@@ -4,11 +4,10 @@ import { cx } from '@pommora/uix/Utilities/cx'
 import { overScrollEllipsis } from '@pommora/uix/Interactions/OverScroll'
 import { text } from '@pommora/uix/Theme'
 import { linkDomain } from '@pommora/core/Paths/urlPath'
-import { DEFAULT_LINK_DISPLAY } from '@pommora/core/Properties/properties'
 import { WEB_PARTITION } from '@pommora/core/Web/partition'
 import { webpageTileTitle } from '@pommora/core/MarkdownPM/Embeds/webpageEmbed'
 import { useDismissal } from '@pommora/uix/Interactions/dismissalStack'
-import { useSession } from '../../Session/store'
+import { useSession, useSetting } from '../../Session/store'
 import { openWebLink } from '../../Web/openWebLink'
 import { webGuestRetention } from './webRetention'
 import { host } from '../../Platform/dialer'
@@ -25,7 +24,7 @@ type Guest = HTMLElement & {
 const CAPTURE_DEADLINE_MS = 200
 
 function useWebpageTitle(label: string, url: string): string {
-  const display = useSession((s) => s.personalization.defaultLinkFormat ?? DEFAULT_LINK_DISPLAY)
+  const display = useSetting('defaultLinkFormat')
   const title = useSession((s) => s.linkTitles[url])
   const resolveLinkTitle = useSession((s) => s.resolveLinkTitle)
   const wantsTitle = label === '' && display === 'link-title'
@@ -51,7 +50,7 @@ export function WebTile({
   refocusHost?: () => void
 }): React.JSX.Element {
   const title = useWebpageTitle(label, url)
-  const pauseOnTabSwitch = useSession((s) => s.personalization.pauseMediaOnTabSwitch !== false)
+  const pauseOnTabSwitch = useSetting('pauseMediaOnTabSwitch')
   const [failed, setFailed] = useState(false)
   const [loaded, setLoaded] = useState(false)
   const [engaged, setEngaged] = useState(false)

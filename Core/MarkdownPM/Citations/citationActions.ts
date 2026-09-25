@@ -68,7 +68,7 @@ function writeCitation(view: EditorView, markerFrom: number, changes: ChangeSpec
   const scan = docScan(view.state.doc)
   const marker = scan.citations.markers.find((m) => m.from === set.mapPos(markerFrom, -1))
   const entry = marker && citationFor(scan.citations, marker.label)
-  if (!entry || view.state.facet(editorHost).settings().jumpToCitation === false) {
+  if (!entry || !view.state.facet(editorHost).settings().jumpToCitation) {
     focusRange(view, marker?.to ?? markerFrom)
     return true
   }

@@ -2,7 +2,11 @@
 
 import { NEW_SLOT, type MutateRequest } from '@pommora/core/Nexus/mutateRequest'
 import type { NexusTree } from '@pommora/core/Nexus/tree'
-import type { Personalization, Placement } from '@pommora/core/Settings/personalization'
+import {
+  type Personalization,
+  type Placement,
+  settingOf,
+} from '@pommora/core/Settings/personalization'
 import { findContainerWhere } from '../Nexus/treePatch'
 
 export const sameIds = (a: string[], b: string[]): boolean =>
@@ -58,7 +62,7 @@ export function tieOrderWith(
 // Bottom is the append the bare request already makes.
 function atTop<R extends MutateRequest & { order?: string[] }>(
   req: R,
-  placement: Placement | undefined,
+  placement: Placement,
   siblingIds: string[] | undefined,
 ): R {
   return placement === 'top' && siblingIds
@@ -72,14 +76,14 @@ export function placeNew(tree: NexusTree, req: MutateRequest, p: Personalization
     case 'createPage':
       return atTop(
         req,
-        p.newPagePlacement,
+        settingOf(p, 'newPagePlacement'),
         container(req.parentPath)?.pages.map((n) => n.id),
       )
     case 'createContainer': {
       const parent = req.kind === 'set' ? container(req.parentPath) : null
       return atTop(
         req,
-        p.newFolderPlacement,
+        settingOf(p, 'newFolderPlacement'),
         parent ? (parent.sets ?? []).map((n) => n.id) : undefined,
       )
     }
@@ -87,7 +91,7 @@ export function placeNew(tree: NexusTree, req: MutateRequest, p: Personalization
       const group = tree.contexts.find((g) => g.def.id === req.contextId)
       return atTop(
         req,
-        p.newSpacePlacement,
+        settingOf(p, 'newSpacePlacement'),
         group?.spaces.map((n) => n.id),
       )
     }

@@ -27,7 +27,7 @@ import { useEntrance } from '@pommora/uix/Animations/useEntrance'
 import { CalendarPicker } from '@pommora/uix/Pickers/CalendarPicker'
 import { contextIdsOf, isContextColumnId } from '../../Contexts/contextIdentity'
 import { useStyleFor } from '../Host/useColumnStyles'
-import { useSession } from '../../Session/store'
+import { useSetting } from '../../Session/store'
 import { condensedDate, formatDate } from '../../Properties/formatValue'
 import { contextOptionsFor, type ContextOption } from '../../Contexts/contextOptions'
 import { declaredType } from '../../Properties/value'
@@ -387,7 +387,7 @@ export function FilterFrame({
   onCommit: (next: FilterView) => void
 }): React.JSX.Element {
   const styleFor = useStyleFor()
-  const nexusClock = useSession((s) => s.personalization.timeFormat)
+  const nexusClock = useSetting('timeFormat')
   const [draft, setDraft] = useState<Connector | null | false>(false)
 
   const [pendingMode, setPendingMode] = useState<MatchMode | null>(null)

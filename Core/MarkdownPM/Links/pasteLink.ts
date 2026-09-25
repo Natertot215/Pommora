@@ -5,7 +5,6 @@ import {
   type LinkPaste,
 } from '@pommora/core/MarkdownPM/Links/pasteDecision'
 import { pasteAsTarget, pasteAsWrite, type PasteAsForm } from '@pommora/core/Actions/pasteAsMenu'
-import { DEFAULT_LINK_DISPLAY } from '@pommora/core/Properties/properties'
 import { linkDestinationAt } from '@pommora/core/MarkdownPM/Embeds/webpageEmbed'
 import { matchesCommand } from '@pommora/uix/Interactions/chords'
 import { docScan, docString } from '../docCache'
@@ -36,9 +35,9 @@ function linkFor(view: EditorView, text: string, inverse: boolean): LinkPaste | 
     selectionText: view.state.sliceDoc(
       ...trimmedRange(docString(view.state.doc), sel.from, sel.to),
     ),
-    pasteIntoText: settings.pasteLinkIntoText === true,
+    pasteIntoText: settings.pasteLinkIntoText,
     inverse,
-    format: settings.defaultLinkFormat ?? DEFAULT_LINK_DISPLAY,
+    format: settings.defaultLinkFormat,
     title: host.linkTitles.get(url) ?? undefined,
   })
   return decision.kind === 'literal' ? null : decision

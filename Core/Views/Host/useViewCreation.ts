@@ -16,6 +16,7 @@ import { DEFAULT_NEW_NAME } from '@pommora/core/Nexus/mutateRequest'
 import { relDirname } from '@pommora/core/Paths/posix'
 import { findScroller, SEEK_GLIDE, scrollGlide } from '@pommora/uix/Interactions/autoscroll'
 import { useSession } from '../../Session/store'
+import { settingOf } from '@pommora/core/Settings/personalization'
 import { declaredType, resolveFieldValue } from '../../Properties/value'
 import { filterSeeds } from '../Pipeline/creationSeeds'
 import { flattenContainer, frontmatterOf } from '../Pipeline/group'
@@ -146,7 +147,7 @@ export function useViewCreation(getCfg: () => ViewCreationConfig): ViewCreation 
     const c = cfg()
     const gestureViewId = c.view.id
     const siblings = containerPagesOf(parentPath)
-    const top = useSession.getState().personalization.newPagePlacement === 'top'
+    const top = settingOf(useSession.getState().personalization, 'newPagePlacement') === 'top'
     // Top leads the folder's own order in any view; a non-structural view otherwise leaves page_order to its sort.
     const order =
       top || c.structuralOrder ? orderWithSlot(siblings, null, top ? 'first' : 'last') : undefined

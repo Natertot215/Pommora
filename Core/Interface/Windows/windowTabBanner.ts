@@ -5,7 +5,7 @@ import { resolveAssetUrl } from '../../Assets/assetUrl'
 import { findSpace } from '../../Nexus/treeIndex'
 import { coverOf } from '../../Pages/pageDetail'
 import { fetchPageDetail, readPageDetail } from '../../Session/pageDetailCache'
-import type { Personalization } from '../../Settings/personalization'
+import { type Personalization, settingOf } from '../../Settings/personalization'
 import { useSession } from '../../Session/store'
 import { useLatest } from '@pommora/uix/Utilities/stableApi'
 
@@ -21,7 +21,7 @@ let seat: BannerSeat | null = null
 let pending: { tabId: string; action: BannerMenuAction } | null = null
 
 export const windowBannerShown = (p: Personalization, kind: WindowTarget['kind']): boolean =>
-  (kind === 'space' ? p.windowSpaceBanners : p.windowPageBanners) ?? false
+  settingOf(p, kind === 'space' ? 'windowSpaceBanners' : 'windowPageBanners')
 
 // The rows follow what the header draws: a banner whose asset no longer resolves reads as none, so Add repairs it.
 export async function windowBannerAdd(target: WindowTarget): Promise<boolean> {

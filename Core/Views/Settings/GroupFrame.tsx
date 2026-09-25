@@ -40,7 +40,7 @@ import { reparentFsOrder, structuralOrderAfterDrop } from '../Bands/bandDndModel
 import { nextOrder } from '@pommora/uix/Interactions/reorderModel'
 import { EntityIcon } from '../../Assets/EntityIcon'
 import { cx } from '@pommora/uix/Utilities/cx'
-import { useSession } from '../../Session/store'
+import { useSession, useSetting } from '../../Session/store'
 import { PickerControl, type PickerOption } from '@pommora/uix/Pickers/PickerControl'
 import { schemaTargets, targetOption } from '../../Properties/Cells/PropertyTypes'
 import { useGroupingListDrag, type GroupingDrop } from './groupDnd'
@@ -370,7 +370,7 @@ function LocationHierarchy({
   onSaveView: (patch: Partial<SavedView>) => void
 } & HideControls): React.JSX.Element {
   const mutate = useSession((st) => st.mutate)
-  const hideChevrons = useSession((st) => st.personalization.hideChevrons ?? false)
+  const hideChevrons = useSetting('hideChevrons')
   const expanded = useDisclosureSet()
   const subGrouped = subDef !== undefined
 

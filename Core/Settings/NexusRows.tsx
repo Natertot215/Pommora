@@ -7,11 +7,10 @@ import { MenuRowView } from '@pommora/uix/Menus'
 import type { Result } from '@pommora/core/Contract/result'
 import type { SyncBinding, SyncState, SyncStatus } from '@pommora/core/Sync/Contract/wire'
 import type { TimeFormat } from '@pommora/core/Properties/columnStyles'
-import { DEFAULT_TIME_FORMAT } from '@pommora/core/Settings/personalization'
 import { clockOf } from '../Properties/formatValue'
 import { SettingsFieldRow } from './SettingsFieldRow'
 import { useTimedLabel } from './useTimedLabel'
-import { useSession } from '../Session/store'
+import { useSession, useSetting } from '../Session/store'
 import { useExperimental } from './experimental'
 import * as x from './settings-rows.css'
 import { host } from '../Platform/dialer'
@@ -55,7 +54,7 @@ function NexusBody({ nexusId }: { nexusId: string }): React.JSX.Element | null {
   const [pin, setPin] = useState('')
   const [busy, setBusy] = useState(false)
   const inFlight = useRef(false)
-  const clock = useSession((s) => s.personalization.timeFormat ?? DEFAULT_TIME_FORMAT)
+  const clock = useSetting('timeFormat')
   const experimental = useExperimental()
   const [syncLabel, markSynced] = useTimedLabel('Sync Now', 'Synced')
 

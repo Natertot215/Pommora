@@ -43,13 +43,13 @@ const monthName = (m: number): string =>
 
 export function CalendarPicker({
   formatDateValue,
-  timeFormat = 'twelveHour',
+  timeFormat,
   value = null,
   onChange,
   range = true,
 }: {
   formatDateValue: (isoDate: string, condensed?: { withYear: boolean }) => string
-  timeFormat?: 'twelveHour' | 'twentyFourHour'
+  timeFormat: 'twelveHour' | 'twentyFourHour'
   value?: string | null
   onChange?: (iso: string | null) => void
   range?: boolean

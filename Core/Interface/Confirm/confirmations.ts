@@ -2,6 +2,7 @@ import type { MutableKind } from '@pommora/core/Nexus/mutateRequest'
 import { valueOr } from '@pommora/core/Contract/result'
 import { DEFAULT_TRASH_MODE } from '@pommora/core/Trash/trashRow'
 import { useSession } from '../../Session/store'
+import { settingOf } from '@pommora/core/Settings/personalization'
 import { notifyDeleted } from '../Notifications/notifications'
 import { host } from '../../Platform/dialer'
 
@@ -27,7 +28,7 @@ const ALWAYS_ASKS: ReadonlySet<MutableKind> = new Set<MutableKind>([
 
 const waived = (kind?: MutableKind): boolean =>
   (kind === undefined || !ALWAYS_ASKS.has(kind)) &&
-  useSession.getState().personalization.confirmDeletion === false
+  !settingOf(useSession.getState().personalization, 'confirmDeletion')
 
 /** A system-trash delete mints no bundle, so it offers no Undo — the artifact left the nexus and there is nothing to name. */
 export const notifyTrashed = (title: string, bundlePath?: string): void =>

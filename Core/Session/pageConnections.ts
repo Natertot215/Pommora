@@ -2,7 +2,7 @@ import { useMemo } from 'react'
 import type { ConnectionsApi } from '../MarkdownPM/Links/connectionsApi'
 import type { NexusTree } from '../Nexus/tree'
 import { showConnectionMenu } from '../Interface/Menus/connectionMenuActions'
-import { useSession } from './store'
+import { useSession, useSetting } from './store'
 import { pageIndexOf } from '../Nexus/treeIndex'
 
 /** `preview` follows the Open in Preview preference, `window` lands in the window's own tab strip, and `inert` opens no page, for a glance or a page's history — its own headings and external links still follow. */
@@ -13,7 +13,7 @@ export function useConnections(
   const select = useSession((s) => s.select)
   const openWindowTab = useSession((s) => s.openWindowTab)
   // Reads the LIVE personalization slice (setPersonalization updates it before the tree echoes).
-  const preview = useSession((s) => s.personalization.connectionsOpenInPreview ?? false)
+  const preview = useSetting('connectionsOpenInPreview')
   const headings = useSession((s) => s.headings)
   const inWindow = mode === 'window' || (mode === 'preview' && preview)
   return useMemo(() => {

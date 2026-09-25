@@ -5,7 +5,7 @@ import { EditorView } from '@codemirror/view'
 import type { PickNode } from '@pommora/core/Actions/gripMenu'
 import { MarkdownEditor } from './MarkdownEditor'
 import { DEFAULT_COMMANDS } from '@pommora/core/Actions/commands'
-import type { EditorHost, EditorSettings } from './api'
+import { type EditorHost, type EditorSettings, editorSettingsOf } from './api'
 import type { EditorPrefs } from '@pommora/core/Contract/bridge'
 import { stubDialer } from '../vitest.setup'
 
@@ -68,7 +68,7 @@ function harnessHost(
   bump: () => void,
 ): HarnessState {
   const state = {
-    settings: { commands: DEFAULT_COMMANDS, ...spec.settings },
+    settings: { ...editorSettingsOf({}, DEFAULT_COMMANDS), ...spec.settings },
     aliases: { ...spec.aliases },
     bodies: { ...spec.bodies },
     linkTitles: { ...spec.linkTitles },

@@ -3,7 +3,7 @@
 import { app, session, webContents, BrowserWindow, type Session, type WebContents } from 'electron'
 import { isHttpLink, WEB_ADDRESS } from '@pommora/core/Paths/urlPath'
 import { WEB_PARTITION } from '@pommora/core/Web/partition'
-import { WEB_ZOOM_DEFAULT } from '@pommora/core/Settings/personalization'
+import { SETTING_DEFAULTS } from '@pommora/core/Settings/personalization'
 import { readInterfaceScale } from '@pommora/core/Settings/devicePrefs'
 import { push } from '../Bridge/ipc'
 import { isWindows } from '../Platform/hostPath'
@@ -46,7 +46,7 @@ const webviewGuests = (): WebContents[] =>
   webContents.getAllWebContents().filter((wc) => wc.getType() === 'webview')
 
 // Not derivable here: settings live per-nexus, so the boot read and the settings write push it in.
-let webZoom = WEB_ZOOM_DEFAULT
+let webZoom = SETTING_DEFAULTS.webZoomFactor
 
 export function setWebZoomFactor(factor: number): void {
   webZoom = factor

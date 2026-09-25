@@ -1,7 +1,6 @@
 import { reportRefusal } from '@pommora/core/Interface/Notifications/notifications'
 import { useCallback, useEffect, useState } from 'react'
 import { valueOr } from '@pommora/core/Contract/result'
-import { DEFAULT_TIME_FORMAT } from '@pommora/core/Settings/personalization'
 import { fetchPageValues } from '@pommora/core/Properties/pageRow'
 import { relDirname } from '@pommora/core/Paths/posix'
 import { Button } from '@pommora/uix/Buttons/Button'
@@ -13,12 +12,12 @@ import { useHeldPresence } from '@pommora/uix/Animations/useExitPresence'
 import { retained, toggled } from '@pommora/uix/Utilities/checkSet'
 import { MarkdownEditor } from '../../MarkdownPM/MarkdownEditor'
 import { useEditorHost } from '../../Pages/editorHost'
-import { clockOf, formatDate, nexusDateFormat } from '../../Properties/formatValue'
+import { clockOf, formatDate } from '../../Properties/formatValue'
 import { restoreSnapshot } from '../../Pages/restoreSnapshot'
 import { fetchPageDetail } from '../../Session/pageDetailCache'
 import { livePagePath, trailOf } from '../../Nexus/treeIndex'
 import { useConnections } from '../../Session/pageConnections'
-import { useEmbedScale, useSession } from '../../Session/store'
+import { useEmbedScale, useSession, useSetting } from '../../Session/store'
 import type { PageTarget } from '@pommora/core/Navigation/navRef'
 import { askDeleteSnapshots, askRestoreSnapshot } from '../Confirm/confirmations'
 import { WINDOW_BASE_PANEL, WindowBase } from '@pommora/uix/Windows/window-base'
@@ -51,8 +50,8 @@ function PageHistoryBody({
   const geometry = useWindowGeometry('page-history')
   const tree = useSession((s) => s.tree)
   const embedScale = useEmbedScale()
-  const nexusClock = useSession((s) => s.personalization.timeFormat ?? DEFAULT_TIME_FORMAT)
-  const dateFormat = nexusDateFormat(useSession((s) => s.personalization.dateFormat))
+  const nexusClock = useSetting('timeFormat')
+  const dateFormat = useSetting('dateFormat')
 
   const [rows, setRows] = useState<number[]>([])
   const [checked, setChecked] = useState<ReadonlySet<number>>(new Set())

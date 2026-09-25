@@ -3,12 +3,10 @@ import type { DevicePrefs } from '@pommora/core/Settings/devicePrefs'
 import type { PickerOption } from '@pommora/uix/Pickers/PickerControl'
 import { type NumberUnit, unitLabel } from '@pommora/uix/Pickers/numberUnit'
 import { LINK_FORMAT_OPTIONS } from '../Properties/Schema/linkFormatOptions'
-import { DEFAULT_LINK_DISPLAY, type LinkDisplay } from '@pommora/core/Properties/properties'
+import type { LinkDisplay } from '@pommora/core/Properties/properties'
 import {
-  DEFAULT_TIME_FORMAT,
   HEADING_LINK_STYLE_LABELS,
   HEADING_LINK_STYLES,
-  HEADING_SIZE_DEFAULTS,
   HEADING_SIZE_KEYS,
   HEADING_SIZE,
   HISTORY_DAYS,
@@ -18,21 +16,19 @@ import {
   TAB_CACHE,
   TAB_MAX_WIDTH,
   TAB_MIN_WIDTH,
-  PREVIEW_PERSISTENCE_DEFAULT,
   TIME_FORMAT_LABELS,
   TIME_FORMAT_SETTINGS,
-  EDITOR_SCALE_DEFAULT,
-  EMBED_SCALE_DEFAULT,
-  WEB_ZOOM_DEFAULT,
   type HeadingLinkStyle,
   type InPageHeadingResolution,
   type MatrixOpenIn,
-  type Personalization,
   type Placement,
   type PreviewPersistence,
   type TabOpenBehavior,
   type TimeFormatSetting,
   TENTHS_SCALE,
+  SETTING_DEFAULTS,
+  type SettingKey,
+  type SettingValue,
 } from '@pommora/core/Settings/personalization'
 import type { ColorSetting } from '@pommora/uix/Theme/colors'
 import {
@@ -49,9 +45,10 @@ const PLACEMENT_OPTIONS: readonly PickerOption<Placement>[] = [
   { value: 'bottom', label: 'Bottom' },
 ]
 
-type KeyOf<V, R = Personalization> = {
-  [K in keyof R]-?: NonNullable<R[K]> extends V ? K : never
-}[keyof R]
+type KeyOf<V> = { [K in SettingKey]: SettingValue<K> extends V ? K : never }[SettingKey]
+type DeviceKeyOf<V> = {
+  [K in keyof DevicePrefs]-?: NonNullable<DevicePrefs[K]> extends V ? K : never
+}[keyof DevicePrefs]
 
 export interface RowText {
   label: string
@@ -62,11 +59,9 @@ type PickerControlRow<T extends string> = RowText & {
   kind: 'picker'
   key: KeyOf<T>
   options: readonly PickerOption<T>[]
-  fallback: T
 }
 
 type ZoomSpec = RowText & {
-  fallback: number
   steps?: readonly number[]
   unit?: NumberUnit
 }
@@ -77,7 +72,6 @@ export type Row =
   | (RowText & {
       kind: 'toggle'
       key: KeyOf<boolean>
-      defaultOn?: boolean
     })
   | (RowText & {
       kind: 'slider'
@@ -85,12 +79,11 @@ export type Row =
       min: number
       max: number
       step: number
-      fallback: number
       format: (v: number) => string
     })
   | (RowText & {
       kind: 'device'
-      key: KeyOf<boolean, DevicePrefs>
+      key: DeviceKeyOf<boolean>
     })
   | (RowText & {
       kind: 'path'
@@ -127,7 +120,8 @@ export type Row =
     })
   | (ZoomSpec & {
       kind: 'deviceZoom'
-      key: KeyOf<number, DevicePrefs>
+      key: DeviceKeyOf<number>
+      fallback: number
     })
 
 export type RowOf<K extends Row['kind']> = Extract<Row, { kind: K }>
@@ -201,7 +195,6 @@ export const FRAMES = roster([
             key: 'dateFormat',
             label: 'Date Format',
             hint: 'How a date reads wherever a column has not chosen its own form.',
-            fallback: 'full',
             options: dateFormatOptions,
           },
           {
@@ -209,7 +202,6 @@ export const FRAMES = roster([
             key: 'timeFormat',
             label: 'Time Format',
             hint: "The nexus's clock — twelve-hour segments or a flat twenty-four-hour time.",
-            fallback: DEFAULT_TIME_FORMAT,
             options: timeFormatOptions,
           },
         ],
@@ -275,7 +267,6 @@ export const FRAMES = roster([
             key: 'embedScale',
             label: 'Embed Scale',
             hint: "The scale embedded pages and views start at; a tile's own toggle compounds it.",
-            fallback: EMBED_SCALE_DEFAULT,
           },
         ],
       },
@@ -287,7 +278,6 @@ export const FRAMES = roster([
             key: 'newPagePlacement',
             label: 'New Page Placement',
             hint: 'Where a new page lands among its siblings when it isn’t created beside another.',
-            fallback: 'bottom',
             options: PLACEMENT_OPTIONS,
           },
           {
@@ -295,7 +285,6 @@ export const FRAMES = roster([
             key: 'newFolderPlacement',
             label: 'New Folder Placement',
             hint: 'Where a new Set or Sub-Set lands among its siblings.',
-            fallback: 'bottom',
             options: PLACEMENT_OPTIONS,
           },
           {
@@ -303,7 +292,6 @@ export const FRAMES = roster([
             key: 'newSpacePlacement',
             label: 'New Space Placement',
             hint: 'Where a new Space lands in its Context when it isn’t created beside another.',
-            fallback: 'bottom',
             options: PLACEMENT_OPTIONS,
           },
         ],
@@ -322,7 +310,6 @@ export const FRAMES = roster([
             key: 'webZoomFactor',
             label: 'Webpage Zoom',
             hint: 'How embedded webpages scale, relative to the window.',
-            fallback: WEB_ZOOM_DEFAULT,
           },
         ],
       },
@@ -340,7 +327,6 @@ export const FRAMES = roster([
             key: 'navCloseOnSelect',
             label: 'Close Navigation On Select',
             hint: 'Picking an entity dismisses the Navigation window.',
-            defaultOn: true,
           },
           {
             kind: 'toggle',
@@ -353,7 +339,6 @@ export const FRAMES = roster([
             key: 'previewPersistence',
             label: 'Hover Previews',
             hint: 'Show a preview when resting on a page; how long it lingers after hovering off.',
-            fallback: PREVIEW_PERSISTENCE_DEFAULT,
             options: [
               { value: 'off', label: 'Off' },
               { value: '1s', label: '1 Second' },
@@ -377,7 +362,6 @@ export const FRAMES = roster([
             kind: 'picker',
             key: 'tabOpenBehavior',
             label: 'Default Opening Behavior',
-            fallback: 'overtake',
             options: [
               { value: 'overtake', label: 'Overtake' },
               { value: 'newtab', label: 'New Tab' },
@@ -387,7 +371,6 @@ export const FRAMES = roster([
             kind: 'picker',
             key: 'matrixOpenIn',
             label: 'Open Matrix In',
-            fallback: 'tab',
             options: [
               { value: 'tab', label: 'New Tab' },
               { value: 'window', label: 'Window' },
@@ -397,13 +380,11 @@ export const FRAMES = roster([
             kind: 'toggle',
             key: 'tabTakeFocus',
             label: 'Focus New Tabs',
-            defaultOn: true,
           },
           {
             kind: 'zoom',
             key: 'tabMinWidth',
             label: 'Minimum Tab Width',
-            fallback: TAB_MIN_WIDTH.default,
             steps: TAB_MIN_WIDTH.steps,
             unit: PIXELS,
           },
@@ -411,7 +392,6 @@ export const FRAMES = roster([
             kind: 'zoom',
             key: 'tabMaxWidth',
             label: 'Maximum Tab Width',
-            fallback: TAB_MAX_WIDTH.default,
             steps: TAB_MAX_WIDTH.steps,
             unit: PIXELS,
           },
@@ -420,7 +400,6 @@ export const FRAMES = roster([
             key: 'tabCache',
             label: 'Active Tab Cache',
             hint: 'Maximum amount of open tabs kept active before switching to on-demand loading.',
-            fallback: TAB_CACHE.default,
             steps: TAB_CACHE.steps,
             unit: TABS,
           },
@@ -429,7 +408,6 @@ export const FRAMES = roster([
             key: 'pauseMediaOnTabSwitch',
             label: 'Pause Media On Tab Switch',
             hint: 'Automatically pause video and audio playback from an open tab when no longer in the main view.',
-            defaultOn: true,
           },
         ],
       },
@@ -507,7 +485,6 @@ export const FRAMES = roster([
             key: 'defaultLinkFormat',
             label: 'Default Format',
             hint: 'How a pasted link reads.',
-            fallback: DEFAULT_LINK_DISPLAY,
             options: LINK_FORMAT_OPTIONS,
           },
           {
@@ -526,14 +503,12 @@ export const FRAMES = roster([
             key: 'removeTitleOnLinkChange',
             label: 'Remove Title On Link Change',
             hint: 'Pointing a connection at another page drops the alias it was wearing.',
-            defaultOn: true,
           },
           {
             kind: 'toggle',
             key: 'aliasPickerOnCommit',
             label: 'Automatically Suggest Existing Aliases When Linking A Page',
             hint: 'Accepting a page from the connection picker offers the names it already carries.',
-            defaultOn: true,
           },
         ],
       },
@@ -570,7 +545,6 @@ export const FRAMES = roster([
             kind: 'toggle',
             key: 'confirmDeletion',
             label: 'Confirm Before Deletion',
-            defaultOn: true,
             hint: 'Ask before deleting a page, a tile, or a folder that carries no schema. Collections, Sets, views and properties always ask.',
           },
           {
@@ -589,13 +563,11 @@ export const FRAMES = roster([
             key: 'fileHistory',
             label: 'File History',
             hint: 'Stores recoverable snapshots of device-local file history.',
-            defaultOn: true,
           },
           {
             kind: 'zoom',
             key: 'historyDays',
             label: 'History Timeframe',
-            fallback: HISTORY_DAYS.default,
             steps: HISTORY_DAYS.steps,
             unit: DAYS,
           },
@@ -603,7 +575,6 @@ export const FRAMES = roster([
             kind: 'zoom',
             key: 'historyInterval',
             label: 'Snapshot Interval',
-            fallback: HISTORY_INTERVAL.default,
             steps: HISTORY_INTERVAL.steps,
             unit: MINUTES,
           },
@@ -653,7 +624,6 @@ export const FRAMES = roster([
             key: 'editorScale',
             label: 'Editor Scale',
             hint: 'How large a page reads — its text, its title, and the chrome around them. An embedded page keeps its own scale.',
-            fallback: EDITOR_SCALE_DEFAULT,
           },
           {
             kind: 'toggle',
@@ -670,11 +640,10 @@ export const FRAMES = roster([
           kind: 'slider',
           key,
           label: `Heading ${i + 1} Size`,
-          hint: `Default: ${unitLabel(HEADING_SIZE_DEFAULTS[key], EM)}`,
+          hint: `Default: ${unitLabel(SETTING_DEFAULTS[key], EM)}`,
           min: HEADING_SIZE.min,
           max: HEADING_SIZE.max,
           step: 0.05,
-          fallback: HEADING_SIZE_DEFAULTS[key],
           format: (v) => unitLabel(v, EM),
         })),
       },
@@ -685,31 +654,26 @@ export const FRAMES = roster([
             kind: 'toggle',
             key: 'transformDashes',
             label: 'Dashes',
-            defaultOn: true,
           },
           {
             kind: 'toggle',
             key: 'transformArrows',
             label: 'Arrows',
-            defaultOn: true,
           },
           {
             kind: 'toggle',
             key: 'transformEquations',
             label: 'Equations',
-            defaultOn: true,
           },
           {
             kind: 'toggle',
             key: 'transformEllipses',
             label: 'Ellipses',
-            defaultOn: true,
           },
           {
             kind: 'toggle',
             key: 'transformCallouts',
             label: 'Callout',
-            defaultOn: true,
           },
           {
             kind: 'toggle',
@@ -730,19 +694,16 @@ export const FRAMES = roster([
             kind: 'toggle',
             key: 'pairBrackets',
             label: 'Brackets',
-            defaultOn: true,
           },
           {
             kind: 'toggle',
             key: 'pairMarkers',
             label: 'Markers',
-            defaultOn: true,
           },
           {
             kind: 'toggle',
             key: 'pairQuotes',
             label: 'Quotes',
-            defaultOn: true,
           },
           {
             kind: 'toggle',
@@ -755,14 +716,12 @@ export const FRAMES = roster([
             key: 'deletePairsTogether',
             label: 'Delete Pairs Together',
             hint: 'Backspace inside an empty pair removes both halves.',
-            defaultOn: true,
           },
           {
             kind: 'toggle',
             key: 'exitPairsOnEnter',
             label: 'Exit On Enter',
             hint: 'Enter moves the caret past the closer of an open pair.',
-            defaultOn: true,
           },
         ],
       },
@@ -833,14 +792,12 @@ export const FRAMES = roster([
             key: 'headingLinkStyle',
             label: 'Heading Link Style',
             options: headingLinkStyleOptions,
-            fallback: 'page-heading',
           },
           {
             kind: 'picker',
             key: 'inPageHeadingResolution',
             label: 'In-Page Heading Resolution',
             options: inPageHeadingResolutionOptions,
-            fallback: 'explicit',
           },
         ],
       },
@@ -858,7 +815,6 @@ export const FRAMES = roster([
             key: 'jumpToCitation',
             label: 'Jump To Citation On Creation',
             hint: 'Writing a footnote carries the caret down to the citation it just made.',
-            defaultOn: true,
           },
         ],
       },

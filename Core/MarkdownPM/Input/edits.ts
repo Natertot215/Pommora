@@ -1,4 +1,4 @@
-import type { Personalization } from '@pommora/core/Settings/personalization'
+import { type Personalization, settingOf } from '@pommora/core/Settings/personalization'
 import { isInsideWikilink } from '../Engine/parser'
 import { linkDestinationAt } from '../Embeds/webpageEmbed'
 import { aliasSpanAt } from '@pommora/core/Connections/connections'
@@ -147,7 +147,8 @@ export function calloutShorthand(
   inserted: string,
   settings: Personalization = {},
 ): Edit | null {
-  if (inserted !== '|' || selStart !== selEnd || settings.transformCallouts === false) return null
+  if (inserted !== '|' || selStart !== selEnd || !settingOf(settings, 'transformCallouts'))
+    return null
   const c = selStart
   const ls = lineStartAt(doc, c)
   if (ls !== c - 1 || doc[c - 1] !== '|') return null
@@ -336,10 +337,10 @@ export function autoPair(
   if (selStart !== selEnd) return null
   const doc = scan.text
   const c = selStart
-  if (')]}'.includes(inserted) && doc[c] === inserted && settings.pairBrackets !== false)
+  if (')]}'.includes(inserted) && doc[c] === inserted && settingOf(settings, 'pairBrackets'))
     return inCodeAt(scan, c) ? null : { from: c, to: c, insert: '', selection: c + 1 }
   const pair = PAIRS[inserted]
-  if (!pair || settings[pair.group] === false || !isPairEdge(doc[c], CLOSE_MARKS)) return null
+  if (!pair || !settingOf(settings, pair.group) || !isPairEdge(doc[c], CLOSE_MARKS)) return null
   if (inCodeAt(scan, c)) return null
   const prev = doc[c - 1]
 
@@ -406,7 +407,7 @@ export function wrapSelection(
 ): Edit | null {
   const open = CYCLE_ENTRY[inserted] ?? inserted
   const pair = PAIRS[open]
-  if (!pair || selStart === selEnd || settings.wrapSelections !== true) return null
+  if (!pair || selStart === selEnd || !settingOf(settings, 'wrapSelections')) return null
   const doc = scan.text
   const [from, to] = trimmedRange(doc, selStart, selEnd)
   const cycle = WRAP_CYCLES[open] ?? []
@@ -414,7 +415,7 @@ export function wrapSelection(
     [...cycle].sort((a, b) => b.length - a.length).find((w) => wrappedBy(doc, from, to, w)) ?? ''
   const start = from - outer.length
   const end = to + outer.length
-  if (settings[pair.group] === false || inCodeAt(scan, start) || inCodeAt(scan, end)) return null
+  if (!settingOf(settings, pair.group) || inCodeAt(scan, start) || inCodeAt(scan, end)) return null
   const text = doc.slice(from, to)
   if (pair.group === 'pairMarkers' && text.includes('\n')) return null
   const next = outer ? cycle[(cycle.indexOf(outer) + 1) % cycle.length] : open
@@ -433,7 +434,7 @@ export function autoDelete(
   selEnd: number,
   settings: Personalization = {},
 ): Edit | null {
-  if (settings.deletePairsTogether === false) return null
+  if (!settingOf(settings, 'deletePairsTogether')) return null
   if (selStart !== selEnd || selStart === 0 || inCodeAt(scan, selStart)) return null
   const doc = scan.text
   const close = PAIRS[doc[selStart - 1]]?.close
@@ -495,7 +496,7 @@ export function closeConstructOnEnter(
   selEnd: number,
   settings: Personalization = {},
 ): Edit | null {
-  if (selStart !== selEnd || settings.exitPairsOnEnter === false) return null
+  if (selStart !== selEnd || !settingOf(settings, 'exitPairsOnEnter')) return null
   const end = closerEndAt(scan, selStart)
   return end === null ? null : { from: selStart, to: selStart, insert: '', selection: end }
 }
@@ -544,7 +545,7 @@ export function closeBlockOnEnter(
   settings: Personalization,
   typed: boolean,
 ): Edit | null {
-  if (selStart !== selEnd || settings.pairMarkers === false) return null
+  if (selStart !== selEnd || !settingOf(settings, 'pairMarkers')) return null
   const i = lineIndexAt(scan, selStart)
   const end = lineEndOf(scan, i)
   if (selStart !== end) return null
@@ -564,7 +565,7 @@ export function closeConstructOnShiftEnter(
   selEnd: number,
   settings: Personalization = {},
 ): Edit | null {
-  if (selStart !== selEnd || settings.exitPairsOnEnter === false) return null
+  if (selStart !== selEnd || !settingOf(settings, 'exitPairsOnEnter')) return null
   const end = closerEndAt(scan, selStart)
   return end === null ? null : shiftEnterEdit(scan, end, end)
 }
@@ -603,7 +604,8 @@ export function ellipsis(
   inserted: string,
   settings: Personalization = {},
 ): Edit | null {
-  if (inserted !== '.' || selStart !== selEnd || settings.transformEllipses === false) return null
+  if (inserted !== '.' || selStart !== selEnd || !settingOf(settings, 'transformEllipses'))
+    return null
   const doc = scan.text
   const c = selStart
   if (doc[c - 1] !== '.' || doc[c - 2] !== '.' || doc[c - 3] === '.' || isLiteralAt(scan, c))
@@ -618,7 +620,8 @@ export function sectionSign(
   inserted: string,
   settings: Personalization = {},
 ): Edit | null {
-  if (inserted !== '#' || selStart !== selEnd || settings.transformSections !== true) return null
+  if (inserted !== '#' || selStart !== selEnd || !settingOf(settings, 'transformSections'))
+    return null
   const doc = scan.text
   const c = selStart
   if (doc[c - 1] !== '#' || doc[c - 2] === '#') return null
@@ -633,7 +636,8 @@ export function bullet(
   inserted: string,
   settings: Personalization = {},
 ): Edit | null {
-  if (inserted !== ' ' || selStart !== selEnd || settings.transformBullets !== true) return null
+  if (inserted !== ' ' || selStart !== selEnd || !settingOf(settings, 'transformBullets'))
+    return null
   const doc = scan.text
   const c = selStart
   if (c < 2 || doc[c - 1] !== '^' || doc[c - 2] !== ' ') return null
@@ -663,7 +667,7 @@ export function equations(
   inserted: string,
   settings: Personalization = {},
 ): Edit | null {
-  if (selStart !== selEnd || settings.transformEquations === false) return null
+  if (selStart !== selEnd || !settingOf(settings, 'transformEquations')) return null
   const doc = scan.text
   const c = selStart
   const glyph = EQUATIONS[`${doc[c - 1]}${inserted}`]
@@ -683,8 +687,8 @@ export function dashArrow(
   const doc = scan.text
   const c = selStart
   if (!'-–←><'.includes(doc[c - 1]) || isLiteralAt(scan, c)) return null
-  const dashes = settings.transformDashes !== false
-  const arrows = settings.transformArrows !== false
+  const dashes = settingOf(settings, 'transformDashes')
+  const arrows = settingOf(settings, 'transformArrows')
 
   if (
     dashes &&

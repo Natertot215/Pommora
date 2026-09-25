@@ -1,7 +1,11 @@
 import { persist } from '@pommora/core/Interface/Notifications/notifications'
 import type { DevicePrefs } from '@pommora/core/Settings/devicePrefs'
 import { type Commands, DEFAULT_COMMANDS } from '@pommora/core/Actions/commands'
-import type { Personalization } from '@pommora/core/Settings/personalization'
+import {
+  type Personalization,
+  SETTING_DEFAULTS,
+  settingOf,
+} from '@pommora/core/Settings/personalization'
 import { applyPersonalizationKey } from '../Settings/applyPersonalization'
 import type { Slice } from './sessionState'
 import { host } from '../Platform/dialer'
@@ -24,7 +28,7 @@ export interface ConfigSlice {
 
 /** An absent key means hidden. `citationsVisible` is where the fallback happens; the toggle's write compares against it. */
 const citationsDefault = (s: { personalization: Personalization }): boolean =>
-  s.personalization.citationsShown ?? false
+  settingOf(s.personalization, 'citationsShown')
 
 /** Every surface that draws a page resolves its footnote visibility here, so they can't disagree about one page. */
 export const citationsVisible = (
@@ -34,7 +38,8 @@ export const citationsVisible = (
 
 export const createConfigSlice: Slice<ConfigSlice> = (set, get) => ({
   personalization: {},
-  setPersonalization: (key, value) => {
+  setPersonalization: (key, next) => {
+    const value = next === SETTING_DEFAULTS[key] ? undefined : next
     // The tree copy re-identifies only for defaultIcons, the one key tree-keyed derivations resolve — a new tree identity re-runs every tree memo and pipeline, a cost a boolean toggle must never pay. Everything else reads the slice.
     set((s) => ({
       personalization: { ...s.personalization, [key]: value },

@@ -23,6 +23,7 @@ import { host } from '../../Platform/dialer'
 import { popMenu } from '../../Actions/menuActions'
 import { createNamed, newPageAdjacent } from '../../Actions/createActions'
 import { useSession } from '../../Session/store'
+import { settingOf } from '@pommora/core/Settings/personalization'
 import { confirmDelete } from '../Confirm/confirmations'
 import { runPageAction } from './pageMenuActions'
 
@@ -57,7 +58,7 @@ export async function showEntityMenu(target: ContextTarget, trigger?: HTMLElemen
         tree: s.tree,
         schema,
         row,
-        capitalize: s.personalization.capitalizeMetadata ?? false,
+        capitalize: settingOf(s.personalization, 'capitalizeMetadata'),
       }
     : null
   const shown: ContextTarget = {

@@ -12,13 +12,13 @@ import { entityIcon } from '../Assets/entityIconPolicy'
 import { text } from '@pommora/uix/Theme'
 import { askEmptyTrash } from '../Interface/Confirm/confirmations'
 import type { MutateRequest } from '@pommora/core/Nexus/mutateRequest'
-import { DEFAULT_TIME_FORMAT, type Personalization } from '@pommora/core/Settings/personalization'
+import type { Personalization } from '@pommora/core/Settings/personalization'
 import type { TrashRow } from '@pommora/core/Trash/trashRow'
 import { PropertyTypeIcon, propertyTypeIconName } from '../Properties/Cells/PropertyTypes'
-import { formatDate, nexusDateFormat } from '../Properties/formatValue'
+import { formatDate } from '../Properties/formatValue'
 import { containerTargets, contextTargets } from '../Actions/destinationTree'
 import { fuzzyScore } from '../Navigation/navSearch'
-import { useSession } from '../Session/store'
+import { useSession, useSetting } from '../Session/store'
 import { notifyReport, unrestoredLine } from '../Interface/Notifications/notifications'
 import { displayPropertyName, useCapitalizeMetadata } from '../Properties/Cells/columnLabel'
 import { host } from '../Platform/dialer'
@@ -66,10 +66,10 @@ export function TrashFrame(): React.JSX.Element {
 }
 
 function TrashBody(): React.JSX.Element {
-  const nexusClock = useSession((s) => s.personalization.timeFormat ?? DEFAULT_TIME_FORMAT)
-  const columnDefault = nexusDateFormat(useSession((s) => s.personalization.dateFormat))
+  const nexusClock = useSetting('timeFormat')
+  const columnDefault = useSetting('dateFormat')
   const dateFormat = useSession((s) => s.personalization.trashDateFormat) ?? columnDefault
-  const timeShown = useSession((s) => s.personalization.trashHideTime !== true)
+  const timeShown = !useSetting('trashHideTime')
   const setPersonalization = useSession((s) => s.setPersonalization)
   const defaultIcons = useSession((s) => s.personalization.defaultIcons)
   const tree = useSession((s) => s.tree)

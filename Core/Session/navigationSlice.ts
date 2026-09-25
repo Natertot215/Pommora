@@ -14,6 +14,7 @@ import {
   toNavRef,
 } from '@pommora/core/Navigation/navRef'
 import type { PageDetail } from '@pommora/core/Pages/pageDetail'
+import { settingOf } from '@pommora/core/Settings/personalization'
 import { type ReconcileIndex, reconcileSelection, reconcileWith } from './reconcileSelection'
 import { navKeysOf, reconcileIndexOf } from '../Nexus/treeIndex'
 import { RECENTS_CAP, recordRecent, removeRecentByKey } from '../Navigation/navRecents'
@@ -415,7 +416,7 @@ export const createNavigationSlice: Slice<NavigationSlice> = (set, get) => {
     openNewTab: () => {
       const s = get()
       const res = openNewTabModel(s.tabs, makeTabId())
-      if (res.tabs !== s.tabs && s.personalization.tabTakeFocus === false) {
+      if (res.tabs !== s.tabs && !settingOf(s.personalization, 'tabTakeFocus')) {
         set({ tabs: res.tabs })
         persistTabs()
         return
@@ -542,7 +543,7 @@ export const createNavigationSlice: Slice<NavigationSlice> = (set, get) => {
 
     select: async (target, opts) => {
       const was = get()
-      const newTab = opts?.newTab ?? was.personalization.tabOpenBehavior === 'newtab'
+      const newTab = opts?.newTab ?? settingOf(was.personalization, 'tabOpenBehavior') === 'newtab'
       const pending =
         opts?.record === false
           ? null
@@ -555,7 +556,7 @@ export const createNavigationSlice: Slice<NavigationSlice> = (set, get) => {
         pending &&
         newTab &&
         pending.tabs.length > was.tabs.length &&
-        was.personalization.tabTakeFocus === false
+        !settingOf(was.personalization, 'tabTakeFocus')
       ) {
         set({ tabs: pending.tabs })
         commitRecents(recordRecent(was.recents, target, RECENTS_CAP))

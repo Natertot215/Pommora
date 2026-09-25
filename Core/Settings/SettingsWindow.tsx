@@ -18,9 +18,9 @@ import { SETTINGS_RAIL, SETTINGS_WIN } from '@pommora/uix/Windows/windowBounds'
 import { steppedPickerProps } from '@pommora/uix/Pickers/PickerControl'
 import { labelColorFor } from '@pommora/uix/Theme/ramp'
 import { solidColorCss } from '@pommora/uix/Theme/ramp'
-import { SCALE } from '@pommora/core/Settings/personalization'
+import { SCALE, settingOf } from '@pommora/core/Settings/personalization'
 import { useExitPresence } from '@pommora/uix/Animations/useExitPresence'
-import { useSession } from '../Session/store'
+import { useSession, useSetting } from '../Session/store'
 import { useExperimental } from './experimental'
 import { AssetDirectoryRow } from './AssetDirectoryRow'
 import { ExcludedDirectoriesRow } from './ExcludedDirectoriesRow'
@@ -206,12 +206,9 @@ const switchRow = (
 )
 
 function ToggleRow({ row }: { row: RowOf<'toggle'> }): React.JSX.Element {
-  const value = useSession((s) => s.personalization[row.key])
+  const on = useSetting(row.key)
   const setPersonalization = useSession((s) => s.setPersonalization)
-  const on = value ?? row.defaultOn ?? false
-  return switchRow(row, on, (next) =>
-    setPersonalization(row.key, row.defaultOn && next ? undefined : next),
-  )
+  return switchRow(row, on, (next) => setPersonalization(row.key, next))
 }
 
 function DeviceRow({ row }: { row: RowOf<'device'> }): React.JSX.Element {
@@ -221,17 +218,17 @@ function DeviceRow({ row }: { row: RowOf<'device'> }): React.JSX.Element {
 }
 
 function ZoomRow({ row }: { row: RowOf<'zoom' | 'deviceZoom'> }): React.JSX.Element {
-  const stored =
-    useSession((s) =>
-      row.kind === 'zoom' ? s.personalization[row.key] : s.devicePrefs[row.key],
-    ) ?? row.fallback
+  const stored = useSession((s) =>
+    row.kind === 'zoom'
+      ? settingOf(s.personalization, row.key)
+      : (s.devicePrefs[row.key] ?? row.fallback),
+  )
   const setPersonalization = useSession((s) => s.setPersonalization)
   const setDevicePref = useSession((s) => s.setDevicePref)
   const steps = row.steps ?? SCALE.steps
   const commit = (value: number): void => {
-    const next = value === row.fallback ? undefined : value
-    if (row.kind === 'zoom') setPersonalization(row.key, next)
-    else setDevicePref(row.key, next)
+    if (row.kind === 'zoom') setPersonalization(row.key, value)
+    else setDevicePref(row.key, value === row.fallback ? undefined : value)
   }
   return (
     <MenuRowView
@@ -251,24 +248,23 @@ function ZoomRow({ row }: { row: RowOf<'zoom' | 'deviceZoom'> }): React.JSX.Elem
 }
 
 function PickerControlRow({ row }: { row: RowOf<'picker'> }): React.JSX.Element {
-  const stored = useSession((s) => s.personalization[row.key])
+  const value = useSetting(row.key)
   const setPersonalization = useSession((s) => s.setPersonalization)
   return (
     <MenuRowView
       row={settingsRow(row, {
         kind: 'picker',
         ariaLabel: row.label,
-        value: stored ?? row.fallback,
+        value,
         options: row.options,
-        onPick: (v: typeof row.fallback) =>
-          setPersonalization(row.key, v === row.fallback ? undefined : v),
+        onPick: (v: typeof value) => setPersonalization(row.key, v),
       })}
     />
   )
 }
 
 function SliderRow({ row }: { row: RowOf<'slider'> }): React.JSX.Element {
-  const value = useSession((s) => s.personalization[row.key] ?? row.fallback)
+  const value = useSetting(row.key)
   const setPersonalization = useSession((s) => s.setPersonalization)
   return (
     <MenuRowView
@@ -282,7 +278,7 @@ function SliderRow({ row }: { row: RowOf<'slider'> }): React.JSX.Element {
         format: row.format,
         readoutClassName: pickerValue,
         onInput: (v) => applyPersonalizationKey(row.key, v),
-        onCommit: (v) => setPersonalization(row.key, v === row.fallback ? undefined : v),
+        onCommit: (v) => setPersonalization(row.key, v),
       })}
     />
   )
