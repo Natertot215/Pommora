@@ -2,7 +2,7 @@
 
 ### Current Focus
 
-The Pommora Codebase Audit is the sole focus. Its ledger, `// Planning`'s `Pommora Codebase Audit.md`, opened at `f6511401d` with 556 findings, and the batches reconciled through `9edb6310d` have folded 247 of the 570 entered so far, leaving 323. Each session takes one workstream, or a coherent slice of one, in the Verdict's Readiness order, then reconciles the ledger and republishes the Dashboard at closeout.
+The Pommora Codebase Audit is the sole focus. Its ledger, `// Planning`'s `Pommora Codebase Audit.md`, opened at `f6511401d` with 556 findings, and the batches reconciled through `f178fd768` have folded 263 of the 577 entered so far, leaving 314. Each session takes one workstream, or a coherent slice of one, in the Verdict's Readiness order, then reconciles the ledger and republishes the Dashboard at closeout.
 
 ### Immediate Work
 
@@ -46,7 +46,7 @@ Findings where the correct answer isn't established in the codebase — design a
 
 Known shortcuts, none broken today. Each is cheap on its own and best taken when its owning file is next touched — or swept together as one batch session.
 
-- [ ] **Fire-and-forget writes have no seam.** The persisted-chrome family — `folds.set`, `viewOrders.set`, `personalization.set`, `devicePrefs.save`, `tiles.writeMarkdown`, `embedHeights.set`, `tableHeadingColumns.set`, the alias memory's `setPageMeta`, `nav.write`, `tabs.save` and the rest — is called as `void window.nexus.x(…)` at fifteen sites with the failure discarded. Silence is the accepted policy for this class (ruled 08-21-2026); one `persist()` helper wraps the family and states the ruling once, so a change to the policy has one site.
+- [ ] **Fire-and-forget writes have no seam.** The persisted-chrome family — `editorPrefs:set`, `viewOrders.set`, `personalization.set`, `devicePrefs.save`, `tiles.writeMarkdown`, the alias memory's `setPageMeta`, `nav.write`, `tabs.save` and the rest — is called as `void window.nexus.x(…)` at fifteen sites with the failure discarded. Silence is the accepted policy for this class (ruled 08-21-2026); one `persist()` helper wraps the family and states the ruling once, so a change to the policy has one site.
 - [ ] **The remaining style rows.** the thirty plain `.css` sheets on ordinary React components migrate to `.css.ts` as each is next opened, the three loading globally from `Desktop/Renderer/main.tsx` first; the six static `style={{…}}` sites (`TileLab.tsx` ×2, `PickerMenu.tsx`, `PropertyPicker.tsx`, `Core/Views/Table/TableView.tsx`, `CardAddPicker.tsx`) and the `{ minWidth: 96, height: 24 }` pair in `PropertyPicker` and `CardAddPicker` become classes; the two repeated clearance pairings (`clearance + --content-inset` ×8, `clearance + --surface-lane` ×3) and the two `subLabel` exports at 13px and 11px each want one decision; `band` names three unrelated things across Tiles, the Views, and the toolbar.
 - [ ] **A value edited outside the app doesn’t live-refresh an open table.**
 - [ ] **A moved tab rebuilds cold.** A tab dropped into the other row starts with fresh history and no warm editor state; the two rows' warm caches are separate, and carrying one across is a decision about what a tab's identity includes.

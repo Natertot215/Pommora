@@ -1,52 +1,56 @@
 ## Handoff — Pommora
 
-> **User Prompt:** Ratify and execute `.claude/Planning/Tab Transfer — Implementation Plan.md` exactly as written, then close it out through its Final Verification chain. Mid-run: implementation agents on Sonnet and review agents on Opus, then the final review as one Fable code-simplification agent and one Fable adversarial-review agent with the neutral verification the orchestrator's own; the dashboard republish hook retired outright; a drop never activates the tab it seats; no comments left at closeout; every hand-check walked over CDP on the live app in Nathan's absence and reported as expectations; the History entry titled Tab Cross-Drag; minimal wording in the Navigation, Interaction, and Interface documents; commit and push.
+> **User Prompt:** Execute `.claude/Planning/Heading Links — Implementation Plan.md` end to end. Each phase gets a dual review, live checks and one commit. Final Verification sends two agents per lens per phase, twelve in all, against each phase's diff, and every fix it drives is net-neutral or net-negative. Nathan is asleep, so the run discloses its calls rather than asking, and the final report states plainly how complete the work is.
 
 #### Current Focus
 
-**Session ID:** 68c5a07d-6d4c-42e0-96c9-7cd1ddb1575f
-**Dates:** 09-15-2026 → 09-16
-**Model:** Fable 5.1 orchestrating; Opus 5 for Phases 1–2 and the first simplification pass; Sonnet 5 for Phases 3–4 and the hook retirement; Fable 5.1 for the final simplification and adversarial reviews
+**Session ID:** e92e8759-bff4-400c-a24d-cff55a16e599
+**Dates:** 09-24-2026 → 09-25
+**Model:** Opus 5.5 orchestrating; Opus executors and reviewers
 
-**Tab Cross-Drag is complete: 27 commits from `c588afcd3` to the documents commit, every gate green, pushed.** A page tab tugged off the main bar or a floating window's strip floats to the other row and seats at the pointed slot; a gallery card, list row, or sidebar page row dropped on either row opens its page there; nothing seated is activated; the source gap holds while the tab hovers elsewhere; a release over nothing snaps home. The engine's `family` gate replaced `crossZone`, the insertion lifecycle escorts rows into the engine, one shell `DragGroup` sits in `App.tsx`, and `openTabAt`/`openTabIn` seat at an index. Nathan confirmed the Phase 1 and Phase 3 checkpoints by hand; every later interaction was driven over CDP against his live Nexus (the app's tabs, windows, recents, and pins were restored to their pre-walkthrough state afterward).
+**Heading Links is complete in eight commits, `fa0f7f2ca` through `ddc45aacb`, at −186 production lines.**
 
-**Two defects surfaced live and closed in the range.** The NavWindow's opened tab row had a 0px strip inside it (`nav-window.css` gives the tabwrap the row's height), and the Page Window's strip had been click-through since before the plan: its toolbar is `pointer-events: none` and the body's over-scroll mask painted above it (`window-base.css` opts the tabwrap in and lifts it). The adversarial review's accepted findings landed in `f0c912523`; the two it raised that were ruled out, and every other ruling, are under the plan's `### Deviations`.
+- **Renames:** one rename cascade covers page and heading renames alike. It reaches bodies, embeds, Link values and every markdown tile.
+- **Settling:** the editor settles a heading rename once, when the caret leaves the line, the editor blurs or the page closes.
+- **Prefs and folds:** one keyed prefs channel lets every editor that shows a page remember its folds.
+- **Links:** one link target serves every follow surface.
+
+Sixteen audit findings closed. Seven new ones entered the ledger (F-571 to F-577). The Dashboard was republished.
 
 #### Completion Criteria
 
-- [x] Phases 1–4 ticked; the two hand checkpoints carry Nathan's word; the four hand-check lists of Phase 4 walked over CDP.
-- [x] Simplification (Opus, then Fable) and the Fable adversarial review run over `b3acbca58..HEAD`; findings fixed or ruled on.
-- [x] Reconciliation walked: `PommoraDND.md`, `NavigationPM.md`, `InterfacePM.md` at minimal wording; PM-139 in History; Context current.
-- [x] Gates green on the final tree; the range's added comments reduced to nine one-line prop contracts.
-- [ ] Nathan's morning check against the expectations list in the closeout report.
-- [x] Push.
+- [x] Phases 1–6 each passed a dual review, a fix round, gates and live CDP checks on an isolated build.
+- [x] Final Verification: twelve reviewers ran, one fix round landed (`ddc45aacb`, −60), a neutral verifier checked the result, and gates were green from a clean checkout of HEAD.
+- [x] Features docs reconciled (Connections, Pages, MarkdownPM, Core, NexusRecord); the ledger reconciled with its header recounted.
+- [ ] Nathan's rulings on the items the report lists under Needs Nathan's Ruling.
 
 #### Next Session
 
-- **Nathan's morning check:** the closeout report's expectations list is what to walk; anything that reads differently on his hands than it did over CDP is the first thing to raise.
-- **Open Items recorded in the plan and Context:** a one-tab Page Window shows its title rather than a strip, so its last tab leaves by the window's own close; a moved tab rebuilds cold with fresh history; keyboard lifts stay in-row; a page pinned in the main bar absorbs a drop by closing the window tab; the NavWindow covers the NavView beneath it, so a NavView card reaches the window's row only from the uncovered region.
-- **Prospects left standing:** drag-to-pin across the tab divider, and a tab popped into its own OS window.
-- **`Carried` is `unknown`** with a cast at both receivers; a generic `SortableZone<T>` would type it. Recorded under Debt & Ride-Alongs.
-
-#### Feedback
-
-- "use sonnet implementation and opus review agents for future agentic dispatch"
-- "dragging a tab should not automatically focus it"
-- "That hook needs to be GONE … the republishing doesn't need to happen or be reminded"
-- "Remember on the closeout -- no comments"
-- "The final review gets one Fable adversarial-review loaded agent and one Fable code-simplification agent. Neutral verification goes to YOU"
-- "History gets logged as Tab Cross-Drag"
-- "make a checklist of every interaction possible that YOU would ask ME to do, then run it through manual verification and report the interaction behavior i can EXPECT in the morning"
+- **Rulings to take:**
+  - Should a glance save the folds a user toggles inside it? Today it saves nothing.
+  - F-571: index tile link mentions (about +40 lines), or leave tile-only heading links to be fixed by hand after an outside rename.
+- **New ledger findings, all Low:**
+  - F-572: the tile walker swallows a failed Context-world load.
+  - F-573: a `#` line inside math or HTML lists as a heading.
+  - F-574: a table cell doesn't mark a missing same-page heading as missing.
+  - F-575: a parked tab's warm detail can outlive an outside value change.
+  - F-576: splitting or joining a heading renames it without a settle.
+  - F-577: a footnote marker in an open cell doesn't follow.
 
 #### Session Pointers
 
-- The plan, its Deviations and Open Items: `.claude/Planning/Tab Transfer — Implementation Plan.md`.
-- The engine and its escort: `UIX/Interactions/{engine,insertionDrag,tableDnd,drag}.tsx`, `shared.ts`; the rows: `Core/Navigation/TabBar.tsx`, `Core/Interface/Windows/WindowTabStrip.tsx`, `Core/Navigation/tabRows.ts` (`useTabExchange`); the sources: `Core/Navigation/{NavGallery,NavList}.tsx`, `Core/Interface/Sidebar/sidebarDnd.tsx`; the models: `Core/Navigation/tabsModel.ts`, `Core/Interface/Windows/windowTabs.ts`; the family name: `TAB_FAMILY` in `Core/Navigation/navRef.ts`.
-- The CDP walkthrough harness lived in this session's scratchpad (`lib.mjs`, `groupA.mjs`, `groupB.mjs`, `finalC.mjs`, `probeEscort.mjs`, `restore.mjs`) and is deleted with it; the recipe is the one in `.claude/Guidelines/Development-Environment.md`, plus the session store reached by dynamically importing `Core/Session/store.ts` at the URL the page loaded it from.
+- **The plan:** `.claude/Planning/Heading Links — Implementation Plan.md`. Its *§Deviations* record every in-flight call, including the final-verification round.
+- **The rename path:**
+  - the cascade: `Core/Nexus/cascade.ts` (`renameCascade`)
+  - the sweep: `Core/Properties/governedSweep.ts`
+  - the settle: `Core/MarkdownPM/Guards/headingRenameSettle.ts`
+  - the watcher's detector: `indexWrittenPage` in `Core/Index/indexSeed.ts`
+- **The link path:** `titleTarget` and `tokenTarget` in `Core/MarkdownPM/Links/connectionsApi.ts`, `followTarget` and `pageEditorAt` in `Links/linkClicks.ts`, and `useConnections` in `Core/Session/pageConnections.ts`.
+- **Prefs:** `editorPrefs:get` and `editorPrefs:set` in `Core/Contract/bridge.ts`. The host's `prefs`, with the glance's `preview` option, is in `Core/Pages/editorHost.tsx`.
 
 #### Working Notes
 
-- **The session store is reachable over CDP** by importing the module at its `/@fs/` URL from `performance.getEntriesByType('resource')`; every tab, window, recents, and pins action can then be driven and read without the DOM.
-- **An HMR update to `engine.tsx` can leave the shell group and a zone on different context instances**; a full `Page.reload` before a live check removes the doubt.
-- **The NavWindow's remembered set reopens with `openNav()`**, and a Page Window reopened by `openWindowTab` restores its remembered tabs; a harness that wants a known tab set trims after opening.
-- **`git commit --only` with a zsh variable of paths needs `${=F}`**; an unsplit variable commits nothing.
+- **Parallel sessions share one git index.** A commit made through a temporary index leaves the real index at the old HEAD for those paths, so run `git reset -q -- <paths>` right after, or a peer's plain commit would revert the change.
+- **The isolated live build:** a scratch worktree ran in dev mode on CDP 9444, with its own userData and a copy of `~/Test`, and the store was exposed as `window.__pommora`.
+  - A Page Window's or tile's editor is read-only until clicked, so a scripted edit needs a real tap first.
+  - With the display asleep the document reads `hidden` and animation frames stop, so glides were measured under emulated `prefers-reduced-motion`.

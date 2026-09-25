@@ -80,7 +80,7 @@ Interface lookups derive from `treeIndex`: one record per entity (kind, id, titl
 
 #### II. Mutations
 
-Every change funnels through one dispatcher, `mutate` in `Core/Nexus/mutate.ts`, which routes each operation to its implementation. A mutation, view edit, or schema edit that names an entity by path acts only on what the live tree holds at that path, as the kind the request names, so the Nexus root, `.nexus`, the trash, and excluded folders fall outside them. Cascade policy is stated beside it once — a page rename stands when its link rewrite can't reach every file, and reports how many kept the old link; a Context delete unlinks its Spaces before the folder moves to the trash. The write path never runs inside a read, and every write channel confirms itself: after a successful write, Core applies the matching change to the live tree — a pure transform where the request carries the whole fact, a one-file re-read where the writer normalizes — and pushes the tree when it moved.
+Every change funnels through one dispatcher, `mutate` in `Core/Nexus/mutate.ts`, which routes each operation to its implementation. A mutation, view edit, or schema edit that names an entity by path acts only on what the live tree holds at that path, as the kind the request names, so the Nexus root, `.nexus`, the trash, and excluded folders fall outside them. Cascade policy is stated beside it once — a page rename stands when its link rewrite can't reach every file, and reports how many kept the old link; a Context delete unlinks its Spaces before the folder moves to the trash, and a Context or Space delete that can't write every member returns what it changed and refuses. The write path never runs inside a read, and every write channel confirms itself: after a successful write, Core applies the matching change to the live tree — a pure transform where the request carries the whole fact, a one-file re-read where the writer normalizes — and pushes the tree when it moved.
 
 Several rules hold across every entity and are stated here rather than per feature:
 
@@ -144,8 +144,8 @@ What Pommora remembers, and for how long. Four tiers, told by where a thing is w
 | State | What it remembers | What clears it |
 | --- | --- | --- |
 | Tabs | The open set, which was active, and each tab's Back/Forward history as bare refs | Closing a tab |
-| Folds | Which headings and lists are collapsed, per page | Unfolding; emptying the list deletes the row |
-| Embed heights · heading columns · footnotes | Per-page editor chrome — a tile's dragged height and Scale, a table's heading column, whether the page shows its footnotes | Changing it back |
+| Folds | Which headings are collapsed, per page, in every editor showing it | Unfolding; emptying the list deletes the row |
+| Embed heights · heading columns · footnotes | Per-page editor chrome, in every editor showing the page — a tile's dragged height and Scale, a table's heading column, whether the page shows its footnotes | Changing it back |
 | Preview and NavWindow tab sets | The floating window's tabs per origin page, and which preview was open | Closing the last tab of a set |
 | Recents | The navigation trail, most recent first, capped by roll-off | Roll-off |
 | Content index | Every relationship each page carries, keyed by kind and target, the governed values it carries, and the mtime and size it was read at | The next open re-indexes any file whose mtime or size moved; an index-generation change drops it whole |

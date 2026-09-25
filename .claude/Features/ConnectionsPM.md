@@ -21,15 +21,15 @@ Every title the scanner finds is looked up in an in-memory map built from the pa
 
 ### The Rename Cascade
 
-A connection resolves by title, so renaming a page rewrites every body that names the old title, each fragment re-emitted as written. `Core/Connections/rewrite.ts` is the primitive — one pure pass over three patterns (wikilink, page embed, markdown link) plus the Link property values in frontmatter — and the cascade runs it over every file the content index relates to the title, confirming each under its own lock, with assigned aliases also using the same cascading mechanism; Connections inside code syntax aren't cascaded. A File property's `[[Basename.ext]]` values are in a different domain and are left alone. Anything inside a code span or fence is a sample and is never rewritten.
+A connection resolves by title, so renaming a page rewrites every body that names the old title, each fragment re-emitted as written. `Core/Connections/rewrite.ts` is the primitive — one pure pass over three patterns (wikilink, page embed, markdown link) plus the Link property values in frontmatter — and the cascade runs it over every file the content index relates to the title and every markdown tile, confirming each under its own lock, with assigned aliases also using the same cascading mechanism; Connections inside code syntax aren't cascaded. A File property's `[[Basename.ext]]` values are in a different domain and are left alone. Anything inside a code span or fence is a sample and is never rewritten.
 
-Renaming a heading rewrites the links that name it the same way: the page's own inside the editing transaction, one undo step with the rename, and every other file the index names once the edit settles, the page's fold keys following. A rename landing from outside Pommora is read by the index re-scan and takes the same path; where one of two identical headings is renamed, links keep the one still standing.
+Renaming a heading carries its links once the rename settles — when the caret leaves the heading line, the editor loses focus, or the page closes — on its own page, in every file the index names, and in every markdown tile, from the old text to the final one in one pass. A rename landing from outside Pommora is read by the index re-scan and takes the same path. Where a heading with the old text still stands, or the new text matches another heading, no link moves, and links to the old text read as missing.
 
 ### Rendering
 
 A connection renders as inline text in the connection color (the **Internal Link Color** setting), never as a chip, with its brackets hidden until the caret enters it. Revealed, an aliased connection shows both halves — the target marked as a target, the alias as prose — with a link glyph between them that takes the connection color when the target resolves and reads muted when it doesn't. A connection being typed takes the color from its first character, so it never reads as prose while a title is being written. A markdown link that names a page uses the same color, leads to the same place, and shows the same glance pane; one that names a website keeps the external-link treatment (External Link Color); and one that names neither keeps the broken-link treatment. A connection naming a heading reads per **Heading Link Style** — `Page § Heading`, or `§Heading` alone — a link to a heading on its own page reading as the heading alone, and an alias overriding both halves.
 
-Clicking a connection opens the page, routed by **Open Connections In Preview** — the active tab by default, the Page Window when the setting is on, and ⌘-click always takes the other route. Resting on a resolved connection raises the glance pane with a read-only render of the target. Ambiguous links keep the bracket treatment in a muted tone; a phantom is inert and reads either muted with its syntax showing or as plain prose, per **Display Unresolved Links As Plain Syntax**, which applies to page prose only — cells and other fields stay muted. A connection naming a heading opens its page and travels to the heading, folds opened, the glance pane opening scrolled there; a link to its own page's heading travels in place, with no glance and no menu. Where a heading text repeats, the nearest one answers.
+Clicking a connection opens the page, routed by **Open Connections In Preview** — the active tab by default, the Page Window when the setting is on, and ⌘-click always takes the other route. Resting on a resolved connection raises the glance pane with a read-only render of the target. Ambiguous links keep the bracket treatment in a muted tone; a phantom is inert and reads either muted with its syntax showing or as plain prose, per **Display Unresolved Links As Plain Syntax**, which applies to page prose only — cells and other fields stay muted. A connection naming a heading opens its page and travels to the heading, folds opened, the glance pane opening scrolled there; a link to its own page's heading travels in place — from prose, a table cell, or a footnote — with no glance and no menu. Where a heading text repeats, the nearest one answers.
 
 ### The Link Menu
 
@@ -37,7 +37,7 @@ Right-clicking a link that names a page, wherever it sits, opens one native menu
 
 | Action | Page Connection | Website Link |
 | --- | --- | --- |
-| **Open** | Preview · New Tab (reads *Open*, and leads, where the page already holds a tab; each dropped where its own surface is already showing the page) | Preview · Open In Browser (the in-app browser and the system one) |
+| **Open** | Preview · New Tab (reads *Open*, and leads, where the page already holds a tab; each dropped where its own surface is already showing the page, unless the link names a heading) | Preview · Open In Browser (the in-app browser and the system one) |
 | **Author** (editable surfaces) | Add Title / Edit Title · Edit Link | Rename · Edit Link |
 | **Copy** | Copy Link · Copy Path | Copy Link |
 | **Format** (editor only) | — | Format ▸ Full Link · Short Link · Page Title, rewriting the label alone |
@@ -66,8 +66,8 @@ One picker (`Core/MarkdownPM/Autocomplete/autocomplete.ts`, driven by `useConnec
 
 #### Known Issues
 
-- **The cascade is per-file, not cross-file atomic.** A page pass failing partway reverts the target's rename, leaving already-rewritten bodies pointing at a title no page holds until the rename is re-run.
-- **The markdown-block healing pass is best-effort.** Its failure is swallowed, and blocks stay stale until the next rewrite.
+- **The cascade is per-file, not cross-file atomic.** A file it can't write keeps the old link while the rename stands, and the rename's warning counts the files left behind.
+- **Tile-only heading links miss an outside rename.** A heading renamed outside Pommora carries its links in markdown tiles only when a page also links it.
 - **Connection rendering is written twice.** The editor's decoration layer and the resting property-cell renderer each map a connection's resolved state to its styling by hand, so the two can drift — today the cell omits the open-state glyph and target mark the editor draws.
 
 #### Prospects
