@@ -1,7 +1,7 @@
 import { style } from '@vanilla-extract/css'
 import { REVEAL_FADE } from './hover-reveal.css'
 
-// LOAD-BEARING: masks STATIC from mount, reveals flip OPACITIES only, the label pointer-inert. Any change here runs the reveal matrix — [[Build-Gotchas]] §Label Melt.
+// LOAD-BEARING: masks STATIC from mount, reveals flip OPACITIES only, the label pointer-inert.
 
 export const host = style({ position: 'relative' })
 
@@ -13,7 +13,6 @@ export const removeButton = style({
   background: 'none',
   color: 'var(--hover-remove-ink, inherit)',
   cursor: 'pointer',
-  opacity: 0,
   transition: REVEAL_FADE,
 })
 

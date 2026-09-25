@@ -15,6 +15,20 @@ class TagStub extends WidgetType {
     return el
   }
 }
+class IgnoringWidget extends WidgetType {
+  toDOM(): HTMLElement {
+    const el = document.createElement('div')
+    el.className = 'ignoring-widget'
+    return el
+  }
+  ignoreEvent(): boolean {
+    return true
+  }
+}
+const blockAt = (pos: number) =>
+  EditorView.decorations.of(
+    Decoration.set([Decoration.widget({ widget: new IgnoringWidget(), block: true }).range(pos)]),
+  )
 const tagAt = (pos: number) =>
   EditorView.decorations.of(
     Decoration.set([Decoration.widget({ widget: new TagStub() }).range(pos)]),
@@ -96,6 +110,29 @@ describe('a code tag', () => {
     expect(tag.dataset.revealHost).toBe('on')
     move(view, 230, 108)
     expect(tag.dataset.revealHost).toBe('')
+  })
+
+  it('re-tests a still pointer when the page scrolls under it', async () => {
+    const { view, tag } = mountTag()
+    move(view, 250, 108)
+    await frame()
+    expect(tag.dataset.revealHost).toBe('on')
+    vi.spyOn(tag, 'getBoundingClientRect').mockReturnValue(rect(500, -400))
+    view.scrollDOM.dispatchEvent(new Event('scroll'))
+    await frame()
+    expect(tag.dataset.revealHost).toBe('')
+  })
+
+  it('counts a move over a widget the editor ignores', async () => {
+    const view = mount('```js\nconst a = 1\n```\n\nafter', [tagAt(0), blockAt(22)])
+    const tag = view.contentDOM.querySelector<HTMLElement>('.codeblock-language') as HTMLElement
+    vi.spyOn(tag, 'getBoundingClientRect').mockReturnValue(rect(500, 100))
+    const widget = view.contentDOM.querySelector('.ignoring-widget') as HTMLElement
+    widget.dispatchEvent(
+      new PointerEvent('pointermove', { bubbles: true, clientX: 250, clientY: 108 }),
+    )
+    await frame()
+    expect(tag.dataset.revealHost).toBe('on')
   })
 
   it('reaches twice as far at twice the font', async () => {

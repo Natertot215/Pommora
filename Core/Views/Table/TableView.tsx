@@ -798,7 +798,15 @@ const DataRow = memo(function DataRow({
               if (!isDragging) api.click(row, c, e)
             }}
           >
-            {i === 0 && <span className="row-rail" aria-hidden="true" />}
+            {i === 0 && (
+              <span
+                className="row-rail"
+                aria-hidden="true"
+                onPointerDown={(e) => e.stopPropagation()}
+                onClick={(e) => e.stopPropagation()}
+                onContextMenu={(e) => e.stopPropagation()}
+              />
+            )}
             {i === 0 && (
               // biome-ignore lint/a11y/useKeyWithClickEvents lint/a11y/noStaticElementInteractions: a bubble guard, not a control
               <span

@@ -3,7 +3,6 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { act } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
 import {
-  type Linger,
   REVEAL_DWELL_MS,
   REVEAL_GRACE_MS,
   REVEAL_REACH,
@@ -12,13 +11,7 @@ import {
 } from './hoverReveal'
 ;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
 
-type Props = {
-  active?: boolean
-  dwell?: boolean
-  held?: boolean
-  engaged?: boolean
-  linger?: { on?: Linger; off?: Linger }
-}
+type Props = Parameters<typeof useHoverReveal>[0]
 
 let api: ReturnType<typeof useHoverReveal>
 let props: Props
@@ -177,7 +170,17 @@ describe('useHoverReveal with a dwell', () => {
     await run(() => api.hover(true))
     await tick(REVEAL_DWELL_MS / 2)
     await render({ engaged: true })
+    await pointer('pointerdown')
+    await pointer('pointerup')
     await tick(REVEAL_DWELL_MS * 2)
+    expect(api.on).toBe(false)
+  })
+
+  it('a press whose flip lands after the pointer has left no longer lingers', async () => {
+    await render({ linger: { on: 2000 } })
+    await run(() => api.press())
+    await run(() => api.hover(false))
+    await render({ engaged: true })
     expect(api.on).toBe(false)
   })
 
@@ -204,12 +207,30 @@ describe('useHoverReveal without a dwell', () => {
   it('a numeric linger holds from the press, whenever the pointer leaves', async () => {
     await render({ linger: { on: 2000 } })
     await run(() => api.press())
+    await tick(500)
     await render({ engaged: true })
     expect(api.on).toBe(true)
     await run(() => api.hover(false))
-    await tick(1999)
+    await tick(1499)
     expect(api.on).toBe(true)
     await tick(1)
+    expect(api.on).toBe(false)
+  })
+
+  it('a numeric linger that ends with the pointer inside keeps the reveal', async () => {
+    await render({ linger: { on: 2000 } })
+    await run(() => api.press())
+    await render({ engaged: true })
+    await tick(2000)
+    expect(api.on).toBe(true)
+  })
+
+  it('a pressed flip to a side with no linger ends a lingering reveal', async () => {
+    await render({ linger: { on: 2000 } })
+    await run(() => api.press())
+    await render({ engaged: true })
+    await run(() => api.press())
+    await render({ engaged: false })
     expect(api.on).toBe(false)
   })
 

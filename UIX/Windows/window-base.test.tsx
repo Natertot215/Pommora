@@ -146,17 +146,53 @@ describe('a floating window reports its size once per drag', () => {
 describe('the footer reveal measures its toggles only while the pointer moves free', () => {
   it('a held move never measures, and the first free move after it measures once', () => {
     const el = mount({ footer: <span />, footerLead: <button type="button" data-reveal-lead /> })
-    const toggles = ['[data-reveal-trail]', '[data-reveal-lead]'].map((sel) =>
-      vi.spyOn(el.querySelector(sel) as HTMLElement, 'getBoundingClientRect'),
-    )
-    const root = vi.spyOn(el, 'getBoundingClientRect')
+    const boxes = [
+      el,
+      ...el.querySelectorAll<HTMLElement>('[data-reveal-trail], [data-reveal-lead]'),
+    ]
+    const measures = boxes.map((b) => vi.spyOn(b, 'getBoundingClientRect'))
     const drag = el.querySelector('.window-drag') as HTMLElement
     act(() => firePointer(drag, 'pointerdown', { x: 0, y: 0 }))
     for (const x of [10, 20, 30]) act(() => firePointer(drag, 'pointermove', { x, y: 0 }))
     act(() => firePointer(window, 'pointerup'))
-    for (const measure of toggles) expect(measure).not.toHaveBeenCalled()
-    for (const x of [40, 50]) act(() => firePointer(el, 'pointermove', { x, y: 0, buttons: 0 }))
-    for (const measure of toggles) expect(measure).toHaveBeenCalledTimes(1)
-    expect(root).not.toHaveBeenCalled()
+    for (const m of measures) expect(m).not.toHaveBeenCalled()
+    for (const x of [40, 50]) act(() => firePointer(el, 'pointermove', { x, y: -500, buttons: 0 }))
+    for (const m of measures) expect(m).toHaveBeenCalledTimes(1)
+  })
+})
+
+describe('the footer toggle reveals within reach of itself', () => {
+  const rect = (left: number, top: number, right: number, bottom: number): DOMRect =>
+    ({ left, top, right, bottom, width: right - left, height: bottom - top }) as DOMRect
+  const setup = (): { el: HTMLElement; trail: HTMLElement } => {
+    const el = mount({ footer: <span /> })
+    const trail = el.querySelector('[data-reveal-trail]') as HTMLElement
+    vi.spyOn(el, 'getBoundingClientRect').mockReturnValue(rect(0, 0, 1000, 600))
+    vi.spyOn(trail, 'getBoundingClientRect').mockReturnValue(rect(900, 552, 940, 576))
+    return { el, trail }
+  }
+  const at = (el: HTMLElement, x: number, y: number): void => {
+    act(() => firePointer(el, 'pointermove', { x, y, buttons: 0 }))
+  }
+
+  it('reaches 280 across and 140 up from the toggle, down to the window bottom', () => {
+    const { el } = setup()
+    at(el, 900 - 280, 560)
+    expect(el.classList.contains('is-footer-near')).toBe(true)
+    at(el, 900 - 290, 560)
+    expect(el.classList.contains('is-footer-near')).toBe(false)
+    at(el, 920, 552 - 140)
+    expect(el.classList.contains('is-footer-near')).toBe(true)
+    at(el, 920, 590)
+    expect(el.classList.contains('is-footer-near')).toBe(true)
+  })
+
+  it('measures again once the window or a toggle ends a transition', () => {
+    const { el, trail } = setup()
+    at(el, 920, 560)
+    vi.spyOn(trail, 'getBoundingClientRect').mockReturnValue(rect(600, 552, 640, 576))
+    act(() => el.dispatchEvent(new Event('transitionend', { bubbles: true })))
+    at(el, 920, 560)
+    expect(el.classList.contains('is-footer-near')).toBe(false)
   })
 })

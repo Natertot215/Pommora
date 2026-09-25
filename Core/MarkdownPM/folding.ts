@@ -31,6 +31,7 @@ export const HEADING_FOLD_LINE = 'md-heading-fold'
 
 /** Rides the rendered anchor line only when blank — a table's last row is a block widget, and a fence there reads as body. */
 const CITE_DIVIDER_LINE = 'md-citation-divider'
+const HOVER_HOST = { 'data-reveal-host': '' }
 
 const persisted = (kind: FoldKind): boolean => kind === 'heading'
 
@@ -305,14 +306,14 @@ const chevronDeco = EditorView.decorations.compute(['doc', foldField], (state) =
       ranges.push(
         Decoration.line({
           class: `${HEADING_FOLD_LINE} md-foldable ${closed ? 'md-fold-closed' : 'md-fold-open'}`,
-          attributes: { 'data-reveal-host': '' },
+          attributes: HOVER_HOST,
         }).range(r.anchorLine),
       )
     } else if (state.doc.lineAt(r.anchorLine).text.trim() === '') {
       ranges.push(
         Decoration.line({
           class: closed ? `${CITE_DIVIDER_LINE} md-citation-divider-off` : CITE_DIVIDER_LINE,
-          attributes: { 'data-reveal-host': '' },
+          attributes: HOVER_HOST,
         }).range(r.anchorLine),
       )
     }

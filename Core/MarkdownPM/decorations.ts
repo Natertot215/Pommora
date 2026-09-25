@@ -190,7 +190,6 @@ class CodeTagWidget extends WidgetType {
     const el = document.createElement('span')
     el.className = 'codeblock-language'
     el.dataset.revealHost = ''
-    el.style.setProperty('--reveal-fade', 'var(--duration-slow)')
     const tag = this.name === undefined ? undefined : CODE_TAGS[this.name]
     const label = tag?.label === undefined ? this.name : tag.label
     const resting = label ?? ''

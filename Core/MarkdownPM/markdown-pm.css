@@ -860,6 +860,7 @@
 }
 
 .mdpm-editor .codeblock .codeblock-language {
+  --reveal-fade: var(--duration-slow);
   position: absolute;
   right: calc(var(--codeblock-inset) + var(--codeblock-pad));
   display: inline-flex;

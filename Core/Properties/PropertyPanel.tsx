@@ -444,12 +444,7 @@ export function PropertyPanel({
               </MenuItem>
             )
             return (
-              <div
-                key={key}
-                className={s.section}
-                data-reveal-host=""
-                {...ghostAnchorProps(ghostApi, key)}
-              >
+              <div key={key} data-reveal-host="" {...ghostAnchorProps(ghostApi, key)}>
                 <div className={heading}>
                   <span>{label}</span>
                   {addable && (
@@ -460,8 +455,7 @@ export function PropertyPanel({
                       icon="plus"
                       size={ICON.optionsAdd}
                       ariaLabel={add}
-                      className={revealTarget}
-                      held={addOpen === key}
+                      className={addOpen === key ? undefined : revealTarget}
                       create
                       onClick={() => openAdd(key)}
                     />

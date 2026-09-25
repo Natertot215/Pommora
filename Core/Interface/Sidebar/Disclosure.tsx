@@ -87,7 +87,7 @@ export function Disclosure({
     }
     setAndSave(!open)
   }
-  // Lingers the open-lock glyph after an unlock so a mistaken toggle can be undone before the pointer leaves.
+  // Lingers the open-lock glyph after an unlock pressed on it, so a mistaken toggle can be undone before the pointer leaves.
   const lock = useHoverReveal({ engaged: locked, linger: { off: 'leave' } })
   // Both reveals exist to seat the sidebar's own field: a rename hosted elsewhere has nothing here to show, and unfolding for it would persist a fold the person never asked for.
   const renamingPath = useSession((s) => (s.renamingHost === 'sidebar' ? s.renamingPath : null))

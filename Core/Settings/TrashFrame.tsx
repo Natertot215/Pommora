@@ -312,7 +312,7 @@ function TrashRowView({
       }
       overlay={
         <Checkbox
-          className={cx(overlay, 'trash-check')}
+          className={overlay}
           size="compact"
           state={checked}
           onChange={onToggle}

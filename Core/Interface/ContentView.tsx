@@ -1,4 +1,4 @@
-import { memo, useEffect, useMemo, useRef } from 'react'
+import { memo, useEffect, useLayoutEffect, useMemo, useRef } from 'react'
 import { cx } from '@pommora/uix/Utilities/cx'
 import type { SelectionState, Tab } from '@pommora/core/Navigation/navRef'
 import { frozenOf, readyPageIds, shownPage, useSession } from '../Session/store'
@@ -166,6 +166,7 @@ export function ContentView(): React.JSX.Element {
         if (showSubfield) reveal.onPointerMove(e)
       }}
       onPointerLeave={reveal.onPointerLeave}
+      onTransitionEnd={reveal.onTransitionEnd}
     >
       <div ref={viewRef} className={frozen ? 'content-view-view is-frozen' : 'content-view-view'}>
         {hosts.map((h) => (
@@ -176,12 +177,12 @@ export function ContentView(): React.JSX.Element {
           </ContentHostContext.Provider>
         ))}
       </div>
-      {showSubfield && <ContentFooter />}
+      {showSubfield && <ContentFooter remeasure={reveal.remeasure} />}
     </div>
   )
 }
 
-function ContentFooter(): React.JSX.Element {
+function ContentFooter({ remeasure }: { remeasure: () => void }): React.JSX.Element {
   const expanded = useSession((s) => s.subfieldExpanded)
   const setExpanded = useSession((s) => s.setSubfieldExpanded)
   const kind = useSession((s) => s.selection.kind)
@@ -191,6 +192,7 @@ function ContentFooter(): React.JSX.Element {
     () => (slot?.status === 'ready' ? { target: slot.target, body: slot.body } : null),
     [slot],
   )
+  useLayoutEffect(remeasure)
   return (
     <>
       <button
