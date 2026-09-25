@@ -11,8 +11,7 @@ import { BoardLock } from '../Tiles/BoardLock'
 import { Icon } from '@pommora/uix/Symbols'
 import { ICON } from '@pommora/uix/Menus/frames.css'
 import { tintAt } from '@pommora/uix/Theme/colors'
-import { cellColor } from '@pommora/uix/Theme/ramp'
-import { labelColorFor } from '@pommora/uix/Theme/ramp'
+import { cellColor, colorNameFor } from '@pommora/uix/Theme/ramp'
 import { IconChoice } from '../Assets/IconChoice'
 import { ColorPicker } from '@pommora/uix/Pickers/ColorPicker'
 import { InlineEditHeader } from '@pommora/uix/Menus/InlineEditHeader'
@@ -39,7 +38,7 @@ export function SpaceMenu(): React.JSX.Element | null {
   const node = id === null ? null : spaceNodeOf(tree, id)
   if (id === null || !node) return null
 
-  const resolved = labelColorFor(node.color)
+  const resolved = colorNameFor(node.color)
   const solid = resolved === 'default' ? null : cellColor(resolved)
 
   const openColor = (anchor: Element | null): void => {

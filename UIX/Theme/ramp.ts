@@ -2,6 +2,7 @@
 import {
   type AccentSetting,
   type CellKey,
+  type ColorName,
   DEFAULT_ACCENT,
   type RampFamily,
   type RampStep,
@@ -11,7 +12,6 @@ import {
   tintAt,
 } from './colors'
 import { vars as colorVars } from './color.css'
-import type { LabelColorName } from '../Labels/label-base.css'
 
 const c = colorVars.color
 const WHITE = c.system.white
@@ -131,7 +131,7 @@ export const cellPaint = (key: CellKey): { base: string; outline?: string } => {
 export function checkboxPaint(
   color: string | undefined,
 ): { '--checkbox-base': string; '--checkbox-outline': string } | undefined {
-  const key = labelColorFor(color)
+  const key = colorNameFor(color)
   if (key === 'default') return undefined
   const { base, outline } = cellPaint(key)
   return { '--checkbox-base': base, '--checkbox-outline': outline ?? tintAt(base, 'tertiary') }
@@ -140,7 +140,7 @@ export function checkboxPaint(
 export const cellRing = (key: CellKey): string =>
   cellPaint(key).outline ?? tintAt(cellColor(key), 'primary')
 
-export function labelColorFor(color: string | undefined): CellKey | 'default' {
+export function colorNameFor(color: string | undefined): ColorName {
   if (!color || !isColorKey(color)) return 'default'
   return Object.hasOwn(ANCHOR_CELLS, color)
     ? ANCHOR_CELLS[color as keyof typeof SPECTRUM]
@@ -150,7 +150,7 @@ export function labelColorFor(color: string | undefined): CellKey | 'default' {
 /** A stored cell's CSS, or the External Link Color when unset. */
 export function solidColorCss(color: string | undefined): string {
   if (!color) return 'var(--link)'
-  const key = labelColorFor(color)
+  const key = colorNameFor(color)
   return cellColor(key === 'default' ? 'grey-4' : key)
 }
 
@@ -158,13 +158,13 @@ export function solidColorCss(color: string | undefined): string {
 export function resolveColor(
   color: string | undefined,
   fallback: string,
-): { name: LabelColorName; css: string } {
-  if (!color) return { name: 'accent', css: fallback }
-  return { name: labelColorFor(color), css: solidColorCss(color) }
+): { name: ColorName; css: string } {
+  if (!color) return { name: 'default', css: fallback }
+  return { name: colorNameFor(color), css: solidColorCss(color) }
 }
 
 const accentCell = (setting: string): string => {
-  const key = labelColorFor(setting)
+  const key = colorNameFor(setting)
   return cellColor(key === 'default' ? ANCHOR_CELLS[DEFAULT_ACCENT] : key)
 }
 

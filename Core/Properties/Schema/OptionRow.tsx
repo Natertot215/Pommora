@@ -3,7 +3,7 @@ import { Button } from '@pommora/uix/Buttons/Button'
 
 import { lookOptions, OPTION_LOOKS } from '@pommora/core/Properties/columnStyles'
 import type { OptionAppearance, PropertyDefinition } from '@pommora/core/Properties/properties'
-import { labelColorFor } from '@pommora/uix/Theme/ramp'
+import { colorNameFor } from '@pommora/uix/Theme/ramp'
 import { cx } from '@pommora/uix/Utilities/cx'
 import { OptionChip } from '../Cells/OptionChip'
 import { OptionEditPopup } from './OptionEditPopup'
@@ -63,7 +63,7 @@ function OptionRow({
   if (renaming) {
     return (
       <OptionNameCaret
-        className={cx(labelShape[optionShapeFor(type)], labelColor[labelColorFor(color)])}
+        className={cx(labelShape[optionShapeFor(type)], labelColor[colorNameFor(color)])}
         value={label}
         onCommit={onCommitRename}
         onCancel={onCancelRename}

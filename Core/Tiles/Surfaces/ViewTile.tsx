@@ -17,8 +17,7 @@ import {
 } from '@pommora/core/Views/views'
 import { freeName } from '@pommora/core/Paths/names'
 import { Icon, LockGlyph } from '@pommora/uix/Symbols'
-import { cellRing } from '@pommora/uix/Theme/ramp'
-import { labelColorFor } from '@pommora/uix/Theme/ramp'
+import { cellRing, colorNameFor } from '@pommora/uix/Theme/ramp'
 import { ColorPicker } from '@pommora/uix/Pickers/ColorPicker'
 import { PickerMenu } from '@pommora/uix/Pickers/PickerMenu'
 import { AccessoryButton, MenuFooting, MenuItem, MenuScrollFrame } from '@pommora/uix/Menus'
@@ -151,7 +150,7 @@ const rawActive = (raw: Record<string, unknown>, count: number): number =>
   )
 
 const strokeStyle = (v: SavedView): React.CSSProperties | undefined => {
-  const key = labelColorFor(v.color)
+  const key = colorNameFor(v.color)
   if (key === 'default') return undefined
   const stroke = cellRing(key)
   return { '--view-pill-stroke': stroke } as React.CSSProperties
@@ -694,7 +693,7 @@ export function ViewTile({
         />
         <ColorPicker
           open={colorFor !== null}
-          selected={labelColorFor(viewById(colorFor)?.color)}
+          selected={colorNameFor(viewById(colorFor)?.color)}
           onPick={(picked) => {
             const v = viewById(colorFor)
             if (v) persistConfig(v.id, { ...v, color: picked })

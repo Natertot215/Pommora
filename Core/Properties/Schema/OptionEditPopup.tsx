@@ -8,7 +8,7 @@ import { EditableInput } from '@pommora/uix/Fields/EditableInput'
 import { MenuSeparator } from '@pommora/uix/Menus'
 import { footingLabel } from '@pommora/uix/Menus/menu-row.css'
 import { Icon } from '@pommora/uix/Symbols'
-import { labelColorFor } from '@pommora/uix/Theme/ramp'
+import { colorNameFor } from '@pommora/uix/Theme/ramp'
 import { IconChoice } from '../../Assets/IconChoice'
 import { optionGlyph, type OptionChipData } from '../Cells/OptionChip'
 import * as s from './option-edit-popup.css'
@@ -76,7 +76,7 @@ export function OptionEditPopup({
           </div>
           <MenuSeparator flush />
           <ColorGrid
-            selected={labelColorFor(option.color)}
+            selected={colorNameFor(option.color)}
             onPick={onPickColor}
             className={s.gridFlush}
           />

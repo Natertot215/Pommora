@@ -1,5 +1,8 @@
 {
   "name": "@pommora/sync",
   "private": true,
-  "type": "module"
+  "type": "module",
+  "devDependencies": {
+    "@pommora/core": "*"
+  }
 }

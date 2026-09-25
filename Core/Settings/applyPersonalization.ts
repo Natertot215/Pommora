@@ -7,11 +7,11 @@ import {
   embedZoom,
   viewEmbedZoom,
 } from '@pommora/core/Settings/personalization'
-import { cellColor, checkboxPaint, labelColorFor } from '@pommora/uix/Theme/ramp'
+import { cellColor, checkboxPaint, colorNameFor } from '@pommora/uix/Theme/ramp'
 
-/** Every sentinel — `accent`, `system`, `default` — reads as no cell, which `labelColorFor` already answers for. */
+/** Every sentinel — `accent`, `system`, `default` — reads as no cell, which `colorNameFor` already answers for. */
 function settingColorCss(setting: unknown): string | null {
-  const key = typeof setting === 'string' ? labelColorFor(setting) : 'default'
+  const key = typeof setting === 'string' ? colorNameFor(setting) : 'default'
   return key === 'default' ? null : cellColor(key)
 }
 

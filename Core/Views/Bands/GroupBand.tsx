@@ -5,7 +5,7 @@ import type { CollectionNode, SetNode } from '@pommora/core/Nexus/tree'
 import type { ResolvedGroup } from '@pommora/core/Views/viewRow'
 import type { SavedView } from '@pommora/core/Views/views'
 import { text } from '@pommora/uix/Theme'
-import { labelColorFor } from '@pommora/uix/Theme/ramp'
+import { colorNameFor } from '@pommora/uix/Theme/ramp'
 import { cx } from '@pommora/uix/Utilities/cx'
 import { base } from '@pommora/uix/Fields/fields.css'
 import { asRenderableIcon, Icon } from '@pommora/uix/Symbols'
@@ -91,7 +91,7 @@ export function resolveBandHead(
     const title = space?.title ?? value
     return {
       label: title,
-      glyph: <NeutralChip color={labelColorFor(space?.color)} title={title} icon={space?.icon} />,
+      glyph: <NeutralChip color={colorNameFor(space?.color)} title={title} icon={space?.icon} />,
     }
   }
 

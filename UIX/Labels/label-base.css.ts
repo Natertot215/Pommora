@@ -1,5 +1,12 @@
 import { globalStyle, style, styleVariants, type ComplexStyleRule } from '@vanilla-extract/css'
-import { RAMP_FAMILIES, RAMP_STEPS, type CellKey, mixAt, tintAt } from '../Theme/colors'
+import {
+  RAMP_FAMILIES,
+  RAMP_STEPS,
+  type CellKey,
+  type ColorName,
+  mixAt,
+  tintAt,
+} from '../Theme/colors'
 import { cellColor, cellPaint } from '../Theme/ramp'
 import { vars as colorVars } from '../Theme/color.css'
 import { text } from '../Theme/typography.css'
@@ -81,13 +88,8 @@ const cellVariants = Object.fromEntries(
 
 export const labelColor = styleVariants({
   ...cellVariants,
-  // Its OWN key: a grid cell would open the picker ringed on an uncolored value, leaving clearing unreachable.
   default: variant({ base: cellColor('grey-4') }),
-  // What an uncolored link or checkbox picker reports, so it rings no palette cell.
-  accent: variant({ base: 'var(--system-accent)' }),
-})
-
-export type LabelColorName = keyof typeof labelColor
+} satisfies Record<ColorName, ComplexStyleRule>)
 
 // The doubled selectors are what lets a modifier hold over whatever the tint says.
 export const fill = {

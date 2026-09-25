@@ -3,7 +3,7 @@ import type { PropertyValue } from '@pommora/core/Properties/propertyValue'
 import type { ResolvedColumn, ViewRow } from '@pommora/core/Views/viewRow'
 import { EntityIcon } from '../../Assets/EntityIcon'
 import { ProgressBar } from '@pommora/uix/Elements/ProgressBar'
-import { labelColorFor } from '@pommora/uix/Theme/ramp'
+import { colorNameFor } from '@pommora/uix/Theme/ramp'
 import { OverScroll } from '@pommora/uix/Interactions/OverScroll'
 import { resolveFileValue } from '../../Assets/assetUrl'
 import { FILE_CHIP_INDEX_ATTR, fileValueWithout } from '../Pickers/filePick'
@@ -102,7 +102,7 @@ export function Cell({
             return (
               <NeutralChip
                 key={id}
-                color={labelColorFor(c?.color)}
+                color={colorNameFor(c?.color)}
                 title={c?.title ?? id}
                 icon={c?.icon}
                 {...(remove

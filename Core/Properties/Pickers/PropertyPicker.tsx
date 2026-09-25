@@ -7,7 +7,7 @@ import {
 } from '@pommora/core/Properties/properties'
 import { NULL_VALUE, type PropertyValue } from '@pommora/core/Properties/propertyValue'
 import { PickerMenu } from '@pommora/uix/Pickers/PickerMenu'
-import { labelColorFor } from '@pommora/uix/Theme/ramp'
+import { colorNameFor } from '@pommora/uix/Theme/ramp'
 import { NeutralChip } from '@pommora/uix/Labels/recipes'
 import { MenuItem, MenuSeparator, MenuTopRow } from '@pommora/uix/Menus'
 import { FrameSlide } from '@pommora/uix/Menus/FrameSlide'
@@ -230,7 +230,7 @@ export function PropertyOptionRows({
           onClick={() => onPick(o.value)}
         >
           {contextOptions ? (
-            <NeutralChip color={labelColorFor(o.color)} title={o.label} icon={o.icon} />
+            <NeutralChip color={colorNameFor(o.color)} title={o.label} icon={o.icon} />
           ) : (
             <OptionChip
               type={def.type}

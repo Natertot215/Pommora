@@ -3,12 +3,13 @@ import { cx } from '../Utilities/cx'
 import { HoverRemove, hoverRemoveHost } from '../Interactions/HoverRemove'
 import { overScrollUnmasked } from '../Interactions/OverScroll'
 import * as s from './label-base.css'
-import type { LabelColorName, LabelShape } from './label-base.css'
+import type { ColorName } from '../Theme/colors'
+import type { LabelShape } from './label-base.css'
 
 export type LabelProps = {
   shape: LabelShape
   /** Tints fill, border and text together. Absent paints none. */
-  color?: LabelColorName
+  color?: ColorName
   text?: string
   icon?: ReactNode
   /** Named only where it differs from the tint. */
