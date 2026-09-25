@@ -27,14 +27,7 @@
 }
 .mdpm-editor {
   height: 100%;
-  padding-left: calc(var(--sidebar-clearance) + var(--content-inset) - var(--rail-inset));
-  padding-right: calc(var(--side-pane-clearance) + var(--content-inset));
-  transition:
-    padding-left var(--duration-base) var(--ease-base),
-    padding-right var(--duration-base) var(--ease-base);
-}
-.shell.is-resizing .mdpm-editor {
-  transition: none;
+  --interface-inset-lead: calc(var(--content-inset) - var(--rail-inset));
 }
 .mdpm-editor .cm-editor {
   height: 100%;
@@ -72,6 +65,9 @@
   height: 0;
   margin: 0 calc(var(--side-pane-clearance) + var(--content-inset)) 0
     calc(var(--sidebar-clearance) + var(--content-inset));
+  transition:
+    margin-left var(--pane-slide) var(--ease-base),
+    margin-right var(--pane-slide) var(--ease-base);
 }
 .mdpm-editor .cm-line.md-citation-divider {
   position: relative;

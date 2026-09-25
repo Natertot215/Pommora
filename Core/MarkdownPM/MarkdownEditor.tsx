@@ -486,7 +486,7 @@ export function MarkdownEditor({
   return (
     <div ref={shellRef} className="mdpm-shell">
       {header}
-      <div ref={editorRef} className="mdpm-editor" />
+      <div ref={editorRef} className="mdpm-editor interface-inset" />
       <AutocompletePane
         ac={ac}
         candidates={candidates}

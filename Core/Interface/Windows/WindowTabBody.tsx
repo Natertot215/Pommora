@@ -45,7 +45,7 @@ function SpaceTabBody({
   return (
     <>
       <EntityBanner owner={banner ? owner : { ...owner, banner: undefined }} chrome="window" />
-      <div className="tile-host-frame">
+      <div className="tile-host-frame interface-inset">
         <TileHost key={host.id} host={host} connections={connections} />
       </div>
     </>

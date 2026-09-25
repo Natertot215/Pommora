@@ -84,12 +84,19 @@ export function PageView({
   }
   const seat = useBodyMount(path, (body) => pushLiveBody(path, body))
 
-  if (!slot) return <div className="detail-placeholder">Loading page…</div>
+  if (!slot)
+    return (
+      <div className="detail interface-inset">
+        <div className="detail-placeholder">Loading page…</div>
+      </div>
+    )
   if (slot.status === 'error')
     return (
-      <div className="detail-placeholder detail-error">
-        Couldn’t open page
-        <span className="state-detail">{slot.error.message}</span>
+      <div className="detail interface-inset">
+        <div className="detail-placeholder detail-error">
+          Couldn’t open page
+          <span className="state-detail">{slot.error.message}</span>
+        </div>
       </div>
     )
   const pageDetail = slot.detail

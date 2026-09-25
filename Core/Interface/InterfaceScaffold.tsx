@@ -39,7 +39,9 @@ export function InterfaceScaffold({
   return (
     <div ref={ref} className={cx('detail-scroll', owner && 'has-header')}>
       {owner ? <EntityBanner owner={owner} /> : null}
-      <div className={surface ? 'tile-host-frame' : 'detail-body'}>{children}</div>
+      <div className={cx(surface ? 'tile-host-frame' : 'detail-body', 'interface-inset')}>
+        {children}
+      </div>
     </div>
   )
 }
