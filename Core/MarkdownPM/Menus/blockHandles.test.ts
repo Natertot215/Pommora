@@ -38,7 +38,7 @@ function mount(doc: string, extra: ReturnType<typeof tagAt>[] = []): EditorView 
   const view = new EditorView({
     state: EditorState.create({
       doc,
-      extensions: [blockHandles(), pointerReveal('page', BASE_PT), ...extra],
+      extensions: [blockHandles(), pointerReveal('page'), ...extra],
     }),
     parent: document.body,
   })

@@ -1,5 +1,5 @@
 import { style } from '@vanilla-extract/css'
-import { vars as colorVars } from '../Theme/color.css'
+import { STATE_OPACITY, vars as colorVars } from '../Theme/color.css'
 
 const c = colorVars.color
 
@@ -14,4 +14,4 @@ export const fileChip = style({
 
 export const fileChipIcon = style({ color: c.label.secondary })
 
-export const fileChipUnresolved = style({ opacity: 'var(--state-inactive)' })
+export const fileChipUnresolved = style({ opacity: STATE_OPACITY.inactive })

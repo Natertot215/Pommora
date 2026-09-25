@@ -178,6 +178,7 @@
   overflow: hidden;
   padding: var(--surface-inset);
   border-radius: var(--app-radius);
+  background: var(--state-muted);
 }
 
 .window-row {

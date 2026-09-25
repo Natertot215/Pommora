@@ -45,7 +45,7 @@ export const segment = style([
 ])
 
 export const segmentActive = style({
-  background: `linear-gradient(var(--state-selected), var(--state-selected)), ${c.fill.quaternary}`,
+  background: `linear-gradient(${c.state.selected}, ${c.state.selected}), ${c.fill.quaternary}`,
   color: c.label.primary,
 })
 
@@ -104,5 +104,5 @@ export const settingsBtn = style({
 /** Held while its menu is open, so it reads as that menu's anchor. */
 export const settingsBtnActive = style({
   color: c.label.secondary,
-  background: 'var(--state-selected)',
+  background: c.state.selected,
 })

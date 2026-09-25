@@ -17,7 +17,7 @@ import { restoreSnapshot } from '../../Pages/restoreSnapshot'
 import { fetchPageDetail } from '../../Session/pageDetailCache'
 import { livePagePath, trailOf } from '../../Nexus/treeIndex'
 import { useConnections } from '../../Session/pageConnections'
-import { useEmbedScale, useSession, useSetting } from '../../Session/store'
+import { useSession, useSetting } from '../../Session/store'
 import type { PageTarget } from '@pommora/core/Navigation/navRef'
 import { askDeleteSnapshots, askRestoreSnapshot } from '../Confirm/confirmations'
 import { WINDOW_BASE_PANEL, WindowBase } from '@pommora/uix/Windows/window-base'
@@ -49,7 +49,6 @@ function PageHistoryBody({
   const closeHistory = useSession((s) => s.closeHistory)
   const geometry = useWindowGeometry('page-history')
   const tree = useSession((s) => s.tree)
-  const embedScale = useEmbedScale()
   const nexusClock = useSetting('timeFormat')
   const dateFormat = useSetting('dateFormat')
 
@@ -228,10 +227,7 @@ function PageHistoryBody({
         children: list,
       }}
     >
-      <div
-        className="window-body over-scroll page-tile-grows"
-        style={{ '--page-detail-scale': embedScale, '--editor-scale': 1 } as React.CSSProperties}
-      >
+      <div className="window-body over-scroll page-tile-grows">
         {body !== null && (
           <div className="page-tile page-history-page">
             <MarkdownEditor
@@ -241,7 +237,6 @@ function PageHistoryBody({
               readOnly
               connections={resolveOnly}
               embedAncestors={[HISTORY_ANCESTOR, livePath]}
-              scale={embedScale}
               edgeFade
             />
           </div>

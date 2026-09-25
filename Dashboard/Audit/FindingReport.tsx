@@ -1,7 +1,8 @@
 import { Fragment, type ReactNode } from 'react'
 import { Label } from '@pommora/uix/Labels/Label'
 import { Icon, type IconName } from '@pommora/uix/Symbols'
-import { ANCHOR_CELLS, type CellKey, cellColor } from '@pommora/uix/Theme/ramp'
+import type { CellKey } from '@pommora/uix/Theme/colors'
+import { ANCHOR_CELLS, cellColor } from '@pommora/uix/Theme/ramp'
 import { type Finding, change, formatNet, netSum, weightCounts } from './auditModel'
 import { Inline } from './markdown'
 

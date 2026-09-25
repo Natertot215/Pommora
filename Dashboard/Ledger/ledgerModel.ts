@@ -1,3 +1,5 @@
+import { vars } from '@pommora/uix/Theme/color.css'
+
 export type Sample = { d: string; v: number[]; io: number[]; c: number[]; t: number[] }
 
 export type Ledger = {
@@ -21,7 +23,7 @@ export const FILTER_ROWS: ReadonlyArray<{ key: keyof Filters; label: string }> =
 
 export type Band = { name: string; color: string }
 
-const COMMENTS: Band = { name: 'Comments', color: 'var(--label-tertiary)' }
+const COMMENTS: Band = { name: 'Comments', color: vars.color.label.tertiary }
 
 /** The stack under the filters: every area, and comments as one grey band above them. */
 export function bands({ areas, colors }: Ledger, f: Filters): Band[] {

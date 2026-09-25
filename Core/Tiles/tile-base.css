@@ -49,7 +49,8 @@
 }
 
 .page-tile {
-  /* The detail lane scales off --page-detail-scale (set inline by PageTile), so the whole embed's geometry follows one variable. */
+  /* The detail lane scales off --page-detail-scale, so the whole embed's geometry follows the Embed Scale setting. */
+  --page-detail-scale: var(--embed-scale);
   --rail-inset: calc(var(--rail-inset-base) * var(--page-detail-scale));
   /* KNOB — the embed banner band's height. */
   --embed-banner-h: 96px;
@@ -123,10 +124,6 @@
 .page-tile.is-window-chrome > .mdpm-header {
   position: static;
   animation: none;
-}
-/* The var is declared on .detail-title itself in markdown-pm.css, where it reads --editor-scale; a declaration on an ancestor never reaches it. */
-.page-tile.is-window-chrome > .mdpm-header .detail-title {
-  --detail-title-size: calc(var(--text-title-large-size) * var(--page-detail-scale));
 }
 
 /* The guest owns the whole body; display:flex is the spike-proven form (block leaves the OOPIF with a phantom baseline gap). */

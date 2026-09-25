@@ -31,6 +31,10 @@
   border-radius: var(--drop-slot-radius, 12px);
   background: var(--drop-slot-fill);
 }
+.drop-slot.is-floating {
+  position: fixed;
+  z-index: var(--z-drag-slot);
+}
 
 .drag-ghost {
   position: fixed;

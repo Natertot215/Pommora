@@ -9,8 +9,6 @@ import { useKeepInView } from '../Autocomplete/useKeepInView'
 import { CLOSED_GEOMETRY } from '../Autocomplete/useConnectionAutocomplete'
 import type { BlockMenuState } from './useBlockMenu'
 
-const BLOCK_MENU_WIDTH = 140
-
 interface Props {
   open: boolean
   state: BlockMenuState | null
@@ -37,7 +35,6 @@ export function BlockMenu({ open, state, matches, selected, onPick }: Props): Re
       origin="center"
       manageFocus={false}
       contentClassName="mdpm-block-menu"
-      style={{ width: BLOCK_MENU_WIDTH }}
     >
       <MenuScrollFrame maxHeight={PICKER_MAX_HEIGHT}>
         {v.matches.map((m) => (

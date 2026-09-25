@@ -224,7 +224,7 @@ export function MenuFooting({
       {children ?? (
         <div className={s.footing}>
           {leading}
-          <span style={{ flex: '1 1 auto' }} />
+          <span className={s.spacer} />
           {trailing}
         </div>
       )}

@@ -17,7 +17,7 @@ import type { PickKind } from './massAssign'
 import { DatetimeValuePicker } from './DatetimeValuePicker'
 import { adoptPathInto, pickFileInto } from './filePick'
 import { OptionChip } from '../Cells/OptionChip'
-import { chooserTop } from './property-picker.css'
+import { chooserTop, emptyPane } from './property-picker.css'
 import { PathField } from '@pommora/uix/Fields/PathField'
 
 export type PickTarget = { def: PropertyDefinition; current: PropertyValue | null } & (
@@ -165,7 +165,7 @@ export function PropertyPicker({
           minHeight={0}
           root={
             chooser.length === 0 ? (
-              <div style={{ minWidth: 96, height: 24 }} />
+              <div className={emptyPane} />
             ) : (
               <div>
                 {spaces.map(entryRow)}
@@ -210,9 +210,7 @@ export function PropertyOptionRows({
   selected: string[]
   onPick: (value: string) => void
 }): React.JSX.Element {
-  if (options.length === 0)
-    // The spacer keeps the pane's proportions so an emptied option list doesn't collapse to nothing.
-    return <div style={{ minWidth: 96, height: 24 }} />
+  if (options.length === 0) return <div className={emptyPane} />
   return (
     <>
       {options.map((o) => (

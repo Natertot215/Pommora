@@ -8,7 +8,7 @@ import { useHeldPresence } from '@pommora/uix/Animations/useExitPresence'
 import { chromePartRect, publishChromePart } from '../chromeParts'
 import { NavTrail } from '@pommora/uix/Elements/NavTrail'
 import { resolveIndexOf, trailOf } from '../../Nexus/treeIndex'
-import { windowTargetOf, useEmbedScale, useSession } from '../../Session/store'
+import { windowTargetOf, useSession } from '../../Session/store'
 import { WindowTabStrip } from './WindowTabStrip'
 import { useWindowTabBody } from './WindowTabBody'
 import { useWindowGeometry } from './useWindowGeometry'
@@ -36,7 +36,6 @@ function PageWindowBody({
 }): React.JSX.Element {
   const closeWindow = useSession((s) => s.closeWindow)
   const geometry = useWindowGeometry('page-window')
-  const embedScale = useEmbedScale()
   const tree = useSession((s) => s.tree)
   const rootRef = useRef<HTMLDivElement>(null)
   useEffect(() => publishChromePart('pageWindow')(rootRef.current), [])
@@ -76,7 +75,6 @@ function PageWindowBody({
       onEscape={() => (sidePaneOpen ? closeSidePane() : closeWindow())}
       dragSurfaces={DRAG_SURFACES}
       ariaLabel="Page Preview"
-      style={{ '--page-detail-scale': embedScale, '--editor-scale': 1 } as React.CSSProperties}
       onScan={promote}
       title={
         <WindowTabStrip

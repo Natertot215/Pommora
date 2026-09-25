@@ -1,9 +1,10 @@
 import { style } from '@vanilla-extract/css'
+import { vars } from '../Theme/color.css'
 
 export const segment = style({
   flexShrink: 0,
   alignSelf: 'center',
   width: 'var(--segment-width, 2px)',
-  background: 'var(--border-light)',
+  background: vars.color.border.light,
   borderRadius: 'var(--radius-full)',
 })

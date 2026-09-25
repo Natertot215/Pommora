@@ -75,8 +75,8 @@ globalStyle(':root', {
     '--solid-light-blue': c.solid.lightBlue,
     '--solid-cyan': c.solid.cyan,
     '--solid-purple': c.solid.purple,
-    '--error': 'var(--solid-red)',
-    '--code': 'color-mix(in srgb, var(--solid-red) 85%, transparent)',
+    '--error': c.solid.red,
+    '--code': tintAt(c.solid.red, 85),
 
     ...Object.fromEntries(
       Object.entries(TINT_STEPS).map(([step, pct]) => [`--tint-${step}`, `${pct}%`]),
@@ -89,9 +89,9 @@ globalStyle(':root', {
     '--state-inactive': STATE_OPACITY.inactive,
 
     '--accent': c.solid[DEFAULT_ACCENT],
-    '--accent-fill': 'color-mix(in srgb, var(--accent) var(--tint-quaternary), transparent)',
-    '--accent-stroke': 'color-mix(in srgb, var(--accent) var(--tint-secondary), transparent)',
-    '--accent-stroke-hot': 'color-mix(in srgb, var(--accent) var(--tint-primary), transparent)',
+    '--accent-fill': tintAt('var(--accent)', 'quaternary'),
+    '--accent-stroke': tintAt('var(--accent)', 'secondary'),
+    '--accent-stroke-hot': tintAt('var(--accent)', 'primary'),
     '--system-accent': c.solid[DEFAULT_ACCENT],
     '--link': 'var(--system-accent)',
     '--connection': 'var(--accent)',
@@ -120,7 +120,7 @@ globalStyle(':root', {
     '--drop-line-inset': `${DROP_LINE_INSET}px`,
 
     '--list-outline-width': '2px',
-    '--list-outline-color': 'var(--border-light)',
+    '--list-outline-color': c.border.light,
     '--list-outline-radius': 'var(--radius-full)',
     '--list-outline-gap': '3px',
 
@@ -166,6 +166,7 @@ globalStyle(':root', {
     '--z-lifted': `${stack.local.lifted}`,
     '--z-overlay': `${stack.local.overlay}`,
     '--z-floating': `${stack.top.floating}`,
+    '--z-drag-slot': `${stack.top.dragSlot}`,
     '--z-caret': `${stack.top.caret}`,
   },
 })

@@ -1,6 +1,7 @@
 import { globalStyle, keyframes, style } from '@vanilla-extract/css'
 import { titleActionFade, titleReveal } from '@pommora/uix/Animations/animations.css'
 import { vars as colorVars } from '@pommora/uix/Theme/color.css'
+import { font } from '@pommora/uix/Theme/typography.css'
 import { duration } from '@pommora/uix/Animations/motion'
 import { accessoryButton } from '@pommora/uix/Menus/menu-base.css'
 import { REVEAL_FADE, revealTarget } from '@pommora/uix/Interactions/hover-reveal.css'
@@ -34,7 +35,7 @@ export const titleRow = style({
   gap: '8px',
   padding: `12px ${HEAD_PAD_R} 8px ${HEAD_PAD_L}`,
   flex: 'none',
-  fontSize: 'var(--editor-font-size, 15px)',
+  fontSize: font.scale.headline.size,
   position: 'relative',
   '::after': {
     content: '""',
@@ -114,8 +115,6 @@ export const slideWrap = style({
   animationDuration: 'var(--duration-base)',
   animationTimingFunction: 'var(--ease-base)',
 })
-
-export const spacer = style({ flex: '1 1 auto' })
 
 export const newView = style([revealTarget, { display: 'inline-flex', transition: REVEAL_FADE }])
 globalStyle(`${newView} ${accessoryButton}`, { color: c.label.secondary })

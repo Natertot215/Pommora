@@ -6,7 +6,6 @@ import { EditorView, keymap } from '@codemirror/view'
 import { Compartment, EditorState, Prec } from '@codemirror/state'
 import { history, historyField, historyKeymap, defaultKeymap } from '@codemirror/commands'
 import { markdown } from '@codemirror/lang-markdown'
-import { EDITOR_SCALE_DEFAULT, coerceScale } from '@pommora/core/Settings/personalization'
 import { markdownDecorations } from './decorations'
 import { markdownInput } from './Input/markdownInput'
 import { tableWidgetExtension, applySavedHeadingCols } from './Tables/widget'
@@ -68,18 +67,11 @@ import { type EditorHost, editorHost, mirrorBody, mirrored } from './api'
 import { useLatest } from '@pommora/uix/Utilities/stableApi'
 import './markdown-pm.css'
 
-export const EDITOR_BASE_PT = 15
-
-export function zoomFontSize(scale: number): number {
-  return EDITOR_BASE_PT * coerceScale(scale, EDITOR_SCALE_DEFAULT)
-}
-
 interface Props {
   initialBody: string
   onChange: (body: string) => void
   host: EditorHost
   header?: ReactNode
-  scale?: number
   connections?: ConnectionsApi
   embedAncestors?: readonly string[]
   autoFocus?: boolean
@@ -103,7 +95,6 @@ export function MarkdownEditor({
   onChange,
   host,
   header,
-  scale = EDITOR_SCALE_DEFAULT,
   connections,
   embedAncestors,
   autoFocus = false,
@@ -280,7 +271,7 @@ export function MarkdownEditor({
       listDragExtension,
       listRenumberOnDelete('page'),
       blockHandles(),
-      pointerReveal('page', EDITOR_BASE_PT),
+      pointerReveal('page'),
       blockDragExtension,
       calloutDragExtension,
       blockquoteDragExtension,
@@ -493,11 +484,7 @@ export function MarkdownEditor({
   }, [])
 
   return (
-    <div
-      ref={shellRef}
-      className="mdpm-shell"
-      style={{ '--editor-font-size': `${zoomFontSize(scale)}px` } as React.CSSProperties}
-    >
+    <div ref={shellRef} className="mdpm-shell">
       {header}
       <div ref={editorRef} className="mdpm-editor" />
       <AutocompletePane

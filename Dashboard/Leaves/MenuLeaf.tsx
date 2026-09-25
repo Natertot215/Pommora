@@ -1,14 +1,15 @@
 import type { ReactNode } from 'react'
 import { Menu, MenuItem, MenuSeparator, heading } from '@pommora/uix/Menus'
 import { Icon } from '@pommora/uix/Symbols'
+import { PURE_WHITE, tintAt } from '@pommora/uix/Theme/colors'
 
 function Panel({ children }: { children: ReactNode }): React.JSX.Element {
   return (
     <div
       style={{
         width: 240,
-        background: '#FFFFFF0A',
-        border: '1px solid #FFFFFF14',
+        background: tintAt(PURE_WHITE, 4),
+        border: `1px solid ${tintAt(PURE_WHITE, 8)}`,
         borderRadius: 10,
       }}
     >

@@ -33,6 +33,7 @@ const ROOT_VARS: Partial<Record<keyof Personalization, VarWriter>> = {
   embedScale: (v) => {
     const scale = coerceScale(v, EMBED_SCALE_DEFAULT)
     return {
+      '--embed-scale': String(scale),
       '--embed-zoom': String(embedZoom(scale)),
       '--view-embed-zoom': String(viewEmbedZoom(scale)),
     }

@@ -100,7 +100,7 @@ export function Slider({
       >
         <ProgressBar fill={pct / 100} />
         <div className={s.knob} style={{ left: `${pct}%` }}>
-          <GlassControl knob style={{ borderRadius: 9 }}>
+          <GlassControl knob style={{ borderRadius: s.SLIDER_KNOB_RADIUS }}>
             <span className={s.knobFill} />
           </GlassControl>
         </div>

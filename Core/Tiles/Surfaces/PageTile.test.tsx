@@ -92,7 +92,7 @@ describe('the window rung', () => {
   it('draws the bare tile with no rung, banner or not', async () => {
     await mount('none', { banner: 'cover.png' })
     expect(container.querySelector('.page-tile')?.outerHTML).toMatchInlineSnapshot(
-      `"<div class="page-tile" style="--page-detail-scale: 0.9; --editor-scale: 1;"><div class="stub-editor">plain</div></div>"`,
+      `"<div class="page-tile"><div class="stub-editor">plain</div></div>"`,
     )
   })
 

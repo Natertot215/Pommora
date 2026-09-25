@@ -337,7 +337,7 @@ export function PickerMenu({
 
   return (
     <>
-      <span ref={markerRef} aria-hidden style={{ display: 'none' }} />
+      <span ref={markerRef} hidden />
       {createPortal(
         <>
           {drawsShield && !closing ? (

@@ -1,5 +1,5 @@
 import { globalStyle, style } from '@vanilla-extract/css'
-import { vars as colorVars } from '../Theme/color.css'
+import { STATE_OPACITY, vars as colorVars } from '../Theme/color.css'
 import type { IconSize } from '../Theme/theme-vars.css'
 import { duration, easing } from '../Animations/motion'
 import { accessoryButton, flushAffordance, rowBox, rowDragging } from './menu-base.css'
@@ -76,7 +76,7 @@ export const allRow = style({ color: c.label.secondary })
 export { rowDragging }
 
 export const hiddenRow = style({
-  opacity: 'var(--state-ghost)',
+  opacity: STATE_OPACITY.ghost,
   selectors: { [`${rowDragging} &`]: { opacity: 1 } },
 })
 

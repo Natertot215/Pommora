@@ -1,5 +1,6 @@
 import { useState, type CSSProperties, type Dispatch, type SetStateAction } from 'react'
 import { Icon } from '@pommora/uix/Symbols'
+import { PURE_WHITE, tintAt } from '@pommora/uix/Theme/colors'
 import { useIsCompact } from './helpers'
 import forest from '../Surfaces/forest.jpg'
 import mac from '../Surfaces/mac.png'
@@ -62,22 +63,18 @@ const CONTROLS: Ctl[] = [
   { key: 'shadowAlpha', label: 'Shadow', min: 0, max: 60, step: 1, unit: '%' },
 ]
 
-// Glass highlights are white light / black shade — pure #FFFFFF / #000000, not the
-// off-white system primitive (matching the shipped frost material).
-function hexA(hex6: string, pct: number): string {
-  const a = Math.round((Math.max(0, Math.min(100, pct)) / 100) * 255)
-  return hex6 + a.toString(16).padStart(2, '0').toUpperCase()
-}
+// Glass highlights are white light / black shade — pure #FFFFFF / #000000, not the off-white system primitive (matching the shipped frost material).
+const white = (pct: number): string => tintAt(PURE_WHITE, pct)
 
 function buildGlassStyle(p: FrostParams): CSSProperties {
   const bf = `blur(${p.blur}px) brightness(${p.brightness}%)`
   const shadow = [
-    `inset 0 1px 0 ${hexA('#FFFFFF', p.specular)}`,
-    p.ring > 0 ? `inset 0 0 0 1px ${hexA('#FFFFFF', p.ring)}` : '',
+    `inset 0 1px 0 ${white(p.specular)}`,
+    p.ring > 0 ? `inset 0 0 0 1px ${white(p.ring)}` : '',
     p.glowAlpha > 0
-      ? `inset 0 -${p.glowBlur}px ${Math.round(p.glowBlur * 1.5)}px -${p.glowBlur}px ${hexA('#FFFFFF', p.glowAlpha)}`
+      ? `inset 0 -${p.glowBlur}px ${Math.round(p.glowBlur * 1.5)}px -${p.glowBlur}px ${white(p.glowAlpha)}`
       : '',
-    `0 ${p.shadowY}px ${p.shadowBlur}px ${hexA('#000000', p.shadowAlpha)}`,
+    `0 ${p.shadowY}px ${p.shadowBlur}px ${tintAt('#000000', p.shadowAlpha)}`,
   ]
     .filter(Boolean)
     .join(', ')
@@ -85,7 +82,7 @@ function buildGlassStyle(p: FrostParams): CSSProperties {
     background: 'transparent',
     backdropFilter: bf,
     WebkitBackdropFilter: bf,
-    border: `1px solid ${hexA('#FFFFFF', p.borderAlpha)}`,
+    border: `1px solid ${white(p.borderAlpha)}`,
     boxShadow: shadow,
   }
 }

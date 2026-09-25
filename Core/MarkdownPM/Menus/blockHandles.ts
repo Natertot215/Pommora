@@ -51,6 +51,8 @@ export function blockHandles(scope: MarkdownScope = 'page'): Extension {
 type Tag = { el: HTMLElement; box: DOMRect }
 type TagMeasure = { font: number; tags: Tag[] }
 const TAG_REACH: Reach = { size: 'inline', toward: { x: -1, y: 1 } }
+// KNOB: the text size REVEAL_REACH's figures are tuned at; the reach grows with the page's font against it.
+const REACH_BASE_PX = 15
 
 class TagReveal {
   tags: Tag[] | null = null
@@ -59,10 +61,7 @@ class TagReveal {
   hot: HTMLElement | null = null
   readonly request: { read: () => TagMeasure; write: (m: TagMeasure) => void }
 
-  constructor(
-    readonly view: EditorView,
-    readonly basePt: number,
-  ) {
+  constructor(readonly view: EditorView) {
     this.request = {
       read: () => ({
         font: parseFloat(getComputedStyle(view.contentDOM).fontSize),
@@ -114,7 +113,7 @@ class TagReveal {
   test(): void {
     const { tags, pointer } = this
     if (!tags || !pointer.inside) return
-    const scale = this.fontPx / this.basePt
+    const scale = this.fontPx / REACH_BASE_PX
     let lo = 0
     let hi = tags.length
     while (lo < hi) {
@@ -139,8 +138,8 @@ class TagReveal {
   }
 }
 
-// Grips can't self-hover, so a grippable block's first line is a script host, turned `on` whenever the pointer sits in the gutter strip of any of its lines. On a page (`basePt` given) each code tag reveals its copy mark while the pointer is within reach, scaled with the editor's font against `basePt`; that listener is the content's own, so a move over a table or an embed, which the editor's handlers skip, still counts.
-export function pointerReveal(scope: MarkdownScope = 'page', basePt?: number): Extension {
+// Grips can't self-hover, so a grippable block's first line is a script host, turned `on` whenever the pointer sits in the gutter strip of any of its lines. On a page each code tag reveals its copy mark while the pointer is within reach, scaled with the editor's font; that listener is the content's own, so a move over a table or an embed, which the editor's handlers skip, still counts.
+export function pointerReveal(scope: MarkdownScope = 'page'): Extension {
   const blocks = scope === 'cell' ? CELL_KINDS : GRIP_BLOCKS
   let hotLine: HTMLElement | null = null
   const setHot = (next: HTMLElement | null): void => {
@@ -170,10 +169,10 @@ export function pointerReveal(scope: MarkdownScope = 'page', basePt?: number): E
       if (hotLine?.isConnected && hotLine.dataset.revealHost === 'off')
         hotLine.dataset.revealHost = 'on'
     }),
-    ...(basePt === undefined
+    ...(scope === 'cell'
       ? []
       : [
-          ViewPlugin.define((view) => new TagReveal(view, basePt), {
+          ViewPlugin.define((view) => new TagReveal(view), {
             eventHandlers: {
               scroll() {
                 this.moved()
