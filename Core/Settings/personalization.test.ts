@@ -5,20 +5,20 @@ import {
   TAB_MIN_WIDTH,
   PREVIEW_PERSISTENCE_DEFAULT,
   coerceHeadingSize,
-  coerceInterfaceScale,
+  coerceTenthsScale,
   previewLingerMs,
 } from './personalization'
 
-describe('coerceInterfaceScale', () => {
+describe('coerceTenthsScale', () => {
   it('clamps out-of-range values so a typo cannot brick the window', () => {
-    expect(coerceInterfaceScale(1.25)).toBe(1.25)
-    expect(coerceInterfaceScale(125)).toBe(1.5)
-    expect(coerceInterfaceScale(0.1)).toBe(0.5)
+    expect(coerceTenthsScale(1.25, 1)).toBe(1.25)
+    expect(coerceTenthsScale(125, 1)).toBe(1.5)
+    expect(coerceTenthsScale(0.1, 1)).toBe(0.5)
   })
 
-  it('falls back to 1.0 on an absent or non-numeric value', () => {
-    expect(coerceInterfaceScale(undefined)).toBe(1)
-    expect(coerceInterfaceScale('big')).toBe(1)
+  it('falls back to the given default on an absent or non-numeric value', () => {
+    expect(coerceTenthsScale(undefined, 0.7)).toBe(0.7)
+    expect(coerceTenthsScale('big', 0.7)).toBe(0.7)
   })
 })
 
@@ -82,9 +82,9 @@ describe('readPersonalization heading link settings', () => {
 })
 
 describe('readPersonalization matrixOpenIn', () => {
-  it('passes Window through and leaves the tab default unwritten', () => {
+  it('passes either option through and drops a stranger', () => {
     expect(readPersonalization({ matrixOpenIn: 'window' }).matrixOpenIn).toBe('window')
-    expect(readPersonalization({ matrixOpenIn: 'tab' }).matrixOpenIn).toBeUndefined()
+    expect(readPersonalization({ matrixOpenIn: 'tab' }).matrixOpenIn).toBe('tab')
     expect(readPersonalization({ matrixOpenIn: 'garbage' }).matrixOpenIn).toBeUndefined()
     expect(readPersonalization({}).matrixOpenIn).toBeUndefined()
   })
@@ -125,12 +125,6 @@ describe('every decode helper at its boundary', () => {
       'windowSpaceBanners',
       undefined,
     ],
-    ['offOnly records the explicit off', { fileHistory: false }, 'fileHistory', false],
-    ['offOnly drops the built-in on', { fileHistory: true }, 'fileHistory', undefined],
-    ['offOnly drops a non-boolean', { fileHistory: 'no' }, 'fileHistory', undefined],
-    ['recorded keeps the non-default', { tabOpenBehavior: 'newtab' }, 'tabOpenBehavior', 'newtab'],
-    ['recorded drops the built-in', { tabOpenBehavior: 'overtake' }, 'tabOpenBehavior', undefined],
-    ['recorded drops a stranger', { tabOpenBehavior: 'split' }, 'tabOpenBehavior', undefined],
     ['oneOf passes a member', { sidebarMode: 'contexts' }, 'sidebarMode', 'contexts'],
     ['oneOf drops a non-member', { sidebarMode: 'graph' }, 'sidebarMode', undefined],
     ['color passes a palette key', { accent: 'green' }, 'accent', 'green'],

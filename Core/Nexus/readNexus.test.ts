@@ -165,12 +165,6 @@ describe('readPersonalization: file history', () => {
     expect(readPersonalization({ historyInterval: '5' }).historyInterval).toBeUndefined()
     expect(readPersonalization({ historyInterval: 12.6 }).historyInterval).toBe(13)
   })
-  it('holds only an explicit off', () => {
-    expect(readPersonalization({ fileHistory: false }).fileHistory).toBe(false)
-    expect(readPersonalization({ fileHistory: true }).fileHistory).toBeUndefined()
-    expect(readPersonalization({ fileHistory: 'no' }).fileHistory).toBeUndefined()
-    expect(readPersonalization({}).fileHistory).toBeUndefined()
-  })
 })
 
 const d = (p: string): void => {

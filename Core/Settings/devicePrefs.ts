@@ -1,6 +1,6 @@
 // Preferences that belong to the MACHINE rather than the Nexus: menu style, interface scale, pane widths, sidebar folds and window sizes are all true of the display and operating system in front of the user, so they stay with the device and travel nowhere.
 import { readValue } from '../Platform/localState'
-import { coerceInterfaceScale } from './personalization'
+import { coerceTenthsScale, TENTHS_SCALE } from './personalization'
 
 // Nested rather than flat: packDevicePrefs drops a top-level `false`, and a disclosure map holds a `false` for every default-open group folded shut, while a truthy object survives whole.
 export interface DevicePrefs {
@@ -19,4 +19,4 @@ export function packDevicePrefs(raw: unknown): DevicePrefs {
 }
 
 export const readInterfaceScale = (): number =>
-  coerceInterfaceScale(readValue<DevicePrefs>('devicePrefs')?.interfaceScale)
+  coerceTenthsScale(readValue<DevicePrefs>('devicePrefs')?.interfaceScale, TENTHS_SCALE.default)
