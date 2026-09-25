@@ -430,7 +430,7 @@ const HIDDEN_TILE = `__rv.all('.tile.tile-base').find((t) => t.querySelector('bu
 // With the title row hidden the settings button sits in the band row.
 surface('untitledViewTile', async () => {
   await homepage()
-  const tile = `__rv.all('.tile.tile-base').find((t) => t.querySelector('button[aria-label="View settings"]') && [...t.querySelectorAll('[role=button], button')].some((b) => b.textContent.trim() === 'Untitled'))`
+  const tile = `__rv.all('.tile.tile-base').find((t) => t.querySelector('button[aria-label="View settings"]')?.parentElement.querySelector('button[aria-label="New View"]'))`
   await ev(`${tile}.scrollIntoView({ block: 'center' })`)
   await sleep(SETTLE)
   const btn = `${tile}?.querySelector('button[aria-label="View settings"]')`
