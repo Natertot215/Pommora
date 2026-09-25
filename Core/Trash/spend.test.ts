@@ -1,6 +1,6 @@
 import { mkdir, readdir, readFile, rename, rm, writeFile } from 'node:fs/promises'
 import { splitFrontmatter } from '../Files/pageFile'
-import { basename, dirname, join } from '../Paths/posix'
+import { basename, dirname, join, relative } from '../Paths/posix'
 import { tempRoot, noModeBits } from '../Testing/hostFs'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { pathExists } from '../Files/atomicWrite'
@@ -946,8 +946,12 @@ describe('restore — the attack folds', () => {
     const record = JSON.parse(await readFile(join(dir, '_record.json'), 'utf8'))
     record.registry.title = '../../../escape-target'
     await writeFile(join(dir, '_record.json'), JSON.stringify(record))
-    const [listed] = await listBundles(root)
-    const r = await handleMutate(root, { op: 'restore', bundlePath: listed.bundlePath }, nexusDeps)
+    expect(await listBundles(root)).toEqual([])
+    const r = await handleMutate(
+      root,
+      { op: 'restore', bundlePath: relative(root, dir) },
+      nexusDeps,
+    )
     expect(r.ok).toBe(false)
     expect(await pathExists(join(root, '..', 'escape-target'))).toBe(false)
   })

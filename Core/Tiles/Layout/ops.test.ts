@@ -8,16 +8,17 @@ import {
   removeLeaf,
   resizeBandPair,
   resizeDivider,
+  repairLayout,
   resizeStackPair,
   stretchTileHeight,
 } from './ops'
-import { splitTile, validateLayout } from '../../Testing/tileLayouts'
+import { splitTile } from '../../Testing/tileLayouts'
 import { computeGeometry } from './rects'
 
 const single = (): TileLayout => insertBand({ bands: [] }, 0, 'a', 200)
 
 const assertValid = (layout: TileLayout): void => {
-  expect(validateLayout(layout)).toEqual([])
+  expect(repairLayout(layout, 1)).toEqual(layout)
 }
 
 describe('insertBand', () => {

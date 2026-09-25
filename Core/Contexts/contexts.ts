@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { holdsName } from '../Paths/names'
 
 const SIGIL = ['<', '>'] as const
 
@@ -7,9 +8,10 @@ export type ContextDef = { id: string; title: string; singular?: string; icon?: 
 /** Array position IS the display order — no ordinal semantics anywhere. */
 export type ContextsRegistry = { contexts: ContextDef[] }
 
+// A title names a folder under the Contexts directory, so a stored one is held to staying inside it.
 export const contextEntry: z.ZodType<ContextDef> = z.looseObject({
   id: z.string().min(1),
-  title: z.string().min(1),
+  title: z.string().refine(holdsName),
   singular: z.string().min(1).optional(),
   icon: z.string().optional(),
 })

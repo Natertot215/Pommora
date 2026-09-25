@@ -79,7 +79,8 @@ describe('contextsRegistry schema', () => {
     expect((parsed.contexts[0] as Record<string, unknown>).future_field).toBe(7)
   })
 
-  it('rejects an entry missing its id', () => {
+  it('rejects an entry missing its id or whose title could leave the Contexts folder', () => {
     expect(() => contextsRegistry.parse({ contexts: [{ title: 'X', singular: 'X' }] })).toThrow()
+    expect(() => contextsRegistry.parse({ contexts: [{ id: 'e', title: '../escape' }] })).toThrow()
   })
 })

@@ -13,6 +13,7 @@ import { TileHost, zoomStyle } from './TileHost'
 import { dropAllTileDocs, isTileRemoving, markTileRemoving, readTileBody } from './tileDocStore'
 import { useSession } from '../Session/store'
 import { makeTree } from '../Testing/testTree'
+import { tileId } from '../Testing/tileLayouts'
 
 vi.stubGlobal(
   'ResizeObserver',
@@ -24,13 +25,13 @@ vi.stubGlobal(
 
 const doc = {
   layout: {
-    bands: ['m', 'p', 'v', 'w'].map((id) => ({ node: { kind: 'tile', id, h: 100 } })),
+    bands: ['m', 'p', 'v', 'w'].map((id) => ({ node: { kind: 'tile', id: tileId(id), h: 100 } })),
   },
   tiles: [
-    { id: 'm', type: 'markdown' },
-    { id: 'p', type: 'page', page_id: 'gone' },
-    { id: 'v', type: 'view', views: [{ source_id: 's' }] },
-    { id: 'w', type: 'widget' },
+    { id: tileId('m'), type: 'markdown' },
+    { id: tileId('p'), type: 'page', page_id: 'gone' },
+    { id: tileId('v'), type: 'view', views: [{ source_id: 's' }] },
+    { id: tileId('w'), type: 'widget' },
   ],
   locked: false,
 }
@@ -131,15 +132,15 @@ describe('the host over the renderer table', () => {
     await act(async () => {
       view?.dispatch({ changes: { from: view.state.doc.length, insert: '!' } })
     })
-    expect(readTileBody('m')).toBe('hello!')
-    markTileRemoving('m')
-    expect(isTileRemoving('m')).toBe(true)
+    expect(readTileBody(tileId('m'))).toBe('hello!')
+    markTileRemoving(tileId('m'))
+    expect(isTileRemoving(tileId('m'))).toBe(true)
     await act(async () => root.render(null))
     expect(writeMarkdown).not.toHaveBeenCalled()
   })
 
   it('a removed tile comes back on Undo, its text and its place with it', async () => {
-    const removed = { entry: { id: 'm', type: 'markdown' }, body: 'hello' }
+    const removed = { entry: { id: tileId('m'), type: 'markdown' }, body: 'hello' }
     const restoreTile = vi.fn(async () => ({ ok: true, value: null }))
     const saves: unknown[] = []
     stubEditorBridge({

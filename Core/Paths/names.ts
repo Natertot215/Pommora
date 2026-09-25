@@ -9,18 +9,16 @@ type NameRole = 'page' | 'directory'
 
 const WINDOWS_DEVICE = /^(con|prn|aux|nul|com[1-9]|lpt[1-9])(\.|$)/i
 
+// A name that stays inside its folder: the part of the rule a stored title is held to as it's read.
+export function holdsName(name: string): boolean {
+  const trimmed = name.trim()
+  return trimmed !== '' && trimmed !== '.' && trimmed !== '..' && !/[/\\\0]/.test(name)
+}
+
 // Every rule a name is held to, in one place. Returns the message to show, or null when the name is allowed.
 export function nameError(name: string, role: NameRole): string | null {
   const trimmed = name.trim()
-  if (
-    !trimmed ||
-    name.includes('/') ||
-    name.includes('\\') ||
-    name.includes('\0') ||
-    trimmed === '.' ||
-    trimmed === '..'
-  )
-    return `"${name}" is not a valid name.`
+  if (!holdsName(name)) return `"${name}" is not a valid name.`
   if (name !== trimmed) return `"${name}" can't begin or end with a space.`
   // The walk hides these, so a file named this way could never be shown again.
   if (hiddenName(name)) return `"${name}" can't begin with a dot or underscore.`

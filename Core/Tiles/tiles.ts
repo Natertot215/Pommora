@@ -1,46 +1,47 @@
 // Entries ride raw through reads and writes so foreign tile types survive; `knownTile` types the ones this build understands.
 
 import { z } from 'zod'
+import { type Result, fault, ok } from '../Contract/result'
+import { isPlainObject } from '../Properties/propertyValue'
 import { looseDecoder } from '../Files/decoders'
+import { isUlidShaped } from '../Nexus/identityMark'
 import { VIEW_BUTTONS, VIEW_STYLES } from '../Views/viewRow'
 
-const rawTileSchema = z.object({
-  kind: z.literal('tile'),
-  id: z.string().min(1),
-  h: z.number(),
-})
-type RawTile = z.infer<typeof rawTileSchema>
+interface RawTile {
+  kind: 'tile'
+  id: string
+  h: number
+}
 
 interface RawRow {
   kind: 'row'
   ratios: number[]
-  children: Array<RawTile | RawRow | RawColumn>
+  children: RawNode[]
 }
 
 interface RawColumn {
   kind: 'column'
-  children: Array<RawTile | RawRow | RawColumn>
+  children: RawNode[]
 }
 
-const rawRowSchema: z.ZodType<RawRow> = z.lazy(() =>
-  z
-    .object({
-      kind: z.literal('row'),
-      ratios: z.array(z.number()),
-      children: z.array(z.union([rawTileSchema, rawRowSchema, rawColumnSchema])).min(2),
-    })
-    .refine((r) => r.ratios.length === r.children.length),
-)
+type RawNode = RawTile | RawRow | RawColumn
 
-const rawColumnSchema: z.ZodType<RawColumn> = z.lazy(() =>
-  z.object({
-    kind: z.literal('column'),
-    children: z.array(z.union([rawTileSchema, rawRowSchema, rawColumnSchema])).min(2),
-  }),
-)
+// The write gate takes a node as an op shaped it; a stored one takes what a hand may have left for repairLayout to finish: a height or share off its type reads as 0, a container may hold one child, and a row's shares may run short.
+const layoutNode = (stored: boolean): z.ZodType<RawNode> => {
+  const num = stored ? z.number().catch(0) : z.number()
+  const children = z.lazy(() => z.array(node).min(stored ? 1 : 2))
+  const tile = z.object({ kind: z.literal('tile'), id: z.string().min(1), h: num })
+  const row = z
+    .object({ kind: z.literal('row'), ratios: z.array(num), children })
+    .refine((r) => stored || r.ratios.length === r.children.length)
+  const column = z.object({ kind: z.literal('column'), children })
+  const node: z.ZodType<RawNode> = z.union([tile, row, column])
+  return node
+}
+export const storedNodeSchema = layoutNode(true)
 
 export const rawLayoutSchema = z.object({
-  bands: z.array(z.object({ node: z.union([rawTileSchema, rawRowSchema, rawColumnSchema]) })),
+  bands: z.array(z.object({ node: layoutNode(false) })),
 })
 
 export const NEW_TILE_H = 160
@@ -52,8 +53,8 @@ export function tileHostKey(host: TileHostRef): string {
 }
 
 export function coerceTileHost(raw: unknown): TileHostRef | null {
-  if (typeof raw !== 'object' || raw === null) return null
-  const { kind, id } = raw as { kind?: unknown; id?: unknown }
+  if (!isPlainObject(raw)) return null
+  const { kind, id } = raw
   if (kind === 'homepage') return { kind: 'homepage' }
   if (kind === 'space' && typeof id === 'string' && id.length > 0) return { kind: 'space', id }
   return null
@@ -65,8 +66,9 @@ const styleField = z.enum(TILE_STYLES).optional().catch(undefined)
 
 const boolField = z.boolean().optional().catch(undefined)
 const zoomField = z.number().positive().optional().catch(undefined)
+// The id names the tile's file, so an entry read from disk is held to the ULID shape every minted id has; a path-shaped id reads as unknown and inert.
 const chassisFields = {
-  id: z.string().min(1),
+  id: z.string().refine(isUlidShaped),
   style: styleField,
   locked: boolField,
   zoom: zoomField,
@@ -199,11 +201,22 @@ export interface TileDocPatch {
   locked?: boolean
 }
 
-/** A shape CHECK only: the ORIGINAL values are what get written, since zod's parse output strips unknown keys and foreign keys must survive. */
-export function tilePatchProblem(patch: TileDocPatch): string | null {
-  if ('layout' in patch && !rawLayoutSchema.safeParse(patch.layout).success)
-    return 'Malformed layout.'
-  if ('tiles' in patch && !Array.isArray(patch.tiles)) return 'tiles must be an array.'
-  if ('locked' in patch && typeof patch.locked !== 'boolean') return 'locked must be a boolean.'
-  return null
+/** The three document keys, each shape-checked and kept as sent: zod's parse output would strip the foreign keys a layout or entry carries. */
+export function tileDocPatch(raw: unknown): Result<TileDocPatch> {
+  if (!isPlainObject(raw)) return fault('Invalid tile-doc patch.')
+  const patch: TileDocPatch = {}
+  const { layout, tiles, locked } = raw
+  if ('layout' in raw) {
+    if (!rawLayoutSchema.safeParse(layout).success) return fault('Malformed layout.')
+    patch.layout = layout
+  }
+  if ('tiles' in raw) {
+    if (!Array.isArray(tiles)) return fault('tiles must be an array.')
+    patch.tiles = tiles
+  }
+  if ('locked' in raw) {
+    if (typeof locked !== 'boolean') return fault('locked must be a boolean.')
+    patch.locked = locked
+  }
+  return ok(patch)
 }

@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import type { TileLayout, TileLeaf } from './model'
 import { tileIds } from './model'
-import { insertBand } from './ops'
-import { splitTile, validateLayout } from '../../Testing/tileLayouts'
+import { insertBand, repairLayout } from './ops'
+import { splitTile } from '../../Testing/tileLayouts'
 import { computeGeometry } from './rects'
 import { stackedAt, stackLayout } from './stack'
 
@@ -17,7 +17,7 @@ const board = (): TileLayout => {
 describe('stackLayout', () => {
   it('flattens every row to one band per tile in reading order, heights kept', () => {
     const stacked = stackLayout(board())
-    expect(validateLayout(stacked)).toEqual([])
+    expect(repairLayout(stacked, 1)).toEqual(stacked)
     expect(tileIds(stacked)).toEqual(['a', 'b', 'c', 'd'])
     expect(stacked.bands.map((b) => (b.node as TileLeaf).h)).toEqual([200, 100, 100, 140])
   })

@@ -37,9 +37,6 @@ export const DISCLOSURE_INDENT = 14
 
 export const DROP_LINE_INSET = 2
 
-/** Grid tiles and the editor's embedded page tiles bottom out at this one minimum. */
-export const TILE_MIN_PX = 64
-
 /** KNOB — a resizable tile's height before a persisted one exists. */
 export const TILE_DEFAULT_PX = 320
 

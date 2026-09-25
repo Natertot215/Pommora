@@ -12,7 +12,7 @@ import { findScroller, startAutoScroll } from '@pommora/uix/Interactions/autoscr
 import { GLIDE_FEEL } from '@pommora/uix/Animations/feel'
 import { usePointerGesture } from '@pommora/uix/Interactions/gesture'
 import { HYSTERESIS, SETTLE_FALLBACK } from '@pommora/uix/Interactions/shared'
-import { TILE_MIN_PX } from '@pommora/uix/Theme/theme-vars.css'
+import { TILE_MIN_PX } from '@pommora/uix/Utilities/tileMetrics'
 import { type Box, type Reach, withinReach } from '@pommora/uix/Interactions/hoverReveal'
 import { revealTarget } from '@pommora/uix/Interactions/hover-reveal.css'
 import { cx } from '@pommora/uix/Utilities/cx'
