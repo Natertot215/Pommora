@@ -3,16 +3,12 @@
 import { hostname } from 'node:os'
 import type { HostDevice } from '@pommora/core/Contract/handlers'
 import type { SyncDevice } from '@pommora/core/Sync/Contract/wire'
+import { nodeMachine } from '../Platform/nodeMachine'
 import { readAppConfig, updateAppConfig } from './appConfig'
 import { getSecret, KEYCHAIN_UNAVAILABLE, secretsAvailable, setSecret } from './secrets'
 
 const SECRET = 'device-key'
 const AGREEMENT_SECRET = 'device-x25519'
-
-async function fingerprintOf(raw: ArrayBuffer): Promise<string> {
-  const digest = await globalThis.crypto.subtle.digest('SHA-256', raw)
-  return [...new Uint8Array(digest)].map((b) => b.toString(16).padStart(2, '0')).join('')
-}
 
 async function mintPair(
   userDataDir: string,
@@ -33,7 +29,7 @@ async function mint(userDataDir: string): Promise<{ device: SyncDevice; key: Cry
   await updateAppConfig(userDataDir, () => ({ device: undefined }))
   const { raw, key } = await mintPair(userDataDir, 'Ed25519', ['sign', 'verify'], SECRET)
   const device: SyncDevice = {
-    id: await fingerprintOf(raw),
+    id: nodeMachine.sha256Hex(new Uint8Array(raw)),
     publicKey: Buffer.from(raw).toString('base64url'),
     name: hostname().slice(0, 64),
   }

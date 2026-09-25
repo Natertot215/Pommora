@@ -20,8 +20,8 @@ import {
 } from '@pommora/core/Testing/storesContract'
 import type { Db } from './driver'
 import { openNexusDb } from './open'
-import { captureStore, contentIndexStore, keyValueStore, snapshotStore, syncStore } from './stores'
-import { openVersionsDb } from './versionsDb'
+import { contentIndexStore, keyValueStore, syncStore } from './stores'
+import { captureStore, openVersionsDb, snapshotStore } from './versionsDb'
 
 let root: string
 let dir: string

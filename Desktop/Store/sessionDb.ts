@@ -2,9 +2,9 @@ import { mkdirSync } from 'node:fs'
 import { errText } from '@pommora/core/Contract/result'
 import { installStores, NO_STORES } from '@pommora/core/Platform/stores'
 import { openNexusDb } from './open'
-import { openVersionsDb } from './versionsDb'
+import { captureStore, openVersionsDb, snapshotStore } from './versionsDb'
 import type { Db } from './driver'
-import { captureStore, contentIndexStore, keyValueStore, snapshotStore, syncStore } from './stores'
+import { contentIndexStore, keyValueStore, syncStore } from './stores'
 
 let db: Db | null = null
 let versionsDb: Db | null = null

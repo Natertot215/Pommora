@@ -332,9 +332,13 @@ export function describeSnapshotStore(name: string, make: () => SnapshotStore): 
 
     it('sweeps snapshots older than a cutoff', () => {
       store.addSnapshot('p1', 100, 'edit', 'a')
-      store.addSnapshot('p1', 300, 'edit', 'b')
+      store.addSnapshot('p1', 200, 'edit', 'b')
+      store.addSnapshot('p1', 300, 'edit', 'c')
       expect(store.sweepSnapshots(200)).toBe(1)
-      expect(store.listSnapshots('p1')).toEqual([{ ts: 300, source: 'edit' }])
+      expect(store.listSnapshots('p1')).toEqual([
+        { ts: 300, source: 'edit' },
+        { ts: 200, source: 'edit' },
+      ])
     })
 
     it('clears every snapshot and reports the count', () => {

@@ -24,7 +24,6 @@ import { sessionRoot } from '@pommora/core/Nexus/session'
 import { flushFileHistory } from '@pommora/core/Pages/fileHistory'
 import { installMachine } from '@pommora/core/Platform/machine'
 import { coerceScale, WEB_ZOOM_DEFAULT } from '@pommora/core/Settings/personalization'
-import { readInterfaceScale } from '@pommora/core/Settings/devicePrefs'
 import {
   readLiveCommands,
   readLivePersonalization,
@@ -46,7 +45,6 @@ import {
 } from './Config/appConfig'
 import { ensureDevice } from './Config/device'
 import { getSecret, setSecret } from './Config/secrets'
-import { interfaceScaleZoom } from './Config/interfaceScale'
 import { startWatcher, stopWatcher } from './FileWatch/watcher'
 import { isWindows, nativePath, posixPath } from './Platform/hostPath'
 import { drainFileLocks } from './Platform/fileLock'
@@ -58,7 +56,7 @@ import {
   installWebGuests,
   pauseGuestMedia,
   setGuestTileZoom,
-  setHostZoom,
+  resetHostZoom,
   setWebZoomFactor,
   wheelGuest,
 } from './Web/webGuests'
@@ -175,7 +173,7 @@ async function applyDefaultZoom(win: BrowserWindow): Promise<void> {
   const root = sessionRoot()
   const p = root ? await readLivePersonalization(root) : null
   setWebZoomFactor(coerceScale(p?.webZoomFactor, WEB_ZOOM_DEFAULT))
-  if (!win.isDestroyed()) setHostZoom(win.webContents, interfaceScaleZoom(readInterfaceScale()))
+  if (!win.isDestroyed()) resetHostZoom(win.webContents)
 }
 
 function createWindow(): void {
