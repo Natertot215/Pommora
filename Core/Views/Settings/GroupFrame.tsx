@@ -57,6 +57,7 @@ import {
 } from './OptionOrderList'
 import { OptionChip } from '../../Properties/Cells/OptionChip'
 import { useCapitalizeMetadata } from '../../Properties/Cells/columnLabel'
+import { styleFor, useNexusForms } from '../Host/useColumnStyles'
 
 const GROUPABLE_PANE = new Set(['select', 'status', 'datetime'])
 
@@ -106,6 +107,7 @@ export function GroupFrame({
   onBack: () => void
 }): React.JSX.Element {
   const capitalize = useCapitalizeMetadata()
+  const nexus = useNexusForms()
   const saveView = useSaveView(source)
   const save = (patch: Partial<SavedView>): void => void saveView({ ...view, ...patch })
   const saveGroup = (group: GroupConfig): void => save({ group })
@@ -183,7 +185,9 @@ export function GroupFrame({
         }
       />
       {dateHeadingProp &&
-        NUMERIC_FORMATS.has(view.column_styles?.[dateHeadingProp]?.date_format ?? 'full') && (
+        NUMERIC_FORMATS.has(
+          styleFor(dateHeadingProp, schema, view, nexus).date_format ?? nexus.dateFormat,
+        ) && (
           <FootingItem
             icon="type"
             label="Separation"
@@ -611,6 +615,7 @@ function DateBucketList({
   schema: PropertyDefinition[]
 } & HideControls): React.JSX.Element | null {
   const values = useContainerValues(source.path)
+  const nexus = useNexusForms()
 
   const granularity = group.date_granularity ?? 'month'
   const present = useMemo(() => {
@@ -625,7 +630,8 @@ function DateBucketList({
   }, [source, values, group.property_id, schema, granularity, view.hidden_groups])
   if (present.size === 0) return null
 
-  const dateFormat = view.column_styles?.[group.property_id]?.date_format ?? 'full'
+  const dateFormat =
+    styleFor(group.property_id, schema, view, nexus).date_format ?? nexus.dateFormat
   return (
     <>
       {bucketOrder(group, def, present).map((key) => {

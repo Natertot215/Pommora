@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import { DATE_FORMATS } from '../Properties/columnStyles'
+import { columnStyle, DATE_FORMATS, type TimeFormat } from '../Properties/columnStyles'
 import { DEFAULT_LINK_DISPLAY, LINK_DISPLAYS } from '../Properties/properties'
 import { type ColorSetting, isColorKey } from '@pommora/uix/Theme/colors'
 import { clamp } from '@pommora/uix/Utilities/clamp'
@@ -17,13 +17,11 @@ export const IN_PAGE_HEADING_RESOLUTION_LABELS: Record<InPageHeadingResolution, 
   automatic: 'Automatic',
 }
 
-export const TIME_FORMAT_SETTINGS = ['twelveHour', 'twentyFourHour'] as const
+export const TIME_FORMAT_SETTINGS = [
+  'twelveHour',
+  'twentyFourHour',
+] as const satisfies readonly TimeFormat[]
 export type TimeFormatSetting = (typeof TIME_FORMAT_SETTINGS)[number]
-
-export const TIME_FORMAT_LABELS: Record<TimeFormatSetting, string> = {
-  twelveHour: '12 Hours',
-  twentyFourHour: '24 Hours',
-}
 
 const ENTITY_ICON_KINDS = ['collection', 'set', 'space', 'page', 'context'] as const
 export type EntityIconKind = (typeof ENTITY_ICON_KINDS)[number]
@@ -211,8 +209,7 @@ const SETTINGS = {
   confirmDeletion: flag(true),
   dateFormat: oneOf(DATE_FORMATS, 'full'),
   timeFormat: oneOf(TIME_FORMAT_SETTINGS, 'twelveHour'),
-  trashDateFormat: oneOf(DATE_FORMATS),
-  trashHideTime: flag(false),
+  trashColumnStyle: setting(columnStyle),
   pasteLinkIntoText: flag(false),
   defaultLinkFormat: oneOf(LINK_DISPLAYS, DEFAULT_LINK_DISPLAY),
   openLinksInApp: flag(false),

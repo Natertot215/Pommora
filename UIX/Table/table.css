@@ -222,7 +222,6 @@
   flex: none;
 }
 .cell-link {
-  color: var(--accent);
   text-decoration: none;
 }
 .cell-link-underline {

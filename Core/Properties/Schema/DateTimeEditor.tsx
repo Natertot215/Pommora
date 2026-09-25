@@ -1,22 +1,20 @@
 import {
   DATE_FORMAT_OPTIONS,
+  showsWeekday,
+  TIME_FORMAT_LABELS,
+  TIME_FORMATS,
+  WEEKDAY_FORMAT_LABELS,
+  WEEKDAY_FORMATS,
   type ColumnStyle,
   type DateFormat,
-  type TimeFormat,
-  type WeekdayFormat,
 } from '@pommora/core/Properties/columnStyles'
 import { MenuRowView, pickerRow } from '@pommora/uix/Menus'
 
-const WEEKDAY_OPTIONS: { value: WeekdayFormat; label: string }[] = [
-  { value: 'long', label: 'Full' },
-  { value: 'short', label: 'Short' },
-  { value: 'none', label: 'Hidden' },
-]
-const TIME_OPTIONS: { value: TimeFormat; label: string }[] = [
-  { value: 'twelveHour', label: '12 Hours' },
-  { value: 'twentyFourHour', label: '24 Hours' },
-  { value: 'none', label: 'Hidden' },
-]
+const WEEKDAY_OPTIONS = WEEKDAY_FORMATS.map((value) => ({
+  value,
+  label: WEEKDAY_FORMAT_LABELS[value],
+}))
+const TIME_OPTIONS = TIME_FORMATS.map((value) => ({ value, label: TIME_FORMAT_LABELS[value] }))
 
 const ROW_LOOK = { iconSize: 'headline', inert: true } as const
 
@@ -29,7 +27,7 @@ export function DateTimeEditor({
   onChange: (patch: Partial<ColumnStyle>) => void
 }): React.JSX.Element {
   const dateFmt: DateFormat = style.date_format ?? 'full'
-  const showDay = dateFmt === 'short' || dateFmt === 'full'
+  const showDay = showsWeekday(dateFmt)
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
       <MenuRowView row={{ kind: 'heading', label: 'Format' }} />

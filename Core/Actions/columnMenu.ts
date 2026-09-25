@@ -2,7 +2,10 @@ import {
   COLUMN_LOOKS,
   DATE_FORMAT_LABELS,
   DATE_FORMATS,
+  showsWeekday,
+  TIME_FORMAT_LABELS,
   TIME_FORMATS,
+  WEEKDAY_FORMAT_LABELS,
   WEEKDAY_FORMATS,
   type ColumnStyle,
 } from '../Properties/columnStyles'
@@ -75,12 +78,10 @@ export function styleMenuItems(ctx: StyleMenuContext): ActionItem<StyleAction>[]
       const time = row('time_format', current.time_format)
       return [
         ...DATE_FORMATS.map((f) => date(DATE_FORMAT_LABELS[f], f)),
-        weekday('Full', 'long', true),
-        weekday('Short', 'short'),
-        weekday('Hidden', 'none'),
-        time('12 Hours', 'twelveHour', true),
-        time('24 Hours', 'twentyFourHour'),
-        time('Hidden', 'none'),
+        ...(showsWeekday(current.date_format)
+          ? WEEKDAY_FORMATS.map((w, i) => weekday(WEEKDAY_FORMAT_LABELS[w], w, i === 0))
+          : []),
+        ...TIME_FORMATS.map((t, i) => time(TIME_FORMAT_LABELS[t], t, i === 0)),
       ]
     }
     default:

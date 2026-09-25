@@ -147,9 +147,9 @@ export function labelColorFor(color: string | undefined): CellKey | 'default' {
     : (color as CellKey)
 }
 
-/** A stored cell's CSS, or the runtime system accent when unset. */
+/** A stored cell's CSS, or the External Link Color when unset. */
 export function solidColorCss(color: string | undefined): string {
-  if (!color) return 'var(--system-accent)'
+  if (!color) return 'var(--link)'
   const key = labelColorFor(color)
   return cellColor(key === 'default' ? 'grey-4' : key)
 }
@@ -178,7 +178,7 @@ export function applyAccent(setting: AccentSetting, systemColor: string | null):
   document.documentElement.style.setProperty('--accent', accentValue(setting, systemColor))
 }
 
-/** External `[text](url)` links bind to `--system-accent`, independent of the `--accent` setting. */
+/** The OS accent `--link` falls back to, independent of the `--accent` setting. */
 export function applySystemAccent(systemColor: string | null): void {
   if (typeof document === 'undefined') return
   const value = systemColor ?? readCssAccentColor() ?? accentCell(DEFAULT_ACCENT)

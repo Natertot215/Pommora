@@ -4,6 +4,7 @@ import { isEmptyBand, type ResolvedGroup } from '@pommora/core/Views/viewRow'
 import type { SavedView } from '@pommora/core/Views/views'
 import { GroupBand, resolveBandHead } from './GroupBand'
 import { useBandDrag } from './BandDnd'
+import { useNexusForms } from '../Host/useColumnStyles'
 import type { ValueContext } from '../../Properties/valueContext'
 import { showEntityMenu } from '../../Interface/Menus/entityMenuActions'
 
@@ -42,8 +43,9 @@ export function ViewGroupBand({
   children: ReactNode
 }): React.JSX.Element {
   const dragHandle = useBandDrag(group.key)
+  const nexus = useNexusForms()
   const glyph = ctx
-    ? resolveBandHead(group, view, ctx, setNames, setIcons, source, setPath).glyph
+    ? resolveBandHead(group, view, ctx, nexus, setNames, setIcons, source, setPath).glyph
     : undefined
   const onContextMenu = setPath
     ? (e: React.MouseEvent): void => {

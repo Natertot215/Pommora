@@ -11,7 +11,6 @@ import {
   HEADING_SIZE,
   IN_PAGE_HEADING_RESOLUTION_LABELS,
   IN_PAGE_HEADING_RESOLUTIONS,
-  TIME_FORMAT_LABELS,
   TIME_FORMAT_SETTINGS,
   type HeadingLinkStyle,
   type InPageHeadingResolution,
@@ -28,7 +27,11 @@ import {
   type SettingValue,
 } from '@pommora/core/Settings/personalization'
 import type { ColorSetting } from '@pommora/uix/Theme/colors'
-import { DATE_FORMAT_OPTIONS, type DateFormat } from '@pommora/core/Properties/columnStyles'
+import {
+  DATE_FORMAT_OPTIONS,
+  TIME_FORMAT_LABELS,
+  type DateFormat,
+} from '@pommora/core/Properties/columnStyles'
 import { TrashFrame } from './TrashFrame'
 import { askClearExclusions, askClearHistory } from '../Interface/Confirm/confirmations'
 import { host } from '../Platform/dialer'

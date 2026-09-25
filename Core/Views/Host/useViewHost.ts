@@ -7,7 +7,7 @@ import type {
   ResolvedGroup,
   ViewRow,
 } from '@pommora/core/Views/viewRow'
-import type { ColumnStyle } from '@pommora/core/Properties/columnStyles'
+import type { ColumnStyle, StoredColumnStyle } from '@pommora/core/Properties/columnStyles'
 import { isLocationFsOrder, type SavedView } from '@pommora/core/Views/views'
 import type { PropertyValue } from '@pommora/core/Properties/propertyValue'
 import { assignValue, type ValueWriter } from '@pommora/core/Properties/assignValue'
@@ -30,7 +30,7 @@ import { resolvedSortCount, resolveManualOrder } from '../Pipeline/sort'
 import { useActiveView } from './useActiveView'
 import { type Overrides, patchOverride } from '../../Properties/valueOverride'
 import { useContainerValues } from './useValuesEpoch'
-import { mergeStyleRecords, useStyleFor } from './useColumnStyles'
+import { mergeStyleRecords, pickedStyle, styleFor, useNexusForms } from './useColumnStyles'
 import { groupingKeyOf, useBandOrdering } from '../Bands/useBandOrdering'
 import { useViewCreation } from './useViewCreation'
 import { groupKeyToValue, REASSIGNABLE_GROUP_TYPES, reassignTarget } from '../reassign'
@@ -48,8 +48,8 @@ export type ViewHostApi = NonNullable<ReturnType<typeof useViewHost>>
 const NO_COLLAPSE = new Set<string>()
 
 const stylesCaughtUp = (
-  patch: Record<string, ColumnStyle>,
-  saved: Record<string, ColumnStyle> | undefined,
+  patch: Record<string, StoredColumnStyle>,
+  saved: Record<string, StoredColumnStyle> | undefined,
 ): boolean =>
   Object.entries(patch).every(([id, style]) =>
     Object.entries(style).every(
@@ -82,7 +82,8 @@ export function useViewHost(
 
   const [orderOverride, setOrderOverride] = useState<string[] | null>(null)
   const [hiddenOverride, setHiddenOverride] = useState<string[] | null>(null)
-  const [stylePatch, setStylePatchState] = useState<Record<string, ColumnStyle> | null>(null)
+  const [stylePatch, setStylePatchState] = useState<Record<string, StoredColumnStyle> | null>(null)
+  const nexus = useNexusForms()
   const [manualOverride, setManualOverride] = useState<string[] | null>(null)
   const [collapsed, setCollapsed] = useState<Set<string>>(
     () => new Set(view.collapsed_groups ?? []),
@@ -255,7 +256,9 @@ export function useViewHost(
       return undefined
     }
     const g = find(groups)
-    return g && ctx ? resolveBandHead(g, liveView, ctx, setNames, setIcons, source).label : id
+    return g && ctx
+      ? resolveBandHead(g, liveView, ctx, nexus, setNames, setIcons, source).label
+      : id
   }
 
   // Persist the saved view + every live layer + a patch, so no one mutation clobbers another's unsaved state; the explicit patch wins last.
@@ -275,7 +278,8 @@ export function useViewHost(
     persistView({ collapsed_groups: [...next] }, { viewState: true })
   }
   const setStylePatch = (colId: string, key: keyof ColumnStyle & string, value: string): void => {
-    const merged = { ...stylePatch?.[colId], [key]: value } as ColumnStyle
+    const stored = pickedStyle(colId, schema, nexus, key, value)
+    const merged = { ...stylePatch?.[colId], [key]: stored } as StoredColumnStyle
     setStylePatchState((prev) => ({ ...prev, [colId]: merged }))
     persistView({
       column_styles: mergeStyleRecords(view.column_styles, { ...stylePatch, [colId]: merged }),
@@ -337,14 +341,19 @@ export function useViewHost(
     if (target === undefined) return
     commitGroupValue(activeId, sortReassign.propertyId, sortReassign.type, target)
   }
-  const styleFor = useStyleFor()
   const pickTarget = (row: ViewRow, column: ResolvedColumn): PickTarget => {
     const def = schema.find((d) => d.id === column.id) ?? syntheticContextDef(column.id)
     const current = resolveFieldValue(row, column.id, schema)
-    const style = styleFor(column.id, schema, liveView)
+    const style = styleFor(column.id, schema, liveView, nexus)
     const type = declaredType(column.id, schema, contextIds)
     if (type === 'datetime')
-      return { kind: 'datetime', def, current, dateFormat: style.date_format }
+      return {
+        kind: 'datetime',
+        def,
+        current,
+        dateFormat: style.date_format,
+        timeFormat: style.time_format,
+      }
     if (type === 'file') return { kind: 'file', def, current }
     return {
       kind: 'options',

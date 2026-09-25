@@ -22,7 +22,11 @@ import { PathField } from '@pommora/uix/Fields/PathField'
 
 export type PickTarget = { def: PropertyDefinition; current: PropertyValue | null } & (
   | { kind: 'options'; look?: ColumnLook; contextOptions?: PickOption[] }
-  | { kind: 'datetime'; dateFormat?: ColumnStyle['date_format'] }
+  | {
+      kind: 'datetime'
+      dateFormat?: ColumnStyle['date_format']
+      timeFormat?: ColumnStyle['time_format']
+    }
   | { kind: 'file' }
 )
 
@@ -112,7 +116,12 @@ export function PropertyPicker({
       )
     })()
   ) : t.kind === 'datetime' ? (
-    <DatetimeValuePicker value={t.current} dateFormat={t.dateFormat} onCommit={commit} />
+    <DatetimeValuePicker
+      value={t.current}
+      dateFormat={t.dateFormat}
+      timeFormat={t.timeFormat}
+      onCommit={commit}
+    />
   ) : (
     <PathField
       label={t.def.name}

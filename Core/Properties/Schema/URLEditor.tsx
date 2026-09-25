@@ -15,7 +15,7 @@ export function URLEditor({
   color: string | undefined
   onSetConfig: (patch: LinkConfig) => void
 }): React.JSX.Element {
-  const link = resolveColor(color, 'var(--system-accent)')
+  const link = resolveColor(color, 'var(--link)')
 
   return (
     <div className={s.configEditor}>

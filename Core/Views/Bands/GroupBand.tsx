@@ -18,6 +18,7 @@ import { findOption, groupLabel } from '../../Properties/Cells/cellResolve'
 import { CheckboxGlyph } from '../../Properties/Cells/CheckboxGlyph'
 import { formatBucketLabel } from '../../Properties/formatValue'
 import type { ValueContext } from '../../Properties/valueContext'
+import { type NexusForms, styleFor } from '../Host/useColumnStyles'
 import './group-band.css'
 import { onActivateKey } from '@pommora/uix/Interactions/activate'
 import { NeutralChip } from '@pommora/uix/Labels/recipes'
@@ -27,6 +28,7 @@ export function resolveBandHead(
   group: ResolvedGroup,
   view: SavedView,
   ctx: ValueContext,
+  nexus: NexusForms,
   setNames: Map<string, string>,
   setIcons: Map<string, string | undefined>,
   source: CollectionNode | SetNode,
@@ -122,7 +124,6 @@ export function resolveBandHead(
     }
     case 'datetime': {
       const icon = asRenderableIcon(def?.icon)
-      const style = view.column_styles?.[propId]
       const granularity =
         (view.group?.kind === 'property'
           ? view.group.date_granularity
@@ -130,7 +131,7 @@ export function resolveBandHead(
       const dateLabel = formatBucketLabel(
         value,
         granularity,
-        style?.date_format ?? 'full',
+        styleFor(propId, ctx.schema, view, nexus).date_format ?? nexus.dateFormat,
         view.date_separator ?? 'dash',
       )
       return {

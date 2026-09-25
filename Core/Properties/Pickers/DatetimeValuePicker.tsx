@@ -7,19 +7,25 @@ import { formatDate } from '../formatValue'
 export function DatetimeValuePicker({
   value,
   dateFormat,
+  timeFormat,
   onCommit,
 }: {
   value: PropertyValue | null
   dateFormat?: ColumnStyle['date_format']
+  timeFormat?: ColumnStyle['time_format']
   onCommit: (value: PropertyValue | null) => void
 }): React.JSX.Element {
-  const timeFormat = useSetting('timeFormat')
-  const fmt = dateFormat === 'relative' ? 'short' : (dateFormat ?? 'full')
+  const nexusClock = useSetting('timeFormat')
+  // A hidden time still edits on a clock: the Nexus's.
+  const clock = timeFormat && timeFormat !== 'none' ? timeFormat : nexusClock
+  const nexusDate = useSetting('dateFormat')
+  const shown = dateFormat ?? nexusDate
+  const fmt = shown === 'relative' ? 'short' : shown
   return (
     <CalendarPicker
       range={false}
       value={value?.kind === 'datetime' ? value.value : null}
-      timeFormat={timeFormat}
+      timeFormat={clock}
       formatDateValue={(k) => formatDate(k, fmt, 'none')}
       onChange={(iso) => onCommit(iso ? { kind: 'datetime', value: iso } : null)}
     />
