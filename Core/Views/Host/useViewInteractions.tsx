@@ -280,7 +280,9 @@ export function useViewInteractions(host: ViewHostApi, policy: ViewInteractionPo
         ? Promise.resolve(true)
         : commitGroupValue(activeId, groupPropId, groupPropType, dest.bucket ?? UNGROUPED)
     if (dest.setId !== (cur?.setId ?? null))
-      void write?.then((ok) => ok && mutate({ op: 'movePage', path, newParentPath: destPath }))
+      void write?.then((ok) =>
+        ok ? mutate({ op: 'movePage', path, newParentPath: destPath }) : null,
+      )
   }
 
   /** One entry for every row drop: a same-band slot reorders, a cross-band one moves the page or rewrites its group value. `beforeId` is null at the target band's end. */

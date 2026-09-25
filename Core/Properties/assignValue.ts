@@ -1,6 +1,6 @@
 import type { RefObject } from 'react'
 import type { PageFrontmatter } from '@pommora/core/Nexus/schemas'
-import type { MutateRequest } from '@pommora/core/Nexus/mutateRequest'
+import type { MutateOutcome, MutateRequest } from '@pommora/core/Nexus/mutateRequest'
 import type { PropertyDefinition } from '@pommora/core/Properties/properties'
 import {
   applyValueAtRoot,
@@ -13,7 +13,7 @@ import { pushUndo } from '../Session/undo'
 
 export interface ValueWriter {
   schema: PropertyDefinition[]
-  mutate: (req: MutateRequest) => Promise<boolean>
+  mutate: (req: MutateRequest) => Promise<MutateOutcome | null>
   rowOf: (id: string) => ViewRow | undefined
   apply: (pageId: string, fm: PageFrontmatter, write: Promise<boolean>) => void
 }
@@ -24,29 +24,26 @@ function write(
   column: ResolvedColumn,
   value: PropertyValue | null,
 ): Promise<boolean> | undefined {
+  let req: MutateRequest
+  let patched: PageFrontmatter
   if (column.kind === 'context') {
     const ids = value?.kind === 'context' ? value.value : []
     const current =
       (row.frontmatter.contextValues as Record<string, string[]> | undefined) ??
       row.contextValues ??
       {}
-    const patched = {
+    patched = {
       ...row.frontmatter,
       contextValues: { ...current, [column.id]: ids },
     } as PageFrontmatter
-    const pending = w.mutate({
-      op: 'setContext',
-      path: row.path,
-      contextId: column.id,
-      spaceIds: ids,
-    })
-    w.apply(row.id, patched, pending)
-    return pending
+    req = { op: 'setContext', path: row.path, contextId: column.id, spaceIds: ids }
+  } else {
+    const def = w.schema.find((d) => d.id === column.id)
+    if (!def) return undefined
+    patched = applyValueAtRoot(row.frontmatter, def, value) as PageFrontmatter
+    req = { op: 'setProperty', path: row.path, propertyId: column.id, value }
   }
-  const def = w.schema.find((d) => d.id === column.id)
-  if (!def) return undefined
-  const patched = applyValueAtRoot(row.frontmatter, def, value) as PageFrontmatter
-  const pending = w.mutate({ op: 'setProperty', path: row.path, propertyId: column.id, value })
+  const pending = w.mutate(req).then((done) => done !== null)
   w.apply(row.id, patched, pending)
   return pending
 }

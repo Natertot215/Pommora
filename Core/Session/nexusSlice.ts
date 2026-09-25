@@ -4,7 +4,7 @@ import {
   reportRefusal,
   unrestoredLine,
 } from '@pommora/core/Interface/Notifications/notifications'
-import type { MutateRequest } from '@pommora/core/Nexus/mutateRequest'
+import type { MutateOutcome, MutateRequest } from '@pommora/core/Nexus/mutateRequest'
 import { caught, type PommoraError, type Result, valueOr } from '@pommora/core/Contract/result'
 import type { NexusTree } from '@pommora/core/Nexus/tree'
 import type { SyncStatus } from '@pommora/core/Sync/Contract/wire'
@@ -52,12 +52,11 @@ export interface NexusSlice {
   choose: () => Promise<void>
   openPath: (path: string) => Promise<void>
   openDropped: (file: File) => Promise<void>
+  /** Answers what the change did, or null when it didn't land; `onCreated` runs before the newborn is shown. */
   mutate: (
     req: MutateRequest,
     onCreated?: (created: { id: string; path: string }) => void | Promise<void>,
-    onAdopted?: (adopted: string | undefined) => void,
-    onTrashed?: (trashed: { bundlePath: string } | undefined) => void,
-  ) => Promise<boolean>
+  ) => Promise<MutateOutcome | null>
 }
 
 /** Every save the window still owes, landed: awaited while the OLD root is bound before a switch, and before the host closes its stores on quit. */
@@ -240,7 +239,7 @@ export const createNexusSlice: Slice<NexusSlice> = (set, get) => {
     openPath: (path) => openVia(() => host().ask('nexus:openPath', path)),
     openDropped: (file) => openVia(() => host().openDropped(file)),
 
-    mutate: async (req, onCreated, onAdopted, onTrashed) => {
+    mutate: async (req, onCreated) => {
       const nexus = get().tree?.nexus.id
       // A save queued for a path this op moves would land on the old path and be refused.
       switch (req.op) {
@@ -263,9 +262,9 @@ export const createNexusSlice: Slice<NexusSlice> = (set, get) => {
           break
       }
       // A flush held by a Nexus switch resumes after it, when the path this op names belongs to the Nexus it left.
-      if (get().tree?.nexus.id !== nexus) return false
+      if (get().tree?.nexus.id !== nexus) return null
       const res = await host().ask('mutate', req)
-      if (!reportRefusal(res)) return false
+      if (!reportRefusal(res)) return null
       if (res.value.unrestored) notifyReport(unrestoredLine(res.value.unrestored), true)
       if (res.value.cascade?.warning) notifyReport(res.value.cascade.warning, true)
       if (req.op === 'delete' || req.op === 'restore' || req.op === 'emptyBundle')
@@ -342,9 +341,7 @@ export const createNexusSlice: Slice<NexusSlice> = (set, get) => {
         }
       }
       if (!createdShown && res.value.created && onCreated) await onCreated(res.value.created)
-      onAdopted?.(res.value.adopted)
-      onTrashed?.(res.value.trashed)
-      return true
+      return res.value
     },
   }
 }

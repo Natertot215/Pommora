@@ -114,8 +114,6 @@ export function EntityBanner({
   const home = owner.kind === 'homepage'
 
   const iconHidden = owner.headingIconHidden === true
-  const toggleHeadingIcon = (): Promise<boolean> =>
-    mutate({ op: 'setHeadingIconHidden', path: owner.path, kind: owner.kind, hidden: !iconHidden })
   const surfaceClass = isSurfaceKind(owner.kind) ? 'is-surface' : undefined
   const titleHeader = (
     <DetailTitleHeader
@@ -142,7 +140,14 @@ export function EntityBanner({
         return null
       }}
       onEditIcon={() => setIconPickerOpen(true)}
-      onToggleIcon={() => void toggleHeadingIcon()}
+      onToggleIcon={() =>
+        void mutate({
+          op: 'setHeadingIconHidden',
+          path: owner.path,
+          kind: owner.kind,
+          hidden: !iconHidden,
+        })
+      }
       search={search}
     />
   )

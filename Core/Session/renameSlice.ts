@@ -149,17 +149,19 @@ export const createRenameSlice: Slice<RenameSlice> = (set, get) => ({
       await flushAllSaves()
       return reportRefusal(await host().ask('nexus:rename', newName))
     }
+    const landed = async (req: MutateRequest): Promise<boolean> =>
+      (await get().mutate(req)) !== null
     // Registry entities rename by id: a bare folder rename strands every member's title key.
     if (kind === 'space' || kind === 'context') {
       const groups = get().tree?.contexts ?? []
       if (kind === 'space') {
         const sp = groups.flatMap((g) => g.spaces).find((s) => s.path === path)
-        return sp ? get().mutate({ op: 'renameSpace', spaceId: sp.id, newName }) : false
+        return sp ? landed({ op: 'renameSpace', spaceId: sp.id, newName }) : false
       }
       const group = groups.find((g) => contextDirRel(g.def.title) === path)
-      return group ? get().mutate({ op: 'renameContext', contextId: group.def.id, newName }) : false
+      return group ? landed({ op: 'renameContext', contextId: group.def.id, newName }) : false
     }
-    return get().mutate({
+    return landed({
       op: 'rename',
       path,
       kind,
