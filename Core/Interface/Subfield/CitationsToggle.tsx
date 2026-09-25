@@ -16,6 +16,7 @@ export function CitationsToggle({ page }: { page: SubfieldPage | null }): React.
     <button
       type="button"
       className={`footnotes-toggle reveal-toggle ${text.subline.emphasized}`}
+      data-reveal-host=""
       data-reveal-lead
       onClick={() => toggle(target.id)}
       onKeyDown={onActivateClick}

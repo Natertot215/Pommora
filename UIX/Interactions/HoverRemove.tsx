@@ -1,13 +1,14 @@
 import { Icon } from '../Symbols'
 import { cx } from '../Utilities/cx'
 import { overScrollHost, overScrollUnmasked } from './OverScroll'
+import { revealTarget } from './hover-reveal.css'
 import * as s from './hover-remove.css'
 
 export const hoverRemoveHost = cx(s.host, overScrollHost)
 
 const revealed = (el: Element): boolean => Number.parseFloat(getComputedStyle(el).opacity) > 0.5
 
-/** INERT until revealed, so a fast click on an invisible × can't silently delete a value. */
+/** A click mid-fade doesn't remove: the × acts only once it's more than half revealed. */
 export function HoverRemove({
   onRemove,
   children,
@@ -32,11 +33,8 @@ export function HoverRemove({
     <>
       <button
         type="button"
-        className={cx(
-          s.removeButton,
-          reveal === 'self' ? s.removeZone : s.revealFromHost,
-          className,
-        )}
+        className={cx(s.removeButton, reveal === 'self' ? s.removeZone : revealTarget, className)}
+        data-reveal-host={reveal === 'self' ? '' : undefined}
         aria-label={label}
         onPointerDown={(e) => {
           if (revealed(e.currentTarget)) e.stopPropagation()

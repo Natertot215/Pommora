@@ -128,7 +128,7 @@ export function StatusEditor({
     <div className={s.statusGroups} ref={reorder.containerRef}>
       {reorder.ghost}
       {groups.map((g) => (
-        <div key={g.id} className={s.statusGroup}>
+        <div key={g.id} className={s.statusGroup} data-reveal-host="">
           <div className={heading}>
             {renamingGroup === g.id ? (
               <OptionNameCaret

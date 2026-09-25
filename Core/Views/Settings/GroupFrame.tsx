@@ -23,6 +23,7 @@ import {
 } from '@pommora/uix/Menus'
 import { useDiscloseTarget } from '@pommora/uix/Interactions/dragDisclose'
 import { EyeToggle } from '@pommora/uix/Elements/EyeToggle'
+import { revealDim } from '@pommora/uix/Interactions/hover-reveal.css'
 import { DualSwitch } from '@pommora/uix/Controls/DualSwitch'
 import { useSaveView } from '../ViewTileScope'
 import { useContainerValues } from '../Host/useValuesEpoch'
@@ -326,7 +327,6 @@ export function GroupFrame({
 function SpringableRow({
   collapsed,
   onExpand,
-  className,
   refCb,
   handle,
   dimmed,
@@ -334,7 +334,6 @@ function SpringableRow({
 }: {
   collapsed: boolean
   onExpand: () => void
-  className: string
   refCb: (el: HTMLElement | null) => void
   handle: { onPointerDown: (e: React.PointerEvent) => void }
   dimmed: boolean
@@ -343,7 +342,7 @@ function SpringableRow({
   const discloseRef = useDiscloseTarget(collapsed && !dimmed, onExpand)
   return (
     <div
-      className={cx(className, dimmed && oo.ghosted)}
+      className={dimmed ? oo.ghosted : undefined}
       ref={(node) => {
         discloseRef.current = node
         refCb(node)
@@ -565,7 +564,7 @@ function LocationHierarchy({
             <EyeToggle
               hidden={isHidden}
               name={s.title}
-              className={isHidden ? undefined : gp.revealEye}
+              className={isHidden ? undefined : revealDim}
               onToggle={() => onToggleHidden(s.id)}
             />
           )
@@ -574,7 +573,6 @@ function LocationHierarchy({
           <SpringableRow
             collapsed={disclosable && !expanded.has(s.id)}
             onExpand={() => expanded.toggle(s.id)}
-            className={gp.rowHoverScope}
             refCb={dnd.rowRef(s.id)}
             handle={dnd.rowHandle(s.id)}
             dimmed={dnd.draggingId === s.id}

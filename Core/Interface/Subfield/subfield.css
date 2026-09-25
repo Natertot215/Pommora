@@ -80,7 +80,8 @@
   bottom: var(--reveal-band-h);
 }
 .content-view.subfield-near .subfield-toggle {
-  opacity: 1;
+  --reveal: 1;
+  --reveal-hits: auto;
 }
 .shell.is-resizing .subfield-toggle {
   transition: none;
@@ -98,7 +99,8 @@
   bottom: var(--reveal-band-h);
 }
 .content-view.subfield-near-lead .footnotes-toggle {
-  opacity: 1;
+  --reveal: 1;
+  --reveal-hits: auto;
 }
 .shell.is-resizing .footnotes-toggle {
   transition: none;

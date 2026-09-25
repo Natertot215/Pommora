@@ -366,6 +366,7 @@ function UnpinnedTab({
       {...drag?.handle}
       data-tab-id={entry.tab.id}
       {...tabHoverProps(entry)}
+      data-reveal-host=""
       className={cx(
         'tab',
         hoverRemoveHost,

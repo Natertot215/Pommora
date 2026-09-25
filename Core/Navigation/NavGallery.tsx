@@ -1,4 +1,5 @@
 import { cx } from '@pommora/uix/Utilities/cx'
+import { revealTarget } from '@pommora/uix/Interactions/hover-reveal.css'
 import { DropSlot, SortableZone, useDragItem, type DragItem } from '@pommora/uix/Interactions/drag'
 import {
   CardBody,
@@ -129,6 +130,7 @@ function GalleryCard({
       drag={drag}
       active={active}
       locked
+      data-reveal-host=""
       {...(drag ? {} : { onKeyDown: onActivateKey(() => onSelect(it.target)) })}
       onClick={open}
       onPointerEnter={(e) => {
@@ -147,7 +149,7 @@ function GalleryCard({
               <EntityIcon item={it} size="titleMedium" />
             </CardPlaceholder>
           )}
-          <NavPinButton it={it} className="card-pin" />
+          <NavPinButton it={it} className={cx(revealTarget, 'card-pin')} />
         </CardThumb>
         <CardText>
           <CardTitle>

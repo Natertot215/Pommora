@@ -4,6 +4,7 @@ import { font, text } from '../Theme/typography.css'
 import { tintAt } from '../Theme/colors'
 import { fieldRing, ROW_RING } from '../Fields/fieldRing'
 import { base } from '../Fields/fields.css'
+import { REVEAL_FADE, revealTarget } from '../Interactions/hover-reveal.css'
 
 const c = colorVars.color
 
@@ -144,11 +145,8 @@ export const gutter = style({
 
 export const overlay = style([
   gutter,
-  {
-    opacity: 0,
-    transition: 'opacity var(--duration-base) var(--ease-base)',
-    selectors: { [`${item}:hover &`]: { opacity: 1 } },
-  },
+  revealTarget,
+  { transition: REVEAL_FADE, vars: { '--reveal-fade': 'var(--duration-base)' } },
 ])
 
 export const side = style({

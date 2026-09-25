@@ -15,7 +15,8 @@ import {
 import { FrameSlide } from '@pommora/uix/Menus/frame-slide'
 import { useHeld } from '@pommora/uix/Animations/useExitPresence'
 import { HoverRemove, hoverRemoveHost } from '@pommora/uix/Interactions/HoverRemove'
-import { removeButton, revealFromHost } from '@pommora/uix/Interactions/hover-remove.css'
+import { removeButton } from '@pommora/uix/Interactions/hover-remove.css'
+import { revealTarget } from '@pommora/uix/Interactions/hover-reveal.css'
 import { side } from '@pommora/uix/Menus/menu-base.css'
 import { useKeepInView } from './useKeepInView'
 import { NavTrail } from '@pommora/uix/Elements/NavTrail'
@@ -105,7 +106,7 @@ export function AutocompletePane({
             ) : row.kind === 'page' ? (
               <button
                 type="button"
-                className={cx(removeButton, revealFromHost, side, 'mdpm-ac-aside')}
+                className={cx(removeButton, revealTarget, side, 'mdpm-ac-aside')}
                 aria-label={`Headings of ${row.value}`}
                 onMouseDown={(e) => {
                   e.preventDefault()

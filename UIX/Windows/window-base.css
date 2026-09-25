@@ -284,7 +284,7 @@
 .window [data-reveal-lead] {
   transition:
     bottom var(--duration-base) var(--ease-base),
-    opacity var(--duration-fast) var(--ease-base),
+    opacity var(--reveal-fade) var(--ease-base),
     background var(--duration-fast) var(--ease-base);
 }
 .window [data-reveal-lead] {
@@ -299,7 +299,8 @@
 }
 .window.is-footer-near-lead [data-reveal-lead],
 .window.is-footer-near .window-footer-toggle {
-  opacity: 1;
+  --reveal: 1;
+  --reveal-hits: auto;
 }
 
 .window-actions-flow {

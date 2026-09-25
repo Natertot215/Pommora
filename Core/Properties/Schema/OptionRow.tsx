@@ -87,7 +87,7 @@ function OptionRow({
           icon="square-pen"
           iconSize={s.ICON.optionEdit}
           className={s.optionEditButton}
-          style={editing ? { opacity: 1 } : undefined}
+          data-reveal-held={editing || undefined}
           aria-label="Edit Option"
           onClick={onToggleEditing}
         />
@@ -131,6 +131,7 @@ export function OptionSlot({
       ref={(el) => drag.registerRow(value, el)}
       {...ghostAnchorProps(ghost, value)}
       className={cx(s.optionRow, drag.dragging === value && s.rowDragging)}
+      data-reveal-host=""
       onPointerDown={(e) => drag.onRowPointerDown(value, e)}
       onContextMenu={(e) => {
         e.preventDefault()

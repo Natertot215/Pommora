@@ -7,6 +7,7 @@ import { button as eyeToggleButton } from '../Elements/eye-toggle.css'
 import { menuAnchor } from './menuAnchor'
 import { stack } from '../Theme/stack'
 import { fieldRing } from '../Fields/fieldRing'
+import { revealDim, revealTarget } from '../Interactions/hover-reveal.css'
 import { tintAt } from '../Theme/colors'
 const c = colorVars.color
 
@@ -101,13 +102,7 @@ export const optionEditor = chipList
 export const statusGroups = style([chipList, { gap: `${OPTION.groupGap}px` }])
 export const statusGroup = style({ display: 'flex', flexDirection: 'column' })
 
-export const groupAdd = style([
-  accessoryButton,
-  {
-    opacity: 0,
-    selectors: { [`${statusGroup}:hover &`]: { opacity: 1 } },
-  },
-])
+export const groupAdd = style([accessoryButton, revealTarget])
 
 export const optionList = style({
   display: 'flex',
@@ -156,13 +151,8 @@ export const optionAnchor = style({ position: 'relative', display: 'flex', align
 
 export const optionEditButton = style([
   accessoryButton,
-  {
-    opacity: 0,
-    selectors: {
-      [`${optionRow}:hover &`]: { opacity: 'var(--state-ghost)' },
-      [`${optionRow}:hover &:hover`]: { opacity: 1, background: c.state.hover },
-    },
-  },
+  revealDim,
+  { selectors: { '&:hover': { background: c.state.hover } } },
 ])
 
 export const configEditor = style({

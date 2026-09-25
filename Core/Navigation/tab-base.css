@@ -125,7 +125,7 @@
   border-radius: 6px;
   color: var(--label-secondary);
   transition:
-    opacity var(--duration-fast) var(--ease-base),
+    opacity var(--reveal-fade) var(--ease-base),
     background var(--duration-fast) var(--ease-base);
 }
 .tab-x.tab-x {

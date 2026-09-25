@@ -1,4 +1,5 @@
 import { style } from '@vanilla-extract/css'
+import { REVEAL_FADE } from './hover-reveal.css'
 
 // LOAD-BEARING: masks STATIC from mount, reveals flip OPACITIES only, the label pointer-inert. Any change here runs the reveal matrix — [[Build-Gotchas]] §Label Melt.
 
@@ -13,15 +14,7 @@ export const removeButton = style({
   color: 'var(--hover-remove-ink, inherit)',
   cursor: 'pointer',
   opacity: 0,
-  transition: 'opacity var(--duration-fast) var(--ease-base)',
-  selectors: {
-    // The click gate reads computed opacity, so a focused × has to be opaque to be pressable.
-    '&:focus-visible': { opacity: 1 },
-  },
-})
-
-export const revealFromHost = style({
-  selectors: { [`${host}:hover &`]: { opacity: 1 } },
+  transition: REVEAL_FADE,
 })
 
 export const removeZone = style({
@@ -34,9 +27,7 @@ export const removeZone = style({
   zIndex: 1,
   justifyContent: 'flex-end',
   padding: '0 2.5px 0 0',
-  selectors: {
-    '&:hover': { opacity: 1 },
-  },
+  opacity: 'var(--reveal, 0)',
 })
 
 const crispRamp =
