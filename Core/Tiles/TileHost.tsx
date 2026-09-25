@@ -1,3 +1,4 @@
+import { isPlainObject } from '../Properties/propertyValue'
 import { type CSSProperties, useCallback, useMemo, useRef, useState } from 'react'
 import {
   knownTile,
@@ -21,7 +22,6 @@ import { useDismissal } from '@pommora/uix/Interactions/dismissalStack'
 import { entityIcon } from '../Assets/entityIconPolicy'
 import type { EntityIconKind } from '@pommora/core/Settings/personalization'
 import { useSession } from '../Session/store'
-import { isPlainObject } from '../Properties/propertyValue'
 import { popMenu } from '../Actions/menuActions'
 import { askRemoveTile } from '../Interface/Confirm/confirmations'
 import { notifyUndoable, reportRefusal } from '../Interface/Notifications/notifications'
@@ -39,6 +39,7 @@ import { isTileRemoving, markTileRemoving, readTileBody, unmarkTileRemoving } fr
 import { useTileDoc } from './useTileDoc'
 import { host as dialer } from '../Platform/dialer'
 import { cx } from '@pommora/uix/Utilities/cx'
+import { RenderBoundary } from '@pommora/uix/Elements/RenderBoundary'
 import './tile-base.css'
 
 function pagePickerItems(
@@ -352,24 +353,30 @@ export function TileHost({
     ],
   )
 
+  // A faulted tile retries when the Nexus or any entry changes, since either may be what it couldn't draw.
+  const retry = useMemo(() => [tree, entries], [tree, entries])
   const renderTile = useCallback(
     (id: string) => {
       const entry = entries.get(id)
       if (!entry) return inertTile()
-      return renderSurface({
-        entry,
-        id,
-        host,
-        editing: editingId === id,
-        beginEdit: setEditingId,
-        connections: conn,
-        openPage: openRoute,
-        suppressFlush: isTileRemoving,
-        pagesById,
-        mutateEntry,
-      })
+      return (
+        <RenderBoundary resetKey={retry}>
+          {renderSurface({
+            entry,
+            id,
+            host,
+            editing: editingId === id,
+            beginEdit: setEditingId,
+            connections: conn,
+            openPage: openRoute,
+            suppressFlush: isTileRemoving,
+            pagesById,
+            mutateEntry,
+          })}
+        </RenderBoundary>
+      )
     },
-    [entries, editingId, conn, openRoute, pagesById, host, mutateEntry],
+    [entries, editingId, conn, openRoute, pagesById, host, mutateEntry, retry],
   )
 
   const onBackdrop = useCallback(

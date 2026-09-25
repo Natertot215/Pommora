@@ -30,6 +30,7 @@ import { MenuPresenter } from './Menus/MenuPresenter'
 import { ValuePickPresenter } from './Menus/ValuePickPresenter'
 import { DragGroup, DropSlot } from '@pommora/uix/Interactions/drag'
 import { cx } from '@pommora/uix/Utilities/cx'
+import { RenderBoundary } from '@pommora/uix/Elements/RenderBoundary'
 
 export function App(): React.JSX.Element {
   // Per-field selectors, never the bare hook — the shell must not re-render on every store set().
@@ -173,7 +174,11 @@ export function App(): React.JSX.Element {
               <span className="state-detail">{error?.message}</span>
             </div>
           )}
-          {status === 'ready' && tree && <Sidebar tree={tree} />}
+          {status === 'ready' && tree && (
+            <RenderBoundary resetKey={tree}>
+              <Sidebar tree={tree} />
+            </RenderBoundary>
+          )}
         </Surface>
         {status === 'ready' && !sidebarHidden && <div className="sidebar-titlebar" />}
         {!sidebarHidden && (

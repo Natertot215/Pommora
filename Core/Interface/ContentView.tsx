@@ -1,5 +1,6 @@
 import { memo, useEffect, useLayoutEffect, useMemo, useRef } from 'react'
 import { cx } from '@pommora/uix/Utilities/cx'
+import { RenderBoundary } from '@pommora/uix/Elements/RenderBoundary'
 import { navKey, type SelectionState, type Tab } from '@pommora/core/Navigation/navRef'
 import {
   frozenOf,
@@ -178,7 +179,9 @@ export function ContentView(): React.JSX.Element {
         {hosts.map((h) => (
           <ContentHostContext.Provider key={h.key} value={h}>
             <div className={cx('detail-host', h.parked && 'is-parked')} inert={h.parked}>
-              <HostView host={h} />
+              <RenderBoundary resetKey={tree}>
+                <HostView host={h} />
+              </RenderBoundary>
             </div>
           </ContentHostContext.Provider>
         ))}
