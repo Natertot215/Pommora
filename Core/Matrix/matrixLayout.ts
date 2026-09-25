@@ -1,11 +1,11 @@
 import { isFiniteNumber, isPlainObject } from '../Contract/validators'
-import type { Frame } from './Engine/viewport'
+import type { Lens } from './Engine/viewport'
 
 export type Positions = Record<string, [number, number]>
 
 export interface MatrixLayout {
   positions: Positions
-  frame: Frame | null
+  lens: Lens | null
 }
 
 // Positions are one row per node, so a save sends only the nodes that moved; a null clears a node the tree has lost.
@@ -13,7 +13,7 @@ export type PositionRows = Record<string, [number, number] | null>
 
 export interface LayoutPatch {
   positions?: PositionRows
-  frame?: Frame
+  lens?: Lens
 }
 
 // The layout is machine-local and regenerative, so a row that no longer reads is dropped on its own rather than taking every other node's place with it.
@@ -33,7 +33,7 @@ const isPositionRows = (v: unknown): v is PositionRows =>
       (Array.isArray(p) && p.length === 2 && isFiniteNumber(p[0]) && isFiniteNumber(p[1])),
   )
 
-export const isFrame = (v: unknown): v is Frame =>
+export const isLens = (v: unknown): v is Lens =>
   isPlainObject(v) &&
   isFiniteNumber(v.cx) &&
   isFiniteNumber(v.cy) &&
@@ -45,5 +45,5 @@ export const isFrame = (v: unknown): v is Frame =>
 export const isLayoutPatch = (v: unknown): v is LayoutPatch =>
   isPlainObject(v) &&
   (v.positions === undefined || isPositionRows(v.positions)) &&
-  (v.frame === undefined || isFrame(v.frame)) &&
-  (v.positions !== undefined || v.frame !== undefined)
+  (v.lens === undefined || isLens(v.lens)) &&
+  (v.positions !== undefined || v.lens !== undefined)

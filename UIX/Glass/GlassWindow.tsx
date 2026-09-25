@@ -1,6 +1,6 @@
 import type { HTMLAttributes, ReactNode, Ref } from 'react'
 import { cx } from '../Utilities/cx'
-import { frostRim, frostStyle, WINDOW_FROST } from './glass-base'
+import { frostRim, frostStyle, WINDOW_FROST } from './glassBase'
 import * as s from './glass-window.css'
 
 const FROST = frostStyle(WINDOW_FROST, false)

@@ -5,11 +5,11 @@ import { createRoot, type Root } from 'react-dom/client'
 import { firePointer, pressEscape, stubPointerCapture } from './pointerHarness'
 import {
   onScreen,
-  useResizeFrame,
+  useResizable,
   type Rect,
-  type ResizeFrameSpec,
+  type ResizableSpec,
   type ResizeGrip,
-} from './ResizeFrame'
+} from './useResizable'
 ;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
 
 stubPointerCapture()
@@ -28,21 +28,21 @@ afterEach(() => {
   host.remove()
 })
 
-function Frame<R extends Partial<Rect>>(
-  props: ResizeFrameSpec<R> & { grip: ResizeGrip },
+function Box<R extends Partial<Rect>>(
+  props: ResizableSpec<R> & { grip: ResizeGrip },
 ): React.JSX.Element {
-  const frame = useResizeFrame(props)
+  const resize = useResizable(props)
   return (
-    <div className="box" onPointerDown={frame.start(props.grip)}>
-      {frame.edges(['se'])}
+    <div className="box" onPointerDown={resize.start(props.grip)}>
+      {resize.edges(['se'])}
     </div>
   )
 }
 
 const mount = <R extends Partial<Rect>>(
-  spec: ResizeFrameSpec<R> & { grip: ResizeGrip },
+  spec: ResizableSpec<R> & { grip: ResizeGrip },
 ): HTMLElement => {
-  act(() => root.render(<Frame {...spec} />))
+  act(() => root.render(<Box {...spec} />))
   return host.querySelector('.box') as HTMLElement
 }
 
@@ -52,8 +52,8 @@ const drag = (el: HTMLElement, x: number, y: number): void => {
 }
 const release = (): void => act(() => firePointer(window, 'pointerup'))
 
-describe('the resize frame', () => {
-  it('an equilateral frame grows the same size from either side and holds its origin', () => {
+describe('a resizable box', () => {
+  it('an equilateral box grows the same size from either side and holds its origin', () => {
     const onChange = vi.fn()
     const spec = { rect: { w: 200, h: 100 }, min: { w: 50 }, equilateral: true, onChange }
     drag(mount({ ...spec, grip: 'e' }), 30, 0)
@@ -65,7 +65,7 @@ describe('the resize frame', () => {
     release()
   })
 
-  it('a free frame carries its origin on a leading-edge pull and clamps at the viewport', () => {
+  it('a free box carries its origin on a leading-edge pull and clamps at the viewport', () => {
     const onChange = vi.fn()
     const rect = { x: 100, y: 50, w: 200, h: 100 }
     drag(mount({ rect, min: { w: 50, h: 50 }, onChange, grip: 'w' }), -150, 0)
@@ -145,7 +145,7 @@ describe('the resize frame', () => {
     expect(onChange).not.toHaveBeenCalledWith(expect.anything(), 'drop', 's')
   })
 
-  it('a move keeps a grab of the frame on screen', () => {
+  it('a move keeps a grab of the box on screen', () => {
     const onChange = vi.fn()
     drag(mount({ rect: { x: 100, y: 50, w: 200, h: 100 }, onChange, grip: 'move' }), 5000, -500)
     expect(onChange).toHaveBeenLastCalledWith({ x: 920, y: 0, w: 200, h: 100 }, 'move', 'move')

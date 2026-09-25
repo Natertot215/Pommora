@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { paneMaterial } from '@pommora/uix/Glass/glass-base'
+import { paneMaterial } from '@pommora/uix/Glass/glassBase'
 import { Icon } from '@pommora/uix/Symbols'
 import { leafById } from './Leaves/registry'
 import { NavSections } from './NavSections'

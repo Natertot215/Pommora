@@ -3,20 +3,20 @@ import { titleActionFade, titleReveal } from '@pommora/uix/Animations/animations
 import { vars as colorVars } from '@pommora/uix/Theme/color.css'
 import { font } from '@pommora/uix/Theme/typography.css'
 import { duration, easing } from '@pommora/uix/Animations/motion'
-import { accessoryButton } from '@pommora/uix/Menus/menu-base.css'
+import { accessoryButton } from '@pommora/uix/Menus/menu-row.css'
 import { REVEAL_FADE, revealTarget } from '@pommora/uix/Interactions/hover-reveal.css'
-import { SEGMENT_H, segmentRow } from '@pommora/uix/Elements/action-band.css'
+import { VIEW_PILL_H, viewStrip } from '@pommora/uix/Elements/view-strip.css'
 import { SETTING_DEFAULTS, embedZoom, viewEmbedZoom } from '@pommora/core/Settings/personalization'
 
 const c = colorVars.color
 
 const HEAD_PAD_L = '14px'
 const HEAD_PAD_R = '12px'
-const BAND_PAD_Y = '6px'
-const bandReveal = `${duration.menu} ${easing.baseEase}`
+const STRIP_PAD_Y = '6px'
+const stripReveal = `${duration.menu} ${easing.baseEase}`
 
-// KNOB — how far the scroll region rises BEHIND the transparent switcher so rows flow UNDER the whole toolbar and dissolve at the title divider, matching the switcher's full height.
-const FADE_RISE = `calc(${SEGMENT_H} + 12px)`
+// KNOB — how far the scroll region rises BEHIND the transparent strip so rows flow UNDER the whole strip and dissolve at the title divider, matching the strip's full height.
+const FADE_RISE = `calc(${VIEW_PILL_H} + 12px)`
 
 export const tile = style({
   display: 'flex',
@@ -67,12 +67,12 @@ export const titleSpaceHidden = style({
   gridTemplateRows: '0fr',
   transitionDelay: duration.menu,
 })
-export const bandSpace = style({
+export const stripSpace = style({
   display: 'grid',
   gridTemplateRows: '1fr',
-  transition: `grid-template-rows ${bandReveal}`,
+  transition: `grid-template-rows ${stripReveal}`,
 })
-export const bandSpaceHidden = style({ gridTemplateRows: '0fr' })
+export const stripSpaceHidden = style({ gridTemplateRows: '0fr' })
 export const spaceInner = style({ minHeight: 0, overflow: 'hidden' })
 
 export const titleIcon = style({ color: c.label.control })
@@ -91,10 +91,10 @@ export const titleText = style({
   outline: 'none',
 })
 
-export const switcherRow = style([
-  segmentRow,
+export const stripRow = style([
+  viewStrip,
   {
-    padding: `${BAND_PAD_Y} ${HEAD_PAD_R} ${BAND_PAD_Y} ${HEAD_PAD_L}`,
+    padding: `${STRIP_PAD_Y} ${HEAD_PAD_R} ${STRIP_PAD_Y} ${HEAD_PAD_L}`,
     flex: 'none',
     position: 'relative',
     zIndex: 1, // paints over the scroll region that rises behind it (FADE_RISE)
@@ -115,7 +115,7 @@ export const slideWrap = style({
 export const newView = style([revealTarget, { display: 'inline-flex', transition: REVEAL_FADE }])
 globalStyle(`${newView} ${accessoryButton}`, { color: c.label.secondary })
 
-export const bandLock = style([titleActionFade, { display: 'inline-flex' }])
+export const stripLock = style([titleActionFade, { display: 'inline-flex' }])
 
 export const listPane = style({ minWidth: 150 })
 
@@ -127,14 +127,14 @@ export const body = style({
   overflowY: 'auto',
   marginTop: `calc(-1 * ${FADE_RISE})`,
   paddingTop: FADE_RISE,
-  transition: `margin-top ${bandReveal}, padding-top ${bandReveal}`,
+  transition: `margin-top ${stripReveal}, padding-top ${stripReveal}`,
   vars: { '--over-scroll-fade': FADE_RISE },
 })
 
 export const bodyFlush = style({
   marginTop: 0,
-  paddingTop: BAND_PAD_Y,
-  vars: { '--over-scroll-fade': BAND_PAD_Y },
+  paddingTop: STRIP_PAD_Y,
+  vars: { '--over-scroll-fade': STRIP_PAD_Y },
 })
 
 globalStyle(`${body} .table-view`, {

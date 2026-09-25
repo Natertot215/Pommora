@@ -1,7 +1,7 @@
 import { globalStyle, style } from '@vanilla-extract/css'
 import { stack } from '../Theme/stack'
 import { fieldRing, ROW_RING } from '../Fields/fieldRing'
-import { check, itemChecked, menuCompact } from '../Menus/menu-base.css'
+import { check, itemChecked, menuCompact } from '../Menus/menu-row.css'
 
 /** KNOB — a picker's height ceiling; below MENU_MAX_HEIGHT because a picker hangs off a control rather than filling a pane. */
 export const PICKER_MAX_HEIGHT = 240

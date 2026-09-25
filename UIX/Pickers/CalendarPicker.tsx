@@ -7,12 +7,12 @@ import { Icon } from '../Symbols'
 import { DualSwitch } from '../Controls/DualSwitch'
 import { usePointerGesture } from '../Interactions/gesture'
 import { OverScroll } from '../Interactions/OverScroll'
-import { PickerMenu } from './picker-base'
-import { MenuItem } from '../Menus/menu-row'
+import { PickerMenu } from './PickerMenu'
+import { MenuItem } from '../Menus/MenuRows'
 import { cx } from '../Utilities/cx'
 import { localDayKey, pad } from '../Utilities/pad'
-import { rowBox } from '../Menus/menu-base.css'
-import { MenuScrollFrame } from '../Menus/menu-row'
+import { rowBox } from '../Menus/menu-row.css'
+import { MenuScrollFrame } from '../Menus/MenuRows'
 import * as s from './calendar-picker.css'
 import { clamp } from '../Utilities/clamp'
 import { useLatest } from '../Utilities/stableApi'
@@ -80,7 +80,7 @@ export function CalendarPicker({
     part: 'h' | 'm'
     at: Anchor
   } | null>(null)
-  const [segEdit, setSegEdit] = useState<{
+  const [partEdit, setPartEdit] = useState<{
     which: 'start' | 'end'
     part: 'h' | 'm'
     draft: string
@@ -279,7 +279,7 @@ export function CalendarPicker({
     (twelve ? (v % 12) + (mins >= 720 ? 12 : 0) : v) * 60 + (mins % 60)
   const minuteToMins = (v: number, mins: number): number => Math.floor(mins / 60) * 60 + v
   const hourText = (v: number): string => (twelve ? String(v) : pad(v))
-  const segText = (part: 'h' | 'm', mins: number): string =>
+  const partText = (part: 'h' | 'm', mins: number): string =>
     part === 'h' ? hourText(hourShown(mins)) : pad(mins % 60)
 
   const dateField = (
@@ -295,47 +295,47 @@ export function CalendarPicker({
     </div>
   )
 
-  const segCommit = (): void => {
-    if (!segEdit) return
-    const v = Number(segEdit.draft)
-    if (segEdit.draft !== '' && Number.isFinite(v)) {
-      const mins = minsOf(segEdit.which)
-      const setMins = setMinsFor(segEdit.which)
-      if (segEdit.part === 'h') {
+  const partCommit = (): void => {
+    if (!partEdit) return
+    const v = Number(partEdit.draft)
+    if (partEdit.draft !== '' && Number.isFinite(v)) {
+      const mins = minsOf(partEdit.which)
+      const setMins = setMinsFor(partEdit.which)
+      if (partEdit.part === 'h') {
         const clamped = twelve ? clamp(v, 1, 12) : Math.min(v, 23)
         setMins(hourToMins(clamped, mins))
       } else setMins(minuteToMins(Math.min(v, 59), mins))
     }
-    setSegEdit(null)
+    setPartEdit(null)
   }
-  const timeSegment = (which: 'start' | 'end', part: 'h' | 'm', mins: number): React.JSX.Element =>
-    segEdit?.which === which && segEdit.part === part ? (
+  const timePart = (which: 'start' | 'end', part: 'h' | 'm', mins: number): React.JSX.Element =>
+    partEdit?.which === which && partEdit.part === part ? (
       <input
         key={`${which}-${part}-edit`}
-        className={s.timeSegInput}
-        value={segEdit.draft}
-        placeholder={segText(part, mins)}
+        className={s.timePartInput}
+        value={partEdit.draft}
+        placeholder={partText(part, mins)}
         // biome-ignore lint/a11y/noAutofocus: the surface exists to take focus the moment it opens; that IS the interaction
         autoFocus
         spellCheck={false}
         onChange={(e) => {
           const draft = e.target.value
-          if (/^\d{0,2}$/.test(draft)) setSegEdit({ which, part, draft })
+          if (/^\d{0,2}$/.test(draft)) setPartEdit({ which, part, draft })
         }}
         onKeyDown={(e) => {
-          if (e.key === 'Enter') segCommit()
+          if (e.key === 'Enter') partCommit()
           else if (e.key === 'Escape') {
             e.preventDefault()
-            setSegEdit(null)
+            setPartEdit(null)
           }
         }}
-        onBlur={segCommit}
+        onBlur={partCommit}
       />
     ) : (
       <button
         type="button"
         key={`${which}-${part}`}
-        className={s.timeSeg}
+        className={s.timePart}
         onClick={(e) => {
           if (e.detail > 1) return
           setTimeMenu(
@@ -346,18 +346,18 @@ export function CalendarPicker({
         }}
         onDoubleClick={() => {
           setTimeMenu(null)
-          setSegEdit({ which, part, draft: '' })
+          setPartEdit({ which, part, draft: '' })
         }}
       >
-        {segText(part, mins)}
+        {partText(part, mins)}
       </button>
     )
-  const ampmSegment = (which: 'start' | 'end', mins: number): React.JSX.Element => {
+  const ampmPart = (which: 'start' | 'end', mins: number): React.JSX.Element => {
     const setMins = setMinsFor(which)
     return (
       <button
         type="button"
-        className={s.timeSeg}
+        className={s.timePart}
         onClick={() => setMins(mins >= 720 ? mins - 720 : mins + 720)}
       >
         {mins >= 720 ? 'PM' : 'AM'}
@@ -372,13 +372,13 @@ export function CalendarPicker({
     <div className={cx(s.field, s.fieldTime)} key={label}>
       <Icon name="clock" size="body" className={s.fieldIcon} />
       {mins !== null ? (
-        <span className={s.timeSegs}>
+        <span className={s.timeParts}>
           <span className={s.hmGroup}>
-            {timeSegment(which, 'h', mins)}
+            {timePart(which, 'h', mins)}
             <span className={s.timeColon}>:</span>
-            {timeSegment(which, 'm', mins)}
+            {timePart(which, 'm', mins)}
           </span>
-          {twelve && ampmSegment(which, mins)}
+          {twelve && ampmPart(which, mins)}
         </span>
       ) : (
         <EmptyValue className={s.fieldValue} />
@@ -531,7 +531,7 @@ export function CalendarPicker({
             onChange={(v) => {
               setEndOn(v)
               if (!v) setEnd(null)
-              setSegEdit(null)
+              setPartEdit(null)
             }}
           />
         </div>
@@ -543,7 +543,7 @@ export function CalendarPicker({
           ariaLabel="Use Time"
           onChange={(v) => {
             setTimeOn(v)
-            setSegEdit(null)
+            setPartEdit(null)
           }}
         />
       </div>

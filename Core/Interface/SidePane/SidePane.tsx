@@ -1,4 +1,4 @@
-import { GlassPane } from '@pommora/uix/Glass/glass-pane'
+import { GlassPane } from '@pommora/uix/Glass/GlassPane'
 import { paneSlide } from '@pommora/uix/Animations/paneSlide'
 import { cx } from '@pommora/uix/Utilities/cx'
 import { publishChromePart } from '../chromeParts'

@@ -1,6 +1,6 @@
 import { style } from '@vanilla-extract/css'
 import { ghostRest } from '../Buttons/button-base.css'
-import { accessoryButton } from '../Menus/menu-base.css'
+import { accessoryButton } from '../Menus/menu-row.css'
 
 export const button = style([accessoryButton, ghostRest])
 

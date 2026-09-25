@@ -7,9 +7,9 @@ const c = colorVars.color
 /** KNOB — how far a subordinate Order row tucks toward its parent row. */
 const SUB_ORDER_GAP = '-4px'
 
-export const subRow = style({ marginTop: SUB_ORDER_GAP })
+export const subOrderRow = style({ marginTop: SUB_ORDER_GAP })
 
-export const subLabel = style([text.body.emphasized, { color: c.label.secondary }])
+export const orderLabel = style([text.body.emphasized, { color: c.label.secondary }])
 
 export const dropLineInset = style({ left: '8px', right: '8px' })
 

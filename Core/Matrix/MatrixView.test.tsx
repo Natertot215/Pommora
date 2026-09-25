@@ -43,7 +43,7 @@ const drain = (limit = 50): void => {
   }
 }
 
-// The stage is 800×600 and framed on the origin at zoom 1, so p1, seated at the origin, sits at the canvas centre.
+// The stage is 800×600 and its lens centres on the origin at zoom 1, so p1, seated at the origin, sits at the canvas centre.
 const CENTRE = { clientX: 400, clientY: 300 }
 const FAR = { clientX: 20, clientY: 20 }
 
@@ -97,7 +97,7 @@ beforeEach(() => {
       ['p1', [0, 0]],
       ...['p2', 'c1', 's1', 'a1', 't1', 'pr1'].map((id, i) => [id, far(i)]),
     ]),
-    matrixFrame: { cx: 0, cy: 0, w: 800, h: 600 },
+    matrixLens: { cx: 0, cy: 0, w: 800, h: 600 },
     matrixLoad: { kind: 'loaded' },
   } as never)
   host = document.createElement('div')

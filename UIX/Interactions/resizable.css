@@ -1,4 +1,4 @@
-/* Invisible bands over the positioned box's edges; a strip is the same band, seated by its host. */
+/* Invisible handles over the positioned box's edges; a strip is the same handle, seated by its host. */
 .resize-edge,
 .resize-strip {
   position: absolute;

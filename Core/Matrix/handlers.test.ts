@@ -55,7 +55,7 @@ describe('the layout channels', () => {
         ok: false,
         error: {
           code: 'operation-failed',
-          message: 'A layout patch needs finite positions or a finite frame.',
+          message: 'A layout patch needs finite positions or a finite lens.',
         },
       },
     )
@@ -63,7 +63,7 @@ describe('the layout channels', () => {
       ok: false,
       error: {
         code: 'operation-failed',
-        message: 'A layout patch needs finite positions or a finite frame.',
+        message: 'A layout patch needs finite positions or a finite lens.',
       },
     })
   })
@@ -81,11 +81,11 @@ describe('the layout channels', () => {
 
   it('writes either half alone and loads both back', async () => {
     matrixHandlers['matrixLayout:save'](ctx, { positions: { a: [1, 2] } })
-    matrixHandlers['matrixLayout:save'](ctx, { frame: { cx: 5, cy: 6, w: 7, h: 8 } })
+    matrixHandlers['matrixLayout:save'](ctx, { lens: { cx: 5, cy: 6, w: 7, h: 8 } })
     const reply = await matrixHandlers['matrixLayout:load'](ctx)
     expect(reply).toEqual({
       ok: true,
-      value: { positions: { a: [1, 2] }, frame: { cx: 5, cy: 6, w: 7, h: 8 } },
+      value: { positions: { a: [1, 2] }, lens: { cx: 5, cy: 6, w: 7, h: 8 } },
     })
   })
 
@@ -94,7 +94,7 @@ describe('the layout channels', () => {
     writeValue('matrixFrame', { cx: 0, cy: 0, w: 0, h: 0 })
     expect(await matrixHandlers['matrixLayout:load'](ctx)).toEqual({
       ok: true,
-      value: { positions: {}, frame: null },
+      value: { positions: {}, lens: null },
     })
   })
 
@@ -116,10 +116,10 @@ describe('the layout channels', () => {
     expect(readScope('matrixLayout')).toEqual({ b: [9, 9], c: [5, 5] })
   })
 
-  it('loads an unwritten layout as an empty map and no frame', async () => {
+  it('loads an unwritten layout as an empty map and no lens', async () => {
     expect(await matrixHandlers['matrixLayout:load'](ctx)).toEqual({
       ok: true,
-      value: { positions: {}, frame: null },
+      value: { positions: {}, lens: null },
     })
   })
 })

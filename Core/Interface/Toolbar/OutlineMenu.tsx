@@ -16,7 +16,7 @@ import { outlineTree, type OutlineNode } from '../../MarkdownPM/Engine/outlineTr
 import { OutlineDnd, useOutlineDrag } from './OutlineDnd'
 import * as s from './toolbar-menu.css'
 import * as o from './outline-menu.css'
-import { rowDragging } from '@pommora/uix/Menus/menu-base.css'
+import { rowDragging } from '@pommora/uix/Menus/menu-row.css'
 
 type Disclosure = ReturnType<typeof useDisclosureSet>
 

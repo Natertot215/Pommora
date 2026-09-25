@@ -1,6 +1,6 @@
 import { type ButtonHTMLAttributes, Fragment, type ReactNode, type Ref } from 'react'
 import { segment } from '../Elements/segment.css'
-import { GlassControl } from '../Glass/glass-control'
+import { GlassControl } from '../Glass/GlassControl'
 import { revealTarget } from '../Interactions/hover-reveal.css'
 import { Icon } from '../Symbols'
 import { type ButtonSize, type IconSize, size as sizeTokens } from '../Theme/theme-vars.css'

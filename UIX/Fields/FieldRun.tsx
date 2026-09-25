@@ -1,9 +1,9 @@
 import { Fragment } from 'react'
 import { OverScroll } from '../Interactions/OverScroll'
-import * as sr from './segment-run.css'
+import * as fr from './field-run.css'
 import { PlainLabel } from '../Labels/recipes'
 
-interface SegmentEntry {
+interface RunEntry {
   key: string
   label: string
   icon?: React.ReactNode
@@ -11,13 +11,13 @@ interface SegmentEntry {
   onRemove?: () => void
 }
 
-export function SegmentRun({ entries }: { entries: SegmentEntry[] }): React.JSX.Element {
+export function FieldRun({ entries }: { entries: RunEntry[] }): React.JSX.Element {
   return (
-    <OverScroll className={sr.segmentRun}>
+    <OverScroll className={fr.fieldRun}>
       {entries.map((e, i) => (
         <Fragment key={e.key}>
-          {i > 0 && <span className={sr.segmentDivider} />}
-          <span className={sr.segment}>
+          {i > 0 && <span className={fr.runDivider} />}
+          <span className={fr.runItem}>
             <PlainLabel
               text={e.label}
               icon={e.icon}

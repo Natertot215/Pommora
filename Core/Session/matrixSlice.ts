@@ -1,4 +1,4 @@
-import type { Frame } from '@pommora/core/Matrix/Engine/viewport'
+import type { Lens } from '@pommora/core/Matrix/Engine/viewport'
 import {
   applyPatch,
   DEFAULT_MATRIX_CONFIG,
@@ -33,7 +33,7 @@ export interface MatrixSlice {
   matrixConfig: MatrixConfig
   matrixGraph: MatrixGraphReply
   matrixPositions: Positions
-  matrixFrame: Frame | null
+  matrixLens: Lens | null
   matrixLoad: MatrixLoad
   loadMatrix: () => Promise<void>
   patchMatrix: (patch: MatrixPatch) => void
@@ -41,7 +41,7 @@ export interface MatrixSlice {
   refetchMatrixPages: (pageIds: Iterable<string>) => void
   refetchMatrixPaths: (paths: string[]) => void
   saveMatrixLayout: (rows: PositionRows) => void
-  saveMatrixFrame: (frame: Frame) => void
+  saveMatrixLens: (lens: Lens) => void
   unloadMatrix: () => void
   resetMatrix: () => void
 }
@@ -60,7 +60,7 @@ function withRows(held: Positions, rows: PositionRows): Positions {
 const HELD = {
   matrixGraph: EMPTY_GRAPH_REPLY,
   matrixPositions: {},
-  matrixFrame: null,
+  matrixLens: null,
 } satisfies Partial<MatrixSlice>
 
 const linkKey = (l: MatrixLink): string =>
@@ -77,7 +77,7 @@ const sameLinks = (a: MatrixLink[], b: MatrixLink[]): boolean => {
 const REFETCH_MS = 150
 
 // The layout rides the session writer, so a burst of saves coalesces, lands on close and quit, and is held or cancelled across a Nexus switch like every other session save.
-const FRAME_KEY = 'matrix-frame'
+const LENS_KEY = 'matrix-lens'
 const LAYOUT_KEY = 'matrix-layout'
 
 export const createMatrixSlice: Slice<MatrixSlice> = (set, get) => {
@@ -180,7 +180,7 @@ export const createMatrixSlice: Slice<MatrixSlice> = (set, get) => {
       set({
         matrixGraph: graph.value,
         matrixPositions: positions,
-        matrixFrame: layout.ok ? layout.value.frame : null,
+        matrixLens: layout.ok ? layout.value.lens : null,
         matrixLoad: { kind: 'loaded' },
       })
       // A node the tree has lost is let go once, as the layout loads.
@@ -230,15 +230,15 @@ export const createMatrixSlice: Slice<MatrixSlice> = (set, get) => {
       })
     },
 
-    // Not written back to `matrixFrame`: only a first build reads it, and every first build follows a load that read it fresh.
-    saveMatrixFrame: (frame) => {
+    // Not written back to `matrixLens`: only a first build reads it, and every first build follows a load that read it fresh.
+    saveMatrixLens: (lens) => {
       if (get().matrixLoad.kind !== 'loaded') return
-      sessionWriter.schedule(FRAME_KEY, () => dialer().ask('matrixLayout:save', { frame }))
+      sessionWriter.schedule(LENS_KEY, () => dialer().ask('matrixLayout:save', { lens }))
     },
 
     // The last surface closing, or a switch landing: owed saves land, the graph and its refetches go, and the config stays for the menus that patch it.
     unloadMatrix: () => {
-      void sessionWriter.flush(FRAME_KEY)
+      void sessionWriter.flush(LENS_KEY)
       void sessionWriter.flush(LAYOUT_KEY)
       letGo()
       set({ ...HELD, matrixLoad: UNLOADED })

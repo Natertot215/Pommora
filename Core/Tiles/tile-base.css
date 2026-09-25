@@ -52,9 +52,9 @@
   /* The detail lane scales off --page-detail-scale, so the whole embed's geometry follows the Embed Scale setting. */
   --page-detail-scale: var(--embed-scale);
   --rail-inset: calc(var(--rail-inset-base) * var(--page-detail-scale));
-  /* KNOB — the embed banner band's height. */
+  /* KNOB — the embed banner's height. */
   --embed-banner-h: 96px;
-  /* Resets the band an outer page declares, so an uncovered embed never inherits it. */
+  /* Resets the banner an outer page declares, so an uncovered embed never inherits it. */
   --header-zone: initial;
   /* Re-homes the scroll timeline at the tile (the shell's page-wide scope stands down here) so each nested tile's banner binds to its own page's scroller. */
   timeline-scope: --mdpm-scroll;
@@ -106,21 +106,21 @@
 .page-tile.has-banner {
   --header-zone: var(--embed-banner-h);
 }
-/* The banner sits out of flow, its height reserved as editor padding, because an in-flow band inside this clipped tile would strand the editor past the clip. Keyframes and range both read --header-zone, so re-pointing it at the banner's height is the whole retarget. */
+/* The banner sits out of flow, its height reserved as editor padding, because an in-flow banner inside this clipped tile would strand the editor past the clip. Keyframes and range both read --header-zone, so re-pointing it at the banner's height is the whole retarget. */
 .page-tile.has-banner .mdpm-editor .cm-content {
   padding-top: calc(var(--embed-banner-h) + 16px * var(--page-detail-scale));
 }
 .page-tile .banner-img {
   -webkit-user-drag: none;
 }
-/* This var exists because the page rung's band stands without .mdpm-header, which normally supplies it; .detail-title-text already carries weight and color. */
+/* This var exists because the page rung's banner stands without .mdpm-header, which normally supplies it; .detail-title-text already carries weight and color. */
 .page-tile:not(.is-window-chrome) .banner-overlay {
   --detail-title-size: calc(var(--text-title-large-size) * var(--page-detail-scale));
   left: calc(16px * var(--page-detail-scale));
   right: calc(16px * var(--page-detail-scale));
 }
 
-/* The window's header sits in flow, so the main shell's parked-absolute header stands down. Anchored at the rung's own header: a page embed nested in this editor keeps the out-of-flow band above. */
+/* The window's header sits in flow, so the main shell's parked-absolute header stands down. Anchored at the rung's own header: a page embed nested in this editor keeps the out-of-flow banner above. */
 .page-tile.is-window-chrome > .mdpm-header {
   position: static;
   animation: none;

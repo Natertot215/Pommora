@@ -21,14 +21,14 @@ import {
   wakeLocal,
 } from './Engine/simulation'
 import {
-  lifeSize,
   fit,
-  type Frame,
-  framed,
-  panFrame,
+  type Lens,
+  lifeSize,
+  panLens,
   type Stage,
-  zoomFrame,
   type Viewport,
+  lensViewport,
+  zoomLens,
 } from './Engine/viewport'
 import { type MatrixConfig, sameForces } from './matrixConfig'
 import { matrixConnections, matrixTree, matrixVisible, type MatrixTree } from './matrixInput'
@@ -68,7 +68,7 @@ class MatrixRuntime {
   graph: Graph = EMPTY
   mode: GroupMode = 'connection'
   sim: Simulation | null = null
-  frame: Frame | null = null
+  lens: Lens | null = null
   hoveredId: string | null = null
   acting: string | null = null
   ghosts: Array<{ x: number; y: number; radius: number; born: number }> = []
@@ -117,7 +117,7 @@ class MatrixRuntime {
   }
 
   private clear(): void {
-    this.frame = null
+    this.lens = null
     this.built = null
     this.graph = EMPTY
     this.sim = null
@@ -222,23 +222,23 @@ class MatrixRuntime {
     if (lostDrag) cool(this.sim)
     if (this.sim.drag) reheat(this.sim)
     if (first) {
-      this.frame = s.matrixFrame ?? this.frame
+      this.lens = s.matrixLens ?? this.lens
       // A first-ever open fits the settled picture, not the spiral: the fit waits for the first settle when nothing was persisted.
-      this.fitOnSettle = s.matrixFrame === null
+      this.fitOnSettle = s.matrixLens === null
       if (this.fitOnSettle && !this.sim.awake) this.fitNow()
     }
     this.invalidate()
   }
 
-  // An empty graph has nothing to frame, so the fit stays owed until there is something to fit.
+  // An empty graph has no extent, so the fit stays owed until there is something to fit.
   private fitNow(): void {
     const next = this.fitted()
     if (next === null) return
     this.fitOnSettle = false
-    this.setFrame(next)
+    this.setLens(next)
   }
 
-  private fitted(): Frame | null {
+  private fitted(): Lens | null {
     const { nodes } = this.graph
     if (nodes.length === 0) return null
     let x0 = Number.POSITIVE_INFINITY
@@ -259,7 +259,7 @@ class MatrixRuntime {
     return false
   }
 
-  // The one frame request: a step at rest only repaints, so hover, the frame, and a label move share it with the physics.
+  // The one frame request: a step at rest only repaints, so hover, the lens, and a label move share it with the physics.
   invalidate(): void {
     if (this.raf || !this.visible) return
     this.raf = requestAnimationFrame(() => {
@@ -297,10 +297,10 @@ class MatrixRuntime {
     return this.ghosts.length > 0 || this.arrivals.size > 0
   }
 
-  // Each surface fits the shared frame into its own box, so a stage that moves or resizes reframes only its own picture. The first box to arrive is also what a frame is made from, so every frame past that carries a real extent.
+  // Each surface fits the shared lens into its own box, so a stage that moves or resizes refits only its own picture. The first box to arrive is also what a lens is made from, so every lens past that carries a real extent.
   setStage(surface: Surface, next: Stage): void {
     this.stages.set(surface, next)
-    if (this.frame === null && next.width > 0) this.frame = lifeSize(next)
+    if (this.lens === null && next.width > 0) this.lens = lifeSize(next)
     this.invalidate()
   }
 
@@ -310,17 +310,17 @@ class MatrixRuntime {
 
   viewportOf(surface: Surface): Viewport {
     const stage = this.stageOf(surface)
-    return framed(this.frame ?? lifeSize(stage), stage)
+    return lensViewport(this.lens ?? lifeSize(stage), stage)
   }
 
   pan(surface: Surface, dx: number, dy: number): void {
-    if (this.frame === null) return
-    this.setFrame(panFrame(this.frame, this.stageOf(surface), dx, dy))
+    if (this.lens === null) return
+    this.setLens(panLens(this.lens, this.stageOf(surface), dx, dy))
   }
 
   zoom(surface: Surface, sx: number, sy: number, factor: number): void {
-    if (this.frame === null) return
-    this.setFrame(zoomFrame(this.frame, this.stageOf(surface), sx, sy, factor))
+    if (this.lens === null) return
+    this.setLens(zoomLens(this.lens, this.stageOf(surface), sx, sy, factor))
   }
 
   indexOf(id: string | null): number {
@@ -346,10 +346,10 @@ class MatrixRuntime {
     this.invalidate()
   }
 
-  setFrame(f: Frame): void {
-    if (f === this.frame) return
-    this.frame = f
-    useSession.getState().saveMatrixFrame(f)
+  setLens(lens: Lens): void {
+    if (lens === this.lens) return
+    this.lens = lens
+    useSession.getState().saveMatrixLens(lens)
     this.invalidate()
   }
 

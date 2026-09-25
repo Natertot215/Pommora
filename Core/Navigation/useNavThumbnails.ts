@@ -6,7 +6,7 @@ import { captured, scopeCaptured } from './thumbMarkers'
 import { dialer } from '../Platform/dialer'
 import { chromePartEl, chromePartRect } from '../Interface/chromeParts'
 
-// The sidebar and side pane are floating overlays carved off the pane's edges; the toolbar is NOT carved (the banner is full-bleed under it), so main overpaints just that chrome band.
+// The sidebar and side pane are floating overlays carved off the pane's edges; the toolbar is NOT carved (the banner is full-bleed under it), so main overpaints just that toolbar.
 function contentRect(pane: Element): ThumbRect {
   const p = pane.getBoundingClientRect()
   let { left, right } = p

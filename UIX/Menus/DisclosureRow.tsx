@@ -3,7 +3,7 @@ import { Icon } from '../Symbols'
 import { cx } from '../Utilities/cx'
 import { toggled } from '../Utilities/checkSet'
 import { Reveal } from '../Animations/Reveal'
-import { MenuItem } from './menu-row'
+import { MenuItem } from './MenuRows'
 import { railRow, dropOutline, dropOutlineOpen, dropOutlineSpacer } from './listed-outline.css'
 
 // The set holds the exceptions to `defaultOpen`, never the open nodes, so a default-open tree needs no seed and stays right as nodes appear and vanish beneath it.

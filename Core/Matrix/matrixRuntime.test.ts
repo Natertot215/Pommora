@@ -41,7 +41,7 @@ const linked = (): MatrixGraphReply => ({ links: [link('p2', 'Alpha')], values: 
 
 let frames: Array<() => void> = []
 let saveLayout: ReturnType<typeof vi.fn>
-let saveFrame: ReturnType<typeof vi.fn>
+let saveLens: ReturnType<typeof vi.fn>
 let detach: (() => void) | null = null
 let visible = true
 
@@ -88,7 +88,7 @@ function seed(over: Record<string, unknown> = {}): void {
     matrixConfig: DEFAULT_MATRIX_CONFIG,
     matrixGraph: EMPTY_GRAPH_REPLY,
     matrixPositions: {},
-    matrixFrame: { cx: 0, cy: 0, w: 800, h: 600 },
+    matrixLens: { cx: 0, cy: 0, w: 800, h: 600 },
     matrixLoad: { kind: 'loaded' },
     saveMatrixLayout: saveLayout as never,
     ...over,
@@ -106,14 +106,14 @@ const attach = (stage: Stage | null = STAGE): void => {
 beforeEach(() => {
   vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] })
   walks.count = 0
-  saveFrame = vi.fn(async () => ok(null))
+  saveLens = vi.fn(async () => ok(null))
   ;(window as unknown as { nexus: unknown }).nexus = stubDialer({
     'matrix:write': async () => ok(null),
-    'matrixLayout:save': saveFrame,
+    'matrixLayout:save': saveLens,
   })
   visible = true
   vi.stubGlobal('requestAnimationFrame', (fn: () => void) => frames.push(fn))
-  matrixRuntime.setFrame({ cx: 0, cy: 0, w: STAGE.width, h: STAGE.height })
+  matrixRuntime.setLens({ cx: 0, cy: 0, w: STAGE.width, h: STAGE.height })
   // Drained rather than dropped: a queued frame left standing keeps the runtime's own frame handle set, and every later schedule is a no-op.
   flush()
   vi.runAllTimers()
@@ -277,55 +277,55 @@ describe('matrixRuntime', () => {
   })
 
   it('fits the graph to the stage on the first settle when nothing was persisted', () => {
-    seed({ matrixFrame: null })
+    seed({ matrixLens: null })
     attach()
     flush()
     vi.runAllTimers()
-    expect(saveFrame).toHaveBeenCalledTimes(1)
-    expect(saveFrame.mock.calls[0][0]).toEqual({ frame: matrixRuntime.frame })
-    expect(matrixRuntime.frame).not.toEqual({ cx: 0, cy: 0, w: 800, h: 600 })
+    expect(saveLens).toHaveBeenCalledTimes(1)
+    expect(saveLens.mock.calls[0][0]).toEqual({ lens: matrixRuntime.lens })
+    expect(matrixRuntime.lens).not.toEqual({ cx: 0, cy: 0, w: 800, h: 600 })
   })
 
   it('fits a first open that carries positions once its settle lands', async () => {
-    matrixRuntime.setFrame({ cx: 0, cy: 0, w: STAGE.width, h: STAGE.height })
+    matrixRuntime.setLens({ cx: 0, cy: 0, w: STAGE.width, h: STAGE.height })
     await vi.runAllTimersAsync()
-    seed({ matrixFrame: null, matrixPositions: { p1: [0, 0], p2: [60, 0] } })
+    seed({ matrixLens: null, matrixPositions: { p1: [0, 0], p2: [60, 0] } })
     attach(null)
     flush()
-    expect(saveFrame).not.toHaveBeenCalled()
+    expect(saveLens).not.toHaveBeenCalled()
     matrixRuntime.setStage(surface, STAGE)
     await vi.runAllTimersAsync()
-    expect(saveFrame).toHaveBeenCalledTimes(1)
-    expect(matrixRuntime.frame).not.toEqual({ cx: 0, cy: 0, w: 800, h: 600 })
+    expect(saveLens).toHaveBeenCalledTimes(1)
+    expect(matrixRuntime.lens).not.toEqual({ cx: 0, cy: 0, w: 800, h: 600 })
   })
 
-  it('writes one frame for a pan, and the last surface flushes it as it leaves', () => {
+  it('writes one lens for a pan, and the last surface flushes it as it leaves', () => {
     seed()
     attach()
     flush()
-    saveFrame.mockClear()
-    matrixRuntime.setFrame({ cx: 10, cy: 0, w: STAGE.width, h: STAGE.height })
-    matrixRuntime.setFrame({ cx: 20, cy: 0, w: STAGE.width, h: STAGE.height })
-    expect(saveFrame).not.toHaveBeenCalled()
+    saveLens.mockClear()
+    matrixRuntime.setLens({ cx: 10, cy: 0, w: STAGE.width, h: STAGE.height })
+    matrixRuntime.setLens({ cx: 20, cy: 0, w: STAGE.width, h: STAGE.height })
+    expect(saveLens).not.toHaveBeenCalled()
     detach?.()
     detach = null
-    expect(saveFrame).toHaveBeenCalledTimes(1)
-    expect(saveFrame.mock.calls[0][0]).toEqual({
-      frame: { cx: 20, cy: 0, w: STAGE.width, h: STAGE.height },
+    expect(saveLens).toHaveBeenCalledTimes(1)
+    expect(saveLens.mock.calls[0][0]).toEqual({
+      lens: { cx: 20, cy: 0, w: STAGE.width, h: STAGE.height },
     })
     vi.runAllTimers()
-    expect(saveFrame).toHaveBeenCalledTimes(1)
+    expect(saveLens).toHaveBeenCalledTimes(1)
   })
 
   it('sends a pan still pending when the window unloads', () => {
     seed()
     attach()
     flush()
-    saveFrame.mockClear()
-    matrixRuntime.setFrame({ cx: 30, cy: 0, w: STAGE.width, h: STAGE.height })
-    expect(saveFrame).not.toHaveBeenCalled()
+    saveLens.mockClear()
+    matrixRuntime.setLens({ cx: 30, cy: 0, w: STAGE.width, h: STAGE.height })
+    expect(saveLens).not.toHaveBeenCalled()
     window.dispatchEvent(new Event('beforeunload'))
-    expect(saveFrame).toHaveBeenCalledTimes(1)
+    expect(saveLens).toHaveBeenCalledTimes(1)
   })
 
   it('walks the tree once for a filter patch and rebuilds the graph from the cache', () => {
@@ -489,7 +489,7 @@ describe('matrixRuntime', () => {
     ;(window as unknown as { nexus: unknown }).nexus = stubDialer({
       'matrix:read': async () => ok(DEFAULT_MATRIX_CONFIG),
       'matrix:graph': graphAsk,
-      'matrixLayout:load': async () => ok({ positions: {}, frame: null }),
+      'matrixLayout:load': async () => ok({ positions: {}, lens: null }),
     })
     seed()
     attach()
@@ -502,20 +502,20 @@ describe('matrixRuntime', () => {
     expect(graphAsk).toHaveBeenCalledTimes(1)
   })
 
-  // Every frame is made from a box, so a gesture before the first fit moves a real picture rather than scaling an empty one.
-  it('takes its first frame from the first stage that has a size', () => {
+  // Every lens is made from a box, so a gesture before the first fit moves a real picture rather than scaling an empty one.
+  it('takes its first lens from the first stage that has a size', () => {
     seed()
     attach()
     flush()
     detach?.()
     detach = null
-    expect(matrixRuntime.frame).toBeNull()
+    expect(matrixRuntime.lens).toBeNull()
 
     matrixRuntime.setStage(surface, { ...STAGE, width: 0, height: 0 })
-    expect(matrixRuntime.frame).toBeNull()
+    expect(matrixRuntime.lens).toBeNull()
 
     matrixRuntime.setStage(surface, STAGE)
-    expect(matrixRuntime.frame).toEqual({ cx: 0, cy: 0, w: STAGE.width, h: STAGE.height })
+    expect(matrixRuntime.lens).toEqual({ cx: 0, cy: 0, w: STAGE.width, h: STAGE.height })
     expect(matrixRuntime.viewportOf(surface).zoom).toBe(1)
   })
 
@@ -557,9 +557,9 @@ describe('matrixRuntime', () => {
     seed()
     attach()
     flush()
-    const before = matrixRuntime.frame
+    const before = matrixRuntime.lens
     matrixRuntime.setStage(surface, { x: 0, y: 0, width: 0, height: 0 })
-    expect(matrixRuntime.frame).toEqual(before)
+    expect(matrixRuntime.lens).toEqual(before)
   })
 
   it('saves only the nodes a settle moved', () => {
@@ -720,7 +720,7 @@ describe('matrixRuntime', () => {
     ;(window as unknown as { nexus: unknown }).nexus = stubDialer({
       'matrix:read': async () => ok(DEFAULT_MATRIX_CONFIG),
       'matrix:graph': graphAsk,
-      'matrixLayout:load': async () => ok({ positions: {}, frame: null }),
+      'matrixLayout:load': async () => ok({ positions: {}, lens: null }),
       'matrixLayout:save': async () => ok(null),
     })
     seed()

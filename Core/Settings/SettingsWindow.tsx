@@ -12,7 +12,7 @@ import {
   type Trailing,
 } from '@pommora/uix/Menus'
 import { text } from '@pommora/uix/Theme'
-import { WindowBase } from '@pommora/uix/Windows/window-base'
+import { WindowBase } from '@pommora/uix/Windows/WindowBase'
 import { SETTINGS_RAIL, SETTINGS_WIN } from '@pommora/uix/Windows/windowBounds'
 import { steppedPickerProps } from '@pommora/uix/Pickers/PickerControl'
 import { labelColorFor } from '@pommora/uix/Theme/ramp'

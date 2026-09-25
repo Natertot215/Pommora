@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { afterEach, describe, expect, it } from 'vitest'
-import type { Size } from '@pommora/uix/Interactions/ResizeFrame'
+import type { Size } from '@pommora/uix/Interactions/useResizable'
 import type { PinnedGlance } from './glanceSlice'
 import type { ReconcileIndex } from './reconcileSelection'
 import { useSession } from './store'

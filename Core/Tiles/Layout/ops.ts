@@ -1,4 +1,4 @@
-import type { Band, DividerRef, Edge, LayoutNode, TileLayout, TileLeaf } from './model'
+import type { DividerRef, Edge, LayoutNode, TileBand, TileLayout, TileLeaf } from './model'
 import { cloneLayout, findTile, getTile, nodeAt } from './model'
 import { clamp } from '@pommora/uix/Utilities/clamp'
 
@@ -126,7 +126,7 @@ export function insertBand(
   if (findTile(layout, tileId)) return layout
   const next = cloneLayout(layout)
   const at = clamp(index, 0, next.bands.length)
-  const band: Band = { node: { kind: 'tile', id: tileId, h: height } }
+  const band: TileBand = { node: { kind: 'tile', id: tileId, h: height } }
   next.bands.splice(at, 0, band)
   return next
 }

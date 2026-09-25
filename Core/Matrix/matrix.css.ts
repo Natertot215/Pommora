@@ -1,6 +1,6 @@
 import { globalStyle, style } from '@vanilla-extract/css'
 import { duration, easing } from '@pommora/uix/Animations/motion'
-import { GLASS_EDGE } from '@pommora/uix/Glass/glass-base'
+import { GLASS_EDGE } from '@pommora/uix/Glass/glassBase'
 import { STATE_OPACITY, vars } from '@pommora/uix/Theme/color.css'
 
 const c = vars.color
@@ -53,7 +53,7 @@ export const host = style({
   },
 })
 
-// The window's own frost is the fill and the graph runs to its edges, so the drag band has to outrank the surface it now covers.
+// The window's own frost is the fill and the graph runs to its edges, so the drag surface has to outrank the surface it now covers.
 export const matrixWindow = style({})
 
 globalStyle(`${matrixWindow} .window-drag`, {

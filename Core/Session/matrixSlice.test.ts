@@ -52,7 +52,7 @@ beforeEach(() => {
     'matrix:graph': vi.fn(async () => ({ ok: true, value: GRAPH })),
     'matrixLayout:load': vi.fn(async () => ({
       ok: true,
-      value: { positions: { p1: [1, 2] }, frame: null },
+      value: { positions: { p1: [1, 2] }, lens: null },
     })),
     'matrixLayout:save': vi.fn(async () => ({ ok: true, value: null })),
   }
@@ -261,7 +261,7 @@ describe('the layout half', () => {
   it('lets go of the nodes the tree has lost once, as it loads', async () => {
     channels['matrixLayout:load'].mockResolvedValue({
       ok: true,
-      value: { positions: { p1: [1, 2], ghost: [5, 6] }, frame: null },
+      value: { positions: { p1: [1, 2], ghost: [5, 6] }, lens: null },
     })
     await seatLoaded()
     expect(useSession.getState().matrixPositions).toEqual({ p1: [1, 2] })
@@ -285,16 +285,16 @@ describe('the layout half', () => {
     expect(channels['matrixLayout:save']).toHaveBeenLastCalledWith({ positions: { p2: [9, 9] } })
   })
 
-  it('saves the frame alone once loaded, the last of a burst', async () => {
-    useSession.getState().saveMatrixFrame({ cx: 1, cy: 2, w: 3, h: 4 })
+  it('saves the lens alone once loaded, the last of a burst', async () => {
+    useSession.getState().saveMatrixLens({ cx: 1, cy: 2, w: 3, h: 4 })
     await vi.advanceTimersByTimeAsync(400)
     expect(channels['matrixLayout:save']).not.toHaveBeenCalled()
     await seatLoaded()
-    useSession.getState().saveMatrixFrame({ cx: 0, cy: 0, w: 3, h: 4 })
-    useSession.getState().saveMatrixFrame({ cx: 1, cy: 2, w: 3, h: 4 })
+    useSession.getState().saveMatrixLens({ cx: 0, cy: 0, w: 3, h: 4 })
+    useSession.getState().saveMatrixLens({ cx: 1, cy: 2, w: 3, h: 4 })
     await vi.advanceTimersByTimeAsync(400)
     expect(channels['matrixLayout:save']).toHaveBeenCalledExactlyOnceWith({
-      frame: { cx: 1, cy: 2, w: 3, h: 4 },
+      lens: { cx: 1, cy: 2, w: 3, h: 4 },
     })
   })
 
@@ -348,11 +348,11 @@ describe('the layout half', () => {
 
   it('lands what it owes as it unloads', async () => {
     await seatLoaded()
-    useSession.getState().saveMatrixFrame({ cx: 1, cy: 2, w: 3, h: 4 })
+    useSession.getState().saveMatrixLens({ cx: 1, cy: 2, w: 3, h: 4 })
     useSession.getState().saveMatrixLayout({ p1: [5, 6] })
     useSession.getState().unloadMatrix()
     expect(channels['matrixLayout:save']).toHaveBeenCalledWith({
-      frame: { cx: 1, cy: 2, w: 3, h: 4 },
+      lens: { cx: 1, cy: 2, w: 3, h: 4 },
     })
     expect(channels['matrixLayout:save']).toHaveBeenCalledWith({ positions: { p1: [5, 6] } })
   })
@@ -361,13 +361,13 @@ describe('the layout half', () => {
 describe('resetMatrix', () => {
   it('returns every field to its per-Nexus value', async () => {
     await seatLoaded()
-    useSession.getState().saveMatrixFrame({ cx: 1, cy: 2, w: 3, h: 4 })
+    useSession.getState().saveMatrixLens({ cx: 1, cy: 2, w: 3, h: 4 })
     useSession.getState().resetMatrix()
     const s = useSession.getState()
     expect(s.matrixConfig).toBe(DEFAULT_MATRIX_CONFIG)
     expect(s.matrixGraph).toEqual({ links: [], values: {} })
     expect(s.matrixPositions).toEqual({})
-    expect(s.matrixFrame).toBeNull()
+    expect(s.matrixLens).toBeNull()
     expect(s.matrixLoad).toEqual({ kind: 'switching' })
   })
 })

@@ -32,7 +32,6 @@
   content: none;
 }
 .trash-frame .trash-row {
-  --segment-tone: var(--border-base);
   --row-pad-trail: 0px;
 }
 .trash-frame .trash-row::after {

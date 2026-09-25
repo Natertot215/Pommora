@@ -21,7 +21,7 @@ import {
 import { NexusIconEditors } from '../../Assets/NexusIconEditors'
 import { useNexusIcon } from '../../Assets/useNexusIcon'
 
-/** The one banner band: its image, menu, crop editor, and window seat; the caller brings the title and what stands when there is no banner. */
+/** The one banner: its image, menu, crop editor, and window seat; the caller brings the title and what stands when there is no banner. */
 export function Banner({
   path,
   kind,

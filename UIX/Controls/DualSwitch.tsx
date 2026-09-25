@@ -2,7 +2,7 @@ import type { CSSProperties } from 'react'
 import * as s from './dual-switch.css'
 import { cx } from '../Utilities/cx'
 import { checkboxPaint } from '../Theme/ramp'
-import { GlassControl } from '../Glass/glass-control'
+import { GlassControl } from '../Glass/GlassControl'
 
 /** Figma "Switch". Ticks fade on the same beat as the knob's slide (dual-switch.css.ts). `readOnly` draws the same look as a plain value glyph, toggled by the row around it. */
 export function DualSwitch({

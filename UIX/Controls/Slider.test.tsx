@@ -7,7 +7,7 @@ import { Slider } from './Slider'
 ;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
 
 stubPointerCapture()
-// jsdom lacks ResizeObserver, which the knob's glass segment observes; a no-op stub is enough.
+// jsdom lacks ResizeObserver, which the glass knob observes; a no-op stub is enough.
 if (!('ResizeObserver' in globalThis)) {
   ;(globalThis as { ResizeObserver?: unknown }).ResizeObserver = class {
     observe(): void {}

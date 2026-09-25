@@ -1,6 +1,6 @@
 import { useEffect, useState, type CSSProperties, type ReactNode, type Ref } from 'react'
 import { Button } from '../Buttons/Button'
-import { GlassWindow } from '../Glass/glass-window'
+import { GlassWindow } from '../Glass/GlassWindow'
 import { FooterToggle } from '../Interactions/FooterToggle'
 import { cx } from '../Utilities/cx'
 import { useRevealNear } from '../Interactions/hoverReveal'
@@ -8,13 +8,13 @@ import { windowIn, windowOut } from '../Animations/animations.css'
 import {
   ALL_EDGES,
   onScreen,
-  useResizeFrame,
+  useResizable,
   type Rect,
   type Size,
-} from '../Interactions/ResizeFrame'
+} from '../Interactions/useResizable'
 import { useEscape } from '../Interactions/dismissalStack'
 import { RenderBoundary } from '../Elements/RenderBoundary'
-import { WindowPanel, windowPanelWidth, type WindowPanelBounds } from './window-panel'
+import { WindowPanel, windowPanelWidth, type WindowPanelBounds } from './WindowPanel'
 import './window-base.css'
 import '../Animations/toolbar-slide.css'
 
@@ -123,7 +123,7 @@ export function WindowBase({
     window.addEventListener('resize', onResize)
     return () => window.removeEventListener('resize', onResize)
   }, [])
-  const frame = useResizeFrame({
+  const resize = useResizable({
     rect: geo,
     min: bounds.min,
     onChange: (next, phase, grip) => {
@@ -133,7 +133,7 @@ export function WindowBase({
   })
   // Window-move is reserved to the bare surfaces — anything else owns its pointer, so row/reorder captures aren't stolen mid-press.
   const onWindowDown = (e: React.PointerEvent<HTMLElement>): void => {
-    if ((e.target as HTMLElement).matches(surfaces)) frame.start('move')(e)
+    if ((e.target as HTMLElement).matches(surfaces)) resize.start('move')(e)
   }
 
   // Seeded from the persisted slot so the first painted frame already carries the restored width.
@@ -166,13 +166,13 @@ export function WindowBase({
   )
 
   const inflow = left?.mode === 'inflow' || right?.mode === 'inflow'
-  // The band belongs to the detail, not to the frame: a panel runs the window's full height and the bar stops at its edge.
+  // The bar belongs to the detail, not to the window: a panel runs the window's full height and the bar stops at its edge.
   const detail = (
     <RenderBoundary resetKey={children}>
       {footer ? (
         <div className="window-detail">
           {children}
-          <div className="window-footer reveal-band">{footer.bar}</div>
+          <div className="window-footer reveal-bar">{footer.bar}</div>
         </div>
       ) : (
         children
@@ -256,7 +256,7 @@ export function WindowBase({
       )}
       {left?.mode === 'overlay' && panel(left, 'left')}
       {right?.mode === 'overlay' && panel(right, 'right')}
-      {frame.edges(ALL_EDGES)}
+      {resize.edges(ALL_EDGES)}
     </GlassWindow>
   )
 }

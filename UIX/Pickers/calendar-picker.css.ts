@@ -156,7 +156,7 @@ export const fieldValue = style({
   color: c.label.primary,
 })
 export const fieldTime = style({ flex: 1, gap: '4px', paddingLeft: '6px', paddingRight: '6px' })
-export const timeSegs = style({
+export const timeParts = style({
   flex: 1,
   display: 'flex',
   alignItems: 'center',
@@ -164,7 +164,7 @@ export const timeSegs = style({
   gap: '2px',
 })
 export const hmGroup = style({ display: 'flex', alignItems: 'center' })
-export const timeSeg = style({
+export const timePart = style({
   all: 'unset',
   position: 'relative',
   padding: '1px 2px',
@@ -175,7 +175,7 @@ export const timeSeg = style({
   userSelect: 'none',
   selectors: { '&:hover': { background: c.state.hover } },
 })
-export const timeSegInput = style([
+export const timePartInput = style([
   base,
   {
     boxSizing: 'content-box',

@@ -1,4 +1,4 @@
-import type { Rect, Size } from '@pommora/uix/Interactions/ResizeFrame'
+import type { Rect, Size } from '@pommora/uix/Interactions/useResizable'
 import { useSession } from '../../Session/store'
 import { chromePartEl } from '../chromeParts'
 

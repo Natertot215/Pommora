@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react'
-import { GlassSurface } from '../Glass/glass-surface'
+import { GlassSurface } from '../Glass/GlassSurface'
 import { cx } from '../Utilities/cx'
 import { menuBloom } from '../Animations/animations.css'
 import * as s from './menu-surface.css'

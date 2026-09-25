@@ -8,7 +8,7 @@ import {
   useRef,
   useState,
 } from 'react'
-import { frostStyle, notchGeometry, NOTCH_H, SURFACE_FROST, WINDOW_FROST } from './glass-base'
+import { frostStyle, notchGeometry, NOTCH_H, SURFACE_FROST, WINDOW_FROST } from './glassBase'
 import { shadowBaseVar } from '../Theme/color.css'
 import { PURE_WHITE } from '../Theme/colors'
 import { cx } from '../Utilities/cx'

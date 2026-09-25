@@ -1,7 +1,7 @@
 import { useEffect, useState, type CSSProperties } from 'react'
 import { useSession } from '../Session/store'
 import { SIDE_PANE_WIDTH, SIDEBAR_WIDTH } from '../Session/layoutSlice'
-import { useResizeFrame } from '@pommora/uix/Interactions/ResizeFrame'
+import { useResizable } from '@pommora/uix/Interactions/useResizable'
 import { Surface } from './InterfaceScaffold'
 import { paneSlide } from '@pommora/uix/Animations/paneSlide'
 import { publishChromePart } from './chromeParts'
@@ -59,21 +59,21 @@ export function App(): React.JSX.Element {
 
   const [sidePaneOpen, setSidePaneOpen] = useState(false)
 
-  const sidebarFrame = useResizeFrame({
+  const sidebarResize = useResizable({
     rect: { w: sidebarWidth },
     min: { w: SIDEBAR_WIDTH.min },
     max: { w: SIDEBAR_WIDTH.max },
     equilateral: true,
     onChange: (next, phase) => (phase === 'drop' ? persistPaneWidths() : setSidebarWidth(next.w)),
   })
-  const sidePaneFrame = useResizeFrame({
+  const sidePaneResize = useResizable({
     rect: { w: sidePaneWidth },
     min: { w: SIDE_PANE_WIDTH.min },
     max: { w: SIDE_PANE_WIDTH.max },
     equilateral: true,
     onChange: (next, phase) => (phase === 'drop' ? persistPaneWidths() : setSidePaneWidth(next.w)),
   })
-  const resizing = sidebarFrame.active !== null || sidePaneFrame.active !== null
+  const resizing = sidebarResize.active !== null || sidePaneResize.active !== null
 
   useEffect(() => {
     void load()
@@ -184,7 +184,7 @@ export function App(): React.JSX.Element {
         {!sidebarHidden && (
           <div
             className="resize-strip sidebar-resize"
-            onPointerDown={sidebarFrame.start('e')}
+            onPointerDown={sidebarResize.start('e')}
             aria-hidden="true"
           />
         )}
@@ -214,7 +214,7 @@ export function App(): React.JSX.Element {
         {status === 'ready' && sidePaneOpen && (
           <div
             className="resize-strip side-pane-resize"
-            onPointerDown={sidePaneFrame.start('w')}
+            onPointerDown={sidePaneResize.start('w')}
             aria-hidden="true"
           />
         )}

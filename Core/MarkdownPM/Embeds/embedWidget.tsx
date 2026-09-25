@@ -20,7 +20,7 @@ import {
 } from '@codemirror/view'
 import { ReactWidget, type ReactDom } from '../reactWidget'
 import { cx } from '@pommora/uix/Utilities/cx'
-import { useResizeFrame } from '@pommora/uix/Interactions/ResizeFrame'
+import { useResizable } from '@pommora/uix/Interactions/useResizable'
 import { type DismissalHandle, pushDismissal } from '@pommora/uix/Interactions/dismissalStack'
 import { TILE_DEFAULT_PX, TILE_GAP_PX } from '@pommora/uix/Theme/theme-vars.css'
 import { TILE_MIN_PX } from '@pommora/uix/Utilities/tileMetrics'
@@ -83,7 +83,7 @@ function EmbedResizeHandle({
   span: HTMLElement
   targetId: string
 }): React.JSX.Element {
-  const frame = useResizeFrame<{ h: number }>({
+  const resize = useResizable<{ h: number }>({
     rect: () => ({ h: span.getBoundingClientRect().height }),
     min: { h: TILE_MIN_PX },
     max: { h: Number.POSITIVE_INFINITY },
@@ -100,7 +100,7 @@ function EmbedResizeHandle({
       view.state.facet(editorHost).prefs?.save('embedHeights', heights)
     },
   })
-  return frame.edges(['s'])[0]
+  return resize.edges(['s'])[0]
 }
 
 const tileEstimate = (height: number | undefined): number =>

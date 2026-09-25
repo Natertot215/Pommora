@@ -7,8 +7,8 @@ import { Slider } from '../Controls/Slider'
 import { steppedPickerProps, PickerControl, type PickerOption } from '../Pickers/PickerControl'
 import { cx } from '../Utilities/cx'
 import { Reveal } from '../Animations/Reveal'
-import { AccessoryButton, MenuItem, MenuSeparator } from './menu-row'
-import { heading, headingCaps } from './menu-base.css'
+import { AccessoryButton, MenuItem, MenuSeparator } from './MenuRows'
+import { heading, headingCaps } from './menu-row.css'
 
 export type Trailing =
   | { kind: 'chevron' }

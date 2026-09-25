@@ -1,5 +1,5 @@
 import type { HTMLAttributes, ReactNode, Ref } from 'react'
-import { paneMaterial } from './glass-base'
+import { paneMaterial } from './glassBase'
 
 /** A Pane's glass — the clearest tier: the app's fixed chrome reads through it. */
 export function GlassPane({

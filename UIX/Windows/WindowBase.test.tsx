@@ -3,8 +3,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { act, useState } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
 import { firePointer, stubPointerCapture } from '../Interactions/pointerHarness'
-import type { Size } from '../Interactions/ResizeFrame'
-import { WindowBase, type WindowFooter } from './window-base'
+import type { Size } from '../Interactions/useResizable'
+import { WindowBase, type WindowFooter } from './WindowBase'
 ;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
 
 stubPointerCapture()

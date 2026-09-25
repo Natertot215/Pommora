@@ -1,5 +1,5 @@
 import type { RefObject } from 'react'
-import { PickerMenu } from './picker-base'
+import { PickerMenu } from './PickerMenu'
 import type { LabelColorName } from '../Labels/label-base.css'
 import { RAMP_FAMILIES, RAMP_STEPS, type CellKey } from '../Theme/colors'
 import { cellColor, cellRing } from '../Theme/ramp'

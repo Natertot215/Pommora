@@ -21,16 +21,16 @@ export const toWorld = (v: Viewport, sx: number, sy: number): [number, number] =
   sy / v.zoom + v.y,
 ]
 
-// The world rectangle a picture is framed on. Each surface fits this into its own box, so two of different sizes show the same picture, each at its own scale.
-export interface Frame {
+// The world rectangle a picture shows, its lens. Each surface fits this into its own box, so two of different sizes show the same picture, each at its own scale.
+export interface Lens {
   cx: number
   cy: number
   w: number
   h: number
 }
 
-// The frame a surface's own box makes, which is the world at life size — what a picture is framed on before anything has been fitted.
-export const lifeSize = (stage: Stage): Frame => ({
+// The lens a surface's own box makes, which is the world at life size — what a picture shows before anything has been fitted.
+export const lifeSize = (stage: Stage): Lens => ({
   cx: 0,
   cy: 0,
   w: stage.width,
@@ -50,39 +50,39 @@ const centre = (stage: Stage): [number, number] => [
   stage.y + stage.height / 2,
 ]
 
-// A surface that has not been measured has no scale to speak of; every frame carries a real extent, made from the first box to arrive.
-const scaleOf = (f: Frame, stage: Stage): number =>
-  stage.width > 0 ? Math.min(stage.width / f.w, stage.height / f.h) : 1
+// A surface that has not been measured has no scale to speak of; every lens carries a real extent, made from the first box to arrive.
+const scaleOf = (lens: Lens, stage: Stage): number =>
+  stage.width > 0 ? Math.min(stage.width / lens.w, stage.height / lens.h) : 1
 
-export function framed(f: Frame, stage: Stage): Viewport {
-  const zoom = clamp(scaleOf(f, stage), ZOOM_MIN, ZOOM_MAX)
+export function lensViewport(lens: Lens, stage: Stage): Viewport {
+  const zoom = clamp(scaleOf(lens, stage), ZOOM_MIN, ZOOM_MAX)
   const [mx, my] = centre(stage)
-  return { zoom, x: f.cx - mx / zoom, y: f.cy - my / zoom }
+  return { zoom, x: lens.cx - mx / zoom, y: lens.cy - my / zoom }
 }
 
-// Pan and zoom move the frame itself. Deriving a viewport and converting it back would reshape the frame to the surface's own aspect, and the other surfaces would jump every time this one moved.
-export function panFrame(f: Frame, stage: Stage, dx: number, dy: number): Frame {
-  const { zoom } = framed(f, stage)
-  return { ...f, cx: f.cx - dx / zoom, cy: f.cy - dy / zoom }
+// Pan and zoom move the lens itself. Deriving a viewport and converting it back would reshape the lens to the surface's own aspect, and the other surfaces would jump every time this one moved.
+export function panLens(lens: Lens, stage: Stage, dx: number, dy: number): Lens {
+  const { zoom } = lensViewport(lens, stage)
+  return { ...lens, cx: lens.cx - dx / zoom, cy: lens.cy - dy / zoom }
 }
 
-// The clamp is read off the frame's true scale, not the painted one: a surface already pinned at a clamp would otherwise keep reshaping the frame and zoom every other surface while its own picture held still.
-export function zoomFrame(f: Frame, stage: Stage, sx: number, sy: number, factor: number): Frame {
-  const scale = scaleOf(f, stage)
+// The clamp is read off the lens's true scale, not the painted one: a surface already pinned at a clamp would otherwise keep reshaping the lens and zoom every other surface while its own picture held still.
+export function zoomLens(lens: Lens, stage: Stage, sx: number, sy: number, factor: number): Lens {
+  const scale = scaleOf(lens, stage)
   const zoom = clamp(scale * factor, ZOOM_MIN, ZOOM_MAX)
-  if (zoom === scale) return f
-  const [wx, wy] = toWorld(framed(f, stage), sx, sy)
+  if (zoom === scale) return lens
+  const [wx, wy] = toWorld(lensViewport(lens, stage), sx, sy)
   const [mx, my] = centre(stage)
   const spread = scale / zoom
   return {
-    w: f.w * spread,
-    h: f.h * spread,
+    w: lens.w * spread,
+    h: lens.h * spread,
     cx: wx + (mx - sx) / zoom,
     cy: wy + (my - sy) / zoom,
   }
 }
 
-export function fit(bounds: { x0: number; y0: number; x1: number; y1: number }): Frame {
+export function fit(bounds: { x0: number; y0: number; x1: number; y1: number }): Lens {
   return {
     cx: (bounds.x0 + bounds.x1) / 2,
     cy: (bounds.y0 + bounds.y1) / 2,

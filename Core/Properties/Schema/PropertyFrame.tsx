@@ -35,7 +35,7 @@ import {
   AccessoryButton,
   DropOutline,
 } from '@pommora/uix/Menus'
-import { titleInput, actionRow } from '@pommora/uix/Menus/menu-base.css'
+import { titleInput, actionRow } from '@pommora/uix/Menus/menu-row.css'
 import { Reveal } from '@pommora/uix/Animations/Reveal'
 import { useEntrance } from '@pommora/uix/Animations/useEntrance'
 import { IconChoice } from '../../Assets/IconChoice'
@@ -46,9 +46,9 @@ import { OPTION_STYLE_OPTIONS, type OptionStyle } from './OptionRow'
 import { PickerControl } from '@pommora/uix/Pickers/PickerControl'
 import { StatusEditor } from './StatusEditor'
 import { URLEditor } from './URLEditor'
-import { FrameSlide } from '@pommora/uix/Menus/frame-slide'
+import { FrameSlide } from '@pommora/uix/Menus/FrameSlide'
 import { PANE_MIN_H, PANE_MIN_W } from '@pommora/uix/Menus/frame-slide.css'
-import { FrameDnd, RowShell, useFrameRegions } from '@pommora/uix/Interactions/frameDnd'
+import { FrameDnd, RowShell, useFrameRegions } from '@pommora/uix/Interactions/FrameDnd'
 import type { FrameRow } from '@pommora/uix/Interactions/frameDndModel'
 import { frameSlot, nexusReorderIndex, type PaneDrop } from '../paneDrop'
 import {

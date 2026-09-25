@@ -1,9 +1,9 @@
 :root {
-  --reveal-band-h: 24px;
+  --reveal-bar-h: 24px;
 }
 
 /* The toggle rests invisible and reveals on hover, focus, or a host-marked "near" region — generous without swallowing clicks beneath. */
-.reveal-band {
+.reveal-bar {
   flex: none;
   height: 0;
   overflow: hidden;

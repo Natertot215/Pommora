@@ -1,7 +1,7 @@
 import { useMemo, useRef, useState } from 'react'
 import { Checkbox } from '@pommora/uix/Controls/Checkbox'
 import { Icon } from '@pommora/uix/Symbols'
-import { PickerMenu } from '@pommora/uix/Pickers/picker-base'
+import { PickerMenu } from '@pommora/uix/Pickers/PickerMenu'
 import { MenuItem } from '@pommora/uix/Menus'
 import { LedgerChart, type Window, zoomed } from './LedgerChart'
 import {

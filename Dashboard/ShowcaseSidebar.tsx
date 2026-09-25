@@ -1,4 +1,4 @@
-import { GlassPane } from '@pommora/uix/Glass/glass-pane'
+import { GlassPane } from '@pommora/uix/Glass/GlassPane'
 import { Icon } from '@pommora/uix/Symbols'
 import { NavSections } from './NavSections'
 

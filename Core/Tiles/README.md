@@ -81,7 +81,7 @@ These are load-bearing; the comments at each site say why. Summarized:
 - **Both drags run on `Interactions/gesture.ts`**, the app's one pointer engine: Escape while
   active, `pointercancel`, blur, and a lost release all abort, never zombie. The grid keeps its
   own tree geometry because a tile edge is a boundary negotiated with its neighbors, not a
-  box; the `ResizeFrame` primitive sizes boxes.
+  box; the `useResizable` hook sizes boxes.
 - **PommoraDND is the interaction vocabulary**: the shared `ACTIVATION` threshold,
   `suppressNextClick`, `HYSTERESIS` edge-hold, `findScroller` + the shared auto-scroll loop
   (`startAutoScroll`), and the shared `Feel` for reflow/settle.
