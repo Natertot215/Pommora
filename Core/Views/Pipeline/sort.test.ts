@@ -110,6 +110,32 @@ describe('makeSorter — type-aware single criterion', () => {
     expect(ids(sorter(rows))).toEqual(['r2', 'r4', 'r1', 'r3'])
   })
 
+  it('a Select sorts by its own options, never by a stale status_groups array it still carries', () => {
+    const stale: PropertyDefinition = {
+      id: 'prop_stale',
+      name: 'Stale',
+      type: 'select',
+      select_options: [
+        { value: 'a', label: 'A' },
+        { value: 'b', label: 'B' },
+      ],
+      status_groups: [
+        {
+          id: 'g',
+          label: 'G',
+          color: 'grey',
+          options: [{ value: 'a', label: 'A', group_id: 'g' }],
+        },
+      ],
+    }
+    const rows = [
+      { ...makeRow('r1'), frontmatter: { [ID_KEY]: 'r1', Stale: ['b'] } },
+      { ...makeRow('r2'), frontmatter: { [ID_KEY]: 'r2', Stale: ['a'] } },
+    ]
+    const sorter = makeSorter([{ property_id: 'prop_stale', direction: 'ascending' }], [stale])!
+    expect(ids(sorter(rows))).toEqual(['r2', 'r1'])
+  })
+
   it('a Custom order ranks options it predates after the listed ones, ahead of the no-value rows', () => {
     const rows = [
       makeRow('r1', {}),
