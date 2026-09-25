@@ -49,6 +49,17 @@ const move = (x: number, y: number, opts: { pointerId?: number; buttons?: number
   firePointer(window, 'pointermove', { x, y, ...opts })
 
 describe('gesture skeleton hardening', () => {
+  it('arms the spring-open listener only once the press becomes a drag', () => {
+    const adds = vi.spyOn(window, 'addEventListener')
+    const moveListeners = (): number => adds.mock.calls.filter(([t]) => t === 'pointermove').length
+    gesture.beginPointerGesture(spec({ onDisclose: () => {} }))
+    move(2, 0)
+    expect(moveListeners()).toBe(1)
+    move(20, 0)
+    expect(moveListeners()).toBe(2)
+    adds.mockRestore()
+  })
+
   it('a throwing onActivate aborts cleanly: onAbort fires, no drop commits, the next begin succeeds', () => {
     const onAbort = vi.fn()
     const onDrop = vi.fn()

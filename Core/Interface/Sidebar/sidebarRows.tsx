@@ -83,7 +83,7 @@ export function DragRow({
   children: React.ReactNode
 }): React.JSX.Element {
   const drag = useSidebarDrag(id)
-  const discloseRef = useDiscloseTarget(springOpen?.collapsed ?? false, () =>
+  const discloseRef = useDiscloseTarget((springOpen?.collapsed ?? false) && !drag.isDragging, () =>
     springOpen?.onExpand(),
   )
   return (

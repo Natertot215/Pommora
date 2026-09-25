@@ -340,7 +340,7 @@ function SpringableRow({
   dimmed: boolean
   children: React.ReactNode
 }): React.JSX.Element {
-  const discloseRef = useDiscloseTarget(collapsed, onExpand)
+  const discloseRef = useDiscloseTarget(collapsed && !dimmed, onExpand)
   return (
     <div
       className={cx(className, dimmed && oo.ghosted)}

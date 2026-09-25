@@ -50,7 +50,7 @@ function detach(g: LiveGesture): void {
   try {
     g.spec.el.releasePointerCapture(g.spec.event.pointerId)
   } catch {}
-  if (g.spec.onDisclose) endDragDisclose()
+  if (g.active && g.spec.onDisclose) endDragDisclose()
   // The lock clears even when teardown throws: a stranded `live` refuses every future drag.
   try {
     g.spec.teardown?.()
@@ -91,6 +91,7 @@ export function beginPointerGesture(spec: PointerGestureSpec): GestureHandle | n
             } catch {}
           }
           g.active = true
+          if (spec.onDisclose) beginDragDisclose(spec.onDisclose)
           let ok: boolean | undefined
           try {
             ok = spec.onActivate(ev)
@@ -154,7 +155,6 @@ export function beginPointerGesture(spec: PointerGestureSpec): GestureHandle | n
   window.addEventListener('blur', g.handlers.blur)
   window.addEventListener('scroll', g.handlers.scroll, { capture: true, passive: true })
   window.addEventListener('keydown', g.handlers.key, { capture: true })
-  if (spec.onDisclose) beginDragDisclose(spec.onDisclose)
   return {
     abort: () => {
       if (live === g) g.handlers.cancel()

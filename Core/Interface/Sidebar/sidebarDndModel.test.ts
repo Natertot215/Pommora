@@ -290,3 +290,20 @@ describe('sidebarSlot — a sibling reorder', () => {
     expect(slotOf('c1', ['c1', 'p3'], 10)).toBeNull()
   })
 })
+
+describe('sidebarSlot — the dragged row itself', () => {
+  it('resolves nothing while the pointer is still over the row it lifted', () => {
+    const measured = ['c1', 's1', 'p3'].map((id, i) => ({
+      id,
+      top: i * 20,
+      bottom: i * 20 + 20,
+      mid: i * 20 + 10,
+    }))
+    const own = { id: 's3', top: 60, bottom: 80, mid: 70 }
+    const snapshot = sidebarSnapshot(idx, {} as Personalization, 's3', measured, own)
+    expect(snapshot && sidebarSlot(snapshot, 70)).toBeNull()
+    expect(snapshot && sidebarSlot(snapshot, 22)?.commit).toEqual(
+      moveSet('Col/Empty', 'Col', ['s3', 's1']),
+    )
+  })
+})

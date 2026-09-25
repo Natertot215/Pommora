@@ -190,7 +190,7 @@ export function GroupBand({
 }): React.JSX.Element {
   const outsideRename = (e: React.MouseEvent): boolean =>
     !(e.target as HTMLElement).closest?.('input')
-  const discloseRef = useDiscloseTarget(!headless && collapsed, onToggle)
+  const discloseRef = useDiscloseTarget(!headless && collapsed && !dragHandle?.isDragging, onToggle)
   return (
     <div className={cx('group-band', subBand && 'sub-band')}>
       {!headless && (
