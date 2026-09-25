@@ -7,13 +7,12 @@
   transform: translateX(-50%);
   max-width: 70%;
   z-index: 2;
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity var(--duration-base) var(--ease-base);
+  --reveal-fade: var(--duration-base);
+  transition: opacity var(--reveal-fade) var(--ease-base);
 }
-.mdpm-embed-tile:hover .page-tile-crumbs,
-.mdpm-embed-tile:hover .web-tile-title {
-  opacity: 1;
+.page-tile-crumbs {
+  opacity: var(--reveal, 0);
+  pointer-events: none;
 }
 
 /* The title rides above both the guest and its catcher, and takes the pointer once revealed, so it stays clickable whether or not the tile is engaged. */
@@ -24,7 +23,4 @@
   padding: 0;
   cursor: pointer;
   color: var(--label-secondary);
-}
-.mdpm-embed-tile:hover .web-tile-title {
-  pointer-events: auto;
 }

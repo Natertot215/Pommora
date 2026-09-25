@@ -7,6 +7,8 @@ import {
 } from '@pommora/uix/Pickers/picker-base'
 import { lockLabel } from '@pommora/core/Actions/toggleLabels'
 import { Icon, LockGlyph } from '@pommora/uix/Symbols'
+import { cx } from '@pommora/uix/Utilities/cx'
+import { revealTarget } from '@pommora/uix/Interactions/hover-reveal.css'
 import { EditorView } from '@codemirror/view'
 import { HEADING_FOLD_LINE, toggleFoldAt } from '../../MarkdownPM/folding'
 import type { WarmSeam } from '../../MarkdownPM/warmSeam'
@@ -421,7 +423,7 @@ export function GlancePane(): React.JSX.Element {
   const lockBtn = page && (
     <button
       type="button"
-      className="glance-lock"
+      className={cx('glance-lock', revealTarget)}
       aria-label={lockLabel(false, 'Preview')}
       onMouseDown={(e) => e.preventDefault()}
       onClick={onLock}
@@ -433,7 +435,8 @@ export function GlancePane(): React.JSX.Element {
   const pinBtn = (p: PinnedGlance): React.JSX.Element => (
     <button
       type="button"
-      className={p.locked ? 'glance-lock glance-lock-persist' : 'glance-lock'}
+      className={cx('glance-lock', revealTarget)}
+      data-reveal-held={p.locked || undefined}
       aria-label={lockLabel(p.locked, 'Preview')}
       onMouseDown={(e) => e.preventDefault()}
       onClick={() => setPinLocked(p.pinId, !p.locked)}

@@ -161,14 +161,9 @@
 .sidebar-collapse {
   top: 1px;
   right: 10px;
-  opacity: 0;
-}
-.surface-glass:hover .sidebar-collapse,
-.sidebar-collapse:focus-visible {
-  opacity: 1;
 }
 .shell.sidebar-hidden .sidebar-collapse {
-  opacity: 1;
+  --reveal: 1;
 }
 .sidebar-expand {
   top: calc(var(--app-inset) + 1px);
@@ -249,7 +244,6 @@
   margin-right: 6px;
 }
 
-/* .row-lock-persist keeps a just-unlocked row's toggle shown so a mistaken unlock can be re-locked. */
 .row-lock {
   display: inline-flex;
   align-items: center;
@@ -259,16 +253,9 @@
   background: transparent;
   color: var(--label-tertiary);
   cursor: pointer;
-  opacity: 0;
-  pointer-events: none;
   transition:
-    opacity var(--duration-fast) var(--ease-base),
+    opacity var(--reveal-fade) var(--ease-base),
     background var(--duration-fast) var(--ease-base);
-}
-.row:hover .row-lock,
-.row-lock.row-lock-persist {
-  opacity: 1;
-  pointer-events: auto;
 }
 .row-lock:hover {
   background: var(--state-hover);

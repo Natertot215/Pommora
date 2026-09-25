@@ -3,7 +3,8 @@ import { titleActionFade, titleReveal } from '@pommora/uix/Animations/animations
 import { vars as colorVars } from '@pommora/uix/Theme/color.css'
 import { duration } from '@pommora/uix/Animations/motion'
 import { accessoryButton } from '@pommora/uix/Menus/menu-base.css'
-import { SEGMENT_H, segmentRow, settingsBtn } from '@pommora/uix/Elements/action-band.css'
+import { REVEAL_FADE, revealTarget } from '@pommora/uix/Interactions/hover-reveal.css'
+import { SEGMENT_H, segmentRow } from '@pommora/uix/Elements/action-band.css'
 import {
   EMBED_SCALE_DEFAULT,
   embedZoom,
@@ -116,19 +117,10 @@ export const slideWrap = style({
 
 export const spacer = style({ flex: '1 1 auto' })
 
-export const newViewReveal = style({
-  display: 'inline-flex',
-  opacity: 0,
-  transition: 'opacity var(--duration-fast) var(--ease-base)',
-})
-globalStyle(`${switcherRow}:hover ${newViewReveal}`, { opacity: 1 })
-globalStyle(`${newViewReveal} ${accessoryButton}`, { color: c.label.secondary })
-
-globalStyle(`${tile}:hover ${settingsBtn}`, { opacity: 1 })
+export const newView = style([revealTarget, { display: 'inline-flex', transition: REVEAL_FADE }])
+globalStyle(`${newView} ${accessoryButton}`, { color: c.label.secondary })
 
 export const bandLock = style([titleActionFade, { display: 'inline-flex' }])
-// The lock's own visibility governs it, not the tile-hover reveal its button class carries.
-globalStyle(`${bandLock} ${settingsBtn}`, { opacity: 1 })
 
 export const listPane = style({ minWidth: 150 })
 

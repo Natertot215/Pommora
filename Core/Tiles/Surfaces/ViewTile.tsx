@@ -21,6 +21,7 @@ import { AccessoryButton, MenuFooting, MenuItem, MenuScrollFrame } from '@pommor
 import { titleInput as rowInput, rowDisabled } from '@pommora/uix/Menus/menu-base.css'
 import { reorder, SortableZone, useDragItem } from '@pommora/uix/Interactions/drag'
 import { useHoverReveal } from '@pommora/uix/Interactions/hoverReveal'
+import { revealTarget } from '@pommora/uix/Interactions/hover-reveal.css'
 import { PICKER_MAX_HEIGHT } from '@pommora/uix/Pickers/picker-base.css'
 import { RenamableLabel } from '@pommora/uix/Fields/RenamableLabel'
 import { IconChoice } from '../../Assets/IconChoice'
@@ -470,7 +471,8 @@ export function ViewTile({
     <button
       ref={btnRef}
       type="button"
-      className={cx(settingsBtn, cfgOpen && settingsBtnActive)}
+      className={cx(settingsBtn, revealTarget, cfgOpen && settingsBtnActive)}
+      data-reveal-held={cfgOpen || undefined}
       aria-label="View settings"
       onClick={() => setCfgOpen(true)}
     >
@@ -545,7 +547,7 @@ export function ViewTile({
           />
         ))}
       </SortableZone>
-      <span className={s.newViewReveal}>{newViewButton}</span>
+      <span className={s.newView}>{newViewButton}</span>
     </>
   )
 
@@ -561,7 +563,7 @@ export function ViewTile({
         openPage,
       }}
     >
-      <div className={s.tile} onPointerDownCapture={onActivate}>
+      <div className={s.tile} data-reveal-host="" onPointerDownCapture={onActivate}>
         <div className={cx(s.titleSpace, !titleShown && s.titleSpaceHidden)}>
           <div className={s.spaceInner}>
             {/* biome-ignore lint/a11y/noStaticElementInteractions: a right-click affordance on a container, not a control — the contents carry their own semantics */}
@@ -602,7 +604,11 @@ export function ViewTile({
         <div className={cx(s.bandSpace, !bandOpen && s.bandSpaceHidden)} {...hoverProps}>
           <div className={s.spaceInner}>
             {/* biome-ignore lint/a11y/noStaticElementInteractions: a right-click affordance on a container, not a control — the contents carry their own semantics */}
-            <div className={s.switcherRow} onContextMenu={(e) => void areaMenu(e)}>
+            <div
+              className={s.switcherRow}
+              data-reveal-host=""
+              onContextMenu={(e) => void areaMenu(e)}
+            >
               {switcher}
               <span className={s.spacer} />
               {!titleShown && configButton}

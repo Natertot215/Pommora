@@ -54,10 +54,10 @@
   border-color: inherit;
   border-radius: 4px;
   background: var(--main-bg);
-  opacity: 0;
   cursor: grab;
   z-index: 4;
-  transition: opacity var(--duration-slow) var(--ease-base);
+  --reveal-fade: var(--duration-slow);
+  transition: opacity var(--reveal-fade) var(--ease-base);
 }
 .tile-handle::before {
   content: "";
@@ -67,20 +67,6 @@
   background-color: var(--label-tertiary);
   -webkit-mask: var(--grip-glyph) center / contain no-repeat;
   mask: var(--grip-glyph) center / contain no-repeat;
-}
-
-.tile:hover .tile-handle {
-  opacity: 1;
-}
-.tile.is-editing-tile:hover .tile-handle {
-  opacity: 0;
-}
-.tile.is-editing-tile.handle-near:hover .tile-handle,
-.tile.is-editing-tile .tile-handle:hover {
-  opacity: 1;
-}
-.tile.handle-pinned.handle-pinned .tile-handle {
-  opacity: 1;
 }
 
 /* The wash is its own layer so it fades on duration-base instead of snapping — a swapped background can't interpolate. */

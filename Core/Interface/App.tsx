@@ -152,6 +152,7 @@ export function App(): React.JSX.Element {
             size="button-large"
             paddingX="0"
             className="sidebar-toggle sidebar-collapse"
+            reveal
             onClick={toggleSidebar}
             aria-label="Collapse sidebar"
             title="Collapse sidebar"

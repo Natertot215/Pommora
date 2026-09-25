@@ -33,6 +33,7 @@ import { Reveal } from '@pommora/uix/Animations/Reveal'
 import { columnLabel, useCapitalizeMetadata } from '../../Properties/Cells/columnLabel'
 import { type DragShift, gapShift, numberBarCapable, useColumns } from './useColumns'
 import { cx } from '@pommora/uix/Utilities/cx'
+import { revealTarget } from '@pommora/uix/Interactions/hover-reveal.css'
 import { useStableApi } from '@pommora/uix/Utilities/stableApi'
 import { text } from '@pommora/uix/Theme'
 import { Icon } from '@pommora/uix/Symbols'
@@ -748,6 +749,7 @@ const DataRow = memo(function DataRow({
     <div
       ref={ref}
       data-rid={row.id}
+      data-reveal-host=""
       className={cx(
         'data-row',
         selected && 'selected',
@@ -796,10 +798,11 @@ const DataRow = memo(function DataRow({
               if (!isDragging) api.click(row, c, e)
             }}
           >
+            {i === 0 && <span className="row-rail" aria-hidden="true" />}
             {i === 0 && (
               // biome-ignore lint/a11y/useKeyWithClickEvents lint/a11y/noStaticElementInteractions: a bubble guard, not a control
               <span
-                className="row-grip"
+                className={cx('row-grip', revealTarget)}
                 {...(dragDisabled ? {} : handle)}
                 // A right-press is defaulted away here — preventing only the context menu comes too late to stop a seated caret.
                 onPointerDown={(e) => {
