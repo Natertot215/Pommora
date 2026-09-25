@@ -8,7 +8,8 @@ import {
   confirmDelete,
 } from './confirmations'
 import { useSession } from '../../Session/store'
-import { currentNotification } from '../Notifications/notifications'
+import { clearNotification, currentNotification } from '../Notifications/notifications'
+import type { MutableKind } from '@pommora/core/Nexus/mutateRequest'
 import { stubDialer } from '../../vitest.setup'
 import { ok } from '@pommora/core/Contract/result'
 
@@ -72,15 +73,47 @@ describe('what the Confirm Before Deletion switch governs', () => {
   })
 })
 
-describe('a confirmed delete', () => {
-  it('offers an Undo that restores the bundle the delete answered with', async () => {
+describe('a delete through the confirmation', () => {
+  const mutate = vi.fn()
+  const del = (kind: MutableKind): Promise<void> =>
+    confirmDelete({ path: 'Notes/A', kind, title: 'A' })
+
+  beforeEach(() => {
     ;(window as unknown as { nexus: unknown }).nexus = stubDialer({
       'delete:facts': async () => ok({ trashMode: 'nexus', permanentDelete: false }),
     })
-    const mutate = vi.fn(async () => ({ trashed: { bundlePath: '.trash/b1' } }))
+    mutate.mockReset()
+    mutate.mockResolvedValue({ trashed: { bundlePath: '.trash/b1' } })
     useSession.setState({ mutate: mutate as never })
-    await confirmDelete({ path: 'Notes/A.md', kind: 'page', title: 'A' })
+    clearNotification()
+  })
+
+  it('with the switch off, deletes a page unasked while a container, Space, or Context still asks', async () => {
+    switchOff()
+    await del('page')
+    expect(asked).toEqual([])
+    for (const kind of ['collection', 'set', 'space', 'context'] as const) await del(kind)
+    expect(asked).toHaveLength(4)
+    expect(mutate).toHaveBeenCalledTimes(5)
+  })
+
+  it('deletes nothing when the question is declined', async () => {
+    switchOn()
+    useSession.setState({ askConfirm: async () => false })
+    await del('page')
+    expect(mutate).not.toHaveBeenCalled()
+  })
+
+  it('offers an Undo that restores the bundle the delete answered with', async () => {
+    await del('page')
     await currentNotification()?.action?.run()
     expect(mutate).toHaveBeenLastCalledWith({ op: 'restore', bundlePath: '.trash/b1' })
+  })
+
+  it('offers no Undo for a system-trash delete, which leaves no bundle', async () => {
+    mutate.mockResolvedValue({})
+    await del('page')
+    expect(currentNotification()?.message).toBe('Deleted “A”')
+    expect(currentNotification()?.action).toBeUndefined()
   })
 })
