@@ -3,6 +3,7 @@
 import type { ResolvedGroup } from '@pommora/core/Views/viewRow'
 import type { SavedView } from '@pommora/core/Views/views'
 import type { SetTreeNode } from '../Pipeline/group'
+import { nearestByTop } from '@pommora/uix/Interactions/insertionDrag'
 import { type MeasuredRow, nextOrder, walksTo } from '@pommora/uix/Interactions/reorderModel'
 
 export interface Band {
@@ -19,7 +20,7 @@ export interface BandSlot {
   lineY: number
 }
 
-/** Top/bottom fraction of a set band that reads as a before/after slot; the middle nests. */
+/** Top fraction of a set band that reads as a slot before it; the rest of its region nests. */
 const NEST_ZONE = 0.3
 
 /** The render reads live collapse state. The ungrouped tail is a non-entity: no band, no drag, no target. */
@@ -80,13 +81,9 @@ export function bandSlot(
     return { beforeId: below.id, impliedParentId: below.parentId, nestInto: null, lineY }
   }
 
-  let idx = -1
-  for (const [i, m] of rows.entries()) {
-    if (y >= m.top) idx = i
-    else break
-  }
-  if (idx === -1) return slotBefore(0, rows[0].top)
-  const row = rows[idx]
+  if (y < rows[0].top) return slotBefore(0, rows[0].top)
+  const row = nearestByTop(rows, y)
+  const idx = rows.indexOf(row)
   const band = byId.get(row.id)
   if (!band) return null
   const inset = (row.bottom - row.top) * NEST_ZONE

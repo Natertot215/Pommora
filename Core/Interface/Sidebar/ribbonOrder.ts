@@ -1,4 +1,4 @@
-import type { SidebarMode } from '@pommora/core/Settings/personalization'
+import { EXPERIMENTAL_MODES, type SidebarMode } from '@pommora/core/Settings/personalization'
 
 export type RibbonKey = SidebarMode | 'matrix' | 'settings'
 
@@ -12,7 +12,9 @@ const DEFAULT_ORDER = Object.keys({
 } satisfies Record<RibbonKey, 0>) as RibbonKey[]
 
 export function resolveOrder(persisted: string[] | undefined, experimental: boolean): RibbonKey[] {
-  const order = experimental ? DEFAULT_ORDER : DEFAULT_ORDER.filter((k) => k !== 'agenda')
+  const order = experimental
+    ? DEFAULT_ORDER
+    : DEFAULT_ORDER.filter((k) => !EXPERIMENTAL_MODES.has(k))
   const known = new Set<string>(order)
   const keys = (persisted ?? []).filter((k): k is RibbonKey => known.has(k))
   order.forEach((k, i) => {

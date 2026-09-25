@@ -34,6 +34,8 @@ export type Placement = (typeof PLACEMENTS)[number]
 
 const SIDEBAR_MODES = ['collections', 'contexts', 'agenda'] as const
 export type SidebarMode = (typeof SIDEBAR_MODES)[number]
+// Modes still being built, present only with Experimental Features on.
+export const EXPERIMENTAL_MODES: ReadonlySet<string> = new Set<SidebarMode>(['agenda'])
 
 export const TAB_OPEN_BEHAVIORS = ['overtake', 'newtab'] as const
 export type TabOpenBehavior = (typeof TAB_OPEN_BEHAVIORS)[number]

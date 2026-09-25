@@ -4,13 +4,13 @@ import type { CollectionNode, NexusTree } from './tree'
 import { NEW_SLOT } from './mutateRequest'
 import {
   insertCreatedInTree,
+  moveInTree,
   patchContextGroupsInTree,
   patchNodeInTree,
   relocateNodeInTree,
   removeNodeInTree,
   renameNodeInTree,
   reorderChildrenInTree,
-  reorderPagesInTree,
 } from './treePatch'
 import { DEFAULT_COMMANDS } from '../Actions/commands'
 
@@ -397,17 +397,52 @@ describe('reorder transforms', () => {
     expect(t?.collections.map((c) => c.id)).toEqual(['c2', 'c1'])
   })
 
-  it('a moved page composed through reorderPages lands at its slot, not appended', () => {
+  it('a moved page lands at the slot its order names, not appended', () => {
     const base = tree()
     base.collections[1].pages.push({ kind: 'page', id: 'p9', title: 'Z', path: 'Work/Z.md' })
-    const moved = relocateNodeInTree(base, 'Notes/A.md', 'Work')
-    expect(moved?.collections[1].pages.map((p) => p.id)).toEqual(['p9', 'p1'])
-    const t = reorderPagesInTree(moved ?? base, 'Work', ['p1', 'p9'])
+    const t = moveInTree(base, {
+      op: 'movePage',
+      path: 'Notes/A.md',
+      newParentPath: 'Work',
+      order: ['p1', 'p9'],
+    })
     expect(t?.collections[1].pages.map((p) => p.id)).toEqual(['p1', 'p9'])
   })
 
-  it('reorderPages ranks ids absent from the order last, stable', () => {
-    const t = reorderPagesInTree(tree(), 'Notes/Sub', ['p2'])
+  it('a moved page with no order is appended', () => {
+    const t = moveInTree(tree(), { op: 'movePage', path: 'Notes/A.md', newParentPath: 'Work' })
+    expect(t?.collections[1].pages.map((p) => p.id)).toEqual(['p1'])
+  })
+
+  it('a same-parent move is its order alone, and a move of nothing is null', () => {
+    const base = tree()
+    base.collections[0].sets.push({
+      kind: 'set',
+      id: 's2',
+      title: 'Z',
+      path: 'Notes/Z',
+      sets: [],
+      pages: [],
+    })
+    const t = moveInTree(base, {
+      op: 'moveSet',
+      path: 'Notes/Z',
+      newParentPath: 'Notes',
+      order: ['s2', 's1'],
+    })
+    expect(t?.collections[0].sets.map((s) => s.id)).toEqual(['s2', 's1'])
+    expect(
+      moveInTree(tree(), { op: 'moveSet', path: 'Notes/Ghost', newParentPath: 'Work', order: [] }),
+    ).toBeNull()
+  })
+
+  it('a same-parent page move ranks ids absent from its order last, stable', () => {
+    const t = moveInTree(tree(), {
+      op: 'movePage',
+      path: 'Notes/Sub/B.md',
+      newParentPath: 'Notes/Sub',
+      order: ['p2'],
+    })
     expect(t?.collections[0].sets[0].pages.map((p) => p.id)).toEqual(['p2'])
   })
 })

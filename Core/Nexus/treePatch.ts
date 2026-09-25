@@ -525,7 +525,7 @@ export function reorderChildrenInTree(
 }
 
 /** Composed after relocateNodeInTree so a moved page lands at its slot rather than appended. */
-export function reorderPagesInTree(
+function reorderPagesInTree(
   tree: NexusTree,
   parentPath: string,
   order: string[],
@@ -535,4 +535,17 @@ export function reorderPagesInTree(
       ? { ...node, pages: byOrder(node.pages, order) }
       : node,
   )
+}
+
+/** A move is its relocation plus the destination's order, and a same-parent move is that order alone; null when neither resolves. */
+export function moveInTree(
+  tree: NexusTree,
+  req: Extract<MutateRequest, { op: 'movePage' | 'moveSet' }>,
+): NexusTree | null {
+  const moved = relocateNodeInTree(tree, req.path, req.newParentPath)
+  if (!moved && relDirname(req.path) !== req.newParentPath) return null
+  if (req.op === 'moveSet')
+    return reorderChildrenInTree(moved ?? tree, req.newParentPath, req.order) ?? moved
+  if (!req.order) return moved
+  return reorderPagesInTree(moved ?? tree, req.newParentPath, req.order) ?? moved
 }
