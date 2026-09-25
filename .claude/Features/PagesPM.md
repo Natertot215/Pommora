@@ -13,7 +13,7 @@ A page stores no dates of its own. Its **Creation Time** is the instant encoded 
 
 The filename minus `.md` is the title; there is no `title` field, and a rename is a file rename. The page's header shows its `icon` beside the title when **Show Icon In Title** is on, and any page can override that from its title's menu, the override kept in its page metadata. Within a folder, names must be unique: creating a page under a taken name disambiguates with a numeric suffix, while renaming onto a taken name is refused. Titles aren't unique Nexus-wide, so two Pages in different folders can share one, and a connection to a shared title resolves as ambiguous.
 
-Every creation surface — the sidebar, a table row, a card, the grid — runs one act (`createDisambiguated` in `Core/Nexus/mutate.ts`): the page exists on disk as **Untitled** the moment the gesture fires, and its title opens as an uncommitted rename with an empty field. Confirming names the page, disambiguating like a create; leaving the field any other way keeps Untitled.
+Every creation surface — the sidebar, a table row, a card, the grid — runs one act (`createDisambiguated` in `Core/Paths/names.ts`): the page exists on disk as **Untitled** the moment the gesture fires, and its title opens as an uncommitted rename with an empty field. Confirming names the page, disambiguating like a create; leaving the field any other way keeps Untitled.
 
 ### Opening Behavior
 
