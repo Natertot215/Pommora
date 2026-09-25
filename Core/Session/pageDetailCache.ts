@@ -118,10 +118,6 @@ export function writeThroughBody(path: string, body: string): void {
   if (d) seat({ ...d, body })
 }
 
-export function dropDetailsWhere(stale: (path: string) => boolean): void {
-  for (const path of [...detailByPath.keys()]) if (stale(path)) dropCacheDetail(path)
-}
-
 export function dropPageDetail(path: string): void {
   detailByPath.delete(path)
   baseByPath.delete(path)

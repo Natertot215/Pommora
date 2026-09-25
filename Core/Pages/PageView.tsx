@@ -5,7 +5,7 @@ import { usePublishSelection } from '../Interface/Subfield/publish'
 import { MarkdownEditor } from '../MarkdownPM/MarkdownEditor'
 import { useConnections } from '../Session/pageConnections'
 import { navKey } from '../Navigation/navRef'
-import { useBodyEpoch } from '../Session/pageDetailCache'
+import { readPageDetail, useBodyEpoch } from '../Session/pageDetailCache'
 import { cacheGeneration, captureCache, readCache } from '../Navigation/warmTabs'
 import { fenceWarm } from '../MarkdownPM/warmSeam'
 import { registerPageEditor } from './pageEditor'
@@ -138,12 +138,12 @@ export function PageView({
         capture: (state) => {
           if (cacheGeneration() !== mountedGen.current) return
           const { slot: now, tabId: owner } = live.current
+          if (now?.status !== 'ready') return captureCache(owner, warmKey, state)
+          const cached = readPageDetail(now.detail.path)
           captureCache(
             owner,
             warmKey,
-            now?.status === 'ready'
-              ? { ...state, pageDetail: { ...now.detail, body: now.body } }
-              : state,
+            cached ? { ...state, pageDetail: { ...cached, body: now.body } } : state,
           )
         },
       }}
