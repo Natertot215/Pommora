@@ -137,7 +137,7 @@ What Pommora remembers, and for how long. Four tiers, told by where a thing is w
 | Which view a container opens on, and the hand order inside it | Each container's own sidecar, as `active_view` and the view's `manual_order` | Picking another view; reordering                                                |
 | Page bodies, frontmatter, and their property values           | The Markdown files themselves                                                | Editing the page                                                                |
 | A page's icon, aliases, and title-icon override               | `metadata/MM-YYYY.json`, by the month the page was created                   | Clearing the field; an entry left with nothing set is deleted                   |
-| The Matrix's group, filter, forces, and display               | `matrix.json`                                                                | Changing a row; sections merge one at a time, and forces by grouping block      |
+| The Matrix's group, filter, forces, and display               | `matrix.json`                                                                | Changing a row; sections merge one at a time, and forces by value per grouping  |
 
 **Stays on this machine, filed under the Nexus's id.** `nexus.db` sits in the app's userData directory and holds this machine's chrome and the index it derived from the content. `versions.db` sits beside it on the same terms and holds this machine's page file history and the bytes its sync conflicts left behind.
 
