@@ -15,7 +15,7 @@
 - **Prefs and folds:** one keyed prefs channel lets every editor that shows a page remember its folds.
 - **Links:** one link target serves every follow surface.
 
-Sixteen audit findings closed. Seven new ones entered the ledger (F-571 to F-577). The Dashboard was republished.
+Twenty audit findings closed: sixteen deleted in the closing ledger commit, plus F-150, F-231, F-467 and F-501, which a peer's reconcile deleted for Phase 2. Seven new ones entered the ledger (F-571 to F-577), so the ledger reads 314/556. The Dashboard was republished.
 
 #### Completion Criteria
 
