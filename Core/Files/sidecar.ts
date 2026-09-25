@@ -15,7 +15,7 @@ export async function readSidecar<S extends z.ZodType>(
   return parsed.success ? parsed.data : null
 }
 
-type Refuse = (why: Result<never>) => null
+export type Refuse = (why: Result<never>) => null
 
 export async function patchSidecar(
   absFolder: string,

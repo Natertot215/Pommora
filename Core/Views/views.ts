@@ -238,6 +238,36 @@ export const DEFAULT_VIEW_ID = `${VIEW_ID_PREFIX}default`
 
 export const mintViewId = (): string => `${VIEW_ID_PREFIX}${newId()}`
 
+const ownViewId = (id: unknown): string | undefined =>
+  typeof id === 'string' && id !== '' && id !== DEFAULT_VIEW_ID ? id : undefined
+
+/** Whether `id` is the stored view's own id rather than a positional one `viewIdsOf` stood in for it. */
+export const ownsViewId = (stored: unknown, id: string): boolean => ownViewId(stored) === id
+
+// A view answers to its stored id; one with none of its own (missing, unsaved, or a sibling's) answers to a positional id no sibling holds until a write mints it one.
+export function viewIdsOf(stored: readonly unknown[], slot: (n: number) => string): string[] {
+  const taken = new Set<string>()
+  const own = stored.map((raw) => {
+    const id = ownViewId(raw)
+    if (id === undefined || taken.has(id)) return undefined
+    taken.add(id)
+    return id
+  })
+  return own.map((id, i) => {
+    if (id !== undefined) return id
+    let n = i
+    while (taken.has(slot(n))) n++
+    taken.add(slot(n))
+    return slot(n)
+  })
+}
+
+export const containerViewIds = (views: readonly unknown[]): string[] =>
+  viewIdsOf(
+    views.map((v) => (v as { id?: unknown } | null)?.id),
+    (n) => `${VIEW_ID_PREFIX}${n}`,
+  )
+
 export function mintNewView(name: string, schema: PropertyDefinition[]): SavedView {
   return {
     id: DEFAULT_VIEW_ID,

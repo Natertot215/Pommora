@@ -1,32 +1,80 @@
 import type { ContainerKind } from '../Nexus/schemas'
-import { DEFAULT_VIEW_ID, mergeViewEdit, mintViewId, type SavedView } from './views'
+import {
+  containerViewIds,
+  DEFAULT_VIEW_ID,
+  mergeViewEdit,
+  mintViewId,
+  ownsViewId,
+  type SavedView,
+} from './views'
 import { ok, fail, type Result, fault } from '../Contract/result'
 import { setOrDrop } from '../Files/atomicWrite'
-import { patchSidecar } from '../Files/sidecar'
+import { patchSidecar, type Refuse } from '../Files/sidecar'
 import { isPlainObject } from '../Properties/propertyValue'
 
-const viewsOf = (raw: Record<string, unknown>): unknown[] =>
-  Array.isArray(raw.views) ? raw.views : []
+interface ViewsDoc {
+  cur: Record<string, unknown>
+  views: unknown[]
+  ids: string[]
+  resolve: (id: string) => string
+}
 
-const idOf = (v: unknown): unknown => (isPlainObject(v) ? v.id : undefined)
+// The positional ids each container's repairs replaced, so a write still in flight under one lands on the view it named.
+const repaired = new Map<string, Map<string, string>>()
+
+// Every write first mints an id for each shown view still answering to a positional one, so a positional id never reaches the file; `resolve` carries a caller's id across the repair, and the selection follows it.
+function patchViews(
+  folder: string,
+  kind: ContainerKind,
+  fn: (doc: ViewsDoc, refuse: Refuse) => Record<string, unknown> | null,
+): Promise<Result<Record<string, unknown>>> {
+  return patchSidecar(folder, kind, (raw, refuse) => {
+    const views = Array.isArray(raw.views) ? [...raw.views] : []
+    const read = containerViewIds(views)
+    const ids = [...read]
+    const minted = repaired.get(folder) ?? new Map<string, string>()
+    views.forEach((v, i) => {
+      if (!isPlainObject(v) || ownsViewId(v.id, read[i])) return
+      ids[i] = mintViewId()
+      minted.set(read[i], ids[i])
+      views[i] = { ...v, id: ids[i] }
+    })
+    if (minted.size > 0) repaired.set(folder, minted)
+    const resolve = (id: string): string => {
+      const at = read.indexOf(id)
+      return at >= 0 ? ids[at] : (minted.get(id) ?? id)
+    }
+    const cur: Record<string, unknown> = { ...raw, views }
+    if (typeof raw.active_view === 'string') cur.active_view = resolve(raw.active_view)
+    return fn({ cur, views, ids, resolve }, refuse)
+  })
+}
 
 export async function saveView(
   folder: string,
   kind: ContainerKind,
   view: SavedView,
 ): Promise<Result<{ id: string }>> {
-  const id = view.id === DEFAULT_VIEW_ID ? mintViewId() : view.id
-  const finalView: SavedView = { ...view, id }
-  const written = await patchSidecar(folder, kind, (cur) => {
-    const views = viewsOf(cur)
-    return {
-      ...cur,
-      views: views.some((v) => idOf(v) === id)
-        ? views.map((v) => (idOf(v) === id ? mergeViewEdit(v, finalView) : v))
-        : [...views, finalView],
-    }
+  let id = view.id
+  const written = await patchViews(folder, kind, ({ cur, views, ids, resolve }) => {
+    const at = ids.indexOf(resolve(view.id))
+    id = at >= 0 ? ids[at] : view.id === DEFAULT_VIEW_ID ? mintViewId() : resolve(view.id)
+    const finalView: SavedView = { ...view, id }
+    if (at < 0) views.push(finalView)
+    else views[at] = mergeViewEdit(views[at], finalView)
+    return { ...cur, views }
   })
   return written.ok ? ok({ id }) : written
+}
+
+export async function setActiveView(
+  folder: string,
+  kind: ContainerKind,
+  viewId: string,
+): Promise<Result<Record<string, unknown>>> {
+  return patchViews(folder, kind, ({ cur, resolve }) =>
+    setOrDrop(cur, 'active_view', resolve(viewId)),
+  )
 }
 
 export async function reorderViews(
@@ -34,13 +82,14 @@ export async function reorderViews(
   kind: ContainerKind,
   orderedIds: string[],
 ): Promise<Result<null>> {
-  const written = await patchSidecar(folder, kind, (cur) => {
-    const views = viewsOf(cur)
-    const rank = (v: unknown): number => {
-      const at = orderedIds.indexOf(idOf(v) as string)
-      return at < 0 ? orderedIds.length : at
+  const written = await patchViews(folder, kind, ({ cur, views, ids, resolve }) => {
+    const wanted = orderedIds.map(resolve)
+    const rank = (i: number): number => {
+      const at = wanted.indexOf(ids[i])
+      return at < 0 ? wanted.length : at
     }
-    return { ...cur, views: [...views].sort((a, b) => rank(a) - rank(b)) }
+    const order = views.map((_, i) => i).sort((a, b) => rank(a) - rank(b))
+    return { ...cur, views: order.map((i) => views[i]) }
   })
   return written.ok ? ok(null) : written
 }
@@ -50,16 +99,16 @@ export async function deleteView(
   kind: ContainerKind,
   viewId: string,
 ): Promise<Result<null>> {
-  const written = await patchSidecar(folder, kind, (cur, refuse) => {
-    const views = viewsOf(cur)
+  const written = await patchViews(folder, kind, ({ cur, views, ids, resolve }, refuse) => {
     if (views.length <= 1) return refuse(fault('Cannot delete the last view.'))
-    const next = views.filter((v) => idOf(v) !== viewId)
-    if (next.length === views.length) return refuse(fail('not-found', 'View not found.'))
+    const at = ids.indexOf(resolve(viewId))
+    if (at < 0) return refuse(fail('not-found', 'View not found.'))
+    views.splice(at, 1)
     // A sidecar naming a view that is gone is legible nonsense; the absent key is the container's "no choice made", which pickView already reads.
     return setOrDrop(
-      { ...cur, views: next },
+      { ...cur, views },
       'active_view',
-      cur.active_view === viewId ? null : cur.active_view,
+      cur.active_view === ids[at] ? null : cur.active_view,
     )
   })
   return written.ok ? ok(null) : written
