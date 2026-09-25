@@ -75,7 +75,6 @@ export function setStatusGroups(
   )
 }
 
-// mutateRegistry alone: the caller holds a page lock the schema chain's cascades take.
 export function addOptionToDef(
   root: string,
   propertyId: string,

@@ -4,7 +4,7 @@ import { useSession } from '../../Session/store'
 import type { BannerOwnerKind } from '@pommora/core/Nexus/mutateRequest'
 import type { Crop } from '@pommora/core/Nexus/schemas'
 import { GhostSuppress } from '@pommora/uix/Interactions/ghostCreate'
-import { host } from '../../Platform/dialer'
+import { dialer } from '../../Platform/dialer'
 import { ImagePicker } from '../../Assets/ImagePicker'
 import { popMenu } from '../../Actions/menuActions'
 import {
@@ -46,7 +46,7 @@ export function useBannerMenu(
     return done?.adopted
   }
   const addOrChange = async (): Promise<void> => {
-    const picked = valueOr(await host().ask('nexus:pickFile'), null)
+    const picked = valueOr(await dialer().ask('nexus:pickFile'), null)
     if (picked && (await setBanner(picked)) && autoEdit) openEditor()
   }
   const openEditor = (): void => {

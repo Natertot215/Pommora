@@ -4,7 +4,7 @@ import { DEFAULT_TRASH_MODE } from '@pommora/core/Trash/trashRow'
 import { useSession } from '../../Session/store'
 import { SETTING_DEFAULTS, settingOf } from '@pommora/core/Settings/personalization'
 import { notifyDeleted } from '../Notifications/notifications'
-import { host } from '../../Platform/dialer'
+import { dialer } from '../../Platform/dialer'
 
 const DELETE_FACTS_FALLBACK = {
   trashMode: DEFAULT_TRASH_MODE,
@@ -46,7 +46,7 @@ export const confirmDelete = async (target: {
   title: string
 }): Promise<void> => {
   if (!waived(target.kind)) {
-    const { trashMode } = valueOr(await host().ask('delete:facts'), DELETE_FACTS_FALLBACK)
+    const { trashMode } = valueOr(await dialer().ask('delete:facts'), DELETE_FACTS_FALLBACK)
     const yes = await ask({
       message: `Delete “${target.title}”?`,
       detail:
@@ -115,7 +115,7 @@ export const askClearOption = (name: string): Promise<boolean> =>
       })
 
 export const askEmptyTrash = async (count: number): Promise<boolean> => {
-  const { permanentDelete } = valueOr(await host().ask('delete:facts'), DELETE_FACTS_FALLBACK)
+  const { permanentDelete } = valueOr(await dialer().ask('delete:facts'), DELETE_FACTS_FALLBACK)
   return ask({
     message: count === 1 ? 'Delete this item?' : `Delete these ${count} items?`,
     detail: permanentDelete

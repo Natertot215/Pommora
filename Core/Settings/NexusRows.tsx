@@ -13,7 +13,7 @@ import { useTimedLabel } from './useTimedLabel'
 import { useSession, useSetting } from '../Session/store'
 import { useExperimental } from './experimental'
 import * as x from './settings-rows.css'
-import { host } from '../Platform/dialer'
+import { dialer } from '../Platform/dialer'
 
 const fingerprint = (id: string): string => id.slice(0, 12)
 
@@ -80,7 +80,7 @@ function NexusBody({ nexusId }: { nexusId: string }): React.JSX.Element | null {
 
   const refresh = useCallback(
     (report = true): void => {
-      void run(() => host().ask('sync:state'), report)
+      void run(() => dialer().ask('sync:state'), report)
     },
     [run],
   )
@@ -107,7 +107,7 @@ function NexusBody({ nexusId }: { nexusId: string }): React.JSX.Element | null {
 
   const onConnect = async (): Promise<void> => {
     const ok = await run(() => {
-      const sent = host().ask(
+      const sent = dialer().ask(
         'sync:connect',
         address,
         password || undefined,
@@ -130,7 +130,7 @@ function NexusBody({ nexusId }: { nexusId: string }): React.JSX.Element | null {
                 ? undefined
                 : {
                     value: state.device.name,
-                    onCommit: (next) => void run(() => host().ask('sync:renameDevice', next)),
+                    onCommit: (next) => void run(() => dialer().ask('sync:renameDevice', next)),
                   }
             }
           >
@@ -199,7 +199,7 @@ function NexusBody({ nexusId }: { nexusId: string }): React.JSX.Element | null {
                     type="base"
                     label="Disconnect"
                     disabled={busy}
-                    onClick={() => void run(() => host().ask('sync:disconnect'))}
+                    onClick={() => void run(() => dialer().ask('sync:disconnect'))}
                   />
                 </>
               )}
@@ -212,7 +212,7 @@ function NexusBody({ nexusId }: { nexusId: string }): React.JSX.Element | null {
               disabled={busy || binding?.state !== 'approved'}
               onClick={() =>
                 void run(async () => {
-                  const r = await host().ask('sync:now')
+                  const r = await dialer().ask('sync:now')
                   if (r.ok && r.value.status.state !== 'off') markSynced()
                   return r
                 })
@@ -241,8 +241,8 @@ function NexusBody({ nexusId }: { nexusId: string }): React.JSX.Element | null {
                             onClick={() =>
                               void run(() =>
                                 device.approved
-                                  ? host().ask('sync:revoke', device.id)
-                                  : host().ask('sync:approve', device.id),
+                                  ? dialer().ask('sync:revoke', device.id)
+                                  : dialer().ask('sync:approve', device.id),
                               )
                             }
                           />

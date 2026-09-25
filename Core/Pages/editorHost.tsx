@@ -12,7 +12,7 @@ import { citationsVisible, pageMetaOf, useSession } from '../Session/store'
 import { pagesByIdOf } from '../Nexus/treeIndex'
 import { fetchPageDetail, knownBody } from '../Session/pageDetailCache'
 import { warmSeamOf } from '../Navigation/warmTabs'
-import { host } from '../Platform/dialer'
+import { dialer } from '../Platform/dialer'
 import { popMenu } from '../Actions/menuActions'
 import {
   cancelGlance,
@@ -37,8 +37,8 @@ interface EditorHostOptions {
 
 /** The bridge's listener is per-caller, so every mounted editor hears every action; both directions answer to `subject`. */
 const nativeEditorMenu: EditorMenuApi = {
-  pushState: (s) => host().tell('editor:format-state', s),
-  onAction: (cb) => host().on('menu:action', cb),
+  pushState: (s) => dialer().tell('editor:format-state', s),
+  onAction: (cb) => dialer().on('menu:action', cb),
 }
 
 // The outer editor tears a tile's DOM down whenever it leaves the viewport; this holds the nested editor's doc, selection, history and scroll, keyed by the full host chain.
@@ -65,7 +65,7 @@ function buildEditorHost(
     const tree = state().tree
     const path = tree && pagesByIdOf(tree).get(id)?.path
     if (next && path)
-      void host()
+      void dialer()
         .ask('mutate', { op: 'setPageMeta', path, patch: { aliases: next.length ? next : null } })
         .then(reportRefusal)
   }
@@ -97,17 +97,17 @@ function buildEditorHost(
     pageSurface,
     prefs: pageId
       ? {
-          load: async () => valueOr(await host().ask('editorPrefs:get', pageId), null),
+          load: async () => valueOr(await dialer().ask('editorPrefs:get', pageId), null),
           save: preview
             ? () => {}
             : (...write) =>
-                void persist(write[0], host().ask('editorPrefs:set', pageId, ...write), true),
+                void persist(write[0], dialer().ask('editorPrefs:set', pageId, ...write), true),
         }
       : undefined,
     clipboard: {
-      read: async () => valueOr(await host().ask('clipboard:read'), ''),
+      read: async () => valueOr(await dialer().ask('clipboard:read'), ''),
       write: async (text) => {
-        await host().ask('clipboard:write', text)
+        await dialer().ask('clipboard:write', text)
       },
     },
     menus: {

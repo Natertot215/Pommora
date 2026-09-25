@@ -14,6 +14,6 @@ declare global {
   }
 }
 
-export function host(): Dialer {
+export function dialer(): Dialer {
   return window.nexus
 }

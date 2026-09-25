@@ -2,7 +2,7 @@ import { reportRefusal } from '@pommora/core/Interface/Notifications/notificatio
 import { PathField } from '@pommora/uix/Fields/PathField'
 import { SettingsFieldRow } from './SettingsFieldRow'
 import { useSession } from '../Session/store'
-import { host } from '../Platform/dialer'
+import { dialer } from '../Platform/dialer'
 
 export function AssetDirectoryRow({
   label,
@@ -12,7 +12,7 @@ export function AssetDirectoryRow({
   hint?: string
 }): React.JSX.Element {
   const stored = useSession((s) => s.tree?.assetDirectory ?? '')
-  const setDir = (dir: string): void => void host().ask('assets:setDir', dir).then(reportRefusal)
+  const setDir = (dir: string): void => void dialer().ask('assets:setDir', dir).then(reportRefusal)
 
   return (
     <SettingsFieldRow label={label} hint={hint}>
@@ -22,7 +22,7 @@ export function AssetDirectoryRow({
         empty="No folder"
         onCommit={setDir}
         onBrowse={() =>
-          void host()
+          void dialer()
             .ask('assets:chooseDir')
             .then((picked) => {
               if (reportRefusal(picked) && picked.value !== null) setDir(picked.value)

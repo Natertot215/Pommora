@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { valueOr } from '@pommora/core/Contract/result'
 import type { Crop } from '@pommora/core/Nexus/schemas'
 import { useSession } from '../Session/store'
-import { host } from '../Platform/dialer'
+import { dialer } from '../Platform/dialer'
 import { popMenu } from '../Actions/menuActions'
 import { type NexusIconAction, nexusIconMenuItems } from '@pommora/core/Actions/identityMenus'
 import { asRenderableIcon } from '@pommora/uix/Symbols'
@@ -23,7 +23,7 @@ export function useNexusIcon() {
     if (action === 'editIcon') setEditor('glyph')
     else if (action === 'addPhoto') {
       setEditor('file')
-      const source = valueOr(await host().ask('nexus:pickFile'), null)
+      const source = valueOr(await dialer().ask('nexus:pickFile'), null)
       if (source && (await mutate({ op: 'setProfileImage', source }))) {
         if (profileIcon) await mutate({ op: 'setProfileIcon', icon: null })
         setEditor('crop')

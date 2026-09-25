@@ -33,7 +33,7 @@ import {
 } from './saveScheduler'
 import type { Slice } from './sessionState'
 import { resetUndo } from './undo'
-import { host } from '../Platform/dialer'
+import { dialer } from '../Platform/dialer'
 
 export interface NexusSlice {
   status: 'idle' | 'loading' | 'ready' | 'error' | 'empty'
@@ -122,7 +122,7 @@ export const createNexusSlice: Slice<NexusSlice> = (set, get) => {
     applySyncStatus: (status) => set({ syncStatus: status }),
 
     loadHeadings: async (paths) => {
-      const res = await host().ask('index:headings', paths)
+      const res = await dialer().ask('index:headings', paths)
       if (!res.ok) return
       set((s) => ({ headings: paths ? { ...s.headings, ...res.value } : res.value }))
     },
@@ -130,13 +130,13 @@ export const createNexusSlice: Slice<NexusSlice> = (set, get) => {
     load: async () => {
       // Only the first load shows it; a refetch keeps the tree mounted so selection survives.
       if (!get().tree) set({ status: 'loading', error: undefined })
-      void host()
+      void dialer()
         .ask('theme:systemAccent')
         .then((r) => {
           systemAccentCache = valueOr(r, null)
         })
       try {
-        const res = await host().ask('nexus:state')
+        const res = await dialer().ask('nexus:state')
         if (!res.ok) {
           set({ status: 'error', error: res.error })
           return
@@ -145,10 +145,10 @@ export const createNexusSlice: Slice<NexusSlice> = (set, get) => {
           case 'open':
             await get().applyTree(res.value.tree)
             await Promise.all([
-              host()
+              dialer()
                 .ask('citations:get')
                 .then((r) => set({ citationsShown: valueOr(r, {}) })),
-              host()
+              dialer()
                 .ask('linkTitles:get')
                 .then((r) => set({ linkTitles: valueOr(r, {}) })),
             ])
@@ -156,9 +156,9 @@ export const createNexusSlice: Slice<NexusSlice> = (set, get) => {
             if (get().activeTabId === '') {
               // Disk leads only here and on the external-edit push, never again mid-session.
               const [read, windows, stored] = await Promise.all([
-                host().ask('nav:read'),
-                host().ask('windows:load'),
-                host().ask('tabs:load'),
+                dialer().ask('nav:read'),
+                dialer().ask('windows:load'),
+                dialer().ask('tabs:load'),
               ])
               if (windows.ok) set({ windowsFile: windows.value })
               get().restoreNavigation(valueOr(read, null), valueOr(stored, null))
@@ -180,7 +180,7 @@ export const createNexusSlice: Slice<NexusSlice> = (set, get) => {
       // Once per nexus, never per reconcile: applyTree runs on every tree change and must not round-trip.
       if (get().devicePrefsState === 'unread') {
         set({ devicePrefsState: 'asked' })
-        const prefs = await host().ask('devicePrefs:load')
+        const prefs = await dialer().ask('devicePrefs:load')
         if (prefs.ok) {
           const panes = prefs.value?.panes
           set({
@@ -206,9 +206,9 @@ export const createNexusSlice: Slice<NexusSlice> = (set, get) => {
       get().reconcileGlance(index)
       // From the module cache: an awaited round-trip here would gate the whole reconcile.
       if (systemAccentCache === undefined)
-        systemAccentCache = valueOr(await host().ask('theme:systemAccent'), null)
+        systemAccentCache = valueOr(await dialer().ask('theme:systemAccent'), null)
       else
-        void host()
+        void dialer()
           .ask('theme:systemAccent')
           .then((r) => {
             systemAccentCache = valueOr(r, null)
@@ -220,9 +220,9 @@ export const createNexusSlice: Slice<NexusSlice> = (set, get) => {
       applyPersonalization(tree.personalization)
     },
 
-    choose: () => openVia(() => host().ask('nexus:choose')),
-    openPath: (path) => openVia(() => host().ask('nexus:openPath', path)),
-    openDropped: (file) => openVia(() => host().openDropped(file)),
+    choose: () => openVia(() => dialer().ask('nexus:choose')),
+    openPath: (path) => openVia(() => dialer().ask('nexus:openPath', path)),
+    openDropped: (file) => openVia(() => dialer().openDropped(file)),
 
     mutate: async (req, onCreated) => {
       const nexus = get().tree?.nexus.id
@@ -248,7 +248,7 @@ export const createNexusSlice: Slice<NexusSlice> = (set, get) => {
       }
       // A flush held by a Nexus switch resumes after it, when the path this op names belongs to the Nexus it left.
       if (get().tree?.nexus.id !== nexus) return null
-      const res = await host().ask('mutate', req)
+      const res = await dialer().ask('mutate', req)
       if (!reportRefusal(res)) return null
       if (res.value.unrestored) notifyReport(unrestoredLine(res.value.unrestored), true)
       if (res.value.cascade?.warning) notifyReport(res.value.cascade.warning, true)

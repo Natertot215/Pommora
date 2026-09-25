@@ -5,7 +5,7 @@ import type { StoredTabSet } from '@pommora/core/Navigation/navRef'
 import type { Result } from '@pommora/core/Contract/result'
 import { persist } from '../Interface/Notifications/notifications'
 import { followBody, readBodyBase, setBodyBase, writeThroughBody } from './pageDetailCache'
-import { host } from '../Platform/dialer'
+import { dialer } from '../Platform/dialer'
 
 const SAVE_DEBOUNCE_MS = 400
 
@@ -111,7 +111,7 @@ export function schedulePageSave(path: string, body: string): void {
     writeThroughBody(path, body)
     followBody(path)
     const sent = readBodyBase(path)?.hash ?? ''
-    const r = await host().ask('page:updateBody', path, body, sent)
+    const r = await dialer().ask('page:updateBody', path, body, sent)
     // A landing that moved the base while this save was out keeps it; the save no longer names the file's last state.
     if (r.ok && !r.value.stale) {
       if (readBodyBase(path)?.hash === sent) setBodyBase(path, { text: body, hash: r.value.hash })
@@ -143,11 +143,11 @@ export function flushAllPageSaves(): Promise<void> {
 export const sessionWriter = createBodyWriter('the session', true)
 
 export function scheduleTabsSave(set: StoredTabSet): void {
-  sessionWriter.schedule('tabs', () => host().ask('tabs:save', set))
+  sessionWriter.schedule('tabs', () => dialer().ask('tabs:save', set))
 }
 
 export function scheduleWindowsSave(file: WindowsFile): void {
-  sessionWriter.schedule('windows', () => host().ask('windows:save', file))
+  sessionWriter.schedule('windows', () => dialer().ask('windows:save', file))
 }
 
 // Sent at once unless a switch holds it, and read from the store when it goes, so a change made mid-switch lands in whichever Nexus stays open.

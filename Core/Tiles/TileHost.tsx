@@ -37,7 +37,7 @@ import {
 import { tileMenuItems } from './tileHandleMenu'
 import { isTileRemoving, markTileRemoving, readTileBody, unmarkTileRemoving } from './tileDocStore'
 import { useTileDoc } from './useTileDoc'
-import { host as dialer } from '../Platform/dialer'
+import { dialer } from '../Platform/dialer'
 import { cx } from '@pommora/uix/Utilities/cx'
 import { RenderBoundary } from '@pommora/uix/Elements/RenderBoundary'
 import './tile-base.css'

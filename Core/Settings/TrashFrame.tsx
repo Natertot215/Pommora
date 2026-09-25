@@ -21,7 +21,7 @@ import { fuzzyScore } from '../Navigation/navSearch'
 import { useSession } from '../Session/store'
 import { notifyReport, unrestoredLine } from '../Interface/Notifications/notifications'
 import { displayPropertyName, useCapitalizeMetadata } from '../Properties/Cells/columnLabel'
-import { host } from '../Platform/dialer'
+import { dialer } from '../Platform/dialer'
 import { popMenu } from '../Actions/menuActions'
 import { trashMenuItems } from '@pommora/core/Actions/trashMenu'
 import { parseStyleAction, styleMenuItems } from '@pommora/core/Actions/columnMenu'
@@ -90,7 +90,7 @@ function TrashBody(): React.JSX.Element {
   const [checked, setChecked] = useState<ReadonlySet<string>>(new Set())
 
   const refresh = useCallback(async (): Promise<void> => {
-    const res = await host().ask('trash:list')
+    const res = await dialer().ask('trash:list')
     if (!res.ok) {
       setFailed(true)
       return
@@ -127,7 +127,7 @@ function TrashBody(): React.JSX.Element {
     const refused: TrashRow[] = []
     const unrestored: string[] = []
     for (const row of targets) {
-      const res = await host().ask('mutate', req(row))
+      const res = await dialer().ask('mutate', req(row))
       ;(res.ok ? done : refused).push(row)
       if (res.ok) unrestored.push(...(res.value.unrestored ?? []))
     }

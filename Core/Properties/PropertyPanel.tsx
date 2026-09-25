@@ -47,7 +47,7 @@ import { useOptionReorder } from './Schema/useOptionReorder'
 import { resolveRowOrder } from './rowOrder'
 import { pushUndo } from '../Session/undo'
 import { readSpaceRowOrder, type SpaceRowOrder } from '../Contexts/spaceSidecar'
-import { host } from '../Platform/dialer'
+import { dialer } from '../Platform/dialer'
 import { contextOptionsFor } from '../Contexts/contextOptions'
 import { isContextColumnId } from '../Contexts/contextIdentity'
 import { relDirname } from '@pommora/core/Paths/posix'
@@ -249,7 +249,8 @@ export function PropertyPanel({
     if (!collection) return
     const full = schema.map((d) => d.id)
     sendWithUndo(
-      (index) => void host().ask('schema:reorder', collection.path, id, index).then(reportRefusal),
+      (index) =>
+        void dialer().ask('schema:reorder', collection.path, id, index).then(reportRefusal),
       nexusReorderIndex(full, shownIds, id, toIndex),
       full.indexOf(id),
     )

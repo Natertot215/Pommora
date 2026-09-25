@@ -8,7 +8,7 @@ import { relDirname } from '@pommora/core/Paths/posix'
 import { assetSubRoot } from '@pommora/core/Paths/nexusPaths'
 import { resolveFileValue } from '../../Assets/assetUrl'
 import { useSession } from '../../Session/store'
-import { host } from '../../Platform/dialer'
+import { dialer } from '../../Platform/dialer'
 import { popMenu } from '../../Actions/menuActions'
 import { reportRefusal } from '../../Interface/Notifications/notifications'
 
@@ -38,7 +38,7 @@ export async function runFilePick(
   const named = chip === null ? undefined : files[chip]
   const dir = (named && folderOf(named)) || propertyFolder(def)
   const picked = valueOr(
-    await host().ask('nexus:pickFile', { any: true, ...(dir ? { dir } : {}) }),
+    await dialer().ask('nexus:pickFile', { any: true, ...(dir ? { dir } : {}) }),
     null,
   )
   if (picked === null) return undefined
@@ -51,7 +51,7 @@ async function adoptInto(
   chip: number | null,
   source: string,
 ): Promise<PropertyValue | undefined> {
-  const adopted = await host().ask('assets:adopt', source, def.file_directory)
+  const adopted = await dialer().ask('assets:adopt', source, def.file_directory)
   if (!reportRefusal(adopted)) return undefined
   const next =
     chip === null

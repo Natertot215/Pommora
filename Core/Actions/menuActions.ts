@@ -1,7 +1,7 @@
 import type { ActionItem, MenuOptions } from '@pommora/core/Actions/menuModel'
 import { valueOr } from '@pommora/core/Contract/result'
 import { useSession } from '../Session/store'
-import { host } from '../Platform/dialer'
+import { dialer } from '../Platform/dialer'
 
 export async function popMenu<A extends string>(
   items: readonly ActionItem<A>[],
@@ -11,7 +11,7 @@ export async function popMenu<A extends string>(
   if (items.length === 0) return null
   if (!trigger || useSession.getState().devicePrefs.nativeMenus) {
     const box = trigger?.getBoundingClientRect()
-    const res = await host().ask('menu', {
+    const res = await dialer().ask('menu', {
       items,
       anchor: box && { left: box.left, top: box.top, height: box.height },
     })

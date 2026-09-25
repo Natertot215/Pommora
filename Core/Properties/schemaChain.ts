@@ -1,4 +1,4 @@
-// The schema-mutation entry points read-modify-write collection sidecars with no per-file guard, so two overlapping IPC ops could land a stale snapshot over a fresh write. Wrap entry points ONLY: a chained fn awaiting another chained fn deadlocks.
+// Schema ops that cascade to pages run one at a time so one can't land inside another's cascade and leave the registry and its pages disagreeing. Wrap entry points ONLY: a chained fn awaiting another chained fn deadlocks.
 
 let chain: Promise<unknown> = Promise.resolve()
 

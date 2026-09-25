@@ -9,7 +9,7 @@ import { linkDomain } from '../../Paths/urlPath'
 import { WEB_PARTITION } from '../../Web/partition'
 import { useHeldPresence } from '@pommora/uix/Animations/useExitPresence'
 import { useSession } from '../../Session/store'
-import { host } from '../../Platform/dialer'
+import { dialer } from '../../Platform/dialer'
 import { useWindowGeometry } from './useWindowGeometry'
 import './web-window.css'
 
@@ -112,7 +112,7 @@ function WebWindowBody({
           type="button"
           className={cx('window-toolbar-title', 'wbrowser-title', text.footnote.standard)}
           title="Open in system browser"
-          onClick={() => void host().ask('link:open', current)}
+          onClick={() => void dialer().ask('link:open', current)}
         >
           <span className="wbrowser-title-domain">{linkDomain(current)}</span>
           {title ? (

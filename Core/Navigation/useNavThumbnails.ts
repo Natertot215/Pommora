@@ -3,7 +3,7 @@ import type { ThumbRect } from '@pommora/core/Interface/chrome'
 import { pageBody, shownPage, shownViewSearch, useSession } from '../Session/store'
 import { navKey } from './navRef'
 import { captured, scopeCaptured } from './thumbMarkers'
-import { host } from '../Platform/dialer'
+import { dialer } from '../Platform/dialer'
 import { chromePartEl, chromePartRect } from '../Interface/chromeParts'
 
 // The sidebar and side pane are floating overlays carved off the pane's edges; the toolbar is NOT carved (the banner is full-bleed under it), so main overpaints just that chrome band.
@@ -59,7 +59,7 @@ export function useNavThumbnails(): void {
         scopeCaptured(s.tree?.nexus.id ?? null)
         const marker = selection.kind === 'page' ? pageBody(shownPage(s)) : s.tree
         if (captured.get(key) === marker) return
-        const res = await host().ask(
+        const res = await dialer().ask(
           'capture:thumbnail',
           key,
           contentRect(pane),

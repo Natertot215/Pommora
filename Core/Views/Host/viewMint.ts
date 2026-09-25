@@ -4,7 +4,7 @@ import type { CollectionNode, SetNode } from '@pommora/core/Nexus/tree'
 import type { PropertyDefinition } from '@pommora/core/Properties/properties'
 import type { Result } from '@pommora/core/Contract/result'
 import { DEFAULT_VIEW_ID, mintDefaultView, type SavedView } from '@pommora/core/Views/views'
-import { host } from '../../Platform/dialer'
+import { dialer } from '../../Platform/dialer'
 
 const inFlight = new Map<string, Promise<string>>()
 
@@ -14,7 +14,7 @@ export function ensureContainerView(
 ): void {
   if ((source.views?.length ?? 0) > 0 || inFlight.has(source.id)) return
   const mint = (async () => {
-    const res = await host().ask('views:save', source.path, source.kind, mintDefaultView(schema))
+    const res = await dialer().ask('views:save', source.path, source.kind, mintDefaultView(schema))
     if (!res.ok) throw new Error(res.error.message)
     return res.value.id
   })()
@@ -33,5 +33,5 @@ export async function saveViewAdopting(
     if (minted) toSave = { ...view, id: minted }
   }
   // Nothing records the adoption: the adopted view IS views[0] once the push lands, which pickView returns.
-  return host().ask('views:save', source.path, source.kind, toSave)
+  return dialer().ask('views:save', source.path, source.kind, toSave)
 }

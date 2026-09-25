@@ -16,7 +16,7 @@ import type { NexusTree } from '../Nexus/tree'
 import { pagesByIdOf, recordsByIdOf } from '../Nexus/treeIndex'
 import { stabilize } from '../Nexus/treeStabilize'
 import { persist } from '../Interface/Notifications/notifications'
-import { host as dialer } from '../Platform/dialer'
+import { dialer } from '../Platform/dialer'
 import { sessionWriter } from './saveScheduler'
 import type { Slice } from './sessionState'
 

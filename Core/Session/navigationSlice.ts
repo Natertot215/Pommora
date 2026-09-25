@@ -56,7 +56,7 @@ import { cancelPageSave, scheduleTabsSave } from './saveScheduler'
 import { crumbDepthFor } from '../Interface/Subfield/crumbs'
 import { ensureContainerView } from '../Views/Host/viewMint'
 import type { SessionState, Slice } from './sessionState'
-import { host as dialer } from '../Platform/dialer'
+import { dialer } from '../Platform/dialer'
 
 export type PageSlot =
   | { status: 'ready'; target: PageTarget; detail: PageDetail; body: string }

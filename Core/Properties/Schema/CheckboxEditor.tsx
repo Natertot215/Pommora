@@ -1,13 +1,11 @@
+import { CHECKBOX_LOOKS, lookOptions } from '@pommora/core/Properties/columnStyles'
 import { resolveColor } from '@pommora/uix/Theme/ramp'
 import { MenuIndex, pickerRow } from '@pommora/uix/Menus'
 import * as s from '@pommora/uix/Menus/frames.css'
 
-export type CheckboxLook = 'checkbox' | 'switch'
+export type CheckboxLook = (typeof CHECKBOX_LOOKS)[number]
 
-const STYLE_OPTIONS: { value: CheckboxLook; label: string }[] = [
-  { value: 'checkbox', label: 'Checkbox' },
-  { value: 'switch', label: 'Switch' },
-]
+const STYLE_OPTIONS = lookOptions(CHECKBOX_LOOKS)
 
 /** Different scopes: Color → the property def (applies everywhere), Style → this view's `column_styles` alone. */
 export function CheckboxEditor({

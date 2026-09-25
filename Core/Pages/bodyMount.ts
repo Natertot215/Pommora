@@ -16,7 +16,7 @@ import {
   setBodyBase,
 } from '../Session/pageDetailCache'
 import { cancelPageSave, schedulePageSave, settlePageSave } from '../Session/saveScheduler'
-import { host } from '../Platform/dialer'
+import { dialer } from '../Platform/dialer'
 import { merge3 } from './merge3'
 import { useLatest } from '@pommora/uix/Utilities/stableApi'
 
@@ -61,7 +61,7 @@ export function useBodyMount(path: string, onFollow?: (body: string) => void): B
         if (head && mount.seq !== head.seq) {
           const merged = merge3(mount.basis, body, head.text)
           if (merged.conflicted)
-            void persist('the conflicting version', host().ask('sync:captureLocal', at, body))
+            void persist('the conflicting version', dialer().ask('sync:captureLocal', at, body))
           text = merged.text
         }
         publishBody(at, mount, text, body)
@@ -88,7 +88,7 @@ export async function absorbLanding(path: string): Promise<void> {
       ? { text: fresh.body, conflicted: true }
       : merge3(base, head.text, fresh.body)
   if (merged.conflicted)
-    void persist('the conflicting version', host().ask('sync:captureLocal', path, head.text))
+    void persist('the conflicting version', dialer().ask('sync:captureLocal', path, head.text))
   setBodyBase(path, { text: fresh.body, hash: fresh.bodyHash })
   advanceHead(path, merged.text)
   followBody(path)

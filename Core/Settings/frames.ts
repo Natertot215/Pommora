@@ -34,7 +34,7 @@ import {
 } from '@pommora/core/Properties/columnStyles'
 import { TrashFrame } from './TrashFrame'
 import { askClearExclusions, askClearHistory } from '../Interface/Confirm/confirmations'
-import { host } from '../Platform/dialer'
+import { dialer } from '../Platform/dialer'
 
 const PLACEMENT_OPTIONS: readonly PickerOption<Placement>[] = [
   { value: 'top', label: 'Top' },
@@ -128,16 +128,16 @@ const EM: NumberUnit = { scale: 1, suffix: 'em', digits: 2 }
 const TABS: NumberUnit = { scale: 1, suffix: ' Tabs', digits: 0 }
 
 const clearExclusions = async (): Promise<boolean> => {
-  const count = await host().ask('exclusions:count')
+  const count = await dialer().ask('exclusions:count')
   if (!reportRefusal(count)) return false
   if (count.value === 0 || !(await askClearExclusions(count.value))) return false
-  const r = await host().ask('exclusions:clear')
+  const r = await dialer().ask('exclusions:clear')
   return reportRefusal(r) && r.value !== null
 }
 
-const clearHistory = async (): Promise<boolean> => {
+const clearFileHistory = async (): Promise<boolean> => {
   if (!(await askClearHistory())) return false
-  return reportRefusal(await host().ask('history:clear'))
+  return reportRefusal(await dialer().ask('history:clear'))
 }
 
 interface Section {
@@ -563,7 +563,7 @@ export const FRAMES = roster([
             kind: 'clear',
             label: 'Clear History',
             hint: 'Permanently delete stored snapshots for all files; this cannot be undone.',
-            clear: clearHistory,
+            clear: clearFileHistory,
           },
         ],
       },

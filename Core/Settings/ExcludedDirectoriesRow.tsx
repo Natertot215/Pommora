@@ -8,7 +8,7 @@ import { Reveal } from '@pommora/uix/Animations/Reveal'
 import { useEntrance } from '@pommora/uix/Animations/useEntrance'
 import { useSession } from '../Session/store'
 import * as x from './settings-rows.css'
-import { host } from '../Platform/dialer'
+import { dialer } from '../Platform/dialer'
 
 const EXCLUDED_MIN_W = 250
 const EXCLUDED_MAX_W = 500
@@ -37,7 +37,7 @@ export function ExcludedDirectoriesRow({
     if (busy) return false
     setBusy(true)
     try {
-      return reportRefusal(await host().ask('exclusions:set', list))
+      return reportRefusal(await dialer().ask('exclusions:set', list))
     } finally {
       setBusy(false)
     }
@@ -50,7 +50,7 @@ export function ExcludedDirectoriesRow({
     if (next && (await commit([...stored, next]))) setDrafting(false)
   }
   const browse = (apply: (picked: string) => void): void => {
-    void host()
+    void dialer()
       .ask('exclusions:choose')
       .then((r) => {
         if (reportRefusal(r) && r.value !== null) apply(r.value)

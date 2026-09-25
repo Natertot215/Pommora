@@ -29,7 +29,7 @@ import { resolveIndexOf } from '../Nexus/treeIndex'
 import { EntityIcon } from '../Assets/EntityIcon'
 import { cycle } from './tabsModel'
 import { useActiveTabInView, useTabClose, useTabExchange } from './tabRows'
-import { host } from '../Platform/dialer'
+import { dialer } from '../Platform/dialer'
 import { popMenu } from '../Actions/menuActions'
 import { tabMenuItems } from '@pommora/core/Actions/tabMenu'
 import { useLatest } from '@pommora/uix/Utilities/stableApi'
@@ -180,7 +180,7 @@ function TabBarBody({
       event: e,
       onActivate: () => true,
       onDragMove: (ev) => {
-        host().tell('win:dragBy', ev.screenX - last.x, ev.screenY - last.y)
+        dialer().tell('win:dragBy', ev.screenX - last.x, ev.screenY - last.y)
         last = { x: ev.screenX, y: ev.screenY }
       },
       onDrop: () => {},
@@ -188,7 +188,7 @@ function TabBarBody({
   }
   const onBarDoubleClick = (e: React.MouseEvent): void => {
     if ((e.target as HTMLElement).closest('.tab, .tab-pinned, button')) return
-    host().tell('win:zoom')
+    dialer().tell('win:zoom')
   }
 
   return (
