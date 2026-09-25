@@ -43,46 +43,30 @@ export type TabOpenBehavior = (typeof TAB_OPEN_BEHAVIORS)[number]
 export const MATRIX_OPEN_INS = ['tab', 'window'] as const
 export type MatrixOpenIn = (typeof MATRIX_OPEN_INS)[number]
 
-export const HISTORY_DAY_STEPS = [7, 14, 30, 60, 90] as const
-export const HISTORY_DAYS = {
-  min: HISTORY_DAY_STEPS[0],
-  max: HISTORY_DAY_STEPS[HISTORY_DAY_STEPS.length - 1],
-  default: 90,
-} as const
-export const HISTORY_INTERVAL_STEPS = [5, 10, 15, 20] as const
-export const HISTORY_INTERVAL = {
-  min: HISTORY_INTERVAL_STEPS[0],
-  max: HISTORY_INTERVAL_STEPS[HISTORY_INTERVAL_STEPS.length - 1],
-  default: 5,
-} as const
-export const TAB_MIN_WIDTH_STEPS = [50, 60, 70, 80, 90, 100] as const
-export const TAB_MIN_WIDTH = {
-  min: TAB_MIN_WIDTH_STEPS[0],
-  max: TAB_MIN_WIDTH_STEPS[TAB_MIN_WIDTH_STEPS.length - 1],
-  default: 70,
-} as const
-export const TAB_MAX_WIDTH_STEPS = [150, 175, 200, 225, 250, 275, 300, 325, 350] as const
-export const TAB_MAX_WIDTH = {
-  min: TAB_MAX_WIDTH_STEPS[0],
-  max: TAB_MAX_WIDTH_STEPS[TAB_MAX_WIDTH_STEPS.length - 1],
-  default: 250,
-} as const
-export const TAB_CACHE_STEPS = [5, 10, 15, 20, 25] as const
-export const TAB_CACHE = {
-  min: TAB_CACHE_STEPS[0],
-  max: TAB_CACHE_STEPS[TAB_CACHE_STEPS.length - 1],
-  default: 5,
-} as const
+const ladder = (steps: readonly number[]) => ({
+  steps,
+  min: steps[0] as number,
+  max: steps[steps.length - 1] as number,
+})
+type Bounds = { min: number; max: number }
+const coerceIn =
+  ({ min, max }: Bounds) =>
+  (v: unknown, fallback: number): number =>
+    typeof v !== 'number' || !Number.isFinite(v) ? fallback : clamp(v, min, max)
 
-export const SCALE_STEPS = [0.5, 0.65, 0.75, 0.9, 1, 1.1, 1.25, 1.5] as const
-const SCALE_MIN = SCALE_STEPS[0]
-const SCALE_MAX = SCALE_STEPS[SCALE_STEPS.length - 1]
+export const HISTORY_DAYS = { ...ladder([7, 14, 30, 60, 90]), default: 90 }
+export const HISTORY_INTERVAL = { ...ladder([5, 10, 15, 20]), default: 5 }
+export const TAB_MIN_WIDTH = { ...ladder([50, 60, 70, 80, 90, 100]), default: 70 }
+export const TAB_MAX_WIDTH = {
+  ...ladder([150, 175, 200, 225, 250, 275, 300, 325, 350]),
+  default: 250,
+}
+export const TAB_CACHE = { ...ladder([5, 10, 15, 20, 25]), default: 5 }
+
+export const SCALE = ladder([0.5, 0.65, 0.75, 0.9, 1, 1.1, 1.25, 1.5])
+export const coerceScale = coerceIn(SCALE)
 export const WEB_ZOOM_DEFAULT = 1
 export const EDITOR_SCALE_DEFAULT = 1
-const clampScale = (n: number): number => clamp(n, SCALE_MIN, SCALE_MAX)
-export function coerceScale(v: unknown, fallback: number): number {
-  return typeof v !== 'number' || !Number.isFinite(v) ? fallback : clampScale(v)
-}
 
 /** Each heading level's size in em of the page text; the fallback is the stylesheet's own. */
 export const HEADING_SIZE_KEYS = [
@@ -102,26 +86,19 @@ export const HEADING_SIZE_DEFAULTS: Record<HeadingSizeKey, number> = {
   heading5Size: 1.1,
   heading6Size: 1,
 }
-export const HEADING_SIZE_MIN = 0.5
-export const HEADING_SIZE_MAX = 2.5
-const clampHeadingSize = (n: number): number => clamp(n, HEADING_SIZE_MIN, HEADING_SIZE_MAX)
-export function coerceHeadingSize(v: unknown, fallback: number): number {
-  return typeof v !== 'number' || !Number.isFinite(v) ? fallback : clampHeadingSize(v)
-}
+export const HEADING_SIZE: Bounds = { min: 0.5, max: 2.5 }
+export const coerceHeadingSize = coerceIn(HEADING_SIZE)
 
 /** Resize is a viewport, never a scale — a view embed normalizes its table's body text to the editor's before taking the same zoom a page embed does. */
 export const EMBED_SCALE_DEFAULT = 0.9
 export const embedZoom = (scale: number): number => 1 + Math.log2(scale)
 export const viewEmbedZoom = (scale: number): number => (15 / 13) * embedZoom(scale)
 
-export const INTERFACE_SCALE_DEFAULT = 1
-export const INTERFACE_SCALE_STEPS = [0.5, 0.6, 0.7, 0.8, 0.9, 1, 1.1, 1.2, 1.3, 1.4, 1.5] as const
-const INTERFACE_SCALE_MIN = INTERFACE_SCALE_STEPS[0]
-const INTERFACE_SCALE_MAX = INTERFACE_SCALE_STEPS[INTERFACE_SCALE_STEPS.length - 1]
-export function coerceInterfaceScale(v: unknown): number {
-  if (typeof v !== 'number' || !Number.isFinite(v)) return INTERFACE_SCALE_DEFAULT
-  return clamp(v, INTERFACE_SCALE_MIN, INTERFACE_SCALE_MAX)
+export const TENTHS_SCALE = {
+  ...ladder([0.5, 0.6, 0.7, 0.8, 0.9, 1, 1.1, 1.2, 1.3, 1.4, 1.5]),
+  default: 1,
 }
+export const coerceTenthsScale = coerceIn(TENTHS_SCALE)
 
 // One axis for the whole preview-persistence story: 'off' disables all arming; the rest set the linger.
 const PREVIEW_PERSISTENCE_VALUES = ['off', '1s', '5s', '10s', 'always'] as const
@@ -144,22 +121,17 @@ export function previewLingerMs(v: Exclude<PreviewPersistence, 'off'> | undefine
 // Every field is per-field lenient — an absent or invalid value decodes to undefined, which every consumer reads as the built-in default.
 const lenient = <T extends z.ZodTypeAny>(schema: T) => schema.optional().catch(undefined)
 const flag = () => lenient(z.boolean())
-// A setting whose built-in is on records only the explicit off.
-const offOnly = () =>
-  lenient(z.boolean().transform((v): boolean | undefined => (v === false ? false : undefined)))
 const oneOf = <const T extends readonly [string, ...string[]]>(values: T) => lenient(z.enum(values))
-// A setting whose built-in is one of its own options records only the other: the file stays the shorter of the two readings, and the type still spans both so a control can show either.
-const recorded = <const T extends readonly [string, ...string[]]>(values: T, kept: T[number]) =>
-  lenient(z.enum(values).transform((v): T[number] | undefined => (v === kept ? v : undefined)))
 const color = <S extends string>(inherit: S) =>
   lenient(
     z.custom<ColorSetting<S>>((v) => typeof v === 'string' && (v === inherit || isColorKey(v))),
   )
-// Only a stored number takes the ramp; anything else leaves the key unwritten.
-const stepped = (range: { min: number; max: number }) =>
-  lenient(z.number().transform((n) => clamp(Math.round(n), range.min, range.max)))
-const scaled = () => lenient(z.number().transform(clampScale))
-const headingSize = () => lenient(z.number().transform(clampHeadingSize))
+// Only a stored number takes the range; anything else leaves the key unwritten.
+const bounded = ({ min, max }: Bounds, round = false) =>
+  lenient(z.number().transform((n) => clamp(round ? Math.round(n) : n, min, max)))
+const stepped = (range: Bounds) => bounded(range, true)
+const scaled = () => bounded(SCALE)
+const headingSize = () => bounded(HEADING_SIZE)
 // Each entry stands on its own: a malformed one drops, and an empty list is the absent list.
 const nonEmptyStrings = () =>
   lenient(
@@ -212,16 +184,16 @@ export const personalizationSchema = z.object({
   // Reveals the surfaces that are still being built; off, they are absent rather than disabled.
   experimentalFeatures: flag(),
   revealTabBarOnHover: flag(),
-  tabOpenBehavior: recorded(TAB_OPEN_BEHAVIORS, 'newtab'),
-  matrixOpenIn: recorded(MATRIX_OPEN_INS, 'window'),
+  tabOpenBehavior: oneOf(TAB_OPEN_BEHAVIORS),
+  matrixOpenIn: oneOf(MATRIX_OPEN_INS),
   windowPageBanners: flag(),
   windowSpaceBanners: flag(),
   windowNavBanner: flag(),
-  tabTakeFocus: offOnly(),
+  tabTakeFocus: flag(),
   tabMinWidth: stepped(TAB_MIN_WIDTH),
   tabMaxWidth: stepped(TAB_MAX_WIDTH),
   tabCache: stepped(TAB_CACHE),
-  pauseMediaOnTabSwitch: offOnly(),
+  pauseMediaOnTabSwitch: flag(),
   nativeHighlight: flag(),
   connectionsOpenInPreview: flag(),
   plainUnresolvedLinks: flag(),
@@ -230,14 +202,14 @@ export const personalizationSchema = z.object({
   ribbonOrder: nonEmptyStrings(),
   previewPersistence: oneOf(PREVIEW_PERSISTENCE_VALUES),
   dismissPreviewOnPointer: flag(),
-  fileHistory: offOnly(),
+  fileHistory: flag(),
   historyDays: stepped(HISTORY_DAYS),
   historyInterval: stepped(HISTORY_INTERVAL),
   permanentDelete: flag(),
   // Off skips the confirmation only where nothing owns a schema: a page, a tile, a bare folder.
-  confirmDeletion: offOnly(),
+  confirmDeletion: flag(),
   dateFormat: oneOf(DATE_FORMATS),
-  timeFormat: recorded(TIME_FORMAT_SETTINGS, 'twentyFourHour'),
+  timeFormat: oneOf(TIME_FORMAT_SETTINGS),
   trashDateFormat: oneOf(DATE_FORMATS),
   trashHideTime: flag(),
   pasteLinkIntoText: flag(),

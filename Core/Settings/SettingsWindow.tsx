@@ -18,7 +18,7 @@ import { SETTINGS_RAIL, SETTINGS_WIN } from '@pommora/uix/Windows/windowBounds'
 import { steppedPickerProps } from '@pommora/uix/Pickers/PickerControl'
 import { labelColorFor } from '@pommora/uix/Theme/ramp'
 import { solidColorCss } from '@pommora/uix/Theme/ramp'
-import { SCALE_STEPS } from '@pommora/core/Settings/personalization'
+import { SCALE } from '@pommora/core/Settings/personalization'
 import { useExitPresence } from '@pommora/uix/Animations/useExitPresence'
 import { useSession } from '../Session/store'
 import { useExperimental } from './experimental'
@@ -227,7 +227,7 @@ function ZoomRow({ row }: { row: RowOf<'zoom' | 'deviceZoom'> }): React.JSX.Elem
     ) ?? row.fallback
   const setPersonalization = useSession((s) => s.setPersonalization)
   const setDevicePref = useSession((s) => s.setDevicePref)
-  const steps = row.steps ?? SCALE_STEPS
+  const steps = row.steps ?? SCALE.steps
   const commit = (value: number): void => {
     const next = value === row.fallback ? undefined : value
     if (row.kind === 'zoom') setPersonalization(row.key, next)

@@ -30,7 +30,7 @@ import { FrameSlide } from '@pommora/uix/Menus/frame-slide'
 import { PANE_MIN_H, PANE_MIN_W } from '@pommora/uix/Menus/frame-slide.css'
 import { iconForTypeSwitch } from '../viewIcon'
 import { ViewItemMenu } from './ViewItemMenu'
-import { clamp } from '@pommora/uix/Utilities/clamp'
+import { coerceTenthsScale, TENTHS_SCALE } from '@pommora/core/Settings/personalization'
 import { cx } from '@pommora/uix/Utilities/cx'
 import * as vs from './layout-frame.css'
 
@@ -102,10 +102,6 @@ const FORMATS: PickerOption<ViewFormat>[] = [
 ]
 
 const CARD_ROW_LOOK = { iconSize: ICON.rootEntry, solid: true } as const
-
-const CARD_SCALE_STEPS = [0.5, 0.6, 0.7, 0.8, 0.9, 1, 1.1, 1.2, 1.3, 1.4, 1.5] as const
-const CARD_SCALE_MIN = CARD_SCALE_STEPS[0]
-const CARD_SCALE_MAX = CARD_SCALE_STEPS[CARD_SCALE_STEPS.length - 1]
 
 // KNOB — LayoutFrame's own height ceiling (not the shared MENU_MAX_HEIGHT): the full door stacks the tallest content, so it earns more room.
 const VIEWSETTINGS_MAX_HEIGHT = 410
@@ -179,10 +175,10 @@ export function LayoutFrame({
                 'scaling',
                 'Card Scale',
                 {
-                  steps: CARD_SCALE_STEPS,
-                  value: view.card_size ?? 1,
-                  coerce: (typed) => clamp(typed, CARD_SCALE_MIN, CARD_SCALE_MAX),
-                  onPick: (v) => write({ card_size: v }),
+                  steps: TENTHS_SCALE.steps,
+                  value: coerceTenthsScale(view.card_size, TENTHS_SCALE.default),
+                  coerce: (typed) => coerceTenthsScale(typed, TENTHS_SCALE.default),
+                  onPick: (v) => write({ card_size: v === TENTHS_SCALE.default ? undefined : v }),
                 },
                 CARD_ROW_LOOK,
               ),

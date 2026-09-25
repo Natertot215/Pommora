@@ -62,6 +62,7 @@ import { solidColorCss } from '@pommora/uix/Theme/ramp'
 import { type PickEntry, PropertyPicker } from '../../Properties/Pickers/PropertyPicker'
 import { NumberValuePicker } from '../../Properties/Pickers/NumberValuePicker'
 import { resolveFieldValue } from '../../Properties/value'
+import { coerceTenthsScale, TENTHS_SCALE } from '@pommora/core/Settings/personalization'
 import { propertyIcon, propertyTypeIconName } from '../../Properties/Cells/PropertyTypes'
 import { parseEditorValue } from '../../Properties/parseEditorValue'
 import { linkEditText } from '@pommora/core/Connections/linkValue'
@@ -421,6 +422,8 @@ export function CardsView({ host }: { host: ViewHostApi }): React.JSX.Element {
         ?.id ?? null,
     )
 
+  const cardScale = coerceTenthsScale(view.card_size, TENTHS_SCALE.default)
+
   return (
     <GhostSuppress.Provider value={interactions.holdGhost}>
       <div
@@ -429,7 +432,7 @@ export function CardsView({ host }: { host: ViewHostApi }): React.JSX.Element {
         }}
         className={shellClass}
         data-view-id={view.id}
-        style={{ '--card-scale': view.card_size ?? 1 } as React.CSSProperties}
+        style={{ '--card-scale': cardScale } as React.CSSProperties}
       >
         {showSetCards && (
           <div className="set-cards-row">
@@ -457,7 +460,7 @@ export function CardsView({ host }: { host: ViewHostApi }): React.JSX.Element {
                 style={
                   {
                     zoom: effectiveZoom,
-                    '--card-scale': view.card_size ?? 1,
+                    '--card-scale': cardScale,
                     width: `${rect.width / effectiveZoom}px`,
                     height: `${rect.height / effectiveZoom}px`,
                   } as React.CSSProperties
