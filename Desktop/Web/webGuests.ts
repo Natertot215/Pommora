@@ -4,6 +4,7 @@ import { app, session, webContents, BrowserWindow, type Session, type WebContent
 import { isHttpLink, WEB_ADDRESS } from '@pommora/core/Paths/urlPath'
 import { WEB_PARTITION } from '@pommora/core/Web/partition'
 import { WEB_ZOOM_DEFAULT } from '@pommora/core/Settings/personalization'
+import { readInterfaceScale } from '@pommora/core/Settings/devicePrefs'
 import { push } from '../Bridge/ipc'
 import { isWindows } from '../Platform/hostPath'
 
@@ -127,11 +128,9 @@ export function installWebGuests(win: BrowserWindow): void {
     webPreferences.allowRunningInsecureContent = false
   })
 
-  // Chromium applies wheel/pinch zoom before this event's turn ends, so the sync defers a tick.
-  win.webContents.on('zoom-changed', () =>
-    setImmediate(() => {
-      if (!win.isDestroyed()) syncGuestZoom()
-    }),
+  // Chromium hands Ctrl+wheel to the embedder as a request (never on macOS); Electron applies nothing itself.
+  win.webContents.on('zoom-changed', (_e, dir) =>
+    stepHostZoom(win.webContents, dir === 'in' ? 1 : -1),
   )
 }
 
@@ -184,4 +183,11 @@ const ZOOM_FACTOR_MAX = 5
 export function stepHostZoom(wc: WebContents, dir: 1 | -1): void {
   const factor = wc.getZoomFactor() * 1.2 ** (dir * 0.5)
   setHostZoom(wc, Math.min(ZOOM_FACTOR_MAX, Math.max(ZOOM_FACTOR_MIN, factor)))
+}
+
+// The chrome is drawn a step below the browser's scale, so the interface's own 1.0 is worth this as a host zoom factor.
+const INTERFACE_SCALE_BASE = 0.9
+
+export function resetHostZoom(wc: WebContents): void {
+  setHostZoom(wc, readInterfaceScale() * INTERFACE_SCALE_BASE)
 }

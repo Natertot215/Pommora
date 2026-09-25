@@ -1,27 +1,14 @@
 import type { KeyValueStore } from '@pommora/core/Platform/machine'
 import type {
   BaseRecord,
-  CaptureStore,
   ContentIndexStore,
   IndexedStat,
   MatrixGraphRows,
   MatrixLinkRow,
-  SnapshotStore,
   SyncStore,
 } from '@pommora/core/Platform/stores'
 import { type Db, inTransaction } from './driver'
 import { INDEX_TABLES } from './ddl'
-import {
-  addCapture,
-  addSnapshot,
-  clearSnapshots,
-  deleteSnapshots,
-  latestSnapshot,
-  listSnapshots,
-  readSnapshot,
-  sweepCaptures,
-  sweepSnapshots,
-} from './versionsDb'
 
 // A batch of paths binds as one JSON argument: a placeholder per path fails past SQLite's variable limit on a large sync or checkout.
 const PATHS_OF = '(SELECT value FROM json_each(?))'
@@ -251,19 +238,4 @@ export const syncStore = (db: Db): SyncStore => ({
   deleteBase(path) {
     db.prepare('DELETE FROM sync WHERE path = ?').run(path)
   },
-})
-
-export const captureStore = (db: Db): CaptureStore => ({
-  addCapture: (path, ts, reason, bytes) => addCapture(db, path, ts, reason, bytes),
-  sweepCaptures: (cutoffMs) => sweepCaptures(db, cutoffMs),
-})
-
-export const snapshotStore = (db: Db): SnapshotStore => ({
-  addSnapshot: (pageId, ts, source, text) => addSnapshot(db, pageId, ts, source, text),
-  latestSnapshot: (pageId) => latestSnapshot(db, pageId),
-  listSnapshots: (pageId) => listSnapshots(db, pageId),
-  readSnapshot: (pageId, ts) => readSnapshot(db, pageId, ts),
-  deleteSnapshots: (pageId, ts) => deleteSnapshots(db, pageId, ts),
-  clearSnapshots: () => clearSnapshots(db),
-  sweepSnapshots: (cutoffMs) => sweepSnapshots(db, cutoffMs),
 })

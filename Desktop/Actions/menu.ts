@@ -1,6 +1,6 @@
+import { Menu } from 'electron'
 import type { BrowserWindow, MenuItemConstructorOptions } from 'electron'
 import type { ActionItem, MenuAnchor, MenuRequest } from '@pommora/core/Actions/menuModel'
-import { popReturningMenu } from './returningMenu'
 
 /** The renderer measures in CSS pixels and `popup` places in window DIPs, differing by the window's zoom. */
 export function anchorPoint(
@@ -40,10 +40,16 @@ export function rowTemplate<A extends string>(
   ])
 }
 
+// The action resolves back to the renderer, which performs the write and asks where one needs confirming.
 export function popNativeMenu(win: BrowserWindow, req: MenuRequest): Promise<string | null> {
-  return popReturningMenu<string>(
-    win,
-    (pick) => rowTemplate(req.items, pick),
-    anchorPoint(win, req.anchor),
-  )
+  return new Promise((resolve) => {
+    const template = rowTemplate(req.items, (action) => () => resolve(action))
+    // A model that gated every item away has nothing to show; popping it would leave an empty frame.
+    if (template.length === 0) return resolve(null)
+    Menu.buildFromTemplate(template).popup({
+      window: win,
+      ...anchorPoint(win, req.anchor),
+      callback: () => resolve(null),
+    })
+  })
 }

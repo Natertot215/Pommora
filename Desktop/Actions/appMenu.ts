@@ -5,10 +5,8 @@ import { pruneRecents, readAppConfig, updateAppConfig } from '../Config/appConfi
 import { type CurrentWindow, push } from '../Bridge/ipc'
 import { dropLiveTree } from '@pommora/core/Nexus/liveTree'
 import { sessionRoot } from '@pommora/core/Nexus/session'
-import { readInterfaceScale } from '@pommora/core/Settings/devicePrefs'
 import { type Commands, toAccelerator } from '@pommora/core/Actions/commands'
-import { setHostZoom, stepHostZoom } from '../Web/webGuests'
-import { interfaceScaleZoom } from '../Config/interfaceScale'
+import { resetHostZoom, stepHostZoom } from '../Web/webGuests'
 import { isWindows, nativePath, posixPath } from '../Platform/hostPath'
 
 const menuTarget = (win: CurrentWindow): BrowserWindow | null => {
@@ -134,7 +132,7 @@ export async function installAppMenu(
           accelerator: toAccelerator(commands['actual-size']),
           click: () => {
             const w = menuTarget(win)
-            if (w) setHostZoom(w.webContents, interfaceScaleZoom(readInterfaceScale()))
+            if (w) resetHostZoom(w.webContents)
           },
         },
         // De-roled: a zoom role acts on the focused WebContents, so a guest would bypass the guest-zoom sync. The hidden item keeps the role's unshifted ⌘= alias (US layout) alive.
