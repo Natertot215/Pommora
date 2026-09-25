@@ -35,6 +35,8 @@ The interaction layer in `UIX/Interactions/` and `UIX/Animations/`: content-agno
 
 **Reveal:** `UIX/Animations/Reveal.tsx` is the canonical body open and close: a `grid-template-rows: 0fr ↔ 1fr` transition on the `fast` token, mounting at 0fr and unmounting on `transitionend`, that stops clipping once open so overhanging affordances aren't cut off. It backs the sidebar's nested trees, the settings panes, and the heading-fold body. Disclosure chevrons rotate through the shared `dropOutline` on the same beat, so rotate and unfold land together.
 
+**Hover Reveal:** `UIX/Interactions/hover-reveal.css.ts` and `hoverReveal.ts` show every control that appears on hover, keyboard focus, or the pointer's approach. An element marked `data-reveal-host` scopes the reveal for everything inside it: `""` reveals on its own hover or focus and rests revealed on a touch screen, while `"on"` and `"off"` are written by script. A control takes `revealTarget`, or `revealDim` to rest at the ghost opacity while its host is hovered; it answers to its nearest host alone, ignores the pointer while hidden, and stays shown while `data-reveal-held` marks it engaged. `useHoverReveal` carries the timed cases — a dwell before opening, a grace before closing, and a linger that holds a toggle's control after its own press — and `withinReach` is the one proximity test, at an inline, an edge, and a corner reach.
+
 **Entrance:** `UIX/Animations/useEntrance.ts` names which rows in a list arrived since the last render, so the list hands `enterOnMount` to those alone and a new row discloses in on the same unfold. It compares key sets rather than array identity, so a list rebuilt on every render still reports an arrival once, and a surface's first render seeds silently — an opening pane presents rather than cascading. The exclusion pane, filter rules, page-property rows, option chips, and the property frame's lists all disclose new rows on it.
 
 **PaneSlide:** The sidebar's and the SidePane's in-out: the `--io` progress carries a pane home from its parked edge while the body beside it gives up the width, on the base tokens.
@@ -75,7 +77,7 @@ The overflow-fade mechanism behind every capped label: a label truncates at rest
 
 #### II. Hover Remove
 
-The hover-revealed remove ×, with the label-tail melt as an option: hovering a chip's right third reveals the × while the label's tail blurs into the fill beneath it.
+The hover-revealed remove ×, with the label-tail melt as an option: the × is its own reveal host over a chip's right third, so hovering there reveals it while the label's tail blurs into the fill beneath it; inside a tab or a menu row it answers to that row instead. It acts on a click only once it is more than half revealed.
 
 **SOURCE:** `UIX/Interactions/HoverRemove.tsx` · `UIX/Interactions/hover-remove.css.ts`
 
@@ -87,7 +89,7 @@ The hover-revealed remove ×, with the label-tail melt as an option: hovering a 
 ### Principles
 
 - **One progress variable** drives a coordinated multi-element move rather than N independent transitions that can desync — and it is the variable that transitions, never a property derived from it.
-- **One primitive per pattern** — `Reveal` for expand and collapse, the shared Bloom keyframes for a menu open, `FrameSlide` for a drill-down, the drag engine for reorder.
+- **One primitive per pattern** — `Reveal` for expand and collapse, hover reveal for a control shown on hover, the shared Bloom keyframes for a menu open, `FrameSlide` for a drill-down, the drag engine for reorder.
 - **Tokens over literals** — duration and easing come from `motion.ts`; a hardcoded duration in a permanent surface reads a token or justifies a new one.
 - **Compositor- and pointer-driven where it counts** — scroll-park, drag chrome, and edge-resize run 1:1 with input, so motion never lags it.
 

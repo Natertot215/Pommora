@@ -248,6 +248,8 @@ surface('tabs', async () => {
   const upperBanner = (sel) => `(() => { const b = ${q(sel)}; if (!b) return null; const r = __rv.box(b); return { x: r.left + r.w * 0.75, y: r.top + 20 } })()`
   const banner = await plusFrom([['pageBBanner', upperBanner('.content-view .mdpm-header .banner')]])
   await collection('Collection B')
+  await need(q('.content-view .detail-scroll .banner'), 'Collection B banner')
+  await sleep(SETTLE)
   const collectionBanner = await plusFrom([['collectionBanner', upperBanner('.content-view .detail-scroll .banner')]])
   await navView()
   const nav = await plusFrom([
@@ -759,6 +761,8 @@ surface('autocomplete', async () => {
 })
 
 // ── Run ──
+// REVEAL_TOUCH=1 records the instance as a touch screen sees it: every "" host pinned revealed. Touch emulation, not setEmulatedMedia, is what makes `(hover: none)` match.
+if (process.env.REVEAL_TOUCH) await c.send('Emulation.setTouchEmulationEnabled', { enabled: true, maxTouchPoints: 1 })
 await ev(PROBE)
 await ev(TRIGGER)
 const failed = []

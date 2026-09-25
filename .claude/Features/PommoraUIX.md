@@ -48,7 +48,7 @@ The Pommora design system — the code counterpart of the Figma library, which l
 | Hover    | `state.hover` · `--state-hover`       | `system-grey` @ 2.5% |
 | Selected | `state.selected` · `--state-selected` | `system-grey` @ 5% |
 | Muted    | `state.muted` · `--state-muted`       | `system-black` @ 10% |
-| Ghost    | `STATE_OPACITY.ghost` · `--state-ghost`       | `0.65`             |
+| Ghost    | `STATE_OPACITY.ghost` · `--state-ghost` · `revealDim` | `0.65`             |
 | Inactive | `STATE_OPACITY.inactive` · `--state-inactive` | `0.55`             |
 
 #### Fills
@@ -212,7 +212,7 @@ Where each goes: menu and sidebar rows → Body (Standard) or Control (Compact, 
 
 ### Buttons
 
-`UIX/Buttons/` — the one button recipe. `Button` is `type` × `size` × content (icon · icon + label · label), with `outline` as an inset ring and the `revealOnHover` modifier; hover on every button, and `pressed` for a toggle whose menu is open.
+`UIX/Buttons/` — the one button recipe. `Button` is `type` × `size` × content (icon · icon + label · label), with `outline` as an inset ring and `reveal` making it a hover-reveal target; hover on every button, and `pressed` for a toggle whose menu is open.
 
 **Button Types** — one `--button-fill` / `--button-ink` / `--button-outline` triple per row; the hover is `state.hover` laid over the fill.
 
@@ -324,7 +324,8 @@ The elements that draw and frame a stored image — `AssetImage`, `ImagePicker`,
 | OverScroll   | `OverScroll`                                            | Overflow fades at the hidden edge, scrolls under the pointer. |
 | HoverRemove  | `HoverRemove` · `hoverRemoveHost`                       | The hover-revealed ×, with the label-tail melt.        |
 | Resize frame | `useResizeFrame` · `onScreen` · `resize-frame.css`     | Drag-to-size and drag-to-move for any box: the handles, the strips, and the outline tint. |
-| Reveal bar   | `useRevealNear` · `reveal-bar.css`                      | A control shown as the pointer nears an edge; a host marks its bands `.reveal-band`, its toggles `.reveal-toggle`, and its leading toggle `data-reveal-lead`. |
+| Hover Reveal | `revealTarget` · `revealDim` · `useHoverReveal` · `withinReach` · `useRevealNear` | A control shown on its host's hover or focus, after a dwell, or as the pointer comes within reach; `data-reveal-host` scopes each reveal to its nearest host. |
+| Reveal bar   | `reveal-bar.css`                                        | The edge-docked toggles and their bands: a host marks its bands `.reveal-band`, its toggles `.reveal-toggle`, its trailing toggle `data-reveal-trail`, and its leading toggle `data-reveal-lead`. |
 
 ### Labels
 
