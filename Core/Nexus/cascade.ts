@@ -1,4 +1,5 @@
 import { join, relative, titleFromPath } from '../Paths/posix'
+import { errText } from '../Contract/result'
 import { splitEnvelope, mergeFrontmatter, splitFrontmatter } from '../Files/pageFile'
 import { sweepGovernedRoots, unsweptLine } from '../Properties/governedSweep'
 import {
@@ -30,46 +31,54 @@ export async function renameCascade(
   change: RenameChange,
   skipRel: string | null = null,
 ): Promise<CascadeReport> {
-  const titleKey = normalizeTitle(title)
-  const rels =
-    'title' in change
-      ? (queryMentions(titleKey) ?? (await nexusCorpus(root)))
-      : (queryHeadingMentions(titleKey, normalizeTitle(change.heading)) ?? [])
-  const runs =
-    'heading' in change &&
-    (await readLivePersonalization(root)).inPageHeadingResolution === 'automatic'
-  const rewrite = (body: string, own = ''): string =>
-    'title' in change
-      ? rewriteConnections(body, title, change.title)
-      : rewriteHeadingConnections(
-          body,
-          title,
-          change.heading,
-          change.to,
-          own,
-          runs && normalizeTitle(own) === titleKey
-            ? headingOutline(body).map((h) => h.text)
-            : undefined,
-        )
-  const names = propertyNames(Object.values((await readRegistry(root)).defs))
-  const text = (content: string, file: string): string | null => {
-    const values = Object.fromEntries(
-      Object.entries(splitFrontmatter(content)).filter(([k]) => isRegisteredPropertyName(k, names)),
-    )
-    const patch = rewriteFrontmatterConnections(values, title, change)
-    const keys = Object.keys(patch)
-    const { body } = splitEnvelope(content)
-    const next = rewrite(body, titleFromPath(file))
-    return next === body && keys.length === 0 ? null : mergeFrontmatter(content, patch, keys, next)
-  }
-  const files = rels.filter((rel) => rel !== skipRel).map((rel) => join(root, rel))
-  const swept = await sweepGovernedRoots(root, files, { text })
-  const tiles = await rewriteTileConnections(root, rewrite)
-  const unmoved = swept.skipped.length + tiles.failed
   const named = 'title' in change ? title : `${title}#${change.heading}`
-  return {
-    pages: [...swept.touched.keys()].map((file) => relative(root, file)),
-    hosts: tiles.hosts,
-    warning: unmoved ? unsweptLine(unmoved, `links to “${named}” in `) : undefined,
+  try {
+    const titleKey = normalizeTitle(title)
+    const rels =
+      'title' in change
+        ? (queryMentions(titleKey) ?? (await nexusCorpus(root)))
+        : (queryHeadingMentions(titleKey, normalizeTitle(change.heading)) ?? [])
+    const runs =
+      'heading' in change &&
+      (await readLivePersonalization(root)).inPageHeadingResolution === 'automatic'
+    const rewrite = (body: string, own = ''): string =>
+      'title' in change
+        ? rewriteConnections(body, title, change.title)
+        : rewriteHeadingConnections(
+            body,
+            title,
+            change.heading,
+            change.to,
+            own,
+            runs && normalizeTitle(own) === titleKey
+              ? headingOutline(body).map((h) => h.text)
+              : undefined,
+          )
+    const names = propertyNames(Object.values((await readRegistry(root)).defs))
+    const text = (content: string, file: string): string | null => {
+      const values = Object.fromEntries(
+        Object.entries(splitFrontmatter(content)).filter(([k]) =>
+          isRegisteredPropertyName(k, names),
+        ),
+      )
+      const patch = rewriteFrontmatterConnections(values, title, change)
+      const keys = Object.keys(patch)
+      const { body } = splitEnvelope(content)
+      const next = rewrite(body, titleFromPath(file))
+      return next === body && keys.length === 0
+        ? null
+        : mergeFrontmatter(content, patch, keys, next)
+    }
+    const files = rels.filter((rel) => rel !== skipRel).map((rel) => join(root, rel))
+    const swept = await sweepGovernedRoots(root, files, { text })
+    const tiles = await rewriteTileConnections(root, rewrite)
+    const unmoved = swept.skipped.length + tiles.failed
+    return {
+      pages: [...swept.touched.keys()].map((file) => relative(root, file)),
+      hosts: tiles.hosts,
+      warning: unmoved ? unsweptLine(unmoved, `links to “${named}” in `) : undefined,
+    }
+  } catch (e) {
+    return { pages: [], hosts: [], warning: `Links to “${named}” weren't updated: ${errText(e)}` }
   }
 }

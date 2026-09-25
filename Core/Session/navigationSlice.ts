@@ -113,11 +113,11 @@ export interface NavigationSlice {
   clearPendingTravel: () => void
 }
 
-interface PendingTravel {
-  route: 'tab' | 'window'
-  path: string
-  heading: string
-}
+// A tab's travel names its landing tab, so a background tab closed unvisited leaves no jump for the next surface to show its page.
+type PendingTravel = { path: string; heading: string } & (
+  | { route: 'tab'; tabId: string }
+  | { route: 'window' }
+)
 
 interface NavSlide {
   tabId: string
@@ -545,24 +545,26 @@ export const createNavigationSlice: Slice<NavigationSlice> = (set, get) => {
     },
 
     select: async (target, opts) => {
-      if (opts?.heading && target.kind === 'page')
-        set({ pendingTravel: { route: 'tab', path: target.path, heading: opts.heading } })
-      const record = opts?.record !== false
-      let pending: ReturnType<typeof openTabModel> | null = null
-      if (record) {
-        const s = get()
-        const newTab = opts?.newTab ?? s.personalization.tabOpenBehavior === 'newtab'
-        pending = openTabModel(s.tabs, s.activeTabId, s.pinnedTabs, target, { newTab }, makeTabId())
-        if (
-          newTab &&
-          pending.tabs.length > s.tabs.length &&
-          s.personalization.tabTakeFocus === false
-        ) {
-          set({ tabs: pending.tabs })
-          commitRecents(recordRecent(s.recents, target, RECENTS_CAP))
-          persistTabs()
-          return
-        }
+      const was = get()
+      const newTab = opts?.newTab ?? was.personalization.tabOpenBehavior === 'newtab'
+      const pending =
+        opts?.record === false
+          ? null
+          : openTabModel(was.tabs, was.activeTabId, was.pinnedTabs, target, { newTab }, makeTabId())
+      if (opts?.heading && target.kind === 'page') {
+        const tabId = pending?.activeTabId ?? was.activeTabId
+        set({ pendingTravel: { route: 'tab', tabId, path: target.path, heading: opts.heading } })
+      }
+      if (
+        pending &&
+        newTab &&
+        pending.tabs.length > was.tabs.length &&
+        was.personalization.tabTakeFocus === false
+      ) {
+        set({ tabs: pending.tabs })
+        commitRecents(recordRecent(was.recents, target, RECENTS_CAP))
+        persistTabs()
+        return
       }
       pageFetchSeq++
       // Held while walking up the breadcrumb spine so the tail stays dimmed; reset on a branch.

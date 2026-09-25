@@ -1,10 +1,16 @@
 // @vitest-environment jsdom
-import { describe, it, expect, afterEach } from 'vitest'
+import { describe, it, expect, afterEach, vi } from 'vitest'
 import { createElement, act } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
 import { MarkdownTable } from './MarkdownTable'
 import { testHost } from '../editorHarness'
 import type { TableModel } from '../Engine/Tables/model'
+import { followCitation } from '../Citations/citationPointer'
+
+vi.mock('../Citations/citationPointer', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('../Citations/citationPointer')>()),
+  followCitation: vi.fn(),
+}))
 
 ;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
 if (!('ResizeObserver' in globalThis)) {
@@ -24,10 +30,10 @@ const model: TableModel = {
 
 let container: HTMLDivElement
 let root: Root
-let cited: string[] = []
+const cited = (): string[] => vi.mocked(followCitation).mock.calls.map(([label]) => label)
 
 async function mount(cites: string): Promise<void> {
-  cited = []
+  vi.mocked(followCitation).mockClear()
   container = document.createElement('div')
   document.body.appendChild(container)
   root = createRoot(container)
@@ -46,7 +52,6 @@ async function mount(cites: string): Promise<void> {
         onUndo: noop,
         onRedo: noop,
         onAppend: noop,
-        onCite: (label: string) => cited.push(label),
       }),
     ),
   )
@@ -144,7 +149,7 @@ describe('a marker in a resting cell leads to its citation', () => {
   it('travels by the label the marker carries, not the number it draws', async () => {
     await mount('NOTE=2')
     await pressGlyph()
-    expect(cited).toEqual(['note'])
+    expect(cited()).toEqual(['note'])
   })
 
   it('and the press never enters the cell', async () => {
@@ -162,7 +167,7 @@ describe('a marker in a resting cell leads to its citation', () => {
       cell.dispatchEvent(new MouseEvent('mousedown', { bubbles: true, button: 0 }))
       cell.dispatchEvent(new MouseEvent('click', { bubbles: true, button: 0, detail: 1 }))
     })
-    expect(cited).toEqual([])
+    expect(cited()).toEqual([])
     expect(container.querySelector('.cm-editor')).not.toBeNull()
   })
 })
@@ -197,7 +202,6 @@ describe('an entered cell follows the numbering too', () => {
           onUndo: noop,
           onRedo: noop,
           onAppend: noop,
-          onCite: (label: string) => cited.push(label),
         }),
       ),
     )

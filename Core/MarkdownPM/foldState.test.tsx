@@ -19,6 +19,7 @@ import {
   type FoldKind,
 } from './folding'
 import { commitCitation } from './Citations/citationActions'
+import { mirrorBody } from './api'
 import { Text, type ChangeSet } from '@codemirror/state'
 import { citationGesture, deleteMarkerChanges } from './Citations/citationEdits'
 import { docScan } from './docCache'
@@ -263,10 +264,29 @@ describe('the saved fold list', () => {
     const { view, saved } = await mountSaving(DOC)
     await fold(view, 0)
     await act(async () => {
+      view.focus()
       view.dispatch({ changes: { from: 2, to: 5, insert: 'Uno' } })
     })
+    expect(saved).toEqual([['One']])
     await cleanupEditor()
     expect(saved[saved.length - 1]).toEqual(['Uno'])
+  })
+
+  it('an unfocused mirrored rename saves nothing, where the same edit made here does', async () => {
+    const mirroredMount = await mountSaving(DOC)
+    await fold(mirroredMount.view, 0)
+    await act(async () => {
+      mirrorBody(mirroredMount.view, DOC.replace('# One', '# Uno'))
+    })
+    expect(mirroredMount.saved).toEqual([['One']])
+    await cleanupEditor()
+
+    const { view, saved } = await mountSaving(DOC)
+    await fold(view, 0)
+    await act(async () => {
+      view.dispatch({ changes: { from: 2, to: 5, insert: 'Uno' } })
+    })
+    expect(saved).toEqual([['One'], ['Uno']])
   })
 
   it('opening a fold writes once, and its reveal ending writes nothing', async () => {
@@ -298,7 +318,7 @@ describe('a heading stops where the citations section starts', () => {
     ])
   })
 
-  it('the region, the scan and the clamped heading agree on the boundary', async () => {
+  it('the region and the scan agree on the boundary', async () => {
     const view = await mountEditor({ initialBody: NESTED })
     const scan = citationScan(splitWithOffsets(NESTED), [])
     const r = citeRegion(view)

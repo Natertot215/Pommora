@@ -1,11 +1,11 @@
 import type { Extension } from '@codemirror/state'
 import { EditorView } from '@codemirror/view'
-import { titleTarget, resolveMdTarget, type ConnectionsApi } from '../Links/connectionsApi'
+import { tokenTarget, type ConnectionsApi } from '../Links/connectionsApi'
 import { type MarkerRef, citationFor, markersFor } from '../Engine/detect'
 import { lineEndOf } from '../Engine/markdownCode'
-import { headingOf, linkTarget, tokenize } from '../Engine/tokens'
+import { tokenize, type Token } from '../Engine/tokens'
 import { docScan, docString } from '../docCache'
-import { type FollowEvent, followTarget } from '../Links/linkClicks'
+import { type FollowEvent, followTarget, pageEditorAt } from '../Links/linkClicks'
 import { applyCitationAction, travelToCitation } from './citationActions'
 import { travelTo } from '../travel'
 import { pointerHandlers, type PointerTarget } from '../Gestures/pointerPath'
@@ -16,20 +16,10 @@ export const CITE_GLYPH = '.md-citation-reference'
 /** Drawn over hidden source rather than written, so it is the one element a press on the row can be aimed at. */
 const CITE_ROW_GLYPH = '.md-citation-number'
 
-export function loneTarget(
-  content: string,
-): { kind: 'link'; url: string } | { kind: 'connection'; title: string; heading?: string } | null {
+export function loneTarget(content: string): { text: string; tk: Token } | null {
   const text = content.trim()
-  if (text === '') return null
   const tk = tokenize(text).find((t) => t.range[0] === 0 && t.range[1] === text.length)
-  if (!tk) return null
-  if (tk.kind === 'wikiLink') {
-    const [s, e] = tk.resolveRange ?? tk.contentRange
-    return { kind: 'connection', title: text.slice(s, e), heading: headingOf(text, tk) }
-  }
-  if (tk.kind !== 'link') return null
-  const url = linkTarget(text, tk)
-  return url ? { kind: 'link', url } : null
+  return tk?.kind === 'wikiLink' || tk?.kind === 'link' ? { text, tk } : null
 }
 
 interface CiteHit extends PointerTarget {
@@ -38,22 +28,18 @@ interface CiteHit extends PointerTarget {
 
 /** A marker whose footnote is one link follows it, in the body or a resting cell; any other travels to its footnote. */
 export function followCitation(
-  view: EditorView,
   label: string,
   api: ConnectionsApi | undefined,
   event: FollowEvent,
 ): void {
+  const { view } = pageEditorAt(event.target as Element)
+  if (!view) return
   const scan = docScan(view.state.doc)
   const entry = citationFor(scan.citations, label)
   const lone =
     entry &&
     loneTarget(docString(view.state.doc).slice(entry.contentStart, lineEndOf(scan, entry.lastLine)))
-  const target =
-    lone &&
-    (lone.kind === 'link'
-      ? resolveMdTarget(api, lone.url)
-      : titleTarget(api, lone.title, lone.heading))
-  const go = target && followTarget(target, api, event)
+  const go = lone && followTarget(tokenTarget(api, lone.text, lone.tk), api, event)
   if (go) go()
   else travelToCitation(view, label)
 }
@@ -75,7 +61,7 @@ export function citationPointer(getApi: () => ConnectionsApi | undefined): Exten
   return pointerHandlers<CiteHit>({
     hoverGate: CITE_GLYPH,
     hitAt: citeHitAt,
-    follow: (hit, view, event) => () => followCitation(view, hit.marker.label, getApi(), event),
+    follow: (hit, _, event) => () => followCitation(hit.marker.label, getApi(), event),
     dwell: () => null,
     menu: (hit, view) => () =>
       void view.state

@@ -360,7 +360,7 @@ export function applySavedFolds(view: EditorView, keys: string[]): void {
 
 /** The divider reports its press through `onCitationsToggle` rather than folding itself: the section's state is the page's visibility. */
 export function markdownFolding(onCitationsToggle: () => void): Extension {
-  // The saved keys are read only at the next mount, so a heading renamed under its fold is re-derived where the editor is left as well as on each fold change.
+  // The saved keys are read only at the next mount, so a heading renamed under its fold is re-derived where the editor is left, on each fold change, and on any unfocused edit a mirrored body didn't make.
   const persist = ViewPlugin.define((view) => {
     const keys = (): string[] =>
       foldedRegions(view.state)

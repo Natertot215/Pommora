@@ -4,7 +4,12 @@ import {
   normalizeTitle,
   pageEmbedText,
 } from '@pommora/core/Connections/connections'
-import { decodeLinkTarget, encodeLinkTarget, escapeAlias } from '@pommora/core/Connections/links'
+import {
+  decodeLinkTarget,
+  emptyTolerantLinkRegex,
+  encodeLinkTarget,
+  escapeAlias,
+} from '@pommora/core/Connections/links'
 import type { TrailSegment } from '@pommora/uix/Elements/NavTrail'
 import { type DocScan, inCodeAt } from '../Engine/docScan'
 import { lineIndexAt, type TextEdit } from '../Engine/markdownCode'
@@ -37,12 +42,10 @@ function markdownTargetAt(
   line: string,
   rel: number,
 ): { from: number; to: number; label: [number, number] } | null {
-  for (let i = line.indexOf(']('); i !== -1; i = line.indexOf('](', i + 2)) {
-    const open = i + 2
-    const close = line.indexOf(')', open)
-    if (close === -1 || rel < open || rel > close) continue
-    const bracket = line.lastIndexOf('[', i)
-    return bracket === -1 ? null : { from: open, to: close, label: [bracket + 1, i] }
+  for (const m of line.matchAll(emptyTolerantLinkRegex())) {
+    const [, label, dest] = m.indices ?? []
+    if (label && dest && rel >= dest[0] && rel <= dest[1])
+      return { from: dest[0], to: dest[1], label }
   }
   return null
 }

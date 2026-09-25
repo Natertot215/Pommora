@@ -366,6 +366,20 @@ describe('the bundle — one folder per deletion, holding the artifact and its r
     const { record } = await onlyBundle()
     expect(record).toMatchObject({ entity: 'context', partial: true })
   })
+
+  it.each([
+    ['context', '.nexus/contexts/Projects'],
+    ['space', '.nexus/contexts/Projects/Pommora'],
+  ] as const)('an unreadable Space sidecar in another Context leaves a %s deletable, partial, and the sidecar byte-identical', async (kind, path) => {
+    const broken = join(contextsDir(root), 'Areas', 'Broken', '_space.json')
+    await mkdir(dirname(broken), { recursive: true })
+    await writeFile(broken, '{ corrupt')
+    const r = await handleMutate(root, { op: 'delete', path, kind }, nexusDeps)
+    expect(r.ok).toBe(true)
+    const { record } = await onlyBundle()
+    expect(record).toMatchObject({ entity: kind, partial: true })
+    expect(await readFile(broken, 'utf8')).toBe('{ corrupt')
+  })
 })
 
 describe('writePropertyBundle — the artifact-less shape', () => {

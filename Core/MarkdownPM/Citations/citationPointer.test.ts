@@ -1,36 +1,38 @@
 import { describe, expect, it } from 'vitest'
 import { loneTarget } from './citationPointer'
+import { tokenTarget } from '../Links/connectionsApi'
+import { buildPageIndex } from '@pommora/core/Connections/pageIndex'
+
+const page = { id: 'p1', title: 'Some Page', path: 'Some Page.md' }
+const index = buildPageIndex([page])
+const target = (content: string) => {
+  const lone = loneTarget(content)
+  return lone && tokenTarget(index, lone.text, lone.tk)
+}
 
 describe('what a citation leads to, when it leads anywhere', () => {
   it('a lone Connection is followed', () => {
-    expect(loneTarget('[[Some Page]]')).toEqual({ kind: 'connection', title: 'Some Page' })
+    expect(target('[[Some Page]]')).toEqual({ kind: 'page', page })
   })
 
   it('an aliased Connection follows the page it names, not the words it wears', () => {
-    expect(loneTarget('[[Some Page|the words]]')).toEqual({
-      kind: 'connection',
-      title: 'Some Page',
-    })
+    expect(target('[[Some Page|the words]]')).toEqual({ kind: 'page', page })
   })
 
   it('a heading link carries its heading, and a bare fragment names this page', () => {
-    expect(loneTarget('[[Some Page#Setup]]')).toEqual({
-      kind: 'connection',
-      title: 'Some Page',
-      heading: 'Setup',
-    })
-    expect(loneTarget('[[#Setup]]')).toEqual({ kind: 'connection', title: '', heading: 'Setup' })
+    expect(target('[[Some Page#Setup]]')).toEqual({ kind: 'page', page, heading: 'Setup' })
+    expect(target('[[#Setup]]')).toEqual({ kind: 'self', heading: 'Setup' })
   })
 
   it('a lone markdown link is followed', () => {
-    expect(loneTarget('[label](https://example.com)')).toEqual({
-      kind: 'link',
+    expect(target('[label](https://example.com)')).toEqual({
+      kind: 'external',
       url: 'https://example.com',
     })
   })
 
   it('surrounding whitespace is not trailing content', () => {
-    expect(loneTarget('  [[Some Page]]  ')).toEqual({ kind: 'connection', title: 'Some Page' })
+    expect(target('  [[Some Page]]  ')).toEqual({ kind: 'page', page })
   })
 
   it('a trailing period means it is not a lone target', () => {

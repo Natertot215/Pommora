@@ -128,3 +128,32 @@ describe('a warm tile whose detail left the cache', () => {
     expect(get).toHaveBeenCalledWith('p1')
   })
 })
+
+describe('a preview tile, as a glance mounts it', () => {
+  afterEach(() => useSession.setState({ tree: null }))
+
+  it('loads the page’s prefs but saves none', async () => {
+    const get = vi.fn(async () => ok(NO_PREFS))
+    const set = vi.fn(async () => ok(null))
+    ;(window as unknown as { nexus: unknown }).nexus = stubDialer({
+      'editorPrefs:get': get,
+      'editorPrefs:set': set,
+    })
+    useSession.setState({ tree: makeTree() })
+    cachePageDetail(detail({ path: 'Notes/Alpha.md', id: 'p1', body: 'alpha' }))
+    await act(async () => {
+      root.render(
+        createElement(PageTile, {
+          path: 'Notes/Alpha.md',
+          editing: false,
+          onBeginEdit: () => {},
+          preview: true,
+        }),
+      )
+    })
+    await seen.host?.prefs?.load()
+    expect(get).toHaveBeenCalledWith('p1')
+    seen.host?.prefs?.save('folds', [])
+    expect(set).not.toHaveBeenCalled()
+  })
+})

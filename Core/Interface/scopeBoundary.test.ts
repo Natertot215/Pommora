@@ -6,7 +6,7 @@ import { installStores, NO_STORES } from '../Platform/stores'
 import { memoryStores } from '../Testing/memoryStores'
 import { writeKey } from '../Platform/localState'
 import { host } from '../Platform/dialer'
-import { interfaceHandlers, scopeGet, scopeSet } from './handlers'
+import { interfaceHandlers, scopeSet } from './handlers'
 
 const ctx = {} as HostContext
 
@@ -22,7 +22,7 @@ afterEach(() => {
 const isShown = (v: unknown): v is boolean | null => typeof v === 'boolean' || v === null
 const write = scopeSet('citations', isShown, 'Shown must be a boolean.')
 const set = (key: string, value: boolean | null) => write(ctx, key, value)
-const get = scopeGet<boolean>('citations')
+const get = interfaceHandlers['citations:get']
 
 describe('the citations override refuses what it cannot store and clears on a null', () => {
   it('stores both settings a page can be pinned to', () => {

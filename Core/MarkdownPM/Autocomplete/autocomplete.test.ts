@@ -149,6 +149,13 @@ describe('the ( ) form', () => {
     expect(doc.slice(r.label!.from, r.label!.to)).toBe('the notes')
   })
 
+  it('reads a target holding balanced parentheses to its real close', () => {
+    const doc = 'see [w](Notes_(a)_b) end'
+    const r = autocompleteQuery(doc, doc.indexOf('Notes') + 2)!
+    expect(r.form).toBe('target')
+    expect(doc.slice(r.from, r.to)).toBe('Notes_(a)_b')
+  })
+
   it('the caret in the label is not the caret in the target', () => {
     const doc = 'see [x](Notes) end'
     expect(autocompleteQuery(doc, 5)?.form).not.toBe('target')

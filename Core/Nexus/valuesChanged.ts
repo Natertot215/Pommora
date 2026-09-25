@@ -7,17 +7,14 @@ import type { NexusTree, ValueChange } from './tree'
 
 // One root at a time: a note under another root is a session that moved, and the old root's unflushed writes have no window left to reach.
 // Each file maps to whether every write it saw this flush was a body edit.
-let ledger: { root: string; byRel: Map<string, Map<string, boolean>> } | null = null
+let ledger: { root: string; byRel: Map<string, boolean> } | null = null
 
 export function noteValueWrite(root: string | null, absFile: string, body = false): void {
   if (root === null) return
   const rel = relative(root, absFile)
   if (!rel || escapes(rel)) return
   if (ledger?.root !== root) ledger = { root, byRel: new Map() }
-  const container = relDirname(rel)
-  const files = ledger.byRel.get(container) ?? new Map<string, boolean>()
-  ledger.byRel.set(container, files)
-  files.set(rel, body && (files.get(rel) ?? true))
+  ledger.byRel.set(rel, body && (ledger.byRel.get(rel) ?? true))
 }
 
 // A sidecar write silences its own watcher echo, so its writer notes the folder here and the confirm patches that node.
@@ -86,27 +83,21 @@ export const livePathOf = (root: string, id: string): string | null =>
 export function flushValueWrites(root: string, only?: readonly string[]): ValueChange[] {
   if (ledger?.root !== root) return []
   const { byRel } = ledger
-  const taken = only ? new Map<string, Map<string, boolean>>() : byRel
-  if (!only) ledger = null
-  for (const file of only ?? []) {
-    const container = relDirname(file)
-    const files = byRel.get(container)
-    const body = files?.get(file)
-    if (!files || body === undefined) continue
-    files.delete(file)
-    if (!files.size) byRel.delete(container)
-    taken.set(container, (taken.get(container) ?? new Map()).set(file, body))
-  }
   const byPath = liveIdIndex(root)
-  return [...taken].map(([rel, files]) => {
-    const pageIds: string[] = []
-    const bodyOnly: string[] = []
-    for (const [f, body] of files) {
-      const id = byPath.get(f)
-      if (!id) continue
-      pageIds.push(id)
-      if (body) bodyOnly.push(id)
-    }
-    return bodyOnly.length ? { rel, pageIds, bodyOnly } : { rel, pageIds }
-  })
+  const out = new Map<string, ValueChange>()
+  for (const file of only ?? byRel.keys()) {
+    const body = byRel.get(file)
+    if (body === undefined) continue
+    byRel.delete(file)
+    const rel = relDirname(file)
+    const change = out.get(rel) ?? { rel, pageIds: [] }
+    out.set(rel, change)
+    const id = byPath.get(file)
+    if (!id) continue
+    change.pageIds.push(id)
+    if (!body) continue
+    change.bodyOnly ??= []
+    change.bodyOnly.push(id)
+  }
+  return [...out.values()]
 }

@@ -30,6 +30,8 @@ interface EditorHostOptions {
   connections?: ConnectionsApi
   inert?: boolean
   pageSurface?: boolean
+  // A preview shows the page's saved prefs without writing them back.
+  preview?: boolean
 }
 
 /** The bridge's listener is per-caller, so every mounted editor hears every action; both directions answer to `subject`. */
@@ -53,7 +55,7 @@ const pickNode = (c: CollectionNode | SetNode): PickNode => ({
 
 /** Every member reads the store when called, so one host serves an editor for its whole mount; the editor seats the host once, so the tile reads the ref rather than a mount-time capture. */
 function buildEditorHost(
-  { pageId, inert, pageSurface }: EditorHostOptions,
+  { pageId, inert, pageSurface, preview }: EditorHostOptions,
   connRef: { readonly current: ConnectionsApi | undefined },
 ): EditorHost {
   const state = useSession.getState
@@ -118,8 +120,10 @@ function buildEditorHost(
     prefs: pageId
       ? {
           load: async () => valueOr(await host().ask('editorPrefs:get', pageId), null),
-          save: (...write) =>
-            void persist(write[0], host().ask('editorPrefs:set', pageId, ...write), true),
+          save: preview
+            ? () => {}
+            : (...write) =>
+                void persist(write[0], host().ask('editorPrefs:set', pageId, ...write), true),
         }
       : undefined,
     clipboard: {
@@ -179,6 +183,7 @@ export function useEditorHost({
   connections,
   inert,
   pageSurface,
+  preview,
 }: EditorHostOptions): EditorHost {
   const connRef = useRef(connections)
   connRef.current = connections
@@ -188,12 +193,13 @@ export function useEditorHost({
   const inPageHeadingResolution = useSession((s) => s.personalization.inPageHeadingResolution)
   const commands = useSession((s) => s.commands)
   return useMemo(
-    () => buildEditorHost({ pageId, inert, pageSurface }, connRef),
+    () => buildEditorHost({ pageId, inert, pageSurface, preview }, connRef),
     [
       pageId,
       connections,
       inert,
       pageSurface,
+      preview,
       shown,
       cbLineCount,
       headingLinkStyle,

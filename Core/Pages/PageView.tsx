@@ -45,7 +45,7 @@ export function PageView({
   const pendingLive = useRef<[string, string] | null>(null)
   const path = slot?.status === 'ready' ? slot.detail.path : ''
   const arrive =
-    pendingTravel?.route === 'tab' && pendingTravel.path === path
+    pendingTravel?.route === 'tab' && pendingTravel.tabId === tabId && pendingTravel.path === path
       ? pendingTravel.heading
       : undefined
   const bodyEpoch = useBodyEpoch(path)

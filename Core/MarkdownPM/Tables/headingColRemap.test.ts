@@ -7,7 +7,7 @@ import { structuralEditChange } from './sync'
 import { insertColumn } from '../Engine/Tables/operations'
 import { docScan } from '../docCache'
 import { editorHost } from '../api'
-import { testHost } from '../editorHarness'
+import { prefsOf, testHost } from '../editorHarness'
 
 // The widget lazy-imports MarkdownTable and renders it; a host and a ResizeObserver keep a synchronous render (if the import has resolved from a prior test) from throwing.
 ;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
@@ -44,7 +44,14 @@ function openTwoTables(onChange: (indices: number[]) => void): EditorView {
   view = new EditorView({
     state: EditorState.create({
       doc: `${A}\n\n${B}`,
-      extensions: [editorHost.of(testHost()), tableWidgetExtension(undefined, onChange)],
+      extensions: [
+        editorHost.of(
+          testHost({
+            prefs: prefsOf({}, (scope, value) => scope === 'headingCols' && onChange(value)),
+          }),
+        ),
+        tableWidgetExtension(),
+      ],
     }),
   })
   return view

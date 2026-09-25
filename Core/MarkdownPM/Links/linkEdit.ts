@@ -8,7 +8,7 @@ import {
 } from '@pommora/core/Connections/connections'
 import type { ConnEditAction } from '@pommora/core/Actions/connectionMenu'
 import type { ConnectionsApi } from './connectionsApi'
-import { aliasedToken, linkTokenAt, tokenize, type Token } from '../Engine/tokens'
+import { aliasedToken, linkTokenAt, type Token } from '../Engine/tokens'
 import { focusRange } from '../caretPlacement'
 import { restedOnLink } from '../Gestures/linkGestures'
 import { editorHost } from '../api'
@@ -55,9 +55,7 @@ export function commitAliasOnEnter(view: EditorView): boolean {
   const line = view.state.doc.lineAt(sel.head)
   const span = aliasSpanAt(line.text, sel.head - line.from)
   if (!span) return false
-  const tk = tokenize(line.text).find(
-    (t) => t.kind === 'wikiLink' && span[0] >= t.range[0] && span[1] <= t.range[1],
-  )
+  const tk = linkTokenAt(line.text, span[0], 'wikiLink')
   if (!tk) return false
   const end = line.from + tk.range[1]
   view.dispatch({

@@ -258,9 +258,7 @@ const cascadeSeen = async (
 ): Promise<void> => {
   const seen = await indexWrittenPage(root, join(root, rel))
   if (!seen) return
-  const c = await renameCascade(root, seen.title, { heading: seen.old, to: seen.next }).catch(
-    (e: unknown) => ({ pages: [], hosts: [], warning: errText(e) }),
-  )
+  const c = await renameCascade(root, seen.title, { heading: seen.old, to: seen.next })
   if (c.warning) console.error('heading rename:', c.warning)
   cascaded.pages.push(...c.pages)
   cascaded.hosts.push(...c.hosts)

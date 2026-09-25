@@ -1,5 +1,5 @@
 import {
-  parseJsonText,
+  parseJsonObject,
   readTextOrNull,
   rewritePreservingTimes,
   writeJson,
@@ -13,7 +13,6 @@ import { listFilesRecursive } from '../Files/walk'
 import { contextsDir } from '../Paths/paths'
 import { SPACE_SIDECAR } from '../Paths/nexusPaths'
 import { sweepAdmits } from '../Files/pageFile'
-import { isPlainObject } from './propertyValue'
 
 export type Raw = Record<string, unknown>
 
@@ -37,6 +36,17 @@ const changedKeys = (raw: Raw, next: Raw): string[] =>
   [...new Set([...Object.keys(raw), ...Object.keys(next)])].filter(
     (k) => JSON.stringify(raw[k]) !== JSON.stringify(next[k]),
   )
+
+function rewriteRaw(rewrite: Rewrite, content: string, file: string): string | null {
+  const raw = splitFrontmatter(content)
+  const next = rewrite(raw, file)
+  if (next === null) return null
+  const keys = changedKeys(raw, next)
+  if (!keys.length) return null
+  const modeled: Raw = {}
+  for (const k of keys) if (k in next) modeled[k] = next[k]
+  return mergeFrontmatter(content, modeled, keys, splitEnvelope(content).body)
+}
 
 /** Files are absolute; a sidecar rewrite in the plan reaches every Space sidecar, which no index names. */
 export async function sweepGovernedRoots(
@@ -64,26 +74,9 @@ export async function sweepGovernedRoots(
         out.refused.push(file)
         return
       }
-      if ('text' in plan) {
-        const next = plan.text(content, file)
-        if (next === null) return
-        await rewritePreservingTimes(file, next)
-        out.touched.set(file, content)
-        noteValueWrite(root, file)
-        await indexWrittenPage(root, file)
-        return
-      }
-      const raw = splitFrontmatter(content)
-      const next = plan.raw(raw, file)
+      const next = 'text' in plan ? plan.text(content, file) : rewriteRaw(plan.raw, content, file)
       if (next === null) return
-      const keys = changedKeys(raw, next)
-      if (!keys.length) return
-      const modeled: Raw = {}
-      for (const k of keys) if (k in next) modeled[k] = next[k]
-      await rewritePreservingTimes(
-        file,
-        mergeFrontmatter(content, modeled, keys, splitEnvelope(content).body),
-      )
+      await rewritePreservingTimes(file, next)
       out.touched.set(file, content)
       noteValueWrite(root, file)
       await indexWrittenPage(root, file)
@@ -100,11 +93,8 @@ export async function sweepGovernedRoots(
           return
         }
         // A sidecar nobody can parse won't read any better on a retry, so it's left byte-identical the way an unparseable page is.
-        let raw: unknown = null
-        try {
-          raw = parseJsonText(text)
-        } catch {}
-        if (!isPlainObject(raw)) {
+        const raw = parseJsonObject(text)
+        if (!raw) {
           out.refused.push(file)
           return
         }

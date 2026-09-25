@@ -861,6 +861,7 @@ describe('store — pending travel', () => {
       .select({ kind: 'page', id: 'a', path: 'Notes/A.md' }, { record: false, heading: 'Setup' })
     expect(useSession.getState().pendingTravel).toEqual({
       route: 'tab',
+      tabId: useSession.getState().activeTabId,
       path: 'Notes/A.md',
       heading: 'Setup',
     })

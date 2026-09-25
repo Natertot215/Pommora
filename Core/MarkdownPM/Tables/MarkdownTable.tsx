@@ -110,7 +110,6 @@ export function MarkdownTable({
   readClipboard,
   onMenu,
   onTableDrag,
-  onCite,
   onUndo,
   onRedo,
   connections,
@@ -132,7 +131,6 @@ export function MarkdownTable({
   readClipboard?: () => Promise<string>
   onMenu: (ctx: TableMenuContext) => void
   onTableDrag: (e: PointerEvent) => void
-  onCite?: (label: string, event: React.MouseEvent) => void
   onUndo: () => void
   onRedo: () => void
   connections?: () => ConnectionsApi | undefined
@@ -497,7 +495,6 @@ export function MarkdownTable({
         connections={connections}
         readOnly={readOnly}
         linkStyle={linkStyle}
-        onCite={onCite}
         onActivate={(coords, sweep) => {
           host.glance?.close()
           caretCoords.current = coords

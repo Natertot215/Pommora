@@ -392,6 +392,7 @@ export function GlancePane(): React.JSX.Element {
       warm={seam}
       ancestors={GLANCE_ANCESTORS}
       arrive={t.heading}
+      preview
     />
   )
   const onFoldClick = (e: React.MouseEvent): void => {

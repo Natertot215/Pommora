@@ -339,6 +339,40 @@ describe('the editor reports a settled heading rename', () => {
     expect(view.state.doc.toString()).toBe('## Setupx\n[[#Setupx]]')
   })
 
+  it('a case-only rename re-cases the page’s own links', async () => {
+    const onHeadingRename = vi.fn()
+    const view = await mountEditor({
+      initialBody: '## setup\n[[#setup]] next',
+      onHeadingRename,
+      autoFocus: true,
+    })
+    await act(async () => {
+      view.dispatch({
+        changes: { from: 3, to: 4, insert: 'S' },
+        selection: { anchor: 4 },
+        userEvent: 'input.type',
+      })
+    })
+    await leave(view)
+    expect(view.state.doc.toString()).toBe('## Setup\n[[#Setup]] next')
+    expect(onHeadingRename).toHaveBeenCalledTimes(1)
+  })
+
+  it('the settle’s own rewrite of a heading line is not a second rename', async () => {
+    const onHeadingRename = vi.fn()
+    const view = await mountEditor({
+      initialBody: '## A\n## See [[#A]]\ntext',
+      onHeadingRename,
+      autoFocus: true,
+    })
+    await typeAt(view, 4, 'x')
+    await leave(view)
+    await leave(view, 0)
+    expect(view.state.doc.toString()).toBe('## Ax\n## See [[#Ax]]\ntext')
+    expect(onHeadingRename).toHaveBeenCalledTimes(1)
+    expect(onHeadingRename).toHaveBeenCalledWith('A', 'Ax')
+  })
+
   it('unmounting with a rename pending settles it: onChange and the warm capture get the moved links and onHeadingRename fires once', async () => {
     const onHeadingRename = vi.fn()
     const onChange = vi.fn()
