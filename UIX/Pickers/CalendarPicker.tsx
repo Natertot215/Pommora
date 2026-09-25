@@ -1,6 +1,5 @@
 import { EmptyValue } from '../Elements/EmptyValue'
 import { useEffect, useRef, useState } from 'react'
-import { Reveal } from '../Animations/Reveal'
 import { useSettleFallback } from '../Animations/useExitPresence'
 import { Button } from '../Buttons/Button'
 import { Icon } from '../Symbols'
@@ -46,45 +45,30 @@ export function CalendarPicker({
   timeFormat,
   value = null,
   onChange,
-  range = true,
 }: {
-  formatDateValue: (isoDate: string, condensed?: { withYear: boolean }) => string
+  formatDateValue: (isoDate: string) => string
   timeFormat: 'twelveHour' | 'twentyFourHour'
-  value?: string | null
+  value?: { at: Date; timed: boolean } | null
   onChange?: (iso: string | null) => void
-  range?: boolean
 }): React.JSX.Element {
   const twelve = timeFormat === 'twelveHour'
   const now = new Date()
   const todayKey = localDayKey(now)
-  const init = value && /^\d{4}-\d{2}-\d{2}/.test(value) ? value : null
-  const initHasTime = init?.includes('T') ?? false
 
   const [cursor, setCursor] = useState(() => {
-    const seed = init ? new Date(`${init.slice(0, 10)}T00:00:00`) : now
+    const seed = value?.at ?? now
     return new Date(seed.getFullYear(), seed.getMonth(), 1)
   })
   const [slide, setSlide] = useState<{ dir: 1 | -1; from: Date } | null>(null)
   const settleSlide = useSettleFallback(slide !== null, 'base', () => setSlide(null))
-  const [start, setStart] = useState<string | null>(init ? init.slice(0, 10) : null)
-  const [end, setEnd] = useState<string | null>(null)
-  const [endOn, setEndOn] = useState(false)
-  const [timeOn, setTimeOn] = useState(initHasTime)
+  const [start, setStart] = useState<string | null>(value ? localDayKey(value.at) : null)
+  const [timeOn, setTimeOn] = useState(value?.timed ?? false)
   const [startMin, setStartMin] = useState(
-    initHasTime && init ? Number(init.slice(11, 13)) * 60 + Number(init.slice(14, 16)) : 9 * 60,
+    value?.timed ? value.at.getHours() * 60 + value.at.getMinutes() : 9 * 60,
   )
-  const [endMin, setEndMin] = useState(17 * 60)
   const [menu, setMenu] = useState<{ kind: 'month' | 'year'; at: Anchor } | null>(null)
-  const [timeMenu, setTimeMenu] = useState<{
-    which: 'start' | 'end'
-    part: 'h' | 'm'
-    at: Anchor
-  } | null>(null)
-  const [partEdit, setPartEdit] = useState<{
-    which: 'start' | 'end'
-    part: 'h' | 'm'
-    draft: string
-  } | null>(null)
+  const [timeMenu, setTimeMenu] = useState<{ part: 'h' | 'm'; at: Anchor } | null>(null)
+  const [partEdit, setPartEdit] = useState<{ part: 'h' | 'm'; draft: string } | null>(null)
 
   const begin = usePointerGesture()
   const swipe = useRef(0)
@@ -133,9 +117,6 @@ export function CalendarPicker({
 
   const menuTrigger = useLatest(menu?.at.el ?? null)
   const timeMenuTrigger = useLatest(timeMenu?.at.el ?? null)
-  const minsOf = (which: 'start' | 'end'): number => (which === 'start' ? startMin : endMin)
-  const setMinsFor = (which: 'start' | 'end'): typeof setStartMin =>
-    which === 'start' ? setStartMin : setEndMin
 
   const nav = (dir: 1 | -1): void => {
     if (slide) return
@@ -147,24 +128,7 @@ export function CalendarPicker({
     setMenu(null)
   }
 
-  const pick = (k: string): void => {
-    if (k === start) {
-      setStart(end)
-      setEnd(null)
-    } else if (k === end) {
-      setEnd(null)
-    } else if (!start) {
-      setStart(k)
-    } else if (endOn && !end) {
-      if (k < start) {
-        setEnd(start)
-        setStart(k)
-      } else setEnd(k)
-    } else {
-      setStart(k)
-      setEnd(null)
-    }
-  }
+  const pick = (k: string): void => setStart(k === start ? null : k)
 
   const onGridWheel = (e: React.WheelEvent): void => {
     if (Math.abs(e.deltaX) <= Math.abs(e.deltaY)) return
@@ -186,9 +150,8 @@ export function CalendarPicker({
   // A zero-move press never captures, so the day button's own click carries the pick.
   const onGridPointerDown = (e: React.PointerEvent<HTMLDivElement>): void => {
     const k = dataKey(e.target as Element)
-    if (!k || (k !== start && k !== end)) return
-    const from = { start, end }
-    const d = { start, end, which: k === start ? 'start' : 'end', moved: false }
+    if (!k || k !== start) return
+    let moved = false
     begin({
       el: e.currentTarget,
       event: e,
@@ -197,30 +160,15 @@ export function CalendarPicker({
       onActivate: () => true,
       onDragMove: (ev) => {
         const at = dataKey(document.elementFromPoint(ev.clientX, ev.clientY))
-        if (!at || at === d.start || at === d.end) return
-        d.moved = true
-        if (d.which === 'start') {
-          if (d.end !== null && at > d.end) {
-            d.start = d.end
-            d.end = at
-            d.which = 'end'
-          } else d.start = at
-        } else if (d.start !== null && at < d.start) {
-          d.end = d.start
-          d.start = at
-          d.which = 'start'
-        } else d.end = at
-        setStart(d.start)
-        setEnd(d.end)
+        if (!at) return
+        moved ||= at !== k
+        setStart(at)
       },
       // The engine swallows the click after an activated release, so a wobble still has to pick here.
       onDrop: () => {
-        if (!d.moved) pick(k)
+        if (!moved) pick(k)
       },
-      onAbort: () => {
-        setStart(from.start)
-        setEnd(from.end)
-      },
+      onAbort: () => setStart(k),
     })
   }
 
@@ -235,15 +183,12 @@ export function CalendarPicker({
     const lead = new Date(y, m, 1).getDay()
     const first = new Date(y, m, 1 - lead)
     const cellCount = rowsFor(month) * 7
-    const ranged = start !== null && end !== null
     return (
       <div className={s.days} key={localDayKey(month)}>
         {Array.from({ length: cellCount }, (_, i) => {
           const d = new Date(first.getFullYear(), first.getMonth(), first.getDate() + i)
           const k = localDayKey(d)
-          const sel = k === start || k === end
-          const mid = ranged && k > start && k < end
-          const col = i % 7
+          const sel = k === start
           return (
             <button
               type="button"
@@ -252,18 +197,8 @@ export function CalendarPicker({
               className={cx(s.day, d.getMonth() !== m && s.dayOut, sel && s.daySelected)}
               onClick={() => pick(k)}
             >
-              {sel && ranged && (
-                <span className={cx(s.pill, k === start ? s.bandUnderStart : s.bandUnderEnd)} />
-              )}
               <span
-                className={cx(
-                  s.pill,
-                  k === todayKey && !sel && !mid && s.pillToday,
-                  sel && s.pillSelected,
-                  mid && s.pillMid,
-                  mid && col === 0 && s.pillRowFirst,
-                  mid && col === 6 && s.pillRowLast,
-                )}
+                className={cx(s.pill, k === todayKey && !sel && s.pillToday, sel && s.pillSelected)}
               />
               {d.getDate()}
             </button>
@@ -283,14 +218,10 @@ export function CalendarPicker({
     part === 'h' ? hourText(hourShown(mins)) : pad(mins % 60)
 
   const dateField = (
-    k: string | null,
-    label: string,
-    condensed?: { withYear: boolean },
-  ): React.JSX.Element => (
-    <div className={s.field} key={label}>
+    <div className={s.field}>
       <Icon name="calendar" size="body" className={s.fieldIcon} />
       <OverScroll className={s.fieldValue}>
-        {k ? formatDateValue(k, condensed) : <EmptyValue />}
+        {start ? formatDateValue(start) : <EmptyValue />}
       </OverScroll>
     </div>
   )
@@ -299,19 +230,17 @@ export function CalendarPicker({
     if (!partEdit) return
     const v = Number(partEdit.draft)
     if (partEdit.draft !== '' && Number.isFinite(v)) {
-      const mins = minsOf(partEdit.which)
-      const setMins = setMinsFor(partEdit.which)
       if (partEdit.part === 'h') {
         const clamped = twelve ? clamp(v, 1, 12) : Math.min(v, 23)
-        setMins(hourToMins(clamped, mins))
-      } else setMins(minuteToMins(Math.min(v, 59), mins))
+        setStartMin(hourToMins(clamped, startMin))
+      } else setStartMin(minuteToMins(Math.min(v, 59), startMin))
     }
     setPartEdit(null)
   }
-  const timePart = (which: 'start' | 'end', part: 'h' | 'm', mins: number): React.JSX.Element =>
-    partEdit?.which === which && partEdit.part === part ? (
+  const timePart = (part: 'h' | 'm', mins: number): React.JSX.Element =>
+    partEdit?.part === part ? (
       <input
-        key={`${which}-${part}-edit`}
+        key={`${part}-edit`}
         className={s.timePartInput}
         value={partEdit.draft}
         placeholder={partText(part, mins)}
@@ -320,7 +249,7 @@ export function CalendarPicker({
         spellCheck={false}
         onChange={(e) => {
           const draft = e.target.value
-          if (/^\d{0,2}$/.test(draft)) setPartEdit({ which, part, draft })
+          if (/^\d{0,2}$/.test(draft)) setPartEdit({ part, draft })
         }}
         onKeyDown={(e) => {
           if (e.key === 'Enter') partCommit()
@@ -334,51 +263,39 @@ export function CalendarPicker({
     ) : (
       <button
         type="button"
-        key={`${which}-${part}`}
+        key={part}
         className={s.timePart}
         onClick={(e) => {
           if (e.detail > 1) return
-          setTimeMenu(
-            timeMenu?.which === which && timeMenu.part === part
-              ? null
-              : { which, part, at: anchorOf(e.currentTarget) },
-          )
+          setTimeMenu(timeMenu?.part === part ? null : { part, at: anchorOf(e.currentTarget) })
         }}
         onDoubleClick={() => {
           setTimeMenu(null)
-          setPartEdit({ which, part, draft: '' })
+          setPartEdit({ part, draft: '' })
         }}
       >
         {partText(part, mins)}
       </button>
     )
-  const ampmPart = (which: 'start' | 'end', mins: number): React.JSX.Element => {
-    const setMins = setMinsFor(which)
-    return (
-      <button
-        type="button"
-        className={s.timePart}
-        onClick={() => setMins(mins >= 720 ? mins - 720 : mins + 720)}
-      >
-        {mins >= 720 ? 'PM' : 'AM'}
-      </button>
-    )
-  }
   const timeField = (
-    mins: number | null,
-    label: string,
-    which: 'start' | 'end',
-  ): React.JSX.Element => (
-    <div className={cx(s.field, s.fieldTime)} key={label}>
+    <div className={cx(s.field, s.fieldTime)}>
       <Icon name="clock" size="body" className={s.fieldIcon} />
-      {mins !== null ? (
+      {start ? (
         <span className={s.timeParts}>
           <span className={s.hmGroup}>
-            {timePart(which, 'h', mins)}
+            {timePart('h', startMin)}
             <span className={s.timeColon}>:</span>
-            {timePart(which, 'm', mins)}
+            {timePart('m', startMin)}
           </span>
-          {twelve && ampmPart(which, mins)}
+          {twelve && (
+            <button
+              type="button"
+              className={s.timePart}
+              onClick={() => setStartMin(startMin >= 720 ? startMin - 720 : startMin + 720)}
+            >
+              {startMin >= 720 ? 'PM' : 'AM'}
+            </button>
+          )}
         </span>
       ) : (
         <EmptyValue className={s.fieldValue} />
@@ -403,12 +320,10 @@ export function CalendarPicker({
         {y}
       </MenuItem>
     ))
-  const timeRows = (which: 'start' | 'end', part: 'h' | 'm'): React.JSX.Element[] => {
-    const mins = minsOf(which)
-    const setMins = setMinsFor(which)
-    const current = part === 'h' ? hourShown(mins) : mins % 60
+  const timeRows = (part: 'h' | 'm'): React.JSX.Element[] => {
+    const current = part === 'h' ? hourShown(startMin) : startMin % 60
     const choose = (v: number): void => {
-      setMins(part === 'h' ? hourToMins(v, mins) : minuteToMins(v, mins))
+      setStartMin(part === 'h' ? hourToMins(v, startMin) : minuteToMins(v, startMin))
       setTimeMenu(null)
     }
     return (part === 'h' ? (twelve ? HOURS_12 : HOURS_24) : MINUTES).map((v) => (
@@ -421,9 +336,6 @@ export function CalendarPicker({
   const prevMonth = slide?.from ?? cursor
   const gridRows = rowsFor(cursor)
   const gridHeight = gridRows * 24 + (gridRows - 1) * 2 + 2
-  const condensed = {
-    withYear: start !== null && end !== null && start.slice(0, 4) !== end.slice(0, 4),
-  }
 
   return (
     <div className={s.root}>
@@ -504,38 +416,9 @@ export function CalendarPicker({
       </div>
       <div className={s.divider} />
       <div className={s.fields}>
-        {endOn ? (
-          <div className={s.fieldRow}>
-            {dateField(start, 'start', condensed)}
-            {dateField(end, 'end', condensed)}
-          </div>
-        ) : (
-          <div className={s.fieldRow}>
-            {dateField(start, 'date')}
-            {timeOn && timeField(start ? startMin : null, 'time', 'start')}
-          </div>
-        )}
-        <Reveal open={endOn && timeOn} fill>
-          <div className={cx(s.fieldRow, s.fieldRowStacked)}>
-            {timeField(start ? startMin : null, 'start-t', 'start')}
-            {timeField(end ? endMin : null, 'end-t', 'end')}
-          </div>
-        </Reveal>
+        {dateField}
+        {timeOn && timeField}
       </div>
-      {range && (
-        <div className={rowBox}>
-          <span className={s.switchLabel}>End Date</span>
-          <DualSwitch
-            checked={endOn}
-            ariaLabel="End Date"
-            onChange={(v) => {
-              setEndOn(v)
-              if (!v) setEnd(null)
-              setPartEdit(null)
-            }}
-          />
-        </div>
-      )}
       <div className={rowBox}>
         <span className={s.switchLabel}>Use Time</span>
         <DualSwitch
@@ -573,7 +456,7 @@ export function CalendarPicker({
         anchorHeight={timeMenu?.at.h}
       >
         <MenuScrollFrame maxHeight={DROPDOWN_MAX_HEIGHT}>
-          {timeMenu && <div className={s.menuList}>{timeRows(timeMenu.which, timeMenu.part)}</div>}
+          {timeMenu && <div className={s.menuList}>{timeRows(timeMenu.part)}</div>}
         </MenuScrollFrame>
       </PickerMenu>
     </div>

@@ -163,6 +163,15 @@ describe('makeSorter — type-aware single criterion', () => {
     ).toEqual(['r1', 'r3', 'r2'])
   })
 
+  it('a date-only value is local midnight, so it sorts after the evening before it', () => {
+    const rows = [
+      makeRow('day', { props: { prop_when: '2026-06-15' } }),
+      makeRow('eve', { props: { prop_when: '2026-06-14T22:00:00' } }),
+    ]
+    const sorter = makeSorter([{ property_id: 'prop_when', direction: 'ascending' }], schema)!
+    expect(ids(sorter(rows))).toEqual(['eve', 'day'])
+  })
+
   it('number sorts numerically, absent first ascending', () => {
     const rows = [
       makeRow('r1', { props: { prop_num: 5 } }),

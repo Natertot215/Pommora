@@ -42,13 +42,13 @@ function PopupButton({
   )
 }
 
-const showcaseDate = (iso: string, condensed?: { withYear: boolean }): string =>
-  new Date(`${iso}T00:00:00`).toLocaleDateString(
-    'en-US',
-    condensed
-      ? { month: 'short', day: 'numeric', ...(condensed.withYear ? { year: 'numeric' } : {}) }
-      : { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' },
-  )
+const showcaseDate = (iso: string): string =>
+  new Date(`${iso}T00:00:00`).toLocaleDateString('en-US', {
+    weekday: 'long',
+    month: 'long',
+    day: 'numeric',
+    year: 'numeric',
+  })
 
 const PICKER_LABELS = [
   { label: 'Active', color: 'blue-1' },
@@ -63,7 +63,7 @@ export function ComponentsLeaf(): React.JSX.Element {
         <h2>Popups</h2>
         <div className="ds-switcher">
           <PopupButton label="CalendarPicker">
-            <CalendarPicker range timeFormat="twelveHour" formatDateValue={showcaseDate} />
+            <CalendarPicker timeFormat="twelveHour" formatDateValue={showcaseDate} />
           </PopupButton>
           <PopupButton label="PickerMenu">
             {(open, close, trigger) => (

@@ -11,6 +11,7 @@ import { isBlankValue, type PropertyValue } from '@pommora/core/Properties/prope
 import { declaredType, resolveFieldValue } from '../../Properties/value'
 import { type SetTreeNode, subtreeIds } from './group'
 import { linkDisplayText } from '@pommora/core/Connections/linkValue'
+import { type LocalDate, readDate, startOfDay } from '../../Properties/formatValue'
 
 export const FILTER_OPS = {
   is: 'is',
@@ -195,12 +196,6 @@ function parseNum(s: Expected): number | null {
   return Number.isNaN(n) ? null : n
 }
 
-function parseDateMs(s: Expected): number | null {
-  if (s == null) return null
-  const t = Date.parse(s)
-  return Number.isNaN(t) ? null : t
-}
-
 function parseBool(s: Expected): boolean | null {
   switch (s?.toLowerCase()) {
     case 'true':
@@ -264,22 +259,24 @@ function evaluateNumber(v: PropertyValue, op: Op, expected: Expected): boolean {
   }
 }
 
-/** Both sides compared by their ISO date component, never exact-ms equality. String truncation, not Date math: the stored day IS the authored day regardless of the viewer's timezone. */
-const dayOf = (iso: string): string => iso.slice(0, 10)
+const dayMs = (d: LocalDate): number => startOfDay(d.at).getTime()
 
-/** A bare-day operand orders by calendar day, the same truncation `is` uses; an operand carrying a time orders by instant. */
+/** Days are the local days the cells show. `is` compares days; a bare-day operand orders by day, and one carrying a time orders by instant. */
 function evaluateDate(v: PropertyValue, op: Op, expected: Expected): boolean {
-  const raw = v.kind === 'datetime' ? v.value : null
-  const bareDay = expected != null && !expected.includes('T')
-  const d = raw === null ? null : parseDateMs(bareDay ? dayOf(raw) : raw)
-  const e = parseDateMs(expected)
+  const value = v.kind === 'datetime' ? readDate(v.value) : null
+  const target = expected == null ? null : readDate(expected)
+  const ms = (x: LocalDate): number => (target?.timed ? x.at.getTime() : dayMs(x))
+  const d = value && ms(value)
+  const e = target && ms(target)
   switch (op) {
     case FILTER_OPS.isEmpty:
-      return d === null
+      return value === null
     case FILTER_OPS.isNotEmpty:
-      return d !== null
+      return value !== null
     case FILTER_OPS.is:
-      return expected == null ? true : raw !== null && dayOf(raw) === dayOf(expected)
+      return expected == null
+        ? true
+        : value !== null && target !== null && dayMs(value) === dayMs(target)
     case FILTER_OPS.isBefore:
       return e === null ? true : d !== null && d < e
     case FILTER_OPS.isAfter:

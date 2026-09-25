@@ -543,6 +543,25 @@ describe('applyFilter — new single-operand ops', () => {
     ).toEqual(['d25'])
   })
 
+  it('a date-only value is local midnight against a time-bearing operand', () => {
+    expect(
+      ids([row('day', { props: { prop_when: '2026-06-15' } })], {
+        match: 'all',
+        rules: [{ property_id: 'prop_when', op: 'is_after', value: '2026-06-14T21:00:00' }],
+      }),
+    ).toEqual(['day'])
+  })
+
+  it('date is matches the local day a zoned value shows', () => {
+    const lateEvening = new Date(2026, 5, 14, 23, 30).toISOString()
+    expect(
+      ids([row('late', { props: { prop_when: lateEvening } })], {
+        match: 'all',
+        rules: [{ property_id: 'prop_when', op: 'is', value: '2026-06-14' }],
+      }),
+    ).toEqual(['late'])
+  })
+
   it('starts_with is case-insensitive; missing operand passes', () => {
     expect(
       ids([rows[4], rows[5]], {

@@ -624,12 +624,17 @@ describe('dateBucketKey', () => {
     expect(dateBucketKey('not-a-date', 'month')).toBeNull()
   })
 
-  it('buckets a date-only value by its stored calendar date, stable across timezones (utc)', () => {
-    expect(dateBucketKey('2026-06-27', 'day', true)).toBe('2026-06-27')
-    expect(dateBucketKey('2026-06-27', 'month', true)).toBe('2026-06')
-    expect(dateBucketKey('2026-06-27', 'year', true)).toBe('2026')
+  it('buckets a date-only value by its stored calendar date in any timezone', () => {
+    expect(dateBucketKey('2026-06-27', 'day')).toBe('2026-06-27')
+    expect(dateBucketKey('2026-06-27', 'month')).toBe('2026-06')
+    expect(dateBucketKey('2026-06-27', 'year')).toBe('2026')
     // 2026-01-01 is a Thursday → ISO week 1; 2025-12-31 (Wed) shares it (its Thursday is Jan 1).
-    expect(dateBucketKey('2026-01-01', 'week', true)).toBe('2026-W01')
-    expect(dateBucketKey('2025-12-31', 'week', true)).toBe('2026-W01')
+    expect(dateBucketKey('2026-01-01', 'week')).toBe('2026-W01')
+    expect(dateBucketKey('2025-12-31', 'week')).toBe('2026-W01')
+  })
+
+  it('buckets a zoned value by the local day its cell shows', () => {
+    const lateEvening = new Date(2026, 5, 14, 23, 30)
+    expect(dateBucketKey(lateEvening.toISOString(), 'day')).toBe('2026-06-14')
   })
 })

@@ -14,6 +14,7 @@ import type { PageFrontmatter, PageMeta } from '@pommora/core/Nexus/schemas'
 import { optionValues, type PropertyDefinition } from '@pommora/core/Properties/properties'
 import { UNGROUPED, isEmptyBand } from '@pommora/core/Views/viewRow'
 import { declaredType, resolveFieldValue } from '../../Properties/value'
+import { readDate } from '../../Properties/formatValue'
 
 const GROUPABLE = new Set<string>(['select', 'status', 'checkbox', 'datetime'])
 
@@ -131,17 +132,13 @@ function isoWeek(year: number, month: number, day: number): [year: number, week:
   return [d.getUTCFullYear(), week]
 }
 
-/** Zero-padded so lexicographic order IS chronological. A date-only value buckets by its stored (UTC) date — the date the user picked, for every viewer — while a datetime buckets display-local. */
-export function dateBucketKey(
-  iso: string,
-  granularity: DateGranularity,
-  utc = false,
-): string | null {
-  const d = new Date(iso)
-  if (Number.isNaN(d.getTime())) return null
-  const year = utc ? d.getUTCFullYear() : d.getFullYear()
-  const month = utc ? d.getUTCMonth() : d.getMonth()
-  const day = utc ? d.getUTCDate() : d.getDate()
+/** Zero-padded so lexicographic order IS chronological. Buckets by the local day the cell shows, so a date-only value keeps the day the user picked. */
+export function dateBucketKey(iso: string, granularity: DateGranularity): string | null {
+  const d = readDate(iso)?.at
+  if (!d) return null
+  const year = d.getFullYear()
+  const month = d.getMonth()
+  const day = d.getDate()
   switch (granularity) {
     case 'year':
       return pad(year, 4)
@@ -170,9 +167,7 @@ export function bucketKey(
     case 'checkbox':
       return v.kind === 'checkbox' ? (v.value ? 'true' : 'false') : null
     case 'datetime':
-      return v.kind === 'datetime'
-        ? dateBucketKey(v.value, granularity, !v.value.includes('T'))
-        : null
+      return v.kind === 'datetime' ? dateBucketKey(v.value, granularity) : null
     default:
       return null
   }

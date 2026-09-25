@@ -1,4 +1,4 @@
-import { keyframes, style, type StyleRule } from '@vanilla-extract/css'
+import { keyframes, style } from '@vanilla-extract/css'
 import { vars } from '../Theme/color.css'
 import { duration, easing } from '../Animations/motion'
 import { tintAt } from '../Theme/colors'
@@ -7,14 +7,12 @@ import { base } from '../Fields/fields.css'
 import { segment } from '../Elements/segment.css'
 
 const c = vars.color
-const endpointFill = tintAt('var(--accent)', 'secondary')
-const bandFill = tintAt('var(--accent)', 'tertiary')
+const selectedFill = tintAt('var(--accent)', 'secondary')
 
 const GUTTER = '2px'
 
 const PILL_INSET = '1px'
 const PILL_RADIUS = '6px'
-const ROW_END_RADIUS = '7px'
 
 const hairline = { height: 'var(--width-100)', background: c.border.base } as const
 
@@ -106,35 +104,17 @@ export const pill = style({
   selectors: { [`${day}:hover &`]: { background: c.state.hover } },
 })
 export const pillToday = style({ boxShadow: 'inset 0 0 0 var(--width-100)' })
-export const pillSelected = style({ background: `${endpointFill} !important` })
+export const pillSelected = style({ background: `${selectedFill} !important` })
 export const daySelected = style({ fontWeight: font.weight.semibold })
-const band = (inset: string): StyleRule => ({
-  background: `${bandFill} !important`,
-  borderRadius: 0,
-  inset,
-})
-export const bandUnderStart = style(band(`${PILL_INSET} 0 ${PILL_INSET} 50%`))
-export const bandUnderEnd = style(band(`${PILL_INSET} 50% ${PILL_INSET} 0`))
-export const pillMid = style(band(`${PILL_INSET} 0`))
-export const pillRowFirst = style({
-  borderRadius: `${ROW_END_RADIUS} 0 0 ${ROW_END_RADIUS}`,
-  inset: `${PILL_INSET} 0 ${PILL_INSET} ${PILL_INSET}`,
-})
-export const pillRowLast = style({
-  borderRadius: `0 ${ROW_END_RADIUS} ${ROW_END_RADIUS} 0`,
-  inset: `${PILL_INSET} ${PILL_INSET} ${PILL_INSET} 0`,
-})
 
 export const divider = style({ ...hairline, margin: `7px ${GUTTER} 8px` })
 
 export const fields = style({
   display: 'flex',
-  flexDirection: 'column',
+  gap: '6px',
   padding: `0 ${GUTTER}`,
   marginBottom: '8px',
 })
-export const fieldRow = style({ display: 'flex', gap: '6px' })
-export const fieldRowStacked = style({ paddingTop: '6px' })
 export const field = style({
   flex: 1,
   minWidth: 0,

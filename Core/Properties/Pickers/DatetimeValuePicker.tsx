@@ -2,7 +2,7 @@ import type { ColumnStyle } from '@pommora/core/Properties/columnStyles'
 import type { PropertyValue } from '@pommora/core/Properties/propertyValue'
 import { CalendarPicker } from '@pommora/uix/Pickers/CalendarPicker'
 import { useSetting } from '../../Session/store'
-import { formatDate } from '../formatValue'
+import { formatDate, readDate } from '../formatValue'
 
 export function DatetimeValuePicker({
   value,
@@ -23,8 +23,7 @@ export function DatetimeValuePicker({
   const fmt = shown === 'relative' ? 'short' : shown
   return (
     <CalendarPicker
-      range={false}
-      value={value?.kind === 'datetime' ? value.value : null}
+      value={value?.kind === 'datetime' ? readDate(value.value) : null}
       timeFormat={clock}
       formatDateValue={(k) => formatDate(k, fmt, 'none')}
       onChange={(iso) => onCommit(iso ? { kind: 'datetime', value: iso } : null)}

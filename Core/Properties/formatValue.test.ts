@@ -1,11 +1,11 @@
 import { describe, expect, it } from 'vitest'
 import {
-  condensedDate,
   currencyGlyph,
   formatDate,
   formatNumber,
   fractionDenominator,
   numberDivisor,
+  readDate,
 } from './formatValue'
 
 describe('formatDate', () => {
@@ -94,8 +94,25 @@ describe('formatDate relative', () => {
     expect(rel('2026-07-05T15:30:00', 'twelveHour')).toBe('Yesterday at 3:30 PM')
     expect(rel('2026-06-20T15:30:00', 'twelveHour')).toBe('2 Weeks Ago')
   })
-  it('condensedDate treats relative as the worded short form (never shown relative in the picker)', () => {
-    expect(condensedDate('2026-07-06', 'relative', true)).toBe('July 6th')
+})
+
+describe('readDate', () => {
+  it('reads a bare day as local midnight, untimed', () => {
+    expect(readDate('2026-06-15')).toEqual({ at: new Date(2026, 5, 15), timed: false })
+  })
+  it('reads a time as written, zone honored', () => {
+    const at = new Date(2026, 5, 14, 23, 30)
+    expect(readDate('2026-06-14T23:30:00')).toEqual({ at, timed: true })
+    expect(readDate(at.toISOString())).toEqual({ at, timed: true })
+  })
+  it('reads a space-separated time', () => {
+    expect(readDate('2026-06-14 23:30')).toEqual({
+      at: new Date(2026, 5, 14, 23, 30),
+      timed: true,
+    })
+  })
+  it('is null for text that names no date', () => {
+    expect(readDate('someday')).toBeNull()
   })
 })
 
