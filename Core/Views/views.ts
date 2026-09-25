@@ -89,14 +89,16 @@ const filterRule = z.object({
 })
 export type FilterRule = z.infer<typeof filterRule>
 
-export const filterGroup = z.object({
+/** RECURSIVE: a child may itself be a FilterGroup, expressing mixed AND/OR. Whether the filter APPLIES is a separate axis (`filter_enabled`), so turning it off never costs it its authored mode. */
+export type FilterGroup = { match: MatchMode; rules: Array<FilterRule | FilterGroup> }
+
+// A rule this build can't read drops alone, and the rest still filter.
+export const filterGroup: z.ZodType<FilterGroup> = z.object({
   match: z.enum(MATCH_MODES),
   get rules() {
-    return z.array(z.union([filterRule, filterGroup]))
+    return eachOf(z.union([filterRule, filterGroup]))
   },
 })
-/** RECURSIVE: a child may itself be a FilterGroup, expressing mixed AND/OR. Whether the filter APPLIES is a separate axis (`filter_enabled`), so turning it off never costs it its authored mode. */
-export type FilterGroup = z.infer<typeof filterGroup>
 
 const GROUP_ORDER_MODE_SET = new Set<string>(GROUP_ORDER_MODES)
 const DATE_GRANULARITY_SET = new Set<string>(DATE_GRANULARITIES)
