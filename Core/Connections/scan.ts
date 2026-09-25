@@ -24,26 +24,32 @@ export function sectionRunsIn(
   text: string,
   headings: readonly string[],
   inCode: CodeMask,
-  sorted = false,
 ): SectionRun[] {
   if (!text.includes('§') || headings.length === 0) return []
-  const links = [...text.matchAll(pageLinkPattern()), ...text.matchAll(markdownLinkRegex())].map(
-    (m) => [m.index ?? 0, (m.index ?? 0) + m[0].length],
-  )
-  const byLength = sorted ? headings : [...headings].sort((a, b) => b.length - a.length)
+  const links = [...text.matchAll(pageLinkPattern()), ...text.matchAll(markdownLinkRegex())]
+    .map((m) => [m.index ?? 0, (m.index ?? 0) + m[0].length])
+    .sort((a, b) => a[0] - b[0])
+  const byLength = new Map<number, Map<string, string>>()
+  for (const heading of headings) {
+    const keys = byLength.get(heading.length) ?? new Map<string, string>()
+    byLength.set(heading.length, keys.set(normalizeTitle(heading), heading))
+  }
+  const lengths = [...byLength.keys()].sort((a, b) => b - a)
   const out: SectionRun[] = []
   const onHeading = (i: number): boolean => {
     const from = text.lastIndexOf('\n', i) + 1
     const to = text.indexOf('\n', i)
     return headingParts(text.slice(from, to === -1 ? text.length : to)) !== null
   }
+  let link = 0
   for (let i = text.indexOf('§'); i !== -1; i = text.indexOf('§', i + 1)) {
-    if (inCode(i) || onHeading(i) || links.some(([a, b]) => i >= a && i < b)) continue
-    for (const heading of byLength) {
-      const end = i + 1 + heading.length
-      if (end > text.length) continue
-      if (normalizeTitle(text.slice(i + 1, end)) !== normalizeTitle(heading)) continue
-      if (end < text.length && wordChar.test(text[end])) continue
+    while (link < links.length && links[link][1] <= i) link++
+    if (inCode(i) || onHeading(i) || (link < links.length && links[link][0] <= i)) continue
+    for (const length of lengths) {
+      const end = i + 1 + length
+      if (end > text.length || (end < text.length && wordChar.test(text[end]))) continue
+      const heading = byLength.get(length)?.get(normalizeTitle(text.slice(i + 1, end)))
+      if (heading === undefined) continue
       out.push({ from: i, to: end, heading })
       i = end - 1
       break

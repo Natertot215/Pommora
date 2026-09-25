@@ -138,6 +138,13 @@ describe('sectionRunsIn', () => {
     const text = '[[Page§X]]'
     expect(sectionRunsIn(text, ['X'], codeMask(text))).toEqual([])
   })
+
+  it('a § after a link that ends before it still runs, and one inside a later link never does', () => {
+    const text = 'a [y](§Guide) §Intro [[x §Setup]] §Setup `§Intro`'
+    expect(
+      sectionRunsIn(text, ['Setup', 'Intro', 'Guide'], codeMask(text)).map((r) => r.heading),
+    ).toEqual(['Intro', 'Setup'])
+  })
 })
 
 describe('extractHeadingMentions', () => {
