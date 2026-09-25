@@ -123,6 +123,22 @@ describe('propertyDefinition', () => {
     ).toBe(3)
   })
 
+  it('drops a number format Intl would throw on', () => {
+    const def = propertyDefinition.parse({
+      id: 'p',
+      name: 'x',
+      type: 'number',
+      number_currency: 'dollars',
+      number_decimals: 101,
+    })
+    expect(def.number_currency).toBeUndefined()
+    expect(def.number_decimals).toBeUndefined()
+    expect(
+      propertyDefinition.parse({ id: 'p', name: 'x', type: 'number', number_currency: 'CHF' })
+        .number_currency,
+    ).toBe('CHF')
+  })
+
   it('requires id, name, and a valid type', () => {
     expect(propertyDefinition.safeParse({ name: 'x', type: 'number' }).success).toBe(false)
     expect(propertyDefinition.safeParse({ id: 'p', type: 'number' }).success).toBe(false)
@@ -223,7 +239,7 @@ describe('keys this build does not know', () => {
       id: 'prop_s',
       name: 'Stage',
       type: 'status',
-      context_target: { context_id: 'ctx_a', scope: 'deep' },
+      foreign_block: { key: 'a', scope: 'deep' },
       select_options: [{ value: 'a', label: 'A', tint: 'warm' }],
       status_groups: [
         {
@@ -235,7 +251,7 @@ describe('keys this build does not know', () => {
         },
       ],
     })
-    expect(def.context_target).toMatchObject({ scope: 'deep' })
+    expect(def).toMatchObject({ foreign_block: { scope: 'deep' } })
     expect(def.select_options?.[0]).toMatchObject({ tint: 'warm' })
     expect(def.status_groups?.[0]).toMatchObject({ collapsed: true })
     expect(def.status_groups?.[0].options[0]).toMatchObject({ glyph: 'o' })

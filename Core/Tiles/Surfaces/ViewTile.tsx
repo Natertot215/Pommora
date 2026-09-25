@@ -39,7 +39,7 @@ import { ViewHost } from '../../Views/Host/ViewHost'
 import { SettingsFrame } from '../../Views/Settings/SettingsFrame'
 import { hostedGutter } from '@pommora/uix/Menus/menu-surface.css'
 import { resolveViewWrite, ViewTileScopeProvider } from '../../Views/ViewTileScope'
-import type { MutateEntry } from '../tileKinds'
+import { inertTile, type MutateEntry } from '../tileKinds'
 import { useSession } from '../../Session/store'
 import { cx } from '@pommora/uix/Utilities/cx'
 import { labelSlot, labelSlotHidden, labelText } from '@pommora/uix/Buttons/button-base.css'
@@ -342,7 +342,7 @@ export function ViewTile({
     [source, view, locked, openPage, scopeApi],
   )
 
-  if (!embedded || !source || !tree) return <div className="tile-inert" />
+  if (!embedded || !source || !tree) return inertTile()
 
   const titleShown = entry.title !== false
   const iconShown = entry.icon !== false

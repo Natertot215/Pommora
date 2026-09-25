@@ -13,6 +13,7 @@ import {
   type Size,
 } from '../Interactions/ResizeFrame'
 import { useEscape } from '../Interactions/dismissalStack'
+import { RenderBoundary } from '../Elements/RenderBoundary'
 import { WindowPanel, windowPanelWidth, type WindowPanelBounds } from './window-panel'
 import './window-base.css'
 import '../Animations/toolbar-slide.css'
@@ -160,19 +161,23 @@ export function WindowBase({
       onWidthChange={which === 'left' ? setLeftW : setRightW}
       onResizingChange={setResizing}
     >
-      {side.children}
+      <RenderBoundary resetKey={side.children}>{side.children}</RenderBoundary>
     </WindowPanel>
   )
 
   const inflow = left?.mode === 'inflow' || right?.mode === 'inflow'
   // The band belongs to the detail, not to the frame: a panel runs the window's full height and the bar stops at its edge.
-  const detail = footer ? (
-    <div className="window-detail">
-      {children}
-      <div className="window-footer reveal-band">{footer.bar}</div>
-    </div>
-  ) : (
-    children
+  const detail = (
+    <RenderBoundary resetKey={children}>
+      {footer ? (
+        <div className="window-detail">
+          {children}
+          <div className="window-footer reveal-band">{footer.bar}</div>
+        </div>
+      ) : (
+        children
+      )}
+    </RenderBoundary>
   )
   const body = inflow ? (
     <div className="window-row">

@@ -99,10 +99,15 @@ export const propertyDefinition = looseDecoder(
     checkbox_color: z.string().optional().catch(undefined),
     // Kept per-def rather than per-view so a format rides as an inert foreign key across rewrites.
     number_family: z.enum(NUMBER_FAMILIES).optional().catch(undefined),
-    number_currency: z.string().optional().catch(undefined),
+    // Intl throws on a currency that isn't three letters or a digit count outside 0–100; a foreign code it doesn't know still formats.
+    number_currency: z
+      .string()
+      .regex(/^[A-Za-z]{3}$/)
+      .optional()
+      .catch(undefined),
     number_separators: z.boolean().optional().catch(undefined),
     number_decimals: z
-      .union([z.literal('hidden'), z.number().int()])
+      .union([z.literal('hidden'), z.number().int().min(0).max(100)])
       .optional()
       .catch(undefined),
     number_fraction: z.boolean().optional().catch(undefined),
