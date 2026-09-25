@@ -5,6 +5,7 @@ import { tintAt } from '../Theme/colors'
 import { fieldRing, ROW_RING } from '../Fields/fieldRing'
 import { base } from '../Fields/fields.css'
 import { REVEAL_FADE, revealTarget } from '../Interactions/hover-reveal.css'
+import { duration } from '../Animations/motion'
 
 const c = colorVars.color
 
@@ -146,7 +147,7 @@ export const gutter = style({
 export const overlay = style([
   gutter,
   revealTarget,
-  { transition: REVEAL_FADE, vars: { '--reveal-fade': 'var(--duration-base)' } },
+  { transition: REVEAL_FADE, vars: { '--reveal-fade': duration.base } },
 ])
 
 export const side = style({

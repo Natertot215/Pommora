@@ -1,11 +1,12 @@
 import { style } from '@vanilla-extract/css'
 import { vars as colorVars } from '../Theme/color.css'
+import { duration, easing } from '../Animations/motion'
 
 export const glyphSwap = style({ display: 'inline-grid', placeItems: 'center' })
 
 export const glyphSwapFace = style({
   gridArea: '1 / 1',
-  transition: 'opacity var(--duration-fast) var(--ease-base)',
+  transition: `opacity ${duration.fast} ${easing.baseEase}`,
   selectors: { '&[data-face="hidden"]': { opacity: 0 } },
 })
 

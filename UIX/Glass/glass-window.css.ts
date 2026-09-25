@@ -1,4 +1,5 @@
 import { globalStyle, style } from '@vanilla-extract/css'
+import { duration, easing } from '../Animations/motion'
 
 export const root = style({})
 // Zero specificity: the rim needs a containing block, and any host's own position outranks this one.
@@ -9,5 +10,5 @@ export const rim = style({
   inset: 0,
   borderRadius: 'inherit',
   pointerEvents: 'none',
-  transition: 'box-shadow var(--duration-base) var(--ease-base)',
+  transition: `box-shadow ${duration.base} ${easing.baseEase}`,
 })

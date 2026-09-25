@@ -1,6 +1,8 @@
 import { keyframes, style } from '@vanilla-extract/css'
 import { vars as colorVars } from '../Theme/color.css'
 import { text } from '../Theme/typography.css'
+import { duration, easing } from '../Animations/motion'
+import { REVEAL_FADE } from '../Interactions/hover-reveal.css'
 
 const c = colorVars.color
 
@@ -71,15 +73,15 @@ const segmentOut = keyframes({
 export const segmentEntering = style({
   overflow: 'hidden',
   animationName: segmentIn,
-  animationDuration: 'var(--duration-menu)',
-  animationTimingFunction: 'var(--ease-base)',
+  animationDuration: duration.menu,
+  animationTimingFunction: easing.baseEase,
 })
 export const segmentExiting = style({
   overflow: 'hidden',
   pointerEvents: 'none',
   animationName: segmentOut,
-  animationDuration: 'var(--duration-menu)',
-  animationTimingFunction: 'var(--ease-base)',
+  animationDuration: duration.menu,
+  animationTimingFunction: easing.baseEase,
 })
 
 /** The dropdown trigger runs tighter than a pill — its trailing chevron already carries the eye to the edge. */
@@ -96,8 +98,7 @@ export const settingsBtn = style({
   borderRadius: '4px',
   display: 'flex',
   color: c.label.tertiary,
-  transition:
-    'opacity var(--reveal-fade) var(--ease-base), background var(--duration-fast) var(--ease-base)',
+  transition: `${REVEAL_FADE}, background ${duration.fast} ${easing.baseEase}`,
   ':hover': { background: c.state.hover },
 })
 
