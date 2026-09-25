@@ -3,7 +3,7 @@ import { fail, ok, type Result, fault } from '../Contract/result'
 import { isUlidShaped } from '../Nexus/identityMark'
 import { machine } from '../Platform/machine'
 import { readTileDocAt, writeTileDocAt } from './tileDoc'
-import { coerceTileHost, type RemovedTile, type TileDocPatch, tilePatchProblem } from './tiles'
+import { coerceTileHost, tileDocPatch } from './tiles'
 
 import {
   convertTile,
@@ -60,10 +60,9 @@ export const tilesHandlers = {
   'tiles:save': withWriteRoot(async (root, _ctx, host: unknown, patch: unknown) => {
     const tile = await tileHostAnd(root, host)
     if (!tile.ok) return tile
-    if (!patch || typeof patch !== 'object') return fault('Invalid tile-doc patch.')
-    const problem = tilePatchProblem(patch as TileDocPatch)
-    if (problem) return fault(problem)
-    return writeTileDocAt(tile.value.dir, (cur) => ({ ...cur, ...(patch as TileDocPatch) }))
+    const read = tileDocPatch(patch)
+    if (!read.ok) return read
+    return writeTileDocAt(tile.value.dir, (cur) => ({ ...cur, ...read.value }))
   }),
 
   'tiles:createMarkdown': withWriteRoot(async (root, _ctx, host: unknown) => {
@@ -77,7 +76,7 @@ export const tilesHandlers = {
     ),
   ),
 
-  'tiles:restoreTile': withWriteRoot(async (root, _ctx, host: unknown, removed: RemovedTile) => {
+  'tiles:restoreTile': withWriteRoot(async (root, _ctx, host: unknown, removed: unknown) => {
     const tile = await tileHostAnd(root, host)
     return tile.ok ? restoreTile(tile.value.dir, removed) : tile
   }),

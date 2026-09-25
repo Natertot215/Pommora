@@ -1,3 +1,4 @@
+import { isPlainObject } from '../Properties/propertyValue'
 import { join, relative } from '../Paths/posix'
 import {
   knownTile,
@@ -11,8 +12,6 @@ import { decodeLayout } from './Layout/codec'
 import { insertBand } from './Layout/ops'
 import { fail, ok, type Result, valueOr, fault } from '../Contract/result'
 import { readTileDocAt, writeTileDocAt } from './tileDoc'
-import { isPlainObject } from '../Properties/propertyValue'
-import { isUlidShaped } from '../Nexus/identityMark'
 import { newId } from '../Nexus/ids'
 import { mintDefaultView, mintViewId } from '../Views/views'
 import { readStoredView } from '../Views/viewsFile'
@@ -108,12 +107,12 @@ export const removeTile = (
 ): Promise<Result<RemovedTile>> => reviseTile(root, dir, tileId, null, deps)
 
 /** File first, as a create is, never over the file its id names; the band lands with the entry, so a board no window holds still shows it. */
-export async function restoreTile(dir: string, removed: RemovedTile): Promise<Result<null>> {
+export async function restoreTile(dir: string, removed: unknown): Promise<Result<null>> {
+  if (!isPlainObject(removed)) return fault('Invalid tile.')
   const known = knownTile(removed.entry)
-  const { at, body = '' } = removed
+  const { at, body = '' } = removed as Partial<RemovedTile>
   if (
     !known ||
-    !isUlidShaped(known.id) ||
     typeof body !== 'string' ||
     (at && !(Number.isInteger(at.band) && Number.isFinite(at.h)))
   )

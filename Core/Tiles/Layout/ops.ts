@@ -2,9 +2,42 @@ import type { Band, DividerRef, Edge, LayoutNode, TileLayout, TileLeaf } from '.
 import { cloneLayout, findTile, getTile, nodeAt } from './model'
 import { clamp } from '@pommora/uix/Utilities/clamp'
 
+// A share that isn't positive takes the mean of those that are, so a row a hand edit broke still draws every child.
 function renormalize(ratios: number[]): number[] {
-  const sum = ratios.reduce((a, r) => a + r, 0)
-  return ratios.map((r) => r / sum)
+  const positive = ratios.filter((r) => r > 0)
+  const fill = positive.length ? positive.reduce((a, r) => a + r, 0) / positive.length : 1
+  const filled = ratios.map((r) => (r > 0 ? r : fill))
+  const sum = filled.reduce((a, r) => a + r, 0)
+  return Math.abs(sum - 1) < 1e-9 ? filled : filled.map((r) => r / sum)
+}
+
+// Rebuilds the tree from the leaves `keep` returns: a container left with one child collapses into it, an emptied one goes, and a row's shares renormalize over the children it kept.
+function rebuild(layout: TileLayout, keep: (leaf: TileLeaf) => TileLeaf | null): TileLayout {
+  const walk = (n: LayoutNode): LayoutNode | null => {
+    if (n.kind === 'tile') return keep(n)
+    const kept = n.children.map(walk)
+    const children = kept.filter((c): c is LayoutNode => c !== null)
+    if (children.length < 2) return children[0] ?? null
+    if (n.kind === 'column') return { kind: 'column', children }
+    const ratios = kept.flatMap((c, i) => (c === null ? [] : [n.ratios[i] ?? 0]))
+    return { kind: 'row', ratios: renormalize(ratios), children }
+  }
+  return {
+    bands: layout.bands.flatMap((b) => {
+      const root = walk(b.node)
+      return root ? [{ node: root }] : []
+    }),
+  }
+}
+
+/** The rules every op keeps, applied to a stored tree: one leaf per id (the first wins), a height of at least `minPx`, and positive shares that sum to one. */
+export function repairLayout(layout: TileLayout, minPx: number): TileLayout {
+  const seen = new Set<string>()
+  return rebuild(layout, (leaf) => {
+    if (seen.has(leaf.id)) return null
+    seen.add(leaf.id)
+    return leaf.h < minPx ? { ...leaf, h: minPx } : leaf
+  })
 }
 
 function replaceAt(node: LayoutNode, path: number[], next: LayoutNode): LayoutNode {
@@ -71,34 +104,8 @@ export function moveTile(
 }
 
 export function removeLeaf(layout: TileLayout, tileId: string): TileLayout {
-  const at = findTile(layout, tileId)
-  if (!at) return layout
-
-  const next = cloneLayout(layout)
-  const band = next.bands[at.band]
-  if (!band) return layout
-
-  if (at.path.length === 0) {
-    next.bands.splice(at.band, 1)
-    return next
-  }
-
-  const parentPath = at.path.slice(0, -1)
-  const childIndex = at.path[at.path.length - 1] as number
-  const parent = nodeAt(next, { band: at.band, path: parentPath })
-  if (!parent || parent.kind === 'tile') return layout
-
-  parent.children.splice(childIndex, 1)
-  if (parent.kind === 'row') {
-    parent.ratios.splice(childIndex, 1)
-    parent.ratios = renormalize(parent.ratios)
-  }
-
-  if (parent.children.length === 1) {
-    const survivor = parent.children[0] as LayoutNode
-    band.node = replaceAt(band.node, parentPath, survivor)
-  }
-  return next
+  if (!findTile(layout, tileId)) return layout
+  return rebuild(layout, (leaf) => (leaf.id === tileId ? null : leaf))
 }
 
 export function attachBelow(

@@ -1,6 +1,7 @@
 // A title rename commits this record FIRST, cascades, commits the registry, then clears it; a crash at any point leaves an exact old→new record that replays idempotently on the next open. A record's identity is its rename, so persisting the skip list updates the held record rather than displacing it.
 
 import { CONTEXT_JOURNAL_FILENAME } from '../Paths/nexusPaths'
+import { holdsName } from '../Paths/names'
 import { journalSlot } from '../Properties/journalSlot'
 
 export interface RenameJournal {
@@ -16,7 +17,9 @@ function decode(raw: Record<string, unknown>): RenameJournal | null {
   if (
     typeof raw.contextId !== 'string' ||
     typeof raw.oldTitle !== 'string' ||
-    typeof raw.newTitle !== 'string'
+    typeof raw.newTitle !== 'string' ||
+    !holdsName(raw.oldTitle) ||
+    !holdsName(raw.newTitle)
   )
     return null
   return {
