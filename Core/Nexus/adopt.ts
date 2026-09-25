@@ -17,7 +17,8 @@ import { readIdentity } from './identity'
 import { asString } from './coerce'
 import { baseSidecar } from './schemas'
 import { recordWrite } from '../Files/writeEcho'
-import { shouldSkipDir, type WatchScope } from '../Paths/exclusion'
+import { renamedSidecar } from './migrateConfig'
+import { outsideContent, type WatchScope } from '../Paths/exclusion'
 import { readSettings, scopeOf } from '../Settings/codec'
 import {
   agendaContext,
@@ -88,25 +89,28 @@ type AdoptableKind = Exclude<FolderKind, 'unknown'>
 
 async function stampFolder(absDir: string, kind: ContainerKind): Promise<void> {
   const file = sidecarPath(absDir, kind)
-  if (!(await pathExists(file)) && (await migrateContainerSidecar(absDir, kind))) return
+  if (!(await pathExists(file))) await migrateContainerSidecar(absDir, kind)
   await rmwJsonStrict(
     file,
-    (cur) => (asString(cur.id) ? null : { ...cur, id: newId() }),
+    (cur) => {
+      const renamed = renamedSidecar(cur)
+      if (asString(cur.id)) return renamed
+      return { ...(renamed ?? cur), id: newId() }
+    },
     () => ({}),
   )
 }
 
-async function migrateContainerSidecar(absDir: string, kind: ContainerKind): Promise<boolean> {
+async function migrateContainerSidecar(absDir: string, kind: ContainerKind): Promise<void> {
   const other: ContainerKind = kind === 'collection' ? 'set' : 'collection'
   const from = join(absDir, SIDECAR_FILENAME[other])
   const read = await readJsonStrict(from)
-  if (!read.ok || !asString(read.value.id)) return false
+  if (!read.ok || !asString(read.value.id)) return
   const to = join(absDir, SIDECAR_FILENAME[kind])
   // Both endpoints — else the rename reads as an external edit and triggers a full re-walk.
   recordWrite(from)
   recordWrite(to)
   await machine().rename(from, to)
-  return true
 }
 
 async function stampTree(
@@ -127,7 +131,7 @@ async function stampTree(
       await stampPage(join(absDir, e.name), memberKind).catch(() => {})
     } else if (e.kind === 'dir' && container) {
       const childRel = `${relDir}/${e.name}`
-      if (shouldSkipDir(e.name, childRel, scope)) continue
+      if (outsideContent(childRel, scope)) continue
       const abs = join(absDir, e.name)
       if (await reHomeRegistered(abs, root, kindCtx).catch(() => false)) continue
       const childKind = await resolveFolderKind(abs, 'nested', kindCtx)
@@ -152,7 +156,7 @@ export async function stampAdopted(root: string): Promise<void> {
 
   for (const e of await listEntries(root)) {
     if (e.kind !== 'dir') continue
-    if (shouldSkipDir(e.name, e.name, scope)) continue
+    if (outsideContent(e.name, scope)) continue
     const abs = join(root, e.name)
     const kind = await resolveFolderKind(abs, 'root', kindCtx)
     if (kind === 'unknown') continue
@@ -178,7 +182,7 @@ async function isEmptyOfContent(
 ): Promise<boolean> {
   for (const e of await listEntries(absDir)) {
     if (isContentFile(e)) return false
-    if (e.kind === 'dir' && !shouldSkipDir(e.name, `${relDir}/${e.name}`, scope)) return false
+    if (e.kind === 'dir' && !outsideContent(`${relDir}/${e.name}`, scope)) return false
   }
   return true
 }

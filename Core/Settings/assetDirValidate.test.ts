@@ -51,10 +51,12 @@ describe('validateAssetDir', () => {
     expect(await validateAssetDir(root, abs)).toEqual({ ok: true, value: 'Media' })
   })
 
-  it('refuses a hidden page too — the cascade still sweeps one', async () => {
+  it('accepts a folder whose only pages are hidden, which the app never reads', async () => {
     const abs = await dir('Media')
     await writeFile(join(abs, '_draft.md'), 'text')
-    expect((await validateAssetDir(root, abs)).ok).toBe(false)
+    await dir('Media/_templates')
+    await writeFile(join(abs, '_templates', 'note.md'), 'text')
+    expect((await validateAssetDir(root, abs)).ok).toBe(true)
   })
 
   it('refuses a folder carrying a sidecar', async () => {

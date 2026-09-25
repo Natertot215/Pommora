@@ -5,6 +5,7 @@ import { tempRoot } from '../Testing/hostFs'
 import { nexusDir } from '../Paths/paths'
 import { SIDECAR_FILENAME, TILE_DOC_FILENAME } from '../Paths/nexusPaths'
 import { normalizeSavedViews } from './migrateConfig'
+import { stampAdopted } from './adopt'
 
 let root: string
 
@@ -17,15 +18,31 @@ const view = (id: string, banner?: string): Record<string, unknown> => ({
   ...(banner === undefined ? {} : { card_banner: banner }),
 })
 
-const sidecarAt = (dir: string): string => join(root, dir, SIDECAR_FILENAME.collection)
+type Kind = 'collection' | 'set'
 
-const seed = async (dir: string, views: Record<string, unknown>[]): Promise<void> => {
+const sidecarAt = (dir: string, kind: Kind = 'collection'): string =>
+  join(root, dir, SIDECAR_FILENAME[kind])
+
+const seed = async (
+  dir: string,
+  views: Record<string, unknown>[],
+  kind: Kind = 'collection',
+): Promise<void> => {
   await mkdir(join(root, dir), { recursive: true })
-  await writeFile(sidecarAt(dir), JSON.stringify({ views }, null, 2))
+  await writeFile(sidecarAt(dir, kind), JSON.stringify({ id: `id-${dir}`, views }, null, 2))
 }
 
-const viewsIn = async (dir: string): Promise<Record<string, unknown>[]> =>
-  JSON.parse(await readFile(sidecarAt(dir), 'utf8')).views
+const viewsIn = async (
+  dir: string,
+  kind: Kind = 'collection',
+): Promise<Record<string, unknown>[]> =>
+  JSON.parse(await readFile(sidecarAt(dir, kind), 'utf8')).views
+
+// The open sequence: the walk covers the Trash and tile documents, and adoption every container in scope.
+const open = async (): Promise<void> => {
+  await normalizeSavedViews(root)
+  await stampAdopted(root)
+}
 
 beforeEach(async () => {
   root = tempRoot('pom-normalize-')
@@ -38,16 +55,16 @@ afterEach(async () => {
 describe('normalizeSavedViews', () => {
   it("rewrites the banner mode's first spelling wherever it is still written down", async () => {
     await seed('Notes', [view('view_a', 'image'), view('view_b', 'preview')])
-    await seed(join('Notes', 'Deep'), [view('view_c', 'image')])
-    await normalizeSavedViews(root)
+    await seed(join('Notes', 'Deep'), [view('view_c', 'image')], 'set')
+    await open()
     expect((await viewsIn('Notes')).map((v) => v.card_banner)).toEqual(['banner', 'preview'])
-    expect((await viewsIn(join('Notes', 'Deep')))[0].card_banner).toBe('banner')
+    expect((await viewsIn(join('Notes', 'Deep'), 'set'))[0].card_banner).toBe('banner')
   })
 
   it('leaves a sidecar it does not alter untouched, so a second open re-dates nothing', async () => {
     await seed('Notes', [view('view_a', 'banner'), view('view_b')])
     const before = (await stat(sidecarAt('Notes'))).mtimeMs
-    await normalizeSavedViews(root)
+    await open()
     expect((await stat(sidecarAt('Notes'))).mtimeMs).toBe(before)
   })
 
@@ -55,7 +72,7 @@ describe('normalizeSavedViews', () => {
     await seed('Notes', [{ ...view('view_a', 'image'), card_size: 0.75, format: 'compact' }])
     const [only] = await viewsIn('Notes')
     expect(only).toMatchObject({ id: 'view_a', card_size: 0.75, format: 'compact' })
-    await normalizeSavedViews(root)
+    await open()
     expect(await viewsIn('Notes')).toEqual([
       { ...view('view_a', 'banner'), card_size: 0.75, format: 'compact' },
     ])
@@ -75,7 +92,7 @@ describe('normalizeSavedViews', () => {
       tileDoc,
       JSON.stringify({ layout: [], tiles: [{ id: 't', views: [tile('table'), tile('star')] }] }),
     )
-    await normalizeSavedViews(root)
+    await open()
     expect((await viewsIn('Notes')).map((v) => v.icon)).toEqual(['view-table', 'star'])
     expect((await viewsIn(trashed))[0].icon).toBe('view-table')
     const doc = JSON.parse(await readFile(tileDoc, 'utf8'))
@@ -83,6 +100,34 @@ describe('normalizeSavedViews', () => {
       'view-table',
       'star',
     ])
+  })
+
+  it('stamps an id and rewrites the spelling together on a first adoption', async () => {
+    await mkdir(join(root, 'Notes'), { recursive: true })
+    await writeFile(sidecarAt('Notes'), JSON.stringify({ views: [view('view_a', 'image')] }))
+    await writeFile(join(root, 'Notes', 'Page.md'), 'body\n')
+    await open()
+    const meta = JSON.parse(await readFile(sidecarAt('Notes'), 'utf8'))
+    expect(typeof meta.id).toBe('string')
+    expect(meta.views[0].card_banner).toBe('banner')
+  })
+
+  it('rewrites a sidecar adoption renames to its folder’s kind', async () => {
+    await seed('Notes', [view('view_a', 'image')], 'set')
+    await writeFile(join(root, 'Notes', 'Page.md'), 'body\n')
+    await open()
+    expect((await viewsIn('Notes'))[0].card_banner).toBe('banner')
+  })
+
+  it('leaves excluded and hidden folders unread', async () => {
+    await writeFile(
+      join(nexusDir(root), 'settings.json'),
+      JSON.stringify({ excluded_folders: ['Archive'] }),
+    )
+    for (const dir of ['Archive', '_Drafts', '.obsidian']) await seed(dir, [view('v', 'image')])
+    await open()
+    for (const dir of ['Archive', '_Drafts', '.obsidian'])
+      expect((await viewsIn(dir))[0].card_banner).toBe('image')
   })
 
   it('passes over a sidecar whose views are absent or malformed', async () => {

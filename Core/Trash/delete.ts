@@ -77,6 +77,6 @@ export async function deleteOp(
     if (bundle) await settleBundle(bundle, abs)
     else await discardFile(root, abs, deps)
   })
-  deindexPath(root, abs)
+  await deindexPath(root, abs)
   return ok(bundle ? { trashed: { bundlePath: relative(root, bundle) } } : {})
 }

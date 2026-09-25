@@ -1812,3 +1812,63 @@ describe('handleMutate — setPageMeta', () => {
     expect((await stat(page)).mtimeMs).toBe(mtimeMs)
   })
 })
+
+describe('handleMutate — landings Settings keeps out', () => {
+  beforeEach(async () => {
+    await writeFile(
+      join(root, '.nexus', 'settings.json'),
+      JSON.stringify({ excluded_folders: ['Archive', 'Other/Daily'], asset_directory: 'Media' }),
+    )
+    await mkdir(join(root, 'Other'), { recursive: true })
+    await writeFile(join(root, 'Other', '_pagecollection.json'), JSON.stringify({ id: 'ot' }))
+    await refreshTree(root)
+  })
+
+  const refusal = (r: Awaited<ReturnType<typeof handleMutate>>): string =>
+    r.ok ? '' : r.error.message
+
+  it('refuses a Collection created, or a Set renamed, onto an excluded folder', async () => {
+    const created = await handleMutate(
+      root,
+      { op: 'createContainer', parentPath: '', kind: 'collection', name: 'Archive' },
+      nexusDeps,
+    )
+    expect(refusal(created)).toContain('"Archive" is currently listed as an excluded directory')
+    expect(await pathExists(join(root, 'Archive'))).toBe(false)
+    const renamed = await handleMutate(
+      root,
+      { op: 'rename', path: 'Notes', kind: 'collection', newName: 'archive' },
+      nexusDeps,
+    )
+    expect(refusal(renamed)).toContain('excluded directory')
+    expect(await pathExists(join(root, 'Notes'))).toBe(true)
+  })
+
+  it('leaves a name the primitive refuses to the primitive', async () => {
+    const r = await handleMutate(
+      root,
+      { op: 'rename', path: 'Notes', kind: 'collection', newName: 'Archive/x' },
+      nexusDeps,
+    )
+    expect(refusal(r)).toContain('is not a valid name')
+  })
+
+  it('refuses a Collection renamed onto the asset folder', async () => {
+    const r = await handleMutate(
+      root,
+      { op: 'rename', path: 'Notes', kind: 'collection', newName: 'Media' },
+      nexusDeps,
+    )
+    expect(refusal(r)).toContain('"Media" is currently listed as the default asset folder')
+  })
+
+  it('refuses a Set moved onto an excluded path', async () => {
+    const r = await handleMutate(
+      root,
+      { op: 'moveSet', path: 'Notes/Daily', newParentPath: 'Other', order: [] },
+      nexusDeps,
+    )
+    expect(refusal(r)).toContain('"Daily" is currently listed as an excluded directory')
+    expect(await pathExists(join(root, 'Notes', 'Daily'))).toBe(true)
+  })
+})

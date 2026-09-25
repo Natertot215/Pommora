@@ -1,9 +1,9 @@
 // Walks the STORES, not the directory: nothing cleans up `.nexus/assets/<id>/` when an entity is deleted, so a directory-driven copy would carry orphans into a folder shared with Obsidian.
 
 import { parseConnectionText } from '../Connections/connections'
-import { ASSETS_DIR_REL, TRASH_DIR, NEXUS_CONFIG_FILES, SIDECARS } from '../Paths/nexusPaths'
+import { ASSETS_DIR_REL, NEXUS_CONFIG_FILES, SIDECARS, SPACE_SIDECAR } from '../Paths/nexusPaths'
 import { basename, titleFromPath, dirname, extname, join, relative } from '../Paths/posix'
-import { assetsDir, nexusConfig } from '../Paths/paths'
+import { assetsDir, contextsDir, nexusConfig } from '../Paths/paths'
 import { machine } from '../Platform/machine'
 import { splitEnvelope, mergeFrontmatter, splitFrontmatter } from '../Files/pageFile'
 import {
@@ -13,11 +13,18 @@ import {
   readTextOrNull,
   updateNexusConfig,
 } from '../Files/atomicWrite'
-import { corpusFiles, listEntries, listFilesRecursive } from '../Files/walk'
+import { corpusFiles, listEntries, listFilesRecursive, listPathsUnder } from '../Files/walk'
+import { outsideContent, type WatchScope } from '../Paths/exclusion'
 import { discardFile } from '../Trash/bundle'
 import { readNavigationFile, writeNavigationState } from '../Navigation/navigationFile'
 import { readWatchScope, updateCrops, updateSettings } from '../Settings/settings'
-import { AMBIGUOUS, buildAssetMap, indexable, refreshAssetMap, resolveAssetName } from './assetMap'
+import {
+  AMBIGUOUS,
+  buildAssetMap,
+  legacyBookkeeping,
+  refreshAssetMap,
+  resolveAssetName,
+} from './assetMap'
 import { assetFilePath } from './assetRoots'
 import { writeAssetFile } from './assetWrite'
 import type { TrashDeps } from '../Trash/bundle'
@@ -102,7 +109,8 @@ async function collectRefs(root: string): Promise<StoreRef[]> {
     write: async (link) =>
       (await updateNexusConfig(root, 'homepage', (cur) => ({ ...cur, banner: link }))).ok,
   })
-  for (const file of await sidecarsUnder(root)) {
+  const scope = await readWatchScope(root)
+  for (const file of await sidecarsUnder(root, scope)) {
     const fields = async (): Promise<Record<string, unknown>> => (await readJsonObject(file)) ?? {}
     for (const slot of slotsOf(await fields()))
       refs.push({
@@ -115,7 +123,6 @@ async function collectRefs(root: string): Promise<StoreRef[]> {
       })
   }
 
-  const scope = await readWatchScope(root)
   for (const rel of (await corpusFiles(root, scope)).sort()) {
     const file = join(root, rel)
     const frontmatter = async (): Promise<Record<string, unknown>> =>
@@ -136,20 +143,13 @@ async function collectRefs(root: string): Promise<StoreRef[]> {
   return refs
 }
 
-/** `.nexus/contexts` included — the corpus walk never enters the folders the app owns. */
-async function sidecarsUnder(root: string): Promise<string[]> {
-  const out: string[] = []
-  const walk = async (dir: string): Promise<void> => {
-    for (const entry of await listEntries(dir)) {
-      const abs = join(dir, entry.name)
-      if (entry.kind === 'dir') {
-        if (entry.name === TRASH_DIR || entry.name === 'node_modules') continue
-        await walk(abs)
-      } else if (SIDECARS.has(entry.name)) out.push(abs)
-    }
-  }
-  await walk(root)
-  return out.sort()
+/** In-scope containers, and every Space under `.nexus/contexts`, which the content walk never enters. */
+async function sidecarsUnder(root: string, scope: WatchScope): Promise<string[]> {
+  const containers = await listPathsUnder(root, root, (rel, kind) =>
+    kind === 'dir' ? !outsideContent(rel, scope) : SIDECARS.has(basename(rel)),
+  )
+  const spaces = await listFilesRecursive(contextsDir(root), [SPACE_SIDECAR])
+  return [...containers.map((rel) => join(root, rel)), ...spaces].sort()
 }
 
 export async function migrateAssets(root: string, deps: TrashDeps): Promise<AssetMigration | null> {
@@ -227,8 +227,9 @@ export async function migrateAssets(root: string, deps: TrashDeps): Promise<Asse
 
 async function sweepLegacyRoot(root: string, deps: TrashDeps): Promise<number> {
   const dir = assetsDir(root, ASSETS_DIR_REL)
-  const files = (await listFilesRecursive(dir)).filter((abs) =>
-    indexable(relative(root, abs), ASSETS_DIR_REL),
+  // Every file the move left behind goes to the trash, the ones the map never indexed included.
+  const files = (await listFilesRecursive(dir)).filter(
+    (abs) => !legacyBookkeeping(relative(root, abs)),
   )
   for (const abs of files) await discardFile(root, abs, deps)
   for (const entry of await listEntries(dir)) {

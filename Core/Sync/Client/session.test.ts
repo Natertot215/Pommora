@@ -192,6 +192,27 @@ describe('startSession', () => {
     expect(readAllBases().map((row) => row.path)).not.toContain('Private/Secret.md')
   })
 
+  it('forgets a base the scope no longer admits, keeping the file and storing nothing for it', async () => {
+    await write('Notes/_Drafts/Idea.md', page('idea'))
+    await write('Notes/One.md', page('one'))
+    for (const path of ['Notes/_Drafts/Idea.md', 'Notes/One.md'])
+      upsertBase({
+        path,
+        mtimeMs: REMOTE_MS,
+        size: 1,
+        hash: 'h',
+        blobSha: 'b',
+        version: 1,
+        baseBytes: null,
+      })
+
+    await startSession(ctx, root, NEXUS)
+
+    expect(readAllBases().map((row) => row.path)).not.toContain('Notes/_Drafts/Idea.md')
+    expect(await machine().readBytes(abs('Notes/_Drafts/Idea.md'))).not.toBeNull()
+    expect(sent('/store').some((req) => JSON.stringify(req).includes('_Drafts'))).toBe(false)
+  })
+
   it('pushes then pulls on syncNow, failed paths included', async () => {
     await write('Notes/One.md', page('one'))
     await startSession(ctx, root, NEXUS)

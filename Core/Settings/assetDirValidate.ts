@@ -1,7 +1,8 @@
-import { join, relative, isMarkdownFile } from '../Paths/posix'
+import { join, relative } from '../Paths/posix'
 import { machine } from '../Platform/machine'
 import { fail, ok, type Result } from '../Contract/result'
-import { listEntries } from '../Files/walk'
+import { isContentName, listEntries } from '../Files/walk'
+import { hiddenFolder } from '../Paths/exclusion'
 import { resolveUnderRoot } from '../Paths/pathSafety'
 import { nexusFolderRefusal } from './codec'
 import { SIDECARS } from '../Paths/nexusPaths'
@@ -27,10 +28,11 @@ export async function validateAssetDir(root: string, abs: string): Promise<Resul
 
 async function holdsContent(abs: string): Promise<boolean> {
   const entries = await listEntries(abs)
-  if (entries.some((e) => e.kind === 'file' && (isMarkdownFile(e.name) || SIDECARS.has(e.name))))
+  if (entries.some((e) => e.kind === 'file' && (isContentName(e.name) || SIDECARS.has(e.name))))
     return true
   for (const e of entries) {
-    if (e.kind === 'dir' && (await holdsContent(join(abs, e.name)))) return true
+    if (e.kind === 'dir' && !hiddenFolder(e.name) && (await holdsContent(join(abs, e.name))))
+      return true
   }
   return false
 }

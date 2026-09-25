@@ -4,8 +4,9 @@ import {
   assetMatcher,
   excludedMatcher,
   manifestAdmits,
+  neverWatched,
+  outsideContent,
   sameScope,
-  shouldSkipDir,
   type WatchScope,
 } from './exclusion'
 
@@ -14,29 +15,52 @@ const scope = (excluded: string[] = [], assetDir = ASSETS_DIR_REL): WatchScope =
   assetDir,
 })
 
-describe('shouldSkipDir', () => {
-  it('skips convention dirs', () => {
-    expect(shouldSkipDir('.git', '.git', scope())).toBe(true)
-    expect(shouldSkipDir('.nexus', '.nexus', scope())).toBe(true)
-    expect(shouldSkipDir('_internal', '_internal', scope())).toBe(true)
-    expect(shouldSkipDir('node_modules', 'node_modules', scope())).toBe(true)
+describe('outsideContent', () => {
+  it('refuses hidden and package folders at any depth, and hidden names', () => {
+    expect(outsideContent('.git', scope())).toBe('hidden')
+    expect(outsideContent('.nexus', scope())).toBe('hidden')
+    expect(outsideContent('_internal', scope())).toBe('hidden')
+    expect(outsideContent('node_modules', scope())).toBe('hidden')
+    expect(outsideContent('.obsidian/plugins/x/README.md', scope())).toBe('hidden')
+    expect(outsideContent('Notes/_Drafts/Idea.md', scope())).toBe('hidden')
+    expect(outsideContent('Notes/_Idea.md', scope())).toBe('hidden')
   })
 
-  it('keeps normal dirs', () => {
-    expect(shouldSkipDir('Vault A', 'Vault A', scope())).toBe(false)
+  it('keeps normal paths', () => {
+    expect(outsideContent('Vault A', scope())).toBeNull()
+    expect(outsideContent('Vault A/Sub/Page.md', scope())).toBeNull()
+    expect(outsideContent('Root Page.md', scope())).toBeNull()
   })
 
   it('applies user excludes by segment-prefix, NFC + case-insensitive', () => {
-    expect(shouldSkipDir('Archive', 'Archive', scope(['archive']))).toBe(true)
-    expect(shouldSkipDir('Sub', 'Vault A/Sub', scope(['Vault A']))).toBe(true)
-    expect(shouldSkipDir('Other', 'Other', scope(['Vault A']))).toBe(false)
-    expect(shouldSkipDir('Vault A', 'Vault A', scope(['Vault A/Sub']))).toBe(false)
+    expect(outsideContent('Archive', scope(['archive']))).toBe('excluded')
+    expect(outsideContent('Vault A/Sub', scope(['Vault A']))).toBe('excluded')
+    expect(outsideContent('Other', scope(['Vault A']))).toBeNull()
+    expect(outsideContent('Vault A', scope(['Vault A/Sub']))).toBeNull()
   })
 
   it('skips the asset root and everything under it', () => {
-    expect(shouldSkipDir('file-assets', 'file-assets', scope([], 'file-assets'))).toBe(true)
-    expect(shouldSkipDir('Sub', 'file-assets/Sub', scope([], 'file-assets'))).toBe(true)
-    expect(shouldSkipDir('file-assets', 'file-assets', scope([], 'Media'))).toBe(false)
+    expect(outsideContent('file-assets', scope([], 'file-assets'))).toBe('asset')
+    expect(outsideContent('file-assets/Sub', scope([], 'file-assets'))).toBe('asset')
+    expect(outsideContent('file-assets', scope([], 'Media'))).toBeNull()
+  })
+})
+
+describe('neverWatched', () => {
+  it('holds every folder on the way to the hidden-folder rule', () => {
+    expect(neverWatched(['Notes', '_Drafts', 'Idea.md'])).toBe(true)
+    expect(neverWatched(['.git', 'HEAD'])).toBe(true)
+    expect(neverWatched(['node_modules'])).toBe(true)
+  })
+
+  it('holds the leaf only to the dot, so sidecars and a hidden folder itself pass', () => {
+    expect(neverWatched(['Notes', '_pagecollection.json'])).toBe(false)
+    expect(neverWatched(['Notes', '_Drafts'])).toBe(false)
+    expect(neverWatched(['Notes', '.DS_Store'])).toBe(true)
+  })
+
+  it('watches .nexus', () => {
+    expect(neverWatched(['.nexus', 'contexts', 'Areas', 'Home', '_space.json'])).toBe(false)
   })
 })
 

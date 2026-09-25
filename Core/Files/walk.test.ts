@@ -33,13 +33,8 @@ afterEach(async () => {
 const rels = (paths: string[]) => paths.map((p) => relative(root, p)).sort()
 
 describe('listMarkdownFiles', () => {
-  it('lists .md recursively (only .md), absolute paths', async () => {
-    expect(rels(await listMarkdownFiles(root))).toEqual([
-      '.nexus/c.md',
-      '.trash/d.md',
-      'a.md',
-      'sub/b.md',
-    ])
+  it('lists .md recursively (only .md), absolute paths, outside hidden folders', async () => {
+    expect(rels(await listMarkdownFiles(root))).toEqual(['a.md', 'sub/b.md'])
   })
 
   it('returns [] for a missing dir', async () => {

@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { sanitizeExclusions } from './settings'
-import { shouldSkipDir, type WatchScope } from '../Paths/exclusion'
+import { outsideContent, type WatchScope } from '../Paths/exclusion'
 
 const value = (folders: unknown): string[] => {
   const r = sanitizeExclusions(folders)
@@ -29,9 +29,9 @@ describe('sanitizeExclusions', () => {
 })
 
 describe('sanitizeExclusions crosses the matcher', () => {
-  it('a folder it stores is the folder shouldSkipDir prunes under the same scope', () => {
+  it('a folder it stores is the folder outsideContent prunes under the same scope', () => {
     const scope: WatchScope = { excluded: value(['Archive/']), assetDir: '' }
-    expect(shouldSkipDir('Archive', 'Archive', scope)).toBe(true)
-    expect(shouldSkipDir('Keep', 'Keep', scope)).toBe(false)
+    expect(outsideContent('Archive', scope)).toBe('excluded')
+    expect(outsideContent('Keep', scope)).toBeNull()
   })
 })

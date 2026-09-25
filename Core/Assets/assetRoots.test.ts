@@ -120,6 +120,8 @@ describe('validPropertyDir — a file property names where its files land', () =
     expect(validPropertyDir('.private', DIR)).toBe(false)
     expect(validPropertyDir('Specs/.private', DIR)).toBe(false)
     expect(validPropertyDir('node_modules', DIR)).toBe(false)
+    expect(validPropertyDir('_private', DIR)).toBe(false)
+    expect(validPropertyDir('Specs/_private', DIR)).toBe(false)
   })
 
   it("a dot in the ROOT's own name is the root's business, not a subfolder's", () => {

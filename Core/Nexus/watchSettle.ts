@@ -41,8 +41,8 @@ export function syncIgnoredUnder(root: string, scope: WatchScope): (path: string
     const rel = relative(root, path)
     if (!rel || escapes(rel)) return false
     const segs = rel.split('/')
-    if (isAsset(segs)) return segs.slice(assetDepth).some(neverWatched)
-    return segs.some(neverWatched) || isExcluded(segs)
+    if (isAsset(segs)) return neverWatched(segs.slice(assetDepth))
+    return neverWatched(segs) || isExcluded(segs)
   }
 }
 

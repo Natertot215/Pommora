@@ -13,13 +13,24 @@ const STORE_FILE = /\.db(-wal|-shm)?$/
 
 const TEMP_SUFFIX = /\.\d+$/
 
-/** `.nexus` is the exception, since Contexts and settings live there. Shared so any lister of a watched directory skips exactly what it drops. */
-export function neverWatched(seg: string): boolean {
-  return (
-    seg === TRASH_DIR ||
-    seg === 'node_modules' ||
-    STORE_FILE.test(seg) ||
-    (seg.startsWith('.') && seg !== NEXUS_DIR)
+export function hiddenName(name: string): boolean {
+  return name.startsWith('.') || name.startsWith('_')
+}
+
+/** A folder the app never enters: hidden behind a leading dot or underscore, or a package cache. */
+export function hiddenFolder(name: string): boolean {
+  return hiddenName(name) || name === 'node_modules'
+}
+
+/** `.nexus` is the exception, since Contexts and settings live there. Every folder on the way is held to `hiddenFolder`, while the leaf is held only to the dot, since sidecars carry the underscore. Shared so any lister of a watched directory skips exactly what it drops. */
+export function neverWatched(segs: string[]): boolean {
+  const leaf = segs.length - 1
+  return segs.some(
+    (seg, i) =>
+      !(i === 0 && seg === NEXUS_DIR) &&
+      (i < leaf
+        ? hiddenFolder(seg)
+        : seg.startsWith('.') || seg === 'node_modules' || STORE_FILE.test(seg)),
   )
 }
 
@@ -40,12 +51,11 @@ export function manifestAdmits(
     const segs = rel.split('/')
     const name = segs[segs.length - 1]
     if (TEMP_SUFFIX.test(name) && siblings?.has(name.replace(TEMP_SUFFIX, ''))) return false
-    if (segs[0] === TRASH_DIR)
-      return !segs.slice(1).some(neverWatched) && !isExcluded(segs.slice(1))
+    if (segs[0] === TRASH_DIR) return !neverWatched(segs.slice(1)) && !isExcluded(segs.slice(1))
     if (thumbnailSegs(segs)) return false
     if (rel === PROPERTY_JOURNAL_REL || rel === CONTEXT_JOURNAL_REL) return false
-    if (isAsset(segs)) return !segs.slice(assetDepth).some(neverWatched)
-    return !segs.some(neverWatched) && !isExcluded(segs)
+    if (isAsset(segs)) return !neverWatched(segs.slice(assetDepth))
+    return !neverWatched(segs) && !isExcluded(segs)
   }
 }
 
@@ -60,16 +70,14 @@ export interface WatchScope {
   assetDir: string
 }
 
-export function hiddenName(name: string): boolean {
-  return name.startsWith('.') || name.startsWith('_')
-}
+export type OutsideReason = 'hidden' | 'asset' | 'excluded'
 
-/** `relPath` is POSIX-style. The asset root leaves the tree the way an excluded folder does — it holds files, not content — while remaining watched. */
-export function shouldSkipDir(name: string, relPath: string, scope: WatchScope): boolean {
-  const segs = relPath.split('/')
-  if (assetMatcher(scope.assetDir)(segs)) return true
-  if (hiddenName(name) || name === 'node_modules') return true
-  return excludedMatcher(scope.excluded)(segs)
+/** What keeps a nexus-relative path outside the content the app reads, or null: a hidden folder or name on the way, the asset root (which holds files rather than content while remaining watched), or an excluded folder. */
+export function outsideContent(rel: string, scope: WatchScope): OutsideReason | null {
+  const segs = rel.split('/')
+  if (segs.some(hiddenFolder)) return 'hidden'
+  if (assetMatcher(scope.assetDir)(segs)) return 'asset'
+  return excludedMatcher(scope.excluded)(segs) ? 'excluded' : null
 }
 
 /** Both the compiled matchers and chokidar's ignore filter capture the scope at arm time, so a change to either half is structural. */

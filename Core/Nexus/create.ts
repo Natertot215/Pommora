@@ -10,7 +10,7 @@ import type { PropertyValue } from '../Properties/propertyValue'
 import { fillSlot, type MutateReply, type MutateRequest } from './mutateRequest'
 import type { MutateContext } from './mutate'
 import { createPage } from './page'
-import { createFolderEntity } from './folderEntity'
+import { createFolderEntity, landingRefusal } from './folderEntity'
 import { setChildOrder, setSpaceOrder } from './reorder'
 import { CONTAINER_KINDS, mutableTarget } from './liveTree'
 import { noteValueWrite } from './valuesChanged'
@@ -56,8 +56,11 @@ export async function createContainerOp(
   const extra: Record<string, unknown> = {
     views: [{ ...mintDefaultView([]), id: mintViewId() }],
   }
-  const r = await createDisambiguated(req.name, (name) =>
-    createFolderEntity(parent.value, req.kind, name, extra),
+  const r = await createDisambiguated(
+    req.name,
+    async (name) =>
+      (await landingRefusal(root, parent.value, name)) ??
+      createFolderEntity(parent.value, req.kind, name, extra),
   )
   if (!r.ok) return r
   if (req.order) await setChildOrder(parent.value, 'set_order', fillSlot(req.order, r.value.id))

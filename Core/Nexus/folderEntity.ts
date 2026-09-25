@@ -1,4 +1,4 @@
-import { join, dirname, basename } from '../Paths/posix'
+import { join, dirname, basename, relative } from '../Paths/posix'
 import { machine } from '../Platform/machine'
 import { newId } from './ids'
 import { recordWrite } from '../Files/writeEcho'
@@ -7,6 +7,26 @@ import { nameError } from '../Paths/names'
 import { sidecarPath } from '../Paths/paths'
 import type { SidecarKind } from '../Paths/nexusPaths'
 import { ok, fail, type Result } from '../Contract/result'
+import { outsideContent } from '../Paths/exclusion'
+import { readWatchScope } from '../Settings/settings'
+
+const SET_ASIDE = {
+  excluded:
+    'is currently listed as an excluded directory in settings; please choose a different name or remove it from the exclusion list.',
+  asset:
+    'is currently listed as the default asset folder; please choose a different name or pick a different asset folder.',
+}
+
+// A Collection or Set landing on a folder Settings keeps out of the Nexus would leave the tree the moment it lands. A name the primitive refuses is left to it.
+export async function landingRefusal(
+  root: string,
+  parentDir: string,
+  name: string,
+): Promise<Result<never> | null> {
+  if (nameError(name, 'directory')) return null
+  const why = outsideContent(relative(root, join(parentDir, name)), await readWatchScope(root))
+  return why && why !== 'hidden' ? fail('invalid-path', `"${name}" ${SET_ASIDE[why]}`) : null
+}
 
 export async function createFolderEntity(
   parentDir: string,

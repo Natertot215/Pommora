@@ -11,11 +11,14 @@ import type { WatchEventName } from '../Nexus/watchPatch'
 
 /** The root's OWN segments are exempt, exactly as in the watcher's ignore — a root named `.attachments` is the case that exemption exists for. */
 export function indexable(rel: string, assetDir: string): boolean {
-  const below = rel.split('/').slice(rootSegs(assetDir).length)
-  if (below.some(neverWatched)) return false
-  return !(
+  return !neverWatched(rel.split('/').slice(rootSegs(assetDir).length)) && !legacyBookkeeping(rel)
+}
+
+/** The legacy asset root's own files: the navigation thumbnails and the crops config. */
+export function legacyBookkeeping(rel: string): boolean {
+  return (
     rel.startsWith(`${ASSETS_DIR_REL}/`) &&
-    (below.includes(THUMBNAILS_SEGMENT) || rel === CROPS_REL)
+    (rel === CROPS_REL || rel.split('/').includes(THUMBNAILS_SEGMENT))
   )
 }
 

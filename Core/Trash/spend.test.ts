@@ -905,6 +905,21 @@ describe('restore — the gate-four pins', () => {
     expect(await bundleDirs(join(root, '.trash'))).toHaveLength(1)
   })
 
+  it('a Set restored onto a folder Settings excludes refuses, the bundle intact', async () => {
+    await handleMutate(root, { op: 'delete', path: 'Notes/Daily', kind: 'set' }, nexusDeps)
+    await writeFile(
+      join(root, '.nexus', 'settings.json'),
+      JSON.stringify({ excluded_folders: ['Notes/Daily'] }),
+    )
+    await refreshTree(root)
+    const [listed] = await listBundles(root)
+    const r = await handleMutate(root, { op: 'restore', bundlePath: listed.bundlePath }, nexusDeps)
+    expect(r.ok ? '' : r.error.message).toContain(
+      '"Daily" is currently listed as an excluded directory',
+    )
+    expect(await bundleDirs(join(root, '.trash'))).toHaveLength(1)
+  })
+
   it('only a trash bundle restores — an in-nexus path refuses', async () => {
     await mkdir(join(root, 'Notes', 'fake.deleted'), { recursive: true })
     await writeFile(

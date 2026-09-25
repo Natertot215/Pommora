@@ -558,8 +558,7 @@ describe('directory events', () => {
       'ignored',
     )
     expect(classifyEvent(tree, root, ev('addDir', 'Ideas'), scope()).kind).toBe('full-refresh')
-    // A disappearing one still walks — the index owes a prune for whatever it held.
-    expect(classifyEvent(tree, root, ev('unlinkDir', '_drafts'), scope()).kind).toBe('full-refresh')
+    expect(classifyEvent(tree, root, ev('unlinkDir', '_drafts'), scope()).kind).toBe('ignored')
   })
 })
 

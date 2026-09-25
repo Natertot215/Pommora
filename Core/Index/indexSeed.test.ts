@@ -17,7 +17,7 @@ import { corpusFiles } from '../Files/walk'
 import { scanDoc } from '../MarkdownPM/Engine/docScan'
 import { sweepAdmitsBody, splitEnvelope } from '../Files/pageFile'
 import { readFile } from 'node:fs/promises'
-import { indexWrittenPage, seedContentIndex } from './indexSeed'
+import { indexWrittenPage, moveIndexPaths, seedContentIndex } from './indexSeed'
 import { renameCascade } from '../Nexus/cascade'
 import { newContentId } from '../Nexus/ids'
 
@@ -68,6 +68,24 @@ describe('seedContentIndex', () => {
     expect(queryMentions('target')?.sort()).toEqual(['Loose/Note.md', 'Notes/A.md'])
     expect(queryKeyHolders('Status')).toEqual(['Notes/A.md'])
     expect(stats?.has('Hidden/Secret.md')).toBe(false)
+  })
+
+  it('writes and moves index only what the corpus admits: hidden and excluded paths get no rows', async () => {
+    await seedContentIndex(root)
+    await mkdir(abs('.obsidian', 'plugins'), { recursive: true })
+    await mkdir(abs('Notes', '_Drafts'), { recursive: true })
+    for (const rel of [
+      '.obsidian/plugins/README.md',
+      'Notes/_Drafts/Idea.md',
+      'Hidden/Secret.md',
+    ]) {
+      await writeFile(abs(rel), 'links [[Target]]\n')
+      await indexWrittenPage(root, abs(rel))
+    }
+    expect(queryMentions('target')?.sort()).toEqual(['Loose/Note.md', 'Notes/A.md'])
+    await moveIndexPaths(root, abs('Loose'), abs('Hidden', 'Loose'))
+    expect(queryMentions('target')).toEqual(['Notes/A.md'])
+    expect(readIndexedStats()?.has('Hidden/Loose/Note.md')).toBe(false)
   })
 
   it("an Unknown file gets no rows but is stat-recorded, matching the sweep's skip", async () => {

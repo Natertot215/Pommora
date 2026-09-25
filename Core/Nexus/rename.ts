@@ -1,4 +1,4 @@
-import { basename, titleFromPath, relative, relJoin } from '../Paths/posix'
+import { basename, dirname, titleFromPath, relative, relJoin } from '../Paths/posix'
 import { createDisambiguated } from '../Paths/names'
 import { ok } from '../Contract/result'
 import { mutableTarget } from './liveTree'
@@ -6,7 +6,7 @@ import { moveIndexPaths } from '../Index/indexSeed'
 import type { MutateReply, MutateRequest } from './mutateRequest'
 import type { MutateContext } from './mutate'
 import { renamePage } from './page'
-import { renameFolderEntity } from './folderEntity'
+import { landingRefusal, renameFolderEntity } from './folderEntity'
 import { type CascadeReport, renameCascade } from './cascade'
 import { reportRename } from '../Sync/Client/tap'
 
@@ -18,6 +18,8 @@ export async function renameOp(
   if (!resolved.ok) return resolved
   const abs = resolved.value
   if (req.kind !== 'page') {
+    const refused = await landingRefusal(root, dirname(abs), req.newName)
+    if (refused) return refused
     const r = await renameFolderEntity(abs, req.newName)
     if (!r.ok) return r
     await moveIndexPaths(root, abs, r.value.path)

@@ -125,6 +125,18 @@ describe('migrateAssets', () => {
     expect(trashed.some((n) => String(n).includes('orphan.png'))).toBe(true)
   })
 
+  it('trashes a leftover the map never indexed rather than deleting it', async () => {
+    await asset('_private/contract.pdf', 'contract-bytes')
+    await asset('live/kept.png', 'kept')
+    await writeFile(
+      join(root, 'Notes', '_pagecollection.json'),
+      JSON.stringify({ id: 'pt', banner: '.nexus/assets/live/kept.png' }),
+    )
+    await migrateAssets(root, nexusDeps)
+    const trashed = await readdir(join(root, '.trash'), { recursive: true })
+    expect(trashed.some((n) => String(n).includes('contract.pdf'))).toBe(true)
+  })
+
   it('sends swept leftovers to the system trash in System mode', async () => {
     await asset('dead/orphan.png', 'orphan-bytes')
     const sent: string[] = []

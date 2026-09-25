@@ -9,6 +9,9 @@ import { readShard, updatePageMetadata } from '../Nexus/pageMetadata'
 import { shardOf } from '../Nexus/ids'
 import { dropLiveTree, refreshTree } from '../Nexus/liveTree'
 import { openSession } from '../Nexus/session'
+import { installStores, NO_STORES } from '../Platform/stores'
+import { memoryStores } from '../Testing/memoryStores'
+import { readIndexedStats } from '../Index/contentIndex'
 
 let root: string
 const d = (p: string): Promise<string | undefined> => mkdir(join(root, p), { recursive: true })
@@ -97,6 +100,22 @@ describe('excludedArtifacts', () => {
       p.some((x) => x.includes('Tasks') || x.includes('node_modules') || x.includes('.git')),
     ).toBe(false)
     expect(p.some((x) => x.startsWith('file-assets'))).toBe(false)
+  })
+
+  it('walks a folder excluded inside another excluded folder once, and never enters or reads a hidden name', async () => {
+    await d('Archive/_Drafts')
+    await w('Archive/_Drafts/idea.md', page('01NNNNNNNNPNNNNNNNNNNNNNNN', ''))
+    await w('Archive/_draft.md', page('01PPPPPPPPPPPPPPPPPPPPPPPP', ''))
+    const { pages, sidecars } = await excludedArtifacts(
+      root,
+      ['Archive', 'Archive/Set'],
+      'file-assets',
+    )
+    const rel = (abs: string): string => abs.slice(root.length + 1)
+    expect(pages.map(rel).filter((p) => p === 'Archive/Set/deep.md')).toHaveLength(1)
+    expect(sidecars.map(rel).filter((p) => p === 'Archive/Set/_pageset.json')).toHaveLength(1)
+    expect(pages.map(rel)).not.toContain('Archive/_Drafts/idea.md')
+    expect(pages.map(rel)).not.toContain('Archive/_draft.md')
   })
 
   it('matches what corpusFilesUnder would return over an agenda-free root, exclusion aside', async () => {
@@ -212,6 +231,21 @@ describe('clearExclusionData', () => {
       expect(month.kind === 'ok' && month.pages).toEqual({ [NOTE]: { icon: 'star' } })
     } finally {
       dropLiveTree()
+    }
+  })
+
+  it('leaves the pages it clears out of the content index', async () => {
+    const mem = memoryStores()
+    installStores(mem.stores)
+    try {
+      await d('.nexus')
+      await w('.nexus/settings.json', JSON.stringify({ excluded_folders: ['Archive'] }))
+      await clearExclusionData(root, ['Archive'], 'file-assets')
+      expect(
+        [...(readIndexedStats()?.keys() ?? [])].filter((p) => p.startsWith('Archive/')),
+      ).toEqual([])
+    } finally {
+      installStores(NO_STORES)
     }
   })
 

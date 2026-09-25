@@ -476,7 +476,7 @@ describe('readNexus — the walk names what it cannot read', () => {
 })
 
 describe('readNexus — the asset root leaves the tree and the corpus together', () => {
-  // shouldSkipDir and corpusFilesUnder are two independent skip tests over the same tree; a folder either leaves both or the index and the tree disagree about what exists.
+  // The tree walk and corpusFilesUnder both read through outsideContent; a folder either leaves both or the index and the tree disagree about what exists.
   const build = (asset_directory?: string): string => {
     const root = tempRoot('pom-asset-')
     mkdirSync(join(root, '.nexus'), { recursive: true })
@@ -509,9 +509,8 @@ describe('readNexus — the asset root leaves the tree and the corpus together',
       }
       expect(visible).toContain('Notes')
       expect(corpus).toContain('Notes/note.md')
-      // A hidden name is the one folder the two disagree about on purpose: the tree hides it, while the cascade still sweeps and rewrites what it holds.
       expect(visible).not.toContain('_drafts')
-      expect(corpus).toContain('_drafts/note.md')
+      expect(corpus).not.toContain('_drafts/note.md')
     } finally {
       rmSync(root, { recursive: true, force: true })
     }

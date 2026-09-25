@@ -25,7 +25,7 @@ import { machine } from '../Platform/machine'
 import { orderedDefs, readRegistry, type PropertyRegistry } from '../Properties/propertiesRegistry'
 import { asString, asStringArray } from './coerce'
 import { isPlainObject } from '../Properties/propertyValue'
-import { shouldSkipDir, type WatchScope } from '../Paths/exclusion'
+import { hiddenFolder, outsideContent, type WatchScope } from '../Paths/exclusion'
 import { resolveOrder } from './order'
 import { beginWalk, cachedParse, endWalk } from '../Files/walkCache'
 import { contextsDir, contextsRegistryFile, nexusConfig } from '../Paths/paths'
@@ -159,7 +159,7 @@ async function readChildSets(
   unreadable: string[],
 ): Promise<SetNode[]> {
   const dirs = (await listEntries(absDir)).filter(
-    (e) => e.kind === 'dir' && !shouldSkipDir(e.name, `${relDir}/${e.name}`, scope),
+    (e) => e.kind === 'dir' && !outsideContent(`${relDir}/${e.name}`, scope),
   )
   const kinds = await Promise.all(
     dirs.map((e) => resolveFolderKind(join(absDir, e.name), 'nested', kindCtx)),
@@ -253,16 +253,14 @@ async function readContextGroups(
   root: string,
   registry: ContextsRegistry,
   spaceOrders: Json,
-  scope: WatchScope,
   unreadable: string[],
 ): Promise<ContextGroup[]> {
   return Promise.all(
     registry.contexts.map(async (def) => {
       const dir = join(contextsDir(root), def.title)
       const entries = (await listEntries(dir))
-        .filter((e) => e.kind === 'dir')
+        .filter((e) => e.kind === 'dir' && !hiddenFolder(e.name))
         .map((e) => ({ name: e.name, rel: spaceDirRel(def.title, e.name) }))
-        .filter(({ name, rel }) => !shouldSkipDir(name, rel, scope))
       const read = await Promise.all(
         entries.map(({ name, rel }) => readSpace(join(dir, name), rel, name, def.id, unreadable)),
       )
@@ -319,11 +317,11 @@ async function walkNexus(root: string): Promise<NexusTree> {
   if (!ctxRegistry && (await pathExists(contextsRegistryFile(root))))
     unreadable.push(CONTEXTS_REGISTRY_REL)
   const contexts = ctxRegistry
-    ? await readContextGroups(root, ctxRegistry, order.spaces, scope, unreadable)
+    ? await readContextGroups(root, ctxRegistry, order.spaces, unreadable)
     : undefined
 
   const rootDirs = (await listEntries(root)).filter(
-    (e) => e.kind === 'dir' && !shouldSkipDir(e.name, e.name, scope),
+    (e) => e.kind === 'dir' && !outsideContent(e.name, scope),
   )
   const maybeCollections = await Promise.all(
     rootDirs.map(async (e) => {
