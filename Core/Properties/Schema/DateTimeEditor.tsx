@@ -6,7 +6,6 @@ import {
   WEEKDAY_FORMAT_LABELS,
   WEEKDAY_FORMATS,
   type ColumnStyle,
-  type DateFormat,
 } from '@pommora/core/Properties/columnStyles'
 import { MenuRowView, pickerRow } from '@pommora/uix/Menus'
 
@@ -26,7 +25,7 @@ export function DateTimeEditor({
   style: ColumnStyle
   onChange: (patch: Partial<ColumnStyle>) => void
 }): React.JSX.Element {
-  const dateFmt: DateFormat = style.date_format ?? 'full'
+  const dateFmt = style.date_format
   const showDay = showsWeekday(dateFmt)
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
@@ -45,7 +44,7 @@ export function DateTimeEditor({
         row={pickerRow(
           'calendar',
           'Day',
-          style.weekday ?? 'none',
+          style.weekday,
           WEEKDAY_OPTIONS,
           (v) => onChange({ weekday: v }),
           { ...ROW_LOOK, ariaLabel: 'Weekday format', reveal: showDay },
@@ -55,7 +54,7 @@ export function DateTimeEditor({
         row={pickerRow(
           'clock',
           'Time',
-          style.time_format ?? 'none',
+          style.time_format,
           TIME_OPTIONS,
           (v) => onChange({ time_format: v }),
           { ...ROW_LOOK, ariaLabel: 'Time format' },

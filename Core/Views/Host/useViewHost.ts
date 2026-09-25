@@ -341,10 +341,11 @@ export function useViewHost(
     if (target === undefined) return
     commitGroupValue(activeId, sortReassign.propertyId, sortReassign.type, target)
   }
+  const styleOf = (columnId: string): ColumnStyle => styleFor(columnId, schema, liveView, nexus)
   const pickTarget = (row: ViewRow, column: ResolvedColumn): PickTarget => {
     const def = schema.find((d) => d.id === column.id) ?? syntheticContextDef(column.id)
     const current = resolveFieldValue(row, column.id, schema)
-    const style = styleFor(column.id, schema, liveView, nexus)
+    const style = styleOf(column.id)
     const type = declaredType(column.id, schema, contextIds)
     if (type === 'datetime')
       return {
@@ -435,6 +436,7 @@ export function useViewHost(
     commitValue,
     commitGroupValue,
     pickTarget,
+    styleOf,
     creation,
     mutate,
     select,

@@ -131,7 +131,7 @@ export function resolveBandHead(
       const dateLabel = formatBucketLabel(
         value,
         granularity,
-        styleFor(propId, ctx.schema, view, nexus).date_format ?? nexus.dateFormat,
+        styleFor(propId, ctx.schema, view, nexus).date_format,
         view.date_separator ?? 'dash',
       )
       return {

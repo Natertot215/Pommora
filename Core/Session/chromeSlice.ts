@@ -1,4 +1,5 @@
 import type { ActionItem, MenuOptions } from '@pommora/core/Actions/menuModel'
+import type { ColumnStyle } from '@pommora/core/Properties/columnStyles'
 import type { PropertyDefinition } from '@pommora/core/Properties/properties'
 import type { PropertyValue } from '@pommora/core/Properties/propertyValue'
 import type { ConfirmRequest } from '../Interface/Confirm/confirmations'
@@ -17,6 +18,7 @@ export interface ValuePickRequest {
   current: PropertyValue
   trigger: HTMLElement
   commit: (value: PropertyValue | null) => void
+  style?: ColumnStyle
 }
 
 export interface ChromeSlice {

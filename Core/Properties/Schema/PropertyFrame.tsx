@@ -273,7 +273,7 @@ export function PropertyFrame({
   const saveColumnStyle = async (propId: string, patch: Partial<ColumnStyle>): Promise<void> => {
     const picks = Object.entries(patch).map(([key, value]) => [
       key,
-      pickedStyle(propId, schema, nexus, key, String(value)),
+      pickedStyle(propId, schema, nexus, key as keyof ColumnStyle, String(value)),
     ])
     const next = { ...activeView.column_styles?.[propId], ...Object.fromEntries(picks) }
     await saveView({

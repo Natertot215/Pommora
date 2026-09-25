@@ -50,6 +50,7 @@ import { relDirname } from '@pommora/core/Paths/posix'
 import { spaceNodeOf } from '../Nexus/treeIndex'
 import { type Overrides, patchOverride, retireSettled } from './valueOverride'
 import { useSession, useSetting } from '../Session/store'
+import { dateDefaults } from './columnStyles'
 import { fetchPageDetail, readPageDetail } from '../Session/pageDetailCache'
 import { popMenu } from '../Actions/menuActions'
 import { linkValueMenuTarget, showConnectionMenu } from '../Interface/Menus/connectionMenuActions'
@@ -409,7 +410,7 @@ export function PropertyPanel({
                   column,
                   ctx,
                   hideIcon: false,
-                  style: { look: 'standard', date_format: dateFormat },
+                  style: { look: 'standard', ...dateDefaults(dateFormat) },
                   remove: (next) => commit(id, next),
                 }) ?? <EmptyValue className={s.empty} />)
               )}

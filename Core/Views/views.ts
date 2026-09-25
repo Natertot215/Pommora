@@ -2,7 +2,7 @@
 
 import { z } from 'zod'
 import { newId } from '../Nexus/ids'
-import { columnStyle } from '../Properties/columnStyles'
+import { columnStyle, holdsStyle } from '../Properties/columnStyles'
 import { mergeKeys } from '../Files/jsonMerge'
 import type { Json } from '../Files/stableJson'
 import { type PropertyDefinition, RESERVED_PROPERTY_ID } from '../Properties/properties'
@@ -201,15 +201,23 @@ export type SavedView = z.infer<typeof savedViewFields>
 /** Loose ⇒ foreign keys survive a rewrite (cloud-sync / agent-legibility); scalar fields decode defensively. */
 export const savedView = savedViewFields.loose()
 
+function withoutEmptyStyles({ column_styles, ...view }: Json): Json {
+  const kept = Object.entries((column_styles ?? {}) as Json).filter(([, s]) => holdsStyle(s))
+  return kept.length > 0 ? { ...view, column_styles: Object.fromEntries(kept) } : view
+}
+
 export function mergeViewEdit(raw: unknown, next: SavedView): Json {
   const stored = savedView.safeParse(raw)
-  if (!stored.success) return next
-  return mergeKeys(
-    stored.data,
-    next,
-    raw as Json,
-    { group: 1, sub_group: 1, column_styles: 2 },
-    () => 'local',
+  return withoutEmptyStyles(
+    stored.success
+      ? mergeKeys(
+          stored.data,
+          next,
+          raw as Json,
+          { group: 1, sub_group: 1, column_styles: 2 },
+          () => 'local',
+        )
+      : next,
   )
 }
 
