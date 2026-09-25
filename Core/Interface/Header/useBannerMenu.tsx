@@ -41,12 +41,9 @@ export function useBannerMenu(
 
   // onDone advances the seat's value so a re-pick's picker resets its draft — a page cover refreshes only on refetch, not a tree push.
   const setBanner = async (source: string | null): Promise<string | undefined> => {
-    let adopted: string | undefined
-    const ok = await mutate({ op: 'setBanner', path, kind, source }, undefined, (a) => {
-      adopted = a
-    })
-    if (ok) onDone?.()
-    return ok ? adopted : undefined
+    const done = await mutate({ op: 'setBanner', path, kind, source })
+    if (done) onDone?.()
+    return done?.adopted
   }
   const addOrChange = async (): Promise<void> => {
     const picked = valueOr(await host().ask('nexus:pickFile'), null)

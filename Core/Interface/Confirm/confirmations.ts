@@ -54,13 +54,10 @@ export const confirmDelete = async (target: {
     })
     if (!yes) return
   }
-  let bundlePath: string | undefined
-  const ok = await useSession
+  const done = await useSession
     .getState()
-    .mutate({ op: 'delete', path: target.path, kind: target.kind }, undefined, undefined, (t) => {
-      bundlePath = t?.bundlePath
-    })
-  if (ok) notifyTrashed(target.title, bundlePath)
+    .mutate({ op: 'delete', path: target.path, kind: target.kind })
+  if (done) notifyTrashed(target.title, done.trashed?.bundlePath)
 }
 
 export const askRemoveTile = (): Promise<boolean> =>

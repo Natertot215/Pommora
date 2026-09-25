@@ -55,7 +55,7 @@ function harness(frontmatter: Record<string, unknown> = {}) {
       schema: SCHEMA,
       mutate: async (req) => {
         sent.push(req)
-        return true
+        return {}
       },
       rowOf: (id) => (id === row.id ? row : undefined),
       apply: () => undefined,

@@ -42,13 +42,8 @@ export function useNexusIcon() {
     if (profileImage) await mutate({ op: 'setCrop', image: profileImage, crop })
   }
 
-  const onRepick = async (source: string): Promise<string | undefined> => {
-    let adopted: string | undefined
-    await mutate({ op: 'setProfileImage', source }, undefined, (a) => {
-      adopted = a
-    })
-    return adopted
-  }
+  const onRepick = async (source: string): Promise<string | undefined> =>
+    (await mutate({ op: 'setProfileImage', source }))?.adopted
 
   // Clears the photo — otherwise it would still outrank the newly picked glyph in display.
   const selectGlyph = (id: string): void => {

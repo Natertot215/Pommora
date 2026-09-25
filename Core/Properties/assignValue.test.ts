@@ -38,7 +38,7 @@ let writer: RefObject<ValueWriter | null>
 
 beforeEach(() => {
   apply = vi.fn()
-  mutate = vi.fn(async () => true)
+  mutate = vi.fn(async () => ({}))
   row = rowOf({ id: 'page1', Tag: ['red'] })
   live = { schema, mutate, rowOf: (id) => (id === row.id ? row : undefined), apply }
   writer = { current: live }
@@ -169,7 +169,7 @@ describe('assignValue', () => {
   })
 
   it('a refused write records nothing to undo', async () => {
-    mutate.mockResolvedValueOnce(false)
+    mutate.mockResolvedValueOnce(null)
     await assignValue(
       writer,
       row,

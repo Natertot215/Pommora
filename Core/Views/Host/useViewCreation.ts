@@ -141,7 +141,7 @@ export function useViewCreation(getCfg: () => ViewCreationConfig): ViewCreation 
         patchSeedValues(created.id, seeds)
         then(created)
       },
-    )
+    ).then((done) => done !== null)
 
   const addIn = (parentPath: string): Promise<boolean> => {
     const c = cfg()

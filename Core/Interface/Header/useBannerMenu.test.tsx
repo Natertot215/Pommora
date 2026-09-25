@@ -13,10 +13,7 @@ import { stubDialer } from '../../vitest.setup'
 
 let host: HTMLDivElement
 let root: Root
-const mutate = vi.fn((_req, _onCreated, onAdopted?: (a: string | undefined) => void) => {
-  onAdopted?.('[[Picked.png]]')
-  return Promise.resolve(true)
-})
+const mutate = vi.fn(async () => ({ adopted: '[[Picked.png]]' }))
 const onDone = vi.fn()
 
 beforeEach(() => {
@@ -121,11 +118,12 @@ describe('useBannerMenu', () => {
     await act(async () => {
       await api.openMenu()
     })
-    expect(mutate).toHaveBeenCalledWith(
-      { op: 'setBanner', path: 'Notes/A.md', kind: 'page', source: '/abs/Picked.png' },
-      undefined,
-      expect.any(Function),
-    )
+    expect(mutate).toHaveBeenCalledWith({
+      op: 'setBanner',
+      path: 'Notes/A.md',
+      kind: 'page',
+      source: '/abs/Picked.png',
+    })
     expect(editor().open).toBe(true)
   })
 
@@ -148,11 +146,12 @@ describe('useBannerMenu', () => {
     await act(async () => {
       await editor().onRepick?.('/abs/New.png')
     })
-    expect(mutate).toHaveBeenCalledWith(
-      { op: 'setBanner', path: 'Notes/A.md', kind: 'page', source: '/abs/New.png' },
-      undefined,
-      expect.any(Function),
-    )
+    expect(mutate).toHaveBeenCalledWith({
+      op: 'setBanner',
+      path: 'Notes/A.md',
+      kind: 'page',
+      source: '/abs/New.png',
+    })
     expect(onDone).toHaveBeenCalled()
   })
 })

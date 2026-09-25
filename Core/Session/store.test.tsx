@@ -666,7 +666,7 @@ describe('store — the mutate rail patches the tree before main confirms', () =
     const done = await useSession
       .getState()
       .mutate({ op: 'setActiveView', path: 'Notes', kind: 'collection', viewId: 'view_b' })
-    expect(done).toBe(true)
+    expect(done).not.toBeNull()
     expect(useSession.getState().tree?.collections[0]?.activeView).toBe('view_b')
   })
 
@@ -759,7 +759,7 @@ describe('store — a Nexus switch lands every owed save first', () => {
     channels['page:updateBody'] = vi.fn(async () => ok({ hash: 'h', stale: false }))
     channels['nexus:state'] = vi.fn(async () => ok({ status: 'empty' }))
     useSession.setState({ tree: makeTree() })
-    let moved: Promise<boolean> = Promise.resolve(true)
+    let moved: Promise<unknown> = Promise.resolve(true)
     channels['nexus:choose'] = vi.fn(async () => {
       schedulePageSave('Notes/A.md', 'typed')
       moved = useSession
@@ -768,7 +768,7 @@ describe('store — a Nexus switch lands every owed save first', () => {
       return ok(true)
     })
     await useSession.getState().choose()
-    expect(await moved).toBe(false)
+    expect(await moved).toBeNull()
     expect(mutate).not.toHaveBeenCalled()
   })
 
