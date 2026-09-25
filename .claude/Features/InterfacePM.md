@@ -47,7 +47,7 @@ A page row's menu is the **page menu** (`Core/Actions/pageMenu.ts`), the same ro
 
 The bottom bar of every content view (`Core/Interface/Subfield/`): a breadcrumb on the left and per-view items on the right, at the Subline scale. The **breadcrumb** is a NavTrail of the open view's ancestry from the Collection down to the current node — Collection and depth-1 Set segments navigate, deeper Sub-Sets are plain, the current segment is inert — extended past the current node with a dimmed tail down to the deepest node visited on this path, still clickable to re-descend, so walking back up keeps the deeper trail in view. The **items** come from a registry keyed by view kind: a Page shows `lines · words · characters`, counting the prose the editor actually draws — or the highlighted selection alone, while one is held — and settling just behind the keystroke; a Collection, a Set, and NavView state how many results the surface holds, as the number by itself; NavView carries its List / Gallery toggle in the bar's lead, where a surface with no breadcrumb states itself; a Space takes the bar with its crumb alone, joined in a floating window by the board's lock at the right.
 
-A page holding footnotes also carries the **Show Footnotes** / **Hide Footnotes** control in the reveal band above the bar, facing the bar's collapse chevron across it. The bar collapses app-wide on one flag, with a hover-revealed chevron riding directly above it. The Subfield is driven by its host: the content pane hands it the shown page and its live body, and the Page Window hands it the window's active tab and its own body, marking the crumbs inert so they describe location without driving the main pane. Item order and the expanded flag persist per Nexus in `settings.json`.
+A page holding footnotes also carries the **Show Footnotes** / **Hide Footnotes** control in the reveal band above the bar, facing the bar's collapse chevron across it. The main pane's bar collapses on one flag, with a hover-revealed chevron riding directly above it. The Subfield is driven by its host: the content pane hands it the shown page and its live body, and the Page Window hands it the window's active tab and its own body, marking the crumbs inert so they describe location without driving the main pane. The main pane's fold persists per machine.
 
 ### Floating Windows
 
@@ -89,4 +89,4 @@ A markdown link naming a website raises the same pane as a live, non-interactive
 - **Always-on ribbon** — a ribbon that survives the sidebar collapsing.
 - **The engulf's landing** when the promoted page's main-pane fetch outlasts the FLIP; usually masked by warmth.
 - **Multi-preview** — two windows at once; the geometry store and slice are ready, and the singleton rule is a product call.
-- **Subfield items** — reordering by drag (the persisted order is wired), user-defined items, and per-view configuration.
+- **Subfield items** — reordering by drag, user-defined items, and per-view configuration.

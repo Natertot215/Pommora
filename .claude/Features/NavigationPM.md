@@ -35,7 +35,7 @@ Back and Forward walk per-tab history (`Core/Navigation/tabsModel.ts`): each unp
 
 ### NavView
 
-The new-tab page (`Core/Navigation/NavView.tsx`): a full-window Recents gallery or list over a search bar, and the empty state — a `+` opens it, a Nexus with no open tabs defaults to it, and closing the last tab lands on it. It shares its gallery and list components with the NavWindow but is its own surface, carrying its own banner (falling back to the Homepage's) with the search field in the banner's title slot. Its List / Gallery toggle lives in the Subfield, and that choice persists per Nexus separately from the NavWindow's. The list shows the pinned group above recents, and the NavWindow's scan glyph promotes its map form into NavView.
+The new-tab page (`Core/Navigation/NavView.tsx`): a full-window Recents gallery or list over a search bar, and the empty state — a `+` opens it, a Nexus with no open tabs defaults to it, and closing the last tab lands on it. It shares its gallery and list components with the NavWindow but is its own surface, carrying its own banner (falling back to the Homepage's) with the search field in the banner's title slot. Its List / Gallery toggle lives in the Subfield, and that choice persists on this machine separately from the NavWindow's. The list shows the pinned group above recents, and the NavWindow's scan glyph promotes its map form into NavView.
 
 ---
 
