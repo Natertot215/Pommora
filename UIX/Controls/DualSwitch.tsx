@@ -27,7 +27,7 @@ export function DualSwitch({
       <span className={s.tickLine} aria-hidden />
       <span className={s.tickCircle} aria-hidden />
       <span className={s.knob}>
-        <GlassControl segment style={{ borderRadius: s.KNOB_RADIUS }}>
+        <GlassControl knob style={{ borderRadius: s.KNOB_RADIUS }}>
           <span className={s.knobFill} />
         </GlassControl>
       </span>
