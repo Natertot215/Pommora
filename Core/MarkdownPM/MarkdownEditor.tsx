@@ -12,7 +12,7 @@ import { markdownInput } from './Input/markdownInput'
 import { tableWidgetExtension, applySavedHeadingCols } from './Tables/widget'
 import { listDragExtension } from './Gestures/listDrag'
 import { listRenumberOnDelete } from './Input/listRenumber'
-import { blockHandles, blockGripHover } from './Menus/blockHandles'
+import { blockHandles, pointerReveal } from './Menus/blockHandles'
 import {
   blockDragExtension,
   blockquoteDragExtension,
@@ -290,7 +290,7 @@ export function MarkdownEditor({
       listDragExtension,
       listRenumberOnDelete('page'),
       blockHandles(),
-      blockGripHover(),
+      pointerReveal('page', EDITOR_BASE_PT),
       blockDragExtension,
       calloutDragExtension,
       blockquoteDragExtension,

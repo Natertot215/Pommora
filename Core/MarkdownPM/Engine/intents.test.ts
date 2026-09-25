@@ -4,6 +4,7 @@ import { computeStats } from './subfieldStats'
 import {
   assembleLineIntents,
   docLineIntents,
+  GRIP_HOST,
   NO_CARET,
   tokenIntents,
   type DecoIntent,
@@ -332,6 +333,16 @@ describe('decoration intents', () => {
     const t = '> > - item'
     const intents = decorationsFor(t, tokenize(t), new Set(), 99)
     expect(intents.some((d) => d.kind === 'widget' && d.spec.type === 'bullet')).toBe(true)
+  })
+
+  it('a quote or callout declares its grip host on its first line alone', () => {
+    for (const t of ['> a\n> b', '> [!note] Head\n> body']) {
+      const lines = decorationsFor(t, tokenize(t), new Set(), 99).filter(
+        (d): d is Extract<typeof d, { kind: 'line' }> => d.kind === 'line',
+      )
+      expect(lines[0].attributes).toEqual(GRIP_HOST)
+      expect(lines.slice(1).every((l) => l.attributes === undefined)).toBe(true)
+    }
   })
 
   it('multi-line blockquote → only the outer lines round (first vs last)', () => {

@@ -189,12 +189,12 @@ class CodeTagWidget extends WidgetType {
   toDOM(view: EditorView): HTMLElement {
     const el = document.createElement('span')
     el.className = 'codeblock-language'
+    el.dataset.revealHost = ''
+    el.style.setProperty('--reveal-fade', 'var(--duration-slow)')
     const tag = this.name === undefined ? undefined : CODE_TAGS[this.name]
     const label = tag?.label === undefined ? this.name : tag.label
     const resting = label ?? ''
 
-    const reach = el.appendChild(document.createElement('span'))
-    reach.className = 'codeblock-reach'
     const slot = el.appendChild(document.createElement('span'))
     slot.className = 'codeblock-mark-slot'
     if (tag) slot.appendChild(mark(tag.glyph, 'codeblock-mark'))
@@ -203,15 +203,6 @@ class CodeTagWidget extends WidgetType {
     const name = el.appendChild(document.createElement('span'))
     name.className = 'codeblock-name'
     name.textContent = resting
-
-    // A press inside the arc is a press on the code it is drawn over; falling through would land on the fence line.
-    reach.addEventListener('mousedown', (e) => {
-      e.preventDefault()
-      const at = view.posAtCoords({ x: e.clientX, y: e.clientY })
-      if (at === null) return
-      view.dispatch({ selection: { anchor: at } })
-      view.focus()
-    })
 
     let timer: number | undefined
     const copy = (e: MouseEvent): void => {
@@ -416,11 +407,11 @@ function build(view: EditorView, conn: ConnectionsApi | undefined, scope: Markdo
     line && line.to >= view.viewport.from && line.from <= view.viewport.to ? line : null
   for (const it of intents) {
     if (it.kind === 'line') {
-      const spec =
+      const attributes =
         it.level === undefined
-          ? { class: it.className }
-          : { class: it.className, attributes: { style: `--list-level:${it.level}` } }
-      ranges.push(Decoration.line(spec).range(it.from))
+          ? it.attributes
+          : { ...it.attributes, style: `--list-level:${it.level}` }
+      ranges.push(Decoration.line({ class: it.className, attributes }).range(it.from))
       continue
     }
     if (it.kind === 'lineWidget') {
