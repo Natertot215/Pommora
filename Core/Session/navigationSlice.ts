@@ -537,7 +537,8 @@ export const createNavigationSlice: Slice<NavigationSlice> = (set, get) => {
       const pos = new Map(keys.map((k, i) => [k, i]))
       const listed = s.recents.filter((r) => pos.has(navKey(r)))
       listed.sort((a, b) => (pos.get(navKey(a)) ?? 0) - (pos.get(navKey(b)) ?? 0))
-      const next = [...s.recents.filter((r) => !pos.has(navKey(r))), ...listed]
+      let i = 0
+      const next = s.recents.map((r) => (pos.has(navKey(r)) ? listed[i++] : r))
       if (next.every((r, i) => r === s.recents[i])) return
       commitRecents(next)
     },
