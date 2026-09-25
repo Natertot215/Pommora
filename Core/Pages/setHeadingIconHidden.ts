@@ -1,7 +1,7 @@
-import { resolveUnderRoot } from '../Paths/pathSafety'
 import { setOrDrop, updateNexusConfig } from '../Files/atomicWrite'
 import { patchSidecar } from '../Files/sidecar'
 import { fault, ok } from '../Contract/result'
+import { mutableTarget } from '../Nexus/liveTree'
 import type { MutateContext } from '../Nexus/mutate'
 import type { MutateReply, MutateRequest } from '../Nexus/mutateRequest'
 
@@ -17,7 +17,7 @@ export async function setHeadingIconHiddenOp(
     const written = await updateNexusConfig(root, 'homepage', patch)
     return written.ok ? ok({}) : written
   }
-  const resolved = await resolveUnderRoot(root, req.path)
+  const resolved = await mutableTarget(root, req.path, [req.kind])
   if (!resolved.ok) return resolved
   const written = await patchSidecar(resolved.value, req.kind, patch)
   return written.ok ? ok({}) : written

@@ -1,5 +1,6 @@
 import { readJsonObject, updateNexusConfig } from '../Files/atomicWrite'
-import { NEXUS_CONFIG_FILES, nexusConfig } from '../Paths/paths'
+import { nexusConfig } from '../Paths/paths'
+import { NEXUS_CONFIG_FILES } from '../Paths/nexusPaths'
 import { isPlainObject } from '../Properties/propertyValue'
 import { type MatrixConfig, type MatrixPatch, parseMatrixConfig } from './matrixConfig'
 

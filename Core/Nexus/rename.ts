@@ -1,7 +1,7 @@
 import { basename, titleFromPath, relative, relJoin } from '../Paths/posix'
-import { isReserved, resolveUnderRoot } from '../Paths/pathSafety'
 import { createDisambiguated } from '../Paths/names'
-import { errText, fault, ok } from '../Contract/result'
+import { errText, ok } from '../Contract/result'
+import { mutableTarget } from './liveTree'
 import { moveIndexPaths } from '../Index/indexSeed'
 import type { MutateReply, MutateRequest } from './mutateRequest'
 import type { MutateContext } from './mutate'
@@ -14,10 +14,9 @@ export async function renameOp(
   { root }: MutateContext,
   req: Extract<MutateRequest, { op: 'rename' }>,
 ): Promise<MutateReply> {
-  const resolved = await resolveUnderRoot(root, req.path)
+  const resolved = await mutableTarget(root, req.path, [req.kind])
   if (!resolved.ok) return resolved
   const abs = resolved.value
-  if (await isReserved(root, abs)) return fault('That item can’t be renamed.')
   if (req.kind !== 'page') {
     const r = await renameFolderEntity(abs, req.newName)
     if (!r.ok) return r

@@ -1,15 +1,15 @@
 import { pathExists, rmwJsonStrict } from '../Files/atomicWrite'
 import { listPathsUnder } from '../Files/walk'
 import { recordWrite } from '../Files/writeEcho'
-import { ASSETS_DIR_REL, CONTEXTS_DIR_REL, NEXUS_DIR } from '../Paths/nexusPaths'
 import {
+  ASSETS_DIR_REL,
+  CONTEXTS_DIR_REL,
+  NEXUS_DIR,
   NEXUS_CONFIG_FILES,
   SIDECARS,
   TILE_DOC_FILENAME,
-  contextsRegistryFile,
-  nexusConfig,
-  tileHostDir,
-} from '../Paths/paths'
+} from '../Paths/nexusPaths'
+import { contextsRegistryFile, nexusConfig, tileHostDir } from '../Paths/paths'
 import { join } from '../Paths/posix'
 import { machine } from '../Platform/machine'
 

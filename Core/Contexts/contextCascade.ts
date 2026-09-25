@@ -14,7 +14,8 @@ import {
 import { renameFrontmatterKey, type KeyCollision } from '../Files/pageFile'
 import { recordWrite } from '../Files/writeEcho'
 import { machine } from '../Platform/machine'
-import { contextsDir, SPACE_SIDECAR } from '../Paths/paths'
+import { contextsDir } from '../Paths/paths'
+import { SPACE_SIDECAR } from '../Paths/nexusPaths'
 import { clearJournal, readJournal, writeJournal, type RenameJournal } from './contextJournal'
 import {
   type Raw,

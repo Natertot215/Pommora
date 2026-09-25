@@ -287,8 +287,6 @@ export function insertCreatedInTree(
     }
   }
   if (req.op === 'createContainer' && req.kind === 'collection') {
-    // Only top-level collections walk as CollectionNodes; a nested one would render as a set.
-    if (req.parentPath !== '') return null
     const node = makeCollectionNode({
       id: created.id,
       title: basename(created.path),

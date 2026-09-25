@@ -1,4 +1,4 @@
-import type { AgendaKind } from '../Paths/paths'
+import type { AgendaKind } from '../Paths/nexusPaths'
 
 export type ContentKind = 'page' | AgendaKind
 

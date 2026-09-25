@@ -1,7 +1,12 @@
 // The walk is single-flight: concurrent refreshes share the in-flight promise. A walk that raced a mutation observed pre-mutation disk, so it discards its result and re-runs; a walk whose slot was dropped or superseded installs nothing, and a root other than the open Nexus's is read without a slot, so a caller still working on it can't install it.
 
 import type { NexusTree } from './tree'
+import type { MutableKind } from './mutateRequest'
 import { pathExists } from '../Files/atomicWrite'
+import { contextDirRel } from '../Paths/nexusPaths'
+import { resolveUnderRoot } from '../Paths/pathSafety'
+import { fail, type Result } from '../Contract/result'
+import { findContainerWhere } from './treePatch'
 import { readNexus } from './readNexus'
 import { sessionRoot } from './session'
 
@@ -55,6 +60,34 @@ export function refreshTree(root: string): Promise<NexusTree> {
 /** The held tree, or a walk of `root` when none is held yet. */
 export const liveTreeOf = (root: string): Promise<NexusTree> =>
   Promise.resolve(getLiveTree() ?? refreshTree(root))
+
+export const CONTAINER_KINDS: readonly MutableKind[] = ['collection', 'set']
+
+/** A mutation reaches only what the tree holds, as a kind it claims, so the root, `.nexus`, the trash, and excluded folders are never a target. */
+export async function mutableTarget(
+  root: string,
+  rel: string,
+  kinds: readonly MutableKind[],
+): Promise<Result<string>> {
+  const tree = await liveTreeOf(root)
+  return kinds.some((kind) => holds(tree, rel, kind))
+    ? resolveUnderRoot(root, rel)
+    : fail('invalid-path', 'That item can’t be changed.')
+}
+
+function holds(tree: NexusTree, rel: string, kind: MutableKind): boolean {
+  switch (kind) {
+    case 'context':
+      return tree.contexts.some((g) => contextDirRel(g.def.title) === rel)
+    case 'space':
+      return tree.contexts.some((g) => g.spaces.some((s) => s.path === rel))
+    case 'page':
+      return !!findContainerWhere(tree, (c) => c.pages.some((p) => p.path === rel))
+    case 'collection':
+    case 'set':
+      return findContainerWhere(tree, (c) => c.path === rel)?.kind === kind
+  }
+}
 
 async function runWalk(root: string, entry: WalkSlot): Promise<NexusTree> {
   for (;;) {

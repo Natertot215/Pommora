@@ -1,8 +1,8 @@
 import { basename, dirname, relative } from '../Paths/posix'
-import { isReserved, resolveUnderRoot } from '../Paths/pathSafety'
+import { mutableTarget } from '../Nexus/liveTree'
 import { pathExists } from '../Files/atomicWrite'
 import { deindexPath } from '../Index/indexSeed'
-import { fail, fault, ok, valueOr } from '../Contract/result'
+import { fail, ok, valueOr } from '../Contract/result'
 import { mutateRegistryFile, readRegistryStrict } from '../Contexts/contextsRegistry'
 import { unlinkContextKey, unlinkSpaceValue } from '../Contexts/contextCascade'
 import type { MutateContext } from '../Nexus/mutate'
@@ -21,10 +21,9 @@ export async function deleteOp(
   { root, deps }: MutateContext,
   req: Extract<MutateRequest, { op: 'delete' }>,
 ): Promise<MutateReply> {
-  const resolved = await resolveUnderRoot(root, req.path)
+  const resolved = await mutableTarget(root, req.path, [req.kind])
   if (!resolved.ok) return resolved
   const abs = resolved.value
-  if (await isReserved(root, abs)) return fault('That item can’t be deleted.')
   if (!(await pathExists(abs))) return fail('not-found', 'Nothing to delete.')
   const contexts = req.kind === 'context' ? await readRegistryStrict(root) : null
   if (contexts && !contexts.ok) return contexts

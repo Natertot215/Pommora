@@ -1,11 +1,11 @@
 import { readJsonStrict, updateNexusFile } from '../Files/atomicWrite'
 import { listEntries } from '../Files/walk'
-import { fail, fault, ok, type Result } from '../Contract/result'
-import { resolveUnderRoot } from '../Paths/pathSafety'
+import { fault, ok, type Result } from '../Contract/result'
+import { mutableTarget } from './liveTree'
 import { isPlainObject } from '../Properties/propertyValue'
 import { metadataShardPath } from '../Paths/paths'
 import { METADATA_DIR_REL, SHARD_FILE_RE } from '../Paths/nexusPaths'
-import { basename, join, isMarkdownFile } from '../Paths/posix'
+import { basename, join } from '../Paths/posix'
 import { metadataShardFile, type PageMeta, type PageMetaPatch } from './schemas'
 import { shardOf } from './ids'
 import { ensurePageId } from './adopt'
@@ -164,8 +164,7 @@ export async function writePageMeta(
   relPath: string,
   patch: PageMetaPatch,
 ): Promise<MutateReply> {
-  if (!isMarkdownFile(relPath)) return fail('not-found', 'Page not found.')
-  const resolved = await resolveUnderRoot(root, relPath)
+  const resolved = await mutableTarget(root, relPath, ['page'])
   if (!resolved.ok) return resolved
   const id = await ensurePageId(resolved.value)
   if (!id.ok) return id

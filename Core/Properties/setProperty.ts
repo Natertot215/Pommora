@@ -1,6 +1,6 @@
 import { machine } from '../Platform/machine'
 import { splitFrontmatter } from '../Files/pageFile'
-import { resolveUnderRoot } from '../Paths/pathSafety'
+import { mutableTarget } from '../Nexus/liveTree'
 import { readTextOrNull } from '../Files/atomicWrite'
 
 import { isMarkdownFile } from '../Paths/posix'
@@ -35,7 +35,7 @@ export async function setPropertyOp(
   { root }: MutateContext,
   req: Extract<MutateRequest, { op: 'setProperty' }>,
 ): Promise<MutateReply> {
-  const resolved = await resolveUnderRoot(root, req.path)
+  const resolved = await mutableTarget(root, req.path, ['page', 'space'])
   if (!resolved.ok) return resolved
   if (!isMarkdownFile(req.path)) {
     const def = (await readRegistry(root)).defs[req.propertyId]

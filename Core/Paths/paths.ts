@@ -1,41 +1,20 @@
 import { join } from './posix'
 import {
-  ASSETS_DIRNAME,
   CONTEXTS_DIR_REL,
   CONTEXTS_REGISTRY_REL,
+  HOMEPAGE_HOST_DIRNAME,
   METADATA_DIR_REL,
   NEXUS_DIR,
+  SIDECAR_FILENAME,
+  type SidecarKind,
+  TILE_DOC_FILENAME,
 } from './nexusPaths'
 import { rootSegs } from './exclusion'
-
-const AGENDA_KINDS = ['task', 'event'] as const
-
-export type AgendaKind = (typeof AGENDA_KINDS)[number]
-
-export type AgendaFolder = `${AgendaKind}s`
-
-export const AGENDA_FOLDERS: readonly AgendaFolder[] = AGENDA_KINDS.map(
-  (k): AgendaFolder => `${k}s`,
-)
-
-export const agendaKind = (folder: AgendaFolder): AgendaKind => folder.slice(0, -1) as AgendaKind
-
-export type SidecarKind = 'space' | 'collection' | 'set' | AgendaFolder
-
-export const SIDECAR_FILENAME: Record<SidecarKind, string> = {
-  space: '_space.json',
-  collection: '_pagecollection.json',
-  set: '_pageset.json',
-  tasks: '_taskconfig.json',
-  events: '_eventconfig.json',
-}
 
 /** Every read-modify-write serializes on this exact string, so it is built here rather than spelled out at a call site. */
 export function sidecarPath(absFolder: string, kind: SidecarKind): string {
   return join(absFolder, SIDECAR_FILENAME[kind])
 }
-
-export const SIDECARS = new Set<string>(Object.values(SIDECAR_FILENAME))
 
 export function nexusDir(root: string): string {
   return join(root, NEXUS_DIR)
@@ -60,26 +39,11 @@ export function contextsDir(root: string): string {
   return join(root, CONTEXTS_DIR_REL)
 }
 
-export const SPACE_SIDECAR = SIDECAR_FILENAME.space
-
-export const HOMEPAGE_HOST_DIRNAME = 'homepage'
-
 export function tileHostDir(root: string): string {
   return join(nexusDir(root), HOMEPAGE_HOST_DIRNAME)
 }
 
-export const TILE_DOC_FILENAME = '_tiles.json'
 export const tileDocPath = (hostDirAbs: string): string => join(hostDirAbs, TILE_DOC_FILENAME)
 
 export const tileFilePath = (hostDirAbs: string, tileId: string): string =>
   join(hostDirAbs, `${tileId}.md`)
-
-export const NEXUS_CONFIG_FILES = {
-  identity: 'nexus.json',
-  settings: 'settings.json',
-  state: 'state.json',
-  matrix: 'matrix.json',
-  homepage: `${HOMEPAGE_HOST_DIRNAME}/homepage.json`,
-  properties: 'properties.json',
-  crops: `${ASSETS_DIRNAME}/crops.json`,
-} as const

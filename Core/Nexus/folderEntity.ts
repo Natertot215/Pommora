@@ -4,7 +4,8 @@ import { newId } from './ids'
 import { recordWrite } from '../Files/writeEcho'
 import { pathExists, targetTaken, writeJson } from '../Files/atomicWrite'
 import { nameError } from '../Paths/names'
-import { sidecarPath, type SidecarKind } from '../Paths/paths'
+import { sidecarPath } from '../Paths/paths'
+import type { SidecarKind } from '../Paths/nexusPaths'
 import { ok, fail, type Result } from '../Contract/result'
 
 export async function createFolderEntity(

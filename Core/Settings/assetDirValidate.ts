@@ -4,7 +4,7 @@ import { fail, ok, type Result } from '../Contract/result'
 import { listEntries } from '../Files/walk'
 import { resolveUnderRoot } from '../Paths/pathSafety'
 import { nexusFolderRefusal } from './codec'
-import { SIDECARS } from '../Paths/paths'
+import { SIDECARS } from '../Paths/nexusPaths'
 
 export async function validateAssetDir(root: string, abs: string): Promise<Result<string>> {
   const rel = relative(root, abs)

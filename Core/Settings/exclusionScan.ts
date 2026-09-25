@@ -13,7 +13,7 @@ import { sweepGovernedRoots, type RewriteText, unsweptLine } from '../Properties
 import { assetMatcher, rootSegs } from '../Paths/exclusion'
 import { listEntries } from '../Files/walk'
 import { mergeFrontmatter, splitFrontmatter, splitEnvelope } from '../Files/pageFile'
-import { SIDECAR_FILENAME } from '../Paths/paths'
+import { SIDECAR_FILENAME } from '../Paths/nexusPaths'
 
 const CONTAINER_SIDECARS: readonly string[] = [SIDECAR_FILENAME.collection, SIDECAR_FILENAME.set]
 const AGENDA_CONFIGS: readonly string[] = [SIDECAR_FILENAME.tasks, SIDECAR_FILENAME.events]

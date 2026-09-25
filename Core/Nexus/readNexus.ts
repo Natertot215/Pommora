@@ -28,15 +28,14 @@ import { isPlainObject } from '../Properties/propertyValue'
 import { shouldSkipDir, type WatchScope } from '../Paths/exclusion'
 import { resolveOrder } from './order'
 import { beginWalk, cachedParse, endWalk } from '../Files/walkCache'
+import { contextsDir, contextsRegistryFile, nexusConfig } from '../Paths/paths'
 import {
-  contextsDir,
-  contextsRegistryFile,
+  CONTEXTS_REGISTRY_REL,
+  spaceDirRel,
   NEXUS_CONFIG_FILES,
-  nexusConfig,
   SIDECAR_FILENAME,
   SPACE_SIDECAR,
-} from '../Paths/paths'
-import { CONTEXTS_REGISTRY_REL, spaceDirRel } from '../Paths/nexusPaths'
+} from '../Paths/nexusPaths'
 
 type Json = Record<string, unknown>
 

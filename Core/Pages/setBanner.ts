@@ -1,5 +1,5 @@
 import { machine } from '../Platform/machine'
-import { isReserved, resolveUnderRoot } from '../Paths/pathSafety'
+import { mutableTarget } from '../Nexus/liveTree'
 import { readTextOrNull, setOrDrop, updateNexusConfig } from '../Files/atomicWrite'
 import { patchSidecar } from '../Files/sidecar'
 import { writeNavigationState } from '../Navigation/navigationFile'
@@ -18,7 +18,7 @@ export async function setBannerOp(
   const landed = (rel: string | null): MutateReply => ok(rel ? { adopted: rel } : {})
 
   if (req.kind === 'page') {
-    const resolved = await resolveUnderRoot(root, req.path)
+    const resolved = await mutableTarget(root, req.path, ['page'])
     if (!resolved.ok) return resolved
     const abs = resolved.value
     return machine().lock(abs, async () => {
@@ -47,9 +47,8 @@ export async function setBannerOp(
     return written.ok ? landed(adopted.value) : written
   }
 
-  const resolved = await resolveUnderRoot(root, req.path)
+  const resolved = await mutableTarget(root, req.path, [req.kind])
   if (!resolved.ok) return resolved
-  if (await isReserved(root, resolved.value)) return fault('That item can’t take a banner.')
   const adopted = await adopt()
   if (!adopted.ok) return adopted
   const written = await patchSidecar(resolved.value, req.kind, (cur) =>

@@ -9,7 +9,7 @@ import {
   NEEDS_CONFIG_PATCH,
   NOT_A_PROPERTY_DIR,
 } from '../Contract/validators'
-import { resolveUnderRoot } from '../Paths/pathSafety'
+import { mutableTarget } from '../Nexus/liveTree'
 import { confirmRegistryWrite } from '../Nexus/confirm'
 import { readWatchScope } from '../Settings/settings'
 import { assignProperty, assignPropertyAt, reorderAssignment } from './assignment'
@@ -47,7 +47,7 @@ async function resolveSchemaFolder(
   containerPath: unknown,
 ): Promise<Result<{ folder: string; rel: string }>> {
   if (typeof containerPath !== 'string') return fault('A container path is required.')
-  const resolved = await resolveUnderRoot(root, containerPath)
+  const resolved = await mutableTarget(root, containerPath, ['collection'])
   return resolved.ok ? ok({ folder: resolved.value, rel: containerPath }) : resolved
 }
 

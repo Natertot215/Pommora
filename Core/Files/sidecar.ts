@@ -1,5 +1,6 @@
 import type { z } from 'zod'
-import { sidecarPath, type SidecarKind } from '../Paths/paths'
+import { sidecarPath } from '../Paths/paths'
+import type { SidecarKind } from '../Paths/nexusPaths'
 import { fail, type Result } from '../Contract/result'
 import { readJsonObject, rmwJsonStrict } from './atomicWrite'
 

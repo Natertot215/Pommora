@@ -2,6 +2,7 @@ import { type Handlers, withRoot, withWriteRoot } from '../Contract/handlers'
 import { ok, type Result, fault } from '../Contract/result'
 import { isStringArray, NEEDS_CONFIG_PATCH } from '../Contract/validators'
 import { resolveUnderRoot } from '../Paths/pathSafety'
+import { mutableTarget } from '../Nexus/liveTree'
 import { confirmContainerWrite } from '../Nexus/confirm'
 import { type ContainerConfigPatch, setContainerConfig } from './containerConfig'
 import { loadValues } from './loadValues'
@@ -16,7 +17,7 @@ async function resolveViewContainer(
 ): Promise<Result<{ folder: string; kind: 'collection' | 'set' }>> {
   if (typeof containerPath !== 'string') return fault('A container path is required.')
   if (kind !== 'collection' && kind !== 'set') return fault('kind must be "collection" or "set".')
-  const resolved = await resolveUnderRoot(root, containerPath)
+  const resolved = await mutableTarget(root, containerPath, [kind])
   if (!resolved.ok) return resolved
   return ok({ folder: resolved.value, kind })
 }
