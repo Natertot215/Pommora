@@ -17,22 +17,21 @@ interface Log {
 
 async function readLog(session: Session): Promise<Log | null> {
   const heads = new Map<string, Change>()
-  let top = 0
   let cursor = 0
   for (;;) {
     const outcome = await call(session.host, session.target, 'pull', {
       nexusId: session.nexusId,
       cursor,
       waitMs: 0,
+      heads: true,
     })
     if (outcome.reply === null) return null
     for (const change of outcome.reply.changes) {
       if (change.from !== undefined) heads.set(change.from, change)
       heads.set(change.path, change)
-      top = change.seq
     }
     cursor = outcome.reply.cursor
-    if (!outcome.reply.hasMore) return { heads, top }
+    if (!outcome.reply.hasMore) return { heads, top: cursor }
   }
 }
 

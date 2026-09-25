@@ -41,17 +41,14 @@ export function logStore(db: DatabaseSync) {
     `INSERT INTO item (nexus_id, path, version, deleted) VALUES (?, ?, ?, ?)
      ON CONFLICT(nexus_id, path) DO UPDATE SET version = excluded.version, deleted = excluded.deleted`,
   )
-  const moveItem = db.prepare(
-    'UPDATE item SET path = ?, version = ? WHERE nexus_id = ? AND path = ?',
-  )
-  const dropItem = db.prepare('DELETE FROM item WHERE nexus_id = ? AND path = ?')
   const insertChange = db.prepare(
     `INSERT INTO change (nexus_id, seq, kind, path, from_path, record, device, at_ms)
      VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
   )
   const headStatement = db.prepare(
-    `SELECT seq, kind, path, from_path, record, device, at_ms FROM change
-     WHERE nexus_id = ? AND (path = ? OR from_path = ?) ORDER BY seq DESC LIMIT 1`,
+    `SELECT c.seq, c.kind, c.path, c.from_path, c.record, c.device, c.at_ms FROM item i
+     JOIN change c ON c.nexus_id = i.nexus_id AND c.seq = i.version
+     WHERE i.nexus_id = ? AND i.path = ?`,
   )
   const recordStatement = db.prepare('SELECT record FROM change WHERE nexus_id = ? AND seq = ?')
   const insertCapture = db.prepare(
@@ -64,6 +61,11 @@ export function logStore(db: DatabaseSync) {
   const changesStatement = db.prepare(
     `SELECT seq, kind, path, from_path, record, device, at_ms FROM change
      WHERE nexus_id = ? AND seq > ? ORDER BY seq LIMIT ?`,
+  )
+  const headsStatement = db.prepare(
+    `SELECT DISTINCT c.seq, c.kind, c.path, c.from_path, c.record, c.device, c.at_ms FROM item i
+     JOIN change c ON c.nexus_id = i.nexus_id AND c.seq = i.version
+     WHERE i.nexus_id = ? AND i.version > ? ORDER BY i.version LIMIT ?`,
   )
   const sweepBlobs = db.prepare(
     `DELETE FROM blob WHERE nexus_id = ? AND at_ms < ?
@@ -93,7 +95,7 @@ export function logStore(db: DatabaseSync) {
   }
 
   const readHead = (nexusId: string, path: string): Wire.Change | null => {
-    const row = headStatement.get(nexusId, path, path) as ChangeRow | undefined
+    const row = headStatement.get(nexusId, path) as ChangeRow | undefined
     return row ? decode(row) : null
   }
 
@@ -165,8 +167,8 @@ export function logStore(db: DatabaseSync) {
         upsertItem.run(nexusId, path, seq, 1)
       } else {
         const { record } = recordStatement.get(nexusId, change.base) as { record: string }
-        dropItem.run(nexusId, path)
-        moveItem.run(path, seq, nexusId, change.from)
+        upsertItem.run(nexusId, path, seq, 0)
+        upsertItem.run(nexusId, change.from, seq, 1)
         insertChange.run(nexusId, seq, 'rename', path, change.from, record, device, atMs)
       }
       outcomes.push({ path, ok: true, version: seq })
@@ -187,8 +189,9 @@ export function logStore(db: DatabaseSync) {
 
     seqOf,
 
-    readChanges: (nexusId: string, cursor: number, limit = 200): Wire.PullReply => {
-      const rows = changesStatement.all(nexusId, cursor, limit + 1) as unknown as ChangeRow[]
+    readChanges: (nexusId: string, cursor: number, heads = false, limit = 200): Wire.PullReply => {
+      const read = heads ? headsStatement : changesStatement
+      const rows = read.all(nexusId, cursor, limit + 1) as unknown as ChangeRow[]
       const hasMore = rows.length > limit
       const changes = (hasMore ? rows.slice(0, limit) : rows).map(decode)
       return { changes, cursor: changes.at(-1)?.seq ?? cursor, hasMore }

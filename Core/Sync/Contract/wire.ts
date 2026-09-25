@@ -123,6 +123,7 @@ export interface PullBody {
   nexusId: string
   cursor: number
   waitMs?: number
+  heads?: true
 }
 
 export interface PullReply {

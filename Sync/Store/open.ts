@@ -16,6 +16,7 @@ const DDL = `
   CREATE TABLE IF NOT EXISTS nexus (nexus_id TEXT PRIMARY KEY, version INTEGER NOT NULL, protocol INTEGER NOT NULL, kdf TEXT NOT NULL, history_days INTEGER NOT NULL, seq INTEGER NOT NULL DEFAULT 0);
   CREATE TABLE IF NOT EXISTS ring (nexus_id TEXT NOT NULL, key_id TEXT NOT NULL, holder TEXT NOT NULL, wrapped BLOB NOT NULL, created_ms INTEGER NOT NULL, PRIMARY KEY (nexus_id, key_id, holder));
   CREATE TABLE IF NOT EXISTS item (nexus_id TEXT NOT NULL, path TEXT NOT NULL, version INTEGER NOT NULL, deleted INTEGER NOT NULL DEFAULT 0, PRIMARY KEY (nexus_id, path));
+  CREATE INDEX IF NOT EXISTS item_version ON item (nexus_id, version);
   CREATE TABLE IF NOT EXISTS change (nexus_id TEXT NOT NULL, seq INTEGER NOT NULL, kind TEXT NOT NULL, path TEXT NOT NULL, from_path TEXT, record TEXT, device TEXT NOT NULL, at_ms INTEGER NOT NULL, PRIMARY KEY (nexus_id, seq));
   CREATE TABLE IF NOT EXISTS blob (id INTEGER PRIMARY KEY, nexus_id TEXT NOT NULL, sha256 TEXT NOT NULL, bytes BLOB NOT NULL, at_ms INTEGER NOT NULL, UNIQUE (nexus_id, sha256));
   CREATE TABLE IF NOT EXISTS capture (nexus_id TEXT NOT NULL, path TEXT NOT NULL, sha256 TEXT NOT NULL, at_ms INTEGER NOT NULL, record TEXT NOT NULL, PRIMARY KEY (nexus_id, path, sha256));
@@ -32,6 +33,7 @@ const MIGRATIONS: Record<number, string[]> = {
     'INSERT INTO blob_v3 SELECT id, nexus_id, sha256, bytes, at_ms FROM blob',
     'DROP TABLE blob',
     'ALTER TABLE blob_v3 RENAME TO blob',
+    'INSERT OR IGNORE INTO item (nexus_id, path, version, deleted) SELECT nexus_id, from_path, MAX(seq), 1 FROM change WHERE from_path IS NOT NULL GROUP BY nexus_id, from_path',
   ],
 }
 

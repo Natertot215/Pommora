@@ -256,6 +256,56 @@ describe('the hub feed', () => {
     expect(second.hasMore).toBe(false)
     expect(second.cursor).toBe(head)
   })
+
+  it('answers only heads that fold to what the full log folds to', async () => {
+    const at = (reply: { reply: Wire.StoreReply }): number => {
+      const outcome = only(reply.reply)
+      if (!outcome.ok) throw new Error(`${outcome.path} was refused`)
+      return outcome.version
+    }
+    const write = (path: string, base: number | null) =>
+      push([{ kind: 'write', base, record: record(path) }])
+    const rename = (from: string, path: string, base: number) =>
+      push([{ kind: 'rename', base, from, path }])
+
+    await write('Heads/a.md', at(await write('Heads/a.md', null)))
+    await push([{ kind: 'delete', base: at(await write('Heads/b.md', null)), path: 'Heads/b.md' }])
+    at(await rename('Heads/c.md', 'Heads/d.md', at(await write('Heads/c.md', null))))
+    at(await write('Heads/c.md', null))
+    const f = at(await rename('Heads/e.md', 'Heads/f.md', at(await write('Heads/e.md', null))))
+    at(await rename('Heads/f.md', 'Heads/e.md', f))
+
+    const fold = async (heads: boolean) => {
+      const folded = new Map<string, Wire.Change>()
+      let cursor = 0
+      let pulled = 0
+      for (;;) {
+        const outcome = await owner.call('/pull', {
+          nexusId: NEXUS,
+          cursor,
+          ...(heads && { heads }),
+        })
+        const reply = outcome.body as Wire.PullReply
+        for (const change of reply.changes) {
+          if (change.from !== undefined) folded.set(change.from, change)
+          folded.set(change.path, change)
+        }
+        pulled += reply.changes.length
+        cursor = reply.cursor
+        if (!reply.hasMore) return { folded, pulled, cursor }
+      }
+    }
+    const full = await fold(false)
+    const heads = await fold(true)
+    expect(heads.folded).toEqual(full.folded)
+    expect(heads.cursor).toBe(head)
+    expect(heads.pulled).toBeLessThan(full.pulled)
+  })
+
+  it('refuses a heads flag other than true', async () => {
+    const outcome = await owner.call('/pull', { nexusId: NEXUS, cursor: 0, heads: 'yes' })
+    expect(outcome.status).toBe(400)
+  })
 })
 
 describe('the hub retention sweep', () => {

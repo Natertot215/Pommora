@@ -407,7 +407,7 @@ describe('pushRename', () => {
         .sort(),
     ).toEqual(['Notes/Journal/One.md', 'Notes/Journal/Two.md'])
     expect(hub.items.has('Notes/Journal/One.md')).toBe(true)
-    expect(hub.items.has('Notes/Daily/One.md')).toBe(false)
+    expect(hub.items.get('Notes/Daily/One.md')?.deleted).toBe(true)
   })
 
   it('pushes bytes edited inside the rename debounce', async () => {

@@ -115,6 +115,18 @@ describe('reconcile', () => {
     expect(session.target.cursor).toBe(1)
   })
 
+  it('reads only the heads of a long history in one pull', async () => {
+    for (let n = 0; n < 250; n++) await hubWrite(hub, ring, 'Notes/One.md', page(`draft ${n}`))
+    await write('Notes/One.md', page('draft 249'))
+
+    await reconcile(session)
+
+    const pulls = hub.sent.filter((req) => req.url.endsWith('/pull'))
+    expect(pulls.map((req) => JSON.parse(String(req.body)).heads)).toEqual([true])
+    expect(readBase('Notes/One.md')?.version).toBe(250)
+    expect(session.target.cursor).toBe(250)
+  })
+
   it('writes nothing and seeds every base when both sides match', async () => {
     await hubWrite(hub, ring, 'Notes/One.md', page('one'))
     await write('Notes/One.md', page('one'))

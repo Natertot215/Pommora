@@ -77,19 +77,20 @@ export function itemRoutes(store: Store) {
     pull: async (id: Identity, body: unknown): Promise<Reply> => {
       const b = body as Partial<Wire.PullBody> | null
       if (!whole(b?.cursor, Number.MAX_SAFE_INTEGER)) return refuse(400, 'malformed')
-      const waitMs = b.waitMs
+      const { waitMs, heads } = b
       if (waitMs !== undefined && !whole(waitMs, Number.MAX_SAFE_INTEGER)) {
         return refuse(400, 'malformed')
       }
+      if (heads !== undefined && heads !== true) return refuse(400, 'malformed')
       const seq = store.log.seqOf(id.nexusId)
       if (seq === null) return refuse(404, 'not-found')
       if (b.cursor > seq) return refuse(409, 'resync', { seq })
-      const first = store.log.readChanges(id.nexusId, b.cursor)
+      const first = store.log.readChanges(id.nexusId, b.cursor, heads)
       if (first.changes.length > 0 || waitMs === undefined || waitMs === 0) {
         return { status: 200, body: first }
       }
       await wait(id.nexusId, b.cursor, waitMs)
-      return { status: 200, body: store.log.readChanges(id.nexusId, b.cursor) }
+      return { status: 200, body: store.log.readChanges(id.nexusId, b.cursor, heads) }
     },
   } satisfies Routes<'store' | 'pull'>
 }

@@ -18,6 +18,7 @@ import type {
   DeviceRecord,
   InfoRecord,
   ItemRecord,
+  PullBody,
   PullReply,
   StoreBody,
   StoreChange,
@@ -66,11 +67,8 @@ const liveOf = (hub: FakeHub, path: string): HubItem | null => {
 }
 
 function headOf(hub: FakeHub, path: string): Change | null {
-  for (let at = hub.changes.length - 1; at >= 0; at -= 1) {
-    const change = hub.changes[at]
-    if (change.path === path || change.from === path) return change
-  }
-  return null
+  const version = hub.items.get(path)?.version
+  return hub.changes.find((change) => change.seq === version) ?? null
 }
 
 const whole = (value: number): boolean => Number.isInteger(value) && value >= 0
@@ -131,9 +129,8 @@ function apply(hub: FakeHub, body: StoreBody): StoreReply {
       hub.changes.push({ seq, kind: 'delete', path, ...at })
       hub.items.set(path, { version: seq, deleted: true })
     } else {
-      hub.items.delete(path)
-      hub.items.delete(change.from)
       hub.items.set(path, { version: seq, deleted: false })
+      hub.items.set(change.from, { version: seq, deleted: true })
       hub.changes.push({
         seq,
         kind: 'rename',
@@ -148,8 +145,11 @@ function apply(hub: FakeHub, body: StoreBody): StoreReply {
   return { outcomes, seq: hub.seq }
 }
 
-function readChanges(hub: FakeHub, cursor: number): PullReply {
-  const rows = hub.changes.filter((change) => change.seq > cursor)
+function readChanges(hub: FakeHub, cursor: number, heads = false): PullReply {
+  const held = new Set([...hub.items.values()].map((item) => item.version))
+  const rows = hub.changes.filter(
+    (change) => change.seq > cursor && (!heads || held.has(change.seq)),
+  )
   const hasMore = rows.length > PAGE
   const changes = rows.slice(0, PAGE)
   return { changes, cursor: changes.at(-1)?.seq ?? cursor, hasMore }
@@ -175,7 +175,7 @@ async function route(
     }
     return hub.blobs.get(sha) ?? MISSING
   }
-  const body = JSON.parse(String(req.body ?? '{}')) as StoreBody & { cursor?: number }
+  const body = JSON.parse(String(req.body ?? '{}')) as StoreBody & Partial<PullBody>
   switch (path) {
     case '/store': {
       if (malformed(body)) return json(400, { error: 'malformed' })
@@ -188,8 +188,8 @@ async function route(
     case '/pull': {
       const cursor = body.cursor ?? 0
       if (cursor > hub.seq) return json(409, { error: 'resync', seq: hub.seq })
-      const reply = readChanges(hub, cursor)
-      const waitMs = (body as { waitMs?: number }).waitMs ?? 0
+      const reply = readChanges(hub, cursor, body.heads)
+      const waitMs = body.waitMs ?? 0
       return reply.changes.length === 0 && waitMs > 0
         ? later(json(200, reply), Math.min(waitMs, IDLE_WAIT_MS))
         : json(200, reply)
