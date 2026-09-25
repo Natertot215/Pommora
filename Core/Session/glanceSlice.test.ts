@@ -1,11 +1,11 @@
 // @vitest-environment jsdom
 import { afterEach, describe, expect, it } from 'vitest'
-import type { GlanceSize } from '@pommora/core/Interface/Windows/windowRecord'
+import type { Size } from '@pommora/uix/Interactions/ResizeFrame'
 import type { PinnedGlance } from './glanceSlice'
 import type { ReconcileIndex } from './reconcileSelection'
 import { useSession } from './store'
 
-const SIZE: GlanceSize = { w: 260, h: 120 }
+const SIZE: Size = { w: 260, h: 120 }
 
 const pin = (tabId: string, id: string, path: string): Omit<PinnedGlance, 'pinId' | 'locked'> => ({
   tabId,

@@ -94,6 +94,12 @@ describe('a sidebar group opens from the device store', () => {
       c1: true,
     })
   })
+
+  it('drops the key when a toggle returns a group to its default', () => {
+    mount({ c1: true })
+    act(() => rowNamed('Notes').click())
+    expect(setDevicePref).toHaveBeenCalledWith('disclosure', { c1: undefined })
+  })
 })
 
 describe('a locked disclosure', () => {

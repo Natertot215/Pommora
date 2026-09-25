@@ -8,7 +8,7 @@ import { pickerBloom } from '@pommora/uix/Animations/animations.css'
 import { MENU_GAP } from '@pommora/uix/Menus/menuAnchor'
 import { pushDismissal } from '@pommora/uix/Interactions/dismissalStack'
 import { firePointer, stubPointerCapture } from '@pommora/uix/Interactions/pointerHarness'
-import { GLANCE_DEFAULT, GlancePane, glanceSize, glanceWarmSeam, setGlanceSize } from './GlancePane'
+import { GLANCE_DEFAULT, GlancePane, glanceWarmSeam } from './GlancePane'
 import { armPreview, closeGlance, glanceShown, setGlancePresenter } from './glanceAction'
 import type { GlanceTarget } from '../../MarkdownPM/api'
 import { cachePageDetail, dropPageDetail } from '../../Session/pageDetailCache'
@@ -27,17 +27,10 @@ class ResizeObserverStub {
 const page = { kind: 'page', id: 'p1', path: 'Notes/Alpha.md' } as const
 const alpha = detail({ title: 'Alpha', path: 'Notes/Alpha.md', body: 'hi' })
 
-const glanceStore = {
-  load: vi.fn(async () => ({ ok: true as const, value: null })),
-  save: vi.fn(async () => ({ ok: true as const, value: null })),
-}
-
 const stubNexus = (extra: Record<string, unknown>): void => {
   ;(window as unknown as { nexus: unknown }).nexus = stubDialer({
     'editor:format-state': () => {},
     'menu:action': () => () => {},
-    'glance:load': glanceStore.load,
-    'glance:save': glanceStore.save,
     'editorPrefs:get': async () => ({ ok: true as const, value: NO_PREFS }),
     ...extra,
   })
@@ -590,16 +583,60 @@ describe('the resize edges', () => {
   })
 })
 
-describe('the size accessor', () => {
-  it('an absent row keeps the default', () => {
-    expect(glanceSize()).toEqual(GLANCE_DEFAULT)
+describe('the stored size', () => {
+  const body = (): HTMLElement => document.querySelector('[data-glance]') as HTMLElement
+  const opened = async (glance?: { w: number; h: number }): Promise<HTMLElement> => {
+    act(() => useSession.setState({ devicePrefs: { windows: glance && { glance } } }))
+    present(link())
+    await flush()
+    return body()
+  }
+  const { setDevicePref } = useSession.getState()
+  afterEach(() => useSession.setState({ devicePrefs: {}, setDevicePref }))
+  const spySave = (): ReturnType<typeof vi.fn> => {
+    stubPointerCapture()
+    const save = vi.fn()
+    useSession.setState({ setDevicePref: save as never })
+    return save
+  }
+  const widenBy = async (dx: number): Promise<void> => {
+    const edge = document.querySelector<HTMLElement>('[data-picker-portal] .resize-edge-e')
+    if (!edge) throw new Error('no east resize edge')
+    await act(async () => {
+      firePointer(edge, 'pointerdown', { x: 0 })
+      firePointer(edge, 'pointermove', { x: dx })
+      firePointer(edge, 'pointerup', { x: dx })
+    })
+  }
+
+  it('an absent size opens at the default', async () => {
+    const b = await opened()
+    expect([b.style.width, b.style.height]).toEqual([
+      `${GLANCE_DEFAULT.w}px`,
+      `${GLANCE_DEFAULT.h}px`,
+    ])
   })
 
-  it('a set clamps, rounds, and writes through', () => {
-    setGlanceSize({ w: 300.6, h: 12 })
-    expect(glanceSize()).toEqual({ w: 301, h: 100 })
-    expect(glanceStore.save).toHaveBeenCalledWith({ w: 301, h: 100 })
-    setGlanceSize(GLANCE_DEFAULT)
+  it('a stored size opens clamped and rounded', async () => {
+    const b = await opened({ w: 300.6, h: 12 })
+    expect([b.style.width, b.style.height]).toEqual(['301px', '100px'])
+  })
+
+  it('a dropped resize writes the size into the device windows record', async () => {
+    const save = spySave()
+    await opened()
+    await widenBy(40)
+    expect(save).toHaveBeenCalledWith('windows', {
+      glance: { w: GLANCE_DEFAULT.w + 40, h: GLANCE_DEFAULT.h },
+    })
+  })
+
+  it('a drop pinned at the ceiling keeps a stored size beyond it', async () => {
+    const save = spySave()
+    const tall = window.innerHeight * 2
+    await opened({ w: 300, h: tall })
+    await widenBy(40)
+    expect(save).toHaveBeenCalledWith('windows', { glance: { w: 340, h: tall } })
   })
 })
 

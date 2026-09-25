@@ -1,4 +1,3 @@
-import { persist } from '@pommora/core/Interface/Notifications/notifications'
 import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { LINK_RESOLVE_TIMEOUT_MS } from '@pommora/core/Web/titleScan'
 import {
@@ -11,16 +10,16 @@ import { Icon, LockGlyph } from '@pommora/uix/Symbols'
 import { EditorView } from '@codemirror/view'
 import { HEADING_FOLD_LINE, toggleFoldAt } from '../../MarkdownPM/folding'
 import type { WarmSeam } from '../../MarkdownPM/warmSeam'
-import { useResizeFrame, type ResizeEdge } from '@pommora/uix/Interactions/ResizeFrame'
+import { useResizeFrame, type ResizeEdge, type Size } from '@pommora/uix/Interactions/ResizeFrame'
 import { useEscape } from '@pommora/uix/Interactions/dismissalStack'
 import { WEB_PARTITION } from '@pommora/core/Web/partition'
-import type { GlanceSize } from '@pommora/core/Interface/Windows/windowRecord'
 import type { PinnedGlance } from '../../Session/glanceSlice'
 import { connectionsFor } from '../../Nexus/treeIndex'
 import { previewLingerMs } from '../../Settings/personalization'
 import { fetchPageDetail, knownBody, readPageDetail } from '../../Session/pageDetailCache'
 import { warmSeamOf } from '../../Navigation/warmTabs'
 import { useSession } from '../../Session/store'
+import { useWindowGeometry } from '../Windows/useWindowGeometry'
 import { PageTile } from '../../Tiles/Surfaces/PageTile'
 import {
   GLANCE_BODY_ATTR,
@@ -35,8 +34,8 @@ import './glance-pane.css'
 // Contract: no dismiss backdrop and `manageFocus={false}` — a glance must never eat the next click or pull focus out of its host.
 
 // KNOB — the default and floor sizes; the ceiling is the viewport and the anchor's band, live.
-export const GLANCE_DEFAULT: GlanceSize = { w: 260, h: 120 }
-const GLANCE_MIN: GlanceSize = { w: 180, h: 100 }
+export const GLANCE_DEFAULT: Size = { w: 260, h: 120 }
+const GLANCE_MIN: Size = { w: 180, h: 100 }
 const VIEWPORT_MARGIN = 8
 const ANCHOR_GAP = 6
 const RECT_SLOP = 6
@@ -46,39 +45,10 @@ const EDGES_DOWN: readonly ResizeEdge[] = ['e', 'w', 's', 'se', 'sw']
 const EDGES_UP: readonly ResizeEdge[] = ['e', 'w', 'n', 'ne', 'nw']
 const NOOP = (): void => {}
 
-const clampSize = (s: GlanceSize): GlanceSize => ({
+const clampSize = (s: Size): Size => ({
   w: Math.max(GLANCE_MIN.w, Math.round(s.w)),
   h: Math.max(GLANCE_MIN.h, Math.round(s.h)),
 })
-
-// Clamped on read so a stored value from before a bounds change never reopens out of bounds.
-let sizeCache: GlanceSize | null = null
-let sizeNexus: string | null = null
-// Only the newest load may land: a nexus switch mid-flight, or a set during the load, supersedes it.
-let sizeLoad = 0
-
-function seedGlanceSize(nexusId: string | undefined): void {
-  if (!nexusId || sizeNexus === nexusId) return
-  sizeCache = null
-  const token = ++sizeLoad
-  void host()
-    .ask('glance:load')
-    .then((r) => {
-      if (token !== sizeLoad || !r.ok) return
-      sizeNexus = nexusId
-      if (r.value) sizeCache = clampSize(r.value)
-    })
-}
-
-export function glanceSize(): GlanceSize {
-  return sizeCache ?? GLANCE_DEFAULT
-}
-
-export function setGlanceSize(next: GlanceSize): void {
-  sizeLoad++
-  sizeCache = clampSize(next)
-  void persist('the glance size', host().ask('glance:save', sizeCache), true)
-}
 
 export function glanceWarmSeam(id: string, path: string): WarmSeam {
   return warmSeamOf('glance', id, () => knownBody(path))
@@ -135,9 +105,11 @@ export function GlancePane(): React.JSX.Element {
     pendingFetch.current++
     setShownState(null)
   }, [])
-  const [size, setSize] = useState(glanceSize)
-  const nexusId = useSession((s) => s.tree?.nexus.id)
-  useEffect(() => seedGlanceSize(nexusId), [nexusId])
+  const geometry = useWindowGeometry('glance')
+  // Clamped on read so a stored value from before a bounds change never reopens out of bounds.
+  const stored = geometry.initialSize ? clampSize(geometry.initialSize) : GLANCE_DEFAULT
+  const [resized, setResized] = useState<Size | null>(null)
+  const size = resized ?? stored
   const [dir, setDir] = useState<PickerDirection>('down')
   const cardRef = useRef<HTMLDivElement | null>(null)
   // State, not a ref: the portal lands a beat after the open render, so the guest-lifecycle effect must re-run when the element actually exists.
@@ -153,7 +125,7 @@ export function GlancePane(): React.JSX.Element {
   if (shown) heldRef.current = shown
   const held = shown ?? heldRef.current
 
-  const maxSize = (): GlanceSize => {
+  const maxSize = (): Size => {
     const w = window.innerWidth - 2 * VIEWPORT_MARGIN
     const link = shownRef.current?.el.isConnected
       ? shownRef.current.el.getBoundingClientRect()
@@ -179,13 +151,12 @@ export function GlancePane(): React.JSX.Element {
     equilateral: true,
     outlined: true,
     onChange: (next, phase) => {
-      setSize(next)
+      setResized(next)
       if (phase !== 'drop') return
-      const stored = glanceSize()
       const cap = maxSize()
       const keep = (axis: 'w' | 'h'): number =>
         next[axis] >= cap[axis] && stored[axis] > cap[axis] ? stored[axis] : next[axis]
-      setGlanceSize({ w: keep('w'), h: keep('h') })
+      geometry.onSizeChange(clampSize({ w: keep('w'), h: keep('h') }))
     },
   })
   const resizing = frame.active !== null
@@ -211,7 +182,7 @@ export function GlancePane(): React.JSX.Element {
         return
       }
       if (freshGuest) setSiteReady(false)
-      setSize(glanceSize())
+      setResized(null)
       setShownState(next)
     }
     setGlancePresenter((next) => {

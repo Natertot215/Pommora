@@ -9,7 +9,7 @@ import type { NavigationState, StoredTabSet } from '../Navigation/navRef'
 import type { MatrixConfig, MatrixPatch } from '../Matrix/matrixConfig'
 import type { MatrixGraphReply } from '../Matrix/matrixGraph'
 import type { LayoutPatch, MatrixLayout } from '../Matrix/matrixLayout'
-import type { GlanceSize, WindowsFile } from '../Interface/Windows/windowRecord'
+import type { WindowsFile } from '../Interface/Windows/windowRecord'
 import type { NavViewModes, SubfieldConfig, ThumbRect } from '../Interface/chrome'
 import type { OpenIn, PageValues, ViewButton } from '../Views/viewRow'
 import type { Personalization } from '../Settings/personalization'
@@ -214,8 +214,6 @@ export interface Asks {
   'tabs:save': { args: [set: StoredTabSet]; reply: Result<null> }
   'windows:load': { args: []; reply: Result<WindowsFile> }
   'windows:save': { args: [file: WindowsFile]; reply: Result<null> }
-  'glance:load': { args: []; reply: Result<GlanceSize | null> }
-  'glance:save': { args: [size: GlanceSize]; reply: Result<null> }
   'devicePrefs:load': { args: []; reply: Result<DevicePrefs | null> }
   'devicePrefs:save': { args: [prefs: DevicePrefs]; reply: Result<null> }
   'sync:state': { args: []; reply: Result<SyncState> }

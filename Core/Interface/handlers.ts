@@ -1,7 +1,7 @@
 import type { EditorPrefs, EditorPrefWrite } from '../Contract/bridge'
 import { type Handlers, withRoot, withWriteRoot } from '../Contract/handlers'
 import { NO_STORE, ok, fault } from '../Contract/result'
-import { isGlanceSize, isHeightMap, isIndexArray, isStringArray } from '../Contract/validators'
+import { isHeightMap, isIndexArray, isStringArray } from '../Contract/validators'
 import { isPlainObject } from '../Properties/propertyValue'
 import {
   readKey,
@@ -12,7 +12,6 @@ import {
   writeValue,
 } from '../Platform/localState'
 import { type DevicePrefs, packDevicePrefs, readInterfaceScale } from '../Settings/devicePrefs'
-import type { GlanceSize } from './Windows/windowRecord'
 import { readWindowsState, sanitizeWindows, writeWindowsState } from './Windows/windowState'
 
 const isEmptyValue = (v: unknown): boolean =>
@@ -41,12 +40,6 @@ export const interfaceHandlers = {
     const clean = sanitizeWindows(file)
     if (!clean) return fault('Bad windows file.')
     return writeWindowsState(clean) ? ok(null) : NO_STORE
-  }),
-
-  'glance:load': withRoot(() => ok(readValue<GlanceSize>('glancePane'))),
-  'glance:save': withWriteRoot((_root, _ctx, size: unknown) => {
-    if (!isGlanceSize(size)) return fault('A glance size needs finite w and h.')
-    return writeValue('glancePane', { w: size.w, h: size.h }) ? ok(null) : NO_STORE
   }),
 
   'devicePrefs:load': withRoot(() => ok(readValue<DevicePrefs>('devicePrefs'))),
