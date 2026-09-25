@@ -33,7 +33,7 @@ export interface WindowSlice {
   openHistory: (target: PageTarget) => void
   closeHistory: () => void
   openNavWindow: () => void
-  openWindowTab: (target: WindowTarget, at?: number) => void
+  openWindowTab: (target: WindowTarget, opts?: { at?: number; heading?: string }) => void
   activateWindowTab: (id: string) => void
   reorderWindowTabs: (activeId: string, overId: string) => void
   promoteWindowTab: (id: string, newTab?: boolean) => void
@@ -144,7 +144,9 @@ export const createWindowSlice: Slice<WindowSlice> = (set, get) => {
       clearWindowCache()
       commitWindow(next, { windowExit: morphing ? 'morph' : 'dismiss' })
     },
-    openWindowTab: (target, at) => {
+    openWindowTab: (target, { at, heading } = {}) => {
+      if (heading && target.kind === 'page')
+        set({ pendingTravel: { route: 'window', path: target.path, heading } })
       const cur = get().pageWindow
       if (cur && cur.kind !== 'matrix') {
         const next = openTabIn(cur, makeTabId, target, at)

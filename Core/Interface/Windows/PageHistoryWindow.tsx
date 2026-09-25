@@ -1,5 +1,5 @@
 import { reportRefusal } from '@pommora/core/Interface/Notifications/notifications'
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { valueOr } from '@pommora/core/Contract/result'
 import { DEFAULT_TIME_FORMAT } from '@pommora/core/Settings/personalization'
 import { fetchPageValues } from '@pommora/core/Properties/pageRow'
@@ -16,7 +16,8 @@ import { useEditorHost } from '../../Pages/editorHost'
 import { clockOf, formatDate, nexusDateFormat } from '../../Properties/formatValue'
 import { restoreSnapshot } from '../../Pages/restoreSnapshot'
 import { fetchPageDetail } from '../../Session/pageDetailCache'
-import { livePagePath, connectionsFor, trailOf } from '../../Nexus/treeIndex'
+import { livePagePath, trailOf } from '../../Nexus/treeIndex'
+import { useConnections } from '../../Session/pageConnections'
 import { useEmbedScale, useSession } from '../../Session/store'
 import type { PageTarget } from '@pommora/core/Navigation/navRef'
 import { askDeleteSnapshots, askRestoreSnapshot } from '../Confirm/confirmations'
@@ -103,14 +104,7 @@ function PageHistoryBody({
     }
   }, [shown, reload, target.id, livePath])
 
-  const resolveOnly = useMemo(
-    () =>
-      connectionsFor(tree, {
-        open: () => {},
-        headingsOf: (p) => useSession.getState().headings[p],
-      }),
-    [tree],
-  )
+  const resolveOnly = useConnections(tree, 'inert')
   const editorHost = useEditorHost({ connections: resolveOnly, inert: true })
   const trail = trailOf(tree, { kind: 'page', id: target.id })
 

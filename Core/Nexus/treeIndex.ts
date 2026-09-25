@@ -20,7 +20,6 @@ import { findContainerWhere } from './treePatch'
 import { iconNameOr } from '@pommora/uix/Symbols'
 import { DEFAULT_NEXUS_ICON, entityIcon } from '../Assets/entityIconPolicy'
 import { NO_TRAIL, type TrailSegment } from '@pommora/uix/Elements/NavTrail'
-import type { ConnectionsApi } from '../MarkdownPM/Links/connectionsApi'
 import { buildPageIndex, type ConnPage, type PageIndex } from '../Connections/pageIndex'
 import { navKey } from '../Navigation/navRecents'
 import type { NavCore, ResolveIndex } from '../Navigation/navResolve'
@@ -273,11 +272,6 @@ export function pageIndexOf(tree: NexusTree): PageIndex {
   if (!ix.pageIndex) ix.pageIndex = buildPageIndex(pagesOf(tree))
   return ix.pageIndex
 }
-
-export const connectionsFor = (
-  tree: NexusTree | null,
-  rest: Omit<ConnectionsApi, keyof PageIndex>,
-): ConnectionsApi | undefined => (tree ? { ...pageIndexOf(tree), ...rest } : undefined)
 
 /** The closed set thumbnail eviction prunes against — nothing selects a Context group, so the records are the complete universe of capturable keys. */
 export function navKeysOf(tree: NexusTree): string[] {

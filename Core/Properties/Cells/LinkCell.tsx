@@ -81,7 +81,10 @@ function ConnectionCell({
           e.preventDefault()
           e.stopPropagation()
           if (isSecondaryClick(e) || !page) return
-          void select({ kind: 'page', id: page.id, path: page.path }, { newTab: isCmd(e) })
+          void select(
+            { kind: 'page', id: page.id, path: page.path },
+            { newTab: isCmd(e), heading: target.heading },
+          )
         }}
       >
         {showTitle ? target.title : (target.alias ?? target.title)}

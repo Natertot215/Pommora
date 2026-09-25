@@ -14,7 +14,7 @@ import {
 import type { ConnPage } from '../Connections/pageIndex'
 import { pagesByIdOf } from '../Nexus/treeIndex'
 import type { ConnectionsApi } from '../MarkdownPM/Links/connectionsApi'
-import { usePreviewConnections } from '../Session/pageConnections'
+import { useConnections } from '../Session/pageConnections'
 import { attachBelow, insertBand, removeLeaf } from './Layout/ops'
 import { emptyLayout, findTile, getTile, type TileLayout } from './Layout/model'
 import { TileGrid, type BackdropTarget } from './TileGrid'
@@ -150,7 +150,7 @@ export function TileHost({
 
   const pagesById = tree ? pagesByIdOf(tree) : NO_PAGES
 
-  const preview = usePreviewConnections(tree)
+  const preview = useConnections(tree, 'preview')
   const conn = connections ?? preview
   const openRoute = connections?.open
 

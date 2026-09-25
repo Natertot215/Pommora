@@ -1,5 +1,4 @@
 import { Fragment, memo, useRef } from 'react'
-import { isCmd } from '@pommora/uix/Interactions/chords'
 import {
   aliasedToken,
   headingOf,
@@ -24,6 +23,8 @@ import { checkboxToggleChange } from '../Engine/listDragModel'
 import { applyEdits } from '../Engine/markdownCode'
 import {
   wikiLinkView,
+  linkMenuTarget,
+  titleTarget,
   resolveMdTarget,
   type ConnectionsApi,
   type ConnMenuTarget,
@@ -263,7 +264,6 @@ function StaticCellImpl({
   connections,
   readOnly,
   linkStyle,
-  travel,
   onActivate,
   onCommit,
   onSelect,
@@ -276,12 +276,11 @@ function StaticCellImpl({
   ordinalOf?: (label: string) => number | null
   connections?: () => ConnectionsApi | undefined
   linkStyle?: HeadingLinkStyle
-  travel?: (heading: string) => void
   readOnly?: () => boolean
   onActivate: (coords: { x: number; y: number }, sweep?: 'start' | 'end') => void
   onCommit: (text: string) => void
   onSelect: (range: [number, number]) => void
-  onCite?: (label: string) => void
+  onCite?: (label: string, event: React.MouseEvent) => void
 }): React.JSX.Element {
   // What the cell reads NOW: a native menu can be held open while an undo moves the cell underneath it.
   const live = useRef(text)
@@ -292,12 +291,7 @@ function StaticCellImpl({
     cellLinkTarget(text, e.target, connections?.())
   const claimLink = (e: React.MouseEvent): (() => void) | null => {
     const found = linkAt(e)
-    if (!found) return null
-    const target = found.target
-    const go =
-      target.kind === 'self'
-        ? travel && (() => travel(target.heading))
-        : followTarget(target, found.url, connections?.(), isCmd(e), found.el, host, null, 0)
+    const go = found && followTarget(found.target, connections?.(), e)
     if (!go) return null
     e.preventDefault()
     e.stopPropagation()
@@ -329,7 +323,7 @@ function StaticCellImpl({
     if (!label) return null
     e.preventDefault()
     e.stopPropagation()
-    return () => onCite(label)
+    return () => onCite(label, e)
   }
 
   const openMenu = (e: React.MouseEvent): boolean => {
@@ -372,7 +366,7 @@ function StaticCellImpl({
       onPointerOver={(e) => {
         const glance = host.glance
         const found = glance && linkAt(e)
-        if (found) dwellTarget(found.target, found.url, glance, found.el)?.()
+        if (found) dwellTarget(found.target, glance, found.el)?.()
       }}
       onPointerOut={() => host.glance?.cancel()}
       onClick={(e) => {
@@ -411,27 +405,22 @@ function StaticCellImpl({
   )
 }
 
+function cellTarget(text: string, tk: Token, api: ConnectionsApi): MdTarget {
+  if (tk.kind === 'link') return resolveMdTarget(api, linkTarget(text, tk))
+  const [rs, re] = tk.resolveRange ?? tk.contentRange
+  return titleTarget(api, text.slice(rs, re), headingOf(text, tk))
+}
+
 function cellLinkTarget(
   text: string,
   eventTarget: EventTarget | null,
   api: ConnectionsApi | undefined,
-): { el: Element; target: MdTarget; url: string } | null {
+): { el: Element; target: MdTarget } | null {
   const el = (eventTarget as HTMLElement | null)?.closest?.(LINK_SELECTOR)
   if (!el || !api || !el.closest('.mdpm-tbl-cell-static')) return null
   const span = linkSpanAt(eventTarget)
   const tk = span && linkTokenAt(text, span[0])
-  if (!tk) return null
-  if (tk.kind === 'wikiLink') {
-    const [rs, re] = tk.resolveRange ?? tk.contentRange
-    const res = api.resolve(text.slice(rs, re))
-    const url = text.slice(...tk.range)
-    return res.status === 'resolved' && res.page
-      ? { el, target: { kind: 'page', page: res.page, heading: headingOf(text, tk) }, url }
-      : null
-  }
-  const url = linkTarget(text, tk)
-  if (!url) return null
-  return { el, target: resolveMdTarget(api, url), url }
+  return tk ? { el, target: cellTarget(text, tk, api) } : null
 }
 
 /** `still` re-reads the link when the action is chosen; `tk` and `text` are what the menu was built from. */
@@ -444,14 +433,12 @@ function menuTarget(
   onCommit: (text: string) => void,
   onSelect: (range: [number, number]) => void,
 ): ConnMenuTarget | null {
-  if (tk.kind === 'wikiLink') {
-    const [rs, re] = tk.resolveRange ?? tk.contentRange
-    const res = api.resolve(text.slice(rs, re))
-    if (res.status !== 'resolved' || !res.page) return null
+  const target = cellTarget(text, tk, api)
+  if (target.kind === 'page' && tk.kind === 'wikiLink')
     return {
       kind: 'page',
-      page: res.page,
-      heading: headingOf(text, tk),
+      page: target.page,
+      heading: target.heading,
       editable: true,
       hasAlias: aliasedToken(tk),
       apply: (action) => {
@@ -462,32 +449,16 @@ function menuTarget(
         onSelect(select)
       },
     }
-  }
-  const url = linkTarget(text, tk)
-  const target = resolveMdTarget(api, url)
-  if (target.kind === 'page')
-    return {
-      kind: 'page',
-      page: target.page,
-      heading: target.heading,
-      editable: false,
-      hasAlias: false,
-    }
-  if (target.kind === 'invalid' || target.kind === 'self') return null
-  return {
-    kind: 'url',
-    url,
-    apply: (action) => {
-      const now = still()
-      if (!now) return
-      if (action === 'rename' || action === 'editLink')
-        return onSelect(linkHalves(now.tk)[action === 'rename' ? 'label' : 'address'])
-      const edit = linkActionText(now.text, now.tk, action, host.linkTitles)
-      if (!edit) return
-      onCommit(now.text.slice(0, now.tk.range[0]) + edit.insert + now.text.slice(now.tk.range[1]))
-      if (edit.wantsTitle) host.linkTitles.resolve(edit.url)
-    },
-  }
+  return linkMenuTarget(target, (action) => {
+    const now = still()
+    if (!now) return
+    if (action === 'rename' || action === 'editLink')
+      return onSelect(linkHalves(now.tk)[action === 'rename' ? 'label' : 'address'])
+    const edit = linkActionText(now.text, now.tk, action, host.linkTitles)
+    if (!edit) return
+    onCommit(now.text.slice(0, now.tk.range[0]) + edit.insert + now.text.slice(now.tk.range[1]))
+    if (edit.wantsTitle) host.linkTitles.resolve(edit.url)
+  })
 }
 
 /** Comparing text and the footnote numbering rather than every prop keeps one cell's keystroke off every other cell. */

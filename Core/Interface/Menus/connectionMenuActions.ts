@@ -88,7 +88,7 @@ export function linkValueMenuTarget(
   } as const
   if (value.kind === 'page') {
     const page = resolveConnection(useSession.getState().tree, value.title)
-    return page ? { ...base, kind: 'page', page, apply } : null
+    return page ? { ...base, kind: 'page', page, heading: value.heading, apply } : null
   }
   return isValidLink(value.url)
     ? {

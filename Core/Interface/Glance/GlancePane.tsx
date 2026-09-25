@@ -1,4 +1,4 @@
-import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { Fragment, useCallback, useEffect, useRef, useState } from 'react'
 import { LINK_RESOLVE_TIMEOUT_MS } from '@pommora/core/Web/titleScan'
 import {
   PICKER_PORTAL_ATTR,
@@ -14,7 +14,7 @@ import { useResizeFrame, type ResizeEdge, type Size } from '@pommora/uix/Interac
 import { useEscape } from '@pommora/uix/Interactions/dismissalStack'
 import { WEB_PARTITION } from '@pommora/core/Web/partition'
 import type { PinnedGlance } from '../../Session/glanceSlice'
-import { connectionsFor } from '../../Nexus/treeIndex'
+import { useConnections } from '../../Session/pageConnections'
 import { previewLingerMs } from '../../Settings/personalization'
 import { fetchPageDetail, knownBody, readPageDetail } from '../../Session/pageDetailCache'
 import { warmSeamOf } from '../../Navigation/warmTabs'
@@ -306,14 +306,7 @@ export function GlancePane(): React.JSX.Element {
   }, [persistence, dismiss])
 
   const tree = useSession((s) => s.tree)
-  const resolveOnly = useMemo(
-    () =>
-      connectionsFor(tree, {
-        open: () => {},
-        headingsOf: (p) => useSession.getState().headings[p],
-      }),
-    [tree],
-  )
+  const resolveOnly = useConnections(tree, 'inert')
 
   const focusBefore = useRef<Element | null>(null)
 

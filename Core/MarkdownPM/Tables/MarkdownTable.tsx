@@ -95,7 +95,6 @@ function slotAt(axis: Axis, geom: Geom, rel: number): number {
 export function MarkdownTable({
   host,
   linkStyle,
-  travel,
   model,
   cites,
   headingColumn = false,
@@ -133,13 +132,12 @@ export function MarkdownTable({
   readClipboard?: () => Promise<string>
   onMenu: (ctx: TableMenuContext) => void
   onTableDrag: (e: PointerEvent) => void
-  onCite?: (label: string) => void
+  onCite?: (label: string, event: React.MouseEvent) => void
   onUndo: () => void
   onRedo: () => void
   connections?: () => ConnectionsApi | undefined
   readOnly?: () => boolean
   linkStyle?: HeadingLinkStyle
-  travel?: (heading: string) => void
 }): React.JSX.Element {
   const total =
     model.columns.reduce((sum, c) => sum + Math.max(1, c.dashes), 0) || model.columns.length
@@ -499,7 +497,6 @@ export function MarkdownTable({
         connections={connections}
         readOnly={readOnly}
         linkStyle={linkStyle}
-        travel={travel}
         onCite={onCite}
         onActivate={(coords, sweep) => {
           host.glance?.close()

@@ -72,7 +72,10 @@ export interface NavigationSlice {
   pages: Record<string, PageSlot>
   setPageBody: (path: string, body: string) => void
   replaceBody: (path: string) => Promise<boolean>
-  select: (target: SelectTarget, opts?: { record?: boolean; newTab?: boolean }) => Promise<void>
+  select: (
+    target: SelectTarget,
+    opts?: { record?: boolean; newTab?: boolean; heading?: string },
+  ) => Promise<void>
   reloadPage: () => Promise<void>
   tabs: Tab[]
   activeTabId: string
@@ -107,11 +110,10 @@ export interface NavigationSlice {
   patchPagesFor: (req: MutateRequest) => void
   resetNavigation: () => void
   pendingTravel: PendingTravel | null
-  setPendingTravel: (pendingTravel: PendingTravel) => void
   clearPendingTravel: () => void
 }
 
-export interface PendingTravel {
+interface PendingTravel {
   route: 'tab' | 'window'
   path: string
   heading: string
@@ -543,6 +545,8 @@ export const createNavigationSlice: Slice<NavigationSlice> = (set, get) => {
     },
 
     select: async (target, opts) => {
+      if (opts?.heading && target.kind === 'page')
+        set({ pendingTravel: { route: 'tab', path: target.path, heading: opts.heading } })
       const record = opts?.record !== false
       let pending: ReturnType<typeof openTabModel> | null = null
       if (record) {
@@ -720,7 +724,6 @@ export const createNavigationSlice: Slice<NavigationSlice> = (set, get) => {
       clearCache()
       dropAllTileDocs()
     },
-    setPendingTravel: (pendingTravel) => set({ pendingTravel }),
     clearPendingTravel: () => set({ pendingTravel: null }),
   }
 }

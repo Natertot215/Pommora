@@ -1,12 +1,11 @@
 import type { Extension } from '@codemirror/state'
-import { isCmd } from '@pommora/uix/Interactions/chords'
 import { EditorView } from '@codemirror/view'
-import { resolveMdTarget, type ConnectionsApi, type MdTarget } from '../Links/connectionsApi'
+import { titleTarget, resolveMdTarget, type ConnectionsApi } from '../Links/connectionsApi'
 import { type MarkerRef, citationFor, markersFor } from '../Engine/detect'
 import { lineEndOf } from '../Engine/markdownCode'
 import { headingOf, linkTarget, tokenize } from '../Engine/tokens'
-import { docScan, docString, perDoc } from '../docCache'
-import { followTarget } from '../Links/linkClicks'
+import { docScan, docString } from '../docCache'
+import { type FollowEvent, followTarget } from '../Links/linkClicks'
 import { applyCitationAction, travelToCitation } from './citationActions'
 import { travelTo } from '../travel'
 import { pointerHandlers, type PointerTarget } from '../Gestures/pointerPath'
@@ -33,92 +32,50 @@ export function loneTarget(
   return url ? { kind: 'link', url } : null
 }
 
-interface CiteSpot {
-  from: number
-  to: number
+interface CiteHit extends PointerTarget {
   marker: MarkerRef
-  lone: ReturnType<typeof loneTarget>
 }
 
-interface CiteHit extends CiteSpot, PointerTarget {}
-
-/** Derived once per document version — a pointer path that re-derived it would tokenize a citation on every mousemove. */
-const citationTargets = perDoc((doc) => {
-  const scan = docScan(doc)
-  const text = docString(doc)
-  const out: CiteSpot[] = []
-  for (const m of scan.citations.markers) {
-    if (m.ordinal === null) continue
-    const entry = citationFor(scan.citations, m.label)
-    if (!entry) continue
-    const end = lineEndOf(scan, entry.lastLine)
-    out.push({
-      from: m.from,
-      to: m.to,
-      marker: m,
-      lone: loneTarget(text.slice(entry.contentStart, end)),
-    })
-  }
-  return out
-})
+/** A marker whose footnote is one link follows it, in the body or a resting cell; any other travels to its footnote. */
+export function followCitation(
+  view: EditorView,
+  label: string,
+  api: ConnectionsApi | undefined,
+  event: FollowEvent,
+): void {
+  const scan = docScan(view.state.doc)
+  const entry = citationFor(scan.citations, label)
+  const lone =
+    entry &&
+    loneTarget(docString(view.state.doc).slice(entry.contentStart, lineEndOf(scan, entry.lastLine)))
+  const target =
+    lone &&
+    (lone.kind === 'link'
+      ? resolveMdTarget(api, lone.url)
+      : titleTarget(api, lone.title, lone.heading))
+  const go = target && followTarget(target, api, event)
+  if (go) go()
+  else travelToCitation(view, label)
+}
 
 /** A marker's offsets are the two seats either side of it, so an offset test alone would claim a press aimed at the space beside it. */
 function citeHitAt(view: EditorView, event: MouseEvent): CiteHit | null {
   if (!(event.target as HTMLElement).closest?.(CITE_GLYPH)) return null
   const pos = view.posAtCoords({ x: event.clientX, y: event.clientY })
   if (pos == null) return null
-  const targets = citationTargets(view.state.doc)
-  const hit = targets.find((t) => pos >= t.from && pos <= t.to)
-  if (!hit) return null
-  return { range: [hit.from, hit.to], onText: true, hidesSyntax: true, pos, ...hit }
+  const { citations } = docScan(view.state.doc)
+  const marker = citations.markers.find(
+    (m) => m.ordinal !== null && pos >= m.from && pos <= m.to && citationFor(citations, m.label),
+  )
+  if (!marker) return null
+  return { range: [marker.from, marker.to], onText: true, hidesSyntax: true, pos, marker }
 }
 
 export function citationPointer(getApi: () => ConnectionsApi | undefined): Extension {
   return pointerHandlers<CiteHit>({
     hoverGate: CITE_GLYPH,
     hitAt: citeHitAt,
-    follow: (hit, view, event) => () => {
-      const api = getApi()
-      const el = event.target as Element
-      if (hit.lone?.kind === 'connection' && api) {
-        const { title, heading } = hit.lone
-        const res = api.resolve(title)
-        // A bare fragment names this page's own heading, so the marker travels there rather than to the citation.
-        const target: MdTarget | null =
-          title === '' && heading
-            ? { kind: 'self', heading }
-            : res.status === 'resolved' && res.page
-              ? { kind: 'page', page: res.page, heading }
-              : null
-        const go =
-          target &&
-          followTarget(
-            target,
-            '',
-            api,
-            isCmd(event),
-            el,
-            view.state.facet(editorHost),
-            view,
-            hit.range[0],
-          )
-        if (go) return go()
-      }
-      if (hit.lone?.kind === 'link') {
-        const go = followTarget(
-          resolveMdTarget(api, hit.lone.url),
-          hit.lone.url,
-          api,
-          isCmd(event),
-          el,
-          view.state.facet(editorHost),
-          view,
-          hit.range[0],
-        )
-        if (go) return go()
-      }
-      travelToCitation(view, hit.marker.label)
-    },
+    follow: (hit, view, event) => () => followCitation(view, hit.marker.label, getApi(), event),
     dwell: () => null,
     menu: (hit, view) => () =>
       void view.state

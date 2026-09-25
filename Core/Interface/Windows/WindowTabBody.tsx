@@ -6,7 +6,7 @@ import { WINDOW_BASE_PANEL, type WindowBasePanel } from '@pommora/uix/Windows/wi
 import type { ConnectionsApi } from '../../MarkdownPM/Links/connectionsApi'
 import { type BannerOwner, findSpace } from '../../Nexus/treeIndex'
 import { PropertyPanel } from '../../Properties/PropertyPanel'
-import { useWindowTabConnections } from '../../Session/pageConnections'
+import { useConnections } from '../../Session/pageConnections'
 import { useSession } from '../../Session/store'
 import { useExperimental } from '../../Settings/experimental'
 import { PageTile } from '../../Tiles/Surfaces/PageTile'
@@ -99,7 +99,7 @@ export function useWindowTabBody(target: WindowTarget | null): WindowTabBodySlot
   // A Space tab's scroll restore waits for its board's first read; a Page tab has no board to wait on.
   const boardReady = useTileDocReady(spaceTarget)
   const warm = useWindowWarm(bodyRef, pagePath, boardReady)
-  const connections = useWindowTabConnections(tree)
+  const connections = useConnections(tree, 'window')
   const { page, onBody } = useSubfieldPage(pageTarget)
 
   const arrive =
