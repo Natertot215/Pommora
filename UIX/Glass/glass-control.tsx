@@ -27,18 +27,18 @@ const CONTROL_OPTICS: Partial<GlassOptics> = {
   sheenDark: false,
 }
 
-/** Tuned for small on-control segments like the switch knob. */
-const SEGMENT_OPTICS = { ...CONTROL_OPTICS, brightness: 0, depth: 0 }
+/** Tuned for the small glass knob of the switch and slider. */
+const KNOB_OPTICS = { ...CONTROL_OPTICS, brightness: 0, depth: 0 }
 
 export function GlassControl({
-  segment,
+  knob,
   style,
   ...rest
-}: { segment?: boolean } & HTMLAttributes<HTMLDivElement>): React.JSX.Element {
+}: { knob?: boolean } & HTMLAttributes<HTMLDivElement>): React.JSX.Element {
   const r = style?.borderRadius
   return (
     <Glass
-      optics={segment ? SEGMENT_OPTICS : CONTROL_OPTICS}
+      optics={knob ? KNOB_OPTICS : CONTROL_OPTICS}
       radius={typeof r === 'number' ? r : undefined}
       style={style}
       {...rest}
