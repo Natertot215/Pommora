@@ -1,7 +1,8 @@
 // @vitest-environment jsdom
-import { afterEach, describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { act } from 'react'
-import { cleanupEditor, mountEditor, stubEditorBridge } from './editorHarness'
+import { scrollGlide } from '@pommora/uix/Interactions/autoscroll'
+import { cleanupEditor, editorContainer, mountEditor, stubEditorBridge } from './editorHarness'
 import { nearestHeading, travelTo } from './travel'
 import { foldedRegions, toggleFoldAt } from './folding'
 
@@ -12,6 +13,11 @@ class ResizeObserverStub {
 }
 ;(globalThis as { ResizeObserver?: unknown }).ResizeObserver = ResizeObserverStub
 stubEditorBridge()
+
+vi.mock('@pommora/uix/Interactions/autoscroll', async (orig) => ({
+  ...(await orig<typeof import('@pommora/uix/Interactions/autoscroll')>()),
+  scrollGlide: vi.fn(),
+}))
 
 afterEach(async () => {
   await cleanupEditor()
@@ -59,6 +65,45 @@ describe('travel goes somewhere without editing or moving the caret', () => {
       travelTo(view, DOC.indexOf('body two'))
     })
     expect(foldedRegions(view.state).map((r) => r.key)).toEqual(['One'])
+  })
+})
+
+describe('travel scrolls whatever scrolls the page', () => {
+  beforeEach(() => vi.mocked(scrollGlide).mockClear())
+  afterEach(() => document.body.replaceChildren())
+
+  // `.page-tile-grows` is a window body; the editor's container stands in for the tile the page draws in.
+  const seat = (...classes: string[]): HTMLElement => {
+    let host = document.body
+    for (const cls of classes) {
+      const el = document.createElement('div')
+      el.className = cls
+      host.append(el)
+      host = el
+    }
+    editorContainer().classList.add('page-tile')
+    host.append(editorContainer())
+    return host
+  }
+
+  it('a page grown inside a window body travels by scrolling the window body', async () => {
+    const view = await mountEditor({ initialBody: DOC })
+    const body = seat('page-tile-grows')
+    await act(async () => travelTo(view, DOC.indexOf('# Two')))
+    expect(vi.mocked(scrollGlide).mock.calls.at(-1)?.[0]).toBe(body)
+  })
+
+  it('a page embedded in a window’s page still scrolls itself', async () => {
+    const view = await mountEditor({ initialBody: DOC })
+    seat('page-tile-grows', 'page-tile')
+    await act(async () => travelTo(view, DOC.indexOf('# Two')))
+    expect(vi.mocked(scrollGlide).mock.calls.at(-1)?.[0]).toBe(view.scrollDOM)
+  })
+
+  it('an editor outside any window still scrolls itself', async () => {
+    const view = await mountEditor({ initialBody: DOC })
+    await act(async () => travelTo(view, DOC.indexOf('# Two')))
+    expect(vi.mocked(scrollGlide).mock.calls.at(-1)?.[0]).toBe(view.scrollDOM)
   })
 })
 

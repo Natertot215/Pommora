@@ -486,6 +486,14 @@ describe('Shift+Enter closes the construct first, then breaks the line', () => {
 })
 
 describe('dash + arrow auto-format', () => {
+  it('a dash inside an address with balanced parens stays literal', () => {
+    const doc = '[w](Notes_(a)_b--)'
+    const c = doc.length - 1
+    expect(dashArrow(scanDoc(doc), c, c, 'x')).toBeNull()
+  })
+  it('an arrow typed inside a link address stays literal', () => {
+    expect(dashArrow(scanDoc('[w](a-)'), 6, 6, '>')).toBeNull()
+  })
   it('-- then a letter → em-dash', () => {
     const doc = '--'
     const e = dashArrow(scanDoc(doc), 2, 2, 'a')!

@@ -50,6 +50,16 @@ describe('sweepGovernedRoots', () => {
     },
   )
 
+  it('a sidecar it can’t parse is refused, not skipped, so a retry isn’t owed', async () => {
+    const { root } = await seed()
+    const bad = join(root, '.nexus', 'contexts', 'Areas', 'Health', '_space.json')
+    await mkdir(join(root, '.nexus', 'contexts', 'Areas', 'Health'), { recursive: true })
+    await writeFile(bad, '{ not json')
+    const r = await sweepGovernedRoots(root, [], { raw: () => null, sidecars: (raw) => raw })
+    expect(r).toEqual({ skipped: [], refused: [bad], touched: new Map() })
+    expect(await readFile(bad, 'utf8')).toBe('{ not json')
+  })
+
   it('a file whose write landed stays touched when the bookkeeping after it throws', async () => {
     const { root, a } = await seed()
     vi.mocked(indexWrittenPage).mockRejectedValueOnce(new Error('index down'))

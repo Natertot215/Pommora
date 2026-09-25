@@ -202,7 +202,7 @@ export function MarkdownEditor({
   const targetOf = (title: string): HeadingTarget =>
     title
       ? headingTargetOf(hostRef.current, connectionsRef.current, title)
-      : { outline: viewRef.current ? docOutline(viewRef.current.state.doc) : [] }
+      : { kind: 'warm', outline: viewRef.current ? docOutline(viewRef.current.state.doc) : [] }
 
   const {
     ac,

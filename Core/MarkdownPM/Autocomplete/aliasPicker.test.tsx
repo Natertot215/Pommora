@@ -3,7 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { act } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
 import { aliasSpanAt, emptyAliasPipeAt, linkAt } from '@pommora/core/Connections/connections'
-import { aliasRows } from './autocomplete'
+import { aliasRows, type HeadingRow } from './autocomplete'
 import { AutocompletePane } from './AutocompletePane'
 import { buildPageIndex } from '@pommora/core/Connections/pageIndex'
 import type { EditorHost } from '../api'
@@ -41,21 +41,21 @@ beforeEach(() => {
 
 describe('the picker offers what a page has been called before', () => {
   it('offers every remembered alias on an empty query, most recent first', () => {
-    expect(aliasRows(index, aliases, 'Q3 Plan', '').map((r) => r.label)).toEqual([
+    expect(aliasRows(index, aliases, 'Q3 Plan', '').map((r) => r.value)).toEqual([
       'the plan',
       'Q3 doc',
     ])
   })
 
   it('filters by what has been typed', () => {
-    expect(aliasRows(index, aliases, 'Q3 Plan', 'the').map((r) => r.label)).toEqual(['the plan'])
+    expect(aliasRows(index, aliases, 'Q3 Plan', 'the').map((r) => r.value)).toEqual(['the plan'])
     expect(aliasRows(index, aliases, 'Q3 Plan', 'zzz')).toEqual([])
   })
 
   it('a row inserts its own words rather than a link', () => {
     const [row] = aliasRows(index, aliases, 'Q3 Plan', '')
     expect(row.value).toBe('the plan')
-    expect(row.isPage).toBe(false)
+    expect(row.kind).toBe('alias')
   })
 
   it('a page with nothing remembered offers nothing', () => {
@@ -68,7 +68,8 @@ describe('the picker offers what a page has been called before', () => {
   })
 
   it('a row forgets itself, and the rest survive', () => {
-    aliasRows(index, aliases, 'Q3 Plan', '')[0].forget?.()
+    const [row] = aliasRows(index, aliases, 'Q3 Plan', '')
+    if (row.kind === 'alias') row.forget()
     expect(remembered.p1).toEqual(['Q3 doc'])
   })
 })
@@ -104,9 +105,7 @@ describe('the forget × is inert until it is revealed', () => {
             caretBottom: 16,
             bounds: { left: 0, right: 1024 },
           }}
-          candidates={[
-            { value: 'the plan', label: 'the plan', isPage: false, location: [], forget },
-          ]}
+          candidates={[{ kind: 'alias', value: 'the plan', forget }]}
           index={0}
           onPick={onPick}
         />,
@@ -182,7 +181,7 @@ describe('the heading slide’s top row marks how it arrived', () => {
     caretBottom: 16,
     bounds: { left: 0, right: 1024 },
   }
-  const rows = [{ value: 'Setup', label: 'Setup', isPage: false, location: [], level: 1 }]
+  const rows: HeadingRow[] = [{ kind: 'heading', value: 'Setup', level: 1 }]
 
   const mount = async (viaChevron: boolean): Promise<void> => {
     host = document.createElement('div')

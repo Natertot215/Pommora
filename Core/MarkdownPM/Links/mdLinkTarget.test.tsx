@@ -141,12 +141,10 @@ describe('following one', () => {
 
 // Asserted on the edit rather than by driving the panel: opening it needs coordsAtPos, and jsdom measures nothing, so a panel-driven version would only ever test the harness.
 describe('picking a page inside the parens', () => {
-  const row = { value: 'Work Notes', label: 'Work Notes', isPage: true, location: [] }
-
   const applied = (doc: string, caret: number): { text: string; after: string } => {
     const ac = autocompleteQuery(scanDoc(doc), caret)!
     expect(ac.form).toBe('target')
-    const edit = commitEdit(ac, row)
+    const edit = commitEdit(ac, 'Work Notes')
     let text = doc
     for (const c of [...edit.changes].reverse()) {
       text = text.slice(0, c.from) + c.insert + text.slice(c.to)

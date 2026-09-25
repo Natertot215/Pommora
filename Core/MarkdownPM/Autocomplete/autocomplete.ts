@@ -25,15 +25,13 @@ export interface AutocompleteQuery {
 
 export type AcQuery = Pick<AutocompleteQuery, 'query' | 'form' | 'title'>
 
-export interface AcRow {
-  value: string
-  label: string
-  pageId?: string
-  isPage: boolean
-  location: TrailSegment[]
-  level?: number
-  forget?: () => void
-}
+export type AcRow = { value: string } & (
+  | { kind: 'page'; pageId: string; location: TrailSegment[] }
+  | { kind: 'heading'; level: number }
+  | { kind: 'alias'; forget: () => void }
+)
+
+export type HeadingRow = Extract<AcRow, { kind: 'heading' }>
 
 function markdownTargetAt(
   line: string,
@@ -130,9 +128,8 @@ export function autocompleteQuery(
 }
 
 export const pageRow = (p: ConnPage): AcRow => ({
+  kind: 'page',
   value: p.title,
-  label: p.title,
-  isPage: true,
   pageId: p.id,
   location: p.path
     .split('/')
@@ -140,7 +137,7 @@ export const pageRow = (p: ConnPage): AcRow => ({
     .map((title) => ({ title })),
 })
 
-export function headingRows(outline: readonly OutlineHeading[], query: string): AcRow[] {
+export function headingRows(outline: readonly OutlineHeading[], query: string): HeadingRow[] {
   const q = normalizeTitle(query)
   const seen = new Set<string>()
   return outline
@@ -150,17 +147,19 @@ export function headingRows(outline: readonly OutlineHeading[], query: string): 
       seen.add(key)
       return true
     })
-    .map((h) => ({ value: h.text, label: h.text, isPage: false, location: [], level: h.level }))
+    .map((h): HeadingRow => ({ kind: 'heading', value: h.text, level: h.level }))
 }
 
 // The rows a collapsed heading hides: everything deeper than it, up to the next heading at its level or above.
-export function openHeadingRows(rows: readonly AcRow[], collapsed: ReadonlySet<string>): AcRow[] {
-  const out: AcRow[] = []
+export function openHeadingRows(
+  rows: readonly HeadingRow[],
+  collapsed: ReadonlySet<string>,
+): HeadingRow[] {
+  const out: HeadingRow[] = []
   let hiddenBelow: number | null = null
   for (const row of rows) {
-    const level = row.level ?? 1
-    if (hiddenBelow !== null && level > hiddenBelow) continue
-    hiddenBelow = collapsed.has(row.value) ? level : null
+    if (hiddenBelow !== null && row.level > hiddenBelow) continue
+    hiddenBelow = collapsed.has(row.value) ? row.level : null
     out.push(row)
   }
   return out
@@ -181,13 +180,13 @@ export function aliasRows(
     .list(page.id)
     .filter((a) => normalizeTitle(a).startsWith(q))
     .slice(0, AC_MAX)
-    .map((a) => ({
-      value: a,
-      label: a,
-      isPage: false,
-      location: [],
-      forget: () => aliases.forget(page.id, a),
-    }))
+    .map(
+      (a): AcRow => ({
+        kind: 'alias',
+        value: a,
+        forget: () => aliases.forget(page.id, a),
+      }),
+    )
 }
 
 /** A carried `alias` rides only the link form — `![[ ]]` has no alias syntax, and the alias form writes into a link that already exists. */
@@ -225,12 +224,12 @@ interface CommitEdit {
 
 export function commitEdit(
   ac: AutocompleteQuery,
-  row: AcRow,
+  value: string,
   opts: { keepAlias?: string; openAlias?: boolean; openHeading?: boolean } = {},
 ): CommitEdit {
   // Opening the heading slot writes an empty fragment and slides the pane in, rather than finishing the link.
   if (ac.form === 'link' && opts.openHeading) {
-    const text = `[[${row.value}#]]`
+    const text = `[[${value}#]]`
     return {
       changes: [{ from: ac.from, to: ac.to, insert: text }],
       anchor: ac.from + text.length - 2,
@@ -239,7 +238,7 @@ export function commitEdit(
   }
   // Opening the alias slot rather than finishing the link lets the picker hand those names straight back. Governed by `aliasPickerOnCommit`.
   if (ac.form === 'link' && opts.openAlias) {
-    const text = `[[${row.value}|]]`
+    const text = `[[${value}|]]`
     return {
       changes: [{ from: ac.from, to: ac.to, insert: text }],
       anchor: ac.from + text.length - 2,
@@ -248,14 +247,14 @@ export function commitEdit(
   }
   // The heading span is the only text the query owns, so the slot opens by appending the pipe to the heading.
   if (ac.form === 'heading' && opts.openAlias) {
-    const text = `${row.value}|`
+    const text = `${value}|`
     return {
       changes: [{ from: ac.from, to: ac.to, insert: text }],
       anchor: ac.from + text.length,
       opensAlias: true,
     }
   }
-  const { insert, caret } = connectionInsert(row.value, ac.from, ac.form, opts.keepAlias)
+  const { insert, caret } = connectionInsert(value, ac.from, ac.form, opts.keepAlias)
   // Bare text, no wrapping syntax to land inside of — the anchor sits right after the heading itself.
   if (ac.form === 'section')
     return { changes: [{ from: ac.from, to: ac.to, insert }], anchor: caret }
@@ -264,7 +263,7 @@ export function commitEdit(
   if (ac.form === 'target') {
     const retarget = { from: ac.from, to: ac.to, insert }
     const fill = ac.label && ac.label.from === ac.label.to ? ac.label : null
-    const label = fill ? escapeAlias(row.value) : ''
+    const label = fill ? escapeAlias(value) : ''
     return {
       changes: fill ? [{ from: fill.from, to: fill.to, insert: label }, retarget] : [retarget],
       anchor: caret + label.length + 1,

@@ -21,7 +21,7 @@ import { useKeepInView } from './useKeepInView'
 import { NavTrail } from '@pommora/uix/Elements/NavTrail'
 import { text } from '@pommora/uix/Theme/typography.css'
 import { outlineTree, type OutlineNode } from '../Engine/outlineTree'
-import type { AcRow } from './autocomplete'
+import type { AcRow, HeadingRow } from './autocomplete'
 import { CLOSED_GEOMETRY, type AcState } from './useConnectionAutocomplete'
 
 interface Props {
@@ -31,7 +31,7 @@ interface Props {
   onPick: (row: AcRow) => void
   viaChevron?: boolean
   loading?: boolean
-  headingRows?: AcRow[]
+  headingRows?: HeadingRow[]
   collapsed?: ReadonlySet<string>
   onToggleHeading?: (value: string) => void
   onAside?: (row: AcRow) => void
@@ -81,32 +81,32 @@ export function AutocompletePane({
           selected={active && i === v.index}
           subLabel={
             <NavTrail
-              segments={row.location}
+              segments={row.kind === 'page' ? row.location : []}
               overScroll={false}
               iconSize="footnote"
               className={text.subline.standard}
             />
           }
           leading={
-            row.isPage ? (
+            row.kind === 'page' ? (
               <EntityIcon kind="page" size="body" />
             ) : (
               <Icon name="square-split-horizontal" size="body" />
             )
           }
           trailing={
-            row.forget ? (
+            row.kind === 'alias' ? (
               <HoverRemove
                 reveal="host"
                 className="mdpm-ac-forget"
-                label={`Forget ${row.label}`}
+                label={`Forget ${row.value}`}
                 onRemove={row.forget}
               />
-            ) : row.isPage ? (
+            ) : row.kind === 'page' ? (
               <button
                 type="button"
                 className={cx(removeButton, revealFromHost, side, 'mdpm-ac-aside')}
-                aria-label={`Headings of ${row.label}`}
+                aria-label={`Headings of ${row.value}`}
                 onMouseDown={(e) => {
                   e.preventDefault()
                   onAside(row)
@@ -122,7 +122,7 @@ export function AutocompletePane({
             onPick(row)
           }}
         >
-          {emphasizeMatch(row.label, 0, matchLen)}
+          {emphasizeMatch(row.value, 0, matchLen)}
         </MenuItem>
       ))}
     </MenuScrollFrame>
@@ -131,7 +131,7 @@ export function AutocompletePane({
   const headingRow = (row: AcRow, i: number, children?: React.ReactNode): React.JSX.Element => (
     <DisclosureRow
       key={row.value}
-      title={emphasizeMatch(row.label, 0, matchLen)}
+      title={emphasizeMatch(row.value, 0, matchLen)}
       icon={null}
       className={itemEmphasized}
       dropOutline={children ? 'chevron' : 'spacer'}
@@ -168,7 +168,7 @@ export function AutocompletePane({
       })
     return walk(
       outlineTree(
-        v.headingRows.map((r) => ({ from: 0, key: r.value, text: r.label, level: r.level ?? 1 })),
+        v.headingRows.map((r) => ({ from: 0, key: r.value, text: r.value, level: r.level })),
       ),
     )
   }

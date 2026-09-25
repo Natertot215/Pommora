@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { ok } from '@pommora/core/Contract/result'
 import type { ConnMenuAction } from '@pommora/core/Actions/connectionMenu'
 import { useSession } from '../../Session/store'
@@ -19,6 +19,10 @@ const settle = (): Promise<void> => new Promise((r) => setTimeout(r, 0))
 
 beforeEach(() => {
   connMenu.mockReset()
+})
+
+afterEach(() => {
+  useSession.setState({ pageWindow: null, selection: { kind: 'none' }, pages: {} })
 })
 
 describe('a connection opens its page the two ways every page menu offers', () => {
@@ -52,7 +56,7 @@ describe('a connection opens its page the two ways every page menu offers', () =
 })
 
 describe('a heading link opens at its heading', () => {
-  const ref = { kind: 'page', id: 'p1', path: 'Notes/Alpha.md' }
+  const ref = { kind: 'page', id: 'p1', path: 'Notes/Alpha.md' } as const
   const atSetup = { ...target, heading: 'Setup' }
 
   it('title:window', async () => {
@@ -71,6 +75,30 @@ describe('a heading link opens at its heading', () => {
     showConnectionMenu(atSetup)
     await settle()
     expect(select).toHaveBeenCalledWith(ref, { newTab: true, heading: 'Setup' })
+  })
+
+  const offered = async (): Promise<(string | undefined)[]> => {
+    connMenu.mockResolvedValue(null)
+    showConnectionMenu(atSetup)
+    await settle()
+    return (connMenu.mock.calls[0][0] as { items: { action?: string }[] }).items.map(
+      (i) => i.action,
+    )
+  }
+
+  it('a page the window already shows still offers Preview, since it travels to the heading', async () => {
+    useSession.setState({
+      pageWindow: { kind: 'page', tabs: [{ id: 'tab1', target: ref }], activeTabId: 'tab1' },
+    })
+    expect(await offered()).toContain('title:window')
+  })
+
+  it('a page the content view already shows still offers to open, since it travels to the heading', async () => {
+    useSession.setState({
+      selection: { kind: 'page', id: 'p1', path: 'Notes/Alpha.md' },
+      pages: { p1: { status: 'ready', detail: { ...page, frontmatter: {} }, body: '' } } as never,
+    })
+    expect(await offered()).toContain('title:newtab')
   })
 
   it('a Link value carries its heading onto the menu', () => {

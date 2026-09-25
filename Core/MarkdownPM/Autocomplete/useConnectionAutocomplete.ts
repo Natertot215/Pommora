@@ -6,6 +6,7 @@ import {
   headingRows,
   openHeadingRows,
   type AcRow,
+  type HeadingRow,
   type AcQuery,
   type AutocompleteQuery,
 } from './autocomplete'
@@ -90,7 +91,7 @@ interface ConnectionAutocomplete {
   acCtl: RefObject<AcCtl>
   viaChevron: boolean
   loading: boolean
-  headingRows: AcRow[]
+  headingRows: HeadingRow[]
   collapsed: ReadonlySet<string>
   toggleHeading: (value: string) => void
 }
@@ -116,13 +117,13 @@ export function useConnectionAutocomplete(
   const heading = form === 'heading' || form === 'section'
   // Read in render so a warm outline answers in the same pass and an exact heading closes without a frame ever mounting.
   const target = useMemo(() => (heading ? targetOf(title ?? '') : null), [heading, title])
-  const outline = target ? (target.outline ?? fetched) : null
+  const outline = target?.kind === 'warm' ? target.outline : fetched
   // A freshly typed `#` shows the empty frame while a cold page's rows load; a typed prefix, or a caret placed in a finished link, waits for the rows so nothing flashes.
   const loading = heading && outline === null && query === ''
 
   useEffect(() => {
     setFetched(null)
-    if (!target?.fetch) return
+    if (target?.kind !== 'cold') return
     let live = true
     void target.fetch().then((rows) => live && setFetched(rows))
     return () => {
@@ -152,7 +153,7 @@ export function useConnectionAutocomplete(
         ? openHeadingRows(allHeadingRows, collapsed)
         : allHeadingRows
       : candidatesForRef.current({ query, form, title })
-    const exact = found.length === 1 && normalizeTitle(found[0].label) === normalizeTitle(query)
+    const exact = found.length === 1 && normalizeTitle(found[0].value) === normalizeTitle(query)
     if (exact && normalizeTitle(query) !== normalizeTitle(backedTo ?? '')) return []
     return found
   }, [query, form, title, host, aliasEpoch, heading, allHeadingRows, collapsed, backedTo])
@@ -170,14 +171,14 @@ export function useConnectionAutocomplete(
       ac.form === 'link'
         ? pageLinkPattern().exec(view.state.doc.sliceString(ac.from, ac.to))?.groups?.alias
         : undefined
-    const pageId = heading ? target?.pageId : row.pageId
+    const pageId = row.kind === 'page' ? row.pageId : target?.pageId
     // Only a page the picker offered can open an alias slot — an empty pipe with nothing behind it is a slot the user has to close.
     const openAlias =
       (ac.form === 'link' || ac.form === 'heading') &&
       !opts.openHeading &&
       settings.aliasPickerOnCommit !== false &&
       host.aliases.list(pageId ?? '').length > 0
-    const { changes, anchor, opensAlias, opensHeading } = commitEdit(ac, row, {
+    const { changes, anchor, opensAlias, opensHeading } = commitEdit(ac, row.value, {
       keepAlias: settings.removeTitleOnLinkChange !== false ? undefined : worn,
       openAlias,
       openHeading: opts.openHeading,
@@ -207,7 +208,7 @@ export function useConnectionAutocomplete(
       if (!view || !ac) return false
       if (dir === 1 && ac.form === 'link') {
         const r = candidates[index ?? 0]
-        if (!r?.isPage) return false
+        if (r?.kind !== 'page') return false
         commit(r, { openHeading: true })
         return true
       }

@@ -5,6 +5,7 @@ import {
   connectionInsert,
   headingRows,
   openHeadingRows,
+  type HeadingRow,
 } from './autocomplete'
 import { tokenize } from '../Engine/tokens'
 import { scanDoc } from '../Engine/docScan'
@@ -181,12 +182,7 @@ describe('a label the picker writes is markdown, not plain text', () => {
   it('escapes a bracket-bearing title into the label slot', () => {
     const doc = 'see []() end'
     const ac = autocompleteQuery(doc, doc.indexOf('(') + 1)!
-    const edit = commitEdit(ac, {
-      value: 'Notes [WIP]',
-      label: 'Notes [WIP]',
-      isPage: true,
-      location: [],
-    })
+    const edit = commitEdit(ac, 'Notes [WIP]')
     const written = edit.changes.reduceRight(
       (t, c) => t.slice(0, c.from) + c.insert + t.slice(c.to),
       doc,
@@ -198,14 +194,11 @@ describe('a label the picker writes is markdown, not plain text', () => {
 })
 
 describe('what accepting a suggestion finishes', () => {
-  const page = { value: 'Alpha', label: 'Alpha', isPage: true, pageId: 'p1', location: [] }
-  const alias = { value: 'the plan', label: 'the plan', isPage: false, location: [] }
-
   it('accepting an alias steps past the whole link, not just the alias', () => {
     const doc = 'a [[Alpha|th]] b'
     const ac = autocompleteQuery(doc, doc.indexOf('th') + 1)!
     expect(ac.form).toBe('alias')
-    const edit = commitEdit(ac, alias)
+    const edit = commitEdit(ac, 'the plan')
     const text =
       doc.slice(0, edit.changes[0].from) + edit.changes[0].insert + doc.slice(edit.changes[0].to)
     expect(text).toBe('a [[Alpha|the plan]] b')
@@ -215,7 +208,7 @@ describe('what accepting a suggestion finishes', () => {
   it('accepting a page opens its alias slot when asked to', () => {
     const doc = 'a [[Alph]] b'
     const ac = autocompleteQuery(doc, doc.indexOf('Alph') + 2)!
-    const edit = commitEdit(ac, page, { openAlias: true })
+    const edit = commitEdit(ac, 'Alpha', { openAlias: true })
     const text =
       doc.slice(0, edit.changes[0].from) + edit.changes[0].insert + doc.slice(edit.changes[0].to)
     expect(text).toBe('a [[Alpha|]] b')
@@ -226,7 +219,7 @@ describe('what accepting a suggestion finishes', () => {
   it('and finishes the link when not', () => {
     const doc = 'a [[Alph]] b'
     const ac = autocompleteQuery(doc, doc.indexOf('Alph') + 2)!
-    const edit = commitEdit(ac, page)
+    const edit = commitEdit(ac, 'Alpha')
     const text =
       doc.slice(0, edit.changes[0].from) + edit.changes[0].insert + doc.slice(edit.changes[0].to)
     expect(text).toBe('a [[Alpha]] b')
@@ -272,15 +265,14 @@ describe('the heading form opens after a typed #', () => {
       { from: 10, level: 2, text: 'Setup 2', key: 'Setup 2' },
       { from: 20, level: 1, text: 'Other', key: 'Other' },
     ]
-    expect(headingRows(outline, 'Set').map((r) => r.label)).toEqual(['Setup', 'Setup 2'])
-    expect(headingRows(outline, '').map((r) => r.label)).toEqual(['Setup', 'Setup 2', 'Other'])
+    expect(headingRows(outline, 'Set').map((r) => r.value)).toEqual(['Setup', 'Setup 2'])
+    expect(headingRows(outline, '').map((r) => r.value)).toEqual(['Setup', 'Setup 2', 'Other'])
   })
 
   it('the chevron commit writes an empty fragment and anchors before the closer', () => {
     const doc = 'a [[Pag]] b'
     const ac = autocompleteQuery(doc, doc.indexOf('Pag') + 1)!
-    const row = { value: 'Page', label: 'Page', isPage: true, location: [] }
-    const edit = commitEdit(ac, row, { openHeading: true })
+    const edit = commitEdit(ac, 'Page', { openHeading: true })
     const text =
       doc.slice(0, edit.changes[0].from) + edit.changes[0].insert + doc.slice(edit.changes[0].to)
     expect(text).toBe('a [[Page#]] b')
@@ -291,8 +283,7 @@ describe('the heading form opens after a typed #', () => {
   it('a heading commit finishes the link past the closer', () => {
     const doc = 'a [[Page#Se]] b'
     const ac = autocompleteQuery(doc, doc.indexOf('Se') + 1)!
-    const row = { value: 'Setup', label: 'Setup', isPage: false, location: [] }
-    const edit = commitEdit(ac, row)
+    const edit = commitEdit(ac, 'Setup')
     const text =
       doc.slice(0, edit.changes[0].from) + edit.changes[0].insert + doc.slice(edit.changes[0].to)
     expect(text).toBe('a [[Page#Setup]] b')
@@ -327,11 +318,9 @@ describe('a typed § arms the section form', () => {
 })
 
 describe('openHeadingRows', () => {
-  const row = (value: string, level: number) => ({
+  const row = (value: string, level: number): HeadingRow => ({
+    kind: 'heading',
     value,
-    label: value,
-    isPage: false,
-    location: [],
     level,
   })
   it('hides everything deeper than a collapsed heading, up to its next sibling', () => {

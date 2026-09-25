@@ -95,9 +95,17 @@ export async function sweepGovernedRoots(
     for (const file of await listFilesRecursive(contextsDir(root), [SPACE_SIDECAR])) {
       await guarded(file, async () => {
         const text = await readTextOrNull(file)
-        const raw = text === null ? null : parseJsonText(text)
-        if (text === null || !isPlainObject(raw)) {
+        if (text === null) {
           out.skipped.push(file)
+          return
+        }
+        // A sidecar nobody can parse won't read any better on a retry, so it's left byte-identical the way an unparseable page is.
+        let raw: unknown = null
+        try {
+          raw = parseJsonText(text)
+        } catch {}
+        if (!isPlainObject(raw)) {
+          out.refused.push(file)
           return
         }
         const next = sidecars(raw, file)

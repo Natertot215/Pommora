@@ -6,6 +6,7 @@ import type { ConnectionsApi } from './connectionsApi'
 import { buildPageIndex, type ConnPage } from '@pommora/core/Connections/pageIndex'
 import { cleanupEditor, editorContainer, mountEditor, stubEditorBridge } from '../editorHarness'
 import { travelToHeading } from '../travel'
+import { applyLinkAction } from './linkEdit'
 
 vi.mock('../travel', async (orig) => ({
   ...(await orig<typeof import('../travel')>()),
@@ -113,6 +114,13 @@ describe('a connection acts on its text, and leaves its edges to the caret', () 
       clickAt(view, pos)
       expect(opened).toHaveBeenCalledWith('p1', undefined)
     }
+  })
+
+  it('Edit Title on the second of two touching links acts on the second', async () => {
+    const view = await mountEditor({ initialBody: '[[Alpha]][[Alpha]]', connections: conn })
+    applyLinkAction(view, 'rename', [9, 18])
+    expect(view.state.sliceDoc(9, 19)).toBe('[[Alpha|]]')
+    expect(view.state.selection.main.head).toBe(17)
   })
 })
 
