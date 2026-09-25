@@ -10,7 +10,6 @@ import {
   type SubGroupConfig,
   VIEW_KINDS,
 } from '@pommora/core/Views/views'
-import { Icon } from '@pommora/uix/Symbols'
 import {
   DisclosureRow,
   FootingItem,
@@ -22,7 +21,6 @@ import {
   useDisclosureSet,
   pickerRow,
 } from '@pommora/uix/Menus'
-import { footingLabel, footingSymbol } from '@pommora/uix/Menus/menu-base.css'
 import { registerDiscloseTarget } from '@pommora/uix/Interactions/dragDisclose'
 import { EyeToggle } from '@pommora/uix/Elements/EyeToggle'
 import { DualSwitch } from '@pommora/uix/Controls/DualSwitch'
@@ -42,7 +40,7 @@ import { nextOrder } from '@pommora/uix/Interactions/reorderModel'
 import { EntityIcon } from '../../Assets/EntityIcon'
 import { cx } from '@pommora/uix/Utilities/cx'
 import { useSession } from '../../Session/store'
-import type { PickerOption } from '@pommora/uix/Pickers/PickerControl'
+import { PickerControl, type PickerOption } from '@pommora/uix/Pickers/PickerControl'
 import { schemaTargets, targetOption } from '../../Properties/Cells/PropertyTypes'
 import { useGroupingListDrag, type GroupingDrop } from './groupDnd'
 import { hiddenRow, middleRegion, optionRow } from '@pommora/uix/Menus/frames.css'
@@ -79,6 +77,15 @@ const GRANULARITY: PickerOption<DateGranularity>[] = [
   { value: 'week', label: 'Week' },
   { value: 'month', label: 'Month' },
   { value: 'year', label: 'Year' },
+]
+
+const UNGROUPED: PickerOption<'top' | 'bottom'>[] = [
+  { value: 'top', label: 'Top' },
+  { value: 'bottom', label: 'Bottom' },
+]
+const SEPARATION: PickerOption<'dash' | 'slash'>[] = [
+  { value: 'dash', label: 'Dash' },
+  { value: 'slash', label: 'Slash' },
 ]
 
 const orderOptionsFor = (type: string | undefined): PickerOption<GroupOrderMode>[] =>
@@ -162,49 +169,31 @@ export function GroupFrame({
           />
         }
       />
-      <MenuRowView
-        row={{
-          kind: 'item',
-          icon: (
-            <span className={footingSymbol}>
-              <Icon name="folder-minus" size="control" />
-            </span>
-          ),
-          label: <span className={footingLabel}>Ungrouped</span>,
-          trailing: {
-            kind: 'picker',
-            ariaLabel: 'Ungrouped',
-            value: view.ungrouped_placement ?? 'bottom',
-            options: [
-              { value: 'top', label: 'Top' },
-              { value: 'bottom', label: 'Bottom' },
-            ],
-            onPick: (v: 'top' | 'bottom') => save({ ungrouped_placement: v }),
-          },
-        }}
+      <FootingItem
+        icon="folder-minus"
+        label="Ungrouped"
+        trailing={
+          <PickerControl
+            ariaLabel="Ungrouped"
+            value={view.ungrouped_placement ?? 'bottom'}
+            options={UNGROUPED}
+            onPick={(v) => save({ ungrouped_placement: v })}
+          />
+        }
       />
       {dateHeadingProp &&
         NUMERIC_FORMATS.has(view.column_styles?.[dateHeadingProp]?.date_format ?? 'full') && (
-          <MenuRowView
-            row={{
-              kind: 'item',
-              icon: (
-                <span className={footingSymbol}>
-                  <Icon name="type" size="control" />
-                </span>
-              ),
-              label: <span className={footingLabel}>Separation</span>,
-              trailing: {
-                kind: 'picker',
-                ariaLabel: 'Separation',
-                value: view.date_separator ?? 'dash',
-                options: [
-                  { value: 'dash', label: 'Dash' },
-                  { value: 'slash', label: 'Slash' },
-                ],
-                onPick: (v: 'dash' | 'slash') => save({ date_separator: v }),
-              },
-            }}
+          <FootingItem
+            icon="type"
+            label="Separation"
+            trailing={
+              <PickerControl
+                ariaLabel="Separation"
+                value={view.date_separator ?? 'dash'}
+                options={SEPARATION}
+                onPick={(v) => save({ date_separator: v })}
+              />
+            }
           />
         )}
     </MenuFooting>

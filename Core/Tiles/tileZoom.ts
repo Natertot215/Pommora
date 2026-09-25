@@ -1,33 +1,24 @@
-import type { CSSProperties } from 'react'
 import { SCALE_STEPS } from '@pommora/core/Settings/personalization'
+import type { ActionItem } from '@pommora/core/Actions/menuModel'
+import { unitLabel } from '@pommora/uix/Pickers/numberUnit'
 
 export const DEFAULT_ZOOM = 1
 
-interface ZoomStep {
-  factor: number
-  label: string
-}
-
-export const ZOOM_STEPS: ZoomStep[] = [...SCALE_STEPS].reverse().map((factor) => ({
-  factor,
-  label: `${factor.toFixed(2)}x`,
-}))
-
-const ZOOM_STYLES = new Map<number, CSSProperties>(
-  ZOOM_STEPS.filter((s) => s.factor !== DEFAULT_ZOOM).map((s) => [
-    s.factor,
-    { '--tile-zoom': s.factor } as CSSProperties,
-  ]),
-)
-
-export function zoomStyle(factor?: number): CSSProperties | undefined {
-  return ZOOM_STYLES.get(zoomStep(factor).factor)
-}
+export const ZOOM_STEPS: readonly number[] = [...SCALE_STEPS].reverse()
 
 /** Snaps to the nearest step so a hand-edited off-grid factor stays clearable through the picker. */
-export function zoomStep(factor?: number): ZoomStep {
+export function zoomStep(factor?: number): number {
   const target = factor ?? DEFAULT_ZOOM
-  return ZOOM_STEPS.reduce((best, s) =>
-    Math.abs(s.factor - target) < Math.abs(best.factor - target) ? s : best,
-  )
+  return ZOOM_STEPS.reduce((best, f) => (Math.abs(f - target) < Math.abs(best - target) ? f : best))
 }
+
+export const scaleRows = <P extends string>(
+  prefix: P,
+  current: number,
+): ActionItem<`${P}${number}`>[] =>
+  ZOOM_STEPS.map((f) => ({
+    label: unitLabel(f),
+    action: `${prefix}${f}`,
+    checked: f === current,
+    stay: true,
+  }))

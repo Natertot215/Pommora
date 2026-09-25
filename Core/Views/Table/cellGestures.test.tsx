@@ -181,8 +181,10 @@ const statusCell = (): HTMLElement => {
 }
 
 // The value picker is ONE table-level pane portaled to document.body (escaping the table's overflow clip), so query it through the portal marker.
-const pickerButtons = (): HTMLButtonElement[] => [
-  ...document.querySelectorAll<HTMLButtonElement>('[data-picker-portal] button'),
+const pickerButtons = (): HTMLElement[] => [
+  ...document.querySelectorAll<HTMLElement>(
+    '[data-picker-portal] [role="button"], [data-picker-portal] button',
+  ),
 ]
 const pickerText = (): string =>
   [...document.querySelectorAll('[data-picker-portal]')].map((e) => e.textContent ?? '').join('')

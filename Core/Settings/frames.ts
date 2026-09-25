@@ -1,6 +1,7 @@
 import { reportRefusal } from '@pommora/core/Interface/Notifications/notifications'
 import type { DevicePrefs } from '@pommora/core/Settings/devicePrefs'
-import type { NumberUnit, PickerOption } from '@pommora/uix/Pickers/PickerControl'
+import type { PickerOption } from '@pommora/uix/Pickers/PickerControl'
+import { type NumberUnit, unitLabel } from '@pommora/uix/Pickers/numberUnit'
 import { LINK_FORMAT_OPTIONS } from '../Properties/Schema/linkFormatOptions'
 import { DEFAULT_LINK_DISPLAY, type LinkDisplay } from '@pommora/core/Properties/properties'
 import {
@@ -142,6 +143,7 @@ export const PERCENT: NumberUnit = { scale: 100, suffix: '%', digits: 0 }
 const DAYS: NumberUnit = { scale: 1, suffix: ' Days', digits: 0 }
 const MINUTES: NumberUnit = { scale: 1, suffix: ' Min', digits: 0 }
 const PIXELS: NumberUnit = { scale: 1, suffix: 'px', digits: 0 }
+const EM: NumberUnit = { scale: 1, suffix: 'em', digits: 2 }
 const TABS: NumberUnit = { scale: 1, suffix: ' Tabs', digits: 0 }
 
 const clearExclusions = async (): Promise<boolean> => {
@@ -675,12 +677,12 @@ export const FRAMES = roster([
           kind: 'slider',
           key,
           label: `Heading ${i + 1} Size`,
-          hint: `Default: ${HEADING_SIZE_DEFAULTS[key].toFixed(2)}em`,
+          hint: `Default: ${unitLabel(HEADING_SIZE_DEFAULTS[key], EM)}`,
           min: HEADING_SIZE_MIN,
           max: HEADING_SIZE_MAX,
           step: 0.05,
           fallback: HEADING_SIZE_DEFAULTS[key],
-          format: (v) => `${v.toFixed(2)}em`,
+          format: (v) => unitLabel(v, EM),
         })),
       },
       {

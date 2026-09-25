@@ -4,7 +4,7 @@ import { act } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
 import type { ActionItem } from '@pommora/core/Actions/menuModel'
 import { slotContent } from '@pommora/uix/Menus/frame-slide.css'
-import { optionSelected } from '@pommora/uix/Pickers/picker-base.css'
+import { check, itemChecked } from '@pommora/uix/Menus/menu-base.css'
 import { SHIELD_ATTR } from '@pommora/uix/Interactions/dismissalStack'
 import { useSession } from '../../Session/store'
 import { MenuPresenter } from './MenuPresenter'
@@ -126,7 +126,7 @@ describe('the in-app menu presenter', () => {
     await expect(promise).resolves.toBe('style:a')
   })
 
-  it('draws a checked row as a ringed option beside an unchecked command row', async () => {
+  it('draws a checked row with its check beside a command row that has none', async () => {
     await act(async () => {
       void useSession.getState().presentMenu(
         [
@@ -136,8 +136,9 @@ describe('the in-app menu presenter', () => {
         trigger,
       )
     })
-    expect(labelled('Bordered')?.tagName).toBe('BUTTON')
-    expect(labelled('Rename')?.getAttribute('role')).toBe('button')
+    expect(labelled('Bordered')?.className).toContain(itemChecked)
+    expect(labelled('Bordered')?.querySelector(`.${check}`)).not.toBeNull()
+    expect(labelled('Rename')?.querySelector(`.${check}`)).toBeNull()
     await act(async () => {
       useSession.getState().pendingMenu?.settle(null)
     })
@@ -165,14 +166,14 @@ describe('the in-app menu presenter', () => {
     await act(async () => {
       labelled('Style')?.click()
     })
-    expect(labelled('Bordered')?.className).toContain(optionSelected)
+    expect(labelled('Bordered')?.className).toContain(itemChecked)
     await act(async () => {
       labelled('Borderless')?.click()
     })
     expect(stay).toHaveBeenCalledWith('style:borderless')
     expect(useSession.getState().pendingMenu).not.toBeNull()
-    expect(labelled('Borderless')?.className).toContain(optionSelected)
-    expect(labelled('Bordered')?.className).not.toContain(optionSelected)
+    expect(labelled('Borderless')?.className).toContain(itemChecked)
+    expect(labelled('Bordered')?.className).not.toContain(itemChecked)
     await act(async () => {
       useSession.getState().pendingMenu?.settle(null)
     })

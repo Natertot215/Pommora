@@ -1,7 +1,8 @@
 import { useMemo, useRef, useState } from 'react'
 import { Checkbox } from '@pommora/uix/Controls/Checkbox'
 import { Icon } from '@pommora/uix/Symbols'
-import { PickerMenu, PickerRow } from '@pommora/uix/Pickers/picker-base'
+import { PickerMenu } from '@pommora/uix/Pickers/picker-base'
+import { MenuItem } from '@pommora/uix/Menus'
 import { LedgerChart, type Window, zoomed } from './LedgerChart'
 import {
   DEFAULT_FILTERS,
@@ -108,13 +109,13 @@ function LedgerBody({ ledger }: { ledger: Ledger }): React.JSX.Element {
               triggerRef={filterRef}
             >
               {FILTER_ROWS.map((row) => (
-                <PickerRow
+                <MenuItem
                   key={row.key}
                   leading={<Checkbox size="compact" state={filters[row.key]} readOnly />}
                   onClick={() => setFilters({ ...filters, [row.key]: !filters[row.key] })}
                 >
                   {row.label}
-                </PickerRow>
+                </MenuItem>
               ))}
             </PickerMenu>
             <button type="button" onClick={() => setWin({ lo: 0, hi: last })}>

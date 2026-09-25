@@ -3,8 +3,8 @@ import { FieldsLeaf } from './FieldsLeaf'
 import { LabelsLeaf } from './LabelsLeaf'
 import { MenuLeaf } from './MenuLeaf'
 import { CalendarPicker } from '@pommora/uix/Pickers/CalendarPicker'
-import { PickerMenu, PickerRow } from '@pommora/uix/Pickers/picker-base'
-import { MenuSurface } from '@pommora/uix/Menus'
+import { PickerMenu } from '@pommora/uix/Pickers/picker-base'
+import { MenuItem, MenuSurface } from '@pommora/uix/Menus'
 import { Checkbox } from '@pommora/uix/Controls/Checkbox'
 import { Label } from '@pommora/uix/Labels/Label'
 
@@ -56,8 +56,6 @@ const PICKER_LABELS = [
   { label: 'Complete', color: 'green-3' },
 ] as const
 
-const POPOUT_LABELS = ['As Link', 'As Title', 'Plain URL'] as const
-
 export function ComponentsLeaf(): React.JSX.Element {
   return (
     <div className="ds-leaf">
@@ -71,20 +69,9 @@ export function ComponentsLeaf(): React.JSX.Element {
             {(open, close, trigger) => (
               <PickerMenu solid open={open} onDismiss={close} triggerRef={trigger}>
                 {PICKER_LABELS.map((o, i) => (
-                  <PickerRow key={o.label} selected={i === 0} onClick={() => {}}>
+                  <MenuItem key={o.label} checked={i === 0} centered onClick={() => {}}>
                     <Label color={o.color} text={o.label} shape="tag" />
-                  </PickerRow>
-                ))}
-              </PickerMenu>
-            )}
-          </PopupButton>
-          <PopupButton label="PickerRow">
-            {(open, close, trigger) => (
-              <PickerMenu solid open={open} onDismiss={close} triggerRef={trigger}>
-                {POPOUT_LABELS.map((label, i) => (
-                  <PickerRow key={label} selected={i === 0} onClick={() => {}}>
-                    {label}
-                  </PickerRow>
+                  </MenuItem>
                 ))}
               </PickerMenu>
             )}

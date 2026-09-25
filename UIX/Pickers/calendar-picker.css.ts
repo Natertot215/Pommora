@@ -44,14 +44,6 @@ export const menuList = style({
   gap: '2px',
   minWidth: '45px',
 })
-export const optionRow = style({
-  flex: 1,
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'space-between',
-  gap: '8px',
-  textAlign: 'left',
-})
 export const weekRow = style({
   display: 'grid',
   gridTemplateColumns: 'repeat(7, 1fr)',

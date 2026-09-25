@@ -21,7 +21,7 @@ describe('a row model as presenter rows', () => {
     expect(style).toMatchObject({ kind: 'item', submenu: items[1].submenu })
     expect(del).toMatchObject({ kind: 'item', disabled: true })
     expect(menuRows(items[1].submenu ?? [])[0]).toMatchObject({
-      kind: 'choice',
+      kind: 'item',
       label: 'A',
       checked: true,
     })

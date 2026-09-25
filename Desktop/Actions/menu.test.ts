@@ -140,10 +140,10 @@ const presenterFlat = (items: readonly ActionItem<string>[], depth = 0): Flat[] 
           {
             label: r.label,
             disabled: r.disabled === true,
-            checked: r.kind === 'choice' ? r.checked : null,
+            checked: r.checked ?? null,
             depth,
           },
-          ...(r.kind === 'item' && r.submenu ? presenterFlat(r.submenu, depth + 1) : []),
+          ...(r.submenu ? presenterFlat(r.submenu, depth + 1) : []),
         ],
   )
 

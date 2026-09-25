@@ -272,7 +272,7 @@ class WebpageTileWidget extends ReactWidget {
           label: this.label,
           visible: editor.pageSurface === true && dom._visible === true,
           tabInactive: host.tabActive?.() === false,
-          zoom: zoomStep(view.state.field(embedField).zooms[this.url]).factor,
+          zoom: zoomStep(view.state.field(embedField).zooms[this.url]),
           refocusHost: () => view.focus(),
         }),
         editor.pageSurface
@@ -323,7 +323,7 @@ const selectionOn = (state: EditorState, from: number, to: number): boolean =>
   state.selection.ranges.some((s) => s.from <= to && s.to >= from)
 
 function applyTileZoom(dom: HTMLElement, zoom: number | undefined): void {
-  const factor = zoomStep(zoom).factor
+  const factor = zoomStep(zoom)
   if (factor === DEFAULT_ZOOM) dom.style.removeProperty('--tile-zoom')
   else dom.style.setProperty('--tile-zoom', String(factor))
 }
@@ -649,7 +649,7 @@ function embedPrefKey(state: EditorState, pos: number): string | null {
 
 export function embedZoomAt(state: EditorState, pos: number): number | null {
   const key = embedPrefKey(state, pos)
-  return key === null ? null : zoomStep(state.field(embedField).zooms[key]).factor
+  return key === null ? null : zoomStep(state.field(embedField).zooms[key])
 }
 
 function ownTiles(view: EditorView): WebTileDom[] {

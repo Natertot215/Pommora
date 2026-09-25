@@ -79,15 +79,18 @@ beforeEach(() => {
 
 const card = (id: string): HTMLElement => host.querySelector(`[data-rid="${id}"]`) as HTMLElement
 const titleIn = (id: string): HTMLElement => card(id).querySelector('.card-title') as HTMLElement
-const portalButtons = (): HTMLButtonElement[] => [
-  ...document.querySelectorAll<HTMLButtonElement>('[data-picker-portal] button'),
+const portalButtons = (): HTMLElement[] => [
+  ...document.querySelectorAll<HTMLElement>(
+    '[data-picker-portal] [role="button"], [data-picker-portal] button',
+  ),
 ]
 // The icon picker is the only seat here carrying a search field.
 const iconSeats = (): number => document.querySelectorAll('[data-picker-portal] input').length
 // A picker portals a shield alongside its pane; the pane is the half holding the options.
 const openPanes = (): number =>
-  [...document.querySelectorAll('[data-picker-portal]')].filter((e) => e.querySelector('button'))
-    .length
+  [...document.querySelectorAll('[data-picker-portal]')].filter((e) =>
+    e.querySelector('[role="button"], button'),
+  ).length
 
 const clickTitle = async (id: string, metaKey: boolean): Promise<void> => {
   const el = titleIn(id)

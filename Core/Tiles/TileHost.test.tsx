@@ -4,7 +4,7 @@ import { act } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
 import { EditorView } from '@codemirror/view'
 import { stubEditorBridge } from '../MarkdownPM/editorHarness'
-import { TileHost } from './TileHost'
+import { TileHost, zoomStyle } from './TileHost'
 import { dropAllTileDocs, isTileRemoving, markTileRemoving, readTileBody } from './tileDocStore'
 import { useSession } from '../Session/store'
 import { makeTree } from '../Testing/testTree'
@@ -59,6 +59,15 @@ async function until(cond: () => boolean): Promise<boolean> {
   while (!cond() && Date.now() < deadline) await new Promise((r) => setTimeout(r, 5))
   return cond()
 }
+
+describe('a tile zoom style', () => {
+  it('styles every step but 1.0 with the one variable, identity-stable per step', () => {
+    expect(zoomStyle(1)).toBeUndefined()
+    expect(zoomStyle(undefined)).toBeUndefined()
+    expect(zoomStyle(0.9)).toEqual({ '--tile-zoom': 0.9 })
+    expect(zoomStyle(0.83)).toBe(zoomStyle(0.9))
+  })
+})
 
 describe('the host over the renderer table', () => {
   it('mounts one surface per known kind and holds space for the rest', async () => {

@@ -1,10 +1,9 @@
 import { useRef, useState } from 'react'
 import { type ActionItem, withoutLeadingSeparator } from '@pommora/core/Actions/menuModel'
 import { useHeld } from '@pommora/uix/Animations/useExitPresence'
-import { overScrollEllipsis } from '@pommora/uix/Interactions/OverScroll'
 import { FrameSlide } from '@pommora/uix/Menus/frame-slide'
 import { MenuItem, MenuScrollFrame, MenuSeparator, MenuTopRow } from '@pommora/uix/Menus'
-import { PickerMenu, PickerRow } from '@pommora/uix/Pickers/picker-base'
+import { PickerMenu } from '@pommora/uix/Pickers/picker-base'
 import { PICKER_MAX_HEIGHT } from '@pommora/uix/Pickers/picker-base.css'
 import { Icon } from '@pommora/uix/Symbols'
 import { useSession } from '../../Session/store'
@@ -37,19 +36,6 @@ function Level({
     switch (row.kind) {
       case 'separator':
         return <MenuSeparator key={`separator-${String(i)}`} />
-      case 'choice':
-        return (
-          <PickerRow
-            key={`${row.label}-${String(i)}`}
-            start
-            selected={row.checked}
-            leading={leadingGlyph(row.icon)}
-            disabled={row.disabled}
-            onClick={() => onPick(row.action, row.stay)}
-          >
-            <span className={overScrollEllipsis}>{row.label}</span>
-          </PickerRow>
-        )
       case 'item': {
         const { submenu } = row
         return (
@@ -58,6 +44,7 @@ function Level({
             disabled={row.disabled}
             leading={leadingGlyph(row.icon)}
             trailing={submenu ? CHEVRON : undefined}
+            checked={row.checked}
             onClick={submenu ? () => setBranchAt(i) : () => onPick(row.action, row.stay)}
           >
             {row.label}
