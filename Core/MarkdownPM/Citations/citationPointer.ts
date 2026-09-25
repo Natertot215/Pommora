@@ -5,11 +5,11 @@ import { type MarkerRef, citationFor, markersFor } from '../Engine/detect'
 import { lineEndOf } from '../Engine/markdownCode'
 import { tokenize, type Token } from '../Engine/tokens'
 import { docScan, docString } from '../docCache'
-import { type FollowEvent, followTarget, pageEditorAt } from '../Links/linkClicks'
+import { type FollowEvent, followTarget } from '../Links/linkClicks'
 import { applyCitationAction, travelToCitation } from './citationActions'
 import { travelTo } from '../travel'
 import { pointerHandlers, type PointerTarget } from '../Gestures/pointerPath'
-import { editorHost } from '../api'
+import { editorHost, pageEditorAt } from '../api'
 
 export const CITE_GLYPH = '.md-citation-reference'
 
@@ -44,15 +44,12 @@ export function followCitation(
   else travelToCitation(view, label)
 }
 
-/** A marker's offsets are the two seats either side of it, so an offset test alone would claim a press aimed at the space beside it. */
+/** A glyph is drawn only over a marker the page binds, and its element names the marker's seat exactly, where a coordinate can't tell two adjacent markers apart. */
 function citeHitAt(view: EditorView, event: MouseEvent): CiteHit | null {
-  if (!(event.target as HTMLElement).closest?.(CITE_GLYPH)) return null
-  const pos = view.posAtCoords({ x: event.clientX, y: event.clientY })
-  if (pos == null) return null
-  const { citations } = docScan(view.state.doc)
-  const marker = citations.markers.find(
-    (m) => m.ordinal !== null && pos >= m.from && pos <= m.to && citationFor(citations, m.label),
-  )
+  const glyph = (event.target as HTMLElement).closest?.(CITE_GLYPH)
+  if (!glyph) return null
+  const pos = view.posAtDOM(glyph)
+  const marker = docScan(view.state.doc).citations.markers.find((m) => m.from === pos)
   if (!marker) return null
   return { range: [marker.from, marker.to], onText: true, hidesSyntax: true, pos, marker }
 }
@@ -63,13 +60,17 @@ export function citationPointer(getApi: () => ConnectionsApi | undefined): Exten
     hitAt: citeHitAt,
     follow: (hit, _, event) => () => followCitation(hit.marker.label, getApi(), event),
     dwell: () => null,
-    menu: (hit, view) => () =>
-      void view.state
-        .facet(editorHost)
-        .menus.citation({ subject: 'marker', editable: !view.state.readOnly })
-        .then((action) => {
-          if (action) applyCitationAction(view, action, { kind: 'marker', marker: hit.marker })
-        }),
+    menu: (hit, view) =>
+      hit.marker.ordinal === null
+        ? null
+        : () =>
+            void view.state
+              .facet(editorHost)
+              .menus.citation({ subject: 'marker', editable: !view.state.readOnly })
+              .then((action) => {
+                if (action)
+                  applyCitationAction(view, action, { kind: 'marker', marker: hit.marker })
+              }),
   })
 }
 

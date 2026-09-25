@@ -1,8 +1,7 @@
 import { Decoration, type DecorationSet, EditorView } from '@codemirror/view'
 import { ReactWidget, type ReactDom } from '../reactWidget'
-import { docScan } from '../docCache'
+import { docHeadingKeys, docScan, perDoc } from '../docCache'
 import { foldLabel } from '../Engine/detect'
-import type { DocScan } from '../Engine/docScan'
 import { focusAt } from '../caretPlacement'
 import {
   Facet,
@@ -202,8 +201,8 @@ class TableWidget extends ReactWidget {
     readonly model: TableModel,
     readonly tableIndex: number,
     readonly headingColumn: boolean,
-    /** A cell's marker draws a number its own text never holds, and this equality gates above the cell memo. */
-    readonly cites: string,
+    /** What a cell draws from the page around it and its own text never holds — the footnote numbering, then the headings a same-page link is judged against — and this equality gates above the cell memo. */
+    readonly page: string,
     readonly linkStyle: HeadingLinkStyle | undefined,
     readonly height: HeightBox = { px: -1 },
   ) {
@@ -219,7 +218,7 @@ class TableWidget extends ReactWidget {
       other.text === this.text &&
       other.tableIndex === this.tableIndex &&
       other.headingColumn === this.headingColumn &&
-      other.cites === this.cites &&
+      other.page === this.page &&
       other.linkStyle === this.linkStyle
     )
   }
@@ -324,7 +323,7 @@ class TableWidget extends ReactWidget {
       <TV
         host={host}
         model={this.model}
-        cites={this.cites}
+        page={this.page}
         headingColumn={this.headingColumn}
         onCellCommit={commit}
         onSettled={() => view.dispatch({ effects: refreshTableEffect.of(this.tableIndex) })}
@@ -400,14 +399,14 @@ export function buildWidgetDecorations(state: EditorState, prev?: DecorationSet)
   const boxes = prev ? heightBoxes(prev) : []
   const ranges: Range<Decoration>[] = []
   const scan = docScan(doc)
-  const cites = citeKey(scan)
   const linkStyle = state.facet(editorHost)?.settings().headingLinkStyle
   scan.tables.forEach((region, i) => {
     const text = doc.sliceString(region.from, region.to)
     const model = modelFromRegion(region)
+    const page = pageKey(doc, text)
     ranges.push(
       Decoration.replace({
-        widget: new TableWidget(text, model, i, headingCols.has(i), cites, linkStyle, boxes[i]),
+        widget: new TableWidget(text, model, i, headingCols.has(i), page, linkStyle, boxes[i]),
         block: true,
       }).range(region.from, region.to),
     )
@@ -420,8 +419,6 @@ function editAffectsTables(deco: DecorationSet, tr: Transaction): boolean {
   for (const it = deco.iter(); it.value; it.next()) {
     if (tr.changes.touchesRange(it.from, it.to) !== false) return true
   }
-  if (deco.size > 0 && citeKey(docScan(tr.state.doc)) !== citeKey(docScan(tr.startState.doc)))
-    return true
   const doc = tr.state.doc
   let delimiterNearby = false
   tr.changes.iterChangedRanges((_fromA, _toA, fromB, toB) => {
@@ -461,32 +458,35 @@ function swapTableWidget(
 }
 
 function rebuiltTable(deco: DecorationSet, state: EditorState, index: number): DecorationSet {
-  const scan = docScan(state.doc)
-  const region = scan.tables[index]
+  const region = docScan(state.doc).tables[index]
   if (!region) return deco
   const text = state.doc.sliceString(region.from, region.to)
-  const cites = citeKey(scan)
+  const page = pageKey(state.doc, text)
   return swapTableWidget(deco, index, (w) =>
-    w.text === text && w.cites === cites
+    w.text === text && w.page === page
       ? null
       : new TableWidget(
           text,
           modelFromRegion(region),
           index,
           w.headingColumn,
-          cites,
+          page,
           w.linkStyle,
           w.height,
         ),
   )
 }
 
-function citeKey(scan: DocScan): string {
-  return scan.citations.entries
-    .filter((e) => e.ordinal !== null)
+const citeKey = perDoc((doc) =>
+  docScan(doc)
+    .citations.entries.filter((e) => e.ordinal !== null)
     .map((e) => `${foldLabel(e.label)}=${e.ordinal}`)
-    .join(';')
-}
+    .join(';'),
+)
+const headingKey = perDoc((doc) => docHeadingKeys(doc).join('\n'))
+
+const pageKey = (doc: Text, text: string): string =>
+  text.includes('[[#') ? `${citeKey(doc)}\n${headingKey(doc)}` : citeKey(doc)
 
 const widgetField = StateField.define<DecorationSet>({
   create: buildWidgetDecorations,
@@ -503,7 +503,7 @@ const widgetField = StateField.define<DecorationSet>({
         const region = docScan(tr.state.doc).tables[idx]
         const text = region ? tr.state.doc.sliceString(region.from, region.to) : w.text
         const model = region ? modelFromRegion(region) : w.model
-        return new TableWidget(text, model, idx, on, w.cites, w.linkStyle, w.height)
+        return new TableWidget(text, model, idx, on, w.page, w.linkStyle, w.height)
       })
     }
     if (toggled) return toggledSet
@@ -520,9 +520,16 @@ const widgetField = StateField.define<DecorationSet>({
     }
     if (refreshed) return refreshedSet
     if (!tr.docChanged) return deco
-    return editAffectsTables(deco, tr)
-      ? buildWidgetDecorations(tr.state, deco)
-      : deco.map(tr.changes)
+    if (editAffectsTables(deco, tr)) return buildWidgetDecorations(tr.state, deco)
+    const { doc } = tr.state
+    let next = deco.map(tr.changes)
+    const was = tr.startState.doc
+    if (citeKey(doc) === citeKey(was) && headingKey(doc) === headingKey(was)) return next
+    for (const it = next.iter(); it.value; it.next()) {
+      const w = it.value.spec.widget as TableWidget
+      if (w.page !== pageKey(doc, w.text)) next = rebuiltTable(next, tr.state, w.tableIndex)
+    }
+    return next
   },
   provide: (f) => EditorView.decorations.from(f),
 })

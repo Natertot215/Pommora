@@ -32,6 +32,11 @@ import { CheckMark, checkboxClass } from '@pommora/uix/Controls/Checkbox'
 import { cx } from '@pommora/uix/Utilities/cx'
 import { useLatest } from '@pommora/uix/Utilities/stableApi'
 
+export interface CellPage {
+  ordinalOf: (label: string) => number | null
+  ownKeys: readonly string[]
+}
+
 // KNOB — distinct cell texts remembered; a table scrolling back in re-reads its cells from here.
 const cellTokens = perText(tokenize, 4096)
 
@@ -39,7 +44,7 @@ const cellTokens = perText(tokenize, 4096)
 export function renderCellContent(
   text: string,
   getConn?: () => ConnectionsApi | undefined,
-  ordinalOf?: (label: string) => number | null,
+  around?: CellPage,
   headingLinkStyle?: HeadingLinkStyle,
   base = 0,
 ): React.ReactNode {
@@ -58,8 +63,7 @@ export function renderCellContent(
     const content = text.slice(tk.contentRange[0], tk.contentRange[1])
     if (tk.kind === 'wikiLink') {
       const [rs, re] = tk.resolveRange ?? tk.contentRange
-      // A cell holds no page identity, so a bare fragment reads as present.
-      const view = conn && wikiLinkView(conn, text, tk, undefined)
+      const view = conn && wikiLinkView(conn, text, tk, around?.ownKeys)
       if (!view) out.push(text.slice(s, e))
       else if (view.status === 'phantom')
         out.push(
@@ -130,7 +134,7 @@ export function renderCellContent(
         ),
       )
     } else if (tk.kind === 'citationRef') {
-      const n = ordinalOf?.(content) ?? null
+      const n = around?.ordinalOf(content) ?? null
       out.push(
         n === null ? (
           text.slice(s, e)
@@ -183,7 +187,7 @@ function MarkerGlyph({
 function renderCellBody(
   text: string,
   getConn?: () => ConnectionsApi | undefined,
-  ordinalOf?: (label: string) => number | null,
+  around?: CellPage,
   headingLinkStyle?: HeadingLinkStyle,
 ): React.ReactNode {
   const lines = text.split('\n')
@@ -194,7 +198,7 @@ function renderCellBody(
     return lm && glyph ? { lm, glyph } : null
   })
   if (items.every((it) => it === null))
-    return renderCellContent(text, getConn, ordinalOf, headingLinkStyle)
+    return renderCellContent(text, getConn, around, headingLinkStyle)
   let offset = 0
   const starts = lines.map((l) => {
     const from = offset
@@ -212,7 +216,7 @@ function renderCellBody(
     const rendered = renderCellContent(
       content,
       getConn,
-      ordinalOf,
+      around,
       headingLinkStyle,
       starts[i] + (it?.lm.contentStart ?? 0),
     )
@@ -252,7 +256,7 @@ function linkSpanAt(target: EventTarget | null): [number, number] | null {
 function StaticCellImpl({
   host,
   text,
-  ordinalOf,
+  around,
   connections,
   readOnly,
   linkStyle,
@@ -262,9 +266,9 @@ function StaticCellImpl({
 }: {
   host: EditorHost
   text: string
-  /** A word label never changes its text when the numbering moves, so comparing the cell's text alone keeps a stale number. */
-  cites?: string
-  ordinalOf?: (label: string) => number | null
+  /** A word label never changes its text when the numbering moves, nor a heading link when its heading goes, so comparing the cell's text alone keeps them stale. */
+  page?: string
+  around?: CellPage
   connections?: () => ConnectionsApi | undefined
   linkStyle?: HeadingLinkStyle
   readOnly?: () => boolean
@@ -388,7 +392,7 @@ function StaticCellImpl({
         if (e.button === 0) claimCheckbox(e) ?? claimCite(e) ?? claimLink(e)
       }}
     >
-      {renderCellBody(text, connections, ordinalOf, linkStyle)}
+      {renderCellBody(text, connections, around, linkStyle)}
     </div>
   )
 }
@@ -443,8 +447,11 @@ function menuTarget(
   })
 }
 
-/** Comparing text and the footnote numbering rather than every prop keeps one cell's keystroke off every other cell. */
+/** Comparing text and the page around it rather than every prop keeps one cell's keystroke off every other cell, and a cell holding no marker or same-page link reads nothing of the page. */
 export const StaticCell = memo(
   StaticCellImpl,
-  (a, b) => a.text === b.text && a.cites === b.cites && a.linkStyle === b.linkStyle,
+  (a, b) =>
+    a.text === b.text &&
+    a.linkStyle === b.linkStyle &&
+    (a.page === b.page || !/\[\[#|\[\^/.test(a.text)),
 )
