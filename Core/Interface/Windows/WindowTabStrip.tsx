@@ -18,7 +18,7 @@ import { popMenu } from '../../Actions/menuActions'
 import { tabMenuItems } from '@pommora/core/Actions/tabMenu'
 import { bannerMenuItems } from '@pommora/core/Actions/identityMenus'
 import { runWindowBanner, windowBannerAdd, windowBannerShown } from './windowTabBanner'
-import { pageMoveContext, runPageSendAction } from '../Menus/pageMenuActions'
+import { pageMoveContext, runPageAction } from '../Menus/pageMenuActions'
 import { useExitPresence } from '@pommora/uix/Animations/useExitPresence'
 import { useHeld } from '@pommora/uix/Animations/useExitPresence'
 import { isWindowTarget, TAB_FAMILY } from '@pommora/core/Navigation/navRef'
@@ -99,7 +99,7 @@ export function WindowTabStrip({
       else if (action === 'close') requestClose(tab.id)
       else if (action === 'change' || action === 'edit' || action === 'remove')
         runWindowBanner(tab.id, action)
-      else if (isPage && action) runPageSendAction(action, target)
+      else if (isPage && action) runPageAction(action, target)
     }
   const renderOverlay = (id: string): React.ReactNode => {
     const entry = entryOf(id)

@@ -7,14 +7,12 @@ import type {
 } from 'electron'
 import {
   EDITOR_ACTION_PREFIX,
-  type FormatChordAction,
+  editorContextItems,
   type FormatState,
-  INSERT_LINK_ACTION,
 } from '@pommora/core/Actions/editorMenu'
-import { type Commands, DEFAULT_COMMANDS, toAccelerator } from '@pommora/core/Actions/commands'
-import { HEADING_LEVELS } from '@pommora/core/Actions/gripMenu'
-import { isValidLink } from '@pommora/core/Paths/urlPath'
+import { type Commands, DEFAULT_COMMANDS } from '@pommora/core/Actions/commands'
 import { PASTE_AS_PREFIX, pasteAsRows } from '@pommora/core/Actions/pasteAsMenu'
+import { rowTemplate } from './menu'
 
 let lastState: FormatState | null = null
 export function setFormatState(s: FormatState): void {
@@ -80,110 +78,6 @@ function speechShareItems(params: ContextMenuParams): MenuItemConstructorOptions
   ]
 }
 
-type FormatFlag = {
-  [K in keyof FormatState]: FormatState[K] extends boolean ? K : never
-}[keyof FormatState]
-
-const FORMAT_ROWS: readonly {
-  label: string
-  action: FormatChordAction
-  state: FormatFlag
-}[] = [
-  { label: 'Italic', action: 'format:italic', state: 'italic' },
-  { label: 'Inline Code', action: 'format:inlineCode', state: 'inlineCode' },
-  { label: 'Bold', action: 'format:bold', state: 'bold' },
-  { label: 'Strikethrough', action: 'format:strikethrough', state: 'strikethrough' },
-  { label: 'Highlight', action: 'format:highlight', state: 'highlight' },
-  { label: 'Connection', action: 'format:connection', state: 'connection' },
-  { label: 'Link', action: 'format:link', state: 'link' },
-]
-
-function pommoraItems(
-  wc: WebContents,
-  s: FormatState,
-  selection: string,
-): MenuItemConstructorOptions[] {
-  const act = (a: string): (() => void) => dispatch(wc, a)
-  return [
-    { type: 'separator' },
-    // Offered only when the selection IS an address, which keeps it apart from Format ▸ Link.
-    ...(isValidLink(selection) ? [{ label: 'Insert Link', click: act(INSERT_LINK_ACTION) }] : []),
-    {
-      label: 'Insert',
-      submenu: [
-        {
-          label: 'Blockquote',
-          type: 'checkbox',
-          checked: s.block === 'quote',
-          click: act('block:quote'),
-        },
-        { label: 'Horizontal Rule', click: act('block:hr') },
-        { label: 'Code Block', click: act('block:code') },
-        { label: 'Callout', click: act('block:callout') },
-        { label: 'Table', click: act('block:table') },
-        ...(s.citeSeat ? [{ label: 'Footnote', click: act('block:citation') }] : []),
-      ],
-    },
-    {
-      label: 'Format',
-      // Display-only; formatKeymap binds the keys from the same table.
-      submenu: FORMAT_ROWS.map(({ label, action, state }) => ({
-        label,
-        type: 'checkbox' as const,
-        checked: s[state],
-        accelerator: toAccelerator(commands[action]),
-        registerAccelerator: false,
-        click: act(action),
-      })),
-    },
-    {
-      label: 'Embed',
-      submenu: [
-        { label: 'Webpage', click: act('block:webpage') },
-        { label: 'Internal Page', click: act('block:page') },
-      ],
-    },
-    {
-      label: 'Heading',
-      submenu: HEADING_LEVELS.map(({ level, label }) => ({
-        label,
-        type: 'checkbox' as const,
-        checked: s.heading === level,
-        click: act(`heading:${level}`),
-      })),
-    },
-    {
-      label: 'Lists',
-      submenu: [
-        {
-          label: 'Bullet List',
-          type: 'checkbox',
-          checked: s.list === 'bullet',
-          click: act('list:bullet'),
-        },
-        {
-          label: 'Numbered List',
-          type: 'checkbox',
-          checked: s.list === 'ordered',
-          click: act('list:ordered'),
-        },
-        {
-          label: 'Alphabetical List',
-          type: 'checkbox',
-          checked: s.list === 'alphabetical',
-          click: act('list:alphabetical'),
-        },
-        {
-          label: 'Task List',
-          type: 'checkbox',
-          checked: s.list === 'checkbox',
-          click: act('list:checkbox'),
-        },
-      ],
-    },
-  ]
-}
-
 // Read here rather than pushed: the `context-menu` event fires in the same turn as the right-click.
 function pasteAsItems(wc: WebContents): MenuItemConstructorOptions[] {
   const rows = pasteAsRows(
@@ -208,7 +102,12 @@ export function installEditorContextMenu(win: BrowserWindow): void {
     if (!params.isEditable) return // the sidebar keeps its own menus
     const items = systemItems(win.webContents, params, lastState?.focused === true)
     if (lastState?.focused)
-      items.push(...pommoraItems(win.webContents, lastState, params.selectionText))
+      items.push(
+        { type: 'separator' },
+        ...rowTemplate(editorContextItems(lastState, commands, params.selectionText), (action) =>
+          dispatch(win.webContents, action),
+        ),
+      )
     items.push(...speechShareItems(params))
     Menu.buildFromTemplate(items).popup({ window: win })
   })

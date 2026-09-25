@@ -8,14 +8,13 @@ import {
   type ConnMenuContext,
 } from '@pommora/core/Actions/connectionMenu'
 import { isValidLink } from '@pommora/core/Paths/urlPath'
-import { connectionText } from '@pommora/core/Connections/connections'
 import { readLink } from '@pommora/core/Connections/linkValue'
 import { resolveConnection } from '../../Nexus/treeIndex'
-import { pagePathText } from '@pommora/core/Actions/pageMenu'
 import { isOpenInTabs } from '../../Navigation/tabsModel'
 import { shownDetail, useSession, windowTargetOf } from '../../Session/store'
 import { host } from '../../Platform/dialer'
 import { popMenu } from '../../Actions/menuActions'
+import { runPageAction } from './pageMenuActions'
 
 export function showConnectionMenu(target: ConnMenuTarget): void {
   // An editable surface with no way back into it can't perform the edit either, so the authoring pair needs both.
@@ -58,21 +57,8 @@ export function showConnectionMenu(target: ConnMenuTarget): void {
     windowed: windowTargetOf(s)?.id === page.id,
   }
   void popMenu(connectionMenuModel(ctx)).then((action) => {
+    if (action === null || runPageAction(action, { ...page, heading: target.heading })) return
     switch (action) {
-      case null:
-        return
-      case 'title:window':
-        useSession.getState().openWindowTab({ kind: 'page', id: page.id, path: page.path })
-        return
-      case 'title:newtab':
-        void useSession.getState().select(ref, { newTab: true })
-        return
-      case 'title:copylink':
-        void host().ask('clipboard:write', connectionText(page.title, undefined, target.heading))
-        return
-      case 'title:copypath':
-        void host().ask('clipboard:write', pagePathText(page.path))
-        return
       // Named rather than caught: the action vocabulary is wider than any one menu, and an item this context never offered has no span or value here to act on.
       case 'rename':
       case 'editLink':

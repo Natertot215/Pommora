@@ -1,6 +1,7 @@
 import { Menu } from 'electron'
 import type { BrowserWindow, MenuItemConstructorOptions } from 'electron'
 import type { ActionItem, MenuAnchor, MenuRequest } from '@pommora/core/Actions/menuModel'
+import { toAccelerator } from '@pommora/core/Actions/commands'
 
 /** The renderer measures in CSS pixels and `popup` places in window DIPs, differing by the window's zoom. */
 export function anchorPoint(
@@ -20,13 +21,17 @@ function nativeRow<A extends string>(
   item: ActionItem<A>,
   pick: (action: A) => () => void,
 ): MenuItemConstructorOptions {
+  const row = { label: item.label, enabled: !item.disabled }
+  if (item.submenu)
+    return item.submenu.length > 0
+      ? { ...row, submenu: rowTemplate(item.submenu, pick) }
+      : { ...row, enabled: false }
   return {
-    label: item.label,
-    enabled: !item.disabled,
-    ...(item.checked !== undefined &&
-      !item.submenu && { type: 'checkbox' as const, checked: item.checked }),
-    // Giving a submenu row a click too would resolve the parent the moment the pointer rested.
-    ...(item.submenu ? { submenu: rowTemplate(item.submenu, pick) } : { click: pick(item.action) }),
+    ...row,
+    ...(item.checked !== undefined && { type: 'checkbox' as const, checked: item.checked }),
+    // Display-only: the editor's keymap binds the chord itself.
+    ...(item.chord && { accelerator: toAccelerator(item.chord), registerAccelerator: false }),
+    click: pick(item.action),
   }
 }
 

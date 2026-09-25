@@ -1,9 +1,9 @@
-import { type ActionItem, afterSeparator, openOrder } from './menuModel'
+import { type ActionItem, joinGroups, openOrder } from './menuModel'
 import { type CreateMenuAction, createMenuItems } from './createMenu'
 import { type PageMetaAction, type PageMoveAction, pageMetaMenuItems } from './pageMenu'
 import { type TitleMenuAction, titleMenuItems } from './identityMenus'
 import { type PropertyAction, propertyBranchRows } from './propertyRows'
-import { openLabel } from './toggleLabels'
+import { lockLabel, openLabel } from './toggleLabels'
 import type { ContextTarget, Creator } from '../Nexus/mutateRequest'
 
 export type EntityMenuAction =
@@ -30,8 +30,6 @@ export function entityMenuItems(
       move: target,
       spaces: target.spaces,
       properties: target.properties,
-      clipboard: true,
-      history: true,
       reveal: true,
     })
   // Only the renderer knows the tab set; an already-open entity reads "Open" and focuses its tab.
@@ -43,11 +41,26 @@ export function entityMenuItems(
       )
     : []
   const create = createMenuItems(creators)
-  const folder = target.kind === 'collection' || target.kind === 'set'
-  const lock: ActionItem<EntityMenuAction>[] =
-    folder && target.host === 'sidebar'
-      ? [{ label: target.disclosureLocked ? 'Unlock Folder' : 'Lock Folder', action: 'lock' }]
-      : []
+  if (target.kind === 'collection' || target.kind === 'set')
+    return joinGroups<EntityMenuAction>([
+      open,
+      create,
+      [
+        { label: 'Rename', action: 'rename' },
+        { label: 'Delete', action: 'delete' },
+      ],
+      [
+        ...(target.host === 'sidebar'
+          ? [
+              {
+                label: lockLabel(target.disclosureLocked ?? false, 'Folder'),
+                action: 'lock' as const,
+              },
+            ]
+          : []),
+        { label: 'Reveal Location', action: 'reveal' },
+      ],
+    ])
   const identity: ActionItem<EntityMenuAction>[] =
     target.kind === 'space'
       ? [
@@ -55,20 +68,13 @@ export function entityMenuItems(
           ...(target.host === 'matrix'
             ? [{ label: 'Change Color', action: 'changeColor' as const }]
             : []),
+          ...propertyBranchRows(target),
         ]
-      : target.kind === 'context'
-        ? titleMenuItems()
-        : [{ label: 'Rename', action: 'rename' }]
-  const branches: ActionItem<EntityMenuAction>[] =
-    target.kind === 'space' ? propertyBranchRows(target) : []
-  return [
-    ...open,
-    ...(open.length > 0 ? afterSeparator(create) : create),
-    ...(open.length + create.length > 0 ? afterSeparator(identity) : identity),
-    ...branches,
-    { label: 'Delete', action: 'delete', separatorBefore: !folder },
-    ...afterSeparator<EntityMenuAction>(
-      folder ? [...lock, { label: 'Reveal Location', action: 'reveal' }] : [],
-    ),
-  ]
+      : titleMenuItems()
+  return joinGroups<EntityMenuAction>([
+    open,
+    create,
+    identity,
+    [{ label: 'Delete', action: 'delete' }],
+  ])
 }

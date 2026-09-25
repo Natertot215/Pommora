@@ -9,7 +9,7 @@ import {
 import type { PropertyAction } from './propertyRows'
 import type { PropertyType } from '../Properties/properties'
 import type { ResolvedColumn } from '../Views/viewRow'
-import { type ActionItem, afterSeparator } from './menuModel'
+import { type ActionItem, joinGroups } from './menuModel'
 
 type CellMenuKind =
   | ({ kind: 'title'; alreadyOpen?: boolean } & PageMenuContext)
@@ -88,67 +88,63 @@ function baseCellMenu(
 }
 
 export function cellMenuModel(ctx: CellMenuContext): ActionItem<CellMenuAction>[] {
-  const { style, items } = baseCellMenuModel(ctx)
-  if (ctx.hideable && ctx.kind !== 'title')
-    items.push({
-      label: ctx.kind === 'file' ? 'Remove from View' : 'Remove',
-      action: 'cell:hide',
-      separatorBefore: items.length > 0,
-    })
-  return style ? [style, ...afterSeparator(items)] : items
+  return joinGroups([
+    ...baseCellMenuModel(ctx),
+    ctx.hideable && ctx.kind !== 'title'
+      ? [{ label: ctx.kind === 'file' ? 'Remove from View' : 'Remove', action: 'cell:hide' }]
+      : [],
+  ])
 }
 
-function baseCellMenuModel(ctx: CellMenuContext): {
-  style?: ActionItem<CellMenuAction>
-  items: ActionItem<CellMenuAction>[]
-} {
+function baseCellMenuModel(ctx: CellMenuContext): ActionItem<CellMenuAction>[][] {
   switch (ctx.kind) {
     case 'title':
-      return {
-        items: pageMetaMenuItems(ctx.alreadyOpen, {
+      return [
+        pageMetaMenuItems(ctx.alreadyOpen, {
           window: true,
           newPages: 'pair',
           move: ctx,
           spaces: ctx.spaces,
           properties: ctx.properties,
-          clipboard: true,
-          history: true,
         }),
-      }
-    case 'style-only': {
-      const rows = styleMenuItems({
-        type: ctx.type,
-        current: ctx.current,
-        barCapable: ctx.barCapable,
-      })
-      return {
-        style: { label: styleMenuLabel(ctx.type), action: rows[0].action, submenu: rows },
-        items: ctx.clearable ? [{ label: 'Clear', action: 'cell:clear' }] : [],
-      }
-    }
+      ]
+    case 'style-only':
+      return [
+        [
+          {
+            label: styleMenuLabel(ctx.type),
+            submenu: styleMenuItems({
+              type: ctx.type,
+              current: ctx.current,
+              barCapable: ctx.barCapable,
+            }),
+          },
+        ],
+        ctx.clearable ? [{ label: 'Clear', action: 'cell:clear' }] : [],
+      ]
     case 'link':
-      return {
-        items: ctx.filled
+      return [
+        ctx.filled
           ? [
               { label: 'Edit', action: 'cell:edit' },
               { label: 'Rename', action: 'cell:rename' },
               { label: 'Clear', action: 'cell:clear' },
             ]
           : [{ label: 'Edit', action: 'cell:edit' }],
-      }
+      ]
     case 'file':
-      return {
-        items: ctx.onChip
-          ? [
+      return ctx.onChip
+        ? [
+            [
               { label: 'Add File', action: 'file:add' },
               { label: 'Replace File', action: 'file:replace' },
-              { label: 'Remove File', action: 'file:remove', separatorBefore: true },
-            ]
-          : [{ label: 'Add File', action: 'file:add' }],
-      }
+            ],
+            [{ label: 'Remove File', action: 'file:remove' }],
+          ]
+        : [[{ label: 'Add File', action: 'file:add' }]]
     case 'clear-only':
-      return { items: [{ label: 'Clear', action: 'cell:clear' }] }
+      return [[{ label: 'Clear', action: 'cell:clear' }]]
     case 'remove-only':
-      return { items: [] }
+      return []
   }
 }

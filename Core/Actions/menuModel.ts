@@ -1,13 +1,32 @@
-export interface ActionItem<A> {
+interface RowBase {
   label: string
-  action: A
   separatorBefore?: boolean
   disabled?: boolean
-  checked?: boolean
   icon?: string
+}
+
+interface LeafFields<A> {
+  action: A
+  checked?: boolean
   stay?: boolean
-  /** A branch's own `action` is never resolved — the leaf a person lands on is. */
-  submenu?: ActionItem<A>[]
+  chord?: string
+}
+
+export interface LeafItem<A> extends RowBase, LeafFields<A> {
+  submenu?: never
+}
+
+// A branch with nothing inside is unreachable, so both renderers grey it out with no way in.
+interface BranchItem<A> extends RowBase, Partial<Record<keyof LeafFields<A>, never>> {
+  submenu: readonly ActionItem<A>[]
+}
+
+export type ActionItem<A> = LeafItem<A> | BranchItem<A>
+
+export function joinGroups<A>(groups: readonly (readonly ActionItem<A>[])[]): ActionItem<A>[] {
+  return groups
+    .filter((g) => g.length > 0)
+    .flatMap((g, i) => (i === 0 ? g : [{ ...g[0], separatorBefore: true }, ...g.slice(1)]))
 }
 
 export function openOrder<A>(
@@ -16,18 +35,6 @@ export function openOrder<A>(
   preview: readonly ActionItem<A>[],
 ): ActionItem<A>[] {
   return alreadyOpen ? [...open, ...preview] : [...preview, ...open]
-}
-
-export function afterSeparator<A>(rows: readonly ActionItem<A>[]): ActionItem<A>[] {
-  return rows.length === 0 ? [] : [{ ...rows[0], separatorBefore: true }, ...rows.slice(1)]
-}
-
-export function withoutLeadingSeparator<A>(
-  rows: readonly ActionItem<A>[],
-): readonly ActionItem<A>[] {
-  return rows[0]?.separatorBefore
-    ? [{ ...rows[0], separatorBefore: false }, ...rows.slice(1)]
-    : rows
 }
 
 export interface MenuAnchor {

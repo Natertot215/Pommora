@@ -9,7 +9,7 @@ import {
   type ViewPickerItem,
 } from '@pommora/core/Tiles/tiles'
 import { scaleRows, zoomStep } from './tileZoom'
-import { type ActionItem, afterSeparator } from '@pommora/core/Actions/menuModel'
+import { type ActionItem, joinGroups } from '@pommora/core/Actions/menuModel'
 
 type TileMenuAction =
   | 'tile:open'
@@ -43,19 +43,15 @@ export function tileMenuItems({
     wrap: (value: T) => TilePick,
   ): ActionItem<TileMenuAction>[] => {
     const row = (n: DrillPickItem<T>): ActionItem<TileMenuAction> => {
-      const base = { label: n.label, icon: n.icon, action: 'tile:open' as const }
-      if (n.submenu) {
-        const rows = drill(n.submenu, wrap)
-        // An empty submenu opens onto blank space instead of saying there is nothing to pick.
-        return rows.length > 0 ? { ...base, submenu: rows } : { ...base, disabled: true }
-      }
-      if (n.pick === undefined) return { ...base, disabled: true }
+      if (n.pick === undefined)
+        return { label: n.label, icon: n.icon, submenu: drill(n.submenu ?? [], wrap) }
       picks.push(wrap(n.pick))
       return { label: n.label, icon: n.icon, action: `tile:pick:${picks.length - 1}` as const }
     }
-    const body = nodes.filter((n) => !n.footer).map(row)
-    const footer = nodes.filter((n) => n.footer).map(row)
-    return [...body, ...(body.length ? afterSeparator(footer) : footer)]
+    return joinGroups([
+      nodes.filter((n) => !n.footer).map(row),
+      nodes.filter((n) => n.footer).map(row),
+    ])
   }
   const borderless = entry.style === 'borderless'
   const items: ActionItem<TileMenuAction>[] = [
@@ -63,24 +59,18 @@ export function tileMenuItems({
       ? [{ label: pageInfo.title, icon: pageInfo.icon, action: 'tile:open' as const }]
       : []),
     // A row with no source is shown and refused rather than dropped.
-    ...TILE_KINDS[entry.type].menuRows.map(({ label, source }): ActionItem<TileMenuAction> => {
-      const rows =
-        source === 'pages'
+    ...TILE_KINDS[entry.type].menuRows.map(({ label, source }) => ({
+      label,
+      icon: 'link',
+      submenu: locked
+        ? []
+        : source === 'pages'
           ? drill(pageItems, (value) => ({ kind: 'page', value }))
-          : drill(viewItems, (value) => ({ kind: 'view', value }))
-      const off = locked || rows.length === 0
-      return {
-        label,
-        icon: 'link',
-        action: 'tile:open',
-        disabled: off,
-        ...(off ? {} : { submenu: rows }),
-      }
-    }),
+          : drill(viewItems, (value) => ({ kind: 'view', value })),
+    })),
     {
       label: 'Style',
       icon: 'palette',
-      action: 'tile:open',
       disabled: locked,
       submenu: [
         { label: 'Bordered', action: 'tile:style:bordered', checked: !borderless, stay: true },
@@ -90,7 +80,6 @@ export function tileMenuItems({
     {
       label: 'Scale',
       icon: 'scaling',
-      action: 'tile:open',
       disabled: locked,
       submenu: scaleRows('tile:zoom:', zoomStep(entry.zoom)),
     },
