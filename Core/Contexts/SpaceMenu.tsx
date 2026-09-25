@@ -7,7 +7,7 @@ import {
   MenuScrollFrame,
   MenuSeparator,
 } from '@pommora/uix/Menus'
-import { BoardLock } from './BoardLock'
+import { BoardLock } from '../Tiles/BoardLock'
 import { Icon } from '@pommora/uix/Symbols'
 import { ICON } from '@pommora/uix/Menus/frames.css'
 import { tintAt } from '@pommora/uix/Theme/colors'

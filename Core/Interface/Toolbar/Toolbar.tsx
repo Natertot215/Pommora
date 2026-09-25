@@ -7,7 +7,6 @@ import { OutlineMenu } from './OutlineMenu'
 import { TabBar } from '../../Navigation/TabBar'
 import { activeUnpinnedTab } from '../../Navigation/tabsModel'
 import { SettingsMenu } from './SettingsMenu'
-import { viewSettingsScope } from './viewSettingsScope'
 import { useSession } from '../../Session/store'
 import { publishChromePart } from '../chromeParts'
 import { useExitPresence } from '@pommora/uix/Animations/useExitPresence'
@@ -26,7 +25,7 @@ export function Toolbar({
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [beaks, setBeaks] = useState<number[]>([])
   const trioRef = useRef<HTMLDivElement>(null)
-  const matrixPane = useSession((s) => viewSettingsScope(s.selection) === 'matrix')
+  const matrixPane = useSession((s) => s.selection.kind === 'matrix')
   useDismissal(settingsOpen, false, {
     layer: () => trioRef.current,
     dismiss: () => setSettingsOpen(false),

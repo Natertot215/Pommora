@@ -1,28 +1,27 @@
 import { useRef } from 'react'
-import { useSession } from '../Session/store'
-import { useAssetUrl } from '../Assets/useAssetUrl'
+import { useSession } from '../../Session/store'
+import { useAssetUrl } from '../../Assets/useAssetUrl'
 import { Icon } from '@pommora/uix/Symbols'
-import { DEFAULT_NEXUS_ICON } from '../Assets/entityIconPolicy'
+import { DEFAULT_NEXUS_ICON } from '../../Assets/entityIconPolicy'
 import { Button } from '@pommora/uix/Buttons/Button'
-import { AssetImage } from '../Assets/AssetImage'
+import { AssetImage } from '../../Assets/AssetImage'
 import { InputField } from '@pommora/uix/Fields/InputField'
 import { MenuFooting, MenuScrollFrame } from '@pommora/uix/Menus'
-import { NexusIconEditors } from '../Assets/NexusIconEditors'
-import { useNexusIcon } from '../Assets/useNexusIcon'
+import { NexusIconEditors } from '../../Assets/NexusIconEditors'
+import { useNexusIcon } from '../../Assets/useNexusIcon'
 import type { TileHostRef } from '@pommora/core/Tiles/tiles'
-import { BoardLock } from './BoardLock'
+import { BoardLock } from '../../Tiles/BoardLock'
 
 import * as s from '@pommora/uix/Menus/frames.css'
 
 const HOMEPAGE_HOST: TileHostRef = { kind: 'homepage' }
 
-export function SettingsScaffold(): React.JSX.Element | null {
-  const selection = useSession((st) => st.selection)
+export function HomepageMenu(): React.JSX.Element | null {
   const tree = useSession((st) => st.tree)
   const icon = useNexusIcon()
   const iconRef = useRef<HTMLButtonElement>(null)
   const photoUrl = useAssetUrl(icon.profileImage)
-  if (!tree || selection.kind !== 'homepage') return null
+  if (!tree) return null
 
   return (
     <>

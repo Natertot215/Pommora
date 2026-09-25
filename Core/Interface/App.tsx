@@ -2,7 +2,7 @@ import { useEffect, useState, type CSSProperties } from 'react'
 import { useSession } from '../Session/store'
 import { SIDE_PANE_WIDTH, SIDEBAR_WIDTH } from '../Session/layoutSlice'
 import { useResizable } from '@pommora/uix/Interactions/useResizable'
-import { Surface } from './InterfaceScaffold'
+import { GlassPane } from '@pommora/uix/Glass/GlassPane'
 import { paneSlide } from '@pommora/uix/Animations/paneSlide'
 import { publishChromePart } from './chromeParts'
 import { Sidebar } from './Sidebar/Sidebar'
@@ -145,9 +145,10 @@ export function App(): React.JSX.Element {
         <main className="content-pane" ref={publishChromePart('contentPane')}>
           <ContentView />
         </main>
-        <Surface
+        <GlassPane
           ref={publishChromePart('sidebar')}
-          className={paneSlide({ side: 'left', mode: 'overlay' })}
+          className={cx('surface-glass', paneSlide({ side: 'left', mode: 'overlay' }))}
+          data-reveal-host=""
         >
           {status === 'ready' && tree && <Ribbon />}
           <Button
@@ -179,7 +180,7 @@ export function App(): React.JSX.Element {
               <Sidebar tree={tree} />
             </RenderBoundary>
           )}
-        </Surface>
+        </GlassPane>
         {status === 'ready' && !sidebarHidden && <div className="sidebar-titlebar" />}
         {!sidebarHidden && (
           <div
