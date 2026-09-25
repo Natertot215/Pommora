@@ -11,7 +11,7 @@ The Pommora design system — the code counterpart of the Figma library, which l
 
 ### Theme
 
-`UIX/Theme/` — the value source; every token republishes as a `--kebab-name` CSS variable through `theme-vars.css.ts`. `color.css.ts` (`vars`), `theme-vars.css.ts` (`size`, `ICON_PX`, the geometry consts), `typography.css.ts` (`font`, `text`), `stack.ts` (`stack`), `colors.ts` (`tintAt`, `mixAt`, `TINT_STEPS`, `labelColorFor`, `resolveColor`, `WINDOW_BG`), and `ramp.ts` (`cellColor`, `cellPaint`, `cellRing`, `solidColorCss`, `applyAccent`, `ANCHOR_CELLS`, the `RAMP_*` re-exports). The text-insertion vocabulary every editable surface shares lives here as well: `caret.css` holds the drawn caret's and selection's look, and `nativeCaret.ts` paints both over the native text fields. `index.ts` is the barrel.
+`UIX/Theme/` — the value source; every token republishes as a `--kebab-name` CSS variable through `theme-vars.css.ts`. `color.css.ts` (`vars`), `theme-vars.css.ts` (`size`, `ICON_PX`, the geometry consts), `typography.css.ts` (`font`, `text`), `stack.ts` (`stack`), `colors.ts` (`tintAt`, `mixAt`, `TINT_STEPS`, `RAMP_FAMILIES`, `RAMP_STEPS`, `WINDOW_BG`), and `ramp.ts` (`cellColor`, `labelColorFor`, `resolveColor`, `cellPaint`, `cellRing`, `solidColorCss`, `applyAccent`, `ANCHOR_CELLS`). The text-insertion vocabulary every editable surface shares lives here as well: `caret.css` holds the drawn caret's and selection's look, and `nativeCaret.ts` paints both over the native text fields. `index.ts` is the barrel.
 
 #### Primitives
 
@@ -49,7 +49,7 @@ The Pommora design system — the code counterpart of the Figma library, which l
 | Selected | `state.selected` · `--state-selected` | `system-grey` @ 5% |
 | Muted    | `state.muted` · `--state-muted`       | `system-black` @ 10% |
 | Ghost    | `STATE_OPACITY.ghost` · `--state-ghost` · `revealDim` | `0.65`             |
-| Inactive | `STATE_OPACITY.inactive` · `--state-inactive` | `0.55`             |
+| Inactive | `STATE_OPACITY.inactive` · `--state-inactive` | `0.50`             |
 
 #### Fills
 
@@ -154,7 +154,7 @@ Eight families × eight steps, dark to light, each spectrum solid seated on an e
 
 | Title             | Token                                                                                              | Value                                                                                                                                                                                                                                                                                                     |
 | ----------------- | -------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Icon Ladder       | `size.icon.*` · `ICON_PX` · `--icon-body`                                                          | Ten steps named as the type ramp is — `titleLarge` `26px` · `titleMedium` `22px` · `titleSmall` `17px` · `headline` `15px` · `body` `13px` · `callout` `12px` · `control` `12px` · `caption` `11px` · `footnote` `10px` · `subline` `10px`; only the body step is also a CSS var, for the editor's glyphs |
+| Icon Ladder       | `size.icon.*` · `ICON_PX` · `--icon-body`                                                          | Eight steps named as the type ramp is — `titleLarge` `26px` · `titleMedium` `22px` · `titleSmall` `17px` · `headline` `15px` · `body` `13px` · `control` `12px` · `caption` `11px` · `footnote` `10px`; only the body step is also a CSS var, for the editor's glyphs |
 | Pill Radius       | `--radius-full`                                                                                    | `999px`                                                                                                                                                                                                                                                                                                   |
 | Disclosure Indent | `DISCLOSURE_INDENT` · `--disclosure-indent`                                                        | `14px`                                                                                                                                                                                                                                                                                                    |
 | Content Inset     | `--content-inset`                                                                                  | `24px` — the gutter page text keeps off a pane (`styles.css`)                                                                                                                                                                                                                                             |
@@ -290,20 +290,19 @@ The elements that draw and frame a stored image — `AssetImage`, `ImagePicker`,
 | GlassSurface  | `GlassSurface` · `SURFACE_FROST`              | A Menu floating over a pane, a step dimmer — menus, pickers; `solid` when it opens over another surface, and opt-in `notch` for the beaked dropdown geometry. |
 | GlassWindow   | `GlassWindow` · `WINDOW_FROST`                | The surface carrying the 90% `--bg-window` body — every floating window and the image picker.                                                                 |
 | Ghost         | `GHOST_FROST`                                 | The edge-free frost the drag chip wears.                                                                                                                      |
-| Frost engine  | `frostStyle` · `SOLID_FILL` · `OUTLINE_INSET` | The recipe itself, the window fill share, and the acted-on edge inset.                                                                                        |
+| Frost engine  | `frostStyle` · `GLASS_EDGE`                   | The recipe itself, and the resting frost's edge color, which the Matrix node ring also wears.                                                                 |
 | Beak geometry | `notchGeometry` · `BEAK_RADIUS`               | The opt-in notched outline `GlassSurface`'s `notch` clips and strokes.                                                                                        |
 | GlassControl  | `GlassControl` · `CONTROL_OPTICS`             | Liquid glass on the button controls, and with `knob` on the switch and slider knob.                                                                           |
 
 | Visual | SURFACE_FROST | WINDOW_FROST         | GHOST_FROST |
 | ---------------- | ---------- | -------------------- | ----------- |
 | Blur             | `6`        | `6`                  | `6`         |
-| Saturate         | `100`      | `100`                | `100`       |
 | Brightness       | `90`       | `90`                 | `100`       |
 | Border Alpha     | `0.12`     | `0.12`               | `0`         |
 | Top Specular     | `0.35`     | `0.35`               | `0`         |
 | Inner Ring       | `0.08`     | `0.08`               | `0`         |
 | Lower Rim / Depth / Rim Blur | `0.08` / `12` / `18` | `0.08` / `12` / `18` | `0` / `0` / `0` |
-| Fill             | unset      | `--bg-window` @ 90%  | `--bg-window` @ 78% |
+| Fill             | unset      | `--bg-window` @ 90%  | `--bg-window` @ 75% |
 | Shadow           | standard   | standard             | lift        |
 
 `--glass-outline` re-colors any tier's edge while it is being driven (a resize in flight, an active embed).
@@ -394,7 +393,7 @@ The elements that draw and frame a stored image — `AssetImage`, `ImagePicker`,
 
 #### Pending
 
-- **Spacing and radius** — spacing stays literal on the even grid by ruling; radius has `--radius-full` and `--app-radius`, and the button ladder's `4/6/10/12` in `UIX/Buttons/button-base.css.ts`; a feature site picks from that set.
+- **Spacing and radius** — both stay literal by ruling: spacing on the even grid, and radius apart from `--radius-full`, `--app-radius`, and the button ladder's `4/6/10/12` in `UIX/Buttons/button-base.css.ts`.
 - **Light/dark theming** — the system is dark-only.
 - **An inactive label tone** — the empty-state text color between secondary and tertiary; interim consumers read tertiary. (The `--state-inactive` opacity above is a different thing.)
 - **Type** — no tracking scale, no Markdown element mapping, no multi-line clamp.

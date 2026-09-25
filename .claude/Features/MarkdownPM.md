@@ -115,9 +115,9 @@ The root of everything: one size factor for structure, one derived factor for gl
 
 | Title              | Token                   | Value · Scope                                                                   |
 | ------------------ | ----------------------- | ------------------------------------------------------------------------------- |
-| Page Detail Factor | `--page-detail-scale`   | `var(--editor-scale)` · `:root` (`--editor-scale: 1`, the Editor Scale setting) |
+| Page Detail Factor | `--page-detail-scale`   | `var(--editor-scale)` · `:root` (`--editor-scale: 1`, the Editor Scale setting); `var(--embed-scale)` · `.page-tile`, `.page-window` (`--embed-scale: 0.9`, the Embed Scale setting) |
 | Per-Tile Zoom      | `@property --tile-zoom` | `<number>`, inherits, initial `1`                                               |
-| Glyph Scale        | `--glyph-scale`         | `calc(var(--page-detail-scale) * var(--tile-zoom, 1))` · `.mdpm-shell`          |
+| Glyph Scale        | `--glyph-scale`         | `calc(var(--page-detail-scale) * var(--tile-zoom))` · `.mdpm-shell`          |
 | Fold Chevron Size  | `--fold-chevron-size`   | `calc(var(--text-headline-size) * var(--glyph-scale))` · `.mdpm-shell`          |
 
 #### II. Header, Banner & Title
@@ -126,7 +126,7 @@ The page header's own measures — the title size and the zones the banner and h
 
 | Title | Token | Value · Scope |
 | --- | --- | --- |
-| Page Title Size | `--detail-title-size` | `calc(var(--text-title-large-size) * var(--editor-scale, 1))` · `.mdpm-header .detail-title` |
+| Page Title Size | `--detail-title-size` | `calc(var(--text-title-large-size) * var(--page-detail-scale))` · `.mdpm-header .detail-title` |
 | Add-Banner Strip | `--banner-add-zone` | `44px` · `.mdpm-header:not(.has-banner)` |
 | Header Park Distance | `--header-zone` | JS-set on `.mdpm-shell`; a covered page tile declares its banner height and a window's page its toolbar band; fallback `90px` |
 
