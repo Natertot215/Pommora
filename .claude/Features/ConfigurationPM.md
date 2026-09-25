@@ -199,12 +199,11 @@ Keyboard shortcuts are data: the `commands` object in `settings.json` maps comma
 
 #### Trash
 
-The one frame that is a surface of its own, anchored below the rail's separator. Its body is the deletion record's browser, and its column heading's menu carries the two display knobs.
+The one frame that is a surface of its own, anchored below the rail's separator. Its body is the deletion record's browser, and its column heading's menu carries the same Style list a view's date column does.
 
 | Setting | Key | Description | Options |
 | --- | --- | --- | --- |
-| Date Format | `trashDateFormat` | How the browser writes a deletion's date. Unset, it follows the Nexus's own date form, and picking that form unsets it. | MM/DD/YYYY · DD/MM/YYYY · Short Date · Full Date · Relative |
-| Show Time | `trashHideTime` | Whether that date carries its clock. | **Shown** · Hidden |
+| Date Column | `trashColumnStyle` | How the browser writes a deletion's date and time. Unset, it follows the Nexus's Date Format and shows the time on its clock, and picking the Nexus's own form or clock returns it to following. | Every date form · Day · 12 Hours · 24 Hours · Hidden |
 
 ### Collections
 
