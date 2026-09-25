@@ -8,15 +8,13 @@ import { titleActionFade, titleActionFadeHidden } from '@pommora/uix/Animations/
 import { RenamableLabel } from '@pommora/uix/Fields/RenamableLabel'
 import { SearchField } from '@pommora/uix/Fields/SearchField'
 import { base } from '@pommora/uix/Fields/fields.css'
-import { useHoverDwell } from '@pommora/uix/Interactions/hoverDwell'
+import { useHoverReveal } from '@pommora/uix/Interactions/hoverReveal'
 import { useEscape } from '@pommora/uix/Interactions/dismissalStack'
 import { useContentHost } from '../contentHost'
 import { overScrollLabel } from '@pommora/uix/Interactions/OverScroll'
 import { cx } from '@pommora/uix/Utilities/cx'
 import { AssetImage } from '../../Assets/AssetImage'
 import './content-title.css'
-
-const HINT_GRACE_MS = 150
 
 /** `query` is null while the title rests, and a string — empty or not — while its search is open. */
 export interface TitleSearch {
@@ -56,7 +54,10 @@ export function DetailTitleHeader({
 }: Props): React.JSX.Element {
   const [editing, setEditing] = useState(false)
   const searching = search?.query != null
-  const hint = useHoverDwell(search !== undefined && !searching && !editing, false, HINT_GRACE_MS)
+  const hint = useHoverReveal({
+    active: search !== undefined && !searching && !editing,
+    dwell: true,
+  })
   const hintOpen = hint.on || searching
   const field = useRef<HTMLInputElement>(null)
   // Only a search opened from the hint slides the title away; every other door replaces it at once.

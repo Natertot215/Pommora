@@ -54,7 +54,7 @@ export function Surface({
   ref?: Ref<HTMLDivElement>
 }): React.JSX.Element {
   return (
-    <GlassPane ref={ref} className={cx('surface-glass', className)}>
+    <GlassPane ref={ref} className={cx('surface-glass', className)} data-reveal-host="">
       {children}
     </GlassPane>
   )

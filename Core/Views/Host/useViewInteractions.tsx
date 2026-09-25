@@ -8,11 +8,11 @@ import type { PageMenuContext } from '@pommora/core/Actions/pageMenu'
 import { relDirname } from '@pommora/core/Paths/posix'
 import { nextOrder } from '@pommora/uix/Interactions/reorderModel'
 import {
-  GHOST_DWELL_MS,
   type GhostAnchor,
   useClearStrandedGhost,
   useGhostAnchor,
 } from '@pommora/uix/Interactions/ghostCreate'
+import { REVEAL_DWELL_MS } from '@pommora/uix/Interactions/hoverReveal'
 import { useCapitalizeMetadata } from '../../Properties/Cells/columnLabel'
 import { useSession } from '../../Session/store'
 import { hoverGlance, leaveGlance } from '../../Interface/Glance/glanceAction'
@@ -397,7 +397,7 @@ export function useViewInteractions(host: ViewHostApi, policy: ViewInteractionPo
   // ── Ghost ─────────────────────────────────────────────────────────────────
 
   const ghost = useGhostAnchor({
-    dwellMs: GHOST_DWELL_MS,
+    dwellMs: REVEAL_DWELL_MS,
     graceMs: policy.ghost.graceMs,
     suppressed: () => iconOpen || policy.ghost.suppressed(),
     travelHold: policy.ghost.travelHold,

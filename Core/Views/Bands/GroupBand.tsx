@@ -212,7 +212,7 @@ export function GroupBand({
               dragHandle?.isNestTarget && 'band-nest-target',
             )}
             onContextMenu={onContextMenu}
-            data-reveal-host
+            data-reveal-host=""
           >
             <button
               type="button"
@@ -248,7 +248,7 @@ export function GroupBand({
                 size="button-inline"
                 icon="plus"
                 iconSize="body"
-                revealOnHover
+                reveal
                 className="group-band-add"
                 tabIndex={-1}
                 onPointerDown={(e) => e.stopPropagation()}
