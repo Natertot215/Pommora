@@ -23,6 +23,7 @@ import {
 import { renameContextOp, renameSpaceOp } from '../Contexts/contextCascade'
 import { reorderContextsOp } from '../Contexts/reorderContexts'
 import type { MutateReply, MutateRequest } from './mutateRequest'
+import { setActiveView } from '../Views/viewsFile'
 import type { TrashDeps } from '../Trash/bundle'
 import { createContainerOp, createPageOp, createSpaceOp } from './create'
 import { movePageOp, moveSetOp } from './move'
@@ -113,11 +114,7 @@ async function dispatch(ctx: MutateContext, req: MutateRequest): Promise<MutateR
     case 'setActiveView': {
       const folder = await mutableTarget(root, req.path, [req.kind])
       if (!folder.ok) return folder
-      return done(
-        await patchSidecar(folder.value, req.kind, (cur) =>
-          setOrDrop(cur, 'active_view', req.viewId),
-        ),
-      )
+      return done(await setActiveView(folder.value, req.kind, req.viewId))
     }
 
     case 'setProperty':

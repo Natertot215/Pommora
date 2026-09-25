@@ -4,7 +4,7 @@ import { isPlainObject } from '../Properties/propertyValue'
 import type { EntityRecord, RecordKind } from './record'
 import { errText } from '../Contract/result'
 import { copyEntry } from '../Tiles/tilesFile'
-import { mintViewId } from '../Views/views'
+import { containerViewIds, mintViewId } from '../Views/views'
 import { writeTileDocAt } from '../Tiles/tileDoc'
 import { pathExists } from '../Files/atomicWrite'
 import { tileDocPath } from '../Paths/paths'
@@ -95,14 +95,16 @@ async function remintSidecar(
   await patchSidecar(absFolder, kind, (current) => {
     if (current.id !== oldId) return null
     let next: Record<string, unknown> = { ...current, id: fresh }
-    if (Array.isArray(next.views))
-      next.views = next.views.map((v) => {
+    if (Array.isArray(next.views)) {
+      const read = containerViewIds(next.views)
+      next.views = next.views.map((v, i) => {
         if (!isPlainObject(v)) return v
         const minted = mintViewId()
-        if (typeof v.id === 'string') viewIds.set(v.id, minted)
+        viewIds.set(read[i], minted)
         // The copy's pages are reminted to fresh ids in this same pass, so a carried manual order would name pages the copy does not hold — and on disk it syncs everywhere with nothing to sweep it.
         return { ...v, id: minted, manual_order: undefined }
       })
+    }
     // The copy must not inherit a selection it cannot resolve: a view id naming nothing in the copy's own namespace is dropped rather than carried.
     if (typeof next.active_view === 'string')
       next = setOrDrop(next, 'active_view', viewIds.get(next.active_view))

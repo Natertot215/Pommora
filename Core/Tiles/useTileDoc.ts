@@ -97,6 +97,7 @@ export function useTileDocReady(host: TileHostRef | null): boolean {
   return host === null || ready
 }
 
-export function useTileDocLock(host: TileHostRef): boolean {
-  return useDocState(host).lock
+export function useTileDocLock(host: TileHostRef): { locked: boolean; ready: boolean } {
+  const { lock, ready } = useDocState(host)
+  return { locked: lock, ready }
 }

@@ -5,14 +5,15 @@ import { isPlainObject } from '@pommora/core/Properties/propertyValue'
 import type { CollectionNode, SetNode } from '@pommora/core/Nexus/tree'
 import type { PropertyDefinition } from '@pommora/core/Properties/properties'
 import {
-  DEFAULT_VIEW_ID,
   mergeViewEdit,
   mintDefaultView,
   mintNewView,
   mintViewId,
+  ownsViewId,
   savedView,
   type SavedView,
   type ViewState,
+  viewIdsOf,
 } from '@pommora/core/Views/views'
 import { freeName } from '@pommora/core/Paths/names'
 import { Icon, LockGlyph } from '@pommora/uix/Symbols'
@@ -67,30 +68,11 @@ function coerceEmbeddedView(raw: unknown, schema: PropertyDefinition[], id: stri
   return { ...(r.success ? r.data : mintDefaultView(schema)), id }
 }
 
-const storedViewId = (el: unknown): string | undefined => {
-  const id = (el as { config?: { id?: unknown } } | null)?.config?.id
-  return typeof id === 'string' && id !== '' && id !== DEFAULT_VIEW_ID ? id : undefined
-}
+const configIdOf = (el: unknown): unknown =>
+  (el as { config?: { id?: unknown } } | null)?.config?.id
 
-// A view answers to its stored id; one with none of its own (missing, unsaved, or a sibling's) takes a positional id no sibling holds.
-export function embedViewIds(els: readonly unknown[], entryId: string): string[] {
-  const taken = new Set<string>()
-  const stored = els.map((el) => {
-    const id = storedViewId(el)
-    if (id === undefined || taken.has(id)) return undefined
-    taken.add(id)
-    return id
-  })
-  return stored.map((id, i) => {
-    if (id !== undefined) return id
-    for (let n = i; ; n++) {
-      const slot = `embed:${entryId}:${n}`
-      if (taken.has(slot)) continue
-      taken.add(slot)
-      return slot
-    }
-  })
-}
+export const embedViewIds = (els: readonly unknown[], entryId: string): string[] =>
+  viewIdsOf(els.map(configIdOf), (n) => `embed:${entryId}:${n}`)
 
 function usePillPresence(views: SavedView[]): {
   entering: Set<string>
@@ -330,7 +312,7 @@ export function ViewTile({
       const el = arr[i]
       if (!isPlainObject(el)) return raw
       // A view answering to a derived id takes a minted one when first written, so only minted ids reach the file.
-      const own = storedViewId(el) === id
+      const own = ownsViewId(configIdOf(el), id)
       arr[i] = {
         ...el,
         config: mergeViewEdit(el.config, own ? config : { ...config, id: mintViewId() }),

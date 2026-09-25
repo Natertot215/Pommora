@@ -3,7 +3,8 @@ import { rm, writeFile, readFile } from 'node:fs/promises'
 import { join } from '../Paths/posix'
 import { tempRoot } from '../Testing/hostFs'
 import { savedView, type SavedView } from './views'
-import { saveView, reorderViews, deleteView } from './viewsFile'
+import { saveView, reorderViews, deleteView, setActiveView } from './viewsFile'
+import { containerFieldsFrom } from '../Nexus/containerFields'
 
 let folder: string
 beforeEach(async () => {
@@ -197,5 +198,64 @@ describe('the saved view', () => {
         plugin_key: { keep: 1 },
       },
     ])
+  })
+})
+
+describe('a view without an id of its own', () => {
+  const stored = [
+    { name: 'A', type: 'table', property_order: [], hidden_properties: [] },
+    { id: 'view_x', name: 'B', type: 'table', property_order: [], hidden_properties: [] },
+    { id: 'view_x', name: 'C', type: 'table', property_order: [], hidden_properties: [] },
+  ]
+  const MINTED = /^view_[0-9A-HJKMNP-TV-Z]{26}$/
+  const shown = () => containerFieldsFrom({ views: stored }, [], []).views ?? []
+  const onDisk = async () => (await readRaw('_pagecollection.json')) as Record<string, unknown>
+  const named = async () => ((await onDisk()).views as SavedView[]).map((v) => v.name)
+
+  it('reads under a positional id no sibling holds, a repeated id included', () => {
+    expect(shown().map((v) => v.id)).toEqual(['view_0', 'view_x', 'view_2'])
+  })
+
+  it('takes a minted id in place on the first write, as does every view without one, and the selection follows', async () => {
+    await writeCollectionSidecar({ views: stored, active_view: 'view_2' })
+    const r = await saveView(folder, 'collection', { ...shown()[0], name: 'A2' })
+    const after = await onDisk()
+    const views = after.views as SavedView[]
+    expect(views.map((v) => v.name)).toEqual(['A2', 'B', 'C'])
+    expect(views[0].id).toMatch(MINTED)
+    expect(views[1].id).toBe('view_x')
+    expect(views[2].id).toMatch(MINTED)
+    expect(r.ok && r.value.id).toBe(views[0].id)
+    expect(after.active_view).toBe(views[2].id)
+  })
+
+  it('lands a second save under the same positional id on the view the first repaired', async () => {
+    await writeCollectionSidecar({ views: stored })
+    const [a] = shown()
+    await saveView(folder, 'collection', { ...a, collapsed_groups: ['g1'] })
+    await saveView(folder, 'collection', { ...a, collapsed_groups: ['g1', 'g2'] })
+    const views = (await onDisk()).views as SavedView[]
+    expect(views.map((v) => v.name)).toEqual(['A', 'B', 'C'])
+    expect(views[0].collapsed_groups).toEqual(['g1', 'g2'])
+  })
+
+  it('restores a deleted view without landing on the sibling that moved into its place', async () => {
+    await writeCollectionSidecar({ views: stored })
+    const [a] = shown()
+    expect((await deleteView(folder, 'collection', a.id)).ok).toBe(true)
+    await saveView(folder, 'collection', a)
+    expect(await named()).toEqual(['B', 'C', 'A'])
+    expect(((await onDisk()).views as SavedView[])[2].id).toMatch(MINTED)
+  })
+
+  it('selects, reorders, and deletes by the id it reads under', async () => {
+    await writeCollectionSidecar({ views: stored })
+    await setActiveView(folder, 'collection', 'view_0')
+    const selected = await onDisk()
+    expect(selected.active_view).toBe((selected.views as SavedView[])[0].id)
+    expect((await reorderViews(folder, 'collection', ['view_2', 'view_0', 'view_x'])).ok).toBe(true)
+    expect(await named()).toEqual(['C', 'A', 'B'])
+    expect((await deleteView(folder, 'collection', 'view_2')).ok).toBe(true)
+    expect(await named()).toEqual(['A', 'B'])
   })
 })

@@ -1,18 +1,19 @@
 // The walk and the watch patch pass DIFFERENT children — the walk its freshly-read ones, the watch the live node's — so the children arrive as arguments rather than being derived here.
 
 import type { PageNode, SetNode } from './tree'
-import { savedView, type SavedView } from '../Views/views'
+import { containerViewIds, savedView, type SavedView } from '../Views/views'
 import { coerceViewButton } from './schemas'
 import { asString, asStringArray } from './coerce'
 import { resolveOrder } from './order'
 
 function parseViews(raw: unknown): SavedView[] | undefined {
   if (!Array.isArray(raw)) return undefined
+  const ids = containerViewIds(raw)
   const out: SavedView[] = []
-  for (const v of raw) {
+  raw.forEach((v, i) => {
     const r = savedView.safeParse(v)
-    if (r.success) out.push(r.data)
-  }
+    if (r.success) out.push({ ...r.data, id: ids[i] })
+  })
   return out.length > 0 ? out : undefined
 }
 
