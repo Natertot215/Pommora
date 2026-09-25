@@ -28,7 +28,7 @@ import { CalendarPicker } from '@pommora/uix/Pickers/CalendarPicker'
 import { contextIdsOf } from '../../Contexts/contextIdentity'
 import { useStyleFor } from '../Host/useColumnStyles'
 import { useSetting } from '../../Session/store'
-import { condensedDate, formatDate } from '../../Properties/formatValue'
+import { formatDate, readDate } from '../../Properties/formatValue'
 import { contextOptionsFor } from '../../Contexts/contextOptions'
 import { declaredType } from '../../Properties/value'
 import { toggleValue } from '../../Properties/Pickers/PropertyPicker'
@@ -533,12 +533,9 @@ export function FilterFrame({
         >
           {() => (
             <CalendarPicker
-              range={false}
-              value={rule.value ?? null}
+              value={rule.value ? readDate(rule.value) : null}
               timeFormat={nexusClock}
-              formatDateValue={(k, condensed) =>
-                condensed ? condensedDate(k, fmt, condensed.withYear) : formatDate(k, fmt, 'none')
-              }
+              formatDateValue={(k) => formatDate(k, fmt, 'none')}
               onChange={(iso) => patch({ value: iso ?? undefined })}
             />
           )}

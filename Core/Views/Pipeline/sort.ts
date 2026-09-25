@@ -10,6 +10,7 @@ import {
 } from '@pommora/core/Properties/properties'
 import { declaredType, fileName, resolveFieldValue } from '../../Properties/value'
 import { linkDisplayText } from '@pommora/core/Connections/linkValue'
+import { readDate } from '../../Properties/formatValue'
 
 type SortKey = number | string
 type Less = (a: SortKey, b: SortKey) => boolean
@@ -41,11 +42,8 @@ function numberOf(row: ViewRow, propertyId: string, schema: PropertyDefinition[]
 
 function dateOf(row: ViewRow, propertyId: string, schema: PropertyDefinition[]): number {
   const v = resolveFieldValue(row, propertyId, schema)
-  if (v.kind === 'datetime') {
-    const t = Date.parse(v.value)
-    if (!Number.isNaN(t)) return t
-  }
-  return Number.NEGATIVE_INFINITY
+  const t = v.kind === 'datetime' ? readDate(v.value)?.at.getTime() : undefined
+  return t ?? Number.NEGATIVE_INFINITY
 }
 
 function boolRank(row: ViewRow, propertyId: string, schema: PropertyDefinition[]): number {

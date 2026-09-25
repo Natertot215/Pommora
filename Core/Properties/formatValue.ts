@@ -43,7 +43,7 @@ export function clockOf(date: Date, timeFormat: TimeFormat): string {
 
 const WEEK_DAYS = 7 // |Δdays| ≤ this shows named/day-count form (with clock when time-shown)
 
-const startOfDay = (d: Date): Date => new Date(d.getFullYear(), d.getMonth(), d.getDate())
+export const startOfDay = (d: Date): Date => new Date(d.getFullYear(), d.getMonth(), d.getDate())
 
 function formatRelative(date: Date, hasTime: boolean, timeFormat: TimeFormat, now: Date): string {
   const DAY = 86_400_000
@@ -68,7 +68,16 @@ function formatRelative(date: Date, hasTime: boolean, timeFormat: TimeFormat, no
   return ago ? `${count} ${plural} Ago` : `${count} ${plural} from now`
 }
 
-/** Date-only strings parse as LOCAL midnight — a bare `new Date('YYYY-MM-DD')` is UTC and shifts the day west of Greenwich. Unparseable input falls back to the raw string. */
+export type LocalDate = { at: Date; timed: boolean }
+
+/** The one reading of a stored date: a bare day is LOCAL midnight — a bare `new Date('YYYY-MM-DD')` is UTC and shifts the day west of Greenwich — and anything else parses as written, its zone honored. */
+export function readDate(iso: string): LocalDate | null {
+  const timed = !/^\d{4}-\d{2}-\d{2}$/.test(iso)
+  const at = new Date(timed ? iso : `${iso}T00:00:00`)
+  return Number.isNaN(at.getTime()) ? null : { at, timed }
+}
+
+/** Unparseable input falls back to the raw string. */
 export function formatDate(
   iso: string,
   dateFormat: DateFormat,
@@ -76,9 +85,9 @@ export function formatDate(
   weekday: WeekdayFormat = 'none',
   now: Date = new Date(),
 ): string {
-  const hasTime = iso.includes('T')
-  const date = new Date(hasTime ? iso : `${iso}T00:00:00`)
-  if (Number.isNaN(date.getTime())) return iso
+  const read = readDate(iso)
+  if (!read) return iso
+  const { at: date, timed: hasTime } = read
   if (dateFormat === 'relative') return formatRelative(date, hasTime, timeFormat, now)
 
   const month = dateFmt({ month: 'long' }).format(date)
@@ -136,21 +145,6 @@ export function formatBucketLabel(
       const out = formatDate(key, dateFormat, 'none')
       return numeric && separator === 'dash' ? out.replaceAll('/', '-') : out
     }
-  }
-}
-
-export function condensedDate(iso: string, dateFormat: DateFormat, withYear: boolean): string {
-  const date = new Date(iso.includes('T') ? iso : `${iso}T00:00:00`)
-  if (Number.isNaN(date.getTime())) return iso
-  switch (dateFormat) {
-    case 'relative':
-    case 'short':
-    case 'full':
-      return `${date.toLocaleDateString('en-US', { month: 'long' })} ${ordinal(date.getDate())}`
-    case 'dayMonthYear':
-      return `${pad(date.getDate())}/${pad(date.getMonth() + 1)}${withYear ? `/${date.getFullYear()}` : ''}`
-    case 'monthDayYear':
-      return `${pad(date.getMonth() + 1)}/${pad(date.getDate())}${withYear ? `/${date.getFullYear()}` : ''}`
   }
 }
 
