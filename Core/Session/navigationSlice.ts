@@ -1,6 +1,6 @@
 import { persist } from '@pommora/core/Interface/Notifications/notifications'
 import type { MutateRequest } from '@pommora/core/Nexus/mutateRequest'
-import { type PommoraError, fault } from '@pommora/core/Contract/result'
+import type { PommoraError } from '@pommora/core/Contract/result'
 import {
   type NavigationState,
   type NavRef,
@@ -49,6 +49,7 @@ import {
   dropCacheDetail,
   cachePageDetail,
   fetchPageDetail,
+  fetchPageResult,
   setBodyBase,
 } from './pageDetailCache'
 import { dropCacheOwner, readCache } from '../Navigation/warmTabs'
@@ -58,7 +59,6 @@ import { cancelPageSave, scheduleTabsSave } from './saveScheduler'
 import { crumbDepthFor } from '../Interface/Subfield/crumbs'
 import { ensureContainerView } from '../Views/Host/viewMint'
 import type { SessionState, Slice } from './sessionState'
-import type { Asks } from '@pommora/core/Contract/bridge'
 import { host as dialer } from '../Platform/dialer'
 
 export type PageSlot =
@@ -315,10 +315,8 @@ export const createNavigationSlice: Slice<NavigationSlice> = (set, get) => {
 
   // False once a newer select superseded the cold fetch, which leaves the slots to that select.
   const showPage = async (target: PageTarget): Promise<boolean> => {
-    const land = (slot: PageSlot): void => {
-      if (slot.status === 'ready') cachePageDetail(slot.detail)
+    const land = (slot: PageSlot): void =>
       set((s) => ({ selection: target, pages: { ...s.pages, [target.id]: slot } }))
-    }
     const loaded = get().pages[target.id]
     if (loaded?.status === 'ready' && loaded.detail.path === target.path) {
       set({ selection: target })
@@ -326,6 +324,7 @@ export const createNavigationSlice: Slice<NavigationSlice> = (set, get) => {
     }
     const cached = readCache(get().activeTabId, navKey(target))?.pageDetail
     if (cached && cached.path === target.path) {
+      cachePageDetail(cached)
       land(readySlot(target, cached))
       return true
     }
@@ -334,12 +333,7 @@ export const createNavigationSlice: Slice<NavigationSlice> = (set, get) => {
     const fallback = setTimeout(() => {
       if (seq === pageFetchSeq) set({ selection: target })
     }, COLD_SWAP_DEADLINE)
-    let res: Asks['page:open']['reply']
-    try {
-      res = await dialer().ask('page:open', target.path)
-    } catch (e) {
-      res = fault(e)
-    }
+    const res = await fetchPageResult(target.path)
     clearTimeout(fallback)
     if (seq !== pageFetchSeq) return false
     land(res.ok ? readySlot(target, res.value) : { status: 'error', target, error: res.error })
@@ -626,11 +620,11 @@ export const createNavigationSlice: Slice<NavigationSlice> = (set, get) => {
     reloadPage: async () => {
       const shown = shownPage(get())
       if (!shown) return
-      const res = await dialer().ask('page:open', shown.target.path)
-      if (!res.ok) return
-      const body = shown.status === 'ready' ? shown.body : res.value.body
+      const detail = await fetchPageDetail(shown.target.path)
+      if (!detail) return
+      const body = shown.status === 'ready' ? shown.body : detail.body
       set((s) => ({
-        pages: { ...s.pages, [shown.target.id]: { ...readySlot(shown.target, res.value), body } },
+        pages: { ...s.pages, [shown.target.id]: { ...readySlot(shown.target, detail), body } },
       }))
     },
 

@@ -165,10 +165,7 @@ function buildEditorHost(
       const slot = state().pages[page.id]
       return slot?.status === 'ready' ? slot.body : null
     },
-    fetchBody: (page) =>
-      fetchPageDetail(page.path)
-        .then((d) => d?.body ?? null)
-        .catch(() => null),
+    fetchBody: (page) => fetchPageDetail(page.path).then((d) => d?.body ?? null),
     pageTitle: () => {
       const tree = state().tree
       return (pageId && tree && pagesByIdOf(tree).get(pageId)?.title) ?? null

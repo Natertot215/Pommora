@@ -1,10 +1,11 @@
 import { contextBridge, ipcRenderer, webUtils } from 'electron'
 import type { IpcRendererEvent } from 'electron'
 import type { Asks, Pushes, Tells } from '@pommora/core/Contract/bridge'
+import { fault } from '@pommora/core/Contract/result'
 import { posixPath } from '../Platform/hostPath'
 
 const ask = <K extends keyof Asks>(k: K, ...args: Asks[K]['args']): Promise<Asks[K]['reply']> =>
-  ipcRenderer.invoke(k, ...args)
+  ipcRenderer.invoke(k, ...args).catch(fault)
 
 const tell = <K extends keyof Tells>(k: K, ...args: Tells[K]): void => {
   ipcRenderer.send(k, ...args)
