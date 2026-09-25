@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useRef, useState } from 'react'
+import { type CSSProperties, useCallback, useMemo, useRef, useState } from 'react'
 import {
   knownTile,
   NEW_TILE_H,
@@ -29,7 +29,7 @@ import { findCollection, findCollectionForSet, findSet } from '../Nexus/treeInde
 import { mintDefaultView } from '@pommora/core/Views/views'
 import { viewGlyph } from '../Views/viewIcon'
 import type { CollectionNode, NexusTree, PageNode, SetNode } from '@pommora/core/Nexus/tree'
-import { zoomStyle } from './tileZoom'
+import { DEFAULT_ZOOM, ZOOM_STEPS, zoomStep } from './tileZoom'
 import {
   inertTile,
   type MutateEntry,
@@ -104,6 +104,17 @@ const withKey = (
 }
 
 const NO_PAGES: ReadonlyMap<string, ConnPage> = new Map()
+
+const ZOOM_STYLES = new Map<number, CSSProperties>(
+  ZOOM_STEPS.filter((f) => f !== DEFAULT_ZOOM).map((f) => [
+    f,
+    { '--tile-zoom': f } as CSSProperties,
+  ]),
+)
+
+export function zoomStyle(factor?: number): CSSProperties | undefined {
+  return ZOOM_STYLES.get(zoomStep(factor))
+}
 
 export function TileHost({
   host,

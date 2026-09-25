@@ -106,6 +106,19 @@ export const itemSelected = style({
   selectors: { '&:hover': { background: c.state.selected } },
 })
 
+/** Carries no fill of its own: the mark is the check, and a pane's `:has()` reads this to tell a list that has a selection from one that has none. */
+export const itemChecked = style({})
+
+/** Shown only inside a picker pane holding a checked row (`picker-base.css.ts`), so a menu of plain commands keeps no check gutter. */
+export const check = style({
+  display: 'none',
+  color: 'var(--accent)',
+  flex: 'none',
+  pointerEvents: 'none',
+})
+
+export const checkHidden = style({ visibility: 'hidden' })
+
 export const itemEmphasized = style([text.body.emphasized])
 
 export const matchText = style({ fontWeight: font.weight.emphasized })
@@ -157,6 +170,8 @@ export const titleWrap = style({
   justifyContent: 'center',
   gap: '2px',
 })
+
+export const titleCentered = style({ alignItems: 'center' })
 
 export const titleText = style({ vars: { '--over-scroll-fade': 'var(--fade-base)' } })
 

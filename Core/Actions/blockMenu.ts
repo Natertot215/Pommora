@@ -1,9 +1,9 @@
 import type { ActionItem } from './menuModel'
 import { HEADING_LEVELS, type ListKind } from './gripMenu'
-import type { BlockFormat, InlineFormat } from '../MarkdownPM/Input/format'
+import type { BlockFormat, HeadingLevel, InlineFormat } from '../MarkdownPM/Input/format'
 
 export type BlockMenuAction =
-  | `heading:${1 | 2 | 3 | 4 | 5}`
+  | `heading:${Exclude<HeadingLevel, 0>}`
   | `list:${Exclude<ListKind, 'arrow'>}`
   | `format:${Extract<InlineFormat, 'link' | 'linkText' | 'connection'>}`
   | `block:${BlockFormat}`
@@ -24,11 +24,10 @@ export interface BlockMenuMatch {
   rows: readonly BlockMenuRow[]
 }
 
-const HEADING_ROWS: readonly ActionItem<BlockMenuAction>[] = HEADING_LEVELS.slice(1).map((h) => ({
-  label: h.label,
-  action: `heading:${h.level}` as BlockMenuAction,
-  icon: `heading-${h.level}`,
-}))
+const HEADING_ROWS: readonly ActionItem<BlockMenuAction>[] = HEADING_LEVELS.flatMap(
+  ({ level, label }) =>
+    level === 0 ? [] : [{ label, action: `heading:${level}`, icon: `heading-${level}` }],
+)
 
 const LIST_ROWS: readonly ActionItem<BlockMenuAction>[] = [
   { label: 'Bullet List', action: 'list:bullet', icon: 'list' },

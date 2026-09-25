@@ -6,7 +6,7 @@ import {
   optionsOf,
 } from '@pommora/core/Properties/properties'
 import type { PropertyValue } from '@pommora/core/Properties/propertyValue'
-import { PickerMenu, PickerRow } from '@pommora/uix/Pickers/picker-base'
+import { PickerMenu } from '@pommora/uix/Pickers/picker-base'
 import { labelColorFor } from '@pommora/uix/Theme/ramp'
 import { NeutralChip } from '@pommora/uix/Labels/recipes'
 import { MenuItem, MenuSeparator, MenuTopRow } from '@pommora/uix/Menus'
@@ -216,9 +216,10 @@ export function PropertyOptionRows({
   return (
     <>
       {options.map((o) => (
-        <PickerRow
+        <MenuItem
           key={o.value}
-          selected={selected.includes(o.value)}
+          checked={selected.includes(o.value)}
+          centered
           onClick={() => onPick(o.value)}
         >
           {contextOptions ? (
@@ -231,7 +232,7 @@ export function PropertyOptionRows({
               def={def}
             />
           )}
-        </PickerRow>
+        </MenuItem>
       ))}
     </>
   )

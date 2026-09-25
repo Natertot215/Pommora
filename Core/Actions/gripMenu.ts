@@ -1,4 +1,6 @@
 import type { ActionItem } from './menuModel'
+import type { HeadingLevel } from '../MarkdownPM/Input/format'
+import { scaleRows } from '../Tiles/tileZoom'
 
 export type ListKind = 'ordered' | 'alphabetical' | 'bullet' | 'checkbox' | 'arrow'
 
@@ -8,14 +10,9 @@ export interface PickNode {
   children?: PickNode[]
 }
 
-interface ZoomOption {
-  label: string
-  factor: number
-}
-
 export type GripMenuContext =
-  | { kind: 'embed'; tree: PickNode[]; zoomSteps: readonly ZoomOption[]; zoom: number | null }
-  | { kind: 'webpage'; zoomSteps: readonly ZoomOption[]; zoom: number | null }
+  | { kind: 'embed'; tree: PickNode[]; zoom: number | null }
+  | { kind: 'webpage'; zoom: number | null }
   | { kind: 'list'; current: ListKind | null }
   | { kind: 'heading'; level: number; linkable: boolean }
   | { kind: 'plain' }
@@ -30,7 +27,7 @@ export type GripMenuAction =
   | `size:${number}`
   | 'delete'
 
-export const HEADING_LEVELS: readonly { level: number; label: string }[] = [
+export const HEADING_LEVELS: readonly { level: HeadingLevel; label: string }[] = [
   { level: 0, label: 'Paragraph' },
   { level: 1, label: 'Heading 1' },
   { level: 2, label: 'Heading 2' },
@@ -53,21 +50,10 @@ const source = (n: PickNode): ActionItem<GripMenuAction> =>
     ? { label: n.label, action: `source:${n.label}`, submenu: n.children.map(source) }
     : { label: n.label, action: `source:${n.title ?? n.label}` }
 
-const scaleRow = (ctx: {
-  zoomSteps: readonly ZoomOption[]
-  zoom: number | null
-}): ActionItem<GripMenuAction> =>
-  ctx.zoom === null
+const scaleRow = (zoom: number | null): ActionItem<GripMenuAction> =>
+  zoom === null
     ? { label: 'Scale', action: 'zoom:1', disabled: true }
-    : {
-        label: 'Scale',
-        action: 'zoom:1',
-        submenu: ctx.zoomSteps.map(({ label, factor }) => ({
-          label,
-          action: `zoom:${factor}`,
-          checked: factor === ctx.zoom,
-        })),
-      }
+    : { label: 'Scale', action: 'zoom:1', submenu: scaleRows('zoom:', zoom) }
 
 function ownRows(ctx: GripMenuContext): ActionItem<GripMenuAction>[] {
   switch (ctx.kind) {
@@ -76,10 +62,10 @@ function ownRows(ctx: GripMenuContext): ActionItem<GripMenuAction>[] {
         ctx.tree.length > 0
           ? { label: 'Source', action: 'source:', submenu: ctx.tree.map(source) }
           : { label: 'Source', action: 'source:', disabled: true },
-        scaleRow(ctx),
+        scaleRow(ctx.zoom),
       ]
     case 'webpage':
-      return [{ label: 'Edit Link', action: 'editLink' }, scaleRow(ctx)]
+      return [{ label: 'Edit Link', action: 'editLink' }, scaleRow(ctx.zoom)]
     case 'list':
       return [
         {

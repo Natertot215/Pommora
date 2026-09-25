@@ -8,7 +8,7 @@ import {
   type ViewPick,
   type ViewPickerItem,
 } from '@pommora/core/Tiles/tiles'
-import { ZOOM_STEPS, zoomStep } from './tileZoom'
+import { scaleRows, zoomStep } from './tileZoom'
 import { type ActionItem, afterSeparator } from '@pommora/core/Actions/menuModel'
 
 type TileMenuAction =
@@ -58,7 +58,6 @@ export function tileMenuItems({
     return [...body, ...(body.length ? afterSeparator(footer) : footer)]
   }
   const borderless = entry.style === 'borderless'
-  const currentFactor = zoomStep(entry.zoom).factor
   const items: ActionItem<TileMenuAction>[] = [
     ...(pageInfo
       ? [{ label: pageInfo.title, icon: pageInfo.icon, action: 'tile:open' as const }]
@@ -93,12 +92,7 @@ export function tileMenuItems({
       icon: 'scaling',
       action: 'tile:open',
       disabled: locked,
-      submenu: ZOOM_STEPS.map((st) => ({
-        label: st.label,
-        action: `tile:zoom:${st.factor}` as const,
-        checked: st.factor === currentFactor,
-        stay: true,
-      })),
+      submenu: scaleRows('tile:zoom:', zoomStep(entry.zoom)),
     },
     {
       label: 'Duplicate',

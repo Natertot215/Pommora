@@ -16,8 +16,8 @@ import { Icon, LockGlyph } from '@pommora/uix/Symbols'
 import { cellRing } from '@pommora/uix/Theme/ramp'
 import { labelColorFor } from '@pommora/uix/Theme/ramp'
 import { ColorPicker } from '@pommora/uix/Pickers/ColorPicker'
-import { PickerMenu, PickerRow } from '@pommora/uix/Pickers/picker-base'
-import { AccessoryButton, MenuFooting, MenuScrollFrame } from '@pommora/uix/Menus'
+import { PickerMenu } from '@pommora/uix/Pickers/picker-base'
+import { AccessoryButton, MenuFooting, MenuItem, MenuScrollFrame } from '@pommora/uix/Menus'
 import { titleInput as rowInput, rowDisabled } from '@pommora/uix/Menus/menu-base.css'
 import { reorder, SortableZone, useDragItem } from '@pommora/uix/Interactions/drag'
 import { useHoverDwell } from '@pommora/uix/Interactions/hoverDwell'
@@ -649,16 +649,15 @@ export function ViewTile({
               footer={<MenuFooting leading={newViewButton} />}
             >
               {views.map((v, i) => (
-                <PickerRow
+                <MenuItem
                   key={v.id}
-                  start
-                  selected={i === index}
+                  checked={i === index}
                   leading={<Icon name={viewGlyph(v)} size="headline" />}
                   onClick={renaming === i ? undefined : () => patchEntry({ active: i })}
                   onContextMenu={(e) => void rowMenu(i, e, false)}
                 >
                   {viewLabel(i)}
-                </PickerRow>
+                </MenuItem>
               ))}
             </MenuScrollFrame>
           </div>

@@ -2,39 +2,11 @@ import type { ActionItem } from '@pommora/core/Actions/menuModel'
 
 export type PresenterRow<A> =
   | { kind: 'separator' }
-  | {
-      kind: 'choice'
-      label: string
-      checked: boolean
-      disabled?: boolean
-      icon?: string
-      stay?: boolean
-      action: A
-    }
-  | {
-      kind: 'item'
-      label: string
-      disabled?: boolean
-      icon?: string
-      stay?: boolean
-      action: A
-      submenu?: ActionItem<A>[]
-    }
+  | ({ kind: 'item' } & Omit<ActionItem<A>, 'separatorBefore'>)
 
 export function menuRows<A extends string>(items: readonly ActionItem<A>[]): PresenterRow<A>[] {
-  return items.flatMap((item): PresenterRow<A>[] => {
-    const base = {
-      label: item.label,
-      disabled: item.disabled,
-      icon: item.icon,
-      stay: item.stay,
-      action: item.action,
-    }
-    return [
-      ...(item.separatorBefore ? [{ kind: 'separator' as const }] : []),
-      item.checked !== undefined && !item.submenu
-        ? { kind: 'choice', ...base, checked: item.checked }
-        : { kind: 'item', ...base, submenu: item.submenu },
-    ]
-  })
+  return items.flatMap(({ separatorBefore, ...item }): PresenterRow<A>[] => [
+    ...(separatorBefore ? [{ kind: 'separator' as const }] : []),
+    { kind: 'item', ...item, checked: item.submenu ? undefined : item.checked },
+  ])
 }

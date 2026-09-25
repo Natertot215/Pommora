@@ -4,8 +4,6 @@ import { cx } from '../Utilities/cx'
 import { toggled } from '../Utilities/checkSet'
 import { Reveal } from '../Animations/Reveal'
 import { MenuItem } from './menu-row'
-import { PickerRow } from '../Pickers/picker-base'
-import { side } from './menu-base.css'
 import { railRow, dropOutline, dropOutlineOpen, dropOutlineSpacer } from './listed-outline.css'
 
 // The set holds the exceptions to `defaultOpen`, never the open nodes, so a default-open tree needs no seed and stays right as nodes appear and vanish beneath it.
@@ -69,7 +67,7 @@ export function DisclosureRow({
   onClick,
   onContextMenu,
   selected = false,
-  picker = false,
+  checked,
   className,
   trailing,
   wrap,
@@ -83,29 +81,17 @@ export function DisclosureRow({
   onClick?: () => void
   onContextMenu?: (e: React.MouseEvent) => void
   selected?: boolean
-  picker?: boolean
+  checked?: boolean
   className?: string
   trailing?: ReactNode
   /** Wraps the row ALONE, never the disclosed run — a drag rect must be the row's own height. */
   wrap?: (row: ReactNode) => ReactNode
   children?: ReactNode
 }): React.JSX.Element {
-  const row = picker ? (
-    <PickerRow
-      selected={selected}
-      onClick={onClick}
-      leading={
-        <span className={side}>
-          <DropOutline kind={kind} open={open} onToggle={onToggle} />
-          {icon}
-        </span>
-      }
-    >
-      {title}
-    </PickerRow>
-  ) : (
+  const row = (
     <MenuItem
       selected={selected}
+      checked={checked}
       className={className}
       leading={
         <>

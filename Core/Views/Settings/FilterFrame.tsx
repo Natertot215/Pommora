@@ -12,13 +12,14 @@ import {
   DisclosureRow,
   MenuFooting,
   MenuCaption,
+  MenuItem,
   FootingItem,
   MenuScrollFrame,
   MenuTopRow,
   useDisclosureSet,
 } from '@pommora/uix/Menus'
 import { accessoryButton } from '@pommora/uix/Menus/menu-base.css'
-import { PickerMenu, PickerRow } from '@pommora/uix/Pickers/picker-base'
+import { PickerMenu } from '@pommora/uix/Pickers/picker-base'
 import { PICKER_MAX_HEIGHT, treePane } from '@pommora/uix/Pickers/picker-base.css'
 import { OverScroll } from '@pommora/uix/Interactions/OverScroll'
 import { Reveal } from '@pommora/uix/Animations/Reveal'
@@ -238,8 +239,7 @@ function LocationField({
         open={expanded.has(n.id)}
         onToggle={() => expanded.toggle(n.id)}
         onClick={() => toggle(n.id)}
-        selected={picked}
-        picker
+        checked={picked}
       >
         {kids.length > 0 ? kids.map(renderNode) : undefined}
       </DisclosureRow>
@@ -343,9 +343,10 @@ function ChipsField({
           : options.length === 0
             ? emptyPicker('No options yet.')
             : options.map((o) => (
-                <PickerRow
+                <MenuItem
                   key={o.value}
-                  selected={shown.includes(o.value)}
+                  checked={shown.includes(o.value)}
+                  centered
                   onClick={() => toggle(o.value)}
                 >
                   {isContext ? (
@@ -353,7 +354,7 @@ function ChipsField({
                   ) : (
                     <OptionChip type={type} option={o} />
                   )}
-                </PickerRow>
+                </MenuItem>
               ))}
       </PickerMenu>
     </>
@@ -482,9 +483,9 @@ export function FilterFrame({
     current?: string,
   ): React.ReactNode =>
     targets.map((t) => (
-      <PickerRow
+      <MenuItem
         key={t.id}
-        selected={t.id === current}
+        checked={t.id === current}
         leading={<Icon name={t.icon} size="body" />}
         onClick={() => {
           close()
@@ -492,7 +493,7 @@ export function FilterFrame({
         }}
       >
         {t.label}
-      </PickerRow>
+      </MenuItem>
     ))
 
   const valueCell = (
@@ -636,10 +637,9 @@ export function FilterFrame({
             {(close) =>
               ops.map((o) => {
                 return (
-                  <PickerRow
+                  <MenuItem
                     key={o.label}
-                    selected={o === current}
-                    start
+                    checked={o === current}
                     {...(isCheckbox ? { leading: checkboxBox(o) } : {})}
                     onClick={() => {
                       close()
@@ -659,7 +659,7 @@ export function FilterFrame({
                     }}
                   >
                     {o.label}
-                  </PickerRow>
+                  </MenuItem>
                 )
               })
             }

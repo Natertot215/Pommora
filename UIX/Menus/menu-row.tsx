@@ -9,6 +9,7 @@ import { onActivateClick } from '../Interactions/activate'
 import { segment } from '../Elements/segment.css'
 
 const BAR_GLYPH = 12 // KNOB
+const CHECK = 12
 
 /** A searched row's label with the typed match drawn emphasized; `at` is where the matcher found it. */
 export function emphasizeMatch(label: string, at: number | null, len: number): ReactNode {
@@ -68,6 +69,8 @@ type MenuItemProps = {
   trailing?: ReactNode
   overlay?: ReactNode
   selected?: boolean
+  checked?: boolean
+  centered?: boolean
   disabled?: boolean
   inert?: boolean
   indent?: number
@@ -89,6 +92,8 @@ export function MenuItem({
   trailing,
   overlay,
   selected = false,
+  checked,
+  centered = false,
   disabled = false,
   inert = false,
   indent = 0,
@@ -115,6 +120,7 @@ export function MenuItem({
       className={cx(
         inert ? s.rowBox : s.item,
         selected && s.itemSelected,
+        checked && s.itemChecked,
         disabled && s.rowDisabled,
         className,
       )}
@@ -130,7 +136,7 @@ export function MenuItem({
       onMouseLeave={onMouseLeave}
     >
       {leading != null && <span className={s.side}>{leading}</span>}
-      <span className={s.titleWrap}>
+      <span className={cx(s.titleWrap, centered && s.titleCentered)}>
         <span className={cx(s.titleText, overScrollEllipsis)}>{children}</span>
         {subLabel != null && <span className={s.subLabel}>{subLabel}</span>}
       </span>
@@ -139,6 +145,9 @@ export function MenuItem({
           {detail != null && <span className={s.detail}>{detail}</span>}
           {trailing}
         </span>
+      )}
+      {checked !== undefined && (
+        <Icon name="check" size={CHECK} className={cx(s.check, !checked && s.checkHidden)} />
       )}
       {overlay}
     </div>

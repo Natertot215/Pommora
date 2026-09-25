@@ -13,19 +13,16 @@ import { useExitPresence } from '../Animations/useExitPresence'
 import { useHeld } from '../Animations/useExitPresence'
 import { GlassSurface } from '../Glass/glass-surface'
 import { GlassWindow } from '../Glass/glass-window'
-import { rowDisabled } from '../Menus/menu-base.css'
 import { SHIELD_ATTR, useDismissal } from '../Interactions/dismissalStack'
 
 /** The portal layer a floating pane occupies. Containment reads against this rather than the pane's body, so the pane's own rim and resize edges are inside it. */
 export const PICKER_PORTAL_ATTR = 'data-picker-portal'
-import { Icon } from '../Symbols'
 import { cx } from '../Utilities/cx'
 import { clamp } from '../Utilities/clamp'
 import { MENU_GAP as GAP } from '../Menus/menuAnchor'
 import * as s from './picker-base.css'
 
 const VIEWPORT_MARGIN = 8
-const CHECK = 12
 
 const stopPointerBubble = (e: { stopPropagation: () => void }): void => e.stopPropagation()
 const stopContextBubble = (e: {
@@ -380,43 +377,5 @@ export function PickerMenu({
         document.body,
       )}
     </>
-  )
-}
-
-export function PickerRow({
-  children,
-  onClick,
-  onContextMenu,
-  selected = false,
-  leading,
-  start = false,
-  disabled = false,
-}: {
-  children: ReactNode
-  onClick?: () => void
-  onContextMenu?: (e: React.MouseEvent) => void
-  selected?: boolean
-  leading?: ReactNode
-  start?: boolean
-  disabled?: boolean
-}): React.JSX.Element {
-  return (
-    <button
-      type="button"
-      className={cx(s.option, selected && s.optionSelected, disabled && rowDisabled)}
-      disabled={disabled}
-      onClick={onClick}
-      onContextMenu={onContextMenu}
-    >
-      <span className={start || leading != null ? s.leadingRow : s.centeredRow}>
-        {leading != null && <span className={s.optionGlyph}>{leading}</span>}
-        {children}
-      </span>
-      <Icon
-        name="check"
-        size={CHECK}
-        className={cx(s.optionCheck, !selected && s.optionCheckHidden)}
-      />
-    </button>
   )
 }

@@ -7,7 +7,8 @@ import { Icon } from '../Symbols'
 import { DualSwitch } from '../Controls/DualSwitch'
 import { usePointerGesture } from '../Interactions/gesture'
 import { OverScroll } from '../Interactions/OverScroll'
-import { PickerMenu, PickerRow } from './picker-base'
+import { PickerMenu } from './picker-base'
+import { MenuItem } from '../Menus/menu-row'
 import { cx } from '../Utilities/cx'
 import { pad } from '../Utilities/pad'
 import { rowBox } from '../Menus/menu-base.css'
@@ -41,10 +42,6 @@ const dataKey = (el: Element | null | undefined): string | null =>
 
 const monthName = (m: number): string =>
   new Date(2026, m, 1).toLocaleDateString('en-US', { month: 'long' })
-
-const optionRow = (label: string | number): React.JSX.Element => (
-  <span className={s.optionRow}>{label}</span>
-)
 
 export function CalendarPicker({
   formatDateValue,
@@ -401,19 +398,15 @@ export function CalendarPicker({
     }
   const monthRows = (): React.JSX.Element[] =>
     Array.from({ length: 12 }, (_, m) => (
-      <PickerRow
-        key={monthName(m)}
-        selected={m === cursor.getMonth()}
-        onClick={() => jump(year, m)}
-      >
-        {optionRow(monthName(m))}
-      </PickerRow>
+      <MenuItem key={monthName(m)} checked={m === cursor.getMonth()} onClick={() => jump(year, m)}>
+        {monthName(m)}
+      </MenuItem>
     ))
   const yearRows = (): React.JSX.Element[] =>
     Array.from({ length: 21 }, (_, i) => year - 10 + i).map((y) => (
-      <PickerRow key={y} selected={y === year} onClick={() => jump(y, cursor.getMonth())}>
-        {optionRow(y)}
-      </PickerRow>
+      <MenuItem key={y} checked={y === year} onClick={() => jump(y, cursor.getMonth())}>
+        {y}
+      </MenuItem>
     ))
   const timeRows = (which: 'start' | 'end', part: 'h' | 'm'): React.JSX.Element[] => {
     const mins = minsOf(which)
@@ -424,9 +417,9 @@ export function CalendarPicker({
       setTimeMenu(null)
     }
     return (part === 'h' ? (twelve ? HOURS_12 : HOURS_24) : MINUTES).map((v) => (
-      <PickerRow key={v} selected={v === current} onClick={() => choose(v)}>
-        {optionRow(part === 'h' ? hourText(v) : pad(v))}
-      </PickerRow>
+      <MenuItem key={v} checked={v === current} onClick={() => choose(v)}>
+        {part === 'h' ? hourText(v) : pad(v)}
+      </MenuItem>
     ))
   }
 

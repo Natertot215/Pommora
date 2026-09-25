@@ -7,7 +7,6 @@ import {
 import type { GripMenuContext, ListKind, PickNode } from '@pommora/core/Actions/gripMenu'
 import { listKindOf, setHeading, setListKind, type HeadingLevel } from '../Input/format'
 import { headingParts } from '../Engine/detect'
-import { ZOOM_STEPS } from '../../Tiles/tileZoom'
 import { type Block, blockAt } from '../Engine/blockModel'
 import { docScan, docString } from '../docCache'
 import { embeddable } from '../Engine/embedClaims'
@@ -71,14 +70,12 @@ function contextFor(view: EditorView, doc: string, block: Block): GripMenuContex
       return {
         kind: 'embed',
         tree: embedPickTree(host.pickTree(), embedExclusions(view.state)),
-        zoomSteps: ZOOM_STEPS,
         zoom: embedZoomAt(view.state, block.from),
       }
     }
     case 'webpage':
       return {
         kind: 'webpage',
-        zoomSteps: ZOOM_STEPS,
         zoom: embedZoomAt(view.state, block.from),
       }
     case 'list':

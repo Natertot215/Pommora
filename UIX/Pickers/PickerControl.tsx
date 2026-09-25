@@ -3,6 +3,7 @@ import { EditableInput } from '../Fields/EditableInput'
 import { cx } from '../Utilities/cx'
 import { Icon } from '../Symbols'
 import * as s from './picker-control.css'
+import { FACTOR, type NumberUnit, unitLabel, unitNumber } from './numberUnit'
 
 export type PickerOption<T extends string> = {
   value: T
@@ -20,11 +21,6 @@ export const MenuDoorContext = createContext<MenuDoor | null>(null)
 
 const labelOf = <T extends string>(opts: readonly PickerOption<T>[], v: T): string =>
   opts.find((o) => o.value === v)?.label ?? opts[0].label
-
-/** How a stepped value reads: multiplied by `scale`, fixed to `digits` decimals, followed by `suffix`. */
-export type NumberUnit = { scale: number; suffix: string; digits: number }
-
-const FACTOR: NumberUnit = { scale: 1, suffix: 'x', digits: 2 }
 
 /** Admits an off-step current value so a hand-typed value still has a row to sit selected on. */
 const stepsWith = (steps: readonly number[], current: number): number[] =>
@@ -49,16 +45,15 @@ export function steppedPickerProps({
   onPick: (v: string) => void
   typeable: { text: string; suffix: string; onCommit: (written: string) => void }
 } {
-  const shown = (f: number): string => (f * unit.scale).toFixed(unit.digits)
   return {
     value: String(value),
     options: stepsWith(steps, value).map((f) => ({
       value: String(f),
-      label: `${shown(f)}${unit.suffix}`,
+      label: unitLabel(f, unit),
     })),
     onPick: (v) => onPick(Number(v)),
     typeable: {
-      text: shown(value),
+      text: unitNumber(value, unit),
       suffix: unit.suffix,
       onCommit: (written) => {
         const typed = Number.parseFloat(written)

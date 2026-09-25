@@ -16,6 +16,7 @@ import { cropFor } from './AssetImage'
 import { useImageAspect } from './imageAspect'
 import { Button } from '@pommora/uix/Buttons/Button'
 import { Slider } from '@pommora/uix/Controls/Slider'
+import { unitLabel } from '@pommora/uix/Pickers/numberUnit'
 import { AccessoryButton } from '@pommora/uix/Menus/menu-row'
 import { InputField } from '@pommora/uix/Fields/InputField'
 import { BrowseButton } from '@pommora/uix/Fields/PathField'
@@ -266,7 +267,7 @@ export function ImagePicker({
               ariaLabel="Zoom"
               onInput={setZoom}
               onCommit={setZoom}
-              format={(v) => `${v.toFixed(2)}x`}
+              format={unitLabel}
               readoutClassName={s.zoomReadout}
             />
           </div>
