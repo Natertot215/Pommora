@@ -6,14 +6,12 @@ import {
   type DecorationSet,
   type ViewUpdate,
 } from '@codemirror/view'
-import { RangeSetBuilder, StateEffect, type Extension } from '@codemirror/state'
+import { RangeSetBuilder, type Extension } from '@codemirror/state'
 import { tokenize } from '../Engine/tokens'
 import { CiteRefWidget } from '../decorations'
+import { resolutionNudge } from '../Embeds/embedWidget'
 
 type OrdinalOf = (label: string) => number | null
-
-/** The document's numbering moved — no transaction this cell's own editor sees says so, so the host holding the whole-document answer fires this instead. */
-export const citesChanged = StateEffect.define<null>()
 
 function marks(view: EditorView, ordinalOf?: OrdinalOf): DecorationSet {
   const text = view.state.doc.toString()
@@ -35,7 +33,10 @@ export function cellCitations(getOrdinalOf: () => OrdinalOf | undefined): Extens
         this.deco = marks(view, getOrdinalOf())
       }
       update(u: ViewUpdate): void {
-        if (u.docChanged || u.transactions.some((tr) => tr.effects.some((e) => e.is(citesChanged))))
+        if (
+          u.docChanged ||
+          u.transactions.some((tr) => tr.effects.some((e) => e.is(resolutionNudge)))
+        )
           this.deco = marks(u.view, getOrdinalOf())
       }
     },

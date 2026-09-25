@@ -253,6 +253,66 @@ describe('a heading link in a table cell travels in the page around the table', 
     expect(inner.dom.querySelector('.md-connection-heading-missing')).toBeNull()
   })
 
+  it('a live cell draws a heading the page lacks as missing', async () => {
+    const view = await mountTable('| [[#Gone]] x | b |')
+    await press(view.dom.querySelectorAll('tbody .mdpm-tbl-cell-static')[0])
+    const inner = EditorView.findFromDOM(cellEditors(view)[0] as HTMLElement)
+    if (!inner) throw new Error('the cell never went live')
+    inner.dispatch({ selection: { anchor: inner.state.doc.length } })
+    expect(inner.dom.querySelector('.md-connection-heading-missing')).not.toBeNull()
+  })
+
+  it('an open cell redraws a heading link once the page gains its heading', async () => {
+    const view = await mountTable('| [[#Gone]] x | b |')
+    await press(view.dom.querySelectorAll('tbody .mdpm-tbl-cell-static')[0])
+    const inner = EditorView.findFromDOM(cellEditors(view)[0] as HTMLElement)
+    if (!inner) throw new Error('the cell never went live')
+    inner.dispatch({ selection: { anchor: inner.state.doc.length } })
+    await act(async () => view.dispatch({ changes: { from: 0, insert: '## Gone\n' } }))
+    expect(inner.dom.querySelector('.md-connection-heading')).not.toBeNull()
+    expect(inner.dom.querySelector('.md-connection-heading-missing')).toBeNull()
+  })
+
+  it('a resting cell draws a heading the page lacks as missing, and redraws once the page gains it', async () => {
+    const view = await mountTable('| [[#Gone]] | b |')
+    const heading = (): Element | null =>
+      view.dom.querySelector('.mdpm-tbl-cell-static .md-connection-heading')
+    expect(heading()?.classList.contains('md-connection-heading-missing')).toBe(true)
+    await act(async () => view.dispatch({ changes: { from: 0, insert: '## Gone\n' } }))
+    expect(heading()?.classList.contains('md-connection-heading-missing')).toBe(false)
+  })
+
+  it('a live cell’s footnote marker follows its footnote in the page', async () => {
+    vi.mocked(travelToHeading).mockClear()
+    const view = await mountTable('| a[^1] | b |\n\n[^1]: [[#Setup]]')
+    await press(view.dom.querySelectorAll('tbody .mdpm-tbl-cell-static')[0])
+    const inner = EditorView.findFromDOM(cellEditors(view)[0] as HTMLElement)
+    if (!inner) throw new Error('the cell never went live')
+    await act(async () => inner.focus())
+    inner.dispatch({ selection: { anchor: 0 } })
+    const glyph = (): Element => inner.dom.querySelector('.md-citation-reference') as Element
+    glyph().dispatchEvent(new MouseEvent('mousedown', { bubbles: true, button: 0 }))
+    glyph().dispatchEvent(new MouseEvent('click', { bubbles: true, button: 0, detail: 1 }))
+    expect(travelToHeading).toHaveBeenCalledWith(view, 'Setup', 16)
+  })
+
+  it('a live cell’s footnote marker offers no footnote menu, as a resting cell’s offers none', async () => {
+    const citation = vi.fn(async () => null)
+    const view = await mountEditor({
+      initialBody: '## Setup\n\n| A | B |\n| --- | --- |\n| a[^1] | b |\n\n[^1]: note',
+      connections: conn,
+      host: { menus: { citation } },
+    })
+    for (let i = 0; !editorContainer().querySelector('.mdpm-tbl-cell-static') && i < 50; i++)
+      await act(() => new Promise((r) => setTimeout(r, 20)))
+    await press(view.dom.querySelectorAll('tbody .mdpm-tbl-cell-static')[0])
+    const glyph = cellEditors(view)[0].querySelector('.md-citation-reference') as Element
+    glyph.dispatchEvent(
+      new MouseEvent('contextmenu', { bubbles: true, cancelable: true, button: 2 }),
+    )
+    expect(citation).not.toHaveBeenCalled()
+  })
+
   it('a resting page link navigates rather than dropping the caret into its syntax', async () => {
     opened.mockClear()
     const view = await mountTable('| [[Alpha]] | b |')

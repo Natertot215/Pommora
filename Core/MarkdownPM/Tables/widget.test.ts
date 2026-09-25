@@ -16,7 +16,7 @@ const make = (doc: string): number => buildWidgetDecorations(EditorState.create(
 function firstTableWidget(state: EditorState): {
   text: string
   model: TableModel
-  cites: string
+  page: string
 } {
   for (const provider of state.facet(EditorView.decorations)) {
     if (typeof provider === 'function') continue
@@ -24,12 +24,22 @@ function firstTableWidget(state: EditorState): {
       const w = it.value.spec.widget as unknown as {
         text: string
         model: TableModel
-        cites: string
+        page: string
       } | null
       if (w && 'model' in w) return w
     }
   }
   throw new Error('no table widget in decoration set')
+}
+
+const tableWidgets = (state: EditorState): unknown[] => {
+  const out: unknown[] = []
+  for (const provider of state.facet(EditorView.decorations)) {
+    if (typeof provider === 'function') continue
+    for (const it = (provider as DecorationSet).iter(); it.value; it.next())
+      out.push(it.value.spec.widget)
+  }
+  return out
 }
 
 function widgetSpan(state: EditorState): [number, number] {
@@ -117,7 +127,7 @@ describe("a table follows the document's footnote numbering", () => {
 
   it('carries the numbering the document gives it', () => {
     const start = EditorState.create({ doc, extensions: [tableWidgetExtension()] })
-    expect(firstTableWidget(start).cites).toBe('A=1;B=2')
+    expect(firstTableWidget(start).page).toBe('A=1;B=2')
   })
 
   it('re-reads it after an edit far from the table renumbers a marker inside it', () => {
@@ -130,7 +140,28 @@ describe("a table follows the document's footnote numbering", () => {
       ],
     }).state
     expect(next.doc.toString()).toContain('[^new] middle line')
-    expect(firstTableWidget(next).cites).toBe('A=1;B=3;NEW=2')
+    expect(firstTableWidget(next).page).toBe('A=1;B=3;NEW=2')
+  })
+
+  it('a table holding a same-page heading link carries the page’s heading keys after the numbering, and re-reads them when a heading far from it changes', () => {
+    const linked = `## Setup\n\n${doc.replace('| [^b] |', '| [^b] [[#Setup]] |')}`
+    const start = EditorState.create({ doc: linked, extensions: [tableWidgetExtension()] })
+    expect(firstTableWidget(start).page).toBe('A=1;B=2\nsetup')
+    const next = start.update({ changes: { from: 8, insert: 'x' } }).state
+    expect(firstTableWidget(next).page).toBe('A=1;B=2\nsetupx')
+  })
+
+  it('a keystroke in a heading rebuilds only the table holding a same-page link', () => {
+    const plain = '| h |\n| - |\n| x |'
+    const start = EditorState.create({
+      doc: `## Setup\n\n${plain}\n\n| h |\n| - |\n| [[#Setup]] |`,
+      extensions: [tableWidgetExtension()],
+    })
+    const next = start.update({ changes: { from: 8, insert: 'x' } }).state
+    const [a0, b0] = tableWidgets(start)
+    const [a1, b1] = tableWidgets(next)
+    expect(a1).toBe(a0)
+    expect(b1).not.toBe(b0)
   })
 
   it('leaves the table alone when the edit moves no number', () => {

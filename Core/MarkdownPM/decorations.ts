@@ -53,7 +53,7 @@ import { lineEndOf, lineIndexAt } from './Engine/markdownCode'
 import { blockQueryAt } from './Menus/blockQuery'
 import { resolveMdTarget, wikiLinkView, type ConnectionsApi } from './Links/connectionsApi'
 import type { LinkStatus } from '@pommora/core/Connections/connections'
-import { editorHost } from './api'
+import { editorHost, pageEditorAt } from './api'
 import { checkMarkSvg, checkboxClass } from '@pommora/uix/Controls/Checkbox'
 import { svgFrame } from '@pommora/uix/Symbols/svgFrame'
 import { cx } from '@pommora/uix/Utilities/cx'
@@ -486,7 +486,8 @@ function build(view: EditorView, conn: ConnectionsApi | undefined, scope: Markdo
   })
   if (conn) {
     const { headingLinkStyle } = view.state.facet(editorHost).settings()
-    const ownKeys = scope === 'cell' ? undefined : docHeadingKeys(view.state.doc)
+    const page = scope === 'cell' ? pageEditorAt(view.dom).view : view
+    const ownKeys = page ? docHeadingKeys(page.state.doc) : undefined
     tokens.forEach((tk, i) => {
       if (tk.kind !== 'wikiLink') return
       const alias = aliasedToken(tk)

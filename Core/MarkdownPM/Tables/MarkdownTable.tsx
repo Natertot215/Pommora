@@ -10,7 +10,7 @@ import { revealTarget } from '@pommora/uix/Interactions/hover-reveal.css'
 import type { Align, TableModel } from '../Engine/Tables/model'
 import type { TableMenuContext } from '@pommora/core/MarkdownPM/Tables/tableMenu'
 import { CellEditor } from './CellEditor'
-import { StaticCell } from './cellStatic'
+import { type CellPage, StaticCell } from './cellStatic'
 import type { HeadingLinkStyle } from '../../Settings/personalization'
 import { cellToDisplay, cellToSource } from '../Engine/Tables/codec'
 import { decodePayload, encodeRect, rectGrid, type TablePayload } from '../Engine/Tables/clipboard'
@@ -99,7 +99,7 @@ export function MarkdownTable({
   host,
   linkStyle,
   model,
-  cites,
+  page,
   headingColumn = false,
   onCellCommit,
   onSettled,
@@ -120,7 +120,7 @@ export function MarkdownTable({
 }: {
   host: EditorHost
   model: TableModel
-  cites?: string
+  page?: string
   headingColumn?: boolean
   onCellCommit: (row: number, col: number, text: string) => void
   onSettled?: () => void
@@ -280,9 +280,10 @@ export function MarkdownTable({
     if (at) setHover((cur) => (cur && cur.r === at.r && cur.c === at.c ? cur : at))
   }
 
-  const ordinalOf = useMemo(() => {
+  const around = useMemo((): CellPage => {
+    const [cites, ...keys] = (page ?? '').split('\n')
     const map = new Map(
-      (cites ?? '')
+      cites
         .split(';')
         .filter(Boolean)
         .map((pair) => {
@@ -290,8 +291,8 @@ export function MarkdownTable({
           return [label, Number(ordinal)] as const
         }),
     )
-    return (label: string): number | null => map.get(foldLabel(label)) ?? null
-  }, [cites])
+    return { ordinalOf: (label) => map.get(foldLabel(label)) ?? null, ownKeys: keys }
+  }, [page])
 
   // The measure sweep runs on the table's SHAPE, never the model's identity — re-measuring per keystroke is an O(rows) forced layout.
   const shape = `${model.rows.length}x${model.columns.map((c) => `${c.align}:${c.dashes}`).join('|')}`
@@ -468,7 +469,7 @@ export function MarkdownTable({
           host={host}
           initial={display}
           connections={connections}
-          ordinalOf={ordinalOf}
+          ordinalOf={around.ordinalOf}
           caretCoords={caretCoords.current}
           initialSelect={initialSelect.current}
           sweepFrom={sweepFrom.current}
@@ -492,8 +493,8 @@ export function MarkdownTable({
       <StaticCell
         host={host}
         text={display}
-        cites={cites}
-        ordinalOf={ordinalOf}
+        page={page}
+        around={around}
         connections={connections}
         readOnly={readOnly}
         linkStyle={linkStyle}

@@ -32,7 +32,7 @@ let container: HTMLDivElement
 let root: Root
 const cited = (): string[] => vi.mocked(followCitation).mock.calls.map(([label]) => label)
 
-async function mount(cites: string): Promise<void> {
+async function mount(page: string): Promise<void> {
   vi.mocked(followCitation).mockClear()
   container = document.createElement('div')
   document.body.appendChild(container)
@@ -42,7 +42,7 @@ async function mount(cites: string): Promise<void> {
       createElement(MarkdownTable, {
         host: testHost(),
         model,
-        cites,
+        page,
         onCellCommit: noop,
         onExit: noop,
         onReorder: () => false,
@@ -84,7 +84,7 @@ describe('a resting cell draws a marker as the number the document gives it', ()
         createElement(MarkdownTable, {
           host: testHost(),
           model,
-          cites: 'NOTE=3',
+          page: 'NOTE=3',
           onCellCommit: noop,
           onExit: noop,
           onReorder: () => false,
@@ -192,7 +192,7 @@ describe('an entered cell follows the numbering too', () => {
         createElement(MarkdownTable, {
           host: testHost(),
           model,
-          cites: 'NOTE=3',
+          page: 'NOTE=3',
           onCellCommit: noop,
           onExit: noop,
           onReorder: () => false,

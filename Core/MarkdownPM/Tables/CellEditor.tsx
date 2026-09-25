@@ -6,7 +6,8 @@ import { customCaret } from '../caret'
 import { customSelection } from '../selection'
 import { markdownDecorations } from '../decorations'
 import { formatKeymap } from '../Input/formatKeymap'
-import { cellCitations, citesChanged } from './cellCitations'
+import { cellCitations } from './cellCitations'
+import { resolutionNudge } from '../Embeds/embedWidget'
 import {
   autoPair,
   autoDelete,
@@ -43,6 +44,7 @@ import { aliasOnLeave } from '../Links/linkEdit'
 import { linkRest, linkTyping } from '../Gestures/linkGestures'
 import { connectionClicks } from '../Links/connectionClicks'
 import { markdownLinkClicks } from '../Links/linkClicks'
+import { citationPointer } from '../Citations/citationPointer'
 import { pasteLink } from '../Links/pasteLink'
 import { pendingTitle } from '../Links/pendingTitle'
 import {
@@ -234,6 +236,7 @@ export function CellEditor({
           ),
           markdownLinkClicks(() => connections?.()),
           connectionClicks(() => connections?.()),
+          citationPointer(() => connections?.()),
           linkRest,
           linkTyping,
           customCaret,
@@ -388,9 +391,9 @@ export function CellEditor({
     view.dispatch({ effects: formatGate.current.reconfigure(formatKeymap(commands)) })
   }, [commands])
 
-  // A renumber above the table never touches this cell's document, so the host announces it on the same beat it re-keys the resting cells.
+  // A renumber or a heading change elsewhere on the page never touches this cell's document, so the host announces it on the same beat it re-keys the resting cells.
   useEffect(() => {
-    viewRef.current?.dispatch({ effects: citesChanged.of(null) })
+    viewRef.current?.dispatch({ effects: resolutionNudge.of(null) })
   }, [ordinalOf])
 
   // Compared as SOURCE, not as text: a rebuild that differs only in what a GFM cell cannot hold — an edge space, a trailing empty item — would otherwise rewrite the live document under the caret.

@@ -3,7 +3,7 @@ import type { ReactNode } from 'react'
 import { changesTo } from '../Pages/merge3'
 import { docString } from './docCache'
 import { Annotation, Facet, Transaction } from '@codemirror/state'
-import type { EditorView } from '@codemirror/view'
+import { EditorView } from '@codemirror/view'
 import type { Personalization } from '@pommora/core/Settings/personalization'
 import type { HostContext } from '@pommora/core/Contract/handlers'
 import type { EditorPrefs, EditorPrefWrite } from '@pommora/core/Contract/bridge'
@@ -17,6 +17,13 @@ import type {
 } from '@pommora/core/MarkdownPM/Citations/citationMenu'
 
 export const mirrored = Annotation.define<boolean>()
+
+/** A cell is a document of its own, so the page editor is found from the element: a link or marker in a table answers to the page around it, from the table's seat. */
+export function pageEditorAt(el: Element): { seat: Element; view: EditorView | null } {
+  const seat = el.closest('.mdpm-tbl-widget') ?? el
+  const editor = seat.closest<HTMLElement>('.cm-editor')
+  return { seat, view: editor && EditorView.findFromDOM(editor) }
+}
 
 /** Another mount's text, already past its own guards, applied as the changed span only: no filter touches it, it stays out of undo history, and it never echoes back through `onChange`. */
 export function mirrorBody(view: EditorView, body: string): void {
