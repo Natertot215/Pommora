@@ -73,3 +73,18 @@ describe('serveIpc registers and answers through the envelope', () => {
     expect(heard).toHaveBeenCalledWith(senderWindow, { open: true })
   })
 })
+
+describe('a Tell is a boundary too', () => {
+  it('a tell that throws is logged and never escapes the main process', () => {
+    const tells = {
+      boom: () => {
+        throw new Error('no')
+      },
+    } as never
+    serveIpc({} as Handlers, tells, host)
+    const quiet = vi.spyOn(console, 'error').mockImplementation(() => {})
+    expect(() => onReg.get('boom')?.(event)).not.toThrow()
+    expect(quiet).toHaveBeenCalledOnce()
+    quiet.mockRestore()
+  })
+})

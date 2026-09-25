@@ -1,4 +1,5 @@
 import { type Handlers, withRoot, withWriteRoot } from '../Contract/handlers'
+import { isKeyOf } from '../Contract/validators'
 import { fail, ok, fault } from '../Contract/result'
 import { machine } from '../Platform/machine'
 import { seedContentIndex } from '../Index/indexSeed'
@@ -8,6 +9,7 @@ import { confirmSettingsWrite } from '../Nexus/confirm'
 import { refreshAfterWrite } from '../Nexus/liveTree'
 import { sweepFileHistory } from '../Pages/fileHistory'
 import { nexusFolderRefusal } from './codec'
+import { personalizationSchema } from './personalization'
 import { clearExclusionData } from './exclusionScan'
 import {
   readWatchScope,
@@ -54,8 +56,8 @@ export const settingsHandlers = {
   }),
 
   'personalization:set': withWriteRoot(async (root, ctx, key: unknown, value: unknown) => {
-    if (typeof key !== 'string' || !key) return fault('Invalid personalization key.')
-    await writePersonalization(root, key, value)
+    if (!isKeyOf(personalizationSchema.shape, key)) return fault('Invalid personalization key.')
+    await writePersonalization(root, key, personalizationSchema.shape[key].parse(value))
     // No renderer confirm exists for this channel (the slice patches optimistically), yet it writes a field the walk reads — the push set's membership predicate.
     await confirmSettingsWrite(ctx, root)
     if (key === 'webZoomFactor') await ctx.applyZoom()

@@ -1,3 +1,4 @@
+import { isPlainObject } from '../Contract/validators'
 import type { Commands } from '../Actions/commands'
 import { type Personalization, settingOf } from './personalization'
 import { setOrDrop, updateNexusConfig } from '../Files/atomicWrite'
@@ -12,7 +13,6 @@ import {
 import { foldKey } from '../Paths/caseFold'
 import { rootSegs, type WatchScope } from '../Paths/exclusion'
 import { fail, ok, type Result, fault } from '../Contract/result'
-import { isPlainObject } from '../Properties/propertyValue'
 
 export async function updateSettings(
   root: string,

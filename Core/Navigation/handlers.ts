@@ -1,11 +1,14 @@
 import { type Handlers, withRoot, withWriteRoot } from '../Contract/handlers'
 import { NO_STORE, ok, fault } from '../Contract/result'
-import { isRect, isString } from '../Contract/validators'
+import { isFiniteNumber, isPlainObject, isString } from '../Contract/validators'
+import type { ThumbRect } from '../Interface/chrome'
+import { holdsName } from '../Paths/names'
 import { liveTreeOf } from '../Nexus/liveTree'
-import { isPlainObject } from '../Properties/propertyValue'
 import { readNavigationState, writeNavigationState } from './navigationFile'
 import { readTabsState, sanitizeTabSet, writeTabsState } from './tabsState'
-import type { NavigationState } from './navRef'
+
+const isRect = (v: unknown): v is ThumbRect =>
+  isPlainObject(v) && ['x', 'y', 'width', 'height'].every((k) => isFiniteNumber(v[k]))
 
 export const navigationHandlers = {
   'nav:read': withRoot(async (root) => {
@@ -14,7 +17,7 @@ export const navigationHandlers = {
 
   'nav:write': withWriteRoot(async (root, _ctx, patch: unknown) => {
     if (!isPlainObject(patch)) return fault('Navigation patch must be an object.')
-    await writeNavigationState(root, patch as Partial<NavigationState>)
+    await writeNavigationState(root, patch)
     return ok(null)
   }),
 
@@ -27,7 +30,7 @@ export const navigationHandlers = {
 
   'capture:thumbnail': withWriteRoot(
     async (root, ctx, navKey: unknown, rect: unknown, scaleFactor: unknown) => {
-      if (typeof navKey !== 'string' || !isRect(rect) || typeof scaleFactor !== 'number')
+      if (!isString(navKey) || !holdsName(navKey) || !isRect(rect) || !isFiniteNumber(scaleFactor))
         return fault('Bad capture args.')
       const nexusId = (await liveTreeOf(root)).nexus.id
       const url = await ctx.thumbnails.capture(root, nexusId, navKey, rect, scaleFactor)

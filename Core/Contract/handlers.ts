@@ -72,9 +72,12 @@ export interface HostContext {
   applyZoom(): Promise<void>
 }
 
+// What the window sends arrives unknown: the declared argument types shape the ask, and every handler narrows what it was handed before it acts.
+export type Untrusted<A extends unknown[]> = { [I in keyof A]: unknown }
+
 type Handler<K extends keyof Asks> = (
   ctx: HostContext,
-  ...args: Asks[K]['args']
+  ...args: Untrusted<Asks[K]['args']>
 ) => Asks[K]['reply'] | Promise<Asks[K]['reply']>
 
 export type Handlers = { [K in keyof Asks]: Handler<K> }

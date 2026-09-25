@@ -14,7 +14,7 @@ const viewButtonField = z.enum(VIEW_BUTTONS).optional().catch(undefined)
 export const coerceOpenIn = (raw: unknown): OpenIn | undefined => openInField.parse(raw)
 export const coerceViewButton = (raw: unknown): ViewButton | undefined => viewButtonField.parse(raw)
 
-const crop = z.object({
+export const crop = z.object({
   x: z.number(),
   y: z.number(),
   zoom: z.number(),

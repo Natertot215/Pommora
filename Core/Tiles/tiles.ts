@@ -2,7 +2,7 @@
 
 import { z } from 'zod'
 import { type Result, fault, ok } from '../Contract/result'
-import { isPlainObject } from '../Properties/propertyValue'
+import { isPlainObject } from '../Contract/validators'
 import { looseDecoder } from '../Files/decoders'
 import { isUlidShaped } from '../Nexus/identityMark'
 import { VIEW_BUTTONS, VIEW_STYLES } from '../Views/viewRow'

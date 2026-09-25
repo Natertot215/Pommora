@@ -17,6 +17,8 @@ import { ASSET_MIME, IMAGE_EXTS } from '@pommora/core/Assets/assetMime'
 import { underAssetRoot } from '@pommora/core/Assets/assetRoots'
 import type { HostContext, HostDevice, PickKind } from '@pommora/core/Contract/handlers'
 import { handlers } from '@pommora/core/Contract/serve'
+import { isFiniteNumber } from '@pommora/core/Contract/validators'
+import { formatState } from '@pommora/core/Actions/editorMenu'
 import { resolveUnderRoot } from '@pommora/core/Paths/pathSafety'
 import { openNexusSequence } from '@pommora/core/Nexus/handlers'
 import { isUlidShaped } from '@pommora/core/Nexus/identityMark'
@@ -320,9 +322,12 @@ let windowFlushed: (() => void) | null = null
 
 const tells: TellHandlers = {
   'app:flushed': () => windowFlushed?.(),
-  'editor:format-state': (_win, state) => setFormatState(state),
+  'editor:format-state': (_win, state) => {
+    const read = formatState.safeParse(state)
+    if (read.success) setFormatState(read.data)
+  },
   'win:dragBy': (win, dx, dy) => {
-    if (!win || typeof dx !== 'number' || typeof dy !== 'number') return
+    if (!win || !isFiniteNumber(dx) || !isFiniteNumber(dy)) return
     const [x, y] = win.getPosition()
     win.setPosition(Math.round(x + dx), Math.round(y + dy))
   },
@@ -333,7 +338,10 @@ const tells: TellHandlers = {
   'win:resendFullscreen': (win) => {
     if (win) push(win, 'win:fullscreen', win.isFullScreen())
   },
-  'web:wheel': (_win, ...args) => wheelGuest(...args),
+  'web:wheel': (_win, ...args) => {
+    if (args.length === 5 && args.every(isFiniteNumber))
+      wheelGuest(...(args as [number, number, number, number, number]))
+  },
 }
 
 serveIpc(handlers, tells, hostContext)

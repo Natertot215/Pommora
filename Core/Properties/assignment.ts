@@ -1,5 +1,5 @@
 import { clamp } from '@pommora/uix/Utilities/clamp'
-import { isPlainObject } from './propertyValue'
+import { isPlainObject } from '../Contract/validators'
 import { moveItem } from '@pommora/uix/Utilities/moveItem'
 import { join } from '../Paths/posix'
 import { sidecarPath } from '../Paths/paths'

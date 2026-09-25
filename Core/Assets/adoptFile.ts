@@ -9,7 +9,7 @@ import { connectionText, embeddableTitle } from '../Connections/connections'
 import { fault, ok, type Result } from '../Contract/result'
 import { ASSET_MIME } from './assetMime'
 import { AMBIGUOUS, indexable, liveAssetMap, resolveAssetName } from './assetMap'
-import { NOT_A_PROPERTY_DIR_MESSAGE, underAssetRoot, validPropertyDir } from './assetRoots'
+import { NOT_A_PROPERTY_DIR, underAssetRoot, validPropertyDir } from './assetRoots'
 import { writeAssetFile } from './assetWrite'
 
 const UNREADABLE = 'That file could not be read.'
@@ -30,7 +30,7 @@ export async function adoptFile(
   const { assetDir } = await readWatchScope(root)
   const dir = assetSubRoot(assetDir, opts.subfolder)
   if (opts.subfolder !== undefined && !validPropertyDir(opts.subfolder, assetDir))
-    return fault(NOT_A_PROPERTY_DIR_MESSAGE)
+    return NOT_A_PROPERTY_DIR
   // Resolving the SUBFOLDER, not the root, is what catches a segment inside the root that is a symlink out.
   const canonical = await resolveUnderRoot(root, dir)
   if (!canonical.ok && canonical.error.code !== 'not-found') return canonical
@@ -39,7 +39,7 @@ export async function adoptFile(
     canonical.ok &&
     !underAssetRoot(relative(await machine().realpath(root), canonical.value), assetDir)
   )
-    return fault(NOT_A_PROPERTY_DIR_MESSAGE)
+    return NOT_A_PROPERTY_DIR
   const hit = resolveAssetName(await liveAssetMap(root), base)
   if (hit === AMBIGUOUS) return fault(`More than one file is named ${base}.`)
 

@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import type { ConnPage } from '@pommora/core/Connections/pageIndex'
 import type { ViewTileEntry } from '@pommora/core/Tiles/tiles'
-import { isPlainObject } from '@pommora/core/Properties/propertyValue'
+import { isPlainObject } from '@pommora/core/Contract/validators'
 import type { CollectionNode, SetNode } from '@pommora/core/Nexus/tree'
 import type { PropertyDefinition } from '@pommora/core/Properties/properties'
 import {

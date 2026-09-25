@@ -145,9 +145,7 @@ export function wheelGuest(
   deltaX: number,
   deltaY: number,
 ): void {
-  // Numbers off the wire, and only ever a guest: any other WebContents is the app's own.
-  if (!Number.isFinite(x) || !Number.isFinite(y)) return
-  if (!Number.isFinite(deltaX) || !Number.isFinite(deltaY)) return
+  // Only ever a guest: any other WebContents is the app's own.
   const guest = webContents.fromId(guestId)
   if (!guest || guest.isDestroyed() || guest.getType() !== 'webview') return
   guest.sendInputEvent({ type: 'mouseWheel', x, y, deltaX, deltaY, canScroll: true })

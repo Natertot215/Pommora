@@ -1,7 +1,8 @@
+import { isStringArray } from '../Contract/validators'
+
 export function asString(v: unknown): string | undefined {
   return typeof v === 'string' && v.length > 0 ? v : undefined
 }
 
-export function asStringArray(v: unknown): string[] | undefined {
-  return Array.isArray(v) && v.every((x) => typeof x === 'string') ? (v as string[]) : undefined
-}
+export const asStringArray = (v: unknown): string[] | undefined =>
+  isStringArray(v) ? v : undefined

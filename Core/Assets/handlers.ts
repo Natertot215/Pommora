@@ -1,6 +1,7 @@
 import { type Handlers, withRoot, withWriteRoot } from '../Contract/handlers'
 import { ok, fault } from '../Contract/result'
-import { NOT_A_PROPERTY_DIR } from '../Contract/validators'
+import { isPlainObject, isString } from '../Contract/validators'
+import { NOT_A_PROPERTY_DIR } from './assetRoots'
 import { seedContentIndex } from '../Index/indexSeed'
 import { assetSubRoot } from '../Paths/nexusPaths'
 import { resolveUnderRoot } from '../Paths/pathSafety'
@@ -22,7 +23,7 @@ import { trashDeps } from '../Trash/bundle'
 export const assetsHandlers = {
   'assets:map': withRoot(async (root) => ok(await liveAssetMap(root)), ok(EMPTY_ASSET_MAP)),
 
-  'assets:chooseDir': withRoot(async (root, ctx, scope?: 'nexus' | 'property', at?: unknown) => {
+  'assets:chooseDir': withRoot(async (root, ctx, scope: unknown, at: unknown) => {
     const forProperty = scope === 'property'
     const { assetDir } = await readWatchScope(root)
     const from =
@@ -68,10 +69,11 @@ export const assetsHandlers = {
     return ok(next)
   }),
 
-  'nexus:pickFile': async (ctx, opts) => {
+  'nexus:pickFile': async (ctx, opts: unknown) => {
     const root = sessionRoot()
-    const at = root && opts?.dir ? await resolveUnderRoot(root, opts.dir) : null
-    const picked = await ctx.pick(opts?.any ? 'file' : 'image', {
+    const { dir, any } = isPlainObject(opts) ? opts : {}
+    const at = root && typeof dir === 'string' ? await resolveUnderRoot(root, dir) : null
+    const picked = await ctx.pick(any === true ? 'file' : 'image', {
       defaultPath: at?.ok ? at.value : (root ?? undefined),
     })
     return ok(picked)
@@ -79,7 +81,9 @@ export const assetsHandlers = {
 
   'nexus:pasteImage': async (ctx) => ok(await ctx.pasteImage()),
 
-  'assets:adopt': withWriteRoot(async (root, ctx, source: string, subfolder?: string) => {
+  'assets:adopt': withWriteRoot(async (root, ctx, source: unknown, subfolder: unknown) => {
+    if (!isString(source)) return fault('A source path is required.')
+    if (subfolder !== undefined && !isString(subfolder)) return fault('Invalid subfolder.')
     const adopted = await adoptFile(root, source, {
       allow: 'any',
       ...(subfolder ? { subfolder } : {}),

@@ -1,7 +1,7 @@
+import { isPlainObject } from '../Contract/validators'
 import type { AccentSetting } from '@pommora/uix/Theme/colors'
 import { chordOf } from '@pommora/uix/Interactions/chords'
 import { COMMAND_IDS, type Commands, DEFAULT_COMMANDS } from '../Actions/commands'
-import { isPlainObject } from '../Properties/propertyValue'
 import { asString } from '../Nexus/coerce'
 import { ASSETS_DIR_REL, NON_CORPUS_TOP, NEXUS_CONFIG_FILES } from '../Paths/nexusPaths'
 import { foldKey } from '../Paths/caseFold'

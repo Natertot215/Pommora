@@ -1,10 +1,10 @@
+import { isPlainObject } from '../Contract/validators'
 import { pathExists, updateNexusConfig } from '../Files/atomicWrite'
 import { patchSidecar } from '../Files/sidecar'
 import { sidecarPath } from '../Paths/paths'
 import { ok, type Result } from '../Contract/result'
 import type { ChildOrderKey } from './mutateRequest'
 import { asStringArray } from './coerce'
-import { isPlainObject } from '../Properties/propertyValue'
 
 type ContainerOrderKey = ChildOrderKey | 'page_order'
 

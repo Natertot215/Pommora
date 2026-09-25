@@ -1,6 +1,7 @@
 // Each enum has ONE source: an `as const` array drives both the TS type and the zod codec / runtime membership Set — never re-listed.
 
 import { z } from 'zod'
+import { isPlainObject } from '../Contract/validators'
 import { newId } from '../Nexus/ids'
 import { columnStyle, holdsStyle } from '../Properties/columnStyles'
 import { eachOf, entriesOf, looseDecoder } from '../Files/decoders'
@@ -127,16 +128,15 @@ function decodeOrdering(raw: Record<string, unknown>): Omit<SubGroupConfig, 'pro
 }
 
 export function decodeSubGroup(raw: unknown): SubGroupConfig | undefined {
-  if (raw === null || typeof raw !== 'object' || Array.isArray(raw)) return undefined
-  const s = raw as Record<string, unknown>
-  if (typeof s.property_id !== 'string' || s.property_id === '') return undefined
-  return { property_id: s.property_id, ...decodeOrdering(s) }
+  if (!isPlainObject(raw)) return undefined
+  if (typeof raw.property_id !== 'string' || raw.property_id === '') return undefined
+  return { property_id: raw.property_id, ...decodeOrdering(raw) }
 }
 
 /** Never throws; an unknown or malformed shape degrades to `structural` — a throw would poison the whole sidecar decode. */
 export function decodeGroupConfig(raw: unknown): GroupConfig {
-  if (raw === null || typeof raw !== 'object' || Array.isArray(raw)) return { kind: 'structural' }
-  const obj = raw as Record<string, unknown>
+  if (!isPlainObject(raw)) return { kind: 'structural' }
+  const obj = raw
   const kind = typeof obj.kind === 'string' ? obj.kind : undefined
 
   switch (kind) {

@@ -1,14 +1,7 @@
-import { validPropertyDir } from '../Assets/assetRoots'
+import { NOT_A_PROPERTY_DIR, validPropertyDir } from '../Assets/assetRoots'
 import { type Handlers, type HostContext, withWriteRoot } from '../Contract/handlers'
 import { ok, type Result, fault } from '../Contract/result'
-import {
-  isOptionArray,
-  narrowFileConfig,
-  narrowLinkConfig,
-  narrowNumberFormat,
-  NEEDS_CONFIG_PATCH,
-  NOT_A_PROPERTY_DIR,
-} from '../Contract/validators'
+import { isFiniteNumber, NEEDS_CONFIG_PATCH } from '../Contract/validators'
 import { mutableTarget } from '../Nexus/liveTree'
 import { confirmRegistryWrite } from '../Nexus/confirm'
 import { readWatchScope } from '../Settings/settings'
@@ -25,7 +18,16 @@ import {
   setStatusGroups,
 } from './optionOps'
 import type { Option } from './optionModel'
-import { type FileConfig, propertyDefinition, type StatusGroup } from './properties'
+import {
+  type FileConfig,
+  narrowOptions,
+  narrowFileConfig,
+  narrowLinkConfig,
+  narrowNumberFormat,
+  narrowStatusGroups,
+  propertyDefinition,
+  type StatusGroup,
+} from './properties'
 import {
   createProperty,
   editProperty,
@@ -68,21 +70,19 @@ const idOnly = ([id]: unknown[]): [string] | Result<never> =>
   typeof id === 'string' ? [id] : NEEDS_PROPERTY_ID
 
 const idAndIndex = ([id, at]: unknown[]): [string, number] | Result<never> =>
-  typeof id === 'string' && typeof at === 'number' ? [id, at] : NEEDS_ID_AND_INDEX
+  typeof id === 'string' && isFiniteNumber(at) ? [id, at] : NEEDS_ID_AND_INDEX
 
-const idAndOptions = ([id, options]: unknown[]): [string, Option[]] | Result<never> =>
-  typeof id !== 'string'
-    ? NEEDS_PROPERTY_ID
-    : isOptionArray(options)
-      ? [id, options]
-      : NEEDS_OPTION_ARRAY
+const idAndOptions = ([id, options]: unknown[]): [string, Option[]] | Result<never> => {
+  if (typeof id !== 'string') return NEEDS_PROPERTY_ID
+  const read = narrowOptions(options)
+  return read ? [id, read] : NEEDS_OPTION_ARRAY
+}
 
-const idAndGroups = ([id, groups]: unknown[]): [string, StatusGroup[]] | Result<never> =>
-  typeof id !== 'string'
-    ? NEEDS_PROPERTY_ID
-    : Array.isArray(groups)
-      ? [id, groups as StatusGroup[]]
-      : NEEDS_STATUS_GROUPS
+const idAndGroups = ([id, groups]: unknown[]): [string, StatusGroup[]] | Result<never> => {
+  if (typeof id !== 'string') return NEEDS_PROPERTY_ID
+  const read = narrowStatusGroups(groups)
+  return read ? [id, read] : NEEDS_STATUS_GROUPS
+}
 
 const idAndValue = ([id, value]: unknown[]): [string, string] | Result<never> =>
   typeof id === 'string' && typeof value === 'string' ? [id, value] : NEEDS_ID_AND_VALUE
@@ -133,7 +133,7 @@ export const propertiesHandlers = {
     async (root, ctx, containerPath: unknown, propertyId: unknown, toIndex: unknown) => {
       const c = await resolveSchemaFolder(root, containerPath)
       if (!c.ok) return c
-      if (typeof propertyId !== 'string' || typeof toIndex !== 'number')
+      if (typeof propertyId !== 'string' || !isFiniteNumber(toIndex))
         return fault('propertyId (string) and toIndex (number) are required.')
       const r = await reorderAssignment(c.value.folder, propertyId, toIndex)
       if (r.ok) await confirmRegistryWrite(ctx, root, c.value.rel)
@@ -161,7 +161,7 @@ export const propertiesHandlers = {
         root,
         c.value.folder,
         propertyId,
-        typeof toIndex === 'number' ? toIndex : undefined,
+        isFiniteNumber(toIndex) ? toIndex : undefined,
       )
       if (r.ok) await confirmRegistryWrite(ctx, root, c.value.rel)
       return r

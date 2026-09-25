@@ -5,7 +5,7 @@ import { readJsonStrict, writeJson } from '../Files/atomicWrite'
 import { mergeKeys } from '../Files/jsonMerge'
 import type { Json } from '../Files/stableJson'
 import { machine } from '../Platform/machine'
-import { isPlainObject } from './propertyValue'
+import { isPlainObject } from '../Contract/validators'
 import { propertyDefinition, type PropertyDefinition } from './properties'
 import { resolveRowOrder } from './rowOrder'
 

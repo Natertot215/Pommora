@@ -1,3 +1,4 @@
+import { isPlainObject } from '../Contract/validators'
 import type { ContainerKind } from '../Nexus/schemas'
 import {
   containerViewIds,
@@ -11,7 +12,6 @@ import {
 import { ok, fail, type Result, fault } from '../Contract/result'
 import { readJsonObject, setOrDrop } from '../Files/atomicWrite'
 import { patchSidecar, type Refuse } from '../Files/sidecar'
-import { isPlainObject } from '../Properties/propertyValue'
 import type { Json } from '../Files/stableJson'
 import { freeName } from '../Paths/names'
 import { sidecarPath } from '../Paths/paths'

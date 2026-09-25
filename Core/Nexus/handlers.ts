@@ -10,7 +10,7 @@ import { nameError } from '../Paths/names'
 import { resolveUnderRoot } from '../Paths/pathSafety'
 import { basename, dirname, join } from '../Paths/posix'
 import { retireFileHistory, sweepFileHistory } from '../Pages/fileHistory'
-import type { MutateRequest } from './mutateRequest'
+import { mutateRequest } from './mutateRequest'
 import { machine } from '../Platform/machine'
 import { runRepairSweep } from '../Properties/repairSweep'
 import { replaySchemaCascade } from '../Properties/replaySchemaCascade'
@@ -150,7 +150,10 @@ export const nexusHandlers = {
     return ok(null)
   }, ok(null)),
 
-  mutate: withWriteRoot(async (root, ctx, req: MutateRequest) => {
+  mutate: withWriteRoot(async (root, ctx, raw: unknown) => {
+    const read = mutateRequest.safeParse(raw)
+    if (!read.success) return fault('Malformed request.')
+    const req = read.data
     const reply = await handleMutate(root, req, await trashDeps(root, ctx), () =>
       confirmWrite(ctx, root, () => confirmBy(root, async () => 'refresh')),
     )

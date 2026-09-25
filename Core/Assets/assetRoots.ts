@@ -1,4 +1,5 @@
 import { parseConnectionText } from '../Connections/connections'
+import { fail } from '../Contract/result'
 import { ASSETS_DIR_REL, assetSubRoot } from '../Paths/nexusPaths'
 import { foldKey } from '../Paths/caseFold'
 import { hiddenFolder, remainderUnder, rootSegs } from '../Paths/exclusion'
@@ -28,7 +29,10 @@ export async function assetFilePath(root: string, value: unknown): Promise<strin
   return typeof rel === 'string' ? rel : null
 }
 
-export const NOT_A_PROPERTY_DIR_MESSAGE = 'That folder can’t hold this property’s files.'
+export const NOT_A_PROPERTY_DIR = fail(
+  'invalid-path',
+  'That folder can’t hold this property’s files.',
+)
 
 export function validPropertyDir(subfolder: string, assetDir: string): boolean {
   if (!subfolder) return true

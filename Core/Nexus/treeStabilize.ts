@@ -1,6 +1,6 @@
 // IPC strips object identity, so without this every 'nexus:changed' push re-rendered every consumer even when nothing changed. `stabilize` recycles the prior tree's subobjects wherever the new content is deep-equal, and an echo push returns the previous tree itself (a zustand no-op).
 
-import { isPlainObject } from '../Properties/propertyValue'
+import { isPlainObject } from '../Contract/validators'
 
 export function stabilize<T>(next: T, prev: unknown): T {
   if (Object.is(next, prev)) return next

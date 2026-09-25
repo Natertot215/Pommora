@@ -32,3 +32,15 @@ describe('linkTitles:get answers the envelope, never a bare reply', () => {
     await expect(webHandlers['linkTitles:get']({} as HostContext)).rejects.toThrow('unreadable')
   })
 })
+
+describe('the web-guest channels hold their numbers to finite ones', () => {
+  it('refuses a zoom that is not a positive finite number and a guest id that is not a number', async () => {
+    sessionRoot.mockReturnValue('/root')
+    const ctx = { webGuests: { setZoom: vi.fn(), pauseMedia: vi.fn() } } as unknown as HostContext
+    expect((await webHandlers['webGuestZoom:set'](ctx, 1, Number.NaN)).ok).toBe(false)
+    expect((await webHandlers['webGuestZoom:set'](ctx, 1, 0)).ok).toBe(false)
+    expect((await webHandlers['webGuestMedia:pause'](ctx, '1')).ok).toBe(false)
+    expect(ctx.webGuests.setZoom).not.toHaveBeenCalled()
+    expect(ctx.webGuests.pauseMedia).not.toHaveBeenCalled()
+  })
+})

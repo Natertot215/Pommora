@@ -1,3 +1,5 @@
+import { z } from 'zod'
+
 interface RowBase {
   label: string
   separatorBefore?: boolean
@@ -47,6 +49,31 @@ export interface MenuRequest {
   items: readonly ActionItem<string>[]
   anchor?: MenuAnchor
 }
+
+const rowFields = {
+  label: z.string(),
+  separatorBefore: z.boolean().optional(),
+  disabled: z.boolean().optional(),
+  icon: z.string().optional(),
+}
+const leafItem = z.object({
+  ...rowFields,
+  action: z.string(),
+  checked: z.boolean().optional(),
+  stay: z.boolean().optional(),
+  chord: z.string().optional(),
+})
+const branchItem = z.object({
+  ...rowFields,
+  submenu: z.array(z.lazy(() => actionItem)),
+})
+const actionItem: z.ZodType<ActionItem<string>> = z.union([leafItem, branchItem])
+
+/** A native menu as the window sends it: the item model with string actions. */
+export const menuRequest: z.ZodType<MenuRequest> = z.object({
+  items: z.array(actionItem),
+  anchor: z.object({ left: z.number(), top: z.number(), height: z.number() }).optional(),
+})
 
 export interface MenuOptions<A extends string = string> {
   solid?: boolean

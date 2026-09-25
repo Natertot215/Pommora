@@ -13,6 +13,10 @@ import {
   type PropertyDefinition,
   type SelectOption,
   type StatusGroup,
+  narrowOptions,
+  narrowLinkConfig,
+  narrowNumberFormat,
+  narrowStatusGroups,
 } from './properties'
 
 describe('propertyType', () => {
@@ -269,3 +273,24 @@ const _mistypedFields = (d: PropertyDefinition, o: SelectOption, g: StatusGroup)
   // @ts-expect-error
   g.options[0].grup_id,
 ]
+
+describe("the display-config narrowers decode against the definition's own fields", () => {
+  it('keeps only the fields a config names, leaves an absent one, and resets an invalid one', () => {
+    expect(narrowLinkConfig({ link_underline: true, type: 'text', id: 'x' })).toStrictEqual({
+      link_underline: true,
+    })
+    expect(narrowNumberFormat({ number_decimals: 101, number_family: 'percent' })).toStrictEqual({
+      number_decimals: undefined,
+      number_family: 'percent',
+    })
+    expect(narrowNumberFormat('nope')).toBeNull()
+    expect(narrowStatusGroups([{ id: 'g', label: 'G', options: [] }])).toEqual([
+      { id: 'g', label: 'G', color: 'grey', options: [] },
+    ])
+    expect(narrowStatusGroups([{ label: 'no id' }])).toBeNull()
+    expect(narrowOptions([{ value: 'a', label: 'A', group_id: 'g' }])).toEqual([
+      { value: 'a', label: 'A', group_id: 'g' },
+    ])
+    expect(narrowOptions([{ value: 'a' }])).toBeNull()
+  })
+})

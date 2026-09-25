@@ -1,6 +1,6 @@
+import { isPlainObject } from '../Contract/validators'
 import { join } from '../Paths/posix'
 import { ID_KEY } from './identityMark'
-import { isPlainObject } from '../Properties/propertyValue'
 import type { EntityRecord, RecordKind } from './record'
 import { errText } from '../Contract/result'
 import { copyEntry } from '../Tiles/tilesFile'

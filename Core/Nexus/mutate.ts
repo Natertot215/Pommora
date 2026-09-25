@@ -31,7 +31,8 @@ import { writePageMeta } from './pageMetadata'
 import { renameOp } from './rename'
 import { renameCascade } from './cascade'
 import { setChildOrder, setCollectionOrder, setPanelContextOrder, setSpaceOrder } from './reorder'
-import { CONTAINER_KINDS, mutableTarget } from './liveTree'
+import { mutableTarget } from './liveTree'
+import { CONTAINER_KINDS } from './mutateRequest'
 
 export interface MutateContext {
   root: string
