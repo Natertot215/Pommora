@@ -8,7 +8,7 @@ import { navKey } from '../Navigation/navRecents'
 import { useBodyEpoch } from '../Session/pageDetailCache'
 import { cacheGeneration, captureCache, readCache } from '../Navigation/warmTabs'
 import { fenceWarm } from '../MarkdownPM/warmSeam'
-import { registerPageEditor, renameHeading } from './pageEditor'
+import { registerPageEditor } from './pageEditor'
 import { PageHeader } from './PageHeader'
 import { useEditorHost } from './editorHost'
 import { useBodyMount } from './bodyMount'
@@ -116,7 +116,11 @@ export function PageView({
       }}
       connections={connections}
       onSelection={publishSelection}
-      onHeadingRename={(old, next) => void renameHeading(pageDetail.id, old, next)}
+      onHeadingRename={(heading, to) =>
+        void useSession
+          .getState()
+          .mutate({ op: 'renameHeading', path: pageDetail.path, heading, to })
+      }
       embedAncestors={[pageDetail.path]}
       register={(view) => {
         editorRef.current = view

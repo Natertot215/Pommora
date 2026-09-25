@@ -2,7 +2,7 @@
 
 import { describe, it, expect, beforeEach, afterEach } from 'vitest'
 import { ASSETS_DIR_REL } from '../Paths/nexusPaths'
-import { rm, mkdir, writeFile, unlink } from 'node:fs/promises'
+import { rm, mkdir, readFile, writeFile, unlink } from 'node:fs/promises'
 import { join } from '../Paths/posix'
 import { tempRoot } from '../Testing/hostFs'
 import { handleMutate } from '../Nexus/mutate'
@@ -16,6 +16,9 @@ import { queryKeyHolders, queryMembers, queryMentions } from './contentIndex'
 import { applyWatchEvents } from '../Nexus/watchPatch'
 import { dropLiveTree, refreshTree } from '../Nexus/liveTree'
 import type { TrashDeps } from '../Trash/bundle'
+import { tileHostDir } from '../Paths/paths'
+import { machine } from '../Platform/machine'
+import { createMarkdownTile, writeMarkdownTile } from '../Tiles/tilesFile'
 
 const A_ID = '01KVGMT8BFP350FZZXAMG1QDRA'
 const B_ID = '01KVGMT8BFP350FZZXAMG1QDRB'
@@ -91,6 +94,24 @@ describe('the writers maintain the rows', () => {
     expect(r.ok).toBe(true)
     expect(queryMentions('gamma')).toEqual(['Notes/Daily/Alpha.md'])
     expect(queryMentions('beta')).toEqual([])
+    await expectMaintained()
+  })
+
+  it('a page rename reaches the renamed page’s own links through the index', async () => {
+    await writeFile(
+      join(root, 'Notes', 'Daily', 'Beta.md'),
+      `---\nID: ${B_ID}\n---\n\n## Part\n\n[[Beta#Part]]`,
+    )
+    await seedContentIndex(root)
+    const r = await handleMutate(
+      root,
+      { op: 'rename', path: 'Notes/Daily/Beta.md', kind: 'page', newName: 'Gamma' },
+      deps,
+    )
+    expect(r.ok && r.value.cascade?.warning).toBeUndefined()
+    expect(await readFile(join(root, 'Notes', 'Daily', 'Gamma.md'), 'utf8')).toContain(
+      '[[Gamma#Part]]',
+    )
     await expectMaintained()
   })
 
@@ -229,6 +250,34 @@ describe('the watcher maintains the rows', () => {
         )
       ).outcome,
     ).toBe('patched')
+    await expectMaintained()
+  })
+
+  it('an external heading rename reports the pages and tile hosts its cascade rewrote', async () => {
+    const beta = join(root, 'Notes', 'Daily', 'Beta.md')
+    const alpha = join(root, 'Notes', 'Daily', 'Alpha.md')
+    await writeFile(beta, `---\nID: ${B_ID}\n---\n\n## Setup\n`)
+    await writeFile(alpha, `---\nID: ${A_ID}\n---\n\nSee [[Beta#Setup]].`)
+    const tile = await createMarkdownTile(tileHostDir(root))
+    await writeMarkdownTile(
+      root,
+      tileHostDir(root),
+      tile,
+      '[[Beta#Setup]]',
+      machine().sha256Hex(''),
+    )
+    await seedContentIndex(root)
+    await refreshTree(root)
+    await writeFile(beta, `---\nID: ${B_ID}\n---\n\n## Intro\n`)
+    const patch = await applyWatchEvents(root, [{ event: 'change', absPath: beta }], {
+      excluded: [],
+      assetDir: ASSETS_DIR_REL,
+    })
+    expect(patch.cascaded).toEqual({
+      pages: ['Notes/Daily/Alpha.md'],
+      hosts: [{ kind: 'homepage' }],
+    })
+    expect(await readFile(alpha, 'utf8')).toContain('[[Beta#Intro]]')
     await expectMaintained()
   })
 })

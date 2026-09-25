@@ -57,7 +57,8 @@ function extractPageIndex(rel: string, content: string): PageIndexEntry {
     if (hit.at >= scan.lineStarts[scan.citations.firstLine])
       add('citation', hit.target, hit.qualifier)
   }
-  for (const target of frontmatterMentions(values)) add('frontmatter', target, '')
+  for (const { target, qualifier } of frontmatterMentions(values))
+    add('frontmatter', target, qualifier)
   for (const { target, qualifier } of spaceRelations(values)) add('space', target, qualifier)
   return {
     matrix: [...tally.values()],
@@ -118,7 +119,7 @@ function recordPage(rel: string, content: string, stat: IndexedStat): PageIndexE
   return entry
 }
 
-export interface HeadingRenameSeen {
+interface HeadingRenameSeen {
   title: string
   old: string
   next: string

@@ -1,8 +1,9 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest'
-import { rm, mkdir, writeFile, readFile } from 'node:fs/promises'
+import { chmod, rm, mkdir, writeFile, readFile } from 'node:fs/promises'
 import { existsSync } from 'node:fs'
 import { join } from '../Paths/posix'
-import { tempRoot } from '../Testing/hostFs'
+import { noModeBits, tempRoot } from '../Testing/hostFs'
+import { fault } from '../Contract/result'
 import { excludedArtifacts, clearExclusionData } from './exclusionScan'
 import { readShard, updatePageMetadata } from '../Nexus/pageMetadata'
 import { shardOf } from '../Nexus/ids'
@@ -173,6 +174,28 @@ describe('clearExclusionData', () => {
     expect(await pagesIn(NOTE)).toEqual({ [OUTSIDER]: { icon: 'star' } })
     expect(await pagesIn(DEEP)).toEqual({})
   })
+
+  it.skipIf(noModeBits)(
+    'a page it can’t clear faults, and only the cleared pages lose their metadata',
+    async () => {
+      const NOTE = '01AAAAAAAAPAAAAAAAAAAAAAAA'
+      const DEEP = '01FFFFFFFFPFFFFFFFFFFFFFFF'
+      for (const id of [NOTE, DEEP]) await updatePageMetadata(root, id, { icon: 'star' })
+      await chmod(join(root, 'Archive/Set'), 0o555)
+      try {
+        const r = await clearExclusionData(root, ['Archive'], 'file-assets').catch(fault)
+        expect(r.ok).toBe(false)
+      } finally {
+        await chmod(join(root, 'Archive/Set'), 0o755)
+      }
+      const pagesIn = async (id: string) => {
+        const month = await readShard(root, shardOf(id)!)
+        return month.kind === 'ok' ? month.pages : null
+      }
+      expect(await pagesIn(NOTE)).toEqual({})
+      expect(await pagesIn(DEEP)).toEqual({ [DEEP]: { icon: 'star' } })
+    },
+  )
 
   it('keeps the entry of a live page that shares an excluded copy’s ID', async () => {
     const NOTE = '01AAAAAAAAPAAAAAAAAAAAAAAA'

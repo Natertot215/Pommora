@@ -63,7 +63,7 @@ describe('markdownLinkRegex — the balanced-parens destination', () => {
   })
 })
 
-// Both halves are shared with main, which runs the same decode inside the rename cascade — a throw there reverts the rename rather than skipping a link.
+// Both halves are shared with main, which runs the same decode inside the rename cascade — a throw there skips that file, and the rename's warning counts it.
 describe('the page-target codec', () => {
   it('round-trips a title through the parens', () => {
     for (const title of ['Notes', 'Work Notes', 'Atomic Habits (Book)', 'Q3 — Plan', '100% Done']) {

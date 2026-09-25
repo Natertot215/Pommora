@@ -82,12 +82,23 @@ export const liveIdOf = (root: string, absFile: string): string | undefined =>
 export const livePathOf = (root: string, id: string): string | null =>
   liveIndices(root)?.byId.get(id) ?? null
 
-export function flushValueWrites(root: string): ValueChange[] {
+// `only` takes just those files' notes, leaving the rest to the operation that wrote them.
+export function flushValueWrites(root: string, only?: readonly string[]): ValueChange[] {
   if (ledger?.root !== root) return []
   const { byRel } = ledger
-  ledger = null
+  const taken = only ? new Map<string, Map<string, boolean>>() : byRel
+  if (!only) ledger = null
+  for (const file of only ?? []) {
+    const container = relDirname(file)
+    const files = byRel.get(container)
+    const body = files?.get(file)
+    if (!files || body === undefined) continue
+    files.delete(file)
+    if (!files.size) byRel.delete(container)
+    taken.set(container, (taken.get(container) ?? new Map()).set(file, body))
+  }
   const byPath = liveIdIndex(root)
-  return [...byRel].map(([rel, files]) => {
+  return [...taken].map(([rel, files]) => {
     const pageIds: string[] = []
     const bodyOnly: string[] = []
     for (const [f, body] of files) {

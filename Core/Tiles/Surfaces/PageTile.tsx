@@ -9,7 +9,6 @@ import { PageHeader } from '../../Pages/PageHeader'
 import { flushPageSave } from '../../Session/saveScheduler'
 import { useBodyMount } from '../../Pages/bodyMount'
 import { fetchPageDetail, readPageDetail, useBodyEpoch } from '../../Session/pageDetailCache'
-import { renameHeading } from '../../Pages/pageEditor'
 import { useEmbedScale, useSession } from '../../Session/store'
 import { usePublishSelection } from '../../Interface/Subfield/publish'
 import { Banner } from '../../Interface/Header/Banner'
@@ -186,7 +185,9 @@ export function PageTile({
         embedAncestors={[...(ancestors ?? []), path]}
         arrive={arrive}
         onArrived={onArrived}
-        onHeadingRename={(old, next) => entry?.id && void renameHeading(entry.id, old, next)}
+        onHeadingRename={(heading, to) =>
+          void useSession.getState().mutate({ op: 'renameHeading', path, heading, to })
+        }
       />
     </div>
   )

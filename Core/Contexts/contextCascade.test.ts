@@ -90,7 +90,7 @@ describe('the cascades open only the members the index names', () => {
     expect(space.ok && space.value.captured.map((c) => c.kind).sort()).toEqual(['page', 'space'])
     expect(sweepSpy.mock.calls[0]?.[1]).toEqual([page()])
     const key = await unlinkContextKey(root, 'Classes')
-    expect(key.ok && key.value.touched).toEqual([classes()])
+    expect(key.ok && [...key.value.touched.keys()]).toEqual([classes()])
     expect(sweepSpy.mock.calls[1]?.[1]).toEqual([classes()])
   })
 

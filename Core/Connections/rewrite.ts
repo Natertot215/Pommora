@@ -25,8 +25,11 @@ const offsetOf = (args: unknown[]): number => args[args.length - 3] as number
 const escapedPipe = (half: string, alias: string | undefined): string =>
   alias ? `${half.endsWith('\\') ? '\\|' : '|'}${alias}` : ''
 
+export type RenameChange = { title: string } | { heading: string; to: string }
+
 /** Code stays untouched — a page documenting `[[Old Title]]` in a fenced block is showing a sample. An alias and a markdown link's label ride through. */
 export function rewriteConnections(body: string, oldTitle: string, newTitle: string): string {
+  if (!body.includes('[[') && !body.includes('](')) return body
   const oldKey = normalizeTitle(oldTitle)
   const inCode = codeMask(body)
   const afterLinks = body.replace(pageLinkPattern(), (match, ...args) => {
@@ -81,8 +84,15 @@ export function rewriteHeadingConnections(
     if (!names(page) || normalizeTitle(titleOf(heading)) !== oldKey) return match
     return `[[${page}#${newHeading}${escapedPipe(heading, alias)}]]`
   })
-  const inCodeAfter = codeMask(afterLinks)
-  const afterMd = afterLinks.replace(
+  const inCodeEmbeds = codeMask(afterLinks)
+  const afterEmbeds = afterLinks.replace(pageEmbedPattern(), (match, ...args) => {
+    const { page, heading } = groupsOf(args)
+    if (!wiki || heading === undefined || inCodeEmbeds(offsetOf(args))) return match
+    if (!names(page) || normalizeTitle(heading) !== oldKey) return match
+    return `![[${page}#${newHeading}]]`
+  })
+  const inCodeAfter = codeMask(afterEmbeds)
+  const afterMd = afterEmbeds.replace(
     markdownLinkRegex(),
     (match, label: string, target: string, offset: number) => {
       if (inCodeAfter(offset) || !names(targetTitle(target))) return match
@@ -103,15 +113,20 @@ export function rewriteHeadingConnections(
 /** Empty when the frontmatter names nothing — the cascade reads that as "no field write". */
 export function rewriteFrontmatterConnections(
   values: Record<string, unknown>,
-  oldKey: string,
-  newTitle: string,
+  title: string,
+  change: RenameChange,
 ): Record<string, string> {
+  if ('heading' in change && !expressibleHeading(change.to)) return {}
+  const titleKey = normalizeTitle(title)
+  const headingKey = 'heading' in change ? normalizeTitle(change.heading) : ''
   const patch: Record<string, string> = {}
   for (const [key, value] of Object.entries(values)) {
     if (typeof value !== 'string') continue
-    const target = readLink(value)
-    if (target.kind === 'page' && normalizeTitle(target.title) === oldKey)
-      patch[key] = connectionText(newTitle, target.alias, target.heading)
+    const link = readLink(value)
+    if (link.kind !== 'page' || normalizeTitle(link.title) !== titleKey) continue
+    if ('title' in change) patch[key] = connectionText(change.title, link.alias, link.heading)
+    else if (normalizeTitle(link.heading ?? '') === headingKey)
+      patch[key] = connectionText(link.title, link.alias, change.to)
   }
   return patch
 }

@@ -2,7 +2,7 @@
 
 import { describe, it, expect } from 'vitest'
 import { codeMask } from '../MarkdownPM/Engine/markdownCode'
-import { frontmatterMentions, type LinkHit, linksIn, mentionsTitle, sectionRunsIn } from './scan'
+import { frontmatterMentions, type LinkHit, linksIn, sectionRunsIn } from './scan'
 
 // `extractMentions` and `extractHeadingMentions` were the index's two readers of `linksIn` until the matrix took their place. They are kept here, unchanged, so the properties they pinned keep answering over the one walker that remains.
 function extractMentions(body: string, ownTitle = ''): Set<string> {
@@ -25,7 +25,7 @@ function extractHeadingMentions(
   const seen = new Set<string>()
   const out: HeadingMention[] = []
   for (const hit of linksIn(body, ownTitle, outline)) {
-    // An embed always yields an empty qualifier, so this one test rejects both.
+    // An unqualified link yields an empty qualifier.
     if (hit.qualifier === '') continue
     const key = `${hit.target}#${hit.qualifier}`
     if (seen.has(key)) continue
@@ -35,48 +35,48 @@ function extractHeadingMentions(
   return out
 }
 
-describe('mentionsTitle', () => {
+describe('a link names its title', () => {
   it('matches a page link by its normalized title', () => {
-    expect(mentionsTitle('See [[Alpha]] and [[Beta Page]].', 'alpha')).toBe(true)
-    expect(mentionsTitle('See [[Alpha]] and [[Beta Page]].', 'beta page')).toBe(true)
-    expect(mentionsTitle('See [[Alpha]].', 'gamma')).toBe(false)
+    expect(extractMentions('See [[Alpha]] and [[Beta Page]].').has('alpha')).toBe(true)
+    expect(extractMentions('See [[Alpha]] and [[Beta Page]].').has('beta page')).toBe(true)
+    expect(extractMentions('See [[Alpha]].').has('gamma')).toBe(false)
   })
 
   it('normalizes case and surrounding whitespace on both sides', () => {
-    expect(mentionsTitle('[[ ALPHA ]]', 'alpha')).toBe(true)
+    expect(extractMentions('[[ ALPHA ]]').has('alpha')).toBe(true)
   })
 
   it('reaches an embed as well as a link, and ignores {{ }}', () => {
-    expect(mentionsTitle('![[Cover]]', 'cover')).toBe(true)
-    expect(mentionsTitle('{{macro}}', 'macro')).toBe(false)
+    expect(extractMentions('![[Cover]]').has('cover')).toBe(true)
+    expect(extractMentions('{{macro}}').has('macro')).toBe(false)
   })
 
   it('drops a legacy pipe segment', () => {
-    expect(mentionsTitle('[[Real|01H9XYZ]]', 'real')).toBe(true)
+    expect(extractMentions('[[Real|01H9XYZ]]').has('real')).toBe(true)
   })
 
   it('never matches an empty or whitespace-only link', () => {
-    expect(mentionsTitle('[[]] [[   ]]', '')).toBe(false)
+    expect(extractMentions('[[]] [[   ]]').has('')).toBe(false)
   })
 
   it('does not match inside code — a sample names no page', () => {
-    expect(mentionsTitle('```\n[[Fenced]]\n```', 'fenced')).toBe(false)
-    expect(mentionsTitle('type `[[Inline]]` here', 'inline')).toBe(false)
-    expect(mentionsTitle('```\n[[Fenced]]\n```\nthen [[Real]]', 'real')).toBe(true)
+    expect(extractMentions('```\n[[Fenced]]\n```').has('fenced')).toBe(false)
+    expect(extractMentions('type `[[Inline]]` here').has('inline')).toBe(false)
+    expect(extractMentions('```\n[[Fenced]]\n```\nthen [[Real]]').has('real')).toBe(true)
   })
 
   it('tolerates internal brackets in a title (a `]` is content unless it closes the pair)', () => {
-    expect(mentionsTitle('see [[Notes [WIP] final]]', 'notes [wip] final')).toBe(true)
-    expect(mentionsTitle('[[A]] then [[B]]', 'b')).toBe(true)
+    expect(extractMentions('see [[Notes [WIP] final]]').has('notes [wip] final')).toBe(true)
+    expect(extractMentions('[[A]] then [[B]]').has('b')).toBe(true)
   })
 
   it('caps title length and never backtracks on a pathological bracket run (ReDoS guard)', () => {
     // Under an unbounded `+` this would hang for seconds — completing at all IS the guard.
-    expect(mentionsTitle('['.repeat(50000), 'x')).toBe(false)
-    expect(mentionsTitle(`[[a|${'['.repeat(50000)}`, 'a')).toBe(false)
+    expect(extractMentions('['.repeat(50000)).has('x')).toBe(false)
+    expect(extractMentions(`[[a|${'['.repeat(50000)}`).has('a')).toBe(false)
     // The title is capped at the filesystem name limit (255): at the bound matches, past it doesn't.
-    expect(mentionsTitle(`[[${'x'.repeat(255)}]]`, 'x'.repeat(255))).toBe(true)
-    expect(mentionsTitle(`[[${'x'.repeat(256)}]]`, 'x'.repeat(256))).toBe(false)
+    expect(extractMentions(`[[${'x'.repeat(255)}]]`).has('x'.repeat(255))).toBe(true)
+    expect(extractMentions(`[[${'x'.repeat(256)}]]`).has('x'.repeat(256))).toBe(false)
   })
 })
 
@@ -194,6 +194,14 @@ describe('linksIn', () => {
     expect(hits('[[Page#Heading]]')[0]).toMatchObject({ target: 'page', qualifier: 'heading' })
     expect(hits('[Text](Page.md#frag)')[0]).toMatchObject({ target: 'page', qualifier: 'frag' })
     expect(hits('[[Page]]')[0].qualifier).toBe('')
+  })
+
+  it('reads an embed’s heading as its qualifier', () => {
+    expect(hits('![[Alpha#Part]]')[0]).toMatchObject({
+      syntax: 'embed',
+      target: 'alpha',
+      qualifier: 'part',
+    })
   })
 
   it('reports `at` as the offset the match begins at', () => {

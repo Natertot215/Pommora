@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
-import { mkdir, rm, writeFile } from 'node:fs/promises'
+import { mkdir, readFile, rm, writeFile } from 'node:fs/promises'
 import { join } from '@pommora/core/Paths/posix'
 import { tempRoot } from '@pommora/core/Testing/hostFs'
 import type { BrowserWindow } from 'electron'
@@ -11,6 +11,10 @@ import { syncIgnoredUnder } from '@pommora/core/Nexus/watchSettle'
 import { tileBodyUnder } from '@pommora/core/Nexus/watchPatch'
 import chokidar from 'chokidar'
 import { startWatcher, stopWatcher } from './watcher'
+import { installStores, NO_STORES } from '@pommora/core/Platform/stores'
+import { memoryStores } from '@pommora/core/Testing/memoryStores'
+import { seedContentIndex } from '@pommora/core/Index/indexSeed'
+import { flushValueWrites, noteValueWrite } from '@pommora/core/Nexus/valuesChanged'
 
 vi.mock('../Bridge/ipc', () => ({ push: vi.fn() }))
 vi.mock('@pommora/core/Nexus/session', () => ({ sessionRoot: vi.fn() }))
@@ -103,6 +107,18 @@ describe('the watcher settle', () => {
     expect(pushMock).not.toHaveBeenCalled()
   })
 
+  it('leaves the value writes a mutation noted to that mutation’s own flush', async () => {
+    await startWatcher(root, win)
+    noteValueWrite(root, abs('Notes', 'A.md'))
+    await writeFile(abs('Notes', 'B.md'), `---\nID: ${ULID_B}\n---\n\nbeta\n`)
+    emit('add', 'Notes', 'B.md')
+    await settleAll(() => pushMock.mock.calls.some((c) => c[1] === 'values:changed'))
+    expect(pushMock.mock.calls.find((c) => c[1] === 'values:changed')?.[2]).toEqual([
+      { rel: 'Notes', pageIds: [ULID_B] },
+    ])
+    expect(flushValueWrites(root)).toEqual([{ rel: 'Notes', pageIds: [ULID_A] }])
+  })
+
   it('a mixed batch lands as one walk, pushed once', async () => {
     await startWatcher(root, win)
     await writeFile(abs('Notes', 'B.md'), `---\nID: ${ULID_B}\n---\n\nbeta\n`)
@@ -120,6 +136,61 @@ describe('the watcher settle', () => {
         ?.collections[0]?.pages.map((p) => p.title)
         .sort(),
     ).toEqual(['A', 'B'])
+  })
+
+  it('an external heading rename pushes the linker it rewrote and takes only its own value notes', async () => {
+    vi.useRealTimers()
+    installStores(memoryStores().stores)
+    try {
+      await mkdir(abs('Other'), { recursive: true })
+      await writeFile(abs('Other', '_pagecollection.json'), JSON.stringify({ id: 'c2' }))
+      await writeFile(abs('Other', 'B.md'), `---\nID: ${ULID_B}\n---\n\n[[A#Setup]]\n`)
+      await writeFile(abs('Notes', 'A.md'), `---\nID: ${ULID_A}\n---\n\n## Setup\n`)
+      await writeFile(abs('Notes', 'C.md'), `---\nID: ${ULID_C}\n---\n\ngamma\n`)
+      await seedContentIndex(root)
+      await refreshTree(root)
+      vi.useFakeTimers()
+      await startWatcher(root, win)
+      noteValueWrite(root, abs('Notes', 'C.md'))
+      await writeFile(abs('Notes', 'A.md'), `---\nID: ${ULID_A}\n---\n\n## Intro\n`)
+      emit('change', 'Notes', 'A.md')
+      await settleAll(() => pushMock.mock.calls.some((c) => c[1] === 'values:changed'))
+      const payload = (channel: string): unknown =>
+        pushMock.mock.calls.find((c) => c[1] === channel)?.[2]
+      expect(payload('pages:changed')).toContain('Other/B.md')
+      expect(payload('values:changed')).toContainEqual({ rel: 'Other', pageIds: [ULID_B] })
+      expect(await readFile(abs('Other', 'B.md'), 'utf8')).toContain('[[A#Intro]]')
+      expect(flushValueWrites(root)).toEqual([{ rel: 'Notes', pageIds: [ULID_C] }])
+    } finally {
+      installStores(NO_STORES)
+    }
+  })
+
+  it('a heading rename whose cascade throws still lands the rest of its batch', async () => {
+    vi.useRealTimers()
+    installStores(memoryStores().stores)
+    const logged = vi.spyOn(console, 'error').mockImplementation(() => {})
+    try {
+      await mkdir(abs('Other'), { recursive: true })
+      await writeFile(abs('Other', '_pagecollection.json'), JSON.stringify({ id: 'c2' }))
+      await writeFile(abs('Other', 'B.md'), `---\nID: ${ULID_B}\n---\n\n[[A#Setup]]\n`)
+      await writeFile(abs('Notes', 'A.md'), `---\nID: ${ULID_A}\n---\n\n## Setup\n`)
+      await seedContentIndex(root)
+      await refreshTree(root)
+      await writeFile(abs('.nexus', 'properties.json'), '{corrupt')
+      vi.useFakeTimers()
+      await startWatcher(root, win)
+      await writeFile(abs('Notes', 'A.md'), `---\nID: ${ULID_A}\n---\n\n## Intro\n`)
+      await writeFile(abs('Notes', 'C.md'), `---\nID: ${ULID_C}\n---\n\ngamma\n`)
+      emit('change', 'Notes', 'A.md')
+      emit('add', 'Notes', 'C.md')
+      await settleAll(() => pushMock.mock.calls.some((c) => c[1] === 'pages:changed'))
+      expect(pushMock.mock.calls.find((c) => c[1] === 'pages:changed')?.[2]).toContain('Notes/C.md')
+      expect(logged).toHaveBeenCalled()
+    } finally {
+      logged.mockRestore()
+      installStores(NO_STORES)
+    }
   })
 })
 

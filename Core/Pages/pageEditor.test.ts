@@ -1,27 +1,12 @@
 // @vitest-environment jsdom
-import { afterEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, describe, expect, it } from 'vitest'
 import { EditorView } from '@codemirror/view'
-import { ok } from '@pommora/core/Contract/result'
-import { stubDialer } from '../vitest.setup'
 import { act, createElement } from 'react'
 import { createRoot } from 'react-dom/client'
-import { moveHeadingSection, registerPageEditor, renameHeading, usePageOutline } from './pageEditor'
+import { moveHeadingSection, registerPageEditor, usePageOutline } from './pageEditor'
 ;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
 
 afterEach(() => registerPageEditor(null))
-
-describe('renameHeading', () => {
-  it('asks the cascade channel', async () => {
-    const cascade = vi.fn(async () => ok({ touched: [] }))
-    ;(window as unknown as { nexus: unknown }).nexus = stubDialer({
-      'connections:headingRenamed': cascade,
-    })
-
-    await renameHeading('p1', 'Setup', 'Intro')
-
-    expect(cascade).toHaveBeenCalledWith('p1', 'Setup', 'Intro')
-  })
-})
 
 describe('moveHeadingSection', () => {
   const mount = (doc: string): EditorView => {

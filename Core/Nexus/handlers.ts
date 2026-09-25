@@ -8,7 +8,7 @@ import { isStringArray } from '../Contract/validators'
 import { targetTaken } from '../Files/atomicWrite'
 import { nameError } from '../Paths/names'
 import { resolveUnderRoot } from '../Paths/pathSafety'
-import { basename, dirname, join, titleFromPath } from '../Paths/posix'
+import { basename, dirname, join } from '../Paths/posix'
 import { retireFileHistory, sweepFileHistory } from '../Pages/fileHistory'
 import type { MutateRequest } from './mutateRequest'
 import { machine } from '../Platform/machine'
@@ -16,7 +16,6 @@ import { runRepairSweep } from '../Properties/repairSweep'
 import { replaySchemaCascade } from '../Properties/replaySchemaCascade'
 import { startSession, stopSession } from '../Sync/Client/session'
 import { stampAdopted } from './adopt'
-import { renameHeadingCascade } from './cascade'
 import { confirmWrite, pushAssetWrites, pushConfirmed, pushValueChanges } from './confirm'
 import { ensureIdentity } from './identity'
 import { dropLiveTree, getLiveTree, liveTreeOf, refreshAfterWrite, refreshTree } from './liveTree'
@@ -26,7 +25,6 @@ import { confirmBy, confirmMutation } from './mutatePatch'
 import { runOpenLedger } from './remintLedger'
 import { openSession, sessionRoot, whileAdopting } from './session'
 import type { NexusState } from './tree'
-import { livePathOf } from './valuesChanged'
 import { trashDeps } from '../Trash/bundle'
 
 async function prepareOpenedNexus(path: string): Promise<string | null> {
@@ -143,14 +141,6 @@ export const nexusHandlers = {
     ok(readHeadings(isStringArray(paths) ? paths : undefined) ?? {}),
   ),
 
-  'connections:headingRenamed': withWriteRoot(
-    async (root, _ctx, pageId, oldHeading, newHeading) => {
-      const rel = livePathOf(root, pageId)
-      if (!rel) return ok({ touched: [] })
-      return renameHeadingCascade(root, titleFromPath(rel), oldHeading, newHeading, rel)
-    },
-  ),
-
   'path:reveal': withRoot(async (root, ctx, p: unknown) => {
     if (typeof p !== 'string') return ok(null)
     const r = await resolveUnderRoot(root, p)
@@ -162,10 +152,13 @@ export const nexusHandlers = {
     const reply = await handleMutate(root, req, await trashDeps(root, ctx), () =>
       confirmWrite(ctx, root, () => confirmBy(root, async () => 'refresh')),
     )
-    if (reply.ok) {
-      await confirmWrite(ctx, root, () => confirmMutation(root, req, reply.value))
-      pushAssetWrites(ctx, root)
-    }
+    if (!reply.ok) return reply
+    const { cascade } = reply.value
+    // Ahead of the confirm's `values:changed`, which drops the cached details an absorb replaces.
+    if (cascade?.pages.length) ctx.push('pages:changed', cascade.pages)
+    for (const host of cascade?.hosts ?? []) ctx.push('tiles:changed', host)
+    await confirmWrite(ctx, root, () => confirmMutation(root, req, reply.value))
+    pushAssetWrites(ctx, root)
     return reply
   }),
 } satisfies Partial<Handlers>

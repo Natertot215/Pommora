@@ -18,6 +18,7 @@ import {
 import { newTabTab, pinTabId } from '../Navigation/tabsModel'
 import { toNavRef } from '@pommora/core/Navigation/navRef'
 import { navKey } from '../Navigation/navRecents'
+import { captureCache, readCache } from '../Navigation/warmTabs'
 import { clearCache, readBodyBase, readPageDetail, setBodyBase } from './pageDetailCache'
 import { schedulePageSave, scheduleTabsSave } from './saveScheduler'
 import { makeTree } from '../Testing/testTree'
@@ -319,7 +320,7 @@ describe('store — page slots', () => {
     expect(useSession.getState().pages.a).toBeUndefined()
   })
 
-  it('a rename deletes every parked slot and reloads the shown one', async () => {
+  const seedLinkerAndParked = (): void => {
     openPage().mockImplementation(async (path: string) => ({
       ok: true,
       value: detail(path.slice(6, 7), path),
@@ -335,19 +336,41 @@ describe('store — page slots', () => {
       selection: pg('a'),
       pages: { a: ready('a'), b: ready('b') },
     })
+  }
+
+  it('a rename re-paths only the renamed page’s slot and leaves the shown linker to the push', async () => {
+    seedLinkerAndParked()
     setBodyBase('Notes/tile.md', { text: 'seen', hash: 'h' })
+    const slotA = useSession.getState().pages.a
     await useSession
       .getState()
       .mutate({ op: 'rename', path: 'Notes/b.md', kind: 'page', newName: 'd' })
     const s = useSession.getState()
     expect(readBodyBase('Notes/tile.md')).toEqual({ text: 'seen', hash: 'h' })
     expect(s.pages.b).toBeUndefined()
-    expect(s.pages.a?.status).toBe('ready')
-    expect(openPage()).toHaveBeenCalledWith('Notes/a.md')
-    // Returning to the parked page fetches cold at its re-pathed file — nothing warm survived.
+    expect(s.pages.a).toBe(slotA)
+    expect(openPage()).not.toHaveBeenCalledWith('Notes/a.md')
+    // Returning to the parked page fetches cold at its re-pathed file.
     openPage().mockClear()
     useSession.getState().activateTab('t2')
     expect(openPage()).toHaveBeenCalledWith('Notes/d.md')
+  })
+
+  it('a heading rename leaves every page slot and warm capture alone and posts its warning', async () => {
+    seedLinkerAndParked()
+    channels.mutate = vi.fn(async () => ok({ cascade: { pages: [], hosts: [], warning: 'W' } }))
+    const { a, b } = useSession.getState().pages
+    captureCache('t2', navKey(pg('b')), { pageDetail: detail('b', 'Notes/b.md') })
+    const warm = readCache('t2', navKey(pg('b')))
+    await useSession
+      .getState()
+      .mutate({ op: 'renameHeading', path: 'Notes/a.md', heading: 'Setup', to: 'Intro' })
+    const s = useSession.getState()
+    expect(s.pages.a).toBe(a)
+    expect(s.pages.b).toBe(b)
+    expect(readCache('t2', navKey(pg('b')))).toBe(warm)
+    expect(openPage()).not.toHaveBeenCalled()
+    expect(s.notification?.message).toBe('W')
   })
 
   it('a tree push that re-paths the shown page spares its slot while the re-select is in flight', async () => {
@@ -661,6 +684,25 @@ describe('store — the mutate rail patches the tree before main confirms', () =
       .getState()
       .mutate({ op: 'rename', path: 'Notes/A.md', kind: 'page', newName: 'B' })
     expect(order).toEqual(['save Notes/A.md', 'mutate'])
+  })
+
+  it('a heading rename lands pending tile saves first', async () => {
+    const order: string[] = []
+    channels['tiles:writeMarkdown'] = vi.fn(async () => {
+      order.push('tile')
+      return ok(null)
+    })
+    channels.mutate = vi.fn(async () => {
+      order.push('mutate')
+      return ok({})
+    })
+    tileBodyWriter.schedule('t1', () =>
+      dialer().ask('tiles:writeMarkdown', { kind: 'homepage' }, 't1', 'x', ''),
+    )
+    await useSession
+      .getState()
+      .mutate({ op: 'renameHeading', path: 'Notes/A.md', heading: 'H', to: 'K' })
+    expect(order).toEqual(['tile', 'mutate'])
   })
 })
 

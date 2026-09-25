@@ -1,6 +1,6 @@
 import { mkdir, readdir, readFile, rename, rm, writeFile } from 'node:fs/promises'
 import { splitFrontmatter } from '../Files/pageFile'
-import { basename, join } from '../Paths/posix'
+import { basename, dirname, join } from '../Paths/posix'
 import { tempRoot, noModeBits } from '../Testing/hostFs'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { pathExists } from '../Files/atomicWrite'
@@ -9,6 +9,9 @@ import { contextsDir, contextsRegistryFile } from '../Paths/paths'
 import { bundleArtifact, readRecord, writePropertyBundle } from './record'
 import { resolveRecord } from './resolve'
 import { listBundles } from './spend'
+import { installStores, NO_STORES } from '../Platform/stores'
+import { memoryStores } from '../Testing/memoryStores'
+import { seedContentIndex } from '../Index/indexSeed'
 import { readNexus } from '../Nexus/readNexus'
 import { closeSession, openSession } from '../Nexus/session'
 import { readShard, updatePageMetadata } from '../Nexus/pageMetadata'
@@ -222,6 +225,69 @@ describe('the bundle — one folder per deletion, holding the artifact and its r
     },
   )
 
+  // Each file sits outside the locked folder, so the sweep rewrites it before refusing on Alpha.
+  const refusable: Record<string, string> = {
+    'Notes/Beta.md': `---\n<Projects>:\n  - Pommora\n  - Sapphire\nID: ${PAGE_B}\n---\nbody`,
+    'Notes/Gamma.md': '---\n<Projects>: Other\nID: 01KVGMT8BFP350FZZXAMG1QDVC\n---\nbody',
+    '.nexus/contexts/Areas/Health/_space.json': JSON.stringify({
+      id: 'sp-health',
+      '<Projects>': ['Pommora', 'Sapphire'],
+      $order: { contexts: ['Projects'], properties: [] },
+    }),
+  }
+  const watched = [
+    ...Object.keys(refusable),
+    'Notes/Daily/Alpha.md',
+    '.nexus/contexts/Projects/Sapphire/_space.json',
+  ]
+  const texts = (): Promise<string[]> =>
+    Promise.all(watched.map((rel) => readFile(join(root, rel), 'utf8')))
+
+  // The retry runs on the index the refusal left, so a restored file the index forgot would keep its tag.
+  const refuseThenRetry = async (path: string, kind: 'context' | 'space'): Promise<void> => {
+    installStores(memoryStores().stores)
+    const { chmod } = await import('node:fs/promises')
+    try {
+      for (const [rel, text] of Object.entries(refusable)) {
+        await mkdir(dirname(join(root, rel)), { recursive: true })
+        await writeFile(join(root, rel), text)
+      }
+      await seedContentIndex(root)
+      const before = await texts()
+      await chmod(join(root, 'Notes', 'Daily'), 0o555)
+      const r = await handleMutate(root, { op: 'delete', path, kind }, nexusDeps)
+      await chmod(join(root, 'Notes', 'Daily'), 0o755)
+      expect(r.ok).toBe(false)
+      expect(await texts()).toEqual(before)
+      expect(await pathExists(join(root, path))).toBe(true)
+      expect(await bundleDirs(join(root, '.trash'))).toEqual([])
+      const retried = await handleMutate(root, { op: 'delete', path, kind }, nexusDeps)
+      expect(retried.ok).toBe(true)
+    } finally {
+      await chmod(join(root, 'Notes', 'Daily'), 0o755)
+      installStores(NO_STORES)
+    }
+  }
+  const projectsOf = async (rel: string): Promise<unknown> =>
+    splitFrontmatter(await readFile(join(root, rel), 'utf8'))['<Projects>']
+
+  it.skipIf(noModeBits)(
+    'a refused Context delete returns every file it swept byte-for-byte, leaves no bundle, and can be retried',
+    async () => {
+      await refuseThenRetry('.nexus/contexts/Projects', 'context')
+      expect(await projectsOf('Notes/Beta.md')).toBeUndefined()
+      expect(await projectsOf('Notes/Gamma.md')).toBeUndefined()
+    },
+  )
+
+  it.skipIf(noModeBits)(
+    'a refused Space delete returns every file it swept byte-for-byte, leaves no bundle, and can be retried',
+    async () => {
+      await refuseThenRetry('.nexus/contexts/Projects/Pommora', 'space')
+      expect(await projectsOf('Notes/Beta.md')).toEqual(['Sapphire'])
+    },
+  )
+
   it('system trash mode refuses the same Context delete', async () => {
     await writeFile(contextsRegistryFile(root), '{corrupt')
     const trashToSystem = vi.fn(async () => {})
@@ -291,11 +357,12 @@ describe('the bundle — one folder per deletion, holding the artifact and its r
   it('an unreadable Space sidecar inside the Context marks its record partial', async () => {
     await mkdir(join(contextsDir(root), 'Projects', 'Broken'), { recursive: true })
     await writeFile(join(contextsDir(root), 'Projects', 'Broken', '_space.json'), '{corrupt')
-    await handleMutate(
+    const r = await handleMutate(
       root,
       { op: 'delete', path: '.nexus/contexts/Projects', kind: 'context' },
       nexusDeps,
     )
+    expect(r.ok).toBe(true)
     const { record } = await onlyBundle()
     expect(record).toMatchObject({ entity: 'context', partial: true })
   })

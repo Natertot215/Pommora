@@ -18,7 +18,7 @@ import { scanDoc } from '../MarkdownPM/Engine/docScan'
 import { sweepAdmitsBody, splitEnvelope } from '../Files/pageFile'
 import { readFile } from 'node:fs/promises'
 import { indexWrittenPage, seedContentIndex } from './indexSeed'
-import { renameHeadingCascade } from '../Nexus/cascade'
+import { renameCascade } from '../Nexus/cascade'
 import { newContentId } from '../Nexus/ids'
 
 const ULID_A = '01ARZ3NDEKPSV4RRFFQ69G5FAV'
@@ -150,7 +150,7 @@ describe('seedContentIndex', () => {
     await writeFile(abs('Notes', 'A.md'), `---\nID: ${ULID_A}\n---\n\n## Intro\n\n[[#Setup]]\n`)
     const seen = await indexWrittenPage(root, abs('Notes', 'A.md'))
     expect(seen).toEqual({ title: 'A', old: 'setup', next: 'Intro' })
-    await renameHeadingCascade(root, seen!.title, seen!.old, seen!.next, null)
+    await renameCascade(root, seen!.title, { heading: seen!.old, to: seen!.next })
     // The cascade's own writes re-enter the re-scan with nothing gone, so nothing loops.
     expect(await indexWrittenPage(root, abs('Notes', 'B.md'))).toBeNull()
     expect(splitEnvelope(await readFile(abs('Notes', 'A.md'), 'utf8')).body).toBe(
@@ -181,6 +181,14 @@ describe('seedContentIndex', () => {
     expect(await indexWrittenPage(root, abs('Notes', 'A.md'))).toBeNull()
   })
 
+  it('renaming one of two headings sharing the old text is not a rename', async () => {
+    await writeFile(abs('Notes', 'A.md'), `---\nID: ${ULID_A}\n---\n\n## Setup\n\n## Setup\n`)
+    await writeFile(abs('Notes', 'B.md'), `---\nID: ${newContentId('page')}\n---\n\n[[A#Setup]]\n`)
+    await seedContentIndex(root)
+    await writeFile(abs('Notes', 'A.md'), `---\nID: ${ULID_A}\n---\n\n## Intro\n\n## Setup\n`)
+    expect(await indexWrittenPage(root, abs('Notes', 'A.md'))).toBeNull()
+  })
+
   it('with no database the seed stands down and queries stay null', async () => {
     installStores(NO_STORES)
     await expect(seedContentIndex(root)).resolves.toBeUndefined()
@@ -208,11 +216,26 @@ describe('the matrix a page yields', () => {
     ])
   })
 
+  it('a heading embed is an `embed` row qualified by the heading', async () => {
+    await page('shows ![[Zeta#Part]]\n')
+    expect(rowsOf('Notes/A.md')).toEqual([
+      { kind: 'embed', target: 'zeta', qualifier: 'part', count: 1 },
+    ])
+  })
+
   it('a Link property is a `frontmatter` row', async () => {
     await writeFile(abs('Notes', 'A.md'), `---\nID: ${ULID_A}\nRef: '[[Zeta]]'\n---\n\nbody\n`)
     await seedContentIndex(root)
     expect(rowsOf('Notes/A.md')).toEqual([
       { kind: 'frontmatter', target: 'zeta', qualifier: '', count: 1 },
+    ])
+  })
+
+  it('a Link property aimed at a heading is a `frontmatter` row qualified by it', async () => {
+    await writeFile(abs('Notes', 'A.md'), `---\nID: ${ULID_A}\nRef: '[[Zeta#Part]]'\n---\n\nbody\n`)
+    await seedContentIndex(root)
+    expect(rowsOf('Notes/A.md')).toEqual([
+      { kind: 'frontmatter', target: 'zeta', qualifier: 'part', count: 1 },
     ])
   })
 

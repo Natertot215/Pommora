@@ -1,8 +1,9 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest'
 import { ID_KEY } from '../Nexus/identityMark'
-import { rm, readFile, writeFile } from 'node:fs/promises'
+import { chmod, rm, readFile, writeFile } from 'node:fs/promises'
 import { join, relative } from '../Paths/posix'
-import { tempRoot } from '../Testing/hostFs'
+import { noModeBits, tempRoot } from '../Testing/hostFs'
+import { fault } from '../Contract/result'
 import { flushValueWrites } from '../Nexus/valuesChanged'
 import { removeProperty } from './removeProperty'
 import { assignProperty } from './assignment'
@@ -133,6 +134,24 @@ describe('removeProperty — strip + cache (C-3/C-6)', () => {
     expect(again.ok).toBe(true)
     expect(await cacheBlock()).toEqual(before)
   })
+
+  it.skipIf(noModeBits)(
+    'a holder it can’t write fails the remove rather than reporting it done',
+    async () => {
+      const set = await createFolderEntity(folder, 'set', 'Locked')
+      if (!set.ok) throw new Error('setup failed')
+      const held = await createPage(set.value.path, 'C', { body: 'b' })
+      if (!held.ok) throw new Error('setup failed')
+      await updatePageProperty(root, held.value.path, liveDef, { kind: 'select', value: 'done' })
+      await chmod(set.value.path, 0o555)
+      try {
+        const r = await removeProperty(root, folder, propId).catch(fault)
+        expect(r.ok).toBe(false)
+      } finally {
+        await chmod(set.value.path, 0o755)
+      }
+    },
+  )
 })
 
 describe('restore on re-assign — per-value schema-currency reconciliation (C-3)', () => {

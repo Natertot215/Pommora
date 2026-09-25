@@ -1,0 +1,64 @@
+import { describe, it, expect, afterEach, vi } from 'vitest'
+import { chmod, mkdir, readFile, rm, writeFile } from 'node:fs/promises'
+import { join } from '../Paths/posix'
+import { noModeBits, tempRoot } from '../Testing/hostFs'
+import { flushValueWrites } from '../Nexus/valuesChanged'
+import { indexWrittenPage } from '../Index/indexSeed'
+import { sweepGovernedRoots } from './governedSweep'
+
+vi.mock('../Index/indexSeed', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('../Index/indexSeed')>()),
+  indexWrittenPage: vi.fn(async () => null),
+}))
+
+const roots: string[] = []
+afterEach(async () => {
+  for (const r of roots.splice(0)) {
+    flushValueWrites(r)
+    await rm(r, { recursive: true, force: true })
+  }
+})
+
+async function seed(): Promise<{ root: string; a: string; b: string }> {
+  const root = tempRoot('pom-sweep-')
+  roots.push(root)
+  await mkdir(join(root, 'Notes'), { recursive: true })
+  await mkdir(join(root, 'Locked'), { recursive: true })
+  const a = join(root, 'Notes', 'A.md')
+  const b = join(root, 'Locked', 'B.md')
+  await writeFile(a, '---\nID: 01KVGMT8BFP350FZZXAMG1QDRA\n---\nbody\n')
+  await writeFile(b, '---\nID: 01KVGMT8BFP350FZZXAMG1QDRB\n---\nbody\n')
+  return { root, a, b }
+}
+
+describe('sweepGovernedRoots', () => {
+  it.skipIf(noModeBits)(
+    'a file it can’t write is skipped and the files after it still sweep',
+    async () => {
+      const { root, a, b } = await seed()
+      await chmod(join(root, 'Locked'), 0o555)
+      try {
+        const r = await sweepGovernedRoots(root, [b, a], { text: (c) => `${c}x` })
+        expect(r).toEqual({
+          skipped: [b],
+          refused: [],
+          touched: new Map([[a, '---\nID: 01KVGMT8BFP350FZZXAMG1QDRA\n---\nbody\n']]),
+        })
+      } finally {
+        await chmod(join(root, 'Locked'), 0o755)
+      }
+    },
+  )
+
+  it('a file whose write landed stays touched when the bookkeeping after it throws', async () => {
+    const { root, a } = await seed()
+    vi.mocked(indexWrittenPage).mockRejectedValueOnce(new Error('index down'))
+    const r = await sweepGovernedRoots(root, [a], { text: (c) => `${c}x` })
+    expect(r).toEqual({
+      skipped: [],
+      refused: [],
+      touched: new Map([[a, '---\nID: 01KVGMT8BFP350FZZXAMG1QDRA\n---\nbody\n']]),
+    })
+    expect(await readFile(a, 'utf8')).toBe('---\nID: 01KVGMT8BFP350FZZXAMG1QDRA\n---\nbody\nx')
+  })
+})

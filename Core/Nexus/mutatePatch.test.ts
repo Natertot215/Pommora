@@ -153,6 +153,18 @@ describe('confirmMutation', () => {
     expect(walkSpy).not.toHaveBeenCalled()
   })
 
+  it('a heading rename confirms with zero walks and zero pushes', async () => {
+    const before = getLiveTree()
+    const pushed = await confirmMutation(
+      root,
+      { op: 'renameHeading', path: 'Notes/A.md', heading: 'H', to: 'K' },
+      {},
+    )
+    expect(pushed).toBeNull()
+    expect(getLiveTree()).toBe(before)
+    expect(walkSpy).not.toHaveBeenCalled()
+  })
+
   it('setContext confirms by one page read — zero walks, contextValues patched', async () => {
     await writeFile(abs('Notes', 'A.md'), `---\nID: ${ULID_A}\n<Areas>:\n  - Home\n---\n\nalpha\n`)
     const pushed = await confirmMutation(

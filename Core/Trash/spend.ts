@@ -86,7 +86,7 @@ async function addContextValues(
         splitEnvelope(content).body,
       )
     const swept = await sweepGovernedRoots(root, files, { text })
-    return swept.touched.length > 0
+    return swept.touched.size > 0
   }
   const file = join(root, entry.path, SPACE_SIDECAR)
   const written = await rmwJsonStrict(file, (raw) => ({ ...raw, [key]: merge(raw) }))

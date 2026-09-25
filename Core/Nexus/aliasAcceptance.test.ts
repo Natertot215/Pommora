@@ -48,8 +48,8 @@ afterEach(async () => {
 
 describe('a rename reaches every form a connection takes', () => {
   it('moves all three syntaxes and leaves the author’s words alone', async () => {
-    const r = await renameCascade(root, 'Q3 Plan', 'Q4 Plan')
-    expect(r.ok).toBe(true)
+    const r = await renameCascade(root, 'Q3 Plan', { title: 'Q4 Plan' })
+    expect(r.warning).toBeUndefined()
     const after = await read()
 
     expect(after).toContain('[[Q4 Plan]]')
@@ -62,7 +62,7 @@ describe('a rename reaches every form a connection takes', () => {
   })
 
   it('reaches a connection authored inside a table cell, escape and all', async () => {
-    await renameCascade(root, 'Q3 Plan', 'Q4 Plan')
+    await renameCascade(root, 'Q3 Plan', { title: 'Q4 Plan' })
     const after = await read()
     // The escape is re-emitted exactly as it arrived: writing a bare pipe here would split the row into an extra column.
     expect(after).toContain('[[Q4 Plan\\|the roadmap]]')
@@ -70,37 +70,37 @@ describe('a rename reaches every form a connection takes', () => {
   })
 
   it('reads on disk as ordinary percent-encoded Markdown', async () => {
-    await renameCascade(root, 'Q3 Plan', 'Q4 Plan')
+    await renameCascade(root, 'Q3 Plan', { title: 'Q4 Plan' })
     expect(await read()).toContain('[the roadmap](Q4%20Plan)')
   })
 
   it('leaves a website alone even where its last segment collides', async () => {
-    await renameCascade(root, 'Q3 Plan', 'Q4 Plan')
+    await renameCascade(root, 'Q3 Plan', { title: 'Q4 Plan' })
     expect(await read()).toContain('[site](https://example.com/Q3%20Plan)')
   })
 
   it('leaves a fenced sample a sample, in both syntaxes', async () => {
-    await renameCascade(root, 'Q3 Plan', 'Q4 Plan')
+    await renameCascade(root, 'Q3 Plan', { title: 'Q4 Plan' })
     const after = await read()
     expect(after).toContain('[[Q3 Plan]] and [x](Q3%20Plan)')
   })
 
-  // A re-encoded target has to remain something the prefilter still recognizes, or the SECOND rename of a page silently skips every markdown link that the first one rewrote.
+  // A re-encoded target has to remain something the index still records, or the SECOND rename of a page silently skips every markdown link that the first one rewrote.
   it('survives a second rename, and a title needing more encoding than the first', async () => {
-    await renameCascade(root, 'Q3 Plan', 'Atomic Habits (Book)')
+    await renameCascade(root, 'Q3 Plan', { title: 'Atomic Habits (Book)' })
     expect(await read()).toContain(`[the roadmap](${encodeLinkTarget('Atomic Habits (Book)')})`)
-    await renameCascade(root, 'Atomic Habits (Book)', 'Plain')
+    await renameCascade(root, 'Atomic Habits (Book)', { title: 'Plain' })
     const after = await read()
     expect(after).toContain('[the roadmap](Plain)')
     expect(after).toContain('[[Plain]]')
     expect(after).toContain('[[Plain|the roadmap]]')
   })
 
-  // rewritePageSerialized calls the rewriter unwrapped and rename.ts turns a throw into a REVERTED rename, so one such body would make every rename in the nexus fail with a message naming nothing.
-  it('a %-bearing target does not throw the whole rename into a revert', async () => {
+  // rewritePageSerialized calls the rewriter unwrapped, so one such body would leave its links unmoved on every rename in the nexus.
+  it('a %-bearing target does not throw the rename', async () => {
     await writeFile(host, `---\nid: p2\n---\nsee [x](Revenue 50% plan) and [[Q3 Plan]] end\n`)
-    const r = await renameCascade(root, 'Q3 Plan', 'Q4 Plan')
-    expect(r.ok).toBe(true)
+    const r = await renameCascade(root, 'Q3 Plan', { title: 'Q4 Plan' })
+    expect(r.warning).toBeUndefined()
     const after = await read()
     expect(after).toContain('[[Q4 Plan]]')
     expect(after).toContain('[x](Revenue 50% plan)')
@@ -109,7 +109,7 @@ describe('a rename reaches every form a connection takes', () => {
   it('never rewrites a page that names nothing', async () => {
     const other = join(root, 'Notes', 'Untouched.md')
     await writeFile(other, '---\nid: p3\n---\nnothing here\n')
-    const r = await renameCascade(root, 'Q3 Plan', 'Q4 Plan')
-    expect(r.ok && r.value.touched.some((p) => p.endsWith('Untouched.md'))).toBe(false)
+    const r = await renameCascade(root, 'Q3 Plan', { title: 'Q4 Plan' })
+    expect(r.pages.some((p) => p.endsWith('Untouched.md'))).toBe(false)
   })
 })

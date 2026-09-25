@@ -89,7 +89,7 @@ describe('classifyBatch', () => {
   it('names a written page in pages:changed and its container in values:changed', () => {
     seedLiveTree(tree)
     const classified = classifyBatch([at('Notes/A.md'), at('Notes/A.md')], root, scope)
-    expect(pagesChangedIn(classified)).toEqual(['Notes/A.md'])
+    expect(pagesChangedIn(classified, [])).toEqual(['Notes/A.md'])
     const touched = new Map([['Notes/A.md', 'pA']])
     expect(valueChangesOf(classified, touched)).toEqual([{ rel: 'Notes', pageIds: ['pA'] }])
   })
@@ -99,11 +99,27 @@ describe('classifyBatch', () => {
     const spy = vi.spyOn(watchPatch, 'classifyEvent')
     const events = [at('Notes/A.md'), at('.nexus/homepage/_tiles.json')]
     const classified = classifyBatch(events, root, scope)
-    pagesChangedIn(classified)
+    pagesChangedIn(classified, [])
     valueChangesOf(classified, new Map())
-    tilesChangedIn(classified)
+    tilesChangedIn(classified, [])
     expect(spy).toHaveBeenCalledTimes(events.length)
-    expect(tilesChangedIn(classified)).toEqual([{ kind: 'homepage' }])
+    expect(tilesChangedIn(classified, [])).toEqual([{ kind: 'homepage' }])
+  })
+
+  it('merges cascaded paths and hosts with the classified ones, once each', () => {
+    seedLiveTree(tree)
+    const classified = classifyBatch(
+      [at('Notes/A.md'), at('.nexus/homepage/_tiles.json')],
+      root,
+      scope,
+    )
+    expect(pagesChangedIn(classified, ['Notes/A.md', 'Other/B.md'])).toEqual([
+      'Notes/A.md',
+      'Other/B.md',
+    ])
+    expect(
+      tilesChangedIn(classified, [{ kind: 'homepage' }, { kind: 'space', id: 'sp1' }]),
+    ).toEqual([{ kind: 'homepage' }, { kind: 'space', id: 'sp1' }])
   })
 
   it('classifies nothing with no live tree', () => {

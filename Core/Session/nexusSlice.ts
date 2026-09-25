@@ -22,7 +22,7 @@ import { applyAccent, applySystemAccent } from '@pommora/uix/Theme/ramp'
 import { applyPersonalization } from '../Settings/applyPersonalization'
 import { reconcileIndexOf } from '../Nexus/treeIndex'
 import { clampWidth, SIDE_PANE_WIDTH, SIDEBAR_WIDTH } from './layoutSlice'
-import { dropTileBodies, flushAllTileDocs, tileBodyWriter } from '../Tiles/tileDocStore'
+import { flushAllTileDocs, tileBodyWriter } from '../Tiles/tileDocStore'
 import {
   cancelAllSaves,
   flushAllPageSaves,
@@ -249,6 +249,9 @@ export const createNexusSlice: Slice<NexusSlice> = (set, get) => {
           if (req.kind === 'page' && !req.fromCreate) await tileBodyWriter.flushAll()
           await (req.kind === 'page' ? flushPageSave(req.path) : flushAllPageSaves())
           break
+        case 'renameHeading':
+          await tileBodyWriter.flushAll()
+          break
         case 'delete':
           await (req.kind === 'page' ? flushPageSave(req.path) : flushAllPageSaves())
           break
@@ -261,6 +264,7 @@ export const createNexusSlice: Slice<NexusSlice> = (set, get) => {
       const res = await host().ask('mutate', req)
       if (!reportRefusal(res)) return false
       if (res.value.unrestored) notifyReport(unrestoredLine(res.value.unrestored), true)
+      if (res.value.cascade?.warning) notifyReport(res.value.cascade.warning, true)
       if (req.op === 'delete' || req.op === 'restore' || req.op === 'emptyBundle')
         get().bumpTrashRevision()
       // Instant optimistic patch; main's confirming push lands a beat later with no flicker.
@@ -285,7 +289,6 @@ export const createNexusSlice: Slice<NexusSlice> = (set, get) => {
           case 'rename':
             // The landed name, never the ask — a from-create rename may have disambiguated.
             patched = renameNodeInTree(cur, req.path, res.value.renamed?.name ?? req.newName)
-            dropTileBodies(res.value.tiles ?? [])
             break
           case 'delete':
             patched = removeNodeInTree(cur, req.path)

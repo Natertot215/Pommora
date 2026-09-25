@@ -1,14 +1,13 @@
 import { basename, titleFromPath, relative, relJoin } from '../Paths/posix'
 import { isReserved, resolveUnderRoot } from '../Paths/pathSafety'
 import { createDisambiguated } from '../Paths/names'
-import { fault, ok } from '../Contract/result'
+import { errText, fault, ok } from '../Contract/result'
 import { moveIndexPaths } from '../Index/indexSeed'
-import { rewriteTileConnections } from '../Tiles/tilesFile'
 import type { MutateReply, MutateRequest } from './mutateRequest'
 import type { MutateContext } from './mutate'
 import { renamePage } from './page'
 import { renameFolderEntity } from './folderEntity'
-import { renameCascade } from './cascade'
+import { type CascadeReport, renameCascade } from './cascade'
 import { reportRename } from '../Sync/Client/tap'
 
 export async function renameOp(
@@ -28,9 +27,9 @@ export async function renameOp(
   }
   const oldTitle = titleFromPath(abs)
   const relParent = req.path.split('/').slice(0, -1).join('/')
-  const renamedReply = (landedPath: string, tiles?: string[]): MutateReply => {
+  const renamedReply = (landedPath: string, cascade?: CascadeReport): MutateReply => {
     const file = basename(landedPath)
-    return ok({ renamed: { path: relJoin(relParent, file), name: titleFromPath(file) }, tiles })
+    return ok({ renamed: { path: relJoin(relParent, file), name: titleFromPath(file) }, cascade })
   }
   if (req.fromCreate) {
     const r = await createDisambiguated(req.newName, (name) => renamePage(abs, name))
@@ -40,18 +39,15 @@ export async function renameOp(
   }
   const r = await renamePage(abs, req.newName)
   if (!r.ok) return r
-  try {
-    const cascade = await renameCascade(root, oldTitle, req.newName)
-    if (!cascade.ok) {
-      await renamePage(r.value.path, oldTitle)
-      return cascade
-    }
-  } catch {
-    await renamePage(r.value.path, oldTitle)
-    return fault('Rename cascade failed; the rename was reverted.')
-  }
-  const tiles = await rewriteTileConnections(root, oldTitle, req.newName).catch(() => [])
+  // The index moves first, so the renamed page's own links to its old title are found where it now lives.
   await moveIndexPaths(root, abs, r.value.path)
   reportRename(relative(root, abs), relative(root, r.value.path))
-  return renamedReply(r.value.path, tiles)
+  const cascade = await renameCascade(root, oldTitle, { title: req.newName }).catch(
+    (e): CascadeReport => ({
+      pages: [],
+      hosts: [],
+      warning: `Links to “${oldTitle}” weren't updated: ${errText(e)}`,
+    }),
+  )
+  return renamedReply(r.value.path, cascade)
 }

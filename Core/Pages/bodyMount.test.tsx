@@ -15,9 +15,7 @@ import {
   cachePageDetail,
   clearCache,
   dropCacheDetail,
-  heldPaths,
   readPageDetail,
-  refreshCache,
   useBodyEpoch,
 } from '../Session/pageDetailCache'
 import { flushPageSave } from '../Session/saveScheduler'
@@ -95,7 +93,6 @@ beforeEach(() => {
     }),
     'sync:captureLocal': vi.fn(async () => ({ ok: true, value: null })),
     'index:headings': async () => ({ ok: true, value: {} }),
-    'connections:headingRenamed': async () => ({ ok: true, value: { touched: [] } }),
     'page:open': async (path: string) => ({
       ok: true,
       value: detail({ path, body: path === PATH ? disk : 'inner' }),
@@ -241,10 +238,7 @@ describe('one head per page path', () => {
   it('a cascade’s rewrite of a held page reaches every editor holding it', async () => {
     const { a, b } = await mountTwo('see [[Old]]\n')
     disk = 'see [[New]]\n'
-    refreshCache()
-    await act(async () => {
-      for (const path of heldPaths()) await absorbLanding(path)
-    })
+    await act(() => absorbLanding(PATH))
     expect(a.state.doc.toString()).toBe('see [[New]]\n')
     expect(b.state.doc.toString()).toBe('see [[New]]\n')
   })

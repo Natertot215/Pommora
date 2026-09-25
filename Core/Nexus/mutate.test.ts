@@ -32,6 +32,14 @@ import { createProperty } from '../Properties/registryProperty'
 import { liveAssetMap, resolveAssetName, takeAssetMapPush } from '../Assets/assetMap'
 import * as tap from '../Sync/Client/tap'
 import type { TrashDeps } from '../Trash/bundle'
+import type { HostContext } from '../Contract/handlers'
+import { installStores, NO_STORES } from '../Platform/stores'
+import { memoryStores } from '../Testing/memoryStores'
+import { seedContentIndex } from '../Index/indexSeed'
+import { tileHostDir } from '../Paths/paths'
+import { createMarkdownTile, readMarkdownTile, writeMarkdownTile } from '../Tiles/tilesFile'
+import { ok } from '../Contract/result'
+import { nexusHandlers } from './handlers'
 
 let root: string
 const nexusDeps: TrashDeps = { trashMode: 'nexus', trashToSystem: (p) => rm(p, { force: true }) }
@@ -743,27 +751,99 @@ describe('handleMutate — review-round hardening', () => {
     expect(r.error.code).toBe('operation-failed')
   })
 
-  it.skipIf(noModeBits)('reverts the page rename when the link cascade fails', async () => {
-    // A page linking [[Beta]] in a read-only dir → the cascade's rewrite commit throws.
-    await mkdir(join(root, 'Notes', 'Locked'), { recursive: true })
-    await writeFile(join(root, 'Notes', 'Locked', '_pageset.json'), JSON.stringify({ id: 'lk' }))
-    await writeFile(
-      join(root, 'Notes', 'Locked', 'Linker.md'),
-      '---\nID: 01KVGMT8BFP350FZZXAMG1QDRK\n---\n\nSee [[Beta]].',
-    )
-    await chmod(join(root, 'Notes', 'Locked'), 0o555)
-    try {
-      const r = await handleMutate(
-        root,
-        { op: 'rename', path: 'Notes/Daily/Beta.md', kind: 'page', newName: 'Gamma' },
-        nexusDeps,
+  it.skipIf(noModeBits)(
+    'finishes a page rename forward when one linker can’t be written, and warns',
+    async () => {
+      // A page linking [[Beta]] in a read-only dir → the cascade's rewrite commit throws.
+      await mkdir(join(root, 'Notes', 'Locked'), { recursive: true })
+      await writeFile(join(root, 'Notes', 'Locked', '_pageset.json'), JSON.stringify({ id: 'lk' }))
+      await writeFile(
+        join(root, 'Notes', 'Locked', 'Linker.md'),
+        '---\nID: 01KVGMT8BFP350FZZXAMG1QDRK\n---\n\nSee [[Beta]].',
       )
-      expect(r.ok).toBe(false)
-      expect(await pathExists(join(root, 'Notes/Daily/Beta.md'))).toBe(true)
-      expect(await pathExists(join(root, 'Notes/Daily/Gamma.md'))).toBe(false)
-    } finally {
-      await chmod(join(root, 'Notes', 'Locked'), 0o755)
-    }
+      await chmod(join(root, 'Notes', 'Locked'), 0o555)
+      try {
+        const r = await handleMutate(
+          root,
+          { op: 'rename', path: 'Notes/Daily/Beta.md', kind: 'page', newName: 'Gamma' },
+          nexusDeps,
+        )
+        expect(r.ok && r.value.cascade?.warning).toBe('Couldn’t update links to “Beta” in 1 file.')
+        expect(await pathExists(join(root, 'Notes/Daily/Gamma.md'))).toBe(true)
+        expect(await pathExists(join(root, 'Notes/Daily/Beta.md'))).toBe(false)
+        const alpha = await read('Notes/Daily/Alpha.md')
+        expect(alpha).toContain('See [[Gamma]] for more.')
+        expect(alpha).not.toContain('[[Beta]]')
+        expect(await read('Notes/Locked/Linker.md')).toContain('See [[Beta]].')
+      } finally {
+        await chmod(join(root, 'Notes', 'Locked'), 0o755)
+      }
+    },
+  )
+
+  it('keeps a page rename whose cascade can’t start, and warns', async () => {
+    await writeFile(join(root, '.nexus', 'properties.json'), '{ not json')
+    const r = await handleMutate(
+      root,
+      { op: 'rename', path: 'Notes/Daily/Beta.md', kind: 'page', newName: 'Gamma' },
+      nexusDeps,
+    )
+    expect(r.ok && r.value.cascade?.warning).toMatch(/^Links to “Beta” weren't updated: /)
+    expect(await pathExists(join(root, 'Notes/Daily/Gamma.md'))).toBe(true)
+  })
+})
+
+describe('handleMutate — renameHeading', () => {
+  const req: MutateRequest = {
+    op: 'renameHeading',
+    path: 'Notes/Daily/Beta.md',
+    heading: 'Setup',
+    to: 'Intro',
+  }
+  let tile: string
+
+  beforeEach(async () => {
+    installStores(memoryStores().stores)
+    await writeFile(
+      join(root, 'Notes', 'Daily', 'Alpha.md'),
+      `---\nID: ${A_ID}\n---\n\nSee [[Beta#Setup]].`,
+    )
+    await writeFile(
+      join(root, 'Notes', 'Daily', 'Beta.md'),
+      `---\nID: ${B_ID}\n---\n\n## Setup\n\n[[#Setup]]`,
+    )
+    await seedContentIndex(root)
+    tile = await createMarkdownTile(tileHostDir(root))
+    await writeMarkdownTile(
+      root,
+      tileHostDir(root),
+      tile,
+      '[[Beta#Setup]]',
+      machine().sha256Hex(''),
+    )
+  })
+  afterEach(() => installStores(NO_STORES))
+
+  const handlerCtx = (push: HostContext['push']): HostContext =>
+    ({ push, trashMode: async () => 'nexus' }) as unknown as HostContext
+
+  it('rewrites what the index and the tile walk name, leaves the renamed page to its editor, and pushes it ahead of values:changed', async () => {
+    const push = vi.fn()
+    const r = await nexusHandlers.mutate(handlerCtx(push), req)
+    await new Promise((resolve) => setTimeout(resolve, 0))
+    expect(r.ok && r.value.cascade).toEqual({
+      pages: ['Notes/Daily/Alpha.md'],
+      hosts: [{ kind: 'homepage' }],
+      warning: undefined,
+    })
+    const names = push.mock.calls.map(([name]) => name)
+    expect(push.mock.calls).toContainEqual(['pages:changed', ['Notes/Daily/Alpha.md']])
+    expect(push.mock.calls).toContainEqual(['tiles:changed', { kind: 'homepage' }])
+    expect(names).toContain('values:changed')
+    expect(names.indexOf('pages:changed')).toBeLessThan(names.indexOf('values:changed'))
+    expect(await read('Notes/Daily/Alpha.md')).toContain('See [[Beta#Intro]].')
+    expect(await read('Notes/Daily/Beta.md')).toContain('[[#Setup]]')
+    expect(await readMarkdownTile(tileHostDir(root), tile)).toEqual(ok('[[Beta#Intro]]'))
   })
 })
 

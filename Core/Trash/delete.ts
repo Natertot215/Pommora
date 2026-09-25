@@ -35,10 +35,15 @@ export async function deleteOp(
         if (record) await writeRecord(bundle, record)
       }
     : null
+  // A refused unlink leaves nothing deleted, so its bundle goes with it.
+  const unmint = async (e: unknown): Promise<never> => {
+    if (bundle) await machine().remove(bundle)
+    throw e
+  }
   if (req.kind === 'space') {
     const registry = write ? await readRegistryStrict(root) : null
     if (write) await write(await gatherSpaceRecord(abs, registry, null))
-    const swept = await unlinkSpaceValue(root, basename(dirname(abs)), basename(abs))
+    const swept = await unlinkSpaceValue(root, basename(dirname(abs)), basename(abs)).catch(unmint)
     if (write) await write(await gatherSpaceRecord(abs, registry, valueOr(swept, null)))
   } else if (req.kind === 'context') {
     const registry = contexts!.value
@@ -61,7 +66,7 @@ export async function deleteOp(
         await mutateRegistryFile(root, (cur) => ({
           contexts: [...cur.contexts.slice(0, at), entry, ...cur.contexts.slice(at)],
         }))
-      throw e
+      return unmint(e)
     })
     if (write && evidence) await write(buildContextRecord(evidence, valueOr(swept, null)))
   } else if (write) {

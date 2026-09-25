@@ -1,7 +1,8 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest'
-import { rm, readFile, stat } from 'node:fs/promises'
+import { chmod, rm, readFile, stat } from 'node:fs/promises'
 import { join } from '../Paths/posix'
-import { seedSpaceSidecar, readSpaceSidecar, tempRoot } from '../Testing/hostFs'
+import { noModeBits, seedSpaceSidecar, readSpaceSidecar, tempRoot } from '../Testing/hostFs'
+import { fault } from '../Contract/result'
 import {
   setOptions,
   renameOption,
@@ -240,6 +241,25 @@ describe('clearOption', () => {
 
   it('fails for an unknown property id', async () => {
     expect((await clearOption(root, 'prop_nope', 'A')).ok).toBe(false)
+  })
+
+  it.skipIf(noModeBits)('a clear that can’t write a holder faults', async () => {
+    const id = await mkSelect([{ value: 'hi', label: 'hi' }])
+    await pageHolding(id, 'hi')
+    const set = await createFolderEntity(join(root, 'Col'), 'set', 'Locked')
+    if (!set.ok) throw new Error('set failed')
+    const p = await createPage(set.value.path, 'Two', { body: 'b' })
+    if (!p.ok) throw new Error('page failed')
+    const def = (await readRegistry(root)).defs[id]
+    if (!def) throw new Error('definition missing')
+    await updatePageProperty(root, p.value.path, def, { kind: 'select', value: 'hi' })
+    await chmod(set.value.path, 0o555)
+    try {
+      const r = await clearOption(root, id, 'hi').catch(fault)
+      expect(r.ok).toBe(false)
+    } finally {
+      await chmod(set.value.path, 0o755)
+    }
   })
 })
 

@@ -1,9 +1,9 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
-import { rm, mkdir, readFile, writeFile } from 'node:fs/promises'
+import { chmod, rm, mkdir, readFile, writeFile } from 'node:fs/promises'
 import { join } from '../Paths/posix'
-import { tempRoot } from '../Testing/hostFs'
+import { noModeBits, tempRoot } from '../Testing/hostFs'
 import type { PropertyDefinition } from '../Properties/properties'
-import { renameCascade, renameHeadingCascade } from './cascade'
+import { renameCascade } from './cascade'
 import { sweepGovernedRoots } from '../Properties/governedSweep'
 import { createPage } from './page'
 import { createProperty } from '../Properties/registryProperty'
@@ -13,6 +13,10 @@ import { rewritePageSerialized } from '../Files/atomicWrite'
 import { installStores, NO_STORES } from '../Platform/stores'
 import { memoryStores } from '../Testing/memoryStores'
 import { seedContentIndex } from '../Index/indexSeed'
+import { ok } from '../Contract/result'
+import { machine } from '../Platform/machine'
+import { tileHostDir } from '../Paths/paths'
+import { createMarkdownTile, readMarkdownTile, writeMarkdownTile } from '../Tiles/tilesFile'
 
 vi.mock('../Properties/governedSweep', async (importOriginal) => {
   const mod = await importOriginal<typeof import('../Properties/governedSweep')>()
@@ -36,6 +40,11 @@ afterEach(async () => {
 const bodyOf = async (p: string) => splitEnvelope(await readFile(p, 'utf8')).body
 const fmBytesOf = async (p: string) => splitEnvelope(await readFile(p, 'utf8')).frontmatter
 const fmOf = async (p: string) => splitFrontmatter(await readFile(p, 'utf8'))
+const rel = (p: string): string => p.slice(root.length + 1)
+const setValue = (path: string, key: string, value: string) =>
+  rewritePageSerialized(path, (content) =>
+    mergeFrontmatter(content, { [key]: value }, [key], splitEnvelope(content).body),
+  )
 
 describe('renameCascade', () => {
   it('rewrites inbound links nexus-wide (incl. nested), leaves frontmatter untouched', async () => {
@@ -48,10 +57,8 @@ describe('renameCascade', () => {
     if (!a.ok || !b.ok || !c.ok || !nested.ok) throw new Error('setup failed')
 
     const before = await fmBytesOf(a.value.path)
-    const r = await renameCascade(root, 'Target', 'New Target')
-    expect(r.ok).toBe(true)
-    if (!r.ok) return
-    expect(r.value.touched.sort()).toEqual([a.value.path, b.value.path, nested.value.path].sort())
+    const r = await renameCascade(root, 'Target', { title: 'New Target' })
+    expect(r.pages.sort()).toEqual([a.value.path, b.value.path, nested.value.path].map(rel).sort())
 
     expect(await bodyOf(a.value.path)).toBe('go to [[New Target]] now')
     expect(await bodyOf(b.value.path)).toBe('[[New Target]] and [[Other]]')
@@ -63,10 +70,31 @@ describe('renameCascade', () => {
 
   it('touches nothing when no page links the old title', async () => {
     await createPage(dir, 'Solo', { body: 'nothing here' })
-    const r = await renameCascade(root, 'Ghost', 'Phantom')
-    expect(r.ok).toBe(true)
-    if (r.ok) expect(r.value.touched).toEqual([])
+    const r = await renameCascade(root, 'Ghost', { title: 'Phantom' })
+    expect(r.pages).toEqual([])
   })
+
+  it.skipIf(noModeBits)(
+    'a linker it can’t write is skipped, the rest still move, and the warning counts it',
+    async () => {
+      const cites = await createPage(dir, 'Cites', { body: 'see [[Target]]' })
+      if (!cites.ok) throw new Error('setup failed')
+      const locked = join(dir, 'Locked')
+      await mkdir(locked, { recursive: true })
+      await writeFile(join(locked, '_pageset.json'), JSON.stringify({ id: 'lk' }))
+      await writeFile(join(locked, 'X.md'), 'see [[Target]]\n')
+      await chmod(locked, 0o555)
+      try {
+        const r = await renameCascade(root, 'Target', { title: 'New Target' })
+        expect(r.pages).toEqual(['Notes/Cites.md'])
+        expect(r.warning).toBe('Couldn’t update links to “Target” in 1 file.')
+      } finally {
+        await chmod(locked, 0o755)
+      }
+      expect(await bodyOf(cites.value.path)).toBe('see [[New Target]]')
+      expect(await readFile(join(locked, 'X.md'), 'utf8')).toBe('see [[Target]]\n')
+    },
+  )
 })
 
 describe('the cascade queries the index', () => {
@@ -101,10 +129,8 @@ describe('the cascade queries the index', () => {
     installStores(memoryStores().stores)
     await seedContentIndex(root)
     sweepSpy.mockClear()
-    const r = await renameCascade(root, 'Target', 'New Target')
-    expect(r.ok).toBe(true)
-    if (!r.ok) return
-    expect(r.value.touched).toHaveLength(3)
+    const r = await renameCascade(root, 'Target', { title: 'New Target' })
+    expect(r.pages).toHaveLength(3)
     expect(sweptFiles()).toHaveLength(3)
     expect(await readFile(join(root, 'Loose', 'Note.md'), 'utf8')).toBe(
       'un-adopted [[New Target]]\n',
@@ -115,10 +141,8 @@ describe('the cascade queries the index', () => {
   it('a null index falls back to the corpus scan — excluded folders unreachable either way', async () => {
     await seedFixture()
     sweepSpy.mockClear()
-    const r = await renameCascade(root, 'Target', 'New Target')
-    expect(r.ok).toBe(true)
-    if (!r.ok) return
-    expect(r.value.touched).toHaveLength(3)
+    const r = await renameCascade(root, 'Target', { title: 'New Target' })
+    expect(r.pages).toHaveLength(3)
     // The fallback reads the whole corpus — every filler too — but never the excluded note.
     expect(sweptFiles()).toHaveLength(40)
     expect(sweptFiles().some((file) => file.includes('Hidden'))).toBe(false)
@@ -134,17 +158,12 @@ describe('renameCascade over frontmatter', () => {
       await createProperty(root, { id: '', name, type: 'url' } as PropertyDefinition)
     }
   })
-  const setValue = (path: string, key: string, value: string) =>
-    rewritePageSerialized(path, (content) =>
-      mergeFrontmatter(content, { [key]: value }, [key], splitEnvelope(content).body),
-    )
-
   it('moves a Link property naming the page, and the body’s links with it', async () => {
     const a = await createPage(dir, 'Cites', { body: 'see [[Target]]' })
     if (!a.ok) throw new Error('setup failed')
     await setValue(a.value.path, SOURCE, '[[Target|the brief]]')
 
-    expect((await renameCascade(root, 'Target', 'New Target')).ok).toBe(true)
+    await renameCascade(root, 'Target', { title: 'New Target' })
     expect(await bodyOf(a.value.path)).toContain('[[New Target]]')
     expect((await fmOf(a.value.path))[SOURCE]).toBe('[[New Target|the brief]]')
   })
@@ -156,11 +175,9 @@ describe('renameCascade over frontmatter', () => {
     installStores(memoryStores().stores)
     await seedContentIndex(root)
 
-    const r = await renameCascade(root, 'Target', 'New Target')
+    const r = await renameCascade(root, 'Target', { title: 'New Target' })
     installStores(NO_STORES)
-    expect(r.ok).toBe(true)
-    if (!r.ok) return
-    expect(r.value.touched).toEqual([a.value.path])
+    expect(r.pages).toEqual([rel(a.value.path)])
     expect((await fmOf(a.value.path))[SOURCE]).toBe('[[New Target]]')
   })
 
@@ -169,12 +186,12 @@ describe('renameCascade over frontmatter', () => {
     if (!a.ok) throw new Error('setup failed')
     await setValue(a.value.path, SITE, 'https://example.com/Target')
 
-    await renameCascade(root, 'Target', 'New Target')
+    await renameCascade(root, 'Target', { title: 'New Target' })
     expect((await fmOf(a.value.path))[SITE]).toBe('https://example.com/Target')
   })
 })
 
-describe('renameHeadingCascade', () => {
+describe('renameCascade for a heading', () => {
   const seedAB = async (): Promise<{ a: string; b: string }> => {
     const a = await createPage(dir, 'A', { body: '## Setup\n[[#Setup]]' })
     const b = await createPage(dir, 'B', { body: '[[A#Setup]]' })
@@ -186,12 +203,9 @@ describe('renameHeadingCascade', () => {
     const { a, b } = await seedAB()
     installStores(memoryStores().stores)
     await seedContentIndex(root)
-    const skipRel = a.slice(root.length + 1)
-    const r = await renameHeadingCascade(root, 'A', 'Setup', 'Intro', skipRel)
+    const r = await renameCascade(root, 'A', { heading: 'Setup', to: 'Intro' }, rel(a))
     installStores(NO_STORES)
-    expect(r.ok).toBe(true)
-    if (!r.ok) return
-    expect(r.value.touched).toEqual([b])
+    expect(r.pages).toEqual([rel(b)])
     expect(await bodyOf(b)).toBe('[[A#Intro]]')
     expect(await bodyOf(a)).toBe('## Setup\n[[#Setup]]')
   })
@@ -200,22 +214,63 @@ describe('renameHeadingCascade', () => {
     const { a, b } = await seedAB()
     installStores(memoryStores().stores)
     await seedContentIndex(root)
-    const r = await renameHeadingCascade(root, 'A', 'Setup', 'Intro', null)
+    const r = await renameCascade(root, 'A', { heading: 'Setup', to: 'Intro' })
     installStores(NO_STORES)
-    expect(r.ok).toBe(true)
-    if (!r.ok) return
-    expect(r.value.touched.sort()).toEqual([a, b].sort())
-    // The cascade rewrites LINKS naming the heading, never the heading line itself — that's the editor guard's job, inside the transaction that typed the rename.
+    expect(r.pages.sort()).toEqual([rel(a), rel(b)].sort())
+    // The cascade rewrites LINKS naming the heading, never the heading line itself — the editor or the outside writer already changed it.
     expect(await bodyOf(a)).toBe('## Setup\n[[#Intro]]')
     expect(await bodyOf(b)).toBe('[[A#Intro]]')
   })
 
   it('touches nothing when the index is not seeded', async () => {
     const { a, b } = await seedAB()
-    const r = await renameHeadingCascade(root, 'A', 'Setup', 'Intro', null)
-    expect(r.ok).toBe(true)
-    if (r.ok) expect(r.value.touched).toEqual([])
+    const r = await renameCascade(root, 'A', { heading: 'Setup', to: 'Intro' })
+    expect(r.pages).toEqual([])
     expect(await bodyOf(a)).toBe('## Setup\n[[#Setup]]')
     expect(await bodyOf(b)).toBe('[[A#Setup]]')
+  })
+
+  it('rewrites a markdown tile’s heading link even when no page links the heading', async () => {
+    const a = await createPage(dir, 'A', { body: '## Setup' })
+    if (!a.ok) throw new Error('setup failed')
+    installStores(memoryStores().stores)
+    await seedContentIndex(root)
+    const tile = await createMarkdownTile(tileHostDir(root))
+    await writeMarkdownTile(
+      root,
+      tileHostDir(root),
+      tile,
+      'see [[A#Setup]]',
+      machine().sha256Hex(''),
+    )
+    const r = await renameCascade(root, 'A', { heading: 'Setup', to: 'Intro' })
+    installStores(NO_STORES)
+    expect(r.hosts).toEqual([{ kind: 'homepage' }])
+    expect(await readMarkdownTile(tileHostDir(root), tile)).toEqual(ok('see [[A#Intro]]'))
+  })
+
+  it('moves a Link property aimed at the renamed heading, found through the index', async () => {
+    await createProperty(root, { id: '', name: 'Source', type: 'url' } as PropertyDefinition)
+    const a = await createPage(dir, 'A', { body: '## Setup' })
+    const c = await createPage(dir, 'C', { body: 'no links' })
+    if (!a.ok || !c.ok) throw new Error('setup failed')
+    await setValue(c.value.path, 'Source', '[[A#Setup|the brief]]')
+    installStores(memoryStores().stores)
+    await seedContentIndex(root)
+    const r = await renameCascade(root, 'A', { heading: 'Setup', to: 'Intro' }, 'Notes/A.md')
+    installStores(NO_STORES)
+    expect((await fmOf(c.value.path)).Source).toBe('[[A#Intro|the brief]]')
+    expect(r.pages).toEqual(['Notes/C.md'])
+  })
+
+  it('reaches a page whose only reference is a heading embed', async () => {
+    const a = await createPage(dir, 'A', { body: '## Setup' })
+    const b = await createPage(dir, 'B', { body: '![[A#Setup]]' })
+    if (!a.ok || !b.ok) throw new Error('setup failed')
+    installStores(memoryStores().stores)
+    await seedContentIndex(root)
+    await renameCascade(root, 'A', { heading: 'Setup', to: 'Intro' }, 'Notes/A.md')
+    installStores(NO_STORES)
+    expect(await bodyOf(b.value.path)).toBe('![[A#Intro]]')
   })
 })

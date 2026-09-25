@@ -2,10 +2,10 @@ import { mutateRegistry, readRegistry } from './propertiesRegistry'
 import { validateOptionValues } from './schema'
 import { collectionFolders } from './assignment'
 import { keyHolderFiles } from './keyHolders'
-import { sweepGovernedRoots } from './governedSweep'
+import { sweepGovernedRoots, unsweptLine } from './governedSweep'
 import { serializeSchemaOp } from './schemaChain'
 import { valueEditRewrite, type ValueEdit } from './pageValue'
-import { ok, fail, type Result } from '../Contract/result'
+import { ok, fail, fault, type Result } from '../Contract/result'
 import type { Adoption } from './propertyValue'
 import {
   renameOption as renameInArray,
@@ -242,8 +242,8 @@ function clearOp(requireType: RequireType) {
     serializeSchemaOp(async () => {
       const r = await resolveForCascade(root, propertyId, requireType)
       if (!r.ok) return r
-      await valueEditSweep(root, r.value, value, { op: 'strip' })
-      return ok(null)
+      const skipped = await valueEditSweep(root, r.value, value, { op: 'strip' })
+      return skipped ? fault(unsweptLine(skipped)) : ok(null)
     })
 }
 

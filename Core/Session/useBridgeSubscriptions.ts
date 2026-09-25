@@ -8,7 +8,7 @@ import { pageIdIndex } from '@pommora/core/Nexus/valuesChanged'
 import { bodyHead, dropDetailsWhere, readBodyBase, readPageDetail } from './pageDetailCache'
 import { absorbLanding } from '../Pages/bodyMount'
 import { flushAllSaves } from './nexusSlice'
-import { setStaleSaveSink } from './saveScheduler'
+import { flushPageSave, setStaleSaveSink } from './saveScheduler'
 import { useSession } from './store'
 import { openWebLink } from '../Web/openWebLink'
 import { host as dialer } from '../Platform/dialer'
@@ -62,7 +62,14 @@ export function useBridgeSubscriptions(): void {
   useEffect(() => {
     const absorb = (path: string, unsaved = readPageDetail(path)?.body): void => {
       if (bodyHead(path)) return void absorbLanding(path)
-      if (unsaved === undefined) return
+      if (unsaved === undefined) {
+        // A page no slot shows fetches from disk on its next open.
+        const shown = Object.values(useSession.getState().pages).some(
+          (s) => s.status === 'ready' && s.detail.path === path,
+        )
+        if (shown) void flushPageSave(path).then(() => replaceBody(path))
+        return
+      }
       if (unsaved !== readBodyBase(path)?.text)
         void persist('the conflicting version', dialer().ask('sync:captureLocal', path, unsaved))
       void replaceBody(path)

@@ -7,9 +7,9 @@ import { ID_KEY } from '../Nexus/identityMark'
 import { asString } from '../Nexus/coerce'
 import { dropPageMetadata } from '../Nexus/pageMetadata'
 import { getLiveTree } from '../Nexus/liveTree'
-import { ok, type Result } from '../Contract/result'
+import { fault, ok, type Result } from '../Contract/result'
 import type { ClearReport } from '../Trash/trashRow'
-import { sweepGovernedRoots, type RewriteText } from '../Properties/governedSweep'
+import { sweepGovernedRoots, type RewriteText, unsweptLine } from '../Properties/governedSweep'
 import { assetMatcher, rootSegs } from '../Paths/exclusion'
 import { listEntries } from '../Files/walk'
 import { mergeFrontmatter, splitFrontmatter, splitEnvelope } from '../Files/pageFile'
@@ -57,15 +57,15 @@ export async function excludedArtifacts(
 }
 
 const clearRewrite =
-  (cleared: string[]): RewriteText =>
-  (content) => {
+  (cleared: Map<string, string>): RewriteText =>
+  (content, file) => {
     const fm = splitFrontmatter(content)
     const remove = Object.keys(fm).filter(
       (k) => BOOKKEEPING_KEYS.includes(k) || parseContextKey(k) !== null,
     )
     if (remove.length === 0) return null
     const id = asString(fm[ID_KEY])
-    if (id) cleared.push(id)
+    if (id) cleared.set(file, id)
     return mergeFrontmatter(content, {}, remove, splitEnvelope(content).body)
   }
 
@@ -86,8 +86,10 @@ export async function clearExclusionData(
       )
     if (gone) removed++
   }
-  const cleared: string[] = []
+  const cleared = new Map<string, string>()
   const swept = await sweepGovernedRoots(root, pages, { text: clearRewrite(cleared) })
-  await dropPageMetadata(root, cleared, getLiveTree())
-  return ok({ pages: swept.touched.length, sidecars: removed, refused: swept.refused.length })
+  const ids = [...swept.touched.keys()].flatMap((file) => cleared.get(file) ?? [])
+  await dropPageMetadata(root, ids, getLiveTree())
+  if (swept.skipped.length) return fault(unsweptLine(swept.skipped.length))
+  return ok({ pages: swept.touched.size, sidecars: removed, refused: swept.refused.length })
 }

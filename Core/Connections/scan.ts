@@ -89,7 +89,8 @@ export function* linksIn(
     const at = m.index
     if (mask(at)) continue
     const target = titleKey(m.groups?.page ?? null, own)
-    if (target) yield { syntax: 'embed', target, qualifier: '', at }
+    if (target)
+      yield { syntax: 'embed', target, qualifier: normalizeTitle(m.groups?.heading ?? ''), at }
   }
   for (const m of body.matchAll(markdownLinkRegex())) {
     const at = m.index
@@ -103,20 +104,18 @@ export function* linksIn(
     yield { syntax: 'section', target: own, qualifier: normalizeTitle(run.heading), at: run.from }
 }
 
-export function mentionsTitle(body: string, normalizedKey: string): boolean {
-  if (normalizedKey === '') return false
-  for (const hit of linksIn(body)) if (hit.target === normalizedKey) return true
-  return false
-}
-
 /** A Link property holds a connection as its whole value, so a rename reaching only bodies would leave it pointing at nothing. */
-export function frontmatterMentions(values: Record<string, unknown>): Set<string> {
-  const out = new Set<string>()
+export function frontmatterMentions(
+  values: Record<string, unknown>,
+): { target: string; qualifier: string }[] {
+  const out = new Map<string, { target: string; qualifier: string }>()
   for (const value of Object.values(values)) {
     if (typeof value !== 'string') continue
-    const target = readLink(value)
-    const key = target.kind === 'page' ? normalizeTitle(target.title) : ''
-    if (key) out.add(key)
+    const link = readLink(value)
+    if (link.kind !== 'page') continue
+    const target = normalizeTitle(link.title)
+    const qualifier = normalizeTitle(link.heading ?? '')
+    if (target) out.set(`${target}\0${qualifier}`, { target, qualifier })
   }
-  return out
+  return [...out.values()]
 }

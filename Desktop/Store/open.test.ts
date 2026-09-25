@@ -104,6 +104,23 @@ describe('openNexusDb', () => {
     second.close()
   })
 
+  it('a generation-6 index rebuilds, so embed and Link-value rows gain their heading qualifier', () => {
+    const first = opened()
+    first
+      .prepare(
+        "INSERT INTO matrix_nodes (path, kind, target, qualifier, count) VALUES ('a.md', 'embed', 'x', '', 1)",
+      )
+      .run()
+    first.prepare("INSERT INTO indexed_files (path, mtime_ms, size) VALUES ('a.md', 1, 1)").run()
+    first.prepare("INSERT OR REPLACE INTO meta (key, value) VALUES ('index_generation', '6')").run()
+    first.close()
+
+    const second = opened()
+    for (const table of INDEX_TABLES) expect(count(second, table)).toBe(0)
+    expect(readMeta(second, 'index_generation')).toBe(String(INDEX_GENERATION))
+    second.close()
+  })
+
   it('the current index generation keeps the index across a reopen', () => {
     const first = opened()
     first

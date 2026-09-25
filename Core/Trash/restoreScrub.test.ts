@@ -4,14 +4,27 @@ import { mkdir, readFile, rm, writeFile } from 'node:fs/promises'
 import { splitFrontmatter } from '../Files/pageFile'
 import { join } from '../Paths/posix'
 import { tempRoot } from '../Testing/hostFs'
-import { afterEach, beforeEach, describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { pathExists } from '../Files/atomicWrite'
 import { handleMutate } from '../Nexus/mutate'
 import { contextsDir, contextsRegistryFile } from '../Paths/paths'
 import { listBundles } from './spend'
+import { fault } from '../Contract/result'
 
 import { closeSession, openSession } from '../Nexus/session'
 import type { TrashDeps } from './bundle'
+
+const trashWrites = vi.hoisted(() => ({ fail: false }))
+vi.mock('../Files/atomicWrite', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../Files/atomicWrite')>()
+  return {
+    ...actual,
+    rewritePreservingTimes: (file: string, data: string): Promise<void> =>
+      trashWrites.fail && file.includes('/.trash/')
+        ? Promise.reject(new Error('read-only'))
+        : actual.rewritePreservingTimes(file, data),
+  }
+})
 
 const PAGE_A = '01KVGMT8BFP350FZZXAMG1QDVA'
 const PROP = 'prop_01KVGMT8BFP350FZZXAMG1QDVZ'
@@ -138,6 +151,39 @@ describe('a returning artifact is reconciled against the world it comes back to'
       await rm(join(contextsDir(root), 'Projects', 'Sapphire'), { recursive: true, force: true })
     })
     expect((await fm('Notes/Alpha.md'))['<Projects>']).toEqual(['Pommora'])
+  })
+
+  it('a returning page the scrub can’t write refuses the restore and keeps the bundle', async () => {
+    await writeFile(
+      join(root, 'Notes', 'Alpha.md'),
+      `---\nID: ${PAGE_A}\n<Projects>:\n  - Pommora\n  - Sapphire\n---\nbody`,
+    )
+    await mkdir(join(contextsDir(root), 'Projects', 'Sapphire'), { recursive: true })
+    await writeFile(
+      join(contextsDir(root), 'Projects', 'Sapphire', '_space.json'),
+      JSON.stringify({ id: 'sp-sap' }),
+    )
+    const d = await handleMutate(
+      root,
+      { op: 'delete', path: 'Notes/Alpha.md', kind: 'page' },
+      nexusDeps,
+    )
+    expect(d.ok).toBe(true)
+    await rm(join(contextsDir(root), 'Projects', 'Sapphire'), { recursive: true, force: true })
+    const [listed] = await listBundles(root)
+    trashWrites.fail = true
+    try {
+      const r = await handleMutate(
+        root,
+        { op: 'restore', bundlePath: listed.bundlePath },
+        nexusDeps,
+      ).catch(fault)
+      expect(r.ok).toBe(false)
+    } finally {
+      trashWrites.fail = false
+    }
+    expect(await listBundles(root)).toHaveLength(1)
+    expect(await pathExists(join(root, 'Notes', 'Alpha.md'))).toBe(false)
   })
 
   it('repairs a near-miss Space title to the canonical spelling on the way back', async () => {

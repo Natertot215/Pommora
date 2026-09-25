@@ -1,5 +1,4 @@
 import { useSyncExternalStore } from 'react'
-import { reportRefusal } from '@pommora/core/Interface/Notifications/notifications'
 import type { EditorView } from '@codemirror/view'
 import type { OutlineHeading } from '../MarkdownPM/Engine/headingScan'
 import { travelTo } from '../MarkdownPM/travel'
@@ -8,7 +7,6 @@ import { blockAt } from '../MarkdownPM/Engine/blockModel'
 import { moveRange } from '../MarkdownPM/Engine/listDragModel'
 import { headingParts } from '../MarkdownPM/Engine/detect'
 import { pageBody, shownPage, useSession } from '../Session/store'
-import { host } from '../Platform/dialer'
 import { clamp } from '@pommora/uix/Utilities/clamp'
 
 // Registered by the page surface at mount, so an embedded tile's or window's editor can never be picked up instead.
@@ -45,10 +43,6 @@ export function renameHeadingAtOffset(from: number, next: string): void {
   if (!parts) return
   const contentStart = line.from + parts.contentStart
   view.dispatch({ changes: { from: contentStart, to: line.to, insert: next } })
-}
-
-export async function renameHeading(pageId: string, old: string, next: string): Promise<void> {
-  reportRefusal(await host().ask('connections:headingRenamed', pageId, old, next))
 }
 
 export function moveHeadingSection(dragKey: string, beforeKey: string | null): void {

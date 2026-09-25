@@ -187,10 +187,26 @@ describe('internal links', () => {
     expect(
       rewriteFrontmatterConnections(
         { A: '[[Meeting Notes]]', B: 'https://example.com/Meeting Notes' },
-        'meeting notes',
-        'New Title',
+        'Meeting Notes',
+        { title: 'New Title' },
       ),
     ).toEqual({ A: '[[New Title]]' })
+  })
+  it('a heading rename moves a Link value aimed at that heading, alias kept, and nothing else', () => {
+    const values = {
+      A: '[[Meeting Notes#Decisions|D]]',
+      B: '[[Meeting Notes#Other]]',
+      C: '[[Meeting Notes]]',
+    }
+    expect(
+      rewriteFrontmatterConnections(values, 'Meeting Notes', {
+        heading: 'Decisions',
+        to: 'Outcomes',
+      }),
+    ).toEqual({ A: '[[Meeting Notes#Outcomes|D]]' })
+    expect(
+      rewriteFrontmatterConnections(values, 'Meeting Notes', { heading: 'Decisions', to: 'A|B' }),
+    ).toEqual({})
   })
   it('reads a heading link with its heading', () => {
     expect(readLink('[[Page#H]]')).toEqual({ kind: 'page', title: 'Page', heading: 'H' })
@@ -199,11 +215,9 @@ describe('internal links', () => {
     const resolve = (raw: string): string | null =>
       raw.trim().toLowerCase() === 'meeting notes' ? 'Meeting Notes' : null
     expect(
-      rewriteFrontmatterConnections(
-        { Link: '[[Meeting Notes#Decisions]]' },
-        'meeting notes',
-        'New Title',
-      ),
+      rewriteFrontmatterConnections({ Link: '[[Meeting Notes#Decisions]]' }, 'Meeting Notes', {
+        title: 'New Title',
+      }),
     ).toEqual({ Link: '[[New Title#Decisions]]' })
     expect(linkEditText('[[Meeting Notes#Decisions]]')).toBe('[[Meeting Notes#Decisions]]')
     expect(urlValueFromEdit('[[meeting notes#Decisions]]', undefined, resolve)).toEqual({

@@ -18,6 +18,7 @@ import {
 import { readTileDocAt, writeTileDocAt } from './tileDoc'
 import { tileDocPath, tileFilePath, tileHostDir } from '../Paths/paths'
 import { machine } from '../Platform/machine'
+import { rewriteConnections } from '../Connections/rewrite'
 import type { TrashDeps } from '../Trash/bundle'
 
 const nexusDeps: TrashDeps = { trashMode: 'nexus', trashToSystem: async () => {} }
@@ -301,18 +302,40 @@ describe('markdown tile lifecycle', () => {
 })
 
 describe('rewriteTileConnections', () => {
+  const rename = (body: string): string => rewriteConnections(body, 'Target', 'Renamed')
+
   it('rewrites [[oldTitle]] → [[newTitle]] in tile bodies, leaving non-matches untouched', async () => {
     const id = await createMarkdownTile(home())
     await write(home(), id, 'see [[Target]] and [[Other]]')
-    await rewriteTileConnections(root, 'Target', 'Renamed')
+    expect(await rewriteTileConnections(root, rename)).toEqual({
+      hosts: [{ kind: 'homepage' }],
+      failed: 0,
+    })
     expect(await readMarkdownTile(home(), id)).toEqual(ok('see [[Renamed]] and [[Other]]'))
   })
 
   it('leaves a body without the old title byte-identical (no needless write)', async () => {
     const id = await createMarkdownTile(home())
     await write(home(), id, 'see [[Other]]')
-    await rewriteTileConnections(root, 'Target', 'Renamed')
+    expect(await rewriteTileConnections(root, rename)).toEqual({ hosts: [], failed: 0 })
     expect(await readMarkdownTile(home(), id)).toEqual(ok('see [[Other]]'))
+  })
+
+  it.skipIf(noModeBits)('counts a tile it can’t write and still rewrites the rest', async () => {
+    const locked = await createMarkdownTile(home())
+    await write(home(), locked, 'see [[Target]]')
+    const open = await createMarkdownTile(spaceDir())
+    await write(spaceDir(), open, 'see [[Target]]')
+    await chmod(home(), 0o555)
+    try {
+      expect(await rewriteTileConnections(root, rename)).toEqual({
+        hosts: [{ kind: 'space', id: 'sp1' }],
+        failed: 1,
+      })
+    } finally {
+      await chmod(home(), 0o755)
+    }
+    expect(await readMarkdownTile(spaceDir(), open)).toEqual(ok('see [[Renamed]]'))
   })
 })
 

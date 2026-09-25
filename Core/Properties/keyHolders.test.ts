@@ -106,7 +106,7 @@ describe('the property cascades open only the holders', () => {
         return next
       },
     })
-    expect(swept.touched).toEqual([])
+    expect(swept.touched.size).toBe(0)
     expect(await readFile(abs('Vault', 'Tagged.md'), 'utf8')).toBe(excludedPage)
   })
 
@@ -121,7 +121,7 @@ describe('the property cascades open only the holders', () => {
         return next
       },
     })
-    expect(swept.touched).toContain(abs('Notes', 'HolderA.md'))
+    expect(swept.touched.has(abs('Notes', 'HolderA.md'))).toBe(true)
     expect(Math.floor((await stat(abs('Notes', 'HolderA.md'))).mtimeMs / 1000)).toBe(
       Math.floor(past.getTime() / 1000),
     )

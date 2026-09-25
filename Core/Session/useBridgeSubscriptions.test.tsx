@@ -7,7 +7,13 @@ import type { SyncStatus } from '@pommora/core/Sync/Contract/wire'
 import { ok } from '@pommora/core/Contract/result'
 import { EMPTY_ASSET_MAP, type ValueChange } from '@pommora/core/Nexus/tree'
 import { makeTree } from '@pommora/core/Testing/testTree'
-import { attachBody, cachePageDetail, clearCache, readPageDetail } from './pageDetailCache'
+import {
+  attachBody,
+  cachePageDetail,
+  clearCache,
+  dropCacheDetail,
+  readPageDetail,
+} from './pageDetailCache'
 import { flushPageSave, schedulePageSave } from './saveScheduler'
 import { useSession } from './store'
 import { useBridgeSubscriptions } from './useBridgeSubscriptions'
@@ -29,6 +35,13 @@ let pushStatus: (status: SyncStatus) => void
 let replaceBody: ReturnType<typeof vi.fn<(path: string) => Promise<boolean>>>
 let captured: ReturnType<typeof vi.fn<(path: string, text: string) => unknown>>
 
+const showInSlot = (): void => {
+  const target = { kind: 'page' as const, id: 'p1', path: PATH }
+  useSession.setState({
+    pages: { p1: { status: 'ready', target, detail: detail({ path: PATH }), body: '' } },
+  })
+}
+
 const mount = async (): Promise<void> => {
   await act(async () => {
     root.render(createElement(Probe))
@@ -39,7 +52,7 @@ beforeEach(() => {
   clearCache()
   replaceBody = vi.fn(async (_path: string) => true)
   captured = vi.fn((_path: string, _text: string) => ok(null))
-  useSession.setState({ replaceBody, syncStatus: null })
+  useSession.setState({ replaceBody, syncStatus: null, pages: {} })
   ;(window as unknown as { nexus: unknown }).nexus = stubDialer({
     'host:platform': async () => ok('posix'),
     'assets:map': async () => ok(EMPTY_ASSET_MAP),
@@ -86,6 +99,35 @@ describe('a page that changed outside the app', () => {
     cachePageDetail(detail({ path: PATH }))
     act(() => landed([PATH, 'Notes/unknown.md']))
     expect(replaceBody).toHaveBeenCalledExactlyOnceWith(PATH)
+  })
+
+  it('replaces the body of a page a slot shows whose detail was since dropped', async () => {
+    await mount()
+    showInSlot()
+    cachePageDetail(detail({ path: PATH }))
+    dropCacheDetail(PATH)
+    await act(async () => landed([PATH]))
+    expect(replaceBody).toHaveBeenCalledExactlyOnceWith(PATH)
+    expect(captured).not.toHaveBeenCalled()
+  })
+
+  it('leaves a page the session once opened but no slot shows to its next open', async () => {
+    await mount()
+    cachePageDetail(detail({ path: PATH }))
+    dropCacheDetail(PATH)
+    await act(async () => landed([PATH]))
+    expect(replaceBody).not.toHaveBeenCalled()
+  })
+
+  it('keeps a pending save typed into a page whose detail was dropped', async () => {
+    await mount()
+    showInSlot()
+    cachePageDetail(detail({ path: PATH }))
+    dropCacheDetail(PATH)
+    schedulePageSave(PATH, 'typed')
+    await act(async () => landed([PATH]))
+    expect(captured).toHaveBeenCalledExactlyOnceWith(PATH, 'typed')
+    expect(replaceBody).toHaveBeenCalled()
   })
 
   it('captures the held body of a refused save and nothing for a plain landing', async () => {

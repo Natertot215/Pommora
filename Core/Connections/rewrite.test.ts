@@ -1,7 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { rewriteConnections, rewriteHeadingConnections } from './rewrite'
-import { mentionsTitle } from './scan'
-import { normalizeTitle, pageEmbedPattern } from './connections'
+import { pageEmbedPattern } from './connections'
 
 describe('rewriteConnections', () => {
   it('rewrites a normalized-matching link to the new title', () => {
@@ -30,7 +29,7 @@ describe('rewriteConnections', () => {
   it('rewrites TO a title with internal brackets and it round-trips', () => {
     const body = rewriteConnections('go to [[Old]] now', 'Old', 'New [v2] final')
     expect(body).toBe('go to [[New [v2] final]] now')
-    expect(mentionsTitle(body, 'new [v2] final')).toBe(true)
+    expect(rewriteConnections(body, 'New [v2] final', 'Again')).toBe('go to [[Again]] now')
   })
 
   it('rewrites FROM a title that itself contains brackets', () => {
@@ -93,10 +92,6 @@ describe('the embed sweep', () => {
       '[[A Much Longer Title]]\n![[A Much Longer Title]]\n```\n[[Old]]\n![[Old]]\n```\n![[A Much Longer Title]]',
     )
   })
-
-  it('mentionsTitle reaches an embed-only body, so a rename still sweeps it', () => {
-    expect(mentionsTitle('no links here\n\n![[Old]]', 'old')).toBe(true)
-  })
 })
 
 describe('one title grammar across the layers', () => {
@@ -141,7 +136,7 @@ describe('the markdown-link sweep', () => {
     expect(rewriteConnections(body, 'Old', 'New')).toBe(body)
   })
 
-  // rewritePageSerialized calls this unwrapped and rename.ts turns any throw into a REVERTED rename, so one `%`-bearing body would make every rename in the nexus fail permanently.
+  // rewritePageSerialized calls this unwrapped, so one `%`-bearing body would leave that page’s links unmoved on every rename.
   it('a %-bearing body does not throw the rename into a revert', () => {
     const body = 'see [x](Revenue 50% plan) and [[Old]] end'
     expect(() => rewriteConnections(body, 'Old', 'New')).not.toThrow()
@@ -223,25 +218,16 @@ describe('rewriteHeadingConnections', () => {
     const body = '```\n[[P#Old]]\n```'
     expect(rewriteHeadingConnections(body, 'P', 'Old', 'New')).toBe(body)
   })
-})
 
-// A prefilter that misses what the rewriter would change means the body is never opened and the link rots silently.
-describe('the prefilter agrees with the rewriter', () => {
-  const bodies = [
-    'see [the notes](Old%20Title) end',
-    '[[Old Title]]',
-    '![[Old Title]]',
-    'see [site](https://example.com/Old%20Title) end',
-    '```\n[x](Old Title)\n```\n',
-    'nothing here at all',
-    'see [x](Revenue 50% plan) end',
-  ]
-
-  it('says yes exactly when a rewrite would change the body', () => {
-    for (const body of bodies) {
-      const changed = rewriteConnections(body, 'Old Title', 'New Title') !== body
-      expect([body, mentionsTitle(body, normalizeTitle('Old Title'))]).toEqual([body, changed])
-    }
+  it('moves an embed of the renamed heading and leaves another heading’s embed and a fenced sample', () => {
+    expect(
+      rewriteHeadingConnections(
+        '![[A#Setup]] ![[A#Other]]\n```\n![[A#Setup]]\n```',
+        'A',
+        'Setup',
+        'Intro',
+      ),
+    ).toBe('![[A#Intro]] ![[A#Other]]\n```\n![[A#Setup]]\n```')
   })
 })
 

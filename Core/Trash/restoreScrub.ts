@@ -14,7 +14,7 @@ import { isMarkdownFile } from '../Paths/posix'
 import { listFilesRecursive, listMarkdownFiles } from '../Files/walk'
 
 import { SPACE_SIDECAR } from '../Paths/paths'
-import { sweepGovernedRoots } from '../Properties/governedSweep'
+import { sweepGovernedRoots, unsweptLine } from '../Properties/governedSweep'
 
 async function liveWorld(
   root: string,
@@ -56,7 +56,8 @@ export async function scrubReturning(
     if (!r.changed.length) return null
     return mergeFrontmatter(content, survivingChanges(r), r.changed, splitEnvelope(content).body)
   }
-  await sweepGovernedRoots(root, pages, { text })
+  const { skipped } = await sweepGovernedRoots(root, pages, { text })
+  if (skipped.length) throw new Error(unsweptLine(skipped.length))
   for (const file of await listFilesRecursive(absArtifact, [SPACE_SIDECAR])) {
     await rmwJsonStrict(file, (raw) => reconciledSidecar(raw, world, inTransitKey))
   }
