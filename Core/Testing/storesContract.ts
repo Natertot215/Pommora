@@ -414,6 +414,17 @@ export function describeSyncStore(name: string, make: () => SyncStore): void {
       expect(store.readBasesUnder('Nothing')).toEqual([])
     })
 
+    it('holds one row per path however its case is written, under the case last recorded', () => {
+      store.upsertBase(base('Notes/Café.md'))
+      expect(store.readBase('notes/CAFÉ.md')?.path).toBe('Notes/Café.md')
+      store.upsertBase(base('notes/café.md', { version: 4 }))
+      expect(store.readAllBases().map((r) => [r.path, r.version])).toEqual([['notes/café.md', 4]])
+      store.renameBase('NOTES/CAFÉ.md', 'Notes/Cafe.md')
+      expect(store.readBasesUnder('NOTES').map((r) => r.path)).toEqual(['Notes/Cafe.md'])
+      store.deleteBase('notes/cafe.md')
+      expect(store.readAllBases()).toEqual([])
+    })
+
     it('keeps base bytes as bytes and null as null', () => {
       const bytes = new Uint8Array([0x00, 0xff, 0x80])
       store.upsertBase(base('a.md', { baseBytes: bytes }))

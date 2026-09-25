@@ -1,3 +1,4 @@
+import { foldKey } from '../Paths/caseFold'
 import type { KeyValueStore } from '../Platform/machine'
 import type {
   BaseRecord,
@@ -234,23 +235,26 @@ const sync = (): SyncStore => {
   })
   return {
     readBase: (path) => {
-      const r = bases.get(path)
+      const r = bases.get(foldKey(path))
       return r ? copy(r) : null
     },
     readAllBases: () => [...bases.values()].map(copy),
-    readBasesUnder: (prefix) =>
-      [...bases.values()].filter((r) => underPrefix(r.path, prefix)).map(copy),
+    readBasesUnder: (prefix) => {
+      const fold = foldKey(prefix)
+      return [...bases.values()].filter((r) => underPrefix(foldKey(r.path), fold)).map(copy)
+    },
     upsertBase: (record) => {
-      bases.set(record.path, copy(record))
+      bases.set(foldKey(record.path), copy(record))
     },
     renameBase: (oldPath, newPath) => {
-      const r = bases.get(oldPath)
+      const fold = foldKey(oldPath)
+      const r = bases.get(fold)
       if (!r) return
-      bases.delete(oldPath)
-      bases.set(newPath, { ...r, path: newPath })
+      bases.delete(fold)
+      bases.set(foldKey(newPath), { ...r, path: newPath })
     },
     deleteBase: (path) => {
-      bases.delete(path)
+      bases.delete(foldKey(path))
     },
   }
 }

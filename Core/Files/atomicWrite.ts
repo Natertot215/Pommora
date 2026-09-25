@@ -211,8 +211,19 @@ export async function pathExists(p: string): Promise<boolean> {
   }
 }
 
+export async function heldName(abs: string): Promise<string | null> {
+  const name = basename(abs)
+  const key = foldKey(name)
+  const names = (await machine().readDir(dirname(abs))).map((e) => e.name)
+  return names.includes(name) ? name : (names.find((n) => foldKey(n) === key) ?? null)
+}
+
 export async function targetTaken(source: string, target: string): Promise<boolean> {
   if (foldKey(source) !== foldKey(target)) return pathExists(target)
-  const name = basename(target)
-  return (await machine().readDir(dirname(target))).some((e) => e.name === name)
+  const from = source.split('/')
+  const to = target.split('/')
+  const differs = to.findIndex((segment, i) => segment !== from[i])
+  for (let i = differs < 0 ? to.length - 1 : differs; i < to.length; i++)
+    if ((await heldName(to.slice(0, i + 1).join('/'))) !== to[i]) return false
+  return true
 }

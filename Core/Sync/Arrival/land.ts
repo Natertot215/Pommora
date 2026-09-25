@@ -1,4 +1,4 @@
-import { landBytes, parseJsonObject } from '../../Files/atomicWrite'
+import { landBytes, parseJsonObject, targetTaken } from '../../Files/atomicWrite'
 import { stableStringify } from '../../Files/stableJson'
 import { platformNameError } from '../../Paths/names'
 import { dirname, join } from '../../Paths/posix'
@@ -122,7 +122,7 @@ export async function landRename(root: string, change: Change): Promise<void> {
   const to = join(root, change.path)
   await machine().lock(from, async () => {
     if (holdable(fromRel) && (await machine().stat(from)) !== null) {
-      const losing = await machine().readBytes(to)
+      const losing = (await targetTaken(from, to)) ? await machine().readBytes(to) : null
       if (losing !== null) await captureLoser(root, change.path, losing, 'local-lost')
       await machine().mkdir(dirname(to))
       await machine().rename(from, to)

@@ -38,7 +38,7 @@ const seed = (db: Db, key: string): void => {
 }
 const seedBase = (db: Db): void => {
   db.prepare(
-    "INSERT INTO sync (path, mtime_ms, size, hash, blob_sha, version) VALUES ('a.md', 1, 1, 'h', 'b', 1)",
+    "INSERT INTO sync_base (fold, path, mtime_ms, size, hash, blob_sha, version) VALUES ('a.md', 'a.md', 1, 1, 'h', 'b', 1)",
   ).run()
 }
 const keys = (db: Db): string[] =>
@@ -98,7 +98,7 @@ describe('openNexusDb', () => {
           .prepare("SELECT COUNT(*) AS n FROM sqlite_master WHERE type = 'table' AND name = ?")
           .get(name) as { n: number }
       ).n
-    for (const retired of ['mentions', 'heading_mentions', 'memberships'])
+    for (const retired of ['mentions', 'heading_mentions', 'memberships', 'sync'])
       expect(named(retired)).toBe(0)
     expect(readMeta(second, 'index_generation')).toBe(String(INDEX_GENERATION))
     second.close()
@@ -164,7 +164,7 @@ describe('the root stamp', () => {
 
     const second = opened()
     expect(keys(second)).toEqual(['p1'])
-    expect(count(second, 'sync')).toBe(1)
+    expect(count(second, 'sync_base')).toBe(1)
     second.close()
   })
 
@@ -178,7 +178,7 @@ describe('the root stamp', () => {
     try {
       const second = opened(moved)
       expect(keys(second)).toEqual(['p1'])
-      expect(count(second, 'sync')).toBe(0)
+      expect(count(second, 'sync_base')).toBe(0)
       expect(readMeta(second, 'root')).toBe(moved)
       second.close()
     } finally {
@@ -195,7 +195,7 @@ describe('the root stamp', () => {
     try {
       const second = opened(copy)
       expect(keys(second)).toEqual(['p1'])
-      expect(count(second, 'sync')).toBe(0)
+      expect(count(second, 'sync_base')).toBe(0)
       expect(readMeta(second, 'root')).toBe(copy)
       second.close()
     } finally {
@@ -211,7 +211,7 @@ describe('the root stamp', () => {
       first.close()
 
       const second = opened(root.toUpperCase())
-      expect(count(second, 'sync')).toBe(1)
+      expect(count(second, 'sync_base')).toBe(1)
       second.close()
     },
   )

@@ -1,3 +1,4 @@
+import { foldKey } from '@pommora/core/Paths/caseFold'
 import type { KeyValueStore } from '@pommora/core/Platform/machine'
 import type {
   BaseRecord,
@@ -206,23 +207,27 @@ const baseRecord = (row: BaseRow): BaseRecord => ({
 
 export const syncStore = (db: Db): SyncStore => ({
   readBase(path) {
-    const row = db.prepare(`SELECT ${BASE_COLUMNS} FROM sync WHERE path = ?`).get(path) as
-      | BaseRow
-      | undefined
+    const row = db
+      .prepare(`SELECT ${BASE_COLUMNS} FROM sync_base WHERE fold = ?`)
+      .get(foldKey(path)) as BaseRow | undefined
     return row ? baseRecord(row) : null
   },
   readAllBases() {
-    return (db.prepare(`SELECT ${BASE_COLUMNS} FROM sync`).all() as BaseRow[]).map(baseRecord)
+    return (db.prepare(`SELECT ${BASE_COLUMNS} FROM sync_base`).all() as BaseRow[]).map(baseRecord)
   },
   readBasesUnder(prefix) {
+    const fold = foldKey(prefix)
     return (
       db
-        .prepare(`SELECT ${BASE_COLUMNS} FROM sync WHERE path >= ? || '/' AND path < ? || '0'`)
-        .all(prefix, prefix) as BaseRow[]
+        .prepare(`SELECT ${BASE_COLUMNS} FROM sync_base WHERE fold >= ? || '/' AND fold < ? || '0'`)
+        .all(fold, fold) as BaseRow[]
     ).map(baseRecord)
   },
   upsertBase(record) {
-    db.prepare(`INSERT OR REPLACE INTO sync (${BASE_COLUMNS}) VALUES (?, ?, ?, ?, ?, ?, ?)`).run(
+    db.prepare(
+      `INSERT OR REPLACE INTO sync_base (fold, ${BASE_COLUMNS}) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+    ).run(
+      foldKey(record.path),
       record.path,
       record.mtimeMs,
       record.size,
@@ -233,9 +238,13 @@ export const syncStore = (db: Db): SyncStore => ({
     )
   },
   renameBase(oldPath, newPath) {
-    db.prepare('UPDATE OR REPLACE sync SET path = ? WHERE path = ?').run(newPath, oldPath)
+    db.prepare('UPDATE OR REPLACE sync_base SET fold = ?, path = ? WHERE fold = ?').run(
+      foldKey(newPath),
+      newPath,
+      foldKey(oldPath),
+    )
   },
   deleteBase(path) {
-    db.prepare('DELETE FROM sync WHERE path = ?').run(path)
+    db.prepare('DELETE FROM sync_base WHERE fold = ?').run(foldKey(path))
   },
 })

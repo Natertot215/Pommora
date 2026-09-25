@@ -12,7 +12,7 @@ import { type FakeHub, hubRename, hubSession, hubWrite } from '../../Testing/syn
 import type { TestSecrets } from '../../Testing/syncDevice'
 import type { SyncScope } from '../Contract/wire'
 import type { Ring } from '../Keys/ring'
-import { readBase, upsertBase } from './base'
+import { readAllBases, readBase, upsertBase } from './base'
 import { ringName } from './keyring'
 import { advance, LONG_POLL_MS, pullOnce } from './pull'
 import type { Session } from './session'
@@ -208,6 +208,22 @@ describe('pullOnce', () => {
 
     expect(await read('Notes/Q3 Plan.md')).toBe(page('plan'))
     expect(readBase('Notes/Q3 Plan.md')?.version).toBe(hub.seq)
+  })
+
+  it('lands a case-only rename under the new case with one base row and no capture', async () => {
+    await hubWrite(hub, ring, 'Notes/plan.md', page('plan'))
+    expect(await pullOnce(session, 0)).toBe('applied')
+    hubRename(hub, 'Notes/plan.md', 'Notes/Plan.md')
+    const added = vi.spyOn(mem.stores.captures as CaptureStore, 'addCapture')
+
+    expect(await pullOnce(session, 0)).toBe('applied')
+
+    expect((await machine().readDir(abs('Notes'))).map((e) => e.name)).toEqual(['Plan.md'])
+    expect(readAllBases().map((row) => [row.path, row.version])).toEqual([
+      ['Notes/Plan.md', hub.seq],
+    ])
+    expect(hub.sent.filter((req) => req.url.endsWith('/store'))).toEqual([])
+    expect(added).not.toHaveBeenCalled()
   })
 
   it('answers resync when the cursor is past the head and leaves the cursor to reconcile', async () => {

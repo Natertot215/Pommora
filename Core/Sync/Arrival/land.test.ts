@@ -216,6 +216,39 @@ describe('landRename', () => {
     expect(new TextDecoder().decode(losing)).toBe('mine\n')
   })
 
+  it('lands a case-only rename under the new case and captures nothing', async () => {
+    const added = vi.spyOn(mem.stores.captures as CaptureStore, 'addCapture')
+    const bytes = utf8('moved\n')
+    await landWrite(host, root, write('Notes/title.md', bytes), bytes)
+
+    await landRename(root, rename('Notes/title.md', 'Notes/Title.md', 9))
+
+    expect((await machine().readDir(abs('Notes'))).map((e) => e.name)).toEqual(['Title.md'])
+    expect(await readFile(abs('Notes/Title.md'), 'utf8')).toBe('moved\n')
+    expect(
+      bases()
+        .readAllBases()
+        .map((r) => [r.path, r.version]),
+    ).toEqual([['Notes/Title.md', 9]])
+    expect(added).not.toHaveBeenCalled()
+  })
+
+  it('lands a folder case rename without capturing the file as its own loser', async () => {
+    const added = vi.spyOn(mem.stores.captures as CaptureStore, 'addCapture')
+    const bytes = utf8('moved\n')
+    await landWrite(host, root, write('Notes/a.md', bytes), bytes)
+
+    await landRename(root, rename('Notes/a.md', 'notes/a.md', 9))
+
+    expect(await readFile(abs('notes/a.md'), 'utf8')).toBe('moved\n')
+    expect(
+      bases()
+        .readAllBases()
+        .map((r) => r.path),
+    ).toEqual(['notes/a.md'])
+    expect(added).not.toHaveBeenCalled()
+  })
+
   it('moves a file into a folder that already exists', async () => {
     const bytes = utf8('child\n')
     await landWrite(host, root, write('Notes/Ideas/One.md', bytes), bytes)

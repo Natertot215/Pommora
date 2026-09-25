@@ -1,4 +1,4 @@
-import { mkdir, rm, truncate, utimes, writeFile } from 'node:fs/promises'
+import { mkdir, rename, rm, truncate, utimes, writeFile } from 'node:fs/promises'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { TransportRequest } from '../../Contract/handlers'
 import { join } from '../../Paths/posix'
@@ -439,5 +439,96 @@ describe('pushRename', () => {
 
     expect(stores()[0].changes.map((change) => change.kind)).toEqual(['write'])
     expect(readBase('Notes/Two.md')?.version).toBe(hub.seq)
+  })
+})
+
+describe('a case-only rename', () => {
+  const held = async (rel: string, body: string): Promise<void> => {
+    const bytes = await write(rel, body)
+    seedBase(rel, bytes, await remoteWrite(rel, body))
+  }
+
+  const liveItems = (): string[] =>
+    [...hub.items].filter(([, item]) => !item.deleted).map(([path]) => path)
+
+  it.each([
+    ['both cases', ['Notes/title.md', 'Notes/Title.md']],
+    ['the new case alone', ['Notes/Title.md']],
+  ])('made outside the app ships one rename when the tap reports %s', async (_, reported) => {
+    await held('Notes/title.md', page('one'))
+    await rename(abs('Notes/title.md'), abs('Notes/Title.md'))
+
+    await pushDirty(session, reported)
+
+    expect(stores().flatMap((body) => body.changes.map((change) => change.kind))).toEqual([
+      'rename',
+    ])
+    expect(liveItems()).toEqual(['Notes/Title.md'])
+    expect(readAllBases().map((row) => row.path)).toEqual(['Notes/Title.md'])
+  })
+
+  it('ships nothing for an echo of the case it left', async () => {
+    await held('Notes/Title.md', page('one'))
+
+    await pushDirty(session, ['Notes/title.md'])
+
+    expect(stores()).toEqual([])
+  })
+
+  it('holds a case rename the hub never answered in failed, once', async () => {
+    await held('Notes/title.md', page('one'))
+    await rename(abs('Notes/title.md'), abs('Notes/Title.md'))
+    hub.intercept = (req) => (req.url.endsWith('/store') ? 'throw' : null)
+
+    await pushDirty(session, ['Notes/Title.md'])
+
+    expect(stores()).toHaveLength(2)
+    expect([...session.failed].sort()).toEqual(['Notes/Title.md', 'Notes/title.md'])
+    expect(readAllBases().map((row) => row.path)).toEqual(['Notes/title.md'])
+  })
+
+  it('keeps home a decomposed name its composed base row would otherwise rename', async () => {
+    const composed = 'Notes/Caf\u00e9.md'
+    seedBase(composed, utf8(page('one')), await remoteWrite(composed, page('one')))
+    await write(composed.normalize('NFD'), page('one'))
+
+    await pushDirty(session, [composed.normalize('NFD')])
+
+    expect(stores()).toEqual([])
+    expect(pushes.at(-1)).toMatchObject(['sync:changed', { state: 'error' }])
+  })
+
+  it('keeps home a sibling that differs only in case on a case-sensitive disk', async (ctx) => {
+    await held('Notes/a.md', page('lower'))
+    await write('Notes/A.md', page('upper'))
+    if ((await read('Notes/a.md')) === page('upper')) ctx.skip()
+
+    await pushDirty(session, ['Notes/A.md', 'Notes/a.md'])
+
+    expect(stores()).toEqual([])
+    expect(pushes.at(-1)).toMatchObject(['sync:changed', { state: 'error' }])
+  })
+
+  it('ships a folder renamed by case on a case-sensitive disk as a rename', async (ctx) => {
+    await held('Notes/One.md', page('one'))
+    await rename(abs('Notes'), abs('notes'))
+    if ((await machine().stat(abs('Notes/One.md'))) !== null) ctx.skip()
+
+    await pushDirty(session, ['Notes/One.md', 'notes/One.md'])
+
+    expect(liveItems()).toEqual(['notes/One.md'])
+    expect(readAllBases().map((row) => row.path)).toEqual(['notes/One.md'])
+  })
+
+  it('leaves a folder whose case differs from the hub under the hub case', async (ctx) => {
+    await held('Notes/One.md', page('one'))
+    await rename(abs('Notes'), abs('notes'))
+    if ((await machine().stat(abs('Notes/One.md'))) === null) ctx.skip()
+    await write('notes/One.md', page('edited'))
+
+    await pushDirty(session, ['notes/One.md'])
+
+    expect(stores().flatMap((body) => body.changes.map((change) => change.kind))).toEqual(['write'])
+    expect(liveItems()).toEqual(['Notes/One.md'])
   })
 })

@@ -1,6 +1,6 @@
 import type { Db } from './driver'
 
-export const INDEX_GENERATION = 7
+export const INDEX_GENERATION = 8
 
 const DDL = `
   CREATE TABLE IF NOT EXISTS meta (
@@ -40,8 +40,9 @@ const DDL = `
     mtime_ms REAL NOT NULL,
     size INTEGER NOT NULL
   );
-  CREATE TABLE IF NOT EXISTS sync (
-    path TEXT PRIMARY KEY,
+  CREATE TABLE IF NOT EXISTS sync_base (
+    fold TEXT PRIMARY KEY,
+    path TEXT NOT NULL,
     mtime_ms REAL NOT NULL,
     size INTEGER NOT NULL,
     hash TEXT NOT NULL,
@@ -68,7 +69,7 @@ export function writeMeta(db: Db, key: string, value: string): void {
 export const INDEX_TABLES = ['matrix_nodes', 'headings', 'page_values', 'indexed_files'] as const
 
 // Names a generation has retired. `applySchema` only ever creates, so a table dropped from the schema is dropped from an existing database here or never.
-const RETIRED_TABLES = ['mentions', 'heading_mentions', 'memberships'] as const
+const RETIRED_TABLES = ['mentions', 'heading_mentions', 'memberships', 'sync'] as const
 
 // A generation step drops every index table and every retired name outright, so a table whose shape changed is recreated and one whose rows moved elsewhere is gone.
 export function rebuildIndex(db: Db): void {
