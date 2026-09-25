@@ -3,6 +3,7 @@ import { patchSidecar } from '../Files/sidecar'
 import { sidecarPath } from '../Paths/paths'
 import { ok, type Result } from '../Contract/result'
 import type { ChildOrderKey } from './mutateRequest'
+import { asStringArray } from './coerce'
 import { isPlainObject } from '../Properties/propertyValue'
 
 type ContainerOrderKey = ChildOrderKey | 'page_order'
@@ -10,35 +11,49 @@ type ContainerOrderKey = ChildOrderKey | 'page_order'
 // Adopted-placeholder ids (`adopted-<hash>`) are in-memory only — the open-time adopter stamps a real ULID before any write captures them. Strip them so a transient id never lands in a persisted order array.
 const persistable = (ids: string[]): string[] => ids.filter((id) => !id.startsWith('adopted-'))
 
-/** The one `state.json` order writer: every key goes through this file's single lock-taking RMW. */
-async function writeStateOrder(
+type StateOrderWrite = Promise<Result<Record<string, unknown>>>
+
+/** The one `state.json` order writer: every key goes through this file's single lock-taking RMW, and a patch with nothing to change returns null. */
+const writeStateOrder = (
   nexusRoot: string,
-  ids: string[],
-  patch: (order: Record<string, unknown>, clean: string[]) => Record<string, unknown>,
-): Promise<Result<string[]>> {
-  const clean = persistable(ids)
-  const written = await updateNexusConfig(nexusRoot, 'state', (state) => ({
-    ...state,
-    order: patch(isPlainObject(state.order) ? state.order : {}, clean),
-  }))
-  return written.ok ? ok(clean) : written
-}
+  patch: (order: Record<string, unknown>) => Record<string, unknown> | null,
+): StateOrderWrite =>
+  updateNexusConfig(nexusRoot, 'state', (state) => {
+    const next = patch(isPlainObject(state.order) ? state.order : {})
+    return next && { ...state, order: next }
+  })
 
-export const setCollectionOrder = (nexusRoot: string, ids: string[]): Promise<Result<string[]>> =>
-  writeStateOrder(nexusRoot, ids, (order, clean) => ({ ...order, collections: clean }))
+const spacesOf = (order: Record<string, unknown>): Record<string, unknown> =>
+  isPlainObject(order.spaces) ? order.spaces : {}
 
-export const setPanelContextOrder = (nexusRoot: string, ids: string[]): Promise<Result<string[]>> =>
-  writeStateOrder(nexusRoot, ids, (order, clean) => ({ ...order, contexts: clean }))
+export const setCollectionOrder = (nexusRoot: string, ids: string[]): StateOrderWrite =>
+  writeStateOrder(nexusRoot, (order) => ({ ...order, collections: persistable(ids) }))
+
+export const setPanelContextOrder = (nexusRoot: string, ids: string[]): StateOrderWrite =>
+  writeStateOrder(nexusRoot, (order) => ({ ...order, contexts: persistable(ids) }))
 
 export const setSpaceOrder = (
   nexusRoot: string,
   contextId: string,
   ids: string[],
-): Promise<Result<string[]>> =>
-  writeStateOrder(nexusRoot, ids, (order, clean) => ({
+): StateOrderWrite =>
+  writeStateOrder(nexusRoot, (order) => ({
     ...order,
-    spaces: { ...(isPlainObject(order.spaces) ? order.spaces : {}), [contextId]: clean },
+    spaces: { ...spacesOf(order), [contextId]: persistable(ids) },
   }))
+
+/** A deleted Context takes its Space order and its panel slot with it. */
+export const dropContextOrder = (nexusRoot: string, contextId: string): StateOrderWrite =>
+  writeStateOrder(nexusRoot, (order) => {
+    const { [contextId]: dropped, ...spaces } = spacesOf(order)
+    const contexts = asStringArray(order.contexts)
+    if (dropped === undefined && !contexts?.includes(contextId)) return null
+    return {
+      ...order,
+      spaces,
+      ...(contexts && { contexts: contexts.filter((id) => id !== contextId) }),
+    }
+  })
 
 export async function setChildOrder(
   absFolder: string,

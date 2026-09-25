@@ -2,7 +2,14 @@ import { describe, it, expect, beforeEach, afterEach } from 'vitest'
 import { rm, readFile, readdir, writeFile, mkdir } from 'node:fs/promises'
 import { join } from '../Paths/posix'
 import { tempRoot } from '../Testing/hostFs'
-import { setCollectionOrder, setSpaceOrder, setChildOrder, setPanelContextOrder } from './reorder'
+import {
+  dropContextOrder,
+  setCollectionOrder,
+  setSpaceOrder,
+  setChildOrder,
+  setPanelContextOrder,
+} from './reorder'
+import { pathExists } from '../Files/atomicWrite'
 import { createFolderEntity } from './folderEntity'
 import { readSidecar } from '../Files/sidecar'
 import { pageCollectionSidecar, pageSetSidecar } from './schemas'
@@ -71,6 +78,22 @@ describe('setCollectionOrder', () => {
         contexts: ['ctxC', 'ctx_projects'],
       },
     })
+  })
+
+  it('dropContextOrder removes the Context from both keys and leaves the rest', async () => {
+    await setSpaceOrder(root, 'ctx_areas', ['x'])
+    await setSpaceOrder(root, 'ctx_projects', ['y'])
+    await setPanelContextOrder(root, ['ctx_projects', 'ctx_areas'])
+    await dropContextOrder(root, 'ctx_projects')
+    expect((await readState()).order).toEqual({
+      spaces: { ctx_areas: ['x'] },
+      contexts: ['ctx_areas'],
+    })
+  })
+
+  it('dropContextOrder writes nothing when the Context has no order', async () => {
+    await dropContextOrder(root, 'ctx_projects')
+    expect(await pathExists(nexusConfig(root, NEXUS_CONFIG_FILES.state))).toBe(false)
   })
 
   it('moves a corrupt state.json aside and lands the order, as a navigation write does', async () => {

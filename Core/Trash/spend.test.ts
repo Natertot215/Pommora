@@ -13,6 +13,7 @@ import { installStores, NO_STORES } from '../Platform/stores'
 import { memoryStores } from '../Testing/memoryStores'
 import { seedContentIndex } from '../Index/indexSeed'
 import { readNexus } from '../Nexus/readNexus'
+import { setPanelContextOrder, setSpaceOrder } from '../Nexus/reorder'
 import { closeSession, openSession } from '../Nexus/session'
 import { readShard, updatePageMetadata } from '../Nexus/pageMetadata'
 import { shardOf } from '../Nexus/ids'
@@ -174,6 +175,22 @@ describe('the bundle — one folder per deletion, holding the artifact and its r
     expect(membership).toHaveLength(1)
     expect(membership[0].root).toEqual({ id: PAGE_A, kind: 'page' })
     expect(membership[0].spaces).toEqual([{ id: 'sp-pom', title: 'Pommora' }])
+  })
+
+  it('a Context delete drops its Space order and its panel slot from state.json', async () => {
+    await setSpaceOrder(root, 'ctx_projects', ['sp-pom'])
+    await setSpaceOrder(root, 'ctx_areas', ['sp-home'])
+    await setPanelContextOrder(root, ['ctx_areas', 'ctx_projects'])
+    const r = await handleMutate(
+      root,
+      { op: 'delete', path: '.nexus/contexts/Projects', kind: 'context' },
+      nexusDeps,
+    )
+    expect(r.ok).toBe(true)
+    expect(JSON.parse(await readFile(join(root, '.nexus', 'state.json'), 'utf8')).order).toEqual({
+      spaces: { ctx_areas: ['sp-home'] },
+      contexts: ['ctx_areas'],
+    })
   })
 
   it('system trash mode writes no bundle — the artifact leaves the nexus entirely', async () => {
