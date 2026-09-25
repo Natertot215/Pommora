@@ -61,6 +61,14 @@
 .card.is-active .card-body {
   border-color: var(--accent-stroke);
 }
+.card-body.hover-pop {
+  position: relative;
+  will-change: transform;
+}
+.card-body.hover-pop:hover {
+  transform: scale(1.0175); /* KNOB — the hover lift */
+  z-index: 1;
+}
 
 .card-thumb {
   position: relative;
