@@ -67,7 +67,6 @@ One picker (`Core/MarkdownPM/Autocomplete/autocomplete.ts`, driven by `useConnec
 #### Known Issues
 
 - **The cascade is per-file, not cross-file atomic.** A file it can't write keeps the old link while the rename stands, and the rename's warning counts the files left behind.
-- **Tile-only heading links miss an outside rename.** A heading renamed outside Pommora carries its links in markdown tiles only when a page also links it.
 - **Connection rendering is written twice.** The editor's decoration layer and the resting property-cell renderer each map a connection's resolved state to its styling by hand, so the two can drift — today the cell omits the open-state glyph and target mark the editor draws.
 
 #### Prospects
