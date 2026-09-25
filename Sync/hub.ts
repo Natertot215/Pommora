@@ -30,7 +30,7 @@ import {
 
 const PORT = Number(process.env.POMMORA_SYNC_PORT ?? 7473)
 const DATA_DIR = process.env.POMMORA_SYNC_DATA ?? join(homedir(), '.pommora-sync')
-const HOST = process.env.POMMORA_SYNC_HOST ?? LOOPBACK
+const HOST = process.env.POMMORA_SYNC_HOST || LOOPBACK
 const SWEEP_EVERY_MS = 3_600_000
 
 function readCapped(req: IncomingMessage, cap: number): Promise<Buffer | null> {
@@ -247,20 +247,34 @@ export async function start(opts: {
   }
 }
 
+const isLoopback = (host: string): boolean =>
+  host === 'localhost' || host === '::1' || /^127(\.\d+){3}$/.test(host)
+
+export const transportRefusal = (host: string, tls: boolean, insecure: boolean): string | null =>
+  tls || insecure || isLoopback(host)
+    ? null
+    : `Refusing to serve ${host} without a certificate. Run npm run sync:cert (in Docker, on the host with POMMORA_SYNC_DATA pointed at the directory bound to /data), or set POMMORA_SYNC_INSECURE=1 to serve plain HTTP.`
+
 if (import.meta.main) {
   const certPath = join(DATA_DIR, 'hub-cert.pem')
   const keyPath = join(DATA_DIR, 'hub-key.pem')
-  const tls =
-    existsSync(certPath) && existsSync(keyPath)
-      ? { cert: readFileSync(certPath, 'utf8'), key: readFileSync(keyPath, 'utf8') }
-      : undefined
-  void start({ dataDir: DATA_DIR, port: PORT, host: HOST, tls })
-    .then(({ port, pin }) => {
-      const scheme = pin ? 'https' : 'http'
-      console.log(`Pommora Sync on ${scheme}://${HOST}:${port}${pin ? ` · pin ${pin}` : ''}`)
+  const tls = existsSync(certPath) && existsSync(keyPath)
+  const refusal = transportRefusal(HOST, tls, process.env.POMMORA_SYNC_INSECURE === '1')
+  const boot = async (): Promise<void> => {
+    if (refusal) throw new Error(refusal)
+    const { port, pin } = await start({
+      dataDir: DATA_DIR,
+      port: PORT,
+      host: HOST,
+      tls: tls
+        ? { cert: readFileSync(certPath, 'utf8'), key: readFileSync(keyPath, 'utf8') }
+        : undefined,
     })
-    .catch((e) => {
-      console.error('Pommora Sync failed to start:', e instanceof Error ? e.message : e)
-      process.exitCode = 1
-    })
+    const scheme = pin ? 'https' : 'http'
+    console.log(`Pommora Sync on ${scheme}://${HOST}:${port}${pin ? ` · pin ${pin}` : ''}`)
+  }
+  boot().catch((e) => {
+    console.error('Pommora Sync failed to start:', e instanceof Error ? e.message : e)
+    process.exitCode = 1
+  })
 }
