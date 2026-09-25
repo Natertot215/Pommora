@@ -17,9 +17,9 @@ export async function createFolderEntity(
   const why = nameError(name, 'directory')
   if (why) return fail('invalid-name', why)
   const folder = join(parentDir, name)
-  if (await pathExists(folder)) return fail('exists', `"${name}" already exists.`)
+  if ((await machine().mkdir(folder)) === 'exists')
+    return fail('exists', `"${name}" already exists.`)
   const id = newId()
-  await machine().mkdir(folder)
   // Suppress the new folder's addDir echo (the mkdir doesn't self-suppress like the sidecar write does) — an un-suppressed watcher swap mid-rename remounts the fresh row and drops the inline-rename keystrokes.
   recordWrite(folder)
   await writeJson(sidecarPath(folder, kind), { id, ...extra })

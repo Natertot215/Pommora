@@ -21,13 +21,11 @@ export function serializeOnFile<T>(path: string, fn: () => Promise<T>): Promise<
       live.settled = true
     })
   const run = (fileChains.get(path) ?? Promise.resolve()).then(guarded, guarded)
-  fileChains.set(
-    path,
-    run.then(
-      () => undefined,
-      () => undefined,
-    ),
-  )
+  const release = (): void => {
+    if (fileChains.get(path) === tail) fileChains.delete(path)
+  }
+  const tail = run.then(release, release)
+  fileChains.set(path, tail)
   return run
 }
 
