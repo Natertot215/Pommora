@@ -9,7 +9,9 @@ import type { Change, ItemRecord } from '../Contract/wire'
 import { deleteBase, readBase, recordBase, renameBase, upsertBase } from '../Client/base'
 import type { SyncHost } from '../Client/call'
 import { captureLoser } from './captures'
-import { type Json, isMergedJson, mergeDepthFor, mergeKeys } from './jsonMerge'
+import { mergeKeys } from '../../Files/jsonMerge'
+import type { Json } from '../../Files/stableJson'
+import { isMergedJson, mergeDepthFor } from './mergePolicy'
 
 const RECENCY_WINDOW_MS = 2_000
 

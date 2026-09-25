@@ -1,5 +1,5 @@
 import type { ContainerKind } from '../Nexus/schemas'
-import { DEFAULT_VIEW_ID, mintViewId, type SavedView } from './views'
+import { DEFAULT_VIEW_ID, mergeViewEdit, mintViewId, type SavedView } from './views'
 import { ok, fail, type Result, fault } from '../Contract/result'
 import { setOrDrop } from '../Files/atomicWrite'
 import { patchSidecar } from '../Files/sidecar'
@@ -22,7 +22,7 @@ export async function saveView(
     return {
       ...cur,
       views: views.some((v) => idOf(v) === id)
-        ? views.map((v) => (idOf(v) === id ? finalView : v))
+        ? views.map((v) => (idOf(v) === id ? mergeViewEdit(v, finalView) : v))
         : [...views, finalView],
     }
   })

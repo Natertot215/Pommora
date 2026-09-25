@@ -42,13 +42,14 @@ export const CURRENCY_CODES = ['USD', 'EUR', 'GBP', 'AUD', 'CAD', 'JPY'] as cons
 const optionAppearance = z.enum(['filled', 'clear'])
 export type OptionAppearance = z.infer<typeof optionAppearance>
 
-const selectOption = z.looseObject({
+const selectOption = z.object({
   value: z.string(),
   label: z.string(),
   icon: z.string().optional().catch(undefined),
   color: z.string().optional().catch(undefined),
   appearance: optionAppearance.optional().catch(undefined),
 })
+export type SelectOption = z.infer<typeof selectOption>
 
 /** An OPEN set: a group is identified by its id, never by its position, so the count is deliberately uncapped. */
 const statusGroupId = z.string()
@@ -81,7 +82,7 @@ export const propertyDefinition = z.looseObject({
   name: z.string(),
   type: propertyType,
   icon: z.string().optional(),
-  select_options: z.array(selectOption).optional(),
+  select_options: z.array(selectOption.loose()).optional(),
   status_groups: z.array(statusGroup).optional(),
   context_target: contextTarget.optional(),
   link_underline: z.boolean().optional().catch(undefined),

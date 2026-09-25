@@ -2,7 +2,9 @@
 
 import { z } from 'zod'
 import { newId } from '../Nexus/ids'
-import { columnStyle, type ColumnStyle } from '../Properties/columnStyles'
+import { columnStyle } from '../Properties/columnStyles'
+import { mergeKeys } from '../Files/jsonMerge'
+import type { Json } from '../Files/stableJson'
 import { type PropertyDefinition, RESERVED_PROPERTY_ID } from '../Properties/properties'
 
 export const VIEW_TYPES = ['table', 'cards', 'list', 'gallery', 'calendar', 'timeline'] as const
@@ -64,78 +66,17 @@ export interface SubGroupConfig {
   date_granularity?: DateGranularity
 }
 
-export interface SortCriterion {
-  property_id: string
-  direction: (typeof SORT_DIRECTIONS)[number]
-  order?: string[]
-}
-
-export interface FilterRule {
-  property_id: string
-  op: string
-  value?: string
-  values?: string[]
-}
-
-/** RECURSIVE: a child may itself be a FilterGroup, expressing mixed AND/OR. Whether the filter APPLIES is a separate axis (`filter_enabled`), so turning it off never costs it its authored mode. */
-export interface FilterGroup {
-  match: MatchMode
-  rules: Array<FilterRule | FilterGroup>
-}
-
 export type GroupConfig =
   | { kind: 'structural' }
   | { kind: 'flat' }
-  | {
-      kind: 'property'
-      property_id: string
-      order_mode: GroupOrderMode
-      order?: string[]
-      date_granularity?: DateGranularity
-    }
-
-export interface SavedView {
-  id: string
-  name: string
-  icon?: string
-  color?: string
-  type: ViewType
-  property_order: string[]
-  hidden_properties: string[]
-  column_widths?: Record<string, number>
-  column_alignments?: Record<string, ColumnAlign>
-  column_styles?: Record<string, ColumnStyle>
-  collapsed_groups?: string[]
-  manual_order?: string[]
-  hidden_groups?: string[]
-  hide_empty_groups?: boolean
-  card_size?: number
-  view_scale?: number
-  card_banner?: CardBanner
-  hide_location?: boolean
-  wrap_titles?: boolean
-  set_cards?: boolean
-  hide_page_icons?: boolean
-  hide_column_icons?: boolean
-  hide_borders?: boolean
-  sort?: SortCriterion[]
-  filter?: FilterGroup
-  filter_enabled?: boolean
-  group?: GroupConfig
-  format?: ViewFormat
-  group_order?: string[]
-  structural_order_mode?: StructuralOrderMode
-  location_order_mode?: StructuralOrderMode
-  sub_group?: SubGroupConfig
-  ungrouped_placement?: EmptyPlacement
-  date_separator?: DateSeparator
-}
+  | ({ kind: 'property' } & SubGroupConfig)
 
 const sortCriterion = z.object({
   property_id: z.string(),
   direction: z.enum(SORT_DIRECTIONS),
   order: z.array(z.string()).optional(),
 })
+export type SortCriterion = z.infer<typeof sortCriterion>
 
 const filterRule = z.object({
   property_id: z.string(),
@@ -143,13 +84,16 @@ const filterRule = z.object({
   value: z.string().optional(),
   values: z.array(z.string()).optional(),
 })
+export type FilterRule = z.infer<typeof filterRule>
 
-export const filterGroup: z.ZodType<FilterGroup> = z.lazy(() =>
-  z.object({
-    match: z.enum(MATCH_MODES),
-    rules: z.array(z.union([filterRule, filterGroup])),
-  }),
-)
+export const filterGroup = z.object({
+  match: z.enum(MATCH_MODES),
+  get rules() {
+    return z.array(z.union([filterRule, filterGroup]))
+  },
+})
+/** RECURSIVE: a child may itself be a FilterGroup, expressing mixed AND/OR. Whether the filter APPLIES is a separate axis (`filter_enabled`), so turning it off never costs it its authored mode. */
+export type FilterGroup = z.infer<typeof filterGroup>
 
 // Element-filtering, not whole-array catch: one bad entry drops alone, good ids survive.
 const idArray = z
@@ -171,20 +115,23 @@ function asEnum<T extends string>(value: unknown, allowed: ReadonlySet<string>):
   return typeof value === 'string' && allowed.has(value) ? (value as T) : undefined
 }
 
+function decodeOrdering(raw: Record<string, unknown>): Omit<SubGroupConfig, 'property_id'> {
+  const order = Array.isArray(raw.order)
+    ? raw.order.filter((x): x is string => typeof x === 'string')
+    : undefined
+  const granularity = asEnum<DateGranularity>(raw.date_granularity, DATE_GRANULARITY_SET)
+  return {
+    order_mode: asEnum<GroupOrderMode>(raw.order_mode, GROUP_ORDER_MODE_SET) ?? 'configured',
+    ...(order !== undefined ? { order } : {}),
+    ...(granularity !== undefined ? { date_granularity: granularity } : {}),
+  }
+}
+
 export function decodeSubGroup(raw: unknown): SubGroupConfig | undefined {
   if (raw === null || typeof raw !== 'object' || Array.isArray(raw)) return undefined
   const s = raw as Record<string, unknown>
   if (typeof s.property_id !== 'string' || s.property_id === '') return undefined
-  const order = Array.isArray(s.order)
-    ? (s.order.filter((x) => typeof x === 'string') as string[])
-    : undefined
-  const granularity = asEnum<DateGranularity>(s.date_granularity, DATE_GRANULARITY_SET)
-  return {
-    property_id: s.property_id,
-    order_mode: asEnum<GroupOrderMode>(s.order_mode, GROUP_ORDER_MODE_SET) ?? 'configured',
-    ...(order !== undefined ? { order } : {}),
-    ...(granularity !== undefined ? { date_granularity: granularity } : {}),
-  }
+  return { property_id: s.property_id, ...decodeOrdering(s) }
 }
 
 /** Never throws; an unknown or malformed shape degrades to `structural` — a throw would poison the whole sidecar decode. */
@@ -193,34 +140,23 @@ export function decodeGroupConfig(raw: unknown): GroupConfig {
   const obj = raw as Record<string, unknown>
   const kind = typeof obj.kind === 'string' ? obj.kind : undefined
 
-  const asProperty = (): GroupConfig => {
-    const order = Array.isArray(obj.order)
-      ? (obj.order.filter((x) => typeof x === 'string') as string[])
-      : undefined
-    const granularity = asEnum<DateGranularity>(obj.date_granularity, DATE_GRANULARITY_SET)
-    return {
-      kind: 'property',
-      property_id: typeof obj.property_id === 'string' ? obj.property_id : '',
-      order_mode: asEnum<GroupOrderMode>(obj.order_mode, GROUP_ORDER_MODE_SET) ?? 'configured',
-      ...(order !== undefined ? { order } : {}),
-      ...(granularity !== undefined ? { date_granularity: granularity } : {}),
-    }
-  }
-
   switch (kind) {
     case 'structural':
       return { kind: 'structural' }
     case 'flat':
       return { kind: 'flat' }
     case 'property':
-      return asProperty()
+      return {
+        kind: 'property',
+        property_id: typeof obj.property_id === 'string' ? obj.property_id : '',
+        ...decodeOrdering(obj),
+      }
     default:
       return { kind: 'structural' }
   }
 }
 
-/** Loose ⇒ foreign keys survive a rewrite (cloud-sync / agent-legibility); scalar fields decode defensively. */
-export const savedView = z.looseObject({
+const savedViewFields = z.object({
   id: z.string().catch(''),
   name: z.string().catch(VIEW_KINDS[DEFAULT_VIEW_TYPE].label),
   icon: z.string().optional(),
@@ -230,7 +166,7 @@ export const savedView = z.looseObject({
   hidden_properties: z.array(z.string()).catch([]),
   column_widths: z.record(z.string(), z.number()).optional(),
   column_alignments: z.record(z.string(), z.enum(COLUMN_ALIGNS)).optional(),
-  column_styles: z.record(z.string(), columnStyle).catch({}).optional(),
+  column_styles: z.record(z.string(), columnStyle.catch({})).catch({}).optional(),
   collapsed_groups: z.array(z.string()).optional(),
   manual_order: idArray.optional(),
   hidden_groups: z.array(z.string()).optional(),
@@ -260,6 +196,22 @@ export const savedView = z.looseObject({
   ungrouped_placement: z.enum(EMPTY_PLACEMENTS).optional().catch(undefined),
   date_separator: z.enum(DATE_SEPARATORS).optional().catch(undefined),
 })
+export type SavedView = z.infer<typeof savedViewFields>
+
+/** Loose ⇒ foreign keys survive a rewrite (cloud-sync / agent-legibility); scalar fields decode defensively. */
+export const savedView = savedViewFields.loose()
+
+export function mergeViewEdit(raw: unknown, next: SavedView): Json {
+  const stored = savedView.safeParse(raw)
+  if (!stored.success) return next
+  return mergeKeys(
+    stored.data,
+    next,
+    raw as Json,
+    { group: 1, sub_group: 1, column_styles: 2 },
+    () => 'local',
+  )
+}
 
 export const LOCATION_SORT = '__location__'
 

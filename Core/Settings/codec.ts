@@ -10,8 +10,7 @@ import { nexusConfig } from '../Paths/paths'
 import { readJsonStrict } from '../Files/atomicWrite'
 import { valueOr } from '../Contract/result'
 import { type Personalization, personalizationSchema, settingOf } from './personalization'
-
-type Json = Record<string, unknown>
+import type { Json } from '../Files/stableJson'
 
 // Per-field: absent/invalid → undefined = the built-in default.
 export const readPersonalization = (raw: unknown): Personalization =>

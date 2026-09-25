@@ -44,8 +44,7 @@ export interface ContextGroup {
   spaces: SpaceNode[]
 }
 
-export interface SetNode extends ChromeNode {
-  kind: 'set'
+interface ContainerNode extends ChromeNode {
   sets?: SetNode[]
   pages: PageNode[]
   views?: SavedView[]
@@ -54,16 +53,15 @@ export interface SetNode extends ChromeNode {
   activeView?: string
 }
 
-export interface CollectionNode extends ChromeNode {
+export interface SetNode extends ContainerNode {
+  kind: 'set'
+}
+
+export interface CollectionNode extends ContainerNode {
   kind: 'collection'
   sets: SetNode[]
-  pages: PageNode[]
   properties?: PropertyDefinition[]
-  views?: SavedView[]
   openIn?: OpenIn
-  viewButton?: ViewButton
-  disclosureLocked?: boolean
-  activeView?: string
 }
 
 /** Keyed by normalized basename. Every path answering to a name is held, sorted, so display takes the first while a delete refuses to choose and an unlink has something to promote. A path's entry in `versions` moves when it's re-saved under an unchanged name, so only that file is re-requested. */

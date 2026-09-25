@@ -1,21 +1,15 @@
 import type { NexusTree } from '@pommora/core/Nexus/tree'
+import type { PickOption } from '../Properties/properties'
 import { spacesByIdOf } from './contextIdentity'
 
-export interface ContextOption {
-  value: string
-  label: string
-  color?: string
-  icon?: string
-}
-
 // The card grid calls this per context value per render, so a STABLE array is cached per (tree, contextId) — keyed on the tree object, so a push invalidates it.
-const optionsCache = new WeakMap<NexusTree, Map<string, ContextOption[]>>()
+const optionsCache = new WeakMap<NexusTree, Map<string, PickOption[]>>()
 
 export function contextOptionsFor(
   contextId: string,
   tree: NexusTree,
   excludeId?: string,
-): ContextOption[] {
+): PickOption[] {
   let byContext = optionsCache.get(tree)
   if (!byContext) {
     byContext = new Map()
@@ -29,7 +23,7 @@ export function contextOptionsFor(
   return excludeId ? opts.filter((o) => o.value !== excludeId) : opts
 }
 
-function buildOptions(contextId: string, tree: NexusTree): ContextOption[] {
+function buildOptions(contextId: string, tree: NexusTree): PickOption[] {
   // Identity comes from the seam, never re-derived here: resolving the glyph locally is what let a picker chip disagree with the sidebar on a personalized nexus.
   return [...spacesByIdOf(tree)]
     .filter(([, s]) => s.contextId === contextId)

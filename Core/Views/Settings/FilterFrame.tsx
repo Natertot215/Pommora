@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { Button } from '@pommora/uix/Buttons/Button'
 import type { CollectionNode, NexusTree, SetNode } from '@pommora/core/Nexus/tree'
-import type { PropertyDefinition } from '@pommora/core/Properties/properties'
+import type { PickOption, PropertyDefinition } from '@pommora/core/Properties/properties'
 import type { FilterRule, SavedView } from '@pommora/core/Views/views'
 import { Icon } from '@pommora/uix/Symbols'
 import { SegmentRun } from '@pommora/uix/Fields/SegmentRun'
@@ -29,7 +29,7 @@ import { contextIdsOf, isContextColumnId } from '../../Contexts/contextIdentity'
 import { useStyleFor } from '../Host/useColumnStyles'
 import { useSetting } from '../../Session/store'
 import { condensedDate, formatDate } from '../../Properties/formatValue'
-import { contextOptionsFor, type ContextOption } from '../../Contexts/contextOptions'
+import { contextOptionsFor } from '../../Contexts/contextOptions'
 import { declaredType } from '../../Properties/value'
 import { toggleValue } from '../../Properties/Pickers/PropertyPicker'
 import { CheckboxGlyph } from '../../Properties/Cells/CheckboxGlyph'
@@ -299,7 +299,7 @@ function ChipsField({
   onCommit,
 }: {
   values: string[]
-  options: ContextOption[]
+  options: PickOption[]
   isContext: boolean
   type: string
   onCommit: (next: string[]) => void
@@ -552,7 +552,7 @@ export function FilterFrame({
         ? rule.property_id
         : def?.context_target?.context_id
       const isContext = type === 'context'
-      const options: ContextOption[] = isContext
+      const options = isContext
         ? tree && contextId
           ? contextOptionsFor(contextId, tree)
           : []

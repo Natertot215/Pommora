@@ -6,6 +6,7 @@ import type { CollectionNode, SetNode } from '@pommora/core/Nexus/tree'
 import type { PropertyDefinition } from '@pommora/core/Properties/properties'
 import {
   DEFAULT_VIEW_ID,
+  mergeViewEdit,
   mintDefaultView,
   mintNewView,
   mintViewId,
@@ -332,7 +333,7 @@ export function ViewTile({
       const own = storedViewId(el) === id
       arr[i] = {
         ...el,
-        config: own ? config : { ...config, id: mintViewId() },
+        config: mergeViewEdit(el.config, own ? config : { ...config, id: mintViewId() }),
       }
       return { ...raw, views: arr }
     })
