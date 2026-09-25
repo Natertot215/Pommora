@@ -84,7 +84,7 @@ export const createNexusSlice: Slice<NexusSlice> = (set, get) => {
     s.resetCaches()
     s.resetGlance()
     s.resetMatrix()
-    s.resetRename()
+    s.resetEdit()
     s.resetViewSearch()
     resetUndo()
     clearNotification()

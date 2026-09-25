@@ -1,16 +1,7 @@
 import { reportRefusal } from '@pommora/core/Interface/Notifications/notifications'
-import {
-  DEFAULT_NEW_NAME,
-  type MutateRequest,
-  type RenameHost,
-  type RenameKind,
-} from '@pommora/core/Nexus/mutateRequest'
+import type { MutateRequest, RenameHost, RenameKind } from '@pommora/core/Nexus/mutateRequest'
 import { contextDirRel } from '@pommora/core/Paths/nexusPaths'
 import { normalizePropertyName } from '@pommora/core/Properties/properties'
-import { orderWithSlot, placeNew } from '../Views/creationOrder'
-import { createSpaceLabel } from '@pommora/core/Contexts/contexts'
-import { findContainerWhere } from '../Nexus/treePatch'
-import { relDirname } from '@pommora/core/Paths/posix'
 import type { Slice } from './sessionState'
 import { host } from '../Platform/dialer'
 import { flushAllSaves } from './nexusSlice'
@@ -25,7 +16,7 @@ interface RenameFence {
   renamingHost: RenameHost | null
 }
 
-export interface RenameSlice {
+export interface EditSlice {
   renamingPath: string | null
   /** A newborn's naming session: the field opens empty and its first commit rides the create. */
   renamingCreate: boolean
@@ -50,17 +41,11 @@ export interface RenameSlice {
   /** A one-shot landed-here pulse; a disclosure-locked folder briefly reveals only that child. */
   peekSignal: { parentPath: string; childId: string; nonce: number } | null
   signalPeek: (parentPath: string, childId: string) => void
-  /** The sidebar's New Page Above/Below — position computed here, where the sibling order lives. */
-  newPageAdjacent: (path: string, where: 'above' | 'below', host?: RenameHost) => Promise<void>
-  newSpaceAdjacent: (id: string, where: 'above' | 'below', host?: RenameHost) => Promise<void>
-  /** An unanchored create, placed by its kind's placement setting and named in place. */
-  createNamed: (req: MutateRequest, host?: RenameHost) => Promise<void>
-  newPage: () => Promise<void>
   renamingProperty: { collectionPath: string; propertyId: string } | null
   beginPropertyRename: (target: { collectionPath: string; propertyId: string }) => void
   cancelPropertyRename: () => void
   submitPropertyRename: (newName: string) => Promise<boolean>
-  resetRename: () => void
+  resetEdit: () => void
 }
 
 let nextRenameToken = 1
@@ -73,7 +58,7 @@ const RENAME_CLEARED = {
   renamingCreate: false,
   renamingHost: null,
   renameWinner: null,
-} satisfies Partial<RenameSlice>
+} satisfies Partial<EditSlice>
 const PER_NEXUS = {
   ...RENAME_CLEARED,
   renameClaims: [],
@@ -83,7 +68,7 @@ const PER_NEXUS = {
   colorHost: null,
   peekSignal: null,
   renamingProperty: null,
-} satisfies Partial<RenameSlice>
+} satisfies Partial<EditSlice>
 
 function resolveRenameWinner(claims: RenameClaim[], fence: RenameFence): number | null {
   const live = claims.filter((c) => c.path === fence.renamingPath)
@@ -95,7 +80,7 @@ function resolveRenameWinner(claims: RenameClaim[], fence: RenameFence): number 
   return winner.token
 }
 
-export const createRenameSlice: Slice<RenameSlice> = (set, get) => ({
+export const createEditSlice: Slice<EditSlice> = (set, get) => ({
   ...PER_NEXUS,
   claimRename: (path, host) => {
     if (path !== get().renamingPath) return null
@@ -177,61 +162,6 @@ export const createRenameSlice: Slice<RenameSlice> = (set, get) => ({
   signalPeek: (parentPath, childId) =>
     set((s) => ({ peekSignal: { parentPath, childId, nonce: (s.peekSignal?.nonce ?? 0) + 1 } })),
 
-  newPageAdjacent: async (path, where, host) => {
-    const tree = get().tree
-    if (!tree) return
-    const parentPath = relDirname(path)
-    const container = findContainerWhere(tree, (n) => n.path === parentPath)
-    if (!container) return
-    const anchor = container.pages.find((p) => p.path === path)
-    if (!anchor) return
-    const order = orderWithSlot(
-      container.pages.map((p) => p.id),
-      anchor.id,
-      where,
-    )
-    await get().mutate({ op: 'createPage', parentPath, name: DEFAULT_NEW_NAME, order }, (created) =>
-      get().beginRename(created.path, true, host),
-    )
-  },
-
-  newSpaceAdjacent: async (id, where, host) => {
-    const group = get().tree?.contexts.find((g) => g.spaces.some((s) => s.id === id))
-    if (!group) return
-    const order = orderWithSlot(
-      group.spaces.map((s) => s.id),
-      id,
-      where,
-    )
-    await get().mutate(
-      { op: 'createSpace', contextId: group.def.id, name: createSpaceLabel(group.def), order },
-      (created) => get().beginRename(created.path, true, host),
-    )
-  },
-
-  createNamed: async (req, host) => {
-    const { tree, personalization } = get()
-    await get().mutate(tree ? placeNew(tree, req, personalization) : req, (created) =>
-      get().beginRename(created.path, true, host),
-    )
-  },
-
-  newPage: async () => {
-    const { tree, selection, personalization } = get()
-    if (!tree) return
-    let parentPath: string | null = null
-    if (selection.kind === 'collection' || selection.kind === 'set')
-      parentPath = findContainerWhere(tree, (n) => n.id === selection.id)?.path ?? null
-    else if (selection.kind === 'page') parentPath = relDirname(selection.path)
-    if (parentPath === null) parentPath = tree.collections[0]?.path ?? null
-    if (parentPath === null) return
-    await get().mutate(
-      placeNew(tree, { op: 'createPage', parentPath, name: DEFAULT_NEW_NAME }, personalization),
-      (created) =>
-        get().select({ kind: 'page', id: created.id, path: created.path }, { newTab: false }),
-    )
-  },
-
   beginPropertyRename: (target) => set({ renamingProperty: target }),
   cancelPropertyRename: () => set({ renamingProperty: null }),
   submitPropertyRename: async (newName) => {
@@ -246,5 +176,5 @@ export const createRenameSlice: Slice<RenameSlice> = (set, get) => ({
     if (before !== undefined && before !== after) get().bumpValuesEpoch(before, after)
     return true
   },
-  resetRename: () => set(PER_NEXUS),
+  resetEdit: () => set(PER_NEXUS),
 })

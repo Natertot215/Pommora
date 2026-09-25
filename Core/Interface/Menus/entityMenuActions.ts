@@ -21,6 +21,7 @@ import {
 } from './propertyMenuActions'
 import { host } from '../../Platform/dialer'
 import { popMenu } from '../../Actions/menuActions'
+import { createNamed, newPageAdjacent } from '../../Actions/create'
 import { useSession } from '../../Session/store'
 import { confirmDelete } from '../Confirm/confirmations'
 import { runPageAction } from './pageMenuActions'
@@ -125,7 +126,7 @@ function runEntityAction(
       return
     case 'title:newabove':
     case 'title:newbelow':
-      void s.newPageAdjacent(path, action === 'title:newabove' ? 'above' : 'below', target.host)
+      void newPageAdjacent(path, action === 'title:newabove' ? 'above' : 'below', target.host)
       return
     case 'reveal':
       void host().ask('path:reveal', path)
@@ -143,7 +144,7 @@ function runEntityAction(
       return
     default: {
       const req = createdRequest(creators, action)
-      if (req) void s.createNamed(req, target.host)
+      if (req) void createNamed(req, target.host)
     }
   }
 }

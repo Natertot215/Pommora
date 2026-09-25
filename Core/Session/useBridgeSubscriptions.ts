@@ -12,6 +12,7 @@ import { flushPageSave, setStaleSaveSink } from './saveScheduler'
 import { useSession } from './store'
 import { openWebLink } from '../Web/openWebLink'
 import { host as dialer } from '../Platform/dialer'
+import { newPage } from '../Actions/create'
 
 export function useBridgeSubscriptions(): void {
   const applyTree = useSession((s) => s.applyTree)
@@ -21,7 +22,6 @@ export function useBridgeSubscriptions(): void {
   const choose = useSession((s) => s.choose)
   const openPath = useSession((s) => s.openPath)
   const toggleSidebar = useSession((s) => s.toggleSidebar)
-  const newPage = useSession((s) => s.newPage)
   const openNewTab = useSession((s) => s.openNewTab)
 
   const setHostWindow = useSession((s) => s.setHostWindow)
@@ -126,7 +126,7 @@ export function useBridgeSubscriptions(): void {
           break
       }
     })
-  }, [choose, newPage, openNewTab, toggleSidebar])
+  }, [choose, openNewTab, toggleSidebar])
 
   useEffect(() => dialer().on('nexus:openRecent', (path) => void openPath(path)), [openPath])
 
