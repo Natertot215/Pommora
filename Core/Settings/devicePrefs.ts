@@ -1,4 +1,4 @@
-// Preferences that belong to the MACHINE rather than the Nexus: menu style, interface scale, pane widths, sidebar folds and window sizes are all true of the display and operating system in front of the user, so they stay with the device and travel nowhere.
+// Preferences that belong to the MACHINE rather than the Nexus: menu style, interface scale, pane widths, sidebar folds, window sizes, the footer's fold and the navigation layouts are all true of the display and operating system in front of the user, so they stay with the device and travel nowhere.
 import { readValue } from '../Platform/localState'
 import { coerceTenthsScale, TENTHS_SCALE } from './personalization'
 
@@ -9,6 +9,9 @@ export interface DevicePrefs {
   panes?: { sidebar?: number; sidePane?: number }
   disclosure?: Partial<Record<string, boolean>>
   windows?: Record<string, { w: number; h: number }>
+  subfieldCollapsed?: boolean
+  navWindowGallery?: boolean
+  navViewGallery?: boolean
 }
 
 /** Keyed on the VALUE rather than a list of names, which would fall behind when a preference is added. */

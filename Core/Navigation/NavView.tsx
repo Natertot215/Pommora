@@ -15,7 +15,7 @@ import './nav-view.css'
 
 export function NavView(): React.JSX.Element {
   const { resolvedRecents, resolvedPins, search, go } = useNavData()
-  const viewMode = useSession((s) => s.navViewMode)
+  const gallery = useSession((s) => s.devicePrefs.navViewGallery === true)
   // NavWindow's freeze-at-open is for its persistent pane — NavView opens fresh each time.
   const setRecentsOrder = useSession((s) => s.setRecentsOrder)
   const reorderRecent = (activeKey: string, overKey: string): void => {
@@ -56,19 +56,19 @@ export function NavView(): React.JSX.Element {
             onSelect={open}
             onOpenNewTab={openNew}
           />
-        ) : viewMode === 'list' ? (
-          <NavList
+        ) : gallery ? (
+          <NavGallery
             pins={resolvedPins}
             items={resolvedRecents}
-            reorderable
             onReorderRecent={reorderRecent}
             onSelect={open}
             onOpenNewTab={openNew}
           />
         ) : (
-          <NavGallery
+          <NavList
             pins={resolvedPins}
             items={resolvedRecents}
+            reorderable
             onReorderRecent={reorderRecent}
             onSelect={open}
             onOpenNewTab={openNew}

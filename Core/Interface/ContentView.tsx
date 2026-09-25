@@ -128,7 +128,7 @@ export function ContentView(): React.JSX.Element {
   const tree = useSession((s) => s.tree)
   const frozen = useSession(frozenOf)
   const navSlide = useSession((s) => s.navSlide)
-  const expanded = useSession((s) => s.subfieldExpanded)
+  const expanded = useSession((s) => !s.devicePrefs.subfieldCollapsed)
   const hosts = useHosts()
 
   const viewRef = useRef<HTMLDivElement>(null)
@@ -183,8 +183,8 @@ export function ContentView(): React.JSX.Element {
 }
 
 function ContentFooter({ remeasure }: { remeasure: () => void }): React.JSX.Element {
-  const expanded = useSession((s) => s.subfieldExpanded)
-  const setExpanded = useSession((s) => s.setSubfieldExpanded)
+  const expanded = useSession((s) => !s.devicePrefs.subfieldCollapsed)
+  const setDevicePref = useSession((s) => s.setDevicePref)
   const kind = useSession((s) => s.selection.kind)
   const count = useSession((s) => s.detailCount)
   const slot = useSession(shownPage)
@@ -200,7 +200,7 @@ function ContentFooter({ remeasure }: { remeasure: () => void }): React.JSX.Elem
         className="subfield-toggle reveal-toggle"
         data-reveal-host=""
         data-reveal-trail
-        onClick={() => setExpanded(!expanded)}
+        onClick={() => setDevicePref('subfieldCollapsed', expanded)}
         aria-label={footerLabel(expanded)}
         title={footerLabel(expanded)}
       >

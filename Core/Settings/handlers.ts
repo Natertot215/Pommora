@@ -1,8 +1,7 @@
 import { type Handlers, withRoot, withWriteRoot } from '../Contract/handlers'
-import { fail, ok, type Result, fault } from '../Contract/result'
+import { fail, ok, fault } from '../Contract/result'
 import { machine } from '../Platform/machine'
 import { seedContentIndex } from '../Index/indexSeed'
-import type { NavViewModes, SubfieldConfig } from '../Interface/chrome'
 import { rootSegs } from '../Paths/exclusion'
 import { relative } from '../Paths/posix'
 import { confirmSettingsWrite } from '../Nexus/confirm'
@@ -11,14 +10,10 @@ import { sweepFileHistory } from '../Pages/fileHistory'
 import { nexusFolderRefusal } from './codec'
 import { clearExclusionData } from './exclusionScan'
 import {
-  readNavViewModes,
-  readSubfield,
   readWatchScope,
   sanitizeExclusions,
   writeExcludedFolders,
-  writeNavViewModes,
   writePersonalization,
-  writeSubfield,
 } from './settings'
 
 export const settingsHandlers = {
@@ -68,28 +63,6 @@ export const settingsHandlers = {
     await confirmSettingsWrite(ctx, root)
     if (key === 'webZoomFactor') await ctx.applyZoom()
     if (key === 'historyDays') void sweepFileHistory(root)
-    return ok(null)
-  }),
-
-  'subfield:get': withRoot(
-    async (root): Promise<Result<SubfieldConfig | null>> => ok(await readSubfield(root)),
-    ok(null),
-  ),
-
-  'subfield:set': withWriteRoot(async (root, _ctx, config: unknown) => {
-    if (!config || typeof config !== 'object') return fault('Invalid subfield config.')
-    await writeSubfield(root, config as SubfieldConfig)
-    return ok(null)
-  }),
-
-  'navViewModes:get': withRoot(
-    async (root): Promise<Result<NavViewModes | null>> => ok(await readNavViewModes(root)),
-    ok(null),
-  ),
-
-  'navViewModes:set': withWriteRoot(async (root, _ctx, modes: unknown) => {
-    if (!modes || typeof modes !== 'object') return fault('Invalid nav view modes.')
-    await writeNavViewModes(root, modes as NavViewModes)
     return ok(null)
   }),
 

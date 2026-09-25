@@ -1,9 +1,6 @@
-import { persist } from '@pommora/core/Interface/Notifications/notifications'
 import type { HostPlatform } from '@pommora/core/Contract/bridge'
-import type { NavViewMode } from '@pommora/core/Interface/chrome'
 import type { Slice } from './sessionState'
 import { clamp } from '@pommora/uix/Utilities/clamp'
-import { host } from '../Platform/dialer'
 
 export interface LayoutSlice {
   sidebarVisible: boolean
@@ -15,12 +12,6 @@ export interface LayoutSlice {
   persistPaneWidths: () => void
   sidePaneWidth: number
   setSidePaneWidth: (w: number) => void
-  subfieldExpanded: boolean
-  setSubfieldExpanded: (expanded: boolean) => void
-  navWindowMode: NavViewMode
-  setNavWindowMode: (mode: NavViewMode) => void
-  navViewMode: NavViewMode
-  setNavViewMode: (mode: NavViewMode) => void
   settingsOpen: boolean
   closeSettings: () => void
   toggleSettings: () => void
@@ -44,26 +35,9 @@ export const clampWidth = (pane: PaneWidth, w: number): number =>
 const PER_NEXUS = {
   sidebarWidth: SIDEBAR_WIDTH.def,
   sidePaneWidth: SIDE_PANE_WIDTH.def,
-  subfieldExpanded: true,
-  navWindowMode: 'list',
-  navViewMode: 'list',
 } satisfies Partial<LayoutSlice>
 
 export const createLayoutSlice: Slice<LayoutSlice> = (set, get) => {
-  const persistSubfield = (): void => {
-    const s = get()
-    void persist('the layout', host().ask('subfield:set', { expanded: s.subfieldExpanded }), true)
-  }
-
-  const persistNavModes = (): void => {
-    const s = get()
-    void persist(
-      'the layout',
-      host().ask('navViewModes:set', { window: s.navWindowMode, view: s.navViewMode }),
-      true,
-    )
-  }
-
   return {
     ...PER_NEXUS,
     sidebarVisible: true,
@@ -76,19 +50,6 @@ export const createLayoutSlice: Slice<LayoutSlice> = (set, get) => {
     persistPaneWidths: () => {
       const s = get()
       s.setDevicePref('panes', { sidebar: s.sidebarWidth, sidePane: s.sidePaneWidth })
-    },
-
-    setSubfieldExpanded: (expanded) => {
-      set({ subfieldExpanded: expanded })
-      persistSubfield()
-    },
-    setNavWindowMode: (mode) => {
-      set({ navWindowMode: mode })
-      persistNavModes()
-    },
-    setNavViewMode: (mode) => {
-      set({ navViewMode: mode })
-      persistNavModes()
     },
 
     settingsOpen: false,
