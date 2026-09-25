@@ -45,16 +45,6 @@ textarea,
   display: none;
 }
 
-.hover-pop {
-  position: relative;
-  transition: transform var(--duration-slow) var(--ease-base);
-  will-change: transform;
-}
-.hover-pop:hover {
-  transform: scale(var(--pop-scale, 1.0175));
-  z-index: 1;
-}
-
 @property --io {
   syntax: "<number>";
   inherits: true;
