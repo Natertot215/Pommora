@@ -443,6 +443,8 @@ surface('untitledViewTile', async () => {
 surface('viewTile', async () => {
   await homepage()
   const shown = SHOWN_TILE
+  await ev(`${shown}.scrollIntoView({ block: 'start' })`)
+  await sleep(SETTLE)
   const band = `${LOCK(shown)}.parentElement.parentElement`
   const res = {}
   res.settings = await settled({ id: 'settings', el: `${shown}?.querySelector('button[aria-label="View settings"]')`, host: shown })

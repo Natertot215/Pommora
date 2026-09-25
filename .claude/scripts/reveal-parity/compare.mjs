@@ -14,10 +14,12 @@ function flatten(o, at = '', out = {}) {
   return out
 }
 
-// Opacity within 0.02, a reach within 10px; durations, pointer events, and flags exactly.
+// A zero blur paints as no filter at all.
+const painted = (v) => (v === 'blur(0px)' ? 'none' : v)
+// Opacity within 0.02, a reach within 10px; durations, pointer events, filters, and flags exactly.
 const same = (path, x, y) => {
   if (typeof x === 'number' && typeof y === 'number') return Math.abs(x - y) <= (path.endsWith('.vis') ? 0.02 : 10)
-  return x === y
+  return painted(x) === painted(y)
 }
 
 export function differences(a, b) {
