@@ -15,8 +15,7 @@ import { text } from '@pommora/uix/Theme'
 import { WindowBase } from '@pommora/uix/Windows/WindowBase'
 import { SETTINGS_RAIL, SETTINGS_WIN } from '@pommora/uix/Windows/windowBounds'
 import { steppedPickerProps } from '@pommora/uix/Pickers/PickerControl'
-import { labelColorFor } from '@pommora/uix/Theme/ramp'
-import { solidColorCss } from '@pommora/uix/Theme/ramp'
+import { resolveColor } from '@pommora/uix/Theme/ramp'
 import {
   coerceIn,
   SETTING_DEFAULTS,
@@ -183,15 +182,18 @@ function ColorRow({ row }: { row: RowOf<'color'> }): React.JSX.Element {
   const value = useSetting(row.key)
   const setPersonalization = useSession((s) => s.setPersonalization)
 
-  const inheriting = value === SETTING_DEFAULTS[row.key]
+  const { name, css } = resolveColor(
+    value === SETTING_DEFAULTS[row.key] ? undefined : value,
+    row.clearedVar,
+  )
 
   return (
     <MenuRowView
       row={settingsRow(row, {
         kind: 'color',
         label: row.label,
-        selected: inheriting ? 'default' : labelColorFor(value),
-        css: inheriting ? row.clearedVar : solidColorCss(value),
+        selected: name,
+        css,
         greyscale: row.greyscale,
         onPick: (next) => setPersonalization(row.key, next as never),
       })}

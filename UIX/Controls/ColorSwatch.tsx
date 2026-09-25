@@ -1,8 +1,7 @@
 import { useRef, useState } from 'react'
 import { ColorPicker } from '../Pickers/ColorPicker'
-import type { LabelColorName } from '../Labels/label-base.css'
 import { cellPaint } from '../Theme/ramp'
-import { type CellKey, tintAt } from '../Theme/colors'
+import { type CellKey, type ColorName, tintAt } from '../Theme/colors'
 import * as s from './color-swatch.css'
 
 /** Greyscale is resolved as a chip rather than painted raw. */
@@ -14,7 +13,7 @@ export function ColorSwatch({
   onPick,
 }: {
   label: string
-  selected: LabelColorName
+  selected: ColorName
   css: string
   greyscale?: boolean
   onPick: (color: string | undefined) => void

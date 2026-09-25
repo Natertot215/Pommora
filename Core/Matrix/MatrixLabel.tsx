@@ -2,7 +2,7 @@ import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { NavTrail } from '@pommora/uix/Elements/NavTrail'
 import { titleInput } from '@pommora/uix/Menus'
 import { ColorPicker } from '@pommora/uix/Pickers/ColorPicker'
-import { labelColorFor } from '@pommora/uix/Theme/ramp'
+import { colorNameFor } from '@pommora/uix/Theme/ramp'
 import { text } from '@pommora/uix/Theme'
 import { cx } from '@pommora/uix/Utilities/cx'
 import { EntityIcon } from '../Assets/EntityIcon'
@@ -136,7 +136,7 @@ export function MatrixLabel({
       {rec.kind === 'space' && (
         <ColorPicker
           open={pickingColor === rec.path}
-          selected={labelColorFor(spaceIdentityOf(tree, rec.id)?.color)}
+          selected={colorNameFor(spaceIdentityOf(tree, rec.id)?.color)}
           onPick={(color) => {
             endColor()
             void mutate({ op: 'setSpaceColor', spaceId: rec.id, color })

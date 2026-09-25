@@ -1,7 +1,6 @@
 import type { RefObject } from 'react'
 import { PickerMenu } from './PickerMenu'
-import type { LabelColorName } from '../Labels/label-base.css'
-import { RAMP_FAMILIES, RAMP_STEPS, type CellKey } from '../Theme/colors'
+import { RAMP_FAMILIES, RAMP_STEPS, type CellKey, type ColorName } from '../Theme/colors'
 import { cellColor, cellRing } from '../Theme/ramp'
 import { cx } from '../Utilities/cx'
 import * as s from './color-picker.css'
@@ -16,7 +15,7 @@ export function ColorPicker({
   greyscale = true,
 }: {
   open: boolean
-  selected: LabelColorName
+  selected: ColorName
   onPick: (color: string | undefined) => void
   onDismiss: () => void
   triggerRef: RefObject<Element | null>
@@ -35,7 +34,7 @@ export function ColorGrid({
   greyscale = true,
   className,
 }: {
-  selected: LabelColorName
+  selected: ColorName
   onPick: (color: string | undefined) => void
   greyscale?: boolean
   className?: string

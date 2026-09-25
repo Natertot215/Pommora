@@ -5,7 +5,7 @@ import { fill, labelColor, roomy, shape, textCap } from '@pommora/uix/Labels/lab
 import { NeutralChip, FileChip, PlainLabel } from '@pommora/uix/Labels/recipes'
 import { DualSwitch } from '@pommora/uix/Controls/DualSwitch'
 import { SortableZone, useDragItem, reorder } from '@pommora/uix/Interactions/drag'
-import type { LabelColorName } from '@pommora/uix/Labels/label-base.css'
+import type { ColorName } from '@pommora/uix/Theme/colors'
 import { ANCHOR_CELLS, cellColor } from '@pommora/uix/Theme/ramp'
 import { cx } from '@pommora/uix/Utilities/cx'
 import { overScrollUnmasked } from '@pommora/uix/Interactions/OverScroll'
@@ -13,8 +13,8 @@ import { humanize, useIsCompact } from './helpers'
 
 // The demo rows show one chip per SPECTRUM anchor rather than all 64 cells — the ramp's shape is the
 // picker's story, not the chip shapes'.
-const CHIP_COLORS: LabelColorName[] = [...Object.values(ANCHOR_CELLS), 'default', 'accent']
-const pillClass = (color: LabelColorName): string => `${shape.pill} ${labelColor[color]}`
+const CHIP_COLORS: ColorName[] = [...Object.values(ANCHOR_CELLS), 'default']
+const pillClass = (color: ColorName): string => `${shape.pill} ${labelColor[color]}`
 
 function ChipCell({
   id,
@@ -22,7 +22,7 @@ function ChipCell({
   label,
 }: {
   id: string
-  color: LabelColorName
+  color: ColorName
   label: string
 }): React.JSX.Element {
   const { setNodeRef, style, handle } = useDragItem(id)
@@ -84,7 +84,7 @@ function ShapeRow({
   shape: string
   content: () => ReactNode
 }): React.JSX.Element {
-  const [order, setOrder] = useState<LabelColorName[]>(() => [...CHIP_COLORS])
+  const [order, setOrder] = useState<ColorName[]>(() => [...CHIP_COLORS])
   const compact = useIsCompact()
   const cells = (
     <div className="ds-chip-row-items">
@@ -112,7 +112,7 @@ function ShapeRow({
             x.map((k) => ({ id: `${rowId}:${k}` })),
             a,
             o,
-          ).map(({ id }) => id.split(':')[1] as LabelColorName),
+          ).map(({ id }) => id.split(':')[1] as ColorName),
         )
       }
     >
@@ -140,14 +140,9 @@ function ShapeCell({
   )
 }
 
-function SwitchDemo({ color }: { color: LabelColorName }): React.JSX.Element {
+function SwitchDemo({ color }: { color: ColorName }): React.JSX.Element {
   const [on, setOn] = useState(true)
-  const solid =
-    color === 'default'
-      ? vars.color.solid.greyDefault
-      : color === 'accent'
-        ? 'var(--system-accent)'
-        : cellColor(color)
+  const solid = color === 'default' ? vars.color.solid.greyDefault : cellColor(color)
   return (
     <span
       className="ds-switch-demo"

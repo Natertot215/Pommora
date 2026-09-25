@@ -7,7 +7,7 @@ import { Icon } from '@pommora/uix/Symbols'
 import { FieldRun } from '@pommora/uix/Fields/FieldRun'
 import * as fr from '@pommora/uix/Fields/field-run.css'
 import { EntityIcon } from '../../Assets/EntityIcon'
-import { labelColorFor } from '@pommora/uix/Theme/ramp'
+import { colorNameFor } from '@pommora/uix/Theme/ramp'
 import {
   DisclosureRow,
   MenuFooting,
@@ -320,7 +320,7 @@ function ChipsField({
               return isContext ? (
                 <NeutralChip
                   key={v}
-                  color={labelColorFor(o?.color)}
+                  color={colorNameFor(o?.color)}
                   title={o?.label ?? v}
                   {...(o?.icon ? { icon: o.icon } : {})}
                   onRemove={() => toggle(v)}
@@ -350,7 +350,7 @@ function ChipsField({
                   onClick={() => toggle(o.value)}
                 >
                   {isContext ? (
-                    <NeutralChip color={labelColorFor(o.color)} title={o.label} />
+                    <NeutralChip color={colorNameFor(o.color)} title={o.label} />
                   ) : (
                     <OptionChip type={type} option={o} />
                   )}

@@ -3,7 +3,7 @@ import type { OptionAppearance, PropertyDefinition } from '@pommora/core/Propert
 import { Label } from '@pommora/uix/Labels/Label'
 import { optionShapeFor } from '@pommora/uix/Labels/recipes'
 import { Icon, type IconName, iconNameOr } from '@pommora/uix/Symbols'
-import { labelColorFor } from '@pommora/uix/Theme/ramp'
+import { colorNameFor } from '@pommora/uix/Theme/ramp'
 import { statusGroupGlyph, statusGroupOf } from './statusCycle'
 
 export interface OptionChipData {
@@ -45,7 +45,7 @@ export function OptionChip({
   return (
     <Label
       shape={optionShapeFor(type)}
-      color={labelColorFor(option?.color)}
+      color={colorNameFor(option?.color)}
       {...(option?.appearance === 'clear' ? { fill: 'none' as const } : {})}
       className={className}
       {...(look === 'compact'

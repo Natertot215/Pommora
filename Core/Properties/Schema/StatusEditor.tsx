@@ -1,7 +1,7 @@
 import { Fragment, useMemo, useRef, useState } from 'react'
 import { Button } from '@pommora/uix/Buttons/Button'
 import { DropLine } from '@pommora/uix/Interactions/DropLine'
-import { labelColorFor } from '@pommora/uix/Theme/ramp'
+import { colorNameFor } from '@pommora/uix/Theme/ramp'
 import {
   addStatusOption,
   recolorStatusOption,
@@ -111,7 +111,7 @@ export function StatusEditor({
     adding?.groupId === g.id && adding.index === index ? (
       <div className={s.optionRow}>
         <OptionNameCaret
-          className={cx(shape.pill, labelColor[labelColorFor(g.color)])}
+          className={cx(shape.pill, labelColor[colorNameFor(g.color)])}
           onCommit={(raw) => commitAdd(g.id, raw, index)}
           onCancel={() => setAdding(null)}
         />

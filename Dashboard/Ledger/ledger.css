@@ -25,7 +25,7 @@
   color: var(--label-tertiary);
 }
 .lg-sha {
-  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-family: var(--font-mono);
   letter-spacing: 0;
   text-transform: none;
 }
@@ -50,7 +50,7 @@
   padding-top: 4px;
 }
 .lg-n {
-  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-family: var(--font-mono);
   font-variant-numeric: tabular-nums;
   font-size: 34px;
   line-height: 38px;
@@ -75,7 +75,7 @@
   color: var(--label-tertiary);
 }
 .lg-census b {
-  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-family: var(--font-mono);
   font-variant-numeric: tabular-nums;
   font-weight: 500;
   color: var(--label-secondary);
@@ -147,7 +147,7 @@
 }
 .lg-span {
   margin-left: 4px;
-  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-family: var(--font-mono);
   font-size: 10px;
   font-variant-numeric: tabular-nums;
   color: var(--label-tertiary);
@@ -171,7 +171,7 @@
   stroke-width: 1;
 }
 .lg-axis text {
-  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-family: var(--font-mono);
   font-size: 9.5px;
   font-variant-numeric: tabular-nums;
   fill: var(--label-tertiary);
@@ -211,7 +211,7 @@
 .lg-when {
   display: block;
   margin-bottom: 7px;
-  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-family: var(--font-mono);
   font-size: 10px;
   color: var(--label-tertiary);
 }
@@ -233,7 +233,7 @@
   color: var(--label-secondary);
 }
 .lg-r span:last-child {
-  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-family: var(--font-mono);
   font-variant-numeric: tabular-nums;
   color: var(--label-primary);
 }
@@ -246,7 +246,7 @@
   font-size: 11px;
 }
 .lg-tot b {
-  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-family: var(--font-mono);
   font-weight: 500;
   color: var(--label-primary);
 }
@@ -322,7 +322,7 @@
 }
 .lg-num {
   padding-left: 22px;
-  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-family: var(--font-mono);
   font-size: 13px;
   color: var(--label-primary);
 }
@@ -331,7 +331,7 @@
 }
 .lg-table-wrap tfoot td {
   padding: 14px 0 0 22px;
-  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-family: var(--font-mono);
   font-size: 13px;
   font-variant-numeric: tabular-nums;
   text-align: right;

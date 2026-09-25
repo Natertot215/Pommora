@@ -18,7 +18,7 @@ import type { PaneDrop } from '@pommora/core/Properties/paneDrop'
 import { useSaveView } from '../ViewTileScope'
 import { pickView } from '../Pipeline/pickView'
 import { ColorPicker } from '@pommora/uix/Pickers/ColorPicker'
-import { labelColorFor } from '@pommora/uix/Theme/ramp'
+import { colorNameFor } from '@pommora/uix/Theme/ramp'
 import { RenamableLabel } from '@pommora/uix/Fields/RenamableLabel'
 import { IconChoice } from '../../Assets/IconChoice'
 import { useSession } from '../../Session/store'
@@ -229,7 +229,7 @@ export function ViewFrame({
       />
       <ColorPicker
         open={colorFor !== null}
-        selected={labelColorFor(colorFor?.color)}
+        selected={colorNameFor(colorFor?.color)}
         onPick={(picked) => {
           if (colorFor) void saveView({ ...colorFor, color: picked })
           setColorFor(null)

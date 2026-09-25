@@ -78,6 +78,8 @@ export const RAMP_STEPS = [0, 1, 2, 3, 4, 5, 6, 7] as const
 export type RampFamily = (typeof RAMP_FAMILIES)[number]
 export type RampStep = (typeof RAMP_STEPS)[number]
 export type CellKey = `${RampFamily}-${RampStep}`
+// `default` is its own name: a grid cell would open the picker ringed on an uncolored value, leaving clearing unreachable.
+export type ColorName = CellKey | 'default'
 type SolidColor = keyof typeof SPECTRUM
 
 const COLOR_KEYS: ReadonlySet<string> = new Set<string>([
