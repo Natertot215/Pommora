@@ -22,14 +22,10 @@ const notify = (): void => {
 
 let windows: HTMLElement[] = []
 
-const rankWindows = (): void => {
-  for (const [i, w] of windows.entries()) w.style.setProperty('--window-rank', `${i}`)
-}
-
 const raiseWindow = (el: HTMLElement): void => {
   if (windows.at(-1) === el) return
   windows = [...windows.filter((w) => w !== el), el]
-  rankWindows()
+  for (const [i, w] of windows.entries()) w.style.setProperty('--window-rank', `${i}`)
 }
 
 /** The window `node` sits in, or, for a layer portalled out of one, the window its trigger sits in. */
@@ -39,11 +35,6 @@ export const ownerWindow = (node: Element | null): HTMLElement | null => {
   if (owner) return owner
   const opener = entries.find((e) => e.entry.layer()?.contains(node))?.entry.trigger?.()
   return opener ? ownerWindow(opener) : null
-}
-
-const behindFront = (node: Element | null): boolean => {
-  const owner = ownerWindow(node)
-  return owner !== null && owner !== windows.at(-1)
 }
 
 const dismissable = (e: Live): boolean => !e.closing && e.entry.dismiss !== undefined
@@ -89,7 +80,8 @@ const onKeyDown = (e: KeyboardEvent): void => {
   if (e.key !== 'Escape' || e.defaultPrevented) return
   for (let i = entries.length - 1; i >= 0; i--) {
     const live = entries[i]
-    if (!dismissable(live) || behindFront(live.entry.scope?.() ?? live.entry.layer())) continue
+    const owner = ownerWindow(live.entry.scope?.() ?? live.entry.layer())
+    if (!dismissable(live) || (owner !== null && owner !== windows.at(-1))) continue
     e.preventDefault()
     live.entry.dismiss?.()
     return

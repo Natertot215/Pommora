@@ -152,22 +152,16 @@ export const createWindowSlice: Slice<WindowSlice> = (set, get) => {
       const cur = get().windowSlot
       if (cur && cur.kind !== 'matrix') {
         const next = openTabIn(cur, makeTabId, target, at)
-        if (next === cur) {
-          set({ windowSummon, ...travel })
-          return
-        }
-        if (at !== undefined) {
-          commitWindow(next, { windowSummon, ...travel })
-          return
-        }
-        const spawned = next.tabs.length > cur.tabs.length
-        commitWindow(next, {
-          windowSummon,
-          ...travel,
-          windowSlide: spawned
-            ? { dir: 'fwd', seq: ++windowSlideSeq }
-            : stampByOrder(cur, next.activeTabId),
-        })
+        const slide =
+          next === cur || at !== undefined
+            ? {}
+            : {
+                windowSlide:
+                  next.tabs.length > cur.tabs.length
+                    ? { dir: 'fwd' as const, seq: ++windowSlideSeq }
+                    : stampByOrder(cur, next.activeTabId),
+              }
+        commitWindow(next, { windowSummon, ...travel, ...slide })
         return
       }
       const restored: WindowState = {

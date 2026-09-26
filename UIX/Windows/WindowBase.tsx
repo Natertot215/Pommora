@@ -1,11 +1,4 @@
-import {
-  useEffect,
-  useRef,
-  useState,
-  type CSSProperties,
-  type ReactNode,
-  type RefObject,
-} from 'react'
+import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react'
 import { Button } from '../Buttons/Button'
 import { GlassWindow } from '../Glass/GlassWindow'
 import { FooterToggle } from '../Interactions/FooterToggle'
@@ -91,7 +84,7 @@ interface WindowBaseProps {
   dragSurfaces?: string
   ariaLabel: string
   className?: string
-  rootRef?: RefObject<HTMLDivElement | null>
+  rootRef?: React.RefObject<HTMLDivElement | null>
   onScan?: () => void
   scanLabel?: string
   lead?: ReactNode

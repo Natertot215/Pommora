@@ -2,6 +2,7 @@ import type { AssetMap, NexusState, NexusTree, ValueChange } from '../Nexus/tree
 import type { MutateOutcome, MutateReply, MutateRequest } from '../Nexus/mutateRequest'
 import type { Result } from './result'
 import type { EditorMenuRequest } from '../Actions/editorMenu'
+import type { MenuCommand } from '../Actions/commands'
 import type { SavedView } from '../Views/views'
 import type { BodyWrite, PageDetail } from '../Pages/pageDetail'
 import type { TrashMode, TrashRow } from '../Trash/trashRow'
@@ -259,7 +260,7 @@ export interface Tells {
 }
 
 export interface Pushes {
-  'menu:action': string
+  'menu:action': MenuCommand | 'open'
   // Open Recent routed through the window, so its pending saves land before the root flips.
   'nexus:openRecent': string
   'app:flush': null
