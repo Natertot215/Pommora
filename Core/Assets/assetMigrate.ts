@@ -7,6 +7,7 @@ import { assetsDir, nexusConfig } from '../Paths/paths'
 import { machine } from '../Platform/machine'
 import { splitEnvelope, mergeFrontmatter, splitFrontmatter } from '../Files/pageFile'
 import {
+  readAppFile,
   readJsonObject,
   rewritePageSerialized,
   rmwJsonStrict,
@@ -107,7 +108,7 @@ async function collectRefs(root: string, skipped: AssetMigration['skipped']): Pr
   refs.push({
     store: 'homepage.json',
     owner: 'Homepage Banner',
-    read: async () => (await readJsonObject(homeFile))?.banner,
+    read: async () => (await readAppFile(homeFile))?.banner,
     write: async (link) =>
       (await updateNexusConfig(root, 'homepage', (cur) => ({ ...cur, banner: link }))).ok,
   })

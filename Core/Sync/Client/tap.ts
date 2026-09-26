@@ -1,8 +1,11 @@
+import { setRepairSeed } from '../../Files/atomicWrite'
 import { setWriteTap } from '../../Files/writeEcho'
 import { setWatchTap } from '../../Nexus/watchSettle'
 import { manifestAdmits, type WatchScope } from '../../Paths/exclusion'
 import { TRASH_DIR } from '../../Paths/nexusPaths'
 import { relative } from '../../Paths/posix'
+import { parseObject } from '../Arrival/land'
+import { readBase } from './base'
 
 export const DEBOUNCE_MS = 2500
 
@@ -51,6 +54,10 @@ export function installTap(root: string, scope: WatchScope, next: TapSinks): voi
   }
   setWatchTap((ev) => feed(ev.absPath, true))
   setWriteTap((absPath) => feed(absPath, false))
+  setRepairSeed((absPath) => {
+    const base = readBase(relative(root, absPath))?.baseBytes
+    return base ? parseObject(base) : null
+  })
 }
 
 export function reportRename(from: string, to: string): void {
@@ -65,6 +72,7 @@ export function reportRename(from: string, to: string): void {
 export function uninstallTap(): void {
   setWatchTap(null)
   setWriteTap(null)
+  setRepairSeed(null)
   for (const timer of timers.values()) clearTimeout(timer)
   timers.clear()
   if (flush !== null) clearTimeout(flush)

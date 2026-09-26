@@ -1,10 +1,23 @@
 import type { Depth } from '../../Files/jsonMerge'
-import { isMetadataShardRel, NEXUS_DIR, NEXUS_CONFIG_FILES } from '../../Paths/nexusPaths'
+import {
+  CONTEXTS_REGISTRY_REL,
+  isMetadataShardRel,
+  NEXUS_CONFIG_FILES,
+  NEXUS_DIR,
+  SIDECARS,
+  TILE_DOC_FILENAME,
+} from '../../Paths/nexusPaths'
 import { basename } from '../../Paths/posix'
 
-export function isMergedJson(rel: string): boolean {
-  return rel.endsWith('.json') && (rel.startsWith(`${NEXUS_DIR}/`) || basename(rel).startsWith('_'))
-}
+const CONFIG_RELS = new Set([
+  ...Object.values(NEXUS_CONFIG_FILES).map((file) => `${NEXUS_DIR}/${file}`),
+  CONTEXTS_REGISTRY_REL,
+])
+const OWN_NAMES = new Set([...SIDECARS, TILE_DOC_FILENAME])
+
+// Pommora's own JSON files; any other JSON, an attachment among them, is the user's and lands whole.
+export const isMergedJson = (rel: string): boolean =>
+  CONFIG_RELS.has(rel) || isMetadataShardRel(rel) || OWN_NAMES.has(basename(rel))
 
 export const MATRIX_MERGE_DEPTH: Depth = { group: 1, filter: 1, forces: 2, display: 1 }
 

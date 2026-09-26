@@ -5,7 +5,7 @@ import { ensureContextsRegistry } from '../Contexts/contextsRegistry'
 import { seedContentIndex } from '../Index/indexSeed'
 import { readHeadings } from '../Index/contentIndex'
 import { isStringArray } from '../Contract/validators'
-import { targetTaken } from '../Files/atomicWrite'
+import { forgetLastReads, targetTaken } from '../Files/atomicWrite'
 import { nameError } from '../Paths/names'
 import { resolveUnderRoot } from '../Paths/pathSafety'
 import { basename, dirname, join } from '../Paths/posix'
@@ -63,6 +63,7 @@ export async function openNexusSequence(
   await stopSession(ctx)
   if (priorRoot !== null) await retireFileHistory(priorRoot)
   await openSession(path)
+  forgetLastReads()
   // openSession canonicalized the root; every step below keys off that string.
   const root = sessionRoot() ?? path
   const nexusId = await prepareOpenedNexus(root)

@@ -4,7 +4,7 @@ import type { NavRef, NavigationState } from './navRef'
 import { nexusConfig } from '../Paths/paths'
 import { NEXUS_CONFIG_FILES } from '../Paths/nexusPaths'
 import { readValue, writeValue } from '../Platform/localState'
-import { readJsonObject, setOrDrop, updateNexusConfig } from '../Files/atomicWrite'
+import { readAppFile, setOrDrop, updateNexusConfig } from '../Files/atomicWrite'
 import { isAssetPath } from '../Assets/assetRoots'
 import { readWatchScope } from '../Settings/settings'
 
@@ -22,7 +22,7 @@ const refList = (v: unknown): NavRef[] | undefined => {
 }
 
 export async function readNavigationFile(root: string): Promise<Omit<NavigationState, 'recents'>> {
-  const obj = navigationOf(await readJsonObject(statePath(root)))
+  const obj = navigationOf(await readAppFile(statePath(root)))
   const { assetDir } = await readWatchScope(root)
   const file: Omit<NavigationState, 'recents'> = {}
   const pinned = refList(obj.pinned)
