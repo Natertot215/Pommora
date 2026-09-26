@@ -53,7 +53,7 @@ The tunables are custom properties declared at `:root`, overridable on any ances
 
 - **Constraints** — an `axis` lock per zone, released by a 24px cross-axis tug where the zone belongs to a family, a `resolveIndex` veto on the group that refuses a landing slot outside the dragged item's run, and a press that begins on an interactive descendant (a button, a field, a value chip marked `data-drag-slop`) needs 12px of travel to lift, so a tap-wobble opens the control instead.
 - **Announcements** — an assertive ARIA live region announces every product drag's pick-up and drop, pointer or keyboard, through the one `announce` primitive.
-- **Keyboard** — Space or Enter on the item lifts, arrow keys move within the item's own zone on a geometric next-slot getter covering list, row, and grid, Space, Enter, or Tab drops, and Esc cancels; focus returns to the item on drop. Items are focusable and the handle role is `button`; a focusable descendant's keys are its own.
+- **Keyboard** — Space on the item lifts and Enter opens an item that opens, lifting one that doesn't; arrow keys move within the item's own zone on a geometric next-slot getter covering list, row, and grid (a fixed zone holds the item in its slot), Space, Enter, or Tab drops, and Esc cancels; focus returns to the item on drop. Items are focusable and the handle role is `button`, and a disabled zone keeps only its openable items in the tab order; a focusable descendant's keys are its own.
 
 ---
 
