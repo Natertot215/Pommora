@@ -211,8 +211,7 @@ const VIEW_FLAG_DEFAULTS: Record<ViewFlag, boolean> = {
   filter_enabled: true,
 }
 
-/** An on/off view option as it reads: the stored value, else its default. */
-export const viewFlag = (view: Partial<Pick<SavedView, ViewFlag>>, key: ViewFlag): boolean =>
+export const viewFlag = (view: Pick<SavedView, ViewFlag>, key: ViewFlag): boolean =>
   view[key] ?? VIEW_FLAG_DEFAULTS[key]
 
 function withoutEmptyStyles({ column_styles, ...view }: Json): Json {
