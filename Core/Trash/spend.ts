@@ -1,7 +1,7 @@
 import { basename, dirname, join, relative, isMarkdownFile } from '../Paths/posix'
 import { escapes, resolveUnderRoot } from '../Paths/pathSafety'
 import { contextKey } from '../Contexts/contexts'
-import { withOrderEntry } from '../Contexts/spaceSidecar'
+import { spaceSidecarsIn, withOrderEntry } from '../Contexts/spaceSidecar'
 import { TRASH_DIR, SPACE_SIDECAR } from '../Paths/nexusPaths'
 import type {
   MutateOutcome,
@@ -18,6 +18,7 @@ import { mutateRegistryFile } from '../Contexts/contextsRegistry'
 import { reconcile } from '../Properties/reconcile'
 import { restoreProperty } from './restoreProperty'
 import { scrubReturning } from './restoreScrub'
+import { reseatExcludedFolders } from '../Settings/settings'
 import { sweepGovernedRoots } from '../Properties/governedSweep'
 import { BUNDLE_SUFFIX } from './bundle'
 import { pathExists, readJsonObject, readTextOrNull, rmwJsonStrict } from '../Files/atomicWrite'
@@ -119,19 +120,15 @@ async function rekeyPassengers(
     return next
   }
   const rekeyed = withOrderEntry(rekey, 'contexts', oldTitle, newTitle)
-  for (const d of await listEntries(absContextDir)) {
-    if (d.kind !== 'dir') continue
-    const file = join(absContextDir, d.name, SPACE_SIDECAR)
+  for (const { file } of await spaceSidecarsIn(absContextDir))
     await rmwJsonStrict(file, (raw) => rekeyed(raw, file))
-  }
 }
 
 async function restoredSpaceTitles(absContextDir: string): Promise<Map<string, string>> {
   const titles = new Map<string, string>()
-  for (const d of await listEntries(absContextDir)) {
-    if (d.kind !== 'dir') continue
-    const raw = await readJsonObject(join(absContextDir, d.name, SPACE_SIDECAR))
-    if (typeof raw?.id === 'string') titles.set(raw.id, d.name)
+  for (const { name, file } of await spaceSidecarsIn(absContextDir)) {
+    const raw = await readJsonObject(file)
+    if (typeof raw?.id === 'string') titles.set(raw.id, name)
   }
   return titles
 }
@@ -210,7 +207,7 @@ function withDestination(
   }
 }
 
-type Restored = Pick<MutateOutcome, 'unrestored'>
+type Restored = Pick<MutateOutcome, 'unrestored' | 'rescope'>
 
 const restored = (unrestored: string[]): Restored => (unrestored.length ? { unrestored } : {})
 
@@ -337,7 +334,12 @@ async function restoreArtifact(
     recordWrite(bundleAbs)
     await machine().remove(bundleAbs)
   }
-  return ok(restored(unspent.map((id) => roots[id].title)))
+  const outcome = restored(unspent.map((id) => roots[id].title))
+  if (record.entity !== 'collection' && record.entity !== 'set') return ok(outcome)
+  return ok({
+    ...outcome,
+    rescope: await reseatExcludedFolders(root, targetRel, record.excluded ?? []),
+  })
 }
 
 /** The ids of what's still here and didn't take its tag back; a root gone since has nothing to take it. */

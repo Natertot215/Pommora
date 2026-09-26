@@ -4,7 +4,8 @@ import type { Result } from './result'
 import type { FormatState } from '../Actions/editorMenu'
 import type { SavedView } from '../Views/views'
 import type { BodyWrite, PageDetail } from '../Pages/pageDetail'
-import type { ClearReport, TrashMode, TrashRow } from '../Trash/trashRow'
+import type { TrashMode, TrashRow } from '../Trash/trashRow'
+import type { ClearReport } from '../Settings/exclusionScan'
 import type { NavigationState, StoredTabSet } from '../Navigation/navRef'
 import type { MatrixConfig, MatrixPatch } from '../Matrix/matrixConfig'
 import type { MatrixGraphReply } from '../Matrix/matrixGraph'
@@ -68,7 +69,6 @@ export interface Asks {
   'exclusions:set': { args: [folders: string[]]; reply: Result<string[]> }
   'exclusions:choose': { args: []; reply: Result<string | null> }
   'exclusions:clear': { args: []; reply: Result<ClearReport | null> }
-  'exclusions:count': { args: []; reply: Result<number> }
 
   'page:open': { args: [relPath: string]; reply: Result<PageDetail> }
   'page:updateBody': {

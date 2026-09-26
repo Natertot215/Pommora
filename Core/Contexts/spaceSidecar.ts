@@ -3,6 +3,10 @@ import { parseContextKey } from './contexts'
 import { asString } from '../Nexus/coerce'
 import type { Json } from '../Files/stableJson'
 import type { Rewrite } from '../Properties/governedSweep'
+import { pathExists } from '../Files/atomicWrite'
+import { visibleFolders } from '../Files/walk'
+import { contextsDir, sidecarPath } from '../Paths/paths'
+import { join } from '../Paths/posix'
 
 export const COLOR_KEY = '$color'
 export const ORDER_KEY = '$order'
@@ -10,6 +14,26 @@ export const ICON_KEY = '$icon'
 
 // Each name here is a reserved property name or `$`-prefixed, so no property value can sit under one.
 const MODELED = new Set(['id', ICON_KEY, 'banner', 'heading_icon_hidden', COLOR_KEY])
+
+/** The Spaces a Context folder holds, by folder name, and where each one's sidecar sits; a folder without a sidecar is a plain folder its reader passes over. */
+export async function spaceSidecarsIn(
+  absContextDir: string,
+): Promise<{ name: string; file: string }[]> {
+  return (await visibleFolders(absContextDir)).map((name) => ({
+    name,
+    file: sidecarPath(join(absContextDir, name), 'space'),
+  }))
+}
+
+/** Every Space sidecar on disk, found by folder rather than by registry: a Context mid-rename has moved on disk before the registry or the tree follows it. */
+export async function spaceSidecars(root: string): Promise<string[]> {
+  const dir = contextsDir(root)
+  const files: string[] = []
+  for (const context of await visibleFolders(dir))
+    for (const { file } of await spaceSidecarsIn(join(dir, context)))
+      if (await pathExists(file)) files.push(file)
+  return files
+}
 
 export interface SpaceRowOrder {
   contexts: string[]

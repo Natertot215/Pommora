@@ -1,5 +1,26 @@
 import { describe, expect, it } from 'vitest'
-import { readSpaceRowOrder, spaceFieldsFrom, withOrderEntry } from './spaceSidecar'
+import { mkdir, rm, writeFile } from 'node:fs/promises'
+import { join } from '../Paths/posix'
+import { contextsDir } from '../Paths/paths'
+import { tempRoot } from '../Testing/hostFs'
+import { readSpaceRowOrder, spaceFieldsFrom, spaceSidecars, withOrderEntry } from './spaceSidecar'
+
+describe('spaceSidecars', () => {
+  it('finds each Space sidecar one level into each Context folder, hidden and plain folders aside', async () => {
+    const root = tempRoot('pom-spaces-')
+    const at = (...segs: string[]): string => join(contextsDir(root), ...segs)
+    try {
+      for (const dir of ['Areas/Home/tiles', 'Areas/_Draft', 'Areas/Plain', '_Old/Kept'])
+        await mkdir(at(dir), { recursive: true })
+      for (const dir of ['Areas/Home', 'Areas/_Draft', '_Old/Kept'])
+        await writeFile(at(dir, '_space.json'), '{}')
+      await writeFile(at('Areas/Home/tiles', 'notes_space.json'), '{}')
+      expect(await spaceSidecars(root)).toEqual([at('Areas/Home/_space.json')])
+    } finally {
+      await rm(root, { recursive: true, force: true })
+    }
+  })
+})
 
 describe('spaceFieldsFrom', () => {
   it('reads the four modeled fields and leaves values undefined when nothing is left', () => {

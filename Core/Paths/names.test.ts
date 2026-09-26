@@ -46,6 +46,11 @@ describe('nameError — role differences', () => {
     for (const n of ['Q3.2025', 'crops.json', 'contexts.json', 'v1.2'])
       expect(nameError(n, 'directory'), n).not.toBe(null)
   })
+
+  it('a directory refuses a name the walk hides as a folder', () => {
+    expect(nameError('node_modules', 'directory')).not.toBe(null)
+    expect(nameError('node_modules', 'page')).toBe(null)
+  })
 })
 
 describe('nameError — Windows rules are gated on the host', () => {

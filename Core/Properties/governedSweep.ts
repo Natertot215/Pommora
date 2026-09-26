@@ -9,11 +9,9 @@ import { noteSidecarWrite, noteValueWrite } from '../Nexus/valuesChanged'
 import { dirname } from '../Paths/posix'
 import { indexWrittenPage } from '../Index/indexSeed'
 import { mergeFrontmatter, splitEnvelope, splitFrontmatter } from '../Files/pageFile'
-import { listFilesRecursive } from '../Files/walk'
-import { contextsDir } from '../Paths/paths'
-import { SPACE_SIDECAR } from '../Paths/nexusPaths'
 import { sweepAdmits } from '../Files/pageFile'
 import type { Json } from '../Files/stableJson'
+import { spaceSidecars } from '../Contexts/spaceSidecar'
 
 export interface SweepResult {
   /** Each file the sweep wrote, with the text it held before the write. */
@@ -84,7 +82,7 @@ export async function sweepGovernedRoots(
 
   const sidecars = plan.sidecars
   if (sidecars)
-    for (const file of await listFilesRecursive(contextsDir(root), [SPACE_SIDECAR])) {
+    for (const file of await spaceSidecars(root)) {
       await guarded(file, async () => {
         const text = await readTextOrNull(file)
         if (text === null) {

@@ -6,7 +6,7 @@ import { moveIndexPaths } from '../Index/indexSeed'
 import type { MutateReply, MutateRequest } from './mutateRequest'
 import type { MutateContext } from './mutate'
 import { renamePage } from './page'
-import { landingRefusal, renameFolderEntity } from './folderEntity'
+import { landedFolder, landingRefusal, renameFolderEntity } from './folderEntity'
 import { type CascadeReport, renameCascade } from './cascade'
 import { reportRename } from '../Sync/Client/tap'
 
@@ -22,9 +22,7 @@ export async function renameOp(
     if (refused) return refused
     const r = await renameFolderEntity(abs, req.newName)
     if (!r.ok) return r
-    await moveIndexPaths(root, abs, r.value.path)
-    reportRename(relative(root, abs), relative(root, r.value.path))
-    return ok({})
+    return ok({ rescope: await landedFolder(root, abs, r.value.path) })
   }
   const oldTitle = titleFromPath(abs)
   const relParent = req.path.split('/').slice(0, -1).join('/')

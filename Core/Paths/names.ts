@@ -1,7 +1,7 @@
 import type { Result } from '../Contract/result'
 import { machine } from '../Platform/machine'
 import { foldKey } from './caseFold'
-import { hiddenName } from './exclusion'
+import { hiddenFolder, hiddenName } from './exclusion'
 import { isMarkdownFile } from './posix'
 import { CROPS_REL } from './nexusPaths'
 
@@ -22,6 +22,8 @@ export function nameError(name: string, role: NameRole): string | null {
   if (name !== trimmed) return `"${name}" can't begin or end with a space.`
   // The walk hides these, so a file named this way could never be shown again.
   if (hiddenName(name)) return `"${name}" can't begin with a dot or underscore.`
+  if (role === 'directory' && hiddenFolder(name))
+    return `"${name}" is a folder name the Nexus keeps hidden.`
   if (/[|#§]/.test(name)) return `"${name}" can't contain "|", "#", or "§".`
   if (role === 'page' && isMarkdownFile(name)) return `"${name}" can't end in ".md".`
   if (role === 'directory' && name.includes('.')) return `"${name}" can't contain a period.`

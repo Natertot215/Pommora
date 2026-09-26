@@ -8,10 +8,8 @@ import { serializeSchemaOp } from './schemaChain'
 import { sweepGovernedRoots, type Rewrite } from './governedSweep'
 import { patchSidecar } from '../Files/sidecar'
 import { readJsonObject } from '../Files/atomicWrite'
-import { listFilesRecursive } from '../Files/walk'
-import { contextsDir, sidecarPath } from '../Paths/paths'
-import { SPACE_SIDECAR } from '../Paths/nexusPaths'
-import { withOrderEntry } from '../Contexts/spaceSidecar'
+import { sidecarPath } from '../Paths/paths'
+import { spaceSidecars, withOrderEntry } from '../Contexts/spaceSidecar'
 
 import { isPlainObject } from '../Contract/validators'
 import { ok, type Result } from '../Contract/result'
@@ -40,7 +38,7 @@ async function snapshot(
     if (holds && id) assignments.push(id)
     if (cached && id) caches[id] = cached
   }
-  for (const file of await listFilesRecursive(contextsDir(root), [SPACE_SIDECAR])) {
+  for (const file of await spaceSidecars(root)) {
     const raw = await readJsonObject(file)
     if (!raw) {
       partial = true

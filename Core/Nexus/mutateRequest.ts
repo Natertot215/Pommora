@@ -15,6 +15,8 @@ export interface MutateOutcome {
   trashed?: { bundlePath: string }
   /** The titles of what a restore brought back without all it held. */
   unrestored?: string[]
+  /** A Collection or Set landed with content Settings keeps out beneath it, so the confirm rescopes rather than patches. */
+  rescope?: boolean
 }
 export type MutateReply = Result<MutateOutcome>
 

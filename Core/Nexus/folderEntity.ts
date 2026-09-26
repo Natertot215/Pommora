@@ -8,7 +8,9 @@ import { sidecarPath } from '../Paths/paths'
 import type { SidecarKind } from '../Paths/nexusPaths'
 import { ok, fail, type Result } from '../Contract/result'
 import { outsideContent } from '../Paths/exclusion'
-import { readWatchScope } from '../Settings/settings'
+import { followExcludedFolders, readWatchScope } from '../Settings/settings'
+import { moveIndexPaths } from '../Index/indexSeed'
+import { reportRename } from '../Sync/Client/tap'
 
 const SET_ASIDE = {
   excluded:
@@ -26,6 +28,15 @@ export async function landingRefusal(
   if (nameError(name, 'directory')) return null
   const why = outsideContent(relative(root, join(parentDir, name)), await readWatchScope(root))
   return why && why !== 'hidden' ? fail('invalid-path', `"${name}" ${SET_ASIDE[why]}`) : null
+}
+
+/** What follows a Collection or Set landing at a new path: the index moves its rows, excluded entries follow before sync hears of the rename so it pushes under the new scope, and true means the landing moved what the scope keeps out. */
+export async function landedFolder(root: string, fromAbs: string, toAbs: string): Promise<boolean> {
+  await moveIndexPaths(root, fromAbs, toAbs)
+  const [from, to] = [relative(root, fromAbs), relative(root, toAbs)]
+  const rescope = await followExcludedFolders(root, from, to)
+  reportRename(from, to)
+  return rescope
 }
 
 export async function createFolderEntity(

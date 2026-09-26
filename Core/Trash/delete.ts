@@ -17,6 +17,7 @@ import {
   gatherSpaceRecord,
 } from './gather'
 import { type RecordFile, writeRecord } from './record'
+import { releaseExcludedFolders } from '../Settings/settings'
 
 export async function deleteOp(
   { root, deps }: MutateContext,
@@ -77,6 +78,8 @@ export async function deleteOp(
     if (bundle) await settleBundle(bundle, abs)
     else await discardFile(root, abs, deps)
   })
+  if (req.kind === 'collection' || req.kind === 'set')
+    await releaseExcludedFolders(root, relative(root, abs))
   await deindexPath(root, abs)
   return ok(bundle ? { trashed: { bundlePath: relative(root, bundle) } } : {})
 }

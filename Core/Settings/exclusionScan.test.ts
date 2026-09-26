@@ -75,11 +75,10 @@ afterEach(() => rm(root, { recursive: true, force: true }))
 
 describe('excludedArtifacts', () => {
   it('finds the pages and container sidecars, skipping agenda, node_modules, .git, and the asset root', async () => {
-    const { pages, sidecars } = await excludedArtifacts(
-      root,
-      ['Archive', 'file-assets'],
-      'file-assets',
-    )
+    const { pages, sidecars } = await excludedArtifacts(root, {
+      excluded: ['Archive', 'file-assets'],
+      assetDir: 'file-assets',
+    })
     const rel = (abs: string): string => abs.slice(root.length + 1)
     const p = pages.map(rel).sort()
     expect(p).toEqual(
@@ -106,11 +105,10 @@ describe('excludedArtifacts', () => {
     await d('Archive/_Drafts')
     await w('Archive/_Drafts/idea.md', page('01NNNNNNNNPNNNNNNNNNNNNNNN', ''))
     await w('Archive/_draft.md', page('01PPPPPPPPPPPPPPPPPPPPPPPP', ''))
-    const { pages, sidecars } = await excludedArtifacts(
-      root,
-      ['Archive', 'Archive/Set'],
-      'file-assets',
-    )
+    const { pages, sidecars } = await excludedArtifacts(root, {
+      excluded: ['Archive', 'Archive/Set'],
+      assetDir: 'file-assets',
+    })
     const rel = (abs: string): string => abs.slice(root.length + 1)
     expect(pages.map(rel).filter((p) => p === 'Archive/Set/deep.md')).toHaveLength(1)
     expect(sidecars.map(rel).filter((p) => p === 'Archive/Set/_pageset.json')).toHaveLength(1)
@@ -126,7 +124,10 @@ describe('excludedArtifacts', () => {
     const ground = (
       await corpusFilesUnder(root, join(root, 'Plain'), { excluded: [], assetDir: 'file-assets' })
     ).sort()
-    const { pages } = await excludedArtifacts(root, ['Plain'], 'file-assets')
+    const { pages } = await excludedArtifacts(root, {
+      excluded: ['Plain'],
+      assetDir: 'file-assets',
+    })
     expect(pages.map((abs) => abs.slice(root.length + 1)).sort()).toEqual(ground)
   })
 })
@@ -134,7 +135,7 @@ describe('excludedArtifacts', () => {
 describe('clearExclusionData', () => {
   it('deletes container sidecars and drops the identity key and Context keys, keeping every other key, comment, and order', async () => {
     const before = await read('Archive/malformed.md')
-    const res = await clearExclusionData(root, ['Archive'], 'file-assets')
+    const res = await clearExclusionData(root, { excluded: ['Archive'], assetDir: 'file-assets' })
     expect(res.ok).toBe(true)
 
     expect(existsSync(join(root, 'Archive/_pagecollection.json'))).toBe(false)
@@ -159,7 +160,7 @@ describe('clearExclusionData', () => {
 
   it('drops the identity key alone — legacy timestamps, icon, cover, property values, and foreign keys stay', async () => {
     await legacy()
-    await clearExclusionData(root, ['Archive'], 'file-assets')
+    await clearExclusionData(root, { excluded: ['Archive'], assetDir: 'file-assets' })
     const text = await expectIdentityStripped()
     expect(text).toContain('Status: open')
   })
@@ -167,14 +168,14 @@ describe('clearExclusionData', () => {
   it('leaves the Agenda folder byte-identical end to end', async () => {
     const config = await read('Archive/Tasks/_taskconfig.json')
     const task = await read('Archive/Tasks/task.md')
-    await clearExclusionData(root, ['Archive'], 'file-assets')
+    await clearExclusionData(root, { excluded: ['Archive'], assetDir: 'file-assets' })
     expect(await read('Archive/Tasks/_taskconfig.json')).toBe(config)
     expect(await read('Archive/Tasks/task.md')).toBe(task)
   })
 
   it('refuses a misplaced identity page rather than scrubbing it', async () => {
     const stray = await read('Archive/stray.md')
-    const res = await clearExclusionData(root, ['Archive'], 'file-assets')
+    const res = await clearExclusionData(root, { excluded: ['Archive'], assetDir: 'file-assets' })
     if (!res.ok) throw new Error('expected ok')
     expect(res.value.refused).toBeGreaterThanOrEqual(1)
     expect(await read('Archive/stray.md')).toBe(stray)
@@ -185,7 +186,7 @@ describe('clearExclusionData', () => {
     const DEEP = '01FFFFFFFFPFFFFFFFFFFFFFFF'
     const OUTSIDER = '01AAAAAAAAPZZZZZZZZZZZZZZZ'
     for (const id of [NOTE, DEEP, OUTSIDER]) await updatePageMetadata(root, id, { icon: 'star' })
-    await clearExclusionData(root, ['Archive'], 'file-assets')
+    await clearExclusionData(root, { excluded: ['Archive'], assetDir: 'file-assets' })
     const pagesIn = async (id: string) => {
       const month = await readShard(root, shardOf(id)!)
       return month.kind === 'ok' ? month.pages : null
@@ -202,7 +203,10 @@ describe('clearExclusionData', () => {
       for (const id of [NOTE, DEEP]) await updatePageMetadata(root, id, { icon: 'star' })
       await chmod(join(root, 'Archive/Set'), 0o555)
       try {
-        const r = await clearExclusionData(root, ['Archive'], 'file-assets').catch(fault)
+        const r = await clearExclusionData(root, {
+          excluded: ['Archive'],
+          assetDir: 'file-assets',
+        }).catch(fault)
         expect(r.ok).toBe(false)
       } finally {
         await chmod(join(root, 'Archive/Set'), 0o755)
@@ -226,7 +230,7 @@ describe('clearExclusionData', () => {
     await updatePageMetadata(root, NOTE, { icon: 'star' })
     await refreshTree(root)
     try {
-      await clearExclusionData(root, ['Archive'], 'file-assets')
+      await clearExclusionData(root, { excluded: ['Archive'], assetDir: 'file-assets' })
       const month = await readShard(root, shardOf(NOTE)!)
       expect(month.kind === 'ok' && month.pages).toEqual({ [NOTE]: { icon: 'star' } })
     } finally {
@@ -240,7 +244,7 @@ describe('clearExclusionData', () => {
     try {
       await d('.nexus')
       await w('.nexus/settings.json', JSON.stringify({ excluded_folders: ['Archive'] }))
-      await clearExclusionData(root, ['Archive'], 'file-assets')
+      await clearExclusionData(root, { excluded: ['Archive'], assetDir: 'file-assets' })
       expect(
         [...(readIndexedStats()?.keys() ?? [])].filter((p) => p.startsWith('Archive/')),
       ).toEqual([])
@@ -250,9 +254,9 @@ describe('clearExclusionData', () => {
   })
 
   it('is idempotent — a second run changes nothing and touches no page', async () => {
-    await clearExclusionData(root, ['Archive'], 'file-assets')
+    await clearExclusionData(root, { excluded: ['Archive'], assetDir: 'file-assets' })
     const snapshot = await read('Archive/note.md')
-    const res = await clearExclusionData(root, ['Archive'], 'file-assets')
+    const res = await clearExclusionData(root, { excluded: ['Archive'], assetDir: 'file-assets' })
     if (!res.ok) throw new Error('expected ok')
     expect(res.value.pages).toBe(0)
     expect(await read('Archive/note.md')).toBe(snapshot)
@@ -262,7 +266,7 @@ describe('clearExclusionData', () => {
 describe('clearExclusionData — degenerate cases', () => {
   it('an empty exclusion list touches nothing', async () => {
     const before = await read('Archive/note.md')
-    const res = await clearExclusionData(root, [], 'file-assets')
+    const res = await clearExclusionData(root, { excluded: [], assetDir: 'file-assets' })
     if (!res.ok) throw new Error('expected ok')
     expect(res.value).toEqual({ pages: 0, sidecars: 0, refused: 0 })
     expect(await read('Archive/note.md')).toBe(before)

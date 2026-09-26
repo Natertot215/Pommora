@@ -16,7 +16,13 @@ import { runRepairSweep } from '../Properties/repairSweep'
 import { replaySchemaCascade } from '../Properties/replaySchemaCascade'
 import { startSession, stopSession } from '../Sync/Client/session'
 import { stampAdopted } from './adopt'
-import { confirmWrite, pushAssetWrites, pushConfirmed, pushValueChanges } from './confirm'
+import {
+  confirmRescope,
+  confirmWrite,
+  pushAssetWrites,
+  pushConfirmed,
+  pushValueChanges,
+} from './confirm'
 import { ensureIdentity } from './identity'
 import { dropLiveTree, getLiveTree, liveTreeOf, refreshAfterWrite, refreshTree } from './liveTree'
 import { ensureConfigLayout, normalizeSavedViews } from './migrateConfig'
@@ -162,7 +168,8 @@ export const nexusHandlers = {
     // Ahead of the confirm's `values:changed`, which drops the cached details an absorb replaces.
     if (cascade?.pages.length) ctx.push('pages:changed', cascade.pages)
     for (const host of cascade?.hosts ?? []) ctx.push('tiles:changed', host)
-    await confirmWrite(ctx, root, () => confirmMutation(root, req, reply.value))
+    if (reply.value.rescope) await confirmRescope(ctx, root)
+    else await confirmWrite(ctx, root, () => confirmMutation(root, req, reply.value))
     pushAssetWrites(ctx, root)
     return reply
   }),

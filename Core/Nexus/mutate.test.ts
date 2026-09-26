@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
-import { dropLiveTree, refreshTree } from './liveTree'
+import { dropLiveTree, getLiveTree, refreshTree } from './liveTree'
 import { splitFrontmatter } from '../Files/pageFile'
 import { ID_KEY } from './identityMark'
 import { rm, mkdir, writeFile, readFile, readdir, chmod, symlink, stat } from 'node:fs/promises'
@@ -1870,5 +1870,106 @@ describe('handleMutate — landings Settings keeps out', () => {
     )
     expect(refusal(r)).toContain('"Daily" is currently listed as an excluded directory')
     expect(await pathExists(join(root, 'Notes', 'Daily'))).toBe(true)
+  })
+})
+
+describe('handleMutate — excluded entries follow their folders', () => {
+  const excludedOnDisk = async (): Promise<unknown> =>
+    JSON.parse(await read('.nexus/settings.json')).excluded_folders
+  const exclude = async (folders: string[]): Promise<void> => {
+    await writeFile(
+      join(root, '.nexus', 'settings.json'),
+      JSON.stringify({ excluded_folders: folders }),
+    )
+    await refreshTree(root)
+  }
+
+  it('rewrites an entry under a renamed Collection and rescopes the session', async () => {
+    await mkdir(join(root, 'Other', 'Daily'), { recursive: true })
+    await writeFile(join(root, 'Other', '_pagecollection.json'), JSON.stringify({ id: 'ot' }))
+    await writeFile(join(root, 'Other', 'Daily', '_pageset.json'), JSON.stringify({ id: 'od' }))
+    await exclude(['Archive', 'Other/Daily'])
+    const push = vi.fn()
+    const watch = vi.fn(async () => {})
+    const ctx = { push, watch, trashMode: async () => 'nexus' } as unknown as HostContext
+    const r = await nexusHandlers.mutate(ctx, {
+      op: 'rename',
+      path: 'Other',
+      kind: 'collection',
+      newName: 'Elsewhere',
+    })
+    await new Promise((resolve) => setTimeout(resolve, 0))
+    expect(r).toEqual({ ok: true, value: { rescope: true } })
+    expect(await excludedOnDisk()).toEqual(['Archive', 'Elsewhere/Daily'])
+    expect(watch).toHaveBeenCalledWith(root)
+    const tree = getLiveTree()
+    expect(tree?.excluded).toEqual(['Archive', 'Elsewhere/Daily'])
+    expect(tree?.collections.find((c) => c.path === 'Elsewhere')?.sets).toEqual([])
+    expect(push.mock.calls.map(([name]) => name)).toContain('nexus:changed')
+  })
+
+  it('takes a trashed Collection’s entries with it and lands them wherever it is restored', async () => {
+    await mkdir(join(root, 'Other', 'Daily'), { recursive: true })
+    await writeFile(join(root, 'Other', '_pagecollection.json'), JSON.stringify({ id: 'ot' }))
+    await writeFile(join(root, 'Other', 'Daily', '_pageset.json'), JSON.stringify({ id: 'od' }))
+    await exclude(['Other/Daily'])
+    const deleted = await handleMutate(
+      root,
+      { op: 'delete', path: 'Other', kind: 'collection' },
+      nexusDeps,
+    )
+    const bundlePath = deleted.ok ? deleted.value.trashed?.bundlePath : undefined
+    expect(bundlePath).toBeDefined()
+    expect(await excludedOnDisk()).toBeUndefined()
+    await handleMutate(
+      root,
+      { op: 'createContainer', parentPath: '', kind: 'collection', name: 'Other' },
+      nexusDeps,
+    )
+    await writeFile(
+      join(root, '.nexus', 'settings.json'),
+      JSON.stringify({ excluded_folders: ['Other/Drafts'] }),
+    )
+    await refreshTree(root)
+    const r = await handleMutate(root, { op: 'restore', bundlePath: bundlePath ?? '' }, nexusDeps)
+    expect(r).toEqual({ ok: true, value: { rescope: true } })
+    expect(await excludedOnDisk()).toEqual(['Other/Drafts', 'Other (2)/Daily'])
+  })
+
+  it('carries an entry with a moved Set', async () => {
+    await mkdir(join(root, 'Other'), { recursive: true })
+    await writeFile(join(root, 'Other', '_pagecollection.json'), JSON.stringify({ id: 'ot' }))
+    await exclude(['Notes/Daily/Old'])
+    const r = await handleMutate(
+      root,
+      { op: 'moveSet', path: 'Notes/Daily', newParentPath: 'Other', order: [] },
+      nexusDeps,
+    )
+    expect(r).toEqual({ ok: true, value: { rescope: true } })
+    expect(await excludedOnDisk()).toEqual(['Other/Daily/Old'])
+  })
+
+  it('writes nothing for a rename no entry sits under', async () => {
+    await exclude(['Archive'])
+    const before = await read('.nexus/settings.json')
+    const r = await handleMutate(
+      root,
+      { op: 'rename', path: 'Notes', kind: 'collection', newName: 'Journal' },
+      nexusDeps,
+    )
+    expect(r).toEqual({ ok: true, value: { rescope: false } })
+    expect(await read('.nexus/settings.json')).toBe(before)
+  })
+
+  it('rescopes a landing beneath an entry that already names the new path', async () => {
+    await exclude(['Job/Daily'])
+    const before = await read('.nexus/settings.json')
+    const r = await handleMutate(
+      root,
+      { op: 'rename', path: 'Notes', kind: 'collection', newName: 'Job' },
+      nexusDeps,
+    )
+    expect(r).toEqual({ ok: true, value: { rescope: true } })
+    expect(await read('.nexus/settings.json')).toBe(before)
   })
 })

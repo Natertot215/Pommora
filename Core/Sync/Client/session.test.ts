@@ -15,7 +15,7 @@ import { readAllBases, readBase, upsertBase } from './base'
 import { recordWrite } from '../../Files/writeEcho'
 import { ringName } from './keyring'
 import { currentSession, startSession, stopSession, syncNow } from './session'
-import { DEBOUNCE_MS, dirtyPending } from './tap'
+import { DEBOUNCE_MS, dirtyPending, reportRename } from './tap'
 
 const NEXUS = 'nx'
 const ADDRESS = 'http://127.0.0.1:7473'
@@ -190,6 +190,21 @@ describe('startSession', () => {
 
     expect(self.scope.excluded).toEqual(['Private'])
     expect(readAllBases().map((row) => row.path)).not.toContain('Private/Secret.md')
+  })
+
+  it('settles the scope a rename carried before pushing the renamed paths', async () => {
+    await startSession(ctx, root, NEXUS)
+    const self = currentSession()
+    if (self === null) throw new Error('no session')
+    await write('Job/One.md', page('one'))
+    await write('Job/Archive/Secret.md', page('secret'))
+    await write('.nexus/settings.json', JSON.stringify({ excluded_folders: ['Job/Archive'] }))
+
+    reportRename('Work', 'Job')
+    await turn(120)
+
+    expect(self.scope.excluded).toEqual(['Job/Archive'])
+    expect(sent('/store').some((req) => JSON.stringify(req).includes('Secret'))).toBe(false)
   })
 
   it('forgets a base the scope no longer admits, keeping the file and storing nothing for it', async () => {

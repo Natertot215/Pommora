@@ -11,7 +11,7 @@ import {
   type ContextsRegistry,
 } from '../Contexts/contexts'
 import { resolveContextKeys } from '../Contexts/contextResolve'
-import { spaceFieldsFrom } from '../Contexts/spaceSidecar'
+import { spaceFieldsFrom, spaceSidecarsIn } from '../Contexts/spaceSidecar'
 import { coerceOpenIn, cropsFile } from './schemas'
 import { containerFieldsFrom } from './containerFields'
 import type { PropertyDefinition } from '../Properties/properties'
@@ -25,7 +25,7 @@ import { isContentFile, listEntries } from '../Files/walk'
 import { machine } from '../Platform/machine'
 import { orderedDefs, readRegistry, type PropertyRegistry } from '../Properties/propertiesRegistry'
 import { asString, asStringArray } from './coerce'
-import { hiddenFolder, outsideContent, type WatchScope } from '../Paths/exclusion'
+import { outsideContent, type WatchScope } from '../Paths/exclusion'
 import { resolveOrder } from './order'
 import { beginWalk, cachedParse, endWalk } from '../Files/walkCache'
 import { contextsDir, contextsRegistryFile, nexusConfig } from '../Paths/paths'
@@ -34,7 +34,6 @@ import {
   spaceDirRel,
   NEXUS_CONFIG_FILES,
   SIDECAR_FILENAME,
-  SPACE_SIDECAR,
 } from '../Paths/nexusPaths'
 import type { Json } from '../Files/stableJson'
 
@@ -230,13 +229,13 @@ async function readPageCollection(
 }
 
 async function readSpace(
-  absDir: string,
+  sidecar: string,
   relDir: string,
   name: string,
   contextId: string,
   unreadable: string[],
 ): Promise<SpaceNode | null> {
-  const sc = await readSidecarNaming(join(absDir, SPACE_SIDECAR), relDir, unreadable)
+  const sc = await readSidecarNaming(sidecar, relDir, unreadable)
   if (!sc) return null
   const node = makeSpaceNode({
     id: asString(sc.id) ?? adoptedId(relDir),
@@ -258,11 +257,10 @@ async function readContextGroups(
   return Promise.all(
     registry.contexts.map(async (def) => {
       const dir = join(contextsDir(root), def.title)
-      const entries = (await listEntries(dir))
-        .filter((e) => e.kind === 'dir' && !hiddenFolder(e.name))
-        .map((e) => ({ name: e.name, rel: spaceDirRel(def.title, e.name) }))
       const read = await Promise.all(
-        entries.map(({ name, rel }) => readSpace(join(dir, name), rel, name, def.id, unreadable)),
+        (await spaceSidecarsIn(dir)).map(({ name, file }) =>
+          readSpace(file, spaceDirRel(def.title, name), name, def.id, unreadable),
+        ),
       )
       const spaces = read.filter((n): n is SpaceNode => n !== null)
       return { def, spaces: resolveOrder(spaces, asStringArray(spaceOrders[def.id])) }

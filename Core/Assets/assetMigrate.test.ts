@@ -3,6 +3,8 @@ import { rm, mkdir, writeFile, readFile, readdir, chmod } from 'node:fs/promises
 import { join } from '../Paths/posix'
 import { tempRoot, noModeBits } from '../Testing/hostFs'
 import { openSession, closeSession } from '../Nexus/session'
+import { refreshTree } from '../Nexus/liveTree'
+import { writeAssetDirectory } from '../Settings/settings'
 import { pathExists } from '../Files/atomicWrite'
 import { migrateAssets } from './assetMigrate'
 import { liveAssetMap, resolveAssetName } from './assetMap'
@@ -49,6 +51,49 @@ describe('migrateAssets', () => {
     )
     expect(await migrateAssets(root, nexusDeps)).toBeNull()
     expect(await pathExists(join(root, '.nexus/assets/a/banner-abcdef12.png'))).toBe(true)
+  })
+
+  it('runs against the asset directory just written while a tree is held', async () => {
+    await writeFile(join(root, '.nexus', 'settings.json'), '{}')
+    await asset('a/banner-abcdef12.png', 'bytes')
+    await writeFile(
+      join(root, 'Notes', '_pagecollection.json'),
+      JSON.stringify({ id: 'pt', banner: '.nexus/assets/a/banner-abcdef12.png' }),
+    )
+    await refreshTree(root)
+    await writeAssetDirectory(root, 'file-assets')
+    expect((await migrateAssets(root, nexusDeps))?.rewritten).toBe(1)
+    expect(JSON.parse(await read('Notes/_pagecollection.json')).banner).toBe('[[Notes Banner.png]]')
+  })
+
+  it('rewrites the links inside excluded folders before the sweep trashes the legacy folder', async () => {
+    await writeFile(
+      join(root, '.nexus', 'settings.json'),
+      JSON.stringify({ asset_directory: 'file-assets', excluded_folders: ['Vault'] }),
+    )
+    await asset('a/Cover.png', 'cover')
+    await mkdir(join(root, 'Vault'), { recursive: true })
+    await writeFile(
+      join(root, 'Vault', '_pagecollection.json'),
+      JSON.stringify({ id: 'vt', banner: '.nexus/assets/a/Cover.png' }),
+    )
+    await writeFile(join(root, 'Vault', 'Old.md'), '---\nbanner: "[[Cover.png]]"\n---\n\nbody')
+    const r = await migrateAssets(root, nexusDeps)
+    expect(r?.rewritten).toBe(2)
+    expect(r?.trashed).toBe(1)
+    expect(JSON.parse(await read('Vault/_pagecollection.json')).banner).toBe('[[Cover.png]]')
+    expect(await pathExists(join(root, 'file-assets', 'Cover.png'))).toBe(true)
+  })
+
+  it('holds the sweep when a store can’t be read', async () => {
+    await asset('a/Cover.png', 'cover')
+    await writeFile(join(root, 'Notes', '_pagecollection.json'), '{ not json')
+    const r = await migrateAssets(root, nexusDeps)
+    expect(r?.skipped).toEqual([
+      { store: 'Notes/_pagecollection.json', why: 'it could not be read' },
+    ])
+    expect(r?.trashed).toBe(0)
+    expect(await pathExists(join(root, '.nexus/assets/a/Cover.png'))).toBe(true)
   })
 
   it('collapses byte-identical files to one and rewrites every reference to it', async () => {

@@ -1,5 +1,3 @@
-// The one place in the app that deliberately reads inside an excluded folder — every other enumerator prunes them.
-
 import { basename, join, isMarkdownFile, relDirname } from '../Paths/posix'
 import { machine } from '../Platform/machine'
 import { parseContextKey } from '../Contexts/contexts'
@@ -8,12 +6,12 @@ import { asString } from '../Nexus/coerce'
 import { dropPageMetadata } from '../Nexus/pageMetadata'
 import { getLiveTree } from '../Nexus/liveTree'
 import { fault, ok, type Result } from '../Contract/result'
-import type { ClearReport } from '../Trash/trashRow'
 import { sweepGovernedRoots, type RewriteText, unsweptLine } from '../Properties/governedSweep'
 import {
   excludedMatcher,
   hiddenFolder,
   outsideContent,
+  reachingExcluded,
   rootSegs,
   type WatchScope,
 } from '../Paths/exclusion'
@@ -21,16 +19,22 @@ import { listPathsUnder } from '../Files/walk'
 import { mergeFrontmatter, splitFrontmatter, splitEnvelope } from '../Files/pageFile'
 import { SIDECAR_FILENAME } from '../Paths/nexusPaths'
 
+export interface ClearReport {
+  pages: number
+  sidecars: number
+  refused: number
+}
+
 const CONTAINER_SIDECARS: readonly string[] = [SIDECAR_FILENAME.collection, SIDECAR_FILENAME.set]
 const AGENDA_CONFIGS: readonly string[] = [SIDECAR_FILENAME.tasks, SIDECAR_FILENAME.events]
 const BOOKKEEPING_KEYS: readonly string[] = [ID_KEY]
 
 export async function excludedArtifacts(
   root: string,
-  excluded: string[],
-  assetDir: string,
+  scope: WatchScope,
 ): Promise<{ pages: string[]; sidecars: string[] }> {
-  const scope: WatchScope = { excluded: [], assetDir }
+  const { excluded } = scope
+  const reach = reachingExcluded(scope)
   const covered = excludedMatcher(excluded)
   const pages: string[] = []
   const sidecars: string[] = []
@@ -40,8 +44,8 @@ export async function excludedArtifacts(
     const rels = await listPathsUnder(root, join(root, ...segs), (rel, kind, siblings) => {
       if (AGENDA_CONFIGS.some((name) => siblings.has(name))) return false
       if (kind === 'file' && CONTAINER_SIDECARS.includes(basename(rel)))
-        return !outsideContent(relDirname(rel), scope)
-      return !outsideContent(rel, scope) && (kind === 'dir' || isMarkdownFile(rel))
+        return !outsideContent(relDirname(rel), reach)
+      return !outsideContent(rel, reach) && (kind === 'dir' || isMarkdownFile(rel))
     })
     for (const rel of rels) (isMarkdownFile(rel) ? pages : sidecars).push(join(root, rel))
   }
@@ -63,10 +67,9 @@ const clearRewrite =
 
 export async function clearExclusionData(
   root: string,
-  excluded: string[],
-  assetDir: string,
+  scope: WatchScope,
 ): Promise<Result<ClearReport>> {
-  const { pages, sidecars } = await excludedArtifacts(root, excluded, assetDir)
+  const { pages, sidecars } = await excludedArtifacts(root, scope)
   // Best-effort: a sidecar that won't delete is skipped so the page sweep still runs, rather than aborting the whole pass mid-way.
   let removed = 0
   for (const sidecar of sidecars) {

@@ -35,6 +35,7 @@ import {
 import { TrashFrame } from './TrashFrame'
 import { askClearExclusions, askClearHistory } from '../Interface/Confirm/confirmations'
 import { dialer } from '../Platform/dialer'
+import { useSession } from '../Session/store'
 
 const PLACEMENT_OPTIONS: readonly PickerOption<Placement>[] = [
   { value: 'top', label: 'Top' },
@@ -128,9 +129,8 @@ const EM: NumberUnit = { scale: 1, suffix: 'em', digits: 2 }
 const TABS: NumberUnit = { scale: 1, suffix: ' Tabs', digits: 0 }
 
 const clearExclusions = async (): Promise<boolean> => {
-  const count = await dialer().ask('exclusions:count')
-  if (!reportRefusal(count)) return false
-  if (count.value === 0 || !(await askClearExclusions(count.value))) return false
+  const count = useSession.getState().tree?.excluded.length ?? 0
+  if (count === 0 || !(await askClearExclusions(count))) return false
   const r = await dialer().ask('exclusions:clear')
   return reportRefusal(r) && r.value !== null
 }

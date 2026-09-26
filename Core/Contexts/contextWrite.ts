@@ -30,12 +30,11 @@ import {
   setOrDrop,
 } from '../Files/atomicWrite'
 import { noteSidecarWrite } from '../Nexus/valuesChanged'
-import { listEntries } from '../Files/walk'
 import { machine } from '../Platform/machine'
 import { setGovernedRootKeys } from '../Properties/governedWrite'
 import { contextsDir, tileFilePath } from '../Paths/paths'
 import { createFolderEntity } from '../Nexus/folderEntity'
-import { COLOR_KEY, ORDER_KEY } from './spaceSidecar'
+import { COLOR_KEY, ORDER_KEY, spaceSidecarsIn } from './spaceSidecar'
 import type { Json } from '../Files/stableJson'
 
 interface SpaceRef {
@@ -65,27 +64,24 @@ export async function loadContextWorld(root: string): Promise<Result<ContextWorl
   for (const def of reg.value.contexts) {
     const dir = join(contextsDir(root), def.title)
     const spaces: SpaceNode[] = []
-    if (await pathExists(dir)) {
-      for (const e of await listEntries(dir)) {
-        if (e.kind !== 'dir') continue
-        // STRICT per sidecar: a folder without one simply isn't a Space, but an unreadable/corrupt one fails the whole load — a world missing a real Space would make the reconcile silently strip that Space's valid tags from every file it touches.
-        const sc = await readJsonStrict(join(dir, e.name, SPACE_SIDECAR))
-        if (!sc.ok) {
-          if (sc.error.code === 'not-found') continue
-          return fault(`Unreadable Space sidecar: ${e.name}`)
-        }
-        const rel = spaceDirRel(def.title, e.name)
-        const id = typeof sc.value.id === 'string' ? sc.value.id : adoptedId(rel)
-        spaces.push({ kind: 'space', id, title: e.name, path: rel, contextId: def.id })
-        spaceById.set(id, {
-          id,
-          title: e.name,
-          contextId: def.id,
-          contextTitle: def.title,
-          dir: join(dir, e.name),
-          raw: sc.value,
-        })
+    for (const { name, file } of await spaceSidecarsIn(dir)) {
+      // STRICT per sidecar: a folder without one simply isn't a Space, but an unreadable/corrupt one fails the whole load — a world missing a real Space would make the reconcile silently strip that Space's valid tags from every file it touches.
+      const sc = await readJsonStrict(file)
+      if (!sc.ok) {
+        if (sc.error.code === 'not-found') continue
+        return fault(`Unreadable Space sidecar: ${name}`)
       }
+      const rel = spaceDirRel(def.title, name)
+      const id = typeof sc.value.id === 'string' ? sc.value.id : adoptedId(rel)
+      spaces.push({ kind: 'space', id, title: name, path: rel, contextId: def.id })
+      spaceById.set(id, {
+        id,
+        title: name,
+        contextId: def.id,
+        contextTitle: def.title,
+        dir: join(dir, name),
+        raw: sc.value,
+      })
     }
     spacesByContext.set(def.id, spaces)
   }
