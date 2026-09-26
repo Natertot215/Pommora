@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { lookOptions, NUMBER_LOOKS } from '@pommora/core/Properties/columnStyles'
 import type { NumberConfig, NumberFamily } from '@pommora/core/Properties/properties'
-import { CURRENCY_CODES } from '@pommora/core/Properties/properties'
+import { CURRENCY_CODES, DEFAULT_CURRENCY } from '@pommora/core/Properties/properties'
 import { Icon } from '@pommora/uix/Symbols'
 import { EditableInput } from '@pommora/uix/Fields/EditableInput'
 import { numberDivisor } from '../formatValue'
@@ -111,7 +111,7 @@ export function NumberEditor({
         row={pickerRow(
           undefined,
           'Currency',
-          config.number_currency ?? 'USD',
+          config.number_currency ?? DEFAULT_CURRENCY,
           CURRENCY_OPTIONS,
           (v) => onSetConfig({ number_currency: v }),
           { ...ROW_LOOK, ariaLabel: 'Currency', reveal: family === 'currency' },

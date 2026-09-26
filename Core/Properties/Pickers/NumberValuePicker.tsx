@@ -2,14 +2,8 @@ import type { RefObject } from 'react'
 import { TextPicker } from '@pommora/uix/Pickers/TextPicker'
 import type { PropertyDefinition } from '@pommora/core/Properties/properties'
 import type { PropertyValue } from '@pommora/core/Properties/propertyValue'
-import { numberFormatGlyph } from '../Cells/PropertyTypes'
 import { parseEditorValue } from '../parseEditorValue'
-import { fractionDenominator } from '../formatValue'
-
-const denominatorOf = (def: PropertyDefinition): string | undefined => {
-  const denominator = fractionDenominator(def)
-  return denominator === undefined ? undefined : `/ ${denominator}`
-}
+import { fractionDenominator, numberFormatGlyph } from '../formatValue'
 
 export function NumberValuePicker({
   def,
@@ -26,13 +20,14 @@ export function NumberValuePicker({
   onCommit: (value: PropertyValue | null) => void
   onDismiss: () => void
 }): React.JSX.Element {
+  const denominator = fractionDenominator(def)
   return (
     <TextPicker
       open={open}
       triggerRef={triggerRef}
       value={current?.kind === 'number' ? String(current.value) : ''}
       leading={numberFormatGlyph(def)}
-      trailing={denominatorOf(def)}
+      trailing={denominator === undefined ? undefined : `/ ${denominator}`}
       onCommit={(raw) => {
         const next = parseEditorValue('number', raw)
         if (next !== undefined) onCommit(next)

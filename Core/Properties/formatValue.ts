@@ -2,7 +2,7 @@
 
 import type { DateFormat, TimeFormat, WeekdayFormat } from '@pommora/core/Properties/columnStyles'
 import type { DateGranularity, DateSeparator } from '@pommora/core/Views/views'
-import type { NumberConfig } from '@pommora/core/Properties/properties'
+import { DEFAULT_CURRENCY, type NumberConfig } from '@pommora/core/Properties/properties'
 import { pad } from '@pommora/uix/Utilities/pad'
 
 // Intl formatter construction is pricey and the card grid formats per-cell, so formatters cache by options tuple; en-US is pinned everywhere, so the key is the options alone.
@@ -162,7 +162,7 @@ function formatScalar(n: number, cfg: NumberConfig | undefined): string {
   if (cfg?.number_family === 'currency') {
     return numFmt({
       style: 'currency',
-      currency: cfg.number_currency ?? 'USD',
+      currency: cfg.number_currency ?? DEFAULT_CURRENCY,
       useGrouping,
       ...digits,
     }).format(n)
@@ -171,7 +171,7 @@ function formatScalar(n: number, cfg: NumberConfig | undefined): string {
   return cfg?.number_family === 'percent' ? `${num}%` : num
 }
 
-/** The fraction's denominator: Fraction on, a positive denominator, and a format other than Percent, which already reads out of 100. */
+/** Percent already reads out of 100, so it takes no fraction. */
 export const fractionDenominator = (cfg: NumberConfig | undefined): number | undefined =>
   cfg?.number_fraction && cfg.number_family !== 'percent' && (cfg.number_denominator ?? 0) > 0
     ? cfg.number_denominator
@@ -189,7 +189,14 @@ export function numberDivisor(cfg: NumberConfig | undefined): number | undefined
   return cfg?.number_family === 'percent' ? 100 : fractionDenominator(cfg)
 }
 
-export const currencyGlyph = (currency: string): string =>
-  numFmt({ style: 'currency', currency, currencyDisplay: 'narrowSymbol' })
-    .formatToParts(0)
-    .find((p) => p.type === 'currency')?.value ?? currency
+/** The number picker's leading glyph; a currency shows its narrow symbol, where a cell spells out the ambiguous ones (A$, CA$). */
+export function numberFormatGlyph(cfg: NumberConfig): string {
+  if (cfg.number_family === 'percent') return '%'
+  if (cfg.number_family !== 'currency') return '#'
+  const currency = cfg.number_currency ?? DEFAULT_CURRENCY
+  return (
+    numFmt({ style: 'currency', currency, currencyDisplay: 'narrowSymbol' })
+      .formatToParts(0)
+      .find((p) => p.type === 'currency')?.value ?? currency
+  )
+}

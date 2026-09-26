@@ -1,12 +1,13 @@
 import { describe, expect, it } from 'vitest'
 import {
-  currencyGlyph,
   formatDate,
   formatNumber,
   fractionDenominator,
   numberDivisor,
+  numberFormatGlyph,
   readDate,
 } from './formatValue'
+import { CURRENCY_CODES } from './properties'
 
 describe('formatDate', () => {
   it('renders the four date formats', () => {
@@ -166,16 +167,15 @@ describe('fractionDenominator', () => {
   })
 })
 
-describe('currencyGlyph', () => {
-  it("is the formatter's narrow currency symbol", () => {
-    expect(['USD', 'EUR', 'GBP', 'AUD', 'CAD', 'JPY'].map(currencyGlyph)).toEqual([
-      '$',
-      '€',
-      '£',
-      '$',
-      '$',
-      '¥',
-    ])
+describe('numberFormatGlyph', () => {
+  it("is %, #, or the formatter's narrow currency symbol", () => {
+    expect(numberFormatGlyph({ number_family: 'percent' })).toBe('%')
+    expect(numberFormatGlyph({})).toBe('#')
+    expect(
+      CURRENCY_CODES.map((c) =>
+        numberFormatGlyph({ number_family: 'currency', number_currency: c }),
+      ),
+    ).toEqual(['$', '€', '£', '$', '$', '¥'])
   })
 })
 

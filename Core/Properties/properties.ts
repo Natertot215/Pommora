@@ -41,6 +41,7 @@ export const NUMBER_FAMILIES = ['number', 'percent', 'currency'] as const
 export type NumberFamily = (typeof NUMBER_FAMILIES)[number]
 
 export const CURRENCY_CODES = ['USD', 'EUR', 'GBP', 'AUD', 'CAD', 'JPY'] as const
+export const DEFAULT_CURRENCY: (typeof CURRENCY_CODES)[number] = 'USD'
 
 const optionAppearance = z.enum(['filled', 'clear'])
 export type OptionAppearance = z.infer<typeof optionAppearance>
