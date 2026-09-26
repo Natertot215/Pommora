@@ -3,7 +3,7 @@ import { Button } from '@pommora/uix/Buttons/Button'
 import type { ReactNode } from 'react'
 import type { CollectionNode, SetNode } from '@pommora/core/Nexus/tree'
 import type { ResolvedGroup } from '@pommora/core/Views/viewRow'
-import type { SavedView } from '@pommora/core/Views/views'
+import { type SavedView, viewOption } from '@pommora/core/Views/views'
 import { text } from '@pommora/uix/Theme'
 import { colorNameFor } from '@pommora/uix/Theme/ramp'
 import { cx } from '@pommora/uix/Utilities/cx'
@@ -132,7 +132,7 @@ export function resolveBandHead(
         value,
         granularity,
         styleFor(propId, ctx.schema, view, nexus).date_format,
-        view.date_separator ?? 'dash',
+        viewOption(view, 'date_separator'),
       )
       return {
         label,

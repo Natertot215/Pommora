@@ -15,7 +15,7 @@ import type { PickerOption } from '@pommora/uix/Pickers/PickerControl'
 import { lockLabel } from '../Actions/toggleLabels'
 import { useSession } from '../Session/store'
 import { FilterFrame } from '../Views/Settings/FilterFrame'
-import { viewFlag } from '../Views/views'
+import { viewOption } from '../Views/views'
 import type { Forces } from './Engine/forces'
 import type { GroupMode } from './Engine/graph'
 import { FORCE_STEPS } from './matrixConfig'
@@ -147,7 +147,7 @@ export function MatrixMenu(): React.JSX.Element {
             onBack={() => setFiltering(false)}
             onCommit={(next) =>
               patch({
-                filter: { rules: next.filter ?? null, enabled: viewFlag(next, 'filter_enabled') },
+                filter: { rules: next.filter ?? null, enabled: viewOption(next, 'filter_enabled') },
               })
             }
           />

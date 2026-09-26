@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { Button } from '@pommora/uix/Buttons/Button'
 import type { CollectionNode, NexusTree, SetNode } from '@pommora/core/Nexus/tree'
 import type { PickOption, PropertyDefinition } from '@pommora/core/Properties/properties'
-import { type FilterRule, type SavedView, viewFlag } from '@pommora/core/Views/views'
+import { type FilterRule, type SavedView, viewOption } from '@pommora/core/Views/views'
 import { Icon } from '@pommora/uix/Symbols'
 import { FieldRun } from '@pommora/uix/Fields/FieldRun'
 import * as fr from '@pommora/uix/Fields/field-run.css'
@@ -722,7 +722,7 @@ export function FilterFrame({
           trailing={
             <PickerControl
               ariaLabel="Filter active"
-              value={viewFlag(liveView, 'filter_enabled') ? 'on' : 'off'}
+              value={viewOption(liveView, 'filter_enabled') ? 'on' : 'off'}
               options={ACTIVE_OPTIONS}
               onPick={(v) => setEnabled(v === 'on')}
             />

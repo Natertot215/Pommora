@@ -32,8 +32,8 @@ export const VIEW_KINDS: Record<ViewType, ViewKind> = {
 const VIEW_FORMATS = ['standard', 'compact'] as const
 export type ViewFormat = (typeof VIEW_FORMATS)[number]
 
-export const isCompact = (view: { format?: ViewFormat }): boolean =>
-  (view.format ?? 'standard') === 'compact'
+export const isCompact = (view: Pick<SavedView, 'format'>): boolean =>
+  viewOption(view, 'format') === 'compact'
 
 const CARD_BANNERS = ['banner', 'preview', 'none'] as const
 export type CardBanner = (typeof CARD_BANNERS)[number]
@@ -200,7 +200,18 @@ export type ViewFlag = {
   [K in keyof SavedView]-?: SavedView[K] extends boolean | undefined ? K : never
 }[keyof SavedView]
 
-const VIEW_FLAG_DEFAULTS: Record<ViewFlag, boolean> = {
+type DefaultedOption =
+  | ViewFlag
+  | 'format'
+  | 'card_banner'
+  | 'date_separator'
+  | 'ungrouped_placement'
+  | 'structural_order_mode'
+  | 'location_order_mode'
+
+type ViewDefaults = { [K in DefaultedOption]-?: NonNullable<SavedView[K]> }
+
+const VIEW_DEFAULTS: ViewDefaults = {
   hide_empty_groups: false,
   hide_location: false,
   wrap_titles: false,
@@ -209,10 +220,18 @@ const VIEW_FLAG_DEFAULTS: Record<ViewFlag, boolean> = {
   hide_column_icons: true,
   hide_borders: false,
   filter_enabled: true,
+  format: 'standard',
+  card_banner: 'banner',
+  date_separator: 'dash',
+  ungrouped_placement: 'bottom',
+  structural_order_mode: 'custom',
+  location_order_mode: 'location',
 }
 
-export const viewFlag = (view: Pick<SavedView, ViewFlag>, key: ViewFlag): boolean =>
-  view[key] ?? VIEW_FLAG_DEFAULTS[key]
+export const viewOption = <K extends DefaultedOption>(
+  view: Partial<Pick<ViewDefaults, K>>,
+  key: K,
+): ViewDefaults[K] => view[key] ?? VIEW_DEFAULTS[key]
 
 function withoutEmptyStyles({ column_styles, ...view }: Json): Json {
   const kept = Object.entries((column_styles ?? {}) as Json).filter(([, s]) => holdsStyle(s))
@@ -240,7 +259,7 @@ export const LOCATION_SORT = '__location__'
 export function isLocationFsOrder(view: SavedView): boolean {
   return (
     view.sort?.[0]?.property_id === LOCATION_SORT &&
-    (view.location_order_mode ?? 'location') === 'location'
+    viewOption(view, 'location_order_mode') === 'location'
   )
 }
 
