@@ -25,7 +25,7 @@ import { outlineTree, type OutlineNode } from '../Engine/outlineTree'
 import type { AcRow, HeadingRow } from './autocomplete'
 import { CLOSED_GEOMETRY, type AcState } from './useConnectionAutocomplete'
 
-interface Props {
+export interface AutocompletePaneProps {
   ac: AcState | null
   candidates: AcRow[]
   index: number
@@ -55,7 +55,7 @@ export function AutocompletePane({
   onToggleHeading = () => {},
   onAside = () => {},
   onBack = () => {},
-}: Props): React.JSX.Element {
+}: AutocompletePaneProps): React.JSX.Element {
   const live = ac !== null && (candidates.length > 0 || loading)
   const v = useHeld(
     { ac: ac ?? CLOSED, candidates, index, viaChevron, headingRows, collapsed },

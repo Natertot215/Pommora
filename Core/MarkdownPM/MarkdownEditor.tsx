@@ -1,25 +1,14 @@
 import { useEffect, useRef, type ReactNode } from 'react'
-import { docOutline, docScan, docString } from './docCache'
+import { docScan, docString } from './docCache'
 import { travelToHeading } from './travel'
-import { headingTargetOf, type HeadingTarget } from './Autocomplete/headingTarget'
 import { EditorView, keymap } from '@codemirror/view'
 import { Compartment, EditorState, Prec } from '@codemirror/state'
 import { history, historyField, historyKeymap, defaultKeymap } from '@codemirror/commands'
 import { markdown } from '@codemirror/lang-markdown'
-import { markdownDecorations } from './decorations'
 import { markdownInput } from './Input/markdownInput'
 import { tableWidgetExtension, applySavedHeadingCols } from './Tables/widget'
-import { listDragExtension } from './Gestures/listDrag'
-import { listRenumberOnDelete } from './Input/listRenumber'
-import { blockHandles, pointerReveal } from './Menus/blockHandles'
+import { blockquoteDragExtension, calloutDragExtension } from './Gestures/blockDrag'
 import {
-  blockDragExtension,
-  blockquoteDragExtension,
-  calloutDragExtension,
-} from './Gestures/blockDrag'
-import { gripMenu } from './Menus/gripMenu'
-import {
-  embedExclusions,
   embedField,
   embedTiles,
   refreshTileZooms,
@@ -28,28 +17,19 @@ import {
   setEmbedHeights,
   setEmbedZooms,
 } from './Embeds/embedWidget'
-import { embeddable } from './Engine/embedClaims'
 import { type PageStats, rangeStats } from './Engine/subfieldStats'
-import { customCaret } from './caret'
-import { customSelection } from './selection'
 import { codeHighlight, codeLanguages } from './codeHighlight'
 import { registerScrollHeal } from './Embeds/scrollHeal'
 import { calloutGuard } from './Guards/calloutGuard'
 import { headingRenameSettle } from './Guards/headingRenameSettle'
 import { citationGuard } from './Guards/citationGuard'
 import { citationHost, citationOrder } from './Citations/citationActions'
-import { citationPointer, citationRowMenu, citationRowPointer } from './Citations/citationPointer'
-import { connectionClicks } from './Links/connectionClicks'
-import { markdownLinkClicks } from './Links/linkClicks'
-import { pasteLink } from './Links/pasteLink'
-import { pendingTitle } from './Links/pendingTitle'
-import { aliasOnLeave } from './Links/linkEdit'
-import { linkRest, linkTyping } from './Gestures/linkGestures'
+import { citationRowMenu, citationRowPointer } from './Citations/citationPointer'
 import { markdownFolding, applySavedFolds, applyCitationsVisibility } from './folding'
-import { editorMenu } from './Menus/menu'
-import { formatKeymap } from './Input/formatKeymap'
-import { AC_MAX, aliasRows, pageRow } from './Autocomplete/autocomplete'
+import { useFormatGate } from './Input/useFormatGate'
+import { inlineSurface } from './surface'
 import {
+  acKeys,
   useConnectionAutocomplete,
   detectConnectionQuery,
   sectionArmAfter,
@@ -108,8 +88,6 @@ export function MarkdownEditor({
 }: Props): React.JSX.Element {
   const readOnlyGate = useRef(new Compartment())
   const lastReadOnly = useRef(readOnly)
-  const formatGate = useRef(new Compartment())
-  const lastCommands = useRef(host.settings().commands)
   const editorRef = useRef<HTMLDivElement>(null)
   const shellRef = useRef<HTMLDivElement>(null)
   const viewRef = useRef<EditorView | null>(null)
@@ -176,41 +154,12 @@ export function MarkdownEditor({
     followed.current = true
   }, [citesShown])
 
-  const targetOf = (title: string): HeadingTarget =>
-    title
-      ? headingTargetOf(hostRef.current, connectionsRef.current, title)
-      : { kind: 'warm', outline: viewRef.current ? docOutline(viewRef.current.state.doc) : [] }
-
-  const {
-    ac,
-    setAc,
-    candidates,
-    acIndex,
-    commit,
-    acCtl,
-    viaChevron,
-    loading,
-    headingRows,
-    collapsed,
-    toggleHeading,
-  } = useConnectionAutocomplete(
+  const { ac, setAc, acCtl, pane } = useConnectionAutocomplete(
     viewRef,
     host,
-    (q) => {
-      const conn = connectionsRef.current
-      if (!conn) return []
-      if (q.form === 'alias') return aliasRows(conn, hostRef.current.aliases, q.title, q.query)
-      const embed = q.form === 'embed'
-      let pool = conn.candidates(q.query, embed ? AC_MAX * 2 : AC_MAX)
-      if (embed) {
-        const state = viewRef.current?.state
-        const taken = state ? embedExclusions(state) : new Set<string>()
-        pool = pool.filter((p) => embeddable(p.title, taken))
-      }
-      return pool.slice(0, AC_MAX).map(pageRow)
-    },
-    targetOf,
+    () => connectionsRef.current,
   )
+  const formatExt = useFormatGate(viewRef, host.settings().commands)
   const block = useBlockMenu(viewRef)
 
   // The pane closing (Escape, a commit, a blur) leaves the § bare rather than arming the next keystroke near it.
@@ -234,65 +183,32 @@ export function MarkdownEditor({
       EditorState.changeFilter.of((tr) => !(tr.startState.readOnly && tr.docChanged)),
       history(),
       Prec.highest(
-        keymap.of([
-          { key: 'ArrowDown', run: whenAcOpen(acCtls, (c) => c.move(1)) },
-          { key: 'ArrowUp', run: whenAcOpen(acCtls, (c) => c.move(-1)) },
-          { key: 'Enter', run: whenAcOpen(acCtls, (c) => c.pick()) },
-          { key: 'Escape', run: whenAcOpen(acCtls, (c) => c.close()) },
-          { key: 'ArrowRight', run: whenAcOpen(acCtls, (c) => c.aside?.(1) ?? false) },
-          { key: 'ArrowLeft', run: whenAcOpen(acCtls, (c) => c.aside?.(-1) ?? false) },
-        ]),
+        keymap.of([...acKeys(acCtls), { key: 'Enter', run: whenAcOpen(acCtls, (c) => c.pick()) }]),
       ),
       markdownInput,
-      formatGate.current.of(formatKeymap(lastCommands.current)),
+      formatExt,
       keymap.of([...defaultKeymap, ...historyKeymap]),
       markdown({ addKeymap: false, pasteURLAsLink: false, completeHTMLTags: false, codeLanguages }),
       codeHighlight,
-      EditorView.lineWrapping,
-      // iOS soft-keyboard hints, no-ops on desktop — mobile scaffolding.
-      EditorView.contentAttributes.of({
-        autocapitalize: 'sentences',
-        autocorrect: 'off',
-        spellcheck: 'true',
-        enterkeyhint: 'enter',
-        'data-drawn-caret': '',
-      }),
-      markdownDecorations(() => connectionsRef.current),
+      citationRowPointer(),
+      citationRowMenu(),
+      inlineSurface(() => connectionsRef.current, 'page'),
       tableWidgetExtension(() => connectionsRef.current),
       embedTiles({
         getConn: () => connectionsRef.current,
         ancestors: embedAncestorsRef.current,
         tabActive: () => activeRef.current,
       }),
-      listDragExtension,
-      listRenumberOnDelete('page'),
-      blockHandles(),
-      pointerReveal('page'),
-      blockDragExtension,
       calloutDragExtension,
       blockquoteDragExtension,
-      gripMenu,
-      customCaret,
-      customSelection,
       calloutGuard,
       headingRenameSettle.of(() => onHeadingRenameRef.current),
       citationGuard,
-      connectionClicks(() => connectionsRef.current),
       citationHost.of({
         shown: () => citesShownRef.current,
         reveal: () => hostRef.current.citations.set(true),
       }),
       citationOrder,
-      citationPointer(() => connectionsRef.current),
-      citationRowPointer(),
-      citationRowMenu(),
-      editorMenu('page'),
-      markdownLinkClicks(() => connectionsRef.current),
-      pasteLink,
-      pendingTitle,
-      aliasOnLeave(() => connectionsRef.current),
-      linkRest,
-      linkTyping,
       EditorView.domEventHandlers({
         blur: () => {
           setAc(null)
@@ -418,17 +334,6 @@ export function MarkdownEditor({
     }
   }, [])
 
-  const commands = host.settings().commands
-  useEffect(() => {
-    const view = viewRef.current
-    if (!view || commands === lastCommands.current) {
-      lastCommands.current = commands
-      return
-    }
-    lastCommands.current = commands
-    view.dispatch({ effects: formatGate.current.reconfigure(formatKeymap(commands)) })
-  }, [commands])
-
   useEffect(() => {
     const view = viewRef.current
     if (!view || readOnly === lastReadOnly.current) {
@@ -459,21 +364,7 @@ export function MarkdownEditor({
     <div ref={shellRef} className="mdpm-shell">
       {header}
       <div ref={editorRef} className="mdpm-editor interface-inset" />
-      <AutocompletePane
-        ac={ac}
-        candidates={candidates}
-        index={acIndex}
-        onPick={commit}
-        viaChevron={viaChevron}
-        loading={loading}
-        headingRows={headingRows}
-        collapsed={collapsed}
-        onToggleHeading={toggleHeading}
-        onAside={(row) => commit(row, { openHeading: true })}
-        onBack={() => {
-          acCtl.current.aside?.(-1)
-        }}
-      />
+      <AutocompletePane {...pane} />
       <BlockMenu
         open={block.open}
         state={block.state}

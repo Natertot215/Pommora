@@ -1,24 +1,29 @@
 import { useEffect, useMemo, useReducer, useState, type RefObject } from 'react'
-import type { EditorView, ViewUpdate } from '@codemirror/view'
+import type { EditorView, KeyBinding, ViewUpdate } from '@codemirror/view'
 import {
+  AC_MAX,
+  aliasRows,
   autocompleteQuery,
   commitEdit,
   headingRows,
   openHeadingRows,
+  pageRow,
   type AcRow,
-  type HeadingRow,
-  type AcQuery,
   type AutocompleteQuery,
 } from './autocomplete'
 import { clamp } from '@pommora/uix/Utilities/clamp'
 import { toggled } from '@pommora/uix/Utilities/checkSet'
-import { docScan } from '../docCache'
+import { docOutline, docScan } from '../docCache'
 import { inCodeAt } from '../Engine/docScan'
 import { linkAt, normalizeTitle, pageLinkPattern } from '@pommora/core/Connections/connections'
 import { restedOnLink } from '../Gestures/linkGestures'
-import type { HeadingTarget } from './headingTarget'
+import { headingTargetOf } from './headingTarget'
+import type { AutocompletePaneProps } from './AutocompletePane'
+import type { ConnectionsApi } from '../Links/connectionsApi'
+import { embedExclusions } from '../Embeds/embedWidget'
+import { embeddable } from '../Engine/embedClaims'
 import type { OutlineHeading } from '../Engine/headingScan'
-import { type EditorHost, editorHost } from '../api'
+import { type EditorHost, editorHost, pageEditorAt } from '../api'
 import { useLatest } from '@pommora/uix/Utilities/stableApi'
 
 export interface CaretGeometry {
@@ -82,25 +87,26 @@ export const whenAcOpen =
     return typeof handled === 'boolean' ? handled : true
   }
 
+/** The picker's own keys; Enter is each surface's, since a cell's Enter also leaves the cell. */
+export const acKeys = (ctls: readonly RefObject<AcCtl>[]): KeyBinding[] => [
+  { key: 'ArrowDown', run: whenAcOpen(ctls, (c) => c.move(1)) },
+  { key: 'ArrowUp', run: whenAcOpen(ctls, (c) => c.move(-1)) },
+  { key: 'Escape', run: whenAcOpen(ctls, (c) => c.close()) },
+  { key: 'ArrowRight', run: whenAcOpen(ctls, (c) => c.aside?.(1) ?? false) },
+  { key: 'ArrowLeft', run: whenAcOpen(ctls, (c) => c.aside?.(-1) ?? false) },
+]
+
 interface ConnectionAutocomplete {
   ac: AcState | null
   setAc: (s: AcState | null) => void
-  candidates: AcRow[]
-  acIndex: number
-  commit: (row: AcRow, opts?: { openHeading?: boolean }) => void
   acCtl: RefObject<AcCtl>
-  viaChevron: boolean
-  loading: boolean
-  headingRows: HeadingRow[]
-  collapsed: ReadonlySet<string>
-  toggleHeading: (value: string) => void
+  pane: AutocompletePaneProps
 }
 
 export function useConnectionAutocomplete(
   viewRef: RefObject<EditorView | null>,
   host: EditorHost,
-  candidatesFor: (q: AcQuery) => AcRow[],
-  targetOf: (title: string) => HeadingTarget,
+  getConn: () => ConnectionsApi | undefined,
 ): ConnectionAutocomplete {
   const [ac, setAc] = useState<AcState | null>(null)
   const [fetched, setFetched] = useState<OutlineHeading[] | null>(null)
@@ -108,14 +114,21 @@ export function useConnectionAutocomplete(
   const [collapsed, setCollapsed] = useState<ReadonlySet<string>>(new Set())
   // The title the heading list slid back to: an exact title closes the page list, but Back must land on it open.
   const [backedTo, setBackedTo] = useState<string | null>(null)
-  const candidatesForRef = useLatest(candidatesFor)
+  const getConnRef = useLatest(getConn)
   const query = ac?.query ?? null
   const form = ac?.form ?? 'link'
   const title = ac?.title
   // A section run reads its outline and rows the same way a heading form does; it never opens an alias slide or a chevron slide.
   const heading = form === 'heading' || form === 'section'
   // Read in render so a warm outline answers in the same pass and an exact heading closes without a frame ever mounting.
-  const target = useMemo(() => (heading ? targetOf(title ?? '') : null), [heading, title])
+  const target = useMemo(() => {
+    if (!heading) return null
+    if (title) return headingTargetOf(host, getConnRef.current(), title)
+    // The host document's outline for a bare `#`: a cell's own document is one cell, so the page around it answers.
+    const view = viewRef.current
+    const page = view && (pageEditorAt(view.dom).view ?? view)
+    return { kind: 'warm' as const, outline: page ? docOutline(page.state.doc) : [] }
+  }, [heading, title])
   const outline = target?.kind === 'warm' ? target.outline : fetched
   // A freshly typed `#` shows the empty frame while a cold page's rows load; a typed prefix, or a caret placed in a finished link, waits for the rows so nothing flashes.
   const loading = heading && outline === null && query === ''
@@ -143,6 +156,19 @@ export function useConnectionAutocomplete(
     () => (heading && query !== null ? headingRows(outline ?? [], query) : []),
     [heading, outline, query],
   )
+  const lookup = (q: string, f: AutocompleteQuery['form'], t: string | undefined): AcRow[] => {
+    const conn = getConnRef.current()
+    if (!conn) return []
+    if (f === 'alias') return aliasRows(conn, host.aliases, t, q)
+    const embed = f === 'embed'
+    let pool = conn.candidates(q, embed ? AC_MAX * 2 : AC_MAX)
+    if (embed) {
+      const state = viewRef.current?.state
+      const taken = state ? embedExclusions(state) : new Set<string>()
+      pool = pool.filter((p) => embeddable(p.title, taken))
+    }
+    return pool.slice(0, AC_MAX).map(pageRow)
+  }
   // A query that names its one match exactly is a finished link, so the caret resting in one opens nothing; Back is the exception.
   const candidates = useMemo(() => {
     if (query === null) return []
@@ -151,7 +177,7 @@ export function useConnectionAutocomplete(
       ? query === ''
         ? openHeadingRows(allHeadingRows, collapsed)
         : allHeadingRows
-      : candidatesForRef.current({ query, form, title })
+      : lookup(query, form, title)
     const exact = found.length === 1 && normalizeTitle(found[0].value) === normalizeTitle(query)
     if (exact && normalizeTitle(query) !== normalizeTitle(backedTo ?? '')) return []
     return found
@@ -227,15 +253,22 @@ export function useConnectionAutocomplete(
   return {
     ac,
     setAc,
-    candidates,
-    acIndex: index ?? 0,
-    commit,
     acCtl: ctl,
-    viaChevron,
-    loading,
-    headingRows: allHeadingRows,
-    collapsed,
-    toggleHeading: (value) => setCollapsed((prev) => toggled(prev, value)),
+    pane: {
+      ac,
+      candidates,
+      index: index ?? 0,
+      onPick: commit,
+      viaChevron,
+      loading,
+      headingRows: allHeadingRows,
+      collapsed,
+      onToggleHeading: (value) => setCollapsed((prev) => toggled(prev, value)),
+      onAside: (row) => commit(row, { openHeading: true }),
+      onBack: () => {
+        ctl.current.aside?.(-1)
+      },
+    },
   }
 }
 

@@ -1,5 +1,5 @@
 import { EditorView, type KeyBinding, keymap } from '@codemirror/view'
-import { Prec, StateField } from '@codemirror/state'
+import { type Extension, Prec, StateField } from '@codemirror/state'
 import {
   continueListOnEnter,
   continueBlockquoteOnEnter,
@@ -30,6 +30,7 @@ import { commitAliasOnEnter } from '../Links/linkEdit'
 import { headingHash } from '../Links/headingHash'
 import { embedTileRanges } from '../Embeds/embedWidget'
 import type { DocScan } from '../Engine/docScan'
+import type { MarkdownScope } from '../Engine/detect'
 import { commitCitation, seedTypedCitation } from '../Citations/citationActions'
 import { citationDeleteIntent } from '../Citations/citationEdits'
 import { docScan } from '../docCache'
@@ -145,6 +146,36 @@ export const wrapChords: KeyBinding[] = Object.entries({ "'": '"', 8: '*', 9: '(
   }),
 )
 
+/** Every typed character on both surfaces: a cell skips the callout shorthand and the citation seed, which write page constructs. */
+export const typedInput = (scope: MarkdownScope): Extension =>
+  EditorView.inputHandler.of((view, from, to, text) => {
+    // Never dispatch mid-composition: a transaction there aborts or garbles the IME session.
+    if (view.composing || view.compositionStarted) return false
+    if (text.length !== 1) return false
+    const scan = docScan(view.state.doc)
+    const settings = settingsOf(view)
+    if (from !== to)
+      return apply(
+        view,
+        wrapSelection(scan, from, to, text, settings) ?? headingHash(scan, from, to, text),
+      )
+    if (refusedInAlias(scan.text, from, text)) return true
+    const page = scope === 'page'
+    if (page && text === ']' && seedTypedCitation(view, from)) return true
+    return apply(
+      view,
+      headingHash(scan, from, from, text) ??
+        (page ? calloutShorthand(scan.text, from, from, text, settings) : null) ??
+        canonicalizeCheckbox(scan.text, from, from, text, scope) ??
+        autoPair(scan, from, from, text, settings) ??
+        dashArrow(scan, from, from, text, settings) ??
+        ellipsis(scan, from, from, text, settings) ??
+        equations(scan, from, from, text, settings) ??
+        sectionSign(scan, from, from, text, settings) ??
+        bullet(scan, from, from, text, settings),
+    )
+  })
+
 export const markdownInput = [
   typedLine,
   Prec.high(
@@ -161,30 +192,4 @@ export const markdownInput = [
       ...wrapChords,
     ]),
   ),
-  EditorView.inputHandler.of((view, from, to, text) => {
-    // Never dispatch mid-composition: a transaction there aborts or garbles the IME session.
-    if (view.composing || view.compositionStarted) return false
-    if (text.length !== 1) return false
-    const scan = docScan(view.state.doc)
-    const settings = settingsOf(view)
-    if (from !== to)
-      return apply(
-        view,
-        wrapSelection(scan, from, to, text, settings) ?? headingHash(scan, from, to, text),
-      )
-    if (refusedInAlias(scan.text, from, text)) return true
-    if (text === ']' && seedTypedCitation(view, from)) return true
-    return apply(
-      view,
-      headingHash(scan, from, from, text) ??
-        calloutShorthand(scan.text, from, from, text, settings) ??
-        canonicalizeCheckbox(scan.text, from, from, text) ??
-        autoPair(scan, from, from, text, settings) ??
-        dashArrow(scan, from, from, text, settings) ??
-        ellipsis(scan, from, from, text, settings) ??
-        equations(scan, from, from, text, settings) ??
-        sectionSign(scan, from, from, text, settings) ??
-        bullet(scan, from, from, text, settings),
-    )
-  }),
 ]
