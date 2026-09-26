@@ -18,6 +18,7 @@ import { InlineEditHeader } from '@pommora/uix/Menus/InlineEditHeader'
 import { spaceNodeOf } from '../Nexus/treeIndex'
 import { PropertyPanel } from '../Properties/PropertyPanel'
 import { useSession } from '../Session/store'
+import { EDITABLE_TARGETS } from '@pommora/uix/Interactions/shared'
 import { popMenu } from '../Actions/menuActions'
 import { useExperimental } from '../Settings/experimental'
 import { type TitleMenuAction, titleMenuItems } from '@pommora/core/Actions/identityMenus'
@@ -48,7 +49,7 @@ export function SpaceMenu(): React.JSX.Element | null {
 
   const openHeaderMenu = async (e: React.MouseEvent): Promise<void> => {
     const target = e.target as HTMLElement
-    if (target.closest('input, textarea, [contenteditable]')) return
+    if (target.closest(EDITABLE_TARGETS)) return
     e.preventDefault()
     e.stopPropagation()
     const field = target.closest('button, [role=button]') ?? e.currentTarget

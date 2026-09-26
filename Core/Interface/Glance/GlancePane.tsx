@@ -22,7 +22,7 @@ import { useConnections } from '../../Session/pageConnections'
 import { PREVIEW_LINGER_MS } from '../../Settings/personalization'
 import { fetchPageDetail, knownBody, readPageDetail } from '../../Session/pageDetailCache'
 import { warmSeamOf } from '../../Navigation/warmTabs'
-import { useSession, useSetting } from '../../Session/store'
+import { useSession, useSetting, windowTargetOf } from '../../Session/store'
 import { useWindowGeometry } from '../Windows/useWindowGeometry'
 import { PageTile } from '../../Tiles/Surfaces/PageTile'
 import {
@@ -189,8 +189,11 @@ export function GlancePane(): React.JSX.Element {
         return
       }
       // Never preview the location already in view — resolved at fire time, so a dwell that lands after a click onto that page voids itself.
-      const sel = useSession.getState().selection
-      if (sel.kind === 'page' && next.target.kind === 'page' && sel.id === next.target.id) return
+      const s = useSession.getState()
+      const inView = [s.selection, windowTargetOf(s)]
+      const { target } = next
+      if (target.kind === 'page' && inView.some((t) => t?.kind === 'page' && t.id === target.id))
+        return
       if (!next.el.isConnected) return
       const token = ++pendingFetch.current
       if (next.target.kind === 'site' || readPageDetail(next.target.path)) {

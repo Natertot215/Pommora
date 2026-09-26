@@ -68,6 +68,20 @@ describe('newPage', () => {
     await newPage(false)
     expect(asked).toHaveLength(2)
   })
+
+  it("from a window, creates beside the window's page and opens it as a window tab", async () => {
+    seed({ kind: 'none' })
+    const openWindowTab = vi.fn()
+    const target = { kind: 'page' as const, id: 'p2', path: 'Notes/Ideas/Beta.md' }
+    useSession.setState({
+      openWindowTab,
+      windowSlot: { kind: 'page', tabs: [{ id: 'w1', target }], activeTabId: 'w1' },
+    })
+    await newPage(true)
+    expect(asked).toMatchObject([{ parentPath: 'Notes/Ideas' }])
+    expect(openWindowTab).toHaveBeenCalledWith({ kind: 'page', ...CREATED })
+    expect(select).not.toHaveBeenCalled()
+  })
 })
 
 describe('adjacent creates', () => {

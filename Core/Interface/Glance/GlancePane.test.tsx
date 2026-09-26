@@ -161,6 +161,19 @@ describe('the current-view guard', () => {
     expect(paneOpen()).toBe(false)
   })
 
+  it('a target the floating window already shows arms nothing', () => {
+    const target = { kind: 'page' as const, id: page.id, path: page.path }
+    act(() =>
+      useSession.setState({
+        selection: { kind: 'page', id: 'other', path: 'Notes/Other.md' },
+        windowSlot: { kind: 'page', tabs: [{ id: 'w1', target }], activeTabId: 'w1' },
+      }),
+    )
+    present(link())
+    expect(paneOpen()).toBe(false)
+    act(() => useSession.setState({ windowSlot: null }))
+  })
+
   it('a target for a different page still opens', () => {
     act(() =>
       useSession.setState({ selection: { kind: 'page', id: 'other', path: 'Notes/Other.md' } }),

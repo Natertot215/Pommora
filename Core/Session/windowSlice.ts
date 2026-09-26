@@ -202,7 +202,7 @@ export const createWindowSlice: Slice<WindowSlice> = (set, get) => {
         // The map tab has no entity to promote: the list itself carries into a new app tab.
         s.setDevicePref('navViewGallery', s.devicePrefs.navWindowGallery === true)
         s.closeWindow()
-        s.openNewTab()
+        s.openNewTab(true)
         return
       }
       s.closeWindowTab(id, 'engulf')

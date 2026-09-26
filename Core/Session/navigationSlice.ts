@@ -84,7 +84,7 @@ export interface NavigationSlice {
   activeTabId: string
   tabMru: string[]
   activateTab: (id: string) => void
-  openNewTab: () => void
+  openNewTab: (take?: boolean) => void
   openTabAt: (target: SelectTarget, index: number) => void
   closeTab: (id: string) => void
   reorderTabs: (activeId: string, overId: string) => void
@@ -413,10 +413,10 @@ export const createNavigationSlice: Slice<NavigationSlice> = (set, get) => {
       syncActiveDetail()
       persistTabs()
     },
-    openNewTab: () => {
+    openNewTab: (take) => {
       const s = get()
       const res = openNewTabModel(s.tabs, makeTabId())
-      if (res.tabs !== s.tabs && !settingOf(s.personalization, 'tabTakeFocus')) {
+      if (res.tabs !== s.tabs && !(take ?? settingOf(s.personalization, 'tabTakeFocus'))) {
         set({ tabs: res.tabs })
         persistTabs()
         return

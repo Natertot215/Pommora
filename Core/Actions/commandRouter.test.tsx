@@ -86,13 +86,16 @@ describe('tab chords follow focus', () => {
     expect(runCommand('search')).toBe(false)
   })
 
-  it('⌘N on the NavWindow’s map tab carries the list into a new main tab', () => {
+  it('⌘N on the NavWindow’s map tab carries the list into a new main tab it switches to', () => {
     frame.className = 'window navwindow'
+    useSession.setState({ personalization: { tabTakeFocus: false } })
     useSession.getState().openNav()
     field.focus()
     runCommand('new-tab')
-    expect(useSession.getState().windowSlot).toBeNull()
-    expect(useSession.getState().tabs.at(-1)?.target.kind).toBe('newtab')
+    const s = useSession.getState()
+    expect(s.windowSlot).toBeNull()
+    expect(s.tabs.at(-1)?.target.kind).toBe('newtab')
+    expect(s.activeTabId).toBe(s.tabs.at(-1)?.id)
   })
 
   it('⌘N in a focused Page Window promotes its active tab', () => {
