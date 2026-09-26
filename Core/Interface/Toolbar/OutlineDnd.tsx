@@ -10,10 +10,9 @@ import { nearestByTop, useInsertionDrag } from '@pommora/uix/Interactions/insert
 import { sectionEnd, type OutlineHeading } from '../../MarkdownPM/Engine/headingScan'
 import { moveHeadingSection } from '../../Pages/pageEditor'
 import { useLatest } from '@pommora/uix/Utilities/stableApi'
+import { rowDropLine } from '@pommora/uix/Menus'
 
 // A flat insertion line marks the drop — the outline re-nests the moved section by level once the document edit lands, so no depth-indented line is needed.
-const LINE_INSET_RIGHT = 12
-const LINE_INSET_LEFT = 8
 
 const EMPTY_SECTION: ReadonlySet<string> = new Set()
 
@@ -80,7 +79,7 @@ export function OutlineDnd({
       }
     },
     commit: (key, slot) => moveHeadingSection(key, slot.beforeKey),
-    lineFor: (slot) => ({ top: slot.lineY, left: LINE_INSET_LEFT, right: LINE_INSET_RIGHT }),
+    lineFor: (slot) => ({ top: slot.lineY, ...rowDropLine() }),
     label: (key) => flatRef.current.find((x) => x.key === key)?.text ?? '',
     ghost: 'grab',
     rowEl: (key) => rows.current.get(key),

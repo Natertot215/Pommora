@@ -10,6 +10,16 @@ import { segment } from '../Elements/segment.css'
 
 const BAR_GLYPH = 12 // KNOB
 const CHECK = 12
+const INDENT_BASE = 8 // KNOB
+const DROP_LINE_TRAIL = 12 // KNOB
+
+const rowLead = (depth: number): number | string =>
+  depth ? INDENT_BASE + depth * DISCLOSURE_INDENT : s.ROW_LEAD
+
+export const rowDropLine = (depth = 0): CSSProperties => ({
+  left: rowLead(depth),
+  right: DROP_LINE_TRAIL,
+})
 
 /** A searched row's label with the typed match drawn emphasized; `at` is where the matcher found it. */
 export function emphasizeMatch(label: string, at: number | null, len: number): ReactNode {
@@ -108,7 +118,7 @@ export function MenuItem({
   ref,
 }: MenuItemProps): React.JSX.Element {
   const rowStyle = {
-    ...(indent ? { paddingLeft: 8 + indent * DISCLOSURE_INDENT } : undefined),
+    ...(indent ? { paddingLeft: rowLead(indent) } : undefined),
     ...(trailing != null ? { '--row-pad-trail': '0px' } : undefined),
   } as CSSProperties
   const hasTrailing = detail != null || trailing != null

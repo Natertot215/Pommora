@@ -5,8 +5,10 @@ import { LINK_RESOLVE_TIMEOUT_MS } from '@pommora/core/Web/titleScan'
 import {
   PICKER_PORTAL_ATTR,
   PickerMenu,
+  VIEWPORT_MARGIN,
   type PickerDirection,
 } from '@pommora/uix/Pickers/PickerMenu'
+import { MENU_GAP } from '@pommora/uix/Menus/menuAnchor'
 import { lockLabel } from '@pommora/core/Actions/toggleLabels'
 import { Icon, LockGlyph } from '@pommora/uix/Symbols'
 import { cx } from '@pommora/uix/Utilities/cx'
@@ -40,8 +42,6 @@ import './glance-pane.css'
 // KNOB — the default and floor sizes; the ceiling is the viewport and the anchor's band, live.
 export const GLANCE_DEFAULT: Size = { w: 260, h: 120 }
 const GLANCE_MIN: Size = { w: 180, h: 100 }
-const VIEWPORT_MARGIN = 8
-const ANCHOR_GAP = 6
 const RECT_SLOP = 6
 // A non-path host chain: no real page path can collide with it in the cycle guard.
 const GLANCE_ANCESTORS = ['glance'] as const
@@ -133,8 +133,8 @@ export function GlancePane(): React.JSX.Element {
     if (!link) return { w, h: window.innerHeight - 2 * VIEWPORT_MARGIN }
     const band =
       dir === 'up'
-        ? link.top - ANCHOR_GAP - VIEWPORT_MARGIN
-        : window.innerHeight - link.bottom - ANCHOR_GAP - VIEWPORT_MARGIN
+        ? link.top - MENU_GAP - VIEWPORT_MARGIN
+        : window.innerHeight - link.bottom - MENU_GAP - VIEWPORT_MARGIN
     return { w, h: Math.max(GLANCE_MIN.h, band) }
   }
   const max = maxSize()

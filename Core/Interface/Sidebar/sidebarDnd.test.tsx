@@ -10,7 +10,7 @@ import {
   stubPointerCapture,
   stubRect,
 } from '@pommora/uix/Testing/pointerHarness'
-import { DISCLOSURE_INDENT } from '@pommora/uix/Theme/theme-vars.css'
+import { rowDropLine } from '@pommora/uix/Menus'
 import { SidebarDnd, useSidebarDrag } from './sidebarDnd'
 import { buildIndex } from './sidebarDndModel'
 import { useSession } from '../../Session/store'
@@ -166,8 +166,7 @@ describe('sidebar drag — Esc abort', () => {
   })
 })
 
-// MenuItem's base inset is 8px, and each depth adds one disclosure step.
-const indentAt = (depth: number): string => `${8 + depth * DISCLOSURE_INDENT}px`
+const indentAt = (depth: number): string => `${rowDropLine(depth).left}px`
 
 describe('sidebar drag — the line', () => {
   it("draws at the slot's edge in the content's own coordinates, indented to the slot's depth", async () => {

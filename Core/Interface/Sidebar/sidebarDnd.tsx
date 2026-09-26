@@ -6,7 +6,7 @@ import {
   type PointerEvent as ReactPointerEvent,
   type ReactNode,
 } from 'react'
-import { DISCLOSURE_INDENT } from '@pommora/uix/Theme/theme-vars.css'
+import { rowDropLine } from '@pommora/uix/Menus'
 import { useInsertionDrag } from '@pommora/uix/Interactions/insertionDrag'
 import { toBox, useEscort } from '@pommora/uix/Interactions/drag'
 import type { MeasuredRow } from '@pommora/uix/Interactions/reorderModel'
@@ -21,10 +21,6 @@ import {
   type SidebarSlot,
   type SidebarSnapshot,
 } from './sidebarDndModel'
-
-const LINE_INSET_RIGHT = 12
-const BASE_INDENT = 8 // MenuItem's base left padding
-const STEP_INDENT = DISCLOSURE_INDENT // MenuItem's per-depth inset — the shared disclosure step
 
 type Snapshot = SidebarSnapshot & { boxTop: number }
 
@@ -85,11 +81,7 @@ export function SidebarDnd({
       return item && content ? { id, family: TAB_FAMILY, item, rect, home: toBox(content) } : null
     },
     commit: (id, slot) => onCommit(slot.commit, id),
-    lineFor: (slot) => ({
-      top: slot.lineY,
-      left: BASE_INDENT + slot.depth * STEP_INDENT,
-      right: LINE_INSET_RIGHT,
-    }),
+    lineFor: (slot) => ({ top: slot.lineY, ...rowDropLine(slot.depth) }),
     label: (rowId) => titleFromPath(index.byId.get(rowId)?.path ?? ''),
     ghost: 'grab',
     rowEl,

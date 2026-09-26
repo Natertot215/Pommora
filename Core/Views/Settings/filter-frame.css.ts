@@ -3,16 +3,13 @@ import { vars as colorVars } from '@pommora/uix/Theme/color.css'
 import { field as fieldBase, borderedField } from '@pommora/uix/Fields/fields.css'
 import { focusRing } from '@pommora/uix/Fields/fieldRing'
 import { growToContent } from '@pommora/uix/Menus/frameGrowth'
-import { rowBox, side } from '@pommora/uix/Menus/menu-row.css'
+import { rowBox } from '@pommora/uix/Menus/menu-row.css'
 import { PANE_MIN_H } from '@pommora/uix/Menus/frame-slide.css'
 
 const c = colorVars.color
 
 /** KNOB — the pane's content-driven width ceiling. */
 const FILTER_MAX_WIDTH = '420px'
-
-/** KNOB — a leading glyph's distance from its label. The picker option row's gap, so an icon sits exactly as far off its label inside a field as it does in the menu that field opens. */
-const LEAD_GAP = '6px'
 
 /** KNOB — the trailing chevron's distance from its label. Tighter than the lead on purpose: the Operator cell is the row's compactness priority. */
 const TRAILING_GAP = '2px'
@@ -47,8 +44,6 @@ export const fieldLabel = style({
   flex: '1 1 auto',
   textAlign: 'left',
 })
-
-export const leadGlyph = style([side, { marginRight: LEAD_GAP }])
 
 export const controlField = style([cellField, { flex: '0 0 auto' }])
 
