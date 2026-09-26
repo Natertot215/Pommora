@@ -5,7 +5,7 @@ Pommora's property system. A **property** is a typed field defined once in the n
 
 ### The Type Catalog
 
-The ten types are the `propertyType` enum in `Core/Properties/properties.ts`; the on-disk value is bare and natively typed, legible to any YAML tool.
+The eleven types are the type ids in `Core/Properties/properties.ts`; the on-disk value is bare and natively typed, legible to any YAML tool. A definition names its type by the displayed name in camelCase — `multiSelect`, `link`, `dateTime`, `createdTime`, `lastEditedTime` — and the spellings earlier builds wrote (`multi_select`, `url`, `datetime`) still read, and are rewritten in `properties.json` when a Nexus opens.
 
 | Type              | On-Disk Value                                                          | Notes                                                                                                   |
 | ----------------- | ---------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------- |
