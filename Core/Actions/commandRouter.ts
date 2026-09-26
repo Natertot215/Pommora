@@ -91,7 +91,7 @@ export function runCommand(id: RoutedCommand, target: EventTarget | null = null)
       s.toggleIteration()
       return true
     case 'search':
-      return focusedWindow() === null && s.searchView()
+      return focusedWindow() === null && s.searchView(s.activeTabId)
     case 'undo-value':
       return undoValue(target)
   }

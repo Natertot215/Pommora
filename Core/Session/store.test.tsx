@@ -13,7 +13,6 @@ import {
   windowTargetOf,
   shownDetail,
   shownPage,
-  shownViewSearch,
   useSession,
 } from './store'
 import { newTabTab, pinTabId } from '../Navigation/tabsModel'
@@ -914,10 +913,10 @@ describe('store — view search', () => {
       selection: ctx('a'),
       viewSearch: {},
     })
-    expect(useSession.getState().searchView()).toBe(false)
+    expect(useSession.getState().searchView('t1')).toBe(false)
     expect(useSession.getState().viewSearch).toEqual({})
     onContainer()
-    expect(useSession.getState().searchView()).toBe(true)
+    expect(useSession.getState().searchView('t1')).toBe(true)
     expect(useSession.getState().viewSearch).toEqual({
       t1: { key: 'collection:c1', query: '', summon: 1 },
     })
@@ -925,17 +924,17 @@ describe('store — view search', () => {
 
   it('a second summon keeps the query and raises the summon', () => {
     onContainer()
-    useSession.getState().searchView()
-    useSession.getState().setViewQuery('ab')
+    useSession.getState().searchView('t1')
+    useSession.getState().setViewQuery('t1', 'ab')
     const before = useSession.getState().viewSearch.t1?.summon ?? 0
-    useSession.getState().searchView()
+    useSession.getState().searchView('t1')
     expect(useSession.getState().viewSearch.t1?.query).toBe('ab')
     expect(useSession.getState().viewSearch.t1?.summon).toBe(before + 1)
   })
 
   it('a null query ends it', () => {
     onContainer({ t1: { key: 'collection:c1', query: 'ab', summon: 0 } })
-    useSession.getState().setViewQuery(null)
+    useSession.getState().setViewQuery('t1', null)
     expect(useSession.getState().viewSearch).toEqual({})
   })
 
@@ -946,6 +945,22 @@ describe('store — view search', () => {
     expect(useSession.getState().viewSearch.t1?.query).toBe('ab')
     await useSession.getState().select(ctx('z'), { newTab: false })
     expect(useSession.getState().viewSearch).toEqual({})
+  })
+
+  it('opens on a pinned container under its pinned id', () => {
+    const pinId = pinTabId(col('c1'))
+    seed({
+      tabs: [],
+      activeTabId: pinId,
+      pinned: [toNavRef(col('c1'))],
+      pinnedTabs: [{ id: pinId, target: col('c1'), navStack: [col('c1')], navIndex: 0 }],
+      selection: col('c1'),
+      viewSearch: {},
+    })
+    expect(useSession.getState().searchView(pinId)).toBe(true)
+    expect(useSession.getState().viewSearch).toEqual({
+      [pinId]: { key: 'collection:c1', query: '', summon: 1 },
+    })
   })
 
   it('follows its tab to the pinned id when the tab is pinned', () => {
@@ -974,7 +989,7 @@ describe('store — view search', () => {
     })
   })
 
-  it('a cold switch to an unloaded page keeps the held container searched until the page lands', () => {
+  it('a cold switch to an unloaded page refuses a search on the page tab, and the held container writes to its own tab', () => {
     channels['page:open'] = vi.fn(() => new Promise(() => {}))
     const page: SelectTarget = { kind: 'page', id: 'p9', path: 'Notes/Z.md' }
     seed({
@@ -986,22 +1001,11 @@ describe('store — view search', () => {
     })
     useSession.getState().activateTab('t2')
     expect(useSession.getState().selection).toEqual(col('c1'))
-    expect(shownViewSearch(useSession.getState())?.query).toBe('ab')
-  })
-
-  it('closing a searching tab onto an unloaded page keeps the held container searched until it lands', () => {
-    channels['page:open'] = vi.fn(() => new Promise(() => {}))
-    const page: SelectTarget = { kind: 'page', id: 'p9', path: 'Notes/Z.md' }
-    seed({
-      tabs: [uTab('t1', col('c1'), [col('c1')], 0), uTab('t2', page, [page], 0)],
-      activeTabId: 't1',
-      tabMru: ['t1', 't2'],
-      selection: col('c1'),
-      viewSearch: { t1: { key: 'collection:c1', query: 'ab', summon: 0 } },
+    expect(useSession.getState().searchView('t2')).toBe(false)
+    useSession.getState().setViewQuery('t1', 'abc')
+    expect(useSession.getState().viewSearch).toEqual({
+      t1: { key: 'collection:c1', query: 'abc', summon: 0 },
     })
-    useSession.getState().closeTab('t1')
-    expect(useSession.getState().selection).toEqual(col('c1'))
-    expect(shownViewSearch(useSession.getState())?.query).toBe('ab')
   })
 
   it('clears with its tab', () => {
@@ -1012,7 +1016,7 @@ describe('store — view search', () => {
 
   it('an empty search closes once its tab is left', () => {
     onContainer()
-    useSession.getState().searchView()
+    useSession.getState().searchView('t1')
     useSession.getState().activateTab('t2')
     expect(useSession.getState().viewSearch).toEqual({})
   })

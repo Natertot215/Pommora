@@ -72,6 +72,17 @@ describe('tab chords follow focus', () => {
     expect(useSession.getState().tabs.at(-1)?.target.kind).toBe('newtab')
   })
 
+  it('⌘F searches the active main tab while focus is outside every window', () => {
+    const col = { kind: 'collection', id: 'c2' } as const
+    useSession.setState({
+      tabs: [tab('t1'), { id: 't2', target: col, navStack: [col], navIndex: 0 }],
+      activeTabId: 't2',
+      viewSearch: {},
+    })
+    expect(runCommand('search')).toBe(true)
+    expect(Object.keys(useSession.getState().viewSearch)).toEqual(['t2'])
+  })
+
   it('⌘F leaves the main view alone while a window holds focus', () => {
     field.focus()
     expect(runCommand('search')).toBe(false)
