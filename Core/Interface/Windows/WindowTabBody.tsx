@@ -1,5 +1,6 @@
 import { memo, useEffect, useMemo, useRef, useState, type RefObject } from 'react'
 import type { PageTarget, SpaceTarget, WindowTarget } from '@pommora/core/Navigation/navRef'
+import { useHeld } from '@pommora/uix/Animations/useExitPresence'
 import { cx } from '@pommora/uix/Utilities/cx'
 import { WindowActions } from '@pommora/uix/Windows/WindowActions'
 import { WINDOW_BASE_PANEL, type WindowBasePanel } from '@pommora/uix/Windows/WindowBase'
@@ -116,8 +117,11 @@ export function useWindowTabBody(target: WindowTarget | null): WindowTabBodySlot
   const paneOpen = sidePaneOpen && pageTarget !== null
   const closeSidePane = (): void => setSidePaneOpen(false)
 
-  const windowTabs = useSession((s) => s.windowSlot?.tabs)
-  const activeTabId = useSession((s) => s.windowSlot?.activeTabId)
+  // Held through the window's exit, so a closing window still draws the page it closes on.
+  const liveSlot = useSession((s) => s.windowSlot)
+  const slot = useHeld(liveSlot, liveSlot !== null)
+  const windowTabs = slot?.tabs
+  const activeTabId = slot?.activeTabId
 
   // Every Space tab the window holds keeps its document loaded, so switching back draws the board in the same frame rather than after a reload.
   const heldSpaces = useMemo(
@@ -170,7 +174,7 @@ export function useWindowTabBody(target: WindowTarget | null): WindowTabBodySlot
   const body = (
     <>
       {pageTabs.map(({ id, page: tab }) => {
-        const shown = id === activeTabId
+        const shown = pageTarget !== null && id === activeTabId
         return (
           <WindowPage
             key={id}

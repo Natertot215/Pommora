@@ -85,13 +85,23 @@ describe('useWindowWarm', () => {
     expect(el.scrollTop).toBe(240)
   })
 
-  it('leaves a scroller that already holds a place, as a parked page or a heading arrival does', async () => {
+  it('restores a scroller once, so a parked page returning, or a heading arrival on it, keeps its place', async () => {
     captureBodyScroll('tab1', 240)
     const el = scroller()
-    el.scrollTop = 500
     await act(async () => {
       root.render(createElement(ScrollProbe, { el, ready: true }))
     })
+    await twoFrames()
+    expect(el.scrollTop).toBe(240)
+    el.scrollTop = 500
+    const activate = (activeTabId: string): Promise<void> =>
+      act(async () => {
+        useSession.setState((s) => ({
+          windowSlot: s.windowSlot && { ...s.windowSlot, activeTabId },
+        }))
+      })
+    await activate('tab2')
+    await activate('tab1')
     await twoFrames()
     expect(el.scrollTop).toBe(500)
   })
