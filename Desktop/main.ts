@@ -21,7 +21,7 @@ import { isFiniteNumber } from '@pommora/core/Contract/validators'
 import { resolveUnderRoot } from '@pommora/core/Paths/pathSafety'
 import { openNexusSequence } from '@pommora/core/Nexus/handlers'
 import { isUlidShaped } from '@pommora/core/Nexus/identityMark'
-import { sessionRoot } from '@pommora/core/Nexus/session'
+import { sessionRoot, waitingOpen } from '@pommora/core/Nexus/session'
 import { flushFileHistory } from '@pommora/core/Pages/fileHistory'
 import { installMachine } from '@pommora/core/Platform/machine'
 import { settingOf } from '@pommora/core/Settings/personalization'
@@ -46,7 +46,7 @@ import {
 } from './Config/appConfig'
 import { ensureDevice } from './Config/device'
 import { getSecret, setSecret } from './Config/secrets'
-import { startWatcher, stopWatcher } from './FileWatch/watcher'
+import { startWatcher, stopWatcher, waitUntilReadable } from './FileWatch/watcher'
 import { isWindows, nativePath, posixPath } from './Platform/hostPath'
 import { drainFileLocks } from './Platform/fileLock'
 import { nodeMachine } from './Platform/nodeMachine'
@@ -173,17 +173,24 @@ async function refreshMenu(): Promise<void> {
   const root = sessionRoot()
   const commands = root ? await readLiveCommands(root) : DEFAULT_COMMANDS
   setEditorCommands(commands)
-  await installAppMenu(
-    currentWindow,
-    async (p) => {
-      try {
-        await handlers['nexus:openPath'](hostContext(null), p)
-      } catch (e) {
-        console.error('Open Recent failed:', e)
-      }
-    },
-    commands,
-  )
+  await installAppMenu(currentWindow, openNexusPath, commands)
+}
+
+// The window opens a Nexus through its own open, which flushes its saves and restores its tabs; with no window, main opens it.
+async function openNexusPath(p: string): Promise<void> {
+  if (currentWindow()) return push(currentWindow, 'nexus:openRecent', p)
+  try {
+    await handlers['nexus:openPath'](hostContext(null), p)
+  } catch (e) {
+    console.error('Open failed:', e)
+  }
+}
+
+function watchNexus(): void {
+  const open = waitingOpen()
+  const root = sessionRoot()
+  if (open) waitUntilReadable(open, openNexusPath)
+  else if (root) void startWatcher(root, currentWindow)
 }
 
 async function applyDefaultZoom(win: BrowserWindow): Promise<void> {
@@ -298,8 +305,8 @@ function hostContext(win: BrowserWindow | null): HostContext {
     transport,
     openStores: (root, nexusId) =>
       openSessionDb(isUlidShaped(nexusId) ? `${userData()}/Nexuses/${nexusId}` : null, root),
-    async adopted(root, path) {
-      void startWatcher(root, currentWindow)
+    async adopted(_root, path) {
+      watchNexus()
       if (mainWindow) void applyDefaultZoom(mainWindow)
       try {
         // The RAW user-facing path, not the canonical root: a nexus under an iCloud-synced ~/Documents realpaths into the Mobile Documents container, which reads as gibberish in Open Recent and breaks restore if iCloud Desktop & Documents is later turned off.
@@ -366,7 +373,7 @@ app
     } catch (e) {
       console.error('Device identity unavailable:', e)
     }
-    // No picker here — a launch never blocks; a failed restore degrades to the empty state.
+    // No picker here — a launch never blocks; a restore refused by a damaged file waits on it, and any other failure degrades to the empty state.
     try {
       const restore = await resolveRestorePath(await readAppConfig(userData()))
       if (restore) await openNexusSequence(hostContext(null), posixPath(restore), true)
@@ -381,8 +388,7 @@ app
     registerAssetProtocol()
     createWindow()
     void refreshMenu()
-    const restored = sessionRoot()
-    if (restored) void startWatcher(restored, currentWindow)
+    watchNexus()
     app.on('activate', () => {
       if (BrowserWindow.getAllWindows().length === 0) createWindow()
     })

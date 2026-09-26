@@ -3,13 +3,7 @@ import type { Commands } from '../Actions/commands'
 import { type Personalization, settingOf } from './personalization'
 import { setOrDrop, updateNexusConfig } from '../Files/atomicWrite'
 import { getLiveTree } from '../Nexus/liveTree'
-import {
-  normalizeExclusions,
-  readSettings,
-  readSettingsLeaves,
-  scopeOf,
-  type SettingsLeaves,
-} from './codec'
+import { normalizeExclusions, readSettings, scopeOf, type SettingsLeaves } from './codec'
 import { foldKey } from '../Paths/caseFold'
 import { remainderUnder, rootSegs, type WatchScope } from '../Paths/exclusion'
 import { fail, ok, type Result, fault } from '../Contract/result'
@@ -34,7 +28,7 @@ export async function updateCrops(
   if (!written.ok) throw new Error(written.error.message)
 }
 
-/** Served from the tree main already holds; the disk read covers the moments before a walk has installed one — launch-restore and adoption. */
+/** Served from the tree main already holds; the disk read answers before a walk installs one, where a damaged file reads as the copy the open's gate read. */
 async function liveLeaves(
   root: string,
 ): Promise<Pick<SettingsLeaves, 'personalization' | 'excluded' | 'assetDirectory' | 'commands'>> {
@@ -42,14 +36,11 @@ async function liveLeaves(
   return tree?.nexus.rootPath === root ? tree : readSettings(root)
 }
 
-// Only the scope decides what the app may touch, so the rest reads as defaults while a damaged file can't be read.
-const leavesOrDefaults = (root: string) => liveLeaves(root).catch(() => readSettingsLeaves({}))
-
 export const readLivePersonalization = async (root: string): Promise<Personalization> =>
-  (await leavesOrDefaults(root)).personalization
+  (await liveLeaves(root)).personalization
 
 export const readLiveCommands = async (root: string): Promise<Commands> =>
-  (await leavesOrDefaults(root)).commands
+  (await liveLeaves(root)).commands
 
 export const readWatchScope = async (root: string): Promise<WatchScope> =>
   scopeOf(await liveLeaves(root))

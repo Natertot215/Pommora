@@ -9,8 +9,10 @@ import { patchContainerFromDisk, patchSettingsFromDisk } from './watchPatch'
 
 export function pushConfirmed(ctx: HostContext, tree: NexusTree | null): void {
   if (!tree) return
-  // One macrotask later, so the ask's own reply reaches the renderer before the confirming push.
-  setTimeout(() => ctx.push('nexus:changed', tree), 0)
+  // One macrotask later, so the ask's own reply reaches the renderer before the confirming push; a tree of a Nexus the session has since left stays unpushed.
+  setTimeout(() => {
+    if (tree.nexus.rootPath === sessionRoot()) ctx.push('nexus:changed', tree)
+  }, 0)
 }
 
 export function pushValueChanges(ctx: HostContext, root: string): void {

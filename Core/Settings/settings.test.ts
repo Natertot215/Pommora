@@ -86,6 +86,11 @@ describe('an unreadable settings.json is never replaced', () => {
     await writeFile(path(), '{"excluded_folders":["Private"],}', 'utf8')
     await expect(readWatchScope(root)).rejects.toThrow('settings.json')
   })
+
+  it('a corrupt file never read fails the delete switch rather than reading it as off', async () => {
+    await writeFile(path(), '{ corrupt', 'utf8')
+    await expect(readPermanentDelete(root)).rejects.toThrow('settings.json')
+  })
 })
 
 describe('readPermanentDelete — what emptying the trash means', () => {

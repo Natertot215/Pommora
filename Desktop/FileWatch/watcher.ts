@@ -15,15 +15,15 @@ import { getHeldAssetMap, refreshAssetMap } from '@pommora/core/Assets/assetMap'
 import { readMatrixFile } from '@pommora/core/Matrix/matrixFile'
 import { readNavigationFile } from '@pommora/core/Navigation/navigationFile'
 import { dropOwnEchoes, isRecentWrite, writtenHash } from '@pommora/core/Files/writeEcho'
-import { isMetadataShardRel } from '@pommora/core/Paths/nexusPaths'
-import { relative } from '@pommora/core/Paths/posix'
+import { isMetadataShardRel, NEXUS_DIR } from '@pommora/core/Paths/nexusPaths'
+import { join, relative } from '@pommora/core/Paths/posix'
 import type { Pushes } from '@pommora/core/Contract/bridge'
 import { type CurrentWindow, push } from '../Bridge/ipc'
 import { posixPath } from '../Platform/hostPath'
 import { seedContentIndex } from '@pommora/core/Index/indexSeed'
-import { sessionRoot } from '@pommora/core/Nexus/session'
+import { sessionRoot, type WaitingOpen } from '@pommora/core/Nexus/session'
 import { readWatchScope } from '@pommora/core/Settings/settings'
-import { errText } from '@pommora/core/Contract/result'
+import { readNexusConfig } from '@pommora/core/Nexus/readNexus'
 import { flushValueWrites } from '@pommora/core/Nexus/valuesChanged'
 import {
   applyWatchEvents,
@@ -71,13 +71,10 @@ function pushConfig<K extends keyof Pushes>(
 }
 
 export async function startWatcher(root: string, win: CurrentWindow): Promise<void> {
+  if (sessionRoot() !== root) return
   stopWatcher()
   const start = starts
-  const scope = await readWatchScope(root).catch((e) => {
-    console.error('watcher: not started:', errText(e))
-    return null
-  })
-  if (!scope) return
+  const scope = await readWatchScope(root)
   // A later start, or a session switch, superseded this one during the settings read.
   if (start !== starts || sessionRoot() !== root) return
   const skip = syncIgnoredUnder(root, scope)
@@ -112,6 +109,25 @@ export async function startWatcher(root: string, win: CurrentWindow): Promise<vo
     .on('addDir', onEvent('addDir'))
     .on('unlinkDir', onEvent('unlinkDir'))
     // An unhandled 'error' on an EventEmitter is RE-THROWN → it would crash the main process (EMFILE/ENOSPC, EPERM, a watched dir vanishing). Log + no-op; ⌘R Reload recovers.
+    .on('error', (error: unknown) => console.error('Nexus watcher error (non-fatal):', error))
+}
+
+// A waiting open has no scope to watch by, so only `.nexus` is watched, and the Nexus opens once its files read.
+export function waitUntilReadable(open: WaitingOpen, reopen: (path: string) => void): void {
+  stopWatcher()
+  const start = starts
+  watcher = chokidar
+    .watch(join(open.root, NEXUS_DIR), { depth: 0 })
+    .on('all', () => {
+      if (debounce) clearTimeout(debounce)
+      debounce = setTimeout(async () => {
+        const readable = await readNexusConfig(open.root).then(
+          () => true,
+          () => false,
+        )
+        if (readable && start === starts) reopen(open.path)
+      }, SETTLE_MS)
+    })
     .on('error', (error: unknown) => console.error('Nexus watcher error (non-fatal):', error))
 }
 

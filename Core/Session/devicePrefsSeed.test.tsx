@@ -2,7 +2,7 @@
 import { describe, expect, it, vi } from 'vitest'
 import { act } from 'react'
 import { createRoot } from 'react-dom/client'
-import { NO_NEXUS, ok } from '@pommora/core/Contract/result'
+import { fail, NO_NEXUS, ok } from '@pommora/core/Contract/result'
 import { type DevicePrefs, packDevicePrefs } from '@pommora/core/Settings/devicePrefs'
 import type { NexusTree } from '@pommora/core/Nexus/tree'
 import { ASSETS_DIR_REL } from '@pommora/core/Paths/nexusPaths'
@@ -31,6 +31,7 @@ type Session = typeof import('./store')['useSession']
 async function freshStore(
   answer: () => Promise<unknown>,
   choose: () => Promise<unknown> = async () => ok(true),
+  state: () => Promise<unknown> = async () => ok({ status: 'open', tree: treeAt('/b') }),
 ): Promise<{
   useSession: Session
   prefsLoad: ReturnType<typeof vi.fn>
@@ -49,7 +50,7 @@ async function freshStore(
     'windows:save': vi.fn(async () => ok(null)),
     'index:headings': vi.fn(async () => ok({})),
     'nexus:choose': vi.fn(choose),
-    'nexus:state': vi.fn(async () => ok({ status: 'open', tree: treeAt('/b') })),
+    'nexus:state': vi.fn(state),
     'citations:get': vi.fn(async () => ok({})),
     'linkTitles:get': vi.fn(async () => ok({})),
     'nav:read': vi.fn(async () => ok(null)),
@@ -165,6 +166,21 @@ describe('a nexus switch keeps none of the old nexus', () => {
     expect(useSession.getState().devicePrefs).toEqual({ disclosure: { 'context:areas': true } })
     await useSession.getState().choose()
     expect(useSession.getState().devicePrefs).toEqual({})
+  })
+
+  it('a refused open or re-fetch leaves no tree behind the error', async () => {
+    const why = 'Couldn’t read “settings.json”.'
+    const { useSession } = await freshStore(
+      withPrefs({}),
+      async () => fail('operation-failed', why),
+      async () => fail('operation-failed', why),
+    )
+    await useSession.getState().applyTree(treeAt('/a'))
+    await useSession.getState().load()
+    expect(useSession.getState()).toMatchObject({ status: 'error', tree: null })
+    await useSession.getState().applyTree(treeAt('/a'))
+    await useSession.getState().choose()
+    expect(useSession.getState()).toMatchObject({ status: 'error', tree: null })
   })
 
   it('a switch closes every window and pinned glance before the switch is attempted, even when it is canceled', async () => {

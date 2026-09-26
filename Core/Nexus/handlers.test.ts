@@ -11,9 +11,9 @@ import { currentStatus } from '../Sync/Client/status'
 import { tempRoot } from '../Testing/hostFs'
 import { memoryStores } from '../Testing/memoryStores'
 import { type HubHost, hubHost } from '../Testing/syncHub'
-import { openNexusSequence } from './handlers'
+import { nexusHandlers, openNexusSequence } from './handlers'
 import { dropLiveTree, refreshTree } from './liveTree'
-import { closeSession } from './session'
+import { closeSession, sessionRoot, waitingOpen } from './session'
 
 const NEXUS = '01KVGMT8BFP350FZZXAMG1QDRN'
 const NOTES = '01KVGMT8BFP350FZZXAMG1QDRW'
@@ -99,10 +99,42 @@ describe('openNexusSequence', () => {
     expect((await refreshTree(opened)).excluded).toEqual(['Private'])
   })
 
-  it('opens a Nexus whose identity file is damaged', async () => {
-    await writeFile(join(root, '.nexus', 'nexus.json'), '{"id": "')
+  it('waits on a Nexus whose identity file is damaged, and opens it once the file parses', async () => {
+    const identity = join(root, '.nexus', 'nexus.json')
+    const good = await readFile(identity, 'utf8')
+    await writeFile(identity, '{"id": "')
+    const openStores = vi.fn()
+    ctx.openStores = openStores
     vi.spyOn(console, 'error').mockImplementation(() => {})
     await expect(openNexusSequence(ctx, root, false)).resolves.toBe(root)
+    const why = 'Couldn’t read “nexus.json”.'
+    expect(sessionRoot()).toBeNull()
+    expect(waitingOpen()).toEqual({ root, path: root, why })
+    expect(openStores).toHaveBeenLastCalledWith(root, null)
+    expect(await readFile(identity, 'utf8')).toBe('{"id": "')
+    expect(await nexusHandlers['nexus:state']()).toMatchObject({
+      ok: false,
+      error: { message: why },
+    })
+
+    await writeFile(identity, good)
+    await openNexusSequence(ctx, root, true)
+    expect(sessionRoot()).toBe(root)
+    expect(waitingOpen()).toBeNull()
+    expect(await nexusHandlers['nexus:state']()).toMatchObject({
+      ok: true,
+      value: { status: 'open' },
+    })
+  })
+
+  it('a reopen of the open Nexus keeps its id while its identity file is damaged', async () => {
+    const openStores = vi.fn()
+    ctx.openStores = openStores
+    await openNexusSequence(ctx, root, false)
+    await writeFile(join(root, '.nexus', 'nexus.json'), '{"id": "')
+    vi.spyOn(console, 'error').mockImplementation(() => {})
+    await openNexusSequence(ctx, root, false)
+    expect(openStores).toHaveBeenLastCalledWith(root, NEXUS)
   })
 
   it('respells a legacy property type in the registry it opens', async () => {

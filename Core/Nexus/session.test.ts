@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach } from 'vitest'
 import { rmSync, symlinkSync } from 'node:fs'
 import { tempRoot } from '../Testing/hostFs'
-import { sessionRoot, openSession, closeSession } from './session'
+import { sessionRoot, openSession, closeSession, waitOn, waitingOpen } from './session'
 
 describe('session — open/close', () => {
   beforeEach(() => closeSession())
@@ -15,6 +15,19 @@ describe('session — open/close', () => {
     expect(sessionRoot()).toBe('/Users/x/Nexus')
     closeSession()
     expect(sessionRoot()).toBeNull()
+  })
+
+  it('a waiting open holds no session, and an open or a close ends it', async () => {
+    const open = { root: '/r', path: '/p', why: 'Couldn’t read “settings.json”.' }
+    await openSession('/Users/x/Nexus')
+    waitOn(open)
+    expect(sessionRoot()).toBeNull()
+    expect(waitingOpen()).toEqual(open)
+    await openSession('/Users/x/Nexus')
+    expect(waitingOpen()).toBeNull()
+    waitOn(open)
+    closeSession()
+    expect(waitingOpen()).toBeNull()
   })
 
   it('canonicalizes the root via realpath (so its lock key matches resolveUnderRoot)', async () => {

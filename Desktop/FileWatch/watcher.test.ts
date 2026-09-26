@@ -11,7 +11,7 @@ import { sessionRoot } from '@pommora/core/Nexus/session'
 import { syncIgnoredUnder } from '@pommora/core/Nexus/watchSettle'
 import { tileBodyUnder } from '@pommora/core/Nexus/watchPatch'
 import chokidar from 'chokidar'
-import { startWatcher, stopWatcher } from './watcher'
+import { startWatcher, stopWatcher, waitUntilReadable } from './watcher'
 import { installStores, NO_STORES } from '@pommora/core/Platform/stores'
 import { memoryStores } from '@pommora/core/Testing/memoryStores'
 import * as indexSeed from '@pommora/core/Index/indexSeed'
@@ -218,6 +218,53 @@ describe('overlapping watcher starts', () => {
     watch.mockClear()
     await Promise.all([startWatcher(root, win), startWatcher(root, win)])
     expect(watch).toHaveBeenCalledTimes(1)
+  })
+})
+
+describe('a waiting open', () => {
+  const settings = (): string => abs('.nexus', 'settings.json')
+  const waiting = () => ({ root, path: `${root}-raw`, why: 'Couldn’t read “settings.json”.' })
+  const reopen = vi.fn()
+  beforeEach(async () => {
+    reopen.mockClear()
+    rootMock.mockReturnValue(null)
+    forgetLastReads()
+    await writeFile(settings(), '{ corrupt')
+    vi.spyOn(console, 'error').mockImplementation(() => {})
+  })
+  afterEach(() => vi.restoreAllMocks())
+
+  it('watches .nexus alone, and reopens by the raw path only once the files read', async () => {
+    const watch = vi.mocked(chokidar.watch)
+    watch.mockClear()
+    waitUntilReadable(waiting(), reopen)
+    expect(watch).toHaveBeenCalledWith(abs('.nexus'), { depth: 0 })
+    emit('all', '.nexus', 'settings.json')
+    await settleAll()
+    expect(reopen).not.toHaveBeenCalled()
+    await writeFile(settings(), '{}')
+    emit('all', '.nexus', 'settings.json')
+    await settleAll(() => reopen.mock.calls.length > 0)
+    expect(reopen).toHaveBeenCalledWith(`${root}-raw`)
+  })
+
+  it('a watcher started after it supersedes it', async () => {
+    waitUntilReadable(waiting(), reopen)
+    await writeFile(settings(), '{}')
+    emit('all', '.nexus', 'settings.json')
+    rootMock.mockReturnValue(root)
+    await startWatcher(root, win)
+    await settleAll()
+    expect(reopen).not.toHaveBeenCalled()
+  })
+
+  it('a start for a root other than the session’s leaves it armed', async () => {
+    waitUntilReadable(waiting(), reopen)
+    await startWatcher(root, win)
+    await writeFile(settings(), '{}')
+    emit('all', '.nexus', 'settings.json')
+    await settleAll(() => reopen.mock.calls.length > 0)
+    expect(reopen).toHaveBeenCalledWith(`${root}-raw`)
   })
 })
 
