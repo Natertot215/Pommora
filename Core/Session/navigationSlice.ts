@@ -262,7 +262,7 @@ export const createNavigationSlice: Slice<NavigationSlice> = (set, get) => {
     const s = get()
     // '' is the never-seeded sentinel — load()'s restore owns seeding, so the keeper stands down.
     if (s.activeTabId === '') return
-    if ([...s.pinnedTabs, ...s.tabs].some((t) => t.id === s.activeTabId)) return
+    if (tabOf(s, s.activeTabId)) return
     applyTabResult({ tabs: s.tabs, activeTabId: s.activeTabId, mru: s.tabMru })
   }
 
@@ -474,7 +474,6 @@ export const createNavigationSlice: Slice<NavigationSlice> = (set, get) => {
       const tab: Tab = existing ?? { id: makeTabId(), target, navStack: [target], navIndex: 0 }
       // Re-tag to the exact id this unpin mints (a fresh makeTabId would orphan the pins and search on a dead tab), and BEFORE unpinTarget — its setPinned scrub drops the vanishing pin: id's pins and search, so the migration must already have moved them off it.
       retagTab(pinId, tab.id)
-      get().unpinTarget(navKey(target))
       if (!existing) set((s) => ({ tabs: insertUnpinned(s.tabs, s.activeTabId, tab) }))
       if (get().activeTabId === pinId)
         set((s) => ({
@@ -484,6 +483,7 @@ export const createNavigationSlice: Slice<NavigationSlice> = (set, get) => {
             tab.id,
           ),
         }))
+      get().unpinTarget(navKey(target))
       dropCacheOwner(pinId)
       persistTabs()
     },
@@ -501,6 +501,7 @@ export const createNavigationSlice: Slice<NavigationSlice> = (set, get) => {
     unpinTarget: (key) => {
       if (!get().pinned.some((p) => navKey(p) === key)) return
       commitPinned(get().pinned.filter((p) => navKey(p) !== key))
+      ensureLiveActive()
     },
     reorderPin: (activeKey, overKey) => {
       const pinned = moveByKey(get().pinned, navKey, activeKey, overKey)

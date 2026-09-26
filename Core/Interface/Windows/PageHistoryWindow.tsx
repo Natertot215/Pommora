@@ -222,6 +222,7 @@ function PageHistoryBody({
       {...geometry}
       closing={closing}
       onClose={closeHistory}
+      raiseOn={target}
       ariaLabel="File History"
       title={
         <div className="window-toolbar-title">

@@ -27,12 +27,10 @@ interface Entry {
   res: ResolvedNav | null
 }
 
-type TabLook = Omit<
-  TabItemProps,
-  'active' | 'closing' | 'drag' | 'onActivate' | 'onClose' | 'onMenu'
->
-
-const windowTabProps = ({ tab, res }: Entry, navKind: boolean): TabLook => {
+const windowTabProps = (
+  { tab, res }: Entry,
+  navKind: boolean,
+): Omit<TabItemProps, 'active' | 'closing' | 'drag' | 'onActivate' | 'onClose' | 'onMenu'> => {
   const target = tab.target
   if (target.kind === 'map')
     return { id: tab.id, label: 'Navigation', icon: 'map', variant: 'compact', iconOnly: true }
@@ -44,7 +42,7 @@ const windowTabProps = ({ tab, res }: Entry, navKind: boolean): TabLook => {
     label: res?.title ?? '',
     icon: shown ?? DEFAULT_ENTITY_ICONS[target.kind],
     variant: 'compact',
-    glance: target.kind === 'page' ? target : undefined,
+    glance: target,
   }
 }
 
@@ -74,10 +72,12 @@ export function WindowTabStrip({
     [tabs, index],
   )
 
-  const { renderEntries, ghostCount, requestClose } = useTabClose(entries, closeWindowTab)
+  const { liveEntries, renderEntries, ghostCount, requestClose } = useTabClose(
+    entries,
+    closeWindowTab,
+  )
   const sentinel = renderEntries.find((e) => e.entry.tab.target.kind === 'map')
   const contentEntries = renderEntries.filter((e) => isWindowTarget(e.entry.tab.target))
-  const firstLiveContent = contentEntries.findIndex((e) => !e.ghost)
 
   const forced = useDragFamily() === TAB_FAMILY
   const showStrip = (tabs?.length ?? 0) > 1 || ghostCount > 0 || forced
@@ -87,8 +87,7 @@ export function WindowTabStrip({
 
   const scrollRef = useActiveTabInView(activeTabId)
 
-  const entryOf = (id: string): Entry | undefined =>
-    contentEntries.find((e) => !e.ghost && e.entry.tab.id === id)?.entry
+  const entryOf = (id: string): Entry | undefined => liveEntries.find((e) => e.tab.id === id)
   const labelOf = (id: string): string => entryOf(id)?.res?.title ?? ''
   const { still, carry, receive } = useTabExchange(
     (id) => entryOf(id)?.tab.target,
@@ -169,11 +168,9 @@ export function WindowTabStrip({
               release={closeWindowTab}
               renderOverlay={renderOverlay}
             >
-              {contentEntries.map(({ entry, ghost }, i) => (
+              {contentEntries.map(({ entry, ghost, seam }) => (
                 <Fragment key={entry.tab.id}>
-                  {(i > 0 || sentinel) && (
-                    <TabSeparator closing={ghost || (!sentinel && i === firstLiveContent)} />
-                  )}
+                  {seam !== null && <TabSeparator closing={seam} />}
                   <DraggableTabItem
                     {...windowTabProps(entry, navKind)}
                     active={!ghost && entry.tab.id === activeTabId}

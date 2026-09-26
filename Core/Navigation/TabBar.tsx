@@ -87,10 +87,7 @@ function TabBarBody({
   const openTabAt = useSession((s) => s.openTabAt)
   const beginGesture = usePointerGesture()
 
-  const { liveEntries, renderEntries, firstLive, requestClose } = useTabClose(
-    unpinnedEntries,
-    closeTab,
-  )
+  const { liveEntries, renderEntries, requestClose } = useTabClose(unpinnedEntries, closeTab)
 
   const entryOf = (id: string): TabEntry | undefined => liveEntries.find((e) => e.tab.id === id)
   const pinKeyOf = (id: string): string =>
@@ -176,7 +173,7 @@ function TabBarBody({
           <div className="tab-pinned-zone">
             {pinnedEntries.map((e, i) => (
               <Fragment key={e.tab.id}>
-                {i > 0 && <TabSeparator closing={false} />}
+                {i > 0 && <TabSeparator />}
                 <PinnedTab
                   entry={e}
                   active={e.tab.id === activeTabId}
@@ -205,9 +202,9 @@ function TabBarBody({
           release={closeTab}
           renderOverlay={renderOverlay}
         >
-          {renderEntries.map(({ entry, ghost }, i) => (
+          {renderEntries.map(({ entry, ghost, seam }) => (
             <Fragment key={entry.tab.id}>
-              {i > 0 && <TabSeparator closing={ghost || i === firstLive} />}
+              {seam !== null && <TabSeparator closing={seam} />}
               {/* Same component type as a live tab — a type swap would remount the DOM node, losing the exit slide. */}
               <UnpinnedTab
                 dragged
@@ -258,7 +255,7 @@ function PinnedTab({
       style={drag.style}
       {...drag.handle}
       data-tab-id={entry.tab.id}
-      {...glanceHoverProps(entry.tab.target.kind === 'page' ? entry.tab.target : undefined)}
+      {...glanceHoverProps(entry.tab.target)}
       className={cx('tab-pinned', active && 'is-active', drag.isDragging && 'is-dragging')}
       title={entry.res.title}
       role="tab"
@@ -305,7 +302,7 @@ function UnpinnedTab({
           ? { seq: slide.seq, className: slide.dir === 'back' ? 'nav-slide-back' : 'nav-slide-fwd' }
           : undefined
       }
-      glance={target.kind === 'page' ? target : undefined}
+      glance={target}
       {...handlers}
     />
   )

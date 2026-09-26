@@ -5,8 +5,7 @@ import { isWindowTarget, type TabTarget, type WindowTabTarget, type WindowTarget
 
 interface TabClose<E> {
   liveEntries: E[]
-  renderEntries: { entry: E; ghost: boolean }[]
-  firstLive: number
+  renderEntries: { entry: E; ghost: boolean; seam: boolean | null }[]
   ghostCount: number
   requestClose: (id: string) => void
 }
@@ -36,17 +35,17 @@ export function useTabClose<E extends { tab: { id: string } }>(
     timers.current.add(t)
   }
   const liveEntries = useMemo(() => entries.filter((e) => !ghosts.has(e.tab.id)), [entries, ghosts])
-  const renderEntries = useMemo<{ entry: E; ghost: boolean }[]>(() => {
+  const renderEntries = useMemo(() => {
     const live = liveEntries.map((entry) => ({ entry, ghost: false }))
     for (const [, g] of [...ghosts.entries()].sort((a, b) => a[1].index - b[1].index)) {
       live.splice(Math.min(g.index, live.length), 0, { entry: g.entry, ghost: true })
     }
-    return live
+    const firstLive = live.findIndex((e) => !e.ghost)
+    return live.map((e, i) => ({ ...e, seam: i === 0 ? null : e.ghost || i === firstLive }))
   }, [liveEntries, ghosts])
   return {
     liveEntries,
     renderEntries,
-    firstLive: renderEntries.findIndex((e) => !e.ghost),
     ghostCount: ghosts.size,
     requestClose,
   }
