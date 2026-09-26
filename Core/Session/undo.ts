@@ -1,3 +1,5 @@
+import { EDITABLE_TARGETS } from '@pommora/uix/Interactions/shared'
+
 type Revert = () => boolean
 
 const DEPTH = 100
@@ -5,8 +7,7 @@ const stack: Revert[] = []
 let group: Revert[] | null = null
 
 export function undoValue(target: EventTarget | null): boolean {
-  if (target instanceof Element && target.closest('input,textarea,[contenteditable],.cm-editor'))
-    return false
+  if (target instanceof Element && target.closest(`${EDITABLE_TARGETS}, .cm-editor`)) return false
   for (let revert = stack.pop(); revert; revert = stack.pop()) if (revert()) return true
   return false
 }

@@ -1,4 +1,4 @@
-import { Fragment, useEffect, useMemo } from 'react'
+import { Fragment, useMemo } from 'react'
 import { Button } from '@pommora/uix/Buttons/Button'
 import { Icon } from '@pommora/uix/Symbols'
 import { cx } from '@pommora/uix/Utilities/cx'
@@ -13,7 +13,6 @@ import {
   type DragItem,
 } from '@pommora/uix/Interactions/drag'
 import { onActivateKey } from '@pommora/uix/Interactions/activate'
-import { matchesCommand } from '@pommora/uix/Interactions/chords'
 import { usePointerGesture } from '@pommora/uix/Interactions/gesture'
 import {
   isWindowTarget,
@@ -27,12 +26,10 @@ import { pageMoveContext, runPageAction } from '../Interface/Menus/pageMenuActio
 import { resolveWith, type ResolvedNav, type ResolveIndex } from './navResolve'
 import { resolveIndexOf } from '../Nexus/treeIndex'
 import { EntityIcon } from '../Assets/EntityIcon'
-import { cycle } from './tabsModel'
 import { useActiveTabInView, useTabClose, useTabExchange } from './tabRows'
 import { dialer } from '../Platform/dialer'
 import { popMenu } from '../Actions/menuActions'
 import { tabMenuItems } from '@pommora/core/Actions/tabMenu'
-import { useLatest } from '@pommora/uix/Utilities/stableApi'
 import './tab-base.css'
 
 interface TabEntry {
@@ -46,7 +43,7 @@ const entriesOf = (tabs: Tab[], index: ResolveIndex | null): TabEntry[] =>
     res: tab.target.kind === 'newtab' || !index ? null : resolveWith(index, tab.target),
   }))
 
-// Gate/body split: every interaction hook (the Ctrl+Tab listener included) mounts only when the bar actually shows.
+// Gate/body split: every interaction hook mounts only when the bar actually shows.
 export function TabBar(): React.JSX.Element | null {
   const tabs = useSession((s) => s.tabs)
   const pinnedTabs = useSession((s) => s.pinnedTabs)
@@ -79,7 +76,6 @@ function TabBarBody({
   forced: boolean
 }): React.JSX.Element {
   const activeTabId = useSession((s) => s.activeTabId)
-  const commands = useSession((s) => s.commands)
   const revealOnHover = useSetting('revealTabBarOnHover')
   const activateTab = useSession((s) => s.activateTab)
   const openNewTab = useSession((s) => s.openNewTab)
@@ -124,24 +120,6 @@ function TabBarBody({
       </div>
     ) : null
   }
-
-  // The cycle runs over the full visual order, intercepted only while the bar shows.
-  const orderedIds = useMemo(
-    () => [...pinnedEntries.map((e) => e.tab.id), ...unpinnedEntries.map((e) => e.tab.id)],
-    [pinnedEntries, unpinnedEntries],
-  )
-  const cycleRef = useLatest({ orderedIds, activeTabId, commands })
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent): void => {
-      const { orderedIds: ids, activeTabId: active, commands: cmds } = cycleRef.current
-      const back = matchesCommand(cmds['previous-tab'], e)
-      if (!back && !matchesCommand(cmds['next-tab'], e)) return
-      e.preventDefault()
-      activateTab(cycle(ids, active, back ? -1 : 1))
-    }
-    window.addEventListener('keydown', onKey)
-    return () => window.removeEventListener('keydown', onKey)
-  }, [activateTab])
 
   const stripRef = useActiveTabInView(activeTabId)
 

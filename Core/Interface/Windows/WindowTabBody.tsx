@@ -93,7 +93,7 @@ export function useWindowTabBody(target: WindowTarget | null): WindowTabBodySlot
   const promoteWindowTab = useSession((s) => s.promoteWindowTab)
   const activeTabId = useSession((s) => s.windowSlot?.activeTabId)
   const promote = (): void => {
-    if (target && activeTabId) promoteWindowTab(activeTabId)
+    if (activeTabId) promoteWindowTab(activeTabId)
   }
 
   const bodyRef = useRef<HTMLDivElement>(null)
