@@ -10,9 +10,7 @@ export async function reconcile<T>(
     let landed = false
     try {
       landed = await apply(id, value)
-    } catch {
-      landed = false
-    }
+    } catch {}
     if (landed) {
       delete kept[id]
       spent.push(id)

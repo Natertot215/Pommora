@@ -95,14 +95,6 @@ export function assignProperty(
   root: string,
   collectionFolder: string,
   propertyId: string,
-): Promise<Result<null>> {
-  return serializeSchemaOp(() => assignInner(root, collectionFolder, propertyId))
-}
-
-export function assignPropertyAt(
-  root: string,
-  collectionFolder: string,
-  propertyId: string,
   toIndex?: number,
 ): Promise<Result<null>> {
   return serializeSchemaOp(async () => {
