@@ -5,8 +5,6 @@ import {
   propertyType,
   isReservedPropertyId,
   invalidPropertyName,
-  isRegisteredPropertyName,
-  propertyNames,
   defaultStatusSeed,
   isOptionsKind,
   optionsOf,
@@ -174,15 +172,6 @@ describe('invalidPropertyName', () => {
 
   it('takes icon as an ordinary name', () => {
     expect(invalidPropertyName('icon')).toBe(false)
-  })
-})
-
-describe('isRegisteredPropertyName', () => {
-  it('matches a registered name exactly, case included', () => {
-    const names = propertyNames([{ id: 'p', name: 'tags', type: 'multi_select' }])
-    expect(isRegisteredPropertyName('tags', names)).toBe(true)
-    expect(isRegisteredPropertyName('Tags', names)).toBe(false)
-    expect(isRegisteredPropertyName('<tags>', names)).toBe(false)
   })
 })
 

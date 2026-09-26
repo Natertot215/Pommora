@@ -5,7 +5,7 @@ import { isFiniteNumber, NEEDS_CONFIG_PATCH } from '../Contract/validators'
 import { mutableTarget } from '../Nexus/liveTree'
 import { confirmRegistryWrite } from '../Nexus/confirm'
 import { readWatchScope } from '../Settings/settings'
-import { assignProperty, assignPropertyAt, reorderAssignment } from './assignment'
+import { assignProperty, reorderAssignment } from './assignment'
 import { deleteProperty } from './deleteProperty'
 import {
   clearOption,
@@ -157,7 +157,7 @@ export const propertiesHandlers = {
       const c = await resolveSchemaFolder(root, containerPath)
       if (!c.ok) return c
       if (typeof propertyId !== 'string') return NEEDS_PROPERTY_ID
-      const r = await assignPropertyAt(
+      const r = await assignProperty(
         root,
         c.value.folder,
         propertyId,

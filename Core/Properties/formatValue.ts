@@ -137,7 +137,7 @@ export function formatBucketLabel(
       const m = /^(\d{4})-(\d{2})$/.exec(key)
       if (!m) return key
       if (numeric) return `${m[2]}${sep}${m[1]}`
-      const month = new Date(`${key}-01T00:00:00`).toLocaleDateString('en-US', { month: 'long' })
+      const month = dateFmt({ month: 'long' }).format(new Date(`${key}-01T00:00:00`))
       return `${month} ${m[1]}`
     }
     case 'day': {
