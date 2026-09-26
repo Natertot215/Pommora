@@ -9,5 +9,5 @@ export interface PageDetail {
 
 export type BodyWrite = { stale: true } | { stale: false; hash: string }
 
-export const coverOf = (detail: PageDetail): string | undefined =>
-  typeof detail.frontmatter.banner === 'string' ? detail.frontmatter.banner : undefined
+export const coverOf = ({ frontmatter }: Pick<PageDetail, 'frontmatter'>): string | undefined =>
+  typeof frontmatter.banner === 'string' ? frontmatter.banner : undefined

@@ -302,6 +302,22 @@ describe('the drag engine across zones', () => {
     expect(reorderSpy).not.toHaveBeenCalled()
   })
 
+  it('asks the resolver once per slot change, not once per pointer move', async () => {
+    const spy = vi.fn((_zone: string, index: number) => index)
+    resolve = spy
+    await dragHold('a1', 100, 150)
+    for (const y of [155, 160, 165])
+      await act(async () => {
+        firePointer(window, 'pointermove', { x: 100, y })
+      })
+    expect(spy).toHaveBeenCalledTimes(1)
+    await act(async () => {
+      firePointer(window, 'pointermove', { x: 100, y: 50 })
+    })
+    expect(spy).toHaveBeenCalledTimes(2)
+    pressEscape()
+  })
+
   it('glides the overlay to the landing cell, not to the release point', async () => {
     withOverlay = true
     await mount()
@@ -551,6 +567,19 @@ describe('the drag engine across a family', () => {
     stray = 'return'
     await mount()
     await dropAt('a1', 300, 250)
+    expect(commitSpy).not.toHaveBeenCalled()
+    expect(reorderSpy).not.toHaveBeenCalled()
+  })
+
+  it('lands home unchanged when it strays off every zone and comes back to its own slot', async () => {
+    stray = 'return'
+    await mount()
+    await dragHold('a1', 300, 250)
+    await act(async () => {
+      firePointer(window, 'pointermove', { x: 100, y: 50 })
+    })
+    await release(100, 50)
+    await settle()
     expect(commitSpy).not.toHaveBeenCalled()
     expect(reorderSpy).not.toHaveBeenCalled()
   })

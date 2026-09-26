@@ -1,17 +1,16 @@
 import { useRef } from 'react'
-import type { PropertyDefinition } from '@pommora/core/Properties/properties'
 import { coerceScale } from '@pommora/core/Settings/personalization'
 import type { CollectionNode, SetNode } from '@pommora/core/Nexus/tree'
 import { useViewTileScope } from '../ViewTileScope'
 import { type SavedView, VIEW_KINDS, type ViewType } from '@pommora/core/Views/views'
 import { useActiveView } from './useActiveView'
+import { NO_SCHEMA } from '../Pipeline/pickView'
 import { TableView } from '../Table/TableView'
 import { CardsView } from '../Cards/CardsView'
 import { useViewHost, type ViewHostApi } from './useViewHost'
 import { usePublishCount } from '../../Interface/Subfield/publish'
 
 const identity = (v: SavedView): SavedView => v
-const NO_SCHEMA: PropertyDefinition[] = []
 
 const VIEW_RENDERERS: Partial<Record<ViewType, (p: { host: ViewHostApi }) => React.JSX.Element>> = {
   table: TableView,

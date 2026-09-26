@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import {
-  contextIdentityOf,
+  contextsByIdOf,
   contextIdsOf,
   isContextColumnId,
   spaceIdentityOf,
@@ -64,9 +64,17 @@ describe('spacesByIdOf', () => {
     expect(spacesByIdOf(tree).get('nope')).toBeUndefined()
   })
 
-  it('hands back the same map instance for a tree, and a fresh one per tree', () => {
-    expect(spacesByIdOf(tree)).toBe(spacesByIdOf(tree))
+  it('keeps its maps across a push that leaves the Contexts and default icons alone', () => {
+    const pushed = { ...tree, pageMetadata: {} } as NexusTree
+    expect(spacesByIdOf(pushed)).toBe(spacesByIdOf(tree))
+    expect(contextIdsOf(pushed)).toBe(contextIdsOf(tree))
     expect(spacesByIdOf(mkTree())).not.toBe(spacesByIdOf(tree))
+  })
+
+  it('rebuilds when the default icons change under the same Contexts', () => {
+    const iconed = { ...tree, personalization: { defaultIcons: { space: 'star' } } } as NexusTree
+    expect(spacesByIdOf(iconed).get('a1')?.icon).toBe('star')
+    expect(spacesByIdOf(tree).get('a1')?.icon).toBe('layout-dashboard')
   })
 
   it('is empty on an unmigrated tree', () => {
@@ -81,13 +89,13 @@ describe('context accessors', () => {
   })
 
   it('resolves a Context to its titles and a renderable icon', () => {
-    expect(contextIdentityOf(tree, 'ctx_areas')).toEqual({
+    expect(contextsByIdOf(tree).get('ctx_areas')).toEqual({
       title: 'Areas',
       singular: 'Area',
       icon: 'briefcase',
     })
-    expect(contextIdentityOf(tree, 'ctx_topics')?.icon).toBe('layout-grid')
-    expect(contextIdentityOf(tree, 'a1')).toBeUndefined()
+    expect(contextsByIdOf(tree).get('ctx_topics')?.icon).toBe('layout-grid')
+    expect(contextsByIdOf(tree).get('a1')).toBeUndefined()
   })
 
   it('resolves a Space id and tells Context columns from Space ids', () => {
@@ -115,13 +123,13 @@ it('a Space default leaves a Context on its own glyph, and the Context default m
     ...mkTree(),
     personalization: { defaultIcons: { space: 'folder-open' } },
   } as NexusTree
-  expect(contextIdentityOf(spaceDefault, 'ctx_topics')?.icon).toBe('layout-grid')
+  expect(contextsByIdOf(spaceDefault).get('ctx_topics')?.icon).toBe('layout-grid')
 
   const contextDefault = {
     ...mkTree(),
     personalization: { defaultIcons: { context: 'folder-open' } },
   } as NexusTree
-  expect(contextIdentityOf(contextDefault, 'ctx_topics')?.icon).toBe('folder-open')
+  expect(contextsByIdOf(contextDefault).get('ctx_topics')?.icon).toBe('folder-open')
   expect(spaceIdentityOf(contextDefault, 'a1')?.icon).toBe('layout-dashboard')
-  expect(contextIdentityOf(contextDefault, 'ctx_areas')?.icon).toBe('briefcase')
+  expect(contextsByIdOf(contextDefault).get('ctx_areas')?.icon).toBe('briefcase')
 })

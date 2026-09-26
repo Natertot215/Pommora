@@ -579,7 +579,7 @@ export function DragGroup({
       }
     }
     // A new candidate has to beat the standing one; on a zone switch the argmin wins outright.
-    if (zid === from && pick !== d.pick && distTo(d.pick) - nearest <= HYSTERESIS) pick = d.pick
+    if (zid === from && distTo(d.pick) - nearest <= HYSTERESIS) return
     const mapped = own && z?.fixed ? d.activeIdx : resolveAt(zid, pick)
     d.pickZone = zid
     d.pick = pick
@@ -635,7 +635,7 @@ export function DragGroup({
     })
   }
 
-  // What the preview showed is what lands: track resolves the pair on every move, and a disclosure re-tracks.
+  // What the preview showed is what lands: track resolves the pair whenever the slot changes, and a disclosure re-tracks.
   const drop = (): void => {
     const d = drag.current
     if (!d.active) return

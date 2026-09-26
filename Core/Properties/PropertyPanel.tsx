@@ -49,7 +49,7 @@ import { pushUndo } from '../Session/undo'
 import { readSpaceRowOrder, type SpaceRowOrder } from '../Contexts/spaceSidecar'
 import { dialer } from '../Platform/dialer'
 import { contextOptionsFor } from '../Contexts/contextOptions'
-import { isContextColumnId } from '../Contexts/contextIdentity'
+import { identityOf, isContextColumnId } from '../Contexts/contextIdentity'
 import { relDirname } from '@pommora/core/Paths/posix'
 import { spaceNodeOf } from '../Nexus/treeIndex'
 import { type Overrides, patchOverride, retireSettled } from './valueOverride'
@@ -160,9 +160,10 @@ export function PropertyPanel({
     () => (isSpace ? (tree?.registry ?? []) : schemaForPage(tree, path)),
     [tree, path, isSpace],
   )
+  const identity = tree && identityOf(tree)
   const ctx = useMemo<ValueContext | null>(
-    () => (tree ? buildValueContext(tree, schema, assetMap) : null),
-    [tree, schema, assetMap],
+    () => (identity ? buildValueContext(identity, schema, assetMap) : null),
+    [identity, schema, assetMap],
   )
   const dateFormat = useSetting('dateFormat')
   const overrideFm = override?.[subjectId]?.fm
