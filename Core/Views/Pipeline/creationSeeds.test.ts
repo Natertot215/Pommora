@@ -25,7 +25,7 @@ describe('filterSeeds', () => {
     })
   })
 
-  it('seeds the one chip a Select or Status Is rule saves, and nothing from two', () => {
+  it('derives the one chip a Select or Status Is rule saves, and nothing from two', () => {
     const filter: FilterGroup = {
       match: 'all',
       rules: [
@@ -38,7 +38,15 @@ describe('filterSeeds', () => {
     })
   })
 
-  it("seeds nothing from Isn't Checked", () => {
+  it('reads a chip list over a leftover single value, as the filter does', () => {
+    const filter: FilterGroup = {
+      match: 'all',
+      rules: [{ property_id: 'p_sel', op: 'is', value: 'stale', values: ['note'] }],
+    }
+    expect(filterSeeds(filter, true, schema)).toEqual({ p_sel: { kind: 'select', value: 'note' } })
+  })
+
+  it("derives nothing from Isn't Checked", () => {
     const filter: FilterGroup = {
       match: 'all',
       rules: [{ property_id: 'p_check', op: 'is', value: 'false' }],

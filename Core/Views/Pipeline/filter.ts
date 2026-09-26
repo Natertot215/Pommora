@@ -111,6 +111,10 @@ function matchesGroup(
   }
 }
 
+/** A chip list wins over a single value, as the pane writes one or the other. */
+export const ruleOperands = (rule: FilterRule): string[] =>
+  rule.values?.length ? rule.values : rule.value != null ? [rule.value] : []
+
 function evaluateRule(
   row: ViewRow,
   rule: FilterRule,
@@ -122,7 +126,7 @@ function evaluateRule(
 
   if (rule.property_id === RESERVED_PROPERTY_ID.location) {
     // Runs BEFORE the generic unauthored-operand guard, so it owns its own. Is/Isn't test the immediate parent, Contains/Doesn't any depth.
-    const want = rule.values?.length ? rule.values : rule.value != null ? [rule.value] : []
+    const want = ruleOperands(rule)
     if (want.length === 0) return NO_OP
     const parent = row.parentSetId
     switch (rule.op) {

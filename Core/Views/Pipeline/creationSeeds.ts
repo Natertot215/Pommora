@@ -3,14 +3,14 @@
 import type { PropertyDefinition } from '@pommora/core/Properties/properties'
 import type { PropertyValue } from '@pommora/core/Properties/propertyValue'
 import type { FilterGroup, FilterRule } from '@pommora/core/Views/views'
-import { FILTER_OPS } from './filter'
+import { FILTER_OPS, ruleOperands } from './filter'
 import { groupKeyToValue } from '../reassign'
 
 function ruleSeed(rule: FilterRule, schema: PropertyDefinition[]): PropertyValue | null {
   if (rule.op !== FILTER_OPS.is) return null
-  const one = rule.value ?? (rule.values?.length === 1 ? rule.values[0] : undefined)
-  if (one === undefined) return null
-  return groupKeyToValue(one, schema.find((d) => d.id === rule.property_id)?.type)
+  const operands = ruleOperands(rule)
+  if (operands.length !== 1) return null
+  return groupKeyToValue(operands[0], schema.find((d) => d.id === rule.property_id)?.type)
 }
 
 /** Callers spread gesture-context seeds AFTER these — where a filter implication and the gesture disagree, the gesture wins. */
