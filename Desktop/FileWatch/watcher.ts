@@ -21,7 +21,6 @@ import type { Pushes } from '@pommora/core/Contract/bridge'
 import { type CurrentWindow, push } from '../Bridge/ipc'
 import { posixPath } from '../Platform/hostPath'
 import { seedContentIndex } from '@pommora/core/Index/indexSeed'
-import { getLiveTree, refreshAfterWrite } from '@pommora/core/Nexus/liveTree'
 import { sessionRoot } from '@pommora/core/Nexus/session'
 import { readWatchScope } from '@pommora/core/Settings/settings'
 import { errText } from '@pommora/core/Contract/result'
@@ -31,7 +30,9 @@ import {
   touchesCorpus,
   type WatchEvent,
   type WatchEventName,
+  type WatchPatch,
 } from '@pommora/core/Nexus/watchPatch'
+import { confirmBy } from '@pommora/core/Nexus/mutatePatch'
 
 const SETTLE_MS = 200
 
@@ -138,18 +139,18 @@ async function settle(root: string, win: CurrentWindow, scope: WatchScope): Prom
   batch = []
   try {
     const events = await dropOwnEchoes(noted)
-    const before = getLiveTree()
     const assetsBefore = getHeldAssetMap(root)
-    const { outcome, touched, cascaded } = await applyWatchEvents(root, events, scope)
-    let tree = getLiveTree()
+    let patching!: Promise<WatchPatch>
+    const tree = await confirmBy(root, async () => {
+      patching = applyWatchEvents(root, events, scope)
+      return (await patching).outcome === 'patched' ? 'ok' : 'refresh'
+    })
+    const { outcome, touched, cascaded } = await patching
     // The map is patch-only, so the fallback walk is where the listing is taken again.
-    if (outcome === 'refresh') {
-      await refreshAssetMap(root)
-      tree = await refreshAfterWrite(root)
-    }
+    if (outcome === 'refresh') await refreshAssetMap(root)
     // A session that switched mid-settle must not receive the OLD root's walked tree — a superseded walk still returns it to its awaiters.
     if (sessionRoot() !== root) return
-    if (tree && tree !== before) push(win, 'nexus:changed', tree)
+    if (tree) push(win, 'nexus:changed', tree)
     const classified = classifyBatch(events, root, scope)
     const pages = pagesChangedIn(classified, cascaded.pages)
     if (pages.length) push(win, 'pages:changed', pages)

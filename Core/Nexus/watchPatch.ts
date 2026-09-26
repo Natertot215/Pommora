@@ -229,8 +229,13 @@ export async function applyWatchEvents(
     dropTileHeadingLinks()
   if (classes.some((c) => c.kind === 'full-refresh')) return walked()
   const touched = new Map<string, string>()
-  for (const c of classes) {
-    if ((await applyOne(root, c, scope, touched, cascaded)) === 'refresh') return walked()
+  try {
+    for (const c of classes) {
+      if ((await applyOne(root, c, scope, touched, cascaded)) === 'refresh') return walked()
+    }
+  } catch (e) {
+    console.error('watch: patch failed, walking:', errText(e))
+    return walked()
   }
   return { outcome: 'patched', touched, cascaded }
 }

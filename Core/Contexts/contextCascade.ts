@@ -1,4 +1,4 @@
-import { basename, join } from '../Paths/posix'
+import { basename, dirname, isMarkdownFile, join } from '../Paths/posix'
 import { normalizeTitle } from '../Connections/connections'
 import { contextKey, type ContextsRegistry } from './contexts'
 import { ID_KEY } from '../Nexus/identityMark'
@@ -30,6 +30,7 @@ import { loadContextWorld } from './contextWrite'
 import { withOrderEntry } from './spaceSidecar'
 import { queryMembers } from '../Index/contentIndex'
 import { indexWrittenPage, nexusCorpus } from '../Index/indexSeed'
+import { noteSidecarWrite } from '../Nexus/valuesChanged'
 import { nameError } from '../Paths/names'
 
 /** A Context rename commits its registry LAST, so a tag written mid-cascade still lands under the OLD key while a key already wearing the new title can only be inert or hand-authored — neither list is fresher, so dropping either would silently lose tags. */
@@ -183,7 +184,8 @@ async function unlinkMembers(
   for (const [file, text] of swept.touched)
     await machine().lock(file, async () => {
       await rewritePreservingTimes(file, text)
-      await indexWrittenPage(root, file)
+      if (isMarkdownFile(file)) await indexWrittenPage(root, file)
+      else noteSidecarWrite(dirname(file))
     })
   throw new Error(unsweptLine(missed.length))
 }
