@@ -37,7 +37,7 @@ describe('loadValues', () => {
     expect((values[P2].frontmatter as Record<string, unknown>)['<Count>']).toBe(7)
   })
 
-  // Local-clock form, the shape the date picker writes: a filter's calendar-day truncation and the cell's rendering must land on the same day, which a UTC `Z` string breaks west of Greenwich.
+  // Local-clock form, the shape the date picker writes.
   it("carries the file's mtime and the id's time in the machine's local clock", async () => {
     const tz = process.env.TZ
     process.env.TZ = 'America/New_York'

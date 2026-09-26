@@ -112,8 +112,12 @@ describe('readDate', () => {
       timed: true,
     })
   })
-  it('is null for text that names no date', () => {
-    expect(readDate('someday')).toBeNull()
+  it('reads a time without seconds', () => {
+    expect(readDate('2026-06-14T23:30')).toEqual({ at: new Date(2026, 5, 14, 23, 30), timed: true })
+  })
+  it('is null for anything but an ISO day or date-time', () => {
+    for (const text of ['someday', 'Phase 2', '2026', '2026-06', 'June 15, 2026', '6/15/2026'])
+      expect(readDate(text)).toBeNull()
   })
 })
 

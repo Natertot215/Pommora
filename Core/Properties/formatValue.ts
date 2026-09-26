@@ -70,14 +70,20 @@ function formatRelative(date: Date, hasTime: boolean, timeFormat: TimeFormat, no
 
 export type LocalDate = { at: Date; timed: boolean }
 
-/** The one reading of a stored date: a bare day is LOCAL midnight — a bare `new Date('YYYY-MM-DD')` is UTC and shifts the day west of Greenwich — and anything else parses as written, its zone honored. */
+const ISO_DATE =
+  /^(\d{4})-(\d{2})-(\d{2})(?:[T ](\d{2}):(\d{2})(?::(\d{2})(?:\.\d+)?)?(Z|[+-]\d{2}:?\d{2})?)?$/
+
+/** The one reading of a stored date: an ISO day or date-time is read in the local clock unless it carries a zone, which is honored; anything else names no date. */
 export function readDate(iso: string): LocalDate | null {
-  const timed = !/^\d{4}-\d{2}-\d{2}$/.test(iso)
-  const at = new Date(timed ? iso : `${iso}T00:00:00`)
-  return Number.isNaN(at.getTime()) ? null : { at, timed }
+  const m = ISO_DATE.exec(iso)
+  if (!m) return null
+  const [, y, mo, d, h, min, sec, zone] = m
+  const at = zone
+    ? new Date(iso.replace(' ', 'T'))
+    : new Date(+y, +mo - 1, +d, +(h ?? 0), +(min ?? 0), +(sec ?? 0))
+  return Number.isNaN(at.getTime()) ? null : { at, timed: h !== undefined }
 }
 
-/** Unparseable input falls back to the raw string. */
 export function formatDate(
   iso: string,
   dateFormat: DateFormat,

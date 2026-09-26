@@ -50,6 +50,25 @@ describe('CalendarPicker saving', () => {
     expect(onChange).toHaveBeenCalledWith('2026-06-12')
   })
 
+  it('saves only the last of two quick picks', () => {
+    const onChange = mount({ at: new Date(2026, 5, 10), timed: false })
+    act(() => day('2026-06-12').click())
+    act(() => vi.advanceTimersByTime(100))
+    act(() => day('2026-06-13').click())
+    act(() => vi.advanceTimersByTime(150))
+    expect(onChange).toHaveBeenCalledTimes(1)
+    expect(onChange).toHaveBeenCalledWith('2026-06-13')
+  })
+
+  it('saves a pick taken back to the day it opened on', () => {
+    const onChange = mount({ at: new Date(2026, 5, 10), timed: false })
+    act(() => day('2026-06-12').click())
+    act(() => vi.advanceTimersByTime(150))
+    act(() => day('2026-06-10').click())
+    act(() => vi.advanceTimersByTime(150))
+    expect(onChange).toHaveBeenLastCalledWith('2026-06-10')
+  })
+
   it('still saves a pick when the picker closes inside that window', () => {
     const onChange = mount({ at: new Date(2026, 5, 10), timed: false })
     act(() => day('2026-06-12').click())

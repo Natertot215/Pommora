@@ -498,7 +498,7 @@ describe('applyFilter — new single-operand ops', () => {
   const rows = [
     row('n5', { props: { prop_num: 5 } }),
     row('n9', { props: { prop_num: 9 } }),
-    row('d20', { props: { prop_when: '2026-06-20T14:30:00Z' } }),
+    row('d20', { props: { prop_when: '2026-06-20T14:30:00' } }),
     row('d25', { props: { prop_when: '2026-06-25' } }),
     row('sApple', { props: { prop_sel: 'apple' } }),
     row('sBanana', { props: { prop_sel: 'banana' } }),
@@ -519,7 +519,7 @@ describe('applyFilter — new single-operand ops', () => {
     ).toEqual(['n5'])
   })
 
-  it('date is matches the CALENDAR DAY, ignoring the time component', () => {
+  it('date is matches the local calendar day, ignoring the time component', () => {
     expect(
       ids([rows[2], rows[3]], {
         match: 'all',
@@ -538,7 +538,7 @@ describe('applyFilter — new single-operand ops', () => {
     expect(
       ids([rows[2], rows[3]], {
         match: 'all',
-        rules: [{ property_id: 'prop_when', op: 'is_after', value: '2026-06-20T14:30:00Z' }],
+        rules: [{ property_id: 'prop_when', op: 'is_after', value: '2026-06-20T14:30:00' }],
       }),
     ).toEqual(['d25'])
   })

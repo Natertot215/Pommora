@@ -61,9 +61,9 @@ export function CalendarPicker({
   })
   const [slide, setSlide] = useState<{ dir: 1 | -1; from: Date } | null>(null)
   const settleSlide = useSettleFallback(slide !== null, 'base', () => setSlide(null))
-  const [start, setStart] = useState<string | null>(value ? localDayKey(value.at) : null)
+  const [day, setDay] = useState<string | null>(value ? localDayKey(value.at) : null)
   const [timeOn, setTimeOn] = useState(value?.timed ?? false)
-  const [startMin, setStartMin] = useState(
+  const [minutes, setMinutes] = useState(
     value?.timed ? value.at.getHours() * 60 + value.at.getMinutes() : 9 * 60,
   )
   const [menu, setMenu] = useState<{ kind: 'month' | 'year'; at: Anchor } | null>(null)
@@ -77,7 +77,7 @@ export function CalendarPicker({
   const onChangeRef = useLatest(onChange)
   const emitTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
   const pendingEmit = useRef<string | null | undefined>(undefined)
-  const initial = useRef({ start, timeOn, startMin })
+  const initial = useRef({ day, timeOn, minutes })
   const armed = useRef(false)
 
   const year = cursor.getFullYear()
@@ -86,17 +86,17 @@ export function CalendarPicker({
     if (!onChangeRef.current) return
     if (
       !armed.current &&
-      start === initial.current.start &&
+      day === initial.current.day &&
       timeOn === initial.current.timeOn &&
-      startMin === initial.current.startMin
+      minutes === initial.current.minutes
     ) {
       return
     }
     armed.current = true
-    const iso = start
+    const iso = day
       ? timeOn
-        ? `${start}T${pad(Math.floor(startMin / 60))}:${pad(startMin % 60)}:00`
-        : start
+        ? `${day}T${pad(Math.floor(minutes / 60))}:${pad(minutes % 60)}:00`
+        : day
       : null
     pendingEmit.current = iso
     clearTimeout(emitTimer.current)
@@ -104,7 +104,7 @@ export function CalendarPicker({
       pendingEmit.current = undefined
       onChangeRef.current?.(iso)
     }, 150)
-  }, [start, timeOn, startMin])
+  }, [day, timeOn, minutes])
   useEffect(
     () => () => {
       if (pendingEmit.current !== undefined) {
@@ -128,7 +128,7 @@ export function CalendarPicker({
     setMenu(null)
   }
 
-  const pick = (k: string): void => setStart(k === start ? null : k)
+  const pick = (k: string): void => setDay(k === day ? null : k)
 
   const onGridWheel = (e: React.WheelEvent): void => {
     if (Math.abs(e.deltaX) <= Math.abs(e.deltaY)) return
@@ -150,7 +150,7 @@ export function CalendarPicker({
   // A zero-move press never captures, so the day button's own click carries the pick.
   const onGridPointerDown = (e: React.PointerEvent<HTMLDivElement>): void => {
     const k = dataKey(e.target as Element)
-    if (!k || k !== start) return
+    if (!k || k !== day) return
     let moved = false
     begin({
       el: e.currentTarget,
@@ -162,13 +162,13 @@ export function CalendarPicker({
         const at = dataKey(document.elementFromPoint(ev.clientX, ev.clientY))
         if (!at) return
         moved ||= at !== k
-        setStart(at)
+        setDay(at)
       },
       // The engine swallows the click after an activated release, so a wobble still has to pick here.
       onDrop: () => {
         if (!moved) pick(k)
       },
-      onAbort: () => setStart(k),
+      onAbort: () => setDay(k),
     })
   }
 
@@ -188,7 +188,7 @@ export function CalendarPicker({
         {Array.from({ length: cellCount }, (_, i) => {
           const d = new Date(first.getFullYear(), first.getMonth(), first.getDate() + i)
           const k = localDayKey(d)
-          const sel = k === start
+          const sel = k === day
           return (
             <button
               type="button"
@@ -208,23 +208,13 @@ export function CalendarPicker({
     )
   }
 
-  const hourShown = (mins: number): number =>
-    twelve ? ((Math.floor(mins / 60) + 11) % 12) + 1 : Math.floor(mins / 60)
-  const hourToMins = (v: number, mins: number): number =>
-    (twelve ? (v % 12) + (mins >= 720 ? 12 : 0) : v) * 60 + (mins % 60)
-  const minuteToMins = (v: number, mins: number): number => Math.floor(mins / 60) * 60 + v
+  const shownHour = twelve ? ((Math.floor(minutes / 60) + 11) % 12) + 1 : Math.floor(minutes / 60)
+  const hourToMins = (v: number): number =>
+    (twelve ? (v % 12) + (minutes >= 720 ? 12 : 0) : v) * 60 + (minutes % 60)
+  const minuteToMins = (v: number): number => Math.floor(minutes / 60) * 60 + v
   const hourText = (v: number): string => (twelve ? String(v) : pad(v))
-  const partText = (part: 'h' | 'm', mins: number): string =>
-    part === 'h' ? hourText(hourShown(mins)) : pad(mins % 60)
-
-  const dateField = (
-    <div className={s.field}>
-      <Icon name="calendar" size="body" className={s.fieldIcon} />
-      <OverScroll className={s.fieldValue}>
-        {start ? formatDateValue(start) : <EmptyValue />}
-      </OverScroll>
-    </div>
-  )
+  const partText = (part: 'h' | 'm'): string =>
+    part === 'h' ? hourText(shownHour) : pad(minutes % 60)
 
   const partCommit = (): void => {
     if (!partEdit) return
@@ -232,18 +222,17 @@ export function CalendarPicker({
     if (partEdit.draft !== '' && Number.isFinite(v)) {
       if (partEdit.part === 'h') {
         const clamped = twelve ? clamp(v, 1, 12) : Math.min(v, 23)
-        setStartMin(hourToMins(clamped, startMin))
-      } else setStartMin(minuteToMins(Math.min(v, 59), startMin))
+        setMinutes(hourToMins(clamped))
+      } else setMinutes(minuteToMins(Math.min(v, 59)))
     }
     setPartEdit(null)
   }
-  const timePart = (part: 'h' | 'm', mins: number): React.JSX.Element =>
+  const timePart = (part: 'h' | 'm'): React.JSX.Element =>
     partEdit?.part === part ? (
       <input
-        key={`${part}-edit`}
         className={s.timePartInput}
         value={partEdit.draft}
-        placeholder={partText(part, mins)}
+        placeholder={partText(part)}
         // biome-ignore lint/a11y/noAutofocus: the surface exists to take focus the moment it opens; that IS the interaction
         autoFocus
         spellCheck={false}
@@ -263,7 +252,6 @@ export function CalendarPicker({
     ) : (
       <button
         type="button"
-        key={part}
         className={s.timePart}
         onClick={(e) => {
           if (e.detail > 1) return
@@ -274,35 +262,9 @@ export function CalendarPicker({
           setPartEdit({ part, draft: '' })
         }}
       >
-        {partText(part, mins)}
+        {partText(part)}
       </button>
     )
-  const timeField = (
-    <div className={cx(s.field, s.fieldTime)}>
-      <Icon name="clock" size="body" className={s.fieldIcon} />
-      {start ? (
-        <span className={s.timeParts}>
-          <span className={s.hmGroup}>
-            {timePart('h', startMin)}
-            <span className={s.timeColon}>:</span>
-            {timePart('m', startMin)}
-          </span>
-          {twelve && (
-            <button
-              type="button"
-              className={s.timePart}
-              onClick={() => setStartMin(startMin >= 720 ? startMin - 720 : startMin + 720)}
-            >
-              {startMin >= 720 ? 'PM' : 'AM'}
-            </button>
-          )}
-        </span>
-      ) : (
-        <EmptyValue className={s.fieldValue} />
-      )}
-    </div>
-  )
-
   const toggleTitleMenu =
     (kind: 'month' | 'year') =>
     (e: React.MouseEvent<HTMLButtonElement>): void => {
@@ -321,9 +283,9 @@ export function CalendarPicker({
       </MenuItem>
     ))
   const timeRows = (part: 'h' | 'm'): React.JSX.Element[] => {
-    const current = part === 'h' ? hourShown(startMin) : startMin % 60
+    const current = part === 'h' ? shownHour : minutes % 60
     const choose = (v: number): void => {
-      setStartMin(part === 'h' ? hourToMins(v, startMin) : minuteToMins(v, startMin))
+      setMinutes(part === 'h' ? hourToMins(v) : minuteToMins(v))
       setTimeMenu(null)
     }
     return (part === 'h' ? (twelve ? HOURS_12 : HOURS_24) : MINUTES).map((v) => (
@@ -416,8 +378,37 @@ export function CalendarPicker({
       </div>
       <div className={s.divider} />
       <div className={s.fields}>
-        {dateField}
-        {timeOn && timeField}
+        <div className={s.field}>
+          <Icon name="calendar" size="body" className={s.fieldIcon} />
+          <OverScroll className={s.fieldValue}>
+            {day ? formatDateValue(day) : <EmptyValue />}
+          </OverScroll>
+        </div>
+        {timeOn && (
+          <div className={cx(s.field, s.fieldTime)}>
+            <Icon name="clock" size="body" className={s.fieldIcon} />
+            {day ? (
+              <span className={s.timeParts}>
+                <span className={s.hmGroup}>
+                  {timePart('h')}
+                  <span className={s.timeColon}>:</span>
+                  {timePart('m')}
+                </span>
+                {twelve && (
+                  <button
+                    type="button"
+                    className={s.timePart}
+                    onClick={() => setMinutes(minutes >= 720 ? minutes - 720 : minutes + 720)}
+                  >
+                    {minutes >= 720 ? 'PM' : 'AM'}
+                  </button>
+                )}
+              </span>
+            ) : (
+              <EmptyValue className={s.fieldValue} />
+            )}
+          </div>
+        )}
       </div>
       <div className={rowBox}>
         <span className={s.switchLabel}>Use Time</span>
