@@ -15,7 +15,12 @@ import {
 } from '@pommora/core/Navigation/navRef'
 import type { PageDetail } from '@pommora/core/Pages/pageDetail'
 import { settingOf } from '@pommora/core/Settings/personalization'
-import { type ReconcileIndex, reconcileSelection, reconcileWith } from './reconcileSelection'
+import {
+  type ReconcileIndex,
+  reconcileHeld,
+  reconcileSelection,
+  reconcileWith,
+} from './reconcileSelection'
 import { navKeysOf, reconcileIndexOf } from '../Nexus/treeIndex'
 import { RECENTS_CAP, recordRecent, removeRecentByKey } from '../Navigation/navRecents'
 import { moveByKey } from '@pommora/uix/Utilities/moveItem'
@@ -28,15 +33,16 @@ import {
   insertUnpinned,
   isPinned,
   makeTabId,
-  newTabTab,
   openNewTab as openNewTabModel,
   openTab as openTabModel,
   openTabAt as openTabAtModel,
   pinTabId,
   pushMru,
-  reconcileTabs,
+  reconcileTab,
   reorderWithinZone,
   sameTabs,
+  settleFocus,
+  type TabFocus,
   tabKey,
 } from '../Navigation/tabsModel'
 import {
@@ -236,9 +242,15 @@ export const createNavigationSlice: Slice<NavigationSlice> = (set, get) => {
     get().retagTabSearch(oldId, newId)
   }
 
-  const applyTabResult = (r: { tabs: Tab[]; activeTabId: string; mru: string[] }): void => {
-    const activeChanged = r.activeTabId !== get().activeTabId
-    set({ tabs: r.tabs, activeTabId: r.activeTabId, tabMru: r.mru })
+  const applyTabResult = (r: TabFocus): void => {
+    const s = get()
+    const next = settleFocus(
+      r,
+      s.pinnedTabs.map((t) => t.id),
+      makeTabId(),
+    )
+    const activeChanged = next.activeTabId !== s.activeTabId
+    set({ tabs: next.tabs, activeTabId: next.activeTabId, tabMru: next.mru })
     if (activeChanged) syncActiveDetail()
     pruneSlots()
     persistTabs()
@@ -248,22 +260,8 @@ export const createNavigationSlice: Slice<NavigationSlice> = (set, get) => {
     const s = get()
     // '' is the never-seeded sentinel — load()'s restore owns seeding, so the keeper stands down.
     if (s.activeTabId === '') return
-    const live = new Set([...s.pinnedTabs.map((t) => t.id), ...s.tabs.map((t) => t.id)])
-    if (live.has(s.activeTabId)) return
-    const focus = s.tabMru.find((id) => live.has(id)) ?? s.tabs[0]?.id ?? s.pinnedTabs[0]?.id
-    if (focus !== undefined) {
-      set({
-        activeTabId: focus,
-        tabMru: pushMru(
-          s.tabMru.filter((id) => live.has(id)),
-          focus,
-        ),
-      })
-    } else {
-      const seeded = newTabTab(makeTabId())
-      set({ tabs: [seeded], activeTabId: seeded.id, tabMru: [seeded.id] })
-    }
-    syncActiveDetail()
+    if ([...s.pinnedTabs, ...s.tabs].some((t) => t.id === s.activeTabId)) return
+    applyTabResult({ tabs: s.tabs, activeTabId: s.activeTabId, mru: s.tabMru })
   }
 
   const writeNav = (patch: Partial<NavigationState>): void =>
@@ -651,26 +649,18 @@ export const createNavigationSlice: Slice<NavigationSlice> = (set, get) => {
         return r.kind === 'page' && r.path === slot.target.path
       })
       const s = get()
-      const rec = reconcileTabs(
-        s.tabs,
-        s.activeTabId,
-        s.tabMru,
-        s.pinnedTabs.map((t) => t.id),
-        (t) => {
-          const r = reconcileWith(index, t)
+      const { next: tabs, dropped } = reconcileHeld(s.tabs, (t) =>
+        reconcileTab(t, (target) => {
+          const r = reconcileWith(index, target)
           return r.kind === 'none' ? null : r
-        },
-        makeTabId(),
+        }),
       )
-      if (rec.changed) {
-        for (const t of s.tabs)
-          if (!rec.tabs.some((n) => n.id === t.id)) {
-            dropCacheOwner(t.id)
-            get().scrubTabPins(t.id)
-          }
-        applyTabResult({ tabs: rec.tabs, activeTabId: rec.activeTabId, mru: rec.mru })
+      for (const t of dropped) {
+        dropCacheOwner(t.id)
+        get().scrubTabPins(t.id)
       }
-      ensureLiveActive()
+      if (tabs !== s.tabs) applyTabResult({ tabs, activeTabId: s.activeTabId, mru: s.tabMru })
+      else ensureLiveActive()
     },
 
     restoreNavigation: (nav, stored) => {
@@ -689,18 +679,12 @@ export const createNavigationSlice: Slice<NavigationSlice> = (set, get) => {
         return true
       })
       const tabs = hydrateTabs(storedTabs, index)
-      const livePinnedTabs = get().pinnedTabs
-      const storedActive = stored?.activeTabId ?? ''
-      const liveIds = new Set([...livePinnedTabs, ...tabs].map((t) => t.id))
-      const active = liveIds.has(storedActive)
-        ? storedActive
-        : (tabs[0]?.id ?? livePinnedTabs[0]?.id ?? '')
-      if (active === '') {
-        const seeded = newTabTab(makeTabId())
-        set({ tabs: [seeded], activeTabId: seeded.id, tabMru: [seeded.id] })
-      } else {
-        set({ tabs, activeTabId: active, tabMru: [active] })
-      }
+      const focus = settleFocus(
+        { tabs, activeTabId: stored?.activeTabId ?? '', mru: [] },
+        get().pinnedTabs.map((t) => t.id),
+        makeTabId(),
+      )
+      set({ tabs: focus.tabs, activeTabId: focus.activeTabId, tabMru: focus.mru })
       syncActiveDetail()
     },
 

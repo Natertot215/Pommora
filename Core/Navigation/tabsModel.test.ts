@@ -17,8 +17,9 @@ import {
   pinTabId,
   liveTarget,
   pushMru,
-  reconcileTabs,
+  reconcileTab,
   reorderWithinZone,
+  settleFocus,
 } from './tabsModel'
 
 const pt = (id: string): SelectTarget => ({ kind: 'page', id, path: `/${id}` })
@@ -159,16 +160,16 @@ describe('tabsModel — openTabAt', () => {
 })
 
 describe('tabsModel — closeTab', () => {
-  it('focuses the MRU top when closing the active tab (D-9)', () => {
+  it('focuses the left neighbor over the MRU top when closing the active tab', () => {
     const tabs = [tab('t1', 'a'), tab('t2', 'b'), tab('t3', 'c')]
     const r = closeTab(tabs, 't3', ['t3', 't1', 't2'], [], 't3', 'NEW')
-    expect(r.activeTabId).toBe('t1')
+    expect(r.activeTabId).toBe('t2')
     expect(r.tabs.map((t) => t.id)).toEqual(['t1', 't2'])
   })
 
-  it('falls back to the spatial neighbor when the MRU is empty (cold relaunch)', () => {
+  it('focuses the left neighbor, not the right, when closing a middle tab', () => {
     const tabs = [tab('t1', 'a'), tab('t2', 'b'), tab('t3', 'c')]
-    expect(closeTab(tabs, 't2', [], [], 't2', 'NEW').activeTabId).toBe('t3')
+    expect(closeTab(tabs, 't2', [], [], 't2', 'NEW').activeTabId).toBe('t1')
   })
 
   it('keeps the previous tab when closing the rightmost with an empty MRU', () => {
@@ -195,6 +196,18 @@ describe('tabsModel — closeTab', () => {
     const r = closeTab([tab('t1', 'a')], 't1', ['t1'], ['pin:page:p'], 't1', 'NEW')
     expect(r.tabs).toHaveLength(0)
     expect(r.activeTabId).toBe('pin:page:p')
+  })
+
+  it('closing the first unpinned tab focuses the last pinned tab', () => {
+    const tabs = [tab('t1', 'a'), tab('t2', 'b')]
+    const r = closeTab(tabs, 't1', ['t1', 't2'], ['pin:page:p', 'pin:page:q'], 't1', 'NEW')
+    expect(r.activeTabId).toBe('pin:page:q')
+  })
+
+  it('closing the first tab with nothing pinned focuses the tab that takes its place', () => {
+    const tabs = [tab('t1', 'a'), tab('t2', 'b'), tab('t3', 'c')]
+    const r = closeTab(tabs, 't1', ['t1', 't3', 't2'], [], 't1', 'NEW')
+    expect(r.activeTabId).toBe('t2')
   })
 
   it('is a no-op for a pinned tab id (not closable here)', () => {
@@ -251,7 +264,7 @@ describe('tabsModel — cycle (I-11)', () => {
   })
 })
 
-describe('tabsModel — reconcileTabs (I-2a)', () => {
+describe('tabsModel — reconcileTab (I-2a)', () => {
   // A reconcile stub over a live-path map: absent id = deleted, changed path = renamed/moved.
   const against = (live: Record<string, string>) => (t: SelectTarget) => {
     if (!('id' in t)) return t
@@ -260,70 +273,84 @@ describe('tabsModel — reconcileTabs (I-2a)', () => {
     return 'path' in t && t.path !== path ? ({ ...t, path } as SelectTarget) : t
   }
 
-  it('returns changed:false with the same references when nothing moved', () => {
-    const tabs = [tab('t1', 'a'), tab('t2', 'b')]
-    const r = reconcileTabs(tabs, 't1', ['t1'], [], against({ a: '/a', b: '/b' }), 'NEW')
-    expect(r.changed).toBe(false)
-    expect(r.tabs).toBe(tabs)
+  it('returns the same tab when nothing moved', () => {
+    const t = tab('t1', 'a')
+    expect(reconcileTab(t, against({ a: '/a' }))).toBe(t)
   })
 
-  it('refreshes an INACTIVE tab target + history on a rename without activating it', () => {
-    const tabs = [tab('t1', 'a'), tab('t2', 'b')]
-    const r = reconcileTabs(
-      tabs,
-      't1',
-      ['t1', 't2'],
-      [],
-      against({ a: '/a', b: '/renamed' }),
-      'NEW',
-    )
-    expect(r.changed).toBe(true)
-    expect(r.activeTabId).toBe('t1')
-    expect(r.tabs[0]).toBe(tabs[0])
-    expect(r.tabs[1].target).toEqual({ kind: 'page', id: 'b', path: '/renamed' })
-    expect(r.tabs[1].navStack).toEqual([{ kind: 'page', id: 'b', path: '/renamed' }])
+  it('refreshes a renamed tab target + history as a new tab', () => {
+    const t = tab('t2', 'b')
+    const r = reconcileTab(t, against({ b: '/renamed' }))
+    expect(r).not.toBe(t)
+    expect(r?.target).toEqual({ kind: 'page', id: 'b', path: '/renamed' })
+    expect(r?.navStack).toEqual([{ kind: 'page', id: 'b', path: '/renamed' }])
   })
 
-  it('closes an inactive unpinned tab whose entity was deleted', () => {
-    const tabs = [tab('t1', 'a'), tab('t2', 'b')]
-    const r = reconcileTabs(tabs, 't1', ['t1', 't2'], [], against({ a: '/a' }), 'NEW')
-    expect(r.tabs.map((t) => t.id)).toEqual(['t1'])
-    expect(r.activeTabId).toBe('t1')
-    expect(r.mru).toEqual(['t1'])
-  })
-
-  it('deleting the ACTIVE tab focuses the MRU survivor', () => {
-    const tabs = [tab('t1', 'a'), tab('t2', 'b'), tab('t3', 'c')]
-    const r = reconcileTabs(
-      tabs,
-      't2',
-      ['t2', 't3', 't1'],
-      [],
-      against({ a: '/a', c: '/c' }),
-      'NEW',
-    )
-    expect(r.activeTabId).toBe('t3')
+  it('returns null for a tab whose entity was deleted', () => {
+    expect(reconcileTab(tab('t2', 'b'), against({ a: '/a' }))).toBeNull()
   })
 
   it('drops dead history entries and recomputes navIndex around them', () => {
     const t: Tab = { id: 't1', target: pt('c'), navStack: [pt('a'), pt('b'), pt('c')], navIndex: 2 }
-    const r = reconcileTabs([t], 't1', ['t1'], [], against({ a: '/a', c: '/c' }), 'NEW')
-    expect(r.tabs[0].navStack).toEqual([pt('a'), pt('c')])
-    expect(r.tabs[0].navIndex).toBe(1)
+    const r = reconcileTab(t, against({ a: '/a', c: '/c' }))
+    expect(r?.navStack).toEqual([pt('a'), pt('c')])
+    expect(r?.navIndex).toBe(1)
   })
 
-  it('everything gone with no pins reseeds a lone NavView (I-5)', () => {
-    const r = reconcileTabs([tab('t1', 'a')], 't1', ['t1'], [], against({}), 'NEW')
-    expect(r.tabs).toHaveLength(1)
-    expect(r.tabs[0].target).toEqual({ kind: 'newtab' })
-    expect(r.activeTabId).toBe('NEW')
+  it('re-finds a pointer lost with its entry by the target key', () => {
+    const t: Tab = { id: 't1', target: pt('a'), navStack: [pt('a'), pt('b')], navIndex: 1 }
+    const r = reconcileTab(t, against({ a: '/a' }))
+    expect(r?.navStack).toEqual([pt('a')])
+    expect(r?.navIndex).toBe(0)
   })
 
   it('keeps a newtab tab through any reconcile', () => {
-    const tabs = [navTab('n'), tab('t1', 'a')]
-    const r = reconcileTabs(tabs, 'n', ['n'], [], against({}), 'NEW')
-    expect(r.tabs.map((t) => t.id)).toEqual(['n'])
-    expect(r.activeTabId).toBe('n')
+    const n = navTab('n')
+    expect(reconcileTab(n, against({}))).toBe(n)
+  })
+})
+
+describe('tabsModel — settleFocus', () => {
+  const tabs = [tab('t1', 'a'), tab('t2', 'b'), tab('t3', 'c')]
+
+  it('keeps a live active tab', () => {
+    const r = settleFocus({ tabs, activeTabId: 't2', mru: ['t3', 't2'] }, [], 'NEW', 't1')
+    expect(r.activeTabId).toBe('t2')
+    expect(r.mru).toEqual(['t2', 't3'])
+  })
+
+  it('falls to the neighbor first', () => {
+    const r = settleFocus({ tabs, activeTabId: 'gone', mru: ['t3'] }, [], 'NEW', 't1')
+    expect(r.activeTabId).toBe('t1')
+  })
+
+  it('then to the most recent live tab', () => {
+    const r = settleFocus({ tabs, activeTabId: 'gone', mru: ['gone', 't3', 't1'] }, [], 'NEW')
+    expect(r.activeTabId).toBe('t3')
+    expect(r.mru).toEqual(['t3', 't1'])
+  })
+
+  it('then to the first tab', () => {
+    expect(
+      settleFocus({ tabs, activeTabId: 'gone', mru: [] }, ['pin:page:p'], 'NEW').activeTabId,
+    ).toBe('t1')
+  })
+
+  it('then to the last pinned tab', () => {
+    const r = settleFocus(
+      { tabs: [], activeTabId: 'gone', mru: [] },
+      ['pin:page:p', 'pin:page:q'],
+      'NEW',
+    )
+    expect(r.activeTabId).toBe('pin:page:q')
+  })
+
+  it('seeds a lone NavView when nothing is left (I-5)', () => {
+    const r = settleFocus({ tabs: [], activeTabId: 'gone', mru: ['gone'] }, [], 'NEW')
+    expect(r.tabs).toHaveLength(1)
+    expect(r.tabs[0].target).toEqual({ kind: 'newtab' })
+    expect(r.activeTabId).toBe('NEW')
+    expect(r.mru).toEqual(['NEW'])
   })
 })
 

@@ -6,8 +6,8 @@
   gap: 6px;
   height: 100%;
   flex: 0 1 var(--tab-pref);
-  min-width: var(--tab-min);
-  max-width: var(--tab-max);
+  min-width: var(--tab-min-user, 70px);
+  max-width: var(--tab-max-user, 250px);
   padding: 0 var(--tab-pad-x);
   color: var(--label-tertiary);
   cursor: default;
@@ -144,8 +144,6 @@
 }
 
 .tabs-standard {
-  --tab-min: var(--tab-min-user, 70px);
-  --tab-max: var(--tab-max-user, 250px);
   --tab-pref: 180px;
   --tab-pad-x: 12px;
   --tab-height: var(--button-large-height);
@@ -155,8 +153,6 @@
   --tab-plus-gutter: 28px;
 }
 .tabs-compact {
-  --tab-min: var(--tab-min-user, 70px);
-  --tab-max: var(--tab-max-user, 200px);
   --tab-pref: 150px;
   --tab-pad-x: 10px;
 }

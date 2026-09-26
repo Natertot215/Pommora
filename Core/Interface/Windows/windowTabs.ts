@@ -1,6 +1,6 @@
 import type { WindowTabTarget, WindowTarget } from '@pommora/core/Navigation/navRef'
 import { clamp } from '@pommora/uix/Utilities/clamp'
-import { moveItem } from '@pommora/uix/Utilities/moveItem'
+import { moveItem, placeAt } from '@pommora/uix/Utilities/moveItem'
 import type { WindowKind } from './windowRecord'
 
 // Bespoke close/spawn (NOT tabsModel's): the last tab closing kills the window, the map tab never closes, and a Matrix window holds no tabs.
@@ -24,19 +24,17 @@ export function openTabIn(
 ): WindowState {
   const first = win.tabs.findIndex((t) => t.target.kind !== 'map')
   const base = first === -1 ? win.tabs.length : first
-  const slot = at === undefined ? undefined : clamp(at + base, base, win.tabs.length)
   const from = win.tabs.findIndex((t) => t.target.kind !== 'map' && t.target.id === target.id)
+  if (at !== undefined) {
+    const slot = clamp(at + base, base, win.tabs.length)
+    const tabs = placeAt(win.tabs, from, slot, () => ({ id: makeId(), target }))
+    return tabs === win.tabs ? win : { ...win, tabs }
+  }
   if (from !== -1) {
-    if (slot === undefined) {
-      const existing = win.tabs[from]
-      return existing.id === win.activeTabId ? win : { ...win, activeTabId: existing.id }
-    }
-    const to = clamp(slot > from ? slot - 1 : slot, base, win.tabs.length - 1)
-    return to === from ? win : { ...win, tabs: moveItem(win.tabs, from, to) }
+    const existing = win.tabs[from]
+    return existing.id === win.activeTabId ? win : { ...win, activeTabId: existing.id }
   }
   const tab: WindowTab = { id: makeId(), target }
-  if (slot !== undefined)
-    return { ...win, tabs: [...win.tabs.slice(0, slot), tab, ...win.tabs.slice(slot)] }
   return { ...win, tabs: [...win.tabs, tab], activeTabId: tab.id }
 }
 

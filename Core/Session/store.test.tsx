@@ -26,7 +26,7 @@ import {
   readPageDetail,
   setBodyBase,
 } from './pageDetailCache'
-import { schedulePageSave, scheduleTabsSave } from './saveScheduler'
+import { flushAllSessionSaves, schedulePageSave, scheduleTabsSave } from './saveScheduler'
 import { makeTree } from '../Testing/testTree'
 import { tileBodyWriter } from '../Tiles/tileDocStore'
 import { dialer } from '../Platform/dialer'
@@ -681,6 +681,23 @@ describe('glance pin lifecycle wiring (Task 10)', () => {
     useSession.getState().pinGlance(glancePin('t2', Q))
     useSession.getState().unpinTarget(navKey(P))
     expect(tags()).toEqual(['t2'])
+  })
+
+  it('a pinned active tab removed by a nav push falls to the tab beside it, and the repair is saved', async () => {
+    const pinId = pinTabId(P)
+    seed({
+      tabs: [uTab('t2', Q, [Q], 0)],
+      activeTabId: pinId,
+      pinned: [toNavRef(P)],
+      pinnedTabs: [{ id: pinId, target: P, navStack: [P], navIndex: 0 }],
+    })
+    useSession.getState().applyNavChanged({ pinned: [], banner: undefined })
+    expect(useSession.getState().activeTabId).toBe('t2')
+    channels['windows:save'] = vi.fn(async () => ok(null))
+    await flushAllSessionSaves()
+    expect(channels['tabs:save']).toHaveBeenLastCalledWith(
+      expect.objectContaining({ activeTabId: 't2' }),
+    )
   })
 
   it('adding a nav pin scrubs no existing glance pins', () => {
