@@ -12,7 +12,7 @@ import { flushPageSave, setStaleSaveSink } from './saveScheduler'
 import { useSession } from './store'
 import { openWebLink } from '../Web/openWebLink'
 import { dialer } from '../Platform/dialer'
-import { isMenuCommand, runCommand } from '../Actions/commandRouter'
+import { runCommand } from '../Actions/commandRouter'
 
 export function useBridgeSubscriptions(): void {
   const applyTree = useSession((s) => s.applyTree)
@@ -108,7 +108,7 @@ export function useBridgeSubscriptions(): void {
     () =>
       dialer().on('menu:action', (action) => {
         if (action === 'open') void choose()
-        else if (isMenuCommand(action)) runCommand(action)
+        else runCommand(action)
       }),
     [choose],
   )

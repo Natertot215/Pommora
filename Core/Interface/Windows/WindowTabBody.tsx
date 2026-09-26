@@ -124,11 +124,9 @@ export function useWindowTabBody(target: WindowTarget | null): WindowTabBodySlot
   const activeTabId = slot?.activeTabId
 
   // Every Space tab the window holds keeps its document loaded, so switching back draws the board in the same frame rather than after a reload.
-  const heldSpaces = useMemo(
-    () =>
-      (windowTabs ?? []).flatMap((t) => (t.target.kind === 'space' ? [t.target.id] : [])).join(' '),
-    [windowTabs],
-  )
+  const heldSpaces = (windowTabs ?? [])
+    .flatMap((t) => (t.target.kind === 'space' ? [t.target.id] : []))
+    .join(' ')
   useEffect(() => {
     const held = heldSpaces
       .split(' ')
