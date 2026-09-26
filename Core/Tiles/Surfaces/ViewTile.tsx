@@ -32,7 +32,7 @@ import { entityIcon } from '../../Assets/entityIconPolicy'
 import { askDeleteView } from '../../Interface/Confirm/confirmations'
 import { notifyDeleted } from '../../Interface/Notifications/notifications'
 import { findCollection, findSet } from '../../Nexus/treeIndex'
-import { resolveContainerSchema } from '../../Views/Pipeline/pickView'
+import { NO_SCHEMA, resolveContainerSchema } from '../../Views/Pipeline/pickView'
 import { viewGlyph } from '../../Views/viewIcon'
 import { ViewHost } from '../../Views/Host/ViewHost'
 import { SettingsFrame } from '../../Views/Settings/SettingsFrame'
@@ -243,7 +243,7 @@ export function ViewTile({
       : undefined
 
   const schema = useMemo(
-    () => (source && tree ? resolveContainerSchema(tree, source) : []),
+    () => (source && tree ? resolveContainerSchema(tree, source) : NO_SCHEMA),
     [tree, source],
   )
   const views = useMemo(() => {

@@ -16,14 +16,14 @@ import { useSession } from '../../Session/store'
 import { useContentHost } from '../../Interface/contentHost'
 import { useSaveView, useViewTileScope } from '../ViewTileScope'
 import { contextOptionsFor } from '../../Contexts/contextOptions'
-import { contextIdsOf } from '../../Contexts/contextIdentity'
+import { contextIdsOf, identityOf } from '../../Contexts/contextIdentity'
 import { type PickTarget, syntheticContextDef } from '../../Properties/Pickers/PropertyPicker'
 import { declaredType, resolveFieldValue } from '../../Properties/value'
 import { buildValueContext } from '../../Properties/valueContext'
 import { buildSetIcons, buildSetNames, buildSetPaths } from '../../Properties/Cells/cellResolve'
 import { hideShown, unhide } from '../visibilityModel'
 import { resolveBandHead } from '../Bands/GroupBand'
-import { resolveContainerSchema } from '../Pipeline/pickView'
+import { NO_SCHEMA, resolveContainerSchema } from '../Pipeline/pickView'
 import {
   bandGrouping,
   bucketKey,
@@ -85,7 +85,10 @@ export function useViewHost(
   const [valueOverride, setValueOverride] = useState<Overrides | null>(null)
   const values = useContainerValues(source.path, setValueOverride)
 
-  const schema = useMemo(() => (tree ? resolveContainerSchema(tree, source) : []), [tree, source])
+  const schema = useMemo(
+    () => (tree ? resolveContainerSchema(tree, source) : NO_SCHEMA),
+    [tree, source],
+  )
   const view = useActiveView(source, schema)
 
   const [orderOverride, setOrderOverride] = useState<string[] | null>(null)
@@ -225,10 +228,10 @@ export function useViewHost(
     return undefined
   }, [groupPropId, sortKeys, liveView.sort, schema, columns])
 
+  const identity = tree && identityOf(tree)
   const ctx = useMemo(
-    () => (tree ? buildValueContext(tree, schema, assetMap) : null),
-    // buildValueContext reads only contexts and the asset map — keying on those slices keeps ctx identity across unrelated tree pushes, so memoized rows hold.
-    [tree?.contexts, schema, assetMap],
+    () => (identity ? buildValueContext(identity, schema, assetMap) : null),
+    [identity, schema, assetMap],
   )
   const setNames = useMemo(() => buildSetNames(source), [source])
   const setIcons = useMemo(() => buildSetIcons(source), [source])

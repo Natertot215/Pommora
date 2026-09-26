@@ -1,11 +1,6 @@
-import type { AssetMap, NexusTree } from '@pommora/core/Nexus/tree'
+import type { AssetMap } from '@pommora/core/Nexus/tree'
 import type { PropertyDefinition } from '@pommora/core/Properties/properties'
-import {
-  type ContextIdentity,
-  contextsByIdOf,
-  type SpaceIdentity,
-  spacesByIdOf,
-} from '../Contexts/contextIdentity'
+import type { ContextIdentity, IdentityMaps, SpaceIdentity } from '../Contexts/contextIdentity'
 
 export interface ValueContext {
   schema: PropertyDefinition[]
@@ -16,14 +11,9 @@ export interface ValueContext {
 }
 
 export function buildValueContext(
-  tree: NexusTree,
+  identity: IdentityMaps,
   schema: PropertyDefinition[],
   assets: AssetMap,
 ): ValueContext {
-  return {
-    schema,
-    contextsById: spacesByIdOf(tree),
-    contexts: contextsByIdOf(tree),
-    assets,
-  }
+  return { schema, contextsById: identity.spaces, contexts: identity.contexts, assets }
 }

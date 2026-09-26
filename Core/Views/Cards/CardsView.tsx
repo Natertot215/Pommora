@@ -39,6 +39,7 @@ import { cx } from '@pommora/uix/Utilities/cx'
 import { useElementZoom } from '@pommora/uix/Utilities/zoom'
 import { useStableApi } from '@pommora/uix/Utilities/stableApi'
 import { useThumb } from '../../Assets/useThumb'
+import { coverOf } from '../../Pages/pageDetail'
 import { useSession } from '../../Session/store'
 import { glanceShown } from '../../Interface/Glance/glanceAction'
 import { AssetImage } from '../../Assets/AssetImage'
@@ -57,6 +58,7 @@ import { rowHover, type TitleMenuContext, useViewInteractions } from '../Host/us
 import type { ValueContext } from '../../Properties/valueContext'
 import { NO_TRAIL, type TrailSegment } from '@pommora/uix/Elements/NavTrail'
 import { ancestryOf } from '../../Nexus/treeIndex'
+import { stabilize } from '../../Nexus/treeStabilize'
 import { TextPicker } from '@pommora/uix/Pickers/TextPicker'
 import { solidColorCss } from '@pommora/uix/Theme/ramp'
 import { type PickEntry, PropertyPicker } from '../../Properties/Pickers/PropertyPicker'
@@ -121,10 +123,7 @@ type CardApi = {
   banner: (req: BannerRequest) => void
 }
 
-type ValueApi = Pick<CardApi, 'commitValue' | 'setStyle' | 'hide' | 'openValuePicker'>
-
-const coverOf = (row: ViewRow): string | undefined =>
-  typeof row.frontmatter.banner === 'string' ? row.frontmatter.banner : undefined
+type ValueApi = Pick<CardApi, 'commitValue' | 'setStyle' | 'hide' | 'openValuePicker' | 'banner'>
 
 const previewKeyOf = (row: ViewRow, banner: CardBanner): string | undefined =>
   banner === 'preview' ? navKey({ kind: 'page', id: row.id }) : undefined
@@ -140,6 +139,7 @@ const INERT_API: ValueApi = {
   setStyle: NOOP,
   hide: NOOP,
   openValuePicker: NOOP,
+  banner: NOOP,
 }
 
 // ── The view ────────────────────────────────────────────────────────────────
@@ -336,15 +336,17 @@ export function CardsView({ host }: { host: ViewHostApi }): React.JSX.Element {
     },
     banner: setBannerRequest,
   })
-  const locByRow = useMemo(() => {
-    const m = new Map<string, TrailSegment[]>()
-    if (hideLocation) return m
-    for (const r of rowById.values()) {
-      if (!r.parentSetId) continue
-      const chain = ancestryOf(tree, { kind: 'set', id: r.parentSetId })
-      if (chain) m.set(r.id, chain.slice(structural ? 2 : 1))
-    }
-    return m
+  const trailHeld = useRef<Record<string, TrailSegment[]>>({})
+  const trailBySet = useMemo(() => {
+    const m: Record<string, TrailSegment[]> = {}
+    if (!hideLocation)
+      for (const { parentSetId } of rowById.values()) {
+        if (!parentSetId || parentSetId in m) continue
+        const chain = ancestryOf(tree, { kind: 'set', id: parentSetId })
+        if (chain) m[parentSetId] = chain.slice(structural ? 2 : 1)
+      }
+    trailHeld.current = stabilize(m, trailHeld.current)
+    return trailHeld.current
   }, [groups, tree, structural, hideLocation])
 
   // ── The ghost's seat and its FLIP ─────────────────────────────────────────
@@ -477,7 +479,7 @@ export function CardsView({ host }: { host: ViewHostApi }): React.JSX.Element {
                       view={liveView}
                       banner={banner}
                       ctx={ctx}
-                      crumbs={locByRow.get(id) ?? NO_TRAIL}
+                      crumbs={trailBySet[r.parentSetId ?? ''] ?? NO_TRAIL}
                       cover={coverOf(r)}
                       iconName={entityIcon('page', r.icon, defaultIcons)}
                       columns={columns}
@@ -533,7 +535,7 @@ export function CardsView({ host }: { host: ViewHostApi }): React.JSX.Element {
                           nexusId={nexusId}
                           columns={columns}
                           ctx={ctx}
-                          loc={locByRow.get(row.id)}
+                          loc={trailBySet[row.parentSetId ?? '']}
                           defaultIcons={defaultIcons}
                           capitalize={capitalize}
                           styleById={styleById}
@@ -709,7 +711,6 @@ interface SetCardProps {
 function SetCard({ set, defaultIcons, api }: SetCardProps): React.JSX.Element {
   const drag = useDragItem(set.id, () => api.openSet(set, false))
   const iconName = entityIcon('set', set.icon, defaultIcons)
-  const thumbRef = useRef<HTMLDivElement>(null)
   return (
     <CardRoot
       drag={drag}
@@ -720,12 +721,10 @@ function SetCard({ set, defaultIcons, api }: SetCardProps): React.JSX.Element {
     >
       <CardBody>
         <CardThumb
-          ref={thumbRef}
           onContextMenu={(e) => {
             e.preventDefault()
             e.stopPropagation()
-            const frame = thumbRef.current ?? (e.currentTarget as HTMLElement)
-            api.banner({ id: set.id, kind: 'set', frame, mode: 'menu' })
+            api.banner({ id: set.id, kind: 'set', frame: e.currentTarget, mode: 'menu' })
           }}
         >
           <AssetImage
@@ -844,7 +843,6 @@ const CardFace = memo(function CardFace({
   onImgError,
   textRef,
   thumbRef,
-  onThumbContextMenu,
   onZoneClick,
   api,
 }: {
@@ -864,7 +862,6 @@ const CardFace = memo(function CardFace({
   onImgError?: () => void
   textRef?: React.Ref<HTMLDivElement>
   thumbRef?: React.Ref<HTMLDivElement>
-  onThumbContextMenu?: (e: React.MouseEvent) => void
   onZoneClick?: (e: React.MouseEvent) => void
   api: ValueApi
 }): React.JSX.Element {
@@ -904,7 +901,11 @@ const CardFace = memo(function CardFace({
         <CardThumb
           ref={thumbRef}
           capture={banner === 'preview'}
-          onContextMenu={onThumbContextMenu ? (e) => void onThumbContextMenu(e) : undefined}
+          onContextMenu={(e) => {
+            e.preventDefault()
+            e.stopPropagation()
+            api.banner({ id: row.id, kind: 'page', frame: e.currentTarget, mode: 'menu' })
+          }}
         >
           {banner === 'banner' ? (
             <AssetImage value={cover} fallback={ph} />
@@ -1032,8 +1033,6 @@ const PageCard = memo(function PageCard({
   const holdGhost = useContext(GhostSuppress)
   const cover = coverOf(row)
 
-  const requestBanner = (mode: 'menu' | 'edit', fallback: HTMLElement): void =>
-    api.banner({ id: row.id, kind: 'page', frame: thumbRef.current ?? fallback, mode })
   const onCardContextMenu = async (e: React.MouseEvent): Promise<void> => {
     e.preventDefault()
     e.stopPropagation()
@@ -1049,7 +1048,8 @@ const PageCard = memo(function PageCard({
     )
     if (!action) return
     if (api.titleAction(action, row, anchor)) return
-    if (action === 'image:edit') requestBanner('edit', anchor)
+    if (action === 'image:edit')
+      api.banner({ id: row.id, kind: 'page', frame: thumbRef.current ?? anchor, mode: 'edit' })
   }
 
   const iconName = entityIcon('page', row.icon, defaultIcons)
@@ -1088,11 +1088,6 @@ const PageCard = memo(function PageCard({
             onImgError={onError}
             textRef={textRef}
             thumbRef={thumbRef}
-            onThumbContextMenu={(e) => {
-              e.preventDefault()
-              e.stopPropagation()
-              requestBanner('menu', e.currentTarget as HTMLElement)
-            }}
             onZoneClick={openAdd}
             api={api}
           />
