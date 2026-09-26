@@ -4,7 +4,7 @@ import { docScan } from '../docCache'
 import { parseListMarkerPrefixed } from '../Engine/detect'
 import { parseDelimiter } from '../Engine/Tables/codec'
 import { decodePayload } from '../Engine/Tables/clipboard'
-import { tableSelfEdit } from './sync'
+import { tableSelfEdit } from '../Tables/sync'
 
 // With the fencing blank line gone, two tables fuse and the second one's header + delimiter become body rows, so the region carries a second delimiter row.
 export function fusedTableCount(scan: DocScan, fromLine: number, toLine: number): number {
@@ -22,8 +22,8 @@ export function fusedTableCount(scan: DocScan, fromLine: number, toLine: number)
   return n
 }
 
-// A multi-line table-shaped clipboard refuses to land where a table cannot live: its rows would only mangle the construct they fall into. Prec.high so the raw paste is judged where it was aimed, ahead of the citation guard's relocation rescue.
-export const tablePasteGuard = Prec.high(
+// A multi-line table-shaped clipboard refuses to land where a table cannot live: its rows would only mangle the construct they fall into. Prec.low because CodeMirror runs transaction filters lowest precedence first, so the raw paste is judged where it was aimed, ahead of the citation guard's relocation rescue.
+export const tablePasteGuard = Prec.low(
   EditorState.transactionFilter.of((tr) => {
     if (!tr.docChanged || !tr.isUserEvent('input.paste')) return tr
     const scan = docScan(tr.startState.doc)

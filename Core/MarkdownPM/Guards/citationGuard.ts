@@ -4,8 +4,7 @@ import { citationEntries, splitWithOffsets } from '../Engine/detect'
 import { lineEndOf } from '../Engine/markdownCode'
 import type { CitationSlice } from '../Citations/citationEdits'
 import { docScan } from '../docCache'
-import type { GuardVerdict } from './calloutGuard'
-import { verdictFilter } from './calloutGuard'
+import { type GuardVerdict, verdictFilter } from './verdictFilter'
 
 function tailHolds(after: string, at: number): boolean {
   if (at >= after.length) return false

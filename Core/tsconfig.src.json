@@ -11,8 +11,6 @@
     "**/*.test.tsx",
     "vitest.config.ts",
     "vitest.setup.ts",
-    "MarkdownPM/editorHarness.ts",
-    "Testing/**",
-    "Views/fixtures/**"
+    "Testing/**"
   ]
 }

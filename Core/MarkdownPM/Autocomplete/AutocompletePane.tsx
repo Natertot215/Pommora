@@ -18,12 +18,12 @@ import { HoverRemove, hoverRemoveHost } from '@pommora/uix/Interactions/HoverRem
 import { removeButton } from '@pommora/uix/Interactions/hover-remove.css'
 import { revealTarget } from '@pommora/uix/Interactions/hover-reveal.css'
 import { side } from '@pommora/uix/Menus/menu-row.css'
-import { useKeepInView } from './useKeepInView'
+import { CLOSED_GEOMETRY, useKeepInView } from '../Menus/caretPane'
 import { NavTrail } from '@pommora/uix/Elements/NavTrail'
 import { text } from '@pommora/uix/Theme/typography.css'
 import { outlineTree, type OutlineNode } from '../Engine/outlineTree'
 import type { AcRow, HeadingRow } from './autocomplete'
-import { CLOSED_GEOMETRY, type AcState } from './useConnectionAutocomplete'
+import type { AcState } from './useConnectionAutocomplete'
 
 export interface AutocompletePaneProps {
   ac: AcState | null

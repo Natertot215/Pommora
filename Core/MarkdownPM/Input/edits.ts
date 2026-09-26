@@ -1,6 +1,5 @@
 import { type Personalization, settingOf } from '@pommora/core/Settings/personalization'
-import { isInsideWikilink } from '../Engine/parser'
-import { linkDestinationAt } from '../Embeds/webpageEmbed'
+import { linkDestinationAt } from '@pommora/core/Connections/links'
 import { aliasSpanAt } from '@pommora/core/Connections/connections'
 import { inCalloutAt, inCodeAt, inFenceAt, spanAt, type DocScan } from '../Engine/docScan'
 import {
@@ -8,6 +7,9 @@ import {
   isBlockquoteLine,
   lineEndOf,
   lineIndexAt,
+  lineStartAt,
+  lineEndAt,
+  trimmedRange,
   quotePrefix,
   type TextEdit,
 } from '../Engine/markdownCode'
@@ -29,13 +31,6 @@ import {
 export interface Edit extends TextEdit {
   selection: number
   head?: number
-}
-
-export const lineStartAt = (doc: string, pos: number): number =>
-  pos <= 0 ? 0 : doc.lastIndexOf('\n', pos - 1) + 1
-export const lineEndAt = (doc: string, pos: number): number => {
-  const i = doc.indexOf('\n', pos)
-  return i === -1 ? doc.length : i
 }
 
 const shorthandCheckboxRe = /^([ \t]*)([-+])\[([ xX]?)\]$/
@@ -370,14 +365,6 @@ export function autoPair(
   return { from: c, to: c, insert: inserted + pair.close, selection: c + 1 }
 }
 
-export const trimmedRange = (doc: string, from: number, to: number): [number, number] => {
-  let f = from
-  let t = to
-  while (f < t && /\s/.test(doc[f])) f++
-  while (t > f && /\s/.test(doc[t - 1])) t--
-  return f === t ? [from, to] : [f, t]
-}
-
 // A wrap over a selection already wrapped by its own cycle steps to the next wrapper instead of compounding; '' unwraps, and a cycle without it loops.
 const WRAP_CYCLES: Record<string, string[]> = {
   '[': ['[', '[[', '{', '{{'],
@@ -568,6 +555,24 @@ export function closeConstructOnShiftEnter(
   if (selStart !== selEnd || !settingOf(settings, 'exitPairsOnEnter')) return null
   const end = closerEndAt(scan, selStart)
   return end === null ? null : shiftEnterEdit(scan, end, end)
+}
+
+// Line-scoped so an unclosed `[[` never bleeds across lines.
+export function isInsideWikilink(offset: number, text: string): boolean {
+  let depth = 0
+  let i = lineStartAt(text, offset)
+  while (i < offset) {
+    if (text[i] === '[' && text[i + 1] === '[') {
+      depth++
+      i += 2
+    } else if (text[i] === ']' && text[i + 1] === ']') {
+      depth = Math.max(0, depth - 1)
+      i += 2
+    } else {
+      i++
+    }
+  }
+  return depth > 0
 }
 
 // A URL-shaped run or a link address the caret sits in is link content: converting `--` → `—` would corrupt the path.

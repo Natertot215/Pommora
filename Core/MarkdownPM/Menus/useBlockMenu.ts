@@ -7,12 +7,7 @@ import {
   type BlockMenuAction,
   type BlockMenuMatch,
 } from '@pommora/core/Actions/blockMenu'
-import {
-  caretGeometry,
-  useMenuCtl,
-  type AcCtl,
-  type CaretGeometry,
-} from '../Autocomplete/useConnectionAutocomplete'
+import { caretGeometry, usePaneCtl, type PaneCtl, type CaretGeometry } from './caretPane'
 import { citationSeatAt } from '../Citations/citationActions'
 import { docScan } from '../docCache'
 import { blockQueryAt, type BlockQuery } from './blockQuery'
@@ -46,7 +41,7 @@ interface BlockMenu {
   selected: BlockMenuAction | null
   open: boolean
   pick: (action: BlockMenuAction) => void
-  ctl: RefObject<AcCtl>
+  ctl: RefObject<PaneCtl>
 }
 
 export function useBlockMenu(viewRef: RefObject<EditorView | null>): BlockMenu {
@@ -71,7 +66,7 @@ export function useBlockMenu(viewRef: RefObject<EditorView | null>): BlockMenu {
     applyEditorAction(view, action)
   }
 
-  const { index, ctl } = useMenuCtl(
+  const { index, ctl } = usePaneCtl(
     rows.length,
     state?.query,
     {

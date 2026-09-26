@@ -4,12 +4,15 @@ import {
   pageLinkPattern,
   connectionText,
 } from '../Connections/connections'
-import { MD_LINK, encodeLinkTarget, targetTitle } from '../Connections/links'
+import {
+  MD_LINK,
+  composeWebpageEmbedLine,
+  encodeLinkTarget,
+  targetTitle,
+} from '../Connections/links'
 import { isValidLink, WEB_ADDRESS } from '../Paths/urlPath'
-import { serializeLink } from '../Connections/linkValue'
-import { linkPaste, type LinkPaste } from '../MarkdownPM/Links/pasteDecision'
+import { linkPaste, serializeLink, type LinkPaste } from '../Connections/linkValue'
 import { LINK_DISPLAY_LABELS, LINK_DISPLAYS, type LinkDisplay } from '../Properties/properties'
-import { composeWebpageEmbedLine } from '../MarkdownPM/Embeds/webpageEmbed'
 
 export type PasteAsForm =
   | LinkDisplay

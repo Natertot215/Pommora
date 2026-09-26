@@ -1,7 +1,7 @@
 import type { EditorView } from '@codemirror/view'
 import type { ConnUrlAction } from '@pommora/core/Actions/connectionMenu'
 import { unescapeAlias } from '@pommora/core/Connections/links'
-import { linkPaste } from '@pommora/core/MarkdownPM/Links/pasteDecision'
+import { linkPaste } from '@pommora/core/Connections/linkValue'
 import type { LinkDisplay } from '@pommora/core/Properties/properties'
 import { linkTarget, linkTokenAt, type Token } from '../Engine/tokens'
 import { focusRange } from '../caretPlacement'

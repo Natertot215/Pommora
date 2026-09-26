@@ -1,7 +1,7 @@
 // Pure, so the same decision serves both editors (page body and table cell) and is testable without fabricating clipboard events.
 
 import { isValidLink, WEB_ADDRESS } from '../../Paths/urlPath'
-import { linkDisplayText, serializeLink } from '../../Connections/linkValue'
+import { linkPaste, serializeLink, type LinkPaste } from '../../Connections/linkValue'
 import type { LinkDisplay } from '../../Properties/properties'
 
 export interface PasteInput {
@@ -12,13 +12,6 @@ export interface PasteInput {
   format: LinkDisplay
   /** A cached page title; absent means Page Title has to fetch one. */
   title?: string
-}
-
-export interface LinkPaste {
-  kind: 'link'
-  text: string
-  target: string
-  wantsTitle: boolean
 }
 
 type PasteDecision = { kind: 'literal' } | LinkPaste
@@ -34,27 +27,6 @@ export function pastedUrl(clipboard: string): string | null {
   return isValidLink(s) ? s : null
 }
 
-const link = (text: string, target: string, wantsTitle = false): LinkPaste => ({
-  kind: 'link',
-  text,
-  target,
-  wantsTitle,
-})
-
-/** The editor's deferred title rewrite reads this same function once its fetch lands, so a paste and its swap-in can never disagree about the form. */
-export function linkMarkdown(url: string, display: LinkDisplay, title?: string): string {
-  return serializeLink({ url, alias: linkDisplayText(url, display, title) })
-}
-
-/** Every writer of a formatted link — paste, Paste As, Format rewrite — comes through here, so a link waiting on a title is announced the same way regardless of how it came to be. */
-export function linkPaste(url: string, display: LinkDisplay, title?: string): LinkPaste {
-  return link(
-    linkMarkdown(url, display, title),
-    url,
-    display === 'link-title' && title === undefined,
-  )
-}
-
 export function decidePaste(input: PasteInput): PasteDecision {
   const target = pastedUrl(input.clipboard)
   if (!target) return LITERAL
@@ -62,7 +34,12 @@ export function decidePaste(input: PasteInput): PasteDecision {
   // A selection chooses the wrap axis; a bare caret chooses the format axis. The chord inverts only whichever axis is in play.
   const wrappable = input.selectionText !== '' && !/[\r\n]/.test(input.selectionText)
   if (wrappable && (input.inverse ? !input.pasteIntoText : input.pasteIntoText))
-    return link(serializeLink({ url: target, alias: input.selectionText }), target)
+    return {
+      kind: 'link',
+      text: serializeLink({ url: target, alias: input.selectionText }),
+      target,
+      wantsTitle: false,
+    }
 
   // A chord spent choosing the wrap axis does not also flip the format axis.
   if (!wrappable && input.inverse) return LITERAL

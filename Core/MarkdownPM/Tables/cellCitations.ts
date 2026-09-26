@@ -9,7 +9,7 @@ import {
 import { RangeSetBuilder, type Extension } from '@codemirror/state'
 import { tokenize } from '../Engine/tokens'
 import { CiteRefWidget } from '../decorations'
-import { resolutionNudge } from '../Embeds/embedWidget'
+import { resolutionNudge } from '../api'
 
 type OrdinalOf = (label: string) => number | null
 

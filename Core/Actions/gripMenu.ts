@@ -1,7 +1,8 @@
 import { type ActionItem, joinGroups } from './menuModel'
-import type { HeadingLevel } from '../MarkdownPM/Input/format'
 import { scaleRows } from '../Tiles/tileZoom'
 import { COPY_LINK_ROW } from './pageMenu'
+
+export type HeadingLevel = 0 | 1 | 2 | 3 | 4 | 5 | 6
 
 export type ListKind = 'ordered' | 'alphabetical' | 'bullet' | 'checkbox' | 'arrow'
 

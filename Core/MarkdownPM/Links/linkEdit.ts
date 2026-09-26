@@ -10,7 +10,7 @@ import type { ConnEditAction } from '@pommora/core/Actions/connectionMenu'
 import type { ConnectionsApi } from './connectionsApi'
 import { aliasedToken, linkTokenAt, type Token } from '../Engine/tokens'
 import { focusRange } from '../caretPlacement'
-import { restedOnLink } from '../Gestures/linkGestures'
+import { restedOnLink } from './linkReveal'
 import { editorHost } from '../api'
 import { clamp } from '@pommora/uix/Utilities/clamp'
 
