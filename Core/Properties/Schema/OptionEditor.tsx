@@ -19,7 +19,7 @@ import { DropLine } from '@pommora/uix/Interactions/DropLine'
 import { OptionSlot, type OptionStyle, useOptionIconChoice } from './OptionRow'
 import { useOptionReorder } from './useOptionReorder'
 import * as s from '@pommora/uix/Menus/frames.css'
-import { AccessoryButton, heading } from '@pommora/uix/Menus'
+import { AccessoryButton, heading, rowDropLine } from '@pommora/uix/Menus'
 import { labelColor, shape } from '@pommora/uix/Labels/label-base.css'
 import { optionShapeFor } from '@pommora/uix/Labels/recipes'
 import { popMenu } from '../../Actions/menuActions'
@@ -152,7 +152,9 @@ export function OptionEditor({
           )
         })}
         {options.length === 0 ? slotAt(0, LIST_ANCHOR) : null}
-        {reorder.lineTop !== null ? <DropLine style={{ top: reorder.lineTop }} /> : null}
+        {reorder.lineTop !== null ? (
+          <DropLine style={{ top: reorder.lineTop, ...rowDropLine() }} />
+        ) : null}
       </div>
       {iconChoice.picker}
     </div>

@@ -1,6 +1,7 @@
 // frameDnd doesn't fit: its two-region assigned/all vocabulary has no parent/nest concept, and the hierarchy list needs reparent drops.
 import { useRef, type PointerEvent as ReactPointerEvent, type ReactNode } from 'react'
 import { useInsertionDrag } from '@pommora/uix/Interactions/insertionDrag'
+import { rowDropLine } from '@pommora/uix/Menus'
 import type { Band, BandIndex, BandSlot } from '../Bands/bandDndModel'
 import { bandSlot, buildBandIndex, canNest } from '../Bands/bandDndModel'
 
@@ -18,13 +19,11 @@ export function useGroupingListDrag({
   bands,
   nestable,
   labelFor,
-  lineClassName,
   onDrop,
 }: {
   bands: Band[]
   nestable: boolean
   labelFor: (id: string) => string
-  lineClassName?: string
   onDrop: (draggedId: string, drop: GroupingDrop) => void
 }): {
   containerRef: (el: HTMLDivElement | null) => void
@@ -68,8 +67,7 @@ export function useGroupingListDrag({
         beforeId: slot.beforeId,
       })
     },
-    lineFor: (slot) => (slot.nestInto ? null : { top: slot.topInBox }),
-    lineClassName,
+    lineFor: (slot) => (slot.nestInto ? null : { top: slot.topInBox, ...rowDropLine() }),
     label: labelFor,
     rowEl: (id) => els.current.get(id),
     scrollTarget: () => container.current,

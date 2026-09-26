@@ -11,6 +11,4 @@ export const subOrderRow = style({ marginTop: SUB_ORDER_GAP })
 
 export const orderLabel = style([text.body.emphasized, { color: c.label.secondary }])
 
-export const dropLineInset = style({ left: '8px', right: '8px' })
-
 export const ghosted = style({ opacity: STATE_OPACITY.ghost })

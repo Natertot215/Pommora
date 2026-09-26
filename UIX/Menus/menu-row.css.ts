@@ -35,6 +35,7 @@ export const rowShell = style({
 })
 
 export const ROW_LEAD = 'var(--row-pad-lead, var(--row-pad-x))'
+export const ROW_TRAIL = 'var(--row-pad-trail, var(--row-pad-x))'
 
 export const rowBox = style([
   text.body.standard,
@@ -45,7 +46,7 @@ export const rowBox = style([
     gap: '8px',
     paddingBlock: 'var(--row-pad-y)',
     paddingLeft: ROW_LEAD,
-    paddingRight: 'var(--row-pad-trail, var(--row-pad-x))',
+    paddingRight: ROW_TRAIL,
     fontSize: 'var(--row-size)',
     lineHeight: 'var(--row-line)',
     color: c.label.primary,

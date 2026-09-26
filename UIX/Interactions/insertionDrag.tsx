@@ -21,7 +21,6 @@ interface InsertionDragSpec<Slot, Snap> {
   resolve: (id: string, point: { x: number; y: number }, snap: Snap) => Slot | null
   commit: (id: string, slot: Slot, snap: Snap) => void
   lineFor?: (slot: Slot, snap: Snap) => CSSProperties | null
-  lineClassName?: string
   label: (id: string) => string
   ghostLabel?: (id: string) => ReactNode
   ghost?: 'offset' | 'grab' | 'none'
@@ -198,7 +197,7 @@ export function useInsertionDrag<Slot, Snap>(
     begin: stable.begin,
     dragging: drag?.id ?? null,
     slot: drag?.slot ?? null,
-    line: drag?.line != null ? <DropLine style={drag.line} className={spec.lineClassName} /> : null,
+    line: drag?.line != null ? <DropLine style={drag.line} /> : null,
     ghost:
       drag?.ghost != null && dragged.current ? (
         <DragGhost
