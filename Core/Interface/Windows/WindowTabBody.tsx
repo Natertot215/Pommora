@@ -31,8 +31,6 @@ interface WindowTabBodySlots {
   promote: () => void
 }
 
-type Editing = { path: string | undefined; on: boolean }
-
 function SpaceTabBody({
   host,
   owner,
@@ -54,13 +52,11 @@ function SpaceTabBody({
   )
 }
 
-// Memoized so a parked page sits out every re-render of the window; its props hold still while it's parked.
+// Memoized so a parked page sits out the window's own re-renders.
 const WindowPage = memo(function WindowPage({
   id,
   path,
   shown,
-  editing,
-  onEdit,
   onBody,
   arrive,
   onArrived,
@@ -71,8 +67,6 @@ const WindowPage = memo(function WindowPage({
   id: string
   path: string
   shown: boolean
-  editing: boolean
-  onEdit: (editing: Editing) => void
   onBody?: (body: string) => void
   arrive?: string
   onArrived: () => void
@@ -80,7 +74,8 @@ const WindowPage = memo(function WindowPage({
   chrome: 'window' | 'none'
   bodyRef: RefObject<HTMLDivElement | null>
 }): React.JSX.Element {
-  const warm = useMemo(() => windowSeam(id, path), [id, path])
+  const [editingPath, setEditingPath] = useState<string | null>(null)
+  if (editingPath !== null && !shown) setEditingPath(null)
   return (
     <div
       className={cx('window-body', 'over-scroll', 'page-tile-grows', !shown && 'is-parked')}
@@ -90,11 +85,11 @@ const WindowPage = memo(function WindowPage({
       <PageTile
         key={path}
         path={path}
-        editing={editing}
-        onBeginEdit={() => onEdit({ path, on: true })}
+        editing={editingPath === path}
+        onBeginEdit={() => setEditingPath(path)}
         connections={connections}
         onBody={onBody}
-        warm={warm}
+        warm={windowSeam(id, path)}
         chrome={chrome}
         arrive={arrive}
         onArrived={onArrived}
@@ -110,15 +105,12 @@ export function useWindowTabBody(target: WindowTarget | null): WindowTabBodySlot
   const experimental = useExperimental()
   const pageBanner = useSession((s) => windowBannerShown(s.personalization, 'page'))
   const spaceBanner = useSession((s) => windowBannerShown(s.personalization, 'space'))
-  const warmTabs = useSetting('tabCache')
+  const tabCache = useSetting('tabCache')
 
   const pageTarget = target?.kind === 'page' ? target : null
   const pagePath = pageTarget?.path
   const spaceTarget = target?.kind === 'space' ? target : null
   const spaceOwner = spaceTarget && findSpace(tree, spaceTarget.id)
-
-  const [editing, setEditing] = useState<Editing>({ path: pagePath, on: false })
-  if (editing.path !== pagePath) setEditing({ path: pagePath, on: false })
 
   const [sidePaneOpen, setSidePaneOpen] = useState(false)
   const paneOpen = sidePaneOpen && pageTarget !== null
@@ -152,10 +144,10 @@ export function useWindowTabBody(target: WindowTarget | null): WindowTabBodySlot
     recent.current = [
       ...shown,
       ...recent.current.filter((id) => id !== activeTabId && pages.has(id)),
-    ].slice(0, warmTabs + 1)
+    ].slice(0, shown.length + tabCache)
     // Fixed order, never most-recent-first: reordering keyed children moves their DOM.
     return [...recent.current].sort().map((id) => ({ id, page: pages.get(id)! }))
-  }, [windowTabs, activeTabId, warmTabs])
+  }, [windowTabs, activeTabId, tabCache])
 
   // It closes the TAB, not the window; the window dies by itself when that was its last, and only then does the engulf play.
   const promoteWindowTab = useSession((s) => s.promoteWindowTab)
@@ -185,8 +177,6 @@ export function useWindowTabBody(target: WindowTarget | null): WindowTabBodySlot
             id={id}
             path={tab.path}
             shown={shown}
-            editing={shown && editing.on}
-            onEdit={setEditing}
             onBody={shown ? onBody : undefined}
             arrive={shown ? arrive : undefined}
             onArrived={clearPendingTravel}
@@ -197,7 +187,7 @@ export function useWindowTabBody(target: WindowTarget | null): WindowTabBodySlot
         )
       })}
       {spaceTarget && spaceOwner && (
-        <div className="window-body over-scroll" ref={bodyRef}>
+        <div key={spaceTarget.id} className="window-body over-scroll" ref={bodyRef}>
           <SpaceTabBody
             host={spaceTarget}
             owner={spaceOwner}

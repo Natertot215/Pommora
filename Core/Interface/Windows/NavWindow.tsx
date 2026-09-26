@@ -5,7 +5,6 @@ import { duration, easing, flipTransform, ms } from '@pommora/uix/Animations/mot
 import { WindowBase } from '@pommora/uix/Windows/WindowBase'
 import type { NavRef } from '@pommora/core/Navigation/navRef'
 import { useExitPresence } from '@pommora/uix/Animations/useExitPresence'
-import { moveByKey } from '@pommora/uix/Utilities/moveItem'
 import { resolveIndexOf } from '../../Nexus/treeIndex'
 import { useFold, windowTargetOf, useSession, useSetting } from '../../Session/store'
 import { useNavData } from '../../Navigation/useNavData'
@@ -47,14 +46,6 @@ function NavWindowBody({ closing }: { closing: boolean }): React.JSX.Element {
     const live = new Set(resolvedRecents.map((r) => r.key))
     return frozenRecents.filter((r) => live.has(r.key))
   }, [frozenRecents, resolvedRecents])
-  // A drag commits the SHOWN order wholesale: the store's live order can lag the frozen view, so splicing against it would land elsewhere than the drop showed.
-  const setRecentsOrder = useSession((s) => s.setRecentsOrder)
-  const reorderShownRecent = (activeKey: string, overKey: string): void => {
-    const next = moveByKey(frozenRecents, (r) => r.key, activeKey, overKey)
-    if (!next) return
-    setFrozenRecents(next)
-    setRecentsOrder(next.map((r) => r.key))
-  }
 
   const searchRef = useRef<HTMLInputElement>(null)
 
@@ -81,7 +72,7 @@ function NavWindowBody({ closing }: { closing: boolean }): React.JSX.Element {
     search,
     pins: resolvedPins,
     recents: shownRecents,
-    onReorderRecent: reorderShownRecent,
+    onReordered: setFrozenRecents,
     onSelect: goClose,
     onOpenNewTab: goNewTab,
     inputRef: searchRef,

@@ -22,7 +22,9 @@
   --window-toolbar-h: 0px;
 }
 
-.navwindow-content {
+/* The region above the footer, so a parked tab keeps the shown one's height and its scroll never clamps while parked. */
+.navwindow-content,
+.page-window-content {
   position: relative;
   display: flex;
   flex-direction: column;

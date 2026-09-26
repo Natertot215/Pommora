@@ -35,14 +35,14 @@ export function useWindowWarm(
     return () => el.removeEventListener('scroll', onScroll)
   }, [activeTabId, scrollerRef])
 
-  // CM6 builds the embed's height ASYNC after mount — an immediate set clamps to 0, and double-rAF lands after its first measure/layout pass. A Space tab's board is read over IPC on its first activation, so `ready` is the second thing worth waiting for.
+  // CM6 builds the embed's height ASYNC after mount — an immediate set clamps to 0, and double-rAF lands after its first measure/layout pass. A Space tab's board is read over IPC on its first activation, so `ready` is the second thing worth waiting for. A parked page keeps its own scroll, so only a fresh scroller, still at the top, takes the saved one.
   useEffect(() => {
     if (!activeTabId || !ready) return
     const saved = readBodyScroll(activeTabId)
     let inner = 0
     const outer = requestAnimationFrame(() => {
       inner = requestAnimationFrame(() => {
-        if (scrollerRef.current) scrollerRef.current.scrollTop = saved
+        if (scrollerRef.current?.scrollTop === 0) scrollerRef.current.scrollTop = saved
       })
     })
     return () => {
