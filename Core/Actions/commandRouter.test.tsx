@@ -1,5 +1,8 @@
 // @vitest-environment jsdom
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
+import { act, createElement } from 'react'
+import { createRoot, type Root } from 'react-dom/client'
+import { pushDismissal, useWindowOrder } from '@pommora/uix/Interactions/dismissalStack'
 import type { SelectTarget, Tab } from '@pommora/core/Navigation/navRef'
 import { useSession } from '../Session/store'
 import { stubDialer } from '../vitest.setup'
@@ -8,9 +11,16 @@ import { runCommand } from './commandRouter'
 const ctx = (id: string): SelectTarget => ({ kind: 'context', id })
 const tab = (id: string): Tab => ({ id, target: ctx(id), navStack: [ctx(id)], navIndex: 0 })
 const page = (id: string) => ({ kind: 'page', id, path: `${id}.md` }) as const
+;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
 
 let frame: HTMLDivElement
 let field: HTMLInputElement
+let order: Root
+
+function Stands(): null {
+  useWindowOrder({ current: frame }, true)
+  return null
+}
 
 beforeEach(() => {
   ;(window as unknown as { nexus: unknown }).nexus = stubDialer({
@@ -32,8 +42,13 @@ beforeEach(() => {
   field = document.createElement('input')
   frame.appendChild(field)
   document.body.appendChild(frame)
+  order = createRoot(document.createElement('div'))
+  act(() => order.render(createElement(Stands)))
 })
-afterEach(() => frame.remove())
+afterEach(() => {
+  act(() => order.unmount())
+  frame.remove()
+})
 
 describe('tab chords follow focus', () => {
   it('Ctrl+Tab cycles the main bar while focus is outside every window', () => {
@@ -88,7 +103,10 @@ describe('tab chords follow focus', () => {
 
   it('⌘N on the NavWindow’s map tab carries the list into a new main tab it switches to', () => {
     frame.className = 'window navwindow'
-    useSession.setState({ personalization: { tabTakeFocus: false } })
+    useSession.setState({
+      personalization: { tabTakeFocus: false },
+      devicePrefs: { ...useSession.getState().devicePrefs, navWindowGallery: true },
+    })
     useSession.getState().openNav()
     field.focus()
     runCommand('new-tab')
@@ -96,6 +114,7 @@ describe('tab chords follow focus', () => {
     expect(s.windowSlot).toBeNull()
     expect(s.tabs.at(-1)?.target.kind).toBe('newtab')
     expect(s.activeTabId).toBe(s.tabs.at(-1)?.id)
+    expect(s.devicePrefs.navViewGallery).toBe(true)
   })
 
   it('⌘N in a focused Page Window promotes its active tab', () => {
@@ -103,5 +122,19 @@ describe('tab chords follow focus', () => {
     field.focus()
     runCommand('new-tab')
     expect(useSession.getState().windowSlot).toBeNull()
+  })
+
+  it('a picker opened from inside the window counts as the window', () => {
+    useSession.getState().openWindowTab(page('a'))
+    const pane = document.createElement('div')
+    const option = document.createElement('button')
+    pane.appendChild(option)
+    document.body.appendChild(pane)
+    const picker = pushDismissal({ layer: () => pane, trigger: () => field, dismiss: () => {} })
+    option.focus()
+    runCommand('new-tab')
+    expect(useSession.getState().windowSlot).toBeNull()
+    picker.release()
+    pane.remove()
   })
 })

@@ -33,6 +33,15 @@ export type CommandId = keyof typeof DEFAULT_COMMANDS
 
 export type Commands = Record<CommandId, string>
 
+/** Carried by the app menu, whose accelerators take the keystroke before the window sees it. */
+export const MENU_COMMANDS = [
+  'new-tab',
+  'new-page',
+  'toggle-sidebar',
+] as const satisfies readonly CommandId[]
+
+export type MenuCommand = (typeof MENU_COMMANDS)[number]
+
 export const COMMAND_IDS = Object.keys(DEFAULT_COMMANDS) as CommandId[]
 
 function spell(chord: string, mod: string, join: string, key: (k: string) => string): string {

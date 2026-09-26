@@ -32,9 +32,18 @@ const raiseWindow = (el: HTMLElement): void => {
   rankWindows()
 }
 
+/** The window `node` sits in, or, for a layer portalled out of one, the window its trigger sits in. */
+export const ownerWindow = (node: Element | null): HTMLElement | null => {
+  if (!node) return null
+  const owner = windows.find((w) => w.contains(node))
+  if (owner) return owner
+  const opener = entries.find((e) => e.entry.layer()?.contains(node))?.entry.trigger?.()
+  return opener ? ownerWindow(opener) : null
+}
+
 const behindFront = (node: Element | null): boolean => {
-  const owner = node ? windows.find((w) => w.contains(node)) : undefined
-  return owner !== undefined && owner !== windows.at(-1)
+  const owner = ownerWindow(node)
+  return owner !== null && owner !== windows.at(-1)
 }
 
 const dismissable = (e: Live): boolean => !e.closing && e.entry.dismiss !== undefined
