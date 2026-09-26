@@ -12,8 +12,6 @@ import { moveHeadingSection } from '../../Pages/pageEditor'
 import { useLatest } from '@pommora/uix/Utilities/stableApi'
 import { rowDropLine } from '@pommora/uix/Menus'
 
-// A flat insertion line marks the drop — the outline re-nests the moved section by level once the document edit lands, so no depth-indented line is needed.
-
 const EMPTY_SECTION: ReadonlySet<string> = new Set()
 
 type MeasuredRow = { key: string; top: number; bottom: number; mid: number }
@@ -79,6 +77,7 @@ export function OutlineDnd({
       }
     },
     commit: (key, slot) => moveHeadingSection(key, slot.beforeKey),
+    // A flat insertion line marks the drop — the outline re-nests the moved section by level once the document edit lands, so no depth-indented line is needed.
     lineFor: (slot) => ({ top: slot.lineY, ...rowDropLine() }),
     label: (key) => flatRef.current.find((x) => x.key === key)?.text ?? '',
     ghost: 'grab',

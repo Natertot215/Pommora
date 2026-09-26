@@ -6,7 +6,7 @@ import { type FilterRule, type SavedView, viewOption } from '@pommora/core/Views
 import { Icon } from '@pommora/uix/Symbols'
 import { FieldRun } from '@pommora/uix/Fields/FieldRun'
 import * as fr from '@pommora/uix/Fields/field-run.css'
-import * as fieldSlot from '@pommora/uix/Fields/fields.css'
+import { leading } from '@pommora/uix/Fields/fields.css'
 import { EntityIcon } from '../../Assets/EntityIcon'
 import { colorNameFor } from '@pommora/uix/Theme/ramp'
 import {
@@ -109,7 +109,7 @@ function FieldPicker({
         aria-label={ariaLabel}
         onClick={() => setOpen(true)}
       >
-        {leadGlyph ? <span className={fieldSlot.leading}>{leadGlyph}</span> : null}
+        {leadGlyph ? <span className={leading}>{leadGlyph}</span> : null}
         <OverScroll className={cx(fp.fieldLabel, display === null && fp.placeholder)}>
           {display ?? placeholder}
         </OverScroll>
