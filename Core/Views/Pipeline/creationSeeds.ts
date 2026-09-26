@@ -1,6 +1,6 @@
 // A rule stamps only when it names one value it can be satisfied by: an Is rule on a Select, Status, or Checkbox, or an Is Any, Is All, or Contains rule on a Multi-Select or a Context, where two such rules on one property take both values. Metadata is never changed to satisfy a filter, and a page those exclude simply creates and stays filtered out.
 
-import type { PropertyDefinition } from '@pommora/core/Properties/properties'
+import { type PropertyDefinition, specOf } from '@pommora/core/Properties/properties'
 import type { PropertyValue } from '@pommora/core/Properties/propertyValue'
 import type { FilterGroup, FilterRule } from '@pommora/core/Views/views'
 import { declaredType } from '@pommora/core/Properties/value'
@@ -17,13 +17,20 @@ function ruleSeed(
   const operands = ruleOperands(rule)
   if (operands.length !== 1) return null
   const type = declaredType(rule.property_id, schema, contextIds)
-  if (type === 'context' || type === 'multiSelect') {
-    if (!LIST_OPS.has(rule.op)) return null
-    return type === 'context'
-      ? { kind: 'context', value: operands }
-      : { kind: 'multiSelect', value: operands }
+  const kind = specOf(type)?.kind
+  switch (kind) {
+    case 'context':
+    case 'multiSelect':
+      return LIST_OPS.has(rule.op) ? { kind, value: operands } : null
+    case 'select':
+    case 'checkbox':
+    case 'number':
+    case 'dateTime':
+    case 'link':
+    case 'file':
+    case undefined:
+      return rule.op === FILTER_OPS.is ? groupKeyToValue(operands[0], type) : null
   }
-  return rule.op === FILTER_OPS.is ? groupKeyToValue(operands[0], type) : null
 }
 
 /** Callers spread gesture-context seeds AFTER these — where a filter implication and the gesture disagree, the gesture wins. */

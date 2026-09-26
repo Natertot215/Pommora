@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import { optionValues, type PropertyDefinition } from './properties'
+import { optionValues, PROPERTY_TYPES, type PropertyDefinition } from './properties'
 
 const strings = z.array(z.string())
 export const propertyValue = z.discriminatedUnion('kind', [
@@ -17,6 +17,7 @@ export const propertyValue = z.discriminatedUnion('kind', [
   z.object({ kind: z.literal('null') }),
 ])
 export type PropertyValue = z.infer<typeof propertyValue>
+export type ValueKind = Exclude<PropertyValue['kind'], 'null'>
 
 /** YAML reads an unquoted `[[Name.ext]]` as a nested flow sequence rather than a string; unwrapping single-element arrays keeps a hand-edit from nulling the whole value. */
 function fileEntry(v: unknown): string | null {
@@ -45,26 +46,22 @@ export const resolveSingleOption = (
 
 export function decodeValue(def: PropertyDefinition, raw: unknown): PropertyValue {
   if (raw === null || raw === undefined) return NULL_VALUE
-
-  switch (def.type) {
+  const kind = PROPERTY_TYPES[def.type].kind
+  switch (kind) {
     case 'number':
-      return typeof raw === 'number' ? { kind: 'number', value: raw } : NULL_VALUE
+      return typeof raw === 'number' ? { kind, value: raw } : NULL_VALUE
     case 'checkbox':
-      return raw === true ? { kind: 'checkbox', value: true } : NULL_VALUE
+      return raw === true ? { kind, value: true } : NULL_VALUE
     case 'link':
-      return typeof raw === 'string' ? { kind: 'link', value: raw } : NULL_VALUE
     case 'dateTime':
-    case 'createdTime':
-    case 'lastEditedTime':
-      return typeof raw === 'string' ? { kind: 'dateTime', value: raw } : NULL_VALUE
-    case 'select':
-    case 'status':
+      return typeof raw === 'string' ? { kind, value: raw } : NULL_VALUE
+    case 'select': {
+      const value = resolveSingleOption(optionList(raw), optionValues(def))
+      return value === undefined ? NULL_VALUE : { kind, value }
+    }
     case 'multiSelect': {
       const xs = optionList(raw)
-      if (def.type === 'multiSelect')
-        return xs.length === 0 ? NULL_VALUE : { kind: 'multiSelect', value: xs }
-      const value = resolveSingleOption(xs, optionValues(def))
-      return value === undefined ? NULL_VALUE : { kind: 'select', value }
+      return xs.length === 0 ? NULL_VALUE : { kind, value: xs }
     }
     // Deliberately NOT merged with multiSelect: optionValues on a file def returns [], so a merged case would discard every attachment through the restore path.
     case 'file': {
@@ -74,9 +71,9 @@ export function decodeValue(def: PropertyDefinition, raw: unknown): PropertyValu
         const entry = fileEntry(x)
         if (entry !== null && entry !== '') entries.push(entry)
       }
-      return entries.length === 0 ? NULL_VALUE : { kind: 'file', value: entries }
+      return entries.length === 0 ? NULL_VALUE : { kind, value: entries }
     }
-    default:
+    case 'context':
       return NULL_VALUE
   }
 }
@@ -115,8 +112,11 @@ export function encodeValue(value: PropertyValue): unknown {
     case 'null':
       return null
     // A value carrying a kind outside the union came from outside the app; undefined is the refusal every writer checks, never a silent clear.
-    default:
+    default: {
+      const _exhaustive: never = value
+      void _exhaustive
       return undefined
+    }
   }
 }
 
@@ -137,7 +137,8 @@ export function isBlankValue(value: PropertyValue | null): boolean {
     case 'link':
     case 'dateTime':
       return value.value === ''
-    default:
+    case 'number':
+    case 'checkbox':
       return false
   }
 }

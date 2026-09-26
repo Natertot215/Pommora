@@ -1,28 +1,32 @@
 import { UNGROUPED } from '@pommora/core/Views/viewRow'
-import type { PropertyValue } from '@pommora/core/Properties/propertyValue'
-import type { PropertyType } from '@pommora/core/Properties/properties'
+import type { PropertyValue, ValueKind } from '@pommora/core/Properties/propertyValue'
+import { type PropertyType, specOf } from '@pommora/core/Properties/properties'
 
-/** A date bucket isn't a single date, so date grouping can't be reassigned by drag; the rest here can. */
-export const REASSIGNABLE_GROUP_TYPES: ReadonlySet<string> = new Set([
-  'status',
-  'select',
-  'checkbox',
-] satisfies PropertyType[])
+/** A date bucket isn't a single date, so date grouping can't be reassigned by drag; a kind without a function here never reassigns. */
+const FROM_GROUP_KEY: Record<ValueKind, ((key: string) => PropertyValue | null) | null> = {
+  select: (key) => ({ kind: 'select', value: key }),
+  checkbox: (key) => (key === 'true' ? { kind: 'checkbox', value: true } : null),
+  dateTime: null,
+  number: null,
+  multiSelect: null,
+  context: null,
+  link: null,
+  file: null,
+}
+
+const fromGroupKey = (type: PropertyType | 'title' | undefined) => {
+  const kind = specOf(type)?.kind
+  return kind ? FROM_GROUP_KEY[kind] : null
+}
+
+export const reassignable = (type: PropertyType | 'title' | undefined): boolean =>
+  fromGroupKey(type) !== null
 
 export function groupKeyToValue(
   groupKey: string,
   type: PropertyType | 'title' | undefined,
 ): PropertyValue | null {
-  if (groupKey === UNGROUPED) return null
-  switch (type) {
-    case 'status':
-    case 'select':
-      return { kind: 'select', value: groupKey }
-    case 'checkbox':
-      return groupKey === 'true' ? { kind: 'checkbox', value: true } : null
-    default:
-      return null
-  }
+  return groupKey === UNGROUPED ? null : (fromGroupKey(type)?.(groupKey) ?? null)
 }
 
 /** The neighbor rule keeps a drop to a run's edge — a seam, or either end of the list — from rewriting anything. */

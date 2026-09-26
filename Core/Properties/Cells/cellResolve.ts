@@ -1,4 +1,5 @@
 import { optionsOf, type PropertyDefinition } from '@pommora/core/Properties/properties'
+import { bandGrouping } from '@pommora/core/Views/Pipeline/group'
 import type { CollectionNode, SetNode } from '@pommora/core/Nexus/tree'
 import type { ResolvedGroup } from '@pommora/core/Views/viewRow'
 import type { SavedView } from '@pommora/core/Views/views'
@@ -29,11 +30,12 @@ export function groupLabel(
 ): string {
   if (group.kind === 'ungrouped') return ''
   if (group.kind === 'structural-set') return setNames.get(group.key) ?? group.key
-  const groupPropId = view.group?.kind === 'property' ? view.group.property_id : undefined
-  if (!groupPropId) return group.key
-  // 'true'/'false' are the checkbox bucket keys minted by bucketKey, not arbitrary strings.
-  const rawFallback = group.key === 'true' ? 'On' : group.key === 'false' ? 'Off' : group.key
-  return optionLabel(groupPropId, group.key, ctx.schema) ?? rawFallback
+  const propId = bandGrouping(view, ctx.schema)?.property_id
+  const value = group.bucket ?? group.key
+  if (!propId) return value
+  // 'true'/'false' are the checkbox bucket keys the grouping engine mints, not arbitrary strings.
+  const rawFallback = value === 'true' ? 'On' : value === 'false' ? 'Off' : value
+  return optionLabel(propId, value, ctx.schema) ?? rawFallback
 }
 
 function buildSetMap<T>(source: CollectionNode | SetNode, pick: (s: SetNode) => T): Map<string, T> {

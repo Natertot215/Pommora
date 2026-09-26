@@ -1,7 +1,11 @@
 // Anything the frame can't faithfully represent decodes as `locked` rather than being silently flattened.
 
-import type { PropertyDefinition } from '@pommora/core/Properties/properties'
-import { RESERVED_PROPERTY_ID } from '@pommora/core/Properties/properties'
+import {
+  type PropertyDefinition,
+  RESERVED_PROPERTY_ID,
+  specOf,
+} from '@pommora/core/Properties/properties'
+import type { ValueKind } from '@pommora/core/Properties/propertyValue'
 import type { FilterGroup, FilterRule, MatchMode } from '@pommora/core/Views/views'
 
 export type { MatchMode }
@@ -152,6 +156,17 @@ const LOCATION_OPS: OperatorChoice[] = [
 /** Title never offers empty ops — a title (the filename basename) is never empty. */
 const TITLE_OPS: OperatorChoice[] = TEXT_OPS
 
+const KIND_OPS: Record<ValueKind, OperatorChoice[]> = {
+  select: OPTION_OPS,
+  multiSelect: SET_OPS,
+  context: CONTEXT_OPS,
+  number: NUMBER_OPS,
+  dateTime: DATE_OPS,
+  checkbox: CHECKBOX_OPS,
+  link: [...TEXT_OPS, ...EMPTIES],
+  file: EMPTIES,
+}
+
 export function operatorsFor(
   propertyId: string,
   schema: PropertyDefinition[],
@@ -159,29 +174,8 @@ export function operatorsFor(
 ): OperatorChoice[] {
   if (propertyId === RESERVED_PROPERTY_ID.title) return TITLE_OPS
   if (propertyId === RESERVED_PROPERTY_ID.location) return LOCATION_OPS
-  switch (declaredType(propertyId, schema, contextIds)) {
-    case 'select':
-    case 'status':
-      return OPTION_OPS
-    case 'multiSelect':
-      return SET_OPS
-    case 'context':
-      return CONTEXT_OPS
-    case 'number':
-      return NUMBER_OPS
-    case 'dateTime':
-    case 'createdTime':
-    case 'lastEditedTime':
-      return DATE_OPS
-    case 'checkbox':
-      return CHECKBOX_OPS
-    case 'link':
-      return [...TEXT_OPS, ...EMPTIES]
-    case 'file':
-      return EMPTIES
-    default:
-      return []
-  }
+  const kind = specOf(declaredType(propertyId, schema, contextIds))?.kind
+  return kind ? KIND_OPS[kind] : []
 }
 
 export function filterTargets(

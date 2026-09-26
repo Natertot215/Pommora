@@ -15,6 +15,7 @@ import { useDiscloseTarget } from '@pommora/uix/Interactions/dragDisclose'
 import { RenamableTitle } from '../../Interface/RenamableTitle'
 import { declaredType } from '../../Properties/value'
 import { findOption, groupLabel } from '../../Properties/Cells/cellResolve'
+import { bandGrouping } from '../Pipeline/group'
 import { CheckboxGlyph } from '../../Properties/Cells/CheckboxGlyph'
 import { formatBucketLabel } from '../../Properties/formatValue'
 import type { ValueContext } from '../../Properties/valueContext'
@@ -75,12 +76,8 @@ export function resolveBandHead(
     }
   }
   // A property band lives in two homes: top-level property grouping, or a sub-group bucket inside a set band (its raw value rides `bucket`; `key` is the composite collapse id).
-  const propId =
-    view.group?.kind === 'property'
-      ? view.group.property_id
-      : view.group?.kind !== 'flat'
-        ? view.sub_group?.property_id
-        : undefined
+  const band = bandGrouping(view, ctx.schema)
+  const propId = band?.property_id
   const label = groupLabel(group, view, ctx, setNames)
   if (!propId) return { label, glyph: <span className="group-name">{group.key}</span> }
   const value = group.bucket ?? group.key
@@ -124,9 +121,7 @@ export function resolveBandHead(
     }
     case 'dateTime': {
       const icon = asRenderableIcon(def?.icon)
-      const granularity = granularityOf(
-        view.group?.kind === 'property' ? view.group : view.sub_group,
-      )
+      const granularity = granularityOf(band)
       const dateLabel = formatBucketLabel(
         value,
         granularity,

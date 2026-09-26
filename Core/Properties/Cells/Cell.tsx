@@ -163,7 +163,8 @@ export function Cell({
           ))}
         </OverScroll>
       )
-    default:
+    case 'checkbox':
+    case 'null':
       return null
   }
 }

@@ -66,7 +66,7 @@ export function OptionEditor({
 
   const commitAdd = (raw: string, at: number): void => {
     setAdding(null)
-    onSetOptions(addOption(options, raw.trim() || fallbackTitle(type, optionOrder), undefined, at))
+    onSetOptions(addOption(options, raw.trim() || fallbackTitle(optionOrder), undefined, at))
   }
   const slotAt = (index: number, anchorId: string): React.JSX.Element | null =>
     adding === index ? (
@@ -87,12 +87,7 @@ export function OptionEditor({
     )
   const commitRename = (oldValue: string, raw: string): void => {
     setRenaming(null)
-    const title =
-      raw.trim() ||
-      fallbackTitle(
-        type,
-        optionOrder.filter((v) => v !== oldValue),
-      )
+    const title = raw.trim() || fallbackTitle(optionOrder.filter((v) => v !== oldValue))
     if (title !== oldValue) onRenameOption(oldValue, title)
   }
   const openMenu = async (o: Option, row: HTMLElement): Promise<void> => {

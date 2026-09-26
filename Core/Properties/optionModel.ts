@@ -1,23 +1,13 @@
 // An option's `value` IS its title (value=label), so identity keys on the value string.
 
-import type {
-  OptionAppearance,
-  PropertyType,
-  SelectOption,
-  StatusGroup,
-  StatusOption,
-} from './properties'
+import type { OptionAppearance, SelectOption, StatusGroup, StatusOption } from './properties'
 import { freeName } from '../Paths/names'
 import { moveItem } from '@pommora/uix/Utilities/moveItem'
 
 export type Option = SelectOption & { group_id?: string }
 
-export function fallbackTitle(
-  type: PropertyType,
-  taken: readonly string[],
-  groupLabel?: string,
-): string {
-  return freeName(type === 'status' ? (groupLabel ?? 'Label') : 'Label', taken)
+export function fallbackTitle(taken: readonly string[], groupLabel?: string): string {
+  return freeName(groupLabel ?? 'Label', taken)
 }
 
 function mapOption<T extends { value: string }>(options: T[], value: string, fn: (o: T) => T): T[] {
