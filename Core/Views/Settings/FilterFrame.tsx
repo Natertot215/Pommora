@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { Button } from '@pommora/uix/Buttons/Button'
 import type { CollectionNode, NexusTree, SetNode } from '@pommora/core/Nexus/tree'
 import type { PickOption, PropertyDefinition } from '@pommora/core/Properties/properties'
-import type { FilterRule, SavedView } from '@pommora/core/Views/views'
+import { type FilterRule, type SavedView, viewFlag } from '@pommora/core/Views/views'
 import { Icon } from '@pommora/uix/Symbols'
 import { FieldRun } from '@pommora/uix/Fields/FieldRun'
 import * as fr from '@pommora/uix/Fields/field-run.css'
@@ -402,7 +402,7 @@ export function FilterFrame({
   }
 
   const decoded: DecodedFilter = decodeFilter(liveView.filter)
-  const enabled = liveView.filter_enabled !== false
+  const enabled = viewFlag(liveView, 'filter_enabled')
   const rows: FilterRow[] = decoded.kind === 'rows' ? decoded.rows : []
   const decodedMode: MatchMode = decoded.kind === 'rows' ? decoded.mode : 'all'
   const mode: MatchMode = rows.length === 0 ? (pendingMode ?? decodedMode) : decodedMode

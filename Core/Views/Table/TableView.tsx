@@ -6,7 +6,7 @@ import {
   cellMenuContextFor,
   cellMenuModel,
 } from '@pommora/core/Actions/cellMenu'
-import type { ColumnAlign } from '@pommora/core/Views/views'
+import { type ColumnAlign, viewFlag } from '@pommora/core/Views/views'
 import { isBlankValue, type PropertyValue } from '@pommora/core/Properties/propertyValue'
 import { isOptionsKind } from '@pommora/core/Properties/properties'
 import { declaredType, resolveFieldValue } from '../../Properties/value'
@@ -238,7 +238,7 @@ export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
         onCancel={() => setEditing(null)}
       />
     )
-    if (col.kind !== 'title' || liveView.hide_page_icons) return editor
+    if (col.kind !== 'title' || viewFlag(liveView, 'hide_page_icons')) return editor
     return (
       <span className="cell-rename">
         <EntityIcon kind="page" icon={row.icon} size="body" />
@@ -492,7 +492,7 @@ export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
   const ghost = interactions.ghost.ghost
   const ghostRowProps = {
     columns,
-    hideIcon: liveView.hide_page_icons ?? false,
+    hideIcon: viewFlag(liveView, 'hide_page_icons'),
     onClosed: interactions.ghost.closed,
     onEnter: interactions.ghost.onGhostEnter,
     onLeave: interactions.ghost.onGhostLeave,
@@ -522,7 +522,7 @@ export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
             overlayCol={overlayTarget?.rowId === row.id ? overlayTarget.colId : null}
             renameCol={renameTarget?.rowId === row.id ? renameTarget.colId : null}
             activeCol={activeCell?.rowId === row.id ? activeCell.colId : null}
-            hideIcon={liveView.hide_page_icons ?? false}
+            hideIcon={viewFlag(liveView, 'hide_page_icons')}
             selected={selection.kind === 'page' && selection.id === row.id}
             dragDisabled={dragDisabled}
             sweepCol={cellSweep.sweep?.rows.has(row.id) ? cellSweep.sweep.colId : null}
@@ -601,7 +601,7 @@ export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
             className={cx(
               'table-grid',
               text.body.standard,
-              liveView.hide_borders && 'no-borders',
+              viewFlag(liveView, 'hide_borders') && 'no-borders',
               columns.length === 1 && 'single-column',
               hiding && 'col-hiding',
               sliding && 'col-sliding',

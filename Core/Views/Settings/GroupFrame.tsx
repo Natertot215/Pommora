@@ -9,6 +9,7 @@ import {
   type StructuralOrderMode,
   type SubGroupConfig,
   VIEW_KINDS,
+  viewFlag,
 } from '@pommora/core/Views/views'
 import {
   DisclosureRow,
@@ -166,7 +167,7 @@ export function GroupFrame({
         label="Hide Empty Groups"
         trailing={
           <DualSwitch
-            checked={view.hide_empty_groups ?? false}
+            checked={viewFlag(view, 'hide_empty_groups')}
             onChange={(next) => save({ hide_empty_groups: next })}
             ariaLabel="Hide Empty Groups"
           />

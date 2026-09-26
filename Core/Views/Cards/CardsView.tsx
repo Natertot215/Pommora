@@ -11,7 +11,7 @@ import {
 import type { ResolvedColumn, ViewRow } from '@pommora/core/Views/viewRow'
 import type { SetNode } from '@pommora/core/Nexus/tree'
 import { isBlankValue, type PropertyValue } from '@pommora/core/Properties/propertyValue'
-import { type CardBanner, isCompact, type SavedView } from '@pommora/core/Views/views'
+import { type CardBanner, isCompact, type SavedView, viewFlag } from '@pommora/core/Views/views'
 import type { ColumnStyle } from '@pommora/core/Properties/columnStyles'
 import { isOptionsKind } from '@pommora/core/Properties/properties'
 import { Icon } from '@pommora/uix/Symbols'
@@ -188,7 +188,7 @@ export function CardsView({ host }: { host: ViewHostApi }): React.JSX.Element {
     () => (setOrderOverride ? byOrder(baseSets, setOrderOverride) : baseSets),
     [baseSets, setOrderOverride],
   )
-  const showSetCards = (view.set_cards ?? true) && sets.length > 0
+  const showSetCards = viewFlag(view, 'set_cards') && sets.length > 0
   const reorderSets = (activeId: string, overId: string): void => {
     const order = reorder(sets, activeId, overId).map((s) => s.id)
     const moved = sets.find((s) => s.id === activeId)
@@ -206,7 +206,7 @@ export function CardsView({ host }: { host: ViewHostApi }): React.JSX.Element {
   const banner: CardBanner = view.card_banner ?? 'banner'
   const shellClass = cx('cards-view', banner === 'none' && 'is-compact')
   const flatMode = view.group?.kind === 'flat'
-  const hideLocation = view.hide_location ?? false
+  const hideLocation = viewFlag(view, 'hide_location')
 
   const [pendingSeat, setPendingSeat] = useState<string | null>(null)
   const [valuePicker, setValuePicker] = useState<ValuePickerRequest | null>(null)
@@ -881,11 +881,11 @@ const CardFace = memo(function CardFace({
     () => shownColumnsFor(row, columns, ctx, isCompact(view)),
     [ctx, columns, row, view],
   )
-  const titleIcon = !(view.hide_page_icons ?? false) && (
+  const titleIcon = !viewFlag(view, 'hide_page_icons') && (
     <Icon name={iconName} className="card-title-icon" />
   )
   const titleRow = (
-    <CardTitle mode={(view.wrap_titles ?? false) ? 'wrap' : 'scroll'}>
+    <CardTitle mode={viewFlag(view, 'wrap_titles') ? 'wrap' : 'scroll'}>
       {titleIcon}
       <span>{row.title}</span>
     </CardTitle>

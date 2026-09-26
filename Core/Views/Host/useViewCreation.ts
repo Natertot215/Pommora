@@ -11,7 +11,7 @@ import {
   type PropertyValue,
 } from '@pommora/core/Properties/propertyValue'
 import type { PropertyDefinition } from '@pommora/core/Properties/properties'
-import type { SavedView } from '@pommora/core/Views/views'
+import { type SavedView, viewFlag } from '@pommora/core/Views/views'
 import { DEFAULT_NEW_NAME } from '@pommora/core/Nexus/mutateRequest'
 import { relDirname } from '@pommora/core/Paths/posix'
 import { findScroller, SEEK_GLIDE, scrollGlide } from '@pommora/uix/Interactions/autoscroll'
@@ -64,7 +64,7 @@ export function useViewCreation(getCfg: () => ViewCreationConfig): ViewCreation 
 
   const impliedSeeds = (): Record<string, PropertyValue> => {
     const c = cfg()
-    return filterSeeds(c.view.filter, c.view.filter_enabled !== false, c.schema)
+    return filterSeeds(c.view.filter, viewFlag(c.view, 'filter_enabled'), c.schema)
   }
   // The created page's seeds reach the pipeline the way a band-drop's reassign does.
   const patchSeedValues = (pageId: string, seeds: Record<string, PropertyValue>): void => {
