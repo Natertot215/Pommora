@@ -7,8 +7,7 @@ import {
   pageMetaMenuItems,
 } from './pageMenu'
 import type { PropertyAction } from './propertyRows'
-import type { PropertyType } from '../Properties/properties'
-import type { ResolvedColumn } from '../Views/viewRow'
+import { PROPERTY_TYPES, type PropertyType } from '../Properties/properties'
 import { type ActionItem, joinGroups } from './menuModel'
 
 type CellMenuKind =
@@ -42,49 +41,47 @@ export type CellMenuAction =
 type CellMenuFlags = { hideable?: boolean; barCapable?: boolean; onChip?: boolean }
 
 export function cellMenuContextFor(
-  col: ResolvedColumn,
   type: PropertyType | 'title' | undefined,
   style: ColumnStyle,
   filled: boolean,
   { hideable = false, barCapable = false, onChip = false }: CellMenuFlags = {},
 ): CellMenuContext | null {
-  const base = baseCellMenu(col, type, style, filled, barCapable, onChip)
+  const base = baseCellMenu(type, style, filled, barCapable, onChip)
   // remove-only must CARRY the flag, since the model appends Remove only on it.
   if (base === null) return hideable ? { kind: 'remove-only', hideable: true } : null
   return hideable ? { ...base, hideable: true } : base
 }
 
 function baseCellMenu(
-  col: ResolvedColumn,
   type: PropertyType | 'title' | undefined,
   style: ColumnStyle,
   filled: boolean,
   barCapable: boolean,
   onChip: boolean,
 ): CellMenuKind | null {
-  if (col.kind === 'title') return { kind: 'title' }
-  if (col.kind === 'context') return filled ? { kind: 'clear-only' } : null
-  if (type === 'link') return { kind: 'link', filled }
-  if (type === 'file') return { kind: 'file', onChip }
-  if (type === 'status' || type === 'dateTime')
-    return { kind: 'style-only', type, current: style, clearable: filled }
-  if (
-    type === 'checkbox' ||
-    type === 'number' ||
-    type === 'createdTime' ||
-    type === 'lastEditedTime'
-  ) {
-    return {
-      kind: 'style-only',
-      type,
-      current: style,
-      ...(type === 'number' && barCapable ? { barCapable: true } : {}),
-    }
+  if (type === 'title') return { kind: 'title' }
+  if (type === undefined) return null
+  const { kind, origin } = PROPERTY_TYPES[type]
+  switch (kind) {
+    case 'link':
+      return { kind: 'link', filled }
+    case 'file':
+      return { kind: 'file', onChip }
+    case 'context':
+      return filled ? { kind: 'clear-only' } : null
+    case 'select':
+    case 'multiSelect':
+    case 'dateTime':
+      return { kind: 'style-only', type, current: style, clearable: filled && origin === 'user' }
+    case 'number':
+    case 'checkbox':
+      return {
+        kind: 'style-only',
+        type,
+        current: style,
+        ...(barCapable ? { barCapable: true } : {}),
+      }
   }
-  if (type === 'select' || type === 'multiSelect' || type === 'context') {
-    return filled ? { kind: 'clear-only' } : null
-  }
-  return null
 }
 
 export function cellMenuModel(ctx: CellMenuContext): ActionItem<CellMenuAction>[] {

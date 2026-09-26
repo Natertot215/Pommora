@@ -105,6 +105,12 @@ describe('PropertyPicker panes', () => {
     expect(portalText()).toContain('Beta')
   })
 
+  it('an options target follows the column look: a compact Select shows glyphs, not labels', async () => {
+    await render({ target: { kind: 'options', def: selectDef, current: null, look: 'compact' } })
+    expect(portal()).toBeTruthy()
+    expect(portalText()).not.toContain('Alpha')
+  })
+
   it('a dateTime target renders the calendar, not option chips', async () => {
     await render({ target: dateTimeTarget() })
     expect(portal()).toBeTruthy()

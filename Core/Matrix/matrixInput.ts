@@ -2,7 +2,7 @@ import { contextIdsOf } from '../Contexts/contextIdentity'
 import type { CollectionNode, NexusTree, PageNode, SetNode } from '../Nexus/tree'
 import { pageIndexOf } from '../Nexus/treeIndex'
 import { spaceRowOf } from '../Properties/pageRow'
-import type { PropertyDefinition } from '../Properties/properties'
+import { type PropertyDefinition, specOf } from '../Properties/properties'
 import { declaredType } from '../Properties/value'
 import { applyFilter, OPERANDLESS_OPS } from '../Views/Pipeline/filter'
 import { buildSetTree, type SetTreeNode, toRow } from '../Views/Pipeline/group'
@@ -80,15 +80,15 @@ function answers(
   schema: PropertyDefinition[],
   contextIds: readonly string[],
 ): boolean {
-  switch (declaredType(rule.property_id, schema, contextIds)) {
+  const t = declaredType(rule.property_id, schema, contextIds)
+  if (t === 'title') return true
+  switch (specOf(t)?.origin) {
     case undefined:
-    case 'createdTime':
-    case 'lastEditedTime':
+    case 'stamp':
       return false
-    case 'title':
     case 'context':
       return true
-    default: {
+    case 'user': {
       if (OPERANDLESS_OPS.has(rule.op)) return true
       const name = schema.find((d) => d.id === rule.property_id)?.name
       return name !== undefined && name in row.frontmatter

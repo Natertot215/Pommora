@@ -233,12 +233,7 @@ export function PropertyOptionRows({
           {contextOptions ? (
             <NeutralChip color={colorNameFor(o.color)} title={o.label} icon={o.icon} />
           ) : (
-            <OptionChip
-              type={def.type}
-              look={def.type === 'status' ? look : undefined}
-              option={o}
-              def={def}
-            />
+            <OptionChip type={def.type} look={look} option={o} def={def} />
           )}
         </MenuItem>
       ))}

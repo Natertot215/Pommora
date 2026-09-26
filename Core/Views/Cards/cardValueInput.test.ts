@@ -6,6 +6,7 @@ import type { ValueContext } from '../../Properties/valueContext'
 import {
   type AddEntry,
   addEntriesFor,
+  fillsBlank,
   orderAddableEntries,
   shownColumnsFor,
 } from './cardValueInput'
@@ -87,5 +88,21 @@ describe('addEntriesFor', () => {
       [createdAt, 'createdTime', true],
       [modifiedAt, 'lastEditedTime', true],
     ])
+  })
+
+  it('fillsBlank: every type but Checkbox and the stamps', () => {
+    for (const t of [
+      'status',
+      'select',
+      'multiSelect',
+      'context',
+      'dateTime',
+      'number',
+      'link',
+      'file',
+    ] as const)
+      expect(fillsBlank(t)).toBe(true)
+    for (const t of ['checkbox', 'createdTime', 'lastEditedTime', 'title', undefined] as const)
+      expect(fillsBlank(t)).toBe(false)
   })
 })

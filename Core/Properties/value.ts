@@ -1,6 +1,6 @@
 // Two axes that must not be confused: declaredType is the column's SCHEMA type, whose record entry sort, filter and grouping classify by; resolveFieldValue is the row's VALUE, decoded definition-first — never inferred from a value's shape, so a Link column always reads as a link.
 
-import type { ViewRow } from '@pommora/core/Views/viewRow'
+import type { ResolvedColumn, ViewRow } from '@pommora/core/Views/viewRow'
 import type { PageFrontmatter } from '@pommora/core/Nexus/schemas'
 import {
   type PropertyDefinition,
@@ -22,6 +22,13 @@ export function declaredType(
   if (contextIds.includes(propertyId)) return 'context'
   return schema.find((d) => d.id === propertyId)?.type
 }
+
+/** A Context column classifies by its resolved column kind, so a surface without the registry ids still reads it as one. */
+export const columnType = (
+  column: ResolvedColumn,
+  schema: PropertyDefinition[],
+): PropertyType | 'title' | undefined =>
+  column.kind === 'context' ? 'context' : declaredType(column.id, schema)
 
 const stampValue = (iso: string | null): PropertyValue =>
   iso === null ? NULL_VALUE : { kind: 'dateTime', value: iso }

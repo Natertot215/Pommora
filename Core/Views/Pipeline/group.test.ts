@@ -6,6 +6,7 @@ import type { GroupConfig } from '@pommora/core/Views/views'
 import type { PropertyDefinition } from '@pommora/core/Properties/properties'
 import {
   bandGrouping,
+  bucketKey,
   dateBucketKey,
   flattenContainer,
   frontmatterOf,
@@ -494,7 +495,7 @@ describe('property grouping — configured / reversed / date', () => {
     ).toEqual(['c', 'b', 'a'])
   })
 
-  it('falls back to structural for a checkbox group property — Checkbox grouping is off', () => {
+  it('a checkbox group property falls back to structural; its rows still bucket for sort-run reassign', () => {
     const cbSchema: PropertyDefinition[] = [{ id: 'prop_done', name: 'Done', type: 'checkbox' }]
     const values = pageValues({
       p1: { [ID_KEY]: 'p1', ...propsAtRoot({ prop_done: true }, cbSchema) },
@@ -509,6 +510,9 @@ describe('property grouping — configured / reversed / date', () => {
     expect(groupsStructurally(group, cbSchema)).toBe(true)
     const groups = resolveGroups(rows, group, cbSchema, setTree, null, 'bottom')
     expect(groups.map((g) => g.kind)).toEqual(['structural-set', 'ungrouped'])
+    const byId = (id: string) => rows.find((r) => r.id === id) as ViewRow
+    expect(bucketKey(byId('p1'), 'prop_done', cbSchema, 'day')).toBe('true')
+    expect(bucketKey(byId('p2'), 'prop_done', cbSchema, 'day')).toBeNull()
   })
 
   it('buckets dates by granularity (same month together)', () => {

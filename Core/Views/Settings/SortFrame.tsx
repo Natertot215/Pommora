@@ -1,9 +1,9 @@
 import type { CollectionNode, SetNode } from '@pommora/core/Nexus/tree'
 import {
-  type PropertyDefinition,
-  type PropertyType,
-  RESERVED_PROPERTY_ID,
   optionsOf,
+  PROPERTY_TYPES,
+  type PropertyDefinition,
+  specOf,
 } from '@pommora/core/Properties/properties'
 import {
   LOCATION_SORT,
@@ -28,18 +28,6 @@ import { middleRegion } from '@pommora/uix/Menus/frames.css'
 import { useCapitalizeMetadata } from '../../Properties/Cells/columnLabel'
 
 type Direction = SortCriterion['direction']
-
-/** Context routes to a no-op text key in the sorter, so it is deliberately absent — never offer what the extractor can't rank. */
-const SORTABLE_PANE: ReadonlySet<string> = new Set([
-  'select',
-  'status',
-  'number',
-  'dateTime',
-  'checkbox',
-  'link',
-  'multiSelect',
-  'file',
-] satisfies PropertyType[])
 
 const OPTION_DIRECTIONS: PickerOption<Direction>[] = [
   { value: 'ascending', label: 'Default' },
@@ -67,16 +55,20 @@ function directionOptions(
   propertyId: string,
   schema: PropertyDefinition[],
 ): PickerOption<Direction>[] {
-  if (propertyId === RESERVED_PROPERTY_ID.title) return TEXT_DIRECTIONS
-  switch (declaredType(propertyId, schema)) {
+  const t = declaredType(propertyId, schema)
+  if (t === 'title') return TEXT_DIRECTIONS
+  switch (specOf(t)?.kind) {
     case 'select':
-    case 'status':
       return OPTION_DIRECTIONS
     case 'link':
     case 'multiSelect':
     case 'file':
       return TEXT_DIRECTIONS
-    default:
+    case 'number':
+    case 'dateTime':
+    case 'checkbox':
+    case 'context':
+    case undefined:
       return VALUE_DIRECTIONS
   }
 }
@@ -103,7 +95,7 @@ export function SortFrame({
   const targets = [
     TITLE_TARGET,
     ...STAMP_TARGETS,
-    ...schemaTargets(schema, (d) => SORTABLE_PANE.has(d.type), capitalize),
+    ...schemaTargets(schema, (d) => PROPERTY_TYPES[d.type].origin === 'user', capitalize),
   ]
   const targetById = new Map(targets.map((t) => [t.id, t]))
   const nameOf = (c: SortCriterion): string =>
@@ -136,7 +128,7 @@ export function SortFrame({
 
   const primaryDef = primary && schema.find((d) => d.id === primary.property_id)
   const finiteDef =
-    primaryDef?.type === 'select' || primaryDef?.type === 'status' ? primaryDef : undefined
+    primaryDef && PROPERTY_TYPES[primaryDef.type].kind === 'select' ? primaryDef : undefined
 
   const savePrimary = (next: SortCriterion): void => save(sub ? [next, sub] : [next])
   const seededOrder = (): string[] =>

@@ -33,9 +33,7 @@ export function groupLabel(
   const propId = bandGrouping(view, ctx.schema)?.property_id
   const value = group.bucket ?? group.key
   if (!propId) return value
-  // 'true'/'false' are the checkbox bucket keys the grouping engine mints, not arbitrary strings.
-  const rawFallback = value === 'true' ? 'On' : value === 'false' ? 'Off' : value
-  return optionLabel(propId, value, ctx.schema) ?? rawFallback
+  return optionLabel(propId, value, ctx.schema) ?? value
 }
 
 function buildSetMap<T>(source: CollectionNode | SetNode, pick: (s: SetNode) => T): Map<string, T> {

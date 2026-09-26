@@ -27,7 +27,6 @@
   align-items: center;
   min-width: 0;
 }
-/* Direct child only, so a nested chip glyph (checkbox box) keeps its own color instead of the shared icon tone. */
 .group-name {
   display: inline-flex;
   align-items: center;

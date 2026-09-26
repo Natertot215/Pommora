@@ -3,11 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { columnMenuItems, parseStyleAction } from '@pommora/core/Actions/columnMenu'
 import { defaultStyleFor, type ColumnStyle } from '@pommora/core/Properties/columnStyles'
-import {
-  type PropertyDefinition,
-  type PropertyType,
-  RESERVED_PROPERTY_ID,
-} from '@pommora/core/Properties/properties'
+import type { PropertyDefinition, PropertyType } from '@pommora/core/Properties/properties'
 import { type ColumnAlign, type SavedView, viewOption } from '@pommora/core/Views/views'
 import { announce } from '@pommora/uix/Interactions/a11y'
 import { findScroller, startAutoScroll } from '@pommora/uix/Interactions/autoscroll'
@@ -103,15 +99,21 @@ export function clampWidth(
 
 // ── Alignment ───────────────────────────────────────────────────────────────
 
-// The chip- and box-shaped values center; so does a Date, whose formatted value reads centered. The reserved Modified timestamp keeps Title's left metadata treatment.
-const CENTERED: ReadonlySet<string> = new Set([
-  'checkbox',
-  'status',
-  'select',
-  'multiSelect',
-  'context',
-  'dateTime',
-] satisfies PropertyType[])
+// The chip- and box-shaped values center; so does a Date, whose formatted value reads centered. Both stamps keep Title's left metadata treatment.
+const DEFAULT_ALIGN: Record<PropertyType | 'title', ColumnAlign> = {
+  title: 'left',
+  checkbox: 'center',
+  status: 'center',
+  select: 'center',
+  multiSelect: 'center',
+  context: 'center',
+  dateTime: 'center',
+  number: 'left',
+  link: 'left',
+  file: 'left',
+  createdTime: 'left',
+  lastEditedTime: 'left',
+}
 
 /** `contextIds` is what makes a Context column classify as such — omit it and one reads as an unknown type. */
 export function defaultAlignFor(
@@ -119,9 +121,8 @@ export function defaultAlignFor(
   schema: PropertyDefinition[],
   contextIds: readonly string[] = [],
 ): ColumnAlign {
-  if (columnId === RESERVED_PROPERTY_ID.title) return 'left'
   const t = declaredType(columnId, schema, contextIds)
-  return t !== undefined && CENTERED.has(t) ? 'center' : 'left'
+  return t === undefined ? 'left' : DEFAULT_ALIGN[t]
 }
 
 export function alignFor(

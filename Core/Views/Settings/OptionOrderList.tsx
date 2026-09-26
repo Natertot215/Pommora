@@ -1,6 +1,7 @@
 import { useMemo } from 'react'
 import {
   groupOptions,
+  PROPERTY_TYPES,
   type PropertyDefinition,
   optionsOf,
 } from '@pommora/core/Properties/properties'
@@ -56,14 +57,13 @@ export function PropertyPreview({
   def: PropertyDefinition | undefined
 } & HideControls): React.JSX.Element | null {
   if (!def) return null
-  const type = def.type === 'status' ? 'status' : 'select'
   const chip = (o: { value: string; label: string; color?: string }): React.JSX.Element => (
     <div key={o.value} className={cx(optionRow, hiddenSet?.has(o.value) && hiddenRow)}>
-      <OptionChip type={type} option={o} />
+      <OptionChip type={def.type} option={o} />
       {rowEye(o.label, o.value, { hiddenSet, onToggleHidden })}
     </div>
   )
-  if (type === 'status') {
+  if (PROPERTY_TYPES[def.type].options === 'status') {
     const statusGroups = def.status_groups ?? []
     const groups = group.order_mode === 'reversed' ? [...statusGroups].reverse() : statusGroups
     return (
@@ -115,7 +115,6 @@ export function CustomList({
     onDrop: (draggedId, drop) => onSave(nextOrder(ordered, draggedId, drop.beforeId)),
   })
   if (!def) return null
-  const type = def.type === 'status' ? 'status' : 'select'
   return (
     <div ref={dnd.containerRef} className="drop-line-host">
       <div className={heading}>Options</div>
@@ -133,7 +132,7 @@ export function CustomList({
               dnd.draggingId === v && oo.ghosted,
             )}
           >
-            <OptionChip type={type} option={o} />
+            <OptionChip type={def.type} option={o} />
             {rowEye(o.label, v, { hiddenSet, onToggleHidden })}
           </div>,
         ]

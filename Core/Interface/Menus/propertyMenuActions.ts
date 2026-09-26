@@ -1,9 +1,9 @@
 import { parsePropertyAction, type PropertyMenuRow } from '@pommora/core/Actions/propertyRows'
 import type { NexusTree } from '@pommora/core/Nexus/tree'
 import {
-  isOptionsKind,
+  pickKindOf,
+  PROPERTY_TYPES,
   type PropertyDefinition,
-  type PropertyType,
 } from '@pommora/core/Properties/properties'
 import type { PropertyValue } from '@pommora/core/Properties/propertyValue'
 import type { ColumnStyle } from '@pommora/core/Properties/columnStyles'
@@ -20,8 +20,6 @@ import {
 } from '../../Properties/Pickers/PropertyPicker'
 import { resolveFieldValue } from '../../Properties/value'
 import { useSession } from '../../Session/store'
-
-const STAMP_TYPES: ReadonlySet<PropertyType> = new Set(['createdTime', 'lastEditedTime'])
 
 const CHECKBOX_OPTIONS = [
   { value: 'true', label: 'Check' },
@@ -59,7 +57,7 @@ export function propertyMenuBranches({
         options: CHECKBOX_OPTIONS.map((o) => ({ ...o, checked: (o.value === 'true') === checked })),
       }
     }
-    if (!isOptionsKind(def.type)) return base
+    if (pickKindOf(def.type) === null) return base
     const selected = selectedValues(current)
     return {
       ...base,
@@ -70,7 +68,9 @@ export function propertyMenuBranches({
       })),
     }
   }
-  const built = schema.filter((d) => !STAMP_TYPES.has(d.type)).map((def) => build(def.id, def))
+  const built = schema
+    .filter((d) => PROPERTY_TYPES[d.type].origin === 'user')
+    .map((def) => build(def.id, def))
   return {
     spaces: [...contexts.keys()].map((id) => build(id, syntheticContextDef(id))),
     properties: [...built.filter((r) => r.options), ...built.filter((r) => !r.options)],

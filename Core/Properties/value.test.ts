@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest'
 import { ID_KEY } from '@pommora/core/Nexus/identityMark'
 import type { ViewRow } from '@pommora/core/Views/viewRow'
 import type { PropertyDefinition } from '@pommora/core/Properties/properties'
-import { declaredType, fileName, resolveFieldValue } from './value'
+import { columnType, declaredType, fileName, resolveFieldValue } from './value'
 import { propsAtRoot } from '../Testing/pageValues'
 
 const schema: PropertyDefinition[] = [
@@ -79,6 +79,14 @@ describe('declaredType', () => {
 
   it('resolves an unknown id to undefined', () => {
     expect(declaredType('prop_absent', schema)).toBeUndefined()
+  })
+
+  it('columnType reads a Context column by its resolved kind', () => {
+    expect(columnType({ id: 'ctx_areas', kind: 'context' }, [])).toBe('context')
+    expect(columnType({ id: '_title', kind: 'title' }, [])).toBe('title')
+    expect(
+      columnType({ id: 'p', kind: 'property' }, [{ id: 'p', name: 'P', type: 'number' }]),
+    ).toBe('number')
   })
 })
 

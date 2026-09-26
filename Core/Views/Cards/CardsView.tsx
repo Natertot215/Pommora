@@ -13,7 +13,7 @@ import type { SetNode } from '@pommora/core/Nexus/tree'
 import { isBlankValue, type PropertyValue } from '@pommora/core/Properties/propertyValue'
 import { type CardBanner, isCompact, type SavedView, viewOption } from '@pommora/core/Views/views'
 import type { ColumnStyle } from '@pommora/core/Properties/columnStyles'
-import { isOptionsKind } from '@pommora/core/Properties/properties'
+import { pickKindOf } from '@pommora/core/Properties/properties'
 import { Icon } from '@pommora/uix/Symbols'
 import { isCmd } from '@pommora/uix/Interactions/chords'
 import { onActivateKey } from '@pommora/uix/Interactions/activate'
@@ -599,7 +599,7 @@ export function CardsView({ host }: { host: ViewHostApi }): React.JSX.Element {
                     name: e.name,
                     icon: e.def ? propertyIcon(e.def) : propertyTypeIconName(e.type),
                     revealOnly: e.revealOnly,
-                    drillable: !e.revealOnly && isOptionsKind(e.type),
+                    drillable: !e.revealOnly && pickKindOf(e.type) !== null,
                     group: addColumn(e.id, tree).kind === 'context' ? 'Spaces' : 'Properties',
                   }),
                 )

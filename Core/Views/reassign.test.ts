@@ -11,7 +11,7 @@ describe('groupKeyToValue — destination group key → PropertyValue', () => {
     expect(groupKeyToValue('red', 'select')).toEqual({ kind: 'select', value: 'red' })
   })
 
-  it('checkbox: the true bucket checks, the false bucket clears — a checkbox is true or absent', () => {
+  it('checkbox: the true key checks, any other key clears — a checkbox is true or absent', () => {
     expect(groupKeyToValue('true', 'checkbox')).toEqual({ kind: 'checkbox', value: true })
     expect(groupKeyToValue('false', 'checkbox')).toBeNull()
   })

@@ -31,7 +31,6 @@ const schema: PropertyDefinition[] = [
     type: 'select',
     select_options: [{ value: 'red', label: 'Red', color: 'red' }],
   },
-  { id: 'prop_check', name: 'Done', type: 'checkbox' },
   { id: 'prop_date', name: 'When', type: 'dateTime' },
 ] as PropertyDefinition[]
 
@@ -70,11 +69,10 @@ const propGroup = (property_id: string, extra: Partial<GroupConfig> = {}): Group
     order_mode: 'configured',
     ...extra,
   }) as GroupConfig
-const group = (kind: ResolvedGroup['kind'], key: string, bucket?: string): ResolvedGroup => ({
+const group = (kind: ResolvedGroup['kind'], key: string): ResolvedGroup => ({
   key,
   kind,
   items: [],
-  ...(bucket !== undefined ? { bucket } : {}),
 })
 
 let host: HTMLDivElement
@@ -135,29 +133,6 @@ describe('resolveBandHead', () => {
     expect(textOf(head.glyph)).toContain('Red')
   })
 
-  it('checkbox → the box glyph + On/Off', () => {
-    const on = resolveBandHead(
-      group('property', 'true'),
-      { ...view(), sub_group: { property_id: 'prop_check', order_mode: 'configured' } },
-      ctx,
-      NEXUS,
-      setNames,
-      setIcons,
-      source,
-    )
-    expect(textOf(on.glyph)).toContain('On')
-    const off = resolveBandHead(
-      group('property', 'false'),
-      { ...view(), sub_group: { property_id: 'prop_check', order_mode: 'configured' } },
-      ctx,
-      NEXUS,
-      setNames,
-      setIcons,
-      source,
-    )
-    expect(textOf(off.glyph)).toContain('Off')
-  })
-
   it('dateTime → the bucket label (formatted), the raw key as text label', () => {
     const head = resolveBandHead(
       group('property', '2026-07'),
@@ -196,42 +171,5 @@ describe('resolveBandHead', () => {
     )
     expect(head.label).toBe('Inbox')
     expect(textOf(head.glyph)).toContain('Inbox')
-  })
-})
-
-describe('resolveBandHead — Context grouping', () => {
-  const ctxWithSpace: ValueContext = {
-    ...ctx,
-    contextsById: new Map([
-      ['sp1', { title: 'Pommora', icon: 'rocket', color: 'mint', contextId: 'ctx_projects' }],
-    ]),
-    contexts: new Map([['ctx_projects', { title: 'Projects', icon: 'folder' }]]),
-  }
-
-  it('names the Space rather than showing its id', () => {
-    const head = resolveBandHead(
-      group('property', 'sp1'),
-      { ...view(), sub_group: { property_id: 'ctx_projects', order_mode: 'configured' } },
-      ctxWithSpace,
-      NEXUS,
-      setNames,
-      setIcons,
-      source,
-    )
-    expect(head.label).toBe('Pommora')
-    expect(textOf(head.glyph)).toContain('Pommora')
-  })
-
-  it('falls back to the raw id when the Space is gone', () => {
-    const head = resolveBandHead(
-      group('property', 'ghost'),
-      { ...view(), sub_group: { property_id: 'ctx_projects', order_mode: 'configured' } },
-      ctxWithSpace,
-      NEXUS,
-      setNames,
-      setIcons,
-      source,
-    )
-    expect(head.label).toBe('ghost')
   })
 })

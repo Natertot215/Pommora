@@ -8,7 +8,6 @@ import {
   invalidPropertyName,
   defaultStatusSeed,
   groupable,
-  isOptionsKind,
   optionsOf,
   pickKindOf,
   PROPERTY_TYPES,
@@ -186,7 +185,7 @@ describe('invalidPropertyName', () => {
 })
 
 describe('PROPERTY_TYPES', () => {
-  it('groups by Select, Status and Date only — Checkbox grouping is off', () => {
+  it('groups by Select, Status and Date only', () => {
     const grouping = (Object.keys(PROPERTY_TYPES) as (keyof typeof PROPERTY_TYPES)[]).filter((t) =>
       groupable(t),
     )
@@ -230,15 +229,6 @@ describe('specOf and pickKindOf', () => {
       undefined,
     ] as const)
       expect(pickKindOf(t)).toBeNull()
-  })
-})
-
-describe('isOptionsKind', () => {
-  it('holds for the four option-bearing kinds and nothing else', () => {
-    for (const t of ['select', 'status', 'multiSelect', 'context'] as const)
-      expect(isOptionsKind(t)).toBe(true)
-    for (const t of ['number', 'checkbox', 'dateTime', 'link', 'file', 'title', undefined] as const)
-      expect(isOptionsKind(t)).toBe(false)
   })
 })
 

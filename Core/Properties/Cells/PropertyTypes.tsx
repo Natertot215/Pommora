@@ -1,5 +1,10 @@
-import type { PropertyDefinition, PropertyType } from '@pommora/core/Properties/properties'
-import { RESERVED_PROPERTY_ID, STAMP_TYPE } from '@pommora/core/Properties/properties'
+import {
+  PROPERTY_TYPES,
+  type PropertyDefinition,
+  type PropertyType,
+  RESERVED_PROPERTY_ID,
+  STAMP_TYPE,
+} from '@pommora/core/Properties/properties'
 import { asRenderableIcon, Icon, type IconName } from '@pommora/uix/Symbols'
 import type { NexusTree } from '@pommora/core/Nexus/tree'
 import { DEFAULT_ENTITY_ICONS } from '../../Assets/entityIconPolicy'
@@ -10,36 +15,34 @@ import type { PickerOption } from '@pommora/uix/Pickers/PickerControl'
 interface TypeMeta {
   label: string
   icon: IconName
-  creatable?: boolean
 }
 
-const PROPERTY_TYPES: Record<PropertyType, TypeMeta> = {
-  number: { label: 'Number', icon: 'hash', creatable: true },
-  checkbox: { label: 'Checkbox', icon: 'square-check', creatable: true },
-  dateTime: { label: 'Date', icon: 'calendar', creatable: true },
-  select: { label: 'Select', icon: 'send', creatable: true },
-  multiSelect: { label: 'Multi-Select', icon: 'tags', creatable: true },
-  status: { label: 'Status', icon: 'progress-check', creatable: true },
-  link: { label: 'Link', icon: 'link', creatable: true },
-  file: { label: 'File', icon: 'file-chart-column', creatable: true },
+// Title isn't a PropertyType, but it shares the glyph vocabulary, so every surface renders it from here.
+const TYPE_META: Record<PropertyType | 'title', TypeMeta> = {
+  title: { label: 'Title', icon: 'text-align-justify' },
+  number: { label: 'Number', icon: 'hash' },
+  checkbox: { label: 'Checkbox', icon: 'square-check' },
+  dateTime: { label: 'Date', icon: 'calendar' },
+  select: { label: 'Select', icon: 'send' },
+  multiSelect: { label: 'Multi-Select', icon: 'tags' },
+  status: { label: 'Status', icon: 'progress-check' },
+  link: { label: 'Link', icon: 'link' },
+  file: { label: 'File', icon: 'file-chart-column' },
   context: { label: 'Context', icon: DEFAULT_ENTITY_ICONS.context },
   createdTime: { label: RESERVED_LABEL[RESERVED_PROPERTY_ID.createdAt], icon: 'clock-plus' },
   lastEditedTime: { label: RESERVED_LABEL[RESERVED_PROPERTY_ID.modifiedAt], icon: 'history' },
 }
 
-export const propertyTypeLabel = (type: PropertyType): string => PROPERTY_TYPES[type].label
+export const propertyTypeLabel = (type: PropertyType): string => TYPE_META[type].label
 
-export const propertyTypeIconName = (type: PropertyType): IconName => PROPERTY_TYPES[type].icon
+export const propertyTypeIconName = (type: PropertyType): IconName => TYPE_META[type].icon
 
 export const propertyIcon = (def: PropertyDefinition): string =>
   asRenderableIcon(def.icon) ?? propertyTypeIconName(def.type)
 
 export const CREATABLE_TYPES = (Object.keys(PROPERTY_TYPES) as PropertyType[]).filter(
-  (t) => PROPERTY_TYPES[t].creatable,
+  (t) => PROPERTY_TYPES[t].origin === 'user',
 )
-
-// Title isn't a user PropertyType, but it needs the same glyph vocabulary — its icon lives here so every surface renders it from one source.
-const TITLE_META: TypeMeta = { label: 'Title', icon: 'text-align-justify' }
 
 export function PropertyTypeIcon({
   type,
@@ -48,7 +51,7 @@ export function PropertyTypeIcon({
   type: PropertyType | 'title'
   size?: React.ComponentProps<typeof Icon>['size']
 }): React.JSX.Element {
-  const name = (type === 'title' ? TITLE_META : PROPERTY_TYPES[type]).icon
+  const name = TYPE_META[type].icon
   return <Icon name={name} size={size} />
 }
 
@@ -60,8 +63,8 @@ export interface PaneTarget {
 
 export const TITLE_TARGET: PaneTarget = {
   id: RESERVED_PROPERTY_ID.title,
-  label: 'Title',
-  icon: TITLE_META.icon,
+  label: TYPE_META.title.label,
+  icon: TYPE_META.title.icon,
 }
 export const STAMP_TARGETS: PaneTarget[] = Object.entries(STAMP_TYPE).flatMap(([id, type]) =>
   type ? [{ id, label: propertyTypeLabel(type), icon: propertyTypeIconName(type) }] : [],

@@ -1,6 +1,5 @@
 import { describe, expect, it } from 'vitest'
 import { type CellMenuContext, cellMenuContextFor, cellMenuModel } from './cellMenu'
-import type { ResolvedColumn } from '../Views/viewRow'
 import { dateDefaults } from '../Properties/columnStyles'
 
 const DATES = dateDefaults('full')
@@ -68,7 +67,7 @@ describe('cellMenuModel', () => {
     expect(m[0].submenu?.find((r) => r.action === 'style:look:standard')?.checked).toBe(true)
   })
 
-  it('clear-only (select/multi/context): just Clear', () => {
+  it('clear-only (context): just Clear', () => {
     const m = cellMenuModel({ kind: 'clear-only' })
     expect(m.map((i) => [i.label, i.action])).toEqual([['Clear', 'cell:clear']])
     expect(m.some((i) => i.submenu)).toBe(false)
@@ -144,40 +143,37 @@ describe('cellMenuModel', () => {
 })
 
 describe('cellMenuContextFor', () => {
-  const prop = (id = 'p'): ResolvedColumn => ({ id, kind: 'property' })
-
   it('a title column → the page-meta title menu', () => {
-    expect(cellMenuContextFor({ id: 'title', kind: 'title' }, 'title', DATES, true)).toEqual({
+    expect(cellMenuContextFor('title', DATES, true)).toEqual({
       kind: 'title',
     })
   })
 
   it('a context column → clear-only when filled, no menu when empty', () => {
-    const context: ResolvedColumn = { id: 'ctx_areas', kind: 'context' }
-    expect(cellMenuContextFor(context, 'context', DATES, true)).toEqual({ kind: 'clear-only' })
-    expect(cellMenuContextFor(context, 'context', DATES, false)).toBeNull()
+    expect(cellMenuContextFor('context', DATES, true)).toEqual({ kind: 'clear-only' })
+    expect(cellMenuContextFor('context', DATES, false)).toBeNull()
   })
 
   it('a link column → the link menu, carrying filled; a file cell has no look left to offer', () => {
-    expect(cellMenuContextFor(prop(), 'link', DATES, true)).toEqual({ kind: 'link', filled: true })
-    expect(cellMenuContextFor(prop(), 'file', DATES, false)).toEqual({
+    expect(cellMenuContextFor('link', DATES, true)).toEqual({ kind: 'link', filled: true })
+    expect(cellMenuContextFor('file', DATES, false)).toEqual({
       kind: 'file',
       onChip: false,
     })
-    expect(cellMenuContextFor(prop(), 'file', DATES, true, { onChip: true })).toEqual({
+    expect(cellMenuContextFor('file', DATES, true, { onChip: true })).toEqual({
       kind: 'file',
       onChip: true,
     })
   })
 
   it('status/dateTime → style-only, Clear gated on filled', () => {
-    expect(cellMenuContextFor(prop(), 'status', DATES, true)).toEqual({
+    expect(cellMenuContextFor('status', DATES, true)).toEqual({
       kind: 'style-only',
       type: 'status',
       current: DATES,
       clearable: true,
     })
-    expect(cellMenuContextFor(prop(), 'status', DATES, false)).toEqual({
+    expect(cellMenuContextFor('status', DATES, false)).toEqual({
       kind: 'style-only',
       type: 'status',
       current: DATES,
@@ -185,26 +181,23 @@ describe('cellMenuContextFor', () => {
     })
   })
 
-  it('checkbox/number and both stamps → style-only with no Clear', () => {
-    expect(cellMenuContextFor(prop(), 'number', DATES, true)).toEqual({
+  it('checkbox/number → style-only with no Clear; a stamp gets Style but never Clear', () => {
+    expect(cellMenuContextFor('number', DATES, true)).toEqual({
       kind: 'style-only',
       type: 'number',
       current: DATES,
     })
-    expect(cellMenuContextFor(prop(), 'createdTime', DATES, true)).toEqual({
-      kind: 'style-only',
-      type: 'createdTime',
-      current: DATES,
-    })
-    expect(cellMenuContextFor(prop(), 'lastEditedTime', DATES, true)).toEqual({
-      kind: 'style-only',
-      type: 'lastEditedTime',
-      current: DATES,
-    })
+    for (const type of ['createdTime', 'lastEditedTime'] as const) {
+      const ctx = cellMenuContextFor(type, DATES, true)
+      expect(ctx).toEqual({ kind: 'style-only', type, current: DATES, clearable: false })
+      expect(cellMenuModel(ctx as CellMenuContext).some((i) => i.action === 'cell:clear')).toBe(
+        false,
+      )
+    }
   })
 
   it('number carries barCapable only when a bar can render (gates the Bar look)', () => {
-    expect(cellMenuContextFor(prop(), 'number', DATES, true, { barCapable: true })).toEqual({
+    expect(cellMenuContextFor('number', DATES, true, { barCapable: true })).toEqual({
       kind: 'style-only',
       type: 'number',
       current: DATES,
@@ -212,24 +205,46 @@ describe('cellMenuContextFor', () => {
     })
   })
 
-  it('select/multi/context → clear-only when filled, no menu when empty', () => {
-    expect(cellMenuContextFor(prop(), 'select', DATES, true)).toEqual({ kind: 'clear-only' })
-    expect(cellMenuContextFor(prop(), 'multiSelect', DATES, false)).toBeNull()
+  it('select/multiSelect → style-only like Status, Clear gated on filled', () => {
+    for (const type of ['select', 'multiSelect'] as const) {
+      expect(cellMenuContextFor(type, DATES, true)).toEqual({
+        kind: 'style-only',
+        type,
+        current: DATES,
+        clearable: true,
+      })
+      expect(cellMenuContextFor(type, DATES, false)).toEqual({
+        kind: 'style-only',
+        type,
+        current: DATES,
+        clearable: false,
+      })
+    }
+    const filled = cellMenuModel(cellMenuContextFor('select', DATES, true) as CellMenuContext)
+    expect(filled.find((i) => i.submenu)?.submenu?.map((i) => i.label)).toEqual([
+      'Standard',
+      'Compact',
+    ])
+    expect(filled.some((i) => i.action === 'cell:clear')).toBe(true)
+    const empty = cellMenuModel(cellMenuContextFor('multiSelect', DATES, false) as CellMenuContext)
+    expect(empty.some((i) => i.action === 'cell:clear')).toBe(false)
   })
 
   it('an unsupported/undefined type → no menu', () => {
-    expect(cellMenuContextFor(prop(), undefined, DATES, true)).toBeNull()
+    expect(cellMenuContextFor(undefined, DATES, true)).toBeNull()
   })
 
-  it('hideable (cards): a filled cell carries hideable; a menu-less cell becomes remove-only', () => {
-    expect(cellMenuContextFor(prop(), 'select', DATES, true, { hideable: true })).toEqual({
-      kind: 'clear-only',
+  it('hideable (cards): a styled cell carries hideable; a menu-less cell becomes remove-only', () => {
+    expect(cellMenuContextFor('select', DATES, true, { hideable: true })).toEqual({
+      kind: 'style-only',
+      type: 'select',
+      current: DATES,
+      clearable: true,
       hideable: true,
     })
-    const ctx = cellMenuContextFor(prop(), 'select', DATES, false, { hideable: true })
-    expect(ctx).toEqual({ kind: 'remove-only', hideable: true })
-    expect(cellMenuModel(ctx as CellMenuContext).map((i) => i.action)).toEqual(['cell:hide'])
-    expect(cellMenuContextFor(prop(), undefined, DATES, true, { hideable: true })).toEqual({
+    const ctx = cellMenuContextFor('select', DATES, false, { hideable: true })
+    expect(cellMenuModel(ctx as CellMenuContext).at(-1)?.action).toBe('cell:hide')
+    expect(cellMenuContextFor(undefined, DATES, true, { hideable: true })).toEqual({
       kind: 'remove-only',
       hideable: true,
     })
