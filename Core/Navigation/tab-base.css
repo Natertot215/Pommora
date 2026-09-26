@@ -244,8 +244,7 @@
 .shell:has(
     .content-view-view
       :is(
-        .detail-scroll .banner,
-        .detail-scroll .banner-empty,
+        .detail-scroll > :is(.banner, .banner-empty),
         .mdpm-header,
         .nav-view-banner,
         .nav-view-head
