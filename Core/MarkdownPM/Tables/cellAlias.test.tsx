@@ -23,7 +23,11 @@ const conn: ConnectionsApi = {
   open: () => {},
 }
 const CELL = '[[Quarterly Plan|the plan]]'
-const model: TableModel = { columns: [{ align: null, dashes: 3 }], header: ['A'], rows: [[CELL]] }
+const modelOf = (cell: string): TableModel => ({
+  columns: [{ align: null, dashes: 3 }],
+  header: ['A'],
+  rows: [[cell]],
+})
 const noop = (): void => {}
 
 let container: HTMLDivElement
@@ -33,7 +37,7 @@ afterEach(async () => {
   container.remove()
 })
 
-async function cellEditor(): Promise<EditorView> {
+async function cellEditor(text = CELL): Promise<EditorView> {
   container = document.createElement('div')
   document.body.appendChild(container)
   root = createRoot(container)
@@ -41,7 +45,7 @@ async function cellEditor(): Promise<EditorView> {
     root.render(
       createElement(MarkdownTable, {
         host: testHost(),
-        model,
+        model: modelOf(text),
         connections: () => conn,
         onCellCommit: noop,
         onExit: noop,
@@ -88,5 +92,33 @@ describe('a `]` typed inside a cell alias is refused, as the page body refuses i
       view.dispatch({ selection: { anchor: at } })
     })
     expect(typed(view, at, 'x')).toBe(false)
+  })
+})
+
+describe('a cell types the page’s link shortcuts', () => {
+  // The handler claims or passes; a passed character lands as the browser would insert it.
+  const type = (view: EditorView, at: number, text: string): void => {
+    if (!typed(view, at, text)) view.dispatch({ changes: { from: at, insert: text } })
+  }
+
+  it('turns a § inside a link into the heading mark', async () => {
+    const view = await cellEditor('[[Page]]')
+    await act(async () => {
+      view.dispatch({ selection: { anchor: 6 } })
+    })
+    await act(async () => {
+      expect(typed(view, 6, '§')).toBe(true)
+    })
+    expect(view.state.doc.toString()).toBe('[[Page#]]')
+  })
+
+  it('leaves || literal, since a callout cannot live in a cell', async () => {
+    const view = await cellEditor('x')
+    await act(async () => {
+      view.dispatch({ selection: { anchor: 0 } })
+      type(view, 0, '|')
+      type(view, 1, '|')
+    })
+    expect(view.state.doc.toString()).toBe('||x')
   })
 })

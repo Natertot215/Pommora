@@ -1,35 +1,19 @@
 import { useEffect, useLayoutEffect, useRef } from 'react'
 import { EditorView, keymap } from '@codemirror/view'
-import { Annotation, Compartment, EditorSelection, EditorState, Prec } from '@codemirror/state'
+import { Annotation, EditorSelection, EditorState, Prec } from '@codemirror/state'
 import { defaultKeymap, deleteCharForward, historyKeymap, redo, undo } from '@codemirror/commands'
-import { customCaret } from '../caret'
-import { customSelection } from '../selection'
-import { markdownDecorations } from '../decorations'
-import { formatKeymap } from '../Input/formatKeymap'
+import { useFormatGate } from '../Input/useFormatGate'
 import { cellCitations } from './cellCitations'
 import { resolutionNudge } from '../Embeds/embedWidget'
 import {
-  autoPair,
   autoDelete,
-  canonicalizeCheckbox,
   continueListOnEnter,
-  dashArrow,
-  ellipsis,
-  equations,
-  bullet,
-  sectionSign,
   indentListOnTab,
   outdentListOnShiftTab,
   smartBackspace,
-  wrapSelection,
   type Edit,
 } from '../Input/edits'
-import { listRenumberOnDelete } from '../Input/listRenumber'
 import { wrapChords } from '../Input/markdownInput'
-import { listDragExtension } from '../Gestures/listDrag'
-import { blockDragExtension } from '../Gestures/blockDrag'
-import { blockHandles, pointerReveal } from '../Menus/blockHandles'
-import { gripMenu } from '../Menus/gripMenu'
 import { renumberAfterNest } from '../Engine/listDragModel'
 import { parseListMarker, type ListMarker, type MarkdownScope } from '../Engine/detect'
 import { cellToSource } from '../Engine/Tables/codec'
@@ -37,29 +21,17 @@ import { applyEdit } from '../Input/applyEdit'
 import { docLineIntentsOf, docScan } from '../docCache'
 import type { DocScan } from '../Engine/docScan'
 import { listGlyphOf, seatPastMarker } from '../Engine/intents'
-import { headingTargetOf } from '../Autocomplete/headingTarget'
-import { AC_MAX, aliasRows, pageRow } from '../Autocomplete/autocomplete'
-import { refusedInAlias } from '../Guards/aliasGuard'
-import { aliasOnLeave } from '../Links/linkEdit'
-import { linkRest, linkTyping } from '../Gestures/linkGestures'
-import { connectionClicks } from '../Links/connectionClicks'
-import { markdownLinkClicks } from '../Links/linkClicks'
-import { citationPointer } from '../Citations/citationPointer'
-import { pasteLink } from '../Links/pasteLink'
-import { pendingTitle } from '../Links/pendingTitle'
 import {
+  acKeys,
   useConnectionAutocomplete,
   detectConnectionQuery,
-  whenAcOpen,
 } from '../Autocomplete/useConnectionAutocomplete'
 import { AutocompletePane } from '../Autocomplete/AutocompletePane'
 import type { ConnectionsApi } from '../Links/connectionsApi'
 import type { NavDir } from '../Engine/Tables/navigate'
 import { type EditorHost, editorHost } from '../api'
 import { useLatest } from '@pommora/uix/Utilities/stableApi'
-import { editorMenu } from '../Menus/menu'
-
-const noConn = (): undefined => undefined
+import { inlineSurface } from '../surface'
 
 const HISTORY_BINDINGS = historyKeymap.filter((b) => b.run === undo || b.run === redo)
 
@@ -177,33 +149,8 @@ export function CellEditor({
   // The numbering is a whole-document fact and the extensions bake at mount, so it is read live.
   const ordinalOfRef = useLatest(ordinalOf)
   const onTablePasteRef = useLatest(onTablePaste)
-  const formatGate = useRef(new Compartment())
-  const lastCommands = useRef(host.settings().commands)
-
-  const {
-    ac,
-    setAc,
-    candidates,
-    acIndex,
-    commit,
-    acCtl,
-    viaChevron,
-    loading,
-    headingRows,
-    collapsed,
-    toggleHeading,
-  } = useConnectionAutocomplete(
-    viewRef,
-    host,
-    (q) => {
-      const conn = connections?.()
-      if (!conn) return []
-      return q.form === 'alias'
-        ? aliasRows(conn, host.aliases, q.title, q.query)
-        : conn.candidates(q.query, AC_MAX).map(pageRow)
-    },
-    (title) => headingTargetOf(host, connections?.(), title),
-  )
+  const { setAc, acCtl, pane } = useConnectionAutocomplete(viewRef, host, () => connections?.())
+  const formatExt = useFormatGate(viewRef, host.settings().commands)
 
   useEffect(() => {
     const view = new EditorView({
@@ -212,19 +159,8 @@ export function CellEditor({
         doc: initial,
         extensions: [
           editorHost.of(host),
-          markdownDecorations(connections ?? noConn, 'cell'),
-          listDragExtension,
-          listRenumberOnDelete('cell'),
-          blockHandles('cell'),
-          pointerReveal('cell'),
-          blockDragExtension,
-          gripMenu,
+          inlineSurface(() => connections?.(), 'cell'),
           cellCitations(() => ordinalOfRef.current),
-          // A cell authors aliases like the body does — without this an abandoned pipe reaches disk.
-          aliasOnLeave(() => connections?.()),
-          pasteLink,
-          // A cell's editor dies the moment it deactivates, so a late fetch reaches nothing and the Short Link stands.
-          pendingTitle,
           Prec.highest(
             EditorView.domEventHandlers({
               paste(event) {
@@ -235,17 +171,6 @@ export function CellEditor({
               },
             }),
           ),
-          markdownLinkClicks(() => connections?.()),
-          connectionClicks(() => connections?.()),
-          citationPointer(() => connections?.()),
-          editorMenu('cell'),
-          linkRest,
-          linkTyping,
-          customCaret,
-          customSelection,
-          EditorView.lineWrapping,
-          // Opted in explicitly: the widget's contentEditable=false host suppresses the spell-check the page editor inherits.
-          EditorView.contentAttributes.of({ spellcheck: 'true', 'data-drawn-caret': '' }),
           Prec.highest(
             keymap.of([
               // In a list Tab is nest and nothing else; at the deepest level it holds, as Shift-Tab does at the shallowest.
@@ -273,9 +198,7 @@ export function CellEditor({
                   if (!continueList(view)) view.dispatch(view.state.replaceSelection('\n'))
                 }),
               },
-              { key: 'ArrowDown', run: whenAcOpen([acCtl], (c) => c.move(1)) },
-              { key: 'ArrowUp', run: whenAcOpen([acCtl], (c) => c.move(-1)) },
-              { key: 'Escape', run: whenAcOpen([acCtl], (c) => c.close()) },
+              ...acKeys([acCtl]),
               // The exit is the list's final item alone; above it, and outside a list, the break is the body's own, and the row does NOT split, because cellToSource serializes it as <br> on disk.
               {
                 key: 'Shift-Enter',
@@ -319,26 +242,8 @@ export function CellEditor({
               })),
             ]),
           ),
-          formatGate.current.of(formatKeymap(lastCommands.current)),
+          formatExt,
           keymap.of(defaultKeymap),
-          EditorView.inputHandler.of((view, from, to, text) => {
-            if (view.composing || view.compositionStarted) return false
-            if (text.length !== 1) return false
-            const scan = docScan(view.state.doc)
-            const settings = host.settings()
-            if (from !== to) return applyEdit(view, wrapSelection(scan, from, to, text, settings))
-            if (refusedInAlias(scan.text, from, text)) return true
-            return applyEdit(
-              view,
-              canonicalizeCheckbox(scan.text, from, from, text, 'cell') ??
-                autoPair(scan, from, from, text, settings) ??
-                dashArrow(scan, from, from, text, settings) ??
-                ellipsis(scan, from, from, text, settings) ??
-                equations(scan, from, from, text, settings) ??
-                sectionSign(scan, from, from, text, settings) ??
-                bullet(scan, from, from, text, settings),
-            )
-          }),
           EditorView.domEventHandlers({
             blur: () => {
               setAc(null)
@@ -382,17 +287,6 @@ export function CellEditor({
     // Mount once — the cell IS the live editor.
   }, [])
 
-  const commands = host.settings().commands
-  useEffect(() => {
-    const view = viewRef.current
-    if (!view || commands === lastCommands.current) {
-      lastCommands.current = commands
-      return
-    }
-    lastCommands.current = commands
-    view.dispatch({ effects: formatGate.current.reconfigure(formatKeymap(commands)) })
-  }, [commands])
-
   // A renumber or a heading change elsewhere on the page never touches this cell's document, so the host announces it on the same beat it re-keys the resting cells.
   useEffect(() => {
     viewRef.current?.dispatch({ effects: resolutionNudge.of(null) })
@@ -413,21 +307,7 @@ export function CellEditor({
   return (
     <>
       <div ref={mountRef} className="mdpm-tbl-cell-editor" />
-      <AutocompletePane
-        ac={ac}
-        candidates={candidates}
-        index={acIndex}
-        onPick={commit}
-        viaChevron={viaChevron}
-        loading={loading}
-        headingRows={headingRows}
-        collapsed={collapsed}
-        onToggleHeading={toggleHeading}
-        onAside={(row) => commit(row, { openHeading: true })}
-        onBack={() => {
-          acCtl.current.aside?.(-1)
-        }}
-      />
+      <AutocompletePane {...pane} />
     </>
   )
 }
