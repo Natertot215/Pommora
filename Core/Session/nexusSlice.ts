@@ -89,7 +89,8 @@ export const createNexusSlice: Slice<NexusSlice> = (set, get) => {
   const openVia = async (attempt: () => Promise<Result<boolean>>): Promise<void> => {
     try {
       // Closed before the root can flip even if the adopt is canceled: data safety over persistence.
-      set({ navOpen: false, pageWindow: null })
+      get().closeWindows()
+      get().resetGlance()
       await flushAllSaves()
       holdSaves()
       const opened = await attempt()

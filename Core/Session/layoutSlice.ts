@@ -12,12 +12,6 @@ export interface LayoutSlice {
   persistPaneWidths: () => void
   sidePaneWidth: number
   setSidePaneWidth: (w: number) => void
-  settingsOpen: boolean
-  closeSettings: () => void
-  toggleSettings: () => void
-  iterationOpen: boolean
-  closeIteration: () => void
-  toggleIteration: () => void
   hostPlatform: HostPlatform
   fullscreen: boolean
   setHostWindow: (host: Partial<Pick<LayoutSlice, 'hostPlatform' | 'fullscreen'>>) => void
@@ -50,14 +44,6 @@ export const createLayoutSlice: Slice<LayoutSlice> = (set, get) => ({
     const s = get()
     s.setDevicePref('panes', { sidebar: s.sidebarWidth, sidePane: s.sidePaneWidth })
   },
-
-  settingsOpen: false,
-  closeSettings: () => set({ settingsOpen: false }),
-  toggleSettings: () => set((s) => ({ settingsOpen: !s.settingsOpen })),
-
-  iterationOpen: false,
-  closeIteration: () => set({ iterationOpen: false }),
-  toggleIteration: () => set((s) => ({ iterationOpen: !s.iterationOpen })),
 
   hostPlatform: 'posix',
   fullscreen: false,

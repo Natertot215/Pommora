@@ -8,7 +8,7 @@ export function useWindowTabSlide(
   rootRef: RefObject<HTMLElement | null>,
   sidePaneOpen: boolean,
 ): void {
-  const activeTabId = useSession((s) => s.pageWindow?.activeTabId)
+  const activeTabId = useSession((s) => s.windowSlot?.activeTabId)
   const windowSlide = useSession((s) => s.windowSlide)
   const prevId = useRef(activeTabId)
   // A stamp from before this window mounted belongs to another window's switch.

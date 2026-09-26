@@ -6,11 +6,7 @@ import { stubDialer } from '../vitest.setup'
 
 beforeEach(() => {
   ;(window as unknown as { nexus: unknown }).nexus = stubDialer({})
-  useSession.setState({
-    pageWindow: null,
-    navOpen: false,
-    windowsFile: { navSet: null, pageSet: null },
-  })
+  useSession.getState().resetWindow()
 })
 
 const indexOf = (pages: Record<string, string>): ReconcileIndex => ({
@@ -42,7 +38,7 @@ describe('reconcileWindow — a page re-keyed at its path', () => {
     useSession.setState({ historyTarget: dead })
     useSession.getState().reconcileWindow(indexOf({ x: 'Notes/x.md' }))
     const live = { kind: 'page', id: 'x', path: 'Notes/x.md' }
-    expect(useSession.getState().pageWindow?.tabs.map((t) => t.target)).toEqual([live])
+    expect(useSession.getState().windowSlot?.tabs.map((t) => t.target)).toEqual([live])
     expect(useSession.getState().historyTarget).toEqual(live)
   })
 })
@@ -52,29 +48,60 @@ describe('the Matrix window — one slot, three kinds', () => {
 
   it('overtakes an open page window, whose set survives for the next Preview', () => {
     useSession.getState().openWindowTab(page)
-    expect(useSession.getState().pageWindow?.kind).toBe('page')
+    expect(useSession.getState().windowSlot?.kind).toBe('page')
     useSession.getState().openMatrixWindow()
-    const win = useSession.getState().pageWindow!
+    const win = useSession.getState().windowSlot!
     expect(win.kind).toBe('matrix')
     expect(win.tabs).toEqual([])
     expect(useSession.getState().windowExit).toBe('dismiss')
-    expect(useSession.getState().windowsFile.pageSet?.tabs).toEqual([
+    expect(useSession.getState().windowsFile.sets.page?.tabs).toEqual([
       { target: { kind: 'page', id: 'x' } },
     ])
   })
 
   it('the toggle opens it, then closes the slot', () => {
     useSession.getState().toggleMatrixWindow()
-    expect(useSession.getState().pageWindow?.kind).toBe('matrix')
+    expect(useSession.getState().windowSlot?.kind).toBe('matrix')
     useSession.getState().toggleMatrixWindow()
-    expect(useSession.getState().pageWindow).toBeNull()
+    expect(useSession.getState().windowSlot).toBeNull()
   })
 
   it('a Preview while it stands overtakes it — the Matrix has no tabs to join', () => {
     useSession.getState().openMatrixWindow()
     useSession.getState().openWindowTab(page)
-    const win = useSession.getState().pageWindow!
+    const win = useSession.getState().windowSlot!
     expect(win.kind).toBe('page')
     expect(win.tabs.map((t) => t.target)).toEqual([page])
+  })
+})
+
+describe('a window action writes the store once', () => {
+  it('activating a tab writes once and saves no file, since the record holds no active tab', () => {
+    const s = useSession.getState()
+    s.openWindowTab({ kind: 'page', id: 'a', path: 'a.md' })
+    s.openWindowTab({ kind: 'page', id: 'b', path: 'b.md' })
+    const first = useSession.getState().windowSlot!.tabs[0].id
+    const file = useSession.getState().windowsFile
+    let writes = 0
+    const off = useSession.subscribe(() => writes++)
+    useSession.getState().activateWindowTab(first)
+    off()
+    expect(writes).toBe(1)
+    expect(useSession.getState().windowsFile).toBe(file)
+  })
+})
+
+describe('reconcileWindow — dead tabs', () => {
+  it('a dead active tab falls to its surviving left neighbor, and an emptied window closes', () => {
+    const s = useSession.getState()
+    s.openWindowTab({ kind: 'page', id: 'a', path: 'a.md' })
+    s.openWindowTab({ kind: 'page', id: 'b', path: 'b.md' })
+    s.openWindowTab({ kind: 'page', id: 'c', path: 'c.md' })
+    useSession.getState().reconcileWindow(indexOf({ a: 'a.md' }))
+    const win = useSession.getState().windowSlot!
+    expect(win.tabs.map((t) => t.target)).toEqual([{ kind: 'page', id: 'a', path: 'a.md' }])
+    expect(win.activeTabId).toBe(win.tabs[0].id)
+    useSession.getState().reconcileWindow(indexOf({}))
+    expect(useSession.getState().windowSlot).toBeNull()
   })
 })

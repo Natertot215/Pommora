@@ -9,7 +9,7 @@ import {
   toNavRef,
   type WindowTarget,
 } from '@pommora/core/Navigation/navRef'
-import { type ReconcileIndex, reconcileWith } from './reconcileSelection'
+import { type ReconcileIndex, reconcileHeld, reconcileWith } from './reconcileSelection'
 import { reconcileIndexOf } from '../Nexus/treeIndex'
 import { liveTarget, makeTabId } from '../Navigation/tabsModel'
 import {
@@ -25,14 +25,14 @@ import type { SessionState, Slice } from './sessionState'
 import { scheduleWindowsSave } from './saveScheduler'
 
 export interface WindowSlice {
-  pageWindow: WindowState | null
+  windowSlot: WindowState | null
   windowsFile: WindowsFile
   windowSlide: { dir: 'back' | 'fwd'; seq: number } | null
   windowExit: 'dismiss' | 'engulf' | 'morph'
+  windowSummon: number
   historyTarget: PageTarget | null
   openHistory: (target: PageTarget) => void
   closeHistory: () => void
-  openNavWindow: () => void
   openWindowTab: (target: WindowTarget, opts?: { at?: number; heading?: string }) => void
   activateWindowTab: (id: string) => void
   reorderWindowTabs: (activeId: string, overId: string) => void
@@ -41,30 +41,49 @@ export interface WindowSlice {
   closeWindow: (reason?: 'dismiss' | 'engulf') => void
   openMatrixWindow: () => void
   toggleMatrixWindow: () => void
-  navOpen: boolean
   openNav: () => void
-  closeNav: () => void
   toggleNav: () => void
   /** The sequence makes every summon a distinct event, so re-clicking a link the window has navigated away from still re-aims it. */
   browserSummon: { url: string; seq: number } | null
   openBrowser: (url: string) => void
   closeBrowser: () => void
+  settingsOpen: boolean
+  closeSettings: () => void
+  toggleSettings: () => void
+  iterationOpen: boolean
+  closeIteration: () => void
+  toggleIteration: () => void
+  closeWindows: () => void
   reconcileWindow: (index: ReconcileIndex) => void
   resetWindow: () => void
 }
 
 export const windowTargetOf = (s: SessionState): WindowTarget | null => {
-  const win = s.pageWindow
+  const win = s.windowSlot
   const active = win?.tabs.find((t) => t.id === win.activeTabId)
   return active && isWindowTarget(active.target) ? active.target : null
 }
 
-const PER_NEXUS = {
-  navOpen: false,
-  pageWindow: null,
+export const windowsOpen = (s: SessionState): boolean =>
+  s.windowSlot !== null ||
+  s.historyTarget !== null ||
+  s.browserSummon !== null ||
+  s.settingsOpen ||
+  s.iterationOpen
+
+const CLOSED = {
+  windowSlot: null,
   historyTarget: null,
+  browserSummon: null,
+  settingsOpen: false,
+  iterationOpen: false,
+} satisfies Partial<WindowSlice>
+
+const PER_NEXUS = {
+  ...CLOSED,
   windowsFile: EMPTY_WINDOWS,
   windowSlide: null,
+  windowSummon: 0,
 } satisfies Partial<WindowSlice>
 
 export const createWindowSlice: Slice<WindowSlice> = (set, get) => {
@@ -83,24 +102,7 @@ export const createWindowSlice: Slice<WindowSlice> = (set, get) => {
     ),
   })
 
-  const saveWindowsFile = (file: WindowsFile): void => {
-    set({ windowsFile: file })
-    scheduleWindowsSave(file)
-  }
-
-  const mirrorWindows = (): void => {
-    const { pageWindow: win, windowsFile: file } = get()
-    // The Matrix window carries no tabs, and a closed window leaves the sets as they stand.
-    saveWindowsFile(
-      win?.kind === 'nav'
-        ? { ...file, navSet: toWindowRecord(win) }
-        : win?.kind === 'page'
-          ? { ...file, pageSet: toWindowRecord(win) }
-          : file,
-    )
-  }
-
-  const reconcileRecord = (rec: WindowSetRecord | null): WindowTab[] => {
+  const reconcileRecord = (rec: WindowSetRecord | null | undefined): WindowTab[] => {
     const tree = get().tree
     if (!rec || !tree) return []
     const index = reconcileIndexOf(tree)
@@ -118,10 +120,19 @@ export const createWindowSlice: Slice<WindowSlice> = (set, get) => {
 
   const commitWindow = (
     next: WindowState | null,
-    extra?: Partial<Pick<WindowSlice, 'windowSlide' | 'navOpen' | 'windowExit'>>,
+    extra?: Partial<
+      Pick<WindowSlice, 'windowSlide' | 'windowExit' | 'windowSummon' | 'windowsFile'>
+    >,
   ): void => {
-    set({ pageWindow: next, ...extra })
-    mirrorWindows()
+    const { windowSlot: cur, windowsFile: file } = get()
+    if (next === null || next.kind !== cur?.kind) clearWindowCache()
+    const windowsFile =
+      extra?.windowsFile ??
+      (next && next.kind !== 'matrix' && next.tabs !== cur?.tabs
+        ? { sets: { ...file.sets, [next.kind]: toWindowRecord(next) } }
+        : file)
+    set({ windowSlot: next, ...extra, windowsFile })
+    if (windowsFile !== file) scheduleWindowsSave(windowsFile)
   }
 
   return {
@@ -129,34 +140,24 @@ export const createWindowSlice: Slice<WindowSlice> = (set, get) => {
     windowExit: 'dismiss',
     openHistory: (target) => set({ historyTarget: target }),
     closeHistory: () => set({ historyTarget: null }),
-    openNavWindow: () => {
-      const cur = get().pageWindow
-      if (cur?.kind === 'nav') return
-      // A live Page Window morphs into the NavWindow rather than dismiss + fresh open — its rect is stashed for the nav's mount FLIP, and 'morph' hides the outgoing window instantly.
-      const morphing = cur?.kind === 'page'
-      if (morphing) stashWindowMorph()
-      const sentinel = { id: makeTabId(), target: { kind: 'navwindow' as const } }
-      const next: WindowState = {
-        kind: 'nav',
-        tabs: [sentinel, ...reconcileRecord(get().windowsFile.navSet)],
-        activeTabId: sentinel.id,
-      }
-      clearWindowCache()
-      commitWindow(next, { windowExit: morphing ? 'morph' : 'dismiss' })
-    },
     openWindowTab: (target, { at, heading } = {}) => {
       if (heading && target.kind === 'page')
         set({ pendingTravel: { route: 'window', path: target.path, heading } })
-      const cur = get().pageWindow
+      const windowSummon = get().windowSummon + 1
+      const cur = get().windowSlot
       if (cur && cur.kind !== 'matrix') {
         const next = openTabIn(cur, makeTabId, target, at)
-        if (next === cur) return
+        if (next === cur) {
+          set({ windowSummon })
+          return
+        }
         if (at !== undefined) {
-          commitWindow(next)
+          commitWindow(next, { windowSummon })
           return
         }
         const spawned = next.tabs.length > cur.tabs.length
         commitWindow(next, {
+          windowSummon,
           windowSlide: spawned
             ? { dir: 'fwd', seq: ++windowSlideSeq }
             : stampByOrder(cur, next.activeTabId),
@@ -165,107 +166,104 @@ export const createWindowSlice: Slice<WindowSlice> = (set, get) => {
       }
       const restored: WindowState = {
         kind: 'page',
-        tabs: reconcileRecord(get().windowsFile.pageSet),
+        tabs: reconcileRecord(get().windowsFile.sets.page),
         activeTabId: '',
       }
-      clearWindowCache()
       // windowExit re-seeds on every open — only a close that writes 'engulf' plays the FLIP.
-      commitWindow(openTabIn(restored, makeTabId, target), {
-        navOpen: false,
-        windowExit: 'dismiss',
-      })
+      commitWindow(openTabIn(restored, makeTabId, target), { windowExit: 'dismiss', windowSummon })
     },
     activateWindowTab: (id) => {
-      const cur = get().pageWindow
+      const cur = get().windowSlot
       if (!cur || cur.activeTabId === id || !cur.tabs.some((t) => t.id === id)) return
-      const next = { ...cur, activeTabId: id }
-      commitWindow(next, { windowSlide: stampByOrder(cur, id) })
+      commitWindow({ ...cur, activeTabId: id }, { windowSlide: stampByOrder(cur, id) })
     },
     reorderWindowTabs: (activeId, overId) => {
-      const cur = get().pageWindow
+      const cur = get().windowSlot
       if (!cur) return
       const next = reorderTabIn(cur, activeId, overId)
       if (next === cur) return
       commitWindow(next)
     },
     promoteWindowTab: (id, newTab) => {
-      const tab = get().pageWindow?.tabs.find((t) => t.id === id)
-      if (!tab || tab.target.kind === 'navwindow') return
+      const tab = get().windowSlot?.tabs.find((t) => t.id === id)
+      if (!tab || tab.target.kind === 'map') return
       get().closeWindowTab(id, 'engulf')
       void get().select(tab.target, newTab ? { newTab: true } : undefined)
     },
     closeWindowTab: (id, exit) => {
-      const cur = get().pageWindow
+      const cur = get().windowSlot
       if (!cur) return
       const next = closeTabIn(cur, id)
       if (next === cur) return
-      if (next === null) {
-        clearWindowCache()
-        // A hand-closed last tab must not come back; the X, which keeps the set, is the other half of that rule.
-        set({ windowExit: exit ?? 'dismiss', windowsFile: { ...get().windowsFile, pageSet: null } })
-      } else dropWindowCache(id)
-      commitWindow(next)
+      if (next) {
+        dropWindowCache(id)
+        commitWindow(next)
+        return
+      }
+      // A hand-closed last tab must not come back; the X, which keeps the set, is the other half of that rule.
+      commitWindow(null, {
+        windowExit: exit ?? 'dismiss',
+        windowsFile: { sets: { ...get().windowsFile.sets, [cur.kind]: null } },
+      })
     },
-    closeWindow: (reason) => {
-      clearWindowCache()
-      commitWindow(null, { windowExit: reason ?? 'dismiss' })
-    },
+    closeWindow: (reason) => commitWindow(null, { windowExit: reason ?? 'dismiss' }),
     openMatrixWindow: () => {
-      if (get().pageWindow?.kind === 'matrix') return
-      clearWindowCache()
-      commitWindow(
-        { kind: 'matrix', tabs: [], activeTabId: '' },
-        { navOpen: false, windowExit: 'dismiss' },
-      )
+      if (get().windowSlot?.kind === 'matrix') return
+      commitWindow({ kind: 'matrix', tabs: [], activeTabId: '' }, { windowExit: 'dismiss' })
     },
     toggleMatrixWindow: () => {
-      if (get().pageWindow?.kind === 'matrix') get().closeWindow()
+      if (get().windowSlot?.kind === 'matrix') get().closeWindow()
       else get().openMatrixWindow()
     },
-
     openNav: () => {
-      set({ navOpen: true })
-      get().openNavWindow()
-    },
-    closeNav: () => {
-      clearWindowCache()
-      commitWindow(null, { navOpen: false })
+      const cur = get().windowSlot
+      if (cur?.kind === 'nav') return
+      // A live Page Window morphs into the NavWindow rather than dismiss + fresh open — its rect is stashed for the nav's mount FLIP, and 'morph' hides the outgoing window instantly.
+      const morphing = cur?.kind === 'page'
+      if (morphing) stashWindowMorph()
+      const sentinel = { id: makeTabId(), target: { kind: 'map' as const } }
+      commitWindow(
+        {
+          kind: 'nav',
+          tabs: [sentinel, ...reconcileRecord(get().windowsFile.sets.nav)],
+          activeTabId: sentinel.id,
+        },
+        { windowExit: morphing ? 'morph' : 'dismiss' },
+      )
     },
     toggleNav: () => {
-      if (get().navOpen) get().closeNav()
+      if (get().windowSlot?.kind === 'nav') get().closeWindow()
       else get().openNav()
     },
 
-    browserSummon: null,
     // Monotonic across closes: living outside the summon object, a re-summon inside the window's exit presence still reads as a new event.
     openBrowser: (url) => set({ browserSummon: { url, seq: ++browserSeq } }),
     closeBrowser: () => set({ browserSummon: null }),
 
+    closeSettings: () => set({ settingsOpen: false }),
+    toggleSettings: () => set((s) => ({ settingsOpen: !s.settingsOpen })),
+    closeIteration: () => set({ iterationOpen: false }),
+    toggleIteration: () => set((s) => ({ iterationOpen: !s.iterationOpen })),
+
+    closeWindows: () => {
+      clearWindowCache()
+      set(CLOSED)
+    },
+
     // A deleted page's flush would hit a dead path, which the crud guard refuses.
     reconcileWindow: (index) => {
-      const cur = get().pageWindow
+      const cur = get().windowSlot
       if (cur) {
-        const deadIds: string[] = []
-        const retarget = new Map<string, PageTarget>()
-        for (const t of cur.tabs) {
-          if (t.target.kind === 'navwindow') continue
+        const { next: tabs, dropped } = reconcileHeld(cur.tabs, (t) => {
+          if (t.target.kind === 'map') return t
           const r = reconcileWith(index, t.target)
-          if (r.kind === 'none') deadIds.push(t.id)
-          else if (r.kind === 'page' && r !== t.target) retarget.set(t.id, r)
-        }
-        if (deadIds.length > 0 || retarget.size > 0) {
-          for (const id of deadIds) dropWindowCache(id)
-          let next: WindowState | null = cur
-          for (const id of deadIds) next = next && closeTabIn(next, id)
-          if (next && retarget.size > 0)
-            next = {
-              ...next,
-              tabs: next.tabs.map((t) => {
-                const target = retarget.get(t.id)
-                return target ? { ...t, target } : t
-              }),
-            }
-          commitWindow(next)
+          return !isWindowTarget(r) ? null : r === t.target ? t : { ...t, target: r }
+        })
+        if (tabs !== cur.tabs) {
+          for (const t of dropped) dropWindowCache(t.id)
+          let closed: WindowState | null = cur
+          for (const t of dropped) closed = closed && closeTabIn(closed, t.id)
+          commitWindow(closed && { ...closed, tabs })
         }
       }
       const history = get().historyTarget
@@ -274,8 +272,8 @@ export const createWindowSlice: Slice<WindowSlice> = (set, get) => {
     },
 
     resetWindow: () => {
-      set(PER_NEXUS)
       clearWindowCache()
+      set(PER_NEXUS)
     },
   }
 }

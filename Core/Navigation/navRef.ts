@@ -70,7 +70,7 @@ export type WindowTarget = PageTarget | SpaceTarget
 export const isWindowTarget = (t: { kind: string }): t is WindowTarget =>
   t.kind === 'page' || t.kind === 'space'
 
-export type WindowTabTarget = WindowTarget | { kind: 'navwindow' }
+export type WindowTabTarget = WindowTarget | { kind: 'map' }
 
 export interface Tab {
   id: string

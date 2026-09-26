@@ -26,7 +26,7 @@ beforeEach(() => {
   toggleNavSpy = vi.fn()
   useSession.setState({
     toggleNav: toggleNavSpy as never,
-    navOpen: false,
+    windowSlot: null,
     tabs: [],
     pinned: [],
     pinnedTabs: [],
@@ -50,7 +50,7 @@ describe('the toolbar trio', () => {
   it('lights the Navigation button while the window stands', () => {
     expect(trioButton('Navigation').getAttribute('aria-pressed')).toBe('false')
     act(() => {
-      useSession.setState({ navOpen: true })
+      useSession.setState({ windowSlot: { kind: 'nav', tabs: [], activeTabId: '' } })
     })
     expect(trioButton('Navigation').getAttribute('aria-pressed')).toBe('true')
   })

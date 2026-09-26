@@ -30,15 +30,15 @@ const DRAG_SURFACES =
   '.navwindow-content, .navwindow-main, .navwindow-main-scroll, .navwindow-search, .tab-scroll, .tab-strip, .nav-list, .nav-gallery, .nav-gallery .card-grid'
 
 export function NavWindow(): React.JSX.Element | null {
-  const navOpen = useSession((s) => s.navOpen)
-  const { mounted, closing } = useExitPresence(navOpen, 'fast')
+  const open = useSession((s) => s.windowSlot?.kind === 'nav')
+  const { mounted, closing } = useExitPresence(open, 'fast')
   if (!mounted) return null
   return <NavWindowBody closing={closing} />
 }
 
 function NavWindowBody({ closing }: { closing: boolean }): React.JSX.Element {
   const { resolvedRecents, resolvedPins, search, go } = useNavData()
-  const closeNav = useSession((s) => s.closeNav)
+  const closeWindow = useSession((s) => s.closeWindow)
   const geometry = useWindowGeometry('navwindow')
   const [footerOpen, setFooterOpen] = useFold('footer:navwindow')
   const tree = useSession((s) => s.tree)
@@ -76,13 +76,13 @@ function NavWindowBody({ closing }: { closing: boolean }): React.JSX.Element {
 
   const results = useMemo(() => (query.trim() ? search(query) : null), [query, search])
   const closeOnSelect = useSetting('navCloseOnSelect')
-  const onSelected = closeOnSelect ? closeNav : undefined
+  const onSelected = closeOnSelect ? () => closeWindow() : undefined
   const goClose = (target: NavRef): void => go(target, onSelected)
   const goNewTab = (target: NavRef): void => go(target, onSelected, { newTab: true })
   const gallery = useSession((s) => s.devicePrefs.navWindowGallery === true)
   const setDevicePref = useSession((s) => s.setDevicePref)
 
-  const target = useSession((s) => (s.pageWindow?.kind === 'nav' ? windowTargetOf(s) : null))
+  const target = useSession((s) => (s.windowSlot?.kind === 'nav' ? windowTargetOf(s) : null))
   const { body, right, actions, footer, footerLead, closeSidePane, promote } =
     useWindowTabBody(target)
   const sidePaneOpen = right.open === true
@@ -102,7 +102,7 @@ function NavWindowBody({ closing }: { closing: boolean }): React.JSX.Element {
       return
     }
     setDevicePref('navViewGallery', gallery)
-    closeNav()
+    closeWindow()
     openNewTab()
   }
   const bannered = useSetting('windowNavBanner')
@@ -124,9 +124,9 @@ function NavWindowBody({ closing }: { closing: boolean }): React.JSX.Element {
       {...geometry}
       rootRef={rootRef}
       closing={closing}
-      onClose={closeNav}
+      onClose={() => closeWindow()}
       // The pane closes first — an Escape during the kind-swap exit is the shell's own closing gate.
-      onEscape={() => (sidePaneOpen ? closeSidePane() : closeNav())}
+      onEscape={() => (sidePaneOpen ? closeSidePane() : closeWindow())}
       dragSurfaces={DRAG_SURFACES}
       footer={{
         bar: footer ?? <Subfield page={null} count={shownCount} selection={{ kind: 'none' }} />,

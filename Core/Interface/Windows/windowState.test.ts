@@ -12,8 +12,10 @@ afterEach(() => {
 })
 
 const file: WindowsFile = {
-  navSet: { tabs: [{ target: { kind: 'page', id: 'p3' } }] },
-  pageSet: { tabs: [{ target: { kind: 'space', id: 's1' } }] },
+  sets: {
+    nav: { tabs: [{ target: { kind: 'page', id: 'p3' } }] },
+    page: { tabs: [{ target: { kind: 'space', id: 's1' } }] },
+  },
 }
 
 describe('readWindowsState', () => {
@@ -21,7 +23,7 @@ describe('readWindowsState', () => {
     expect(readWindowsState()).toEqual(EMPTY_WINDOWS)
   })
 
-  it('round-trips the nav set and the page set', () => {
+  it("round-trips each kind's set", () => {
     writeWindowsState(file)
     expect(readWindowsState()).toEqual(file)
   })
@@ -45,35 +47,32 @@ describe('sanitizeWindows', () => {
     expect(sanitizeWindows('windows')).toBeNull()
   })
 
-  it('a field it cannot read falls to its empty value rather than failing the file', () => {
-    expect(sanitizeWindows({ navSet: 7, pageSet: null })).toEqual(EMPTY_WINDOWS)
+  it('a set it cannot read drops alone rather than failing the file', () => {
+    expect(sanitizeWindows({ sets: { nav: 7, page: null } })).toEqual({ sets: { page: null } })
   })
 
-  it('a file written before the set was unified keeps its nav set and drops the rest', () => {
+  it('a file of the old named-set shape reads as empty', () => {
     expect(
       sanitizeWindows({
-        navSet: { tabs: [{ target: { kind: 'page', id: 'p3' } }], activeIndex: 0 },
-        origins: { p1: { tabs: [{ target: { kind: 'page', id: 'p2' } }], activeIndex: 0 } },
-        open: { kind: 'page', originId: 'p1' },
+        navSet: { tabs: [{ target: { kind: 'page', id: 'p3' } }] },
+        pageSet: null,
       }),
-    ).toEqual({
-      navSet: { tabs: [{ target: { kind: 'page', id: 'p3' } }] },
-      pageSet: null,
-    })
+    ).toEqual(EMPTY_WINDOWS)
   })
 
   it('strips display fields and drops refs of no storable kind', () => {
     const clean = sanitizeWindows({
-      navSet: {
-        tabs: [
-          { target: { kind: 'navwindow' } },
-          { target: { kind: 'page', id: 'p1', path: 'stale.md' } },
-          { target: { kind: 'space', id: 's1' } },
-        ],
+      sets: {
+        nav: {
+          tabs: [
+            { target: { kind: 'map' } },
+            { target: { kind: 'page', id: 'p1', path: 'stale.md' } },
+            { target: { kind: 'space', id: 's1' } },
+          ],
+        },
       },
-      pageSet: null,
     })
-    expect(clean?.navSet?.tabs).toEqual([
+    expect(clean?.sets.nav?.tabs).toEqual([
       { target: { kind: 'page', id: 'p1' } },
       { target: { kind: 'space', id: 's1' } },
     ])
@@ -81,16 +80,17 @@ describe('sanitizeWindows', () => {
 
   it('drops every stored ref a window tab cannot render', () => {
     const clean = sanitizeWindows({
-      navSet: null,
-      pageSet: {
-        tabs: [
-          { target: { kind: 'matrix' } },
-          { target: { kind: 'collection', id: 'c1' } },
-          { target: { kind: 'homepage' } },
-          { target: { kind: 'page', id: 'p1' } },
-        ],
+      sets: {
+        page: {
+          tabs: [
+            { target: { kind: 'matrix' } },
+            { target: { kind: 'collection', id: 'c1' } },
+            { target: { kind: 'homepage' } },
+            { target: { kind: 'page', id: 'p1' } },
+          ],
+        },
       },
     })
-    expect(clean?.pageSet?.tabs).toEqual([{ target: { kind: 'page', id: 'p1' } }])
+    expect(clean?.sets.page?.tabs).toEqual([{ target: { kind: 'page', id: 'p1' } }])
   })
 })

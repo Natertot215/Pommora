@@ -504,16 +504,16 @@ describe('store — applyTree reconciles the window tabs (D-6)', () => {
         { id: 'c', path: 'Notes/C.md' },
       ]),
     )
-    let p = useSession.getState().pageWindow
+    let p = useSession.getState().windowSlot
     expect(p?.tabs[0].target).toMatchObject({ id: 'b', path: 'Notes/Renamed.md' })
     expect(windowTargetOf(useSession.getState())).toMatchObject({ id: 'c', path: 'Notes/C.md' })
 
     await useSession.getState().applyTree(treeWith([{ id: 'c', path: 'Notes/C.md' }]))
-    p = useSession.getState().pageWindow
+    p = useSession.getState().windowSlot
     expect(p?.tabs).toHaveLength(1)
 
     await useSession.getState().applyTree(treeWith([]))
-    expect(useSession.getState().pageWindow).toBeNull()
+    expect(useSession.getState().windowSlot).toBeNull()
     expect(windowTargetOf(useSession.getState())).toBeNull()
   })
 
@@ -521,11 +521,11 @@ describe('store — applyTree reconciles the window tabs (D-6)', () => {
     await useSession.getState().applyTree(treeWith([{ id: 'a', path: 'Notes/A.md' }], ['s1']))
     useSession.getState().openWindowTab({ kind: 'page', id: 'a', path: 'Notes/A.md' })
     useSession.getState().openWindowTab({ kind: 'space', id: 's1' })
-    expect(useSession.getState().pageWindow?.tabs).toHaveLength(2)
+    expect(useSession.getState().windowSlot?.tabs).toHaveLength(2)
 
     await useSession.getState().applyTree(treeWith([{ id: 'a', path: 'Notes/A.md' }]))
-    const p = useSession.getState().pageWindow
-    expect(p?.tabs.map((t) => (t.target.kind === 'navwindow' ? 'map' : t.target.id))).toEqual(['a'])
+    const p = useSession.getState().windowSlot
+    expect(p?.tabs.map((t) => (t.target.kind === 'map' ? 'map' : t.target.id))).toEqual(['a'])
   })
 
   it('folds multiple simultaneous dead tabs: a dead active with a dead left neighbor lands on the survivor', async () => {
@@ -541,7 +541,7 @@ describe('store — applyTree reconciles the window tabs (D-6)', () => {
         { id: 'b', path: 'Notes/B.md' },
       ]),
     )
-    const p = useSession.getState().pageWindow
+    const p = useSession.getState().windowSlot
     expect(p?.tabs.map((t) => (t.target.kind === 'page' ? t.target.id : ''))).toEqual(['a', 'b'])
     expect(p?.tabs.find((t) => t.id === p.activeTabId)?.target).toMatchObject({ id: 'b' })
   })
@@ -555,35 +555,34 @@ describe('store — applyTree reconciles the window tabs (D-6)', () => {
     )
     useSession.setState({
       windowsFile: {
-        navSet: null,
-        pageSet: {
-          tabs: [
-            { target: { kind: 'page', id: 'x' } },
-            { target: { kind: 'page', id: 'y' } },
-            { target: { kind: 'page', id: 'z' } },
-          ],
+        sets: {
+          nav: null,
+          page: {
+            tabs: [
+              { target: { kind: 'page', id: 'x' } },
+              { target: { kind: 'page', id: 'y' } },
+              { target: { kind: 'page', id: 'z' } },
+            ],
+          },
         },
       },
     })
     useSession.getState().openWindowTab({ kind: 'page', id: 'x', path: 'Notes/x.md' })
-    const p = useSession.getState().pageWindow
+    const p = useSession.getState().windowSlot
     // Dead z drops; y re-paths to its rename; the asked tab takes the focus, which the record never named.
-    expect(p?.tabs.map((t) => (t.target.kind === 'navwindow' ? '' : t.target.id))).toEqual([
-      'x',
-      'y',
-    ])
+    expect(p?.tabs.map((t) => (t.target.kind === 'map' ? '' : t.target.id))).toEqual(['x', 'y'])
     expect(p?.tabs[1].target).toMatchObject({ path: 'Notes/Renamed.md' })
     expect(windowTargetOf(useSession.getState())).toMatchObject({ id: 'x' })
   })
 
   it('keeps the nav kind alive through a reconcile: dead page tabs drop, the map tab stays', async () => {
-    useSession.getState().openNavWindow()
+    useSession.getState().openNav()
     useSession.getState().openWindowTab({ kind: 'page', id: 'b', path: 'Notes/B.md' })
 
     await useSession.getState().applyTree(treeWith([]))
-    const p = useSession.getState().pageWindow
+    const p = useSession.getState().windowSlot
     expect(p?.kind).toBe('nav')
-    expect(p?.tabs.map((t) => t.target.kind)).toEqual(['navwindow'])
+    expect(p?.tabs.map((t) => t.target.kind)).toEqual(['map'])
     expect(windowTargetOf(useSession.getState())).toBeNull()
   })
 })

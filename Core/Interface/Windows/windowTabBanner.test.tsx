@@ -14,7 +14,7 @@ const Seat = ({ run }: { run: (a: 'edit') => Promise<void> }): null => {
 
 // The store is the hook's external source, so it is set outside render — a setState during render loops the subscription.
 const activate = (tabId: string): void => {
-  useSession.setState({ pageWindow: { kind: 'page', tabs: [], activeTabId: tabId } as never })
+  useSession.setState({ windowSlot: { kind: 'page', tabs: [], activeTabId: tabId } as never })
 }
 
 beforeEach(() => {

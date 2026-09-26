@@ -22,7 +22,7 @@ beforeEach(() => {
 })
 
 afterEach(() => {
-  useSession.setState({ pageWindow: null, selection: { kind: 'none' }, pages: {} })
+  useSession.setState({ windowSlot: null, selection: { kind: 'none' }, pages: {} })
 })
 
 describe('a connection opens its page the two ways every page menu offers', () => {
@@ -88,7 +88,7 @@ describe('a heading link opens at its heading', () => {
 
   it('a page the window already shows still offers Preview, since it travels to the heading', async () => {
     useSession.setState({
-      pageWindow: { kind: 'page', tabs: [{ id: 'tab1', target: ref }], activeTabId: 'tab1' },
+      windowSlot: { kind: 'page', tabs: [{ id: 'tab1', target: ref }], activeTabId: 'tab1' },
     })
     expect(await offered()).toContain('title:window')
   })

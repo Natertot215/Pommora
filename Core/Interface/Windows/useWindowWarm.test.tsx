@@ -45,7 +45,7 @@ const twoFrames = (): Promise<void> =>
 
 const onSpaceTab = (): void =>
   useSession.setState({
-    pageWindow: {
+    windowSlot: {
       kind: 'page',
       tabs: [{ id: 'tab1', target: { kind: 'space', id: 'sp' } }],
       activeTabId: 'tab1',
@@ -56,7 +56,7 @@ beforeEach(() => {
   clearCache()
   clearWindowCache()
   useSession.setState({
-    pageWindow: {
+    windowSlot: {
       kind: 'page',
       tabs: [{ id: 'tab1', target: { kind: 'page', id: 'a', path: 'Notes/a.md' } }],
       activeTabId: 'tab1',

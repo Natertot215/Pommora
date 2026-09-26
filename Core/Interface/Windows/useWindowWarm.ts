@@ -7,7 +7,7 @@ import { captureBodyScroll, readBodyScroll, WINDOW_OWNER } from './windowCache'
 
 // Liveness-gated — the editor's unmount capture trails the store's drop, and ungated it would re-insert one ghost editorState per close.
 const isLive = (tabId: string): boolean =>
-  useSession.getState().pageWindow?.tabs.some((t) => t.id === tabId) ?? false
+  useSession.getState().windowSlot?.tabs.some((t) => t.id === tabId) ?? false
 
 export function useWindowWarm(
   scrollerRef: RefObject<HTMLElement | null>,
@@ -15,7 +15,7 @@ export function useWindowWarm(
   /** Whether the tab's body can hold a scroll yet — `true` for a Page tab, a Space tab's board readiness otherwise. */
   ready: boolean,
 ): WarmSeam | undefined {
-  const activeTabId = useSession((s) => s.pageWindow?.activeTabId)
+  const activeTabId = useSession((s) => s.windowSlot?.activeTabId)
 
   const seam = useMemo<WarmSeam | undefined>(
     () =>

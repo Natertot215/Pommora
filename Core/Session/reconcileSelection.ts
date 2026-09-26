@@ -45,3 +45,19 @@ export function reconcileWith(index: ReconcileIndex, selection: SelectionState):
 export function reconcileSelection(tree: NexusTree, selection: SelectionState): SelectionState {
   return reconcileWith(reconcileIndexOf(tree), selection)
 }
+
+/** The same array comes back when every item maps to itself, so a caller can skip its write. */
+export function reconcileHeld<T>(
+  items: T[],
+  map: (item: T) => T | null,
+): { next: T[]; dropped: T[] } {
+  const next: T[] = []
+  const dropped: T[] = []
+  for (const item of items) {
+    const kept = map(item)
+    if (kept === null) dropped.push(item)
+    else next.push(kept)
+  }
+  const same = dropped.length === 0 && next.every((kept, i) => kept === items[i])
+  return { next: same ? items : next, dropped }
+}

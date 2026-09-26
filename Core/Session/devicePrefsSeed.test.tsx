@@ -46,6 +46,7 @@ async function freshStore(
     'devicePrefs:save': prefsSave,
     'nav:write': vi.fn(async () => ok(null)),
     'tabs:save': vi.fn(async () => ok(null)),
+    'windows:save': vi.fn(async () => ok(null)),
     'index:headings': vi.fn(async () => ok({})),
     'nexus:choose': vi.fn(choose),
     'nexus:state': vi.fn(async () => ok({ status: 'open', tree: treeAt('/b') })),
@@ -164,6 +165,35 @@ describe('a nexus switch keeps none of the old nexus', () => {
     expect(useSession.getState().devicePrefs).toEqual({ disclosure: { 'context:areas': true } })
     await useSession.getState().choose()
     expect(useSession.getState().devicePrefs).toEqual({})
+  })
+
+  it('a switch closes every window and pinned glance before the flush, even when it is canceled', async () => {
+    const { useSession } = await freshStore(
+      async () => ok({}),
+      async () => ok(false),
+    )
+    await useSession.getState().applyTree(treeAt('/a'))
+    const page = { kind: 'page', id: 'x', path: 'x.md' } as const
+    const s = useSession.getState()
+    s.openWindowTab(page)
+    s.openHistory(page)
+    s.toggleSettings()
+    s.pinGlance({
+      tabId: 't',
+      target: page,
+      anchorX: 0,
+      anchorY: 0,
+      anchorHeight: 0,
+      size: { w: 100, h: 100 },
+    })
+    await useSession.getState().choose()
+    const after = useSession.getState()
+    expect(after.windowSlot).toBeNull()
+    expect(after.historyTarget).toBeNull()
+    expect(after.settingsOpen).toBe(false)
+    expect(after.pinnedGlances).toEqual([])
+    expect(after.status).not.toBe('error')
+    expect(after.windowsFile.sets.page?.tabs).toEqual([{ target: { kind: 'page', id: 'x' } }])
   })
 })
 

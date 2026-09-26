@@ -41,7 +41,7 @@ beforeEach(() => {
     pinnedTabs: [],
     recents: [],
     pendingTravel: null,
-    pageWindow: null,
+    windowSlot: null,
     pages: {
       a: {
         status: 'ready',
@@ -80,7 +80,7 @@ describe('a heading travel waits for the tab it was opened in', () => {
 
   it('openWindowTab parks its travel even when the page is already the window’s active tab', () => {
     useSession.setState({
-      pageWindow: { kind: 'page', tabs: [{ id: 'w1', target: A }], activeTabId: 'w1' },
+      windowSlot: { kind: 'page', tabs: [{ id: 'w1', target: A }], activeTabId: 'w1' },
     })
     useSession.getState().openWindowTab(A, { heading: 'Setup' })
     expect(useSession.getState().pendingTravel).toEqual({

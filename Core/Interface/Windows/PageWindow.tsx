@@ -20,7 +20,7 @@ const DRAG_SURFACES = '.tab-scroll, .tab-strip'
 const EXIT_CLASS = { dismiss: '', engulf: 'engulfing', morph: 'morphing' } as const
 
 export function PageWindow(): React.JSX.Element | null {
-  const open = useSession((s) => s.pageWindow?.kind === 'page')
+  const open = useSession((s) => s.windowSlot?.kind === 'page')
   const target = useSession(windowTargetOf)
   const shown = useHeldPresence(target, 'base', open)
   if (!shown) return null

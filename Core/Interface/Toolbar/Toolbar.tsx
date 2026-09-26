@@ -59,7 +59,7 @@ export function Toolbar({
 
   const flat = useSession((s) => s.hostPlatform === 'windows')
   const toggleNav = useSession((s) => s.toggleNav)
-  const navOpen = useSession((s) => s.navOpen)
+  const navOpen = useSession((s) => s.windowSlot?.kind === 'nav')
   const goBack = useSession((s) => s.goBack)
   const goForward = useSession((s) => s.goForward)
   const canGoBack = useSession((s) => {
