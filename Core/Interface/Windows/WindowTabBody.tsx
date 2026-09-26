@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useRef, useState, type RefObject } from 'react'
-import type { SpaceTarget, WindowTarget } from '@pommora/core/Navigation/navRef'
+import { memo, useEffect, useMemo, useRef, useState, type RefObject } from 'react'
+import type { PageTarget, SpaceTarget, WindowTarget } from '@pommora/core/Navigation/navRef'
 import { cx } from '@pommora/uix/Utilities/cx'
 import { WindowActions } from '@pommora/uix/Windows/WindowActions'
 import { WINDOW_BASE_PANEL, type WindowBasePanel } from '@pommora/uix/Windows/WindowBase'
@@ -7,7 +7,7 @@ import type { ConnectionsApi } from '../../MarkdownPM/Links/connectionsApi'
 import { type BannerOwner, findSpace } from '../../Nexus/treeIndex'
 import { PropertyPanel } from '../../Properties/PropertyPanel'
 import { useConnections } from '../../Session/pageConnections'
-import { useSession } from '../../Session/store'
+import { useSession, useSetting } from '../../Session/store'
 import { useExperimental } from '../../Settings/experimental'
 import { PageTile } from '../../Tiles/Surfaces/PageTile'
 import { TileHost } from '../../Tiles/TileHost'
@@ -17,7 +17,7 @@ import { EntityBanner } from '../Header/Banner'
 import { CitationsToggle } from '../Subfield/CitationsToggle'
 import { Subfield } from '../Subfield/Subfield'
 import { useSubfieldPage } from '../Subfield/subfieldPage'
-import { useWindowWarm } from './useWindowWarm'
+import { useWindowWarm, windowSeam } from './useWindowWarm'
 import { windowBannerShown } from './windowTabBanner'
 
 interface WindowTabBodySlots {
@@ -30,6 +30,8 @@ interface WindowTabBodySlots {
   closeSidePane: () => void
   promote: () => void
 }
+
+type Editing = { path: string | undefined; on: boolean }
 
 function SpaceTabBody({
   host,
@@ -52,6 +54,55 @@ function SpaceTabBody({
   )
 }
 
+// Memoized so a parked page sits out every re-render of the window; its props hold still while it's parked.
+const WindowPage = memo(function WindowPage({
+  id,
+  path,
+  shown,
+  editing,
+  onEdit,
+  onBody,
+  arrive,
+  onArrived,
+  connections,
+  chrome,
+  bodyRef,
+}: {
+  id: string
+  path: string
+  shown: boolean
+  editing: boolean
+  onEdit: (editing: Editing) => void
+  onBody?: (body: string) => void
+  arrive?: string
+  onArrived: () => void
+  connections: ConnectionsApi | undefined
+  chrome: 'window' | 'none'
+  bodyRef: RefObject<HTMLDivElement | null>
+}): React.JSX.Element {
+  const warm = useMemo(() => windowSeam(id, path), [id, path])
+  return (
+    <div
+      className={cx('window-body', 'over-scroll', 'page-tile-grows', !shown && 'is-parked')}
+      inert={!shown}
+      ref={shown ? bodyRef : undefined}
+    >
+      <PageTile
+        key={path}
+        path={path}
+        editing={editing}
+        onBeginEdit={() => onEdit({ path, on: true })}
+        connections={connections}
+        onBody={onBody}
+        warm={warm}
+        chrome={chrome}
+        arrive={arrive}
+        onArrived={onArrived}
+      />
+    </div>
+  )
+})
+
 export function useWindowTabBody(target: WindowTarget | null): WindowTabBodySlots {
   const tree = useSession((s) => s.tree)
   const pendingTravel = useSession((s) => s.pendingTravel)
@@ -59,21 +110,24 @@ export function useWindowTabBody(target: WindowTarget | null): WindowTabBodySlot
   const experimental = useExperimental()
   const pageBanner = useSession((s) => windowBannerShown(s.personalization, 'page'))
   const spaceBanner = useSession((s) => windowBannerShown(s.personalization, 'space'))
+  const warmTabs = useSetting('tabCache')
 
   const pageTarget = target?.kind === 'page' ? target : null
   const pagePath = pageTarget?.path
   const spaceTarget = target?.kind === 'space' ? target : null
   const spaceOwner = spaceTarget && findSpace(tree, spaceTarget.id)
 
-  const [editing, setEditing] = useState(false)
-  useEffect(() => setEditing(false), [pagePath])
+  const [editing, setEditing] = useState<Editing>({ path: pagePath, on: false })
+  if (editing.path !== pagePath) setEditing({ path: pagePath, on: false })
 
   const [sidePaneOpen, setSidePaneOpen] = useState(false)
   const paneOpen = sidePaneOpen && pageTarget !== null
   const closeSidePane = (): void => setSidePaneOpen(false)
 
-  // Every Space tab the window holds keeps its document loaded, so switching back draws the board in the same frame rather than after a reload.
   const windowTabs = useSession((s) => s.windowSlot?.tabs)
+  const activeTabId = useSession((s) => s.windowSlot?.activeTabId)
+
+  // Every Space tab the window holds keeps its document loaded, so switching back draws the board in the same frame rather than after a reload.
   const heldSpaces = useMemo(
     () =>
       (windowTabs ?? []).flatMap((t) => (t.target.kind === 'space' ? [t.target.id] : [])).join(' '),
@@ -89,9 +143,22 @@ export function useWindowTabBody(target: WindowTarget | null): WindowTabBodySlot
     }
   }, [heldSpaces])
 
+  // The shown page tab and the most recent ones up to the Active Tab Cache, each mounted once and parked off screen while another shows.
+  const recent = useRef<string[]>([])
+  const pageTabs = useMemo(() => {
+    const pages = new Map<string, PageTarget>()
+    for (const t of windowTabs ?? []) if (t.target.kind === 'page') pages.set(t.id, t.target)
+    const shown = activeTabId !== undefined && pages.has(activeTabId) ? [activeTabId] : []
+    recent.current = [
+      ...shown,
+      ...recent.current.filter((id) => id !== activeTabId && pages.has(id)),
+    ].slice(0, warmTabs + 1)
+    // Fixed order, never most-recent-first: reordering keyed children moves their DOM.
+    return [...recent.current].sort().map((id) => ({ id, page: pages.get(id)! }))
+  }, [windowTabs, activeTabId, warmTabs])
+
   // It closes the TAB, not the window; the window dies by itself when that was its last, and only then does the engulf play.
   const promoteWindowTab = useSession((s) => s.promoteWindowTab)
-  const activeTabId = useSession((s) => s.windowSlot?.activeTabId)
   const promote = (): void => {
     if (activeTabId) promoteWindowTab(activeTabId)
   }
@@ -99,7 +166,7 @@ export function useWindowTabBody(target: WindowTarget | null): WindowTabBodySlot
   const bodyRef = useRef<HTMLDivElement>(null)
   // A Space tab's scroll restore waits for its board's first read; a Page tab has no board to wait on.
   const boardReady = useTileDocReady(spaceTarget)
-  const warm = useWindowWarm(bodyRef, pagePath, boardReady)
+  useWindowWarm(bodyRef, boardReady)
   const connections = useConnections(tree, 'window')
   const { page, onBody } = useSubfieldPage(pageTarget)
 
@@ -108,36 +175,38 @@ export function useWindowTabBody(target: WindowTarget | null): WindowTabBodySlot
       ? pendingTravel.heading
       : undefined
 
-  const body = target && (
-    <div
-      className={cx('window-body', 'over-scroll', pageTarget !== null && 'page-tile-grows')}
-      ref={bodyRef}
-    >
-      {pageTarget ? (
-        <PageTile
-          key={pageTarget.path}
-          path={pageTarget.path}
-          editing={editing}
-          onBeginEdit={() => setEditing(true)}
-          connections={connections}
-          onBody={onBody}
-          warm={warm}
-          chrome={pageBanner ? 'window' : 'none'}
-          arrive={arrive}
-          onArrived={clearPendingTravel}
-        />
-      ) : (
-        spaceTarget &&
-        spaceOwner && (
+  const body = (
+    <>
+      {pageTabs.map(({ id, page: tab }) => {
+        const shown = id === activeTabId
+        return (
+          <WindowPage
+            key={id}
+            id={id}
+            path={tab.path}
+            shown={shown}
+            editing={shown && editing.on}
+            onEdit={setEditing}
+            onBody={shown ? onBody : undefined}
+            arrive={shown ? arrive : undefined}
+            onArrived={clearPendingTravel}
+            connections={connections}
+            chrome={pageBanner ? 'window' : 'none'}
+            bodyRef={bodyRef}
+          />
+        )
+      })}
+      {spaceTarget && spaceOwner && (
+        <div className="window-body over-scroll" ref={bodyRef}>
           <SpaceTabBody
             host={spaceTarget}
             owner={spaceOwner}
             banner={spaceBanner}
             connections={connections}
           />
-        )
+        </div>
       )}
-    </div>
+    </>
   )
 
   return {

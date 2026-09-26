@@ -11,7 +11,7 @@ import type { WarmSeam } from '../MarkdownPM/warmSeam'
 import { citationsVisible, pageMetaOf, useSession } from '../Session/store'
 import { pagesByIdOf } from '../Nexus/treeIndex'
 import { fetchPageDetail, knownBody } from '../Session/pageDetailCache'
-import { warmSeamOf } from '../Navigation/warmTabs'
+import { warmSeamOf } from '../Session/warmCache'
 import { dialer } from '../Platform/dialer'
 import { popMenu } from '../Actions/menuActions'
 import {

@@ -10,6 +10,15 @@
 .page-window {
   --page-detail-scale: var(--embed-scale);
 }
+/* The region above the footer, so a parked page tab keeps the shown one's height and its scroll never clamps while parked. */
+.page-window-content {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+}
 /* Align the footer content with the embed's text column — its left/right insets scale off the same --page-detail-scale the embed uses, so the crumbs sit under the body like the detail footer. */
 .page-window .window-footer .subfield {
   padding-left: calc(20px * var(--page-detail-scale));

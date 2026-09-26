@@ -99,9 +99,13 @@ export function PropertyPanel({
   const subjectId = subject.id
   const spaceNode = isSpace ? spaceNodeOf(tree, subjectId) : null
   const path = subject.kind === 'page' ? subject.path : (spaceNode?.path ?? '')
+  const [editingFor, setEditingFor] = useState(path)
+  if (editingFor !== path) {
+    setEditingFor(path)
+    setEditing(null)
+  }
 
   useEffect(() => {
-    setEditing(null)
     if (isSpace) return
     const cached = readPageDetail(path)
     if (cached) {

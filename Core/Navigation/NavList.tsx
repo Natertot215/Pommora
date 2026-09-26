@@ -137,14 +137,12 @@ function NavRow({
 export function NavList({
   items,
   pins,
-  reorderable,
   onReorderRecent,
   onSelect,
   onOpenNewTab,
 }: {
   items: ResolvedNav[]
-  pins?: ResolvedNav[]
-  reorderable?: boolean
+  pins: ResolvedNav[]
   onReorderRecent?: (activeKey: string, overKey: string) => void
   onSelect: (target: NavRef) => void
   onOpenNewTab?: (target: NavRef) => void
@@ -153,20 +151,19 @@ export function NavList({
   const tree = useSession((s) => s.tree)
   const escort = useEscort()
   const openMenu = (it: ResolvedNav): void => void showNavRowMenu(it, onOpenNewTab)
-  const pinRows = reorderable ? (pins ?? []) : []
-  const rows = [...pinRows, ...items]
+  const rows = [...pins, ...items]
   // Identity-stable so a parent re-render mid-drag can't false-dirty the drag's row snapshot.
   const dndRows = useMemo(
     () => [
-      ...pinRows.map((p) => ({ id: p.key, groupKey: 'pins' })),
+      ...pins.map((p) => ({ id: p.key, groupKey: 'pins' })),
       ...items.map((r) => ({ id: r.key, groupKey: 'recents' })),
     ],
-    [reorderable, pins, items],
+    [pins, items],
   )
   if (rows.length === 0) return null
 
   const commitReorder = (activeId: string, groupKey: string, beforeId: string | null): void => {
-    const group = groupKey === 'pins' ? pinRows : items
+    const group = groupKey === 'pins' ? pins : items
     const next = nextOrder(
       group.map((g) => g.key),
       activeId,
@@ -194,8 +191,7 @@ export function NavList({
   return (
     <TableRowDnd
       rows={dndRows}
-      disabled={false}
-      canReorderWithin={!!reorderable}
+      canReorderWithin={onReorderRecent !== undefined}
       crossZone={false}
       onDrop={commitReorder}
       escort={escort && { via: escort, family: TAB_FAMILY, carry }}

@@ -25,7 +25,7 @@ const Ctx = createContext<Value | null>(null)
 
 export function TableRowDnd({
   rows,
-  disabled,
+  disabled = false,
   canReorderWithin,
   crossZone,
   onDrop,
@@ -34,7 +34,7 @@ export function TableRowDnd({
   children,
 }: {
   rows: { id: string; groupKey: string }[]
-  disabled: boolean
+  disabled?: boolean
   canReorderWithin: boolean
   /** Whether a drop onto another group is offered at all — the caller decides whether it relocates the page or rewrites its group value. */
   crossZone: boolean

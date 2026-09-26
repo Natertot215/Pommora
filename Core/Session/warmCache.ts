@@ -3,32 +3,32 @@ import { capSet } from '@pommora/uix/Utilities/capMap'
 import type { PageDetail } from '@pommora/core/Pages/pageDetail'
 import { fenceWarm, type WarmSeam } from '../MarkdownPM/warmSeam'
 
-interface CacheEntry {
+interface WarmEntry {
   editorState?: unknown
   scrollTop?: number
   pageDetail?: PageDetail
 }
 
-const CACHE_CAP_PER_OWNER = 50
+const WARM_CAP_PER_OWNER = 50
 
 // Every surface that returns an editor warm — a main tab, a window tab, the glance, an embed — keeps its entries under one owner here, so one clear reaches them all.
-const cache = new Map<string, Map<string, CacheEntry>>()
+const cache = new Map<string, Map<string, WarmEntry>>()
 
-export function captureCache(owner: string, entity: string, patch: Partial<CacheEntry>): void {
-  const entries = cache.get(owner) ?? new Map<string, CacheEntry>()
+export function captureWarm(owner: string, entity: string, patch: Partial<WarmEntry>): void {
+  const entries = cache.get(owner) ?? new Map<string, WarmEntry>()
   cache.set(owner, entries)
-  capSet(entries, entity, { ...entries.get(entity), ...patch }, CACHE_CAP_PER_OWNER)
+  capSet(entries, entity, { ...entries.get(entity), ...patch }, WARM_CAP_PER_OWNER)
 }
 
-export function readCache(owner: string, entity: string): CacheEntry | undefined {
+export function readWarm(owner: string, entity: string): WarmEntry | undefined {
   return cache.get(owner)?.get(entity)
 }
 
-export function dropCacheOwner(owner: string): void {
+export function dropWarmOwner(owner: string): void {
   cache.delete(owner)
 }
 
-export function dropCacheEntry(owner: string, entity: string): void {
+export function dropWarmEntry(owner: string, entity: string): void {
   cache.get(owner)?.delete(entity)
 }
 
@@ -41,7 +41,7 @@ export function dropWarmDetail(path: string): void {
 
 // A surface unmounting because of a clear captures after it — the generation lets it tell.
 let generation = 0
-export const cacheGeneration = (): number => generation
+export const warmGeneration = (): number => generation
 
 export function clearWarm(): void {
   cache.clear()
@@ -59,13 +59,13 @@ export function warmSeamOf(
   return {
     restore: () => {
       restoredAt = generation
-      const entry = readCache(owner, entity)
+      const entry = readWarm(owner, entity)
       const kept = fenceWarm(entry, known())
-      if (entry && !kept) dropCacheEntry(owner, entity)
+      if (entry && !kept) dropWarmEntry(owner, entity)
       return kept
     },
     capture: (state) => {
-      if (restoredAt === generation && live()) captureCache(owner, entity, state)
+      if (restoredAt === generation && live()) captureWarm(owner, entity, state)
     },
   }
 }
