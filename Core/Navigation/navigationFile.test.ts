@@ -107,6 +107,16 @@ describe('navigation state — one contract, routed storage', () => {
     expect(raw.navigation).toEqual({ mine: 1, pinned: [{ kind: 'page', id: 'p1' }] })
   })
 
+  it('a banner write leaves the stored pins as written, so a newer build’s pin kind survives', async () => {
+    const pinned = [
+      { kind: 'page', id: 'p1' },
+      { kind: 'board', id: 'b1', extra: 1 },
+    ]
+    await seedState({ navigation: { pinned } })
+    await writeNavigationState(root, { banner: '.nexus/assets/b.jpg' })
+    expect((await readState()).navigation).toEqual({ pinned, banner: '.nexus/assets/b.jpg' })
+  })
+
   it('a homepage ref smuggling an id drops, as does an empty id', async () => {
     await seedState({
       navigation: {

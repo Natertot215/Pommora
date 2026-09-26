@@ -17,7 +17,7 @@ import type { TrashRow } from '@pommora/core/Trash/trashRow'
 import { PropertyTypeIcon, propertyTypeIconName } from '../Properties/Cells/PropertyTypes'
 import { formatDate } from '../Properties/formatValue'
 import { containerTargets, contextTargets } from '../Actions/destinationTree'
-import { fuzzyScore } from '../Navigation/navSearch'
+import { foldKey, matchScore, rankMatches } from '../Paths/caseFold'
 import { useSession } from '../Session/store'
 import { notifyReport, unrestoredLine } from '../Interface/Notifications/notifications'
 import { displayPropertyName, useCapitalizeMetadata } from '../Properties/Cells/columnLabel'
@@ -52,18 +52,13 @@ export function countPhrase(rows: TrashRow[]): string {
 }
 
 export function filterRows(rows: TrashRow[], query: string): TrashRow[] {
-  const q = query.trim().toLowerCase()
+  const q = foldKey(query.trim())
   if (!q) return rows
-  const scored: { row: TrashRow; score: number }[] = []
-  for (const row of rows) {
-    const where = row.crumbs.map((c) => c.title).join(' ')
-    const score = Math.max(
-      fuzzyScore(row.title.toLowerCase(), q) ?? Number.NEGATIVE_INFINITY,
-      fuzzyScore(where.toLowerCase(), q) ?? Number.NEGATIVE_INFINITY,
-    )
-    if (score > Number.NEGATIVE_INFINITY) scored.push({ row, score })
-  }
-  return scored.sort((a, b) => b.score - a.score).map((s) => s.row)
+  return rankMatches(rows, (row) => {
+    const title = matchScore(foldKey(row.title), q)
+    const place = matchScore(foldKey(row.crumbs.map((c) => c.title).join(' ')), q)
+    return title === null ? place : place === null ? title : Math.max(title, place)
+  })
 }
 
 // Keyed on the nexus so a switch with Settings open mounts a body with its own list.

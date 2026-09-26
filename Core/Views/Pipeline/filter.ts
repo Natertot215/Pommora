@@ -12,6 +12,7 @@ import { declaredType, resolveFieldValue } from '../../Properties/value'
 import { type SetTreeNode, subtreeIds } from './group'
 import { linkDisplayText } from '@pommora/core/Connections/linkValue'
 import { type LocalDate, readDate, startOfDay } from '../../Properties/formatValue'
+import { foldKey } from '../../Paths/caseFold'
 
 export const FILTER_OPS = {
   is: 'is',
@@ -339,13 +340,11 @@ function evaluateText(v: PropertyValue, op: Op, expected: Expected, values?: str
       if (values?.length) return s === null ? true : !values.includes(s)
       return expected == null ? true : s !== expected
     case FILTER_OPS.contains:
-      return expected == null ? true : (s?.toLowerCase().includes(expected.toLowerCase()) ?? false)
+      return expected == null ? true : s !== null && foldKey(s).includes(foldKey(expected))
     case FILTER_OPS.doesNotContain:
-      return expected == null ? true : !(s?.toLowerCase().includes(expected.toLowerCase()) ?? false)
+      return expected == null ? true : !(s !== null && foldKey(s).includes(foldKey(expected)))
     case FILTER_OPS.startsWith:
-      return expected == null
-        ? true
-        : (s?.toLowerCase().startsWith(expected.toLowerCase()) ?? false)
+      return expected == null ? true : s !== null && foldKey(s).startsWith(foldKey(expected))
     default:
       return true
   }

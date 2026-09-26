@@ -83,7 +83,7 @@ describe('searchEntriesOf', () => {
     const alpha = entries.find((e) => e.title === 'Alpha')
     expect(alpha?.target).toEqual({ kind: 'page', id: 'p1' })
     expect(alpha?.key).toBe('page:p1')
-    expect(alpha?.lower).toBe('alpha')
+    expect(alpha?.folded).toBe('alpha')
   })
 
   it('indexes the homepage, the Matrix, spaces, collections, sets, and pages', () => {

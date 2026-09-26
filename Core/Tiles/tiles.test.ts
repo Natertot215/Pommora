@@ -168,8 +168,14 @@ describe('tileDocPatch', () => {
 })
 
 describe('coerceTileHost', () => {
-  it('accepts the homepage host and rejects the rest', () => {
+  it('accepts the homepage and a Space, copying out only their reference, and rejects the rest', () => {
     expect(coerceTileHost({ kind: 'homepage' })).toEqual({ kind: 'homepage' })
+    expect(coerceTileHost({ kind: 'space', id: 's1', path: 'x' })).toEqual({
+      kind: 'space',
+      id: 's1',
+    })
+    expect(coerceTileHost({ kind: 'page', id: 'p1' })).toBeNull()
+    expect(coerceTileHost({ kind: 'homepage', id: 'x' })).toBeNull()
     expect(coerceTileHost({ kind: 'area', path: 'x' })).toBeNull()
     expect(coerceTileHost('homepage')).toBeNull()
   })

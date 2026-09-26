@@ -2,13 +2,7 @@
 
 import type { EntityRecord } from '@pommora/core/Nexus/record'
 import type { BannerOwnerKind } from '@pommora/core/Nexus/mutateRequest'
-import {
-  isSingleton,
-  navKey,
-  type NavRef,
-  type SelectTarget,
-  toNavRef,
-} from '@pommora/core/Navigation/navRef'
+import { navKey, type NavRef, type SelectTarget, toNavRef } from '@pommora/core/Navigation/navRef'
 import { MATRIX_ICON, MATRIX_TITLE } from '@pommora/core/Matrix/matrixKind'
 import type {
   CollectionNode,
@@ -24,6 +18,7 @@ import { NO_TRAIL, type TrailSegment } from '@pommora/uix/Elements/NavTrail'
 import { buildPageIndex, type ConnPage, type PageIndex } from '../Connections/pageIndex'
 import type { NavCore, ResolveIndex } from '../Navigation/navResolve'
 import type { SearchEntry } from '../Navigation/navSearch'
+import { foldKey } from '../Paths/caseFold'
 import type { ReconcileIndex } from '../Session/reconcileSelection'
 
 /** `id` and `path` are '' for the two folderless singletons, the Homepage and the Matrix. */
@@ -223,8 +218,12 @@ export function searchEntriesOf(tree: NexusTree): SearchEntry[] {
       page: [],
     }
     for (const r of ix.nodes) {
-      const target: NavRef = isSingleton(r) ? { kind: r.kind } : { kind: r.kind, id: r.id }
-      byKind[r.kind].push({ key: r.key, target, title: r.title, lower: r.title.toLowerCase() })
+      byKind[r.kind].push({
+        key: r.key,
+        target: toNavRef(r),
+        title: r.title,
+        folded: foldKey(r.title),
+      })
     }
     ix.search = [
       ...byKind.homepage,

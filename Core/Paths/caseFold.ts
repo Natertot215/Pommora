@@ -12,3 +12,51 @@ export function foldKey(text: string): string {
 export function compareTitles(a: string, b: string): number {
   return titleCollator.compare(a, b)
 }
+
+export function matchScore(t: string, q: string): number | null {
+  let ti = 0
+  let score = 0
+  let streak = 0
+  for (const ch of q) {
+    const idx = t.indexOf(ch, ti)
+    if (idx === -1) return null
+    if (idx === ti) {
+      streak++
+      score += 2 + streak
+    } else {
+      streak = 0
+      score += 1
+    }
+    if (idx === 0 || t[idx - 1] === ' ') score += 3
+    ti = idx + 1
+  }
+  return score - t.length * 0.01
+}
+
+type Ranked<T> = { item: T; score: number }
+
+export function rankMatches<T extends { title: string }>(
+  items: readonly T[],
+  scoreOf: (item: T) => number | null,
+  cap = Number.POSITIVE_INFINITY,
+): T[] {
+  const before = (a: Ranked<T>, b: Ranked<T>): number =>
+    b.score - a.score || compareTitles(a.item.title, b.item.title)
+  const kept: Ranked<T>[] = []
+  for (const item of items) {
+    const score = scoreOf(item)
+    if (score === null) continue
+    const hit = { item, score }
+    if (kept.length === cap && before(hit, kept[cap - 1]) >= 0) continue
+    let lo = 0
+    let hi = kept.length
+    while (lo < hi) {
+      const mid = (lo + hi) >>> 1
+      if (before(kept[mid], hit) <= 0) lo = mid + 1
+      else hi = mid
+    }
+    kept.splice(lo, 0, hit)
+    if (kept.length > cap) kept.pop()
+  }
+  return kept.map((k) => k.item)
+}

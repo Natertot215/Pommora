@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import { searchEntriesOf } from '../Nexus/treeIndex'
 import { filterNav } from './navSearch'
+import { foldKey } from '../Paths/caseFold'
 import { makeTree } from '../Testing/testTree'
 
 const index = (): ReturnType<typeof searchEntriesOf> => searchEntriesOf(makeTree())
@@ -15,7 +16,7 @@ describe('filterNav', () => {
     expect(hits.map((h) => h.title)).toContain('Alpha')
   })
 
-  it('is case-insensitive and fuzzy (subsequence)', () => {
+  it('is case-insensitive and matches a subsequence', () => {
     const hits = filterNav(index(), 'nb')
     expect(hits.map((h) => h.title)).toContain('Nested Beta')
   })
@@ -31,7 +32,9 @@ describe('filterNav', () => {
     expect(filterNav(index(), 'zzzzz')).toEqual([])
   })
 
-  it('respects the result cap', () => {
-    expect(filterNav(index(), 'e', 2).length).toBeLessThanOrEqual(2)
+  it('finds a title stored decomposed from a composed query', () => {
+    const entry = { key: 'page:x', target: { kind: 'page', id: 'x' } as const, title: 'Cafe\u0301' }
+    const hits = filterNav([{ ...entry, folded: foldKey(entry.title) }], 'Caf\u00e9')
+    expect(hits.map((h) => h.key)).toEqual(['page:x'])
   })
 })
