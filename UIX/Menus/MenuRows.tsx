@@ -11,14 +11,13 @@ import { segment } from '../Elements/segment.css'
 const BAR_GLYPH = 12 // KNOB
 const CHECK = 12
 const INDENT_BASE = 8 // KNOB
-const DROP_LINE_TRAIL = 12 // KNOB
 
 const rowLead = (depth: number): number | string =>
   depth ? INDENT_BASE + depth * DISCLOSURE_INDENT : s.ROW_LEAD
 
 export const rowDropLine = (depth = 0): CSSProperties => ({
   left: rowLead(depth),
-  right: DROP_LINE_TRAIL,
+  right: s.ROW_TRAIL,
 })
 
 /** A searched row's label with the typed match drawn emphasized; `at` is where the matcher found it. */

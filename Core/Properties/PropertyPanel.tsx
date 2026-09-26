@@ -2,7 +2,7 @@ import { reportRefusal } from '@pommora/core/Interface/Notifications/notificatio
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { EmptyValue } from '@pommora/uix/Elements/EmptyValue'
 import { Icon } from '@pommora/uix/Symbols'
-import { AccessoryButton, MenuItem, heading } from '@pommora/uix/Menus'
+import { AccessoryButton, MenuItem, heading, rowDropLine } from '@pommora/uix/Menus'
 import { ICON } from '@pommora/uix/Menus/frames.css'
 import { ghostAnchorProps } from '@pommora/uix/Interactions/ghostCreate'
 import { DropLine } from '@pommora/uix/Interactions/DropLine'
@@ -499,7 +499,9 @@ export function PropertyPanel({
                         </div>
                       </Reveal>
                     )}
-                    {drag.lineTop !== null ? <DropLine style={{ top: drag.lineTop }} /> : null}
+                    {drag.lineTop !== null ? (
+                      <DropLine style={{ top: drag.lineTop, ...rowDropLine() }} />
+                    ) : null}
                   </div>
                 )}
               </div>

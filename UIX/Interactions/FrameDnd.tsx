@@ -11,6 +11,7 @@ import { useInsertionDrag } from './insertionDrag'
 import type { MeasuredRow } from './reorderModel'
 import type { FrameRow, FrameSlot, Region, SlotFor } from './frameDndModel'
 import * as s from '../Menus/frames.css'
+import { rowDropLine } from '../Menus/MenuRows'
 
 type Snapshot = {
   rows: MeasuredRow[]
@@ -86,7 +87,7 @@ export function FrameDnd<D>({
         : null
     },
     commit: (_id, slot) => onDrop(slot.drop),
-    lineFor: (slot) => (slot.topInBox != null ? { top: slot.topInBox } : null),
+    lineFor: (slot) => (slot.topInBox != null ? { top: slot.topInBox, ...rowDropLine() } : null),
     label: labelFor,
     rowEl: (id) => els.current.get(id),
     scrollTarget: () => box.current,

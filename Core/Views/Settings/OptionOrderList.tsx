@@ -111,7 +111,6 @@ export function CustomList({
     bands,
     nestable: false,
     labelFor: (id) => byValue.get(id)?.label ?? id,
-    lineClassName: oo.dropLineInset,
     onDrop: (draggedId, drop) => onSave(nextOrder(ordered, draggedId, drop.beforeId)),
   })
   if (!def) return null

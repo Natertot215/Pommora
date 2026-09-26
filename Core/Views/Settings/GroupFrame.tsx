@@ -517,7 +517,6 @@ function LocationHierarchy({
     bands,
     nestable: true,
     labelFor,
-    lineClassName: oo.dropLineInset,
     onDrop,
   })
 

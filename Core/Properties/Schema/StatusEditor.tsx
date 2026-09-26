@@ -20,7 +20,7 @@ import { OptionSlot, type OptionStyle, useOptionIconChoice } from './OptionRow'
 import { useStatusReorder } from './useStatusReorder'
 import * as s from '@pommora/uix/Menus/frames.css'
 import { accessoryButton } from '@pommora/uix/Menus/menu-row.css'
-import { heading } from '@pommora/uix/Menus'
+import { heading, rowDropLine } from '@pommora/uix/Menus'
 import { text } from '@pommora/uix/Theme'
 import { labelColor, shape } from '@pommora/uix/Labels/label-base.css'
 import { popMenu } from '../../Actions/menuActions'
@@ -190,7 +190,9 @@ export function StatusEditor({
               )
             })}
             {g.options.length === 0 ? slotAt(g, 0, g.id) : null}
-            {reorder.drop?.groupId === g.id ? <DropLine style={{ top: reorder.drop.top }} /> : null}
+            {reorder.drop?.groupId === g.id ? (
+              <DropLine style={{ top: reorder.drop.top, ...rowDropLine() }} />
+            ) : null}
           </div>
         </div>
       ))}
