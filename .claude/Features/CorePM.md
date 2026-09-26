@@ -125,7 +125,7 @@ Opening a folder as a Nexus runs an idempotent, best-effort pass (`Core/Nexus/ad
 
 What Pommora remembers, and for how long. Four tiers, told by where a thing is written: the Nexus's own files travel with it, its database stays on the machine that made it, the app's own preferences sit outside every Nexus, and everything else lasts the run.
 
-**Travels with the Nexus.** Written into `.nexus/` files, so a synced or copied Nexus arrives with all of it, and a hand edit from outside is read back live.
+**Travels with the Nexus.** Written into `.nexus/` files, so a synced or copied Nexus arrives with all of it, and a hand edit from outside is read back live. A file only Pommora writes — the order and pins, the Homepage, crops, the Matrix, and a tile layout — that stops parsing reads as the copy last read, and the next change rebuilds it from that copy, or from the last synced one, setting the damaged bytes aside under a hidden name.
 
 | State                                                         | Where it lives                                                               | What clears it                                                                  |
 | ------------------------------------------------------------- | ---------------------------------------------------------------------------- | ------------------------------------------------------------------------------- |
