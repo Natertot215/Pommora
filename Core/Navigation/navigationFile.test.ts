@@ -69,6 +69,17 @@ describe('navigation state — one contract, routed storage', () => {
     expect('recents' in (await readState()).navigation).toBe(false)
   })
 
+  it('a recents write with no store reports false, and the pins beside it still land', async () => {
+    installStores(NO_STORES)
+    expect(
+      await writeNavigationState(root, {
+        recents: [{ kind: 'space', id: 's1' }],
+        pinned: [{ kind: 'homepage' }],
+      }),
+    ).toBe(false)
+    expect((await readNavigationFile(root)).pinned).toEqual([{ kind: 'homepage' }])
+  })
+
   it('an emptied recents list deletes its row', async () => {
     await writeNavigationState(root, { recents: [{ kind: 'page', id: 'p1' }] })
     await writeNavigationState(root, { recents: [] })

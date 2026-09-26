@@ -1,6 +1,8 @@
-import { describe, expect, it, vi } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { HostContext } from '../Contract/handlers'
-import { fault } from '../Contract/result'
+import { fault, NO_STORE, ok } from '../Contract/result'
+import { installStores, NO_STORES } from '../Platform/stores'
+import { memoryStores } from '../Testing/memoryStores'
 
 vi.mock('../Nexus/session', () => ({ sessionRoot: () => '/root', adopting: () => false }))
 
@@ -22,5 +24,21 @@ describe('capture:thumbnail', () => {
       ),
     ).toEqual(fault('Bad capture args.'))
     expect(ctx.thumbnails.capture).not.toHaveBeenCalled()
+  })
+})
+
+describe('nav:write', () => {
+  const ctx = {} as HostContext
+  const recents = [{ kind: 'page', id: 'p1' }]
+  afterEach(() => installStores(NO_STORES))
+
+  it('reports a recents write that has no store to land in', async () => {
+    installStores(NO_STORES)
+    expect(await navigationHandlers['nav:write'](ctx, { recents })).toEqual(NO_STORE)
+  })
+
+  it('answers ok once the recents land', async () => {
+    installStores(memoryStores().stores)
+    expect(await navigationHandlers['nav:write'](ctx, { recents })).toEqual(ok(null))
   })
 })

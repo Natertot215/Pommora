@@ -40,12 +40,13 @@ export async function readNavigationState(root: string): Promise<NavigationState
 export async function writeNavigationState(
   root: string,
   patch: Record<string, unknown>,
-): Promise<void> {
+): Promise<boolean> {
+  let stored = true
   if ('recents' in patch) {
     const recents = refList(patch.recents) ?? []
-    writeValue('recents', recents.length ? recents : null)
+    stored = writeValue('recents', recents.length ? recents : null)
   }
-  if (!('pinned' in patch) && !('banner' in patch)) return
+  if (!('pinned' in patch) && !('banner' in patch)) return stored
   const written = await updateNexusConfig(root, 'state', (state) => {
     const base = navigationOf(state)
     const navigation = 'pinned' in patch ? setOrDrop(base, 'pinned', refList(patch.pinned)) : base
@@ -57,4 +58,5 @@ export async function writeNavigationState(
     }
   })
   if (!written.ok) throw new Error(written.error.message)
+  return stored
 }
