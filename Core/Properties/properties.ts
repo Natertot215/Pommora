@@ -4,7 +4,6 @@ import { z } from 'zod'
 import { isKeyOf, isPlainObject } from '../Contract/validators'
 import { looseDecoder } from '../Files/decoders'
 import { rootSegs } from '../Paths/exclusion'
-import type { Option } from './optionModel'
 import type { ValueKind } from './propertyValue'
 import { PAGE_MODELED_KEYS, RETIRED_ID_KEYS } from '../Nexus/identityMark'
 
@@ -103,7 +102,7 @@ export type NumberFamily = (typeof NUMBER_FAMILIES)[number]
 export const CURRENCY_CODES = ['USD', 'EUR', 'GBP', 'AUD', 'CAD', 'JPY'] as const
 export const DEFAULT_CURRENCY: (typeof CURRENCY_CODES)[number] = 'USD'
 
-const optionAppearance = z.enum(['filled', 'clear'])
+export const optionAppearance = z.enum(['filled', 'clear'])
 export type OptionAppearance = z.infer<typeof optionAppearance>
 
 const selectOption = looseDecoder(
@@ -206,10 +205,6 @@ export const narrowFileConfig = (payload: unknown): FileConfig | null => {
   const dir = rootSegs(raw.trim()).join('/')
   return { file_directory: dir || undefined }
 }
-export const narrowOptions = (v: unknown): Option[] | null =>
-  selectOptions.safeParse(v).data ?? null
-export const narrowStatusGroups = (v: unknown): StatusGroup[] | null =>
-  statusGroups.safeParse(v).data ?? null
 
 export type FileConfig = Pick<PropertyDefinition, 'file_directory'>
 
@@ -295,6 +290,25 @@ export const optionsOf = (
 export const optionValues = (
   def: Pick<PropertyDefinition, 'type' | 'status_groups' | 'select_options'>,
 ): string[] => optionsOf(def).map((o) => o.value)
+
+export const SELECT_GROUP = 'select'
+
+export function optionGroupsOf(
+  def: Pick<PropertyDefinition, 'type' | 'select_options' | 'status_groups'>,
+): StatusGroup[] {
+  if (PROPERTY_TYPES[def.type].options === 'status') return def.status_groups ?? []
+  const options = (def.select_options ?? []).map((o) => ({ ...o, group_id: SELECT_GROUP }))
+  return [{ id: SELECT_GROUP, label: '', color: '', options }]
+}
+
+export function withOptionGroups(
+  def: PropertyDefinition,
+  groups: StatusGroup[],
+): PropertyDefinition {
+  if (PROPERTY_TYPES[def.type].options === 'status') return { ...def, status_groups: groups }
+  const select_options = (groups[0]?.options ?? []).map(({ group_id: _drop, ...o }) => o)
+  return { ...def, select_options }
+}
 
 export function defaultStatusSeed(): StatusGroup[] {
   return [

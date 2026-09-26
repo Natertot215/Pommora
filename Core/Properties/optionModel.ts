@@ -1,25 +1,20 @@
-// An option's `value` IS its title (value=label), so identity keys on the value string.
-
-import type { OptionAppearance, SelectOption, StatusGroup, StatusOption } from './properties'
+import { z } from 'zod'
+import { optionAppearance, type StatusGroup, type StatusOption } from './properties'
 import { freeName } from '../Paths/names'
-import { moveItem } from '@pommora/uix/Utilities/moveItem'
-
-export type Option = SelectOption & { group_id?: string }
 
 export function fallbackTitle(taken: readonly string[], groupLabel?: string): string {
-  return freeName(groupLabel ?? 'Label', taken)
+  return freeName(groupLabel || 'Label', taken)
 }
 
-function mapOption<T extends { value: string }>(options: T[], value: string, fn: (o: T) => T): T[] {
-  return options.map((o) => (o.value === value ? fn(o) : o))
-}
-
-function mapStatusOption(
+function mapOption(
   groups: StatusGroup[],
   value: string,
   fn: (o: StatusOption) => StatusOption,
 ): StatusGroup[] {
-  return groups.map((g) => ({ ...g, options: mapOption(g.options, value, fn) }))
+  return groups.map((g) => ({
+    ...g,
+    options: g.options.map((o) => (o.value === value ? fn(o) : o)),
+  }))
 }
 
 function withField<T extends { value: string }, K extends keyof T>(
@@ -32,18 +27,6 @@ function withField<T extends { value: string }, K extends keyof T>(
 }
 
 export function addOption(
-  options: Option[],
-  title: string,
-  groupId?: string,
-  /** Omitted appends — the ghost slot passes the seat it was standing in, so an option created off a chip takes that chip's place in the order. */
-  atIndex?: number,
-): Option[] {
-  const next = { value: title, label: title, ...(groupId ? { group_id: groupId } : {}) }
-  const i = atIndex ?? options.length
-  return [...options.slice(0, i), next, ...options.slice(i)]
-}
-
-export function addStatusOption(
   groups: StatusGroup[],
   groupId: string,
   title: string,
@@ -57,33 +40,15 @@ export function addStatusOption(
   })
 }
 
-export function recolorStatusOption(
-  groups: StatusGroup[],
-  value: string,
-  color: string | undefined,
-): StatusGroup[] {
-  return mapStatusOption(groups, value, (o) => withField(o, 'color', color))
-}
-
-/** By its OLD value. The page cascade (main-process) rewrites the stored label on every assigning page. */
-export function renameStatusOption(
+export function renameOption(
   groups: StatusGroup[],
   oldValue: string,
   newTitle: string,
 ): StatusGroup[] {
-  return mapStatusOption(groups, oldValue, (o) => ({ ...o, value: newTitle, label: newTitle }))
+  return mapOption(groups, oldValue, (o) => ({ ...o, value: newTitle, label: newTitle }))
 }
 
-export function relabelStatusGroup(
-  groups: StatusGroup[],
-  groupId: string,
-  label: string,
-): StatusGroup[] {
-  return groups.map((g) => (g.id === groupId ? { ...g, label } : g))
-}
-
-/** toIndex is in the target group's without-the-dragged coordinate space; a cross-group move inherits the new group's color unless it carries its own. */
-export function moveStatusOption(
+export function moveOption(
   groups: StatusGroup[],
   value: string,
   toGroupId: string,
@@ -100,55 +65,37 @@ export function moveStatusOption(
   })
 }
 
-export function renameOption(options: Option[], oldValue: string, title: string): Option[] {
-  return mapOption(options, oldValue, (o) => ({ ...o, value: title, label: title }))
-}
+const edit = <K extends string, S extends z.ZodRawShape>(literal: K, fields: S) =>
+  z.object({ op: z.literal(literal), ...fields })
+const value = z.string()
+const groupId = z.string()
+const index = z.number().int().nonnegative()
 
-export function recolorOption(
-  options: Option[],
-  value: string,
-  color: string | undefined,
-): Option[] {
-  return mapOption(options, value, (o) => withField(o, 'color', color))
-}
+export const optionEdit = z.discriminatedUnion('op', [
+  edit('add', { groupId, title: z.string(), atIndex: index.optional() }),
+  edit('recolor', { value, color: z.string().optional() }),
+  edit('icon', { value, icon: z.string().optional() }),
+  edit('appearance', { value, appearance: optionAppearance }),
+  edit('move', { value, groupId, toIndex: index }),
+  edit('relabelGroup', { groupId, label: z.string().min(1) }),
+])
+export type OptionEdit = z.infer<typeof optionEdit>
 
-export function setOptionIcon(
-  options: Option[],
-  value: string,
-  icon: string | undefined,
-): Option[] {
-  return mapOption(options, value, (o) => withField(o, 'icon', icon))
-}
-
-export function setOptionAppearance(
-  options: Option[],
-  value: string,
-  appearance: OptionAppearance,
-): Option[] {
-  return mapOption(options, value, (o) =>
-    withField(o, 'appearance', appearance === 'clear' ? appearance : undefined),
-  )
-}
-
-export function setStatusOptionIcon(
-  groups: StatusGroup[],
-  value: string,
-  icon: string | undefined,
-): StatusGroup[] {
-  return mapStatusOption(groups, value, (o) => withField(o, 'icon', icon))
-}
-
-export function setStatusOptionAppearance(
-  groups: StatusGroup[],
-  value: string,
-  appearance: OptionAppearance,
-): StatusGroup[] {
-  return mapStatusOption(groups, value, (o) =>
-    withField(o, 'appearance', appearance === 'clear' ? appearance : undefined),
-  )
-}
-
-export function reorderOption(options: Option[], value: string, toIndex: number): Option[] {
-  const from = options.findIndex((o) => o.value === value)
-  return from === -1 ? options : moveItem(options, from, toIndex)
+export function applyOptionEdit(groups: StatusGroup[], e: OptionEdit): StatusGroup[] {
+  switch (e.op) {
+    case 'add':
+      return addOption(groups, e.groupId, e.title, e.atIndex)
+    case 'recolor':
+      return mapOption(groups, e.value, (o) => withField(o, 'color', e.color))
+    case 'icon':
+      return mapOption(groups, e.value, (o) => withField(o, 'icon', e.icon))
+    case 'appearance':
+      return mapOption(groups, e.value, (o) =>
+        withField(o, 'appearance', e.appearance === 'clear' ? e.appearance : undefined),
+      )
+    case 'move':
+      return moveOption(groups, e.value, e.groupId, e.toIndex)
+    case 'relabelGroup':
+      return groups.map((g) => (g.id === e.groupId ? { ...g, label: e.label } : g))
+  }
 }

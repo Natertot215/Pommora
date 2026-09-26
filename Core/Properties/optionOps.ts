@@ -8,65 +8,63 @@ import { valueEditRewrite, type ValueEdit } from './pageValue'
 import { ok, fail, fault, type Result } from '../Contract/result'
 import type { Adoption } from './propertyValue'
 import {
-  renameOption as renameInArray,
-  renameStatusOption as renameStatusInArray,
-  type Option,
+  addOption,
+  applyOptionEdit,
+  renameOption as renameInGroups,
+  type OptionEdit,
 } from './optionModel'
 import {
+  optionGroupsOf,
+  optionsOf,
+  optionValues,
   PROPERTY_TYPES,
   type PropertyDefinition,
-  type PropertyType,
+  SELECT_GROUP,
   type StatusGroup,
+  withOptionGroups,
 } from './properties'
 import { clearSchemaJournal, writeSchemaJournal, type SchemaJournal } from './propertyJournal'
 
-function requireOptionType(type: PropertyType): Result<null> {
-  return PROPERTY_TYPES[type].options === 'select'
-    ? ok(null)
-    : fail('invalid-property', 'Options can only be edited on Select or Multi-Select properties.')
+const NO_OPTION = fail('not-found', 'That option no longer exists.')
+const NO_GROUP = fail('not-found', 'That group no longer exists.')
+const NO_OPTIONS = fail(
+  'invalid-property',
+  'Options can only be edited on a Select, Multi-Select, or Status property.',
+)
+
+const requireOptions = (def: PropertyDefinition): Result<null> =>
+  PROPERTY_TYPES[def.type].options ? ok(null) : NO_OPTIONS
+
+function editStoredOptions(
+  def: PropertyDefinition,
+  stored: unknown,
+  edit: (groups: StatusGroup[]) => StatusGroup[],
+): PropertyDefinition {
+  const raw = { ...(stored as PropertyDefinition), type: def.type }
+  return withOptionGroups(def, edit(optionGroupsOf(raw)))
 }
 
-/** Rides serializeSchemaOp so it can't land inside a concurrent renameOption's cascade and desync the registry from pages. */
-export function setOptions(
-  root: string,
-  propertyId: string,
-  options: Option[],
-): Promise<Result<null>> {
+function admitOptionEdit(def: PropertyDefinition, e: OptionEdit): Result<null> {
+  if ('value' in e && !optionValues(def).includes(e.value)) return NO_OPTION
+  if ('groupId' in e && !optionGroupsOf(def).some((g) => g.id === e.groupId)) return NO_GROUP
+  if (e.op === 'relabelGroup' && PROPERTY_TYPES[def.type].options !== 'status') return NO_GROUP
+  return ok(null)
+}
+
+export function editOption(root: string, propertyId: string, e: OptionEdit): Promise<Result<null>> {
   return serializeSchemaOp(() =>
-    mutateRegistry<Result<null>>(root, (registry) => {
-      const current = registry.defs[propertyId]
-      if (!current) return { result: NO_PROPERTY }
-      const typeCheck = requireOptionType(current.type)
+    mutateRegistry<Result<null>>(root, (registry, stored) => {
+      const def = registry.defs[propertyId]
+      if (!def) return { result: NO_PROPERTY }
+      const typeCheck = requireOptions(def)
       if (!typeCheck.ok) return { result: typeCheck }
-      const check = validateOptionValues(options)
+      const admitted = admitOptionEdit(def, e)
+      if (!admitted.ok) return { result: admitted }
+      const next = editStoredOptions(def, stored[propertyId], (groups) =>
+        applyOptionEdit(groups, e),
+      )
+      const check = validateOptionValues(optionsOf(next))
       if (!check.ok) return { result: check }
-      const next = { ...current, select_options: options }
-      return {
-        next: { ...registry, defs: { ...registry.defs, [propertyId]: next } },
-        result: ok(null),
-      }
-    }),
-  )
-}
-
-/** Validates unique option values property-wide, across all groups, since a page's value is referenced across all groups. */
-export function setStatusGroups(
-  root: string,
-  propertyId: string,
-  groups: StatusGroup[],
-): Promise<Result<null>> {
-  return serializeSchemaOp(() =>
-    mutateRegistry<Result<null>>(root, (registry) => {
-      const current = registry.defs[propertyId]
-      if (!current) return { result: NO_PROPERTY }
-      if (PROPERTY_TYPES[current.type].options !== 'status') {
-        return {
-          result: fail('invalid-property', 'Status groups can only be set on a Status property.'),
-        }
-      }
-      const check = validateOptionValues(groups.flatMap((g) => g.options))
-      if (!check.ok) return { result: check }
-      const next = { ...current, status_groups: groups }
       return {
         next: { ...registry, defs: { ...registry.defs, [propertyId]: next } },
         result: ok(null),
@@ -80,21 +78,17 @@ export function addOptionToDef(
   propertyId: string,
   value: string,
 ): Promise<Result<null>> {
-  return mutateRegistry<Result<null>>(root, (registry) => {
+  return mutateRegistry<Result<null>>(root, (registry, stored) => {
     const current = registry.defs[propertyId]
     if (!current) return { result: NO_PROPERTY }
     if (current.type !== 'multiSelect')
       return { result: fail('invalid-property', 'Only a Multi-Select adopts options.') }
-    const options = current.select_options ?? []
-    if (options.some((o) => o.value === value)) return { result: ok(null) }
+    if (optionValues(current).includes(value)) return { result: ok(null) }
+    const next = editStoredOptions(current, stored[propertyId], (groups) =>
+      addOption(groups, SELECT_GROUP, value),
+    )
     return {
-      next: {
-        ...registry,
-        defs: {
-          ...registry.defs,
-          [propertyId]: { ...current, select_options: [...options, { value, label: value }] },
-        },
-      },
+      next: { ...registry, defs: { ...registry.defs, [propertyId]: next } },
       result: ok(null),
     }
   })
@@ -110,28 +104,17 @@ export async function applyAdoptions(root: string, adoptions: readonly Adoption[
   }
 }
 
-/** Shared with the crash replay so both run the identical edit; a value already gone is a completed finish, not a failure. */
 export function dropOptionFromDef(
   root: string,
   propertyId: string,
   value: string,
 ): Promise<Result<null>> {
-  return mutateRegistry<Result<null>>(root, (registry) => {
+  return mutateRegistry<Result<null>>(root, (registry, stored) => {
     const current = registry.defs[propertyId]
     if (!current) return { result: NO_PROPERTY }
-    const next =
-      PROPERTY_TYPES[current.type].options === 'status'
-        ? {
-            ...current,
-            status_groups: (current.status_groups ?? []).map((g) => ({
-              ...g,
-              options: g.options.filter((o) => o.value !== value),
-            })),
-          }
-        : {
-            ...current,
-            select_options: (current.select_options ?? []).filter((o) => o.value !== value),
-          }
+    const next = editStoredOptions(current, stored[propertyId], (groups) =>
+      groups.map((g) => ({ ...g, options: g.options.filter((o) => o.value !== value) })),
+    )
     return {
       next: { ...registry, defs: { ...registry.defs, [propertyId]: next } },
       result: ok(null),
@@ -139,17 +122,16 @@ export function dropOptionFromDef(
   })
 }
 
-type RequireType = (type: PropertyType) => Result<null>
-
 async function resolveForCascade(
   root: string,
   propertyId: string,
-  requireType: RequireType,
+  value: string,
 ): Promise<Result<string>> {
   const def = (await readRegistry(root)).defs[propertyId]
   if (!def) return NO_PROPERTY
-  const typeCheck = requireType(def.type)
+  const typeCheck = requireOptions(def)
   if (!typeCheck.ok) return typeCheck
+  if (!optionValues(def).includes(value)) return NO_OPTION
   return ok(def.name)
 }
 
@@ -176,94 +158,70 @@ async function stageOptionRename(
   return record
 }
 
-function requireStatusType(type: PropertyType): Result<null> {
-  return PROPERTY_TYPES[type].options === 'status'
-    ? ok(null)
-    : fail('invalid-property', 'Status options can only be edited on a Status property.')
-}
-
-type OptionEdit = (
-  def: PropertyDefinition,
+export function renameOption(
+  root: string,
+  propertyId: string,
   oldValue: string,
   newTitle: string,
-) => { next: PropertyDefinition; values: Option[] }
-
-const editSelectOptions: OptionEdit = (def, oldValue, newTitle) => {
-  const options = renameInArray(def.select_options ?? [], oldValue, newTitle)
-  return { next: { ...def, select_options: options }, values: options }
-}
-
-const editStatusGroups: OptionEdit = (def, oldValue, newTitle) => {
-  const groups = renameStatusInArray(def.status_groups ?? [], oldValue, newTitle)
-  return { next: { ...def, status_groups: groups }, values: groups.flatMap((g) => g.options) }
-}
-
-function renameOp(requireType: RequireType, editDef: OptionEdit) {
-  return (
-    root: string,
-    propertyId: string,
-    oldValue: string,
-    newTitle: string,
-  ): Promise<Result<null>> =>
-    serializeSchemaOp(async () => {
-      const record = await stageOptionRename(root, propertyId, oldValue, newTitle)
-      const edit = await mutateRegistry<Result<string>>(root, (registry) => {
-        const def = registry.defs[propertyId]
-        if (!def) return { result: NO_PROPERTY }
-        const typeCheck = requireType(def.type)
-        if (!typeCheck.ok) return { result: typeCheck }
-        const edited = editDef(def, oldValue, newTitle)
-        const check = validateOptionValues(edited.values)
-        if (!check.ok) return { result: check }
-        return {
-          next: { ...registry, defs: { ...registry.defs, [propertyId]: edited.next } },
-          result: ok(def.name),
-        }
-      })
-      if (!edit.ok) {
-        await clearSchemaJournal(root, record)
-        return edit
+): Promise<Result<null>> {
+  return serializeSchemaOp(async () => {
+    const record = await stageOptionRename(root, propertyId, oldValue, newTitle)
+    const edit = await mutateRegistry<Result<string>>(root, (registry, stored) => {
+      const def = registry.defs[propertyId]
+      if (!def) return { result: NO_PROPERTY }
+      const typeCheck = requireOptions(def)
+      if (!typeCheck.ok) return { result: typeCheck }
+      if (!optionValues(def).includes(oldValue)) return { result: NO_OPTION }
+      const next = editStoredOptions(def, stored[propertyId], (groups) =>
+        renameInGroups(groups, oldValue, newTitle),
+      )
+      const check = validateOptionValues(optionsOf(next))
+      if (!check.ok) return { result: check }
+      return {
+        next: { ...registry, defs: { ...registry.defs, [propertyId]: next } },
+        result: ok(def.name),
       }
-      const skipped = await valueEditSweep(root, edit.value, oldValue, {
-        op: 'replace',
-        to: newTitle,
-      })
-      if (!skipped) await clearSchemaJournal(root, record)
-      return ok(null)
     })
-}
-
-/** Unjournaled because the registry is untouched: its crash residue disagrees with nothing, since every remaining value is still a legal option. */
-function clearOp(requireType: RequireType) {
-  return (root: string, propertyId: string, value: string): Promise<Result<null>> =>
-    serializeSchemaOp(async () => {
-      const r = await resolveForCascade(root, propertyId, requireType)
-      if (!r.ok) return r
-      const skipped = await valueEditSweep(root, r.value, value, { op: 'strip' })
-      return skipped ? fault(unsweptLine(skipped)) : ok(null)
-    })
-}
-
-/** Pages first, so a def-edit failure never leaves the option gone with its values orphaned; a strip that could not read every holder defers the registry drop. */
-function removeOp(requireType: RequireType) {
-  return (root: string, propertyId: string, value: string): Promise<Result<null>> =>
-    serializeSchemaOp(async () => {
-      const r = await resolveForCascade(root, propertyId, requireType)
-      if (!r.ok) return r
-      const record: SchemaJournal = { op: 'option-remove', id: propertyId, value }
-      await writeSchemaJournal(root, record)
-      const skipped = await valueEditSweep(root, r.value, value, { op: 'strip' })
-      if (skipped) return ok(null)
-      const dropped = await dropOptionFromDef(root, propertyId, value)
+    if (!edit.ok) {
       await clearSchemaJournal(root, record)
-      return dropped
+      return edit
+    }
+    const skipped = await valueEditSweep(root, edit.value, oldValue, {
+      op: 'replace',
+      to: newTitle,
     })
+    if (!skipped) await clearSchemaJournal(root, record)
+    return ok(null)
+  })
 }
 
-export const renameOption = renameOp(requireOptionType, editSelectOptions)
-export const clearOption = clearOp(requireOptionType)
-export const removeOption = removeOp(requireOptionType)
+export function clearOption(
+  root: string,
+  propertyId: string,
+  value: string,
+): Promise<Result<null>> {
+  return serializeSchemaOp(async () => {
+    const r = await resolveForCascade(root, propertyId, value)
+    if (!r.ok) return r
+    const skipped = await valueEditSweep(root, r.value, value, { op: 'strip' })
+    return skipped ? fault(unsweptLine(skipped)) : ok(null)
+  })
+}
 
-export const renameStatusOption = renameOp(requireStatusType, editStatusGroups)
-export const clearStatusOption = clearOp(requireStatusType)
-export const removeStatusOption = removeOp(requireStatusType)
+export function removeOption(
+  root: string,
+  propertyId: string,
+  value: string,
+): Promise<Result<null>> {
+  return serializeSchemaOp(async () => {
+    const r = await resolveForCascade(root, propertyId, value)
+    if (!r.ok) return r
+    const record: SchemaJournal = { op: 'option-remove', id: propertyId, value }
+    await writeSchemaJournal(root, record)
+    const skipped = await valueEditSweep(root, r.value, value, { op: 'strip' })
+    if (skipped) return ok(null)
+    const dropped = await dropOptionFromDef(root, propertyId, value)
+    await clearSchemaJournal(root, record)
+    return dropped
+  })
+}
