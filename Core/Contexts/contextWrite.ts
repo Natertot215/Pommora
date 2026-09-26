@@ -46,7 +46,7 @@ interface SpaceRef {
   raw: Json
 }
 
-interface ContextWorld extends GovernedWorld {
+export interface ContextWorld extends GovernedWorld {
   registry: ContextsRegistry
   spaceById: Map<string, SpaceRef>
 }
@@ -89,21 +89,17 @@ export async function loadContextWorld(root: string): Promise<Result<ContextWorl
 }
 
 /** Unknown ids fail — a stale renderer id must never serialize as a guess. */
-function targetTitles(world: ContextWorld, spaceIds: string[]): Result<string[]> {
+export function contextTarget(
+  world: ContextWorld,
+  contextId: string,
+  spaceIds: string[],
+): Result<{ key: string; value: string[] | undefined }> {
   const titles: string[] = []
   for (const id of spaceIds) {
     const ref = world.spaceById.get(id)
     if (!ref) return fail('not-found', 'Unknown Space.')
     titles.push(ref.title)
   }
-  return ok(titles)
-}
-
-function applyTarget(
-  world: ContextWorld,
-  contextId: string,
-  titles: string[],
-): Result<{ key: string; value: string[] | undefined }> {
   const def = world.registry.contexts.find((c) => c.id === contextId)
   if (!def) return fail('not-found', 'Unknown Context.')
   return ok({ key: contextKey(def.title), value: titles.length ? titles : undefined })
@@ -116,9 +112,7 @@ export async function setPageContext(
   contextId: string,
   spaceIds: string[],
 ): Promise<Result<null>> {
-  const titles = targetTitles(world, spaceIds)
-  if (!titles.ok) return titles
-  const applied = applyTarget(world, contextId, titles.value)
+  const applied = contextTarget(world, contextId, spaceIds)
   if (!applied.ok) return applied
   const { key, value } = applied.value
   const adoptions = await machine().lock(absFile, async () => {
@@ -190,9 +184,7 @@ export async function setSpaceContext(
   const a = world.spaceById.get(spaceId)
   if (!a) return fail('not-found', 'Unknown Space.')
   if (targetSpaceIds.includes(spaceId)) return fault('A Space can’t link itself.')
-  const titles = targetTitles(world, targetSpaceIds)
-  if (!titles.ok) return titles
-  const applied = applyTarget(world, contextId, titles.value)
+  const applied = contextTarget(world, contextId, targetSpaceIds)
   if (!applied.ok) return applied
   const { key, value } = applied.value
   const backKey = contextKey(a.contextTitle)

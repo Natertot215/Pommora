@@ -3,6 +3,7 @@ import type { PageFrontmatter } from '@pommora/core/Nexus/schemas'
 import type { MutateOutcome, MutateRequest } from '@pommora/core/Nexus/mutateRequest'
 import type { PropertyDefinition } from '@pommora/core/Properties/properties'
 import {
+  applyContextAtRoot,
   applyValueAtRoot,
   isBlankValue,
   type PropertyValue,
@@ -28,14 +29,12 @@ function write(
   let patched: PageFrontmatter
   if (column.kind === 'context') {
     const ids = value?.kind === 'context' ? value.value : []
-    const current =
-      (row.frontmatter.contextValues as Record<string, string[]> | undefined) ??
-      row.contextValues ??
-      {}
-    patched = {
-      ...row.frontmatter,
-      contextValues: { ...current, [column.id]: ids },
-    } as PageFrontmatter
+    patched = applyContextAtRoot(
+      row.frontmatter,
+      column.id,
+      ids,
+      row.contextValues,
+    ) as PageFrontmatter
     req = { op: 'setContext', path: row.path, contextId: column.id, spaceIds: ids }
   } else {
     const def = w.schema.find((d) => d.id === column.id)

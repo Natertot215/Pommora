@@ -153,3 +153,13 @@ export function applyValueAtRoot(
   else next[key] = encodeValue(value)
   return next
 }
+
+export function applyContextAtRoot(
+  root: Record<string, unknown>,
+  contextId: string,
+  spaceIds: string[],
+  held?: Record<string, string[]>,
+): Record<string, unknown> {
+  const current = (root.contextValues as Record<string, string[]> | undefined) ?? held
+  return { ...root, contextValues: { ...current, [contextId]: spaceIds } }
+}

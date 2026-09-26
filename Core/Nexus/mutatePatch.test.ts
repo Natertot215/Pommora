@@ -109,6 +109,26 @@ describe('confirmMutation', () => {
     expect(stabilize(await readNexus(root), live)).toBe(live)
   })
 
+  it('a Context-seeded create reads its page back — zero walks, contextValues patched', async () => {
+    await writeFile(abs('Notes', 'B.md'), `---\nID: ${ULID_B}\n<Areas>:\n  - Home\n---\n\nbeta\n`)
+    const pushed = await confirmMutation(
+      root,
+      {
+        op: 'createPage',
+        parentPath: 'Notes',
+        name: 'B',
+        seeds: { ctx1: { kind: 'context', value: ['sp1'] } },
+      },
+      { created: { id: ULID_B, path: 'Notes/B.md' } },
+    )
+    expect(pushed).not.toBeNull()
+    expect(walkSpy).not.toHaveBeenCalled()
+    const live = getLiveTree()
+    const page = live?.collections[0]?.pages.find((p) => p.id === ULID_B)
+    expect(page?.contextValues).toEqual({ ctx1: ['sp1'] })
+    expect(stabilize(await readNexus(root), live)).toBe(live)
+  })
+
   it('a created container carries its own seeded sidecar view, walk-identically', async () => {
     await mkdir(abs('Notes', 'Drafts'), { recursive: true })
     await writeFile(

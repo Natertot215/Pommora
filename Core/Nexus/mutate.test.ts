@@ -150,6 +150,24 @@ describe('handleMutate — create', () => {
     expect('Stage' in splitFrontmatter(await read('Notes/Daily/Blank Seed.md'))).toBe(false)
   })
 
+  it('createPage lands a Context seed through the Context writer; an unknown Space refuses the create', async () => {
+    await seedSpaceSidecar(root, 'Areas', 'Work', { id: 'sp-work' })
+    await writeFile(
+      join(root, '.nexus', 'contexts', 'contexts.json'),
+      JSON.stringify({ contexts: [{ id: 'ctxA', title: 'Areas', singular: 'Area' }] }),
+    )
+    const seeded = (name: string, spaceId: string): MutateRequest => ({
+      op: 'createPage',
+      parentPath: 'Notes/Daily',
+      name,
+      seeds: { ctxA: { kind: 'context', value: [spaceId] } },
+    })
+    expect((await handleMutate(root, seeded('In Work', 'sp-work'), nexusDeps)).ok).toBe(true)
+    expect(splitFrontmatter(await read('Notes/Daily/In Work.md'))['<Areas>']).toEqual(['Work'])
+    expect((await handleMutate(root, seeded('Stale', 'sp-gone'), nexusDeps)).ok).toBe(false)
+    expect(await pathExists(join(root, 'Notes/Daily/Stale.md'))).toBe(false)
+  })
+
   it('createPage order substitutes NEW_SLOT with the minted id and persists page_order', async () => {
     const r = await handleMutate(
       root,

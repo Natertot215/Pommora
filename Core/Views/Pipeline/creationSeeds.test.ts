@@ -109,6 +109,20 @@ describe('filterSeeds', () => {
     expect(filterSeeds(rule(['s_work', 's_home']), true, schema, ['ctx_areas'])).toEqual({})
   })
 
+  it('takes both values when two one-chip rules name the same list property', () => {
+    const both: FilterGroup = {
+      match: 'all',
+      rules: [
+        { property_id: 'p_tags', op: 'contains_any', values: ['draft'] },
+        { property_id: 'p_tags', op: 'contains_all', values: ['urgent'] },
+        { property_id: 'p_tags', op: 'contains_any', values: ['draft'] },
+      ],
+    }
+    expect(filterSeeds(both, true, schema)).toEqual({
+      p_tags: { kind: 'multiSelect', value: ['draft', 'urgent'] },
+    })
+  })
+
   it('a disabled or absent filter derives nothing', () => {
     const filter: FilterGroup = {
       match: 'all',

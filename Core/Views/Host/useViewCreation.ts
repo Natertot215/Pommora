@@ -6,6 +6,7 @@ import { UNGROUPED } from '@pommora/core/Views/viewRow'
 import type { PageFrontmatter } from '@pommora/core/Nexus/schemas'
 import type { SetOverrides } from '../../Properties/valueOverride'
 import {
+  applyContextAtRoot,
   applyValueAtRoot,
   isBlankValue,
   type PropertyValue,
@@ -78,10 +79,7 @@ export function useViewCreation(getCfg: () => ViewCreationConfig): ViewCreation 
         const def = c.schema.find((d) => d.id === propId)
         if (def) patched = applyValueAtRoot(patched, def, value)
         else if (value.kind === 'context')
-          patched = {
-            ...patched,
-            contextValues: { ...(patched.contextValues as object), [propId]: value.value },
-          }
+          patched = applyContextAtRoot(patched, propId, value.value)
       }
       return { ...prev, [pageId]: { fm: patched as PageFrontmatter, write: null } }
     })
