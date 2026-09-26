@@ -12,7 +12,7 @@ import {
   type TabTarget,
 } from '@pommora/core/Navigation/navRef'
 import type { MutableKind } from '@pommora/core/Nexus/mutateRequest'
-import { moveItem } from '@pommora/uix/Utilities/moveItem'
+import { moveItem, placeAt } from '@pommora/uix/Utilities/moveItem'
 import { reconcileWith, type ReconcileIndex } from '../Session/reconcileSelection'
 
 const NEWTAB: TabTarget = { kind: 'newtab' }
@@ -39,6 +39,28 @@ export function liveTarget(index: ReconcileIndex, ref: NavRef): SelectTarget | n
 }
 
 /** The history pointer is carried through the pruning — re-pointed by key if it lands wrong, degraded to a single-entry stack if its target vanished. */
+function pruneHistory<R>(
+  target: SelectTarget,
+  navStack: R[],
+  navIndex: number,
+  live: (ref: R) => SelectTarget | null,
+): { navStack: SelectTarget[]; navIndex: number; changed: boolean } {
+  const stack: SelectTarget[] = []
+  let at = -1
+  let changed = false
+  navStack.forEach((ref, i) => {
+    const kept = live(ref)
+    if (kept !== ref) changed = true
+    if (!kept) return
+    if (i === navIndex) at = stack.length
+    stack.push(kept)
+  })
+  if (at === -1 || navKey(stack[at]) !== navKey(target))
+    at = stack.findIndex((s) => navKey(s) === navKey(target))
+  if (at === -1) return { navStack: [target], navIndex: 0, changed: true }
+  return { navStack: stack, navIndex: at, changed: changed || at !== navIndex }
+}
+
 export function hydrateTabs(stored: StoredTab[], index: ReconcileIndex | null): Tab[] {
   if (!index) return []
   const tabs: Tab[] = []
@@ -49,23 +71,25 @@ export function hydrateTabs(stored: StoredTab[], index: ReconcileIndex | null): 
     }
     const target = liveTarget(index, t.target)
     if (!target) continue
-    const navStack: SelectTarget[] = []
-    let navIndex = -1
-    t.navStack.forEach((ref, i) => {
-      const live = liveTarget(index, ref)
-      if (!live) return
-      if (i === t.navIndex) navIndex = navStack.length
-      navStack.push(live)
-    })
-    if (navIndex === -1 || navKey(navStack[navIndex]) !== navKey(target))
-      navIndex = navStack.findIndex((s) => navKey(s) === navKey(target))
-    if (navIndex === -1) {
-      navStack.splice(0, navStack.length, target)
-      navIndex = 0
-    }
+    const { navStack, navIndex } = pruneHistory(target, t.navStack, t.navIndex, (ref) =>
+      liveTarget(index, ref),
+    )
     tabs.push({ id: t.id, target, navStack, navIndex })
   }
   return tabs
+}
+
+/** Returns the same tab when nothing about it changed, and null once its target is gone. */
+export function reconcileTab(
+  t: Tab,
+  reconcile: (target: SelectTarget) => SelectTarget | null,
+): Tab | null {
+  if (t.target.kind === 'newtab') return t
+  const target = reconcile(t.target)
+  if (target === null) return null
+  const history = pruneHistory(target, t.navStack, t.navIndex, reconcile)
+  if (target === t.target && !history.changed) return t
+  return { ...t, target, navStack: history.navStack, navIndex: history.navIndex }
 }
 
 export function derivePinnedTabs(pinned: NavRef[], index: ReconcileIndex | null): Tab[] {
@@ -187,26 +211,38 @@ export function openTabAt(
   newId: string,
 ): Tab[] {
   if (pinned.some(showing(target))) return tabs
-  const from = tabs.findIndex(showing(target))
-  if (from !== -1) {
-    const to = clamp(index > from ? index - 1 : index, 0, tabs.length - 1)
-    return from === to ? tabs : moveItem(tabs, from, to)
-  }
-  const at = clamp(index, 0, tabs.length)
-  return [...tabs.slice(0, at), tabFor(newId, target), ...tabs.slice(at)]
+  return placeAt(tabs, tabs.findIndex(showing(target)), clamp(index, 0, tabs.length), () =>
+    tabFor(newId, target),
+  )
 }
 
 export function pushMru(mru: string[], id: string): string[] {
   return [id, ...mru.filter((m) => m !== id)]
 }
 
-interface CloseResult {
+export interface TabFocus {
   tabs: Tab[]
   activeTabId: string
   mru: string[]
 }
 
-/** Falls back to the spatial neighbor when the MRU is empty (a cold relaunch); closing the very last tab reseeds a lone NavView. */
+/** A live active tab stays; otherwise the neighbor, the most recent live tab, the first tab, then the last pinned, and a lone new tab when nothing is left. */
+export function settleFocus(
+  { tabs, activeTabId, mru }: TabFocus,
+  pinnedIds: string[],
+  newId: string,
+  neighbor?: string,
+): TabFocus {
+  const live = new Set([...pinnedIds, ...tabs.map((t) => t.id)])
+  const recent = mru.filter((id) => live.has(id))
+  const focus = live.has(activeTabId)
+    ? activeTabId
+    : (neighbor ?? recent[0] ?? tabs[0]?.id ?? pinnedIds.at(-1))
+  if (focus === undefined) return { tabs: [newTabTab(newId)], activeTabId: newId, mru: [newId] }
+  return { tabs, activeTabId: focus, mru: pushMru(recent, focus) }
+}
+
+/** Closing the active tab falls to its left neighbor, as the window strip's does. */
 export function closeTab(
   tabs: Tab[],
   activeTabId: string,
@@ -214,22 +250,17 @@ export function closeTab(
   pinnedIds: string[],
   id: string,
   newId: string,
-): CloseResult {
+): TabFocus {
   const idx = tabs.findIndex((t) => t.id === id)
   if (idx === -1) return { tabs, activeTabId, mru }
-  const nextTabs = tabs.filter((t) => t.id !== id)
-  const nextMru = mru.filter((m) => m !== id)
-
-  if (nextTabs.length === 0 && pinnedIds.length === 0) {
-    return { tabs: [newTabTab(newId)], activeTabId: newId, mru: [newId] }
-  }
-  if (id !== activeTabId) return { tabs: nextTabs, activeTabId, mru: nextMru }
-
-  const live = new Set([...pinnedIds, ...nextTabs.map((t) => t.id)])
-  const mruTop = nextMru.find((m) => live.has(m))
-  const spatial =
-    nextTabs[Math.min(idx, nextTabs.length - 1)]?.id ?? pinnedIds[pinnedIds.length - 1]
-  return { tabs: nextTabs, activeTabId: mruTop ?? spatial, mru: nextMru }
+  const rest = tabs.filter((t) => t.id !== id)
+  const left = idx > 0 ? rest[idx - 1].id : (pinnedIds.at(-1) ?? rest[0]?.id)
+  return settleFocus(
+    { tabs: rest, activeTabId, mru: mru.filter((m) => m !== id) },
+    pinnedIds,
+    newId,
+    left,
+  )
 }
 
 export function reorderWithinZone(tabs: Tab[], fromId: string, toIndex: number): Tab[] {
@@ -243,67 +274,6 @@ export function reorderWithinZone(tabs: Tab[], fromId: string, toIndex: number):
 export function insertUnpinned(tabs: Tab[], activeTabId: string, tab: Tab): Tab[] {
   const at = tabs[0] && tabs[0].id === activeTabId ? 1 : 0
   return [...tabs.slice(0, at), tab, ...tabs.slice(at)]
-}
-
-interface ReconcileTabsResult {
-  tabs: Tab[]
-  activeTabId: string
-  mru: string[]
-  changed: boolean
-}
-
-/** Reference-preserving — untouched tabs keep their identity, and `changed: false` means the caller can skip the state write. */
-export function reconcileTabs(
-  tabs: Tab[],
-  activeTabId: string,
-  mru: string[],
-  pinnedIds: string[],
-  reconcile: (t: SelectTarget) => SelectTarget | null,
-  newId: string,
-): ReconcileTabsResult {
-  let changed = false
-  const nextTabs: Tab[] = []
-  for (const t of tabs) {
-    if (t.target.kind === 'newtab') {
-      nextTabs.push(t)
-      continue
-    }
-    const target = reconcile(t.target)
-    if (target === null) {
-      changed = true
-      continue
-    }
-    const stack: SelectTarget[] = []
-    let navIndex = -1
-    let stackChanged = false
-    for (let i = 0; i < t.navStack.length; i++) {
-      const r = reconcile(t.navStack[i])
-      if (r === null) {
-        stackChanged = true
-        continue
-      }
-      if (r !== t.navStack[i]) stackChanged = true
-      stack.push(r)
-      if (i === t.navIndex) navIndex = stack.length - 1
-    }
-    if (navIndex === -1) navIndex = stack.length - 1
-    if (target === t.target && !stackChanged) {
-      nextTabs.push(t)
-      continue
-    }
-    changed = true
-    nextTabs.push({ ...t, target, navStack: stack, navIndex })
-  }
-  if (!changed) return { tabs, activeTabId, mru, changed: false }
-
-  const live = new Set([...pinnedIds, ...nextTabs.map((t) => t.id)])
-  const nextMru = mru.filter((id) => live.has(id))
-  if (live.has(activeTabId)) return { tabs: nextTabs, activeTabId, mru: nextMru, changed: true }
-  const focus = nextMru[0] ?? nextTabs[0]?.id ?? pinnedIds[pinnedIds.length - 1]
-  if (focus !== undefined)
-    return { tabs: nextTabs, activeTabId: focus, mru: nextMru, changed: true }
-  const seeded = newTabTab(newId)
-  return { tabs: [seeded], activeTabId: seeded.id, mru: [seeded.id], changed: true }
 }
 
 export function cycle(orderedIds: string[], activeTabId: string, dir: 1 | -1): string {

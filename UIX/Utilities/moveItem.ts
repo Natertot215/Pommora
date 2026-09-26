@@ -6,6 +6,13 @@ export function moveItem<T>(list: readonly T[], from: number, to: number): T[] {
   return next
 }
 
+/** `at` counts gaps in the list as it stands; a missing item (`from` -1) is made there. */
+export function placeAt<T>(list: T[], from: number, at: number, make: () => T): T[] {
+  if (from === -1) return [...list.slice(0, at), make(), ...list.slice(at)]
+  const to = at > from ? at - 1 : at
+  return to === from ? list : moveItem(list, from, to)
+}
+
 export function moveByKey<T>(
   list: T[],
   keyOf: (item: T) => string,
