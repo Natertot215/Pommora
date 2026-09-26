@@ -2,7 +2,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { act } from 'react'
 import type { Root } from 'react-dom/client'
-import { firePointer, stubRect } from '@pommora/uix/Interactions/pointerHarness'
+import { firePointer, stubRect } from '@pommora/uix/Testing/pointerHarness'
 import type { Band } from '../Bands/bandDndModel'
 import { useGroupingListDrag, type GroupingDrop } from './groupDnd'
 import { mountEachTest } from '../../Testing/viewHarness'

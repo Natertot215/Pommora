@@ -7,7 +7,7 @@ import { type ConnMenuAction, connectionMenuModel } from '@pommora/core/Actions/
 import type { ConnectionsApi } from './connectionsApi'
 import { buildPageIndex } from '@pommora/core/Connections/pageIndex'
 import { showConnectionMenu } from '../../Interface/Menus/connectionMenuActions'
-import { cleanupEditor, mountEditor, seedHost, stubEditorBridge } from '../editorHarness'
+import { cleanupEditor, mountEditor, seedHost, stubEditorBridge } from '../../Testing/editorHarness'
 
 class ResizeObserverStub {
   observe(): void {}

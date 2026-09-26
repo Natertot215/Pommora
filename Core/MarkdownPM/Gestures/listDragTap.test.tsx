@@ -3,8 +3,8 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { act } from 'react'
 import type { EditorView } from '@codemirror/view'
-import { cleanupEditor, mountEditor, stubEditorBridge } from '../editorHarness'
-import { firePointer, stubPointerCapture } from '@pommora/uix/Interactions/pointerHarness'
+import { cleanupEditor, mountEditor, stubEditorBridge } from '../../Testing/editorHarness'
+import { firePointer, stubPointerCapture } from '@pommora/uix/Testing/pointerHarness'
 
 class ResizeObserverStub {
   observe(): void {}

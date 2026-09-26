@@ -5,7 +5,7 @@ import { act } from 'react'
 import type { EditorView } from '@codemirror/view'
 import { type ConnMenuAction, connectionMenuModel } from '@pommora/core/Actions/connectionMenu'
 import { INSERT_LINK_ACTION } from '@pommora/core/Actions/editorMenu'
-import { linkMarkdown } from '@pommora/core/MarkdownPM/Links/pasteDecision'
+import { linkMarkdown } from '@pommora/core/Connections/linkValue'
 import type { ConnectionsApi } from './connectionsApi'
 import { buildPageIndex } from '@pommora/core/Connections/pageIndex'
 import { showConnectionMenu } from '../../Interface/Menus/connectionMenuActions'
@@ -16,7 +16,7 @@ import {
   seedHost,
   settleTitle,
   stubEditorBridge,
-} from '../editorHarness'
+} from '../../Testing/editorHarness'
 
 class ResizeObserverStub {
   observe(): void {}

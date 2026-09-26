@@ -1,8 +1,8 @@
 import { describe, it, expect } from 'vitest'
 import { EditorState } from '@codemirror/state'
 import { scanDoc } from '../Engine/docScan'
-import { citationGuard } from '../Guards/citationGuard'
-import { fusedTableCount as fusedIn, tableMergeGuard, tablePasteGuard } from './guard'
+import { citationGuard } from './citationGuard'
+import { fusedTableCount as fusedIn, tableMergeGuard, tablePasteGuard } from './tableGuard'
 
 const fusedTableCount = (doc: string): number => {
   const scan = scanDoc(doc)
@@ -59,6 +59,7 @@ describe('tablePasteGuard — a table-shaped paste refuses lists and the citatio
 
   it('refuses a whole table pasted into the citations section — no relocation rescue', () => {
     expect(paste(citeDoc, citeDoc.length, `\n${t1}`)).toBe(citeDoc)
+    expect(paste(citeDoc, citeDoc.length, `\n\n${t1}`)).toBe(citeDoc)
   })
 
   it('lets a table paste land in plain prose, and plain text land in a list', () => {

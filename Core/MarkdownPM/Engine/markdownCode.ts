@@ -177,6 +177,21 @@ export function lineIndexAt(d: LineTable, pos: number): number {
 export const lineEndOf = (d: LineTable, line: number): number =>
   d.lineStarts[line] + d.lines[line].length
 
+export const lineStartAt = (doc: string, pos: number): number =>
+  pos <= 0 ? 0 : doc.lastIndexOf('\n', pos - 1) + 1
+export const lineEndAt = (doc: string, pos: number): number => {
+  const i = doc.indexOf('\n', pos)
+  return i === -1 ? doc.length : i
+}
+
+export const trimmedRange = (doc: string, from: number, to: number): [number, number] => {
+  let f = from
+  let t = to
+  while (f < t && /\s/.test(doc[f])) f++
+  while (t > f && /\s/.test(doc[t - 1])) t--
+  return f === t ? [from, to] : [f, t]
+}
+
 export function codeAt(d: LineTable, fenced: (line: number) => boolean, offset: number): boolean {
   if (offset < 0 || offset > lineEndOf(d, d.lines.length - 1)) return false
   const i = lineIndexAt(d, offset)

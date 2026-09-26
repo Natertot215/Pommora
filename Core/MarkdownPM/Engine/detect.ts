@@ -11,7 +11,8 @@ import {
   quotePrefixWidth,
   type CodeMask,
 } from './markdownCode'
-import { loneWebpageEmbed } from '@pommora/core/MarkdownPM/Embeds/webpageEmbed'
+import { emptyTolerantLinkRegex, unescapeAlias } from '@pommora/core/Connections/links'
+import { isValidLink, WEB_ADDRESS } from '@pommora/core/Paths/urlPath'
 import type { ListKind } from '@pommora/core/Actions/gripMenu'
 export const highlightRegex = (): RegExp => /(?<!=)==(?!=)((?:[^=\n]|=(?!=))+)==(?!=)/dg
 export const inlineLatexRegex = (): RegExp => /(?<!\$)\$(?!\$)([^$\n]+?)\$(?!\$)/dg
@@ -320,6 +321,25 @@ const loneEmbedRe = /^!\[\[([^\]\r\n]*)\]\][ \t]*$/
 
 export function loneEmbedTitle(line: string): string | null {
   return loneEmbedRe.exec(line)?.[1] ?? null
+}
+
+/** Never indented: an indented line is list continuation, mirroring the page embed's anchor. A mid-typed prefix like `https://example.c` passes, which is why claims are formation-gated on the selection rather than on the grammar. */
+export function loneWebpageEmbed(lineText: string): { label: string; url: string } | null {
+  if (!lineText.startsWith('![')) return null
+  const line = lineText.replace(/\s+$/, '')
+  const m = emptyTolerantLinkRegex().exec(line)
+  if (!m) return null
+  if (m.index !== 1 || m.index + m[0].length !== line.length) return null
+  const url = m[2]
+  if (!url || !WEB_ADDRESS.test(url) || !isValidLink(url)) return null
+  return { label: unescapeAlias(m[1]), url }
+}
+
+/** What Edit Link selects, so a tile's address is retyped the way every other link's is. */
+export function webpageEmbedUrlSpan(lineText: string): [number, number] | null {
+  if (!loneWebpageEmbed(lineText)) return null
+  const span = emptyTolerantLinkRegex().exec(lineText.replace(/\s+$/, ''))?.indices?.[2]
+  return span ? [span[0], span[1]] : null
 }
 
 /** Trailing whitespace doesn't break lone-ness, but a leading indent does — an indented line is a list continuation. */

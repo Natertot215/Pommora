@@ -3,7 +3,12 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import { act } from 'react'
 import type { EditorView } from '@codemirror/view'
 import { deleteLine, moveLineUp, redo, undo } from '@codemirror/commands'
-import { cleanupEditor, mountEditor, rerenderEditor, stubEditorBridge } from './editorHarness'
+import {
+  cleanupEditor,
+  mountEditor,
+  rerenderEditor,
+  stubEditorBridge,
+} from '../Testing/editorHarness'
 import { mirrorBody } from './api'
 
 class ResizeObserverStub {

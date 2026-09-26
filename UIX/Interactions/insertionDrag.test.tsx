@@ -2,7 +2,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { act } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
-import { firePointer, stubPointerCapture } from './pointerHarness'
+import { firePointer, stubPointerCapture } from '../Testing/pointerHarness'
 import { nudgeDragRemeasure } from './dragDisclose'
 import { useInsertionDrag } from './insertionDrag'
 import type { Escort } from './engine'

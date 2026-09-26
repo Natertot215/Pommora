@@ -4,8 +4,8 @@ import type { EditorView } from '@codemirror/view'
 import type { ConnectionsApi } from '../Links/connectionsApi'
 import { buildPageIndex } from '@pommora/core/Connections/pageIndex'
 import { embedField, setEmbedHeights } from './embedWidget'
-import { cleanupEditor, mountEditor, prefsOf, stubEditorBridge } from '../editorHarness'
-import { firePointer, stubPointerCapture, stubRect } from '@pommora/uix/Interactions/pointerHarness'
+import { cleanupEditor, mountEditor, prefsOf, stubEditorBridge } from '../../Testing/editorHarness'
+import { firePointer, stubPointerCapture, stubRect } from '@pommora/uix/Testing/pointerHarness'
 
 stubEditorBridge()
 stubPointerCapture()

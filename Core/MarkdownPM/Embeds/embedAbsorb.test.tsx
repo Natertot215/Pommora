@@ -7,7 +7,7 @@ import { defaultKeymap, historyKeymap } from '@codemirror/commands'
 import type { ConnectionsApi } from '../Links/connectionsApi'
 import { buildPageIndex } from '@pommora/core/Connections/pageIndex'
 import { embedTileRanges } from './embedWidget'
-import { cleanupEditor, mountEditor, stubEditorBridge } from '../editorHarness'
+import { cleanupEditor, mountEditor, stubEditorBridge } from '../../Testing/editorHarness'
 
 stubEditorBridge()
 afterEach(cleanupEditor)

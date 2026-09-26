@@ -9,7 +9,7 @@ import {
   cleanupEditor,
   seedHost,
   settleTitle,
-} from '../editorHarness'
+} from '../../Testing/editorHarness'
 import { pendingTitles } from './pendingTitle'
 import { pasteAs } from './pasteLink'
 

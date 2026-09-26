@@ -2,14 +2,13 @@
 import { createElement, Fragment, type ReactNode } from 'react'
 import {
   EditorSelection,
-  EditorState,
+  type EditorState,
   type Extension,
   Facet,
   RangeSetBuilder,
   StateEffect,
   StateField,
-  type Text,
-  Transaction,
+  type Transaction,
 } from '@codemirror/state'
 import {
   Decoration,
@@ -25,16 +24,15 @@ import { type DismissalHandle, pushDismissal } from '@pommora/uix/Interactions/d
 import { TILE_DEFAULT_PX, TILE_GAP_PX } from '@pommora/uix/Theme/theme-vars.css'
 import { TILE_MIN_PX } from '@pommora/uix/Utilities/tileMetrics'
 import { titleFromPath } from '@pommora/core/Paths/posix'
-import { normalizeTitle, pageEmbedText } from '@pommora/core/Connections/connections'
+import { normalizeTitle } from '@pommora/core/Connections/connections'
 import '../../Tiles/tile-base.css'
-import { loneWebpageEmbed } from '@pommora/core/MarkdownPM/Embeds/webpageEmbed'
+import { loneWebpageEmbed } from '../Engine/detect'
 import { DEFAULT_ZOOM, zoomStep } from '../../Tiles/tileZoom'
 import { docScan } from '../docCache'
-import { loneEmbedTitle } from '../Engine/detect'
 import { claimedEmbeds } from '../Engine/embedClaims'
 import { healTileScrolls } from './scrollHeal'
 import type { ConnectionsApi } from '../Links/connectionsApi'
-import { editorHost } from '../api'
+import { editorHost, resolutionNudge } from '../api'
 import { clamp } from '@pommora/uix/Utilities/clamp'
 
 interface EmbedHost {
@@ -50,8 +48,6 @@ const embedHost = Facet.define<EmbedHost, EmbedHost>({
 const setEmbedEditing = StateEffect.define<string | null>()
 
 export const setWebLinkSeat = StateEffect.define<number | null>()
-
-export const resolutionNudge = StateEffect.define<null>()
 
 export const setEmbedHeights = StateEffect.define<Record<string, number>>()
 
@@ -561,87 +557,6 @@ const editingExit = ViewPlugin.fromClass(
   },
 )
 
-// Per tile, never a document-wide sum — a summed compare would let one tile's un-gluing pay for another's regression.
-function gluedOf(doc: Text, from: number): number {
-  let glued = 0
-  const n = doc.lineAt(Math.min(from, doc.length)).number
-  if (n > 1 && doc.line(n - 1).text.trim() !== '') glued++
-  if (n < doc.lines && doc.line(n + 1).text.trim() !== '') glued++
-  return glued
-}
-
-function boundaryRepair(
-  tr: Transaction,
-  r: TileRange,
-): { from: number; insert: string; caret: number } | null {
-  const changes: { from: number; to: number; text: string }[] = []
-  tr.changes.iterChanges((fromA, toA, _fromB, _toB, inserted) => {
-    changes.push({ from: fromA, to: toA, text: inserted.toString() })
-  })
-  if (changes.length !== 1) return null
-  const [{ from, to, text }] = changes
-  if (from !== to || text === '') return null
-  if (from === r.from) return { from, insert: `${text}\n`, caret: from + text.length }
-  if (from === r.to) return { from, insert: `\n${text}`, caret: from + 1 + text.length }
-  return null
-}
-
-// A CLAIMED embed line can be removed whole but never eroded: a pure boundary insertion repairs, the rest refuse.
-const embedGuard = EditorState.transactionFilter.of((tr) => {
-  if (!tr.docChanged) return tr
-  const { ranges } = tr.startState.field(embedField)
-  if (ranges.length === 0) return tr
-  let hasDeletion = false
-  tr.changes.iterChangedRanges((fromA, toA) => {
-    if (toA > fromA) hasDeletion = true
-  })
-  if (hasDeletion) {
-    for (const r of ranges) {
-      const mappedFrom = tr.changes.mapPos(r.from, 1)
-      const line = tr.newDoc.lineAt(Math.min(mappedFrom, tr.newDoc.length))
-      const stillLone =
-        r.kind === 'page'
-          ? loneEmbedTitle(line.text) === r.title
-          : loneWebpageEmbed(line.text)?.url === r.url
-      if (!stillLone) continue
-      if (gluedOf(tr.newDoc, mappedFrom) > gluedOf(tr.startState.doc, r.from)) return []
-    }
-  }
-  for (const r of ranges) {
-    // A change STRICTLY INSIDE the token is in-place damage — word motion bypasses the atomic absorb.
-    let interior = false
-    tr.changes.iterChangedRanges((fromA, toA) => {
-      const overlaps = fromA < r.to && toA > r.from
-      const covers = fromA <= r.from && toA >= r.to
-      if (overlaps && !covers) interior = true
-    })
-    if (interior) return []
-    const mapped = tr.changes.mapPos(r.from, 1)
-    const line = tr.newDoc.lineAt(Math.min(mapped, tr.newDoc.length))
-    const present =
-      r.kind === 'page'
-        ? line.text.includes(pageEmbedText(r.title))
-        : line.text.includes(`](${r.url})`)
-    if (!present) continue
-    const lone =
-      r.kind === 'page' ? loneEmbedTitle(line.text) !== null : loneWebpageEmbed(line.text) !== null
-    if (lone) continue
-    const repair = boundaryRepair(tr, r)
-    if (repair) {
-      const userEvent = tr.annotation(Transaction.userEvent)
-      return [
-        {
-          changes: { from: repair.from, insert: repair.insert },
-          selection: { anchor: repair.caret },
-          annotations: userEvent ? Transaction.userEvent.of(userEvent) : undefined,
-        },
-      ]
-    }
-    return []
-  }
-  return tr
-})
-
 function embedPrefKey(state: EditorState, pos: number): string | null {
   const r = state.field(embedField).ranges.find((t) => t.from <= pos && pos <= t.to)
   if (!r) return null
@@ -744,13 +659,5 @@ const reslotHeal = ViewPlugin.fromClass(
 )
 
 export function embedTiles(host: EmbedHost): Extension {
-  return [
-    embedHost.of(host),
-    embedField,
-    embedAtomic,
-    embedGuard,
-    embedClickSeat,
-    editingExit,
-    reslotHeal,
-  ]
+  return [embedHost.of(host), embedField, embedAtomic, embedClickSeat, editingExit, reslotHeal]
 }

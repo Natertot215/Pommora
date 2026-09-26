@@ -5,7 +5,7 @@ import type { EditorView } from '@codemirror/view'
 import type { ConnectionsApi } from './connectionsApi'
 import { buildPageIndex } from '@pommora/core/Connections/pageIndex'
 import type { EditorHost } from '../api'
-import { cleanupEditor, mountEditor, stubEditorBridge } from '../editorHarness'
+import { cleanupEditor, mountEditor, stubEditorBridge } from '../../Testing/editorHarness'
 
 class ResizeObserverStub {
   observe(): void {}

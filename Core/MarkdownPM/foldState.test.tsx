@@ -9,7 +9,7 @@ import {
   rerenderEditor,
   stubEditorBridge,
   harnessState,
-} from './editorHarness'
+} from '../Testing/editorHarness'
 import {
   applySavedFolds,
   foldedRegions,

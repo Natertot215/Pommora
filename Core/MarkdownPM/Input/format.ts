@@ -9,15 +9,20 @@ import {
   stripQuotePrefix,
   type ListMarker,
 } from '../Engine/detect'
-import { isBlockquoteLine, quotePrefix, type TextEdit } from '../Engine/markdownCode'
-import type { ListKind } from '@pommora/core/Actions/gripMenu'
-import { lineStartAt, lineEndAt, trimmedRange } from './edits'
+import {
+  isBlockquoteLine,
+  quotePrefix,
+  type TextEdit,
+  lineStartAt,
+  lineEndAt,
+  trimmedRange,
+} from '../Engine/markdownCode'
+import type { HeadingLevel, ListKind } from '@pommora/core/Actions/gripMenu'
+import type { BlockFormat, LinkFormat } from '@pommora/core/Actions/blockMenu'
 import { emptyTable } from '../Engine/Tables/model'
 import { serialize } from '../Engine/Tables/codec'
 
-export type InlineFormat = keyof typeof WRAP | 'link' | 'linkText' | 'connection'
-export type HeadingLevel = 0 | 1 | 2 | 3 | 4 | 5 | 6
-export type BlockFormat = 'quote' | 'code' | 'hr' | 'callout' | 'table'
+export type InlineFormat = keyof typeof WRAP | LinkFormat
 
 export interface FormatEdit {
   changes: TextEdit[]

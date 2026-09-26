@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import { scanDoc } from '../Engine/docScan'
 import {
+  isInsideWikilink,
   continueListOnEnter,
   smartBackspace,
   canonicalizeCheckbox,
@@ -19,7 +20,6 @@ import {
   continueBlockquoteOnEnter,
   calloutShorthand,
   shiftEnterEdit,
-  lineStartAt,
   wrapSelection,
   type Edit,
 } from './edits'
@@ -782,10 +782,15 @@ describe('nested list behavior inside a callout', () => {
   })
 })
 
-describe('line bounds', () => {
-  it('starts the first line at 0 even where the document opens on a newline', () => {
-    expect(lineStartAt('\ntext', 0)).toBe(0)
-    expect(lineStartAt('\ntext', 1)).toBe(1)
-    expect(lineStartAt('a\nb', 3)).toBe(2)
+describe('isInsideWikilink', () => {
+  it('true inside [[...]], false past the closer', () => {
+    const t = '[[ab]] x'
+    expect(isInsideWikilink(3, t)).toBe(true)
+    expect(isInsideWikilink(7, t)).toBe(false)
+  })
+
+  it('resets per line (an unclosed [[ does not bleed to the next line)', () => {
+    const t = 'a [[b\nc]] d'
+    expect(isInsideWikilink(t.indexOf('c]]'), t)).toBe(false)
   })
 })

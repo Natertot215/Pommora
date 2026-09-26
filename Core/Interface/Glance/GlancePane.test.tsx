@@ -7,14 +7,14 @@ import { PickerMenu } from '@pommora/uix/Pickers/PickerMenu'
 import { pickerBloom } from '@pommora/uix/Animations/animations.css'
 import { MENU_GAP } from '@pommora/uix/Menus/menuAnchor'
 import { pushDismissal } from '@pommora/uix/Interactions/dismissalStack'
-import { firePointer, stubPointerCapture } from '@pommora/uix/Interactions/pointerHarness'
+import { firePointer, stubPointerCapture } from '@pommora/uix/Testing/pointerHarness'
 import { GLANCE_DEFAULT, GlancePane, glanceWarmSeam } from './GlancePane'
 import { armPreview, closeGlance, glanceShown, setGlancePresenter } from './glanceAction'
 import type { GlanceTarget } from '../../MarkdownPM/api'
 import { cachePageDetail, dropPageDetail } from '../../Session/pageDetailCache'
 import { useSession } from '../../Session/store'
 import { stubDialer } from '../../vitest.setup'
-import { NO_PREFS } from '../../MarkdownPM/editorHarness'
+import { NO_PREFS } from '../../Testing/editorHarness'
 ;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
 
 class ResizeObserverStub {

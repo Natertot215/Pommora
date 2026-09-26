@@ -15,9 +15,10 @@ import {
   quotePrefix,
   quotePrefixWidth,
   type TextEdit,
+  lineStartAt,
+  lineEndAt,
 } from './markdownCode'
 import { type DocScan, indentWidth, inJoinedMath } from './docScan'
-import { lineStartAt, lineEndAt } from '../Input/edits'
 
 /** Shared by the extension's click handler so press-to-drag never flips the box. */
 export function checkboxToggleChange(doc: string, pos: number): TextEdit | null {

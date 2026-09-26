@@ -4,8 +4,8 @@ import { cx } from '@pommora/uix/Utilities/cx'
 import { overScrollEllipsis } from '@pommora/uix/Interactions/OverScroll'
 import { text } from '@pommora/uix/Theme'
 import { linkDomain } from '@pommora/core/Paths/urlPath'
+import { linkDisplayText } from '@pommora/core/Connections/linkValue'
 import { WEB_PARTITION } from '@pommora/core/Web/partition'
-import { webpageTileTitle } from '@pommora/core/MarkdownPM/Embeds/webpageEmbed'
 import { useDismissal } from '@pommora/uix/Interactions/dismissalStack'
 import { useSession, useSetting } from '../../Session/store'
 import { openWebLink } from '../../Web/openWebLink'
@@ -31,7 +31,7 @@ function useWebpageTitle(label: string, url: string): string {
   useEffect(() => {
     if (wantsTitle && !title) resolveLinkTitle(url)
   }, [wantsTitle, title, url, resolveLinkTitle])
-  return webpageTileTitle(label, url, display, title)
+  return label !== '' ? label : linkDisplayText(url, display, title)
 }
 
 export function WebTile({

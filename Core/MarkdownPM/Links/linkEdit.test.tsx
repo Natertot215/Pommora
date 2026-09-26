@@ -7,7 +7,12 @@ import { type ConnMenuAction, connectionMenuModel } from '@pommora/core/Actions/
 import type { ConnectionsApi } from './connectionsApi'
 import { buildPageIndex } from '@pommora/core/Connections/pageIndex'
 import { showConnectionMenu } from '../../Interface/Menus/connectionMenuActions'
-import { cleanupEditor, harnessState, mountEditor, stubEditorBridge } from '../editorHarness'
+import {
+  cleanupEditor,
+  harnessState,
+  mountEditor,
+  stubEditorBridge,
+} from '../../Testing/editorHarness'
 import { commitAliasOnEnter } from './linkEdit'
 
 class ResizeObserverStub {

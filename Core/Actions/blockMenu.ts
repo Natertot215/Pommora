@@ -1,11 +1,13 @@
 import type { LeafItem } from './menuModel'
-import { HEADING_LEVELS, LIST_KINDS, type ListKind } from './gripMenu'
-import type { BlockFormat, HeadingLevel, InlineFormat } from '../MarkdownPM/Input/format'
+import { HEADING_LEVELS, LIST_KINDS, type HeadingLevel, type ListKind } from './gripMenu'
+
+export type LinkFormat = 'link' | 'linkText' | 'connection'
+export type BlockFormat = 'quote' | 'code' | 'hr' | 'callout' | 'table'
 
 export type BlockMenuAction =
   | `heading:${Exclude<HeadingLevel, 0>}`
   | `list:${ListKind}`
-  | `format:${Extract<InlineFormat, 'link' | 'linkText' | 'connection'>}`
+  | `format:${LinkFormat}`
   | `block:${BlockFormat}`
   | 'block:citation'
   | 'block:page'

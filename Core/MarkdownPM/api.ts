@@ -2,7 +2,7 @@ import type { ConnPage } from '@pommora/core/Connections/pageIndex'
 import type { ReactNode } from 'react'
 import { changesTo } from '../Pages/merge3'
 import { docString } from './docCache'
-import { Annotation, Facet, Transaction } from '@codemirror/state'
+import { Annotation, Facet, StateEffect, Transaction } from '@codemirror/state'
 import { EditorView } from '@codemirror/view'
 import {
   type Personalization,
@@ -21,6 +21,8 @@ import type {
 } from '@pommora/core/MarkdownPM/Citations/citationMenu'
 
 export const mirrored = Annotation.define<boolean>()
+
+export const resolutionNudge = StateEffect.define<null>()
 
 /** A cell is a document of its own, so the page editor is found from the element: a link or marker in a table answers to the page around it, from the table's seat. */
 export function pageEditorAt(el: Element): { seat: Element; view: EditorView | null } {

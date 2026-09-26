@@ -10,7 +10,7 @@ import {
   mountEditor,
   seedHost,
   stubEditorBridge,
-} from '../editorHarness'
+} from '../../Testing/editorHarness'
 
 ;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
 if (!('ResizeObserver' in globalThis)) {

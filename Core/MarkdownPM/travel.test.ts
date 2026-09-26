@@ -2,7 +2,12 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { act } from 'react'
 import { scrollGlide } from '@pommora/uix/Interactions/autoscroll'
-import { cleanupEditor, editorContainer, mountEditor, stubEditorBridge } from './editorHarness'
+import {
+  cleanupEditor,
+  editorContainer,
+  mountEditor,
+  stubEditorBridge,
+} from '../Testing/editorHarness'
 import { nearestHeading, travelTo } from './travel'
 import { foldedRegions, toggleFoldAt } from './folding'
 

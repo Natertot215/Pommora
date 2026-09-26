@@ -4,7 +4,7 @@ import { act } from 'react'
 import { undo } from '@codemirror/commands'
 import { EditorView } from '@codemirror/view'
 import type { Personalization } from '@pommora/core/Settings/personalization'
-import { stubEditorBridge, mountEditor, cleanupEditor, seedHost } from '../editorHarness'
+import { stubEditorBridge, mountEditor, cleanupEditor, seedHost } from '../../Testing/editorHarness'
 import type { ConnectionsApi } from '../Links/connectionsApi'
 import { buildPageIndex } from '@pommora/core/Connections/pageIndex'
 import {

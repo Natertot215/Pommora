@@ -8,7 +8,7 @@ import { undo } from '@codemirror/commands'
 import { buildPageIndex } from '@pommora/core/Connections/pageIndex'
 import { detail } from '@pommora/core/Testing/fixtures'
 import { MarkdownEditor } from '../MarkdownPM/MarkdownEditor'
-import { testHost } from '../MarkdownPM/editorHarness'
+import { testHost } from '../Testing/editorHarness'
 import type { ConnectionsApi } from '../MarkdownPM/Links/connectionsApi'
 import {
   bumpBodyEpoch,

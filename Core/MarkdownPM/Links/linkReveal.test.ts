@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { EditorState } from '@codemirror/state'
-import { linkRest, linkTyping, restedOnLink } from './linkGestures'
+import { linkRest, linkTyping, restedOnLink } from './linkReveal'
 
 // Finishing a link leaves the caret on its closer and the link rendered; clicking that same spot is aiming at the syntax and must reveal it — so what the decoration reads is the gesture, not the offset.
 const seed = (): EditorState => EditorState.create({ doc: 'a [[Alpha]] b', extensions: [linkRest] })

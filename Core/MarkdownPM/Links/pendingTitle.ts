@@ -1,6 +1,6 @@
 import { StateEffect, StateField, type Extension } from '@codemirror/state'
 import { type EditorView, ViewPlugin } from '@codemirror/view'
-import { linkMarkdown } from '@pommora/core/MarkdownPM/Links/pasteDecision'
+import { linkMarkdown } from '@pommora/core/Connections/linkValue'
 import { editorHost } from '../api'
 import type { TextEdit } from '../Engine/markdownCode'
 

@@ -4,7 +4,12 @@ import { act } from 'react'
 import { EditorView } from '@codemirror/view'
 import type { ConnectionsApi } from './connectionsApi'
 import { buildPageIndex, type ConnPage } from '@pommora/core/Connections/pageIndex'
-import { cleanupEditor, editorContainer, mountEditor, stubEditorBridge } from '../editorHarness'
+import {
+  cleanupEditor,
+  editorContainer,
+  mountEditor,
+  stubEditorBridge,
+} from '../../Testing/editorHarness'
 import { travelToHeading } from '../travel'
 import { applyLinkAction } from './linkEdit'
 

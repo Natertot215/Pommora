@@ -4,18 +4,23 @@ import {
   expressibleHeading,
   pageEmbedText,
 } from '@pommora/core/Connections/connections'
-import type { GripMenuContext, ListKind, PickNode } from '@pommora/core/Actions/gripMenu'
+import type {
+  GripMenuContext,
+  HeadingLevel,
+  ListKind,
+  PickNode,
+} from '@pommora/core/Actions/gripMenu'
 import { COPY_LINK_ROW } from '@pommora/core/Actions/pageMenu'
-import { listKindOf, setHeading, setListKind, type HeadingLevel } from '../Input/format'
-import { headingParts } from '../Engine/detect'
+import { listKindOf, setHeading, setListKind } from '../Input/format'
+import { headingParts, webpageEmbedUrlSpan } from '../Engine/detect'
 import { type Block, blockAt } from '../Engine/blockModel'
 import { docScan, docString } from '../docCache'
 import { embeddable } from '../Engine/embedClaims'
 import { HEADING_FOLD_LINE } from '../folding'
 import { applyEmbedZoom, embedExclusions, embedZoomAt, setWebLinkSeat } from '../Embeds/embedWidget'
 import { focusRange } from '../caretPlacement'
+import { lineEndAt, lineStartAt } from '../Engine/markdownCode'
 import { applyEdit } from '../Input/applyEdit'
-import { webpageEmbedUrlSpan } from '@pommora/core/MarkdownPM/Embeds/webpageEmbed'
 import { type EditorHost, editorHost } from '../api'
 import { inGripStrip } from '../lineDom'
 
@@ -53,14 +58,14 @@ export function blockDeleteSpan(
   r: { from: number; to: number },
 ): { from: number; to: number } {
   const prevEnd = r.from - 1
-  const prevStart = doc.lastIndexOf('\n', prevEnd - 1) + 1
+  const prevStart = lineStartAt(doc, prevEnd)
   const prevBlank = r.from >= 2 && doc.slice(prevStart, prevEnd).trim() === ''
   const hasTrailingNewline = r.to < doc.length && doc[r.to] === '\n'
   if (!hasTrailingNewline) return { from: Math.max(0, r.from - 1), to: r.to }
   const nextStart = r.to + 1
-  const nextEnd = doc.indexOf('\n', nextStart)
-  const nextBlank = doc.slice(nextStart, nextEnd === -1 ? doc.length : nextEnd).trim() === ''
-  if (prevBlank && nextBlank && nextEnd !== -1) return { from: r.from, to: nextEnd + 1 }
+  const nextEnd = lineEndAt(doc, nextStart)
+  const nextBlank = doc.slice(nextStart, nextEnd).trim() === ''
+  if (prevBlank && nextBlank && nextEnd < doc.length) return { from: r.from, to: nextEnd + 1 }
   return { from: r.from, to: r.to + 1 }
 }
 

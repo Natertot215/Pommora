@@ -3,7 +3,7 @@ import { describe, it, expect, afterEach, vi } from 'vitest'
 import { createElement, act } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
 import { MarkdownTable } from './MarkdownTable'
-import { testHost } from '../editorHarness'
+import { testHost } from '../../Testing/editorHarness'
 import type { TableModel } from '../Engine/Tables/model'
 import { followCitation } from '../Citations/citationPointer'
 

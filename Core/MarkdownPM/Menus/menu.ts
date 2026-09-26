@@ -4,14 +4,14 @@ import { INSERT_LINK_ACTION, PASTE_PLAIN_ACTION } from '@pommora/core/Actions/ed
 import { isValidLink, normalizeLinkUrl } from '@pommora/core/Paths/urlPath'
 import { serializeLink } from '@pommora/core/Connections/linkValue'
 import { PASTE_AS_PREFIX, type PasteAsForm } from '@pommora/core/Actions/pasteAsMenu'
-import type { ListKind } from '@pommora/core/Actions/gripMenu'
+import type { HeadingLevel, ListKind } from '@pommora/core/Actions/gripMenu'
+import type { BlockFormat } from '@pommora/core/Actions/blockMenu'
 import { citationSeatAt, insertCitation } from '../Citations/citationActions'
 import { embedInsertAtCaret, embedSeatAt, webpageInsertAtCaret } from '../Embeds/embedInsert'
 import { pasteAs } from '../Links/pasteLink'
 import { readFormatState } from '../Input/formatState'
 import type { MarkdownScope } from '../Engine/detect'
 import { editorHost } from '../api'
-import { trimmedRange } from '../Input/edits'
 import { applyEdit } from '../Input/applyEdit'
 import { docString } from '../docCache'
 import {
@@ -21,9 +21,8 @@ import {
   setBlock,
   type FormatEdit,
   type InlineFormat,
-  type HeadingLevel,
-  type BlockFormat,
 } from '../Input/format'
+import { trimmedRange } from '../Engine/markdownCode'
 
 function editFor(action: string, doc: string, from: number, to: number): FormatEdit | null {
   const [group, value] = action.split(':')

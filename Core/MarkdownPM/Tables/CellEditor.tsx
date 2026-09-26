@@ -4,7 +4,6 @@ import { Annotation, EditorSelection, EditorState, Prec } from '@codemirror/stat
 import { defaultKeymap, deleteCharForward, historyKeymap, redo, undo } from '@codemirror/commands'
 import { useFormatGate } from '../Input/useFormatGate'
 import { cellCitations } from './cellCitations'
-import { resolutionNudge } from '../Embeds/embedWidget'
 import {
   autoDelete,
   continueListOnEnter,
@@ -22,14 +21,14 @@ import { docLineIntentsOf, docScan } from '../docCache'
 import type { DocScan } from '../Engine/docScan'
 import { listGlyphOf, seatPastMarker } from '../Engine/intents'
 import {
-  acKeys,
   useConnectionAutocomplete,
   detectConnectionQuery,
 } from '../Autocomplete/useConnectionAutocomplete'
+import { paneKeys } from '../Menus/caretPane'
 import { AutocompletePane } from '../Autocomplete/AutocompletePane'
 import type { ConnectionsApi } from '../Links/connectionsApi'
 import type { NavDir } from '../Engine/Tables/navigate'
-import { type EditorHost, editorHost } from '../api'
+import { type EditorHost, editorHost, resolutionNudge } from '../api'
 import { useLatest } from '@pommora/uix/Utilities/stableApi'
 import { inlineSurface } from '../surface'
 
@@ -200,7 +199,7 @@ export function CellEditor({
                   if (!continueList(view)) view.dispatch(view.state.replaceSelection('\n'))
                 }),
               },
-              ...acKeys([acCtl]),
+              ...paneKeys([acCtl]),
               // The exit is the list's final item alone; above it, and outside a list, the break is the body's own, and the row does NOT split, because cellToSource serializes it as <br> on disk.
               {
                 key: 'Shift-Enter',

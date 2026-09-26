@@ -6,7 +6,7 @@ import type { EditorView } from '@codemirror/view'
 import { itemSelected, matchText } from '@pommora/uix/Menus/menu-row.css'
 import { emptyTable } from '../Engine/Tables/model'
 import { serialize } from '../Engine/Tables/codec'
-import { cleanupEditor, mountEditor, stubEditorBridge } from '../editorHarness'
+import { cleanupEditor, mountEditor, stubEditorBridge } from '../../Testing/editorHarness'
 
 stubEditorBridge()
 afterEach(async () => {

@@ -9,7 +9,7 @@ import {
   mountEditor,
   seedHost,
   stubEditorBridge,
-} from '../editorHarness'
+} from '../../Testing/editorHarness'
 import { docScan } from '../docCache'
 import { modelFromRegion } from '../Engine/Tables/regions'
 

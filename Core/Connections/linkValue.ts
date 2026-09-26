@@ -109,3 +109,25 @@ export function linkDisplayText(raw: string, display?: LinkDisplay, title?: stri
       return target.url
   }
 }
+
+export interface LinkPaste {
+  kind: 'link'
+  text: string
+  target: string
+  wantsTitle: boolean
+}
+
+/** The editor's deferred title rewrite reads this same function once its fetch lands, so a paste and its swap-in can never disagree about the form. */
+export function linkMarkdown(url: string, display: LinkDisplay, title?: string): string {
+  return serializeLink({ url, alias: linkDisplayText(url, display, title) })
+}
+
+/** Every writer of a formatted link — paste, Paste As, Format rewrite — comes through here, so a link waiting on a title is announced the same way regardless of how it came to be. */
+export function linkPaste(url: string, display: LinkDisplay, title?: string): LinkPaste {
+  return {
+    kind: 'link',
+    text: linkMarkdown(url, display, title),
+    target: url,
+    wantsTitle: display === 'link-title' && title === undefined,
+  }
+}

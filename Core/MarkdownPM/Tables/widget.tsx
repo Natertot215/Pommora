@@ -42,12 +42,11 @@ import {
   type TablePayload,
 } from '../Engine/Tables/clipboard'
 import { blockDeleteSpan } from '../Menus/gripMenu'
-import { tableMergeGuard, tablePasteGuard } from './guard'
+import { tableMergeGuard, tablePasteGuard } from '../Guards/tableGuard'
 import type { TableModel } from '../Engine/Tables/model'
 import type { ConnectionsApi } from '../Links/connectionsApi'
 import type { TableMenuAction, TableMenuContext } from '@pommora/core/MarkdownPM/Tables/tableMenu'
-import { editorHost } from '../api'
-import { resolutionNudge } from '../Embeds/embedWidget'
+import { editorHost, resolutionNudge } from '../api'
 import type { HeadingLinkStyle } from '../../Settings/personalization'
 
 type ConnGetter = () => ConnectionsApi | undefined

@@ -8,7 +8,12 @@ import type { EditorMenuRequest } from '@pommora/core/Actions/editorMenu'
 import { buildPageIndex } from '@pommora/core/Connections/pageIndex'
 import { showConnectionMenu } from '../../Interface/Menus/connectionMenuActions'
 import type { ConnectionsApi } from '../Links/connectionsApi'
-import { cleanupEditor, editorContainer, mountEditor, stubEditorBridge } from '../editorHarness'
+import {
+  cleanupEditor,
+  editorContainer,
+  mountEditor,
+  stubEditorBridge,
+} from '../../Testing/editorHarness'
 
 if (!('ResizeObserver' in globalThis)) {
   ;(globalThis as { ResizeObserver?: unknown }).ResizeObserver = class {

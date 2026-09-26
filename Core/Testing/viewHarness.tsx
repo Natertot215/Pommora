@@ -5,7 +5,7 @@ import { createRoot, type Root } from 'react-dom/client'
 import { afterEach, beforeEach, vi } from 'vitest'
 import type { CollectionNode } from '@pommora/core/Nexus/tree'
 import type { PropertyDefinition } from '@pommora/core/Properties/properties'
-import { stubPointerCapture } from '@pommora/uix/Interactions/pointerHarness'
+import { stubPointerCapture } from '@pommora/uix/Testing/pointerHarness'
 import { ViewHost } from '../Views/Host/ViewHost'
 
 class ResizeObserverStub {

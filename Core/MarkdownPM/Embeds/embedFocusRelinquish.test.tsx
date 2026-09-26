@@ -2,7 +2,12 @@
 import { afterEach, describe, expect, it } from 'vitest'
 import type { ConnectionsApi } from '../Links/connectionsApi'
 import { buildPageIndex } from '@pommora/core/Connections/pageIndex'
-import { cleanupEditor, editorContainer, mountEditor, stubEditorBridge } from '../editorHarness'
+import {
+  cleanupEditor,
+  editorContainer,
+  mountEditor,
+  stubEditorBridge,
+} from '../../Testing/editorHarness'
 
 stubEditorBridge()
 afterEach(cleanupEditor)

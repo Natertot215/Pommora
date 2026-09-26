@@ -13,7 +13,7 @@ import {
   useEscort,
   type Escort,
 } from './engine'
-import { firePointer, pressEscape, stubPointerCapture, stubRect } from './pointerHarness'
+import { firePointer, pressEscape, stubPointerCapture, stubRect } from '../Testing/pointerHarness'
 import { DEFAULT_FEEL } from '../Animations/feel'
 import { type Box, SETTLE_FALLBACK } from './shared'
 ;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true

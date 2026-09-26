@@ -13,7 +13,6 @@ import {
   embedTiles,
   refreshTileZooms,
   rerenderWebTiles,
-  resolutionNudge,
   setEmbedHeights,
   setEmbedZooms,
 } from './Embeds/embedWidget'
@@ -21,6 +20,7 @@ import { type PageStats, rangeStats } from './Engine/subfieldStats'
 import { codeHighlight, codeLanguages } from './codeHighlight'
 import { registerScrollHeal } from './Embeds/scrollHeal'
 import { calloutGuard } from './Guards/calloutGuard'
+import { embedGuard } from './Guards/embedGuard'
 import { headingRenameSettle } from './Guards/headingRenameSettle'
 import { citationGuard } from './Guards/citationGuard'
 import { citationHost, citationOrder } from './Citations/citationActions'
@@ -29,18 +29,17 @@ import { markdownFolding, applySavedFolds, applyCitationsVisibility } from './fo
 import { useFormatGate } from './Input/useFormatGate'
 import { inlineSurface } from './surface'
 import {
-  acKeys,
   useConnectionAutocomplete,
   detectConnectionQuery,
   sectionArmAfter,
-  whenAcOpen,
 } from './Autocomplete/useConnectionAutocomplete'
+import { paneKeys, whenPaneOpen } from './Menus/caretPane'
 import { AutocompletePane } from './Autocomplete/AutocompletePane'
 import { BlockMenu } from './Menus/BlockMenu'
 import { detectBlockQuery, useBlockMenu } from './Menus/useBlockMenu'
 import type { ConnectionsApi } from './Links/connectionsApi'
 import type { WarmSeam } from './warmSeam'
-import { type EditorHost, editorHost, mirrorBody, mirrored } from './api'
+import { type EditorHost, editorHost, mirrorBody, mirrored, resolutionNudge } from './api'
 import { useLatest } from '@pommora/uix/Utilities/stableApi'
 import './markdown-pm.css'
 
@@ -171,7 +170,7 @@ export function MarkdownEditor({
   }, [pane.ac])
 
   useEffect(() => {
-    const acCtls = [acCtl, block.ctl]
+    const paneCtls = [acCtl, block.ctl]
     const parent = editorRef.current
     if (!parent) return
     const prefs = hostRef.current.prefs
@@ -184,7 +183,10 @@ export function MarkdownEditor({
       EditorState.changeFilter.of((tr) => !(tr.startState.readOnly && tr.docChanged)),
       history(),
       Prec.highest(
-        keymap.of([...acKeys(acCtls), { key: 'Enter', run: whenAcOpen(acCtls, (c) => c.pick()) }]),
+        keymap.of([
+          ...paneKeys(paneCtls),
+          { key: 'Enter', run: whenPaneOpen(paneCtls, (c) => c.pick()) },
+        ]),
       ),
       markdownInput,
       formatExt,
@@ -200,6 +202,7 @@ export function MarkdownEditor({
         ancestors: embedAncestorsRef.current,
         tabActive: () => activeRef.current,
       }),
+      embedGuard,
       calloutDragExtension,
       blockquoteDragExtension,
       calloutGuard,

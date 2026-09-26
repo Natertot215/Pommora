@@ -9,7 +9,7 @@ import { MD_LINK_CLASS } from '../decorations'
 import { resolveMdTarget, type ConnectionsApi } from './connectionsApi'
 import { buildPageIndex, type ConnPage } from '@pommora/core/Connections/pageIndex'
 import { renderCellContent } from '../Tables/cellStatic'
-import { cleanupEditor, mountEditor, seedHost, stubEditorBridge } from '../editorHarness'
+import { cleanupEditor, mountEditor, seedHost, stubEditorBridge } from '../../Testing/editorHarness'
 import { scanDoc } from '../Engine/docScan'
 
 class ResizeObserverStub {

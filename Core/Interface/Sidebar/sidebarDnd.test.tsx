@@ -9,7 +9,7 @@ import {
   pressEscape,
   stubPointerCapture,
   stubRect,
-} from '@pommora/uix/Interactions/pointerHarness'
+} from '@pommora/uix/Testing/pointerHarness'
 import { DISCLOSURE_INDENT } from '@pommora/uix/Theme/theme-vars.css'
 import { SidebarDnd, useSidebarDrag } from './sidebarDnd'
 import { buildIndex } from './sidebarDndModel'

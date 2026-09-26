@@ -11,6 +11,7 @@ const LINK_DEST = (min: 0 | 1): string =>
 export const markdownLinkRegex = (): RegExp =>
   new RegExp(`\\[${LINK_LABEL(1)}\\]\\(${LINK_DEST(1)}\\)`, 'dg')
 
+/** Every other link grammar refuses empty halves, so the surfaces that recognize a link mid-authoring read this one. */
 export const emptyTolerantLinkRegex = (): RegExp =>
   new RegExp(`\\[${LINK_LABEL(0)}\\]\\(${LINK_DEST(0)}\\)`, 'dg')
 
@@ -20,6 +21,23 @@ export function escapeAlias(alias: string): string {
 
 export function unescapeAlias(alias: string): string {
   return alias.replace(/\\(.)/g, '$1')
+}
+
+/** The ONLY assembly path: `serializeLink` emits no bang and collapses an empty alias to the bare URL, so composing through it would write a line the detector refuses. */
+export function composeWebpageEmbedLine(label: string, url: string): string {
+  return `![${escapeAlias(label)}](${url})`
+}
+
+/** Two shapes count: a complete link, empty halves included (⌘K seats the caret inside `[]()`), and a destination still open before the caret. */
+export function linkDestinationAt(lineText: string, col: number): boolean {
+  for (const m of lineText.matchAll(emptyTolerantLinkRegex())) {
+    const span = m.indices?.[2]
+    if (!span || span[0] > col) break
+    if (col >= span[0] && col <= span[1]) return true
+  }
+  const head = lineText.slice(0, col)
+  const open = head.lastIndexOf('](')
+  return open !== -1 && !head.slice(open + 2).includes(')')
 }
 
 // `encodeURI` leaves parens and colons alone; a raw colon declares a target a URL and a lone `(` leaves the link untokenizable, so both are escaped on top. A lone surrogate makes encodeURI throw, and the rename cascade calls this unwrapped.

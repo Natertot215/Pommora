@@ -3,7 +3,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import { act } from 'react'
 import type { ConnectionsApi } from './connectionsApi'
 import { buildPageIndex } from '@pommora/core/Connections/pageIndex'
-import { cleanupEditor, mountEditor, stubEditorBridge } from '../editorHarness'
+import { cleanupEditor, mountEditor, stubEditorBridge } from '../../Testing/editorHarness'
 
 class ResizeObserverStub {
   observe(): void {}

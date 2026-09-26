@@ -1,5 +1,4 @@
 import { lineIndexAt, quotePrefix } from './markdownCode'
-import { loneWebpageEmbed } from '@pommora/core/MarkdownPM/Embeds/webpageEmbed'
 import { chunksOver, scanDoc, type DocScan } from './docScan'
 import { holdsTokens, type Token, tokenize } from './tokens'
 import { perText } from './perText'
@@ -9,6 +8,7 @@ import {
   headingParts,
   isThematicBreakLine,
   loneEmbedTitle,
+  loneWebpageEmbed,
   markerRegex,
   parseListMarker,
 } from './detect'

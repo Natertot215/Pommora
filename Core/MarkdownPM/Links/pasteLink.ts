@@ -1,20 +1,17 @@
 import { EditorView } from '@codemirror/view'
-import {
-  decidePaste,
-  pastedUrl,
-  type LinkPaste,
-} from '@pommora/core/MarkdownPM/Links/pasteDecision'
+import { decidePaste, pastedUrl } from '@pommora/core/MarkdownPM/Links/pasteDecision'
+import type { LinkPaste } from '@pommora/core/Connections/linkValue'
 import { pasteAsTarget, pasteAsWrite, type PasteAsForm } from '@pommora/core/Actions/pasteAsMenu'
-import { linkDestinationAt } from '@pommora/core/MarkdownPM/Embeds/webpageEmbed'
+import { linkDestinationAt } from '@pommora/core/Connections/links'
 import { matchesCommand } from '@pommora/uix/Interactions/chords'
 import { docScan, docString } from '../docCache'
 import { inCodeAt } from '../Engine/docScan'
-import { trimmedRange } from '../Input/edits'
 import { insertCitation } from '../Citations/citationActions'
 import { citationText } from '../Citations/citationEdits'
 import { embedSeatAt } from '../Embeds/embedInsert'
 import { awaitTitle } from './pendingTitle'
 import { editorHost } from '../api'
+import { trimmedRange } from '../Engine/markdownCode'
 
 /** Deciding and writing are separate so a paste can be claimed on the decision alone — claiming after the write would leave the original text pasted alongside the link. */
 function linkFor(view: EditorView, text: string, inverse: boolean): LinkPaste | null {

@@ -2,7 +2,7 @@
 import { detail } from '@pommora/core/Testing/fixtures'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { ok } from '@pommora/core/Contract/result'
-import { NO_PREFS } from '../MarkdownPM/editorHarness'
+import { NO_PREFS } from '../Testing/editorHarness'
 import { makeTree } from '@pommora/core/Testing/testTree'
 import type { PageMeta } from '@pommora/core/Nexus/schemas'
 import { act, createElement } from 'react'

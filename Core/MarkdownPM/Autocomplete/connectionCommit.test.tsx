@@ -10,7 +10,7 @@ import {
   mountEditor,
   seedHost,
   stubEditorBridge,
-} from '../editorHarness'
+} from '../../Testing/editorHarness'
 
 class ResizeObserverStub {
   observe(): void {}

@@ -2,7 +2,12 @@
 import { afterEach, describe, expect, it } from 'vitest'
 import { act } from 'react'
 import type { EditorView } from '@codemirror/view'
-import { cleanupEditor, editorContainer, mountEditor, stubEditorBridge } from '../editorHarness'
+import {
+  cleanupEditor,
+  editorContainer,
+  mountEditor,
+  stubEditorBridge,
+} from '../../Testing/editorHarness'
 
 ;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
 if (!('ResizeObserver' in globalThis)) {

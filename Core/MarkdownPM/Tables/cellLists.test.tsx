@@ -2,7 +2,12 @@
 import { afterEach, describe, expect, it } from 'vitest'
 import { act } from 'react'
 import { EditorView } from '@codemirror/view'
-import { cleanupEditor, editorContainer, mountEditor, stubEditorBridge } from '../editorHarness'
+import {
+  cleanupEditor,
+  editorContainer,
+  mountEditor,
+  stubEditorBridge,
+} from '../../Testing/editorHarness'
 import { cellToDisplay, cellToSource } from '../Engine/Tables/codec'
 import { linkTokenAt, tokenize } from '../Engine/tokens'
 import { decorationsFor } from '../../Testing/markdownEngine'

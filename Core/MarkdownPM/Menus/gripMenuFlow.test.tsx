@@ -4,7 +4,7 @@ import { act } from 'react'
 import type { EditorView } from '@codemirror/view'
 import type { ConnectionsApi } from '../Links/connectionsApi'
 import { buildPageIndex } from '@pommora/core/Connections/pageIndex'
-import { cleanupEditor, mountEditor, seedHost, stubEditorBridge } from '../editorHarness'
+import { cleanupEditor, mountEditor, seedHost, stubEditorBridge } from '../../Testing/editorHarness'
 import { type GripMenuAction, type PickNode, gripMenuItems } from '@pommora/core/Actions/gripMenu'
 import type { ActionItem } from '@pommora/core/Actions/menuModel'
 
