@@ -402,7 +402,6 @@ export function FilterFrame({
   }
 
   const decoded: DecodedFilter = decodeFilter(liveView.filter)
-  const enabled = viewFlag(liveView, 'filter_enabled')
   const rows: FilterRow[] = decoded.kind === 'rows' ? decoded.rows : []
   const decodedMode: MatchMode = decoded.kind === 'rows' ? decoded.mode : 'all'
   const mode: MatchMode = rows.length === 0 ? (pendingMode ?? decodedMode) : decodedMode
@@ -723,7 +722,7 @@ export function FilterFrame({
           trailing={
             <PickerControl
               ariaLabel="Filter active"
-              value={enabled ? 'on' : 'off'}
+              value={viewFlag(liveView, 'filter_enabled') ? 'on' : 'off'}
               options={ACTIVE_OPTIONS}
               onPick={(v) => setEnabled(v === 'on')}
             />

@@ -16,14 +16,14 @@ export const switchRows = (
   save: (next: SavedView) => void,
 ): MenuRow[] =>
   entries.map((e) => {
-    const stored = viewFlag(view, e.key)
+    const on = viewFlag(view, e.key)
     return {
       kind: 'item',
       icon: <Icon name={e.icon} size={ICON.rootEntry} />,
       label: e.label,
       trailing: {
         kind: 'switch',
-        checked: e.invert ? !stored : stored,
+        checked: e.invert ? !on : on,
         ariaLabel: e.label,
         onChange: (next) => save({ ...view, [e.key]: e.invert ? !next : next }),
       },
