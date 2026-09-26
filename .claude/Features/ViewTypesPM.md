@@ -11,7 +11,7 @@ The **active view** is the container sidecar's `active_view` field, so the view 
 
 ### Creation
 
-Every renderer creates through one act (`useViewCreation.ts`): the page exists on disk as Untitled the moment a gesture fires, stamped with the values its birth context implies — the band's group value, and values on the active sort criteria that carry one (Select, Status, Checkbox, Number, Date) — with its order settled in the same act, and the renderer opens its own naming field over the row already real. Pages created within groups or filtering configurations inherit the values required to match it. 
+Every renderer creates through one act (`useViewCreation.ts`): the page exists on disk as Untitled the moment a gesture fires, stamped with the values its birth context implies — the band's group value, and values on the active sort criteria that carry one (Select, Status, Checkbox, Number, Date) — with its order settled in the same act, and the renderer opens its own naming field over the row already real. A page created in a filtered view takes the value each of its Is rules names when the rule holds one Select, Status, or Checkbox value outside an Any group; a page the other rules exclude is created outside the view. 
 
 Every renderer also shares the **hover ghost** (`UIX/Interactions/ghostCreate.ts`): dwelling on a row or card extends a ghost "New Page" beneath it at the inactive dim, on that renderer's own chrome, with click-to-create actions. Views created within a collection or set without pages are use the ghosting mechanism, where a persisted ghosted page is displayed to offer creation in the otherwise empty view. 
 

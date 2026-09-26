@@ -64,5 +64,5 @@ The tunables are custom properties declared at `:root`, overridable on any ances
 
 #### Pending
 
-- **The CalendarPicker's range drag** stays on its own lifecycle; it belongs to the scrub family rather than the drag one.
+- **The CalendarPicker's day drag** stays on its own lifecycle; it belongs to the scrub family rather than the drag one.
 - **Mobile readiness** — the sensor and collision layers keep it viable (draggables opt out of native panning, `pointercancel` tears a gesture down, collision math never bakes in hit-target sizes); a touch pass adds a press-delay alongside the travel-distance activation.
