@@ -25,6 +25,27 @@ describe('filterSeeds', () => {
     })
   })
 
+  it('seeds the one chip a Select or Status Is rule saves, and nothing from two', () => {
+    const filter: FilterGroup = {
+      match: 'all',
+      rules: [
+        { property_id: 'p_status', op: 'is', values: ['Done'] },
+        { property_id: 'p_sel', op: 'is', values: ['a', 'b'] },
+      ],
+    }
+    expect(filterSeeds(filter, true, schema)).toEqual({
+      p_status: { kind: 'select', value: 'Done' },
+    })
+  })
+
+  it("seeds nothing from Isn't Checked", () => {
+    const filter: FilterGroup = {
+      match: 'all',
+      rules: [{ property_id: 'p_check', op: 'is', value: 'false' }],
+    }
+    expect(filterSeeds(filter, true, schema)).toEqual({})
+  })
+
   it('derives nothing from Any-mode groups, negatives, presence ops, or non-derivable types', () => {
     const any: FilterGroup = {
       match: 'any',
