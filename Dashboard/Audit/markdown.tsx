@@ -1,3 +1,4 @@
+// biome-ignore-all lint/suspicious/noArrayIndexKey: parsed Markdown blocks, rows, and cells are plain strings with no identity but their position — the index IS the key.
 import type { ReactNode } from 'react'
 
 // A deliberately small Markdown subset: paragraphs, bullet and numbered lists, pipe tables, and

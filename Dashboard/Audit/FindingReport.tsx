@@ -83,6 +83,7 @@ function Dots({ parts }: { parts: ReactNode[] }): React.JSX.Element {
   return (
     <>
       {parts.filter(Boolean).map((p, i) => (
+        // biome-ignore lint/suspicious/noArrayIndexKey: the parts are positional by definition
         <Fragment key={i}>
           {i > 0 && ' · '}
           {p}
@@ -165,6 +166,7 @@ export function FindingReport({
           {f.fix && (
             <ol className="au-steps">
               {steps.map((s, i) => (
+                // biome-ignore lint/suspicious/noArrayIndexKey: a fix's steps are plain strings with no identity but their position
                 <li key={i}>
                   <Inline text={s} />
                   {i === steps.length - 1 && f.size && (

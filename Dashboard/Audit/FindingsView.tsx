@@ -54,7 +54,7 @@ export function FindingsView({
         )}
       </div>
       <div className="au-results">
-        {findings.map((f, i) => shown.has(f) && <FindingReport key={i} finding={f} level={3} />)}
+        {findings.map((f) => shown.has(f) && <FindingReport key={f.id} finding={f} level={3} />)}
       </div>
     </>
   )

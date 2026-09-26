@@ -46,7 +46,7 @@ function GroupSection({
       {group.body && <Markdown source={group.body} />}
       <Totals findings={group.findings} />
       <div id={panel} hidden={!open}>
-        {open && group.findings.map((f, i) => <FindingReport key={i} finding={f} level={5} />)}
+        {open && group.findings.map((f) => <FindingReport key={f.id} finding={f} level={5} />)}
       </div>
     </section>
   )
