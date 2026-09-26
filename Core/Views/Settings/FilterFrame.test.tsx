@@ -2,7 +2,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { act } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
-import type { CollectionNode } from '@pommora/core/Nexus/tree'
+import type { CollectionNode, NexusTree } from '@pommora/core/Nexus/tree'
 import type { PropertyDefinition } from '@pommora/core/Properties/properties'
 import type { SavedView } from '@pommora/core/Views/views'
 import { FilterFrame, type FilterView } from './FilterFrame'
@@ -58,14 +58,14 @@ mountEachTest((h, r) => {
 })
 let saveSpy: ReturnType<typeof vi.fn<(next: FilterView) => void>>
 
-const mount = async (v: SavedView): Promise<void> => {
+const mount = async (v: SavedView, tree: NexusTree | null = null): Promise<void> => {
   await act(async () => {
     root.render(
       <FilterFrame
         locations={source.sets}
         view={v}
         schema={schema}
-        tree={null}
+        tree={tree}
         label="Settings"
         onBack={() => {}}
         onCommit={saveSpy}
@@ -444,27 +444,28 @@ describe('FilterFrame value editors', () => {
     expect(rule.values).toEqual(['todo', 'done'])
   })
 
+  const contextRule = view({
+    filter: { match: 'all', rules: [{ property_id: 'g1', op: 'contains_any' }] },
+  })
+
   it('a Context rule lists its Spaces with their icons', async () => {
     const tree = linkedSpacesTree()
     tree.contexts[0].spaces[0].icon = 'hash'
-    await act(async () => {
-      root.render(
-        <FilterFrame
-          locations={source.sets}
-          view={view({ filter: { match: 'all', rules: [{ property_id: 'g1', op: 'contains_any' }] } })}
-          schema={schema}
-          tree={tree}
-          label="Settings"
-          onBack={() => {}}
-          onCommit={saveSpy}
-        />,
-      )
-    })
+    await mount(contextRule, tree)
     await click(host.querySelector('[aria-label="Filter values"]'))
     const row = [...document.querySelectorAll('[role="button"]')].find(
       (el) => el.textContent === 'Work',
     )
+    expect(row).toBeDefined()
     expect(row?.querySelector('.lucide-hash')).not.toBeNull()
+  })
+
+  it('a Context with no Spaces says so', async () => {
+    const tree = linkedSpacesTree()
+    tree.contexts[0].spaces = []
+    await mount(contextRule, tree)
+    await click(host.querySelector('[aria-label="Filter values"]'))
+    expect(document.body.textContent).toContain('No options yet.')
   })
 
   it('two rapid picks inside the refetch window accumulate — the second never drops the first', async () => {
