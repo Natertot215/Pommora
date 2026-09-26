@@ -1,8 +1,9 @@
-// A rule stamps only when it names one value it can be satisfied by: an Is rule on a single-value property, or an Is Any, Is All, or Contains rule on a Multi-Select or a Context. Metadata is never changed to satisfy a filter, and a page those exclude simply creates and stays filtered out.
+// A rule stamps only when it names one value it can be satisfied by: an Is rule on a Select, Status, or Checkbox, or an Is Any, Is All, or Contains rule on a Multi-Select or a Context, where two such rules on one property take both values. Metadata is never changed to satisfy a filter, and a page those exclude simply creates and stays filtered out.
 
 import type { PropertyDefinition } from '@pommora/core/Properties/properties'
 import type { PropertyValue } from '@pommora/core/Properties/propertyValue'
 import type { FilterGroup, FilterRule } from '@pommora/core/Views/views'
+import { declaredType } from '@pommora/core/Properties/value'
 import { FILTER_OPS, ruleOperands } from './filter'
 import { groupKeyToValue } from '../reassign'
 
@@ -15,11 +16,13 @@ function ruleSeed(
 ): PropertyValue | null {
   const operands = ruleOperands(rule)
   if (operands.length !== 1) return null
-  if (contextIds.includes(rule.property_id))
-    return LIST_OPS.has(rule.op) ? { kind: 'context', value: operands } : null
-  const type = schema.find((d) => d.id === rule.property_id)?.type
-  if (type === 'multi_select')
-    return LIST_OPS.has(rule.op) ? { kind: 'multiSelect', value: operands } : null
+  const type = declaredType(rule.property_id, schema, contextIds)
+  if (type === 'context' || type === 'multi_select') {
+    if (!LIST_OPS.has(rule.op)) return null
+    return type === 'context'
+      ? { kind: 'context', value: operands }
+      : { kind: 'multiSelect', value: operands }
+  }
   return rule.op === FILTER_OPS.is ? groupKeyToValue(operands[0], type) : null
 }
 
@@ -40,7 +43,12 @@ export function filterSeeds(
         continue
       }
       const value = ruleSeed(entry, schema, contextIds)
-      if (value !== null) seeds[entry.property_id] = value
+      if (value === null) continue
+      const prior = seeds[entry.property_id]
+      seeds[entry.property_id] =
+        (value.kind === 'context' || value.kind === 'multiSelect') && prior?.kind === value.kind
+          ? { ...value, value: [...new Set([...prior.value, ...value.value])] }
+          : value
     }
   }
   walk(filter)
