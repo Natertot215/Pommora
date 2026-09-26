@@ -29,8 +29,13 @@ describe('matching an editor’s ask to the click', () => {
     expect(atClick(req(101, 41), { x: 126, y: 51 }, 1.25)).toBe(true)
   })
 
-  it('refuses a click three pixels away', () => {
+  it('widens with the zoom, since the renderer’s click is whole CSS pixels', () => {
+    expect(atClick(req(282, 329), { x: 849, y: 990 }, 3)).toBe(true)
+  })
+
+  it('refuses a click farther than that slack', () => {
     expect(atClick(req(100, 40), { x: 103, y: 40 }, 1)).toBe(false)
+    expect(atClick(req(100, 40), { x: 304, y: 120 }, 3)).toBe(false)
   })
 })
 
