@@ -278,29 +278,27 @@ class TableWidget extends ReactWidget {
       if (region) startBlockDrag(view, e, { from: region.from, to: region.to })
     }
     const onMenu = (ctx: TableMenuContext): void => {
+      const at = docScan(view.state.doc)
+      const opened = at.tables[this.tableIndex]
+      if (!opened) return
+      // The menu can stand open while an undo or a sync moves the document, so the action re-finds its table and stands down if it changed.
+      const source = at.text.slice(opened.from, opened.to)
       void host.menus.table(ctx).then((action) => {
         if (!action) return
+        const scan = docScan(view.state.doc)
+        const region = scan.tables[this.tableIndex]
+        if (!region || scan.text.slice(region.from, region.to) !== source) return
         if (action === 'col:toggle-heading') {
           view.dispatch({ effects: toggleHeadingColEffect.of(this.tableIndex) })
           return
         }
-        const scan = docScan(view.state.doc)
-        const region = scan.tables[this.tableIndex]
-        if (!region) return
-        const copy = copyTextFor(
-          action,
-          ctx.index,
-          scan.text.slice(region.from, region.to),
-          modelFromRegion(region),
-        )
+        const model = modelFromRegion(region)
+        const copy = copyTextFor(action, ctx.index, source, model)
         if (copy !== null) {
           toClipboard(copy)
           return
         }
-        if (
-          action === 'table:delete' ||
-          (action === 'col:delete' && modelFromRegion(region).columns.length <= 1)
-        ) {
+        if (action === 'table:delete' || (action === 'col:delete' && model.columns.length <= 1)) {
           view.dispatch({ changes: { from: region.from, to: region.to, insert: '' } })
           return
         }

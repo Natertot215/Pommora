@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { describe, it, expect, beforeEach, afterEach } from 'vitest'
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 import { act } from 'react'
 import { undo } from '@codemirror/commands'
 import { EditorView } from '@codemirror/view'
@@ -417,6 +417,27 @@ describe('copying an unbound citation', () => {
       applyCitationAction(view, 'cite:copy', { kind: 'citation', label: 'lost' })
     })
     expect(written).toEqual(['[^lost]'])
+  })
+
+  it('offers Copy from a read-only page’s row and leaves the page alone', async () => {
+    const body = 'body[^a] here\n\n[^a]: the citation'
+    const write = vi.fn(async () => {})
+    const citation = vi.fn(async () => 'cite:copy' as const)
+    const view = await mountEditor({
+      initialBody: body,
+      citationsShown: true,
+      readOnly: true,
+      host: { menus: { citation }, clipboard: { write } },
+    })
+    const row = view.dom.querySelector('.cm-line.md-citation') as HTMLElement
+    const event = new MouseEvent('contextmenu', { bubbles: true, cancelable: true })
+    await act(async () => {
+      row.dispatchEvent(event)
+    })
+    expect(event.defaultPrevented).toBe(true)
+    expect(citation).toHaveBeenCalledWith({ subject: 'citation', editable: false })
+    expect(write).toHaveBeenCalledWith('[^a]')
+    expect(doc(view)).toBe(body)
   })
 })
 

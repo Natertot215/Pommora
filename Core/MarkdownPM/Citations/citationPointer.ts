@@ -109,7 +109,6 @@ export function citationRowPointer(): Extension {
 export function citationRowMenu(): Extension {
   return EditorView.domEventHandlers({
     contextmenu(event, view) {
-      if (view.state.readOnly) return false
       const line = (event.target as HTMLElement).closest?.(
         '.cm-line.md-citation, .cm-line.md-citation-continued',
       )
@@ -122,7 +121,7 @@ export function citationRowMenu(): Extension {
       event.preventDefault()
       void view.state
         .facet(editorHost)
-        .menus.citation({ subject: 'citation', editable: true })
+        .menus.citation({ subject: 'citation', editable: !view.state.readOnly })
         .then((action) => {
           if (action) applyCitationAction(view, action, { kind: 'citation', label: entry.label })
         })

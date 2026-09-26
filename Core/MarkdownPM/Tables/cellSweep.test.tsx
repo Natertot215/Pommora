@@ -177,9 +177,32 @@ describe('a swept cell rectangle', () => {
     await mount({ onClearCells, onCopyText })
     await sweepDown()
     expect((await press(document.body, 'Backspace')).defaultPrevented).toBe(true)
-    expect(onClearCells).toHaveBeenCalledOnce()
+    expect(onClearCells).toHaveBeenCalledExactlyOnceWith(0, 0, 1, 0)
     await press(editor, 'c', true)
     expect(onCopyText).toHaveBeenCalledOnce()
+  })
+
+  it('cuts with ⌘X: the rectangle is copied, then cleared', async () => {
+    const onClearCells = vi.fn()
+    const onCopyText = vi.fn()
+    await mount({ onClearCells, onCopyText })
+    await sweepDown()
+    await press(document.body, 'x', true)
+    expect(onCopyText).toHaveBeenCalledExactlyOnceWith('| A |\n| one |')
+    expect(onClearCells).toHaveBeenCalledExactlyOnceWith(0, 0, 1, 0)
+    expect(onCopyText.mock.invocationCallOrder[0]).toBeLessThan(
+      onClearCells.mock.invocationCallOrder[0],
+    )
+  })
+
+  it('pastes with ⌘V into the rectangle’s first cell', async () => {
+    const onFill = vi.fn()
+    const readClipboard = vi.fn(async () => 'x')
+    await mount({ onFill, readClipboard })
+    await sweepDown()
+    await press(document.body, 'v', true)
+    await act(async () => {})
+    expect(onFill).toHaveBeenCalledExactlyOnceWith(0, 0, { kind: 'rect', grid: [['x']] })
   })
 
   it('leaves Delete, ⌘C, ⌘X, and ⌘V typed into an unrelated field to that field', async () => {
