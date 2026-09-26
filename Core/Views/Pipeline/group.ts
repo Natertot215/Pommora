@@ -371,14 +371,28 @@ export function groupsStructurally(
   return !groupable(declaredType(group.property_id, schema))
 }
 
-/** The grouping a view's property bands follow: its property group when the engine draws it, else the sub-group it names inside Set bands, which the engine draws only when `groupable`; a flat view has none. */
+/** The sub-group the engine draws inside Set bands: a view grouped by Set, sub-grouped by a groupable property. */
+export function drawnSubGroup(
+  view: { group?: GroupConfig; sub_group?: SubGroupConfig },
+  schema: PropertyDefinition[],
+): SubGroupConfig | undefined {
+  const { group, sub_group } = view
+  return groupsStructurally(group, schema) &&
+    sub_group &&
+    groupable(declaredType(sub_group.property_id, schema))
+    ? sub_group
+    : undefined
+}
+
+/** The grouping a view's property bands follow: its property group when the engine draws it, else the sub-group it draws inside Set bands. */
 export function bandGrouping(
   view: { group?: GroupConfig; sub_group?: SubGroupConfig },
   schema: PropertyDefinition[],
 ): PropertyGroup | SubGroupConfig | undefined {
-  const { group, sub_group } = view
-  if (group?.kind === 'property' && !groupsStructurally(group, schema)) return group
-  return group?.kind === 'flat' ? undefined : sub_group
+  const { group } = view
+  return group?.kind === 'property' && !groupsStructurally(group, schema)
+    ? group
+    : drawnSubGroup(view, schema)
 }
 
 export function resolveGroups(
@@ -398,7 +412,7 @@ export function resolveGroups(
   if (!groupsStructurally(group, schema))
     return property(rows, group as PropertyGroup, schema, sorter, placement)
   if (flattenStructural) return structuralFlat(rows, setTree, sorter, placement)
-  if (subGroup && groupable(declaredType(subGroup.property_id, schema)))
-    return structuralSubGrouped(rows, setTree, subGroup, schema, sorter, placement)
+  const drawn = drawnSubGroup({ group, sub_group: subGroup }, schema)
+  if (drawn) return structuralSubGrouped(rows, setTree, drawn, schema, sorter, placement)
   return structural(rows, setTree, sorter, placement)
 }

@@ -37,6 +37,7 @@ import { useContainerValues } from '../Host/useValuesEpoch'
 import {
   bucketKey,
   bucketOrder,
+  drawnSubGroup,
   flattenContainer,
   groupsStructurally,
   subHiddenKey,
@@ -133,7 +134,7 @@ export function GroupFrame({
   )
   const activeDef =
     group.kind === 'property' ? schema.find((d) => d.id === group.property_id) : undefined
-  const subGroup = structural && !flat ? view.sub_group : undefined
+  const subGroup = flat ? undefined : drawnSubGroup(view, schema)
   const subDef = subGroup && schema.find((d) => d.id === subGroup.property_id)
   const dateHeadingProp = [activeDef, subDef].find((d) => d?.type === 'dateTime')?.id
 

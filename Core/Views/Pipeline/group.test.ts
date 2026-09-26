@@ -658,5 +658,7 @@ describe('bandGrouping', () => {
     expect(bandGrouping({ group: degraded, sub_group: sub }, schema)).toBe(sub)
     expect(bandGrouping({ group: { kind: 'structural' }, sub_group: sub }, schema)).toBe(sub)
     expect(bandGrouping({ group: { kind: 'flat' }, sub_group: sub }, schema)).toBeUndefined()
+    const gone = { property_id: 'prop_gone', order_mode: 'configured' } as const
+    expect(bandGrouping({ group: { kind: 'structural' }, sub_group: gone }, schema)).toBeUndefined()
   })
 })

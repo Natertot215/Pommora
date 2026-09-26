@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { groupable, type PropertyType, specOf } from '@pommora/core/Properties/properties'
+import { type PropertyType, specOf } from '@pommora/core/Properties/properties'
 import { UNGROUPED } from '@pommora/core/Views/viewRow'
 import type { CollectionNode, SetNode } from '@pommora/core/Nexus/tree'
 import type {
@@ -24,7 +24,13 @@ import { buildSetIcons, buildSetNames, buildSetPaths } from '../../Properties/Ce
 import { hideShown, unhide } from '../visibilityModel'
 import { resolveBandHead } from '../Bands/GroupBand'
 import { resolveContainerSchema } from '../Pipeline/pickView'
-import { bandGrouping, bucketKey, flattenContainer, groupsStructurally } from '../Pipeline/group'
+import {
+  bandGrouping,
+  bucketKey,
+  drawnSubGroup,
+  flattenContainer,
+  groupsStructurally,
+} from '../Pipeline/group'
 import { resolveView } from '../Pipeline/resolveView'
 import { searchGroups } from '../Pipeline/search'
 import { foldKey } from '../../Paths/caseFold'
@@ -117,11 +123,7 @@ export function useViewHost(
   const sortedOrGrouped = sortKeys > 0 || view.group != null
   const structuralGrouping = groupsStructurally(view.group, schema)
   // The engine's own sub-group rule: a flattened paint, or a sub_group it won't bucket, must not reassign against it.
-  const subGrouped =
-    structuralGrouping &&
-    !flattenStructural &&
-    view.sub_group !== undefined &&
-    groupable(declaredType(view.sub_group.property_id, schema))
+  const subGrouped = !flattenStructural && drawnSubGroup(view, schema) !== undefined
   const groupPropId =
     !structuralGrouping || subGrouped ? bandGrouping(view, schema)?.property_id : undefined
   const groupPropType = groupPropId ? declaredType(groupPropId, schema) : undefined

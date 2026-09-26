@@ -317,6 +317,11 @@ describe('GroupFrame rows', () => {
     expect(texts()).toContain('Sub-Group')
   })
 
+  it("a sub-group the engine won't draw reads as none: no Sub-Order row", async () => {
+    await mount(view({ sub_group: { property_id: 'prop_gone', order_mode: 'configured' } }))
+    expect(texts().split('Order').length - 1).toBe(1)
+  })
+
   it('switching Group By away and back preserves sub_group (view-level survival)', async () => {
     const v = view({
       sub_group: { property_id: 'prop_status', order_mode: 'manual', order: ['todo'] },
