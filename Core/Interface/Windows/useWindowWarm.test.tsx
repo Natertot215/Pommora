@@ -85,6 +85,17 @@ describe('useWindowWarm', () => {
     expect(el.scrollTop).toBe(240)
   })
 
+  it('leaves a scroller that already holds a place, as a parked page or a heading arrival does', async () => {
+    captureBodyScroll('tab1', 240)
+    const el = scroller()
+    el.scrollTop = 500
+    await act(async () => {
+      root.render(createElement(ScrollProbe, { el, ready: true }))
+    })
+    await twoFrames()
+    expect(el.scrollTop).toBe(500)
+  })
+
   it('holds the restore until the tab is ready, then lands it', async () => {
     onSpaceTab()
     captureBodyScroll('tab1', 240)
