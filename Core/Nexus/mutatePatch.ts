@@ -28,6 +28,7 @@ import {
   patchSpaceFromDisk,
 } from './watchPatch'
 import { flushSidecarWrites } from './valuesChanged'
+import { errText } from '../Contract/result'
 import { dropTileHeadingLinks } from '../Tiles/tilesFile'
 
 /** `'no-change'`: the op cannot move the tree. Null: no transform owns it, so the caller walks. */
@@ -211,7 +212,10 @@ export async function confirmBy(
   work: () => Promise<'ok' | 'refresh'>,
 ): Promise<NexusTree | null> {
   const before = getLiveTree()
-  let route = await work()
+  let route = await work().catch((e) => {
+    console.error('confirm: patch failed, walking:', errText(e))
+    return 'refresh' as const
+  })
   for (const dirRel of flushSidecarWrites(root)) {
     if (route === 'ok' && (await patchSpaceFromDisk(root, dirRel)) === 'refresh') route = 'refresh'
   }

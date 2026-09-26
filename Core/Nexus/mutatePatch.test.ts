@@ -88,6 +88,13 @@ describe('confirmMutation', () => {
     expect(await tilesLinkHeading(root, 'a', 'keep')).toBe(true)
   })
 
+  it('a confirm whose patch throws walks rather than failing the write it confirms', async () => {
+    await writeFile(abs('Notes', 'B.md'), `---\nID: ${ULID_B}\n---\n\nbeta\n`)
+    const tree = await confirmBy(root, () => Promise.reject(new Error('mid-read')))
+    expect(walkSpy).toHaveBeenCalledTimes(1)
+    expect(tree?.collections[0]?.pages.map((p) => p.id)).toEqual([ULID_A, ULID_B])
+  })
+
   it('a restored page reads back its one file — zero walks; a restored folder walks', async () => {
     await writeFile(abs('Notes', 'B.md'), `---\nID: ${ULID_B}\n---\n\nbeta\n`)
     const page = await confirmMutation(

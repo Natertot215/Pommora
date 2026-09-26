@@ -13,6 +13,7 @@ import chokidar from 'chokidar'
 import { startWatcher, stopWatcher } from './watcher'
 import { installStores, NO_STORES } from '@pommora/core/Platform/stores'
 import { memoryStores } from '@pommora/core/Testing/memoryStores'
+import * as indexSeed from '@pommora/core/Index/indexSeed'
 import { seedContentIndex } from '@pommora/core/Index/indexSeed'
 import { flushValueWrites, noteValueWrite } from '@pommora/core/Nexus/valuesChanged'
 
@@ -97,6 +98,21 @@ describe('the watcher settle', () => {
     expect(pushMock.mock.calls[1][2]).toEqual(['Notes/B.md', 'Notes/C.md'])
     expect(pushMock.mock.calls[2][2]).toEqual([{ rel: 'Notes', pageIds: [ULID_B, ULID_C] }])
     expect(getLiveTree()?.collections[0]?.pages).toHaveLength(3)
+  })
+
+  it('a patch that throws mid-batch walks instead, so the held tree still reaches the disk', async () => {
+    await startWatcher(root, win)
+    await writeFile(abs('Notes', 'B.md'), `---\nID: ${ULID_B}\n---\n\nbeta\n`)
+    const reading = vi
+      .spyOn(indexSeed, 'indexWrittenPage')
+      .mockRejectedValueOnce(new Error('mid-read'))
+    const logged = vi.spyOn(console, 'error').mockImplementation(() => {})
+    emit('add', 'Notes', 'B.md')
+    await settleAll(() => pushMock.mock.calls.some((c) => c[1] === 'nexus:changed'))
+    reading.mockRestore()
+    logged.mockRestore()
+    expect(getLiveTree()?.collections[0]?.pages.map((p) => p.id)).toEqual([ULID_A, ULID_B])
+    expect(pushMock.mock.calls.find((c) => c[1] === 'nexus:changed')?.[2]).toBe(getLiveTree())
   })
 
   it('pushes nothing when the batch changes nothing anyone renders', async () => {

@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 import { splitFrontmatter } from '../Files/pageFile'
 import { rm, mkdir, symlink, writeFile, readFile } from 'node:fs/promises'
-import { join } from '../Paths/posix'
+import { join, relative } from '../Paths/posix'
 import { tempRoot, windows } from '../Testing/hostFs'
 import {
   renameContextOp,
@@ -19,6 +19,7 @@ import { contextsRegistryFile, contextsDir, nexusDir } from '../Paths/paths'
 
 import { pathExists } from '../Files/atomicWrite'
 import { closeSession, openSession } from '../Nexus/session'
+import { flushSidecarWrites } from '../Nexus/valuesChanged'
 
 vi.mock('../Properties/governedSweep', async (importOriginal) => {
   const mod = await importOriginal<typeof import('../Properties/governedSweep')>()
@@ -288,6 +289,22 @@ describe('the sweep tells the truth about what it did (G-2)', () => {
     expect(captured).toContainEqual({ kind: 'page', values: ['Pommora', 'pommora'] })
     expect(captured).toContainEqual({ id: 'sp-cs', kind: 'space', values: ['Pommora'] })
     expect(captured).toHaveLength(3)
+  })
+
+  it('a sweep that misses a member puts each Space back and notes it, so the next confirm reads it again', async () => {
+    const original = sweepSpy.getMockImplementation()
+    sweepSpy.mockImplementationOnce(async (...args) => {
+      const swept = await original!(...args)
+      // A watcher settle between the strip and the rollback takes the strip's notes.
+      flushSidecarWrites(root)
+      return { ...swept, skipped: [join(root, 'Notes', 'Gone.md')] }
+    })
+    const { unlinkSpaceValue } = await import('./contextCascade')
+    await expect(unlinkSpaceValue(root, 'Projects', 'Pommora')).rejects.toThrow()
+    expect(JSON.parse(await readFile(csSidecar(), 'utf8'))['<Projects>']).toEqual(['Pommora'])
+    expect(flushSidecarWrites(root)).toEqual([
+      `${relative(root, contextsDir(root))}/Classes/CS 161`,
+    ])
   })
 
   it('unlinkSpaceValue captures the removed title per root; zero matches is an empty list', async () => {
