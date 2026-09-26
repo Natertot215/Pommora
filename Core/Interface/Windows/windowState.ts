@@ -17,7 +17,7 @@ const windowSetRecord = z.object({
 })
 
 const windowsFile = z.object({
-  sets: entriesOf(windowSetRecord.nullable()).catch({}),
+  sets: entriesOf(windowSetRecord).catch({}),
 })
 
 export function sanitizeWindows(raw: unknown): WindowsFile | null {

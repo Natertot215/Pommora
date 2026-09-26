@@ -167,10 +167,14 @@ describe('a nexus switch keeps none of the old nexus', () => {
     expect(useSession.getState().devicePrefs).toEqual({})
   })
 
-  it('a switch closes every window and pinned glance before the flush, even when it is canceled', async () => {
+  it('a switch closes every window and pinned glance before the switch is attempted, even when it is canceled', async () => {
+    let atChoose: ReturnType<Session['getState']> | undefined
     const { useSession } = await freshStore(
       async () => ok({}),
-      async () => ok(false),
+      async () => {
+        atChoose = useSession.getState()
+        return ok(false)
+      },
     )
     await useSession.getState().applyTree(treeAt('/a'))
     const page = { kind: 'page', id: 'x', path: 'x.md' } as const
@@ -178,6 +182,8 @@ describe('a nexus switch keeps none of the old nexus', () => {
     s.openWindowTab(page)
     s.openHistory(page)
     s.toggleSettings()
+    s.openBrowser('https://example.com')
+    s.toggleIteration()
     s.pinGlance({
       tabId: 't',
       target: page,
@@ -187,11 +193,15 @@ describe('a nexus switch keeps none of the old nexus', () => {
       size: { w: 100, h: 100 },
     })
     await useSession.getState().choose()
+    expect(atChoose).toMatchObject({
+      windowSlot: null,
+      historyTarget: null,
+      settingsOpen: false,
+      browserSummon: null,
+      iterationOpen: false,
+      pinnedGlances: [],
+    })
     const after = useSession.getState()
-    expect(after.windowSlot).toBeNull()
-    expect(after.historyTarget).toBeNull()
-    expect(after.settingsOpen).toBe(false)
-    expect(after.pinnedGlances).toEqual([])
     expect(after.status).not.toBe('error')
     expect(after.windowsFile.sets.page?.tabs).toEqual([{ target: { kind: 'page', id: 'x' } }])
   })

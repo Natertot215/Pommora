@@ -129,7 +129,7 @@ describe('windowTabs — the one durable page set (B-4)', () => {
     ])
     useSession.getState().closeWindowTab(useSession.getState().windowSlot!.tabs[0].id)
     expect(useSession.getState().windowSlot).toBeNull()
-    expect(useSession.getState().windowsFile.sets.page).toBeNull()
+    expect(useSession.getState().windowsFile.sets.page).toEqual({ tabs: [] })
     useSession.getState().openWindowTab(page('x'))
     expect(ids()).toEqual(['x'])
   })
@@ -149,7 +149,6 @@ describe('windowTabs — the one durable page set (B-4)', () => {
     useSession.setState({
       windowsFile: {
         sets: {
-          nav: null,
           page: {
             tabs: [{ target: { kind: 'page', id: 'x' } }, { target: { kind: 'page', id: 'y' } }],
           },
@@ -165,7 +164,6 @@ describe('windowTabs — the one durable page set (B-4)', () => {
     useSession.setState({
       windowsFile: {
         sets: {
-          nav: null,
           page: {
             tabs: [
               { target: { kind: 'space', id: 's1' } },
@@ -196,7 +194,7 @@ describe('windowTabs — the one durable page set (B-4)', () => {
   it('the map sentinel neither moves nor gets landed on', () => {
     useSession.setState({
       windowsFile: {
-        sets: { nav: { tabs: [{ target: { kind: 'page', id: 'x' } }] }, page: null },
+        sets: { nav: { tabs: [{ target: { kind: 'page', id: 'x' } }] } },
       },
     })
     useSession.getState().openNav()
@@ -215,7 +213,6 @@ describe('windowTabs — the nav kind (B-3)', () => {
     useSession.getState().openWindowTab(page('x'))
     const p = useSession.getState().windowSlot!
     expect(p.kind).toBe('nav')
-    expect(useSession.getState().windowSlot?.kind === 'nav').toBe(true)
     expect(ids()).toEqual(['map', 'x'])
     const file = useSession.getState().windowsFile
     expect(file.sets.nav?.tabs).toEqual([{ target: { kind: 'page', id: 'x' } }])
@@ -254,19 +251,17 @@ describe('windowTabs — the nav kind (B-3)', () => {
   it('openNav seeds the nav kind with the remembered set; closeWindow keeps it durable', () => {
     useSession.setState({
       windowsFile: {
-        sets: { nav: { tabs: [{ target: { kind: 'page', id: 'n' } }] }, page: null },
+        sets: { nav: { tabs: [{ target: { kind: 'page', id: 'n' } }] } },
       },
     })
     useSession.getState().openNav()
     const p = useSession.getState().windowSlot!
-    expect(useSession.getState().windowSlot?.kind === 'nav').toBe(true)
     expect(p.kind).toBe('nav')
     expect(ids()).toEqual(['map', 'n'])
     expect(p.activeTabId).toBe(p.tabs[0].id)
 
     useSession.getState().closeWindow()
     expect(useSession.getState().windowSlot).toBeNull()
-    expect(useSession.getState().windowSlot?.kind === 'nav').toBe(false)
     expect(useSession.getState().windowsFile.sets.nav?.tabs).toEqual([
       { target: { kind: 'page', id: 'n' } },
     ])

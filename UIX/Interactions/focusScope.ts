@@ -5,17 +5,25 @@ const FOCUSABLE =
 const tabStops = (root: HTMLElement): HTMLElement[] =>
   Array.from(root.querySelectorAll<HTMLElement>(FOCUSABLE))
 
+const returns = new Map<HTMLElement, HTMLElement>()
+
 export function useFocusScope(
   ref: RefObject<HTMLElement | null>,
   open: boolean,
   { ready = true, initial = 'first' }: { ready?: boolean; initial?: 'first' | 'root' } = {},
 ): (e: React.KeyboardEvent<HTMLElement>) => void {
   const focusReturn = useRef<HTMLElement | null>(null)
+  const fallback = useRef<HTMLElement | null>(null)
   const tookFocus = useRef(false)
   useLayoutEffect(() => {
     if (!open) return
+    const root = ref.current
     const from = document.activeElement
-    if (from instanceof HTMLElement && !ref.current?.contains(from)) focusReturn.current = from
+    if (from instanceof HTMLElement && !root?.contains(from)) {
+      focusReturn.current = from
+      fallback.current = [...returns].find(([r]) => r !== root && r.contains(from))?.[1] ?? null
+    }
+    if (root && focusReturn.current) returns.set(root, fallback.current ?? focusReturn.current)
   }, [open])
 
   useEffect(() => {
@@ -28,10 +36,12 @@ export function useFocusScope(
 
   useEffect(() => {
     if (!open) return
+    const root = ref.current
     return () => {
+      if (root) returns.delete(root)
       tookFocus.current = false
-      const back = focusReturn.current
-      if (!back?.isConnected) return
+      const back = [focusReturn.current, fallback.current].find((el) => el?.isConnected)
+      if (!back) return
       const active = document.activeElement
       if (active && active !== document.body && !ref.current?.contains(active)) return
       focusReturn.current = null

@@ -40,7 +40,7 @@ beforeEach(() => {
 describe('newPage', () => {
   it('creates in the selected Set by its placement setting and opens the page in the current tab', async () => {
     seed({ kind: 'set', id: 's1', path: 'Notes/Ideas' }, makeTree(), { newPagePlacement: 'top' })
-    await newPage()
+    await newPage(false)
     expect(asked).toEqual([
       {
         op: 'createPage',
@@ -54,18 +54,18 @@ describe('newPage', () => {
 
   it("creates beside the selected page, in the page's own folder", async () => {
     seed({ kind: 'page', id: 'p2', path: 'Notes/Ideas/Beta.md' })
-    await newPage()
+    await newPage(false)
     expect(asked).toMatchObject([{ parentPath: 'Notes/Ideas' }])
   })
 
   it('falls back to the first Collection, and creates nothing without one', async () => {
     seed({ kind: 'none' })
-    await newPage()
+    await newPage(false)
     seed({ kind: 'set', id: 'gone', path: 'Notes/Gone' })
-    await newPage()
+    await newPage(false)
     expect(asked).toMatchObject([{ parentPath: 'Notes' }, { parentPath: 'Notes' }])
     seed({ kind: 'none' }, { ...makeTree(), collections: [] })
-    await newPage()
+    await newPage(false)
     expect(asked).toHaveLength(2)
   })
 })

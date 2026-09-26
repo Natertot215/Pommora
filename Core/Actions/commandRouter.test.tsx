@@ -43,26 +43,24 @@ describe('tab chords follow focus', () => {
     expect(useSession.getState().activeTabId).toBe('t2')
   })
 
-  it('Ctrl+Tab cycles the window’s tabs while it holds focus, leaving the main bar', () => {
+  it('Ctrl+Tab cycles the window’s tabs while it holds focus, and stays there after the switch drops the focused body', () => {
     useSession.getState().openWindowTab(page('a'))
     useSession.getState().openWindowTab(page('b'))
     const win = useSession.getState().windowSlot!
     field.focus()
     runCommand('next-tab')
     expect(useSession.getState().windowSlot!.activeTabId).toBe(win.tabs[0].id)
-    expect(useSession.getState().activeTabId).toBe('t1')
-  })
-
-  it('a second Ctrl+Tab stays in the window after the first switch drops the focused body', () => {
-    useSession.getState().openWindowTab(page('a'))
-    useSession.getState().openWindowTab(page('b'))
-    const win = useSession.getState().windowSlot!
-    field.focus()
-    runCommand('next-tab')
     field.remove()
     runCommand('next-tab')
     expect(useSession.getState().windowSlot!.activeTabId).toBe(win.tabs[1].id)
     expect(useSession.getState().activeTabId).toBe('t1')
+  })
+
+  it('Ctrl+Tab in a one-tab window leaves the focus on the field', () => {
+    useSession.getState().openWindowTab(page('a'))
+    field.focus()
+    runCommand('next-tab')
+    expect(document.activeElement).toBe(field)
   })
 
   it('⌘N opens a main tab while a Page Window stands behind the main pane', () => {

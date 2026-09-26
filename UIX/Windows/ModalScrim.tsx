@@ -20,8 +20,9 @@ export function ModalScrim({
   const wrapRef = useRef<HTMLDivElement>(null)
   const { mounted, closing } = useExitPresence(open, 'fast')
   const held = useHeld(children, open)
-  useDismissal(mounted && !closing, false, { layer: () => wrapRef.current, dismiss })
-  const trapTab = useFocusScope(wrapRef, open, { ready: mounted, initial: 'root' })
+  const live = mounted && !closing
+  useDismissal(live, false, { layer: () => wrapRef.current, dismiss })
+  const trapTab = useFocusScope(wrapRef, open, { ready: live, initial: 'root' })
   if (!mounted) return null
 
   return createPortal(

@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { act, StrictMode, useEffect, useRef, useState } from 'react'
+import { act, Profiler, StrictMode, useEffect, useRef, useState } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
 import { useDismissal } from '../Interactions/dismissalStack'
 import { firePointer, stubPointerCapture } from '../Interactions/pointerHarness'
@@ -216,6 +216,23 @@ describe('a floating window takes Escape by front-to-back order', () => {
     active.mockRestore()
     expect(web.style.getPropertyValue('--window-rank')).toBe('1')
   })
+
+  it('a summon onto a window behind brings it to the front', () => {
+    const two = (summon: number): React.JSX.Element => (
+      <>
+        <WindowBase closing={false} onClose={() => undefined} raiseOn={summon} ariaLabel="back">
+          <div />
+        </WindowBase>
+        <WindowBase closing={false} onClose={() => undefined} ariaLabel="front">
+          <div />
+        </WindowBase>
+      </>
+    )
+    act(() => root.render(two(0)))
+    act(() => root.render(two(1)))
+    const back = host.querySelector('[aria-label="back"]') as HTMLElement
+    expect(back.style.getPropertyValue('--window-rank')).toBe('1')
+  })
 })
 
 describe('a floating window hands focus back when it closes', () => {
@@ -235,6 +252,26 @@ describe('a floating window hands focus back when it closes', () => {
     act(() => root.render(win(true)))
     expect(document.activeElement).toBe(outside)
     outside.remove()
+  })
+
+  it('returns focus through each window that replaced the one it opened from', () => {
+    const field = document.createElement('textarea')
+    document.body.appendChild(field)
+    field.focus()
+    const win = (name: string, closing: boolean): React.JSX.Element => (
+      <WindowBase key={name} closing={closing} onClose={() => undefined} ariaLabel={name}>
+        <div />
+      </WindowBase>
+    )
+    act(() => root.render(win('a', false)))
+    expect(document.activeElement).toBe(host.querySelector('[aria-label="a"]'))
+    act(() => root.render([win('a', true), win('b', false)]))
+    act(() => root.render(win('b', false)))
+    act(() => root.render([win('b', true), win('c', false)]))
+    act(() => root.render(win('c', false)))
+    act(() => root.render(win('c', true)))
+    expect(document.activeElement).toBe(field)
+    field.remove()
   })
 
   it('a press on the window itself takes the keyboard back into it', () => {
@@ -371,5 +408,35 @@ describe('a side panel keeps its width across windows of one id', () => {
     )
     const win = host.querySelector('.window') as HTMLElement
     expect(win.style.getPropertyValue('--window-panel-r-w')).toBe('250px')
+  })
+
+  it('a drag frame renders the window once', () => {
+    let commits = 0
+    act(() =>
+      root.render(
+        <Profiler id="window" onRender={() => commits++}>
+          <WindowBase
+            closing={false}
+            onClose={() => undefined}
+            ariaLabel="a"
+            right={{
+              windowId: 'panel-frame-test',
+              bounds: { min: 100, def: 200, max: 400 },
+              mode: 'overlay',
+              children: null,
+            }}
+          >
+            <div />
+          </WindowBase>
+        </Profiler>,
+      ),
+    )
+    const strip = host.querySelector('.window-panel-right-overlay-resize') as HTMLElement
+    act(() => firePointer(strip, 'pointerdown', { x: 600, y: 10 }))
+    act(() => firePointer(window, 'pointermove', { x: 580, y: 10 }))
+    commits = 0
+    act(() => firePointer(window, 'pointermove', { x: 550, y: 10 }))
+    expect(commits).toBe(1)
+    act(() => firePointer(window, 'pointerup', { x: 550, y: 10 }))
   })
 })

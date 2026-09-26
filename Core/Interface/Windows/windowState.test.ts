@@ -48,7 +48,9 @@ describe('sanitizeWindows', () => {
   })
 
   it('a set it cannot read drops alone rather than failing the file', () => {
-    expect(sanitizeWindows({ sets: { nav: 7, page: null } })).toEqual({ sets: { page: null } })
+    expect(sanitizeWindows({ sets: { nav: 7, page: { tabs: [] } } })).toEqual({
+      sets: { page: { tabs: [] } },
+    })
   })
 
   it('a file of the old named-set shape reads as empty', () => {

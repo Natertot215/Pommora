@@ -6,15 +6,15 @@ import { useDragItem, type DragItem } from '@pommora/uix/Interactions/drag'
 import { segment } from '@pommora/uix/Elements/segment.css'
 import { Icon } from '@pommora/uix/Symbols'
 import { text } from '@pommora/uix/Theme'
-import type { PageTarget } from '@pommora/core/Navigation/navRef'
+import type { TabTarget, WindowTabTarget } from '@pommora/core/Navigation/navRef'
 import { EntityIcon } from '../Assets/EntityIcon'
 import { hoverGlance, leaveGlance } from '../Interface/Glance/glanceAction'
 import type { ResolvedNav } from './navResolve'
 
 // A page tab is a location: it raises its preview on Shift, never on plain hover. Non-page tabs carry no id/path, so they raise nothing.
-export const glanceHoverProps = (target: PageTarget | undefined) => ({
+export const glanceHoverProps = (target: TabTarget | WindowTabTarget | undefined) => ({
   onPointerEnter: (e: React.PointerEvent<HTMLElement>) => {
-    if (target) hoverGlance(target, e.currentTarget, 'location', e.shiftKey)
+    if (target?.kind === 'page') hoverGlance(target, e.currentTarget, 'location', e.shiftKey)
   },
   onPointerLeave: () => leaveGlance(),
 })
@@ -34,7 +34,7 @@ export interface TabItemProps {
   drag?: DragItem
   iconOnly?: boolean
   slide?: { seq: number; className: string }
-  glance?: PageTarget
+  glance?: TabTarget | WindowTabTarget
   onActivate?: () => void
   onClose?: () => void
   onMenu?: (e: React.MouseEvent) => void
@@ -46,9 +46,9 @@ export function TabItem({
   icon,
   variant,
   active,
-  closing = false,
+  closing,
   drag,
-  iconOnly = false,
+  iconOnly,
   slide,
   glance,
   onActivate,
@@ -107,6 +107,6 @@ export function DraggableTabItem(props: Omit<TabItemProps, 'drag'>): React.JSX.E
   return <TabItem {...props} drag={drag} />
 }
 
-export function TabSeparator({ closing }: { closing: boolean }): React.JSX.Element {
+export function TabSeparator({ closing }: { closing?: boolean }): React.JSX.Element {
   return <span className={cx(segment, 'tab-seg', closing && 'is-closing')} aria-hidden />
 }

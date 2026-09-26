@@ -153,6 +153,17 @@ describe('tabsModel — openTabAt', () => {
     expect(openTabAt(tabs, [], pt('a'), 2, 'NEW').map((t) => t.id)).toEqual(['t2', 't1', 't3'])
   })
 
+  it('moves an already-open page leftward to the index', () => {
+    const tabs = [tab('t1', 'a'), tab('t2', 'b'), tab('t3', 'c')]
+    expect(openTabAt(tabs, [], pt('c'), 0, 'NEW').map((t) => t.id)).toEqual(['t3', 't1', 't2'])
+  })
+
+  it('leaves the row untouched when a page drops into its own gap', () => {
+    const tabs = [tab('t1', 'a'), tab('t2', 'b'), tab('t3', 'c')]
+    expect(openTabAt(tabs, [], pt('b'), 1, 'NEW')).toBe(tabs)
+    expect(openTabAt(tabs, [], pt('b'), 2, 'NEW')).toBe(tabs)
+  })
+
   it('leaves the row untouched when the page is pinned', () => {
     const tabs = [tab('t1', 'a')]
     expect(openTabAt(tabs, [tab(pinTabId(pt('p')), 'p')], pt('p'), 0, 'NEW')).toBe(tabs)
@@ -286,6 +297,13 @@ describe('tabsModel — reconcileTab (I-2a)', () => {
     expect(r?.navStack).toEqual([{ kind: 'page', id: 'b', path: '/renamed' }])
   })
 
+  it('refreshes a renamed history entry behind an unmoved target as a new tab', () => {
+    const t: Tab = { id: 't1', target: pt('a'), navStack: [pt('b'), pt('a')], navIndex: 1 }
+    const r = reconcileTab(t, against({ a: '/a', b: '/renamed' }))
+    expect(r).not.toBe(t)
+    expect(r?.navStack[0]).toEqual({ kind: 'page', id: 'b', path: '/renamed' })
+  })
+
   it('returns null for a tab whose entity was deleted', () => {
     expect(reconcileTab(tab('t2', 'b'), against({ a: '/a' }))).toBeNull()
   })
@@ -298,9 +316,14 @@ describe('tabsModel — reconcileTab (I-2a)', () => {
   })
 
   it('re-finds a pointer lost with its entry by the target key', () => {
-    const t: Tab = { id: 't1', target: pt('a'), navStack: [pt('a'), pt('b')], navIndex: 1 }
-    const r = reconcileTab(t, against({ a: '/a' }))
-    expect(r?.navStack).toEqual([pt('a')])
+    const t: Tab = {
+      id: 't1',
+      target: pt('a'),
+      navStack: [pt('a'), pt('b'), pt('c')],
+      navIndex: 2,
+    }
+    const r = reconcileTab(t, against({ a: '/a', b: '/b' }))
+    expect(r?.navStack).toEqual([pt('a'), pt('b')])
     expect(r?.navIndex).toBe(0)
   })
 

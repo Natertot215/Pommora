@@ -6,6 +6,7 @@ import { captured, scopeCaptured } from './thumbMarkers'
 import { dialer } from '../Platform/dialer'
 import { chromePartEl, chromePartRect } from '../Interface/chromeParts'
 import { windowsOpen } from '../Session/windowSlice'
+import { glanceShown } from '../Interface/Glance/glanceAction'
 
 // The sidebar and side pane are floating overlays carved off the pane's edges; the toolbar is NOT carved (the banner is full-bleed under it), so main overpaints just that toolbar.
 function contentRect(pane: Element): ThumbRect {
@@ -32,7 +33,7 @@ async function imagesReady(pane: Element): Promise<void> {
   )
 }
 
-// Captured only while no floating window stands, so none bakes into the shot; the delay clears the close animation and debounces rapid navigation.
+// Captured only while no floating window or glance stands over the pane, so none bakes into the shot; the delay clears the close animation and debounces rapid navigation.
 export function useNavThumbnails(): void {
   const selection = useSession((s) => s.selection)
   const shownStatus = useSession((s) => shownPage(s)?.status)
@@ -54,10 +55,16 @@ export function useNavThumbnails(): void {
         await new Promise<void>((r) =>
           requestAnimationFrame(() => requestAnimationFrame(() => r())),
         )
-        if (canceled || windowsOpen(useSession.getState())) return
-        const key = navKey(selection)
         // The gate — read at capture time so the marker reflects what the shot will show.
         const s = useSession.getState()
+        if (
+          canceled ||
+          windowsOpen(s) ||
+          glanceShown() ||
+          s.pinnedGlances.some((p) => p.tabId === s.activeTabId)
+        )
+          return
+        const key = navKey(selection)
         scopeCaptured(s.tree?.nexus.id ?? null)
         const marker = selection.kind === 'page' ? pageBody(shownPage(s)) : s.tree
         if (captured.get(key) === marker) return

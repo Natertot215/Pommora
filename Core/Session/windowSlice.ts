@@ -102,7 +102,7 @@ export const createWindowSlice: Slice<WindowSlice> = (set, get) => {
     ),
   })
 
-  const reconcileRecord = (rec: WindowSetRecord | null | undefined): WindowTab[] => {
+  const reconcileRecord = (rec: WindowSetRecord | undefined): WindowTab[] => {
     const tree = get().tree
     if (!rec || !tree) return []
     const index = reconcileIndexOf(tree)
@@ -121,7 +121,10 @@ export const createWindowSlice: Slice<WindowSlice> = (set, get) => {
   const commitWindow = (
     next: WindowState | null,
     extra?: Partial<
-      Pick<WindowSlice, 'windowSlide' | 'windowExit' | 'windowSummon' | 'windowsFile'>
+      Pick<
+        SessionState,
+        'windowSlide' | 'windowExit' | 'windowSummon' | 'windowsFile' | 'pendingTravel'
+      >
     >,
   ): void => {
     const { windowSlot: cur, windowsFile: file } = get()
@@ -141,23 +144,26 @@ export const createWindowSlice: Slice<WindowSlice> = (set, get) => {
     openHistory: (target) => set({ historyTarget: target }),
     closeHistory: () => set({ historyTarget: null }),
     openWindowTab: (target, { at, heading } = {}) => {
-      if (heading && target.kind === 'page')
-        set({ pendingTravel: { route: 'window', path: target.path, heading } })
+      const travel =
+        heading && target.kind === 'page'
+          ? { pendingTravel: { route: 'window' as const, path: target.path, heading } }
+          : {}
       const windowSummon = get().windowSummon + 1
       const cur = get().windowSlot
       if (cur && cur.kind !== 'matrix') {
         const next = openTabIn(cur, makeTabId, target, at)
         if (next === cur) {
-          set({ windowSummon })
+          set({ windowSummon, ...travel })
           return
         }
         if (at !== undefined) {
-          commitWindow(next, { windowSummon })
+          commitWindow(next, { windowSummon, ...travel })
           return
         }
         const spawned = next.tabs.length > cur.tabs.length
         commitWindow(next, {
           windowSummon,
+          ...travel,
           windowSlide: spawned
             ? { dir: 'fwd', seq: ++windowSlideSeq }
             : stampByOrder(cur, next.activeTabId),
@@ -170,7 +176,11 @@ export const createWindowSlice: Slice<WindowSlice> = (set, get) => {
         activeTabId: '',
       }
       // windowExit re-seeds on every open — only a close that writes 'engulf' plays the FLIP.
-      commitWindow(openTabIn(restored, makeTabId, target), { windowExit: 'dismiss', windowSummon })
+      commitWindow(openTabIn(restored, makeTabId, target), {
+        windowExit: 'dismiss',
+        windowSummon,
+        ...travel,
+      })
     },
     activateWindowTab: (id) => {
       const cur = get().windowSlot
@@ -211,7 +221,7 @@ export const createWindowSlice: Slice<WindowSlice> = (set, get) => {
       // A hand-closed last tab must not come back; the X, which keeps the set, is the other half of that rule.
       commitWindow(null, {
         windowExit: exit ?? 'dismiss',
-        windowsFile: { sets: { ...get().windowsFile.sets, [cur.kind]: null } },
+        windowsFile: { sets: { ...get().windowsFile.sets, [cur.kind]: { tabs: [] } } },
       })
     },
     closeWindow: (reason) => commitWindow(null, { windowExit: reason ?? 'dismiss' }),

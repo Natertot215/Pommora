@@ -48,6 +48,7 @@ beforeEach(() => {
     'devicePrefs:load': vi.fn(async () => ({ ok: true, value: null })),
     'index:headings': vi.fn(async () => ({ ok: true, value: {} })),
     mutate: vi.fn(async () => ({ ok: true, value: {} })),
+    'windows:save': vi.fn(async () => ok(null)),
   }
   ;(window as unknown as { nexus: unknown }).nexus = stubDialer(channels)
 })
@@ -490,6 +491,24 @@ describe('store — applyTree reconciles EVERY tab (I-2a)', () => {
     expect(s.tabs.map((t) => t.id)).toEqual(['t1'])
     expect(s.activeTabId).toBe('t1')
   })
+
+  it('a deleted active tab falls to the most recent tab', async () => {
+    const [a, b, c] = (['a', 'b', 'c'] as const).map((id) => page(id, `Notes/${id}.md`))
+    seed({
+      tabs: [uTab('t1', a, [a], 0), uTab('t2', b, [b], 0), uTab('t3', c, [c], 0)],
+      activeTabId: 't1',
+      tabMru: ['t1', 't3', 't2'],
+    })
+    await useSession.getState().applyTree(
+      treeWith([
+        { id: 'b', path: 'Notes/b.md' },
+        { id: 'c', path: 'Notes/c.md' },
+      ]),
+    )
+    const s = useSession.getState()
+    expect(s.tabs.map((t) => t.id)).toEqual(['t2', 't3'])
+    expect(s.activeTabId).toBe('t3')
+  })
 })
 
 describe('store — applyTree reconciles the window tabs (D-6)', () => {
@@ -555,7 +574,6 @@ describe('store — applyTree reconciles the window tabs (D-6)', () => {
     useSession.setState({
       windowsFile: {
         sets: {
-          nav: null,
           page: {
             tabs: [
               { target: { kind: 'page', id: 'x' } },
@@ -682,21 +700,51 @@ describe('glance pin lifecycle wiring (Task 10)', () => {
     expect(tags()).toEqual(['t2'])
   })
 
-  it('a pinned active tab removed by a nav push falls to the tab beside it, and the repair is saved', async () => {
+  it('a pinned active tab removed by a nav push falls to the most recent tab, and the repair is saved', async () => {
     const pinId = pinTabId(P)
+    const R: SelectTarget = { kind: 'page', id: 'p3', path: 'Notes/C.md' }
     seed({
-      tabs: [uTab('t2', Q, [Q], 0)],
+      tabs: [uTab('t2', Q, [Q], 0), uTab('t3', R, [R], 0)],
       activeTabId: pinId,
+      tabMru: [pinId, 't3', 't2'],
       pinned: [toNavRef(P)],
       pinnedTabs: [{ id: pinId, target: P, navStack: [P], navIndex: 0 }],
     })
     useSession.getState().applyNavChanged({ pinned: [], banner: undefined })
-    expect(useSession.getState().activeTabId).toBe('t2')
-    channels['windows:save'] = vi.fn(async () => ok(null))
+    expect(useSession.getState().activeTabId).toBe('t3')
     await flushAllSessionSaves()
     expect(channels['tabs:save']).toHaveBeenLastCalledWith(
-      expect.objectContaining({ activeTabId: 't2' }),
+      expect.objectContaining({ activeTabId: 't3' }),
     )
+  })
+
+  it('unpinning the active pinned tab from the list leaves the focus on a live tab', () => {
+    const pinId = pinTabId(P)
+    seed({
+      tabs: [uTab('t2', Q, [Q], 0)],
+      activeTabId: pinId,
+      tabMru: [pinId, 't2'],
+      pinned: [toNavRef(P)],
+      pinnedTabs: [{ id: pinId, target: P, navStack: [P], navIndex: 0 }],
+    })
+    useSession.getState().unpinTarget(navKey(P))
+    expect(useSession.getState().activeTabId).toBe('t2')
+  })
+
+  it('unpinning the active pinned tab keeps the focus on the tab it becomes, with no detour', () => {
+    const pinId = pinTabId(P)
+    seed({
+      tabs: [uTab('t2', Q, [Q], 0)],
+      activeTabId: pinId,
+      tabMru: [pinId, 't2'],
+      pinned: [toNavRef(P)],
+      pinnedTabs: [{ id: pinId, target: P, navStack: [P], navIndex: 0 }],
+    })
+    useSession.getState().unpinTab(pinId)
+    const s = useSession.getState()
+    const fresh = s.tabs.find((t) => t.id !== 't2')
+    expect(s.activeTabId).toBe(fresh?.id)
+    expect(openPage()).not.toHaveBeenCalled()
   })
 
   it('adding a nav pin scrubs no existing glance pins', () => {
@@ -771,7 +819,6 @@ describe('store — a Nexus switch lands every owed save first', () => {
     channels['tabs:save'] = record('tabs', null)
     channels['nexus:choose'] = record('choose', false)
     channels['matrixLayout:save'] = vi.fn(async () => ok(null))
-    channels['windows:save'] = vi.fn(async () => ok(null))
     schedulePageSave('Notes/A.md', 'typed')
     tileBodyWriter.schedule('t1', () =>
       dialer().ask('tiles:writeMarkdown', { kind: 'homepage' }, 't1', 'x', ''),

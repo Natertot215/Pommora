@@ -89,6 +89,31 @@ describe('a window action writes the store once', () => {
     expect(writes).toBe(1)
     expect(useSession.getState().windowsFile).toBe(file)
   })
+
+  it('a heading Preview writes once, its travel riding the same write', () => {
+    let writes = 0
+    const off = useSession.subscribe(() => writes++)
+    useSession
+      .getState()
+      .openWindowTab({ kind: 'page', id: 'a', path: 'a.md' }, { heading: 'Setup' })
+    off()
+    expect(writes).toBe(1)
+    expect(useSession.getState().pendingTravel).toEqual({
+      route: 'window',
+      path: 'a.md',
+      heading: 'Setup',
+    })
+  })
+
+  it('a repeat Preview of the shown page summons the window without replacing it', () => {
+    const page = { kind: 'page', id: 'a', path: 'a.md' } as const
+    const before = useSession.getState().windowSummon
+    useSession.getState().openWindowTab(page)
+    const slot = useSession.getState().windowSlot
+    useSession.getState().openWindowTab(page)
+    expect(useSession.getState().windowSummon).toBe(before + 2)
+    expect(useSession.getState().windowSlot).toBe(slot)
+  })
 })
 
 describe('reconcileWindow — dead tabs', () => {

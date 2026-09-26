@@ -57,7 +57,7 @@ export async function createNamed(req: MutateRequest, host?: RenameHost): Promis
   )
 }
 
-export async function newPage(inWindow = false): Promise<void> {
+export async function newPage(inWindow: boolean): Promise<void> {
   const s = useSession.getState()
   const { tree, personalization, mutate } = s
   if (!tree) return

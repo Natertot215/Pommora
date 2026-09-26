@@ -173,16 +173,18 @@ export function useWindowOrder(
   useEffect(() => {
     const el = ref.current
     if (!active || !el) return
+    const elsewhere = windows.some((w) => w !== el && w.contains(document.activeElement))
     raiseWindow(el)
-    // Focus entering a frame (a Web window's page) fires no focusin here, only the document's blur.
+    if (elsewhere) el.focus({ preventScroll: true })
+    // Focus entering a frame (a Web window's page) fires no focusin in this document, only the window's blur.
     const onFrameFocus = (): void => {
-      if (el.contains(document.activeElement)) raiseWindow(el)
+      const frame = document.activeElement
+      if (frame?.matches('iframe, webview') && el.contains(frame)) raiseWindow(el)
     }
     window.addEventListener('blur', onFrameFocus)
     return () => {
       window.removeEventListener('blur', onFrameFocus)
       windows = windows.filter((w) => w !== el)
-      rankWindows()
     }
   }, [active, raiseOn])
   return () => {
