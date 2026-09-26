@@ -91,14 +91,14 @@ function writePlain(view: EditorView, text: string): void {
   })
 }
 
-/** `'plain'` is the menu's Paste Without Formatting: the clipboard as typed, whatever it holds. */
-export async function pasteAs(view: EditorView, form: PasteAsForm | 'plain'): Promise<void> {
+/** `'literal'` is the menu's Paste Without Formatting: the clipboard as typed, whatever it holds. */
+export async function pasteAs(view: EditorView, form: PasteAsForm | 'literal'): Promise<void> {
   const host = view.state.facet(editorHost)
   const text = await host.clipboard.read()
   // The menu can be held open indefinitely — a table cell's editor is destroyed the moment its cell deactivates.
   if (!text || !view.dom.isConnected || view.state.readOnly) return
   // The explicit pick overrides the settings, never the syntax, or the picked form would nest a link inside the one being authored.
-  if (form === 'plain' || destinationGuard(view, view.state.selection.main.from)) {
+  if (form === 'literal' || destinationGuard(view, view.state.selection.main.from)) {
     writePlain(view, text)
     view.focus()
     return

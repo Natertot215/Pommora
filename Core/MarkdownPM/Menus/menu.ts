@@ -64,7 +64,7 @@ export function applyEditorAction(view: EditorView, action: string): boolean {
   if (action === INSERT_LINK_ACTION) return insertLinkOverSelection(view)
   if (action === 'block:citation') return insertCitation(view)
   if (action === PASTE_PLAIN_ACTION) {
-    void pasteAs(view, 'plain')
+    void pasteAs(view, 'literal')
     return true
   }
   if (action.startsWith(PASTE_AS_PREFIX)) {
