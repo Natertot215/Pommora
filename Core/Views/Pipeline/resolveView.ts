@@ -44,7 +44,8 @@ export function resolveView(input: {
   )
   const sorter = makeSorter(view.sort, schema, manualOrder)
   const structuralGrouping = groupsStructurally(view.group, schema)
-  const locationOrdered = structuralGrouping && view.structural_order_mode === 'location'
+  const locationOrdered =
+    structuralGrouping && viewOption(view, 'structural_order_mode') === 'location'
   const hidden = new Set(view.hidden_groups ?? [])
   let resolved = resolveGroups(
     filtered,

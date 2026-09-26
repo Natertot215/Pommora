@@ -3,7 +3,7 @@
 import { useMemo, useRef, useState } from 'react'
 import { UNGROUPED } from '@pommora/core/Views/viewRow'
 import type { ViewRow } from '@pommora/core/Views/viewRow'
-import type { SavedView } from '@pommora/core/Views/views'
+import { type SavedView, viewOption } from '@pommora/core/Views/views'
 import type { PageMenuContext } from '@pommora/core/Actions/pageMenu'
 import { relDirname } from '@pommora/core/Paths/posix'
 import { nextOrder } from '@pommora/uix/Interactions/reorderModel'
@@ -144,7 +144,7 @@ export function useViewInteractions(host: ViewHostApi, policy: ViewInteractionPo
     })
     if (!structural) return
     if (drop.kind === 'reorder') {
-      if (structuralGrouping && liveView.structural_order_mode === 'location') {
+      if (structuralGrouping && viewOption(liveView, 'structural_order_mode') === 'location') {
         const parentPath = dragged.parentId === null ? source.path : setPaths.get(dragged.parentId)
         const siblingIds =
           dragged.parentId === null

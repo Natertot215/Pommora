@@ -3,7 +3,7 @@ import { Button } from '@pommora/uix/Buttons/Button'
 import type { ReactNode } from 'react'
 import type { CollectionNode, SetNode } from '@pommora/core/Nexus/tree'
 import type { ResolvedGroup } from '@pommora/core/Views/viewRow'
-import { type SavedView, viewOption } from '@pommora/core/Views/views'
+import { granularityOf, type SavedView, viewOption } from '@pommora/core/Views/views'
 import { text } from '@pommora/uix/Theme'
 import { colorNameFor } from '@pommora/uix/Theme/ramp'
 import { cx } from '@pommora/uix/Utilities/cx'
@@ -124,10 +124,9 @@ export function resolveBandHead(
     }
     case 'datetime': {
       const icon = asRenderableIcon(def?.icon)
-      const granularity =
-        (view.group?.kind === 'property'
-          ? view.group.date_granularity
-          : view.sub_group?.date_granularity) ?? 'month'
+      const granularity = granularityOf(
+        view.group?.kind === 'property' ? view.group : view.sub_group,
+      )
       const dateLabel = formatBucketLabel(
         value,
         granularity,

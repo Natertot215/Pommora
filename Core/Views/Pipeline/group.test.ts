@@ -85,7 +85,7 @@ describe('flattenContainer + structural grouping', () => {
     const setB = set('setB', [page('p_b')])
     const col = collection([setA, setB], [page('p_root')])
     const { rows, setTree } = flattenContainer(col, {}, {})
-    const groups = resolveGroups(rows, { kind: 'structural' }, [], setTree, null)
+    const groups = resolveGroups(rows, { kind: 'structural' }, [], setTree, null, 'bottom')
 
     expect(groups.map((g) => [g.key, g.kind])).toEqual([
       ['setA', 'structural-set'],
@@ -195,25 +195,25 @@ describe('flattenContainer + structural grouping', () => {
       [set('subX', [page('p_x')]), set('subY', [page('p_y')])],
     )
     const { rows, setTree } = flattenContainer(container, {}, {})
-    const groups = resolveGroups(rows, { kind: 'structural' }, [], setTree, null)
+    const groups = resolveGroups(rows, { kind: 'structural' }, [], setTree, null, 'bottom')
     expect(keys(groups)).toEqual(['subX', 'subY', '_ungrouped'])
     expect(itemIds(groups[2])).toEqual(['p_own'])
   })
 
   it('still shows an empty Set as a disclosure group', () => {
     const { rows, setTree } = flattenContainer(collection([set('empty', [])], []), {}, {})
-    const groups = resolveGroups(rows, { kind: 'structural' }, [], setTree, null)
+    const groups = resolveGroups(rows, { kind: 'structural' }, [], setTree, null, 'bottom')
     expect(keys(groups)).toEqual(['empty'])
     expect(groups[0].items).toEqual([])
   })
 
   it('with zero Sets yields a single headerless band, and nothing for an empty container', () => {
     const { rows, setTree } = flattenContainer(collection([], [page('p1'), page('p2')]), {}, {})
-    const groups = resolveGroups(rows, { kind: 'structural' }, [], setTree, null)
+    const groups = resolveGroups(rows, { kind: 'structural' }, [], setTree, null, 'bottom')
     expect(keys(groups)).toEqual(['_ungrouped'])
     expect(groups[0].kind).toBe('ungrouped')
     expect(itemIds(groups[0])).toEqual(['p1', 'p2'])
-    expect(resolveGroups([], { kind: 'structural' }, [], [], null)).toEqual([])
+    expect(resolveGroups([], { kind: 'structural' }, [], [], null, 'bottom')).toEqual([])
   })
 
   it('applies the sorter within each group', () => {
@@ -223,7 +223,7 @@ describe('flattenContainer + structural grouping', () => {
       {},
     )
     const byId = (r: ViewRow[]): ViewRow[] => [...r].sort((x, y) => (x.id < y.id ? -1 : 1))
-    const groups = resolveGroups(rows, { kind: 'flat' }, [], setTree, byId)
+    const groups = resolveGroups(rows, { kind: 'flat' }, [], setTree, byId, 'bottom')
     expect(itemIds(groups[0])).toEqual(['a', 'b', 'c'])
   })
 })
@@ -264,7 +264,7 @@ describe('flat grouping', () => {
       {},
       {},
     )
-    const groups = resolveGroups(rows, { kind: 'flat' }, [], setTree, null)
+    const groups = resolveGroups(rows, { kind: 'flat' }, [], setTree, null, 'bottom')
     expect(keys(groups)).toEqual(['_ungrouped'])
     expect(itemIds(groups[0]).sort()).toEqual(['p1', 'p2'])
   })
@@ -287,7 +287,7 @@ describe('property grouping — status manual order', () => {
 
   it('orders buckets by manual order — an empty bucket renders as an empty band, no-value tail at bottom', () => {
     const { rows, setTree } = flattenContainer(col, values, {})
-    const groups = resolveGroups(rows, base, statusSchema, setTree, null)
+    const groups = resolveGroups(rows, base, statusSchema, setTree, null, 'bottom')
     expect(keys(groups)).toEqual(['in_progress', 'opt_open', 'not_started', 'done', '_ungrouped'])
     expect(groups.find((g) => g.key === 'opt_open')?.items).toEqual([])
   })
@@ -300,13 +300,14 @@ describe('property grouping — status manual order', () => {
       statusSchema,
       setTree,
       null,
+      'bottom',
     )
     expect(keys(groups)).toEqual(['in_progress', 'opt_open', 'not_started', 'done', '_ungrouped'])
   })
 
   it('resolution keeps live empty buckets — dropping them is the orchestrator’s (pruneEmptyBuckets); the no-value tail stays', () => {
     const { rows, setTree } = flattenContainer(col, values, {})
-    const groups = resolveGroups(rows, base, statusSchema, setTree, null)
+    const groups = resolveGroups(rows, base, statusSchema, setTree, null, 'bottom')
     expect(keys(groups)).toEqual(['in_progress', 'opt_open', 'not_started', 'done', '_ungrouped'])
     expect(keys(pruneEmptyBuckets(groups))).toEqual([
       'in_progress',
@@ -443,7 +444,7 @@ describe('ungrouped placement (the view-level knob)', () => {
       {},
       {},
     )
-    const groups = resolveGroups(rows, { kind: 'structural' }, [], setTree, null)
+    const groups = resolveGroups(rows, { kind: 'structural' }, [], setTree, null, 'bottom')
     expect(groups[groups.length - 1].kind).toBe('ungrouped')
   })
 })
@@ -480,10 +481,14 @@ describe('property grouping — configured / reversed / checkbox / date', () => 
       {},
     )
     expect(
-      keys(resolveGroups(rows, cfg({ order_mode: 'configured' }), selSchema, setTree, null)),
+      keys(
+        resolveGroups(rows, cfg({ order_mode: 'configured' }), selSchema, setTree, null, 'bottom'),
+      ),
     ).toEqual(['a', 'b', 'c'])
     expect(
-      keys(resolveGroups(rows, cfg({ order_mode: 'reversed' }), selSchema, setTree, null)),
+      keys(
+        resolveGroups(rows, cfg({ order_mode: 'reversed' }), selSchema, setTree, null, 'bottom'),
+      ),
     ).toEqual(['c', 'b', 'a'])
   })
 
@@ -509,6 +514,7 @@ describe('property grouping — configured / reversed / checkbox / date', () => 
       cbSchema,
       setTree,
       null,
+      'bottom',
     )
     expect(keys(groups)).toEqual(['false', 'true'])
     expect(itemIds(groups[0])).toEqual(['p2', 'p3'])
@@ -547,6 +553,7 @@ describe('property grouping — configured / reversed / checkbox / date', () => 
       dateSchema,
       setTree,
       null,
+      'bottom',
     )
     expect(keys(groups)).toEqual(['2026-06', '2026-07'])
     expect(itemIds(groups[0]).sort()).toEqual(['p1', 'p2'])
@@ -569,6 +576,7 @@ describe('property grouping — configured / reversed / checkbox / date', () => 
       dueSchema,
       setTree,
       null,
+      'bottom',
     )
     expect(keys(groups)).toEqual(['2026-06-27'])
   })
@@ -591,6 +599,7 @@ describe('property grouping — non-groupable fallback', () => {
       [{ id: 'prop_num', name: 'Num', type: 'number' }],
       setTree,
       null,
+      'bottom',
     )
     expect(keys(numGroups)).toEqual(['s1', '_ungrouped'])
 
@@ -604,6 +613,7 @@ describe('property grouping — non-groupable fallback', () => {
       [{ id: 'prop_tags', name: 'Tags', type: 'multi_select' }],
       setTree,
       null,
+      'bottom',
     )
     expect(keys(msGroups)).toEqual(['s1', '_ungrouped'])
   })

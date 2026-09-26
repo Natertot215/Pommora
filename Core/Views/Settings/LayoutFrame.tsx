@@ -3,7 +3,6 @@ import type { CollectionNode, SetNode } from '@pommora/core/Nexus/tree'
 import type { PropertyDefinition } from '@pommora/core/Properties/properties'
 import {
   type CardBanner,
-  isCompact,
   type SavedView,
   type ViewFormat,
   VIEW_KINDS,
@@ -161,7 +160,7 @@ export function LayoutFrame({
               pickerRow(
                 'palette',
                 'Card Style',
-                isCompact(view) ? 'compact' : 'standard',
+                viewOption(view, 'format'),
                 FORMATS,
                 (v) => write({ format: v }),
                 CARD_ROW_LOOK,
