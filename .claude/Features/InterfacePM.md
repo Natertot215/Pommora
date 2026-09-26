@@ -53,7 +53,7 @@ A page holding footnotes also carries the **Show Footnotes** / **Hide Footnotes*
 
 Every in-app window mounts one chassis, **WindowBase** (`UIX/Windows/`): a glass shell with per-window-id geometry, one floating toolbar (a zero-height strip whose action clusters float over the content), side-panel slots, and a footer, opening and closing on a scale-fade and sealed off from the main shell's pane geometry so the SidePane behind it shifts nothing inside. Seven windows mount it: the Page Window, the Web Window, the NavWindow, the Page History window, the Nexus Settings window, the Matrix window, and the Iteration window. Whether each is open is held in the session's window slice (`Core/Session/windowSlice.ts`), and switching Nexus closes every window and pinned glance.
 
-Open windows stack front to back: a press or focus inside a window brings it forward, Escape closes the front one, and a keyboard chord acts on the window that holds focus, counting a menu or picker opened from inside it. A window takes focus when it opens and returns it on close to where it was, through a swap from one window kind to another as well.
+Open windows stack front to back: a press or focus inside a window brings it forward, Escape closes the front one, and ⌘N, ⌘⇧N and Ctrl+Tab act on the Page Window or NavWindow while it holds focus, counting a menu or picker opened from inside it. A window takes focus when it opens and returns it on close to where it was, through a swap from one window kind to another as well.
 
 #### The Page Window
 
