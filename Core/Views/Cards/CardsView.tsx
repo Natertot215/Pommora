@@ -203,7 +203,7 @@ export function CardsView({ host }: { host: ViewHostApi }): React.JSX.Element {
 
   // ── Interactions ──────────────────────────────────────────────────────────
 
-  const banner: CardBanner = viewOption(view, 'card_banner')
+  const banner = viewOption(view, 'card_banner')
   const shellClass = cx('cards-view', banner === 'none' && 'is-compact')
   const flatMode = view.group?.kind === 'flat'
   const hideLocation = viewOption(view, 'hide_location')

@@ -233,6 +233,10 @@ export const viewOption = <K extends DefaultedOption>(
   key: K,
 ): ViewDefaults[K] => view[key] ?? VIEW_DEFAULTS[key]
 
+export const granularityOf = (
+  g: { date_granularity?: DateGranularity } | undefined,
+): DateGranularity => g?.date_granularity ?? 'month'
+
 function withoutEmptyStyles({ column_styles, ...view }: Json): Json {
   const kept = Object.entries((column_styles ?? {}) as Json).filter(([, s]) => holdsStyle(s))
   return kept.length > 0 ? { ...view, column_styles: Object.fromEntries(kept) } : view

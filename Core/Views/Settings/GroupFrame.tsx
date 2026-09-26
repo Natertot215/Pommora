@@ -5,6 +5,7 @@ import {
   type DateGranularity,
   type GroupConfig,
   type GroupOrderMode,
+  granularityOf,
   type SavedView,
   type StructuralOrderMode,
   type SubGroupConfig,
@@ -213,12 +214,8 @@ export function GroupFrame({
       />
       {group.kind === 'property' && activeDef?.type === 'datetime' && (
         <MenuRowView
-          row={pickerRow(
-            'calendar',
-            'Date By',
-            group.date_granularity ?? 'month',
-            GRANULARITY,
-            (g) => saveGroup({ ...group, date_granularity: g }),
+          row={pickerRow('calendar', 'Date By', granularityOf(group), GRANULARITY, (g) =>
+            saveGroup({ ...group, date_granularity: g }),
           )}
         />
       )}
@@ -260,12 +257,8 @@ export function GroupFrame({
           />
           {subGroup && subDef?.type === 'datetime' && (
             <MenuRowView
-              row={pickerRow(
-                'calendar',
-                'Date By',
-                subGroup.date_granularity ?? 'month',
-                GRANULARITY,
-                (g) => saveSub({ ...subGroup, date_granularity: g }),
+              row={pickerRow('calendar', 'Date By', granularityOf(subGroup), GRANULARITY, (g) =>
+                saveSub({ ...subGroup, date_granularity: g }),
               )}
             />
           )}
@@ -454,7 +447,7 @@ function LocationHierarchy({
       return
     }
     if (drop.kind === 'reorder') {
-      if (view.structural_order_mode === 'location') {
+      if (viewOption(view, 'structural_order_mode') === 'location') {
         const parentPath =
           drop.targetParentId === null ? source.path : paths.get(drop.targetParentId)
         const siblings = childIds.get(drop.targetParentId) ?? []
@@ -616,7 +609,7 @@ function DateBucketList({
   const values = useContainerValues(source.path)
   const nexus = useNexusForms()
 
-  const granularity = group.date_granularity ?? 'month'
+  const granularity = granularityOf(group)
   const present = useMemo(() => {
     const set = new Set<string>()
     for (const row of flattenContainer(source, values, {}).rows) {

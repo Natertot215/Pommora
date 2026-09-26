@@ -2,11 +2,12 @@
 
 import type { CollectionNode, PageNode, SetNode } from '@pommora/core/Nexus/tree'
 import type { PageValues, ResolvedGroup, ViewRow } from '@pommora/core/Views/viewRow'
-import type {
-  DateGranularity,
-  EmptyPlacement,
-  GroupConfig,
-  SubGroupConfig,
+import {
+  type DateGranularity,
+  type EmptyPlacement,
+  type GroupConfig,
+  granularityOf,
+  type SubGroupConfig,
 } from '@pommora/core/Views/views'
 import { ID_KEY } from '@pommora/core/Nexus/identityMark'
 import { localDayKey, pad } from '@pommora/uix/Utilities/pad'
@@ -210,7 +211,7 @@ function property(
 ): ResolvedGroup[] {
   const def = schema.find((d) => d.id === group.property_id)
   const isCheckbox = def?.type === 'checkbox'
-  const granularity = group.date_granularity ?? 'month'
+  const granularity = granularityOf(group)
 
   const byBucket = groupRows(
     rows,
@@ -300,7 +301,7 @@ function structuralSubGrouped(
   placement: EmptyPlacement,
 ): ResolvedGroup[] {
   const def = schema.find((d) => d.id === sub.property_id)
-  const granularity = sub.date_granularity ?? 'month'
+  const granularity = granularityOf(sub)
   const byParent = groupRows(rows, (r) => r.parentSetId)
   const rootRows = byParent.get(undefined) ?? []
 
@@ -377,7 +378,7 @@ export function resolveGroups(
   schema: PropertyDefinition[],
   setTree: SetTreeNode[],
   sorter: Sorter | null,
-  placement: EmptyPlacement = 'bottom',
+  placement: EmptyPlacement,
   subGroup?: SubGroupConfig,
   flattenStructural = false,
   locationFlatten = false,
