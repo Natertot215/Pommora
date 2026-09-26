@@ -26,7 +26,6 @@ export {
   shownDetail,
   shownPage,
 } from './navigationSlice'
-export { shownViewSearch } from './viewSearchSlice'
 export { windowTargetOf } from './windowSlice'
 export { citationsVisible } from './configSlice'
 

@@ -169,8 +169,10 @@ export const readyPageIds = (s: SessionState): string =>
     .map(([id]) => id)
     .join(',')
 
-const activeTabOf = (s: SessionState): Tab | undefined =>
-  s.tabs.find((t) => t.id === s.activeTabId) ?? s.pinnedTabs.find((t) => t.id === s.activeTabId)
+export const tabOf = (s: SessionState, id: string): Tab | undefined =>
+  s.tabs.find((t) => t.id === id) ?? s.pinnedTabs.find((t) => t.id === id)
+
+const activeTabOf = (s: SessionState): Tab | undefined => tabOf(s, s.activeTabId)
 
 export const frozenOf = (s: SessionState): boolean => {
   const target = activeTabOf(s)?.target

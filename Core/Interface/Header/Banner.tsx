@@ -108,8 +108,8 @@ export function EntityBanner({
       : {
           query: open?.query ?? null,
           summon: open?.summon ?? 0,
-          start: searchView,
-          change: setViewQuery,
+          start: () => searchView(searchTab),
+          change: (query: string | null) => setViewQuery(searchTab, query),
         }
   const home = owner.kind === 'homepage'
 
