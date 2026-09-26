@@ -6,7 +6,10 @@ import {
 } from '../Files/atomicWrite'
 import { machine } from '../Platform/machine'
 import { noteSidecarWrite, noteValueWrite } from '../Nexus/valuesChanged'
-import { dirname } from '../Paths/posix'
+import { dirname, join } from '../Paths/posix'
+import { ID_KEY } from '../Nexus/identityMark'
+import { asString } from '../Nexus/coerce'
+import type { EntityRecord } from '../Nexus/record'
 import { indexWrittenPage } from '../Index/indexSeed'
 import { mergeFrontmatter, splitEnvelope, splitFrontmatter } from '../Files/pageFile'
 import { sweepAdmits } from '../Files/pageFile'
@@ -25,6 +28,14 @@ export type Rewrite = (raw: Json, file: string) => Json | null
 export type RewriteText = (content: string, file: string) => string | null
 
 type SweepPlan = ({ raw: Rewrite } | { text: RewriteText }) & { sidecars?: Rewrite }
+
+/** Removes `keys` from a root holding any of them; a root holding none is left as it is. */
+export const stripKeys =
+  (...keys: string[]): Rewrite =>
+  (raw) =>
+    keys.some((k) => k in raw)
+      ? Object.fromEntries(Object.entries(raw).filter(([k]) => !keys.includes(k)))
+      : null
 
 export const unsweptLine = (count: number, what = ''): string =>
   `Couldn’t update ${what}${count} ${count === 1 ? 'file' : 'files'}.`
@@ -103,4 +114,31 @@ export async function sweepGovernedRoots(
       })
     }
   return out
+}
+
+/** Rewrites each page or Space whose ID is in `values` — found where `roots` places it, matched by the ID it carries — and answers the IDs whose root now holds what its rewrite asked for; a null rewrite leaves its root as it is. */
+export async function sweepRootsById<T>(
+  root: string,
+  roots: Record<string, EntityRecord>,
+  values: Record<string, T>,
+  rewrite: (raw: Json, value: T) => Json | null,
+): Promise<Set<string>> {
+  const asked = new Map<string, string>()
+  const byId =
+    (idKey: string): Rewrite =>
+    (raw, file) => {
+      const id = asString(raw[idKey])
+      if (id === undefined || !Object.hasOwn(values, id)) return null
+      const next = rewrite(raw, values[id])
+      if (next !== null) asked.set(file, id)
+      return next
+    }
+  const ids = Object.keys(values)
+  const pages = ids.flatMap((id) => (roots[id]?.kind === 'page' ? join(root, roots[id].path) : []))
+  const { skipped } = await sweepGovernedRoots(root, pages, {
+    raw: byId(ID_KEY),
+    ...(ids.some((id) => roots[id]?.kind === 'space') ? { sidecars: byId('id') } : {}),
+  })
+  for (const file of skipped) asked.delete(file)
+  return new Set(asked.values())
 }

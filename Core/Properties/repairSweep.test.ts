@@ -10,7 +10,7 @@ import { createProperty } from './registryProperty'
 import { readRegistry } from './propertiesRegistry'
 import { seedContentIndex } from '../Index/indexSeed'
 import { runRepairSweep } from './repairSweep'
-import * as liveTree from '../Nexus/liveTree'
+import * as walk from '../Nexus/readNexus'
 import { refreshAfterWrite } from '../Nexus/liveTree'
 import { contextsDir, contextsRegistryFile } from '../Paths/paths'
 import { installStores, NO_STORES } from '../Platform/stores'
@@ -94,7 +94,7 @@ describe('runRepairSweep', () => {
     }
     await frontmatter('Status: Open')
     await seedContentIndex(root)
-    const walks = vi.spyOn(liveTree, 'refreshTree')
+    const walks = vi.spyOn(walk, 'readNexus')
     await runRepairSweep(root)
     expect(walks).toHaveBeenCalledTimes(1)
     walks.mockRestore()

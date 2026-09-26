@@ -3,6 +3,7 @@
 import type { BannerOwnerKind, MutableKind, MutateOutcome, MutateRequest } from './mutateRequest'
 import type { CollectionNode, NexusTree, SetNode } from './tree'
 import {
+  findContainerWhere,
   insertCreatedInTree,
   moveInTree,
   patchContextGroupsInTree,
@@ -11,7 +12,7 @@ import {
   repointRegistryInTree,
   reorderChildrenInTree,
 } from './treePatch'
-import { isMarkdownFile } from '../Paths/posix'
+import { isMarkdownFile, relDirname } from '../Paths/posix'
 import { isAdoptedId } from './ids'
 import { orderedDefs, readRegistry } from '../Properties/propertiesRegistry'
 import { dropLiveTree, getLiveTree, refreshAfterWrite } from './liveTree'
@@ -137,14 +138,18 @@ async function routeMutation(
       return patchSettingsFromDisk(root)
     case 'restore':
       dropTileHeadingLinks()
-      return 'refresh'
+      return reply.landed && isMarkdownFile(reply.landed)
+        ? patchPage(root, reply.landed)
+        : 'refresh'
     default: {
       const tree = getLiveTree()
       if (!tree) return 'refresh'
-      // An adopted id hashes the very path a rename or move changes, so an affected subtree walks rather than hold an id the next walk could never produce.
+      // An adopted id hashes the very path a rename or move changes, and a delete records its parent by stamping the adopted one away, so an affected subtree walks rather than hold an id the next walk could never produce.
       if (
-        (req.op === 'rename' || req.op === 'movePage' || req.op === 'moveSet') &&
-        subtreeHoldsAdoptedId(tree, req.path)
+        ((req.op === 'rename' || req.op === 'movePage' || req.op === 'moveSet') &&
+          subtreeHoldsAdoptedId(tree, req.path)) ||
+        (req.op === 'delete' &&
+          isAdoptedId(findContainerWhere(tree, (c) => c.path === relDirname(req.path))?.id ?? ''))
       )
         return 'refresh'
       const patched = patchForMutation(tree, req, reply)

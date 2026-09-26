@@ -168,9 +168,13 @@ export async function deindexPath(root: string, abs: string): Promise<void> {
 export async function moveIndexPaths(root: string, oldAbs: string, newAbs: string): Promise<void> {
   const oldRel = await relCorpusPath(root, oldAbs)
   const newRel = await relCorpusPath(root, newAbs)
-  if (!oldRel) return
   if (!newRel) {
-    await deindexPath(root, oldAbs)
+    if (oldRel) await deindexPath(root, oldAbs)
+    return
+  }
+  if (!oldRel) {
+    const landed = isMarkdownFile(newRel) ? [newAbs] : await folderCorpus(root, newAbs)
+    for (const abs of landed) await indexWrittenPage(root, abs)
     return
   }
   if (isMarkdownFile(oldRel)) renamePathIndex(oldRel, newRel)

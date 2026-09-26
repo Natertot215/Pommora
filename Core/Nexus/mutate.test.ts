@@ -1950,7 +1950,7 @@ describe('handleMutate — excluded entries follow their folders', () => {
     )
     await refreshTree(root)
     const r = await handleMutate(root, { op: 'restore', bundlePath: bundlePath ?? '' }, nexusDeps)
-    expect(r).toEqual({ ok: true, value: { rescope: true } })
+    expect(r).toEqual({ ok: true, value: { rescope: true, landed: 'Other (2)' } })
     expect(await excludedOnDisk()).toEqual(['Other/Drafts', 'Other (2)/Daily'])
   })
 

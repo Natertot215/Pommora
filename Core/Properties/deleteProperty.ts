@@ -5,7 +5,7 @@ import { removeFromRegistry } from './registryProperty'
 import { keyedHolders, keyHolderFiles } from './keyHolders'
 import { clearSchemaJournal, writeSchemaJournal, type SchemaJournal } from './propertyJournal'
 import { serializeSchemaOp } from './schemaChain'
-import { sweepGovernedRoots, type Rewrite } from './governedSweep'
+import { stripKeys, sweepGovernedRoots } from './governedSweep'
 import { patchSidecar } from '../Files/sidecar'
 import { readJsonObject } from '../Files/atomicWrite'
 import { sidecarPath } from '../Paths/paths'
@@ -102,22 +102,13 @@ export async function stripAndRemove(
   folders: string[],
   files: string[],
 ): Promise<{ skipped: number; removed: Result<null> }> {
-  const raw = stripKeyRewrite(key)
+  const raw = stripKeys(key)
   const swept = await sweepGovernedRoots(root, files, {
     raw,
     sidecars: withOrderEntry(raw, 'properties', key, null),
   })
   for (const folder of folders) await unassignAndPurge(folder, propertyId)
   return { skipped: swept.skipped.length, removed: await removeFromRegistry(root, propertyId) }
-}
-
-function stripKeyRewrite(key: string): Rewrite {
-  return (raw) => {
-    if (!(key in raw)) return null
-    const next = { ...raw }
-    delete next[key]
-    return next
-  }
 }
 
 async function unassignAndPurge(folder: string, propertyId: string): Promise<void> {

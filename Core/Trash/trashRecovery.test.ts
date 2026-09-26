@@ -5,7 +5,7 @@ import { tempRoot } from '../Testing/hostFs'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { dropLiveTree, refreshTree } from '../Nexus/liveTree'
 import { pathExists } from '../Files/atomicWrite'
-import { handleMutate } from '../Nexus/mutate'
+import { confirmedMutate } from '../Testing/confirmedMutate'
 import { contextsDir, contextsRegistryFile } from '../Paths/paths'
 import { listBundles } from './spend'
 import { trashRows } from './trashRows'
@@ -27,7 +27,7 @@ const find = async (title: string) => {
 }
 const del = async (path: string, kind: string) => {
   await refreshTree(root)
-  const r = await handleMutate(root, { op: 'delete', path, kind } as never, deps)
+  const r = await confirmedMutate(root, { op: 'delete', path, kind } as never, deps)
   expect(r.ok, `delete ${path}`).toBe(true)
 }
 
@@ -100,7 +100,7 @@ describe('end to end — deleted, listed, restored', () => {
     const row = await find('Alpha')
     expect(row.homeResolves).toBe(true)
     expect(row.crumbs.map((c) => c.title)).toEqual(['Journal', 'Daily'])
-    const r = await handleMutate(root, { op: 'restore', bundlePath: row.bundlePath }, deps)
+    const r = await confirmedMutate(root, { op: 'restore', bundlePath: row.bundlePath }, deps)
     expect(r.ok).toBe(true)
     expect(await pathExists(join(root, 'Journal', 'Daily', 'Alpha.md'))).toBe(true)
     expect(await rows()).toHaveLength(0)
@@ -110,7 +110,7 @@ describe('end to end — deleted, listed, restored', () => {
     await del('Journal/Daily/Alpha.md', 'page')
     expect(
       (
-        await handleMutate(
+        await confirmedMutate(
           root,
           { op: 'rename', path: 'Journal', kind: 'collection', newName: 'Logbook' },
           deps,
@@ -119,9 +119,9 @@ describe('end to end — deleted, listed, restored', () => {
     ).toBe(true)
     const row = await find('Alpha')
     expect(row.crumbs.map((c) => c.title)).toEqual(['Logbook', 'Daily'])
-    expect((await handleMutate(root, { op: 'restore', bundlePath: row.bundlePath }, deps)).ok).toBe(
-      true,
-    )
+    expect(
+      (await confirmedMutate(root, { op: 'restore', bundlePath: row.bundlePath }, deps)).ok,
+    ).toBe(true)
     expect(await pathExists(join(root, 'Logbook', 'Daily', 'Alpha.md'))).toBe(true)
   })
 
@@ -129,7 +129,7 @@ describe('end to end — deleted, listed, restored', () => {
     await del('.nexus/contexts/Projects/Pommora', 'space')
     expect(
       (
-        await handleMutate(
+        await confirmedMutate(
           root,
           { op: 'renameContext', contextId: 'ctx_projects', newName: 'Ventures' },
           deps,
@@ -138,9 +138,9 @@ describe('end to end — deleted, listed, restored', () => {
     ).toBe(true)
     const row = await find('Pommora')
     expect(row.crumbs).toEqual([{ kind: 'context', title: 'Ventures' }])
-    expect((await handleMutate(root, { op: 'restore', bundlePath: row.bundlePath }, deps)).ok).toBe(
-      true,
-    )
+    expect(
+      (await confirmedMutate(root, { op: 'restore', bundlePath: row.bundlePath }, deps)).ok,
+    ).toBe(true)
     expect(await pathExists(join(contextsDir(root), 'Ventures', 'Pommora', '_space.json'))).toBe(
       true,
     )
@@ -151,7 +151,7 @@ describe('end to end — deleted, listed, restored', () => {
     let row = await find('Alpha')
     expect(
       (
-        await handleMutate(
+        await confirmedMutate(
           root,
           {
             op: 'restore',
@@ -170,12 +170,12 @@ describe('end to end — deleted, listed, restored', () => {
     row = await find('Alpha')
     expect(row.homeResolves).toBe(false)
     expect(row.historical).toBe(true)
-    expect((await handleMutate(root, { op: 'restore', bundlePath: row.bundlePath }, deps)).ok).toBe(
-      false,
-    )
+    expect(
+      (await confirmedMutate(root, { op: 'restore', bundlePath: row.bundlePath }, deps)).ok,
+    ).toBe(false)
     expect(
       (
-        await handleMutate(
+        await confirmedMutate(
           root,
           {
             op: 'restore',
@@ -191,7 +191,7 @@ describe('end to end — deleted, listed, restored', () => {
     const setRow = await find('Daily')
     expect(
       (
-        await handleMutate(
+        await confirmedMutate(
           root,
           {
             op: 'restore',
@@ -210,7 +210,7 @@ describe('end to end — deleted, listed, restored', () => {
     expect(spaceRow.homeResolves).toBe(false)
     expect(
       (
-        await handleMutate(
+        await confirmedMutate(
           root,
           {
             op: 'restore',
@@ -230,7 +230,7 @@ describe('end to end — deleted, listed, restored', () => {
     const row = await find('Alpha')
     expect(
       (
-        await handleMutate(
+        await confirmedMutate(
           root,
           {
             op: 'restore',
@@ -257,9 +257,9 @@ describe('end to end — deleted, listed, restored', () => {
     expect(addressable.map((r) => r.title).sort()).toEqual(['Daily', 'Health'])
     expect(homeless.map((r) => r.title)).toEqual(['Alpha'])
     for (const r of addressable)
-      expect((await handleMutate(root, { op: 'restore', bundlePath: r.bundlePath }, deps)).ok).toBe(
-        true,
-      )
+      expect(
+        (await confirmedMutate(root, { op: 'restore', bundlePath: r.bundlePath }, deps)).ok,
+      ).toBe(true)
     expect((await rows()).map((r) => r.title)).toEqual(['Alpha'])
   })
 
@@ -267,7 +267,7 @@ describe('end to end — deleted, listed, restored', () => {
     await del('Journal/Daily/Alpha.md', 'page')
     let row = await find('Alpha')
     expect(
-      (await handleMutate(root, { op: 'emptyBundle', bundlePath: row.bundlePath }, deps)).ok,
+      (await confirmedMutate(root, { op: 'emptyBundle', bundlePath: row.bundlePath }, deps)).ok,
     ).toBe(true)
     expect(handed).toHaveLength(1)
     expect(handed[0].endsWith('Alpha.md')).toBe(true)
@@ -281,7 +281,8 @@ describe('end to end — deleted, listed, restored', () => {
     row = await find('Beta')
     const permanent: TrashDeps = { ...deps, permanentDelete: true }
     expect(
-      (await handleMutate(root, { op: 'emptyBundle', bundlePath: row.bundlePath }, permanent)).ok,
+      (await confirmedMutate(root, { op: 'emptyBundle', bundlePath: row.bundlePath }, permanent))
+        .ok,
     ).toBe(true)
     expect(handed).toHaveLength(1)
     expect(await rows()).toHaveLength(0)

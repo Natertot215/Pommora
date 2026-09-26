@@ -1,18 +1,19 @@
-import { join } from '../Paths/posix'
 import { propertyDefinition } from '../Properties/properties'
 import { patchSidecar } from '../Files/sidecar'
 import { fail, ok, type Result, fault } from '../Contract/result'
 import { readRegistry } from '../Properties/propertiesRegistry'
 import type { RecordFile } from './record'
 import { projectBaseline } from '../Nexus/remintLedger'
-import { refreshTree } from '../Nexus/liveTree'
+import { liveTreeOf } from '../Nexus/liveTree'
 import { readJsonObject } from '../Files/atomicWrite'
 import { sidecarPath } from '../Paths/paths'
-import { machine } from '../Platform/machine'
-import { collectionFolders, assignInner, patchCacheBlock } from '../Properties/assignment'
-import { updatePageProperty } from '../Nexus/page'
-import { setSpaceProperty } from '../Properties/setProperty'
-import { isBlankRaw, isBlankValue, reconcilePropertyValue } from '../Properties/propertyValue'
+import {
+  collectionFolders,
+  assignInner,
+  patchCacheBlock,
+  refillValues,
+} from '../Properties/assignment'
+import { isBlankRaw } from '../Properties/propertyValue'
 import { createProperty } from '../Properties/registryProperty'
 import { serializeSchemaOp } from '../Properties/schemaChain'
 
@@ -55,19 +56,13 @@ async function restoreInner(root: string, record: PropertyRecord): Promise<Resul
       await patchSidecar(folder, 'collection', (cur) => patchCacheBlock(cur, record.id, { values }))
   }
 
-  const roots = projectBaseline(await refreshTree(root)).entries
-  const unrestored: string[] = []
-  for (const [id, raw] of Object.entries(record.values)) {
-    const entry = roots[id]
-    if ((entry?.kind !== 'page' && entry?.kind !== 'space') || isBlankRaw(raw)) continue
-    const reconciled = reconcilePropertyValue(def, raw, false)
-    const abs = join(root, entry.path)
-    const written = isBlankValue(reconciled.value)
-      ? null
-      : entry.kind === 'page'
-        ? await machine().lock(abs, () => updatePageProperty(root, abs, def, reconciled.value))
-        : await setSpaceProperty(abs, def, reconciled.value)
-    if (!written?.ok) unrestored.push(entry.title)
-  }
-  return ok(unrestored)
+  const roots = projectBaseline(await liveTreeOf(root)).entries
+  const values = Object.fromEntries(
+    Object.entries(record.values).filter(
+      ([id, raw]) =>
+        (roots[id]?.kind === 'page' || roots[id]?.kind === 'space') && !isBlankRaw(raw),
+    ),
+  )
+  const taken = await refillValues(root, def, roots, values)
+  return ok(Object.keys(values).flatMap((id) => (taken.has(id) ? [] : roots[id].title)))
 }

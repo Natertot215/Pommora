@@ -1,4 +1,4 @@
-import { readFile, rm, mkdir, writeFile } from 'node:fs/promises'
+import { readFile, rename, rm, mkdir, stat, utimes, writeFile } from 'node:fs/promises'
 import { join } from '../Paths/posix'
 import { contextsDir, contextsRegistryFile } from '../Paths/paths'
 import { tempRoot } from '../Testing/hostFs'
@@ -90,6 +90,35 @@ describe('restoring a deleted property', () => {
     const r = await handleMutate(root, { op: 'restore', bundlePath: await onlyBundlePath() }, deps)
     expect(r.ok).toBe(true)
     expect(JSON.parse(await readFile(file, 'utf8')).properties).toEqual([id])
+  })
+
+  it('fills only pages that hold no value, names the one that kept its own, and re-dates none', async () => {
+    const id = await seedPriority()
+    const p1 = await createPage(notes, 'A', { body: 'b' })
+    const p2 = await createPage(tasks, 'B', { body: 'b' })
+    if (!p1.ok || !p2.ok) throw new Error('pages failed')
+    await updatePageProperty(root, p1.value.path, await liveDef(id), {
+      kind: 'select',
+      value: 'hi',
+    })
+    await updatePageProperty(root, p2.value.path, await liveDef(id), {
+      kind: 'select',
+      value: 'lo',
+    })
+    expect((await deleteProperty(root, id)).ok).toBe(true)
+    await writeFile(
+      p2.value.path,
+      (await readFile(p2.value.path, 'utf8')).replace(/\n---\n/, '\nPriority: hi\n---\n'),
+    )
+    const then = new Date('2020-01-01T00:00:00Z')
+    for (const page of [p1.value.path, p2.value.path]) await utimes(page, then, then)
+
+    const r = await handleMutate(root, { op: 'restore', bundlePath: await onlyBundlePath() }, deps)
+    expect(r).toMatchObject({ ok: true, value: { unrestored: ['B'] } })
+    expect(await valueOn(p1.value.path, 'Priority')).toEqual(['hi'])
+    expect(await valueOn(p2.value.path, 'Priority')).toBe('hi')
+    for (const page of [p1.value.path, p2.value.path])
+      expect((await stat(page)).mtimeMs).toBe(then.getTime())
   })
 
   it('comes back defined, assigned where it was, and holding its values', async () => {
@@ -259,6 +288,28 @@ describe('restoring a deleted property', () => {
     const r = await handleMutate(root, { op: 'restore', bundlePath: await onlyBundlePath() }, deps)
     expect(r.ok).toBe(true)
     expect((await sidecar()).Priority).toEqual(['hi'])
+  })
+
+  it('a Space whose Context folder differs in case from its title still takes its value back', async () => {
+    await mkdir(contextsDir(root), { recursive: true })
+    await writeFile(contextsRegistryFile(root), JSON.stringify({ contexts: [] }))
+    const group = await createContextGroup(root, 'Projects')
+    if (!group.ok) throw new Error('context failed')
+    const space = await createSpace(root, group.value.id, 'Pommora')
+    if (!space.ok) throw new Error('space failed')
+    await rename(join(contextsDir(root), 'Projects'), join(contextsDir(root), 'moved'))
+    await rename(join(contextsDir(root), 'moved'), join(contextsDir(root), 'projects'))
+    const sidecarFile = join(contextsDir(root), 'projects', 'Pommora', '_space.json')
+    const id = await seedPriority()
+    await setSpaceProperty(join(root, space.value.path), await liveDef(id), {
+      kind: 'select',
+      value: 'hi',
+    })
+    expect((await deleteProperty(root, id)).ok).toBe(true)
+
+    const r = await handleMutate(root, { op: 'restore', bundlePath: await onlyBundlePath() }, deps)
+    expect(r).toEqual({ ok: true, value: {} })
+    expect(JSON.parse(await readFile(sidecarFile, 'utf8')).Priority).toEqual(['hi'])
   })
 
   it('a Multi-Select value comes back holding only the options the definition still offers', async () => {

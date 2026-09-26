@@ -1,6 +1,5 @@
 // Option lists are edited IN PLACE, never decode-to-strings→re-encode: a holder may carry foreign or non-string elements, and an op must touch only its target.
 
-import { splitEnvelope, mergeFrontmatter, splitFrontmatter } from '../Files/pageFile'
 import type { Rewrite } from './governedSweep'
 
 export type ValueEdit = { op: 'strip' } | { op: 'replace'; to: string }
@@ -32,10 +31,4 @@ export function valueEditRewrite(key: string, target: string, edit: ValueEdit): 
     else out[key] = next
     return out
   }
-}
-
-export function stripPageMember(content: string, key: string): string | null {
-  const root = splitFrontmatter(content) as Record<string, unknown>
-  if (!(key in root)) return null
-  return mergeFrontmatter(content, {}, [key], splitEnvelope(content).body)
 }

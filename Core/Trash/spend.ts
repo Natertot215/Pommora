@@ -2,7 +2,7 @@ import { basename, dirname, join, relative, isMarkdownFile } from '../Paths/posi
 import { escapes, resolveUnderRoot } from '../Paths/pathSafety'
 import { contextKey } from '../Contexts/contexts'
 import { spaceSidecarsIn, withOrderEntry } from '../Contexts/spaceSidecar'
-import { TRASH_DIR, SPACE_SIDECAR } from '../Paths/nexusPaths'
+import { TRASH_DIR } from '../Paths/nexusPaths'
 import type {
   MutateOutcome,
   MutateReply,
@@ -11,26 +11,26 @@ import type {
 } from '../Nexus/mutateRequest'
 import { landingRefusal } from '../Nexus/folderEntity'
 import type { MutateContext } from '../Nexus/mutate'
-import { seedContentIndex } from '../Index/indexSeed'
+import { moveIndexPaths } from '../Index/indexSeed'
 import { fail, ok, type Result, fault } from '../Contract/result'
 import type { NexusTree } from '../Nexus/tree'
 import { mutateRegistryFile } from '../Contexts/contextsRegistry'
-import { reconcile } from '../Properties/reconcile'
 import { restoreProperty } from './restoreProperty'
 import { scrubReturning } from './restoreScrub'
 import { reseatExcludedFolders } from '../Settings/settings'
-import { sweepGovernedRoots } from '../Properties/governedSweep'
+import { sweepRootsById } from '../Properties/governedSweep'
 import { BUNDLE_SUFFIX } from './bundle'
 import { pathExists, readJsonObject, readTextOrNull, rmwJsonStrict } from '../Files/atomicWrite'
 import { listEntries, listMarkdownFiles } from '../Files/walk'
 import { dropPageMetadata } from '../Nexus/pageMetadata'
 import { machine } from '../Platform/machine'
-import { mergeFrontmatter, splitEnvelope, splitFrontmatter, stampedId } from '../Files/pageFile'
+import { stampedId } from '../Files/pageFile'
 import { recordWrite } from '../Files/writeEcho'
 import { noteValueWrite } from '../Nexus/valuesChanged'
-import { getLiveTree, refreshTree } from '../Nexus/liveTree'
+import { getLiveTree, liveTreeOf } from '../Nexus/liveTree'
 
 import { projectBaseline } from '../Nexus/remintLedger'
+import type { EntityRecord } from '../Nexus/record'
 import { type RecordFile, readRecord, bundleArtifact } from './record'
 import { findContainerById, resolveRecord, type ArtifactRecord, type Refusal } from './resolve'
 
@@ -69,36 +69,6 @@ const REFUSAL_TEXT: Record<Refusal, string> = {
   'cannot-hold': 'The place this belonged to can no longer hold it.',
   unaddressable: 'Where this belonged was never recorded.',
   'id-live': 'Something in the nexus already carries this identity.',
-}
-
-async function addContextValues(
-  root: string,
-  entry: { kind: string; path: string } | undefined,
-  key: string,
-  titles: string[],
-): Promise<boolean> {
-  if (!entry || (entry.kind !== 'page' && entry.kind !== 'space')) return false
-  const merge = (raw: Record<string, unknown>): unknown[] => {
-    const existing = Array.isArray(raw[key])
-      ? (raw[key] as unknown[]).filter((v): v is string => typeof v === 'string')
-      : []
-    return [...existing, ...titles.filter((t) => !existing.includes(t))]
-  }
-  if (entry.kind === 'page') {
-    const files = [join(root, entry.path)]
-    const text = (content: string): string =>
-      mergeFrontmatter(
-        content,
-        { [key]: merge(splitFrontmatter(content)) },
-        [key],
-        splitEnvelope(content).body,
-      )
-    const swept = await sweepGovernedRoots(root, files, { text })
-    return swept.touched.size > 0
-  }
-  const file = join(root, entry.path, SPACE_SIDECAR)
-  const written = await rmwJsonStrict(file, (raw) => ({ ...raw, [key]: merge(raw) }))
-  return written.ok
 }
 
 async function rekeyPassengers(
@@ -207,7 +177,7 @@ function withDestination(
   }
 }
 
-type Restored = Pick<MutateOutcome, 'unrestored' | 'rescope'>
+type Restored = Pick<MutateOutcome, 'unrestored' | 'rescope' | 'landed'>
 
 const restored = (unrestored: string[]): Restored => (unrestored.length ? { unrestored } : {})
 
@@ -217,9 +187,7 @@ export async function restoreOp(
 ): Promise<MutateReply> {
   const resolved = await resolveUnderRoot(root, req.bundlePath)
   if (!resolved.ok) return resolved
-  const r = await restoreArtifact(root, resolved.value, req.destination)
-  if (r.ok) await seedContentIndex(root)
-  return r
+  return restoreArtifact(root, resolved.value, req.destination)
 }
 
 async function restoreArtifact(
@@ -242,7 +210,7 @@ async function restoreArtifact(
   if (!artifactAbs)
     return fail('not-found', 'That deletion never finished; there is nothing to restore.')
 
-  const tree = await refreshTree(root)
+  const tree = await liveTreeOf(root)
   const rehomed = destination ? withDestination(opened.value, destination, tree) : ok(opened.value)
   if (!rehomed.ok) return rehomed
   const record = rehomed.value
@@ -302,6 +270,7 @@ async function restoreArtifact(
       }))
     return fault(e)
   }
+  await moveIndexPaths(root, artifactAbs, targetAbs)
   const roots = projectBaseline(tree).entries
   const unspent: string[] = []
   if (record.entity === 'context') {
@@ -334,7 +303,7 @@ async function restoreArtifact(
     recordWrite(bundleAbs)
     await machine().remove(bundleAbs)
   }
-  const outcome = restored(unspent.map((id) => roots[id].title))
+  const outcome = { ...restored(unspent.map((id) => roots[id].title)), landed: targetRel }
   if (record.entity !== 'collection' && record.entity !== 'set') return ok(outcome)
   return ok({
     ...outcome,
@@ -345,12 +314,15 @@ async function restoreArtifact(
 /** The ids of what's still here and didn't take its tag back; a root gone since has nothing to take it. */
 async function reapply(
   root: string,
-  roots: Record<string, { kind: string; path: string }>,
+  roots: Record<string, EntityRecord>,
   key: string,
   additions: Record<string, string[]>,
 ): Promise<string[]> {
-  const { kept } = await reconcile(additions, (id, titles) =>
-    addContextValues(root, roots[id], key, titles),
-  )
-  return Object.keys(kept).filter((id) => roots[id])
+  const taken = await sweepRootsById(root, roots, additions, (raw, titles) => {
+    const held = Array.isArray(raw[key])
+      ? raw[key].filter((v): v is string => typeof v === 'string')
+      : []
+    return { ...raw, [key]: [...held, ...titles.filter((t) => !held.includes(t))] }
+  })
+  return Object.keys(additions).filter((id) => roots[id] && !taken.has(id))
 }

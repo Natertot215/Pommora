@@ -5,7 +5,7 @@ import { ASSETS_DIR_REL } from '../Paths/nexusPaths'
 import { rm, mkdir, readFile, writeFile, unlink } from 'node:fs/promises'
 import { join } from '../Paths/posix'
 import { tempRoot } from '../Testing/hostFs'
-import { handleMutate } from '../Nexus/mutate'
+import { confirmedMutate } from '../Testing/confirmedMutate'
 import { openSession, closeSession } from '../Nexus/session'
 import { installStores, NO_STORES } from '../Platform/stores'
 import { memoryStores } from '../Testing/memoryStores'
@@ -86,7 +86,7 @@ afterEach(async () => {
 
 describe('the writers maintain the rows', () => {
   it('a page rename moves its rows and re-points every mentioning page — cascade included', async () => {
-    const r = await handleMutate(
+    const r = await confirmedMutate(
       root,
       { op: 'rename', path: 'Notes/Daily/Beta.md', kind: 'page', newName: 'Gamma' },
       deps,
@@ -103,7 +103,7 @@ describe('the writers maintain the rows', () => {
       `---\nID: ${B_ID}\n---\n\n## Part\n\n[[Beta#Part]]`,
     )
     await seedContentIndex(root)
-    const r = await handleMutate(
+    const r = await confirmedMutate(
       root,
       { op: 'rename', path: 'Notes/Daily/Beta.md', kind: 'page', newName: 'Gamma' },
       deps,
@@ -116,7 +116,7 @@ describe('the writers maintain the rows', () => {
   })
 
   it('a folder rename prefix-moves every row beneath it', async () => {
-    const r = await handleMutate(
+    const r = await confirmedMutate(
       root,
       { op: 'rename', path: 'Notes/Daily', kind: 'set', newName: 'Weekly' },
       deps,
@@ -128,7 +128,7 @@ describe('the writers maintain the rows', () => {
 
   it('a property write lands in page_values; a create is born indexed', async () => {
     await createProperty(root, { id: 'prop_s', name: 'Stage', type: 'select' })
-    const set = await handleMutate(
+    const set = await confirmedMutate(
       root,
       {
         op: 'setProperty',
@@ -140,7 +140,7 @@ describe('the writers maintain the rows', () => {
     )
     expect(set.ok).toBe(true)
     expect(queryKeyHolders('Stage')).toEqual(['Notes/Daily/Alpha.md'])
-    const created = await handleMutate(
+    const created = await confirmedMutate(
       root,
       { op: 'createPage', parentPath: 'Notes', name: 'Fresh' },
       deps,
@@ -150,7 +150,7 @@ describe('the writers maintain the rows', () => {
   })
 
   it('a context write lands as a space row; a Space rename and delete each keep it current', async () => {
-    const tagged = await handleMutate(
+    const tagged = await confirmedMutate(
       root,
       {
         op: 'setContext',
@@ -163,7 +163,7 @@ describe('the writers maintain the rows', () => {
     expect(tagged.ok).toBe(true)
     expect(queryMembers('<Projects>', 'pommora')).toEqual(['Notes/Daily/Alpha.md'])
     await expectMaintained()
-    const renamed = await handleMutate(
+    const renamed = await confirmedMutate(
       root,
       { op: 'renameSpace', spaceId: 'sp-pom', newName: 'Pom' },
       deps,
@@ -173,7 +173,7 @@ describe('the writers maintain the rows', () => {
     expect(queryMembers('<Projects>', 'pom')).toEqual(['Notes/Daily/Alpha.md'])
     await expectMaintained()
     await refreshTree(root)
-    const deleted = await handleMutate(
+    const deleted = await confirmedMutate(
       root,
       { op: 'delete', path: '.nexus/contexts/Projects/Pom', kind: 'space' },
       deps,
@@ -183,8 +183,8 @@ describe('the writers maintain the rows', () => {
     await expectMaintained()
   })
 
-  it('a delete clears the rows; a restore reseeds them', async () => {
-    const del = await handleMutate(
+  it('a delete clears the rows; a restore indexes what came back', async () => {
+    const del = await confirmedMutate(
       root,
       { op: 'delete', path: 'Notes/Daily/Beta.md', kind: 'page' },
       deps,
@@ -193,7 +193,7 @@ describe('the writers maintain the rows', () => {
     expect(queryMentions('beta')).toEqual(['Notes/Daily/Alpha.md'])
     await expectMaintained()
     const [listed] = await listBundles(root)
-    const restored = await handleMutate(
+    const restored = await confirmedMutate(
       root,
       { op: 'restore', bundlePath: listed.bundlePath },
       deps,
@@ -202,8 +202,27 @@ describe('the writers maintain the rows', () => {
     await expectMaintained()
   })
 
+  it('a Set delete clears every row beneath it; its restore indexes each page that came back', async () => {
+    const del = await confirmedMutate(
+      root,
+      { op: 'delete', path: 'Notes/Daily', kind: 'set' },
+      deps,
+    )
+    expect(del.ok).toBe(true)
+    expect(queryMentions('beta')).toEqual([])
+    const [listed] = await listBundles(root)
+    const restored = await confirmedMutate(
+      root,
+      { op: 'restore', bundlePath: listed.bundlePath },
+      deps,
+    )
+    expect(restored.ok).toBe(true)
+    expect(queryMentions('beta')).toEqual(['Notes/Daily/Alpha.md'])
+    await expectMaintained()
+  })
+
   it('a page move re-keys its rows', async () => {
-    const r = await handleMutate(
+    const r = await confirmedMutate(
       root,
       { op: 'movePage', path: 'Notes/Daily/Beta.md', newParentPath: 'Notes' },
       deps,

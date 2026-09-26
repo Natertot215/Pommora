@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest'
 import { ID_KEY } from '../Nexus/identityMark'
-import { chmod, rm, readFile, writeFile } from 'node:fs/promises'
+import { chmod, rename, rm, readFile, stat, utimes, writeFile } from 'node:fs/promises'
 import { join, relative } from '../Paths/posix'
 import { noModeBits, tempRoot } from '../Testing/hostFs'
 import { fault } from '../Contract/result'
@@ -155,6 +155,28 @@ describe('removeProperty — strip + cache (C-3/C-6)', () => {
 })
 
 describe('restore on re-assign — per-value schema-currency reconciliation (C-3)', () => {
+  it('removing and re-assigning leaves every page’s modification time where it was', async () => {
+    const then = new Date('2020-01-01T00:00:00Z')
+    for (const page of [pageA, pageB]) await utimes(page, then, then)
+    await removeProperty(root, folder, propId)
+    await assignProperty(root, folder, propId)
+    expect(await pageValue(pageA)).toEqual(['active'])
+    for (const page of [pageA, pageB]) expect((await stat(page)).mtimeMs).toBe(then.getTime())
+  })
+
+  it('pages swapped behind the held tree each take back their own value', async () => {
+    await refreshTree(root)
+    await removeProperty(root, folder, propId)
+    const tmp = join(folder, 'tmp.md')
+    await rename(pageA, tmp)
+    await rename(pageB, pageA)
+    await rename(tmp, pageB)
+    await assignProperty(root, folder, propId)
+    expect(await pageValue(pageA)).toEqual(['done'])
+    expect(await pageValue(pageB)).toEqual(['active'])
+    expect(await cacheBlock()).toBeUndefined()
+  })
+
   it('restores cached values to pages still present and clears the block', async () => {
     await removeProperty(root, folder, propId)
     const r = await assignProperty(root, folder, propId)
