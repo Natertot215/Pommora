@@ -43,7 +43,7 @@ export function pointerHandlers<H extends PointerTarget>(spec: PointerSpec<H>): 
       editingOnPress = hit ? caretInside(view, hit.range) : false
       if (!hit) return false
       const go = spec.follow(hit, view, event)
-      // LOAD-BEARING: `contextmenu` reads the live caret to decide it is inside the syntax and should stand down, so a fallthrough seats one on every right-press and the menu never appears. No test covers it — jsdom seats no caret from synthetic coordinates.
+      // LOAD-BEARING: `contextmenu` reads the live caret to decide it is inside the syntax and should stand down, so a fallthrough seats one on every right-press and the menu never appears.
       if (event.button === 2) return go != null
       if (event.button !== 0 || event.shiftKey || event.detail > 1) return false
       // A press that missed the drawn text but clamped inside belongs outside — the zero-width marker that made the coordinate land here would drop the caret inside a label the pointer never touched.
