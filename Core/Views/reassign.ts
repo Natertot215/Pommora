@@ -1,10 +1,18 @@
 import { UNGROUPED } from '@pommora/core/Views/viewRow'
 import type { PropertyValue } from '@pommora/core/Properties/propertyValue'
+import type { PropertyType } from '@pommora/core/Properties/properties'
 
 /** A date bucket isn't a single date, so date/datetime grouping can't be reassigned by drag; the rest here can. */
-export const REASSIGNABLE_GROUP_TYPES = new Set<string>(['status', 'select', 'checkbox'])
+export const REASSIGNABLE_GROUP_TYPES: ReadonlySet<string> = new Set([
+  'status',
+  'select',
+  'checkbox',
+] satisfies PropertyType[])
 
-export function groupKeyToValue(groupKey: string, type: string | undefined): PropertyValue | null {
+export function groupKeyToValue(
+  groupKey: string,
+  type: PropertyType | 'title' | undefined,
+): PropertyValue | null {
   if (groupKey === UNGROUPED) return null
   switch (type) {
     case 'status':

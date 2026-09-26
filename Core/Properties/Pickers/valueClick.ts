@@ -1,7 +1,7 @@
 // One home for the rules that must never drift across surfaces: a checkbox is true-or-absent on disk, never a stored false; the option kinds open their picker; datetime opens the calendar.
 
 import type { PropertyValue } from '@pommora/core/Properties/propertyValue'
-import { isOptionsKind } from '../properties'
+import { isOptionsKind, type PropertyType } from '../properties'
 
 type ValueClickAction =
   | { kind: 'commit'; value: PropertyValue | null }
@@ -12,7 +12,7 @@ type ValueClickAction =
 
 /** Null = the click isn't covered by the shared rules — the surface's own tail routes it. */
 export function sharedValueClickAction(
-  type: string | undefined,
+  type: PropertyType | 'title' | undefined,
   value: PropertyValue,
 ): ValueClickAction {
   if (type === 'checkbox') {

@@ -68,7 +68,7 @@ export function linkAlias(raw: string): string | undefined {
 }
 
 // `null` clears, `undefined` refuses the commit. Only an address carries its alias through an edit: its field shows the bare URL, so an alias left off the typed text was never on screen.
-export function urlValueFromEdit(
+export function linkValueFromEdit(
   raw: string,
   current: string | undefined,
   resolve?: ResolveTitle,
@@ -83,7 +83,7 @@ export function urlValueFromEdit(
   return { kind: 'url', value: serializeLink({ url: normalizeLinkUrl(trimmed), alias }) }
 }
 
-export function urlValueFromRename(alias: string, current: string): PropertyValue {
+export function linkValueFromRename(alias: string, current: string): PropertyValue {
   const named = alias.trim() || undefined
   const target = readLink(current)
   return {

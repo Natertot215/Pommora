@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
+import type { PropertyType } from '@pommora/core/Properties/properties'
 import { UNGROUPED } from '@pommora/core/Views/viewRow'
 import type { CollectionNode, SetNode } from '@pommora/core/Nexus/tree'
 import type {
@@ -323,7 +324,7 @@ export function useViewHost(
   const commitGroupValue = (
     pageId: string,
     propertyId: string,
-    type: string | undefined,
+    type: PropertyType | 'title' | undefined,
     groupKey: string,
   ): Promise<boolean> | undefined => {
     const row = rowById.get(pageId)

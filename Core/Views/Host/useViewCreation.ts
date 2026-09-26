@@ -11,7 +11,7 @@ import {
   isBlankValue,
   type PropertyValue,
 } from '@pommora/core/Properties/propertyValue'
-import type { PropertyDefinition } from '@pommora/core/Properties/properties'
+import type { PropertyDefinition, PropertyType } from '@pommora/core/Properties/properties'
 import { type SavedView, viewOption } from '@pommora/core/Views/views'
 import { DEFAULT_NEW_NAME } from '@pommora/core/Nexus/mutateRequest'
 import { relDirname } from '@pommora/core/Paths/posix'
@@ -26,7 +26,13 @@ import { groupKeyToValue } from '../reassign'
 import { useLatest } from '@pommora/uix/Utilities/stableApi'
 
 // Sort criteria whose value a new page can inherit from its anchor — single-value user properties; under anything else the row simply lands where the sort puts it.
-const SEEDABLE_SORT_TYPES = new Set(['status', 'select', 'checkbox', 'number', 'datetime'])
+const SEEDABLE_SORT_TYPES: ReadonlySet<string> = new Set([
+  'status',
+  'select',
+  'checkbox',
+  'number',
+  'datetime',
+] satisfies PropertyType[])
 
 interface ViewCreationConfig {
   source: CollectionNode | SetNode
@@ -43,7 +49,7 @@ interface ViewCreationConfig {
   bandBucket: (key: string) => string | null
   canReassign: boolean
   groupPropId: string | undefined
-  groupPropType: string | undefined
+  groupPropType: PropertyType | 'title' | undefined
   setPaths: Map<string, string>
   collapsed: Set<string>
   toggleCollapse: (key: string) => void

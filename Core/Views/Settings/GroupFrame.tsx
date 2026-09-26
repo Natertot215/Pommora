@@ -1,6 +1,10 @@
 import { useMemo } from 'react'
 import type { CollectionNode, SetNode } from '@pommora/core/Nexus/tree'
-import { type PropertyDefinition, optionsOf } from '@pommora/core/Properties/properties'
+import {
+  type PropertyDefinition,
+  type PropertyType,
+  optionsOf,
+} from '@pommora/core/Properties/properties'
 import {
   type DateGranularity,
   type GroupConfig,
@@ -61,7 +65,11 @@ import { OptionChip } from '../../Properties/Cells/OptionChip'
 import { useCapitalizeMetadata } from '../../Properties/Cells/columnLabel'
 import { styleFor, useNexusForms } from '../Host/useColumnStyles'
 
-const GROUPABLE_PANE = new Set(['select', 'status', 'datetime'])
+const GROUPABLE_PANE: ReadonlySet<string> = new Set([
+  'select',
+  'status',
+  'datetime',
+] satisfies PropertyType[])
 
 const STRUCTURAL_ORDER: PickerOption<StructuralOrderMode>[] = [
   { value: 'custom', label: 'Custom' },
@@ -92,7 +100,7 @@ const SEPARATION: PickerOption<'dash' | 'slash'>[] = [
   { value: 'slash', label: 'Slash' },
 ]
 
-const orderOptionsFor = (type: string | undefined): PickerOption<GroupOrderMode>[] =>
+const orderOptionsFor = (type: PropertyType | undefined): PickerOption<GroupOrderMode>[] =>
   type === 'datetime' ? DATE_ORDER : OPTION_ORDER
 
 export function GroupFrame({

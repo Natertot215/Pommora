@@ -14,7 +14,7 @@ import { FrameSlide } from '@pommora/uix/Menus/FrameSlide'
 import { Icon } from '@pommora/uix/Symbols'
 import { useHeld } from '@pommora/uix/Animations/useExitPresence'
 import type { PickKind } from './massAssign'
-import { DatetimeValuePicker } from './DatetimeValuePicker'
+import { DateTimeValuePicker } from './DateTimeValuePicker'
 import { adoptPathInto, pickFileInto } from './filePick'
 import { OptionChip } from '../Cells/OptionChip'
 import { chooserTop, emptyPane } from './property-picker.css'
@@ -116,7 +116,7 @@ export function PropertyPicker({
       )
     })()
   ) : t.kind === 'datetime' ? (
-    <DatetimeValuePicker
+    <DateTimeValuePicker
       value={t.current}
       dateFormat={t.dateFormat}
       timeFormat={t.timeFormat}

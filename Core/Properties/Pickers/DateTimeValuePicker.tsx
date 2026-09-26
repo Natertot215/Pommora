@@ -4,7 +4,7 @@ import { CalendarPicker } from '@pommora/uix/Pickers/CalendarPicker'
 import { useSetting } from '../../Session/store'
 import { formatDate, readDate } from '../formatValue'
 
-export function DatetimeValuePicker({
+export function DateTimeValuePicker({
   value,
   dateFormat,
   timeFormat,

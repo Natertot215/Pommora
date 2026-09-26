@@ -3,8 +3,11 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { columnMenuItems, parseStyleAction } from '@pommora/core/Actions/columnMenu'
 import { defaultStyleFor, type ColumnStyle } from '@pommora/core/Properties/columnStyles'
-import type { PropertyDefinition } from '@pommora/core/Properties/properties'
-import { RESERVED_PROPERTY_ID } from '@pommora/core/Properties/properties'
+import {
+  type PropertyDefinition,
+  type PropertyType,
+  RESERVED_PROPERTY_ID,
+} from '@pommora/core/Properties/properties'
 import { type ColumnAlign, type SavedView, viewOption } from '@pommora/core/Views/views'
 import { announce } from '@pommora/uix/Interactions/a11y'
 import { findScroller, startAutoScroll } from '@pommora/uix/Interactions/autoscroll'
@@ -31,7 +34,7 @@ interface ColumnWidth {
 
 // Only `title` is UNCAPPED — a resize past the pane h-scrolls instead of hitting a wall. Mins stay so a stale saved value can't squash a column below legibility.
 const UNCAPPED = Number.POSITIVE_INFINITY
-const WIDTHS: Record<string, ColumnWidth> = {
+const WIDTHS: Record<PropertyType | 'title', ColumnWidth> = {
   title: { min: 120, default: 280, max: UNCAPPED },
   context: { min: 80, default: 140, max: 350 },
   status: { min: 65, default: 120, max: 250 },
@@ -50,7 +53,7 @@ const FALLBACK: ColumnWidth = { min: 80, default: 140, max: UNCAPPED }
 
 // Per-look min overrides replace the type's base min; status, select and multi-select are one option-chip family, so they share OPTION_MIN.
 const OPTION_MIN = { compact: 65, standard: 80 } as const
-const STYLE_MIN: Record<string, Partial<Record<string, number>>> = {
+const STYLE_MIN: Partial<Record<PropertyType | 'title', Partial<Record<string, number>>>> = {
   checkbox: { switch: 70 },
   status: OPTION_MIN,
   select: OPTION_MIN,
@@ -66,7 +69,7 @@ export function widthFor(
   contextIds: readonly string[] = [],
 ): ColumnWidth {
   const t = declaredType(columnId, schema, contextIds)
-  return (t !== undefined && WIDTHS[t]) || FALLBACK
+  return t === undefined ? FALLBACK : WIDTHS[t]
 }
 
 /** `look` omitted resolves the type's DEFAULT look, so an unstyled option column reads its Standard min; reserved timestamp columns keep the base. */
@@ -101,7 +104,14 @@ export function clampWidth(
 // ── Alignment ───────────────────────────────────────────────────────────────
 
 // The chip- and box-shaped values center; so does a datetime, whose formatted value reads centered. The reserved Modified timestamp keeps Title's left metadata treatment.
-const CENTERED = new Set(['checkbox', 'status', 'select', 'multi_select', 'context', 'datetime'])
+const CENTERED: ReadonlySet<string> = new Set([
+  'checkbox',
+  'status',
+  'select',
+  'multi_select',
+  'context',
+  'datetime',
+] satisfies PropertyType[])
 
 /** `contextIds` is what makes a Context column classify as such — omit it and one reads as an unknown type. */
 export function defaultAlignFor(

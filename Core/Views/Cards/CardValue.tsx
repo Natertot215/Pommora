@@ -12,7 +12,7 @@ import { declaredType, resolveFieldValue } from '../../Properties/value'
 import { isOptionsKind } from '../../Properties/properties'
 import { GhostSuppress } from '@pommora/uix/Interactions/ghostCreate'
 import { Cell } from '../../Properties/Cells/Cell'
-import { linkAlias, linkEditText, urlValueFromRename } from '@pommora/core/Connections/linkValue'
+import { linkAlias, linkEditText, linkValueFromRename } from '@pommora/core/Connections/linkValue'
 import { validateLink } from '../../Properties/Cells/linkResolve'
 import {
   linkValueMenuTarget,
@@ -145,7 +145,7 @@ export function CardValue({
     // A url Edit rewrites the URL but rides the existing alias along; `undefined` = invalid, so don't commit.
     const parsed =
       mode === 'rename'
-        ? urlValueFromRename(raw, v.kind === 'url' ? v.value : '')
+        ? linkValueFromRename(raw, v.kind === 'url' ? v.value : '')
         : parseEditorValue(t, raw, v)
     if (parsed !== undefined) commit(parsed)
   }
