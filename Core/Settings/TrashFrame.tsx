@@ -77,7 +77,6 @@ function TrashBody(): React.JSX.Element {
   const defaultIcons = useSession((s) => s.personalization.defaultIcons)
   const tree = useSession((s) => s.tree)
   const mutate = useSession((s) => s.mutate)
-  const load = useSession((s) => s.load)
   const trashRevision = useSession((s) => s.trashRevision)
   const [rows, setRows] = useState<TrashRow[] | null>(null)
   const [failed, setFailed] = useState(false)
@@ -116,7 +115,6 @@ function TrashBody(): React.JSX.Element {
   const many = async (
     targets: TrashRow[],
     req: (row: TrashRow) => MutateRequest,
-    reloads: boolean,
   ): Promise<{ done: TrashRow[]; refused: TrashRow[]; unrestored: string[] }> => {
     const done: TrashRow[] = []
     const refused: TrashRow[] = []
@@ -126,18 +124,16 @@ function TrashBody(): React.JSX.Element {
       ;(res.ok ? done : refused).push(row)
       if (res.ok) unrestored.push(...(res.value.unrestored ?? []))
     }
-    if (done.length > 0 && reloads) await load()
     await refresh()
     return { done, refused, unrestored }
   }
 
   const restoreBatch = async (targets: TrashRow[]): Promise<void> => {
     const addressable = targets.filter((r) => r.homeResolves)
-    const { done, refused, unrestored } = await many(
-      addressable,
-      (row) => ({ op: 'restore', bundlePath: row.bundlePath }),
-      true,
-    )
+    const { done, refused, unrestored } = await many(addressable, (row) => ({
+      op: 'restore',
+      bundlePath: row.bundlePath,
+    }))
     const homeless = targets.filter((r) => !r.homeResolves)
     const unmet = [
       homeless.length > 0 &&
@@ -150,11 +146,10 @@ function TrashBody(): React.JSX.Element {
 
   const emptyBatch = async (targets: TrashRow[]): Promise<void> => {
     if (!(await askEmptyTrash(targets.length))) return
-    const { done, refused } = await many(
-      targets,
-      (row) => ({ op: 'emptyBundle', bundlePath: row.bundlePath }),
-      false,
-    )
+    const { done, refused } = await many(targets, (row) => ({
+      op: 'emptyBundle',
+      bundlePath: row.bundlePath,
+    }))
     const unmet = refused.length > 0 ? ` ${countPhrase(refused)} couldn’t be deleted.` : ''
     notifyReport(`Deleted ${countPhrase(done)}.${unmet}`, unmet !== '')
   }

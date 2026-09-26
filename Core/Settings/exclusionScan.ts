@@ -6,7 +6,12 @@ import { asString } from '../Nexus/coerce'
 import { dropPageMetadata } from '../Nexus/pageMetadata'
 import { getLiveTree } from '../Nexus/liveTree'
 import { fault, ok, type Result } from '../Contract/result'
-import { sweepGovernedRoots, type RewriteText, unsweptLine } from '../Properties/governedSweep'
+import {
+  type Rewrite,
+  stripKeys,
+  sweepGovernedRoots,
+  unsweptLine,
+} from '../Properties/governedSweep'
 import {
   excludedMatcher,
   hiddenFolder,
@@ -16,7 +21,6 @@ import {
   type WatchScope,
 } from '../Paths/exclusion'
 import { listPathsUnder } from '../Files/walk'
-import { mergeFrontmatter, splitFrontmatter, splitEnvelope } from '../Files/pageFile'
 import { SIDECAR_FILENAME } from '../Paths/nexusPaths'
 
 export interface ClearReport {
@@ -53,16 +57,16 @@ export async function excludedArtifacts(
 }
 
 const clearRewrite =
-  (cleared: Map<string, string>): RewriteText =>
-  (content, file) => {
-    const fm = splitFrontmatter(content)
-    const remove = Object.keys(fm).filter(
-      (k) => BOOKKEEPING_KEYS.includes(k) || parseContextKey(k) !== null,
-    )
-    if (remove.length === 0) return null
-    const id = asString(fm[ID_KEY])
-    if (id) cleared.set(file, id)
-    return mergeFrontmatter(content, {}, remove, splitEnvelope(content).body)
+  (cleared: Map<string, string>): Rewrite =>
+  (raw, file) => {
+    const id = asString(raw[ID_KEY])
+    const next = stripKeys(
+      ...Object.keys(raw).filter(
+        (k) => BOOKKEEPING_KEYS.includes(k) || parseContextKey(k) !== null,
+      ),
+    )(raw, file)
+    if (next !== null && id) cleared.set(file, id)
+    return next
   }
 
 export async function clearExclusionData(
@@ -82,7 +86,7 @@ export async function clearExclusionData(
     if (gone) removed++
   }
   const cleared = new Map<string, string>()
-  const swept = await sweepGovernedRoots(root, pages, { text: clearRewrite(cleared) })
+  const swept = await sweepGovernedRoots(root, pages, { raw: clearRewrite(cleared) })
   const ids = [...swept.touched.keys()].flatMap((file) => cleared.get(file) ?? [])
   await dropPageMetadata(root, ids, getLiveTree())
   if (swept.skipped.length) return fault(unsweptLine(swept.skipped.length))

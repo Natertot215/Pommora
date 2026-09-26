@@ -22,6 +22,7 @@ import {
   type Rewrite,
   type RewriteText,
   type SweepResult,
+  stripKeys,
   sweepGovernedRoots,
   unsweptLine,
 } from '../Properties/governedSweep'
@@ -139,9 +140,7 @@ export async function unlinkContextKey(
       ? raw[key].filter((v): v is string => typeof v === 'string')
       : []
     captured.push(captureRoot(raw, file, values))
-    const next = { ...raw }
-    delete next[key]
-    return next
+    return stripKeys(key)(raw, file)
   }
   const entry = withOrderEntry(strip, 'contexts', contextTitle, null)
   const swept = await unlinkMembers(root, { key }, entry, skipUnder)

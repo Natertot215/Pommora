@@ -1,15 +1,18 @@
 import { clamp } from '@pommora/uix/Utilities/clamp'
 import { isPlainObject } from '../Contract/validators'
 import { moveItem } from '@pommora/uix/Utilities/moveItem'
-import { join } from '../Paths/posix'
+import { join, relative } from '../Paths/posix'
 import { sidecarPath } from '../Paths/paths'
 import { readJsonObject } from '../Files/atomicWrite'
 import { patchSidecar } from '../Files/sidecar'
-import { getLiveTree, refreshTree } from '../Nexus/liveTree'
+import { getLiveTree, liveTreeOf } from '../Nexus/liveTree'
+import { projectBaseline } from '../Nexus/remintLedger'
+import type { EntityRecord } from '../Nexus/record'
 import { NO_DEFS } from '../Contexts/contextResolve'
 import { readRegistry } from './propertiesRegistry'
 import type { PropertyDefinition } from './properties'
-import { restoreCachedValues } from './removeProperty'
+import { encodeValue, isBlankValue, reconcilePropertyValue } from './propertyValue'
+import { sweepRootsById } from './governedSweep'
 import { serializeSchemaOp } from './schemaChain'
 import { ok, fail, type Result } from '../Contract/result'
 
@@ -58,13 +61,59 @@ export function patchCacheBlock(
   return next
 }
 
+/** Puts each value back on the page or Space its ID names wherever that root holds none, and answers the IDs that took theirs. */
+export function refillValues(
+  root: string,
+  def: PropertyDefinition,
+  roots: Record<string, EntityRecord>,
+  values: Record<string, unknown>,
+): Promise<Set<string>> {
+  return sweepRootsById(root, roots, values, (raw, value) => {
+    const restored = reconcilePropertyValue(def, value, false).value
+    const encoded = isBlankValue(restored) ? undefined : encodeValue(restored)
+    if (encoded === undefined) return null
+    if (!isBlankValue(reconcilePropertyValue(def, raw[def.name], false).value)) return null
+    return { ...raw, [def.name]: encoded }
+  })
+}
+
+async function restoreCachedValues(
+  root: string,
+  collectionFolder: string,
+  propertyId: string,
+): Promise<Result<null>> {
+  const cached = cachedValues(
+    await readJsonObject(sidecarPath(collectionFolder, 'collection')),
+    propertyId,
+  )
+  if (!cached) return ok(null)
+
+  // No readable definition → the cache stays whole: a def that reappears later still finds everything waiting.
+  const def = (await readRegistry(root)).defs[propertyId]
+  if (!def) return ok(null)
+  const under = `${relative(root, collectionFolder)}/`
+  const live = projectBaseline(await liveTreeOf(root)).entries
+  const members = Object.fromEntries(
+    Object.keys(cached).flatMap((id) =>
+      live[id]?.kind === 'page' && live[id].path.startsWith(under) ? [[id, live[id]]] : [],
+    ),
+  )
+  const spent = await refillValues(root, def, members, cached)
+  const written = await patchSidecar(collectionFolder, 'collection', (cur) => {
+    const left = { ...(cachedValues(cur, propertyId) ?? {}) }
+    for (const id of spent) delete left[id]
+    return patchCacheBlock(cur, propertyId, Object.keys(left).length ? { values: left } : undefined)
+  })
+  return written.ok ? ok(null) : written
+}
+
 // A chained fn awaiting another chained fn would deadlock the schema chain, so these are unchained internals a chained op composes in its own slot.
 export async function assignInner(
   root: string,
   collectionFolder: string,
   propertyId: string,
 ): Promise<Result<null>> {
-  // Restore stays OUTSIDE the sidecar lock: it walks every member page, long enough that holding the lock would stall every sibling sidecar write.
+  // Restore stays OUTSIDE the sidecar lock: it rewrites every page it fills, long enough that holding the lock would stall every sibling sidecar write.
   let appended = false
   const written = await patchSidecar(collectionFolder, 'collection', (cur) => {
     const ids = assignedIds(cur)
@@ -105,9 +154,7 @@ export function assignProperty(
 }
 
 export async function collectionFolders(root: string): Promise<string[]> {
-  const held = getLiveTree()
-  const tree = held?.nexus.rootPath === root ? held : await refreshTree(root)
-  return tree.collections.map((c) => join(root, c.path))
+  return (await liveTreeOf(root)).collections.map((c) => join(root, c.path))
 }
 
 export const collectionFolderOf = (folders: string[], absFile: string): string | null =>
