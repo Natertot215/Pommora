@@ -19,9 +19,11 @@ export const stack = {
   },
   /** Fixed and body-portalled surfaces, which all resolve in the root context. */
   top: {
+    /** A floating window stacks at this plus its front-to-back rank, so the next rung must clear every window that can stand at once. */
     floating: 1000,
     dragSlot: 1010,
     dragOverlay: 1020,
+    modal: 1030,
     menu: 1100,
     caret: 2147483647,
   },

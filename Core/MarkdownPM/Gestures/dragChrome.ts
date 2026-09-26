@@ -44,7 +44,7 @@ export class Overlay {
       l.setAttribute('aria-hidden', 'true')
       l.className = 'drop-line'
       // Viewport-fixed with explicit left/width per frame — the class's absolute + edge insets don't apply to a body-level overlay.
-      l.style.cssText = 'position:fixed;right:auto;z-index:var(--z-floating)'
+      l.style.cssText = 'position:fixed;right:auto;z-index:var(--z-drag-slot)'
       const dot = document.createElement('span')
       dot.className = 'drop-dot'
       l.appendChild(dot)

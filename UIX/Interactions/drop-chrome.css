@@ -42,7 +42,7 @@
   border-radius: 8px;
   color: var(--label-primary);
   pointer-events: none;
-  z-index: var(--z-floating);
+  z-index: var(--z-drag-slot);
   display: inline-flex;
   align-items: center;
   gap: 6px;

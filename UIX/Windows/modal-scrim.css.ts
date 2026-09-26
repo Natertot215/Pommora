@@ -14,7 +14,7 @@ const scrim = `${duration.fast} ${easing.baseEase}`
 export const backdrop = style({
   position: 'fixed',
   inset: 0,
-  zIndex: stack.top.floating,
+  zIndex: stack.top.modal,
   display: 'flex',
   alignItems: 'center',
   justifyContent: 'center',
@@ -25,3 +25,5 @@ export const backdrop = style({
 export const backdropClosing = style({
   animation: `${scrimOut} ${scrim} forwards`,
 })
+
+export const frame = style({ outline: 'none' })

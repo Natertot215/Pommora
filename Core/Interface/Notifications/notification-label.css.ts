@@ -13,7 +13,7 @@ export const host = style({
   position: 'fixed',
   top: `calc(var(--app-inset) + var(--toolbar-h) + var(--app-inset))`,
   right: 'var(--surface-inset)',
-  zIndex: stack.top.floating,
+  zIndex: stack.top.modal,
   display: 'flex',
   flexDirection: 'column',
   gap: SIZE.padX,

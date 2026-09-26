@@ -14,6 +14,7 @@ import { useHeld } from '../Animations/useExitPresence'
 import { GlassSurface } from '../Glass/GlassSurface'
 import { GlassWindow } from '../Glass/GlassWindow'
 import { SHIELD_ATTR, useDismissal } from '../Interactions/dismissalStack'
+import { useFocusScope } from '../Interactions/focusScope'
 
 /** The portal layer a floating pane occupies. Containment reads against this rather than the pane's body, so the pane's own rim and resize edges are inside it. */
 export const PICKER_PORTAL_ATTR = 'data-picker-portal'
@@ -33,11 +34,6 @@ const stopContextBubble = (e: {
   e.stopPropagation()
   e.preventDefault()
 }
-
-const FOCUSABLE =
-  'a[href],button:not([disabled]),input:not([disabled]),select:not([disabled]),textarea:not([disabled]),[tabindex]:not([tabindex="-1"])'
-const tabStops = (root: HTMLElement): HTMLElement[] =>
-  Array.from(root.querySelectorAll<HTMLElement>(FOCUSABLE))
 
 export type PickerDirection = 'down' | 'up'
 
@@ -267,48 +263,10 @@ export function PickerMenu({
     onDirection,
   ])
 
-  const focusReturn = useRef<HTMLElement | null>(null)
-  const tookFocus = useRef(false)
-  useLayoutEffect(() => {
-    if (!manageFocus || !open) return
-    const from = document.activeElement
-    focusReturn.current =
-      from instanceof HTMLElement && !paneRef.current?.contains(from) ? from : null
-  }, [manageFocus, open])
-
   const placed = pos !== null
-  useEffect(() => {
-    const pane = paneRef.current
-    if (!manageFocus || !open || closing || !placed || !pane || tookFocus.current) return
-    tookFocus.current = true
-    if (pane.contains(document.activeElement)) return
-    ;(tabStops(pane)[0] ?? pane).focus()
-  }, [manageFocus, open, closing, placed, mounted])
-
-  useEffect(() => {
-    if (!manageFocus || !open) return
-    return () => {
-      tookFocus.current = false
-      const back = focusReturn.current
-      focusReturn.current = null
-      if (!back?.isConnected) return
-      const active = document.activeElement
-      if (active && active !== document.body && !paneRef.current?.contains(active)) return
-      back.focus({ preventScroll: true })
-    }
-  }, [manageFocus, open])
-
-  const trapTab = (e: React.KeyboardEvent<HTMLDivElement>): void => {
-    if (e.key !== 'Tab' || e.ctrlKey || e.metaKey || e.altKey) return
-    const pane = paneRef.current
-    if (!pane) return
-    const stops = tabStops(pane)
-    const edge = e.shiftKey ? stops[0] : stops[stops.length - 1]
-    if (stops.length > 0 && document.activeElement !== edge && document.activeElement !== pane)
-      return
-    e.preventDefault()
-    ;(e.shiftKey ? stops[stops.length - 1] : stops[0])?.focus()
-  }
+  const trapTab = useFocusScope(paneRef, manageFocus && open, {
+    ready: mounted && placed && !closing,
+  })
 
   const Shell = { surface: GlassSurface, window: GlassWindow }[glass]
   const pane = (

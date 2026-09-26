@@ -35,6 +35,7 @@ function PageWindowBody({
   closing: boolean
 }): React.JSX.Element {
   const closeWindow = useSession((s) => s.closeWindow)
+  const summon = useSession((s) => s.windowSummon)
   const geometry = useWindowGeometry('page-window')
   const [footerOpen, setFooterOpen] = useFold('footer:page-window')
   const tree = useSession((s) => s.tree)
@@ -73,6 +74,7 @@ function PageWindowBody({
       className={cx('page-window', closing && EXIT_CLASS[exitReason])}
       closing={closing}
       onClose={() => closeWindow()}
+      raiseOn={summon}
       onEscape={() => (sidePaneOpen ? closeSidePane() : closeWindow())}
       dragSurfaces={DRAG_SURFACES}
       ariaLabel="Page Preview"

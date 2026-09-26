@@ -1,7 +1,8 @@
 // @vitest-environment jsdom
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { act, useState } from 'react'
+import { act, StrictMode, useEffect, useRef, useState } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
+import { useDismissal } from '../Interactions/dismissalStack'
 import { firePointer, stubPointerCapture } from '../Interactions/pointerHarness'
 import type { Size } from '../Interactions/useResizable'
 import { WindowBase, type WindowFooter } from './WindowBase'
@@ -89,7 +90,7 @@ describe('a floating window opens at the size it is given', () => {
   })
 })
 
-describe('a floating window takes Escape by open order', () => {
+describe('a floating window takes Escape by front-to-back order', () => {
   const pressEscape = (): void =>
     act(() => {
       document.dispatchEvent(
@@ -126,6 +127,114 @@ describe('a floating window takes Escape by open order', () => {
     expect(log).toEqual(['second'])
     pressEscape()
     expect(log).toEqual(['second', 'first'])
+  })
+
+  it('a press raises a window, and Escape then closes it first', () => {
+    const log: string[] = []
+    function Two(): React.JSX.Element {
+      const [closed, setClosed] = useState<readonly string[]>([])
+      const win = (name: string): React.JSX.Element => (
+        <WindowBase
+          key={name}
+          closing={closed.includes(name)}
+          onClose={() => {
+            log.push(name)
+            setClosed((c) => [...c, name])
+          }}
+          ariaLabel={name}
+        >
+          <div />
+        </WindowBase>
+      )
+      return (
+        <>
+          {win('first')}
+          {win('second')}
+        </>
+      )
+    }
+    act(() => root.render(<Two />))
+    const first = host.querySelector('[aria-label="first"]') as HTMLElement
+    act(() => firePointer(first, 'pointerdown', { x: 0, y: 0 }))
+    expect(first.style.getPropertyValue('--window-rank')).toBe('1')
+    pressEscape()
+    expect(log).toEqual(['first'])
+    pressEscape()
+    expect(log).toEqual(['first', 'second'])
+  })
+
+  it('an Escape entry inside a window behind the front one is skipped', () => {
+    const log: string[] = []
+    function Inner(): null {
+      const ref = useRef<HTMLElement | null>(null)
+      useEffect(() => {
+        ref.current = document.querySelector('[aria-label="back"] .body')
+      })
+      useDismissal(true, false, {
+        layer: () => ref.current,
+        dismiss: () => log.push('inner'),
+        outsidePress: false,
+      })
+      return null
+    }
+    act(() =>
+      root.render(
+        <>
+          <WindowBase closing={false} onClose={() => log.push('back')} ariaLabel="back">
+            <div className="body" />
+          </WindowBase>
+          <WindowBase closing={false} onClose={() => log.push('front')} ariaLabel="front">
+            <div />
+          </WindowBase>
+          <Inner />
+        </>,
+      ),
+    )
+    pressEscape()
+    expect(log).toEqual(['front'])
+  })
+
+  it('focus entering a frame inside a window behind raises it', () => {
+    act(() =>
+      root.render(
+        <>
+          <WindowBase closing={false} onClose={() => undefined} ariaLabel="web">
+            <iframe title="page" />
+          </WindowBase>
+          <WindowBase closing={false} onClose={() => undefined} ariaLabel="front">
+            <div />
+          </WindowBase>
+        </>,
+      ),
+    )
+    const web = host.querySelector('[aria-label="web"]') as HTMLElement
+    const frame = web.querySelector('iframe') as HTMLIFrameElement
+    const active = vi.spyOn(document, 'activeElement', 'get').mockReturnValue(frame)
+    act(() => {
+      window.dispatchEvent(new Event('blur'))
+    })
+    active.mockRestore()
+    expect(web.style.getPropertyValue('--window-rank')).toBe('1')
+  })
+})
+
+describe('a floating window hands focus back when it closes', () => {
+  it('returns focus to where it was under StrictMode', () => {
+    const outside = document.createElement('button')
+    document.body.appendChild(outside)
+    outside.focus()
+    const win = (closing: boolean): React.JSX.Element => (
+      <StrictMode>
+        <WindowBase closing={closing} onClose={() => undefined} ariaLabel="Test">
+          <div />
+        </WindowBase>
+      </StrictMode>
+    )
+    act(() => root.render(win(false)))
+    expect(document.activeElement).toBe(host.querySelector('.window'))
+    act(() => root.render(win(true)))
+    expect(document.activeElement).toBe(outside)
+    outside.remove()
   })
 })
 
@@ -218,5 +327,38 @@ describe('the footer folds as its host says', () => {
     act(() => (el.querySelector('.window-footer-toggle') as HTMLElement).click())
     expect(onOpenChange).toHaveBeenCalledWith(true)
     expect(el.classList.contains('is-footer-open')).toBe(false)
+  })
+})
+
+describe('a side panel keeps its width across windows of one id', () => {
+  it('a width dragged in one window opens the next window of that id at it, on the first frame', () => {
+    const side = (children: React.ReactNode) => ({
+      windowId: 'panel-test',
+      bounds: { min: 100, def: 200, max: 400 },
+      mode: 'overlay' as const,
+      children,
+    })
+    act(() =>
+      root.render(
+        <WindowBase closing={false} onClose={() => undefined} ariaLabel="a" right={side(null)}>
+          <div />
+        </WindowBase>,
+      ),
+    )
+    const strip = host.querySelector('.window-panel-right-overlay-resize') as HTMLElement
+    act(() => firePointer(strip, 'pointerdown', { x: 600, y: 10 }))
+    act(() => firePointer(window, 'pointermove', { x: 550, y: 10 }))
+    act(() => firePointer(window, 'pointerup', { x: 550, y: 10 }))
+    act(() => root.unmount())
+    root = createRoot(host)
+    act(() =>
+      root.render(
+        <WindowBase closing={false} onClose={() => undefined} ariaLabel="b" right={side(null)}>
+          <div />
+        </WindowBase>,
+      ),
+    )
+    const win = host.querySelector('.window') as HTMLElement
+    expect(win.style.getPropertyValue('--window-panel-r-w')).toBe('250px')
   })
 })
