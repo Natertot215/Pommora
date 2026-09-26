@@ -84,6 +84,7 @@ function WebWindowBody({
       className="wbrowser"
       closing={closing}
       onClose={closeBrowser}
+      raiseOn={seq}
       bounds={BOUNDS}
       ariaLabel="Browser"
       lead={

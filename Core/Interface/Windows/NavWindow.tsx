@@ -39,6 +39,7 @@ export function NavWindow(): React.JSX.Element | null {
 function NavWindowBody({ closing }: { closing: boolean }): React.JSX.Element {
   const { resolvedRecents, resolvedPins, search, go } = useNavData()
   const closeWindow = useSession((s) => s.closeWindow)
+  const summon = useSession((s) => s.windowSummon)
   const geometry = useWindowGeometry('navwindow')
   const [footerOpen, setFooterOpen] = useFold('footer:navwindow')
   const tree = useSession((s) => s.tree)
@@ -125,6 +126,7 @@ function NavWindowBody({ closing }: { closing: boolean }): React.JSX.Element {
       rootRef={rootRef}
       closing={closing}
       onClose={() => closeWindow()}
+      raiseOn={summon}
       // The pane closes first — an Escape during the kind-swap exit is the shell's own closing gate.
       onEscape={() => (sidePaneOpen ? closeSidePane() : closeWindow())}
       dragSurfaces={DRAG_SURFACES}

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef } from 'react'
+import { useEffect, useRef } from 'react'
 import { useSession } from '../../Session/store'
 import { Button } from '@pommora/uix/Buttons/Button'
 import { GlassWindow } from '@pommora/uix/Glass/GlassWindow'
@@ -11,11 +11,6 @@ export function ConfirmationWindow(): React.JSX.Element | null {
   const open = pending !== null
   const panelRef = useRef<HTMLDivElement>(null)
   const pendingRef = useLatest(pending)
-
-  const focusPanel = useCallback((el: HTMLDivElement | null) => {
-    panelRef.current = el
-    el?.focus()
-  }, [])
 
   useEffect(() => {
     if (!open) return
@@ -39,12 +34,11 @@ export function ConfirmationWindow(): React.JSX.Element | null {
     <ModalScrim open={open} dismiss={() => pendingRef.current?.settle(false)}>
       {pending && (
         <GlassWindow
-          ref={focusPanel}
+          ref={panelRef}
           className={s.panel}
           role="alertdialog"
           aria-modal="true"
           aria-label={pending.req.message}
-          tabIndex={-1}
         >
           <div className={s.body}>
             <span className={s.message}>{pending.req.message}</span>

@@ -1,6 +1,7 @@
 .window {
   position: fixed;
-  z-index: var(--z-floating);
+  z-index: calc(var(--z-floating) + var(--window-rank, 0));
+  outline: none;
   display: flex;
   flex-direction: column;
   border-radius: var(--app-radius);

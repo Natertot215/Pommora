@@ -222,7 +222,6 @@ function PageHistoryBody({
       {...geometry}
       closing={closing}
       onClose={closeHistory}
-      onEscape={closeHistory}
       ariaLabel="File History"
       title={
         <div className="window-toolbar-title">

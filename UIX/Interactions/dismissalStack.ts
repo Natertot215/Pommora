@@ -1,9 +1,11 @@
-import { useEffect, useRef, useSyncExternalStore } from 'react'
+import { type RefObject, useEffect, useRef, useSyncExternalStore } from 'react'
 import { suppressReleaseClick } from './shared'
 import { useLatest } from '../Utilities/stableApi'
 
 type DismissalEntry = {
   layer: () => Element | null
+  /** The element whose window decides whether Escape reaches this entry; the layer when absent. */
+  scope?: () => Element | null
   trigger?: () => Element | null
   dismiss?: () => void
   shield?: boolean
@@ -16,6 +18,23 @@ let entries: Live[] = []
 const subscribers = new Set<() => void>()
 const notify = (): void => {
   for (const fn of subscribers) fn()
+}
+
+let windows: HTMLElement[] = []
+
+const rankWindows = (): void => {
+  for (const [i, w] of windows.entries()) w.style.setProperty('--window-rank', `${i}`)
+}
+
+const raiseWindow = (el: HTMLElement): void => {
+  if (windows.at(-1) === el) return
+  windows = [...windows.filter((w) => w !== el), el]
+  rankWindows()
+}
+
+const behindFront = (node: Element | null): boolean => {
+  const owner = node ? windows.find((w) => w.contains(node)) : undefined
+  return owner !== undefined && owner !== windows.at(-1)
 }
 
 const dismissable = (e: Live): boolean => !e.closing && e.entry.dismiss !== undefined
@@ -60,9 +79,10 @@ const onPointerDown = (e: PointerEvent): void => {
 const onKeyDown = (e: KeyboardEvent): void => {
   if (e.key !== 'Escape' || e.defaultPrevented) return
   for (let i = entries.length - 1; i >= 0; i--) {
-    if (!dismissable(entries[i])) continue
+    const live = entries[i]
+    if (!dismissable(live) || behindFront(live.entry.scope?.() ?? live.entry.layer())) continue
     e.preventDefault()
-    entries[i].entry.dismiss?.()
+    live.entry.dismiss?.()
     return
   }
 }
@@ -114,6 +134,7 @@ export function useDismissal(active: boolean, closing: boolean, entry: Dismissal
     if (!active) return
     handle.current = pushDismissal({
       layer: () => entryRef.current.layer(),
+      scope: () => entryRef.current.scope?.() ?? null,
       trigger: () => entryRef.current.trigger?.() ?? null,
       get dismiss() {
         return entryRef.current.dismiss
@@ -136,6 +157,35 @@ export function useDismissal(active: boolean, closing: boolean, entry: Dismissal
   return useSyncExternalStore(subscribe, () => handle.current?.shields() === true)
 }
 
-export function useEscape(active: boolean, dismiss: (() => void) | undefined): void {
-  useDismissal(active, false, { layer: () => null, dismiss, outsidePress: false })
+export function useEscape(
+  active: boolean,
+  dismiss: (() => void) | undefined,
+  scope?: () => Element | null,
+): void {
+  useDismissal(active, false, { layer: () => null, scope, dismiss, outsidePress: false })
+}
+
+export function useWindowOrder(
+  ref: RefObject<HTMLElement | null>,
+  active: boolean,
+  raiseOn?: unknown,
+): () => void {
+  useEffect(() => {
+    const el = ref.current
+    if (!active || !el) return
+    raiseWindow(el)
+    // Focus entering a frame (a Web window's page) fires no focusin here, only the document's blur.
+    const onFrameFocus = (): void => {
+      if (el.contains(document.activeElement)) raiseWindow(el)
+    }
+    window.addEventListener('blur', onFrameFocus)
+    return () => {
+      window.removeEventListener('blur', onFrameFocus)
+      windows = windows.filter((w) => w !== el)
+      rankWindows()
+    }
+  }, [active, raiseOn])
+  return () => {
+    if (active && ref.current) raiseWindow(ref.current)
+  }
 }

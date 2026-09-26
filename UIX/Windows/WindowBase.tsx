@@ -1,4 +1,11 @@
-import { useEffect, useState, type CSSProperties, type ReactNode, type Ref } from 'react'
+import {
+  useEffect,
+  useRef,
+  useState,
+  type CSSProperties,
+  type ReactNode,
+  type RefObject,
+} from 'react'
 import { Button } from '../Buttons/Button'
 import { GlassWindow } from '../Glass/GlassWindow'
 import { FooterToggle } from '../Interactions/FooterToggle'
@@ -12,9 +19,10 @@ import {
   type Rect,
   type Size,
 } from '../Interactions/useResizable'
-import { useEscape } from '../Interactions/dismissalStack'
+import { useEscape, useWindowOrder } from '../Interactions/dismissalStack'
+import { useFocusScope } from '../Interactions/focusScope'
 import { RenderBoundary } from '../Elements/RenderBoundary'
-import { WindowPanel, windowPanelWidth, type WindowPanelBounds } from './WindowPanel'
+import { WindowPanel, type WindowPanelBounds } from './WindowPanel'
 import './window-base.css'
 import '../Animations/toolbar-slide.css'
 
@@ -62,6 +70,11 @@ export interface WindowBasePanel {
   children: ReactNode
 }
 
+// Session-only; never written to disk.
+const panelWidths = new Map<string, number>()
+const storedWidth = (side: WindowBasePanel | undefined): number =>
+  side ? (panelWidths.get(side.windowId) ?? side.bounds.def) : 0
+
 interface WindowBaseProps {
   closing: boolean
   onClose: () => void
@@ -73,11 +86,12 @@ interface WindowBaseProps {
   onSizeChange?: (size: Size) => void
   /** Read once, at open. Absent centres on the viewport with its upper bias. */
   region?: () => Rect | null
+  /** A change brings the window to the front: a summon onto one already standing. */
+  raiseOn?: unknown
   dragSurfaces?: string
   ariaLabel: string
   className?: string
-  style?: CSSProperties
-  rootRef?: Ref<HTMLDivElement>
+  rootRef?: RefObject<HTMLDivElement | null>
   onScan?: () => void
   scanLabel?: string
   lead?: ReactNode
@@ -100,10 +114,10 @@ export function WindowBase({
   initialSize,
   onSizeChange,
   region,
+  raiseOn,
   dragSurfaces,
   ariaLabel,
   className,
-  style,
   rootRef,
   onScan,
   scanLabel = 'Open Full Page',
@@ -116,6 +130,8 @@ export function WindowBase({
   children,
 }: WindowBaseProps): React.JSX.Element {
   const surfaces = dragSurfaces ? `${DRAG_SURFACES}, ${dragSurfaces}` : DRAG_SURFACES
+  const ownRef = useRef<HTMLDivElement>(null)
+  const root = rootRef ?? ownRef
   const [geo, setGeo] = useState(() => opening(initialSize, bounds, region))
   const reveal = useRevealNear()
   useEffect(() => {
@@ -136,29 +152,30 @@ export function WindowBase({
     if ((e.target as HTMLElement).matches(surfaces)) resize.start('move')(e)
   }
 
-  // Seeded from the persisted slot so the first painted frame already carries the restored width.
-  const [leftW, setLeftW] = useState(() =>
-    left ? windowPanelWidth(left.windowId, left.bounds.def) : 0,
-  )
-  const [rightW, setRightW] = useState(() =>
-    right ? windowPanelWidth(right.windowId, right.bounds.def) : 0,
-  )
+  const [leftW, setLeftW] = useState(() => storedWidth(left))
+  const [rightW, setRightW] = useState(() => storedWidth(right))
   const [resizing, setResizing] = useState(false)
 
   const leftOpen = left ? left.open !== false : false
   const rightOpen = right ? right.open !== false : false
 
-  useEscape(!closing, onEscape ?? onClose)
+  const raise = useWindowOrder(root, !closing, raiseOn)
+  useEscape(!closing, onEscape ?? onClose, () => root.current)
+  useFocusScope(root, !closing, { initial: 'root' })
 
   const panel = (side: WindowBasePanel, which: 'left' | 'right'): React.JSX.Element => (
     <WindowPanel
-      windowId={side.windowId}
       side={which}
       mode={side.mode}
       bounds={side.bounds}
+      width={which === 'left' ? leftW : rightW}
+      onWidth={(w) => {
+        panelWidths.set(side.windowId, w)
+        if (which === 'left') setLeftW(w)
+        else setRightW(w)
+      }}
       open={side.open !== false}
       className={side.className}
-      onWidthChange={which === 'left' ? setLeftW : setRightW}
       onResizingChange={setResizing}
     >
       <RenderBoundary resetKey={side.children}>{side.children}</RenderBoundary>
@@ -191,7 +208,7 @@ export function WindowBase({
 
   return (
     <GlassWindow
-      ref={rootRef}
+      ref={root}
       className={cx(
         'window',
         className,
@@ -212,11 +229,13 @@ export function WindowBase({
           height: geo.h,
           ...(left && { '--window-panel-l-w': `${leftW}px` }),
           ...(right && { '--window-panel-r-w': `${rightW}px` }),
-          ...style,
         } as CSSProperties
       }
       role="dialog"
       aria-label={ariaLabel}
+      tabIndex={-1}
+      onPointerDownCapture={raise}
+      onFocusCapture={raise}
       onPointerDown={onWindowDown}
       onPointerMove={footer ? reveal.onPointerMove : undefined}
       onPointerLeave={footer ? reveal.onPointerLeave : undefined}
