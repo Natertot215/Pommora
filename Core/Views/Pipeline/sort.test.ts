@@ -129,8 +129,46 @@ describe('makeSorter — type-aware single criterion', () => {
       ],
     }
     const rows = [
-      { ...makeRow('r1'), frontmatter: { [ID_KEY]: 'r1', Stale: ['b'] } },
-      { ...makeRow('r2'), frontmatter: { [ID_KEY]: 'r2', Stale: ['a'] } },
+      {
+        ...makeRow('r1'),
+        frontmatter: { [ID_KEY]: 'r1', ...propsAtRoot({ prop_stale: 'b' }, [stale]) },
+      },
+      {
+        ...makeRow('r2'),
+        frontmatter: { [ID_KEY]: 'r2', ...propsAtRoot({ prop_stale: 'a' }, [stale]) },
+      },
+    ]
+    const sorter = makeSorter([{ property_id: 'prop_stale', direction: 'ascending' }], [stale])!
+    expect(ids(sorter(rows))).toEqual(['r2', 'r1'])
+  })
+
+  it('a Status sorts by its groups, never by a stale select_options array it still carries', () => {
+    const stale: PropertyDefinition = {
+      id: 'prop_stale',
+      name: 'Stale',
+      type: 'status',
+      select_options: [{ value: 'done', label: 'Done' }],
+      status_groups: [
+        {
+          id: 'g',
+          label: 'G',
+          color: 'grey',
+          options: [
+            { value: 'todo', label: 'Todo', group_id: 'g' },
+            { value: 'done', label: 'Done', group_id: 'g' },
+          ],
+        },
+      ],
+    }
+    const rows = [
+      {
+        ...makeRow('r1'),
+        frontmatter: { [ID_KEY]: 'r1', ...propsAtRoot({ prop_stale: 'done' }, [stale]) },
+      },
+      {
+        ...makeRow('r2'),
+        frontmatter: { [ID_KEY]: 'r2', ...propsAtRoot({ prop_stale: 'todo' }, [stale]) },
+      },
     ]
     const sorter = makeSorter([{ property_id: 'prop_stale', direction: 'ascending' }], [stale])!
     expect(ids(sorter(rows))).toEqual(['r2', 'r1'])
