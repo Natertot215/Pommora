@@ -1,4 +1,4 @@
-import { basename, relative } from '../Paths/posix'
+import { basename, dirname, relative } from '../Paths/posix'
 import { ok, type Result } from '../Contract/result'
 import { moveIndexPaths } from '../Index/indexSeed'
 import type { MutateReply, MutateRequest } from './mutateRequest'
@@ -10,7 +10,7 @@ import { CONTAINER_KINDS } from './mutateRequest'
 import { setChildOrder } from './reorder'
 import { noteValueWrite } from './valuesChanged'
 import { reportRename } from '../Sync/Client/tap'
-import { excludedWithin, exclusionWriteRefusal, readWatchScope } from '../Settings/settings'
+import { excludedWithin, exclusionWriteRefusal } from '../Settings/settings'
 
 async function ends(
   root: string,
@@ -47,10 +47,9 @@ export async function moveSetOp(
   if (!at.ok) return at
   const refused =
     (await landingRefusal(root, at.value.dst, basename(at.value.src))) ??
-    (await exclusionWriteRefusal(
-      root,
-      excludedWithin((await readWatchScope(root)).excluded, req.path),
-    ))
+    (dirname(at.value.src) === at.value.dst
+      ? null
+      : await exclusionWriteRefusal(root, await excludedWithin(root, req.path)))
   if (refused) return refused
   const r = await moveFolderEntity(at.value.src, at.value.dst)
   if (!r.ok) return r

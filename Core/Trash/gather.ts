@@ -1,5 +1,5 @@
 import { basename, dirname, join, relative } from '../Paths/posix'
-import { excludedWithin, readWatchScope } from '../Settings/settings'
+import { excludedWithin } from '../Settings/settings'
 import { stampedId } from '../Files/pageFile'
 import type { ContextsRegistry } from '../Contexts/contexts'
 import type { Result } from '../Contract/result'
@@ -44,9 +44,7 @@ export async function gatherContentRecord(
     entity: kind,
     ...(id ? { id } : {}),
     parent,
-    ...(kind === 'page'
-      ? {}
-      : { excluded: excludedWithin((await readWatchScope(root)).excluded, relative(root, abs)) }),
+    ...(kind === 'page' ? {} : { excluded: await excludedWithin(root, relative(root, abs)) }),
   }
 }
 

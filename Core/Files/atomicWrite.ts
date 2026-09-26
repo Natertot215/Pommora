@@ -125,7 +125,7 @@ async function rmwLocked(
   return ok(next)
 }
 
-// The last copy of each file this session saw parse, or null when it saw the file absent, so a damaged one reads as it.
+// The last copy of each file this session read or wrote, or null when a read found it absent, so a damaged one reads as it.
 const lastRead = new Map<string, Record<string, unknown> | null>()
 
 export const forgetLastReads = (): void => lastRead.clear()
@@ -149,9 +149,9 @@ function readLast(absPath: string): Promise<Record<string, unknown> | null | und
       return value
     }
     const why = read.kind === 'corrupt' ? read.why : 'Unreadable file'
-    const seen = lastRead.has(absPath)
-    console.error(`${why}: ${absPath}; ${seen ? 'kept as last read' : 'never read'}`)
-    return seen ? lastRead.get(absPath) : undefined
+    const kept = lastRead.get(absPath)
+    console.error(`${why}: ${absPath}; ${kept === undefined ? 'never read' : 'kept as last read'}`)
+    return kept
   })
 }
 

@@ -1951,6 +1951,40 @@ describe('handleMutate — excluded entries follow their folders', () => {
     expect(landed.ok).toBe(true)
   })
 
+  it('refuses a Set moved, or a Collection restored, with excluded entries while settings.json can’t be written', async () => {
+    await mkdir(join(root, 'Notes', 'Daily', 'Private'), { recursive: true })
+    await mkdir(join(root, 'Other', 'Kept', 'Private'), { recursive: true })
+    await writeFile(join(root, 'Other', '_pagecollection.json'), JSON.stringify({ id: 'ot' }))
+    await writeFile(join(root, 'Other', 'Kept', '_pageset.json'), JSON.stringify({ id: 'ok' }))
+    await mkdir(join(root, 'Third'))
+    await writeFile(join(root, 'Third', '_pagecollection.json'), JSON.stringify({ id: 'th' }))
+    await exclude(['Notes/Daily/Private', 'Other/Kept/Private'])
+    const deleted = await handleMutate(
+      root,
+      { op: 'delete', path: 'Other', kind: 'collection' },
+      nexusDeps,
+    )
+    const bundlePath = (deleted.ok && deleted.value.trashed?.bundlePath) || ''
+    await refreshTree(root)
+    await writeFile(join(root, '.nexus', 'settings.json'), '{ corrupt')
+    const moved = await handleMutate(
+      root,
+      { op: 'moveSet', path: 'Notes/Daily', newParentPath: 'Third', order: [] },
+      nexusDeps,
+    )
+    expect(moved.ok ? '' : moved.error.message).toContain('settings.json')
+    const restored = await handleMutate(root, { op: 'restore', bundlePath }, nexusDeps)
+    expect(restored.ok ? '' : restored.error.message).toContain('settings.json')
+    expect(await pathExists(join(root, 'Notes', 'Daily', 'Private'))).toBe(true)
+    expect(await pathExists(join(root, 'Other'))).toBe(false)
+    const reordered = await handleMutate(
+      root,
+      { op: 'moveSet', path: 'Notes/Daily', newParentPath: 'Notes', order: [] },
+      nexusDeps,
+    )
+    expect(reordered.ok).toBe(true)
+  })
+
   it('takes a trashed Collection’s entries with it and lands them wherever it is restored', async () => {
     await mkdir(join(root, 'Other', 'Daily'), { recursive: true })
     await writeFile(join(root, 'Other', '_pagecollection.json'), JSON.stringify({ id: 'ot' }))

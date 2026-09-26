@@ -96,8 +96,8 @@ const entryWithin = (entry: string, rel: string): string[] | null =>
   remainderUnder(rootSegs(entry), rootSegs(rel).map(foldKey))
 
 /** The excluded entries at or under `rel`, each relative to it. */
-export const excludedWithin = (excluded: string[], rel: string): string[] =>
-  excluded.flatMap((entry) => entryWithin(entry, rel)?.join('/') ?? [])
+export const excludedWithin = async (root: string, rel: string): Promise<string[]> =>
+  (await readWatchScope(root)).excluded.flatMap((entry) => entryWithin(entry, rel)?.join('/') ?? [])
 
 const holdsUnder = (excluded: string[], rel: string): boolean =>
   excluded.some((entry) => entryWithin(entry, rel) !== null)

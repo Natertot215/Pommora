@@ -460,8 +460,8 @@ describe('readNexus — the walk names what it cannot read', () => {
   })
 
   it.each([
-    ['nexus.json'],
-    ['properties.json'],
+    'nexus.json',
+    'properties.json',
   ])('a damaged %s fails a first walk and names itself', async (file) => {
     const r = tempRoot('pom-unread-first-')
     try {
@@ -475,9 +475,9 @@ describe('readNexus — the walk names what it cannot read', () => {
   })
 
   it.each([
-    ['settings.json'],
-    ['properties.json'],
-    ['nexus.json'],
+    'settings.json',
+    'properties.json',
+    'nexus.json',
   ])('a %s damaged after a clean walk reads as that walk', async (file) => {
     const r = tempRoot('pom-kept-walk-')
     try {
