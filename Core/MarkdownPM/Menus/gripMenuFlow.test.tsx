@@ -263,3 +263,31 @@ describe("a webpage tile's Edit Link", () => {
     expect(view.dom.querySelector('.mdpm-embed-tile')).not.toBeNull()
   })
 })
+
+describe('a read-only heading’s grip', () => {
+  it('offers Copy Link, which copies the heading’s connection', async () => {
+    const written: string[] = []
+    const asked: unknown[] = []
+    seedHost({
+      pageTitle: 'Notes',
+      clipboard: { write: async (t) => void written.push(t) },
+      menus: {
+        grip: async (ctx) => {
+          asked.push(ctx)
+          return 'title:copylink'
+        },
+      },
+    })
+    const view = await mountEditor({ initialBody: '## Setup\n\nbody', readOnly: true })
+    const line = view.dom.querySelector('.cm-line.md-heading-fold') as HTMLElement
+    expect(line).toBeTruthy()
+    await act(async () => {
+      line.dispatchEvent(
+        new MouseEvent('contextmenu', { bubbles: true, cancelable: true, clientX: -1 }),
+      )
+      await Promise.resolve()
+    })
+    expect(asked).toEqual([{ kind: 'heading', level: 2, linkable: true, editable: false }])
+    expect(written).toEqual(['[[Notes#Setup]]'])
+  })
+})

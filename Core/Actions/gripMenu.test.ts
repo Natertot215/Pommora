@@ -3,7 +3,7 @@ import { gripMenuItems } from './gripMenu'
 
 describe('the block grip menu', () => {
   it('a linkable heading offers Rename, Copy Link, a Size set with its level in force, and a divided Delete', () => {
-    const items = gripMenuItems({ kind: 'heading', level: 2, linkable: true })
+    const items = gripMenuItems({ kind: 'heading', level: 2, linkable: true, editable: true })
     expect(items.map((i) => i.label)).toEqual(['Rename', 'Copy Link', 'Size', 'Delete'])
     expect(items[2].submenu?.find((r) => r.checked)).toMatchObject({
       label: 'Heading 2',
@@ -13,8 +13,15 @@ describe('the block grip menu', () => {
   })
 
   it('a heading that cannot be linked omits Copy Link', () => {
-    const items = gripMenuItems({ kind: 'heading', level: 2, linkable: false })
+    const items = gripMenuItems({ kind: 'heading', level: 2, linkable: false, editable: true })
     expect(items.map((i) => i.label)).toEqual(['Rename', 'Size', 'Delete'])
+  })
+
+  it('a read-only heading offers Copy Link alone, and nothing when it cannot be linked', () => {
+    const ro = (linkable: boolean) =>
+      gripMenuItems({ kind: 'heading', level: 2, linkable, editable: false })
+    expect(ro(true)).toEqual([{ label: 'Copy Link', action: 'title:copylink' }])
+    expect(ro(false)).toEqual([])
   })
 
   it('an embed drills its source tree to page leaves and scales only once claimed', () => {

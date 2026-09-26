@@ -1,6 +1,7 @@
 import { type ActionItem, joinGroups } from './menuModel'
 import type { HeadingLevel } from '../MarkdownPM/Input/format'
 import { scaleRows } from '../Tiles/tileZoom'
+import { COPY_LINK_ROW } from './pageMenu'
 
 export type ListKind = 'ordered' | 'alphabetical' | 'bullet' | 'checkbox' | 'arrow'
 
@@ -14,7 +15,7 @@ export type GripMenuContext =
   | { kind: 'embed'; tree: PickNode[]; zoom: number | null }
   | { kind: 'webpage'; zoom: number | null }
   | { kind: 'list'; current: ListKind | null }
-  | { kind: 'heading'; level: number; linkable: boolean }
+  | { kind: 'heading'; level: number; linkable: boolean; editable: boolean }
   | { kind: 'plain' }
 
 export type GripMenuAction =
@@ -23,7 +24,7 @@ export type GripMenuAction =
   | `zoom:${number}`
   | `listKind:${ListKind}`
   | 'rename'
-  | 'copyLink'
+  | typeof COPY_LINK_ROW.action
   | `size:${number}`
   | 'delete'
 
@@ -82,24 +83,27 @@ function ownRows(ctx: GripMenuContext): ActionItem<GripMenuAction>[] {
           })),
         },
       ]
-    case 'heading':
+    case 'heading': {
+      const size = {
+        label: 'Size',
+        submenu: HEADING_LEVELS.map(({ level, label }) => ({
+          label,
+          action: `size:${level}` as const,
+          checked: ctx.level === level,
+        })),
+      }
       return [
-        { label: 'Rename', action: 'rename' },
-        ...(ctx.linkable ? [{ label: 'Copy Link', action: 'copyLink' as const }] : []),
-        {
-          label: 'Size',
-          submenu: HEADING_LEVELS.map(({ level, label }) => ({
-            label,
-            action: `size:${level}`,
-            checked: ctx.level === level,
-          })),
-        },
+        ...(ctx.editable ? [{ label: 'Rename', action: 'rename' as const }] : []),
+        ...(ctx.linkable ? [COPY_LINK_ROW] : []),
+        ...(ctx.editable ? [size] : []),
       ]
+    }
     case 'plain':
       return []
   }
 }
 
 export function gripMenuItems(ctx: GripMenuContext): ActionItem<GripMenuAction>[] {
-  return joinGroups([ownRows(ctx), [{ label: 'Delete', action: 'delete' }]])
+  const editable = ctx.kind !== 'heading' || ctx.editable
+  return joinGroups([ownRows(ctx), editable ? [{ label: 'Delete', action: 'delete' }] : []])
 }

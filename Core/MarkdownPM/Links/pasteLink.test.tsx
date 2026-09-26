@@ -215,6 +215,17 @@ describe('pasting as an embed', () => {
     return view
   }
 
+  it('Plain Text writes the address a copied link points at, and Paste Without Formatting the clipboard as it is', async () => {
+    clipboard = `[Home](${URL})`
+    const plain = await seated('x ', 2)
+    await act(async () => await pasteAs(plain, 'plain'))
+    expect(plain.state.doc.toString()).toBe(`x ${URL}`)
+    await cleanupEditor()
+    const literal = await seated('x ', 2)
+    await act(async () => await pasteAs(literal, 'literal'))
+    expect(literal.state.doc.toString()).toBe(`x [Home](${URL})`)
+  })
+
   it('writes a page embed onto the blank line the caret is on', async () => {
     clipboard = '[[Alpha]]'
     const view = await seated('intro\n\ntail', 6)

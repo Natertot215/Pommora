@@ -5,6 +5,7 @@ import {
   pageEmbedText,
 } from '@pommora/core/Connections/connections'
 import type { GripMenuContext, ListKind, PickNode } from '@pommora/core/Actions/gripMenu'
+import { COPY_LINK_ROW } from '@pommora/core/Actions/pageMenu'
 import { listKindOf, setHeading, setListKind, type HeadingLevel } from '../Input/format'
 import { headingParts } from '../Engine/detect'
 import { type Block, blockAt } from '../Engine/blockModel'
@@ -93,30 +94,32 @@ function popHeadingMenu(view: EditorView, headingEl: HTMLElement): void {
   const host = view.state.facet(editorHost)
   const title = host.pageTitle()
   const linkable = title !== null && expressibleHeading(openedParts.content.trim())
-  void host.menus.grip({ kind: 'heading', level, linkable }).then((action) => {
-    if (!action) return
-    // Re-found and matched against what the menu was built from — a native menu can stay open while an undo moves the document.
-    const doc = docString(view.state.doc)
-    const line = view.state.doc.lineAt(view.posAtDOM(headingEl))
-    const parts = headingParts(line.text)
-    if (!parts || line.text !== opened.text) return
-    const contentStart = line.from + parts.contentStart
-    if (action === 'rename') focusRange(view, contentStart, line.to)
-    else if (action === 'copyLink' && title !== null)
-      void host.clipboard.write(connectionText(title, undefined, parts.content.trim()))
-    else if (action === 'delete') {
-      const span = blockDeleteSpan(doc, { from: line.from, to: line.to })
-      view.dispatch({
-        changes: { from: span.from, to: span.to, insert: '' },
-        userEvent: 'delete',
-      })
-    } else {
-      // The grip addresses one block, so the range is that heading's own line — the selection belongs to the caret.
-      const level = Number(action.slice('size:'.length)) as HeadingLevel
-      applyEdit(view, setHeading(doc, line.from, line.from, level))
-      view.focus()
-    }
-  })
+  void host.menus
+    .grip({ kind: 'heading', level, linkable, editable: !view.state.readOnly })
+    .then((action) => {
+      if (!action) return
+      // Re-found and matched against what the menu was built from — a native menu can stay open while an undo moves the document.
+      const doc = docString(view.state.doc)
+      const line = view.state.doc.lineAt(view.posAtDOM(headingEl))
+      const parts = headingParts(line.text)
+      if (!parts || line.text !== opened.text) return
+      const contentStart = line.from + parts.contentStart
+      if (action === 'rename') focusRange(view, contentStart, line.to)
+      else if (action === COPY_LINK_ROW.action && title !== null)
+        void host.clipboard.write(connectionText(title, undefined, parts.content.trim()))
+      else if (action === 'delete') {
+        const span = blockDeleteSpan(doc, { from: line.from, to: line.to })
+        view.dispatch({
+          changes: { from: span.from, to: span.to, insert: '' },
+          userEvent: 'delete',
+        })
+      } else {
+        // The grip addresses one block, so the range is that heading's own line — the selection belongs to the caret.
+        const level = Number(action.slice('size:'.length)) as HeadingLevel
+        applyEdit(view, setHeading(doc, line.from, line.from, level))
+        view.focus()
+      }
+    })
 }
 
 export const gripMenu = EditorView.domEventHandlers({
@@ -127,13 +130,13 @@ export const gripMenu = EditorView.domEventHandlers({
     return true
   },
   contextmenu(e, view) {
-    if (view.state.readOnly) return false
     const headingEl = headingLineAt(e)
     if (headingEl) {
       e.preventDefault()
       popHeadingMenu(view, headingEl)
       return true
     }
+    if (view.state.readOnly) return false
     const line = gripLineAt(e)
     if (!line) return false
     const block = blockAt(docScan(view.state.doc), view.posAtDOM(line))
