@@ -7,11 +7,7 @@ export async function reconcile<T>(
   const kept = { ...entries }
   const spent: string[] = []
   for (const [id, value] of Object.entries(entries)) {
-    let landed = false
-    try {
-      landed = await apply(id, value)
-    } catch {}
-    if (landed) {
+    if (await apply(id, value).catch(() => false)) {
       delete kept[id]
       spent.push(id)
     }

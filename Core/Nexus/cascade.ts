@@ -13,7 +13,6 @@ import { headingOutline } from '../MarkdownPM/Engine/headingScan'
 import { queryHeadingMentions, queryMentions } from '../Index/contentIndex'
 import { nexusCorpus } from '../Index/indexSeed'
 import { readRegistry } from '../Properties/propertiesRegistry'
-import { propertyNames } from '../Properties/properties'
 import { readLivePersonalization } from '../Settings/settings'
 import { settingOf } from '../Settings/personalization'
 import { rewriteTileConnections } from '../Tiles/tilesFile'
@@ -55,7 +54,7 @@ export async function renameCascade(
               ? headingOutline(body).map((h) => h.text)
               : undefined,
           )
-    const names = propertyNames(Object.values((await readRegistry(root)).defs))
+    const names = new Set(Object.values((await readRegistry(root)).defs).map((d) => d.name))
     const text = (content: string, file: string): string | null => {
       const values = Object.fromEntries(
         Object.entries(splitFrontmatter(content)).filter(([k]) => names.has(k)),

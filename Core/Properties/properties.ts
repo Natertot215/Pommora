@@ -214,9 +214,6 @@ export function invalidPropertyName(name: string): boolean {
   return !n || n.startsWith(RESERVED_NAME_PREFIX) || n.startsWith('<') || RESERVED_KEY_NAMES.has(n)
 }
 
-export const propertyNames = (defs: Iterable<PropertyDefinition>): ReadonlySet<string> =>
-  new Set([...defs].map((d) => d.name))
-
 function statusOptions(def: Pick<PropertyDefinition, 'status_groups'> | undefined): StatusOption[] {
   return (def?.status_groups ?? []).flatMap((g) =>
     g.options.map((o) => (o.color ? o : { ...o, color: g.color })),
