@@ -74,18 +74,16 @@ function buildCriterion(c: SortCriterion, schema: PropertyDefinition[]): Resolve
   switch (declaredType(c.property_id, schema)) {
     case 'select':
     case 'status': {
-      // Options the saved order predates rank after the listed ones — at MAX_SAFE_INTEGER they tie with the no-value rows and interleave, the same appended tail `configuredOrder` gives the group path.
+      // A Custom order leads with its saved values and appends the options it predates, so they rank ahead of the no-value rows; it always reads ascending.
       const def = schema.find((d) => d.id === c.property_id)
-      const values = def ? optionValues(def) : []
-      const listed = new Set(c.order)
-      const ranked = c.order?.length
-        ? [...c.order, ...values.filter((v) => !listed.has(v))]
-        : values
-      const order = Object.fromEntries(ranked.map((v, i) => [v, i]))
+      const custom = c.order?.length ? c.order : undefined
+      const listed = new Set(custom)
+      const tail = (def ? optionValues(def) : []).filter((v) => !listed.has(v))
+      const order = Object.fromEntries([...(custom ?? []), ...tail].map((v, i) => [v, i]))
       return {
         extract: (r) => rank(r, c.property_id, order, schema),
         less: numericLess,
-        ascending: c.order?.length ? true : ascending,
+        ascending: custom ? true : ascending,
       }
     }
     case 'number':
