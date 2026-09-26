@@ -146,7 +146,7 @@ What Pommora remembers, and for how long. Four tiers, told by where a thing is w
 | Tabs | The open set, which was active, and each tab's Back/Forward history as bare refs | Closing a tab |
 | Folds | Which headings are collapsed, per page, in every editor showing it | Unfolding; emptying the list deletes the row |
 | Embed heights · heading columns · footnotes | Per-page editor chrome, in every editor showing the page — a tile's dragged height and Scale, a table's heading column, whether the page shows its footnotes | Changing it back |
-| Preview and NavWindow tab sets | The floating window's tabs per origin page, and which preview was open | Closing the last tab of a set |
+| Window tab sets | One tab set per tabbed window kind | Closing the last tab of a set |
 | Recents | The navigation trail, most recent first, capped by roll-off | Roll-off |
 | Content index | Every relationship each page carries, keyed by kind and target, the governed values it carries, and the mtime and size it was read at | The next open re-indexes any file whose mtime or size moved; an index-generation change drops it whole |
 | Matrix layout and lens | Every node's dragged place, keyed by id, and the world rectangle the picture shows | A node's row leaves with its entity |
