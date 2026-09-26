@@ -25,7 +25,7 @@ import {
 } from './confirm'
 import { ensureIdentity } from './identity'
 import { dropLiveTree, getLiveTree, liveTreeOf, refreshAfterWrite, refreshTree } from './liveTree'
-import { ensureConfigLayout, normalizeSavedViews } from './migrateConfig'
+import { ensureConfigLayout, normalizePropertyTypes, normalizeSavedViews } from './migrateConfig'
 import { handleMutate } from './mutate'
 import { confirmBy, confirmMutation } from './mutatePatch'
 import { dropTileHeadingLinks } from '../Tiles/tilesFile'
@@ -41,6 +41,7 @@ async function prepareOpenedNexus(path: string): Promise<string | null> {
     await ensureConfigLayout(path)
     await ensureContextsRegistry(path)
     await normalizeSavedViews(path)
+    await normalizePropertyTypes(path)
   } catch (e) {
     console.error('ensure config-on-open failed:', e)
   }

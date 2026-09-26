@@ -16,7 +16,7 @@ export function mergeDepthFor(rel: string): Depth {
     case `${NEXUS_DIR}/${NEXUS_CONFIG_FILES.state}`:
       return { order: 1, navigation: 1 }
     case `${NEXUS_DIR}/${NEXUS_CONFIG_FILES.properties}`:
-      return { defs: 1 }
+      return { defs: 2 }
     case `${NEXUS_DIR}/${NEXUS_CONFIG_FILES.crops}`:
       return { byImage: 1 }
     case `${NEXUS_DIR}/${NEXUS_CONFIG_FILES.matrix}`:

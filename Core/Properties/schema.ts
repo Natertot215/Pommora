@@ -4,6 +4,7 @@ import {
   isReservedKeyName,
   isReservedPropertyId,
   KEY_REFUSAL,
+  STAMP_TYPE,
   type PropertyDefinition,
 } from './properties'
 import { fail, ok, type Result } from '../Contract/result'
@@ -35,6 +36,8 @@ export function validateDefinition(
   if (!nameCheck.ok) return nameCheck
   if (isReservedPropertyId(def.id)) return fail('invalid-property', 'That property id is reserved.')
   if (def.type === 'context') return fail('invalid-property', 'A Context column is not a property.')
+  if (Object.values(STAMP_TYPE).includes(def.type))
+    return fail('invalid-property', 'A timestamp column is not a property.')
   if (existing.some((d) => d.id === def.id)) {
     return fail('invalid-property', 'That property id already exists.')
   }

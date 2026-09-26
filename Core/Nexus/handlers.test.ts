@@ -95,6 +95,16 @@ describe('openNexusSequence', () => {
     await expect(openNexusSequence(ctx, root, false)).resolves.toBe(root)
   })
 
+  it('respells a legacy property type in the registry it opens', async () => {
+    const registry = join(root, '.nexus', 'properties.json')
+    await writeFile(
+      registry,
+      JSON.stringify({ defs: { a: { id: 'a', name: 'Tags', type: 'multi_select' } } }),
+    )
+    await openNexusSequence(ctx, root, false)
+    expect(JSON.parse(await readFile(registry, 'utf8')).defs.a.type).toBe('multiSelect')
+  })
+
   it('drains an in-flight push before the stores swap', async () => {
     const { second, later } = await secondNexus('pom-open-swap-')
 

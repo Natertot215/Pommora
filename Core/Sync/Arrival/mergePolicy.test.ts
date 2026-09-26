@@ -99,7 +99,7 @@ describe('mergeKeys', () => {
 
     expect(mergeDepthFor('.nexus/settings.json')).toEqual({ personalization: 1 })
     expect(mergeDepthFor('.nexus/state.json')).toEqual({ order: 1, navigation: 1 })
-    expect(mergeDepthFor('.nexus/properties.json')).toEqual({ defs: 1 })
+    expect(mergeDepthFor('.nexus/properties.json')).toEqual({ defs: 2 })
     expect(mergeDepthFor('.nexus/assets/crops.json')).toEqual({ byImage: 1 })
     expect(mergeDepthFor('.nexus/metadata/09-2026.json')).toEqual({ pages: 2 })
     expect(mergeDepthFor('.nexus/metadata/09-2026.json.bad-x')).toEqual({})
@@ -110,6 +110,24 @@ describe('mergeKeys', () => {
       forces: 2,
       display: 1,
     })
+  })
+
+  it("keeps one side's type respelling and the other side's rename of the same def", () => {
+    const depth = mergeDepthFor('.nexus/properties.json')
+    const base = { defs: { P: { id: 'P', name: 'Old', type: 'multi_select' } } }
+    const local = { defs: { P: { id: 'P', name: 'Old', type: 'multiSelect' } } }
+    const remote = { defs: { P: { id: 'P', name: 'New', type: 'multi_select' } } }
+    expect(merge(base, local, remote, depth)).toEqual({
+      defs: { P: { id: 'P', name: 'New', type: 'multiSelect' } },
+    })
+  })
+
+  it('keeps only the edited fields of a def one side deleted and the other edited', () => {
+    const depth = mergeDepthFor('.nexus/properties.json')
+    const base = { defs: { P: { id: 'P', name: 'Old', type: 'select' } } }
+    const local = { defs: {} }
+    const remote = { defs: { P: { id: 'P', name: 'New', type: 'select' } } }
+    expect(merge(base, local, remote, depth, takeRemote)).toEqual({ defs: { P: { name: 'New' } } })
   })
 
   it('merges two forces keys and takes one side of rules whole', () => {

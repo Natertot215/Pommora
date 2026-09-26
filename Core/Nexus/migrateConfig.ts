@@ -1,3 +1,4 @@
+import { isPlainObject } from '../Contract/validators'
 import { pathExists, rmwJsonStrict } from '../Files/atomicWrite'
 import { listFilesRecursive } from '../Files/walk'
 import { recordWrite } from '../Files/writeEcho'
@@ -13,6 +14,7 @@ import {
 import { contextsRegistryFile, nexusConfig, tileHostDir } from '../Paths/paths'
 import { join } from '../Paths/posix'
 import { machine } from '../Platform/machine'
+import { propertyType } from '../Properties/properties'
 
 async function migrateFile(oldAbs: string, newAbs: string): Promise<void> {
   if (!(await pathExists(oldAbs))) return
@@ -96,3 +98,22 @@ export async function normalizeSavedViews(root: string): Promise<void> {
     for (const file of await listFilesRecursive(dir, [TILE_DOC_FILENAME]))
       await rmwJsonStrict(file, renamedTileDoc)
 }
+
+const respelled = (type: unknown) => {
+  const id = propertyType.safeParse(type).data
+  return id === type ? null : id
+}
+
+const renamedRegistry = (file: unknown) =>
+  field(file, 'defs', (defs) => {
+    if (!isPlainObject(defs)) return null
+    const renamed = Object.entries(defs).flatMap(([id, def]) => {
+      const next = field(def, 'type', respelled)
+      return next ? [[id, next] as const] : []
+    })
+    return renamed.length ? { ...defs, ...Object.fromEntries(renamed) } : null
+  })
+
+// A def keeps the spelling it was written with through every ordinary write, so the registry's own copy is respelled here.
+export const normalizePropertyTypes = (root: string) =>
+  rmwJsonStrict(nexusConfig(root, NEXUS_CONFIG_FILES.properties), renamedRegistry)

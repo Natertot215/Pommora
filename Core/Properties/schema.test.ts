@@ -31,6 +31,11 @@ describe('validateDefinition', () => {
     )
   })
 
+  it('refuses the types the timestamp columns wear', () => {
+    for (const type of ['createdTime', 'lastEditedTime'] as const)
+      expect(validateDefinition(def({ id: 'p6', name: 'When', type }), existing).ok).toBe(false)
+  })
+
   it('blocks reserved ids and duplicate ids', () => {
     expect(validateDefinition(def({ id: '_title', name: 'X', type: 'number' }), existing).ok).toBe(
       false,
