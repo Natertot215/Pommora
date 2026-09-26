@@ -371,6 +371,7 @@ export function useViewHost(
     source,
     view: liveView,
     schema,
+    contextIds,
     values,
     setValueOverride,
     effectiveValues,

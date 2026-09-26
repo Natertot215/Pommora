@@ -153,8 +153,14 @@ async function routeMutation(
       if (applyPatch(root, () => patched) === 'refresh') return 'refresh'
       // The landed position derives from an order file the transform never read: it ranks unlisted entities by order where the walk ranks by title, so one targeted read pins it.
       switch (req.op) {
-        case 'createPage':
-          return req.order ? 'ok' : patchContainerFromDisk(root, req.parentPath)
+        case 'createPage': {
+          const placed = req.order ? 'ok' : await patchContainerFromDisk(root, req.parentPath)
+          // A Context seed lands after the birth write, so the page reads back its membership.
+          const seededContext = Object.values(req.seeds ?? {}).some((v) => v.kind === 'context')
+          return placed === 'ok' && seededContext && reply.created
+            ? patchPage(root, reply.created.path)
+            : placed
+        }
         case 'createContainer': {
           // The creation seeded the new sidecar with a default view; read it, then pin the order.
           const own = reply.created ? await patchContainerFromDisk(root, reply.created.path) : 'ok'
