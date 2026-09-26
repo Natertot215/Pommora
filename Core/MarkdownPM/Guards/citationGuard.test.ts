@@ -255,3 +255,37 @@ describe('whitespace alone is refused rather than rescued', () => {
     expect(sectionOf(out)).toBe(2)
   })
 })
+
+describe('a change from the body never joins the section onto its line', () => {
+  const GAP = 'body\n\n[^a]: first'
+  const TWO = 'body[^a] and[^b]\n\n[^a]: first\n[^b]: second'
+
+  it('typing over the blank line keeps the text and gives the section its line back', () => {
+    const out = type(GAP, 5, 'x', true, 6)
+    expect(out).toBe('body\nx\n[^a]: first')
+    expect(sectionOf(out)).toBe(1)
+  })
+
+  it('and without the guard the same keystroke literalizes the section', () => {
+    expect(sectionOf(type(GAP, 5, 'x', false, 6))).toBe(0)
+  })
+
+  it('typing over the body line\u2019s end and the blank line keeps both lines apart', () => {
+    const out = type(GAP, 4, 'x', true, 6)
+    expect(out).toBe('bodyx\n[^a]: first')
+    expect(sectionOf(out)).toBe(1)
+  })
+
+  it('deleting the body line\u2019s end and the blank line leaves one newline standing', () => {
+    const out = type(GAP, 4, '', true, 6)
+    expect(out).toBe('body\n[^a]: first')
+    expect(sectionOf(out)).toBe(1)
+  })
+
+  it('a sweep that removes the first head ending at the next one keeps that one on its own line', () => {
+    const to = TWO.indexOf('[^b]: second')
+    const out = type(TWO, 4, 'Z', true, to)
+    expect(out).toBe('bodyZ\n[^b]: second')
+    expect(sectionOf(out)).toBe(1)
+  })
+})
