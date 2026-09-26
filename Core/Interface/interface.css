@@ -9,10 +9,6 @@
   flex: 1;
   min-height: 0;
 }
-/* Cold-switch pause: the outgoing view is a held frame, not a live surface — input can't land on a page that's already being left. */
-.content-view-view.is-frozen {
-  pointer-events: none;
-}
 
 /* Content held clear of the shell's panes: --interface-inset is its room past each pane's edge, and --interface-inset-lead the leading side's where the two differ. */
 .interface-inset {

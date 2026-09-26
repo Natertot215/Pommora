@@ -178,7 +178,7 @@ export function ContentView(): React.JSX.Element {
       onPointerLeave={reveal.onPointerLeave}
       onTransitionEnd={reveal.onTransitionEnd}
     >
-      <div ref={viewRef} className={frozen ? 'content-view-view is-frozen' : 'content-view-view'}>
+      <div ref={viewRef} className="content-view-view" inert={frozen}>
         {hosts.map((h) => (
           <ContentHostContext.Provider key={h.key} value={h}>
             <div className={cx('detail-host', h.parked && 'is-parked')} inert={h.parked}>
