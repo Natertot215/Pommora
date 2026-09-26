@@ -55,7 +55,7 @@ The **Status editor** edits in place: a Style toggle over a group-labeled option
 
 #### II. Checkbox
 
-A boolean with two per-view looks and one property-wide color. The look is **Checkbox** (a rounded box) or **Switch** (a DualSwitch); toggling on writes `true` and toggling off strips the key. The `checkbox_color` applies to the on state only — a checked box fills with it and a switch's on-track tints — while the off state stays neutral; an absent color follows the Nexus's Checkbox Color live. Cells, cards, group bands, and filter rows all draw the value in its color and the view's look. The editor pairs a ColorSwatch with a Style picker.
+A boolean with two per-view looks and one property-wide color. The look is **Checkbox** (a rounded box) or **Switch** (a DualSwitch); toggling on writes `true` and toggling off strips the key. The `checkbox_color` applies to the on state only — a checked box fills with it and a switch's on-track tints — while the off state stays neutral; an absent color follows the Nexus's Checkbox Color live. Cells, cards, and filter rows all draw the value in its color and the view's look. The editor pairs a ColorSwatch with a Style picker.
 
 #### II. Number
 
