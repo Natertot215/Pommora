@@ -1,17 +1,7 @@
 import { Fragment, useMemo } from 'react'
 import { cx } from '@pommora/uix/Utilities/cx'
-import { overScrollEllipsis } from '@pommora/uix/Interactions/OverScroll'
-import { HoverRemove, hoverRemoveHost } from '@pommora/uix/Interactions/HoverRemove'
-import {
-  SortableZone,
-  useDragFamily,
-  useDragItem,
-  type DragItem,
-} from '@pommora/uix/Interactions/drag'
-import { Icon } from '@pommora/uix/Symbols'
+import { SortableZone, useDragFamily } from '@pommora/uix/Interactions/drag'
 import { DEFAULT_ENTITY_ICONS } from '../../Assets/entityIconPolicy'
-import { text } from '@pommora/uix/Theme'
-import { EntityIcon } from '../../Assets/EntityIcon'
 import { resolveWith, type ResolveIndex, type ResolvedNav } from '../../Navigation/navResolve'
 import { useActiveTabInView, useTabClose, useTabExchange } from '../../Navigation/tabRows'
 import { popMenu } from '../../Actions/menuActions'
@@ -24,13 +14,38 @@ import { useHeld } from '@pommora/uix/Animations/useExitPresence'
 import { isWindowTarget, TAB_FAMILY } from '@pommora/core/Navigation/navRef'
 import { useSession } from '../../Session/store'
 import type { WindowTab } from './windowTabs'
+import {
+  DraggableTabItem,
+  TabItem,
+  type TabItemProps,
+  TabSeparator,
+} from '../../Navigation/TabItem'
 import '../../Navigation/tab-base.css'
-
-const TAB_ICON = 'control'
 
 interface Entry {
   tab: WindowTab
   res: ResolvedNav | null
+}
+
+type TabLook = Omit<
+  TabItemProps,
+  'active' | 'closing' | 'drag' | 'onActivate' | 'onClose' | 'onMenu'
+>
+
+const windowTabProps = ({ tab, res }: Entry, navKind: boolean): TabLook => {
+  const target = tab.target
+  if (target.kind === 'map')
+    return { id: tab.id, label: 'Navigation', icon: 'map', variant: 'compact', iconOnly: true }
+  // A tab whose own icon is ALSO the map glyph renders its type icon instead — nothing masquerades as the perma-pinned NavWindow tab.
+  const shown =
+    navKind && res?.icon === 'map' ? { ...res, icon: DEFAULT_ENTITY_ICONS[target.kind] } : res
+  return {
+    id: tab.id,
+    label: res?.title ?? '',
+    icon: shown ?? DEFAULT_ENTITY_ICONS[target.kind],
+    variant: 'compact',
+    glance: target.kind === 'page' ? target : undefined,
+  }
 }
 
 export function WindowTabStrip({
@@ -108,14 +123,7 @@ export function WindowTabStrip({
     const entry = entryOf(id)
     return entry ? (
       <div className="tab-overlay tabs-compact">
-        <WindowTabItem
-          entry={entry}
-          navKind={navKind}
-          active={entry.tab.id === activeTabId}
-          closing={false}
-          onActivate={() => {}}
-          onClose={() => {}}
-        />
+        <TabItem {...windowTabProps(entry, navKind)} active={entry.tab.id === activeTabId} />
       </div>
     ) : null
   }
@@ -135,13 +143,10 @@ export function WindowTabStrip({
       )}
       <div className="window-tabwrap tabs-compact">
         {showStrip && sentinel && (
-          <WindowTabItem
-            entry={sentinel.entry}
-            navKind={navKind}
+          <TabItem
+            {...windowTabProps(sentinel.entry, navKind)}
             active={sentinel.entry.tab.id === activeTabId}
-            closing={false}
             onActivate={() => activateWindowTab(sentinel.entry.tab.id)}
-            onClose={() => {}}
           />
         )}
         {showStrip && (
@@ -167,17 +172,10 @@ export function WindowTabStrip({
               {contentEntries.map(({ entry, ghost }, i) => (
                 <Fragment key={entry.tab.id}>
                   {(i > 0 || sentinel) && (
-                    <span
-                      className={cx(
-                        'tab-seg',
-                        (ghost || (i > 0 && i === firstLiveContent)) && 'is-closing',
-                      )}
-                      aria-hidden
-                    />
+                    <TabSeparator closing={ghost || (!sentinel && i === firstLiveContent)} />
                   )}
-                  <DraggableWindowTab
-                    entry={entry}
-                    navKind={navKind}
+                  <DraggableTabItem
+                    {...windowTabProps(entry, navKind)}
                     active={!ghost && entry.tab.id === activeTabId}
                     closing={ghost}
                     onActivate={() => activateWindowTab(entry.tab.id)}
@@ -191,89 +189,5 @@ export function WindowTabStrip({
         )}
       </div>
     </>
-  )
-}
-
-function DraggableWindowTab(props: {
-  entry: Entry
-  navKind: boolean
-  active: boolean
-  closing: boolean
-  onActivate: () => void
-  onClose: () => void
-  onMenu?: (e: React.MouseEvent) => void
-}): React.JSX.Element {
-  const drag = useDragItem(props.entry.tab.id)
-  return <WindowTabItem {...props} drag={drag} />
-}
-
-function WindowTabItem({
-  entry,
-  navKind,
-  active,
-  closing,
-  drag,
-  onActivate,
-  onClose,
-  onMenu,
-}: {
-  entry: Entry
-  navKind: boolean
-  active: boolean
-  closing: boolean
-  drag?: DragItem
-  onActivate: () => void
-  onClose: () => void
-  onMenu?: (e: React.MouseEvent) => void
-}): React.JSX.Element {
-  const isMap = entry.tab.target.kind === 'map'
-  const kind = entry.tab.target.kind === 'map' ? 'page' : entry.tab.target.kind
-  const label = isMap ? 'Navigation' : (entry.res?.title ?? '')
-  // A tab whose own icon is ALSO the map glyph renders its type icon instead — nothing masquerades as the perma-pinned NavWindow tab.
-  const res =
-    navKind && entry.res?.icon === 'map'
-      ? { ...entry.res, icon: DEFAULT_ENTITY_ICONS[kind] }
-      : entry.res
-  return (
-    // biome-ignore lint/a11y/useKeyWithClickEvents: the drag handle spread supplies onKeyDown (Space/Enter lift), which a spread hides from static analysis
-    <div
-      ref={drag?.setNodeRef}
-      style={drag?.style}
-      {...drag?.handle}
-      data-tab-id={entry.tab.id}
-      data-reveal-host=""
-      className={cx(
-        'tab',
-        hoverRemoveHost,
-        text.caption.standard,
-        active && 'is-active',
-        closing && 'is-closing',
-        isMap && 'tab-map',
-        drag?.isDragging && 'is-dragging',
-      )}
-      title={label}
-      role="tab"
-      aria-selected={active}
-      // Roving tabindex: the strip is ONE tab stop, the active tab holds it.
-      tabIndex={active ? 0 : -1}
-      onClick={() => {
-        if (!drag?.isDragging) onActivate()
-      }}
-      onContextMenu={onMenu}
-    >
-      {res ? (
-        <EntityIcon item={res} size={TAB_ICON} className="tab-icon" />
-      ) : (
-        <Icon
-          name={isMap ? 'map' : DEFAULT_ENTITY_ICONS[kind]}
-          size={TAB_ICON}
-          className="tab-icon"
-        />
-      )}
-      {!isMap && <span className={cx(overScrollEllipsis, 'tab-label')}>{label}</span>}
-      {!isMap && (
-        <HoverRemove reveal="host" className="tab-x" label="Close Tab" onRemove={onClose} />
-      )}
-    </div>
   )
 }
