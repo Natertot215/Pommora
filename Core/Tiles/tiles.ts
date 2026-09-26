@@ -5,6 +5,7 @@ import { type Result, fault, ok } from '../Contract/result'
 import { isPlainObject } from '../Contract/validators'
 import { looseDecoder } from '../Files/decoders'
 import { isUlidShaped } from '../Nexus/identityMark'
+import { isNavRef, toNavRef } from '../Navigation/navRef'
 import { VIEW_BUTTONS, VIEW_STYLES } from '../Views/viewRow'
 
 interface RawTile {
@@ -50,16 +51,10 @@ export type TileHostRef = { kind: 'homepage' } | { kind: 'space'; id: string }
 
 export const HOMEPAGE_HOST = { kind: 'homepage' } as const satisfies TileHostRef
 
-export function tileHostKey(host: TileHostRef): string {
-  return host.kind === 'homepage' ? 'homepage' : `space:${host.id}`
-}
+const TILE_HOST_KINDS: ReadonlySet<string> = new Set<TileHostRef['kind']>(['homepage', 'space'])
 
 export function coerceTileHost(raw: unknown): TileHostRef | null {
-  if (!isPlainObject(raw)) return null
-  const { kind, id } = raw
-  if (kind === 'homepage') return HOMEPAGE_HOST
-  if (kind === 'space' && typeof id === 'string' && id.length > 0) return { kind: 'space', id }
-  return null
+  return isNavRef(raw, TILE_HOST_KINDS) ? (toNavRef(raw) as TileHostRef) : null
 }
 
 const TILE_STYLES = ['bordered', 'borderless'] as const

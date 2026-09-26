@@ -26,6 +26,7 @@ import { resolveContainerSchema } from '../Pipeline/pickView'
 import { bucketKey, flattenContainer, groupsStructurally } from '../Pipeline/group'
 import { resolveView } from '../Pipeline/resolveView'
 import { searchGroups } from '../Pipeline/search'
+import { foldKey } from '../../Paths/caseFold'
 import { resolvedSortCount, resolveManualOrder } from '../Pipeline/sort'
 import { useActiveView } from './useActiveView'
 import { type Overrides, patchOverride } from '../../Properties/valueOverride'
@@ -70,7 +71,7 @@ export function useViewHost(
   const tile = useViewTileScope()
   const host = useContentHost()
   const query = useSession((s) => (tile || !host ? undefined : s.viewSearch[host.tabId]?.query))
-  const needle = query?.trim().toLowerCase() ?? ''
+  const needle = foldKey(query?.trim() ?? '')
   const searching = needle !== ''
 
   // The loaded values never re-read on a write, so a changed row re-groups only because this optimistic patch feeds the pipeline.
@@ -201,7 +202,7 @@ export function useViewHost(
     flattenStructural,
   ])
   const titles = useMemo(
-    () => (searching ? new Map(rows.map((r) => [r.id, r.title.toLowerCase()])) : null),
+    () => (searching ? new Map(rows.map((r) => [r.id, foldKey(r.title)])) : null),
     [rows, searching],
   )
   const groups = useMemo(

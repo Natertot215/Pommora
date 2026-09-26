@@ -8,7 +8,8 @@ import {
   rootSegs,
   type WatchScope,
 } from '../Paths/exclusion'
-import { type TileHostRef, tileHostKey } from '../Tiles/tiles'
+import type { TileHostRef } from '../Tiles/tiles'
+import { navKey } from '../Navigation/navRef'
 import type { ValueChange } from './tree'
 import { getLiveTree } from './liveTree'
 import { classifyEvent, type WatchClass, type WatchEvent, type WatchEventName } from './watchPatch'
@@ -72,8 +73,8 @@ export function tilesChangedIn(
   classified: WatchClass[],
   cascaded: readonly TileHostRef[],
 ): TileHostRef[] {
-  const hosts = new Map(cascaded.map((host) => [tileHostKey(host), host]))
-  for (const c of classified) if (c.kind === 'tiles-leaf') hosts.set(tileHostKey(c.host), c.host)
+  const hosts = new Map(cascaded.map((host) => [navKey(host), host]))
+  for (const c of classified) if (c.kind === 'tiles-leaf') hosts.set(navKey(c.host), c.host)
   return [...hosts.values()]
 }
 

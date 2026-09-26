@@ -54,16 +54,12 @@ export async function writeNavigationState(
   if (!('pinned' in patch) && !('banner' in patch)) return
   const written = await updateNexusConfig(root, 'state', (state) => {
     const base = navigationOf(state)
-    const pinned = refList('pinned' in patch ? patch.pinned : base.pinned)
+    const navigation = 'pinned' in patch ? setOrDrop(base, 'pinned', refList(patch.pinned)) : base
     // The reader drops a banner outside the asset folder, so the write keeps any path it's given.
     const banner = 'banner' in patch ? patch.banner : base.banner
     return {
       ...state,
-      navigation: setOrDrop(
-        setOrDrop(base, 'pinned', pinned),
-        'banner',
-        typeof banner === 'string' && banner,
-      ),
+      navigation: setOrDrop(navigation, 'banner', typeof banner === 'string' && banner),
     }
   })
   if (!written.ok) throw new Error(written.error.message)

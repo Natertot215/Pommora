@@ -1,11 +1,7 @@
 import { capSet } from '@pommora/uix/Utilities/capMap'
 import type { Result } from '@pommora/core/Contract/result'
-import {
-  type TileDoc,
-  type TileDocPatch,
-  type TileHostRef,
-  tileHostKey,
-} from '@pommora/core/Tiles/tiles'
+import type { TileDoc, TileDocPatch, TileHostRef } from '@pommora/core/Tiles/tiles'
+import { navKey } from '../Navigation/navRef'
 import { decodeLayout } from './Layout/codec'
 import { emptyLayout, type TileLayout, tileIds } from './Layout/model'
 import { dialer } from '../Platform/dialer'
@@ -91,7 +87,7 @@ export const isTileRemoving = (tileId: string): boolean => removing.has(tileId)
 
 const docs = new Map<string, HostDoc>()
 
-const at = (host: TileHostRef): HostDoc | undefined => docs.get(tileHostKey(host))
+const at = (host: TileHostRef): HostDoc | undefined => docs.get(navKey(host))
 
 // Every write joins the ones in flight, so a flush awaits all of them and a reload sees any of them land.
 const save = (doc: HostDoc, patch: TileDocPatch): Promise<Result<null>> => {
@@ -100,7 +96,7 @@ const save = (doc: HostDoc, patch: TileDocPatch): Promise<Result<null>> => {
   return sent
 }
 
-const layoutKey = (doc: HostDoc): string => `layout:${tileHostKey(doc.host)}`
+const layoutKey = (doc: HostDoc): string => `layout:${navKey(doc.host)}`
 
 const flush = (doc: HostDoc): Promise<void> => sessionWriter.flush(layoutKey(doc))
 
@@ -152,7 +148,7 @@ const reload = async (doc: HostDoc): Promise<void> => {
 }
 
 function create(host: TileHostRef): HostDoc {
-  const key = tileHostKey(host)
+  const key = navKey(host)
   const doc: HostDoc = {
     host,
     state: EMPTY,
@@ -165,7 +161,7 @@ function create(host: TileHostRef): HostDoc {
   }
   docs.set(key, doc)
   doc.off = dialer().on('tiles:changed', (changed) => {
-    if (tileHostKey(changed) !== key) return
+    if (navKey(changed) !== key) return
     dropTileBodies(tileIds(doc.state.layout))
     if (doc.holds > 0) doc.heldPush = true
     else void reload(doc)
@@ -184,7 +180,7 @@ async function retire(doc: HostDoc): Promise<void> {
   // A remount inside the same commit — a host swapped in place, React's double-invoked effects — re-subscribes before this resolves, and keeps the document rather than re-reading the file.
   if (doc.listeners.size > 0) return
   if (at(doc.host) === doc) {
-    docs.delete(tileHostKey(doc.host))
+    docs.delete(navKey(doc.host))
     for (const id of tileIds(doc.state.layout)) {
       bodies.delete(id)
       bases.delete(id)
