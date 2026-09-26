@@ -28,7 +28,7 @@ const G_ID = '01KVGMT8BFP350FZZXAMG1QDRG'
 import { openSession, closeSession } from './session'
 import { flushValueWrites } from './valuesChanged'
 import { readNexus } from './readNexus'
-import { pathExists } from '../Files/atomicWrite'
+import { forgetLastReads, pathExists } from '../Files/atomicWrite'
 import { createProperty } from '../Properties/registryProperty'
 import { liveAssetMap, resolveAssetName, takeAssetMapPush } from '../Assets/assetMap'
 import * as tap from '../Sync/Client/tap'
@@ -835,6 +835,7 @@ describe('handleMutate — review-round hardening', () => {
 
   it('keeps a page rename whose cascade can’t start, and warns', async () => {
     await refreshTree(root)
+    forgetLastReads()
     await writeFile(join(root, '.nexus', 'properties.json'), '{ not json')
     const r = await handleMutate(
       root,
@@ -1924,6 +1925,30 @@ describe('handleMutate — excluded entries follow their folders', () => {
     expect(tree?.excluded).toEqual(['Archive', 'Elsewhere/Daily'])
     expect(tree?.collections.find((c) => c.path === 'Elsewhere')?.sets).toEqual([])
     expect(push.mock.calls.map(([name]) => name)).toContain('nexus:changed')
+  })
+
+  it('refuses a landing that carries excluded entries while settings.json can’t be written', async () => {
+    await mkdir(join(root, 'Notes', 'Private'), { recursive: true })
+    await mkdir(join(root, 'Other'), { recursive: true })
+    await writeFile(join(root, 'Other', '_pagecollection.json'), JSON.stringify({ id: 'ot' }))
+    await exclude(['Notes/Private'])
+    await writeFile(join(root, '.nexus', 'settings.json'), '{ corrupt')
+    for (const req of [
+      { op: 'rename', path: 'Notes', kind: 'collection', newName: 'Elsewhere' },
+      { op: 'delete', path: 'Notes', kind: 'collection' },
+    ] as const) {
+      const r = await handleMutate(root, req, nexusDeps)
+      expect(r.ok ? '' : r.error.message).toContain('settings.json')
+      expect(await pathExists(join(root, 'Notes', 'Private'))).toBe(true)
+    }
+    expect(await pathExists(join(root, '.trash'))).toBe(false)
+    expect(await read('.nexus/settings.json')).toBe('{ corrupt')
+    const landed = await handleMutate(
+      root,
+      { op: 'rename', path: 'Other', kind: 'collection', newName: 'Moved' },
+      nexusDeps,
+    )
+    expect(landed.ok).toBe(true)
   })
 
   it('takes a trashed Collection’s entries with it and lands them wherever it is restored', async () => {

@@ -17,7 +17,12 @@ import {
   gatherSpaceRecord,
 } from './gather'
 import { type RecordFile, writeRecord } from './record'
-import { releaseExcludedFolders } from '../Settings/settings'
+import {
+  excludedWithin,
+  exclusionWriteRefusal,
+  readWatchScope,
+  releaseExcludedFolders,
+} from '../Settings/settings'
 
 export async function deleteOp(
   { root, deps }: MutateContext,
@@ -29,6 +34,14 @@ export async function deleteOp(
   if (!(await pathExists(abs))) return fail('not-found', 'Nothing to delete.')
   const contexts = req.kind === 'context' ? await readRegistryStrict(root) : null
   if (contexts && !contexts.ok) return contexts
+  const refused =
+    req.kind === 'collection' || req.kind === 'set'
+      ? await exclusionWriteRefusal(
+          root,
+          excludedWithin((await readWatchScope(root)).excluded, req.path),
+        )
+      : null
+  if (refused) return refused
   // Write-ahead: the record lands before the sweep destroys what it describes, and the artifact moves LAST, so a delete cut short leaves evidence rather than silence.
   const bundle = deps.trashMode === 'system' ? null : await mintBundle(root, abs)
   const write = bundle

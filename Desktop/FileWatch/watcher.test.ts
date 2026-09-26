@@ -5,6 +5,7 @@ import { tempRoot } from '@pommora/core/Testing/hostFs'
 import type { BrowserWindow } from 'electron'
 import { dropLiveTree, getLiveTree, refreshTree } from '@pommora/core/Nexus/liveTree'
 import { recordWrite } from '@pommora/core/Files/writeEcho'
+import { forgetLastReads } from '@pommora/core/Files/atomicWrite'
 import { push } from '../Bridge/ipc'
 import { sessionRoot } from '@pommora/core/Nexus/session'
 import { syncIgnoredUnder } from '@pommora/core/Nexus/watchSettle'
@@ -193,6 +194,7 @@ describe('the watcher settle', () => {
       await writeFile(abs('Notes', 'A.md'), `---\nID: ${ULID_A}\n---\n\n## Setup\n`)
       await seedContentIndex(root)
       await refreshTree(root)
+      forgetLastReads()
       await writeFile(abs('.nexus', 'properties.json'), '{corrupt')
       vi.useFakeTimers()
       await startWatcher(root, win)

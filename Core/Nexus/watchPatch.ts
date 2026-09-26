@@ -425,12 +425,7 @@ export async function patchSpaceFromDisk(root: string, dirRel: string): Promise<
 }
 
 async function applySettingsLeaf(root: string, watched: WatchScope): Promise<'ok' | 'refresh'> {
-  // A damaged settings file leaves the held tree and the armed scope as they were until it reads again.
-  const leaves = await readSettings(root).catch((e) => {
-    console.error('settings: kept as last read:', errText(e))
-    return null
-  })
-  if (!leaves) return 'ok'
+  const leaves = await readSettings(root)
   return sameScope(scopeOf(leaves), watched) ? applySettingsLeaves(root, leaves) : 'refresh'
 }
 

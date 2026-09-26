@@ -12,7 +12,9 @@ import {
   readJsonStrict,
   rmwJsonStrict,
   readAppFile,
+  readKept,
   setRepairSeed,
+  updateNexusConfig,
   updateNexusFile,
 } from './atomicWrite'
 import { mintBundle, settleBundle, trashFileFlat } from '../Trash/bundle'
@@ -158,7 +160,7 @@ describe('readAppFile and a repairable updateNexusFile', () => {
     expect(JSON.parse(await readFile(file, 'utf8'))).toEqual({ order: ['a'] })
   })
 
-  it('a file never read cleanly rebuilds from the repair seed, and a deleted one forgets its last read', async () => {
+  it('a file never read cleanly rebuilds from the repair seed, and a deleted one reads as absent', async () => {
     const file = join(dir, 'state.json')
     await writeFile(file, JSON.stringify({ order: ['old'] }))
     await readAppFile(file)
@@ -172,6 +174,43 @@ describe('readAppFile and a repairable updateNexusFile', () => {
       setRepairSeed(null)
     }
     expect(JSON.parse(await readFile(file, 'utf8'))).toEqual({ order: ['synced'], pinned: ['p'] })
+  })
+
+  it('readKept answers a file damaged after a clean read with that read', async () => {
+    const file = join(dir, 'settings.json')
+    await writeFile(file, JSON.stringify({ a: 1 }))
+    await readKept(file)
+    await damage(file)
+    expect(await readKept(file)).toEqual({ a: 1 })
+  })
+
+  it('a file read absent then damaged reads null, and a write still rebuilds it from the repair seed', async () => {
+    const file = join(dir, 'state.json')
+    expect(await readKept(file)).toBeNull()
+    await damage(file)
+    expect(await readKept(file)).toBeNull()
+    expect(await readAppFile(file)).toBeNull()
+    setRepairSeed((abs) => (abs === file ? { order: ['synced'] } : null))
+    try {
+      await updateNexusFile(file, (cur) => ({ ...cur, pinned: ['p'] }), true)
+    } finally {
+      setRepairSeed(null)
+    }
+    expect(JSON.parse(await readFile(file, 'utf8'))).toEqual({ order: ['synced'], pinned: ['p'] })
+  })
+
+  it('a damaged file this session never saw fails readKept by name and reads empty through readAppFile', async () => {
+    const file = join(dir, 'settings.json')
+    await damage(file)
+    await expect(readKept(file)).rejects.toThrow('Couldn’t read “settings.json”.')
+    expect(await readAppFile(file)).toBeNull()
+  })
+
+  it('a hand-authored file keeps the copy its last write landed', async () => {
+    expect((await updateNexusConfig(dir, 'settings', () => ({ excluded: ['X'] }))).ok).toBe(true)
+    const file = join(dir, '.nexus', 'settings.json')
+    await damage(file)
+    expect(await readKept(file)).toEqual({ excluded: ['X'] })
   })
 
   it('a file that refuses repair leaves its damaged copy in place', async () => {

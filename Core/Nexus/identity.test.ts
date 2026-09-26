@@ -6,7 +6,6 @@ import { ensureIdentity, readIdentity } from './identity'
 import { agendaContext, resolveFolderKind } from './folderKind'
 import { isUlidShaped } from './identityMark'
 import { pathExists } from '../Files/atomicWrite'
-import { valueOr } from '../Contract/result'
 import { nexusDir, nexusConfig } from '../Paths/paths'
 import { NEXUS_CONFIG_FILES, SIDECAR_FILENAME } from '../Paths/nexusPaths'
 
@@ -101,7 +100,7 @@ describe('ensureIdentity', () => {
         await expect(ensureIdentity(root)).resolves.toEqual({ id: 'nx', created: false })
         expect(logged).toHaveBeenCalledTimes(1)
         expect(await readFile(idPath(), 'utf8')).toBe(before)
-        const identity = valueOr(await readIdentity(root), null)
+        const identity = await readIdentity(root)
         expect(identity?.agenda_singletons).toBeUndefined()
         const ctx = await agendaContext(root, identity)
         expect(await resolveFolderKind(join(root, 'Tasks'), 'root', ctx)).toBe('tasks')

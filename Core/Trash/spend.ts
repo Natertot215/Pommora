@@ -17,7 +17,7 @@ import type { NexusTree } from '../Nexus/tree'
 import { mutateRegistryFile } from '../Contexts/contextsRegistry'
 import { restoreProperty } from './restoreProperty'
 import { scrubReturning } from './restoreScrub'
-import { reseatExcludedFolders } from '../Settings/settings'
+import { exclusionWriteRefusal, reseatExcludedFolders } from '../Settings/settings'
 import { sweepRootsById } from '../Properties/governedSweep'
 import { BUNDLE_SUFFIX } from './bundle'
 import { pathExists, readJsonObject, readTextOrNull, rmwJsonStrict } from '../Files/atomicWrite'
@@ -229,7 +229,9 @@ async function restoreArtifact(
   )
     return fault('That restore record points outside the nexus.')
   if (record.entity === 'collection' || record.entity === 'set') {
-    const refused = await landingRefusal(root, join(root, dir), finalName)
+    const refused =
+      (await landingRefusal(root, join(root, dir), finalName)) ??
+      (await exclusionWriteRefusal(root, record.excluded ?? []))
     if (refused) return refused
   }
   // The tree is the resolver's universe; a file the walk cannot see (an Unknown squatter) could still occupy the target — refuse rather than clobber what nothing adjudicated.

@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, afterEach } from 'vitest'
 import { rm, writeFile, mkdir, readFile } from 'node:fs/promises'
 import { join } from '../Paths/posix'
 import { tempRoot } from '../Testing/hostFs'
-import { mutateRegistry, orderedDefs, readRegistry } from './propertiesRegistry'
+import { mutateRegistry, orderedDefs, readKeptRegistry, readRegistry } from './propertiesRegistry'
 import type { PropertyDefinition } from './properties'
 
 let root: string
@@ -31,6 +31,13 @@ describe('propertiesRegistry', () => {
     await writeFile(join(root, '.nexus', 'properties.json'), '{nope')
     await expect(readRegistry(root)).rejects.toThrow()
     await expect(mutateRegistry(root, () => ({ result: undefined }))).rejects.toThrow()
+  })
+
+  it('a registry damaged after a write keeps that write for a read that writes nothing', async () => {
+    const next = { order: ['prop_a'], defs: { prop_a: def('prop_a', 'Priority') } }
+    await mutateRegistry(root, () => ({ next, result: undefined }))
+    await writeFile(join(root, '.nexus', 'properties.json'), '{ corrupt')
+    expect(await readKeptRegistry(root)).toEqual(next)
   })
 
   it('round-trips a registry written through the mutation chain', async () => {

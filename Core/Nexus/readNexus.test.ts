@@ -459,6 +459,47 @@ describe('readNexus — the walk names what it cannot read', () => {
     }
   })
 
+  it.each([
+    ['nexus.json'],
+    ['properties.json'],
+  ])('a damaged %s fails a first walk and names itself', async (file) => {
+    const r = tempRoot('pom-unread-first-')
+    try {
+      d(join(r, '.nexus'))
+      w(join(r, '.nexus', 'nexus.json'), JSON.stringify({ id: 'nxs' }))
+      w(join(r, '.nexus', file), '{ corrupt')
+      await expect(readNexus(r)).rejects.toThrow(`Couldn’t read “${file}”.`)
+    } finally {
+      rmSync(r, { recursive: true, force: true })
+    }
+  })
+
+  it.each([
+    ['settings.json'],
+    ['properties.json'],
+    ['nexus.json'],
+  ])('a %s damaged after a clean walk reads as that walk', async (file) => {
+    const r = tempRoot('pom-kept-walk-')
+    try {
+      d(join(r, '.nexus'))
+      w(join(r, '.nexus', 'nexus.json'), JSON.stringify({ id: 'nxs' }))
+      w(join(r, '.nexus', 'settings.json'), JSON.stringify({ excluded_folders: ['Private'] }))
+      w(
+        join(r, '.nexus', 'properties.json'),
+        JSON.stringify({ order: ['p'], defs: { p: { id: 'p', name: 'Done', type: 'checkbox' } } }),
+      )
+      const first = await readNexus(r)
+      w(join(r, '.nexus', file), '{ corrupt')
+      const next = await readNexus(r)
+      expect(next.excluded).toEqual(['Private'])
+      expect(next.registry).toEqual(first.registry)
+      expect(next.registry).toHaveLength(1)
+      expect(next.nexus.id).toBe('nxs')
+    } finally {
+      rmSync(r, { recursive: true, force: true })
+    }
+  })
+
   it('an unusable registry names itself — a blank Contexts layer is not mass deletion', async () => {
     const r = tempRoot('pom-unread-reg-')
     try {

@@ -21,6 +21,7 @@ import {
   type WatchEvent,
 } from './watchPatch'
 import { findContainerWhere } from './treePatch'
+import { confirmBy } from './mutatePatch'
 import type { CollectionNode, SetNode } from './tree'
 import { noteExternalEdit } from '../Pages/fileHistory'
 import { openSession } from './session'
@@ -243,6 +244,23 @@ describe('applyWatchEvents — must agree with the walk', () => {
 })
 
 describe('settings leaves — the walk and the settings patch must never disagree', () => {
+  it('a settings file damaged mid-session keeps the held tree through a confirm that walks', async () => {
+    await writeFile(abs('.nexus', 'settings.json'), JSON.stringify({ excluded_folders: ['Loose'] }))
+    await refreshTree(root)
+    await writeFile(abs('.nexus', 'settings.json'), '{ corrupt')
+    await mkdir(abs('Fresh'))
+    await writeFile(abs('Fresh', '_pagecollection.json'), JSON.stringify({ id: 'c2' }))
+    const events = [ev('change', '.nexus', 'settings.json'), ev('addDir', 'Fresh')]
+    await confirmBy(root, async () =>
+      (await applyWatchEvents(root, events, scope(['Loose']))).outcome === 'patched'
+        ? 'ok'
+        : 'refresh',
+    )
+    const tree = getLiveTree()
+    expect(tree?.collections.map((c) => c.path)).toContain('Fresh')
+    expect(tree?.excluded).toEqual(['Loose'])
+  })
+
   // The decoder, the walk's tree literal and applySettingsLeaves must never disagree; a per-function test cannot see that, so this drives both over the same bytes.
   it('an asset_directory appearing on disk reaches the live tree exactly as a fresh walk reads it', async () => {
     await writeFile(abs('.nexus', 'settings.json'), JSON.stringify({}))

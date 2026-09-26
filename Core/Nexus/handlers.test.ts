@@ -12,7 +12,7 @@ import { tempRoot } from '../Testing/hostFs'
 import { memoryStores } from '../Testing/memoryStores'
 import { type HubHost, hubHost } from '../Testing/syncHub'
 import { openNexusSequence } from './handlers'
-import { dropLiveTree } from './liveTree'
+import { dropLiveTree, refreshTree } from './liveTree'
 import { closeSession } from './session'
 
 const NEXUS = '01KVGMT8BFP350FZZXAMG1QDRN'
@@ -87,6 +87,16 @@ describe('openNexusSequence', () => {
 
     expect(currentSession()).not.toBeNull()
     expect(currentStatus().state).not.toBe('off')
+  })
+
+  it('a reopen of the open Nexus keeps the settings it read', async () => {
+    const settings = join(root, '.nexus', 'settings.json')
+    await writeFile(settings, JSON.stringify({ excluded_folders: ['Private'] }))
+    const opened = await openNexusSequence(ctx, root, false)
+    await writeFile(settings, '{ corrupt')
+    vi.spyOn(console, 'error').mockImplementation(() => {})
+    await openNexusSequence(ctx, root, false)
+    expect((await refreshTree(opened)).excluded).toEqual(['Private'])
   })
 
   it('opens a Nexus whose identity file is damaged', async () => {

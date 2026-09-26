@@ -1,5 +1,5 @@
 import { basename, dirname, join } from '../Paths/posix'
-import { fault, ok, valueOr, type Result } from '../Contract/result'
+import { fault, ok, type Result } from '../Contract/result'
 import { machine } from '../Platform/machine'
 import { isContentFile, listEntries } from '../Files/walk'
 import { admitContentFile, ID_KEY, type ContentKind } from './identityMark'
@@ -142,7 +142,7 @@ async function stampTree(
 }
 
 export async function ensureFolderId(root: string, absDir: string): Promise<void> {
-  const identity = valueOr(await readIdentity(root), null)
+  const identity = await readIdentity(root)
   const kindCtx = await agendaContext(root, identity, false)
   const depth = dirname(absDir) === root ? 'root' : 'nested'
   const kind = await resolveFolderKind(absDir, depth, kindCtx)
@@ -151,7 +151,7 @@ export async function ensureFolderId(root: string, absDir: string): Promise<void
 
 export async function stampAdopted(root: string): Promise<void> {
   const scope = scopeOf(await readSettings(root))
-  const identity = valueOr(await readIdentity(root), null)
+  const identity = await readIdentity(root)
   const kindCtx = await agendaContext(root, identity, true)
 
   for (const e of await listEntries(root)) {

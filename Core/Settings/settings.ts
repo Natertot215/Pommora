@@ -130,6 +130,16 @@ export async function followExcludedFolders(
   return foldKey(from) !== foldKey(to) && holdsUnder(next, to)
 }
 
+/** A landing that moves excluded entries rewrites the settings file, so it refuses before anything moves while that file can't be written. */
+export async function exclusionWriteRefusal(
+  root: string,
+  entries: readonly string[],
+): Promise<Result<never> | null> {
+  if (!entries.length) return null
+  const settings = await updateNexusConfig(root, 'settings', () => null)
+  return settings.ok ? null : settings
+}
+
 /** A trashed Collection or Set takes its excluded entries with it; its record keeps them relative to it. */
 export async function releaseExcludedFolders(root: string, rel: string): Promise<void> {
   await editExcluded(root, (excluded) =>

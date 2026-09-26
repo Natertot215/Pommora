@@ -125,8 +125,8 @@ async function rmwLocked(
   return ok(next)
 }
 
-// The last copy of each app-written file that parsed, so a damaged one reads as it and the next write rebuilds from it rather than from nothing.
-const lastRead = new Map<string, Record<string, unknown>>()
+// The last copy of each file this session saw parse, or null when it saw the file absent, so a damaged one reads as it.
+const lastRead = new Map<string, Record<string, unknown> | null>()
 
 export const forgetLastReads = (): void => lastRead.clear()
 
@@ -139,26 +139,32 @@ export function setRepairSeed(
   repairSeed = seed ?? (() => null)
 }
 
-/** An app-written file: absent reads null, and a damaged or unreadable one reads as the last copy that parsed. */
-export function readAppFile(absPath: string): Promise<Record<string, unknown> | null> {
+// Undefined is a file this session never saw parse.
+function readLast(absPath: string): Promise<Record<string, unknown> | null | undefined> {
   return machine().lock(absPath, async () => {
     const read = await readJsonStrictly(absPath)
-    switch (read.kind) {
-      case 'ok':
-        lastRead.set(absPath, read.value)
-        return read.value
-      case 'absent':
-        lastRead.delete(absPath)
-        return null
-      default: {
-        const kept = lastRead.get(absPath) ?? null
-        const why = read.kind === 'corrupt' ? read.why : 'Unreadable file'
-        console.error(`${why}: ${absPath}; ${kept ? 'kept as last read' : 'read as empty'}`)
-        return kept
-      }
+    if (read.kind === 'ok' || read.kind === 'absent') {
+      const value = read.kind === 'ok' ? read.value : null
+      lastRead.set(absPath, value)
+      return value
     }
+    const why = read.kind === 'corrupt' ? read.why : 'Unreadable file'
+    const seen = lastRead.has(absPath)
+    console.error(`${why}: ${absPath}; ${seen ? 'kept as last read' : 'never read'}`)
+    return seen ? lastRead.get(absPath) : undefined
   })
 }
+
+/** A damaged or unreadable file reads as the last copy this session saw, and absent reads null; one never seen fails by name. */
+export async function readKept(absPath: string): Promise<Record<string, unknown> | null> {
+  const value = await readLast(absPath)
+  if (value === undefined) throw new Error(`Couldn’t read “${basename(absPath)}”.`)
+  return value
+}
+
+/** An app-written file: one this session never saw reads as empty. */
+export const readAppFile = async (absPath: string): Promise<Record<string, unknown> | null> =>
+  (await readLast(absPath)) ?? null
 
 // The damaged bytes keep a dotted name beside the file, which neither the watcher nor sync admits.
 async function setAside(bad: string): Promise<Record<string, unknown>> {
@@ -175,7 +181,7 @@ export function updateNexusFile(
   return machine().lock(absPath, async () => {
     await machine().mkdir(dirname(absPath))
     const written = await rmwLocked(absPath, mutate, () => ({}), repairable ? setAside : undefined)
-    if (repairable && written.ok) lastRead.set(absPath, written.value)
+    if (written.ok) lastRead.set(absPath, written.value)
     return written
   })
 }

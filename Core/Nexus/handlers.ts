@@ -63,9 +63,13 @@ export async function openNexusSequence(
   await stopSession(ctx)
   if (priorRoot !== null) await retireFileHistory(priorRoot)
   await openSession(path)
-  forgetLastReads()
   // openSession canonicalized the root; every step below keys off that string.
   const root = sessionRoot() ?? path
+  if (root !== priorRoot) {
+    forgetLastReads()
+    dropLiveTree()
+    dropTileHeadingLinks()
+  }
   const nexusId = await prepareOpenedNexus(root)
   // A sync start for the old root that shared the first stop's wait began after it; this stop retires it before the new stores bind.
   await stopSession(ctx)
@@ -73,8 +77,6 @@ export async function openNexusSequence(
   await replayPendingRename(root)
   if (root !== priorRoot) {
     void sweepFileHistory(root)
-    dropLiveTree()
-    dropTileHeadingLinks()
     if (latchRecord) {
       await runOpenLedger(root)
     } else {

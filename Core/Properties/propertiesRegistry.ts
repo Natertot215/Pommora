@@ -1,10 +1,9 @@
-import { nexusConfig, nexusDir } from '../Paths/paths'
+import { nexusConfig } from '../Paths/paths'
 import { NEXUS_CONFIG_FILES } from '../Paths/nexusPaths'
 import { fail, valueOr } from '../Contract/result'
-import { readJsonStrict, writeJson } from '../Files/atomicWrite'
+import { readJsonStrict, readKept, updateNexusFile } from '../Files/atomicWrite'
 import { mergeKeys } from '../Files/jsonMerge'
 import type { Json } from '../Files/stableJson'
-import { machine } from '../Platform/machine'
 import { isPlainObject } from '../Contract/validators'
 import { propertyDefinition, type PropertyDefinition } from './properties'
 import { resolveRowOrder } from './rowOrder'
@@ -40,28 +39,33 @@ function normalizeRegistry(obj: Record<string, unknown>): {
   return { registry: { order, defs }, unparsed }
 }
 
-async function readRegistryObject(root: string): Promise<Record<string, unknown>> {
+export async function readRegistry(root: string): Promise<RegistryFile> {
   const read = await readJsonStrict(registryPath(root))
   if (!read.ok && read.error.code !== 'not-found') throw new Error(read.error.message)
-  return valueOr(read, {})
+  return normalizeRegistry(valueOr(read, {})).registry
 }
 
-export async function readRegistry(root: string): Promise<RegistryFile> {
-  return normalizeRegistry(await readRegistryObject(root)).registry
+/** A read that writes no definition: a damaged file reads as its last parse. Every reader that gates a registry write stays strict. */
+export async function readKeptRegistry(root: string): Promise<RegistryFile> {
+  return normalizeRegistry((await readKept(registryPath(root))) ?? {}).registry
 }
 
 export const orderedDefs = (reg: RegistryFile): PropertyDefinition[] =>
   resolveRowOrder(Object.entries(reg.defs), ([key]) => key, reg.order).map(([, d]) => d)
 
-export function mutateRegistry<T>(
+export async function mutateRegistry<T>(
   root: string,
   fn: (registry: RegistryFile) => { next?: RegistryFile; result: T },
 ): Promise<T> {
-  return machine().lock(registryPath(root), async () => {
-    const raw = await readRegistryObject(root)
-    const { registry, unparsed } = normalizeRegistry(raw)
-    const { next, result } = fn(registry)
-    if (next) {
+  let result!: T
+  const written = await updateNexusFile(
+    registryPath(root),
+    (raw) => {
+      const { registry, unparsed } = normalizeRegistry(raw)
+      const edit = fn(registry)
+      result = edit.result
+      const next = edit.next
+      if (!next) return null
       const rawDefs = isPlainObject(raw.defs) ? raw.defs : {}
       const defs: Record<string, unknown> = { ...unparsed }
       for (const [id, d] of Object.entries(next.defs)) {
@@ -73,9 +77,10 @@ export function mutateRegistry<T>(
         ...next.order,
         ...Object.keys(unparsed).filter((id) => !next.order.includes(id)),
       ]
-      await machine().mkdir(nexusDir(root))
-      await writeJson(registryPath(root), { ...raw, order, defs })
-    }
-    return result
-  })
+      return { ...raw, order, defs }
+    },
+    false,
+  )
+  if (!written.ok) throw new Error(written.error.message)
+  return result
 }

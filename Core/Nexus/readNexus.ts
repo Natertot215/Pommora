@@ -1,6 +1,5 @@
 import { isPlainObject } from '../Contract/validators'
 import { basename, join, relJoin, titleFromPath } from '../Paths/posix'
-import { valueOr } from '../Contract/result'
 import { splitFrontmatter } from '../Files/pageFile'
 import { admitContentFile } from './identityMark'
 import { agendaContext, resolveFolderKind, type FolderKindContext } from './folderKind'
@@ -23,7 +22,11 @@ import { pathExists, readAppFile, readJsonObject } from '../Files/atomicWrite'
 import { readIdentity } from './identity'
 import { isContentFile, listEntries } from '../Files/walk'
 import { machine } from '../Platform/machine'
-import { orderedDefs, readRegistry, type PropertyRegistry } from '../Properties/propertiesRegistry'
+import {
+  orderedDefs,
+  readKeptRegistry,
+  type PropertyRegistry,
+} from '../Properties/propertiesRegistry'
 import { asString, asStringArray } from './coerce'
 import { outsideContent, type WatchScope } from '../Paths/exclusion'
 import { resolveOrder } from './order'
@@ -278,31 +281,26 @@ export async function readNexus(root: string): Promise<NexusTree> {
   }
 }
 
+/** The three hand-authored files every read of the Nexus rests on. */
+export const readNexusConfig = (root: string) =>
+  Promise.all([readIdentity(root), readSettings(root), readKeptRegistry(root)])
+
 async function walkNexus(root: string): Promise<NexusTree> {
   const [
-    identityRead,
-    leaves,
+    [identity, leaves, registry],
     state,
     homepageConfig,
     cropsConfig,
     pageMetadata,
-    registry,
     ctxRegistryRaw,
   ] = await Promise.all([
-    readIdentity(root),
-    readSettings(root),
+    readNexusConfig(root),
     readConfig(nexusConfig(root, NEXUS_CONFIG_FILES.state)),
     readConfig(nexusConfig(root, NEXUS_CONFIG_FILES.homepage)),
     readConfig(nexusConfig(root, NEXUS_CONFIG_FILES.crops)),
     readPageMetadata(root),
-    readRegistry(root),
     readSidecar(contextsRegistryFile(root)),
   ])
-  // Absent nexus.json is real raw mode; an UNREADABLE one is an error — a lenient null here would flip the whole nexus to raw mode, ignoring every sidecar's identity, views and schema for the session. Fail the walk instead.
-  if (!identityRead.ok && identityRead.error.code !== 'not-found') {
-    throw new Error(`The nexus identity file could not be read: ${identityRead.error.message}`)
-  }
-  const identity = valueOr(identityRead, null)
   const id = asString(identity?.id) ?? adoptedId(root)
   const kindCtx = await agendaContext(root, identity)
 
