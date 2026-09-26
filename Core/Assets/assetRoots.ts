@@ -17,6 +17,11 @@ export function underAssetRoot(rel: string, assetDir: string): boolean {
   return startsUnder(segs, ASSETS_DIR_REL) || startsUnder(segs, assetDir)
 }
 
+export function isAssetPath(v: unknown, assetDir: string): v is string {
+  if (typeof v !== 'string') return false
+  return parseConnectionText(v) !== null || underAssetRoot(v, assetDir)
+}
+
 /** A name several files answer to names none of them — rendering the wrong image is recoverable, acting on one is not. */
 export async function assetFilePath(root: string, value: unknown): Promise<string | null> {
   if (typeof value !== 'string' || !value.trim()) return null

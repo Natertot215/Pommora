@@ -3,8 +3,13 @@ import { mkdir, rm, writeFile } from 'node:fs/promises'
 import { join } from '../Paths/posix'
 import { tempRoot } from '../Testing/hostFs'
 import { ASSETS_DIR_REL } from '../Paths/nexusPaths'
-import { assetFilePath, assetSubfolder, underAssetRoot, validPropertyDir } from './assetRoots'
-import { isAssetPath } from '../Navigation/navigationFile'
+import {
+  assetFilePath,
+  assetSubfolder,
+  isAssetPath,
+  underAssetRoot,
+  validPropertyDir,
+} from './assetRoots'
 
 describe('underAssetRoot', () => {
   const dir = 'file-assets'
