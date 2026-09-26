@@ -2,7 +2,7 @@
 
 import type { PropertyDefinition } from '@pommora/core/Properties/properties'
 import type { ResolvedColumn, ResolvedGroup, ViewRow } from '@pommora/core/Views/viewRow'
-import { isLocationFsOrder, type SavedView, viewFlag } from '@pommora/core/Views/views'
+import { isLocationFsOrder, type SavedView, viewOption } from '@pommora/core/Views/views'
 import { applyFilter } from './filter'
 import { orderGroups } from './bandOrder'
 import {
@@ -37,7 +37,7 @@ export function resolveView(input: {
   // Parked filters keep their rules and their mode; only application stops.
   const filtered = applyFilter(
     rows,
-    viewFlag(view, 'filter_enabled') ? view.filter : undefined,
+    viewOption(view, 'filter_enabled') ? view.filter : undefined,
     schema,
     setTree,
     contextIds,
@@ -52,13 +52,14 @@ export function resolveView(input: {
     schema,
     structuralGrouping && hidden.size > 0 ? pruneHiddenSets(setTree, hidden) : setTree,
     sorter,
-    view.ungrouped_placement ?? 'bottom',
+    viewOption(view, 'ungrouped_placement'),
     structuralGrouping ? view.sub_group : undefined,
     flattenStructural,
     useLocationFlat,
   )
   if (hidden.size > 0) resolved = dropHiddenGroups(resolved, hidden)
-  if (viewFlag(view, 'hide_empty_groups')) resolved = pruneEmptyGroups(pruneEmptyBuckets(resolved))
+  if (viewOption(view, 'hide_empty_groups'))
+    resolved = pruneEmptyGroups(pruneEmptyBuckets(resolved))
   else if (filtered.length !== rows.length) resolved = pruneEmptyGroups(resolved)
   return { columns, groups: orderGroups(resolved, locationOrdered ? undefined : view.group_order) }
 }

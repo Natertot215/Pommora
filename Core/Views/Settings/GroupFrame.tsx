@@ -9,7 +9,7 @@ import {
   type StructuralOrderMode,
   type SubGroupConfig,
   VIEW_KINDS,
-  viewFlag,
+  viewOption,
 } from '@pommora/core/Views/views'
 import {
   DisclosureRow,
@@ -167,7 +167,7 @@ export function GroupFrame({
         label="Hide Empty Groups"
         trailing={
           <DualSwitch
-            checked={viewFlag(view, 'hide_empty_groups')}
+            checked={viewOption(view, 'hide_empty_groups')}
             onChange={(next) => save({ hide_empty_groups: next })}
             ariaLabel="Hide Empty Groups"
           />
@@ -179,7 +179,7 @@ export function GroupFrame({
         trailing={
           <PickerControl
             ariaLabel="Ungrouped"
-            value={view.ungrouped_placement ?? 'bottom'}
+            value={viewOption(view, 'ungrouped_placement')}
             options={UNGROUPED}
             onPick={(v) => save({ ungrouped_placement: v })}
           />
@@ -193,7 +193,7 @@ export function GroupFrame({
             trailing={
               <PickerControl
                 ariaLabel="Separation"
-                value={view.date_separator ?? 'dash'}
+                value={viewOption(view, 'date_separator')}
                 options={SEPARATION}
                 onPick={(v) => save({ date_separator: v })}
               />
@@ -237,7 +237,7 @@ export function GroupFrame({
           row={pickerRow(
             'arrow-up-down',
             'Order',
-            view.structural_order_mode ?? 'custom',
+            viewOption(view, 'structural_order_mode'),
             STRUCTURAL_ORDER,
             (m) => save({ structural_order_mode: m }),
             subGroup ? SUB_LOOK : undefined,
@@ -633,7 +633,12 @@ function DateBucketList({
   return (
     <>
       {bucketOrder(group, def, present).map((key) => {
-        const label = formatBucketLabel(key, granularity, dateFormat, view.date_separator ?? 'dash')
+        const label = formatBucketLabel(
+          key,
+          granularity,
+          dateFormat,
+          viewOption(view, 'date_separator'),
+        )
         return (
           <div key={key} className={cx(optionRow, hiddenSet?.has(key) && hiddenRow)}>
             <span className={oo.orderLabel}>{label}</span>

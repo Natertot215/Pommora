@@ -9,6 +9,7 @@ import {
   VIEW_KINDS,
   VIEW_TYPES,
   type ViewType,
+  viewOption,
 } from '@pommora/core/Views/views'
 import { Icon, type IconName } from '@pommora/uix/Symbols'
 import {
@@ -152,7 +153,7 @@ export function LayoutFrame({
               pickerRow(
                 'image',
                 'Card Image',
-                view.card_banner ?? 'banner',
+                viewOption(view, 'card_banner'),
                 BANNERS,
                 (v) => write({ card_banner: v }),
                 CARD_ROW_LOOK,

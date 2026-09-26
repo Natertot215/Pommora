@@ -5,7 +5,7 @@ import { columnMenuItems, parseStyleAction } from '@pommora/core/Actions/columnM
 import { defaultStyleFor, type ColumnStyle } from '@pommora/core/Properties/columnStyles'
 import type { PropertyDefinition } from '@pommora/core/Properties/properties'
 import { RESERVED_PROPERTY_ID } from '@pommora/core/Properties/properties'
-import { type ColumnAlign, type SavedView, viewFlag } from '@pommora/core/Views/views'
+import { type ColumnAlign, type SavedView, viewOption } from '@pommora/core/Views/views'
 import { announce } from '@pommora/uix/Interactions/a11y'
 import { findScroller, startAutoScroll } from '@pommora/uix/Interactions/autoscroll'
 import { reorder } from '@pommora/uix/Interactions/drag'
@@ -196,7 +196,7 @@ export function useColumns(host: ViewHostApi) {
     setColDrag(null)
   }, [view.id])
 
-  const iconsShown = !viewFlag(liveView, 'hide_column_icons')
+  const iconsShown = !viewOption(liveView, 'hide_column_icons')
   const styleMap = useColumnStyleMap(host)
   const alignByCol = useMemo(
     () => columns.map((c) => alignOverride[c.id] ?? alignFor(c.id, schema, liveView, contextIds)),

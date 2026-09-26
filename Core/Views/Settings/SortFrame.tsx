@@ -6,6 +6,7 @@ import {
   type SavedView,
   type SortCriterion,
   VIEW_KINDS,
+  viewOption,
 } from '@pommora/core/Views/views'
 import { MenuRowView, MenuTopRow, MenuSeparator, pickerRow } from '@pommora/uix/Menus'
 import { useSaveView } from '../ViewTileScope'
@@ -176,7 +177,7 @@ export function SortFrame({
               row={pickerRow(
                 'folder',
                 'Order',
-                view.location_order_mode ?? 'location',
+                viewOption(view, 'location_order_mode'),
                 LOCATION_ORDERS,
                 (v) => void saveView({ ...view, location_order_mode: v }),
                 sub ? SUB_LOOK : undefined,
