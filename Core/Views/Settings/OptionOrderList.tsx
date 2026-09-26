@@ -1,5 +1,9 @@
 import { useMemo } from 'react'
-import { type PropertyDefinition, optionsOf } from '@pommora/core/Properties/properties'
+import {
+  groupOptions,
+  type PropertyDefinition,
+  optionsOf,
+} from '@pommora/core/Properties/properties'
 import type { GroupConfig } from '@pommora/core/Views/views'
 import { heading, type PickerRowLook } from '@pommora/uix/Menus'
 import { side } from '@pommora/uix/Menus/menu-row.css'
@@ -67,8 +71,8 @@ export function PropertyPreview({
         {groups.map((g) => (
           <div key={g.id}>
             <div className={heading}>{g.label}</div>
-            {(group.order_mode === 'reversed' ? [...g.options].reverse() : g.options).map((o) =>
-              chip(o.color ? o : { ...o, color: g.color }),
+            {(group.order_mode === 'reversed' ? groupOptions(g).reverse() : groupOptions(g)).map(
+              chip,
             )}
           </div>
         ))}

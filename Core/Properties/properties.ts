@@ -214,10 +214,12 @@ export function invalidPropertyName(name: string): boolean {
   return !n || n.startsWith(RESERVED_NAME_PREFIX) || n.startsWith('<') || RESERVED_KEY_NAMES.has(n)
 }
 
+/** An option without its own color wears its group's. */
+export const groupOptions = (g: StatusGroup): StatusOption[] =>
+  g.options.map((o) => (o.color ? o : { ...o, color: g.color }))
+
 function statusOptions(def: Pick<PropertyDefinition, 'status_groups'> | undefined): StatusOption[] {
-  return (def?.status_groups ?? []).flatMap((g) =>
-    g.options.map((o) => (o.color ? o : { ...o, color: g.color })),
-  )
+  return (def?.status_groups ?? []).flatMap(groupOptions)
 }
 
 /** A Status property's options live in `status_groups` instead, and every other type has none, so writing `select_options` onto one of those corrupts the definition. */
