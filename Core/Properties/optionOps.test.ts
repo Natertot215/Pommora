@@ -245,6 +245,33 @@ describe('an option edit leaves every other stored entry as written (F-562)', ()
     ])
   })
 
+  it('resetting a field to its default removes the stored value, whatever its neighbors hold', async () => {
+    const file = JSON.parse(await readFile(registryFile(), 'utf8'))
+    file.defs.prop_sel.select_options = [
+      { value: 'A', label: 'A', appearance: 'outline', color: 7, icon: 7 },
+      { value: 'B', label: 'B', appearance: 'outline', color: 7, icon: 7 },
+      { value: 'C', label: 'C' },
+    ]
+    file.defs.prop_multi.select_options = [{ value: 'a', label: 'a', appearance: 'outline' }]
+    await writeFile(registryFile(), JSON.stringify(file))
+    expect(
+      (await editOption(root, 'prop_sel', { op: 'appearance', value: 'A', appearance: 'filled' }))
+        .ok,
+    ).toBe(true)
+    expect((await editOption(root, 'prop_sel', { op: 'recolor', value: 'B' })).ok).toBe(true)
+    expect(
+      (await editOption(root, 'prop_multi', { op: 'appearance', value: 'a', appearance: 'filled' }))
+        .ok,
+    ).toBe(true)
+    const defs = await rawDefs()
+    expect(defs.prop_sel.select_options).toEqual([
+      { value: 'A', label: 'A', color: 7, icon: 7 },
+      { value: 'B', label: 'B', appearance: 'outline', icon: 7 },
+      { value: 'C', label: 'C' },
+    ])
+    expect(defs.prop_multi.select_options).toEqual([{ value: 'a', label: 'a' }])
+  })
+
   it('an entry stored under a legacy type spelling keeps that spelling and its neighbors through every writer', async () => {
     const file = JSON.parse(await readFile(registryFile(), 'utf8'))
     file.defs.prop_multi.type = 'multi_select'
