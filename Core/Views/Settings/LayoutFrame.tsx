@@ -42,13 +42,7 @@ interface LayoutOptions {
 
 const TABLE_LAYOUT: LayoutOptions = {
   switches: [
-    {
-      icon: 'columns-3-cog',
-      label: 'Column Icons',
-      key: 'hide_column_icons',
-      invert: true,
-      defaultOn: true,
-    },
+    { icon: 'columns-3-cog', label: 'Column Icons', key: 'hide_column_icons', invert: true },
     { icon: 'view-table', label: 'Hide Borders', key: 'hide_borders' },
     { icon: 'file-text', label: 'Page Icons', key: 'hide_page_icons', invert: true },
   ],
@@ -63,7 +57,7 @@ const LAYOUT_OPTIONS: Partial<Record<ViewType, LayoutOptions>> = {
       { icon: 'map', label: 'Hide Location', key: 'hide_location' },
       { icon: 'wrap-text', label: 'Wrap Titles', key: 'wrap_titles' },
       { icon: 'eye-off', label: 'Hide Icons', key: 'hide_page_icons' },
-      { icon: 'folder-closed', label: 'Set Cards', key: 'set_cards', defaultOn: true },
+      { icon: 'folder-closed', label: 'Set Cards', key: 'set_cards' },
     ],
     cardRows: true,
     leaf: 'switches',

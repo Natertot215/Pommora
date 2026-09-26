@@ -3,6 +3,7 @@ import fixture from '@pommora/core/Testing/fixtures/collection-with-status.json'
 import {
   mergeViewEdit,
   savedView,
+  viewFlag,
   DEFAULT_VIEW_TYPE,
   decodeGroupConfig,
   decodeSubGroup,
@@ -441,3 +442,14 @@ describe('filter codec', () => {
 const _mistypedViewField = (v: SavedView): unknown =>
   // @ts-expect-error
   v.hide_boarders
+
+describe('viewFlag', () => {
+  it('reads an absent flag at its default and a stored one as stored', () => {
+    const view = savedView.parse({ id: 'v', type: 'table' })
+    expect(viewFlag(view, 'set_cards')).toBe(true)
+    expect(viewFlag(view, 'hide_column_icons')).toBe(true)
+    expect(viewFlag(view, 'filter_enabled')).toBe(true)
+    expect(viewFlag(view, 'hide_borders')).toBe(false)
+    expect(viewFlag({ ...view, set_cards: false }, 'set_cards')).toBe(false)
+  })
+})

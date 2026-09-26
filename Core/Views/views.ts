@@ -196,6 +196,25 @@ export const savedView = looseDecoder(
 )
 export type SavedView = z.infer<typeof savedView>
 
+export type ViewFlag = {
+  [K in keyof SavedView]-?: SavedView[K] extends boolean | undefined ? K : never
+}[keyof SavedView]
+
+const VIEW_FLAG_DEFAULTS: Record<ViewFlag, boolean> = {
+  hide_empty_groups: false,
+  hide_location: false,
+  wrap_titles: false,
+  set_cards: true,
+  hide_page_icons: false,
+  hide_column_icons: true,
+  hide_borders: false,
+  filter_enabled: true,
+}
+
+/** An on/off view option as it reads: the stored value, else its default. */
+export const viewFlag = (view: Partial<Pick<SavedView, ViewFlag>>, key: ViewFlag): boolean =>
+  view[key] ?? VIEW_FLAG_DEFAULTS[key]
+
 function withoutEmptyStyles({ column_styles, ...view }: Json): Json {
   const kept = Object.entries((column_styles ?? {}) as Json).filter(([, s]) => holdsStyle(s))
   return kept.length > 0 ? { ...view, column_styles: Object.fromEntries(kept) } : view

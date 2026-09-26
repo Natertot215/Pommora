@@ -1,18 +1,13 @@
-import type { SavedView } from '@pommora/core/Views/views'
+import { type SavedView, type ViewFlag, viewFlag } from '@pommora/core/Views/views'
 import { Icon, type IconName } from '@pommora/uix/Symbols'
 import type { MenuRow } from '@pommora/uix/Menus'
 import { ICON } from '@pommora/uix/Menus/frames.css'
 
-type SwitchKey = {
-  [K in keyof SavedView]-?: SavedView[K] extends boolean | undefined ? K : never
-}[keyof SavedView]
-
 export type SwitchEntry = {
   icon: IconName
   label: string
-  key: SwitchKey
+  key: ViewFlag
   invert?: boolean
-  defaultOn?: boolean
 }
 
 export const switchRows = (
@@ -21,7 +16,7 @@ export const switchRows = (
   save: (next: SavedView) => void,
 ): MenuRow[] =>
   entries.map((e) => {
-    const stored = view[e.key] ?? e.defaultOn ?? false
+    const stored = viewFlag(view, e.key)
     return {
       kind: 'item',
       icon: <Icon name={e.icon} size={ICON.rootEntry} />,
