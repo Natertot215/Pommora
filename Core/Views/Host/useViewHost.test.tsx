@@ -439,9 +439,11 @@ describe("the engine's grouping", () => {
     await mount(
       setCollection({
         group: { kind: 'property', property_id: 'prop_gone', order_mode: 'configured' },
+        manual_order: ['pA', 'pB'],
       }),
     )
     expect(api?.groupPropId).toBeUndefined()
+    expect(api?.manualOrder).toBeUndefined()
     expect(api?.canReassign).toBe(false)
     expect(api?.canRelocate).toBe(true)
   })
