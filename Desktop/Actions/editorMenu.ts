@@ -33,13 +33,13 @@ export function askEditorMenu(req: EditorMenuRequest): Promise<string | null> {
   })
 }
 
-/** The renderer measures in whole CSS pixels and the event in window DIPs, differing by the window's zoom, so the slack is half a CSS pixel at that zoom beyond two DIPs. */
+/** The renderer truncates the click to whole CSS pixels and the event measures in window DIPs, differing by the window's zoom, so the slack is one CSS pixel at that zoom beyond two DIPs. */
 export function atClick(
   req: EditorMenuRequest,
   params: Pick<ContextMenuParams, 'x' | 'y'>,
   zoom: number,
 ): boolean {
-  const slack = 2 + zoom / 2
+  const slack = 2 + zoom
   return Math.abs(req.x * zoom - params.x) <= slack && Math.abs(req.y * zoom - params.y) <= slack
 }
 
