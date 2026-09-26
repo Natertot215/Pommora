@@ -155,7 +155,12 @@ describe('a floating window takes Escape by front-to-back order', () => {
     }
     act(() => root.render(<Two />))
     const first = host.querySelector('[aria-label="first"]') as HTMLElement
-    act(() => firePointer(first, 'pointerdown', { x: 0, y: 0 }))
+    act(() =>
+      firePointer(first.querySelector('.window-toolbar') as HTMLElement, 'pointerdown', {
+        x: 0,
+        y: 0,
+      }),
+    )
     expect(first.style.getPropertyValue('--window-rank')).toBe('1')
     pressEscape()
     expect(log).toEqual(['first'])
