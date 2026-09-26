@@ -12,12 +12,21 @@ import {
 import { ID_KEY } from '@pommora/core/Nexus/identityMark'
 import { localDayKey, pad } from '@pommora/uix/Utilities/pad'
 import type { PageFrontmatter, PageMeta } from '@pommora/core/Nexus/schemas'
-import { optionValues, type PropertyDefinition } from '@pommora/core/Properties/properties'
+import {
+  optionValues,
+  type PropertyDefinition,
+  type PropertyType,
+} from '@pommora/core/Properties/properties'
 import { UNGROUPED, isEmptyBand } from '@pommora/core/Views/viewRow'
 import { declaredType, resolveFieldValue } from '../../Properties/value'
 import { readDate } from '../../Properties/formatValue'
 
-const GROUPABLE = new Set<string>(['select', 'status', 'checkbox', 'datetime'])
+const GROUPABLE: ReadonlySet<string> = new Set([
+  'select',
+  'status',
+  'checkbox',
+  'datetime',
+] satisfies PropertyType[])
 
 type PropertyGroup = Extract<GroupConfig, { kind: 'property' }>
 type Sorter = (rows: ViewRow[]) => ViewRow[]

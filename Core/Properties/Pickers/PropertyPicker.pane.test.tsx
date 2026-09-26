@@ -28,7 +28,7 @@ const dateDef: PropertyDefinition = { id: 'prop_d', name: 'Due', type: 'datetime
 const fileDef: PropertyDefinition = { id: 'prop_f', name: 'Doc', type: 'file' }
 
 const optionsTarget = (): PickTarget => ({ kind: 'options', def: selectDef, current: null })
-const datetimeTarget = (): PickTarget => ({ kind: 'datetime', def: dateDef, current: null })
+const dateTimeTarget = (): PickTarget => ({ kind: 'datetime', def: dateDef, current: null })
 const fileTarget = (): PickTarget => ({ kind: 'file', def: fileDef, current: null })
 
 function Host(props: {
@@ -106,7 +106,7 @@ describe('PropertyPicker panes', () => {
   })
 
   it('a datetime target renders the calendar, not option chips', async () => {
-    await render({ target: datetimeTarget() })
+    await render({ target: dateTimeTarget() })
     expect(portal()).toBeTruthy()
     expect(portalText()).not.toContain('Alpha')
     expect(portalText()).toContain('Sun')

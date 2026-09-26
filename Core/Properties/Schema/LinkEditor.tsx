@@ -4,7 +4,7 @@ import { MenuIndex, pickerRow } from '@pommora/uix/Menus'
 import { LINK_FORMAT_OPTIONS } from './linkFormatOptions'
 import * as s from '@pommora/uix/Menus/frames.css'
 
-export function URLEditor({
+export function LinkEditor({
   underline,
   display,
   color,

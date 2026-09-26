@@ -177,9 +177,9 @@ describe('invalidPropertyName', () => {
 
 describe('isOptionsKind', () => {
   it('holds for the four option-bearing kinds and nothing else', () => {
-    for (const t of ['select', 'status', 'multi_select', 'context'])
+    for (const t of ['select', 'status', 'multi_select', 'context'] as const)
       expect(isOptionsKind(t)).toBe(true)
-    for (const t of ['number', 'checkbox', 'datetime', 'url', 'file', undefined])
+    for (const t of ['number', 'checkbox', 'datetime', 'url', 'file', 'title', undefined] as const)
       expect(isOptionsKind(t)).toBe(false)
   })
 })

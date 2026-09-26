@@ -1,10 +1,11 @@
 import type { PropertyValue } from './propertyValue'
-import { urlValueFromEdit } from '@pommora/core/Connections/linkValue'
+import type { PropertyType } from './properties'
+import { linkValueFromEdit } from '@pommora/core/Connections/linkValue'
 import { resolveTitle } from './Cells/linkResolve'
 
 /** `null` clears (empty input); `undefined` means invalid — don't commit. */
 export function parseEditorValue(
-  type: string | undefined,
+  type: PropertyType | 'title' | undefined,
   raw: string,
   current?: PropertyValue | null,
 ): PropertyValue | null | undefined {
@@ -15,6 +16,6 @@ export function parseEditorValue(
     return Number.isNaN(n) ? undefined : { kind: 'number', value: n }
   }
   if (type === 'url')
-    return urlValueFromEdit(raw, current?.kind === 'url' ? current.value : undefined, resolveTitle)
+    return linkValueFromEdit(raw, current?.kind === 'url' ? current.value : undefined, resolveTitle)
   return undefined
 }

@@ -226,7 +226,7 @@ function statusOptions(def: Pick<PropertyDefinition, 'status_groups'> | undefine
 export const hasSelectOptions = (type: PropertyType): type is 'select' | 'multi_select' =>
   type === 'select' || type === 'multi_select'
 
-export const isOptionsKind = (type: string | undefined): boolean =>
+export const isOptionsKind = (type: PropertyType | 'title' | undefined): boolean =>
   type === 'select' || type === 'status' || type === 'multi_select' || type === 'context'
 
 export type PickOption = { value: string; label: string; color?: string; icon?: string }

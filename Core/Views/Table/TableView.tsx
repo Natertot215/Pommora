@@ -48,8 +48,8 @@ import { openWebLink } from '../../Web/openWebLink'
 import {
   linkAlias,
   linkEditText,
+  linkValueFromRename,
   urlClickTarget,
-  urlValueFromRename,
 } from '@pommora/core/Connections/linkValue'
 import { validateLink } from '../../Properties/Cells/linkResolve'
 import {
@@ -299,7 +299,7 @@ export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
         value={linkAlias(raw) ?? ''}
         accent={solidColorCss(linkDef?.link_color)}
         onCommit={(alias) => {
-          commitValue(row, col, urlValueFromRename(alias, raw))
+          commitValue(row, col, linkValueFromRename(alias, raw))
           setEditing(null)
         }}
         onDismiss={() => setEditing(null)}

@@ -45,7 +45,7 @@ import { OptionEditor } from './OptionEditor'
 import { OPTION_STYLE_OPTIONS, type OptionStyle } from './OptionRow'
 import { PickerControl } from '@pommora/uix/Pickers/PickerControl'
 import { StatusEditor } from './StatusEditor'
-import { URLEditor } from './URLEditor'
+import { LinkEditor } from './LinkEditor'
 import { FrameSlide } from '@pommora/uix/Menus/FrameSlide'
 import { PANE_MIN_H, PANE_MIN_W } from '@pommora/uix/Menus/frame-slide.css'
 import { FrameDnd, RowShell, useFrameRegions } from '@pommora/uix/Interactions/FrameDnd'
@@ -393,7 +393,7 @@ export function PropertyFrame({
       />
     ),
     url: (def) => (
-      <URLEditor
+      <LinkEditor
         underline={def.link_underline ?? false}
         display={def.link_display ?? DEFAULT_LINK_DISPLAY}
         color={def.link_color}

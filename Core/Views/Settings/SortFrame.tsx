@@ -1,6 +1,10 @@
 import type { CollectionNode, SetNode } from '@pommora/core/Nexus/tree'
-import type { PropertyDefinition } from '@pommora/core/Properties/properties'
-import { RESERVED_PROPERTY_ID, optionsOf } from '@pommora/core/Properties/properties'
+import {
+  type PropertyDefinition,
+  type PropertyType,
+  RESERVED_PROPERTY_ID,
+  optionsOf,
+} from '@pommora/core/Properties/properties'
 import {
   LOCATION_SORT,
   type SavedView,
@@ -26,7 +30,7 @@ import { useCapitalizeMetadata } from '../../Properties/Cells/columnLabel'
 type Direction = SortCriterion['direction']
 
 /** Context routes to a no-op text key in the sorter, so it is deliberately absent — never offer what the extractor can't rank. */
-const SORTABLE_PANE = new Set([
+const SORTABLE_PANE: ReadonlySet<string> = new Set([
   'select',
   'status',
   'number',
@@ -35,7 +39,7 @@ const SORTABLE_PANE = new Set([
   'url',
   'multi_select',
   'file',
-])
+] satisfies PropertyType[])
 
 const OPTION_DIRECTIONS: PickerOption<Direction>[] = [
   { value: 'ascending', label: 'Default' },

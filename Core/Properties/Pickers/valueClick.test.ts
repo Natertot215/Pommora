@@ -14,13 +14,13 @@ describe('sharedValueClickAction', () => {
   })
 
   it('option kinds open their picker; datetime opens the calendar', () => {
-    for (const t of ['status', 'select', 'multi_select', 'context'])
+    for (const t of ['status', 'select', 'multi_select', 'context'] as const)
       expect(sharedValueClickAction(t, { kind: 'null' })).toEqual({ kind: 'picker' })
     expect(sharedValueClickAction('datetime', { kind: 'null' })).toEqual({ kind: 'datetime' })
   })
 
   it('number/url/title fall through to the surface tail', () => {
-    for (const t of ['number', 'url', 'last_edited_time', undefined])
+    for (const t of ['number', 'url', 'last_edited_time', 'title', undefined] as const)
       expect(sharedValueClickAction(t, { kind: 'null' })).toBeNull()
   })
 

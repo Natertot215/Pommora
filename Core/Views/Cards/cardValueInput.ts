@@ -23,7 +23,7 @@ const ADDABLE_TYPES: ReadonlySet<string> = new Set([
   'url',
   'file',
   'checkbox',
-])
+] satisfies PropertyType[])
 
 /** Compact's label-less flow can't render an empty value, so it drops blanks — EXCEPT a checkbox, whose unchecked box is the on-card toggle. */
 export function shownColumnsFor(

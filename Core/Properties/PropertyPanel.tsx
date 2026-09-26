@@ -22,7 +22,7 @@ import {
 } from '@pommora/core/Properties/propertyValue'
 import type { PageFrontmatter } from '@pommora/core/Nexus/schemas'
 import type { ResolvedColumn, ViewRow } from '@pommora/core/Views/viewRow'
-import { linkAlias, linkEditText, urlValueFromRename } from '@pommora/core/Connections/linkValue'
+import { linkAlias, linkEditText, linkValueFromRename } from '@pommora/core/Connections/linkValue'
 import { propertyMenuModel } from '@pommora/core/Actions/propertyMenu'
 import { Cell } from './Cells/Cell'
 import { PropertyEditor } from './Pickers/PropertyEditor'
@@ -508,7 +508,7 @@ export function PropertyPanel({
             value={linkAlias(rawLinkOf(editing.id)) ?? ''}
             accent={solidColorCss(editingDef?.link_color)}
             onCommit={(alias) => {
-              commit(editing.id, urlValueFromRename(alias, rawLinkOf(editing.id)))
+              commit(editing.id, linkValueFromRename(alias, rawLinkOf(editing.id)))
               setEditing(null)
             }}
             onDismiss={() => setEditing(null)}
