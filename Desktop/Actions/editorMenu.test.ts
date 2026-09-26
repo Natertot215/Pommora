@@ -1,6 +1,25 @@
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
+import type { BrowserWindow, ContextMenuParams, MenuItemConstructorOptions } from 'electron'
 import type { EditorMenuRequest } from '@pommora/core/Actions/editorMenu'
-import { askEditorMenu, atClick } from './editorMenu'
+import { askEditorMenu, atClick, installEditorContextMenu } from './editorMenu'
+
+const native = vi.hoisted(() => ({
+  clipboard: '',
+  popped: null as MenuItemConstructorOptions[] | null,
+  close: null as (() => void) | null,
+}))
+
+vi.mock('electron', () => ({
+  clipboard: { readText: () => native.clipboard },
+  Menu: {
+    buildFromTemplate: (items: MenuItemConstructorOptions[]) => ({
+      popup: (opts: { callback?: () => void }) => {
+        native.popped = items
+        native.close = opts.callback ?? null
+      },
+    }),
+  },
+}))
 
 const req = (x: number, y: number): EditorMenuRequest => ({
   scope: 'page',
@@ -45,5 +64,85 @@ describe('the parked ask', () => {
     const first = askEditorMenu(req(0, 0))
     void askEditorMenu(req(1, 1))
     await expect(first).resolves.toBeNull()
+  })
+})
+
+describe('the window’s right-click', () => {
+  let rightClick: (params: Partial<ContextMenuParams>) => void = () => {}
+  const pasteAndMatchStyle = vi.fn()
+  installEditorContextMenu({
+    webContents: {
+      on: (_event: string, fn: (e: unknown, p: ContextMenuParams) => void) => {
+        rightClick = (params) =>
+          fn({}, {
+            x: 10,
+            y: 10,
+            isEditable: true,
+            selectionText: '',
+            misspelledWord: '',
+            dictionarySuggestions: [],
+            editFlags: { canPaste: true },
+            ...params,
+          } as ContextMenuParams)
+      },
+      getZoomFactor: () => 1,
+      pasteAndMatchStyle,
+    },
+  } as unknown as BrowserWindow)
+
+  const labels = (): (string | undefined)[] => (native.popped ?? []).map((i) => i.label ?? i.role)
+  const row = (label: string): MenuItemConstructorOptions | undefined =>
+    native.popped?.find((i) => i.label === label)
+  const pick = (item: MenuItemConstructorOptions | undefined): void =>
+    (item?.click as (() => void) | undefined)?.()
+
+  it('builds the editor rows from the ask its click matches, and a row answers it', async () => {
+    const asked = askEditorMenu(req(10, 10))
+    rightClick({})
+    expect(labels()).toContain('Format')
+    pick((row('Format')?.submenu as MenuItemConstructorOptions[])[0])
+    await expect(asked).resolves.toBe('format:italic')
+  })
+
+  it('answers null to an ask whose click lands elsewhere, and offers no editor rows', async () => {
+    const asked = askEditorMenu(req(50, 50))
+    rightClick({})
+    expect(labels()).not.toContain('Format')
+    await expect(asked).resolves.toBeNull()
+  })
+
+  it('answers null and pops nothing over a field that isn’t editable', async () => {
+    native.popped = null
+    const asked = askEditorMenu(req(10, 10))
+    rightClick({ isEditable: false })
+    expect(native.popped).toBeNull()
+    await expect(asked).resolves.toBeNull()
+  })
+
+  it('answers null when the menu closes with nothing picked', async () => {
+    const asked = askEditorMenu(req(10, 10))
+    rightClick({})
+    native.close?.()
+    await expect(asked).resolves.toBeNull()
+  })
+
+  it('sends Paste Without Formatting to the editor that asked, and to the browser otherwise', async () => {
+    const asked = askEditorMenu(req(10, 10))
+    rightClick({})
+    pick(row('Paste Without Formatting'))
+    await expect(asked).resolves.toBe('paste:plain')
+    rightClick({})
+    pick(row('Paste Without Formatting'))
+    expect(pasteAndMatchStyle).toHaveBeenCalledOnce()
+  })
+
+  it('offers Paste As from the seats the ask carries', () => {
+    native.clipboard = 'plain words'
+    void askEditorMenu({ ...req(10, 10), citeSeat: true })
+    rightClick({})
+    expect(labels()).toContain('Paste As')
+    void askEditorMenu(req(10, 10))
+    rightClick({})
+    expect(labels()).not.toContain('Paste As')
   })
 })

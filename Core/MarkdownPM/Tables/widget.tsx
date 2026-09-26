@@ -41,6 +41,7 @@ import {
   serializeOutline,
   type TablePayload,
 } from '../Engine/Tables/clipboard'
+import { blockDeleteSpan } from '../Menus/gripMenu'
 import { tableMergeGuard, tablePasteGuard } from './guard'
 import type { TableModel } from '../Engine/Tables/model'
 import type { ConnectionsApi } from '../Links/connectionsApi'
@@ -299,7 +300,7 @@ class TableWidget extends ReactWidget {
           return
         }
         if (action === 'table:delete' || (action === 'col:delete' && model.columns.length <= 1)) {
-          view.dispatch({ changes: { from: region.from, to: region.to, insert: '' } })
+          view.dispatch({ changes: { ...blockDeleteSpan(scan.text, region), insert: '' } })
           return
         }
         const transform = transformFor(action, ctx.index)

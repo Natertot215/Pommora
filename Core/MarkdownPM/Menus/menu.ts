@@ -7,7 +7,7 @@ import { PASTE_AS_PREFIX, type PasteAsForm } from '@pommora/core/Actions/pasteAs
 import type { ListKind } from '@pommora/core/Actions/gripMenu'
 import { citationSeatAt, insertCitation } from '../Citations/citationActions'
 import { embedInsertAtCaret, embedSeatAt, webpageInsertAtCaret } from '../Embeds/embedInsert'
-import { pasteAs, pastePlain } from '../Links/pasteLink'
+import { pasteAs } from '../Links/pasteLink'
 import { readFormatState } from '../Input/formatState'
 import type { MarkdownScope } from '../Engine/detect'
 import { editorHost } from '../api'
@@ -64,7 +64,7 @@ export function applyEditorAction(view: EditorView, action: string): boolean {
   if (action === INSERT_LINK_ACTION) return insertLinkOverSelection(view)
   if (action === 'block:citation') return insertCitation(view)
   if (action === PASTE_PLAIN_ACTION) {
-    void pastePlain(view)
+    void pasteAs(view, 'plain')
     return true
   }
   if (action.startsWith(PASTE_AS_PREFIX)) {
@@ -95,8 +95,8 @@ export const editorMenu = (scope: MarkdownScope): Extension =>
           scope,
           x: event.clientX,
           y: event.clientY,
-          embedSeat: page && embedSeatAt(view.state),
-          citeSeat: page && citationSeatAt(view.state),
+          embedSeat: page && embedSeatAt(view.state, from),
+          citeSeat: page && citationSeatAt(view.state, to),
         }).then((action) => {
           if (action && view.dom.isConnected) applyEditorAction(view, action)
         })

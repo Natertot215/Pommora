@@ -70,6 +70,13 @@ describe('the editor’s native menu', () => {
     expect(format).toHaveBeenCalledWith(expect.objectContaining({ bold: true }))
   })
 
+  it('reads the embed seat at the click, not at the caret', async () => {
+    const view = await mountEditor({ initialBody: 'text\n\nmore', host: host() })
+    view.dispatch({ selection: { anchor: 0 } })
+    await rightClick(view, 5, view.dom.querySelectorAll('.cm-line')[1])
+    expect(format).toHaveBeenCalledWith(expect.objectContaining({ embedSeat: true }))
+  })
+
   it('never asks from a read-only editor', async () => {
     const view = await mountEditor({ initialBody: 'text', readOnly: true, host: host() })
     await rightClick(view, 1)
@@ -117,8 +124,10 @@ describe('the editor’s native menu', () => {
     expect(view.state.doc.toString()).toBe('- item')
   })
 
-  it('asks from a live cell with the cell’s scope and no page seats', async () => {
-    await mountEditor({ initialBody: '| A | B |\n| --- | --- |\n| x | z |', host: host() })
+  const TABLE = '| A | B |\n| --- | --- |\n| x | z |'
+
+  async function liveCell(body: string): Promise<{ page: EditorView; cell: EditorView }> {
+    const page = await mountEditor({ initialBody: body, host: host() })
     let table: Element | null = null
     for (let i = 0; !table && i < 50; i++) {
       await act(() => new Promise((r) => setTimeout(r, 20)))
@@ -132,11 +141,32 @@ describe('the editor’s native menu', () => {
       div.dispatchEvent(new MouseEvent('click', { ...ev, detail: 1 }))
     })
     const content = editorContainer().querySelector('.mdpm-tbl-cell-editor .cm-content')
-    const cell = EditorView.findFromDOM(content as HTMLElement) as EditorView
+    return { page, cell: EditorView.findFromDOM(content as HTMLElement) as EditorView }
+  }
+
+  it('asks from a live cell with the cell’s scope and no page seats, and answers in the cell', async () => {
+    format.mockResolvedValue('format:bold')
+    const { page, cell } = await liveCell(`before\n\n${TABLE}`)
+    cell.dispatch({ selection: { anchor: 0, head: 1 } })
     await rightClick(cell, 0)
     expect(format).toHaveBeenCalledTimes(1)
     expect(format).toHaveBeenCalledWith(
       expect.objectContaining({ scope: 'cell', embedSeat: false, citeSeat: false }),
     )
+    await act(async () => {})
+    expect(page.state.doc.toString()).toBe(`before\n\n| A | B |\n| --- | --- |\n| **x** | z |`)
+  })
+
+  it('fills the cells with a table-shaped clipboard pasted plain into a cell', async () => {
+    clipboard = '| a | b |\n| c | d |'
+    format.mockResolvedValue('paste:plain')
+    const { page, cell } = await liveCell(TABLE)
+    await rightClick(cell, 0)
+    await act(async () => {})
+    await act(async () => {})
+    const doc = page.state.doc.toString()
+    expect(doc).toContain('| a | b |')
+    expect(doc).toContain('| c | d |')
+    expect(doc).not.toContain('\\|')
   })
 })

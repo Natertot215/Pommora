@@ -154,7 +154,7 @@ export function MarkdownEditor({
     followed.current = true
   }, [citesShown])
 
-  const { ac, setAc, acCtl, pane } = useConnectionAutocomplete(
+  const { setAc, acCtl, pane } = useConnectionAutocomplete(
     viewRef,
     host,
     () => connectionsRef.current,
@@ -165,9 +165,10 @@ export function MarkdownEditor({
   // The pane closing (Escape, a commit, a blur) leaves the § bare rather than arming the next keystroke near it.
   const acFormRef = useRef<string | null>(null)
   useEffect(() => {
-    if (ac?.form !== 'section' && acFormRef.current === 'section') sectionArmedRef.current = null
-    acFormRef.current = ac?.form ?? null
-  }, [ac])
+    if (pane.ac?.form !== 'section' && acFormRef.current === 'section')
+      sectionArmedRef.current = null
+    acFormRef.current = pane.ac?.form ?? null
+  }, [pane.ac])
 
   useEffect(() => {
     const acCtls = [acCtl, block.ctl]
@@ -190,9 +191,9 @@ export function MarkdownEditor({
       keymap.of([...defaultKeymap, ...historyKeymap]),
       markdown({ addKeymap: false, pasteURLAsLink: false, completeHTMLTags: false, codeLanguages }),
       codeHighlight,
+      inlineSurface(() => connectionsRef.current, 'page'),
       citationRowPointer(),
       citationRowMenu(),
-      inlineSurface(() => connectionsRef.current, 'page'),
       tableWidgetExtension(() => connectionsRef.current),
       embedTiles({
         getConn: () => connectionsRef.current,

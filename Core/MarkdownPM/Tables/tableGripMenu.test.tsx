@@ -100,8 +100,48 @@ describe('the table grip menu', () => {
 
   it('removes the whole table when its last column goes', async () => {
     const view = await pick('col:delete', 'col', 0, 'before\n\n| A |\n| --- |\n| x |\n\nafter')
-    expect(docScan(view.state.doc).tables).toHaveLength(0)
-    expect(view.state.doc.toString()).not.toContain('|')
+    expect(view.state.doc.toString()).toBe('before\n\nafter')
+  })
+
+  it('inserts a column left of its grip', async () => {
+    const view = await pick('col:insert-left', 'col', 1)
+    expect(modelOf(view).header).toEqual(['A', '', 'B'])
+  })
+
+  it('clears a column', async () => {
+    const view = await pick('col:clear', 'col', 1)
+    expect(modelOf(view).rows).toEqual([
+      ['c1', ''],
+      ['d1', ''],
+    ])
+  })
+
+  it('aligns a column', async () => {
+    const view = await pick('align:right', 'col', 1)
+    expect(modelOf(view).columns[1].align).toBe('right')
+  })
+
+  it('makes the first column the heading column', async () => {
+    await pick('col:toggle-heading', 'col', 0)
+    expect(editorContainer().querySelector('.mdpm-tbl-heading-col')).toBeTruthy()
+  })
+
+  it('clears the whole table from the heading row’s grip', async () => {
+    const view = await pick('table:clear', 'row', 0)
+    expect(table).toHaveBeenCalledWith({ kind: 'header', index: 0 })
+    expect(modelOf(view).header).toEqual(['', ''])
+    expect(modelOf(view).rows).toEqual([
+      ['', ''],
+      ['', ''],
+    ])
+  })
+
+  it('copies a column without touching the document', async () => {
+    const view = await pick('col:copy', 'col', 1)
+    expect(write).toHaveBeenCalledOnce()
+    expect(write.mock.calls[0][0]).toContain('c2')
+    expect(write.mock.calls[0][0]).not.toContain('c1')
+    expect(view.state.doc.toString()).toBe(TABLE)
   })
 
   it('copies a row without touching the document', async () => {
@@ -124,5 +164,20 @@ describe('the table grip menu', () => {
       await new Promise((r) => setTimeout(r, 0))
     })
     expect(view.state.doc.toString()).toBe(before)
+  })
+
+  it('still acts when only the document around the table changed', async () => {
+    let answer: (a: TableMenuAction) => void = () => {}
+    table.mockImplementation(() => new Promise((r) => (answer = r)))
+    const view = await mountEditor({ initialBody: TABLE })
+    await rightClickGrip('row', 1)
+    await act(async () => {
+      view.dispatch({ changes: { from: view.state.doc.length, insert: '\n\nafter' } })
+    })
+    await act(async () => {
+      answer('row:delete')
+      await new Promise((r) => setTimeout(r, 0))
+    })
+    expect(modelOf(view).rows).toEqual([['d1', 'd2']])
   })
 })

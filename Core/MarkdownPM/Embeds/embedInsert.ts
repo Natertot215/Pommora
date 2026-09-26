@@ -30,8 +30,8 @@ export function embedInsertAfter(
 }
 
 /** Whether the caret already sits where a lone-line embed may be written. Read off the per-version scan, since it answers on every caret move. */
-export function embedSeatAt(state: EditorState): boolean {
-  const line = state.doc.lineAt(state.selection.main.from)
+export function embedSeatAt(state: EditorState, at = state.selection.main.from): boolean {
+  const line = state.doc.lineAt(at)
   if (line.text.trim() !== '') return false
   return !inSealedBlockAt(docScan(state.doc), line.number - 1)
 }

@@ -13,10 +13,10 @@ import {
   smartBackspace,
   type Edit,
 } from '../Input/edits'
-import { wrapChords } from '../Input/markdownInput'
 import { renumberAfterNest } from '../Engine/listDragModel'
 import { parseListMarker, type ListMarker, type MarkdownScope } from '../Engine/detect'
 import { cellToSource } from '../Engine/Tables/codec'
+import { decodePayload, type TablePayload } from '../Engine/Tables/clipboard'
 import { applyEdit } from '../Input/applyEdit'
 import { docLineIntentsOf, docScan } from '../docCache'
 import type { DocScan } from '../Engine/docScan'
@@ -131,7 +131,7 @@ export function CellEditor({
   initial: string
   onCommit: (text: string) => void
   onNavigate: (dir: NavDir) => void
-  onTablePaste?: (text: string) => boolean
+  onTablePaste?: (payload: TablePayload) => void
   onUndo: () => void
   onRedo: () => void
   caretCoords?: { x: number; y: number } | null
@@ -161,16 +161,18 @@ export function CellEditor({
           editorHost.of(host),
           inlineSurface(() => connections?.(), 'cell'),
           cellCitations(() => ordinalOfRef.current),
-          Prec.highest(
-            EditorView.domEventHandlers({
-              paste(event) {
-                const text = event.clipboardData?.getData('text/plain')
-                if (!text || !onTablePasteRef.current?.(text)) return false
-                event.preventDefault()
-                return true
-              },
-            }),
-          ),
+          // Every paste reaches here tagged, the menu's and the inverse chord's included, so a table-shaped clipboard fills the cells instead of landing escaped in this one.
+          EditorState.transactionFilter.of((tr) => {
+            if (!tr.isUserEvent('input.paste') || !onTablePasteRef.current) return tr
+            let text = ''
+            tr.changes.iterChanges((_fa, _ta, _fb, _tb, inserted) => {
+              text += inserted.toString()
+            })
+            const payload = decodePayload(text)
+            if (!payload) return tr
+            queueMicrotask(() => onTablePasteRef.current?.(payload))
+            return []
+          }),
           Prec.highest(
             keymap.of([
               // In a list Tab is nest and nothing else; at the deepest level it holds, as Shift-Tab does at the shallowest.
@@ -234,7 +236,6 @@ export function CellEditor({
                   return true
                 },
               },
-              ...wrapChords,
               // The main editor can't catch these itself (the widget's ignoreEvent), so the cell forwards them to the page history.
               ...HISTORY_BINDINGS.map((b) => ({
                 ...b,

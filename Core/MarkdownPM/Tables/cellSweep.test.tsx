@@ -187,7 +187,7 @@ describe('a swept cell rectangle', () => {
     const onCopyText = vi.fn()
     await mount({ onClearCells, onCopyText })
     await sweepDown()
-    await press(document.body, 'x', true)
+    expect((await press(document.body, 'x', true)).defaultPrevented).toBe(true)
     expect(onCopyText).toHaveBeenCalledExactlyOnceWith('| A |\n| one |')
     expect(onClearCells).toHaveBeenCalledExactlyOnceWith(0, 0, 1, 0)
     expect(onCopyText.mock.invocationCallOrder[0]).toBeLessThan(
@@ -200,7 +200,7 @@ describe('a swept cell rectangle', () => {
     const readClipboard = vi.fn(async () => 'x')
     await mount({ onFill, readClipboard })
     await sweepDown()
-    await press(document.body, 'v', true)
+    expect((await press(document.body, 'v', true)).defaultPrevented).toBe(true)
     await act(async () => {})
     expect(onFill).toHaveBeenCalledExactlyOnceWith(0, 0, { kind: 'rect', grid: [['x']] })
   })

@@ -97,7 +97,6 @@ export const acKeys = (ctls: readonly RefObject<AcCtl>[]): KeyBinding[] => [
 ]
 
 interface ConnectionAutocomplete {
-  ac: AcState | null
   setAc: (s: AcState | null) => void
   acCtl: RefObject<AcCtl>
   pane: AutocompletePaneProps
@@ -156,11 +155,11 @@ export function useConnectionAutocomplete(
     () => (heading && query !== null ? headingRows(outline ?? [], query) : []),
     [heading, outline, query],
   )
-  const lookup = (q: string, f: AutocompleteQuery['form'], t: string | undefined): AcRow[] => {
+  const lookup = (q: string): AcRow[] => {
     const conn = getConnRef.current()
     if (!conn) return []
-    if (f === 'alias') return aliasRows(conn, host.aliases, t, q)
-    const embed = f === 'embed'
+    if (form === 'alias') return aliasRows(conn, host.aliases, title, q)
+    const embed = form === 'embed'
     let pool = conn.candidates(q, embed ? AC_MAX * 2 : AC_MAX)
     if (embed) {
       const state = viewRef.current?.state
@@ -177,7 +176,7 @@ export function useConnectionAutocomplete(
       ? query === ''
         ? openHeadingRows(allHeadingRows, collapsed)
         : allHeadingRows
-      : lookup(query, form, title)
+      : lookup(query)
     const exact = found.length === 1 && normalizeTitle(found[0].value) === normalizeTitle(query)
     if (exact && normalizeTitle(query) !== normalizeTitle(backedTo ?? '')) return []
     return found
@@ -251,7 +250,6 @@ export function useConnectionAutocomplete(
   })
 
   return {
-    ac,
     setAc,
     acCtl: ctl,
     pane: {
@@ -265,9 +263,7 @@ export function useConnectionAutocomplete(
       collapsed,
       onToggleHeading: (value) => setCollapsed((prev) => toggled(prev, value)),
       onAside: (row) => commit(row, { openHeading: true }),
-      onBack: () => {
-        ctl.current.aside?.(-1)
-      },
+      onBack: () => ctl.current.aside?.(-1),
     },
   }
 }

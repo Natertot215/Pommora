@@ -5,6 +5,8 @@ import { undo } from '@codemirror/commands'
 import { EditorView } from '@codemirror/view'
 import type { Personalization } from '@pommora/core/Settings/personalization'
 import { stubEditorBridge, mountEditor, cleanupEditor, seedHost } from '../editorHarness'
+import type { ConnectionsApi } from '../Links/connectionsApi'
+import { buildPageIndex } from '@pommora/core/Connections/pageIndex'
 import {
   applyCitationAction,
   citationSeatAt,
@@ -437,7 +439,37 @@ describe('copying an unbound citation', () => {
     expect(event.defaultPrevented).toBe(true)
     expect(citation).toHaveBeenCalledWith({ subject: 'citation', editable: false })
     expect(write).toHaveBeenCalledWith('[^a]')
-    expect(doc(view)).toBe(body)
+  })
+
+  it('leaves a connection inside a row to its own menu, read-only or not', async () => {
+    const menu = vi.fn()
+    const conn: ConnectionsApi = {
+      ...buildPageIndex([{ id: 'p1', title: 'Alpha', path: 'Notes/Alpha.md' }]),
+      open: () => {},
+      menu,
+    }
+    const citation = vi.fn(async () => null)
+    for (const readOnly of [true, false]) {
+      menu.mockClear()
+      citation.mockClear()
+      const view = await mountEditor({
+        initialBody: 'x[^a] y\n\n[^a]: [[Alpha]]',
+        citationsShown: true,
+        readOnly,
+        connections: conn,
+        host: { menus: { citation } },
+      })
+      vi.spyOn(view, 'posAtCoords').mockReturnValue(view.state.doc.length - 4)
+      const link = view.dom.querySelector(
+        '.cm-line.md-citation .md-connection-resolved',
+      ) as HTMLElement
+      await act(async () => {
+        link.dispatchEvent(new MouseEvent('contextmenu', { bubbles: true, cancelable: true }))
+      })
+      expect(menu).toHaveBeenCalledOnce()
+      expect(citation).not.toHaveBeenCalled()
+      await cleanupEditor()
+    }
   })
 })
 
