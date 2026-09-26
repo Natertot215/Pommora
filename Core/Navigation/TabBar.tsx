@@ -229,7 +229,7 @@ function TabBarBody({
         data-create
         aria-label="New Tab"
         title="New Tab"
-        onClick={openNewTab}
+        onClick={() => openNewTab()}
       />
     </div>
   )
@@ -260,7 +260,7 @@ function PinnedTab({
       title={entry.res.title}
       role="tab"
       aria-selected={active}
-      // Roving tabindex: the strip is ONE tab stop, arrowing/clicking moves the selection.
+      // Roving tabindex: the strip is ONE tab stop, the active tab holds it.
       tabIndex={active ? 0 : -1}
       onClick={() => {
         if (!drag.isDragging) onActivate()
