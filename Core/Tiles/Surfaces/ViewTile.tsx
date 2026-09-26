@@ -179,7 +179,8 @@ function ViewPill({
   onMenu: (e: React.MouseEvent) => void
   onAnimEnd: () => void
 }): React.JSX.Element {
-  const { setNodeRef, style, handle } = useDragItem(view.id)
+  const open = renaming ? undefined : onSwitch
+  const { setNodeRef, style, handle } = useDragItem(view.id, open)
   return (
     <button
       ref={setNodeRef}
@@ -192,7 +193,7 @@ function ViewPill({
         entering && viewPillEntering,
         exiting && viewPillExiting,
       )}
-      onClick={renaming ? undefined : onSwitch}
+      onClick={open}
       onContextMenu={onMenu}
       onAnimationEnd={onAnimEnd}
     >

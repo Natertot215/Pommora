@@ -44,9 +44,13 @@ let carryA: ((id: string) => unknown) | undefined
 let hidden = new Set<string>()
 let escortRef: Escort | null = null
 
-function Item({ id }: { id: string }): React.JSX.Element {
-  const { setNodeRef, style, handle } = useDragItem(id)
-  return <div ref={setNodeRef} data-id={id} style={style} {...handle} />
+function Item({ id, onOpen }: { id: string; onOpen?: () => void }): React.JSX.Element {
+  const { setNodeRef, style, handle } = useDragItem(id, onOpen)
+  return (
+    <div ref={setNodeRef} data-id={id} style={style} {...handle}>
+      <button type="button" data-inner={id} />
+    </div>
+  )
 }
 
 function Slot(): React.JSX.Element | null {
@@ -345,6 +349,122 @@ describe('the drag engine across zones', () => {
     expect(commitSpy).not.toHaveBeenCalled()
     await settle()
     expect(commitSpy).toHaveBeenCalledOnce()
+  })
+})
+
+describe('the drag handle keyboard', () => {
+  const renderZone = async (
+    onOpen: (() => void) | undefined,
+    zone: { disabled?: boolean; fixed?: boolean; onReorder?: () => void } = {},
+  ): Promise<{ handle: HTMLElement; done: () => void }> => {
+    const box = document.createElement('div')
+    document.body.appendChild(box)
+    const local = createRoot(box)
+    await act(async () =>
+      local.render(
+        <SortableZone items={['k', 'j']} {...zone}>
+          <Item id="k" onOpen={onOpen} />
+          <Item id="j" />
+        </SortableZone>,
+      ),
+    )
+    for (const [i, id] of ['k', 'j'].entries())
+      stubRect(box.querySelector(`[data-id="${id}"]`) as Element, {
+        top: i * 100,
+        bottom: i * 100 + 100,
+        left: 0,
+        right: 200,
+      })
+    return {
+      handle: box.querySelector('[data-id="k"]') as HTMLElement,
+      done: () => {
+        pressEscape()
+        act(() => local.unmount())
+        box.remove()
+      },
+    }
+  }
+  const press = (el: EventTarget, key: string): Promise<KeyboardEvent> =>
+    act(async () => {
+      const e = new KeyboardEvent('keydown', { key, bubbles: true, cancelable: true })
+      el.dispatchEvent(e)
+      return e
+    })
+  const lifted = (el: HTMLElement): boolean => el.getAttribute('aria-pressed') === 'true'
+
+  it('opens on Enter when the item opens, without lifting', async () => {
+    const onOpen = vi.fn()
+    const { handle, done } = await renderZone(onOpen)
+    expect((await press(handle, 'Enter')).defaultPrevented).toBe(true)
+    expect(onOpen).toHaveBeenCalledOnce()
+    expect(lifted(handle)).toBe(false)
+    done()
+  })
+
+  it('lifts on Space when the item opens', async () => {
+    const onOpen = vi.fn()
+    const { handle, done } = await renderZone(onOpen)
+    await press(handle, ' ')
+    expect(lifted(handle)).toBe(true)
+    expect(onOpen).not.toHaveBeenCalled()
+    done()
+  })
+
+  it('drops on Enter without opening an item it lifted', async () => {
+    const onOpen = vi.fn()
+    const { handle, done } = await renderZone(onOpen)
+    await press(handle, ' ')
+    await press(handle, 'Enter')
+    await settle()
+    expect(onOpen).not.toHaveBeenCalled()
+    expect(lifted(handle)).toBe(false)
+    done()
+  })
+
+  it('keeps a lifted item home in a fixed zone', async () => {
+    const onReorder = vi.fn()
+    const { handle, done } = await renderZone(undefined, { fixed: true, onReorder })
+    await press(handle, ' ')
+    await press(document, 'ArrowDown')
+    await press(document, ' ')
+    await settle()
+    expect(onReorder).not.toHaveBeenCalled()
+    done()
+  })
+
+  it('lifts on Enter when the item has no open action', async () => {
+    const { handle, done } = await renderZone(undefined)
+    await press(handle, 'Enter')
+    expect(lifted(handle)).toBe(true)
+    done()
+  })
+
+  it("leaves a focusable descendant's Enter to it", async () => {
+    const onOpen = vi.fn()
+    const { handle, done } = await renderZone(onOpen)
+    await press(handle.querySelector('[data-inner]') as Element, 'Enter')
+    expect(onOpen).not.toHaveBeenCalled()
+    expect(lifted(handle)).toBe(false)
+    done()
+  })
+
+  it('never lifts in a disabled zone, and leaves the tab order only with nothing to open', async () => {
+    const inert = await renderZone(undefined, { disabled: true })
+    await press(inert.handle, 'Enter')
+    await press(inert.handle, ' ')
+    expect(lifted(inert.handle)).toBe(false)
+    expect(inert.handle.getAttribute('tabindex')).toBe('-1')
+    inert.done()
+
+    const onOpen = vi.fn()
+    const openable = await renderZone(onOpen, { disabled: true })
+    await press(openable.handle, ' ')
+    expect(lifted(openable.handle)).toBe(false)
+    await press(openable.handle, 'Enter')
+    expect(onOpen).toHaveBeenCalledOnce()
+    expect(openable.handle.getAttribute('tabindex')).toBe('0')
+    expect(openable.handle.hasAttribute('aria-disabled')).toBe(false)
+    openable.done()
   })
 })
 

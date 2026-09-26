@@ -189,7 +189,7 @@ function IconFavCell({
   onPick: (id: string) => void
   onContext: (e: MouseEvent, id: string) => void
 }): React.JSX.Element {
-  const { setNodeRef, style, handle } = useDragItem(id)
+  const { setNodeRef, style, handle, isDragging } = useDragItem(id, () => onPick(id))
   return (
     <button
       type="button"
@@ -198,7 +198,9 @@ function IconFavCell({
       {...handle}
       className={cx(s.cell, selected && s.cellSelected)}
       title={id}
-      onClick={() => onPick(id)}
+      onClick={() => {
+        if (!isDragging) onPick(id)
+      }}
       onContextMenu={(e) => onContext(e, id)}
     >
       <Icon name={id} size="1em" />
