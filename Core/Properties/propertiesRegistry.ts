@@ -55,18 +55,21 @@ export const orderedDefs = (reg: RegistryFile): PropertyDefinition[] =>
 
 export async function mutateRegistry<T>(
   root: string,
-  fn: (registry: RegistryFile) => { next?: RegistryFile; result: T },
+  fn: (
+    registry: RegistryFile,
+    stored: Readonly<Record<string, unknown>>,
+  ) => { next?: RegistryFile; result: T },
 ): Promise<T> {
   let result!: T
   const written = await updateNexusFile(
     registryPath(root),
     (raw) => {
       const { registry, unparsed } = normalizeRegistry(raw)
-      const edit = fn(registry)
+      const rawDefs = isPlainObject(raw.defs) ? raw.defs : {}
+      const edit = fn(registry, rawDefs)
       result = edit.result
       const next = edit.next
       if (!next) return null
-      const rawDefs = isPlainObject(raw.defs) ? raw.defs : {}
       const defs: Record<string, unknown> = { ...unparsed }
       for (const [id, d] of Object.entries(next.defs)) {
         const stored = registry.defs[id]

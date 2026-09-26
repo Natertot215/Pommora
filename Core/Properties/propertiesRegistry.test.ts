@@ -189,4 +189,29 @@ describe('the edited definition', () => {
       plugin_key: { keep: 1 },
     })
   })
+
+  it('hands fn the stored definition with its unrecognized keys intact', async () => {
+    const stored = {
+      id: 'prop_f',
+      name: 'Money',
+      type: 'number',
+      number_family: 'crypto',
+      plugin_key: { keep: 1 },
+    }
+    await mkdir(join(root, '.nexus'), { recursive: true })
+    await writeFile(
+      join(root, '.nexus', 'properties.json'),
+      JSON.stringify({ order: ['prop_f'], defs: { prop_f: stored } }),
+    )
+    const seen = await mutateRegistry(root, (reg, raw) => ({
+      result: { decoded: reg.defs.prop_f, raw: raw.prop_f },
+    }))
+    expect(seen.raw).toEqual(stored)
+    expect(seen.decoded).toEqual({
+      id: 'prop_f',
+      name: 'Money',
+      type: 'number',
+      plugin_key: { keep: 1 },
+    })
+  })
 })

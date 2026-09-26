@@ -6,14 +6,11 @@ import { useSession } from '../../Session/store'
 import {
   DEFAULT_LINK_DISPLAY,
   isReservedPropertyId,
-  type LinkConfig,
-  type NumberConfig,
+  optionGroupsOf,
   type PropertyDefinition,
   PROPERTY_TYPES,
   type PropertyType,
-  type StatusGroup,
 } from '@pommora/core/Properties/properties'
-import type { Option } from '@pommora/core/Properties/optionModel'
 import type { Result } from '@pommora/core/Contract/result'
 import type { ColumnStyle } from '@pommora/core/Properties/columnStyles'
 import type { CollectionNode, SetNode } from '@pommora/core/Nexus/tree'
@@ -44,7 +41,6 @@ import { InlineEditHeader } from '@pommora/uix/Menus/InlineEditHeader'
 import { OptionEditor } from './OptionEditor'
 import { OPTION_STYLE_OPTIONS, type OptionStyle } from './OptionRow'
 import { PickerControl } from '@pommora/uix/Pickers/PickerControl'
-import { StatusEditor } from './StatusEditor'
 import { LinkEditor } from './LinkEditor'
 import { FrameSlide } from '@pommora/uix/Menus/FrameSlide'
 import { PANE_MIN_H, PANE_MIN_W } from '@pommora/uix/Menus/frame-slide.css'
@@ -250,22 +246,8 @@ export function PropertyFrame({
   const write = async (res: Promise<WriteResult>): Promise<void> => {
     reportRefusal(await res)
   }
-  const assign = (id: string): Promise<void> =>
-    write(dialer().ask('schema:assign', collectionPath, id))
-  const saveOptions = (id: string, next: Option[]): Promise<void> =>
-    write(dialer().ask('property:setOptions', id, next))
-  const saveStatusGroups = (id: string, next: StatusGroup[]): Promise<void> =>
-    write(dialer().ask('property:setStatusGroups', id, next))
-  const saveLinkConfig = (id: string, patch: LinkConfig): Promise<void> =>
-    write(dialer().ask('property:setLinkConfig', id, patch))
-  const saveCheckboxColor = (id: string, color: string | undefined): Promise<void> =>
-    write(dialer().ask('property:setCheckboxColor', id, color))
-  const saveNumberFormat = (id: string, patch: Partial<NumberConfig>): Promise<void> =>
-    write(dialer().ask('property:setNumberFormat', id, patch))
   const saveFileDirectory = (id: string, dir: string): Promise<void> =>
     write(dialer().ask('property:setFileDirectory', id, { file_directory: dir }))
-  const savePropertyIcon = (id: string, icon: string): Promise<void> =>
-    write(dialer().ask('property:setIcon', id, icon))
   const saveColumnStyle = async (propId: string, patch: Partial<ColumnStyle>): Promise<void> => {
     const picks = Object.entries(patch).map(([key, value]) => [
       key,
@@ -277,18 +259,6 @@ export function PropertyFrame({
       column_styles: { ...activeView.column_styles, [propId]: next },
     })
   }
-  const renameOption = (id: string, oldValue: string, newTitle: string): Promise<void> =>
-    write(dialer().ask('property:renameOption', id, oldValue, newTitle))
-  const removeOption = (id: string, value: string): Promise<void> =>
-    write(dialer().ask('property:removeOption', id, value))
-  const clearOption = (id: string, value: string): Promise<void> =>
-    write(dialer().ask('property:clearOption', id, value))
-  const renameStatusOption = (id: string, oldValue: string, newTitle: string): Promise<void> =>
-    write(dialer().ask('property:renameStatusOption', id, oldValue, newTitle))
-  const removeStatusOption = (id: string, value: string): Promise<void> =>
-    write(dialer().ask('property:removeStatusOption', id, value))
-  const clearStatusOption = (id: string, value: string): Promise<void> =>
-    write(dialer().ask('property:clearStatusOption', id, value))
   const handleDrop = (drop: PaneDrop): Promise<void> =>
     write(
       drop.kind === 'reorder-assigned'
@@ -359,19 +329,21 @@ export function PropertyFrame({
   )
 
   const NO_SETTINGS = (): React.JSX.Element => <div style={{ minHeight: 8 }} />
-  const selectSettings = (
+  const optionSettings = (
     def: PropertyDefinition,
     _style: ColumnStyle,
     look: OptionStyle,
   ): React.JSX.Element => (
     <OptionEditor
       type={def.type}
-      options={def.select_options ?? []}
+      groups={optionGroupsOf(def)}
       look={look}
-      onSetOptions={(next) => void saveOptions(def.id, next)}
-      onRenameOption={(oldValue, newTitle) => void renameOption(def.id, oldValue, newTitle)}
-      onRemoveOption={(value) => void removeOption(def.id, value)}
-      onClearOption={(value) => void clearOption(def.id, value)}
+      onEdit={(edit) => void write(dialer().ask('property:editOption', def.id, edit))}
+      onRenameOption={(oldValue, newTitle) =>
+        void write(dialer().ask('property:renameOption', def.id, oldValue, newTitle))
+      }
+      onRemoveOption={(value) => void write(dialer().ask('property:removeOption', def.id, value))}
+      onClearOption={(value) => void write(dialer().ask('property:clearOption', def.id, value))}
     />
   )
 
@@ -380,24 +352,15 @@ export function PropertyFrame({
     PropertyType,
     (def: PropertyDefinition, style: ColumnStyle, look: OptionStyle) => React.JSX.Element
   > = {
-    select: selectSettings,
-    multiSelect: selectSettings,
-    status: (def, _style, look) => (
-      <StatusEditor
-        groups={def.status_groups ?? []}
-        look={look}
-        onSetGroups={(next) => void saveStatusGroups(def.id, next)}
-        onRenameOption={(oldValue, newTitle) => void renameStatusOption(def.id, oldValue, newTitle)}
-        onRemoveOption={(value) => void removeStatusOption(def.id, value)}
-        onClearOption={(value) => void clearStatusOption(def.id, value)}
-      />
-    ),
+    select: optionSettings,
+    multiSelect: optionSettings,
+    status: optionSettings,
     link: (def) => (
       <LinkEditor
         underline={def.link_underline ?? false}
         display={def.link_display ?? DEFAULT_LINK_DISPLAY}
         color={def.link_color}
-        onSetConfig={(patch) => void saveLinkConfig(def.id, patch)}
+        onSetConfig={(patch) => void write(dialer().ask('property:setLinkConfig', def.id, patch))}
       />
     ),
     dateTime: (def, style) => (
@@ -407,22 +370,15 @@ export function PropertyFrame({
       <CheckboxEditor
         color={def.checkbox_color}
         look={style.look === 'switch' ? 'switch' : 'checkbox'}
-        onSetColor={(next) => void saveCheckboxColor(def.id, next)}
+        onSetColor={(next) => void write(dialer().ask('property:setCheckboxColor', def.id, next))}
         onSetStyle={(look) => void saveColumnStyle(def.id, { look })}
       />
     ),
     number: (def, style) => (
       <NumberEditor
-        config={{
-          number_family: def.number_family,
-          number_currency: def.number_currency,
-          number_separators: def.number_separators,
-          number_decimals: def.number_decimals,
-          number_fraction: def.number_fraction,
-          number_denominator: def.number_denominator,
-        }}
+        config={def}
         look={style.look === 'bar' ? 'bar' : 'number'}
-        onSetConfig={(patch) => void saveNumberFormat(def.id, patch)}
+        onSetConfig={(patch) => void write(dialer().ask('property:setNumberFormat', def.id, patch))}
         onSetStyle={(look) => void saveColumnStyle(def.id, { look })}
       />
     ),
@@ -533,7 +489,7 @@ export function PropertyFrame({
           }
           onToggleAll={() => setAllOpen((o) => !o)}
           onOpenEditor={(id) => setView({ kind: 'edit', id })}
-          onAssign={(id) => void assign(id)}
+          onAssign={(id) => void write(dialer().ask('schema:assign', collectionPath, id))}
           onRowMenu={(d, group) => void rowMenu(d, group)}
           onRenameCommit={(id, next) => {
             cancelPropertyRename()
@@ -563,7 +519,7 @@ export function PropertyFrame({
         triggerRef={iconRef}
         value={editingIcon}
         onSelect={(icon) => {
-          if (editingId) void savePropertyIcon(editingId, icon)
+          if (editingId) void write(dialer().ask('property:setIcon', editingId, icon))
         }}
       />
     </>

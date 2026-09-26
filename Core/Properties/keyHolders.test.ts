@@ -34,7 +34,12 @@ beforeEach(async () => {
   await writeFile(abs('.nexus', 'nexus.json'), JSON.stringify({ id: 'nx', createdAt: 'x' }))
   await writeFile(abs('.nexus', 'settings.json'), '{}')
   await mkdir(abs('Notes'), { recursive: true })
-  await createProperty(root, { id: 'prop_s', name: 'Stage', type: 'select' })
+  await createProperty(root, {
+    id: 'prop_s',
+    name: 'Stage',
+    type: 'select',
+    select_options: [{ value: 'Draft', label: 'Draft' }],
+  })
   await writeFile(
     abs('Notes', '_pagecollection.json'),
     JSON.stringify({ id: 'c1', properties: ['prop_s'] }),

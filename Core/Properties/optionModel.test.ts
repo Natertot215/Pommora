@@ -1,44 +1,35 @@
 import { describe, it, expect } from 'vitest'
+import { addOption, applyOptionEdit, fallbackTitle, moveOption, renameOption } from './optionModel'
 import {
-  addOption,
-  addStatusOption,
-  recolorStatusOption,
-  renameStatusOption,
-  relabelStatusGroup,
-  moveStatusOption,
-  renameOption,
-  recolorOption,
-  reorderOption,
-  setOptionAppearance,
-  setOptionIcon,
-  setStatusOptionAppearance,
-  setStatusOptionIcon,
-  fallbackTitle,
-} from './optionModel'
-import type { StatusGroup } from './properties'
+  optionGroupsOf,
+  withOptionGroups,
+  type PropertyDefinition,
+  type StatusGroup,
+  type StatusOption,
+} from './properties'
 
-const opt = (t: string, color?: string) => ({ value: t, label: t, ...(color ? { color } : {}) })
+const groups: StatusGroup[] = [
+  {
+    id: 'upcoming',
+    label: 'Open',
+    color: 'grey',
+    options: [{ value: 'A', label: 'A', group_id: 'upcoming' }],
+  },
+  {
+    id: 'done',
+    label: 'Done',
+    color: 'green',
+    options: [{ value: 'D', label: 'D', group_id: 'done', color: 'red' }],
+  },
+]
+const A = groups[0].options[0]
+const D = groups[1].options[0]
 
 describe('optionModel', () => {
-  it('addOption appends an uncolored option (renders default) with value=label=title', () => {
-    expect(addOption([opt('A')], 'B')).toEqual([opt('A'), { value: 'B', label: 'B' }])
-  })
-  it('addOption seats the option at a given index — the ghost creates in place, not at the end', () => {
-    expect(addOption([opt('A'), opt('C')], 'B', undefined, 1)).toEqual([
-      opt('A'),
-      { value: 'B', label: 'B' },
-      opt('C'),
-    ])
-    expect(addOption([opt('A'), opt('B')], 'Z', undefined, 0).map((o) => o.value)).toEqual([
-      'Z',
-      'A',
-      'B',
-    ])
-  })
-
   it('fallbackTitle yields Label for select and the group name for status', () => {
     expect(fallbackTitle([])).toBe('Label')
     expect(fallbackTitle([], 'Active')).toBe('Active')
+    expect(fallbackTitle(['Label'], '')).toBe('Label (2)')
   })
 
   it('fallbackTitle steps aside from a title already taken', () => {
@@ -46,191 +37,142 @@ describe('optionModel', () => {
     expect(fallbackTitle(['Open'], 'Open')).toBe('Open (2)')
   })
 
-  it('renameOption rewrites value+label together (stable identity is the OLD value)', () => {
-    expect(renameOption([opt('A'), opt('B')], 'A', 'C')).toEqual([
-      { value: 'C', label: 'C' },
-      opt('B'),
+  it('addOption inserts into the matched group only, carrying its group_id', () => {
+    expect(addOption(groups, 'upcoming', 'Triage', 0)[0].options.map((o) => o.value)).toEqual([
+      'Triage',
+      'A',
     ])
-  })
-
-  it('recolorOption sets the color key; clearing removes it', () => {
-    expect(recolorOption([opt('A')], 'A', 'blue')).toEqual([
-      { value: 'A', label: 'A', color: 'blue' },
-    ])
-    expect(recolorOption([opt('A', 'blue')], 'A', undefined)).toEqual([opt('A')])
-  })
-
-  it('setOptionAppearance writes only clear; filled removes the key (the default is never stored)', () => {
-    expect(setOptionAppearance([opt('A')], 'A', 'clear')).toEqual([
-      { value: 'A', label: 'A', appearance: 'clear' },
-    ])
-    expect(
-      setOptionAppearance([{ value: 'A', label: 'A', appearance: 'clear' }], 'A', 'filled'),
-    ).toEqual([opt('A')])
-  })
-
-  it('setStatusOptionIcon and setStatusOptionAppearance reach the option in whichever group holds it', () => {
-    const groups: StatusGroup[] = [
-      {
-        id: 'upcoming',
-        label: 'Open',
-        color: 'grey',
-        options: [{ value: 'A', label: 'A', group_id: 'upcoming' }],
-      },
-      {
-        id: 'done',
-        label: 'Done',
-        color: 'green',
-        options: [{ value: 'D', label: 'D', group_id: 'done' }],
-      },
-    ]
-    expect(setStatusOptionIcon(groups, 'D', 'star')[1].options[0]).toEqual({
-      value: 'D',
-      label: 'D',
-      group_id: 'done',
-      icon: 'star',
-    })
-    expect(
-      setStatusOptionIcon(setStatusOptionIcon(groups, 'D', 'star'), 'D', undefined)[1].options[0],
-    ).toEqual({ value: 'D', label: 'D', group_id: 'done' })
-    expect(setStatusOptionAppearance(groups, 'A', 'clear')[0].options[0]).toEqual({
-      value: 'A',
-      label: 'A',
-      group_id: 'upcoming',
-      appearance: 'clear',
-    })
-    expect(
-      setStatusOptionAppearance(setStatusOptionAppearance(groups, 'A', 'clear'), 'A', 'filled')[0]
-        .options[0],
-    ).toEqual({ value: 'A', label: 'A', group_id: 'upcoming' })
-  })
-
-  it('setOptionIcon sets the icon key; clearing removes it', () => {
-    expect(setOptionIcon([opt('A')], 'A', 'star')).toEqual([
-      { value: 'A', label: 'A', icon: 'star' },
-    ])
-    expect(setOptionIcon([{ value: 'A', label: 'A', icon: 'star' }], 'A', undefined)).toEqual([
-      opt('A'),
-    ])
-  })
-
-  it('reorderOption moves an option to a new index', () => {
-    expect(reorderOption([opt('A'), opt('B'), opt('C')], 'C', 0)).toEqual([
-      opt('C'),
-      opt('A'),
-      opt('B'),
-    ])
-  })
-
-  it('addStatusOption appends to the matched group only, carrying its group_id', () => {
-    const groups: StatusGroup[] = [
-      {
-        id: 'upcoming',
-        label: 'Open',
-        color: 'grey',
-        options: [{ value: 'Open', label: 'Open', group_id: 'upcoming' }],
-      },
-      {
-        id: 'done',
-        label: 'Done',
-        color: 'green',
-        options: [{ value: 'Done', label: 'Done', group_id: 'done' }],
-      },
-    ]
-    expect(addStatusOption(groups, 'upcoming', 'Triage', 0)[0].options.map((o) => o.value)).toEqual(
-      ['Triage', 'Open'],
-    )
-    const next = addStatusOption(groups, 'upcoming', 'Backlog')
+    const next = addOption(groups, 'upcoming', 'Backlog')
     expect(next[0].options).toEqual([
-      { value: 'Open', label: 'Open', group_id: 'upcoming' },
+      A,
       { value: 'Backlog', label: 'Backlog', group_id: 'upcoming' },
     ])
     expect(next[1]).toBe(groups[1])
   })
 
-  it('recolorStatusOption sets then clears a color on the matching option in any group', () => {
-    const groups: StatusGroup[] = [
-      {
-        id: 'upcoming',
-        label: 'Open',
-        color: 'grey',
-        options: [{ value: 'Open', label: 'Open', group_id: 'upcoming' }],
-      },
-    ]
-    expect(recolorStatusOption(groups, 'Open', 'red')[0].options[0]).toEqual({
-      value: 'Open',
-      label: 'Open',
-      group_id: 'upcoming',
-      color: 'red',
-    })
-    const colored: StatusGroup[] = [
-      { ...groups[0], options: [{ ...groups[0].options[0], color: 'red' }] },
-    ]
-    expect(recolorStatusOption(colored, 'Open', undefined)[0].options[0]).toEqual({
-      value: 'Open',
-      label: 'Open',
-      group_id: 'upcoming',
-    })
-  })
-
-  it('relabelStatusGroup renames the label, keeping id + options', () => {
-    const groups: StatusGroup[] = [{ id: 'upcoming', label: 'Open', color: 'grey', options: [] }]
-    expect(relabelStatusGroup(groups, 'upcoming', 'Backlog')[0]).toEqual({
-      id: 'upcoming',
-      label: 'Backlog',
-      color: 'grey',
-      options: [],
-    })
-  })
-
-  it('moveStatusOption reassigns group_id and inserts at the target index (cross-group)', () => {
-    const groups: StatusGroup[] = [
-      {
-        id: 'upcoming',
-        label: 'Open',
-        color: 'grey',
-        options: [{ value: 'A', label: 'A', group_id: 'upcoming' }],
-      },
-      {
-        id: 'done',
-        label: 'Done',
-        color: 'green',
-        options: [{ value: 'D', label: 'D', group_id: 'done' }],
-      },
-    ]
-    const next = moveStatusOption(groups, 'A', 'done', 0)
-    expect(next[0].options).toEqual([])
-    expect(next[1].options).toEqual([
-      { value: 'A', label: 'A', group_id: 'done' },
-      { value: 'D', label: 'D', group_id: 'done' },
-    ])
-  })
-
-  it('renameStatusOption sets value+label to the new title in any group, keeping group_id + color', () => {
-    const groups: StatusGroup[] = [
-      {
-        id: 'upcoming',
-        label: 'Open',
-        color: 'grey',
-        options: [{ value: 'A', label: 'A', group_id: 'upcoming' }],
-      },
-      {
-        id: 'done',
-        label: 'Done',
-        color: 'green',
-        options: [{ value: 'D', label: 'D', group_id: 'done', color: 'red' }],
-      },
-    ]
-    expect(renameStatusOption(groups, 'D', 'Shipped')[1].options[0]).toEqual({
+  it('renameOption sets value+label to the new title in any group, keeping group_id + color', () => {
+    expect(renameOption(groups, 'D', 'Shipped')[1].options[0]).toEqual({
+      ...D,
       value: 'Shipped',
       label: 'Shipped',
-      group_id: 'done',
-      color: 'red',
     })
-    expect(renameStatusOption(groups, 'A', 'Todo')[0].options[0]).toEqual({
+    expect(renameOption(groups, 'A', 'Todo')[0].options[0]).toEqual({
+      ...A,
       value: 'Todo',
       label: 'Todo',
-      group_id: 'upcoming',
     })
+  })
+
+  it('moveOption reassigns group_id and inserts at the target index (cross-group)', () => {
+    const next = moveOption(groups, 'A', 'done', 0)
+    expect(next[0].options).toEqual([])
+    expect(next[1].options).toEqual([{ ...A, group_id: 'done' }, D])
+  })
+
+  it('applyOptionEdit recolor sets a color on one option and clears it on another', () => {
+    expect(
+      applyOptionEdit(groups, { op: 'recolor', value: 'A', color: 'red' })[0].options[0],
+    ).toEqual({ ...A, color: 'red' })
+    expect(applyOptionEdit(groups, { op: 'recolor', value: 'D' })[1].options[0]).toEqual({
+      value: 'D',
+      label: 'D',
+      group_id: 'done',
+    })
+  })
+
+  it('applyOptionEdit icon and appearance set and clear the field on the option in whichever group holds it', () => {
+    const icon = (gs: StatusGroup[], icon?: string) =>
+      applyOptionEdit(gs, { op: 'icon', value: 'D', icon })
+    const appearance = (gs: StatusGroup[], appearance: 'clear' | 'filled') =>
+      applyOptionEdit(gs, { op: 'appearance', value: 'A', appearance })
+    expect(icon(groups, 'star')[1].options[0]).toEqual({ ...D, icon: 'star' })
+    expect(icon(icon(groups, 'star'), undefined)[1].options[0]).toEqual(D)
+    expect(appearance(groups, 'clear')[0].options[0]).toEqual({ ...A, appearance: 'clear' })
+    expect(appearance(appearance(groups, 'clear'), 'filled')[0].options[0]).toEqual(A)
+  })
+
+  it('applyOptionEdit relabelGroup renames the label, keeping id + options', () => {
+    expect(
+      applyOptionEdit(groups, { op: 'relabelGroup', groupId: 'upcoming', label: 'Backlog' })[0],
+    ).toEqual({ ...groups[0], label: 'Backlog' })
+  })
+
+  it('every applyOptionEdit op keeps the keys it does not build fresh on every entry', () => {
+    type Raw = StatusOption & { tint?: string; appearance?: string }
+    const raw = [
+      {
+        id: 'g1',
+        label: 'One',
+        color: 'grey',
+        tint: 'x',
+        options: [
+          { value: 'A', label: 'A', group_id: 'g1', tint: 'x', appearance: 'outline' },
+          { value: 'B', label: 'B', group_id: 'g1', tint: 'x', appearance: 'outline' },
+        ],
+      },
+      {
+        id: 'g2',
+        label: 'Two',
+        color: 'green',
+        tint: 'x',
+        options: [{ value: 'C', label: 'C', group_id: 'g2', tint: 'x', appearance: 'outline' }],
+      },
+    ] as unknown as StatusGroup[]
+    const entries = (gs: StatusGroup[]) => gs.flatMap((g) => g.options) as Raw[]
+    const edits = [
+      { op: 'add', groupId: 'g1', title: 'N' },
+      { op: 'recolor', value: 'A', color: 'red' },
+      { op: 'icon', value: 'A', icon: 'star' },
+      { op: 'appearance', value: 'A', appearance: 'clear' },
+      { op: 'move', value: 'A', groupId: 'g2', toIndex: 0 },
+      { op: 'relabelGroup', groupId: 'g1', label: 'Uno' },
+    ] as const
+    for (const e of edits) {
+      const next = applyOptionEdit(raw, e)
+      expect(next.map((g) => (g as { tint?: string }).tint)).toEqual(['x', 'x'])
+      expect(entries(next).filter((o) => o.value !== 'N')).toHaveLength(3)
+      for (const o of entries(next)) {
+        if (o.value === 'N') continue
+        expect(o.tint).toBe('x')
+        if (o.value !== 'A') expect(o).toEqual(entries(raw).find((r) => r.value === o.value))
+        else if (e.op !== 'appearance') expect(o.appearance).toBe('outline')
+      }
+    }
+  })
+
+  it('withOptionGroups(optionGroupsOf(select)) round-trips a Select with no group_id on any entry', () => {
+    const options = [
+      { value: 'A', label: 'A' },
+      { value: 'B', label: 'B', color: 'red' },
+    ]
+    const select = {
+      id: 'p',
+      name: 'Tags',
+      type: 'select',
+      select_options: options,
+    } as PropertyDefinition
+    const selectGroups = optionGroupsOf(select)
+    expect(selectGroups).toHaveLength(1)
+    expect(selectGroups[0].options.every((o) => o.group_id === 'select')).toBe(true)
+    const back = withOptionGroups(select, selectGroups)
+    expect(back).toEqual(select)
+    expect(back.select_options?.some((o) => 'group_id' in o)).toBe(false)
+    expect(
+      withOptionGroups(
+        select,
+        applyOptionEdit(selectGroups, { op: 'add', groupId: 'select', title: 'C' }),
+      ).select_options,
+    ).toEqual([...options, { value: 'C', label: 'C' }])
+  })
+
+  it('optionGroupsOf(status) is status_groups by reference', () => {
+    const status = {
+      id: 'p',
+      name: 'Stage',
+      type: 'status',
+      status_groups: groups,
+    } as PropertyDefinition
+    expect(optionGroupsOf(status)).toBe(groups)
+    expect(withOptionGroups(status, groups).status_groups).toBe(groups)
   })
 })

@@ -251,6 +251,7 @@ export function AccessoryButton({
   create = false,
   disabled = false,
   pressed,
+  reveal,
   ref,
 }: {
   icon: IconName
@@ -262,6 +263,7 @@ export function AccessoryButton({
   create?: boolean
   disabled?: boolean
   pressed?: boolean
+  reveal?: boolean
   ref?: Ref<HTMLButtonElement>
 }): React.JSX.Element {
   return (
@@ -273,6 +275,7 @@ export function AccessoryButton({
       iconSize={size}
       disabled={disabled}
       pressed={pressed}
+      reveal={reveal}
       className={cx(s.accessoryButton, className)}
       data-create={create || undefined}
       style={box ? ({ '--accessory-box': `${box}px` } as CSSProperties) : undefined}

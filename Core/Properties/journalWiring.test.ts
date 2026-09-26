@@ -16,7 +16,7 @@ import { listBundles } from '../Trash/spend'
 import { readRegistry } from './propertiesRegistry'
 import { createProperty, editProperty, renameProperty } from './registryProperty'
 import { deleteProperty } from './deleteProperty'
-import { clearOption, removeOption, renameOption, setOptions } from './optionOps'
+import { clearOption, editOption, removeOption, renameOption } from './optionOps'
 import { readSchemaJournal, writeSchemaJournal } from './propertyJournal'
 
 vi.mock('../Files/atomicWrite', async (importOriginal) => {
@@ -219,9 +219,9 @@ describe('the option-op writers', () => {
     expect(await readFile(abs('Col', 'C.md'), 'utf8')).not.toContain('Tags: Draft')
   })
 
-  it('setOptions never writes a record', async () => {
+  it('editOption never writes a record', async () => {
     await withOptions()
-    await setOptions(root, 'prop_t', [{ value: 'Solo', label: 'Solo' }])
+    await editOption(root, 'prop_t', { op: 'add', groupId: 'select', title: 'Solo' })
     expect(observed.some((o) => o.path === journalFile())).toBe(false)
   })
 })

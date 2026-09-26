@@ -7,26 +7,14 @@ import { confirmRegistryWrite } from '../Nexus/confirm'
 import { readWatchScope } from '../Settings/settings'
 import { assignProperty, reorderAssignment } from './assignment'
 import { deleteProperty } from './deleteProperty'
-import {
-  clearOption,
-  clearStatusOption,
-  removeOption,
-  removeStatusOption,
-  renameOption,
-  renameStatusOption,
-  setOptions,
-  setStatusGroups,
-} from './optionOps'
-import type { Option } from './optionModel'
+import { clearOption, editOption, removeOption, renameOption } from './optionOps'
+import { optionEdit, type OptionEdit } from './optionModel'
 import {
   type FileConfig,
-  narrowOptions,
   narrowFileConfig,
   narrowLinkConfig,
   narrowNumberFormat,
-  narrowStatusGroups,
   propertyDefinition,
-  type StatusGroup,
 } from './properties'
 import {
   createProperty,
@@ -41,8 +29,7 @@ const NEEDS_PROPERTY_ID = fault('A property id is required.')
 const NEEDS_ID_AND_VALUE = fault('A property id and value are required.')
 const NEEDS_ID_AND_INDEX = fault('propertyId (string) and toIndex (number) are required.')
 const NEEDS_RENAME_ARGS = fault('propertyId, oldValue, and newTitle are required.')
-const NEEDS_OPTION_ARRAY = fault('Options must be an array of { value, label }.')
-const NEEDS_STATUS_GROUPS = fault('Status groups must be an array.')
+const NEEDS_OPTION_EDIT = fault('An option edit is required.')
 
 // containerPath is the schema-owning Collection's folder — a Set inherits the schema, so the renderer passes the ancestor's path.
 async function resolveSchemaFolder(
@@ -54,7 +41,7 @@ async function resolveSchemaFolder(
   return resolved.ok ? ok({ folder: resolved.value, rel: containerPath }) : resolved
 }
 
-const registryOp = <A extends unknown[], T = null>(
+const registryChannel = <A extends unknown[], T = null>(
   narrow: (args: unknown[]) => A | Result<never>,
   write: (root: string, ...args: A) => Promise<Result<T>>,
 ) =>
@@ -66,22 +53,33 @@ const registryOp = <A extends unknown[], T = null>(
     return r
   })
 
+const schemaChannel = <A extends unknown[]>(
+  narrow: (args: unknown[]) => A | Result<never>,
+  write: (root: string, folder: string, ...args: A) => Promise<Result<null>>,
+) =>
+  withWriteRoot(async (root, ctx, containerPath: unknown, ...args: unknown[]) => {
+    const c = await resolveSchemaFolder(root, containerPath)
+    if (!c.ok) return c
+    const narrowed = narrow(args)
+    if (!Array.isArray(narrowed)) return narrowed
+    const r = await write(root, c.value.folder, ...narrowed)
+    if (r.ok) await confirmRegistryWrite(ctx, root, c.value.rel)
+    return r
+  })
+
 const idOnly = ([id]: unknown[]): [string] | Result<never> =>
   typeof id === 'string' ? [id] : NEEDS_PROPERTY_ID
 
 const idAndIndex = ([id, at]: unknown[]): [string, number] | Result<never> =>
   typeof id === 'string' && isFiniteNumber(at) ? [id, at] : NEEDS_ID_AND_INDEX
 
-const idAndOptions = ([id, options]: unknown[]): [string, Option[]] | Result<never> => {
-  if (typeof id !== 'string') return NEEDS_PROPERTY_ID
-  const read = narrowOptions(options)
-  return read ? [id, read] : NEEDS_OPTION_ARRAY
-}
+const idAndOptionalIndex = ([id, at]: unknown[]): [string, number | undefined] | Result<never> =>
+  typeof id === 'string' ? [id, isFiniteNumber(at) ? at : undefined] : NEEDS_PROPERTY_ID
 
-const idAndGroups = ([id, groups]: unknown[]): [string, StatusGroup[]] | Result<never> => {
+const idAndEdit = ([id, e]: unknown[]): [string, OptionEdit] | Result<never> => {
   if (typeof id !== 'string') return NEEDS_PROPERTY_ID
-  const read = narrowStatusGroups(groups)
-  return read ? [id, read] : NEEDS_STATUS_GROUPS
+  const read = optionEdit.safeParse(e)
+  return read.success ? [id, read.data] : NEEDS_OPTION_EDIT
 }
 
 const idAndValue = ([id, value]: unknown[]): [string, string] | Result<never> =>
@@ -129,50 +127,15 @@ export const propertiesHandlers = {
     return ok({ id: created.value.id })
   }),
 
-  'schema:reorder': withWriteRoot(
-    async (root, ctx, containerPath: unknown, propertyId: unknown, toIndex: unknown) => {
-      const c = await resolveSchemaFolder(root, containerPath)
-      if (!c.ok) return c
-      if (typeof propertyId !== 'string' || !isFiniteNumber(toIndex))
-        return fault('propertyId (string) and toIndex (number) are required.')
-      const r = await reorderAssignment(c.value.folder, propertyId, toIndex)
-      if (r.ok) await confirmRegistryWrite(ctx, root, c.value.rel)
-      return r
-    },
+  'schema:reorder': schemaChannel(idAndIndex, (_root, folder, id, at) =>
+    reorderAssignment(folder, id, at),
   ),
+  'schema:unassign': schemaChannel(idOnly, removeProperty),
+  'schema:assign': schemaChannel(idAndOptionalIndex, assignProperty),
 
-  'schema:unassign': withWriteRoot(
-    async (root, ctx, containerPath: unknown, propertyId: unknown) => {
-      const c = await resolveSchemaFolder(root, containerPath)
-      if (!c.ok) return c
-      if (typeof propertyId !== 'string') return NEEDS_PROPERTY_ID
-      const r = await removeProperty(root, c.value.folder, propertyId)
-      if (r.ok) await confirmRegistryWrite(ctx, root, c.value.rel)
-      return r
-    },
-  ),
-
-  'schema:assign': withWriteRoot(
-    async (root, ctx, containerPath: unknown, propertyId: unknown, toIndex: unknown) => {
-      const c = await resolveSchemaFolder(root, containerPath)
-      if (!c.ok) return c
-      if (typeof propertyId !== 'string') return NEEDS_PROPERTY_ID
-      const r = await assignProperty(
-        root,
-        c.value.folder,
-        propertyId,
-        isFiniteNumber(toIndex) ? toIndex : undefined,
-      )
-      if (r.ok) await confirmRegistryWrite(ctx, root, c.value.rel)
-      return r
-    },
-  ),
-
-  'registry:reorder': registryOp(idAndIndex, reorderRegistry),
-  'property:rename': registryOp(idAndValue, renameProperty),
-  'property:delete': registryOp(idOnly, deleteProperty),
-  'property:setOptions': registryOp(idAndOptions, setOptions),
-  'property:setStatusGroups': registryOp(idAndGroups, setStatusGroups),
+  'registry:reorder': registryChannel(idAndIndex, reorderRegistry),
+  'property:rename': registryChannel(idAndValue, renameProperty),
+  'property:delete': registryChannel(idOnly, deleteProperty),
 
   'property:setLinkConfig': defEditOp(narrowLinkConfig),
   'property:setCheckboxColor': defEditOp((color) => ({
@@ -186,10 +149,8 @@ export const propertiesHandlers = {
     const { assetDir } = await readWatchScope(root)
     return validPropertyDir(dir, assetDir) ? ok(null) : NOT_A_PROPERTY_DIR
   }),
-  'property:renameOption': registryOp(idOldNew, renameOption),
-  'property:removeOption': registryOp(idAndValue, removeOption),
-  'property:clearOption': registryOp(idAndValue, clearOption),
-  'property:renameStatusOption': registryOp(idOldNew, renameStatusOption),
-  'property:removeStatusOption': registryOp(idAndValue, removeStatusOption),
-  'property:clearStatusOption': registryOp(idAndValue, clearStatusOption),
+  'property:editOption': registryChannel(idAndEdit, editOption),
+  'property:renameOption': registryChannel(idOldNew, renameOption),
+  'property:removeOption': registryChannel(idAndValue, removeOption),
+  'property:clearOption': registryChannel(idAndValue, clearOption),
 } satisfies Partial<Handlers>

@@ -1,16 +1,13 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest'
-import { chmod, rm, readFile, stat } from 'node:fs/promises'
+import { chmod, mkdir, rm, readFile, stat, writeFile } from 'node:fs/promises'
 import { join } from '../Paths/posix'
 import { noModeBits, seedSpaceSidecar, readSpaceSidecar, tempRoot } from '../Testing/hostFs'
 import { fault } from '../Contract/result'
 import {
-  setOptions,
+  editOption,
   renameOption,
   removeOption,
   clearOption,
-  renameStatusOption,
-  removeStatusOption,
-  clearStatusOption,
   addOptionToDef,
   applyAdoptions,
 } from './optionOps'
@@ -21,7 +18,7 @@ import { createPage, updatePageProperty } from '../Nexus/page'
 import { serializeSchemaOp } from './schemaChain'
 import { machine } from '../Platform/machine'
 import { readRegistry } from './propertiesRegistry'
-import type { PropertyDefinition } from './properties'
+import type { PropertyDefinition, SelectOption } from './properties'
 import { flushValueWrites } from '../Nexus/valuesChanged'
 
 let root: string
@@ -32,42 +29,18 @@ afterEach(async () => {
   await rm(root, { recursive: true, force: true })
 })
 
-async function mkSelect(
-  options: { value: string; label: string; color?: string }[],
-): Promise<string> {
-  const c = await createProperty(root, {
-    id: '',
-    name: 'Tags',
-    type: 'select',
-    select_options: options,
-  } as PropertyDefinition)
+async function mkProperty(def: Omit<PropertyDefinition, 'id'>): Promise<string> {
+  const c = await createProperty(root, { id: '', ...def })
   if (!c.ok) throw new Error('createProperty failed')
   return c.value.id
 }
+
+const mkSelect = (select_options: SelectOption[]): Promise<string> =>
+  mkProperty({ name: 'Tags', type: 'select', select_options })
+
+const mkStatus = (): Promise<string> => mkProperty({ name: 'Stage', type: 'status' })
 
 async function pageHolding(id: string, value: string): Promise<string> {
-  const col = await createFolderEntity(root, 'collection', 'Col')
-  if (!col.ok) throw new Error('folder failed')
-  await assignProperty(root, col.value.path, id)
-  const p = await createPage(col.value.path, 'One', { body: 'b' })
-  if (!p.ok) throw new Error('page failed')
-  const def = (await readRegistry(root)).defs[id]
-  if (!def) throw new Error('definition missing')
-  await updatePageProperty(root, p.value.path, def, { kind: 'select', value })
-  return p.value.path
-}
-
-async function mkStatus(): Promise<string> {
-  const c = await createProperty(root, {
-    id: '',
-    name: 'Stage',
-    type: 'status',
-  } as PropertyDefinition)
-  if (!c.ok) throw new Error('createProperty failed')
-  return c.value.id
-}
-
-async function statusPageHolding(id: string, value: string): Promise<string> {
   const col = await createFolderEntity(root, 'collection', 'Col')
   if (!col.ok) throw new Error('folder failed')
   await assignProperty(root, col.value.path, id)
@@ -87,32 +60,24 @@ async function statusValues(id: string): Promise<string[]> {
   return (def.status_groups ?? []).flatMap((g) => g.options.map((o) => o.value))
 }
 
-describe('setOptions', () => {
-  it('writes the array verbatim and does NOT re-seed an emptied select', async () => {
+describe('editOption', () => {
+  it('an emptied options list survives an unrelated property edit — no phantom re-seed', async () => {
     const id = await mkSelect([{ value: 'A', label: 'A' }])
-    const r = await setOptions(root, id, [])
-    expect(r.ok).toBe(true)
+    expect((await removeOption(root, id, 'A')).ok).toBe(true)
+    expect((await readRegistry(root)).defs[id].select_options).toEqual([])
+    await editProperty(root, id, { icon: 'tag' })
     expect((await readRegistry(root)).defs[id].select_options).toEqual([])
   })
 
-  it('rejects duplicate titles', async () => {
+  it('add refuses a title another option holds', async () => {
     const id = await mkSelect([{ value: 'A', label: 'A' }])
-    const r = await setOptions(root, id, [
-      { value: 'A', label: 'A' },
-      { value: 'A', label: 'A' },
-    ])
+    const r = await editOption(root, id, { op: 'add', groupId: 'select', title: 'A' })
     expect(r.ok).toBe(false)
+    expect((await readRegistry(root)).defs[id].select_options).toEqual([{ value: 'A', label: 'A' }])
   })
 
   it('fails for an unknown property id', async () => {
-    expect((await setOptions(root, 'prop_nope', [])).ok).toBe(false)
-  })
-
-  it('an emptied options list survives an unrelated property edit — no phantom re-seed (F2)', async () => {
-    const id = await mkSelect([{ value: 'A', label: 'A' }])
-    await setOptions(root, id, [])
-    await editProperty(root, id, { icon: 'tag' })
-    expect((await readRegistry(root)).defs[id].select_options).toEqual([])
+    expect((await editOption(root, 'prop_nope', { op: 'recolor', value: 'A' })).ok).toBe(false)
   })
 
   it('serializes on the schema chain — queues behind an in-flight schema op, never interleaving', async () => {
@@ -122,37 +87,201 @@ describe('setOptions', () => {
     const gate = new Promise<void>((r) => {
       release = r
     })
-    // Occupy the shared schema chain with a gated op, THEN fire setOptions: on a different lock it would slip past the gate and land first.
+    // Occupy the shared schema chain with a gated op, THEN fire editOption: on a different lock it would slip past the gate and land first.
     const slow = serializeSchemaOp(async () => {
       await gate
       order.push('schema-op')
     })
-    const fast = setOptions(root, id, [{ value: 'B', label: 'B' }]).then(() =>
-      order.push('setOptions'),
+    const fast = editOption(root, id, { op: 'add', groupId: 'select', title: 'B' }).then(() =>
+      order.push('editOption'),
     )
     await new Promise((r) => setTimeout(r, 50))
     release()
     await Promise.all([slow, fast])
-    expect(order).toEqual(['schema-op', 'setOptions'])
+    expect(order).toEqual(['schema-op', 'editOption'])
+  })
+
+  it('relabelGroup is refused on a Select', async () => {
+    const id = await mkSelect([{ value: 'A', label: 'A' }])
+    const r = await editOption(root, id, { op: 'relabelGroup', groupId: 'select', label: 'Named' })
+    expect(r).toMatchObject({ ok: false, error: { code: 'not-found' } })
+    expect((await readRegistry(root)).defs[id].select_options).toEqual([{ value: 'A', label: 'A' }])
+  })
+
+  it('add and move are refused for a group the definition lacks', async () => {
+    const id = await mkStatus()
+    const before = await statusValues(id)
+    expect(await editOption(root, id, { op: 'add', groupId: 'nope', title: 'X' })).toMatchObject({
+      ok: false,
+      error: { code: 'not-found' },
+    })
+    expect(
+      await editOption(root, id, { op: 'move', value: 'Open', groupId: 'nope', toIndex: 0 }),
+    ).toMatchObject({ ok: false, error: { code: 'not-found' } })
+    expect(await statusValues(id)).toEqual(before)
   })
 })
 
-describe('option ops reject non-select/multi properties', () => {
-  it('all four ops fail on a status property and never corrupt it', async () => {
-    const c = await createProperty(root, {
-      id: '',
-      name: 'Stage',
-      type: 'status',
-    } as PropertyDefinition)
-    if (!c.ok) throw new Error('createProperty failed')
-    const id = c.value.id
-    expect((await setOptions(root, id, [{ value: 'X', label: 'X' }])).ok).toBe(false)
-    expect((await renameOption(root, id, 'Open', 'Started')).ok).toBe(false)
-    expect((await removeOption(root, id, 'Open')).ok).toBe(false)
-    expect((await clearOption(root, id, 'Open')).ok).toBe(false)
-    const def = (await readRegistry(root)).defs[id]
-    expect(def.select_options).toBeUndefined()
-    expect(def.status_groups).toHaveLength(3)
+describe('a rename followed by a registry-only edit (F-134)', () => {
+  it('an edit still addressed to the old value is refused, and the new title holds in the registry and on the page', async () => {
+    const id = await mkSelect([{ value: 'Urgent', label: 'Urgent' }])
+    const page = await pageHolding(id, 'Urgent')
+    const rename = renameOption(root, id, 'Urgent', 'Critical')
+    const recolor = editOption(root, id, { op: 'recolor', value: 'Urgent', color: 'red' })
+    const [renamed, recolored] = await Promise.all([rename, recolor])
+    expect(renamed.ok).toBe(true)
+    expect(recolored).toMatchObject({ ok: false, error: { code: 'not-found' } })
+    expect((await readRegistry(root)).defs[id].select_options).toEqual([
+      { value: 'Critical', label: 'Critical' },
+    ])
+    const content = await readFile(page, 'utf8')
+    expect(content).toContain('Critical')
+    expect(content).not.toContain('Urgent')
+  })
+
+  it('an edit addressed to the new title lands on it', async () => {
+    const id = await mkSelect([{ value: 'Urgent', label: 'Urgent' }])
+    const page = await pageHolding(id, 'Urgent')
+    const rename = renameOption(root, id, 'Urgent', 'Critical')
+    const recolor = editOption(root, id, { op: 'recolor', value: 'Critical', color: 'red' })
+    const [renamed, recolored] = await Promise.all([rename, recolor])
+    expect(renamed.ok).toBe(true)
+    expect(recolored.ok).toBe(true)
+    expect((await readRegistry(root)).defs[id].select_options).toEqual([
+      { value: 'Critical', label: 'Critical', color: 'red' },
+    ])
+    expect(await readFile(page, 'utf8')).toContain('Critical')
+  })
+})
+
+describe('an option edit leaves every other stored entry as written (F-562)', () => {
+  const selectSeed = [
+    { value: 'A', label: 'A' },
+    { value: 'B', label: 'B', appearance: 'outline', icon: 7, tint: 'x' },
+    { value: 'C', label: 'C' },
+  ]
+  const statusSeed = [
+    {
+      id: 'g1',
+      label: 'One',
+      color: 'grey',
+      options: [
+        { value: 'X', label: 'X', group_id: 'g1' },
+        { value: 'Y', label: 'Y', group_id: 'g1', appearance: 'outline', icon: 7, tint: 'x' },
+        { value: 'W', label: 'W', group_id: 'g1' },
+      ],
+    },
+    { id: 'g2', label: 'Two', color: 42, options: [{ value: 'Z', label: 'Z', group_id: 'g2' }] },
+  ]
+  const multiSeed = [
+    { value: 'a', label: 'a' },
+    { value: 'b', label: 'b', appearance: 'outline', icon: 7, tint: 'x' },
+  ]
+  const registryFile = () => join(root, '.nexus', 'properties.json')
+  const rawDefs = async () => JSON.parse(await readFile(registryFile(), 'utf8')).defs
+
+  beforeEach(async () => {
+    await mkdir(join(root, '.nexus'), { recursive: true })
+    await writeFile(
+      registryFile(),
+      JSON.stringify({
+        order: ['prop_sel', 'prop_st', 'prop_multi'],
+        defs: {
+          prop_sel: { id: 'prop_sel', name: 'Tags', type: 'select', select_options: selectSeed },
+          prop_st: { id: 'prop_st', name: 'Stage', type: 'status', status_groups: statusSeed },
+          prop_multi: {
+            id: 'prop_multi',
+            name: 'Labels',
+            type: 'multiSelect',
+            select_options: multiSeed,
+          },
+        },
+      }),
+    )
+  })
+
+  it('after a recolor, a rename, a remove, and an adoption, the untouched entries deep-equal what was seeded', async () => {
+    expect(
+      (await editOption(root, 'prop_sel', { op: 'recolor', value: 'A', color: 'red' })).ok,
+    ).toBe(true)
+    expect(
+      (await editOption(root, 'prop_st', { op: 'recolor', value: 'X', color: 'red' })).ok,
+    ).toBe(true)
+    expect((await renameOption(root, 'prop_sel', 'A', 'AA')).ok).toBe(true)
+    expect((await renameOption(root, 'prop_st', 'X', 'XX')).ok).toBe(true)
+    expect((await removeOption(root, 'prop_sel', 'C')).ok).toBe(true)
+    expect((await removeOption(root, 'prop_st', 'W')).ok).toBe(true)
+    expect((await addOptionToDef(root, 'prop_multi', 'c')).ok).toBe(true)
+    const defs = await rawDefs()
+    expect(defs.prop_sel.select_options).toEqual([
+      { value: 'AA', label: 'AA', color: 'red' },
+      selectSeed[1],
+    ])
+    expect(defs.prop_st.status_groups).toEqual([
+      {
+        ...statusSeed[0],
+        options: [
+          { value: 'XX', label: 'XX', group_id: 'g1', color: 'red' },
+          statusSeed[0].options[1],
+        ],
+      },
+      statusSeed[1],
+    ])
+    expect(defs.prop_multi.select_options).toEqual([...multiSeed, { value: 'c', label: 'c' }])
+  })
+
+  it("a move keeps the moved option's own keys and the target group's color", async () => {
+    expect(
+      (await editOption(root, 'prop_st', { op: 'move', value: 'Y', groupId: 'g2', toIndex: 0 })).ok,
+    ).toBe(true)
+    const defs = await rawDefs()
+    expect(defs.prop_st.status_groups[1]).toEqual({
+      ...statusSeed[1],
+      options: [{ ...statusSeed[0].options[1], group_id: 'g2' }, ...statusSeed[1].options],
+    })
+    expect(defs.prop_st.status_groups[0].options).toEqual([
+      statusSeed[0].options[0],
+      statusSeed[0].options[2],
+    ])
+  })
+
+  it('an entry stored under a legacy type spelling keeps that spelling and its neighbors through every writer', async () => {
+    const file = JSON.parse(await readFile(registryFile(), 'utf8'))
+    file.defs.prop_multi.type = 'multi_select'
+    await writeFile(registryFile(), JSON.stringify(file))
+    expect((await addOptionToDef(root, 'prop_multi', 'c')).ok).toBe(true)
+    expect(
+      (await editOption(root, 'prop_multi', { op: 'recolor', value: 'a', color: 'red' })).ok,
+    ).toBe(true)
+    expect((await renameOption(root, 'prop_multi', 'a', 'aa')).ok).toBe(true)
+    const defs = await rawDefs()
+    expect(defs.prop_multi.type).toBe('multi_select')
+    expect(defs.prop_multi.select_options).toEqual([
+      { value: 'aa', label: 'aa', color: 'red' },
+      multiSeed[1],
+      { value: 'c', label: 'c' },
+    ])
+  })
+})
+
+describe('option ops refuse a property without options', () => {
+  const mkNumber = (): Promise<string> => mkProperty({ name: 'Count', type: 'number' })
+
+  it('editOption', async () => {
+    const id = await mkNumber()
+    expect((await editOption(root, id, { op: 'recolor', value: 'A' })).ok).toBe(false)
+  })
+  it('renameOption', async () => {
+    const id = await mkNumber()
+    expect((await renameOption(root, id, 'A', 'B')).ok).toBe(false)
+  })
+  it('removeOption', async () => {
+    const id = await mkNumber()
+    expect((await removeOption(root, id, 'A')).ok).toBe(false)
+  })
+  it('clearOption', async () => {
+    const id = await mkNumber()
+    expect((await clearOption(root, id, 'A')).ok).toBe(false)
   })
 })
 
@@ -184,6 +313,22 @@ describe('renameOption', () => {
 
   it('fails for an unknown property id', async () => {
     expect((await renameOption(root, 'prop_nope', 'A', 'B')).ok).toBe(false)
+  })
+
+  it('is refused for a value the definition lacks, and rewrites no page', async () => {
+    const id = await mkSelect([{ value: 'A', label: 'A' }])
+    const page = await pageHolding(id, 'A')
+    await updatePageProperty(root, page, (await readRegistry(root)).defs[id], {
+      kind: 'select',
+      value: 'Stray',
+    })
+    const stray = await readFile(page, 'utf8')
+    expect(stray).toContain('Stray')
+    expect(await renameOption(root, id, 'Stray', 'B')).toMatchObject({
+      ok: false,
+      error: { code: 'not-found' },
+    })
+    expect(await readFile(page, 'utf8')).toBe(stray)
   })
 
   it('notes every rewritten page once per container for the values:changed push', async () => {
@@ -225,6 +370,37 @@ describe('removeOption', () => {
 
   it('fails for an unknown property id', async () => {
     expect((await removeOption(root, 'prop_nope', 'A')).ok).toBe(false)
+  })
+})
+
+describe('remove and clear on a value the definition lacks', () => {
+  const stray = async (): Promise<{ id: string; page: string; bytes: string }> => {
+    const id = await mkSelect([{ value: 'A', label: 'A' }])
+    const page = await pageHolding(id, 'A')
+    await updatePageProperty(root, page, (await readRegistry(root)).defs[id], {
+      kind: 'select',
+      value: 'Stray',
+    })
+    return { id, page, bytes: await readFile(page, 'utf8') }
+  }
+
+  it('removeOption is refused, drops nothing, and rewrites no page', async () => {
+    const { id, page, bytes } = await stray()
+    expect(await removeOption(root, id, 'Stray')).toMatchObject({
+      ok: false,
+      error: { code: 'not-found' },
+    })
+    expect(await readFile(page, 'utf8')).toBe(bytes)
+    expect((await readRegistry(root)).defs[id].select_options).toEqual([{ value: 'A', label: 'A' }])
+  })
+
+  it('clearOption is refused and rewrites no page', async () => {
+    const { id, page, bytes } = await stray()
+    expect(await clearOption(root, id, 'Stray')).toMatchObject({
+      ok: false,
+      error: { code: 'not-found' },
+    })
+    expect(await readFile(page, 'utf8')).toBe(bytes)
   })
 })
 
@@ -299,22 +475,12 @@ describe('option cascades reach a Space sidecar', () => {
   })
 })
 
-describe('status ops reject non-status properties', () => {
-  it('all three fail on a select property and never corrupt it', async () => {
-    const id = await mkSelect([{ value: 'A', label: 'A' }])
-    expect((await renameStatusOption(root, id, 'A', 'B')).ok).toBe(false)
-    expect((await removeStatusOption(root, id, 'A')).ok).toBe(false)
-    expect((await clearStatusOption(root, id, 'A')).ok).toBe(false)
-    expect((await readRegistry(root)).defs[id].select_options).toEqual([{ value: 'A', label: 'A' }])
-  })
-})
-
-describe('renameStatusOption', () => {
+describe('renameOption on a Status', () => {
   it('rewrites the group option and cascades the value onto assigning pages', async () => {
     const id = await mkStatus()
-    const page = await statusPageHolding(id, 'Open')
+    const page = await pageHolding(id, 'Open')
 
-    const r = await renameStatusOption(root, id, 'Open', 'Started')
+    const r = await renameOption(root, id, 'Open', 'Started')
     expect(r.ok).toBe(true)
     expect(await statusValues(id)).toContain('Started')
     expect(await statusValues(id)).not.toContain('Open')
@@ -325,35 +491,31 @@ describe('renameStatusOption', () => {
 
   it('rejects a rename colliding with another option value property-wide (no page writes)', async () => {
     const id = await mkStatus()
-    const page = await statusPageHolding(id, 'Open')
-    const r = await renameStatusOption(root, id, 'Open', 'Active')
+    const page = await pageHolding(id, 'Open')
+    const r = await renameOption(root, id, 'Open', 'Active')
     expect(r.ok).toBe(false)
     expect(await readFile(page, 'utf8')).toContain('Open')
   })
-
-  it('fails for an unknown property id', async () => {
-    expect((await renameStatusOption(root, 'prop_nope', 'A', 'B')).ok).toBe(false)
-  })
 })
 
-describe('removeStatusOption', () => {
+describe('removeOption on a Status', () => {
   it('drops the option from its group and strips its value from pages', async () => {
     const id = await mkStatus()
-    const page = await statusPageHolding(id, 'Active')
+    const page = await pageHolding(id, 'Active')
 
-    const r = await removeStatusOption(root, id, 'Active')
+    const r = await removeOption(root, id, 'Active')
     expect(r.ok).toBe(true)
     expect(await statusValues(id)).not.toContain('Active')
     expect(await readFile(page, 'utf8')).not.toContain(id)
   })
 })
 
-describe('clearStatusOption', () => {
+describe('clearOption on a Status', () => {
   it('strips the value from pages but KEEPS the option in its group', async () => {
     const id = await mkStatus()
-    const page = await statusPageHolding(id, 'Done')
+    const page = await pageHolding(id, 'Done')
 
-    const r = await clearStatusOption(root, id, 'Done')
+    const r = await clearOption(root, id, 'Done')
     expect(r.ok).toBe(true)
     expect(await statusValues(id)).toContain('Done')
     expect(await readFile(page, 'utf8')).not.toContain(id)
@@ -361,16 +523,12 @@ describe('clearStatusOption', () => {
 })
 
 describe('adoption — a Multi-Select registers an option a page already holds', () => {
-  async function mkMulti(): Promise<string> {
-    const c = await createProperty(root, {
-      id: '',
+  const mkMulti = (): Promise<string> =>
+    mkProperty({
       name: 'Labels',
       type: 'multiSelect',
       select_options: [{ value: 'alpha', label: 'alpha' }],
-    } as PropertyDefinition)
-    if (!c.ok) throw new Error('createProperty failed')
-    return c.value.id
-  }
+    })
   const values = async (id: string) =>
     ((await readRegistry(root)).defs[id].select_options ?? []).map((o) => o.value)
 

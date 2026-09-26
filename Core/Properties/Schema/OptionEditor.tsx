@@ -1,14 +1,10 @@
 import { Fragment, useMemo, useRef, useState } from 'react'
+import { fallbackTitle, type OptionEdit } from '@pommora/core/Properties/optionModel'
 import {
-  addOption,
-  recolorOption,
-  reorderOption,
-  setOptionAppearance,
-  setOptionIcon,
-  fallbackTitle,
-  type Option,
-} from '@pommora/core/Properties/optionModel'
-import type { PropertyType } from '@pommora/core/Properties/properties'
+  PROPERTY_TYPES,
+  type PropertyType,
+  type StatusGroup,
+} from '@pommora/core/Properties/properties'
 import { askClearOption, askRemoveOption } from '../../Interface/Confirm/confirmations'
 import { cx } from '@pommora/uix/Utilities/cx'
 import { GhostOptionChip, OptionNameCaret, useGhostOptionAnchor } from './GhostOptionChip'
@@ -16,8 +12,10 @@ import { ghostAnchorProps } from '@pommora/uix/Interactions/ghostCreate'
 import { Reveal } from '@pommora/uix/Animations/Reveal'
 import { useEntrance } from '@pommora/uix/Animations/useEntrance'
 import { DropLine } from '@pommora/uix/Interactions/DropLine'
+import { colorNameFor } from '@pommora/uix/Theme/ramp'
+import { text } from '@pommora/uix/Theme'
 import { OptionSlot, type OptionStyle, useOptionIconChoice } from './OptionRow'
-import { useOptionReorder } from './useOptionReorder'
+import { useStatusReorder } from './useStatusReorder'
 import * as s from '@pommora/uix/Menus/frames.css'
 import { AccessoryButton, heading, rowDropLine } from '@pommora/uix/Menus'
 import { labelColor, shape } from '@pommora/uix/Labels/label-base.css'
@@ -25,55 +23,108 @@ import { optionShapeFor } from '@pommora/uix/Labels/recipes'
 import { popMenu } from '../../Actions/menuActions'
 import { optionMenuModel } from '@pommora/core/Actions/optionMenu'
 
-const LIST_ANCHOR = 'options'
-
 export function OptionEditor({
   type,
-  options,
+  groups,
   look,
-  onSetOptions,
+  onEdit,
   onRenameOption,
   onRemoveOption,
   onClearOption,
 }: {
   type: PropertyType
-  options: Option[]
+  groups: StatusGroup[]
   look: OptionStyle
-  onSetOptions: (next: Option[]) => void
+  onEdit: (edit: OptionEdit) => void
   onRenameOption: (oldValue: string, newTitle: string) => void
   onRemoveOption: (value: string) => void
   onClearOption: (value: string) => void
 }): React.JSX.Element {
-  const [adding, setAdding] = useState<number | null>(null)
+  const grouped = PROPERTY_TYPES[type].options === 'status'
+  const [adding, setAdding] = useState<{ groupId: string; index: number } | null>(null)
+  const [renamingGroup, setRenamingGroup] = useState<string | null>(null)
   const [renaming, setRenaming] = useState<string | null>(null)
-  const [editing, setEditing] = useState<string | null>(null)
+  const [editing, setEditing] = useState<{ row: string; value: string } | null>(null)
   const editBtnRef = useRef<HTMLButtonElement>(null)
+  const alias = useRef(new Map<string, string>())
+  const options = useMemo(() => groups.flatMap((g) => g.options), [groups])
+  const values = useMemo(() => options.map((o) => o.value), [options])
+  const keyOf = (value: string): string => {
+    const key = alias.current.get(value)
+    return key !== undefined && !values.includes(key) ? key : value
+  }
+  const isEditing = (row: string): boolean =>
+    editing !== null &&
+    (editing.value === row || (editing.row === row && !values.includes(editing.value)))
   const iconChoice = useOptionIconChoice(
     (value) => options.find((o) => o.value === value)?.icon,
-    (value, icon) => onSetOptions(setOptionIcon(options, value, icon)),
+    (value, icon) => onEdit({ op: 'icon', value, icon }),
   )
-  const optionOrder = useMemo(() => options.map((o) => o.value), [options])
-  const entering = useEntrance(options, (o) => o.value)
-  const reorder = useOptionReorder(
-    optionOrder,
+  const def = useMemo(() => ({ status_groups: groups }), [groups])
+  const order = useMemo(
+    () => groups.map((g) => ({ id: g.id, values: g.options.map((o) => o.value) })),
+    [groups],
+  )
+  const entering = useEntrance(options, (o) => keyOf(o.value))
+  const reorder = useStatusReorder(
+    order,
     (value) => options.find((o) => o.value === value)?.label ?? value,
-    (value, toIndex) => onSetOptions(reorderOption(options, value, toIndex)),
+    (value, groupId, toIndex) => onEdit({ op: 'move', value, groupId, toIndex }),
   )
-  // Each option is its own anchor; an empty list has no chip to anchor to, so the list itself stands in for the first one.
   const ghostApi = useGhostOptionAnchor(
-    adding !== null || renaming !== null || editing !== null || iconChoice.editing,
+    adding !== null ||
+      renaming !== null ||
+      renamingGroup !== null ||
+      editing !== null ||
+      iconChoice.editing,
   )
 
-  const commitAdd = (raw: string, at: number): void => {
+  const commitAdd = (g: StatusGroup, raw: string, atIndex: number): void => {
     setAdding(null)
-    onSetOptions(addOption(options, raw.trim() || fallbackTitle(optionOrder), undefined, at))
+    onEdit({
+      op: 'add',
+      groupId: g.id,
+      title: raw.trim() || fallbackTitle(values, g.label),
+      atIndex,
+    })
   }
-  const slotAt = (index: number, anchorId: string): React.JSX.Element | null =>
-    adding === index ? (
+  const commitGroupRename = (groupId: string, raw: string): void => {
+    setRenamingGroup(null)
+    const label = raw.trim()
+    if (label) onEdit({ op: 'relabelGroup', groupId, label })
+  }
+  const commitRename = (row: string, raw: string, g: StatusGroup): void => {
+    setRenaming(null)
+    const from = isEditing(row) && editing ? editing.value : row
+    const title =
+      raw.trim() ||
+      fallbackTitle(
+        values.filter((v) => v !== from),
+        g.label,
+      )
+    if (title === from) return
+    if (title === row || !values.includes(title)) {
+      alias.current.set(title, keyOf(row))
+      setEditing((e) => (e && e.value === from ? { row: e.row, value: title } : e))
+    }
+    onRenameOption(from, title)
+  }
+  const openMenu = async (value: string, name: string, row: HTMLElement): Promise<void> => {
+    const action = await popMenu(optionMenuModel())
+    if (action === 'option:rename') setRenaming(value)
+    else if (action === 'option:edit-icon') iconChoice.begin(value, row)
+    else if (action === 'option:remove') {
+      if (await askRemoveOption(name)) onRemoveOption(value)
+    } else if (action === 'option:clear') {
+      if (await askClearOption(name)) onClearOption(value)
+    }
+  }
+  const slotAt = (g: StatusGroup, index: number, anchorId: string): React.JSX.Element | null =>
+    adding?.groupId === g.id && adding.index === index ? (
       <div className={s.optionRow}>
         <OptionNameCaret
-          className={cx(shape.tag, labelColor.default)}
-          onCommit={(raw) => commitAdd(raw, index)}
+          className={cx(shape[optionShapeFor(type)], labelColor[colorNameFor(g.color)])}
+          onCommit={(raw) => commitAdd(g, raw, index)}
           onCancel={() => setAdding(null)}
         />
       </div>
@@ -82,80 +133,88 @@ export function OptionEditor({
         api={ghostApi}
         anchorId={anchorId}
         shape={optionShapeFor(type)}
-        onCreate={() => setAdding(index)}
+        onCreate={() => setAdding({ groupId: g.id, index })}
       />
     )
-  const commitRename = (oldValue: string, raw: string): void => {
-    setRenaming(null)
-    const title = raw.trim() || fallbackTitle(optionOrder.filter((v) => v !== oldValue))
-    if (title !== oldValue) onRenameOption(oldValue, title)
-  }
-  const openMenu = async (o: Option, row: HTMLElement): Promise<void> => {
-    const action = await popMenu(optionMenuModel())
-    if (action === 'option:rename') setRenaming(o.value)
-    else if (action === 'option:edit-icon') iconChoice.begin(o.value, row)
-    else if (action === 'option:remove') {
-      if (await askRemoveOption(o.label)) onRemoveOption(o.value)
-    } else if (action === 'option:clear') {
-      if (await askClearOption(o.label)) onClearOption(o.value)
-    }
-  }
 
   return (
-    <div className={s.optionEditor}>
-      <div className={heading}>
-        <span>Options</span>
-        <AccessoryButton
-          icon="plus"
-          size={s.ICON.optionsAdd}
-          ariaLabel="Add Option"
-          create
-          onClick={() => setAdding(options.length)}
-        />
-      </div>
-      <div
-        className={cx('drop-line-host', s.optionList)}
-        ref={reorder.containerRef}
-        {...(options.length === 0 ? ghostAnchorProps(ghostApi, LIST_ANCHOR) : {})}
-      >
-        {reorder.ghost}
-        {options.map((o, i) => {
-          const isEditing = editing === o.value
-          return (
-            <Fragment key={o.value}>
-              <Reveal open enterOnMount={entering(o.value)} fill>
-                <OptionSlot
-                  value={o.value}
-                  drag={reorder}
-                  ghost={ghostApi}
-                  onOpenMenu={(row) => void openMenu(o, row)}
-                  type={type}
-                  look={look}
-                  label={o.label}
-                  color={o.color}
-                  icon={o.icon}
-                  appearance={o.appearance}
-                  renaming={renaming === o.value}
-                  editing={isEditing}
-                  editButtonRef={editBtnRef}
-                  onCommitRename={(raw) => commitRename(o.value, raw)}
-                  onCancelRename={() => setRenaming(null)}
-                  onToggleEditing={() => setEditing((v) => (v === o.value ? null : o.value))}
-                  onCloseEditing={() => setEditing(null)}
-                  onPickColor={(color) => onSetOptions(recolorOption(options, o.value, color))}
-                  onPickAppearance={(a) => onSetOptions(setOptionAppearance(options, o.value, a))}
-                  onEditIcon={(icon) => onSetOptions(setOptionIcon(options, o.value, icon))}
-                />
-              </Reveal>
-              {slotAt(i + 1, o.value)}
-            </Fragment>
-          )
-        })}
-        {options.length === 0 ? slotAt(0, LIST_ANCHOR) : null}
-        {reorder.lineTop !== null ? (
-          <DropLine style={{ top: reorder.lineTop, ...rowDropLine() }} />
-        ) : null}
-      </div>
+    <div className={s.statusGroups} ref={reorder.containerRef}>
+      {reorder.ghost}
+      {groups.map((g) => (
+        <div key={g.id} className={s.statusGroup} data-reveal-host="">
+          <div className={heading}>
+            {grouped && renamingGroup === g.id ? (
+              <OptionNameCaret
+                className={text.footnote.emphasized}
+                value={g.label}
+                onCommit={(raw) => commitGroupRename(g.id, raw)}
+                onCancel={() => setRenamingGroup(null)}
+              />
+            ) : (
+              // biome-ignore lint/a11y/noStaticElementInteractions: a double-click affordance on a heading, not a control — the contents carry their own semantics
+              <span onDoubleClick={grouped ? () => setRenamingGroup(g.id) : undefined}>
+                {grouped ? g.label : 'Options'}
+              </span>
+            )}
+            <AccessoryButton
+              icon="plus"
+              size={s.ICON.optionsAdd}
+              ariaLabel={grouped ? `Add to ${g.label}` : 'Add Option'}
+              create
+              reveal={grouped}
+              onClick={() => setAdding({ groupId: g.id, index: g.options.length })}
+            />
+          </div>
+          <div
+            className={cx('drop-line-host', s.optionList)}
+            ref={(el) => reorder.registerGroup(g.id, el)}
+            {...(g.options.length === 0 ? ghostAnchorProps(ghostApi, g.id) : {})}
+          >
+            {g.options.map((o, i) => (
+              <Fragment key={keyOf(o.value)}>
+                <Reveal open enterOnMount={entering(keyOf(o.value))} fill>
+                  <OptionSlot
+                    value={o.value}
+                    drag={reorder}
+                    ghost={ghostApi}
+                    onOpenMenu={(row) => void openMenu(o.value, o.label, row)}
+                    type={type}
+                    look={look}
+                    label={o.label}
+                    color={o.color ?? g.color}
+                    icon={o.icon}
+                    appearance={o.appearance}
+                    def={def}
+                    renaming={renaming === o.value}
+                    editing={isEditing(o.value)}
+                    editButtonRef={editBtnRef}
+                    onCommitRename={(raw) => commitRename(o.value, raw, g)}
+                    onCancelRename={() => setRenaming(null)}
+                    onToggleEditing={() =>
+                      setEditing(isEditing(o.value) ? null : { row: o.value, value: o.value })
+                    }
+                    onCloseEditing={() => setEditing(null)}
+                    onPickColor={(color) =>
+                      onEdit({ op: 'recolor', value: editing?.value ?? o.value, color })
+                    }
+                    onPickAppearance={(appearance) =>
+                      onEdit({ op: 'appearance', value: editing?.value ?? o.value, appearance })
+                    }
+                    onEditIcon={(icon) =>
+                      onEdit({ op: 'icon', value: editing?.value ?? o.value, icon })
+                    }
+                  />
+                </Reveal>
+                {slotAt(g, i + 1, o.value)}
+              </Fragment>
+            ))}
+            {g.options.length === 0 ? slotAt(g, 0, g.id) : null}
+            {reorder.drop?.groupId === g.id ? (
+              <DropLine style={{ top: reorder.drop.top, ...rowDropLine() }} />
+            ) : null}
+          </div>
+        </div>
+      ))}
       {iconChoice.picker}
     </div>
   )

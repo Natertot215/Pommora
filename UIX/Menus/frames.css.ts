@@ -95,11 +95,12 @@ export const allHighlight = style({
   borderRadius: `${SIZE.dragHighlightRadius}px`,
 })
 
-const chipList = style({ display: 'flex', flexDirection: 'column', vars: { '--row-pad-y': '0px' } })
-
-export const optionEditor = chipList
-
-export const statusGroups = style([chipList, { gap: `${OPTION.groupGap}px` }])
+export const statusGroups = style({
+  display: 'flex',
+  flexDirection: 'column',
+  gap: `${OPTION.groupGap}px`,
+  vars: { '--row-pad-y': '0px' },
+})
 export const statusGroup = style({ display: 'flex', flexDirection: 'column' })
 
 export const optionList = style({

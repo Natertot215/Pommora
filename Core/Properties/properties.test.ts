@@ -15,10 +15,8 @@ import {
   type PropertyDefinition,
   type SelectOption,
   type StatusGroup,
-  narrowOptions,
   narrowLinkConfig,
   narrowNumberFormat,
-  narrowStatusGroups,
 } from './properties'
 
 describe('propertyType', () => {
@@ -321,13 +319,5 @@ describe("the display-config narrowers decode against the definition's own field
       number_family: 'percent',
     })
     expect(narrowNumberFormat('nope')).toBeNull()
-    expect(narrowStatusGroups([{ id: 'g', label: 'G', options: [] }])).toEqual([
-      { id: 'g', label: 'G', color: 'grey', options: [] },
-    ])
-    expect(narrowStatusGroups([{ label: 'no id' }])).toBeNull()
-    expect(narrowOptions([{ value: 'a', label: 'A', group_id: 'g' }])).toEqual([
-      { value: 'a', label: 'A', group_id: 'g' },
-    ])
-    expect(narrowOptions([{ value: 'a' }])).toBeNull()
   })
 })

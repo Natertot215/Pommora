@@ -15,7 +15,7 @@ import type { WindowsFile } from '../Interface/Windows/windowRecord'
 import type { ThumbRect } from '../Interface/chrome'
 import type { PageValues } from '../Views/viewRow'
 import type { ContainerConfigPatch } from '../Views/containerConfig'
-import type { Option } from '../Properties/optionModel'
+import type { OptionEdit } from '../Properties/optionModel'
 import type { PropertyRename } from '../Properties/registryProperty'
 import type { Personalization } from '../Settings/personalization'
 import type { TileDoc, TileDocPatch, TileHostRef, TilePick, RemovedTile } from '../Tiles/tiles'
@@ -24,7 +24,6 @@ import type {
   LinkConfig,
   NumberConfig,
   PropertyDefinition,
-  StatusGroup,
 } from '../Properties/properties'
 import type { MenuRequest } from '../Actions/menuModel'
 import type { DevicePrefs } from '../Settings/devicePrefs'
@@ -132,14 +131,6 @@ export interface Asks {
     reply: Result<PropertyRename | null>
   }
   'property:delete': { args: [propertyId: string]; reply: Result<Pick<MutateOutcome, 'trashed'>> }
-  'property:setOptions': {
-    args: [propertyId: string, options: Option[]]
-    reply: Result<null>
-  }
-  'property:setStatusGroups': {
-    args: [propertyId: string, groups: StatusGroup[]]
-    reply: Result<null>
-  }
   'property:setLinkConfig': {
     args: [propertyId: string, patch: LinkConfig]
     reply: Result<null>
@@ -157,18 +148,13 @@ export interface Asks {
     args: [propertyId: string, patch: FileConfig]
     reply: Result<null>
   }
+  'property:editOption': { args: [propertyId: string, edit: OptionEdit]; reply: Result<null> }
   'property:renameOption': {
     args: [propertyId: string, oldValue: string, newTitle: string]
     reply: Result<null>
   }
   'property:removeOption': { args: [propertyId: string, value: string]; reply: Result<null> }
   'property:clearOption': { args: [propertyId: string, value: string]; reply: Result<null> }
-  'property:renameStatusOption': {
-    args: [propertyId: string, oldValue: string, newTitle: string]
-    reply: Result<null>
-  }
-  'property:removeStatusOption': { args: [propertyId: string, value: string]; reply: Result<null> }
-  'property:clearStatusOption': { args: [propertyId: string, value: string]; reply: Result<null> }
 
   'tiles:get': { args: [host: TileHostRef]; reply: Result<TileDoc> }
   'tiles:save': { args: [host: TileHostRef, patch: TileDocPatch]; reply: Result<null> }
