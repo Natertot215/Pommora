@@ -1,18 +1,8 @@
 import { Fragment, useMemo } from 'react'
 import { Button } from '@pommora/uix/Buttons/Button'
-import { Icon } from '@pommora/uix/Symbols'
 import { cx } from '@pommora/uix/Utilities/cx'
-import { overScrollEllipsis } from '@pommora/uix/Interactions/OverScroll'
-import { HoverRemove, hoverRemoveHost } from '@pommora/uix/Interactions/HoverRemove'
-import { text } from '@pommora/uix/Theme'
 import { segment } from '@pommora/uix/Elements/segment.css'
-import {
-  SortableZone,
-  useDragFamily,
-  useDragItem,
-  type DragItem,
-} from '@pommora/uix/Interactions/drag'
-import { onActivateKey } from '@pommora/uix/Interactions/activate'
+import { SortableZone, useDragFamily, useDragItem } from '@pommora/uix/Interactions/drag'
 import { usePointerGesture } from '@pommora/uix/Interactions/gesture'
 import {
   isWindowTarget,
@@ -21,7 +11,6 @@ import {
   type TabTarget,
 } from '@pommora/core/Navigation/navRef'
 import { useSession, useSetting } from '../Session/store'
-import { hoverGlance, leaveGlance } from '../Interface/Glance/glanceAction'
 import { pageMoveContext, runPageAction } from '../Interface/Menus/pageMenuActions'
 import { resolveWith, type ResolvedNav, type ResolveIndex } from './navResolve'
 import { resolveIndexOf } from '../Nexus/treeIndex'
@@ -30,6 +19,13 @@ import { useActiveTabInView, useTabClose, useTabExchange } from './tabRows'
 import { dialer } from '../Platform/dialer'
 import { popMenu } from '../Actions/menuActions'
 import { tabMenuItems } from '@pommora/core/Actions/tabMenu'
+import {
+  DraggableTabItem,
+  glanceHoverProps,
+  TabItem,
+  type TabItemProps,
+  TabSeparator,
+} from './TabItem'
 import './tab-base.css'
 
 interface TabEntry {
@@ -109,14 +105,7 @@ function TabBarBody({
     const entry = entryOf(id)
     return entry ? (
       <div className="tab-overlay tabs-standard">
-        <UnpinnedTab
-          entry={entry}
-          active={entry.tab.id === activeTabId}
-          closing={false}
-          onActivate={() => {}}
-          onClose={() => {}}
-          onMenu={() => {}}
-        />
+        <UnpinnedTab entry={entry} active={entry.tab.id === activeTabId} />
       </div>
     ) : null
   }
@@ -187,7 +176,7 @@ function TabBarBody({
           <div className="tab-pinned-zone">
             {pinnedEntries.map((e, i) => (
               <Fragment key={e.tab.id}>
-                {i > 0 && <span className={cx(segment, 'tab-seg')} aria-hidden />}
+                {i > 0 && <TabSeparator closing={false} />}
                 <PinnedTab
                   entry={e}
                   active={e.tab.id === activeTabId}
@@ -218,14 +207,10 @@ function TabBarBody({
         >
           {renderEntries.map(({ entry, ghost }, i) => (
             <Fragment key={entry.tab.id}>
-              {i > 0 && (
-                <span
-                  className={cx(segment, 'tab-seg', (ghost || i === firstLive) && 'is-closing')}
-                  aria-hidden
-                />
-              )}
+              {i > 0 && <TabSeparator closing={ghost || i === firstLive} />}
               {/* Same component type as a live tab — a type swap would remount the DOM node, losing the exit slide. */}
-              <DraggableUnpinnedTab
+              <UnpinnedTab
+                dragged
                 entry={entry}
                 active={!ghost && entry.tab.id === activeTabId}
                 closing={ghost}
@@ -253,16 +238,6 @@ function TabBarBody({
   )
 }
 
-// A page tab is a location: it raises its preview on Shift, never on plain hover. Non-page tabs carry no id/path, so they raise nothing.
-const tabHoverProps = (entry: TabEntry) => ({
-  onPointerEnter: (e: React.PointerEvent<HTMLElement>) => {
-    const t = entry.tab.target
-    if (t.kind === 'page')
-      hoverGlance({ kind: 'page', id: t.id, path: t.path }, e.currentTarget, 'location', e.shiftKey)
-  },
-  onPointerLeave: () => leaveGlance(),
-})
-
 function PinnedTab({
   entry,
   active,
@@ -274,16 +249,16 @@ function PinnedTab({
   onActivate: () => void
   onMenu: (e: React.MouseEvent) => void
 }): React.JSX.Element | null {
-  const drag = useDragItem(entry.tab.id)
+  const drag = useDragItem(entry.tab.id, onActivate)
   if (!entry.res) return null
   return (
-    // biome-ignore lint/a11y/useKeyWithClickEvents: the drag handle spread supplies onKeyDown (Space/Enter lift), which a spread hides from static analysis
+    // biome-ignore lint/a11y/useKeyWithClickEvents: the drag handle spread supplies onKeyDown (Space lifts, Enter opens), which a spread hides from static analysis
     <div
       ref={drag.setNodeRef}
       style={drag.style}
       {...drag.handle}
       data-tab-id={entry.tab.id}
-      {...tabHoverProps(entry)}
+      {...glanceHoverProps(entry.tab.target.kind === 'page' ? entry.tab.target : undefined)}
       className={cx('tab-pinned', active && 'is-active', drag.isDragging && 'is-dragging')}
       title={entry.res.title}
       role="tab"
@@ -300,84 +275,38 @@ function PinnedTab({
   )
 }
 
-function DraggableUnpinnedTab(props: {
-  entry: TabEntry
-  active: boolean
-  closing: boolean
-  onActivate: () => void
-  onClose: () => void
-  onMenu: (e: React.MouseEvent) => void
-}): React.JSX.Element {
-  const drag = useDragItem(props.entry.tab.id)
-  return <UnpinnedTab {...props} drag={drag} />
-}
-
 function UnpinnedTab({
   entry,
-  active,
-  closing,
-  drag,
-  onActivate,
-  onClose,
-  onMenu,
+  dragged = false,
+  ...handlers
 }: {
   entry: TabEntry
-  active: boolean
-  closing: boolean
-  drag?: DragItem
-  onActivate: () => void
-  onClose: () => void
-  onMenu: (e: React.MouseEvent) => void
-}): React.JSX.Element {
-  const isNewTab = entry.tab.target.kind === 'newtab'
-  const title = isNewTab ? 'New Tab' : (entry.res?.title ?? '')
+  dragged?: boolean
+} & Pick<
+  TabItemProps,
+  'active' | 'closing' | 'onActivate' | 'onClose' | 'onMenu'
+>): React.JSX.Element {
   // A navigation that swaps this tab's CONTENT slides the icon+label in; a tab SWITCH (`source === 'tab'`) leaves it motionless.
   const slide = useSession((s) =>
     s.navSlide && s.navSlide.source !== 'tab' && s.navSlide.tabId === entry.tab.id
       ? s.navSlide
       : null,
   )
-  const slideClass = slide ? (slide.dir === 'back' ? 'nav-slide-back' : 'nav-slide-fwd') : undefined
+  const target = entry.tab.target
+  const Item = dragged ? DraggableTabItem : TabItem
   return (
-    // biome-ignore lint/a11y/useKeyWithClickEvents: the drag handle spread supplies onKeyDown (Space/Enter lift), which a spread hides from static analysis
-    <div
-      ref={drag?.setNodeRef}
-      style={drag?.style}
-      {...drag?.handle}
-      data-tab-id={entry.tab.id}
-      {...tabHoverProps(entry)}
-      data-reveal-host=""
-      className={cx(
-        'tab',
-        hoverRemoveHost,
-        text.control.standard,
-        active && 'is-active',
-        closing && 'is-closing',
-        drag?.isDragging && 'is-dragging',
-      )}
-      title={title}
-      role="tab"
-      aria-selected={active}
-      tabIndex={active ? 0 : -1}
-      onClick={() => {
-        if (!drag?.isDragging) onActivate()
-      }}
-      {...(drag ? {} : { onKeyDown: onActivateKey(onActivate) })}
-      onContextMenu={onMenu}
-    >
-      <Fragment key={slide?.seq ?? 0}>
-        {isNewTab || !entry.res ? (
-          <Icon
-            name={isNewTab ? 'copy' : 'file'}
-            size="body"
-            className={cx('tab-icon', slideClass)}
-          />
-        ) : (
-          <EntityIcon item={entry.res} size="body" className={cx('tab-icon', slideClass)} />
-        )}
-        <span className={cx(overScrollEllipsis, 'tab-label', slideClass)}>{title}</span>
-      </Fragment>
-      <HoverRemove reveal="host" className="tab-x" label="Close Tab" onRemove={onClose} />
-    </div>
+    <Item
+      id={entry.tab.id}
+      label={target.kind === 'newtab' ? 'New Tab' : (entry.res?.title ?? '')}
+      icon={target.kind === 'newtab' ? 'copy' : (entry.res ?? 'file')}
+      variant="standard"
+      slide={
+        slide
+          ? { seq: slide.seq, className: slide.dir === 'back' ? 'nav-slide-back' : 'nav-slide-fwd' }
+          : undefined
+      }
+      glance={target.kind === 'page' ? target : undefined}
+      {...handlers}
+    />
   )
 }

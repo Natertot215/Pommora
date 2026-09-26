@@ -22,7 +22,8 @@
     opacity var(--duration-base) var(--ease-base) var(--duration-fast);
 }
 /* The roving-tabindex tab holds DOM focus, so a bare Shift keydown would flip the UA focus ring on over the already-distinct active tab; the active state carries the indication instead. */
-.tab-bar [role="tab"]:focus-visible {
+.tab-bar [role="tab"]:focus-visible,
+.window-tabwrap [role="tab"]:focus-visible {
   outline: none;
 }
 .tab:last-child:not(.tab-map) {
