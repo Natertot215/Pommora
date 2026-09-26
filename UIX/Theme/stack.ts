@@ -23,8 +23,9 @@ export const stack = {
     floating: 1000,
     dragSlot: 1010,
     dragOverlay: 1020,
-    modal: 1030,
     menu: 1100,
+    foremost: 1200,
+    interrupt: 1300,
     caret: 2147483647,
   },
 } as const

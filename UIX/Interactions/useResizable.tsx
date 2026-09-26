@@ -25,8 +25,8 @@ export interface ResizableSpec<R extends Partial<Rect>> {
   /** Read at press when given as a function — for a box whose size is measured, not held. */
   rect: R | (() => R)
   min?: Partial<Size>
-  /** Read live per move when given as a function; the viewport otherwise. */
-  max?: Partial<Size> | (() => Partial<Size>)
+  /** The viewport when absent. */
+  max?: Partial<Size>
   /** Holds its origin and grows equally from either side; otherwise a north or west pull carries the origin. */
   equilateral?: boolean
   outlined?: boolean
@@ -64,7 +64,7 @@ function pull<R extends Partial<Rect>>(
   const w = from.w ?? 0
   const h = from.h ?? 0
   if (grip === 'move') return { ...from, ...onScreen({ x: x + dx, y: y + dy, w, h }) }
-  const cap = typeof spec.max === 'function' ? spec.max() : spec.max
+  const cap = spec.max
   const minW = spec.min?.w ?? 0
   const minH = spec.min?.h ?? 0
   const capW = cap?.w ?? window.innerWidth

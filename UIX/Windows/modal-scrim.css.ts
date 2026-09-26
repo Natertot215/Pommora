@@ -14,7 +14,7 @@ const scrim = `${duration.fast} ${easing.baseEase}`
 export const backdrop = style({
   position: 'fixed',
   inset: 0,
-  zIndex: stack.top.modal,
+  zIndex: stack.top.foremost,
   display: 'flex',
   alignItems: 'center',
   justifyContent: 'center',

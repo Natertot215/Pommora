@@ -106,7 +106,7 @@ export function PickerMenu({
   modal?: boolean
   contentClassName?: string
   style?: CSSProperties
-  onDirection?: (dir: PickerDirection) => void
+  onDirection?: (dir: PickerDirection, room: number) => void
 }): React.JSX.Element | null {
   const { mounted, closing } = useExitPresence(open, 'menu')
   const paneRef = useRef<HTMLDivElement>(null)
@@ -196,12 +196,15 @@ export function PickerMenu({
       const { w: pw, h: ph } = paneBox.current
       let eff = decidedDir.current ?? direction
       if (decidedDir.current === null) {
-        if (direction === 'up' && t.top - GAP - ph < VIEWPORT_MARGIN) eff = 'down'
-        else if (direction === 'down' && t.bottom + GAP + ph > window.innerHeight - VIEWPORT_MARGIN)
-          eff = 'up'
+        const room = (side: PickerDirection): number =>
+          side === 'up'
+            ? t.top - GAP - VIEWPORT_MARGIN
+            : window.innerHeight - t.bottom - GAP - VIEWPORT_MARGIN
+        const other = direction === 'up' ? 'down' : 'up'
+        if (ph > room(direction) && room(other) > room(direction)) eff = other
         decidedDir.current = eff
+        onDirection?.(eff, room(eff))
       }
-      onDirection?.(eff)
       const edge = (along: number, at: number): number =>
         clamp(at, CORNER_CLEAR, Math.max(CORNER_CLEAR, along - CORNER_CLEAR))
       const near = (x: number): string => `${edge(pw, x)}px ${eff === 'up' ? ph : 0}px`

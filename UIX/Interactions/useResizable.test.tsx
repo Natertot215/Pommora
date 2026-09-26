@@ -76,21 +76,17 @@ describe('a resizable box', () => {
     release()
   })
 
-  it('a live ceiling is read per move', () => {
+  it('a pull stops at the ceiling', () => {
     const onChange = vi.fn()
-    let cap = 260
     const el = mount({
       rect: { w: 200, h: 100 },
-      max: () => ({ w: cap }),
+      max: { w: 260 },
       equilateral: true,
       onChange,
       grip: 'e',
     })
     drag(el, 100, 0)
     expect(onChange).toHaveBeenLastCalledWith({ w: 260, h: 100 }, 'move', 'e')
-    cap = 240
-    act(() => firePointer(window, 'pointermove', { x: 110, y: 0 }))
-    expect(onChange).toHaveBeenLastCalledWith({ w: 240, h: 100 }, 'move', 'e')
     release()
   })
 
