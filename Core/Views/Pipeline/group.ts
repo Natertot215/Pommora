@@ -9,7 +9,7 @@ import type {
   SubGroupConfig,
 } from '@pommora/core/Views/views'
 import { ID_KEY } from '@pommora/core/Nexus/identityMark'
-import { pad } from '@pommora/uix/Utilities/pad'
+import { localDayKey, pad } from '@pommora/uix/Utilities/pad'
 import type { PageFrontmatter, PageMeta } from '@pommora/core/Nexus/schemas'
 import { optionValues, type PropertyDefinition } from '@pommora/core/Properties/properties'
 import { UNGROUPED, isEmptyBand } from '@pommora/core/Views/viewRow'
@@ -145,7 +145,7 @@ export function dateBucketKey(iso: string, granularity: DateGranularity): string
     case 'month':
       return `${pad(year, 4)}-${pad(month + 1, 2)}`
     case 'day':
-      return `${pad(year, 4)}-${pad(month + 1, 2)}-${pad(day, 2)}`
+      return localDayKey(d)
     case 'week': {
       const [wy, w] = isoWeek(year, month, day)
       return `${pad(wy, 4)}-W${pad(w, 2)}`

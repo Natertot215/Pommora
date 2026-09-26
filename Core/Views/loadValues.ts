@@ -8,7 +8,7 @@ import { folderCorpus } from '../Index/indexSeed'
 import { liveIdIndex } from '../Nexus/valuesChanged'
 import { localDayKey, pad } from '@pommora/uix/Utilities/pad'
 
-// Local-clock form, the same shape the date picker writes — a stamp is filtered by calendar-day truncation and rendered through the local clock, and only one convention keeps those on one day.
+// Local-clock form, the same shape the date picker writes.
 export function iso(ms: number | null): string | null {
   if (ms === null) return null
   const d = new Date(ms)

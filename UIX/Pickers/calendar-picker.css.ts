@@ -7,7 +7,6 @@ import { base } from '../Fields/fields.css'
 import { segment } from '../Elements/segment.css'
 
 const c = vars.color
-const selectedFill = tintAt('var(--accent)', 'secondary')
 
 const GUTTER = '2px'
 
@@ -104,7 +103,9 @@ export const pill = style({
   selectors: { [`${day}:hover &`]: { background: c.state.hover } },
 })
 export const pillToday = style({ boxShadow: 'inset 0 0 0 var(--width-100)' })
-export const pillSelected = style({ background: `${selectedFill} !important` })
+export const pillSelected = style({
+  background: `${tintAt('var(--accent)', 'secondary')} !important`,
+})
 export const daySelected = style({ fontWeight: font.weight.semibold })
 
 export const divider = style({ ...hairline, margin: `7px ${GUTTER} 8px` })
