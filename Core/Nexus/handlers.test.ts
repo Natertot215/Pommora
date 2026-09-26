@@ -12,7 +12,7 @@ import { tempRoot } from '../Testing/hostFs'
 import { memoryStores } from '../Testing/memoryStores'
 import { type HubHost, hubHost } from '../Testing/syncHub'
 import { nexusHandlers, openNexusSequence } from './handlers'
-import { dropLiveTree, refreshTree } from './liveTree'
+import { dropLiveTree, getLiveTree, refreshTree } from './liveTree'
 import { closeSession, sessionRoot, waitingOpen } from './session'
 
 const NEXUS = '01KVGMT8BFP350FZZXAMG1QDRN'
@@ -92,11 +92,11 @@ describe('openNexusSequence', () => {
   it('a reopen of the open Nexus keeps the settings it read', async () => {
     const settings = join(root, '.nexus', 'settings.json')
     await writeFile(settings, JSON.stringify({ excluded_folders: ['Private'] }))
-    const opened = await openNexusSequence(ctx, root, false)
+    await openNexusSequence(ctx, root, false)
     await writeFile(settings, '{ corrupt')
     vi.spyOn(console, 'error').mockImplementation(() => {})
     await openNexusSequence(ctx, root, false)
-    expect((await refreshTree(opened)).excluded).toEqual(['Private'])
+    expect((await refreshTree(root)).excluded).toEqual(['Private'])
   })
 
   it('waits on a Nexus whose identity file is damaged, and opens it once the file parses', async () => {
@@ -106,12 +106,11 @@ describe('openNexusSequence', () => {
     const openStores = vi.fn()
     ctx.openStores = openStores
     vi.spyOn(console, 'error').mockImplementation(() => {})
-    await expect(openNexusSequence(ctx, root, false)).resolves.toBe(root)
+    await openNexusSequence(ctx, root, false)
     const why = 'Couldn’t read “nexus.json”.'
     expect(sessionRoot()).toBeNull()
     expect(waitingOpen()).toEqual({ root, path: root, why })
     expect(openStores).toHaveBeenLastCalledWith(root, null)
-    expect(await readFile(identity, 'utf8')).toBe('{"id": "')
     expect(await nexusHandlers['nexus:state']()).toMatchObject({
       ok: false,
       error: { message: why },
@@ -125,6 +124,19 @@ describe('openNexusSequence', () => {
       ok: true,
       value: { status: 'open' },
     })
+  })
+
+  it('a waiting open stamps, walks, and syncs nothing', async () => {
+    const loose = join(root, 'Library', 'Loose.md')
+    await writeFile(loose, 'no id yet')
+    await writeFile(join(root, '.nexus', 'properties.json'), '{ corrupt')
+    vi.spyOn(console, 'error').mockImplementation(() => {})
+    await openNexusSequence(ctx, root, true)
+    await turn(100)
+    expect(waitingOpen()?.why).toBe('Couldn’t read “properties.json”.')
+    expect(await readFile(loose, 'utf8')).toBe('no id yet')
+    expect(getLiveTree()).toBeNull()
+    expect(currentSession()).toBeNull()
   })
 
   it('a reopen of the open Nexus keeps its id while its identity file is damaged', async () => {

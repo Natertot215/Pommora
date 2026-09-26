@@ -53,7 +53,7 @@ export async function openNexusSequence(
   ctx: HostContext,
   path: string,
   latchRecord: boolean,
-): Promise<string> {
+): Promise<void> {
   // Re-adopting the already-open nexus is a re-point of a live session, not a genuine open.
   const priorRoot = sessionRoot()
   await stopSession(ctx)
@@ -66,13 +66,13 @@ export async function openNexusSequence(
     dropLiveTree()
     dropTileHeadingLinks()
   }
-  const config = await readNexusConfig(root).catch((e: unknown) => errText(e))
+  const config = await readNexusConfig(root).catch(errText)
   // A sync start for the old root that shared the first stop's wait began after it; either branch stops it again before the new stores bind.
   if (typeof config === 'string') {
     await stopSession(ctx)
     ctx.openStores(root, null)
     waitOn({ root, path, why: config })
-    return root
+    return
   }
   // A reopen of the open Nexus reads a damaged identity as its kept copy, where the strict ensure reads none.
   const nexusId = (await prepareOpenedNexus(root)) ?? asString(config[0]?.id) ?? null
@@ -98,7 +98,6 @@ export async function openNexusSequence(
     void runRepairSweep(root).then(() => pushValueChanges(ctx, root))
   }
   if (nexusId !== null) void startSession(ctx, root, nexusId)
-  return root
 }
 
 /** `latchRecord: false` is the mid-session re-point's opt-out — a re-point that latched would diff the live session against the launch baseline, reporting every change as drift. */
@@ -108,8 +107,8 @@ export async function adoptNexus(
   latchRecord = true,
 ): Promise<void> {
   await whileAdopting(async () => {
-    const root = await openNexusSequence(ctx, path, latchRecord)
-    await ctx.adopted(root, path)
+    await openNexusSequence(ctx, path, latchRecord)
+    await ctx.adopted(path)
   })
 }
 

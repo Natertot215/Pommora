@@ -139,6 +139,7 @@ export const createNexusSlice: Slice<NexusSlice> = (set, get) => {
       try {
         const res = await dialer().ask('nexus:state')
         if (!res.ok) {
+          resetNexusSession()
           set({ status: 'error', error: res.error, tree: null })
           return
         }

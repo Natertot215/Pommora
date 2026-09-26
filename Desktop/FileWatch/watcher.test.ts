@@ -7,7 +7,7 @@ import { dropLiveTree, getLiveTree, refreshTree } from '@pommora/core/Nexus/live
 import { recordWrite } from '@pommora/core/Files/writeEcho'
 import { forgetLastReads } from '@pommora/core/Files/atomicWrite'
 import { push } from '../Bridge/ipc'
-import { sessionRoot } from '@pommora/core/Nexus/session'
+import { sessionRoot, type WaitingOpen, waitingOpen } from '@pommora/core/Nexus/session'
 import { syncIgnoredUnder } from '@pommora/core/Nexus/watchSettle'
 import { tileBodyUnder } from '@pommora/core/Nexus/watchPatch'
 import chokidar from 'chokidar'
@@ -19,7 +19,7 @@ import { seedContentIndex } from '@pommora/core/Index/indexSeed'
 import { flushValueWrites, noteValueWrite } from '@pommora/core/Nexus/valuesChanged'
 
 vi.mock('../Bridge/ipc', () => ({ push: vi.fn() }))
-vi.mock('@pommora/core/Nexus/session', () => ({ sessionRoot: vi.fn() }))
+vi.mock('@pommora/core/Nexus/session', () => ({ sessionRoot: vi.fn(), waitingOpen: vi.fn() }))
 
 type Handler = (path: string) => void
 const handlers = new Map<string, Handler>()
@@ -32,7 +32,10 @@ vi.mock('chokidar', () => ({
           handlers.set(name, fn)
           return fake
         },
-        close: () => Promise.resolve(),
+        close: () => {
+          handlers.clear()
+          return Promise.resolve()
+        },
       }
       return fake
     }),
@@ -223,9 +226,11 @@ describe('overlapping watcher starts', () => {
 
 describe('a waiting open', () => {
   const settings = (): string => abs('.nexus', 'settings.json')
-  const waiting = () => ({ root, path: `${root}-raw`, why: 'Couldn’t read “settings.json”.' })
+  let waiting: WaitingOpen
   const reopen = vi.fn()
   beforeEach(async () => {
+    waiting = { root, path: `${root}-raw`, why: 'Couldn’t read “settings.json”.' }
+    vi.mocked(waitingOpen).mockReturnValue(waiting)
     reopen.mockClear()
     rootMock.mockReturnValue(null)
     forgetLastReads()
@@ -237,7 +242,7 @@ describe('a waiting open', () => {
   it('watches .nexus alone, and reopens by the raw path only once the files read', async () => {
     const watch = vi.mocked(chokidar.watch)
     watch.mockClear()
-    waitUntilReadable(waiting(), reopen)
+    waitUntilReadable(waiting, reopen)
     expect(watch).toHaveBeenCalledWith(abs('.nexus'), { depth: 0 })
     emit('all', '.nexus', 'settings.json')
     await settleAll()
@@ -248,8 +253,27 @@ describe('a waiting open', () => {
     expect(reopen).toHaveBeenCalledWith(`${root}-raw`)
   })
 
+  it('reopens once, however many events follow while the open runs', async () => {
+    waitUntilReadable(waiting, reopen)
+    await writeFile(settings(), '{}')
+    emit('all', '.nexus', 'settings.json')
+    await settleAll(() => reopen.mock.calls.length > 0)
+    emit('all', '.nexus', 'settings.json')
+    await settleAll()
+    expect(reopen).toHaveBeenCalledTimes(1)
+  })
+
+  it('an open that ends the wait while the files are read reopens nothing', async () => {
+    waitUntilReadable(waiting, reopen)
+    await writeFile(settings(), '{}')
+    emit('all', '.nexus', 'settings.json')
+    vi.mocked(waitingOpen).mockReturnValue(null)
+    await settleAll()
+    expect(reopen).not.toHaveBeenCalled()
+  })
+
   it('a watcher started after it supersedes it', async () => {
-    waitUntilReadable(waiting(), reopen)
+    waitUntilReadable(waiting, reopen)
     await writeFile(settings(), '{}')
     emit('all', '.nexus', 'settings.json')
     rootMock.mockReturnValue(root)
@@ -259,7 +283,7 @@ describe('a waiting open', () => {
   })
 
   it('a start for a root other than the session’s leaves it armed', async () => {
-    waitUntilReadable(waiting(), reopen)
+    waitUntilReadable(waiting, reopen)
     await startWatcher(root, win)
     await writeFile(settings(), '{}')
     emit('all', '.nexus', 'settings.json')

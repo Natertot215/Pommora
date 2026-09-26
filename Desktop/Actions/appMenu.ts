@@ -19,7 +19,6 @@ const zoomStep = (win: CurrentWindow, dir: 1 | -1) => (): void => {
   if (w) stepHostZoom(w.webContents, dir)
 }
 
-/** `openRecent` opens a recent Nexus by its path. */
 export async function installAppMenu(
   win: CurrentWindow,
   openRecent: (path: string) => unknown,
