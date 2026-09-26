@@ -95,7 +95,7 @@ export const createNexusSlice: Slice<NexusSlice> = (set, get) => {
       holdSaves()
       const opened = await attempt()
       if (!opened.ok) {
-        set({ status: 'error', error: opened.error })
+        set({ status: 'error', error: opened.error, tree: null })
         return
       }
       if (opened.value) {
@@ -139,7 +139,7 @@ export const createNexusSlice: Slice<NexusSlice> = (set, get) => {
       try {
         const res = await dialer().ask('nexus:state')
         if (!res.ok) {
-          set({ status: 'error', error: res.error })
+          set({ status: 'error', error: res.error, tree: null })
           return
         }
         switch (res.value.status) {

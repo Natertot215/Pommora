@@ -16,21 +16,17 @@ import { runRepairSweep } from '../Properties/repairSweep'
 import { replaySchemaCascade } from '../Properties/replaySchemaCascade'
 import { startSession, stopSession } from '../Sync/Client/session'
 import { stampAdopted } from './adopt'
-import {
-  confirmRescope,
-  confirmWrite,
-  pushAssetWrites,
-  pushConfirmed,
-  pushValueChanges,
-} from './confirm'
+import { confirmRescope, confirmWrite, pushAssetWrites, pushValueChanges } from './confirm'
 import { ensureIdentity } from './identity'
-import { dropLiveTree, getLiveTree, liveTreeOf, refreshAfterWrite, refreshTree } from './liveTree'
+import { dropLiveTree, liveTreeOf, refreshAfterWrite, refreshTree } from './liveTree'
 import { ensureConfigLayout, normalizePropertyTypes, normalizeSavedViews } from './migrateConfig'
 import { handleMutate } from './mutate'
 import { confirmBy, confirmMutation } from './mutatePatch'
 import { dropTileHeadingLinks } from '../Tiles/tilesFile'
 import { runOpenLedger } from './remintLedger'
-import { openSession, sessionRoot, whileAdopting } from './session'
+import { openSession, sessionRoot, waitingOpen, waitOn, whileAdopting } from './session'
+import { readNexusConfig } from './readNexus'
+import { asString } from './coerce'
 import type { NexusState } from './tree'
 import { trashDeps } from '../Trash/bundle'
 
@@ -70,8 +66,16 @@ export async function openNexusSequence(
     dropLiveTree()
     dropTileHeadingLinks()
   }
-  const nexusId = await prepareOpenedNexus(root)
-  // A sync start for the old root that shared the first stop's wait began after it; this stop retires it before the new stores bind.
+  const config = await readNexusConfig(root).catch((e: unknown) => errText(e))
+  // A sync start for the old root that shared the first stop's wait began after it; either branch stops it again before the new stores bind.
+  if (typeof config === 'string') {
+    await stopSession(ctx)
+    ctx.openStores(root, null)
+    waitOn({ root, path, why: config })
+    return root
+  }
+  // A reopen of the open Nexus reads a damaged identity as its kept copy, where the strict ensure reads none.
+  const nexusId = (await prepareOpenedNexus(root)) ?? asString(config[0]?.id) ?? null
   await stopSession(ctx)
   ctx.openStores(root, nexusId)
   await replayPendingRename(root)
@@ -110,11 +114,12 @@ export async function adoptNexus(
 }
 
 export const nexusHandlers = {
-  'nexus:state': withRoot(
-    async (root): Promise<Result<NexusState>> =>
-      ok({ status: 'open', tree: await liveTreeOf(root) }),
-    ok({ status: 'empty' }),
-  ),
+  'nexus:state': async (): Promise<Result<NexusState>> => {
+    const root = sessionRoot()
+    if (root) return ok({ status: 'open', tree: await liveTreeOf(root) })
+    const open = waitingOpen()
+    return open ? fail('operation-failed', open.why) : ok({ status: 'empty' })
+  },
 
   'nexus:choose': async (ctx) => {
     const chosen = await ctx.pick('folder', { message: 'Choose a nexus folder' })
@@ -145,7 +150,6 @@ export const nexusHandlers = {
     await retireFileHistory(root)
     await machine().rename(root, newRoot)
     await adoptNexus(ctx, newRoot, false)
-    pushConfirmed(ctx, getLiveTree())
     return ok(null)
   }),
 

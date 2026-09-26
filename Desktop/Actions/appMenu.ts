@@ -19,7 +19,7 @@ const zoomStep = (win: CurrentWindow, dir: 1 | -1) => (): void => {
   if (w) stepHostZoom(w.webContents, dir)
 }
 
-/** `openRecent` adopts host-side, for when no window is open to flush its saves first. */
+/** `openRecent` opens a recent Nexus by its path. */
 export async function installAppMenu(
   win: CurrentWindow,
   openRecent: (path: string) => unknown,
@@ -39,10 +39,7 @@ export async function installAppMenu(
   const recentItems: MenuItemConstructorOptions[] = recents.length
     ? recents.map((p) => ({
         label: basename(p),
-        click: () => {
-          if (win()) push(win, 'nexus:openRecent', posixPath(p))
-          else void openRecent(posixPath(p))
-        },
+        click: () => openRecent(posixPath(p)),
       }))
     : [{ label: 'No Recent Nexuses', enabled: false }]
 

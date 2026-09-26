@@ -126,7 +126,9 @@ export const createEditSlice: Slice<EditSlice> = (set, get) => ({
     // Not a mutate op: the rename re-adopts the root and refuses every write until it lands, so saves flush first.
     if (kind === 'homepage') {
       await flushAllSaves()
-      return reportRefusal(await dialer().ask('nexus:rename', newName))
+      const renamed = reportRefusal(await dialer().ask('nexus:rename', newName))
+      if (renamed) await get().load()
+      return renamed
     }
     const landed = async (req: MutateRequest): Promise<boolean> =>
       (await get().mutate(req)) !== null
