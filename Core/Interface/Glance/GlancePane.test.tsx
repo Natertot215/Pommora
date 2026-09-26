@@ -29,7 +29,6 @@ const alpha = detail({ title: 'Alpha', path: 'Notes/Alpha.md', body: 'hi' })
 
 const stubNexus = (extra: Record<string, unknown>): void => {
   ;(window as unknown as { nexus: unknown }).nexus = stubDialer({
-    'editor:format-state': () => {},
     'menu:action': () => () => {},
     'editorPrefs:get': async () => ({ ok: true as const, value: NO_PREFS }),
     ...extra,

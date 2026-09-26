@@ -2,16 +2,13 @@ import { tokenize } from '../Engine/tokens'
 import { parseListMarker, headingParts } from '../Engine/detect'
 import { isQuoteToggleable, splitPrefix } from './format'
 import { lineStartAt, lineEndAt } from './edits'
-import type { FormatState } from '@pommora/core/Actions/editorMenu'
+import type { EditorMenuRequest } from '@pommora/core/Actions/editorMenu'
 
 export function readFormatState(
   doc: string,
   from: number,
   to: number,
-  focused: boolean,
-  embedSeat: boolean,
-  citeSeat: boolean,
-): FormatState {
+): Omit<EditorMenuRequest, 'scope' | 'x' | 'y' | 'embedSeat' | 'citeSeat'> {
   // Inline marks are line-local, so only the caret's line is tokenized, in line-relative coords. A cross-line selection can't sit inside one inline token anyway.
   const ls = lineStartAt(doc, from)
   const le = lineEndAt(doc, from)
@@ -28,8 +25,6 @@ export function readFormatState(
   const hm = headingParts(body)
 
   return {
-    focused,
-    hasSelection: from !== to,
     bold: wraps('bold'),
     italic: wraps('italic'),
     strikethrough: wraps('strikethrough'),
@@ -40,7 +35,5 @@ export function readFormatState(
     heading: hm ? hm.hashes.length : 0,
     list: lm?.kind ?? null,
     block: isQuoteToggleable(line) ? 'quote' : null,
-    embedSeat,
-    citeSeat,
   }
 }

@@ -48,7 +48,6 @@ beforeEach(() => {
     'page:open': vi.fn(async (path: string) => ok(detail({ id: 'a', path, body: onDisk }))),
     'page:updateBody': updated,
     'sync:captureLocal': captured,
-    'editor:format-state': vi.fn(),
     'menu:action': vi.fn(() => () => undefined),
     mutate: mutated,
     menu: vi.fn(async () => ok(menuPick)),

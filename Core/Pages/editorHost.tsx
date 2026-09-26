@@ -5,7 +5,7 @@ import { type PickNode, gripMenuItems } from '@pommora/core/Actions/gripMenu'
 import { valueOr } from '@pommora/core/Contract/result'
 import { tableMenuItems } from '@pommora/core/MarkdownPM/Tables/tableMenu'
 import { citationMenuModel } from '@pommora/core/MarkdownPM/Citations/citationMenu'
-import { type EditorHost, type EditorMenuApi, editorSettingsOf } from '../MarkdownPM/api'
+import { type EditorHost, editorSettingsOf } from '../MarkdownPM/api'
 import type { ConnectionsApi } from '../MarkdownPM/Links/connectionsApi'
 import type { WarmSeam } from '../MarkdownPM/warmSeam'
 import { citationsVisible, pageMetaOf, useSession } from '../Session/store'
@@ -33,12 +33,6 @@ interface EditorHostOptions {
   pageSurface?: boolean
   // A preview shows the page's saved prefs without writing them back.
   preview?: boolean
-}
-
-/** The bridge's listener is per-caller, so every mounted editor hears every action; both directions answer to `subject`. */
-const nativeEditorMenu: EditorMenuApi = {
-  pushState: (s) => dialer().tell('editor:format-state', s),
-  onAction: (cb) => dialer().on('menu:action', cb),
 }
 
 // The outer editor tears a tile's DOM down whenever it leaves the viewport; this holds the nested editor's doc, selection, history and scroll, keyed by the full host chain.
@@ -114,7 +108,12 @@ function buildEditorHost(
       grip: (ctx) => popMenu(gripMenuItems(ctx)),
       table: (ctx) => popMenu(tableMenuItems(ctx)),
       citation: (ctx) => popMenu(citationMenuModel(ctx)),
-      format: inert ? undefined : nativeEditorMenu,
+      format: inert
+        ? undefined
+        : (req) =>
+            dialer()
+              .ask('editor:menu', req)
+              .then((r) => valueOr(r, null)),
     },
     glance: inert
       ? undefined

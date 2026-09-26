@@ -12,11 +12,11 @@ import {
 } from './blockMenu'
 import { isValidLink } from '../Paths/urlPath'
 
-/** Pushed renderer→main on selection/focus change: main cannot see CM6 state. */
-/** The editor's format state as the native menu reads it, off the window. */
-export const formatState = z.object({
-  focused: z.boolean(),
-  hasSelection: z.boolean(),
+/** What sits under a right-click, sent to the host as the menu is asked for; main cannot see CM6 state. */
+export const editorMenuRequest = z.object({
+  scope: z.enum(['page', 'cell']),
+  x: z.number(),
+  y: z.number(),
   bold: z.boolean(),
   italic: z.boolean(),
   strikethrough: z.boolean(),
@@ -31,12 +31,10 @@ export const formatState = z.object({
   embedSeat: z.boolean(),
   citeSeat: z.boolean(),
 })
-export type FormatState = z.infer<typeof formatState>
-
-/** Menu-action strings (sent main→renderer), namespaced so other `menu:action` listeners ignore them. */
-export const EDITOR_ACTION_PREFIX = 'mdpm:'
+export type EditorMenuRequest = z.infer<typeof editorMenuRequest>
 
 export const INSERT_LINK_ACTION = 'link:insert' as const
+export const PASTE_PLAIN_ACTION = 'paste:plain' as const
 
 export type FormatChordAction = Extract<CommandId, `format:${string}`>
 
@@ -58,7 +56,7 @@ const FORMAT_ROWS: readonly LeafItem<FormatChordAction>[] = [
   EXTERNAL_LINK_ROW,
 ]
 
-function checkedIn(s: FormatState, action: EditorMenuAction): boolean | undefined {
+function checkedIn(s: EditorMenuRequest, action: EditorMenuAction): boolean | undefined {
   const [kind, value] = action.split(':')
   switch (kind) {
     case 'heading':
@@ -74,7 +72,7 @@ function checkedIn(s: FormatState, action: EditorMenuAction): boolean | undefine
 
 /** The editor's own block of the native right-click menu, worded and ordered as the block menu. */
 export function editorContextItems(
-  s: FormatState,
+  s: EditorMenuRequest,
   commands: Commands,
   selection: string,
 ): ActionItem<EditorMenuAction>[] {
@@ -84,24 +82,24 @@ export function editorContextItems(
   const insertLink: ActionItem<EditorMenuAction>[] = isValidLink(selection)
     ? [{ label: 'Insert Link', action: INSERT_LINK_ACTION }]
     : []
-  return [
-    ...insertLink,
-    { label: 'Insert', submenu: rows(insertRows(s.citeSeat)) },
-    {
-      label: 'Format',
-      submenu: FORMAT_ROWS.map((r) => ({
-        ...r,
-        checked: checkedIn(s, r.action),
-        chord: commands[r.action],
-      })),
-    },
-    { label: 'Embed', submenu: rows(EMBED_ROWS) },
-    {
-      label: 'Heading',
-      submenu: rows(
-        HEADING_LEVELS.map(({ level, label }) => ({ label, action: `heading:${level}` })),
-      ),
-    },
-    { label: 'Lists', submenu: rows(LIST_ROWS) },
-  ]
+  const insert = { label: 'Insert', submenu: rows(insertRows(s.citeSeat)) }
+  const format = {
+    label: 'Format',
+    submenu: FORMAT_ROWS.map((r) => ({
+      ...r,
+      checked: checkedIn(s, r.action),
+      chord: commands[r.action],
+    })),
+  }
+  const embed = { label: 'Embed', submenu: rows(EMBED_ROWS) }
+  const heading = {
+    label: 'Heading',
+    submenu: rows(
+      HEADING_LEVELS.map(({ level, label }) => ({ label, action: `heading:${level}` })),
+    ),
+  }
+  const lists = { label: 'Lists', submenu: rows(LIST_ROWS) }
+  return s.scope === 'cell'
+    ? [...insertLink, format, lists]
+    : [...insertLink, insert, format, embed, heading, lists]
 }

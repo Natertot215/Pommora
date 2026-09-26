@@ -82,6 +82,23 @@ function writeLine(view: EditorView, text: string): void {
   })
 }
 
+/** Literal text, tagged as a paste so every paste guard reads it as one. */
+export function writePlain(view: EditorView, text: string): void {
+  view.dispatch({
+    ...view.state.replaceSelection(text),
+    userEvent: 'input.paste',
+    scrollIntoView: true,
+  })
+}
+
+/** The menu's Paste Without Formatting: the clipboard as typed, whatever it holds. */
+export async function pastePlain(view: EditorView): Promise<void> {
+  const text = await view.state.facet(editorHost).clipboard.read()
+  if (!text || !view.dom.isConnected || view.state.readOnly) return
+  writePlain(view, text)
+  view.focus()
+}
+
 export async function pasteAs(view: EditorView, form: PasteAsForm): Promise<void> {
   const host = view.state.facet(editorHost)
   const text = await host.clipboard.read()
@@ -89,7 +106,7 @@ export async function pasteAs(view: EditorView, form: PasteAsForm): Promise<void
   if (!text || !view.dom.isConnected || view.state.readOnly) return
   // The explicit pick overrides the settings, never the syntax, or the picked form would nest a link inside the one being authored.
   if (destinationGuard(view, view.state.selection.main.from)) {
-    view.dispatch(view.state.replaceSelection(text))
+    writePlain(view, text)
     view.focus()
     return
   }
@@ -103,7 +120,7 @@ export async function pasteAs(view: EditorView, form: PasteAsForm): Promise<void
   if (!write) return
   if (write.kind === 'link') writeLink(view, write)
   else if (write.kind === 'line') writeLine(view, write.text)
-  else view.dispatch(view.state.replaceSelection(write.text))
+  else writePlain(view, write.text)
   view.focus()
 }
 
@@ -129,7 +146,7 @@ export const pasteLink = EditorView.domEventHandlers({
       if (!text || !view.dom.isConnected) return
       const link = linkFor(view, text, true)
       if (link) writeLink(view, link)
-      else view.dispatch(view.state.replaceSelection(text))
+      else writePlain(view, text)
     })
     return true
   },

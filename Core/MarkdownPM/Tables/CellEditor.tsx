@@ -57,6 +57,7 @@ import type { ConnectionsApi } from '../Links/connectionsApi'
 import type { NavDir } from '../Engine/Tables/navigate'
 import { type EditorHost, editorHost } from '../api'
 import { useLatest } from '@pommora/uix/Utilities/stableApi'
+import { editorMenu } from '../Menus/menu'
 
 const noConn = (): undefined => undefined
 
@@ -237,6 +238,7 @@ export function CellEditor({
           markdownLinkClicks(() => connections?.()),
           connectionClicks(() => connections?.()),
           citationPointer(() => connections?.()),
+          editorMenu('cell'),
           linkRest,
           linkTyping,
           customCaret,

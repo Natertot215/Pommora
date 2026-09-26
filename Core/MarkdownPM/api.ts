@@ -12,7 +12,7 @@ import {
 import type { HostContext } from '@pommora/core/Contract/handlers'
 import type { EditorPrefs, EditorPrefWrite } from '@pommora/core/Contract/bridge'
 import type { Commands } from '@pommora/core/Actions/commands'
-import type { FormatState } from '@pommora/core/Actions/editorMenu'
+import type { EditorMenuRequest } from '@pommora/core/Actions/editorMenu'
 import type { GripMenuAction, GripMenuContext, PickNode } from '@pommora/core/Actions/gripMenu'
 import type { TableMenuAction, TableMenuContext } from '@pommora/core/MarkdownPM/Tables/tableMenu'
 import type {
@@ -43,11 +43,6 @@ export function mirrorBody(view: EditorView, body: string): void {
 export type GlanceTarget =
   | { kind: 'page'; id: string; path: string; heading?: string }
   | { kind: 'site'; url: string }
-
-export interface EditorMenuApi {
-  pushState: (s: FormatState) => void
-  onAction: (cb: (action: string) => void) => () => void
-}
 
 const EDITOR_SETTING_KEYS = [
   'codeblockLineCount',
@@ -130,7 +125,7 @@ export interface EditorHost {
     grip(ctx: GripMenuContext): Promise<GripMenuAction | null>
     table(ctx: TableMenuContext): Promise<TableMenuAction | null>
     citation(ctx: CitationMenuContext): Promise<CitationMenuAction | null>
-    format?: EditorMenuApi
+    format?: (req: EditorMenuRequest) => Promise<string | null>
   }
   /** Absent on a surface that never glances (a read-only snapshot); `contains` answers whether an element sits inside an open glance. */
   glance?: {

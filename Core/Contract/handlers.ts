@@ -1,6 +1,7 @@
 import type { Asks, Pushes } from './bridge'
 import { BUSY, NO_NEXUS } from './result'
 import { adopting, sessionRoot } from '../Nexus/session'
+import type { EditorMenuRequest } from '../Actions/editorMenu'
 import type { MenuRequest } from '../Actions/menuModel'
 import type { ThumbRect } from '../Interface/chrome'
 import type { TrashMode } from '../Trash/trashRow'
@@ -47,6 +48,7 @@ export interface HostContext {
   openExternal(url: string): Promise<void>
   systemAccent(): string | null
   menu(req: MenuRequest): Promise<string | null>
+  editorMenu(req: EditorMenuRequest): Promise<string | null>
   thumbnails: {
     capture(
       root: string,

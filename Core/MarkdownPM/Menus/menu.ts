@@ -1,12 +1,16 @@
-import type { EditorView } from '@codemirror/view'
-import { EDITOR_ACTION_PREFIX, INSERT_LINK_ACTION } from '@pommora/core/Actions/editorMenu'
+import { Prec, type Extension } from '@codemirror/state'
+import { EditorView } from '@codemirror/view'
+import { INSERT_LINK_ACTION, PASTE_PLAIN_ACTION } from '@pommora/core/Actions/editorMenu'
 import { isValidLink, normalizeLinkUrl } from '@pommora/core/Paths/urlPath'
 import { serializeLink } from '@pommora/core/Connections/linkValue'
 import { PASTE_AS_PREFIX, type PasteAsForm } from '@pommora/core/Actions/pasteAsMenu'
 import type { ListKind } from '@pommora/core/Actions/gripMenu'
-import { insertCitation } from '../Citations/citationActions'
-import { embedInsertAtCaret, webpageInsertAtCaret } from '../Embeds/embedInsert'
-import { pasteAs } from '../Links/pasteLink'
+import { citationSeatAt, insertCitation } from '../Citations/citationActions'
+import { embedInsertAtCaret, embedSeatAt, webpageInsertAtCaret } from '../Embeds/embedInsert'
+import { pasteAs, pastePlain } from '../Links/pasteLink'
+import { readFormatState } from '../Input/formatState'
+import type { MarkdownScope } from '../Engine/detect'
+import { editorHost } from '../api'
 import { trimmedRange } from '../Input/edits'
 import { applyEdit } from '../Input/applyEdit'
 import { docString } from '../docCache'
@@ -20,20 +24,6 @@ import {
   type HeadingLevel,
   type BlockFormat,
 } from '../Input/format'
-
-/** Latched when focus lands rather than read live: a native menu holds the document's focus, so `hasFocus` reads false at exactly the moment the chosen action comes back. */
-let subject: EditorView | null = null
-
-export const claimEditorMenu = (view: EditorView): void => {
-  subject = view
-}
-
-/** Released on unmount only — never on blur, which is the state a native menu puts the editor in. */
-export const releaseEditorMenu = (view: EditorView): void => {
-  if (subject === view) subject = null
-}
-
-export const ownsEditorMenu = (view: EditorView): boolean => subject === view
 
 function editFor(action: string, doc: string, from: number, to: number): FormatEdit | null {
   const [group, value] = action.split(':')
@@ -67,14 +57,16 @@ function insertLinkOverSelection(view: EditorView): boolean {
   return true
 }
 
-/** Applies to whatever view is handed in — only the broadcast menu subscription has to ask `ownsEditorMenu` first. */
-export function applyEditorAction(view: EditorView, raw: string): boolean {
-  if (!raw.startsWith(EDITOR_ACTION_PREFIX)) return false
-  const action = raw.slice(EDITOR_ACTION_PREFIX.length)
+/** Runs the menu's, the block pane's, or a chord's action on the view handed in. */
+export function applyEditorAction(view: EditorView, action: string): boolean {
   if (action === 'block:page') return embedInsertAtCaret(view)
   if (action === 'block:webpage') return webpageInsertAtCaret(view)
   if (action === INSERT_LINK_ACTION) return insertLinkOverSelection(view)
   if (action === 'block:citation') return insertCitation(view)
+  if (action === PASTE_PLAIN_ACTION) {
+    void pastePlain(view)
+    return true
+  }
   if (action.startsWith(PASTE_AS_PREFIX)) {
     void pasteAs(view, action.slice(PASTE_AS_PREFIX.length) as PasteAsForm)
     return true
@@ -84,3 +76,31 @@ export function applyEditorAction(view: EditorView, raw: string): boolean {
   view.focus()
   return true
 }
+
+/** Asks at the click and answers to the reply: the native menu holds focus, so nothing read later could say which view was clicked. Lowest precedence, so a grip, a link, or a footnote row that claimed the press keeps its own menu. */
+export const editorMenu = (scope: MarkdownScope): Extension =>
+  Prec.lowest(
+    EditorView.domEventHandlers({
+      contextmenu(event, view) {
+        const ask = view.state.facet(editorHost).menus.format
+        if (!ask || view.state.readOnly) return false
+        // The browser seats the word under a right-click after this handler, so a click outside the selection reads the flags at the click.
+        const sel = view.state.selection.main
+        const at = view.posAtCoords(event)
+        const [from, to] =
+          at !== null && (at < sel.from || at > sel.to) ? [at, at] : [sel.from, sel.to]
+        const page = scope === 'page'
+        void ask({
+          ...readFormatState(docString(view.state.doc), from, to),
+          scope,
+          x: event.clientX,
+          y: event.clientY,
+          embedSeat: page && embedSeatAt(view.state),
+          citeSeat: page && citationSeatAt(view.state),
+        }).then((action) => {
+          if (action && view.dom.isConnected) applyEditorAction(view, action)
+        })
+        return false
+      },
+    }),
+  )

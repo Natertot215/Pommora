@@ -18,7 +18,6 @@ import { underAssetRoot } from '@pommora/core/Assets/assetRoots'
 import type { HostContext, HostDevice, PickKind } from '@pommora/core/Contract/handlers'
 import { handlers } from '@pommora/core/Contract/serve'
 import { isFiniteNumber } from '@pommora/core/Contract/validators'
-import { formatState } from '@pommora/core/Actions/editorMenu'
 import { resolveUnderRoot } from '@pommora/core/Paths/pathSafety'
 import { openNexusSequence } from '@pommora/core/Nexus/handlers'
 import { isUlidShaped } from '@pommora/core/Nexus/identityMark'
@@ -33,7 +32,7 @@ import {
 } from '@pommora/core/Settings/settings'
 import { SYSTEM, WINDOW_BG } from '@pommora/uix/Theme/colors'
 import { installAppMenu } from './Actions/appMenu'
-import { installEditorContextMenu, setFormatState, setEditorCommands } from './Actions/editorMenu'
+import { askEditorMenu, installEditorContextMenu, setEditorCommands } from './Actions/editorMenu'
 import { DEFAULT_COMMANDS } from '@pommora/core/Actions/commands'
 import { popNativeMenu } from './Actions/menu'
 import { push, serveIpc, settleAsks, type TellHandlers } from './Bridge/ipc'
@@ -280,6 +279,7 @@ function hostContext(win: BrowserWindow | null): HostContext {
       }
     },
     menu: (req) => (win ? popNativeMenu(win, req) : Promise.resolve(null)),
+    editorMenu: askEditorMenu,
     thumbnails: {
       capture: (root, nexusId, navKey, rect, scaleFactor) =>
         win
@@ -322,10 +322,6 @@ let windowFlushed: (() => void) | null = null
 
 const tells: TellHandlers = {
   'app:flushed': () => windowFlushed?.(),
-  'editor:format-state': (_win, state) => {
-    const read = formatState.safeParse(state)
-    if (read.success) setFormatState(read.data)
-  },
   'win:dragBy': (win, dx, dy) => {
     if (!win || !isFiniteNumber(dx) || !isFiniteNumber(dy)) return
     const [x, y] = win.getPosition()

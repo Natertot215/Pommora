@@ -1,4 +1,4 @@
-// Every push the host bridge makes into the running session. One place a non-Electron host re-implements, so no shell surface subscribes on its own.
+// Every push the host bridge makes lands here, and the Dialer's `on` is the one seam a non-Electron host implements; a surface that needs a push of its own subscribes through the same `on`.
 import { persist } from '@pommora/core/Interface/Notifications/notifications'
 import { useEffect } from 'react'
 import { valueOr } from '@pommora/core/Contract/result'

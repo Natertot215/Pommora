@@ -4,12 +4,12 @@ import { ok } from '@pommora/core/Contract/result'
 import { act } from 'react'
 import type { EditorView } from '@codemirror/view'
 import { type ConnMenuAction, connectionMenuModel } from '@pommora/core/Actions/connectionMenu'
-import { EDITOR_ACTION_PREFIX, INSERT_LINK_ACTION } from '@pommora/core/Actions/editorMenu'
+import { INSERT_LINK_ACTION } from '@pommora/core/Actions/editorMenu'
 import { linkMarkdown } from '@pommora/core/MarkdownPM/Links/pasteDecision'
 import type { ConnectionsApi } from './connectionsApi'
 import { buildPageIndex } from '@pommora/core/Connections/pageIndex'
 import { showConnectionMenu } from '../../Interface/Menus/connectionMenuActions'
-import { applyEditorAction, claimEditorMenu } from '../Menus/menu'
+import { applyEditorAction } from '../Menus/menu'
 import {
   cleanupEditor,
   mountEditor,
@@ -179,10 +179,9 @@ describe('the three that act on the link itself', () => {
 describe('Insert Link over a selected address', () => {
   const insert = async (body: string, from: number, to: number): Promise<EditorView> => {
     const view = await mountEditor({ initialBody: body })
-    claimEditorMenu(view)
     view.dispatch({ selection: { anchor: from, head: to } })
     await act(async () => {
-      applyEditorAction(view, EDITOR_ACTION_PREFIX + INSERT_LINK_ACTION)
+      applyEditorAction(view, INSERT_LINK_ACTION)
     })
     return view
   }

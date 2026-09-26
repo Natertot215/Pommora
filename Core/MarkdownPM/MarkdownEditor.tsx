@@ -37,7 +37,7 @@ import { registerScrollHeal } from './Embeds/scrollHeal'
 import { calloutGuard } from './Guards/calloutGuard'
 import { headingRenameSettle } from './Guards/headingRenameSettle'
 import { citationGuard } from './Guards/citationGuard'
-import { citationHost, citationOrder, citationSeatAt } from './Citations/citationActions'
+import { citationHost, citationOrder } from './Citations/citationActions'
 import { citationPointer, citationRowMenu, citationRowPointer } from './Citations/citationPointer'
 import { connectionClicks } from './Links/connectionClicks'
 import { markdownLinkClicks } from './Links/linkClicks'
@@ -46,11 +46,8 @@ import { pendingTitle } from './Links/pendingTitle'
 import { aliasOnLeave } from './Links/linkEdit'
 import { linkRest, linkTyping } from './Gestures/linkGestures'
 import { markdownFolding, applySavedFolds, applyCitationsVisibility } from './folding'
-import { applyEditorAction, claimEditorMenu, ownsEditorMenu, releaseEditorMenu } from './Menus/menu'
+import { editorMenu } from './Menus/menu'
 import { formatKeymap } from './Input/formatKeymap'
-import { embedSeatAt } from './Embeds/embedInsert'
-import { readFormatState } from './Input/formatState'
-import type { FormatState } from '@pommora/core/Actions/editorMenu'
 import { AC_MAX, aliasRows, pageRow } from './Autocomplete/autocomplete'
 import {
   useConnectionAutocomplete,
@@ -127,7 +124,6 @@ export function MarkdownEditor({
   const arriveRef = useLatest(arrive)
   const onArrivedRef = useLatest(onArrived)
   const onHeadingRenameRef = useLatest(onHeadingRename)
-  const lastFormatRef = useRef<FormatState | null>(null)
   // The position of a typed `§` that opens the heading list in prose; cleared once the caret leaves its line or the pane closes.
   const sectionArmedRef = useRef<number | null>(null)
 
@@ -290,6 +286,7 @@ export function MarkdownEditor({
       citationPointer(() => connectionsRef.current),
       citationRowPointer(),
       citationRowMenu(),
+      editorMenu('page'),
       markdownLinkClicks(() => connectionsRef.current),
       pasteLink,
       pendingTitle,
@@ -309,7 +306,6 @@ export function MarkdownEditor({
       }),
       EditorView.updateListener.of((u) => {
         if (!(u.docChanged || u.selectionSet || u.focusChanged)) return
-        if (u.focusChanged && u.view.hasFocus) claimEditorMenu(u.view)
         const doc = docString(u.state.doc)
         if (u.transactions.some((tr) => tr.docChanged && !tr.annotation(mirrored)))
           onChangeRef.current(doc)
@@ -324,25 +320,6 @@ export function MarkdownEditor({
             onSelectionRef.current(
               range ? rangeStats(docScan(u.state.doc), range.from, range.to) : null,
             )
-          }
-        }
-
-        if (ownsEditorMenu(u.view)) {
-          const sel = u.state.selection.main
-          const fs = readFormatState(
-            doc,
-            sel.from,
-            sel.to,
-            u.view.hasFocus,
-            embedSeatAt(u.state),
-            citationSeatAt(u.state),
-          )
-          const last = lastFormatRef.current
-          const changed =
-            !last || (Object.keys(fs) as (keyof typeof fs)[]).some((k) => fs[k] !== last[k])
-          if (changed) {
-            lastFormatRef.current = fs
-            hostRef.current.menus.format?.pushState(fs)
           }
         }
 
@@ -421,13 +398,8 @@ export function MarkdownEditor({
         land()
       })
     else requestAnimationFrame(land)
-    const unsubMenu = hostRef.current.menus.format?.onAction((action) => {
-      if (ownsEditorMenu(view)) applyEditorAction(view, action)
-    })
     return () => {
       view.plugin(headingRenameSettle)?.flush()
-      unsubMenu?.()
-      releaseEditorMenu(view)
       if (lastRangeRef.current) {
         lastRangeRef.current = null
         onSelectionRef.current?.(null)

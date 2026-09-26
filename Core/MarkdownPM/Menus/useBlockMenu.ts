@@ -1,7 +1,6 @@
 import { useMemo, useState, type RefObject } from 'react'
 import { Transaction } from '@codemirror/state'
 import type { EditorView } from '@codemirror/view'
-import { EDITOR_ACTION_PREFIX } from '@pommora/core/Actions/editorMenu'
 import {
   blockMenuSections,
   filterBlockMenu,
@@ -69,7 +68,7 @@ export function useBlockMenu(viewRef: RefObject<EditorView | null>): BlockMenu {
       annotations: Transaction.addToHistory.of(false),
       userEvent: 'input',
     })
-    applyEditorAction(view, EDITOR_ACTION_PREFIX + action)
+    applyEditorAction(view, action)
   }
 
   const { index, ctl } = useMenuCtl(

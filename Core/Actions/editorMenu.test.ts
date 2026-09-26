@@ -1,10 +1,11 @@
 import { describe, expect, it } from 'vitest'
 import { DEFAULT_COMMANDS } from './commands'
-import { type FormatState, editorContextItems } from './editorMenu'
+import { type EditorMenuRequest, editorContextItems } from './editorMenu'
 
-const state: FormatState = {
-  focused: true,
-  hasSelection: false,
+const state: EditorMenuRequest = {
+  scope: 'page',
+  x: 0,
+  y: 0,
   bold: true,
   italic: false,
   strikethrough: false,
@@ -61,5 +62,14 @@ describe('the editor’s right-click block', () => {
     expect(editorContextItems(state, DEFAULT_COMMANDS, 'https://a.com')[0].label).toBe(
       'Insert Link',
     )
+  })
+
+  it('trims a cell’s block to Insert Link, Format, and Lists', () => {
+    expect(
+      editorContextItems({ ...state, scope: 'cell' }, DEFAULT_COMMANDS, '').map((i) => i.label),
+    ).toEqual(['Format', 'Lists'])
+    expect(
+      editorContextItems({ ...state, scope: 'cell' }, DEFAULT_COMMANDS, 'https://a.com')[0].label,
+    ).toBe('Insert Link')
   })
 })
