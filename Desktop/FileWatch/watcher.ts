@@ -21,7 +21,7 @@ import type { Pushes } from '@pommora/core/Contract/bridge'
 import { type CurrentWindow, push } from '../Bridge/ipc'
 import { posixPath } from '../Platform/hostPath'
 import { seedContentIndex } from '@pommora/core/Index/indexSeed'
-import { sessionRoot, type WaitingOpen } from '@pommora/core/Nexus/session'
+import { sessionRoot, type WaitingOpen, waitingOpen } from '@pommora/core/Nexus/session'
 import { readWatchScope } from '@pommora/core/Settings/settings'
 import { readNexusConfig } from '@pommora/core/Nexus/readNexus'
 import { flushValueWrites } from '@pommora/core/Nexus/valuesChanged'
@@ -112,10 +112,9 @@ export async function startWatcher(root: string, win: CurrentWindow): Promise<vo
     .on('error', (error: unknown) => console.error('Nexus watcher error (non-fatal):', error))
 }
 
-// A waiting open has no scope to watch by, so only `.nexus` is watched, and the Nexus opens once its files read.
+// A waiting open has no scope to watch by, so only `.nexus` is watched, and the Nexus opens once its files read; the watch stops as it reopens, and an open that waits again arms a new one.
 export function waitUntilReadable(open: WaitingOpen, reopen: (path: string) => void): void {
   stopWatcher()
-  const start = starts
   watcher = chokidar
     .watch(join(open.root, NEXUS_DIR), { depth: 0 })
     .on('all', () => {
@@ -125,7 +124,9 @@ export function waitUntilReadable(open: WaitingOpen, reopen: (path: string) => v
           () => true,
           () => false,
         )
-        if (readable && start === starts) reopen(open.path)
+        if (!readable || waitingOpen() !== open) return
+        stopWatcher()
+        reopen(open.path)
       }, SETTLE_MS)
     })
     .on('error', (error: unknown) => console.error('Nexus watcher error (non-fatal):', error))

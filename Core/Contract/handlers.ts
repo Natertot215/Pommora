@@ -69,7 +69,7 @@ export interface HostContext {
   }
   transport(req: TransportRequest): Promise<TransportReply>
   openStores(root: string, nexusId: string | null): void
-  adopted(root: string, path: string): Promise<void>
+  adopted(path: string): Promise<void>
   watch(root: string): Promise<void>
   applyZoom(): Promise<void>
 }

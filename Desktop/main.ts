@@ -305,7 +305,7 @@ function hostContext(win: BrowserWindow | null): HostContext {
     transport,
     openStores: (root, nexusId) =>
       openSessionDb(isUlidShaped(nexusId) ? `${userData()}/Nexuses/${nexusId}` : null, root),
-    async adopted(_root, path) {
+    async adopted(path) {
       watchNexus()
       if (mainWindow) void applyDefaultZoom(mainWindow)
       try {
