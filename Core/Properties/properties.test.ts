@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import {
+  LEGACY_TYPE_IDS,
   LINK_DISPLAYS,
   propertyDefinition,
   propertyType,
@@ -18,22 +19,27 @@ import {
 } from './properties'
 
 describe('propertyType', () => {
-  it('accepts the 11 on-disk type strings', () => {
+  it('accepts the 11 type ids', () => {
     for (const t of [
       'number',
       'checkbox',
-      'datetime',
+      'dateTime',
       'select',
-      'multi_select',
+      'multiSelect',
       'status',
-      'url',
+      'link',
       'context',
-      'created_time',
-      'last_edited_time',
+      'createdTime',
+      'lastEditedTime',
       'file',
     ]) {
-      expect(propertyType.safeParse(t).success).toBe(true)
+      expect(propertyType.safeParse(t).data).toBe(t)
     }
+  })
+
+  it('reads each legacy spelling as its current id', () => {
+    for (const [legacy, id] of Object.entries(LEGACY_TYPE_IDS))
+      expect(propertyType.safeParse(legacy).data).toBe(id)
   })
 
   it('rejects an unknown type', () => {
@@ -71,9 +77,9 @@ describe('propertyDefinition', () => {
     expect(parsed.checkbox_color).toBeUndefined()
   })
 
-  it('round-trips a url def in each of the three link displays', () => {
+  it('round-trips a link def in each of the three link displays', () => {
     for (const link_display of LINK_DISPLAYS) {
-      const def = { id: 'prop_u', name: 'Site', type: 'url', link_display }
+      const def = { id: 'prop_u', name: 'Site', type: 'link', link_display }
       expect(propertyDefinition.parse(def)).toEqual(def)
     }
   })
@@ -83,7 +89,7 @@ describe('propertyDefinition', () => {
     const parsed = propertyDefinition.parse({
       id: 'p',
       name: 'x',
-      type: 'url',
+      type: 'link',
       link_display: 'link-url',
     })
     expect(parsed.link_display).toBeUndefined()
@@ -177,9 +183,9 @@ describe('invalidPropertyName', () => {
 
 describe('isOptionsKind', () => {
   it('holds for the four option-bearing kinds and nothing else', () => {
-    for (const t of ['select', 'status', 'multi_select', 'context'] as const)
+    for (const t of ['select', 'status', 'multiSelect', 'context'] as const)
       expect(isOptionsKind(t)).toBe(true)
-    for (const t of ['number', 'checkbox', 'datetime', 'url', 'file', 'title', undefined] as const)
+    for (const t of ['number', 'checkbox', 'dateTime', 'link', 'file', 'title', undefined] as const)
       expect(isOptionsKind(t)).toBe(false)
   })
 })

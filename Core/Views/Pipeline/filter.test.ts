@@ -33,10 +33,10 @@ const schema: PropertyDefinition[] = [
     })),
   },
   { id: 'prop_num', name: 'Num', type: 'number' },
-  { id: 'prop_url', name: 'Link', type: 'url' },
-  { id: 'prop_when', name: 'When', type: 'datetime' },
+  { id: 'prop_url', name: 'Link', type: 'link' },
+  { id: 'prop_when', name: 'When', type: 'dateTime' },
   { id: 'prop_done', name: 'Done', type: 'checkbox' },
-  { id: 'prop_tags', name: 'Tags', type: 'multi_select' },
+  { id: 'prop_tags', name: 'Tags', type: 'multiSelect' },
 ]
 
 function row(
@@ -237,7 +237,7 @@ describe('applyFilter — per-type matrix', () => {
     ).toEqual(['b'])
   })
 
-  it('multi_select: membership via contains / is_empty', () => {
+  it('multiSelect: membership via contains / is_empty', () => {
     const rows = [
       row('a', { props: { prop_tags: ['x', 'y'] } }),
       row('b', { props: { prop_tags: ['z'] } }),
@@ -602,7 +602,7 @@ describe('applyFilter — multi-operand values[]', () => {
     ).toEqual(['b'])
   })
 
-  it('multi_select contains_all / contains_any / does_not_contain over values[]', () => {
+  it('multiSelect contains_all / contains_any / does_not_contain over values[]', () => {
     expect(
       ids([rows[2], rows[3]], {
         match: 'all',

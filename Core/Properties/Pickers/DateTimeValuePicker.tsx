@@ -23,10 +23,10 @@ export function DateTimeValuePicker({
   const fmt = shown === 'relative' ? 'short' : shown
   return (
     <CalendarPicker
-      value={value?.kind === 'datetime' ? readDate(value.value) : null}
+      value={value?.kind === 'dateTime' ? readDate(value.value) : null}
       timeFormat={clock}
       formatDateValue={(k) => formatDate(k, fmt, 'none')}
-      onChange={(iso) => onCommit(iso ? { kind: 'datetime', value: iso } : null)}
+      onChange={(iso) => onCommit(iso ? { kind: 'dateTime', value: iso } : null)}
     />
   )
 }

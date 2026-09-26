@@ -79,7 +79,7 @@ const statusDef: PropertyDefinition = {
 const tagsDef: PropertyDefinition = {
   id: 'prop_tags',
   name: 'Tags',
-  type: 'multi_select',
+  type: 'multiSelect',
   select_options: [{ value: 'alpha', label: 'alpha' }],
 }
 const world: GovernedWorld = {

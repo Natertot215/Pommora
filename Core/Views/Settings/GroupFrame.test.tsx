@@ -24,7 +24,7 @@ const statusDef: PropertyDefinition = {
     },
   ],
 }
-const dateDef: PropertyDefinition = { id: 'prop_when', name: 'When', type: 'datetime' }
+const dateDef: PropertyDefinition = { id: 'prop_when', name: 'When', type: 'dateTime' }
 
 const view = (over?: Partial<SavedView>): SavedView => ({
   id: 'view_1',

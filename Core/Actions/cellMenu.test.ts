@@ -94,7 +94,7 @@ describe('cellMenuModel', () => {
     expect(cellMenuModel({ kind: 'clear-only', hideable: true }).at(-1)?.label).toBe('Remove')
   })
 
-  it('link (a filled url cell): Edit + Rename + Clear, no Style (its look is per-property)', () => {
+  it('link (a filled Link cell): Edit + Rename + Clear, no Style (its look is per-property)', () => {
     const m = cellMenuModel({ kind: 'link', filled: true })
     expect(m.map((i) => [i.label, i.action])).toEqual([
       ['Edit', 'cell:edit'],
@@ -104,7 +104,7 @@ describe('cellMenuModel', () => {
     expect(m.some((i) => i.submenu)).toBe(false)
   })
 
-  it('link (an empty url cell): Edit alone — Rename/Clear are no-ops with no value', () => {
+  it('link (an empty Link cell): Edit alone — Rename/Clear are no-ops with no value', () => {
     const m = cellMenuModel({ kind: 'link', filled: false })
     expect(m.map((i) => [i.label, i.action])).toEqual([['Edit', 'cell:edit']])
   })
@@ -158,8 +158,8 @@ describe('cellMenuContextFor', () => {
     expect(cellMenuContextFor(context, 'context', DATES, false)).toBeNull()
   })
 
-  it('url → link (carrying filled); a file cell has no look left to offer', () => {
-    expect(cellMenuContextFor(prop(), 'url', DATES, true)).toEqual({ kind: 'link', filled: true })
+  it('a link column → the link menu, carrying filled; a file cell has no look left to offer', () => {
+    expect(cellMenuContextFor(prop(), 'link', DATES, true)).toEqual({ kind: 'link', filled: true })
     expect(cellMenuContextFor(prop(), 'file', DATES, false)).toEqual({
       kind: 'file',
       onChip: false,
@@ -170,7 +170,7 @@ describe('cellMenuContextFor', () => {
     })
   })
 
-  it('status/datetime → style-only, Clear gated on filled', () => {
+  it('status/dateTime → style-only, Clear gated on filled', () => {
     expect(cellMenuContextFor(prop(), 'status', DATES, true)).toEqual({
       kind: 'style-only',
       type: 'status',
@@ -191,14 +191,14 @@ describe('cellMenuContextFor', () => {
       type: 'number',
       current: DATES,
     })
-    expect(cellMenuContextFor(prop(), 'created_time', DATES, true)).toEqual({
+    expect(cellMenuContextFor(prop(), 'createdTime', DATES, true)).toEqual({
       kind: 'style-only',
-      type: 'created_time',
+      type: 'createdTime',
       current: DATES,
     })
-    expect(cellMenuContextFor(prop(), 'last_edited_time', DATES, true)).toEqual({
+    expect(cellMenuContextFor(prop(), 'lastEditedTime', DATES, true)).toEqual({
       kind: 'style-only',
-      type: 'last_edited_time',
+      type: 'lastEditedTime',
       current: DATES,
     })
   })
@@ -214,7 +214,7 @@ describe('cellMenuContextFor', () => {
 
   it('select/multi/context → clear-only when filled, no menu when empty', () => {
     expect(cellMenuContextFor(prop(), 'select', DATES, true)).toEqual({ kind: 'clear-only' })
-    expect(cellMenuContextFor(prop(), 'multi_select', DATES, false)).toBeNull()
+    expect(cellMenuContextFor(prop(), 'multiSelect', DATES, false)).toBeNull()
   })
 
   it('an unsupported/undefined type → no menu', () => {

@@ -1,4 +1,4 @@
-// Two axes that must not be confused: declaredType is the column's SCHEMA type, what sort/group/filter switch on; resolveFieldValue is the row's VALUE, decoded definition-first — never inferred from a value's shape, so a url column always reads url.
+// Two axes that must not be confused: declaredType is the column's SCHEMA type, what sort/group/filter switch on; resolveFieldValue is the row's VALUE, decoded definition-first — never inferred from a value's shape, so a Link column always reads as a link.
 
 import type { ViewRow } from '@pommora/core/Views/viewRow'
 import type { PageFrontmatter } from '@pommora/core/Nexus/schemas'
@@ -24,7 +24,7 @@ export function declaredType(
 }
 
 const stampValue = (iso: string | null): PropertyValue =>
-  iso === null ? NULL_VALUE : { kind: 'datetime', value: iso }
+  iso === null ? NULL_VALUE : { kind: 'dateTime', value: iso }
 
 /** A CONTEXT column bypasses the cache below: its ids resolve at walk assembly onto the row's own `contextValues`, the optimistic patch winning while a commit is in flight. */
 export function resolveFieldValue(

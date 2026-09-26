@@ -22,7 +22,7 @@ describe('groupKeyToValue — destination group key → PropertyValue', () => {
   })
 
   it('an un-reassignable type yields null (caller gates these out)', () => {
-    expect(groupKeyToValue('2026-06', 'datetime')).toBeNull()
+    expect(groupKeyToValue('2026-06', 'dateTime')).toBeNull()
     expect(groupKeyToValue('x', undefined)).toBeNull()
   })
 

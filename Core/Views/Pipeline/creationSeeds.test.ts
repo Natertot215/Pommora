@@ -8,7 +8,7 @@ const schema: PropertyDefinition[] = [
   { id: 'p_sel', name: 'Kind', type: 'select' },
   { id: 'p_check', name: 'Done', type: 'checkbox' },
   { id: 'p_num', name: 'Count', type: 'number' },
-  { id: 'p_tags', name: 'Tags', type: 'multi_select' },
+  { id: 'p_tags', name: 'Tags', type: 'multiSelect' },
 ]
 
 describe('filterSeeds', () => {

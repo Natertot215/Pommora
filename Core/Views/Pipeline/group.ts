@@ -25,7 +25,7 @@ const GROUPABLE: ReadonlySet<string> = new Set([
   'select',
   'status',
   'checkbox',
-  'datetime',
+  'dateTime',
 ] satisfies PropertyType[])
 
 type PropertyGroup = Extract<GroupConfig, { kind: 'property' }>
@@ -176,8 +176,8 @@ export function bucketKey(
       return v.kind === 'select' ? v.value : null
     case 'checkbox':
       return v.kind === 'checkbox' ? (v.value ? 'true' : 'false') : null
-    case 'datetime':
-      return v.kind === 'datetime' ? dateBucketKey(v.value, granularity) : null
+    case 'dateTime':
+      return v.kind === 'dateTime' ? dateBucketKey(v.value, granularity) : null
     default:
       return null
   }

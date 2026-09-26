@@ -15,7 +15,11 @@ export function parseEditorValue(
     const n = Number.parseFloat(trimmed)
     return Number.isNaN(n) ? undefined : { kind: 'number', value: n }
   }
-  if (type === 'url')
-    return linkValueFromEdit(raw, current?.kind === 'url' ? current.value : undefined, resolveTitle)
+  if (type === 'link')
+    return linkValueFromEdit(
+      raw,
+      current?.kind === 'link' ? current.value : undefined,
+      resolveTitle,
+    )
   return undefined
 }

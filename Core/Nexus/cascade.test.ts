@@ -155,7 +155,7 @@ describe('renameCascade over frontmatter', () => {
   const SITE = 'Site'
   beforeEach(async () => {
     for (const name of [SOURCE, SITE]) {
-      await createProperty(root, { id: '', name, type: 'url' } as PropertyDefinition)
+      await createProperty(root, { id: '', name, type: 'link' } as PropertyDefinition)
     }
   })
   it('moves a Link property naming the page, and the body’s links with it', async () => {
@@ -250,7 +250,7 @@ describe('renameCascade for a heading', () => {
   })
 
   it('moves a Link property aimed at the renamed heading, found through the index', async () => {
-    await createProperty(root, { id: '', name: 'Source', type: 'url' } as PropertyDefinition)
+    await createProperty(root, { id: '', name: 'Source', type: 'link' } as PropertyDefinition)
     const a = await createPage(dir, 'A', { body: '## Setup' })
     const c = await createPage(dir, 'C', { body: 'no links' })
     if (!a.ok || !c.ok) throw new Error('setup failed')

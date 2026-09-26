@@ -1253,7 +1253,7 @@ describe('handleMutate — setProperty (the D-4 cross-group reassignment write)'
   // A value only writes for a property the registry knows — the key carries a name, and an unknown name is inert by construction.
   beforeEach(async () => {
     await createProperty(root, { id: 'prop_s', name: 'Stage', type: 'select' })
-    await createProperty(root, { id: 'prop_m', name: 'Tags', type: 'multi_select' })
+    await createProperty(root, { id: 'prop_m', name: 'Tags', type: 'multiSelect' })
   })
 
   it('writes a typed property into the page frontmatter, preserving id + body', async () => {

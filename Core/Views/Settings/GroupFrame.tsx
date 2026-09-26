@@ -68,7 +68,7 @@ import { styleFor, useNexusForms } from '../Host/useColumnStyles'
 const GROUPABLE_PANE: ReadonlySet<string> = new Set([
   'select',
   'status',
-  'datetime',
+  'dateTime',
 ] satisfies PropertyType[])
 
 const STRUCTURAL_ORDER: PickerOption<StructuralOrderMode>[] = [
@@ -101,7 +101,7 @@ const SEPARATION: PickerOption<'dash' | 'slash'>[] = [
 ]
 
 const orderOptionsFor = (type: PropertyType | undefined): PickerOption<GroupOrderMode>[] =>
-  type === 'datetime' ? DATE_ORDER : OPTION_ORDER
+  type === 'dateTime' ? DATE_ORDER : OPTION_ORDER
 
 export function GroupFrame({
   source,
@@ -140,7 +140,7 @@ export function GroupFrame({
     group.kind === 'property' ? schema.find((d) => d.id === group.property_id) : undefined
   const subGroup = structural && !flat ? view.sub_group : undefined
   const subDef = subGroup && schema.find((d) => d.id === subGroup.property_id)
-  const dateHeadingProp = [activeDef, subDef].find((d) => d?.type === 'datetime')?.id
+  const dateHeadingProp = [activeDef, subDef].find((d) => d?.type === 'dateTime')?.id
 
   const pickGroupBy = (id: string): void => {
     if (id === 'none') {
@@ -220,7 +220,7 @@ export function GroupFrame({
       <MenuRowView
         row={pickerRow('layers', 'Group By', groupByValue, groupByOptions, pickGroupBy)}
       />
-      {group.kind === 'property' && activeDef?.type === 'datetime' && (
+      {group.kind === 'property' && activeDef?.type === 'dateTime' && (
         <MenuRowView
           row={pickerRow('calendar', 'Date By', granularityOf(group), GRANULARITY, (g) =>
             saveGroup({ ...group, date_granularity: g }),
@@ -263,7 +263,7 @@ export function GroupFrame({
                 ),
             )}
           />
-          {subGroup && subDef?.type === 'datetime' && (
+          {subGroup && subDef?.type === 'dateTime' && (
             <MenuRowView
               row={pickerRow('calendar', 'Date By', granularityOf(subGroup), GRANULARITY, (g) =>
                 saveSub({ ...subGroup, date_granularity: g }),
@@ -287,7 +287,7 @@ export function GroupFrame({
       <MenuSeparator flush />
       <div className={`${middleRegion} over-scroll`}>
         {!structural && group.kind === 'property' ? (
-          activeDef?.type === 'datetime' ? (
+          activeDef?.type === 'dateTime' ? (
             <DateBucketList
               source={source}
               view={view}

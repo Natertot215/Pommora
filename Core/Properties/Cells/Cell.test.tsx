@@ -49,7 +49,7 @@ const schema: PropertyDefinition[] = [
   },
   { id: 'prop_done', name: 'Done', type: 'checkbox' },
   { id: 'prop_pin', name: 'Pinned', type: 'checkbox', checkbox_color: 'blue' },
-  { id: 'prop_when', name: 'When', type: 'datetime' },
+  { id: 'prop_when', name: 'When', type: 'dateTime' },
   { id: 'prop_n', name: 'Count', type: 'number' },
   { id: 'prop_files', name: 'Files', type: 'file' },
 ]
@@ -168,7 +168,7 @@ describe('checkbox looks', () => {
 })
 
 describe('formats', () => {
-  it('datetime renders per the saved formats', () => {
+  it('dateTime renders per the saved formats', () => {
     mount(rowWith({ prop_when: '2026-03-01' }), 'prop_when', {
       date_format: 'short',
       time_format: 'none',

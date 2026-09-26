@@ -160,7 +160,7 @@ function TrashBody(): React.JSX.Element {
   }
 
   const openColumnMenu = async (): Promise<void> => {
-    const action = await popMenu(styleMenuItems({ type: 'datetime', current: style }))
+    const action = await popMenu(styleMenuItems({ type: 'dateTime', current: style }))
     const pick = action ? parseStyleAction(action) : null
     if (!pick) return
     const next = { ...stored, [pick.key]: storedPick(pick.key, pick.value, defaults, nexus.clock) }

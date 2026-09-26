@@ -170,18 +170,18 @@ function evaluateByType(
   switch (t) {
     case 'number':
       return evaluateNumber(v, op, expected)
-    case 'datetime':
-    case 'created_time':
-    case 'last_edited_time':
+    case 'dateTime':
+    case 'createdTime':
+    case 'lastEditedTime':
       return evaluateDate(v, op, expected)
     case 'checkbox':
       return evaluateCheckbox(v, op, expected)
     // This switch reads the DECLARED TYPE, not the value's kind — dropping the Status case sends every Status rule to the no-op default.
     case 'status':
     case 'select':
-    case 'url':
+    case 'link':
       return evaluateText(v, op, expected, values)
-    case 'multi_select':
+    case 'multiSelect':
       return evaluateMulti(v, op, expected, values)
     case 'title':
       // resolveFieldValue('_title') carries row.title as a select-kind string — the text matrix reads it.
@@ -220,7 +220,7 @@ function textValue(v: PropertyValue): string | null {
   switch (v.kind) {
     case 'select':
       return v.value
-    case 'url':
+    case 'link':
       // Match the SHOWN text (alias, else URL) — the same parse Cell renders, so a `contains` on an aliased link tests the visible text, not its raw markdown.
       return linkDisplayText(v.value)
     default:
@@ -268,7 +268,7 @@ const dayMs = (d: LocalDate): number => startOfDay(d.at).getTime()
 
 /** Days are the local days the cells show. `is` compares days; a bare-day operand orders by day, and one carrying a time orders by instant. */
 function evaluateDate(v: PropertyValue, op: Op, expected: Expected): boolean {
-  const value = v.kind === 'datetime' ? readDate(v.value) : null
+  const value = v.kind === 'dateTime' ? readDate(v.value) : null
   const target = expected == null ? null : readDate(expected)
   const ms = (x: LocalDate): number => (target?.timed ? x.at.getTime() : dayMs(x))
   const d = value && ms(value)

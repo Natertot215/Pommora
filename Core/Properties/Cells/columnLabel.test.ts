@@ -5,7 +5,7 @@ import { RESERVED_PROPERTY_ID, type PropertyDefinition } from '@pommora/core/Pro
 
 const schema: PropertyDefinition[] = [
   { id: 'prop_status', name: 'Status', type: 'status' },
-  { id: 'prop_due', name: 'Due', type: 'datetime' },
+  { id: 'prop_due', name: 'Due', type: 'dateTime' },
 ]
 
 const NO_CONTEXTS = new Map()
@@ -49,7 +49,7 @@ describe('displayPropertyName', () => {
   })
 
   it('columnLabel capitalizes the property branch only', () => {
-    const lower: PropertyDefinition[] = [{ id: 'prop_tags', name: 'tags', type: 'multi_select' }]
+    const lower: PropertyDefinition[] = [{ id: 'prop_tags', name: 'tags', type: 'multiSelect' }]
     expect(columnLabel('prop_tags', lower, NO_CONTEXTS, true)).toBe('Tags')
     expect(columnLabel('prop_tags', lower, NO_CONTEXTS)).toBe('tags')
     expect(columnLabel('prop_gone', lower, NO_CONTEXTS, true)).toBe('prop_gone')

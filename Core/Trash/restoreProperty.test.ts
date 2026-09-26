@@ -164,10 +164,12 @@ describe('restoring a deleted property', () => {
     const def = await liveDef(id)
     await updatePageProperty(root, good.value.path, def, { kind: 'select', value: 'hi' })
     // A hand-written value naming an option the definition never had.
-    await updatePageProperty(root, page.value.path, { ...def, type: 'url' } as PropertyDefinition, {
-      kind: 'url',
-      value: 'nonsense',
-    })
+    await updatePageProperty(
+      root,
+      page.value.path,
+      { ...def, type: 'link' } as PropertyDefinition,
+      { kind: 'link', value: 'nonsense' },
+    )
     expect(await valueOn(page.value.path, 'Priority')).toBe('nonsense')
 
     expect((await deleteProperty(root, id)).ok).toBe(true)
@@ -263,7 +265,7 @@ describe('restoring a deleted property', () => {
     const c = await createProperty(root, {
       id: '',
       name: 'Tags',
-      type: 'multi_select',
+      type: 'multiSelect',
       select_options: [{ value: 'alpha', label: 'alpha' }],
     } as PropertyDefinition)
     if (!c.ok) throw new Error('seed failed')

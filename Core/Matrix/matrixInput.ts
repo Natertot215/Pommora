@@ -82,8 +82,8 @@ function answers(
 ): boolean {
   switch (declaredType(rule.property_id, schema, contextIds)) {
     case undefined:
-    case 'created_time':
-    case 'last_edited_time':
+    case 'createdTime':
+    case 'lastEditedTime':
       return false
     case 'title':
     case 'context':

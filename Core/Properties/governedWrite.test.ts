@@ -155,7 +155,7 @@ describe('setGovernedRootKeys with a world — the three precedence rules', () =
     const tags: PropertyDefinition = {
       id: 'prop_tags',
       name: 'Tags',
-      type: 'multi_select',
+      type: 'multiSelect',
       select_options: [{ value: 'alpha', label: 'alpha' }],
     }
     await writeFile(page, "---\nid: p1\nTags:\n  - ''\n  - alpha\n---\nbody\n")
@@ -171,7 +171,7 @@ describe('setGovernedRootKeys with a world — the three precedence rules', () =
     const tags: PropertyDefinition = {
       id: 'prop_tags',
       name: 'Tags',
-      type: 'multi_select',
+      type: 'multiSelect',
       select_options: [{ value: 'alpha', label: 'alpha' }],
     }
     await writeFile(page, '---\nid: p1\nTags:\n  - alpha\n  - zeta\n---\nbody\n')

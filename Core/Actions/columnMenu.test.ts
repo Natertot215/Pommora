@@ -29,18 +29,18 @@ describe('styleMenuItems', () => {
       'style:look:standard',
       'style:look:compact',
     ])
-    expect(items('multi_select', {}).map((r) => r.action)).toEqual([
+    expect(items('multiSelect', {}).map((r) => r.action)).toEqual([
       'style:look:standard',
       'style:look:compact',
     ])
   })
 
-  it('checkbox offers Checkbox/Switch; url the three link forms; file Filename/Full Path', () => {
+  it('checkbox offers Checkbox/Switch; link the three link forms; file Filename/Full Path', () => {
     expect(items('checkbox', { look: 'checkbox' }).map((r) => r.label)).toEqual([
       'Checkbox',
       'Switch',
     ])
-    expect(items('url', { look: 'link-full' }).map((r) => r.label)).toEqual([
+    expect(items('link', { look: 'link-full' }).map((r) => r.label)).toEqual([
       'Full Link',
       'Short Link',
       'Page Title',
@@ -57,8 +57,8 @@ describe('styleMenuItems', () => {
     expect(items('number', { look: 'number' }).map((r) => r.label)).toEqual(['Number'])
   })
 
-  it('datetime lists dates, then weekdays, then times — each group behind a separator', () => {
-    const rows = items('datetime', { date_format: 'full', time_format: 'none', weekday: 'none' })
+  it('dateTime lists dates, then weekdays, then times — each group behind a separator', () => {
+    const rows = items('dateTime', { date_format: 'full', time_format: 'none', weekday: 'none' })
     expect(rows.map((r) => [r.label, r.action])).toEqual([
       ['MM/DD/YYYY', 'style:date_format:monthDayYear'],
       ['DD/MM/YYYY', 'style:date_format:dayMonthYear'],
@@ -85,13 +85,13 @@ describe('styleMenuItems', () => {
 
   it('offers no weekday under a numeric or Relative form, as the Date editor hides its Day row', () => {
     for (const date_format of ['monthDayYear', 'relative'] as const) {
-      const rows = items('datetime', { date_format, time_format: 'none', weekday: 'none' })
+      const rows = items('dateTime', { date_format, time_format: 'none', weekday: 'none' })
       expect(rows.some((r) => r.action?.startsWith('style:weekday:'))).toBe(false)
     }
   })
 
   it('offers the Relative date radio and Full/Short/Hidden weekday radios', () => {
-    const rows = items('datetime', { date_format: 'full', time_format: 'none', weekday: 'none' })
+    const rows = items('dateTime', { date_format: 'full', time_format: 'none', weekday: 'none' })
     expect(rows.find((r) => r.action === 'style:date_format:relative')?.label).toBe('Relative')
     expect(
       rows.filter((r) => r.action?.startsWith('style:weekday:')).map((r) => [r.label, r.action]),
@@ -102,8 +102,8 @@ describe('styleMenuItems', () => {
     ])
   })
 
-  it('last_edited_time shares the datetime menu', () => {
-    expect(items('last_edited_time', {}).map((r) => r.label)).toContain('Short Date')
+  it('lastEditedTime shares the dateTime menu', () => {
+    expect(items('lastEditedTime', {}).map((r) => r.label)).toContain('Short Date')
   })
 
   it('context gets no Style items', () => {
@@ -161,11 +161,11 @@ describe('parseStyleAction', () => {
 
 describe('styleMenuLabel', () => {
   it('says Format for the two whose rows are one', () => {
-    expect(styleMenuLabel('url')).toBe('Format')
+    expect(styleMenuLabel('link')).toBe('Format')
     expect(styleMenuLabel('number')).toBe('Format')
   })
   it('leaves the rest as Style', () => {
-    for (const t of ['status', 'checkbox', 'file', 'datetime', 'last_edited_time'] as const)
+    for (const t of ['status', 'checkbox', 'file', 'dateTime', 'lastEditedTime'] as const)
       expect(styleMenuLabel(t)).toBe('Style')
   })
 })

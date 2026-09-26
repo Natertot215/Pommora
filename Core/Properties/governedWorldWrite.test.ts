@@ -195,7 +195,7 @@ describe('a property write reconciles the whole file', () => {
     const tags = await createProperty(root, {
       id: '',
       name: 'Tags',
-      type: 'multi_select',
+      type: 'multiSelect',
       select_options: [{ value: 'alpha', label: 'alpha' }],
     } as PropertyDefinition)
     if (!tags.ok) throw new Error('setup')

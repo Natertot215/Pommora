@@ -45,14 +45,14 @@ const schema: PropertyDefinition[] = [
   },
   { id: 'prop_num', name: 'Num', type: 'number' },
   { id: 'prop_done', name: 'Done', type: 'checkbox' },
-  { id: 'prop_when', name: 'When', type: 'datetime' },
-  { id: 'prop_led', name: 'Edited', type: 'last_edited_time' },
+  { id: 'prop_when', name: 'When', type: 'dateTime' },
+  { id: 'prop_led', name: 'Edited', type: 'lastEditedTime' },
   {
     id: 'prop_rel',
     name: 'Rel',
     type: 'context',
   },
-  { id: 'prop_link', name: 'Link', type: 'url' },
+  { id: 'prop_link', name: 'Link', type: 'link' },
   { id: 'prop_file', name: 'File', type: 'file' },
 ]
 
@@ -78,7 +78,7 @@ function makeRow(
 const ids = (rows: ViewRow[]): string[] => rows.map((r) => r.id)
 
 describe('makeSorter — type-aware single criterion', () => {
-  it('url sorts by the SHOWN text (alias, else URL), not the raw [alias](url)', () => {
+  it('link sorts by the SHOWN text (alias, else URL), not the raw [alias](url)', () => {
     const rows = [
       makeRow('r_zebra', { props: { prop_link: '[Zebra](https://a.co)' } }),
       makeRow('r_apple', { props: { prop_link: '[Apple](https://z.co)' } }),
@@ -243,7 +243,7 @@ describe('makeSorter — type-aware single criterion', () => {
     ).toEqual(['r3', 'r2', 'r1'])
   })
 
-  it('last_edited_time sorts by date (routes to the date branch)', () => {
+  it('lastEditedTime sorts by date (routes to the date branch)', () => {
     const rows = [
       makeRow('r1', { props: { prop_led: '2026-06-20T10:00:00Z' } }),
       makeRow('r2', { props: { prop_led: '2026-06-15T10:00:00Z' } }),
@@ -310,7 +310,7 @@ describe('the stamp readers agree', () => {
       makeRow('new', { modifiedAt: '2026-06-25T10:00:00Z' }),
     ]
     expect(resolveFieldValue(rows[1], '_modified_at', schema)).toEqual({
-      kind: 'datetime',
+      kind: 'dateTime',
       value: '2026-06-25T10:00:00Z',
     })
     expect(

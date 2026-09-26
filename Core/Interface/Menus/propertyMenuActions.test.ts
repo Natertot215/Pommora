@@ -26,7 +26,7 @@ const SCHEMA: PropertyDefinition[] = [
   {
     id: 'prop_tags',
     name: 'Tags',
-    type: 'multi_select',
+    type: 'multiSelect',
     select_options: [
       { value: 'x', label: 'Ex' },
       { value: 'y', label: 'Why' },
@@ -34,7 +34,7 @@ const SCHEMA: PropertyDefinition[] = [
   },
   { id: 'prop_num', name: 'Count', type: 'number' },
   { id: 'prop_box', name: 'Done', type: 'checkbox' },
-  { id: 'prop_made', name: 'Made', type: 'created_time' },
+  { id: 'prop_made', name: 'Made', type: 'createdTime' },
 ]
 
 const CONTEXT_ID = makeTree().contexts[0].def.id

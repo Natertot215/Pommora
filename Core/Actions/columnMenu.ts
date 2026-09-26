@@ -37,7 +37,7 @@ export interface StyleMenuContext {
 }
 
 export function styleMenuLabel(type: PropertyType): string {
-  return type === 'url' || type === 'number' ? 'Format' : 'Style'
+  return type === 'link' || type === 'number' ? 'Format' : 'Style'
 }
 
 export function alignRows(
@@ -64,19 +64,19 @@ export function styleMenuItems(ctx: StyleMenuContext): ActionItem<StyleAction>[]
   switch (type) {
     case 'status':
     case 'select':
-    case 'multi_select':
+    case 'multiSelect':
       return OPTION_LOOKS.map((l) => look(LOOK_LABELS[l], l))
     case 'checkbox':
       return CHECKBOX_LOOKS.map((l) => look(LOOK_LABELS[l], l))
-    case 'url':
+    case 'link':
       return LINK_DISPLAYS.map((l) => look(LOOK_LABELS[l], l))
     case 'number':
       return NUMBER_LOOKS.filter((l) => ctx.barCapable || l !== 'bar').map((l) =>
         look(LOOK_LABELS[l], l),
       )
-    case 'datetime':
-    case 'created_time':
-    case 'last_edited_time': {
+    case 'dateTime':
+    case 'createdTime':
+    case 'lastEditedTime': {
       const date = row('date_format', current.date_format)
       const weekday = row('weekday', current.weekday)
       const time = row('time_format', current.time_format)

@@ -84,10 +84,10 @@ describe('createProperty', () => {
   })
 
   it('refuses a name Pommora manages as a page key, on create and on rename', async () => {
-    const created = await createProperty(root, def({ name: 'created_at', type: 'datetime' }))
+    const created = await createProperty(root, def({ name: 'created_at', type: 'dateTime' }))
     expect(created.ok).toBe(false)
     if (!created.ok) expect(created.error.message).toContain('created_at')
-    const ok = await createProperty(root, def({ name: 'Due', type: 'datetime' }))
+    const ok = await createProperty(root, def({ name: 'Due', type: 'dateTime' }))
     if (!ok.ok) return
     expect((await renameProperty(root, ok.value.id, 'created_at')).ok).toBe(false)
     expect((await renameProperty(root, ok.value.id, '<Due>')).ok).toBe(false)

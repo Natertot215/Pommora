@@ -40,19 +40,26 @@ const statusDef: PropertyDefinition = {
 }
 const checkboxDef: PropertyDefinition = { id: 'prop_done', name: 'Done', type: 'checkbox' }
 const numberDef: PropertyDefinition = { id: 'prop_n', name: 'Count', type: 'number' }
-const urlDef: PropertyDefinition = { id: 'prop_link', name: 'Link', type: 'url' }
+const linkDef: PropertyDefinition = { id: 'prop_link', name: 'Link', type: 'link' }
 const fileDef: PropertyDefinition = { id: 'prop_files', name: 'Files', type: 'file' }
 const multiDef: PropertyDefinition = {
   id: 'prop_tags',
   name: 'Tags',
-  type: 'multi_select',
+  type: 'multiSelect',
   select_options: [
     { value: 'a', label: 'Alpha' },
     { value: 'b', label: 'Beta' },
   ],
 }
 
-const allDefs: PropertyDefinition[] = [statusDef, checkboxDef, numberDef, urlDef, fileDef, multiDef]
+const allDefs: PropertyDefinition[] = [
+  statusDef,
+  checkboxDef,
+  numberDef,
+  linkDef,
+  fileDef,
+  multiDef,
+]
 
 const sourceWith = (columnStyles?: Record<string, { look?: string }>): CollectionNode =>
   ({
@@ -65,7 +72,7 @@ const sourceWith = (columnStyles?: Record<string, { look?: string }>): Collectio
       { kind: 'page', id: 'p1', title: 'Page One', path: 'Col/Page One.md' },
       { kind: 'page', id: 'p2', title: 'Page Two', path: 'Col/Page Two.md' },
     ],
-    properties: [statusDef, checkboxDef, numberDef, urlDef, fileDef],
+    properties: [statusDef, checkboxDef, numberDef, linkDef, fileDef],
     views: [
       {
         id: 'view_1',
@@ -381,14 +388,14 @@ describe('number cell inline editing', () => {
 })
 
 describe('menu-entered editing', () => {
-  it('url Edit normalizes a schemeless link on commit', async () => {
+  it('link Edit normalizes a schemeless link on commit', async () => {
     await mountTable(sourceWith())
     channels.menu = vi.fn(async () => ok('editLink'))
-    const urlCell = host.querySelectorAll<HTMLElement>('.data-cell')[4]
+    const linkCell = host.querySelectorAll<HTMLElement>('.data-cell')[4]
     await act(async () => {
-      urlCell.dispatchEvent(new MouseEvent('contextmenu', { bubbles: true }))
+      linkCell.dispatchEvent(new MouseEvent('contextmenu', { bubbles: true }))
     })
-    const input = urlCell.querySelector('input') as HTMLInputElement
+    const input = linkCell.querySelector('input') as HTMLInputElement
     expect(input.value).toBe('https://old.com')
     await act(async () => {
       typeInto(input, 'example.com')
@@ -398,7 +405,7 @@ describe('menu-entered editing', () => {
       op: 'setProperty',
       path: 'Col/Page One.md',
       propertyId: 'prop_link',
-      value: { kind: 'url', value: 'https://example.com' },
+      value: { kind: 'link', value: 'https://example.com' },
     })
   })
 
@@ -453,7 +460,7 @@ describe('open actions + row-click narrowing', () => {
     )
   })
 
-  it('url cell click opens externally through the sanctioned IPC, not navigation', async () => {
+  it('link cell click opens externally through the sanctioned IPC, not navigation', async () => {
     await mountTable(sourceWith())
     const link = host.querySelector<HTMLElement>('.cell-link')
     await act(async () => {

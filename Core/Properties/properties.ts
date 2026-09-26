@@ -1,26 +1,38 @@
 // Loose ⇒ foreign keys within a def survive a rewrite: what is modeled here is only what the write path or a renderer actually reads.
 
 import { z } from 'zod'
-import { isPlainObject } from '../Contract/validators'
+import { isKeyOf, isPlainObject } from '../Contract/validators'
 import { looseDecoder } from '../Files/decoders'
 import { rootSegs } from '../Paths/exclusion'
 import type { Option } from './optionModel'
 import { PAGE_MODELED_KEYS, RETIRED_ID_KEYS } from '../Nexus/identityMark'
 
-export const propertyType = z.enum([
+const typeIds = z.enum([
   'number',
   'checkbox',
-  'datetime',
+  'dateTime',
   'select',
-  'multi_select',
+  'multiSelect',
   'status',
-  'url',
+  'link',
   'context', // the type of a column synthesized from a registry Context; creating a property with it is refused
-  'created_time',
-  'last_edited_time',
+  'createdTime',
+  'lastEditedTime',
   'file',
 ])
-export type PropertyType = z.infer<typeof propertyType>
+export type PropertyType = z.infer<typeof typeIds>
+
+// The spellings written to disk before the ids went camelCase; a Trash record and an older build's synced file keep them, so they read forever.
+export const LEGACY_TYPE_IDS = {
+  multi_select: 'multiSelect',
+  url: 'link',
+  datetime: 'dateTime',
+} as const satisfies Record<string, PropertyType>
+
+export const propertyType = z.preprocess(
+  (v) => (isKeyOf(LEGACY_TYPE_IDS, v) ? LEGACY_TYPE_IDS[v] : v),
+  typeIds,
+)
 
 export const LINK_DISPLAYS = ['link-full', 'link-short', 'link-title'] as const
 export type LinkDisplay = (typeof LINK_DISPLAYS)[number]
@@ -171,8 +183,8 @@ export const RESERVED_PROPERTY_ID = {
 } as const
 
 export const STAMP_TYPE: Readonly<Partial<Record<string, PropertyType>>> = {
-  [RESERVED_PROPERTY_ID.createdAt]: 'created_time',
-  [RESERVED_PROPERTY_ID.modifiedAt]: 'last_edited_time',
+  [RESERVED_PROPERTY_ID.createdAt]: 'createdTime',
+  [RESERVED_PROPERTY_ID.modifiedAt]: 'lastEditedTime',
 }
 
 const RESERVED_SET = new Set<string>(Object.values(RESERVED_PROPERTY_ID))
@@ -223,11 +235,11 @@ function statusOptions(def: Pick<PropertyDefinition, 'status_groups'> | undefine
 }
 
 /** A Status property's options live in `status_groups` instead, and every other type has none, so writing `select_options` onto one of those corrupts the definition. */
-export const hasSelectOptions = (type: PropertyType): type is 'select' | 'multi_select' =>
-  type === 'select' || type === 'multi_select'
+export const hasSelectOptions = (type: PropertyType): type is 'select' | 'multiSelect' =>
+  type === 'select' || type === 'multiSelect'
 
 export const isOptionsKind = (type: PropertyType | 'title' | undefined): boolean =>
-  type === 'select' || type === 'status' || type === 'multi_select' || type === 'context'
+  type === 'select' || type === 'status' || type === 'multiSelect' || type === 'context'
 
 export type PickOption = { value: string; label: string; color?: string; icon?: string }
 

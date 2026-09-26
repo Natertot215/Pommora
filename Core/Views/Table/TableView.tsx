@@ -181,10 +181,10 @@ export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
       } else {
         setEditing({ rowId: row.id, colId: col.id, mode: 'editor' })
       }
-    } else if (t === 'url') {
+    } else if (t === 'link') {
       e.stopPropagation()
       const v = resolveFieldValue(row, col.id, schema)
-      const raw = v.kind === 'url' ? v.value : undefined
+      const raw = v.kind === 'link' ? v.value : undefined
       const url = urlClickTarget(raw)
       if (url) openWebLink(url)
       else if (!raw) setEditing({ rowId: row.id, colId: col.id, mode: 'editor' })
@@ -197,7 +197,7 @@ export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
     if (col.kind === 'title') return editing?.fromCreate ? '' : row.title
     const v = resolveFieldValue(row, col.id, schema)
     if (v.kind === 'number') return String(v.value)
-    if (v.kind === 'url') return linkEditText(v.value)
+    if (v.kind === 'link') return linkEditText(v.value)
     return ''
   }
   const commitEditorText = (row: ViewRow, col: ResolvedColumn, raw: string): void => {
@@ -230,9 +230,9 @@ export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
       <PropertyEditor
         initial={editorInitial(row, col)}
         numeric={t === 'number'}
-        validate={t === 'url' ? validateLink : undefined}
+        validate={t === 'link' ? validateLink : undefined}
         color={
-          t === 'url' ? solidColorCss(schema.find((d) => d.id === col.id)?.link_color) : undefined
+          t === 'link' ? solidColorCss(schema.find((d) => d.id === col.id)?.link_color) : undefined
         }
         onCommit={(raw) => commitEditorText(row, col, raw)}
         onCancel={() => setEditing(null)}
@@ -289,7 +289,7 @@ export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
           onDismiss={() => setEditing(null)}
         />
       )
-    const raw = v.kind === 'url' ? v.value : ''
+    const raw = v.kind === 'link' ? v.value : ''
     const linkDef = schema.find((d) => d.id === col.id)
     return (
       <TextPicker
@@ -321,9 +321,9 @@ export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
     const cellEl = el.closest<HTMLElement>('.data-cell') ?? el
     const filled = !isBlankValue(resolveFieldValue(row, col.id, schema))
     const dt = declaredType(col.id, schema)
-    if (dt === 'url') {
+    if (dt === 'link') {
       const v = resolveFieldValue(row, col.id, schema)
-      const target = linkValueMenuTarget(v.kind === 'url' ? v.value : '', (action) => {
+      const target = linkValueMenuTarget(v.kind === 'link' ? v.value : '', (action) => {
         if (action === 'link:clear') return commitValue(row, col, null)
         if (action === 'editLink')
           return setEditing({ rowId: row.id, colId: col.id, mode: 'editor' })

@@ -114,7 +114,7 @@ describe('the DRY nested slide (A-7)', () => {
 })
 
 const effortDef: PropertyDefinition = { id: 'prop_x', name: 'Effort', type: 'number' }
-const titleDef: PropertyDefinition = { id: '_title', name: 'Title', type: 'url' }
+const titleDef: PropertyDefinition = { id: '_title', name: 'Title', type: 'link' }
 
 describe('the All Properties section (T5)', () => {
   it('lists only unassigned, unreserved registry defs (A-4/E-5), in registry order (B-1)', async () => {

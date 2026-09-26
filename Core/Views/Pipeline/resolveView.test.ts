@@ -585,7 +585,7 @@ describe('resolveView — hidden groups + Hide Empty Groups', () => {
   })
 
   it('a hidden date bucket drops by its bucket key', () => {
-    const dateSchema: PropertyDefinition[] = [{ id: 'prop_when', name: 'When', type: 'datetime' }]
+    const dateSchema: PropertyDefinition[] = [{ id: 'prop_when', name: 'When', type: 'dateTime' }]
     const values = pageValues({
       p1: { [ID_KEY]: 'p1', ...propsAtRoot({ prop_when: '2025-07-02' }, dateSchema) },
       p2: { [ID_KEY]: 'p2', ...propsAtRoot({ prop_when: '2025-08-03' }, dateSchema) },

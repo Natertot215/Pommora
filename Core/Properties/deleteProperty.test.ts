@@ -184,7 +184,7 @@ describe('a global delete reaches a Space sidecar', () => {
     const c = await createProperty(root, {
       id: '',
       name: 'icon',
-      type: 'url',
+      type: 'link',
     } as PropertyDefinition)
     if (!c.ok) throw new Error('setup failed')
     const pom = await seedSpace('Pommora', { id: 'sp1', $icon: 'box' })
@@ -195,7 +195,7 @@ describe('a global delete reaches a Space sidecar', () => {
     })
 
     const set = await setSpaceProperty(dirname(pom), await liveDef(c.value.id), {
-      kind: 'url',
+      kind: 'link',
       value: 'https://final.example',
     })
     expect(set.ok).toBe(true)

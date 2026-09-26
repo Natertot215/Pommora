@@ -95,7 +95,7 @@ describe('vocabulary', () => {
   const schema: PropertyDefinition[] = [
     { id: 'prop_sel', name: 'Sel', type: 'select' },
     { id: 'prop_done', name: 'Done', type: 'checkbox' },
-    { id: 'prop_tags', name: 'Tags', type: 'multi_select' },
+    { id: 'prop_tags', name: 'Tags', type: 'multiSelect' },
   ]
 
   it('checkbox operators carry the whole clause (slot none, implied values)', () => {

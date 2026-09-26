@@ -232,7 +232,7 @@ describe('updatePageProperty', () => {
       (splitFrontmatter(await readFile(f, 'utf8')) as Record<string, unknown>)[name]
 
     await updatePageProperty(root, f, defOf('prop_status'), { kind: 'select', value: 'todo' })
-    await updatePageProperty(root, f, defOf('prop_tags', 'multi_select'), {
+    await updatePageProperty(root, f, defOf('prop_tags', 'multiSelect'), {
       kind: 'multiSelect',
       value: ['a', 'b'],
     })

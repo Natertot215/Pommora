@@ -42,7 +42,7 @@ function numberOf(row: ViewRow, propertyId: string, schema: PropertyDefinition[]
 
 function dateOf(row: ViewRow, propertyId: string, schema: PropertyDefinition[]): number {
   const v = resolveFieldValue(row, propertyId, schema)
-  const t = v.kind === 'datetime' ? readDate(v.value)?.at.getTime() : undefined
+  const t = v.kind === 'dateTime' ? readDate(v.value)?.at.getTime() : undefined
   return t ?? Number.NEGATIVE_INFINITY
 }
 
@@ -54,7 +54,7 @@ function boolRank(row: ViewRow, propertyId: string, schema: PropertyDefinition[]
 function sortText(row: ViewRow, propertyId: string, schema: PropertyDefinition[]): string {
   const v = resolveFieldValue(row, propertyId, schema)
   switch (v.kind) {
-    case 'url':
+    case 'link':
       // Sort by the SHOWN text (alias, else URL) — the same parse boundary Cell renders, so an aliased link never sorts by its raw markdown.
       return linkDisplayText(v.value)
     case 'multiSelect':
@@ -88,14 +88,14 @@ function buildCriterion(c: SortCriterion, schema: PropertyDefinition[]): Resolve
     }
     case 'number':
       return { extract: (r) => numberOf(r, c.property_id, schema), less: numericLess, ascending }
-    case 'datetime':
-    case 'created_time':
-    case 'last_edited_time':
+    case 'dateTime':
+    case 'createdTime':
+    case 'lastEditedTime':
       return { extract: (r) => dateOf(r, c.property_id, schema), less: numericLess, ascending }
     case 'checkbox':
       return { extract: (r) => boolRank(r, c.property_id, schema), less: numericLess, ascending }
-    case 'url':
-    case 'multi_select':
+    case 'link':
+    case 'multiSelect':
     case 'context':
     case 'file':
       return { extract: (r) => sortText(r, c.property_id, schema), less: ciLess, ascending }

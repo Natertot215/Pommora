@@ -381,7 +381,7 @@ export function PropertyFrame({
     (def: PropertyDefinition, style: ColumnStyle, look: OptionStyle) => React.JSX.Element
   > = {
     select: selectSettings,
-    multi_select: selectSettings,
+    multiSelect: selectSettings,
     status: (def, _style, look) => (
       <StatusEditor
         groups={def.status_groups ?? []}
@@ -392,7 +392,7 @@ export function PropertyFrame({
         onClearOption={(value) => void clearStatusOption(def.id, value)}
       />
     ),
-    url: (def) => (
+    link: (def) => (
       <LinkEditor
         underline={def.link_underline ?? false}
         display={def.link_display ?? DEFAULT_LINK_DISPLAY}
@@ -400,7 +400,7 @@ export function PropertyFrame({
         onSetConfig={(patch) => void saveLinkConfig(def.id, patch)}
       />
     ),
-    datetime: (def, style) => (
+    dateTime: (def, style) => (
       <DateTimeEditor style={style} onChange={(patch) => void saveColumnStyle(def.id, patch)} />
     ),
     checkbox: (def, style) => (
@@ -442,8 +442,8 @@ export function PropertyFrame({
     ),
     // A registry Context and the two stamps carry no settings of their own.
     context: NO_SETTINGS,
-    created_time: NO_SETTINGS,
-    last_edited_time: NO_SETTINGS,
+    createdTime: NO_SETTINGS,
+    lastEditedTime: NO_SETTINGS,
   }
 
   const editor = (id: string): React.JSX.Element => {

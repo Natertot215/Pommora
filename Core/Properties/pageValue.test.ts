@@ -19,12 +19,12 @@ describe('valueEditRewrite — strip', () => {
     expect(strip({ id: 'p1', S: 'Active' }, 'S', 'Active')).toEqual({ id: 'p1' })
   })
 
-  it('multi_select: filters the array, deletes the key only when empty', () => {
+  it('multiSelect: filters the array, deletes the key only when empty', () => {
     expect(strip({ M: ['a', 'x', 'b'] }, 'M', 'x')).toEqual({ M: ['a', 'b'] })
     expect(strip({ M: ['x'] }, 'M', 'x')).toEqual({})
   })
 
-  it('multi_select: preserves foreign (non-string) array elements it never targeted', () => {
+  it('multiSelect: preserves foreign (non-string) array elements it never targeted', () => {
     expect(strip({ M: ['x', 5, 'keep'] }, 'M', 'x')).toEqual({ M: [5, 'keep'] })
   })
 })
@@ -57,15 +57,15 @@ describe('valueEditRewrite — replace (rename cascade)', () => {
     expect(replace({ S: 'Active' }, 'S', 'Active', 'Doing')).toEqual({ S: ['Doing'] })
   })
 
-  it('multi_select: swaps one element in place', () => {
+  it('multiSelect: swaps one element in place', () => {
     expect(replace({ M: ['a', 'x'] }, 'M', 'x', 'y')).toEqual({ M: ['a', 'y'] })
   })
 
-  it('multi_select: preserves foreign elements when swapping', () => {
+  it('multiSelect: preserves foreign elements when swapping', () => {
     expect(replace({ M: ['x', 5] }, 'M', 'x', 'y')).toEqual({ M: ['y', 5] })
   })
 
-  it('multi_select: renaming into a value already present merges, never duplicates', () => {
+  it('multiSelect: renaming into a value already present merges, never duplicates', () => {
     expect(replace({ M: ['x', 'y'] }, 'M', 'x', 'y')).toEqual({ M: ['y'] })
   })
 

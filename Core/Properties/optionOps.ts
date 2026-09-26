@@ -83,7 +83,7 @@ export function addOptionToDef(
   return mutateRegistry<Result<null>>(root, (registry) => {
     const current = registry.defs[propertyId]
     if (!current) return { result: NO_PROPERTY }
-    if (current.type !== 'multi_select')
+    if (current.type !== 'multiSelect')
       return { result: fail('invalid-property', 'Only a Multi-Select adopts options.') }
     const options = current.select_options ?? []
     if (options.some((o) => o.value === value)) return { result: ok(null) }

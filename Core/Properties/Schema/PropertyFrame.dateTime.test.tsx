@@ -20,7 +20,7 @@ class ResizeObserverStub {
 }
 ;(globalThis as { ResizeObserver?: unknown }).ResizeObserver = ResizeObserverStub
 
-const dateDef: PropertyDefinition = { id: 'prop_due', name: 'Due', type: 'datetime' }
+const dateDef: PropertyDefinition = { id: 'prop_due', name: 'Due', type: 'dateTime' }
 const source = { id: 'col1', kind: 'collection', path: 'Col', title: 'Col', views: [] } as never
 
 let host: HTMLDivElement
@@ -81,7 +81,7 @@ const openDueEditor = async (): Promise<void> => {
   })
 }
 
-describe('the datetime Format editor writes the ACTIVE view (A-3)', () => {
+describe('the dateTime Format editor writes the ACTIVE view (A-3)', () => {
   it('picking Short Date saves column_styles on the source node, not the schema', async () => {
     await openDueEditor()
     await act(async () => {

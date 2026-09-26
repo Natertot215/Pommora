@@ -522,7 +522,7 @@ describe('property grouping — configured / reversed / checkbox / date', () => 
   })
 
   it('buckets dates by granularity (same month together)', () => {
-    const dateSchema: PropertyDefinition[] = [{ id: 'prop_when', name: 'When', type: 'datetime' }]
+    const dateSchema: PropertyDefinition[] = [{ id: 'prop_when', name: 'When', type: 'dateTime' }]
     const values = pageValues({
       p1: {
         [ID_KEY]: 'p1',
@@ -560,7 +560,7 @@ describe('property grouping — configured / reversed / checkbox / date', () => 
   })
 
   it('buckets a date-only value by its stored date (no timezone shift)', () => {
-    const dueSchema: PropertyDefinition[] = [{ id: 'prop_due', name: 'Due', type: 'datetime' }]
+    const dueSchema: PropertyDefinition[] = [{ id: 'prop_due', name: 'Due', type: 'dateTime' }]
     const values = pageValues({
       p1: { [ID_KEY]: 'p1', ...propsAtRoot({ prop_due: '2026-06-27' }, dueSchema) },
     })
@@ -583,7 +583,7 @@ describe('property grouping — configured / reversed / checkbox / date', () => 
 })
 
 describe('property grouping — non-groupable fallback', () => {
-  it('falls back to structural for number and multi_select group properties', () => {
+  it('falls back to structural for number and multiSelect group properties', () => {
     const { rows, setTree } = flattenContainer(
       collection([set('s1', [page('p1')])], [page('p2')]),
       {},
@@ -610,7 +610,7 @@ describe('property grouping — non-groupable fallback', () => {
         property_id: 'prop_tags',
         order_mode: 'configured',
       },
-      [{ id: 'prop_tags', name: 'Tags', type: 'multi_select' }],
+      [{ id: 'prop_tags', name: 'Tags', type: 'multiSelect' }],
       setTree,
       null,
       'bottom',

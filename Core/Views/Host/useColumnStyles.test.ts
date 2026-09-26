@@ -14,7 +14,7 @@ const DATES = dateDefaults('full')
 
 const schema: PropertyDefinition[] = [
   { id: 'prop_status', name: 'Status', type: 'status' },
-  { id: 'prop_date', name: 'Due', type: 'datetime' },
+  { id: 'prop_date', name: 'Due', type: 'dateTime' },
   { id: 'prop_n', name: 'Count', type: 'number' },
 ]
 
@@ -85,10 +85,10 @@ describe('styleFor', () => {
     expect(styleFor('prop_date', schema, v, nexus('relative')).date_format).toBe('short')
   })
 
-  it('reaches Modified columns, which share the datetime arm', () => {
+  it('reaches Modified columns, which share the dateTime arm', () => {
     const withModified: PropertyDefinition[] = [
       ...schema,
-      { id: 'prop_m', name: 'Modified', type: 'last_edited_time' },
+      { id: 'prop_m', name: 'Modified', type: 'lastEditedTime' },
     ]
     expect(styleFor('prop_m', withModified, view({}), nexus('dayMonthYear')).date_format).toBe(
       'dayMonthYear',

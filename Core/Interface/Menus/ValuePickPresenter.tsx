@@ -30,13 +30,13 @@ export function ValuePickPresenter(): React.JSX.Element | null {
         onDismiss={dismiss}
       />
     )
-  if (def.type === 'datetime')
+  if (def.type === 'dateTime')
     return (
       <PropertyPicker
         open={pending !== null}
         triggerRef={triggerRef}
         target={{
-          kind: 'datetime',
+          kind: 'dateTime',
           def,
           current,
           dateFormat: style?.date_format,
@@ -53,7 +53,7 @@ export function ValuePickPresenter(): React.JSX.Element | null {
     <TextPicker
       open={pending !== null}
       triggerRef={triggerRef}
-      value={current?.kind === 'url' ? linkEditText(current.value) : ''}
+      value={current?.kind === 'link' ? linkEditText(current.value) : ''}
       accent={solidColorCss(def.link_color)}
       onCommit={(raw) => {
         const next = parseEditorValue(def.type, raw, current)

@@ -365,7 +365,7 @@ describe('adoption — a Multi-Select registers an option a page already holds',
     const c = await createProperty(root, {
       id: '',
       name: 'Labels',
-      type: 'multi_select',
+      type: 'multiSelect',
       select_options: [{ value: 'alpha', label: 'alpha' }],
     } as PropertyDefinition)
     if (!c.ok) throw new Error('createProperty failed')

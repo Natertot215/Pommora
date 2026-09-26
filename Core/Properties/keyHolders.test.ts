@@ -63,7 +63,7 @@ describe('keyHolderFiles', () => {
   it('a name registered after the seed finds the pages already holding it, with no re-read', async () => {
     await page('Late', 'Notes: x\n')
     await seedContentIndex(root)
-    await createProperty(root, { id: 'prop_n', name: 'Notes', type: 'url' })
+    await createProperty(root, { id: 'prop_n', name: 'Notes', type: 'link' })
     expect(await keyHolderFiles(root, 'Notes', [abs('Notes')])).toEqual([abs('Notes', 'Late.md')])
   })
 

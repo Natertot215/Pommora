@@ -32,7 +32,7 @@ const schema: PropertyDefinition[] = [
     select_options: [{ value: 'red', label: 'Red', color: 'red' }],
   },
   { id: 'prop_check', name: 'Done', type: 'checkbox' },
-  { id: 'prop_date', name: 'When', type: 'datetime' },
+  { id: 'prop_date', name: 'When', type: 'dateTime' },
 ] as PropertyDefinition[]
 
 const ctx: ValueContext = {
@@ -158,7 +158,7 @@ describe('resolveBandHead', () => {
     expect(textOf(off.glyph)).toContain('Off')
   })
 
-  it('datetime → the bucket label (formatted), the raw key as text label', () => {
+  it('dateTime → the bucket label (formatted), the raw key as text label', () => {
     const head = resolveBandHead(
       group('property', '2026-07'),
       view(propGroup('prop_date', { date_granularity: 'month' })),

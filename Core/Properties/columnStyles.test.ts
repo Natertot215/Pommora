@@ -23,12 +23,12 @@ describe('defaultStyleFor', () => {
   it('gives each look-bearing type its default look', () => {
     expect(defaultStyleFor('status')).toEqual({ look: 'standard' })
     expect(defaultStyleFor('checkbox')).toEqual({ look: 'checkbox' })
-    expect(defaultStyleFor('url')).toEqual({ look: 'link-full' })
+    expect(defaultStyleFor('link')).toEqual({ look: 'link-full' })
   })
 
-  // A url column reads the way its property says to unless its view says otherwise, so the default resolves to the property's own Format rather than a constant.
-  it('takes a url column’s default from the property’s own Format', () => {
-    expect(defaultStyleFor('url', { link_display: 'link-title' })).toEqual({ look: 'link-title' })
+  // A Link column reads the way its property says to unless its view says otherwise, so the default resolves to the property's own Format rather than a constant.
+  it('takes a link column’s default from the property’s own Format', () => {
+    expect(defaultStyleFor('link', { link_display: 'link-title' })).toEqual({ look: 'link-title' })
   })
 
   it('drops a look saved under the vocabulary this replaced', () => {
@@ -56,7 +56,7 @@ describe('defaultStyleFor', () => {
 
   it('select/multi default to the Standard option look', () => {
     expect(defaultStyleFor('select')).toEqual({ look: 'standard' })
-    expect(defaultStyleFor('multi_select')).toEqual({ look: 'standard' })
+    expect(defaultStyleFor('multiSelect')).toEqual({ look: 'standard' })
   })
 
   it('an unknown type is not style-addressable', () => {

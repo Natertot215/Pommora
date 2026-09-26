@@ -29,7 +29,7 @@ const schema: PropertyDefinition[] = [
       { value: 'done', label: 'Done' },
     ],
   },
-  { id: 'prop_when', name: 'When', type: 'datetime' },
+  { id: 'prop_when', name: 'When', type: 'dateTime' },
   { id: 'prop_num', name: 'Num', type: 'number' },
 ]
 
@@ -61,8 +61,8 @@ const row: ViewRow = {
 describe('declaredType', () => {
   it('maps reserved columns to the type/sentinel sort+group+filter switch on', () => {
     expect(declaredType('_title', schema)).toBe('title')
-    expect(declaredType('_created_at', schema)).toBe('created_time')
-    expect(declaredType('_modified_at', schema)).toBe('last_edited_time')
+    expect(declaredType('_created_at', schema)).toBe('createdTime')
+    expect(declaredType('_modified_at', schema)).toBe('lastEditedTime')
   })
 
   it('classifies a Context column only when its id is among the registry ids', () => {
@@ -74,7 +74,7 @@ describe('declaredType', () => {
     expect(declaredType('prop_status', schema)).toBe('status')
     expect(declaredType('prop_sel', schema)).toBe('select')
     expect(declaredType('prop_num', schema)).toBe('number')
-    expect(declaredType('prop_when', schema)).toBe('datetime')
+    expect(declaredType('prop_when', schema)).toBe('dateTime')
   })
 
   it('resolves an unknown id to undefined', () => {
@@ -86,11 +86,11 @@ describe('resolveFieldValue', () => {
   it('reads reserved columns from the row, not the frontmatter', () => {
     expect(rfv(row, '_title')).toEqual({ kind: 'select', value: 'My Page' })
     expect(rfv(row, '_created_at')).toEqual({
-      kind: 'datetime',
+      kind: 'dateTime',
       value: '2026-06-01T08:00:00Z',
     })
     expect(rfv(row, '_modified_at')).toEqual({
-      kind: 'datetime',
+      kind: 'dateTime',
       value: '2026-06-20T10:00:00Z',
     })
     expect(rfv(row, 'ctx_areas')).toEqual({ kind: 'context', value: ['01AREA'] })
@@ -101,7 +101,7 @@ describe('resolveFieldValue', () => {
     expect(rfv(row, 'prop_status')).toEqual({ kind: 'select', value: 'in_progress' })
     expect(rfv(row, 'prop_sel')).toEqual({ kind: 'select', value: 'opt_a' })
     expect(rfv(row, 'prop_when')).toEqual({
-      kind: 'datetime',
+      kind: 'dateTime',
       value: '2026-06-15T09:00:00Z',
     })
     expect(rfv(row, 'prop_num')).toEqual({ kind: 'number', value: 42 })
@@ -199,7 +199,7 @@ describe('resolveFieldValue memoization', () => {
       kind: 'select',
       value: 'done',
     })
-    expect(resolveFieldValue(r, 'prop_s', [{ ...def, type: 'multi_select' }])).toEqual({
+    expect(resolveFieldValue(r, 'prop_s', [{ ...def, type: 'multiSelect' }])).toEqual({
       kind: 'multiSelect',
       value: ['open'],
     })
@@ -223,7 +223,7 @@ describe('resolveFieldValue memoization', () => {
 
 describe('resolveFieldValue — the declared type is obeyed, never inferred from the value', () => {
   const typedSchema: PropertyDefinition[] = [
-    { id: 'prop_link', name: 'Link', type: 'url' },
+    { id: 'prop_link', name: 'Link', type: 'link' },
     {
       id: 'prop_tag',
       name: 'Tag',
@@ -243,7 +243,7 @@ describe('resolveFieldValue — the declared type is obeyed, never inferred from
     modifiedAt: null,
   })
 
-  it('a url column reads an aliased [alias](url) value as url — no shape ever votes', () => {
+  it('a link column reads an aliased [alias](url) value as link — no shape ever votes', () => {
     expect(
       resolveFieldValue(
         rowOf({ prop_link: '[Docs](https://example.com)' }),
@@ -251,21 +251,21 @@ describe('resolveFieldValue — the declared type is obeyed, never inferred from
         typedSchema,
       ),
     ).toEqual({
-      kind: 'url',
+      kind: 'link',
       value: '[Docs](https://example.com)',
     })
   })
 
-  it('a url column reads a bare URL as url', () => {
+  it('a link column reads a bare URL as link', () => {
     expect(
       resolveFieldValue(rowOf({ prop_link: 'https://example.com' }), 'prop_link', typedSchema),
     ).toEqual({
-      kind: 'url',
+      kind: 'link',
       value: 'https://example.com',
     })
   })
 
-  it('a select column keeps a link-shaped value as select — never stolen to url', () => {
+  it('a select column keeps a link-shaped value as select — never stolen to link', () => {
     expect(
       resolveFieldValue(rowOf({ prop_tag: '[URGENT](tel:911)' }), 'prop_tag', typedSchema),
     ).toEqual({

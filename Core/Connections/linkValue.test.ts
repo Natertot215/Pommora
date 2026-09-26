@@ -117,7 +117,7 @@ describe('linkDisplayText — no alias, the look decides', () => {
     )
   })
 
-  // Sort and filter call this with no look on purpose; a link-short default would silently re-order every URL column.
+  // Sort and filter call this with no look on purpose; a link-short default would silently re-order every Link column.
   it('the no-look call returns the raw URL — the pin sort and filter stand on', () => {
     expect(linkDisplayText('https://www.example.com/x')).toBe('https://www.example.com/x')
     expect(linkDisplayText('https://www.example.com/x', undefined, 'Example Domain')).toBe(
@@ -132,25 +132,25 @@ describe('internal links', () => {
 
   it('commits a pasted connection under the page’s canonical title', () => {
     expect(linkValueFromEdit('[[meeting notes]]', undefined, resolve)).toEqual({
-      kind: 'url',
+      kind: 'link',
       value: '[[Meeting Notes]]',
     })
   })
   it('keeps a pasted connection’s alias', () => {
     expect(linkValueFromEdit('[[Meeting Notes|Today]]', undefined, resolve)).toEqual({
-      kind: 'url',
+      kind: 'link',
       value: '[[Meeting Notes|Today]]',
     })
   })
   it('reads a markdown link naming a page as a connection, label and all', () => {
     expect(linkValueFromEdit('[Today](Meeting%20Notes)', undefined, resolve)).toEqual({
-      kind: 'url',
+      kind: 'link',
       value: '[[Meeting Notes|Today]]',
     })
   })
   it('drops an alias that merely repeats the title', () => {
     expect(linkValueFromEdit('[[Meeting Notes|meeting notes]]', undefined, resolve)).toEqual({
-      kind: 'url',
+      kind: 'link',
       value: '[[Meeting Notes]]',
     })
   })
@@ -160,7 +160,7 @@ describe('internal links', () => {
   })
   it('reads a markdown link over an address as the aliased URL', () => {
     expect(linkValueFromEdit('[My Site](https://example.com)', undefined, resolve)).toEqual({
-      kind: 'url',
+      kind: 'link',
       value: '[My Site](https://example.com)',
     })
   })
@@ -175,11 +175,11 @@ describe('internal links', () => {
   })
   it('renames by setting the connection’s alias', () => {
     expect(linkValueFromRename('Today', '[[Meeting Notes]]')).toEqual({
-      kind: 'url',
+      kind: 'link',
       value: '[[Meeting Notes|Today]]',
     })
     expect(linkValueFromRename('', '[[Meeting Notes|Today]]')).toEqual({
-      kind: 'url',
+      kind: 'link',
       value: '[[Meeting Notes]]',
     })
   })
@@ -221,15 +221,15 @@ describe('internal links', () => {
     ).toEqual({ Link: '[[New Title#Decisions]]' })
     expect(linkEditText('[[Meeting Notes#Decisions]]')).toBe('[[Meeting Notes#Decisions]]')
     expect(linkValueFromEdit('[[meeting notes#Decisions]]', undefined, resolve)).toEqual({
-      kind: 'url',
+      kind: 'link',
       value: '[[Meeting Notes#Decisions]]',
     })
     expect(linkValueFromEdit('[Label](Meeting%20Notes#Decisions)', undefined, resolve)).toEqual({
-      kind: 'url',
+      kind: 'link',
       value: '[[Meeting Notes#Decisions|Label]]',
     })
     expect(linkValueFromRename('Today', '[[Meeting Notes#Decisions]]')).toEqual({
-      kind: 'url',
+      kind: 'link',
       value: '[[Meeting Notes#Decisions|Today]]',
     })
   })
@@ -244,40 +244,40 @@ describe('a connection under the Link cell’s three menu actions', () => {
     const text = linkEditText(CONNECTION)
     expect(text).toBe(CONNECTION)
     expect(linkValueFromEdit(text, CONNECTION, resolve)).toEqual({
-      kind: 'url',
+      kind: 'link',
       value: CONNECTION,
     })
   })
   it('Edit re-targets to a different page, keeping nothing of the old one', () => {
     expect(linkValueFromEdit('[[meeting notes]]', CONNECTION, resolve)).toEqual({
-      kind: 'url',
+      kind: 'link',
       value: '[[Meeting Notes]]',
     })
   })
   it('Edit swaps a connection for an address, and an address back for a connection', () => {
     expect(linkValueFromEdit('example.com', CONNECTION, resolve)).toEqual({
-      kind: 'url',
+      kind: 'link',
       value: 'https://example.com',
     })
     expect(linkValueFromEdit('example.org', '[My Site](https://example.com)', resolve)).toEqual({
-      kind: 'url',
+      kind: 'link',
       value: '[My Site](https://example.org)',
     })
     expect(linkValueFromEdit(CONNECTION, 'https://example.com', resolve)).toEqual({
-      kind: 'url',
+      kind: 'link',
       value: CONNECTION,
     })
   })
   it('Rename opens on the alias and writes it back onto the same page', () => {
     expect(linkAlias(CONNECTION)).toBe('Today')
     expect(linkValueFromRename('Tomorrow', CONNECTION)).toEqual({
-      kind: 'url',
+      kind: 'link',
       value: '[[Meeting Notes|Tomorrow]]',
     })
   })
   it('an alias that would break the grammar is refused rather than written', () => {
     expect(linkValueFromRename('Notes] done', '[[Meeting Notes]]')).toEqual({
-      kind: 'url',
+      kind: 'link',
       value: '[[Meeting Notes]]',
     })
   })

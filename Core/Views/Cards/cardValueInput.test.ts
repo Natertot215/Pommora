@@ -19,13 +19,13 @@ describe('parseEditorValue', () => {
     expect(parseEditorValue('number', 'abc')).toBeUndefined()
   })
 
-  it('url: normalizes + serializes a valid link, clears on empty, rejects invalid', () => {
-    expect(parseEditorValue('url', 'example.com')).toEqual({
-      kind: 'url',
+  it('link: normalizes + serializes a valid link, clears on empty, rejects invalid', () => {
+    expect(parseEditorValue('link', 'example.com')).toEqual({
+      kind: 'link',
       value: 'https://example.com',
     })
-    expect(parseEditorValue('url', '')).toBeNull()
-    expect(parseEditorValue('url', 'not a url')).toBeUndefined()
+    expect(parseEditorValue('link', '')).toBeNull()
+    expect(parseEditorValue('link', 'not a url')).toBeUndefined()
   })
 
   it('an unsupported type never commits', () => {
@@ -40,7 +40,7 @@ describe('orderAddableEntries', () => {
       { id: 'chk', name: 'Chk', type: 'checkbox', def: null, revealOnly: true },
       { id: 's', name: 'S', type: 'status', def: null, revealOnly: false },
       { id: 'area', name: 'Areas', type: 'context', def: null, revealOnly: true },
-      { id: 'u', name: 'U', type: 'url', def: null, revealOnly: false },
+      { id: 'u', name: 'U', type: 'link', def: null, revealOnly: false },
     ]
     expect(orderAddableEntries(entries).map((e) => e.id)).toEqual(['n', 's', 'u', 'chk', 'area'])
   })
@@ -84,8 +84,8 @@ describe('addEntriesFor', () => {
     const { createdAt, modifiedAt } = RESERVED_PROPERTY_ID
     const entries = addEntriesFor(row, view, ctx, [{ id: '_title', kind: 'title' }])
     expect(entries.map((e) => [e.id, e.type, e.revealOnly])).toEqual([
-      [createdAt, 'created_time', true],
-      [modifiedAt, 'last_edited_time', true],
+      [createdAt, 'createdTime', true],
+      [modifiedAt, 'lastEditedTime', true],
     ])
   })
 })

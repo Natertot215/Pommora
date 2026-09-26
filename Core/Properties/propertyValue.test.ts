@@ -61,15 +61,15 @@ describe('decodeValue — the declared type decides, never the shape', () => {
       kind: 'checkbox',
       value: true,
     })
-    expect(decodeValue(def({ type: 'url' }), 'https://acme.io')).toEqual({
-      kind: 'url',
+    expect(decodeValue(def({ type: 'link' }), 'https://acme.io')).toEqual({
+      kind: 'link',
       value: 'https://acme.io',
     })
-    expect(decodeValue(def({ type: 'datetime' }), '2026-06-15')).toEqual({
-      kind: 'datetime',
+    expect(decodeValue(def({ type: 'dateTime' }), '2026-06-15')).toEqual({
+      kind: 'dateTime',
       value: '2026-06-15',
     })
-    expect(decodeValue(def({ type: 'multi_select' }), ['a', 'b'])).toEqual({
+    expect(decodeValue(def({ type: 'multiSelect' }), ['a', 'b'])).toEqual({
       kind: 'multiSelect',
       value: ['a', 'b'],
     })
@@ -78,7 +78,7 @@ describe('decodeValue — the declared type decides, never the shape', () => {
   it('a value whose shape contradicts its type reads as null, never as another type', () => {
     expect(decodeValue(def({ type: 'number' }), 'five')).toEqual({ kind: 'null' })
     expect(decodeValue(def({ type: 'checkbox' }), 'true')).toEqual({ kind: 'null' })
-    expect(decodeValue(def({ type: 'multi_select' }), { a: 1 })).toEqual({ kind: 'null' })
+    expect(decodeValue(def({ type: 'multiSelect' }), { a: 1 })).toEqual({ kind: 'null' })
   })
 
   it('a checkbox is true or absent — false written from outside reads as no value', () => {
@@ -89,14 +89,14 @@ describe('decodeValue — the declared type decides, never the shape', () => {
     const year = def({ type: 'select', select_options: [{ value: '2024', label: '2024' }] })
     expect(decodeValue(year, [2024])).toEqual({ kind: 'select', value: '2024' })
     expect(decodeValue(year, 2024)).toEqual({ kind: 'select', value: '2024' })
-    expect(decodeValue(def({ type: 'multi_select' }), [true, 'x'])).toEqual({
+    expect(decodeValue(def({ type: 'multiSelect' }), [true, 'x'])).toEqual({
       kind: 'multiSelect',
       value: ['true', 'x'],
     })
   })
 
   it('an option type reads a scalar as a list of one', () => {
-    expect(decodeValue(def({ type: 'multi_select' }), 'zeta')).toEqual({
+    expect(decodeValue(def({ type: 'multiSelect' }), 'zeta')).toEqual({
       kind: 'multiSelect',
       value: ['zeta'],
     })
@@ -104,13 +104,13 @@ describe('decodeValue — the declared type decides, never the shape', () => {
     expect(decodeValue(statusDef, ['Done'])).toEqual({ kind: 'select', value: 'Done' })
   })
 
-  it('both stamp types decode as a datetime', () => {
-    expect(decodeValue(def({ type: 'last_edited_time' }), '2026-06-15T14:30:00Z')).toEqual({
-      kind: 'datetime',
+  it('both stamp types decode as a dateTime', () => {
+    expect(decodeValue(def({ type: 'lastEditedTime' }), '2026-06-15T14:30:00Z')).toEqual({
+      kind: 'dateTime',
       value: '2026-06-15T14:30:00Z',
     })
-    expect(decodeValue(def({ type: 'created_time' }), '2026-06-15T14:30:00Z')).toEqual({
-      kind: 'datetime',
+    expect(decodeValue(def({ type: 'createdTime' }), '2026-06-15T14:30:00Z')).toEqual({
+      kind: 'dateTime',
       value: '2026-06-15T14:30:00Z',
     })
   })
@@ -155,13 +155,13 @@ describe('decodeValue — lenient on read', () => {
   })
 
   it('a multi-select keeps a value the schema does not offer yet', () => {
-    const d = def({ type: 'multi_select', select_options: [{ value: 'A', label: 'A' }] })
+    const d = def({ type: 'multiSelect', select_options: [{ value: 'A', label: 'A' }] })
     expect(decodeValue(d, ['A', 'Gone'])).toEqual({ kind: 'multiSelect', value: ['A', 'Gone'] })
     expect(decodeValue(d, ['Gone'])).toEqual({ kind: 'multiSelect', value: ['Gone'] })
   })
 
-  it('an empty string is a url value', () => {
-    expect(decodeValue(def({ type: 'url' }), '')).toEqual({ kind: 'url', value: '' })
+  it('an empty string is a link value', () => {
+    expect(decodeValue(def({ type: 'link' }), '')).toEqual({ kind: 'link', value: '' })
   })
 })
 
@@ -240,10 +240,10 @@ describe('encodeValue — bare on disk', () => {
     const pairs: Array<[PropertyDefinition, unknown]> = [
       [def({ type: 'number' }), 42],
       [def({ type: 'checkbox' }), true],
-      [def({ type: 'url' }), 'https://acme.io'],
-      [def({ type: 'datetime' }), '2026-06-15T14:30:00Z'],
+      [def({ type: 'link' }), 'https://acme.io'],
+      [def({ type: 'dateTime' }), '2026-06-15T14:30:00Z'],
       [selectDef, ['A']],
-      [def({ type: 'multi_select' }), ['a', 'b']],
+      [def({ type: 'multiSelect' }), ['a', 'b']],
       [statusDef, ['Done']],
       [def({ type: 'file' }), ['[[y.png]]']],
     ]
@@ -267,8 +267,8 @@ describe('the no-empties rule — no value, no key', () => {
     { kind: 'context', value: [] },
     { kind: 'file', value: [] },
     { kind: 'select', value: '' },
-    { kind: 'url', value: '' },
-    { kind: 'datetime', value: '' },
+    { kind: 'link', value: '' },
+    { kind: 'dateTime', value: '' },
   ]
   for (const v of empties) {
     it(`an empty ${v.kind} deletes the key — never writes []/''`, () => {

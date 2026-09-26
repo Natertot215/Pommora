@@ -13,11 +13,11 @@ import {
 const schema: PropertyDefinition[] = [
   { id: 'prop_status', name: 'Status', type: 'status' },
   { id: 'prop_select', name: 'Tag', type: 'select' },
-  { id: 'prop_multi', name: 'Tags', type: 'multi_select' },
+  { id: 'prop_multi', name: 'Tags', type: 'multiSelect' },
   { id: 'prop_n', name: 'Count', type: 'number' },
   { id: 'prop_done', name: 'Done', type: 'checkbox' },
-  { id: 'prop_url', name: 'Link', type: 'url' },
-  { id: 'prop_date', name: 'Due', type: 'datetime' },
+  { id: 'prop_url', name: 'Link', type: 'link' },
+  { id: 'prop_date', name: 'Due', type: 'dateTime' },
 ]
 
 describe('column widths', () => {
@@ -32,6 +32,10 @@ describe('column widths', () => {
     it('keys user properties by their schema type', () => {
       expect(widthFor('prop_status', schema)).toEqual({ min: 65, default: 120, max: 250 })
       expect(widthFor('prop_n', schema).default).toBe(100)
+    })
+
+    it('keys a Link column by its own width, not the fallback', () => {
+      expect(widthFor('prop_url', schema)).toEqual({ min: 100, default: 140, max: 350 })
     })
 
     it('falls back for an unknown column', () => {
@@ -103,7 +107,7 @@ describe('column alignment', () => {
       expect(defaultAlignFor('prop_date', schema)).toBe('center')
     })
 
-    it('left-aligns title, number, url, and modified', () => {
+    it('left-aligns title, number, link, and modified', () => {
       expect(defaultAlignFor(RESERVED_PROPERTY_ID.title, schema)).toBe('left')
       expect(defaultAlignFor('prop_n', schema)).toBe('left')
       expect(defaultAlignFor('prop_url', schema)).toBe('left')

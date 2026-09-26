@@ -136,12 +136,12 @@ export function defaultStyleFor(
   switch (type) {
     case 'status':
     case 'select':
-    case 'multi_select':
+    case 'multiSelect':
       return { look: 'standard' }
     case 'checkbox':
       return { look: 'checkbox' }
-    // A url column reads the way its property says to unless this view says otherwise — so the property's Format is the default here rather than a constant that would silently override it.
-    case 'url':
+    // A Link column reads the way its property says to unless this view says otherwise — so the property's Format is the default here rather than a constant that would silently override it.
+    case 'link':
       return { look: def?.link_display ?? DEFAULT_LINK_DISPLAY }
     case 'number':
       return { look: 'number' }

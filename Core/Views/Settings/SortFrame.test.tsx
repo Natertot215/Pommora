@@ -27,7 +27,7 @@ const statusDef: PropertyDefinition = {
     },
   ],
 }
-const dateDef: PropertyDefinition = { id: 'prop_when', name: 'When', type: 'datetime' }
+const dateDef: PropertyDefinition = { id: 'prop_when', name: 'When', type: 'dateTime' }
 const fileDef: PropertyDefinition = { id: 'prop_file', name: 'Attachment', type: 'file' }
 const checkDef: PropertyDefinition = { id: 'prop_check', name: 'Checked', type: 'checkbox' }
 const schema = [statusDef, dateDef, fileDef, checkDef]
@@ -118,7 +118,7 @@ describe('SortFrame rows', () => {
     expect(lastSaved().sort).toEqual([{ property_id: 'prop_status', direction: 'ascending' }])
   })
 
-  it('per-type Order labels: status reads Default, datetime Ascending, file A → Z', async () => {
+  it('per-type Order labels: status reads Default, dateTime Ascending, file A → Z', async () => {
     await mount(view({ sort: [{ property_id: 'prop_status', direction: 'ascending' }] }))
     expect(texts()).toContain('Order')
     expect(texts()).toContain('Default')
@@ -229,7 +229,7 @@ describe('SortFrame rows', () => {
     expect(texts().indexOf('Done')).toBeLessThan(texts().indexOf('Todo'))
   })
 
-  it('a datetime primary collapses the example middle', async () => {
+  it('a dateTime primary collapses the example middle', async () => {
     await mount(view({ sort: [{ property_id: 'prop_when', direction: 'ascending' }] }))
     expect(texts()).not.toContain('Todo')
     expect(texts()).not.toContain('Open')

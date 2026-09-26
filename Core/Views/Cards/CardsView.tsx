@@ -86,7 +86,7 @@ import './cards-view.css'
 type ValuePickerRequest = {
   rowId: string
   column: ResolvedColumn
-  kind: 'picker' | 'datetime' | 'link' | 'number' | 'file'
+  kind: 'picker' | 'dateTime' | 'link' | 'number' | 'file'
   anchor: HTMLElement
   clickX?: number
   revealOnCommit?: boolean
@@ -260,7 +260,7 @@ export function CardsView({ host }: { host: ViewHostApi }): React.JSX.Element {
     valuePicker && valuePicker.kind !== 'link' && valuePicker.kind !== 'number' ? valuePicker : null
   const vRow = valuePicker && rowById.get(valuePicker.rowId)
   const vTarget = valuePicker && vRow ? pickTarget(vRow, valuePicker.column) : null
-  const vRaw = vTarget?.current?.kind === 'url' ? vTarget.current.value : undefined
+  const vRaw = vTarget?.current?.kind === 'link' ? vTarget.current.value : undefined
   const commitPicked = (v: PropertyValue | null, entry?: PickEntry): void => {
     const req = valuePicker ?? addPicker
     const row = req && rowById.get(req.rowId)
@@ -574,7 +574,7 @@ export function CardsView({ host }: { host: ViewHostApi }): React.JSX.Element {
           value={vRaw ? linkEditText(vRaw) : ''}
           accent={solidColorCss(vTarget?.def.link_color)}
           onCommit={(raw) => {
-            const nv = parseEditorValue('url', raw, vTarget?.current)
+            const nv = parseEditorValue('link', raw, vTarget?.current)
             if (nv !== undefined && (nv !== null || vRaw)) commitPicked(nv)
             setValuePicker(null)
           }}
@@ -619,7 +619,7 @@ export function CardsView({ host }: { host: ViewHostApi }): React.JSX.Element {
               rowId: addPicker.rowId,
               column: addColumn(entry.id, tree),
               kind:
-                src && (src.type === 'datetime' || src.type === 'number' || src.type === 'file')
+                src && (src.type === 'dateTime' || src.type === 'number' || src.type === 'file')
                   ? src.type
                   : 'link',
               anchor: addPicker.anchor,
