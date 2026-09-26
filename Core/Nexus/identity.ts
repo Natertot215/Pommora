@@ -1,16 +1,17 @@
 import { machine } from '../Platform/machine'
-import { errText, ok, type Result, valueOr } from '../Contract/result'
+import { errText, valueOr } from '../Contract/result'
 import { newId } from './ids'
-import { readJsonStrict, writeJson } from '../Files/atomicWrite'
+import { readJsonStrict, readKept, writeJson } from '../Files/atomicWrite'
 import { asString } from './coerce'
 import { nexusDir, nexusConfig } from '../Paths/paths'
 import { AGENDA_FOLDERS, NEXUS_CONFIG_FILES } from '../Paths/nexusPaths'
 import { createFolderEntity } from './folderEntity'
 import type { AgendaRegistration } from './folderKind'
 
-export async function readIdentity(root: string): Promise<Result<Record<string, unknown>>> {
-  const read = await readJsonStrict(nexusConfig(root, NEXUS_CONFIG_FILES.identity))
-  return read.ok ? ok(retireAgendaKey(read.value)) : read
+/** Absent is raw mode; a damaged file reads as its last parse, never as raw mode, which would ignore every sidecar's identity. */
+export async function readIdentity(root: string): Promise<Record<string, unknown> | null> {
+  const identity = await readKept(nexusConfig(root, NEXUS_CONFIG_FILES.identity))
+  return identity && retireAgendaKey(identity)
 }
 
 export async function ensureIdentity(

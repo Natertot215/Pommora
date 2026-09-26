@@ -10,6 +10,7 @@ import { CONTAINER_KINDS } from './mutateRequest'
 import { setChildOrder } from './reorder'
 import { noteValueWrite } from './valuesChanged'
 import { reportRename } from '../Sync/Client/tap'
+import { excludedWithin, exclusionWriteRefusal, readWatchScope } from '../Settings/settings'
 
 async function ends(
   root: string,
@@ -44,7 +45,12 @@ export async function moveSetOp(
 ): Promise<MutateReply> {
   const at = await ends(root, req, 'set')
   if (!at.ok) return at
-  const refused = await landingRefusal(root, at.value.dst, basename(at.value.src))
+  const refused =
+    (await landingRefusal(root, at.value.dst, basename(at.value.src))) ??
+    (await exclusionWriteRefusal(
+      root,
+      excludedWithin((await readWatchScope(root)).excluded, req.path),
+    ))
   if (refused) return refused
   const r = await moveFolderEntity(at.value.src, at.value.dst)
   if (!r.ok) return r
