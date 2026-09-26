@@ -7,6 +7,7 @@ import type { PropertyDefinition } from '@pommora/core/Properties/properties'
 import type { SavedView } from '@pommora/core/Views/views'
 import { FilterFrame, type FilterView } from './FilterFrame'
 import { mountEachTest } from '../../Testing/viewHarness'
+import { linkedSpacesTree } from '../../Testing/testTree'
 
 const statusDef: PropertyDefinition = {
   id: 'prop_status',
@@ -441,6 +442,29 @@ describe('FilterFrame value editors', () => {
     )
     rule = (lastSaved().filter as { rules: unknown[] }).rules[0] as Record<string, unknown>
     expect(rule.values).toEqual(['todo', 'done'])
+  })
+
+  it('a Context rule lists its Spaces with their icons', async () => {
+    const tree = linkedSpacesTree()
+    tree.contexts[0].spaces[0].icon = 'hash'
+    await act(async () => {
+      root.render(
+        <FilterFrame
+          locations={source.sets}
+          view={view({ filter: { match: 'all', rules: [{ property_id: 'g1', op: 'contains_any' }] } })}
+          schema={schema}
+          tree={tree}
+          label="Settings"
+          onBack={() => {}}
+          onCommit={saveSpy}
+        />,
+      )
+    })
+    await click(host.querySelector('[aria-label="Filter values"]'))
+    const row = [...document.querySelectorAll('[role="button"]')].find(
+      (el) => el.textContent === 'Work',
+    )
+    expect(row?.querySelector('.lucide-hash')).not.toBeNull()
   })
 
   it('two rapid picks inside the refetch window accumulate — the second never drops the first', async () => {

@@ -31,12 +31,16 @@ import { useSetting } from '../../Session/store'
 import { formatDate, readDate } from '../../Properties/formatValue'
 import { contextOptionsFor } from '../../Contexts/contextOptions'
 import { declaredType } from '../../Properties/value'
-import { toggleValue } from '../../Properties/Pickers/PropertyPicker'
+import {
+  PropertyOptionRows,
+  pickShape,
+  syntheticContextDef,
+  toggleValue,
+} from '../../Properties/Pickers/PropertyPicker'
 import { CheckboxGlyph } from '../../Properties/Cells/CheckboxGlyph'
 import { onActivateKey } from '@pommora/uix/Interactions/activate'
 import { cx } from '@pommora/uix/Utilities/cx'
 import { PickerControl, type PickerOption } from '@pommora/uix/Pickers/PickerControl'
-import { optionsOf } from '@pommora/core/Properties/properties'
 import {
   type Connector,
   type DecodedFilter,
@@ -293,20 +297,19 @@ function LocationField({
 
 function ChipsField({
   values,
-  options,
-  isContext,
-  type,
+  def,
+  contextOptions,
   onCommit,
 }: {
   values: string[]
-  options: PickOption[]
-  isContext: boolean
-  type: string
+  def: PropertyDefinition
+  contextOptions?: PickOption[]
   onCommit: (next: string[]) => void
 }): React.JSX.Element {
   const [open, setOpen] = useState(false)
   const ref = useRef<HTMLDivElement>(null)
   const { shown, toggle } = useMultiValue(values, onCommit)
+  const { options } = pickShape(def, contextOptions)
   const byValue = new Map(options.map((o) => [o.value, o]))
   return (
     <>
@@ -317,7 +320,7 @@ function ChipsField({
           <OverScroll className={fp.chipRun}>
             {shown.map((v) => {
               const o = byValue.get(v)
-              return isContext ? (
+              return contextOptions ? (
                 <NeutralChip
                   key={v}
                   color={colorNameFor(o?.color)}
@@ -328,7 +331,7 @@ function ChipsField({
               ) : (
                 <OptionChip
                   key={v}
-                  type={type}
+                  type={def.type}
                   option={o ?? { value: v }}
                   onRemove={() => toggle(v)}
                 />
@@ -338,24 +341,17 @@ function ChipsField({
         )}
       </ValueFieldShell>
       <PickerMenu open={open} onDismiss={() => setOpen(false)} triggerRef={ref}>
-        {!open
-          ? null
-          : options.length === 0
-            ? emptyPicker('No options yet.')
-            : options.map((o) => (
-                <MenuItem
-                  key={o.value}
-                  checked={shown.includes(o.value)}
-                  centered
-                  onClick={() => toggle(o.value)}
-                >
-                  {isContext ? (
-                    <NeutralChip color={colorNameFor(o.color)} title={o.label} />
-                  ) : (
-                    <OptionChip type={type} option={o} />
-                  )}
-                </MenuItem>
-              ))}
+        {!open ? null : options.length === 0 ? (
+          emptyPicker('No options yet.')
+        ) : (
+          <PropertyOptionRows
+            def={def}
+            contextOptions={contextOptions}
+            options={options}
+            selected={shown}
+            onPick={toggle}
+          />
+        )}
       </PickerMenu>
     </>
   )
@@ -544,19 +540,14 @@ export function FilterFrame({
     }
 
     if (op.slot === 'chips') {
-      const type = declaredType(rule.property_id, schema, contextIds)
-      const isContext = type === 'context'
-      const options = isContext
-        ? tree
-          ? contextOptionsFor(rule.property_id, tree)
-          : []
-        : optionsOf(def)
+      const isContext = declaredType(rule.property_id, schema, contextIds) === 'context'
       return (
         <ChipsField
           values={rule.values ?? []}
-          options={options}
-          isContext={isContext}
-          type={type ?? 'select'}
+          def={def ?? syntheticContextDef(rule.property_id)}
+          contextOptions={
+            isContext ? (tree ? contextOptionsFor(rule.property_id, tree) : []) : undefined
+          }
           onCommit={(values) => patch({ values })}
         />
       )
