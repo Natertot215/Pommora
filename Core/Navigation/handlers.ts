@@ -17,8 +17,7 @@ export const navigationHandlers = {
 
   'nav:write': withWriteRoot(async (root, _ctx, patch: unknown) => {
     if (!isPlainObject(patch)) return fault('Navigation patch must be an object.')
-    await writeNavigationState(root, patch)
-    return ok(null)
+    return (await writeNavigationState(root, patch)) ? ok(null) : NO_STORE
   }),
 
   'tabs:load': withRoot(() => ok(readTabsState())),
