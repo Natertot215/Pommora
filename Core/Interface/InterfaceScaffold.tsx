@@ -3,7 +3,7 @@ import { cx } from '@pommora/uix/Utilities/cx'
 import { EntityBanner } from './Header/Banner'
 import { isSurfaceKind, type BannerOwner } from '../Nexus/treeIndex'
 import { useContentHost } from './contentHost'
-import { captureCache, readCache } from '../Navigation/warmTabs'
+import { captureWarm, readWarm } from '../Session/warmCache'
 
 export function InterfaceScaffold({
   owner,
@@ -21,7 +21,7 @@ export function InterfaceScaffold({
   useEffect(() => {
     const el = ref.current
     if (!el || tabId === undefined || warmKey === undefined) return
-    const saved = readCache(tabId, warmKey)?.scrollTop
+    const saved = readWarm(tabId, warmKey)?.scrollTop
     el.scrollTop = saved ?? 0
     let last = saved ?? 0
     const onScroll = (): void => {
@@ -30,7 +30,7 @@ export function InterfaceScaffold({
     el.addEventListener('scroll', onScroll, { passive: true })
     return () => {
       el.removeEventListener('scroll', onScroll)
-      captureCache(tabId, warmKey, { scrollTop: last })
+      captureWarm(tabId, warmKey, { scrollTop: last })
     }
   }, [tabId, warmKey])
 

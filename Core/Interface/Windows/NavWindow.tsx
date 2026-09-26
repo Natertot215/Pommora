@@ -2,21 +2,18 @@ import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { Button } from '@pommora/uix/Buttons/Button'
 import { cx } from '@pommora/uix/Utilities/cx'
 import { duration, easing, flipTransform, ms } from '@pommora/uix/Animations/motion'
-import { text } from '@pommora/uix/Theme'
 import { WindowBase } from '@pommora/uix/Windows/WindowBase'
-import { SearchField } from '@pommora/uix/Fields/SearchField'
 import type { NavRef } from '@pommora/core/Navigation/navRef'
 import { useExitPresence } from '@pommora/uix/Animations/useExitPresence'
 import { moveByKey } from '@pommora/uix/Utilities/moveItem'
 import { resolveIndexOf } from '../../Nexus/treeIndex'
 import { useFold, windowTargetOf, useSession, useSetting } from '../../Session/store'
 import { useNavData } from '../../Navigation/useNavData'
-import { NavList } from '../../Navigation/NavList'
 import { NavBanner } from '../../Navigation/NavBanner'
+import { useNavBase } from '../../Navigation/NavBase'
 import { consumeWindowMorph } from './windowMorph'
 import { WindowTabStrip } from './WindowTabStrip'
 import { useWindowTabBody } from './WindowTabBody'
-import { NavGallery } from '../../Navigation/NavGallery'
 import { useWindowGeometry } from './useWindowGeometry'
 import { useWindowTabSlide } from './useWindowTabSlide'
 import { Subfield } from '../Subfield/Subfield'
@@ -59,7 +56,6 @@ function NavWindowBody({ closing }: { closing: boolean }): React.JSX.Element {
     setRecentsOrder(next.map((r) => r.key))
   }
 
-  const [query, setQuery] = useState('')
   const searchRef = useRef<HTMLInputElement>(null)
 
   // An open sourced from a live Page Window FLIPs from its stashed rect; the css intro is canceled pre-paint so only one motion plays.
@@ -75,12 +71,21 @@ function NavWindowBody({ closing }: { closing: boolean }): React.JSX.Element {
     )
   }, [])
 
-  const results = useMemo(() => (query.trim() ? search(query) : null), [query, search])
   const closeOnSelect = useSetting('navCloseOnSelect')
   const onSelected = closeOnSelect ? () => closeWindow() : undefined
   const goClose = (target: NavRef): void => go(target, onSelected)
   const goNewTab = (target: NavRef): void => go(target, onSelected, { newTab: true })
   const gallery = useSession((s) => s.devicePrefs.navWindowGallery === true)
+  const nav = useNavBase({
+    gallery,
+    search,
+    pins: resolvedPins,
+    recents: shownRecents,
+    onReorderRecent: reorderShownRecent,
+    onSelect: goClose,
+    onOpenNewTab: goNewTab,
+    inputRef: searchRef,
+  })
   const setDevicePref = useSession((s) => s.setDevicePref)
 
   const target = useSession((s) => (s.windowSlot?.kind === 'nav' ? windowTargetOf(s) : null))
@@ -89,24 +94,14 @@ function NavWindowBody({ closing }: { closing: boolean }): React.JSX.Element {
   const sidePaneOpen = right.open === true
   const contentRef = useRef<HTMLDivElement>(null)
   useWindowTabSlide(contentRef, rootRef, sidePaneOpen)
-  // Also re-focuses on every map-tab return — the input remounts when a tab swaps the body away.
+  // Re-focuses on every map-tab return.
   useEffect(() => {
     if (!target) searchRef.current?.focus()
   }, [target])
 
   const bannered = useSetting('windowNavBanner')
-  const searchField = (
-    <SearchField
-      inputRef={searchRef}
-      className={cx('nav-view-search', text.headline.emphasized)}
-      value={query}
-      onValueChange={setQuery}
-    />
-  )
-  const searchRow = <div className="nav-search-row navwindow-search">{searchField}</div>
+  const searchRow = <div className="nav-search-row navwindow-search">{nav.search}</div>
   const resolveIndex = tree ? resolveIndexOf(tree) : null
-  // Its own list, never the main pane's selection — the bar states what this window is showing.
-  const shownCount = results ? results.length : resolvedPins.length + shownRecents.length
 
   return (
     <WindowBase
@@ -119,7 +114,7 @@ function NavWindowBody({ closing }: { closing: boolean }): React.JSX.Element {
       onEscape={() => (sidePaneOpen ? closeSidePane() : closeWindow())}
       dragSurfaces={DRAG_SURFACES}
       footer={{
-        bar: footer ?? <Subfield page={null} count={shownCount} selection={{ kind: 'none' }} />,
+        bar: footer ?? <Subfield page={null} count={nav.count} selection={{ kind: 'none' }} />,
         open: footerOpen,
         onOpenChange: setFooterOpen,
         label: footerLabel,
@@ -149,40 +144,18 @@ function NavWindowBody({ closing }: { closing: boolean }): React.JSX.Element {
       right={right}
     >
       <div className="navwindow-content" ref={contentRef}>
-        {body ?? (
-          <div className="navwindow-main">
-            {bannered ? (
-              <NavBanner search={searchField} empty={() => searchRow} chrome="window" />
-            ) : (
-              searchRow
-            )}
-            <div className="navwindow-main-scroll over-scroll">
-              {gallery ? (
-                <NavGallery
-                  pins={results ? [] : resolvedPins}
-                  items={results ? results : shownRecents}
-                  frozenLayout={!!results}
-                  {...(results ? {} : { onReorderRecent: reorderShownRecent })}
-                  onSelect={goClose}
-                  onOpenNewTab={goNewTab}
-                />
-              ) : (
-                <NavList
-                  {...(results
-                    ? { items: results }
-                    : {
-                        pins: resolvedPins,
-                        items: shownRecents,
-                        reorderable: true,
-                        onReorderRecent: reorderShownRecent,
-                      })}
-                  onSelect={goClose}
-                  onOpenNewTab={goNewTab}
-                />
-              )}
-            </div>
-          </div>
-        )}
+        {body}
+        <div
+          className={cx('navwindow-main', target !== null && 'is-parked')}
+          inert={target !== null}
+        >
+          {bannered ? (
+            <NavBanner search={nav.search} empty={() => searchRow} chrome="window" />
+          ) : (
+            searchRow
+          )}
+          <div className="navwindow-main-scroll over-scroll">{nav.body}</div>
+        </div>
       </div>
     </WindowBase>
   )

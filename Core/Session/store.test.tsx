@@ -17,7 +17,7 @@ import {
 } from './store'
 import { newTabTab, pinTabId } from '../Navigation/tabsModel'
 import { navKey, toNavRef } from '@pommora/core/Navigation/navRef'
-import { captureCache, readCache } from '../Navigation/warmTabs'
+import { captureWarm, readWarm } from './warmCache'
 import {
   clearCache,
   dropPageDetail,
@@ -388,15 +388,15 @@ describe('store — page slots', () => {
     seedLinkerAndParked()
     channels.mutate = vi.fn(async () => ok({ cascade: { pages: [], hosts: [], warning: 'W' } }))
     const { a, b } = useSession.getState().pages
-    captureCache('t2', navKey(pg('b')), { pageDetail: detail('b', 'Notes/b.md') })
-    const warm = readCache('t2', navKey(pg('b')))
+    captureWarm('t2', navKey(pg('b')), { pageDetail: detail('b', 'Notes/b.md') })
+    const warm = readWarm('t2', navKey(pg('b')))
     await useSession
       .getState()
       .mutate({ op: 'renameHeading', path: 'Notes/a.md', heading: 'Setup', to: 'Intro' })
     const s = useSession.getState()
     expect(s.pages.a).toBe(a)
     expect(s.pages.b).toBe(b)
-    expect(readCache('t2', navKey(pg('b')))).toBe(warm)
+    expect(readWarm('t2', navKey(pg('b')))).toBe(warm)
     expect(openPage()).not.toHaveBeenCalled()
     expect(currentNotification()?.message).toBe('W')
   })

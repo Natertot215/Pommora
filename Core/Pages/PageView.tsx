@@ -6,17 +6,15 @@ import { MarkdownEditor } from '../MarkdownPM/MarkdownEditor'
 import { useConnections } from '../Session/pageConnections'
 import { navKey } from '../Navigation/navRef'
 import { readPageDetail, useBodyEpoch } from '../Session/pageDetailCache'
-import { cacheGeneration, captureCache, readCache } from '../Navigation/warmTabs'
+import { warmGeneration, captureWarm, readWarm } from '../Session/warmCache'
 import { fenceWarm } from '../MarkdownPM/warmSeam'
 import { registerPageEditor } from './pageEditor'
 import { PageHeader } from './PageHeader'
 import { useEditorHost } from './editorHost'
 import { useBodyMount } from './bodyMount'
+import { useSettledBody } from '../Interface/Subfield/subfieldPage'
 import { coverOf } from './pageDetail'
 import { useLatest } from '@pommora/uix/Utilities/stableApi'
-
-// Live stats settle just behind the keystroke so a long page isn't Markdown-scanned on every char.
-const STATS_DEBOUNCE_MS = 120
 
 export function PageView({
   tabId,
@@ -32,17 +30,16 @@ export function PageView({
   // The capture at teardown reads the slot/tab id of that moment through here, and stays silent after a clear.
   const live = useLatest({ slot, tabId })
   // Re-armed per commit: a clear tearing this surface down runs its cleanup before the survivors' effects, so the stale generation is seen exactly by the captures a clear caused.
-  const mountedGen = useRef(cacheGeneration())
+  const mountedGen = useRef(warmGeneration())
   useEffect(() => {
-    mountedGen.current = cacheGeneration()
+    mountedGen.current = warmGeneration()
   })
   const pendingTravel = useSession((s) => s.pendingTravel)
   const clearPendingTravel = useSession((s) => s.clearPendingTravel)
   const reloadPage = useSession((s) => s.reloadPage)
   const tree = useSession((s) => s.tree)
   const setPageBody = useSession((s) => s.setPageBody)
-  const liveTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
-  const pendingLive = useRef<[string, string] | null>(null)
+  const settle = useSettledBody<[string, string]>((live) => setPageBody(...live), true)
   const path = slot?.status === 'ready' ? slot.detail.path : ''
   const arrive =
     pendingTravel?.route === 'tab' && pendingTravel.tabId === tabId && pendingTravel.path === path
@@ -51,18 +48,7 @@ export function PageView({
   const bodyEpoch = useBodyEpoch(path)
   const publishSelection = usePublishSelection(path)
   // A replaced body supersedes a live body still waiting to land; the old editor's last keystroke must not write over it.
-  useEffect(() => {
-    clearTimeout(liveTimer.current)
-    pendingLive.current = null
-  }, [bodyEpoch])
-  useEffect(
-    () => () => {
-      clearTimeout(liveTimer.current)
-      const pending = pendingLive.current
-      if (pending) useSession.getState().setPageBody(...pending)
-    },
-    [],
-  )
+  useEffect(() => settle.cancel(), [bodyEpoch])
   const editorRef = useRef<EditorView | null>(null)
   useEffect(() => {
     if (parked) return
@@ -73,16 +59,7 @@ export function PageView({
   const connections = useConnections(tree, 'preview')
   const editorHost = useEditorHost({ pageId, connections, pageSurface: true })
 
-  // The debounced body write lives in the shared path-keyed autosave (saveScheduler) — every teardown path flushes there, so a pending write survives without per-host flush machinery.
-  const pushLiveBody = (path: string, body: string): void => {
-    clearTimeout(liveTimer.current)
-    pendingLive.current = [path, body]
-    liveTimer.current = setTimeout(() => {
-      pendingLive.current = null
-      setPageBody(path, body)
-    }, STATS_DEBOUNCE_MS)
-  }
-  const seat = useBodyMount(path, (body) => pushLiveBody(path, body))
+  const seat = useBodyMount(path, (body) => settle.push([path, body]))
 
   if (!slot)
     return (
@@ -118,7 +95,7 @@ export function PageView({
         />
       }
       onChange={(body) => {
-        pushLiveBody(pageDetail.path, body)
+        settle.push([pageDetail.path, body])
         seat.save(body)
       }}
       connections={connections}
@@ -137,17 +114,17 @@ export function PageView({
       // A warm entry whose captured path diverges from the mounting page's mounts cold — id-keyed warmth must never revive a stale-path doc.
       warm={{
         restore: () => {
-          const entry = readCache(tabId, warmKey)
+          const entry = readWarm(tabId, warmKey)
           return entry?.pageDetail?.path === pageDetail.path
             ? fenceWarm(entry, slot.body)
             : undefined
         },
         capture: (state) => {
-          if (cacheGeneration() !== mountedGen.current) return
+          if (warmGeneration() !== mountedGen.current) return
           const { slot: now, tabId: owner } = live.current
-          if (now?.status !== 'ready') return captureCache(owner, warmKey, state)
+          if (now?.status !== 'ready') return captureWarm(owner, warmKey, state)
           const cached = readPageDetail(now.detail.path)
-          captureCache(
+          captureWarm(
             owner,
             warmKey,
             cached ? { ...state, pageDetail: { ...cached, body: now.body } } : state,

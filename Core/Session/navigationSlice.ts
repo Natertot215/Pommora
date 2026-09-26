@@ -55,7 +55,7 @@ import {
   fetchPageResult,
   setBodyBase,
 } from './pageDetailCache'
-import { dropCacheOwner, readCache } from '../Navigation/warmTabs'
+import { dropWarmOwner, readWarm } from './warmCache'
 import { findCollection, findCollectionForSet, findSet, isDepth1Set } from '../Nexus/treeIndex'
 import { dropAllTileDocs } from '../Tiles/tileDocStore'
 import { cancelPageSave, scheduleTabsSave } from './saveScheduler'
@@ -301,7 +301,7 @@ export const createNavigationSlice: Slice<NavigationSlice> = (set, get) => {
       tabMru: s.tabMru.filter((m) => !covered.some((c) => c.id === m)),
     })
     for (const t of covered) {
-      dropCacheOwner(t.id)
+      dropWarmOwner(t.id)
       // Pins survive the re-key (unlike the warm cache, which is dropped): a graduated tab keeps its pins and search under the pinned id.
       if (t.target.kind !== 'newtab') retagTab(t.id, pinTabId(t.target))
     }
@@ -320,7 +320,7 @@ export const createNavigationSlice: Slice<NavigationSlice> = (set, get) => {
       set({ selection: target })
       return true
     }
-    const cached = readCache(get().activeTabId, navKey(target))?.pageDetail
+    const cached = readWarm(get().activeTabId, navKey(target))?.pageDetail
     if (cached && cached.path === target.path) {
       cachePageDetail(cached)
       land(readySlot(target, cached))
@@ -446,7 +446,7 @@ export const createNavigationSlice: Slice<NavigationSlice> = (set, get) => {
       const s = get()
       const pinnedIds = s.pinnedTabs.map((t) => t.id)
       const res = closeTabModel(s.tabs, s.activeTabId, s.tabMru, pinnedIds, id, makeTabId())
-      dropCacheOwner(id)
+      dropWarmOwner(id)
       get().scrubTabPins(id)
       applyTabResult(res)
     },
@@ -484,7 +484,7 @@ export const createNavigationSlice: Slice<NavigationSlice> = (set, get) => {
           ),
         }))
       get().unpinTarget(navKey(target))
-      dropCacheOwner(pinId)
+      dropWarmOwner(pinId)
       persistTabs()
     },
 
@@ -659,7 +659,7 @@ export const createNavigationSlice: Slice<NavigationSlice> = (set, get) => {
         }),
       )
       for (const t of dropped) {
-        dropCacheOwner(t.id)
+        dropWarmOwner(t.id)
         get().scrubTabPins(t.id)
       }
       if (tabs !== s.tabs) applyTabResult({ tabs, activeTabId: s.activeTabId, mru: s.tabMru })

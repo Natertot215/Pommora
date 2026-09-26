@@ -19,7 +19,7 @@ import {
   dropCacheDetail,
   dropPageDetail,
 } from '../Session/pageDetailCache'
-import { readCache } from '../Navigation/warmTabs'
+import { readWarm } from '../Session/warmCache'
 import { flushPageSave, setStaleSaveSink } from '../Session/saveScheduler'
 import { absorbLanding } from './bodyMount'
 
@@ -125,12 +125,12 @@ describe('a warm capture takes its page detail from the detail cache', () => {
 
   it('so a page a value change dropped returns without the slot’s stale values', async () => {
     await unmountAfter(true)
-    expect(readCache('t1', 'page:a')?.pageDetail).toBeUndefined()
+    expect(readWarm('t1', 'page:a')?.pageDetail).toBeUndefined()
   })
 
   it('and a page still cached returns warm with its live body', async () => {
     await unmountAfter(false)
-    expect(readCache('t1', 'page:a')?.pageDetail).toMatchObject({ path: PATH, body: 'live' })
+    expect(readWarm('t1', 'page:a')?.pageDetail).toMatchObject({ path: PATH, body: 'live' })
   })
 })
 

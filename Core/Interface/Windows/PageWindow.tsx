@@ -15,7 +15,7 @@ import { useWindowGeometry } from './useWindowGeometry'
 import { useWindowTabSlide } from './useWindowTabSlide'
 import './page-window.css'
 
-const DRAG_SURFACES = '.tab-scroll, .tab-strip'
+const DRAG_SURFACES = '.page-window-content, .tab-scroll, .tab-strip'
 
 const EXIT_CLASS = { dismiss: '', engulf: 'engulfing', morph: 'morphing' } as const
 
@@ -99,7 +99,7 @@ function PageWindowBody({
           : undefined
       }
     >
-      {body}
+      <div className="page-window-content">{body}</div>
     </WindowBase>
   )
 }

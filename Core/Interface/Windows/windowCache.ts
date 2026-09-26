@@ -1,4 +1,4 @@
-import { dropCacheEntry, dropCacheOwner } from '../../Navigation/warmTabs'
+import { dropWarmEntry, dropWarmOwner } from '../../Session/warmCache'
 
 // Module state, never render state: tab ids re-mint at every summon/restore, so the map lives and dies with the open window. A tab's editor state lives in the shared warm store under WINDOW_OWNER; only the window body's own scroll is kept here.
 export const WINDOW_OWNER = 'window'
@@ -13,10 +13,10 @@ export const readBodyScroll = (tabId: string): number => bodyScroll.get(tabId) ?
 
 export function dropWindowCache(tabId: string): void {
   bodyScroll.delete(tabId)
-  dropCacheEntry(WINDOW_OWNER, tabId)
+  dropWarmEntry(WINDOW_OWNER, tabId)
 }
 
 export function clearWindowCache(): void {
   bodyScroll.clear()
-  dropCacheOwner(WINDOW_OWNER)
+  dropWarmOwner(WINDOW_OWNER)
 }

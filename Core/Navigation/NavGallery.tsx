@@ -22,14 +22,12 @@ import './nav-list.css'
 export function NavGallery({
   pins,
   items,
-  frozenLayout,
   onReorderRecent,
   onSelect,
   onOpenNewTab,
 }: {
   pins: ResolvedNav[]
   items: ResolvedNav[]
-  frozenLayout?: boolean
   onReorderRecent?: (activeKey: string, overKey: string) => void
   onSelect: (target: NavRef) => void
   onOpenNewTab?: (target: NavRef) => void
@@ -37,6 +35,7 @@ export function NavGallery({
   const reorderPin = useSession((s) => s.reorderPin)
   const nexusId = useSession((s) => s.tree?.nexus.id ?? '')
   const tree = useSession((s) => s.tree)
+  const frozen = onReorderRecent === undefined
   const find = (key: string): ResolvedNav | undefined =>
     pins.find((p) => p.key === key) ?? items.find((r) => r.key === key)
   const carry = (key: string): WindowTarget | null => {
@@ -64,14 +63,14 @@ export function NavGallery({
   )
   return (
     <div className="nav-gallery nav-gallery-list">
-      <div className={cx('card-grid', frozenLayout && 'is-fill')}>
+      <div className={cx('card-grid', frozen && 'is-fill')}>
         {pins.length > 0 && (
           <SortableZone items={pins.map((p) => p.key)} onReorder={reorderPin} {...zone}>
             <DropSlot />
             {pins.map(card)}
           </SortableZone>
         )}
-        {frozenLayout ? (
+        {frozen ? (
           <SortableZone items={items.map((r) => r.key)} fixed {...zone}>
             {items.map(card)}
           </SortableZone>

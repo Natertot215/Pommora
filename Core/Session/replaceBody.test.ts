@@ -5,7 +5,7 @@ import { act, createElement } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
 import { useSession } from './store'
 import { bumpBodyEpoch, clearCache, readPageDetail, useBodyEpoch } from './pageDetailCache'
-import { captureCache, readCache } from '../Navigation/warmTabs'
+import { captureWarm, readWarm } from './warmCache'
 import { schedulePageSave } from './saveScheduler'
 import { stubDialer } from '../vitest.setup'
 
@@ -50,8 +50,8 @@ const armSave = (openPage: () => Promise<unknown>) => {
 describe('replaceBody', () => {
   it('drops every warm detail, refetches, patches the slot, and bumps the epoch', async () => {
     const stale = { ...opened, body: 'stale' }
-    captureCache('t1', 'page:a', { editorState: { doc: 'stale' }, scrollTop: 4, pageDetail: stale })
-    captureCache('t2', 'page:a', { pageDetail: stale })
+    captureWarm('t1', 'page:a', { editorState: { doc: 'stale' }, scrollTop: 4, pageDetail: stale })
+    captureWarm('t2', 'page:a', { pageDetail: stale })
     useSession.setState({
       pages: {
         a: {
@@ -65,8 +65,8 @@ describe('replaceBody', () => {
     const epoch = watchEpoch('Notes/a.md')
     const before = epoch()
     await act(() => useSession.getState().replaceBody('Notes/a.md'))
-    expect(readCache('t1', 'page:a')).toEqual({ editorState: { doc: 'stale' }, scrollTop: 4 })
-    expect(readCache('t2', 'page:a')?.pageDetail).toBeUndefined()
+    expect(readWarm('t1', 'page:a')).toEqual({ editorState: { doc: 'stale' }, scrollTop: 4 })
+    expect(readWarm('t2', 'page:a')?.pageDetail).toBeUndefined()
     expect(readPageDetail('Notes/a.md')?.body).toBe('restored')
     const slot = useSession.getState().pages.a
     expect(slot?.status === 'ready' && slot.body).toBe('restored')

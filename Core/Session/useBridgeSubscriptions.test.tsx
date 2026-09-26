@@ -17,7 +17,7 @@ import {
 import { flushPageSave, schedulePageSave } from './saveScheduler'
 import { useSession } from './store'
 import { useBridgeSubscriptions } from './useBridgeSubscriptions'
-import { captureCache, readCache } from '../Navigation/warmTabs'
+import { captureWarm, readWarm } from './warmCache'
 import { stubDialer } from '../vitest.setup'
 
 ;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
@@ -201,9 +201,9 @@ describe('a values push', () => {
     useSession.setState({ tree: makeTree() })
     await mount()
     const alpha = 'Notes/Alpha.md'
-    captureCache('tab-1', 'p1', { pageDetail: detail({ id: 'p1', path: alpha }) })
+    captureWarm('tab-1', 'p1', { pageDetail: detail({ id: 'p1', path: alpha }) })
     expect(readPageDetail(alpha)).toBeUndefined()
     act(() => pushValues([{ rel: 'Notes', pageIds: ['p1'] }]))
-    expect(readCache('tab-1', 'p1')?.pageDetail).toBeUndefined()
+    expect(readWarm('tab-1', 'p1')?.pageDetail).toBeUndefined()
   })
 })

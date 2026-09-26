@@ -32,7 +32,7 @@ beforeEach(async () => {
   dropSpy = vi.fn()
   await act(async () => {
     root.render(
-      <TableRowDnd rows={ROWS} disabled={false} canReorderWithin crossZone={false} onDrop={dropSpy}>
+      <TableRowDnd rows={ROWS} canReorderWithin crossZone={false} onDrop={dropSpy}>
         <Row id="r1" />
         <Row id="r2" />
         <Row id="r3" />
@@ -96,13 +96,7 @@ describe('table row drag — Esc abort', () => {
     ]
     await act(async () => {
       root.render(
-        <TableRowDnd
-          rows={pushed}
-          disabled={false}
-          canReorderWithin
-          crossZone={false}
-          onDrop={dropSpy}
-        >
+        <TableRowDnd rows={pushed} canReorderWithin crossZone={false} onDrop={dropSpy}>
           <Row id="r1" />
           <Row id="r3" />
         </TableRowDnd>,
@@ -127,13 +121,7 @@ describe('table row drag — Esc abort', () => {
     ]
     await act(async () => {
       root.render(
-        <TableRowDnd
-          rows={pushed}
-          disabled={false}
-          canReorderWithin
-          crossZone={false}
-          onDrop={dropSpy}
-        >
+        <TableRowDnd rows={pushed} canReorderWithin crossZone={false} onDrop={dropSpy}>
           <Row id="r1" />
           <Row id="r3" />
         </TableRowDnd>,

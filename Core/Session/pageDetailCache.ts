@@ -3,7 +3,7 @@ import { useSyncExternalStore } from 'react'
 import { capSet } from '@pommora/uix/Utilities/capMap'
 import type { PageDetail } from '@pommora/core/Pages/pageDetail'
 import { type Result, valueOr } from '@pommora/core/Contract/result'
-import { clearWarm, dropWarmDetail } from '../Navigation/warmTabs'
+import { clearWarm, dropWarmDetail } from './warmCache'
 import { dialer } from '../Platform/dialer'
 
 const DETAIL_CAP = 50

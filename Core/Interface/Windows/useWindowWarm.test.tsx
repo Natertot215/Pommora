@@ -3,28 +3,20 @@ import { detail } from '@pommora/core/Testing/fixtures'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { act, createElement, useRef } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
-import type { WarmSeam } from '../../MarkdownPM/warmSeam'
 import { cachePageDetail, clearCache } from '../../Session/pageDetailCache'
 import { useSession } from '../../Session/store'
-import { useWindowWarm } from './useWindowWarm'
+import { useWindowWarm, windowSeam } from './useWindowWarm'
 import { captureBodyScroll, clearWindowCache, WINDOW_OWNER } from './windowCache'
-import { captureCache, readCache } from '../../Navigation/warmTabs'
+import { captureWarm, readWarm } from '../../Session/warmCache'
 
 ;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
 
 let container: HTMLDivElement
 let root: Root
-let seam: WarmSeam | undefined
-
-function Probe({ path }: { path: string }): null {
-  const ref = useRef<HTMLDivElement | null>(null)
-  seam = useWindowWarm(ref, path, true)
-  return null
-}
 
 function ScrollProbe({ el, ready }: { el: HTMLElement; ready: boolean }): null {
   const ref = useRef<HTMLElement | null>(el)
-  useWindowWarm(ref, undefined, ready)
+  useWindowWarm(ref, ready)
   return null
 }
 
@@ -72,16 +64,14 @@ afterEach(async () => {
 })
 
 describe('useWindowWarm', () => {
-  it("fences the active tab's entry against the active path's known body, dropping a stale one", async () => {
-    captureCache(WINDOW_OWNER, 'tab1', { editorState: { doc: 'old' }, scrollTop: 0 })
+  it("fences the active tab's entry against the active path's known body, dropping a stale one", () => {
+    captureWarm(WINDOW_OWNER, 'tab1', { editorState: { doc: 'old' }, scrollTop: 0 })
     cachePageDetail(detail({ id: 'a', title: 'A', path: 'Notes/a.md', body: 'new' }))
-    await act(async () => {
-      root.render(createElement(Probe, { path: 'Notes/a.md' }))
-    })
-    expect(seam?.restore()).toBeUndefined()
-    expect(readCache(WINDOW_OWNER, 'tab1')).toBeUndefined()
-    captureCache(WINDOW_OWNER, 'tab1', { editorState: { doc: 'new' }, scrollTop: 0 })
-    expect(seam?.restore()).toEqual({ editorState: { doc: 'new' }, scrollTop: 0 })
+    const seam = windowSeam('tab1', 'Notes/a.md')
+    expect(seam.restore()).toBeUndefined()
+    expect(readWarm(WINDOW_OWNER, 'tab1')).toBeUndefined()
+    captureWarm(WINDOW_OWNER, 'tab1', { editorState: { doc: 'new' }, scrollTop: 0 })
+    expect(seam.restore()).toEqual({ editorState: { doc: 'new' }, scrollTop: 0 })
   })
 
   it("restores the active tab's scroll for a tab carrying no page", async () => {
