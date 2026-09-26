@@ -1,5 +1,5 @@
-import { EditorView } from '@codemirror/view'
-import type { Extension } from '@codemirror/state'
+import { EditorView, keymap } from '@codemirror/view'
+import { type Extension, Prec } from '@codemirror/state'
 import type { MarkdownScope } from './Engine/detect'
 import type { ConnectionsApi } from './Links/connectionsApi'
 import { markdownDecorations } from './decorations'
@@ -7,7 +7,7 @@ import { listDragExtension } from './Gestures/listDrag'
 import { blockDragExtension } from './Gestures/blockDrag'
 import { linkRest, linkTyping } from './Gestures/linkGestures'
 import { listRenumberOnDelete } from './Input/listRenumber'
-import { typedInput } from './Input/markdownInput'
+import { typedInput, wrapChords } from './Input/markdownInput'
 import { blockHandles, pointerReveal } from './Menus/blockHandles'
 import { gripMenu } from './Menus/gripMenu'
 import { editorMenu } from './Menus/menu'
@@ -37,14 +37,13 @@ export const inlineSurface = (
   connectionClicks(getConn),
   citationPointer(getConn),
   markdownLinkClicks(getConn),
-  // A cell authors aliases like the body does; without this an abandoned pipe reaches disk. A late title fetch reaching a destroyed cell leaves the Short Link standing.
   pasteLink,
   pendingTitle,
   aliasOnLeave(getConn),
   linkRest,
   linkTyping,
   EditorView.lineWrapping,
-  // iOS soft-keyboard hints, no-ops on desktop.
+  // A cell's contentEditable=false widget host suppresses the inherited spellcheck; the rest are iOS keyboard hints.
   EditorView.contentAttributes.of({
     autocapitalize: 'sentences',
     autocorrect: 'off',
@@ -52,6 +51,7 @@ export const inlineSurface = (
     enterkeyhint: 'enter',
     'data-drawn-caret': '',
   }),
+  Prec.high(keymap.of(wrapChords)),
   typedInput(scope),
   editorMenu(scope),
 ]

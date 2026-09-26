@@ -121,8 +121,7 @@ export function installEditorContextMenu(win: BrowserWindow): void {
   win.webContents.on('context-menu', (_e, params) => {
     const editor = takeEditorMenu(win, params)
     if (!params.isEditable) return editor?.resolve(null) // the sidebar keeps its own menus
-    const wc = win.webContents
-    const items = systemItems(wc, params, editor)
+    const items = systemItems(win.webContents, params, editor)
     if (editor)
       items.push(
         { type: 'separator' },

@@ -478,11 +478,8 @@ export function MarkdownTable({
             onCellCommit(row, col, t)
           }}
           onNavigate={(dir) => navigate(row, col, dir)}
-          onTablePaste={(text) => {
-            const payload = decodePayload(text)
-            if (!payload) return false
+          onTablePaste={(payload) => {
             if (payload.kind !== 'table') onFill?.(row, col, payload)
-            return true
           }}
           onUndo={onUndo}
           onRedo={onRedo}

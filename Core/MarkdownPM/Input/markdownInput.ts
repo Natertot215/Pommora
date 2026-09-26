@@ -189,7 +189,6 @@ export const markdownInput = [
       { key: 'Delete', run: onForwardDelete },
       // Shift+Backspace joins like Backspace inside a callout instead of falling to the default delete, which would erode the body prefix.
       { key: 'Shift-Backspace', run: onBackspace },
-      ...wrapChords,
     ]),
   ),
 ]
