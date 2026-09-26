@@ -1,7 +1,7 @@
 import type { AssetMap, NexusState, NexusTree, ValueChange } from '../Nexus/tree'
 import type { MutateOutcome, MutateReply, MutateRequest } from '../Nexus/mutateRequest'
 import type { Result } from './result'
-import type { FormatState } from '../Actions/editorMenu'
+import type { EditorMenuRequest } from '../Actions/editorMenu'
 import type { SavedView } from '../Views/views'
 import type { BodyWrite, PageDetail } from '../Pages/pageDetail'
 import type { TrashMode, TrashRow } from '../Trash/trashRow'
@@ -245,10 +245,10 @@ export interface Asks {
   'assets:adopt': { args: [source: string, subfolder?: string]; reply: Result<string> }
   'nexus:pasteImage': { args: []; reply: Result<string | null> }
   menu: { args: [req: MenuRequest]; reply: Result<string | null> }
+  'editor:menu': { args: [req: EditorMenuRequest]; reply: Result<string | null> }
 }
 
 export interface Tells {
-  'editor:format-state': [state: FormatState]
   'win:dragBy': [dx: number, dy: number]
   'win:zoom': []
   'win:resendFullscreen': []

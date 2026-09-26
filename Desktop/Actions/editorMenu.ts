@@ -6,32 +6,58 @@ import type {
   WebContents,
 } from 'electron'
 import {
-  EDITOR_ACTION_PREFIX,
+  type EditorMenuRequest,
   editorContextItems,
-  type FormatState,
+  PASTE_PLAIN_ACTION,
 } from '@pommora/core/Actions/editorMenu'
 import { type Commands, DEFAULT_COMMANDS } from '@pommora/core/Actions/commands'
 import { PASTE_AS_PREFIX, pasteAsRows } from '@pommora/core/Actions/pasteAsMenu'
 import { rowTemplate } from './menu'
-
-let lastState: FormatState | null = null
-export function setFormatState(s: FormatState): void {
-  lastState = s
-}
 
 let commands: Commands = DEFAULT_COMMANDS
 export function setEditorCommands(c: Commands): void {
   commands = c
 }
 
-// The event hands over a bare WebContents, so the typed push (which takes a window) can't be used.
-const dispatch = (wc: WebContents, action: string) => () =>
-  wc.send('menu:action', EDITOR_ACTION_PREFIX + action)
+interface EditorMenu {
+  req: EditorMenuRequest
+  resolve: (action: string | null) => void
+}
+let pending: EditorMenu | null = null
+
+/** Parked until the click's own `context-menu` event arrives, which Chromium sends after the renderer's handler. */
+export function askEditorMenu(req: EditorMenuRequest): Promise<string | null> {
+  pending?.resolve(null)
+  return new Promise((resolve) => {
+    pending = { req, resolve }
+  })
+}
+
+/** The renderer measures in CSS pixels and the event in window DIPs, differing by the window's zoom. */
+export function atClick(
+  req: EditorMenuRequest,
+  params: Pick<ContextMenuParams, 'x' | 'y'>,
+  zoom: number,
+): boolean {
+  return (
+    Math.abs(Math.round(req.x * zoom) - params.x) <= 2 &&
+    Math.abs(Math.round(req.y * zoom) - params.y) <= 2
+  )
+}
+
+function takeEditorMenu(win: BrowserWindow, params: ContextMenuParams): EditorMenu | null {
+  const menu = pending
+  pending = null
+  if (!menu) return null
+  if (atClick(menu.req, params, win.webContents.getZoomFactor())) return menu
+  menu.resolve(null)
+  return null
+}
 
 function systemItems(
   wc: WebContents,
   params: ContextMenuParams,
-  editorFocused: boolean,
+  editor: EditorMenu | null,
 ): MenuItemConstructorOptions[] {
   const f = params.editFlags
   const items: MenuItemConstructorOptions[] = []
@@ -56,12 +82,12 @@ function systemItems(
     { role: 'cut', enabled: f.canCut },
     { role: 'copy', enabled: f.canCopy },
     { role: 'paste', enabled: f.canPaste },
-    ...(editorFocused ? pasteAsItems(wc) : []),
+    ...(editor ? pasteAsItems(editor) : []),
     // The `pasteAndMatchStyle` role would take back ⌘⇧V, which belongs to the inverse paste command.
     {
       label: 'Paste Without Formatting',
       enabled: f.canPaste,
-      click: () => wc.pasteAndMatchStyle(),
+      click: editor ? () => editor.resolve(PASTE_PLAIN_ACTION) : () => wc.pasteAndMatchStyle(),
     },
     { role: 'selectAll' },
   )
@@ -78,20 +104,16 @@ function speechShareItems(params: ContextMenuParams): MenuItemConstructorOptions
   ]
 }
 
-// Read here rather than pushed: the `context-menu` event fires in the same turn as the right-click.
-function pasteAsItems(wc: WebContents): MenuItemConstructorOptions[] {
-  const rows = pasteAsRows(
-    clipboard.readText(),
-    lastState?.embedSeat === true,
-    lastState?.citeSeat === true,
-  )
+// The clipboard is read here, in the same turn as the right-click, not sent with the request.
+function pasteAsItems(editor: EditorMenu): MenuItemConstructorOptions[] {
+  const rows = pasteAsRows(clipboard.readText(), editor.req.embedSeat, editor.req.citeSeat)
   if (rows.length === 0) return []
   return [
     {
       label: 'Paste As',
       submenu: rows.map((r) => ({
         label: r.label,
-        click: dispatch(wc, PASTE_AS_PREFIX + r.form),
+        click: () => editor.resolve(PASTE_AS_PREFIX + r.form),
       })),
     },
   ]
@@ -99,16 +121,19 @@ function pasteAsItems(wc: WebContents): MenuItemConstructorOptions[] {
 
 export function installEditorContextMenu(win: BrowserWindow): void {
   win.webContents.on('context-menu', (_e, params) => {
-    if (!params.isEditable) return // the sidebar keeps its own menus
-    const items = systemItems(win.webContents, params, lastState?.focused === true)
-    if (lastState?.focused)
+    const editor = takeEditorMenu(win, params)
+    if (!params.isEditable) return editor?.resolve(null) // the sidebar keeps its own menus
+    const wc = win.webContents
+    const items = systemItems(wc, params, editor)
+    if (editor)
       items.push(
         { type: 'separator' },
-        ...rowTemplate(editorContextItems(lastState, commands, params.selectionText), (action) =>
-          dispatch(win.webContents, action),
+        ...rowTemplate(
+          editorContextItems(editor.req, commands, params.selectionText),
+          (action) => () => editor.resolve(action),
         ),
       )
     items.push(...speechShareItems(params))
-    Menu.buildFromTemplate(items).popup({ window: win })
+    Menu.buildFromTemplate(items).popup({ window: win, callback: () => editor?.resolve(null) })
   })
 }
