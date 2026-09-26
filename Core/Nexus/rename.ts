@@ -9,7 +9,7 @@ import { renamePage } from './page'
 import { landedFolder, landingRefusal, renameFolderEntity } from './folderEntity'
 import { type CascadeReport, renameCascade } from './cascade'
 import { reportRename } from '../Sync/Client/tap'
-import { excludedWithin, exclusionWriteRefusal, readWatchScope } from '../Settings/settings'
+import { excludedWithin, exclusionWriteRefusal } from '../Settings/settings'
 
 export async function renameOp(
   { root }: MutateContext,
@@ -21,10 +21,7 @@ export async function renameOp(
   if (req.kind !== 'page') {
     const refused =
       (await landingRefusal(root, dirname(abs), req.newName)) ??
-      (await exclusionWriteRefusal(
-        root,
-        excludedWithin((await readWatchScope(root)).excluded, req.path),
-      ))
+      (await exclusionWriteRefusal(root, await excludedWithin(root, req.path)))
     if (refused) return refused
     const r = await renameFolderEntity(abs, req.newName)
     if (!r.ok) return r
