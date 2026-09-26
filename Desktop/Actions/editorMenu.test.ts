@@ -25,17 +25,18 @@ describe('matching an editor’s ask to the click', () => {
     expect(atClick(req(100, 40), { x: 100, y: 40 }, 1)).toBe(true)
   })
 
-  it('converts CSS pixels to window DIPs, rounding as the event does', () => {
+  it('converts CSS pixels to window DIPs', () => {
     expect(atClick(req(101, 41), { x: 126, y: 51 }, 1.25)).toBe(true)
   })
 
-  it('widens with the zoom, since the renderer’s click is whole CSS pixels', () => {
+  it('widens with the zoom, since the renderer truncates its click to whole CSS pixels', () => {
     expect(atClick(req(282, 329), { x: 849, y: 990 }, 3)).toBe(true)
+    expect(atClick(req(262, 77), { x: 1052, y: 312 }, 3.9999)).toBe(true)
   })
 
   it('refuses a click farther than that slack', () => {
-    expect(atClick(req(100, 40), { x: 103, y: 40 }, 1)).toBe(false)
-    expect(atClick(req(100, 40), { x: 304, y: 120 }, 3)).toBe(false)
+    expect(atClick(req(100, 40), { x: 104, y: 40 }, 1)).toBe(false)
+    expect(atClick(req(100, 40), { x: 306, y: 120 }, 3)).toBe(false)
   })
 })
 
