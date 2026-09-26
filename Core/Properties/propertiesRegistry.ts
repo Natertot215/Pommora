@@ -53,6 +53,20 @@ export async function readKeptRegistry(root: string): Promise<RegistryFile> {
 export const orderedDefs = (reg: RegistryFile): PropertyDefinition[] =>
   resolveRowOrder(Object.entries(reg.defs), ([key]) => key, reg.order).map(([, d]) => d)
 
+const OPTION_KEYS = ['select_options', 'status_groups'] as const
+
+function rebuiltOptions(
+  stored: PropertyDefinition,
+  next: PropertyDefinition,
+): Partial<PropertyDefinition> {
+  return Object.fromEntries(
+    OPTION_KEYS.filter((key) => key in next && next[key] !== stored[key]).map((key) => [
+      key,
+      next[key],
+    ]),
+  )
+}
+
 export async function mutateRegistry<T>(
   root: string,
   fn: (
@@ -73,7 +87,12 @@ export async function mutateRegistry<T>(
       const defs: Record<string, unknown> = { ...unparsed }
       for (const [id, d] of Object.entries(next.defs)) {
         const stored = registry.defs[id]
-        defs[id] = stored ? mergeKeys(stored, d, rawDefs[id] as Json, {}, () => 'local') : d
+        defs[id] = stored
+          ? {
+              ...mergeKeys(stored, d, rawDefs[id] as Json, {}, () => 'local'),
+              ...rebuiltOptions(stored, d),
+            }
+          : d
       }
       // Unparsed ids keep their order membership too, appended, so a repaired def re-lists rather than vanishing from the pane.
       const order = [
