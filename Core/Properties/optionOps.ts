@@ -13,7 +13,7 @@ import {
   type Option,
 } from './optionModel'
 import {
-  hasSelectOptions,
+  PROPERTY_TYPES,
   type PropertyDefinition,
   type PropertyType,
   type StatusGroup,
@@ -21,7 +21,7 @@ import {
 import { clearSchemaJournal, writeSchemaJournal, type SchemaJournal } from './propertyJournal'
 
 function requireOptionType(type: PropertyType): Result<null> {
-  return hasSelectOptions(type)
+  return PROPERTY_TYPES[type].options === 'select'
     ? ok(null)
     : fail('invalid-property', 'Options can only be edited on Select or Multi-Select properties.')
 }
@@ -59,7 +59,7 @@ export function setStatusGroups(
     mutateRegistry<Result<null>>(root, (registry) => {
       const current = registry.defs[propertyId]
       if (!current) return { result: NO_PROPERTY }
-      if (current.type !== 'status') {
+      if (PROPERTY_TYPES[current.type].options !== 'status') {
         return {
           result: fail('invalid-property', 'Status groups can only be set on a Status property.'),
         }
@@ -120,7 +120,7 @@ export function dropOptionFromDef(
     const current = registry.defs[propertyId]
     if (!current) return { result: NO_PROPERTY }
     const next =
-      current.type === 'status'
+      PROPERTY_TYPES[current.type].options === 'status'
         ? {
             ...current,
             status_groups: (current.status_groups ?? []).map((g) => ({
@@ -177,7 +177,7 @@ async function stageOptionRename(
 }
 
 function requireStatusType(type: PropertyType): Result<null> {
-  return type === 'status'
+  return PROPERTY_TYPES[type].options === 'status'
     ? ok(null)
     : fail('invalid-property', 'Status options can only be edited on a Status property.')
 }

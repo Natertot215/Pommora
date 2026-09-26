@@ -131,4 +131,14 @@ describe('filterSeeds', () => {
     expect(filterSeeds(filter, false, schema)).toEqual({})
     expect(filterSeeds(undefined, true, schema)).toEqual({})
   })
+
+  it('a stamp Is rule seeds nothing', () => {
+    expect(
+      filterSeeds(
+        { match: 'all', rules: [{ property_id: '_modified_at', op: 'is', value: '2026-01-01' }] },
+        true,
+        schema,
+      ),
+    ).toEqual({})
+  })
 })

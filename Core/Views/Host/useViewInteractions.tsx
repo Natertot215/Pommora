@@ -117,7 +117,7 @@ export function useViewInteractions(host: ViewHostApi, policy: ViewInteractionPo
     const dragged = bands.find((b) => b.id === draggedId)
     if (!dragged) return
     if (dragged.kind === 'property') {
-      if (liveView.group?.kind === 'property') {
+      if (!structuralGrouping && liveView.group?.kind === 'property') {
         if (drop.kind !== 'reorder') return
         const patch = bandReorderPatch({
           dragged,

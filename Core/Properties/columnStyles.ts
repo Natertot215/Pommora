@@ -6,6 +6,7 @@ import {
   LINK_DISPLAYS,
   type PropertyDefinition,
   type PropertyType,
+  specOf,
 } from './properties'
 
 export const OPTION_LOOKS = ['standard', 'compact'] as const
@@ -133,8 +134,7 @@ export function defaultStyleFor(
   type: PropertyType | 'title' | undefined,
   def?: Pick<PropertyDefinition, 'link_display'>,
 ): Pick<StoredColumnStyle, 'look'> {
-  switch (type) {
-    case 'status':
+  switch (specOf(type)?.kind) {
     case 'select':
     case 'multiSelect':
       return { look: 'standard' }
@@ -145,7 +145,10 @@ export function defaultStyleFor(
       return { look: def?.link_display ?? DEFAULT_LINK_DISPLAY }
     case 'number':
       return { look: 'number' }
-    default:
+    case 'dateTime':
+    case 'context':
+    case 'file':
+    case undefined:
       return {}
   }
 }

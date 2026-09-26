@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import type { PropertyType } from '@pommora/core/Properties/properties'
+import { groupable, type PropertyType, specOf } from '@pommora/core/Properties/properties'
 import { UNGROUPED } from '@pommora/core/Views/viewRow'
 import type { CollectionNode, SetNode } from '@pommora/core/Nexus/tree'
 import type {
@@ -24,7 +24,7 @@ import { buildSetIcons, buildSetNames, buildSetPaths } from '../../Properties/Ce
 import { hideShown, unhide } from '../visibilityModel'
 import { resolveBandHead } from '../Bands/GroupBand'
 import { resolveContainerSchema } from '../Pipeline/pickView'
-import { bucketKey, flattenContainer, groupsStructurally } from '../Pipeline/group'
+import { bandGrouping, bucketKey, flattenContainer, groupsStructurally } from '../Pipeline/group'
 import { resolveView } from '../Pipeline/resolveView'
 import { searchGroups } from '../Pipeline/search'
 import { foldKey } from '../../Paths/caseFold'
@@ -35,7 +35,7 @@ import { useContainerValues } from './useValuesEpoch'
 import { mergeStyleRecords, pickedStyle, styleFor, useNexusForms } from './useColumnStyles'
 import { groupingKeyOf, useBandOrdering } from '../Bands/useBandOrdering'
 import { useViewCreation } from './useViewCreation'
-import { groupKeyToValue, REASSIGNABLE_GROUP_TYPES, reassignTarget } from '../reassign'
+import { groupKeyToValue, reassignable, reassignTarget } from '../reassign'
 import { sameIds } from '../creationOrder'
 
 interface ViewHostUpward {
@@ -116,16 +116,16 @@ export function useViewHost(
   const sortKeys = useMemo(() => resolvedSortCount(view.sort, schema), [view.sort, schema])
   const sortedOrGrouped = sortKeys > 0 || view.group != null
   const structuralGrouping = groupsStructurally(view.group, schema)
-  // A flattened paint never sub-groups, so a view still carrying `sub_group` from a type switch must not reassign against it.
-  const subGrouped = structuralGrouping && view.sub_group !== undefined && !flattenStructural
+  // The engine's own sub-group rule: a flattened paint, or a sub_group it won't bucket, must not reassign against it.
+  const subGrouped =
+    structuralGrouping &&
+    !flattenStructural &&
+    view.sub_group !== undefined &&
+    groupable(declaredType(view.sub_group.property_id, schema))
   const groupPropId =
-    view.group?.kind === 'property'
-      ? view.group.property_id
-      : subGrouped
-        ? view.sub_group?.property_id
-        : undefined
+    !structuralGrouping || subGrouped ? bandGrouping(view, schema)?.property_id : undefined
   const groupPropType = groupPropId ? declaredType(groupPropId, schema) : undefined
-  const canReassign = groupPropType !== undefined && REASSIGNABLE_GROUP_TYPES.has(groupPropType)
+  const canReassign = reassignable(groupPropType)
   const locationFsOrder = flattenStructural && isLocationFsOrder(view)
   const canReorderWithin = sortKeys < 2 && !locationFsOrder
   const canRelocate = structuralGrouping && !subGrouped
@@ -216,7 +216,7 @@ export function useViewHost(
     if (groupPropId !== undefined || sortKeys !== 1) return undefined
     for (const c of liveView.sort ?? []) {
       const type = declaredType(c.property_id, schema)
-      if (!type || !REASSIGNABLE_GROUP_TYPES.has(type)) continue
+      if (!reassignable(type)) continue
       if (columns.some((col) => col.id === c.property_id))
         return { propertyId: c.property_id, type }
     }
@@ -349,7 +349,8 @@ export function useViewHost(
     const current = resolveFieldValue(row, column.id, schema)
     const style = styleOf(column.id)
     const type = declaredType(column.id, schema, contextIds)
-    if (type === 'dateTime')
+    const spec = specOf(type)
+    if (spec?.kind === 'dateTime' && spec.origin === 'user')
       return {
         kind: 'dateTime',
         def,

@@ -13,20 +13,13 @@ import { ID_KEY } from '@pommora/core/Nexus/identityMark'
 import { localDayKey, pad } from '@pommora/uix/Utilities/pad'
 import type { PageFrontmatter, PageMeta } from '@pommora/core/Nexus/schemas'
 import {
+  groupable,
   optionValues,
   type PropertyDefinition,
-  type PropertyType,
 } from '@pommora/core/Properties/properties'
 import { UNGROUPED, isEmptyBand } from '@pommora/core/Views/viewRow'
 import { declaredType, resolveFieldValue } from '../../Properties/value'
 import { readDate } from '../../Properties/formatValue'
-
-const GROUPABLE: ReadonlySet<string> = new Set([
-  'select',
-  'status',
-  'checkbox',
-  'dateTime',
-] satisfies PropertyType[])
 
 type PropertyGroup = Extract<GroupConfig, { kind: 'property' }>
 type Sorter = (rows: ViewRow[]) => ViewRow[]
@@ -170,15 +163,19 @@ export function bucketKey(
   granularity: DateGranularity,
 ): string | null {
   const v = resolveFieldValue(row, propertyId, schema)
-  switch (declaredType(propertyId, schema)) {
+  switch (v.kind) {
     case 'select':
-    case 'status':
-      return v.kind === 'select' ? v.value : null
+      return v.value
     case 'checkbox':
-      return v.kind === 'checkbox' ? (v.value ? 'true' : 'false') : null
+      return 'true'
     case 'dateTime':
-      return v.kind === 'dateTime' ? dateBucketKey(v.value, granularity) : null
-    default:
+      return dateBucketKey(v.value, granularity)
+    case 'number':
+    case 'multiSelect':
+    case 'context':
+    case 'link':
+    case 'file':
+    case 'null':
       return null
   }
 }
@@ -377,8 +374,17 @@ export function groupsStructurally(
 ): boolean {
   if (group?.kind === 'flat') return false
   if (group?.kind !== 'property') return true
-  const t = declaredType(group.property_id, schema)
-  return t === undefined || !GROUPABLE.has(t)
+  return !groupable(declaredType(group.property_id, schema))
+}
+
+/** The grouping a view's property bands follow: its property group when the engine draws it, else the sub-group it names inside Set bands, which the engine draws only when `groupable`; a flat view has none. */
+export function bandGrouping(
+  view: { group?: GroupConfig; sub_group?: SubGroupConfig },
+  schema: PropertyDefinition[],
+): PropertyGroup | SubGroupConfig | undefined {
+  const { group, sub_group } = view
+  if (group?.kind === 'property' && !groupsStructurally(group, schema)) return group
+  return group?.kind === 'flat' ? undefined : sub_group
 }
 
 export function resolveGroups(
@@ -398,8 +404,7 @@ export function resolveGroups(
   if (!groupsStructurally(group, schema))
     return property(rows, group as PropertyGroup, schema, sorter, placement)
   if (flattenStructural) return structuralFlat(rows, setTree, sorter, placement)
-  const t = subGroup ? declaredType(subGroup.property_id, schema) : undefined
-  if (subGroup && t !== undefined && GROUPABLE.has(t))
+  if (subGroup && groupable(declaredType(subGroup.property_id, schema)))
     return structuralSubGrouped(rows, setTree, subGroup, schema, sorter, placement)
   return structural(rows, setTree, sorter, placement)
 }

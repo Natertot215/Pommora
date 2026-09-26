@@ -82,6 +82,14 @@ describe('groupLabel', () => {
     const g = { key: UNGROUPED, kind: 'ungrouped', items: [] } as ResolvedGroup
     expect(groupLabel(g, view, ctx, setNames)).toBe('')
   })
+  it('resolves a sub-band inside a Set band to its option label', () => {
+    const subView = {
+      group: { kind: 'structural' },
+      sub_group: { property_id: 'prop_status', order_mode: 'configured' },
+    } as unknown as Parameters<typeof groupLabel>[1]
+    const g = { key: 'set1/doing', bucket: 'doing', kind: 'property', items: [] } as ResolvedGroup
+    expect(groupLabel(g, subView, ctx, setNames)).toBe('Doing')
+  })
 })
 
 describe('buildSetNames', () => {

@@ -7,6 +7,7 @@ import {
   optionValues,
   type PropertyDefinition,
   RESERVED_PROPERTY_ID,
+  specOf,
 } from '@pommora/core/Properties/properties'
 import { declaredType, fileName, resolveFieldValue } from '../../Properties/value'
 import { linkDisplayText } from '@pommora/core/Connections/linkValue'
@@ -62,7 +63,12 @@ function sortText(row: ViewRow, propertyId: string, schema: PropertyDefinition[]
     case 'file':
       // The FILENAMES, not the raw `[[…]]` references — every value would otherwise share the leading bracket and order by whatever follows it.
       return v.value.map(fileName).join(',')
-    default:
+    case 'number':
+    case 'checkbox':
+    case 'dateTime':
+    case 'select':
+    case 'context':
+    case 'null':
       return ''
   }
 }
@@ -71,9 +77,8 @@ function buildCriterion(c: SortCriterion, schema: PropertyDefinition[]): Resolve
   const ascending = c.direction !== 'descending'
   if (c.property_id === RESERVED_PROPERTY_ID.title)
     return { extract: (r) => r.title, less: ciLess, ascending }
-  switch (declaredType(c.property_id, schema)) {
-    case 'select':
-    case 'status': {
+  switch (specOf(declaredType(c.property_id, schema))?.kind) {
+    case 'select': {
       // A Custom order leads with its saved values and appends the options it predates, so they rank ahead of the no-value rows; it always reads ascending.
       const def = schema.find((d) => d.id === c.property_id)
       const custom = c.order?.length ? c.order : undefined
@@ -89,17 +94,15 @@ function buildCriterion(c: SortCriterion, schema: PropertyDefinition[]): Resolve
     case 'number':
       return { extract: (r) => numberOf(r, c.property_id, schema), less: numericLess, ascending }
     case 'dateTime':
-    case 'createdTime':
-    case 'lastEditedTime':
       return { extract: (r) => dateOf(r, c.property_id, schema), less: numericLess, ascending }
     case 'checkbox':
       return { extract: (r) => boolRank(r, c.property_id, schema), less: numericLess, ascending }
     case 'link':
     case 'multiSelect':
-    case 'context':
     case 'file':
       return { extract: (r) => sortText(r, c.property_id, schema), less: ciLess, ascending }
-    default:
+    case 'context':
+    case undefined:
       return null
   }
 }

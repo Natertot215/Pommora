@@ -5,9 +5,11 @@ import type { ViewRow } from '@pommora/core/Views/viewRow'
 import type { GroupConfig } from '@pommora/core/Views/views'
 import type { PropertyDefinition } from '@pommora/core/Properties/properties'
 import {
+  bandGrouping,
   dateBucketKey,
   flattenContainer,
   frontmatterOf,
+  groupsStructurally,
   pruneEmptyBuckets,
   resolveGroups,
   subGroupKey,
@@ -449,7 +451,7 @@ describe('ungrouped placement (the view-level knob)', () => {
   })
 })
 
-describe('property grouping — configured / reversed / checkbox / date', () => {
+describe('property grouping — configured / reversed / date', () => {
   const selSchema: PropertyDefinition[] = [
     {
       id: 'prop_sel',
@@ -492,33 +494,21 @@ describe('property grouping — configured / reversed / checkbox / date', () => 
     ).toEqual(['c', 'b', 'a'])
   })
 
-  it('routes a nil checkbox to the false bucket with no no-value band', () => {
+  it('falls back to structural for a checkbox group property — Checkbox grouping is off', () => {
     const cbSchema: PropertyDefinition[] = [{ id: 'prop_done', name: 'Done', type: 'checkbox' }]
     const values = pageValues({
       p1: { [ID_KEY]: 'p1', ...propsAtRoot({ prop_done: true }, cbSchema) },
-      p2: { [ID_KEY]: 'p2', ...propsAtRoot({ prop_done: false }, cbSchema) },
-      p3: { [ID_KEY]: 'p3' },
+      p2: { [ID_KEY]: 'p2' },
     })
     const { rows, setTree } = flattenContainer(
-      collection([], [page('p1'), page('p2'), page('p3')]),
+      collection([set('s1', [page('p1')])], [page('p2')]),
       values,
       {},
     )
-    const groups = resolveGroups(
-      rows,
-      {
-        kind: 'property',
-        property_id: 'prop_done',
-        order_mode: 'configured',
-      },
-      cbSchema,
-      setTree,
-      null,
-      'bottom',
-    )
-    expect(keys(groups)).toEqual(['false', 'true'])
-    expect(itemIds(groups[0])).toEqual(['p2', 'p3'])
-    expect(itemIds(groups[1])).toEqual(['p1'])
+    const group = { kind: 'property', property_id: 'prop_done', order_mode: 'configured' } as const
+    expect(groupsStructurally(group, cbSchema)).toBe(true)
+    const groups = resolveGroups(rows, group, cbSchema, setTree, null, 'bottom')
+    expect(groups.map((g) => g.kind)).toEqual(['structural-set', 'ungrouped'])
   })
 
   it('buckets dates by granularity (same month together)', () => {
@@ -646,5 +636,23 @@ describe('dateBucketKey', () => {
   it('buckets a zoned value by the local day its cell shows', () => {
     const lateEvening = new Date(2026, 5, 14, 23, 30)
     expect(dateBucketKey(lateEvening.toISOString(), 'day')).toBe('2026-06-14')
+  })
+})
+
+describe('bandGrouping', () => {
+  const schema: PropertyDefinition[] = [{ id: 'prop_s', name: 'S', type: 'status' }]
+  const sub = { property_id: 'prop_s', order_mode: 'configured' } as const
+
+  it('follows the property group the engine draws, else the sub-group, and nothing on a flat view', () => {
+    const drawn = { kind: 'property', property_id: 'prop_s', order_mode: 'configured' } as const
+    const degraded = {
+      kind: 'property',
+      property_id: 'prop_gone',
+      order_mode: 'configured',
+    } as const
+    expect(bandGrouping({ group: drawn, sub_group: sub }, schema)).toBe(drawn)
+    expect(bandGrouping({ group: degraded, sub_group: sub }, schema)).toBe(sub)
+    expect(bandGrouping({ group: { kind: 'structural' }, sub_group: sub }, schema)).toBe(sub)
+    expect(bandGrouping({ group: { kind: 'flat' }, sub_group: sub }, schema)).toBeUndefined()
   })
 })

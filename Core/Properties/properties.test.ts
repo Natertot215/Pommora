@@ -7,8 +7,12 @@ import {
   isReservedPropertyId,
   invalidPropertyName,
   defaultStatusSeed,
+  groupable,
   isOptionsKind,
   optionsOf,
+  pickKindOf,
+  PROPERTY_TYPES,
+  specOf,
   type PropertyDefinition,
   type SelectOption,
   type StatusGroup,
@@ -178,6 +182,54 @@ describe('invalidPropertyName', () => {
 
   it('takes icon as an ordinary name', () => {
     expect(invalidPropertyName('icon')).toBe(false)
+  })
+})
+
+describe('PROPERTY_TYPES', () => {
+  it('groups by Select, Status and Date only — Checkbox grouping is off', () => {
+    const grouping = (Object.keys(PROPERTY_TYPES) as (keyof typeof PROPERTY_TYPES)[]).filter((t) =>
+      groupable(t),
+    )
+    expect(grouping).toEqual(['dateTime', 'select', 'status'])
+  })
+
+  it('stamps and Context are the only types a user does not create', () => {
+    expect(PROPERTY_TYPES.createdTime.origin).toBe('stamp')
+    expect(PROPERTY_TYPES.lastEditedTime.origin).toBe('stamp')
+    expect(PROPERTY_TYPES.context.origin).toBe('context')
+  })
+
+  it('Status keeps its options in status_groups and wears the select kind', () => {
+    expect(PROPERTY_TYPES.status).toEqual({
+      kind: 'select',
+      origin: 'user',
+      groups: true,
+      options: 'status',
+    })
+  })
+})
+
+describe('specOf and pickKindOf', () => {
+  it('title and an unknown type have no spec', () => {
+    expect(specOf('title')).toBeUndefined()
+    expect(specOf(undefined)).toBeUndefined()
+  })
+
+  it('picks by kind: Status picks as a select, Multi-Select and Context as themselves', () => {
+    expect(pickKindOf('status')).toBe('select')
+    expect(pickKindOf('multiSelect')).toBe('multiSelect')
+    expect(pickKindOf('context')).toBe('context')
+    for (const t of [
+      'number',
+      'checkbox',
+      'dateTime',
+      'link',
+      'file',
+      'createdTime',
+      'title',
+      undefined,
+    ] as const)
+      expect(pickKindOf(t)).toBeNull()
   })
 })
 

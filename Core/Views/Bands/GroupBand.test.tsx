@@ -138,7 +138,7 @@ describe('resolveBandHead', () => {
   it('checkbox → the box glyph + On/Off', () => {
     const on = resolveBandHead(
       group('property', 'true'),
-      view(propGroup('prop_check')),
+      { ...view(), sub_group: { property_id: 'prop_check', order_mode: 'configured' } },
       ctx,
       NEXUS,
       setNames,
@@ -148,7 +148,7 @@ describe('resolveBandHead', () => {
     expect(textOf(on.glyph)).toContain('On')
     const off = resolveBandHead(
       group('property', 'false'),
-      view(propGroup('prop_check')),
+      { ...view(), sub_group: { property_id: 'prop_check', order_mode: 'configured' } },
       ctx,
       NEXUS,
       setNames,
@@ -211,7 +211,7 @@ describe('resolveBandHead — Context grouping', () => {
   it('names the Space rather than showing its id', () => {
     const head = resolveBandHead(
       group('property', 'sp1'),
-      view(propGroup('ctx_projects')),
+      { ...view(), sub_group: { property_id: 'ctx_projects', order_mode: 'configured' } },
       ctxWithSpace,
       NEXUS,
       setNames,
@@ -225,7 +225,7 @@ describe('resolveBandHead — Context grouping', () => {
   it('falls back to the raw id when the Space is gone', () => {
     const head = resolveBandHead(
       group('property', 'ghost'),
-      view(propGroup('ctx_projects')),
+      { ...view(), sub_group: { property_id: 'ctx_projects', order_mode: 'configured' } },
       ctxWithSpace,
       NEXUS,
       setNames,

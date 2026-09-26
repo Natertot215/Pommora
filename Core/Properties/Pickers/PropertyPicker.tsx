@@ -1,9 +1,11 @@
 import { type RefObject, useEffect, useState } from 'react'
 import type { ColumnLook, ColumnStyle } from '@pommora/core/Properties/columnStyles'
 import {
+  optionsOf,
+  type PickKind,
+  pickKindOf,
   type PickOption,
   type PropertyDefinition,
-  optionsOf,
 } from '@pommora/core/Properties/properties'
 import { NULL_VALUE, type PropertyValue } from '@pommora/core/Properties/propertyValue'
 import { PickerMenu } from '@pommora/uix/Pickers/PickerMenu'
@@ -13,7 +15,6 @@ import { MenuItem, MenuSeparator, MenuTopRow } from '@pommora/uix/Menus'
 import { FrameSlide } from '@pommora/uix/Menus/FrameSlide'
 import { Icon } from '@pommora/uix/Symbols'
 import { useHeld } from '@pommora/uix/Animations/useExitPresence'
-import type { PickKind } from './massAssign'
 import { DateTimeValuePicker } from './DateTimeValuePicker'
 import { adoptPathInto, pickFileInto } from './filePick'
 import { OptionChip } from '../Cells/OptionChip'
@@ -51,7 +52,7 @@ export const pickShape = (
   contextOptions?: PickOption[],
 ): { options: PickOption[]; kind: PickKind } => ({
   options: contextOptions ?? optionsOf(def),
-  kind: contextOptions ? 'context' : def.type === 'multiSelect' ? 'multiSelect' : 'select',
+  kind: pickKindOf(def.type) ?? 'select',
 })
 
 export const toggleValue = (selected: string[], value: string): string[] =>

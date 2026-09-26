@@ -1,6 +1,5 @@
 import type { PropertyValue } from '@pommora/core/Properties/propertyValue'
-
-export type PickKind = 'select' | 'multiSelect' | 'context'
+import type { PickKind } from '@pommora/core/Properties/properties'
 
 export function massSelected(optionValues: string[], rows: string[][]): string[] {
   return optionValues.filter((v) => rows.every((r) => r.includes(v)))

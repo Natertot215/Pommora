@@ -253,14 +253,9 @@ describe('makeSorter — type-aware single criterion', () => {
     ).toEqual(['r2', 'r1'])
   })
 
-  it('relation extracts to "" — a usable but no-op sorter that holds input order', () => {
-    const rows = [
-      makeRow('r1', { props: { prop_rel: ['z'] } }),
-      makeRow('r2', { props: { prop_rel: ['a'] } }),
-    ]
-    const sorter = makeSorter([{ property_id: 'prop_rel', direction: 'ascending' }], schema)
-    expect(sorter).not.toBeNull()
-    expect(ids(sorter!(rows))).toEqual(['r1', 'r2'])
+  it('a Context criterion resolves to nothing, so it neither sorts nor counts', () => {
+    expect(makeSorter([{ property_id: 'prop_rel', direction: 'ascending' }], schema)).toBeNull()
+    expect(resolvedSortCount([{ property_id: 'prop_rel', direction: 'ascending' }], schema)).toBe(0)
   })
 })
 

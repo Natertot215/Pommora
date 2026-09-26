@@ -426,6 +426,27 @@ describe('the cards seam (flattenStructural)', () => {
   })
 })
 
+describe("the engine's grouping", () => {
+  it('a sub_group on a property the engine cannot group by never arms reassign', async () => {
+    await mount(setCollection({ sub_group: { property_id: 'prop_gone', order_mode: 'manual' } }))
+    expect(api?.subGrouped).toBe(false)
+    expect(api?.groupPropId).toBeUndefined()
+    expect(api?.canReassign).toBe(false)
+    expect(api?.canRelocate).toBe(true)
+  })
+
+  it('a property group the engine paints as Sets reads as structural', async () => {
+    await mount(
+      setCollection({
+        group: { kind: 'property', property_id: 'prop_gone', order_mode: 'configured' },
+      }),
+    )
+    expect(api?.groupPropId).toBeUndefined()
+    expect(api?.canReassign).toBe(false)
+    expect(api?.canRelocate).toBe(true)
+  })
+})
+
 const SORTED: Partial<SavedView> = {
   sort: [{ property_id: 'prop_status', direction: 'ascending' }],
 }

@@ -5,6 +5,7 @@ import { isKeyOf, isPlainObject } from '../Contract/validators'
 import { looseDecoder } from '../Files/decoders'
 import { rootSegs } from '../Paths/exclusion'
 import type { Option } from './optionModel'
+import type { ValueKind } from './propertyValue'
 import { PAGE_MODELED_KEYS, RETIRED_ID_KEYS } from '../Nexus/identityMark'
 
 const typeIds = z.enum([
@@ -21,6 +22,53 @@ const typeIds = z.enum([
   'file',
 ])
 export type PropertyType = z.infer<typeof typeIds>
+
+// `options` names where a type keeps its options: `select_options`, or `status_groups` for Status.
+export type TypeSpec = Readonly<{
+  kind: ValueKind
+  origin: 'user' | 'stamp' | 'context'
+  groups?: true
+  options?: 'select' | 'status'
+}>
+
+export const PROPERTY_TYPES: Readonly<Record<PropertyType, TypeSpec>> = {
+  number: { kind: 'number', origin: 'user' },
+  checkbox: { kind: 'checkbox', origin: 'user' },
+  dateTime: { kind: 'dateTime', origin: 'user', groups: true },
+  select: { kind: 'select', origin: 'user', groups: true, options: 'select' },
+  multiSelect: { kind: 'multiSelect', origin: 'user', options: 'select' },
+  status: { kind: 'select', origin: 'user', groups: true, options: 'status' },
+  link: { kind: 'link', origin: 'user' },
+  context: { kind: 'context', origin: 'context' },
+  createdTime: { kind: 'dateTime', origin: 'stamp' },
+  lastEditedTime: { kind: 'dateTime', origin: 'stamp' },
+  file: { kind: 'file', origin: 'user' },
+}
+
+export const specOf = (t: PropertyType | 'title' | undefined): TypeSpec | undefined =>
+  t === undefined || t === 'title' ? undefined : PROPERTY_TYPES[t]
+
+export const groupable = (t: PropertyType | 'title' | undefined): boolean =>
+  specOf(t)?.groups === true
+
+export type PickKind = Extract<ValueKind, 'select' | 'multiSelect' | 'context'>
+
+export function pickKindOf(t: PropertyType | 'title' | undefined): PickKind | null {
+  const kind = specOf(t)?.kind
+  switch (kind) {
+    case 'select':
+    case 'multiSelect':
+    case 'context':
+      return kind
+    case 'number':
+    case 'checkbox':
+    case 'dateTime':
+    case 'link':
+    case 'file':
+    case undefined:
+      return null
+  }
+}
 
 // The spellings written to disk before the ids went camelCase; a Trash record and an older build's synced file keep them, so they read forever.
 export const LEGACY_TYPE_IDS = {
@@ -234,10 +282,6 @@ function statusOptions(def: Pick<PropertyDefinition, 'status_groups'> | undefine
   return (def?.status_groups ?? []).flatMap(groupOptions)
 }
 
-/** A Status property's options live in `status_groups` instead, and every other type has none, so writing `select_options` onto one of those corrupts the definition. */
-export const hasSelectOptions = (type: PropertyType): type is 'select' | 'multiSelect' =>
-  type === 'select' || type === 'multiSelect'
-
 export const isOptionsKind = (type: PropertyType | 'title' | undefined): boolean =>
   type === 'select' || type === 'status' || type === 'multiSelect' || type === 'context'
 
@@ -246,7 +290,10 @@ export type PickOption = { value: string; label: string; color?: string; icon?: 
 /** Keyed on the DECLARED type, never on which array happens to be present — a type change retains the array it moved away from, so a Status property can still carry a stale select_options. */
 export const optionsOf = (
   def: Pick<PropertyDefinition, 'type' | 'select_options' | 'status_groups'> | undefined,
-): PickOption[] => (def?.type === 'status' ? statusOptions(def) : (def?.select_options ?? []))
+): PickOption[] =>
+  def && PROPERTY_TYPES[def.type].options === 'status'
+    ? statusOptions(def)
+    : (def?.select_options ?? [])
 
 export const optionValues = (
   def: Pick<PropertyDefinition, 'type' | 'status_groups' | 'select_options'>,

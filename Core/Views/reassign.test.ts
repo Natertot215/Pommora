@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { UNGROUPED } from '@pommora/core/Views/viewRow'
-import { groupKeyToValue, REASSIGNABLE_GROUP_TYPES, reassignTarget } from './reassign'
+import { groupKeyToValue, reassignable, reassignTarget } from './reassign'
 
 describe('groupKeyToValue — destination group key → PropertyValue', () => {
   it('status: the key is the status value', () => {
@@ -26,8 +26,21 @@ describe('groupKeyToValue — destination group key → PropertyValue', () => {
     expect(groupKeyToValue('x', undefined)).toBeNull()
   })
 
-  it('REASSIGNABLE_GROUP_TYPES is exactly status/select/checkbox', () => {
-    expect([...REASSIGNABLE_GROUP_TYPES].sort()).toEqual(['checkbox', 'select', 'status'])
+  it('reassignable holds for Status, Select and Checkbox and nothing else', () => {
+    for (const t of ['status', 'select', 'checkbox'] as const) expect(reassignable(t)).toBe(true)
+    for (const t of [
+      'dateTime',
+      'createdTime',
+      'lastEditedTime',
+      'number',
+      'multiSelect',
+      'context',
+      'link',
+      'file',
+      'title',
+      undefined,
+    ] as const)
+      expect(reassignable(t)).toBe(false)
   })
 })
 

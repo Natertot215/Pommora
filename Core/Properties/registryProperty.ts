@@ -6,9 +6,9 @@ import { freeName } from '../Paths/names'
 import {
   defaultStatusSeed,
   defaultSelectSeed,
-  hasSelectOptions,
   KEY_REFUSAL,
   normalizePropertyName,
+  PROPERTY_TYPES,
   type PropertyDefinition,
 } from './properties'
 import { ok, fail, type Result } from '../Contract/result'
@@ -27,13 +27,16 @@ import { serializeSchemaOp } from './schemaChain'
 
 // Seeds only when the field is undefined; an EMPTY array is a deliberate state, or emptying a select's options then making any unrelated edit would resurrect the seed.
 function seeded(def: PropertyDefinition): PropertyDefinition {
-  let d = def
-  if (d.type === 'status' && d.status_groups === undefined)
-    d = { ...d, status_groups: defaultStatusSeed() }
-  if (hasSelectOptions(d.type) && d.select_options === undefined) {
-    d = { ...d, select_options: defaultSelectSeed() }
+  switch (PROPERTY_TYPES[def.type].options) {
+    case 'status':
+      return def.status_groups === undefined ? { ...def, status_groups: defaultStatusSeed() } : def
+    case 'select':
+      return def.select_options === undefined
+        ? { ...def, select_options: defaultSelectSeed() }
+        : def
+    case undefined:
+      return def
   }
-  return d
 }
 
 export async function createProperty(

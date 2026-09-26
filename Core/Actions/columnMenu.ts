@@ -13,7 +13,7 @@ import {
   WEEKDAY_FORMATS,
   type ColumnStyle,
 } from '../Properties/columnStyles'
-import { LINK_DISPLAYS, type PropertyType } from '../Properties/properties'
+import { LINK_DISPLAYS, PROPERTY_TYPES, type PropertyType } from '../Properties/properties'
 import { COLUMN_ALIGNS, type ColumnAlign } from '../Views/views'
 import type { ActionItem } from './menuModel'
 
@@ -61,8 +61,7 @@ export function styleMenuItems(ctx: StyleMenuContext): ActionItem<StyleAction>[]
       ...(separatorBefore ? { separatorBefore } : {}),
     })
   const look = row('look', current.look)
-  switch (type) {
-    case 'status':
+  switch (PROPERTY_TYPES[type].kind) {
     case 'select':
     case 'multiSelect':
       return OPTION_LOOKS.map((l) => look(LOOK_LABELS[l], l))
@@ -74,9 +73,7 @@ export function styleMenuItems(ctx: StyleMenuContext): ActionItem<StyleAction>[]
       return NUMBER_LOOKS.filter((l) => ctx.barCapable || l !== 'bar').map((l) =>
         look(LOOK_LABELS[l], l),
       )
-    case 'dateTime':
-    case 'createdTime':
-    case 'lastEditedTime': {
+    case 'dateTime': {
       const date = row('date_format', current.date_format)
       const weekday = row('weekday', current.weekday)
       const time = row('time_format', current.time_format)
@@ -88,7 +85,8 @@ export function styleMenuItems(ctx: StyleMenuContext): ActionItem<StyleAction>[]
         ...TIME_FORMATS.map((t, i) => time(TIME_FORMAT_LABELS[t], t, i === 0)),
       ]
     }
-    default:
+    case 'context':
+    case 'file':
       return []
   }
 }

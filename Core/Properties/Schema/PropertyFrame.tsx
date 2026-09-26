@@ -5,11 +5,11 @@ import type { IconSize } from '@pommora/uix/Theme'
 import { useSession } from '../../Session/store'
 import {
   DEFAULT_LINK_DISPLAY,
-  hasSelectOptions,
   isReservedPropertyId,
   type LinkConfig,
   type NumberConfig,
   type PropertyDefinition,
+  PROPERTY_TYPES,
   type PropertyType,
   type StatusGroup,
 } from '@pommora/core/Properties/properties'
@@ -459,7 +459,7 @@ export function PropertyFrame({
     const columnStyle = styleFor(def.id, schema, activeView)
     const optionLook: OptionStyle = columnStyle.look === 'compact' ? 'compact' : 'standard'
     const styleFooting =
-      hasSelectOptions(def.type) || def.type === 'status' ? (
+      PROPERTY_TYPES[def.type].options !== undefined ? (
         <MenuFooting>
           <FootingItem
             icon="palette"

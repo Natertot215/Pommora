@@ -37,13 +37,13 @@ describe('optionModel', () => {
   })
 
   it('fallbackTitle yields Label for select and the group name for status', () => {
-    expect(fallbackTitle('select', [])).toBe('Label')
-    expect(fallbackTitle('status', [], 'Active')).toBe('Active')
+    expect(fallbackTitle([])).toBe('Label')
+    expect(fallbackTitle([], 'Active')).toBe('Active')
   })
 
   it('fallbackTitle steps aside from a title already taken', () => {
-    expect(fallbackTitle('select', ['Label'])).toBe('Label (2)')
-    expect(fallbackTitle('status', ['Open'], 'Open')).toBe('Open (2)')
+    expect(fallbackTitle(['Label'])).toBe('Label (2)')
+    expect(fallbackTitle(['Open'], 'Open')).toBe('Open (2)')
   })
 
   it('renameOption rewrites value+label together (stable identity is the OLD value)', () => {

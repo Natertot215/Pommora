@@ -1,4 +1,4 @@
-// Two axes that must not be confused: declaredType is the column's SCHEMA type, what sort/group/filter switch on; resolveFieldValue is the row's VALUE, decoded definition-first — never inferred from a value's shape, so a Link column always reads as a link.
+// Two axes that must not be confused: declaredType is the column's SCHEMA type, whose record entry sort, filter and grouping classify by; resolveFieldValue is the row's VALUE, decoded definition-first — never inferred from a value's shape, so a Link column always reads as a link.
 
 import type { ViewRow } from '@pommora/core/Views/viewRow'
 import type { PageFrontmatter } from '@pommora/core/Nexus/schemas'

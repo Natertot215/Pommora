@@ -3,11 +3,15 @@
 import type { FilterGroup, FilterRule } from '@pommora/core/Views/views'
 import type { ViewRow } from '@pommora/core/Views/viewRow'
 import {
+  PROPERTY_TYPES,
   type PropertyDefinition,
-  type PropertyType,
   RESERVED_PROPERTY_ID,
 } from '@pommora/core/Properties/properties'
-import { isBlankValue, type PropertyValue } from '@pommora/core/Properties/propertyValue'
+import {
+  isBlankValue,
+  type PropertyValue,
+  type ValueKind,
+} from '@pommora/core/Properties/propertyValue'
 import { declaredType, resolveFieldValue } from '../../Properties/value'
 import { type SetTreeNode, subtreeIds } from './group'
 import { linkDisplayText } from '@pommora/core/Connections/linkValue'
@@ -151,47 +155,36 @@ function evaluateRule(
   if (t === undefined) return NO_OP
   // A rule whose op still wants an operand isn't authored yet — it constrains nothing.
   if (!OPERANDLESS_OPS.has(rule.op) && rule.value == null && !rule.values?.length) return NO_OP
-  return evaluateByType(
-    resolveFieldValue(row, rule.property_id, schema),
-    rule.op,
-    rule.value,
-    rule.values,
-    t,
-  )
+  const v = resolveFieldValue(row, rule.property_id, schema)
+  // resolveFieldValue('_title') carries row.title as a select-kind string — the text matrix reads it.
+  return t === 'title'
+    ? evaluateText(v, rule.op, rule.value, rule.values)
+    : evaluateByKind(v, rule.op, rule.value, rule.values, PROPERTY_TYPES[t].kind)
 }
 
-function evaluateByType(
+function evaluateByKind(
   v: PropertyValue,
   op: Op,
   expected: Expected,
   values: string[] | undefined,
-  t: PropertyType | 'title',
+  kind: ValueKind,
 ): boolean {
-  switch (t) {
+  switch (kind) {
     case 'number':
       return evaluateNumber(v, op, expected)
     case 'dateTime':
-    case 'createdTime':
-    case 'lastEditedTime':
       return evaluateDate(v, op, expected)
     case 'checkbox':
       return evaluateCheckbox(v, op, expected)
-    // This switch reads the DECLARED TYPE, not the value's kind — dropping the Status case sends every Status rule to the no-op default.
-    case 'status':
     case 'select':
     case 'link':
       return evaluateText(v, op, expected, values)
     case 'multiSelect':
       return evaluateMulti(v, op, expected, values)
-    case 'title':
-      // resolveFieldValue('_title') carries row.title as a select-kind string — the text matrix reads it.
-      return evaluateText(v, op, expected, values)
     case 'context':
       return evaluateList(v.kind === 'context' ? v.value : [], op, expected, values)
     case 'file':
       return evaluatePresence(v, op)
-    default:
-      return true
   }
 }
 
@@ -223,7 +216,13 @@ function textValue(v: PropertyValue): string | null {
     case 'link':
       // Match the SHOWN text (alias, else URL) — the same parse Cell renders, so a `contains` on an aliased link tests the visible text, not its raw markdown.
       return linkDisplayText(v.value)
-    default:
+    case 'number':
+    case 'checkbox':
+    case 'dateTime':
+    case 'multiSelect':
+    case 'context':
+    case 'file':
+    case 'null':
       return null
   }
 }

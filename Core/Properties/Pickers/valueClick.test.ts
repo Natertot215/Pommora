@@ -30,4 +30,9 @@ describe('sharedValueClickAction', () => {
       kind: 'file',
     })
   })
+
+  it('a stamp opens nothing, though its value is a date', () => {
+    for (const t of ['createdTime', 'lastEditedTime'] as const)
+      expect(sharedValueClickAction(t, { kind: 'dateTime', value: '2026-01-01' })).toBeNull()
+  })
 })
