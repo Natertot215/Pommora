@@ -5,19 +5,13 @@ import { nexusConfig } from '../Paths/paths'
 import { NEXUS_CONFIG_FILES } from '../Paths/nexusPaths'
 import { readValue, writeValue } from '../Platform/localState'
 import { readJsonObject, setOrDrop, updateNexusConfig } from '../Files/atomicWrite'
-import { parseConnectionText } from '../Connections/connections'
-import { underAssetRoot } from '../Assets/assetRoots'
+import { isAssetPath } from '../Assets/assetRoots'
 import { readWatchScope } from '../Settings/settings'
 
 const statePath = (root: string): string => nexusConfig(root, NEXUS_CONFIG_FILES.state)
 
 const navigationOf = (state: Record<string, unknown> | null): Record<string, unknown> =>
   isPlainObject(state?.navigation) ? state.navigation : {}
-
-export function isAssetPath(v: unknown, assetDir: string): v is string {
-  if (typeof v !== 'string') return false
-  return parseConnectionText(v) !== null || underAssetRoot(v, assetDir)
-}
 
 const cleanRefs = (v: unknown[]): NavRef[] => v.filter((r) => isNavRef(r)).map(toNavRef)
 
