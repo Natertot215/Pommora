@@ -6,7 +6,8 @@ import { captureLoser } from './Arrival/captures'
 import { liveTreeOf } from '../Nexus/liveTree'
 import { sessionRoot } from '../Nexus/session'
 import { readValue, writeValue } from '../Platform/localState'
-import { readFileHistoryConfig } from '../Settings/settings'
+import { readLivePersonalization } from '../Settings/settings'
+import { settingOf } from '../Settings/personalization'
 import { deleteBase, readAllBases } from './Client/base'
 import {
   answered,
@@ -38,8 +39,6 @@ import {
   wrapForDevice,
   wrapForPassword,
 } from './Keys/ring'
-
-const DAY_MS = 86_400_000
 
 const OFF: SyncStatus = { state: 'off' }
 
@@ -338,7 +337,7 @@ export const syncHandlers = {
           create: {
             protocol: 1,
             kdf,
-            historyDays: (await readFileHistoryConfig(root)).keepMs / DAY_MS,
+            historyDays: settingOf(await readLivePersonalization(root), 'historyDays'),
             ring: entries,
           },
         })

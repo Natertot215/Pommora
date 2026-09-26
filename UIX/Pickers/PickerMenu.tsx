@@ -24,7 +24,7 @@ import { clamp } from '../Utilities/clamp'
 import { MENU_GAP as GAP } from '../Menus/menuAnchor'
 import * as s from './picker-base.css'
 
-const VIEWPORT_MARGIN = 8
+export const VIEWPORT_MARGIN = 8
 
 const stopPointerBubble = (e: { stopPropagation: () => void }): void => e.stopPropagation()
 const stopContextBubble = (e: {

@@ -12,6 +12,7 @@ export {
   FootingItem,
   MenuScrollFrame,
   emphasizeMatch,
+  rowDropLine,
 } from './MenuRows'
 export {
   MenuIndex,
