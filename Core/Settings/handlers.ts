@@ -2,11 +2,9 @@ import { type Handlers, withRoot, withWriteRoot } from '../Contract/handlers'
 import { isKeyOf } from '../Contract/validators'
 import { fail, ok, fault } from '../Contract/result'
 import { machine } from '../Platform/machine'
-import { seedContentIndex } from '../Index/indexSeed'
 import { rootSegs } from '../Paths/exclusion'
 import { relative } from '../Paths/posix'
-import { confirmSettingsWrite } from '../Nexus/confirm'
-import { refreshAfterWrite } from '../Nexus/liveTree'
+import { confirmRescope, confirmSettingsWrite } from '../Nexus/confirm'
 import { sweepFileHistory } from '../Pages/fileHistory'
 import { nexusFolderRefusal } from './codec'
 import { personalizationSchema } from './personalization'
@@ -19,19 +17,12 @@ import {
 } from './settings'
 
 export const settingsHandlers = {
-  // Duplicates collapse on the case-folded path the matcher compares, so `archive` and `Archive` are one folder while the spelling the user typed is what's stored.
   'exclusions:set': withWriteRoot(async (root, ctx, folders: unknown) => {
     const sanitized = sanitizeExclusions(folders)
     if (!sanitized.ok) return sanitized
-    const next = sanitized.value
-    await writeExcludedFolders(root, next)
-    // The write's own echo is suppressed, so the re-arm an external edit would trigger never fires here.
-    await confirmSettingsWrite(ctx, root)
-    const tree = await refreshAfterWrite(root)
-    await seedContentIndex(root)
-    ctx.push('nexus:changed', tree)
-    await ctx.watch(root)
-    return ok(next)
+    await writeExcludedFolders(root, sanitized.value)
+    await confirmRescope(ctx, root)
+    return sanitized
   }),
 
   'exclusions:choose': withRoot(async (root, ctx) => {
@@ -46,13 +37,8 @@ export const settingsHandlers = {
   }),
 
   'exclusions:clear': withWriteRoot(async (root) => {
-    const { excluded, assetDir } = await readWatchScope(root)
-    if (excluded.length === 0) return ok(null)
-    return clearExclusionData(root, excluded, assetDir)
-  }),
-
-  'exclusions:count': withRoot(async (root) => {
-    return ok((await readWatchScope(root)).excluded.length)
+    const scope = await readWatchScope(root)
+    return scope.excluded.length ? clearExclusionData(root, scope) : ok(null)
   }),
 
   'personalization:set': withWriteRoot(async (root, ctx, key: unknown, value: unknown) => {

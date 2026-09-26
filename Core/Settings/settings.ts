@@ -4,15 +4,16 @@ import { type Personalization, settingOf } from './personalization'
 import { setOrDrop, updateNexusConfig } from '../Files/atomicWrite'
 import { getLiveTree } from '../Nexus/liveTree'
 import {
-  nexusFolderRefusal,
+  normalizeExclusions,
   readSettings,
   readSettingsLeaves,
   scopeOf,
   type SettingsLeaves,
 } from './codec'
 import { foldKey } from '../Paths/caseFold'
-import { rootSegs, type WatchScope } from '../Paths/exclusion'
+import { remainderUnder, rootSegs, type WatchScope } from '../Paths/exclusion'
 import { fail, ok, type Result, fault } from '../Contract/result'
+import { patchSettingsFromDisk } from '../Nexus/watchPatch'
 
 export async function updateSettings(
   root: string,
@@ -71,15 +72,82 @@ export async function readFileHistoryConfig(
   }
 }
 
+// A scope write lands in the held tree at once, so what runs before the session rescopes (the asset migration) reads the scope it wrote.
+async function updateScope(
+  root: string,
+  mutate: (current: Record<string, unknown>) => Record<string, unknown>,
+): Promise<void> {
+  await updateSettings(root, mutate)
+  await patchSettingsFromDisk(root)
+}
+
 /** An emptied value deletes the key rather than storing a blank — absent is what the default means, and the reader answers it either way. */
 export function writeAssetDirectory(root: string, dir: string): Promise<void> {
-  return updateSettings(root, (cur) => setOrDrop(cur, 'asset_directory', dir))
+  return updateScope(root, (cur) => setOrDrop(cur, 'asset_directory', dir))
 }
 
 export function writeExcludedFolders(root: string, folders: string[]): Promise<void> {
-  return updateSettings(root, (cur) =>
+  return updateScope(root, (cur) =>
     setOrDrop(cur, 'excluded_folders', folders.length ? folders : null),
   )
+}
+
+const entryWithin = (entry: string, rel: string): string[] | null =>
+  remainderUnder(rootSegs(entry), rootSegs(rel).map(foldKey))
+
+/** The excluded entries at or under `rel`, each relative to it. */
+export const excludedWithin = (excluded: string[], rel: string): string[] =>
+  excluded.flatMap((entry) => entryWithin(entry, rel)?.join('/') ?? [])
+
+const holdsUnder = (excluded: string[], rel: string): boolean =>
+  excluded.some((entry) => entryWithin(entry, rel) !== null)
+
+async function editExcluded(
+  root: string,
+  edit: (excluded: string[]) => string[],
+): Promise<string[]> {
+  const { excluded } = await readWatchScope(root)
+  const next = normalizeExclusions(edit(excluded)).folders
+  if (next.length !== excluded.length || next.some((entry, i) => entry !== excluded[i]))
+    await writeExcludedFolders(root, next)
+  return next
+}
+
+/** An excluded entry follows the folder it names: a Collection or Set landing at `to` carries every entry at or under `from` with it. True when an entry now sits under `to`, since the landing moved content the scope keeps out. */
+export async function followExcludedFolders(
+  root: string,
+  from: string,
+  to: string,
+): Promise<boolean> {
+  if (from === to) return false
+  const next = await editExcluded(root, (excluded) =>
+    excluded.map((entry) => {
+      const rest = entryWithin(entry, from)
+      return rest ? [to, ...rest].join('/') : entry
+    }),
+  )
+  // A case-only rename changes no entry's reach, since matching folds case.
+  return foldKey(from) !== foldKey(to) && holdsUnder(next, to)
+}
+
+/** A trashed Collection or Set takes its excluded entries with it; its record keeps them relative to it. */
+export async function releaseExcludedFolders(root: string, rel: string): Promise<void> {
+  await editExcluded(root, (excluded) =>
+    excluded.filter((entry) => entryWithin(entry, rel) === null),
+  )
+}
+
+/** A restored Collection or Set lands with the entries its record kept. True when an entry sits under it. */
+export async function reseatExcludedFolders(
+  root: string,
+  rel: string,
+  within: string[],
+): Promise<boolean> {
+  const next = await editExcluded(root, (excluded) => [
+    ...excluded,
+    ...within.map((rest) => `${rel}/${rest}`),
+  ])
+  return holdsUnder(next, rel)
 }
 
 /** An `undefined` value resets the key to its built-in default — JSON omits it. */
@@ -90,22 +158,8 @@ export function writePersonalization(root: string, key: string, value: unknown):
   })
 }
 
-/** Deduped on the case-folded path so `archive` and `Archive` are one folder while the typed casing is stored. The first refusal stops the whole write — a partial list is never stored. */
 export function sanitizeExclusions(folders: unknown): Result<string[]> {
   if (!Array.isArray(folders)) return fault('A folder list is required.')
-  const seen = new Set<string>()
-  const out: string[] = []
-  for (const entry of folders) {
-    if (typeof entry !== 'string') return fault('A folder path is required.')
-    const raw = entry.trim()
-    const refusal = nexusFolderRefusal(raw)
-    if (refusal) return fail('invalid-path', refusal)
-    const segs = rootSegs(raw)
-    const rel = segs.join('/')
-    const key = segs.map(foldKey).join('/')
-    if (seen.has(key)) continue
-    seen.add(key)
-    out.push(rel)
-  }
-  return ok(out)
+  const { folders: kept, refusal } = normalizeExclusions(folders)
+  return refusal ? fail('invalid-path', refusal) : ok(kept)
 }

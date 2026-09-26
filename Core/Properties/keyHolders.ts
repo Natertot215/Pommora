@@ -3,10 +3,7 @@
 import { queryKeyHolders } from '../Index/contentIndex'
 import { corpusUnder, nexusCorpus } from '../Index/indexSeed'
 import { readJsonObject, readTextOrNull } from '../Files/atomicWrite'
-import { listFilesRecursive } from '../Files/walk'
 import { relative } from '../Paths/posix'
-import { contextsDir } from '../Paths/paths'
-import { SPACE_SIDECAR } from '../Paths/nexusPaths'
 import { splitFrontmatter } from '../Files/pageFile'
 import { ID_KEY } from '../Nexus/identityMark'
 import { asString } from '../Nexus/coerce'
@@ -16,6 +13,7 @@ import { getLiveTree } from '../Nexus/liveTree'
 import { findPage, patchPageFromDisk } from '../Nexus/watchPatch'
 import { valueOr } from '../Contract/result'
 import { isBlankRaw } from './propertyValue'
+import { spaceSidecars } from '../Contexts/spaceSidecar'
 
 export async function keyHolderFiles(
   root: string,
@@ -40,7 +38,7 @@ export async function confirmedKeyHolders(
     const content = await readTextOrNull(file)
     if (content !== null && key in splitFrontmatter(content)) holders.push(file)
   }
-  for (const file of await listFilesRecursive(contextsDir(root), [SPACE_SIDECAR])) {
+  for (const file of await spaceSidecars(root)) {
     const raw = await readJsonObject(file)
     if (raw && key in raw) holders.push(file)
   }

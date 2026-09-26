@@ -7,12 +7,6 @@ export interface TrashCrumb {
   title: string
 }
 
-export interface ClearReport {
-  pages: number
-  sidecars: number
-  refused: number
-}
-
 /** Main owns the parse: the renderer never sees a `.deleted` suffix, a folder stamp, or the record union. */
 export interface TrashRow {
   bundlePath: string

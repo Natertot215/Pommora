@@ -80,6 +80,9 @@ export function outsideContent(rel: string, scope: WatchScope): OutsideReason | 
   return excludedMatcher(scope.excluded)(segs) ? 'excluded' : null
 }
 
+/** The scope of a deliberate reach into excluded folders, which still passes hidden folders and the asset root by. Clear Exclusion Cache and the legacy asset migration are the two; every other enumerator keeps excluded folders out. */
+export const reachingExcluded = (scope: WatchScope): WatchScope => ({ ...scope, excluded: [] })
+
 /** Both the compiled matchers and chokidar's ignore filter capture the scope at arm time, so a change to either half is structural. */
 export function sameScope(a: WatchScope, b: WatchScope): boolean {
   return (

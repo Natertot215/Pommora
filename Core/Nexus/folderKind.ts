@@ -2,10 +2,9 @@ import { isPlainObject } from '../Contract/validators'
 import { join } from '../Paths/posix'
 import { baseSidecar } from './schemas'
 import { pathExists } from '../Files/atomicWrite'
-import { listEntries } from '../Files/walk'
+import { visibleFolders } from '../Files/walk'
 import { AGENDA_FOLDERS, type AgendaFolder, SIDECAR_FILENAME } from '../Paths/nexusPaths'
 import { readSidecar } from '../Files/sidecar'
-import { hiddenFolder } from '../Paths/exclusion'
 
 export type FolderKind = 'collection' | 'set' | AgendaFolder | 'unknown'
 
@@ -76,11 +75,11 @@ export async function agendaContext(
   }
 
   // An unreadable root yields no entries, so no claims are counted and the recorded registration stands — a root Pommora cannot list is no evidence that anything duplicated it.
-  const entries = (await listEntries(root)).filter((e) => e.kind === 'dir' && !hiddenFolder(e.name))
+  const folders = await visibleFolders(root)
   // Counting is order-independent, so the reads fan out — this runs on every walk, and a serial pass costs one round trip per root folder per slot before anything can render.
   const found = await Promise.all(
-    entries.flatMap((e) =>
-      AGENDA_FOLDERS.map((slot) => readSidecar(join(root, e.name), slot, baseSidecar)),
+    folders.flatMap((name) =>
+      AGENDA_FOLDERS.map((slot) => readSidecar(join(root, name), slot, baseSidecar)),
     ),
   )
   const claims = new Map<string, number>()

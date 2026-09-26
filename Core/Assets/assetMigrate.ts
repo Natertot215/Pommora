@@ -1,9 +1,9 @@
 // Walks the STORES, not the directory: nothing cleans up `.nexus/assets/<id>/` when an entity is deleted, so a directory-driven copy would carry orphans into a folder shared with Obsidian.
 
 import { parseConnectionText } from '../Connections/connections'
-import { ASSETS_DIR_REL, NEXUS_CONFIG_FILES, SIDECARS, SPACE_SIDECAR } from '../Paths/nexusPaths'
+import { ASSETS_DIR_REL, NEXUS_CONFIG_FILES, SIDECARS } from '../Paths/nexusPaths'
 import { basename, titleFromPath, dirname, extname, join, relative } from '../Paths/posix'
-import { assetsDir, contextsDir, nexusConfig } from '../Paths/paths'
+import { assetsDir, nexusConfig } from '../Paths/paths'
 import { machine } from '../Platform/machine'
 import { splitEnvelope, mergeFrontmatter, splitFrontmatter } from '../Files/pageFile'
 import {
@@ -14,7 +14,7 @@ import {
   updateNexusConfig,
 } from '../Files/atomicWrite'
 import { corpusFiles, listEntries, listFilesRecursive, listPathsUnder } from '../Files/walk'
-import { outsideContent, type WatchScope } from '../Paths/exclusion'
+import { outsideContent, reachingExcluded, type WatchScope } from '../Paths/exclusion'
 import { discardFile } from '../Trash/bundle'
 import { readNavigationFile, writeNavigationState } from '../Navigation/navigationFile'
 import { readWatchScope, updateCrops, updateSettings } from '../Settings/settings'
@@ -28,6 +28,7 @@ import {
 import { assetFilePath } from './assetRoots'
 import { writeAssetFile } from './assetWrite'
 import type { TrashDeps } from '../Trash/bundle'
+import { spaceSidecars } from '../Contexts/spaceSidecar'
 
 interface AssetMigration {
   moved: { from: string; to: string }[]
@@ -79,7 +80,8 @@ const withLink = (fields: Record<string, unknown>, { key, entry }: Slot, link: s
 const ownerOf = (name: string, { key }: Slot): string =>
   `${name} ${key === 'banner' ? 'Banner' : key}`
 
-async function collectRefs(root: string): Promise<StoreRef[]> {
+// A store that can't be read may still name a legacy file, so it holds the sweep like one whose write failed.
+async function collectRefs(root: string, skipped: AssetMigration['skipped']): Promise<StoreRef[]> {
   const refs: StoreRef[] = []
   const homeFile = nexusConfig(root, NEXUS_CONFIG_FILES.homepage)
   const settingsFile = nexusConfig(root, NEXUS_CONFIG_FILES.settings)
@@ -109,14 +111,19 @@ async function collectRefs(root: string): Promise<StoreRef[]> {
     write: async (link) =>
       (await updateNexusConfig(root, 'homepage', (cur) => ({ ...cur, banner: link }))).ok,
   })
-  const scope = await readWatchScope(root)
+  // Links inside excluded folders move with the rest, or the sweep would trash files they still name.
+  const scope = reachingExcluded(await readWatchScope(root))
   for (const file of await sidecarsUnder(root, scope)) {
-    const fields = async (): Promise<Record<string, unknown>> => (await readJsonObject(file)) ?? {}
-    for (const slot of slotsOf(await fields()))
+    const fields = await readJsonObject(file)
+    if (!fields) {
+      skipped.push({ store: relative(root, file), why: 'it could not be read' })
+      continue
+    }
+    for (const slot of slotsOf(fields))
       refs.push({
         store: relative(root, file),
         owner: ownerOf(basename(dirname(file)), slot),
-        read: async () => valueAt(await fields(), slot),
+        read: async () => valueAt((await readJsonObject(file)) ?? {}, slot),
         write: async (link) =>
           (await rmwJsonStrict(file, (cur) => ({ ...cur, [slot.key]: withLink(cur, slot, link) })))
             .ok,
@@ -125,13 +132,16 @@ async function collectRefs(root: string): Promise<StoreRef[]> {
 
   for (const rel of (await corpusFiles(root, scope)).sort()) {
     const file = join(root, rel)
-    const frontmatter = async (): Promise<Record<string, unknown>> =>
-      splitFrontmatter((await readTextOrNull(file)) ?? '')
-    for (const slot of slotsOf(await frontmatter()))
+    const text = await readTextOrNull(file)
+    if (text === null) {
+      skipped.push({ store: rel, why: 'it could not be read' })
+      continue
+    }
+    for (const slot of slotsOf(splitFrontmatter(text)))
       refs.push({
         store: rel,
         owner: ownerOf(titleFromPath(rel), slot),
-        read: async () => valueAt(await frontmatter(), slot),
+        read: async () => valueAt(splitFrontmatter((await readTextOrNull(file)) ?? ''), slot),
         write: (link) =>
           rewritePageSerialized(file, (content) => {
             const { body } = splitEnvelope(content)
@@ -143,12 +153,12 @@ async function collectRefs(root: string): Promise<StoreRef[]> {
   return refs
 }
 
-/** In-scope containers, and every Space under `.nexus/contexts`, which the content walk never enters. */
+/** The containers `scope` admits, and every Space sidecar, which the content walk never enters. */
 async function sidecarsUnder(root: string, scope: WatchScope): Promise<string[]> {
   const containers = await listPathsUnder(root, root, (rel, kind) =>
     kind === 'dir' ? !outsideContent(rel, scope) : SIDECARS.has(basename(rel)),
   )
-  const spaces = await listFilesRecursive(contextsDir(root), [SPACE_SIDECAR])
+  const spaces = await spaceSidecars(root)
   return [...containers.map((rel) => join(root, rel)), ...spaces].sort()
 }
 
@@ -161,7 +171,7 @@ export async function migrateAssets(root: string, deps: TrashDeps): Promise<Asse
   const result: AssetMigration = { moved: [], rewritten: 0, skipped: [], trashed: 0 }
   const landed = new Map<string, string>()
 
-  for (const ref of await collectRefs(root)) {
+  for (const ref of await collectRefs(root, result.skipped)) {
     const value = await ref.read()
     if (typeof value !== 'string' || !value.trim()) continue
     const named = parseConnectionText(value)

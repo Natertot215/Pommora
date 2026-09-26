@@ -2,13 +2,11 @@ import { type Handlers, withRoot, withWriteRoot } from '../Contract/handlers'
 import { ok, fault } from '../Contract/result'
 import { isPlainObject, isString } from '../Contract/validators'
 import { NOT_A_PROPERTY_DIR } from './assetRoots'
-import { seedContentIndex } from '../Index/indexSeed'
 import { assetSubRoot } from '../Paths/nexusPaths'
 import { resolveUnderRoot } from '../Paths/pathSafety'
 import { assetsDir } from '../Paths/paths'
 import { join, relative } from '../Paths/posix'
-import { confirmSettingsWrite, pushAssetWrites } from '../Nexus/confirm'
-import { refreshAfterWrite } from '../Nexus/liveTree'
+import { confirmRescope, pushAssetWrites } from '../Nexus/confirm'
 
 import { adoptFile } from './adoptFile'
 import { sessionRoot } from '../Nexus/session'
@@ -54,18 +52,14 @@ export const assetsHandlers = {
     }
     await writeAssetDirectory(root, next)
     try {
-      await migrateAssets(root, await trashDeps(root, ctx))
+      const migrated = await migrateAssets(root, await trashDeps(root, ctx))
+      for (const { store, why } of migrated?.skipped ?? [])
+        console.error(`assets: the legacy folder stays — ${store}: ${why}`)
     } catch (e) {
       console.error('assets: the migration stopped partway:', e)
     }
-    // The write's own echo is suppressed, so the structural re-arm an external edit would trigger never fires here.
-    await confirmSettingsWrite(ctx, root)
-    const tree = await refreshAfterWrite(root)
-    await seedContentIndex(root)
-    const assets = await refreshAssetMap(root)
-    ctx.push('nexus:changed', tree)
-    ctx.push('assets:changed', assets)
-    await ctx.watch(root)
+    await confirmRescope(ctx, root)
+    ctx.push('assets:changed', await refreshAssetMap(root))
     return ok(next)
   }),
 

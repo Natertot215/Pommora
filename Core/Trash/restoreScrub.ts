@@ -10,8 +10,9 @@ import {
 } from '../Contexts/contextResolve'
 import { rmwJsonStrict } from '../Files/atomicWrite'
 import { mergeFrontmatter, splitEnvelope, splitFrontmatter } from '../Files/pageFile'
-import { isMarkdownFile } from '../Paths/posix'
-import { listFilesRecursive, listMarkdownFiles } from '../Files/walk'
+import { basename, isMarkdownFile, join } from '../Paths/posix'
+import { listMarkdownFiles, listPathsUnder } from '../Files/walk'
+import { hiddenFolder } from '../Paths/exclusion'
 
 import { SPACE_SIDECAR } from '../Paths/nexusPaths'
 import { sweepGovernedRoots, unsweptLine } from '../Properties/governedSweep'
@@ -58,7 +59,9 @@ export async function scrubReturning(
   }
   const { skipped } = await sweepGovernedRoots(root, pages, { text })
   if (skipped.length) throw new Error(unsweptLine(skipped.length))
-  for (const file of await listFilesRecursive(absArtifact, [SPACE_SIDECAR])) {
-    await rmwJsonStrict(file, (raw) => reconciledSidecar(raw, world, inTransitKey))
-  }
+  const sidecars = await listPathsUnder(root, absArtifact, (rel, kind) =>
+    kind === 'dir' ? !hiddenFolder(basename(rel)) : basename(rel) === SPACE_SIDECAR,
+  )
+  for (const rel of sidecars)
+    await rmwJsonStrict(join(root, rel), (raw) => reconciledSidecar(raw, world, inTransitKey))
 }

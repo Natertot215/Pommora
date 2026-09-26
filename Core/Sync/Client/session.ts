@@ -1,6 +1,5 @@
 import type { HostContext } from '../../Contract/handlers'
 import { errText } from '../../Contract/result'
-import { NEXUS_DIR, NEXUS_CONFIG_FILES } from '../../Paths/nexusPaths'
 import type { WatchScope } from '../../Paths/exclusion'
 import { readValue } from '../../Platform/localState'
 import { captureStore } from '../../Platform/stores'
@@ -26,7 +25,6 @@ export interface Session {
   failed: Set<string>
 }
 
-const SETTINGS_REL = `${NEXUS_DIR}/${NEXUS_CONFIG_FILES.settings}`
 const FIRST_RETRY_MS = 5_000
 const LAST_RETRY_MS = 60_000
 const LONGEST_BACKOFF_MS = 30_000
@@ -134,7 +132,7 @@ async function begin(
     onDirty: (rels) => {
       void working(self, async () => {
         try {
-          if (rels.includes(SETTINGS_REL)) await rescope(self, await readWatchScope(root))
+          await rescope(self, await readWatchScope(root))
           await pushDirty(self, rels)
         } catch (e) {
           for (const rel of rels) self.failed.add(rel)
@@ -142,8 +140,12 @@ async function begin(
         }
       })
     },
+    // A rename can carry excluded entries with it, so the scope settles before the renamed paths push.
     onRename: (from, to) => {
-      void working(self, () => pushRename(self, from, to))
+      void working(self, async () => {
+        await rescope(self, await readWatchScope(root))
+        await pushRename(self, from, to)
+      })
     },
   })
   dropUnadmittedBases(scope)

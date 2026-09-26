@@ -63,22 +63,32 @@ function readAssetDirectoryLeaf(v: unknown): string {
   return nexusFolderRefusal(raw) ? ASSETS_DIR_REL : rootSegs(raw).join('/')
 }
 
-function readExcludedLeaf(v: unknown): string[] {
-  if (!Array.isArray(v)) return []
+/** Deduped on the case-folded path the matcher compares, so `archive` and `Archive` are one folder while the typed spelling is kept. A bad entry is dropped and the first one's refusal returned: a reader keeps the rest, so one hand edit can't blank the list, and a writer refuses the whole list, so a partial one is never stored. */
+export function normalizeExclusions(list: unknown[]): {
+  folders: string[]
+  refusal: string | null
+} {
   const seen = new Set<string>()
-  const out: string[] = []
-  for (const item of v) {
-    if (typeof item !== 'string') continue
-    const raw = item.trim()
-    if (!raw || nexusFolderRefusal(raw)) continue
+  const folders: string[] = []
+  let first: string | null = null
+  for (const entry of list) {
+    const raw = typeof entry === 'string' ? entry.trim() : ''
+    const refusal = nexusFolderRefusal(raw)
+    if (refusal) {
+      first ??= refusal
+      continue
+    }
     const segs = rootSegs(raw)
     const key = segs.map(foldKey).join('/')
     if (seen.has(key)) continue
     seen.add(key)
-    out.push(segs.join('/'))
+    folders.push(segs.join('/'))
   }
-  return out
+  return { folders, refusal: first }
 }
+
+const readExcludedLeaf = (v: unknown): string[] =>
+  Array.isArray(v) ? normalizeExclusions(v).folders : []
 
 export function readSettingsLeaves(settings: Json): SettingsLeaves {
   const personalization = readPersonalization(settings.personalization)

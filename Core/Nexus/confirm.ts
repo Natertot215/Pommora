@@ -4,6 +4,7 @@ import { confirmBy, confirmRegistry } from './mutatePatch'
 import { sessionRoot } from './session'
 import type { NexusTree } from './tree'
 import { flushValueWrites } from './valuesChanged'
+import { seedContentIndex } from '../Index/indexSeed'
 import { patchContainerFromDisk, patchSettingsFromDisk } from './watchPatch'
 
 export function pushConfirmed(ctx: HostContext, tree: NexusTree | null): void {
@@ -50,6 +51,15 @@ export const confirmRegistryWrite = (
 
 export const confirmSettingsWrite = (ctx: HostContext, root: string): Promise<void> =>
   confirmWrite(ctx, root, () => confirmBy(root, () => patchSettingsFromDisk(root)))
+
+/** A write that moved what Settings keeps out of the Nexus: the walk re-reads under the new scope, the seed prunes the rows it disowned, and the watcher re-arms, since its ignore filter captured the old scope. The app's own write is echo-suppressed, so nothing else would. */
+export const confirmRescope = (ctx: HostContext, root: string): Promise<void> =>
+  confirmWrite(ctx, root, async () => {
+    const tree = await confirmBy(root, async () => 'refresh')
+    await seedContentIndex(root)
+    await ctx.watch(root)
+    return tree
+  })
 
 /** An asset a mutation adopted never reaches the watcher (its own write is echo-suppressed), so the write's channel is what tells the renderer. */
 export function pushAssetWrites(ctx: HostContext, root: string): void {

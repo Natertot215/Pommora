@@ -4,7 +4,7 @@ import { moveIndexPaths } from '../Index/indexSeed'
 import type { MutateReply, MutateRequest } from './mutateRequest'
 import type { MutateContext } from './mutate'
 import { movePage } from './page'
-import { landingRefusal, moveFolderEntity } from './folderEntity'
+import { landedFolder, landingRefusal, moveFolderEntity } from './folderEntity'
 import { mutableTarget } from './liveTree'
 import { CONTAINER_KINDS } from './mutateRequest'
 import { setChildOrder } from './reorder'
@@ -49,8 +49,7 @@ export async function moveSetOp(
   const r = await moveFolderEntity(at.value.src, at.value.dst)
   if (!r.ok) return r
   await setChildOrder(at.value.dst, 'set_order', req.order)
-  await moveIndexPaths(root, at.value.src, r.value.path)
-  reportRename(relative(root, at.value.src), relative(root, r.value.path))
+  const rescope = await landedFolder(root, at.value.src, r.value.path)
   noteValueWrite(root, r.value.path)
-  return ok({})
+  return ok({ rescope })
 }

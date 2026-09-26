@@ -42,6 +42,13 @@ export async function corpusFiles(root: string, scope: WatchScope): Promise<stri
   return corpusFilesUnder(root, root, scope)
 }
 
+/** The folders `dir` holds that the app enters: every one but a hidden one. */
+export async function visibleFolders(dir: string): Promise<string[]> {
+  return (await listEntries(dir))
+    .filter((e) => e.kind === 'dir' && !hiddenFolder(e.name))
+    .map((e) => e.name)
+}
+
 // Descended by hand so a refused subtree is never entered, which makes pruning a directory identical to filtering its files.
 export async function listPathsUnder(
   root: string,

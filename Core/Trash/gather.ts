@@ -1,11 +1,12 @@
-import { basename, dirname, join } from '../Paths/posix'
+import { basename, dirname, join, relative } from '../Paths/posix'
+import { excludedWithin, readWatchScope } from '../Settings/settings'
 import { stampedId } from '../Files/pageFile'
 import type { ContextsRegistry } from '../Contexts/contexts'
 import type { Result } from '../Contract/result'
 import { ensureFolderId } from '../Nexus/adopt'
 import type { SweepCapture, UnlinkOutcome } from '../Contexts/contextCascade'
 import { pathExists, readJsonObject, readTextOrNull } from '../Files/atomicWrite'
-import { listEntries } from '../Files/walk'
+import { spaceSidecarsIn } from '../Contexts/spaceSidecar'
 import { SIDECAR_FILENAME, SPACE_SIDECAR } from '../Paths/nexusPaths'
 
 import type { RecordFile, ParentRef } from './record'
@@ -39,7 +40,14 @@ export async function gatherContentRecord(
     kind === 'page'
       ? stampedId((await readTextOrNull(abs)) ?? '')
       : await sidecarId(abs, SIDECAR_FILENAME[kind])
-  return { entity: kind, ...(id ? { id } : {}), parent }
+  return {
+    entity: kind,
+    ...(id ? { id } : {}),
+    parent,
+    ...(kind === 'page'
+      ? {}
+      : { excluded: excludedWithin((await readWatchScope(root)).excluded, relative(root, abs)) }),
+  }
 }
 
 const sweepIncomplete = (swept: UnlinkOutcome | null): boolean =>
@@ -85,11 +93,9 @@ export async function gatherContextEvidence(
   if (!entry) return null
   const spaceIds = new Map<string, string>()
   let unresolved = false
-  for (const d of await listEntries(abs)) {
-    if (d.kind !== 'dir') continue
-    const sidecar = join(abs, d.name, SPACE_SIDECAR)
+  for (const { name, file: sidecar } of await spaceSidecarsIn(abs)) {
     const raw = await readJsonObject(sidecar)
-    if (typeof raw?.id === 'string') spaceIds.set(d.name, raw.id)
+    if (typeof raw?.id === 'string') spaceIds.set(name, raw.id)
     // Absent sidecar = a plain folder, silent; present-but-unusable marks the evidence incomplete rather than silently thinning the membership join.
     else if (await pathExists(sidecar)) unresolved = true
   }
