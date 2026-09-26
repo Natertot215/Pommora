@@ -194,7 +194,6 @@ const appendTail = (base: string[], present: Set<string>): string[] => [
 function configuredOrder(def: PropertyDefinition | undefined, present: Set<string>): string[] {
   const schemaOrder = schemaOptionOrder(def)
   if (schemaOrder) return appendTail(schemaOrder, present)
-  if (def?.type === 'checkbox') return ['false', 'true']
   return [...present].sort()
 }
 
@@ -216,20 +215,16 @@ function property(
   placement: EmptyPlacement,
 ): ResolvedGroup[] {
   const def = schema.find((d) => d.id === group.property_id)
-  const isCheckbox = def?.type === 'checkbox'
   const granularity = granularityOf(group)
 
-  const byBucket = groupRows(
-    rows,
-    (r) => bucketKey(r, group.property_id, schema, granularity) ?? (isCheckbox ? 'false' : null),
-  )
+  const byBucket = groupRows(rows, (r) => bucketKey(r, group.property_id, schema, granularity))
   const noValue = byBucket.get(null) ?? []
   byBucket.delete(null)
   const buckets = byBucket as Map<string, ViewRow[]>
 
   const groups: ResolvedGroup[] = []
   // Only LIVE schema keys earn an empty band: a stale manual-order key (a deleted option, an old date bucket snapshotted by a band drag) must never render a ghost band.
-  const liveKeys = new Set(schemaOptionOrder(def) ?? (isCheckbox ? ['false', 'true'] : []))
+  const liveKeys = new Set(schemaOptionOrder(def) ?? [])
   for (const key of bucketOrder(group, def, new Set(buckets.keys()))) {
     const items = buckets.get(key) ?? []
     if (items.length === 0 && !liveKeys.has(key)) continue
@@ -240,7 +235,6 @@ function property(
     })
   }
   // No "None" band: value-less rows are a flattened, header-less tail placed by the VIEW-level knob — it holds rows, so hide_empty_groups never touches it.
-  if (isCheckbox) return groups
   return placeTail(groups, noValue, sorter, placement)
 }
 

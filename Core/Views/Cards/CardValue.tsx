@@ -8,8 +8,7 @@ import { parseStyleAction } from '@pommora/core/Actions/columnMenu'
 import { cx } from '@pommora/uix/Utilities/cx'
 import { isSecondaryClick } from '@pommora/uix/Interactions/chords'
 import { text } from '@pommora/uix/Theme/typography.css'
-import { declaredType, resolveFieldValue } from '../../Properties/value'
-import { isOptionsKind } from '../../Properties/properties'
+import { columnType, resolveFieldValue } from '../../Properties/value'
 import { GhostSuppress } from '@pommora/uix/Interactions/ghostCreate'
 import { Cell } from '../../Properties/Cells/Cell'
 import { linkAlias, linkEditText, linkValueFromRename } from '@pommora/core/Connections/linkValue'
@@ -25,6 +24,7 @@ import { numberDivisor } from '../../Properties/formatValue'
 import { sharedValueClickAction } from '../../Properties/Pickers/valueClick'
 import { fileChipIndex, pickFileInto, runFileMenuAction } from '../../Properties/Pickers/filePick'
 import { popMenu } from '../../Actions/menuActions'
+import { fillsBlank } from './cardValueInput'
 
 export function CardValue({
   row,
@@ -58,14 +58,9 @@ export function CardValue({
   const dismiss = (): void => setMode(null)
   const commit = (v: PropertyValue | null): void => onCommit(column, v)
 
-  const dt = declaredType(column.id, ctx.schema)
-  // The resolved kind is the only reliable Context test here — declaredType can't tell without the registry ids, which this context doesn't carry.
-  const t = column.kind === 'context' ? 'context' : dt
+  const t = columnType(column, ctx.schema)
   const v = resolveFieldValue(row, column.id, ctx.schema)
   const schemaDef = ctx.schema.find((d) => d.id === column.id)
-  // Kinds a click on a blank value fills in place. A checkbox draws its own box; last-edited has no fill path, so it gets no "Empty" affordance.
-  const canFillBlank =
-    isOptionsKind(t) || t === 'dateTime' || t === 'number' || t === 'link' || t === 'file'
 
   const onClick = (e: React.MouseEvent): void => {
     if (isSecondaryClick(e)) return
@@ -111,9 +106,9 @@ export function CardValue({
         return
       }
     }
-    const barCapable = dt === 'number' && numberDivisor(schemaDef) !== undefined
+    const barCapable = t === 'number' && numberDivisor(schemaDef) !== undefined
     const chip = fileChipIndex(e.target)
-    const menuCtx = cellMenuContextFor(column, dt, style, !isBlankValue(v), {
+    const menuCtx = cellMenuContextFor(t, style, !isBlankValue(v), {
       hideable: true,
       barCapable,
       onChip: chip !== null,
@@ -169,7 +164,7 @@ export function CardValue({
           onCommit={commitEditor}
           onCancel={dismiss}
         />
-      ) : isBlankValue(v) && canFillBlank ? (
+      ) : isBlankValue(v) && fillsBlank(t) ? (
         <EmptyValue className={cx('card-value-empty', text.caption.emphasized)} />
       ) : (
         <Cell

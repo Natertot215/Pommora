@@ -1,6 +1,7 @@
 import { useMemo } from 'react'
 import type { CollectionNode, SetNode } from '@pommora/core/Nexus/tree'
 import {
+  groupable,
   type PropertyDefinition,
   type PropertyType,
   optionsOf,
@@ -65,12 +66,6 @@ import { OptionChip } from '../../Properties/Cells/OptionChip'
 import { useCapitalizeMetadata } from '../../Properties/Cells/columnLabel'
 import { styleFor, useNexusForms } from '../Host/useColumnStyles'
 
-const GROUPABLE_PANE: ReadonlySet<string> = new Set([
-  'select',
-  'status',
-  'dateTime',
-] satisfies PropertyType[])
-
 const STRUCTURAL_ORDER: PickerOption<StructuralOrderMode>[] = [
   { value: 'custom', label: 'Custom' },
   { value: 'location', label: 'Location' },
@@ -133,7 +128,7 @@ export function GroupFrame({
   const group = view.group ?? { kind: 'structural' as const }
   const structural = groupsStructurally(group, schema)
   const flat = VIEW_KINDS[view.type].flat
-  const propertyOptions = schemaTargets(schema, (d) => GROUPABLE_PANE.has(d.type), capitalize).map(
+  const propertyOptions = schemaTargets(schema, (d) => groupable(d.type), capitalize).map(
     targetOption,
   )
   const activeDef =
@@ -524,7 +519,6 @@ function LocationHierarchy({
     lineClassName: oo.dropLineInset,
     onDrop,
   })
-  const subType = subDef?.type === 'status' ? 'status' : 'select'
 
   const subChipRow = (setId: string, o: (typeof subChips)[number]): React.JSX.Element => {
     const id = subBandId(setId, o.value)
@@ -540,7 +534,7 @@ function LocationHierarchy({
           dnd.draggingId === id && oo.ghosted,
         )}
       >
-        <OptionChip type={subType} option={o} />
+        <OptionChip type={subDef?.type ?? ''} option={o} />
         {rowEye(o.label, subHiddenKey(o.value), { hiddenSet, onToggleHidden })}
       </div>
     )

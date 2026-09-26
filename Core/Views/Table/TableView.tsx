@@ -8,8 +8,8 @@ import {
 } from '@pommora/core/Actions/cellMenu'
 import { type ColumnAlign, viewOption } from '@pommora/core/Views/views'
 import { isBlankValue, type PropertyValue } from '@pommora/core/Properties/propertyValue'
-import { isOptionsKind } from '@pommora/core/Properties/properties'
-import { declaredType, resolveFieldValue } from '../../Properties/value'
+import { pickKindOf } from '@pommora/core/Properties/properties'
+import { columnType, declaredType, resolveFieldValue } from '../../Properties/value'
 import { PropertyEditor } from '../../Properties/Pickers/PropertyEditor'
 import { parseEditorValue } from '../../Properties/parseEditorValue'
 import { MassPropertyPicker } from '../../Properties/Pickers/MassPropertyPicker'
@@ -163,7 +163,7 @@ export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
       return
     }
     if (col.kind !== 'property' && col.kind !== 'context') return
-    const t = col.kind === 'context' ? 'context' : declaredType(col.id, schema)
+    const t = columnType(col, schema)
     const value = resolveFieldValue(row, col.id, schema)
     const def = schema.find((d) => d.id === col.id)
     const shared = sharedValueClickAction(t, value)
@@ -320,7 +320,7 @@ export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
     const el = e.currentTarget as HTMLElement
     const cellEl = el.closest<HTMLElement>('.data-cell') ?? el
     const filled = !isBlankValue(resolveFieldValue(row, col.id, schema))
-    const dt = declaredType(col.id, schema)
+    const dt = columnType(col, schema)
     if (dt === 'link') {
       const v = resolveFieldValue(row, col.id, schema)
       const target = linkValueMenuTarget(v.kind === 'link' ? v.value : '', (action) => {
@@ -338,7 +338,7 @@ export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
       }
     }
     const chip = fileChipIndex(e.target)
-    const base = cellMenuContextFor(col, dt, colStyle(col.id), filled, {
+    const base = cellMenuContextFor(dt, colStyle(col.id), filled, {
       barCapable: numberBarCapable(schema, col.id),
       onChip: chip !== null,
     })
@@ -388,8 +388,7 @@ export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
     },
   })
   const startSweep = (row: ViewRow, col: ResolvedColumn, e: React.PointerEvent): boolean => {
-    const t = col.kind === 'context' ? 'context' : declaredType(col.id, schema)
-    if (!isOptionsKind(t)) return false
+    if (pickKindOf(columnType(col, schema)) === null) return false
     if (e.button !== 0) return false
     cellSweep.begin(row.id, col.id, e)
     return true

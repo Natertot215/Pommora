@@ -282,9 +282,6 @@ function statusOptions(def: Pick<PropertyDefinition, 'status_groups'> | undefine
   return (def?.status_groups ?? []).flatMap(groupOptions)
 }
 
-export const isOptionsKind = (type: PropertyType | 'title' | undefined): boolean =>
-  type === 'select' || type === 'status' || type === 'multiSelect' || type === 'context'
-
 export type PickOption = { value: string; label: string; color?: string; icon?: string }
 
 /** Keyed on the DECLARED type, never on which array happens to be present — a type change retains the array it moved away from, so a Status property can still carry a stale select_options. */

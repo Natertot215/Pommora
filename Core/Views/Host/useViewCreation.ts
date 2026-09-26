@@ -10,8 +10,13 @@ import {
   applyValueAtRoot,
   isBlankValue,
   type PropertyValue,
+  type ValueKind,
 } from '@pommora/core/Properties/propertyValue'
-import type { PropertyDefinition, PropertyType } from '@pommora/core/Properties/properties'
+import {
+  type PropertyDefinition,
+  type PropertyType,
+  specOf,
+} from '@pommora/core/Properties/properties'
 import { type SavedView, viewOption } from '@pommora/core/Views/views'
 import { DEFAULT_NEW_NAME } from '@pommora/core/Nexus/mutateRequest'
 import { relDirname } from '@pommora/core/Paths/posix'
@@ -25,14 +30,17 @@ import { orderWithSlot, tieOrderWith } from '../creationOrder'
 import { groupKeyToValue } from '../reassign'
 import { useLatest } from '@pommora/uix/Utilities/stableApi'
 
-// Sort criteria whose value a new page can inherit from its anchor — single-value user properties; under anything else the row simply lands where the sort puts it.
-const SEEDABLE_SORT_TYPES: ReadonlySet<string> = new Set([
-  'status',
-  'select',
-  'checkbox',
-  'number',
-  'dateTime',
-] satisfies PropertyType[])
+// Sort criteria whose value a new page can inherit from its anchor — single-value user properties, a link aside; under anything else the row simply lands where the sort puts it.
+const SEEDS_FROM_SORT: Record<ValueKind, boolean> = {
+  select: true,
+  checkbox: true,
+  number: true,
+  dateTime: true,
+  multiSelect: false,
+  context: false,
+  link: false,
+  file: false,
+}
 
 interface ViewCreationConfig {
   source: CollectionNode | SetNode
@@ -191,8 +199,8 @@ export function useViewCreation(getCfg: () => ViewCreationConfig): ViewCreation 
       if (v !== null) seeds[c.groupPropId] = v
     }
     for (const criterion of c.view.sort ?? []) {
-      const t = declaredType(criterion.property_id, c.schema)
-      if (!t || !SEEDABLE_SORT_TYPES.has(t)) continue
+      const spec = specOf(declaredType(criterion.property_id, c.schema))
+      if (spec?.origin !== 'user' || !SEEDS_FROM_SORT[spec.kind]) continue
       const v = resolveFieldValue(row, criterion.property_id, c.schema)
       if (!isBlankValue(v)) seeds[criterion.property_id] = v
     }

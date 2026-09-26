@@ -5,7 +5,6 @@ import type { CollectionNode, SetNode } from '@pommora/core/Nexus/tree'
 import type { ResolvedGroup } from '@pommora/core/Views/viewRow'
 import { granularityOf, type SavedView, viewOption } from '@pommora/core/Views/views'
 import { text } from '@pommora/uix/Theme'
-import { colorNameFor } from '@pommora/uix/Theme/ramp'
 import { cx } from '@pommora/uix/Utilities/cx'
 import { base } from '@pommora/uix/Fields/fields.css'
 import { asRenderableIcon, Icon } from '@pommora/uix/Symbols'
@@ -14,15 +13,14 @@ import { DropOutline } from '@pommora/uix/Menus'
 import { useDiscloseTarget } from '@pommora/uix/Interactions/dragDisclose'
 import { RenamableTitle } from '../../Interface/RenamableTitle'
 import { declaredType } from '../../Properties/value'
+import { specOf } from '@pommora/core/Properties/properties'
 import { findOption, groupLabel } from '../../Properties/Cells/cellResolve'
 import { bandGrouping } from '../Pipeline/group'
-import { CheckboxGlyph } from '../../Properties/Cells/CheckboxGlyph'
 import { formatBucketLabel } from '../../Properties/formatValue'
 import type { ValueContext } from '../../Properties/valueContext'
 import { type NexusForms, styleFor } from '../Host/useColumnStyles'
 import './group-band.css'
 import { onActivateKey } from '@pommora/uix/Interactions/activate'
-import { NeutralChip } from '@pommora/uix/Labels/recipes'
 import { OptionChip } from '../../Properties/Cells/OptionChip'
 
 export function resolveBandHead(
@@ -82,41 +80,14 @@ export function resolveBandHead(
   if (!propId) return { label, glyph: <span className="group-name">{group.key}</span> }
   const value = group.bucket ?? group.key
 
-  // A Context band wears its Space's own icon: routing it through the type registry would give every Context one shared glyph, and declaredType classifies a Context column only when handed the registry ids.
-  if (ctx.contexts.has(propId)) {
-    const space = ctx.contextsById.get(value)
-    const title = space?.title ?? value
-    return {
-      label: title,
-      glyph: <NeutralChip color={colorNameFor(space?.color)} title={title} icon={space?.icon} />,
-    }
-  }
-
   const groupType = declaredType(propId, ctx.schema)
   const def = ctx.schema.find((d) => d.id === propId)
-  switch (groupType) {
-    case 'status':
+  switch (specOf(groupType)?.kind) {
     case 'select': {
       const opt = findOption(propId, value, ctx.schema)
       return {
         label,
-        glyph: <OptionChip type={groupType} option={opt ?? { value }} def={def} />,
-      }
-    }
-    case 'checkbox': {
-      const on = value === 'true'
-      return {
-        label,
-        glyph: (
-          <span className="group-name">
-            <CheckboxGlyph
-              checked={on}
-              color={def?.checkbox_color}
-              look={view.column_styles?.[propId]?.look}
-            />
-            {on ? 'On' : 'Off'}
-          </span>
-        ),
+        glyph: <OptionChip type={groupType ?? ''} option={opt ?? { value }} def={def} />,
       }
     }
     case 'dateTime': {
@@ -138,7 +109,13 @@ export function resolveBandHead(
         ),
       }
     }
-    default:
+    case 'number':
+    case 'checkbox':
+    case 'multiSelect':
+    case 'context':
+    case 'link':
+    case 'file':
+    case undefined:
       return { label, glyph: <span className="group-name">{value}</span> }
   }
 }
