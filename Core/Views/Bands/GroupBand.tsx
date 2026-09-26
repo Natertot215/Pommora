@@ -122,7 +122,7 @@ export function resolveBandHead(
         ),
       }
     }
-    case 'datetime': {
+    case 'dateTime': {
       const icon = asRenderableIcon(def?.icon)
       const granularity = granularityOf(
         view.group?.kind === 'property' ? view.group : view.sub_group,

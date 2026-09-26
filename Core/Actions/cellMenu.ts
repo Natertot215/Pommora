@@ -64,15 +64,15 @@ function baseCellMenu(
 ): CellMenuKind | null {
   if (col.kind === 'title') return { kind: 'title' }
   if (col.kind === 'context') return filled ? { kind: 'clear-only' } : null
-  if (type === 'url') return { kind: 'link', filled }
+  if (type === 'link') return { kind: 'link', filled }
   if (type === 'file') return { kind: 'file', onChip }
-  if (type === 'status' || type === 'datetime')
+  if (type === 'status' || type === 'dateTime')
     return { kind: 'style-only', type, current: style, clearable: filled }
   if (
     type === 'checkbox' ||
     type === 'number' ||
-    type === 'created_time' ||
-    type === 'last_edited_time'
+    type === 'createdTime' ||
+    type === 'lastEditedTime'
   ) {
     return {
       kind: 'style-only',
@@ -81,7 +81,7 @@ function baseCellMenu(
       ...(type === 'number' && barCapable ? { barCapable: true } : {}),
     }
   }
-  if (type === 'select' || type === 'multi_select' || type === 'context') {
+  if (type === 'select' || type === 'multiSelect' || type === 'context') {
     return filled ? { kind: 'clear-only' } : null
   }
   return null

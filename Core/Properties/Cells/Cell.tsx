@@ -116,7 +116,7 @@ export function Cell({
           })}
         </OverScroll>
       )
-    case 'url':
+    case 'link':
       return (
         <LinkCell
           raw={v.value}
@@ -126,7 +126,7 @@ export function Cell({
         />
       )
 
-    case 'datetime':
+    case 'dateTime':
       return (
         <OverScroll className="cell-text-scroll cell-control">
           {formatDate(v.value, style.date_format, style.time_format, style.weekday)}

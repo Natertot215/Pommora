@@ -349,9 +349,9 @@ export function useViewHost(
     const current = resolveFieldValue(row, column.id, schema)
     const style = styleOf(column.id)
     const type = declaredType(column.id, schema, contextIds)
-    if (type === 'datetime')
+    if (type === 'dateTime')
       return {
-        kind: 'datetime',
+        kind: 'dateTime',
         def,
         current,
         dateFormat: style.date_format,

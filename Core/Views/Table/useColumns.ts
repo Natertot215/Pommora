@@ -39,14 +39,14 @@ const WIDTHS: Record<PropertyType | 'title', ColumnWidth> = {
   context: { min: 80, default: 140, max: 350 },
   status: { min: 65, default: 120, max: 250 },
   select: { min: 65, default: 120, max: 350 },
-  multi_select: { min: 65, default: 180, max: 350 },
+  multiSelect: { min: 65, default: 180, max: 350 },
   checkbox: { min: 45, default: 60, max: 80 },
-  url: { min: 100, default: 140, max: 350 },
+  link: { min: 100, default: 140, max: 350 },
   file: { min: 100, default: 140, max: 250 },
   number: { min: 50, default: 100, max: 350 },
-  datetime: { min: 90, default: 140, max: 250 },
-  created_time: { min: 90, default: 120, max: 250 },
-  last_edited_time: { min: 90, default: 120, max: 250 },
+  dateTime: { min: 90, default: 140, max: 250 },
+  createdTime: { min: 90, default: 120, max: 250 },
+  lastEditedTime: { min: 90, default: 120, max: 250 },
 }
 
 const FALLBACK: ColumnWidth = { min: 80, default: 140, max: UNCAPPED }
@@ -57,7 +57,7 @@ const STYLE_MIN: Partial<Record<PropertyType | 'title', Partial<Record<string, n
   checkbox: { switch: 70 },
   status: OPTION_MIN,
   select: OPTION_MIN,
-  multi_select: OPTION_MIN,
+  multiSelect: OPTION_MIN,
 }
 
 const HEADER_ICON_BUMP = ICON_PX.body + 6
@@ -103,14 +103,14 @@ export function clampWidth(
 
 // ── Alignment ───────────────────────────────────────────────────────────────
 
-// The chip- and box-shaped values center; so does a datetime, whose formatted value reads centered. The reserved Modified timestamp keeps Title's left metadata treatment.
+// The chip- and box-shaped values center; so does a Date, whose formatted value reads centered. The reserved Modified timestamp keeps Title's left metadata treatment.
 const CENTERED: ReadonlySet<string> = new Set([
   'checkbox',
   'status',
   'select',
-  'multi_select',
+  'multiSelect',
   'context',
-  'datetime',
+  'dateTime',
 ] satisfies PropertyType[])
 
 /** `contextIds` is what makes a Context column classify as such — omit it and one reads as an unknown type. */

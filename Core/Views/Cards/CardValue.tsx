@@ -46,7 +46,7 @@ export function CardValue({
   onHide: (colId: string) => void
   onOpenPicker: (
     column: ResolvedColumn,
-    kind: 'picker' | 'datetime' | 'link',
+    kind: 'picker' | 'dateTime' | 'link',
     anchor: HTMLElement,
     clickX?: number,
   ) => void
@@ -65,14 +65,14 @@ export function CardValue({
   const schemaDef = ctx.schema.find((d) => d.id === column.id)
   // Kinds a click on a blank value fills in place. A checkbox draws its own box; last-edited has no fill path, so it gets no "Empty" affordance.
   const canFillBlank =
-    isOptionsKind(t) || t === 'datetime' || t === 'number' || t === 'url' || t === 'file'
+    isOptionsKind(t) || t === 'dateTime' || t === 'number' || t === 'link' || t === 'file'
 
   const onClick = (e: React.MouseEvent): void => {
     if (isSecondaryClick(e)) return
     e.stopPropagation()
     // React events cross portals along the component tree: a click inside the picker bubbles back through this span and would re-open what the pick just dismissed.
     if (!e.currentTarget.contains(e.target as Node)) return
-    const openPicker = (kind: 'picker' | 'datetime' | 'link'): void => {
+    const openPicker = (kind: 'picker' | 'dateTime' | 'link'): void => {
       if (anchorRef.current) onOpenPicker(column, kind, anchorRef.current, e.clientX)
     }
     const shared = sharedValueClickAction(t, v)
@@ -83,7 +83,7 @@ export function CardValue({
       } else openPicker(shared.kind)
     } else if (t === 'number') {
       setMode('editor')
-    } else if (t === 'url') {
+    } else if (t === 'link') {
       openPicker('link')
     }
   }
@@ -95,9 +95,9 @@ export function CardValue({
     e.stopPropagation()
     // Portal events bubble the component tree: a right-click inside an open picker arrives here too — swallow it, never pop a mis-targeted menu.
     if (!e.currentTarget.contains(e.target as Node)) return
-    if (t === 'url') {
+    if (t === 'link') {
       const target = linkValueMenuTarget(
-        v.kind === 'url' ? v.value : '',
+        v.kind === 'link' ? v.value : '',
         (action) => {
           if (action === 'link:clear') return commit(null)
           if (action === 'link:hide') return onHide(column.id)
@@ -125,7 +125,7 @@ export function CardValue({
     if (action === 'cell:clear') commit(null)
     else if (action === 'cell:hide') onHide(column.id)
     else if (action === 'cell:edit') {
-      if (t === 'url' && anchorRef.current) onOpenPicker(column, 'link', anchorRef.current)
+      if (t === 'link' && anchorRef.current) onOpenPicker(column, 'link', anchorRef.current)
       else setMode('editor')
     } else if (action === 'cell:rename') setMode('rename')
     else if (action.startsWith('style:')) {
@@ -135,17 +135,17 @@ export function CardValue({
   }
 
   const editorInitial = (): string => {
-    if (mode === 'rename') return v.kind === 'url' ? (linkAlias(v.value) ?? '') : ''
+    if (mode === 'rename') return v.kind === 'link' ? (linkAlias(v.value) ?? '') : ''
     if (v.kind === 'number') return String(v.value)
-    if (v.kind === 'url') return linkEditText(v.value)
+    if (v.kind === 'link') return linkEditText(v.value)
     return ''
   }
   const commitEditor = (raw: string): void => {
     setMode(null)
-    // A url Edit rewrites the URL but rides the existing alias along; `undefined` = invalid, so don't commit.
+    // A Link Edit rewrites the URL but rides the existing alias along; `undefined` = invalid, so don't commit.
     const parsed =
       mode === 'rename'
-        ? linkValueFromRename(raw, v.kind === 'url' ? v.value : '')
+        ? linkValueFromRename(raw, v.kind === 'link' ? v.value : '')
         : parseEditorValue(t, raw, v)
     if (parsed !== undefined) commit(parsed)
   }
@@ -165,7 +165,7 @@ export function CardValue({
         <PropertyEditor
           initial={editorInitial()}
           numeric={mode === 'editor' && t === 'number'}
-          validate={mode === 'editor' && t === 'url' ? validateLink : undefined}
+          validate={mode === 'editor' && t === 'link' ? validateLink : undefined}
           onCommit={commitEditor}
           onCancel={dismiss}
         />
@@ -178,7 +178,7 @@ export function CardValue({
           ctx={ctx}
           hideIcon={false}
           style={style}
-          {...(t !== 'multi_select' || allowInlineRemove
+          {...(t !== 'multiSelect' || allowInlineRemove
             ? { remove: (next: PropertyValue | null) => commit(next) }
             : {})}
         />

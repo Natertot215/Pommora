@@ -294,7 +294,7 @@ export function PropertyPanel({
       } else setEditing({ id: def.id, mode: 'picker' })
       return
     }
-    if (def.type === 'number' || def.type === 'url') setEditing({ id: def.id, mode: 'editor' })
+    if (def.type === 'number' || def.type === 'link') setEditing({ id: def.id, mode: 'editor' })
   }
   const emptyRow = (id: string, keep: boolean): void => {
     commit(id, null)
@@ -315,7 +315,7 @@ export function PropertyPanel({
       return true
     }
     const link =
-      value.kind === 'url'
+      value.kind === 'link'
         ? linkValueMenuTarget(value.value, (action) => {
             if (action === 'link:clear') return emptyRow(id, true)
             if (action === 'rename' || action === 'editLink')
@@ -341,7 +341,7 @@ export function PropertyPanel({
 
   const rawLinkOf = (id: string): string => {
     const v = row ? resolveFieldValue(row, id, schema) : NULL_VALUE
-    return v.kind === 'url' ? v.value : ''
+    return v.kind === 'link' ? v.value : ''
   }
   const editingDef = editing ? schema.find((d) => d.id === editing.id) : undefined
   const panelTarget = ((): PickTarget | null => {
@@ -350,7 +350,7 @@ export function PropertyPanel({
       editingDef ?? (isContextRow(editing.id) ? syntheticContextDef(editing.id) : undefined)
     if (!def) return null
     const current = resolveFieldValue(row, editing.id, schema)
-    if (def.type === 'datetime') return { kind: 'datetime', def, current }
+    if (def.type === 'dateTime') return { kind: 'dateTime', def, current }
     return {
       kind: 'options',
       def,
@@ -397,11 +397,11 @@ export function PropertyPanel({
                   initial={(() => {
                     const v = resolveFieldValue(row, id, schema)
                     if (v.kind === 'number') return String(v.value)
-                    if (v.kind === 'url') return linkEditText(v.value)
+                    if (v.kind === 'link') return linkEditText(v.value)
                     return ''
                   })()}
                   numeric={def.type === 'number'}
-                  validate={def.type === 'url' ? validateLink : undefined}
+                  validate={def.type === 'link' ? validateLink : undefined}
                   onCommit={(raw) => {
                     const next = parseEditorValue(def.type, raw, resolveFieldValue(row, id, schema))
                     if (next !== undefined) commit(id, next)

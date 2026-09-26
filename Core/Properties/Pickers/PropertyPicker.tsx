@@ -23,7 +23,7 @@ import { PathField } from '@pommora/uix/Fields/PathField'
 export type PickTarget = { def: PropertyDefinition; current: PropertyValue | null } & (
   | { kind: 'options'; look?: ColumnLook; contextOptions?: PickOption[] }
   | {
-      kind: 'datetime'
+      kind: 'dateTime'
       dateFormat?: ColumnStyle['date_format']
       timeFormat?: ColumnStyle['time_format']
     }
@@ -51,7 +51,7 @@ export const pickShape = (
   contextOptions?: PickOption[],
 ): { options: PickOption[]; kind: PickKind } => ({
   options: contextOptions ?? optionsOf(def),
-  kind: contextOptions ? 'context' : def.type === 'multi_select' ? 'multiSelect' : 'select',
+  kind: contextOptions ? 'context' : def.type === 'multiSelect' ? 'multiSelect' : 'select',
 })
 
 export const toggleValue = (selected: string[], value: string): string[] =>
@@ -115,7 +115,7 @@ export function PropertyPicker({
         />
       )
     })()
-  ) : t.kind === 'datetime' ? (
+  ) : t.kind === 'dateTime' ? (
     <DateTimeValuePicker
       value={t.current}
       dateFormat={t.dateFormat}

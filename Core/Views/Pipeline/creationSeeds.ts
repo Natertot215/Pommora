@@ -17,7 +17,7 @@ function ruleSeed(
   const operands = ruleOperands(rule)
   if (operands.length !== 1) return null
   const type = declaredType(rule.property_id, schema, contextIds)
-  if (type === 'context' || type === 'multi_select') {
+  if (type === 'context' || type === 'multiSelect') {
     if (!LIST_OPS.has(rule.op)) return null
     return type === 'context'
       ? { kind: 'context', value: operands }

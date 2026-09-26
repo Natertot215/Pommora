@@ -34,10 +34,10 @@ const SORTABLE_PANE: ReadonlySet<string> = new Set([
   'select',
   'status',
   'number',
-  'datetime',
+  'dateTime',
   'checkbox',
-  'url',
-  'multi_select',
+  'link',
+  'multiSelect',
   'file',
 ] satisfies PropertyType[])
 
@@ -72,8 +72,8 @@ function directionOptions(
     case 'select':
     case 'status':
       return OPTION_DIRECTIONS
-    case 'url':
-    case 'multi_select':
+    case 'link':
+    case 'multiSelect':
     case 'file':
       return TEXT_DIRECTIONS
     default:

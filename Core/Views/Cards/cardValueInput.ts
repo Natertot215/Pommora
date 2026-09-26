@@ -17,10 +17,10 @@ import type { ValueContext } from '../../Properties/valueContext'
 const ADDABLE_TYPES: ReadonlySet<string> = new Set([
   'select',
   'status',
-  'multi_select',
-  'datetime',
+  'multiSelect',
+  'dateTime',
   'number',
-  'url',
+  'link',
   'file',
   'checkbox',
 ] satisfies PropertyType[])

@@ -31,7 +31,7 @@ const SEEDABLE_SORT_TYPES: ReadonlySet<string> = new Set([
   'select',
   'checkbox',
   'number',
-  'datetime',
+  'dateTime',
 ] satisfies PropertyType[])
 
 interface ViewCreationConfig {

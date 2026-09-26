@@ -16,15 +16,15 @@ interface TypeMeta {
 const PROPERTY_TYPES: Record<PropertyType, TypeMeta> = {
   number: { label: 'Number', icon: 'hash', creatable: true },
   checkbox: { label: 'Checkbox', icon: 'square-check', creatable: true },
-  datetime: { label: 'Date', icon: 'calendar', creatable: true },
+  dateTime: { label: 'Date', icon: 'calendar', creatable: true },
   select: { label: 'Select', icon: 'send', creatable: true },
-  multi_select: { label: 'Multi-Select', icon: 'tags', creatable: true },
+  multiSelect: { label: 'Multi-Select', icon: 'tags', creatable: true },
   status: { label: 'Status', icon: 'progress-check', creatable: true },
-  url: { label: 'Link', icon: 'link', creatable: true },
+  link: { label: 'Link', icon: 'link', creatable: true },
   file: { label: 'File', icon: 'file-chart-column', creatable: true },
   context: { label: 'Context', icon: DEFAULT_ENTITY_ICONS.context },
-  created_time: { label: RESERVED_LABEL[RESERVED_PROPERTY_ID.createdAt], icon: 'clock-plus' },
-  last_edited_time: { label: RESERVED_LABEL[RESERVED_PROPERTY_ID.modifiedAt], icon: 'history' },
+  createdTime: { label: RESERVED_LABEL[RESERVED_PROPERTY_ID.createdAt], icon: 'clock-plus' },
+  lastEditedTime: { label: RESERVED_LABEL[RESERVED_PROPERTY_ID.modifiedAt], icon: 'history' },
 }
 
 export const propertyTypeLabel = (type: PropertyType): string => PROPERTY_TYPES[type].label

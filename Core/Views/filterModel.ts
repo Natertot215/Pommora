@@ -163,19 +163,19 @@ export function operatorsFor(
     case 'select':
     case 'status':
       return OPTION_OPS
-    case 'multi_select':
+    case 'multiSelect':
       return SET_OPS
     case 'context':
       return CONTEXT_OPS
     case 'number':
       return NUMBER_OPS
-    case 'datetime':
-    case 'created_time':
-    case 'last_edited_time':
+    case 'dateTime':
+    case 'createdTime':
+    case 'lastEditedTime':
       return DATE_OPS
     case 'checkbox':
       return CHECKBOX_OPS
-    case 'url':
+    case 'link':
       return [...TEXT_OPS, ...EMPTIES]
     case 'file':
       return EMPTIES

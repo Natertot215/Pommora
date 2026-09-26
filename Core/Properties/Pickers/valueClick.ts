@@ -1,4 +1,4 @@
-// One home for the rules that must never drift across surfaces: a checkbox is true-or-absent on disk, never a stored false; the option kinds open their picker; datetime opens the calendar.
+// One home for the rules that must never drift across surfaces: a checkbox is true-or-absent on disk, never a stored false; the option kinds open their picker; a Date opens the calendar.
 
 import type { PropertyValue } from '@pommora/core/Properties/propertyValue'
 import { isOptionsKind, type PropertyType } from '../properties'
@@ -6,7 +6,7 @@ import { isOptionsKind, type PropertyType } from '../properties'
 type ValueClickAction =
   | { kind: 'commit'; value: PropertyValue | null }
   | { kind: 'picker' }
-  | { kind: 'datetime' }
+  | { kind: 'dateTime' }
   | { kind: 'file' }
   | null
 
@@ -20,7 +20,7 @@ export function sharedValueClickAction(
     return { kind: 'commit', value: checked ? null : { kind: 'checkbox', value: true } }
   }
   if (isOptionsKind(type)) return { kind: 'picker' }
-  if (type === 'datetime') return { kind: 'datetime' }
+  if (type === 'dateTime') return { kind: 'dateTime' }
   if (type === 'file') return { kind: 'file' }
   return null
 }

@@ -21,7 +21,7 @@ import {
 import { resolveFieldValue } from '../../Properties/value'
 import { useSession } from '../../Session/store'
 
-const STAMP_TYPES: ReadonlySet<PropertyType> = new Set(['created_time', 'last_edited_time'])
+const STAMP_TYPES: ReadonlySet<PropertyType> = new Set(['createdTime', 'lastEditedTime'])
 
 const CHECKBOX_OPTIONS = [
   { value: 'true', label: 'Check' },

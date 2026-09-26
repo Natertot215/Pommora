@@ -76,18 +76,18 @@ export function linkValueFromEdit(
   const trimmed = raw.trim()
   if (trimmed === '') return null
   const pasted = parsePastedLink(trimmed, resolve)
-  if (pasted !== null) return { kind: 'url', value: pasted }
+  if (pasted !== null) return { kind: 'link', value: pasted }
   if (!isValidLink(trimmed)) return undefined
   const cur = current ? readLink(current) : undefined
   const alias = cur?.kind === 'url' ? cur.alias : undefined
-  return { kind: 'url', value: serializeLink({ url: normalizeLinkUrl(trimmed), alias }) }
+  return { kind: 'link', value: serializeLink({ url: normalizeLinkUrl(trimmed), alias }) }
 }
 
 export function linkValueFromRename(alias: string, current: string): PropertyValue {
   const named = alias.trim() || undefined
   const target = readLink(current)
   return {
-    kind: 'url',
+    kind: 'link',
     value:
       target.kind === 'page'
         ? connectionText(target.title, named, target.heading)

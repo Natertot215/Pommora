@@ -5,13 +5,13 @@ const strings = z.array(z.string())
 export const propertyValue = z.discriminatedUnion('kind', [
   z.object({ kind: z.literal('number'), value: z.number() }),
   z.object({ kind: z.literal('checkbox'), value: z.literal(true) }),
-  // ISO-8601; a bare "yyyy-MM-dd" is a date-only datetime
-  z.object({ kind: z.literal('datetime'), value: z.string() }),
+  // ISO-8601; a bare "yyyy-MM-dd" is a date-only value
+  z.object({ kind: z.literal('dateTime'), value: z.string() }),
   z.object({ kind: z.literal('select'), value: z.string() }),
   z.object({ kind: z.literal('multiSelect'), value: strings }),
   // Kept while the Status tag goes, because Context is NOT derivable from the schema on the value path — the type resolver runs there without the Context id list.
   z.object({ kind: z.literal('context'), value: strings }),
-  z.object({ kind: z.literal('url'), value: z.string() }),
+  z.object({ kind: z.literal('link'), value: z.string() }),
   // `[[Name.ext]]` wikilinks, resolved in the asset basename domain
   z.object({ kind: z.literal('file'), value: strings }),
   z.object({ kind: z.literal('null') }),
@@ -51,22 +51,22 @@ export function decodeValue(def: PropertyDefinition, raw: unknown): PropertyValu
       return typeof raw === 'number' ? { kind: 'number', value: raw } : NULL_VALUE
     case 'checkbox':
       return raw === true ? { kind: 'checkbox', value: true } : NULL_VALUE
-    case 'url':
-      return typeof raw === 'string' ? { kind: 'url', value: raw } : NULL_VALUE
-    case 'datetime':
-    case 'created_time':
-    case 'last_edited_time':
-      return typeof raw === 'string' ? { kind: 'datetime', value: raw } : NULL_VALUE
+    case 'link':
+      return typeof raw === 'string' ? { kind: 'link', value: raw } : NULL_VALUE
+    case 'dateTime':
+    case 'createdTime':
+    case 'lastEditedTime':
+      return typeof raw === 'string' ? { kind: 'dateTime', value: raw } : NULL_VALUE
     case 'select':
     case 'status':
-    case 'multi_select': {
+    case 'multiSelect': {
       const xs = optionList(raw)
-      if (def.type === 'multi_select')
+      if (def.type === 'multiSelect')
         return xs.length === 0 ? NULL_VALUE : { kind: 'multiSelect', value: xs }
       const value = resolveSingleOption(xs, optionValues(def))
       return value === undefined ? NULL_VALUE : { kind: 'select', value }
     }
-    // Deliberately NOT merged with multi_select: optionValues on a file def returns [], so a merged case would discard every attachment through the restore path.
+    // Deliberately NOT merged with multiSelect: optionValues on a file def returns [], so a merged case would discard every attachment through the restore path.
     case 'file': {
       // An entry nothing can spell is dropped rather than nulling the whole list and losing the other attachments.
       const entries: string[] = []
@@ -106,8 +106,8 @@ export function encodeValue(value: PropertyValue): unknown {
       return [value.value]
     case 'number':
     case 'checkbox':
-    case 'url':
-    case 'datetime':
+    case 'link':
+    case 'dateTime':
     case 'multiSelect':
     case 'file':
     case 'context':
@@ -134,8 +134,8 @@ export function isBlankValue(value: PropertyValue | null): boolean {
     case 'file':
       return value.value.length === 0
     case 'select':
-    case 'url':
-    case 'datetime':
+    case 'link':
+    case 'dateTime':
       return value.value === ''
     default:
       return false

@@ -14,7 +14,7 @@ export interface OptionChipData {
   appearance?: OptionAppearance
 }
 
-const defaultOptionIcon = (type: string): IconName => (type === 'multi_select' ? 'tags' : 'tag')
+const defaultOptionIcon = (type: string): IconName => (type === 'multiSelect' ? 'tags' : 'tag')
 
 export function optionGlyph(
   type: string,
