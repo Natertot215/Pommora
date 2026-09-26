@@ -8,7 +8,6 @@ import {
   VIEWPORT_MARGIN,
   type PickerDirection,
 } from '@pommora/uix/Pickers/PickerMenu'
-import { MENU_GAP } from '@pommora/uix/Menus/menuAnchor'
 import { lockLabel } from '@pommora/core/Actions/toggleLabels'
 import { Icon, LockGlyph } from '@pommora/uix/Symbols'
 import { cx } from '@pommora/uix/Utilities/cx'
@@ -39,7 +38,7 @@ import './glance-pane.css'
 
 // Contract: no dismiss backdrop and `manageFocus={false}` — a glance must never eat the next click or pull focus out of its host.
 
-// KNOB — the default and floor sizes; the ceiling is the viewport and the anchor's band, live.
+// KNOB — the default and floor sizes; the ceiling is the viewport and the anchor's band as the glance opens.
 export const GLANCE_DEFAULT: Size = { w: 260, h: 120 }
 const GLANCE_MIN: Size = { w: 180, h: 100 }
 const RECT_SLOP = 6
@@ -115,6 +114,11 @@ export function GlancePane(): React.JSX.Element {
   const [resized, setResized] = useState<Size | null>(null)
   const size = resized ?? stored
   const [dir, setDir] = useState<PickerDirection>('down')
+  const [room, setRoom] = useState(Number.POSITIVE_INFINITY)
+  const onDirection = useCallback((next: PickerDirection, nextRoom: number) => {
+    setDir(next)
+    setRoom(nextRoom)
+  }, [])
   const cardRef = useRef<HTMLDivElement | null>(null)
   // State, not a ref: the portal lands a beat after the open render, so the guest-lifecycle effect must re-run when the element actually exists.
   const [siteEl, setSiteEl] = useState<HTMLElement | null>(null)
@@ -125,19 +129,7 @@ export function GlancePane(): React.JSX.Element {
   const shownRef = useLatest(shown)
   const held = useHeld(shown, !!shown)
 
-  const maxSize = (): Size => {
-    const w = window.innerWidth - 2 * VIEWPORT_MARGIN
-    const link = shownRef.current?.el.isConnected
-      ? shownRef.current.el.getBoundingClientRect()
-      : null
-    if (!link) return { w, h: window.innerHeight - 2 * VIEWPORT_MARGIN }
-    const band =
-      dir === 'up'
-        ? link.top - MENU_GAP - VIEWPORT_MARGIN
-        : window.innerHeight - link.bottom - MENU_GAP - VIEWPORT_MARGIN
-    return { w, h: Math.max(GLANCE_MIN.h, band) }
-  }
-  const max = maxSize()
+  const max = { w: window.innerWidth - 2 * VIEWPORT_MARGIN, h: Math.max(GLANCE_MIN.h, room) }
   const live = { w: Math.min(size.w, max.w), h: Math.min(size.h, max.h) }
   const box = useHeld(live, !!shown)
 
@@ -145,15 +137,14 @@ export function GlancePane(): React.JSX.Element {
   const resize = useResizable({
     rect: box,
     min: GLANCE_MIN,
-    max: maxSize,
+    max,
     equilateral: true,
     outlined: true,
     onChange: (next, phase) => {
       setResized(next)
       if (phase !== 'drop') return
-      const cap = maxSize()
       const keep = (axis: 'w' | 'h'): number =>
-        next[axis] >= cap[axis] && stored[axis] > cap[axis] ? stored[axis] : next[axis]
+        next[axis] >= max[axis] && stored[axis] > max[axis] ? stored[axis] : next[axis]
       geometry.onSizeChange(clampSize({ w: keep('w'), h: keep('h') }))
     },
   })
@@ -167,6 +158,7 @@ export function GlancePane(): React.JSX.Element {
       }
       const cur = shownRef.current
       if (cur && keyOf(next) === keyOf(cur) && next.el === cur.el) return
+      setRoom(Number.POSITIVE_INFINITY)
       const freshGuest =
         next.target.kind === 'site' &&
         !(cur?.target.kind === 'site' && cur.target.url === next.target.url)
@@ -452,7 +444,7 @@ export function GlancePane(): React.JSX.Element {
         manageFocus={false}
         modal={false}
         origin="center"
-        onDirection={setDir}
+        onDirection={onDirection}
       >
         {/* biome-ignore lint/a11y/noStaticElementInteractions: a pointer-only glance surface — the pane never takes focus by contract */}
         {/* biome-ignore lint/a11y/useKeyWithClickEvents: same — no keyboard path exists into a glance */}

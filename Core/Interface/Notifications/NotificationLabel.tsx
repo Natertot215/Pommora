@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { dismissNotification, useNotification } from './notifications'
 import { duration, ms } from '@pommora/uix/Animations/motion'
 import { paneSlide } from '@pommora/uix/Animations/paneSlide'
-import { ProgressBar } from '@pommora/uix/Elements/ProgressBar'
+import { ProgressBar, paintProgress } from '@pommora/uix/Elements/ProgressBar'
 import { useHeld } from '@pommora/uix/Animations/useExitPresence'
 import { cx } from '@pommora/uix/Utilities/cx'
 import * as s from './notification-label.css'
@@ -14,8 +14,8 @@ const MAX_STEP_MS = 100
 export function NotificationLabel(): React.JSX.Element {
   const note = useNotification()
   const hostRef = useRef<HTMLDivElement>(null)
+  const barRef = useRef<HTMLDivElement>(null)
   const nearRef = useRef(false)
-  const [left, setLeft] = useState(1)
   const [shown, setShown] = useState(false)
 
   useEffect(() => {
@@ -23,7 +23,7 @@ export function NotificationLabel(): React.JSX.Element {
       setShown(false)
       return
     }
-    setLeft(1)
+    if (barRef.current) paintProgress(barRef.current, 1)
     nearRef.current = false
     setShown(true)
   }, [note])
@@ -41,7 +41,7 @@ export function NotificationLabel(): React.JSX.Element {
       rate = clamp(rate + (nearRef.current ? -step : step) / BASE_MS, 0, 1)
       spent += step * rate
       const remaining = 1 - spent / s.DWELL_MS
-      setLeft(remaining > 0 ? remaining : 0)
+      if (barRef.current) paintProgress(barRef.current, remaining)
       if (remaining > 0) raf = requestAnimationFrame(tick)
       else setShown(false)
     }
@@ -120,7 +120,7 @@ export function NotificationLabel(): React.JSX.Element {
           </button>
         ) : null}
       </div>
-      <ProgressBar fill={left} />
+      <ProgressBar ref={barRef} fill={1} />
     </div>
   )
 }

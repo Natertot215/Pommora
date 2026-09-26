@@ -13,7 +13,7 @@ import { useExitPresence } from '@pommora/uix/Animations/useExitPresence'
 import './toolbar.css'
 import '@pommora/uix/Animations/toolbar-slide.css'
 
-type TrioSegment = Segment & { panel?: boolean }
+const SETTINGS = 'Settings'
 
 export function Toolbar({
   sidePaneOpen,
@@ -23,7 +23,7 @@ export function Toolbar({
   onToggleSidePane: () => void
 }): React.JSX.Element {
   const [settingsOpen, setSettingsOpen] = useState(false)
-  const [beaks, setBeaks] = useState<number[]>([])
+  const [settingsBeak, setSettingsBeak] = useState<number>()
   const trioRef = useRef<HTMLDivElement>(null)
   const matrixPane = useSession((s) => s.selection.kind === 'matrix')
   useDismissal(settingsOpen, false, {
@@ -39,17 +39,10 @@ export function Toolbar({
     const apply = (): void => {
       el.closest<HTMLElement>('.app-toolbar')?.style.setProperty('--trio-w', `${el.offsetWidth}px`)
       // Both rects carry the cluster's ride transform, so their difference cancels it out. Skips the inert glass layer, which holds a hidden duplicate of every button.
-      const right = el.getBoundingClientRect().right
-      const next = Array.from(
-        el.querySelectorAll<HTMLElement>('.toolbar-trio > :not([inert]) button'),
-        (b) => {
-          const r = b.getBoundingClientRect()
-          return right - (r.left + r.width / 2)
-        },
-      )
-      setBeaks((prev) =>
-        prev.length === next.length && prev.every((v, i) => v === next[i]) ? prev : next,
-      )
+      const button = el.querySelector(`.toolbar-trio > :not([inert]) button[title="${SETTINGS}"]`)
+      if (!button) return
+      const r = button.getBoundingClientRect()
+      setSettingsBeak(el.getBoundingClientRect().right - (r.left + r.width / 2))
     }
     apply()
     const ro = new ResizeObserver(apply)
@@ -75,18 +68,16 @@ export function Toolbar({
     { icon: 'chevron-left', title: 'Back', onClick: goBack, disabled: !canGoBack },
     { icon: 'chevron-right', title: 'Forward', onClick: goForward, disabled: !canGoForward },
   ]
-  const trio: TrioSegment[] = [
+  const trio: Segment[] = [
     { icon: 'map', title: 'Navigation', onClick: toggleNav, active: navOpen },
     {
       icon: 'sliders-horizontal',
-      title: 'Settings',
-      panel: true,
+      title: SETTINGS,
       onClick: () => setSettingsOpen((v) => !v),
       active: settingsOpen,
     },
     { icon: 'panel-right', title: 'Side Pane', onClick: onToggleSidePane, active: sidePaneOpen },
   ]
-  const settingsBeak = beaks[trio.findIndex((s) => s.panel)]
 
   return (
     <div className="app-toolbar" ref={publishChromePart('toolbar')}>

@@ -11,6 +11,7 @@ export const track = style({
 
 export const fill = style({
   height: '100%',
+  clipPath: 'inset(0 calc(100% - var(--fill) * 1%) 0 0 round var(--radius-full))',
   borderRadius: 'var(--radius-full)',
   background: 'var(--accent)',
 })
