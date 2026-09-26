@@ -1,5 +1,5 @@
 import type { Size } from '@pommora/uix/Interactions/useResizable'
-import { type ReconcileIndex, reconcileWith } from './reconcileSelection'
+import { type ReconcileIndex, reconcileHeld, reconcileWith } from './reconcileSelection'
 import { makeTabId } from '../Navigation/tabsModel'
 import type { Slice } from './sessionState'
 
@@ -47,23 +47,13 @@ export const createGlanceSlice: Slice<GlanceSlice> = (set, get) => ({
     set((s) => ({
       pinnedGlances: s.pinnedGlances.map((p) => (p.tabId === oldId ? { ...p, tabId: newId } : p)),
     })),
-  // Reference-preserving so a tree push with no moved/deleted pin skips the state write, exactly as tabs and windows reconcile.
   reconcileGlance: (index) => {
     const cur = get().pinnedGlances
-    let changed = false
-    const next: PinnedGlance[] = []
-    for (const p of cur) {
+    const { next } = reconcileHeld(cur, (p) => {
       const r = reconcileWith(index, p.target)
-      if (r.kind === 'none') {
-        changed = true
-        continue
-      }
-      if (r.kind === 'page' && r !== p.target) {
-        changed = true
-        next.push({ ...p, target: r })
-      } else next.push(p)
-    }
-    if (changed) set({ pinnedGlances: next })
+      return r.kind !== 'page' ? null : r === p.target ? p : { ...p, target: r }
+    })
+    if (next !== cur) set({ pinnedGlances: next })
   },
   resetGlance: () => set({ ...PER_NEXUS }),
 })

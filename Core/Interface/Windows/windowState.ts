@@ -2,7 +2,7 @@ import { z } from 'zod'
 import { EMPTY_WINDOWS, type WindowsFile } from './windowRecord'
 import { isNavRef, isWindowTarget, type NavRef, toNavRef } from '../../Navigation/navRef'
 import { readValue, writeValue } from '../../Platform/localState'
-import { eachOf } from '../../Files/decoders'
+import { eachOf, entriesOf } from '../../Files/decoders'
 
 // `NavRef` keeps its one validator; the schema decodes the file's shape around it.
 const windowTarget = z
@@ -16,10 +16,8 @@ const windowSetRecord = z.object({
   tabs: eachOf(windowTab),
 })
 
-// Every field catches, so a file written before the set was unified reads as one that simply never named a page set.
 const windowsFile = z.object({
-  navSet: windowSetRecord.nullable().catch(null),
-  pageSet: windowSetRecord.nullable().catch(null),
+  sets: entriesOf(windowSetRecord.nullable()).catch({}),
 })
 
 export function sanitizeWindows(raw: unknown): WindowsFile | null {

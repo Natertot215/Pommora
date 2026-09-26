@@ -3,7 +3,7 @@ import { clamp } from '@pommora/uix/Utilities/clamp'
 import { moveItem } from '@pommora/uix/Utilities/moveItem'
 import type { WindowKind } from './windowRecord'
 
-// Bespoke close/spawn (NOT tabsModel's) — the last tab closing kills the window, there are no pins, and a Matrix window holds no tabs.
+// Bespoke close/spawn (NOT tabsModel's): the last tab closing kills the window, the map tab never closes, and a Matrix window holds no tabs.
 
 export interface WindowTab {
   id: string
@@ -22,10 +22,10 @@ export function openTabIn(
   target: WindowTarget,
   at?: number,
 ): WindowState {
-  const first = win.tabs.findIndex((t) => t.target.kind !== 'navwindow')
+  const first = win.tabs.findIndex((t) => t.target.kind !== 'map')
   const base = first === -1 ? win.tabs.length : first
   const slot = at === undefined ? undefined : clamp(at + base, base, win.tabs.length)
-  const from = win.tabs.findIndex((t) => t.target.kind !== 'navwindow' && t.target.id === target.id)
+  const from = win.tabs.findIndex((t) => t.target.kind !== 'map' && t.target.id === target.id)
   if (from !== -1) {
     if (slot === undefined) {
       const existing = win.tabs[from]
@@ -44,15 +44,14 @@ export function reorderTabIn(win: WindowState, activeId: string, overId: string)
   const from = win.tabs.findIndex((t) => t.id === activeId)
   const to = win.tabs.findIndex((t) => t.id === overId)
   if (from === -1 || to === -1 || from === to) return win
-  if (win.tabs[from].target.kind === 'navwindow' || win.tabs[to].target.kind === 'navwindow')
-    return win
+  if (win.tabs[from].target.kind === 'map' || win.tabs[to].target.kind === 'map') return win
   return { ...win, tabs: moveItem(win.tabs, from, to) }
 }
 
 export function closeTabIn(win: WindowState, id: string): WindowState | null {
   const idx = win.tabs.findIndex((t) => t.id === id)
   if (idx === -1) return win
-  if (win.tabs[idx].target.kind === 'navwindow') return win
+  if (win.tabs[idx].target.kind === 'map') return win
   const tabs = win.tabs.filter((t) => t.id !== id)
   if (tabs.length === 0) return null
   const activeTabId = win.activeTabId === id ? tabs[Math.max(0, idx - 1)].id : win.activeTabId

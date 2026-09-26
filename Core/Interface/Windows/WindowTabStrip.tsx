@@ -40,15 +40,15 @@ export function WindowTabStrip({
   index: ResolveIndex | null
   title: React.ReactNode
 }): React.JSX.Element {
-  const pageWindow = useSession((s) => s.pageWindow)
+  const windowSlot = useSession((s) => s.windowSlot)
   const activateWindowTab = useSession((s) => s.activateWindowTab)
   const closeWindowTab = useSession((s) => s.closeWindowTab)
   const reorderWindowTabs = useSession((s) => s.reorderWindowTabs)
   const openWindowTab = useSession((s) => s.openWindowTab)
   const promoteWindowTab = useSession((s) => s.promoteWindowTab)
-  const tabs = pageWindow?.tabs
-  const activeTabId = pageWindow?.activeTabId
-  const navKind = pageWindow?.kind === 'nav'
+  const tabs = windowSlot?.tabs
+  const activeTabId = windowSlot?.activeTabId
+  const navKind = windowSlot?.kind === 'nav'
 
   const entries = useMemo<Entry[]>(
     () =>
@@ -60,7 +60,7 @@ export function WindowTabStrip({
   )
 
   const { renderEntries, ghostCount, requestClose } = useTabClose(entries, closeWindowTab)
-  const sentinel = renderEntries.find((e) => e.entry.tab.target.kind === 'navwindow')
+  const sentinel = renderEntries.find((e) => e.entry.tab.target.kind === 'map')
   const contentEntries = renderEntries.filter((e) => isWindowTarget(e.entry.tab.target))
   const firstLiveContent = contentEntries.findIndex((e) => !e.ghost)
 
@@ -85,7 +85,7 @@ export function WindowTabStrip({
       e.preventDefault()
       e.stopPropagation()
       const target = tab.target
-      if (target.kind === 'navwindow') return
+      if (target.kind === 'map') return
       const isPage = target.kind === 'page'
       const banner = windowBannerShown(useSession.getState().personalization, target.kind)
         ? bannerMenuItems({ add: await windowBannerAdd(target) })
@@ -226,8 +226,8 @@ function WindowTabItem({
   onClose: () => void
   onMenu?: (e: React.MouseEvent) => void
 }): React.JSX.Element {
-  const isMap = entry.tab.target.kind === 'navwindow'
-  const kind = entry.tab.target.kind === 'navwindow' ? 'page' : entry.tab.target.kind
+  const isMap = entry.tab.target.kind === 'map'
+  const kind = entry.tab.target.kind === 'map' ? 'page' : entry.tab.target.kind
   const label = isMap ? 'Navigation' : (entry.res?.title ?? '')
   // A tab whose own icon is ALSO the map glyph renders its type icon instead — nothing masquerades as the perma-pinned NavWindow tab.
   const res =

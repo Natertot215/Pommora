@@ -46,7 +46,7 @@ export function runWindowBanner(tabId: string, action: BannerMenuAction): void {
 
 export function useWindowBannerSeat(active: boolean, run: BannerRun): void {
   const held = useLatest(run)
-  const tabId = useSession((s) => (active ? s.pageWindow?.activeTabId : undefined))
+  const tabId = useSession((s) => (active ? s.windowSlot?.activeTabId : undefined))
   useEffect(() => {
     if (!tabId) return
     const mine: BannerSeat = { tabId, run: (action) => held.current(action) }

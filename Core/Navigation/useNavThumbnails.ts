@@ -5,6 +5,7 @@ import { navKey } from './navRef'
 import { captured, scopeCaptured } from './thumbMarkers'
 import { dialer } from '../Platform/dialer'
 import { chromePartEl, chromePartRect } from '../Interface/chromeParts'
+import { windowsOpen } from '../Session/windowSlice'
 
 // The sidebar and side pane are floating overlays carved off the pane's edges; the toolbar is NOT carved (the banner is full-bleed under it), so main overpaints just that toolbar.
 function contentRect(pane: Element): ThumbRect {
@@ -31,16 +32,16 @@ async function imagesReady(pane: Element): Promise<void> {
   )
 }
 
-// Captured only while the NavWindow is closed, so the overlay never bakes into the shot; the delay clears the close animation and debounces rapid navigation.
+// Captured only while no floating window stands, so none bakes into the shot; the delay clears the close animation and debounces rapid navigation.
 export function useNavThumbnails(): void {
   const selection = useSession((s) => s.selection)
   const shownStatus = useSession((s) => shownPage(s)?.status)
-  const navOpen = useSession((s) => s.navOpen)
+  const windowOpen = useSession(windowsOpen)
   const searching = useSession((s) => shownViewSearch(s) !== undefined)
   const bumpThumb = useSession((s) => s.bumpThumb)
 
   useEffect(() => {
-    if (navOpen || searching || selection.kind === 'none') return
+    if (windowOpen || searching || selection.kind === 'none') return
     if (selection.kind === 'page' && shownStatus !== 'ready') return
     let canceled = false
     const timer = setTimeout(() => {
@@ -52,7 +53,7 @@ export function useNavThumbnails(): void {
         await new Promise<void>((r) =>
           requestAnimationFrame(() => requestAnimationFrame(() => r())),
         )
-        if (canceled || useSession.getState().navOpen) return
+        if (canceled || windowsOpen(useSession.getState())) return
         const key = navKey(selection)
         // The gate — read at capture time so the marker reflects what the shot will show.
         const s = useSession.getState()
@@ -75,5 +76,5 @@ export function useNavThumbnails(): void {
       canceled = true
       clearTimeout(timer)
     }
-  }, [selection, shownStatus, navOpen, searching, bumpThumb])
+  }, [selection, shownStatus, windowOpen, searching, bumpThumb])
 }

@@ -8,8 +8,7 @@ export interface WindowSetRecord {
 export type WindowKind = 'page' | 'nav' | 'matrix'
 
 export interface WindowsFile {
-  navSet: WindowSetRecord | null
-  pageSet: WindowSetRecord | null
+  sets: Partial<Record<WindowKind, WindowSetRecord | null>>
 }
 
-export const EMPTY_WINDOWS: WindowsFile = { navSet: null, pageSet: null }
+export const EMPTY_WINDOWS: WindowsFile = { sets: {} }

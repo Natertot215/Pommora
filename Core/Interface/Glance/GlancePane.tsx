@@ -210,7 +210,7 @@ export function GlancePane(): React.JSX.Element {
 
   const selection = useSession((s) => s.selection)
   const activeTabId = useSession((s) => s.activeTabId)
-  const pageWindow = useSession((s) => s.pageWindow)
+  const windowTab = useSession((s) => s.windowSlot?.activeTabId)
   const unpinGlance = useSession((s) => s.unpinGlance)
 
   // A closing pin stays in the store, its `open` false, so its pane blooms out; it leaves the store only once that exit has played through.
@@ -246,7 +246,7 @@ export function GlancePane(): React.JSX.Element {
       else removePin(p.pinId)
     }
     beginExit(onTab)
-  }, [dismiss, removePin, beginExit, selection, activeTabId, pageWindow])
+  }, [dismiss, removePin, beginExit, selection, activeTabId, windowTab])
 
   // A press outside every glance portal blooms out unlocked active-tab pins. Containment is the portal layer, not the glance body, so the live pane's resize edges and rim don't read as click-away.
   useEffect(() => {

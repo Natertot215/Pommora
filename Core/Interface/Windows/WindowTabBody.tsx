@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type RefObject } from 'react'
+import { useEffect, useMemo, useRef, useState, type RefObject } from 'react'
 import type { SpaceTarget, WindowTarget } from '@pommora/core/Navigation/navRef'
 import { cx } from '@pommora/uix/Utilities/cx'
 import { WindowActions } from '@pommora/uix/Windows/WindowActions'
@@ -73,10 +73,11 @@ export function useWindowTabBody(target: WindowTarget | null): WindowTabBodySlot
   const closeSidePane = (): void => setSidePaneOpen(false)
 
   // Every Space tab the window holds keeps its document loaded, so switching back draws the board in the same frame rather than after a reload.
-  const heldSpaces = useSession((s) =>
-    (s.pageWindow?.tabs ?? [])
-      .flatMap((t) => (t.target.kind === 'space' ? [t.target.id] : []))
-      .join(' '),
+  const windowTabs = useSession((s) => s.windowSlot?.tabs)
+  const heldSpaces = useMemo(
+    () =>
+      (windowTabs ?? []).flatMap((t) => (t.target.kind === 'space' ? [t.target.id] : [])).join(' '),
+    [windowTabs],
   )
   useEffect(() => {
     const held = heldSpaces
@@ -90,7 +91,7 @@ export function useWindowTabBody(target: WindowTarget | null): WindowTabBodySlot
 
   // It closes the TAB, not the window; the window dies by itself when that was its last, and only then does the engulf play.
   const promoteWindowTab = useSession((s) => s.promoteWindowTab)
-  const activeTabId = useSession((s) => s.pageWindow?.activeTabId)
+  const activeTabId = useSession((s) => s.windowSlot?.activeTabId)
   const promote = (): void => {
     if (target && activeTabId) promoteWindowTab(activeTabId)
   }

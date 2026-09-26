@@ -63,7 +63,7 @@ async function matrixMenu(): Promise<void> {
     openOrder<RibbonMenuAction>(
       inTabs,
       [{ label: openLabel(inTabs), action: 'open' }],
-      [{ label: 'Preview', action: 'preview', disabled: s.pageWindow?.kind === 'matrix' }],
+      [{ label: 'Preview', action: 'preview', disabled: s.windowSlot?.kind === 'matrix' }],
     ),
   )
   if (action === 'open') void s.select(MATRIX_REF)
