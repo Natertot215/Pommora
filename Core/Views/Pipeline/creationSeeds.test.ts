@@ -8,6 +8,7 @@ const schema: PropertyDefinition[] = [
   { id: 'p_sel', name: 'Kind', type: 'select' },
   { id: 'p_check', name: 'Done', type: 'checkbox' },
   { id: 'p_num', name: 'Count', type: 'number' },
+  { id: 'p_tags', name: 'Tags', type: 'multi_select' },
 ]
 
 describe('filterSeeds', () => {
@@ -81,6 +82,31 @@ describe('filterSeeds', () => {
       ],
     }
     expect(filterSeeds(filter, true, schema)).toEqual({ p_sel: { kind: 'select', value: 'note' } })
+  })
+
+  it('derives a one-option list from a one-chip Multi-Select Is Any or Is All rule', () => {
+    const one = (op: string): FilterGroup => ({
+      match: 'all',
+      rules: [{ property_id: 'p_tags', op, values: ['draft'] }],
+    })
+    expect(filterSeeds(one('contains_any'), true, schema)).toEqual({
+      p_tags: { kind: 'multiSelect', value: ['draft'] },
+    })
+    expect(filterSeeds(one('contains_all'), true, schema)).toEqual({
+      p_tags: { kind: 'multiSelect', value: ['draft'] },
+    })
+    expect(filterSeeds(one('does_not_contain'), true, schema)).toEqual({})
+  })
+
+  it('derives a Space from a one-chip Context Contains rule, and nothing from two', () => {
+    const rule = (values: string[]): FilterGroup => ({
+      match: 'all',
+      rules: [{ property_id: 'ctx_areas', op: 'contains_any', values }],
+    })
+    expect(filterSeeds(rule(['s_work']), true, schema, ['ctx_areas'])).toEqual({
+      ctx_areas: { kind: 'context', value: ['s_work'] },
+    })
+    expect(filterSeeds(rule(['s_work', 's_home']), true, schema, ['ctx_areas'])).toEqual({})
   })
 
   it('a disabled or absent filter derives nothing', () => {

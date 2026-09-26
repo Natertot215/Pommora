@@ -31,6 +31,7 @@ interface ViewCreationConfig {
   source: CollectionNode | SetNode
   view: SavedView
   schema: PropertyDefinition[]
+  contextIds: readonly string[]
   values: Record<string, PageValues>
   setValueOverride: SetOverrides
   effectiveValues: Record<string, PageValues>
@@ -64,7 +65,7 @@ export function useViewCreation(getCfg: () => ViewCreationConfig): ViewCreation 
 
   const impliedSeeds = (): Record<string, PropertyValue> => {
     const c = cfg()
-    return filterSeeds(c.view.filter, viewFlag(c.view, 'filter_enabled'), c.schema)
+    return filterSeeds(c.view.filter, viewFlag(c.view, 'filter_enabled'), c.schema, c.contextIds)
   }
   // The created page's seeds reach the pipeline the way a band-drop's reassign does.
   const patchSeedValues = (pageId: string, seeds: Record<string, PropertyValue>): void => {
@@ -76,6 +77,11 @@ export function useViewCreation(getCfg: () => ViewCreationConfig): ViewCreation 
       for (const [propId, value] of entries) {
         const def = c.schema.find((d) => d.id === propId)
         if (def) patched = applyValueAtRoot(patched, def, value)
+        else if (value.kind === 'context')
+          patched = {
+            ...patched,
+            contextValues: { ...(patched.contextValues as object), [propId]: value.value },
+          }
       }
       return { ...prev, [pageId]: { fm: patched as PageFrontmatter, write: null } }
     })
