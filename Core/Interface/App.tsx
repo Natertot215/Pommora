@@ -24,7 +24,7 @@ import { useNavThumbnails } from '../Navigation/useNavThumbnails'
 import { Button } from '@pommora/uix/Buttons/Button'
 import { Icon } from '@pommora/uix/Symbols'
 import { matchesCommand } from '@pommora/uix/Interactions/chords'
-import { undoValue } from '../Session/undo'
+import { KEYED_COMMANDS, runCommand } from '../Actions/commandRouter'
 import { useBridgeSubscriptions } from '../Session/useBridgeSubscriptions'
 import { MenuPresenter } from './Menus/MenuPresenter'
 import { ValuePickPresenter } from './Menus/ValuePickPresenter'
@@ -48,13 +48,8 @@ export function App(): React.JSX.Element {
   const toggleSidebar = useSession((s) => s.toggleSidebar)
   const openDropped = useSession((s) => s.openDropped)
   const ribbonVisible = useSession((s) => s.ribbonVisible)
-  const toggleRibbon = useSession((s) => s.toggleRibbon)
   const trafficLights = useSession((s) => s.hostPlatform !== 'windows' && !s.fullscreen)
-  const toggleIteration = useSession((s) => s.toggleIteration)
-  const toggleNav = useSession((s) => s.toggleNav)
-  const toggleMatrixWindow = useSession((s) => s.toggleMatrixWindow)
   const commands = useSession((s) => s.commands)
-  const searchView = useSession((s) => s.searchView)
   useNavThumbnails()
 
   const [sidePaneOpen, setSidePaneOpen] = useState(false)
@@ -84,27 +79,12 @@ export function App(): React.JSX.Element {
   useEffect(() => {
     const onKey = (e: KeyboardEvent): void => {
       if (e.defaultPrevented) return
-      if (matchesCommand(commands['toggle-ribbon'], e)) {
-        e.preventDefault()
-        toggleRibbon()
-      } else if (matchesCommand(commands['toggle-nav'], e)) {
-        e.preventDefault()
-        toggleNav()
-      } else if (matchesCommand(commands['toggle-matrix'], e)) {
-        e.preventDefault()
-        toggleMatrixWindow()
-      } else if (matchesCommand(commands['toggle-iteration'], e)) {
-        e.preventDefault()
-        toggleIteration()
-      } else if (matchesCommand(commands.search, e)) {
-        if (!document.activeElement?.closest('[role="dialog"]') && searchView()) e.preventDefault()
-      } else if (matchesCommand(commands['undo-value'], e)) {
-        if (undoValue(e.target)) e.preventDefault()
-      }
+      const id = KEYED_COMMANDS.find((c) => matchesCommand(commands[c], e))
+      if (id && runCommand(id, e.target)) e.preventDefault()
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [commands, toggleRibbon, toggleNav, toggleMatrixWindow, toggleIteration, searchView])
+  }, [commands])
 
   const sidebarHidden = status === 'ready' && !sidebarVisible
 

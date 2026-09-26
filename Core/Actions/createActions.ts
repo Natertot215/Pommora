@@ -7,7 +7,7 @@ import {
 import { relDirname } from '../Paths/posix'
 import { orderWithSlot, placeNew } from '../Views/creationOrder'
 import { findContainerWhere } from '../Nexus/treePatch'
-import { useSession } from '../Session/store'
+import { useSession, windowTargetOf } from '../Session/store'
 
 export async function newPageAdjacent(
   path: string,
@@ -57,17 +57,22 @@ export async function createNamed(req: MutateRequest, host?: RenameHost): Promis
   )
 }
 
-export async function newPage(): Promise<void> {
-  const { tree, selection, personalization, mutate, select } = useSession.getState()
+export async function newPage(inWindow = false): Promise<void> {
+  const s = useSession.getState()
+  const { tree, personalization, mutate } = s
   if (!tree) return
+  const from = inWindow ? windowTargetOf(s) : s.selection
   let parentPath: string | null = null
-  if (selection.kind === 'collection' || selection.kind === 'set')
-    parentPath = findContainerWhere(tree, (n) => n.id === selection.id)?.path ?? null
-  else if (selection.kind === 'page') parentPath = relDirname(selection.path)
+  if (from?.kind === 'collection' || from?.kind === 'set')
+    parentPath = findContainerWhere(tree, (n) => n.id === from.id)?.path ?? null
+  else if (from?.kind === 'page') parentPath = relDirname(from.path)
   if (parentPath === null) parentPath = tree.collections[0]?.path ?? null
   if (parentPath === null) return
   await mutate(
     placeNew(tree, { op: 'createPage', parentPath, name: DEFAULT_NEW_NAME }, personalization),
-    (created) => select({ kind: 'page', id: created.id, path: created.path }, { newTab: false }),
+    (created) => {
+      const page = { kind: 'page', id: created.id, path: created.path } as const
+      return inWindow ? s.openWindowTab(page) : s.select(page, { newTab: false })
+    },
   )
 }

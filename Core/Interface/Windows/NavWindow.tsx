@@ -94,18 +94,6 @@ function NavWindowBody({ closing }: { closing: boolean }): React.JSX.Element {
     if (!target) searchRef.current?.focus()
   }, [target])
 
-  const openNewTab = useSession((s) => s.openNewTab)
-
-  // The map tab has no entity to promote: the scan carries the list itself into a new app tab.
-  const scan = (): void => {
-    if (target) {
-      promote()
-      return
-    }
-    setDevicePref('navViewGallery', gallery)
-    closeWindow()
-    openNewTab()
-  }
   const bannered = useSetting('windowNavBanner')
   const searchField = (
     <SearchField
@@ -139,7 +127,7 @@ function NavWindowBody({ closing }: { closing: boolean }): React.JSX.Element {
       }}
       className={cx('navwindow', target !== null && 'is-page-tab')}
       ariaLabel="Navigation"
-      onScan={scan}
+      onScan={promote}
       title={<WindowTabStrip index={resolveIndex} title={null} />}
       actions={actions}
       left={{

@@ -185,10 +185,18 @@ export const createWindowSlice: Slice<WindowSlice> = (set, get) => {
       commitWindow(next)
     },
     promoteWindowTab: (id, newTab) => {
-      const tab = get().windowSlot?.tabs.find((t) => t.id === id)
-      if (!tab || tab.target.kind === 'map') return
-      get().closeWindowTab(id, 'engulf')
-      void get().select(tab.target, newTab ? { newTab: true } : undefined)
+      const s = get()
+      const tab = s.windowSlot?.tabs.find((t) => t.id === id)
+      if (!tab) return
+      if (tab.target.kind === 'map') {
+        // The map tab has no entity to promote: the list itself carries into a new app tab.
+        s.setDevicePref('navViewGallery', s.devicePrefs.navWindowGallery === true)
+        s.closeWindow()
+        s.openNewTab()
+        return
+      }
+      s.closeWindowTab(id, 'engulf')
+      void s.select(tab.target, newTab ? { newTab: true } : undefined)
     },
     closeWindowTab: (id, exit) => {
       const cur = get().windowSlot

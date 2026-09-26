@@ -149,7 +149,10 @@ export function WindowBase({
   })
   // Window-move is reserved to the bare surfaces — anything else owns its pointer, so row/reorder captures aren't stolen mid-press.
   const onWindowDown = (e: React.PointerEvent<HTMLElement>): void => {
-    if ((e.target as HTMLElement).matches(surfaces)) resize.start('move')(e)
+    if (!(e.target as HTMLElement).matches(surfaces)) return
+    resize.start('move')(e)
+    if (!root.current?.contains(document.activeElement))
+      root.current?.focus({ preventScroll: true })
   }
 
   const [leftW, setLeftW] = useState(() => storedWidth(left))

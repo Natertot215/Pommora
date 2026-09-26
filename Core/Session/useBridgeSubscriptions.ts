@@ -12,7 +12,7 @@ import { flushPageSave, setStaleSaveSink } from './saveScheduler'
 import { useSession } from './store'
 import { openWebLink } from '../Web/openWebLink'
 import { dialer } from '../Platform/dialer'
-import { newPage } from '../Actions/createActions'
+import { isMenuCommand, runCommand } from '../Actions/commandRouter'
 
 export function useBridgeSubscriptions(): void {
   const applyTree = useSession((s) => s.applyTree)
@@ -21,8 +21,6 @@ export function useBridgeSubscriptions(): void {
   const nexusRoot = useSession((s) => s.tree?.nexus.rootPath)
   const choose = useSession((s) => s.choose)
   const openPath = useSession((s) => s.openPath)
-  const toggleSidebar = useSession((s) => s.toggleSidebar)
-  const openNewTab = useSession((s) => s.openNewTab)
 
   const setHostWindow = useSession((s) => s.setHostWindow)
   useEffect(() => {
@@ -106,27 +104,14 @@ export function useBridgeSubscriptions(): void {
 
   useEffect(() => dialer().on('web:popup', openWebLink), [])
 
-  useEffect(() => {
-    return dialer().on('menu:action', (action) => {
-      switch (action) {
-        case 'open':
-          void choose()
-          break
-        case 'new-tab': {
-          const s = useSession.getState()
-          if (s.windowSlot?.kind === 'page') s.promoteWindowTab(s.windowSlot.activeTabId, true)
-          else openNewTab()
-          break
-        }
-        case 'new-page':
-          void newPage()
-          break
-        case 'toggle-sidebar':
-          toggleSidebar()
-          break
-      }
-    })
-  }, [choose, openNewTab, toggleSidebar])
+  useEffect(
+    () =>
+      dialer().on('menu:action', (action) => {
+        if (action === 'open') void choose()
+        else if (isMenuCommand(action)) runCommand(action)
+      }),
+    [choose],
+  )
 
   useEffect(() => dialer().on('nexus:openRecent', (path) => void openPath(path)), [openPath])
 

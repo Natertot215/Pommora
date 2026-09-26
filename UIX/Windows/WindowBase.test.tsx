@@ -236,6 +236,17 @@ describe('a floating window hands focus back when it closes', () => {
     expect(document.activeElement).toBe(outside)
     outside.remove()
   })
+
+  it('a press on the window itself takes the keyboard back into it', () => {
+    const el = mount({})
+    const outside = document.createElement('button')
+    document.body.appendChild(outside)
+    outside.focus()
+    act(() => firePointer(el, 'pointerdown', { x: 10, y: 10 }))
+    release()
+    expect(document.activeElement).toBe(el)
+    outside.remove()
+  })
 })
 
 describe('a floating window reports its size once per drag', () => {
