@@ -1,4 +1,4 @@
-import { readJsonObject, updateNexusConfig } from '../Files/atomicWrite'
+import { readAppFile, updateNexusConfig } from '../Files/atomicWrite'
 import { nexusConfig } from '../Paths/paths'
 import { NEXUS_CONFIG_FILES } from '../Paths/nexusPaths'
 import { mergeKeys } from '../Files/jsonMerge'
@@ -9,7 +9,7 @@ import { applyPatch, type MatrixConfig, type MatrixPatch, parseMatrixConfig } fr
 const matrixPath = (root: string): string => nexusConfig(root, NEXUS_CONFIG_FILES.matrix)
 
 export async function readMatrixFile(root: string): Promise<MatrixConfig> {
-  return parseMatrixConfig(await readJsonObject(matrixPath(root)))
+  return parseMatrixConfig(await readAppFile(matrixPath(root)))
 }
 
 // A write merges over the stored file, so a force or key this build reads differently stays as stored unless the patch changed it, and a patch that changes nothing leaves the file untouched.

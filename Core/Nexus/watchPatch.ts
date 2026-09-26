@@ -12,7 +12,7 @@ import {
   type WatchScope,
 } from '../Paths/exclusion'
 import { adoptedId, isAdoptedId, shardOf } from './ids'
-import { pathExists, readJsonObject } from '../Files/atomicWrite'
+import { pathExists, readAppFile, readJsonObject } from '../Files/atomicWrite'
 import { isContentName } from '../Files/walk'
 import { queryHeadingMentions, removePathIndex } from '../Index/contentIndex'
 import { normalizeTitle } from '../Connections/connections'
@@ -78,7 +78,7 @@ export type WatchClass =
   | { kind: 'crops-leaf' }
   | { kind: 'metadata-leaf'; shard: string }
   | { kind: 'order-leaf' }
-  | { kind: 'tiles-leaf'; host: TileHostRef }
+  | { kind: 'tiles-leaf'; host: TileHostRef; rel: string }
   | { kind: 'asset'; rel: string; event: WatchEventName }
   | { kind: 'index-only'; rel: string }
   | { kind: 'ignored' }
@@ -161,7 +161,7 @@ export function classifyEvent(
     if (name.startsWith(`${TILE_DOC_FILENAME}.bad`)) return { kind: 'ignored' }
     if (name === TILE_DOC_FILENAME || tileBodyUnder(segs, rel)) {
       const host = tileHostAt(tree, rel)
-      return host ? { kind: 'tiles-leaf', host } : { kind: 'ignored' }
+      return host ? { kind: 'tiles-leaf', host, rel } : { kind: 'ignored' }
     }
     if (rel === `${NEXUS_DIR}/${NEXUS_CONFIG_FILES.settings}`) return { kind: 'settings-leaf' }
     if (rel === `${NEXUS_DIR}/${NEXUS_CONFIG_FILES.homepage}`) return { kind: 'homepage-leaf' }
@@ -307,6 +307,8 @@ async function applyOne(
     case 'settings-leaf':
       return applySettingsLeaf(root, watched)
     case 'tiles-leaf':
+      // A host off screen isn't re-read by the window, so its document's last read would otherwise stay where it was.
+      if (basename(c.rel) === TILE_DOC_FILENAME) await readAppFile(join(root, c.rel))
       return 'ok'
     case 'homepage-leaf':
       return patchHomepageFromDisk(root)
@@ -454,7 +456,7 @@ function applySettingsLeaves(root: string, leaves: SettingsLeaves): 'ok' | 'refr
 }
 
 export async function patchOrderFromDisk(root: string): Promise<'ok' | 'refresh'> {
-  const order = readOrder((await readJsonObject(nexusConfig(root, NEXUS_CONFIG_FILES.state))) ?? {})
+  const order = readOrder((await readAppFile(nexusConfig(root, NEXUS_CONFIG_FILES.state))) ?? {})
   return applyPatch(root, (t) => {
     const collections = resolveOrder(t.collections, order.collections)
     const contexts = t.contexts.map((g) => {
@@ -471,12 +473,12 @@ export async function patchOrderFromDisk(root: string): Promise<'ok' | 'refresh'
 }
 
 export async function patchHomepageFromDisk(root: string): Promise<'ok' | 'refresh'> {
-  const config = (await readJsonObject(nexusConfig(root, NEXUS_CONFIG_FILES.homepage))) ?? {}
+  const config = (await readAppFile(nexusConfig(root, NEXUS_CONFIG_FILES.homepage))) ?? {}
   return applyPatch(root, (t) => ({ ...t, homepage: readHomepageLeaves(config) }))
 }
 
 export async function patchCropsFromDisk(root: string): Promise<'ok' | 'refresh'> {
-  const config = (await readJsonObject(nexusConfig(root, NEXUS_CONFIG_FILES.crops))) ?? {}
+  const config = (await readAppFile(nexusConfig(root, NEXUS_CONFIG_FILES.crops))) ?? {}
   return applyPatch(root, (t) => ({ ...t, crops: readCropLeaves(config) }))
 }
 

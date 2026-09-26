@@ -147,6 +147,40 @@ describe('landWrite', () => {
     })
   })
 
+  it('keeps a local JSON file that reads over a remote one that does not, capturing the remote', async () => {
+    const added = vi.spyOn(mem.stores.captures as CaptureStore, 'addCapture')
+    const path = '.nexus/state.json'
+    const local = utf8(JSON.stringify({ order: { collections: ['a'] } }))
+    const remote = utf8('{ corrupt')
+    await writeFile(abs(path), local)
+    await landWrite(host, root, write(path, remote, 4, Date.now() + 600_000), remote)
+    expect(await readFile(abs(path))).toEqual(Buffer.from(local))
+    expect(added).toHaveBeenCalledWith(path, expect.any(Number), 'remote-lost', remote)
+    expect(bases().readBase(path)?.hash).toBe(machine().sha256Hex(remote))
+  })
+
+  it('merges against a base that does not parse as though it were empty', async () => {
+    const path = '.nexus/settings.json'
+    const base = utf8('{ corrupt')
+    const local = utf8(JSON.stringify({ profile_subtitle: 'mine' }))
+    const remote = utf8(JSON.stringify({ personalization: { accent: 'moss' } }))
+    await writeFile(abs(path), local)
+    bases().upsertBase({
+      path,
+      mtimeMs: MTIME - 10_000,
+      size: base.length,
+      hash: machine().sha256Hex(base),
+      blobSha: machine().sha256Hex(base),
+      version: 1,
+      baseBytes: base,
+    })
+    await landWrite(host, root, write(path, remote, 4), remote)
+    expect(JSON.parse(await readFile(abs(path), 'utf8'))).toEqual({
+      profile_subtitle: 'mine',
+      personalization: { accent: 'moss' },
+    })
+  })
+
   it('records no echo', async () => {
     const bytes = utf8('quiet\n')
     await landWrite(host, root, write('Notes/A.md', bytes), bytes)

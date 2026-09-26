@@ -171,6 +171,16 @@ describe('pushDirty', () => {
     expect(readBase('Notes/Bare.md')).toBeNull()
   })
 
+  it('never ships a Pommora JSON file that does not parse, and ships it once it does', async () => {
+    await write('.nexus/state.json', '{ corrupt')
+    await pushDirty(session, ['.nexus/state.json'])
+    expect(puts()).toHaveLength(0)
+    expect(readBase('.nexus/state.json')).toBeNull()
+    await write('.nexus/state.json', '{"order":{}}')
+    await pushDirty(session, ['.nexus/state.json'])
+    expect(puts()).toHaveLength(1)
+  })
+
   it('tombstones every row under a removed folder', async () => {
     const one = await remoteWrite('Notes/Daily/One.md', 'one')
     const two = await remoteWrite('Notes/Daily/Two.md', 'two')
@@ -241,6 +251,24 @@ describe('pushDirty', () => {
     const landed = JSON.parse(await read(rel)) as Record<string, number>
     expect(landed).toEqual({ remote: 1, local: 2 })
     expect(await isDirty(root, rel)).toBe(true)
+  })
+
+  it('keeps a readable JSON file over a damaged stale head, then ships it over that head', async () => {
+    const rel = '.nexus/state.json'
+    const first = await remoteWrite(rel, '{ corrupt')
+    seedBase(rel, utf8('{}'), first - 1, true)
+    await write(rel, '{"order":{"collections":["a"]}}', LOCAL_MS)
+
+    await pushDirty(session, [rel])
+    expect(JSON.parse(await read(rel))).toEqual({ order: { collections: ['a'] } })
+    expect(readBase(rel)?.version).toBe(first)
+
+    await pushDirty(session, [rel])
+    const shipped = stores()
+      .at(-1)
+      ?.changes.find((change) => pathOf(change) === rel)
+    expect(shipped).toMatchObject({ kind: 'write', base: first })
+    expect(await isDirty(root, rel)).toBe(false)
   })
 
   it('follows a rename head to the new path', async () => {

@@ -118,20 +118,31 @@ describe('the document', () => {
     expect(seen).toEqual({ layout: 1, tiles: [], locked: false })
   })
 
-  it('a corrupt document reads empty untouched; the next write quarantines it under a fresh name and lands', async () => {
+  it('a corrupt document never read cleanly reads empty untouched; the next write sets it aside under a hidden name and lands', async () => {
     await mkdir(home(), { recursive: true })
     await writeFile(tileDocPath(home()), '{ not json')
     expect(await readTileDocAt(home())).toEqual({ layout: undefined, tiles: [], locked: false })
     expect(await readFile(tileDocPath(home()), 'utf8')).toBe('{ not json')
     await seed(home(), [{ id: tileId('a'), type: 'markdown' }])
     expect((await entries())[0].id).toBe(tileId('a'))
-    const bad = (await readdir(home())).filter((f) => f.startsWith('_tiles.json.bad-'))
+    const bad = (await readdir(home())).filter((f) => f.startsWith('._tiles.json.bad-'))
     expect(bad).toHaveLength(1)
     expect(await readFile(join(home(), bad[0]), 'utf8')).toBe('{ not json')
     await writeFile(tileDocPath(home()), '[1, 2]')
     await seed(home(), [{ id: tileId('b'), type: 'markdown' }])
-    expect((await readdir(home())).filter((f) => f.startsWith('_tiles.json.bad-'))).toHaveLength(2)
+    expect((await readdir(home())).filter((f) => f.startsWith('._tiles.json.bad-'))).toHaveLength(2)
     expect((await entries())[0].id).toBe(tileId('b'))
+  })
+
+  it('a document damaged after a clean read reads as that read, and the next write rebuilds from it', async () => {
+    await mkdir(home(), { recursive: true })
+    await writeFile(tileDocPath(home()), JSON.stringify({ layout: 1, locked: true, tiles: [] }))
+    expect(await readTileDocAt(home())).toEqual({ layout: 1, tiles: [], locked: true })
+    await writeFile(tileDocPath(home()), '{ not json')
+    expect(await readTileDocAt(home())).toEqual({ layout: 1, tiles: [], locked: true })
+    await seed(home(), [{ id: tileId('a'), type: 'markdown' }])
+    expect(await readTileDocAt(home())).toMatchObject({ layout: 1, locked: true })
+    expect((await entries())[0].id).toBe(tileId('a'))
   })
 })
 

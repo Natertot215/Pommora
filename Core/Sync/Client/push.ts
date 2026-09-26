@@ -7,7 +7,15 @@ import { basename, dirname, join, isMarkdownFile } from '../../Paths/posix'
 import { machine } from '../../Platform/machine'
 import { captureLoser } from '../Arrival/captures'
 import { isMergedJson } from '../Arrival/mergePolicy'
-import { holdable, landDelete, landRename, landWrite, newerSide, recordOf } from '../Arrival/land'
+import {
+  holdable,
+  landDelete,
+  landRename,
+  landWrite,
+  newerSide,
+  parseObject,
+  recordOf,
+} from '../Arrival/land'
 import type { Change, ItemRecord, StoreChange, StoreOutcome } from '../Contract/wire'
 import { encryptItem, SEAL_OVERHEAD } from '../Keys/item'
 import { newest, owned } from '../Keys/ring'
@@ -85,6 +93,8 @@ async function sealed(
   rel: string,
   snapshot: Snapshot,
 ): Promise<{ record: ItemRecord; blob: Uint8Array } | null> {
+  // A Pommora JSON file that doesn't parse stays home until it does, so another device keeps the copy it holds.
+  if (isMergedJson(rel) && parseObject(snapshot.bytes) === null) return null
   const key = newest(session.ring)
   const blob = await encryptItem(key, rel, owned(snapshot.bytes))
   const sha256 = machine().sha256Hex(blob)

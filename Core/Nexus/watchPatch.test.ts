@@ -14,6 +14,7 @@ import {
   applyWatchEvents,
   classifyEvent,
   patchContainerFromDisk,
+  patchHomepageFromDisk,
   patchOrderFromDisk,
   tileBodyUnder,
   touchesCorpus,
@@ -139,6 +140,23 @@ describe('applyWatchEvents — must agree with the walk', () => {
     expect(stabilize(await readNexus(root), live)).toBe(live)
     expect(await patchOrderFromDisk(root)).toBe('ok')
     expect(getLiveTree()).toBe(live)
+  })
+
+  it('holds the order and the homepage through a damaged state.json and homepage.json, and the walk agrees', async () => {
+    await writeFile(abs('.nexus', 'state.json'), JSON.stringify({ order: { contexts: ['ctx1'] } }))
+    await writeFile(
+      abs('.nexus', 'homepage', 'homepage.json'),
+      JSON.stringify({ banner: 'Loose/b.png' }),
+    )
+    const held = await refreshTree(root)
+    await writeFile(abs('.nexus', 'state.json'), '{ corrupt')
+    await writeFile(abs('.nexus', 'homepage', 'homepage.json'), '[1, 2]')
+    expect(await patchOrderFromDisk(root)).toBe('ok')
+    expect(await patchHomepageFromDisk(root)).toBe('ok')
+    const live = getLiveTree()
+    expect(live?.contextOrder).toEqual(['ctx1'])
+    expect(live?.homepage.banner).toBe('Loose/b.png')
+    expect(stabilize(await readNexus(root), held)).toBe(held)
   })
 
   it('patches crops.json as a leaf, dropping a malformed entry, walk-identically', async () => {
@@ -268,6 +286,7 @@ describe('classifyEvent', () => {
     ).toEqual({
       kind: 'tiles-leaf',
       host: { kind: 'homepage' },
+      rel: '.nexus/homepage/_tiles.json',
     })
     expect(
       classifyEvent(
@@ -276,7 +295,11 @@ describe('classifyEvent', () => {
         ev('change', '.nexus', 'contexts', 'Areas', 'Home', '_tiles.json'),
         scope(),
       ),
-    ).toEqual({ kind: 'tiles-leaf', host: { kind: 'space', id: tree.contexts[0].spaces[0].id } })
+    ).toEqual({
+      kind: 'tiles-leaf',
+      host: { kind: 'space', id: tree.contexts[0].spaces[0].id },
+      rel: '.nexus/contexts/Areas/Home/_tiles.json',
+    })
     expect(kind(ev('change', '.nexus', 'contexts', 'Areas', 'Nowhere', '_tiles.json'))).toBe(
       'ignored',
     )

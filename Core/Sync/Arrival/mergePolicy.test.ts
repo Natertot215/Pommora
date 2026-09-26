@@ -96,6 +96,11 @@ describe('mergeKeys', () => {
     expect(isMergedJson('.nexus/homepage/_tiles.json')).toBe(true)
     expect(isMergedJson('Notes/A.md')).toBe(false)
     expect(isMergedJson('assets/x.json')).toBe(false)
+    expect(isMergedJson('.nexus/assets/crops.json')).toBe(true)
+    expect(isMergedJson('.nexus/contexts/contexts.json')).toBe(true)
+    expect(isMergedJson('.nexus/metadata/09-2026.json')).toBe(true)
+    expect(isMergedJson('.nexus/assets/data.json')).toBe(false)
+    expect(isMergedJson('Notes/_list.json')).toBe(false)
 
     expect(mergeDepthFor('.nexus/settings.json')).toEqual({ personalization: 1 })
     expect(mergeDepthFor('.nexus/state.json')).toEqual({ order: 1, navigation: 1 })

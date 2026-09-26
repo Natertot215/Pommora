@@ -1,7 +1,7 @@
 import { stableStringify } from './stableJson'
 import { ok } from '../Contract/result'
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
-import { rm, mkdir, readFile, writeFile, stat, utimes } from 'node:fs/promises'
+import { rm, mkdir, readFile, readdir, writeFile, stat, utimes } from 'node:fs/promises'
 import { dirname, join, basename } from '../Paths/posix'
 import { tempRoot } from '../Testing/hostFs'
 import {
@@ -11,6 +11,9 @@ import {
   writeJson,
   readJsonStrict,
   rmwJsonStrict,
+  readAppFile,
+  setRepairSeed,
+  updateNexusFile,
 } from './atomicWrite'
 import { mintBundle, settleBundle, trashFileFlat } from '../Trash/bundle'
 import { isRecentWrite, setWriteTap } from './writeEcho'
@@ -128,6 +131,55 @@ describe('rmwJsonStrict', () => {
     )
     expect(written.ok).toBe(false)
     expect(await readFile(p, 'utf8')).toBe('[1, 2]')
+  })
+})
+
+describe('readAppFile and a repairable updateNexusFile', () => {
+  const damage = (file: string) => writeFile(file, '{ corrupt')
+  const aside = async (file: string) =>
+    (await readdir(dirname(file))).find((f) => f.startsWith(`.${basename(file)}.bad-`))
+
+  it('a damaged file reads as the last write, and the next write rebuilds from it', async () => {
+    const file = join(dir, 'state.json')
+    await updateNexusFile(file, () => ({ order: ['a'] }), true)
+    await damage(file)
+    expect(await readAppFile(file)).toEqual({ order: ['a'] })
+    await updateNexusFile(file, (cur) => ({ ...cur, pinned: ['p'] }), true)
+    expect(JSON.parse(await readFile(file, 'utf8'))).toEqual({ order: ['a'], pinned: ['p'] })
+    expect(await readFile(join(dir, (await aside(file)) ?? ''), 'utf8')).toBe('{ corrupt')
+  })
+
+  it('a repair lands the last read even when the write finds nothing to change', async () => {
+    const file = join(dir, 'state.json')
+    await writeFile(file, JSON.stringify({ order: ['a'] }))
+    await readAppFile(file)
+    await damage(file)
+    await updateNexusFile(file, () => null, true)
+    expect(JSON.parse(await readFile(file, 'utf8'))).toEqual({ order: ['a'] })
+  })
+
+  it('a file never read cleanly rebuilds from the repair seed, and a deleted one forgets its last read', async () => {
+    const file = join(dir, 'state.json')
+    await writeFile(file, JSON.stringify({ order: ['old'] }))
+    await readAppFile(file)
+    await rm(file)
+    expect(await readAppFile(file)).toBeNull()
+    await damage(file)
+    setRepairSeed((abs) => (abs === file ? { order: ['synced'] } : null))
+    try {
+      await updateNexusFile(file, (cur) => ({ ...cur, pinned: ['p'] }), true)
+    } finally {
+      setRepairSeed(null)
+    }
+    expect(JSON.parse(await readFile(file, 'utf8'))).toEqual({ order: ['synced'], pinned: ['p'] })
+  })
+
+  it('a file that refuses repair leaves its damaged copy in place', async () => {
+    const file = join(dir, 'settings.json')
+    await damage(file)
+    expect((await updateNexusFile(file, () => ({ a: 1 }), false)).ok).toBe(false)
+    expect(await readFile(file, 'utf8')).toBe('{ corrupt')
+    expect(await aside(file)).toBeUndefined()
   })
 })
 

@@ -1,5 +1,11 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { readFile, rm, writeFile } from 'node:fs/promises'
+import { updateNexusFile } from '../../Files/atomicWrite'
 import { recordWrite } from '../../Files/writeEcho'
+import { installStores, NO_STORES } from '../../Platform/stores'
+import { tempRoot } from '../../Testing/hostFs'
+import { memoryStores } from '../../Testing/memoryStores'
+import { upsertBase } from './base'
 import { emitWatch } from '../../Nexus/watchSettle'
 import type { WatchScope } from '../../Paths/exclusion'
 import { join } from '../../Paths/posix'
@@ -95,5 +101,39 @@ describe('installTap', () => {
     emitWatch('change', join(ROOT, 'Notes/One.md'))
     await vi.advanceTimersByTimeAsync(DEBOUNCE_MS + 1)
     expect(dirty).toEqual([])
+  })
+})
+
+describe('the repair seed', () => {
+  it('rebuilds a file damaged before any read from its last synced copy, and not once uninstalled', async () => {
+    vi.useRealTimers()
+    const root = tempRoot('pom-tap-')
+    installStores(memoryStores().stores)
+    const synced = new TextEncoder().encode(JSON.stringify({ order: { collections: ['a'] } }))
+    for (const path of ['state.json', 'matrix.json'])
+      upsertBase({
+        path,
+        mtimeMs: 0,
+        size: 0,
+        hash: 'h',
+        blobSha: 'b',
+        version: 1,
+        baseBytes: synced,
+      })
+    const repair = async (name: string): Promise<unknown> => {
+      const file = join(root, name)
+      await writeFile(file, '{ corrupt')
+      await updateNexusFile(file, (cur) => ({ ...cur, pinned: ['p'] }), true)
+      return JSON.parse(await readFile(file, 'utf8'))
+    }
+    try {
+      installTap(root, SCOPE, { onDirty: () => {}, onRename: () => {} })
+      expect(await repair('state.json')).toEqual({ order: { collections: ['a'] }, pinned: ['p'] })
+      uninstallTap()
+      expect(await repair('matrix.json')).toEqual({ pinned: ['p'] })
+    } finally {
+      installStores(NO_STORES)
+      await rm(root, { recursive: true, force: true })
+    }
   })
 })

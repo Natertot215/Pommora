@@ -19,7 +19,7 @@ import { makeCollectionNode, makePageNode, makeSetNode, makeSpaceNode } from './
 import { adoptedId } from './ids'
 import { readPageMetadata } from './pageMetadata'
 import { readSettings, scopeOf } from '../Settings/codec'
-import { pathExists, readJsonObject } from '../Files/atomicWrite'
+import { pathExists, readAppFile, readJsonObject } from '../Files/atomicWrite'
 import { readIdentity } from './identity'
 import { isContentFile, listEntries } from '../Files/walk'
 import { machine } from '../Platform/machine'
@@ -94,7 +94,7 @@ const readContainerMeta = (
   readSidecarNaming(join(absDir, sidecar), relDir, unreadable).then((m) => m ?? {})
 
 const readConfig = (absPath: string): Promise<Record<string, unknown>> =>
-  readJsonObject(absPath).then((v) => v ?? {})
+  readAppFile(absPath).then((v) => v ?? {})
 
 // Registry-independent, so the parse cache never needs busting for registry changes.
 const rawContextByNode = new WeakMap<object, Json>()

@@ -27,7 +27,7 @@ export function newerSide(
   return localDeviceId < remoteDeviceId ? 'local' : 'remote'
 }
 
-const parseObject = (bytes: Uint8Array): Json | null =>
+export const parseObject = (bytes: Uint8Array): Json | null =>
   parseJsonObject(new TextDecoder().decode(bytes))
 
 export function recordOf(change: Change): ItemRecord {
@@ -37,20 +37,26 @@ export function recordOf(change: Change): ItemRecord {
 
 async function bytesToLand(
   localDeviceId: string,
-  abs: string,
+  root: string,
   change: Change,
   record: ItemRecord,
   plaintext: Uint8Array,
 ): Promise<Uint8Array> {
   if (!isMergedJson(change.path)) return plaintext
+  const abs = join(root, change.path)
   const local = await machine().readBytes(abs)
   if (!local) return plaintext
-  const base = readBase(change.path)?.baseBytes ?? null
-  if (base && machine().sha256Hex(local) === machine().sha256Hex(base)) return plaintext
-  const b = base ? parseObject(base) : {}
   const l = parseObject(local)
   const r = parseObject(plaintext)
-  if (!b || !l || !r) return plaintext
+  if (!l) return plaintext
+  // A Pommora JSON file that doesn't parse holds no one's intent, so it never lands over a copy that reads.
+  if (!r) {
+    await captureLoser(root, change.path, plaintext, 'remote-lost')
+    return local
+  }
+  const base = readBase(change.path)?.baseBytes ?? null
+  if (base && machine().sha256Hex(local) === machine().sha256Hex(base)) return plaintext
+  const b = (base && parseObject(base)) ?? {}
   const localMtimeMs = (await machine().stat(abs))?.mtimeMs ?? 0
   const merged = mergeKeys(b, l, r, mergeDepthFor(change.path), () =>
     newerSide(localMtimeMs, localDeviceId, record.mtimeMs, change.device),
@@ -85,7 +91,7 @@ export async function landWrite(
   const hash = machine().sha256Hex(plaintext)
   await machine().lock(abs, async () => {
     await machine().mkdir(dirname(abs))
-    const bytes = await bytesToLand(host.device.id, abs, change, record, plaintext)
+    const bytes = await bytesToLand(host.device.id, root, change, record, plaintext)
     if (bytes === plaintext) await captureUnrecorded(root, change.path, hash, 'local-lost')
     await landBytes(abs, bytes, bytes === plaintext ? record.mtimeMs : Date.now())
     recordBase(

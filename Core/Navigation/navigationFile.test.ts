@@ -95,14 +95,29 @@ describe('navigation state — one contract, routed storage', () => {
     expect((await readNavigationFile(root)).banner).toBe('.nexus/assets/banner-x.jpg')
   })
 
-  it('a write moves an unreadable file aside rather than losing it', async () => {
+  it('a write sets an unreadable file aside under a hidden name rather than losing it', async () => {
     await seedState('{ corrupt')
     await writeNavigationState(root, { pinned: [{ kind: 'homepage' }] })
     expect((await readState()).navigation).toEqual({ pinned: [{ kind: 'homepage' }] })
     const dir = dirname(statePath(root))
     const aside = (await readdir(dir)).find((f) => f.includes('.bad-'))
-    expect(aside).toBeDefined()
+    expect(aside?.startsWith('.state.json.bad-')).toBe(true)
     expect(await readFile(join(dir, aside ?? ''), 'utf8')).toBe('{ corrupt')
+  })
+
+  it('pins and order damaged after a clean read keep reading, and the next write rebuilds from them', async () => {
+    await seedState({
+      order: { collections: ['c1'] },
+      navigation: { pinned: [{ kind: 'homepage' }] },
+    })
+    expect((await readNavigationFile(root)).pinned).toEqual([{ kind: 'homepage' }])
+    await seedState('{ corrupt')
+    expect((await readNavigationFile(root)).pinned).toEqual([{ kind: 'homepage' }])
+    await writeNavigationState(root, { banner: '.nexus/assets/banner-x.jpg' })
+    expect(await readState()).toEqual({
+      order: { collections: ['c1'] },
+      navigation: { pinned: [{ kind: 'homepage' }], banner: '.nexus/assets/banner-x.jpg' },
+    })
   })
 
   it('the order section and foreign keys ride through a navigation write untouched', async () => {

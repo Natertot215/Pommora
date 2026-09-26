@@ -102,51 +102,86 @@ export function rmwJsonStrict(
   absPath: string,
   mutate: (current: Record<string, unknown>) => Record<string, unknown> | null,
   seedOnAbsent?: () => Record<string, unknown>,
-  onCorrupt?: (absPath: string) => Promise<void>,
 ): Promise<Result<Record<string, unknown>>> {
-  return machine().lock(absPath, () => rmwLocked(absPath, mutate, seedOnAbsent, onCorrupt))
+  return machine().lock(absPath, () => rmwLocked(absPath, mutate, seedOnAbsent))
 }
 
 async function rmwLocked(
   absPath: string,
   mutate: (current: Record<string, unknown>) => Record<string, unknown> | null,
   seedOnAbsent?: () => Record<string, unknown>,
-  onCorrupt?: (absPath: string) => Promise<void>,
+  repair?: (absPath: string) => Promise<Record<string, unknown>>,
 ): Promise<Result<Record<string, unknown>>> {
   const read = await readJsonStrictly(absPath)
   let base: Record<string, unknown>
   if (read.kind === 'ok') base = read.value
   else if (read.kind === 'absent' && seedOnAbsent) base = seedOnAbsent()
-  else if (read.kind === 'corrupt' && onCorrupt && seedOnAbsent) {
-    await onCorrupt(absPath)
-    base = seedOnAbsent()
-  } else return strictResult(read, absPath)
-  // A mutate that finds nothing to change returns null, so a sweep touching a file it doesn't alter neither rewrites nor re-dates it.
-  const next = mutate(base)
+  else if (read.kind === 'corrupt' && repair) base = await repair(absPath)
+  else return strictResult(read, absPath)
+  // A mutate that finds nothing to change returns null, so a sweep touching a file it doesn't alter neither rewrites nor re-dates it; a repaired file lands regardless, since its damaged copy has moved aside.
+  const next = mutate(base) ?? (read.kind === 'corrupt' ? base : null)
   if (next === null) return ok(base)
   await writeJson(absPath, next)
   return ok(next)
 }
 
-/** The primitive behind Pommora's app-authored JSON files: a missing file starts empty in a folder created under the lock; an unreadable one fails the write rather than replacing what's already on disk, and a corrupt one moves aside for a fresh file only where `replaceCorrupt` allows. */
-export function updateNexusFile(
-  absPath: string,
-  mutate: (current: Record<string, unknown>) => Record<string, unknown> | null,
-  replaceCorrupt: boolean,
-): Promise<Result<Record<string, unknown>>> {
+// The last copy of each app-written file that parsed, so a damaged one reads as it and the next write rebuilds from it rather than from nothing.
+const lastRead = new Map<string, Record<string, unknown>>()
+
+export const forgetLastReads = (): void => lastRead.clear()
+
+// Sync installs the last synced copy as the rebuild for a file damaged before this session read it.
+let repairSeed: (absPath: string) => Record<string, unknown> | null = () => null
+
+export function setRepairSeed(
+  seed: ((absPath: string) => Record<string, unknown> | null) | null,
+): void {
+  repairSeed = seed ?? (() => null)
+}
+
+/** An app-written file: absent reads null, and a damaged or unreadable one reads as the last copy that parsed. */
+export function readAppFile(absPath: string): Promise<Record<string, unknown> | null> {
   return machine().lock(absPath, async () => {
-    await machine().mkdir(dirname(absPath))
-    return rmwLocked(
-      absPath,
-      mutate,
-      () => ({}),
-      replaceCorrupt ? (bad) => machine().rename(bad, `${bad}.bad-${newId()}`) : undefined,
-    )
+    const read = await readJsonStrictly(absPath)
+    switch (read.kind) {
+      case 'ok':
+        lastRead.set(absPath, read.value)
+        return read.value
+      case 'absent':
+        lastRead.delete(absPath)
+        return null
+      default: {
+        const kept = lastRead.get(absPath) ?? null
+        const why = read.kind === 'corrupt' ? read.why : 'Unreadable file'
+        console.error(`${why}: ${absPath}; ${kept ? 'kept as last read' : 'read as empty'}`)
+        return kept
+      }
+    }
   })
 }
 
-// A hand-authored or irreplaceable file refuses a write over its corrupt copy; an app-authored one the app can rebuild moves aside.
-const REPLACE_CORRUPT = {
+// The damaged bytes keep a dotted name beside the file, which neither the watcher nor sync admits.
+async function setAside(bad: string): Promise<Record<string, unknown>> {
+  await machine().rename(bad, join(dirname(bad), `.${basename(bad)}.bad-${newId()}`))
+  return lastRead.get(bad) ?? repairSeed(bad) ?? {}
+}
+
+/** The primitive behind Pommora's own JSON files: a missing file starts empty in a folder created under the lock; an unreadable one fails the write rather than replacing what's already on disk, and a corrupt one is set aside and rebuilt from its last read only where `repairable` allows. */
+export function updateNexusFile(
+  absPath: string,
+  mutate: (current: Record<string, unknown>) => Record<string, unknown> | null,
+  repairable: boolean,
+): Promise<Result<Record<string, unknown>>> {
+  return machine().lock(absPath, async () => {
+    await machine().mkdir(dirname(absPath))
+    const written = await rmwLocked(absPath, mutate, () => ({}), repairable ? setAside : undefined)
+    if (repairable && written.ok) lastRead.set(absPath, written.value)
+    return written
+  })
+}
+
+// A hand-authored or irreplaceable file refuses a write over its corrupt copy; a file only the app writes is rebuilt from its last read.
+const REPAIRABLE = {
   identity: false,
   settings: false,
   properties: false,
@@ -161,7 +196,7 @@ export function updateNexusConfig(
   file: keyof typeof NEXUS_CONFIG_FILES,
   mutate: (current: Record<string, unknown>) => Record<string, unknown> | null,
 ): Promise<Result<Record<string, unknown>>> {
-  return updateNexusFile(nexusConfig(root, NEXUS_CONFIG_FILES[file]), mutate, REPLACE_CORRUPT[file])
+  return updateNexusFile(nexusConfig(root, NEXUS_CONFIG_FILES[file]), mutate, REPAIRABLE[file])
 }
 
 export function setOrDrop(
