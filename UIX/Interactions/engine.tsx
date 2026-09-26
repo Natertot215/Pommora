@@ -764,7 +764,7 @@ export function DragGroup({
     if (e.key in ARROW_DIRS) {
       e.preventDefault()
       const next = keyboardNext(f.rects, d.pick, ARROW_DIRS[e.key])
-      if (next !== d.pick) {
+      if (next !== d.pick && !zones.current.get(d.zoneId)?.fixed) {
         d.pick = next
         d.mapped = resolveAt(d.zoneId, next)
         setLanding(landingOf(d))
@@ -1081,7 +1081,7 @@ export function useEscort(): Escort | null {
   return useContext(ApiCtx)?.escort ?? null
 }
 
-export function useDragItem(id: string): DragItem {
+export function useDragItem(id: string, onOpen?: () => void): DragItem {
   const api = useContext(ApiCtx)
   const state = useContext(StateCtx)
   const zone = useContext(ZoneIdCtx)
@@ -1089,6 +1089,7 @@ export function useDragItem(id: string): DragItem {
   const { zoneId, disabled } = zone
   const { transform, hidden, animate } = state.itemState(zoneId, id)
   const isDragging = state.active?.id === id && state.active.zoneId === zoneId
+  const inert = disabled && !onOpen
   return {
     setNodeRef: (el) => api.registerItem(zoneId, id, el),
     style: {
@@ -1107,19 +1108,22 @@ export function useDragItem(id: string): DragItem {
     handle: {
       onPointerDown: (e: ReactPointerEvent) => api.begin(zoneId, id, e),
       onKeyDown: (e: ReactKeyboardEvent) => {
-        // A focusable descendant's Space or Enter is its own, never a lift.
-        if (e.target !== e.currentTarget) return
-        if ((e.key === ' ' || e.key === 'Enter') && !isDragging && !disabled) {
+        // A focusable descendant's Space or Enter is its own.
+        if (e.target !== e.currentTarget || isDragging) return
+        if (e.key === 'Enter' && onOpen) {
+          e.preventDefault()
+          onOpen()
+        } else if ((e.key === ' ' || e.key === 'Enter') && !disabled) {
           e.preventDefault()
           api.liftKeyboard(zoneId, id)
         }
       },
       role: 'button',
-      tabIndex: disabled ? -1 : 0,
+      tabIndex: inert ? -1 : 0,
       'aria-roledescription': 'sortable',
       'aria-describedby': INSTRUCTIONS_ID,
       'aria-pressed': isDragging || undefined,
-      'aria-disabled': disabled || undefined,
+      'aria-disabled': inert || undefined,
     },
     isDragging,
   }

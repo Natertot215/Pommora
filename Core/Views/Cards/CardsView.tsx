@@ -16,6 +16,7 @@ import type { ColumnStyle } from '@pommora/core/Properties/columnStyles'
 import { isOptionsKind } from '@pommora/core/Properties/properties'
 import { Icon } from '@pommora/uix/Symbols'
 import { isCmd } from '@pommora/uix/Interactions/chords'
+import { onActivateKey } from '@pommora/uix/Interactions/activate'
 import { entityIcon } from '../../Assets/entityIconPolicy'
 import { text } from '@pommora/uix/Theme/typography.css'
 import {
@@ -29,7 +30,6 @@ import {
 } from '@pommora/uix/Cards/Card'
 import {
   DragGroup,
-  type DragItem,
   DropSlot,
   reorder,
   SortableZone,
@@ -443,7 +443,7 @@ export function CardsView({ host }: { host: ViewHostApi }): React.JSX.Element {
             >
               <DropSlot />
               {sets.map((s) => (
-                <DraggableSetCard key={s.id} set={s} defaultIcons={defaultIcons} api={cardApi} />
+                <SetCard key={s.id} set={s} defaultIcons={defaultIcons} api={cardApi} />
               ))}
             </SortableZone>
           </div>
@@ -706,17 +706,8 @@ interface SetCardProps {
   api: Pick<CardApi, 'openSet' | 'banner'>
 }
 
-function DraggableSetCard(props: SetCardProps): React.JSX.Element {
-  const drag = useDragItem(props.set.id)
-  return <SetCard {...props} drag={drag} />
-}
-
-function SetCard({
-  set,
-  defaultIcons,
-  api,
-  drag,
-}: SetCardProps & { drag?: DragItem }): React.JSX.Element {
+function SetCard({ set, defaultIcons, api }: SetCardProps): React.JSX.Element {
+  const drag = useDragItem(set.id, () => api.openSet(set, false))
   const iconName = entityIcon('set', set.icon, defaultIcons)
   const thumbRef = useRef<HTMLDivElement>(null)
   return (
@@ -724,7 +715,7 @@ function SetCard({
       drag={drag}
       locked
       onClick={(e) => {
-        if (!drag?.isDragging) api.openSet(set, isCmd(e))
+        if (!drag.isDragging) api.openSet(set, isCmd(e))
       }}
     >
       <CardBody>
@@ -1019,7 +1010,8 @@ const PageCard = memo(function PageCard({
   draggable,
   allowInlineRemove,
 }: PageCardProps): React.JSX.Element {
-  const item = useDragItem(row.id)
+  const openRow = (): void => api.open(row, false)
+  const item = useDragItem(row.id, openRow)
   const drag = draggable ? item : null
   // The boolean, not the object: `item` is a fresh object per slot flip, so a handler keyed on it would rebuild on every drag frame — exactly when CardFace's memo has to hold.
   const isDragging = drag?.isDragging ?? false
@@ -1068,6 +1060,7 @@ const PageCard = memo(function PageCard({
       active={active}
       data-rid={row.id}
       {...rowHover(row, api.hover)}
+      {...(!drag && { onKeyDown: onActivateKey(openRow) })}
       onClick={(e) => {
         if (drag?.isDragging || naming) return
         const hit = document.elementFromPoint(e.clientX, e.clientY)

@@ -16,7 +16,6 @@ import { pageTargetFromNav, type ResolvedNav, windowTargetFromNav } from './navR
 import { EntityIcon } from '../Assets/EntityIcon'
 import { NavPinButton, showNavRowMenu } from './NavList'
 import { hoverGlance, leaveGlance } from '../Interface/Glance/glanceAction'
-import { onActivateKey } from '@pommora/uix/Interactions/activate'
 import { useThumb } from '../Assets/useThumb'
 import './nav-list.css'
 
@@ -93,7 +92,7 @@ function DraggableCard(props: {
   onSelect: (t: NavRef) => void
   onMenu: (it: ResolvedNav, e: React.MouseEvent) => void
 }): React.JSX.Element {
-  const drag = useDragItem(props.it.key)
+  const drag = useDragItem(props.it.key, () => props.onSelect(props.it.target))
   return <GalleryCard {...props} drag={drag} />
 }
 
@@ -123,7 +122,6 @@ function GalleryCard({
       active={active}
       locked
       data-reveal-host=""
-      {...(drag ? {} : { onKeyDown: onActivateKey(() => onSelect(it.target)) })}
       onClick={open}
       onPointerEnter={(e) => {
         const t = pageTargetFromNav(it, useSession.getState().tree)
