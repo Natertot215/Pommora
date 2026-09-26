@@ -325,7 +325,7 @@ function ChipsField({
                   key={v}
                   color={colorNameFor(o?.color)}
                   title={o?.label ?? v}
-                  {...(o?.icon ? { icon: o.icon } : {})}
+                  icon={o?.icon}
                   onRemove={() => toggle(v)}
                 />
               ) : (
@@ -539,19 +539,19 @@ export function FilterFrame({
       )
     }
 
-    if (op.slot === 'chips') {
-      const isContext = declaredType(rule.property_id, schema, contextIds) === 'context'
+    if (op.slot === 'chips')
       return (
         <ChipsField
           values={rule.values ?? []}
           def={def ?? syntheticContextDef(rule.property_id)}
           contextOptions={
-            isContext ? (tree ? contextOptionsFor(rule.property_id, tree) : []) : undefined
+            tree && declaredType(rule.property_id, schema, contextIds) === 'context'
+              ? contextOptionsFor(rule.property_id, tree)
+              : undefined
           }
           onCommit={(values) => patch({ values })}
         />
       )
-    }
 
     return (
       <LocationField
