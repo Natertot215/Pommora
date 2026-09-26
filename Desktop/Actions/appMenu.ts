@@ -5,7 +5,7 @@ import { pruneRecents, readAppConfig, updateAppConfig } from '../Config/appConfi
 import { type CurrentWindow, push } from '../Bridge/ipc'
 import { dropLiveTree } from '@pommora/core/Nexus/liveTree'
 import { sessionRoot } from '@pommora/core/Nexus/session'
-import { type Commands, toAccelerator } from '@pommora/core/Actions/commands'
+import { type Commands, type MenuCommand, toAccelerator } from '@pommora/core/Actions/commands'
 import { resetHostZoom, stepHostZoom } from '../Web/webGuests'
 import { isWindows, nativePath, posixPath } from '../Platform/hostPath'
 
@@ -34,7 +34,7 @@ export async function installAppMenu(
   }
   const hasSession = sessionRoot() !== null
   const isMac = process.platform === 'darwin'
-  const send = (action: string): void => push(win, 'menu:action', action)
+  const send = (action: MenuCommand | 'open'): void => push(win, 'menu:action', action)
 
   const recentItems: MenuItemConstructorOptions[] = recents.length
     ? recents.map((p) => ({

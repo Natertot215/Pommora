@@ -1,7 +1,8 @@
+import { ownerWindow } from '@pommora/uix/Interactions/dismissalStack'
 import { cycle } from '../Navigation/tabsModel'
 import { useSession } from '../Session/store'
 import { undoValue } from '../Session/undo'
-import type { CommandId } from './commands'
+import { type CommandId, MENU_COMMANDS, type MenuCommand } from './commands'
 import { newPage } from './createActions'
 
 export const KEYED_COMMANDS = [
@@ -15,22 +16,15 @@ export const KEYED_COMMANDS = [
   'undo-value',
 ] as const satisfies readonly CommandId[]
 
-/** Carried by the app menu, whose accelerators take the keystroke before the window sees it. */
-const MENU_COMMANDS = [
-  'new-tab',
-  'new-page',
-  'toggle-sidebar',
-] as const satisfies readonly CommandId[]
+type RoutedCommand = (typeof KEYED_COMMANDS)[number] | MenuCommand
 
-type RoutedCommand = (typeof KEYED_COMMANDS)[number] | (typeof MENU_COMMANDS)[number]
-
-export const isMenuCommand = (action: string): action is (typeof MENU_COMMANDS)[number] =>
+export const isMenuCommand = (action: string): action is MenuCommand =>
   (MENU_COMMANDS as readonly string[]).includes(action)
 
 /** Whether the command acted, so a keydown it answered stops there. */
 export function runCommand(id: RoutedCommand, target: EventTarget | null = null): boolean {
   const s = useSession.getState()
-  const root = document.activeElement?.closest<HTMLElement>('.window') ?? null
+  const root = ownerWindow(document.activeElement)
   const win =
     root?.matches('.page-window, .navwindow') && s.windowSlot?.kind !== 'matrix'
       ? s.windowSlot
