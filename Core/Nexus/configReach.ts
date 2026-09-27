@@ -284,13 +284,13 @@ export async function reachConfig(
     if (wrote) noteSidecarWrite(dir)
   }
   const sources = new Set(containers.map((c) => c.id))
-  const inScope = (tile: Raw): boolean =>
-    !under ||
-    (Array.isArray(tile.views) &&
-      tile.views.some((v) => isPlainObject(v) && sources.has(String(v.source_id))))
+  const inScope = (entry: unknown): boolean =>
+    !under || (isPlainObject(entry) && sources.has(String(entry.source_id)))
   for (const { host, dir } of tiles.hosts) {
     const wrote = await written(tileDocPath(dir), (cur) =>
-      mapTiles(cur, (tile) => (inScope(tile) ? mapViews(tile, edit) : null)),
+      mapTiles(cur, (tile) =>
+        mapViews(tile, (view, i) => (inScope((tile.views as unknown[])[i]) ? edit(view) : null)),
+      ),
     )
     if (wrote) reach.hosts.push(host)
   }
