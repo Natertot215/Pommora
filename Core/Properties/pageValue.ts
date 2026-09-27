@@ -1,5 +1,6 @@
 // Option lists are edited IN PLACE, never decode-to-strings→re-encode: a holder may carry foreign or non-string elements, and an op must touch only its target.
 
+import { setOrDrop } from '../Files/atomicWrite'
 import type { Rewrite } from './governedSweep'
 
 export type ValueEdit = { op: 'strip' } | { op: 'replace'; to: string }
@@ -33,9 +34,6 @@ export function valueEditRewrite(key: string, target: string, edit: ValueEdit): 
     const held = raw[key]
     const next = editList(Array.isArray(held) ? held : [held], namesValue(target), edit)
     if (next === null) return null
-    const out = { ...raw }
-    if (next.length) out[key] = next
-    else delete out[key]
-    return out
+    return setOrDrop(raw, key, next.length ? next : undefined)
   }
 }
