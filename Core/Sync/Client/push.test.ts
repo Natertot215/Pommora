@@ -438,6 +438,21 @@ describe('pushRename', () => {
     expect(hub.items.get('Notes/Daily/One.md')?.deleted).toBe(true)
   })
 
+  it('pushes no deletes for a rename whose new path is already gone', async () => {
+    const one = await remoteWrite('Notes/Daily/One.md', 'one')
+    const two = await remoteWrite('Notes/Daily/Two.md', 'two')
+    seedBase('Notes/Daily/One.md', utf8('one'), one)
+    seedBase('Notes/Daily/Two.md', utf8('two'), two)
+
+    await pushRename(session, 'Notes/Daily', 'Notes/Journal')
+
+    expect(stores().flatMap((body) => body.changes.map((change) => change.kind))).toEqual([
+      'rename',
+      'rename',
+    ])
+    expect(hub.items.get('Notes/Journal/One.md')?.deleted).not.toBe(true)
+  })
+
   it('pushes bytes edited inside the rename debounce', async () => {
     const one = await remoteWrite('Notes/One.md', page('one'))
     seedBase('Notes/One.md', utf8(page('one')), one)
