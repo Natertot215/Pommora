@@ -76,7 +76,6 @@ export async function moveFolderEntity(
   newParentDir: string,
 ): Promise<Result<{ path: string }>> {
   const target = join(newParentDir, basename(absFolder))
-  if (target === absFolder) return ok({ path: absFolder })
   if (await pathExists(target))
     return fail('exists', `"${basename(absFolder)}" already exists there.`)
   recordWrite(absFolder)

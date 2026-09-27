@@ -96,7 +96,6 @@ export async function movePage(
   newParentDir: string,
 ): Promise<Result<{ path: string }>> {
   const target = join(newParentDir, basename(absFile))
-  if (target === absFile) return ok({ path: absFile })
   if (await pathExists(target))
     return fail('exists', `A page named "${basename(absFile)}" already exists there.`)
   await relocatePage(absFile, target)

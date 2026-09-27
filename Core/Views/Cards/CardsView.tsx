@@ -190,10 +190,8 @@ export function CardsView({ host }: { host: ViewHostApi }): React.JSX.Element {
   const showSetCards = viewOption(view, 'set_cards') && sets.length > 0
   const reorderSets = (activeId: string, overId: string): void => {
     const order = reorder(sets, activeId, overId).map((s) => s.id)
-    const moved = sets.find((s) => s.id === activeId)
-    if (!moved) return
     setSetOrderOverride(order)
-    void mutate({ op: 'moveSet', path: moved.path, newParentPath: source.path, order }).then(
+    void mutate({ op: 'reorderChildren', parentPath: source.path, key: 'set_order', order }).then(
       (ok) => {
         if (!ok) setSetOrderOverride((cur) => (cur === order ? null : cur))
       },

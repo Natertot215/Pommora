@@ -4,7 +4,7 @@ import { setOrDrop } from '../Files/atomicWrite'
 import { patchSidecar } from '../Files/sidecar'
 import { titleFromPath } from '../Paths/posix'
 import { resolveUnderRoot } from '../Paths/pathSafety'
-import { fault, ok, type Result } from '../Contract/result'
+import { fault, ok } from '../Contract/result'
 import { emptyBundle, restoreOp } from '../Trash/spend'
 import { deleteOp } from '../Trash/delete'
 import { updateSettings } from '../Settings/settings'
@@ -22,7 +22,7 @@ import {
 } from '../Contexts/contextWrite'
 import { renameContextOp, renameSpaceOp } from '../Contexts/contextCascade'
 import { reorderContextsOp } from '../Contexts/reorderContexts'
-import type { MutateReply, MutateRequest } from './mutateRequest'
+import { done, type MutateReply, type MutateRequest } from './mutateRequest'
 import { setActiveView } from '../Views/viewsFile'
 import type { TrashDeps } from '../Trash/bundle'
 import { createContainerOp, createPageOp, createSpaceOp } from './create'
@@ -38,8 +38,6 @@ export interface MutateContext {
   root: string
   deps: TrashDeps
 }
-
-const done = (r: Result<unknown>): MutateReply => (r.ok ? ok({}) : r)
 
 /** A thrown write can stop partway through what it wrote, so `afterThrow` gets the chance to re-read the disk; a refusal returned as a result wrote nothing. */
 export async function handleMutate(
