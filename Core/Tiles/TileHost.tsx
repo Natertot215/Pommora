@@ -5,7 +5,6 @@ import {
   NEW_TILE_H,
   type TileEntry,
   type TileHostRef,
-  type TileStyle,
   TILE_KINDS,
   type TilePick,
 } from '@pommora/core/Tiles/tiles'
@@ -31,25 +30,21 @@ import {
   renderTile as renderSurface,
   tileSourceInfo,
 } from './tileKinds'
-import { tileMenuItems, viewPickTree } from './tileHandleMenu'
-import { isTileRemoving, markTileRemoving, readTileBody, unmarkTileRemoving } from './tileDocStore'
+import { menuPatch, tileMenuItems, viewPickTree } from './tileHandleMenu'
+import {
+  isTileRemoving,
+  landTileWrite,
+  markTileRemoving,
+  patchTileEntry,
+  readTileBody,
+  readTileDoc,
+  unmarkTileRemoving,
+} from './tileDocStore'
 import { useTileDoc } from './useTileDoc'
 import { dialer } from '../Platform/dialer'
 import { cx } from '@pommora/uix/Utilities/cx'
 import { RenderBoundary } from '@pommora/uix/Elements/RenderBoundary'
 import './tile-base.css'
-
-// An absent key IS the default, so clearing a field deletes it rather than writing the default back.
-const withKey = (
-  raw: Record<string, unknown>,
-  key: string,
-  value: unknown,
-): Record<string, unknown> => {
-  const next = { ...raw }
-  if (value === undefined) delete next[key]
-  else next[key] = value
-  return next
-}
 
 const NO_PAGES: ReadonlyMap<string, ConnPage> = new Map()
 
@@ -72,6 +67,13 @@ const parsedTile = (raw: unknown): TileEntry | null => {
   return parsedTiles.get(raw) ?? null
 }
 
+const storedEntry = (host: TileHostRef, id: string): TileEntry | undefined => {
+  for (const raw of readTileDoc(host).tiles) {
+    const entry = parsedTile(raw)
+    if (entry?.id === id) return entry
+  }
+}
+
 export function TileHost({
   host,
   connections,
@@ -86,8 +88,6 @@ export function TileHost({
     locked: hostLocked,
     setLayout,
     commitLayout,
-    refreshEntries,
-    saveTiles,
     setBusy,
   } = useTileDoc(host)
   const [editingId, setEditingId] = useState<string | null>(null)
@@ -118,41 +118,24 @@ export function TileHost({
   const applyPick = useCallback(
     (id: string, pick: TilePick) => {
       setEditingId((cur) => (cur === id ? null : cur))
-      void dialer().ask('tiles:convert', host, id, pick).then(reportRefusal).then(refreshEntries)
+      void landTileWrite(host, dialer().ask('tiles:convert', host, id, pick)).then(reportRefusal)
     },
-    [refreshEntries, host],
+    [host],
   )
 
   const [menuOpenId, setMenuOpenId] = useState<string | null>(null)
   const mutateEntry = useCallback<MutateEntry>(
-    (id, fn) => {
-      saveTiles((cur) =>
-        cur.map((raw) => (knownTile(raw)?.id === id ? fn(raw as Record<string, unknown>) : raw)),
-      )
-    },
-    [saveTiles],
-  )
-  const setStyle = useCallback(
-    (id: string, style: TileStyle) => mutateEntry(id, (raw) => ({ ...raw, style })),
-    [mutateEntry],
-  )
-  // Toggles off the STRICT boolean — a foreign truthy `locked` parses to unlocked, so the first click must lock, not delete-to-no-op.
-  const toggleLock = useCallback(
-    (id: string) =>
-      mutateEntry(id, (raw) => withKey(raw, 'locked', raw.locked === true ? undefined : true)),
-    [mutateEntry],
+    (id, patchOf) => patchTileEntry(host, id, patchOf),
+    [host],
   )
   const duplicateTile = useCallback(
     (id: string) => {
-      void dialer()
-        .ask('tiles:duplicateTile', host, id)
-        .then((r) => {
-          if (!reportRefusal(r)) return
-          refreshEntries()
-          commitLayout((cur) => attachBelow(cur, id, r.value.id, getTile(cur, id)?.h ?? NEW_TILE_H))
-        })
+      void landTileWrite(host, dialer().ask('tiles:duplicateTile', host, id)).then((r) => {
+        if (!reportRefusal(r)) return
+        commitLayout((cur) => attachBelow(cur, id, r.value.id, getTile(cur, id)?.h ?? NEW_TILE_H))
+      })
     },
-    [refreshEntries, commitLayout, host],
+    [commitLayout, host],
   )
   const confirmRemove = useCallback(
     (id: string) => {
@@ -181,26 +164,26 @@ export function TileHost({
             JSON.stringify(cur) === untouched ? before : insertBand(cur, band, id, h),
           )
         }
-        void dialer()
-          .ask('tiles:removeTile', host, id)
-          .then((r) => {
-            refreshEntries()
-            if (!reportRefusal(r)) return putBack()
-            unmarkTileRemoving(id)
-            const body = readTileBody(id) ?? r.value.body
-            notifyUndoable(`Deleted ${TILE_KINDS[kind].label}`, async () => {
-              const back = await dialer().ask('tiles:restoreTile', host, {
-                ...r.value,
+        void landTileWrite(host, dialer().ask('tiles:removeTile', host, id)).then((r) => {
+          if (!reportRefusal(r)) return putBack()
+          unmarkTileRemoving(id)
+          const { removed } = r.value
+          const body = readTileBody(id) ?? removed.body
+          notifyUndoable(`Deleted ${TILE_KINDS[kind].label}`, async () => {
+            const back = await landTileWrite(
+              host,
+              dialer().ask('tiles:restoreTile', host, {
+                ...removed,
                 ...(body === undefined ? {} : { body }),
                 at: at(),
-              })
-              refreshEntries()
-              if (reportRefusal(back)) putBack()
-            })
+              }),
+            )
+            if (reportRefusal(back)) putBack()
           })
+        })
       })
     },
-    [entries, commitLayout, refreshEntries, host],
+    [entries, commitLayout, host],
   )
 
   const tileClassName = useCallback(
@@ -214,12 +197,6 @@ export function TileHost({
   const tileStyle = useCallback(
     (id: string) => zoomStyle(entries.get(id)?.zoom ?? ZOOM.default),
     [entries],
-  )
-
-  const setTileZoom = useCallback(
-    (id: string, factor: number) =>
-      mutateEntry(id, (raw) => withKey(raw, 'zoom', factor === ZOOM.default ? undefined : factor)),
-    [mutateEntry],
   )
 
   const onHandleMenu = useCallback(
@@ -247,35 +224,22 @@ export function TileHost({
         action.startsWith(prefix) ? action.slice(prefix.length) : undefined
       const run = (action: string): void => {
         const picked = arg(action, 'tile:pick:')
-        const zoom = arg(action, 'tile:zoom:')
         const chosen = picked === undefined ? undefined : built.picks[Number(picked)]
+        const patch = menuPatch(action, storedEntry(host, id) ?? entry)
         if (chosen) applyPick(id, chosen)
-        else if (zoom !== undefined) setTileZoom(id, Number(zoom))
-        else if (action === 'tile:style:bordered') setStyle(id, 'bordered')
-        else if (action === 'tile:style:borderless') setStyle(id, 'borderless')
+        else if (patch) mutateEntry(id, () => patch)
         else if (action === 'tile:duplicate') duplicateTile(id)
         else if (action === 'tile:delete') confirmRemove(id)
-        else if (action === 'tile:lock') toggleLock(id)
         else if (action === 'tile:open' && page) {
           if (openRoute) openRoute(page)
           else select({ kind: 'page', id: page.id, path: page.path })
         }
       }
-      let current = entry
-      const project = (action: string): TileEntry => {
-        const zoom = arg(action, 'tile:zoom:')
-        if (zoom !== undefined) return { ...current, zoom: Number(zoom) }
-        if (action === 'tile:style:bordered') return { ...current, style: 'bordered' }
-        if (action === 'tile:style:borderless') return { ...current, style: 'borderless' }
-        if (action === 'tile:lock') return { ...current, locked: !(current.locked ?? false) }
-        return current
-      }
       setMenuOpenId(id)
       void popMenu(built.items, e.currentTarget as HTMLElement, {
         stay: (action) => {
           run(action)
-          current = project(action)
-          built = build(current)
+          built = build(storedEntry(host, id) ?? entry)
           return built.items
         },
       }).then((action) => {
@@ -287,12 +251,11 @@ export function TileHost({
       entries,
       pagesById,
       hostLocked,
+      host,
       applyPick,
-      setTileZoom,
-      setStyle,
+      mutateEntry,
       duplicateTile,
       confirmRemove,
-      toggleLock,
       select,
       openRoute,
     ],
@@ -326,19 +289,16 @@ export function TileHost({
 
   const onBackdrop = useCallback(
     (target: BackdropTarget) => {
-      void dialer()
-        .ask('tiles:createMarkdown', host)
-        .then((r) => {
-          if (!reportRefusal(r)) return
-          refreshEntries()
-          commitLayout((cur) =>
-            target.kind === 'wedge'
-              ? attachBelow(cur, target.above, r.value.id, target.fillPx)
-              : insertBand(cur, cur.bands.length, r.value.id, NEW_TILE_H),
-          )
-        })
+      void landTileWrite(host, dialer().ask('tiles:createMarkdown', host)).then((r) => {
+        if (!reportRefusal(r)) return
+        commitLayout((cur) =>
+          target.kind === 'wedge'
+            ? attachBelow(cur, target.above, r.value.id, target.fillPx)
+            : insertBand(cur, cur.bands.length, r.value.id, NEW_TILE_H),
+        )
+      })
     },
-    [commitLayout, refreshEntries, host],
+    [commitLayout, host],
   )
 
   if (!ready) return null

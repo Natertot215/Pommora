@@ -18,7 +18,14 @@ import type { ContainerConfigPatch } from '../Views/containerConfig'
 import type { OptionEdit } from '../Properties/optionModel'
 import type { PropertyRename } from '../Properties/registryProperty'
 import type { Personalization } from '../Settings/personalization'
-import type { TileDoc, TileDocPatch, TileHostRef, TilePick, RemovedTile } from '../Tiles/tiles'
+import type {
+  Landed,
+  RemovedTile,
+  TileDoc,
+  TileDocPatch,
+  TileHostRef,
+  TilePick,
+} from '../Tiles/tiles'
 import type {
   FileConfig,
   LinkConfig,
@@ -157,10 +164,13 @@ export interface Asks {
   'property:clearOption': { args: [propertyId: string, value: string]; reply: Result<null> }
 
   'tiles:get': { args: [host: TileHostRef]; reply: Result<TileDoc> }
-  'tiles:save': { args: [host: TileHostRef, patch: TileDocPatch]; reply: Result<null> }
-  'tiles:createMarkdown': { args: [host: TileHostRef]; reply: Result<{ id: string }> }
-  'tiles:removeTile': { args: [host: TileHostRef, tileId: string]; reply: Result<RemovedTile> }
-  'tiles:restoreTile': { args: [host: TileHostRef, removed: RemovedTile]; reply: Result<null> }
+  'tiles:save': { args: [host: TileHostRef, patch: TileDocPatch]; reply: Result<Landed> }
+  'tiles:createMarkdown': { args: [host: TileHostRef]; reply: Result<Landed<{ id: string }>> }
+  'tiles:removeTile': {
+    args: [host: TileHostRef, tileId: string]
+    reply: Result<Landed<{ removed: RemovedTile }>>
+  }
+  'tiles:restoreTile': { args: [host: TileHostRef, removed: RemovedTile]; reply: Result<Landed> }
   'tiles:readMarkdown': {
     args: [host: TileHostRef, tileId: string]
     reply: Result<{ body: string; hash: string }>
@@ -171,11 +181,11 @@ export interface Asks {
   }
   'tiles:convert': {
     args: [host: TileHostRef, tileId: string, pick: TilePick]
-    reply: Result<null>
+    reply: Result<Landed>
   }
   'tiles:duplicateTile': {
     args: [host: TileHostRef, tileId: string]
-    reply: Result<{ id: string }>
+    reply: Result<Landed<{ id: string }>>
   }
 
   'personalization:set': {

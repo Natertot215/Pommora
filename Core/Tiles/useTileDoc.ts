@@ -8,8 +8,6 @@ import {
   EMPTY,
   holdTileDoc,
   readTileDoc,
-  refreshTileEntries,
-  saveTileEntries,
   setTileLayout,
   subscribeTileDoc,
   type TileDocState,
@@ -22,8 +20,6 @@ export interface TileDocSession {
   locked: boolean
   setLayout: (layout: TileLayout) => void
   commitLayout: (update: (cur: TileLayout) => TileLayout) => void
-  refreshEntries: () => void
-  saveTiles: (update: (cur: unknown[]) => unknown[]) => void
   setBusy: (busy: boolean) => void
 }
 
@@ -74,11 +70,6 @@ export function useTileDoc(host: TileHostRef): TileDocSession {
     (update: (cur: TileLayout) => TileLayout) => commitTileLayout(hostRef.current, update),
     [hostKey],
   )
-  const refreshEntries = useCallback(() => refreshTileEntries(hostRef.current), [hostKey])
-  const saveTiles = useCallback(
-    (update: (cur: unknown[]) => unknown[]) => saveTileEntries(hostRef.current, update),
-    [hostKey],
-  )
 
   return {
     layout: state.layout,
@@ -87,8 +78,6 @@ export function useTileDoc(host: TileHostRef): TileDocSession {
     locked: state.lock,
     setLayout,
     commitLayout,
-    refreshEntries,
-    saveTiles,
     setBusy,
   }
 }

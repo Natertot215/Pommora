@@ -3,10 +3,14 @@ import { join, relative } from '../Paths/posix'
 import {
   HOMEPAGE_HOST,
   knownTile,
+  type Landed,
+  landed,
+  mergeEntry,
   mintSeed,
   NEW_TILE_H,
   type RemovedTile,
   TILE_KINDS,
+  type TileDoc,
   type TileHostRef,
 } from './tiles'
 import { decodeLayout } from './Layout/codec'
@@ -46,16 +50,15 @@ export async function hostDir(root: string, host: TileHostRef): Promise<string |
   return null
 }
 
-const setTiles = (dir: string, update: (tiles: unknown[]) => unknown[]): Promise<Result<null>> =>
+const setTiles = (dir: string, update: (tiles: unknown[]) => unknown[]): Promise<Result<TileDoc>> =>
   writeTileDocAt(dir, (cur) => ({ ...cur, tiles: update(cur.tiles) }))
 
 /** File first, so a crash leaks at worst an orphan file, never an entry without one. */
-export async function createMarkdownTile(dir: string): Promise<string> {
+export async function createMarkdownTile(dir: string): Promise<Result<Landed<{ id: string }>>> {
   const id = newId()
   await machine().mkdir(dir)
   await atomicWriteFile(tileFilePath(dir, id), '')
-  await setTiles(dir, (tiles) => [...tiles, mintSeed('markdown', id)])
-  return id
+  return landed(await setTiles(dir, (tiles) => [...tiles, mintSeed('markdown', id)]), { id })
 }
 
 async function reviseTile(
@@ -64,21 +67,21 @@ async function reviseTile(
   tileId: string,
   patch: Json | null,
   deps: TrashDeps,
-): Promise<Result<RemovedTile>> {
+): Promise<Result<Landed<{ removed: RemovedTile }>>> {
   let entry: Json | null = null
   const written = await setTiles(dir, (tiles) =>
     tiles.flatMap((b) => {
       if (knownTile(b)?.id !== tileId) return [b]
       entry = b as Json
-      return patch ? [{ ...entry, ...patch }] : []
+      return patch ? [mergeEntry(entry, patch)] : []
     }),
   )
   if (!written.ok) return written
   const known = knownTile(entry)
   if (!known) return fail('not-found', 'No such tile.')
-  if (!TILE_KINDS[known.type].fileBacked) return ok({ entry })
+  if (!TILE_KINDS[known.type].fileBacked) return landed(written, { removed: { entry } })
   const body = await discardTileFile(root, dir, tileId, deps)
-  return ok(body === null ? { entry } : { entry, body })
+  return landed(written, { removed: body === null ? { entry } : { entry, body } })
 }
 
 /** Ordered against a still-pending editor flush, so a late body write can never land after the discard and resurrect it. */
@@ -105,10 +108,10 @@ export const removeTile = (
   dir: string,
   tileId: string,
   deps: TrashDeps,
-): Promise<Result<RemovedTile>> => reviseTile(root, dir, tileId, null, deps)
+): Promise<Result<Landed<{ removed: RemovedTile }>>> => reviseTile(root, dir, tileId, null, deps)
 
 /** File first, as a create is, never over the file its id names; the band lands with the entry, so a board no window holds still shows it. */
-export async function restoreTile(dir: string, removed: unknown): Promise<Result<null>> {
+export async function restoreTile(dir: string, removed: unknown): Promise<Result<Landed>> {
   if (!isPlainObject(removed)) return fault('Invalid tile.')
   const known = knownTile(removed.entry)
   const { at, body = '' } = removed as Partial<RemovedTile>
@@ -124,7 +127,7 @@ export async function restoreTile(dir: string, removed: unknown): Promise<Result
       if (!(await pathExists(file))) await atomicWriteFile(file, body)
     })
   }
-  return writeTileDocAt(dir, (cur) => {
+  const written = await writeTileDocAt(dir, (cur) => {
     const layout = decodeLayout(cur.layout)
     return {
       ...cur,
@@ -136,11 +139,7 @@ export async function restoreTile(dir: string, removed: unknown): Promise<Result
         : cur.layout,
     }
   }).finally(dropTileHeadingLinks)
-}
-
-const settled = async (revised: Promise<Result<unknown>>): Promise<Result<null>> => {
-  const r = await revised
-  return r.ok ? ok(null) : r
+  return landed(written, {})
 }
 
 export async function convertTile(
@@ -149,9 +148,11 @@ export async function convertTile(
   tileId: string,
   pick: unknown,
   deps: TrashDeps,
-): Promise<Result<null>> {
+): Promise<Result<Landed>> {
   const patch = await convertedEntry(root, pick)
-  return patch.ok ? settled(reviseTile(root, dir, tileId, patch.value, deps)) : patch
+  if (!patch.ok) return patch
+  const revised = await reviseTile(root, dir, tileId, patch.value, deps)
+  return revised.ok ? ok({ landed: revised.value.landed }) : revised
 }
 
 // A view pick naming no view takes the container's default.
@@ -189,11 +190,14 @@ export function copyEntry(raw: unknown): unknown {
   return { ...raw, views }
 }
 
-export async function duplicateTile(dir: string, tileId: string): Promise<string | null> {
+export async function duplicateTile(
+  dir: string,
+  tileId: string,
+): Promise<Result<Landed<{ id: string }>>> {
   const doc = await readTileDocAt(dir)
   const src = doc.tiles.find((b) => knownTile(b)?.id === tileId)
   const entry = src ? knownTile(src) : null
-  if (!src || !entry) return null
+  if (!src || !entry) return fail('not-found', 'No such tile.')
   const id = newId()
   if (TILE_KINDS[entry.type].fileBacked) {
     const body = await readMarkdownTile(dir, tileId)
@@ -201,8 +205,7 @@ export async function duplicateTile(dir: string, tileId: string): Promise<string
     await atomicWriteFile(tileFilePath(dir, id), valueOr(body, ''))
   }
   const copy = copyEntry({ ...(src as Json), id })
-  await setTiles(dir, (tiles) => [...tiles, copy])
-  return id
+  return landed(await setTiles(dir, (tiles) => [...tiles, copy]), { id })
 }
 
 /** Absent and unreadable stay apart: a body the read merely failed on must never render as an empty tile the next keystroke overwrites. */

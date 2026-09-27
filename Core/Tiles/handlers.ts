@@ -3,7 +3,7 @@ import { fail, ok, type Result, fault } from '../Contract/result'
 import { isUlidShaped } from '../Nexus/identityMark'
 import { machine } from '../Platform/machine'
 import { readTileDocAt, writeTileDocAt } from './tileDoc'
-import { coerceTileHost, tileDocPatch } from './tiles'
+import { coerceTileHost, landed, patchEntries, tileDocPatch } from './tiles'
 
 import {
   convertTile,
@@ -62,12 +62,20 @@ export const tilesHandlers = {
     if (!tile.ok) return tile
     const read = tileDocPatch(patch)
     if (!read.ok) return read
-    return writeTileDocAt(tile.value.dir, (cur) => ({ ...cur, ...read.value }))
+    const { entry, ...keys } = read.value
+    return landed(
+      await writeTileDocAt(tile.value.dir, (cur) => ({
+        ...cur,
+        ...keys,
+        tiles: entry ? patchEntries(cur.tiles, entry.id, entry.patch) : cur.tiles,
+      })),
+      {},
+    )
   }),
 
   'tiles:createMarkdown': withWriteRoot(async (root, _ctx, host: unknown) => {
     const tile = await tileHostAnd(root, host)
-    return tile.ok ? ok({ id: await createMarkdownTile(tile.value.dir) }) : tile
+    return tile.ok ? createMarkdownTile(tile.value.dir) : tile
   }),
 
   'tiles:removeTile': withWriteRoot(
@@ -102,10 +110,5 @@ export const tilesHandlers = {
     ),
   ),
 
-  'tiles:duplicateTile': withWriteRoot(
-    onTile(async ({ dir }, tileId) => {
-      const id = await duplicateTile(dir, tileId)
-      return id ? ok({ id }) : fail('not-found', 'No such tile.')
-    }),
-  ),
+  'tiles:duplicateTile': withWriteRoot(onTile(({ dir }, tileId) => duplicateTile(dir, tileId))),
 } satisfies Partial<Handlers>

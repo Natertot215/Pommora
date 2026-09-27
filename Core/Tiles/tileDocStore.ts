@@ -1,6 +1,16 @@
 import { capSet } from '@pommora/uix/Utilities/capMap'
 import type { Result } from '@pommora/core/Contract/result'
-import type { TileDoc, TileDocPatch, TileHostRef } from '@pommora/core/Tiles/tiles'
+import {
+  type EntryPatch,
+  knownTile,
+  type Landed,
+  patchEntries,
+  type TileDoc,
+  type TileDocPatch,
+  type TileHostRef,
+} from '@pommora/core/Tiles/tiles'
+import { isPlainObject } from '../Contract/validators'
+import { stableStringify } from '../Files/stableJson'
 import { navKey } from '../Navigation/navRef'
 import { decodeLayout } from './Layout/codec'
 import { emptyLayout, type TileLayout, tileIds } from './Layout/model'
@@ -24,6 +34,8 @@ interface HostDoc {
   listeners: Set<() => void>
   off: () => void
   lastSave: Promise<unknown>
+  writing: number
+  overlapped: boolean
   holds: number
   queued: LayoutUpdate[]
   heldPush: boolean
@@ -90,10 +102,29 @@ const docs = new Map<string, HostDoc>()
 const at = (host: TileHostRef): HostDoc | undefined => docs.get(navKey(host))
 
 // Every write joins the ones in flight, so a flush awaits all of them and a reload sees any of them land.
-const save = (doc: HostDoc, patch: TileDocPatch): Promise<Result<null>> => {
-  const sent = dialer().ask('tiles:save', doc.host, patch)
+const joined = <T>(doc: HostDoc, sent: Promise<T>): Promise<T> => {
   doc.lastSave = Promise.all([doc.lastSave, sent])
   return sent
+}
+
+const save = (doc: HostDoc, patch: TileDocPatch): Promise<Result<Landed>> =>
+  joined(doc, dialer().ask('tiles:save', doc.host, patch))
+
+// An entry or lock write answers with the document it left, and a lone write's answer is what the disk holds. Writes that overlap can land in any order, so the board keeps its own paint until the last one answers and then reads the disk, as it does after a refusal.
+const land = <T>(doc: HostDoc, sent: Promise<Result<Landed<T>>>): Promise<Result<Landed<T>>> => {
+  doc.writing += 1
+  doc.overlapped ||= doc.writing > 1
+  return sent.then((r) => {
+    doc.writing -= 1
+    doc.overlapped ||= !r.ok
+    if (doc.writing > 0 || at(doc.host) !== doc) return r
+    if (doc.overlapped) {
+      doc.overlapped = false
+      void reload(doc)
+    } else if (r.ok)
+      put(doc, { tiles: kept(doc, r.value.landed.tiles), lock: r.value.landed.locked })
+    return r
+  })
 }
 
 const layoutKey = (doc: HostDoc): string => `layout:${navKey(doc.host)}`
@@ -109,13 +140,19 @@ const put = (doc: HostDoc, next: Partial<TileDocState>): void => {
   notify(doc)
 }
 
+// An entry the disk holds as this window already does keeps its object, so a write re-parses and redraws only what it changed.
+const kept = (doc: HostDoc, tiles: unknown[]): unknown[] => {
+  const held = new Map(doc.state.tiles.map((b) => [stableStringify(b), b]))
+  return tiles.map((b) => held.get(stableStringify(b)) ?? b)
+}
+
 const adopt = (doc: HostDoc, raw: TileDoc): void => {
   if (at(doc.host) !== doc) return
   const layout = decodeLayout(raw.layout) ?? emptyLayout()
   revive(layout)
   put(doc, {
     layout,
-    tiles: raw.tiles,
+    tiles: kept(doc, raw.tiles),
     ready: true,
     lock: raw.locked,
   })
@@ -132,14 +169,15 @@ const writeLayout = (doc: HostDoc, layout: TileLayout): void => {
   sessionWriter.schedule(layoutKey(doc), () => save(doc, { layout }))
 }
 
-// A disk change is read only after the local write it may race has landed, and a layout the user changed during the read sends before the read is weighed, so the user's own last action never silently reverts.
+// A disk change is read only after the local write it may race has landed, and a layout the user changed during the read sends before the read is weighed, so the user's own last action never silently reverts; a write that lands during the read sends the read again.
 const reload = async (doc: HostDoc): Promise<void> => {
   await flush(doc)
   const saved = doc.lastSave
   await saved
   const r = await dialer().ask('tiles:get', doc.host)
   await flush(doc)
-  if (!r.ok || at(doc.host) !== doc || doc.lastSave !== saved) return
+  if (!r.ok || at(doc.host) !== doc) return
+  if (doc.lastSave !== saved) return reload(doc)
   if (doc.holds > 0) {
     doc.heldPush = true
     return
@@ -155,6 +193,8 @@ function create(host: TileHostRef): HostDoc {
     listeners: new Set(),
     off: () => {},
     lastSave: Promise.resolve(),
+    writing: 0,
+    overlapped: false,
     holds: 0,
     queued: [],
     heldPush: false,
@@ -235,28 +275,34 @@ export function holdTileDoc(host: TileHostRef, held: boolean): void {
   }
 }
 
-export function refreshTileEntries(host: TileHostRef): void {
-  void dialer()
-    .ask('tiles:get', host)
-    .then((r) => {
-      const doc = at(host)
-      if (r.ok && doc) put(doc, { tiles: r.value.tiles })
-    })
+export function landTileWrite<T>(
+  host: TileHostRef,
+  sent: Promise<Result<Landed<T>>>,
+): Promise<Result<Landed<T>>> {
+  const doc = at(host)
+  return doc ? land(doc, joined(doc, sent)) : sent
 }
 
-export function saveTileEntries(host: TileHostRef, update: (cur: unknown[]) => unknown[]): void {
+// The patch paints at once and merges into the one entry on disk, so no copy of the list is ever sent back over it.
+export function patchTileEntry(
+  host: TileHostRef,
+  id: string,
+  patchOf: (raw: Record<string, unknown>) => EntryPatch | null,
+): void {
   const doc = at(host)
   if (!doc) return
-  const next = update(doc.state.tiles)
-  put(doc, { tiles: next })
-  save(doc, { tiles: next })
+  const raw = doc.state.tiles.find((b) => knownTile(b)?.id === id)
+  const patch = isPlainObject(raw) ? patchOf(raw) : null
+  if (!patch) return
+  put(doc, { tiles: patchEntries(doc.state.tiles, id, patch) })
+  void land(doc, save(doc, { entry: { id, patch } }))
 }
 
 export function setTileDocLock(host: TileHostRef, locked: boolean): void {
   const doc = at(host)
   if (!doc?.state.ready || doc.state.lock === locked) return
   put(doc, { lock: locked })
-  save(doc, { locked })
+  void land(doc, save(doc, { locked }))
 }
 
 // The Nexus-adopt path awaits this while the OLD root is still bound — a write after the flip would bind the new Nexus and overwrite a same-relative-path file. Layouts land through the session writer's own flush.
