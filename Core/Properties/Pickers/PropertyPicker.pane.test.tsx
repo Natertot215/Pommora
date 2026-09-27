@@ -4,7 +4,7 @@ import { act } from 'react'
 import { useRef } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
 import type { PropertyDefinition } from '@pommora/core/Properties/properties'
-import { PropertyPicker, type PickEntry, type PickTarget } from './PropertyPicker'
+import { PropertyPicker, pickShape, type PickEntry, type PickTarget } from './PropertyPicker'
 
 ;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
 
@@ -228,5 +228,13 @@ describe('PropertyPicker panes', () => {
     })
     expect(onCommit).toHaveBeenCalled()
     expect(onCommit.mock.calls[0]?.[1]).toMatchObject({ id: 'prop_sel' })
+  })
+})
+
+describe('pickShape', () => {
+  it('labels an option by its value, never by a label still stored beside it', () => {
+    const stale: unknown = [{ value: 'New', label: 'Old' }]
+    const def = { ...selectDef, select_options: stale } as PropertyDefinition
+    expect(pickShape(def).options.map((o) => o.label)).toEqual(['New'])
   })
 })
