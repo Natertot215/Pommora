@@ -8,6 +8,7 @@ import { LOCATION_SORT, type SavedView } from '@pommora/core/Views/views'
 import { ContentHostContext } from '../../Interface/contentHost'
 import { useSession } from '../../Session/store'
 import { useViewHost, type ViewHostApi } from './useViewHost'
+import { useContainerValues } from './useContainerValues'
 import { propsAtRoot, pageValues } from '../../Testing/pageValues'
 import { ID_KEY } from '@pommora/core/Nexus/identityMark'
 import { stubDialer } from '../../vitest.setup'
@@ -136,6 +137,10 @@ beforeEach(() => {
 })
 
 const lastSavedView = (): SavedView => saveSpy.mock.calls.at(-1)?.[2] as SavedView
+const paintOrder = (): string[] | undefined =>
+  api?.groups.flatMap((g) =>
+    [...g.items, ...(g.children ?? []).flatMap((c) => c.items)].map((r) => r.id),
+  )
 
 describe('the persist fold', () => {
   it('one save carries collapse + a live style patch + the fold ref, the explicit patch winning', async () => {
@@ -172,14 +177,14 @@ describe('the persist fold', () => {
 })
 
 describe('the reset keys', () => {
-  it('manualOverride drops on a source-identity echo while valueOverride survives it', async () => {
+  it('a structural paint ignores the stored order, and manualOverride drops on a source-identity echo', async () => {
+    await mount(collection({ manual_order: ['p2', 'p1'] }))
+    expect(paintOrder()).toEqual(['p1', 'p2'])
     await mount(collection())
     act(() => api?.setManualOverride(['p2', 'p1']))
-    act(() => api?.setValueOverride({ p2: { fm: { id: 'p2' } as never, write: null } }))
-    expect(api?.manualOrder).toEqual(['p2', 'p1'])
+    expect(paintOrder()).toEqual(['p2', 'p1'])
     await mount(collection())
-    expect(api?.manualOrder).toBeUndefined()
-    expect(api?.effectiveValues.p2?.frontmatter).toEqual({ id: 'p2' })
+    expect(paintOrder()).toEqual(['p1', 'p2'])
   })
 
   it('hide-then-hide: the second write still carries the first', async () => {
@@ -222,6 +227,15 @@ describe('the reset keys', () => {
 })
 
 describe('the values epoch', () => {
+  let vals: ReturnType<typeof useContainerValues> | null = null
+  function ValuesProbe({ path }: { path: string }): null {
+    vals = useContainerValues(path)
+    return null
+  }
+  const mountValues = async (path = 'Col'): Promise<void> => {
+    await act(async () => root.render(<ValuesProbe path={path} />))
+    await act(async () => {})
+  }
   const loadValues = (): ReturnType<typeof vi.fn> =>
     channels['view:loadValues'] as ReturnType<typeof vi.fn>
   const bump = (changes: { rel: string; pageIds: string[] }[]): void =>
@@ -237,10 +251,10 @@ describe('the values epoch', () => {
   })
 
   it('a container push re-reads only the named pages, merging them, and retires their overrides', async () => {
-    await mount(collection())
+    await mountValues()
     channels['view:loadValues'] = vi.fn(async () => ({ ok: true, value: P2 }))
     act(() =>
-      api?.setValueOverride({
+      vals?.setValueOverride({
         p1: { fm: { id: 'p1' } as never, write: null },
         p2: { fm: { id: 'p2' } as never, write: new Promise(() => {}) },
       }),
@@ -248,13 +262,13 @@ describe('the values epoch', () => {
     bump([{ rel: 'Col', pageIds: ['p2'] }])
     await act(async () => {})
     expect(loadValues()).toHaveBeenCalledWith('Col', ['p2'])
-    expect(api?.effectiveValues.p2).toEqual(P2.p2)
-    expect(api?.effectiveValues.p1?.frontmatter).toEqual({ id: 'p1' })
-    expect(api?.values.p1).toEqual(VALUES.p1)
+    expect(vals?.effectiveValues.p2).toEqual(P2.p2)
+    expect(vals?.effectiveValues.p1?.frontmatter).toEqual({ id: 'p1' })
+    expect(vals?.values.p1).toEqual(VALUES.p1)
   })
 
   it('a scoped read that lands after a container swap never merges into the new container', async () => {
-    await mount(collection())
+    await mountValues()
     let land: (v: { ok: true; value: typeof P2 }) => void = () => {}
     channels['view:loadValues'] = vi.fn((_path: string, ids?: string[]) =>
       ids
@@ -263,96 +277,97 @@ describe('the values epoch', () => {
           })
         : Promise.resolve({ ok: true, value: {} }),
     )
+    act(() => vals?.setValueOverride({ p1: { fm: { id: 'p1' } as never, write: null } }))
     bump([{ rel: 'Col', pageIds: ['p2'] }])
     await act(async () => {})
-    await mount({ ...collection(), id: 'col2', title: 'Other', path: 'Other' })
+    await mountValues('Other')
     await act(async () => {
       land({ ok: true, value: P2 })
     })
-    expect(api?.values).toEqual({})
+    expect(vals?.effectiveValues).toEqual({})
   })
 
   it('a scoped read that resolves no page retires no override', async () => {
-    await mount(collection())
+    await mountValues()
     channels['view:loadValues'] = vi.fn(async () => ({ ok: true, value: {} }))
-    act(() => api?.setValueOverride({ p1: { fm: { id: 'p1' } as never, write: null } }))
+    act(() => vals?.setValueOverride({ p1: { fm: { id: 'p1' } as never, write: null } }))
     bump([{ rel: 'Col', pageIds: ['p1'] }])
     await act(async () => {})
-    expect(api?.effectiveValues.p1?.frontmatter).toEqual({ id: 'p1' })
+    expect(vals?.effectiveValues.p1?.frontmatter).toEqual({ id: 'p1' })
   })
 
   it('a failed read keeps the values already held', async () => {
-    await mount(collection())
+    await mountValues()
     channels['view:loadValues'] = vi.fn(async () => ({
       ok: false,
       error: { code: 'operation-failed' },
     }))
     bump([{ rel: 'Col', pageIds: ['p1'] }])
     await act(async () => {})
-    expect(api?.effectiveValues.p1).toEqual(VALUES.p1)
+    expect(vals?.effectiveValues.p1).toEqual(VALUES.p1)
   })
 
   it('a named override holds until the refetch lands, so the row never paints its fallback', async () => {
-    await mount(collection())
+    await mountValues()
     let land: (v: { ok: true; value: typeof P2 }) => void = () => {}
     channels['view:loadValues'] = vi.fn(
       () => new Promise<{ ok: true; value: typeof P2 }>((r) => (land = r)),
     )
-    act(() => api?.setValueOverride({ p2: { fm: { id: 'p2' } as never, write: null } }))
+    act(() => vals?.setValueOverride({ p2: { fm: { id: 'p2' } as never, write: null } }))
     bump([{ rel: 'Col', pageIds: ['p2'] }])
     await act(async () => {})
-    expect(api?.effectiveValues.p2?.frontmatter).toEqual({ id: 'p2' })
+    expect(vals?.effectiveValues.p2?.frontmatter).toEqual({ id: 'p2' })
     await act(async () => land({ ok: true, value: P2 }))
-    expect(api?.effectiveValues.p2).toEqual(P2.p2)
+    expect(vals?.effectiveValues.p2).toEqual(P2.p2)
   })
 
   it('a push naming no ids retires the settled override and keeps the pending one', async () => {
-    await mount(collection())
+    await mountValues()
     act(() =>
-      api?.setValueOverride({
+      vals?.setValueOverride({
         p1: { fm: { id: 'p1' } as never, write: new Promise(() => {}) },
         p2: { fm: { id: 'p2' } as never, write: null },
       }),
     )
     bump([{ rel: 'Col', pageIds: [] }])
     await act(async () => {})
-    expect(api?.effectiveValues.p1?.frontmatter).toEqual({ id: 'p1' })
-    expect(api?.effectiveValues.p2).toBeUndefined()
+    expect(vals?.effectiveValues.p1?.frontmatter).toEqual({ id: 'p1' })
+    expect(vals?.effectiveValues.p2).toBeUndefined()
   })
 
   it('one push over several containers reaches the mounted one', async () => {
-    await mount(collection())
+    await mountValues()
     channels['view:loadValues'] = vi.fn(async () => ({ ok: true, value: P2 }))
-    act(() => api?.setValueOverride({ p2: { fm: { id: 'p2' } as never, write: null } }))
+    act(() => vals?.setValueOverride({ p2: { fm: { id: 'p2' } as never, write: null } }))
     bump([
       { rel: 'Other', pageIds: ['p9'] },
       { rel: 'Col', pageIds: ['p2'] },
     ])
     await act(async () => {})
     expect(loadValues()).toHaveBeenCalledTimes(1)
-    expect(api?.effectiveValues.p2).toEqual(P2.p2)
+    expect(vals?.effectiveValues.p2).toEqual(P2.p2)
   })
 
   it('a sibling container push neither refetches nor retires', async () => {
-    await mount(collection())
+    await mountValues()
     loadValues().mockClear()
-    act(() => api?.setValueOverride({ p2: { fm: { id: 'p2' } as never, write: null } }))
+    act(() => vals?.setValueOverride({ p2: { fm: { id: 'p2' } as never, write: null } }))
     bump([{ rel: 'Other', pageIds: ['p2'] }])
     await act(async () => {})
     expect(loadValues()).not.toHaveBeenCalled()
-    expect(api?.effectiveValues.p2?.frontmatter).toEqual({ id: 'p2' })
+    expect(vals?.effectiveValues.p2?.frontmatter).toEqual({ id: 'p2' })
   })
 
   it('a rename re-keys the override instead of clearing it', async () => {
-    await mount(collection())
+    await mountValues()
     act(() =>
-      api?.setValueOverride({
+      vals?.setValueOverride({
         p2: { fm: { id: 'p2', Status: ['Done'] } as never, write: null },
       }),
     )
     act(() => useSession.getState().bumpValuesEpoch('Status', 'State'))
     await act(async () => {})
-    expect(api?.effectiveValues.p2?.frontmatter).toEqual({ id: 'p2', State: ['Done'] })
+    expect(vals?.effectiveValues.p2?.frontmatter).toEqual({ id: 'p2', State: ['Done'] })
   })
 })
 
@@ -409,7 +424,6 @@ describe('the cards seam (flattenStructural)', () => {
     } as unknown as Partial<SavedView>)
     await mount(located, true)
     expect(api?.canReorderWithin).toBe(false)
-    expect(api?.manualOrder).toBeUndefined()
     await mount(located, false)
     expect(api?.canReorderWithin).toBe(true)
   })
@@ -443,7 +457,7 @@ describe("the engine's grouping", () => {
       }),
     )
     expect(api?.groupPropId).toBeUndefined()
-    expect(api?.manualOrder).toBeUndefined()
+    expect(api?.structuralOrder).toBe(true)
     expect(api?.canReassign).toBe(false)
     expect(api?.canRelocate).toBe(true)
   })
@@ -483,12 +497,14 @@ describe('the manual order fold', () => {
     expect(lastSavedView().manual_order).toEqual(['p2', 'p1'])
   })
 
-  it('the resolver reads the view record, and the override drops once the record catches it up', async () => {
-    await mount(collection({ ...SORTED, manual_order: ['p2', 'p1'] }))
-    expect(api?.manualOrder).toEqual(['p2', 'p1'])
+  it('the stored order paints, a sub-grouped view without a group key included, and the override drops once the record catches it up', async () => {
+    channels['view:loadValues'] = async () => ({ ok: true, value: {} })
+    const subGrouped = { sub_group: { property_id: 'prop_status', order_mode: 'manual' } } as const
+    await mount(collection({ ...subGrouped, manual_order: ['p2', 'p1'] }))
+    expect(paintOrder()).toEqual(['p2', 'p1'])
     act(() => api?.setManualOverride(['p1', 'p2']))
-    expect(api?.manualOrder).toEqual(['p1', 'p2'])
-    await mount(collection({ ...SORTED, manual_order: ['p1', 'p2'] }))
+    expect(paintOrder()).toEqual(['p1', 'p2'])
+    await mount(collection({ ...subGrouped, manual_order: ['p1', 'p2'] }))
     expect(api?.liveView).toBe(api?.view)
   })
 })
@@ -521,10 +537,10 @@ describe('settleOrders — a create composes with the live order', () => {
   it("the override survives the create's own optimistic push — only a page_order-backed view resets on it", async () => {
     await mount(collection({ ...SORTED, manual_order: ['p1', 'p2'] }))
     await createBelowFirst()
-    expect(api?.manualOrder).toEqual(['p1', 'p3', 'p2'])
+    expect(api?.liveView.manual_order).toEqual(['p1', 'p3', 'p2'])
     // The create's own mutate pushes an optimistic tree: same content, new source identity.
     await mount(collection({ ...SORTED, manual_order: ['p1', 'p2'] }))
-    expect(api?.manualOrder).toEqual(['p1', 'p3', 'p2'])
+    expect(api?.liveView.manual_order).toEqual(['p1', 'p3', 'p2'])
   })
 
   it('an unsorted, ungrouped view mints no manual_order where none existed', async () => {

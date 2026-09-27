@@ -2,12 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { type PropertyType, specOf } from '@pommora/core/Properties/properties'
 import { UNGROUPED } from '@pommora/core/Views/viewRow'
 import type { CollectionNode, SetNode } from '@pommora/core/Nexus/tree'
-import type {
-  PageValues,
-  ResolvedColumn,
-  ResolvedGroup,
-  ViewRow,
-} from '@pommora/core/Views/viewRow'
+import type { ResolvedColumn, ResolvedGroup, ViewRow } from '@pommora/core/Views/viewRow'
 import type { ColumnStyle, StoredColumnStyle } from '@pommora/core/Properties/columnStyles'
 import { isLocationFsOrder, type SavedView } from '@pommora/core/Views/views'
 import type { PropertyValue } from '@pommora/core/Properties/propertyValue'
@@ -34,10 +29,10 @@ import {
 import { resolveView } from '../Pipeline/resolveView'
 import { searchGroups } from '../Pipeline/search'
 import { foldKey } from '../../Paths/caseFold'
-import { resolvedSortCount, resolveManualOrder } from '../Pipeline/sort'
+import { resolvedSortCount } from '../Pipeline/sort'
 import { useActiveView } from './useActiveView'
-import { type Overrides, patchOverride } from '../../Properties/valueOverride'
-import { useContainerValues } from './useValuesEpoch'
+import { patchOverride } from '../../Properties/valueOverride'
+import { useContainerValues } from './useContainerValues'
 import { mergeStyleRecords, pickedStyle, styleFor, useNexusForms } from './useColumnStyles'
 import { groupingKeyOf, useBandOrdering } from '../Bands/useBandOrdering'
 import { useViewCreation } from './useViewCreation'
@@ -81,9 +76,7 @@ export function useViewHost(
   const needle = foldKey(query?.trim() ?? '')
   const searching = needle !== ''
 
-  // The loaded values never re-read on a write, so a changed row re-groups only because this optimistic patch feeds the pipeline.
-  const [valueOverride, setValueOverride] = useState<Overrides | null>(null)
-  const values = useContainerValues(source.path, setValueOverride)
+  const { values, effectiveValues, setValueOverride } = useContainerValues(source.path)
 
   const schema = useMemo(
     () => (tree ? resolveContainerSchema(tree, source) : NO_SCHEMA),
@@ -123,7 +116,6 @@ export function useViewHost(
 
   // Derived from `view` and ABOVE the memo, because the fold reads `structuralOrder` — reading it below would be a TDZ crash the type gate misses. Sound because no override moves a sort criterion or a group kind: `bandPatch` touches only `group.order` and `group_order`.
   const sortKeys = useMemo(() => resolvedSortCount(view.sort, schema), [view.sort, schema])
-  const sortedOrGrouped = sortKeys > 0 || view.group != null
   const structuralGrouping = groupsStructurally(view.group, schema)
   // The engine's own sub-group rule: a flattened paint, or a sub_group it won't bucket, must not reassign against it.
   const subGrouped = !flattenStructural && drawnSubGroup(view, schema) !== undefined
@@ -156,26 +148,9 @@ export function useViewHost(
   // A stored manual order never feeds a structural paint — the rows draw in tree order, and the array stays the sorted/grouped tiebreaker.
   const manualOrder = locationFsOrder
     ? undefined
-    : resolveManualOrder(
-        sortedOrGrouped,
-        manualOverride,
-        structuralOrder ? undefined : view.manual_order,
-      )
+    : (manualOverride ?? (structuralOrder ? undefined : view.manual_order))
   const dragDisabled = searching || !(canReorderWithin || canReassign || canRelocate)
 
-  const effectiveValues = useMemo(() => {
-    if (!valueOverride) return values
-    const out = { ...values }
-    for (const [id, e] of Object.entries(valueOverride)) {
-      const prior: PageValues | undefined = values[id]
-      out[id] = {
-        createdAt: prior?.createdAt ?? null,
-        modifiedAt: prior?.modifiedAt ?? null,
-        frontmatter: e.fm,
-      }
-    }
-    return out
-  }, [values, valueOverride])
   const contextIds = contextIdsOf(tree)
   const {
     columns,
@@ -404,9 +379,6 @@ export function useViewHost(
     view,
     liveView,
     flat: flattenStructural,
-    values,
-    effectiveValues,
-    setValueOverride,
     columns,
     groups,
     setTree,
@@ -433,7 +405,6 @@ export function useViewHost(
     structuralOrder,
     dragDisabled,
     searching,
-    manualOrder,
     setManualOverride,
     setOrderOverride,
     setHiddenOverride,

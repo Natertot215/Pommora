@@ -33,7 +33,7 @@ import { EyeToggle } from '@pommora/uix/Elements/EyeToggle'
 import { revealDim } from '@pommora/uix/Interactions/hover-reveal.css'
 import { DualSwitch } from '@pommora/uix/Controls/DualSwitch'
 import { useSaveView } from '../ViewTileScope'
-import { useContainerValues } from '../Host/useValuesEpoch'
+import { useContainerValues } from '../Host/useContainerValues'
 import {
   bucketKey,
   bucketOrder,
@@ -608,7 +608,7 @@ function DateBucketList({
   def: PropertyDefinition | undefined
   schema: PropertyDefinition[]
 } & HideControls): React.JSX.Element | null {
-  const values = useContainerValues(source.path)
+  const { values } = useContainerValues(source.path)
   const nexus = useNexusForms()
 
   const granularity = granularityOf(group)

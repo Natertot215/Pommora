@@ -97,11 +97,6 @@ export function SortFrame({
     ...STAMP_TARGETS,
     ...schemaTargets(schema, (d) => PROPERTY_TYPES[d.type].origin === 'user', capitalize),
   ]
-  const targetById = new Map(targets.map((t) => [t.id, t]))
-  const nameOf = (c: SortCriterion): string =>
-    c.property_id === LOCATION_SORT
-      ? 'Location'
-      : (targetById.get(c.property_id)?.label ?? c.property_id)
 
   const pickPrimary = (id: string | null): void => {
     if (id === null) {
@@ -138,16 +133,20 @@ export function SortFrame({
       new Set(optionsOf(finiteDef).map((o) => o.value)),
     )
 
-  const sortByOptions: PickerOption<string>[] = [
+  const listed: PickerOption<string>[] = [
     { value: '_none', label: 'None', icon: 'circle-off' as const },
-    ...(VIEW_KINDS[view.type].flat
+    ...(VIEW_KINDS[view.type].flat || primary?.property_id === LOCATION_SORT
       ? [{ value: LOCATION_SORT, label: 'Location', icon: 'folder' as const }]
       : []),
     ...targets.filter((t) => t.id !== sub?.property_id).map(targetOption),
-    ...(primary && !targets.some((t) => t.id === primary.property_id)
-      ? [{ value: primary.property_id, label: nameOf(primary), icon: 'tag' as const }]
-      : []),
   ]
+  const sortByOptions =
+    primary && !listed.some((o) => o.value === primary.property_id)
+      ? [
+          ...listed,
+          { value: primary.property_id, label: primary.property_id, icon: 'tag' as const },
+        ]
+      : listed
 
   const subOptions: PickerOption<string>[] = [
     { value: '_none', label: 'None', icon: 'circle-off' as const },

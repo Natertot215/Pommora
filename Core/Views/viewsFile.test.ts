@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, afterEach } from 'vitest'
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 import { rm, writeFile, readFile } from 'node:fs/promises'
 import { join } from '../Paths/posix'
 import { tempRoot } from '../Testing/hostFs'
@@ -12,12 +12,15 @@ import {
   setActiveView,
 } from './viewsFile'
 import { containerFieldsFrom } from '../Nexus/containerFields'
+import { stubDialer } from '../vitest.setup'
+import { restoreView } from './restoreView'
 
 let folder: string
 beforeEach(async () => {
   folder = tempRoot('pom-views-crud-')
 })
 afterEach(async () => {
+  vi.unstubAllGlobals()
   await rm(folder, { recursive: true, force: true })
 })
 
@@ -95,6 +98,27 @@ describe('view persistence CRUD', () => {
     const last = await deleteView(folder, 'collection', 'b')
     expect(last.ok).toBe(false)
     if (!last.ok) expect(last.error.code).toBe('operation-failed')
+  })
+
+  it("a delete's Undo puts the view back at its index with its configuration intact", async () => {
+    vi.stubGlobal('window', {
+      nexus: stubDialer({
+        'views:save': (_: string, _k: string, v: SavedView) => saveView(folder, 'collection', v),
+        'views:reorder': (_: string, _k: string, ids: string[]) =>
+          reorderViews(folder, 'collection', ids),
+      }),
+    })
+    const b = view({
+      id: 'b',
+      type: 'cards',
+      hidden_properties: ['prop_x'],
+      sort: [{ property_id: '_title', direction: 'descending' }],
+    })
+    const views = [view({ id: 'a' }), b, view({ id: 'c' })]
+    await writeCollectionSidecar({ views })
+    await deleteView(folder, 'collection', 'b')
+    await restoreView('Col', 'collection', b, views)
+    expect((await readRaw('_pagecollection.json')).views).toEqual(views)
   })
 
   it('drops active_view when it named the deleted view, and keeps it otherwise', async () => {

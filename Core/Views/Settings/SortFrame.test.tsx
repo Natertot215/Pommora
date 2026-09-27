@@ -4,7 +4,7 @@ import { act } from 'react'
 import type { Root } from 'react-dom/client'
 import type { CollectionNode } from '@pommora/core/Nexus/tree'
 import type { PropertyDefinition } from '@pommora/core/Properties/properties'
-import type { SavedView } from '@pommora/core/Views/views'
+import { LOCATION_SORT, type SavedView } from '@pommora/core/Views/views'
 import { useSession } from '../../Session/store'
 import { SortFrame } from './SortFrame'
 import { stubDialer } from '../../vitest.setup'
@@ -233,6 +233,17 @@ describe('SortFrame rows', () => {
     await mount(view({ sort: [{ property_id: 'prop_when', direction: 'ascending' }] }))
     expect(texts()).not.toContain('Todo')
     expect(texts()).not.toContain('Open')
+  })
+
+  it.each([
+    'cards',
+    'table',
+  ] as const)('a %s view sorted by Location lists Location once', async (type) => {
+    await mount(view({ type, sort: [{ property_id: LOCATION_SORT, direction: 'ascending' }] }))
+    await openPicker('Sort By')
+    const rows = [...document.querySelectorAll('[role="button"]')].map((e) => e.textContent)
+    expect(rows.filter((t) => t === 'Location')).toHaveLength(1)
+    expect(rows).not.toContain(LOCATION_SORT)
   })
 
   it('a dead primary shows its raw id and None still clears it', async () => {

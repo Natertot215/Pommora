@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { NEW_SLOT } from '@pommora/core/Nexus/mutateRequest'
 import { orderWithSlot, placeNew, spliceBeside, tieOrderWith } from './creationOrder'
 import { makeTree } from '../Testing/testTree'
-import { makeSorter, resolveManualOrder } from './Pipeline/sort'
+import { makeSorter } from './Pipeline/sort'
 import type { ViewRow } from '@pommora/core/Views/viewRow'
 
 describe('orderWithSlot', () => {
@@ -121,15 +121,10 @@ describe('the created row settles into the live order', () => {
   it('a stale manual override spliced via tieOrderWith ranks the newborn at its slot first-pass', () => {
     const spliced = tieOrderWith(STALE, ALL, 'pNew', 'p1', 'below')
     expect(spliced).toEqual(['p3', 'p1', 'pNew', 'p2'])
-    expect(painted(resolveManualOrder(true, spliced, STALE))).toEqual(spliced)
+    expect(painted(spliced)).toEqual(spliced)
   })
 
   it('unspliced, the same state ranks the newborn last — the defect the settle kills', () => {
-    expect(painted(resolveManualOrder(true, STALE, undefined))).toEqual(['p3', 'p1', 'p2', 'pNew'])
-  })
-
-  it('the fall-through path: no override, a stale persisted array — the persisted splice serves it', () => {
-    const spliced = tieOrderWith(STALE, ALL, 'pNew', 'p1', 'below')
-    expect(painted(resolveManualOrder(true, null, spliced))).toEqual(spliced)
+    expect(painted(STALE)).toEqual(['p3', 'p1', 'p2', 'pNew'])
   })
 })

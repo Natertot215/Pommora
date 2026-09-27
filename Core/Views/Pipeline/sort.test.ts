@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest'
 import { ID_KEY } from '@pommora/core/Nexus/identityMark'
 import type { ViewRow } from '@pommora/core/Views/viewRow'
 import type { PropertyDefinition } from '@pommora/core/Properties/properties'
-import { makeSorter, resolveManualOrder, resolvedSortCount } from './sort'
+import { makeSorter, resolvedSortCount } from './sort'
 import { applyFilter } from './filter'
 import { resolveFieldValue } from '../../Properties/value'
 import { propsAtRoot } from '../../Testing/pageValues'
@@ -465,30 +465,5 @@ describe('resolvedSortCount', () => {
         schema,
       ),
     ).toBe(2)
-  })
-})
-
-describe('resolveManualOrder', () => {
-  it('returns undefined for a plain view (unsorted, ungrouped, no active drag)', () => {
-    expect(resolveManualOrder(false, null, ['a', 'b'])).toBeUndefined()
-    expect(resolveManualOrder(false, null, undefined)).toBeUndefined()
-  })
-
-  it('an active drag override wins even on a plain view (instant drop feedback)', () => {
-    expect(resolveManualOrder(false, ['x', 'y'], ['a', 'b'])).toEqual(['x', 'y'])
-  })
-
-  it('reads the persisted per-view order when the view is sorted or grouped', () => {
-    expect(resolveManualOrder(true, null, ['a', 'b'])).toEqual(['a', 'b'])
-    expect(resolveManualOrder(true, null, undefined)).toBeUndefined()
-  })
-
-  it('the override still wins over the persisted order when sorted', () => {
-    expect(resolveManualOrder(true, ['x'], ['a', 'b'])).toEqual(['x'])
-  })
-
-  it('a stored empty order ranks nothing — the same paint as none at all', () => {
-    expect(makeSorter(undefined, schema, resolveManualOrder(true, null, []))).toBeNull()
-    expect(makeSorter(undefined, schema, resolveManualOrder(true, null, undefined))).toBeNull()
   })
 })
