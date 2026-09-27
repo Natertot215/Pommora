@@ -70,6 +70,15 @@ describe('installTap', () => {
     expect(dirty).toEqual([])
   })
 
+  it('feeds a rename with an end the scope refuses as a write at the admitted end', async () => {
+    setTapScope({ excluded: ['Drafts'], assetDir: '.nexus/assets' })
+    reportRename(join(ROOT, 'Drafts/One.md'), join(ROOT, 'Notes/One.md'))
+    reportRename(join(ROOT, 'Notes/Two.md'), '/elsewhere/Two.md')
+    await vi.advanceTimersByTimeAsync(DEBOUNCE_MS + 1)
+    expect(renames).toEqual([])
+    expect(dirty).toEqual([['Notes/One.md', 'Notes/Two.md']])
+  })
+
   it('admits against the scope it is handed last, both taps at once', async () => {
     setTapScope({ excluded: ['Notes'], assetDir: '.nexus/assets' })
     emitWatch('change', join(ROOT, 'Notes/One.md'))

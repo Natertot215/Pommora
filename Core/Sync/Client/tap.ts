@@ -48,7 +48,6 @@ export function installTap(root: string, scope: WatchScope, next: TapSinks): voi
   setTapScope(scope)
   const feed = (absPath: string, watched: boolean): void => {
     const rel = relative(root, absPath)
-    if (!rel) return
     if (watched && rel.split('/')[0] === TRASH_DIR) return
     if (admits(rel)) schedule(rel)
   }
@@ -63,7 +62,12 @@ export function installTap(root: string, scope: WatchScope, next: TapSinks): voi
   })
 }
 
+// A rename with an end outside the scope isn't one sync can mirror, so each admitted end pushes as a plain write.
 function feedRename(from: string, to: string): void {
+  if (!admits(from) || !admits(to)) {
+    for (const rel of [from, to]) if (admits(rel)) schedule(rel)
+    return
+  }
   for (const rel of [from, to]) {
     clearTimeout(timers.get(rel))
     timers.delete(rel)
