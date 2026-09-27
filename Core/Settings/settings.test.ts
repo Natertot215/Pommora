@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest'
 import { rm, mkdir, writeFile, readFile, readdir } from 'node:fs/promises'
-import { tempRoot } from '../Testing/hostFs'
+import { tempRoot, readJsonAt } from '../Testing/hostFs'
 import {
   readWatchScope,
   readPermanentDelete,
@@ -26,8 +26,7 @@ afterEach(async () => {
 })
 
 const path = () => nexusConfig(root, NEXUS_CONFIG_FILES.settings)
-const readSettings = async (): Promise<Record<string, unknown>> =>
-  JSON.parse(await readFile(path(), 'utf8'))
+const readSettings = async (): Promise<Record<string, unknown>> => await readJsonAt(path())
 const write = async (v: object): Promise<void> => {
   await writeFile(path(), JSON.stringify(v))
 }

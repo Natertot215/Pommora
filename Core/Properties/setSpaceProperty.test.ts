@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest'
 import { rm, readFile, stat, mkdir, writeFile } from 'node:fs/promises'
 import { join } from '../Paths/posix'
-import { tempRoot } from '../Testing/hostFs'
+import { tempRoot, readJsonAt } from '../Testing/hostFs'
 import { contextsDir, contextsRegistryFile, nexusDir } from '../Paths/paths'
 import { createContextGroup, createSpace } from '../Contexts/contextWrite'
 import { createProperty } from './registryProperty'
@@ -42,8 +42,7 @@ afterEach(async () => {
 })
 
 const sidecarFile = (): string => join(root, spaceRel, '_space.json')
-const sidecar = async (): Promise<Record<string, unknown>> =>
-  JSON.parse(await readFile(sidecarFile(), 'utf8'))
+const sidecar = async (): Promise<Record<string, unknown>> => await readJsonAt(sidecarFile())
 
 const write = (value: PropertyValue | null) =>
   setPropertyOp(ctx(), { op: 'setProperty', path: spaceRel, propertyId: statusId, value })

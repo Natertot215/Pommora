@@ -1,9 +1,9 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { readFile, rm, writeFile } from 'node:fs/promises'
+import { rm, writeFile } from 'node:fs/promises'
 import { updateNexusFile } from '../../Files/atomicWrite'
 import { recordWrite, reportRename } from '../../Files/writeEcho'
 import { installStores, NO_STORES } from '../../Platform/stores'
-import { tempRoot } from '../../Testing/hostFs'
+import { tempRoot, readJsonAt } from '../../Testing/hostFs'
 import { memoryStores } from '../../Testing/memoryStores'
 import { upsertBase } from './base'
 import { emitWatch } from '../../Nexus/watchSettle'
@@ -126,7 +126,7 @@ describe('the repair seed', () => {
       const file = join(root, name)
       await writeFile(file, '{ corrupt')
       await updateNexusFile(file, (cur) => ({ ...cur, pinned: ['p'] }), true)
-      return JSON.parse(await readFile(file, 'utf8'))
+      return await readJsonAt(file)
     }
     try {
       installTap(root, SCOPE, { onDirty: () => {}, onRename: () => {} })

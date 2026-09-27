@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { mkdir, readFile, rm, stat, writeFile } from 'node:fs/promises'
-import { tempRoot } from '../../Testing/hostFs'
+import { tempRoot, readJsonAt } from '../../Testing/hostFs'
 import { memoryStores } from '../../Testing/memoryStores'
 import { dropLiveTree } from '../../Nexus/liveTree'
 import {
@@ -123,8 +123,9 @@ describe('landWrite', () => {
       baseBytes: base,
     })
     await landWrite(host, root, write(path, remote, 4), remote)
-    const disk = await readFile(abs(path), 'utf8')
-    expect(JSON.parse(disk)).toEqual({ personalization: { accent: 'moss', density: 'tight' } })
+    expect(await readJsonAt(abs(path))).toEqual({
+      personalization: { accent: 'moss', density: 'tight' },
+    })
     const row = bases().readBase(path)
     expect(row?.hash).toBe(machine().sha256Hex(remote))
     expect(machine().sha256Hex(await readFile(abs(path)))).not.toBe(row?.hash)
@@ -141,7 +142,7 @@ describe('landWrite', () => {
 
     await landWrite(host, root, write(path, remote, 4, Date.now() + 600_000), remote)
 
-    expect(JSON.parse(await readFile(abs(path), 'utf8'))).toEqual({
+    expect(await readJsonAt(abs(path))).toEqual({
       personalization: { accent: 'lavender' },
       pinned: ['A.md'],
     })
@@ -175,7 +176,7 @@ describe('landWrite', () => {
       baseBytes: base,
     })
     await landWrite(host, root, write(path, remote, 4), remote)
-    expect(JSON.parse(await readFile(abs(path), 'utf8'))).toEqual({
+    expect(await readJsonAt(abs(path))).toEqual({
       profile_subtitle: 'mine',
       personalization: { accent: 'moss' },
     })

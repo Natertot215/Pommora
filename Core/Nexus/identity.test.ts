@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 import { rm, mkdir, writeFile, readFile } from 'node:fs/promises'
 import { join } from '../Paths/posix'
-import { tempRoot, noModeBits } from '../Testing/hostFs'
+import { tempRoot, noModeBits, readJsonAt } from '../Testing/hostFs'
 import { ensureIdentity, readIdentity } from './identity'
 import { agendaContext, resolveFolderKind } from './folderKind'
 import { isUlidShaped } from './identityMark'
@@ -18,8 +18,7 @@ afterEach(async () => {
 })
 
 const idPath = () => nexusConfig(root, NEXUS_CONFIG_FILES.identity)
-const readId = async (): Promise<Record<string, unknown>> =>
-  JSON.parse(await readFile(idPath(), 'utf8'))
+const readId = async (): Promise<Record<string, unknown>> => await readJsonAt(idPath())
 const writeId = async (v: object): Promise<void> => {
   await mkdir(nexusDir(root), { recursive: true })
   await writeFile(idPath(), JSON.stringify(v))
@@ -132,7 +131,7 @@ describe('ensureIdentity', () => {
 
 describe('the agenda singleton seed', () => {
   const cfg = async (folder: string, name: string): Promise<Record<string, unknown>> =>
-    JSON.parse(await readFile(join(root, folder, name), 'utf8'))
+    await readJsonAt(join(root, folder, name))
 
   it('seeds both singletons at creation and registers them by sidecar id', async () => {
     await ensureIdentity(root)

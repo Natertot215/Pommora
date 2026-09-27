@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest'
 import { rm, mkdir, writeFile, readFile, stat } from 'node:fs/promises'
 import { join } from '../Paths/posix'
-import { tempRoot } from '../Testing/hostFs'
+import { tempRoot, readJsonAt } from '../Testing/hostFs'
 import { pathExists } from '../Files/atomicWrite'
 import { CONTEXTS_REGISTRY_REL, NEXUS_CONFIG_FILES } from '../Paths/nexusPaths'
 import { contextsRegistryFile, nexusConfig } from '../Paths/paths'
@@ -80,8 +80,7 @@ describe('normalizePropertyTypes', () => {
   const registry = (): string => nexusConfig(root, NEXUS_CONFIG_FILES.properties)
   const seedRegistry = (file: unknown): Promise<void> =>
     writeFile(registry(), JSON.stringify(file, null, 2))
-  const readRegistry = async (): Promise<Record<string, unknown>> =>
-    JSON.parse(await readFile(registry(), 'utf8'))
+  const readRegistry = async (): Promise<Record<string, unknown>> => await readJsonAt(registry())
 
   it('respells every legacy type id and leaves everything else as written', async () => {
     await seedRegistry({

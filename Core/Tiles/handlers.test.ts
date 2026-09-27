@@ -1,11 +1,11 @@
-import { mkdir, readFile } from 'node:fs/promises'
+import { mkdir } from 'node:fs/promises'
 import { pathExists } from '../Files/atomicWrite'
 import { join } from '../Paths/posix'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { HostContext } from '../Contract/handlers'
 import { fail, fault, ok } from '../Contract/result'
 import { tileDocPath, tileHostDir } from '../Paths/paths'
-import { tempRoot } from '../Testing/hostFs'
+import { tempRoot, readJsonAt } from '../Testing/hostFs'
 import { tileId } from '../Testing/tileLayouts'
 import { readTileDocAt, writeTileDocAt } from './tileDoc'
 
@@ -53,7 +53,7 @@ describe('the tile channels', () => {
     )
     const saved = await tilesHandlers['tiles:save'](ctx, homepage, { locked: true, extra: 1 })
     expect(saved.ok).toBe(true)
-    expect(JSON.parse(await readFile(tileDocPath(tileHostDir(root)), 'utf8'))).toEqual({
+    expect(await readJsonAt(tileDocPath(tileHostDir(root)))).toEqual({
       locked: true,
       tiles: [],
     })

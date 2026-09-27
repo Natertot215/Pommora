@@ -24,9 +24,10 @@ import {
   reorderRegistry,
 } from './registryProperty'
 import { removeProperty } from './removeProperty'
+import { replaySchemaCascade } from './replaySchemaCascade'
 import { unsweptLine } from './governedSweep'
 import type { TileHostRef } from '../Tiles/tiles'
-import type { ConfigReach } from '../Nexus/configReach'
+import { type ConfigReach, NO_REACH } from '../Nexus/configReach'
 
 const NEEDS_PROPERTY_ID = fault('A property id is required.')
 const NEEDS_ID_AND_VALUE = fault('A property id and value are required.')
@@ -156,10 +157,15 @@ export const propertiesHandlers = {
 
   'registry:reorder': registryChannel(idAndIndex, reorderRegistry),
   'property:rename': registryChannel(idAndValue, renameProperty),
-  'property:delete': registryChannel(idOnly, deleteProperty, ({ hosts, trashed }) => ({
-    hosts,
-    result: ok({ trashed }),
+  'property:delete': registryChannel(idOnly, deleteProperty, (deleted) => ({
+    hosts: deleted.cascade.hosts,
+    result: ok(deleted),
   })),
+  'property:replayDelete': registryChannel(
+    idOnly,
+    async (root, id) => (await replaySchemaCascade(root, id)) ?? ok(NO_REACH),
+    unsweptReply,
+  ),
 
   'property:setLinkConfig': defEditOp(narrowLinkConfig),
   'property:setCheckboxColor': defEditOp((color) => ({

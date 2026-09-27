@@ -15,6 +15,7 @@ import {
 import { rawLayoutSchema } from '../Tiles/tiles'
 import { readTileDocAt } from '../Tiles/tileDoc'
 import { contextsRegistryFile, contextsDir, nexusDir } from '../Paths/paths'
+import type { ContextsRegistry } from './contexts'
 
 let root: string
 beforeEach(async () => {
@@ -56,10 +57,10 @@ describe('createContextGroup', () => {
     const r = await createContextGroup(root, 'Clients')
     expect(r.ok).toBe(true)
     if (!r.ok) return
-    const reg = JSON.parse(await readFile(contextsRegistryFile(root), 'utf8'))
-    const entry = reg.contexts.find((c: { title: string }) => c.title === 'Clients')
-    expect(entry.id).toBe(r.value.id)
-    expect(entry.singular).toBeUndefined()
+    const reg = await readJsonAt<ContextsRegistry>(contextsRegistryFile(root))
+    const entry = reg.contexts.find((c) => c.title === 'Clients')
+    expect(entry!.id).toBe(r.value.id)
+    expect(entry!.singular).toBeUndefined()
     const entries = await readdir(join(contextsDir(root), 'Clients'))
     expect(entries).toEqual([])
   })
@@ -94,9 +95,7 @@ describe('createSpace', () => {
     expect(r.ok).toBe(true)
     if (!r.ok) return
     expect(r.value.path).toBe('.nexus/contexts/Projects/Sapphire')
-    const sc = JSON.parse(
-      await readFile(join(contextsDir(root), 'Projects', 'Sapphire', '_space.json'), 'utf8'),
-    )
+    const sc = await readJsonAt(join(contextsDir(root), 'Projects', 'Sapphire', '_space.json'))
     expect(typeof sc.id).toBe('string')
     expect(sc.icon).toBeUndefined()
     expect(sc.$color).toBeUndefined()
@@ -177,9 +176,7 @@ describe('setSpaceContext (G-1, cross-context)', () => {
   it('tags a Space into a different Context through its own sidecar', async () => {
     const r = await setSpaceContext(await world(), 'sp-pom', 'ctxC', ['sp-cs'])
     expect(r.ok).toBe(true)
-    const sc = JSON.parse(
-      await readFile(join(contextsDir(root), 'Projects', 'Pommora', '_space.json'), 'utf8'),
-    )
+    const sc = await readJsonAt(join(contextsDir(root), 'Projects', 'Pommora', '_space.json'))
     expect(sc['<Classes>']).toEqual(['CS 161'])
     expect(sc.id).toBe('sp-pom')
     expect('modified_at' in sc).toBe(false)
@@ -190,7 +187,7 @@ describe('setSpaceContext (G-1, cross-context)', () => {
     await writeFile(path, JSON.stringify({ id: 'sp-pom', '<Classes>': ['cs 161'] }))
     const r = await setSpaceContext(await world(), 'sp-pom', 'ctx_projects', [])
     expect(r.ok).toBe(true)
-    expect(JSON.parse(await readFile(path, 'utf8'))['<Classes>']).toEqual(['CS 161'])
+    expect((await readJsonAt(path))['<Classes>']).toEqual(['CS 161'])
   })
 
   const pomFile = (): string => join(contextsDir(root), 'Projects', 'Pommora', '_space.json')

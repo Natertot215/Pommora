@@ -388,11 +388,11 @@ describe('an unreadable registry holds the record', () => {
 describe('a slot the replay cannot read is left as it lies', () => {
   const slot = (root: string): string => join(root, '.nexus', 'property-cascade.json')
 
-  it('an unreadable slot answers false and stays in place', async () => {
+  it('an unreadable slot answers nothing owed and stays in place', async () => {
     const root = await seedNexus()
     await openSession(root)
     await mkdir(slot(root))
-    expect(await replaySchemaCascade(root)).toBe(false)
+    expect(await replaySchemaCascade(root)).toBeNull()
     expect((await stat(slot(root))).isDirectory()).toBe(true)
     expect(await readdir(slot(root))).toEqual([])
   })
@@ -400,11 +400,11 @@ describe('a slot the replay cannot read is left as it lies', () => {
   it.each([
     '{nope',
     '{ "op": "bogus", "id": "x" }',
-  ])('a corrupt slot (%s) answers false, byte-identical', async (bad) => {
+  ])('a corrupt slot (%s) answers nothing owed, byte-identical', async (bad) => {
     const root = await seedNexus()
     await openSession(root)
     await writeFile(slot(root), bad)
-    expect(await replaySchemaCascade(root)).toBe(false)
+    expect(await replaySchemaCascade(root)).toBeNull()
     expect(await readFile(slot(root), 'utf8')).toBe(bad)
     expect((await readdir(join(root, '.nexus'))).some((f) => f.includes('.bad-'))).toBe(false)
   })

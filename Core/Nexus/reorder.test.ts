@@ -1,9 +1,9 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest'
 import { rm, readFile, readdir, writeFile, mkdir } from 'node:fs/promises'
 import { join } from '../Paths/posix'
-import { tempRoot } from '../Testing/hostFs'
+import { tempRoot, readJsonAt } from '../Testing/hostFs'
 import {
-  dropContextOrder,
+  dropSpaceOrder,
   setCollectionOrder,
   setSpaceOrder,
   setChildOrder,
@@ -25,7 +25,7 @@ afterEach(async () => {
 })
 
 async function readState(): Promise<Record<string, unknown>> {
-  return JSON.parse(await readFile(nexusConfig(root, NEXUS_CONFIG_FILES.state), 'utf8'))
+  return await readJsonAt(nexusConfig(root, NEXUS_CONFIG_FILES.state))
 }
 
 describe('setCollectionOrder', () => {
@@ -80,19 +80,19 @@ describe('setCollectionOrder', () => {
     })
   })
 
-  it('dropContextOrder removes the Context from both keys and leaves the rest', async () => {
+  it('dropSpaceOrder removes the Context’s Space order and leaves the rest', async () => {
     await setSpaceOrder(root, 'ctx_areas', ['x'])
     await setSpaceOrder(root, 'ctx_projects', ['y'])
     await setPanelContextOrder(root, ['ctx_projects', 'ctx_areas'])
-    await dropContextOrder(root, 'ctx_projects')
+    await dropSpaceOrder(root, 'ctx_projects')
     expect((await readState()).order).toEqual({
       spaces: { ctx_areas: ['x'] },
-      contexts: ['ctx_areas'],
+      contexts: ['ctx_projects', 'ctx_areas'],
     })
   })
 
-  it('dropContextOrder writes nothing when the Context has no order', async () => {
-    await dropContextOrder(root, 'ctx_projects')
+  it('dropSpaceOrder writes nothing when the Context has no order', async () => {
+    await dropSpaceOrder(root, 'ctx_projects')
     expect(await pathExists(nexusConfig(root, NEXUS_CONFIG_FILES.state))).toBe(false)
   })
 
@@ -102,7 +102,7 @@ describe('setCollectionOrder', () => {
     await writeFile(statePath, '{ corrupt', 'utf8')
     const r = await setCollectionOrder(root, ['a'])
     expect(r.ok).toBe(true)
-    expect(JSON.parse(await readFile(statePath, 'utf8')).order).toEqual({ collections: ['a'] })
+    expect((await readJsonAt(statePath)).order).toEqual({ collections: ['a'] })
     const aside = (await readdir(nexusDir(root))).find((f) => f.includes('.bad-'))
     expect(await readFile(join(nexusDir(root), aside ?? ''), 'utf8')).toBe('{ corrupt')
   })

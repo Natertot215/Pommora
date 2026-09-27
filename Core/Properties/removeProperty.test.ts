@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 import { ID_KEY } from '../Nexus/identityMark'
 import { chmod, rename, rm, readFile, stat, utimes, writeFile } from 'node:fs/promises'
 import { join, relative } from '../Paths/posix'
-import { noModeBits, tempRoot } from '../Testing/hostFs'
+import { noModeBits, tempRoot, readJsonAt } from '../Testing/hostFs'
 import { fault, ok } from '../Contract/result'
 import { editJsonStrict } from '../Files/atomicWrite'
 import { seedConfigSurfaces, viewOn } from '../Testing/configSurfaces'
@@ -180,7 +180,10 @@ describe('removeProperty reaches saved views (B-6)', () => {
     const surfaces = await seedConfigSurfaces(root, folder, held)
     const other = await createFolderEntity(root, 'collection', 'Other')
     if (!other.ok) throw new Error('setup failed')
-    const doc = JSON.parse(await readFile(surfaces.tiles, 'utf8'))
+    type TileDoc = {
+      tiles: { id: string; type: string; views: { source_id: string; config: unknown }[] }[]
+    }
+    const doc = await readJsonAt<TileDoc>(surfaces.tiles)
     doc.tiles.push({ id: 'u', type: 'view', views: [{ source_id: other.value.id, config: held }] })
     await writeFile(surfaces.tiles, JSON.stringify(doc))
     vi.mocked(editJsonStrict).mockClear()
@@ -195,9 +198,7 @@ describe('removeProperty reaches saved views (B-6)', () => {
     expect(await Promise.all(own)).toEqual(['unchanged'])
     const views = await surfaces.read()
     expect([views.collection, views.set, views.tile]).toEqual([cleared, cleared, cleared])
-    expect(JSON.parse(await readFile(surfaces.tiles, 'utf8')).tiles[1].views[0].config).toEqual(
-      held,
-    )
+    expect((await readJsonAt<TileDoc>(surfaces.tiles)).tiles[1].views[0].config).toEqual(held)
     expect(views.matrix).toEqual(held.filter)
     expect((await sidecar())?.properties).toEqual([])
     expect(Object.keys((await cacheBlock())?.values ?? {})).toHaveLength(2)

@@ -8,9 +8,9 @@ import { readRegistry } from './propertiesRegistry'
 import { serializeSchemaOp } from './schemaChain'
 import { ok, type Result } from '../Contract/result'
 import { mapViews } from '../Views/views'
-import { type ConfigReach, propertyClear, reachConfig } from '../Nexus/configReach'
+import { type ConfigReach, NO_REACH, propertyClear, reachConfig } from '../Nexus/configReach'
 
-const NOTHING_TO_REMOVE = ok<ConfigReach>({ skipped: 0, hosts: [] })
+const NOTHING_TO_REMOVE = ok<ConfigReach>(NO_REACH)
 
 export function removeProperty(
   root: string,

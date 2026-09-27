@@ -1,7 +1,7 @@
 import { ok } from '../Contract/result'
 import { chmod, mkdir, readFile, readdir, writeFile } from 'node:fs/promises'
 import { join } from '../Paths/posix'
-import { tempRoot, noModeBits } from '../Testing/hostFs'
+import { tempRoot, noModeBits, readJsonAt } from '../Testing/hostFs'
 import { landedId, tileId } from '../Testing/tileLayouts'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { pathExists } from '../Files/atomicWrite'
@@ -77,7 +77,7 @@ describe('the document', () => {
         locked: true,
       }),
     )
-    expect(JSON.parse(await readFile(tileDocPath(home()), 'utf8'))).toEqual({
+    expect(await readJsonAt(tileDocPath(home()))).toEqual({
       layout: { bands: [] },
       tiles: [{ id: tileId('a'), type: 'markdown', keep: 1 }],
       locked: true,
@@ -113,7 +113,7 @@ describe('the document', () => {
     await mkdir(home(), { recursive: true })
     await writeFile(tileDocPath(home()), JSON.stringify({ tiles: [], note: 'mine' }))
     await seed(home(), [{ id: tileId('a'), type: 'markdown' }])
-    expect(JSON.parse(await readFile(tileDocPath(home()), 'utf8')).note).toBe('mine')
+    expect((await readJsonAt(tileDocPath(home()))).note).toBe('mine')
   })
 
   it('a hand-edited shape coerces on read and inside a mutation', async () => {

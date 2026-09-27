@@ -5,6 +5,7 @@ import { symlinkSync } from 'node:fs'
 import { rm } from 'node:fs/promises'
 import { relative } from '../Paths/posix'
 import { tempRoot } from '../Testing/hostFs'
+import { lockContention } from '../Testing/machines'
 import { renameOption } from './optionOps'
 import { createProperty } from './registryProperty'
 import { assignProperty } from './assignment'
@@ -66,12 +67,14 @@ describe('F1 — the cascade takes the cell-write lock', () => {
       release = r
     })
     // Occupy the page's file lock with a gated cell-write: keyed off a different path string, the cascade would land in another bucket and slip past.
+    const lock = lockContention(key.value)
     const held = machine().lock(key.value, async () => {
       await gate
       order.push('cell-write')
     })
     const cascade = renameOption(root, propertyId, 'old', 'new').then(() => order.push('cascade'))
-    await new Promise((r) => setTimeout(r, 50))
+    await lock.contended
+    lock.restore()
     release()
     await Promise.all([held, cascade])
     expect(order).toEqual(['cell-write', 'cascade'])

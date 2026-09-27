@@ -45,6 +45,18 @@ describe('a delete notification', () => {
     expect(undo).toHaveBeenCalledTimes(1)
   })
 
+  it('offers Try Again beside its note, and keeps Undo on the chord', () => {
+    const undo = vi.fn()
+    const retry = vi.fn()
+    notifyDeleted('X', undo, 'Couldn’t update 1 file.', retry)
+    expect(currentNotification()?.action?.label).toBe('Try Again')
+    void currentNotification()?.action?.run()
+    expect(retry).toHaveBeenCalledTimes(1)
+    expect(undo).not.toHaveBeenCalled()
+    expect(undoValue(null)).toBe(true)
+    expect(undo).toHaveBeenCalledTimes(1)
+  })
+
   it('walks past a spent entry to the one beneath it', () => {
     const older = vi.fn()
     const newer = vi.fn()

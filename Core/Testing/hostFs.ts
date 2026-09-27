@@ -16,7 +16,7 @@ export const tempRoot = (prefix: string): string =>
 
 export const noModeBits = windows || process.getuid?.() === 0
 
-export const readJsonAt = async (file: string): Promise<Record<string, unknown>> =>
+export const readJsonAt = async <T = Record<string, unknown>>(file: string): Promise<T> =>
   JSON.parse(await readFile(file, 'utf8'))
 
 export const putJson = async (file: string, value: unknown): Promise<void> => {

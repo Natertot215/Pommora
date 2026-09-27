@@ -1,9 +1,15 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest'
-import { rm, writeFile, mkdir, readFile } from 'node:fs/promises'
+import { rm, writeFile, mkdir } from 'node:fs/promises'
 import { join } from '../Paths/posix'
-import { tempRoot } from '../Testing/hostFs'
+import { tempRoot, readJsonAt } from '../Testing/hostFs'
 import { mutateRegistry, orderedDefs, readKeptRegistry, readRegistry } from './propertiesRegistry'
 import type { PropertyDefinition } from './properties'
+
+type RegistryFile = {
+  order: string[]
+  defs: Record<string, Record<string, unknown>>
+  [key: string]: unknown
+}
 
 let root: string
 beforeEach(async () => {
@@ -151,7 +157,7 @@ describe('untouched definitions', () => {
       next: { ...reg, defs: { ...reg.defs, prop_a: { ...reg.defs.prop_a, name: 'Urgency' } } },
       result: undefined,
     }))
-    const after = JSON.parse(await readFile(join(root, '.nexus', 'properties.json'), 'utf8'))
+    const after = await readJsonAt<RegistryFile>(join(root, '.nexus', 'properties.json'))
     expect(after.defs.prop_f).toEqual(future)
     expect(after.defs.prop_a.name).toBe('Urgency')
     expect(after.plugin_top).toEqual({ keep: 1 })
@@ -180,7 +186,7 @@ describe('the edited definition', () => {
         result: undefined,
       }
     })
-    const after = JSON.parse(await readFile(join(root, '.nexus', 'properties.json'), 'utf8'))
+    const after = await readJsonAt<RegistryFile>(join(root, '.nexus', 'properties.json'))
     expect(after.defs.prop_f).toEqual({
       id: 'prop_f',
       name: 'Cash',

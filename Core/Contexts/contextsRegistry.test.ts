@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest'
 import { rm, mkdir, writeFile, readFile } from 'node:fs/promises'
 import { join } from '../Paths/posix'
-import { tempRoot } from '../Testing/hostFs'
+import { tempRoot, readJsonAt } from '../Testing/hostFs'
 import { ensureContextsRegistry, mutateRegistryFile, readRegistryStrict } from './contextsRegistry'
 import { contextsRegistryFile, nexusDir } from '../Paths/paths'
 import { readJsonStrict, rmwJsonStrict } from '../Files/atomicWrite'
@@ -33,9 +33,9 @@ describe('ensureContextsRegistry', () => {
     expect(new Set(r.value.contexts.map((c) => c.id)).size).toBe(3)
     expect(r.value.contexts.map((c) => c.title)).toEqual(['Areas', 'Topics', 'Projects'])
 
-    const seeded = JSON.parse(await readFile(contextsRegistryFile(root), 'utf8'))
+    const seeded = await readJsonAt(contextsRegistryFile(root))
     await ensureContextsRegistry(root)
-    expect(JSON.parse(await readFile(contextsRegistryFile(root), 'utf8'))).toEqual(seeded)
+    expect(await readJsonAt(contextsRegistryFile(root))).toEqual(seeded)
   })
 
   it('leaves a corrupt registry untouched, and the strict read fails', async () => {
@@ -49,7 +49,8 @@ describe('ensureContextsRegistry', () => {
 describe('mutateRegistryFile', () => {
   it('round-trips unknown fields at both levels', async () => {
     await ensureContextsRegistry(root)
-    const before = JSON.parse(await readFile(contextsRegistryFile(root), 'utf8'))
+    type LooseRegistry = { contexts: Record<string, unknown>[]; [key: string]: unknown }
+    const before = await readJsonAt<LooseRegistry>(contextsRegistryFile(root))
     before.foreign = { keep: true }
     before.contexts[0].future_field = 7
     await writeFile(contextsRegistryFile(root), JSON.stringify(before))
@@ -58,7 +59,7 @@ describe('mutateRegistryFile', () => {
       contexts: [...reg.contexts, { id: 'ctxNew', title: 'Classes', singular: 'Class' }],
     }))
     expect(r.ok).toBe(true)
-    const after = JSON.parse(await readFile(contextsRegistryFile(root), 'utf8'))
+    const after = await readJsonAt<LooseRegistry>(contextsRegistryFile(root))
     expect(after.foreign).toEqual({ keep: true })
     expect(after.contexts[0].future_field).toBe(7)
     expect(after.contexts).toHaveLength(4)
@@ -114,7 +115,7 @@ describe('strict JSON IO', () => {
     await writeFile(target, JSON.stringify({ id: 'sp1', color: 'cyan' }))
     const r = await rmwJsonStrict(target, (cur) => ({ ...cur, banner: 'b.png' }))
     expect(r.ok).toBe(true)
-    const after = JSON.parse(await readFile(target, 'utf8'))
+    const after = await readJsonAt(target)
     expect(after).toEqual({ id: 'sp1', color: 'cyan', banner: 'b.png' })
   })
 })

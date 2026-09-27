@@ -269,6 +269,8 @@ export interface ConfigReach {
   hosts: TileHostRef[]
 }
 
+export const NO_REACH: ConfigReach = { skipped: 0, hosts: [] }
+
 export const reachReport = ({ hosts, skipped }: ConfigReach): CascadeReport => ({
   pages: [],
   hosts,

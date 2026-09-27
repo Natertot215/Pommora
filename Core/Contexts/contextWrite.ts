@@ -19,7 +19,7 @@ import { applyAdoptions } from '../Properties/optionOps'
 import type { NexusTree, SpaceNode } from '../Nexus/tree'
 import { isColorKey } from '@pommora/uix/Theme/colors'
 import { ok, fail, type Result, fault } from '../Contract/result'
-import { mutateRegistryFile, readRegistryStrict } from './contextsRegistry'
+import { mutateRegistryFile, readRegistryStrict, withContextAt } from './contextsRegistry'
 import { adoptedId, newId } from '../Nexus/ids'
 import { freeName, nameError } from '../Paths/names'
 import {
@@ -238,7 +238,7 @@ export async function createContextGroup(
       cur.contexts.map((c) => c.title),
     )
     // No icon: a fresh group resolves to the kind's glyph and follows a nexus default; stamping one would outrank that override forever.
-    return { contexts: [...cur.contexts, { id, title }] }
+    return withContextAt({ id, title })(cur)
   })
   if (!written.ok) return written
   await machine().mkdir(join(contextsDir(root), title))

@@ -8,7 +8,7 @@ import { readValue, writeValue } from '../Platform/localState'
 import { installStores, NO_STORES } from '../Platform/stores'
 import { currentSession, startSession, stopSession } from '../Sync/Client/session'
 import { currentStatus } from '../Sync/Client/status'
-import { tempRoot } from '../Testing/hostFs'
+import { tempRoot, readJsonAt } from '../Testing/hostFs'
 import { memoryStores } from '../Testing/memoryStores'
 import { type HubHost, hubHost } from '../Testing/syncHub'
 import { nexusHandlers, openNexusSequence } from './handlers'
@@ -156,7 +156,9 @@ describe('openNexusSequence', () => {
       JSON.stringify({ defs: { a: { id: 'a', name: 'Tags', type: 'multi_select' } } }),
     )
     await openNexusSequence(ctx, root, false)
-    expect(JSON.parse(await readFile(registry, 'utf8')).defs.a.type).toBe('multiSelect')
+    expect((await readJsonAt<{ defs: { a: { type: string } } }>(registry)).defs.a.type).toBe(
+      'multiSelect',
+    )
   })
 
   it('drains an in-flight push before the stores swap', async () => {

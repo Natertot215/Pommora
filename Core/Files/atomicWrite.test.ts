@@ -3,7 +3,7 @@ import { ok } from '../Contract/result'
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 import { rm, mkdir, readFile, readdir, writeFile, stat, utimes } from 'node:fs/promises'
 import { dirname, join, basename } from '../Paths/posix'
-import { tempRoot } from '../Testing/hostFs'
+import { tempRoot, readJsonAt } from '../Testing/hostFs'
 import {
   atomicWriteFile,
   editJsonStrict,
@@ -89,7 +89,7 @@ describe('rmwJsonStrict', () => {
     await writeJson(p, { count: 1, keep: 'me' })
     const written = await rmwJsonStrict(p, (cur) => ({ ...cur, count: 2 }))
     expect(written.ok).toBe(true)
-    expect(JSON.parse(await readFile(p, 'utf8'))).toEqual({ count: 2, keep: 'me' })
+    expect(await readJsonAt(p)).toEqual({ count: 2, keep: 'me' })
   })
 
   it('seeds a missing file when a seed is given', async () => {
@@ -100,7 +100,7 @@ describe('rmwJsonStrict', () => {
       () => ({ seed: 1 }),
     )
     expect(written.ok).toBe(true)
-    expect(JSON.parse(await readFile(p, 'utf8'))).toEqual({ seed: 1, added: true })
+    expect(await readJsonAt(p)).toEqual({ seed: 1, added: true })
   })
 
   it('fails on a missing file without a seed, writing nothing', async () => {
@@ -190,7 +190,7 @@ describe('readAppFile and a repairable updateNexusFile', () => {
     await damage(file)
     expect(await readAppFile(file)).toEqual({ order: ['a'] })
     await updateNexusFile(file, (cur) => ({ ...cur, pinned: ['p'] }), true)
-    expect(JSON.parse(await readFile(file, 'utf8'))).toEqual({ order: ['a'], pinned: ['p'] })
+    expect(await readJsonAt(file)).toEqual({ order: ['a'], pinned: ['p'] })
     expect(await readFile(join(dir, (await aside(file)) ?? ''), 'utf8')).toBe('{ corrupt')
   })
 
@@ -200,7 +200,7 @@ describe('readAppFile and a repairable updateNexusFile', () => {
     await readAppFile(file)
     await damage(file)
     await updateNexusFile(file, () => null, true)
-    expect(JSON.parse(await readFile(file, 'utf8'))).toEqual({ order: ['a'] })
+    expect(await readJsonAt(file)).toEqual({ order: ['a'] })
   })
 
   it('a file never read cleanly rebuilds from the repair seed, and a deleted one reads as absent', async () => {
@@ -216,7 +216,7 @@ describe('readAppFile and a repairable updateNexusFile', () => {
     } finally {
       setRepairSeed(null)
     }
-    expect(JSON.parse(await readFile(file, 'utf8'))).toEqual({ order: ['synced'], pinned: ['p'] })
+    expect(await readJsonAt(file)).toEqual({ order: ['synced'], pinned: ['p'] })
   })
 
   it('readKept answers a file damaged after a clean read with that read', async () => {
@@ -239,7 +239,7 @@ describe('readAppFile and a repairable updateNexusFile', () => {
     } finally {
       setRepairSeed(null)
     }
-    expect(JSON.parse(await readFile(file, 'utf8'))).toEqual({ order: ['synced'], pinned: ['p'] })
+    expect(await readJsonAt(file)).toEqual({ order: ['synced'], pinned: ['p'] })
   })
 
   it('a damaged file this session never saw fails readKept by name and reads empty through readAppFile', async () => {

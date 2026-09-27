@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest'
-import { rm, writeFile, readFile } from 'node:fs/promises'
+import { rm, writeFile } from 'node:fs/promises'
 import { join } from '../Paths/posix'
-import { tempRoot } from '../Testing/hostFs'
+import { tempRoot, readJsonAt } from '../Testing/hostFs'
 import { savedView, type SavedView } from './views'
 import {
   saveView,
@@ -38,7 +38,7 @@ async function writeCollectionSidecar(obj: Record<string, unknown>): Promise<voi
   await writeFile(join(folder, '_pagecollection.json'), JSON.stringify({ id: 'col', ...obj }))
 }
 async function readRaw(file: string): Promise<Record<string, unknown>> {
-  return JSON.parse(await readFile(join(folder, file), 'utf8'))
+  return await readJsonAt(join(folder, file))
 }
 
 describe('view persistence CRUD', () => {
@@ -201,8 +201,8 @@ describe('view persistence CRUD', () => {
     await writeFile(join(folder, '_pageset.json'), JSON.stringify({ id: 'set', views: [] }))
     const r = await upsert(folder, 'set', view({ id: 'view_s', name: 'SetTable' }))
     expect(r.ok).toBe(true)
-    const sidecar = JSON.parse(await readFile(join(folder, '_pageset.json'), 'utf8'))
-    expect(sidecar.views.map((v: SavedView) => v.id)).toEqual(['view_s'])
+    const sidecar = await readJsonAt<{ views: SavedView[] }>(join(folder, '_pageset.json'))
+    expect(sidecar.views.map((v) => v.id)).toEqual(['view_s'])
   })
 })
 

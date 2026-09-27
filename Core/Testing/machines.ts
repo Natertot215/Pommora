@@ -3,7 +3,7 @@ import { createHash } from 'node:crypto'
 import { mkdir, readdir, readFile, rename, rm, stat, utimes, writeFile } from 'node:fs/promises'
 import { dirname } from '../Paths/posix'
 import { realpathPosix, windows } from './hostFs'
-import type { DirEntry, FileStat, Machine } from '../Platform/machine'
+import { type DirEntry, type FileStat, type Machine, machine } from '../Platform/machine'
 
 const sha256Hex = (input: string | Uint8Array): string =>
   createHash('sha256').update(input).digest('hex')
@@ -30,6 +30,31 @@ function chainLock(): Machine['lock'] {
       ),
     )
     return run
+  }
+}
+
+/** Resolves once a second caller waits on `key`'s lock, so a race test pauses on the lock itself rather than on a timer. */
+export function lockContention(key: string): { contended: Promise<void>; restore: () => void } {
+  const m = machine()
+  const lock = m.lock
+  let inFlight = 0
+  let contend = (): void => {}
+  const contended = new Promise<void>((resolve) => {
+    contend = resolve
+  })
+  m.lock = <T>(k: string, fn: () => Promise<T>): Promise<T> => {
+    if (k !== key) return lock(k, fn)
+    if (inFlight) contend()
+    inFlight++
+    return lock(k, fn).finally(() => {
+      inFlight--
+    })
+  }
+  return {
+    contended,
+    restore: () => {
+      m.lock = lock
+    },
   }
 }
 

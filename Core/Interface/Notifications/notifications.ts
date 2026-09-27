@@ -52,9 +52,11 @@ export function reportRefusal<T>(r: Result<T>): r is { ok: true; value: T } {
   return r.ok
 }
 
+const tryAgain = (run: () => void): Notification['action'] => ({ label: 'Try Again', run })
+
 /** A refusal that may pass on a second attempt, which its label offers. */
 export function notifyRetry(message: string, retry: () => void): void {
-  post({ message, tone: 'error', action: { label: 'Try Again', run: retry } })
+  post({ message, tone: 'error', action: tryAgain(retry) })
 }
 
 /** A write nothing waits on still answers: a refusal posts a notice naming `what`, or, for `quiet` chrome, logs it. */
@@ -77,18 +79,21 @@ export const notifyDeleted = (
   title: string,
   undo?: () => void | Promise<void>,
   note?: string,
+  retry?: () => void,
 ): void =>
   note
-    ? notifyUndoable(`Deleted “${title}”. ${note}`, undo, 'error')
+    ? notifyUndoable(`Deleted “${title}”. ${note}`, undo, 'error', retry)
     : notifyUndoable(`Deleted “${title}”`, undo)
 
 export function notifyUndoable(
   message: string,
   undo?: () => void | Promise<void>,
   tone: Notification['tone'] = 'normal',
+  retry?: () => void,
 ): void {
+  const retried = retry && tryAgain(retry)
   if (!undo) {
-    post({ message, tone })
+    post({ message, tone, action: retried })
     return
   }
   // The label's Undo and the undo chord are one shot between them, so a restore cannot run twice and mint a second copy.
@@ -99,7 +104,7 @@ export function notifyUndoable(
     void undo()
     return true
   }
-  const id = post({ message, tone, action: { label: 'Undo', run: () => void once() } })
+  const id = post({ message, tone, action: retried ?? { label: 'Undo', run: () => void once() } })
   pushUndo(() => {
     if (!once()) return false
     dismissNotification(id)

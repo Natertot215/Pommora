@@ -1,7 +1,7 @@
 import { readFile, rename, rm, mkdir, stat, utimes, writeFile } from 'node:fs/promises'
 import { join } from '../Paths/posix'
 import { contextsDir, contextsRegistryFile } from '../Paths/paths'
-import { tempRoot } from '../Testing/hostFs'
+import { tempRoot, readJsonAt } from '../Testing/hostFs'
 import { createContextGroup, createSpace } from '../Contexts/contextWrite'
 import { setSpaceProperty } from '../Properties/setProperty'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
@@ -82,14 +82,14 @@ describe('restoring a deleted property', () => {
     const id = await seedPriority()
     expect((await deleteProperty(root, id)).ok).toBe(true)
     const file = join(notes, '_pagecollection.json')
-    const raw = JSON.parse(await readFile(file, 'utf8'))
+    const raw = await readJsonAt(file)
     raw.views = [
       { id: 'view_x', name: 'X', type: 'table', sort: [{ property_id: 'p', direction: 'random' }] },
     ]
     await writeFile(file, JSON.stringify(raw))
     const r = await handleMutate(root, { op: 'restore', bundlePath: await onlyBundlePath() }, deps)
     expect(r.ok).toBe(true)
-    expect(JSON.parse(await readFile(file, 'utf8')).properties).toEqual([id])
+    expect((await readJsonAt(file)).properties).toEqual([id])
   })
 
   it('fills only pages that hold no value, names the one that kept its own, and re-dates none', async () => {
@@ -268,8 +268,7 @@ describe('restoring a deleted property', () => {
     const space = await createSpace(root, group.value.id, 'Pommora')
     if (!space.ok) throw new Error('space failed')
     const sidecarFile = join(root, space.value.path, '_space.json')
-    const sidecar = async (): Promise<Record<string, unknown>> =>
-      JSON.parse(await readFile(sidecarFile, 'utf8'))
+    const sidecar = async (): Promise<Record<string, unknown>> => await readJsonAt(sidecarFile)
 
     const id = await seedPriority()
     expect(
@@ -309,7 +308,7 @@ describe('restoring a deleted property', () => {
 
     const r = await handleMutate(root, { op: 'restore', bundlePath: await onlyBundlePath() }, deps)
     expect(r).toEqual({ ok: true, value: {} })
-    expect(JSON.parse(await readFile(sidecarFile, 'utf8')).Priority).toEqual(['hi'])
+    expect((await readJsonAt(sidecarFile)).Priority).toEqual(['hi'])
   })
 
   it('a Multi-Select value comes back holding only the options the definition still offers', async () => {

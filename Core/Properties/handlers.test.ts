@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { chmod, mkdir, rm } from 'node:fs/promises'
+import { chmod, mkdir, readFile, rm, writeFile } from 'node:fs/promises'
 import { relative } from '../Paths/posix'
-import { noModeBits, tempRoot } from '../Testing/hostFs'
+import { noModeBits, readJsonAt, tempRoot } from '../Testing/hostFs'
 import { type ConfigSurfaces, seedConfigSurfaces, viewOn } from '../Testing/configSurfaces'
 import type { HostContext } from '../Contract/handlers'
 import { fault } from '../Contract/result'
@@ -15,6 +15,7 @@ import { createProperty } from './registryProperty'
 import { assignProperty } from './assignment'
 import { mutateRegistry, readRegistry } from './propertiesRegistry'
 import { unsweptLine } from './governedSweep'
+import { readSchemaJournal, writeSchemaJournal } from './propertyJournal'
 import { propertiesHandlers } from './handlers'
 
 vi.mock('./propertiesRegistry', async (importOriginal) => {
@@ -111,6 +112,44 @@ describe('the property channels', () => {
     expect(r).toEqual(fault(unsweptLine(1)))
     expect((liveViewAt(col) as { filter: unknown }).filter).toEqual({ match: 'all', rules: [] })
     expect(tilePushes()).toEqual([HOME])
+  })
+
+  it('a delete held by an unreadable Set sidecar warns, and the replay channel heals it once the file reads', async () => {
+    const setFile = sidecarPath(surfaces.set, 'set')
+    const held = await readFile(setFile, 'utf8')
+    await rm(setFile)
+    await mkdir(setFile)
+    const r = await propertiesHandlers['property:delete'](ctx, propId)
+    expect(r.ok && r.value.cascade?.warning).toBe(unsweptLine(1))
+    expect(r.ok && r.value.replayable).toBe(true)
+    expect(tilePushes()).toEqual([HOME])
+    expect(await propertiesHandlers['property:replayDelete'](ctx, propId)).toEqual(
+      fault(unsweptLine(1)),
+    )
+    await rm(setFile, { recursive: true })
+    await writeFile(setFile, held)
+    expect(await propertiesHandlers['property:replayDelete'](ctx, propId)).toEqual({
+      ok: true,
+      value: null,
+    })
+    const views = (await readJsonAt(setFile)).views as { filter: unknown }[]
+    expect(views[0].filter).toEqual({ match: 'all', rules: [] })
+  })
+
+  it('a delete that finds another operation owed in the journal offers no replay of its own', async () => {
+    const owed = { op: 'rename' as const, id: 'prop_other', from: 'A', to: 'B' }
+    await writeSchemaJournal(root, owed)
+    const setFile = sidecarPath(surfaces.set, 'set')
+    await rm(setFile)
+    await mkdir(setFile)
+    const r = await propertiesHandlers['property:delete'](ctx, propId)
+    expect(r.ok && r.value.cascade.warning).toBe(unsweptLine(1))
+    expect(r.ok && r.value.replayable).toBeUndefined()
+    expect(await propertiesHandlers['property:replayDelete'](ctx, propId)).toEqual({
+      ok: true,
+      value: null,
+    })
+    expect(await readSchemaJournal(root)).toEqual(owed)
   })
 
   it('a removal whose drop fails still confirms the Set it wrote', async () => {

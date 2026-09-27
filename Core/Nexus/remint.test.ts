@@ -1,6 +1,7 @@
 import { chmod, cp, mkdir, readFile, rm, writeFile } from 'node:fs/promises'
 import { join } from '../Paths/posix'
-import { noModeBits, tempRoot } from '../Testing/hostFs'
+import { noModeBits, tempRoot, readJsonAt } from '../Testing/hostFs'
+import { lockContention } from '../Testing/machines'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { isUlidShaped } from './identityMark'
 import type { EntityRecord } from './record'
@@ -216,7 +217,7 @@ describe('the re-mint writes', () => {
 
   const chooseSetView = async (viewId: string): Promise<void> => {
     const file = join(root, 'Library', 'Fiction', '_pageset.json')
-    const sidecar = JSON.parse(await readFile(file, 'utf8'))
+    const sidecar = await readJsonAt(file)
     await writeFile(file, JSON.stringify({ ...sidecar, active_view: viewId }))
   }
 
@@ -245,24 +246,29 @@ describe('the re-mint writes', () => {
 
     await runOpenLedger(root)
 
-    const originalSet = JSON.parse(
-      await readFile(join(root, 'Library', 'Fiction', '_pageset.json'), 'utf8'),
+    type SetSidecar = {
+      id: unknown
+      active_view: unknown
+      views: { id: string; name: unknown; manual_order?: unknown }[]
+    }
+    const originalSet = await readJsonAt<SetSidecar>(
+      join(root, 'Library', 'Fiction', '_pageset.json'),
     )
     expect(originalSet.id).toBe(SET)
     expect(originalSet.views[0].id).toBe('view-1')
-    const copySet = JSON.parse(
-      await readFile(join(root, 'Library', 'Fiction copy', '_pageset.json'), 'utf8'),
+    const copySet = await readJsonAt<SetSidecar>(
+      join(root, 'Library', 'Fiction copy', '_pageset.json'),
     )
     expect(isUlidShaped(copySet.id)).toBe(true)
     expect(isViewId(copySet.views[0].id)).toBe(true)
     expect(copySet.views[0].name).toBe('Table')
 
-    const originalSpace = JSON.parse(
-      await readFile(join(root, '.nexus', 'contexts', 'Areas', 'Work', '_space.json'), 'utf8'),
+    const originalSpace = await readJsonAt(
+      join(root, '.nexus', 'contexts', 'Areas', 'Work', '_space.json'),
     )
     expect(originalSpace.id).toBe(SPACE)
-    const copySpace = JSON.parse(
-      await readFile(join(root, '.nexus', 'contexts', 'Areas', 'Work copy', '_space.json'), 'utf8'),
+    const copySpace = await readJsonAt(
+      join(root, '.nexus', 'contexts', 'Areas', 'Work copy', '_space.json'),
     )
     expect(isUlidShaped(copySpace.id)).toBe(true)
     expect(copySpace.keep_me).toBe('foreign')
@@ -301,12 +307,14 @@ describe('the re-mint writes', () => {
       await cp(work, copy, { recursive: true })
       await chmod(join(copy, '_tiles.json'), 0o000)
       await runOpenLedger(root)
-      const idOf = async () => JSON.parse(await readFile(join(copy, '_space.json'), 'utf8')).id
+      const idOf = async () => (await readJsonAt(join(copy, '_space.json'))).id
       expect(await idOf()).toBe(SPACE)
       await chmod(join(copy, '_tiles.json'), 0o644)
       await runOpenLedger(root)
       expect(await idOf()).not.toBe(SPACE)
-      const board = JSON.parse(await readFile(join(copy, '_tiles.json'), 'utf8'))
+      const board = await readJsonAt<{
+        tiles: { views: { config: { id: string } }[] }[]
+      }>(join(copy, '_tiles.json'))
       expect(isViewId(board.tiles[0].views[0].config.id)).toBe(true)
     },
   )
@@ -321,13 +329,9 @@ describe('the re-mint writes', () => {
     await runOpenLedger(root)
     await runOpenLedger(root)
 
-    const copySet = JSON.parse(
-      await readFile(join(root, 'Library', 'Fiction copy', '_pageset.json'), 'utf8'),
-    )
+    const copySet = await readJsonAt(join(root, 'Library', 'Fiction copy', '_pageset.json'))
     expect(copySet.id).not.toBe(SET)
-    const originalSet = JSON.parse(
-      await readFile(join(root, 'Library', 'Fiction', '_pageset.json'), 'utf8'),
-    )
+    const originalSet = await readJsonAt(join(root, 'Library', 'Fiction', '_pageset.json'))
     expect(originalSet.active_view).toBe('view-ghost')
     expect(copySet.active_view).toBeUndefined()
   })
@@ -357,6 +361,7 @@ describe('the re-mint writes', () => {
     const copyFile = join(copyDir, '_pageset.json')
 
     let release = (): void => {}
+    const lock = lockContention(sidecarPath(copyDir, 'set'))
     const held = machine().lock(sidecarPath(copyDir, 'set'), async () => {
       const cur = await readJsonStrict(copyFile)
       await new Promise<void>((r) => {
@@ -365,11 +370,12 @@ describe('the re-mint writes', () => {
       if (cur.ok) await writeJson(copyFile, { ...cur.value, banner: 'Wallpaper.png' })
     })
     const pass = runOpenLedger(root)
-    await Promise.race([pass, new Promise((r) => setTimeout(r, 200))])
+    await Promise.race([pass, lock.contended])
+    lock.restore()
     release()
     await Promise.all([held, pass])
 
-    const copySet = JSON.parse(await readFile(copyFile, 'utf8'))
+    const copySet = await readJsonAt(copyFile)
     expect(copySet.banner).toBe('Wallpaper.png')
     expect(copySet.id).not.toBe(SET)
     expect(isUlidShaped(copySet.id)).toBe(true)
@@ -406,8 +412,8 @@ describe('the whole-Collection copy — the acceptance shape', () => {
       await runOpenLedger(root2)
 
       const original = {
-        col: JSON.parse(await readFile(join(root2, 'Library', '_pagecollection.json'), 'utf8')),
-        set: JSON.parse(await readFile(join(root2, 'Library', 'Fiction', '_pageset.json'), 'utf8')),
+        col: await readJsonAt<{ id: string }>(join(root2, 'Library', '_pagecollection.json')),
+        set: await readJsonAt(join(root2, 'Library', 'Fiction', '_pageset.json')),
         page: await readFile(join(root2, 'Library', 'Notes.md'), 'utf8'),
       }
       expect(original.col.id).toBe('01KVGMT8BFP350FZZXAMG1QDWA')
@@ -415,12 +421,8 @@ describe('the whole-Collection copy — the acceptance shape', () => {
       expect(original.page).toContain('01KVGMT8BFP350FZZXAMG1QDWC')
 
       const copy = {
-        col: JSON.parse(
-          await readFile(join(root2, 'Library copy', '_pagecollection.json'), 'utf8'),
-        ),
-        set: JSON.parse(
-          await readFile(join(root2, 'Library copy', 'Fiction', '_pageset.json'), 'utf8'),
-        ),
+        col: await readJsonAt<{ id: string }>(join(root2, 'Library copy', '_pagecollection.json')),
+        set: await readJsonAt(join(root2, 'Library copy', 'Fiction', '_pageset.json')),
         page: await readFile(join(root2, 'Library copy', 'Notes.md'), 'utf8'),
       }
       expect(isUlidShaped(copy.col.id)).toBe(true)

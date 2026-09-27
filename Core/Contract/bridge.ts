@@ -1,5 +1,5 @@
 import type { AssetMap, NexusState, NexusTree, ValueChange } from '../Nexus/tree'
-import type { MutateOutcome, MutateReply, MutateRequest } from '../Nexus/mutateRequest'
+import type { MutateReply, MutateRequest } from '../Nexus/mutateRequest'
 import type { Result } from './result'
 import type { EditorMenuRequest } from '../Actions/editorMenu'
 import type { MenuCommand } from '../Actions/commands'
@@ -16,6 +16,7 @@ import type { ThumbRect } from '../Interface/chrome'
 import type { PageValues } from '../Views/viewRow'
 import type { ContainerConfigPatch } from '../Views/containerConfig'
 import type { OptionEdit } from '../Properties/optionModel'
+import type { PropertyDeletion } from '../Properties/deleteProperty'
 import type { PropertyRename } from '../Properties/registryProperty'
 import type { Personalization } from '../Settings/personalization'
 import type {
@@ -141,7 +142,8 @@ export interface Asks {
     args: [propertyId: string, name: string]
     reply: Result<PropertyRename | null>
   }
-  'property:delete': { args: [propertyId: string]; reply: Result<Pick<MutateOutcome, 'trashed'>> }
+  'property:delete': { args: [propertyId: string]; reply: Result<PropertyDeletion> }
+  'property:replayDelete': { args: [propertyId: string]; reply: Result<null> }
   'property:setLinkConfig': {
     args: [propertyId: string, patch: LinkConfig]
     reply: Result<null>

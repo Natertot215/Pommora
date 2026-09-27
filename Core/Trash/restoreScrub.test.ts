@@ -3,7 +3,7 @@
 import { mkdir, readFile, rm, writeFile } from 'node:fs/promises'
 import { splitFrontmatter } from '../Files/pageFile'
 import { join } from '../Paths/posix'
-import { tempRoot } from '../Testing/hostFs'
+import { tempRoot, readJsonAt } from '../Testing/hostFs'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { dropLiveTree, refreshTree } from '../Nexus/liveTree'
 import { pathExists } from '../Files/atomicWrite'
@@ -302,10 +302,12 @@ describe('a returning artifact is reconciled against the world it comes back to'
       )
     })
     expect((await fm('Notes/Alpha.md')).Tags).toEqual(['a'])
-    const def = JSON.parse(await readFile(join(root, '.nexus', 'properties.json'), 'utf8')).defs[
-      PROP
-    ]
-    expect(def.select_options.map((o: { value: string }) => o.value)).toEqual(['a'])
+    const def = (
+      await readJsonAt<{ defs: Record<string, { select_options: { value: string }[] }> }>(
+        join(root, '.nexus', 'properties.json'),
+      )
+    ).defs[PROP]
+    expect(def.select_options.map((o) => o.value)).toEqual(['a'])
   })
 
   it('leaves foreign frontmatter and the body untouched while it strips', async () => {
@@ -349,7 +351,7 @@ describe('a Space sidecar is a context root too', () => {
   }
 
   const sidecar = async (rel: string): Promise<Record<string, unknown>> =>
-    JSON.parse(await readFile(join(contextsDir(root), rel, '_space.json'), 'utf8'))
+    await readJsonAt(join(contextsDir(root), rel, '_space.json'))
 
   it('drops a passenger tag whose Space died while the subtree sat in the trash', async () => {
     await seedPassenger()

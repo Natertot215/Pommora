@@ -2,7 +2,8 @@ import { describe, it, expect, beforeEach, afterEach } from 'vitest'
 import { ID_KEY, isUlidShaped, kindOf } from './identityMark'
 import { rm, mkdir, writeFile, readFile, readdir, stat, utimes } from 'node:fs/promises'
 import { join } from '../Paths/posix'
-import { tempRoot } from '../Testing/hostFs'
+import { tempRoot, readJsonAt } from '../Testing/hostFs'
+import { lockContention } from '../Testing/machines'
 import { ensurePageId, stampAdopted } from './adopt'
 import { readSidecar } from '../Files/sidecar'
 import { splitFrontmatter } from '../Files/pageFile'
@@ -41,6 +42,7 @@ describe('stampAdopted', () => {
     const file = sidecarPath(notes, 'collection')
     await writeFile(file, JSON.stringify({ icon: 'box' }))
     let release = (): void => {}
+    const lock = lockContention(file)
     const held = machine().lock(file, async () => {
       const cur = await readJsonStrict(file)
       await new Promise<void>((r) => {
@@ -49,10 +51,11 @@ describe('stampAdopted', () => {
       if (cur.ok) await writeJson(file, { ...cur.value, banner: 'Wallpaper.png' })
     })
     const pass = stampAdopted(root)
-    await Promise.race([pass, new Promise((r) => setTimeout(r, 100))])
+    await Promise.race([pass, lock.contended])
+    lock.restore()
     release()
     await Promise.all([held, pass])
-    const after = JSON.parse(await readFile(file, 'utf8'))
+    const after = await readJsonAt(file)
     expect(after).toMatchObject({ icon: 'box', banner: 'Wallpaper.png' })
     expect(isUlidShaped(after.id)).toBe(true)
   })

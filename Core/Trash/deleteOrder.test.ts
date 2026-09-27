@@ -3,7 +3,8 @@
 import { mkdir, readdir, readFile, rm, writeFile } from 'node:fs/promises'
 import { splitFrontmatter } from '../Files/pageFile'
 import { join } from '../Paths/posix'
-import { tempRoot } from '../Testing/hostFs'
+import { tempRoot, readJsonAt } from '../Testing/hostFs'
+import { lockContention } from '../Testing/machines'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { pathExists, readJsonObject } from '../Files/atomicWrite'
 import { handleMutate } from '../Nexus/mutate'
@@ -29,7 +30,7 @@ async function firstRecordUnder(dir: string): Promise<unknown> {
   for (const e of entries) {
     if (!e.isDirectory()) continue
     const hit = join(dir, e.name, '_record.json')
-    if (await pathExists(hit)) return JSON.parse(await readFile(hit, 'utf8'))
+    if (await pathExists(hit)) return await readJsonAt(hit)
     const deeper = await firstRecordUnder(join(dir, e.name))
     if (deeper !== undefined) return deeper
   }
@@ -246,6 +247,7 @@ describe('a page delete waits out a save in flight', () => {
     const gate = new Promise<void>((r) => {
       release = r
     })
+    const lock = lockContention(file)
     const save = machine().lock(file, async () => {
       await gate
       await writeFile(file, 'saved')
@@ -255,7 +257,8 @@ describe('a page delete waits out a save in flight', () => {
       { op: 'delete', path: 'Notes/Alpha.md', kind: 'page' },
       nexusDeps,
     )
-    await new Promise((r) => setTimeout(r, 20))
+    await lock.contended
+    lock.restore()
     release()
     await save
     const r = await del

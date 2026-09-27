@@ -54,6 +54,7 @@ const recordFile = z.discriminatedUnion('entity', [
   z.object({
     entity: z.literal('context'),
     registry: contextEntry,
+    at: z.number().int().nonnegative().optional(),
     membership: z.array(z.object({ root: memberRoot, spaces: z.array(spaceRef) })),
     partial: z.literal(true).optional(),
   }),

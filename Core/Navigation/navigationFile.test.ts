@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest'
 import { rm, readFile, writeFile, mkdir, readdir } from 'node:fs/promises'
 import { dirname, join } from '../Paths/posix'
-import { tempRoot } from '../Testing/hostFs'
+import { tempRoot, readJsonAt } from '../Testing/hostFs'
 import type { NavRef } from './navRef'
 import { installStores, NO_STORES } from '../Platform/stores'
 import { memoryStores } from '../Testing/memoryStores'
@@ -21,7 +21,7 @@ const statePath = (r: string): string => join(r, '.nexus', 'state.json')
 const readState = async (): Promise<{
   navigation: Record<string, unknown>
   [k: string]: unknown
-}> => JSON.parse(await readFile(statePath(root), 'utf8'))
+}> => await readJsonAt(statePath(root))
 const seedState = async (state: unknown): Promise<void> => {
   await mkdir(join(root, '.nexus'), { recursive: true })
   await writeFile(statePath(root), typeof state === 'string' ? state : JSON.stringify(state))

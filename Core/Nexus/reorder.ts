@@ -4,7 +4,6 @@ import { patchSidecar } from '../Files/sidecar'
 import { sidecarPath } from '../Paths/paths'
 import { ok, type Result } from '../Contract/result'
 import type { ChildOrderKey } from './mutateRequest'
-import { asStringArray } from './coerce'
 
 type ContainerOrderKey = ChildOrderKey | 'page_order'
 
@@ -42,17 +41,11 @@ export const setSpaceOrder = (
     spaces: { ...spacesOf(order), [contextId]: persistable(ids) },
   }))
 
-/** A deleted Context takes its Space order and its panel slot with it. */
-export const dropContextOrder = (nexusRoot: string, contextId: string): StateOrderWrite =>
+/** A Context gone for good takes its Space order with it. */
+export const dropSpaceOrder = (nexusRoot: string, contextId: string): StateOrderWrite =>
   writeStateOrder(nexusRoot, (order) => {
     const { [contextId]: dropped, ...spaces } = spacesOf(order)
-    const contexts = asStringArray(order.contexts)
-    if (dropped === undefined && !contexts?.includes(contextId)) return null
-    return {
-      ...order,
-      spaces,
-      ...(contexts && { contexts: contexts.filter((id) => id !== contextId) }),
-    }
+    return dropped === undefined ? null : { ...order, spaces }
   })
 
 export async function setChildOrder(

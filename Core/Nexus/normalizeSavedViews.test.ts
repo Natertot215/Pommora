@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest'
-import { rm, mkdir, writeFile, readFile, stat } from 'node:fs/promises'
+import { rm, mkdir, writeFile, stat } from 'node:fs/promises'
 import { join } from '../Paths/posix'
-import { tempRoot } from '../Testing/hostFs'
+import { tempRoot, readJsonAt } from '../Testing/hostFs'
 import { nexusDir } from '../Paths/paths'
 import { SIDECAR_FILENAME, TILE_DOC_FILENAME } from '../Paths/nexusPaths'
 import { normalizeSavedViews } from './migrateConfig'
@@ -36,7 +36,7 @@ const viewsIn = async (
   dir: string,
   kind: Kind = 'collection',
 ): Promise<Record<string, unknown>[]> =>
-  JSON.parse(await readFile(sidecarAt(dir, kind), 'utf8')).views
+  (await readJsonAt<{ views: Record<string, unknown>[] }>(sidecarAt(dir, kind))).views
 
 // The open sequence: the walk covers the Trash and tile documents, and adoption every container in scope.
 const open = async (): Promise<void> => {
@@ -101,11 +101,9 @@ describe('normalizeSavedViews', () => {
     await open()
     expect((await viewsIn('Notes')).map((v) => v.icon)).toEqual(['view-table', 'star'])
     expect((await viewsIn(trashed))[0].icon).toBe('view-table')
-    const doc = JSON.parse(await readFile(tileDoc, 'utf8'))
-    expect(doc.tiles[0].views.map((e: { config: { icon: string } }) => e.config.icon)).toEqual([
-      'view-table',
-      'star',
-    ])
+    type TileDoc = { tiles: { views: { config: { icon: string } }[] }[] }
+    const doc = await readJsonAt<TileDoc>(tileDoc)
+    expect(doc.tiles[0].views.map((e) => e.config.icon)).toEqual(['view-table', 'star'])
     expect(doc.tiles[1].views[0].config.icon).toBe('table')
   })
 
@@ -114,7 +112,9 @@ describe('normalizeSavedViews', () => {
     await writeFile(sidecarAt('Notes'), JSON.stringify({ views: [view('view_a', 'image')] }))
     await writeFile(join(root, 'Notes', 'Page.md'), 'body\n')
     await open()
-    const meta = JSON.parse(await readFile(sidecarAt('Notes'), 'utf8'))
+    const meta = await readJsonAt<{ id: unknown; views: { card_banner: unknown }[] }>(
+      sidecarAt('Notes'),
+    )
     expect(typeof meta.id).toBe('string')
     expect(meta.views[0].card_banner).toBe('banner')
   })

@@ -18,6 +18,13 @@ import { createPage, updatePageProperty } from '../Nexus/page'
 import { serializeSchemaOp } from './schemaChain'
 import { machine } from '../Platform/machine'
 import { mutateRegistry, readRegistry } from './propertiesRegistry'
+
+type PropDefLike = Record<string, unknown> & {
+  select_options?: unknown[]
+  status_groups?: { options: unknown[] }[]
+  type?: string
+}
+type RegistryFile = { order: string[]; defs: Record<string, PropDefLike> }
 import { readSchemaJournal } from './propertyJournal'
 import { type ConfigSurfaces, seedConfigSurfaces, viewOn } from '../Testing/configSurfaces'
 import { sidecarPath } from '../Paths/paths'
@@ -181,7 +188,7 @@ describe('an option edit leaves every other stored entry as written (F-562)', ()
   ]
   const multiSeed = [{ value: 'a' }, { value: 'b', appearance: 'outline', icon: 7, tint: 'x' }]
   const registryFile = () => join(root, '.nexus', 'properties.json')
-  const rawDefs = async () => JSON.parse(await readFile(registryFile(), 'utf8')).defs
+  const rawDefs = async () => (await readJsonAt<RegistryFile>(registryFile())).defs
 
   beforeEach(async () => {
     await mkdir(join(root, '.nexus'), { recursive: true })
@@ -232,18 +239,18 @@ describe('an option edit leaves every other stored entry as written (F-562)', ()
       (await editOption(root, 'prop_st', { op: 'move', value: 'Y', groupId: 'g2', toIndex: 0 })).ok,
     ).toBe(true)
     const defs = await rawDefs()
-    expect(defs.prop_st.status_groups[1]).toEqual({
+    expect(defs.prop_st.status_groups![1]).toEqual({
       ...statusSeed[1],
       options: [{ ...statusSeed[0].options[1], group_id: 'g2' }, ...statusSeed[1].options],
     })
-    expect(defs.prop_st.status_groups[0].options).toEqual([
+    expect(defs.prop_st.status_groups![0].options).toEqual([
       statusSeed[0].options[0],
       statusSeed[0].options[2],
     ])
   })
 
   it('resetting a field to its default removes the stored value, whatever its neighbors hold', async () => {
-    const file = JSON.parse(await readFile(registryFile(), 'utf8'))
+    const file = await readJsonAt<RegistryFile>(registryFile())
     file.defs.prop_sel.select_options = [
       { value: 'A', appearance: 'outline', color: 7, icon: 7 },
       { value: 'B', appearance: 'outline', color: 7, icon: 7 },
@@ -270,7 +277,7 @@ describe('an option edit leaves every other stored entry as written (F-562)', ()
   })
 
   it('an entry stored under a legacy type spelling keeps that spelling and its neighbors through every writer', async () => {
-    const file = JSON.parse(await readFile(registryFile(), 'utf8'))
+    const file = await readJsonAt<RegistryFile>(registryFile())
     file.defs.prop_multi.type = 'multi_select'
     await writeFile(registryFile(), JSON.stringify(file))
     expect((await addOptionToDef(root, 'prop_multi', 'c')).ok).toBe(true)
@@ -332,9 +339,9 @@ describe('an option write drops a stored label', () => {
     )
     expect((await renameOption(root, 'prop_sel', 'A', 'AA')).ok).toBe(true)
     expect((await renameOption(root, 'prop_st', 'X', 'XX')).ok).toBe(true)
-    const defs = JSON.parse(await readFile(registryFile, 'utf8')).defs
+    const defs = (await readJsonAt<RegistryFile>(registryFile)).defs
     expect(defs.prop_sel.select_options).toEqual([{ value: 'AA' }, { value: 'B' }])
-    expect(defs.prop_st.status_groups.map((g: { options: unknown[] }) => g.options)).toEqual([
+    expect(defs.prop_st.status_groups!.map((g) => g.options)).toEqual([
       [{ value: 'XX', group_id: 'g1' }],
       [{ value: 'Y', group_id: 'g2' }],
     ])

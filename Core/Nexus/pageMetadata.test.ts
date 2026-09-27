@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { mkdir, readdir, readFile, rm, stat, utimes, writeFile } from 'node:fs/promises'
-import { tempRoot } from '../Testing/hostFs'
+import { tempRoot, readJsonAt } from '../Testing/hostFs'
 import { metadataShardPath } from '../Paths/paths'
 import { METADATA_DIR_REL } from '../Paths/nexusPaths'
 import { join } from '../Paths/posix'
@@ -74,7 +74,7 @@ describe('the writer', () => {
   afterEach(() => rm(root, { recursive: true, force: true }))
 
   const shardOnDisk = async (shard: string): Promise<unknown> =>
-    JSON.parse(await readFile(metadataShardPath(root, shard), 'utf8'))
+    await readJsonAt(metadataShardPath(root, shard))
 
   it('a patch on a fresh month creates its file with one entry', async () => {
     expect(await updatePageMetadata(root, SEP_A, { icon: 'star' })).toEqual({

@@ -4,10 +4,10 @@ import { goneEdit, reachConfig, reachReport } from '../Nexus/configReach'
 import { pathExists } from '../Files/atomicWrite'
 import { deindexPath } from '../Index/indexSeed'
 import { fail, ok, valueOr } from '../Contract/result'
-import { mutateRegistryFile, readRegistryStrict } from '../Contexts/contextsRegistry'
+import { mutateRegistryFile, readRegistryStrict, withContextAt } from '../Contexts/contextsRegistry'
 import { unlinkContextKey, unlinkSpaceValue } from '../Contexts/contextCascade'
 import type { MutateContext } from '../Nexus/mutate'
-import { dropContextOrder } from '../Nexus/reorder'
+import { dropSpaceOrder } from '../Nexus/reorder'
 import type { MutateReply, MutateRequest } from '../Nexus/mutateRequest'
 import { machine } from '../Platform/machine'
 import { discardFile, mintBundle, settleBundle } from './bundle'
@@ -57,7 +57,7 @@ export async function deleteOp(
     const title = basename(abs)
     const at = registry.contexts.findIndex((c) => c.title === title)
     const entry = registry.contexts[at]
-    const evidence = write ? await gatherContextEvidence(abs, title, registry) : null
+    const evidence = write && entry ? await gatherContextEvidence(abs, entry, at) : null
     if (write && evidence) await write(buildContextRecord(evidence, null))
     // By id, never by title: two entries sharing a title would otherwise erase both while only one folder is trashed.
     const removed = await mutateRegistryFile(root, (cur) =>
@@ -69,13 +69,10 @@ export async function deleteOp(
     }
     const swept = await unlinkContextKey(root, title, abs).catch(async (e) => {
       // A sweep cut short puts the entry back where it stood, so the Context can be deleted again.
-      if (entry)
-        await mutateRegistryFile(root, (cur) => ({
-          contexts: [...cur.contexts.slice(0, at), entry, ...cur.contexts.slice(at)],
-        }))
+      if (entry) await mutateRegistryFile(root, withContextAt(entry, at))
       return unmint(e)
     })
-    if (entry) await dropContextOrder(root, entry.id)
+    if (entry && !bundle) await dropSpaceOrder(root, entry.id)
     if (write && evidence) await write(buildContextRecord(evidence, valueOr(swept, null)))
   } else if (write) {
     await write(await gatherContentRecord(root, req.kind, abs))

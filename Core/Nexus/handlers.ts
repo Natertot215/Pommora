@@ -91,7 +91,7 @@ export async function openNexusSequence(
       }
     }
     await seedContentIndex(root)
-    if (await replaySchemaCascade(root))
+    if ((await replaySchemaCascade(root)) !== null)
       await refreshAfterWrite(root).catch((e) =>
         console.error('adopt: the replayed schema walk failed; reads will retry:', errText(e)),
       )

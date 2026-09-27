@@ -1,4 +1,4 @@
-import { reportRefusal } from '@pommora/core/Interface/Notifications/notifications'
+import { notifyRetry, reportRefusal } from '@pommora/core/Interface/Notifications/notifications'
 import { useRef, useState, type ReactNode } from 'react'
 import { Icon, type IconName } from '@pommora/uix/Symbols'
 import type { IconSize } from '@pommora/uix/Theme'
@@ -168,6 +168,13 @@ function ListGroups({
   )
 }
 
+const replayDelete = (propertyId: string) => (): void =>
+  void dialer()
+    .ask('property:replayDelete', propertyId)
+    .then((r) => {
+      if (!r.ok) notifyRetry(r.error.message, replayDelete(propertyId))
+    })
+
 export function PropertyFrame({
   collectionPath,
   schema,
@@ -294,7 +301,11 @@ export function PropertyFrame({
       if (!reportRefusal(deleted)) return
       bumpTrashRevision()
       backToList()
-      notifyTrashed(displayPropertyName(def.name, capitalize), deleted.value.trashed?.bundlePath)
+      notifyTrashed(
+        displayPropertyName(def.name, capitalize),
+        deleted.value,
+        deleted.value.replayable ? replayDelete(def.id) : undefined,
+      )
     }
   }
   const rowMenu = async (d: PropertyDefinition, group: 'assigned' | 'all'): Promise<void> => {

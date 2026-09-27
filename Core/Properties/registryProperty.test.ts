@@ -18,6 +18,8 @@ import { nexusConfig } from '../Paths/paths'
 import { NEXUS_CONFIG_FILES } from '../Paths/nexusPaths'
 import type { PropertyDefinition } from './properties'
 
+type RegistryFile = { order: string[]; defs: Record<string, unknown> }
+
 let root: string
 beforeEach(async () => {
   root = tempRoot('pom-regcrud-')
@@ -44,13 +46,13 @@ describe('the registry file is never replaced by a failed read', () => {
   it('an entry that does not parse as a def rides through a write untouched', async () => {
     const a = await createProperty(root, def({ name: 'Real', type: 'number' }))
     if (!a.ok) throw new Error('setup failed')
-    const raw = JSON.parse(await readFile(registryFilePath(), 'utf8'))
+    const raw = await readJsonAt<RegistryFile>(registryFilePath())
     raw.defs.prop_mystery = { garbage: true }
     await writeFile(registryFilePath(), JSON.stringify(raw), 'utf8')
 
     const b = await createProperty(root, def({ name: 'Another', type: 'number' }))
     expect(b.ok).toBe(true)
-    const after = JSON.parse(await readFile(registryFilePath(), 'utf8'))
+    const after = await readJsonAt<RegistryFile>(registryFilePath())
     expect(after.defs.prop_mystery).toEqual({ garbage: true })
     expect((await readRegistry(root)).defs.prop_mystery).toBeUndefined()
   })
@@ -226,7 +228,7 @@ describe('removeFromRegistry', () => {
     if (!c.ok) return
     expect((await removeFromRegistry(root, c.value.id)).ok).toBe(true)
     expect(await readRegistry(root)).toEqual({ order: [], defs: {} })
-    const raw = JSON.parse(await readFile(join(root, '.nexus', 'properties.json'), 'utf8'))
+    const raw = await readJsonAt(join(root, '.nexus', 'properties.json'))
     expect(raw.order).toEqual([])
   })
 })

@@ -1,9 +1,9 @@
-import { mkdir, readFile, rm, writeFile } from 'node:fs/promises'
+import { mkdir, rm, writeFile } from 'node:fs/promises'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { join } from '../Paths/posix'
 import { installStores, NO_STORES } from '../Platform/stores'
 import { memoryStores } from '../Testing/memoryStores'
-import { tempRoot } from '../Testing/hostFs'
+import { tempRoot, readJsonAt } from '../Testing/hostFs'
 import { DEFAULT_MATRIX_CONFIG } from './matrixConfig'
 import { readMatrixFile, writeMatrixFile } from './matrixFile'
 
@@ -25,7 +25,7 @@ const seed = async (file: Record<string, unknown>): Promise<void> => {
 }
 
 const onDisk = async (): Promise<Record<string, unknown>> =>
-  JSON.parse(await readFile(join(root, '.nexus', 'matrix.json'), 'utf8'))
+  await readJsonAt(join(root, '.nexus', 'matrix.json'))
 
 describe('matrix.json', () => {
   it('reads an absent file as the defaults', async () => {

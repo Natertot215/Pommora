@@ -1,7 +1,7 @@
 import { mkdir, readdir, readFile, rename, rm, writeFile } from 'node:fs/promises'
 import { splitFrontmatter } from '../Files/pageFile'
 import { basename, dirname, join, relative } from '../Paths/posix'
-import { tempRoot, noModeBits } from '../Testing/hostFs'
+import { tempRoot, noModeBits, readJsonAt } from '../Testing/hostFs'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { pathExists } from '../Files/atomicWrite'
 import { confirmedMutate } from '../Testing/confirmedMutate'
@@ -19,6 +19,7 @@ import { readShard, updatePageMetadata } from '../Nexus/pageMetadata'
 import { shardOf } from '../Nexus/ids'
 import { dropLiveTree, refreshTree } from '../Nexus/liveTree'
 import type { TrashDeps } from './bundle'
+import type { ContextsRegistry } from '../Contexts/contexts'
 
 const PAGE_A = '01KVGMT8BFP350FZZXAMG1QDVA'
 const PAGE_B = '01KVGMT8BFP350FZZXAMG1QDVB'
@@ -177,19 +178,88 @@ describe('the bundle — one folder per deletion, holding the artifact and its r
     expect(membership[0].spaces).toEqual([{ id: 'sp-pom', title: 'Pommora' }])
   })
 
-  it('a Context delete drops its Space order and its panel slot from state.json', async () => {
-    await setSpaceOrder(root, 'ctx_projects', ['sp-pom'])
-    await setSpaceOrder(root, 'ctx_areas', ['sp-home'])
-    await setPanelContextOrder(root, ['ctx_areas', 'ctx_projects'])
-    const r = await confirmedMutate(
-      root,
-      { op: 'delete', path: '.nexus/contexts/Projects', kind: 'context' },
-      nexusDeps,
-    )
-    expect(r.ok).toBe(true)
-    expect(JSON.parse(await readFile(join(root, '.nexus', 'state.json'), 'utf8')).order).toEqual({
-      spaces: { ctx_areas: ['sp-home'] },
-      contexts: ['ctx_areas'],
+  describe('a Context’s place', () => {
+    const stateOrder = async (): Promise<unknown> =>
+      (await readJsonAt(join(root, '.nexus', 'state.json'))).order
+    const registryIds = async (): Promise<string[]> =>
+      (await readJsonAt<ContextsRegistry>(contextsRegistryFile(root))).contexts.map((c) => c.id)
+    const seeded = {
+      spaces: { ctx_projects: ['sp-sap', 'sp-pom'], ctx_areas: ['sp-home'] },
+      contexts: ['ctx_projects', 'ctx_areas'],
+    }
+    const deleteProjects = (deps: TrashDeps) =>
+      confirmedMutate(
+        root,
+        { op: 'delete', path: '.nexus/contexts/Projects', kind: 'context' },
+        deps,
+      )
+
+    beforeEach(async () => {
+      await writeFile(
+        contextsRegistryFile(root),
+        JSON.stringify({
+          contexts: [
+            { id: 'ctx_areas', title: 'Areas' },
+            { id: 'ctx_projects', title: 'Projects' },
+            { id: 'ctx_zeta', title: 'Zeta' },
+          ],
+        }),
+      )
+      await setSpaceOrder(root, 'ctx_projects', ['sp-sap', 'sp-pom'])
+      await setSpaceOrder(root, 'ctx_areas', ['sp-home'])
+      await setPanelContextOrder(root, ['ctx_projects', 'ctx_areas'])
+    })
+
+    it('a Context in the Trash keeps its order, and its restore returns to its sidebar place', async () => {
+      const r = await deleteProjects(nexusDeps)
+      expect(r.ok).toBe(true)
+      expect(await stateOrder()).toEqual(seeded)
+      const listed = r.ok ? r.value.trashed : undefined
+      expect(
+        (await confirmedMutate(root, { op: 'restore', bundlePath: listed!.bundlePath }, nexusDeps))
+          .ok,
+      ).toBe(true)
+      expect(await registryIds()).toEqual(['ctx_areas', 'ctx_projects', 'ctx_zeta'])
+      const tree = await readNexus(root)
+      expect(tree.contexts[1].spaces.map((sp) => sp.id)).toEqual(['sp-sap', 'sp-pom'])
+      expect(tree.contextOrder).toEqual(['ctx_projects', 'ctx_areas'])
+    })
+
+    it('a record from before the place was kept restores its Context at the end', async () => {
+      const r = await deleteProjects(nexusDeps)
+      const bundlePath = r.ok ? r.value.trashed!.bundlePath : ''
+      const recordFile = join(root, bundlePath, '_record.json')
+      const { at: _, ...older } = await readJsonAt(recordFile)
+      await writeFile(recordFile, JSON.stringify(older))
+      expect((await confirmedMutate(root, { op: 'restore', bundlePath }, nexusDeps)).ok).toBe(true)
+      expect(await registryIds()).toEqual(['ctx_areas', 'ctx_zeta', 'ctx_projects'])
+    })
+
+    it('emptying a Context’s bundle drops its Space order', async () => {
+      const r = await deleteProjects(nexusDeps)
+      const listed = r.ok ? r.value.trashed : undefined
+      expect(
+        (
+          await confirmedMutate(
+            root,
+            { op: 'emptyBundle', bundlePath: listed!.bundlePath },
+            nexusDeps,
+          )
+        ).ok,
+      ).toBe(true)
+      expect(await stateOrder()).toEqual({
+        spaces: { ctx_areas: ['sp-home'] },
+        contexts: ['ctx_projects', 'ctx_areas'],
+      })
+    })
+
+    it('a system-trash Context delete drops its Space order at once', async () => {
+      const r = await deleteProjects({ trashMode: 'system', trashToSystem: async () => {} })
+      expect(r.ok).toBe(true)
+      expect(await stateOrder()).toEqual({
+        spaces: { ctx_areas: ['sp-home'] },
+        contexts: ['ctx_projects', 'ctx_areas'],
+      })
     })
   })
 
@@ -220,6 +290,17 @@ describe('the bundle — one folder per deletion, holding the artifact and its r
     'a member sweep cut short puts the registry entry back, so the Context can be deleted again',
     async () => {
       const { chmod } = await import('node:fs/promises')
+      const around = {
+        contexts: [
+          { id: 'ctx_a', title: 'A' },
+          { id: 'ctx_z', title: 'Z' },
+        ],
+      }
+      const seeded = await readJsonAt<ContextsRegistry>(contextsRegistryFile(root))
+      await writeFile(
+        contextsRegistryFile(root),
+        JSON.stringify({ contexts: [around.contexts[0], ...seeded.contexts, around.contexts[1]] }),
+      )
       await chmod(join(root, 'Notes', 'Daily'), 0o555)
       try {
         const r = await confirmedMutate(
@@ -231,8 +312,8 @@ describe('the bundle — one folder per deletion, holding the artifact and its r
       } finally {
         await chmod(join(root, 'Notes', 'Daily'), 0o755)
       }
-      const reg = JSON.parse(await readFile(contextsRegistryFile(root), 'utf8'))
-      expect(reg.contexts.map((c: { title: string }) => c.title)).toContain('Projects')
+      const reg = await readJsonAt<ContextsRegistry>(contextsRegistryFile(root))
+      expect(reg.contexts.map((c) => c.id)).toEqual(['ctx_a', 'ctx_projects', 'ctx_z'])
       const retried = await confirmedMutate(
         root,
         { op: 'delete', path: '.nexus/contexts/Projects', kind: 'context' },
@@ -759,9 +840,7 @@ describe('restore — the record spends, headless', () => {
         '<Projects>'
       ],
     ).toEqual(['Pommora'])
-    const sap = JSON.parse(
-      await readFile(join(contextsDir(root), 'Projects', 'Sapphire', '_space.json'), 'utf8'),
-    )
+    const sap = await readJsonAt(join(contextsDir(root), 'Projects', 'Sapphire', '_space.json'))
     expect(sap['<Projects>']).toEqual(['Pommora'])
   })
 
@@ -842,7 +921,7 @@ describe('restore — the record spends, headless', () => {
       nexusDeps,
     )
     expect(r.ok).toBe(true)
-    const reg = JSON.parse(await readFile(contextsRegistryFile(root), 'utf8'))
+    const reg = await readJsonAt<ContextsRegistry>(contextsRegistryFile(root))
     expect(reg.contexts).toContainEqual({
       id: 'ctx_projects',
       title: 'Projects',
@@ -854,9 +933,7 @@ describe('restore — the record spends, headless', () => {
         '<Projects>'
       ],
     ).toEqual(['Pommora'])
-    const sap = JSON.parse(
-      await readFile(join(contextsDir(root), 'Projects', 'Sapphire', '_space.json'), 'utf8'),
-    )
+    const sap = await readJsonAt(join(contextsDir(root), 'Projects', 'Sapphire', '_space.json'))
     expect(sap['<Projects>']).toEqual(['Pommora'])
   })
 
@@ -921,7 +998,7 @@ describe('restore — the gate-four pins', () => {
       nexusDeps,
     )
     // An impostor mints the freed title while the original sits in trash.
-    const reg = JSON.parse(await readFile(contextsRegistryFile(root), 'utf8'))
+    const reg = await readJsonAt<ContextsRegistry>(contextsRegistryFile(root))
     reg.contexts.push({ id: 'ctx_impostor', title: 'Projects' })
     await writeFile(contextsRegistryFile(root), JSON.stringify(reg))
     await mkdir(join(contextsDir(root), 'Projects'), { recursive: true })
@@ -938,7 +1015,7 @@ describe('restore — the gate-four pins', () => {
     expect(
       await pathExists(join(contextsDir(root), 'Projects (2)', 'Pommora', '_space.json')),
     ).toBe(true)
-    const after = JSON.parse(await readFile(contextsRegistryFile(root), 'utf8'))
+    const after = await readJsonAt<ContextsRegistry>(contextsRegistryFile(root))
     expect(after.contexts).toContainEqual({
       id: 'ctx_projects',
       title: 'Projects (2)',
@@ -1033,7 +1110,9 @@ describe('restore — the attack folds', () => {
       nexusDeps,
     )
     const [dir] = await bundleDirs(join(root, '.trash'))
-    const record = JSON.parse(await readFile(join(dir, '_record.json'), 'utf8'))
+    const record = await readJsonAt<{ registry: Record<string, unknown> }>(
+      join(dir, '_record.json'),
+    )
     record.registry.title = '../../../escape-target'
     await writeFile(join(dir, '_record.json'), JSON.stringify(record))
     expect(await listBundles(root)).toEqual([])
@@ -1086,8 +1165,8 @@ describe('restore — the attack folds', () => {
         )
         expect(failed.ok).toBe(false)
         // No ghost entry: the append reversed when the move refused.
-        const reg = JSON.parse(await readFile(contextsRegistryFile(root), 'utf8'))
-        expect(reg.contexts.some((c: { id: string }) => c.id === 'ctx_projects')).toBe(false)
+        const reg = await readJsonAt<ContextsRegistry>(contextsRegistryFile(root))
+        expect(reg.contexts.some((c) => c.id === 'ctx_projects')).toBe(false)
       } finally {
         await chmod(join(root, '.nexus', 'contexts'), 0o755)
       }
@@ -1109,7 +1188,7 @@ describe('restore — the attack folds', () => {
       { op: 'delete', path: '.nexus/contexts/Projects', kind: 'context' },
       nexusDeps,
     )
-    const reg = JSON.parse(await readFile(contextsRegistryFile(root), 'utf8'))
+    const reg = await readJsonAt<ContextsRegistry>(contextsRegistryFile(root))
     reg.contexts.push({ id: 'ctx_impostor', title: 'Projects' })
     await writeFile(contextsRegistryFile(root), JSON.stringify(reg))
     await mkdir(join(contextsDir(root), 'Projects'), { recursive: true })
@@ -1122,9 +1201,7 @@ describe('restore — the attack folds', () => {
       nexusDeps,
     )
     expect(r.ok).toBe(true)
-    const sap = JSON.parse(
-      await readFile(join(contextsDir(root), 'Projects (2)', 'Sapphire', '_space.json'), 'utf8'),
-    )
+    const sap = await readJsonAt(join(contextsDir(root), 'Projects (2)', 'Sapphire', '_space.json'))
     // The passenger's key follows the final title — never left pointing at the impostor.
     expect(sap['<Projects (2)>']).toEqual(['Pommora'])
     expect('<Projects>' in sap).toBe(false)
@@ -1144,7 +1221,7 @@ describe('restore — the attack folds', () => {
       { op: 'delete', path: '.nexus/contexts/Projects', kind: 'context' },
       nexusDeps,
     )
-    const reg = JSON.parse(await readFile(contextsRegistryFile(root), 'utf8'))
+    const reg = await readJsonAt<ContextsRegistry>(contextsRegistryFile(root))
     reg.contexts.push({ id: 'ctx_impostor', title: 'Projects' })
     await writeFile(contextsRegistryFile(root), JSON.stringify(reg))
     await mkdir(join(contextsDir(root), 'Projects'), { recursive: true })
@@ -1154,9 +1231,7 @@ describe('restore — the attack folds', () => {
     expect(
       (await confirmedMutate(root, { op: 'restore', bundlePath: listed.bundlePath }, nexusDeps)).ok,
     ).toBe(true)
-    const sap = JSON.parse(
-      await readFile(join(contextsDir(root), 'Projects (2)', 'Sapphire', '_space.json'), 'utf8'),
-    )
+    const sap = await readJsonAt(join(contextsDir(root), 'Projects (2)', 'Sapphire', '_space.json'))
     expect(sap.$order).toEqual({ contexts: ['Projects (2)'] })
   })
 })
@@ -1415,7 +1490,7 @@ describe('restore — into a chosen destination', () => {
   })
 
   it('a Space whose Context is gone lands in the Context the user picks', async () => {
-    const reg = JSON.parse(await readFile(contextsRegistryFile(root), 'utf8'))
+    const reg = await readJsonAt<ContextsRegistry>(contextsRegistryFile(root))
     reg.contexts.push({ id: 'ctx_areas', title: 'Areas' })
     await writeFile(contextsRegistryFile(root), JSON.stringify(reg))
     await mkdir(join(contextsDir(root), 'Areas'), { recursive: true })

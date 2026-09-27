@@ -4,7 +4,7 @@ import { describe, it, expect, beforeEach, afterEach } from 'vitest'
 import { dropLiveTree } from './liveTree'
 import { rm, mkdir, writeFile, readFile } from 'node:fs/promises'
 import { join } from '../Paths/posix'
-import { tempRoot } from '../Testing/hostFs'
+import { tempRoot, readJsonAt } from '../Testing/hostFs'
 import { ID_KEY, kindOf } from './identityMark'
 import { readNexus } from './readNexus'
 import { stampAdopted } from './adopt'
@@ -313,9 +313,7 @@ describe('agenda singleton adoption', () => {
     await writeFile(join(root, 'Stray', 'Note.md'), 'no frontmatter\n')
 
     await stampAdopted(root)
-    const coll = JSON.parse(
-      await readFile(join(root, 'Stray', SIDECAR_FILENAME.collection), 'utf8'),
-    )
+    const coll = await readJsonAt(join(root, 'Stray', SIDECAR_FILENAME.collection))
     expect(coll.id).toBe(SET_ID)
     expect(coll.icon).toBe('box')
     await expect(readFile(join(root, 'Stray', SIDECAR_FILENAME.set), 'utf8')).rejects.toThrow()

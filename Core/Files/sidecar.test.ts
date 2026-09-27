@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest'
 import { rm, readFile, writeFile } from 'node:fs/promises'
 import { join } from '../Paths/posix'
-import { tempRoot } from '../Testing/hostFs'
+import { readJsonAt, tempRoot } from '../Testing/hostFs'
 import { patchSidecar, readSidecar } from './sidecar'
 import { SIDECAR_FILENAME } from '../Paths/nexusPaths'
 import { fail } from '../Contract/result'
@@ -18,6 +18,8 @@ afterEach(async () => {
 const seed = (obj: Record<string, unknown>): Promise<void> =>
   writeFile(join(dir, SIDECAR_FILENAME.collection), JSON.stringify(obj))
 const raw = async (): Promise<string> => readFile(join(dir, SIDECAR_FILENAME.collection), 'utf8')
+const rawJson = (): Promise<Record<string, unknown>> =>
+  readJsonAt(join(dir, SIDECAR_FILENAME.collection))
 
 describe('readSidecar', () => {
   it('reads a sidecar through its schema, foreign keys included', async () => {
@@ -55,7 +57,7 @@ describe('patchSidecar', () => {
     expect((await patchSidecar(dir, 'collection', (cur) => cur)).ok).toBe(false)
     await seed({ icon: 'no-id' })
     expect((await patchSidecar(dir, 'collection', (cur) => ({ ...cur, x: 1 }))).ok).toBe(false)
-    expect(JSON.parse(await raw())).toEqual({ icon: 'no-id' })
+    expect(await rawJson()).toEqual({ icon: 'no-id' })
   })
 
   it('returns the refusal its edit raises, writing nothing', async () => {
@@ -64,6 +66,6 @@ describe('patchSidecar', () => {
       refuse(fail('not-found', 'View not found.')),
     )
     expect(r).toEqual(fail('not-found', 'View not found.'))
-    expect(JSON.parse(await raw())).toEqual({ id: 'T1' })
+    expect(await rawJson()).toEqual({ id: 'T1' })
   })
 })

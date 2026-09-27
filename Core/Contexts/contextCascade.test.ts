@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 import { splitFrontmatter } from '../Files/pageFile'
 import { rm, mkdir, symlink, writeFile, readFile } from 'node:fs/promises'
 import { join, relative } from '../Paths/posix'
-import { tempRoot, windows } from '../Testing/hostFs'
+import { tempRoot, windows, readJsonAt } from '../Testing/hostFs'
 import {
   renameContextOp,
   renameSpaceOp,
@@ -16,6 +16,7 @@ import { memoryStores } from '../Testing/memoryStores'
 import { seedContentIndex } from '../Index/indexSeed'
 import { clearJournal, readJournal, writeJournal } from './contextJournal'
 import { contextsRegistryFile, contextsDir, nexusDir } from '../Paths/paths'
+import type { ContextsRegistry } from './contexts'
 
 import { pathExists } from '../Files/atomicWrite'
 import { captureWriteTap } from '../Testing/writeTap'
@@ -85,7 +86,7 @@ describe('the cascades open only the members the index names', () => {
     expect((await renameSpaceOp(root, 'sp-pom', 'Pom')).ok).toBe(true)
     expect(sweepSpy.mock.calls[0]?.[1]).toEqual([page()])
     expect((await fmOf(page()))['<Projects>']).toEqual(['Pom'])
-    expect(JSON.parse(await readFile(csSidecar(), 'utf8'))['<Projects>']).toEqual(['Pom'])
+    expect((await readJsonAt(csSidecar()))['<Projects>']).toEqual(['Pom'])
   })
 
   it('a Context rename opens the holders of the key alone', async () => {
@@ -111,8 +112,8 @@ describe('the cascades open only the members the index names', () => {
 })
 
 const regTitle = async (id: string): Promise<string | undefined> => {
-  const reg = JSON.parse(await readFile(contextsRegistryFile(root), 'utf8'))
-  return reg.contexts.find((c: { id: string }) => c.id === id)?.title
+  const reg = await readJsonAt<ContextsRegistry>(contextsRegistryFile(root))
+  return reg.contexts.find((c) => c.id === id)?.title
 }
 
 const fmOf = async (file: string): Promise<Record<string, unknown>> =>
@@ -123,8 +124,8 @@ describe('case folding on renames', () => {
     expect((await renameContextOp(root, 'ctx_projects', 'classes')).ok).toBe(false)
     const self = await renameContextOp(root, 'ctx_projects', 'PROJECTS')
     expect(self.ok).toBe(true)
-    const reg = JSON.parse(await readFile(contextsRegistryFile(root), 'utf8'))
-    expect(reg.contexts.find((c: { id: string }) => c.id === 'ctx_projects').title).toBe('PROJECTS')
+    const reg = await readJsonAt<ContextsRegistry>(contextsRegistryFile(root))
+    expect(reg.contexts.find((c) => c.id === 'ctx_projects')!.title).toBe('PROJECTS')
   })
 
   it('a case-only Space rename passes (its own folder is not a collision)', async () => {
@@ -141,7 +142,7 @@ describe('renameContextOp', () => {
     const fm = await fmOf(page())
     expect(fm['<Ventures>']).toEqual(['Pommora', 'pommora'])
     expect('<Projects>' in fm).toBe(false)
-    const sc = JSON.parse(await readFile(csSidecar(), 'utf8'))
+    const sc = await readJsonAt(csSidecar())
     expect(sc['<Ventures>']).toEqual(['Pommora'])
     expect(sc.id).toBe('sp-cs')
     expect(await regTitle('ctx_projects')).toBe('Ventures')
@@ -171,7 +172,7 @@ describe('renameContextOp', () => {
     expect(sweepSpy).toHaveBeenCalledTimes(2)
     expect((await fmOf(page()))['<Projects>']).toEqual(['Pommora', 'pommora'])
     expect((await fmOf(page()))['<Ventures>']).toBeUndefined()
-    expect(JSON.parse(await readFile(csSidecar(), 'utf8'))['<Projects>']).toEqual(['Pommora'])
+    expect((await readJsonAt(csSidecar()))['<Projects>']).toEqual(['Pommora'])
     expect(await pathExists(join(contextsDir(root), 'Projects', 'Pommora'))).toBe(true)
     expect(await pathExists(join(contextsDir(root), 'Ventures'))).toBe(false)
     expect(await readJournal(root)).toBeNull()
@@ -263,7 +264,7 @@ describe('renameSpaceOp', () => {
     const r = await renameSpaceOp(root, 'sp-pom', 'Pommora 2')
     expect(r.ok).toBe(true)
     expect((await fmOf(page()))['<Projects>']).toEqual(['Pommora 2'])
-    const sc = JSON.parse(await readFile(csSidecar(), 'utf8'))
+    const sc = await readJsonAt(csSidecar())
     expect(sc['<Projects>']).toEqual(['Pommora 2'])
     expect(await pathExists(join(contextsDir(root), 'Projects', 'Pommora 2'))).toBe(true)
     expect(await readJournal(root)).toBeNull()
@@ -318,7 +319,7 @@ describe('unlink cascades (D-3)', () => {
     const r = await unlinkContextKey(root, 'Projects')
     expect(r.ok).toBe(true)
     expect('<Projects>' in (await fmOf(page()))).toBe(false)
-    expect('<Projects>' in JSON.parse(await readFile(csSidecar(), 'utf8'))).toBe(false)
+    expect('<Projects>' in (await readJsonAt(csSidecar()))).toBe(false)
   })
 
   it('unlinkSpaceValue strips and captures every spelling of the title, dropping an emptied key', async () => {
@@ -378,7 +379,7 @@ describe('the sweep tells the truth about what it did (G-2)', () => {
     })
     const { unlinkSpaceValue } = await import('./contextCascade')
     await expect(unlinkSpaceValue(root, 'Projects', 'Pommora')).rejects.toThrow()
-    expect(JSON.parse(await readFile(csSidecar(), 'utf8'))['<Projects>']).toEqual(['Pommora'])
+    expect((await readJsonAt(csSidecar()))['<Projects>']).toEqual(['Pommora'])
     expect(flushSidecarWrites(root)).toEqual([
       `${relative(root, contextsDir(root))}/Classes/CS 161`,
     ])
@@ -407,9 +408,7 @@ describe('the Context cascades carry $order.contexts (B-7)', () => {
       JSON.stringify({ id: 'sp-pom', $order: { contexts: ['Classes', 'Projects'] } }),
     )
     expect((await renameContextOp(root, 'ctx_projects', 'Ventures')).ok).toBe(true)
-    const pom = JSON.parse(
-      await readFile(join(contextsDir(root), 'Ventures', 'Pommora', '_space.json'), 'utf8'),
-    )
+    const pom = await readJsonAt(join(contextsDir(root), 'Ventures', 'Pommora', '_space.json'))
     expect(pom.$order).toEqual({ contexts: ['Classes', 'Ventures'] })
   })
 
@@ -421,7 +420,7 @@ describe('the Context cascades carry $order.contexts (B-7)', () => {
     const r = await unlinkContextKey(root, 'Projects')
     expect(r.ok).toBe(true)
     if (!r.ok) return
-    const pom = JSON.parse(await readFile(pomSidecar(), 'utf8'))
+    const pom = await readJsonAt(pomSidecar())
     expect(pom.$order).toEqual({ contexts: [] })
     expect(r.value.captured.some((c) => c.id === 'sp-pom')).toBe(false)
   })
@@ -435,19 +434,17 @@ describe('a delete sweep never strips a passenger (G-1a)', () => {
     const { unlinkContextKey } = await import('./contextCascade')
     const r = await unlinkContextKey(root, 'Projects', join(contextsDir(root), 'Projects'))
     expect(r.ok).toBe(true)
-    const pom = JSON.parse(await readFile(pomSidecar(), 'utf8'))
+    const pom = await readJsonAt(pomSidecar())
     expect(pom['<Projects>']).toEqual(['Sapphire'])
     expect('<Projects>' in (await fmOf(page()))).toBe(false)
-    expect('<Projects>' in JSON.parse(await readFile(csSidecar(), 'utf8'))).toBe(false)
+    expect('<Projects>' in (await readJsonAt(csSidecar()))).toBe(false)
   })
 
   it('the rename cascade still reaches inside its own Context — the skip is the delete’s alone', async () => {
     await writeFile(pomSidecar(), JSON.stringify({ id: 'sp-pom', '<Projects>': ['Sapphire'] }))
     const r = await renameContextOp(root, 'ctx_projects', 'Ventures')
     expect(r.ok).toBe(true)
-    const pom = JSON.parse(
-      await readFile(join(contextsDir(root), 'Ventures', 'Pommora', '_space.json'), 'utf8'),
-    )
+    const pom = await readJsonAt(join(contextsDir(root), 'Ventures', 'Pommora', '_space.json'))
     expect(pom['<Ventures>']).toEqual(['Sapphire'])
     expect('<Projects>' in pom).toBe(false)
   })
