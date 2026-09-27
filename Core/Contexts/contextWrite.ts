@@ -1,7 +1,6 @@
 import { join, isMarkdownFile } from '../Paths/posix'
 import { contextKey, parseContextKey, type ContextsRegistry } from './contexts'
 import {
-  listOf,
   namesSpace,
   NO_DEFS,
   preservedChanges,
@@ -36,6 +35,7 @@ import { contextsDir, tileFilePath } from '../Paths/paths'
 import { createFolderEntity } from '../Nexus/folderEntity'
 import { COLOR_KEY, ORDER_KEY, spaceSidecarsIn } from './spaceSidecar'
 import type { Json } from '../Files/stableJson'
+import { listOf } from '../Contract/validators'
 
 interface SpaceRef {
   id: string

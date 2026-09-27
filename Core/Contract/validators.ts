@@ -4,6 +4,7 @@ export const NEEDS_CONFIG_PATCH = fault('A config patch is required.')
 
 export const isPlainObject = (v: unknown): v is Record<string, unknown> =>
   typeof v === 'object' && v !== null && !Array.isArray(v)
+export const listOf = (raw: unknown): unknown[] => (Array.isArray(raw) ? raw : [raw])
 export const isString = (v: unknown): v is string => typeof v === 'string'
 export const isStringArray = (v: unknown): v is string[] => Array.isArray(v) && v.every(isString)
 export const isFiniteNumber = (v: unknown): v is number =>

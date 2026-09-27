@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { listOf } from '../Contract/validators'
 import { optionValues, PROPERTY_TYPES, type PropertyDefinition } from './properties'
 
 const strings = z.array(z.string())
@@ -33,7 +34,7 @@ export type Adoption = { propertyId: string; value: string }
 
 // An outside `- 2024` parses as a number and must still name the option "2024".
 const optionList = (raw: unknown): string[] =>
-  (Array.isArray(raw) ? raw : [raw])
+  listOf(raw)
     .filter((x) => typeof x === 'string' || typeof x === 'number' || typeof x === 'boolean')
     .map(String)
     .filter((x) => x !== '')
@@ -67,7 +68,7 @@ export function decodeValue(def: PropertyDefinition, raw: unknown): PropertyValu
     case 'file': {
       // An entry nothing can spell is dropped rather than nulling the whole list and losing the other attachments.
       const entries: string[] = []
-      for (const x of Array.isArray(raw) ? raw : [raw]) {
+      for (const x of listOf(raw)) {
         const entry = fileEntry(x)
         if (entry !== null && entry !== '') entries.push(entry)
       }
