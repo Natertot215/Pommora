@@ -117,6 +117,9 @@ function optionRule(e: OptionReach, rule: Raw): Raw | null {
     ? editList(rule.values, namesValue, e.value, e.edit)
     : null
   if (!value && !values) return rule
+  const operandless = OPERANDLESS_OPS.has(String(rule.op))
+  // A chip list is the operand the rule reads over its value, so emptying it leaves nothing the user picked.
+  if (values && !values.length && !operandless) return null
   const next = { ...rule }
   if (value) {
     if (value.length) next.value = value[0]
@@ -126,9 +129,7 @@ function optionRule(e: OptionReach, rule: Raw): Raw | null {
     if (values.length) next.values = values
     else delete next.values
   }
-  return OPERANDLESS_OPS.has(String(next.op)) || ruleOperands(next as FilterRule).length
-    ? next
-    : null
+  return operandless || ruleOperands(next as FilterRule).length ? next : null
 }
 
 const scopedOrder = (e: OptionReach, holder: unknown): unknown => {
