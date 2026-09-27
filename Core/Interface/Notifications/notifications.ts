@@ -73,8 +73,11 @@ export const persist = (
 export const unrestoredLine = (titles: string[]): string =>
   `${titles.join(', ')} didn’t get ${titles.length === 1 ? 'its' : 'their'} value back.`
 
-export const notifyDeleted = (title: string, undo?: () => void | Promise<void>): void =>
-  notifyUndoable(`Deleted “${title}”`, undo)
+export const notifyDeleted = (
+  title: string,
+  undo?: () => void | Promise<void>,
+  note?: string,
+): void => notifyUndoable(note ? `Deleted “${title}”. ${note}` : `Deleted “${title}”`, undo)
 
 export function notifyUndoable(message: string, undo?: () => void | Promise<void>): void {
   if (!undo) {

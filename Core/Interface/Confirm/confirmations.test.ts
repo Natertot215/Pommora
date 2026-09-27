@@ -110,6 +110,16 @@ describe('a delete through the confirmation', () => {
     expect(mutate).toHaveBeenLastCalledWith({ op: 'restore', bundlePath: '.trash/b1' })
   })
 
+  it('carries the configuration pass’s warning in the Deleted notice', async () => {
+    const warning = 'Couldn’t update 1 file.'
+    mutate.mockResolvedValue({
+      trashed: { bundlePath: '.trash/b1' },
+      cascade: { pages: [], hosts: [], warning },
+    })
+    await del('set')
+    expect(currentNotification()?.message).toBe(`Deleted “A”. ${warning}`)
+  })
+
   it('offers no Undo for a system-trash delete, which leaves no bundle', async () => {
     mutate.mockResolvedValue({})
     await del('page')

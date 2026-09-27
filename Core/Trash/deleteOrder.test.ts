@@ -20,6 +20,8 @@ const nexusDeps: TrashDeps = { trashMode: 'nexus', trashToSystem: async () => {}
 let root: string
 let atSweep: unknown
 let atSettle: unknown
+let atReach: unknown
+let deleting = ''
 let settleFails = false
 
 async function firstRecordUnder(dir: string): Promise<unknown> {
@@ -63,9 +65,21 @@ vi.mock('./bundle', async (importOriginal) => {
   }
 })
 
+vi.mock('../Nexus/configReach', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../Nexus/configReach')>()
+  return {
+    ...actual,
+    reachConfig: async (...args: Parameters<typeof actual.reachConfig>) => {
+      atReach = await pathExists(deleting)
+      return actual.reachConfig(...args)
+    },
+  }
+})
+
 beforeEach(async () => {
   atSweep = undefined
   atSettle = undefined
+  atReach = undefined
   settleFails = false
   root = tempRoot('pom-order-')
   await mkdir(join(root, '.nexus'), { recursive: true })
@@ -85,6 +99,11 @@ beforeEach(async () => {
   )
   await mkdir(join(root, 'Notes'), { recursive: true })
   await writeFile(join(root, 'Notes', '_pagecollection.json'), JSON.stringify({ id: 'col-notes' }))
+  await mkdir(join(root, 'Notes', 'Daily'))
+  await writeFile(
+    join(root, 'Notes', 'Daily', '_pageset.json'),
+    JSON.stringify({ id: 'set-daily' }),
+  )
   await writeFile(
     join(root, 'Notes', 'Alpha.md'),
     `---\nID: ${PAGE_A}\n<Projects>:\n  - Pommora\n---\nbody`,
@@ -148,6 +167,21 @@ describe('the record is written before the destruction it describes', () => {
     expect(r.ok).toBe(true)
     expect(await anyRecord()).toBeUndefined()
   })
+})
+
+describe('the configuration pass runs after the artifact moves', () => {
+  for (const [path, kind] of [
+    ['Notes/Daily', 'set'],
+    ['.nexus/contexts/Projects/Pommora', 'space'],
+    ['.nexus/contexts/Projects', 'context'],
+  ] as const) {
+    it(`a ${kind} delete finds its folder gone`, async () => {
+      deleting = join(root, path)
+      const r = await handleMutate(root, { op: 'delete', path, kind }, nexusDeps)
+      expect(r.ok).toBe(true)
+      expect(atReach).toBe(false)
+    })
+  }
 })
 
 describe('one unparseable page never fails the sweep around it', () => {

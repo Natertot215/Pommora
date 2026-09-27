@@ -36,6 +36,14 @@ describe('a delete notification', () => {
     expect(undo).toHaveBeenCalledTimes(1)
   })
 
+  it('carries a note beside its Undo', () => {
+    const undo = vi.fn()
+    notifyDeleted('X', undo, 'Couldn’t update 1 file.')
+    expect(currentNotification()?.message).toBe('Deleted “X”. Couldn’t update 1 file.')
+    void currentNotification()?.action?.run()
+    expect(undo).toHaveBeenCalledTimes(1)
+  })
+
   it('walks past a spent entry to the one beneath it', () => {
     const older = vi.fn()
     const newer = vi.fn()
