@@ -20,8 +20,8 @@ export function noteValueWrite(root: string | null, absFile: string, body = fals
 // A sidecar write silences its own watcher echo, so its writer notes the folder here and the confirm patches that node.
 const sidecarWrites = new Set<string>()
 
-export function noteSidecarWrite(absSpaceDir: string): void {
-  sidecarWrites.add(absSpaceDir)
+export function noteSidecarWrite(absDir: string): void {
+  sidecarWrites.add(absDir)
 }
 
 export function flushSidecarWrites(root: string): string[] {
