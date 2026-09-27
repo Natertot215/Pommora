@@ -113,7 +113,7 @@ What holds across every type: the assign surface, the mutations and their safety
 
 **The Properties Menu.** Any full page menu — a sidebar page row, a view row's title cell, a card, a Matrix node — carries **Spaces ▸** and **Properties ▸** branches that enable quick management of contexts and properties. The first lists the nexus Contexts in registry order; the second lists the Collection's assigned properties, skipping the auto-managed stamps. A row whose type offers a fixed set expands into it with the page's standing values checked — the options for Select, Status, Multi-Select, and Context, with **Check** and **Uncheck** for a Checkbox. Non-option properties stay leaves; File opens the operating system's file dialog, with Number, Link, and Date opening their pickers anchored where the menu originates. 
 
-**Schema Mutations.** The registry mutations live in `Core/Properties/registryProperty.ts` and its siblings; their entry points serialize on one chain, and every operation that writes both the registry and pages states its intent in a journal first so a crash replays forward on the next open, and a property delete's Try Again replays its own record at once.
+**Schema Mutations.** The registry mutations live in `Core/Properties/registryProperty.ts` and its siblings; their entry points serialize on one chain, and every operation that writes both the registry and pages states its intent in a journal first so a crash replays forward on the next open, and the Try Again a property delete or an option rename or removal offers replays what that property still owes at once.
 
 | Mutation | Effect on Existing Values |
 | --- | --- |
@@ -123,7 +123,7 @@ What holds across every type: the assign surface, the mutations and their safety
 | Rename a property | Commits the registry, then sweeps every page and Space holding the old key. Never re-dates a page; assignment lists are id-keyed and unaffected. |
 | Reorder properties | Per-Collection assignment order on the sidecar; the All Properties group reorders the nexus-wide display order in the registry. |
 | Delete a property (global) | A record — the definition, the Collections that assigned it, and every value keyed by its holder's id, and each Collection's cached values — lands in `.trash` before anything is destroyed, then the value is stripped everywhere, every cache block is purged, the saved views, View Tiles, and the Matrix filter drop what named it, and the definition leaves the registry. Restorable from the Trash pane or the notification's Undo; when a file couldn't be updated, the label offers Try Again and the undo chord keeps Undo. |
-| Edit options | Global — adding, reordering, and recoloring are registry-only; renaming an option rewrites its value on every page, Space, saved view, View Tile, and the Matrix filter, and removing one strips that value from the same and drops a filter rule left with nothing to match. |
+| Edit options | Global — adding, reordering, and recoloring are registry-only; renaming an option rewrites its value on every page, Space, saved view, View Tile, and the Matrix filter, and removing one strips that value from the same and drops a filter rule left with nothing to match. A rename or removal that couldn't update every file offers Try Again. |
 
 Neither Remove nor the global delete is cross-file atomic; each is a per-file fan-out whose safety net is written first and which re-runs cleanly after a partial run. Remove is the daily path; the global delete is the rare destructive one.
 
