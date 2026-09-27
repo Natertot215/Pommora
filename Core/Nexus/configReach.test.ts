@@ -502,6 +502,25 @@ describe('a gone edit', () => {
     expect(await Promise.all(files.map(async (f) => (await stat(f)).mtimeMs))).toEqual(before)
   })
 
+  it('matches a gone id whole or as the head of a key, whatever the id holds', async () => {
+    await put(colFile(), {
+      id: 'col_notes',
+      views: [
+        {
+          id: 'v',
+          name: 'v',
+          type: 'table',
+          group_order: ['odd/id', 'odd/idx'],
+          collapsed_groups: ['odd/id/Done'],
+        },
+      ],
+    })
+    await reachConfig(root, { kind: 'gone', propertyId: '_location', ids: new Set(['odd/id']) })
+    const [view] = await viewsOf(colFile())
+    expect(view.group_order).toEqual(['odd/idx'])
+    expect(view.collapsed_groups).toEqual([])
+  })
+
   it('reports a pass as a cascade, carrying a warning only for a skip', () => {
     expect(reachReport({ skipped: 2, hosts: [] })).toEqual({
       pages: [],
@@ -526,6 +545,11 @@ describe('a gone edit', () => {
       kind: 'gone',
       propertyId: '_location',
       ids: new Set(['col_notes', 'set_deep']),
+    })
+    expect(goneEdit(tree, 'set', 'Notes/Deep')).toEqual({
+      kind: 'gone',
+      propertyId: '_location',
+      ids: new Set(['set_deep']),
     })
     expect(goneEdit(tree, 'page', 'Notes/Page.md')).toBeNull()
     expect(goneEdit(tree, 'set', 'Missing')).toBeNull()

@@ -150,7 +150,7 @@ const optionRule = (e: OptionReach, rule: Raw): Raw | null =>
 const gone =
   (e: Gone): Matcher =>
   (el) =>
-    typeof el === 'string' && e.ids.has(el.split('/')[0])
+    typeof el === 'string' && [...e.ids].some((id) => el === id || el.startsWith(`${id}/`))
 
 const goneRule = (e: Gone, rule: Raw): Raw | null =>
   onProperty(e.propertyId, rule) ? editOperands(rule, (xs) => stripList(xs, gone(e))) : rule
