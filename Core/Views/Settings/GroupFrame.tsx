@@ -627,6 +627,8 @@ function DateBucketList({
       if (key) set.add(key)
     }
     for (const b of hiddenBuckets(view, 'group', group.property_id)) set.add(b)
+    // A legacy bare key under this grouping is a date bucket when it starts with a year; a leftover Set id or option value never does.
+    for (const key of view.hidden_groups ?? []) if (/^\d{4}/.test(key)) set.add(key)
     return set
   }, [source, values, group.property_id, schema, granularity, view.hidden_groups])
   if (present.size === 0) return null
