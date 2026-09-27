@@ -1,8 +1,8 @@
 import { join, isMarkdownFile } from '../Paths/posix'
-import { normalizeTitle } from '../Connections/connections'
 import { contextKey, parseContextKey, type ContextsRegistry } from './contexts'
 import {
   listOf,
+  namesSpace,
   NO_DEFS,
   preservedChanges,
   reconcileGovernedRoot,
@@ -172,9 +172,6 @@ export async function writeSpaceSidecar(
   return ok(null)
 }
 
-const names = (raw: unknown, title: string): boolean =>
-  listOf(raw).some((v) => typeof v === 'string' && normalizeTitle(v) === normalizeTitle(title))
-
 export async function setSpaceContext(
   world: ContextWorld,
   spaceId: string,
@@ -196,11 +193,12 @@ export async function setSpaceContext(
   for (const s of world.spacesByContext.get(contextId) ?? []) {
     const far = world.spaceById.get(s.id)
     const wants = targetSpaceIds.includes(s.id)
-    if (!far || far.id === a.id || names(far.raw[backKey], a.title) === wants) continue
+    if (!far || far.id === a.id || listOf(far.raw[backKey]).some(namesSpace(a.title)) === wants)
+      continue
     const half = await writeSpaceSidecar(far.dir, (raw) => {
       const base = repaired(raw)
       const held = listOf(base[backKey]).filter((v): v is string => typeof v === 'string')
-      const without = held.filter((t) => normalizeTitle(t) !== normalizeTitle(a.title))
+      const without = held.filter((t) => !namesSpace(a.title)(t))
       const next = wants ? [...without, a.title] : without
       return setOrDrop(base, backKey, next.length > 0 && next)
     })

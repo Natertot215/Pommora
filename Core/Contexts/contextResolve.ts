@@ -2,6 +2,7 @@ import type { ContextsRegistry } from './contexts'
 import { normalizeTitle } from '../Connections/connections'
 import { parseContextKey } from './contexts'
 import type { PropertyDefinition } from '../Properties/properties'
+import type { Matcher } from '../Properties/pageValue'
 import {
   type Adoption,
   encodeValue,
@@ -13,6 +14,11 @@ import type { NexusTree, SpaceNode } from '../Nexus/tree'
 type ResolvedLinks = Map<string, string[]>
 
 export const listOf = (raw: unknown): unknown[] => (Array.isArray(raw) ? raw : [raw])
+
+export const namesSpace =
+  (title: string): Matcher =>
+  (el) =>
+    typeof el === 'string' && normalizeTitle(el) === normalizeTitle(title)
 
 export interface GovernedWorld {
   registry: ContextsRegistry | null

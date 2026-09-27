@@ -9,6 +9,7 @@ import {
   pathExists,
   readJsonStrict,
   rewritePreservingTimes,
+  setOrDrop,
   targetTaken,
 } from '../Files/atomicWrite'
 import { renameFrontmatterKey, type KeyCollision } from '../Files/pageFile'
@@ -28,6 +29,8 @@ import {
 } from '../Properties/governedSweep'
 import { loadContextWorld } from './contextWrite'
 import { withOrderEntry } from './spaceSidecar'
+import { editList } from '../Properties/pageValue'
+import { listOf, namesSpace } from './contextResolve'
 import { queryMembers } from '../Index/contentIndex'
 import { indexWrittenPage, nexusCorpus } from '../Index/indexSeed'
 import { noteSidecarWrite } from '../Nexus/valuesChanged'
@@ -56,12 +59,9 @@ function rewriteRoot(raw: Json, contextTitle: string, j: RenameJournal): Json | 
   }
   const key = contextKey(contextTitle)
   const arr = raw[key]
-  if (!Array.isArray(arr) || !arr.includes(j.oldTitle)) return null
-  const next: unknown[] = []
-  for (const v of arr) {
-    const mapped = v === j.oldTitle ? j.newTitle : v
-    if (!next.includes(mapped)) next.push(mapped)
-  }
+  const next =
+    Array.isArray(arr) && editList(arr, namesSpace(j.oldTitle), { op: 'replace', to: j.newTitle })
+  if (!next) return null
   return { ...raw, [key]: next }
 }
 
@@ -137,10 +137,13 @@ export async function unlinkContextKey(
   const captured: SweepCapture[] = []
   const strip: Rewrite = (raw, file) => {
     if (!(key in raw)) return null
-    const values = Array.isArray(raw[key])
-      ? raw[key].filter((v): v is string => typeof v === 'string')
-      : []
-    captured.push(captureRoot(raw, file, values))
+    captured.push(
+      captureRoot(
+        raw,
+        file,
+        listOf(raw[key]).filter((v): v is string => typeof v === 'string'),
+      ),
+    )
     return stripKeys(key)(raw, file)
   }
   const entry = withOrderEntry(strip, 'contexts', contextTitle, null)
@@ -155,15 +158,19 @@ export async function unlinkSpaceValue(
 ): Promise<Result<UnlinkOutcome>> {
   const key = contextKey(contextTitle)
   const captured: SweepCapture[] = []
+  const names = namesSpace(spaceTitle)
   const take: Rewrite = (raw, file) => {
     const arr = raw[key]
-    if (!Array.isArray(arr) || !arr.includes(spaceTitle)) return null
-    captured.push(captureRoot(raw, file, [spaceTitle]))
-    const kept = arr.filter((v) => v !== spaceTitle)
-    const next = { ...raw }
-    if (kept.length) next[key] = kept
-    else delete next[key]
-    return next
+    const next = Array.isArray(arr) && editList(arr, names, { op: 'strip' })
+    if (!next) return null
+    captured.push(
+      captureRoot(
+        raw,
+        file,
+        arr.filter((v): v is string => typeof v === 'string' && names(v)),
+      ),
+    )
+    return setOrDrop(raw, key, next.length ? next : undefined)
   }
   return ok({ ...(await unlinkMembers(root, { key, spaceTitle }, take)), captured })
 }
