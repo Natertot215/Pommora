@@ -282,7 +282,7 @@ export function MarkdownEditor({
           view.scrollDOM.scrollTop = lastScrollTop
       })
     }
-    if (edgeFade) view.scrollDOM.classList.add('over-scroll', 'over-scroll-gated')
+    if (edgeFade) view.scrollDOM.classList.add('scroll-fade', 'scroll-fade-gated')
     if (autoFocus && !lastReadOnly.current) view.focus()
     applyCitationsVisibility(view, citesShownRef.current, false)
     // The warm scroll restores AFTER folds settle: folding changes content height, so restoring first lands on a pre-fold offset.

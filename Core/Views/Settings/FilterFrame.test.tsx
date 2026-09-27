@@ -288,41 +288,14 @@ describe('FilterFrame', () => {
     })
   })
 
-  it('an uncommitted value flushes when the pane unmounts', async () => {
+  it('an uncommitted value is discarded when the pane unmounts', async () => {
     await mount(view({ filter: { match: 'all', rules: [{ property_id: '_title', op: 'is' }] } }))
     const input = host.querySelector('input')
     await act(async () => {
       if (input) input.value = 'stranded'
     })
     await act(() => root.unmount())
-    expect(lastSaved().filter?.rules).toEqual([
-      { property_id: '_title', op: 'is', value: 'stranded' },
-    ])
-    root = createRoot(host)
-  })
-
-  it('a value edited after an earlier commit still flushes on unmount', async () => {
-    await mount(view({ filter: { match: 'all', rules: [{ property_id: '_title', op: 'is' }] } }))
-    await act(async () => {
-      const first = host.querySelector('input')
-      if (first) {
-        first.focus()
-        first.value = 'one'
-        first.dispatchEvent(new FocusEvent('focusout', { bubbles: true }))
-      }
-    })
-    // The commit re-keys the input; re-query rather than reusing the detached node.
-    await mount(
-      view({
-        filter: { match: 'all', rules: [{ property_id: '_title', op: 'is', value: 'one' }] },
-      }),
-    )
-    await act(async () => {
-      const second = host.querySelector('input')
-      if (second) second.value = 'two'
-    })
-    await act(() => root.unmount())
-    expect(lastSaved().filter?.rules).toEqual([{ property_id: '_title', op: 'is', value: 'two' }])
+    expect(saveSpy).not.toHaveBeenCalled()
     root = createRoot(host)
   })
 
@@ -504,6 +477,7 @@ describe('FilterFrame value editors', () => {
     expect(input).toBeTruthy()
     await act(async () => {
       if (input) {
+        input.focus()
         input.value = 'idea'
         input.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }))
       }

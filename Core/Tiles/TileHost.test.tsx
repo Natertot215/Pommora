@@ -69,9 +69,8 @@ async function until(cond: () => boolean): Promise<boolean> {
 describe('a tile zoom style', () => {
   it('styles every step but 1.0 with the one variable, identity-stable per step', () => {
     expect(zoomStyle(1)).toBeUndefined()
-    expect(zoomStyle(undefined)).toBeUndefined()
     expect(zoomStyle(0.9)).toEqual({ '--tile-zoom': 0.9 })
-    expect(zoomStyle(0.83)).toBe(zoomStyle(0.9))
+    expect(zoomStyle(0.9)).toBe(zoomStyle(0.9))
   })
 })
 

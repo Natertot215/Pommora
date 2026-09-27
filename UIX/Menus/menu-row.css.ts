@@ -3,7 +3,7 @@ import { STATE_OPACITY, vars as colorVars } from '../Theme/color.css'
 import { font, text } from '../Theme/typography.css'
 import { tintAt } from '../Theme/colors'
 import { fieldRing, ROW_RING } from '../Fields/fieldRing'
-import { base } from '../Fields/fields.css'
+import { fillInput } from '../Fields/fields.css'
 import { REVEAL_FADE, revealTarget } from '../Interactions/hover-reveal.css'
 import { duration } from '../Animations/motion'
 
@@ -175,16 +175,9 @@ export const titleWrap = style({
 
 export const titleCentered = style({ alignItems: 'center' })
 
-export const titleText = style({ vars: { '--over-scroll-fade': 'var(--fade-base)' } })
+export const titleText = style({ vars: { '--scroll-fade': 'var(--fade-base)' } })
 
-export const titleInput = style([
-  base,
-  {
-    width: '100%',
-    minWidth: 0,
-    WebkitAppRegion: 'no-drag',
-  } as StyleRule,
-])
+export const titleInput = style([fillInput, { WebkitAppRegion: 'no-drag' } as StyleRule])
 
 export const subLabel = style([text.caption.standard, { color: c.label.secondary }])
 
@@ -249,10 +242,7 @@ export const accessoryButton = style({
   selectors: { '&&:disabled': { opacity: STATE_OPACITY.ghost } },
 })
 
-export const detail = style([
-  text.footnote.emphasized,
-  { flex: '0 1 auto', minWidth: 0, vars: { '--over-scroll-fade': 'var(--fade-base)' } },
-])
+export const detail = style([text.footnote.emphasized, { flex: '0 1 auto', minWidth: 0 }])
 
 globalStyle(`${side}:has(${detail})`, { flex: '0 1 auto', minWidth: 0, maxWidth: '55%' })
 globalStyle(`${footing} ${accessoryButton}`, { color: c.label.secondary })

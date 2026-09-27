@@ -35,7 +35,7 @@ export const suffixInput = style([
     fontSize: font.scale.control.size,
     fontWeight: font.weight.emphasized,
     color: c.label.primary,
-    vars: { '--over-scroll-fade': 'var(--fade-light)' },
+    vars: { '--scroll-fade': 'var(--fade-light)' },
   },
 ])
 

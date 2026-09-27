@@ -46,10 +46,6 @@ function parsePastedLink(text: string, resolve?: ResolveTitle): string | null {
   return isValidLink(target) ? serializeLink({ url: normalizeLinkUrl(target), alias }) : null
 }
 
-export function isCommittableLink(text: string, resolve?: ResolveTitle): boolean {
-  return parsePastedLink(text, resolve) !== null || isValidLink(text)
-}
-
 export function urlClickTarget(value: string | undefined): string | null {
   if (!value) return null
   const target = readLink(value)

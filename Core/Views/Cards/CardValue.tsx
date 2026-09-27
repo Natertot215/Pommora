@@ -11,15 +11,15 @@ import { text } from '@pommora/uix/Theme/typography.css'
 import { columnType, resolveFieldValue } from '../../Properties/value'
 import { GhostSuppress } from '@pommora/uix/Interactions/ghostCreate'
 import { Cell } from '../../Properties/Cells/Cell'
-import { linkAlias, linkEditText, linkValueFromRename } from '@pommora/core/Connections/linkValue'
-import { validateLink } from '../../Properties/Cells/linkResolve'
+import { linkAlias, linkValueFromRename } from '@pommora/core/Connections/linkValue'
 import {
   linkValueMenuTarget,
   showConnectionMenu,
 } from '../../Interface/Menus/connectionMenuActions'
-import { parseEditorValue } from '../../Properties/parseEditorValue'
+import { PropertyValueInput } from '../../Properties/Pickers/PropertyValueInput'
 import type { ValueContext } from '../../Properties/valueContext'
-import { PropertyEditor } from '../../Properties/Pickers/PropertyEditor'
+import { EditableInput } from '@pommora/uix/Fields/EditableInput'
+import { fillInput } from '@pommora/uix/Fields/fields.css'
 import { numberDivisor } from '../../Properties/formatValue'
 import { sharedValueClickAction } from '../../Properties/Pickers/valueClick'
 import { fileChipIndex, pickFileInto, runFileMenuAction } from '../../Properties/Pickers/filePick'
@@ -129,23 +129,6 @@ export function CardValue({
     }
   }
 
-  const editorInitial = (): string => {
-    if (mode === 'rename') return v.kind === 'link' ? (linkAlias(v.value) ?? '') : ''
-    if (v.kind === 'number') return String(v.value)
-    if (v.kind === 'link') return linkEditText(v.value)
-    return ''
-  }
-  const commitEditor = (raw: string): void => {
-    setMode(null)
-    // A Link Edit rewrites the URL but rides the existing alias along; `undefined` = invalid, so don't commit.
-    const parsed =
-      mode === 'rename'
-        ? linkValueFromRename(raw, v.kind === 'link' ? v.value : '')
-        : parseEditorValue(t, raw, v)
-    if (parsed !== undefined) commit(parsed)
-  }
-
-  const editing = mode === 'editor' || mode === 'rename'
   return (
     // data-drag-slop: the whole card is a drag handle, so a press beginning on a value gets a larger activation threshold — a tap-wobble opens the picker instead of lifting the card.
     // biome-ignore lint/a11y/useKeyWithClickEvents lint/a11y/noStaticElementInteractions: a grid cell — per-cell tab stops are the wrong pattern; the grid wants roving tabindex, which is a feature rather than a lint fix
@@ -156,14 +139,19 @@ export function CardValue({
       onClick={onClick}
       onContextMenu={onContextMenu}
     >
-      {editing ? (
-        <PropertyEditor
-          initial={editorInitial()}
-          numeric={mode === 'editor' && t === 'number'}
-          validate={mode === 'editor' && t === 'link' ? validateLink : undefined}
-          onCommit={commitEditor}
+      {mode === 'rename' ? (
+        <EditableInput
+          initial={(v.kind === 'link' && linkAlias(v.value)) || ''}
+          className={fillInput}
+          caretAtEnd
+          onCommit={(raw) => {
+            dismiss()
+            commit(linkValueFromRename(raw, v.kind === 'link' ? v.value : ''))
+          }}
           onCancel={dismiss}
         />
+      ) : mode === 'editor' ? (
+        <PropertyValueInput type={t} current={v} onCommit={commit} onClose={dismiss} />
       ) : isBlankValue(v) && fillsBlank(t) ? (
         <EmptyValue className={cx('card-value-empty', text.caption.emphasized)} />
       ) : (

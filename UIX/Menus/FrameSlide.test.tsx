@@ -52,7 +52,7 @@ describe('FrameSlide', () => {
     await act(async () => {
       root.render(<FrameSlide open={false} root={<div>alpha</div>} detail={<div>beta</div>} />)
     })
-    expect(host.querySelectorAll('.over-scroll')).toHaveLength(0)
+    expect(host.querySelectorAll('.scroll-fade')).toHaveLength(0)
     for (const el of host.querySelectorAll<HTMLElement>('div')) expect(el.style.overflowY).toBe('')
   })
 

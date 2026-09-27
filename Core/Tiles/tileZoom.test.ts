@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import { DEFAULT_ZOOM, ZOOM_STEPS, scaleRows, zoomStep } from './tileZoom'
+import { ZOOM } from '@pommora/core/Settings/personalization'
+import { ZOOM_STEPS, scaleRows, zoomStep } from './tileZoom'
 
 describe('tileZoom', () => {
   it('offers the shared ramp, high to low', () => {
@@ -23,7 +24,7 @@ describe('tileZoom', () => {
   })
 
   it('resolves an absent factor to the 1.0 step', () => {
-    expect(zoomStep(undefined)).toBe(DEFAULT_ZOOM)
+    expect(zoomStep(undefined)).toBe(ZOOM.default)
   })
 
   it('snaps an off-grid factor to the nearest step (hand-edit / import safety)', () => {

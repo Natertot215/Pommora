@@ -2,44 +2,44 @@ import {
   HEADING_SIZE_KEYS,
   SETTING_DEFAULTS,
   type Personalization,
-  coerceHeadingSize,
-  coerceScale,
   embedZoom,
   viewEmbedZoom,
 } from '@pommora/core/Settings/personalization'
 import { cellColor, checkboxPaint, colorNameFor } from '@pommora/uix/Theme/ramp'
 
 /** Every sentinel — `accent`, `system`, `default` — reads as no cell, which `colorNameFor` already answers for. */
-function settingColorCss(setting: unknown): string | null {
-  const key = typeof setting === 'string' ? colorNameFor(setting) : 'default'
+function settingColorCss(setting: string | undefined): string | null {
+  const key = colorNameFor(setting)
   return key === 'default' ? null : cellColor(key)
 }
 
 /** A `null` REMOVES the var rather than setting it, for a cleared value whose stylesheet fallback is the live answer — writing a copy of that answer would freeze it where it stood. */
-type VarWriter = (value: unknown) => Record<string, string | null>
+type VarWriters = {
+  [K in keyof Personalization]?: (value: Personalization[K]) => Record<string, string | null>
+}
 
 // A size lands in em of the page text.
-const headingVars: Partial<Record<keyof Personalization, VarWriter>> = {}
+const headingVars: VarWriters = {}
 HEADING_SIZE_KEYS.forEach((key, i) => {
   headingVars[key] = (v) => ({
-    [`--h${i + 1}-size`]: `${coerceHeadingSize(v, SETTING_DEFAULTS[key])}em`,
+    [`--h${i + 1}-size`]: `${v ?? SETTING_DEFAULTS[key]}em`,
   })
 })
 
-const ROOT_VARS: Partial<Record<keyof Personalization, VarWriter>> = {
+const ROOT_VARS: VarWriters = {
   embedScale: (v) => {
-    const scale = coerceScale(v, SETTING_DEFAULTS.embedScale)
+    const scale = v ?? SETTING_DEFAULTS.embedScale
     return {
       '--embed-scale': String(scale),
       '--embed-zoom': String(embedZoom(scale)),
       '--view-embed-zoom': String(viewEmbedZoom(scale)),
     }
   },
-  editorScale: (v) => ({ '--editor-scale': String(coerceScale(v, SETTING_DEFAULTS.editorScale)) }),
+  editorScale: (v) => ({ '--editor-scale': String(v ?? SETTING_DEFAULTS.editorScale) }),
   connectionColor: (v) => ({ '--connection': settingColorCss(v) }),
   externalLinkColor: (v) => ({ '--link': settingColorCss(v) }),
   checkboxColor: (v) =>
-    checkboxPaint(typeof v === 'string' ? v : undefined) ?? {
+    checkboxPaint(v) ?? {
       '--checkbox-base': null,
       '--checkbox-outline': null,
     },

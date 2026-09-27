@@ -23,11 +23,6 @@
   color: var(--label-secondary);
   border-bottom: var(--heading-divider);
   user-select: none;
-  /* Full-bleeds the fill and seam to both glass edges; the matching padding re-lands the tracks on a data row's content width — un-padded, every column drifts. */
-  margin-left: calc(-1 * var(--content-inset));
-  margin-right: calc(-1 * var(--table-right-inset));
-  padding-left: var(--content-inset);
-  padding-right: var(--table-right-inset);
 }
 .col-header-icon {
   display: inline-flex;
@@ -80,13 +75,6 @@
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-.property-editor {
-  width: 100%;
-}
-/* Ghosted until the typed value is a valid link — the link's color, set inline, dimmed. */
-.property-editor-ghost {
-  opacity: var(--state-ghost);
-}
 .cell-rename {
   display: flex;
   align-items: center;
@@ -94,10 +82,6 @@
 }
 .cell-rename > svg {
   color: var(--label-secondary);
-}
-.cell-rename > .property-editor {
-  flex: 1;
-  min-width: 0;
 }
 /* A single-column table reads as a plain list — no trailing line to bound. */
 .data-cell:not(:last-child) {

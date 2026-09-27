@@ -12,7 +12,7 @@ import { dialer } from '../../Platform/dialer'
 import { useWindowGeometry } from './useWindowGeometry'
 import './web-window.css'
 
-const BOUNDS: WindowBounds = { min: { w: 480, h: 360 }, def: { w: 1000, h: 700 } }
+const BOUNDS: WindowBounds = { min: { w: 480, h: 360 }, default: { w: 1000, h: 700 } }
 
 interface BrowserGuest extends HTMLElement {
   goBack(): void

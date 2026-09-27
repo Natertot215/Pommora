@@ -9,6 +9,8 @@ import { segment } from '../Elements/segment.css'
 const c = vars.color
 
 const GUTTER = '2px'
+const DAY_HEIGHT = '24px'
+const ROW_GAP = '2px'
 
 const PILL_INSET = '1px'
 const PILL_RADIUS = '6px'
@@ -63,7 +65,9 @@ const slideRight = keyframes({
   from: { transform: 'translateX(-50%)' },
   to: { transform: 'translateX(0)' },
 })
+/** `--grid-rows` is the shown month's week count, so the height animates between five- and six-week months. */
 export const viewport = style({
+  height: `calc(var(--grid-rows) * ${DAY_HEIGHT} + (var(--grid-rows) - 1) * ${ROW_GAP} + ${GUTTER})`,
   overflow: 'hidden',
   transition: `height ${duration.base} ${easing.baseEase}`,
 })
@@ -78,14 +82,14 @@ export const trackRight = style({
 export const days = style({
   display: 'grid',
   gridTemplateColumns: 'repeat(7, 1fr)',
-  rowGap: '2px',
+  rowGap: ROW_GAP,
   padding: `0 ${GUTTER} ${GUTTER}`,
   width: '50%',
   flex: 'none',
 })
 export const day = style({
   all: 'unset',
-  height: '24px',
+  height: DAY_HEIGHT,
   textAlign: 'center',
   fontSize: font.scale.caption.size,
   display: 'grid',

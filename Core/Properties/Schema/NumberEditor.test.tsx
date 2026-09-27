@@ -17,6 +17,7 @@ class ResizeObserverStub {
 let host: HTMLDivElement
 let root: Root
 beforeEach(() => {
+  onSetConfig.mockClear()
   host = document.createElement('div')
   document.body.appendChild(host)
   root = createRoot(host)
@@ -26,10 +27,11 @@ afterEach(() => {
   host.remove()
 })
 
+const onSetConfig = vi.fn()
 const mount = (config: NumberConfig): void => {
   act(() =>
     root.render(
-      <NumberEditor config={config} look="number" onSetConfig={vi.fn()} onSetStyle={vi.fn()} />,
+      <NumberEditor config={config} look="number" onSetConfig={onSetConfig} onSetStyle={vi.fn()} />,
     ),
   )
 }
@@ -57,5 +59,21 @@ describe('NumberEditor', () => {
     expect(labels()).not.toContain('Value')
     mount({ number_family: 'number', number_fraction: true, number_denominator: 10 })
     expect(labels()).toContain('Value')
+  })
+
+  it('the Value row refuses text that only partly parses, and a blank clears it', () => {
+    mount({ number_family: 'number', number_fraction: true, number_denominator: 10 })
+    const type = (text: string): void => {
+      act(() => (host.querySelector('button[aria-label="Fraction value"]') as HTMLElement).click())
+      const input = host.querySelector('input') as HTMLInputElement
+      input.value = text
+      act(() => {
+        input.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }))
+      })
+    }
+    type('12abc')
+    expect(onSetConfig).not.toHaveBeenCalled()
+    type('')
+    expect(onSetConfig).toHaveBeenCalledWith({ number_denominator: undefined })
   })
 })

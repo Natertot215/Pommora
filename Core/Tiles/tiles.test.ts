@@ -191,6 +191,13 @@ describe('tile entry zoom field', () => {
     expect(e).not.toBeNull()
     expect(e?.zoom).toBeUndefined()
   })
+
+  it('snaps a zoom to the nearest step', () => {
+    const at = (zoom: number) => knownTile({ id: tileId('d'), type: 'markdown', zoom })?.zoom
+    expect(at(9)).toBe(1.5)
+    expect(at(0.83)).toBe(0.9)
+    expect(at(-1)).toBe(0.5)
+  })
 })
 
 describe('the tile recipe', () => {

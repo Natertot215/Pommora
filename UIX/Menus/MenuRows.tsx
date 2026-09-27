@@ -368,7 +368,7 @@ export function MenuScrollFrame({
   return (
     <div className={cx(s.scrollFrame, className)} style={{ maxHeight }}>
       {header && <div className={s.scrollFrameEdge}>{header}</div>}
-      <div className={cx(s.scrollFrameBody, 'over-scroll')}>{children}</div>
+      <div className={cx(s.scrollFrameBody, 'scroll-fade')}>{children}</div>
       {footer && <div className={s.scrollFrameEdge}>{footer}</div>}
     </div>
   )

@@ -8,3 +8,8 @@ export const unitNumber = (value: number, unit: NumberUnit = FACTOR): string =>
 
 export const unitLabel = (value: number, unit: NumberUnit = FACTOR): string =>
   `${unitNumber(value, unit)}${unit.suffix}`
+
+export const numberFrom = (text: string): number | undefined => {
+  const n = text.trim() === '' ? Number.NaN : Number(text)
+  return Number.isFinite(n) ? n : undefined
+}

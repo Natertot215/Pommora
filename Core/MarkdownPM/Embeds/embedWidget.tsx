@@ -27,7 +27,8 @@ import { titleFromPath } from '@pommora/core/Paths/posix'
 import { normalizeTitle } from '@pommora/core/Connections/connections'
 import '../../Tiles/tile-base.css'
 import { loneWebpageEmbed } from '../Engine/detect'
-import { DEFAULT_ZOOM, zoomStep } from '../../Tiles/tileZoom'
+import { ZOOM } from '../../Settings/personalization'
+import { zoomStep } from '../../Tiles/tileZoom'
 import { docScan } from '../docCache'
 import { claimedEmbeds } from '../Engine/embedClaims'
 import { healTileScrolls } from './scrollHeal'
@@ -323,7 +324,7 @@ const selectionOn = (state: EditorState, from: number, to: number): boolean =>
 
 function applyTileZoom(dom: HTMLElement, zoom: number | undefined): void {
   const factor = zoomStep(zoom)
-  if (factor === DEFAULT_ZOOM) dom.style.removeProperty('--tile-zoom')
+  if (factor === ZOOM.default) dom.style.removeProperty('--tile-zoom')
   else dom.style.setProperty('--tile-zoom', String(factor))
 }
 
@@ -599,7 +600,7 @@ export function applyEmbedZoom(view: EditorView, pos: number, factor: number): v
   const key = embedPrefKey(view.state, pos)
   if (key === null) return
   const zooms = { ...view.state.field(embedField).zooms }
-  if (factor === DEFAULT_ZOOM) delete zooms[key]
+  if (factor === ZOOM.default) delete zooms[key]
   else zooms[key] = factor
   view.dispatch({ effects: setEmbedZooms.of(zooms) })
   view.state.facet(editorHost).prefs?.save('embedZooms', zooms)

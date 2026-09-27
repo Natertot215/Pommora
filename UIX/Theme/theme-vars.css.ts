@@ -103,6 +103,9 @@ globalStyle(':root', {
     '--width-200': '2px',
     '--radius-full': '999px',
 
+    '--app-inset': '6px',
+    '--app-radius': '12px',
+    '--surface-inset': '10px',
     '--icon-body': size.icon.body,
     '--disclosure-indent': `${DISCLOSURE_INDENT}px`,
     '--rail-inset-base': '20px',

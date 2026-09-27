@@ -639,7 +639,7 @@ export function ViewTile({
             </div>
           </div>
         </div>
-        <div className={cx(s.body, !stripOpen && s.bodyFlush, 'over-scroll')} {...bodyHover}>
+        <div className={cx(s.body, !stripOpen && s.bodyFlush, 'scroll-fade')} {...bodyHover}>
           <div
             key={index}
             className={s.slideWrap}

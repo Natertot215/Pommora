@@ -347,6 +347,12 @@ describe('card_size codec', () => {
     ).toBeUndefined()
     expect(savedView.parse({ ...base, card_size: Number.NaN }).card_size).toBeUndefined()
   })
+  it('clamps card_size and view_scale into their ranges', () => {
+    expect(savedView.parse({ ...base, card_size: 125 }).card_size).toBe(1.5)
+    expect(savedView.parse({ ...base, card_size: 0.1 }).card_size).toBe(0.5)
+    expect(savedView.parse({ ...base, view_scale: 9 }).view_scale).toBe(1.5)
+    expect(savedView.parse({ ...base, view_scale: 0.2 }).view_scale).toBe(0.5)
+  })
 })
 
 describe('card_banner codec', () => {

@@ -2,7 +2,7 @@ import type { RefObject } from 'react'
 import { TextPicker } from '@pommora/uix/Pickers/TextPicker'
 import type { PropertyDefinition } from '@pommora/core/Properties/properties'
 import type { PropertyValue } from '@pommora/core/Properties/propertyValue'
-import { parseEditorValue } from '../parseEditorValue'
+import { editorText, parseEditorValue } from '../parseEditorValue'
 import { fractionDenominator, numberFormatGlyph } from '../formatValue'
 
 export function NumberValuePicker({
@@ -25,7 +25,7 @@ export function NumberValuePicker({
     <TextPicker
       open={open}
       triggerRef={triggerRef}
-      value={current?.kind === 'number' ? String(current.value) : ''}
+      value={editorText(current)}
       leading={numberFormatGlyph(def)}
       trailing={denominator === undefined ? undefined : `/ ${denominator}`}
       onCommit={(raw) => {

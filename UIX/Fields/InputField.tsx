@@ -2,6 +2,7 @@ import { type ReactNode, useRef, useState } from 'react'
 import * as s from './fields.css'
 import { cx } from '../Utilities/cx'
 import { onActivateKey } from '../Interactions/activate'
+import { overScrollLabel } from '../Interactions/OverScroll'
 import { RenamableLabel } from './RenamableLabel'
 
 export interface FieldEdit {
@@ -53,7 +54,7 @@ export function InputField({
       }
     : undefined
   const content = capped ? (
-    <span className={cx(s.contentRow, 'over-scroll-x', 'over-scroll-cap')}>{children}</span>
+    <span className={cx(s.contentRow, overScrollLabel)}>{children}</span>
   ) : (
     children
   )

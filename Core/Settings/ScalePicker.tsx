@@ -16,7 +16,7 @@ export function ScalePicker({
       solid
       chevronLead
       {...steppedPickerProps({
-        steps: SCALE.steps,
+        range: SCALE,
         value,
         onPick,
       })}

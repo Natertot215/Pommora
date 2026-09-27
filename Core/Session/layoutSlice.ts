@@ -1,6 +1,5 @@
 import type { HostPlatform } from '@pommora/core/Contract/bridge'
 import type { Slice } from './sessionState'
-import { clamp } from '@pommora/uix/Utilities/clamp'
 
 export interface LayoutSlice {
   sidebarVisible: boolean
@@ -18,17 +17,13 @@ export interface LayoutSlice {
   resetLayout: () => void
 }
 
-export const SIDEBAR_WIDTH = { min: 180, max: 380, def: 240 }
-export const SIDE_PANE_WIDTH = { min: 240, max: 420, def: 300 }
-type PaneWidth = typeof SIDEBAR_WIDTH
-
-export const clampWidth = (pane: PaneWidth, w: number): number =>
-  clamp(Math.round(w), pane.min, pane.max)
+export const SIDEBAR_WIDTH = { min: 180, max: 380, default: 240 }
+export const SIDE_PANE_WIDTH = { min: 240, max: 420, default: 300 }
 
 // devicePrefs is bound to a session root, so a pane width belongs to this Nexus and returns to its default when another one opens.
 const PER_NEXUS = {
-  sidebarWidth: SIDEBAR_WIDTH.def,
-  sidePaneWidth: SIDE_PANE_WIDTH.def,
+  sidebarWidth: SIDEBAR_WIDTH.default,
+  sidePaneWidth: SIDE_PANE_WIDTH.default,
 } satisfies Partial<LayoutSlice>
 
 export const createLayoutSlice: Slice<LayoutSlice> = (set, get) => ({
@@ -38,8 +33,8 @@ export const createLayoutSlice: Slice<LayoutSlice> = (set, get) => ({
   ribbonVisible: true,
   toggleRibbon: () => set((s) => ({ ribbonVisible: !s.ribbonVisible })),
 
-  setSidebarWidth: (w) => set({ sidebarWidth: clampWidth(SIDEBAR_WIDTH, w) }),
-  setSidePaneWidth: (w) => set({ sidePaneWidth: clampWidth(SIDE_PANE_WIDTH, w) }),
+  setSidebarWidth: (w) => set({ sidebarWidth: Math.round(w) }),
+  setSidePaneWidth: (w) => set({ sidePaneWidth: Math.round(w) }),
   persistPaneWidths: () => {
     const s = get()
     s.setDevicePref('panes', { sidebar: s.sidebarWidth, sidePane: s.sidePaneWidth })

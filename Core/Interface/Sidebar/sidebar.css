@@ -235,7 +235,7 @@
 }
 
 .sidebar .over-scroll-ellipsis {
-  --over-scroll-fade: var(--fade-heavy);
+  --scroll-fade: var(--fade-heavy);
 }
 
 .row-icon {

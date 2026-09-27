@@ -433,7 +433,7 @@ export function Sidebar({ tree }: { tree: NexusTree }): React.JSX.Element {
     <SidebarGhost.Provider value={ghostValue}>
       <SidebarGhostApi.Provider value={sidebarGhostApi}>
         <GhostSuppress.Provider value={ghostApi.suppressWrap}>
-          <nav ref={navRef} className="sidebar over-scroll">
+          <nav ref={navRef} className="sidebar scroll-fade">
             <div className="sidebar-mode-stage">
               {exit && (
                 <div

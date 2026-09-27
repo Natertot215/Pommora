@@ -3,24 +3,9 @@ import { readPersonalization } from './codec'
 import {
   type Personalization,
   TAB_MIN_WIDTH,
-  coerceHeadingSize,
-  coerceTenthsScale,
   PREVIEW_LINGER_MS,
   SETTING_DEFAULTS,
 } from './personalization'
-
-describe('coerceTenthsScale', () => {
-  it('clamps out-of-range values so a typo cannot brick the window', () => {
-    expect(coerceTenthsScale(1.25)).toBe(1.25)
-    expect(coerceTenthsScale(125)).toBe(1.5)
-    expect(coerceTenthsScale(0.1)).toBe(0.5)
-  })
-
-  it('falls back to 1.0 on an absent or non-numeric value', () => {
-    expect(coerceTenthsScale(undefined)).toBe(1)
-    expect(coerceTenthsScale('big')).toBe(1)
-  })
-})
 
 describe('readPersonalization previewPersistence', () => {
   it('passes a valid rung through', () => {
@@ -85,14 +70,7 @@ describe('readPersonalization matrixOpenIn', () => {
   })
 })
 
-describe('coerceHeadingSize', () => {
-  it('clamps to the slider range and falls back on junk', () => {
-    expect(coerceHeadingSize(1.6, 1.8)).toBe(1.6)
-    expect(coerceHeadingSize(9, 1.8)).toBe(2.5)
-    expect(coerceHeadingSize(0.1, 1.8)).toBe(0.5)
-    expect(coerceHeadingSize('big', 1.8)).toBe(1.8)
-  })
-
+describe('heading sizes', () => {
   it('reads only a stored number per level, clamped', () => {
     const p = readPersonalization({ heading2Size: 2, heading6Size: 7, heading3Size: 'x' })
     expect(p.heading2Size).toBe(2)

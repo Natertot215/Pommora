@@ -1,16 +1,7 @@
 import { describe, expect, it } from 'vitest'
-import {
-  clampZoom,
-  coverRect,
-  coverStyle,
-  DEFAULT_CROP,
-  dragRect,
-  MAX_ZOOM,
-  MIN_ZOOM,
-  panToCrop,
-} from './cropGeometry'
+import { coverRect, coverStyle, CROP_ZOOM, DEFAULT_CROP, dragRect, panToCrop } from './cropGeometry'
 import { cropKeyFor } from '../Paths/nexusPaths'
-import type { Crop } from '../Nexus/schemas'
+import { type Crop, crop } from '../Nexus/schemas'
 
 describe('coverStyle', () => {
   it('fills width when the image is taller than the box relative to width', () => {
@@ -38,18 +29,8 @@ describe('coverStyle', () => {
     expect(coverStyle({ x: 0.5, y: 0.5, zoom: 0.6 }, 1, 2)?.backgroundSize).toBe('auto 60%')
   })
 
-  it('clamps an out-of-bounds zoom and repairs a NaN zoom to 1', () => {
-    expect(coverStyle({ x: 0.5, y: 0.5, zoom: 10 }, 2, 1)?.backgroundSize).toBe(
-      `${MAX_ZOOM * 100}% auto`,
-    )
-    expect(coverStyle({ x: 0.5, y: 0.5, zoom: 0.01 }, 2, 1)?.backgroundSize).toBe(
-      `${MIN_ZOOM * 100}% auto`,
-    )
-    expect(coverStyle({ x: 0.5, y: 0.5, zoom: Number.NaN }, 2, 1)?.backgroundSize).toBe('100% auto')
-  })
-
-  it('clamps the focal point into [0, 1] and paints the colour', () => {
-    expect(coverStyle({ x: -1, y: 2, zoom: 1, color: '#123456' }, 2, 1)).toEqual({
+  it('paints the colour', () => {
+    expect(coverStyle({ x: 0, y: 1, zoom: 1, color: '#123456' }, 2, 1)).toEqual({
       backgroundSize: '100% auto',
       backgroundPosition: '0% 100%',
       backgroundColor: '#123456',
@@ -77,11 +58,17 @@ describe('coverStyle', () => {
   })
 })
 
-describe('clampZoom', () => {
-  it('holds the range at both ends', () => {
-    expect(clampZoom(0.01)).toBe(MIN_ZOOM)
-    expect(clampZoom(99)).toBe(MAX_ZOOM)
-    expect(clampZoom(1.5)).toBe(1.5)
+describe('the crop decode', () => {
+  const at = (zoom: unknown) => crop.safeParse({ x: 0.5, y: 0.5, zoom }).data?.zoom
+  it('holds the zoom range at both ends and drops a non-finite zoom', () => {
+    expect(at(0.01)).toBe(CROP_ZOOM.min)
+    expect(at(99)).toBe(CROP_ZOOM.max)
+    expect(at(1.5)).toBe(1.5)
+    expect(at(Number.NaN)).toBeUndefined()
+  })
+
+  it('clamps the focal point into [0, 1]', () => {
+    expect(crop.safeParse({ x: -1, y: 2, zoom: 1 }).data).toEqual({ x: 0, y: 1, zoom: 1 })
   })
 })
 

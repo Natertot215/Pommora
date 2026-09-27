@@ -387,7 +387,7 @@ describe('a side panel keeps its width across windows of one id', () => {
   it('a width dragged in one window opens the next window of that id at it, on the first frame', () => {
     const side = (children: React.ReactNode) => ({
       windowId: 'panel-test',
-      bounds: { min: 100, def: 200, max: 400 },
+      bounds: { min: 100, default: 200, max: 400 },
       mode: 'overlay' as const,
       children,
     })
@@ -426,7 +426,7 @@ describe('a side panel keeps its width across windows of one id', () => {
             ariaLabel="a"
             right={{
               windowId: 'panel-frame-test',
-              bounds: { min: 100, def: 200, max: 400 },
+              bounds: { min: 100, default: 200, max: 400 },
               mode: 'overlay',
               children: null,
             }}

@@ -107,10 +107,10 @@ export function IconPicker({
       <SearchField className={s.search} value={query} onValueChange={setQuery} />
       {iconFavs.length === 0 && <div className={s.separator} />}
 
-      <div ref={setScrollEl} className={cx(s.grid, 'over-scroll')}>
+      <div ref={setScrollEl} className={cx(s.grid, 'scroll-fade')}>
         {iconFavs.length > 0 && (
           <div className={s.iconFavorites}>
-            <div className={cx(s.iconFavScroll, 'over-scroll-x')}>
+            <div className={cx(s.iconFavScroll, 'scroll-fade-x')}>
               <SortableZone items={iconFavs} onReorder={reorderIconFavs}>
                 {iconFavs.map((id) => (
                   <IconFavCell

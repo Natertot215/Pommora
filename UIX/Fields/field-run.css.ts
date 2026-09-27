@@ -16,7 +16,7 @@ export const fieldRun = style({
   flex: '1 1 auto',
   gap: RUN_GAP,
   // The FIELD is what runs out of room, so one fade sits at its trailing edge: per-item fades would read as several broken labels. `--label-max` is lifted for the same reason.
-  vars: { '--over-scroll-fade': RUN_FADE, '--label-max': 'none' },
+  vars: { '--scroll-fade': RUN_FADE, '--label-max': 'none' },
 })
 
 /** Natural width so the RUN overflows; squeezing would truncate every title a little rather than the list as a whole. */

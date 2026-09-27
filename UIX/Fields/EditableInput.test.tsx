@@ -25,7 +25,7 @@ function mountStaying(
   act(() =>
     root.render(
       <EditableInput
-        value="Alpha"
+        initial="Alpha"
         className="field"
         autoFocus={false}
         onCommit={onCommit}
@@ -68,5 +68,44 @@ describe('EditableInput in a field that stays mounted', () => {
     input.value = 'Gamma'
     act(() => input.blur())
     expect(onCommit.mock.calls).toEqual([['Gamma']])
+  })
+})
+
+describe('EditableInput torn down without a blur', () => {
+  it('discards the typed text', () => {
+    const onCommit = vi.fn()
+    act(() =>
+      root.render(
+        <EditableInput initial="Alpha" className="field" onCommit={onCommit} onCancel={() => {}} />,
+      ),
+    )
+    ;(host.querySelector('input') as HTMLInputElement).value = 'Typed'
+    act(() => root.render(null))
+    expect(onCommit).not.toHaveBeenCalled()
+  })
+})
+
+describe('EditableInput marking text that will not commit', () => {
+  const notANumber = (text: string): boolean => text.trim() !== '' && Number.isNaN(Number(text))
+
+  it('marks the opening text and every keystroke on the node', () => {
+    act(() =>
+      root.render(
+        <EditableInput
+          initial="x"
+          className="field"
+          invalid={notANumber}
+          onCommit={() => {}}
+          onCancel={() => {}}
+        />,
+      ),
+    )
+    const input = host.querySelector('input') as HTMLInputElement
+    expect(input.getAttribute('aria-invalid')).toBe('true')
+    act(() => {
+      input.value = '12'
+      input.dispatchEvent(new Event('input', { bubbles: true }))
+    })
+    expect(input.getAttribute('aria-invalid')).toBe('false')
   })
 })

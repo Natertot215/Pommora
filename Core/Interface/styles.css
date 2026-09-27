@@ -1,8 +1,5 @@
 :root {
   --main-bg: var(--bg-window);
-  --app-inset: 6px;
-  --app-radius: 12px;
-  --surface-inset: 10px;
   --toolbar-h: 38px;
   --content-edge: 12px;
   /* Ratified mobile pre-paving. */
@@ -43,18 +40,6 @@ textarea,
 
 ::-webkit-scrollbar {
   display: none;
-}
-
-@property --io {
-  syntax: "<number>";
-  inherits: true;
-  initial-value: 0;
-}
-
-@property --io-l {
-  syntax: "<number>";
-  inherits: true;
-  initial-value: 0;
 }
 
 @property --window-flow-reveal {

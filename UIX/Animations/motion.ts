@@ -15,6 +15,9 @@ export const easing = {
 
 export const ms = (d: (typeof duration)[keyof typeof duration]): number => Number.parseInt(d, 10)
 
+export const prefersReducedMotion = (): boolean =>
+  window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false
+
 /** Evaluates a CSS `cubic-bezier` for a canvas paint or a scroll offset, where a timing function can't be handed to the browser. */
 export function cubicBezier(x1: number, y1: number, x2: number, y2: number): (t: number) => number {
   const axis = (a: number, b: number, t: number): number =>

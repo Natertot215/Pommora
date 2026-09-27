@@ -222,7 +222,7 @@ export function SortFrame({
           {finiteDef && (
             <>
               <MenuSeparator flush />
-              <div className={`${middleRegion} over-scroll`}>
+              <div className={`${middleRegion} scroll-fade`}>
                 {primary.order ? (
                   <CustomList
                     group={{ order_mode: 'manual', order: primary.order }}

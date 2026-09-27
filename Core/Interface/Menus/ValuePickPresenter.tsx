@@ -2,12 +2,11 @@ import { useState } from 'react'
 import { useLatest } from '@pommora/uix/Utilities/stableApi'
 import { TextPicker } from '@pommora/uix/Pickers/TextPicker'
 import { useHeld } from '@pommora/uix/Animations/useExitPresence'
-import { linkEditText } from '@pommora/core/Connections/linkValue'
 import type { PropertyValue } from '@pommora/core/Properties/propertyValue'
 import { solidColorCss } from '@pommora/uix/Theme/ramp'
 import { NumberValuePicker } from '../../Properties/Pickers/NumberValuePicker'
 import { PropertyPicker } from '../../Properties/Pickers/PropertyPicker'
-import { parseEditorValue } from '../../Properties/parseEditorValue'
+import { editorText, parseEditorValue } from '../../Properties/parseEditorValue'
 import { useSession } from '../../Session/store'
 
 export function ValuePickPresenter(): React.JSX.Element | null {
@@ -53,7 +52,7 @@ export function ValuePickPresenter(): React.JSX.Element | null {
     <TextPicker
       open={pending !== null}
       triggerRef={triggerRef}
-      value={current?.kind === 'link' ? linkEditText(current.value) : ''}
+      value={editorText(current)}
       accent={solidColorCss(def.link_color)}
       onCommit={(raw) => {
         const next = parseEditorValue(def.type, raw, current)

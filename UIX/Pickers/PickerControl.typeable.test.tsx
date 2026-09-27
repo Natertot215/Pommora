@@ -128,3 +128,36 @@ describe('a typeable picker', () => {
     expect(field()).toBeNull()
   })
 })
+
+describe('a type-only picker', () => {
+  beforeEach(() => {
+    act(() => {
+      root.render(
+        <PickerControl
+          ariaLabel="Fraction value"
+          value=""
+          options={[]}
+          onPick={() => {}}
+          typeable={{ text: '8', onCommit }}
+        />,
+      )
+    })
+  })
+
+  it('rests on the typed text', () => {
+    expect(host.querySelector('button[aria-label="Fraction value"]')?.textContent).toBe('8')
+  })
+
+  it('a left press starts typing into a field that keeps the label', () => {
+    press(host.querySelector('button') as HTMLButtonElement, 'click', { detail: 1 })
+    expect(door).not.toHaveBeenCalled()
+    const input = field()
+    expect(input?.getAttribute('aria-label')).toBe('Fraction value')
+    expect(input?.value).toBe('8')
+    act(() => {
+      ;(input as HTMLInputElement).value = '12'
+      input?.blur()
+    })
+    expect(onCommit).toHaveBeenCalledWith('12')
+  })
+})

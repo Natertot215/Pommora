@@ -8,7 +8,8 @@ import {
   type TileStyle,
   type ViewPickerItem,
 } from '@pommora/core/Tiles/tiles'
-import { scaleRows, zoomStep } from './tileZoom'
+import { scaleRows } from './tileZoom'
+import { ZOOM } from '@pommora/core/Settings/personalization'
 import { type ActionItem, joinGroups } from '@pommora/core/Actions/menuModel'
 
 type TileMenuAction =
@@ -79,7 +80,7 @@ export function tileMenuItems({
       label: 'Scale',
       icon: 'scaling',
       disabled: locked,
-      submenu: scaleRows('tile:zoom:', zoomStep(entry.zoom)),
+      submenu: scaleRows('tile:zoom:', entry.zoom ?? ZOOM.default),
     },
     {
       label: 'Duplicate',

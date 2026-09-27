@@ -120,7 +120,7 @@ export const middleRegion = style({
   position: 'relative',
   maxHeight: MIDDLE_MAX_HEIGHT,
   overflowY: 'auto',
-  vars: { '--over-scroll-fade': 'var(--fade-base)' },
+  vars: { '--scroll-fade': 'var(--fade-base)' },
 })
 
 export const optionLead = style({

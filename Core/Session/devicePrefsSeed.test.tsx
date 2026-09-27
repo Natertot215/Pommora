@@ -93,6 +93,14 @@ describe('the panes open at the widths this machine last left them', () => {
     expect([s.sidebarWidth, s.sidePaneWidth]).toEqual([380, 240])
   })
 
+  it('reads a stored width that is not a finite number as absent', async () => {
+    const panes = { sidebar: 'wide', sidePane: Number.NaN } as unknown as DevicePrefs['panes']
+    const { useSession } = await freshStore(withPrefs({ panes }))
+    await useSession.getState().applyTree(treeAt('/a'))
+    const s = useSession.getState()
+    expect([s.sidebarWidth, s.sidePaneWidth]).toEqual([240, 300])
+  })
+
   it('seeds only the width the prefs hold', async () => {
     const { useSession } = await freshStore(withPrefs({ panes: { sidebar: 300 } }))
     await useSession.getState().applyTree(treeAt('/a'))
@@ -315,7 +323,7 @@ describe('a device preference saves only into the Nexus whose record the window 
 })
 
 describe('a nexus switch returns the panes to their defaults', () => {
-  it('resetLayout drops both widths back to def', async () => {
+  it('resetLayout drops both widths back to their defaults', async () => {
     const { useSession } = await freshStore(withPrefs({ panes: { sidebar: 300, sidePane: 400 } }))
     await useSession.getState().applyTree(treeAt('/a'))
     useSession.getState().resetLayout()

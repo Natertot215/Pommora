@@ -38,10 +38,11 @@ export function Slider({
   const decimals = decimalsOf(step)
   const v = clamp(draft ?? value, min, max)
   const pct = ((v - min) / (max - min)) * 100
+  const snap = (n: number): number =>
+    clamp(Number((min + Math.round((n - min) / step) * step).toFixed(decimals)), min, max)
   const valueAt = (r: DOMRect, clientX: number): number => {
     if (r.width === 0) return v
-    const t = clamp((clientX - r.left) / r.width, 0, 1)
-    return Number((Math.round((min + t * (max - min)) / step) * step).toFixed(decimals))
+    return snap(min + clamp((clientX - r.left) / r.width, 0, 1) * (max - min))
   }
   const scrub = (next: number): void => {
     setDraft(next)
@@ -90,11 +91,7 @@ export function Slider({
         onKeyDown={(e) => {
           if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return
           e.preventDefault()
-          const next = clamp(
-            Number((value + (e.key === 'ArrowRight' ? step : -step)).toFixed(decimals)),
-            min,
-            max,
-          )
+          const next = snap(value + (e.key === 'ArrowRight' ? step : -step))
           if (next !== value) onCommit(next)
         }}
       >

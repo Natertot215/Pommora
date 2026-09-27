@@ -1,13 +1,10 @@
-import { useState } from 'react'
 import { lookOptions, NUMBER_LOOKS } from '@pommora/core/Properties/columnStyles'
 import type { NumberConfig, NumberFamily } from '@pommora/core/Properties/properties'
 import { CURRENCY_CODES, DEFAULT_CURRENCY } from '@pommora/core/Properties/properties'
-import { Icon } from '@pommora/uix/Symbols'
-import { EditableInput } from '@pommora/uix/Fields/EditableInput'
 import { numberDivisor } from '../formatValue'
 import type { PickerOption } from '@pommora/uix/Pickers/PickerControl'
 import { MenuRowView, pickerRow, type MenuRow, type Trailing } from '@pommora/uix/Menus'
-import { value as pickerValue } from '@pommora/uix/Pickers/picker-control.css'
+import { numberFrom } from '@pommora/uix/Pickers/numberUnit'
 import * as s from './number-editor.css'
 
 type NumberLook = (typeof NUMBER_LOOKS)[number]
@@ -40,42 +37,6 @@ const row = (label: string, trailing: Trailing, reveal?: boolean): MenuRow => ({
   reveal,
   ...ROW_LOOK,
 })
-
-function ValueField({
-  value,
-  onCommit,
-}: {
-  value: number | undefined
-  onCommit: (n: number | undefined) => void
-}): React.JSX.Element {
-  const [editing, setEditing] = useState(false)
-  const chevron = <Icon name="chevrons-up-down" size="control" />
-  if (editing) {
-    return (
-      <span className={s.valueControl}>
-        <EditableInput
-          value={value !== undefined ? String(value) : ''}
-          className={s.valueCaret}
-          caretAtEnd
-          onCommit={(text) => {
-            const t = text.trim()
-            const n = Number.parseFloat(t)
-            onCommit(t === '' || Number.isNaN(n) ? undefined : n)
-            setEditing(false)
-          }}
-          onCancel={() => setEditing(false)}
-        />
-        {chevron}
-      </span>
-    )
-  }
-  return (
-    <button type="button" className={s.valueControl} onClick={() => setEditing(true)}>
-      <span className={pickerValue}>{value ?? ''}</span>
-      {chevron}
-    </button>
-  )
-}
 
 export function NumberEditor({
   config,
@@ -156,19 +117,18 @@ export function NumberEditor({
       />
 
       <MenuRowView
-        row={row(
-          'Value',
-          {
-            kind: 'field',
-            children: (
-              <ValueField
-                value={config.number_denominator}
-                onCommit={(n) => onSetConfig({ number_denominator: n })}
-              />
-            ),
+        row={pickerRow(undefined, 'Value', '', [], () => {}, {
+          ...ROW_LOOK,
+          ariaLabel: 'Fraction value',
+          reveal: !isPercent && fraction,
+          typeable: {
+            text: String(config.number_denominator ?? ''),
+            onCommit: (typed) => {
+              const n = numberFrom(typed)
+              if (n !== undefined || typed === '') onSetConfig({ number_denominator: n })
+            },
           },
-          !isPercent && fraction,
-        )}
+        })}
       />
 
       <MenuRowView

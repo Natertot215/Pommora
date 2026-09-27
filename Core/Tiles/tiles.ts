@@ -7,6 +7,7 @@ import { looseDecoder } from '../Files/decoders'
 import { isUlidShaped } from '../Nexus/identityMark'
 import { isNavRef, toNavRef } from '../Navigation/navRef'
 import { VIEW_BUTTONS, VIEW_STYLES } from '../Views/viewRow'
+import { zoomStep } from './tileZoom'
 
 interface RawTile {
   kind: 'tile'
@@ -62,7 +63,7 @@ export type TileStyle = (typeof TILE_STYLES)[number]
 const styleField = z.enum(TILE_STYLES).optional().catch(undefined)
 
 const boolField = z.boolean().optional().catch(undefined)
-const zoomField = z.number().positive().optional().catch(undefined)
+const zoomField = z.number().transform(zoomStep).optional().catch(undefined)
 // The id names the tile's file, so an entry read from disk is held to the ULID shape every minted id has; a path-shaped id reads as unknown and inert.
 const chassisFields = {
   id: z.string().refine(isUlidShaped),

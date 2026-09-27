@@ -22,10 +22,9 @@ import {
 } from '@pommora/core/Properties/propertyValue'
 import type { PageFrontmatter } from '@pommora/core/Nexus/schemas'
 import type { ResolvedColumn, ViewRow } from '@pommora/core/Views/viewRow'
-import { linkAlias, linkEditText, linkValueFromRename } from '@pommora/core/Connections/linkValue'
+import { linkAlias, linkValueFromRename } from '@pommora/core/Connections/linkValue'
 import { propertyMenuModel } from '@pommora/core/Actions/propertyMenu'
 import { Cell } from './Cells/Cell'
-import { PropertyEditor } from './Pickers/PropertyEditor'
 import {
   PropertyPicker,
   type PickEntry,
@@ -34,12 +33,11 @@ import {
 } from './Pickers/PropertyPicker'
 import { assignValue, type ValueWriter } from './assignValue'
 import { collectionOfPage, fetchPageValues, pageRowOf, schemaForPage, spaceRowOf } from './pageRow'
-import { parseEditorValue } from './parseEditorValue'
+import { PropertyValueInput } from './Pickers/PropertyValueInput'
 import { resolveFieldValue } from './value'
 import { buildValueContext, type ValueContext } from './valueContext'
 import { sharedValueClickAction } from './Pickers/valueClick'
 import { fileChipIndex, fileValueMenu, pickFileInto } from './Pickers/filePick'
-import { validateLink } from './Cells/linkResolve'
 import { useCapitalizeMetadata } from './Cells/columnLabel'
 import { contextPaneTargets, type PaneTarget, schemaTargets } from './Cells/PropertyTypes'
 import { useGhostOptionAnchor } from './Schema/GhostOptionChip'
@@ -374,6 +372,7 @@ export function PropertyPanel({
       drag: ReturnType<typeof useOptionReorder>,
     ): React.ReactNode => {
       const column: ResolvedColumn = { id, kind: def ? 'property' : 'context' }
+      const current = resolveFieldValue(row, id, schema)
       const rowBody = (
         <MenuItem
           key={id}
@@ -383,7 +382,7 @@ export function PropertyPanel({
           leading={<Icon name={icon} size="control" />}
           onContextMenu={(e) => {
             e.preventDefault()
-            void rowMenu(id, label, resolveFieldValue(row, id, schema))
+            void rowMenu(id, label, current)
           }}
           trailing={
             // biome-ignore lint/a11y/useKeyWithClickEvents lint/a11y/noStaticElementInteractions: a grid cell; the grid wants roving tabindex, not per-cell tab stops
@@ -391,28 +390,18 @@ export function PropertyPanel({
               className={s.value}
               data-property-row={id}
               onContextMenu={(e) => {
-                if (!valueMenu(id, resolveFieldValue(row, id, schema), e.target)) return
+                if (!valueMenu(id, current, e.target)) return
                 e.preventDefault()
                 e.stopPropagation()
               }}
               onClick={(e) => editRow(def ?? syntheticContextDef(id), e.currentTarget, e.target)}
             >
               {editing?.id === id && editing.mode === 'editor' && def ? (
-                <PropertyEditor
-                  initial={(() => {
-                    const v = resolveFieldValue(row, id, schema)
-                    if (v.kind === 'number') return String(v.value)
-                    if (v.kind === 'link') return linkEditText(v.value)
-                    return ''
-                  })()}
-                  numeric={def.type === 'number'}
-                  validate={def.type === 'link' ? validateLink : undefined}
-                  onCommit={(raw) => {
-                    const next = parseEditorValue(def.type, raw, resolveFieldValue(row, id, schema))
-                    if (next !== undefined) commit(id, next)
-                    setEditing(null)
-                  }}
-                  onCancel={() => setEditing(null)}
+                <PropertyValueInput
+                  type={def.type}
+                  current={current}
+                  onCommit={(next) => commit(id, next)}
+                  onClose={() => setEditing(null)}
                 />
               ) : (
                 (Cell({
@@ -438,7 +427,7 @@ export function PropertyPanel({
     }
     return (
       <>
-        <div className={panelHost === 'dropdown' ? s.pageRows : cx(s.panelRows, 'over-scroll')}>
+        <div className={panelHost === 'dropdown' ? s.pageRows : cx(s.panelRows, 'scroll-fade')}>
           {GROUPS.map(({ key, label, add }) => {
             const rows = shown[key]
             const drag = key === 'contexts' ? contextDrag : propertyDrag

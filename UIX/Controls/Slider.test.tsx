@@ -104,3 +104,50 @@ describe('slider scrub', () => {
     expect(onCommit).not.toHaveBeenCalled()
   })
 })
+
+describe('slider grid', () => {
+  const renderRange = async (value: number, min: number, max: number, step: number) => {
+    await act(async () => {
+      root.render(
+        <Slider
+          value={value}
+          min={min}
+          max={max}
+          step={step}
+          ariaLabel="S"
+          onCommit={onCommit}
+          onInput={onInput}
+        />,
+      )
+    })
+    stubRect(strip(), { top: 0, bottom: 20, left: 0, right: 200 })
+  }
+  const scrubTo = async (x: number) => {
+    await act(async () => {
+      firePointer(strip(), 'pointerdown', { x, y: 10 })
+    })
+    await act(async () => {
+      firePointer(strip(), 'pointerup', { x, y: 10 })
+    })
+  }
+
+  it('counts its steps from the minimum, so an odd minimum is reachable', async () => {
+    await renderRange(5, 1, 9, 2)
+    await scrubTo(0)
+    expect(onCommit).toHaveBeenLastCalledWith(1)
+  })
+
+  it('holds a drag within a maximum off the grid', async () => {
+    await renderRange(4, 0, 10, 4)
+    await scrubTo(200)
+    expect(onCommit).toHaveBeenLastCalledWith(10)
+  })
+
+  it('lands an arrow step on the grid counted from the minimum', async () => {
+    await renderRange(2, 1, 9, 2)
+    await act(async () => {
+      strip().dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true }))
+    })
+    expect(onCommit).toHaveBeenCalledExactlyOnceWith(5)
+  })
+})

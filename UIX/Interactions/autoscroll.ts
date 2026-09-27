@@ -1,4 +1,4 @@
-import { duration, easeSnap, ms } from '../Animations/motion'
+import { duration, easeSnap, ms, prefersReducedMotion } from '../Animations/motion'
 import { clamp } from '../Utilities/clamp'
 
 type Axis = 'x' | 'y' | 'xy'
@@ -235,8 +235,7 @@ export function scrollGlide(
   const seek = typeof to === 'function' ? to : (): number => to
   const target = (): number => clamp(seek(), 0, scroller.scrollHeight - scroller.clientHeight)
   const from = scroller.scrollTop
-  const reduced = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false
-  if (reduced || target() === from) {
+  if (prefersReducedMotion() || target() === from) {
     scroller.scrollTop = target()
     onArrive?.()
     return () => {}

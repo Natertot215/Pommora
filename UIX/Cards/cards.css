@@ -141,7 +141,6 @@
   display: flex;
   align-items: center;
   min-width: 0;
-  --over-scroll-fade: var(--fade-base);
   gap: 6px;
   color: var(--label-primary);
 }
@@ -178,5 +177,4 @@
 .card-loc {
   flex: 1 1 0;
   min-width: 0;
-  --over-scroll-fade: var(--fade-base);
 }

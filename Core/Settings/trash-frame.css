@@ -16,8 +16,6 @@
   align-items: center;
   position: relative;
   flex-shrink: 0;
-  margin: 0;
-  padding: 0;
 }
 .trash-frame .trash-head::after {
   content: "";

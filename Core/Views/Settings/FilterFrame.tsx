@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useRef, useState } from 'react'
 import { Button } from '@pommora/uix/Buttons/Button'
 import type { CollectionNode, NexusTree, SetNode } from '@pommora/core/Nexus/tree'
 import type { PickOption, PropertyDefinition } from '@pommora/core/Properties/properties'
@@ -58,7 +58,7 @@ import * as fp from './filter-frame.css'
 import { NeutralChip } from '@pommora/uix/Labels/recipes'
 import { OptionChip } from '../../Properties/Cells/OptionChip'
 import { useCapitalizeMetadata } from '../../Properties/Cells/columnLabel'
-import { useLatest } from '@pommora/uix/Utilities/stableApi'
+import { EditableInput } from '@pommora/uix/Fields/EditableInput'
 
 const MATCH_OPTIONS: PickerOption<MatchMode>[] = [
   { value: 'all', label: 'All' },
@@ -133,47 +133,6 @@ function mintRule(
     op: first?.op ?? '',
     ...(first?.impliedValue ? { value: first.impliedValue } : {}),
   }
-}
-
-function ValueInput({
-  value,
-  numeric,
-  onCommit,
-}: {
-  value: string | undefined
-  numeric: boolean
-  onCommit: (next: string | undefined) => void
-}): React.JSX.Element {
-  // Kept through a ref callback that ignores the detach: React detaches refs before passive cleanups, and the `key` below remounts the input on every committed round-trip.
-  const node = useRef<HTMLInputElement | null>(null)
-  const keepNode = (n: HTMLInputElement | null): void => {
-    if (n) node.current = n
-  }
-  const latest = useLatest({ value, onCommit })
-  const commit = (raw: string): void => {
-    const next = raw.trim() === '' ? undefined : raw
-    if (next !== latest.current.value) latest.current.onCommit(next)
-  }
-  useEffect(
-    () => () => {
-      if (node.current) commit(node.current.value)
-    },
-    [],
-  )
-  return (
-    <input
-      ref={keepNode}
-      key={value ?? ''}
-      className={fp.cellInput}
-      defaultValue={value ?? ''}
-      placeholder="Value"
-      {...(numeric ? { inputMode: 'decimal' as const } : {})}
-      onBlur={(e) => commit(e.currentTarget.value)}
-      onKeyDown={(e) => {
-        if (e.key === 'Enter') commit(e.currentTarget.value)
-      }}
-    />
-  )
 }
 
 function useMultiValue(
@@ -510,10 +469,17 @@ export function FilterFrame({
 
     if (op.slot === 'text' || op.slot === 'number')
       return (
-        <ValueInput
-          value={rule.value}
-          numeric={op.slot === 'number'}
-          onCommit={(v) => patch({ value: v })}
+        <EditableInput
+          key={rule.value ?? ''}
+          initial={rule.value ?? ''}
+          className={fp.cellInput}
+          placeholder="Value"
+          boxed
+          autoFocus={false}
+          onCommit={(text) => {
+            if (text !== (rule.value ?? '')) patch({ value: text || undefined })
+          }}
+          onCancel={() => {}}
         />
       )
 

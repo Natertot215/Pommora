@@ -3,12 +3,9 @@ import { GlassPane } from '../Glass/GlassPane'
 import { paneSlide } from '../Animations/paneSlide'
 import { cx } from '../Utilities/cx'
 import { useResizable } from '../Interactions/useResizable'
+import type { NumberRange } from '../Utilities/clamp'
 
-export interface WindowPanelBounds {
-  min: number
-  def: number
-  max: number
-}
+export type WindowPanelBounds = NumberRange & { default: number }
 
 export function WindowPanel({
   side,

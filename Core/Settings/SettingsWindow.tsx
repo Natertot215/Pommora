@@ -16,16 +16,13 @@ import { WindowBase } from '@pommora/uix/Windows/WindowBase'
 import { SETTINGS_RAIL, SETTINGS_WIN } from '@pommora/uix/Windows/windowBounds'
 import { steppedPickerProps } from '@pommora/uix/Pickers/PickerControl'
 import { resolveColor } from '@pommora/uix/Theme/ramp'
-import {
-  coerceIn,
-  SETTING_DEFAULTS,
-  SETTING_RANGES,
-  settingOf,
-} from '@pommora/core/Settings/personalization'
+import { SETTING_DEFAULTS, SETTING_RANGES } from '@pommora/core/Settings/personalization'
+import type { SteppedRange } from '@pommora/uix/Utilities/clamp'
 import { useExitPresence } from '@pommora/uix/Animations/useExitPresence'
 import { useSession, useSetting } from '../Session/store'
 import { useExperimental } from './experimental'
 import { AssetDirectoryRow } from './AssetDirectoryRow'
+import { interfaceScaleOf } from './devicePrefs'
 import { ExcludedDirectoriesRow } from './ExcludedDirectoriesRow'
 import { ClearActionRow } from './ClearActionRow'
 import { NexusRows } from './NexusRows'
@@ -83,7 +80,7 @@ function NexusSettingsBody({ closing }: { closing: boolean }): React.JSX.Element
         className: 'settings-rail',
         children: (
           <>
-            <Menu className="settings-rail-list over-scroll">
+            <Menu className="settings-rail-list scroll-fade">
               {shown
                 .filter((l) => !l.foot)
                 .map((l) => (
@@ -132,7 +129,7 @@ function FrameBody({ category }: { category: CategoryKey }): React.JSX.Element {
   if (frame.Surface) return <frame.Surface />
   const { sections } = frame
   return (
-    <div className="window-body settings-body over-scroll">
+    <div className="window-body settings-body scroll-fade">
       <h2 className={cx('settings-heading', text.headline.emphasized)}>
         <Icon name={frame.icon} className="settings-heading-icon" />
         {frame.label}
@@ -161,8 +158,9 @@ function RowControl({ row }: { row: Row }): React.JSX.Element {
     case 'picker':
       return <PickerControlRow row={row} />
     case 'zoom':
-    case 'deviceZoom':
       return <ZoomRow row={row} />
+    case 'deviceZoom':
+      return <DeviceZoomRow row={row} />
     case 'device':
       return <DeviceRow row={row} />
     case 'path':
@@ -223,32 +221,32 @@ function DeviceRow({ row }: { row: RowOf<'device'> }): React.JSX.Element {
   return switchRow(row, on, (next) => setDevicePref(row.key, next || undefined))
 }
 
-function ZoomRow({ row }: { row: RowOf<'zoom' | 'deviceZoom'> }): React.JSX.Element {
-  const range = row.kind === 'zoom' ? SETTING_RANGES[row.key] : row.range
-  const value = useSession((s) =>
-    row.kind === 'zoom'
-      ? settingOf(s.personalization, row.key)
-      : coerceIn(row.range)(s.devicePrefs[row.key], row.range.default),
-  )
+const zoomRow = (
+  row: RowOf<'zoom' | 'deviceZoom'>,
+  range: SteppedRange,
+  value: number,
+  onPick: (next: number) => void,
+): React.JSX.Element => (
+  <MenuRowView
+    row={settingsRow(row, {
+      kind: 'picker',
+      ariaLabel: row.label,
+      ...steppedPickerProps({ range, value, unit: row.unit ?? PERCENT, onPick }),
+    })}
+  />
+)
+
+function ZoomRow({ row }: { row: RowOf<'zoom'> }): React.JSX.Element {
+  const value = useSetting(row.key)
   const setPersonalization = useSession((s) => s.setPersonalization)
+  return zoomRow(row, SETTING_RANGES[row.key], value, (next) => setPersonalization(row.key, next))
+}
+
+function DeviceZoomRow({ row }: { row: RowOf<'deviceZoom'> }): React.JSX.Element {
+  const value = useSession((s) => interfaceScaleOf(s.devicePrefs))
   const setDevicePref = useSession((s) => s.setDevicePref)
-  const commit = (next: number): void => {
-    if (row.kind === 'zoom') setPersonalization(row.key, next)
-    else setDevicePref(row.key, next === row.range.default ? undefined : next)
-  }
-  return (
-    <MenuRowView
-      row={settingsRow(row, {
-        kind: 'picker',
-        ariaLabel: row.label,
-        ...steppedPickerProps({
-          steps: range.steps,
-          value,
-          unit: row.unit ?? PERCENT,
-          onPick: commit,
-        }),
-      })}
-    />
+  return zoomRow(row, row.range, value, (next) =>
+    setDevicePref(row.key, next === row.range.default ? undefined : next),
   )
 }
 

@@ -21,12 +21,12 @@ import '../Animations/toolbar-slide.css'
 
 export interface WindowBounds {
   min: Size
-  def: Size
+  default: Size
 }
 
-const BOUNDS: WindowBounds = { min: { w: 360, h: 280 }, def: { w: 850, h: 600 } }
+const BOUNDS: WindowBounds = { min: { w: 360, h: 280 }, default: { w: 850, h: 600 } }
 
-export const WINDOW_BASE_PANEL: WindowPanelBounds = { min: 180, def: 260, max: 420 }
+export const WINDOW_BASE_PANEL: WindowPanelBounds = { min: 180, default: 260, max: 420 }
 
 // A remembered size may come from a larger display, so the opening rect is placed and then clamped to this viewport.
 const opening = (
@@ -34,7 +34,7 @@ const opening = (
   bounds: WindowBounds,
   region?: () => Rect | null,
 ): Rect => {
-  const s = size ?? bounds.def
+  const s = size ?? bounds.default
   const r = region?.()
   // A named region is centred on both axes; the bare viewport keeps its upper bias, where the whole screen is the window's to sit in.
   const box = r ?? { x: 0, y: 0, w: window.innerWidth, h: window.innerHeight }
@@ -66,14 +66,14 @@ export interface WindowBasePanel {
 // Session-only; never written to disk.
 const panelWidths = new Map<string, number>()
 const storedWidth = (side: WindowBasePanel | undefined): number =>
-  side ? (panelWidths.get(side.windowId) ?? side.bounds.def) : 0
+  side ? (panelWidths.get(side.windowId) ?? side.bounds.default) : 0
 
 interface WindowBaseProps {
   closing: boolean
   onClose: () => void
   onEscape?: () => void
   bounds?: WindowBounds
-  /** Absent opens at `bounds.def`. Read once, at open. */
+  /** Absent opens at `bounds.default`. Read once, at open. */
   initialSize?: Size
   /** Only a resize reports: a move's size may be one clamped onto a smaller viewport at the open. */
   onSizeChange?: (size: Size) => void

@@ -16,7 +16,7 @@ import { handleMutate } from './mutate'
 import { machine } from '../Platform/machine'
 import { sidecarPath } from '../Paths/paths'
 import { resolveUnderRoot } from '../Paths/pathSafety'
-import { NEW_SLOT, type MutateRequest } from './mutateRequest'
+import { NEW_SLOT, type MutateRequest, mutateRequest } from './mutateRequest'
 import type { Crop } from './schemas'
 import { cropKeyFor } from '../Paths/nexusPaths'
 import { assetFilePath } from '../Assets/assetRoots'
@@ -1180,7 +1180,7 @@ describe('handleMutate — setCrop', () => {
       nexusDeps,
     )
   const setCrop = (image: string, crop: Crop | null) =>
-    handleMutate(root, { op: 'setCrop', image, crop }, nexusDeps)
+    handleMutate(root, mutateRequest.parse({ op: 'setCrop', image, crop }), nexusDeps)
   const cropsOf = async (): Promise<Record<string, Crop> | undefined> => {
     try {
       return JSON.parse(await read('.nexus/assets/crops.json')).byImage

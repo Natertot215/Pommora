@@ -2,7 +2,6 @@ import { describe, it, expect } from 'vitest'
 import { rewriteFrontmatterConnections } from './rewrite'
 import { LINK_DISPLAYS } from '../Properties/properties'
 import {
-  isCommittableLink,
   linkDisplayText,
   linkAlias,
   linkEditText,
@@ -156,7 +155,6 @@ describe('internal links', () => {
   })
   it('refuses a title no page answers to', () => {
     expect(linkValueFromEdit('[[Nowhere]]', undefined, resolve)).toBeUndefined()
-    expect(isCommittableLink('[[Nowhere]]', resolve)).toBe(false)
   })
   it('reads a markdown link over an address as the aliased URL', () => {
     expect(linkValueFromEdit('[My Site](https://example.com)', undefined, resolve)).toEqual({

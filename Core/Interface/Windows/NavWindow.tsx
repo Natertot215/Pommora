@@ -19,7 +19,7 @@ import { Subfield } from '../Subfield/Subfield'
 import { footerLabel } from '@pommora/core/Actions/toggleLabels'
 import './nav-window.css'
 
-const RAIL = { min: 120, def: 200, max: 320 }
+const RAIL = { min: 120, default: 200, max: 320 }
 
 // Matched against the press target itself, so child content — row internals, card bodies, the search input — never arms a window move.
 const DRAG_SURFACES =
@@ -145,7 +145,7 @@ function NavWindowBody({ closing }: { closing: boolean }): React.JSX.Element {
           ) : (
             searchRow
           )}
-          <div className="navwindow-main-scroll over-scroll">{nav.body}</div>
+          <div className="navwindow-main-scroll scroll-fade">{nav.body}</div>
         </div>
       </div>
     </WindowBase>
