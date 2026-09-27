@@ -31,4 +31,12 @@ describe('a setting at its fallback stores no key', () => {
     useSession.getState().setPersonalization('tabOpenBehavior', 'overtake')
     expect(save).toHaveBeenLastCalledWith('tabOpenBehavior', undefined)
   })
+
+  it('holds a typed stepped value as the host writes it', () => {
+    useSession.getState().setPersonalization('tabMaxWidth', 173.6)
+    expect(save).toHaveBeenLastCalledWith('tabMaxWidth', 174)
+    expect(useSession.getState().personalization.tabMaxWidth).toBe(174)
+    useSession.getState().setPersonalization('tabMaxWidth', 249.7)
+    expect(save).toHaveBeenLastCalledWith('tabMaxWidth', undefined)
+  })
 })
