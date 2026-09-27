@@ -1,11 +1,12 @@
-import { basename, dirname } from '../Paths/posix'
+import { basename, dirname, join } from '../Paths/posix'
 import { ok, type Result } from '../Contract/result'
 import { moveIndexPaths } from '../Index/indexSeed'
 import { CONTAINER_KINDS, done, type MutateReply, type MutateRequest } from './mutateRequest'
 import type { MutateContext } from './mutate'
 import { movePage } from './page'
 import { landedFolder, landingRefusal, moveFolderEntity } from './folderEntity'
-import { mutableTarget } from './liveTree'
+import { liveTreeOf, mutableTarget } from './liveTree'
+import { goneEdit, reachConfig, reachReport } from './configReach'
 import { setChildOrder } from './reorder'
 import { noteValueWrite } from './valuesChanged'
 import { excludedWithin, exclusionWriteRefusal } from '../Settings/settings'
@@ -50,10 +51,16 @@ export async function moveSetOp(
     (await landingRefusal(root, at.value.dst, basename(at.value.src))) ??
     (await exclusionWriteRefusal(root, await excludedWithin(root, req.path)))
   if (refused) return refused
+  const from = dirname(req.path).split('/')
+  const to = req.newParentPath.split('/')
+  const diverge = from.findIndex((seg, i) => seg !== to[i])
+  const left = diverge === -1 ? null : from.slice(0, diverge + 1).join('/')
+  const edit = left === null ? null : goneEdit(await liveTreeOf(root), 'set', req.path)
   const r = await moveFolderEntity(at.value.src, at.value.dst)
   if (!r.ok) return r
   await setChildOrder(at.value.dst, 'set_order', req.order)
   const rescope = await landedFolder(root, at.value.src, r.value.path)
   noteValueWrite(root, r.value.path)
-  return ok({ rescope })
+  const reach = left && edit && (await reachConfig(root, edit, join(root, left)))
+  return ok({ rescope, ...(reach ? { cascade: reachReport(reach) } : {}) })
 }
