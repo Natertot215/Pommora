@@ -1,5 +1,10 @@
-import { useEffect, useMemo, useState } from 'react'
-import { type Overrides, retireSettled, type SetOverrides } from '../../Properties/valueOverride'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import {
+  type Overrides,
+  retireSettled,
+  type SetOverrides,
+  settled,
+} from '../../Properties/valueOverride'
 import type { PageFrontmatter } from '@pommora/core/Nexus/schemas'
 import type { PageValues } from '@pommora/core/Views/viewRow'
 import { fetchPageValues } from '../../Properties/pageRow'
@@ -16,6 +21,42 @@ const rekeyOverrides = (o: Overrides | null, oldKey: string, newKey: string): Ov
       return [id, { ...entry, fm: { ...rest, [newKey]: moved } as PageFrontmatter }]
     }),
   )
+}
+
+/** A rename refetches and RE-KEYS the overrides (clearing them revives the assign-vanish); a push retires overrides only once its read lands, since a row retired ahead of it paints its identity-only fallback for the round trip. */
+export function useValuesEpoch(
+  path: string | null,
+  land: (values: Record<string, PageValues>, scoped: boolean) => void,
+  setValueOverride: SetOverrides,
+  pageId?: string,
+): void {
+  const valuesEpoch = useSession((st) => st.valuesEpoch)
+  const live = useLatest({ path, land })
+  const fullReads = useRef(0)
+  useEffect(() => {
+    if (!valuesEpoch || path === null) return
+    let named: string[] | undefined
+    if (valuesEpoch.kind === 'container') {
+      const mine = valuesEpoch.changes.filter((c) => c.rel === path || c.rel.startsWith(`${path}/`))
+      if (!mine.length) return
+      if (mine.every((c) => c.pageIds.length > 0)) named = mine.flatMap((c) => c.pageIds)
+      if (pageId && named && !named.includes(pageId)) return
+    } else {
+      const { oldKey, newKey } = valuesEpoch
+      setValueOverride((prev) => rekeyOverrides(prev, oldKey, newKey))
+    }
+    const only = pageId ? [pageId] : named
+    const issued = settled()
+    const read = only ? 0 : ++fullReads.current
+    void fetchPageValues(path, only).then((v) => {
+      // A container swap drops any read, and a newer full read drops an older one; a scoped read superseded on the same path still lands, since its pages are not the newer read's.
+      if (!v || live.current.path !== path || (read && read !== fullReads.current)) return
+      live.current.land(v, only !== undefined)
+      // Only a page the read resolved is settled; one it could not still holds its override.
+      if (valuesEpoch.kind === 'container')
+        setValueOverride((prev) => retireSettled(prev, only ? Object.keys(v) : null, issued))
+    })
+  }, [valuesEpoch, path, pageId, setValueOverride, live])
 }
 
 /** `canceled` keeps a fast container swap from landing the old path's read. The overrides lay each optimistic write over the loaded values, which never re-read on a write. */
@@ -36,39 +77,11 @@ export function useContainerValues(path: string): {
       canceled = true
     }
   }, [path])
-  const valuesEpoch = useSession((st) => st.valuesEpoch)
-  // A scoped read superseded by a newer push on the same path still lands (its pages are not the newer read's); one superseded by a container swap must not.
-  const live = useLatest(path)
-  // A rename refetches and RE-KEYS the overrides (clearing them revives the assign-vanish); overrides retire only once the refetch lands, since a row retired ahead of it paints its identity-only fallback for the round trip.
-  useEffect(() => {
-    if (!valuesEpoch) return
-    let retire: ((prev: Overrides | null) => Overrides | null) | null = null
-    let only: string[] | undefined
-    if (valuesEpoch.kind === 'container') {
-      const mine = valuesEpoch.changes.filter((c) => c.rel === path || c.rel.startsWith(`${path}/`))
-      if (!mine.length) return
-      const ids = mine.flatMap((c) => c.pageIds)
-      retire = (prev) => retireSettled(prev, ids)
-      if (mine.every((c) => c.pageIds.length > 0)) only = ids
-    } else {
-      const { oldKey, newKey } = valuesEpoch
-      setValueOverride((prev) => rekeyOverrides(prev, oldKey, newKey))
-    }
-    let canceled = false
-    void fetchPageValues(path, only).then((v) => {
-      if (!v) return
-      if (only) {
-        if (live.current === path) setValues((prev) => ({ ...prev, ...v }))
-        // Only a page the read resolved is settled; one it could not still holds its override.
-        const landed = Object.keys(v)
-        retire = landed.length ? (prev) => retireSettled(prev, landed) : null
-      } else if (!canceled) setValues(v)
-      if (retire) setValueOverride(retire)
-    })
-    return () => {
-      canceled = true
-    }
-  }, [valuesEpoch, path])
+  useValuesEpoch(
+    path,
+    (v, scoped) => setValues((prev) => (scoped ? { ...prev, ...v } : v)),
+    setValueOverride,
+  )
   const effectiveValues = useMemo(() => {
     if (!valueOverride) return values
     const out = { ...values }

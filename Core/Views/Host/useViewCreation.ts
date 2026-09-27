@@ -4,7 +4,7 @@ import type { CollectionNode, SetNode } from '@pommora/core/Nexus/tree'
 import type { PageValues, ViewRow } from '@pommora/core/Views/viewRow'
 import { UNGROUPED } from '@pommora/core/Views/viewRow'
 import type { PageFrontmatter } from '@pommora/core/Nexus/schemas'
-import type { SetOverrides } from '../../Properties/valueOverride'
+import { settle, type SetOverrides } from '../../Properties/valueOverride'
 import {
   applyContextAtRoot,
   applyValueAtRoot,
@@ -95,7 +95,7 @@ export function useViewCreation(getCfg: () => ViewCreationConfig): ViewCreation 
         else if (value.kind === 'context')
           patched = applyContextAtRoot(patched, propId, value.value)
       }
-      return { ...prev, [pageId]: { fm: patched as PageFrontmatter, write: null } }
+      return { ...prev, [pageId]: { fm: patched as PageFrontmatter, write: settle() } }
     })
   }
   // The full child list of the container a create targets.
