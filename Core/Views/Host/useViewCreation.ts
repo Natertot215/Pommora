@@ -18,7 +18,7 @@ import {
   specOf,
 } from '@pommora/core/Properties/properties'
 import { type SavedView, viewOption } from '@pommora/core/Views/views'
-import { DEFAULT_NEW_NAME } from '@pommora/core/Nexus/mutateRequest'
+import { DEFAULT_NEW_NAME, type MutateRequest } from '@pommora/core/Nexus/mutateRequest'
 import { relDirname } from '@pommora/core/Paths/posix'
 import { findScroller, SEEK_GLIDE, scrollGlide } from '@pommora/uix/Interactions/autoscroll'
 import { useSession } from '../../Session/store'
@@ -26,7 +26,8 @@ import { settingOf } from '@pommora/core/Settings/personalization'
 import { declaredType, resolveFieldValue } from '../../Properties/value'
 import { filterSeeds } from '../Pipeline/creationSeeds'
 import { flattenContainer, frontmatterOf } from '../Pipeline/group'
-import { orderWithSlot, tieOrderWith } from '../creationOrder'
+import { placeAt, placementSlot, type Slot, tieOrderWith } from '../creationOrder'
+import { pageIdsIn } from '../../Nexus/treePatch'
 import { groupKeyToValue } from '../reassign'
 import { useLatest } from '@pommora/uix/Utilities/stableApi'
 
@@ -41,6 +42,8 @@ const SEEDS_FROM_SORT: Record<ValueKind, boolean> = {
   link: false,
   file: false,
 }
+
+type CreatePage = Extract<MutateRequest, { op: 'createPage' }>
 
 interface ViewCreationConfig {
   source: CollectionNode | SetNode
@@ -98,18 +101,6 @@ export function useViewCreation(getCfg: () => ViewCreationConfig): ViewCreation 
       return { ...prev, [pageId]: { fm: patched as PageFrontmatter, write: settle() } }
     })
   }
-  // The full child list of the container a create targets.
-  const containerPagesOf = (path: string): string[] => {
-    const walk = (node: CollectionNode | SetNode): string[] | null => {
-      if (node.path === path) return node.pages.map((p) => p.id)
-      for (const s of node.sets ?? []) {
-        const hit = walk(s)
-        if (hit) return hit
-      }
-      return null
-    }
-    return walk(cfg().source) ?? []
-  }
   const glideToRow = (pageId: string): void => {
     const viewEl = cfg().viewRootRef.current
     if (!viewEl) return
@@ -132,7 +123,7 @@ export function useViewCreation(getCfg: () => ViewCreationConfig): ViewCreation 
     latest: ViewCreationConfig,
     createdId: string,
     anchorId: string | null,
-    where: 'above' | 'below' | 'first',
+    where: Slot,
   ): void => {
     const allIds = flattenContainer(latest.source, latest.effectiveValues, {}).rows.map((r) => r.id)
     // The live view already folds a held override, so the next create composes on this one.
@@ -141,40 +132,37 @@ export function useViewCreation(getCfg: () => ViewCreationConfig): ViewCreation 
     if (!latest.structuralOrder || latest.view.manual_order)
       latest.persistView({ manual_order: next }, { viewState: true })
   }
+  const pageRequest = (parentPath: string, seeds: Record<string, PropertyValue>): CreatePage => ({
+    op: 'createPage',
+    parentPath,
+    name: DEFAULT_NEW_NAME,
+    ...(Object.keys(seeds).length ? { seeds } : {}),
+  })
   const createPageIn = (
-    parentPath: string,
-    seeds: Record<string, PropertyValue>,
-    order: string[] | undefined,
+    req: CreatePage,
     then: (created: { id: string; path: string }) => void,
   ): Promise<boolean> =>
-    mutate(
-      {
-        op: 'createPage',
-        parentPath,
-        name: DEFAULT_NEW_NAME,
-        ...(Object.keys(seeds).length ? { seeds } : {}),
-        ...(order ? { order } : {}),
-      },
-      (created) => {
-        patchSeedValues(created.id, seeds)
-        then(created)
-      },
-    ).then((done) => done !== null)
+    mutate(req, (created) => {
+      patchSeedValues(created.id, req.seeds ?? {})
+      then(created)
+    }).then((done) => done !== null)
 
   const addIn = (parentPath: string): Promise<boolean> => {
     const c = cfg()
     const gestureViewId = c.view.id
-    const siblings = containerPagesOf(parentPath)
-    const top = settingOf(useSession.getState().personalization, 'newPagePlacement') === 'top'
-    // Top leads the folder's own order in any view; a non-structural view otherwise leaves page_order to its sort.
-    const order =
-      top || c.structuralOrder ? orderWithSlot(siblings, null, top ? 'first' : 'last') : undefined
-    return createPageIn(parentPath, impliedSeeds(), order, (created) => {
-      // A non-structural view has no page_order write to land the newborn's slot — absent any live array, the read-side title fallback would rank the newborn mid-band.
+    const { tree, personalization } = useSession.getState()
+    const slot = placementSlot(settingOf(personalization, 'newPagePlacement'))
+    const req = placeAt(
+      pageRequest(parentPath, impliedSeeds()),
+      pageIdsIn(tree!, parentPath),
+      null,
+      slot,
+    )
+    return createPageIn(req, (created) => {
+      // A non-structural view ranks by its own array — absent any live one, the read-side title fallback would rank the newborn mid-band.
       const latest = cfg()
       latest.onCreated(created)
-      if (latest.view.id === gestureViewId)
-        settleOrders(latest, created.id, null, top ? 'first' : 'below')
+      if (latest.view.id === gestureViewId) settleOrders(latest, created.id, null, slot)
       requestAnimationFrame(() => glideToRow(created.id))
     })
   }
@@ -204,14 +192,15 @@ export function useViewCreation(getCfg: () => ViewCreationConfig): ViewCreation 
       const v = resolveFieldValue(row, criterion.property_id, c.schema)
       if (!isBlankValue(v)) seeds[criterion.property_id] = v
     }
-    const order = c.structuralOrder
-      ? orderWithSlot(containerPagesOf(parentPath), row.id, where)
-      : undefined
-    return createPageIn(parentPath, seeds, order, (created) => {
-      const latest = cfg()
-      latest.onCreated(created)
-      if (latest.view.id === gestureViewId) settleOrders(latest, created.id, row.id, where)
-    })
+    const siblings = pageIdsIn(useSession.getState().tree!, parentPath)
+    return createPageIn(
+      placeAt(pageRequest(parentPath, seeds), siblings, row.id, where),
+      (created) => {
+        const latest = cfg()
+        latest.onCreated(created)
+        if (latest.view.id === gestureViewId) settleOrders(latest, created.id, row.id, where)
+      },
+    )
   }
 
   return {

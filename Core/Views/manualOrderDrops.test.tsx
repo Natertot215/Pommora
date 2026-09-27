@@ -11,6 +11,7 @@ import { useSession } from '../Session/store'
 import { propsAtRoot, valuesReply } from '../Testing/pageValues'
 import { stubDialer } from '../vitest.setup'
 import { mountEachTest, renderView, settle } from '../Testing/viewHarness'
+import { makeTree } from '../Testing/testTree'
 
 const statusDef: PropertyDefinition = {
   id: 'prop_status',
@@ -116,7 +117,7 @@ beforeEach(() => {
     menu: async () => ({ ok: true, value: null }),
   })
   useSession.setState({
-    tree: { collections: [], contexts: [], personalization: {}, nexus: { id: 'nx' } } as never,
+    tree: makeTree(),
     selection: { kind: 'none' } as never,
     renamingPath: null,
     mutate: mutateSpy as never,

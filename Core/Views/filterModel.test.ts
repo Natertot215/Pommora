@@ -33,6 +33,19 @@ describe('encodeFilter', () => {
     ).toEqual({ match: 'any', rules: [{ match: 'all', rules: [r('a'), r('b')] }, r('c')] })
   })
 
+  it('an And under Any saves as an all group, not as the mode', () => {
+    expect(
+      encodeFilter('any', [
+        { connector: null, rule: r('a') },
+        { connector: 'and', rule: r('b') },
+      ]),
+    ).toEqual({ match: 'all', rules: [r('a'), r('b')] })
+    expect(encodeFilter('any', [{ connector: null, rule: r('a') }])).toEqual({
+      match: 'any',
+      rules: [r('a')],
+    })
+  })
+
   it('no rows → undefined, whatever the mode', () => {
     expect(encodeFilter('all', [])).toBeUndefined()
     expect(encodeFilter('any', [])).toBeUndefined()
@@ -70,11 +83,12 @@ describe('decodeFilter', () => {
     expect(pureOr.kind === 'rows' && pureOr.mode).toBe('any')
   })
 
-  it('locks the shallow trap: an any nested under an all root', () => {
-    expect(
-      decodeFilter({ match: 'all', rules: [r('a'), { match: 'any', rules: [r('b'), r('c')] }] })
-        .kind,
-    ).toBe('locked')
+  it('locks any group nested under an all root, which the frame never writes', () => {
+    for (const match of ['any', 'all'] as const) {
+      expect(
+        decodeFilter({ match: 'all', rules: [r('a'), { match, rules: [r('b'), r('c')] }] }).kind,
+      ).toBe('locked')
+    }
   })
 
   it('locks 3-deep nesting', () => {
@@ -84,6 +98,11 @@ describe('decodeFilter', () => {
         rules: [{ match: 'all', rules: [r('a'), { match: 'any', rules: [r('b')] }] }],
       }).kind,
     ).toBe('locked')
+  })
+
+  it('an any whose runs are single rules reads as Any', () => {
+    const d = decodeFilter({ match: 'any', rules: [{ match: 'all', rules: [r('a')] }, r('b')] })
+    expect(d.kind === 'rows' && d.mode).toBe('any')
   })
 
   it('undefined → empty rows in the all mode', () => {

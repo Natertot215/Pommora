@@ -1,11 +1,19 @@
 import { describe, expect, it } from 'vitest'
-import { NEW_SLOT } from '@pommora/core/Nexus/mutateRequest'
-import { orderWithSlot, placeNew, spliceBeside, tieOrderWith } from './creationOrder'
+import { type MutateRequest, NEW_SLOT } from '@pommora/core/Nexus/mutateRequest'
+import { placeAt, placeNew, type Slot, spliceBeside, tieOrderWith } from './creationOrder'
 import { makeTree } from '../Testing/testTree'
 import { makeSorter } from './Pipeline/sort'
 import type { ViewRow } from '@pommora/core/Views/viewRow'
 
-describe('orderWithSlot', () => {
+describe('placeAt', () => {
+  const page: Extract<MutateRequest, { op: 'createPage' }> = {
+    op: 'createPage',
+    parentPath: 'Notes',
+    name: 'Untitled',
+  }
+  const orderWithSlot = (...at: [string[], string | null, Slot]): string[] | undefined =>
+    placeAt(page, ...at).order
+
   it('appends for a band-add and splices beside an anchor', () => {
     expect(orderWithSlot(['a', 'b'], null, 'last')).toEqual(['a', 'b', NEW_SLOT])
     expect(orderWithSlot(['a', 'b', 'c'], 'b', 'above')).toEqual(['a', NEW_SLOT, 'b', 'c'])
@@ -51,10 +59,26 @@ describe('placeNew', () => {
     })
   })
 
-  it('leaves the request as its own append at Bottom or unset', () => {
-    expect(placeNew(makeTree(), page, { newPagePlacement: 'bottom' })).toBe(page)
-    expect(placeNew(makeTree(), set, { newPagePlacement: 'top' })).toBe(set)
-    expect(placeNew(makeTree(), space, {})).toBe(space)
+  it("trails each kind's siblings at Bottom, the unset placement", () => {
+    expect(placeNew(makeTree(), page, {})).toEqual({ ...page, order: ['p2', NEW_SLOT] })
+    expect(placeNew(makeTree(), set, { newPagePlacement: 'top' })).toEqual({
+      ...set,
+      order: ['s1', NEW_SLOT],
+    })
+    expect(placeNew(makeTree(), space, {})).toEqual({
+      ...space,
+      order: ['a1', 't1', 'pr1', NEW_SLOT],
+    })
+  })
+
+  it('leaves a create into a folder the tree lacks as its own request', () => {
+    const stray = { ...page, parentPath: 'Notes/Gone' }
+    expect(placeNew(makeTree(), stray, top)).toBe(stray)
+  })
+
+  it('leaves a Collection, which no placement setting governs, as its own request', () => {
+    const collection = { ...set, kind: 'collection', parentPath: '' } as const
+    expect(placeNew(makeTree(), collection, top)).toBe(collection)
   })
 })
 

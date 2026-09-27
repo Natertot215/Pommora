@@ -9,6 +9,7 @@ import { useSession } from '../../Session/store'
 import { mountEachTest, renderView } from '../../Testing/viewHarness'
 import { valuesReply } from '../../Testing/pageValues'
 import { stubDialer } from '../../vitest.setup'
+import { makeTree } from '../../Testing/testTree'
 
 const source = (): CollectionNode =>
   ({
@@ -57,7 +58,7 @@ beforeEach(() => {
     menu: async () => ({ ok: true, value: null }),
   })
   useSession.setState({
-    tree: { collections: [], contexts: [], personalization: {}, nexus: { id: 'nx' } } as never,
+    tree: makeTree(),
     selection: { kind: 'none' } as never,
     renamingPath: null,
     mutate: mutateSpy as never,

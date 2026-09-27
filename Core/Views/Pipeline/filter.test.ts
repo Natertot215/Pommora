@@ -562,6 +562,19 @@ describe('applyFilter — new single-operand ops', () => {
     ).toEqual(['late'])
   })
 
+  it('a single-operand check reads the chip list first, and an unreadable operand passes', () => {
+    const pair = [rows[4], rows[5]]
+    const rule = (extra: object) => ({
+      match: 'all' as const,
+      rules: [{ property_id: 'prop_sel', op: 'contains', ...extra }],
+    })
+    expect(ids(pair, rule({ values: ['ban'] }))).toEqual(['sBanana'])
+    expect(ids(pair, rule({ value: 'app', values: ['ban'] }))).toEqual(['sBanana'])
+    expect(
+      ids(rows, { match: 'all', rules: [{ property_id: 'prop_when', op: 'is', value: 'soon' }] }),
+    ).toEqual(rows.map((r) => r.id))
+  })
+
   it('starts_with is case-insensitive; missing operand passes', () => {
     expect(
       ids([rows[4], rows[5]], {
@@ -630,6 +643,21 @@ describe('applyFilter — multi-operand values[]', () => {
         rules: [{ property_id: 'prop_tags', op: 'contains_any', values: [] }],
       }),
     ).toEqual(['ab', 'ac'])
+  })
+
+  it('an empty values[] beside a value filters on the value', () => {
+    expect(
+      ids([rows[2], rows[3]], {
+        match: 'all',
+        rules: [{ property_id: 'prop_tags', op: 'contains_any', value: 'b', values: [] }],
+      }),
+    ).toEqual(['ab'])
+    expect(
+      ids([rows[4]], {
+        match: 'all',
+        rules: [{ property_id: 'ctx_areas', op: 'does_not_contain', value: 'area1', values: [] }],
+      }),
+    ).toEqual([])
   })
 
   it('Context contains_all / contains_any', () => {

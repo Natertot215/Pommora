@@ -7,6 +7,7 @@ import type { CollectionNode } from '@pommora/core/Nexus/tree'
 import type { PropertyDefinition } from '@pommora/core/Properties/properties'
 import { stubPointerCapture } from '@pommora/uix/Testing/pointerHarness'
 import { ViewHost } from '../Views/Host/ViewHost'
+import { useSession } from '../Session/store'
 
 class ResizeObserverStub {
   observe(): void {}
@@ -37,6 +38,8 @@ export function mountEachTest(onMount: (host: HTMLDivElement, root: Root) => voi
 
 export async function renderView(root: Root, source: CollectionNode): Promise<void> {
   await act(async () => {
+    const { tree } = useSession.getState()
+    if (tree) useSession.setState({ tree: { ...tree, collections: [source] } })
     root.render(<ViewHost source={source} />)
   })
   await act(async () => {})

@@ -2,7 +2,12 @@ import { useRef, useState } from 'react'
 import { Button } from '@pommora/uix/Buttons/Button'
 import type { CollectionNode, NexusTree, SetNode } from '@pommora/core/Nexus/tree'
 import type { PickOption, PropertyDefinition } from '@pommora/core/Properties/properties'
-import { type FilterRule, type SavedView, viewOption } from '@pommora/core/Views/views'
+import {
+  type FilterRule,
+  type MatchMode,
+  type SavedView,
+  viewOption,
+} from '@pommora/core/Views/views'
 import { Icon } from '@pommora/uix/Symbols'
 import { FieldRun } from '@pommora/uix/Fields/FieldRun'
 import * as fr from '@pommora/uix/Fields/field-run.css'
@@ -45,7 +50,6 @@ import { PickerControl, type PickerOption } from '@pommora/uix/Pickers/PickerCon
 import {
   type Connector,
   type DecodedFilter,
-  type MatchMode,
   type OperatorChoice,
   type FilterRow,
   decodeFilter,
@@ -54,6 +58,7 @@ import {
   filterTargets,
   operatorsFor,
 } from '../filterModel'
+import { ruleOperands } from '../Pipeline/filter'
 import * as fp from './filter-frame.css'
 import { NeutralChip } from '@pommora/uix/Labels/recipes'
 import { OptionChip } from '../../Properties/Cells/OptionChip'
@@ -458,6 +463,8 @@ export function FilterFrame({
   ): React.ReactNode => {
     if (!op || op.slot === 'none') return null
     const rule = row.rule
+    const operands = ruleOperands(rule)
+    const operand = operands[0] ?? ''
     const def = defById.get(rule.property_id)
     const patch = (next: Partial<Pick<FilterRule, 'value' | 'values'>>): void =>
       replaceRule(index, {
@@ -470,14 +477,14 @@ export function FilterFrame({
     if (op.slot === 'text' || op.slot === 'number')
       return (
         <EditableInput
-          key={rule.value ?? ''}
-          initial={rule.value ?? ''}
+          key={operand}
+          initial={operand}
           className={fp.cellInput}
           placeholder="Value"
           boxed
           autoFocus={false}
           onCommit={(text) => {
-            if (text !== (rule.value ?? '')) patch({ value: text || undefined })
+            if (text !== operand) patch({ value: text || undefined })
           }}
           onCancel={() => {}}
         />
@@ -490,12 +497,12 @@ export function FilterFrame({
         <FieldPicker
           ariaLabel="Filter date"
           className={fp.valueField}
-          display={rule.value ? formatDate(rule.value, fmt, 'none') : null}
+          display={operand ? formatDate(operand, fmt, 'none') : null}
           placeholder="Date"
         >
           {() => (
             <CalendarPicker
-              value={rule.value ? readDate(rule.value) : null}
+              value={operand ? readDate(operand) : null}
               timeFormat={nexusClock}
               formatDateValue={(k) => formatDate(k, fmt, 'none')}
               onChange={(iso) => patch({ value: iso ?? undefined })}
@@ -508,7 +515,7 @@ export function FilterFrame({
     if (op.slot === 'chips')
       return (
         <ChipsField
-          values={rule.values ?? []}
+          values={operands}
           def={def ?? syntheticContextDef(rule.property_id)}
           contextOptions={
             tree && declaredType(rule.property_id, schema, contextIds) === 'context'
@@ -520,11 +527,7 @@ export function FilterFrame({
       )
 
     return (
-      <LocationField
-        values={rule.values ?? (rule.value != null ? [rule.value] : [])}
-        nodes={locations}
-        onCommit={(values) => patch({ values })}
-      />
+      <LocationField values={operands} nodes={locations} onCommit={(values) => patch({ values })} />
     )
   }
 
@@ -532,7 +535,8 @@ export function FilterFrame({
     const ops = operatorsFor(row.rule.property_id, schema, contextIds)
     const current = ops.find(
       (o) =>
-        o.op === row.rule.op && (o.impliedValue === undefined || o.impliedValue === row.rule.value),
+        o.op === row.rule.op &&
+        (o.impliedValue === undefined || o.impliedValue === ruleOperands(row.rule)[0]),
     )
     const target = targetById.get(row.rule.property_id)
     const isCheckbox = declaredType(row.rule.property_id, schema, contextIds) === 'checkbox'

@@ -12,6 +12,7 @@ import { propsAtRoot, valuesReply } from '../../Testing/pageValues'
 import { ID_KEY } from '@pommora/core/Nexus/identityMark'
 import { stubDialer } from '../../vitest.setup'
 import { mountEachTest, renderView, settle } from '../../Testing/viewHarness'
+import { makeTree } from '../../Testing/testTree'
 
 const statusDef: PropertyDefinition = {
   id: 'prop_status',
@@ -146,7 +147,7 @@ beforeEach(() => {
   ;(window as unknown as { nexus: unknown }).nexus = stubDialer(channels)
   useSession.setState({
     tree: {
-      nexus: {},
+      ...makeTree(),
       personalization: { defaultIcons: {} },
       contexts: [
         {

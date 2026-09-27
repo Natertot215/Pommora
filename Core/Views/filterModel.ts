@@ -7,8 +7,6 @@ import {
 } from '@pommora/core/Properties/properties'
 import type { ValueKind } from '@pommora/core/Properties/propertyValue'
 import type { FilterGroup, FilterRule, MatchMode } from '@pommora/core/Views/views'
-
-export type { MatchMode }
 import type { NexusTree } from '@pommora/core/Nexus/tree'
 import { contextIdsOf } from '../Contexts/contextIdentity'
 import { declaredType } from '../Properties/value'
@@ -39,7 +37,7 @@ const isAllOfLeaves = (node: FilterRule | FilterGroup): node is FilterGroup =>
 
 export const connectorFor = (mode: MatchMode): Connector => (mode === 'any' ? 'or' : 'and')
 
-/** Connectors derive the structure: the list splits into AND-runs at each 'or'. A split under All becomes an `any` of `all`-runs; under Any the root already is `any`. */
+/** Connectors derive the structure: the list splits into AND-runs at each 'or', and a split becomes an `any` of `all`-runs. The mode names only a lone rule's group. */
 export function encodeFilter(mode: MatchMode, rows: FilterRow[]): FilterGroup | undefined {
   if (rows.length === 0) return undefined
   const runs: FilterRule[][] = [[]]
@@ -47,26 +45,28 @@ export function encodeFilter(mode: MatchMode, rows: FilterRow[]): FilterGroup | 
     if (row.connector === 'or' && runs[runs.length - 1].length > 0) runs.push([])
     runs[runs.length - 1].push(row.rule)
   }
-  if (runs.length === 1) return { match: mode, rules: runs[0] }
+  if (runs.length === 1) return { match: rows.length === 1 ? mode : 'all', rules: runs[0] }
   return {
-    match: mode === 'all' ? 'any' : mode,
+    match: 'any',
     rules: runs.map((run) => (run.length === 1 ? run[0] : { match: 'all', rules: run })),
   }
 }
 
-/** `locked` when the shape isn't one the frame writes — defined by shape, never depth. Mixed connectors display mode `all` ("Or" is a valid deviation under All). */
+/** The frame writes two shapes: a flat group, or an `any` of rules and all-of runs, which reads as All with each Or a deviation once a run joins with And. */
 export function decodeFilter(filter: FilterGroup | undefined): DecodedFilter {
   if (!filter) return { kind: 'rows', mode: 'all', rows: [] }
 
-  if (filter.match !== 'any' && filter.rules.every(isLeaf)) {
+  if (filter.rules.every(isLeaf)) {
+    const connector = connectorFor(filter.match)
     return {
       kind: 'rows',
       mode: filter.match,
-      rows: filter.rules.map((rule, i) => ({ connector: i === 0 ? null : 'and', rule })),
+      rows: filter.rules.map((rule, i) => ({ connector: i === 0 ? null : connector, rule })),
     }
   }
 
-  if (!filter.rules.every((n) => isLeaf(n) || isAllOfLeaves(n))) return { kind: 'locked' }
+  if (filter.match === 'all' || !filter.rules.every((n) => isLeaf(n) || isAllOfLeaves(n)))
+    return { kind: 'locked' }
   const rows: FilterRow[] = []
   for (const child of filter.rules) {
     const run = isLeaf(child) ? [child] : (child.rules as FilterRule[])
@@ -74,9 +74,7 @@ export function decodeFilter(filter: FilterGroup | undefined): DecodedFilter {
       rows.push({ connector: rows.length === 0 ? null : i === 0 ? 'or' : 'and', rule })
     })
   }
-  // A pure-leaf `any` is genuinely Any; one carrying an all-of-leaves run shows as All with the Or as a deviation.
-  const mode: MatchMode = filter.rules.every(isLeaf) ? 'any' : 'all'
-  return { kind: 'rows', mode, rows }
+  return { kind: 'rows', mode: rows.some((r) => r.connector === 'and') ? 'all' : 'any', rows }
 }
 
 type ValueSlot = 'none' | 'text' | 'number' | 'date' | 'chips' | 'set'

@@ -58,9 +58,15 @@ describe('filterSeeds', () => {
   it('derives nothing from Any-mode groups, negatives, presence ops, or non-derivable types', () => {
     const any: FilterGroup = {
       match: 'any',
-      rules: [{ property_id: 'p_status', op: 'is', value: 'doing' }],
+      rules: [
+        { property_id: 'p_status', op: 'is', value: 'doing' },
+        { property_id: 'p_sel', op: 'is', value: 'note' },
+      ],
     }
     expect(filterSeeds(any, true, schema)).toEqual({})
+    expect(filterSeeds({ ...any, rules: any.rules.slice(0, 1) }, true, schema)).toEqual({
+      p_status: { kind: 'select', value: 'doing' },
+    })
     const rest: FilterGroup = {
       match: 'all',
       rules: [
@@ -78,7 +84,13 @@ describe('filterSeeds', () => {
       match: 'all',
       rules: [
         { property_id: 'p_sel', op: 'is', value: 'note' },
-        { match: 'any', rules: [{ property_id: 'p_status', op: 'is', value: 'doing' }] },
+        {
+          match: 'any',
+          rules: [
+            { property_id: 'p_status', op: 'is', value: 'doing' },
+            { property_id: 'p_check', op: 'is', value: 'true' },
+          ],
+        },
       ],
     }
     expect(filterSeeds(filter, true, schema)).toEqual({ p_sel: { kind: 'select', value: 'note' } })

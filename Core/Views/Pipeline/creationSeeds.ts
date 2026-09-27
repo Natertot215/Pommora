@@ -43,9 +43,9 @@ export function filterSeeds(
   const seeds: Record<string, PropertyValue> = {}
   if (!filter || !enabled) return seeds
   const walk = (group: FilterGroup): void => {
-    if (group.match !== 'all') return
+    if (group.match !== 'all' && group.rules.length > 1) return
     for (const entry of group.rules) {
-      if ('match' in entry) {
+      if ('rules' in entry) {
         walk(entry)
         continue
       }

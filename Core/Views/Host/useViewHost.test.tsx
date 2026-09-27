@@ -15,6 +15,7 @@ import { ID_KEY } from '@pommora/core/Nexus/identityMark'
 import { stubDialer } from '../../vitest.setup'
 import { mountEachTest, renderView } from '../../Testing/viewHarness'
 import { ViewTileScopeProvider } from '../ViewTileScope'
+import { makeTree } from '../../Testing/testTree'
 
 const statusDef: PropertyDefinition = {
   id: 'prop_status',
@@ -587,6 +588,17 @@ describe('settleOrders — a create composes with the live order', () => {
     expect(api?.liveView.manual_order).toEqual(['p1', 'p3', 'p2'])
   })
 
+  it("a sorted view's create lands at the folder's Bottom slot and beside its anchor", async () => {
+    const source = collection(SORTED)
+    useSession.setState((s) => ({ tree: { ...s.tree!, collections: [source] } }))
+    const mutate = useSession.getState().mutate as ReturnType<typeof vi.fn>
+    await mount(source)
+    await act(async () => void api?.creation.createFirst())
+    expect(mutate.mock.calls[0][0]).toMatchObject({ order: ['p1', 'p2', '$new'] })
+    await createBelowFirst()
+    expect(mutate.mock.calls[1][0]).toMatchObject({ order: ['p1', '$new', 'p2'] })
+  })
+
   it('an unsorted, ungrouped view mints no manual_order where none existed', async () => {
     await mount(collection())
     saveSpy.mockClear()
@@ -656,7 +668,7 @@ describe('the root seat', () => {
     ;(source as unknown as { pages: unknown[] }).pages = []
     ;(source.sets?.[0] as unknown as { pages: unknown[] }).pages = []
     useSession.setState({
-      tree: { collections: [], contexts: [], personalization: {}, nexus: { id: 'nx' } } as never,
+      tree: makeTree(),
     })
     await mountSeat(source)
     expect(host.querySelector('.cards-view')).toBeTruthy()

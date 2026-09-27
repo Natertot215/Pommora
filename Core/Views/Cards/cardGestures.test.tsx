@@ -10,6 +10,7 @@ import { useSession } from '../../Session/store'
 import { mountEachTest, STATUS_DEF, renderView } from '../../Testing/viewHarness'
 import { propsAtRoot, valuesReply } from '../../Testing/pageValues'
 import { stubDialer } from '../../vitest.setup'
+import { makeTree } from '../../Testing/testTree'
 // Absent from property_order and blank on every page, so it is the card menu's one addable entry.
 const numberDef: PropertyDefinition = { id: 'prop_n', name: 'Count', type: 'number' }
 
@@ -67,7 +68,7 @@ beforeEach(() => {
     menu: menuSpy,
   })
   useSession.setState({
-    tree: { collections: [], contexts: [], personalization: {}, nexus: { id: 'nx' } } as never,
+    tree: makeTree(),
     selection: { kind: 'none' } as never,
     renamingPath: null,
     tabs: [] as never,

@@ -43,9 +43,6 @@ export const FILTER_OPS = {
 
 const FILTER_OP_SET = new Set<string>(Object.values(FILTER_OPS))
 
-type Op = string
-type Expected = string | undefined
-
 /** Distinct from `false` so it abstains instead of voting either way. */
 const NO_OP = null
 type Verdict = boolean | typeof NO_OP
@@ -88,10 +85,6 @@ export function applyFilter(
   return rows.filter((row) => matchesGroup(row, filter, schema, locate, contextIds) !== false)
 }
 
-function isGroup(node: FilterRule | FilterGroup): node is FilterGroup {
-  return 'rules' in node
-}
-
 function matchesGroup(
   row: ViewRow,
   group: FilterGroup,
@@ -103,7 +96,7 @@ function matchesGroup(
   if (group.rules.length === 0) return NO_OP
   const votes = group.rules
     .map((node) =>
-      isGroup(node)
+      'rules' in node
         ? matchesGroup(row, node, schema, locate, contextIds)
         : evaluateRule(row, node, schema, locate, contextIds),
     )
@@ -129,11 +122,12 @@ function evaluateRule(
   contextIds: readonly string[],
 ): Verdict {
   if (!FILTER_OP_SET.has(rule.op)) return NO_OP
+  const want = ruleOperands(rule)
+  // A rule whose op still wants an operand isn't authored yet — it constrains nothing.
+  if (want.length === 0 && !OPERANDLESS_OPS.has(rule.op)) return NO_OP
 
   if (rule.property_id === RESERVED_PROPERTY_ID.location) {
-    // Runs BEFORE the generic unauthored-operand guard, so it owns its own. Is/Isn't test the immediate parent, Contains/Doesn't any depth.
-    const want = ruleOperands(rule)
-    if (want.length === 0) return NO_OP
+    // Is/Isn't test the immediate parent, Contains/Doesn't any depth.
     const parent = row.parentSetId
     switch (rule.op) {
       case FILTER_OPS.is:
@@ -154,43 +148,34 @@ function evaluateRule(
 
   const t = declaredType(rule.property_id, schema, contextIds)
   if (t === undefined) return NO_OP
-  // A rule whose op still wants an operand isn't authored yet — it constrains nothing.
-  if (!OPERANDLESS_OPS.has(rule.op) && rule.value == null && !rule.values?.length) return NO_OP
   const v = resolveFieldValue(row, rule.property_id, schema)
   // resolveFieldValue('_title') carries row.title as a select-kind string — the text matrix reads it.
   return t === 'title'
-    ? evaluateText(v, rule.op, rule.value, rule.values)
-    : evaluateByKind(v, rule.op, rule.value, rule.values, PROPERTY_TYPES[t].kind)
+    ? evaluateText(v, rule.op, want)
+    : evaluateByKind(v, rule.op, want, PROPERTY_TYPES[t].kind)
 }
 
-function evaluateByKind(
-  v: PropertyValue,
-  op: Op,
-  expected: Expected,
-  values: string[] | undefined,
-  kind: ValueKind,
-): boolean {
+function evaluateByKind(v: PropertyValue, op: string, want: string[], kind: ValueKind): boolean {
   switch (kind) {
     case 'number':
-      return evaluateNumber(v, op, expected)
+      return evaluateNumber(v, op, want)
     case 'dateTime':
-      return evaluateDate(v, op, expected)
+      return evaluateDate(v, op, want)
     case 'checkbox':
-      return evaluateCheckbox(v, op, expected)
+      return evaluateCheckbox(v, op, want)
     case 'select':
     case 'link':
-      return evaluateText(v, op, expected, values)
+      return evaluateText(v, op, want)
     case 'multiSelect':
-      return evaluateMulti(v, op, expected, values)
     case 'context':
-      return evaluateList(v.kind === 'context' ? v.value : [], op, expected, values)
+      return evaluateSet(v.kind === 'multiSelect' || v.kind === 'context' ? v.value : [], op, want)
     case 'file':
       return evaluatePresence(v, op)
   }
 }
 
-function parseBool(s: Expected): boolean | null {
-  switch (s?.toLowerCase()) {
+function parseBool(s: string): boolean | null {
+  switch (s.toLowerCase()) {
     case 'true':
     case '1':
     case 'yes':
@@ -222,26 +207,29 @@ function textValue(v: PropertyValue): string | null {
   }
 }
 
-function evaluateNumber(v: PropertyValue, op: Op, expected: Expected): boolean {
+function evaluateNumber(v: PropertyValue, op: string, want: string[]): boolean {
   const n = v.kind === 'number' ? v.value : null
-  const e = numberFrom(expected ?? '')
   switch (op) {
     case FILTER_OPS.isEmpty:
       return n === null
     case FILTER_OPS.isNotEmpty:
       return n !== null
+  }
+  const e = numberFrom(want[0])
+  if (e === undefined) return true
+  switch (op) {
     case FILTER_OPS.is:
-      return e === undefined ? true : n !== null && n === e
+      return n === e
     case FILTER_OPS.isNot:
-      return n === null || e === undefined ? true : n !== e
+      return n !== e
     case FILTER_OPS.greaterThan:
-      return e === undefined ? true : n !== null && n > e
+      return n !== null && n > e
     case FILTER_OPS.lessThan:
-      return e === undefined ? true : n !== null && n < e
+      return n !== null && n < e
     case FILTER_OPS.greaterOrEqual:
-      return e === undefined ? true : n !== null && n >= e
+      return n !== null && n >= e
     case FILTER_OPS.lessOrEqual:
-      return e === undefined ? true : n !== null && n <= e
+      return n !== null && n <= e
     default:
       return true
   }
@@ -250,66 +238,52 @@ function evaluateNumber(v: PropertyValue, op: Op, expected: Expected): boolean {
 const dayMs = (d: LocalDate): number => startOfDay(d.at).getTime()
 
 /** Days are the local days the cells show. `is` compares days; a bare-day operand orders by day, and one carrying a time orders by instant. */
-function evaluateDate(v: PropertyValue, op: Op, expected: Expected): boolean {
+function evaluateDate(v: PropertyValue, op: string, want: string[]): boolean {
   const value = v.kind === 'dateTime' ? readDate(v.value) : null
-  const target = expected == null ? null : readDate(expected)
-  const ms = (x: LocalDate): number => (target?.timed ? x.at.getTime() : dayMs(x))
-  const d = value && ms(value)
-  const e = target && ms(target)
   switch (op) {
     case FILTER_OPS.isEmpty:
       return value === null
     case FILTER_OPS.isNotEmpty:
       return value !== null
+  }
+  const target = readDate(want[0])
+  if (target === null) return true
+  const ms = (x: LocalDate): number => (target.timed ? x.at.getTime() : dayMs(x))
+  const d = value && ms(value)
+  const e = ms(target)
+  switch (op) {
     case FILTER_OPS.is:
-      return expected == null
-        ? true
-        : value !== null && target !== null && dayMs(value) === dayMs(target)
+      return value !== null && dayMs(value) === dayMs(target)
     case FILTER_OPS.isBefore:
-      return e === null ? true : d !== null && d < e
+      return d !== null && d < e
     case FILTER_OPS.isAfter:
-      return e === null ? true : d !== null && d > e
+      return d !== null && d > e
     case FILTER_OPS.onOrAfter:
-      return e === null ? true : d !== null && d >= e
+      return d !== null && d >= e
     case FILTER_OPS.onOrBefore:
-      return e === null ? true : d !== null && d <= e
+      return d !== null && d <= e
     default:
       return true
   }
 }
 
-function evaluateCheckbox(v: PropertyValue, op: Op, expected: Expected): boolean {
-  const present = v.kind === 'checkbox'
+function evaluateCheckbox(v: PropertyValue, op: string, want: string[]): boolean {
   const b = v.kind === 'checkbox' ? v.value : false
   switch (op) {
     case FILTER_OPS.isEmpty:
-      return !present
-    case FILTER_OPS.is: {
-      const e = parseBool(expected)
-      return e === null ? true : b === e
-    }
+      return v.kind !== 'checkbox'
+    case FILTER_OPS.is:
     case FILTER_OPS.isNot: {
-      const e = parseBool(expected)
-      return e === null ? true : b !== e
+      const e = parseBool(want[0])
+      if (e === null) return true
+      return op === FILTER_OPS.is ? b === e : b !== e
     }
     default:
       return true
   }
 }
 
-/** An empty `want` on the any-shaped op passes — a mid-authoring empty chip set never blanks the table. Returns undefined for ops it doesn't own. */
-function matchesSet(xs: string[], op: Op, want: string[]): boolean | undefined {
-  switch (op) {
-    case FILTER_OPS.containsAny:
-      return want.length === 0 ? true : want.some((w) => xs.includes(w))
-    case FILTER_OPS.containsAll:
-      return want.every((w) => xs.includes(w))
-    default:
-      return undefined
-  }
-}
-
-function evaluateText(v: PropertyValue, op: Op, expected: Expected, values?: string[]): boolean {
+function evaluateText(v: PropertyValue, op: string, want: string[]): boolean {
   const s = textValue(v)
   switch (op) {
     case FILTER_OPS.isEmpty:
@@ -317,67 +291,41 @@ function evaluateText(v: PropertyValue, op: Op, expected: Expected, values?: str
     case FILTER_OPS.isNotEmpty:
       return !(s === null || s === '')
     case FILTER_OPS.is:
-      if (values?.length) return s !== null && values.includes(s)
-      return expected == null ? true : s !== null && s === expected
+      return s !== null && want.includes(s)
     case FILTER_OPS.isNot:
-      if (values?.length) return s === null ? true : !values.includes(s)
-      return expected == null ? true : s !== expected
+      return s === null || !want.includes(s)
     case FILTER_OPS.contains:
-      return expected == null ? true : s !== null && foldKey(s).includes(foldKey(expected))
+      return s !== null && foldKey(s).includes(foldKey(want[0]))
     case FILTER_OPS.doesNotContain:
-      return expected == null ? true : !(s !== null && foldKey(s).includes(foldKey(expected)))
+      return s === null || !foldKey(s).includes(foldKey(want[0]))
     case FILTER_OPS.startsWith:
-      return expected == null ? true : s !== null && foldKey(s).startsWith(foldKey(expected))
+      return s !== null && foldKey(s).startsWith(foldKey(want[0]))
     default:
       return true
   }
 }
 
-function evaluateMulti(v: PropertyValue, op: Op, expected: Expected, values?: string[]): boolean {
-  const xs = v.kind === 'multiSelect' ? v.value : []
-  const want = values ?? (expected != null ? [expected] : [])
-  const set = matchesSet(xs, op, want)
-  if (set !== undefined) return set
+function evaluateSet(xs: string[], op: string, want: string[]): boolean {
   switch (op) {
     case FILTER_OPS.isEmpty:
       return xs.length === 0
     case FILTER_OPS.isNotEmpty:
       return xs.length > 0
+    case FILTER_OPS.containsAll:
+      return want.every((w) => xs.includes(w))
     case FILTER_OPS.is:
     case FILTER_OPS.contains:
-      // Empty set = mid-authoring → pass, NEVER exclude ([].some() would blank the table).
-      return want.length === 0 ? true : want.some((w) => xs.includes(w))
+    case FILTER_OPS.containsAny:
+      return want.some((w) => xs.includes(w))
     case FILTER_OPS.isNot:
     case FILTER_OPS.doesNotContain:
-      return want.length === 0 ? true : !want.some((w) => xs.includes(w))
+      return !want.some((w) => xs.includes(w))
     default:
       return true
   }
 }
 
-/** DELIBERATE asymmetry, stated so nobody "fixes" it: is/contains with a missing SINGLE operand → false, while the chip-shaped set ops pass on an empty operand set, because a mid-authoring chip row must never blank the table. */
-function evaluateList(ids: string[], op: Op, expected: Expected, values?: string[]): boolean {
-  const want = values ?? (expected != null ? [expected] : [])
-  const set = matchesSet(ids, op, want)
-  if (set !== undefined) return set
-  switch (op) {
-    case FILTER_OPS.isEmpty:
-      return ids.length === 0
-    case FILTER_OPS.isNotEmpty:
-      return ids.length > 0
-    case FILTER_OPS.is:
-    case FILTER_OPS.contains:
-      if (values?.length) return values.some((w) => ids.includes(w))
-      return expected == null ? false : ids.includes(expected)
-    case FILTER_OPS.isNot:
-    case FILTER_OPS.doesNotContain:
-      return want.length === 0 ? true : !want.some((w) => ids.includes(w))
-    default:
-      return true
-  }
-}
-
-function evaluatePresence(v: PropertyValue, op: Op): boolean {
+function evaluatePresence(v: PropertyValue, op: string): boolean {
   const empty = isBlankValue(v)
   switch (op) {
     case FILTER_OPS.isEmpty:
