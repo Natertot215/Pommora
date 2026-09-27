@@ -132,7 +132,7 @@ export function CustomList({
             )}
           >
             <OptionChip type={def.type} option={o} />
-            {rowEye(o.value, v, { isHidden, onToggleHidden })}
+            {rowEye(v, v, { isHidden, onToggleHidden })}
           </div>,
         ]
       })}
