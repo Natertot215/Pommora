@@ -111,6 +111,9 @@ export const mutateRequest = z.discriminatedUnion('op', [
 ])
 export type MutateRequest = z.infer<typeof mutateRequest>
 
+export const seedsContext = (req: Extract<MutateRequest, { op: 'createPage' }>): boolean =>
+  Object.values(req.seeds ?? {}).some((v) => v.kind === 'context')
+
 export type RenameHost = 'detail' | 'sidebar' | 'matrix'
 
 export interface ContextTarget extends PageMenuContext {
