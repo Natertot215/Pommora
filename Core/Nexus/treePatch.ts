@@ -217,7 +217,7 @@ export const contextAt = (tree: NexusTree, rel: string): ContextGroup | null =>
   tree.contexts.find((g) => contextDirRel(g.def.title) === rel) ?? null
 
 export const pageIdsIn = (tree: NexusTree, path: string): string[] | undefined =>
-  findContainerWhere(tree, (n) => n.path === path)?.pages.map((p) => p.id)
+  containerAt(tree, path)?.pages.map((p) => p.id)
 
 function holdsPath(containers: (CollectionNode | SetNode)[], path: string): boolean {
   return containers.some(
@@ -238,7 +238,7 @@ export function insertCreatedInTree(
     req.op === 'createContextGroup'
       ? tree.contexts.some((g) => g.def.id === created.id)
       : req.op === 'createSpace'
-        ? tree.contexts.some((g) => g.spaces.some((s) => s.path === created.path))
+        ? !!spaceAt(tree, created.path)
         : holdsPath(tree.collections, created.path)
   if (present) return null
   if (req.op === 'createContextGroup') {

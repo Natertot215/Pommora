@@ -9,7 +9,7 @@ import {
 } from './mutateRequest'
 import type { CollectionNode, NexusTree, SetNode } from './tree'
 import {
-  findContainerWhere,
+  containerAt,
   insertCreatedInTree,
   moveInTree,
   patchContextGroupsInTree,
@@ -156,8 +156,7 @@ async function routeMutation(
       if (
         ((req.op === 'rename' || req.op === 'movePage' || req.op === 'moveSet') &&
           subtreeHoldsAdoptedId(tree, req.path)) ||
-        (req.op === 'delete' &&
-          isAdoptedId(findContainerWhere(tree, (c) => c.path === relDirname(req.path))?.id ?? ''))
+        (req.op === 'delete' && isAdoptedId(containerAt(tree, relDirname(req.path))?.id ?? ''))
       )
         return 'refresh'
       const patched = patchForMutation(tree, req, reply)

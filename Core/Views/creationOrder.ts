@@ -7,7 +7,7 @@ import {
   type Placement,
   settingOf,
 } from '@pommora/core/Settings/personalization'
-import { findContainerWhere, pageIdsIn } from '../Nexus/treePatch'
+import { containerAt, pageIdsIn } from '../Nexus/treePatch'
 
 export const sameIds = (a: string[], b: string[]): boolean =>
   a.length === b.length && a.every((x, i) => x === b[i])
@@ -81,8 +81,7 @@ export function placeNew<R extends MutateRequest>(tree: NexusTree, req: R, p: Pe
     case 'createPage':
       return at(pageIdsIn(tree, r.parentPath), settingOf(p, 'newPagePlacement'))
     case 'createContainer': {
-      const parent =
-        r.kind === 'set' ? findContainerWhere(tree, (n) => n.path === r.parentPath) : null
+      const parent = r.kind === 'set' ? containerAt(tree, r.parentPath) : null
       return at(
         parent ? (parent.sets ?? []).map((n) => n.id) : undefined,
         settingOf(p, 'newFolderPlacement'),
