@@ -60,13 +60,13 @@ export async function writeJson(filePath: string, value: unknown): Promise<void>
   await atomicWriteFile(filePath, `${stableStringify(value)}\n`)
 }
 
-type StrictRead =
+export type StrictRead =
   | { kind: 'ok'; value: Record<string, unknown> }
   | { kind: 'absent' }
   | { kind: 'unreadable' }
   | { kind: 'corrupt'; why: string }
 
-async function readJsonStrictly(absPath: string): Promise<StrictRead> {
+export async function readJsonStrictly(absPath: string): Promise<StrictRead> {
   let raw: string | null
   try {
     raw = await machine().readText(absPath)
@@ -177,9 +177,8 @@ export async function readAppFileKnown(
 }
 
 // The damaged bytes keep a dotted name beside the file, which neither the watcher nor sync admits.
-async function setAside(bad: string): Promise<Record<string, unknown>> {
+export async function setAside(bad: string): Promise<void> {
   await machine().rename(bad, join(dirname(bad), `.${basename(bad)}.bad-${newId()}`))
-  return lastRead.get(bad) ?? repairSeed(bad) ?? {}
 }
 
 /** The primitive behind Pommora's own JSON files: a missing file starts empty in a folder created under the lock; an unreadable one fails the write rather than replacing what's already on disk, and a corrupt one is set aside and rebuilt from its last read only where `repairable` allows. */
@@ -190,9 +189,40 @@ export function updateNexusFile(
 ): Promise<Result<Record<string, unknown>>> {
   return machine().lock(absPath, async () => {
     await machine().mkdir(dirname(absPath))
-    const written = await rmwLocked(absPath, mutate, () => ({}), repairable ? setAside : undefined)
+    const written = await rmwLocked(
+      absPath,
+      mutate,
+      () => ({}),
+      repairable
+        ? async (bad) => {
+            await setAside(bad)
+            return lastRead.get(bad) ?? repairSeed(bad) ?? {}
+          }
+        : undefined,
+    )
     if (written.ok) lastRead.set(absPath, written.value)
     return written
+  })
+}
+
+export type StrictEdit = 'absent' | 'unreadable' | 'corrupt' | 'unchanged' | 'written'
+
+/** An in-place edit that neither seeds an absent file nor repairs a corrupt one, answering which it met; what it read or wrote becomes the file's last read. */
+export function editJsonStrict(
+  absPath: string,
+  mutate: (current: Record<string, unknown>) => Record<string, unknown> | null,
+): Promise<StrictEdit> {
+  return machine().lock(absPath, async () => {
+    const read = await readJsonStrictly(absPath)
+    if (read.kind !== 'ok') return read.kind
+    const next = mutate(read.value)
+    if (next === null) {
+      lastRead.set(absPath, read.value)
+      return 'unchanged'
+    }
+    await writeJson(absPath, next)
+    lastRead.set(absPath, next)
+    return 'written'
   })
 }
 
