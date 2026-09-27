@@ -238,6 +238,9 @@ export const personalizationSchema = z.object(
 
 export type Personalization = z.infer<typeof personalizationSchema>
 
+export const settingValue = <K extends SettingKey>(key: K, value: unknown): Personalization[K] =>
+  personalizationSchema.shape[key].parse(value) as Personalization[K]
+
 export const SETTING_DEFAULTS = eachSetting((s) => s.fallback) as {
   [K in SettingKey]: Settings[K]['fallback']
 }

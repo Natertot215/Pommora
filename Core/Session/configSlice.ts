@@ -5,6 +5,7 @@ import {
   type Personalization,
   SETTING_DEFAULTS,
   settingOf,
+  settingValue,
 } from '@pommora/core/Settings/personalization'
 import { applyPersonalizationKey } from '../Settings/applyPersonalization'
 import type { Slice } from './sessionState'
@@ -40,7 +41,8 @@ export const citationsVisible = (
 export const createConfigSlice: Slice<ConfigSlice> = (set, get) => ({
   personalization: {},
   setPersonalization: (key, next) => {
-    const value = next === SETTING_DEFAULTS[key] ? undefined : next
+    const settled = settingValue(key, next)
+    const value = settled === SETTING_DEFAULTS[key] ? undefined : settled
     // The tree copy re-identifies only for defaultIcons, the one key tree-keyed derivations resolve — a new tree identity re-runs every tree memo and pipeline, a cost a boolean toggle must never pay. Everything else reads the slice.
     set((s) => ({
       personalization: { ...s.personalization, [key]: value },

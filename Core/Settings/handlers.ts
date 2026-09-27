@@ -7,7 +7,7 @@ import { relative } from '../Paths/posix'
 import { confirmRescope, confirmSettingsWrite } from '../Nexus/confirm'
 import { sweepFileHistory } from '../Pages/fileHistory'
 import { nexusFolderRefusal } from './codec'
-import { personalizationSchema } from './personalization'
+import { personalizationSchema, settingValue } from './personalization'
 import { clearExclusionData } from './exclusionScan'
 import {
   readWatchScope,
@@ -43,7 +43,7 @@ export const settingsHandlers = {
 
   'personalization:set': withWriteRoot(async (root, ctx, key: unknown, value: unknown) => {
     if (!isKeyOf(personalizationSchema.shape, key)) return fault('Invalid personalization key.')
-    await writePersonalization(root, key, personalizationSchema.shape[key].parse(value))
+    await writePersonalization(root, key, settingValue(key, value))
     // No renderer confirm exists for this channel (the slice patches optimistically), yet it writes a field the walk reads — the push set's membership predicate.
     await confirmSettingsWrite(ctx, root)
     if (key === 'webZoomFactor') await ctx.applyZoom()
