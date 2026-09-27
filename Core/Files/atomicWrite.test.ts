@@ -6,6 +6,7 @@ import { dirname, join, basename } from '../Paths/posix'
 import { tempRoot } from '../Testing/hostFs'
 import {
   atomicWriteFile,
+  editJsonStrict,
   landBytes,
   rewritePageSerialized,
   writeJson,
@@ -133,6 +134,48 @@ describe('rmwJsonStrict', () => {
     )
     expect(written.ok).toBe(false)
     expect(await readFile(p, 'utf8')).toBe('[1, 2]')
+  })
+})
+
+describe('editJsonStrict', () => {
+  const bump = (cur: Record<string, unknown>) => ({ ...cur, n: 2 })
+
+  it('an absent path stays absent and no folder is created', async () => {
+    const p = join(dir, 'missing', 'a.json')
+    expect(await editJsonStrict(p, bump)).toBe('absent')
+    await expect(stat(dirname(p))).rejects.toThrow()
+  })
+
+  it('a corrupt file stays byte-identical and nothing is set aside', async () => {
+    const p = join(dir, 'a.json')
+    await writeFile(p, '{nope')
+    expect(await editJsonStrict(p, bump)).toBe('corrupt')
+    expect(await readFile(p, 'utf8')).toBe('{nope')
+    expect((await readdir(dir)).filter((f) => f.includes('.bad-'))).toEqual([])
+  })
+
+  it('an unreadable path writes nothing', async () => {
+    const p = join(dir, 'a.json')
+    await mkdir(p)
+    expect(await editJsonStrict(p, bump)).toBe('unreadable')
+    expect((await stat(p)).isDirectory()).toBe(true)
+  })
+
+  it('an unchanged edit re-dates nothing', async () => {
+    const p = join(dir, 'a.json')
+    await writeJson(p, { n: 1 })
+    const past = new Date('2020-06-01T12:00:00Z')
+    await utimes(p, past, past)
+    expect(await editJsonStrict(p, () => null)).toBe('unchanged')
+    expect(Math.floor((await stat(p)).mtimeMs / 1000)).toBe(Math.floor(past.getTime() / 1000))
+  })
+
+  it('a written edit becomes the last read', async () => {
+    const p = join(dir, 'a.json')
+    await writeJson(p, { n: 1 })
+    expect(await editJsonStrict(p, bump)).toBe('written')
+    await writeFile(p, '{ corrupt')
+    expect(await readAppFile(p)).toEqual({ n: 2 })
   })
 })
 

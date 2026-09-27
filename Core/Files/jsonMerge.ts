@@ -3,7 +3,7 @@ import { type Json, stableStringify } from './stableJson'
 
 export type Depth = Record<string, number>
 
-const same = (a: unknown, b: unknown): boolean => stableStringify(a) === stableStringify(b)
+export const same = (a: unknown, b: unknown): boolean => stableStringify(a) === stableStringify(b)
 
 const unionKeys = (...objects: Json[]): string[] => [
   ...new Set(objects.flatMap((o) => Object.keys(o))),
