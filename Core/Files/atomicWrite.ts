@@ -60,7 +60,7 @@ export async function writeJson(filePath: string, value: unknown): Promise<void>
   await atomicWriteFile(filePath, `${stableStringify(value)}\n`)
 }
 
-export type StrictRead =
+type StrictRead =
   | { kind: 'ok'; value: Record<string, unknown> }
   | { kind: 'absent' }
   | { kind: 'unreadable' }
@@ -181,6 +181,11 @@ export async function setAside(bad: string): Promise<void> {
   await machine().rename(bad, join(dirname(bad), `.${basename(bad)}.bad-${newId()}`))
 }
 
+async function rebuild(bad: string): Promise<Record<string, unknown>> {
+  await setAside(bad)
+  return lastRead.get(bad) ?? repairSeed(bad) ?? {}
+}
+
 /** The primitive behind Pommora's own JSON files: a missing file starts empty in a folder created under the lock; an unreadable one fails the write rather than replacing what's already on disk, and a corrupt one is set aside and rebuilt from its last read only where `repairable` allows. */
 export function updateNexusFile(
   absPath: string,
@@ -189,17 +194,7 @@ export function updateNexusFile(
 ): Promise<Result<Record<string, unknown>>> {
   return machine().lock(absPath, async () => {
     await machine().mkdir(dirname(absPath))
-    const written = await rmwLocked(
-      absPath,
-      mutate,
-      () => ({}),
-      repairable
-        ? async (bad) => {
-            await setAside(bad)
-            return lastRead.get(bad) ?? repairSeed(bad) ?? {}
-          }
-        : undefined,
-    )
+    const written = await rmwLocked(absPath, mutate, () => ({}), repairable ? rebuild : undefined)
     if (written.ok) lastRead.set(absPath, written.value)
     return written
   })
@@ -216,13 +211,9 @@ export function editJsonStrict(
     const read = await readJsonStrictly(absPath)
     if (read.kind !== 'ok') return read.kind
     const next = mutate(read.value)
-    if (next === null) {
-      lastRead.set(absPath, read.value)
-      return 'unchanged'
-    }
-    await writeJson(absPath, next)
-    lastRead.set(absPath, next)
-    return 'written'
+    if (next !== null) await writeJson(absPath, next)
+    lastRead.set(absPath, next ?? read.value)
+    return next === null ? 'unchanged' : 'written'
   })
 }
 
