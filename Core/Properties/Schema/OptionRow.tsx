@@ -24,7 +24,6 @@ function OptionRow({
   type,
   look,
   value,
-  label,
   color,
   icon,
   appearance,
@@ -43,7 +42,6 @@ function OptionRow({
   type: string
   look: OptionStyle
   value: string
-  label: string
   color: string | undefined
   icon?: string
   appearance?: OptionAppearance
@@ -59,12 +57,12 @@ function OptionRow({
   onPickAppearance: (appearance: OptionAppearance) => void
   onEditIcon: (icon: string | undefined) => void
 }): React.JSX.Element {
-  const option = { value, label, color, icon, appearance }
+  const option = { value, color, icon, appearance }
   if (renaming) {
     return (
       <OptionNameCaret
         className={cx(labelShape[optionShapeFor(type)], labelColor[colorNameFor(color)])}
-        value={label}
+        value={value}
         onCommit={onCommitRename}
         onCancel={onCancelRename}
       />
@@ -74,7 +72,7 @@ function OptionRow({
     <>
       <span className={s.optionLead}>
         <OptionChip type={type} look={look} option={option} def={def} />
-        {look === 'compact' && <span className={compactTitle}>{label}</span>}
+        {look === 'compact' && <span className={compactTitle}>{value}</span>}
       </span>
       <span className={s.optionAnchor}>
         <Button

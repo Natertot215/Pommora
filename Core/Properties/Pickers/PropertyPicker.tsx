@@ -51,7 +51,7 @@ export const pickShape = (
   def: PropertyDefinition,
   contextOptions?: PickOption[],
 ): { options: PickOption[]; kind: PickKind } => ({
-  options: contextOptions ?? optionsOf(def),
+  options: contextOptions ?? optionsOf(def).map((o) => ({ ...o, label: o.value })),
   kind: pickKindOf(def.type) ?? 'select',
 })
 

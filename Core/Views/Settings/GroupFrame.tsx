@@ -507,10 +507,7 @@ function LocationHierarchy({
   }
 
   const labelFor = (id: string): string => {
-    if (id.startsWith('sub:')) {
-      const value = id.split(':').slice(2).join(':')
-      return subChips.find((o) => o.value === value)?.label ?? value
-    }
+    if (id.startsWith('sub:')) return id.split(':').slice(2).join(':')
     const bySet = (sets: SetNode[]): string | null => {
       for (const s of sets) {
         if (s.id === id) return s.title
@@ -543,7 +540,7 @@ function LocationHierarchy({
         )}
       >
         <OptionChip type={subDef?.type ?? ''} option={o} />
-        {rowEye(o.label, o.value, subControls)}
+        {rowEye(o.value, o.value, subControls)}
       </div>
     )
   }

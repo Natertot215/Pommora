@@ -57,10 +57,10 @@ export function PropertyPreview({
   def: PropertyDefinition | undefined
 } & HideControls): React.JSX.Element | null {
   if (!def) return null
-  const chip = (o: { value: string; label: string; color?: string }): React.JSX.Element => (
+  const chip = (o: { value: string; color?: string }): React.JSX.Element => (
     <div key={o.value} className={cx(optionRow, isHidden?.(o.value) && hiddenRow)}>
       <OptionChip type={def.type} option={o} />
-      {rowEye(o.label, o.value, { isHidden, onToggleHidden })}
+      {rowEye(o.value, o.value, { isHidden, onToggleHidden })}
     </div>
   )
   if (PROPERTY_TYPES[def.type].options === 'status') {
@@ -110,7 +110,7 @@ export function CustomList({
   const dnd = useGroupingListDrag({
     bands,
     nestable: false,
-    labelFor: (id) => byValue.get(id)?.label ?? id,
+    labelFor: (id) => id,
     onDrop: (draggedId, drop) => onSave(nextOrder(ordered, draggedId, drop.beforeId)),
   })
   if (!def) return null
@@ -132,7 +132,7 @@ export function CustomList({
             )}
           >
             <OptionChip type={def.type} option={o} />
-            {rowEye(o.label, v, { isHidden, onToggleHidden })}
+            {rowEye(o.value, v, { isHidden, onToggleHidden })}
           </div>,
         ]
       })}

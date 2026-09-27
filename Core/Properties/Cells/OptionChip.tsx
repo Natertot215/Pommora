@@ -8,7 +8,6 @@ import { statusGroupGlyph, statusGroupOf } from './statusCycle'
 
 export interface OptionChipData {
   value: string
-  label?: string
   color?: string
   icon?: string
   appearance?: OptionAppearance
@@ -50,7 +49,7 @@ export function OptionChip({
       className={className}
       {...(look === 'compact'
         ? { icon: <Icon name={optionGlyph(type, option, def)} size="body" /> }
-        : { text: option?.label ?? value })}
+        : { text: value })}
       {...(onRemove ? { onRemove } : {})}
     />
   )

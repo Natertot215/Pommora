@@ -1,39 +1,16 @@
 import { optionsOf, type PropertyDefinition } from '@pommora/core/Properties/properties'
-import { bandGrouping } from '@pommora/core/Views/Pipeline/group'
 import type { CollectionNode, SetNode } from '@pommora/core/Nexus/tree'
 import type { ResolvedGroup } from '@pommora/core/Views/viewRow'
-import type { SavedView } from '@pommora/core/Views/views'
-import type { ValueContext } from '../valueContext'
 
-export function findOption(
-  columnId: string,
-  value: string,
-  schema: PropertyDefinition[],
-): { value: string; label: string; color?: string; icon?: string } | undefined {
+export function findOption(columnId: string, value: string, schema: PropertyDefinition[]) {
   const def = schema.find((d) => d.id === columnId)
   return optionsOf(def).find((o) => o.value === value)
 }
 
-export function optionLabel(
-  columnId: string,
-  value: string,
-  schema: PropertyDefinition[],
-): string | undefined {
-  return findOption(columnId, value, schema)?.label
-}
-
-export function groupLabel(
-  group: ResolvedGroup,
-  view: SavedView,
-  ctx: ValueContext,
-  setNames: Map<string, string>,
-): string {
+export function groupLabel(group: ResolvedGroup, setNames: Map<string, string>): string {
   if (group.kind === 'ungrouped') return ''
   if (group.kind === 'structural-set') return setNames.get(group.key) ?? group.key
-  const propId = bandGrouping(view, ctx.schema)?.property_id
-  const value = group.bucket ?? group.key
-  if (!propId) return value
-  return optionLabel(propId, value, ctx.schema) ?? value
+  return group.bucket ?? group.key
 }
 
 function buildSetMap<T>(source: CollectionNode | SetNode, pick: (s: SetNode) => T): Map<string, T> {
