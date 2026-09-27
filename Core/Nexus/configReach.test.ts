@@ -371,6 +371,25 @@ describe('a pass scoped under one Collection', () => {
     })
   })
 
+  it('edits only the views of a tile that source the Collection', async () => {
+    await put(spaceTiles(), {
+      tiles: [
+        {
+          id: 't_mixed',
+          type: 'view',
+          views: [
+            { source_id: 'set_deep', config: rich('tv_in') },
+            { source_id: 'col_other', config: rich('tv_out') },
+          ],
+        },
+      ],
+    })
+    await reachConfig(root, clear, col())
+    const [inside, outside] = await tileViews('t_mixed')
+    expect(inside.group).toEqual({ kind: 'structural' })
+    expect(outside).toEqual(rich('tv_out'))
+  })
+
   it('never opens the Collection’s own sidecar', async () => {
     await rm(colFile())
     await mkdir(colFile())
