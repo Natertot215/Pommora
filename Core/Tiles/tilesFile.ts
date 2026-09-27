@@ -30,25 +30,42 @@ import { utf8 } from '../Files/utf8'
 import { linksIn } from '../Connections/scan'
 import { discardFile } from '../Trash/bundle'
 import { machine } from '../Platform/machine'
-import { loadContextWorld } from '../Contexts/contextWrite'
 import { getLiveTree, liveTreeOf } from '../Nexus/liveTree'
+import type { NexusTree } from '../Nexus/tree'
+import { CONTEXTS_DIR_REL } from '../Paths/nexusPaths'
 import { tileFilePath, tileHostDir } from '../Paths/paths'
 import type { BodyWrite } from '../Pages/pageDetail'
 import { captureLoser } from '../Sync/Arrival/captures'
 import type { TrashDeps } from '../Trash/bundle'
 
+export function tileHostsOf(
+  root: string,
+  tree: NexusTree,
+): { hosts: { host: TileHostRef; dir: string }[]; unreadable: number } {
+  return {
+    hosts: [
+      { host: HOMEPAGE_HOST, dir: tileHostDir(root) },
+      ...tree.contexts.flatMap((g) =>
+        g.spaces.map((s) => ({
+          host: { kind: 'space' as const, id: s.id },
+          dir: join(root, s.path),
+        })),
+      ),
+    ],
+    unreadable: (tree.unreadable ?? []).filter((u) => u.path.startsWith(`${CONTEXTS_DIR_REL}/`))
+      .length,
+  }
+}
+
 export async function hostDir(root: string, host: TileHostRef): Promise<string | null> {
   if (host.kind === 'homepage') return tileHostDir(root)
   const held = getLiveTree()
   if (held?.nexus.rootPath !== root) return null
-  for (const g of held.contexts) {
-    const space = g.spaces.find((s) => s.id === host.id)
-    if (!space) continue
-    // Mid-cascade the tree still spells the folder a rename just moved.
-    const dir = join(root, space.path)
-    return (await pathExists(dir)) ? dir : null
-  }
-  return null
+  const hit = tileHostsOf(root, held).hosts.find(
+    (h) => h.host.kind === 'space' && h.host.id === host.id,
+  )
+  // Mid-cascade the tree still spells the folder a rename just moved.
+  return hit && (await pathExists(hit.dir)) ? hit.dir : null
 }
 
 const setTiles = (dir: string, update: (tiles: unknown[]) => unknown[]): Promise<Result<TileDoc>> =>
@@ -250,19 +267,6 @@ export async function writeMarkdownTile(
   })
 }
 
-async function listTileHosts(root: string): Promise<{ host: TileHostRef; dir: string }[]> {
-  const hosts: { host: TileHostRef; dir: string }[] = [
-    { host: HOMEPAGE_HOST, dir: tileHostDir(root) },
-  ]
-  try {
-    const world = await loadContextWorld(root)
-    if (world.ok)
-      for (const [id, ref] of world.value.spaceById)
-        hosts.push({ host: { kind: 'space', id }, dir: ref.dir })
-  } catch {}
-  return hosts
-}
-
 // Null is a board that couldn't be read, whose tiles are unknown.
 const markdownTileIds = async (dir: string): Promise<string[] | null> => {
   const doc = await readTileDocAt(dir)
@@ -281,7 +285,7 @@ export const dropTileHeadingLinks = (): void => {
 
 async function readTileHeadingLinks(root: string): Promise<Set<string>> {
   const keys = new Set<string>()
-  for (const { dir } of await listTileHosts(root))
+  for (const { dir } of tileHostsOf(root, await liveTreeOf(root)).hosts)
     for (const id of (await markdownTileIds(dir)) ?? [])
       for (const hit of linksIn(valueOr(await readMarkdownTile(dir, id), '')))
         if (hit.qualifier) keys.add(`${hit.target}\0${hit.qualifier}`)
@@ -301,9 +305,10 @@ export async function rewriteTileConnections(
   root: string,
   rewrite: (body: string) => string,
 ): Promise<{ hosts: TileHostRef[]; failed: number }> {
+  const found = tileHostsOf(root, await liveTreeOf(root))
   const hosts: TileHostRef[] = []
-  let failed = 0
-  for (const { host, dir } of await listTileHosts(root)) {
+  let failed = found.unreadable
+  for (const { host, dir } of found.hosts) {
     let wrote = false
     const ids = await markdownTileIds(dir)
     if (!ids) failed++
