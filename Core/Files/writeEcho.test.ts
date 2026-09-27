@@ -51,7 +51,7 @@ describe('isRecentWrite', () => {
 describe('setWriteTap', () => {
   it('hands every recorded path to the tap until it is cleared', () => {
     const seen: string[] = []
-    setWriteTap((p) => seen.push(p))
+    setWriteTap({ wrote: (p) => seen.push(p), renamed: () => {} })
     recordWrite('/t6/a.md')
     recordWrite('/t6/b.md')
     setWriteTap(null)

@@ -29,9 +29,9 @@ import { openSession, closeSession } from './session'
 import { flushValueWrites } from './valuesChanged'
 import { readNexus } from './readNexus'
 import { forgetLastReads, pathExists } from '../Files/atomicWrite'
+import { setWriteTap } from '../Files/writeEcho'
 import { createProperty } from '../Properties/registryProperty'
 import { liveAssetMap, resolveAssetName, takeAssetMapPush } from '../Assets/assetMap'
-import * as tap from '../Sync/Client/tap'
 import type { TrashDeps } from '../Trash/bundle'
 import type { HostContext } from '../Contract/handlers'
 import { installStores, NO_STORES } from '../Platform/stores'
@@ -345,8 +345,14 @@ describe('handleMutate — delete', () => {
 })
 
 describe('handleMutate — sync tap', () => {
+  let renames: Array<[string, string]>
+  beforeEach(() => {
+    renames = []
+    setWriteTap({ wrote: () => {}, renamed: (from, to) => renames.push([from, to]) })
+  })
+  afterEach(() => setWriteTap(null))
+
   it('reports a page rename and a page move to the sync tap', async () => {
-    const reported = vi.spyOn(tap, 'reportRename').mockImplementation(() => {})
     await mkdir(join(root, 'Notes', 'Archive'), { recursive: true })
     await writeFile(join(root, 'Notes', 'Archive', '_pageset.json'), JSON.stringify({ id: 'arc' }))
 
@@ -362,11 +368,32 @@ describe('handleMutate — sync tap', () => {
       nexusDeps,
     )
 
-    expect(reported.mock.calls).toEqual([
-      ['Notes/Daily/Beta.md', 'Notes/Daily/Gamma.md'],
-      ['Notes/Daily/Gamma.md', 'Notes/Archive/Gamma.md'],
+    expect(renames).toEqual([
+      [join(root, 'Notes/Daily/Beta.md'), join(root, 'Notes/Daily/Gamma.md')],
+      [join(root, 'Notes/Daily/Gamma.md'), join(root, 'Notes/Archive/Gamma.md')],
     ])
-    reported.mockRestore()
+  })
+
+  it('reports a from-create rename where it landed', async () => {
+    await writeFile(
+      join(root, 'Notes', 'Daily', 'Fresh.md'),
+      '---\nID: 01KVGMT8BFP350FZZXAMG1QDRG\n---\n',
+    )
+    const r = await handleMutate(
+      root,
+      {
+        op: 'rename',
+        path: 'Notes/Daily/Beta.md',
+        kind: 'page',
+        newName: 'Fresh',
+        fromCreate: true,
+      },
+      nexusDeps,
+    )
+    expect(r.ok && r.value.renamed?.name).toBe('Fresh (2)')
+    expect(renames).toEqual([
+      [join(root, 'Notes/Daily/Beta.md'), join(root, 'Notes/Daily/Fresh (2).md')],
+    ])
   })
 })
 

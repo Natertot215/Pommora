@@ -53,14 +53,17 @@ export function installTap(root: string, scope: WatchScope, next: TapSinks): voi
     if (admits(rel)) schedule(rel)
   }
   setWatchTap((ev) => feed(ev.absPath, true))
-  setWriteTap((absPath) => feed(absPath, false))
+  setWriteTap({
+    wrote: (absPath) => feed(absPath, false),
+    renamed: (absFrom, absTo) => renamed(relative(root, absFrom), relative(root, absTo)),
+  })
   setRepairSeed((absPath) => {
     const base = readBase(relative(root, absPath))?.baseBytes
     return base ? parseObject(base) : null
   })
 }
 
-export function reportRename(from: string, to: string): void {
+function renamed(from: string, to: string): void {
   for (const rel of [from, to]) {
     clearTimeout(timers.get(rel))
     timers.delete(rel)

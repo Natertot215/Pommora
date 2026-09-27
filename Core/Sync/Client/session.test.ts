@@ -12,10 +12,10 @@ import { TEST_KDF, testKeys } from '../../Testing/syncDevice'
 import type { Ring } from '../Keys/ring'
 import type { SyncStatus } from '../Contract/wire'
 import { readAllBases, readBase, upsertBase } from './base'
-import { recordWrite } from '../../Files/writeEcho'
+import { recordWrite, reportRename } from '../../Files/writeEcho'
 import { ringName } from './keyring'
 import { currentSession, startSession, stopSession, syncNow } from './session'
-import { DEBOUNCE_MS, dirtyPending, reportRename } from './tap'
+import { DEBOUNCE_MS, dirtyPending } from './tap'
 
 const NEXUS = 'nx'
 const ADDRESS = 'http://127.0.0.1:7473'
@@ -200,7 +200,7 @@ describe('startSession', () => {
     await write('Job/Archive/Secret.md', page('secret'))
     await write('.nexus/settings.json', JSON.stringify({ excluded_folders: ['Job/Archive'] }))
 
-    reportRename('Work', 'Job')
+    reportRename(abs('Work'), abs('Job'))
     await turn(120)
 
     expect(self.scope.excluded).toEqual(['Job/Archive'])

@@ -1,4 +1,4 @@
-import { basename, dirname, titleFromPath, relative, relJoin } from '../Paths/posix'
+import { basename, dirname, titleFromPath, relJoin } from '../Paths/posix'
 import { createDisambiguated } from '../Paths/names'
 import { ok } from '../Contract/result'
 import { mutableTarget } from './liveTree'
@@ -8,7 +8,6 @@ import type { MutateContext } from './mutate'
 import { renamePage } from './page'
 import { landedFolder, landingRefusal, renameFolderEntity } from './folderEntity'
 import { type CascadeReport, renameCascade } from './cascade'
-import { reportRename } from '../Sync/Client/tap'
 import { excludedWithin, exclusionWriteRefusal } from '../Settings/settings'
 
 export async function renameOp(
@@ -43,6 +42,5 @@ export async function renameOp(
   if (!r.ok) return r
   // The index moves first, so the renamed page's own links to its old title are found where it now lives.
   await moveIndexPaths(root, abs, r.value.path)
-  reportRename(relative(root, abs), relative(root, r.value.path))
   return renamedReply(r.value.path, await renameCascade(root, oldTitle, { title: req.newName }))
 }

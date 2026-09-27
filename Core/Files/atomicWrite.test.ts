@@ -334,7 +334,7 @@ describe('trashFileFlat', () => {
     const p = join(dir, 'reported.md')
     await atomicWriteFile(p, 'bye')
     const seen: string[] = []
-    setWriteTap((w) => seen.push(w))
+    setWriteTap({ wrote: (w) => seen.push(w), renamed: () => {} })
     const dest = await trashFileFlat(dir, p)
     setWriteTap(null)
     expect(seen).toEqual([p, dest])

@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { readFile, rm, writeFile } from 'node:fs/promises'
 import { updateNexusFile } from '../../Files/atomicWrite'
-import { recordWrite } from '../../Files/writeEcho'
+import { recordWrite, reportRename } from '../../Files/writeEcho'
 import { installStores, NO_STORES } from '../../Platform/stores'
 import { tempRoot } from '../../Testing/hostFs'
 import { memoryStores } from '../../Testing/memoryStores'
@@ -9,14 +9,7 @@ import { upsertBase } from './base'
 import { emitWatch } from '../../Nexus/watchSettle'
 import type { WatchScope } from '../../Paths/exclusion'
 import { join } from '../../Paths/posix'
-import {
-  DEBOUNCE_MS,
-  dirtyPending,
-  installTap,
-  reportRename,
-  setTapScope,
-  uninstallTap,
-} from './tap'
+import { DEBOUNCE_MS, dirtyPending, installTap, setTapScope, uninstallTap } from './tap'
 
 const ROOT = '/nexus'
 const SCOPE: WatchScope = { excluded: [], assetDir: '.nexus/assets' }
@@ -70,7 +63,7 @@ describe('installTap', () => {
   it('clears pending timers on a rename report and reaches onRename', async () => {
     emitWatch('change', join(ROOT, 'Notes/One.md'))
     expect(dirtyPending()).toEqual(new Set(['Notes/One.md']))
-    reportRename('Notes/One.md', 'Notes/Two.md')
+    reportRename(join(ROOT, 'Notes/One.md'), join(ROOT, 'Notes/Two.md'))
     expect(renames).toEqual([['Notes/One.md', 'Notes/Two.md']])
     expect(dirtyPending()).toEqual(new Set())
     await vi.advanceTimersByTimeAsync(DEBOUNCE_MS + 1)

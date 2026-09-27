@@ -1,4 +1,4 @@
-import { basename, dirname, relative } from '../Paths/posix'
+import { basename, dirname } from '../Paths/posix'
 import { ok, type Result } from '../Contract/result'
 import { moveIndexPaths } from '../Index/indexSeed'
 import type { MutateReply, MutateRequest } from './mutateRequest'
@@ -9,7 +9,6 @@ import { mutableTarget } from './liveTree'
 import { CONTAINER_KINDS } from './mutateRequest'
 import { setChildOrder } from './reorder'
 import { noteValueWrite } from './valuesChanged'
-import { reportRename } from '../Sync/Client/tap'
 import { excludedWithin, exclusionWriteRefusal } from '../Settings/settings'
 
 async function ends(
@@ -34,7 +33,6 @@ export async function movePageOp(
   if (!r.ok) return r
   if (req.order) await setChildOrder(at.value.dst, 'page_order', req.order)
   await moveIndexPaths(root, at.value.src, r.value.path)
-  reportRename(relative(root, at.value.src), relative(root, r.value.path))
   noteValueWrite(root, r.value.path)
   return ok({})
 }

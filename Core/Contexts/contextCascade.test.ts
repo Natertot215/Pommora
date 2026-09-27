@@ -18,12 +18,20 @@ import { clearJournal, readJournal, writeJournal } from './contextJournal'
 import { contextsRegistryFile, contextsDir, nexusDir } from '../Paths/paths'
 
 import { pathExists } from '../Files/atomicWrite'
+import { setWriteTap } from '../Files/writeEcho'
+import { fault } from '../Contract/result'
+import { mutateRegistryFile } from './contextsRegistry'
 import { closeSession, openSession } from '../Nexus/session'
 import { flushSidecarWrites } from '../Nexus/valuesChanged'
 
 vi.mock('../Properties/governedSweep', async (importOriginal) => {
   const mod = await importOriginal<typeof import('../Properties/governedSweep')>()
   return { ...mod, sweepGovernedRoots: vi.fn(mod.sweepGovernedRoots) }
+})
+
+vi.mock('./contextsRegistry', async (importOriginal) => {
+  const mod = await importOriginal<typeof import('./contextsRegistry')>()
+  return { ...mod, mutateRegistryFile: vi.fn(mod.mutateRegistryFile) }
 })
 
 const sweepSpy = vi.mocked(sweepGovernedRoots)
@@ -194,6 +202,42 @@ describe('a renamed Context key keeps its place on every page carrying it', () =
     expect((await fmOf(page()))['<Ventures>']).toEqual(['Pommora', 'pommora'])
     expect(await regTitle('ctx_projects')).toBe('Ventures')
     expect(await readJournal(root)).toBeNull()
+  })
+})
+
+describe('the renames report their folder to sync', () => {
+  let renames: Array<[string, string]>
+  beforeEach(() => {
+    renames = []
+    setWriteTap({ wrote: () => {}, renamed: (from, to) => renames.push([from, to]) })
+  })
+  afterEach(() => setWriteTap(null))
+
+  it('a Context rename', async () => {
+    expect((await renameContextOp(root, 'ctx_projects', 'Ventures')).ok).toBe(true)
+    expect(renames).toEqual([
+      [join(contextsDir(root), 'Projects'), join(contextsDir(root), 'Ventures')],
+    ])
+  })
+
+  it('a Space rename', async () => {
+    expect((await renameSpaceOp(root, 'sp-pom', 'Pom')).ok).toBe(true)
+    expect(renames).toEqual([
+      [join(contextsDir(root), 'Projects', 'Pommora'), join(contextsDir(root), 'Projects', 'Pom')],
+    ])
+  })
+
+  it('a Context rename backed out reports the folder going back', async () => {
+    vi.mocked(mutateRegistryFile).mockResolvedValueOnce(fault('refused'))
+    expect((await renameContextOp(root, 'ctx_projects', 'Ventures')).ok).toBe(false)
+    const [projects, ventures] = [
+      join(contextsDir(root), 'Projects'),
+      join(contextsDir(root), 'Ventures'),
+    ]
+    expect(renames).toEqual([
+      [projects, ventures],
+      [ventures, projects],
+    ])
   })
 })
 

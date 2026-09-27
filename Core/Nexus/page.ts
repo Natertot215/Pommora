@@ -2,7 +2,7 @@ import { join, dirname, basename } from '../Paths/posix'
 import { ID_KEY } from './identityMark'
 import { newContentId } from './ids'
 import { bodyHash, type PageWrite, writePageFile } from '../Files/pageFile'
-import { recordWrite } from '../Files/writeEcho'
+import { recordWrite, reportRename } from '../Files/writeEcho'
 import { machine } from '../Platform/machine'
 import {
   type Adoption,
@@ -58,6 +58,7 @@ async function relocatePage(absFile: string, target: string): Promise<void> {
     recordWrite(target)
     await machine().rename(absFile, target)
   })
+  reportRename(absFile, target)
 }
 
 export async function renamePage(
