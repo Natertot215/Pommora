@@ -155,13 +155,3 @@ export function makeSorter(
     return decorated.map((d) => d.row)
   }
 }
-
-/** An active drag override always wins; the view's stored order applies only when the view is sorted or grouped — on a plain view `manual_order` is not a primary order. */
-export function resolveManualOrder(
-  sortedOrGrouped: boolean,
-  manualOverride: string[] | null,
-  stored: string[] | undefined,
-): string[] | undefined {
-  if (!sortedOrGrouped && !manualOverride) return undefined
-  return manualOverride ?? stored
-}
