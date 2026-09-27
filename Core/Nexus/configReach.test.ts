@@ -522,7 +522,7 @@ describe('a gone edit', () => {
       propertyId: 'ctx_areas',
       ids: new Set(['sp_home']),
     })
-    expect(goneEdit(tree, 'set', 'Notes')).toEqual({
+    expect(goneEdit(tree, 'collection', 'Notes')).toEqual({
       kind: 'gone',
       propertyId: '_location',
       ids: new Set(['col_notes', 'set_deep']),
