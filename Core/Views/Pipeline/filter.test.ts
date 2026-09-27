@@ -423,6 +423,30 @@ describe('applyFilter — negation + registry', () => {
     ).toEqual(['r1'])
   })
 
+  it('a group of only abstaining rules leaves its Any sibling deciding', () => {
+    expect(
+      ids(rows, {
+        match: 'any',
+        rules: [
+          { match: 'all', rules: [{ property_id: 'prop_sel', op: 'is' }] },
+          { property_id: 'prop_sel', op: 'is', value: 'b' },
+        ],
+      }),
+    ).toEqual(['r2'])
+  })
+
+  it('an operator a kind leaves unhandled votes true, and one Location lacks abstains', () => {
+    const any = (rule: FilterGroup['rules'][number]) =>
+      applyFilter(
+        rows,
+        { match: 'any', rules: [rule, { property_id: 'prop_sel', op: 'is', value: 'zzz' }] },
+        schema,
+        [{ id: 'set_a', children: [] }],
+      ).map((r) => r.id)
+    expect(any({ property_id: 'prop_done', op: 'is_not_empty' })).toEqual(['r1', 'r2'])
+    expect(any({ property_id: '_location', op: 'contains', value: 'set_a' })).toEqual([])
+  })
+
   it('registers every new op raw string', () => {
     expect(FILTER_OPS.startsWith).toBe('starts_with')
     expect(FILTER_OPS.containsAll).toBe('contains_all')

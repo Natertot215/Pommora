@@ -1,4 +1,4 @@
-// Match modes are all = AND and any = OR at every depth; negation lives on the per-rule operators. See NO_OP below for the abstain rule.
+// Match modes are all = AND and any = OR at every depth; negation lives on the per-rule operators.
 
 import type { FilterGroup, FilterRule } from '@pommora/core/Views/views'
 import type { ViewRow } from '@pommora/core/Views/viewRow'
@@ -13,7 +13,7 @@ import {
   type ValueKind,
 } from '@pommora/core/Properties/propertyValue'
 import { declaredType, resolveFieldValue } from '../../Properties/value'
-import { type SetTreeNode, subtreeIds } from './group'
+import type { SetTreeNode } from './group'
 import { linkDisplayText } from '@pommora/core/Connections/linkValue'
 import { type LocalDate, readDate, startOfDay } from '../../Properties/formatValue'
 import { foldKey } from '../../Paths/caseFold'
@@ -43,34 +43,11 @@ export const FILTER_OPS = {
 
 const FILTER_OP_SET = new Set<string>(Object.values(FILTER_OPS))
 
-/** Distinct from `false` so it abstains instead of voting either way. */
-const NO_OP = null
-type Verdict = boolean | typeof NO_OP
-
 /** The ops that are complete without an operand; everything else is unauthored until one arrives. */
 export const OPERANDLESS_OPS = new Set<string>([FILTER_OPS.isEmpty, FILTER_OPS.isNotEmpty])
 
-/** Built ONCE per operand and membership-tested per row — never a per-row ancestor walk. Unknown set id → undefined → no-op pass. */
-type LocationIndex = (setId: string) => ReadonlySet<string> | undefined
-
-function makeLocationIndex(setTree: SetTreeNode[]): LocationIndex {
-  const cache = new Map<string, ReadonlySet<string> | undefined>()
-  const find = (nodes: SetTreeNode[], id: string): SetTreeNode | undefined => {
-    for (const n of nodes) {
-      if (n.id === id) return n
-      const hit = find(n.children, id)
-      if (hit) return hit
-    }
-    return undefined
-  }
-  return (setId) => {
-    if (!cache.has(setId)) {
-      const node = find(setTree, setId)
-      cache.set(setId, node ? new Set(subtreeIds(node)) : undefined)
-    }
-    return cache.get(setId)
-  }
-}
+type RowTest = (row: ViewRow) => boolean
+type Evaluator = (v: PropertyValue, op: string, want: string[]) => boolean
 
 export function applyFilter(
   rows: ViewRow[],
@@ -79,34 +56,29 @@ export function applyFilter(
   setTree: SetTreeNode[] = [],
   contextIds: readonly string[] = [],
 ): ViewRow[] {
-  if (!filter) return rows
-  const locate = makeLocationIndex(setTree)
-  // A whole filter that abstains filters nothing — the row passes. Only a real `false` excludes.
-  return rows.filter((row) => matchesGroup(row, filter, schema, locate, contextIds) !== false)
+  const test = filter && prepareGroup(filter, schema, setTree, contextIds)
+  return test ? rows.filter(test) : rows
 }
 
-function matchesGroup(
-  row: ViewRow,
+function prepareGroup(
   group: FilterGroup,
   schema: PropertyDefinition[],
-  locate: LocationIndex,
+  setTree: SetTreeNode[],
   contextIds: readonly string[],
-): Verdict {
-  // A GROUP abstains too, and must: returning `true` would hand the parent a vote its NO_OP filter can't strip, so a fully-unauthored `(A and B)` inside `(A and B) or C` would suppress C entirely.
-  if (group.rules.length === 0) return NO_OP
-  const votes = group.rules
-    .map((node) =>
+): RowTest | undefined {
+  const tests = group.rules.flatMap((node) => {
+    const test =
       'rules' in node
-        ? matchesGroup(row, node, schema, locate, contextIds)
-        : evaluateRule(row, node, schema, locate, contextIds),
-    )
-    .filter((v): v is boolean => v !== NO_OP)
-  if (votes.length === 0) return NO_OP
+        ? prepareGroup(node, schema, setTree, contextIds)
+        : prepareRule(node, schema, setTree, contextIds)
+    return test ? [test] : []
+  })
+  if (tests.length === 0) return undefined
   switch (group.match) {
     case 'all':
-      return votes.every(Boolean)
+      return (row) => tests.every((test) => test(row))
     case 'any':
-      return votes.some(Boolean)
+      return (row) => tests.some((test) => test(row))
   }
 }
 
@@ -114,63 +86,67 @@ function matchesGroup(
 export const ruleOperands = (rule: FilterRule): string[] =>
   rule.values?.length ? rule.values : rule.value != null ? [rule.value] : []
 
-function evaluateRule(
-  row: ViewRow,
+function prepareRule(
   rule: FilterRule,
   schema: PropertyDefinition[],
-  locate: LocationIndex,
+  setTree: SetTreeNode[],
   contextIds: readonly string[],
-): Verdict {
-  if (!FILTER_OP_SET.has(rule.op)) return NO_OP
+): RowTest | undefined {
+  const { op, property_id: id } = rule
   const want = ruleOperands(rule)
-  // A rule whose op still wants an operand isn't authored yet — it constrains nothing.
-  if (want.length === 0 && !OPERANDLESS_OPS.has(rule.op)) return NO_OP
-
-  if (rule.property_id === RESERVED_PROPERTY_ID.location) {
-    // Is/Isn't test the immediate parent, Contains/Doesn't any depth.
-    const parent = row.parentSetId
-    switch (rule.op) {
-      case FILTER_OPS.is:
-        return parent != null && want.includes(parent)
-      case FILTER_OPS.isNot:
-        return parent == null || !want.includes(parent)
-      case FILTER_OPS.isInside:
-      case FILTER_OPS.isNotInside: {
-        const trees = want.map(locate).filter((t): t is ReadonlySet<string> => t !== undefined)
-        if (trees.length === 0) return NO_OP
-        const hit = parent != null && trees.some((t) => t.has(parent))
-        return rule.op === FILTER_OPS.isInside ? hit : !hit
-      }
-      default:
-        return NO_OP
-    }
-  }
-
-  const t = declaredType(rule.property_id, schema, contextIds)
-  if (t === undefined) return NO_OP
-  const v = resolveFieldValue(row, rule.property_id, schema)
+  if (!FILTER_OP_SET.has(op) || (want.length === 0 && !OPERANDLESS_OPS.has(op))) return undefined
+  if (id === RESERVED_PROPERTY_ID.location) return prepareLocation(op, want, setTree)
+  const t = declaredType(id, schema, contextIds)
+  if (t === undefined) return undefined
   // resolveFieldValue('_title') carries row.title as a select-kind string — the text matrix reads it.
-  return t === 'title'
-    ? evaluateText(v, rule.op, want)
-    : evaluateByKind(v, rule.op, want, PROPERTY_TYPES[t].kind)
+  const evaluate = t === 'title' ? evaluateText : evaluatorOf(PROPERTY_TYPES[t].kind)
+  return (row) => evaluate(resolveFieldValue(row, id, schema), op, want)
 }
 
-function evaluateByKind(v: PropertyValue, op: string, want: string[], kind: ValueKind): boolean {
+// Is/Isn't test the immediate parent, Contains/Doesn't any depth.
+function prepareLocation(op: string, want: string[], setTree: SetTreeNode[]): RowTest | undefined {
+  switch (op) {
+    case FILTER_OPS.is:
+      return ({ parentSetId: p }) => p != null && want.includes(p)
+    case FILTER_OPS.isNot:
+      return ({ parentSetId: p }) => p == null || !want.includes(p)
+    case FILTER_OPS.isInside:
+    case FILTER_OPS.isNotInside: {
+      const inside = new Set<string>()
+      const walk = (nodes: SetTreeNode[], within: boolean): void => {
+        for (const n of nodes) {
+          const hit = within || want.includes(n.id)
+          if (hit) inside.add(n.id)
+          walk(n.children, hit)
+        }
+      }
+      walk(setTree, false)
+      if (inside.size === 0) return undefined
+      const keep = op === FILTER_OPS.isInside
+      return ({ parentSetId: p }) => (p != null && inside.has(p)) === keep
+    }
+    default:
+      return undefined
+  }
+}
+
+function evaluatorOf(kind: ValueKind): Evaluator {
   switch (kind) {
     case 'number':
-      return evaluateNumber(v, op, want)
+      return evaluateNumber
     case 'dateTime':
-      return evaluateDate(v, op, want)
+      return evaluateDate
     case 'checkbox':
-      return evaluateCheckbox(v, op, want)
+      return evaluateCheckbox
     case 'select':
     case 'link':
-      return evaluateText(v, op, want)
+      return evaluateText
     case 'multiSelect':
     case 'context':
-      return evaluateSet(v.kind === 'multiSelect' || v.kind === 'context' ? v.value : [], op, want)
+      return (v, op, want) =>
+        evaluateSet(v.kind === 'multiSelect' || v.kind === 'context' ? v.value : [], op, want)
     case 'file':
-      return evaluatePresence(v, op)
+      return evaluatePresence
   }
 }
 
