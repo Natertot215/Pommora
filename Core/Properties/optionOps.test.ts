@@ -26,6 +26,7 @@ type PropDefLike = Record<string, unknown> & {
 }
 type RegistryFile = { order: string[]; defs: Record<string, PropDefLike> }
 import { readSchemaJournal } from './propertyJournal'
+import { unsweptLine } from './governedSweep'
 import { type ConfigSurfaces, seedConfigSurfaces, viewOn } from '../Testing/configSurfaces'
 import { sidecarPath } from '../Paths/paths'
 import type { PropertyDefinition, SelectOption } from './properties'
@@ -668,7 +669,7 @@ describe('option cascades reach saved views', () => {
   it('a rename reaches the Collection, the Set, the tile, and the Matrix', async () => {
     const { id, surfaces } = await seeded()
     expect(await renameOption(root, id, 'Done', 'Closed')).toEqual(
-      ok({ skipped: 0, hosts: [HOME] }),
+      ok({ cascade: { pages: [], hosts: [HOME] } }),
     )
     const views = await surfaces.read()
     const want = viewOn(id, 'Closed')
@@ -678,7 +679,9 @@ describe('option cascades reach saved views', () => {
 
   it('a removal strips the value and drops the rule it emptied', async () => {
     const { id, surfaces } = await seeded()
-    expect(await removeOption(root, id, 'Done')).toEqual(ok({ skipped: 0, hosts: [HOME] }))
+    expect(await removeOption(root, id, 'Done')).toEqual(
+      ok({ cascade: { pages: [], hosts: [HOME] } }),
+    )
     const held = viewOn(id, 'Done')
     const want = {
       ...held,
@@ -700,7 +703,9 @@ describe('option cascades reach saved views', () => {
       const { id, col, surfaces } = await seeded()
       const locked = await lockedHolder(id, col)
       try {
-        expect(await removeOption(root, id, 'Done')).toEqual(ok({ skipped: 1, hosts: [] }))
+        expect(await removeOption(root, id, 'Done')).toEqual(
+          ok({ cascade: { pages: [], hosts: [], warning: unsweptLine(1) }, replayable: true }),
+        )
       } finally {
         await chmod(locked, 0o755)
       }
@@ -722,7 +727,7 @@ describe('option cascades reach saved views', () => {
       const locked = await lockedHolder(id, col)
       try {
         expect(await renameOption(root, id, 'Done', 'Closed')).toEqual(
-          ok({ skipped: 1, hosts: [HOME] }),
+          ok({ cascade: { pages: [], hosts: [HOME], warning: unsweptLine(1) }, replayable: true }),
         )
       } finally {
         await chmod(locked, 0o755)
@@ -737,7 +742,9 @@ describe('option cascades reach saved views', () => {
     const setFile = sidecarPath(surfaces.set, 'set')
     await rm(setFile)
     await mkdir(setFile)
-    expect(await removeOption(root, id, 'Done')).toEqual(ok({ skipped: 1, hosts: [HOME] }))
+    expect(await removeOption(root, id, 'Done')).toEqual(
+      ok({ cascade: { pages: [], hosts: [HOME], warning: unsweptLine(1) }, replayable: true }),
+    )
     expect(await readSchemaJournal(root)).toEqual({ op: 'option-remove', id, value: 'Done' })
     expect((await readRegistry(root)).defs[id].select_options?.map((o) => o.value)).toEqual([
       'Done',

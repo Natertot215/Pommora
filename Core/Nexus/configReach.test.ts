@@ -335,11 +335,19 @@ describe('what the pass skips', () => {
     },
   )
 
-  it('counts a Space the walk listed as unreadable', async () => {
+  it('reaches the board of a Space the walk listed as unreadable, with no host to push', async () => {
     await writeFile(join(space(), SIDECAR_FILENAME.space), '{ not json')
-    const reach = await reachConfig(root, rename)
-    expect(reach).toEqual({ skipped: 1, hosts: [] })
-    expect((await tileViews('t_deep'))[0]).toEqual(rich('tv_deep'))
+    expect(await reachConfig(root, rename)).toEqual({ skipped: 0, hosts: [] })
+    expect((await tileViews('t_deep'))[0].hidden_groups).toEqual([
+      'prop_s/Closed',
+      'sub/prop_s/Closed',
+      'prop_x/Done',
+    ])
+  })
+
+  it('counts an unreadable Contexts registry as one skip, since no Space can be found', async () => {
+    await writeFile(join(root, '.nexus', 'contexts', 'contexts.json'), '{ not json')
+    expect(await reachConfig(root, rename)).toEqual({ skipped: 1, hosts: [] })
   })
 
   it('answers one skip and writes nothing when the walk throws', async () => {

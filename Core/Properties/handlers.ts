@@ -26,6 +26,7 @@ import {
 import { removeProperty } from './removeProperty'
 import { replaySchemaCascade } from './replaySchemaCascade'
 import { unsweptLine } from './governedSweep'
+import type { SchemaCascade } from './propertyJournal'
 import type { TileHostRef } from '../Tiles/tiles'
 import { type ConfigReach, NO_REACH } from '../Nexus/configReach'
 
@@ -50,6 +51,10 @@ const asIs = <T>(value: T): Reply<T> => ({ hosts: [], result: ok(value) })
 const unsweptReply = ({ hosts, skipped }: ConfigReach): Reply<null> => ({
   hosts,
   result: skipped ? fault(unsweptLine(skipped)) : ok(null),
+})
+const cascadeReply = <T extends SchemaCascade>(r: T): Reply<T> => ({
+  hosts: r.cascade.hosts,
+  result: ok(r),
 })
 
 async function answer<T, R>(
@@ -157,11 +162,8 @@ export const propertiesHandlers = {
 
   'registry:reorder': registryChannel(idAndIndex, reorderRegistry),
   'property:rename': registryChannel(idAndValue, renameProperty),
-  'property:delete': registryChannel(idOnly, deleteProperty, (deleted) => ({
-    hosts: deleted.cascade.hosts,
-    result: ok(deleted),
-  })),
-  'property:replayDelete': registryChannel(
+  'property:delete': registryChannel(idOnly, deleteProperty, cascadeReply),
+  'property:replay': registryChannel(
     idOnly,
     async (root, id) => (await replaySchemaCascade(root, id)) ?? ok(NO_REACH),
     unsweptReply,
@@ -180,7 +182,7 @@ export const propertiesHandlers = {
     return validPropertyDir(dir, assetDir) ? ok(null) : NOT_A_PROPERTY_DIR
   }),
   'property:editOption': registryChannel(idAndEdit, editOption),
-  'property:renameOption': registryChannel(idOldNew, renameOption, unsweptReply),
-  'property:removeOption': registryChannel(idAndValue, removeOption, unsweptReply),
+  'property:renameOption': registryChannel(idOldNew, renameOption, cascadeReply),
+  'property:removeOption': registryChannel(idAndValue, removeOption, cascadeReply),
   'property:clearOption': registryChannel(idAndValue, clearOption),
 } satisfies Partial<Handlers>

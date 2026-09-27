@@ -4,7 +4,7 @@ import { relative } from '../Paths/posix'
 import { noModeBits, readJsonAt, tempRoot } from '../Testing/hostFs'
 import { type ConfigSurfaces, seedConfigSurfaces, viewOn } from '../Testing/configSurfaces'
 import type { HostContext } from '../Contract/handlers'
-import { fault } from '../Contract/result'
+import { fault, ok } from '../Contract/result'
 import { sidecarPath } from '../Paths/paths'
 import { closeSession, openSession } from '../Nexus/session'
 import { dropLiveTree, getLiveTree } from '../Nexus/liveTree'
@@ -76,7 +76,7 @@ afterEach(async () => {
 describe('the property channels', () => {
   it('a rename pushes each board it wrote once and confirms the containers', async () => {
     const r = await propertiesHandlers['property:renameOption'](ctx, propId, 'Done', 'Closed')
-    expect(r).toEqual({ ok: true, value: null })
+    expect(r).toEqual(ok({ cascade: { pages: [], hosts: [HOME] } }))
     expect(tilePushes()).toEqual([HOME])
     expect(liveViewAt(surfaces.set)).toEqual(viewOn(propId, 'Closed'))
   })
@@ -104,12 +104,29 @@ describe('the property channels', () => {
     },
   )
 
-  it('a removal held by an unreadable Set sidecar confirms what it wrote and answers the fault', async () => {
+  it('an option rename held by an unreadable Set sidecar warns with a replay that heals it once the file reads', async () => {
+    const setFile = sidecarPath(surfaces.set, 'set')
+    const held = await readFile(setFile, 'utf8')
+    await rm(setFile)
+    await mkdir(setFile)
+    const r = await propertiesHandlers['property:renameOption'](ctx, propId, 'Done', 'Closed')
+    expect(r.ok && r.value.cascade.warning).toBe(unsweptLine(1))
+    expect(r.ok && r.value.replayable).toBe(true)
+    expect((liveViewAt(col) as { filter: unknown }).filter).toEqual(viewOn(propId, 'Closed').filter)
+    await rm(setFile, { recursive: true })
+    await writeFile(setFile, held)
+    expect(await propertiesHandlers['property:replay'](ctx, propId)).toEqual(ok(null))
+    expect((await readJsonAt(setFile)).views).toEqual([viewOn(propId, 'Closed')])
+    expect(await readSchemaJournal(root)).toBeNull()
+  })
+
+  it('an option removal held by an unreadable Set sidecar keeps the option and offers the replay', async () => {
     const setFile = sidecarPath(surfaces.set, 'set')
     await rm(setFile)
     await mkdir(setFile)
     const r = await propertiesHandlers['property:removeOption'](ctx, propId, 'Done')
-    expect(r).toEqual(fault(unsweptLine(1)))
+    expect(r.ok && r.value.cascade.warning).toBe(unsweptLine(1))
+    expect(r.ok && r.value.replayable).toBe(true)
     expect((liveViewAt(col) as { filter: unknown }).filter).toEqual({ match: 'all', rules: [] })
     expect(tilePushes()).toEqual([HOME])
   })
@@ -123,12 +140,10 @@ describe('the property channels', () => {
     expect(r.ok && r.value.cascade?.warning).toBe(unsweptLine(1))
     expect(r.ok && r.value.replayable).toBe(true)
     expect(tilePushes()).toEqual([HOME])
-    expect(await propertiesHandlers['property:replayDelete'](ctx, propId)).toEqual(
-      fault(unsweptLine(1)),
-    )
+    expect(await propertiesHandlers['property:replay'](ctx, propId)).toEqual(fault(unsweptLine(1)))
     await rm(setFile, { recursive: true })
     await writeFile(setFile, held)
-    expect(await propertiesHandlers['property:replayDelete'](ctx, propId)).toEqual({
+    expect(await propertiesHandlers['property:replay'](ctx, propId)).toEqual({
       ok: true,
       value: null,
     })
@@ -145,10 +160,22 @@ describe('the property channels', () => {
     const r = await propertiesHandlers['property:delete'](ctx, propId)
     expect(r.ok && r.value.cascade.warning).toBe(unsweptLine(1))
     expect(r.ok && r.value.replayable).toBeUndefined()
-    expect(await propertiesHandlers['property:replayDelete'](ctx, propId)).toEqual({
+    expect(await propertiesHandlers['property:replay'](ctx, propId)).toEqual({
       ok: true,
       value: null,
     })
+    expect(await readSchemaJournal(root)).toEqual(owed)
+  })
+
+  it('an option removal that finds another operation owed in the journal offers no replay of its own', async () => {
+    const owed = { op: 'rename' as const, id: 'prop_other', from: 'A', to: 'B' }
+    await writeSchemaJournal(root, owed)
+    const setFile = sidecarPath(surfaces.set, 'set')
+    await rm(setFile)
+    await mkdir(setFile)
+    const r = await propertiesHandlers['property:removeOption'](ctx, propId, 'Done')
+    expect(r.ok && r.value.cascade.warning).toBe(unsweptLine(1))
+    expect(r.ok && r.value.replayable).toBeUndefined()
     expect(await readSchemaJournal(root)).toEqual(owed)
   })
 

@@ -1,4 +1,8 @@
-import { notifyRetry, reportRefusal } from '@pommora/core/Interface/Notifications/notifications'
+import {
+  notifyReport,
+  notifyRetry,
+  reportRefusal,
+} from '@pommora/core/Interface/Notifications/notifications'
 import { useRef, useState, type ReactNode } from 'react'
 import { Icon, type IconName } from '@pommora/uix/Symbols'
 import type { IconSize } from '@pommora/uix/Theme'
@@ -12,6 +16,7 @@ import {
   type PropertyType,
 } from '@pommora/core/Properties/properties'
 import type { Result } from '@pommora/core/Contract/result'
+import type { SchemaCascade } from '@pommora/core/Properties/propertyJournal'
 import type { ColumnStyle } from '@pommora/core/Properties/columnStyles'
 import type { CollectionNode, SetNode } from '@pommora/core/Nexus/tree'
 import { useActiveView } from '../../Views/Host/useActiveView'
@@ -168,12 +173,20 @@ function ListGroups({
   )
 }
 
-const replayDelete = (propertyId: string) => (): void =>
+const replay = (propertyId: string) => (): void =>
   void dialer()
-    .ask('property:replayDelete', propertyId)
+    .ask('property:replay', propertyId)
     .then((r) => {
-      if (!r.ok) notifyRetry(r.error.message, replayDelete(propertyId))
+      if (!r.ok) notifyRetry(r.error.message, replay(propertyId))
     })
+
+async function warnOwed(propertyId: string, res: Promise<Result<SchemaCascade>>): Promise<void> {
+  const r = await res
+  const warning = reportRefusal(r) && r.value.cascade.warning
+  if (!warning) return
+  if (r.ok && r.value.replayable) notifyRetry(warning, replay(propertyId))
+  else notifyReport(warning, true)
+}
 
 export function PropertyFrame({
   collectionPath,
@@ -304,7 +317,7 @@ export function PropertyFrame({
       notifyTrashed(
         displayPropertyName(def.name, capitalize),
         deleted.value,
-        deleted.value.replayable ? replayDelete(def.id) : undefined,
+        deleted.value.replayable && replay(def.id),
       )
     }
   }
@@ -348,9 +361,11 @@ export function PropertyFrame({
       look={look}
       onEdit={(edit) => void write(dialer().ask('property:editOption', def.id, edit))}
       onRenameOption={(oldValue, newTitle) =>
-        void write(dialer().ask('property:renameOption', def.id, oldValue, newTitle))
+        void warnOwed(def.id, dialer().ask('property:renameOption', def.id, oldValue, newTitle))
       }
-      onRemoveOption={(value) => void write(dialer().ask('property:removeOption', def.id, value))}
+      onRemoveOption={(value) =>
+        void warnOwed(def.id, dialer().ask('property:removeOption', def.id, value))
+      }
       onClearOption={(value) => void write(dialer().ask('property:clearOption', def.id, value))}
     />
   )

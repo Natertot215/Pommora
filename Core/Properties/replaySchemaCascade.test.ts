@@ -21,6 +21,8 @@ import { deleteProperty } from './deleteProperty'
 import { removeOption, renameOption } from './optionOps'
 import { readSchemaJournal, writeSchemaJournal } from './propertyJournal'
 import { replaySchemaCascade } from './replaySchemaCascade'
+import { unsweptLine } from './governedSweep'
+import { ensureContextsRegistry } from '../Contexts/contextsRegistry'
 import { seedConfigSurfaces, viewOn } from '../Testing/configSurfaces'
 
 const roots: string[] = []
@@ -450,6 +452,26 @@ describe('unreadable holders hold the record', () => {
       await replaySchemaCascade(root)
       expect(await page(root, 'B')).not.toContain('Stage')
       expect(await readSchemaJournal(root)).toBeNull()
+    },
+  )
+})
+
+describe('an unreadable Space sidecar', () => {
+  it.skipIf(noModeBits)(
+    'is counted once by a delete, though its board is reached too',
+    async () => {
+      const root = await seedNexus()
+      await mkdir(join(root, '.nexus', 'contexts'), { recursive: true })
+      await ensureContextsRegistry(root)
+      const sidecar = await seedSpace(root, { id: 'sp_1', Stage: 'Draft' })
+      await chmod(sidecar, 0o000)
+      try {
+        await openSession(root)
+        const deleted = await deleteProperty(root, 'prop_s')
+        expect(deleted.ok && deleted.value.cascade.warning).toBe(unsweptLine(1))
+      } finally {
+        await chmod(sidecar, 0o644)
+      }
     },
   )
 })
