@@ -467,6 +467,49 @@ describe('replayPendingRename (D-7a crash windows)', () => {
     expect((await fmOf(page()))['<Projects>']).toEqual(['Pommora 2', 'pommora'])
     expect(await readJournal(root)).toBeNull()
   })
+
+  const ventures = {
+    contextId: 'ctx_projects',
+    oldTitle: 'Projects',
+    newTitle: 'Ventures',
+    skipped: [],
+  }
+
+  it('an unreadable registry holds the journal and leaves every page as it was', async () => {
+    await writeJournal(root, ventures)
+    const before = await readFile(page(), 'utf8')
+    await rm(contextsRegistryFile(root))
+    await mkdir(contextsRegistryFile(root))
+    await replayPendingRename(root)
+    expect(await readFile(page(), 'utf8')).toBe(before)
+    expect(await readJournal(root)).toEqual(ventures)
+  })
+
+  it('an absent registry clears the journal', async () => {
+    await writeJournal(root, ventures)
+    await rm(contextsRegistryFile(root))
+    await replayPendingRename(root)
+    expect(await readJournal(root)).toBeNull()
+  })
+
+  it('a space journal holds while one of its titles cannot be read', async () => {
+    const renamed = join(contextsDir(root), 'Projects', 'Pommora 2', '_space.json')
+    await mkdir(renamed, { recursive: true })
+    const j = {
+      contextId: 'ctx_projects',
+      spaceId: 'sp-pom',
+      oldTitle: 'Pommora',
+      newTitle: 'Pommora 2',
+      skipped: [],
+    }
+    await writeJournal(root, j)
+    await replayPendingRename(root)
+    expect((await fmOf(page()))['<Projects>']).toEqual(['Pommora', 'pommora'])
+    expect(await pathExists(join(contextsDir(root), 'Projects', 'Pommora', '_space.json'))).toBe(
+      true,
+    )
+    expect(await readJournal(root)).toEqual(j)
+  })
 })
 
 afterEach(async () => {

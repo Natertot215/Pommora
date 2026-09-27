@@ -7,7 +7,7 @@ import { ok, fail, type Result, fault } from '../Contract/result'
 import { mutateRegistryFile, readRegistryStrict } from './contextsRegistry'
 import {
   pathExists,
-  readJsonObject,
+  readJsonStrict,
   rewritePreservingTimes,
   targetTaken,
 } from '../Files/atomicWrite'
@@ -291,7 +291,7 @@ export async function replayPendingRename(root: string): Promise<void> {
   if (!j) return
   const reg = await readRegistryStrict(root)
   if (!reg.ok) {
-    await clearJournal(root, j)
+    if (reg.error.code === 'not-found') await clearJournal(root, j)
     return
   }
   const entry = reg.value.contexts.find((c) => c.id === j.contextId)
@@ -324,12 +324,14 @@ export async function replayPendingRename(root: string): Promise<void> {
   }
 
   const ctxDir = join(contextsDir(root), entry.title)
-  const findTitle = async (title: string): Promise<boolean> => {
-    const sc = await readJsonObject(join(ctxDir, title, SPACE_SIDECAR))
-    return sc?.id === j.spaceId
+  const findTitle = async (title: string): Promise<boolean | null> => {
+    const sc = await readJsonStrict(join(ctxDir, title, SPACE_SIDECAR))
+    if (sc.ok) return sc.value.id === j.spaceId
+    return sc.error.code === 'not-found' ? false : null
   }
   const atOld = await findTitle(j.oldTitle)
   const atNew = await findTitle(j.newTitle)
+  if (atOld === null || atNew === null) return
   if (!atOld && !atNew) {
     await clearJournal(root, j)
     return

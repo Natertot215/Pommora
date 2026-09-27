@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 import { existsSync } from 'node:fs'
-import { mkdir, readFile, rm, writeFile } from 'node:fs/promises'
+import { mkdir, readdir, readFile, rm, stat, writeFile } from 'node:fs/promises'
 import { join } from '../Paths/posix'
 import { tempRoot } from '../Testing/hostFs'
 import type { PropertyDefinition } from './properties'
@@ -17,7 +17,7 @@ import { readRegistry } from './propertiesRegistry'
 import { createProperty, editProperty, renameProperty } from './registryProperty'
 import { deleteProperty } from './deleteProperty'
 import { clearOption, editOption, removeOption, renameOption } from './optionOps'
-import { readSchemaJournal, writeSchemaJournal } from './propertyJournal'
+import { clearSchemaJournal, readSchemaJournal, writeSchemaJournal } from './propertyJournal'
 
 vi.mock('../Files/atomicWrite', async (importOriginal) => {
   const mod = await importOriginal<typeof import('../Files/atomicWrite')>()
@@ -270,6 +270,32 @@ describe('the slot protects a stranded record', () => {
       from: 'Old',
       to: 'New',
     })
+  })
+})
+
+describe('the slot writes over nothing it cannot read', () => {
+  const record = { op: 'rename', id: 'prop_x', from: 'Old', to: 'New' } as const
+
+  it('an unreadable slot refuses a write and a clear', async () => {
+    await mkdir(journalFile())
+    await writeSchemaJournal(root, record)
+    await clearSchemaJournal(root, record)
+    expect((await stat(journalFile())).isDirectory()).toBe(true)
+    expect(await readdir(journalFile())).toEqual([])
+  })
+
+  it.each([
+    '{nope',
+    '{ "op": "bogus", "id": "x" }',
+  ])('a corrupt slot (%s) is set aside by the next write', async (bad) => {
+    await writeFile(journalFile(), bad)
+    await writeSchemaJournal(root, record)
+    expect(await readSchemaJournal(root)).toEqual(record)
+    const aside = (await readdir(abs('.nexus'))).filter((f) =>
+      f.startsWith('.property-cascade.json.bad-'),
+    )
+    expect(aside).toHaveLength(1)
+    expect(await readFile(abs('.nexus', aside[0]), 'utf8')).toBe(bad)
   })
 })
 

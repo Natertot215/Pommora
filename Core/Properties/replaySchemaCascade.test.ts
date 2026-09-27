@@ -1,7 +1,7 @@
 // The crash-window suite: each window is the exact on-disk state a killed op leaves, and the replay must land the same disk an uninterrupted op lands.
 
 import { describe, it, expect, afterEach } from 'vitest'
-import { chmod, mkdir, readFile, rm, writeFile } from 'node:fs/promises'
+import { chmod, mkdir, readdir, readFile, rm, stat, writeFile } from 'node:fs/promises'
 import { join } from '../Paths/posix'
 import { tempRoot, noModeBits, seedSpaceSidecar, readSpaceSidecar } from '../Testing/hostFs'
 import type { PropertyDefinition } from './properties'
@@ -336,6 +336,31 @@ describe('an unreadable registry holds the record', () => {
     expect(await page(root, 'A')).toContain('Stage: Draft')
     expect(await page(root, 'B')).toContain('Stage: Draft')
     expect(await readSchemaJournal(root)).toEqual({ op: 'delete', id: 'prop_s', name: 'Stage' })
+  })
+})
+
+describe('a slot the replay cannot read is left as it lies', () => {
+  const slot = (root: string): string => join(root, '.nexus', 'property-cascade.json')
+
+  it('an unreadable slot answers false and stays in place', async () => {
+    const root = await seedNexus()
+    await openSession(root)
+    await mkdir(slot(root))
+    expect(await replaySchemaCascade(root)).toBe(false)
+    expect((await stat(slot(root))).isDirectory()).toBe(true)
+    expect(await readdir(slot(root))).toEqual([])
+  })
+
+  it.each([
+    '{nope',
+    '{ "op": "bogus", "id": "x" }',
+  ])('a corrupt slot (%s) answers false, byte-identical', async (bad) => {
+    const root = await seedNexus()
+    await openSession(root)
+    await writeFile(slot(root), bad)
+    expect(await replaySchemaCascade(root)).toBe(false)
+    expect(await readFile(slot(root), 'utf8')).toBe(bad)
+    expect((await readdir(join(root, '.nexus'))).some((f) => f.includes('.bad-'))).toBe(false)
   })
 })
 
