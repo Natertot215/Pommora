@@ -31,3 +31,11 @@ export const seedSpaceSidecar = async (
 
 export const readSpaceSidecar = async (file: string): Promise<Record<string, unknown>> =>
   JSON.parse(await readFile(file, 'utf8'))
+
+export const readJsonAt = async (file: string): Promise<Record<string, unknown>> =>
+  JSON.parse(await readFile(file, 'utf8'))
+
+export const putJson = async (file: string, value: unknown): Promise<void> => {
+  await mkdir(join(file, '..'), { recursive: true })
+  await writeFile(file, JSON.stringify(value, null, 2))
+}

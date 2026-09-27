@@ -1,9 +1,9 @@
-import { mkdir, readFile, writeFile } from 'node:fs/promises'
 import { join } from '../Paths/posix'
 import { contextsDir, contextsRegistryFile, nexusConfig, sidecarPath } from '../Paths/paths'
 import { NEXUS_CONFIG_FILES, SIDECAR_FILENAME, TILE_DOC_FILENAME } from '../Paths/nexusPaths'
 import { pathExists } from '../Files/atomicWrite'
 import { createFolderEntity } from '../Nexus/folderEntity'
+import { putJson, readJsonAt } from './hostFs'
 
 type Raw = Record<string, unknown>
 
@@ -34,42 +34,35 @@ export const viewOn = (propertyId: string, value: string): Raw => ({
   collapsed_groups: [value],
 })
 
-const json = async (file: string): Promise<Raw> => JSON.parse(await readFile(file, 'utf8'))
-
-const put = async (file: string, value: unknown): Promise<void> => {
-  await mkdir(join(file, '..'), { recursive: true })
-  await writeFile(file, JSON.stringify(value, null, 2))
-}
-
 export async function seedConfigSurfaces(
   root: string,
   collection: string,
   view: Raw,
 ): Promise<ConfigSurfaces> {
   const identity = nexusConfig(root, NEXUS_CONFIG_FILES.identity)
-  if (!(await pathExists(identity))) await put(identity, { id: 'nx', createdAt: '2026' })
+  if (!(await pathExists(identity))) await putJson(identity, { id: 'nx', createdAt: '2026' })
   const colFile = sidecarPath(collection, 'collection')
-  await put(colFile, { ...(await json(colFile)), views: [view] })
+  await putJson(colFile, { ...(await readJsonAt(colFile)), views: [view] })
   const set = await createFolderEntity(collection, 'set', 'Deep', { views: [view] })
   if (!set.ok) throw new Error('set failed')
-  await put(contextsRegistryFile(root), { contexts: [{ id: 'ctx_areas', title: 'Areas' }] })
+  await putJson(contextsRegistryFile(root), { contexts: [{ id: 'ctx_areas', title: 'Areas' }] })
   const space = join(contextsDir(root), 'Areas', 'Home')
-  await put(join(space, SIDECAR_FILENAME.space), { id: 'sp_home' })
+  await putJson(join(space, SIDECAR_FILENAME.space), { id: 'sp_home' })
   const tiles = join(space, TILE_DOC_FILENAME)
-  await put(tiles, {
+  await putJson(tiles, {
     tiles: [{ id: 't', type: 'view', views: [{ source_id: set.value.id, config: view }] }],
   })
   const matrix = nexusConfig(root, NEXUS_CONFIG_FILES.matrix)
-  await put(matrix, { filter: { rules: view.filter, enabled: true } })
+  await putJson(matrix, { filter: { rules: view.filter, enabled: true } })
   const setFile = sidecarPath(set.value.path, 'set')
   return {
     set: set.value.path,
     tiles,
     read: async () => ({
-      collection: ((await json(colFile)).views as Raw[])[0],
-      set: ((await json(setFile)).views as Raw[])[0],
-      tile: (((await json(tiles)).tiles as Raw[])[0].views as Raw[])[0].config as Raw,
-      matrix: ((await json(matrix)).filter as Raw).rules,
+      collection: ((await readJsonAt(colFile)).views as Raw[])[0],
+      set: ((await readJsonAt(setFile)).views as Raw[])[0],
+      tile: (((await readJsonAt(tiles)).tiles as Raw[])[0].views as Raw[])[0].config as Raw,
+      matrix: ((await readJsonAt(matrix)).filter as Raw).rules,
     }),
   }
 }

@@ -1,7 +1,7 @@
-import { mkdir, readFile, rm, writeFile } from 'node:fs/promises'
+import { mkdir, readFile, rm } from 'node:fs/promises'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { join } from '../Paths/posix'
-import { tempRoot } from '../Testing/hostFs'
+import { putJson, readJsonAt, tempRoot } from '../Testing/hostFs'
 import { type ConfigSurfaces, seedConfigSurfaces, viewOn } from '../Testing/configSurfaces'
 import { confirmedMutate } from '../Testing/confirmedMutate'
 import { createFolderEntity } from '../Nexus/folderEntity'
@@ -21,12 +21,6 @@ const nexusDeps: TrashDeps = { trashMode: 'nexus', trashToSystem: async () => {}
 
 let root: string
 let notes: string
-
-const json = async (file: string): Promise<Raw> => JSON.parse(await readFile(file, 'utf8'))
-const put = async (file: string, value: unknown): Promise<void> => {
-  await mkdir(join(file, '..'), { recursive: true })
-  await writeFile(file, JSON.stringify(value, null, 2))
-}
 
 const view = (rules: unknown[], extra: Raw = {}): Raw => ({
   id: 'view_1',
@@ -50,11 +44,11 @@ const entity = async (
 }
 
 const addWork = (): Promise<void> =>
-  put(join(contextsDir(root), 'Areas', 'Work', SIDECAR_FILENAME.space), { id: 'sp_work' })
+  putJson(join(contextsDir(root), 'Areas', 'Work', SIDECAR_FILENAME.space), { id: 'sp_work' })
 
 beforeEach(async () => {
   root = tempRoot('pom-delete-reach-')
-  await put(nexusConfig(root, NEXUS_CONFIG_FILES.identity), { id: 'nx', createdAt: '2026' })
+  await putJson(nexusConfig(root, NEXUS_CONFIG_FILES.identity), { id: 'nx', createdAt: '2026' })
   notes = (await entity(root, 'collection', 'Notes')).path
   await openSession(root)
 })
@@ -124,7 +118,7 @@ describe('a Context delete', () => {
       sort: [{ property_id: 'ctx_projects', direction: 'ascending' }],
     })
     const surfaces = await seedConfigSurfaces(root, notes, held)
-    await put(contextsRegistryFile(root), {
+    await putJson(contextsRegistryFile(root), {
       contexts: [
         { id: 'ctx_areas', title: 'Areas' },
         { id: 'ctx_projects', title: 'Projects' },
@@ -184,11 +178,11 @@ describe('a Set delete', () => {
     })
     surfaces = await seedConfigSurfaces(root, notes, located)
     const goneFile = sidecarPath(gone.path, 'set')
-    await put(goneFile, { ...(await json(goneFile)), views: [located] })
+    await putJson(goneFile, { ...(await readJsonAt(goneFile)), views: [located] })
     goneSidecar = await readFile(goneFile, 'utf8')
     goneTile = { id: 'u', type: 'view', views: [{ source_id: gone.id, config: located }] }
-    const board = await json(surfaces.tiles)
-    await put(surfaces.tiles, { tiles: [...(board.tiles as Raw[]), goneTile] })
+    const board = await readJsonAt(surfaces.tiles)
+    await putJson(surfaces.tiles, { tiles: [...(board.tiles as Raw[]), goneTile] })
     await refreshTree(root)
   })
 
@@ -201,7 +195,7 @@ describe('a Set delete', () => {
     const v = await surfaces.read()
     expect([v.collection, v.set, v.tile]).toEqual([stripped, stripped, stripped])
     expect(v.matrix).toEqual(stripped.filter)
-    expect(((await json(surfaces.tiles)).tiles as Raw[])[1]).toEqual(goneTile)
+    expect(((await readJsonAt(surfaces.tiles)).tiles as Raw[])[1]).toEqual(goneTile)
   })
 
   it('leaves the trashed copy of its own sidecar byte-identical', async () => {
@@ -214,7 +208,22 @@ describe('a Set delete', () => {
   it('restores the Set with its own views and none of the configuration that named it', async () => {
     const bundlePath = await trashGone()
     expect((await confirmedMutate(root, { op: 'restore', bundlePath }, nexusDeps)).ok).toBe(true)
-    expect((await json(sidecarPath(gone.path, 'set'))).views).toEqual([located])
+    expect((await readJsonAt(sidecarPath(gone.path, 'set'))).views).toEqual([located])
+    expect((await surfaces.read()).collection).toEqual(stripped)
+  })
+
+  it('runs the pass for a system-trash delete, which mints no bundle', async () => {
+    const systemDeps: TrashDeps = {
+      trashMode: 'system',
+      trashToSystem: (abs) => rm(abs, { recursive: true, force: true }),
+    }
+    const r = await confirmedMutate(
+      root,
+      { op: 'delete', path: 'Notes/Gone', kind: 'set' },
+      systemDeps,
+    )
+    expect(r.ok && r.value.trashed).toBeUndefined()
+    expect(r.ok && r.value.cascade?.hosts).toEqual([{ kind: 'space', id: 'sp_home' }])
     expect((await surfaces.read()).collection).toEqual(stripped)
   })
 
@@ -232,7 +241,7 @@ describe('a Set delete', () => {
 describe('a Collection delete', () => {
   it('strips it and its Sets from the Matrix and leaves the surviving Collection', async () => {
     const surfaces = await seedConfigSurfaces(root, notes, viewOn('prop_s', 'Done'))
-    const deep = (await json(sidecarPath(surfaces.set, 'set'))).id
+    const deep = (await readJsonAt(sidecarPath(surfaces.set, 'set'))).id
     const old = await entity(root, 'collection', 'Old')
     const oldSet = await entity(old.path, 'set', 'OldSet')
     const matrix = nexusConfig(root, NEXUS_CONFIG_FILES.matrix)
@@ -240,7 +249,7 @@ describe('a Collection delete', () => {
       match: 'all',
       rules: [{ property_id: '_location', op: 'is', values }],
     })
-    await put(matrix, {
+    await putJson(matrix, {
       filter: { rules: locatedRule([old.id, oldSet.id, deep]), enabled: true },
     })
     await refreshTree(root)

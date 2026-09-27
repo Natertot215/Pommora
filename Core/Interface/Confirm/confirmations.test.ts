@@ -118,6 +118,7 @@ describe('a delete through the confirmation', () => {
     })
     await del('set')
     expect(currentNotification()?.message).toBe(`Deleted “A”. ${warning}`)
+    expect(currentNotification()?.tone).toBe('error')
   })
 
   it('offers no Undo for a system-trash delete, which leaves no bundle', async () => {

@@ -40,6 +40,7 @@ describe('a delete notification', () => {
     const undo = vi.fn()
     notifyDeleted('X', undo, 'Couldn’t update 1 file.')
     expect(currentNotification()?.message).toBe('Deleted “X”. Couldn’t update 1 file.')
+    expect(currentNotification()?.tone).toBe('error')
     void currentNotification()?.action?.run()
     expect(undo).toHaveBeenCalledTimes(1)
   })

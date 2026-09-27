@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { chmod, mkdir, readFile, rm, stat, writeFile } from 'node:fs/promises'
 import { join } from '../Paths/posix'
-import { noModeBits, tempRoot } from '../Testing/hostFs'
+import { noModeBits, putJson, readJsonAt, tempRoot } from '../Testing/hostFs'
 import { contextsDir, contextsRegistryFile, nexusConfig, tileHostDir } from '../Paths/paths'
 import { NEXUS_CONFIG_FILES, SIDECAR_FILENAME, TILE_DOC_FILENAME } from '../Paths/nexusPaths'
 import type { PropertyDefinition } from '../Properties/properties'
@@ -97,32 +97,28 @@ const spaceTiles = (): string => join(space(), TILE_DOC_FILENAME)
 const homeTiles = (): string => join(tileHostDir(root), TILE_DOC_FILENAME)
 const matrixFile = (): string => nexusConfig(root, NEXUS_CONFIG_FILES.matrix)
 
-const json = async (file: string): Promise<Raw> => JSON.parse(await readFile(file, 'utf8'))
-const put = async (file: string, value: unknown): Promise<void> => {
-  await mkdir(join(file, '..'), { recursive: true })
-  await writeFile(file, JSON.stringify(value, null, 2))
-}
-const viewsOf = async (file: string): Promise<Raw[]> => (await json(file)).views as Raw[]
+const viewsOf = async (file: string): Promise<Raw[]> => (await readJsonAt(file)).views as Raw[]
 const tileViews = async (id: string): Promise<Raw[]> => {
-  const tile = ((await json(spaceTiles())).tiles as Raw[]).find((t) => t.id === id)
+  const tile = ((await readJsonAt(spaceTiles())).tiles as Raw[]).find((t) => t.id === id)
   return (tile?.views as Raw[]).map((v) => v.config as Raw)
 }
-const matrixRules = async (): Promise<unknown> => ((await json(matrixFile())).filter as Raw).rules
+const matrixRules = async (): Promise<unknown> =>
+  ((await readJsonAt(matrixFile())).filter as Raw).rules
 
 beforeEach(async () => {
   root = tempRoot('pom-reach-')
-  await put(nexusConfig(root, NEXUS_CONFIG_FILES.identity), { id: 'nx', createdAt: '2026' })
-  await put(contextsRegistryFile(root), { contexts: [{ id: 'ctx_areas', title: 'Areas' }] })
-  await put(join(space(), SIDECAR_FILENAME.space), { id: 'sp_home' })
-  await put(colFile(), {
+  await putJson(nexusConfig(root, NEXUS_CONFIG_FILES.identity), { id: 'nx', createdAt: '2026' })
+  await putJson(contextsRegistryFile(root), { contexts: [{ id: 'ctx_areas', title: 'Areas' }] })
+  await putJson(join(space(), SIDECAR_FILENAME.space), { id: 'sp_home' })
+  await putJson(colFile(), {
     id: 'col_notes',
     properties: ['prop_s'],
     views: [rich('view_c'), elsewhere('view_e'), 'foreign'],
     property_cache: { prop_s: { values: { p1: 'Done', p2: ['Done', 'Todo'], p3: 'Todo' } } },
   })
-  await put(setFile(), { id: 'set_deep', views: [rich('view_s')] })
-  await put(join(other(), SIDECAR_FILENAME.collection), { id: 'col_other', views: [] })
-  await put(spaceTiles(), {
+  await putJson(setFile(), { id: 'set_deep', views: [rich('view_s')] })
+  await putJson(join(other(), SIDECAR_FILENAME.collection), { id: 'col_other', views: [] })
+  await putJson(spaceTiles(), {
     tiles: [
       { id: 't_deep', type: 'view', views: [{ source_id: 'set_deep', config: rich('tv_deep') }] },
       {
@@ -132,8 +128,8 @@ beforeEach(async () => {
       },
     ],
   })
-  await put(homeTiles(), { tiles: [{ id: 'm', type: 'markdown' }] })
-  await put(matrixFile(), {
+  await putJson(homeTiles(), { tiles: [{ id: 'm', type: 'markdown' }] })
+  await putJson(matrixFile(), {
     filter: {
       rules: { match: 'all', rules: [{ property_id: 'prop_s', op: 'is', value: 'Done' }, null] },
       enabled: true,
@@ -181,7 +177,7 @@ describe('an option rename', () => {
       match: 'all',
       rules: [{ property_id: 'prop_s', op: 'is', value: 'Closed' }, null],
     })
-    expect(((await json(colFile())).property_cache as Raw).prop_s).toEqual({
+    expect(((await readJsonAt(colFile())).property_cache as Raw).prop_s).toEqual({
       values: { p1: ['Closed'], p2: ['Closed', 'Todo'], p3: 'Todo' },
     })
   })
@@ -194,7 +190,7 @@ describe('an option rename', () => {
   })
 
   it('edits a Multi-Select contains rule, which compares whole values', async () => {
-    await put(setFile(), {
+    await putJson(setFile(), {
       id: 'set_deep',
       views: [
         {
@@ -249,7 +245,7 @@ describe('an option removal', () => {
     expect(view.hidden_groups).toEqual(['prop_x/Done'])
     expect(view.collapsed_groups).toEqual(['Todo'])
     expect((view.group as Raw).order).toEqual(['Todo'])
-    expect(((await json(colFile())).property_cache as Raw).prop_s).toEqual({
+    expect(((await readJsonAt(colFile())).property_cache as Raw).prop_s).toEqual({
       values: { p2: ['Todo'], p3: 'Todo' },
     })
     expect(await matrixRules()).toEqual({ match: 'all', rules: [null] })
@@ -368,7 +364,7 @@ describe('a pass scoped under one Collection', () => {
   })
 
   it('edits only the views of a tile that source the Collection', async () => {
-    await put(spaceTiles(), {
+    await putJson(spaceTiles(), {
       tiles: [
         {
           id: 't_mixed',
@@ -427,9 +423,9 @@ describe('a gone edit', () => {
   }
 
   beforeEach(async () => {
-    await put(colFile(), { id: 'col_notes', views: [located('view_c')] })
-    await put(setFile(), { id: 'set_deep', views: [located('view_s')] })
-    await put(spaceTiles(), {
+    await putJson(colFile(), { id: 'col_notes', views: [located('view_c')] })
+    await putJson(setFile(), { id: 'set_deep', views: [located('view_s')] })
+    await putJson(spaceTiles(), {
       tiles: [
         {
           id: 't_deep',
@@ -439,7 +435,7 @@ describe('a gone edit', () => {
         goneTile,
       ],
     })
-    await put(matrixFile(), {
+    await putJson(matrixFile(), {
       filter: { rules: { match: 'all', rules: locatedRules }, enabled: true },
     })
   })
@@ -461,7 +457,7 @@ describe('a gone edit', () => {
   })
 
   it('strips a gone Space from the rules on its Context, dropping one it empties, and leaves another Context', async () => {
-    await put(setFile(), {
+    await putJson(setFile(), {
       id: 'set_deep',
       views: [
         {
@@ -489,7 +485,7 @@ describe('a gone edit', () => {
 
   it('leaves a tile view sourced from a gone container as written', async () => {
     await reachConfig(root, setGone)
-    const tiles = (await json(spaceTiles())).tiles as Raw[]
+    const tiles = (await readJsonAt(spaceTiles())).tiles as Raw[]
     expect(tiles.find((t) => t.id === 't_gone')).toEqual(goneTile)
     expect((await tileViews('t_deep'))[0].group_order).toEqual(['set_keep'])
   })
@@ -503,7 +499,7 @@ describe('a gone edit', () => {
   })
 
   it('matches a gone id whole or as the head of a key, whatever the id holds', async () => {
-    await put(colFile(), {
+    await putJson(colFile(), {
       id: 'col_notes',
       views: [
         {
