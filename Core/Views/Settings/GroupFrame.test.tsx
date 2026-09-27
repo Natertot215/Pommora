@@ -20,7 +20,7 @@ const statusDef: PropertyDefinition = {
       id: 'g1',
       label: 'Open',
       color: 'gray',
-      options: [{ value: 'todo', group_id: 'g1' }],
+      options: [{ value: 'Queued', group_id: 'g1' }],
     },
   ],
 }
@@ -244,13 +244,13 @@ describe('GroupFrame rows', () => {
       },
     })
     await mount(propView)
-    const eye = host.querySelector('button[aria-label="Hide Todo"]') as HTMLElement
+    const eye = host.querySelector('button[aria-label="Hide Queued"]') as HTMLElement
     await act(async () => {
       eye.click()
     })
-    expect(lastSaved().hidden_groups).toEqual(['prop_status/todo'])
-    await mount({ ...propView, hidden_groups: ['todo'] })
-    const unhide = host.querySelector('button[aria-label="Show Todo"]') as HTMLElement
+    expect(lastSaved().hidden_groups).toEqual(['prop_status/Queued'])
+    await mount({ ...propView, hidden_groups: ['Queued'] })
+    const unhide = host.querySelector('button[aria-label="Show Queued"]') as HTMLElement
     await act(async () => {
       unhide.click()
     })
@@ -303,7 +303,7 @@ describe('GroupFrame rows', () => {
       }),
     )
     expect(texts()).toContain('Open')
-    expect(texts()).toContain('todo')
+    expect(texts()).toContain('Queued')
     expect(texts()).not.toContain('Options')
     await mount(
       view({
@@ -315,7 +315,7 @@ describe('GroupFrame rows', () => {
       }),
     )
     expect(texts()).toContain('Options')
-    expect(texts()).toContain('todo')
+    expect(texts()).toContain('Queued')
   })
 
   it('a dead-property grouping wears the structural chrome (the pipeline fallback, mirrored)', async () => {
@@ -339,7 +339,7 @@ describe('GroupFrame rows', () => {
 
   it('switching Group By away and back preserves sub_group (view-level survival)', async () => {
     const v = view({
-      sub_group: { property_id: 'prop_status', order_mode: 'manual', order: ['todo'] },
+      sub_group: { property_id: 'prop_status', order_mode: 'manual', order: ['Queued'] },
     })
     await mount(v)
     await openPicker('Group By')
@@ -347,7 +347,7 @@ describe('GroupFrame rows', () => {
     expect(lastSaved().sub_group).toEqual({
       property_id: 'prop_status',
       order_mode: 'manual',
-      order: ['todo'],
+      order: ['Queued'],
     })
   })
 })

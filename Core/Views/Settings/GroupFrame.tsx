@@ -507,7 +507,6 @@ function LocationHierarchy({
   }
 
   const labelFor = (id: string): string => {
-    if (id.startsWith('sub:')) return id.split(':').slice(2).join(':')
     const bySet = (sets: SetNode[]): string | null => {
       for (const s of sets) {
         if (s.id === id) return s.title
@@ -516,7 +515,7 @@ function LocationHierarchy({
       }
       return null
     }
-    return bySet(source.sets ?? []) ?? id
+    return chipValueOf.get(id) ?? bySet(source.sets ?? []) ?? id
   }
   const dnd = useGroupingListDrag({
     bands,

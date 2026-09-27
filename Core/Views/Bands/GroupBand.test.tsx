@@ -133,6 +133,20 @@ describe('resolveBandHead', () => {
     expect(textOf(head.glyph)).toContain('red')
   })
 
+  it('a sub-band inside a Set band → its bucket value, not its composite key', () => {
+    const head = resolveBandHead(
+      { key: 'sA/red', bucket: 'red', kind: 'property', items: [] },
+      view(propGroup('prop_select')),
+      ctx,
+      NEXUS,
+      setNames,
+      setIcons,
+      source,
+    )
+    expect(head.label).toBe('red')
+    expect(textOf(head.glyph)).toContain('red')
+  })
+
   it('dateTime → the bucket label (formatted), the raw key as text label', () => {
     const head = resolveBandHead(
       group('property', '2026-07'),

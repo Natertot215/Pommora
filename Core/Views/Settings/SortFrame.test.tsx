@@ -21,8 +21,8 @@ const statusDef: PropertyDefinition = {
       label: 'Open',
       color: 'gray',
       options: [
-        { value: 'todo', group_id: 'g1' },
-        { value: 'done', group_id: 'g1' },
+        { value: 'Queued', group_id: 'g1' },
+        { value: 'Shipped', group_id: 'g1' },
       ],
     },
   ],
@@ -197,22 +197,26 @@ describe('SortFrame rows', () => {
     await click(trigger)
     await click(clickable((el) => el.textContent === 'Custom'))
     expect(lastSaved().sort).toEqual([
-      { property_id: 'prop_status', direction: 'descending', order: ['done', 'todo'] },
+      { property_id: 'prop_status', direction: 'descending', order: ['Shipped', 'Queued'] },
     ])
     await mount(
       view({
-        sort: [{ property_id: 'prop_status', direction: 'ascending', order: ['done', 'todo'] }],
+        sort: [
+          { property_id: 'prop_status', direction: 'ascending', order: ['Shipped', 'Queued'] },
+        ],
       }),
     )
     expect(texts()).toContain('Custom')
     expect(texts()).toContain('Options')
-    expect(texts().indexOf('done')).toBeLessThan(texts().indexOf('todo'))
+    expect(texts()).toMatch(/Shipped.*Queued/)
   })
 
   it('Default strips a custom order back off the criterion', async () => {
     await mount(
       view({
-        sort: [{ property_id: 'prop_status', direction: 'ascending', order: ['done', 'todo'] }],
+        sort: [
+          { property_id: 'prop_status', direction: 'ascending', order: ['Shipped', 'Queued'] },
+        ],
       }),
     )
     const trigger = host.querySelectorAll('button[aria-label="Order"]')[0] as HTMLElement
@@ -224,14 +228,14 @@ describe('SortFrame rows', () => {
   it('a status primary shows the example order; Reversed flips the run', async () => {
     await mount(view({ sort: [{ property_id: 'prop_status', direction: 'ascending' }] }))
     expect(texts()).toContain('Open')
-    expect(texts().indexOf('todo')).toBeLessThan(texts().indexOf('done'))
+    expect(texts()).toMatch(/Queued.*Shipped/)
     await mount(view({ sort: [{ property_id: 'prop_status', direction: 'descending' }] }))
-    expect(texts().indexOf('done')).toBeLessThan(texts().indexOf('todo'))
+    expect(texts()).toMatch(/Shipped.*Queued/)
   })
 
   it('a dateTime primary collapses the example middle', async () => {
     await mount(view({ sort: [{ property_id: 'prop_when', direction: 'ascending' }] }))
-    expect(texts()).not.toContain('todo')
+    expect(texts()).not.toContain('Queued')
     expect(texts()).not.toContain('Open')
   })
 
