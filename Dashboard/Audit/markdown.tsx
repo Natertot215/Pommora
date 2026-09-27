@@ -1,7 +1,7 @@
 // biome-ignore-all lint/suspicious/noArrayIndexKey: parsed Markdown blocks, rows, and cells are plain strings with no identity but their position — the index IS the key.
 import type { ReactNode } from 'react'
 
-// A deliberately small Markdown subset: paragraphs, bullet and numbered lists, pipe tables, and
+// A deliberately small Markdown subset: paragraphs, bullet and numbered lists, pipe tables, rules, and
 // inline code, bold, italic and links. Everything renders as React elements, so source text is
 // always escaped and no raw HTML reaches the page.
 
@@ -9,7 +9,9 @@ type Block =
   | { kind: 'p'; lines: string[] }
   | { kind: 'ul' | 'ol'; items: string[] }
   | { kind: 'table'; rows: string[] }
+  | { kind: 'hr' }
 
+const RULE = /^\s*([-*_])(\s*\1){2,}\s*$/
 const BULLET = /^\s*[-*+]\s+(.*)$/
 const NUMBERED = /^\s*\d+[.)]\s+(.*)$/
 const TABLE_ROW = /^\s*\|/
@@ -25,6 +27,9 @@ function parseBlocks(src: string): Block[] {
     const item = bullet ?? numbered
     if (!line.trim()) {
       open = undefined
+    } else if (RULE.test(line)) {
+      open = undefined
+      blocks.push({ kind: 'hr' })
     } else if (item) {
       const kind = bullet ? 'ul' : 'ol'
       if (open?.kind !== kind) {
@@ -126,6 +131,8 @@ export function Markdown({ source }: { source: string }): React.JSX.Element {
             )
           case 'table':
             return <Table key={i} rows={b.rows} />
+          case 'hr':
+            return <hr key={i} />
           default: {
             const List = b.kind
             return (

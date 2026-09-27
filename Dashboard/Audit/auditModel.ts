@@ -72,7 +72,10 @@ const keyOf = (title: string): string => title.toLowerCase().replace(/[^a-z]/g, 
 const child = (node: Outline | undefined, key: string): Outline | undefined =>
   node?.children.find((c) => keyOf(c.title).startsWith(key))
 
-const text = (node: Outline | undefined): string => node?.lines.join('\n').trim() ?? ''
+const CLOSING_RULE = /(?:\n\s*(?:[-*_]\s*){3,})+\s*$/
+
+const text = (node: Outline | undefined): string =>
+  node?.lines.join('\n').replace(CLOSING_RULE, '').trim() ?? ''
 
 // "W1 · Name" and "F-014 · Title" both lead with a code before the separator.
 function splitCode(title: string): { code: string; name: string } {

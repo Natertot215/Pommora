@@ -102,6 +102,11 @@
 .au-prose li + li {
   margin-top: 6px;
 }
+.au-prose hr {
+  margin: 0 0 12px;
+  border: 0;
+  border-top: var(--width-100) solid var(--border-faint);
+}
 
 .au-table-wrap {
   max-width: 100%;
