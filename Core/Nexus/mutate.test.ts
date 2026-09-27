@@ -1775,33 +1775,59 @@ describe('handleMutate — setActiveView', () => {
   })
 })
 
+const seedTwoContexts = async (): Promise<void> => {
+  closeSession()
+  for (const [context, space, id] of [
+    ['Projects', 'Pommora', 'sp-pom'],
+    ['Areas', 'Work', 'sp-work'],
+  ]) {
+    await mkdir(join(root, '.nexus', 'contexts', context, space), { recursive: true })
+    await writeFile(
+      join(root, '.nexus', 'contexts', context, space, '_space.json'),
+      JSON.stringify({ id }),
+    )
+  }
+  await writeFile(
+    join(root, '.nexus', 'contexts', 'contexts.json'),
+    JSON.stringify({
+      contexts: [
+        { id: 'ctxP', title: 'Projects', singular: 'Project' },
+        { id: 'ctxA', title: 'Areas', singular: 'Area' },
+      ],
+    }),
+  )
+  await openSession(root)
+}
+
+describe('the Contexts lock', () => {
+  beforeEach(seedTwoContexts)
+
+  it('a page tag written during a Context rename lands under the new key beside its other Contexts', async () => {
+    const [renamed, tagged] = await Promise.all([
+      handleMutate(
+        root,
+        { op: 'renameContext', contextId: 'ctxP', newName: 'Ventures' },
+        nexusDeps,
+      ),
+      handleMutate(
+        root,
+        { op: 'setContext', path: 'Notes/Daily/Alpha.md', contextId: 'ctxP', spaceIds: ['sp-pom'] },
+        nexusDeps,
+      ),
+    ])
+    expect(renamed.ok && tagged.ok).toBe(true)
+    const fm = splitFrontmatter(await read('Notes/Daily/Alpha.md'))
+    expect(fm['<Ventures>']).toEqual(['Pommora'])
+    expect(fm['<Areas>']).toEqual(['Work'])
+    expect('<Projects>' in fm).toBe(false)
+  })
+})
+
 describe('setContext on a Space', () => {
   const sidecar = (context: string, space: string): Promise<Record<string, unknown>> =>
     readSpaceSidecar(join(root, '.nexus', 'contexts', context, space, '_space.json'))
 
-  beforeEach(async () => {
-    closeSession()
-    for (const [context, space, id] of [
-      ['Projects', 'Pommora', 'sp-pom'],
-      ['Areas', 'Work', 'sp-work'],
-    ]) {
-      await mkdir(join(root, '.nexus', 'contexts', context, space), { recursive: true })
-      await writeFile(
-        join(root, '.nexus', 'contexts', context, space, '_space.json'),
-        JSON.stringify({ id }),
-      )
-    }
-    await writeFile(
-      join(root, '.nexus', 'contexts', 'contexts.json'),
-      JSON.stringify({
-        contexts: [
-          { id: 'ctxP', title: 'Projects', singular: 'Project' },
-          { id: 'ctxA', title: 'Areas', singular: 'Area' },
-        ],
-      }),
-    )
-    await openSession(root)
-  })
+  beforeEach(seedTwoContexts)
 
   const link = (spaceIds: string[]) =>
     handleMutate(

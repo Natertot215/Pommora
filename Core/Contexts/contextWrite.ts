@@ -214,17 +214,16 @@ export async function setContextOp(
   const target = await mutableTarget(root, path, ['page', 'space'])
   if (!target.ok) return target
   const abs = target.value
-  const page = isMarkdownFile(abs)
-  const write = async (): Promise<Result<null>> => {
-    const world = await loadContextWorld(root)
-    if (!world.ok) return world
-    if (page) return setPageContext(abs, root, world.value, contextId, spaceIds)
-    const owner = [...world.value.spaceById.values()].find((ref) => ref.dir === abs)
-    if (owner) return setSpaceContext(world.value, owner.id, contextId, spaceIds)
-    return fail('invalid-path', 'Not a context-taggable entity.')
-  }
-  // A Space's link write decides each far half from the world it loaded, so two of them never overlap.
-  const r = await (page ? write() : machine().lock(contextsDir(root), write))
+  const world = await loadContextWorld(root)
+  if (!world.ok) return world
+  const r = isMarkdownFile(abs)
+    ? await setPageContext(abs, root, world.value, contextId, spaceIds)
+    : await (async () => {
+        const owner = [...world.value.spaceById.values()].find((ref) => ref.dir === abs)
+        return owner
+          ? setSpaceContext(world.value, owner.id, contextId, spaceIds)
+          : fail('invalid-path', 'Not a context-taggable entity.')
+      })()
   return r.ok ? ok({}) : r
 }
 
