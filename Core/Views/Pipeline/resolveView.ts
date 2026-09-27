@@ -58,7 +58,7 @@ export function resolveView(input: {
     flattenStructural,
     useLocationFlat,
   )
-  if (hidden.size > 0) resolved = dropHiddenGroups(resolved, hidden)
+  if (hidden.size > 0) resolved = dropHiddenGroups(resolved, hidden, view)
   if (viewOption(view, 'hide_empty_groups'))
     resolved = pruneEmptyGroups(pruneEmptyBuckets(resolved))
   else if (filtered.length !== rows.length) resolved = pruneEmptyGroups(resolved)

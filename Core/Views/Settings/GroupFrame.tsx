@@ -9,11 +9,15 @@ import {
 import {
   type DateGranularity,
   type GroupConfig,
+  type GroupLevel,
   type GroupOrderMode,
   granularityOf,
+  hiddenBuckets,
+  isBucketHidden,
   type SavedView,
   type StructuralOrderMode,
   type SubGroupConfig,
+  toggleHiddenBucket,
   VIEW_KINDS,
   viewOption,
 } from '@pommora/core/Views/views'
@@ -40,7 +44,6 @@ import {
   drawnSubGroup,
   flattenContainer,
   groupsStructurally,
-  subHiddenKey,
 } from '../Pipeline/group'
 import { formatBucketLabel, NUMERIC_FORMATS } from '../../Properties/formatValue'
 import type { Band } from '../Bands/bandDndModel'
@@ -118,13 +121,19 @@ export function GroupFrame({
   const save = (patch: Partial<SavedView>): void => void saveView({ ...view, ...patch })
   const saveGroup = (group: GroupConfig): void => save({ group })
 
-  const hiddenSet = new Set(view.hidden_groups ?? [])
-  const toggleHidden = (key: string): void =>
-    save({
-      hidden_groups: hiddenSet.has(key)
-        ? (view.hidden_groups ?? []).filter((k) => k !== key)
-        : [...(view.hidden_groups ?? []), key],
-    })
+  const hidden = new Set(view.hidden_groups ?? [])
+  const setControls: HideControls = {
+    isHidden: (id) => hidden.has(id),
+    onToggleHidden: (id) =>
+      save({
+        hidden_groups: hidden.has(id) ? [...hidden].filter((k) => k !== id) : [...hidden, id],
+      }),
+  }
+  const bucketControls = (level: GroupLevel, propertyId: string): HideControls => ({
+    isHidden: (bucket) => isBucketHidden(view, hidden, level, propertyId, bucket),
+    onToggleHidden: (bucket) =>
+      save({ hidden_groups: toggleHiddenBucket(view, level, propertyId, bucket) }),
+  })
 
   const group = view.group ?? { kind: 'structural' as const }
   const structural = groupsStructurally(group, schema)
@@ -290,23 +299,20 @@ export function GroupFrame({
               group={group}
               def={activeDef}
               schema={schema}
-              hiddenSet={hiddenSet}
-              onToggleHidden={toggleHidden}
+              {...bucketControls('group', group.property_id)}
             />
           ) : group.order_mode === 'manual' ? (
             <CustomList
               group={group}
               def={activeDef}
               onSave={(order) => saveGroup({ ...group, order })}
-              hiddenSet={hiddenSet}
-              onToggleHidden={toggleHidden}
+              {...bucketControls('group', group.property_id)}
             />
           ) : (
             <PropertyPreview
               group={group}
               def={activeDef}
-              hiddenSet={hiddenSet}
-              onToggleHidden={toggleHidden}
+              {...bucketControls('group', group.property_id)}
             />
           )
         ) : (
@@ -315,8 +321,8 @@ export function GroupFrame({
             view={view}
             subDef={subDef}
             onSaveView={save}
-            hiddenSet={hiddenSet}
-            onToggleHidden={toggleHidden}
+            {...setControls}
+            subControls={subDef ? bucketControls('sub', subDef.id) : {}}
           />
         )}
       </div>
@@ -361,13 +367,15 @@ function LocationHierarchy({
   view,
   subDef,
   onSaveView,
-  hiddenSet,
+  isHidden,
   onToggleHidden,
+  subControls,
 }: {
   source: CollectionNode | SetNode
   view: SavedView
   subDef: PropertyDefinition | undefined
   onSaveView: (patch: Partial<SavedView>) => void
+  subControls: HideControls
 } & HideControls): React.JSX.Element {
   const mutate = useSession((st) => st.mutate)
   const hideChevrons = useSetting('hideChevrons')
@@ -530,12 +538,12 @@ function LocationHierarchy({
         className={cx(
           optionRow,
           gp.subChip,
-          hiddenSet?.has(subHiddenKey(o.value)) && hiddenRow,
+          subControls.isHidden?.(o.value) && hiddenRow,
           dnd.draggingId === id && oo.ghosted,
         )}
       >
         <OptionChip type={subDef?.type ?? ''} option={o} />
-        {rowEye(o.label, subHiddenKey(o.value), { hiddenSet, onToggleHidden })}
+        {rowEye(o.label, o.value, subControls)}
       </div>
     )
   }
@@ -545,7 +553,7 @@ function LocationHierarchy({
       ? subChips.map((o) => subChipRow(s.id, o))
       : (s.sets ?? []).map(renderSet)
     const disclosable = body.length > 0
-    const isHidden = hiddenSet?.has(s.id) ?? false
+    const setHidden = isHidden?.(s.id) ?? false
     return (
       <DisclosureRow
         key={s.id}
@@ -556,13 +564,13 @@ function LocationHierarchy({
         onToggle={() => expanded.toggle(s.id)}
         onClick={disclosable ? () => expanded.toggle(s.id) : undefined}
         selected={dnd.nestTarget === s.id}
-        className={cx(isHidden && hiddenRow)}
+        className={cx(setHidden && hiddenRow)}
         trailing={
           onToggleHidden && (
             <EyeToggle
-              hidden={isHidden}
+              hidden={setHidden}
               name={s.title}
-              className={isHidden ? undefined : revealDim}
+              className={setHidden ? undefined : revealDim}
               onToggle={() => onToggleHidden(s.id)}
             />
           )
@@ -599,7 +607,7 @@ function DateBucketList({
   group,
   def,
   schema,
-  hiddenSet,
+  isHidden,
   onToggleHidden,
 }: {
   source: CollectionNode | SetNode
@@ -618,8 +626,7 @@ function DateBucketList({
       const key = bucketKey(row, group.property_id, schema, granularity)
       if (key) set.add(key)
     }
-    // Date bucket keys alone start with a year — the shared hidden list's other vocabularies (option values, set ULIDs, sub/<value>) never do.
-    for (const key of view.hidden_groups ?? []) if (/^\d{4}/.test(key)) set.add(key)
+    for (const b of hiddenBuckets(view, 'group', group.property_id)) set.add(b)
     return set
   }, [source, values, group.property_id, schema, granularity, view.hidden_groups])
   if (present.size === 0) return null
@@ -635,9 +642,9 @@ function DateBucketList({
           viewOption(view, 'date_separator'),
         )
         return (
-          <div key={key} className={cx(optionRow, hiddenSet?.has(key) && hiddenRow)}>
+          <div key={key} className={cx(optionRow, isHidden?.(key) && hiddenRow)}>
             <span className={oo.orderLabel}>{label}</span>
-            {rowEye(label, key, { hiddenSet, onToggleHidden })}
+            {rowEye(label, key, { isHidden, onToggleHidden })}
           </div>
         )
       })}

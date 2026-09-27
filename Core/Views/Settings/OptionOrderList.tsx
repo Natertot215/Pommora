@@ -26,20 +26,20 @@ export const SUB_LOOK: PickerRowLook = {
 export type PropertyGroupConfig = Extract<GroupConfig, { kind: 'property' }>
 
 export interface HideControls {
-  hiddenSet?: ReadonlySet<string>
+  isHidden?: (key: string) => boolean
   onToggleHidden?: (key: string) => void
 }
 
 export function rowEye(
   label: string,
   hideKey: string,
-  { hiddenSet, onToggleHidden }: HideControls,
+  { isHidden, onToggleHidden }: HideControls,
 ): React.JSX.Element | null {
   if (!onToggleHidden) return null
   return (
     <span className={side}>
       <EyeToggle
-        hidden={hiddenSet?.has(hideKey) ?? false}
+        hidden={isHidden?.(hideKey) ?? false}
         name={label}
         onToggle={() => onToggleHidden(hideKey)}
       />
@@ -50,7 +50,7 @@ export function rowEye(
 export function PropertyPreview({
   group,
   def,
-  hiddenSet,
+  isHidden,
   onToggleHidden,
 }: {
   group: Pick<PropertyGroupConfig, 'order_mode' | 'order'>
@@ -58,9 +58,9 @@ export function PropertyPreview({
 } & HideControls): React.JSX.Element | null {
   if (!def) return null
   const chip = (o: { value: string; label: string; color?: string }): React.JSX.Element => (
-    <div key={o.value} className={cx(optionRow, hiddenSet?.has(o.value) && hiddenRow)}>
+    <div key={o.value} className={cx(optionRow, isHidden?.(o.value) && hiddenRow)}>
       <OptionChip type={def.type} option={o} />
-      {rowEye(o.label, o.value, { hiddenSet, onToggleHidden })}
+      {rowEye(o.label, o.value, { isHidden, onToggleHidden })}
     </div>
   )
   if (PROPERTY_TYPES[def.type].options === 'status') {
@@ -89,7 +89,7 @@ export function CustomList({
   group,
   def,
   onSave,
-  hiddenSet,
+  isHidden,
   onToggleHidden,
 }: {
   group: Pick<PropertyGroupConfig, 'order_mode' | 'order'>
@@ -127,12 +127,12 @@ export function CustomList({
             {...dnd.rowHandle(v)}
             className={cx(
               optionRow,
-              hiddenSet?.has(v) && hiddenRow,
+              isHidden?.(v) && hiddenRow,
               dnd.draggingId === v && oo.ghosted,
             )}
           >
             <OptionChip type={def.type} option={o} />
-            {rowEye(o.label, v, { hiddenSet, onToggleHidden })}
+            {rowEye(o.label, v, { isHidden, onToggleHidden })}
           </div>,
         ]
       })}
