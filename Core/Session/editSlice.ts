@@ -1,6 +1,6 @@
 import { reportRefusal } from '@pommora/core/Interface/Notifications/notifications'
 import type { MutateRequest, RenameHost, RenameKind } from '@pommora/core/Nexus/mutateRequest'
-import { contextDirRel } from '@pommora/core/Paths/nexusPaths'
+import { contextAt, spaceAt } from '@pommora/core/Nexus/treePatch'
 import type { Slice } from './sessionState'
 import { dialer } from '../Platform/dialer'
 import { flushAllSaves } from './nexusSlice'
@@ -134,12 +134,13 @@ export const createEditSlice: Slice<EditSlice> = (set, get) => ({
       (await get().mutate(req)) !== null
     // Registry entities rename by id: a bare folder rename strands every member's title key.
     if (kind === 'space' || kind === 'context') {
-      const groups = get().tree?.contexts ?? []
+      const tree = get().tree
+      if (!tree) return false
       if (kind === 'space') {
-        const sp = groups.flatMap((g) => g.spaces).find((s) => s.path === path)
+        const sp = spaceAt(tree, path)
         return sp ? landed({ op: 'renameSpace', spaceId: sp.id, newName }) : false
       }
-      const group = groups.find((g) => contextDirRel(g.def.title) === path)
+      const group = contextAt(tree, path)
       return group ? landed({ op: 'renameContext', contextId: group.def.id, newName }) : false
     }
     return landed({

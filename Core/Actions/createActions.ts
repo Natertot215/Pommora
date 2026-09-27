@@ -6,7 +6,7 @@ import {
 } from '../Nexus/mutateRequest'
 import { relDirname } from '../Paths/posix'
 import { placeAt, placeNew } from '../Views/creationOrder'
-import { findContainerWhere } from '../Nexus/treePatch'
+import { containerAt, findContainerWhere } from '../Nexus/treePatch'
 import { useSession, windowTargetOf } from '../Session/store'
 
 export async function newPageAdjacent(
@@ -17,7 +17,7 @@ export async function newPageAdjacent(
   const { tree, mutate, beginRename } = useSession.getState()
   if (!tree) return
   const parentPath = relDirname(path)
-  const container = findContainerWhere(tree, (n) => n.path === parentPath)
+  const container = containerAt(tree, parentPath)
   if (!container) return
   const anchor = container.pages.find((p) => p.path === path)
   if (!anchor) return
