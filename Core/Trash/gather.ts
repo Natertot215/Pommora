@@ -1,7 +1,7 @@
 import { basename, dirname, join, relative } from '../Paths/posix'
 import { excludedWithin } from '../Settings/settings'
 import { stampedId } from '../Files/pageFile'
-import type { ContextsRegistry } from '../Contexts/contexts'
+import type { ContextDef, ContextsRegistry } from '../Contexts/contexts'
 import type { Result } from '../Contract/result'
 import { ensureFolderId } from '../Nexus/adopt'
 import type { SweepCapture, UnlinkOutcome } from '../Contexts/contextCascade'
@@ -77,18 +77,17 @@ export async function gatherSpaceRecord(
 }
 
 interface ContextEvidence {
-  entry: { id: string; title: string; singular?: string; icon?: string }
+  entry: ContextDef
+  at: number
   spaceIds: Map<string, string>
   unresolved: boolean
 }
 
 export async function gatherContextEvidence(
   abs: string,
-  title: string,
-  registry: ContextsRegistry,
-): Promise<ContextEvidence | null> {
-  const entry = registry.contexts.find((c) => c.title === title)
-  if (!entry) return null
+  entry: ContextDef,
+  at: number,
+): Promise<ContextEvidence> {
   const spaceIds = new Map<string, string>()
   let unresolved = false
   for (const { name, file: sidecar } of await spaceSidecarsIn(abs)) {
@@ -97,7 +96,7 @@ export async function gatherContextEvidence(
     // Absent sidecar = a plain folder, silent; present-but-unusable marks the evidence incomplete rather than silently thinning the membership join.
     else if (await pathExists(sidecar)) unresolved = true
   }
-  return { entry: { ...entry }, spaceIds, unresolved }
+  return { entry: { ...entry }, at, spaceIds, unresolved }
 }
 
 export function buildContextRecord(
@@ -115,6 +114,7 @@ export function buildContextRecord(
   return {
     entity: 'context',
     registry: evidence.entry,
+    at: evidence.at,
     membership,
     ...(partial ? { partial: true as const } : {}),
   }

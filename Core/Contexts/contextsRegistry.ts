@@ -1,6 +1,11 @@
 // Mutations serialize on the registry file's own per-file lock, NOT the global schema-op chain — nesting a schema op there would deadlock.
 
-import { contextsRegistry, seededRegistry, type ContextsRegistry } from './contexts'
+import {
+  type ContextDef,
+  contextsRegistry,
+  seededRegistry,
+  type ContextsRegistry,
+} from './contexts'
 import { ok, type Result, fault } from '../Contract/result'
 import { readJsonStrict, rmwJsonStrict, writeJson } from '../Files/atomicWrite'
 import { newId } from '../Nexus/ids'
@@ -38,3 +43,10 @@ export async function mutateRegistryFile(
   if (!written.ok) return written
   return parseRegistry(written.value)
 }
+
+export const withContextAt =
+  (def: ContextDef, at?: number) =>
+  (cur: ContextsRegistry): ContextsRegistry => {
+    const i = at ?? cur.contexts.length
+    return { contexts: [...cur.contexts.slice(0, i), def, ...cur.contexts.slice(i)] }
+  }

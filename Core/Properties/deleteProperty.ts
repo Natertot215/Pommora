@@ -15,8 +15,7 @@ import { isPlainObject } from '../Contract/validators'
 import { ok, type Result } from '../Contract/result'
 import { relative } from '../Paths/posix'
 import type { MutateOutcome } from '../Nexus/mutateRequest'
-import type { TileHostRef } from '../Tiles/tiles'
-import { type ConfigReach, reachConfig } from '../Nexus/configReach'
+import { type ConfigReach, reachConfig, reachReport } from '../Nexus/configReach'
 
 async function snapshot(
   root: string,
@@ -62,13 +61,18 @@ async function snapshot(
   })
 }
 
-type Deleted = Pick<MutateOutcome, 'trashed'> & { hosts: TileHostRef[] }
+export type PropertyDeletion = Required<Pick<MutateOutcome, 'trashed' | 'cascade'>> & {
+  replayable?: true
+}
 
-export function deleteProperty(root: string, propertyId: string): Promise<Result<Deleted>> {
+export function deleteProperty(
+  root: string,
+  propertyId: string,
+): Promise<Result<PropertyDeletion>> {
   return serializeSchemaOp(() => deleteInner(root, propertyId))
 }
 
-async function deleteInner(root: string, propertyId: string): Promise<Result<Deleted>> {
+async function deleteInner(root: string, propertyId: string): Promise<Result<PropertyDeletion>> {
   const def = (await readRegistry(root)).defs[propertyId]
   if (!def) return NO_PROPERTY
   const key = def.name
@@ -80,17 +84,22 @@ async function deleteInner(root: string, propertyId: string): Promise<Result<Del
   const bundle = await snapshot(root, propertyId, def, folders, held)
   // Journaled AFTER the snapshot — a replay re-runs the strip tail, never the bundle mint.
   const record: SchemaJournal = { op: 'delete', id: propertyId, name: def.name }
-  await writeSchemaJournal(root, record)
+  const journaled = await writeSchemaJournal(root, record)
 
-  const { skipped, hosts, removed } = await stripAndRemove(
+  const { removed, ...reach } = await stripAndRemove(
     root,
     propertyId,
     key,
     folders,
     files.filter((f) => !held.kept.includes(f)),
   )
-  if (!skipped && removed.ok) await clearSchemaJournal(root, record)
-  return removed.ok ? ok({ trashed: { bundlePath: relative(root, bundle) }, hosts }) : removed
+  if (!removed.ok) return removed
+  if (!reach.skipped) await clearSchemaJournal(root, record)
+  return ok({
+    trashed: { bundlePath: relative(root, bundle) },
+    cascade: reachReport(reach),
+    ...(reach.skipped && journaled ? { replayable: true as const } : {}),
+  })
 }
 
 export async function stripAndRemove(

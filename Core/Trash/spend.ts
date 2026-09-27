@@ -14,7 +14,7 @@ import type { MutateContext } from '../Nexus/mutate'
 import { moveIndexPaths } from '../Index/indexSeed'
 import { fail, ok, type Result, fault } from '../Contract/result'
 import type { NexusTree } from '../Nexus/tree'
-import { mutateRegistryFile } from '../Contexts/contextsRegistry'
+import { mutateRegistryFile, withContextAt } from '../Contexts/contextsRegistry'
 import { restoreProperty } from './restoreProperty'
 import { scrubReturning } from './restoreScrub'
 import { exclusionWriteRefusal, reseatExcludedFolders } from '../Settings/settings'
@@ -23,6 +23,7 @@ import { BUNDLE_SUFFIX } from './bundle'
 import { pathExists, readJsonObject, readTextOrNull, rmwJsonStrict } from '../Files/atomicWrite'
 import { listEntries, listMarkdownFiles } from '../Files/walk'
 import { dropPageMetadata } from '../Nexus/pageMetadata'
+import { dropSpaceOrder } from '../Nexus/reorder'
 import { machine } from '../Platform/machine'
 import { stampedId } from '../Files/pageFile'
 import { recordWrite } from '../Files/writeEcho'
@@ -147,6 +148,7 @@ export async function emptyBundle(
   if (deps.permanentDelete === true) await machine().remove(artifactAbs)
   else await deps.trashToSystem(artifactAbs)
   await dropPageMetadata(root, pageIds, getLiveTree())
+  if (opened.value.entity === 'context') await dropSpaceOrder(root, opened.value.registry.id)
   recordWrite(bundleAbs)
   await machine().remove(bundleAbs)
   return ok(null)
@@ -250,12 +252,13 @@ async function restoreArtifact(
     owner === undefined ? null : owner === artifactAbs ? artifactAbs : join(root, owner),
     record.entity === 'context' ? contextKey(record.registry.title) : undefined,
   )
-  // A Context's identity lives ONLY in its registry entry, so it re-enters BEFORE anything moves: a refused write leaves the bundle intact — the restore is retryable — where an append after the move would destroy the evidence on failure and reply ok.
+  // A Context's identity lives ONLY in its registry entry, so it re-enters BEFORE anything moves: a refused write leaves the bundle intact — the restore is retryable — where an entry written after the move would destroy the evidence on failure and reply ok.
   const title = finalTitle ?? finalName
   if (record.entity === 'context') {
-    const committed = await mutateRegistryFile(root, (cur) => ({
-      contexts: [...cur.contexts, { ...record.registry, title }],
-    }))
+    const committed = await mutateRegistryFile(
+      root,
+      withContextAt({ ...record.registry, title }, record.at),
+    )
     if (!committed.ok) return committed
   }
   recordWrite(artifactAbs)
@@ -265,7 +268,7 @@ async function restoreArtifact(
     await machine().mkdir(dirname(targetAbs))
     await machine().rename(artifactAbs, targetAbs)
   } catch (e) {
-    // The move is the irreversible half; the append is the reversible one. Reversing it keeps the failure retryable — a ghost entry would trip the next attempt's own id-live guard.
+    // The move is the irreversible half; the entry is the reversible one. Reversing it keeps the failure retryable — a ghost entry would trip the next attempt's own id-live guard.
     if (record.entity === 'context')
       await mutateRegistryFile(root, (cur) => ({
         contexts: cur.contexts.filter((c) => !(c.id === record.registry.id && c.title === title)),

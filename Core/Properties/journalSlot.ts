@@ -6,7 +6,7 @@ import { nexusConfig } from '../Paths/paths'
 
 interface JournalSlot<J> {
   read(root: string): Promise<J | null>
-  write(root: string, j: J): Promise<void>
+  write(root: string, j: J): Promise<boolean>
   clear(root: string, own: J): Promise<void>
 }
 
@@ -34,10 +34,11 @@ export function journalSlot<J>(
     write: (root, j) =>
       machine().lock(path(root), async () => {
         const h = await held(root)
-        if (h.kind === 'unreadable') return
-        if (h.kind === 'held' && !same(h.record, j) && !supersedes?.(h.record, j)) return
+        if (h.kind === 'unreadable') return false
+        if (h.kind === 'held' && !same(h.record, j) && !supersedes?.(h.record, j)) return false
         if (h.kind === 'corrupt') await setAside(path(root))
         await writeJson(path(root), j)
+        return true
       }),
     clear: (root, own) =>
       machine().lock(path(root), async () => {

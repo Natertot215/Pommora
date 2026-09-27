@@ -1,4 +1,4 @@
-import type { MutableKind } from '@pommora/core/Nexus/mutateRequest'
+import type { MutableKind, MutateOutcome } from '@pommora/core/Nexus/mutateRequest'
 import { valueOr } from '@pommora/core/Contract/result'
 import { DEFAULT_TRASH_MODE } from '@pommora/core/Trash/trashRow'
 import { useSession } from '../../Session/store'
@@ -34,11 +34,17 @@ const waived = (kind?: MutableKind): boolean =>
   !settingOf(useSession.getState().personalization, 'confirmDeletion')
 
 /** A system-trash delete mints no bundle, so it offers no Undo — the artifact left the nexus and there is nothing to name. */
-export const notifyTrashed = (title: string, bundlePath?: string, note?: string): void =>
+export const notifyTrashed = (
+  title: string,
+  { trashed, cascade }: Pick<MutateOutcome, 'trashed' | 'cascade'>,
+  retry?: () => void,
+): void =>
   notifyDeleted(
     title,
-    bundlePath ? () => void useSession.getState().mutate({ op: 'restore', bundlePath }) : undefined,
-    note,
+    trashed &&
+      (() => void useSession.getState().mutate({ op: 'restore', bundlePath: trashed.bundlePath })),
+    cascade?.warning,
+    retry,
   )
 
 export const confirmDelete = async (target: {
@@ -62,7 +68,7 @@ export const confirmDelete = async (target: {
   const done = await useSession
     .getState()
     .mutate({ op: 'delete', path: target.path, kind: target.kind })
-  if (done) notifyTrashed(target.title, done.trashed?.bundlePath, done.cascade?.warning)
+  if (done) notifyTrashed(target.title, done)
 }
 
 export const askRemoveTile = (): Promise<boolean> =>
