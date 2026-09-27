@@ -13,13 +13,13 @@ const groups: StatusGroup[] = [
     id: 'upcoming',
     label: 'Open',
     color: 'grey',
-    options: [{ value: 'A', label: 'A', group_id: 'upcoming' }],
+    options: [{ value: 'A', group_id: 'upcoming' }],
   },
   {
     id: 'done',
     label: 'Done',
     color: 'green',
-    options: [{ value: 'D', label: 'D', group_id: 'done', color: 'red' }],
+    options: [{ value: 'D', group_id: 'done', color: 'red' }],
   },
 ]
 const A = groups[0].options[0]
@@ -43,23 +43,18 @@ describe('optionModel', () => {
       'A',
     ])
     const next = addOption(groups, 'upcoming', 'Backlog')
-    expect(next[0].options).toEqual([
-      A,
-      { value: 'Backlog', label: 'Backlog', group_id: 'upcoming' },
-    ])
+    expect(next[0].options).toEqual([A, { value: 'Backlog', group_id: 'upcoming' }])
     expect(next[1]).toBe(groups[1])
   })
 
-  it('renameOption sets value+label to the new title in any group, keeping group_id + color', () => {
+  it('renameOption sets the value to the new title in any group, keeping group_id + color', () => {
     expect(renameOption(groups, 'D', 'Shipped')[1].options[0]).toEqual({
       ...D,
       value: 'Shipped',
-      label: 'Shipped',
     })
     expect(renameOption(groups, 'A', 'Todo')[0].options[0]).toEqual({
       ...A,
       value: 'Todo',
-      label: 'Todo',
     })
   })
 
@@ -75,7 +70,6 @@ describe('optionModel', () => {
     ).toEqual({ ...A, color: 'red' })
     expect(applyOptionEdit(groups, { op: 'recolor', value: 'D' })[1].options[0]).toEqual({
       value: 'D',
-      label: 'D',
       group_id: 'done',
     })
   })
@@ -106,8 +100,8 @@ describe('optionModel', () => {
         color: 'grey',
         tint: 'x',
         options: [
-          { value: 'A', label: 'A', group_id: 'g1', tint: 'x', appearance: 'outline' },
-          { value: 'B', label: 'B', group_id: 'g1', tint: 'x', appearance: 'outline' },
+          { value: 'A', group_id: 'g1', tint: 'x', appearance: 'outline' },
+          { value: 'B', group_id: 'g1', tint: 'x', appearance: 'outline' },
         ],
       },
       {
@@ -115,7 +109,7 @@ describe('optionModel', () => {
         label: 'Two',
         color: 'green',
         tint: 'x',
-        options: [{ value: 'C', label: 'C', group_id: 'g2', tint: 'x', appearance: 'outline' }],
+        options: [{ value: 'C', group_id: 'g2', tint: 'x', appearance: 'outline' }],
       },
     ] as unknown as StatusGroup[]
     const entries = (gs: StatusGroup[]) => gs.flatMap((g) => g.options) as Raw[]
@@ -141,10 +135,7 @@ describe('optionModel', () => {
   })
 
   it('withOptionGroups(optionGroupsOf(select)) round-trips a Select with no group_id on any entry', () => {
-    const options = [
-      { value: 'A', label: 'A' },
-      { value: 'B', label: 'B', color: 'red' },
-    ]
+    const options = [{ value: 'A' }, { value: 'B', color: 'red' }]
     const select = {
       id: 'p',
       name: 'Tags',
@@ -162,7 +153,7 @@ describe('optionModel', () => {
         select,
         applyOptionEdit(selectGroups, { op: 'add', groupId: 'select', title: 'C' }),
       ).select_options,
-    ).toEqual([...options, { value: 'C', label: 'C' }])
+    ).toEqual([...options, { value: 'C' }])
   })
 
   it('optionGroupsOf(status) is status_groups by reference', () => {
@@ -173,6 +164,6 @@ describe('optionModel', () => {
       status_groups: groups,
     } as PropertyDefinition
     expect(optionGroupsOf(status)).toBe(groups)
-    expect(withOptionGroups(status, groups).status_groups).toBe(groups)
+    expect(withOptionGroups(status, groups).status_groups).toEqual(groups)
   })
 })

@@ -19,13 +19,13 @@ describe('PropertyPreview', () => {
       id: 'p',
       name: 'Kind',
       type: 'select',
-      select_options: [{ value: 'a', label: 'Alpha' }],
+      select_options: [{ value: 'Alpha' }],
       status_groups: [
         {
           id: 'g',
           label: 'Stale Group',
           color: 'grey',
-          options: [{ value: 'z', label: 'Zeta', group_id: 'g' }],
+          options: [{ value: 'Zeta', group_id: 'g' }],
         },
       ],
     }

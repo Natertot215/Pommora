@@ -19,8 +19,8 @@ const statusDef = def({
       label: 'G',
       color: 'blue',
       options: [
-        { value: 'Done', label: 'Done', group_id: 'g' },
-        { value: 'Open', label: 'Open', group_id: 'g' },
+        { value: 'Done', group_id: 'g' },
+        { value: 'Open', group_id: 'g' },
       ],
     },
   ],
@@ -28,10 +28,7 @@ const statusDef = def({
 
 const selectDef = def({
   type: 'select',
-  select_options: [
-    { value: 'A', label: 'A' },
-    { value: 'B', label: 'B' },
-  ],
+  select_options: [{ value: 'A' }, { value: 'B' }],
 })
 
 describe('decodeValue — the declared type decides, never the shape', () => {
@@ -42,10 +39,7 @@ describe('decodeValue — the declared type decides, never the shape', () => {
   it('never guesses: a select option shaped like a date or a url stays a select', () => {
     const shaped = def({
       type: 'select',
-      select_options: [
-        { value: '2024-01-01', label: 'Kickoff' },
-        { value: 'https://acme.io', label: 'Site' },
-      ],
+      select_options: [{ value: '2024-01-01' }, { value: 'https://acme.io' }],
     })
     expect(decodeValue(shaped, '2024-01-01')).toEqual({ kind: 'select', value: '2024-01-01' })
     expect(decodeValue(shaped, 'https://acme.io')).toEqual({
@@ -86,7 +80,7 @@ describe('decodeValue — the declared type decides, never the shape', () => {
   })
 
   it('a YAML number or boolean names the option it spells — an outside `- 2024` is the option "2024"', () => {
-    const year = def({ type: 'select', select_options: [{ value: '2024', label: '2024' }] })
+    const year = def({ type: 'select', select_options: [{ value: '2024' }] })
     expect(decodeValue(year, [2024])).toEqual({ kind: 'select', value: '2024' })
     expect(decodeValue(year, 2024)).toEqual({ kind: 'select', value: '2024' })
     expect(decodeValue(def({ type: 'multiSelect' }), [true, 'x'])).toEqual({
@@ -155,7 +149,7 @@ describe('decodeValue — lenient on read', () => {
   })
 
   it('a multi-select keeps a value the schema does not offer yet', () => {
-    const d = def({ type: 'multiSelect', select_options: [{ value: 'A', label: 'A' }] })
+    const d = def({ type: 'multiSelect', select_options: [{ value: 'A' }] })
     expect(decodeValue(d, ['A', 'Gone'])).toEqual({ kind: 'multiSelect', value: ['A', 'Gone'] })
     expect(decodeValue(d, ['Gone'])).toEqual({ kind: 'multiSelect', value: ['Gone'] })
   })

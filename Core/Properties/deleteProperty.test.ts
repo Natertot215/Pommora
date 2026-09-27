@@ -70,7 +70,7 @@ describe('deleteProperty', () => {
       id: '',
       name: 'Priority',
       type: 'select',
-      select_options: [{ value: 'hi', label: 'High', color: 'red' }],
+      select_options: [{ value: 'hi', color: 'red' }],
     } as PropertyDefinition)
     expect(c.ok).toBe(true)
     if (!c.ok) return
@@ -126,7 +126,7 @@ describe('deleteProperty', () => {
       id: '',
       name: 'Priority',
       type: 'select',
-      select_options: [{ value: 'hi', label: 'High', color: 'red' }],
+      select_options: [{ value: 'hi', color: 'red' }],
     } as PropertyDefinition)
     if (!c.ok) return
     const id = c.value.id
@@ -156,7 +156,7 @@ describe('a global delete reaches a Space sidecar', () => {
       id: '',
       name: 'Priority',
       type: 'select',
-      select_options: [{ value: 'hi', label: 'High' }],
+      select_options: [{ value: 'hi' }],
     } as PropertyDefinition)
     if (!c.ok) throw new Error('setup failed')
     return c.value.id
@@ -251,7 +251,7 @@ describe('a delete reaches saved views', () => {
       id: '',
       name: 'Priority',
       type: 'select',
-      select_options: [{ value: 'hi', label: 'hi' }],
+      select_options: [{ value: 'hi' }],
     } as PropertyDefinition)
     if (!c.ok) throw new Error('setup failed')
     await assignProperty(root, notes, c.value.id)

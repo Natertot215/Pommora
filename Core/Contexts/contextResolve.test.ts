@@ -71,16 +71,13 @@ const statusDef: PropertyDefinition = {
   id: 'prop_status',
   name: 'Status',
   type: 'select',
-  select_options: [
-    { value: 'Open', label: 'Open' },
-    { value: 'Active', label: 'Active' },
-  ],
+  select_options: [{ value: 'Open' }, { value: 'Active' }],
 }
 const tagsDef: PropertyDefinition = {
   id: 'prop_tags',
   name: 'Tags',
   type: 'multiSelect',
-  select_options: [{ value: 'alpha', label: 'alpha' }],
+  select_options: [{ value: 'alpha' }],
 }
 const world: GovernedWorld = {
   registry,

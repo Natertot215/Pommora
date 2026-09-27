@@ -50,10 +50,7 @@ describe('validateDefinition', () => {
       id: 'p3',
       name: 'Tag2',
       type: 'select',
-      select_options: [
-        { value: 'a', label: 'A' },
-        { value: 'a', label: 'A2' },
-      ],
+      select_options: [{ value: 'a' }, { value: 'a' }],
     })
     expect(validateDefinition(dupOpts, existing).ok).toBe(false)
   })

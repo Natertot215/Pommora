@@ -68,7 +68,7 @@ export function OptionEditor({
   const entering = useEntrance(options, (o) => keyOf(o.value))
   const reorder = useStatusReorder(
     order,
-    (value) => options.find((o) => o.value === value)?.label ?? value,
+    (value) => value,
     (value, groupId, toIndex) => onEdit({ op: 'move', value, groupId, toIndex }),
   )
   const ghostApi = useGhostOptionAnchor(
@@ -109,14 +109,14 @@ export function OptionEditor({
     }
     onRenameOption(from, title)
   }
-  const openMenu = async (value: string, name: string, row: HTMLElement): Promise<void> => {
+  const openMenu = async (value: string, row: HTMLElement): Promise<void> => {
     const action = await popMenu(optionMenuModel())
     if (action === 'option:rename') setRenaming(value)
     else if (action === 'option:edit-icon') iconChoice.begin(value, row)
     else if (action === 'option:remove') {
-      if (await askRemoveOption(name)) onRemoveOption(value)
+      if (await askRemoveOption(value)) onRemoveOption(value)
     } else if (action === 'option:clear') {
-      if (await askClearOption(name)) onClearOption(value)
+      if (await askClearOption(value)) onClearOption(value)
     }
   }
   const slotAt = (g: StatusGroup, index: number, anchorId: string): React.JSX.Element | null =>
@@ -177,10 +177,9 @@ export function OptionEditor({
                     value={o.value}
                     drag={reorder}
                     ghost={ghostApi}
-                    onOpenMenu={(row) => void openMenu(o.value, o.label, row)}
+                    onOpenMenu={(row) => void openMenu(o.value, row)}
                     type={type}
                     look={look}
-                    label={o.label}
                     color={o.color ?? g.color}
                     icon={o.icon}
                     appearance={o.appearance}

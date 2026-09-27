@@ -20,7 +20,7 @@ const statusDef: PropertyDefinition = {
       id: 'g1',
       label: 'Open',
       color: 'gray',
-      options: [{ value: 'todo', label: 'Todo', group_id: 'g1' }],
+      options: [{ value: 'todo', group_id: 'g1' }],
     },
   ],
 }
@@ -303,7 +303,7 @@ describe('GroupFrame rows', () => {
       }),
     )
     expect(texts()).toContain('Open')
-    expect(texts()).toContain('Todo')
+    expect(texts()).toContain('todo')
     expect(texts()).not.toContain('Options')
     await mount(
       view({
@@ -315,7 +315,7 @@ describe('GroupFrame rows', () => {
       }),
     )
     expect(texts()).toContain('Options')
-    expect(texts()).toContain('Todo')
+    expect(texts()).toContain('todo')
   })
 
   it('a dead-property grouping wears the structural chrome (the pipeline fallback, mirrored)', async () => {

@@ -57,7 +57,7 @@ beforeEach(async () => {
     id: '',
     name: 'Status',
     type: 'select',
-    select_options: [{ value: 'Open', label: 'Open' }],
+    select_options: [{ value: 'Open' }],
   } as PropertyDefinition)
   const priority = await createProperty(root, {
     id: '',
@@ -196,7 +196,7 @@ describe('a property write reconciles the whole file', () => {
       id: '',
       name: 'Tags',
       type: 'multiSelect',
-      select_options: [{ value: 'alpha', label: 'alpha' }],
+      select_options: [{ value: 'alpha' }],
     } as PropertyDefinition)
     if (!tags.ok) throw new Error('setup')
     await assignProperty(root, notes, tags.value.id)

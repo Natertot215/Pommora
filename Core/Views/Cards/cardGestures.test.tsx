@@ -39,7 +39,7 @@ const source = (): CollectionNode =>
   }) as unknown as CollectionNode
 
 const VALUES = valuesReply({
-  p1: { [ID_KEY]: 'p1', ...propsAtRoot({ prop_status: 'active' }, [STATUS_DEF]) },
+  p1: { [ID_KEY]: 'p1', ...propsAtRoot({ prop_status: 'Active' }, [STATUS_DEF]) },
   p2: { [ID_KEY]: 'p2' },
 })
 
@@ -142,7 +142,7 @@ describe('a card value', () => {
       op: 'setProperty',
       path: 'Col/One.md',
       propertyId: 'prop_status',
-      value: { kind: 'select', value: 'complete' },
+      value: { kind: 'select', value: 'Complete' },
     })
   })
 })

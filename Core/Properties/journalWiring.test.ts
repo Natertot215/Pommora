@@ -171,10 +171,7 @@ describe('the option-op writers', () => {
       id: 'prop_t',
       name: 'Tags',
       type: 'select',
-      select_options: [
-        { value: 'Draft', label: 'Draft' },
-        { value: 'Done', label: 'Done' },
-      ],
+      select_options: [{ value: 'Draft' }, { value: 'Done' }],
     } as PropertyDefinition)
     await writeFile(
       abs('Col', '_pagecollection.json'),

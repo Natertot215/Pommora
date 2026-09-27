@@ -47,8 +47,8 @@ async function seedPriority(): Promise<string> {
     name: 'Priority',
     type: 'select',
     select_options: [
-      { value: 'hi', label: 'High', color: 'red' },
-      { value: 'lo', label: 'Low', color: 'blue' },
+      { value: 'hi', color: 'red' },
+      { value: 'lo', color: 'blue' },
     ],
   } as PropertyDefinition)
   if (!c.ok) throw new Error('seed failed')
@@ -175,7 +175,7 @@ describe('restoring a deleted property', () => {
       id,
       name: 'Urgency',
       type: 'select',
-      select_options: [{ value: 'hi', label: 'High', color: 'red' }],
+      select_options: [{ value: 'hi', color: 'red' }],
     } as PropertyDefinition)
     expect(back.ok).toBe(true)
 
@@ -317,7 +317,7 @@ describe('restoring a deleted property', () => {
       id: '',
       name: 'Tags',
       type: 'multiSelect',
-      select_options: [{ value: 'alpha', label: 'alpha' }],
+      select_options: [{ value: 'alpha' }],
     } as PropertyDefinition)
     if (!c.ok) throw new Error('seed failed')
     await assignProperty(root, notes, c.value.id)

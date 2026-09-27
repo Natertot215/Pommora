@@ -58,7 +58,7 @@ beforeEach(async () => {
           id: 'prop_status',
           name: 'Status',
           type: 'select',
-          select_options: [{ value: 'live', label: 'Live', color: 'green' }],
+          select_options: [{ value: 'live', color: 'green' }],
         },
       },
     }),

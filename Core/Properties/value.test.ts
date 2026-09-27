@@ -15,19 +15,16 @@ const schema: PropertyDefinition[] = [
         id: 'g',
         label: 'G',
         color: 'blue',
-        options: [{ value: 'in_progress', label: 'In Progress', group_id: 'g' }],
+        options: [{ value: 'in_progress', group_id: 'g' }],
       },
     ],
   },
-  { id: 'prop_sel', name: 'Sel', type: 'select', select_options: [{ value: 'opt_a', label: 'A' }] },
+  { id: 'prop_sel', name: 'Sel', type: 'select', select_options: [{ value: 'opt_a' }] },
   {
     id: 'prop_s',
     name: 'S',
     type: 'select',
-    select_options: [
-      { value: 'open', label: 'Open' },
-      { value: 'done', label: 'Done' },
-    ],
+    select_options: [{ value: 'open' }, { value: 'done' }],
   },
   { id: 'prop_when', name: 'When', type: 'dateTime' },
   { id: 'prop_num', name: 'Num', type: 'number' },
@@ -185,7 +182,7 @@ describe('resolveFieldValue memoization', () => {
     const def = schema.find((d) => d.id === 'prop_s') as PropertyDefinition
     const gained = {
       ...def,
-      select_options: [...(def.select_options ?? []), { value: 'Final', label: 'Final' }],
+      select_options: [...(def.select_options ?? []), { value: 'Final' }],
     }
     expect(resolveFieldValue(r, 'prop_s', [def])).toEqual({ kind: 'null' })
     expect(resolveFieldValue(r, 'prop_s', [gained])).toEqual({ kind: 'select', value: 'Final' })
@@ -236,10 +233,7 @@ describe('resolveFieldValue — the declared type is obeyed, never inferred from
       id: 'prop_tag',
       name: 'Tag',
       type: 'select',
-      select_options: [
-        { value: 'opt_a', label: 'A' },
-        { value: '[URGENT](tel:911)', label: 'Urgent' },
-      ],
+      select_options: [{ value: 'opt_a' }, { value: '[URGENT](tel:911)' }],
     },
   ]
   const rowOf = (properties: Record<string, unknown>): ViewRow => ({

@@ -43,13 +43,13 @@ const stageDef = {
       id: 'upcoming',
       label: 'To-do',
       color: 'gray',
-      options: [{ value: 'active', label: 'Active', group_id: 'upcoming' }],
+      options: [{ value: 'active', group_id: 'upcoming' }],
     },
     {
       id: 'done',
       label: 'Done',
       color: 'green',
-      options: [{ value: 'done', label: 'Done', group_id: 'done' }],
+      options: [{ value: 'done', group_id: 'done' }],
     },
   ],
 } as PropertyDefinition
@@ -255,7 +255,7 @@ describe('restore on re-assign — per-value schema-currency reconciliation (C-3
           id: 'done',
           label: 'Done',
           color: 'green',
-          options: [{ value: 'done', label: 'Done', group_id: 'done' }],
+          options: [{ value: 'done', group_id: 'done' }],
         },
       ],
     } as Partial<PropertyDefinition>)
@@ -294,9 +294,9 @@ describe('restore on re-assign — per-value schema-currency reconciliation (C-3
       name: 'Milestone',
       type: 'select',
       select_options: [
-        { value: '2024-01-01', label: 'Kickoff' },
-        { value: 'https://acme.io', label: 'Site' },
-        { value: 'note:draft', label: 'Draft' },
+        { value: '2024-01-01' },
+        { value: 'https://acme.io' },
+        { value: 'note:draft' },
       ],
     } as PropertyDefinition)
     if (!sel.ok) throw new Error('setup failed')
@@ -317,7 +317,7 @@ describe('restore on re-assign — per-value schema-currency reconciliation (C-3
       id: '',
       name: 'Tags',
       type: 'multiSelect',
-      select_options: [{ value: 'alpha', label: 'alpha' }],
+      select_options: [{ value: 'alpha' }],
     } as PropertyDefinition)
     if (!tags.ok) throw new Error('setup failed')
     await assignProperty(root, folder, tags.value.id)

@@ -17,8 +17,8 @@ const schema: PropertyDefinition[] = [
         label: 'G',
         color: 'blue',
         options: [
-          { value: 'Done', label: 'Done', group_id: 'g' },
-          { value: 'Open', label: 'Open', group_id: 'g' },
+          { value: 'Done', group_id: 'g' },
+          { value: 'Open', group_id: 'g' },
         ],
       },
     ],
@@ -27,10 +27,7 @@ const schema: PropertyDefinition[] = [
     id: 'prop_sel',
     name: 'Sel',
     type: 'select',
-    select_options: ['a', 'b', 'alpha', 'beta', 'apple', 'banana'].map((v) => ({
-      value: v,
-      label: v,
-    })),
+    select_options: ['a', 'b', 'alpha', 'beta', 'apple', 'banana'].map((value) => ({ value })),
   },
   { id: 'prop_num', name: 'Num', type: 'number' },
   { id: 'prop_url', name: 'Link', type: 'link' },

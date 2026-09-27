@@ -22,7 +22,7 @@ const statusDef: PropertyDefinition = {
       id: 'in_progress',
       label: 'In Progress',
       color: 'blue',
-      options: [{ value: 'active', label: 'Active', color: 'blue', group_id: 'in_progress' }],
+      options: [{ value: 'active', color: 'blue', group_id: 'in_progress' }],
     },
   ],
 }

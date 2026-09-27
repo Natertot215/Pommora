@@ -50,10 +50,7 @@ beforeEach(async () => {
     id: '',
     name: 'Stage',
     type: 'select',
-    select_options: [
-      { value: 'Done', label: 'Done' },
-      { value: 'Todo', label: 'Todo' },
-    ],
+    select_options: [{ value: 'Done' }, { value: 'Todo' }],
   })
   if (!c.ok || !p.ok) throw new Error('setup failed')
   col = c.value.path

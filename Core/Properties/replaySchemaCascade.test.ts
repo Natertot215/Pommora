@@ -44,10 +44,7 @@ async function seedNexus(): Promise<string> {
     id: 'prop_s',
     name: 'Stage',
     type: 'select',
-    select_options: [
-      { value: 'Draft', label: 'Draft' },
-      { value: 'Done', label: 'Done' },
-    ],
+    select_options: [{ value: 'Draft' }, { value: 'Done' }],
   } as PropertyDefinition)
   await writeFile(
     join(root, 'Col', '_pagecollection.json'),
@@ -226,10 +223,7 @@ describe('option replay', () => {
           ...registry.defs,
           prop_s: {
             ...registry.defs.prop_s,
-            select_options: [
-              { value: 'Queued', label: 'Queued' },
-              { value: 'Done', label: 'Done' },
-            ],
+            select_options: [{ value: 'Queued' }, { value: 'Done' }],
           },
         },
       },
@@ -303,10 +297,7 @@ describe('option replay', () => {
           ...registry.defs,
           prop_s: {
             ...registry.defs.prop_s,
-            select_options: [
-              { value: 'Queued', label: 'Queued' },
-              { value: 'Done', label: 'Done' },
-            ],
+            select_options: [{ value: 'Queued' }, { value: 'Done' }],
           },
         },
       },
@@ -336,10 +327,7 @@ describe('option replay reaches saved views', () => {
           ...registry.defs,
           prop_s: {
             ...registry.defs.prop_s,
-            select_options: [
-              { value: 'Queued', label: 'Queued' },
-              { value: 'Done', label: 'Done' },
-            ],
+            select_options: [{ value: 'Queued' }, { value: 'Done' }],
           },
         },
       },
@@ -379,9 +367,7 @@ describe('option replay reaches saved views', () => {
     expect(views.set.filter).toEqual({ match: 'all', rules: [] })
     expect(views.tile.hidden_groups).toEqual([])
     expect(views.matrix).toEqual({ match: 'all', rules: [] })
-    expect((await readRegistry(root)).defs.prop_s?.select_options).toEqual([
-      { value: 'Done', label: 'Done' },
-    ])
+    expect((await readRegistry(root)).defs.prop_s?.select_options).toEqual([{ value: 'Done' }])
     expect(await readSchemaJournal(root)).toBeNull()
   })
 })

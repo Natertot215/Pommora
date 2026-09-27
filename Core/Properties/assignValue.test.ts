@@ -12,10 +12,7 @@ const schema: PropertyDefinition[] = [
     id: 'prop_tag',
     name: 'Tag',
     type: 'select',
-    select_options: [
-      { value: 'red', label: 'Red' },
-      { value: 'blue', label: 'Blue' },
-    ],
+    select_options: [{ value: 'red' }, { value: 'blue' }],
   },
 ]
 

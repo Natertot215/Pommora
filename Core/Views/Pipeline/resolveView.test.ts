@@ -135,7 +135,7 @@ describe('resolveView — full pipeline over the fixture', () => {
             id: 'in_progress',
             label: 'IP',
             color: 'blue',
-            options: [{ value: 'in_progress', label: 'A', group_id: 'in_progress' }],
+            options: [{ value: 'in_progress', group_id: 'in_progress' }],
           },
         ],
       },
@@ -268,7 +268,7 @@ describe('resolveView — group_order', () => {
             id: 'g',
             label: 'G',
             color: 'blue',
-            options: [{ value: 'todo', label: 'T', group_id: 'g' }],
+            options: [{ value: 'todo', group_id: 'g' }],
           },
         ],
       },
@@ -454,11 +454,7 @@ describe('resolveView — hidden groups + Hide Empty Groups', () => {
       id: 'prop_sel',
       name: 'Sel',
       type: 'select',
-      select_options: [
-        { value: 'Alpha', label: 'Alpha' },
-        { value: 'Beta', label: 'Beta' },
-        { value: 'Gamma', label: 'Gamma' },
-      ],
+      select_options: [{ value: 'Alpha' }, { value: 'Beta' }, { value: 'Gamma' }],
     },
   ]
   const view = (patch: Partial<SavedView>): SavedView =>
@@ -677,7 +673,7 @@ describe('resolveView — hidden groups + Hide Empty Groups', () => {
         id: 'prop_other',
         name: 'Other',
         type: 'select',
-        select_options: [{ value: 'Alpha', label: 'Alpha' }],
+        select_options: [{ value: 'Alpha' }],
       },
     ]
     const values = pageValues({

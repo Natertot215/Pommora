@@ -19,8 +19,8 @@ const statusDef: PropertyDefinition = {
       label: 'Open',
       color: 'gray',
       options: [
-        { value: 'todo', label: 'Todo', group_id: 'g1' },
-        { value: 'done', label: 'Done', group_id: 'g1' },
+        { value: 'todo', group_id: 'g1' },
+        { value: 'done', group_id: 'g1' },
       ],
     },
   ],
@@ -403,7 +403,7 @@ describe('FilterFrame value editors', () => {
     )
     await click(host.querySelector('[aria-label="Filter values"]'))
     await click(
-      [...document.querySelectorAll('*')].filter((el) => el.textContent === 'Todo').at(-1),
+      [...document.querySelectorAll('*')].filter((el) => el.textContent === 'todo').at(-1),
     )
     let rule = (lastSaved().filter as { rules: unknown[] }).rules[0] as Record<string, unknown>
     expect(rule.values).toEqual(['todo'])
@@ -411,7 +411,7 @@ describe('FilterFrame value editors', () => {
     await mount(view({ filter: lastSaved().filter }))
     await click(host.querySelector('[aria-label="Filter values"]'))
     await click(
-      [...document.querySelectorAll('*')].filter((el) => el.textContent === 'Done').at(-1),
+      [...document.querySelectorAll('*')].filter((el) => el.textContent === 'done').at(-1),
     )
     rule = (lastSaved().filter as { rules: unknown[] }).rules[0] as Record<string, unknown>
     expect(rule.values).toEqual(['todo', 'done'])
@@ -448,10 +448,10 @@ describe('FilterFrame value editors', () => {
     await click(host.querySelector('[aria-label="Filter values"]'))
     // No remount between the two clicks — the stale-prop window the optimistic accumulator covers.
     await click(
-      [...document.querySelectorAll('*')].filter((el) => el.textContent === 'Todo').at(-1),
+      [...document.querySelectorAll('*')].filter((el) => el.textContent === 'todo').at(-1),
     )
     await click(
-      [...document.querySelectorAll('*')].filter((el) => el.textContent === 'Done').at(-1),
+      [...document.querySelectorAll('*')].filter((el) => el.textContent === 'done').at(-1),
     )
     const rule = (lastSaved().filter as { rules: unknown[] }).rules[0] as Record<string, unknown>
     expect(rule.values).toEqual(['todo', 'done'])

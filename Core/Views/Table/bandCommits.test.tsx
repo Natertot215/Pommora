@@ -25,19 +25,19 @@ const statusDef: PropertyDefinition = {
       id: 'upcoming',
       label: 'Upcoming',
       color: 'gray',
-      options: [{ value: 'not_started', label: 'Not started', group_id: 'upcoming' }],
+      options: [{ value: 'not_started', group_id: 'upcoming' }],
     },
     {
       id: 'in_progress',
       label: 'In Progress',
       color: 'blue',
-      options: [{ value: 'active', label: 'Active', color: 'blue', group_id: 'in_progress' }],
+      options: [{ value: 'active', color: 'blue', group_id: 'in_progress' }],
     },
     {
       id: 'done',
       label: 'Done',
       color: 'green',
-      options: [{ value: 'complete', label: 'Complete', color: 'green', group_id: 'done' }],
+      options: [{ value: 'complete', color: 'green', group_id: 'done' }],
     },
   ],
 }
@@ -235,8 +235,8 @@ describe('property band reorder', () => {
   it('persists group.order + order_mode manual and renders optimistically', async () => {
     // Bands in configured schema order — Not started leads as an EMPTY band (no rows, hide off).
     await mountTable(propertySource())
-    expect(headerTexts()[0]).toContain('Not started')
-    expect(headerTexts()[1]).toContain('Active')
+    expect(headerTexts()[0]).toContain('not_started')
+    expect(headerTexts()[1]).toContain('active')
     await dragBand(2, 26)
     await drop()
     expect(saveSpy).toHaveBeenCalledOnce()
@@ -248,7 +248,7 @@ describe('property band reorder', () => {
     })
     expect(lastSavedView().group_order).toBeUndefined()
     expect(mutateSpy).not.toHaveBeenCalled()
-    expect(headerTexts()[1]).toContain('Complete')
+    expect(headerTexts()[1]).toContain('complete')
   })
 })
 

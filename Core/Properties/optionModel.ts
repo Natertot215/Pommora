@@ -34,7 +34,7 @@ export function addOption(
 ): StatusGroup[] {
   return groups.map((g) => {
     if (g.id !== groupId) return g
-    const next = { value: title, label: title, group_id: g.id }
+    const next = { value: title, group_id: g.id }
     const i = atIndex ?? g.options.length
     return { ...g, options: [...g.options.slice(0, i), next, ...g.options.slice(i)] }
   })
@@ -45,7 +45,7 @@ export function renameOption(
   oldValue: string,
   newTitle: string,
 ): StatusGroup[] {
-  return mapOption(groups, oldValue, (o) => ({ ...o, value: newTitle, label: newTitle }))
+  return mapOption(groups, oldValue, (o) => ({ ...o, value: newTitle }))
 }
 
 export function moveOption(

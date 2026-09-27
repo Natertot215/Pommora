@@ -19,10 +19,7 @@ const selectDef: PropertyDefinition = {
   id: 'prop_sel',
   name: 'Stage',
   type: 'select',
-  select_options: [
-    { value: 'a', label: 'Alpha' },
-    { value: 'b', label: 'Beta' },
-  ],
+  select_options: [{ value: 'Alpha' }, { value: 'Beta' }],
 }
 const dateDef: PropertyDefinition = { id: 'prop_d', name: 'Due', type: 'dateTime' }
 const fileDef: PropertyDefinition = { id: 'prop_f', name: 'Doc', type: 'file' }

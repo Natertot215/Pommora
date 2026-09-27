@@ -18,7 +18,7 @@ const def = (id: string, name: string): PropertyDefinition =>
     id,
     name,
     type: 'select',
-    select_options: [{ value: 'a', label: 'A', color: 'blue' }],
+    select_options: [{ value: 'a', color: 'blue' }],
   }) as PropertyDefinition
 
 describe('propertiesRegistry', () => {

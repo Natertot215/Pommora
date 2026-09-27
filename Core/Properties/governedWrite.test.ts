@@ -88,13 +88,13 @@ describe('setGovernedRootKeys with a world — the three precedence rules', () =
     id: 'prop_priority',
     name: 'Priority',
     type: 'select',
-    select_options: [{ value: 'High', label: 'High' }],
+    select_options: [{ value: 'High' }],
   }
   const status: PropertyDefinition = {
     id: 'prop_status',
     name: 'Status',
     type: 'select',
-    select_options: [{ value: 'Open', label: 'Open' }],
+    select_options: [{ value: 'Open' }],
   }
   const world: GovernedWorld = {
     registry: { contexts: [{ id: 'ctx_areas', title: 'Areas' }] },
@@ -156,7 +156,7 @@ describe('setGovernedRootKeys with a world — the three precedence rules', () =
       id: 'prop_tags',
       name: 'Tags',
       type: 'multiSelect',
-      select_options: [{ value: 'alpha', label: 'alpha' }],
+      select_options: [{ value: 'alpha' }],
     }
     await writeFile(page, "---\nid: p1\nTags:\n  - ''\n  - alpha\n---\nbody\n")
     await setGovernedRootKeys(dir, page, { Status: 'Done' }, ['Status'], {
@@ -172,7 +172,7 @@ describe('setGovernedRootKeys with a world — the three precedence rules', () =
       id: 'prop_tags',
       name: 'Tags',
       type: 'multiSelect',
-      select_options: [{ value: 'alpha', label: 'alpha' }],
+      select_options: [{ value: 'alpha' }],
     }
     await writeFile(page, '---\nid: p1\nTags:\n  - alpha\n  - zeta\n---\nbody\n')
     const adoptions = await setGovernedRootKeys(dir, page, { Status: ['Open'] }, ['Status'], {

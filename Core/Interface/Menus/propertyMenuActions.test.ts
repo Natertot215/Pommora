@@ -18,19 +18,13 @@ const SCHEMA: PropertyDefinition[] = [
     id: 'prop_sel',
     name: 'stage',
     type: 'select',
-    select_options: [
-      { value: 'a', label: 'Alpha' },
-      { value: 'b', label: 'Beta' },
-    ],
+    select_options: [{ value: 'a' }, { value: 'b' }],
   },
   {
     id: 'prop_tags',
     name: 'Tags',
     type: 'multiSelect',
-    select_options: [
-      { value: 'x', label: 'Ex' },
-      { value: 'y', label: 'Why' },
-    ],
+    select_options: [{ value: 'x' }, { value: 'y' }],
   },
   { id: 'prop_num', name: 'Count', type: 'number' },
   { id: 'prop_box', name: 'Done', type: 'checkbox' },
@@ -121,8 +115,8 @@ describe('propertyMenuBranches', () => {
   it('a select marks the held option; a number stays a leaf for its own picker', () => {
     const { properties } = branchesFor({ stage: 'b' })
     expect(properties.find((r) => r.name === 'stage')?.options).toEqual([
-      { value: 'a', label: 'Alpha', checked: false },
-      { value: 'b', label: 'Beta', checked: true },
+      { value: 'a', label: 'a', checked: false },
+      { value: 'b', label: 'b', checked: true },
     ])
     expect(properties.find((r) => r.name === 'Count')?.options).toBeUndefined()
   })

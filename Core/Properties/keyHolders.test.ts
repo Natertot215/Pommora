@@ -38,7 +38,7 @@ beforeEach(async () => {
     id: 'prop_s',
     name: 'Stage',
     type: 'select',
-    select_options: [{ value: 'Draft', label: 'Draft' }],
+    select_options: [{ value: 'Draft' }],
   })
   await writeFile(
     abs('Notes', '_pagecollection.json'),

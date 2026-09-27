@@ -76,7 +76,7 @@ export function resolveBandHead(
   // A property band lives in two homes: top-level property grouping, or a sub-group bucket inside a set band (its raw value rides `bucket`; `key` is the composite collapse id).
   const band = bandGrouping(view, ctx.schema)
   const propId = band?.property_id
-  const label = groupLabel(group, view, ctx, setNames)
+  const label = groupLabel(group, setNames)
   if (!propId) return { label, glyph: <span className="group-name">{group.key}</span> }
   const value = group.bucket ?? group.key
 

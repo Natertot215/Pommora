@@ -23,19 +23,19 @@ const statusDef: PropertyDefinition = {
       id: 'upcoming',
       label: 'Upcoming',
       color: 'gray',
-      options: [{ value: 'not_started', label: 'Not started', group_id: 'upcoming' }],
+      options: [{ value: 'not_started', group_id: 'upcoming' }],
     },
     {
       id: 'in_progress',
       label: 'In Progress',
       color: 'blue',
-      options: [{ value: 'active', label: 'Active', color: 'blue', group_id: 'in_progress' }],
+      options: [{ value: 'active', color: 'blue', group_id: 'in_progress' }],
     },
     {
       id: 'done',
       label: 'Done',
       color: 'green',
-      options: [{ value: 'complete', label: 'Complete', color: 'green', group_id: 'done' }],
+      options: [{ value: 'complete', color: 'green', group_id: 'done' }],
     },
   ],
 }
@@ -47,10 +47,7 @@ const multiDef: PropertyDefinition = {
   id: 'prop_tags',
   name: 'Tags',
   type: 'multiSelect',
-  select_options: [
-    { value: 'a', label: 'Alpha' },
-    { value: 'b', label: 'Beta' },
-  ],
+  select_options: [{ value: 'a' }, { value: 'b' }],
 }
 
 const allDefs: PropertyDefinition[] = [
@@ -203,8 +200,8 @@ describe('status cell gestures', () => {
     await act(async () => {
       statusCell().click()
     })
-    expect(pickerText()).toContain('Not started')
-    expect(pickerText()).toContain('Complete')
+    expect(pickerText()).toContain('not_started')
+    expect(pickerText()).toContain('complete')
     expect(mutateSpy).not.toHaveBeenCalled()
   })
 
@@ -213,13 +210,13 @@ describe('status cell gestures', () => {
     await act(async () => {
       statusCell().click()
     })
-    expect(pickerButtons().some((b) => b.textContent?.includes('Complete'))).toBe(true)
-    const option = pickerButtons().find((b) => b.textContent?.includes('Complete'))
+    expect(pickerButtons().some((b) => b.textContent?.includes('complete'))).toBe(true)
+    const option = pickerButtons().find((b) => b.textContent?.includes('complete'))
     await act(async () => {
       option?.click()
     })
     await settle(450)
-    expect(pickerButtons().some((b) => b.textContent?.includes('Not started'))).toBe(false)
+    expect(pickerButtons().some((b) => b.textContent?.includes('not_started'))).toBe(false)
   })
 
   it('picking an option writes the status optimistically through setProperty', async () => {
@@ -227,7 +224,7 @@ describe('status cell gestures', () => {
     await act(async () => {
       statusCell().click()
     })
-    const option = pickerButtons().find((b) => b.textContent?.includes('Complete'))
+    const option = pickerButtons().find((b) => b.textContent?.includes('complete'))
     expect(option).toBeTruthy()
     await act(async () => {
       option?.click()
@@ -512,14 +509,14 @@ describe('PropertyPicker (direct mount) — multi-select', () => {
         />,
       )
     })
-    const beta = pickerButtons().find((b) => b.textContent?.includes('Beta'))
+    const beta = pickerButtons().find((b) => b.textContent === 'b')
     await act(async () => {
       beta?.click()
     })
     expect(onCommit).toHaveBeenCalledWith({ kind: 'multiSelect', value: ['a', 'b'] })
     expect(onDismiss).not.toHaveBeenCalled()
 
-    const alpha = pickerButtons().find((b) => b.textContent?.includes('Alpha'))
+    const alpha = pickerButtons().find((b) => b.textContent === 'a')
     await act(async () => {
       alpha?.click()
     })
@@ -586,7 +583,7 @@ describe('chip hover × — the per-chip remove (pill looks only)', () => {
       propertyId: 'prop_status',
       value: null,
     })
-    expect(host.textContent).not.toContain('Not started')
+    expect(host.textContent).not.toContain('not_started')
   })
 
   it('a multi-select pill × removes just THAT option', async () => {

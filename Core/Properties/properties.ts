@@ -108,7 +108,6 @@ export type OptionAppearance = z.infer<typeof optionAppearance>
 const selectOption = looseDecoder(
   z.object({
     value: z.string(),
-    label: z.string(),
     icon: z.string().optional().catch(undefined),
     color: z.string().optional().catch(undefined),
     appearance: optionAppearance.optional().catch(undefined),
@@ -124,7 +123,6 @@ export type StatusGroupId = z.infer<typeof statusGroupId>
 const statusOption = looseDecoder(
   z.object({
     value: z.string(),
-    label: z.string(),
     color: z.string().optional().catch(undefined),
     icon: z.string().optional().catch(undefined),
     appearance: optionAppearance.optional().catch(undefined),
@@ -282,7 +280,7 @@ export type PickOption = { value: string; label: string; color?: string; icon?: 
 /** Keyed on the DECLARED type, never on which array happens to be present — a type change retains the array it moved away from, so a Status property can still carry a stale select_options. */
 export const optionsOf = (
   def: Pick<PropertyDefinition, 'type' | 'select_options' | 'status_groups'> | undefined,
-): PickOption[] =>
+): (SelectOption | StatusOption)[] =>
   def && PROPERTY_TYPES[def.type].options === 'status'
     ? statusOptions(def)
     : (def?.select_options ?? [])
@@ -301,12 +299,17 @@ export function optionGroupsOf(
   return [{ id: SELECT_GROUP, label: '', color: '', options }]
 }
 
+const stored = ({ label: _stale, ...o }: StatusOption & { label?: string }): StatusOption => o
+
 export function withOptionGroups(
   def: PropertyDefinition,
   groups: StatusGroup[],
 ): PropertyDefinition {
-  if (PROPERTY_TYPES[def.type].options === 'status') return { ...def, status_groups: groups }
-  const select_options = (groups[0]?.options ?? []).map(({ group_id: _drop, ...o }) => o)
+  if (PROPERTY_TYPES[def.type].options === 'status')
+    return { ...def, status_groups: groups.map((g) => ({ ...g, options: g.options.map(stored) })) }
+  const select_options = (groups[0]?.options ?? [])
+    .map(stored)
+    .map(({ group_id: _drop, ...o }) => o)
   return { ...def, select_options }
 }
 
@@ -316,23 +319,23 @@ export function defaultStatusSeed(): StatusGroup[] {
       id: 'upcoming',
       label: 'Open',
       color: 'grey',
-      options: [{ value: 'Open', label: 'Open', color: 'grey', group_id: 'upcoming' }],
+      options: [{ value: 'Open', color: 'grey', group_id: 'upcoming' }],
     },
     {
       id: 'in_progress',
       label: 'Active',
       color: 'blue',
-      options: [{ value: 'Active', label: 'Active', color: 'blue', group_id: 'in_progress' }],
+      options: [{ value: 'Active', color: 'blue', group_id: 'in_progress' }],
     },
     {
       id: 'done',
       label: 'Done',
       color: 'green',
-      options: [{ value: 'Done', label: 'Done', color: 'green', group_id: 'done' }],
+      options: [{ value: 'Done', color: 'green', group_id: 'done' }],
     },
   ]
 }
 
-export function defaultSelectSeed(): { value: string; label: string }[] {
-  return [{ value: 'Option 1', label: 'Option 1' }]
+export function defaultSelectSeed(): { value: string }[] {
+  return [{ value: 'Option 1' }]
 }

@@ -21,8 +21,8 @@ const statusDef: PropertyDefinition = {
       label: 'Open',
       color: 'gray',
       options: [
-        { value: 'todo', label: 'Todo', group_id: 'g1' },
-        { value: 'done', label: 'Done', group_id: 'g1' },
+        { value: 'todo', group_id: 'g1' },
+        { value: 'done', group_id: 'g1' },
       ],
     },
   ],
@@ -206,7 +206,7 @@ describe('SortFrame rows', () => {
     )
     expect(texts()).toContain('Custom')
     expect(texts()).toContain('Options')
-    expect(texts().indexOf('Done')).toBeLessThan(texts().indexOf('Todo'))
+    expect(texts().indexOf('done')).toBeLessThan(texts().indexOf('todo'))
   })
 
   it('Default strips a custom order back off the criterion', async () => {
@@ -224,14 +224,14 @@ describe('SortFrame rows', () => {
   it('a status primary shows the example order; Reversed flips the run', async () => {
     await mount(view({ sort: [{ property_id: 'prop_status', direction: 'ascending' }] }))
     expect(texts()).toContain('Open')
-    expect(texts().indexOf('Todo')).toBeLessThan(texts().indexOf('Done'))
+    expect(texts().indexOf('todo')).toBeLessThan(texts().indexOf('done'))
     await mount(view({ sort: [{ property_id: 'prop_status', direction: 'descending' }] }))
-    expect(texts().indexOf('Done')).toBeLessThan(texts().indexOf('Todo'))
+    expect(texts().indexOf('done')).toBeLessThan(texts().indexOf('todo'))
   })
 
   it('a dateTime primary collapses the example middle', async () => {
     await mount(view({ sort: [{ property_id: 'prop_when', direction: 'ascending' }] }))
-    expect(texts()).not.toContain('Todo')
+    expect(texts()).not.toContain('todo')
     expect(texts()).not.toContain('Open')
   })
 

@@ -49,7 +49,7 @@ beforeEach(async () => {
     id: '',
     name: 'Tags',
     type: 'multiSelect',
-    select_options: [{ value: 'alpha', label: 'alpha' }],
+    select_options: [{ value: 'alpha' }],
   } as PropertyDefinition)
   if (!status.ok || !tags.ok) throw new Error('registry failed')
   tagsId = tags.value.id

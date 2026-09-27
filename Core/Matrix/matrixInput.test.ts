@@ -99,10 +99,7 @@ const STATUS: PropertyDefinition = {
   id: 'prop_status',
   name: 'Status',
   type: 'select',
-  select_options: [
-    { value: 'Active', label: 'Active' },
-    { value: 'Done', label: 'Done' },
-  ],
+  select_options: [{ value: 'Active' }, { value: 'Done' }],
 }
 
 const spacesTree = (): NexusTree => {

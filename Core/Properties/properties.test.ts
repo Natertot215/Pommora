@@ -236,7 +236,7 @@ describe('optionsOf', () => {
       id: 'p',
       name: 'x',
       type: 'select' as const,
-      select_options: [{ value: 'a', label: 'A' }],
+      select_options: [{ value: 'a' }],
     }
     expect(optionsOf(def).map((o) => o.value)).toEqual(['a'])
   })
@@ -252,21 +252,20 @@ describe('optionsOf', () => {
       name: 'x',
       type: 'status' as const,
       status_groups: defaultStatusSeed(),
-      select_options: [{ value: 'stale', label: 'Stale' }],
+      select_options: [{ value: 'stale' }],
     }
     expect(optionsOf(def).map((o) => o.value)).toEqual(['Open', 'Active', 'Done'])
   })
 })
 
 describe('status seed relabel', () => {
-  it('seeds Open/Active/Done with value=label=title and group colors', () => {
+  it('seeds Open/Active/Done with value=title and group colors', () => {
     const g = defaultStatusSeed()
     expect(g.map((x) => x.id)).toEqual(['upcoming', 'in_progress', 'done'])
     expect(g.map((x) => x.label)).toEqual(['Open', 'Active', 'Done'])
     for (const grp of g) {
       expect(grp.options).toHaveLength(1)
       expect(grp.options[0].value).toBe(grp.label)
-      expect(grp.options[0].label).toBe(grp.label)
       expect(grp.options[0].color).toBe(grp.color)
     }
   })
@@ -279,14 +278,14 @@ describe('keys this build does not know', () => {
       name: 'Stage',
       type: 'status',
       foreign_block: { key: 'a', scope: 'deep' },
-      select_options: [{ value: 'a', label: 'A', tint: 'warm' }],
+      select_options: [{ value: 'a', tint: 'warm' }],
       status_groups: [
         {
           id: 'todo',
           label: 'To Do',
           color: 'grey',
           collapsed: true,
-          options: [{ value: 'open', label: 'Open', group_id: 'todo', glyph: 'o' }],
+          options: [{ value: 'open', group_id: 'todo', glyph: 'o' }],
         },
       ],
     })

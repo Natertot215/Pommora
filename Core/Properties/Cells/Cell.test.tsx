@@ -31,19 +31,19 @@ const schema: PropertyDefinition[] = [
         id: 'upcoming',
         label: 'Upcoming',
         color: 'gray',
-        options: [{ value: 'not_started', label: 'Not started', group_id: 'upcoming' }],
+        options: [{ value: 'not_started', group_id: 'upcoming' }],
       },
       {
         id: 'in_progress',
         label: 'In Progress',
         color: 'blue',
-        options: [{ value: 'active', label: 'Active', color: 'blue', group_id: 'in_progress' }],
+        options: [{ value: 'active', color: 'blue', group_id: 'in_progress' }],
       },
       {
         id: 'done',
         label: 'Done',
         color: 'green',
-        options: [{ value: 'complete', label: 'Complete', color: 'green', group_id: 'done' }],
+        options: [{ value: 'complete', color: 'green', group_id: 'done' }],
       },
     ],
   },
@@ -99,12 +99,12 @@ describe('status looks', () => {
 
   it('standard renders the labeled chip', () => {
     mount(row, 'prop_status', { look: 'standard' })
-    expect(host.textContent).toContain('Active')
+    expect(host.textContent).toContain('active')
   })
 
   it('compact renders the icon-only chip — glyph by group, no label', () => {
     mount(row, 'prop_status', { look: 'compact' })
-    expect(host.textContent).not.toContain('Active')
+    expect(host.textContent).not.toContain('active')
     expect(host.querySelector('svg')).toBeTruthy()
   })
 })

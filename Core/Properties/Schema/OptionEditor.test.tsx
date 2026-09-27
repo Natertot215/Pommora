@@ -14,7 +14,7 @@ const status = [
     id: 'todo',
     label: 'To-do',
     color: 'grey',
-    options: [{ value: 'Open', label: 'Open', group_id: 'todo' }],
+    options: [{ value: 'Open', group_id: 'todo' }],
   },
 ] as StatusGroup[]
 
@@ -24,8 +24,8 @@ const select = [
     label: '',
     color: '',
     options: [
-      { value: 'Urgent', label: 'Urgent', group_id: 'select' },
-      { value: 'Later', label: 'Later', group_id: 'select' },
+      { value: 'Urgent', group_id: 'select' },
+      { value: 'Later', group_id: 'select' },
     ],
   },
 ] as StatusGroup[]
@@ -163,10 +163,7 @@ describe('the popup through a rename (F-134)', () => {
     const refreshed = [
       {
         ...select[0],
-        options: [
-          { value: 'Critical', label: 'Critical', group_id: 'select' },
-          select[0].options[1],
-        ],
+        options: [{ value: 'Critical', group_id: 'select' }, select[0].options[1]],
       },
     ]
     const errors = vi.spyOn(console, 'error').mockImplementation(() => {})

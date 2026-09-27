@@ -22,10 +22,7 @@ const stageDef: PropertyDefinition = {
   id: 'prop_stage',
   name: 'Stage',
   type: 'select',
-  select_options: [
-    { value: 'a', label: 'Alpha' },
-    { value: 'b', label: 'Beta' },
-  ],
+  select_options: [{ value: 'Alpha' }, { value: 'Beta' }],
 }
 const noteDef: PropertyDefinition = { id: 'prop_note', name: 'Note', type: 'number' }
 const rankDef: PropertyDefinition = { id: 'prop_rank', name: 'Rank', type: 'number' }
@@ -132,7 +129,7 @@ describe('PropertyPanel', () => {
   })
 
   it('a held property shows its row and an unheld one stays hidden', async () => {
-    cachePageDetail(detail({ path: 'Col/Page.md', frontmatter: { Stage: 'a' } }))
+    cachePageDetail(detail({ path: 'Col/Page.md', frontmatter: { Stage: 'Alpha' } }))
     await renderPanel(<PropertyPanel subject={PAGE} host="side-pane" />)
     expect(text()).toContain('Stage')
     expect(text()).not.toContain('Note')
@@ -145,7 +142,7 @@ describe('PropertyPanel', () => {
       tell: vi.fn(),
       on: vi.fn(() => () => {}),
     }
-    cachePageDetail(detail({ path: 'Col/Page.md', frontmatter: { Stage: 'a' } }))
+    cachePageDetail(detail({ path: 'Col/Page.md', frontmatter: { Stage: 'Alpha' } }))
     await renderPanel(<PropertyPanel subject={PAGE} host="dropdown" />)
     expect(text()).toContain('Stage')
     const cell = host.querySelector('[data-property-row="prop_stage"]')
@@ -158,9 +155,9 @@ describe('PropertyPanel', () => {
 
   it('a push naming the page or a property rename re-reads it, and a sibling’s push does not', async () => {
     useSession.setState({ valuesEpoch: null })
-    cachePageDetail(detail({ path: 'Col/Page.md', frontmatter: { Stage: 'a' } }))
+    cachePageDetail(detail({ path: 'Col/Page.md', frontmatter: { Stage: 'Alpha' } }))
     await renderPanel(<PropertyPanel subject={PAGE} host="side-pane" />)
-    ask.mockImplementation(async () => valuesReply({ p1: { Stage: 'b' } as never }))
+    ask.mockImplementation(async () => valuesReply({ p1: { Stage: 'Beta' } as never }))
     const reads = (): unknown[] => ask.mock.calls.filter((c) => c[0] === 'view:loadValues')
     const push = (pageIds: string[]) =>
       useSession.getState().bumpContainerValues([{ rel: 'Col', pageIds }])
@@ -183,7 +180,7 @@ describe('PropertyPanel', () => {
       tell: vi.fn(),
       on: vi.fn(() => () => {}),
     }
-    cachePageDetail(detail({ path: 'Col/Page.md', frontmatter: { Stage: 'a' } }))
+    cachePageDetail(detail({ path: 'Col/Page.md', frontmatter: { Stage: 'Alpha' } }))
     cachePageDetail(detail({ path: 'Col/Other.md', frontmatter: {} }))
     await renderPanel(<PropertyPanel subject={PAGE} host="dropdown" />)
     await act(async () => {
@@ -201,7 +198,7 @@ describe('PropertyPanel', () => {
   })
 
   it('a Space subject reads the registry and its node’s own values', async () => {
-    setTree({ Stage: 'a' })
+    setTree({ Stage: 'Alpha' })
     await renderPanel(<PropertyPanel subject={SPACE} host="dropdown" />)
     expect(text()).toContain('Stage')
     expect(text()).toContain('Alpha')
@@ -216,7 +213,7 @@ describe('PropertyPanel', () => {
       tell: vi.fn(),
       on: vi.fn(() => () => {}),
     }
-    setTree({ Stage: 'a' })
+    setTree({ Stage: 'Alpha' })
     await renderPanel(<PropertyPanel subject={SPACE} host="dropdown" />)
     const cell = host.querySelector('[data-property-row="prop_stage"]')
     await act(async () => {
@@ -224,7 +221,7 @@ describe('PropertyPanel', () => {
     })
     await act(async () => {})
     expect(text()).not.toContain('Alpha')
-    await act(async () => setTree({ Stage: 'b' }))
+    await act(async () => setTree({ Stage: 'Beta' }))
     await act(async () => {})
     expect(text()).toContain('Beta')
   })
@@ -243,7 +240,7 @@ describe('PropertyPanel', () => {
   })
 
   it('a Space’s property rows read its own $order, unlisted last', async () => {
-    setTree({ Stage: 'a', Note: 5, Rank: 7, $order: { properties: ['Note', 'Stage'] } })
+    setTree({ Stage: 'Alpha', Note: 5, Rank: 7, $order: { properties: ['Note', 'Stage'] } })
     await renderPanel(<PropertyPanel subject={SPACE} host="dropdown" />)
     const read = text()
     expect(read).toContain('Note')

@@ -65,8 +65,8 @@ const byStatus = (): CollectionNode =>
   })
 
 const VALUES = valuesReply({
-  p1: { [ID_KEY]: 'p1', ...propsAtRoot({ prop_status: 'active' }, [STATUS_DEF]) },
-  p2: { [ID_KEY]: 'p2', ...propsAtRoot({ prop_status: 'complete' }, [STATUS_DEF]) },
+  p1: { [ID_KEY]: 'p1', ...propsAtRoot({ prop_status: 'Active' }, [STATUS_DEF]) },
+  p2: { [ID_KEY]: 'p2', ...propsAtRoot({ prop_status: 'Complete' }, [STATUS_DEF]) },
 })
 
 let host: HTMLDivElement
@@ -155,7 +155,7 @@ describe('a card dropped across property bands', () => {
       op: 'setProperty',
       path: 'Col/One.md',
       propertyId: 'prop_status',
-      value: { kind: 'select', value: 'complete' },
+      value: { kind: 'select', value: 'Complete' },
     })
   })
 })

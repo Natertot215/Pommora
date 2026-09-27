@@ -21,7 +21,7 @@ const schema: PropertyDefinition[] = [
         id: 'g',
         label: 'G',
         color: 'blue',
-        options: [{ value: 'active', label: 'Active', color: 'blue', group_id: 'g' }],
+        options: [{ value: 'active', color: 'blue', group_id: 'g' }],
       },
     ],
   },
@@ -29,7 +29,7 @@ const schema: PropertyDefinition[] = [
     id: 'prop_select',
     name: 'Sel',
     type: 'select',
-    select_options: [{ value: 'red', label: 'Red', color: 'red' }],
+    select_options: [{ value: 'red', color: 'red' }],
   },
   { id: 'prop_date', name: 'When', type: 'dateTime' },
 ] as PropertyDefinition[]
@@ -105,7 +105,7 @@ describe('resolveBandHead', () => {
     expect(textOf(head.glyph)).toContain('Alpha')
   })
 
-  it('status → the option label (a Chip)', () => {
+  it('status → the option value (a Chip)', () => {
     const head = resolveBandHead(
       group('property', 'active'),
       view(propGroup('prop_status')),
@@ -115,11 +115,11 @@ describe('resolveBandHead', () => {
       setIcons,
       source,
     )
-    expect(head.label).toBe('Active')
-    expect(textOf(head.glyph)).toContain('Active')
+    expect(head.label).toBe('active')
+    expect(textOf(head.glyph)).toContain('active')
   })
 
-  it('select → the option label (a Chip)', () => {
+  it('select → the option value (a Chip)', () => {
     const head = resolveBandHead(
       group('property', 'red'),
       view(propGroup('prop_select')),
@@ -129,8 +129,8 @@ describe('resolveBandHead', () => {
       setIcons,
       source,
     )
-    expect(head.label).toBe('Red')
-    expect(textOf(head.glyph)).toContain('Red')
+    expect(head.label).toBe('red')
+    expect(textOf(head.glyph)).toContain('red')
   })
 
   it('dateTime → the bucket label (formatted), the raw key as text label', () => {
