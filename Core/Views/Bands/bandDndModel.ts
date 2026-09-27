@@ -123,6 +123,34 @@ export function propertyOrderAfterDrop(
   return nextOrder(presentKeys, draggedKey, beforeKey)
 }
 
+export function bandReorderPatch(input: {
+  dragged: Band
+  beforeId: string | null
+  view: SavedView
+  structuralIds: string[]
+  propertyKeys: string[]
+}): Partial<SavedView> | null {
+  const { dragged, beforeId, view, structuralIds, propertyKeys } = input
+  if (dragged.kind === 'property') {
+    if (view.group?.kind !== 'property') return null
+    return {
+      group: {
+        ...view.group,
+        order_mode: 'manual',
+        order: propertyOrderAfterDrop(propertyKeys, dragged.id, beforeId),
+      },
+    }
+  }
+  return {
+    group_order: structuralOrderAfterDrop(
+      view.group_order ?? [],
+      structuralIds,
+      dragged.id,
+      beforeId,
+    ),
+  }
+}
+
 /** Its CURRENT children + the moved id APPENDED — never the visual drop position, which persists only in the view's group_order: the per-view order must not leak into the filesystem. */
 export function reparentFsOrder(destChildIds: string[], movedId: string): string[] {
   return [...destChildIds.filter((id) => id !== movedId), movedId]

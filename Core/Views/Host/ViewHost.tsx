@@ -2,15 +2,13 @@ import { useRef } from 'react'
 import { ZOOM } from '@pommora/core/Settings/personalization'
 import type { CollectionNode, SetNode } from '@pommora/core/Nexus/tree'
 import { useViewTileScope } from '../ViewTileScope'
-import { type SavedView, VIEW_KINDS, type ViewType } from '@pommora/core/Views/views'
+import { VIEW_KINDS, type ViewType } from '@pommora/core/Views/views'
 import { useActiveView } from './useActiveView'
 import { NO_SCHEMA } from '../Pipeline/pickView'
 import { TableView } from '../Table/TableView'
 import { CardsView } from '../Cards/CardsView'
 import { useViewHost, type ViewHostApi } from './useViewHost'
 import { usePublishCount } from '../../Interface/Subfield/publish'
-
-const identity = (v: SavedView): SavedView => v
 
 const VIEW_RENDERERS: Partial<Record<ViewType, (p: { host: ViewHostApi }) => React.JSX.Element>> = {
   table: TableView,
@@ -25,7 +23,6 @@ export function ViewHost({ source }: { source: CollectionNode | SetNode }): Reac
   // An embedded tile states its own size, so in a tile scope the factor stays 1 and never compounds with the embed zoom.
   const scale = tile ? ZOOM.default : (view.view_scale ?? ZOOM.default)
   const upward = useRef<ViewHostApi['seam']>({
-    foldOverrides: { current: identity },
     bandBucket: { current: (key) => key },
     viewRootRef: { current: null },
     onCreated: { current: () => {} },

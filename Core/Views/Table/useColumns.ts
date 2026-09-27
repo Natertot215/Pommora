@@ -1,6 +1,6 @@
 // Everything a table column is: the width table and its clamp, the default alignment, the reorder helper, and the hook that resolves a view's columns into the per-index width, alignment and style the grid paints — plus the resize, hide, align and drag gestures that rewrite them.
 
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { columnMenuItems, parseStyleAction } from '@pommora/core/Actions/columnMenu'
 import { defaultStyleFor, type ColumnStyle } from '@pommora/core/Properties/columnStyles'
 import type { PropertyDefinition, PropertyType } from '@pommora/core/Properties/properties'
@@ -177,58 +177,37 @@ const COL_SHIFT_HYSTERESIS = 25
 // ── The hook ────────────────────────────────────────────────────────────────
 
 export function useColumns(host: ViewHostApi) {
-  const {
-    schema,
-    view,
-    liveView,
-    columns,
-    contextIds,
-    persistView,
-    setOrderOverride,
-    setHiddenOverride,
-    setStylePatch,
-  } = host
+  const { schema, view, liveView, columns, contextIds, persistView, setStylePatch } = host
   const beginGesture = usePointerGesture()
-  // Local column layers stay OUT of `liveView` — a resize must not re-run the pipeline.
-  const [widthOverride, setWidthOverride] = useState<Record<string, number>>({})
-  const [alignOverride, setAlignOverride] = useState<Record<string, ColumnAlign>>({})
+  // The in-drag width paints outside the pipeline's input, so a resize frame never re-runs it.
+  const [dragWidth, setDragWidth] = useState<{ id: string; width: number } | null>(null)
   const [collapsing, setCollapsing] = useState<string | null>(null)
   const [sliding, setSliding] = useState<ReadonlySet<string>>(() => new Set())
   const [colDrag, setColDrag] = useState<{ from: number; to: number; id: string } | null>(null)
   const [resizing, setResizing] = useState(false)
   const [overflowing, setOverflowing] = useState(false)
-  // Captured at resize start so an abort restores exactly — an entry absent before the drag is deleted, never written back as a width a later persist would carry to disk.
-  const resizeBaseline = useRef<{ id: string; value: number | undefined } | null>(null)
 
   useEffect(() => {
-    setWidthOverride({})
-    setAlignOverride({})
     setCollapsing(null)
     setColDrag(null)
   }, [view.id])
 
   const iconsShown = !viewOption(liveView, 'hide_column_icons')
   const styleMap = useColumnStyleMap(host)
+  const storedWidth = (id: string): number =>
+    (dragWidth?.id === id ? dragWidth.width : liveView.column_widths?.[id]) ??
+    widthFor(id, schema, contextIds).default
   const alignByCol = useMemo(
-    () => columns.map((c) => alignOverride[c.id] ?? alignFor(c.id, schema, liveView, contextIds)),
-    [columns, schema, liveView, alignOverride, contextIds],
+    () => columns.map((c) => alignFor(c.id, schema, liveView, contextIds)),
+    [columns, schema, liveView, contextIds],
   )
   const styleByCol = useMemo(() => columns.map((c) => styleMap.get(c.id)!), [columns, styleMap])
   const widthByCol = useMemo(
     () =>
       columns.map((c, i) =>
-        clampWidth(
-          widthOverride[c.id] ??
-            liveView.column_widths?.[c.id] ??
-            widthFor(c.id, schema, contextIds).default,
-          c.id,
-          schema,
-          styleByCol[i].look,
-          contextIds,
-          iconsShown,
-        ),
+        clampWidth(storedWidth(c.id), c.id, schema, styleByCol[i].look, contextIds, iconsShown),
       ),
-    [columns, schema, liveView, widthOverride, contextIds, styleByCol, iconsShown],
+    [columns, schema, liveView, dragWidth, contextIds, styleByCol, iconsShown],
   )
   const indexOf = (id: string): number => columns.findIndex((c) => c.id === id)
   const colStyle = (id: string): ColumnStyle => styleByCol[indexOf(id)]
@@ -242,10 +221,7 @@ export function useColumns(host: ViewHostApi) {
       const look = styleByCol[i].look
       const prev = prevStyles[i]?.look
       if (prev === look) return
-      const basis =
-        widthOverride[c.id] ??
-        liveView.column_widths?.[c.id] ??
-        widthFor(c.id, schema, contextIds).default
+      const basis = storedWidth(c.id)
       if (
         clampWidth(basis, c.id, schema, look, contextIds, iconsShown) >
         clampWidth(basis, c.id, schema, prev, contextIds, iconsShown)
@@ -295,8 +271,7 @@ export function useColumns(host: ViewHostApi) {
       activeId,
       overId,
     )
-    setOrderOverride(next)
-    persistView({ property_order: next })
+    void persistView({ property_order: next })
   }
   const resizeColumn = (id: string, width: number): number => {
     const clamped = clampWidth(
@@ -307,34 +282,17 @@ export function useColumns(host: ViewHostApi) {
       contextIds,
       iconsShown,
     )
-    setWidthOverride((prev) => ({ ...prev, [id]: clamped }))
+    setDragWidth({ id, width: clamped })
     return clamped
   }
-  const startResize = (id: string): void => {
-    resizeBaseline.current = { id, value: widthOverride[id] }
-    setResizing(true)
-  }
+  const startResize = (): void => setResizing(true)
   // Cleared by whichever end fires, never by teardown — the skeleton runs teardown BEFORE onAbort.
-  const abortResize = (): void => {
-    const b = resizeBaseline.current
-    if (!b) return
-    resizeBaseline.current = null
-    setWidthOverride((prev) => {
-      const next = { ...prev }
-      if (b.value === undefined) delete next[b.id]
-      else next[b.id] = b.value
-      return next
-    })
-  }
-  const endResize = (): void => {
-    setResizing(false)
-  }
+  const abortResize = (): void => setDragWidth(null)
+  const endResize = (): void => setResizing(false)
   const commitResize = (id: string, width: number): void => {
-    resizeBaseline.current = null
-    persistView({
+    setDragWidth(null)
+    void persistView({
       column_widths: {
-        ...liveView.column_widths,
-        ...widthOverride,
         [id]: clampWidth(width, id, schema, colStyle(id).look, contextIds, iconsShown),
       },
     })
@@ -346,14 +304,10 @@ export function useColumns(host: ViewHostApi) {
     if (!collapsing) return
     const hidden = [...(liveView.hidden_properties ?? []), collapsing]
     setCollapsing(null)
-    setHiddenOverride(hidden)
-    persistView({ hidden_properties: hidden })
+    void persistView({ hidden_properties: hidden })
   }
   const setColumnAlign = (id: string, align: ColumnAlign): void => {
-    setAlignOverride((prev) => ({ ...prev, [id]: align }))
-    persistView({
-      column_alignments: { ...liveView.column_alignments, ...alignOverride, [id]: align },
-    })
+    void persistView({ column_alignments: { [id]: align } })
   }
   const runStyleAction = (id: string, action: string): void => {
     const parsed = parseStyleAction(action)
@@ -381,7 +335,7 @@ export function useColumns(host: ViewHostApi) {
       }),
     )
     if (action === 'column:hide') hideColumn(id)
-    else if (action === 'column:toggle-icons') persistView({ hide_column_icons: iconsShown })
+    else if (action === 'column:toggle-icons') void persistView({ hide_column_icons: iconsShown })
     else if (action?.startsWith('align:'))
       setColumnAlign(id, action.slice('align:'.length) as ColumnAlign)
     else if (action) runStyleAction(id, action)
@@ -494,11 +448,6 @@ export function useColumns(host: ViewHostApi) {
   }
 
   return {
-    foldOverrides: (v: SavedView): SavedView => ({
-      ...v,
-      column_widths: { ...v.column_widths, ...widthOverride },
-      column_alignments: { ...v.column_alignments, ...alignOverride },
-    }),
     iconsShown,
     alignByCol,
     styleByCol,

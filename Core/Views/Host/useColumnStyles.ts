@@ -6,7 +6,6 @@ import {
   storedPick,
   type ColumnStyle,
   type DateFormat,
-  type StoredColumnStyle,
   type TimeFormat,
 } from '@pommora/core/Properties/columnStyles'
 import type { PropertyDefinition } from '@pommora/core/Properties/properties'
@@ -82,15 +81,4 @@ export function useColumnStyleMap(
     () => new Map(columns.map((c) => [c.id, styleFor(c.id, schema, liveView)])),
     [columns, schema, liveView, styleFor],
   )
-}
-
-/** Fold style overrides per-KEY: style entries are objects, so an entry-level spread would wipe a column's saved sibling keys. */
-export function mergeStyleRecords(
-  saved: Record<string, StoredColumnStyle> | undefined,
-  overrides: Record<string, StoredColumnStyle>,
-): Record<string, StoredColumnStyle> {
-  const folded = Object.fromEntries(
-    Object.entries(overrides).map(([id, s]) => [id, { ...saved?.[id], ...s }]),
-  )
-  return { ...saved, ...folded }
 }
