@@ -208,6 +208,12 @@ describe('renameSpaceOp', () => {
     expect(await readJournal(root)).toBeNull()
   })
 
+  it('rewrites a tag written as a single value', async () => {
+    await writeFile(other(), '---\nid: p2\n<Projects>: pommora\n---\nbody')
+    expect((await renameSpaceOp(root, 'sp-pom', 'Pommora 2')).ok).toBe(true)
+    expect((await fmOf(other()))['<Projects>']).toEqual(['Pommora 2'])
+  })
+
   it('dedupes when the new title already rides alongside the old', async () => {
     await writeFile(other(), '---\nid: p2\n<Projects>:\n  - Pommora\n  - Sapphire\n---\nbody')
     await mkdir(join(contextsDir(root), 'Projects', 'Sapphire'), { recursive: true })
@@ -265,6 +271,13 @@ describe('unlink cascades (D-3)', () => {
     })
     expect('<Projects>' in (await fmOf(page()))).toBe(false)
     expect((await fmOf(other()))['<Projects>']).toEqual(['Sapphire'])
+  })
+
+  it('unlinkSpaceValue strips and captures a tag written as a single value', async () => {
+    await writeFile(other(), '---\nid: p2\n<Projects>: Pommora\n---\nbody')
+    const r = await unlinkSpaceValue(root, 'Projects', 'Pommora')
+    expect(r.ok && r.value.captured).toContainEqual({ kind: 'page', values: ['Pommora'] })
+    expect('<Projects>' in (await fmOf(other()))).toBe(false)
   })
 })
 

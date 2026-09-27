@@ -92,7 +92,10 @@ describe('normalizeSavedViews', () => {
       tileDoc,
       JSON.stringify({
         layout: [],
-        tiles: [{ id: 't', type: 'view', views: [tile('table'), tile('star')] }],
+        tiles: [
+          { id: 't', type: 'view', views: [tile('table'), tile('star')] },
+          { id: 'u', views: [tile('table')] },
+        ],
       }),
     )
     await open()
@@ -103,6 +106,7 @@ describe('normalizeSavedViews', () => {
       'view-table',
       'star',
     ])
+    expect(doc.tiles[1].views[0].config.icon).toBe('table')
   })
 
   it('stamps an id and rewrites the spelling together on a first adoption', async () => {
