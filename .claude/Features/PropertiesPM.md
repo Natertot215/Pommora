@@ -49,7 +49,7 @@ Each type's definition-level configuration lives on the `propertyDefinition` sch
 
 #### II. Status
 
-A workflow property whose options sort into **groups**. The group set is open — each group is a stable `id` with a user-editable label, a color, and its own options — seeded with three: `upcoming` (Open, grey), `in_progress` (Active, blue), `done` (Done, green). Every option references its group by id, so status semantics resolve by id rather than position, and further groups drop in with no data change. An option's `value` is its label, so renaming rewrites both and cascades onto every assigning page; an option without its own color wears its group's. Sort is group position first, then option order within it.
+A workflow property whose options sort into **groups**. The group set is open — each group is a stable `id` with a user-editable label, a color, and its own options — seeded with three: `upcoming` (Open, grey), `in_progress` (Active, blue), `done` (Done, green). Every option references its group by id, so status semantics resolve by id rather than position, and further groups drop in with no data change. An option stores its word once, as its `value`, so a rename rewrites that one word and cascades it onto every assigning page; an option without its own color wears its group's. Sort is group position first, then option order within it.
 
 The value renders as a pill in its group's color; the **Compact** style renders it icon-only — the option's own icon, or its group's glyph.
 
