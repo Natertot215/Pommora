@@ -12,7 +12,7 @@ import { seedBoard } from '../Tiles/tiles'
 import { writeTileDocAt } from '../Tiles/tileDoc'
 import { getLiveTree, mutableTarget } from '../Nexus/liveTree'
 import type { MutateContext } from '../Nexus/mutate'
-import type { MutateReply, MutateRequest } from '../Nexus/mutateRequest'
+import { done, type MutateReply, type MutateRequest } from '../Nexus/mutateRequest'
 import { assignedDefs, collectionFolderOf, collectionFolders } from '../Properties/assignment'
 import { applyAdoptions } from '../Properties/optionOps'
 import type { NexusTree, SpaceNode } from '../Nexus/tree'
@@ -216,15 +216,11 @@ export async function setContextOp(
   const abs = target.value
   const world = await loadContextWorld(root)
   if (!world.ok) return world
-  const r = isMarkdownFile(abs)
-    ? await setPageContext(abs, root, world.value, contextId, spaceIds)
-    : await (async () => {
-        const owner = [...world.value.spaceById.values()].find((ref) => ref.dir === abs)
-        return owner
-          ? setSpaceContext(world.value, owner.id, contextId, spaceIds)
-          : fail('invalid-path', 'Not a context-taggable entity.')
-      })()
-  return r.ok ? ok({}) : r
+  if (isMarkdownFile(abs))
+    return done(await setPageContext(abs, root, world.value, contextId, spaceIds))
+  const owner = [...world.value.spaceById.values()].find((ref) => ref.dir === abs)
+  if (!owner) return fail('invalid-path', 'Not a context-taggable entity.')
+  return done(await setSpaceContext(world.value, owner.id, contextId, spaceIds))
 }
 
 export async function createContextGroup(
