@@ -58,19 +58,30 @@ mountEachTest((h, r) => {
 })
 let saveSpy: ReturnType<typeof vi.fn<(next: FilterView) => void>>
 
+// The pane's backend: each commit lands on the held view and redraws, as the view store and the Matrix store both do.
+let current: SavedView
+let currentTree: NexusTree | null
+const frame = (): React.JSX.Element => (
+  <FilterFrame
+    locations={source.sets}
+    view={current}
+    read={() => current}
+    schema={schema}
+    tree={currentTree}
+    label="Settings"
+    onBack={() => {}}
+    onCommit={(patch) => {
+      current = { ...current, ...patch }
+      saveSpy(current)
+      root.render(frame())
+    }}
+  />
+)
 const mount = async (v: SavedView, tree: NexusTree | null = null): Promise<void> => {
+  current = v
+  currentTree = tree
   await act(async () => {
-    root.render(
-      <FilterFrame
-        locations={source.sets}
-        view={v}
-        schema={schema}
-        tree={tree}
-        label="Settings"
-        onBack={() => {}}
-        onCommit={saveSpy}
-      />,
-    )
+    root.render(frame())
   })
 }
 const texts = (): string => host.textContent ?? ''

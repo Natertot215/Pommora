@@ -3,6 +3,7 @@ import type { PropertyDefinition } from '@pommora/core/Properties/properties'
 import type { SavedView } from '@pommora/core/Views/views'
 import { useViewTileScope } from '../ViewTileScope'
 import { pickView } from '../Pipeline/pickView'
+import { useLiveView } from './pendingView'
 
 export function useActiveView(
   source: CollectionNode | SetNode,
@@ -10,5 +11,5 @@ export function useActiveView(
 ): SavedView {
   // Inside a view embed the tile payload IS the view; the container's own choice doesn't reach it.
   const scope = useViewTileScope()
-  return scope ? scope.view : pickView(source, schema)
+  return useLiveView(source.id, scope ? scope.view : pickView(source, schema))
 }

@@ -8,7 +8,8 @@ import { LOCATION_SORT, type SavedView } from '@pommora/core/Views/views'
 import { ContentHostContext } from '../../Interface/contentHost'
 import { useSession } from '../../Session/store'
 import { useViewHost, type ViewHostApi } from './useViewHost'
-import { useContainerValues } from './useContainerValues'
+import { useContainerValues, useValuesEpoch } from './useContainerValues'
+import { useViewCreation } from './useViewCreation'
 import { patchOverride } from '../../Properties/valueOverride'
 import { propsAtRoot, pageValues } from '../../Testing/pageValues'
 import { ID_KEY } from '@pommora/core/Nexus/identityMark'
@@ -98,10 +99,12 @@ let saveSpy: ReturnType<typeof vi.fn>
 let channels: Record<string, unknown>
 let api: ViewHostApi | null = null
 
-let upward: ViewHostApi['seam']
+let creation: ReturnType<typeof useViewCreation>
 
 function Probe({ source, flatten }: { source: CollectionNode | SetNode; flatten: boolean }): null {
-  api = useViewHost(source, flatten, upward)
+  const host = useViewHost(source, flatten)
+  api = host
+  creation = useViewCreation(() => ({ ...host!, bandBucket: (key) => key, onCreated: () => {} }))
   return null
 }
 
@@ -118,11 +121,6 @@ const mount = async (source: CollectionNode | SetNode, flatten = false): Promise
 
 beforeEach(() => {
   api = null
-  upward = {
-    bandBucket: { current: (key) => key },
-    viewRootRef: { current: null },
-    onCreated: { current: () => {} },
-  }
   saveSpy = vi.fn(async () => ({ ok: true, value: { id: 'v1' } }))
   channels = {
     'view:loadValues': async () => ({ ok: true, value: VALUES }),
@@ -265,13 +263,13 @@ describe('the reset keys', () => {
     await mount(collection())
     act(() => void api?.persistView({ property_order: ['prop_status', '_title'] }))
     act(() => api?.hideProperty('prop_status'))
-    expect(api?.liveView.property_order).toEqual(['prop_status', '_title'])
+    expect(api?.view.property_order).toEqual(['prop_status', '_title'])
     await mount(
       collection({ property_order: ['prop_status', '_title'], hidden_properties: ['prop_status'] }),
     )
     await mount(collection())
-    expect(api?.liveView.property_order).toEqual(['_title', 'prop_status'])
-    expect(api?.liveView.hidden_properties).toEqual([])
+    expect(api?.view.property_order).toEqual(['_title', 'prop_status'])
+    expect(api?.view.hidden_properties).toEqual([])
   })
 
   it('sibling sub-Sets sharing the sentinel: navigating A → B resets every staged field, and B first-persists clean', async () => {
@@ -280,9 +278,9 @@ describe('the reset keys', () => {
     act(() => void api?.persistView({ property_order: ['prop_status', '_title'] }))
     act(() => api?.setStylePatch('prop_status', 'look', 'label'))
     act(() => api?.toggleCollapse('gA'))
-    expect(api?.liveView.property_order).toEqual(['prop_status', '_title'])
+    expect(api?.view.property_order).toEqual(['prop_status', '_title'])
     await mount(b)
-    expect(api?.liveView.property_order).not.toEqual(['prop_status', '_title'])
+    expect(api?.view.property_order).not.toEqual(['prop_status', '_title'])
     expect(api?.collapsed.size).toBe(0)
     saveSpy.mockClear()
     await act(async () => void api?.persistView({}))
@@ -315,6 +313,32 @@ describe('the values epoch', () => {
   beforeEach(() => {
     channels['view:loadValues'] = vi.fn(async () => ({ ok: true, value: VALUES }))
     useSession.setState({ valuesEpoch: null })
+  })
+
+  it('an epoch from before the mount, or before a container swap, triggers no second read', async () => {
+    act(() => useSession.getState().bumpValuesEpoch('Old', 'New'))
+    bump([{ rel: 'Col', pageIds: [] }])
+    await mountValues()
+    expect(loadValues()).toHaveBeenCalledTimes(1)
+    await mountValues('Other')
+    expect(loadValues()).toHaveBeenCalledTimes(2)
+    bump([{ rel: 'Other', pageIds: [] }])
+    await act(async () => {})
+    expect(loadValues()).toHaveBeenCalledTimes(3)
+  })
+
+  it('an epoch one page passed over is still read for the next page shown', async () => {
+    function PageProbe({ pageId }: { pageId: string }): null {
+      useValuesEpoch('Col', () => {}, vi.fn(), pageId)
+      return null
+    }
+    await act(async () => root.render(<PageProbe pageId="p1" />))
+    bump([{ rel: 'Col', pageIds: ['p2'] }])
+    await act(async () => {})
+    expect(loadValues()).not.toHaveBeenCalled()
+    await act(async () => root.render(<PageProbe pageId="p2" />))
+    await act(async () => {})
+    expect(loadValues()).toHaveBeenCalledWith('Col', ['p2'])
   })
 
   it('a container push re-reads only the named pages and retires a settled override while a still-saving one holds', async () => {
@@ -544,10 +568,10 @@ describe('the cards seam (flattenStructural)', () => {
     await act(async () => void api?.persistView({}))
     expect(lastSavedView().collapsed_groups).toEqual(['sA'])
     act(() => api?.setStylePatch('prop_status', 'look', 'compact'))
-    expect(api?.liveView.column_styles?.prop_status).toEqual({ look: 'compact' })
+    expect(api?.view.column_styles?.prop_status).toEqual({ look: 'compact' })
     await mount(setCollection({ column_styles: { prop_status: { look: 'compact' } } }), true)
     await mount(setCollection(), true)
-    expect(api?.liveView.column_styles).toBeUndefined()
+    expect(api?.view.column_styles).toBeUndefined()
   })
 })
 
@@ -611,7 +635,7 @@ describe('the manual order fold', () => {
 describe('settleOrders — a create composes with the live order', () => {
   const createBelowFirst = async (): Promise<void> => {
     const row = api?.rows[0]
-    if (row) await act(async () => void api?.creation.createAdjacent(row, 'below'))
+    if (row) await act(async () => void creation.createAdjacent(row, 'below'))
   }
 
   beforeEach(() => {
@@ -636,10 +660,10 @@ describe('settleOrders — a create composes with the live order', () => {
   it("the override survives the create's own optimistic push — only a page_order-backed view resets on it", async () => {
     await mount(collection({ ...SORTED, manual_order: ['p1', 'p2'] }))
     await createBelowFirst()
-    expect(api?.liveView.manual_order).toEqual(['p1', 'p3', 'p2'])
+    expect(api?.view.manual_order).toEqual(['p1', 'p3', 'p2'])
     // The create's own mutate pushes an optimistic tree: same content, new source identity.
     await mount(collection({ ...SORTED, manual_order: ['p1', 'p2'] }))
-    expect(api?.liveView.manual_order).toEqual(['p1', 'p3', 'p2'])
+    expect(api?.view.manual_order).toEqual(['p1', 'p3', 'p2'])
   })
 
   it("a sorted view's create lands at the folder's Bottom slot and beside its anchor", async () => {
@@ -647,7 +671,7 @@ describe('settleOrders — a create composes with the live order', () => {
     useSession.setState((s) => ({ tree: { ...s.tree!, collections: [source] } }))
     const mutate = useSession.getState().mutate as ReturnType<typeof vi.fn>
     await mount(source)
-    await act(async () => void api?.creation.createFirst())
+    await act(async () => void creation.createFirst())
     expect(mutate.mock.calls[0][0]).toMatchObject({ order: ['p1', 'p2', '$new'] })
     await createBelowFirst()
     expect(mutate.mock.calls[1][0]).toMatchObject({ order: ['p1', '$new', 'p2'] })
@@ -774,8 +798,7 @@ describe('view search', () => {
           value={{
             source,
             view: source.views?.[0] as SavedView,
-            persistConfig: vi.fn(),
-            persistState: vi.fn(),
+            persist: vi.fn(),
             locked: false,
             setLocked: vi.fn(),
           }}

@@ -329,10 +329,12 @@ function flattenNodes(
 }
 
 export type FilterView = Pick<SavedView, 'filter' | 'filter_enabled' | 'column_styles'>
+export type FilterPatch = { filter: SavedView['filter'] } | { filter_enabled: boolean }
 
 export function FilterFrame({
   locations,
   view,
+  read,
   schema,
   tree,
   label,
@@ -341,11 +343,12 @@ export function FilterFrame({
 }: {
   locations: (CollectionNode | SetNode)[]
   view: FilterView
+  read: () => FilterView
   schema: PropertyDefinition[]
   tree: NexusTree | null
   label: string
   onBack: () => void
-  onCommit: (next: FilterView) => void
+  onCommit: (patch: FilterPatch) => void
 }): React.JSX.Element {
   const styleFor = useStyleFor()
   const nexusClock = useSetting('timeFormat')
@@ -353,34 +356,20 @@ export function FilterFrame({
 
   const [pendingMode, setPendingMode] = useState<MatchMode | null>(null)
 
-  const propRef = useRef(view)
-  const writtenRef = useRef(view)
-  if (propRef.current !== view) {
-    propRef.current = view
-    writtenRef.current = view
-  }
-  const liveView = writtenRef.current
-
-  const commit = (next: FilterView): void => {
-    writtenRef.current = next
-    onCommit(next)
-  }
-
-  const decoded: DecodedFilter = decodeFilter(liveView.filter)
+  const decoded: DecodedFilter = decodeFilter(view.filter)
   const rows: FilterRow[] = decoded.kind === 'rows' ? decoded.rows : []
   const decodedMode: MatchMode = decoded.kind === 'rows' ? decoded.mode : 'all'
   const mode: MatchMode = rows.length === 0 ? (pendingMode ?? decodedMode) : decodedMode
 
   const save = (nextMode: MatchMode, nextRows: FilterRow[]): void =>
-    commit({ ...writtenRef.current, filter: encodeFilter(nextMode, nextRows) })
+    onCommit({ filter: encodeFilter(nextMode, nextRows) })
 
   const liveRows = (): FilterRow[] => {
-    const d = decodeFilter(writtenRef.current.filter)
+    const d = decodeFilter(read().filter)
     return d.kind === 'rows' ? d.rows : []
   }
 
-  const setEnabled = (next: boolean): void =>
-    commit({ ...writtenRef.current, filter_enabled: next })
+  const setEnabled = (next: boolean): void => onCommit({ filter_enabled: next })
 
   const entering = useEntrance(rows, (_, i) => String(i))
 
@@ -693,7 +682,7 @@ export function FilterFrame({
           trailing={
             <PickerControl
               ariaLabel="Filter active"
-              value={viewOption(liveView, 'filter_enabled') ? 'on' : 'off'}
+              value={viewOption(view, 'filter_enabled') ? 'on' : 'off'}
               options={ACTIVE_OPTIONS}
               onPick={(v) => setEnabled(v === 'on')}
             />

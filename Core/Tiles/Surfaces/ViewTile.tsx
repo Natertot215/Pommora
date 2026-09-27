@@ -5,6 +5,7 @@ import { isPlainObject } from '@pommora/core/Contract/validators'
 import type { CollectionNode, SetNode } from '@pommora/core/Nexus/tree'
 import type { PropertyDefinition } from '@pommora/core/Properties/properties'
 import {
+  applyViewPatch,
   mergeViewEdit,
   mintDefaultView,
   mintNewView,
@@ -12,8 +13,8 @@ import {
   ownsViewId,
   savedView,
   type SavedView,
-  type ViewState,
   viewIdsOf,
+  type ViewPatch,
 } from '@pommora/core/Views/views'
 import { freeName } from '@pommora/core/Paths/names'
 import { Icon, LockGlyph } from '@pommora/uix/Symbols'
@@ -37,7 +38,7 @@ import { viewGlyph } from '../../Views/viewIcon'
 import { ViewHost } from '../../Views/Host/ViewHost'
 import { SettingsFrame } from '../../Views/Settings/SettingsFrame'
 import { hostedGutter } from '@pommora/uix/Menus/menu-surface.css'
-import { resolveViewWrite, ViewTileScopeProvider } from '../../Views/ViewTileScope'
+import { ViewTileScopeProvider } from '../../Views/ViewTileScope'
 import { inertTile, type MutateEntry } from '../tileKinds'
 import { useSession } from '../../Session/store'
 import { cx } from '@pommora/uix/Utilities/cx'
@@ -315,7 +316,7 @@ export function ViewTile({
     mutateEntry(entry.id, () => patch)
   }
   const setLocked = (v: boolean): void => patchEntry({ locked: v ? true : null })
-  const writeConfig = (id: string, config: SavedView): void => {
+  const writeConfig = (id: string, patch: ViewPatch): void => {
     mutateEntry(entry.id, (raw) => {
       const arr = rawViews(raw)
       const i = viewAt(arr, id)
@@ -323,27 +324,17 @@ export function ViewTile({
       if (!isPlainObject(el)) return null
       // A view answering to a derived id takes a minted one when first written, so only minted ids reach the file.
       const own = ownsViewId(configIdOf(el), id)
-      arr[i] = {
-        ...el,
-        config: mergeViewEdit(el.config, own ? config : { ...config, id: mintViewId() }),
-      }
+      const stored = coerceEmbeddedView(el.config, schema, own ? id : mintViewId())
+      arr[i] = { ...el, config: mergeViewEdit(el.config, applyViewPatch(stored, patch)) }
       return { views: arr }
     })
   }
-  const persistConfig = (id: string, config: SavedView): void => {
-    if (resolveViewWrite(locked, config).kind === 'config') writeConfig(id, config)
-  }
-  // Folds onto the STORED view, never the caller's — the live overrides on a locked tile hold gestures the lock already refused.
-  const persistState = (id: string, state: ViewState): void => {
-    const stored = viewById(id)
-    if (stored) writeConfig(id, { ...stored, ...state })
+  const persistConfig = (id: string, patch: ViewPatch): void => {
+    if (!locked) writeConfig(id, patch)
   }
   const scopeApi = useStableApi({
-    persistConfig: (next: SavedView) => {
-      if (view) persistConfig(view.id, next)
-    },
-    persistState: (next: ViewState) => {
-      if (view) persistState(view.id, next)
+    persist: (patch: ViewPatch) => {
+      if (view) writeConfig(view.id, patch)
     },
     setLocked,
   })
@@ -366,7 +357,7 @@ export function ViewTile({
       const arr = rawViews(raw)
       arr.push({
         source_id: source.id,
-        config: { ...mintNewView('Untitled', schema), id: mintViewId() },
+        config: mintNewView('Untitled', schema),
       })
       return { views: arr, active: arr.length - 1 }
     })
@@ -386,12 +377,13 @@ export function ViewTile({
       return { views: arr, active: i + 1 }
     })
   }
-  const restoreViewAt = (i: number, el: unknown): void => {
+  const restoreViewAt = (i: number, el: unknown, wasActive: boolean): void => {
     mutateEntry(entry.id, (raw) => {
       const arr = rawViews(raw)
+      const cur = rawActive(raw, arr.length)
       const at = Math.min(i, arr.length)
       arr.splice(at, 0, el)
-      return { views: arr, active: at }
+      return { views: arr, active: wasActive ? at : cur >= at ? cur + 1 : cur }
     })
   }
   const deleteView = (id: string): void => {
@@ -404,7 +396,7 @@ export function ViewTile({
       if (at < 0 || arr.length <= 1) return null
       const cur = rawActive(raw, arr.length)
       const [removed] = arr.splice(at, 1)
-      undo = () => restoreViewAt(at, removed)
+      undo = () => restoreViewAt(at, removed, cur === at)
       return { views: arr, active: Math.min(cur > at ? cur - 1 : cur, arr.length - 1) }
     })
     if (undo) notifyDeleted(name, undo)
@@ -507,7 +499,7 @@ export function ViewTile({
       autoSize
       onCommit={(next) => {
         setRenaming(null)
-        persistConfig(v.id, { ...v, name: next })
+        persistConfig(v.id, { name: next })
       }}
       onBegin={() => setRenaming(v.id)}
       onCancel={() => setRenaming(null)}
@@ -699,7 +691,7 @@ export function ViewTile({
           onSelect={(icon) => {
             if (iconFor === 'title') return patchEntry({ display_icon: icon })
             const v = viewById(iconFor?.view)
-            if (v) persistConfig(v.id, { ...v, icon })
+            if (v) persistConfig(v.id, { icon })
           }}
         />
         <ColorPicker
@@ -707,7 +699,7 @@ export function ViewTile({
           selected={colorNameFor(viewById(colorFor)?.color)}
           onPick={(picked) => {
             const v = viewById(colorFor)
-            if (v) persistConfig(v.id, { ...v, color: picked })
+            if (v) persistConfig(v.id, { color: picked })
             setColorFor(null)
           }}
           onDismiss={() => setColorFor(null)}

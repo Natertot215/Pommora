@@ -8,10 +8,10 @@ import { isLocationFsOrder } from '@pommora/core/Views/views'
 import type { PropertyValue } from '@pommora/core/Properties/propertyValue'
 import { assignValue, type ValueWriter } from '@pommora/core/Properties/assignValue'
 import type { Result } from '@pommora/core/Contract/result'
-import { useLatest } from '@pommora/uix/Utilities/stableApi'
 import { useSession } from '../../Session/store'
 import { useContentHost } from '../../Interface/contentHost'
-import { useSaveView, useViewTileScope } from '../ViewTileScope'
+import { useViewTileScope } from '../ViewTileScope'
+import { useSaveView } from '../viewWrite'
 import { contextOptionsFor } from '../../Contexts/contextOptions'
 import { contextIdsOf, identityOf } from '../../Contexts/contextIdentity'
 import { type PickTarget, syntheticContextDef } from '../../Properties/Pickers/PropertyPicker'
@@ -36,25 +36,14 @@ import { useActiveView } from './useActiveView'
 import { patchOverride } from '../../Properties/valueOverride'
 import { useContainerValues } from './useContainerValues'
 import { pickedStyle, styleFor, useNexusForms } from './useColumnStyles'
-import { foldView, slotsOf, usePendingView, type ViewPatch } from './pendingView'
-import { useViewCreation } from './useViewCreation'
+import type { ViewPatch } from '@pommora/core/Views/views'
 import { groupKeyToValue, reassignable, reassignTarget } from '../reassign'
-
-interface ViewHostUpward {
-  bandBucket: { current: (key: string) => string | null }
-  viewRootRef: { current: HTMLElement | null }
-  onCreated: { current: (created: { id: string; path: string }) => void }
-}
 
 export type ViewHostApi = NonNullable<ReturnType<typeof useViewHost>>
 
 const NO_COLLAPSE = new Set<string>()
 
-export function useViewHost(
-  source: CollectionNode | SetNode,
-  flattenStructural: boolean,
-  upward: ViewHostUpward,
-) {
+export function useViewHost(source: CollectionNode | SetNode, flattenStructural: boolean) {
   const tree = useSession((s) => s.tree)
   const assetMap = useSession((s) => s.assetMap)
   const select = useSession((s) => s.select)
@@ -75,12 +64,7 @@ export function useViewHost(
   const view = useActiveView(source, schema)
 
   const nexus = useNexusForms()
-  const { liveView, stage } = usePendingView(view, `${source.id}\0${view.id}`)
-  const live = useLatest(liveView)
-  const collapsed = useMemo(
-    () => new Set(liveView.collapsed_groups ?? []),
-    [liveView.collapsed_groups],
-  )
+  const collapsed = useMemo(() => new Set(view.collapsed_groups ?? []), [view.collapsed_groups])
   // Painted ahead of the tree push that carries the new page_order; it settles on that push, not on a view save.
   const [structuralPaint, setStructuralPaint] = useState<string[] | null>(null)
 
@@ -104,7 +88,7 @@ export function useViewHost(
     ? undefined
     : structuralOrder
       ? (structuralPaint ?? undefined)
-      : liveView.manual_order
+      : view.manual_order
   const dragDisabled = searching || !(canReorderWithin || canReassign || canRelocate)
 
   const contextIds = contextIdsOf(tree)
@@ -119,7 +103,7 @@ export function useViewHost(
       ...resolveView({
         rows,
         setTree,
-        view: liveView,
+        view,
         schema,
         manualOrder,
         flattenStructural,
@@ -132,7 +116,7 @@ export function useViewHost(
     source,
     effectiveValues,
     tree?.pageMetadata,
-    liveView,
+    view,
     schema,
     manualOrder,
     contextIds,
@@ -150,14 +134,14 @@ export function useViewHost(
   // A single-sorted view lays its rows out in value RUNS, so a reorder landing one strictly inside another run rewrites the sorted property. Armed only when the column is shown — an unrendered property leaves the run boundaries unreadable.
   const sortReassign = useMemo(() => {
     if (groupPropId !== undefined || sortKeys !== 1) return undefined
-    for (const c of liveView.sort ?? []) {
+    for (const c of view.sort ?? []) {
       const type = declaredType(c.property_id, schema)
       if (!reassignable(type)) continue
       if (columns.some((col) => col.id === c.property_id))
         return { propertyId: c.property_id, type }
     }
     return undefined
-  }, [groupPropId, sortKeys, liveView.sort, schema, columns])
+  }, [groupPropId, sortKeys, view.sort, schema, columns])
 
   const identity = tree && identityOf(tree)
   const ctx = useMemo(
@@ -194,18 +178,13 @@ export function useViewHost(
       return undefined
     }
     const g = find(groups)
-    return g && ctx
-      ? resolveBandHead(g, liveView, ctx, nexus, setNames, setIcons, source).label
-      : id
+    return g && ctx ? resolveBandHead(g, view, ctx, nexus, setNames, setIcons, source).label : id
   }
 
   const persistView = (
     patch: ViewPatch,
     opts?: { viewState?: boolean },
-  ): Promise<Result<{ id: string }>> => {
-    stage(patch)
-    return saveView(foldView(live.current, slotsOf(patch)), opts)
-  }
+  ): Promise<Result<{ id: string }>> => saveView(view, patch, opts)
   const toggleCollapse = (key: string): void => {
     if (searching) return
     const next = new Set(collapsed)
@@ -217,22 +196,23 @@ export function useViewHost(
     void persistView({
       column_styles: {
         [colId]: {
-          ...liveView.column_styles?.[colId],
+          ...view.column_styles?.[colId],
           [key]: pickedStyle(colId, schema, nexus, key, value),
         },
       },
     })
   }
+  const viewRootRef = useRef<HTMLElement | null>(null)
   const revealingRef = useRef<Set<string>>(new Set())
   const revealProperty = (id: string): void => {
     if (revealingRef.current.has(id)) return
-    if (liveView.property_order.includes(id) && !liveView.hidden_properties.includes(id)) return
+    if (view.property_order.includes(id) && !view.hidden_properties.includes(id)) return
     revealingRef.current.add(id)
-    void persistView(unhide(liveView, id)).finally(() => revealingRef.current.delete(id))
+    void persistView(unhide(view, id)).finally(() => revealingRef.current.delete(id))
   }
   const hideProperty = (id: string): void => {
-    if (liveView.hidden_properties.includes(id)) return
-    void persistView(hideShown(liveView, id))
+    if (view.hidden_properties.includes(id)) return
+    void persistView(hideShown(view, id))
   }
 
   const writer = useRef<ValueWriter | null>(null)
@@ -274,7 +254,7 @@ export function useViewHost(
     if (target === undefined) return
     commitGroupValue(activeId, sortReassign.propertyId, sortReassign.type, target)
   }
-  const styleOf = (columnId: string): ColumnStyle => styleFor(columnId, schema, liveView, nexus)
+  const styleOf = (columnId: string): ColumnStyle => styleFor(columnId, schema, view, nexus)
   const pickTarget = (row: ViewRow, column: ResolvedColumn): PickTarget => {
     const def = schema.find((d) => d.id === column.id) ?? syntheticContextDef(column.id)
     const current = resolveFieldValue(row, column.id, schema)
@@ -300,35 +280,11 @@ export function useViewHost(
     }
   }
 
-  const creation = useViewCreation(() => ({
-    source,
-    view: liveView,
-    schema,
-    contextIds,
-    values,
-    setValueOverride,
-    effectiveValues,
-    structuralOrder,
-    persistView,
-    setStructuralPaint,
-    rowBand,
-    bandBucket: (key) => upward.bandBucket.current(key),
-    canReassign,
-    groupPropId,
-    groupPropType,
-    setPaths,
-    collapsed: shownCollapsed,
-    toggleCollapse,
-    viewRootRef: upward.viewRootRef,
-    onCreated: (created) => upward.onCreated.current(created),
-  }))
-
   if (!ctx || !tree) return null
   return {
     source,
     schema,
     view,
-    liveView,
     flat: flattenStructural,
     columns,
     groups,
@@ -365,10 +321,12 @@ export function useViewHost(
     commitGroupValue,
     pickTarget,
     styleOf,
-    creation,
     mutate,
     select,
     tree,
-    seam: upward,
+    values,
+    effectiveValues,
+    setValueOverride,
+    viewRootRef,
   }
 }

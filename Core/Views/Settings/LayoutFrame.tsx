@@ -20,7 +20,7 @@ import {
   pickerRow,
 } from '@pommora/uix/Menus'
 import { ICON } from '@pommora/uix/Menus/frames.css'
-import { useSaveView } from '../ViewTileScope'
+import { useSaveView } from '../viewWrite'
 import { InlineEditHeader } from '@pommora/uix/Menus/InlineEditHeader'
 import { VisibilityFrame } from './VisibilityFrame'
 import { switchRows, type SwitchEntry } from './switchRows'
@@ -79,7 +79,9 @@ function ViewSwitches({
   return (
     <>
       {separated ? <MenuSeparator flush /> : null}
-      <MenuIndex sections={[{ rows: switchRows(switches, view, (next) => void saveView(next)) }]} />
+      <MenuIndex
+        sections={[{ rows: switchRows(switches, view, (patch) => void saveView(view, patch)) }]}
+      />
     </>
   )
 }
@@ -131,7 +133,7 @@ export function LayoutFrame({
 }): React.JSX.Element {
   const [frame, setFrame] = useState<ViewRowId | null>(null)
   const saveView = useSaveView(source)
-  const write = (patch: Partial<SavedView>): void => void saveView({ ...view, ...patch })
+  const write = (patch: Partial<SavedView>): void => void saveView(view, patch)
   const rename = (name: string): void => {
     if (name && name !== view.name) write({ name })
   }

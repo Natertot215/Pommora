@@ -1,13 +1,16 @@
 import { isPlainObject } from '../Contract/validators'
 import type { ContainerKind } from '../Nexus/schemas'
 import {
+  applyViewPatch,
   containerViewIds,
   DEFAULT_VIEW_ID,
   mergeViewEdit,
   mintViewId,
   ownsViewId,
   savedView,
+  type RemovedView,
   type SavedView,
+  type ViewPatch,
 } from './views'
 import { ok, fail, type Result, fault } from '../Contract/result'
 import { readJsonObject, setOrDrop } from '../Files/atomicWrite'
@@ -64,15 +67,24 @@ function patchViews(
 export async function saveView(
   folder: string,
   kind: ContainerKind,
-  view: SavedView,
+  base: SavedView,
+  patch: ViewPatch,
 ): Promise<Result<{ id: string }>> {
-  let id = view.id
-  const written = await patchViews(folder, kind, ({ cur, views, ids, resolve }) => {
-    const at = ids.indexOf(resolve(view.id))
-    id = at >= 0 ? ids[at] : view.id === DEFAULT_VIEW_ID ? mintViewId() : resolve(view.id)
-    const finalView: SavedView = { ...view, id }
-    if (at < 0) views.push(finalView)
-    else views[at] = mergeViewEdit(views[at], finalView)
+  let id = base.id
+  const written = await patchViews(folder, kind, ({ cur, views, ids, resolve }, refuse) => {
+    const placeholder = base.id === DEFAULT_VIEW_ID
+    const at = placeholder
+      ? views.findIndex((v) => savedView.safeParse(v).success)
+      : ids.indexOf(resolve(base.id))
+    id = at >= 0 ? ids[at] : placeholder ? mintViewId() : resolve(base.id)
+    const stored = at >= 0 ? savedView.safeParse(views[at]) : undefined
+    const next = savedView.safeParse({
+      ...applyViewPatch(stored?.success ? stored.data : base, patch),
+      id,
+    })
+    if (!next.success) return refuse(fault('Invalid view payload.'))
+    if (at < 0) views.push(next.data)
+    else views[at] = mergeViewEdit(views[at], next.data)
     return { ...cur, views }
   })
   return written.ok ? ok({ id }) : written
@@ -138,18 +150,30 @@ export async function deleteView(
   folder: string,
   kind: ContainerKind,
   viewId: string,
-): Promise<Result<null>> {
+): Promise<Result<RemovedView>> {
+  let removed: RemovedView | undefined
   const written = await patchViews(folder, kind, ({ cur, views, ids, resolve }, refuse) => {
     if (views.length <= 1) return refuse(fault('Cannot delete the last view.'))
     const at = ids.indexOf(resolve(viewId))
     if (at < 0) return refuse(fail('not-found', 'View not found.'))
-    views.splice(at, 1)
+    const active = cur.active_view === ids[at]
+    removed = { view: views.splice(at, 1)[0] as Json, index: at, active }
     // A sidecar naming a view that is gone is legible nonsense; the absent key is the container's "no choice made", which pickView already reads.
-    return setOrDrop(
-      { ...cur, views },
-      'active_view',
-      cur.active_view === ids[at] ? null : cur.active_view,
-    )
+    return setOrDrop({ ...cur, views }, 'active_view', active ? null : cur.active_view)
+  })
+  return written.ok ? ok(removed!) : written
+}
+
+export async function restoreView(
+  folder: string,
+  kind: ContainerKind,
+  { view, index, active }: RemovedView,
+): Promise<Result<null>> {
+  const written = await patchViews(folder, kind, ({ cur, views, ids }, refuse) => {
+    if (typeof view.id !== 'string' || ids.includes(view.id))
+      return refuse(fault('That view is already back.'))
+    views.splice(Math.min(index, views.length), 0, view)
+    return { ...cur, views, ...(active && { active_view: view.id }) }
   })
   return written.ok ? ok(null) : written
 }

@@ -6,7 +6,6 @@ import type { CollectionNode, PageNode } from '@pommora/core/Nexus/tree'
 import {
   savedView,
   mintDefaultView,
-  DEFAULT_VIEW_ID,
   LOCATION_SORT,
   type SavedView,
 } from '@pommora/core/Views/views'
@@ -710,14 +709,13 @@ describe('resolveView — hidden groups + Hide Empty Groups', () => {
 })
 
 describe('mintDefaultView', () => {
-  it('mints a Table view: sentinel id, title-only, structural, no sort or _modified_at', () => {
+  it('mints a Table view: its own id, title-only, structural, no sort or _modified_at', () => {
     const schema: PropertyDefinition[] = [
       { id: 'prop_x', name: 'X', type: 'select' },
       { id: 'prop_y', name: 'Y', type: 'number' },
     ]
     const v = mintDefaultView(schema)
-    expect(v.id).toBe(DEFAULT_VIEW_ID)
-    expect(v.id).toBe('view_default')
+    expect(v.id).toMatch(/^view_[0-9A-HJKMNP-TV-Z]{26}$/)
     expect(v.type).toBe('table')
     expect(v.property_order).toEqual(['_title'])
     expect(v.hidden_properties).toContain('prop_x')

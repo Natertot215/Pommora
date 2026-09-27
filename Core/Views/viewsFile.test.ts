@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
+import { describe, it, expect, beforeEach, afterEach } from 'vitest'
 import { rm, writeFile, readFile } from 'node:fs/promises'
 import { join } from '../Paths/posix'
 import { tempRoot } from '../Testing/hostFs'
@@ -9,18 +9,19 @@ import {
   deleteView,
   duplicateView,
   readStoredView,
+  restoreView,
   setActiveView,
 } from './viewsFile'
 import { containerFieldsFrom } from '../Nexus/containerFields'
-import { stubDialer } from '../vitest.setup'
-import { restoreView } from './restoreView'
+
+const upsert = (folder: string, kind: 'collection' | 'set', v: SavedView) =>
+  saveView(folder, kind, v, v)
 
 let folder: string
 beforeEach(async () => {
   folder = tempRoot('pom-views-crud-')
 })
 afterEach(async () => {
-  vi.unstubAllGlobals()
   await rm(folder, { recursive: true, force: true })
 })
 
@@ -43,7 +44,7 @@ async function readRaw(file: string): Promise<Record<string, unknown>> {
 describe('view persistence CRUD', () => {
   it('upserts a view and round-trips it', async () => {
     await writeCollectionSidecar({ views: [] })
-    const r = await saveView(folder, 'collection', view({ id: 'view_1', name: 'Table' }))
+    const r = await upsert(folder, 'collection', view({ id: 'view_1', name: 'Table' }))
     expect(r.ok).toBe(true)
     const sidecar = await readRaw('_pagecollection.json')
     expect((sidecar.views as SavedView[]).map((v) => v.id)).toEqual(['view_1'])
@@ -51,7 +52,7 @@ describe('view persistence CRUD', () => {
 
   it('swaps the view_default sentinel for a real view_<ulid> on save', async () => {
     await writeCollectionSidecar({ views: [] })
-    const r = await saveView(folder, 'collection', view({ id: 'view_default', name: 'Table' }))
+    const r = await upsert(folder, 'collection', view({ id: 'view_default', name: 'Table' }))
     expect(r.ok).toBe(true)
     if (!r.ok) return
     expect(r.value.id).not.toBe('view_default')
@@ -74,12 +75,49 @@ describe('view persistence CRUD', () => {
         },
       ],
     })
-    const r = await saveView(folder, 'collection', view({ id: 'view_default', name: 'New' }))
+    const r = await upsert(folder, 'collection', view({ id: 'view_new', name: 'New' }))
     expect(r.ok).toBe(true)
     const sidecar = await readRaw('_pagecollection.json')
     expect(sidecar.plugin_top).toBe('keep-top')
     const keep = (sidecar.views as Record<string, unknown>[]).find((v) => v.id === 'view_keep')
     expect(keep?._plugin).toBe('keep-view')
+  })
+
+  it('lands a patch on the stored view, so a stale sender reverts nothing it left alone', async () => {
+    await writeCollectionSidecar({ views: [view({ id: 'a', name: 'Renamed', type: 'cards' })] })
+    await saveView(folder, 'collection', view({ id: 'a', name: 'Old' }), { hide_borders: true })
+    const [stored] = (await readRaw('_pagecollection.json')).views as SavedView[]
+    expect(stored).toMatchObject({ name: 'Renamed', type: 'cards', hide_borders: true })
+  })
+
+  it('a patch that clears a field removes it from the stored view', async () => {
+    await writeCollectionSidecar({ views: [view({ id: 'a', card_size: 1.2 })] })
+    await saveView(folder, 'collection', view({ id: 'a' }), { card_size: undefined })
+    const [stored] = (await readRaw('_pagecollection.json')).views as SavedView[]
+    expect('card_size' in stored).toBe(false)
+  })
+
+  it('lands a placeholder save on the first view, so racing first saves make one view', async () => {
+    await writeCollectionSidecar({})
+    const first = await upsert(folder, 'collection', view({ id: 'view_default', name: 'A' }))
+    const second = await upsert(
+      folder,
+      'collection',
+      view({ id: 'view_default', name: 'A', collapsed_groups: ['g1'] }),
+    )
+    expect(first.ok && second.ok && second.value.id === first.value.id).toBe(true)
+    const views = (await readRaw('_pagecollection.json')).views as SavedView[]
+    expect(views).toHaveLength(1)
+    expect(views[0].collapsed_groups).toEqual(['g1'])
+  })
+
+  it('appends a placeholder save beside a view it cannot read, leaving that view as stored', async () => {
+    const unreadable = 'hand-edited'
+    await writeCollectionSidecar({ views: [unreadable] })
+    await upsert(folder, 'collection', view({ id: 'view_default', name: 'A' }))
+    const views = (await readRaw('_pagecollection.json')).views as unknown[]
+    expect(views).toHaveLength(2)
+    expect(views[0]).toEqual(unreadable)
   })
 
   it('reorders views by id, keeping unnamed views at the end', async () => {
@@ -101,13 +139,6 @@ describe('view persistence CRUD', () => {
   })
 
   it("a delete's Undo puts the view back at its index with its configuration intact", async () => {
-    vi.stubGlobal('window', {
-      nexus: stubDialer({
-        'views:save': (_: string, _k: string, v: SavedView) => saveView(folder, 'collection', v),
-        'views:reorder': (_: string, _k: string, ids: string[]) =>
-          reorderViews(folder, 'collection', ids),
-      }),
-    })
     const b = view({
       id: 'b',
       type: 'cards',
@@ -116,9 +147,22 @@ describe('view persistence CRUD', () => {
     })
     const views = [view({ id: 'a' }), b, view({ id: 'c' })]
     await writeCollectionSidecar({ views })
-    await deleteView(folder, 'collection', 'b')
-    await restoreView('Col', 'collection', b, views)
+    const removed = await deleteView(folder, 'collection', 'b')
+    if (!removed.ok) throw new Error('delete refused')
+    expect((await restoreView(folder, 'collection', removed.value)).ok).toBe(true)
     expect((await readRaw('_pagecollection.json')).views).toEqual(views)
+  })
+
+  it("a delete's Undo re-selects the view it took away, and refuses a second restore", async () => {
+    await writeCollectionSidecar({
+      views: [view({ id: 'a' }), view({ id: 'b' })],
+      active_view: 'b',
+    })
+    const removed = await deleteView(folder, 'collection', 'b')
+    if (!removed.ok) throw new Error('delete refused')
+    await restoreView(folder, 'collection', removed.value)
+    expect((await readRaw('_pagecollection.json')).active_view).toBe('b')
+    expect((await restoreView(folder, 'collection', removed.value)).ok).toBe(false)
   })
 
   it('drops active_view when it named the deleted view, and keeps it otherwise', async () => {
@@ -139,7 +183,7 @@ describe('view persistence CRUD', () => {
 
   it('writes no modified_at through save, reorder, or delete', async () => {
     await writeCollectionSidecar({ views: [view({ id: 'a' })] })
-    expect((await saveView(folder, 'collection', view({ id: 'b' }))).ok).toBe(true)
+    expect((await upsert(folder, 'collection', view({ id: 'b' }))).ok).toBe(true)
     expect((await reorderViews(folder, 'collection', ['b', 'a'])).ok).toBe(true)
     expect((await deleteView(folder, 'collection', 'a')).ok).toBe(true)
     const sidecar = await readRaw('_pagecollection.json')
@@ -149,13 +193,13 @@ describe('view persistence CRUD', () => {
 
   it('leaves a legacy modified_at in place as a foreign key', async () => {
     await writeCollectionSidecar({ views: [], modified_at: '2020-01-01T00:00:00.000Z' })
-    expect((await saveView(folder, 'collection', view({ id: 'a' }))).ok).toBe(true)
+    expect((await upsert(folder, 'collection', view({ id: 'a' }))).ok).toBe(true)
     expect((await readRaw('_pagecollection.json')).modified_at).toBe('2020-01-01T00:00:00.000Z')
   })
 
   it('writes Set views into the _pageset.json sidecar', async () => {
     await writeFile(join(folder, '_pageset.json'), JSON.stringify({ id: 'set', views: [] }))
-    const r = await saveView(folder, 'set', view({ id: 'view_s', name: 'SetTable' }))
+    const r = await upsert(folder, 'set', view({ id: 'view_s', name: 'SetTable' }))
     expect(r.ok).toBe(true)
     const sidecar = JSON.parse(await readFile(join(folder, '_pageset.json'), 'utf8'))
     expect(sidecar.views.map((v: SavedView) => v.id)).toEqual(['view_s'])
@@ -177,7 +221,7 @@ describe('container writes keep what this build does not decode', () => {
     const { setChildOrder } = await import('../Nexus/reorder')
     const { assignProperty } = await import('../Properties/assignment')
     await writeCollectionSidecar({ ...raw, views: [gantt, view({ id: 'view_t' })] })
-    expect((await saveView(folder, 'collection', view({ id: 'view_t', name: 'Renamed' }))).ok).toBe(
+    expect((await upsert(folder, 'collection', view({ id: 'view_t', name: 'Renamed' }))).ok).toBe(
       true,
     )
     expect((await setChildOrder(folder, 'page_order', ['p2', 'p1'])).ok).toBe(true)
@@ -194,7 +238,7 @@ describe('container writes keep what this build does not decode', () => {
     sideways.sort = [{ property_id: 'p', direction: 'sideways' }]
     await writeCollectionSidecar({ views: [sideways, view({ id: 'view_t' })] })
     expect((await setChildOrder(folder, 'page_order', ['p1'])).ok).toBe(true)
-    expect((await saveView(folder, 'collection', view({ id: 'view_t', name: 'T2' }))).ok).toBe(true)
+    expect((await upsert(folder, 'collection', view({ id: 'view_t', name: 'T2' }))).ok).toBe(true)
     expect((await deleteView(folder, 'collection', 'view_t')).ok).toBe(true)
     const after = await readRaw('_pagecollection.json')
     expect(after.page_order).toEqual(['p1'])
@@ -216,7 +260,9 @@ describe('the saved view', () => {
     }
     await writeCollectionSidecar({ views: [stored] })
     const { wrap_titles: _cleared, ...shown } = savedView.parse(stored)
-    expect((await saveView(folder, 'collection', { ...shown, name: 'Lanes' })).ok).toBe(true)
+    expect(
+      (await upsert(folder, 'collection', { ...shown, name: 'Lanes', wrap_titles: undefined })).ok,
+    ).toBe(true)
     const after = await readRaw('_pagecollection.json')
     expect(after.views).toEqual([
       {
@@ -249,7 +295,7 @@ describe('a view without an id of its own', () => {
 
   it('takes a minted id in place on the first write, as does every view without one, and the selection follows', async () => {
     await writeCollectionSidecar({ views: stored, active_view: 'view_2' })
-    const r = await saveView(folder, 'collection', { ...shown()[0], name: 'A2' })
+    const r = await upsert(folder, 'collection', { ...shown()[0], name: 'A2' })
     const after = await onDisk()
     const views = after.views as SavedView[]
     expect(views.map((v) => v.name)).toEqual(['A2', 'B', 'C'])
@@ -263,8 +309,8 @@ describe('a view without an id of its own', () => {
   it('lands a second save under the same positional id on the view the first repaired', async () => {
     await writeCollectionSidecar({ views: stored })
     const [a] = shown()
-    await saveView(folder, 'collection', { ...a, collapsed_groups: ['g1'] })
-    await saveView(folder, 'collection', { ...a, collapsed_groups: ['g1', 'g2'] })
+    await upsert(folder, 'collection', { ...a, collapsed_groups: ['g1'] })
+    await upsert(folder, 'collection', { ...a, collapsed_groups: ['g1', 'g2'] })
     const views = (await onDisk()).views as SavedView[]
     expect(views.map((v) => v.name)).toEqual(['A', 'B', 'C'])
     expect(views[0].collapsed_groups).toEqual(['g1', 'g2'])
@@ -274,7 +320,7 @@ describe('a view without an id of its own', () => {
     await writeCollectionSidecar({ views: stored })
     const [a] = shown()
     expect((await deleteView(folder, 'collection', a.id)).ok).toBe(true)
-    await saveView(folder, 'collection', a)
+    await upsert(folder, 'collection', a)
     expect(await named()).toEqual(['B', 'C', 'A'])
     expect(((await onDisk()).views as SavedView[])[2].id).toMatch(MINTED)
   })

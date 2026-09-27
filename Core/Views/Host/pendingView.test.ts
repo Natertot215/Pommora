@@ -4,7 +4,8 @@ import { act, createElement } from 'react'
 import type { Root } from 'react-dom/client'
 import type { SavedView } from '@pommora/core/Views/views'
 import { mountEachTest } from '../../Testing/viewHarness'
-import { foldView, slotsOf, usePendingView, type ViewPatch } from './pendingView'
+import { foldView, slotsOf, type ViewPatch } from '@pommora/core/Views/views'
+import { stageView, useLiveView } from './pendingView'
 
 const base = (over: Partial<SavedView> = {}): SavedView =>
   ({
@@ -25,16 +26,15 @@ let live: SavedView
 let stage: (patch: ViewPatch) => void
 let renders = 0
 
-function Probe({ view, resetKey }: { view: SavedView; resetKey: string }): null {
-  const pending = usePendingView(view, resetKey)
-  live = pending.liveView
-  stage = pending.stage
+function Probe({ view, sourceId }: { view: SavedView; sourceId: string }): null {
+  live = useLiveView(sourceId, view)
+  stage = (patch) => stageView(sourceId, view, patch)
   renders++
   return null
 }
 
-const show = (view: SavedView, resetKey = 'k'): Promise<void> =>
-  act(async () => root.render(createElement(Probe, { view, resetKey })))
+const show = (view: SavedView, sourceId = 'k'): Promise<void> =>
+  act(async () => root.render(createElement(Probe, { view, sourceId })))
 const put = (patch: ViewPatch): Promise<void> => act(async () => stage(patch))
 
 beforeEach(() => {
@@ -84,12 +84,15 @@ describe('a whole field', () => {
     expect(live.collapsed_groups).toEqual(['c'])
   })
 
-  it('a staged undefined drops the field with its entries', async () => {
-    await show(base({ column_widths: { a: 100 } }))
-    await put({ column_widths: { a: 150 }, hide_borders: true })
+  it('a staged clear paints the field cleared, entries included, until the clear lands', async () => {
+    await show(base({ column_widths: { a: 100 }, hide_borders: true }))
+    await put({ column_widths: { a: 150 } })
     await put({ column_widths: undefined, hide_borders: undefined })
-    expect(live.column_widths).toEqual({ a: 100 })
+    expect(live.column_widths).toBeUndefined()
     expect(live.hide_borders).toBeUndefined()
+    await show(base())
+    await show(base({ hide_borders: true }))
+    expect(live.hide_borders).toBe(true)
   })
 
   it('a run back to its start settles when the start lands and never masks a later write', async () => {
@@ -143,7 +146,7 @@ describe('the column records', () => {
 })
 
 describe('the hook', () => {
-  it('a reset key change drops every slot', async () => {
+  it('a change of source drops every slot', async () => {
     await show(base())
     await put({ collapsed_groups: ['a'], column_widths: { a: 100 } })
     await show(base(), 'other')

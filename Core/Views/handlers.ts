@@ -1,86 +1,66 @@
 import { type Handlers, withRoot, withWriteRoot } from '../Contract/handlers'
 import { ok, type Result, fault } from '../Contract/result'
 import { isPlainObject, isStringArray, NEEDS_CONFIG_PATCH } from '../Contract/validators'
-import { coerceOpenIn, coerceViewButton } from '../Nexus/schemas'
+import { type ContainerKind, coerceOpenIn, coerceViewButton } from '../Nexus/schemas'
 import { resolveUnderRoot } from '../Paths/pathSafety'
 import { mutableTarget } from '../Nexus/liveTree'
 import { confirmContainerWrite } from '../Nexus/confirm'
 import { setContainerConfig } from './containerConfig'
 import { loadValues } from './loadValues'
-import { savedView } from './views'
-import { deleteView, duplicateView, reorderViews, saveView } from './viewsFile'
+import { removedView, savedView } from './views'
+import { deleteView, duplicateView, reorderViews, restoreView, saveView } from './viewsFile'
 
 // View SELECTION is the container sidecar's `active_view`; this is the view DEFINITION.
-async function resolveViewContainer(
-  root: string,
-  containerPath: unknown,
-  kind: unknown,
-): Promise<Result<{ folder: string; kind: 'collection' | 'set' }>> {
-  if (typeof containerPath !== 'string') return fault('A container path is required.')
-  if (kind !== 'collection' && kind !== 'set') return fault('kind must be "collection" or "set".')
-  const resolved = await mutableTarget(root, containerPath, [kind])
-  if (!resolved.ok) return resolved
-  return ok({ folder: resolved.value, kind })
-}
+const containerWrite = <A extends unknown[], T>(
+  run: (folder: string, kind: ContainerKind, ...args: A) => Promise<Result<T>>,
+) =>
+  withWriteRoot(async (root, ctx, containerPath: unknown, kind: unknown, ...args: A) => {
+    if (typeof containerPath !== 'string') return fault('A container path is required.')
+    if (kind !== 'collection' && kind !== 'set') return fault('kind must be "collection" or "set".')
+    const folder = await mutableTarget(root, containerPath, [kind])
+    if (!folder.ok) return folder
+    const r = await run(folder.value, kind, ...args)
+    if (r.ok) await confirmContainerWrite(ctx, root, containerPath)
+    return r
+  })
 
 export const viewsHandlers = {
-  'views:save': withWriteRoot(
-    async (root, ctx, containerPath: unknown, kind: unknown, view: unknown) => {
-      const c = await resolveViewContainer(root, containerPath, kind)
-      if (!c.ok) return c
-      const parsed = savedView.safeParse(view)
-      if (!parsed.success) return fault('Invalid view payload.')
-      const r = await saveView(c.value.folder, c.value.kind, parsed.data)
-      if (r.ok) await confirmContainerWrite(ctx, root, containerPath)
-      return r.ok ? ok({ id: r.value.id }) : r
-    },
+  'views:save': containerWrite(async (folder, kind, base: unknown, patch: unknown) => {
+    const parsed = savedView.safeParse(base)
+    if (!parsed.success || !isPlainObject(patch)) return fault('Invalid view payload.')
+    return saveView(folder, kind, parsed.data, patch)
+  }),
+
+  'views:duplicate': containerWrite(async (folder, kind, viewId: unknown) =>
+    typeof viewId === 'string'
+      ? duplicateView(folder, kind, viewId)
+      : fault('A view id is required.'),
   ),
 
-  'views:duplicate': withWriteRoot(
-    async (root, ctx, containerPath: unknown, kind: unknown, viewId: unknown) => {
-      const c = await resolveViewContainer(root, containerPath, kind)
-      if (!c.ok) return c
-      if (typeof viewId !== 'string') return fault('A view id is required.')
-      const r = await duplicateView(c.value.folder, c.value.kind, viewId)
-      if (r.ok) await confirmContainerWrite(ctx, root, containerPath)
-      return r
-    },
+  'views:reorder': containerWrite(async (folder, kind, orderedIds: unknown) =>
+    isStringArray(orderedIds)
+      ? reorderViews(folder, kind, orderedIds)
+      : fault('orderedIds must be a string array.'),
   ),
 
-  'views:reorder': withWriteRoot(
-    async (root, ctx, containerPath: unknown, kind: unknown, orderedIds: unknown) => {
-      const c = await resolveViewContainer(root, containerPath, kind)
-      if (!c.ok) return c
-      if (!isStringArray(orderedIds)) return fault('orderedIds must be a string array.')
-      const r = await reorderViews(c.value.folder, c.value.kind, orderedIds)
-      if (r.ok) await confirmContainerWrite(ctx, root, containerPath)
-      return r
-    },
+  'views:delete': containerWrite(async (folder, kind, viewId: unknown) =>
+    typeof viewId === 'string' ? deleteView(folder, kind, viewId) : fault('A view id is required.'),
   ),
 
-  'views:delete': withWriteRoot(
-    async (root, ctx, containerPath: unknown, kind: unknown, viewId: unknown) => {
-      const c = await resolveViewContainer(root, containerPath, kind)
-      if (!c.ok) return c
-      if (typeof viewId !== 'string') return fault('A view id is required.')
-      const r = await deleteView(c.value.folder, c.value.kind, viewId)
-      if (r.ok) await confirmContainerWrite(ctx, root, containerPath)
-      return r
-    },
-  ),
+  'views:restore': containerWrite(async (folder, kind, removed: unknown) => {
+    const parsed = removedView.safeParse(removed)
+    return parsed.success
+      ? restoreView(folder, kind, parsed.data)
+      : fault('A removed view is required.')
+  }),
 
-  'container:configure': withWriteRoot(
-    async (root, ctx, containerPath: unknown, kind: unknown, patch: unknown) => {
-      const c = await resolveViewContainer(root, containerPath, kind)
-      if (!c.ok) return c
-      if (!isPlainObject(patch)) return NEEDS_CONFIG_PATCH
-      const r = await setContainerConfig(c.value.folder, c.value.kind, {
-        open_in: coerceOpenIn(patch.open_in),
-        view_button: coerceViewButton(patch.view_button),
-      })
-      if (r.ok) await confirmContainerWrite(ctx, root, containerPath)
-      return r
-    },
+  'container:configure': containerWrite(async (folder, kind, patch: unknown) =>
+    isPlainObject(patch)
+      ? setContainerConfig(folder, kind, {
+          open_in: coerceOpenIn(patch.open_in),
+          view_button: coerceViewButton(patch.view_button),
+        })
+      : NEEDS_CONFIG_PATCH,
   ),
 
   'view:loadValues': withRoot(async (root, _ctx, containerPath: unknown, pageIds: unknown) => {

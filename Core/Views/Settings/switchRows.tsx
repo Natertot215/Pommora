@@ -13,7 +13,7 @@ export type SwitchEntry = {
 export const switchRows = (
   entries: SwitchEntry[],
   view: SavedView,
-  save: (next: SavedView) => void,
+  save: (patch: Partial<SavedView>) => void,
 ): MenuRow[] =>
   entries.map((e) => {
     const on = viewOption(view, e.key)
@@ -25,7 +25,7 @@ export const switchRows = (
         kind: 'switch',
         checked: e.invert ? !on : on,
         ariaLabel: e.label,
-        onChange: (next) => save({ ...view, [e.key]: e.invert ? !next : next }),
+        onChange: (next) => save({ [e.key]: e.invert ? !next : next }),
       },
     }
   })

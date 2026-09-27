@@ -31,7 +31,7 @@ describe('the session gate during a Nexus switch', () => {
     let release!: () => void
     const held = whileAdopting(() => new Promise<void>((r) => (release = r)))
     expect(await interfaceHandlers['devicePrefs:save'](ctx, { nativeMenus: true })).toEqual(BUSY)
-    expect(await viewsHandlers['views:save'](ctx, 'Notes', 'collection', {})).toEqual(BUSY)
+    expect(await viewsHandlers['views:save'](ctx, 'Notes', 'collection', {}, {})).toEqual(BUSY)
     expect(readValue('devicePrefs')).toBeNull()
     expect(await interfaceHandlers['devicePrefs:load'](ctx)).toEqual(ok(null))
     release()

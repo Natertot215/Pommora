@@ -1,6 +1,6 @@
 import type { PropertyDefinition } from '@pommora/core/Properties/properties'
 import type { CollectionNode, NexusTree, SetNode } from '@pommora/core/Nexus/tree'
-import { mintDefaultView, type SavedView } from '@pommora/core/Views/views'
+import { DEFAULT_VIEW_ID, mintDefaultView, type SavedView } from '@pommora/core/Views/views'
 
 export const NO_SCHEMA: PropertyDefinition[] = []
 
@@ -27,7 +27,7 @@ export function pickView(
   const saved =
     (source.activeView ? views.find((v) => v.id === source.activeView) : undefined) ?? views[0]
   if (saved) return saved
-  const view = minted.get(schema) ?? mintDefaultView(schema)
+  const view = minted.get(schema) ?? { ...mintDefaultView(schema), id: DEFAULT_VIEW_ID }
   minted.set(schema, view)
   return view
 }

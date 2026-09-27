@@ -1,9 +1,8 @@
 import { useRef, useState } from 'react'
 import type { CollectionNode, SetNode } from '@pommora/core/Nexus/tree'
 import type { SavedView } from '@pommora/core/Views/views'
-import { askDeleteView } from '../../Interface/Confirm/confirmations'
-import { notifyDeleted, reportRefusal } from '../../Interface/Notifications/notifications'
-import { restoreView } from '../restoreView'
+import { reportRefusal } from '../../Interface/Notifications/notifications'
+import { deleteViewWithUndo } from '../deleteViewWithUndo'
 import { Icon } from '@pommora/uix/Symbols'
 import { AccessoryButton, MenuItem, MenuSeparator } from '@pommora/uix/Menus'
 import { PickerMenu } from '@pommora/uix/Pickers/PickerMenu'
@@ -24,11 +23,7 @@ export function ViewItemMenu({
   const canDelete = views.length > 1
 
   const deleteView = async (): Promise<void> => {
-    if (!(await askDeleteView())) return
-    const res = await dialer().ask('views:delete', source.path, source.kind, view.id)
-    if (!reportRefusal(res)) return
-    notifyDeleted(view.name, () => restoreView(source.path, source.kind, view, views))
-    onDeleted?.()
+    if (await deleteViewWithUndo(source, view)) onDeleted?.()
   }
 
   return (

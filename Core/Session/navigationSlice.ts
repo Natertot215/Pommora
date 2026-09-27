@@ -56,11 +56,9 @@ import {
   setBodyBase,
 } from './pageDetailCache'
 import { dropWarmOwner, readWarm } from './warmCache'
-import { findCollection, findCollectionForSet, findSet, isDepth1Set } from '../Nexus/treeIndex'
 import { dropAllTileDocs } from '../Tiles/tileDocStore'
 import { cancelPageSave, scheduleTabsSave } from './saveScheduler'
 import { crumbDepthFor } from '../Interface/Subfield/crumbs'
-import { ensureContainerView } from '../Views/Host/viewMint'
 import type { SessionState, Slice } from './sessionState'
 import { dialer } from '../Platform/dialer'
 
@@ -598,22 +596,12 @@ export const createNavigationSlice: Slice<NavigationSlice> = (set, get) => {
         case 'space':
           set({ selection: { kind: target.kind, id: target.id } })
           break
-        case 'collection': {
+        case 'collection':
           set({ selection: { kind: 'collection', id: target.id } })
-          const col = findCollection(get().tree, target.id)
-          if (col) ensureContainerView(col, col.properties ?? [])
           break
-        }
-        case 'set': {
+        case 'set':
           set({ selection: { kind: 'set', id: target.id, path: target.path } })
-          const setNode = findSet(get().tree, target.id)
-          if (setNode && isDepth1Set(get().tree, target.id))
-            ensureContainerView(
-              setNode,
-              findCollectionForSet(get().tree, target.id)?.properties ?? [],
-            )
           break
-        }
         case 'page':
           if (!(await landPage({ kind: 'page', id: target.id, path: target.path }))) return
           break

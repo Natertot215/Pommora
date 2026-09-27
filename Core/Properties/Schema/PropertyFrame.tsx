@@ -15,7 +15,7 @@ import type { Result } from '@pommora/core/Contract/result'
 import type { ColumnStyle } from '@pommora/core/Properties/columnStyles'
 import type { CollectionNode, SetNode } from '@pommora/core/Nexus/tree'
 import { useActiveView } from '../../Views/Host/useActiveView'
-import { useSaveView } from '../../Views/ViewTileScope'
+import { useSaveView } from '../../Views/viewWrite'
 import { pickedStyle, useNexusForms, useStyleFor } from '../../Views/Host/useColumnStyles'
 import { DateTimeEditor } from './DateTimeEditor'
 import { CheckboxEditor } from './CheckboxEditor'
@@ -254,10 +254,7 @@ export function PropertyFrame({
       pickedStyle(propId, schema, nexus, key as keyof ColumnStyle, String(value)),
     ])
     const next = { ...activeView.column_styles?.[propId], ...Object.fromEntries(picks) }
-    await saveView({
-      ...activeView,
-      column_styles: { ...activeView.column_styles, [propId]: next },
-    })
+    await saveView(activeView, { column_styles: { [propId]: next } })
   }
   const handleDrop = (drop: PaneDrop): Promise<void> =>
     write(

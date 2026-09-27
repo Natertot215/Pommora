@@ -90,11 +90,9 @@ describe('the dateTime Format editor writes the ACTIVE view (A-3)', () => {
     await act(async () => {
       buttonFor('Short Date').click()
     })
-    expect(saveSpy).toHaveBeenCalledWith(
-      'Col',
-      'collection',
-      expect.objectContaining({ column_styles: { prop_due: { date_format: 'short' } } }),
-    )
+    expect(saveSpy).toHaveBeenCalledWith('Col', 'collection', expect.anything(), {
+      column_styles: { prop_due: { date_format: 'short' } },
+    })
   })
 
   it("a time on the Nexus's own clock stores as shown, so it keeps following that clock", async () => {
@@ -106,10 +104,8 @@ describe('the dateTime Format editor writes the ACTIVE view (A-3)', () => {
     await act(async () => {
       buttonFor('24 Hours').click()
     })
-    expect(saveSpy).toHaveBeenCalledWith(
-      'Col',
-      'collection',
-      expect.objectContaining({ column_styles: { prop_due: { time_format: 'shown' } } }),
-    )
+    expect(saveSpy).toHaveBeenCalledWith('Col', 'collection', expect.anything(), {
+      column_styles: { prop_due: { time_format: 'shown' } },
+    })
   })
 })

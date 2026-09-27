@@ -13,7 +13,7 @@ import {
   viewOption,
 } from '@pommora/core/Views/views'
 import { MenuRowView, MenuTopRow, MenuSeparator, pickerRow } from '@pommora/uix/Menus'
-import { useSaveView } from '../ViewTileScope'
+import { useSaveView } from '../viewWrite'
 import { declaredType } from '../../Properties/value'
 import type { PickerOption } from '@pommora/uix/Pickers/PickerControl'
 import { CustomList, PropertyPreview, SUB_LOOK } from './OptionOrderList'
@@ -87,7 +87,7 @@ export function SortFrame({
   onBack: () => void
 }): React.JSX.Element {
   const saveView = useSaveView(source)
-  const save = (sort: SortCriterion[] | undefined): void => void saveView({ ...view, sort })
+  const save = (sort: SortCriterion[] | undefined): void => void saveView(view, { sort })
 
   const primary = view.sort?.[0]
   const sub = view.sort?.[1]
@@ -106,8 +106,7 @@ export function SortFrame({
     if (primary?.property_id === id) return
     const fresh: SortCriterion = { property_id: id, direction: 'ascending' }
     const next = sub && sub.property_id !== id ? [fresh, sub] : [fresh]
-    if (id === LOCATION_SORT)
-      void saveView({ ...view, sort: next, location_order_mode: 'location' })
+    if (id === LOCATION_SORT) void saveView(view, { sort: next, location_order_mode: 'location' })
     else save(next)
   }
 
@@ -174,7 +173,7 @@ export function SortFrame({
                 'Order',
                 viewOption(view, 'location_order_mode'),
                 LOCATION_ORDERS,
-                (v) => void saveView({ ...view, location_order_mode: v }),
+                (v) => void saveView(view, { location_order_mode: v }),
                 sub ? SUB_LOOK : undefined,
               )}
             />

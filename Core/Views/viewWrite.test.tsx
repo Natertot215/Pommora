@@ -4,20 +4,15 @@ import { act, useEffect } from 'react'
 import type { Root } from 'react-dom/client'
 import type { CollectionNode } from '@pommora/core/Nexus/tree'
 import type { PropertyDefinition } from '@pommora/core/Properties/properties'
-import type { SavedView, ViewState } from '@pommora/core/Views/views'
+import type { SavedView } from '@pommora/core/Views/views'
 import { useSession } from '../Session/store'
 import { GroupFrame } from './Settings/GroupFrame'
 import { SettingsFrame } from './Settings/SettingsFrame'
-import {
-  resolveViewWrite,
-  saveViewIn,
-  useSaveView,
-  VIEW_CONFIG_LOCKED,
-  ViewTileScopeProvider,
-  type ViewTileScopeValue,
-} from './ViewTileScope'
+import { ViewTileScopeProvider, type ViewTileScopeValue } from './ViewTileScope'
+import { resolveViewWrite, saveViewIn, useSaveView, VIEW_CONFIG_LOCKED } from './viewWrite'
 import { stubDialer } from '../vitest.setup'
 import { mountEachTest } from '../Testing/viewHarness'
+import { useActiveView } from './Host/useActiveView'
 
 const statusDef: PropertyDefinition = {
   id: 'prop_status',
@@ -58,15 +53,13 @@ mountEachTest((h, r) => {
   host = h
   root = r
 })
-let persistConfig: Mock<(next: SavedView) => void>
-let persistState: Mock<(next: ViewState) => void>
+let persist: Mock<(patch: Partial<SavedView>) => void>
 let sourceSave: Mock
 
 const scope = (locked: boolean): ViewTileScopeValue => ({
   source,
   view,
-  persistConfig,
-  persistState,
+  persist,
   locked,
   setLocked: vi.fn(),
 })
@@ -86,8 +79,7 @@ const clickRow = (label: string, which: 'first' | 'last' = 'first'): Promise<voi
 }
 
 beforeEach(() => {
-  persistConfig = vi.fn()
-  persistState = vi.fn()
+  persist = vi.fn()
   sourceSave = vi.fn(async () => ({ ok: true, value: { id: view.id } }))
   ;(window as unknown as { nexus: unknown }).nexus = stubDialer({
     'views:save': sourceSave,
@@ -98,7 +90,7 @@ beforeEach(() => {
 function Probe({ onResult }: { onResult: (r: unknown) => void }): null {
   const save = useSaveView(source)
   useEffect(() => {
-    void save({ ...view, name: 'Renamed' }).then(onResult)
+    void save(view, { name: 'Renamed' }).then(onResult)
   }, [save, onResult])
   return null
 }
@@ -107,7 +99,8 @@ function StateProbe({ onResult }: { onResult: (r: unknown) => void }): null {
   const save = useSaveView(source)
   useEffect(() => {
     void save(
-      { ...view, collapsed_groups: ['Done'], column_widths: { _title: 420 } },
+      view,
+      { collapsed_groups: ['Done'], column_widths: { _title: 420 } },
       { viewState: true },
     ).then(onResult)
   }, [save, onResult])
@@ -125,7 +118,7 @@ describe('a locked view-embed scope', () => {
     expect(results).toEqual([
       { ok: false, error: { code: 'operation-failed', message: VIEW_CONFIG_LOCKED } },
     ])
-    expect(persistConfig).not.toHaveBeenCalled()
+    expect(persist).not.toHaveBeenCalled()
   })
 
   it('persists through the payload writer when unlocked', async () => {
@@ -136,7 +129,7 @@ describe('a locked view-embed scope', () => {
       </ViewTileScopeProvider>,
     )
     expect(results).toEqual([{ ok: true, value: { id: view.id } }])
-    expect(persistConfig).toHaveBeenCalledWith({ ...view, name: 'Renamed' })
+    expect(persist).toHaveBeenCalledWith({ name: 'Renamed' })
   })
 
   it('lets a collapse through — the lock freezes config, not how you are reading the tile', async () => {
@@ -147,7 +140,7 @@ describe('a locked view-embed scope', () => {
       </ViewTileScopeProvider>,
     )
     expect(results).toEqual([{ ok: true, value: { id: view.id } }])
-    expect(persistState).toHaveBeenCalledWith({ collapsed_groups: ['Done'] })
+    expect(persist).toHaveBeenCalledWith({ collapsed_groups: ['Done'] })
   })
 
   it('narrows a state write to the state keys, so a refused override cannot ride along', async () => {
@@ -156,8 +149,7 @@ describe('a locked view-embed scope', () => {
         <StateProbe onResult={() => {}} />
       </ViewTileScopeProvider>,
     )
-    expect(persistState).toHaveBeenCalledWith({ collapsed_groups: ['Done'] })
-    expect(persistConfig).not.toHaveBeenCalled()
+    expect(persist.mock.calls).toEqual([[{ collapsed_groups: ['Done'] }]])
   })
 
   it('drops nothing to the source container either', async () => {
@@ -174,7 +166,7 @@ describe('a locked view-embed scope', () => {
     )
     await clickRow('Group By')
     await clickRow('Status', 'last')
-    expect(persistConfig).not.toHaveBeenCalled()
+    expect(persist).not.toHaveBeenCalled()
     expect(sourceSave).not.toHaveBeenCalled()
   })
 
@@ -219,52 +211,83 @@ describe('a locked view-embed scope', () => {
 
 describe('saveViewIn — the write every settings frame routes through', () => {
   it('lands a scoped write on the tile payload, never the source', async () => {
-    const res = await saveViewIn(scope(false), source, { ...view, name: 'Renamed' })
+    const res = await saveViewIn(scope(false), source, view, { name: 'Renamed' })
     expect(res).toEqual({ ok: true, value: { id: view.id } })
-    expect(persistConfig).toHaveBeenCalledWith({ ...view, name: 'Renamed' })
+    expect(persist).toHaveBeenCalledWith({ name: 'Renamed' })
     expect(sourceSave).not.toHaveBeenCalled()
   })
 
   it('refuses a scoped write while the tile is locked', async () => {
-    const res = await saveViewIn(scope(true), source, { ...view, name: 'Renamed' })
+    const res = await saveViewIn(scope(true), source, view, { name: 'Renamed' })
     expect(res).toEqual({
       ok: false,
       error: { code: 'operation-failed', message: VIEW_CONFIG_LOCKED },
     })
-    expect(persistConfig).not.toHaveBeenCalled()
+    expect(persist).not.toHaveBeenCalled()
     expect(sourceSave).not.toHaveBeenCalled()
   })
 
+  it('a refused write paints nothing on the locked tile', async () => {
+    let live: SavedView = view
+    function Shown(): null {
+      live = useActiveView(source, [statusDef])
+      return null
+    }
+    await render(
+      <ViewTileScopeProvider value={scope(true)}>
+        <Shown />
+      </ViewTileScopeProvider>,
+    )
+    await act(async () => {
+      await saveViewIn(scope(true), source, view, { name: 'Renamed' })
+    })
+    expect(live.name).toBe(view.name)
+  })
+
   it('falls through to the source when nothing scopes it', async () => {
-    await saveViewIn(null, source, { ...view, name: 'Renamed' })
+    await saveViewIn(null, source, view, { name: 'Renamed' })
     expect(sourceSave).toHaveBeenCalled()
-    expect(persistConfig).not.toHaveBeenCalled()
+    expect(persist).not.toHaveBeenCalled()
+  })
+
+  it('a second write before the first lands carries the first, whatever view its caller drew', async () => {
+    const shown = { ...source, views: [view] } as CollectionNode
+    let save: ReturnType<typeof useSaveView> = async () => ({ ok: true, value: { id: '' } })
+    function Shown(): null {
+      useActiveView(shown, [statusDef])
+      save = useSaveView(shown)
+      return null
+    }
+    await render(<Shown />)
+    await act(async () => {
+      await save(view, { name: 'Renamed' })
+      await save(view, { type: 'cards' })
+    })
+    expect(sourceSave.mock.calls.at(-1)?.[2]).toMatchObject({ name: 'Renamed', type: 'cards' })
   })
 })
 
 describe('resolveViewWrite — the one lock-write gate', () => {
-  it('writes the whole view when unlocked', () => {
-    expect(resolveViewWrite(false, view)).toEqual({ kind: 'config', view })
+  it('writes the whole patch when unlocked', () => {
+    expect(resolveViewWrite(false, { name: 'Renamed' })).toEqual({ name: 'Renamed' })
   })
   it('refuses a config write while locked', () => {
-    expect(resolveViewWrite(true, view)).toEqual({ kind: 'refused' })
+    expect(resolveViewWrite(true, { name: 'Renamed' })).toBeNull()
   })
   it('folds a state-only write while locked, dropping config keys like name', () => {
-    const edited: SavedView = { ...view, name: 'Renamed', collapsed_groups: ['Done'] }
-    const write = resolveViewWrite(true, edited, { viewState: true })
-    expect(write.kind).toBe('state')
-    if (write.kind === 'state') {
-      expect('name' in write.state).toBe(false)
-      expect(write.state.collapsed_groups).toEqual(['Done'])
-    }
+    const write = resolveViewWrite(
+      true,
+      { name: 'Renamed', collapsed_groups: ['Done'] },
+      { viewState: true },
+    )
+    expect(write).toEqual({ collapsed_groups: ['Done'] })
   })
   it('a locked tile still carries a manual order through the state-only write', () => {
-    const edited: SavedView = { ...view, name: 'Renamed', manual_order: ['p2', 'p1'] }
-    const write = resolveViewWrite(true, edited, { viewState: true })
-    expect(write.kind).toBe('state')
-    if (write.kind === 'state') {
-      expect('name' in write.state).toBe(false)
-      expect(write.state.manual_order).toEqual(['p2', 'p1'])
-    }
+    const write = resolveViewWrite(
+      true,
+      { name: 'Renamed', manual_order: ['p2', 'p1'] },
+      { viewState: true },
+    )
+    expect(write).toEqual({ manual_order: ['p2', 'p1'] })
   })
 })

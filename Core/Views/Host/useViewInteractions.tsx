@@ -34,6 +34,7 @@ import { sameIds, spliceBeside, tieOrderWith } from '../creationOrder'
 import { pageIdsIn } from '../../Nexus/treePatch'
 import { useViewTileScope } from '../ViewTileScope'
 import type { ViewHostApi } from './useViewHost'
+import { useViewCreation } from './useViewCreation'
 
 interface ViewInteractionPolicy {
   ghost: {
@@ -75,7 +76,7 @@ export function rowHover(
 export function useViewInteractions(host: ViewHostApi, policy: ViewInteractionPolicy) {
   const {
     source,
-    liveView,
+    view,
     groups,
     setTree,
     rows,
@@ -99,7 +100,6 @@ export function useViewInteractions(host: ViewHostApi, policy: ViewInteractionPo
     persistView,
     commitValue,
     commitGroupValue,
-    creation,
     mutate,
     select,
     styleOf,
@@ -115,20 +115,20 @@ export function useViewInteractions(host: ViewHostApi, policy: ViewInteractionPo
     const dragged = bands.find((b) => b.id === draggedId)
     if (!dragged) return
     if (dragged.kind === 'property') {
-      if (!structuralGrouping && liveView.group?.kind === 'property') {
+      if (!structuralGrouping && view.group?.kind === 'property') {
         if (drop.kind !== 'reorder') return
         const patch = bandReorderPatch({
           dragged,
           beforeId: drop.beforeId,
-          view: liveView,
+          view,
           structuralIds: [],
           propertyKeys: groups.filter((g) => g.kind === 'property').map((g) => g.key),
         })
         if (patch) void persistView(patch)
         return
       }
-      if (!subGrouped || !liveView.sub_group || liveView.sub_group.order_mode !== 'manual') return
-      const sub = subGroupOrderPatch(groups, liveView.sub_group, draggedId, drop.beforeId)
+      if (!subGrouped || !view.sub_group || view.sub_group.order_mode !== 'manual') return
+      const sub = subGroupOrderPatch(groups, view.sub_group, draggedId, drop.beforeId)
       if (sub) void persistView(sub)
       return
     }
@@ -136,13 +136,13 @@ export function useViewInteractions(host: ViewHostApi, policy: ViewInteractionPo
     const structural = bandReorderPatch({
       dragged,
       beforeId: drop.beforeId,
-      view: liveView,
+      view,
       structuralIds: setTree.flatMap(subtreeIds),
       propertyKeys: [],
     })
     if (!structural) return
     if (drop.kind === 'reorder') {
-      if (structuralGrouping && viewOption(liveView, 'structural_order_mode') === 'location') {
+      if (structuralGrouping && viewOption(view, 'structural_order_mode') === 'location') {
         const parentPath = dragged.parentId === null ? source.path : setPaths.get(dragged.parentId)
         const siblingIds =
           dragged.parentId === null
@@ -192,6 +192,11 @@ export function useViewInteractions(host: ViewHostApi, policy: ViewInteractionPo
     }
     return m
   }, [groups])
+  const creation = useViewCreation(() => ({
+    ...host,
+    bandBucket: (key) => (subGrouped ? (subTargets.get(key)?.bucket ?? null) : key),
+    onCreated: (created) => policy.rename(created, true),
+  }))
 
   // ── Rows ──────────────────────────────────────────────────────────────────
 
@@ -257,8 +262,8 @@ export function useViewInteractions(host: ViewHostApi, policy: ViewInteractionPo
     const spliceLive = (existing: string[] | undefined): string[] =>
       tieOrderWith(existing, allIds, activeId, beforeId, 'above')
     setStructuralPaint((m) => m && spliceLive(m))
-    if (liveView.manual_order)
-      void persistView({ manual_order: spliceLive(liveView.manual_order) }, { viewState: true })
+    if (view.manual_order)
+      void persistView({ manual_order: spliceLive(view.manual_order) }, { viewState: true })
     void mutate({ op: 'movePage', path: row.path, newParentPath: destPath, order })
   }
 
@@ -421,13 +426,9 @@ export function useViewInteractions(host: ViewHostApi, policy: ViewInteractionPo
     return flight
   }
 
-  // ── What the create engine reads at fire time ─────────────────────────────
-
-  host.seam.bandBucket.current = (key) => (subGrouped ? (subTargets.get(key)?.bucket ?? null) : key)
-  host.seam.onCreated.current = (created) => policy.rename(created, true)
-
   return {
     bands,
+    bandAdd: creation.bandAdd,
     onBandDrop,
     onDrop,
     structuralSlot,

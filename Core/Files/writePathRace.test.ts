@@ -38,7 +38,7 @@ describe('concurrent sidecar writers', () => {
   it('an order write and a view save both survive each other', async () => {
     await Promise.all([
       setChildOrder(folder, 'page_order', ['p1', 'p2']),
-      saveView(folder, 'collection', view('view_1')),
+      saveView(folder, 'collection', view('view_1'), view('view_1')),
     ])
     const sidecar = await readSidecar(folder, 'collection', pageCollectionSidecar)
     expect(sidecar?.page_order).toEqual(['p1', 'p2'])
@@ -48,7 +48,7 @@ describe('concurrent sidecar writers', () => {
   it('three different writers land together without dropping a key', async () => {
     await Promise.all([
       setChildOrder(folder, 'set_order', ['s1']),
-      saveView(folder, 'collection', view('view_1')),
+      saveView(folder, 'collection', view('view_1'), view('view_1')),
       setContainerConfig(folder, 'collection', { view_button: 'labeled' }),
     ])
     const sidecar = await readSidecar(folder, 'collection', pageCollectionSidecar)
@@ -61,7 +61,7 @@ describe('concurrent sidecar writers', () => {
 
   it('a later view save still sees the order an earlier one persisted', async () => {
     await setChildOrder(folder, 'page_order', ['p1'])
-    await saveView(folder, 'collection', view('view_1'))
+    await saveView(folder, 'collection', view('view_1'), view('view_1'))
     await setChildOrder(folder, 'page_order', ['p1', 'p2'])
     const sidecar = await readSidecar(folder, 'collection', pageCollectionSidecar)
     expect(sidecar?.page_order).toEqual(['p1', 'p2'])

@@ -2,7 +2,8 @@ import type { CollectionNode, SetNode } from '@pommora/core/Nexus/tree'
 import type { PropertyDefinition } from '@pommora/core/Properties/properties'
 import type { SavedView } from '@pommora/core/Views/views'
 import { useSession } from '../../Session/store'
-import { useSaveView } from '../ViewTileScope'
+import { useSaveView } from '../viewWrite'
+import { readLiveView } from '../Host/pendingView'
 import { GroupFrame } from './GroupFrame'
 import { SortFrame } from './SortFrame'
 import { FilterFrame } from './FilterFrame'
@@ -39,11 +40,12 @@ export function ViewLeaf({
           key={view.id}
           locations={source.sets ?? []}
           view={view}
+          read={() => readLiveView(source.id, view)}
           schema={schema}
           tree={tree}
           label={label}
           onBack={onBack}
-          onCommit={(next) => void saveView({ ...view, ...next })}
+          onCommit={(patch) => void saveView(view, patch)}
         />
       )
   }
