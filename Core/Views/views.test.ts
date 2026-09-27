@@ -16,6 +16,9 @@ import {
   mapRules,
   mapTiles,
   mapViews,
+  editHiddenBucket,
+  clearHiddenBuckets,
+  type GroupedView,
   type FilterGroup,
   type FilterRule,
   type SavedView,
@@ -538,5 +541,99 @@ describe('the saved-view traversal', () => {
       note: 'kept',
       rules: [{ property_id: 'a', op: 'is', value: 'x' }, null, { match: 'any', rules: [] }],
     })
+  })
+})
+
+describe('the stored hidden-group keys', () => {
+  const onA = {
+    kind: 'property' as const,
+    property_id: 'prop_A',
+    order_mode: 'configured' as const,
+  }
+  const subA = { property_id: 'prop_A', order_mode: 'configured' as const }
+  const held = (
+    hidden_groups: string[],
+    v: Omit<GroupedView, 'hidden_groups'> = {},
+  ): GroupedView => ({
+    ...v,
+    hidden_groups,
+  })
+
+  it('a rename moves the encoded key at both levels', () => {
+    expect(
+      editHiddenBucket(
+        held(['prop_A/Done', 'sub/prop_A/Done', 'prop_B/Done']),
+        'prop_A',
+        'Done',
+        'Closed',
+      ),
+    ).toEqual(['prop_A/Closed', 'sub/prop_A/Closed', 'prop_B/Done'])
+  })
+
+  it('a legacy spelling under the current grouping is renamed into the encoded one', () => {
+    expect(editHiddenBucket(held(['Done'], { group: onA }), 'prop_A', 'Done', 'Closed')).toEqual([
+      'prop_A/Closed',
+    ])
+    expect(
+      editHiddenBucket(held(['sub/Done'], { sub_group: subA }), 'prop_A', 'Done', 'Closed'),
+    ).toEqual(['sub/prop_A/Closed'])
+  })
+
+  it('a legacy spelling under another grouping is left', () => {
+    const onB = { ...onA, property_id: 'prop_B' }
+    expect(
+      editHiddenBucket(held(['Done', 'sub/Done'], { group: onB }), 'prop_A', 'Done', 'Closed'),
+    ).toBeNull()
+  })
+
+  it('a removal drops every spelling it names', () => {
+    expect(
+      editHiddenBucket(
+        held(['prop_A/Done', 'Done', 'sub/prop_A/Done', 'x'], { group: onA }),
+        'prop_A',
+        'Done',
+        null,
+      ),
+    ).toEqual(['x'])
+  })
+
+  it('a rename onto a key the list already holds keeps one copy', () => {
+    expect(
+      editHiddenBucket(held(['prop_A/Done', 'prop_A/Closed']), 'prop_A', 'Done', 'Closed'),
+    ).toEqual(['prop_A/Closed'])
+  })
+
+  it('answers null when nothing matches', () => {
+    expect(editHiddenBucket(held(['prop_B/Done', 'Done']), 'prop_A', 'Done', 'Closed')).toBeNull()
+    expect(editHiddenBucket({}, 'prop_A', 'Done', null)).toBeNull()
+  })
+
+  it('a clear drops the property’s encoded keys at both levels and keeps another property’s', () => {
+    expect(
+      clearHiddenBuckets(
+        held(['prop_A/Done', 'sub/prop_A/Todo', 'prop_B/Done', 'sub/prop_B/Todo']),
+        'prop_A',
+      ),
+    ).toEqual(['prop_B/Done', 'sub/prop_B/Todo'])
+  })
+
+  it('a clear keeps a bare legacy key and a hidden Set id under a grouping on the property', () => {
+    expect(clearHiddenBuckets(held(['Done', 'set_01'], { group: onA }), 'prop_A')).toBeNull()
+  })
+
+  it('a clear drops a legacy sub key only under a sub-grouping on the property', () => {
+    expect(clearHiddenBuckets(held(['sub/Done', 'set_01'], { sub_group: subA }), 'prop_A')).toEqual(
+      ['set_01'],
+    )
+    expect(
+      clearHiddenBuckets(
+        held(['sub/Done'], { sub_group: { ...subA, property_id: 'prop_B' } }),
+        'prop_A',
+      ),
+    ).toBeNull()
+  })
+
+  it('a clear answers null when no key is the property’s own', () => {
+    expect(clearHiddenBuckets(held(['prop_B/Done']), 'prop_A')).toBeNull()
   })
 })

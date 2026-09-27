@@ -608,6 +608,94 @@ describe('resolveView — hidden groups + Hide Empty Groups', () => {
     expect(keys(groups)).toEqual(['2025-08'])
   })
 
+  it('an encoded option bucket drops as its legacy spelling does', () => {
+    const { groups } = resolveView({
+      ...selInput(),
+      view: view({ group: propertyGroup(), hidden_groups: ['prop_sel/Alpha'] }),
+    })
+    expect(keys(groups)).toEqual(['Beta', 'Gamma'])
+  })
+
+  it('an encoded sub key hides that sub-bucket under every set', () => {
+    const twoSets: CollectionNode = {
+      kind: 'collection',
+      id: 'col',
+      title: 'Col',
+      path: 'Col',
+      sets: [set('sA', [page('p1'), page('p2')]), set('sB', [page('p3')])],
+      pages: [],
+    }
+    const values = pageValues({
+      p1: { [ID_KEY]: 'p1', ...propsAtRoot({ prop_sel: 'Alpha' }, selectSchema) },
+      p2: { [ID_KEY]: 'p2', ...propsAtRoot({ prop_sel: 'Beta' }, selectSchema) },
+      p3: { [ID_KEY]: 'p3', ...propsAtRoot({ prop_sel: 'Beta' }, selectSchema) },
+    })
+    const { rows, setTree } = flattenContainer(twoSets, values, {})
+    const { groups } = resolveView({
+      rows,
+      setTree,
+      view: view({
+        sub_group: { property_id: 'prop_sel', order_mode: 'configured' },
+        hidden_groups: ['sub/prop_sel/Beta'],
+      }),
+      schema: selectSchema,
+    })
+    expect(groups.find((g) => g.key === 'sA')?.children?.map((c) => c.bucket ?? c.key)).toEqual([
+      'Alpha',
+    ])
+    expect(groups.find((g) => g.key === 'sB')?.children).toBeUndefined()
+  })
+
+  it('an encoded date bucket drops by its property and bucket', () => {
+    const dateSchema: PropertyDefinition[] = [{ id: 'prop_when', name: 'When', type: 'dateTime' }]
+    const values = pageValues({
+      p1: { [ID_KEY]: 'p1', ...propsAtRoot({ prop_when: '2025-07-02' }, dateSchema) },
+      p2: { [ID_KEY]: 'p2', ...propsAtRoot({ prop_when: '2025-08-03' }, dateSchema) },
+    })
+    const { rows, setTree } = flattenContainer(collection([page('p1'), page('p2')]), values, {})
+    const { groups } = resolveView({
+      rows,
+      setTree,
+      view: view({
+        group: {
+          kind: 'property',
+          property_id: 'prop_when',
+          order_mode: 'configured',
+          date_granularity: 'month',
+        },
+        hidden_groups: ['prop_when/2025-07'],
+      }),
+      schema: dateSchema,
+    })
+    expect(keys(groups)).toEqual(['2025-08'])
+  })
+
+  it('a bucket hidden under one property leaves the same bucket of another (F-383)', () => {
+    const twoStatus: PropertyDefinition[] = [
+      ...selectSchema,
+      {
+        id: 'prop_other',
+        name: 'Other',
+        type: 'select',
+        select_options: [{ value: 'Alpha', label: 'Alpha' }],
+      },
+    ]
+    const values = pageValues({
+      p1: { [ID_KEY]: 'p1', ...propsAtRoot({ prop_sel: 'Alpha', prop_other: 'Alpha' }, twoStatus) },
+    })
+    const { rows, setTree } = flattenContainer(collection([page('p1')]), values, {})
+    const { groups } = resolveView({
+      rows,
+      setTree,
+      view: view({
+        group: { kind: 'property', property_id: 'prop_other', order_mode: 'configured' },
+        hidden_groups: ['prop_sel/Alpha'],
+      }),
+      schema: twoStatus,
+    })
+    expect(keys(groups)).toEqual(['Alpha'])
+  })
+
   it('Hide Empty Groups (view-level) drops empty option bands and empty sets alike', () => {
     const prop = resolveView({
       ...selInput(),

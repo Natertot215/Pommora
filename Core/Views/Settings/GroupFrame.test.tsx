@@ -248,7 +248,7 @@ describe('GroupFrame rows', () => {
     await act(async () => {
       eye.click()
     })
-    expect(lastSaved().hidden_groups).toEqual(['todo'])
+    expect(lastSaved().hidden_groups).toEqual(['prop_status/todo'])
     await mount({ ...propView, hidden_groups: ['todo'] })
     const unhide = host.querySelector('button[aria-label="Show Todo"]') as HTMLElement
     await act(async () => {

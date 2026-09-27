@@ -341,6 +341,104 @@ export function mergeViewEdit(raw: unknown, next: SavedView): Json {
   )
 }
 
+export type GroupLevel = 'group' | 'sub'
+export type GroupedView = Pick<SavedView, 'group' | 'sub_group' | 'hidden_groups'>
+
+export const hiddenBucketKey = (level: GroupLevel, propertyId: string, bucket: string): string =>
+  level === 'group' ? `${propertyId}/${bucket}` : `sub/${propertyId}/${bucket}`
+
+// The pre-F-383 spelling, read only under the grouping the view holds now.
+const legacyBucketKey = (
+  v: GroupedView,
+  level: GroupLevel,
+  propertyId: string,
+  bucket: string,
+): string | undefined =>
+  level === 'group'
+    ? v.group?.kind === 'property' && v.group.property_id === propertyId
+      ? bucket
+      : undefined
+    : v.sub_group?.property_id === propertyId
+      ? `sub/${bucket}`
+      : undefined
+
+export function isBucketHidden(
+  v: GroupedView,
+  hidden: ReadonlySet<string>,
+  level: GroupLevel,
+  propertyId: string,
+  bucket: string,
+): boolean {
+  const legacy = legacyBucketKey(v, level, propertyId, bucket)
+  return (
+    hidden.has(hiddenBucketKey(level, propertyId, bucket)) ||
+    (legacy !== undefined && hidden.has(legacy))
+  )
+}
+
+/** A hide appends the encoded key; a show removes it and its legacy spelling. */
+export function toggleHiddenBucket(
+  v: GroupedView,
+  level: GroupLevel,
+  propertyId: string,
+  bucket: string,
+): string[] {
+  const held = v.hidden_groups ?? []
+  const own = hiddenBucketKey(level, propertyId, bucket)
+  const legacy = legacyBucketKey(v, level, propertyId, bucket)
+  return isBucketHidden(v, new Set(held), level, propertyId, bucket)
+    ? held.filter((k) => k !== own && k !== legacy)
+    : [...held, own]
+}
+
+/** The buckets of `propertyId` hidden at `level` under the encoded spelling. */
+export const hiddenBuckets = (v: GroupedView, level: GroupLevel, propertyId: string): string[] => {
+  const prefix = hiddenBucketKey(level, propertyId, '')
+  return (v.hidden_groups ?? []).flatMap((k) =>
+    k.startsWith(prefix) ? [k.slice(prefix.length)] : [],
+  )
+}
+
+/** An option rename or removal over both spellings at both levels; `to === null` removes. */
+export function editHiddenBucket(
+  v: GroupedView,
+  propertyId: string,
+  from: string,
+  to: string | null,
+): string[] | null {
+  const held = v.hidden_groups ?? []
+  const names = new Set<string>()
+  for (const level of ['group', 'sub'] as const) {
+    names.add(hiddenBucketKey(level, propertyId, from))
+    const legacy = legacyBucketKey(v, level, propertyId, from)
+    if (legacy !== undefined) names.add(legacy)
+  }
+  if (!held.some((k) => names.has(k))) return null
+  const next: string[] = []
+  for (const k of held) {
+    if (!names.has(k)) {
+      if (!next.includes(k)) next.push(k)
+      continue
+    }
+    if (to === null) continue
+    const level: GroupLevel = k.startsWith('sub/') ? 'sub' : 'group'
+    const renamed = hiddenBucketKey(level, propertyId, to)
+    if (!next.includes(renamed)) next.push(renamed)
+  }
+  return next
+}
+
+/** A property's encoded keys at both levels, and its legacy `sub/` keys under the sub-grouping the view holds now; a legacy bare key stays, since it can't be told from a hidden Set (B-4). */
+export function clearHiddenBuckets(v: GroupedView, propertyId: string): string[] | null {
+  const held = v.hidden_groups ?? []
+  const own = (k: string): boolean =>
+    k.startsWith(hiddenBucketKey('group', propertyId, '')) ||
+    k.startsWith(hiddenBucketKey('sub', propertyId, '')) ||
+    (v.sub_group?.property_id === propertyId && k.startsWith('sub/') && !k.slice(4).includes('/'))
+  const next = held.filter((k) => !own(k))
+  return next.length === held.length ? null : next
+}
+
 export const LOCATION_SORT = '__location__'
 
 /** Both the pipeline and the card drag must read the same predicate: when they disagree, one honors a key the other doesn't. */

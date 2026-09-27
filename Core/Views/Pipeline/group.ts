@@ -6,7 +6,9 @@ import {
   type DateGranularity,
   type EmptyPlacement,
   type GroupConfig,
+  type GroupedView,
   granularityOf,
+  isBucketHidden,
   type SubGroupConfig,
 } from '@pommora/core/Views/views'
 import { ID_KEY } from '@pommora/core/Nexus/identityMark'
@@ -70,18 +72,26 @@ export function pruneHiddenSets(tree: SetTreeNode[], hidden: ReadonlySet<string>
   )
 }
 
-/** Value-keyed, not set-scoped: one toggle hides that bucket under every parent set. */
-export const subHiddenKey = (bucket: string): string => `sub/${bucket}`
-
 export function dropHiddenGroups(
   groups: ResolvedGroup[],
   hidden: ReadonlySet<string>,
+  view: GroupedView,
 ): ResolvedGroup[] {
+  const top = view.group?.kind === 'property' ? view.group.property_id : undefined
+  const sub = view.sub_group?.property_id
   return groups.flatMap((group) => {
-    if (group.kind === 'property' && hidden.has(group.bucket ?? group.key)) return []
+    if (
+      group.kind === 'property' &&
+      top &&
+      isBucketHidden(view, hidden, 'group', top, group.bucket ?? group.key)
+    )
+      return []
     const { children: nested, ...band } = group
     const children = nested?.filter(
-      (c) => c.kind !== 'property' || !hidden.has(subHiddenKey(c.bucket ?? c.key)),
+      (c) =>
+        c.kind !== 'property' ||
+        !sub ||
+        !isBucketHidden(view, hidden, 'sub', sub, c.bucket ?? c.key),
     )
     return [children?.length ? { ...band, children } : band]
   })
