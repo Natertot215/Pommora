@@ -1,16 +1,9 @@
 import { optionsOf, type PropertyDefinition } from '@pommora/core/Properties/properties'
 import type { CollectionNode, SetNode } from '@pommora/core/Nexus/tree'
-import type { ResolvedGroup } from '@pommora/core/Views/viewRow'
 
 export function findOption(columnId: string, value: string, schema: PropertyDefinition[]) {
   const def = schema.find((d) => d.id === columnId)
   return optionsOf(def).find((o) => o.value === value)
-}
-
-export function groupLabel(group: ResolvedGroup, setNames: Map<string, string>): string {
-  if (group.kind === 'ungrouped') return ''
-  if (group.kind === 'structural-set') return setNames.get(group.key) ?? group.key
-  return group.bucket ?? group.key
 }
 
 function buildSetMap<T>(source: CollectionNode | SetNode, pick: (s: SetNode) => T): Map<string, T> {

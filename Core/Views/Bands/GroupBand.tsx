@@ -14,7 +14,7 @@ import { useDiscloseTarget } from '@pommora/uix/Interactions/dragDisclose'
 import { RenamableTitle } from '../../Interface/RenamableTitle'
 import { declaredType } from '../../Properties/value'
 import { specOf } from '@pommora/core/Properties/properties'
-import { findOption, groupLabel } from '../../Properties/Cells/cellResolve'
+import { findOption } from '../../Properties/Cells/cellResolve'
 import { bandGrouping } from '../Pipeline/group'
 import { formatBucketLabel } from '../../Properties/formatValue'
 import type { ValueContext } from '../../Properties/valueContext'
@@ -76,9 +76,8 @@ export function resolveBandHead(
   // A property band lives in two homes: top-level property grouping, or a sub-group bucket inside a set band (its raw value rides `bucket`; `key` is the composite collapse id).
   const band = bandGrouping(view, ctx.schema)
   const propId = band?.property_id
-  const label = groupLabel(group, setNames)
-  if (!propId) return { label, glyph: <span className="group-name">{group.key}</span> }
   const value = group.bucket ?? group.key
+  if (!propId) return { label: value, glyph: <span className="group-name">{group.key}</span> }
 
   const groupType = declaredType(propId, ctx.schema)
   const def = ctx.schema.find((d) => d.id === propId)
@@ -86,7 +85,7 @@ export function resolveBandHead(
     case 'select': {
       const opt = findOption(propId, value, ctx.schema)
       return {
-        label,
+        label: value,
         glyph: <OptionChip type={groupType ?? ''} option={opt ?? { value }} def={def} />,
       }
     }
@@ -100,7 +99,7 @@ export function resolveBandHead(
         viewOption(view, 'date_separator'),
       )
       return {
-        label,
+        label: value,
         glyph: (
           <span className="group-name">
             {icon ? <Icon name={icon} size="body" /> : null}
@@ -116,7 +115,7 @@ export function resolveBandHead(
     case 'link':
     case 'file':
     case undefined:
-      return { label, glyph: <span className="group-name">{value}</span> }
+      return { label: value, glyph: <span className="group-name">{value}</span> }
   }
 }
 
