@@ -136,12 +136,13 @@ export async function indexWrittenPage(
   const st = await machine()
     .stat(abs)
     .catch(() => null)
-  const content = st && (await readTextOrNull(abs))
-  // Vanished between the write and this read — drop the rows; the reconcile confirms.
-  if (!st || content === null) {
+  if (!st) {
     removePathIndex(rel)
     return null
   }
+  // An unreadable page keeps its rows, so a sweep the index seeds still reaches the file and counts it.
+  const content = await readTextOrNull(abs)
+  if (content === null) return null
   const title = titleFromPath(rel)
   const before = readHeadings([rel])?.[rel] ?? []
   const { entry, outline } = recordPage(rel, content, { mtimeMs: st.mtimeMs, size: st.size })
@@ -198,12 +199,13 @@ export async function seedContentIndex(root: string): Promise<void> {
       const st = await machine()
         .stat(abs)
         .catch(() => null)
-      if (st && prior && prior.mtimeMs === st.mtimeMs && prior.size === st.size) continue
-      const content = st && (await readTextOrNull(abs))
-      if (!st || content === null) {
+      if (!st) {
         seen.delete(rel)
         continue
       }
+      if (prior && prior.mtimeMs === st.mtimeMs && prior.size === st.size) continue
+      const content = await readTextOrNull(abs)
+      if (content === null) continue
       if (contentIndexStore() !== db0) return
       // A maintaining writer that landed while this file's read was in flight left a fresher row than the snapshot knew — keep theirs; this read predates their write.
       const row = readIndexedStat(rel)

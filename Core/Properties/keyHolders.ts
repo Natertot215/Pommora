@@ -31,13 +31,11 @@ export async function confirmedKeyHolders(
   folders: string[],
 ): Promise<string[]> {
   const holders: string[] = []
-  for (const file of corpusUnder(
-    root,
-    queryKeyHolders(key) ?? (await nexusCorpus(root)),
-    folders,
-  )) {
+  const indexed = queryKeyHolders(key)
+  for (const file of corpusUnder(root, indexed ?? (await nexusCorpus(root)), folders)) {
     const content = await readTextOrNull(file)
-    if (content !== null && key in splitFrontmatter(content)) holders.push(file)
+    // An unreadable file holds the key when the index last read it holding it.
+    if (content === null ? indexed !== null : key in splitFrontmatter(content)) holders.push(file)
   }
   for (const file of await spaceSidecars(root)) {
     const raw = await readJsonObject(file)
@@ -46,19 +44,22 @@ export async function confirmedKeyHolders(
   return holders
 }
 
-/** The pages holding `key` that a value can be filed for by ID, those values, and the holders left as they are: a page the tree lists without an ID is given one first, and a holder whose ID another already took, or that the tree doesn't list, is kept. */
+/** The values of the pages holding `key`, filed by ID, the files a strip should reach, and whether the values miss a holder: a page the tree lists without an ID is given one first, a holder whose ID another already took, or that the tree doesn't list, is kept out of the strip, and a file that can't be read is stripped once it reads. */
 export async function keyedHolders(
   root: string,
   files: string[],
   key: string,
-): Promise<{ holders: string[]; values: Record<string, unknown>; kept: string[] }> {
-  const holders: string[] = []
+): Promise<{ values: Record<string, unknown>; strip: string[]; partial: boolean }> {
   const values: Record<string, unknown> = {}
   const kept: string[] = []
   const seen = new Set<string>()
+  let unread = false
   for (const file of files) {
     const content = await readTextOrNull(file)
-    if (content === null) continue
+    if (content === null) {
+      unread = true
+      continue
+    }
     const fields = splitFrontmatter(content) as Record<string, unknown>
     if (!(key in fields)) continue
     const id = asString(fields[ID_KEY]) ?? (await stampListed(root, file))
@@ -67,10 +68,13 @@ export async function keyedHolders(
       continue
     }
     seen.add(id)
-    holders.push(file)
     if (!isBlankRaw(fields[key])) values[id] = fields[key]
   }
-  return { holders, values, kept }
+  return {
+    values,
+    strip: files.filter((f) => !kept.includes(f)),
+    partial: unread || kept.length > 0,
+  }
 }
 
 async function stampListed(root: string, file: string): Promise<string | null> {
