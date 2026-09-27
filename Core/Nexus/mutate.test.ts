@@ -36,6 +36,7 @@ import type { TrashDeps } from '../Trash/bundle'
 import type { HostContext } from '../Contract/handlers'
 import { installStores, NO_STORES } from '../Platform/stores'
 import { memoryStores } from '../Testing/memoryStores'
+import * as indexSeed from '../Index/indexSeed'
 import { seedContentIndex } from '../Index/indexSeed'
 import { tileHostDir } from '../Paths/paths'
 import { createMarkdownTile, readMarkdownTile, writeMarkdownTile } from '../Tiles/tilesFile'
@@ -394,6 +395,39 @@ describe('handleMutate — sync tap', () => {
     expect(renames).toEqual([
       [join(root, 'Notes/Daily/Beta.md'), join(root, 'Notes/Daily/Fresh (2).md')],
     ])
+  })
+
+  it('a Set or a page moved onto its own parent writes the order alone', async () => {
+    await mkdir(join(root, 'Notes', 'Daily', 'SetA'), { recursive: true })
+    await writeFile(
+      join(root, 'Notes', 'Daily', 'SetA', '_pageset.json'),
+      JSON.stringify({ id: 'sa' }),
+    )
+    await refreshTree(root)
+    const indexMoves = vi.spyOn(indexSeed, 'moveIndexPaths')
+    flushValueWrites(root)
+    const set = await handleMutate(
+      root,
+      { op: 'moveSet', path: 'Notes/Daily/SetA', newParentPath: 'Notes/Daily', order: ['sa'] },
+      nexusDeps,
+    )
+    const moved = await handleMutate(
+      root,
+      {
+        op: 'movePage',
+        path: 'Notes/Daily/Beta.md',
+        newParentPath: 'Notes/Daily',
+        order: [B_ID, A_ID],
+      },
+      nexusDeps,
+    )
+    expect(set.ok && moved.ok).toBe(true)
+    const sidecar = JSON.parse(await read('Notes/Daily/_pageset.json'))
+    expect([sidecar.set_order, sidecar.page_order]).toEqual([['sa'], [B_ID, A_ID]])
+    expect(renames).toEqual([])
+    expect(indexMoves).not.toHaveBeenCalled()
+    expect(flushValueWrites(root)).toEqual([])
+    indexMoves.mockRestore()
   })
 })
 

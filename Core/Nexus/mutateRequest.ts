@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import type { Result } from '../Contract/result'
+import { ok, type Result } from '../Contract/result'
 import type { PageMenuContext } from '../Actions/pageMenu'
 import { propertyValue } from '../Properties/propertyValue'
 import { crop, type PageMetaPatch } from './schemas'
@@ -21,6 +21,8 @@ export interface MutateOutcome {
   rescope?: boolean
 }
 export type MutateReply = Result<MutateOutcome>
+
+export const done = (r: Result<unknown>): MutateReply => (r.ok ? ok({}) : r)
 
 export const DEFAULT_NEW_NAME = 'Untitled'
 

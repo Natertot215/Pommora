@@ -1,7 +1,7 @@
 import { basename, dirname } from '../Paths/posix'
 import { ok, type Result } from '../Contract/result'
 import { moveIndexPaths } from '../Index/indexSeed'
-import type { MutateReply, MutateRequest } from './mutateRequest'
+import { done, type MutateReply, type MutateRequest } from './mutateRequest'
 import type { MutateContext } from './mutate'
 import { movePage } from './page'
 import { landedFolder, landingRefusal, moveFolderEntity } from './folderEntity'
@@ -29,6 +29,8 @@ export async function movePageOp(
 ): Promise<MutateReply> {
   const at = await ends(root, req, 'page')
   if (!at.ok) return at
+  if (dirname(at.value.src) === at.value.dst)
+    return req.order ? done(await setChildOrder(at.value.dst, 'page_order', req.order)) : ok({})
   const r = await movePage(at.value.src, at.value.dst)
   if (!r.ok) return r
   if (req.order) await setChildOrder(at.value.dst, 'page_order', req.order)
@@ -43,11 +45,11 @@ export async function moveSetOp(
 ): Promise<MutateReply> {
   const at = await ends(root, req, 'set')
   if (!at.ok) return at
+  if (dirname(at.value.src) === at.value.dst)
+    return done(await setChildOrder(at.value.dst, 'set_order', req.order))
   const refused =
     (await landingRefusal(root, at.value.dst, basename(at.value.src))) ??
-    (dirname(at.value.src) === at.value.dst
-      ? null
-      : await exclusionWriteRefusal(root, await excludedWithin(root, req.path)))
+    (await exclusionWriteRefusal(root, await excludedWithin(root, req.path)))
   if (refused) return refused
   const r = await moveFolderEntity(at.value.src, at.value.dst)
   if (!r.ok) return r
