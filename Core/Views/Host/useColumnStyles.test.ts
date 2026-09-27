@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { mergeStyleRecords, pickedStyle, styleFor } from './useColumnStyles'
+import { pickedStyle, styleFor } from './useColumnStyles'
 import { dateDefaults } from '@pommora/core/Properties/columnStyles'
 import type { DateFormat } from '@pommora/core/Properties/columnStyles'
 import type { PropertyDefinition } from '@pommora/core/Properties/properties'
@@ -110,23 +110,5 @@ describe('a column follows the Nexus until it picks its own', () => {
     expect(pick('time_format', 'twentyFourHour')).toBe('shown')
     expect(pick('time_format', 'twelveHour')).toBe('twelveHour')
     expect(pick('time_format', 'none')).toBeUndefined()
-  })
-})
-
-describe('mergeStyleRecords', () => {
-  it('folds per-KEY — a partial override never wipes a saved sibling key', () => {
-    const out = mergeStyleRecords(
-      { a: { look: 'compact', date_format: 'short' } },
-      { a: { time_format: 'twelveHour' } },
-    )
-    expect(out.a).toEqual({ look: 'compact', date_format: 'short', time_format: 'twelveHour' })
-  })
-
-  it('keeps untouched columns and lets the override key win', () => {
-    const out = mergeStyleRecords(
-      { a: { look: 'standard' }, b: { look: 'checkbox' } },
-      { a: { look: 'compact' } },
-    )
-    expect(out).toEqual({ a: { look: 'compact' }, b: { look: 'checkbox' } })
   })
 })

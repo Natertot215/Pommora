@@ -54,8 +54,8 @@ interface ViewCreationConfig {
   setValueOverride: SetOverrides
   effectiveValues: Record<string, PageValues>
   structuralOrder: boolean
-  persistView: (patch: Partial<SavedView>, opts?: { viewState?: boolean }) => void
-  setManualOverride: React.Dispatch<React.SetStateAction<string[] | null>>
+  persistView: (patch: Partial<SavedView>, opts?: { viewState?: boolean }) => Promise<unknown>
+  setStructuralPaint: React.Dispatch<React.SetStateAction<string[] | null>>
   rowBand: Map<string, string>
   bandBucket: (key: string) => string | null
   canReassign: boolean
@@ -128,9 +128,9 @@ export function useViewCreation(getCfg: () => ViewCreationConfig): ViewCreation 
     const allIds = flattenContainer(latest.source, latest.effectiveValues, {}).rows.map((r) => r.id)
     // The live view already folds a held override, so the next create composes on this one.
     const next = tieOrderWith(latest.view.manual_order, allIds, createdId, anchorId, where)
-    latest.setManualOverride(next)
+    if (latest.structuralOrder) latest.setStructuralPaint(next)
     if (!latest.structuralOrder || latest.view.manual_order)
-      latest.persistView({ manual_order: next }, { viewState: true })
+      void latest.persistView({ manual_order: next }, { viewState: true })
   }
   const pageRequest = (parentPath: string, seeds: Record<string, PropertyValue>): CreatePage => ({
     op: 'createPage',

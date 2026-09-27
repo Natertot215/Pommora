@@ -3,7 +3,7 @@
 import { useMemo, useRef, useState } from 'react'
 import { UNGROUPED } from '@pommora/core/Views/viewRow'
 import type { ViewRow } from '@pommora/core/Views/viewRow'
-import { type SavedView, viewOption } from '@pommora/core/Views/views'
+import { viewOption } from '@pommora/core/Views/views'
 import type { PageMenuContext } from '@pommora/core/Actions/pageMenu'
 import { relDirname } from '@pommora/core/Paths/posix'
 import { nextOrder } from '@pommora/uix/Interactions/reorderModel'
@@ -23,12 +23,12 @@ import { isOpenInTabs } from '../../Navigation/tabsModel'
 import { IconChoice } from '../../Assets/IconChoice'
 import type { BandDrop } from '../Bands/BandDnd'
 import {
+  bandReorderPatch,
   childIdsOf,
   flattenBands,
   reparentFsOrder,
   subGroupOrderPatch,
 } from '../Bands/bandDndModel'
-import { bandReorderPatch } from '../Bands/useBandOrdering'
 import { subtreeIds } from '../Pipeline/group'
 import { sameIds, spliceBeside, tieOrderWith } from '../creationOrder'
 import { pageIdsIn } from '../../Nexus/treePatch'
@@ -41,8 +41,6 @@ interface ViewInteractionPolicy {
     suppressed: () => boolean
     travelHold?: { inZone: (enteringId: string) => boolean; holdMs: number }
   }
-  /** Layers the renderer keeps out of `liveView` and folds into every persist. */
-  foldOverrides?: (v: SavedView) => SavedView
   /** Opens the renderer's naming surface over a page that already exists on disk. */
   rename: (target: { id: string; path: string }, fromCreate: boolean) => void
 }
@@ -97,9 +95,8 @@ export function useViewInteractions(host: ViewHostApi, policy: ViewInteractionPo
     canRelocate,
     reassignBySortRun,
     structuralOrder,
-    setManualOverride,
+    setStructuralPaint,
     persistView,
-    commitBand,
     commitValue,
     commitGroupValue,
     creation,
@@ -127,12 +124,12 @@ export function useViewInteractions(host: ViewHostApi, policy: ViewInteractionPo
           structuralIds: [],
           propertyKeys: groups.filter((g) => g.kind === 'property').map((g) => g.key),
         })
-        if (patch) commitBand(patch)
+        if (patch) void persistView(patch)
         return
       }
       if (!subGrouped || !liveView.sub_group || liveView.sub_group.order_mode !== 'manual') return
       const sub = subGroupOrderPatch(groups, liveView.sub_group, draggedId, drop.beforeId)
-      if (sub) commitBand(sub)
+      if (sub) void persistView(sub)
       return
     }
     // The id universe is the set tree, never the rendered groups — a filter prunes emptied bands out of `groups`, and merging against that drops their stored order.
@@ -160,7 +157,7 @@ export function useViewInteractions(host: ViewHostApi, policy: ViewInteractionPo
         })
         return
       }
-      commitBand(structural)
+      void persistView(structural)
       return
     }
     const path = setPaths.get(draggedId)
@@ -181,7 +178,7 @@ export function useViewInteractions(host: ViewHostApi, policy: ViewInteractionPo
         }))
       )
         return
-      commitBand(structural)
+      void persistView(structural)
     })()
   }
 
@@ -221,8 +218,8 @@ export function useViewInteractions(host: ViewHostApi, policy: ViewInteractionPo
       )
     )
       return
-    setManualOverride(full)
     if (structuralOrder) {
+      setStructuralPaint(full)
       const row = rowById.get(activeId)
       if (!row) return
       const parent = relDirname(row.path)
@@ -242,7 +239,7 @@ export function useViewInteractions(host: ViewHostApi, policy: ViewInteractionPo
         void mutate({ op: 'movePage', path: row.path, newParentPath: parent, order })
       return
     }
-    persistView({ manual_order: full }, { viewState: true })
+    void persistView({ manual_order: full }, { viewState: true })
     reassignBySortRun(full, bandKey, activeId)
   }
 
@@ -259,9 +256,9 @@ export function useViewInteractions(host: ViewHostApi, policy: ViewInteractionPo
     const allIds = rows.map((r) => r.id)
     const spliceLive = (existing: string[] | undefined): string[] =>
       tieOrderWith(existing, allIds, activeId, beforeId, 'above')
-    setManualOverride((m) => (m ? spliceLive(m) : m))
+    setStructuralPaint((m) => m && spliceLive(m))
     if (liveView.manual_order)
-      persistView({ manual_order: spliceLive(liveView.manual_order) }, { viewState: true })
+      void persistView({ manual_order: spliceLive(liveView.manual_order) }, { viewState: true })
     void mutate({ op: 'movePage', path: row.path, newParentPath: destPath, order })
   }
 
@@ -426,7 +423,6 @@ export function useViewInteractions(host: ViewHostApi, policy: ViewInteractionPo
 
   // ── What the create engine reads at fire time ─────────────────────────────
 
-  host.seam.foldOverrides.current = policy.foldOverrides ?? ((v) => v)
   host.seam.bandBucket.current = (key) => (subGrouped ? (subTargets.get(key)?.bucket ?? null) : key)
   host.seam.onCreated.current = (created) => policy.rename(created, true)
 

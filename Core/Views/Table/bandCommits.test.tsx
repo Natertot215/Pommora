@@ -578,3 +578,36 @@ describe('band header — the sidebar interaction model', () => {
     })
   })
 })
+
+describe('column width', () => {
+  const resize = async (by: number): Promise<void> => {
+    const grip = host.querySelectorAll('.col-resizer')[1]
+    await act(async () => firePointer(grip, 'pointerdown', { x: 100, y: 5 }))
+    await act(async () => firePointer(window, 'pointermove', { x: 100 + by, y: 5 }))
+    await drop()
+  }
+  const cols = (): string =>
+    (host.querySelector('.table-grid') as HTMLElement).style.getPropertyValue('--cols')
+
+  it("a resized column's staged width drops once the stored view carries it", async () => {
+    await mountTable(structuralSource())
+    expect(cols()).toBe('280px 120px 1fr')
+    await resize(40)
+    expect(lastSavedView().column_widths).toEqual({ prop_status: 160 })
+    expect(cols()).toBe('280px 160px 1fr')
+    await mountTable(structuralSource({ column_widths: { prop_status: 160 } }))
+    await mountTable(structuralSource())
+    expect(cols()).toBe('280px 120px 1fr')
+  })
+
+  it('a width the walker cleared is not written back by the next persist', async () => {
+    await mountTable(structuralSource())
+    await resize(40)
+    await mountTable(structuralSource({ column_widths: { prop_status: 160 } }))
+    await mountTable(structuralSource())
+    const outline = host.querySelectorAll('.group-band-drop-outline')[0]
+    await act(async () => (outline as HTMLElement).click())
+    expect(lastSavedView().collapsed_groups).toEqual(['sA'])
+    expect(lastSavedView().column_widths?.prop_status).toBeUndefined()
+  })
+})

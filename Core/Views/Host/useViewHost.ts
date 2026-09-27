@@ -3,10 +3,12 @@ import { type PropertyType, specOf } from '@pommora/core/Properties/properties'
 import { UNGROUPED } from '@pommora/core/Views/viewRow'
 import type { CollectionNode, SetNode } from '@pommora/core/Nexus/tree'
 import type { ResolvedColumn, ResolvedGroup, ViewRow } from '@pommora/core/Views/viewRow'
-import type { ColumnStyle, StoredColumnStyle } from '@pommora/core/Properties/columnStyles'
-import { isLocationFsOrder, type SavedView } from '@pommora/core/Views/views'
+import type { ColumnStyle } from '@pommora/core/Properties/columnStyles'
+import { isLocationFsOrder } from '@pommora/core/Views/views'
 import type { PropertyValue } from '@pommora/core/Properties/propertyValue'
 import { assignValue, type ValueWriter } from '@pommora/core/Properties/assignValue'
+import type { Result } from '@pommora/core/Contract/result'
+import { useLatest } from '@pommora/uix/Utilities/stableApi'
 import { useSession } from '../../Session/store'
 import { useContentHost } from '../../Interface/contentHost'
 import { useSaveView, useViewTileScope } from '../ViewTileScope'
@@ -33,14 +35,12 @@ import { resolvedSortCount } from '../Pipeline/sort'
 import { useActiveView } from './useActiveView'
 import { patchOverride } from '../../Properties/valueOverride'
 import { useContainerValues } from './useContainerValues'
-import { mergeStyleRecords, pickedStyle, styleFor, useNexusForms } from './useColumnStyles'
-import { groupingKeyOf, useBandOrdering } from '../Bands/useBandOrdering'
+import { pickedStyle, styleFor, useNexusForms } from './useColumnStyles'
+import { foldView, slotsOf, usePendingView, type ViewPatch } from './pendingView'
 import { useViewCreation } from './useViewCreation'
 import { groupKeyToValue, reassignable, reassignTarget } from '../reassign'
-import { sameIds } from '../creationOrder'
 
 interface ViewHostUpward {
-  foldOverrides: { current: (v: SavedView) => SavedView }
   bandBucket: { current: (key: string) => string | null }
   viewRootRef: { current: HTMLElement | null }
   onCreated: { current: (created: { id: string; path: string }) => void }
@@ -49,16 +49,6 @@ interface ViewHostUpward {
 export type ViewHostApi = NonNullable<ReturnType<typeof useViewHost>>
 
 const NO_COLLAPSE = new Set<string>()
-
-const stylesCaughtUp = (
-  patch: Record<string, StoredColumnStyle>,
-  saved: Record<string, StoredColumnStyle> | undefined,
-): boolean =>
-  Object.entries(patch).every(([id, style]) =>
-    Object.entries(style).every(
-      ([key, value]) => (saved?.[id] as Record<string, unknown> | undefined)?.[key] === value,
-    ),
-  )
 
 export function useViewHost(
   source: CollectionNode | SetNode,
@@ -84,37 +74,16 @@ export function useViewHost(
   )
   const view = useActiveView(source, schema)
 
-  const [orderOverride, setOrderOverride] = useState<string[] | null>(null)
-  const [hiddenOverride, setHiddenOverride] = useState<string[] | null>(null)
-  const [stylePatch, setStylePatchState] = useState<Record<string, StoredColumnStyle> | null>(null)
   const nexus = useNexusForms()
-  const [manualOverride, setManualOverride] = useState<string[] | null>(null)
-  const [collapsed, setCollapsed] = useState<Set<string>>(
-    () => new Set(view.collapsed_groups ?? []),
+  const { liveView, stage } = usePendingView(view, `${source.id}\0${view.id}`)
+  const live = useLatest(liveView)
+  const collapsed = useMemo(
+    () => new Set(liveView.collapsed_groups ?? []),
+    [liveView.collapsed_groups],
   )
-  const { bandPatch, commitBand, resetBand } = useBandOrdering(
-    (patch) => persistView(patch),
-    groupingKeyOf(view),
-  )
+  // Painted ahead of the tree push that carries the new page_order; it settles on that push, not on a view save.
+  const [structuralPaint, setStructuralPaint] = useState<string[] | null>(null)
 
-  // Host layers reset on the id STRINGS, never `[source]` identity, and `source.id` must be in the array: sibling sub-Sets below depth 1 share the DEFAULT_VIEW_ID sentinel and would leak layers on `[view.id]` alone.
-  useEffect(() => {
-    setOrderOverride(null)
-    setHiddenOverride(null)
-    setStylePatchState(null)
-    setManualOverride(null)
-    resetBand()
-    setCollapsed(new Set(view.collapsed_groups ?? []))
-  }, [source.id, view.id])
-  // Drop an override once the canonical view catches it up — a pinned override would otherwise mask a later external write on the next persist.
-  useEffect(() => {
-    if (orderOverride && sameIds(orderOverride, view.property_order)) setOrderOverride(null)
-    if (hiddenOverride && sameIds(hiddenOverride, view.hidden_properties)) setHiddenOverride(null)
-    if (stylePatch && stylesCaughtUp(stylePatch, view.column_styles)) setStylePatchState(null)
-    if (manualOverride && sameIds(manualOverride, view.manual_order ?? [])) setManualOverride(null)
-  }, [view, orderOverride, hiddenOverride, stylePatch, manualOverride])
-
-  // Derived from `view` and ABOVE the memo, because the fold reads `structuralOrder` — reading it below would be a TDZ crash the type gate misses. Sound because no override moves a sort criterion or a group kind: `bandPatch` touches only `group.order` and `group_order`.
   const sortKeys = useMemo(() => resolvedSortCount(view.sort, schema), [view.sort, schema])
   const structuralGrouping = groupsStructurally(view.group, schema)
   // The engine's own sub-group rule: a flattened paint, or a sub_group it won't bucket, must not reassign against it.
@@ -127,28 +96,15 @@ export function useViewHost(
   const canReorderWithin = sortKeys < 2 && !locationFsOrder
   const canRelocate = structuralGrouping && !subGrouped
   const structuralOrder = groupPropId === undefined && sortKeys === 0
-  // A fresh tree carries canonical page_order, so drop the override it masked — but only where page_order IS the order: on a sorted or grouped view the drop's own optimistic push would otherwise revert the drag that fired it, and the catch-up above retires the override instead. VALUES deliberately do NOT reset, since clearing them on this identity change would revert a just-assigned value on a watcher echo (the assign-vanish).
   useEffect(() => {
-    if (structuralOrder) setManualOverride(null)
+    if (structuralOrder) setStructuralPaint(null)
   }, [source, structuralOrder])
 
-  const liveView = useMemo(() => {
-    if (!orderOverride && !hiddenOverride && !stylePatch && !bandPatch && !manualOverride)
-      return view
-    return {
-      ...view,
-      property_order: orderOverride ?? view.property_order,
-      hidden_properties: hiddenOverride ?? view.hidden_properties,
-      ...(stylePatch ? { column_styles: mergeStyleRecords(view.column_styles, stylePatch) } : {}),
-      ...(!structuralOrder && manualOverride ? { manual_order: manualOverride } : {}),
-      ...bandPatch,
-    }
-  }, [view, orderOverride, hiddenOverride, stylePatch, bandPatch, manualOverride, structuralOrder])
-
-  // A stored manual order never feeds a structural paint — the rows draw in tree order, and the array stays the sorted/grouped tiebreaker.
   const manualOrder = locationFsOrder
     ? undefined
-    : (manualOverride ?? (structuralOrder ? undefined : view.manual_order))
+    : structuralOrder
+      ? (structuralPaint ?? undefined)
+      : liveView.manual_order
   const dragDisabled = searching || !(canReorderWithin || canReassign || canRelocate)
 
   const contextIds = contextIdsOf(tree)
@@ -243,28 +199,28 @@ export function useViewHost(
       : id
   }
 
-  // Persist the saved view + every live layer + a patch, so no one mutation clobbers another's unsaved state; the explicit patch wins last.
-  const saveFolded = (patch: Partial<SavedView>, opts?: { viewState?: boolean }) => {
-    const folded = upward.foldOverrides.current({ ...liveView, collapsed_groups: [...collapsed] })
-    return saveView({ ...folded, ...patch }, opts)
-  }
-  const persistView = (patch: Partial<SavedView>, opts?: { viewState?: boolean }): void => {
-    void saveFolded(patch, opts)
+  const persistView = (
+    patch: ViewPatch,
+    opts?: { viewState?: boolean },
+  ): Promise<Result<{ id: string }>> => {
+    stage(patch)
+    return saveView(foldView(live.current, slotsOf(patch)), opts)
   }
   const toggleCollapse = (key: string): void => {
     if (searching) return
     const next = new Set(collapsed)
     if (next.has(key)) next.delete(key)
     else next.add(key)
-    setCollapsed(next)
-    persistView({ collapsed_groups: [...next] }, { viewState: true })
+    void persistView({ collapsed_groups: [...next] }, { viewState: true })
   }
   const setStylePatch = (colId: string, key: keyof ColumnStyle & string, value: string): void => {
-    const stored = pickedStyle(colId, schema, nexus, key, value)
-    const merged = { ...stylePatch?.[colId], [key]: stored } as StoredColumnStyle
-    setStylePatchState((prev) => ({ ...prev, [colId]: merged }))
-    persistView({
-      column_styles: mergeStyleRecords(view.column_styles, { ...stylePatch, [colId]: merged }),
+    void persistView({
+      column_styles: {
+        [colId]: {
+          ...liveView.column_styles?.[colId],
+          [key]: pickedStyle(colId, schema, nexus, key, value),
+        },
+      },
     })
   }
   const revealingRef = useRef<Set<string>>(new Set())
@@ -272,16 +228,11 @@ export function useViewHost(
     if (revealingRef.current.has(id)) return
     if (liveView.property_order.includes(id) && !liveView.hidden_properties.includes(id)) return
     revealingRef.current.add(id)
-    const patch = unhide(liveView, id)
-    setOrderOverride(patch.property_order)
-    setHiddenOverride(patch.hidden_properties)
-    void saveFolded(patch).finally(() => revealingRef.current.delete(id))
+    void persistView(unhide(liveView, id)).finally(() => revealingRef.current.delete(id))
   }
   const hideProperty = (id: string): void => {
     if (liveView.hidden_properties.includes(id)) return
-    const patch = hideShown(liveView, id)
-    setHiddenOverride(patch.hidden_properties)
-    persistView(patch)
+    void persistView(hideShown(liveView, id))
   }
 
   const writer = useRef<ValueWriter | null>(null)
@@ -359,7 +310,7 @@ export function useViewHost(
     effectiveValues,
     structuralOrder,
     persistView,
-    setManualOverride,
+    setStructuralPaint,
     rowBand,
     bandBucket: (key) => upward.bandBucket.current(key),
     canReassign,
@@ -405,14 +356,11 @@ export function useViewHost(
     structuralOrder,
     dragDisabled,
     searching,
-    setManualOverride,
-    setOrderOverride,
-    setHiddenOverride,
+    setStructuralPaint,
     setStylePatch,
     hideProperty,
     revealProperty,
     persistView,
-    commitBand,
     commitValue,
     commitGroupValue,
     pickTarget,

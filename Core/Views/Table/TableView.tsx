@@ -83,7 +83,6 @@ export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
   } = host
   const selection = useSession((s) => s.selection)
   const {
-    foldOverrides,
     iconsShown,
     alignByCol,
     styleByCol,
@@ -134,7 +133,6 @@ export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
 
   const interactions = useViewInteractions(host, {
     ghost: { graceMs: 0, suppressed: () => editing !== null || glanceShown() },
-    foldOverrides,
     rename: (target, fromCreate) => {
       if (titleColId)
         setEditing({

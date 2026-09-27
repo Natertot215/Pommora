@@ -119,7 +119,6 @@ const mount = async (source: CollectionNode | SetNode, flatten = false): Promise
 beforeEach(() => {
   api = null
   upward = {
-    foldOverrides: { current: (v) => v },
     bandBucket: { current: (key) => key },
     viewRootRef: { current: null },
     onCreated: { current: () => {} },
@@ -144,21 +143,48 @@ const paintOrder = (): string[] | undefined =>
     [...g.items, ...(g.children ?? []).flatMap((c) => c.items)].map((r) => r.id),
   )
 
+const threeStatus: PropertyDefinition = {
+  ...statusDef,
+  status_groups: [
+    {
+      id: 'done',
+      label: 'Done',
+      color: 'green',
+      options: [
+        { value: 'complete', label: 'Complete', color: 'green', group_id: 'done' },
+        { value: 'shipped', label: 'Shipped', color: 'green', group_id: 'done' },
+        { value: 'archived', label: 'Archived', color: 'green', group_id: 'done' },
+      ],
+    },
+  ],
+}
+const CONFIGURED = {
+  kind: 'property',
+  property_id: 'prop_status',
+  order_mode: 'configured',
+} as const
+const banded = (group: SavedView['group']): CollectionNode =>
+  ({ ...collection({ group }), properties: [threeStatus] }) as CollectionNode
+const bandKeys = (): string[] =>
+  api?.groups.flatMap((g) => (g.kind === 'property' ? [g.key] : [])) ?? []
+
 describe('the persist fold', () => {
-  it('one save carries collapse + a live style patch + the fold ref, the explicit patch winning', async () => {
-    upward.foldOverrides.current = (v) => ({
-      ...v,
-      column_widths: { ...v.column_widths, prop_status: 120 },
-    })
-    await mount(collection({ column_styles: { prop_status: { look: 'compact' } } }))
+  it('one save carries a collapse, a style patch, and a resize, the explicit patch winning', async () => {
+    await mount(
+      collection({
+        column_styles: { prop_status: { look: 'compact' } },
+        column_widths: { _title: 300 },
+      }),
+    )
     act(() => api?.toggleCollapse('g1'))
     act(() => api?.setStylePatch('prop_status', 'date_format', 'relative'))
-    act(() => api?.persistView({ hide_borders: true, column_widths: { prop_status: 90 } }))
+    act(() => void api?.persistView({ column_widths: { prop_status: 120 } }))
+    act(() => void api?.persistView({ hide_borders: true, column_widths: { prop_status: 90 } }))
     const saved = lastSavedView()
     expect(saved.collapsed_groups).toEqual(['g1'])
     expect(saved.column_styles?.prop_status).toEqual({ look: 'compact', date_format: 'relative' })
     expect(saved.hide_borders).toBe(true)
-    expect(saved.column_widths?.prop_status).toBe(90)
+    expect(saved.column_widths).toEqual({ _title: 300, prop_status: 90 })
   })
 
   it("a pick equal to the column's default stores nothing, so the column follows it again", async () => {
@@ -167,23 +193,62 @@ describe('the persist fold', () => {
     expect(lastSavedView().column_styles?.prop_status).toEqual({})
   })
 
-  it('a persist fired after a round-trip reads the fire-time fold, not the mount closure', async () => {
+  it('a persist fired after a round-trip folds the fire-time live view, not its closure', async () => {
     await mount(collection())
-    upward.foldOverrides.current = (v) => ({
-      ...v,
-      column_widths: { ...v.column_widths, prop_status: 240 },
-    })
-    act(() => api?.persistView({}))
-    expect(lastSavedView().column_widths?.prop_status).toBe(240)
+    const early = api?.persistView
+    act(() => api?.toggleCollapse('g1'))
+    act(() => void early?.({ hide_borders: true }))
+    expect(lastSavedView().collapsed_groups).toEqual(['g1'])
+    expect(lastSavedView().hide_borders).toBe(true)
+  })
+
+  it('F-122: a band order the walker replaced paints and saves as the walker wrote it', async () => {
+    await mount(banded(CONFIGURED))
+    const configured = bandKeys()
+    act(
+      () =>
+        void api?.persistView({
+          group: {
+            ...CONFIGURED,
+            order_mode: 'manual',
+            order: ['shipped', 'complete', 'archived'],
+          },
+        }),
+    )
+    expect(bandKeys()).toEqual(['shipped', 'complete', 'archived'])
+    await mount(banded({ ...CONFIGURED, order_mode: 'reversed' }))
+    expect(bandKeys()).toEqual([...configured].reverse())
+    act(() => api?.toggleCollapse('g1'))
+    expect(lastSavedView().group).toEqual({ ...CONFIGURED, order_mode: 'reversed' })
+  })
+
+  it('D-2: a staged collapse the walker rewrote paints and saves the new key', async () => {
+    await mount(collection())
+    act(() => api?.toggleCollapse('Old'))
+    await mount(collection({ collapsed_groups: ['New'] }))
+    expect([...(api?.collapsed ?? [])]).toEqual(['New'])
+    act(() => void api?.persistView({}))
+    expect(lastSavedView().collapsed_groups).toEqual(['New'])
+  })
+
+  it('two collapses before the first save lands never paint the first alone, and the second save carries both', async () => {
+    await mount(collection())
+    act(() => api?.toggleCollapse('g1'))
+    act(() => api?.toggleCollapse('g2'))
+    expect(lastSavedView().collapsed_groups).toEqual(['g1', 'g2'])
+    await mount(collection({ collapsed_groups: ['g1'] }))
+    expect([...(api?.collapsed ?? [])]).toEqual(['g1', 'g2'])
+    await mount(collection({ collapsed_groups: ['g1', 'g2'] }))
+    expect([...(api?.collapsed ?? [])]).toEqual(['g1', 'g2'])
   })
 })
 
 describe('the reset keys', () => {
-  it('a structural paint ignores the stored order, and manualOverride drops on a source-identity echo', async () => {
+  it('a structural paint ignores the stored order, and drops on a source-identity echo', async () => {
     await mount(collection({ manual_order: ['p2', 'p1'] }))
     expect(paintOrder()).toEqual(['p1', 'p2'])
     await mount(collection())
-    act(() => api?.setManualOverride(['p2', 'p1']))
+    act(() => api?.setStructuralPaint(['p2', 'p1']))
     expect(paintOrder()).toEqual(['p2', 'p1'])
     await mount(collection())
     expect(paintOrder()).toEqual(['p1', 'p2'])
@@ -196,23 +261,23 @@ describe('the reset keys', () => {
     expect(lastSavedView().hidden_properties).toEqual(['prop_status', '_title'])
   })
 
-  it('the order/hidden catch-up drop fires on sameIds', async () => {
+  it('a staged order and hidden list drop once the stored view carries them', async () => {
     await mount(collection())
-    act(() => api?.setOrderOverride(['prop_status', '_title']))
-    act(() => api?.setHiddenOverride(['prop_status']))
+    act(() => void api?.persistView({ property_order: ['prop_status', '_title'] }))
+    act(() => api?.hideProperty('prop_status'))
     expect(api?.liveView.property_order).toEqual(['prop_status', '_title'])
     await mount(
       collection({ property_order: ['prop_status', '_title'], hidden_properties: ['prop_status'] }),
     )
-    expect(api?.liveView.property_order).toEqual(['prop_status', '_title'])
-    act(() => api?.setOrderOverride(['_title', 'prop_status']))
+    await mount(collection())
     expect(api?.liveView.property_order).toEqual(['_title', 'prop_status'])
+    expect(api?.liveView.hidden_properties).toEqual([])
   })
 
-  it('sibling sub-Sets sharing the sentinel: navigating A → B resets every host layer, and B first-persists clean', async () => {
+  it('sibling sub-Sets sharing the sentinel: navigating A → B resets every staged field, and B first-persists clean', async () => {
     const { a, b } = deepSets()
     await mount(a)
-    act(() => api?.setOrderOverride(['prop_status', '_title']))
+    act(() => void api?.persistView({ property_order: ['prop_status', '_title'] }))
     act(() => api?.setStylePatch('prop_status', 'look', 'label'))
     act(() => api?.toggleCollapse('gA'))
     expect(api?.liveView.property_order).toEqual(['prop_status', '_title'])
@@ -220,10 +285,10 @@ describe('the reset keys', () => {
     expect(api?.liveView.property_order).not.toEqual(['prop_status', '_title'])
     expect(api?.collapsed.size).toBe(0)
     saveSpy.mockClear()
-    await act(async () => api?.persistView({}))
+    await act(async () => void api?.persistView({}))
     const saved = lastSavedView()
     expect(saved.property_order).not.toEqual(['prop_status', '_title'])
-    expect(saved.collapsed_groups).toEqual([])
+    expect(saved.collapsed_groups).toBeUndefined()
     expect(saved.column_styles?.prop_status).toBeUndefined()
   })
 })
@@ -473,15 +538,16 @@ describe('the cards seam (flattenStructural)', () => {
     expect(api?.canReorderWithin).toBe(true)
   })
 
-  it('a cards persist mid-collapse keeps the collapse, and a caught-up style patch dies', async () => {
+  it('a cards persist mid-collapse keeps the collapse, and a landed style patch yields to a later write', async () => {
     await mount(setCollection(), true)
     act(() => api?.toggleCollapse('sA'))
-    await act(async () => api?.persistView({}))
+    await act(async () => void api?.persistView({}))
     expect(lastSavedView().collapsed_groups).toEqual(['sA'])
     act(() => api?.setStylePatch('prop_status', 'look', 'compact'))
-    expect(api?.liveView).not.toBe(api?.view)
+    expect(api?.liveView.column_styles?.prop_status).toEqual({ look: 'compact' })
     await mount(setCollection({ column_styles: { prop_status: { look: 'compact' } } }), true)
-    expect(api?.liveView).toBe(api?.view)
+    await mount(setCollection(), true)
+    expect(api?.liveView.column_styles).toBeUndefined()
   })
 })
 
@@ -513,44 +579,32 @@ const SORTED: Partial<SavedView> = {
 }
 
 describe('the manual order fold', () => {
-  it('a reorder under a sort folds its ids into manual_order on the saved view', async () => {
+  it('a reorder under a sort rides every later save', async () => {
     await mount(collection(SORTED))
-    act(() => api?.setManualOverride(['p2', 'p1']))
-    await act(async () => api?.persistView({}))
+    act(() => void api?.persistView({ manual_order: ['p2', 'p1'] }, { viewState: true }))
+    act(() => api?.toggleCollapse('g1'))
     expect(lastSavedView().manual_order).toEqual(['p2', 'p1'])
   })
 
-  it('a structural reorder leaves the stored manual_order at its value', async () => {
+  it('the crossing: a collapse under a structural paint saves the stored order untouched', async () => {
     await mount(collection({ manual_order: ['p2', 'p1'] }))
     expect(api?.structuralOrder).toBe(true)
-    act(() => api?.setManualOverride(['p1', 'p2']))
-    await act(async () => api?.persistView({}))
-    expect(lastSavedView().manual_order).toEqual(['p2', 'p1'])
-  })
-
-  it('a drag with no other live override still folds — the early-return guard', async () => {
-    await mount(collection(SORTED))
-    act(() => api?.setManualOverride(['p2', 'p1']))
-    expect(api?.liveView.manual_order).toEqual(['p2', 'p1'])
-  })
-
-  it('the crossing: a collapse under a structural drag saves the stored order untouched', async () => {
-    await mount(collection({ manual_order: ['p2', 'p1'] }))
-    act(() => api?.setManualOverride(['p1', 'p2']))
+    act(() => api?.setStructuralPaint(['p1', 'p2']))
     act(() => api?.toggleCollapse('g1'))
     expect(lastSavedView().collapsed_groups).toEqual(['g1'])
     expect(lastSavedView().manual_order).toEqual(['p2', 'p1'])
   })
 
-  it('the stored order paints, a sub-grouped view without a group key included, and the override drops once the record catches it up', async () => {
+  it('the stored order paints, a sub-grouped view without a group key included, and a landed order yields to a later write', async () => {
     channels['view:loadValues'] = async () => ({ ok: true, value: {} })
     const subGrouped = { sub_group: { property_id: 'prop_status', order_mode: 'manual' } } as const
     await mount(collection({ ...subGrouped, manual_order: ['p2', 'p1'] }))
     expect(paintOrder()).toEqual(['p2', 'p1'])
-    act(() => api?.setManualOverride(['p1', 'p2']))
+    act(() => void api?.persistView({ manual_order: ['p1', 'p2'] }, { viewState: true }))
     expect(paintOrder()).toEqual(['p1', 'p2'])
     await mount(collection({ ...subGrouped, manual_order: ['p1', 'p2'] }))
-    expect(api?.liveView).toBe(api?.view)
+    await mount(collection({ ...subGrouped, manual_order: ['p2', 'p1'] }))
+    expect(paintOrder()).toEqual(['p2', 'p1'])
   })
 })
 
