@@ -155,7 +155,7 @@ export function mapRules(
 }
 
 /** A list with each changed element replaced; null when nothing changed. */
-export function mapList<T>(xs: readonly T[], f: (x: T, i: number) => T | null): T[] | null {
+function mapList<T>(xs: readonly T[], f: (x: T, i: number) => T | null): T[] | null {
   let found = false
   const next = xs.map((x, i) => {
     const y = f(x, i)
@@ -165,29 +165,21 @@ export function mapList<T>(xs: readonly T[], f: (x: T, i: number) => T | null): 
   return found ? next : null
 }
 
-type RawView = Record<string, unknown>
-
 /** A container sidecar's `views[]`, or a View Tile entry's `views[].config`, each with its index; null when nothing changed. */
-export function mapViews(
-  doc: Record<string, unknown>,
-  fn: (view: RawView, i: number) => RawView | null,
-): Record<string, unknown> | null {
+export function mapViews(doc: Json, fn: (view: Json, i: number) => Json | null): Json | null {
   if (!Array.isArray(doc.views)) return null
   const tile = doc.type === 'view'
   const views = mapList(doc.views as unknown[], (v, i) => {
     const view = tile ? (isPlainObject(v) ? v.config : null) : v
     if (!isPlainObject(view)) return null
     const next = fn(view, i)
-    return next && (tile ? { ...(v as RawView), config: next } : next)
+    return next && (tile ? { ...(v as Json), config: next } : next)
   })
   return views && { ...doc, views }
 }
 
 /** A tile document's `tiles[]` entries through `fn`; null when nothing changed. */
-export function mapTiles(
-  doc: Record<string, unknown>,
-  fn: (tile: Record<string, unknown>) => Record<string, unknown> | null,
-): Record<string, unknown> | null {
+export function mapTiles(doc: Json, fn: (tile: Json) => Json | null): Json | null {
   if (!Array.isArray(doc.tiles)) return null
   const tiles = mapList(doc.tiles as unknown[], (t) => (isPlainObject(t) ? fn(t) : null))
   return tiles && { ...doc, tiles }

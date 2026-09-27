@@ -102,16 +102,14 @@ async function remintSidecar(
   await patchSidecar(absFolder, kind, (current) => {
     if (current.id !== oldId) return null
     let next: Record<string, unknown> = { ...current, id: fresh }
-    if (Array.isArray(next.views)) {
-      const read = containerViewIds(next.views)
-      next =
-        mapViews(next, (v, i) => {
-          const minted = mintViewId()
-          viewIds.set(read[i], minted)
-          // The copy's pages are reminted to fresh ids in this same pass, so a carried manual order would name pages the copy does not hold — and on disk it syncs everywhere with nothing to sweep it.
-          return { ...v, id: minted, manual_order: undefined }
-        }) ?? next
-    }
+    const read = Array.isArray(next.views) ? containerViewIds(next.views) : []
+    next =
+      mapViews(next, (v, i) => {
+        const minted = mintViewId()
+        viewIds.set(read[i], minted)
+        // The copy's pages are reminted to fresh ids in this same pass, so a carried manual order would name pages the copy does not hold — and on disk it syncs everywhere with nothing to sweep it.
+        return { ...v, id: minted, manual_order: undefined }
+      }) ?? next
     // The copy must not inherit a selection it cannot resolve: a view id naming nothing in the copy's own namespace is dropped rather than carried.
     if (typeof next.active_view === 'string')
       next = setOrDrop(next, 'active_view', viewIds.get(next.active_view))
