@@ -183,6 +183,61 @@ describe('the host over the renderer table', () => {
     expect(saves.at(-1)).toEqual(doc.layout)
   })
 
+  const deleteBox = async (at: number, bridge: Record<string, unknown>, layout = doc.layout) => {
+    stubEditorBridge({
+      'tiles:changed': () => () => {},
+      'tiles:get': async () => ({ ok: true, value: { ...doc, layout } }),
+      'tiles:save': async () => ({ ok: true, value: { landed: doc } }),
+      'tiles:readMarkdown': async () => ({ ok: true, value: { body: 'hello' } }),
+      menu: async () => ({ ok: true, value: 'tile:delete' }),
+      ...bridge,
+    })
+    useSession.setState((st) => ({
+      tree: makeTree(),
+      devicePrefs: { ...st.devicePrefs, nativeMenus: true },
+      personalization: { ...st.personalization, confirmDeletion: false },
+    }))
+    clearNotification()
+    await act(async () => root.render(<TileHost host={{ kind: 'homepage' }} />))
+    expect(await until(() => host.querySelectorAll('.tile').length === 4)).toBe(true)
+    await act(async () => {
+      ;(host.querySelectorAll('.tile-handle')[at] as HTMLElement).click()
+    })
+    expect(await until(() => currentNotification() !== null)).toBe(true)
+    expect(currentNotification()?.message).toBe('Deleted Tile')
+    expect(host.querySelectorAll('.tile')).toHaveLength(3)
+  }
+
+  it('a box of a kind this build doesn’t know can be deleted, and its Undo brings the entry back', async () => {
+    const removed = { entry: doc.tiles[3] }
+    const restoreTile = vi.fn(async () => ({ ok: true, value: { landed: doc } }))
+    await deleteBox(3, {
+      'tiles:removeTile': async () => ({
+        ok: true,
+        value: { removed, landed: { ...doc, tiles: doc.tiles.slice(0, 3) } },
+      }),
+      'tiles:restoreTile': restoreTile,
+    })
+    await act(async () => {
+      undoValue(null)
+    })
+    expect(await until(() => host.querySelectorAll('.tile').length === 4)).toBe(true)
+    expect(restoreTile).toHaveBeenCalledWith(
+      { kind: 'homepage' },
+      { ...removed, at: { band: 3, h: 100 } },
+    )
+  })
+
+  it('a box whose id names no tile leaves the board without asking the host, and for good', async () => {
+    const removeTile = vi.fn()
+    const layout = {
+      bands: [...doc.layout.bands.slice(0, 3), { node: { kind: 'tile', id: 'x/y', h: 100 } }],
+    }
+    await deleteBox(3, { 'tiles:removeTile': removeTile }, layout)
+    expect(removeTile).not.toHaveBeenCalled()
+    expect(currentNotification()?.action).toBeUndefined()
+  })
+
   it('a removal the host refuses puts the tile back', async () => {
     stubEditorBridge({
       'tiles:changed': () => () => {},

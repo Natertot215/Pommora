@@ -4,6 +4,7 @@ import {
   HOMEPAGE_HOST,
   knownTile,
   type Landed,
+  tileIdOf,
   landed,
   mergeEntry,
   mintSeed,
@@ -80,18 +81,20 @@ async function reviseTile(
   patch: Json | null,
   deps: TrashDeps,
 ): Promise<Result<Landed<{ removed: RemovedTile }>>> {
+  // A convert rewrites a tile this build knows; a removal takes any entry by its id, or none, since a box can outlive its entry.
+  const matches = (b: unknown): boolean => (patch ? knownTile(b)?.id : tileIdOf(b)) === tileId
   let entry: Json | null = null
   const written = await setTiles(dir, (tiles) =>
     tiles.flatMap((b) => {
-      if (knownTile(b)?.id !== tileId) return [b]
+      if (!matches(b)) return [b]
       entry = b as Json
       return patch ? [mergeEntry(entry, patch)] : []
     }),
   )
   if (!written.ok) return written
   const known = knownTile(entry)
-  if (!known) return fail('not-found', 'No such tile.')
-  if (!TILE_KINDS[known.type].fileBacked) return landed(written, { removed: { entry } })
+  if (patch && !known) return fail('not-found', 'No such tile.')
+  if (known && !TILE_KINDS[known.type].fileBacked) return landed(written, { removed: { entry } })
   const body = await discardTileFile(root, dir, tileId, deps)
   return landed(written, { removed: body === null ? { entry } : { entry, body } })
 }
@@ -125,16 +128,18 @@ export const removeTile = (
 /** File first, as a create is, never over the file its id names; the band lands with the entry, so a board no window holds still shows it. */
 export async function restoreTile(dir: string, removed: unknown): Promise<Result<Landed>> {
   if (!isPlainObject(removed)) return fault('Invalid tile.')
+  const id = tileIdOf(removed.entry)
   const known = knownTile(removed.entry)
   const { at, body = '' } = removed as Partial<RemovedTile>
   if (
-    !known ||
+    !id ||
     typeof body !== 'string' ||
     (at && !(Number.isInteger(at.band) && Number.isFinite(at.h)))
   )
     return fault('Invalid tile.')
-  if (TILE_KINDS[known.type].fileBacked) {
-    const file = tileFilePath(dir, known.id)
+  // A kind this build doesn't know brings back the file it had, if it had one.
+  if (known ? TILE_KINDS[known.type].fileBacked : 'body' in removed) {
+    const file = tileFilePath(dir, id)
     await machine().lock(file, async () => {
       if (!(await pathExists(file))) await atomicWriteFile(file, body)
     })
@@ -143,11 +148,9 @@ export async function restoreTile(dir: string, removed: unknown): Promise<Result
     const layout = decodeLayout(cur.layout)
     return {
       ...cur,
-      tiles: cur.tiles.some((b) => knownTile(b)?.id === known.id)
-        ? cur.tiles
-        : [...cur.tiles, removed.entry],
+      tiles: cur.tiles.some((b) => tileIdOf(b) === id) ? cur.tiles : [...cur.tiles, removed.entry],
       layout: layout
-        ? insertBand(layout, at?.band ?? layout.bands.length, known.id, at?.h ?? NEW_TILE_H)
+        ? insertBand(layout, at?.band ?? layout.bands.length, id, at?.h ?? NEW_TILE_H)
         : cur.layout,
     }
   }).finally(dropTileHeadingLinks)

@@ -239,6 +239,34 @@ describe('markdown tile lifecycle', () => {
     expect(trashed.some((f) => f.includes(id))).toBe(true)
   })
 
+  it('remove takes an entry this build doesn’t know, or none, with any file its id names', async () => {
+    const [w, gone] = [tileId('w'), tileId('g')]
+    await seed(home(), [{ id: w, type: 'widget' }])
+    await write(home(), gone, 'orphaned')
+    expect(await removeTile(root, home(), w, nexusDeps)).toMatchObject(
+      ok({ removed: { entry: { id: w, type: 'widget' } } }),
+    )
+    expect(await entries()).toEqual([])
+    expect(await removeTile(root, home(), gone, nexusDeps)).toMatchObject(
+      ok({ removed: { entry: null, body: 'orphaned' } }),
+    )
+    expect(await pathExists(tileFilePath(home(), gone))).toBe(false)
+    expect((await restoreTile(home(), { entry: { id: w, type: 'widget' }, body: 'kept' })).ok).toBe(
+      true,
+    )
+    expect(await entries()).toEqual([{ id: w, type: 'widget' }])
+    expect(await readMarkdownTile(home(), w)).toEqual(ok('kept'))
+  })
+
+  it('convert refuses an entry this build doesn’t know and leaves it alone', async () => {
+    await seed(home(), [{ id: tileId('w'), type: 'widget' }])
+    const pick = { kind: 'page', value: 'page-1' } as const
+    expect(await convertTile(root, home(), tileId('w'), pick, nexusDeps)).toMatchObject({
+      error: { code: 'not-found' },
+    })
+    expect(await entries()).toEqual([{ id: tileId('w'), type: 'widget' }])
+  })
+
   it('a removed tile restores with its text, once, and never over a file already there', async () => {
     const id = await landedId(createMarkdownTile(home()))
     await write(home(), id, 'kept text')
@@ -272,7 +300,7 @@ describe('markdown tile lifecycle', () => {
     expect((await docAt()).layout).toEqual({
       bands: [band('a'), { node: { kind: 'tile', id, h: 120 } }, band('b')],
     })
-    expect((await restoreTile(home(), { entry: { id: tileId('x'), type: 'page' } })).ok).toBe(false)
+    expect((await restoreTile(home(), { entry: { id: '../x', type: 'markdown' } })).ok).toBe(false)
   })
 
   it('a removed tile file goes to the system trash in System mode', async () => {

@@ -162,6 +162,17 @@ describe('the tile menu model both renderers draw', () => {
   })
 })
 
+describe('the menu of a box with no entry this build draws', () => {
+  it('offers Delete alone, held by the board lock', () => {
+    expect(tileMenuItems(ctx({ entry: undefined })).items).toEqual([
+      { label: 'Delete', icon: 'x', action: 'tile:delete', disabled: false },
+    ])
+    expect(
+      row(tileMenuItems(ctx({ entry: undefined, containerLocked: true })), 'Delete')?.disabled,
+    ).toBe(true)
+  })
+})
+
 describe('the patch a settings pick writes', () => {
   const entry = { type: 'markdown', id: 'b1' } as unknown as TileEntry
   it('writes the picked setting, and deletes a key the pick returns to its default', () => {
