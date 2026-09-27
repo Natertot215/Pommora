@@ -7,10 +7,14 @@ const WINDOW_MS = 2000
 // Descendant (prefix) suppression gets a tighter window: a folder rename's child echoes all land within chokidar's settle pipeline (~400ms), while every prefix-suppressed millisecond is also a blind spot for a genuine EXTERNAL write into that folder.
 const PREFIX_WINDOW_MS = 800
 
-let tap: ((absPath: string) => void) | null = null
+interface WriteTap {
+  wrote(absPath: string): void
+  renamed(absFrom: string, absTo: string): void
+}
+let tap: WriteTap | null = null
 
-export function setWriteTap(fn: ((absPath: string) => void) | null): void {
-  tap = fn
+export function setWriteTap(next: WriteTap | null): void {
+  tap = next
 }
 
 export function recordWrite(absPath: string, content?: string | Uint8Array): void {
@@ -22,8 +26,11 @@ export function recordWrite(absPath: string, content?: string | Uint8Array): voi
     const cutoff = Date.now() - WINDOW_MS
     for (const [p, r] of recent) if (r.at < cutoff) recent.delete(p)
   }
-  tap?.(absPath)
+  tap?.wrote(absPath)
 }
+
+/** A rename the app made, for the sync client; it records no echo, since the paths' own writes already did. */
+export const reportRename = (absFrom: string, absTo: string): void => tap?.renamed(absFrom, absTo)
 
 const held = (absPath: string): Echo | undefined => {
   const r = recent.get(absPath)

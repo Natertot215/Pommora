@@ -13,7 +13,7 @@ import {
   targetTaken,
 } from '../Files/atomicWrite'
 import { renameFrontmatterKey, type KeyCollision } from '../Files/pageFile'
-import { recordWrite } from '../Files/writeEcho'
+import { recordWrite, reportRename } from '../Files/writeEcho'
 import { machine } from '../Platform/machine'
 import type { Json } from '../Files/stableJson'
 import { contextsDir } from '../Paths/paths'
@@ -229,6 +229,7 @@ export async function renameContextOp(
       recordWrite(oldDir)
       recordWrite(newDir)
       await machine().rename(oldDir, newDir)
+      reportRename(oldDir, newDir)
     }
   } catch (e) {
     await clearJournal(root, j)
@@ -241,7 +242,10 @@ export async function renameContextOp(
   if (!committed.ok) {
     await cascadeTitle(root, reg.value, { ...j, oldTitle: newName, newTitle: entry.title })
     try {
-      if (await pathExists(newDir)) await machine().rename(newDir, oldDir)
+      if (await pathExists(newDir)) {
+        await machine().rename(newDir, oldDir)
+        reportRename(newDir, oldDir)
+      }
     } catch {}
     await clearJournal(root, j)
     return committed
@@ -278,6 +282,7 @@ export async function renameSpaceOp(
     recordWrite(ref.dir)
     recordWrite(target)
     await machine().rename(ref.dir, target)
+    reportRename(ref.dir, target)
   } catch (e) {
     await clearJournal(root, j)
     return fault(e)

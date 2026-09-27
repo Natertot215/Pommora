@@ -1,7 +1,7 @@
 import { join, dirname, basename, relative } from '../Paths/posix'
 import { machine } from '../Platform/machine'
 import { newId } from './ids'
-import { recordWrite } from '../Files/writeEcho'
+import { recordWrite, reportRename } from '../Files/writeEcho'
 import { pathExists, targetTaken, writeJson } from '../Files/atomicWrite'
 import { nameError } from '../Paths/names'
 import { sidecarPath } from '../Paths/paths'
@@ -10,7 +10,6 @@ import { ok, fail, type Result } from '../Contract/result'
 import { outsideContent } from '../Paths/exclusion'
 import { followExcludedFolders, readWatchScope } from '../Settings/settings'
 import { moveIndexPaths } from '../Index/indexSeed'
-import { reportRename } from '../Sync/Client/tap'
 
 const SET_ASIDE = {
   excluded:
@@ -33,9 +32,8 @@ export async function landingRefusal(
 /** What follows a Collection or Set landing at a new path: the index moves its rows, excluded entries follow before sync hears of the rename so it pushes under the new scope, and true means the landing moved what the scope keeps out. */
 export async function landedFolder(root: string, fromAbs: string, toAbs: string): Promise<boolean> {
   await moveIndexPaths(root, fromAbs, toAbs)
-  const [from, to] = [relative(root, fromAbs), relative(root, toAbs)]
-  const rescope = await followExcludedFolders(root, from, to)
-  reportRename(from, to)
+  const rescope = await followExcludedFolders(root, relative(root, fromAbs), relative(root, toAbs))
+  reportRename(fromAbs, toAbs)
   return rescope
 }
 
