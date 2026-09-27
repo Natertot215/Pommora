@@ -465,6 +465,19 @@ describe('rewriteTileConnections', () => {
     }
     expect(await readMarkdownTile(spaceDir(), open)).toEqual(ok('see [[Renamed]]'))
   })
+
+  it('counts a Space whose sidecar can’t be read and still rewrites the other Spaces', async () => {
+    const broken = join(root, '.nexus', 'contexts', 'Realms', 'Broken')
+    await mkdir(broken, { recursive: true })
+    await writeFile(join(broken, '_space.json'), '{ corrupt')
+    const id = await landedId(createMarkdownTile(spaceDir()))
+    await write(spaceDir(), id, 'see [[Target]]')
+    expect(await rewriteTileConnections(root, rename)).toEqual({
+      hosts: [{ kind: 'space', id: 'sp1' }],
+      failed: 1,
+    })
+    expect(await readMarkdownTile(spaceDir(), id)).toEqual(ok('see [[Renamed]]'))
+  })
 })
 
 describe('copyEntry', () => {
