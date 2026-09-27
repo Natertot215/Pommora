@@ -8,7 +8,7 @@ import { loadGovernedWorld, writeSpaceSidecar } from '../Contexts/contextWrite'
 import { noShape, updatePageProperty } from '../Nexus/page'
 import { fail, ok, type Result } from '../Contract/result'
 import type { MutateContext } from '../Nexus/mutate'
-import type { MutateReply, MutateRequest } from '../Nexus/mutateRequest'
+import { done, type MutateReply, type MutateRequest } from '../Nexus/mutateRequest'
 import type { PropertyDefinition } from './properties'
 import { encodeValue, isBlankValue, type PropertyValue } from './propertyValue'
 import { applyAdoptions } from './optionOps'
@@ -41,7 +41,7 @@ export async function setPropertyOp(
     const def = (await readRegistry(root)).defs[req.propertyId]
     if (!def) return NO_PROPERTY
     const written = await setSpaceProperty(resolved.value, def, req.value)
-    return written.ok ? ok({}) : written
+    return done(written)
   }
   // Resolved inside the lock: a rename sweeps on its own chain, so a name read before the lock can send the write to a key the sweep has already passed.
   const adoptions = await machine().lock(resolved.value, async () => {

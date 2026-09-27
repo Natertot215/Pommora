@@ -9,7 +9,7 @@ import { basename, join } from '../Paths/posix'
 import { metadataShardFile, type PageMeta, type PageMetaPatch } from './schemas'
 import { shardOf } from './ids'
 import { ensurePageId } from './adopt'
-import type { MutateReply } from './mutateRequest'
+import { done, type MutateReply } from './mutateRequest'
 import { stabilize } from './treeStabilize'
 import { findContainerWhere } from './treePatch'
 import type { NexusTree } from './tree'
@@ -169,5 +169,5 @@ export async function writePageMeta(
   const id = await ensurePageId(resolved.value)
   if (!id.ok) return id
   const written = await updatePageMetadata(root, id.value, patch)
-  return written.ok ? ok({}) : written
+  return done(written)
 }

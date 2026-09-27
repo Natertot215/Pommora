@@ -1,9 +1,9 @@
 import { setOrDrop, updateNexusConfig } from '../Files/atomicWrite'
 import { patchSidecar } from '../Files/sidecar'
-import { fault, ok } from '../Contract/result'
+import { fault } from '../Contract/result'
 import { mutableTarget } from '../Nexus/liveTree'
 import type { MutateContext } from '../Nexus/mutate'
-import type { MutateReply, MutateRequest } from '../Nexus/mutateRequest'
+import { done, type MutateReply, type MutateRequest } from '../Nexus/mutateRequest'
 
 export async function setHeadingIconHiddenOp(
   { root }: MutateContext,
@@ -15,10 +15,10 @@ export async function setHeadingIconHiddenOp(
     setOrDrop(cur, 'heading_icon_hidden', req.hidden)
   if (req.kind === 'homepage') {
     const written = await updateNexusConfig(root, 'homepage', patch)
-    return written.ok ? ok({}) : written
+    return done(written)
   }
   const resolved = await mutableTarget(root, req.path, [req.kind])
   if (!resolved.ok) return resolved
   const written = await patchSidecar(resolved.value, req.kind, patch)
-  return written.ok ? ok({}) : written
+  return done(written)
 }

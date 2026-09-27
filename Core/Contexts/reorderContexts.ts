@@ -1,6 +1,5 @@
-import { ok } from '../Contract/result'
 import type { MutateContext } from '../Nexus/mutate'
-import type { MutateReply, MutateRequest } from '../Nexus/mutateRequest'
+import { done, type MutateReply, type MutateRequest } from '../Nexus/mutateRequest'
 import { mutateRegistryFile } from './contextsRegistry'
 
 export async function reorderContextsOp(
@@ -13,5 +12,5 @@ export async function reorderContextsOp(
     const rest = cur.contexts.filter((c) => !req.ids.includes(c.id))
     return { contexts: [...ordered, ...rest] }
   })
-  return r.ok ? ok({}) : r
+  return done(r)
 }
