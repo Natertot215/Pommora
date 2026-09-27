@@ -30,7 +30,8 @@ import {
 import { loadContextWorld } from './contextWrite'
 import { withOrderEntry } from './spaceSidecar'
 import { editList } from '../Properties/pageValue'
-import { listOf, namesSpace } from './contextResolve'
+import { namesSpace } from './contextResolve'
+import { listOf } from '../Contract/validators'
 import { queryMembers } from '../Index/contentIndex'
 import { indexWrittenPage, nexusCorpus } from '../Index/indexSeed'
 import { noteSidecarWrite } from '../Nexus/valuesChanged'
@@ -60,7 +61,7 @@ function rewriteRoot(raw: Json, contextTitle: string, j: RenameJournal): Json | 
   const key = contextKey(contextTitle)
   const arr = raw[key]
   const next =
-    Array.isArray(arr) && editList(arr, namesSpace(j.oldTitle), { op: 'replace', to: j.newTitle })
+    Array.isArray(arr) && editList(arr, namesSpace, j.oldTitle, { op: 'replace', to: j.newTitle })
   if (!next) return null
   return { ...raw, [key]: next }
 }
@@ -156,7 +157,7 @@ export async function unlinkSpaceValue(
   const names = namesSpace(spaceTitle)
   const take: Rewrite = (raw, file) => {
     const arr = raw[key]
-    const next = Array.isArray(arr) && editList(arr, names, { op: 'strip' })
+    const next = Array.isArray(arr) && editList(arr, namesSpace, spaceTitle, { op: 'strip' })
     if (!next) return null
     const taken = arr.filter((v): v is string => typeof v === 'string' && names(v))
     captured.push(captureRoot(raw, file, taken))
