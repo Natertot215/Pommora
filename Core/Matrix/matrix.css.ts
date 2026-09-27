@@ -26,9 +26,9 @@ export const host = style({
       flex: 1,
       minHeight: 0,
       vars: {
-        '--os-lead': '1',
-        '--os-trail': '1',
-        '--over-scroll-fade': 'var(--window-toolbar-h)',
+        '--scroll-fade-lead': '1',
+        '--scroll-fade-trail': '1',
+        '--scroll-fade': 'var(--window-toolbar-h)',
       },
     },
   },

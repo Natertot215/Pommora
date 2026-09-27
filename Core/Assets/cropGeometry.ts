@@ -1,5 +1,5 @@
 import type { Crop } from '../Nexus/schemas'
-import { clamp } from '@pommora/uix/Utilities/clamp'
+import { clamp, type NumberRange } from '@pommora/uix/Utilities/clamp'
 
 interface CoverStyle {
   backgroundSize: string
@@ -8,29 +8,27 @@ interface CoverStyle {
 }
 
 export const DEFAULT_CROP: Crop = { x: 0.5, y: 0.5, zoom: 1 }
-export const MIN_ZOOM = 0.25
-export const MAX_ZOOM = 2
+export const CROP_ZOOM: NumberRange = { min: 0.25, max: 2 }
+export const CROP_POINT: NumberRange = { min: 0, max: 1 }
 
 const usable = (n: number): boolean => Number.isFinite(n) && n > 0
 const pct = (n: number): string => `${Number((n * 100).toFixed(4))}%`
 
-export const clampZoom = (zoom: number): number => clamp(zoom, MIN_ZOOM, MAX_ZOOM)
-
 const widthMeets = (imageAspect: number, boxAspect: number): boolean => imageAspect > boxAspect
-const cropZoom = (crop: Crop): number => clampZoom(Number.isFinite(crop.zoom) ? crop.zoom : 1)
 
 export function coverStyle(crop: Crop, imageAspect: number, boxAspect: number): CoverStyle | null {
   if (!usable(imageAspect) || !usable(boxAspect)) return null
-  const zoom = cropZoom(crop)
+  const { zoom } = crop
   return {
     backgroundSize: widthMeets(imageAspect, boxAspect) ? `${pct(zoom)} auto` : `auto ${pct(zoom)}`,
-    backgroundPosition: `${pct(clamp(crop.x, 0, 1))} ${pct(clamp(crop.y, 0, 1))}`,
+    backgroundPosition: `${pct(crop.x)} ${pct(crop.y)}`,
     backgroundColor: crop.color ?? '',
   }
 }
 
 export function panToCrop(crop: Crop, dx: number, dy: number): Crop {
-  return { ...crop, x: clamp(crop.x + dx, 0, 1), y: clamp(crop.y + dy, 0, 1) }
+  const { min, max } = CROP_POINT
+  return { ...crop, x: clamp(crop.x + dx, min, max), y: clamp(crop.y + dy, min, max) }
 }
 
 interface CoverRect {
@@ -47,12 +45,12 @@ export function coverRect(
   boxH: number,
 ): CoverRect | null {
   if (!usable(imageAspect) || !usable(boxW) || !usable(boxH)) return null
-  const z = cropZoom(crop)
-  const width = widthMeets(imageAspect, boxH / boxW) ? z * boxW : (z * boxH) / imageAspect
+  const { zoom } = crop
+  const width = widthMeets(imageAspect, boxH / boxW) ? zoom * boxW : (zoom * boxH) / imageAspect
   const height = width * imageAspect
   return {
-    left: (boxW - width) * clamp(crop.x, 0, 1),
-    top: (boxH - height) * clamp(crop.y, 0, 1),
+    left: (boxW - width) * crop.x,
+    top: (boxH - height) * crop.y,
     width,
     height,
   }

@@ -1,5 +1,5 @@
 import { useRef } from 'react'
-import { coerceScale } from '@pommora/core/Settings/personalization'
+import { ZOOM } from '@pommora/core/Settings/personalization'
 import type { CollectionNode, SetNode } from '@pommora/core/Nexus/tree'
 import { useViewTileScope } from '../ViewTileScope'
 import { type SavedView, VIEW_KINDS, type ViewType } from '@pommora/core/Views/views'
@@ -23,7 +23,7 @@ export function ViewHost({ source }: { source: CollectionNode | SetNode }): Reac
   const Renderer = VIEW_RENDERERS[view.type] ?? TableView
   const tile = useViewTileScope()
   // An embedded tile states its own size, so in a tile scope the factor stays 1 and never compounds with the embed zoom.
-  const scale = tile ? 1 : coerceScale(view.view_scale, 1)
+  const scale = tile ? ZOOM.default : (view.view_scale ?? ZOOM.default)
   const upward = useRef<ViewHostApi['seam']>({
     foldOverrides: { current: identity },
     bandBucket: { current: (key) => key },

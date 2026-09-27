@@ -30,7 +30,7 @@ import { FrameSlide } from '@pommora/uix/Menus/FrameSlide'
 import { PANE_MIN_H, PANE_MIN_W } from '@pommora/uix/Menus/frame-slide.css'
 import { iconForTypeSwitch } from '../viewIcon'
 import { ViewItemMenu } from './ViewItemMenu'
-import { coerceTenthsScale, TENTHS_SCALE } from '@pommora/core/Settings/personalization'
+import { TENTHS_SCALE } from '@pommora/core/Settings/personalization'
 import { cx } from '@pommora/uix/Utilities/cx'
 import * as vs from './layout-frame.css'
 
@@ -169,8 +169,8 @@ export function LayoutFrame({
                 'scaling',
                 'Card Scale',
                 {
-                  steps: TENTHS_SCALE.steps,
-                  value: coerceTenthsScale(view.card_size),
+                  range: TENTHS_SCALE,
+                  value: view.card_size ?? TENTHS_SCALE.default,
                   onPick: (v) => write({ card_size: v === TENTHS_SCALE.default ? undefined : v }),
                 },
                 CARD_ROW_LOOK,

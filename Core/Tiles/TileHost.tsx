@@ -20,14 +20,14 @@ import { emptyLayout, findTile, getTile, type TileLayout } from './Layout/model'
 import { TileGrid, type BackdropTarget } from './TileGrid'
 import { useDismissal } from '@pommora/uix/Interactions/dismissalStack'
 import { entityIcon } from '../Assets/entityIconPolicy'
-import type { EntityIconKind } from '@pommora/core/Settings/personalization'
+import { type EntityIconKind, ZOOM } from '@pommora/core/Settings/personalization'
 import { useSession } from '../Session/store'
 import { popMenu } from '../Actions/menuActions'
 import { askRemoveTile } from '../Interface/Confirm/confirmations'
 import { notifyUndoable, reportRefusal } from '../Interface/Notifications/notifications'
 import { viewGlyph } from '../Views/viewIcon'
 import type { CollectionNode, NexusTree, PageNode, SetNode } from '@pommora/core/Nexus/tree'
-import { DEFAULT_ZOOM, ZOOM_STEPS, zoomStep } from './tileZoom'
+import { ZOOM_STEPS } from './tileZoom'
 import {
   inertTile,
   type MutateEntry,
@@ -106,14 +106,14 @@ const withKey = (
 const NO_PAGES: ReadonlyMap<string, ConnPage> = new Map()
 
 const ZOOM_STYLES = new Map<number, CSSProperties>(
-  ZOOM_STEPS.filter((f) => f !== DEFAULT_ZOOM).map((f) => [
+  ZOOM_STEPS.filter((f) => f !== ZOOM.default).map((f) => [
     f,
     { '--tile-zoom': f } as CSSProperties,
   ]),
 )
 
-export function zoomStyle(factor?: number): CSSProperties | undefined {
-  return ZOOM_STYLES.get(zoomStep(factor))
+export function zoomStyle(factor: number): CSSProperties | undefined {
+  return ZOOM_STYLES.get(factor)
 }
 
 // A write replaces only the entries it changed, so an untouched entry keeps its parse, and every memo keyed on it holds.
@@ -272,11 +272,14 @@ export function TileHost({
     [entries],
   )
 
-  const tileStyle = useCallback((id: string) => zoomStyle(entries.get(id)?.zoom), [entries])
+  const tileStyle = useCallback(
+    (id: string) => zoomStyle(entries.get(id)?.zoom ?? ZOOM.default),
+    [entries],
+  )
 
   const setTileZoom = useCallback(
     (id: string, factor: number) =>
-      mutateEntry(id, (raw) => withKey(raw, 'zoom', factor === 1 ? undefined : factor)),
+      mutateEntry(id, (raw) => withKey(raw, 'zoom', factor === ZOOM.default ? undefined : factor)),
     [mutateEntry],
   )
 

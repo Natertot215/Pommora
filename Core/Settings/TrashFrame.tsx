@@ -237,7 +237,7 @@ function TrashBody(): React.JSX.Element {
           {rows.length === 0 ? 'Trash is empty.' : 'Nothing matches.'}
         </div>
       ) : (
-        <div className="trash-scroll over-scroll">
+        <div className="trash-scroll scroll-fade">
           <div className="nav-list">
             {shown.map((row) => (
               <TrashRowView

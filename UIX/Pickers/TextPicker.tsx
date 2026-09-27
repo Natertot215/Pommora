@@ -11,7 +11,6 @@ export function TextPicker({
   value,
   onCommit,
   accent,
-  maxLength,
   leading,
   trailing,
 }: {
@@ -21,18 +20,16 @@ export function TextPicker({
   value: string
   onCommit: (next: string) => void
   accent?: string
-  maxLength?: number
   leading?: React.ReactNode
   trailing?: React.ReactNode
 }): React.JSX.Element | null {
   const hasAffix = leading !== undefined || trailing !== undefined
   const field = (
     <EditableInput
-      value={value}
+      initial={value}
       className={hasAffix ? s.suffixInput : s.input}
       // The bare variant takes the shared field chrome so it truncates rather than letting the eclipse dissolve its own box.
       boxed={!hasAffix}
-      maxLength={maxLength}
       caretAtEnd
       onCommit={onCommit}
       onCancel={onDismiss}

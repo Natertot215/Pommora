@@ -1,14 +1,12 @@
-import { SCALE } from '@pommora/core/Settings/personalization'
+import { ZOOM } from '@pommora/core/Settings/personalization'
 import type { ActionItem } from '@pommora/core/Actions/menuModel'
 import { unitLabel } from '@pommora/uix/Pickers/numberUnit'
 
-export const DEFAULT_ZOOM = 1
-
-export const ZOOM_STEPS: readonly number[] = [...SCALE.steps].reverse()
+export const ZOOM_STEPS: readonly number[] = [...ZOOM.steps].reverse()
 
 /** Snaps to the nearest step so a hand-edited off-grid factor stays clearable through the picker. */
 export function zoomStep(factor?: number): number {
-  const target = factor ?? DEFAULT_ZOOM
+  const target = factor ?? ZOOM.default
   return ZOOM_STEPS.reduce((best, f) => (Math.abs(f - target) < Math.abs(best - target) ? f : best))
 }
 

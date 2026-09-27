@@ -281,7 +281,7 @@ export function GroupFrame({
         </>
       )}
       <MenuSeparator flush />
-      <div className={`${middleRegion} over-scroll`}>
+      <div className={`${middleRegion} scroll-fade`}>
         {!structural && group.kind === 'property' ? (
           activeDef?.type === 'dateTime' ? (
             <DateBucketList

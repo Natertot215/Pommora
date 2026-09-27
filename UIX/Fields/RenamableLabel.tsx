@@ -45,8 +45,7 @@ export function RenamableLabel({
   }
   return (
     <EditableInput
-      value={value}
-      initialText={emptyInitial ? '' : undefined}
+      initial={emptyInitial ? '' : value}
       className={className}
       type={type}
       autoSize={autoSize}

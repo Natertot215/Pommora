@@ -1,6 +1,6 @@
 import { reportRefusal } from '@pommora/core/Interface/Notifications/notifications'
 import { useRef, useState } from 'react'
-import { coerceScale } from '@pommora/core/Settings/personalization'
+import { ZOOM } from '@pommora/core/Settings/personalization'
 import type { OpenIn } from '@pommora/core/Views/viewRow'
 import { Icon } from '@pommora/uix/Symbols'
 import { entityIcon } from '../../Assets/entityIconPolicy'
@@ -87,10 +87,9 @@ export function SettingsFrame(): React.JSX.Element | null {
       .then(reportRefusal)
   }
 
-  const viewScale = coerceScale(view.view_scale, 1)
+  const viewScale = view.view_scale ?? ZOOM.default
   const setViewScale = (f: number): void => {
-    const next = coerceScale(f, 1)
-    void saveViewIn(scope, node, { ...view, view_scale: next === 1 ? undefined : next })
+    void saveViewIn(scope, node, { ...view, view_scale: f === ZOOM.default ? undefined : f })
   }
 
   const configurationLeaf = (

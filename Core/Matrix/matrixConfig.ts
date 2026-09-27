@@ -1,6 +1,7 @@
 import { isPlainObject } from '../Contract/validators'
 import { type FilterGroup, filterGroup } from '../Views/views'
-import { clamp } from '@pommora/uix/Utilities/clamp'
+import { numberCheck } from '../Files/decoders'
+import { type SteppedRange, steppedRange } from '@pommora/uix/Utilities/clamp'
 import type { Forces } from './Engine/forces'
 import type { GroupMode } from './Engine/graph'
 
@@ -17,21 +18,16 @@ export type MatrixPatch = {
   forces?: { [M in GroupMode]?: Partial<Forces> }
 }
 
-const GRAVITY_STEPS = Array.from({ length: 20 }, (_, i) => (i + 1) / 10)
-const QUARTER_STEPS = [
+const GRAVITY = steppedRange(Array.from({ length: 20 }, (_, i) => (i + 1) / 10))
+const QUARTERS = steppedRange([
   0.35, 0.5, 0.75, 1, 1.25, 1.5, 1.75, 2, 2.25, 2.5, 2.75, 3, 3.25, 3.5, 3.75, 4,
-]
+])
 
-export const FORCE_STEPS: Record<keyof Forces, readonly number[]> = {
-  gravity: GRAVITY_STEPS,
-  spread: QUARTER_STEPS,
-  strength: QUARTER_STEPS,
-  distance: QUARTER_STEPS,
-}
-
-const clampForce = (key: keyof Forces, v: number): number => {
-  const steps = FORCE_STEPS[key]
-  return clamp(v, steps[0], steps[steps.length - 1])
+export const FORCE_RANGES: Record<keyof Forces, SteppedRange> = {
+  gravity: GRAVITY,
+  spread: QUARTERS,
+  strength: QUARTERS,
+  distance: QUARTERS,
 }
 
 // A patch spreads a new block for its grouping even when no value moved, so the runtime reads these by value rather than re-solving the picture for an unchanged set.
@@ -65,7 +61,7 @@ const section = (raw: unknown, key: string): Record<string, unknown> =>
   isPlainObject(raw) && isPlainObject(raw[key]) ? raw[key] : {}
 const bool = (v: unknown, fallback: boolean): boolean => (typeof v === 'boolean' ? v : fallback)
 const force = (v: unknown, key: keyof Forces, fallback: number): number =>
-  typeof v === 'number' && Number.isFinite(v) ? clampForce(key, v) : fallback
+  numberCheck(FORCE_RANGES[key]).safeParse(v).data ?? fallback
 
 export function parseMatrixConfig(raw: unknown): MatrixConfig {
   const d = DEFAULT_MATRIX_CONFIG

@@ -17,6 +17,7 @@ import { type SetTreeNode, subtreeIds } from './group'
 import { linkDisplayText } from '@pommora/core/Connections/linkValue'
 import { type LocalDate, readDate, startOfDay } from '../../Properties/formatValue'
 import { foldKey } from '../../Paths/caseFold'
+import { numberFrom } from '@pommora/uix/Pickers/numberUnit'
 
 export const FILTER_OPS = {
   is: 'is',
@@ -188,12 +189,6 @@ function evaluateByKind(
   }
 }
 
-function parseNum(s: Expected): number | null {
-  if (s == null || s.trim() === '') return null
-  const n = Number(s)
-  return Number.isNaN(n) ? null : n
-}
-
 function parseBool(s: Expected): boolean | null {
   switch (s?.toLowerCase()) {
     case 'true':
@@ -229,35 +224,24 @@ function textValue(v: PropertyValue): string | null {
 
 function evaluateNumber(v: PropertyValue, op: Op, expected: Expected): boolean {
   const n = v.kind === 'number' ? v.value : null
+  const e = numberFrom(expected ?? '')
   switch (op) {
     case FILTER_OPS.isEmpty:
       return n === null
     case FILTER_OPS.isNotEmpty:
       return n !== null
-    case FILTER_OPS.is: {
-      const e = parseNum(expected)
-      return e === null ? true : n !== null && n === e
-    }
-    case FILTER_OPS.isNot: {
-      const e = parseNum(expected)
-      return n === null || e === null ? true : n !== e
-    }
-    case FILTER_OPS.greaterThan: {
-      const e = parseNum(expected)
-      return e === null ? true : n !== null && n > e
-    }
-    case FILTER_OPS.lessThan: {
-      const e = parseNum(expected)
-      return e === null ? true : n !== null && n < e
-    }
-    case FILTER_OPS.greaterOrEqual: {
-      const e = parseNum(expected)
-      return e === null ? true : n !== null && n >= e
-    }
-    case FILTER_OPS.lessOrEqual: {
-      const e = parseNum(expected)
-      return e === null ? true : n !== null && n <= e
-    }
+    case FILTER_OPS.is:
+      return e === undefined ? true : n !== null && n === e
+    case FILTER_OPS.isNot:
+      return n === null || e === undefined ? true : n !== e
+    case FILTER_OPS.greaterThan:
+      return e === undefined ? true : n !== null && n > e
+    case FILTER_OPS.lessThan:
+      return e === undefined ? true : n !== null && n < e
+    case FILTER_OPS.greaterOrEqual:
+      return e === undefined ? true : n !== null && n >= e
+    case FILTER_OPS.lessOrEqual:
+      return e === undefined ? true : n !== null && n <= e
     default:
       return true
   }

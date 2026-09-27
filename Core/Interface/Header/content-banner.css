@@ -7,6 +7,20 @@
   border-bottom: var(--detail-divider-width) solid var(--border-base);
 }
 
+/* The window banner — the one banner a windowed Page, Space, and the Navigation Window's map tab draw: under the strip and any open pane, out to the glass, its title clearing the panes. Doubled with .window so it outranks each surface's own banner rules. */
+.window .window-banner {
+  height: 140px; /* KNOB — the banner's height */
+  margin: calc(-1 * var(--window-toolbar-h)) calc(-1 * var(--window-clear-r)) 0
+    calc(-1 * var(--window-clear-l));
+}
+/* The clearances ride --io, which a transition on left or right would chase. */
+.window .window-banner-title {
+  left: calc(var(--content-edge) + var(--window-clear-l));
+  right: calc(var(--content-edge) + var(--window-clear-r));
+  bottom: 12px;
+  transition: none;
+}
+
 .banner-title,
 .banner-empty-title {
   font-size: var(--text-title-small-size);

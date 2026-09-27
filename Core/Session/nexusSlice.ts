@@ -21,7 +21,8 @@ import { stabilize } from '@pommora/core/Nexus/treeStabilize'
 import { applyAccent, applySystemAccent } from '@pommora/uix/Theme/ramp'
 import { applyPersonalization } from '../Settings/applyPersonalization'
 import { reconcileIndexOf } from '../Nexus/treeIndex'
-import { clampWidth, SIDE_PANE_WIDTH, SIDEBAR_WIDTH } from './layoutSlice'
+import { numberCheck } from '../Files/decoders'
+import { SIDE_PANE_WIDTH, SIDEBAR_WIDTH } from './layoutSlice'
 import { flushAllTileDocs, tileBodyWriter } from '../Tiles/tileDocStore'
 import {
   cancelAllSaves,
@@ -185,15 +186,13 @@ export const createNexusSlice: Slice<NexusSlice> = (set, get) => {
         const prefs = await dialer().ask('devicePrefs:load')
         if (prefs.ok) {
           const panes = prefs.value?.panes
+          const sidebarWidth = numberCheck(SIDEBAR_WIDTH, true).safeParse(panes?.sidebar).data
+          const sidePaneWidth = numberCheck(SIDE_PANE_WIDTH, true).safeParse(panes?.sidePane).data
           set({
             devicePrefsState: 'live',
             devicePrefs: prefs.value ?? {},
-            ...(panes?.sidebar !== undefined && {
-              sidebarWidth: clampWidth(SIDEBAR_WIDTH, panes.sidebar),
-            }),
-            ...(panes?.sidePane !== undefined && {
-              sidePaneWidth: clampWidth(SIDE_PANE_WIDTH, panes.sidePane),
-            }),
+            ...(sidebarWidth !== undefined && { sidebarWidth }),
+            ...(sidePaneWidth !== undefined && { sidePaneWidth }),
           })
         }
       }

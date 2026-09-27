@@ -18,7 +18,7 @@ import { FilterFrame } from '../Views/Settings/FilterFrame'
 import { viewOption } from '../Views/views'
 import type { Forces } from './Engine/forces'
 import type { GroupMode } from './Engine/graph'
-import { FORCE_STEPS } from './matrixConfig'
+import { FORCE_RANGES } from './matrixConfig'
 import { MATRIX_TITLE } from './matrixKind'
 import { matrixRuntime } from './matrixRuntime'
 
@@ -93,7 +93,7 @@ export function MatrixMenu(): React.JSX.Element {
       title: 'Link Forces',
       rows: FORCES.map(({ key, label }) =>
         steppedRow(undefined, label, {
-          steps: FORCE_STEPS[key],
+          range: FORCE_RANGES[key],
           value: forces[key],
           onPick: (factor) => patch({ forces: { [mode]: { [key]: factor } } }),
         }),

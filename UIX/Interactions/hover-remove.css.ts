@@ -31,13 +31,13 @@ export const removeZone = style({
 })
 
 const c = vars.color
-const crispRamp = `linear-gradient(to right, transparent 0, ${c.system.black} var(--over-scroll-fade, 0px), ${c.system.black} calc(100% - 18px), transparent calc(100% - 8px))`
+const crispRamp = `linear-gradient(to right, transparent 0, ${c.system.black} var(--scroll-fade, 0px), ${c.system.black} calc(100% - 18px), transparent calc(100% - 8px))`
 const blurRamp = `linear-gradient(to right, transparent calc(100% - 18px), ${c.system.black} calc(100% - 8px))`
 
 /** A twin sits inside the scroller, so its box rides the WINDOW the label is showing while its text stays put — `left` walks the box along, the matching negative indent walks the string back. */
 const overWindow = {
-  left: 'var(--os-scroll, 0px)',
-  textIndent: 'calc(-1 * var(--os-scroll, 0px))',
+  left: 'var(--over-scroll-offset, 0px)',
+  textIndent: 'calc(-1 * var(--over-scroll-offset, 0px))',
   maskRepeat: 'no-repeat',
   WebkitMaskRepeat: 'no-repeat',
 } as const

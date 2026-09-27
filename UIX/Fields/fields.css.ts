@@ -1,5 +1,5 @@
 import { style } from '@vanilla-extract/css'
-import { vars as colorVars } from '../Theme/color.css'
+import { STATE_OPACITY, vars as colorVars } from '../Theme/color.css'
 import { text } from '../Theme/typography.css'
 import { fieldRing, focusRing } from './fieldRing'
 
@@ -117,17 +117,20 @@ export const base = style({
   ...placeholderTone,
 })
 
+export const fillInput = style([base, { width: '100%', minWidth: 0 }])
+
+export const invalidInput = style({
+  selectors: { '&[aria-invalid="true"]': { opacity: STATE_OPACITY.ghost } },
+})
+
 export const placeholder = style({ color: c.label.tertiary })
 export const fieldTrail = style({ font: 'inherit' })
-
-const CONTENT_FADE = 'var(--fade-base)' // KNOB — the content row's fade width
 
 export const contentRow = style({
   display: 'flex',
   alignItems: 'center',
   flex: '1 1 auto',
   minWidth: 0,
-  vars: { '--over-scroll-fade': CONTENT_FADE },
 })
 
 export const resting = style({ display: 'contents' })

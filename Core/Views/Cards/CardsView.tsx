@@ -64,10 +64,9 @@ import { solidColorCss } from '@pommora/uix/Theme/ramp'
 import { type PickEntry, PropertyPicker } from '../../Properties/Pickers/PropertyPicker'
 import { NumberValuePicker } from '../../Properties/Pickers/NumberValuePicker'
 import { resolveFieldValue } from '../../Properties/value'
-import { coerceTenthsScale } from '@pommora/core/Settings/personalization'
+import { TENTHS_SCALE } from '@pommora/core/Settings/personalization'
 import { propertyIcon, propertyTypeIconName } from '../../Properties/Cells/PropertyTypes'
-import { parseEditorValue } from '../../Properties/parseEditorValue'
-import { linkEditText } from '@pommora/core/Connections/linkValue'
+import { editorText, parseEditorValue } from '../../Properties/parseEditorValue'
 import { CardValue } from './CardValue'
 import {
   type AddEntry,
@@ -424,7 +423,7 @@ export function CardsView({ host }: { host: ViewHostApi }): React.JSX.Element {
         ?.id ?? null,
     )
 
-  const cardScale = coerceTenthsScale(view.card_size)
+  const cardScale = view.card_size ?? TENTHS_SCALE.default
 
   return (
     <GhostSuppress.Provider value={interactions.holdGhost}>
@@ -573,7 +572,7 @@ export function CardsView({ host }: { host: ViewHostApi }): React.JSX.Element {
           open={valuePicker?.kind === 'link'}
           onDismiss={() => setValuePicker(null)}
           triggerRef={pickerAnchorRef}
-          value={vRaw ? linkEditText(vRaw) : ''}
+          value={editorText(vTarget?.current)}
           accent={solidColorCss(vTarget?.def.link_color)}
           onCommit={(raw) => {
             const nv = parseEditorValue('link', raw, vTarget?.current)

@@ -79,7 +79,7 @@ const WindowPage = memo(function WindowPage({
   if (editingPath !== null && !shown) setEditingPath(null)
   return (
     <div
-      className={cx('window-body', 'over-scroll', 'page-tile-grows', !shown && 'is-parked')}
+      className={cx('window-body', 'scroll-fade', 'page-tile-grows', !shown && 'is-parked')}
       inert={!shown}
       ref={shown ? bodyRef : undefined}
     >
@@ -189,7 +189,7 @@ export function useWindowTabBody(target: WindowTarget | null): WindowTabBodySlot
         )
       })}
       {spaceTarget && spaceOwner && (
-        <div key={spaceTarget.id} className="window-body over-scroll" ref={bodyRef}>
+        <div key={spaceTarget.id} className="window-body scroll-fade" ref={bodyRef}>
           <SpaceTabBody
             host={spaceTarget}
             owner={spaceOwner}

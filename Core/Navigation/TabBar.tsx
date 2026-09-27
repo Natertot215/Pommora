@@ -188,7 +188,7 @@ function TabBarBody({
       {pinnedEntries.length > 0 && unpinnedEntries.length > 0 && (
         <span className={cx(segment, 'tab-divider')} />
       )}
-      <div className="tab-scroll over-scroll-x" ref={stripRef}>
+      <div className="tab-scroll scroll-fade-x" ref={stripRef}>
         <SortableZone
           id="tabs-main"
           className={cx('tab-strip', (still || forced) && 'is-still')}

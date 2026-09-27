@@ -1,9 +1,9 @@
 import { z } from 'zod'
-import { eachOf } from '../Files/decoders'
+import { eachOf, numberCheck } from '../Files/decoders'
 import { columnStyle, DATE_FORMATS, type TimeFormat } from '../Properties/columnStyles'
 import { DEFAULT_LINK_DISPLAY, LINK_DISPLAYS } from '../Properties/properties'
 import { type ColorSetting, isColorKey } from '@pommora/uix/Theme/colors'
-import { clamp } from '@pommora/uix/Utilities/clamp'
+import { type NumberRange, type SteppedRange, steppedRange } from '@pommora/uix/Utilities/clamp'
 
 export const HEADING_LINK_STYLES = ['page-heading', 'heading-only'] as const
 export type HeadingLinkStyle = (typeof HEADING_LINK_STYLES)[number]
@@ -41,29 +41,17 @@ export type TabOpenBehavior = (typeof TAB_OPEN_BEHAVIORS)[number]
 export const MATRIX_OPEN_INS = ['tab', 'window'] as const
 export type MatrixOpenIn = (typeof MATRIX_OPEN_INS)[number]
 
-type Bounds = { min: number; max: number }
-export type Ladder = Bounds & { steps: readonly number[] }
-const ladder = (steps: readonly number[]): Ladder => ({
-  steps,
-  min: steps[0],
-  max: steps[steps.length - 1],
-})
-export const coerceIn =
-  ({ min, max }: Bounds) =>
-  (v: unknown, fallback: number): number =>
-    typeof v !== 'number' || !Number.isFinite(v) ? fallback : clamp(v, min, max)
-
-export const HISTORY_DAYS = { ...ladder([7, 14, 30, 60, 90]), default: 90 }
-export const HISTORY_INTERVAL = { ...ladder([5, 10, 15, 20]), default: 5 }
-export const TAB_MIN_WIDTH = { ...ladder([50, 60, 70, 80, 90, 100]), default: 70 }
+export const HISTORY_DAYS = { ...steppedRange([7, 14, 30, 60, 90]), default: 90 }
+export const HISTORY_INTERVAL = { ...steppedRange([5, 10, 15, 20]), default: 5 }
+export const TAB_MIN_WIDTH = { ...steppedRange([50, 60, 70, 80, 90, 100]), default: 70 }
 export const TAB_MAX_WIDTH = {
-  ...ladder([150, 175, 200, 225, 250, 275, 300, 325, 350]),
+  ...steppedRange([150, 175, 200, 225, 250, 275, 300, 325, 350]),
   default: 250,
 }
-export const TAB_CACHE = { ...ladder([5, 10, 15, 20, 25]), default: 5 }
+export const TAB_CACHE = { ...steppedRange([5, 10, 15, 20, 25]), default: 5 }
 
-export const SCALE = ladder([0.5, 0.65, 0.75, 0.9, 1, 1.1, 1.25, 1.5])
-export const coerceScale = coerceIn(SCALE)
+export const SCALE = steppedRange([0.5, 0.65, 0.75, 0.9, 1, 1.1, 1.25, 1.5])
+export const ZOOM = { ...SCALE, default: 1 }
 
 /** Each heading level's size in em of the page text. */
 export const HEADING_SIZE_KEYS = [
@@ -74,19 +62,16 @@ export const HEADING_SIZE_KEYS = [
   'heading5Size',
   'heading6Size',
 ] as const
-export const HEADING_SIZE: Bounds = { min: 0.5, max: 2.5 }
-export const coerceHeadingSize = coerceIn(HEADING_SIZE)
+export const HEADING_SIZE: NumberRange = { min: 0.5, max: 2.5 }
 
 /** Resize is a viewport, never a scale — a view embed normalizes its table's body text to the editor's before taking the same zoom a page embed does. */
 export const embedZoom = (scale: number): number => 1 + Math.log2(scale)
 export const viewEmbedZoom = (scale: number): number => (15 / 13) * embedZoom(scale)
 
 export const TENTHS_SCALE = {
-  ...ladder([0.5, 0.6, 0.7, 0.8, 0.9, 1, 1.1, 1.2, 1.3, 1.4, 1.5]),
+  ...steppedRange([0.5, 0.6, 0.7, 0.8, 0.9, 1, 1.1, 1.2, 1.3, 1.4, 1.5]),
   default: 1,
 }
-export const coerceTenthsScale = (v: unknown): number =>
-  coerceIn(TENTHS_SCALE)(v, TENTHS_SCALE.default)
 
 // One axis for the whole preview-persistence story: 'off' disables all arming; the rest set the linger.
 const PREVIEW_PERSISTENCE_VALUES = ['off', '1s', '5s', '10s', 'always'] as const
@@ -103,7 +88,11 @@ export const PREVIEW_LINGER_MS: Record<PreviewPersistence, number> = {
 
 // One declaration per setting: the shape the file is read through, the type the app holds, and the value an absent key means come from the same entry, so a setting the reader forgot cannot compile.
 // Every field is per-field lenient — an absent or invalid value decodes to undefined, which settingOf reads as the entry's fallback.
-const setting = <T extends z.ZodTypeAny, F = undefined, R extends Ladder | undefined = undefined>(
+const setting = <
+  T extends z.ZodTypeAny,
+  F = undefined,
+  R extends SteppedRange | undefined = undefined,
+>(
   schema: T,
   fallback?: F,
   range?: R,
@@ -125,13 +114,10 @@ const color = <S extends string>(inherit: S) =>
     z.custom<ColorSetting<S>>((v) => typeof v === 'string' && (v === inherit || isColorKey(v))),
     inherit,
   )
-// Only a stored number takes the range; anything else leaves the key unwritten.
-const bounded = ({ min, max }: Bounds, round = false) =>
-  z.number().transform((n) => clamp(round ? Math.round(n) : n, min, max))
-const stepped = (range: Ladder & { default: number }) =>
-  setting(bounded(range, true), range.default, range)
-const scaled = (fallback: number) => setting(bounded(SCALE), fallback, SCALE)
-const headingSize = (fallback: number) => setting(bounded(HEADING_SIZE), fallback)
+const stepped = (range: SteppedRange & { default: number }) =>
+  setting(numberCheck(range, true), range.default, range)
+const scaled = (fallback: number) => setting(numberCheck(SCALE), fallback, SCALE)
+const headingSize = (fallback: number) => setting(numberCheck(HEADING_SIZE), fallback)
 // Each entry stands on its own: a malformed one drops, and an empty list is the absent list.
 const nonEmptyStrings = () => setting(eachOf(z.string().min(1)).refine((a) => a.length > 0))
 const iconsByKind = () =>
@@ -259,8 +245,8 @@ export const SETTING_DEFAULTS = eachSetting((s) => s.fallback) as {
 export const SETTING_RANGES = eachSetting((s) => s.range) as {
   [K in SettingKey]: Settings[K]['range']
 }
-export type LadderKey = {
-  [K in SettingKey]: Settings[K]['range'] extends Ladder ? K : never
+export type SteppedKey = {
+  [K in SettingKey]: Settings[K]['range'] extends SteppedRange ? K : never
 }[SettingKey]
 
 export const settingOf = <K extends SettingKey>(p: Personalization, key: K): SettingValue<K> =>

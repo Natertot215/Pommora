@@ -1,0 +1,11 @@
+@property --io {
+  syntax: "<number>";
+  inherits: true;
+  initial-value: 0;
+}
+
+@property --io-l {
+  syntax: "<number>";
+  inherits: true;
+  initial-value: 0;
+}

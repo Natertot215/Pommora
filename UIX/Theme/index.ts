@@ -1,4 +1,5 @@
 import '@fontsource-variable/inter/index.css'
+import '../Interactions/scroll-fade.css'
 export { vars } from './color.css'
 export { text } from './typography.css'
 export { tintAt, TINT_STEPS } from './colors'

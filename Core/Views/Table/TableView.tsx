@@ -10,8 +10,9 @@ import { type ColumnAlign, viewOption } from '@pommora/core/Views/views'
 import { isBlankValue, type PropertyValue } from '@pommora/core/Properties/propertyValue'
 import { pickKindOf } from '@pommora/core/Properties/properties'
 import { columnType, declaredType, resolveFieldValue } from '../../Properties/value'
-import { PropertyEditor } from '../../Properties/Pickers/PropertyEditor'
-import { parseEditorValue } from '../../Properties/parseEditorValue'
+import { PropertyValueInput } from '../../Properties/Pickers/PropertyValueInput'
+import { RenamableLabel } from '@pommora/uix/Fields/RenamableLabel'
+import { fillInput } from '@pommora/uix/Fields/fields.css'
 import { MassPropertyPicker } from '../../Properties/Pickers/MassPropertyPicker'
 import { groupUndo } from '../../Session/undo'
 import { PropertyPicker } from '../../Properties/Pickers/PropertyPicker'
@@ -45,13 +46,7 @@ import { useCellSweep } from './cellSweep'
 import { TableRowDnd, useTableRowDrag } from '@pommora/uix/Interactions/TableRowDnd'
 import { solidColorCss } from '@pommora/uix/Theme/ramp'
 import { openWebLink } from '../../Web/openWebLink'
-import {
-  linkAlias,
-  linkEditText,
-  linkValueFromRename,
-  urlClickTarget,
-} from '@pommora/core/Connections/linkValue'
-import { validateLink } from '../../Properties/Cells/linkResolve'
+import { linkAlias, linkValueFromRename, urlClickTarget } from '@pommora/core/Connections/linkValue'
 import {
   linkValueMenuTarget,
   showConnectionMenu,
@@ -193,57 +188,51 @@ export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
 
   // ── The inline editor and the pickers ─────────────────────────────────────
 
-  const editorInitial = (row: ViewRow, col: ResolvedColumn): string => {
-    if (col.kind === 'title') return editing?.fromCreate ? '' : row.title
-    const v = resolveFieldValue(row, col.id, schema)
-    if (v.kind === 'number') return String(v.value)
-    if (v.kind === 'link') return linkEditText(v.value)
-    return ''
-  }
-  const commitEditorText = (row: ViewRow, col: ResolvedColumn, raw: string): void => {
-    const fromCreate = editing?.fromCreate
-    setEditing(null)
-    if (col.kind === 'title') {
-      const trimmed = raw.trim()
-      if (trimmed && trimmed !== row.title)
-        void mutate({
-          op: 'rename',
-          path: row.path,
-          kind: 'page',
-          newName: trimmed,
-          ...(fromCreate ? { fromCreate } : {}),
-        })
-      return
-    }
-    const next = parseEditorValue(
-      declaredType(col.id, schema),
-      raw,
-      resolveFieldValue(row, col.id, schema),
-    )
-    if (next !== undefined) commitValue(row, col, next)
-  }
   const cellEditor = (row: ViewRow, col: ResolvedColumn): React.ReactNode => {
     if (editing?.mode !== 'editor' || editing.rowId !== row.id || editing.colId !== col.id)
       return null
+    if (col.kind === 'title') {
+      const fromCreate = editing.fromCreate
+      const field = (
+        <RenamableLabel
+          renames="title"
+          editing
+          emptyInitial={fromCreate}
+          value={row.title}
+          className={fillInput}
+          onCommit={(newName) => {
+            setEditing(null)
+            void mutate({
+              op: 'rename',
+              path: row.path,
+              kind: 'page',
+              newName,
+              ...(fromCreate ? { fromCreate } : {}),
+            })
+          }}
+          onCancel={() => setEditing(null)}
+        />
+      )
+      if (viewOption(liveView, 'hide_page_icons')) return field
+      return (
+        <span className="cell-rename">
+          <EntityIcon kind="page" icon={row.icon} size="body" />
+          {field}
+        </span>
+      )
+    }
     const t = declaredType(col.id, schema)
-    const editor = (
-      <PropertyEditor
-        initial={editorInitial(row, col)}
-        numeric={t === 'number'}
-        validate={t === 'link' ? validateLink : undefined}
-        color={
+    const current = resolveFieldValue(row, col.id, schema)
+    return (
+      <PropertyValueInput
+        type={t}
+        current={current}
+        accent={
           t === 'link' ? solidColorCss(schema.find((d) => d.id === col.id)?.link_color) : undefined
         }
-        onCommit={(raw) => commitEditorText(row, col, raw)}
-        onCancel={() => setEditing(null)}
+        onCommit={(next) => commitValue(row, col, next)}
+        onClose={() => setEditing(null)}
       />
-    )
-    if (col.kind !== 'title' || viewOption(liveView, 'hide_page_icons')) return editor
-    return (
-      <span className="cell-rename">
-        <EntityIcon kind="page" icon={row.icon} size="body" />
-        {editor}
-      </span>
     )
   }
 

@@ -4,7 +4,8 @@ import { z } from 'zod'
 import { isPlainObject } from '../Contract/validators'
 import { newId } from '../Nexus/ids'
 import { columnStyle, holdsStyle } from '../Properties/columnStyles'
-import { eachOf, entriesOf, looseDecoder } from '../Files/decoders'
+import { eachOf, entriesOf, looseDecoder, numberCheck } from '../Files/decoders'
+import { TENTHS_SCALE, ZOOM } from '../Settings/personalization'
 import { mergeKeys } from '../Files/jsonMerge'
 import type { Json } from '../Files/stableJson'
 import { type PropertyDefinition, RESERVED_PROPERTY_ID } from '../Properties/properties'
@@ -172,8 +173,8 @@ export const savedView = looseDecoder(
     manual_order: idArray.optional(),
     hidden_groups: idArray.optional(),
     hide_empty_groups: z.boolean().optional().catch(undefined),
-    card_size: z.number().optional().catch(undefined),
-    view_scale: z.number().optional().catch(undefined),
+    card_size: numberCheck(TENTHS_SCALE).optional().catch(undefined),
+    view_scale: numberCheck(ZOOM).optional().catch(undefined),
     card_banner: z.enum(CARD_BANNERS).optional().catch(undefined),
     hide_location: z.boolean().optional().catch(undefined),
     wrap_titles: z.boolean().optional().catch(undefined),

@@ -150,7 +150,7 @@ export function WindowTabStrip({
         )}
         {showStrip && (
           <div
-            className="tab-scroll over-scroll-x"
+            className="tab-scroll scroll-fade-x"
             role="tablist"
             aria-label="Preview tabs"
             ref={scrollRef}

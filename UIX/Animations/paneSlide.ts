@@ -1,4 +1,5 @@
 import { paneInflow, paneOverlay } from './pane-slide.css'
+import './slide-progress.css'
 
 export function paneSlide({
   side,

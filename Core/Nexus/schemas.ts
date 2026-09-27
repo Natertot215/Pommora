@@ -1,7 +1,8 @@
 // `z.looseObject` ⇒ FOREIGN keys survive a rewrite — outside tools and agents can add keys to a sidecar without Pommora erasing them.
 
 import { z } from 'zod'
-import { entriesOf } from '../Files/decoders'
+import { entriesOf, numberCheck } from '../Files/decoders'
+import { CROP_POINT, CROP_ZOOM } from '../Assets/cropGeometry'
 import { OPEN_INS, VIEW_BUTTONS, type OpenIn, type ViewButton } from '../Views/viewRow'
 import { savedView } from '../Views/views'
 import { ID_KEY } from './identityMark'
@@ -15,9 +16,9 @@ export const coerceOpenIn = (raw: unknown): OpenIn | undefined => openInField.pa
 export const coerceViewButton = (raw: unknown): ViewButton | undefined => viewButtonField.parse(raw)
 
 export const crop = z.object({
-  x: z.number(),
-  y: z.number(),
-  zoom: z.number(),
+  x: numberCheck(CROP_POINT),
+  y: numberCheck(CROP_POINT),
+  zoom: numberCheck(CROP_ZOOM),
   color: z.string().optional(),
 })
 export type Crop = z.infer<typeof crop>

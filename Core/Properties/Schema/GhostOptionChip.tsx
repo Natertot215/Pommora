@@ -36,7 +36,7 @@ export function OptionNameCaret({
   return (
     <span className={className}>
       <EditableInput
-        value={value}
+        initial={value}
         autoSize
         className={base}
         onCommit={onCommit}

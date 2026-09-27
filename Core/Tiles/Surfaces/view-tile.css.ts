@@ -128,13 +128,13 @@ export const body = style({
   marginTop: `calc(-1 * ${FADE_RISE})`,
   paddingTop: FADE_RISE,
   transition: `margin-top ${stripReveal}, padding-top ${stripReveal}`,
-  vars: { '--over-scroll-fade': FADE_RISE },
+  vars: { '--scroll-fade': FADE_RISE },
 })
 
 export const bodyFlush = style({
   marginTop: 0,
   paddingTop: STRIP_PAD_Y,
-  vars: { '--over-scroll-fade': STRIP_PAD_Y },
+  vars: { '--scroll-fade': STRIP_PAD_Y },
 })
 
 globalStyle(`${body} .table-view`, {

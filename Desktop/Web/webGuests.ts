@@ -5,6 +5,7 @@ import { isHttpLink, WEB_ADDRESS } from '@pommora/core/Paths/urlPath'
 import { WEB_PARTITION } from '@pommora/core/Web/partition'
 import { SETTING_DEFAULTS } from '@pommora/core/Settings/personalization'
 import { readInterfaceScale } from '@pommora/core/Settings/devicePrefs'
+import { clamp } from '@pommora/uix/Utilities/clamp'
 import { push } from '../Bridge/ipc'
 import { isWindows } from '../Platform/hostPath'
 
@@ -180,7 +181,7 @@ const ZOOM_FACTOR_MAX = 5
 /** De-roled: a role acts on whatever holds focus, so a focused guest would zoom itself. */
 export function stepHostZoom(wc: WebContents, dir: 1 | -1): void {
   const factor = wc.getZoomFactor() * 1.2 ** (dir * 0.5)
-  setHostZoom(wc, Math.min(ZOOM_FACTOR_MAX, Math.max(ZOOM_FACTOR_MIN, factor)))
+  setHostZoom(wc, clamp(factor, ZOOM_FACTOR_MIN, ZOOM_FACTOR_MAX))
 }
 
 // The chrome is drawn a step below the browser's scale, so the interface's own 1.0 is worth this as a host zoom factor.

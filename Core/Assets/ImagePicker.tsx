@@ -1,14 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import type { Crop } from '@pommora/core/Nexus/schemas'
 import { valueOr } from '@pommora/core/Contract/result'
-import {
-  clampZoom,
-  coverRect,
-  DEFAULT_CROP,
-  dragRect,
-  MAX_ZOOM,
-  MIN_ZOOM,
-} from '@pommora/core/Assets/cropGeometry'
+import { coverRect, CROP_ZOOM, DEFAULT_CROP, dragRect } from '@pommora/core/Assets/cropGeometry'
 import { WEB_ADDRESS } from '@pommora/core/Paths/urlPath'
 import { resolveAssetUrl, resolveAssetValue } from './assetUrl'
 import { useSession } from '../Session/store'
@@ -102,7 +95,10 @@ export function ImagePicker({
     const onWheel = (e: WheelEvent): void => {
       e.preventDefault()
       const rate = e.ctrlKey ? PINCH_RATE : SCROLL_RATE
-      setDraft((d) => ({ ...d, zoom: clampZoom(d.zoom * Math.exp(-e.deltaY * rate)) }))
+      setDraft((d) => ({
+        ...d,
+        zoom: clamp(d.zoom * Math.exp(-e.deltaY * rate), CROP_ZOOM.min, CROP_ZOOM.max),
+      }))
     }
     el.addEventListener('wheel', onWheel, { passive: false })
     return () => el.removeEventListener('wheel', onWheel)
@@ -198,7 +194,7 @@ export function ImagePicker({
   }
 
   const viewportClass = dragging ? `${s.viewport} ${s.grabbing}` : s.viewport
-  const setZoom = (z: number): void => setDraft((d) => ({ ...d, zoom: clampZoom(z) }))
+  const setZoom = (zoom: number): void => setDraft((d) => ({ ...d, zoom }))
 
   const glyphs = (
     <>
@@ -260,8 +256,8 @@ export function ImagePicker({
           <div className={s.sliderRow} style={{ width: frameW }}>
             <Slider
               value={draft.zoom}
-              min={MIN_ZOOM}
-              max={MAX_ZOOM}
+              min={CROP_ZOOM.min}
+              max={CROP_ZOOM.max}
               step={0.01}
               ariaLabel="Zoom"
               onInput={setZoom}

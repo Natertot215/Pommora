@@ -237,7 +237,7 @@ function PageHistoryBody({
         children: list,
       }}
     >
-      <div className="window-body over-scroll page-tile-grows">
+      <div className="window-body scroll-fade page-tile-grows">
         {body !== null && (
           <div className="page-tile page-history-page">
             <MarkdownEditor

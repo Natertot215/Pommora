@@ -1,5 +1,5 @@
 import { EmptyValue } from '../Elements/EmptyValue'
-import { useEffect, useRef, useState } from 'react'
+import { type CSSProperties, useEffect, useRef, useState } from 'react'
 import { useSettleFallback } from '../Animations/useExitPresence'
 import { Button } from '../Buttons/Button'
 import { Icon } from '../Symbols'
@@ -15,6 +15,8 @@ import { MenuScrollFrame } from '../Menus/MenuRows'
 import * as s from './calendar-picker.css'
 import { clamp } from '../Utilities/clamp'
 import { useLatest } from '../Utilities/stableApi'
+import { EditableInput } from '../Fields/EditableInput'
+import { numberFrom } from './numberUnit'
 
 const WEEKDAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
 
@@ -68,7 +70,7 @@ export function CalendarPicker({
   )
   const [menu, setMenu] = useState<{ kind: 'month' | 'year'; at: Anchor } | null>(null)
   const [timeMenu, setTimeMenu] = useState<{ part: 'h' | 'm'; at: Anchor } | null>(null)
-  const [partEdit, setPartEdit] = useState<{ part: 'h' | 'm'; draft: string } | null>(null)
+  const [partEdit, setPartEdit] = useState<'h' | 'm' | null>(null)
 
   const begin = usePointerGesture()
   const swipe = useRef(0)
@@ -216,38 +218,24 @@ export function CalendarPicker({
   const partText = (part: 'h' | 'm'): string =>
     part === 'h' ? hourText(shownHour) : pad(minutes % 60)
 
-  const partCommit = (): void => {
-    if (!partEdit) return
-    const v = Number(partEdit.draft)
-    if (partEdit.draft !== '' && Number.isFinite(v)) {
-      if (partEdit.part === 'h') {
-        const clamped = twelve ? clamp(v, 1, 12) : Math.min(v, 23)
-        setMinutes(hourToMins(clamped))
-      } else setMinutes(minuteToMins(Math.min(v, 59)))
-    }
+  const partCommit = (part: 'h' | 'm', text: string): void => {
     setPartEdit(null)
+    const v = numberFrom(text)
+    if (v === undefined || !Number.isInteger(v)) return
+    if (part === 'h') setMinutes(hourToMins(twelve ? clamp(v, 1, 12) : clamp(v, 0, 23)))
+    else setMinutes(minuteToMins(clamp(v, 0, 59)))
   }
   const timePart = (part: 'h' | 'm'): React.JSX.Element =>
-    partEdit?.part === part ? (
-      <input
-        className={s.timePartInput}
-        value={partEdit.draft}
+    partEdit === part ? (
+      <EditableInput
+        initial=""
         placeholder={partText(part)}
-        // biome-ignore lint/a11y/noAutofocus: the surface exists to take focus the moment it opens; that IS the interaction
-        autoFocus
-        spellCheck={false}
-        onChange={(e) => {
-          const draft = e.target.value
-          if (/^\d{0,2}$/.test(draft)) setPartEdit({ part, draft })
-        }}
-        onKeyDown={(e) => {
-          if (e.key === 'Enter') partCommit()
-          else if (e.key === 'Escape') {
-            e.preventDefault()
-            setPartEdit(null)
-          }
-        }}
-        onBlur={partCommit}
+        inputMode="numeric"
+        maxLength={2}
+        boxed
+        className={s.timePartInput}
+        onCommit={(text) => partCommit(part, text)}
+        onCancel={() => setPartEdit(null)}
       />
     ) : (
       <button
@@ -259,7 +247,7 @@ export function CalendarPicker({
         }}
         onDoubleClick={() => {
           setTimeMenu(null)
-          setPartEdit({ part, draft: '' })
+          setPartEdit(part)
         }}
       >
         {partText(part)}
@@ -296,8 +284,6 @@ export function CalendarPicker({
   }
 
   const prevMonth = slide?.from ?? cursor
-  const gridRows = rowsFor(cursor)
-  const gridHeight = gridRows * 24 + (gridRows - 1) * 2 + 2
 
   return (
     <div className={s.root}>
@@ -350,7 +336,11 @@ export function CalendarPicker({
           </span>
         ))}
       </div>
-      <div className={s.viewport} style={{ height: gridHeight }} onWheel={onGridWheel}>
+      <div
+        className={s.viewport}
+        style={{ '--grid-rows': rowsFor(cursor) } as CSSProperties}
+        onWheel={onGridWheel}
+      >
         <div
           className={cx(
             s.track,

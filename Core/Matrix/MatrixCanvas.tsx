@@ -537,7 +537,7 @@ export function MatrixCanvas({
   return (
     <div
       ref={hostRef}
-      className={cx('over-scroll', s.host)}
+      className={cx('scroll-fade', s.host)}
       onPointerLeave={() => {
         if (canvasRef.current) boxes.delete(canvasRef.current)
         if (!editing && !glanceShown()) matrixRuntime.setHovered(null)

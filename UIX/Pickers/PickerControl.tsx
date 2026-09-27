@@ -1,10 +1,10 @@
 import { useRef, useState } from 'react'
 import { EditableInput } from '../Fields/EditableInput'
-import { clamp } from '../Utilities/clamp'
+import { clamp, type SteppedRange } from '../Utilities/clamp'
 import { cx } from '../Utilities/cx'
 import { Icon } from '../Symbols'
 import * as s from './picker-control.css'
-import { FACTOR, type NumberUnit, unitLabel, unitNumber } from './numberUnit'
+import { FACTOR, type NumberUnit, numberFrom, unitLabel, unitNumber } from './numberUnit'
 
 export type PickerOption<T extends string> = {
   value: T
@@ -24,8 +24,8 @@ export const setMenuDoor = (next: MenuDoor): void => {
   door = next
 }
 
-const labelOf = <T extends string>(opts: readonly PickerOption<T>[], v: T): string =>
-  opts.find((o) => o.value === v)?.label ?? opts[0].label
+const labelOf = <T extends string>(opts: readonly PickerOption<T>[], v: T): string | undefined =>
+  opts.find((o) => o.value === v)?.label ?? opts[0]?.label
 
 /** Admits an off-step current value so a hand-typed value still has a row to sit selected on. */
 const stepsWith = (steps: readonly number[], current: number): number[] =>
@@ -33,12 +33,12 @@ const stepsWith = (steps: readonly number[], current: number): number[] =>
 
 // Every stepped number control — a list of step rows, and the same field behind a right press; a typed value is divided back by `scale` and held within the steps' ends.
 export function steppedPickerProps({
-  steps,
+  range,
   value,
   unit = FACTOR,
   onPick,
 }: {
-  steps: readonly number[]
+  range: SteppedRange
   value: number
   unit?: NumberUnit
   onPick: (value: number) => void
@@ -50,7 +50,7 @@ export function steppedPickerProps({
 } {
   return {
     value: String(value),
-    options: stepsWith(steps, value).map((f) => ({
+    options: stepsWith(range.steps, value).map((f) => ({
       value: String(f),
       label: unitLabel(f, unit),
     })),
@@ -59,9 +59,8 @@ export function steppedPickerProps({
       text: unitNumber(value, unit),
       suffix: unit.suffix,
       onCommit: (written) => {
-        const typed = Number.parseFloat(written)
-        if (Number.isFinite(typed))
-          onPick(clamp(typed / unit.scale, steps[0], steps[steps.length - 1]))
+        const typed = numberFrom(written)
+        if (typed !== undefined) onPick(clamp(typed / unit.scale, range.min, range.max))
       },
     },
   }
@@ -82,7 +81,7 @@ export function PickerControl<T extends string>({
   onPick: (v: T) => void
   solid?: boolean
   chevronLead?: boolean
-  /** A right press turns the trigger into a field instead of opening the list. */
+  /** A right press turns the trigger into a number field instead of opening the list; with no options, so does a left press. */
   typeable?: { text: string; suffix?: string; onCommit: (typed: string) => void }
 }): React.JSX.Element {
   const [typing, setTyping] = useState(false)
@@ -90,6 +89,10 @@ export function PickerControl<T extends string>({
   const isToggle = options.length === 2
 
   const onTrigger = (): void => {
+    if (options.length === 0) {
+      setTyping(true)
+      return
+    }
     if (isToggle) {
       onPick((options.find((o) => o.value !== value) ?? options[0]).value)
       return
@@ -117,8 +120,10 @@ export function PickerControl<T extends string>({
         <span className={cx(s.trigger, s.value, chevronLead && s.chevronLead)}>
           <span className={s.written}>
             <EditableInput
-              value={typeable.text}
+              initial={typeable.text}
               className={cx(s.value, s.caretShape)}
+              ariaLabel={ariaLabel}
+              inputMode="decimal"
               autoSize
               onCommit={(typed) => {
                 setTyping(false)
@@ -151,7 +156,7 @@ export function PickerControl<T extends string>({
               : undefined
           }
         >
-          <span className={s.value}>{labelOf(options, value)}</span>
+          <span className={s.value}>{labelOf(options, value) ?? typeable?.text}</span>
           {chevron}
         </button>
       )}

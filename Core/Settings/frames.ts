@@ -2,6 +2,7 @@ import { reportRefusal } from '@pommora/core/Interface/Notifications/notificatio
 import type { DevicePrefs } from '@pommora/core/Settings/devicePrefs'
 import type { PickerOption } from '@pommora/uix/Pickers/PickerControl'
 import { type NumberUnit, unitLabel } from '@pommora/uix/Pickers/numberUnit'
+import type { NumberRange, SteppedRange } from '@pommora/uix/Utilities/clamp'
 import { LINK_FORMAT_OPTIONS } from '../Properties/Schema/linkFormatOptions'
 import type { LinkDisplay } from '@pommora/core/Properties/properties'
 import {
@@ -20,8 +21,7 @@ import {
   type TabOpenBehavior,
   type TimeFormatSetting,
   TENTHS_SCALE,
-  type Ladder,
-  type LadderKey,
+  type SteppedKey,
   SETTING_DEFAULTS,
   type SettingKey,
   type SettingValue,
@@ -69,14 +69,13 @@ export type Row =
       kind: 'toggle'
       key: KeyOf<boolean>
     })
-  | (RowText & {
-      kind: 'slider'
-      key: KeyOf<number>
-      min: number
-      max: number
-      step: number
-      format: (v: number) => string
-    })
+  | (RowText &
+      NumberRange & {
+        kind: 'slider'
+        key: KeyOf<number>
+        step: number
+        format: (v: number) => string
+      })
   | (RowText & {
       kind: 'device'
       key: DeviceKeyOf<boolean>
@@ -111,12 +110,12 @@ export type Row =
     })
   | (ZoomSpec & {
       kind: 'zoom'
-      key: LadderKey
+      key: SteppedKey
     })
   | (ZoomSpec & {
       kind: 'deviceZoom'
       key: DeviceKeyOf<number>
-      range: Ladder & { default: number }
+      range: SteppedRange & { default: number }
     })
 
 export type RowOf<K extends Row['kind']> = Extract<Row, { kind: K }>
@@ -622,8 +621,7 @@ export const FRAMES = roster([
           key,
           label: `Heading ${i + 1} Size`,
           hint: `Default: ${unitLabel(SETTING_DEFAULTS[key], EM)}`,
-          min: HEADING_SIZE.min,
-          max: HEADING_SIZE.max,
+          ...HEADING_SIZE,
           step: 0.05,
           format: (v) => unitLabel(v, EM),
         })),

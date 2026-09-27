@@ -39,7 +39,6 @@ export const iconFavScroll = style({
   overflowX: 'auto',
   overflowY: 'hidden',
   scrollbarWidth: 'none',
-  vars: { '--over-scroll-fade': 'var(--fade-base)' },
 })
 
 /** Explicit width so `cols` measures a real box — a bare flex item collapses to its absolute rows' zero width. */
@@ -53,7 +52,7 @@ export const grid = style({
   overflowY: 'auto',
   overflowX: 'hidden',
   scrollbarWidth: 'none',
-  vars: { '--over-scroll-fade': 'var(--fade-base)' },
+  vars: { '--scroll-fade': 'var(--fade-base)' },
 })
 
 export const list = style({ position: 'relative', width: '100%', flex: '0 0 auto' })

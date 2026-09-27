@@ -31,7 +31,7 @@ export function NavView(): React.JSX.Element {
           </div>
         )}
       />
-      <div className="nav-view-scroll interface-inset over-scroll">{nav.body}</div>
+      <div className="nav-view-scroll interface-inset scroll-fade">{nav.body}</div>
     </div>
   )
 }
