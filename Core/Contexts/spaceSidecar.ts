@@ -3,6 +3,7 @@ import { parseContextKey } from './contexts'
 import { asString } from '../Nexus/coerce'
 import type { Json } from '../Files/stableJson'
 import type { Rewrite } from '../Properties/governedSweep'
+import { editList, namesValue } from '../Properties/pageValue'
 import { pathExists } from '../Files/atomicWrite'
 import { visibleFolders } from '../Files/walk'
 import { contextsDir, sidecarPath } from '../Paths/paths'
@@ -82,9 +83,10 @@ export function withOrderEntry(
     const cur = keyed ?? raw
     const order = cur[ORDER_KEY]
     const entries = isPlainObject(order) ? order[list] : undefined
-    if (!isPlainObject(order) || !Array.isArray(entries) || !entries.includes(from)) return keyed
     const next =
-      to === null ? entries.filter((e) => e !== from) : entries.map((e) => (e === from ? to : e))
+      Array.isArray(entries) &&
+      editList(entries, namesValue(from), to === null ? { op: 'strip' } : { op: 'replace', to })
+    if (!isPlainObject(order) || !next) return keyed
     return { ...cur, [ORDER_KEY]: { ...order, [list]: next } }
   }
 }

@@ -76,7 +76,7 @@ describe('the cascades open only the members the index names', () => {
   it('a Space rename opens the one holder and still reaches every sidecar', async () => {
     expect((await renameSpaceOp(root, 'sp-pom', 'Pom')).ok).toBe(true)
     expect(sweepSpy.mock.calls[0]?.[1]).toEqual([page()])
-    expect((await fmOf(page()))['<Projects>']).toEqual(['Pom', 'pommora'])
+    expect((await fmOf(page()))['<Projects>']).toEqual(['Pom'])
     expect(JSON.parse(await readFile(csSidecar(), 'utf8'))['<Projects>']).toEqual(['Pom'])
   })
 
@@ -122,7 +122,7 @@ describe('case folding on renames', () => {
   it('a case-only Space rename passes (its own folder is not a collision)', async () => {
     const r = await renameSpaceOp(root, 'sp-pom', 'POMMORA')
     expect(r.ok).toBe(true)
-    expect((await fmOf(page()))['<Projects>']).toEqual(['POMMORA', 'pommora'])
+    expect((await fmOf(page()))['<Projects>']).toEqual(['POMMORA'])
   })
 })
 
@@ -198,10 +198,10 @@ describe('a renamed Context key keeps its place on every page carrying it', () =
 })
 
 describe('renameSpaceOp', () => {
-  it('rewrites ONLY the exact canonical old title as a value (near-miss forms stay)', async () => {
+  it('rewrites every spelling that names the Space', async () => {
     const r = await renameSpaceOp(root, 'sp-pom', 'Pommora 2')
     expect(r.ok).toBe(true)
-    expect((await fmOf(page()))['<Projects>']).toEqual(['Pommora 2', 'pommora'])
+    expect((await fmOf(page()))['<Projects>']).toEqual(['Pommora 2'])
     const sc = JSON.parse(await readFile(csSidecar(), 'utf8'))
     expect(sc['<Projects>']).toEqual(['Pommora 2'])
     expect(await pathExists(join(contextsDir(root), 'Projects', 'Pommora 2'))).toBe(true)
@@ -254,14 +254,17 @@ describe('unlink cascades (D-3)', () => {
     expect('<Projects>' in JSON.parse(await readFile(csSidecar(), 'utf8'))).toBe(false)
   })
 
-  it('unlinkSpaceValue strips only the exact title, dropping an emptied key', async () => {
-    await writeFile(other(), '---\nid: p2\n<Projects>:\n  - Pommora\n---\nbody')
+  it('unlinkSpaceValue strips and captures every spelling of the title, dropping an emptied key', async () => {
+    await writeFile(other(), '---\nid: p2\n<Projects>:\n  - Pommora\n  - Sapphire\n---\nbody')
     const { unlinkSpaceValue } = await import('./contextCascade')
     const r = await unlinkSpaceValue(root, 'Projects', 'Pommora')
     expect(r.ok).toBe(true)
-    // The near-miss survives (reconcile owns it); an emptied key is removed outright.
-    expect((await fmOf(page()))['<Projects>']).toEqual(['pommora'])
-    expect('<Projects>' in (await fmOf(other()))).toBe(false)
+    expect(r.ok && r.value.captured).toContainEqual({
+      kind: 'page',
+      values: ['Pommora', 'pommora'],
+    })
+    expect('<Projects>' in (await fmOf(page()))).toBe(false)
+    expect((await fmOf(other()))['<Projects>']).toEqual(['Sapphire'])
   })
 })
 
@@ -312,7 +315,7 @@ describe('the sweep tells the truth about what it did (G-2)', () => {
     const r = await unlinkSpaceValue(root, 'Projects', 'Pommora')
     expect(r.ok).toBe(true)
     if (!r.ok) return
-    expect(r.value.captured).toContainEqual({ kind: 'page', values: ['Pommora'] })
+    expect(r.value.captured).toContainEqual({ kind: 'page', values: ['Pommora', 'pommora'] })
     expect(r.value.captured).toContainEqual({ id: 'sp-cs', kind: 'space', values: ['Pommora'] })
     expect(r.value.captured).toHaveLength(2)
 
@@ -464,7 +467,7 @@ describe('replayPendingRename (D-7a crash windows)', () => {
       skipped: [],
     })
     await replayPendingRename(root)
-    expect((await fmOf(page()))['<Projects>']).toEqual(['Pommora 2', 'pommora'])
+    expect((await fmOf(page()))['<Projects>']).toEqual(['Pommora 2'])
     expect(await readJournal(root)).toBeNull()
   })
 
@@ -576,7 +579,8 @@ describe('neither clearing a value nor renaming a key writes a modified_at', () 
     const { unlinkSpaceValue } = await import('./contextCascade')
     expect((await unlinkSpaceValue(root, 'Projects', 'Pommora')).ok).toBe(true)
     const fm = await fmOf(page())
-    expect(fm['<Projects>']).toEqual(['pommora'])
+    expect(fm['<Projects>']).toBeUndefined()
+    expect(fm.id).toBe('p1')
     expect('modified_at' in fm).toBe(false)
   })
 

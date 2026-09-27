@@ -3,32 +3,39 @@
 import type { Rewrite } from './governedSweep'
 
 export type ValueEdit = { op: 'strip' } | { op: 'replace'; to: string }
+export type Matcher = (el: unknown) => boolean
 
-const SKIP = Symbol('skip')
-
-function rewriteRaw(raw: unknown, target: string, edit: ValueEdit): unknown | typeof SKIP {
-  const xs = Array.isArray(raw) ? raw : [raw]
-  const names = (el: unknown, value: string): boolean =>
+export const namesValue =
+  (value: string): Matcher =>
+  (el) =>
     (typeof el === 'string' || typeof el === 'number' || typeof el === 'boolean') &&
     String(el) === value
-  if (!xs.some((el) => names(el, target))) return SKIP
-  if (edit.op === 'replace') {
-    // Renaming into a value the list already holds would duplicate it — merge by dropping the target instead; `to !== target` keeps a no-op rename from deleting the value.
-    if (edit.to !== target && xs.some((el) => names(el, edit.to)))
-      return xs.filter((el) => !names(el, target))
-    return xs.map((el) => (names(el, target) ? edit.to : el))
+
+/** Replaces or removes the elements `matches` names; null when nothing matched, and a replace holds one copy of `to`. */
+export function editList(
+  xs: readonly unknown[],
+  matches: Matcher,
+  edit: ValueEdit,
+): unknown[] | null {
+  if (!xs.some(matches)) return null
+  if (edit.op === 'strip') return xs.filter((el) => !matches(el))
+  const isTo = namesValue(edit.to)
+  const out: unknown[] = []
+  for (const el of xs) {
+    const next = matches(el) ? edit.to : el
+    if (!(isTo(next) && out.some(isTo))) out.push(next)
   }
-  const filtered = xs.filter((el) => !names(el, target))
-  return filtered.length ? filtered : null
+  return out
 }
 
 export function valueEditRewrite(key: string, target: string, edit: ValueEdit): Rewrite {
   return (raw) => {
-    const next = rewriteRaw(raw[key], target, edit)
-    if (next === SKIP) return null
+    const held = raw[key]
+    const next = editList(Array.isArray(held) ? held : [held], namesValue(target), edit)
+    if (next === null) return null
     const out = { ...raw }
-    if (next === null) delete out[key]
-    else out[key] = next
+    if (next.length) out[key] = next
+    else delete out[key]
     return out
   }
 }

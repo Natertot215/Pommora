@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest'
-import { valueEditRewrite } from './pageValue'
+import { editList, namesValue, valueEditRewrite } from './pageValue'
+import { namesSpace } from '../Contexts/contextResolve'
 import type { Json } from '../Files/stableJson'
 
 const strip = (raw: Json, key: string, value: string): Json | null =>
@@ -71,5 +72,33 @@ describe('valueEditRewrite — replace (rename cascade)', () => {
 
   it('returns null when the holder does not hold the value', () => {
     expect(replace({ S: 'Other' }, 'S', 'Urgent', 'Critical')).toBeNull()
+  })
+})
+
+describe('editList', () => {
+  it('edits a list of one', () => {
+    expect(editList(['a'], namesValue('a'), { op: 'replace', to: 'b' })).toEqual(['b'])
+  })
+
+  it('answers null when nothing matches', () => {
+    expect(editList(['a', 1, null], namesValue('z'), { op: 'strip' })).toBeNull()
+  })
+
+  it('a replace into a value the list holds keeps one copy at the renamed element', () => {
+    expect(editList(['x', 'a', 'y', 'b'], namesValue('a'), { op: 'replace', to: 'b' })).toEqual([
+      'x',
+      'b',
+      'y',
+    ])
+  })
+
+  it('a replace of two spellings of one Space yields one title', () => {
+    expect(
+      editList(['Pommora', 'x', 'pommora'], namesSpace('Pommora'), { op: 'replace', to: 'Pom' }),
+    ).toEqual(['Pom', 'x'])
+  })
+
+  it('a strip that empties the list answers an empty list', () => {
+    expect(editList(['a', 'a'], namesValue('a'), { op: 'strip' })).toEqual([])
   })
 })
