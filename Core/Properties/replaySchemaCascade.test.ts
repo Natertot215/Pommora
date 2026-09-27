@@ -9,8 +9,8 @@ import { closeSession, openSession } from '../Nexus/session'
 import { installStores, NO_STORES } from '../Platform/stores'
 import { memoryStores } from '../Testing/memoryStores'
 import { dropLiveTree } from '../Nexus/liveTree'
-import { seedContentIndex } from '../Index/indexSeed'
-import { writePropertyBundle } from '../Trash/record'
+import { indexWrittenPage, seedContentIndex } from '../Index/indexSeed'
+import { readRecord, writePropertyBundle } from '../Trash/record'
 import { listBundles } from '../Trash/spend'
 import { mutateRegistry, readRegistry } from './propertiesRegistry'
 import { renameFrontmatterKey } from '../Files/pageFile'
@@ -422,6 +422,31 @@ describe('unreadable holders hold the record', () => {
       expect(await readSchemaJournal(root)).toEqual({ op: 'delete', id: 'prop_s', name: 'Stage' })
       expect(await replaySchemaCascade(root).then(() => readSchemaJournal(root))).not.toBeNull()
       await chmod(join(root, 'Col', 'B.md'), 0o644)
+      await replaySchemaCascade(root)
+      expect(await page(root, 'B')).not.toContain('Stage')
+      expect(await readSchemaJournal(root)).toBeNull()
+    },
+  )
+
+  it.skipIf(noModeBits)(
+    'with a warm index, a holder the watcher found unreadable still holds the record, and its bundle says it is partial',
+    async () => {
+      const root = await seedNexus()
+      await openSession(root)
+      installStores(memoryStores().stores)
+      await seedContentIndex(root)
+      const b = join(root, 'Col', 'B.md')
+      await chmod(b, 0o000)
+      await indexWrittenPage(root, b)
+      const deleted = await deleteProperty(root, 'prop_s')
+      await chmod(b, 0o644)
+      if (!deleted.ok) throw new Error('delete refused')
+      expect(deleted.value.replayable).toBe(true)
+      expect(deleted.value.cascade.warning).toBeDefined()
+      expect(await readRecord(join(root, deleted.value.trashed.bundlePath))).toMatchObject({
+        partial: true,
+      })
+      await indexWrittenPage(root, b)
       await replaySchemaCascade(root)
       expect(await page(root, 'B')).not.toContain('Stage')
       expect(await readSchemaJournal(root)).toBeNull()

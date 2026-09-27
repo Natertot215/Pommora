@@ -1,10 +1,10 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
-import { rm, mkdir, readFile, stat, utimes, writeFile } from 'node:fs/promises'
+import { chmod, rm, mkdir, readFile, stat, utimes, writeFile } from 'node:fs/promises'
 import { join } from '../Paths/posix'
-import { tempRoot } from '../Testing/hostFs'
+import { noModeBits, tempRoot } from '../Testing/hostFs'
 import { installStores, NO_STORES } from '../Platform/stores'
 import { memoryStores } from '../Testing/memoryStores'
-import { nexusCorpus, seedContentIndex } from '../Index/indexSeed'
+import { indexWrittenPage, nexusCorpus, seedContentIndex } from '../Index/indexSeed'
 import { dropLiveTree } from '../Nexus/liveTree'
 import { createProperty, renameProperty } from './registryProperty'
 import { renameOption } from './optionOps'
@@ -80,6 +80,42 @@ describe('keyHolderFiles', () => {
     expect(refused.ok).toBe(false)
     expect((await renameProperty(root, 'prop_s', 'Step')).ok).toBe(true)
   })
+
+  it.skipIf(noModeBits)(
+    'a holder that stops reading keeps its row, whether the watcher or the next seed reads it',
+    async () => {
+      const a = abs('Notes', 'HolderA.md')
+      const b = abs('Notes', 'HolderB.md')
+      try {
+        await chmod(a, 0o000)
+        await indexWrittenPage(root, a)
+        await page('HolderB', 'Stage: Done\n')
+        await chmod(b, 0o000)
+        await seedContentIndex(root)
+        expect((await keyHolderFiles(root, 'Stage', [abs('Notes')])).sort()).toEqual([a, b])
+      } finally {
+        await chmod(a, 0o644)
+        await chmod(b, 0o644)
+      }
+    },
+  )
+
+  it.skipIf(noModeBits)(
+    'a rename onto a key an unreadable page was last read holding is refused, and only that key',
+    async () => {
+      const q = abs('Notes', 'Q9X.md')
+      await page('Q9X', 'Phase: x\n')
+      await seedContentIndex(root)
+      try {
+        await chmod(q, 0o000)
+        await indexWrittenPage(root, q)
+        expect((await renameProperty(root, 'prop_s', 'Phase')).ok).toBe(false)
+        expect((await renameProperty(root, 'prop_s', 'Step')).ok).toBe(true)
+      } finally {
+        await chmod(q, 0o644)
+      }
+    },
+  )
 
   it('with no index it answers the corpus intersected the same way', async () => {
     installStores(NO_STORES)

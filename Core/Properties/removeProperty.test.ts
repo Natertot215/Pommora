@@ -160,6 +160,18 @@ describe('removeProperty — strip + cache (C-3/C-6)', () => {
       }
     },
   )
+
+  it.skipIf(noModeBits)('a holder it can’t read is answered as a skip, not left out', async () => {
+    const held = await createPage(folder, 'C', { body: 'b' })
+    if (!held.ok) throw new Error('setup failed')
+    await updatePageProperty(root, held.value.path, liveDef, { kind: 'select', value: 'done' })
+    await chmod(held.value.path, 0o000)
+    try {
+      expect(await removeProperty(root, folder, propId)).toEqual(ok({ skipped: 1, hosts: [] }))
+    } finally {
+      await chmod(held.value.path, 0o644)
+    }
+  })
 })
 
 describe('removeProperty reaches saved views (B-6)', () => {

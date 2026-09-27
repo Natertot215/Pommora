@@ -32,7 +32,7 @@ async function removeInner(
   if (!def) return NOTHING_TO_REMOVE
   const key = def.name
 
-  const { holders, values } = await keyedHolders(
+  const { values, strip } = await keyedHolders(
     root,
     await keyHolderFiles(root, key, [collectionFolder]),
     key,
@@ -51,6 +51,6 @@ async function removeInner(
   )
   if (!written.ok) return written
   const reach = await reachConfig(root, { kind: 'property', propertyId }, collectionFolder)
-  const { skipped } = await sweepGovernedRoots(root, holders, { raw: stripKeys(key) })
+  const { skipped } = await sweepGovernedRoots(root, strip, { raw: stripKeys(key) })
   return ok({ skipped: skipped.length + reach.skipped, hosts: reach.hosts })
 }

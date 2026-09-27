@@ -28,7 +28,7 @@ async function snapshot(
   const values = { ...held.values }
   const assignments: string[] = []
   const caches: Record<string, Record<string, unknown>> = {}
-  let partial = held.kept.length > 0
+  let partial = held.partial
   for (const folder of folders) {
     // Gathered before the unassign strips it — a property restored into no Collection is defined but belongs nowhere.
     const sidecar = await readJsonObject(sidecarPath(folder, 'collection'))
@@ -79,20 +79,13 @@ async function deleteInner(root: string, propertyId: string): Promise<Result<Pro
 
   // EVERY collection folder, not just current assigners — a Remove-cache block lives on a collection sidecar that no longer assigns the id, and pre-cache dormant values may sit on any page.
   const folders = await collectionFolders(root)
-  const files = await keyHolderFiles(root, key, folders)
-  const held = await keyedHolders(root, files, key)
+  const held = await keyedHolders(root, await keyHolderFiles(root, key, folders), key)
   const bundle = await snapshot(root, propertyId, def, folders, held)
   // Journaled AFTER the snapshot — a replay re-runs the strip tail, never the bundle mint.
   const record: SchemaJournal = { op: 'delete', id: propertyId, name: def.name }
   const journaled = await writeSchemaJournal(root, record)
 
-  const { removed, ...reach } = await stripAndRemove(
-    root,
-    propertyId,
-    key,
-    folders,
-    files.filter((f) => !held.kept.includes(f)),
-  )
+  const { removed, ...reach } = await stripAndRemove(root, propertyId, key, folders, held.strip)
   if (!removed.ok) return removed
   if (!reach.skipped) await clearSchemaJournal(root, record)
   return ok({
