@@ -1,10 +1,9 @@
 // The page exists on disk as Untitled the moment the gesture fires — seeds and order riding the create — and the caller opens its own naming surface over the row already real.
 
-import type { CollectionNode, SetNode } from '@pommora/core/Nexus/tree'
-import type { PageValues, ViewRow } from '@pommora/core/Views/viewRow'
+import type { ViewRow } from '@pommora/core/Views/viewRow'
 import { UNGROUPED } from '@pommora/core/Views/viewRow'
 import type { PageFrontmatter } from '@pommora/core/Nexus/schemas'
-import { settle, type SetOverrides } from '../../Properties/valueOverride'
+import { settle } from '../../Properties/valueOverride'
 import {
   applyContextAtRoot,
   applyValueAtRoot,
@@ -12,12 +11,8 @@ import {
   type PropertyValue,
   type ValueKind,
 } from '@pommora/core/Properties/propertyValue'
-import {
-  type PropertyDefinition,
-  type PropertyType,
-  specOf,
-} from '@pommora/core/Properties/properties'
-import { type SavedView, viewOption } from '@pommora/core/Views/views'
+import { specOf } from '@pommora/core/Properties/properties'
+import { viewOption } from '@pommora/core/Views/views'
 import { DEFAULT_NEW_NAME, type MutateRequest } from '@pommora/core/Nexus/mutateRequest'
 import { relDirname } from '@pommora/core/Paths/posix'
 import { findScroller, SEEK_GLIDE, scrollGlide } from '@pommora/uix/Interactions/autoscroll'
@@ -30,6 +25,7 @@ import { placeAt, placementSlot, type Slot, tieOrderWith } from '../creationOrde
 import { pageIdsIn } from '../../Nexus/treePatch'
 import { groupKeyToValue } from '../reassign'
 import { useLatest } from '@pommora/uix/Utilities/stableApi'
+import type { ViewHostApi } from './useViewHost'
 
 // Sort criteria whose value a new page can inherit from its anchor — single-value user properties, a link aside; under anything else the row simply lands where the sort puts it.
 const SEEDS_FROM_SORT: Record<ValueKind, boolean> = {
@@ -45,26 +41,28 @@ const SEEDS_FROM_SORT: Record<ValueKind, boolean> = {
 
 type CreatePage = Extract<MutateRequest, { op: 'createPage' }>
 
-interface ViewCreationConfig {
-  source: CollectionNode | SetNode
-  view: SavedView
-  schema: PropertyDefinition[]
-  contextIds: readonly string[]
-  values: Record<string, PageValues>
-  setValueOverride: SetOverrides
-  effectiveValues: Record<string, PageValues>
-  structuralOrder: boolean
-  persistView: (patch: Partial<SavedView>, opts?: { viewState?: boolean }) => Promise<unknown>
-  setStructuralPaint: React.Dispatch<React.SetStateAction<string[] | null>>
-  rowBand: Map<string, string>
+type ViewCreationConfig = Pick<
+  ViewHostApi,
+  | 'source'
+  | 'view'
+  | 'schema'
+  | 'contextIds'
+  | 'values'
+  | 'setValueOverride'
+  | 'effectiveValues'
+  | 'structuralOrder'
+  | 'persistView'
+  | 'setStructuralPaint'
+  | 'rowBand'
+  | 'canReassign'
+  | 'groupPropId'
+  | 'groupPropType'
+  | 'setPaths'
+  | 'collapsed'
+  | 'toggleCollapse'
+  | 'viewRootRef'
+> & {
   bandBucket: (key: string) => string | null
-  canReassign: boolean
-  groupPropId: string | undefined
-  groupPropType: PropertyType | 'title' | undefined
-  setPaths: Map<string, string>
-  collapsed: Set<string>
-  toggleCollapse: (key: string) => void
-  viewRootRef: { readonly current: HTMLElement | null }
   onCreated: (created: { id: string; path: string }) => void
 }
 
@@ -75,7 +73,7 @@ interface ViewCreation {
   createAfter: (row: ViewRow) => Promise<boolean>
 }
 
-/** `getCfg` is read only when a gesture fires, so the hook can sit above any loading/empty return while its config closes over later render-scope consts. */
+/** `getCfg` is read when a gesture fires, so a create reads the host as of the latest render. */
 export function useViewCreation(getCfg: () => ViewCreationConfig): ViewCreation {
   const mutate = useSession((s) => s.mutate)
   const getRef = useLatest(getCfg)

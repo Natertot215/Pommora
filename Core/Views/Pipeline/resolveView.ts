@@ -31,8 +31,7 @@ export function resolveView(input: {
   const { rows, setTree, view, schema, manualOrder, flattenStructural, contextIds = [] } = input
   // Sort By: Location (cards) is a reserved sort primary the sorter can't rank; on its Location order mode it flattens the structural walk into one band.
   const locationFsOrder = isLocationFsOrder(view)
-  const useLocationFlat =
-    (flattenStructural && view.group?.kind === 'flat' && locationFsOrder) ?? false
+  const useLocationFlat = flattenStructural && view.group?.kind === 'flat' && locationFsOrder
   const columns = resolveColumns(view, schema, contextIds)
   // Parked filters keep their rules and their mode; only application stops.
   const filtered = applyFilter(

@@ -2,6 +2,7 @@ import { reportRefusal } from '@pommora/core/Interface/Notifications/notificatio
 import { useRef, useState } from 'react'
 import { ZOOM } from '@pommora/core/Settings/personalization'
 import type { OpenIn } from '@pommora/core/Views/viewRow'
+import type { CollectionNode, SetNode } from '@pommora/core/Nexus/tree'
 import { Icon } from '@pommora/uix/Symbols'
 import { entityIcon } from '../../Assets/entityIconPolicy'
 import { NavTrail } from '@pommora/uix/Elements/NavTrail'
@@ -9,7 +10,6 @@ import { trailOf } from '../../Nexus/treeIndex'
 import { ICON } from '@pommora/uix/Menus/frames.css'
 import { useSession } from '../../Session/store'
 import { findCollection, findSet, findCollectionForSet } from '../../Nexus/treeIndex'
-import { pickView } from '../Pipeline/pickView'
 import { viewGlyph } from '../viewIcon'
 import { PropertyFrame } from '../../Properties/Schema/PropertyFrame'
 import { VisibilityFrame } from './VisibilityFrame'
@@ -32,7 +32,9 @@ import {
 import type { PickerOption } from '@pommora/uix/Pickers/PickerControl'
 import { IconChoice } from '../../Assets/IconChoice'
 import { InlineEditHeader } from '@pommora/uix/Menus/InlineEditHeader'
-import { saveViewIn, useViewTileScope } from '../ViewTileScope'
+import { useViewTileScope } from '../ViewTileScope'
+import { useSaveView } from '../viewWrite'
+import { useActiveView } from '../Host/useActiveView'
 import { lockLabel } from '@pommora/core/Actions/toggleLabels'
 import { dialer } from '../../Platform/dialer'
 
@@ -52,14 +54,7 @@ const OPEN_IN_OPTIONS: PickerOption<OpenIn>[] = [
 
 export function SettingsFrame(): React.JSX.Element | null {
   const selection = useSession((st) => st.selection)
-  const defaultIcons = useSession((st) => st.personalization.defaultIcons)
   const tree = useSession((st) => st.tree)
-  const submitRename = useSession((st) => st.submitRename)
-  const mutate = useSession((st) => st.mutate)
-  const [pane, setPane] = useState<FrameId | 'root'>('root')
-  const [iconOpen, setIconOpen] = useState(false)
-  const iconRef = useRef<HTMLButtonElement>(null)
-
   const scope = useViewTileScope()
   const selectionNode =
     selection.kind === 'collection'
@@ -71,9 +66,28 @@ export function SettingsFrame(): React.JSX.Element | null {
   const schemaCollection =
     node && (node.kind === 'collection' ? node : findCollectionForSet(tree, node.id))
   if (!node || !schemaCollection) return null
+  return <ContainerSettings node={node} schemaCollection={schemaCollection} />
+}
+
+function ContainerSettings({
+  node,
+  schemaCollection,
+}: {
+  node: CollectionNode | SetNode
+  schemaCollection: CollectionNode
+}): React.JSX.Element {
+  const defaultIcons = useSession((st) => st.personalization.defaultIcons)
+  const tree = useSession((st) => st.tree)
+  const submitRename = useSession((st) => st.submitRename)
+  const mutate = useSession((st) => st.mutate)
+  const [pane, setPane] = useState<FrameId | 'root'>('root')
+  const [iconOpen, setIconOpen] = useState(false)
+  const iconRef = useRef<HTMLButtonElement>(null)
+  const scope = useViewTileScope()
+  const saveView = useSaveView(node)
 
   const schema = schemaCollection.properties ?? []
-  const view = scope?.view ?? pickView(node, schema)
+  const view = useActiveView(node, schema)
   const entries = scope ? ENTRIES.filter((e) => e.id !== 'configuration') : ENTRIES
   const configLocked = scope?.locked ?? false
   const frozen = (id: FrameId): boolean => configLocked && id !== 'properties'
@@ -89,7 +103,7 @@ export function SettingsFrame(): React.JSX.Element | null {
 
   const viewScale = view.view_scale ?? ZOOM.default
   const setViewScale = (f: number): void => {
-    void saveViewIn(scope, node, { ...view, view_scale: f === ZOOM.default ? undefined : f })
+    void saveView(view, { view_scale: f === ZOOM.default ? undefined : f })
   }
 
   const configurationLeaf = (
@@ -120,7 +134,7 @@ export function SettingsFrame(): React.JSX.Element | null {
         onCommit={(next) => {
           // The header is the VIEW's identity in scope — renaming the source folder from an embed is exactly the mutation the scope exists to prevent.
           if (scope) {
-            if (next && next !== view.name) scope.persistConfig({ ...view, name: next })
+            if (next && next !== view.name) void saveView(view, { name: next })
           } else void submitRename(node.path, node.kind, next)
         }}
       />
@@ -236,7 +250,7 @@ export function SettingsFrame(): React.JSX.Element | null {
         triggerRef={iconRef}
         value={scope ? view.icon : node.icon}
         onSelect={(id) => {
-          if (scope) scope.persistConfig({ ...view, icon: id })
+          if (scope) void saveView(view, { icon: id })
           else void mutate({ op: 'setIcon', path: node.path, kind: node.kind, icon: id })
         }}
       />

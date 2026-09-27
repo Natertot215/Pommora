@@ -58,7 +58,7 @@ export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
   const {
     source,
     schema,
-    liveView,
+    view,
     columns,
     groups,
     ctx,
@@ -77,7 +77,6 @@ export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
     dragDisabled,
     commitValue,
     pickTarget,
-    creation,
     mutate,
     select,
   } = host
@@ -211,7 +210,7 @@ export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
           onCancel={() => setEditing(null)}
         />
       )
-      if (viewOption(liveView, 'hide_page_icons')) return field
+      if (viewOption(view, 'hide_page_icons')) return field
       return (
         <span className="cell-rename">
           <EntityIcon kind="page" icon={row.icon} size="body" />
@@ -362,10 +361,10 @@ export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
   const [massOpen, setMassOpen] = useState(false)
   const massTriggerRef = useRef<HTMLElement | null>(null)
   const cellSweep = useCellSweep({
-    gridEl: () => host.seam.viewRootRef.current,
+    gridEl: () => host.viewRootRef.current,
     onSettle: (colId, rowIds, settleRowId) => {
       const at = columns.findIndex((c) => c.id === colId)
-      const cell = host.seam.viewRootRef.current
+      const cell = host.viewRootRef.current
         ?.querySelector(`[data-rid="${CSS.escape(settleRowId)}"]`)
         ?.children.item(at)
       if (!(cell instanceof HTMLElement)) return cellSweep.clear()
@@ -478,7 +477,7 @@ export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
   const ghost = interactions.ghost.ghost
   const ghostRowProps = {
     columns,
-    hideIcon: viewOption(liveView, 'hide_page_icons'),
+    hideIcon: viewOption(view, 'hide_page_icons'),
     onClosed: interactions.ghost.closed,
     onEnter: interactions.ghost.onGhostEnter,
     onLeave: interactions.ghost.onGhostLeave,
@@ -508,7 +507,7 @@ export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
             overlayCol={overlayTarget?.rowId === row.id ? overlayTarget.colId : null}
             renameCol={renameTarget?.rowId === row.id ? renameTarget.colId : null}
             activeCol={activeCell?.rowId === row.id ? activeCell.colId : null}
-            hideIcon={viewOption(liveView, 'hide_page_icons')}
+            hideIcon={viewOption(view, 'hide_page_icons')}
             selected={selection.kind === 'page' && selection.id === row.id}
             dragDisabled={dragDisabled}
             sweepCol={cellSweep.sweep?.rows.has(row.id) ? cellSweep.sweep.colId : null}
@@ -533,7 +532,7 @@ export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
       <ViewGroupBand
         key={`gb-${g.key}`}
         group={g}
-        view={liveView}
+        view={view}
         ctx={ctx}
         setNames={setNames}
         setIcons={setIcons}
@@ -541,7 +540,7 @@ export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
         setPath={g.kind === 'structural-set' ? setPaths.get(g.key) : undefined}
         onAdd={
           g.kind === 'structural-set' && setPaths.has(g.key)
-            ? () => creation.bandAdd(g.key)
+            ? () => interactions.bandAdd(g.key)
             : undefined
         }
         onOpen={
@@ -564,7 +563,7 @@ export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
   return (
     <div
       ref={(el) => {
-        host.seam.viewRootRef.current = el
+        host.viewRootRef.current = el
       }}
       className={cx('table table-view', overflowing && 'overflowing')}
     >
@@ -587,7 +586,7 @@ export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
             className={cx(
               'table-grid',
               text.body.standard,
-              viewOption(liveView, 'hide_borders') && 'no-borders',
+              viewOption(view, 'hide_borders') && 'no-borders',
               columns.length === 1 && 'single-column',
               hiding && 'col-hiding',
               sliding && 'col-sliding',

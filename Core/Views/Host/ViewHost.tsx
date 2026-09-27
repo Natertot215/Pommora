@@ -1,4 +1,3 @@
-import { useRef } from 'react'
 import { ZOOM } from '@pommora/core/Settings/personalization'
 import type { CollectionNode, SetNode } from '@pommora/core/Nexus/tree'
 import { useViewTileScope } from '../ViewTileScope'
@@ -22,12 +21,7 @@ export function ViewHost({ source }: { source: CollectionNode | SetNode }): Reac
   const tile = useViewTileScope()
   // An embedded tile states its own size, so in a tile scope the factor stays 1 and never compounds with the embed zoom.
   const scale = tile ? ZOOM.default : (view.view_scale ?? ZOOM.default)
-  const upward = useRef<ViewHostApi['seam']>({
-    bandBucket: { current: (key) => key },
-    viewRootRef: { current: null },
-    onCreated: { current: () => {} },
-  }).current
-  const host = useViewHost(source, VIEW_KINDS[view.type].flat, upward)
+  const host = useViewHost(source, VIEW_KINDS[view.type].flat)
   // The resolved rows are already post-filter, so their total is the count; an embedded tile leaves the bar to the surface that owns it.
   usePublishCount(!tile && host ? host.rowById.size : null)
   if (!host) return <div />

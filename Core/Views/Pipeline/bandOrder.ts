@@ -14,7 +14,7 @@ export function orderGroups(
     if (sets.length === 0) return recursed
     const listed = sets
       .filter((g) => pos.has(g.key))
-      .sort((a, b) => (pos.get(a.key) ?? 0) - (pos.get(b.key) ?? 0))
+      .sort((a, b) => pos.get(a.key)! - pos.get(b.key)!)
     const unlisted = sets.filter((g) => !pos.has(g.key))
     const reordered = [...listed, ...unlisted]
     let i = 0

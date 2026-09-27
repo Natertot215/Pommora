@@ -2,9 +2,8 @@ import { type ReactNode, useRef, useState } from 'react'
 import type { CollectionNode, SetNode } from '@pommora/core/Nexus/tree'
 import type { PropertyDefinition } from '@pommora/core/Properties/properties'
 import { DEFAULT_VIEW_ID, mintNewView, type SavedView } from '@pommora/core/Views/views'
-import { askDeleteView } from '../../Interface/Confirm/confirmations'
-import { notifyDeleted, reportRefusal } from '../../Interface/Notifications/notifications'
-import { restoreView } from '../restoreView'
+import { reportRefusal } from '../../Interface/Notifications/notifications'
+import { deleteViewWithUndo } from '../deleteViewWithUndo'
 import { viewGlyph } from '../viewIcon'
 import { Button } from '@pommora/uix/Buttons/Button'
 import { Icon } from '@pommora/uix/Symbols'
@@ -15,8 +14,9 @@ import { LayoutFrame } from './LayoutFrame'
 import { FrameDnd, RowShell, useFrameRegions } from '@pommora/uix/Interactions/FrameDnd'
 import type { FrameRow, SlotFor } from '@pommora/uix/Interactions/frameDndModel'
 import type { PaneDrop } from '@pommora/core/Properties/paneDrop'
-import { useSaveView } from '../ViewTileScope'
+import { useSaveView } from '../viewWrite'
 import { pickView } from '../Pipeline/pickView'
+import { useLiveView } from '../Host/pendingView'
 import { ColorPicker } from '@pommora/uix/Pickers/ColorPicker'
 import { colorNameFor } from '@pommora/uix/Theme/ramp'
 import { RenamableLabel } from '@pommora/uix/Fields/RenamableLabel'
@@ -75,7 +75,11 @@ export function ViewFrame({
   const views = node.views ?? []
   const active = pickView(node, schema)
   const rows = views.length ? views : [active]
-  const editing = editingId ? rows.find((v) => v.id === editingId) : undefined
+  const editing = editingId
+    ? (rows.find((v) => v.id === editingId) ??
+      (editingId === DEFAULT_VIEW_ID ? views[0] : undefined))
+    : undefined
+  const editingLive = useLiveView(node.id, editing ?? active)
 
   // The placeholder row a viewless container shows carries the sentinel id, which must never reach a legible sidecar.
   const switchTo = (id: string): void => {
@@ -84,7 +88,7 @@ export function ViewFrame({
   }
   const createView = async (): Promise<void> => {
     reportRefusal(
-      await dialer().ask('views:save', node.path, node.kind, mintNewView('Untitled', schema)),
+      await dialer().ask('views:save', node.path, node.kind, mintNewView('Untitled', schema), {}),
     )
   }
 
@@ -99,7 +103,7 @@ export function ViewFrame({
 
   const commitRename = (v: SavedView, next: string): void => {
     setRenamingId(null)
-    void saveView({ ...v, name: next })
+    void saveView(v, { name: next })
   }
   const rowMenu = async (v: SavedView, e: React.MouseEvent): Promise<void> => {
     e.preventDefault()
@@ -117,16 +121,10 @@ export function ViewFrame({
       case 'duplicate':
         return void dialer().ask('views:duplicate', node.path, node.kind, v.id).then(reportRefusal)
       case 'delete':
-        return void deleteRow(v)
+        return void deleteViewWithUndo(node, v)
       default:
         return
     }
-  }
-  const deleteRow = async (v: SavedView): Promise<void> => {
-    if (!(await askDeleteView())) return
-    const res = await dialer().ask('views:delete', node.path, node.kind, v.id)
-    if (!reportRefusal(res)) return
-    notifyDeleted(v.name, () => restoreView(node.path, node.kind, v, views))
   }
 
   const list = (
@@ -202,7 +200,7 @@ export function ViewFrame({
   const detail = editing ? (
     <LayoutFrame
       source={node}
-      view={editing}
+      view={editingLive}
       schema={schema}
       door="full"
       onBack={() => setEditingId(null)}
@@ -224,14 +222,14 @@ export function ViewFrame({
         onClose={() => setIconFor(null)}
         value={iconFor?.icon}
         onSelect={(icon) => {
-          if (iconFor) void saveView({ ...iconFor, icon })
+          if (iconFor) void saveView(iconFor, { icon })
         }}
       />
       <ColorPicker
         open={colorFor !== null}
         selected={colorNameFor(colorFor?.color)}
         onPick={(picked) => {
-          if (colorFor) void saveView({ ...colorFor, color: picked })
+          if (colorFor) void saveView(colorFor, { color: picked })
           setColorFor(null)
         }}
         onDismiss={() => setColorFor(null)}

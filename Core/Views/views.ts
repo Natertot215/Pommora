@@ -187,10 +187,9 @@ const GROUP_ORDER_MODE_SET = new Set<string>(GROUP_ORDER_MODES)
 const DATE_GRANULARITY_SET = new Set<string>(DATE_GRANULARITIES)
 
 const VIEW_STATE_KEYS = ['collapsed_groups', 'manual_order'] as const
-export type ViewState = Pick<SavedView, (typeof VIEW_STATE_KEYS)[number]>
 
-export function pickViewState(view: SavedView): ViewState {
-  return Object.fromEntries(VIEW_STATE_KEYS.map((k) => [k, view[k]])) as ViewState
+export function pickViewState(view: Partial<SavedView>): Partial<SavedView> {
+  return Object.fromEntries(VIEW_STATE_KEYS.filter((k) => k in view).map((k) => [k, view[k]]))
 }
 
 function asEnum<T extends string>(value: unknown, allowed: ReadonlySet<string>): T | undefined {
@@ -324,6 +323,45 @@ function withoutEmptyStyles({ column_styles, ...view }: Json): Json {
   return kept.length > 0 ? { ...view, column_styles: Object.fromEntries(kept) } : view
 }
 
+export type ViewPatch = Partial<SavedView>
+
+const ENTRY_KEYS = [
+  'column_widths',
+  'column_alignments',
+  'column_styles',
+] as const satisfies readonly (keyof SavedView)[]
+export type EntryKey = (typeof ENTRY_KEYS)[number]
+const isEntryKey = (k: string): k is EntryKey => (ENTRY_KEYS as readonly string[]).includes(k)
+
+export const slotsOf = (patch: ViewPatch): [key: string, value: unknown][] =>
+  Object.entries(patch).flatMap(([k, v]) =>
+    isEntryKey(k) && v !== undefined
+      ? Object.entries(v as Record<string, unknown>).map(([id, e]): [string, unknown] => [
+          `${k}/${id}`,
+          e,
+        ])
+      : [[k, v]],
+  )
+
+export function foldView(
+  view: SavedView,
+  slots: readonly [key: string, value: unknown][],
+): SavedView {
+  const next: Record<string, unknown> = { ...view }
+  for (const [key, value] of slots) {
+    const at = key.indexOf('/')
+    if (at < 0) next[key] = value
+    else {
+      const field = key.slice(0, at)
+      next[field] = { ...(next[field] as object | undefined), [key.slice(at + 1)]: value }
+    }
+  }
+  return next as SavedView
+}
+
+export const applyViewPatch = (view: SavedView, patch: ViewPatch): SavedView =>
+  foldView(view, slotsOf(patch))
+
 export function mergeViewEdit(raw: unknown, next: SavedView): Json {
   const stored = savedView.safeParse(raw)
   return withoutEmptyStyles(
@@ -434,7 +472,14 @@ export function isLocationFsOrder(view: SavedView): boolean {
 
 const VIEW_ID_PREFIX = 'view_'
 
-/** The id an unsaved view carries; `saveView` swaps it for a minted one on first save. */
+export const removedView = z.object({
+  view: z.record(z.string(), z.unknown()),
+  index: z.number().int().nonnegative(),
+  active: z.boolean(),
+})
+export type RemovedView = z.infer<typeof removedView>
+
+/** The id the unsaved placeholder carries; its first save lands on the container's first readable view, or mints one when it has none. */
 export const DEFAULT_VIEW_ID = `${VIEW_ID_PREFIX}default`
 
 export const mintViewId = (): string => `${VIEW_ID_PREFIX}${newId()}`
@@ -471,7 +516,7 @@ export const containerViewIds = (views: readonly unknown[]): string[] =>
 
 export function mintNewView(name: string, schema: PropertyDefinition[]): SavedView {
   return {
-    id: DEFAULT_VIEW_ID,
+    id: mintViewId(),
     name,
     icon: VIEW_KINDS[DEFAULT_VIEW_TYPE].icon,
     type: DEFAULT_VIEW_TYPE,

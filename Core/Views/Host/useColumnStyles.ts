@@ -73,12 +73,12 @@ export function useStyleFor(): (
 
 /** Every rendered column's resolved style, keyed by id — one fold of the saved entries over the type defaults for whichever view kind paints them. */
 export function useColumnStyleMap(
-  host: Pick<ViewHostApi, 'columns' | 'schema' | 'liveView'>,
+  host: Pick<ViewHostApi, 'columns' | 'schema' | 'view'>,
 ): Map<string, ColumnStyle> {
-  const { columns, schema, liveView } = host
+  const { columns, schema, view } = host
   const styleFor = useStyleFor()
   return useMemo(
-    () => new Map(columns.map((c) => [c.id, styleFor(c.id, schema, liveView)])),
-    [columns, schema, liveView, styleFor],
+    () => new Map(columns.map((c) => [c.id, styleFor(c.id, schema, view)])),
+    [columns, schema, view, styleFor],
   )
 }

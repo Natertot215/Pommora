@@ -3,7 +3,7 @@ import type { MutateOutcome, MutateReply, MutateRequest } from '../Nexus/mutateR
 import type { Result } from './result'
 import type { EditorMenuRequest } from '../Actions/editorMenu'
 import type { MenuCommand } from '../Actions/commands'
-import type { SavedView } from '../Views/views'
+import type { RemovedView, SavedView, ViewPatch } from '../Views/views'
 import type { BodyWrite, PageDetail } from '../Pages/pageDetail'
 import type { TrashMode, TrashRow } from '../Trash/trashRow'
 import type { ClearReport } from '../Settings/exclusionScan'
@@ -95,7 +95,7 @@ export interface Asks {
   'citations:set': { args: [pageId: string, shown: boolean | null]; reply: Result<null> }
 
   'views:save': {
-    args: [containerPath: string, kind: 'collection' | 'set', view: SavedView]
+    args: [containerPath: string, kind: 'collection' | 'set', base: SavedView, patch: ViewPatch]
     reply: Result<{ id: string }>
   }
   'views:duplicate': {
@@ -108,6 +108,10 @@ export interface Asks {
   }
   'views:delete': {
     args: [containerPath: string, kind: 'collection' | 'set', viewId: string]
+    reply: Result<RemovedView>
+  }
+  'views:restore': {
+    args: [containerPath: string, kind: 'collection' | 'set', removed: RemovedView]
     reply: Result<null>
   }
   'container:configure': {

@@ -11,7 +11,7 @@ import { dialer } from '../../Platform/dialer'
 import { popMenu } from '../../Actions/menuActions'
 import { viewButtonMenuItems } from '@pommora/core/Actions/viewMenus'
 
-/** Renders only on a Collection / depth-1 Set (sub-Sets don't own saved views). */
+/** Renders only on a Collection / depth-1 Set; a sub-Set's edits save to its one view. */
 export function ViewMenu(): React.JSX.Element | null {
   const selection = useSession((st) => st.selection)
   const tree = useSession((st) => st.tree)

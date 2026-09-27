@@ -147,7 +147,6 @@ export function CardsView({ host }: { host: ViewHostApi }): React.JSX.Element {
   const {
     source,
     view,
-    liveView,
     columns,
     groups,
     ctx,
@@ -167,7 +166,6 @@ export function CardsView({ host }: { host: ViewHostApi }): React.JSX.Element {
     revealProperty,
     commitValue,
     pickTarget,
-    creation,
     mutate,
     select,
     tree,
@@ -209,7 +207,7 @@ export function CardsView({ host }: { host: ViewHostApi }): React.JSX.Element {
   const [valuePicker, setValuePicker] = useState<ValuePickerRequest | null>(null)
   const [addPicker, setAddPicker] = useState<AddPickerRequest | null>(null)
   const ghostRowmate = (enteringId: string): boolean => {
-    const root = host.seam.viewRootRef.current
+    const root = host.viewRootRef.current
     const ghostEl = root?.querySelector('.ghost-card')
     const cardEl = root?.querySelector(`[data-rid="${CSS.escape(enteringId)}"]`)
     if (!ghostEl || !cardEl) return false
@@ -232,7 +230,7 @@ export function CardsView({ host }: { host: ViewHostApi }): React.JSX.Element {
       beginRename(target.path, fromCreate, 'detail')
     },
   })
-  const effectiveZoom = useElementZoom(host.seam.viewRootRef)
+  const effectiveZoom = useElementZoom(host.viewRootRef)
 
   // ── Value and add pickers ─────────────────────────────────────────────────
 
@@ -247,8 +245,8 @@ export function CardsView({ host }: { host: ViewHostApi }): React.JSX.Element {
     if (valuePicker.revealOnCommit) return
     const cur = resolveFieldValue(row, valuePicker.column.id, ctx.schema)
     const isCheckbox = ctx.schema.find((d) => d.id === valuePicker.column.id)?.type === 'checkbox'
-    if (isCompact(liveView) && isBlankValue(cur) && !isCheckbox) setValuePicker(null)
-  }, [valuePicker, rowById, ctx, liveView])
+    if (isCompact(view) && isBlankValue(cur) && !isCheckbox) setValuePicker(null)
+  }, [valuePicker, rowById, ctx, view])
   useEffect(() => {
     if (addPicker && !rowById.get(addPicker.rowId)) setAddPicker(null)
   }, [addPicker, rowById])
@@ -270,7 +268,7 @@ export function CardsView({ host }: { host: ViewHostApi }): React.JSX.Element {
 
   const addRow = addPicker ? rowById.get(addPicker.rowId) : undefined
   const addEntries = addRow
-    ? orderAddableEntries(addEntriesFor(addRow, liveView, ctx, columns, tree, capitalize))
+    ? orderAddableEntries(addEntriesFor(addRow, view, ctx, columns, tree, capitalize))
     : []
 
   // ── The root banner seat ──────────────────────────────────────────────────
@@ -324,7 +322,7 @@ export function CardsView({ host }: { host: ViewHostApi }): React.JSX.Element {
     hover: interactions.ghost.onHover,
     titleMenuContext: interactions.titleMenuContext,
     titleAction: interactions.runTitleAction,
-    addableFor: (row) => addEntriesFor(row, liveView, ctx, columns, tree, capitalize),
+    addableFor: (row) => addEntriesFor(row, view, ctx, columns, tree, capitalize),
     openSet: (set, newTab) => {
       void select(
         { kind: 'set', id: set.id, path: set.path },
@@ -356,7 +354,7 @@ export function CardsView({ host }: { host: ViewHostApi }): React.JSX.Element {
   const [ghostShown, setGhostShown] = useState<string | null>(null)
   useLayoutEffect(() => {
     if (ghostLiveId === ghostShown) return
-    const root = host.seam.viewRootRef.current
+    const root = host.viewRootRef.current
     const hardGone = ghostShown !== null && interactions.ghost.ghost === null
     const anchorId = ghostLiveId ?? ghostShown
     if (root && !hardGone && anchorId !== null) {
@@ -403,7 +401,7 @@ export function CardsView({ host }: { host: ViewHostApi }): React.JSX.Element {
   const ghostCard = (
     <GhostCard
       banner={banner}
-      view={liveView}
+      view={view}
       columns={columns}
       ctx={ctx}
       capitalize={capitalize}
@@ -427,7 +425,7 @@ export function CardsView({ host }: { host: ViewHostApi }): React.JSX.Element {
     <GhostSuppress.Provider value={interactions.holdGhost}>
       <div
         ref={(el) => {
-          host.seam.viewRootRef.current = el
+          host.viewRootRef.current = el
         }}
         className={shellClass}
         data-view-id={view.id}
@@ -473,7 +471,7 @@ export function CardsView({ host }: { host: ViewHostApi }): React.JSX.Element {
                   <CardBody pop={false}>
                     <OverlayFace
                       row={r}
-                      view={liveView}
+                      view={view}
                       banner={banner}
                       ctx={ctx}
                       crumbs={trailBySet[r.parentSetId ?? ''] ?? NO_TRAIL}
@@ -504,14 +502,14 @@ export function CardsView({ host }: { host: ViewHostApi }): React.JSX.Element {
                 <ViewGroupBand
                   key={g.key}
                   group={g}
-                  view={liveView}
+                  view={view}
                   ctx={ctx}
                   setNames={setNames}
                   setIcons={setIcons}
                   source={source}
                   collapsed={isCollapsed}
                   onToggle={() => toggleCollapse(g.key)}
-                  onAdd={setPaths.has(g.key) ? () => creation.bandAdd(g.key) : undefined}
+                  onAdd={setPaths.has(g.key) ? () => interactions.bandAdd(g.key) : undefined}
                   headless={flatMode || (g.kind === 'ungrouped' && structural)}
                   fill
                 >
@@ -527,7 +525,7 @@ export function CardsView({ host }: { host: ViewHostApi }): React.JSX.Element {
                         <PageCard
                           key={row.id}
                           row={row}
-                          view={liveView}
+                          view={view}
                           banner={banner}
                           nexusId={nexusId}
                           columns={columns}

@@ -9,7 +9,7 @@ import {
   setPageContext,
 } from '../Contexts/contextWrite'
 import { indexWrittenPage } from '../Index/indexSeed'
-import { mintDefaultView, mintViewId } from '../Views/views'
+import { mintDefaultView } from '../Views/views'
 import { readRegistry } from '../Properties/propertiesRegistry'
 import type { PropertyDefinition } from '../Properties/properties'
 import type { PropertyValue } from '../Properties/propertyValue'
@@ -80,7 +80,7 @@ export async function createContainerOp(
       : await mutableTarget(root, req.parentPath, CONTAINER_KINDS)
   if (!parent.ok) return parent
   const extra: Record<string, unknown> = {
-    views: [{ ...mintDefaultView([]), id: mintViewId() }],
+    views: [mintDefaultView([])],
   }
   const r = await createDisambiguated(
     req.name,

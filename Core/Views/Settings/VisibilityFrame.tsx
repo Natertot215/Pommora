@@ -10,7 +10,7 @@ import { useSession } from '../../Session/store'
 import { MenuRowView, MenuTopRow, MenuScrollFrame } from '@pommora/uix/Menus'
 import { resolveColumns } from '../Pipeline/columns'
 import { columnLabel, useCapitalizeMetadata } from '../../Properties/Cells/columnLabel'
-import { useSaveView } from '../ViewTileScope'
+import { useSaveView } from '../viewWrite'
 import { FrameDnd, RowShell, useFrameRegions } from '@pommora/uix/Interactions/FrameDnd'
 import type { FrameRow } from '@pommora/uix/Interactions/frameDndModel'
 import type { PaneDrop } from '@pommora/core/Properties/paneDrop'
@@ -129,7 +129,7 @@ export function VisibilityFrame({
   const hiddenSet = new Set(hiddenIds)
   const nameFor = (id: string): string => columnLabel(id, schema, contextsByIdOf(tree), capitalize)
 
-  const save = (patch: Partial<SavedView>): void => void saveView({ ...view, ...patch })
+  const save = (patch: Partial<SavedView>): void => void saveView(view, patch)
   const handleDrop = (drop: PaneDrop): void => {
     if (drop.kind === 'unassign') save(hideShown(view, drop.propId))
     else if (drop.kind === 'reorder-assigned' || drop.kind === 'assign')

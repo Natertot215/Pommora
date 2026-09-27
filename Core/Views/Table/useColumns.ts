@@ -177,7 +177,7 @@ const COL_SHIFT_HYSTERESIS = 25
 // ── The hook ────────────────────────────────────────────────────────────────
 
 export function useColumns(host: ViewHostApi) {
-  const { schema, view, liveView, columns, contextIds, persistView, setStylePatch } = host
+  const { schema, view, columns, contextIds, persistView, setStylePatch } = host
   const beginGesture = usePointerGesture()
   // The in-drag width paints outside the pipeline's input, so a resize frame never re-runs it.
   const [dragWidth, setDragWidth] = useState<{ id: string; width: number } | null>(null)
@@ -192,14 +192,14 @@ export function useColumns(host: ViewHostApi) {
     setColDrag(null)
   }, [view.id])
 
-  const iconsShown = !viewOption(liveView, 'hide_column_icons')
+  const iconsShown = !viewOption(view, 'hide_column_icons')
   const styleMap = useColumnStyleMap(host)
   const storedWidth = (id: string): number =>
-    (dragWidth?.id === id ? dragWidth.width : liveView.column_widths?.[id]) ??
+    (dragWidth?.id === id ? dragWidth.width : view.column_widths?.[id]) ??
     widthFor(id, schema, contextIds).default
   const alignByCol = useMemo(
-    () => columns.map((c) => alignFor(c.id, schema, liveView, contextIds)),
-    [columns, schema, liveView, contextIds],
+    () => columns.map((c) => alignFor(c.id, schema, view, contextIds)),
+    [columns, schema, view, contextIds],
   )
   const styleByCol = useMemo(() => columns.map((c) => styleMap.get(c.id)!), [columns, styleMap])
   const widthByCol = useMemo(
@@ -207,7 +207,7 @@ export function useColumns(host: ViewHostApi) {
       columns.map((c, i) =>
         clampWidth(storedWidth(c.id), c.id, schema, styleByCol[i].look, contextIds, iconsShown),
       ),
-    [columns, schema, liveView, dragWidth, contextIds, styleByCol, iconsShown],
+    [columns, schema, view, dragWidth, contextIds, styleByCol, iconsShown],
   )
   const indexOf = (id: string): number => columns.findIndex((c) => c.id === id)
   const colStyle = (id: string): ColumnStyle => styleByCol[indexOf(id)]
@@ -245,7 +245,7 @@ export function useColumns(host: ViewHostApi) {
   const cols = `${columns.map((_c, i) => `${colWidth(i)}px`).join(' ')} 1fr`
 
   useEffect(() => {
-    const el = host.seam.viewRootRef.current
+    const el = host.viewRootRef.current
     if (!el) return
     const check = (): void => {
       const cs = getComputedStyle(el)
@@ -267,7 +267,7 @@ export function useColumns(host: ViewHostApi) {
   const reorderColumn = (activeId: string, overId: string): void => {
     const next = reorderColumns(
       columns.map((c) => c.id),
-      liveView.property_order,
+      view.property_order,
       activeId,
       overId,
     )
@@ -302,7 +302,7 @@ export function useColumns(host: ViewHostApi) {
   }
   const commitHide = (): void => {
     if (!collapsing) return
-    const hidden = [...(liveView.hidden_properties ?? []), collapsing]
+    const hidden = [...(view.hidden_properties ?? []), collapsing]
     setCollapsing(null)
     void persistView({ hidden_properties: hidden })
   }

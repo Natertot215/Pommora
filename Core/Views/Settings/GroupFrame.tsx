@@ -36,7 +36,7 @@ import { useDiscloseTarget } from '@pommora/uix/Interactions/dragDisclose'
 import { EyeToggle } from '@pommora/uix/Elements/EyeToggle'
 import { revealDim } from '@pommora/uix/Interactions/hover-reveal.css'
 import { DualSwitch } from '@pommora/uix/Controls/DualSwitch'
-import { useSaveView } from '../ViewTileScope'
+import { useSaveView } from '../viewWrite'
 import { useContainerValues } from '../Host/useContainerValues'
 import {
   bucketKey,
@@ -118,7 +118,7 @@ export function GroupFrame({
   const capitalize = useCapitalizeMetadata()
   const nexus = useNexusForms()
   const saveView = useSaveView(source)
-  const save = (patch: Partial<SavedView>): void => void saveView({ ...view, ...patch })
+  const save = (patch: Partial<SavedView>): void => void saveView(view, patch)
   const saveGroup = (group: GroupConfig): void => save({ group })
 
   const hidden = new Set(view.hidden_groups ?? [])

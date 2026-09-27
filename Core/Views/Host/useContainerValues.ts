@@ -33,8 +33,9 @@ export function useValuesEpoch(
   const valuesEpoch = useSession((st) => st.valuesEpoch)
   const live = useLatest({ path, land })
   const fullReads = useRef(0)
+  const handled = useRef(valuesEpoch)
   useEffect(() => {
-    if (!valuesEpoch || path === null) return
+    if (!valuesEpoch || path === null || valuesEpoch === handled.current) return
     let named: string[] | undefined
     if (valuesEpoch.kind === 'container') {
       const mine = valuesEpoch.changes.filter((c) => c.rel === path || c.rel.startsWith(`${path}/`))
@@ -45,6 +46,7 @@ export function useValuesEpoch(
       const { oldKey, newKey } = valuesEpoch
       setValueOverride((prev) => rekeyOverrides(prev, oldKey, newKey))
     }
+    handled.current = valuesEpoch
     const only = pageId ? [pageId] : named
     const issued = settled()
     const read = only ? 0 : ++fullReads.current
