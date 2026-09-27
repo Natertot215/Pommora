@@ -307,9 +307,9 @@ export function withOptionGroups(
 ): PropertyDefinition {
   if (PROPERTY_TYPES[def.type].options === 'status')
     return { ...def, status_groups: groups.map((g) => ({ ...g, options: g.options.map(stored) })) }
-  const select_options = (groups[0]?.options ?? [])
-    .map(stored)
-    .map(({ group_id: _drop, ...o }) => o)
+  const select_options = (groups[0]?.options ?? []).map(
+    ({ label: _stale, group_id: _drop, ...o }: StatusOption & { label?: string }) => o,
+  )
   return { ...def, select_options }
 }
 
