@@ -37,6 +37,8 @@ import type { HostContext } from '../Contract/handlers'
 import { installStores, NO_STORES } from '../Platform/stores'
 import { memoryStores } from '../Testing/memoryStores'
 import * as indexSeed from '../Index/indexSeed'
+import * as assignment from '../Properties/assignment'
+import * as atomicWrite from '../Files/atomicWrite'
 import { seedContentIndex } from '../Index/indexSeed'
 import { tileHostDir } from '../Paths/paths'
 import { createMarkdownTile, readMarkdownTile, writeMarkdownTile } from '../Tiles/tilesFile'
@@ -367,6 +369,29 @@ describe('handleMutate — sync tap', () => {
     expect(tap.renames).toEqual([
       [join(root, 'Notes/Daily/Beta.md'), join(root, 'Notes/Daily/Gamma.md')],
       [join(root, 'Notes/Daily/Gamma.md'), join(root, 'Notes/Archive/Gamma.md')],
+    ])
+  })
+
+  it('reports a Collection rename and a Set move once each', async () => {
+    await mkdir(join(root, 'Archive'), { recursive: true })
+    await writeFile(join(root, 'Archive', '_pagecollection.json'), JSON.stringify({ id: 'arc' }))
+    await refreshTree(root)
+
+    await handleMutate(
+      root,
+      { op: 'rename', path: 'Notes', kind: 'collection', newName: 'Journal' },
+      nexusDeps,
+    )
+    await refreshTree(root)
+    await handleMutate(
+      root,
+      { op: 'moveSet', path: 'Journal/Daily', newParentPath: 'Archive', order: ['col'] },
+      nexusDeps,
+    )
+
+    expect(tap.renames).toEqual([
+      [join(root, 'Notes'), join(root, 'Journal')],
+      [join(root, 'Journal/Daily'), join(root, 'Archive/Daily')],
     ])
   })
 
@@ -1814,6 +1839,82 @@ describe('the Contexts lock', () => {
     const fm = splitFrontmatter(await read('Notes/Daily/Alpha.md'))
     expect(fm['<Ventures>']).toEqual(['Pommora'])
     expect(fm['<Areas>']).toEqual(['Work'])
+    expect('<Projects>' in fm).toBe(false)
+  })
+
+  it('a page tag written during a Space rename names the Space by its new title', async () => {
+    // Unlocked, the rename waits at its collision check until the tag has loaded its world, and the tag writes only once the rename is done; locked, the rename's wait times out.
+    installStores(memoryStores().stores)
+    await seedContentIndex(root)
+    let worldLoaded = (): void => {}
+    const loaded = new Promise<void>((resolve) => {
+      worldLoaded = resolve
+    })
+    const taken = atomicWrite.targetTaken
+    const renameWaits = vi
+      .spyOn(atomicWrite, 'targetTaken')
+      .mockImplementation(async (from, to) => {
+        await Promise.race([loaded, new Promise((resolve) => setTimeout(resolve, 50))])
+        return taken(from, to)
+      })
+    const renaming = handleMutate(
+      root,
+      { op: 'renameSpace', spaceId: 'sp-pom', newName: 'Atlas' },
+      nexusDeps,
+    )
+    const folders = assignment.collectionFolders
+    const tagWaits = vi.spyOn(assignment, 'collectionFolders').mockImplementation(async (r) => {
+      worldLoaded()
+      await renaming
+      return folders(r)
+    })
+    const tagged = await handleMutate(
+      root,
+      { op: 'setContext', path: 'Notes/Daily/Alpha.md', contextId: 'ctxP', spaceIds: ['sp-pom'] },
+      nexusDeps,
+    )
+    renameWaits.mockRestore()
+    tagWaits.mockRestore()
+    installStores(NO_STORES)
+    expect((await renaming).ok && tagged.ok).toBe(true)
+    expect(splitFrontmatter(await read('Notes/Daily/Alpha.md'))['<Projects>']).toEqual(['Atlas'])
+  })
+
+  it('a Space created during a Context rename lands in the renamed Context', async () => {
+    const [renamed, created] = await Promise.all([
+      handleMutate(
+        root,
+        { op: 'renameContext', contextId: 'ctxP', newName: 'Ventures' },
+        nexusDeps,
+      ),
+      handleMutate(root, { op: 'createSpace', contextId: 'ctxP', name: 'Atlas' }, nexusDeps),
+    ])
+    expect(renamed.ok && created.ok).toBe(true)
+    expect(await pathExists(join(root, '.nexus/contexts/Ventures/Atlas/_space.json'))).toBe(true)
+    expect(await pathExists(join(root, '.nexus/contexts/Projects'))).toBe(false)
+  })
+
+  it('a page created with a Context seed during that Context’s rename carries the new key', async () => {
+    const [renamed, created] = await Promise.all([
+      handleMutate(
+        root,
+        { op: 'renameContext', contextId: 'ctxP', newName: 'Ventures' },
+        nexusDeps,
+      ),
+      handleMutate(
+        root,
+        {
+          op: 'createPage',
+          parentPath: 'Notes/Daily',
+          name: 'Gamma',
+          seeds: { ctxP: { kind: 'context', value: ['sp-pom'] } },
+        },
+        nexusDeps,
+      ),
+    ])
+    expect(renamed.ok && created.ok).toBe(true)
+    const fm = splitFrontmatter(await read('Notes/Daily/Gamma.md'))
+    expect(fm['<Ventures>']).toEqual(['Pommora'])
     expect('<Projects>' in fm).toBe(false)
   })
 })
