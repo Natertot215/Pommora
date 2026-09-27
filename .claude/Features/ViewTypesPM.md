@@ -21,7 +21,7 @@ Every renderer also shares the **hover ghost** (`UIX/Interactions/ghostCreate.ts
 
 #### II. Filter
 
-A filter is a recursive group of rules under a match mode — **All** (and) or **Any** (or) — evaluated at every depth. Negation lives on the per-rule operators (Isn't, Isn't Empty, Doesn't Contain), so "none of these" is spelled as an All of negated rules. Whether the filter runs at all is a separate axis, `filter_enabled`, so parking a filter keeps its rules and its mode. A rule the schema can't read — an unknown operator, a deleted property or Set, an operand not yet supplied — abstains rather than voting, and a filter that abstains in whole filters nothing; a row holding no value matches no positive comparison.
+A filter is a recursive group of rules under a match mode — **All** (and) or **Any** (or) — evaluated at every depth. Negation lives on the per-rule operators (Isn't, Isn't Empty, Doesn't Contain), so "none of these" is spelled as an All of negated rules. Whether the filter runs at all is a separate axis, `filter_enabled`, so parking a filter keeps its rules and its mode. Deleting a property, Space, Context, Set, or Collection removes it from every filter that named it, dropping a rule it leaves with nothing to test. A rule the schema can't read — an unknown operator, a property it doesn't hold, an operand not yet supplied — abstains rather than voting, and a filter that abstains in whole filters nothing; a row holding no value matches no positive comparison.
 
 The operator families are type-aware, defined in `Core/Views/filterModel.ts`:
 
