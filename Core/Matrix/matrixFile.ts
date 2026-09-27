@@ -2,7 +2,7 @@ import { readAppFile, updateNexusConfig } from '../Files/atomicWrite'
 import { nexusConfig } from '../Paths/paths'
 import { NEXUS_CONFIG_FILES } from '../Paths/nexusPaths'
 import { mergeKeys } from '../Files/jsonMerge'
-import { stableStringify } from '../Files/stableJson'
+import { same } from '../Files/stableJson'
 import { MATRIX_MERGE_DEPTH } from '../Sync/Arrival/mergePolicy'
 import { applyPatch, type MatrixConfig, type MatrixPatch, parseMatrixConfig } from './matrixConfig'
 
@@ -18,7 +18,7 @@ export async function writeMatrixFile(root: string, patch: MatrixPatch): Promise
     const read = parseMatrixConfig(current)
     const local = parseMatrixConfig(applyPatch(read, patch))
     const next = mergeKeys(read, local, current, MATRIX_MERGE_DEPTH, () => 'local')
-    return stableStringify(next) === stableStringify(current) ? null : next
+    return same(next, current) ? null : next
   })
   if (!written.ok) throw new Error(written.error.message)
 }

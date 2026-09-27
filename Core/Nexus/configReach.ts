@@ -20,7 +20,7 @@ import { tileHostsOf } from '../Tiles/tilesFile'
 import type { TileHostRef } from '../Tiles/tiles'
 import { liveTreeOf } from './liveTree'
 import { editJsonStrict, type StrictEdit } from '../Files/atomicWrite'
-import { same } from '../Files/jsonMerge'
+import { same } from '../Files/stableJson'
 import { errText } from '../Contract/result'
 import { noteSidecarWrite } from './valuesChanged'
 import { nexusConfig, sidecarPath, tileDocPath } from '../Paths/paths'
@@ -218,7 +218,6 @@ export interface ConfigReach {
   hosts: TileHostRef[]
 }
 
-/** The Collection sidecar's `property_cache` values follow an option edit through the one cache writer. */
 function cacheEdit(e: OptionReach, cur: Raw): Raw | null {
   const cached = cachedValues(cur, e.def.id)
   if (!cached) return null

@@ -154,7 +154,6 @@ export function mapRules(
   }
 }
 
-/** A list with each changed element replaced; null when nothing changed. */
 function mapList<T>(xs: readonly T[], f: (x: T, i: number) => T | null): T[] | null {
   let found = false
   const next = xs.map((x, i) => {
@@ -178,7 +177,6 @@ export function mapViews(doc: Json, fn: (view: Json, i: number) => Json | null):
   return views && { ...doc, views }
 }
 
-/** A tile document's `tiles[]` entries through `fn`; null when nothing changed. */
 export function mapTiles(doc: Json, fn: (tile: Json) => Json | null): Json | null {
   if (!Array.isArray(doc.tiles)) return null
   const tiles = mapList(doc.tiles as unknown[], (t) => (isPlainObject(t) ? fn(t) : null))
@@ -346,7 +344,6 @@ export type GroupedView = Pick<SavedView, 'group' | 'sub_group' | 'hidden_groups
 
 const LEVEL_PREFIX: Record<GroupLevel, string> = { group: '', sub: 'sub/' }
 
-/** Whether the view's current grouping at `level` is on `propertyId`. */
 export const groupsOn = (v: GroupedView, level: GroupLevel, propertyId: string): boolean =>
   level === 'group'
     ? v.group?.kind === 'property' && v.group.property_id === propertyId
@@ -392,7 +389,6 @@ export function toggleHiddenBucket(
   return shown.length < held.length ? shown : [...held, own]
 }
 
-/** The buckets of `propertyId` hidden at `level` under the encoded spelling. */
 export const hiddenBuckets = (v: GroupedView, level: GroupLevel, propertyId: string): string[] => {
   const prefix = hiddenBucketKey(level, propertyId, '')
   return (v.hidden_groups ?? []).flatMap((k) =>

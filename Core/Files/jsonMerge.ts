@@ -1,9 +1,7 @@
 import { isPlainObject } from '../Contract/validators'
-import { type Json, stableStringify } from './stableJson'
+import { type Json, same } from './stableJson'
 
 export type Depth = Record<string, number>
-
-export const same = (a: unknown, b: unknown): boolean => stableStringify(a) === stableStringify(b)
 
 const unionKeys = (...objects: Json[]): string[] => [
   ...new Set(objects.flatMap((o) => Object.keys(o))),

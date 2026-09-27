@@ -1,5 +1,5 @@
 // A write displaces nothing it can't read and no different stranded record — its owed heal outranks the op now starting, which runs unjournaled — while a corrupt slot is set aside by the next write, and a clear lands only for the caller's own record.
-import { readJsonStrictly, setAside, writeJson } from '../Files/atomicWrite'
+import { readJsonStrictly, setAside, type StrictMiss, writeJson } from '../Files/atomicWrite'
 import { recordWrite } from '../Files/writeEcho'
 import { machine } from '../Platform/machine'
 import { nexusConfig } from '../Paths/paths'
@@ -10,7 +10,7 @@ interface JournalSlot<J> {
   clear(root: string, own: J): Promise<void>
 }
 
-type Held<J> = { kind: 'held'; record: J } | { kind: 'absent' | 'unreadable' | 'corrupt' }
+type Held<J> = { kind: 'held'; record: J } | { kind: StrictMiss }
 
 export function journalSlot<J>(
   file: string,

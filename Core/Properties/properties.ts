@@ -299,7 +299,10 @@ export function optionGroupsOf(
   return [{ id: SELECT_GROUP, label: '', color: '', options }]
 }
 
-const stored = ({ label: _stale, ...o }: StatusOption & { label?: string }): StatusOption => o
+const stored = <O extends object>({
+  label: _stale,
+  ...o
+}: O & { label?: string }): Omit<O, 'label'> => o
 
 export function withOptionGroups(
   def: PropertyDefinition,
@@ -307,9 +310,7 @@ export function withOptionGroups(
 ): PropertyDefinition {
   if (PROPERTY_TYPES[def.type].options === 'status')
     return { ...def, status_groups: groups.map((g) => ({ ...g, options: g.options.map(stored) })) }
-  const select_options = (groups[0]?.options ?? []).map(
-    ({ label: _stale, group_id: _drop, ...o }: StatusOption & { label?: string }) => o,
-  )
+  const select_options = (groups[0]?.options ?? []).map(({ group_id: _drop, ...o }) => stored(o))
   return { ...def, select_options }
 }
 
