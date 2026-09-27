@@ -59,9 +59,10 @@ function rewriteRoot(raw: Json, contextTitle: string, j: RenameJournal): Json | 
     return out
   }
   const key = contextKey(contextTitle)
-  const arr = raw[key]
-  const next =
-    Array.isArray(arr) && editList(arr, namesSpace, j.oldTitle, { op: 'replace', to: j.newTitle })
+  const next = editList(listOf(raw[key]), namesSpace, j.oldTitle, {
+    op: 'replace',
+    to: j.newTitle,
+  })
   if (!next) return null
   return { ...raw, [key]: next }
 }
@@ -156,10 +157,10 @@ export async function unlinkSpaceValue(
   const captured: SweepCapture[] = []
   const names = namesSpace(spaceTitle)
   const take: Rewrite = (raw, file) => {
-    const arr = raw[key]
-    const next = Array.isArray(arr) && editList(arr, namesSpace, spaceTitle, { op: 'strip' })
+    const held = listOf(raw[key])
+    const next = editList(held, namesSpace, spaceTitle, { op: 'strip' })
     if (!next) return null
-    const taken = arr.filter((v): v is string => typeof v === 'string' && names(v))
+    const taken = held.filter((v): v is string => typeof v === 'string' && names(v))
     captured.push(captureRoot(raw, file, taken))
     return setOrDrop(raw, key, next.length ? next : undefined)
   }
