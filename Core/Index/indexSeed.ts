@@ -1,6 +1,7 @@
 import { join, relative, isMarkdownFile, titleFromPath } from '../Paths/posix'
 import { escapes } from '../Paths/pathSafety'
 import { errText } from '../Contract/result'
+import { listOf } from '../Contract/validators'
 import { frontmatterMentions, linksIn } from '../Connections/scan'
 import { normalizeTitle } from '../Connections/connections'
 import { headingOutlineOf } from '../MarkdownPM/Engine/headingScan'
@@ -75,7 +76,7 @@ function* spaceRelations(
   for (const [key, raw] of Object.entries(values)) {
     if (parseContextKey(key) === null || raw == null) continue
     const titles = new Set<string>()
-    for (const value of Array.isArray(raw) ? raw : [raw]) {
+    for (const value of listOf(raw)) {
       const title = normalizeTitle(value)
       if (title) titles.add(title)
     }

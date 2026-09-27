@@ -10,10 +10,9 @@ import {
   reconcilePropertyValue,
 } from '../Properties/propertyValue'
 import type { NexusTree, SpaceNode } from '../Nexus/tree'
+import { listOf } from '../Contract/validators'
 
 type ResolvedLinks = Map<string, string[]>
-
-export const listOf = (raw: unknown): unknown[] => (Array.isArray(raw) ? raw : [raw])
 
 export const namesSpace =
   (title: string): Matcher =>
