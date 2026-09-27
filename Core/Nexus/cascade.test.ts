@@ -17,6 +17,7 @@ import { ok } from '../Contract/result'
 import { machine } from '../Platform/machine'
 import { tileHostDir } from '../Paths/paths'
 import { createMarkdownTile, readMarkdownTile, writeMarkdownTile } from '../Tiles/tilesFile'
+import { landedId } from '../Testing/tileLayouts'
 
 vi.mock('../Properties/governedSweep', async (importOriginal) => {
   const mod = await importOriginal<typeof import('../Properties/governedSweep')>()
@@ -235,7 +236,7 @@ describe('renameCascade for a heading', () => {
     if (!a.ok) throw new Error('setup failed')
     installStores(memoryStores().stores)
     await seedContentIndex(root)
-    const tile = await createMarkdownTile(tileHostDir(root))
+    const tile = await landedId(createMarkdownTile(tileHostDir(root)))
     await writeMarkdownTile(
       root,
       tileHostDir(root),

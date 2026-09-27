@@ -1,6 +1,7 @@
 import type { ConnectionsApi } from '../MarkdownPM/Links/connectionsApi'
 import type { ConnPage } from '../Connections/pageIndex'
 import {
+  type EntryPatch,
   knownTile,
   type TileEntry,
   type TileHostRef,
@@ -10,9 +11,10 @@ import { MarkdownTile } from './Surfaces/MarkdownTile'
 import { PageTile } from './Surfaces/PageTile'
 import { ViewTile } from './Surfaces/ViewTile'
 
+/** The patch is built from the entry as stored, and null writes nothing. */
 export type MutateEntry = (
   id: string,
-  fn: (raw: Record<string, unknown>) => Record<string, unknown>,
+  patchOf: (raw: Record<string, unknown>) => EntryPatch | null,
 ) => void
 
 export interface TileRenderContext {
@@ -72,7 +74,7 @@ const TILE_SURFACES: { [T in TileType]: TileSurface<Extract<TileEntry, { type: T
       <ViewTile
         entry={entry}
         mutateEntry={(target, fn) =>
-          mutateEntry(target, (raw) => (knownTile(raw)?.type === entry.type ? fn(raw) : raw))
+          mutateEntry(target, (raw) => (knownTile(raw)?.type === entry.type ? fn(raw) : null))
         }
         onActivate={() => beginEdit(id)}
         openPage={openPage}

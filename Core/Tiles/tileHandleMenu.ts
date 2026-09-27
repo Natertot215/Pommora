@@ -1,5 +1,6 @@
 import { lockLabel } from '@pommora/core/Actions/toggleLabels'
 import {
+  type EntryPatch,
   TILE_KINDS,
   type TileEntry,
   type TilePick,
@@ -21,6 +22,17 @@ type TileMenuAction =
   | `tile:style:${TileStyle}`
   | `tile:zoom:${number}`
   | `tile:pick:${number}`
+
+export function menuPatch(action: string, entry: TileEntry): EntryPatch | null {
+  if (action.startsWith('tile:zoom:')) {
+    const factor = Number(action.slice('tile:zoom:'.length))
+    return { zoom: factor === ZOOM.default ? null : factor }
+  }
+  if (action === 'tile:style:bordered') return { style: 'bordered' }
+  if (action === 'tile:style:borderless') return { style: 'borderless' }
+  if (action === 'tile:lock') return { locked: entry.locked ? null : true }
+  return null
+}
 
 export const viewPickTree = (tree: NexusTree, icons: DefaultIcons): PickItem<ViewPick>[] =>
   containerPickTree(tree, icons, (c) => [

@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import type { PickItem } from '../Actions/menuModel'
 import type { TileEntry, ViewPick } from '../Tiles/tiles'
 import { makeTree } from '../Testing/testTree'
-import { tileMenuItems, viewPickTree } from './tileHandleMenu'
+import { menuPatch, tileMenuItems, viewPickTree } from './tileHandleMenu'
 
 type Ctx = Parameters<typeof tileMenuItems>[0]
 
@@ -159,5 +159,17 @@ describe('the tile menu model both renderers draw', () => {
       { source_id: 's2', view_id: 'v1' },
       { source_id: 's2' },
     ])
+  })
+})
+
+describe('the patch a settings pick writes', () => {
+  const entry = { type: 'markdown', id: 'b1' } as unknown as TileEntry
+  it('writes the picked setting, and deletes a key the pick returns to its default', () => {
+    expect(menuPatch('tile:zoom:1.2', entry)).toEqual({ zoom: 1.2 })
+    expect(menuPatch('tile:zoom:1', entry)).toEqual({ zoom: null })
+    expect(menuPatch('tile:style:borderless', entry)).toEqual({ style: 'borderless' })
+    expect(menuPatch('tile:lock', entry)).toEqual({ locked: true })
+    expect(menuPatch('tile:lock', { ...entry, locked: true })).toEqual({ locked: null })
+    expect(menuPatch('tile:duplicate', entry)).toBeNull()
   })
 })

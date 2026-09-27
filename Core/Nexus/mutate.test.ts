@@ -39,6 +39,7 @@ import { memoryStores } from '../Testing/memoryStores'
 import { seedContentIndex } from '../Index/indexSeed'
 import { tileHostDir } from '../Paths/paths'
 import { createMarkdownTile, readMarkdownTile, writeMarkdownTile } from '../Tiles/tilesFile'
+import { landedId } from '../Testing/tileLayouts'
 import { ok } from '../Contract/result'
 import { nexusHandlers } from './handlers'
 
@@ -867,7 +868,7 @@ describe('handleMutate — renameHeading', () => {
       `---\nID: ${B_ID}\n---\n\n## Setup\n\n[[#Setup]]`,
     )
     await seedContentIndex(root)
-    tile = await createMarkdownTile(tileHostDir(root))
+    tile = await landedId(createMarkdownTile(tileHostDir(root)))
     await writeMarkdownTile(
       root,
       tileHostDir(root),

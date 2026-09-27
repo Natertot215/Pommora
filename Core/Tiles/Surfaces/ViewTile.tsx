@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import type { ConnPage } from '@pommora/core/Connections/pageIndex'
-import type { ViewTileEntry } from '@pommora/core/Tiles/tiles'
+import type { EntryPatch, ViewTileEntry } from '@pommora/core/Tiles/tiles'
 import { isPlainObject } from '@pommora/core/Contract/validators'
 import type { CollectionNode, SetNode } from '@pommora/core/Nexus/tree'
 import type { PropertyDefinition } from '@pommora/core/Properties/properties'
@@ -310,28 +310,24 @@ export function ViewTile({
       }
 
   const locked = entry.locked ?? false
-  const patchEntry = (patch: Record<string, unknown>): void => {
+  const patchEntry = (patch: EntryPatch): void => {
     if (locked && !('locked' in patch) && !('active' in patch)) return
-    mutateEntry(entry.id, (raw) => {
-      const next = { ...raw, ...patch }
-      for (const [k, v] of Object.entries(patch)) if (v === undefined) delete next[k]
-      return next
-    })
+    mutateEntry(entry.id, () => patch)
   }
-  const setLocked = (v: boolean): void => patchEntry({ locked: v ? true : undefined })
+  const setLocked = (v: boolean): void => patchEntry({ locked: v ? true : null })
   const writeConfig = (id: string, config: SavedView): void => {
     mutateEntry(entry.id, (raw) => {
       const arr = rawViews(raw)
       const i = viewAt(arr, id)
       const el = arr[i]
-      if (!isPlainObject(el)) return raw
+      if (!isPlainObject(el)) return null
       // A view answering to a derived id takes a minted one when first written, so only minted ids reach the file.
       const own = ownsViewId(configIdOf(el), id)
       arr[i] = {
         ...el,
         config: mergeViewEdit(el.config, own ? config : { ...config, id: mintViewId() }),
       }
-      return { ...raw, views: arr }
+      return { views: arr }
     })
   }
   const persistConfig = (id: string, config: SavedView): void => {
@@ -372,7 +368,7 @@ export function ViewTile({
         source_id: source.id,
         config: { ...mintNewView('Untitled', schema), id: mintViewId() },
       })
-      return { ...raw, views: arr, active: arr.length - 1 }
+      return { views: arr, active: arr.length - 1 }
     })
   }
   const duplicate = (id: string): void => {
@@ -383,11 +379,11 @@ export function ViewTile({
       const arr = rawViews(raw)
       const i = viewAt(arr, id)
       const el = arr[i]
-      if (!isPlainObject(el)) return raw
+      if (!isPlainObject(el)) return null
       const stored = isPlainObject(el.config) ? el.config : src
       const config = { ...stored, id: mintViewId(), name: freeName(src.name, names) }
       arr.splice(i + 1, 0, { ...el, config })
-      return { ...raw, views: arr, active: i + 1 }
+      return { views: arr, active: i + 1 }
     })
   }
   const restoreViewAt = (i: number, el: unknown): void => {
@@ -395,7 +391,7 @@ export function ViewTile({
       const arr = rawViews(raw)
       const at = Math.min(i, arr.length)
       arr.splice(at, 0, el)
-      return { ...raw, views: arr, active: at }
+      return { views: arr, active: at }
     })
   }
   const deleteView = (id: string): void => {
@@ -405,11 +401,11 @@ export function ViewTile({
     mutateEntry(entry.id, (raw) => {
       const arr = rawViews(raw)
       const at = viewAt(arr, id)
-      if (at < 0 || arr.length <= 1) return raw
+      if (at < 0 || arr.length <= 1) return null
       const cur = rawActive(raw, arr.length)
       const [removed] = arr.splice(at, 1)
       undo = () => restoreViewAt(at, removed)
-      return { ...raw, views: arr, active: Math.min(cur > at ? cur - 1 : cur, arr.length - 1) }
+      return { views: arr, active: Math.min(cur > at ? cur - 1 : cur, arr.length - 1) }
     })
     if (undo) notifyDeleted(name, undo)
   }
@@ -426,14 +422,14 @@ export function ViewTile({
       )
       const cur = rawActive(raw, arr.length)
       const newActive = seq.findIndex((x) => x.i === cur)
-      return { ...raw, views: seq.map((x) => arr[x.i]), active: newActive >= 0 ? newActive : 0 }
+      return { views: seq.map((x) => arr[x.i]), active: newActive >= 0 ? newActive : 0 }
     })
   }
   const commitTitle = (next: string): void => {
-    patchEntry({ display_title: !next || next === source.title ? undefined : next })
+    patchEntry({ display_title: !next || next === source.title ? null : next })
   }
 
-  const toggleViews = (): void => patchEntry({ view_band: viewsShown ? false : undefined })
+  const toggleViews = (): void => patchEntry({ view_band: viewsShown ? false : null })
   const popHeld = async <A extends string>(
     items: Parameters<typeof popMenu<A>>[0],
   ): Promise<A | null> => {
@@ -448,7 +444,7 @@ export function ViewTile({
     e.preventDefault()
     if (locked) return
     const action = await popHeld(embedTitleMenuItems(iconShown, titleLevel, viewsShown))
-    if (action === 'toggle-icon') patchEntry({ icon: iconShown ? false : undefined })
+    if (action === 'toggle-icon') patchEntry({ icon: iconShown ? false : null })
     else if (action === 'change-icon') {
       menuAnchorRef.current = titleIconRef.current
       setIconFor('title')
@@ -456,7 +452,7 @@ export function ViewTile({
     else if (action === 'toggle-views') toggleViews()
     else if (action?.startsWith('size-')) {
       const n = Number(action.slice(5))
-      patchEntry({ title_level: n === 4 ? undefined : n })
+      patchEntry({ title_level: n === 4 ? null : n })
     }
   }
   const areaMenu = async (e: React.MouseEvent): Promise<void> => {
@@ -465,11 +461,11 @@ export function ViewTile({
     const action = await popHeld(
       embedAreaMenuItems({ viewStyle: dropdown ? 'dropdown' : 'toolbar', titleShown, viewsShown }),
     )
-    if (action === 'show-title') patchEntry({ title: undefined })
+    if (action === 'show-title') patchEntry({ title: null })
     else if (action === 'toggle-views') toggleViews()
     else if (action === 'new-view') addView()
     else if (action === 'style-dropdown') patchEntry({ view_style: 'dropdown' })
-    else if (action === 'style-toolbar') patchEntry({ view_style: undefined })
+    else if (action === 'style-toolbar') patchEntry({ view_style: null })
   }
   const rowMenu = async (id: string, e: React.MouseEvent, animate: boolean): Promise<void> => {
     e.preventDefault()
@@ -493,7 +489,7 @@ export function ViewTile({
       case 'duplicate':
         return duplicate(id)
       case 'titles':
-        return patchEntry({ view_button: labeled ? 'icon' : undefined })
+        return patchEntry({ view_button: labeled ? 'icon' : null })
       case 'delete':
         if (!(await askDeleteView('tile'))) return
         return animate ? presence.beginExit(id) : deleteView(id)

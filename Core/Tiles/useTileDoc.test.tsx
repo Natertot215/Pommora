@@ -2,10 +2,18 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { act } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
-import type { TileDoc, TileHostRef } from '@pommora/core/Tiles/tiles'
+import type { Landed, TileDoc, TileHostRef } from '@pommora/core/Tiles/tiles'
+import type { Result } from '../Contract/result'
+import { tileId } from '../Testing/tileLayouts'
 import { insertBand } from './Layout/ops'
 import { tileIds, type TileLayout } from './Layout/model'
-import { dropAllTileDocs, readTileBody, setTileDocLock, writeTileBody } from './tileDocStore'
+import {
+  dropAllTileDocs,
+  patchTileEntry,
+  readTileBody,
+  setTileDocLock,
+  writeTileBody,
+} from './tileDocStore'
 import { cancelAllSaves } from '../Session/saveScheduler'
 import { flushAllSaves } from '../Session/nexusSlice'
 import { type TileDocSession, useTileDoc, useTileDocReady } from './useTileDoc'
@@ -26,10 +34,11 @@ const held: Array<() => void> = []
 const releaseSave = (): void => {
   for (const release of held.splice(0)) release()
 }
+// A save answers with what the disk holds when it's released, as the host's write reads it back.
 const save = vi.fn(
   () =>
-    new Promise<{ ok: true; value: null }>((resolve) => {
-      held.push(() => resolve({ ok: true, value: null }))
+    new Promise<Result<Landed>>((resolve) => {
+      held.push(() => resolve({ ok: true, value: { landed: disk } }))
     }),
 )
 const get = vi.fn(async () => ({ ok: true as const, value: disk }))
@@ -287,6 +296,63 @@ describe('the lock the document owns', () => {
   })
 })
 
+describe('an entry write', () => {
+  const A = tileId('a')
+  const entry = (): unknown => at('c').tiles[0]
+  const refused = { ok: false as const, error: { code: 'operation-failed' as const, message: 'x' } }
+  beforeEach(async () => {
+    disk = docWith(A)
+    await act(async () => root.render(<Probe seat="c" on={OTHER} />))
+    await tick()
+    save.mockClear()
+  })
+
+  it('paints at once, sends only that entry, and takes what landed', async () => {
+    act(() => patchTileEntry(OTHER, A, () => ({ style: 'borderless' })))
+    expect(entry()).toEqual({ id: A, type: 'markdown', style: 'borderless' })
+    expect(save).toHaveBeenCalledWith(OTHER, { entry: { id: A, patch: { style: 'borderless' } } })
+    disk = { ...docWith(A), tiles: [{ id: A, type: 'markdown', style: 'borderless', synced: 1 }] }
+    await act(async () => releaseSave())
+    expect(entry()).toEqual({ id: A, type: 'markdown', style: 'borderless', synced: 1 })
+  })
+
+  it('an entry the answer left as painted keeps its object', async () => {
+    act(() => patchTileEntry(OTHER, A, () => ({ style: 'borderless' })))
+    const painted = entry()
+    disk = { ...docWith(A), tiles: [{ id: A, type: 'markdown', style: 'borderless' }] }
+    await act(async () => releaseSave())
+    expect(entry()).toBe(painted)
+  })
+
+  it('overlapping writes keep the paint until the last answers, then show the disk', async () => {
+    act(() => patchTileEntry(OTHER, A, () => ({ style: 'borderless' })))
+    act(() => patchTileEntry(OTHER, A, () => ({ zoom: 1.2 })))
+    disk = { ...docWith(A), tiles: [{ id: A, type: 'markdown', style: 'borderless' }] }
+    await act(async () => held.shift()?.())
+    expect(entry()).toEqual({ id: A, type: 'markdown', style: 'borderless', zoom: 1.2 })
+    get.mockClear()
+    // The host took the writes in the other order, so neither answer alone is the disk.
+    const both = { id: A, type: 'markdown', style: 'borderless', zoom: 1.2, created: 1 }
+    disk = { ...docWith(A), tiles: [both] }
+    await act(async () => releaseSave())
+    await tick()
+    expect(get).toHaveBeenCalledOnce()
+    expect(entry()).toEqual(both)
+  })
+
+  it('a refused write reads the disk again', async () => {
+    save.mockImplementationOnce(async () => refused)
+    act(() => patchTileEntry(OTHER, A, () => ({ style: 'borderless' })))
+    await tick()
+    expect(entry()).toEqual({ id: A, type: 'markdown' })
+  })
+
+  it('a patch built as null writes nothing', () => {
+    act(() => patchTileEntry(OTHER, A, () => null))
+    expect(save).not.toHaveBeenCalled()
+  })
+})
+
 describe('a host document changing on disk', () => {
   it('replaces the layout for the mounted host and ignores another host', async () => {
     expect(shown('a')).toEqual(['a'])
@@ -328,6 +394,24 @@ describe('a host document changing on disk', () => {
     await act(async () => releaseGet?.())
     expect(save).toHaveBeenCalledOnce()
     expect(shown('a')).toEqual(['a', 'local'])
+  })
+
+  it('a write that lands during the read reads again, so the change still shows', async () => {
+    let releaseGet: (() => void) | null = null
+    get.mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          releaseGet = () => resolve({ ok: true as const, value: disk })
+        }),
+    )
+    disk = docWith('a', 'synced')
+    await act(async () => push(HOST))
+    act(() => setTileDocLock(HOST, true))
+    await act(async () => releaseGet?.())
+    expect(shown('a')).toEqual(['a'])
+    await act(async () => releaseSave())
+    await tick()
+    expect(shown('a')).toEqual(['a', 'synced'])
   })
 
   it('a later commit builds on the pushed layout, not the pre-push one', async () => {

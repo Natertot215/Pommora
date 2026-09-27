@@ -3,11 +3,11 @@ import { pathExists } from '../Files/atomicWrite'
 import { join } from '../Paths/posix'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { HostContext } from '../Contract/handlers'
-import { fail, fault } from '../Contract/result'
+import { fail, fault, ok } from '../Contract/result'
 import { tileDocPath, tileHostDir } from '../Paths/paths'
 import { tempRoot } from '../Testing/hostFs'
 import { tileId } from '../Testing/tileLayouts'
-import { readTileDocAt } from './tileDoc'
+import { readTileDocAt, writeTileDocAt } from './tileDoc'
 
 const { sessionRoot } = vi.hoisted(() => ({ sessionRoot: vi.fn() }))
 vi.mock('../Nexus/session', () => ({ sessionRoot, adopting: () => false }))
@@ -57,6 +57,26 @@ describe('the tile channels', () => {
       locked: true,
       tiles: [],
     })
+  })
+
+  it('save merges an entry patch into that entry alone and answers with the document it left', async () => {
+    const [a, b] = [tileId('a'), tileId('b')]
+    await writeTileDocAt(tileHostDir(root), (cur) => ({
+      ...cur,
+      tiles: [
+        { id: a, type: 'markdown', zoom: 1.2, foreign: 1 },
+        { id: b, type: 'markdown' },
+      ],
+    }))
+    const saved = await tilesHandlers['tiles:save'](ctx, homepage, {
+      entry: { id: a, patch: { style: 'borderless', zoom: null } },
+    })
+    const disk = await readTileDocAt(tileHostDir(root))
+    expect(disk.tiles).toEqual([
+      { id: a, type: 'markdown', foreign: 1, style: 'borderless' },
+      { id: b, type: 'markdown' },
+    ])
+    expect(saved).toEqual(ok({ landed: disk }))
   })
 
   it('restore refuses an entry whose id could name a file outside the board', async () => {

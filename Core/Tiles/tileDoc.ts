@@ -18,7 +18,7 @@ export async function readTileDocAt(dir: string): Promise<TileDoc> {
 export async function writeTileDocAt(
   dir: string,
   mutate: (cur: TileDoc) => TileDoc,
-): Promise<Result<null>> {
+): Promise<Result<TileDoc>> {
   try {
     const written = await updateNexusFile(
       tileDocPath(dir),
@@ -26,7 +26,9 @@ export async function writeTileDocAt(
       (cur) => ({ ...cur, ...mutate(coerceTileDoc(cur)) }),
       true,
     )
-    return written.ok ? ok(null) : fail(written.error.code, written.error.message)
+    return written.ok
+      ? ok(coerceTileDoc(written.value))
+      : fail(written.error.code, written.error.message)
   } catch (e) {
     return fault(e)
   }

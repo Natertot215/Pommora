@@ -182,24 +182,56 @@ export interface TileDoc {
   locked: boolean
 }
 
+/** A key set to null leaves the entry, since an absent key is its default. */
+export type EntryPatch = Record<string, unknown>
+
+export const mergeEntry = (
+  raw: Record<string, unknown>,
+  patch: EntryPatch,
+): Record<string, unknown> => {
+  const next = { ...raw }
+  for (const [k, v] of Object.entries(patch)) {
+    if (v === null) delete next[k]
+    else next[k] = v
+  }
+  return next
+}
+
+export const patchEntries = (tiles: unknown[], id: string, patch: EntryPatch): unknown[] =>
+  tiles.map((b) => (knownTile(b)?.id === id ? mergeEntry(b as Record<string, unknown>, patch) : b))
+
 export interface TileDocPatch {
   layout?: unknown
-  tiles?: unknown[]
+  entry?: { id: string; patch: EntryPatch }
   locked?: boolean
 }
 
-/** The three document keys, each shape-checked and kept as sent: zod's parse output would strip the foreign keys a layout or entry carries. */
+/** Every write answers with the document it left on disk, and the board adopts its entries and lock from it. */
+export type Landed<T = unknown> = T & { landed: TileDoc }
+
+export const landed = <T>(written: Result<TileDoc>, value: T): Result<Landed<T>> =>
+  written.ok ? ok({ ...value, landed: written.value }) : written
+
+/** The document keys a board writes, each shape-checked and kept as sent: zod's parse output would strip the foreign keys a layout or entry carries. */
 export function tileDocPatch(raw: unknown): Result<TileDocPatch> {
   if (!isPlainObject(raw)) return fault('Invalid tile-doc patch.')
   const patch: TileDocPatch = {}
-  const { layout, tiles, locked } = raw
+  const { layout, entry, locked } = raw
   if ('layout' in raw) {
     if (!rawLayoutSchema.safeParse(layout).success) return fault('Malformed layout.')
     patch.layout = layout
   }
-  if ('tiles' in raw) {
-    if (!Array.isArray(tiles)) return fault('tiles must be an array.')
-    patch.tiles = tiles
+  if ('entry' in raw) {
+    // A patch sets an entry's settings; its identity and kind change only through convert.
+    if (
+      !isPlainObject(entry) ||
+      !isUlidShaped(entry.id) ||
+      !isPlainObject(entry.patch) ||
+      'id' in entry.patch ||
+      'type' in entry.patch
+    )
+      return fault('Malformed entry patch.')
+    patch.entry = { id: entry.id, patch: entry.patch }
   }
   if ('locked' in raw) {
     if (typeof locked !== 'boolean') return fault('locked must be a boolean.')

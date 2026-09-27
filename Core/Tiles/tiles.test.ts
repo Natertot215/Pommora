@@ -157,11 +157,18 @@ describe('rawLayoutSchema', () => {
 })
 
 describe('tileDocPatch', () => {
-  it('keeps the three doc keys as sent and refuses the malformed ones', () => {
+  it('keeps the doc keys as sent and refuses the malformed ones', () => {
     expect(tileDocPatch({ layout: { bands: [] }, extra: 1 })).toEqual(ok({ layout: { bands: [] } }))
-    expect(tileDocPatch({ tiles: [], locked: true })).toEqual(ok({ tiles: [], locked: true }))
+    const entry = { id: tileId('a'), patch: { style: 'borderless', zoom: null } }
+    expect(tileDocPatch({ entry, locked: true, tiles: [] })).toEqual(ok({ entry, locked: true }))
     expect(tileDocPatch({ layout: 'garbage' })).toEqual(fault('Malformed layout.'))
-    expect(tileDocPatch({ tiles: 'no' })).toEqual(fault('tiles must be an array.'))
+    for (const bad of [
+      { id: '../x', patch: {} },
+      { id: tileId('a'), patch: 'no' },
+      { id: tileId('a'), patch: { id: tileId('b') } },
+      { id: tileId('a'), patch: { type: 'page' } },
+    ])
+      expect(tileDocPatch({ entry: bad })).toEqual(fault('Malformed entry patch.'))
     expect(tileDocPatch({ locked: 'yes' })).toEqual(fault('locked must be a boolean.'))
     expect(tileDocPatch(null)).toEqual(fault('Invalid tile-doc patch.'))
   })

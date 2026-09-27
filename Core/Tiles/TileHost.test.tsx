@@ -46,7 +46,7 @@ beforeEach(() => {
   stubEditorBridge({
     'tiles:changed': () => () => {},
     'tiles:get': async () => ({ ok: true, value: doc }),
-    'tiles:save': async () => ({ ok: true, value: null }),
+    'tiles:save': async () => ({ ok: true, value: { landed: doc } }),
     'tiles:readMarkdown': async () => ({ ok: true, value: { body: 'hello' } }),
     'tiles:writeMarkdown': writeMarkdown,
   })
@@ -140,17 +140,20 @@ describe('the host over the renderer table', () => {
 
   it('a removed tile comes back on Undo, its text and its place with it', async () => {
     const removed = { entry: { id: tileId('m'), type: 'markdown' }, body: 'hello' }
-    const restoreTile = vi.fn(async () => ({ ok: true, value: null }))
+    const restoreTile = vi.fn(async () => ({ ok: true, value: { landed: doc } }))
     const saves: unknown[] = []
     stubEditorBridge({
       'tiles:changed': () => () => {},
       'tiles:get': async () => ({ ok: true, value: doc }),
       'tiles:save': async (_host: unknown, patch: { layout?: unknown }) => {
         if (patch.layout) saves.push(patch.layout)
-        return { ok: true, value: null }
+        return { ok: true, value: { landed: doc } }
       },
       'tiles:readMarkdown': async () => ({ ok: true, value: { body: 'hello' } }),
-      'tiles:removeTile': async () => ({ ok: true, value: removed }),
+      'tiles:removeTile': async () => ({
+        ok: true,
+        value: { removed, landed: { ...doc, tiles: doc.tiles.slice(1) } },
+      }),
       'tiles:restoreTile': restoreTile,
       menu: async () => ({ ok: true, value: 'tile:delete' }),
     })
@@ -184,7 +187,7 @@ describe('the host over the renderer table', () => {
     stubEditorBridge({
       'tiles:changed': () => () => {},
       'tiles:get': async () => ({ ok: true, value: doc }),
-      'tiles:save': async () => ({ ok: true, value: null }),
+      'tiles:save': async () => ({ ok: true, value: { landed: doc } }),
       'tiles:readMarkdown': async () => ({ ok: true, value: { body: 'hello' } }),
       'tiles:removeTile': async () => ({
         ok: false,
