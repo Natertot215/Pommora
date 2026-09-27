@@ -31,6 +31,7 @@ import {
 import { bandReorderPatch } from '../Bands/useBandOrdering'
 import { subtreeIds } from '../Pipeline/group'
 import { sameIds, spliceBeside, tieOrderWith } from '../creationOrder'
+import { pageIdsIn } from '../../Nexus/treePatch'
 import { useViewTileScope } from '../ViewTileScope'
 import type { ViewHostApi } from './useViewHost'
 
@@ -203,8 +204,6 @@ export function useViewInteractions(host: ViewHostApi, policy: ViewInteractionPo
     const path = rowById.get(id)?.path
     return path !== undefined && relDirname(path) === parent
   }
-  const idsUnder = (dir: string): string[] =>
-    rows.flatMap((r) => (relDirname(r.path) === dir ? [r.id] : []))
 
   const reorderWithin = (bandKey: string, activeId: string, beforeId: string | null): void => {
     const bandOrder = nextOrder(bandRowIds(bandKey, activeId), activeId, beforeId)
@@ -231,7 +230,8 @@ export function useViewInteractions(host: ViewHostApi, policy: ViewInteractionPo
       const after = bandOrder
         .slice(bandOrder.indexOf(activeId) + 1)
         .find((id) => isSiblingOf(parent, id))
-      const siblings = idsUnder(parent)
+      const siblings = pageIdsIn(tree, parent)
+      if (!siblings) return
       const order = spliceBeside(
         siblings.filter((id) => id !== activeId),
         after ?? null,
@@ -250,7 +250,8 @@ export function useViewInteractions(host: ViewHostApi, policy: ViewInteractionPo
     const row = rowById.get(activeId)
     const destPath = toZone === UNGROUPED ? source.path : setPaths.get(toZone)
     if (!row || !destPath || destPath === relDirname(row.path)) return
-    const destIds = idsUnder(destPath)
+    const destIds = pageIdsIn(tree, destPath)
+    if (!destIds) return
     const bandIds = bandRowIds(toZone, activeId)
     const at = beforeId === null ? bandIds.length : bandIds.indexOf(beforeId)
     const sibBefore = bandIds.slice(at).find((id) => isSiblingOf(destPath, id))

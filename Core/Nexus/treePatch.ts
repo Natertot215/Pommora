@@ -206,6 +206,9 @@ export function findContainerWhere(
   return null
 }
 
+export const pageIdsIn = (tree: NexusTree, path: string): string[] | undefined =>
+  findContainerWhere(tree, (n) => n.path === path)?.pages.map((p) => p.id)
+
 function holdsPath(containers: (CollectionNode | SetNode)[], path: string): boolean {
   return containers.some(
     (c) =>

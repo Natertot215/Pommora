@@ -5,7 +5,7 @@ import {
   spaceCreator,
 } from '../Nexus/mutateRequest'
 import { relDirname } from '../Paths/posix'
-import { orderWithSlot, placeNew } from '../Views/creationOrder'
+import { placeAt, placeNew } from '../Views/creationOrder'
 import { findContainerWhere } from '../Nexus/treePatch'
 import { useSession, windowTargetOf } from '../Session/store'
 
@@ -21,14 +21,13 @@ export async function newPageAdjacent(
   if (!container) return
   const anchor = container.pages.find((p) => p.path === path)
   if (!anchor) return
-  const order = orderWithSlot(
+  const req = placeAt(
+    { op: 'createPage', parentPath, name: DEFAULT_NEW_NAME },
     container.pages.map((p) => p.id),
     anchor.id,
     where,
   )
-  await mutate({ op: 'createPage', parentPath, name: DEFAULT_NEW_NAME, order }, (created) =>
-    beginRename(created.path, true, host),
-  )
+  await mutate(req, (created) => beginRename(created.path, true, host))
 }
 
 export async function newSpaceAdjacent(
@@ -39,14 +38,13 @@ export async function newSpaceAdjacent(
   const { tree, mutate, beginRename } = useSession.getState()
   const group = tree?.contexts.find((g) => g.spaces.some((s) => s.id === id))
   if (!group) return
-  const order = orderWithSlot(
+  const req = placeAt(
+    spaceCreator(group.def).req,
     group.spaces.map((s) => s.id),
     id,
     where,
   )
-  await mutate({ ...spaceCreator(group.def).req, order }, (created) =>
-    beginRename(created.path, true, host),
-  )
+  await mutate(req, (created) => beginRename(created.path, true, host))
 }
 
 /** An unanchored create, placed by its kind's placement setting and named in place. */
