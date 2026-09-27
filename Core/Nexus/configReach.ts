@@ -1,4 +1,5 @@
 import {
+  answerable,
   clearHiddenBuckets,
   editHiddenBucket,
   type FilterGroup,
@@ -8,7 +9,6 @@ import {
   mapTiles,
   mapViews,
   OPERANDLESS_OPS,
-  ruleOperands,
   type SavedView,
   SUBSTRING_OPS,
   savedView,
@@ -95,7 +95,7 @@ const ROLES = {
 
 // ── Edits ──
 type OptionReach = { def: PropertyDefinition; value: string; edit: ValueEdit }
-type Gone = { propertyId: string; ids: ReadonlySet<string> }
+type Gone = { propertyId: string; ids: readonly string[] }
 type ConfigEdit =
   | ({ kind: 'option' } & OptionReach)
   | { kind: 'property'; propertyId: string }
@@ -139,7 +139,7 @@ function editOperands(rule: Raw, edit: (xs: readonly unknown[]) => unknown[] | n
     if (values.length) next.values = values
     else delete next.values
   }
-  return operandless || ruleOperands(next as FilterRule).length ? next : null
+  return answerable(next as FilterRule) ? next : null
 }
 
 const optionRule = (e: OptionReach, rule: Raw): Raw | null =>
@@ -150,7 +150,7 @@ const optionRule = (e: OptionReach, rule: Raw): Raw | null =>
 const gone =
   (e: Gone): Matcher =>
   (el) =>
-    typeof el === 'string' && [...e.ids].some((id) => el === id || el.startsWith(`${id}/`))
+    typeof el === 'string' && e.ids.some((id) => el === id || el.startsWith(`${id}/`))
 
 const goneRule = (e: Gone, rule: Raw): Raw | null =>
   onProperty(e.propertyId, rule) ? editOperands(rule, (xs) => stripList(xs, gone(e))) : rule
@@ -290,7 +290,7 @@ export function goneEdit(tree: NexusTree, kind: MutableKind, rel: string): Confi
     }
     case 'space': {
       const space = spaceAt(tree, rel)
-      return space ? { kind: 'gone', propertyId: space.contextId, ids: new Set([space.id]) } : null
+      return space ? { kind: 'gone', propertyId: space.contextId, ids: [space.id] } : null
     }
     case 'collection':
     case 'set': {
@@ -299,7 +299,7 @@ export function goneEdit(tree: NexusTree, kind: MutableKind, rel: string): Confi
         ? {
             kind: 'gone',
             propertyId: RESERVED_PROPERTY_ID.location,
-            ids: new Set(within(node).map((n) => n.id)),
+            ids: within(node).map((n) => n.id),
           }
         : null
     }
@@ -366,7 +366,7 @@ export async function reachConfig(
   const sources = new Set(containers.map((c) => c.id))
   const inScope = (entry: unknown): boolean => {
     const source = isPlainObject(entry) ? String(entry.source_id) : ''
-    return (!under || sources.has(source)) && !(e.kind === 'gone' && e.ids.has(source))
+    return (!under || sources.has(source)) && !(e.kind === 'gone' && e.ids.includes(source))
   }
   for (const { host, dir } of tiles.hosts) {
     const wrote = await written(tileDocPath(dir), (cur) =>

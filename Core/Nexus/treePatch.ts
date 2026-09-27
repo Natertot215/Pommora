@@ -210,6 +210,9 @@ export function findContainerWhere(
 export const containerAt = (tree: NexusTree, rel: string): CollectionNode | SetNode | null =>
   findContainerWhere(tree, (n) => n.path === rel)
 
+export const pageAt = (tree: NexusTree, rel: string): PageNode | null =>
+  containerAt(tree, relDirname(rel))?.pages.find((p) => p.path === rel) ?? null
+
 export const spaceAt = (tree: NexusTree, rel: string): SpaceNode | null =>
   tree.contexts.flatMap((g) => g.spaces).find((s) => s.path === rel) ?? null
 

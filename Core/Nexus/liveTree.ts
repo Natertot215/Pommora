@@ -5,7 +5,7 @@ import type { MutableKind } from './mutateRequest'
 import { pathExists } from '../Files/atomicWrite'
 import { resolveUnderRoot } from '../Paths/pathSafety'
 import { fail, type Result } from '../Contract/result'
-import { containerAt, contextAt, findContainerWhere, spaceAt } from './treePatch'
+import { containerAt, contextAt, pageAt, spaceAt } from './treePatch'
 import { readNexus } from './readNexus'
 import { sessionRoot } from './session'
 
@@ -79,7 +79,7 @@ function holds(tree: NexusTree, rel: string, kind: MutableKind): boolean {
     case 'space':
       return !!spaceAt(tree, rel)
     case 'page':
-      return !!findContainerWhere(tree, (c) => c.pages.some((p) => p.path === rel))
+      return !!pageAt(tree, rel)
     case 'collection':
     case 'set':
       return containerAt(tree, rel)?.kind === kind

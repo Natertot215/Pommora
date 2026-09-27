@@ -4,8 +4,8 @@ import {
   FILTER_OPS,
   type FilterGroup,
   type FilterRule,
+  answerable,
   isGroup,
-  OPERANDLESS_OPS,
   ruleOperands,
 } from '@pommora/core/Views/views'
 import type { ViewRow } from '@pommora/core/Views/viewRow'
@@ -71,7 +71,7 @@ function prepareRule(
 ): RowTest | undefined {
   const { op, property_id: id } = rule
   const want = ruleOperands(rule)
-  if (!FILTER_OP_SET.has(op) || (want.length === 0 && !OPERANDLESS_OPS.has(op))) return undefined
+  if (!FILTER_OP_SET.has(op) || !answerable(rule)) return undefined
   if (id === RESERVED_PROPERTY_ID.location) return prepareLocation(op, want, setTree)
   const t = declaredType(id, schema, contextIds)
   if (t === undefined) return undefined
