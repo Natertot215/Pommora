@@ -137,13 +137,8 @@ export async function unlinkContextKey(
   const captured: SweepCapture[] = []
   const strip: Rewrite = (raw, file) => {
     if (!(key in raw)) return null
-    captured.push(
-      captureRoot(
-        raw,
-        file,
-        listOf(raw[key]).filter((v): v is string => typeof v === 'string'),
-      ),
-    )
+    const values = listOf(raw[key]).filter((v): v is string => typeof v === 'string')
+    captured.push(captureRoot(raw, file, values))
     return stripKeys(key)(raw, file)
   }
   const entry = withOrderEntry(strip, 'contexts', contextTitle, null)
@@ -163,13 +158,8 @@ export async function unlinkSpaceValue(
     const arr = raw[key]
     const next = Array.isArray(arr) && editList(arr, names, { op: 'strip' })
     if (!next) return null
-    captured.push(
-      captureRoot(
-        raw,
-        file,
-        arr.filter((v): v is string => typeof v === 'string' && names(v)),
-      ),
-    )
+    const taken = arr.filter((v): v is string => typeof v === 'string' && names(v))
+    captured.push(captureRoot(raw, file, taken))
     return setOrDrop(raw, key, next.length ? next : undefined)
   }
   return ok({ ...(await unlinkMembers(root, { key, spaceTitle }, take)), captured })
