@@ -162,6 +162,22 @@ describe('renameContextOp', () => {
     expect(fm.foreign).toBe(1)
   })
 
+  it('a failed title commit backs the rename out: keys, folder, journal, and registry as before', async () => {
+    const registryBefore = await readFile(contextsRegistryFile(root), 'utf8')
+    sweepSpy.mockClear()
+    vi.mocked(mutateRegistryFile).mockResolvedValueOnce(fault('refused'))
+    const r = await renameContextOp(root, 'ctx_projects', 'Ventures')
+    expect(r.ok).toBe(false)
+    expect(sweepSpy).toHaveBeenCalledTimes(2)
+    expect((await fmOf(page()))['<Projects>']).toEqual(['Pommora', 'pommora'])
+    expect((await fmOf(page()))['<Ventures>']).toBeUndefined()
+    expect(JSON.parse(await readFile(csSidecar(), 'utf8'))['<Projects>']).toEqual(['Pommora'])
+    expect(await pathExists(join(contextsDir(root), 'Projects', 'Pommora'))).toBe(true)
+    expect(await pathExists(join(contextsDir(root), 'Ventures'))).toBe(false)
+    expect(await readJournal(root)).toBeNull()
+    expect(await readFile(contextsRegistryFile(root), 'utf8')).toBe(registryBefore)
+  })
+
   it('rejects a taken title without journaling; a sigil glyph is legal', async () => {
     expect((await renameContextOp(root, 'ctx_projects', 'Classes')).ok).toBe(false)
     expect(await readJournal(root)).toBeNull()
