@@ -126,7 +126,7 @@ export function useViewCreation(getCfg: () => ViewCreationConfig): ViewCreation 
     where: Slot,
   ): void => {
     const allIds = flattenContainer(latest.source, latest.effectiveValues, {}).rows.map((r) => r.id)
-    // The live view already folds a held override, so the next create composes on this one.
+    // The live view already folds a staged order, so the next create composes on this one.
     const next = tieOrderWith(latest.view.manual_order, allIds, createdId, anchorId, where)
     if (latest.structuralOrder) latest.setStructuralPaint(next)
     if (!latest.structuralOrder || latest.view.manual_order)
