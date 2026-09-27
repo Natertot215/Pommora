@@ -38,6 +38,7 @@ import { installStores, NO_STORES } from '../Platform/stores'
 import { memoryStores } from '../Testing/memoryStores'
 import * as indexSeed from '../Index/indexSeed'
 import * as assignment from '../Properties/assignment'
+import * as contextCascade from '../Contexts/contextCascade'
 import * as atomicWrite from '../Files/atomicWrite'
 import { seedContentIndex } from '../Index/indexSeed'
 import { tileHostDir } from '../Paths/paths'
@@ -1940,6 +1941,67 @@ describe('the Contexts lock', () => {
     installStores(NO_STORES)
     expect((await renaming).ok && tagged.ok).toBe(true)
     expect(splitFrontmatter(await read('Notes/Daily/Alpha.md'))['<Projects>']).toEqual(['Atlas'])
+  })
+
+  const sweeps = {
+    unlinkSpaceValue: contextCascade.unlinkSpaceValue,
+    unlinkContextKey: contextCascade.unlinkContextKey,
+  }
+  const tagDuringDelete = async (
+    sweep: keyof typeof sweeps,
+    req: Extract<MutateRequest, { op: 'delete' }>,
+  ): Promise<string> => {
+    installStores(memoryStores().stores)
+    await seedContentIndex(root)
+    let worldLoaded = (): void => {}
+    const loaded = new Promise<void>((resolve) => {
+      worldLoaded = resolve
+    })
+    const unlink = sweeps[sweep] as (...args: unknown[]) => Promise<unknown>
+    const deleteWaits = vi.spyOn(contextCascade, sweep).mockImplementation((async (
+      ...args: unknown[]
+    ) => {
+      await Promise.race([loaded, new Promise((resolve) => setTimeout(resolve, 50))])
+      return unlink(...args)
+    }) as never)
+    const deleting = handleMutate(root, req, nexusDeps)
+    const folders = assignment.collectionFolders
+    const tagWaits = vi.spyOn(assignment, 'collectionFolders').mockImplementation(async (r) => {
+      worldLoaded()
+      await deleting
+      return folders(r)
+    })
+    const tagged = await handleMutate(
+      root,
+      { op: 'setContext', path: 'Notes/Daily/Beta.md', contextId: 'ctxA', spaceIds: ['sp-work'] },
+      nexusDeps,
+    )
+    deleteWaits.mockRestore()
+    tagWaits.mockRestore()
+    installStores(NO_STORES)
+    expect((await deleting).ok).toBe(true)
+    expect('<Areas>' in splitFrontmatter(await read('Notes/Daily/Beta.md'))).toBe(false)
+    return tagged.ok ? 'tagged' : `${tagged.error.code}: ${tagged.error.message}`
+  }
+
+  it('a page tag written during a Space delete is refused as an unknown Space', async () => {
+    expect(
+      await tagDuringDelete('unlinkSpaceValue', {
+        op: 'delete',
+        path: '.nexus/contexts/Areas/Work',
+        kind: 'space',
+      }),
+    ).toBe('not-found: Unknown Space.')
+  })
+
+  it('a page tag written during a Context delete is refused as an unknown Space', async () => {
+    expect(
+      await tagDuringDelete('unlinkContextKey', {
+        op: 'delete',
+        path: '.nexus/contexts/Areas',
+        kind: 'context',
+      }),
+    ).toBe('not-found: Unknown Space.')
   })
 
   it('a Space created during a Context rename lands in the renamed Context', async () => {
