@@ -151,7 +151,10 @@ describe('the document', () => {
       await writeFile(tileDocPath(home()), JSON.stringify({ tiles: [{ id: tileId('a') }] }))
       await chmod(tileDocPath(home()), 0o000)
       const refused = {
-        error: { code: 'operation-failed', message: expect.stringContaining('_tiles.json') },
+        error: {
+          code: 'operation-failed',
+          message: 'An error occurred while attempting to read this layout.',
+        },
       }
       expect(await readTileDocAt(home())).toMatchObject(refused)
       expect(await createMarkdownTile(home())).toMatchObject(refused)

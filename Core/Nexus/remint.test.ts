@@ -1,6 +1,6 @@
-import { cp, mkdir, readFile, rm, writeFile } from 'node:fs/promises'
+import { chmod, cp, mkdir, readFile, rm, writeFile } from 'node:fs/promises'
 import { join } from '../Paths/posix'
-import { tempRoot } from '../Testing/hostFs'
+import { noModeBits, tempRoot } from '../Testing/hostFs'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { isUlidShaped } from './identityMark'
 import type { EntityRecord } from './record'
@@ -289,6 +289,27 @@ describe('the re-mint writes', () => {
       originalDoc.value.tiles[0].views[0].config.id,
     )
   })
+
+  it.skipIf(noModeBits)(
+    'a copied Space whose board refuses defers its whole re-mint to an open that can write both',
+    async () => {
+      const work = join(root, '.nexus', 'contexts', 'Areas', 'Work')
+      const copy = join(root, '.nexus', 'contexts', 'Areas', 'Work copy')
+      const tiles = [{ id: 'tile-1', type: 'view', views: [{ config: { id: 'cfg-original' } }] }]
+      await writeTileDocAt(work, (cur) => ({ ...cur, tiles }))
+      await runOpenLedger(root)
+      await cp(work, copy, { recursive: true })
+      await chmod(join(copy, '_tiles.json'), 0o000)
+      await runOpenLedger(root)
+      const idOf = async () => JSON.parse(await readFile(join(copy, '_space.json'), 'utf8')).id
+      expect(await idOf()).toBe(SPACE)
+      await chmod(join(copy, '_tiles.json'), 0o644)
+      await runOpenLedger(root)
+      expect(await idOf()).not.toBe(SPACE)
+      const board = JSON.parse(await readFile(join(copy, '_tiles.json'), 'utf8'))
+      expect(isViewId(board.tiles[0].views[0].config.id)).toBe(true)
+    },
+  )
 
   it('a selection naming a view the container no longer has does not travel at all', async () => {
     // The copy must not inherit a reference it cannot resolve — carrying it anyway is precisely the dangling selection this join exists to prevent.

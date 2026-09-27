@@ -15,7 +15,7 @@ import { navKey } from '../Navigation/navRef'
 import { decodeLayout } from './Layout/codec'
 import { emptyLayout, type TileLayout, tileIds } from './Layout/model'
 import { dialer } from '../Platform/dialer'
-import { reportRefusal } from '../Interface/Notifications/notifications'
+import { notifyRetry, reportRefusal } from '../Interface/Notifications/notifications'
 import { createBodyWriter, sessionWriter } from '../Session/saveScheduler'
 
 const BODY_CAP = 50
@@ -215,15 +215,21 @@ function create(host: TileHostRef): HostDoc {
     if (doc.holds > 0) doc.heldPush = true
     else void reload(doc)
   })
-  void dialer()
-    .ask('tiles:get', host)
-    .then((r) => {
-      if (r.ok) adopt(doc, r.value)
-      // A board the host fails to read stays closed and says so; a Space gone or a Nexus mid-switch leaves it closed quietly.
-      else if (r.error.code === 'operation-failed') reportRefusal(r)
-    })
+  void load(doc)
   return doc
 }
+
+// A board the host fails to read stays closed and says so, with a way to try again; a Space gone or a Nexus mid-switch leaves it closed quietly.
+const load = (doc: HostDoc): Promise<void> =>
+  dialer()
+    .ask('tiles:get', doc.host)
+    .then((r) => {
+      if (r.ok) adopt(doc, r.value)
+      else if (r.error.code === 'operation-failed' && at(doc.host) === doc)
+        notifyRetry(r.error.message, () => {
+          if (!doc.state.ready) void load(doc)
+        })
+    })
 
 async function retire(doc: HostDoc): Promise<void> {
   await flush(doc)

@@ -52,6 +52,11 @@ export function reportRefusal<T>(r: Result<T>): r is { ok: true; value: T } {
   return r.ok
 }
 
+/** A refusal that may pass on a second attempt, which its label offers. */
+export function notifyRetry(message: string, retry: () => void): void {
+  post({ message, tone: 'error', action: { label: 'Try Again', run: retry } })
+}
+
 /** A write nothing waits on still answers: a refusal posts a notice naming `what`, or, for `quiet` chrome, logs it. */
 export const persist = (
   what: string,

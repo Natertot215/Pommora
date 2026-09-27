@@ -89,6 +89,14 @@ async function remintSidecar(
   oldId: string,
   fresh: string,
 ): Promise<boolean> {
+  // The board goes first, so a refused one defers the whole re-mint to the next open, as any refused write does, rather than leaving the copy's view tiles sharing their source's config ids.
+  if (kind === 'space' && (await pathExists(tileDocPath(absFolder)))) {
+    const board = await writeTileDocAt(absFolder, (cur) => ({
+      ...cur,
+      tiles: cur.tiles.map(copyEntry),
+    }))
+    if (!board.ok) throw new Error(board.error.message)
+  }
   const viewIds = new Map<string, string>()
   let landed = false
   // Read fresh inside the lock: a container write that landed since the walk holds facts the stamp must carry forward, and a blind write would drop them.
@@ -111,19 +119,7 @@ async function remintSidecar(
     landed = true
     return next
   })
-  if (!landed) return false
-  if (kind === 'space' && (await pathExists(tileDocPath(absFolder)))) {
-    const doc = await writeTileDocAt(absFolder, (cur) => ({
-      ...cur,
-      tiles: cur.tiles.map(copyEntry),
-    }))
-    if (!doc.ok)
-      console.error(
-        "remint: the copy's tile document refused; its view ids stand:",
-        doc.error.message,
-      )
-  }
-  return true
+  return landed
 }
 
 const COPY_SCOPES = ['folds', 'headingCols', 'citations', 'embedHeights', 'embedZooms'] as const

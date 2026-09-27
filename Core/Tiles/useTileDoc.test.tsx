@@ -371,7 +371,7 @@ describe('a document the host fails to read', () => {
     expect(shown('a')).toEqual(['a'])
   })
 
-  it('stays closed and says why, where a board whose Space is gone stays closed quietly', async () => {
+  it('stays closed and says why until Try Again reads it, where a board whose Space is gone stays closed quietly', async () => {
     clearNotification()
     const refusal = (code: 'operation-failed' | 'not-found', message: string) => async () => ({
       ok: false as const,
@@ -386,6 +386,9 @@ describe('a document the host fails to read', () => {
     await tick()
     expect(readyAt('d')).toBe(false)
     expect(currentNotification()?.message).toBe('unreadable')
+    await act(async () => currentNotification()?.action?.run())
+    await tick()
+    expect(readyAt('d')).toBe(true)
   })
 })
 
