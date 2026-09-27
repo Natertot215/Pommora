@@ -39,8 +39,12 @@ const view = (rules: unknown[], extra: Raw = {}): Raw => ({
 const del = (path: string, kind: MutableKind) =>
   confirmedMutate(root, { op: 'delete', path, kind }, nexusDeps)
 
-const setOf = async (parent: string, name: string): Promise<{ id: string; path: string }> => {
-  const made = await createFolderEntity(parent, 'set', name)
+const entity = async (
+  parent: string,
+  kind: 'collection' | 'set',
+  name: string,
+): Promise<{ id: string; path: string }> => {
+  const made = await createFolderEntity(parent, kind, name)
   if (!made.ok) throw new Error(`${name} failed`)
   return made.value
 }
@@ -51,9 +55,7 @@ const addWork = (): Promise<void> =>
 beforeEach(async () => {
   root = tempRoot('pom-delete-reach-')
   await put(nexusConfig(root, NEXUS_CONFIG_FILES.identity), { id: 'nx', createdAt: '2026' })
-  const made = await createFolderEntity(root, 'collection', 'Notes')
-  if (!made.ok) throw new Error('Notes failed')
-  notes = made.value.path
+  notes = (await entity(root, 'collection', 'Notes')).path
   await openSession(root)
 })
 
@@ -153,10 +155,17 @@ describe('a Set delete', () => {
   let goneTile: Raw
   let goneSidecar: string
 
+  const trashGone = async (): Promise<string> => {
+    const r = await del('Notes/Gone', 'set')
+    const bundlePath = r.ok ? r.value.trashed?.bundlePath : undefined
+    if (!bundlePath) throw new Error('the delete did not trash')
+    return bundlePath
+  }
+
   beforeEach(async () => {
-    gone = await setOf(notes, 'Gone')
-    const sub = await setOf(gone.path, 'Sub')
-    const keep = await setOf(notes, 'Keep')
+    gone = await entity(notes, 'set', 'Gone')
+    const sub = await entity(gone.path, 'set', 'Sub')
+    const keep = await entity(notes, 'set', 'Keep')
     located = view(
       [
         { property_id: '_location', op: 'is', values: [gone.id, keep.id] },
@@ -196,28 +205,23 @@ describe('a Set delete', () => {
   })
 
   it('leaves the trashed copy of its own sidecar byte-identical', async () => {
-    const r = await del('Notes/Gone', 'set')
-    const bundlePath = r.ok ? r.value.trashed?.bundlePath : undefined
-    if (!bundlePath) throw new Error('the delete did not trash')
+    const bundlePath = await trashGone()
     expect(await readFile(join(root, bundlePath, 'Gone', SIDECAR_FILENAME.set), 'utf8')).toBe(
       goneSidecar,
     )
   })
 
   it('restores the Set with its own views and none of the configuration that named it', async () => {
-    const r = await del('Notes/Gone', 'set')
-    const bundlePath = r.ok ? r.value.trashed?.bundlePath : undefined
-    if (!bundlePath) throw new Error('the delete did not trash')
+    const bundlePath = await trashGone()
     expect((await confirmedMutate(root, { op: 'restore', bundlePath }, nexusDeps)).ok).toBe(true)
     expect((await json(sidecarPath(gone.path, 'set'))).views).toEqual([located])
     expect((await surfaces.read()).collection).toEqual(stripped)
   })
 
   it('lands and warns when the pass can’t read a sidecar', async () => {
-    const other = await createFolderEntity(root, 'collection', 'Other')
-    if (!other.ok) throw new Error('Other failed')
+    const other = await entity(root, 'collection', 'Other')
     await refreshTree(root)
-    const otherFile = sidecarPath(other.value.path, 'collection')
+    const otherFile = sidecarPath(other.path, 'collection')
     await rm(otherFile)
     await mkdir(otherFile)
     const r = await del('Notes/Gone', 'set')
@@ -229,16 +233,15 @@ describe('a Collection delete', () => {
   it('strips it and its Sets from the Matrix and leaves the surviving Collection', async () => {
     const surfaces = await seedConfigSurfaces(root, notes, viewOn('prop_s', 'Done'))
     const deep = (await json(sidecarPath(surfaces.set, 'set'))).id
-    const old = await createFolderEntity(root, 'collection', 'Old')
-    if (!old.ok) throw new Error('Old failed')
-    const oldSet = await setOf(old.value.path, 'OldSet')
+    const old = await entity(root, 'collection', 'Old')
+    const oldSet = await entity(old.path, 'set', 'OldSet')
     const matrix = nexusConfig(root, NEXUS_CONFIG_FILES.matrix)
     const locatedRule = (values: unknown[]) => ({
       match: 'all',
       rules: [{ property_id: '_location', op: 'is', values }],
     })
     await put(matrix, {
-      filter: { rules: locatedRule([old.value.id, oldSet.id, deep]), enabled: true },
+      filter: { rules: locatedRule([old.id, oldSet.id, deep]), enabled: true },
     })
     await refreshTree(root)
     const before = await surfaces.read()

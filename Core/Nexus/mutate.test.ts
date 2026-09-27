@@ -1947,16 +1947,14 @@ describe('the Contexts lock', () => {
     unlinkSpaceValue: contextCascade.unlinkSpaceValue,
     unlinkContextKey: contextCascade.unlinkContextKey,
   }
-  const tagDuringDelete = async (
-    sweep: keyof typeof sweeps,
-    req: Extract<MutateRequest, { op: 'delete' }>,
-  ): Promise<string> => {
+  const tagDuringDelete = async (kind: 'space' | 'context', path: string): Promise<string> => {
     installStores(memoryStores().stores)
     await seedContentIndex(root)
     let worldLoaded = (): void => {}
     const loaded = new Promise<void>((resolve) => {
       worldLoaded = resolve
     })
+    const sweep = kind === 'space' ? 'unlinkSpaceValue' : 'unlinkContextKey'
     const unlink = sweeps[sweep] as (...args: unknown[]) => Promise<unknown>
     const deleteWaits = vi.spyOn(contextCascade, sweep).mockImplementation((async (
       ...args: unknown[]
@@ -1964,7 +1962,7 @@ describe('the Contexts lock', () => {
       await Promise.race([loaded, new Promise((resolve) => setTimeout(resolve, 50))])
       return unlink(...args)
     }) as never)
-    const deleting = handleMutate(root, req, nexusDeps)
+    const deleting = handleMutate(root, { op: 'delete', path, kind }, nexusDeps)
     const folders = assignment.collectionFolders
     const tagWaits = vi.spyOn(assignment, 'collectionFolders').mockImplementation(async (r) => {
       worldLoaded()
@@ -1985,23 +1983,15 @@ describe('the Contexts lock', () => {
   }
 
   it('a page tag written during a Space delete is refused as an unknown Space', async () => {
-    expect(
-      await tagDuringDelete('unlinkSpaceValue', {
-        op: 'delete',
-        path: '.nexus/contexts/Areas/Work',
-        kind: 'space',
-      }),
-    ).toBe('not-found: Unknown Space.')
+    expect(await tagDuringDelete('space', '.nexus/contexts/Areas/Work')).toBe(
+      'not-found: Unknown Space.',
+    )
   })
 
   it('a page tag written during a Context delete is refused as an unknown Space', async () => {
-    expect(
-      await tagDuringDelete('unlinkContextKey', {
-        op: 'delete',
-        path: '.nexus/contexts/Areas',
-        kind: 'context',
-      }),
-    ).toBe('not-found: Unknown Space.')
+    expect(await tagDuringDelete('context', '.nexus/contexts/Areas')).toBe(
+      'not-found: Unknown Space.',
+    )
   })
 
   it('a Space created during a Context rename lands in the renamed Context', async () => {

@@ -61,6 +61,6 @@ export async function moveSetOp(
   await setChildOrder(at.value.dst, 'set_order', req.order)
   const rescope = await landedFolder(root, at.value.src, r.value.path)
   noteValueWrite(root, r.value.path)
-  const reach = left && edit && (await reachConfig(root, edit, join(root, left)))
+  const reach = left && edit ? await reachConfig(root, edit, join(root, left)) : null
   return ok({ rescope, ...(reach ? { cascade: reachReport(reach) } : {}) })
 }
