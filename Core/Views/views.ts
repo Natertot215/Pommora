@@ -102,6 +102,97 @@ export const filterGroup: z.ZodType<FilterGroup> = z.object({
   },
 })
 
+export const FILTER_OPS = {
+  is: 'is',
+  isNot: 'is_not',
+  contains: 'contains',
+  doesNotContain: 'does_not_contain',
+  isEmpty: 'is_empty',
+  isNotEmpty: 'is_not_empty',
+  greaterThan: 'greater_than',
+  lessThan: 'less_than',
+  onOrAfter: 'on_or_after',
+  onOrBefore: 'on_or_before',
+  startsWith: 'starts_with',
+  containsAll: 'contains_all',
+  containsAny: 'contains_any',
+  isBefore: 'is_before',
+  isAfter: 'is_after',
+  greaterOrEqual: 'greater_or_equal',
+  lessOrEqual: 'less_or_equal',
+  isInside: 'is_inside',
+  isNotInside: 'is_not_inside',
+} as const
+
+/** The ops that are complete without an operand; everything else is unauthored until one arrives. */
+export const OPERANDLESS_OPS = new Set<string>([FILTER_OPS.isEmpty, FILTER_OPS.isNotEmpty])
+
+export const SUBSTRING_OPS = new Set<string>([
+  FILTER_OPS.contains,
+  FILTER_OPS.doesNotContain,
+  FILTER_OPS.startsWith,
+])
+
+/** A chip list wins over a single value, as the pane writes one or the other. */
+export const ruleOperands = (rule: FilterRule): string[] =>
+  rule.values?.length ? rule.values : rule.value != null ? [rule.value] : []
+
+// Read over raw stored rules as well as decoded ones, so a foreign `null` entry is a leaf, never a throw.
+export const isGroup = (node: FilterRule | FilterGroup): node is FilterGroup =>
+  isPlainObject(node) && Array.isArray((node as { rules?: unknown }).rules)
+
+/** Every leaf through `fn`, at every depth; a null drops the rule, and a foreign non-object entry rides through. */
+export function mapRules(
+  group: FilterGroup,
+  fn: (rule: FilterRule) => FilterRule | null,
+): FilterGroup {
+  return {
+    ...group,
+    rules: group.rules.flatMap<FilterRule | FilterGroup>((node) =>
+      isGroup(node) ? [mapRules(node, fn)] : isPlainObject(node) ? (fn(node) ?? []) : [node],
+    ),
+  }
+}
+
+/** A list with each changed element replaced; null when nothing changed. */
+export function mapList<T>(xs: readonly T[], f: (x: T, i: number) => T | null): T[] | null {
+  let found = false
+  const next = xs.map((x, i) => {
+    const y = f(x, i)
+    if (y !== null) found = true
+    return y ?? x
+  })
+  return found ? next : null
+}
+
+type RawView = Record<string, unknown>
+
+/** A container sidecar's `views[]`, or a View Tile entry's `views[].config`, each with its index; null when nothing changed. */
+export function mapViews(
+  doc: Record<string, unknown>,
+  fn: (view: RawView, i: number) => RawView | null,
+): Record<string, unknown> | null {
+  if (!Array.isArray(doc.views)) return null
+  const tile = doc.type === 'view'
+  const views = mapList(doc.views as unknown[], (v, i) => {
+    const view = tile ? (isPlainObject(v) ? v.config : null) : v
+    if (!isPlainObject(view)) return null
+    const next = fn(view, i)
+    return next && (tile ? { ...(v as RawView), config: next } : next)
+  })
+  return views && { ...doc, views }
+}
+
+/** A tile document's `tiles[]` entries through `fn`; null when nothing changed. */
+export function mapTiles(
+  doc: Record<string, unknown>,
+  fn: (tile: Record<string, unknown>) => Record<string, unknown> | null,
+): Record<string, unknown> | null {
+  if (!Array.isArray(doc.tiles)) return null
+  const tiles = mapList(doc.tiles as unknown[], (t) => (isPlainObject(t) ? fn(t) : null))
+  return tiles && { ...doc, tiles }
+}
+
 const GROUP_ORDER_MODE_SET = new Set<string>(GROUP_ORDER_MODES)
 const DATE_GRANULARITY_SET = new Set<string>(DATE_GRANULARITIES)
 

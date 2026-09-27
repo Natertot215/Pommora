@@ -2,9 +2,14 @@
 
 import { type PropertyDefinition, specOf } from '@pommora/core/Properties/properties'
 import type { PropertyValue } from '@pommora/core/Properties/propertyValue'
-import type { FilterGroup, FilterRule } from '@pommora/core/Views/views'
+import {
+  FILTER_OPS,
+  type FilterGroup,
+  type FilterRule,
+  isGroup,
+  ruleOperands,
+} from '@pommora/core/Views/views'
 import { declaredType } from '@pommora/core/Properties/value'
-import { FILTER_OPS, ruleOperands } from './filter'
 import { groupKeyToValue } from '../reassign'
 
 const LIST_OPS: ReadonlySet<string> = new Set([FILTER_OPS.containsAny, FILTER_OPS.containsAll])
@@ -45,7 +50,7 @@ export function filterSeeds(
   const walk = (group: FilterGroup): void => {
     if (group.match !== 'all' && group.rules.length > 1) return
     for (const entry of group.rules) {
-      if ('rules' in entry) {
+      if (isGroup(entry)) {
         walk(entry)
         continue
       }

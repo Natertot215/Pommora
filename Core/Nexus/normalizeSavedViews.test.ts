@@ -90,7 +90,10 @@ describe('normalizeSavedViews', () => {
     const tile = (icon: string) => ({ config: { ...view('embed'), icon }, source_id: 's' })
     await writeFile(
       tileDoc,
-      JSON.stringify({ layout: [], tiles: [{ id: 't', views: [tile('table'), tile('star')] }] }),
+      JSON.stringify({
+        layout: [],
+        tiles: [{ id: 't', type: 'view', views: [tile('table'), tile('star')] }],
+      }),
     )
     await open()
     expect((await viewsIn('Notes')).map((v) => v.icon)).toEqual(['view-table', 'star'])

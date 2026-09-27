@@ -13,6 +13,9 @@ import {
   mintDefaultView,
   mintNewView,
   pickViewState,
+  mapRules,
+  mapTiles,
+  mapViews,
   type FilterGroup,
   type FilterRule,
   type SavedView,
@@ -480,5 +483,60 @@ describe('viewOption', () => {
     expect(granularityOf({})).toBe('month')
     expect(granularityOf(undefined)).toBe('month')
     expect(granularityOf({ date_granularity: 'week' })).toBe('week')
+  })
+})
+
+describe('the saved-view traversal', () => {
+  const stamp = (v: Record<string, unknown>) => ({ ...v, seen: true })
+
+  it('mapViews keeps each view at its index across a non-object element', () => {
+    const seen: number[] = []
+    const out = mapViews({ views: [{ id: 'a' }, 7, { id: 'b' }] }, (v, i) => {
+      seen.push(i)
+      return v.id === 'b' ? stamp(v) : null
+    })
+    expect(seen).toEqual([0, 2])
+    expect(out).toEqual({ views: [{ id: 'a' }, 7, { id: 'b', seen: true }] })
+  })
+
+  it('mapViews answers null for an unchanged list', () => {
+    expect(mapViews({ views: [{ id: 'a' }] }, () => null)).toBeNull()
+    expect(mapViews({ other: 1 }, stamp)).toBeNull()
+  })
+
+  it('mapViews re-wraps a View Tile config and keeps the entry’s other keys', () => {
+    const tile = { id: 't', type: 'view', views: [{ config: { id: 'v' }, source_id: 's' }] }
+    expect(mapViews(tile, stamp)).toEqual({
+      ...tile,
+      views: [{ config: { id: 'v', seen: true }, source_id: 's' }],
+    })
+  })
+
+  it('mapViews rides a view’s foreign keys through', () => {
+    const out = mapViews({ views: [{ id: 'a', future_key: { x: 1 } }] }, (v) => ({ ...v, id: 'b' }))
+    expect(out).toEqual({ views: [{ id: 'b', future_key: { x: 1 } }] })
+  })
+
+  it('mapTiles skips a non-object entry and answers null when no entry changed', () => {
+    const doc = { layout: [], tiles: [null, { id: 't' }] }
+    expect(mapTiles(doc, () => null)).toBeNull()
+    expect(mapTiles(doc, stamp)).toEqual({ layout: [], tiles: [null, { id: 't', seen: true }] })
+  })
+
+  it('mapRules drops a nested rule, keeps the group’s other keys, and rides a null entry through', () => {
+    const group = {
+      match: 'all',
+      note: 'kept',
+      rules: [
+        { property_id: 'a', op: 'is', value: 'x' },
+        null,
+        { match: 'any', rules: [{ property_id: 'b', op: 'is', value: 'y' }] },
+      ],
+    } as unknown as FilterGroup
+    expect(mapRules(group, (rule) => (rule.property_id === 'b' ? null : rule))).toEqual({
+      match: 'all',
+      note: 'kept',
+      rules: [{ property_id: 'a', op: 'is', value: 'x' }, null, { match: 'any', rules: [] }],
+    })
   })
 })

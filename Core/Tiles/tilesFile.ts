@@ -19,7 +19,7 @@ import { insertBand } from './Layout/ops'
 import { fail, ok, type Result, valueOr, fault } from '../Contract/result'
 import { readTileDocAt, writeTileDocAt } from './tileDoc'
 import { newId } from '../Nexus/ids'
-import { mintDefaultView, mintViewId } from '../Views/views'
+import { mapViews, mintDefaultView, mintViewId } from '../Views/views'
 import { readStoredView } from '../Views/viewsFile'
 import { resolveContainerSchema } from '../Views/Pipeline/pickView'
 import type { Json } from '../Files/stableJson'
@@ -195,15 +195,10 @@ async function convertedEntry(root: string, pick: unknown): Promise<Result<Json>
 }
 
 /** The source view's id and the DEFAULT_VIEW_ID sentinel are live keys outside the payload — preserving one would silently re-couple a copied snapshot to its source. */
-export function copyEntry(raw: unknown): unknown {
-  if (!isPlainObject(raw) || raw.type !== 'view' || !Array.isArray(raw.views)) return raw
-  const views = raw.views.map((v) =>
-    isPlainObject(v) && isPlainObject(v.config)
-      ? { ...v, config: { ...v.config, id: mintViewId() } }
-      : v,
-  )
-  return { ...raw, views }
-}
+export const copyEntry = (raw: unknown): unknown =>
+  isPlainObject(raw) && raw.type === 'view'
+    ? (mapViews(raw, (config) => ({ ...config, id: mintViewId() })) ?? raw)
+    : raw
 
 export async function duplicateTile(
   dir: string,

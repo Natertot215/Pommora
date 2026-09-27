@@ -58,7 +58,7 @@ import {
   filterTargets,
   operatorsFor,
 } from '../filterModel'
-import { ruleOperands } from '../Pipeline/filter'
+import { ruleOperands } from '@pommora/core/Views/views'
 import * as fp from './filter-frame.css'
 import { NeutralChip } from '@pommora/uix/Labels/recipes'
 import { OptionChip } from '../../Properties/Cells/OptionChip'

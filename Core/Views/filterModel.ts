@@ -6,11 +6,16 @@ import {
   specOf,
 } from '@pommora/core/Properties/properties'
 import type { ValueKind } from '@pommora/core/Properties/propertyValue'
-import type { FilterGroup, FilterRule, MatchMode } from '@pommora/core/Views/views'
+import {
+  FILTER_OPS,
+  type FilterGroup,
+  type FilterRule,
+  isGroup,
+  type MatchMode,
+} from '@pommora/core/Views/views'
 import type { NexusTree } from '@pommora/core/Nexus/tree'
 import { contextIdsOf } from '../Contexts/contextIdentity'
 import { declaredType } from '../Properties/value'
-import { FILTER_OPS } from './Pipeline/filter'
 import {
   contextPaneTargets,
   type PaneTarget,
@@ -31,9 +36,8 @@ export type DecodedFilter =
   | { kind: 'rows'; mode: MatchMode; rows: FilterRow[] }
   | { kind: 'locked' }
 
-const isLeaf = (node: FilterRule | FilterGroup): node is FilterRule => !('rules' in node)
 const isAllOfLeaves = (node: FilterRule | FilterGroup): node is FilterGroup =>
-  !isLeaf(node) && node.match === 'all' && node.rules.every(isLeaf)
+  isGroup(node) && node.match === 'all' && !node.rules.some(isGroup)
 
 export const connectorFor = (mode: MatchMode): Connector => (mode === 'any' ? 'or' : 'and')
 
@@ -56,20 +60,23 @@ export function encodeFilter(mode: MatchMode, rows: FilterRow[]): FilterGroup | 
 export function decodeFilter(filter: FilterGroup | undefined): DecodedFilter {
   if (!filter) return { kind: 'rows', mode: 'all', rows: [] }
 
-  if (filter.rules.every(isLeaf)) {
+  if (!filter.rules.some(isGroup)) {
     const connector = connectorFor(filter.match)
     return {
       kind: 'rows',
       mode: filter.match,
-      rows: filter.rules.map((rule, i) => ({ connector: i === 0 ? null : connector, rule })),
+      rows: (filter.rules as FilterRule[]).map((rule, i) => ({
+        connector: i === 0 ? null : connector,
+        rule,
+      })),
     }
   }
 
-  if (filter.match === 'all' || !filter.rules.every((n) => isLeaf(n) || isAllOfLeaves(n)))
+  if (filter.match === 'all' || !filter.rules.every((n) => !isGroup(n) || isAllOfLeaves(n)))
     return { kind: 'locked' }
   const rows: FilterRow[] = []
   for (const child of filter.rules) {
-    const run = isLeaf(child) ? [child] : (child.rules as FilterRule[])
+    const run = isGroup(child) ? (child.rules as FilterRule[]) : [child]
     run.forEach((rule, i) => {
       rows.push({ connector: rows.length === 0 ? null : i === 0 ? 'or' : 'and', rule })
     })

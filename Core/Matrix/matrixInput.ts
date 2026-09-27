@@ -4,10 +4,10 @@ import { pageIndexOf } from '../Nexus/treeIndex'
 import { spaceRowOf } from '../Properties/pageRow'
 import { type PropertyDefinition, specOf } from '../Properties/properties'
 import { declaredType } from '../Properties/value'
-import { applyFilter, OPERANDLESS_OPS } from '../Views/Pipeline/filter'
+import { applyFilter } from '../Views/Pipeline/filter'
 import { buildSetTree, type SetTreeNode, toRow } from '../Views/Pipeline/group'
 import type { ViewRow } from '../Views/viewRow'
-import type { FilterGroup, FilterRule } from '../Views/views'
+import { type FilterRule, mapRules, OPERANDLESS_OPS } from '../Views/views'
 import type { ConnectionKind, GraphInput } from './Engine/graph'
 import type { MatrixConfig } from './matrixConfig'
 import type { MatrixGraphReply } from './matrixGraph'
@@ -96,24 +96,6 @@ function answers(
   }
 }
 
-function pruneFilterFor(
-  row: ViewRow,
-  filter: FilterGroup,
-  schema: PropertyDefinition[],
-  contextIds: readonly string[],
-): FilterGroup {
-  return {
-    match: filter.match,
-    rules: filter.rules.flatMap<FilterRule | FilterGroup>((node) =>
-      'rules' in node
-        ? [pruneFilterFor(row, node, schema, contextIds)]
-        : answers(row, node, schema, contextIds)
-          ? [node]
-          : [],
-    ),
-  }
-}
-
 // Rows exist only for a filter to read, so a Matrix with none set builds none.
 export function matrixVisible(
   held: MatrixTree,
@@ -140,7 +122,9 @@ export function matrixVisible(
           [g.def.id]: [...(own.contextValues?.[g.def.id] ?? []), s.id],
         },
       }
-      const pruned = pruneFilterFor(row, rules, schema, contextIds)
+      const pruned = mapRules(rules, (rule) =>
+        answers(row, rule, schema, contextIds) ? rule : null,
+      )
       if (applyFilter([row], pruned, schema, [], contextIds).length > 0) ids.add(row.id)
     }
   return ids
