@@ -85,7 +85,7 @@ async function dispatch(ctx: MutateContext, req: MutateRequest): Promise<MutateR
       return deleteOp(ctx, req)
 
     case 'restore':
-      return restoreOp(ctx, req)
+      return underContexts(() => restoreOp(ctx, req))
 
     case 'emptyBundle': {
       const resolved = await resolveUnderRoot(root, req.bundlePath)

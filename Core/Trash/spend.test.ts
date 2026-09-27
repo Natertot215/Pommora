@@ -765,6 +765,31 @@ describe('restore — the record spends, headless', () => {
     expect(sap['<Projects>']).toEqual(['Pommora'])
   })
 
+  it('a Space restored during its Context’s rename lands in the renamed Context, its tags under the new key', async () => {
+    await confirmedMutate(
+      root,
+      { op: 'delete', path: '.nexus/contexts/Projects/Pommora', kind: 'space' },
+      nexusDeps,
+    )
+    const [listed] = await listBundles(root)
+    const [renamed, restored] = await Promise.all([
+      confirmedMutate(
+        root,
+        { op: 'renameContext', contextId: 'ctx_projects', newName: 'Ventures' },
+        nexusDeps,
+      ),
+      confirmedMutate(root, { op: 'restore', bundlePath: listed.bundlePath }, nexusDeps),
+    ])
+    expect(renamed.ok && restored.ok).toBe(true)
+    expect(await pathExists(join(contextsDir(root), 'Ventures', 'Pommora', '_space.json'))).toBe(
+      true,
+    )
+    expect(await pathExists(join(contextsDir(root), 'Projects'))).toBe(false)
+    const fm = splitFrontmatter(await readFile(join(root, 'Notes', 'Daily', 'Alpha.md'), 'utf8'))
+    expect(fm['<Ventures>']).toEqual(['Pommora'])
+    expect('<Projects>' in fm).toBe(false)
+  })
+
   it('a tag that can’t go back is named, and the record stays', async () => {
     await confirmedMutate(
       root,
