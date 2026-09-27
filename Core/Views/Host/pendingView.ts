@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import type { SavedView } from '@pommora/core/Views/views'
 import { same } from '@pommora/core/Files/jsonMerge'
+import { useLatest } from '@pommora/uix/Utilities/stableApi'
 
 export type ViewPatch = Partial<SavedView>
 
@@ -85,6 +86,7 @@ const NOTHING: Staged = {}
 
 /** `resetKey` is the identity the host paints; a change drops every slot, since nothing staged over another view can settle against this one. */
 export function usePendingView(view: SavedView, resetKey: string) {
+  const latest = useLatest(view)
   const [staged, setStaged] = useState<Staged>(NOTHING)
   useEffect(() => setStaged(NOTHING), [resetKey])
   useEffect(() => setStaged((s) => settle(s, view)), [view])
@@ -96,6 +98,6 @@ export function usePendingView(view: SavedView, resetKey: string) {
       ),
     [view, staged],
   )
-  const stage = (patch: ViewPatch): void => setStaged((s) => stageOver(s, view, patch))
+  const stage = (patch: ViewPatch): void => setStaged((s) => stageOver(s, latest.current, patch))
   return { liveView, stage }
 }

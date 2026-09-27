@@ -50,6 +50,15 @@ describe('a whole field', () => {
     expect(live.collapsed_groups).toEqual(['b'])
   })
 
+  it('a stage captured before the view changed stages over the view as it is now', async () => {
+    await show(base())
+    const captured = stage
+    await show(base({ collapsed_groups: ['x'] }))
+    await act(async () => captured({ collapsed_groups: ['a'] }))
+    await show(base({ collapsed_groups: ['x'] }))
+    expect(live.collapsed_groups).toEqual(['a'])
+  })
+
   it('stays while the stored value is its base', async () => {
     await show(base({ collapsed_groups: ['x'] }))
     await put({ collapsed_groups: ['a'] })

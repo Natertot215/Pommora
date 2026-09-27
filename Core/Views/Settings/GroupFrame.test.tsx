@@ -257,6 +257,21 @@ describe('GroupFrame rows', () => {
     expect(lastSaved().hidden_groups).toEqual([])
   })
 
+  it('a date bucket hidden under its legacy bare key keeps a row, and showing it drops the key', async () => {
+    await mount(
+      view({
+        group: { kind: 'property', property_id: 'prop_when', order_mode: 'configured' },
+        hidden_groups: ['2024-05'],
+      }),
+    )
+    const shown = host.querySelectorAll('button[aria-label^="Show "]')
+    expect(shown).toHaveLength(1)
+    await act(async () => {
+      ;(shown[0] as HTMLElement).click()
+    })
+    expect(lastSaved().hidden_groups).toEqual([])
+  })
+
   it('the Hide Empty Groups switch writes the view-level knob', async () => {
     await mount(view())
     const sw = host.querySelector('button[aria-label="Hide Empty Groups"]') as HTMLElement
