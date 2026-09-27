@@ -246,16 +246,27 @@ describe('structuralOrderAfterDrop', () => {
 
 describe('propertyOrderAfterDrop', () => {
   it('moves the dragged key before the target within the present keys', () => {
-    expect(propertyOrderAfterDrop(['open', 'active', 'done'], 'done', 'open')).toEqual([
+    expect(propertyOrderAfterDrop([], ['open', 'active', 'done'], 'done', 'open')).toEqual([
       'done',
       'open',
       'active',
     ])
-    expect(propertyOrderAfterDrop(['open', 'active', 'done'], 'open', null)).toEqual([
+    expect(propertyOrderAfterDrop([], ['open', 'active', 'done'], 'open', null)).toEqual([
       'active',
       'done',
       'open',
     ])
+  })
+
+  it('keeps a stored bucket no band shows where it stood, and lists a new band after the stored ones', () => {
+    expect(
+      propertyOrderAfterDrop(
+        ['Gimel', 'Beta', 'Alef', 'Dalet'],
+        ['Beta', 'Alef', 'Dalet', 'New'],
+        'Dalet',
+        'Beta',
+      ),
+    ).toEqual(['Gimel', 'Dalet', 'Beta', 'Alef', 'New'])
   })
 })
 

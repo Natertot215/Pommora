@@ -115,12 +115,15 @@ export function structuralOrderAfterDrop(
   )
 }
 
+/** A manual order keeps its buckets no band shows (hidden, or emptied by a filter) where they stood; the bands shown and not yet listed follow, as the pipeline paints them. */
 export function propertyOrderAfterDrop(
+  stored: readonly string[],
   presentKeys: string[],
   draggedKey: string,
   beforeKey: string | null,
 ): string[] {
-  return nextOrder(presentKeys, draggedKey, beforeKey)
+  const universe = [...stored, ...presentKeys.filter((k) => !stored.includes(k))]
+  return nextOrder(universe, draggedKey, beforeKey)
 }
 
 export function bandReorderPatch(input: {
@@ -137,7 +140,12 @@ export function bandReorderPatch(input: {
       group: {
         ...view.group,
         order_mode: 'manual',
-        order: propertyOrderAfterDrop(propertyKeys, dragged.id, beforeId),
+        order: propertyOrderAfterDrop(
+          view.group.order_mode === 'manual' ? (view.group.order ?? []) : [],
+          propertyKeys,
+          dragged.id,
+          beforeId,
+        ),
       },
     }
   }
@@ -185,6 +193,9 @@ export function subGroupOrderPatch(
   if (beforeBucket === draggedBucket) return null
   const present = [...new Set(bucketByKey.values())]
   return {
-    sub_group: { ...sub, order: propertyOrderAfterDrop(present, draggedBucket, beforeBucket) },
+    sub_group: {
+      ...sub,
+      order: propertyOrderAfterDrop(sub.order ?? [], present, draggedBucket, beforeBucket),
+    },
   }
 }
