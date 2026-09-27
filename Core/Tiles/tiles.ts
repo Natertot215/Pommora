@@ -171,6 +171,9 @@ export interface ViewPick {
 
 export type TilePick = { kind: 'page'; value: string } | { kind: 'view'; value: ViewPick }
 
+export const tileIdOf = (raw: unknown): string | null =>
+  isPlainObject(raw) && isUlidShaped(raw.id) ? raw.id : null
+
 export function knownTile(raw: unknown): TileEntry | null {
   const parsed = knownEntry.safeParse(raw)
   return parsed.success ? (parsed.data as TileEntry) : null

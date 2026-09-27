@@ -3,6 +3,7 @@ import { type CSSProperties, useCallback, useMemo, useRef, useState } from 'reac
 import {
   knownTile,
   NEW_TILE_H,
+  tileIdOf,
   type TileEntry,
   type TileHostRef,
   TILE_KINDS,
@@ -42,6 +43,7 @@ import {
 } from './tileDocStore'
 import { useTileDoc } from './useTileDoc'
 import { dialer } from '../Platform/dialer'
+import { isUlidShaped } from '../Nexus/identityMark'
 import { cx } from '@pommora/uix/Utilities/cx'
 import { RenderBoundary } from '@pommora/uix/Elements/RenderBoundary'
 import './tile-base.css'
@@ -139,9 +141,8 @@ export function TileHost({
   )
   const confirmRemove = useCallback(
     (id: string) => {
-      const kind = entries.get(id)?.type
       void askRemoveTile().then((ok) => {
-        if (!ok || !kind) return
+        if (!ok) return
         // Order is load-bearing: suppress the tile's editor flush, layout first (invisible orphan beats a dead box on a crash), then the entry + file.
         markTileRemoving(id)
         setEditingId((cur) => (cur === id ? null : cur))
@@ -164,12 +165,21 @@ export function TileHost({
             JSON.stringify(cur) === untouched ? before : insertBand(cur, band, id, h),
           )
         }
+        // A box whose id can't name a tile has nothing on the host, so leaving the board is its whole removal.
+        if (!isUlidShaped(id)) {
+          unmarkTileRemoving(id)
+          return notifyUndoable('Deleted Tile')
+        }
         void landTileWrite(host, dialer().ask('tiles:removeTile', host, id)).then((r) => {
           if (!reportRefusal(r)) return putBack()
           unmarkTileRemoving(id)
           const { removed } = r.value
+          const kind = knownTile(removed.entry)?.type
+          const label = `Deleted ${kind ? TILE_KINDS[kind].label : 'Tile'}`
+          // A box with no entry behind it has nothing to restore, so its removal is final.
+          if (tileIdOf(removed.entry) === null) return notifyUndoable(label)
           const body = readTileBody(id) ?? removed.body
-          notifyUndoable(`Deleted ${TILE_KINDS[kind].label}`, async () => {
+          notifyUndoable(label, async () => {
             const back = await landTileWrite(
               host,
               dialer().ask('tiles:restoreTile', host, {
@@ -183,7 +193,7 @@ export function TileHost({
         })
       })
     },
-    [entries, commitLayout, host],
+    [commitLayout, host],
   )
 
   const tileClassName = useCallback(
@@ -203,12 +213,12 @@ export function TileHost({
     (id: string, e: React.MouseEvent) => {
       const entry = entries.get(id)
       const { tree, personalization } = useSession.getState()
-      if (!entry || !tree) return
+      if (!tree) return
       const { defaultIcons } = personalization
-      const page = tileSourceInfo(entry, pagesById)
+      const page = entry && tileSourceInfo(entry, pagesById)
       const pageItems = pagePickTree(tree, defaultIcons, (p) => p.id)
       const viewItems = viewPickTree(tree, defaultIcons)
-      const build = (on: TileEntry): ReturnType<typeof tileMenuItems> =>
+      const build = (on: TileEntry | undefined): ReturnType<typeof tileMenuItems> =>
         tileMenuItems({
           entry: on,
           pageItems,
@@ -219,13 +229,15 @@ export function TileHost({
           },
           containerLocked: hostLocked,
         })
+      const latest = (): TileEntry | undefined => storedEntry(host, id) ?? entry
       let built = build(entry)
       const arg = (action: string, prefix: string): string | undefined =>
         action.startsWith(prefix) ? action.slice(prefix.length) : undefined
       const run = (action: string): void => {
         const picked = arg(action, 'tile:pick:')
         const chosen = picked === undefined ? undefined : built.picks[Number(picked)]
-        const patch = menuPatch(action, storedEntry(host, id) ?? entry)
+        const cur = latest()
+        const patch = cur && menuPatch(action, cur)
         if (chosen) applyPick(id, chosen)
         else if (patch) mutateEntry(id, () => patch)
         else if (action === 'tile:duplicate') duplicateTile(id)
@@ -239,7 +251,7 @@ export function TileHost({
       void popMenu(built.items, e.currentTarget as HTMLElement, {
         stay: (action) => {
           run(action)
-          built = build(storedEntry(host, id) ?? entry)
+          built = build(latest())
           return built.items
         },
       }).then((action) => {

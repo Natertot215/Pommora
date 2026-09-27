@@ -51,7 +51,7 @@ export function tileMenuItems({
   pageInfo,
   containerLocked,
 }: {
-  entry: TileEntry
+  entry: TileEntry | undefined
   pageItems: readonly PickItem<string>[]
   viewItems: readonly PickItem<ViewPick>[]
   pageInfo?: { title: string; icon: string }
@@ -59,7 +59,10 @@ export function tileMenuItems({
 }): { items: ActionItem<TileMenuAction>[]; picks: TilePick[] } {
   // Rows name an index into `picks` because a menu row can't carry a pick.
   const picks: TilePick[] = []
-  const locked = (entry.locked ?? false) || containerLocked
+  const locked = (entry?.locked ?? false) || containerLocked
+  const deleteRow = { label: 'Delete', icon: 'x', action: 'tile:delete' as const, disabled: locked }
+  // A box with no entry this build can draw offers Delete alone, so it can still be removed.
+  if (!entry) return { items: [deleteRow], picks }
   const pickAction = (pick: TilePick): TileMenuAction => {
     picks.push(pick)
     return `tile:pick:${picks.length - 1}`
@@ -101,7 +104,7 @@ export function tileMenuItems({
       separatorBefore: true,
       disabled: locked,
     },
-    { label: 'Delete', icon: 'x', action: 'tile:delete', disabled: locked },
+    deleteRow,
     {
       label: containerLocked ? 'Locked' : lockLabel(locked),
       icon: locked ? 'locked' : 'lock-outline',
