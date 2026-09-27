@@ -82,7 +82,9 @@ async function dispatch(ctx: MutateContext, req: MutateRequest): Promise<MutateR
       return ok({ cascade: await renameCascade(root, titleFromPath(req.path), req, req.path) })
 
     case 'delete':
-      return deleteOp(ctx, req)
+      return req.kind === 'space' || req.kind === 'context'
+        ? underContexts(() => deleteOp(ctx, req))
+        : deleteOp(ctx, req)
 
     case 'restore':
       return underContexts(() => restoreOp(ctx, req))
