@@ -5,11 +5,10 @@ import { setOrDrop } from '../Files/atomicWrite'
 import { patchSidecar } from '../Files/sidecar'
 import { mutateRegistryFile } from '../Contexts/contextsRegistry'
 import { ICON_KEY } from '../Contexts/spaceSidecar'
-import { ok } from '../Contract/result'
 import { mutableTarget } from '../Nexus/liveTree'
 import { writePageMeta } from '../Nexus/pageMetadata'
 import type { MutateContext } from '../Nexus/mutate'
-import type { MutateReply, MutateRequest } from '../Nexus/mutateRequest'
+import { done, type MutateReply, type MutateRequest } from '../Nexus/mutateRequest'
 
 export async function setIconOp(
   { root }: MutateContext,
@@ -30,10 +29,10 @@ export async function setIconOp(
         return next
       }),
     }))
-    return r.ok ? ok({}) : r
+    return done(r)
   }
   const written = await patchSidecar(abs, req.kind, (cur) =>
     setOrDrop(cur, req.kind === 'space' ? ICON_KEY : 'icon', req.icon),
   )
-  return written.ok ? ok({}) : written
+  return done(written)
 }
