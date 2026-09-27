@@ -24,7 +24,13 @@ import {
 } from '../Contexts/contextWrite'
 import { renameContextOp, renameSpaceOp } from '../Contexts/contextCascade'
 import { reorderContextsOp } from '../Contexts/reorderContexts'
-import { done, type MutateReply, type MutateRequest } from './mutateRequest'
+import {
+  CONTAINER_KINDS,
+  done,
+  seedsContext,
+  type MutateReply,
+  type MutateRequest,
+} from './mutateRequest'
 import { setActiveView } from '../Views/viewsFile'
 import type { TrashDeps } from '../Trash/bundle'
 import { createContainerOp, createPageOp, createSpaceOp } from './create'
@@ -34,7 +40,6 @@ import { renameOp } from './rename'
 import { renameCascade } from './cascade'
 import { setChildOrder, setCollectionOrder, setPanelContextOrder, setSpaceOrder } from './reorder'
 import { mutableTarget } from './liveTree'
-import { CONTAINER_KINDS } from './mutateRequest'
 
 export interface MutateContext {
   root: string
@@ -63,7 +68,7 @@ async function dispatch(ctx: MutateContext, req: MutateRequest): Promise<MutateR
     machine().lock(contextsDir(root), fn)
   switch (req.op) {
     case 'createPage':
-      return Object.values(req.seeds ?? {}).some((v) => v.kind === 'context')
+      return seedsContext(req)
         ? underContexts(() => createPageOp(ctx, req))
         : createPageOp(ctx, req)
 

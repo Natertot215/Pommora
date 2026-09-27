@@ -1,6 +1,12 @@
 // After a successful write the matching change lands on the live tree, by pure transform or a one-file re-read. A write with no patch degrades to a walk, never a silently stale tree.
 
-import type { BannerOwnerKind, MutableKind, MutateOutcome, MutateRequest } from './mutateRequest'
+import {
+  seedsContext,
+  type BannerOwnerKind,
+  type MutableKind,
+  type MutateOutcome,
+  type MutateRequest,
+} from './mutateRequest'
 import type { CollectionNode, NexusTree, SetNode } from './tree'
 import {
   findContainerWhere,
@@ -163,8 +169,7 @@ async function routeMutation(
         case 'createPage': {
           const placed = req.order ? 'ok' : await patchContainerFromDisk(root, req.parentPath)
           // A Context seed lands after the birth write, so the page reads back its membership.
-          const seededContext = Object.values(req.seeds ?? {}).some((v) => v.kind === 'context')
-          return placed === 'ok' && seededContext && reply.created
+          return placed === 'ok' && seedsContext(req) && reply.created
             ? patchPage(root, reply.created.path)
             : placed
         }
