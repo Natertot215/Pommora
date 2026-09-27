@@ -13,6 +13,9 @@ export const namesValue =
     (typeof el === 'string' || typeof el === 'number' || typeof el === 'boolean') &&
     String(el) === value
 
+export const stripList = (xs: readonly unknown[], matches: Matcher): unknown[] | null =>
+  xs.some(matches) ? xs.filter((el) => !matches(el)) : null
+
 export function editList(
   xs: readonly unknown[],
   names: (value: string) => Matcher,
@@ -20,8 +23,8 @@ export function editList(
   edit: ValueEdit,
 ): unknown[] | null {
   const matches = names(target)
+  if (edit.op === 'strip') return stripList(xs, matches)
   if (!xs.some(matches)) return null
-  if (edit.op === 'strip') return xs.filter((el) => !matches(el))
   const isTo = names(edit.to)
   const out: unknown[] = []
   for (const el of xs) {

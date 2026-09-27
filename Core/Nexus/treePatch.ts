@@ -5,6 +5,7 @@ import { stabilize } from './treeStabilize'
 import type { CollectionNode, ContextGroup, NexusTree, PageNode, SetNode, SpaceNode } from './tree'
 import type { PropertyDefinition } from '../Properties/properties'
 import { basename, isMarkdownFile, relDirname, relJoin, titleFromPath } from '../Paths/posix'
+import { contextDirRel } from '../Paths/nexusPaths'
 
 // The walk's literal node shapes, stated once: every producer builds here, so a transform-built node and a walk-built one carry identical key sets — what lets `stabilize` prove convergence by reference identity. Never fold the factories together, and never drop a possibly-undefined key.
 
@@ -205,6 +206,15 @@ export function findContainerWhere(
   }
   return null
 }
+
+export const containerAt = (tree: NexusTree, rel: string): CollectionNode | SetNode | null =>
+  findContainerWhere(tree, (n) => n.path === rel)
+
+export const spaceAt = (tree: NexusTree, rel: string): SpaceNode | null =>
+  tree.contexts.flatMap((g) => g.spaces).find((s) => s.path === rel) ?? null
+
+export const contextAt = (tree: NexusTree, rel: string): ContextGroup | null =>
+  tree.contexts.find((g) => contextDirRel(g.def.title) === rel) ?? null
 
 export const pageIdsIn = (tree: NexusTree, path: string): string[] | undefined =>
   findContainerWhere(tree, (n) => n.path === path)?.pages.map((p) => p.id)

@@ -3,10 +3,9 @@
 import type { NexusTree } from './tree'
 import type { MutableKind } from './mutateRequest'
 import { pathExists } from '../Files/atomicWrite'
-import { contextDirRel } from '../Paths/nexusPaths'
 import { resolveUnderRoot } from '../Paths/pathSafety'
 import { fail, type Result } from '../Contract/result'
-import { findContainerWhere } from './treePatch'
+import { containerAt, contextAt, findContainerWhere, spaceAt } from './treePatch'
 import { readNexus } from './readNexus'
 import { sessionRoot } from './session'
 
@@ -76,14 +75,14 @@ export async function mutableTarget(
 function holds(tree: NexusTree, rel: string, kind: MutableKind): boolean {
   switch (kind) {
     case 'context':
-      return tree.contexts.some((g) => contextDirRel(g.def.title) === rel)
+      return !!contextAt(tree, rel)
     case 'space':
-      return tree.contexts.some((g) => g.spaces.some((s) => s.path === rel))
+      return !!spaceAt(tree, rel)
     case 'page':
       return !!findContainerWhere(tree, (c) => c.pages.some((p) => p.path === rel))
     case 'collection':
     case 'set':
-      return findContainerWhere(tree, (c) => c.path === rel)?.kind === kind
+      return containerAt(tree, rel)?.kind === kind
   }
 }
 
