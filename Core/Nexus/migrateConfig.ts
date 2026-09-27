@@ -15,6 +15,7 @@ import { contextsRegistryFile, nexusConfig, tileHostDir } from '../Paths/paths'
 import { join } from '../Paths/posix'
 import { machine } from '../Platform/machine'
 import { propertyType } from '../Properties/properties'
+import { mapTiles, mapViews } from '../Views/views'
 
 async function migrateFile(oldAbs: string, newAbs: string): Promise<void> {
   if (!(await pathExists(oldAbs))) return
@@ -50,22 +51,9 @@ const RENAMED: { key: string; from: string; to: string }[] = [
   { key: 'icon', from: 'table', to: 'view-table' },
 ]
 
-function renamedView(v: unknown): Record<string, unknown> | null {
-  if (!v || typeof v !== 'object') return null
-  const view = v as Record<string, unknown>
+function renamedView(view: Record<string, unknown>): Record<string, unknown> | null {
   const hits = RENAMED.filter((r) => view[r.key] === r.from)
   return hits.length ? { ...view, ...Object.fromEntries(hits.map((r) => [r.key, r.to])) } : null
-}
-
-const changed = (xs: unknown, f: (x: unknown) => unknown | null): unknown[] | null => {
-  if (!Array.isArray(xs)) return null
-  let found = false
-  const next = xs.map((x) => {
-    const y = f(x)
-    if (y) found = true
-    return y ?? x
-  })
-  return found ? next : null
 }
 
 const field = (
@@ -79,16 +67,10 @@ const field = (
 }
 
 export const renamedSidecar = (meta: unknown) =>
-  field(meta, 'views', (vs) => changed(vs, renamedView))
+  isPlainObject(meta) ? mapViews(meta, renamedView) : null
 
 const renamedTileDoc = (doc: unknown) =>
-  field(doc, 'tiles', (tiles) =>
-    changed(tiles, (tile) =>
-      field(tile, 'views', (entries) =>
-        changed(entries, (entry) => field(entry, 'config', renamedView)),
-      ),
-    ),
-  )
+  isPlainObject(doc) ? mapTiles(doc, (tile) => mapViews(tile, renamedView)) : null
 
 // Containers in scope ride the adoption pass (`stampFolder`); only the Trash and the tile documents are walked here.
 export async function normalizeSavedViews(root: string): Promise<void> {

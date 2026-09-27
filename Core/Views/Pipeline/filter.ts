@@ -1,6 +1,13 @@
 // Match modes are all = AND and any = OR at every depth; negation lives on the per-rule operators.
 
-import type { FilterGroup, FilterRule } from '@pommora/core/Views/views'
+import {
+  FILTER_OPS,
+  type FilterGroup,
+  type FilterRule,
+  isGroup,
+  OPERANDLESS_OPS,
+  ruleOperands,
+} from '@pommora/core/Views/views'
 import type { ViewRow } from '@pommora/core/Views/viewRow'
 import {
   PROPERTY_TYPES,
@@ -19,32 +26,7 @@ import { type LocalDate, readDate, startOfDay } from '../../Properties/formatVal
 import { foldKey } from '../../Paths/caseFold'
 import { numberFrom } from '@pommora/uix/Pickers/numberUnit'
 
-export const FILTER_OPS = {
-  is: 'is',
-  isNot: 'is_not',
-  contains: 'contains',
-  doesNotContain: 'does_not_contain',
-  isEmpty: 'is_empty',
-  isNotEmpty: 'is_not_empty',
-  greaterThan: 'greater_than',
-  lessThan: 'less_than',
-  onOrAfter: 'on_or_after',
-  onOrBefore: 'on_or_before',
-  startsWith: 'starts_with',
-  containsAll: 'contains_all',
-  containsAny: 'contains_any',
-  isBefore: 'is_before',
-  isAfter: 'is_after',
-  greaterOrEqual: 'greater_or_equal',
-  lessOrEqual: 'less_or_equal',
-  isInside: 'is_inside',
-  isNotInside: 'is_not_inside',
-} as const
-
 const FILTER_OP_SET = new Set<string>(Object.values(FILTER_OPS))
-
-/** The ops that are complete without an operand; everything else is unauthored until one arrives. */
-export const OPERANDLESS_OPS = new Set<string>([FILTER_OPS.isEmpty, FILTER_OPS.isNotEmpty])
 
 type RowTest = (row: ViewRow) => boolean
 type Evaluator = (v: PropertyValue, op: string, want: string[]) => boolean
@@ -67,10 +49,9 @@ function prepareGroup(
   contextIds: readonly string[],
 ): RowTest | undefined {
   const tests = group.rules.flatMap((node) => {
-    const test =
-      'rules' in node
-        ? prepareGroup(node, schema, setTree, contextIds)
-        : prepareRule(node, schema, setTree, contextIds)
+    const test = isGroup(node)
+      ? prepareGroup(node, schema, setTree, contextIds)
+      : prepareRule(node, schema, setTree, contextIds)
     return test ? [test] : []
   })
   if (tests.length === 0) return undefined
@@ -81,10 +62,6 @@ function prepareGroup(
       return (row) => tests.some((test) => test(row))
   }
 }
-
-/** A chip list wins over a single value, as the pane writes one or the other. */
-export const ruleOperands = (rule: FilterRule): string[] =>
-  rule.values?.length ? rule.values : rule.value != null ? [rule.value] : []
 
 function prepareRule(
   rule: FilterRule,
