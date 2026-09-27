@@ -1,6 +1,6 @@
 import { readFile, rm, writeFile, mkdir, stat } from 'node:fs/promises'
 import { join } from '../Paths/posix'
-import { seedSpaceSidecar, readSpaceSidecar, tempRoot } from '../Testing/hostFs'
+import { seedSpaceSidecar, readJsonAt, tempRoot } from '../Testing/hostFs'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { renameSweep } from './registryProperty'
 
@@ -89,7 +89,7 @@ describe('renameSweep reaches a Space sidecar', () => {
       $order: { contexts: ['ctxA'], properties: ['Other', 'Status'] },
     })
     await renameSweep(root, 'Status', 'Stage')
-    const raw = await readSpaceSidecar(file)
+    const raw = await readJsonAt(file)
     expect(raw.Stage).toBe('Old')
     expect('Status' in raw).toBe(false)
     expect(raw.$order).toEqual({ contexts: ['ctxA'], properties: ['Other', 'Stage'] })
@@ -98,7 +98,7 @@ describe('renameSweep reaches a Space sidecar', () => {
   it('renames a listed entry on a sidecar that no longer holds the key', async () => {
     const file = await seedSpace({ id: 'sp1', $order: { properties: ['Status'] } })
     await renameSweep(root, 'Status', 'Stage')
-    expect((await readSpaceSidecar(file)).$order).toEqual({ properties: ['Stage'] })
+    expect((await readJsonAt(file)).$order).toEqual({ properties: ['Stage'] })
   })
 
   it('leaves a sidecar with neither the key nor the entry byte-identical', async () => {

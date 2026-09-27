@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest'
 import { readFile, rm, writeFile } from 'node:fs/promises'
 import { join } from '../Paths/posix'
-import { readSpaceSidecar, seedSpaceSidecar, tempRoot } from '../Testing/hostFs'
+import { readJsonAt, seedSpaceSidecar, tempRoot } from '../Testing/hostFs'
 import {
   createProperty,
   editProperty,
@@ -169,7 +169,7 @@ describe('renameProperty and editProperty', () => {
     const refused = await renameProperty(root, c.value.id, 'Stage')
     expect(refused.ok).toBe(false)
     if (!refused.ok) expect(refused.error.message).toBe('1 file already uses "Stage" as a key.')
-    expect(await readSpaceSidecar(file)).toEqual({
+    expect(await readJsonAt(file)).toEqual({
       id: 'sp1',
       Status: ['Active'],
       Stage: ['Hand-written'],

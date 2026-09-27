@@ -4,13 +4,7 @@ import { splitFrontmatter } from '../Files/pageFile'
 import { ID_KEY } from './identityMark'
 import { rm, mkdir, writeFile, readFile, readdir, chmod, symlink, stat } from 'node:fs/promises'
 import { join } from '../Paths/posix'
-import {
-  readSpaceSidecar,
-  seedSpaceSidecar,
-  tempRoot,
-  noModeBits,
-  windows,
-} from '../Testing/hostFs'
+import { readJsonAt, seedSpaceSidecar, tempRoot, noModeBits, windows } from '../Testing/hostFs'
 import { adoptFile } from '../Assets/adoptFile'
 import { handleMutate } from './mutate'
 import { machine } from '../Platform/machine'
@@ -1527,7 +1521,7 @@ describe('handleMutate — setIcon and setHeadingIconHidden on a container sidec
       nexusDeps,
     )
     expect(set.ok).toBe(true)
-    expect(await readSpaceSidecar(file)).toEqual({ id: 'sp1', icon: 'box', $icon: 'star' })
+    expect(await readJsonAt(file)).toEqual({ id: 'sp1', icon: 'box', $icon: 'star' })
 
     const cleared = await handleMutate(
       root,
@@ -1535,7 +1529,7 @@ describe('handleMutate — setIcon and setHeadingIconHidden on a container sidec
       nexusDeps,
     )
     expect(cleared.ok).toBe(true)
-    expect(await readSpaceSidecar(file)).toEqual({ id: 'sp1', icon: 'box' })
+    expect(await readJsonAt(file)).toEqual({ id: 'sp1', icon: 'box' })
   })
 
   it('refuses an icon on a sidecar with no id rather than reseeding one', async () => {
@@ -2035,7 +2029,7 @@ describe('the Contexts lock', () => {
 
 describe('setContext on a Space', () => {
   const sidecar = (context: string, space: string): Promise<Record<string, unknown>> =>
-    readSpaceSidecar(join(root, '.nexus', 'contexts', context, space, '_space.json'))
+    readJsonAt(join(root, '.nexus', 'contexts', context, space, '_space.json'))
 
   beforeEach(seedTwoContexts)
 

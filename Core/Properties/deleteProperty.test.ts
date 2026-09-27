@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 import { ID_KEY } from '../Nexus/identityMark'
 import { rm, readFile, readdir } from 'node:fs/promises'
 import { dirname, join } from '../Paths/posix'
-import { seedSpaceSidecar, readSpaceSidecar, tempRoot } from '../Testing/hostFs'
+import { seedSpaceSidecar, readJsonAt, tempRoot } from '../Testing/hostFs'
 import { deleteProperty } from './deleteProperty'
 import { createProperty, removeFromRegistry } from './registryProperty'
 import { fault } from '../Contract/result'
@@ -183,7 +183,7 @@ describe('a global delete reaches a Space sidecar', () => {
     expect((await deleteProperty(root, id)).ok).toBe(true)
 
     expect((await bundle(id)).values.sp1).toEqual(['hi'])
-    const raw = await readSpaceSidecar(file)
+    const raw = await readJsonAt(file)
     expect('Priority' in raw).toBe(false)
     expect(raw.$icon).toBe('box')
     expect(raw.$order).toEqual({ properties: ['Other'] })
@@ -208,14 +208,14 @@ describe('a global delete reaches a Space sidecar', () => {
       value: 'https://final.example',
     })
     expect(set.ok).toBe(true)
-    const pomFields = spaceFieldsFrom(await readSpaceSidecar(pom))
+    const pomFields = spaceFieldsFrom(await readJsonAt(pom))
     expect(pomFields.icon).toBe('box')
     expect(pomFields.values).toEqual({ icon: 'https://final.example' })
 
     expect((await deleteProperty(root, c.value.id)).ok).toBe(true)
-    expect(await readSpaceSidecar(pom)).toEqual({ id: 'sp1', $icon: 'box' })
-    expect(spaceFieldsFrom(await readSpaceSidecar(atlas)).icon).toBe('map')
-    expect('icon' in (await readSpaceSidecar(atlas))).toBe(false)
+    expect(await readJsonAt(pom)).toEqual({ id: 'sp1', $icon: 'box' })
+    expect(spaceFieldsFrom(await readJsonAt(atlas)).icon).toBe('map')
+    expect('icon' in (await readJsonAt(atlas))).toBe(false)
   })
 
   it('marks the record partial for a sidecar holding the key with no id', async () => {

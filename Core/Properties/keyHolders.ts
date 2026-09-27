@@ -10,7 +10,8 @@ import { asString } from '../Nexus/coerce'
 import { ensurePageId } from '../Nexus/adopt'
 import { isAdoptedId } from '../Nexus/ids'
 import { getLiveTree } from '../Nexus/liveTree'
-import { findPage, patchPageFromDisk } from '../Nexus/watchPatch'
+import { patchPageFromDisk } from '../Nexus/watchPatch'
+import { pageAt } from '../Nexus/treePatch'
 import { valueOr } from '../Contract/result'
 import { isBlankRaw } from './propertyValue'
 import { spaceSidecars } from '../Contexts/spaceSidecar'
@@ -75,7 +76,7 @@ export async function keyedHolders(
 async function stampListed(root: string, file: string): Promise<string | null> {
   const rel = relative(root, file)
   const tree = getLiveTree()
-  const listed = tree && findPage(tree, rel)
+  const listed = tree && pageAt(tree, rel)
   if (!listed || !isAdoptedId(listed.id)) return null
   const id = valueOr(await ensurePageId(file), null)
   if (id) await patchPageFromDisk(root, rel)

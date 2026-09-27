@@ -394,7 +394,7 @@ describe('a gone edit', () => {
   const setGone = {
     kind: 'gone' as const,
     propertyId: '_location',
-    ids: new Set(['set_gone', 'set_sub']),
+    ids: ['set_gone', 'set_sub'],
   }
   const locatedRules = [
     { property_id: '_location', op: 'is', values: ['set_gone', 'set_keep'] },
@@ -473,7 +473,7 @@ describe('a gone edit', () => {
         },
       ],
     })
-    await reachConfig(root, { kind: 'gone', propertyId: 'ctx_areas', ids: new Set(['sp_work']) })
+    await reachConfig(root, { kind: 'gone', propertyId: 'ctx_areas', ids: ['sp_work'] })
     expect((await viewsOf(setFile()))[0].filter).toEqual({
       match: 'all',
       rules: [
@@ -511,7 +511,7 @@ describe('a gone edit', () => {
         },
       ],
     })
-    await reachConfig(root, { kind: 'gone', propertyId: '_location', ids: new Set(['odd/id']) })
+    await reachConfig(root, { kind: 'gone', propertyId: '_location', ids: ['odd/id'] })
     const [view] = await viewsOf(colFile())
     expect(view.group_order).toEqual(['odd/idx'])
     expect(view.collapsed_groups).toEqual([])
@@ -535,17 +535,17 @@ describe('a gone edit', () => {
     expect(goneEdit(tree, 'space', '.nexus/contexts/Areas/Home')).toEqual({
       kind: 'gone',
       propertyId: 'ctx_areas',
-      ids: new Set(['sp_home']),
+      ids: ['sp_home'],
     })
     expect(goneEdit(tree, 'collection', 'Notes')).toEqual({
       kind: 'gone',
       propertyId: '_location',
-      ids: new Set(['col_notes', 'set_deep']),
+      ids: ['col_notes', 'set_deep'],
     })
     expect(goneEdit(tree, 'set', 'Notes/Deep')).toEqual({
       kind: 'gone',
       propertyId: '_location',
-      ids: new Set(['set_deep']),
+      ids: ['set_deep'],
     })
     expect(goneEdit(tree, 'page', 'Notes/Page.md')).toBeNull()
     expect(goneEdit(tree, 'set', 'Missing')).toBeNull()

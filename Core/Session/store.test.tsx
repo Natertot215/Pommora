@@ -1,7 +1,10 @@
 // @vitest-environment jsdom
 import { detail as pageDetail } from '@pommora/core/Testing/fixtures'
 import { beforeEach, describe, expect, it, vi, onTestFinished } from 'vitest'
-import { currentNotification } from '@pommora/core/Interface/Notifications/notifications'
+import {
+  clearNotification,
+  currentNotification,
+} from '@pommora/core/Interface/Notifications/notifications'
 import { ok } from '@pommora/core/Contract/result'
 import { ASSETS_DIR_REL } from '@pommora/core/Paths/nexusPaths'
 import type { NexusTree } from '@pommora/core/Nexus/tree'
@@ -803,6 +806,21 @@ describe('store — the mutate rail patches the tree before main confirms', () =
       .getState()
       .mutate({ op: 'renameHeading', path: 'Notes/A.md', heading: 'H', to: 'K' })
     expect(order).toEqual(['tile', 'mutate'])
+  })
+
+  it('leaves a delete’s pass warning to the Deleted notice and posts a move’s', async () => {
+    channels.mutate = vi.fn(async () => ok({ cascade: { pages: [], hosts: [], warning: 'W' } }))
+    clearNotification()
+    const deleted = await useSession
+      .getState()
+      .mutate({ op: 'delete', path: 'Notes/Ideas', kind: 'set' })
+    expect(deleted).not.toBeNull()
+    expect(currentNotification()).toBeNull()
+    const moved = await useSession
+      .getState()
+      .mutate({ op: 'movePage', path: 'Notes/A.md', newParentPath: 'Notes/Ideas' })
+    expect(moved).not.toBeNull()
+    expect(currentNotification()?.message).toBe('W')
   })
 })
 

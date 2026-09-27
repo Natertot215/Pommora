@@ -3,7 +3,7 @@ import { mkdir, readFile, realpath, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { contextsDir } from '../Paths/paths'
 import { SPACE_SIDECAR } from '../Paths/nexusPaths'
-import { join } from '../Paths/posix'
+import { dirname, join } from '../Paths/posix'
 
 export const windows = process.platform === 'win32'
 
@@ -16,26 +16,21 @@ export const tempRoot = (prefix: string): string =>
 
 export const noModeBits = windows || process.getuid?.() === 0
 
+export const readJsonAt = async (file: string): Promise<Record<string, unknown>> =>
+  JSON.parse(await readFile(file, 'utf8'))
+
+export const putJson = async (file: string, value: unknown): Promise<void> => {
+  await mkdir(dirname(file), { recursive: true })
+  await writeFile(file, JSON.stringify(value, null, 2))
+}
+
 export const seedSpaceSidecar = async (
   root: string,
   contextTitle: string,
   spaceName: string,
   raw: Record<string, unknown>,
 ): Promise<string> => {
-  const dir = join(contextsDir(root), contextTitle, spaceName)
-  await mkdir(dir, { recursive: true })
-  const file = join(dir, SPACE_SIDECAR)
-  await writeFile(file, JSON.stringify(raw))
+  const file = join(contextsDir(root), contextTitle, spaceName, SPACE_SIDECAR)
+  await putJson(file, raw)
   return file
-}
-
-export const readSpaceSidecar = async (file: string): Promise<Record<string, unknown>> =>
-  JSON.parse(await readFile(file, 'utf8'))
-
-export const readJsonAt = async (file: string): Promise<Record<string, unknown>> =>
-  JSON.parse(await readFile(file, 'utf8'))
-
-export const putJson = async (file: string, value: unknown): Promise<void> => {
-  await mkdir(join(file, '..'), { recursive: true })
-  await writeFile(file, JSON.stringify(value, null, 2))
 }

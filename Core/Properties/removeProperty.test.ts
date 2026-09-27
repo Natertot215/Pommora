@@ -19,7 +19,7 @@ import { splitFrontmatter } from '../Files/pageFile'
 import { pageCollectionSidecar } from '../Nexus/schemas'
 import { closeSession, openSession } from '../Nexus/session'
 import { getLiveTree, refreshTree } from '../Nexus/liveTree'
-import { findPage } from '../Nexus/watchPatch'
+import { pageAt } from '../Nexus/treePatch'
 import type { PropertyDefinition } from './properties'
 
 vi.mock('../Files/atomicWrite', async (importOriginal) => {
@@ -114,7 +114,7 @@ describe('removeProperty — strip + cache (C-3/C-6)', () => {
     expect((await removeProperty(root, folder, propId)).ok).toBe(true)
     expect(await pageValue(pageA)).toBeUndefined()
     const stamped = String(splitFrontmatter(await readFile(pageA, 'utf8'))[ID_KEY])
-    expect(findPage(getLiveTree()!, relative(root, pageA))?.id).toBe(stamped)
+    expect(pageAt(getLiveTree()!, relative(root, pageA))?.id).toBe(stamped)
     // A page the tree hasn't listed yet keeps its value where it is.
     expect(await pageValue(join(folder, 'Late.md'))).toBe('done')
     await assignProperty(root, folder, propId)

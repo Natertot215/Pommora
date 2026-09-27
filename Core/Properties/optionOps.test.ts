@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 import { chmod, mkdir, rm, readFile, stat, writeFile } from 'node:fs/promises'
 import { join } from '../Paths/posix'
-import { noModeBits, seedSpaceSidecar, readSpaceSidecar, tempRoot } from '../Testing/hostFs'
+import { noModeBits, seedSpaceSidecar, readJsonAt, tempRoot } from '../Testing/hostFs'
 import { fault, ok } from '../Contract/result'
 import {
   editOption,
@@ -516,8 +516,8 @@ describe('option cascades reach a Space sidecar', () => {
     const list = await spaceSidecar('Sapphire', { id: 'sp2', Tags: ['Urgent', 'Keep'] })
 
     expect((await renameOption(root, id, 'Urgent', 'Critical')).ok).toBe(true)
-    expect((await readSpaceSidecar(scalar)).Tags).toEqual(['Critical'])
-    expect((await readSpaceSidecar(list)).Tags).toEqual(['Critical', 'Keep'])
+    expect((await readJsonAt(scalar)).Tags).toEqual(['Critical'])
+    expect((await readJsonAt(list)).Tags).toEqual(['Critical', 'Keep'])
   })
 
   it('a remove empties a one-element list and the key leaves the sidecar', async () => {
@@ -525,7 +525,7 @@ describe('option cascades reach a Space sidecar', () => {
     const file = await spaceSidecar('Pommora', { id: 'sp1', Tags: ['A'], icon: 'box' })
 
     expect((await removeOption(root, id, 'A')).ok).toBe(true)
-    const raw = await readSpaceSidecar(file)
+    const raw = await readJsonAt(file)
     expect('Tags' in raw).toBe(false)
     expect(raw.icon).toBe('box')
   })

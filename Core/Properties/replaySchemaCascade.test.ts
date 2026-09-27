@@ -3,7 +3,7 @@
 import { describe, it, expect, afterEach } from 'vitest'
 import { chmod, mkdir, readdir, readFile, rm, stat, writeFile } from 'node:fs/promises'
 import { join } from '../Paths/posix'
-import { tempRoot, noModeBits, seedSpaceSidecar, readSpaceSidecar } from '../Testing/hostFs'
+import { tempRoot, noModeBits, seedSpaceSidecar, readJsonAt } from '../Testing/hostFs'
 import type { PropertyDefinition } from './properties'
 import { closeSession, openSession } from '../Nexus/session'
 import { installStores, NO_STORES } from '../Platform/stores'
@@ -171,7 +171,7 @@ describe('delete replay', () => {
     await writeSchemaJournal(root, { op: 'delete', id: 'prop_s', name: 'Stage' })
     await openSession(root)
     await replaySchemaCascade(root)
-    const raw = await readSpaceSidecar(file)
+    const raw = await readJsonAt(file)
     expect('Stage' in raw).toBe(false)
     expect(raw.$order).toEqual({ properties: [] })
   })
@@ -305,7 +305,7 @@ describe('option replay', () => {
     }))
     await openSession(root)
     await replaySchemaCascade(root)
-    expect((await readSpaceSidecar(file)).Stage).toEqual(['Queued'])
+    expect((await readJsonAt(file)).Stage).toEqual(['Queued'])
   })
 
   it('option-remove, replayed, reaches a Space sidecar', async () => {
@@ -314,7 +314,7 @@ describe('option replay', () => {
     await writeSchemaJournal(root, { op: 'option-remove', id: 'prop_s', value: 'Draft' })
     await openSession(root)
     await replaySchemaCascade(root)
-    expect('Stage' in (await readSpaceSidecar(file))).toBe(false)
+    expect('Stage' in (await readJsonAt(file))).toBe(false)
   })
 })
 

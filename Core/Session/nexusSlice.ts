@@ -252,7 +252,8 @@ export const createNexusSlice: Slice<NexusSlice> = (set, get) => {
       const res = await dialer().ask('mutate', req)
       if (!reportRefusal(res)) return null
       if (res.value.unrestored) notifyReport(unrestoredLine(res.value.unrestored), true)
-      if (res.value.cascade?.warning) notifyReport(res.value.cascade.warning, true)
+      if (req.op !== 'delete' && res.value.cascade?.warning)
+        notifyReport(res.value.cascade.warning, true)
       if (req.op === 'delete' || req.op === 'restore' || req.op === 'emptyBundle')
         get().bumpTrashRevision()
       // Instant optimistic patch; main's confirming push lands a beat later with no flicker.

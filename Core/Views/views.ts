@@ -137,6 +137,9 @@ export const SUBSTRING_OPS = new Set<string>([
 export const ruleOperands = (rule: FilterRule): string[] =>
   rule.values?.length ? rule.values : rule.value != null ? [rule.value] : []
 
+export const answerable = (rule: FilterRule): boolean =>
+  OPERANDLESS_OPS.has(rule.op) || ruleOperands(rule).length > 0
+
 export const isGroup = (node: FilterRule | FilterGroup): node is FilterGroup =>
   isPlainObject(node) && Array.isArray((node as { rules?: unknown }).rules)
 

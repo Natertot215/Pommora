@@ -1,6 +1,6 @@
 import { basename, join, relDirname, relative, isMarkdownFile } from '../Paths/posix'
 import { escapes } from '../Paths/pathSafety'
-import type { NexusTree, PageNode } from './tree'
+import type { NexusTree } from './tree'
 import { asString, asStringArray } from './coerce'
 import { patchHeldAssetMap } from '../Assets/assetMap'
 import {
@@ -39,6 +39,7 @@ import { containerFieldsFrom } from './containerFields'
 import { spaceFieldsFrom } from '../Contexts/spaceSidecar'
 import {
   containerAt,
+  pageAt,
   makeCollectionNode,
   makeSetNode,
   makeSpaceNode,
@@ -88,11 +89,6 @@ export type WatchClass =
 const toPosixRel = (root: string, absPath: string): string | null => {
   const rel = relative(root, absPath)
   return !rel || escapes(rel) ? null : rel
-}
-
-export function findPage(tree: NexusTree, rel: string): PageNode | null {
-  const container = containerAt(tree, relDirname(rel))
-  return container?.pages.find((p) => p.path === rel) ?? null
 }
 
 // A tile body is no part of the tree; a change to one names its host, like the host's own document.
@@ -243,7 +239,7 @@ const replaceNode = (root: string, rel: string, next: TreeEntity): 'ok' | 'refre
   applyPatch(root, (t) => updateNodeInTree(t, rel, () => next) ?? t)
 
 const removePage = (root: string, rel: string): 'ok' | 'refresh' =>
-  applyPatch(root, (t) => (findPage(t, rel) ? removeNodeInTree(t, rel) : t))
+  applyPatch(root, (t) => (pageAt(t, rel) ? removeNodeInTree(t, rel) : t))
 
 // A rename a landed file shows (an Obsidian or sync edit) takes the same cascade the editor's settle takes; the editor's own save reports none, its settle having spoken.
 const cascadeSeen = async (
@@ -332,7 +328,7 @@ export async function patchPageFromDisk(root: string, rel: string): Promise<Page
   const links = resolveEntityContexts(record.fm, tree.contexts)
   if (links) node.contextValues = links
   else delete node.contextValues
-  const existing = findPage(tree, rel)
+  const existing = pageAt(tree, rel)
   if (existing && existing.id === node.id)
     return replaceNode(root, rel, node) === 'refresh' ? 'refresh' : { id: node.id }
   const dirRel = relDirname(rel)
@@ -480,7 +476,7 @@ export async function patchMetadataFromDisk(
 
 export async function patchPageMetaFromDisk(root: string, rel: string): Promise<'ok' | 'refresh'> {
   const held = getLiveTree()
-  let id = (held && findPage(held, rel))?.id ?? null
+  let id = (held && pageAt(held, rel))?.id ?? null
   if (id !== null && isAdoptedId(id)) {
     const patched = await patchPageFromDisk(root, rel)
     if (patched === 'refresh') return 'refresh'
