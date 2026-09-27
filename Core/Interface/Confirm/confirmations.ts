@@ -34,10 +34,11 @@ const waived = (kind?: MutableKind): boolean =>
   !settingOf(useSession.getState().personalization, 'confirmDeletion')
 
 /** A system-trash delete mints no bundle, so it offers no Undo — the artifact left the nexus and there is nothing to name. */
-export const notifyTrashed = (title: string, bundlePath?: string): void =>
+export const notifyTrashed = (title: string, bundlePath?: string, note?: string): void =>
   notifyDeleted(
     title,
     bundlePath ? () => void useSession.getState().mutate({ op: 'restore', bundlePath }) : undefined,
+    note,
   )
 
 export const confirmDelete = async (target: {
@@ -61,7 +62,7 @@ export const confirmDelete = async (target: {
   const done = await useSession
     .getState()
     .mutate({ op: 'delete', path: target.path, kind: target.kind })
-  if (done) notifyTrashed(target.title, done.trashed?.bundlePath)
+  if (done) notifyTrashed(target.title, done.trashed?.bundlePath, done.cascade?.warning)
 }
 
 export const askRemoveTile = (): Promise<boolean> =>

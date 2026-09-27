@@ -1,5 +1,6 @@
 import { basename, dirname, relative } from '../Paths/posix'
-import { mutableTarget } from '../Nexus/liveTree'
+import { liveTreeOf, mutableTarget } from '../Nexus/liveTree'
+import { goneEdit, reachConfig, reachReport } from '../Nexus/configReach'
 import { pathExists } from '../Files/atomicWrite'
 import { deindexPath } from '../Index/indexSeed'
 import { fail, ok, valueOr } from '../Contract/result'
@@ -27,13 +28,14 @@ export async function deleteOp(
   if (!resolved.ok) return resolved
   const abs = resolved.value
   if (!(await pathExists(abs))) return fail('not-found', 'Nothing to delete.')
+  const edit = goneEdit(await liveTreeOf(root), req.kind, req.path)
   const contexts = req.kind === 'context' ? await readRegistryStrict(root) : null
   if (contexts && !contexts.ok) return contexts
   if (req.kind === 'collection' || req.kind === 'set') {
     const refused = await exclusionWriteRefusal(root, await excludedWithin(root, req.path))
     if (refused) return refused
   }
-  // Write-ahead: the record lands before the sweep destroys what it describes, and the artifact moves LAST, so a delete cut short leaves evidence rather than silence.
+  // Write-ahead: the record lands before the sweep destroys what it describes, and the artifact moves before the configuration pass, so a delete cut short leaves evidence rather than silence.
   const bundle = deps.trashMode === 'system' ? null : await mintBundle(root, abs)
   const write = bundle
     ? async (record: RecordFile | null): Promise<void> => {
@@ -85,5 +87,8 @@ export async function deleteOp(
   if (req.kind === 'collection' || req.kind === 'set')
     await releaseExcludedFolders(root, relative(root, abs))
   await deindexPath(root, abs)
-  return ok(bundle ? { trashed: { bundlePath: relative(root, bundle) } } : {})
+  return ok({
+    ...(bundle ? { trashed: { bundlePath: relative(root, bundle) } } : {}),
+    ...(edit ? { cascade: reachReport(await reachConfig(root, edit)) } : {}),
+  })
 }
