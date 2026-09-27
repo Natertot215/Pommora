@@ -202,6 +202,11 @@ async function settleJournal(root: string, j: RenameJournal, skipped: string[]):
   else await clearJournal(root, j)
 }
 
+const commitTitle = (root: string, id: string, title: string) =>
+  mutateRegistryFile(root, (cur) => ({
+    contexts: cur.contexts.map((c) => (c.id === id ? { ...c, title } : c)),
+  }))
+
 /** Order: journal → folder rename → KEY cascade → registry title commit → journal settle; a live failure aborts with a best-effort reverse and a cleared journal. */
 export async function renameContextOp(
   root: string,
@@ -240,9 +245,7 @@ export async function renameContextOp(
 
   const cascade = await cascadeTitle(root, reg.value, j)
 
-  const committed = await mutateRegistryFile(root, (cur) => ({
-    contexts: cur.contexts.map((c) => (c.id === contextId ? { ...c, title: newName } : c)),
-  }))
+  const committed = await commitTitle(root, contextId, newName)
   if (!committed.ok) {
     await cascadeTitle(root, reg.value, { ...j, oldTitle: newName, newTitle: entry.title })
     try {
@@ -321,9 +324,7 @@ export async function replayPendingRename(root: string): Promise<void> {
       await machine().rename(oldDir, newDir)
     const cascade = await cascadeTitle(root, reg.value, j)
     if (entry.title !== j.newTitle) {
-      const committed = await mutateRegistryFile(root, (cur) => ({
-        contexts: cur.contexts.map((c) => (c.id === j.contextId ? { ...c, title: j.newTitle } : c)),
-      }))
+      const committed = await commitTitle(root, j.contextId, j.newTitle)
       if (!committed.ok) return
     }
     await settleJournal(root, j, cascade.skipped)
