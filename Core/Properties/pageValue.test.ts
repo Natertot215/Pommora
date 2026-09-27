@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { editList, namesValue, valueEditRewrite } from './pageValue'
+import { editList, namesValue, stripList, valueEditRewrite } from './pageValue'
 import { namesSpace } from '../Contexts/contextResolve'
 import type { Json } from '../Files/stableJson'
 
@@ -107,5 +107,14 @@ describe('editList', () => {
 
   it('a strip that empties the list answers an empty list', () => {
     expect(editList(['a', 'a'], namesValue, 'a', { op: 'strip' })).toEqual([])
+  })
+})
+
+describe('stripList', () => {
+  it('drops the elements the matcher names, and answers null when it names none', () => {
+    const isA = (el: unknown): boolean => el === 'a'
+    expect(stripList(['a', 1, 'b', null], isA)).toEqual([1, 'b', null])
+    expect(stripList(['b'], isA)).toBeNull()
+    expect(stripList(['a'], isA)).toEqual([])
   })
 })

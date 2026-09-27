@@ -1,6 +1,6 @@
 import { basename, join, relDirname, relative, isMarkdownFile } from '../Paths/posix'
 import { escapes } from '../Paths/pathSafety'
-import type { CollectionNode, NexusTree, PageNode, SetNode, SpaceNode } from './tree'
+import type { NexusTree, PageNode } from './tree'
 import { asString, asStringArray } from './coerce'
 import { patchHeldAssetMap } from '../Assets/assetMap'
 import {
@@ -38,11 +38,12 @@ import { coerceOpenIn } from './schemas'
 import { containerFieldsFrom } from './containerFields'
 import { spaceFieldsFrom } from '../Contexts/spaceSidecar'
 import {
-  findContainerWhere,
+  containerAt,
   makeCollectionNode,
   makeSetNode,
   makeSpaceNode,
   removeNodeInTree,
+  spaceAt,
   type TreeEntity,
   updateNodeInTree,
 } from './treePatch'
@@ -89,20 +90,9 @@ const toPosixRel = (root: string, absPath: string): string | null => {
   return !rel || escapes(rel) ? null : rel
 }
 
-const containerAt = (tree: NexusTree, dirRel: string): CollectionNode | SetNode | null =>
-  findContainerWhere(tree, (n) => n.path === dirRel)
-
 export function findPage(tree: NexusTree, rel: string): PageNode | null {
   const container = containerAt(tree, relDirname(rel))
   return container?.pages.find((p) => p.path === rel) ?? null
-}
-
-function findSpace(tree: NexusTree, dirRel: string): SpaceNode | null {
-  for (const g of tree.contexts) {
-    const hit = g.spaces.find((s) => s.path === dirRel)
-    if (hit) return hit
-  }
-  return null
 }
 
 // A tile body is no part of the tree; a change to one names its host, like the host's own document.
@@ -125,7 +115,7 @@ export function tileHostAt(tree: NexusTree, rel: string): TileHostRef | null {
   if (segs[0] !== NEXUS_DIR) return null
   if (segs.length === 3 && segs[1] === HOMEPAGE_HOST_DIRNAME) return HOMEPAGE_HOST
   const space =
-    segs[1] === CONTEXTS_DIRNAME && segs.length === 5 ? findSpace(tree, relDirname(rel)) : null
+    segs[1] === CONTEXTS_DIRNAME && segs.length === 5 ? spaceAt(tree, relDirname(rel)) : null
   return space ? { kind: 'space', id: space.id } : null
 }
 
@@ -172,7 +162,7 @@ export function classifyEvent(
       segs.length === 5 &&
       name === SPACE_SIDECAR &&
       (ev.event === 'add' || ev.event === 'change') &&
-      findSpace(tree, dirRel)
+      spaceAt(tree, dirRel)
     ) {
       return { kind: 'space-meta', dirRel }
     }
@@ -408,7 +398,7 @@ export async function patchSpaceFromDisk(root: string, dirRel: string): Promise<
   if (sc === null) return 'refresh'
   const tree = getLiveTree()
   if (!tree) return 'refresh'
-  const node = findSpace(tree, dirRel)
+  const node = spaceAt(tree, dirRel)
   if (!node) return 'refresh'
   const id = asString(sc.id) ?? adoptedId(dirRel)
   if (id !== node.id) return 'refresh'
