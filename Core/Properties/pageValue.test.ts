@@ -77,15 +77,15 @@ describe('valueEditRewrite — replace (rename cascade)', () => {
 
 describe('editList', () => {
   it('edits a list of one', () => {
-    expect(editList(['a'], namesValue('a'), { op: 'replace', to: 'b' })).toEqual(['b'])
+    expect(editList(['a'], namesValue, 'a', { op: 'replace', to: 'b' })).toEqual(['b'])
   })
 
   it('answers null when nothing matches', () => {
-    expect(editList(['a', 1, null], namesValue('z'), { op: 'strip' })).toBeNull()
+    expect(editList(['a', 1, null], namesValue, 'z', { op: 'strip' })).toBeNull()
   })
 
   it('a replace into a value the list holds keeps one copy at the renamed element', () => {
-    expect(editList(['x', 'a', 'y', 'b'], namesValue('a'), { op: 'replace', to: 'b' })).toEqual([
+    expect(editList(['x', 'a', 'y', 'b'], namesValue, 'a', { op: 'replace', to: 'b' })).toEqual([
       'x',
       'b',
       'y',
@@ -94,11 +94,18 @@ describe('editList', () => {
 
   it('a replace of two spellings of one Space yields one title', () => {
     expect(
-      editList(['Pommora', 'x', 'pommora'], namesSpace('Pommora'), { op: 'replace', to: 'Pom' }),
+      editList(['Pommora', 'x', 'pommora'], namesSpace, 'Pommora', { op: 'replace', to: 'Pom' }),
     ).toEqual(['Pom', 'x'])
   })
 
+  it('a Space renamed onto a title the list already spells differently holds one copy, spelled as the new title', () => {
+    expect(editList(['b', 'x', 'A'], namesSpace, 'A', { op: 'replace', to: 'B' })).toEqual([
+      'B',
+      'x',
+    ])
+  })
+
   it('a strip that empties the list answers an empty list', () => {
-    expect(editList(['a', 'a'], namesValue('a'), { op: 'strip' })).toEqual([])
+    expect(editList(['a', 'a'], namesValue, 'a', { op: 'strip' })).toEqual([])
   })
 })

@@ -85,7 +85,7 @@ export function withOrderEntry(
     const entries = isPlainObject(order) ? order[list] : undefined
     const next =
       Array.isArray(entries) &&
-      editList(entries, namesValue(from), to === null ? { op: 'strip' } : { op: 'replace', to })
+      editList(entries, namesValue, from, to === null ? { op: 'strip' } : { op: 'replace', to })
     if (!isPlainObject(order) || !next) return keyed
     return { ...cur, [ORDER_KEY]: { ...order, [list]: next } }
   }
