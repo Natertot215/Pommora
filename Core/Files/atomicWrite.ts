@@ -66,6 +66,8 @@ type StrictRead =
   | { kind: 'unreadable' }
   | { kind: 'corrupt'; why: string }
 
+export type StrictMiss = Exclude<StrictRead['kind'], 'ok'>
+
 export async function readJsonStrictly(absPath: string): Promise<StrictRead> {
   let raw: string | null
   try {
@@ -200,7 +202,7 @@ export function updateNexusFile(
   })
 }
 
-export type StrictEdit = 'absent' | 'unreadable' | 'corrupt' | 'unchanged' | 'written'
+export type StrictEdit = StrictMiss | 'unchanged' | 'written'
 
 /** An in-place edit that neither seeds an absent file nor repairs a corrupt one, answering which it met; what it read or wrote becomes the file's last read. */
 export function editJsonStrict(

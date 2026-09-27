@@ -236,6 +236,14 @@ describe('setSpaceContext (G-1, cross-context)', () => {
     expect(await readFile(csFile(), 'utf8')).toBe(before)
   })
 
+  it('keeps an element it can’t read on the far half, linking and unlinking around it', async () => {
+    await writeFile(csFile(), JSON.stringify({ id: 'sp-cs', '<Projects>': [7] }))
+    expect((await setSpaceContext(await world(), 'sp-pom', 'ctxC', ['sp-cs'])).ok).toBe(true)
+    expect((await readSpaceSidecar(csFile()))['<Projects>']).toEqual([7, 'Pommora'])
+    expect((await setSpaceContext(await world(), 'sp-pom', 'ctxC', [])).ok).toBe(true)
+    expect((await readSpaceSidecar(csFile()))['<Projects>']).toEqual([7])
+  })
+
   it('refuses a self-link and writes nothing', async () => {
     const before = await readFile(pomFile(), 'utf8')
     const r = await setSpaceContext(await world(), 'sp-pom', 'ctx_projects', ['sp-pom'])

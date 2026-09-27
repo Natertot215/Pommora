@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import type { SavedView } from '@pommora/core/Views/views'
-import { same } from '@pommora/core/Files/jsonMerge'
+import { same } from '@pommora/core/Files/stableJson'
 import { useLatest } from '@pommora/uix/Utilities/stableApi'
 
 export type ViewPatch = Partial<SavedView>

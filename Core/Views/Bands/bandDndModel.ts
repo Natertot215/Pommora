@@ -118,7 +118,7 @@ export function structuralOrderAfterDrop(
 /** A manual order keeps its buckets no band shows (hidden, or emptied by a filter) where they stood; the bands shown and not yet listed follow, as the pipeline paints them. */
 export function propertyOrderAfterDrop(
   stored: readonly string[],
-  presentKeys: string[],
+  presentKeys: readonly string[],
   draggedKey: string,
   beforeKey: string | null,
 ): string[] {

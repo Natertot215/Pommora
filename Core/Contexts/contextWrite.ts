@@ -1,5 +1,6 @@
 import { join, isMarkdownFile } from '../Paths/posix'
 import { contextKey, parseContextKey, type ContextsRegistry } from './contexts'
+import { editList } from '../Properties/pageValue'
 import {
   namesSpace,
   NO_DEFS,
@@ -197,8 +198,8 @@ export async function setSpaceContext(
     if (!far || far.id === a.id || listOf(far.raw[backKey]).some(namesA) === wants) continue
     const half = await writeSpaceSidecar(far.dir, (raw) => {
       const base = repaired(raw)
-      const held = listOf(base[backKey]).filter((v): v is string => typeof v === 'string')
-      const without = held.filter((t) => !namesA(t))
+      const held = base[backKey] == null ? [] : listOf(base[backKey])
+      const without = editList(held, namesSpace, a.title, { op: 'strip' }) ?? held
       const next = wants ? [...without, a.title] : without
       return setOrDrop(base, backKey, next.length > 0 && next)
     })
