@@ -30,7 +30,6 @@ import { isPlainObject, listOf } from '../Contract/validators'
 import type { CollectionNode, NexusTree, SetNode } from './tree'
 
 // ── Roles ──
-// A field's role names the shape it holds; a field added to `savedView` fails here until it's classified.
 type Role =
   | 'none'
   | 'idList'
@@ -85,7 +84,6 @@ type ConfigEdit = ({ kind: 'option' } & OptionReach) | { kind: 'property'; prope
 
 type Raw = Record<string, unknown>
 type ViewEdit = (view: Raw) => Raw | null
-// A handler answers the field's next value; `undefined` removes the field.
 type Handler<E> = (e: E, held: unknown, view: SavedView) => unknown
 
 const editRules = (held: unknown, fn: (rule: Raw) => Raw | null): unknown =>
@@ -98,14 +96,12 @@ const onProperty = (id: string, holder: unknown): holder is Raw =>
 
 const clearRule = (id: string, rule: Raw): Raw | null => (onProperty(id, rule) ? null : rule)
 
-// The owner edits the stored strings; a foreign element rides through (C-2).
 function overStrings(held: unknown, edit: (keys: string[]) => string[] | null): unknown {
   if (!Array.isArray(held)) return held
   const next = edit(held.filter((k): k is string => typeof k === 'string'))
   return next ? [...next, ...held.filter((k) => typeof k !== 'string')] : held
 }
 
-// A rule whose operator compares whole option values (B-1); one the edit leaves with no operand goes (B-2).
 const wholeValues = (def: PropertyDefinition, op: unknown): boolean =>
   PROPERTY_TYPES[def.type].kind === 'multiSelect' || !SUBSTRING_OPS.has(String(op))
 
@@ -118,7 +114,6 @@ function optionRule(e: OptionReach, rule: Raw): Raw | null {
     : null
   if (!value && !values) return rule
   const operandless = OPERANDLESS_OPS.has(String(rule.op))
-  // A chip list is the operand the rule reads over its value, so emptying it leaves nothing the user picked.
   if (values && !values.length && !operandless) return null
   const next = { ...rule }
   if (value) {
@@ -138,7 +133,6 @@ const scopedOrder = (e: OptionReach, holder: unknown): unknown => {
   return order ? { ...holder, order } : holder
 }
 
-// A collapsed key is the band's identity: whole at the top level, `<parent>/<bucket>` under a sub-grouping (A-4).
 function collapsedKeys(e: OptionReach, view: SavedView, keys: unknown[]): unknown[] {
   const top = groupsOn(view, 'group', e.def.id)
   const sub = groupsOn(view, 'sub', e.def.id)
@@ -249,7 +243,6 @@ function containersOf(tree: NexusTree, root: string, under?: string): Container[
   return out
 }
 
-/** `under`, a Collection folder (absolute), scopes the pass: its own sidecar, already written by the caller, is left; its Sets and every tile sourcing them are edited, and the Matrix is left (B-6). */
 export async function reachConfig(
   root: string,
   e: ConfigEdit,
@@ -263,7 +256,6 @@ export async function reachConfig(
   }
   const tiles = tileHostsOf(root, tree)
   const reach: ConfigReach = { skipped: tiles.unreadable, hosts: [] }
-  // A file that can't be edited or written is one skip, as a guarded page sweep counts it; the pass goes on.
   const written = async (path: string, mutate: (cur: Raw) => Raw | null): Promise<boolean> => {
     const outcome = await editJsonStrict(path, mutate).catch((err): StrictEdit => {
       console.error('configuration pass skipped a file:', errText(err))

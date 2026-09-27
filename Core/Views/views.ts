@@ -137,11 +137,9 @@ export const SUBSTRING_OPS = new Set<string>([
 export const ruleOperands = (rule: FilterRule): string[] =>
   rule.values?.length ? rule.values : rule.value != null ? [rule.value] : []
 
-// Read over raw stored rules as well as decoded ones, so a foreign `null` entry is a leaf, never a throw.
 export const isGroup = (node: FilterRule | FilterGroup): node is FilterGroup =>
   isPlainObject(node) && Array.isArray((node as { rules?: unknown }).rules)
 
-/** Every leaf through `fn`, at every depth; a null drops the rule, and a foreign non-object entry rides through. */
 export function mapRules(
   group: FilterGroup,
   fn: (rule: FilterRule) => FilterRule | null,
@@ -164,7 +162,6 @@ function mapList<T>(xs: readonly T[], f: (x: T, i: number) => T | null): T[] | n
   return found ? next : null
 }
 
-/** A container sidecar's `views[]`, or a View Tile entry's `views[].config`, each with its index; null when nothing changed. */
 export function mapViews(doc: Json, fn: (view: Json, i: number) => Json | null): Json | null {
   if (!Array.isArray(doc.views)) return null
   const tile = doc.type === 'view'
@@ -352,7 +349,6 @@ export const groupsOn = (v: GroupedView, level: GroupLevel, propertyId: string):
 const hiddenBucketKey = (level: GroupLevel, propertyId: string, bucket: string): string =>
   `${LEVEL_PREFIX[level]}${propertyId}/${bucket}`
 
-// The pre-F-383 spelling, read only under the grouping the view holds now.
 const legacyBucketKey = (
   v: GroupedView,
   level: GroupLevel,
@@ -375,7 +371,6 @@ export function isBucketHidden(
   )
 }
 
-/** A hide appends the encoded key; a show removes it and its legacy spelling. */
 export function toggleHiddenBucket(
   v: GroupedView,
   level: GroupLevel,
@@ -396,7 +391,6 @@ export const hiddenBuckets = (v: GroupedView, level: GroupLevel, propertyId: str
   )
 }
 
-/** An option rename or removal over both spellings at both levels; `to === null` removes. */
 export function editHiddenBucket(
   v: GroupedView,
   propertyId: string,
@@ -415,7 +409,6 @@ export function editHiddenBucket(
   return [...new Set(held.flatMap((k) => renamed.get(k) ?? [k]))]
 }
 
-/** A property's encoded keys at both levels, and its legacy `sub/` keys under the sub-grouping the view holds now; a legacy bare key stays, since it can't be told from a hidden Set (B-4). */
 export function clearHiddenBuckets(v: GroupedView, propertyId: string): string[] | null {
   const held = v.hidden_groups ?? []
   const own = (k: string): boolean =>

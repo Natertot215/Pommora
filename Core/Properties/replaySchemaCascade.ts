@@ -48,7 +48,6 @@ async function replay(root: string, journal: SchemaJournal): Promise<boolean> {
         folders,
         files,
       )
-      // In the freed state the def is already gone and removeFromRegistry answers NO_PROPERTY, which owes nothing.
       return skipped > 0 || (crashed && !removed.ok)
     }
     case 'option-rename': {

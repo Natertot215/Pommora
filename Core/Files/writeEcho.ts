@@ -29,7 +29,6 @@ export function recordWrite(absPath: string, content?: string | Uint8Array): voi
   tap?.wrote(absPath)
 }
 
-/** A rename the app made, for the sync client; it records no echo, since the paths' own writes already did. */
 export const reportRename = (absFrom: string, absTo: string): void => tap?.renamed(absFrom, absTo)
 
 const held = (absPath: string): Echo | undefined => {

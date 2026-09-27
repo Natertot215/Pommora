@@ -250,7 +250,6 @@ export async function pushRename(session: Session, from: string, to: string): Pr
     if (outcome.ok) upsertBase({ ...entry.row, path: entry.path, version: outcome.version })
     else if (outcome.why === 'stale') await resolveStale(session, entry.path, outcome.head)
   }
-  // A rename already undone reaches sync as its own report; pushing the gone end would delete every moved file only for that report to write them back.
   if ((await machine().stat(join(session.root, to))) === null) return
   return pushDirty(session, [to])
 }

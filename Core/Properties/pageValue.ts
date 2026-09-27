@@ -13,7 +13,6 @@ export const namesValue =
     (typeof el === 'string' || typeof el === 'number' || typeof el === 'boolean') &&
     String(el) === value
 
-/** Replaces or removes the elements `names(target)` matches; null when nothing matched, and a replace holds one copy of `to`, spelled as `to`, in place of every element `names(to)` matches. */
 export function editList(
   xs: readonly unknown[],
   names: (value: string) => Matcher,
