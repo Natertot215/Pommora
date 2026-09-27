@@ -359,7 +359,7 @@ describe('what the pass skips', () => {
 describe('a pass scoped under one Collection', () => {
   it('edits its Sets and the tiles sourcing them, and leaves its own sidecar, other sources, and the Matrix', async () => {
     const colBefore = await readFile(colFile(), 'utf8')
-    const reach = await reachConfig(root, clear, { under: col() })
+    const reach = await reachConfig(root, clear, col())
     expect(reach).toEqual({ skipped: 0, hosts: [{ kind: 'space', id: 'sp_home' }] })
     expect((await viewsOf(setFile()))[0].group).toEqual({ kind: 'structural' })
     expect((await tileViews('t_deep'))[0].group).toEqual({ kind: 'structural' })
@@ -374,7 +374,7 @@ describe('a pass scoped under one Collection', () => {
   it('never opens the Collection’s own sidecar', async () => {
     await rm(colFile())
     await mkdir(colFile())
-    expect((await reachConfig(root, clear, { under: col() })).skipped).toBe(0)
+    expect((await reachConfig(root, clear, col())).skipped).toBe(0)
     expect((await reachConfig(root, clear)).skipped).toBe(1)
   })
 })
