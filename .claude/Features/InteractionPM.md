@@ -61,19 +61,28 @@ One text-insertion identity for the whole app: every CodeMirror surface mounts t
 | Blink | `--caret-blink` | the `caret-blink` animation over one `--caret-gap`, worn by the field bar and the editor's caret layer |
 | I-Beam Cursor | `--caret-cursor` | inline SVG data-URI, hotspot `7 12` |
 
+#### II. Scroll Fade
+
+The edge fade on a scroller: its hidden edge dissolves into the surface along its own scroll timeline. `scroll-fade` works on the block axis and `scroll-fade-x` on the inline axis, and `scroll-fade-gated` holds the leading fade until a full fade-width has scrolled past; `--scroll-fade` is non-inheriting, so the width knob sits on the element carrying the class.
+
+**SOURCE:** `UIX/Interactions/scroll-fade.css`
+
+| Title | Token | Value |
+| --- | --- | --- |
+| Lead / Trail Progress | `@property --scroll-fade-lead` / `--scroll-fade-trail` | `<number>`, non-inheriting, initial `0` |
+| Width Knob | `@property --scroll-fade` | `syntax "*"`, non-inheriting |
+| House Default | `--scroll-fade-default` | `22px` block axis; `--fade-base` inline; `0` under an ellipsis |
+| Axis | `--scroll-fade-dir` | `to bottom` fallback; `to right` on the inline axis |
+
 #### II. OverScroll
 
-The overflow-fade mechanism behind every capped label: a label truncates at rest and scrolls under the pointer to reveal its full text, its hidden edge fading into the surface. Three registered properties, two axis classes, and three modifiers; `--over-scroll-fade` is non-inheriting, so the knob sits on the element carrying the class. An axis class carries the fade, `over-scroll-cap` adds a capped-label box beneath it, and a label that can't hover itself takes the scrolled state from an ancestor with `over-scroll-host`.
+The capped label: a label truncates at rest, scrolls sideways under the wheel while hovered to reveal its full text, and slides back to its start on `easeBase` when the pointer leaves, yielding to any other scroll of the label mid-slide. `over-scroll-cap` makes the capped box, which carries the inline scroll fade, and a label that can't hover itself takes the hovered state from an ancestor with `over-scroll-host`. The wheel listener exists only while a label is hovered.
 
 **SOURCE:** `UIX/Interactions/OverScroll.tsx` · `UIX/Interactions/over-scroll.css`
 
 | Title | Token | Value |
 | --- | --- | --- |
-| Lead / Trail Progress | `@property --os-lead` / `--os-trail` | `<number>`, non-inheriting, initial `0` |
-| Width Knob | `@property --over-scroll-fade` | `syntax "*"`, non-inheriting |
-| House Default | `--os-fade-default` | `22px` block axis; `16px` inline; `0` under an ellipsis |
-| Axis | `--os-dir` | `to bottom` fallback; `to right` on the inline axis |
-| Read Distance | `--os-scroll` | live `scrollLeft` on the cap; `0px` fallback |
+| Read Distance | `--over-scroll-offset` | live `scrollLeft` on the cap; `0px` fallback |
 
 #### II. Hover Remove
 
