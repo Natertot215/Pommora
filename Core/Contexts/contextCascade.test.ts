@@ -18,7 +18,7 @@ import { clearJournal, readJournal, writeJournal } from './contextJournal'
 import { contextsRegistryFile, contextsDir, nexusDir } from '../Paths/paths'
 
 import { pathExists } from '../Files/atomicWrite'
-import { setWriteTap } from '../Files/writeEcho'
+import { captureWriteTap } from '../Testing/writeTap'
 import { fault } from '../Contract/result'
 import { mutateRegistryFile } from './contextsRegistry'
 import { closeSession, openSession } from '../Nexus/session'
@@ -222,23 +222,18 @@ describe('a renamed Context key keeps its place on every page carrying it', () =
 })
 
 describe('the renames report their folder to sync', () => {
-  let renames: Array<[string, string]>
-  beforeEach(() => {
-    renames = []
-    setWriteTap({ wrote: () => {}, renamed: (from, to) => renames.push([from, to]) })
-  })
-  afterEach(() => setWriteTap(null))
+  const tap = captureWriteTap()
 
   it('a Context rename', async () => {
     expect((await renameContextOp(root, 'ctx_projects', 'Ventures')).ok).toBe(true)
-    expect(renames).toEqual([
+    expect(tap.renames).toEqual([
       [join(contextsDir(root), 'Projects'), join(contextsDir(root), 'Ventures')],
     ])
   })
 
   it('a Space rename', async () => {
     expect((await renameSpaceOp(root, 'sp-pom', 'Pom')).ok).toBe(true)
-    expect(renames).toEqual([
+    expect(tap.renames).toEqual([
       [join(contextsDir(root), 'Projects', 'Pommora'), join(contextsDir(root), 'Projects', 'Pom')],
     ])
   })
@@ -250,9 +245,15 @@ describe('the renames report their folder to sync', () => {
       join(contextsDir(root), 'Projects'),
       join(contextsDir(root), 'Ventures'),
     ]
-    expect(renames).toEqual([
+    expect(tap.renames).toEqual([
       [projects, ventures],
       [ventures, projects],
+    ])
+    expect(tap.wrote.filter((path) => path === projects || path === ventures)).toEqual([
+      projects,
+      ventures,
+      ventures,
+      projects,
     ])
   })
 })

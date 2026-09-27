@@ -243,6 +243,8 @@ export async function renameContextOp(
     await cascadeTitle(root, reg.value, { ...j, oldTitle: newName, newTitle: entry.title })
     try {
       if (await pathExists(newDir)) {
+        recordWrite(newDir)
+        recordWrite(oldDir)
         await machine().rename(newDir, oldDir)
         reportRename(newDir, oldDir)
       }

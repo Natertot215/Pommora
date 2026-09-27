@@ -29,7 +29,7 @@ import { openSession, closeSession } from './session'
 import { flushValueWrites } from './valuesChanged'
 import { readNexus } from './readNexus'
 import { forgetLastReads, pathExists } from '../Files/atomicWrite'
-import { setWriteTap } from '../Files/writeEcho'
+import { captureWriteTap } from '../Testing/writeTap'
 import { createProperty } from '../Properties/registryProperty'
 import { liveAssetMap, resolveAssetName, takeAssetMapPush } from '../Assets/assetMap'
 import type { TrashDeps } from '../Trash/bundle'
@@ -346,12 +346,7 @@ describe('handleMutate — delete', () => {
 })
 
 describe('handleMutate — sync tap', () => {
-  let renames: Array<[string, string]>
-  beforeEach(() => {
-    renames = []
-    setWriteTap({ wrote: () => {}, renamed: (from, to) => renames.push([from, to]) })
-  })
-  afterEach(() => setWriteTap(null))
+  const tap = captureWriteTap()
 
   it('reports a page rename and a page move to the sync tap', async () => {
     await mkdir(join(root, 'Notes', 'Archive'), { recursive: true })
@@ -369,7 +364,7 @@ describe('handleMutate — sync tap', () => {
       nexusDeps,
     )
 
-    expect(renames).toEqual([
+    expect(tap.renames).toEqual([
       [join(root, 'Notes/Daily/Beta.md'), join(root, 'Notes/Daily/Gamma.md')],
       [join(root, 'Notes/Daily/Gamma.md'), join(root, 'Notes/Archive/Gamma.md')],
     ])
@@ -392,7 +387,7 @@ describe('handleMutate — sync tap', () => {
       nexusDeps,
     )
     expect(r.ok && r.value.renamed?.name).toBe('Fresh (2)')
-    expect(renames).toEqual([
+    expect(tap.renames).toEqual([
       [join(root, 'Notes/Daily/Beta.md'), join(root, 'Notes/Daily/Fresh (2).md')],
     ])
   })
@@ -424,7 +419,7 @@ describe('handleMutate — sync tap', () => {
     expect(set.ok && moved.ok).toBe(true)
     const sidecar = JSON.parse(await read('Notes/Daily/_pageset.json'))
     expect([sidecar.set_order, sidecar.page_order]).toEqual([['sa'], [B_ID, A_ID]])
-    expect(renames).toEqual([])
+    expect(tap.renames).toEqual([])
     expect(indexMoves).not.toHaveBeenCalled()
     expect(flushValueWrites(root)).toEqual([])
     indexMoves.mockRestore()
