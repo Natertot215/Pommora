@@ -344,8 +344,16 @@ export function mergeViewEdit(raw: unknown, next: SavedView): Json {
 export type GroupLevel = 'group' | 'sub'
 export type GroupedView = Pick<SavedView, 'group' | 'sub_group' | 'hidden_groups'>
 
+const LEVEL_PREFIX: Record<GroupLevel, string> = { group: '', sub: 'sub/' }
+
+/** Whether the view's current grouping at `level` is on `propertyId`. */
+export const groupsOn = (v: GroupedView, level: GroupLevel, propertyId: string): boolean =>
+  level === 'group'
+    ? v.group?.kind === 'property' && v.group.property_id === propertyId
+    : v.sub_group?.property_id === propertyId
+
 const hiddenBucketKey = (level: GroupLevel, propertyId: string, bucket: string): string =>
-  level === 'group' ? `${propertyId}/${bucket}` : `sub/${propertyId}/${bucket}`
+  `${LEVEL_PREFIX[level]}${propertyId}/${bucket}`
 
 // The pre-F-383 spelling, read only under the grouping the view holds now.
 const legacyBucketKey = (
@@ -354,13 +362,7 @@ const legacyBucketKey = (
   propertyId: string,
   bucket: string,
 ): string | undefined =>
-  level === 'group'
-    ? v.group?.kind === 'property' && v.group.property_id === propertyId
-      ? bucket
-      : undefined
-    : v.sub_group?.property_id === propertyId
-      ? `sub/${bucket}`
-      : undefined
+  groupsOn(v, level, propertyId) ? `${LEVEL_PREFIX[level]}${bucket}` : undefined
 
 export function isBucketHidden(
   v: GroupedView,
@@ -386,9 +388,8 @@ export function toggleHiddenBucket(
   const held = v.hidden_groups ?? []
   const own = hiddenBucketKey(level, propertyId, bucket)
   const legacy = legacyBucketKey(v, level, propertyId, bucket)
-  return isBucketHidden(v, new Set(held), level, propertyId, bucket)
-    ? held.filter((k) => k !== own && k !== legacy)
-    : [...held, own]
+  const shown = held.filter((k) => k !== own && k !== legacy)
+  return shown.length < held.length ? shown : [...held, own]
 }
 
 /** The buckets of `propertyId` hidden at `level` under the encoded spelling. */
@@ -406,26 +407,16 @@ export function editHiddenBucket(
   from: string,
   to: string | null,
 ): string[] | null {
-  const held = v.hidden_groups ?? []
-  const names = new Set<string>()
+  const renamed = new Map<string, string[]>()
   for (const level of ['group', 'sub'] as const) {
-    names.add(hiddenBucketKey(level, propertyId, from))
+    const into = to === null ? [] : [hiddenBucketKey(level, propertyId, to)]
+    renamed.set(hiddenBucketKey(level, propertyId, from), into)
     const legacy = legacyBucketKey(v, level, propertyId, from)
-    if (legacy !== undefined) names.add(legacy)
+    if (legacy !== undefined) renamed.set(legacy, into)
   }
-  if (!held.some((k) => names.has(k))) return null
-  const next: string[] = []
-  for (const k of held) {
-    if (!names.has(k)) {
-      if (!next.includes(k)) next.push(k)
-      continue
-    }
-    if (to === null) continue
-    const level: GroupLevel = k.startsWith('sub/') ? 'sub' : 'group'
-    const renamed = hiddenBucketKey(level, propertyId, to)
-    if (!next.includes(renamed)) next.push(renamed)
-  }
-  return next
+  const held = v.hidden_groups ?? []
+  if (!held.some((k) => renamed.has(k))) return null
+  return [...new Set(held.flatMap((k) => renamed.get(k) ?? [k]))]
 }
 
 /** A property's encoded keys at both levels, and its legacy `sub/` keys under the sub-grouping the view holds now; a legacy bare key stays, since it can't be told from a hidden Set (B-4). */
@@ -434,7 +425,7 @@ export function clearHiddenBuckets(v: GroupedView, propertyId: string): string[]
   const own = (k: string): boolean =>
     k.startsWith(hiddenBucketKey('group', propertyId, '')) ||
     k.startsWith(hiddenBucketKey('sub', propertyId, '')) ||
-    (v.sub_group?.property_id === propertyId && k.startsWith('sub/') && !k.slice(4).includes('/'))
+    (groupsOn(v, 'sub', propertyId) && k.startsWith('sub/') && !k.slice(4).includes('/'))
   const next = held.filter((k) => !own(k))
   return next.length === held.length ? null : next
 }

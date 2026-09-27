@@ -51,6 +51,20 @@ const unsweptReply = ({ hosts, skipped }: ConfigReach): Reply<null> => ({
   result: skipped ? fault(unsweptLine(skipped)) : ok(null),
 })
 
+// Every outcome confirms, so a write the operation made before it failed still reaches the renderer.
+async function answer<T, R>(
+  ctx: HostContext,
+  root: string,
+  r: Result<T>,
+  reply: (value: T) => Reply<R>,
+  containerPath?: string,
+): Promise<Result<R>> {
+  const replied = r.ok ? reply(r.value) : null
+  for (const host of replied?.hosts ?? []) ctx.push('tiles:changed', host)
+  await confirmRegistryWrite(ctx, root, containerPath)
+  return replied ? replied.result : (r as Result<never>)
+}
+
 const registryChannel = <A extends unknown[], T, R = T>(
   narrow: (args: unknown[]) => A | Result<never>,
   write: (root: string, ...args: A) => Promise<Result<T>>,
@@ -59,11 +73,7 @@ const registryChannel = <A extends unknown[], T, R = T>(
   withWriteRoot(async (root, ctx, ...args: unknown[]): Promise<Result<R>> => {
     const narrowed = narrow(args)
     if (!Array.isArray(narrowed)) return narrowed
-    const r = await write(root, ...narrowed)
-    const replied = r.ok ? reply(r.value) : null
-    for (const host of replied?.hosts ?? []) ctx.push('tiles:changed', host)
-    await confirmRegistryWrite(ctx, root)
-    return replied ? replied.result : (r as Result<never>)
+    return answer(ctx, root, await write(root, ...narrowed), reply)
   })
 
 const schemaChannel = <A extends unknown[], T = null, R = T>(
@@ -76,11 +86,7 @@ const schemaChannel = <A extends unknown[], T = null, R = T>(
     if (!c.ok) return c
     const narrowed = narrow(args)
     if (!Array.isArray(narrowed)) return narrowed
-    const r = await write(root, c.value.folder, ...narrowed)
-    const replied = r.ok ? reply(r.value) : null
-    for (const host of replied?.hosts ?? []) ctx.push('tiles:changed', host)
-    await confirmRegistryWrite(ctx, root, c.value.rel)
-    return replied ? replied.result : (r as Result<never>)
+    return answer(ctx, root, await write(root, c.value.folder, ...narrowed), reply, c.value.rel)
   })
 
 const idOnly = ([id]: unknown[]): [string] | Result<never> =>
