@@ -4,12 +4,8 @@ import {
   expressibleHeading,
   pageEmbedText,
 } from '@pommora/core/Connections/connections'
-import type {
-  GripMenuContext,
-  HeadingLevel,
-  ListKind,
-  PickNode,
-} from '@pommora/core/Actions/gripMenu'
+import type { GripMenuContext, HeadingLevel, ListKind } from '@pommora/core/Actions/gripMenu'
+import type { PickItem } from '@pommora/core/Actions/menuModel'
 import { COPY_LINK_ROW } from '@pommora/core/Actions/pageMenu'
 import { listKindOf, setHeading, setListKind } from '../Input/format'
 import { headingParts, webpageEmbedUrlSpan } from '../Engine/detect'
@@ -39,17 +35,13 @@ const headingLineAt = (e: MouseEvent): HTMLElement | null =>
   gutterLineAt(e, `.cm-line.${HEADING_FOLD_LINE}`)
 
 export function embedPickTree(
-  nodes: readonly PickNode[],
+  nodes: readonly PickItem<string>[],
   exclude: ReadonlySet<string>,
-): PickNode[] {
-  const kept: PickNode[] = []
-  for (const n of nodes) {
-    if (n.children) {
-      const children = embedPickTree(n.children, exclude)
-      if (children.length > 0) kept.push({ label: n.label, children })
-    } else if (n.title !== undefined && embeddable(n.title, exclude)) kept.push(n)
-  }
-  return kept
+): PickItem<string>[] {
+  return nodes.flatMap((n) => {
+    if (n.pick === undefined) return [{ ...n, submenu: embedPickTree(n.submenu ?? [], exclude) }]
+    return embeddable(n.pick, exclude) ? [n] : []
+  })
 }
 
 /** Plus one fencing blank when the block sat between two (a single separator survives); at EOF the preceding newline goes. */

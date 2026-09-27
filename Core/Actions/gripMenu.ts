@@ -1,4 +1,4 @@
-import { type ActionItem, joinGroups } from './menuModel'
+import { type ActionItem, joinGroups, type PickItem, pickRows } from './menuModel'
 import { scaleRows } from '../Tiles/tileZoom'
 import { COPY_LINK_ROW } from './pageMenu'
 
@@ -6,14 +6,8 @@ export type HeadingLevel = 0 | 1 | 2 | 3 | 4 | 5 | 6
 
 export type ListKind = 'ordered' | 'alphabetical' | 'bullet' | 'checkbox' | 'arrow'
 
-export interface PickNode {
-  label: string
-  title?: string
-  children?: PickNode[]
-}
-
 export type GripMenuContext =
-  | { kind: 'embed'; tree: PickNode[]; zoom: number | null }
+  | { kind: 'embed'; tree: readonly PickItem<string>[]; zoom: number | null }
   | { kind: 'webpage'; zoom: number | null }
   | { kind: 'list'; current: ListKind | null }
   | { kind: 'heading'; level: number; linkable: boolean; editable: boolean }
@@ -57,11 +51,6 @@ export const LIST_KINDS: readonly {
   { kind: 'arrow', label: 'Arrowed List', short: 'Arrowed', icon: 'arrow-right' },
 ]
 
-const source = (n: PickNode): ActionItem<GripMenuAction> =>
-  n.children
-    ? { label: n.label, submenu: n.children.map(source) }
-    : { label: n.label, action: `source:${n.title ?? n.label}` }
-
 const scaleRow = (zoom: number | null): ActionItem<GripMenuAction> => ({
   label: 'Scale',
   submenu: zoom === null ? [] : scaleRows('zoom:', zoom),
@@ -70,7 +59,10 @@ const scaleRow = (zoom: number | null): ActionItem<GripMenuAction> => ({
 function ownRows(ctx: GripMenuContext): ActionItem<GripMenuAction>[] {
   switch (ctx.kind) {
     case 'embed':
-      return [{ label: 'Source', submenu: ctx.tree.map(source) }, scaleRow(ctx.zoom)]
+      return [
+        { label: 'Source', submenu: pickRows(ctx.tree, (title) => `source:${title}` as const) },
+        scaleRow(ctx.zoom),
+      ]
     case 'webpage':
       return [{ label: 'Edit Link', action: 'editLink' }, scaleRow(ctx.zoom)]
     case 'list':

@@ -31,6 +31,29 @@ export function joinGroups<A>(groups: readonly (readonly ActionItem<A>[])[]): Ac
     .flatMap((g, i) => (i === 0 ? g : [{ ...g[0], separatorBefore: true }, ...g.slice(1)]))
 }
 
+/** A tree a menu drills to its picks: a node without a pick is a branch, and footer nodes sink to a separated last group of their level. */
+export interface PickItem<T> {
+  label: string
+  icon?: string
+  pick?: T
+  submenu?: readonly PickItem<T>[]
+  footer?: boolean
+}
+
+export function pickRows<T, A>(
+  nodes: readonly PickItem<T>[],
+  act: (pick: T) => A,
+): ActionItem<A>[] {
+  const row = (n: PickItem<T>): ActionItem<A> =>
+    n.pick === undefined
+      ? { label: n.label, icon: n.icon, submenu: pickRows(n.submenu ?? [], act) }
+      : { label: n.label, icon: n.icon, action: act(n.pick) }
+  return joinGroups([
+    nodes.filter((n) => !n.footer).map(row),
+    nodes.filter((n) => n.footer).map(row),
+  ])
+}
+
 export function openOrder<A>(
   alreadyOpen: boolean | undefined,
   open: readonly ActionItem<A>[],

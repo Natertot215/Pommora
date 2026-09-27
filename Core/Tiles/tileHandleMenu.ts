@@ -1,16 +1,17 @@
 import { lockLabel } from '@pommora/core/Actions/toggleLabels'
 import {
-  type DrillPickItem,
-  type PagePickerItem,
   TILE_KINDS,
   type TileEntry,
   type TilePick,
   type TileStyle,
-  type ViewPickerItem,
+  type ViewPick,
 } from '@pommora/core/Tiles/tiles'
 import { scaleRows } from './tileZoom'
 import { ZOOM } from '@pommora/core/Settings/personalization'
-import { type ActionItem, joinGroups } from '@pommora/core/Actions/menuModel'
+import { type ActionItem, type PickItem, pickRows } from '@pommora/core/Actions/menuModel'
+import { containerPickTree, type DefaultIcons } from '@pommora/core/Actions/pickTree'
+import type { NexusTree } from '@pommora/core/Nexus/tree'
+import { viewGlyph } from '@pommora/core/Views/viewIcon'
 
 type TileMenuAction =
   | 'tile:open'
@@ -21,6 +22,16 @@ type TileMenuAction =
   | `tile:zoom:${number}`
   | `tile:pick:${number}`
 
+export const viewPickTree = (tree: NexusTree, icons: DefaultIcons): PickItem<ViewPick>[] =>
+  containerPickTree(tree, icons, (c) => [
+    ...(c.views ?? []).map((v) => ({
+      label: v.name,
+      icon: viewGlyph(v),
+      pick: { source_id: c.id, view_id: v.id },
+    })),
+    { label: '+ Custom', pick: { source_id: c.id }, footer: true },
+  ])
+
 export function tileMenuItems({
   entry,
   pageItems,
@@ -29,28 +40,17 @@ export function tileMenuItems({
   containerLocked,
 }: {
   entry: TileEntry
-  pageItems: PagePickerItem[]
-  viewItems: ViewPickerItem[]
+  pageItems: readonly PickItem<string>[]
+  viewItems: readonly PickItem<ViewPick>[]
   pageInfo?: { title: string; icon: string }
   containerLocked: boolean
 }): { items: ActionItem<TileMenuAction>[]; picks: TilePick[] } {
   // Rows name an index into `picks` because a menu row can't carry a pick.
   const picks: TilePick[] = []
   const locked = (entry.locked ?? false) || containerLocked
-  const drill = <T>(
-    nodes: readonly DrillPickItem<T>[],
-    wrap: (value: T) => TilePick,
-  ): ActionItem<TileMenuAction>[] => {
-    const row = (n: DrillPickItem<T>): ActionItem<TileMenuAction> => {
-      if (n.pick === undefined)
-        return { label: n.label, icon: n.icon, submenu: drill(n.submenu ?? [], wrap) }
-      picks.push(wrap(n.pick))
-      return { label: n.label, icon: n.icon, action: `tile:pick:${picks.length - 1}` as const }
-    }
-    return joinGroups([
-      nodes.filter((n) => !n.footer).map(row),
-      nodes.filter((n) => n.footer).map(row),
-    ])
+  const pickAction = (pick: TilePick): TileMenuAction => {
+    picks.push(pick)
+    return `tile:pick:${picks.length - 1}`
   }
   const borderless = entry.style === 'borderless'
   const items: ActionItem<TileMenuAction>[] = [
@@ -64,8 +64,8 @@ export function tileMenuItems({
       submenu: locked
         ? []
         : source === 'pages'
-          ? drill(pageItems, (value) => ({ kind: 'page', value }))
-          : drill(viewItems, (value) => ({ kind: 'view', value })),
+          ? pickRows(pageItems, (value) => pickAction({ kind: 'page', value }))
+          : pickRows(viewItems, (value) => pickAction({ kind: 'view', value })),
     })),
     {
       label: 'Style',

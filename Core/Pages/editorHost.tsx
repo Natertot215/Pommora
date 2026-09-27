@@ -1,7 +1,7 @@
 import { persist, reportRefusal } from '@pommora/core/Interface/Notifications/notifications'
 import { useMemo } from 'react'
-import type { CollectionNode, SetNode } from '@pommora/core/Nexus/tree'
-import { type PickNode, gripMenuItems } from '@pommora/core/Actions/gripMenu'
+import { gripMenuItems } from '@pommora/core/Actions/gripMenu'
+import { pagePickTree } from '@pommora/core/Actions/pickTree'
 import { valueOr } from '@pommora/core/Contract/result'
 import { tableMenuItems } from '@pommora/core/MarkdownPM/Tables/tableMenu'
 import { citationMenuModel } from '@pommora/core/MarkdownPM/Citations/citationMenu'
@@ -39,14 +39,6 @@ interface EditorHostOptions {
 function tileWarmSeam(chain: readonly string[]): WarmSeam {
   return warmSeamOf('embed', chain.join('\n'), () => knownBody(chain[chain.length - 1]))
 }
-
-const pickNode = (c: CollectionNode | SetNode): PickNode => ({
-  label: c.title,
-  children: [
-    ...(c.sets ?? []).map(pickNode),
-    ...c.pages.map((p) => ({ label: p.title, title: p.title })),
-  ],
-})
 
 /** Every member reads the store when called, so one host serves an editor for its whole mount; the editor seats the host once, so the tile reads the ref rather than a mount-time capture. */
 function buildEditorHost(
@@ -140,7 +132,10 @@ function buildEditorHost(
           refocusHost={tile.refocusHost}
         />
       ),
-    pickTree: () => state().tree?.collections.map(pickNode) ?? [],
+    pickTree: () => {
+      const { tree, personalization } = state()
+      return tree ? pagePickTree(tree, personalization.defaultIcons, (p) => p.title) : []
+    },
     openLink: openWebLink,
     warmBody: (page) => {
       const slot = state().pages[page.id]

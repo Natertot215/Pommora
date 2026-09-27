@@ -6,10 +6,8 @@ import {
   type TileEntry,
   type TileHostRef,
   type TileStyle,
-  type PagePickerItem,
   TILE_KINDS,
   type TilePick,
-  type ViewPickerItem,
 } from '@pommora/core/Tiles/tiles'
 import type { ConnPage } from '../Connections/pageIndex'
 import { pagesByIdOf } from '../Nexus/treeIndex'
@@ -20,13 +18,12 @@ import { emptyLayout, findTile, getTile, type TileLayout } from './Layout/model'
 import { TileGrid, type BackdropTarget } from './TileGrid'
 import { useDismissal } from '@pommora/uix/Interactions/dismissalStack'
 import { entityIcon } from '../Assets/entityIconPolicy'
-import { type EntityIconKind, ZOOM } from '@pommora/core/Settings/personalization'
+import { ZOOM } from '@pommora/core/Settings/personalization'
 import { useSession } from '../Session/store'
 import { popMenu } from '../Actions/menuActions'
 import { askRemoveTile } from '../Interface/Confirm/confirmations'
 import { notifyUndoable, reportRefusal } from '../Interface/Notifications/notifications'
-import { viewGlyph } from '../Views/viewIcon'
-import type { CollectionNode, NexusTree, PageNode, SetNode } from '@pommora/core/Nexus/tree'
+import { pagePickTree } from '../Actions/pickTree'
 import { ZOOM_STEPS } from './tileZoom'
 import {
   inertTile,
@@ -34,62 +31,13 @@ import {
   renderTile as renderSurface,
   tileSourceInfo,
 } from './tileKinds'
-import { tileMenuItems } from './tileHandleMenu'
+import { tileMenuItems, viewPickTree } from './tileHandleMenu'
 import { isTileRemoving, markTileRemoving, readTileBody, unmarkTileRemoving } from './tileDocStore'
 import { useTileDoc } from './useTileDoc'
 import { dialer } from '../Platform/dialer'
 import { cx } from '@pommora/uix/Utilities/cx'
 import { RenderBoundary } from '@pommora/uix/Elements/RenderBoundary'
 import './tile-base.css'
-
-function pagePickerItems(
-  tree: NexusTree,
-  defaultIcons?: Partial<Record<EntityIconKind, string>>,
-): PagePickerItem[] {
-  const pageItem = (p: PageNode): PagePickerItem => ({
-    label: p.title,
-    icon: entityIcon('page', tree.pageMetadata[p.id]?.icon, defaultIcons),
-    pick: p.id,
-  })
-  const setItem = (s: SetNode): PagePickerItem => ({
-    label: s.title,
-    icon: entityIcon('set', s.icon, defaultIcons),
-    submenu: [...(s.sets ?? []).map(setItem), ...s.pages.map(pageItem)],
-  })
-  const collectionItem = (c: CollectionNode): PagePickerItem => ({
-    label: c.title,
-    icon: entityIcon('collection', c.icon, defaultIcons),
-    submenu: [...c.sets.map(setItem), ...c.pages.map(pageItem)],
-  })
-  return tree.collections.map(collectionItem)
-}
-
-function viewPickerItems(
-  tree: NexusTree,
-  defaultIcons?: Partial<Record<EntityIconKind, string>>,
-): ViewPickerItem[] {
-  const containerViews = (node: CollectionNode | SetNode): ViewPickerItem[] => [
-    ...(node.views ?? []).map((v) => ({
-      label: v.name,
-      icon: viewGlyph(v),
-      pick: { source_id: node.id, view_id: v.id },
-    })),
-    { label: '+ Custom', pick: { source_id: node.id }, footer: true },
-  ]
-  const collectionItem = (c: CollectionNode): ViewPickerItem => ({
-    label: c.title,
-    icon: entityIcon('collection', c.icon, defaultIcons),
-    submenu: [
-      ...containerViews(c),
-      ...c.sets.map((s) => ({
-        label: s.title,
-        icon: entityIcon('set', s.icon, defaultIcons),
-        submenu: containerViews(s),
-      })),
-    ],
-  })
-  return tree.collections.map(collectionItem)
-}
 
 // An absent key IS the default, so clearing a field deletes it rather than writing the default back.
 const withKey = (
@@ -144,15 +92,6 @@ export function TileHost({
   } = useTileDoc(host)
   const [editingId, setEditingId] = useState<string | null>(null)
   const tree = useSession((s) => s.tree)
-  const defaultIcons = useSession((s) => s.personalization.defaultIcons)
-  const pickers = useMemo(
-    () =>
-      tree && {
-        pageItems: pagePickerItems(tree, defaultIcons),
-        viewItems: viewPickerItems(tree, defaultIcons),
-      },
-    [tree, defaultIcons],
-  )
   const select = useSession((s) => s.select)
 
   const entries = useMemo(() => {
@@ -286,12 +225,17 @@ export function TileHost({
   const onHandleMenu = useCallback(
     (id: string, e: React.MouseEvent) => {
       const entry = entries.get(id)
-      if (!entry || !pickers) return
+      const { tree, personalization } = useSession.getState()
+      if (!entry || !tree) return
+      const { defaultIcons } = personalization
       const page = tileSourceInfo(entry, pagesById)
+      const pageItems = pagePickTree(tree, defaultIcons, (p) => p.id)
+      const viewItems = viewPickTree(tree, defaultIcons)
       const build = (on: TileEntry): ReturnType<typeof tileMenuItems> =>
         tileMenuItems({
           entry: on,
-          ...pickers,
+          pageItems,
+          viewItems,
           pageInfo: page && {
             title: page.title,
             icon: entityIcon('page', page.icon, defaultIcons),
@@ -341,9 +285,7 @@ export function TileHost({
     },
     [
       entries,
-      pickers,
       pagesById,
-      defaultIcons,
       hostLocked,
       applyPick,
       setTileZoom,

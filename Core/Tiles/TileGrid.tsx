@@ -28,7 +28,8 @@ import {
   resizeStackPair,
   stretchTileHeight,
 } from './Layout/ops'
-import { computeGeometry, type Rect } from './Layout/rects'
+import { computeGeometry } from './Layout/rects'
+import type { Rect } from '@pommora/uix/Interactions/useResizable'
 import { snapAxis, xCandidates, yCandidates } from './Layout/snap'
 import { stackLayout, stackedAt } from './Layout/stack'
 import { useLatest } from '@pommora/uix/Utilities/stableApi'

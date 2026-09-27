@@ -115,28 +115,38 @@ function usePillPresence(views: SavedView[]): {
 // KNOB — how long the strip's lock stays after locking before it fades
 const STRIP_LOCK_LINGER_MS = 2000
 
-type PeekAnchor = { kind: 'zone'; el: Element } | { kind: 'row'; first: Element } | null
+type PeekAnchor =
+  | { kind: 'zone'; el: Element }
+  | { kind: 'row'; first: HTMLElement; lead: Element | null; cols: number }
+  | null
 
 // A table reveals from its heading row; cards, which have none, from the first group band ahead of the first card, else the first row of cards.
 function resolvePeekAnchor(body: Element): PeekAnchor {
   const head = body.querySelector('.table-head')
   if (head) return { kind: 'zone', el: head }
-  const first = body.querySelector('.cards-view .card')
+  const first = body.querySelector<HTMLElement>('.cards-view .card')
   if (!first) return null
   const band = body.querySelector('.group-band-row')
   if (band && band.compareDocumentPosition(first) & Node.DOCUMENT_POSITION_FOLLOWING)
     return { kind: 'zone', el: band }
-  return { kind: 'row', first }
+  // The row is counted once by offsetTop, which a scroll leaves alone, so hovering tests position alone; a width change is counted on the next entry.
+  let cols = 1
+  for (
+    let n = first.nextElementSibling;
+    n instanceof HTMLElement && n.offsetTop === first.offsetTop;
+    n = n.nextElementSibling
+  )
+    cols++
+  return { kind: 'row', first, lead: first.previousElementSibling, cols }
 }
 
 function inPeekAnchor(anchor: PeekAnchor, target: EventTarget): boolean {
   if (!anchor || !(target instanceof Element)) return false
   if (anchor.kind === 'zone') return anchor.el.contains(target)
-  const card = target.closest('.card')
-  return (
-    card?.parentElement === anchor.first.parentElement &&
-    Math.abs(card.getBoundingClientRect().top - anchor.first.getBoundingClientRect().top) < 1
-  )
+  let n = target.closest('.card')
+  for (let i = 0; n && i < anchor.cols; i++, n = n.previousElementSibling)
+    if (n === anchor.first) return true
+  return false
 }
 
 const rawViews = (raw: Record<string, unknown>): unknown[] =>
@@ -279,14 +289,18 @@ export function ViewTile({
   }
   const peekHover = viewsShown ? undefined : hoverProps
 
-  // The anchor resolves once per entry into the body, so crossing cards reads no layout beyond the first row's.
+  // The anchor resolves once per entry into the body, and again only when its first card moves, so crossing cards reads no layout.
   const bodyHover = viewsShown
     ? undefined
     : {
         onPointerOver: (e: React.PointerEvent<HTMLDivElement>) => {
           const a = peekAnchor.current
-          if (!a || !(a.kind === 'zone' ? a.el : a.first).isConnected)
-            peekAnchor.current = resolvePeekAnchor(e.currentTarget)
+          const stale =
+            !a ||
+            (a.kind === 'zone'
+              ? !a.el.isConnected
+              : !a.first.isConnected || a.first.previousElementSibling !== a.lead)
+          if (stale) peekAnchor.current = resolvePeekAnchor(e.currentTarget)
           reveal.hover(inPeekAnchor(peekAnchor.current, e.target))
         },
         onPointerLeave: () => {
