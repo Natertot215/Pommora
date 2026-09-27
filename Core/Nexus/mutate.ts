@@ -4,6 +4,8 @@ import { setOrDrop } from '../Files/atomicWrite'
 import { patchSidecar } from '../Files/sidecar'
 import { titleFromPath } from '../Paths/posix'
 import { resolveUnderRoot } from '../Paths/pathSafety'
+import { contextsDir } from '../Paths/paths'
+import { machine } from '../Platform/machine'
 import { fault, ok } from '../Contract/result'
 import { emptyBundle, restoreOp } from '../Trash/spend'
 import { deleteOp } from '../Trash/delete'
@@ -56,9 +58,14 @@ export async function handleMutate(
 
 async function dispatch(ctx: MutateContext, req: MutateRequest): Promise<MutateReply> {
   const { root, deps } = ctx
+  // A Space's link write decides each far half from the world it loaded, and a tag written mid-rename must land under the new key, so every Contexts write and rename runs under the folder's one lock.
+  const underContexts = <T>(fn: () => Promise<T>): Promise<T> =>
+    machine().lock(contextsDir(root), fn)
   switch (req.op) {
     case 'createPage':
-      return createPageOp(ctx, req)
+      return Object.values(req.seeds ?? {}).some((v) => v.kind === 'context')
+        ? underContexts(() => createPageOp(ctx, req))
+        : createPageOp(ctx, req)
 
     case 'createContainer':
       return createContainerOp(ctx, req)
@@ -142,19 +149,19 @@ async function dispatch(ctx: MutateContext, req: MutateRequest): Promise<MutateR
     }
 
     case 'createSpace':
-      return createSpaceOp(ctx, req)
+      return underContexts(() => createSpaceOp(ctx, req))
 
     case 'setContext':
-      return setContextOp(ctx, req)
+      return underContexts(() => setContextOp(ctx, req))
 
     case 'setSpaceColor':
       return done(await setSpaceColor(root, req.spaceId, req.color))
 
     case 'renameContext':
-      return done(await renameContextOp(root, req.contextId, req.newName))
+      return done(await underContexts(() => renameContextOp(root, req.contextId, req.newName)))
 
     case 'renameSpace':
-      return done(await renameSpaceOp(root, req.spaceId, req.newName))
+      return done(await underContexts(() => renameSpaceOp(root, req.spaceId, req.newName)))
 
     case 'reorderContexts':
       return reorderContextsOp(ctx, req)
