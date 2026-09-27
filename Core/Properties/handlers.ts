@@ -51,7 +51,6 @@ const unsweptReply = ({ hosts, skipped }: ConfigReach): Reply<null> => ({
   result: skipped ? fault(unsweptLine(skipped)) : ok(null),
 })
 
-// Every outcome confirms, so a write the operation made before it failed still reaches the renderer.
 async function answer<T, R>(
   ctx: HostContext,
   root: string,

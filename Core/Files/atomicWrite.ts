@@ -204,7 +204,6 @@ export function updateNexusFile(
 
 export type StrictEdit = StrictMiss | 'unchanged' | 'written'
 
-/** An in-place edit that neither seeds an absent file nor repairs a corrupt one, answering which it met; what it read or wrote becomes the file's last read. */
 export function editJsonStrict(
   absPath: string,
   mutate: (current: Record<string, unknown>) => Record<string, unknown> | null,

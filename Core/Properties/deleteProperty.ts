@@ -89,7 +89,6 @@ async function deleteInner(root: string, propertyId: string): Promise<Result<Del
     folders,
     files.filter((f) => !held.kept.includes(f)),
   )
-  // Cleared only once the registry write landed, as the option removal clears only after its drop (D-1).
   if (!skipped && removed.ok) await clearSchemaJournal(root, record)
   return removed.ok ? ok({ trashed: { bundlePath: relative(root, bundle) }, hosts }) : removed
 }

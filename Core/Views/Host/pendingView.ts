@@ -13,7 +13,6 @@ const ENTRY_KEYS = [
 type EntryKey = (typeof ENTRY_KEYS)[number]
 const isEntryKey = (k: string): k is EntryKey => (ENTRY_KEYS as readonly string[]).includes(k)
 
-// `seen[0]` is the stored value at the first stage; each later entry is a value this host staged since.
 interface Slot {
   value: unknown
   seen: unknown[]
@@ -39,7 +38,6 @@ const stored = (view: SavedView, key: string): unknown => {
       ]
 }
 
-/** The view with each slot's value over it; an entry slot lands inside its record, so a patch of one column never drops its siblings. */
 export function foldView(
   view: SavedView,
   slots: readonly [key: string, value: unknown][],
@@ -56,7 +54,6 @@ export function foldView(
   return next as SavedView
 }
 
-/** A slot stays until the stored value reaches its latest staged value or leaves the run it was staged over; a stored value at an earlier staged value is this host's own earliest unlanded save, so a run that revisits a value settles in order. */
 function settle(staged: Staged, view: SavedView): Staged {
   let next: Staged | null = null
   for (const [key, slot] of Object.entries(staged)) {
@@ -84,7 +81,6 @@ function stageOver(staged: Staged, view: SavedView, patch: ViewPatch): Staged {
 
 const NOTHING: Staged = {}
 
-/** `resetKey` is the identity the host paints; a change drops every slot, since nothing staged over another view can settle against this one. */
 export function usePendingView(view: SavedView, resetKey: string) {
   const latest = useLatest(view)
   const [staged, setStaged] = useState<Staged>(NOTHING)

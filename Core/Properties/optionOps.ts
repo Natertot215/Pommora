@@ -147,7 +147,6 @@ async function valueEditSweep(
   return (await sweepGovernedRoots(root, files, { raw, sidecars: raw })).skipped.length
 }
 
-/** The page sweep, then the configuration pass: a rename's pass runs regardless (its replay is idempotent); a removal's runs only once the sweep is clean, and its skips hold the drop (B-2). */
 export async function optionCascade(
   root: string,
   def: PropertyDefinition,
