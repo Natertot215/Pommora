@@ -14,8 +14,19 @@ import {
   savedView,
 } from '../Views/views'
 import { cachedValues, patchCacheBlock } from '../Properties/assignment'
-import { PROPERTY_TYPES, type PropertyDefinition } from '../Properties/properties'
-import { editList, namesValue, type ValueEdit } from '../Properties/pageValue'
+import {
+  PROPERTY_TYPES,
+  type PropertyDefinition,
+  RESERVED_PROPERTY_ID,
+} from '../Properties/properties'
+import {
+  editList,
+  type Matcher,
+  namesValue,
+  stripList,
+  type ValueEdit,
+} from '../Properties/pageValue'
+import { unsweptLine } from '../Properties/governedSweep'
 import { tileHostsOf } from '../Tiles/tilesFile'
 import type { TileHostRef } from '../Tiles/tiles'
 import { liveTreeOf } from './liveTree'
@@ -28,12 +39,16 @@ import { join } from '../Paths/posix'
 import { NEXUS_CONFIG_FILES } from '../Paths/nexusPaths'
 import { isPlainObject, listOf } from '../Contract/validators'
 import type { CollectionNode, NexusTree, SetNode } from './tree'
+import type { CascadeReport } from './cascade'
+import type { MutableKind } from './mutateRequest'
+import { containerAt, contextAt, spaceAt } from './treePatch'
 
 // ── Roles ──
 type Role =
   | 'none'
   | 'idList'
   | 'idMap'
+  | 'setIds'
   | 'rules'
   | 'criteria'
   | 'group'
@@ -70,7 +85,7 @@ const ROLES = {
   filter_enabled: 'none',
   group: 'group',
   format: 'none',
-  group_order: 'none',
+  group_order: 'setIds',
   structural_order_mode: 'none',
   location_order_mode: 'none',
   sub_group: 'subGroup',
@@ -80,7 +95,11 @@ const ROLES = {
 
 // ── Edits ──
 type OptionReach = { def: PropertyDefinition; value: string; edit: ValueEdit }
-type ConfigEdit = ({ kind: 'option' } & OptionReach) | { kind: 'property'; propertyId: string }
+type Gone = { propertyId: string; ids: ReadonlySet<string> }
+type ConfigEdit =
+  | ({ kind: 'option' } & OptionReach)
+  | { kind: 'property'; propertyId: string }
+  | ({ kind: 'gone' } & Gone)
 
 type Raw = Record<string, unknown>
 type ViewEdit = (view: Raw) => Raw | null
@@ -105,13 +124,9 @@ function overStrings(held: unknown, edit: (keys: string[]) => string[] | null): 
 const wholeValues = (def: PropertyDefinition, op: unknown): boolean =>
   PROPERTY_TYPES[def.type].kind === 'multiSelect' || !SUBSTRING_OPS.has(String(op))
 
-function optionRule(e: OptionReach, rule: Raw): Raw | null {
-  if (!onProperty(e.def.id, rule) || !wholeValues(e.def, rule.op)) return rule
-  const value =
-    typeof rule.value === 'string' ? editList([rule.value], namesValue, e.value, e.edit) : null
-  const values = Array.isArray(rule.values)
-    ? editList(rule.values, namesValue, e.value, e.edit)
-    : null
+function editOperands(rule: Raw, edit: (xs: readonly unknown[]) => unknown[] | null): Raw | null {
+  const value = typeof rule.value === 'string' ? edit([rule.value]) : null
+  const values = Array.isArray(rule.values) ? edit(rule.values) : null
   if (!value && !values) return rule
   const operandless = OPERANDLESS_OPS.has(String(rule.op))
   if (values && !values.length && !operandless) return null
@@ -126,6 +141,19 @@ function optionRule(e: OptionReach, rule: Raw): Raw | null {
   }
   return operandless || ruleOperands(next as FilterRule).length ? next : null
 }
+
+const optionRule = (e: OptionReach, rule: Raw): Raw | null =>
+  onProperty(e.def.id, rule) && wholeValues(e.def, rule.op)
+    ? editOperands(rule, (xs) => editList(xs, namesValue, e.value, e.edit))
+    : rule
+
+const gone =
+  (e: Gone): Matcher =>
+  (el) =>
+    typeof el === 'string' && e.ids.has(el.split('/')[0])
+
+const goneRule = (e: Gone, rule: Raw): Raw | null =>
+  onProperty(e.propertyId, rule) ? editOperands(rule, (xs) => stripList(xs, gone(e))) : rule
 
 const scopedOrder = (e: OptionReach, holder: unknown): unknown => {
   if (!onProperty(e.def.id, holder) || !Array.isArray(holder.order)) return holder
@@ -152,6 +180,7 @@ const RENAME: Record<Role, Handler<OptionReach>> = {
   none: keep,
   idList: keep,
   idMap: keep,
+  setIds: keep,
   rules: (e, held) => editRules(held, (r) => optionRule(e, r)),
   criteria: (e, held) => (Array.isArray(held) ? held.map((c) => scopedOrder(e, c)) : held),
   group: scopedOrder,
@@ -175,6 +204,7 @@ const CLEAR: Record<Role, Handler<string>> = {
     isPlainObject(held) && id in held
       ? Object.fromEntries(Object.entries(held).filter(([k]) => k !== id))
       : held,
+  setIds: keep,
   rules: (id, held) => editRules(held, (r) => clearRule(id, r)),
   criteria: (id, held) => (Array.isArray(held) ? held.filter((c) => !onProperty(id, c)) : held),
   group: (id, held) => (onProperty(id, held) ? { kind: 'structural' } : held),
@@ -187,6 +217,22 @@ const CLEAR: Record<Role, Handler<string>> = {
       : groupsOn(view, 'sub', id) && Array.isArray(held)
         ? held.filter((k) => typeof k !== 'string' || !k.includes('/'))
         : held,
+}
+
+const stripGone: Handler<Gone> = (e, held) =>
+  Array.isArray(held) ? (stripList(held, gone(e)) ?? held) : held
+
+const GONE: Record<Role, Handler<Gone>> = {
+  none: keep,
+  idList: keep,
+  idMap: keep,
+  setIds: stripGone,
+  rules: (e, held) => editRules(held, (r) => goneRule(e, r)),
+  criteria: keep,
+  group: keep,
+  subGroup: keep,
+  hiddenKeys: stripGone,
+  bandKeys: stripGone,
 }
 
 function viewEdit<E>(table: Record<Role, Handler<E>>, e: E): ViewEdit {
@@ -206,10 +252,58 @@ function viewEdit<E>(table: Record<Role, Handler<E>>, e: E): ViewEdit {
 
 export const propertyClear = (propertyId: string): ViewEdit => viewEdit(CLEAR, propertyId)
 
+function editsOf(e: ConfigEdit): { view: ViewEdit; rule: (rule: Raw) => Raw | null } {
+  switch (e.kind) {
+    case 'option':
+      return { view: viewEdit(RENAME, e), rule: (r) => optionRule(e, r) }
+    case 'property':
+      return { view: propertyClear(e.propertyId), rule: (r) => clearRule(e.propertyId, r) }
+    case 'gone':
+      return { view: viewEdit(GONE, e), rule: (r) => goneRule(e, r) }
+  }
+}
+
 // ── Reach ──
 export interface ConfigReach {
   skipped: number
   hosts: TileHostRef[]
+}
+
+export const reachReport = ({ hosts, skipped }: ConfigReach): CascadeReport => ({
+  pages: [],
+  hosts,
+  ...(skipped ? { warning: unsweptLine(skipped) } : {}),
+})
+
+const within = (node: CollectionNode | SetNode): (CollectionNode | SetNode)[] => [
+  node,
+  ...(node.sets ?? []).flatMap(within),
+]
+
+export function goneEdit(tree: NexusTree, kind: MutableKind, rel: string): ConfigEdit | null {
+  switch (kind) {
+    case 'page':
+      return null
+    case 'context': {
+      const group = contextAt(tree, rel)
+      return group ? { kind: 'property', propertyId: group.def.id } : null
+    }
+    case 'space': {
+      const space = spaceAt(tree, rel)
+      return space ? { kind: 'gone', propertyId: space.contextId, ids: new Set([space.id]) } : null
+    }
+    case 'collection':
+    case 'set': {
+      const node = containerAt(tree, rel)
+      return node
+        ? {
+            kind: 'gone',
+            propertyId: RESERVED_PROPERTY_ID.location,
+            ids: new Set(within(node).map((n) => n.id)),
+          }
+        : null
+    }
+  }
 }
 
 function cacheEdit(e: OptionReach, cur: Raw): Raw | null {
@@ -232,15 +326,10 @@ function cacheEdit(e: OptionReach, cur: Raw): Raw | null {
 type Container = { kind: 'collection' | 'set'; id: string; dir: string }
 
 function containersOf(tree: NexusTree, root: string, under?: string): Container[] {
-  const out: Container[] = []
-  const walk = (node: CollectionNode | SetNode): void => {
-    const dir = join(root, node.path)
-    if (!under || dir === under || dir.startsWith(`${under}/`))
-      out.push({ kind: node.kind, id: node.id, dir })
-    for (const s of node.sets ?? []) walk(s)
-  }
-  for (const c of tree.collections) walk(c)
-  return out
+  return tree.collections
+    .flatMap(within)
+    .map((node) => ({ kind: node.kind, id: node.id, dir: join(root, node.path) }))
+    .filter(({ dir }) => !under || dir === under || dir.startsWith(`${under}/`))
 }
 
 export async function reachConfig(
@@ -264,10 +353,9 @@ export async function reachConfig(
     if (outcome === 'unreadable' || outcome === 'corrupt') reach.skipped++
     return outcome === 'written'
   }
-  const edit = e.kind === 'option' ? viewEdit(RENAME, e) : propertyClear(e.propertyId)
+  const { view: edit, rule } = editsOf(e)
   const containers = containersOf(tree, root, under)
   for (const { kind, dir } of containers) {
-    if (dir === under) continue
     const wrote = await written(sidecarPath(dir, kind), (cur) => {
       const views = mapViews(cur, edit)
       const cache = kind === 'collection' && e.kind === 'option' ? cacheEdit(e, views ?? cur) : null
@@ -276,8 +364,10 @@ export async function reachConfig(
     if (wrote) noteSidecarWrite(dir)
   }
   const sources = new Set(containers.map((c) => c.id))
-  const inScope = (entry: unknown): boolean =>
-    !under || (isPlainObject(entry) && sources.has(String(entry.source_id)))
+  const inScope = (entry: unknown): boolean => {
+    const source = isPlainObject(entry) ? String(entry.source_id) : ''
+    return (!under || sources.has(source)) && !(e.kind === 'gone' && e.ids.has(source))
+  }
   for (const { host, dir } of tiles.hosts) {
     const wrote = await written(tileDocPath(dir), (cur) =>
       mapTiles(cur, (tile) =>
@@ -289,9 +379,7 @@ export async function reachConfig(
   if (!under)
     await written(nexusConfig(root, NEXUS_CONFIG_FILES.matrix), (cur) => {
       if (!isPlainObject(cur.filter)) return null
-      const rules = editRules(cur.filter.rules, (r) =>
-        e.kind === 'option' ? optionRule(e, r) : clearRule(e.propertyId, r),
-      )
+      const rules = editRules(cur.filter.rules, rule)
       return same(rules, cur.filter.rules) ? null : { ...cur, filter: { ...cur.filter, rules } }
     })
   return reach

@@ -7,7 +7,8 @@ import { NEXUS_CONFIG_FILES, SIDECAR_FILENAME, TILE_DOC_FILENAME } from '../Path
 import type { PropertyDefinition } from '../Properties/properties'
 import { dropLiveTree, liveTreeOf } from './liveTree'
 import { flushSidecarWrites } from './valuesChanged'
-import { propertyClear, reachConfig } from './configReach'
+import { goneEdit, propertyClear, reachConfig, reachReport } from './configReach'
+import { unsweptLine } from '../Properties/governedSweep'
 
 vi.mock('./liveTree', async (importOriginal) => {
   const mod = await importOriginal<typeof import('./liveTree')>()
@@ -353,14 +354,13 @@ describe('what the pass skips', () => {
 })
 
 describe('a pass scoped under one Collection', () => {
-  it('edits its Sets and the tiles sourcing them, and leaves its own sidecar, other sources, and the Matrix', async () => {
-    const colBefore = await readFile(colFile(), 'utf8')
+  it('edits the Collection, its Sets, and the tiles sourcing them, and leaves other sources and the Matrix', async () => {
     const reach = await reachConfig(root, clear, col())
     expect(reach).toEqual({ skipped: 0, hosts: [{ kind: 'space', id: 'sp_home' }] })
+    expect((await viewsOf(colFile()))[0].group).toEqual({ kind: 'structural' })
     expect((await viewsOf(setFile()))[0].group).toEqual({ kind: 'structural' })
     expect((await tileViews('t_deep'))[0].group).toEqual({ kind: 'structural' })
     expect((await tileViews('t_other'))[0]).toEqual(rich('tv_other'))
-    expect(await readFile(colFile(), 'utf8')).toBe(colBefore)
     expect(await matrixRules()).toEqual({
       match: 'all',
       rules: [{ property_id: 'prop_s', op: 'is', value: 'Done' }, null],
@@ -386,10 +386,148 @@ describe('a pass scoped under one Collection', () => {
     expect(outside).toEqual(rich('tv_out'))
   })
 
-  it('never opens the Collection’s own sidecar', async () => {
+  it('counts the Collection’s own unreadable sidecar', async () => {
     await rm(colFile())
     await mkdir(colFile())
-    expect((await reachConfig(root, clear, col())).skipped).toBe(0)
+    expect((await reachConfig(root, clear, col())).skipped).toBe(1)
     expect((await reachConfig(root, clear)).skipped).toBe(1)
+  })
+})
+
+describe('a gone edit', () => {
+  const setGone = {
+    kind: 'gone' as const,
+    propertyId: '_location',
+    ids: new Set(['set_gone', 'set_sub']),
+  }
+  const locatedRules = [
+    { property_id: '_location', op: 'is', values: ['set_gone', 'set_keep'] },
+    { property_id: '_location', op: 'is_inside', values: ['set_sub'] },
+    { property_id: '_location', op: 'is_empty' },
+    { property_id: 'prop_s', op: 'is', value: 'set_gone' },
+  ]
+  const strippedRules = [
+    { property_id: '_location', op: 'is', values: ['set_keep'] },
+    { property_id: '_location', op: 'is_empty' },
+    { property_id: 'prop_s', op: 'is', value: 'set_gone' },
+  ]
+  const located = (id: string): Raw => ({
+    id,
+    name: id,
+    type: 'table',
+    filter: { match: 'all', rules: locatedRules },
+    group_order: ['set_gone', 'set_keep', 'set_sub'],
+    hidden_groups: ['set_gone', 'prop_s/Done'],
+    collapsed_groups: ['set_gone', 'set_gone/Done', 'set_keep/_ungrouped', 'Done'],
+  })
+  const goneTile = {
+    id: 't_gone',
+    type: 'view',
+    views: [{ source_id: 'set_gone', config: located('tv_gone') }],
+  }
+
+  beforeEach(async () => {
+    await put(colFile(), { id: 'col_notes', views: [located('view_c')] })
+    await put(setFile(), { id: 'set_deep', views: [located('view_s')] })
+    await put(spaceTiles(), {
+      tiles: [
+        {
+          id: 't_deep',
+          type: 'view',
+          views: [{ source_id: 'set_deep', config: located('tv_deep') }],
+        },
+        goneTile,
+      ],
+    })
+    await put(matrixFile(), {
+      filter: { rules: { match: 'all', rules: locatedRules }, enabled: true },
+    })
+  })
+
+  it('strips the gone ids from Location rules and band keys on a Collection, a Set, a tile, and the Matrix', async () => {
+    const reach = await reachConfig(root, setGone)
+    expect(reach).toEqual({ skipped: 0, hosts: [{ kind: 'space', id: 'sp_home' }] })
+    for (const view of [
+      (await viewsOf(colFile()))[0],
+      (await viewsOf(setFile()))[0],
+      (await tileViews('t_deep'))[0],
+    ]) {
+      expect(view.filter).toEqual({ match: 'all', rules: strippedRules })
+      expect(view.group_order).toEqual(['set_keep'])
+      expect(view.hidden_groups).toEqual(['prop_s/Done'])
+      expect(view.collapsed_groups).toEqual(['set_keep/_ungrouped', 'Done'])
+    }
+    expect(await matrixRules()).toEqual({ match: 'all', rules: strippedRules })
+  })
+
+  it('strips a gone Space from the rules on its Context, dropping one it empties, and leaves another Context', async () => {
+    await put(setFile(), {
+      id: 'set_deep',
+      views: [
+        {
+          ...elsewhere('v'),
+          filter: {
+            match: 'all',
+            rules: [
+              { property_id: 'ctx_areas', op: 'contains_any', values: ['sp_work', 'sp_home'] },
+              { property_id: 'ctx_areas', op: 'does_not_contain', values: ['sp_work'] },
+              { property_id: 'ctx_other', op: 'contains_any', values: ['sp_work'] },
+            ],
+          },
+        },
+      ],
+    })
+    await reachConfig(root, { kind: 'gone', propertyId: 'ctx_areas', ids: new Set(['sp_work']) })
+    expect((await viewsOf(setFile()))[0].filter).toEqual({
+      match: 'all',
+      rules: [
+        { property_id: 'ctx_areas', op: 'contains_any', values: ['sp_home'] },
+        { property_id: 'ctx_other', op: 'contains_any', values: ['sp_work'] },
+      ],
+    })
+  })
+
+  it('leaves a tile view sourced from a gone container as written', async () => {
+    await reachConfig(root, setGone)
+    const tiles = (await json(spaceTiles())).tiles as Raw[]
+    expect(tiles.find((t) => t.id === 't_gone')).toEqual(goneTile)
+    expect((await tileViews('t_deep'))[0].group_order).toEqual(['set_keep'])
+  })
+
+  it('writes nothing on a second run', async () => {
+    await reachConfig(root, setGone)
+    const files = [colFile(), setFile(), spaceTiles(), homeTiles(), matrixFile()]
+    const before = await Promise.all(files.map(async (f) => (await stat(f)).mtimeMs))
+    expect(await reachConfig(root, setGone)).toEqual({ skipped: 0, hosts: [] })
+    expect(await Promise.all(files.map(async (f) => (await stat(f)).mtimeMs))).toEqual(before)
+  })
+
+  it('reports a pass as a cascade, carrying a warning only for a skip', () => {
+    expect(reachReport({ skipped: 2, hosts: [] })).toEqual({
+      pages: [],
+      hosts: [],
+      warning: unsweptLine(2),
+    })
+    expect('warning' in reachReport({ skipped: 0, hosts: [] })).toBe(false)
+  })
+
+  it('reads the edit a delete owes from the tree', async () => {
+    const tree = await liveTreeOf(root)
+    expect(goneEdit(tree, 'context', '.nexus/contexts/Areas')).toEqual({
+      kind: 'property',
+      propertyId: 'ctx_areas',
+    })
+    expect(goneEdit(tree, 'space', '.nexus/contexts/Areas/Home')).toEqual({
+      kind: 'gone',
+      propertyId: 'ctx_areas',
+      ids: new Set(['sp_home']),
+    })
+    expect(goneEdit(tree, 'set', 'Notes')).toEqual({
+      kind: 'gone',
+      propertyId: '_location',
+      ids: new Set(['col_notes', 'set_deep']),
+    })
+    expect(goneEdit(tree, 'page', 'Notes/Page.md')).toBeNull()
+    expect(goneEdit(tree, 'set', 'Missing')).toBeNull()
   })
 })

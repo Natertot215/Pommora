@@ -188,8 +188,11 @@ describe('removeProperty reaches saved views (B-6)', () => {
     expect(await removeProperty(root, folder, propId)).toEqual(
       ok({ skipped: 0, hosts: [{ kind: 'space', id: 'sp_home' }] }),
     )
-    const opened = vi.mocked(editJsonStrict).mock.calls.map(([path]) => path)
-    expect(opened).not.toContain(sidecarPath(folder, 'collection'))
+    const { calls, results } = vi.mocked(editJsonStrict).mock
+    const own = calls.flatMap(([path], i) =>
+      path === sidecarPath(folder, 'collection') ? [results[i].value] : [],
+    )
+    expect(await Promise.all(own)).toEqual(['unchanged'])
     const views = await surfaces.read()
     expect([views.collection, views.set, views.tile]).toEqual([cleared, cleared, cleared])
     expect(JSON.parse(await readFile(surfaces.tiles, 'utf8')).tiles[1].views[0].config).toEqual(
