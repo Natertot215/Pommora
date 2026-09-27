@@ -14,11 +14,11 @@ import {
 import { adoptFile } from '../Assets/adoptFile'
 import { handleMutate } from './mutate'
 import { machine } from '../Platform/machine'
-import { sidecarPath } from '../Paths/paths'
+import { nexusConfig, sidecarPath } from '../Paths/paths'
 import { resolveUnderRoot } from '../Paths/pathSafety'
 import { NEW_SLOT, type MutateRequest, mutateRequest } from './mutateRequest'
 import type { Crop } from './schemas'
-import { cropKeyFor } from '../Paths/nexusPaths'
+import { cropKeyFor, NEXUS_CONFIG_FILES } from '../Paths/nexusPaths'
 import { assetFilePath } from '../Assets/assetRoots'
 import { shardOf } from './ids'
 
@@ -573,6 +573,68 @@ describe('handleMutate — move + guards', () => {
       .find((c) => c.title === 'Notes')
       ?.sets.find((s) => s.title === 'Weekly')
     expect(weekly?.sets?.map((s) => s.id)).toEqual(['sx'])
+  })
+
+  describe('a Set that leaves a container', () => {
+    const located = (ids: string[]) => ({
+      id: 'v',
+      name: 'V',
+      type: 'table',
+      filter: { match: 'all', rules: [{ property_id: '_location', op: 'is', values: ids }] },
+      group_order: ids,
+    })
+    const seedSet = async (rel: string, id: string, extra: object = {}): Promise<void> => {
+      await mkdir(join(root, rel), { recursive: true })
+      await writeFile(join(root, rel, '_pageset.json'), JSON.stringify({ id, ...extra }))
+    }
+    const viewsAt = async (rel: string): Promise<unknown> => JSON.parse(await read(rel)).views
+    const matrix = (): string => nexusConfig(root, NEXUS_CONFIG_FILES.matrix)
+    const moveSet = (path: string, newParentPath: string) =>
+      handleMutate(root, { op: 'moveSet', path, newParentPath, order: [] }, nexusDeps)
+
+    it('strips a Set moved to another Collection, and its Sets, from the Collection it left', async () => {
+      const all = ['col', 'ch', 'wk']
+      await writeFile(
+        join(root, 'Notes', '_pagecollection.json'),
+        JSON.stringify({ id: 'pt', views: [located(all)] }),
+      )
+      await seedSet('Notes/Daily/Child', 'ch')
+      await seedSet('Notes/Weekly', 'wk', { views: [located(all)] })
+      await mkdir(join(root, 'Other'))
+      await writeFile(join(root, 'Other', '_pagecollection.json'), JSON.stringify({ id: 'ot' }))
+      const rules = { match: 'all', rules: [{ property_id: '_location', op: 'is', values: all }] }
+      await writeFile(matrix(), JSON.stringify({ filter: { rules, enabled: true } }))
+      const r = await moveSet('Notes/Daily', 'Other')
+      expect(r.ok && r.value.cascade).toEqual({ pages: [], hosts: [] })
+      expect(await viewsAt('Notes/_pagecollection.json')).toEqual([located(['wk'])])
+      expect(await viewsAt('Notes/Weekly/_pageset.json')).toEqual([located(['wk'])])
+      expect(JSON.parse(await readFile(matrix(), 'utf8')).filter.rules).toEqual(rules)
+    })
+
+    it('strips a Set moved out of its parent Set from that Set, and leaves the Collection', async () => {
+      await writeFile(
+        join(root, 'Notes', '_pagecollection.json'),
+        JSON.stringify({ id: 'pt', views: [located(['sa', 'sb'])] }),
+      )
+      await seedSet('Notes/A', 'sa', { views: [located(['sb', 'x'])] })
+      await seedSet('Notes/A/B', 'sb')
+      const r = await moveSet('Notes/A/B', 'Notes')
+      expect(r.ok && r.value.cascade).toEqual({ pages: [], hosts: [] })
+      expect(await viewsAt('Notes/A/_pageset.json')).toEqual([located(['x'])])
+      expect(await viewsAt('Notes/_pagecollection.json')).toEqual([located(['sa', 'sb'])])
+    })
+
+    it('edits nothing for a Set moved deeper under its own parent', async () => {
+      await writeFile(
+        join(root, 'Notes', '_pagecollection.json'),
+        JSON.stringify({ id: 'pt', views: [located(['col', 'wk'])] }),
+      )
+      await seedSet('Notes/Weekly', 'wk', { views: [located(['col', 'wk'])] })
+      const r = await moveSet('Notes/Daily', 'Notes/Weekly')
+      expect(r.ok && 'cascade' in r.value).toBe(false)
+      expect(await viewsAt('Notes/_pagecollection.json')).toEqual([located(['col', 'wk'])])
+      expect(await viewsAt('Notes/Weekly/_pageset.json')).toEqual([located(['col', 'wk'])])
+    })
   })
 
   it('moveSet into its current collection is an in-place reorder (no folder move)', async () => {
@@ -2206,7 +2268,7 @@ describe('handleMutate — excluded entries follow their folders', () => {
       { op: 'moveSet', path: 'Notes/Daily', newParentPath: 'Other', order: [] },
       nexusDeps,
     )
-    expect(r).toEqual({ ok: true, value: { rescope: true } })
+    expect(r).toEqual({ ok: true, value: { rescope: true, cascade: { pages: [], hosts: [] } } })
     expect(await excludedOnDisk()).toEqual(['Other/Daily/Old'])
   })
 
