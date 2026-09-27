@@ -13,13 +13,18 @@ import { mintDefaultView, mintViewId } from '../Views/views'
 import { readRegistry } from '../Properties/propertiesRegistry'
 import type { PropertyDefinition } from '../Properties/properties'
 import type { PropertyValue } from '../Properties/propertyValue'
-import { fillSlot, type MutateReply, type MutateRequest } from './mutateRequest'
+import {
+  CONTAINER_KINDS,
+  contextSeeds,
+  fillSlot,
+  type MutateReply,
+  type MutateRequest,
+} from './mutateRequest'
 import type { MutateContext } from './mutate'
 import { createPage } from './page'
 import { createFolderEntity, landingRefusal } from './folderEntity'
 import { setChildOrder, setSpaceOrder } from './reorder'
 import { mutableTarget } from './liveTree'
-import { CONTAINER_KINDS } from './mutateRequest'
 import { noteValueWrite } from './valuesChanged'
 
 const created = (parentPath: string, r: { id: string; path: string }): MutateReply =>
@@ -31,9 +36,7 @@ export async function createPageOp(
 ): Promise<MutateReply> {
   const parent = await mutableTarget(root, req.parentPath, CONTAINER_KINDS)
   if (!parent.ok) return parent
-  const contexts = Object.entries(req.seeds ?? {}).flatMap(([id, v]) =>
-    v.kind === 'context' ? [[id, v.value] as const] : [],
-  )
+  const contexts = contextSeeds(req)
   let world: ContextWorld | undefined
   if (contexts.length) {
     const loaded = await loadContextWorld(root)

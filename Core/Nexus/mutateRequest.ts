@@ -111,8 +111,14 @@ export const mutateRequest = z.discriminatedUnion('op', [
 ])
 export type MutateRequest = z.infer<typeof mutateRequest>
 
-export const seedsContext = (req: Extract<MutateRequest, { op: 'createPage' }>): boolean =>
-  Object.values(req.seeds ?? {}).some((v) => v.kind === 'context')
+type CreatePageRequest = Extract<MutateRequest, { op: 'createPage' }>
+
+export const contextSeeds = (req: CreatePageRequest): [contextId: string, spaceIds: string[]][] =>
+  Object.entries(req.seeds ?? {}).flatMap(([id, v]) =>
+    v.kind === 'context' ? [[id, v.value]] : [],
+  )
+
+export const seedsContext = (req: CreatePageRequest): boolean => contextSeeds(req).length > 0
 
 export type RenameHost = 'detail' | 'sidebar' | 'matrix'
 
