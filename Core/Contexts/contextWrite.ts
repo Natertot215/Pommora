@@ -190,15 +190,15 @@ export async function setSpaceContext(
     ...preservedChanges(reconcileGovernedRoot(raw, world), raw),
   })
 
+  const namesA = namesSpace(a.title)
   for (const s of world.spacesByContext.get(contextId) ?? []) {
     const far = world.spaceById.get(s.id)
     const wants = targetSpaceIds.includes(s.id)
-    if (!far || far.id === a.id || listOf(far.raw[backKey]).some(namesSpace(a.title)) === wants)
-      continue
+    if (!far || far.id === a.id || listOf(far.raw[backKey]).some(namesA) === wants) continue
     const half = await writeSpaceSidecar(far.dir, (raw) => {
       const base = repaired(raw)
       const held = listOf(base[backKey]).filter((v): v is string => typeof v === 'string')
-      const without = held.filter((t) => !namesSpace(a.title)(t))
+      const without = held.filter((t) => !namesA(t))
       const next = wants ? [...without, a.title] : without
       return setOrDrop(base, backKey, next.length > 0 && next)
     })
