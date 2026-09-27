@@ -176,6 +176,30 @@ describe('PropertyPanel', () => {
     ])
   })
 
+  it('an edit made on one page doesn’t cover that page’s values after the panel moves away and back', async () => {
+    ask = vi.fn(async () => ({ ok: true, value: 'value:remove' }))
+    ;(window as unknown as { nexus: unknown }).nexus = {
+      ask,
+      tell: vi.fn(),
+      on: vi.fn(() => () => {}),
+    }
+    cachePageDetail(detail({ path: 'Col/Page.md', frontmatter: { Stage: 'a' } }))
+    cachePageDetail(detail({ path: 'Col/Other.md', frontmatter: {} }))
+    await renderPanel(<PropertyPanel subject={PAGE} host="dropdown" />)
+    await act(async () => {
+      host
+        .querySelector('[data-property-row="prop_stage"]')
+        ?.dispatchEvent(new MouseEvent('contextmenu', { bubbles: true }))
+    })
+    await act(async () => {})
+    expect(text()).not.toContain('Stage')
+    await renderPanel(
+      <PropertyPanel subject={{ kind: 'page', id: 'p2', path: 'Col/Other.md' }} host="dropdown" />,
+    )
+    await renderPanel(<PropertyPanel subject={PAGE} host="dropdown" />)
+    expect(text()).toContain('Alpha')
+  })
+
   it('a Space subject reads the registry and its node’s own values', async () => {
     setTree({ Stage: 'a' })
     await renderPanel(<PropertyPanel subject={SPACE} host="dropdown" />)
