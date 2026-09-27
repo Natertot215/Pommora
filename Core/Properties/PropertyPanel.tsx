@@ -32,7 +32,8 @@ import {
   syntheticContextDef,
 } from './Pickers/PropertyPicker'
 import { assignValue, type ValueWriter } from './assignValue'
-import { collectionOfPage, fetchPageValues, pageRowOf, schemaForPage, spaceRowOf } from './pageRow'
+import { collectionOfPage, pageRowOf, schemaForPage, spaceRowOf } from './pageRow'
+import { useValuesEpoch } from '../Views/Host/useContainerValues'
 import { PropertyValueInput } from './Pickers/PropertyValueInput'
 import { resolveFieldValue } from './value'
 import { buildValueContext, type ValueContext } from './valueContext'
@@ -123,23 +124,16 @@ export function PropertyPanel({
     }
   }, [path, isSpace])
 
-  const valuesEpoch = useSession((st) => st.valuesEpoch)
-  useEffect(() => {
-    if (isSpace || valuesEpoch?.kind !== 'container') return
-    const named = valuesEpoch.changes.some((c) => c.pageIds.includes(subjectId))
-    const mine =
-      named || valuesEpoch.changes.some((c) => c.pageIds.length === 0 && c.rel === relDirname(path))
-    if (!mine) return
-    setOverride((prev) => retireSettled(prev, named ? [subjectId] : null))
-    let live = true
-    void fetchPageValues(relDirname(path), [subjectId]).then((values) => {
-      const next = values?.[subjectId]?.frontmatter
-      if (live && next) setBase(next as PageFrontmatter)
-    })
-    return () => {
-      live = false
-    }
-  }, [valuesEpoch, subjectId, path, isSpace])
+  useEffect(() => setOverride(null), [subjectId])
+  useValuesEpoch(
+    isSpace ? null : relDirname(path),
+    (v) => {
+      const next = v[subjectId]?.frontmatter
+      if (next) setBase(next)
+    },
+    setOverride,
+    subjectId,
+  )
 
   // A Space has no values push; its override retires on its node's swap.
   useEffect(() => {

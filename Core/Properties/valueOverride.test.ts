@@ -1,26 +1,29 @@
 import { describe, expect, it } from 'vitest'
 import type { PageFrontmatter } from '@pommora/core/Nexus/schemas'
-import { patchOverride, retireSettled, type Overrides } from './valueOverride'
+import {
+  patchOverride,
+  retireSettled,
+  settled as settleCount,
+  type Overrides,
+} from './valueOverride'
 
 const fm = (id: string): PageFrontmatter => ({ id }) as never
 const inFlight = new Promise<boolean>(() => {})
 const overrides: Overrides = {
   a: { fm: fm('a'), write: inFlight },
-  b: { fm: fm('b'), write: null },
+  b: { fm: fm('b'), write: 0 },
 }
 
 describe('retireSettled', () => {
-  it('a push naming ids retires them, pending or not', () => {
-    expect(retireSettled(overrides, ['a'])).toEqual({ b: overrides.b })
-    expect(retireSettled(overrides, ['b'])).toEqual({ a: overrides.a })
-  })
-
-  it('a push naming none retires only the settled', () => {
+  it('retires only settled overrides, among the named pages or across every page for null', () => {
+    expect(retireSettled(overrides, ['a', 'b'])).toEqual({ a: overrides.a })
+    expect(retireSettled(overrides, ['a'])).toEqual(overrides)
+    expect(retireSettled(overrides, [])).toEqual(overrides)
     expect(retireSettled(overrides, null)).toEqual({ a: overrides.a })
   })
 
   it('an emptied map is null, and null stays null', () => {
-    expect(retireSettled(overrides, ['a', 'b'])).toBeNull()
+    expect(retireSettled({ b: overrides.b }, ['b'])).toBeNull()
     expect(retireSettled({ b: overrides.b }, null)).toBeNull()
     expect(retireSettled(null, ['a'])).toBeNull()
   })
@@ -41,7 +44,7 @@ describe('patchOverride', () => {
     land(true)
     await settled
     await Promise.resolve()
-    expect(state).toEqual({ a: { fm: fm('a'), write: null } })
+    expect(state).toEqual({ a: { fm: fm('a'), write: settleCount() } })
   })
 
   it('an older write landing does not settle a newer override on the same page', async () => {

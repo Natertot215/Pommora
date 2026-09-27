@@ -9,6 +9,7 @@ import { ContentHostContext } from '../../Interface/contentHost'
 import { useSession } from '../../Session/store'
 import { useViewHost, type ViewHostApi } from './useViewHost'
 import { useContainerValues } from './useContainerValues'
+import { patchOverride } from '../../Properties/valueOverride'
 import { propsAtRoot, pageValues } from '../../Testing/pageValues'
 import { ID_KEY } from '@pommora/core/Nexus/identityMark'
 import { stubDialer } from '../../vitest.setup'
@@ -250,21 +251,63 @@ describe('the values epoch', () => {
     useSession.setState({ valuesEpoch: null })
   })
 
-  it('a container push re-reads only the named pages, merging them, and retires their overrides', async () => {
+  it('a container push re-reads only the named pages and retires a settled override while a still-saving one holds', async () => {
     await mountValues()
-    channels['view:loadValues'] = vi.fn(async () => ({ ok: true, value: P2 }))
+    channels['view:loadValues'] = vi.fn(async () => ({ ok: true, value: { ...VALUES, ...P2 } }))
     act(() =>
       vals?.setValueOverride({
-        p1: { fm: { id: 'p1' } as never, write: null },
-        p2: { fm: { id: 'p2' } as never, write: new Promise(() => {}) },
+        p1: { fm: { id: 'p1' } as never, write: new Promise(() => {}) },
+        p2: { fm: { id: 'p2' } as never, write: 0 },
       }),
     )
-    bump([{ rel: 'Col', pageIds: ['p2'] }])
+    bump([{ rel: 'Col', pageIds: ['p1', 'p2'] }])
     await act(async () => {})
-    expect(loadValues()).toHaveBeenCalledWith('Col', ['p2'])
+    expect(loadValues()).toHaveBeenCalledWith('Col', ['p1', 'p2'])
     expect(vals?.effectiveValues.p2).toEqual(P2.p2)
     expect(vals?.effectiveValues.p1?.frontmatter).toEqual({ id: 'p1' })
-    expect(vals?.values.p1).toEqual(VALUES.p1)
+  })
+
+  it('a full read a container swap discards retires nothing in the new container', async () => {
+    await mountValues()
+    const lands: ((v: { ok: true; value: typeof VALUES }) => void)[] = []
+    channels['view:loadValues'] = vi.fn(() => new Promise((r) => lands.push(r)))
+    bump([{ rel: 'Col', pageIds: [] }])
+    await act(async () => {})
+    await mountValues('Other')
+    act(() => vals?.setValueOverride({ p9: { fm: { id: 'p9' } as never, write: 0 } }))
+    await act(async () => lands[0]({ ok: true, value: VALUES }))
+    expect(vals?.effectiveValues.p9?.frontmatter).toEqual({ id: 'p9' })
+  })
+
+  it('a pending full read outlives another container’s push, and keeps a write that landed after it was issued', async () => {
+    await mountValues()
+    const lands: ((v: { ok: true; value: typeof P2 }) => void)[] = []
+    channels['view:loadValues'] = vi.fn(() => new Promise((r) => lands.push(r)))
+    bump([{ rel: 'Col', pageIds: [] }])
+    await act(async () => {})
+    const write = Promise.resolve(true)
+    act(() =>
+      patchOverride(vals?.setValueOverride ?? (() => {}), 'p2', { id: 'p2' } as never, write),
+    )
+    await act(async () => write)
+    bump([{ rel: 'Other', pageIds: ['p9'] }])
+    await act(async () => {})
+    await act(async () => lands[0]({ ok: true, value: P2 }))
+    expect(vals?.values.p2).toEqual(P2.p2)
+    expect(vals?.effectiveValues.p2?.frontmatter).toEqual({ id: 'p2' })
+  })
+
+  it('an older full read landing after a newer one is dropped', async () => {
+    await mountValues()
+    const lands: ((v: { ok: true; value: typeof P2 }) => void)[] = []
+    channels['view:loadValues'] = vi.fn(() => new Promise((r) => lands.push(r)))
+    bump([{ rel: 'Col', pageIds: [] }])
+    await act(async () => {})
+    bump([{ rel: 'Col', pageIds: [] }])
+    await act(async () => {})
+    await act(async () => lands[1]({ ok: true, value: P2 }))
+    await act(async () => lands[0]({ ok: true, value: VALUES }))
+    expect(vals?.values).toEqual(P2)
   })
 
   it('a scoped read that lands after a container swap never merges into the new container', async () => {
@@ -277,7 +320,7 @@ describe('the values epoch', () => {
           })
         : Promise.resolve({ ok: true, value: {} }),
     )
-    act(() => vals?.setValueOverride({ p1: { fm: { id: 'p1' } as never, write: null } }))
+    act(() => vals?.setValueOverride({ p1: { fm: { id: 'p1' } as never, write: 0 } }))
     bump([{ rel: 'Col', pageIds: ['p2'] }])
     await act(async () => {})
     await mountValues('Other')
@@ -290,7 +333,7 @@ describe('the values epoch', () => {
   it('a scoped read that resolves no page retires no override', async () => {
     await mountValues()
     channels['view:loadValues'] = vi.fn(async () => ({ ok: true, value: {} }))
-    act(() => vals?.setValueOverride({ p1: { fm: { id: 'p1' } as never, write: null } }))
+    act(() => vals?.setValueOverride({ p1: { fm: { id: 'p1' } as never, write: 0 } }))
     bump([{ rel: 'Col', pageIds: ['p1'] }])
     await act(async () => {})
     expect(vals?.effectiveValues.p1?.frontmatter).toEqual({ id: 'p1' })
@@ -307,18 +350,19 @@ describe('the values epoch', () => {
     expect(vals?.effectiveValues.p1).toEqual(VALUES.p1)
   })
 
-  it('a named override holds until the refetch lands, so the row never paints its fallback', async () => {
+  it('a named override holds until the refetch lands, so the row never paints its fallback, and the refetch merges', async () => {
     await mountValues()
     let land: (v: { ok: true; value: typeof P2 }) => void = () => {}
     channels['view:loadValues'] = vi.fn(
       () => new Promise<{ ok: true; value: typeof P2 }>((r) => (land = r)),
     )
-    act(() => vals?.setValueOverride({ p2: { fm: { id: 'p2' } as never, write: null } }))
+    act(() => vals?.setValueOverride({ p2: { fm: { id: 'p2' } as never, write: 0 } }))
     bump([{ rel: 'Col', pageIds: ['p2'] }])
     await act(async () => {})
     expect(vals?.effectiveValues.p2?.frontmatter).toEqual({ id: 'p2' })
     await act(async () => land({ ok: true, value: P2 }))
     expect(vals?.effectiveValues.p2).toEqual(P2.p2)
+    expect(vals?.values.p1).toEqual(VALUES.p1)
   })
 
   it('a push naming no ids retires the settled override and keeps the pending one', async () => {
@@ -326,7 +370,7 @@ describe('the values epoch', () => {
     act(() =>
       vals?.setValueOverride({
         p1: { fm: { id: 'p1' } as never, write: new Promise(() => {}) },
-        p2: { fm: { id: 'p2' } as never, write: null },
+        p2: { fm: { id: 'p2' } as never, write: 0 },
       }),
     )
     bump([{ rel: 'Col', pageIds: [] }])
@@ -338,7 +382,7 @@ describe('the values epoch', () => {
   it('one push over several containers reaches the mounted one', async () => {
     await mountValues()
     channels['view:loadValues'] = vi.fn(async () => ({ ok: true, value: P2 }))
-    act(() => vals?.setValueOverride({ p2: { fm: { id: 'p2' } as never, write: null } }))
+    act(() => vals?.setValueOverride({ p2: { fm: { id: 'p2' } as never, write: 0 } }))
     bump([
       { rel: 'Other', pageIds: ['p9'] },
       { rel: 'Col', pageIds: ['p2'] },
@@ -351,7 +395,7 @@ describe('the values epoch', () => {
   it('a sibling container push neither refetches nor retires', async () => {
     await mountValues()
     loadValues().mockClear()
-    act(() => vals?.setValueOverride({ p2: { fm: { id: 'p2' } as never, write: null } }))
+    act(() => vals?.setValueOverride({ p2: { fm: { id: 'p2' } as never, write: 0 } }))
     bump([{ rel: 'Other', pageIds: ['p2'] }])
     await act(async () => {})
     expect(loadValues()).not.toHaveBeenCalled()
@@ -362,7 +406,7 @@ describe('the values epoch', () => {
     await mountValues()
     act(() =>
       vals?.setValueOverride({
-        p2: { fm: { id: 'p2', Status: ['Done'] } as never, write: null },
+        p2: { fm: { id: 'p2', Status: ['Done'] } as never, write: 0 },
       }),
     )
     act(() => useSession.getState().bumpValuesEpoch('Status', 'State'))

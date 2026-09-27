@@ -7,6 +7,7 @@ import type { PropertyDefinition } from '@pommora/core/Properties/properties'
 import { useSession } from '../Session/store'
 import { cachePageDetail } from '../Session/pageDetailCache'
 import { PropertyPanel } from './PropertyPanel'
+import { valuesReply } from '../Testing/pageValues'
 
 ;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
 
@@ -153,6 +154,26 @@ describe('PropertyPanel', () => {
     })
     await act(async () => {})
     expect(text()).not.toContain('Stage')
+  })
+
+  it('a push naming the page or a property rename re-reads it, and a sibling’s push does not', async () => {
+    useSession.setState({ valuesEpoch: null })
+    cachePageDetail(detail({ path: 'Col/Page.md', frontmatter: { Stage: 'a' } }))
+    await renderPanel(<PropertyPanel subject={PAGE} host="side-pane" />)
+    ask.mockImplementation(async () => valuesReply({ p1: { Stage: 'b' } as never }))
+    const reads = (): unknown[] => ask.mock.calls.filter((c) => c[0] === 'view:loadValues')
+    const push = (pageIds: string[]) =>
+      useSession.getState().bumpContainerValues([{ rel: 'Col', pageIds }])
+    await act(async () => push(['p9']))
+    expect(reads()).toEqual([])
+    await act(async () => push(['p1']))
+    await act(async () => {})
+    expect(text()).toContain('Beta')
+    await act(async () => useSession.getState().bumpValuesEpoch('Stage', 'Stage'))
+    expect(reads()).toEqual([
+      ['view:loadValues', 'Col', ['p1']],
+      ['view:loadValues', 'Col', ['p1']],
+    ])
   })
 
   it('a Space subject reads the registry and its node’s own values', async () => {
