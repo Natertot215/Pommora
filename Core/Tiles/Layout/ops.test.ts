@@ -243,8 +243,8 @@ describe('geometry invariants', () => {
     const rects = [...geo.tiles.values()]
     for (let i = 0; i < rects.length; i++) {
       for (let j = i + 1; j < rects.length; j++) {
-        const a = rects[i] as { x: number; y: number; w: number; h: number }
-        const b = rects[j] as { x: number; y: number; w: number; h: number }
+        const a = rects[i]
+        const b = rects[j]
         const overlap =
           a.x < b.x + b.w - 1e-6 &&
           b.x < a.x + a.w - 1e-6 &&

@@ -1,12 +1,6 @@
+import type { Rect } from '@pommora/uix/Interactions/useResizable'
 import type { DividerRef, LayoutNode, TileLayout } from './model'
 import { nodeHeight } from './model'
-
-export interface Rect {
-  x: number
-  y: number
-  w: number
-  h: number
-}
 
 interface DividerRect extends Rect {
   ref: DividerRef

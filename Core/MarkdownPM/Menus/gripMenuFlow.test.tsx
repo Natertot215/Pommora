@@ -5,8 +5,8 @@ import type { EditorView } from '@codemirror/view'
 import type { ConnectionsApi } from '../Links/connectionsApi'
 import { buildPageIndex } from '@pommora/core/Connections/pageIndex'
 import { cleanupEditor, mountEditor, seedHost, stubEditorBridge } from '../../Testing/editorHarness'
-import { type GripMenuAction, type PickNode, gripMenuItems } from '@pommora/core/Actions/gripMenu'
-import type { ActionItem } from '@pommora/core/Actions/menuModel'
+import { type GripMenuAction, gripMenuItems } from '@pommora/core/Actions/gripMenu'
+import type { ActionItem, PickItem } from '@pommora/core/Actions/menuModel'
 
 const calls: (readonly ActionItem<string>[])[] = []
 let nextPick: GripMenuAction | null = null
@@ -18,8 +18,8 @@ const pages = [
   { id: 'p3', title: 'Soup', path: 'Notes/Soup.md' },
 ]
 
-const treeOf = (collectionPages: { title: string }[]): PickNode[] => [
-  { label: 'Notes', children: collectionPages.map((p) => ({ label: p.title, title: p.title })) },
+const treeOf = (collectionPages: { title: string }[]): PickItem<string>[] => [
+  { label: 'Notes', submenu: collectionPages.map((p) => ({ label: p.title, pick: p.title })) },
 ]
 
 const conn: ConnectionsApi = { ...buildPageIndex(pages), open: () => {} }

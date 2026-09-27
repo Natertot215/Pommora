@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest'
-import type { TileEntry, PagePickerItem, ViewPickerItem } from '../Tiles/tiles'
-import { tileMenuItems } from './tileHandleMenu'
+import type { PickItem } from '../Actions/menuModel'
+import type { TileEntry, ViewPick } from '../Tiles/tiles'
+import { makeTree } from '../Testing/testTree'
+import { tileMenuItems, viewPickTree } from './tileHandleMenu'
 
 type Ctx = Parameters<typeof tileMenuItems>[0]
 
@@ -60,13 +62,13 @@ describe('the tile menu model both renderers draw', () => {
   })
 
   it('indexes drill picks so a view pick survives a menu row that can only carry a string', () => {
-    const views: ViewPickerItem[] = [
+    const views: PickItem<ViewPick>[] = [
       {
         label: 'Roadmap',
         submenu: [{ label: 'Board', pick: { source_id: 's1', view_id: 'v1' } }],
       },
     ]
-    const pages: PagePickerItem[] = [{ label: 'Notes', pick: 'p9' }]
+    const pages: PickItem<string>[] = [{ label: 'Notes', pick: 'p9' }]
     const m = tileMenuItems(ctx({ viewItems: views, pageItems: pages }))
     const leaf = row(m, 'Link View')?.submenu?.[0].submenu?.[0]
     expect(leaf?.label).toBe('Board')
@@ -103,9 +105,7 @@ describe('the tile menu model both renderers draw', () => {
   })
 
   it('leaves a container holding nothing an empty branch, which both renderers grey out', () => {
-    const m = tileMenuItems(
-      ctx({ pageItems: [{ label: 'Empty Collection', submenu: [] }] as PagePickerItem[] }),
-    )
+    const m = tileMenuItems(ctx({ pageItems: [{ label: 'Empty Collection', submenu: [] }] }))
     expect(row(m, 'Link Page')?.submenu?.[0]).toMatchObject({
       label: 'Empty Collection',
       submenu: [],
@@ -113,7 +113,7 @@ describe('the tile menu model both renderers draw', () => {
   })
 
   it('sinks a footer node to a separated last row of its level', () => {
-    const views: ViewPickerItem[] = [
+    const views: PickItem<ViewPick>[] = [
       {
         label: 'Roadmap',
         submenu: [
@@ -129,7 +129,7 @@ describe('the tile menu model both renderers draw', () => {
   })
 
   it('leaves a level of footers alone with nothing to separate it from', () => {
-    const views: ViewPickerItem[] = [
+    const views: PickItem<ViewPick>[] = [
       {
         label: 'Roadmap',
         submenu: [{ label: '+ Custom', pick: { source_id: 's1' }, footer: true }],
@@ -138,5 +138,26 @@ describe('the tile menu model both renderers draw', () => {
     const level = row(tileMenuItems(ctx({ viewItems: views })), 'Link View')?.submenu?.[0].submenu
     expect(level?.map((r) => r.label)).toEqual(['+ Custom'])
     expect(level?.[0].separatorBefore).toBeFalsy()
+  })
+
+  it('reaches the views of a Set nested inside another Set', () => {
+    const tree = makeTree()
+    const ideas = tree.collections[0].sets[0]
+    ideas.sets = [
+      {
+        kind: 'set',
+        id: 's2',
+        title: 'Deep',
+        path: 'Notes/Ideas/Deep',
+        pages: [],
+        views: [{ id: 'v1', name: 'Board', type: 'table' } as never],
+      },
+    ]
+    const deep = viewPickTree(tree, undefined)[0].submenu?.[0].submenu?.[0]
+    expect(deep?.label).toBe('Deep')
+    expect(deep?.submenu?.map((n) => n.pick)).toEqual([
+      { source_id: 's2', view_id: 'v1' },
+      { source_id: 's2' },
+    ])
   })
 })

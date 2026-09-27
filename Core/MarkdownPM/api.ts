@@ -13,7 +13,8 @@ import type { HostContext } from '@pommora/core/Contract/handlers'
 import type { EditorPrefs, EditorPrefWrite } from '@pommora/core/Contract/bridge'
 import type { Commands } from '@pommora/core/Actions/commands'
 import type { EditorMenuRequest } from '@pommora/core/Actions/editorMenu'
-import type { GripMenuAction, GripMenuContext, PickNode } from '@pommora/core/Actions/gripMenu'
+import type { GripMenuAction, GripMenuContext } from '@pommora/core/Actions/gripMenu'
+import type { PickItem } from '@pommora/core/Actions/menuModel'
 import type { TableMenuAction, TableMenuContext } from '@pommora/core/MarkdownPM/Tables/tableMenu'
 import type {
   CitationMenuAction,
@@ -137,7 +138,7 @@ export interface EditorHost {
     contains(el: Element): boolean
   }
   renderTile(tile: TileMount): ReactNode
-  pickTree(): PickNode[]
+  pickTree(): PickItem<string>[]
   openLink(url: string): void
   // A page's body as the session holds it: the open tab's live text when warm, else read from disk.
   warmBody(page: ConnPage): string | null

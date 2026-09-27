@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { blockDeleteSpan, embedPickTree } from './gripMenu'
-import type { PickNode } from '@pommora/core/Actions/gripMenu'
+import type { PickItem } from '@pommora/core/Actions/menuModel'
 
 describe('blockDeleteSpan', () => {
   const del = (doc: string, from: number, to: number): string => {
@@ -30,27 +30,28 @@ describe('blockDeleteSpan', () => {
 })
 
 describe('embedPickTree', () => {
-  const tree: PickNode[] = [
+  const tree: PickItem<string>[] = [
     {
       label: 'Notes',
-      children: [
-        { label: 'Drafts', children: [{ label: 'Beta', title: 'Beta' }] },
-        { label: 'Alpha', title: 'Alpha' },
+      submenu: [
+        { label: 'Drafts', submenu: [{ label: 'Beta', pick: 'Beta' }] },
+        { label: 'Alpha', pick: 'Alpha' },
       ],
     },
-    { label: 'Empty', children: [] },
+    { label: 'Empty', submenu: [] },
   ]
 
-  it('walks containers to pages and prunes empties', () => {
+  it('walks containers to pages, keeping an empty container as an empty branch', () => {
     const t = embedPickTree(tree, new Set())
-    expect(t).toHaveLength(1)
-    expect(t[0].label).toBe('Notes')
-    expect(t[0].children?.map((n) => n.label)).toEqual(['Drafts', 'Alpha'])
-    expect(t[0].children?.[0].children?.[0]).toEqual({ label: 'Beta', title: 'Beta' })
+    expect(t.map((n) => n.label)).toEqual(['Notes', 'Empty'])
+    expect(t[0].submenu?.map((n) => n.label)).toEqual(['Drafts', 'Alpha'])
+    expect(t[0].submenu?.[0].submenu?.[0]).toEqual({ label: 'Beta', pick: 'Beta' })
+    expect(t[1].submenu).toEqual([])
   })
 
-  it('excluded titles drop out, and a container emptied by exclusion drops with them', () => {
+  it('excluded titles drop out, and a container emptied by exclusion stays as an empty branch', () => {
     const t = embedPickTree(tree, new Set(['beta']))
-    expect(t[0].children?.map((n) => n.label)).toEqual(['Alpha'])
+    expect(t[0].submenu?.map((n) => n.label)).toEqual(['Drafts', 'Alpha'])
+    expect(t[0].submenu?.[0].submenu).toEqual([])
   })
 })

@@ -27,7 +27,7 @@ describe('the block grip menu', () => {
   it('an embed drills its source tree to page leaves and scales only once claimed', () => {
     const items = gripMenuItems({
       kind: 'embed',
-      tree: [{ label: 'Notes', children: [{ label: 'Alpha', title: 'Alpha' }] }],
+      tree: [{ label: 'Notes', submenu: [{ label: 'Alpha', pick: 'Alpha' }] }],
       zoom: null,
     })
     expect(items[0].submenu?.[0].submenu?.[0]).toEqual({ label: 'Alpha', action: 'source:Alpha' })

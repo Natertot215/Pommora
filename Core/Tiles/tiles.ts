@@ -164,21 +164,10 @@ export function seedBoard([a, b, c, d]: readonly string[]): TileDoc {
   }
 }
 
-export interface DrillPickItem<T> {
-  label: string
-  icon?: string
-  pick?: T
-  submenu?: Array<DrillPickItem<T>>
-  footer?: boolean
-}
-
-export type PagePickerItem = DrillPickItem<string>
-
-interface ViewPick {
+export interface ViewPick {
   source_id: string
   view_id?: string
 }
-export type ViewPickerItem = DrillPickItem<ViewPick>
 
 export type TilePick = { kind: 'page'; value: string } | { kind: 'view'; value: ViewPick }
 

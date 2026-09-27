@@ -2,7 +2,7 @@
 import { act, createElement, useRef, useState } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
 import { EditorView } from '@codemirror/view'
-import type { PickNode } from '@pommora/core/Actions/gripMenu'
+import type { PickItem } from '@pommora/core/Actions/menuModel'
 import { MarkdownEditor } from '../MarkdownPM/MarkdownEditor'
 import { DEFAULT_COMMANDS } from '@pommora/core/Actions/commands'
 import { type EditorHost, type EditorSettings, editorSettingsOf } from '../MarkdownPM/api'
@@ -19,7 +19,7 @@ interface HarnessHost {
   clipboard?: Partial<EditorHost['clipboard']>
   menus?: Partial<EditorHost['menus']>
   glance?: EditorHost['glance'] | false
-  pickTree?: PickNode[]
+  pickTree?: PickItem<string>[]
   openLink?: EditorHost['openLink']
   pageTitle?: string
   pageSurface?: boolean
