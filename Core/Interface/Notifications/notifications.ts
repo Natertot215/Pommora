@@ -77,11 +77,18 @@ export const notifyDeleted = (
   title: string,
   undo?: () => void | Promise<void>,
   note?: string,
-): void => notifyUndoable(note ? `Deleted “${title}”. ${note}` : `Deleted “${title}”`, undo)
+): void =>
+  note
+    ? notifyUndoable(`Deleted “${title}”. ${note}`, undo, 'error')
+    : notifyUndoable(`Deleted “${title}”`, undo)
 
-export function notifyUndoable(message: string, undo?: () => void | Promise<void>): void {
+export function notifyUndoable(
+  message: string,
+  undo?: () => void | Promise<void>,
+  tone: Notification['tone'] = 'normal',
+): void {
   if (!undo) {
-    post({ message, tone: 'normal' })
+    post({ message, tone })
     return
   }
   // The label's Undo and the undo chord are one shot between them, so a restore cannot run twice and mint a second copy.
@@ -92,7 +99,7 @@ export function notifyUndoable(message: string, undo?: () => void | Promise<void
     void undo()
     return true
   }
-  const id = post({ message, tone: 'normal', action: { label: 'Undo', run: () => void once() } })
+  const id = post({ message, tone, action: { label: 'Undo', run: () => void once() } })
   pushUndo(() => {
     if (!once()) return false
     dismissNotification(id)
