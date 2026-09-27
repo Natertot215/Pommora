@@ -235,14 +235,13 @@ describe('an option rename', () => {
 })
 
 describe('an option removal', () => {
-  it('drops a rule it leaves with no operand, empties a values list into an absent key, and strips the cache', async () => {
+  it('drops a rule it leaves with no operand, or whose chip list it empties beside a value, and strips the cache', async () => {
     await reachConfig(root, removal)
     const [view] = await viewsOf(colFile())
     expect(view.filter).toEqual({
       match: 'all',
       rules: [
         { match: 'any', rules: [{ property_id: 'prop_s', op: 'is_not', values: ['Todo'] }] },
-        { property_id: 'prop_s', op: 'is', value: 'Todo' },
         { property_id: 'prop_s', op: 'contains', value: 'Done' },
         { property_id: 'prop_s', op: 'is_empty' },
         { property_id: 'prop_x', op: 'is', value: 'Done' },
