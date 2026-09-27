@@ -3,7 +3,13 @@ import { assignedIds, cachedValues, collectionFolders, patchCacheBlock } from '.
 import { readRegistry, type PropertyRegistry, NO_PROPERTY } from './propertiesRegistry'
 import { removeFromRegistry } from './registryProperty'
 import { keyedHolders, keyHolderFiles } from './keyHolders'
-import { clearSchemaJournal, writeSchemaJournal, type SchemaJournal } from './propertyJournal'
+import {
+  clearSchemaJournal,
+  type SchemaCascade,
+  schemaCascade,
+  type SchemaJournal,
+  writeSchemaJournal,
+} from './propertyJournal'
 import { serializeSchemaOp } from './schemaChain'
 import { stripKeys, sweepGovernedRoots } from './governedSweep'
 import { patchSidecar } from '../Files/sidecar'
@@ -15,7 +21,7 @@ import { isPlainObject } from '../Contract/validators'
 import { ok, type Result } from '../Contract/result'
 import { relative } from '../Paths/posix'
 import type { MutateOutcome } from '../Nexus/mutateRequest'
-import { type ConfigReach, reachConfig, reachReport } from '../Nexus/configReach'
+import { type ConfigReach, reachConfig } from '../Nexus/configReach'
 
 async function snapshot(
   root: string,
@@ -61,9 +67,7 @@ async function snapshot(
   })
 }
 
-export type PropertyDeletion = Required<Pick<MutateOutcome, 'trashed' | 'cascade'>> & {
-  replayable?: true
-}
+export type PropertyDeletion = SchemaCascade & Required<Pick<MutateOutcome, 'trashed'>>
 
 export function deleteProperty(
   root: string,
@@ -88,11 +92,7 @@ async function deleteInner(root: string, propertyId: string): Promise<Result<Pro
   const { removed, ...reach } = await stripAndRemove(root, propertyId, key, folders, held.strip)
   if (!removed.ok) return removed
   if (!reach.skipped) await clearSchemaJournal(root, record)
-  return ok({
-    trashed: { bundlePath: relative(root, bundle) },
-    cascade: reachReport(reach),
-    ...(reach.skipped && journaled ? { replayable: true as const } : {}),
-  })
+  return ok({ trashed: { bundlePath: relative(root, bundle) }, ...schemaCascade(reach, journaled) })
 }
 
 export async function stripAndRemove(

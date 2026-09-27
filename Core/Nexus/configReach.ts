@@ -376,7 +376,7 @@ export async function reachConfig(
         mapViews(tile, (view, i) => (inScope((tile.views as unknown[])[i]) ? edit(view) : null)),
       ),
     )
-    if (wrote) reach.hosts.push(host)
+    if (wrote && host) reach.hosts.push(host)
   }
   if (!under)
     await written(nexusConfig(root, NEXUS_CONFIG_FILES.matrix), (cur) => {

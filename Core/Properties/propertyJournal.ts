@@ -2,6 +2,8 @@
 
 import { PROPERTY_JOURNAL_FILENAME } from '../Paths/nexusPaths'
 import { journalSlot } from './journalSlot'
+import { type ConfigReach, reachReport } from '../Nexus/configReach'
+import type { CascadeReport } from '../Nexus/cascade'
 
 export type SchemaJournal =
   | { op: 'rename'; id: string; from: string; to: string }
@@ -45,3 +47,11 @@ const slot = journalSlot<SchemaJournal>(PROPERTY_JOURNAL_FILENAME, decode, sameR
 export const writeSchemaJournal = slot.write
 export const readSchemaJournal = slot.read
 export const clearSchemaJournal = slot.clear
+
+/** A journaled op's answer: its cascade, and whether a replay the user can run still owes what it skipped. */
+export type SchemaCascade = { cascade: CascadeReport; replayable?: true }
+
+export const schemaCascade = (reach: ConfigReach, journaled: boolean): SchemaCascade => ({
+  cascade: reachReport(reach),
+  ...(reach.skipped && journaled ? { replayable: true as const } : {}),
+})

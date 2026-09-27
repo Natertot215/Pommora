@@ -23,7 +23,13 @@ import {
   type StatusGroup,
   withOptionGroups,
 } from './properties'
-import { clearSchemaJournal, writeSchemaJournal, type SchemaJournal } from './propertyJournal'
+import {
+  clearSchemaJournal,
+  type SchemaCascade,
+  schemaCascade,
+  type SchemaJournal,
+  writeSchemaJournal,
+} from './propertyJournal'
 import { type ConfigReach, reachConfig } from '../Nexus/configReach'
 
 const NO_OPTION = fail('not-found', 'That option no longer exists.')
@@ -160,15 +166,8 @@ export async function optionCascade(
 }
 
 /** Staged BEFORE the commit: a crash between commit and cascade is recoverable only from this record, and one stranded by a refusal is disposed of by the replay's holds-to-and-not-from gate. */
-async function stageOptionRename(
-  root: string,
-  propertyId: string,
-  from: string,
-  to: string,
-): Promise<SchemaJournal> {
-  const record: SchemaJournal = { op: 'option-rename', id: propertyId, from, to }
-  if ((await readRegistry(root)).defs[propertyId]) await writeSchemaJournal(root, record)
-  return record
+async function stageOptionRename(root: string, record: SchemaJournal): Promise<boolean> {
+  return (await readRegistry(root)).defs[record.id] ? writeSchemaJournal(root, record) : false
 }
 
 export function renameOption(
@@ -176,9 +175,15 @@ export function renameOption(
   propertyId: string,
   oldValue: string,
   newTitle: string,
-): Promise<Result<ConfigReach>> {
+): Promise<Result<SchemaCascade>> {
   return serializeSchemaOp(async () => {
-    const record = await stageOptionRename(root, propertyId, oldValue, newTitle)
+    const record: SchemaJournal = {
+      op: 'option-rename',
+      id: propertyId,
+      from: oldValue,
+      to: newTitle,
+    }
+    const journaled = await stageOptionRename(root, record)
     const edit = await mutateRegistry<Result<PropertyDefinition>>(root, (registry, stored) => {
       const def = registry.defs[propertyId]
       if (!def) return { result: NO_PROPERTY }
@@ -201,7 +206,7 @@ export function renameOption(
     }
     const reach = await optionCascade(root, edit.value, oldValue, { op: 'replace', to: newTitle })
     if (!reach.skipped) await clearSchemaJournal(root, record)
-    return ok(reach)
+    return ok(schemaCascade(reach, journaled))
   })
 }
 
@@ -222,17 +227,18 @@ export function removeOption(
   root: string,
   propertyId: string,
   value: string,
-): Promise<Result<ConfigReach>> {
+): Promise<Result<SchemaCascade>> {
   return serializeSchemaOp(async () => {
     const r = await resolveForCascade(root, propertyId, value)
     if (!r.ok) return r
     const record: SchemaJournal = { op: 'option-remove', id: propertyId, value }
-    await writeSchemaJournal(root, record)
+    const journaled = await writeSchemaJournal(root, record)
     const reach = await optionCascade(root, r.value, value, { op: 'strip' })
-    if (reach.skipped) return ok(reach)
-    const dropped = await dropOptionFromDef(root, propertyId, value)
-    if (!dropped.ok) return dropped
-    await clearSchemaJournal(root, record)
-    return ok(reach)
+    if (!reach.skipped) {
+      const dropped = await dropOptionFromDef(root, propertyId, value)
+      if (!dropped.ok) return dropped
+      await clearSchemaJournal(root, record)
+    }
+    return ok(schemaCascade(reach, journaled))
   })
 }

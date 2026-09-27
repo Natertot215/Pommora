@@ -14,14 +14,13 @@ import { serializeSchemaOp } from './schemaChain'
 
 export function replaySchemaCascade(
   root: string,
-  deleteOf?: string,
+  propertyId?: string,
 ): Promise<Result<ConfigReach> | null> {
   return serializeSchemaOp(async () => {
     try {
       const journal = await readSchemaJournal(root)
       if (!journal) return null
-      if (deleteOf !== undefined && !(journal.op === 'delete' && journal.id === deleteOf))
-        return null
+      if (propertyId !== undefined && journal.id !== propertyId) return null
       const owed = await replay(root, journal)
       if (!owed.skipped) await clearSchemaJournal(root, journal)
       return ok(owed)

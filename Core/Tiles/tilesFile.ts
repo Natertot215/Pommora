@@ -32,16 +32,18 @@ import { discardFile } from '../Trash/bundle'
 import { machine } from '../Platform/machine'
 import { getLiveTree, liveTreeOf } from '../Nexus/liveTree'
 import type { NexusTree } from '../Nexus/tree'
-import { CONTEXTS_DIR_REL } from '../Paths/nexusPaths'
+import { CONTEXTS_DIR_REL, CONTEXTS_REGISTRY_REL } from '../Paths/nexusPaths'
 import { tileFilePath, tileHostDir } from '../Paths/paths'
 import type { BodyWrite } from '../Pages/pageDetail'
 import { captureLoser } from '../Sync/Arrival/captures'
 import type { TrashDeps } from '../Trash/bundle'
 
+/** A Space whose sidecar the walk couldn't read is still reached by its folder, with no host to name; only an unreadable Contexts registry hides the Spaces themselves. */
 export function tileHostsOf(
   root: string,
   tree: NexusTree,
-): { hosts: { host: TileHostRef; dir: string }[]; unreadable: number } {
+): { hosts: { host?: TileHostRef; dir: string }[]; unreadable: number } {
+  const unread = (tree.unreadable ?? []).map((u) => u.path)
   return {
     hosts: [
       { host: HOMEPAGE_HOST, dir: tileHostDir(root) },
@@ -51,9 +53,11 @@ export function tileHostsOf(
           dir: join(root, s.path),
         })),
       ),
+      ...unread
+        .filter((p) => p.startsWith(`${CONTEXTS_DIR_REL}/`) && p !== CONTEXTS_REGISTRY_REL)
+        .map((p) => ({ dir: join(root, p) })),
     ],
-    unreadable: (tree.unreadable ?? []).filter((u) => u.path.startsWith(`${CONTEXTS_DIR_REL}/`))
-      .length,
+    unreadable: unread.includes(CONTEXTS_REGISTRY_REL) ? 1 : 0,
   }
 }
 
@@ -62,7 +66,7 @@ export async function hostDir(root: string, host: TileHostRef): Promise<string |
   const held = getLiveTree()
   if (held?.nexus.rootPath !== root) return null
   const hit = tileHostsOf(root, held).hosts.find(
-    (h) => h.host.kind === 'space' && h.host.id === host.id,
+    (h) => h.host?.kind === 'space' && h.host.id === host.id,
   )
   // Mid-cascade the tree still spells the folder a rename just moved.
   return hit && (await pathExists(hit.dir)) ? hit.dir : null
@@ -321,7 +325,7 @@ export async function rewriteTileConnections(
       if (landed === null) failed++
       else wrote ||= landed
     }
-    if (wrote) hosts.push(host)
+    if (wrote && host) hosts.push(host)
   }
   dropTileHeadingLinks()
   return { hosts, failed }
