@@ -8,7 +8,7 @@ import { createProperty, removeFromRegistry } from './registryProperty'
 import { fault } from '../Contract/result'
 import { readSchemaJournal, writeSchemaJournal } from './propertyJournal'
 import { replaySchemaCascade } from './replaySchemaCascade'
-import { seedConfigSurfaces, viewOn } from '../Testing/configSurfaces'
+import { type ConfigSurfaces, seedConfigSurfaces, viewOn } from '../Testing/configSurfaces'
 import { assignProperty } from './assignment'
 import { removeProperty } from './removeProperty'
 import { setSpaceProperty } from './setProperty'
@@ -245,7 +245,7 @@ describe('a delete reaches saved views', () => {
 
   async function seeded(): Promise<{
     id: string
-    surfaces: Awaited<ReturnType<typeof seedConfigSurfaces>>
+    surfaces: ConfigSurfaces
   }> {
     const c = await createProperty(root, {
       id: '',
@@ -261,9 +261,7 @@ describe('a delete reaches saved views', () => {
     }
   }
 
-  const expectCleared = async (
-    surfaces: Awaited<ReturnType<typeof seedConfigSurfaces>>,
-  ): Promise<void> => {
+  const expectCleared = async (surfaces: ConfigSurfaces): Promise<void> => {
     const views = await surfaces.read()
     expect([views.collection, views.set, views.tile]).toEqual([cleared, cleared, cleared])
     expect(views.matrix).toEqual({ match: 'all', rules: [] })

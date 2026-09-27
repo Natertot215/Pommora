@@ -7,7 +7,7 @@ import { createFolderEntity } from '../Nexus/folderEntity'
 
 type Raw = Record<string, unknown>
 
-export interface ConfigViews {
+interface ConfigViews {
   collection: Raw
   set: Raw
   tile: Raw

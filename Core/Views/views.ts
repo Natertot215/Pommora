@@ -344,7 +344,7 @@ export function mergeViewEdit(raw: unknown, next: SavedView): Json {
 export type GroupLevel = 'group' | 'sub'
 export type GroupedView = Pick<SavedView, 'group' | 'sub_group' | 'hidden_groups'>
 
-export const hiddenBucketKey = (level: GroupLevel, propertyId: string, bucket: string): string =>
+const hiddenBucketKey = (level: GroupLevel, propertyId: string, bucket: string): string =>
   level === 'group' ? `${propertyId}/${bucket}` : `sub/${propertyId}/${bucket}`
 
 // The pre-F-383 spelling, read only under the grouping the view holds now.

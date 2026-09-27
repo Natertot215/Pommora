@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { chmod, mkdir, rm } from 'node:fs/promises'
 import { relative } from '../Paths/posix'
 import { noModeBits, tempRoot } from '../Testing/hostFs'
-import { seedConfigSurfaces, viewOn } from '../Testing/configSurfaces'
+import { type ConfigSurfaces, seedConfigSurfaces, viewOn } from '../Testing/configSurfaces'
 import type { HostContext } from '../Contract/handlers'
 import { fault } from '../Contract/result'
 import { sidecarPath } from '../Paths/paths'
@@ -27,7 +27,7 @@ const HOME = { kind: 'space', id: 'sp_home' }
 let root: string
 let col: string
 let propId: string
-let surfaces: Awaited<ReturnType<typeof seedConfigSurfaces>>
+let surfaces: ConfigSurfaces
 let pushes: { channel: string; payload: unknown }[]
 
 const ctx = {

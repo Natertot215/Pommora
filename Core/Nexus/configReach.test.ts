@@ -77,7 +77,6 @@ const rich = (id: string): Raw => ({
   collapsed_groups: ['Done', 'set_1/Done', 'Todo'],
 })
 
-// Grouped on another property: its legacy and collapsed keys belong to that grouping.
 const elsewhere = (id: string): Raw => ({
   id,
   name: id,

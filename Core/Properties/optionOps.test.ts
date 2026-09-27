@@ -19,7 +19,7 @@ import { serializeSchemaOp } from './schemaChain'
 import { machine } from '../Platform/machine'
 import { mutateRegistry, readRegistry } from './propertiesRegistry'
 import { readSchemaJournal } from './propertyJournal'
-import { seedConfigSurfaces, viewOn } from '../Testing/configSurfaces'
+import { type ConfigSurfaces, seedConfigSurfaces, viewOn } from '../Testing/configSurfaces'
 import { sidecarPath } from '../Paths/paths'
 import type { PropertyDefinition, SelectOption } from './properties'
 import { flushValueWrites } from '../Nexus/valuesChanged'
@@ -605,7 +605,7 @@ describe('option cascades reach saved views', () => {
   async function seeded(): Promise<{
     id: string
     col: string
-    surfaces: Awaited<ReturnType<typeof seedConfigSurfaces>>
+    surfaces: ConfigSurfaces
   }> {
     const id = await mkSelect([
       { value: 'Done', label: 'Done' },
@@ -616,7 +616,6 @@ describe('option cascades reach saved views', () => {
     return { id, col, surfaces: await seedConfigSurfaces(root, col, viewOn(id, 'Done')) }
   }
 
-  // A page in a folder that can't be written is one the sweep skips.
   async function lockedHolder(id: string, col: string): Promise<string> {
     const set = await createFolderEntity(col, 'set', 'Locked')
     if (!set.ok) throw new Error('set failed')
