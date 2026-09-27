@@ -18,6 +18,7 @@ import { cancelAllSaves } from '../Session/saveScheduler'
 import { flushAllSaves } from '../Session/nexusSlice'
 import { type TileDocSession, useTileDoc, useTileDocReady } from './useTileDoc'
 import { stubDialer } from '../vitest.setup'
+import { clearNotification, currentNotification } from '../Interface/Notifications/notifications'
 ;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
 
 const HOST: TileHostRef = { kind: 'space', id: 'sp1' }
@@ -41,7 +42,7 @@ const save = vi.fn(
       held.push(() => resolve({ ok: true, value: { landed: disk } }))
     }),
 )
-const get = vi.fn(async () => ({ ok: true as const, value: disk }))
+const get = vi.fn(async (): Promise<Result<TileDoc>> => ({ ok: true, value: disk }))
 
 let host: HTMLDivElement
 let root: Root
@@ -340,16 +341,51 @@ describe('an entry write', () => {
     expect(entry()).toEqual(both)
   })
 
-  it('a refused write reads the disk again', async () => {
+  it('a refused write says why and reads the disk again', async () => {
+    clearNotification()
     save.mockImplementationOnce(async () => refused)
     act(() => patchTileEntry(OTHER, A, () => ({ style: 'borderless' })))
     await tick()
     expect(entry()).toEqual({ id: A, type: 'markdown' })
+    expect(currentNotification()?.message).toBe('x')
   })
 
   it('a patch built as null writes nothing', () => {
     act(() => patchTileEntry(OTHER, A, () => null))
     expect(save).not.toHaveBeenCalled()
+  })
+})
+
+describe('a document the host fails to read', () => {
+  it('a refused layout save says why and shows the disk again', async () => {
+    clearNotification()
+    save.mockImplementationOnce(async () => ({
+      ok: false,
+      error: { code: 'operation-failed', message: 'refused' },
+    }))
+    act(() => at('a').commitLayout((cur) => append(cur, 'local')))
+    expect(shown('a')).toEqual(['a', 'local'])
+    await tick()
+    await tick()
+    expect(currentNotification()?.message).toBe('refused')
+    expect(shown('a')).toEqual(['a'])
+  })
+
+  it('stays closed and says why, where a board whose Space is gone stays closed quietly', async () => {
+    clearNotification()
+    const refusal = (code: 'operation-failed' | 'not-found', message: string) => async () => ({
+      ok: false as const,
+      error: { code, message },
+    })
+    get.mockImplementationOnce(refusal('not-found', 'gone'))
+    await act(async () => root.render(<Probe seat="c" on={OTHER} />))
+    await tick()
+    expect(currentNotification()).toBeNull()
+    get.mockImplementationOnce(refusal('operation-failed', 'unreadable'))
+    await act(async () => root.render(<Probe seat="d" on={{ kind: 'space', id: 'sp3' }} />))
+    await tick()
+    expect(readyAt('d')).toBe(false)
+    expect(currentNotification()?.message).toBe('unreadable')
   })
 })
 

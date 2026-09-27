@@ -139,32 +139,42 @@ export function setRepairSeed(
   repairSeed = seed ?? (() => null)
 }
 
-// Undefined is a file this session never saw parse.
-function readLast(absPath: string): Promise<Record<string, unknown> | null | undefined> {
+// An undefined value is a file this session never saw parse; `unreadable` says its bytes couldn't be read at all.
+function readLast(
+  absPath: string,
+): Promise<{ value: Record<string, unknown> | null | undefined; unreadable: boolean }> {
   return machine().lock(absPath, async () => {
     const read = await readJsonStrictly(absPath)
     if (read.kind === 'ok' || read.kind === 'absent') {
       const value = read.kind === 'ok' ? read.value : null
       lastRead.set(absPath, value)
-      return value
+      return { value, unreadable: false }
     }
     const why = read.kind === 'corrupt' ? read.why : 'Unreadable file'
     const kept = lastRead.get(absPath)
     console.error(`${why}: ${absPath}; ${kept === undefined ? 'never read' : 'kept as last read'}`)
-    return kept
+    return { value: kept, unreadable: read.kind === 'unreadable' }
   })
 }
 
 /** A damaged or unreadable file reads as the last copy this session saw, and absent reads null; one never seen fails by name. */
 export async function readKept(absPath: string): Promise<Record<string, unknown> | null> {
-  const value = await readLast(absPath)
+  const { value } = await readLast(absPath)
   if (value === undefined) throw new Error(`Couldn’t read “${basename(absPath)}”.`)
   return value
 }
 
-/** An app-written file: one this session never saw reads as empty. */
+/** An app-written file: one this session never saw parse reads as empty. */
 export const readAppFile = async (absPath: string): Promise<Record<string, unknown> | null> =>
-  (await readLast(absPath)) ?? null
+  (await readLast(absPath)).value ?? null
+
+/** As `readAppFile`, except a file this session could never read answers undefined, since reading it as empty would show nothing where something is. */
+export async function readAppFileKnown(
+  absPath: string,
+): Promise<Record<string, unknown> | null | undefined> {
+  const { value, unreadable } = await readLast(absPath)
+  return value === undefined && unreadable ? undefined : (value ?? null)
+}
 
 // The damaged bytes keep a dotted name beside the file, which neither the watcher nor sync admits.
 async function setAside(bad: string): Promise<Record<string, unknown>> {

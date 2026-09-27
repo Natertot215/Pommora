@@ -101,7 +101,9 @@ describe('createSpace', () => {
     expect(sc.icon).toBeUndefined()
     expect(sc.$color).toBeUndefined()
     expect(sc.tiles).toBeUndefined()
-    const doc = await readTileDocAt(join(contextsDir(root), 'Projects', 'Sapphire'))
+    const read = await readTileDocAt(join(contextsDir(root), 'Projects', 'Sapphire'))
+    if (!read.ok) throw new Error(read.error.message)
+    const doc = read.value
     expect(doc.tiles).toHaveLength(4)
     expect((doc.tiles as { type: string }[]).map((b) => b.type)).toEqual(Array(4).fill('markdown'))
     const layout = rawLayoutSchema.parse(doc.layout)

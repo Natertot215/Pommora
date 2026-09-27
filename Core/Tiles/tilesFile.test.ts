@@ -18,6 +18,7 @@ import {
   writeMarkdownTile,
 } from './tilesFile'
 import { readTileDocAt, writeTileDocAt } from './tileDoc'
+import type { TileDoc } from './tiles'
 import { tileDocPath, tileFilePath, tileHostDir } from '../Paths/paths'
 import { machine } from '../Platform/machine'
 import { rewriteConnections } from '../Connections/rewrite'
@@ -30,8 +31,13 @@ let root: string
 const home = (): string => tileHostDir(root)
 const spaceDir = (): string => join(root, '.nexus', 'contexts', 'Realms', 'Astral')
 const spaceSidecar = (): string => join(spaceDir(), '_space.json')
+const docAt = async (dir = home()): Promise<TileDoc> => {
+  const doc = await readTileDocAt(dir)
+  if (!doc.ok) throw new Error(doc.error.message)
+  return doc.value
+}
 const entries = async (dir = home()): Promise<Array<Record<string, unknown>>> =>
-  (await readTileDocAt(dir)).tiles as Array<Record<string, unknown>>
+  (await docAt(dir)).tiles as Array<Record<string, unknown>>
 // Every write here lands on a freshly created, empty tile.
 const write = (dir: string, id: string, body: string): Promise<unknown> =>
   writeMarkdownTile(root, dir, id, body, machine().sha256Hex(''))
@@ -54,7 +60,7 @@ afterEach(() => {
 
 describe('the document', () => {
   it('opens empty when the host has none, and the read creates nothing', async () => {
-    expect(await readTileDocAt(home())).toEqual({ layout: undefined, tiles: [], locked: false })
+    expect(await readTileDocAt(home())).toEqual(ok({ layout: undefined, tiles: [], locked: false }))
     expect(await pathExists(home())).toBe(false)
   })
 
@@ -64,11 +70,13 @@ describe('the document', () => {
       tiles: [{ id: tileId('a'), type: 'markdown', keep: 1 }],
       locked: true,
     }))
-    expect(await readTileDocAt(home())).toEqual({
-      layout: { bands: [] },
-      tiles: [{ id: tileId('a'), type: 'markdown', keep: 1 }],
-      locked: true,
-    })
+    expect(await readTileDocAt(home())).toEqual(
+      ok({
+        layout: { bands: [] },
+        tiles: [{ id: tileId('a'), type: 'markdown', keep: 1 }],
+        locked: true,
+      }),
+    )
     expect(JSON.parse(await readFile(tileDocPath(home()), 'utf8'))).toEqual({
       layout: { bands: [] },
       tiles: [{ id: tileId('a'), type: 'markdown', keep: 1 }],
@@ -79,7 +87,9 @@ describe('the document', () => {
   it('a mutation sees the current document and leaves the untouched fields alone', async () => {
     await writeTileDocAt(home(), (cur) => ({ ...cur, layout: { bands: [] } }))
     await writeTileDocAt(home(), (cur) => ({ ...cur, locked: true }))
-    expect(await readTileDocAt(home())).toEqual({ layout: { bands: [] }, tiles: [], locked: true })
+    expect(await readTileDocAt(home())).toEqual(
+      ok({ layout: { bands: [] }, tiles: [], locked: true }),
+    )
   })
 
   it('hosts keep their own documents; the first write creates the homepage folder', async () => {
@@ -109,7 +119,7 @@ describe('the document', () => {
   it('a hand-edited shape coerces on read and inside a mutation', async () => {
     await mkdir(home(), { recursive: true })
     await writeFile(tileDocPath(home()), JSON.stringify({ tiles: {}, locked: 'yes', layout: 1 }))
-    expect(await readTileDocAt(home())).toEqual({ layout: 1, tiles: [], locked: false })
+    expect(await readTileDocAt(home())).toEqual(ok({ layout: 1, tiles: [], locked: false }))
     let seen: unknown
     await writeTileDocAt(home(), (cur) => {
       seen = cur
@@ -121,7 +131,7 @@ describe('the document', () => {
   it('a corrupt document never read cleanly reads empty untouched; the next write sets it aside under a hidden name and lands', async () => {
     await mkdir(home(), { recursive: true })
     await writeFile(tileDocPath(home()), '{ not json')
-    expect(await readTileDocAt(home())).toEqual({ layout: undefined, tiles: [], locked: false })
+    expect(await readTileDocAt(home())).toEqual(ok({ layout: undefined, tiles: [], locked: false }))
     expect(await readFile(tileDocPath(home()), 'utf8')).toBe('{ not json')
     await seed(home(), [{ id: tileId('a'), type: 'markdown' }])
     expect((await entries())[0].id).toBe(tileId('a'))
@@ -134,14 +144,32 @@ describe('the document', () => {
     expect((await entries())[0].id).toBe(tileId('b'))
   })
 
+  it.skipIf(noModeBits)(
+    'a document this session could never read fails, and a write leaves it alone',
+    async () => {
+      await mkdir(home(), { recursive: true })
+      await writeFile(tileDocPath(home()), JSON.stringify({ tiles: [{ id: tileId('a') }] }))
+      await chmod(tileDocPath(home()), 0o000)
+      const refused = {
+        error: { code: 'operation-failed', message: expect.stringContaining('_tiles.json') },
+      }
+      expect(await readTileDocAt(home())).toMatchObject(refused)
+      expect(await createMarkdownTile(home())).toMatchObject(refused)
+      expect((await readdir(home())).filter((f) => f.endsWith('.md'))).toEqual([])
+      expect((await rewriteTileConnections(root, (body) => body)).failed).toBe(1)
+      await chmod(tileDocPath(home()), 0o644)
+      expect(await entries()).toEqual([{ id: tileId('a') }])
+    },
+  )
+
   it('a document damaged after a clean read reads as that read, and the next write rebuilds from it', async () => {
     await mkdir(home(), { recursive: true })
     await writeFile(tileDocPath(home()), JSON.stringify({ layout: 1, locked: true, tiles: [] }))
-    expect(await readTileDocAt(home())).toEqual({ layout: 1, tiles: [], locked: true })
+    expect(await readTileDocAt(home())).toEqual(ok({ layout: 1, tiles: [], locked: true }))
     await writeFile(tileDocPath(home()), '{ not json')
-    expect(await readTileDocAt(home())).toEqual({ layout: 1, tiles: [], locked: true })
+    expect(await readTileDocAt(home())).toEqual(ok({ layout: 1, tiles: [], locked: true }))
     await seed(home(), [{ id: tileId('a'), type: 'markdown' }])
-    expect(await readTileDocAt(home())).toMatchObject({ layout: 1, locked: true })
+    expect(await readTileDocAt(home())).toMatchObject(ok({ layout: 1, locked: true }))
     expect((await entries())[0].id).toBe(tileId('a'))
   })
 })
@@ -202,7 +230,7 @@ describe('markdown tile lifecycle', () => {
     expect(removed).toEqual(
       ok({
         removed: { entry: { id, type: 'markdown' }, body: 'kept text' },
-        landed: await readTileDocAt(home()),
+        landed: await docAt(),
       }),
     )
     expect(await entries()).toEqual([{ id: tileId('a'), type: 'widget', keep: true }])
@@ -216,9 +244,7 @@ describe('markdown tile lifecycle', () => {
     await write(home(), id, 'kept text')
     const removed = await removeTile(root, home(), id, nexusDeps)
     if (!removed.ok) throw new Error('remove refused')
-    expect(await restoreTile(home(), removed.value.removed)).toEqual(
-      ok({ landed: await readTileDocAt(home()) }),
-    )
+    expect(await restoreTile(home(), removed.value.removed)).toEqual(ok({ landed: await docAt() }))
     expect(await readMarkdownTile(home(), id)).toEqual(ok('kept text'))
     expect(await entries()).toEqual([{ id, type: 'markdown' }])
     expect((await restoreTile(home(), { ...removed.value.removed, body: 'other' })).ok).toBe(true)
@@ -243,7 +269,7 @@ describe('markdown tile lifecycle', () => {
     const removed = await removeTile(root, home(), id, nexusDeps)
     if (!removed.ok) throw new Error('remove refused')
     await restoreTile(home(), { ...removed.value.removed, at: { band: 1, h: 120 } })
-    expect((await readTileDocAt(home())).layout).toEqual({
+    expect((await docAt()).layout).toEqual({
       bands: [band('a'), { node: { kind: 'tile', id, h: 120 } }, band('b')],
     })
     expect((await restoreTile(home(), { entry: { id: tileId('x'), type: 'page' } })).ok).toBe(false)
@@ -266,7 +292,7 @@ describe('markdown tile lifecycle', () => {
   it('an entry op leaves the layout and lock alone', async () => {
     await writeTileDocAt(home(), (cur) => ({ ...cur, layout: { bands: [] }, locked: true }))
     await landedId(createMarkdownTile(home()))
-    const doc = await readTileDocAt(home())
+    const doc = await docAt()
     expect(doc.layout).toEqual({ bands: [] })
     expect(doc.locked).toBe(true)
   })

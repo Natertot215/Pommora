@@ -276,16 +276,18 @@ describe('the re-mint writes', () => {
     expect(originalSet.views[1].manual_order).toEqual(['page-b', 'page-a'])
     expect(copySet.views[1].manual_order).toBeUndefined()
 
-    type Doc = { tiles: { views: { config: { id: string } }[] }[] }
+    type Doc = { value: { tiles: { views: { config: { id: string } }[] }[] } }
     const originalDoc = (await readTileDocAt(
       join(root, '.nexus', 'contexts', 'Areas', 'Work'),
     )) as unknown as Doc
     const copyDoc = (await readTileDocAt(
       join(root, '.nexus', 'contexts', 'Areas', 'Work copy'),
     )) as unknown as Doc
-    expect(originalDoc.tiles[0].views[0].config.id).toBe('cfg-original')
-    expect(isViewId(copyDoc.tiles[0].views[0].config.id)).toBe(true)
-    expect(copyDoc.tiles[0].views[0].config.id).not.toBe(originalDoc.tiles[0].views[0].config.id)
+    expect(originalDoc.value.tiles[0].views[0].config.id).toBe('cfg-original')
+    expect(isViewId(copyDoc.value.tiles[0].views[0].config.id)).toBe(true)
+    expect(copyDoc.value.tiles[0].views[0].config.id).not.toBe(
+      originalDoc.value.tiles[0].views[0].config.id,
+    )
   })
 
   it('a selection naming a view the container no longer has does not travel at all', async () => {

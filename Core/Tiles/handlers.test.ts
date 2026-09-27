@@ -71,7 +71,9 @@ describe('the tile channels', () => {
     const saved = await tilesHandlers['tiles:save'](ctx, homepage, {
       entry: { id: a, patch: { style: 'borderless', zoom: null } },
     })
-    const disk = await readTileDocAt(tileHostDir(root))
+    const read = await readTileDocAt(tileHostDir(root))
+    if (!read.ok) throw new Error(read.error.message)
+    const disk = read.value
     expect(disk.tiles).toEqual([
       { id: a, type: 'markdown', foreign: 1, style: 'borderless' },
       { id: b, type: 'markdown' },
@@ -87,7 +89,7 @@ describe('the tile channels', () => {
     expect(await tilesHandlers['tiles:restoreTile'](ctx, homepage, null)).toEqual(
       fault('Invalid tile.'),
     )
-    expect((await readTileDocAt(tileHostDir(root))).tiles).toEqual([])
+    expect(await readTileDocAt(tileHostDir(root))).toMatchObject(ok({ tiles: [] }))
     expect(await pathExists(join(root, 'outside.md'))).toBe(false)
     await mkdir(tileHostDir(root), { recursive: true })
     const well = { entry: { id: tileId('a'), type: 'markdown' }, body: 'x' }
