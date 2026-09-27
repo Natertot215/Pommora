@@ -15,6 +15,7 @@ import { navKey } from '../Navigation/navRef'
 import { decodeLayout } from './Layout/codec'
 import { emptyLayout, type TileLayout, tileIds } from './Layout/model'
 import { dialer } from '../Platform/dialer'
+import { reportRefusal } from '../Interface/Notifications/notifications'
 import { createBodyWriter, sessionWriter } from '../Session/saveScheduler'
 
 const BODY_CAP = 50
@@ -107,16 +108,24 @@ const joined = <T>(doc: HostDoc, sent: Promise<T>): Promise<T> => {
   return sent
 }
 
+// A refused save says why and reads the disk again, whichever key it carried, so the board never keeps a change the file refused.
 const save = (doc: HostDoc, patch: TileDocPatch): Promise<Result<Landed>> =>
-  joined(doc, dialer().ask('tiles:save', doc.host, patch))
+  joined(
+    doc,
+    dialer()
+      .ask('tiles:save', doc.host, patch)
+      .then((r) => {
+        if (!reportRefusal(r)) void reload(doc)
+        return r
+      }),
+  )
 
-// An entry or lock write answers with the document it left, and a lone write's answer is what the disk holds. Writes that overlap can land in any order, so the board keeps its own paint until the last one answers and then reads the disk, as it does after a refusal.
+// An entry or lock write answers with the document it left, and a lone write's answer is what the disk holds. Writes that overlap can land in any order, so the board keeps its own paint until the last one answers and then reads the disk.
 const land = <T>(doc: HostDoc, sent: Promise<Result<Landed<T>>>): Promise<Result<Landed<T>>> => {
   doc.writing += 1
   doc.overlapped ||= doc.writing > 1
   return sent.then((r) => {
     doc.writing -= 1
-    doc.overlapped ||= !r.ok
     if (doc.writing > 0 || at(doc.host) !== doc) return r
     if (doc.overlapped) {
       doc.overlapped = false
@@ -210,6 +219,8 @@ function create(host: TileHostRef): HostDoc {
     .ask('tiles:get', host)
     .then((r) => {
       if (r.ok) adopt(doc, r.value)
+      // A board the host fails to read stays closed and says so; a Space gone or a Nexus mid-switch leaves it closed quietly.
+      else if (r.error.code === 'operation-failed') reportRefusal(r)
     })
   return doc
 }

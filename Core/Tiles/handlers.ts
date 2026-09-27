@@ -54,7 +54,7 @@ const onTile =
 export const tilesHandlers = {
   'tiles:get': withRoot(async (root, _ctx, host: unknown) => {
     const tile = await tileHostAnd(root, host)
-    return tile.ok ? ok(await readTileDocAt(tile.value.dir)) : tile
+    return tile.ok ? readTileDocAt(tile.value.dir) : tile
   }),
 
   'tiles:save': withWriteRoot(async (root, _ctx, host: unknown, patch: unknown) => {

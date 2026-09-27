@@ -53,12 +53,24 @@ export async function hostDir(root: string, host: TileHostRef): Promise<string |
 const setTiles = (dir: string, update: (tiles: unknown[]) => unknown[]): Promise<Result<TileDoc>> =>
   writeTileDocAt(dir, (cur) => ({ ...cur, tiles: update(cur.tiles) }))
 
-/** File first, so a crash leaks at worst an orphan file, never an entry without one. */
+// A new tile's file lands before its entry, so a crash leaks at worst an orphan file, never an entry without one; a refused entry takes its file back.
+async function addTile(
+  dir: string,
+  id: string,
+  entry: unknown,
+  body: string | null,
+): Promise<Result<Landed<{ id: string }>>> {
+  const file = tileFilePath(dir, id)
+  if (body !== null) await atomicWriteFile(file, body)
+  const written = await setTiles(dir, (tiles) => [...tiles, entry])
+  if (!written.ok && body !== null) await machine().remove(file)
+  return landed(written, { id })
+}
+
 export async function createMarkdownTile(dir: string): Promise<Result<Landed<{ id: string }>>> {
   const id = newId()
   await machine().mkdir(dir)
-  await atomicWriteFile(tileFilePath(dir, id), '')
-  return landed(await setTiles(dir, (tiles) => [...tiles, mintSeed('markdown', id)]), { id })
+  return addTile(dir, id, mintSeed('markdown', id), '')
 }
 
 async function reviseTile(
@@ -195,17 +207,18 @@ export async function duplicateTile(
   tileId: string,
 ): Promise<Result<Landed<{ id: string }>>> {
   const doc = await readTileDocAt(dir)
-  const src = doc.tiles.find((b) => knownTile(b)?.id === tileId)
+  if (!doc.ok) return doc
+  const src = doc.value.tiles.find((b) => knownTile(b)?.id === tileId)
   const entry = src ? knownTile(src) : null
   if (!src || !entry) return fail('not-found', 'No such tile.')
   const id = newId()
+  let text: string | null = null
   if (TILE_KINDS[entry.type].fileBacked) {
     const body = await readMarkdownTile(dir, tileId)
     if (!body.ok && body.error.code !== 'not-found') throw new Error(body.error.message)
-    await atomicWriteFile(tileFilePath(dir, id), valueOr(body, ''))
+    text = valueOr(body, '')
   }
-  const copy = copyEntry({ ...(src as Json), id })
-  return landed(await setTiles(dir, (tiles) => [...tiles, copy]), { id })
+  return addTile(dir, id, copyEntry({ ...(src as Json), id }), text)
 }
 
 /** Absent and unreadable stay apart: a body the read merely failed on must never render as an empty tile the next keystroke overwrites. */
@@ -252,11 +265,15 @@ async function listTileHosts(root: string): Promise<{ host: TileHostRef; dir: st
   return hosts
 }
 
-const markdownTileIds = async (dir: string): Promise<string[]> =>
-  (await readTileDocAt(dir)).tiles.flatMap((b) => {
+// Null is a board that couldn't be read, whose tiles are unknown.
+const markdownTileIds = async (dir: string): Promise<string[] | null> => {
+  const doc = await readTileDocAt(dir)
+  if (!doc.ok) return null
+  return doc.value.tiles.flatMap((b) => {
     const entry = knownTile(b)
     return entry && TILE_KINDS[entry.type].fileBacked ? [entry.id] : []
   })
+}
 
 let tileHeadingLinks: { root: string; keys: Promise<Set<string>> } | null = null
 
@@ -267,7 +284,7 @@ export const dropTileHeadingLinks = (): void => {
 async function readTileHeadingLinks(root: string): Promise<Set<string>> {
   const keys = new Set<string>()
   for (const { dir } of await listTileHosts(root))
-    for (const id of await markdownTileIds(dir))
+    for (const id of (await markdownTileIds(dir)) ?? [])
       for (const hit of linksIn(valueOr(await readMarkdownTile(dir, id), '')))
         if (hit.qualifier) keys.add(`${hit.target}\0${hit.qualifier}`)
   return keys
@@ -290,7 +307,9 @@ export async function rewriteTileConnections(
   let failed = 0
   for (const { host, dir } of await listTileHosts(root)) {
     let wrote = false
-    for (const id of await markdownTileIds(dir)) {
+    const ids = await markdownTileIds(dir)
+    if (!ids) failed++
+    for (const id of ids ?? []) {
       // The timestamp-preserving path: a rename cascade must not re-date every tile it merely rewrites a link inside.
       const landed = await rewritePageSerialized(tileFilePath(dir, id), (body) => {
         const next = rewrite(body)
