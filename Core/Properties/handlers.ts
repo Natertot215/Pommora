@@ -24,6 +24,9 @@ import {
   reorderRegistry,
 } from './registryProperty'
 import { removeProperty } from './removeProperty'
+import { unsweptLine } from './governedSweep'
+import type { TileHostRef } from '../Tiles/tiles'
+import type { ConfigReach } from '../Nexus/configReach'
 
 const NEEDS_PROPERTY_ID = fault('A property id is required.')
 const NEEDS_ID_AND_VALUE = fault('A property id and value are required.')
@@ -41,21 +44,32 @@ async function resolveSchemaFolder(
   return resolved.ok ? ok({ folder: resolved.value, rel: containerPath }) : resolved
 }
 
-const registryChannel = <A extends unknown[], T = null>(
+type Reply<R> = { hosts: TileHostRef[]; result: Result<R> }
+const asIs = <T>(value: T): Reply<T> => ({ hosts: [], result: ok(value) })
+const unsweptReply = ({ hosts, skipped }: ConfigReach): Reply<null> => ({
+  hosts,
+  result: skipped ? fault(unsweptLine(skipped)) : ok(null),
+})
+
+const registryChannel = <A extends unknown[], T, R = T>(
   narrow: (args: unknown[]) => A | Result<never>,
   write: (root: string, ...args: A) => Promise<Result<T>>,
+  reply: (value: T) => Reply<R> = asIs as (value: T) => Reply<R>,
 ) =>
-  withWriteRoot(async (root, ctx, ...args: unknown[]): Promise<Result<T>> => {
+  withWriteRoot(async (root, ctx, ...args: unknown[]): Promise<Result<R>> => {
     const narrowed = narrow(args)
     if (!Array.isArray(narrowed)) return narrowed
     const r = await write(root, ...narrowed)
-    if (r.ok) await confirmRegistryWrite(ctx, root)
-    return r
+    const replied = r.ok ? reply(r.value) : null
+    for (const host of replied?.hosts ?? []) ctx.push('tiles:changed', host)
+    await confirmRegistryWrite(ctx, root)
+    return replied ? replied.result : (r as Result<never>)
   })
 
-const schemaChannel = <A extends unknown[]>(
+const schemaChannel = <A extends unknown[], T = null, R = T>(
   narrow: (args: unknown[]) => A | Result<never>,
-  write: (root: string, folder: string, ...args: A) => Promise<Result<null>>,
+  write: (root: string, folder: string, ...args: A) => Promise<Result<T>>,
+  reply: (value: T) => Reply<R> = asIs as (value: T) => Reply<R>,
 ) =>
   withWriteRoot(async (root, ctx, containerPath: unknown, ...args: unknown[]) => {
     const c = await resolveSchemaFolder(root, containerPath)
@@ -63,8 +77,10 @@ const schemaChannel = <A extends unknown[]>(
     const narrowed = narrow(args)
     if (!Array.isArray(narrowed)) return narrowed
     const r = await write(root, c.value.folder, ...narrowed)
-    if (r.ok) await confirmRegistryWrite(ctx, root, c.value.rel)
-    return r
+    const replied = r.ok ? reply(r.value) : null
+    for (const host of replied?.hosts ?? []) ctx.push('tiles:changed', host)
+    await confirmRegistryWrite(ctx, root, c.value.rel)
+    return replied ? replied.result : (r as Result<never>)
   })
 
 const idOnly = ([id]: unknown[]): [string] | Result<never> =>
@@ -130,12 +146,15 @@ export const propertiesHandlers = {
   'schema:reorder': schemaChannel(idAndIndex, (_root, folder, id, at) =>
     reorderAssignment(folder, id, at),
   ),
-  'schema:unassign': schemaChannel(idOnly, removeProperty),
+  'schema:unassign': schemaChannel(idOnly, removeProperty, unsweptReply),
   'schema:assign': schemaChannel(idAndOptionalIndex, assignProperty),
 
   'registry:reorder': registryChannel(idAndIndex, reorderRegistry),
   'property:rename': registryChannel(idAndValue, renameProperty),
-  'property:delete': registryChannel(idOnly, deleteProperty),
+  'property:delete': registryChannel(idOnly, deleteProperty, ({ hosts, trashed }) => ({
+    hosts,
+    result: ok({ trashed }),
+  })),
 
   'property:setLinkConfig': defEditOp(narrowLinkConfig),
   'property:setCheckboxColor': defEditOp((color) => ({
@@ -150,7 +169,7 @@ export const propertiesHandlers = {
     return validPropertyDir(dir, assetDir) ? ok(null) : NOT_A_PROPERTY_DIR
   }),
   'property:editOption': registryChannel(idAndEdit, editOption),
-  'property:renameOption': registryChannel(idOldNew, renameOption),
-  'property:removeOption': registryChannel(idAndValue, removeOption),
+  'property:renameOption': registryChannel(idOldNew, renameOption, unsweptReply),
+  'property:removeOption': registryChannel(idAndValue, removeOption, unsweptReply),
   'property:clearOption': registryChannel(idAndValue, clearOption),
 } satisfies Partial<Handlers>

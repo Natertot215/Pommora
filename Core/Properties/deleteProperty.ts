@@ -15,6 +15,8 @@ import { isPlainObject } from '../Contract/validators'
 import { ok, type Result } from '../Contract/result'
 import { relative } from '../Paths/posix'
 import type { MutateOutcome } from '../Nexus/mutateRequest'
+import type { TileHostRef } from '../Tiles/tiles'
+import { type ConfigReach, reachConfig } from '../Nexus/configReach'
 
 async function snapshot(
   root: string,
@@ -60,17 +62,13 @@ async function snapshot(
   })
 }
 
-export function deleteProperty(
-  root: string,
-  propertyId: string,
-): Promise<Result<Pick<MutateOutcome, 'trashed'>>> {
+type Deleted = Pick<MutateOutcome, 'trashed'> & { hosts: TileHostRef[] }
+
+export function deleteProperty(root: string, propertyId: string): Promise<Result<Deleted>> {
   return serializeSchemaOp(() => deleteInner(root, propertyId))
 }
 
-async function deleteInner(
-  root: string,
-  propertyId: string,
-): Promise<Result<Pick<MutateOutcome, 'trashed'>>> {
+async function deleteInner(root: string, propertyId: string): Promise<Result<Deleted>> {
   const def = (await readRegistry(root)).defs[propertyId]
   if (!def) return NO_PROPERTY
   const key = def.name
@@ -84,15 +82,16 @@ async function deleteInner(
   const record: SchemaJournal = { op: 'delete', id: propertyId, name: def.name }
   await writeSchemaJournal(root, record)
 
-  const { skipped, removed } = await stripAndRemove(
+  const { skipped, hosts, removed } = await stripAndRemove(
     root,
     propertyId,
     key,
     folders,
     files.filter((f) => !held.kept.includes(f)),
   )
-  if (!skipped) await clearSchemaJournal(root, record)
-  return removed.ok ? ok({ trashed: { bundlePath: relative(root, bundle) } }) : removed
+  // Cleared only once the registry write landed, as the option removal clears only after its drop (D-1).
+  if (!skipped && removed.ok) await clearSchemaJournal(root, record)
+  return removed.ok ? ok({ trashed: { bundlePath: relative(root, bundle) }, hosts }) : removed
 }
 
 export async function stripAndRemove(
@@ -101,14 +100,19 @@ export async function stripAndRemove(
   key: string,
   folders: string[],
   files: string[],
-): Promise<{ skipped: number; removed: Result<null> }> {
+): Promise<ConfigReach & { removed: Result<null> }> {
   const raw = stripKeys(key)
   const swept = await sweepGovernedRoots(root, files, {
     raw,
     sidecars: withOrderEntry(raw, 'properties', key, null),
   })
   for (const folder of folders) await unassignAndPurge(folder, propertyId)
-  return { skipped: swept.skipped.length, removed: await removeFromRegistry(root, propertyId) }
+  const reach = await reachConfig(root, { kind: 'property', propertyId })
+  return {
+    skipped: swept.skipped.length + reach.skipped,
+    hosts: reach.hosts,
+    removed: await removeFromRegistry(root, propertyId),
+  }
 }
 
 async function unassignAndPurge(folder: string, propertyId: string): Promise<void> {

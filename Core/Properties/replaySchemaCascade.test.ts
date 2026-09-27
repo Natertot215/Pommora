@@ -21,6 +21,7 @@ import { deleteProperty } from './deleteProperty'
 import { removeOption, renameOption } from './optionOps'
 import { readSchemaJournal, writeSchemaJournal } from './propertyJournal'
 import { replaySchemaCascade } from './replaySchemaCascade'
+import { seedConfigSurfaces, viewOn } from '../Testing/configSurfaces'
 
 const roots: string[] = []
 afterEach(async () => {
@@ -323,6 +324,65 @@ describe('option replay', () => {
     await openSession(root)
     await replaySchemaCascade(root)
     expect('Stage' in (await readSpaceSidecar(file))).toBe(false)
+  })
+})
+
+describe('option replay reaches saved views', () => {
+  const renamedDef = (root: string): Promise<null> =>
+    mutateRegistry(root, (registry) => ({
+      next: {
+        ...registry,
+        defs: {
+          ...registry.defs,
+          prop_s: {
+            ...registry.defs.prop_s,
+            select_options: [
+              { value: 'Queued', label: 'Queued' },
+              { value: 'Done', label: 'Done' },
+            ],
+          },
+        },
+      },
+      result: null,
+    }))
+
+  it('option-rename rewrites a view still holding the old value, and replaying twice equals once', async () => {
+    const root = await seedNexus()
+    const surfaces = await seedConfigSurfaces(root, join(root, 'Col'), viewOn('prop_s', 'Draft'))
+    const record = { op: 'option-rename', id: 'prop_s', from: 'Draft', to: 'Queued' } as const
+    await writeSchemaJournal(root, record)
+    await renamedDef(root)
+    await openSession(root)
+    await replaySchemaCascade(root)
+    const once = await surfaces.read()
+    const want = viewOn('prop_s', 'Queued')
+    expect([once.collection, once.set, once.tile]).toEqual([want, want, want])
+    expect(once.matrix).toEqual(want.filter)
+    expect(await readSchemaJournal(root)).toBeNull()
+    const tilesAt = (await stat(surfaces.tiles)).mtimeMs
+    await writeSchemaJournal(root, record)
+    await replaySchemaCascade(root)
+    expect(await surfaces.read()).toEqual(once)
+    expect((await stat(surfaces.tiles)).mtimeMs).toBe(tilesAt)
+    expect(await readSchemaJournal(root)).toBeNull()
+  })
+
+  it('option-remove with clean pages strips a view still holding the value, then drops the option', async () => {
+    const root = await seedNexus()
+    const surfaces = await seedConfigSurfaces(root, join(root, 'Col'), viewOn('prop_s', 'Draft'))
+    await writeFile(join(root, 'Col', 'A.md'), `---\nID: ${PAGE_IDS[0]}\n---\nbody\n`)
+    await writeFile(join(root, 'Col', 'B.md'), `---\nID: ${PAGE_IDS[1]}\n---\nbody\n`)
+    await writeSchemaJournal(root, { op: 'option-remove', id: 'prop_s', value: 'Draft' })
+    await openSession(root)
+    await replaySchemaCascade(root)
+    const views = await surfaces.read()
+    expect(views.set.filter).toEqual({ match: 'all', rules: [] })
+    expect(views.tile.hidden_groups).toEqual([])
+    expect(views.matrix).toEqual({ match: 'all', rules: [] })
+    expect((await readRegistry(root)).defs.prop_s?.select_options).toEqual([
+      { value: 'Done', label: 'Done' },
+    ])
+    expect(await readSchemaJournal(root)).toBeNull()
   })
 })
 

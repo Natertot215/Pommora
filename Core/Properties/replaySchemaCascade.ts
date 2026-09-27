@@ -6,7 +6,7 @@ import { collectionFolders } from './assignment'
 import { keyHolderFiles } from './keyHolders'
 import { renameSweep } from './registryProperty'
 import { stripAndRemove } from './deleteProperty'
-import { dropOptionFromDef, valueEditSweep } from './optionOps'
+import { dropOptionFromDef, optionCascade } from './optionOps'
 import { optionValues } from './properties'
 import { clearSchemaJournal, readSchemaJournal, type SchemaJournal } from './propertyJournal'
 import { serializeSchemaOp } from './schemaChain'
@@ -41,7 +41,15 @@ async function replay(root: string, journal: SchemaJournal): Promise<boolean> {
       if (!crashed && !freed) return false
       const folders = await collectionFolders(root)
       const files = await keyHolderFiles(root, journal.name, folders)
-      return (await stripAndRemove(root, journal.id, journal.name, folders, files)).skipped > 0
+      const { skipped, removed } = await stripAndRemove(
+        root,
+        journal.id,
+        journal.name,
+        folders,
+        files,
+      )
+      // In the freed state the def is already gone and removeFromRegistry answers NO_PROPERTY, which owes nothing.
+      return skipped > 0 || (crashed && !removed.ok)
     }
     case 'option-rename': {
       const def = defs[journal.id]
@@ -50,16 +58,16 @@ async function replay(root: string, journal: SchemaJournal): Promise<boolean> {
       // Holds `to` and not `from` = the commit landed cleanly; every other state is not this record's.
       if (!values.includes(journal.to) || values.includes(journal.from)) return false
       return (
-        (await valueEditSweep(root, def.name, journal.from, { op: 'replace', to: journal.to })) > 0
+        (await optionCascade(root, def, journal.from, { op: 'replace', to: journal.to })).skipped >
+        0
       )
     }
     case 'option-remove': {
       // Pages-first order holds the value in the def until the strip completes, so the value still listed is the owed state; gone means only the clear failed.
       const def = defs[journal.id]
       if (!def || !optionValues(def).includes(journal.value)) return false
-      if ((await valueEditSweep(root, def.name, journal.value, { op: 'strip' })) > 0) return true
-      await dropOptionFromDef(root, journal.id, journal.value)
-      return false
+      if ((await optionCascade(root, def, journal.value, { op: 'strip' })).skipped > 0) return true
+      return !(await dropOptionFromDef(root, journal.id, journal.value)).ok
     }
   }
 }

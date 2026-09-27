@@ -1,9 +1,12 @@
-import { describe, it, expect, beforeEach, afterEach } from 'vitest'
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 import { ID_KEY } from '../Nexus/identityMark'
 import { chmod, rename, rm, readFile, stat, utimes, writeFile } from 'node:fs/promises'
 import { join, relative } from '../Paths/posix'
 import { noModeBits, tempRoot } from '../Testing/hostFs'
-import { fault } from '../Contract/result'
+import { fault, ok } from '../Contract/result'
+import { editJsonStrict } from '../Files/atomicWrite'
+import { seedConfigSurfaces, viewOn } from '../Testing/configSurfaces'
+import { sidecarPath } from '../Paths/paths'
 import { flushValueWrites } from '../Nexus/valuesChanged'
 import { removeProperty } from './removeProperty'
 import { assignProperty } from './assignment'
@@ -18,6 +21,11 @@ import { closeSession, openSession } from '../Nexus/session'
 import { getLiveTree, refreshTree } from '../Nexus/liveTree'
 import { findPage } from '../Nexus/watchPatch'
 import type { PropertyDefinition } from './properties'
+
+vi.mock('../Files/atomicWrite', async (importOriginal) => {
+  const mod = await importOriginal<typeof import('../Files/atomicWrite')>()
+  return { ...mod, editJsonStrict: vi.fn(mod.editJsonStrict) }
+})
 
 let root: string
 let folder: string
@@ -136,7 +144,7 @@ describe('removeProperty — strip + cache (C-3/C-6)', () => {
   })
 
   it.skipIf(noModeBits)(
-    'a holder it can’t write fails the remove rather than reporting it done',
+    'a holder it can’t write is answered as a skip, which the channel turns into the fault',
     async () => {
       const set = await createFolderEntity(folder, 'set', 'Locked')
       if (!set.ok) throw new Error('setup failed')
@@ -146,12 +154,51 @@ describe('removeProperty — strip + cache (C-3/C-6)', () => {
       await chmod(set.value.path, 0o555)
       try {
         const r = await removeProperty(root, folder, propId).catch(fault)
-        expect(r.ok).toBe(false)
+        expect(r).toEqual(ok({ skipped: 1, hosts: [] }))
       } finally {
         await chmod(set.value.path, 0o755)
       }
     },
   )
+})
+
+describe('removeProperty reaches saved views (B-6)', () => {
+  const cleared = {
+    ...viewOn('', ''),
+    property_order: ['_title'],
+    hidden_properties: [],
+    column_widths: {},
+    filter: { match: 'all', rules: [] },
+    sort: [],
+    group: { kind: 'structural' },
+    hidden_groups: [],
+    collapsed_groups: [],
+  }
+
+  it('clears its own views in the one sidecar write, then its Set and the tile sourcing it, and leaves another source and the Matrix', async () => {
+    const held = viewOn(propId, 'done')
+    const surfaces = await seedConfigSurfaces(root, folder, held)
+    const other = await createFolderEntity(root, 'collection', 'Other')
+    if (!other.ok) throw new Error('setup failed')
+    const doc = JSON.parse(await readFile(surfaces.tiles, 'utf8'))
+    doc.tiles.push({ id: 'u', type: 'view', views: [{ source_id: other.value.id, config: held }] })
+    await writeFile(surfaces.tiles, JSON.stringify(doc))
+    vi.mocked(editJsonStrict).mockClear()
+
+    expect(await removeProperty(root, folder, propId)).toEqual(
+      ok({ skipped: 0, hosts: [{ kind: 'space', id: 'sp_home' }] }),
+    )
+    const opened = vi.mocked(editJsonStrict).mock.calls.map(([path]) => path)
+    expect(opened).not.toContain(sidecarPath(folder, 'collection'))
+    const views = await surfaces.read()
+    expect([views.collection, views.set, views.tile]).toEqual([cleared, cleared, cleared])
+    expect(JSON.parse(await readFile(surfaces.tiles, 'utf8')).tiles[1].views[0].config).toEqual(
+      held,
+    )
+    expect(views.matrix).toEqual(held.filter)
+    expect((await sidecar())?.properties).toEqual([])
+    expect(Object.keys((await cacheBlock())?.values ?? {})).toHaveLength(2)
+  })
 })
 
 describe('restore on re-assign — per-value schema-currency reconciliation (C-3)', () => {

@@ -24,6 +24,7 @@ import {
   withOptionGroups,
 } from './properties'
 import { clearSchemaJournal, writeSchemaJournal, type SchemaJournal } from './propertyJournal'
+import { type ConfigReach, reachConfig } from '../Nexus/configReach'
 
 const NO_OPTION = fail('not-found', 'That option no longer exists.')
 const NO_GROUP = fail('not-found', 'That group no longer exists.')
@@ -126,16 +127,16 @@ async function resolveForCascade(
   root: string,
   propertyId: string,
   value: string,
-): Promise<Result<string>> {
+): Promise<Result<PropertyDefinition>> {
   const def = (await readRegistry(root)).defs[propertyId]
   if (!def) return NO_PROPERTY
   const typeCheck = requireOptions(def)
   if (!typeCheck.ok) return typeCheck
   if (!optionValues(def).includes(value)) return NO_OPTION
-  return ok(def.name)
+  return ok(def)
 }
 
-export async function valueEditSweep(
+async function valueEditSweep(
   root: string,
   key: string,
   target: string,
@@ -144,6 +145,19 @@ export async function valueEditSweep(
   const files = await keyHolderFiles(root, key, await collectionFolders(root))
   const raw = valueEditRewrite(key, target, edit)
   return (await sweepGovernedRoots(root, files, { raw, sidecars: raw })).skipped.length
+}
+
+/** The page sweep, then the configuration pass: a rename's pass runs regardless (its replay is idempotent); a removal's runs only once the sweep is clean, and its skips hold the drop (B-2). */
+export async function optionCascade(
+  root: string,
+  def: PropertyDefinition,
+  value: string,
+  edit: ValueEdit,
+): Promise<ConfigReach> {
+  const pages = await valueEditSweep(root, def.name, value, edit)
+  if (pages && edit.op === 'strip') return { skipped: pages, hosts: [] }
+  const reach = await reachConfig(root, { kind: 'option', def, value, edit })
+  return { skipped: pages + reach.skipped, hosts: reach.hosts }
 }
 
 /** Staged BEFORE the commit: a crash between commit and cascade is recoverable only from this record, and one stranded by a refusal is disposed of by the replay's holds-to-and-not-from gate. */
@@ -163,10 +177,10 @@ export function renameOption(
   propertyId: string,
   oldValue: string,
   newTitle: string,
-): Promise<Result<null>> {
+): Promise<Result<ConfigReach>> {
   return serializeSchemaOp(async () => {
     const record = await stageOptionRename(root, propertyId, oldValue, newTitle)
-    const edit = await mutateRegistry<Result<string>>(root, (registry, stored) => {
+    const edit = await mutateRegistry<Result<PropertyDefinition>>(root, (registry, stored) => {
       const def = registry.defs[propertyId]
       if (!def) return { result: NO_PROPERTY }
       const typeCheck = requireOptions(def)
@@ -179,19 +193,16 @@ export function renameOption(
       if (!check.ok) return { result: check }
       return {
         next: { ...registry, defs: { ...registry.defs, [propertyId]: next } },
-        result: ok(def.name),
+        result: ok(def),
       }
     })
     if (!edit.ok) {
       await clearSchemaJournal(root, record)
       return edit
     }
-    const skipped = await valueEditSweep(root, edit.value, oldValue, {
-      op: 'replace',
-      to: newTitle,
-    })
-    if (!skipped) await clearSchemaJournal(root, record)
-    return ok(null)
+    const reach = await optionCascade(root, edit.value, oldValue, { op: 'replace', to: newTitle })
+    if (!reach.skipped) await clearSchemaJournal(root, record)
+    return ok(reach)
   })
 }
 
@@ -203,7 +214,7 @@ export function clearOption(
   return serializeSchemaOp(async () => {
     const r = await resolveForCascade(root, propertyId, value)
     if (!r.ok) return r
-    const skipped = await valueEditSweep(root, r.value, value, { op: 'strip' })
+    const skipped = await valueEditSweep(root, r.value.name, value, { op: 'strip' })
     return skipped ? fault(unsweptLine(skipped)) : ok(null)
   })
 }
@@ -212,16 +223,17 @@ export function removeOption(
   root: string,
   propertyId: string,
   value: string,
-): Promise<Result<null>> {
+): Promise<Result<ConfigReach>> {
   return serializeSchemaOp(async () => {
     const r = await resolveForCascade(root, propertyId, value)
     if (!r.ok) return r
     const record: SchemaJournal = { op: 'option-remove', id: propertyId, value }
     await writeSchemaJournal(root, record)
-    const skipped = await valueEditSweep(root, r.value, value, { op: 'strip' })
-    if (skipped) return ok(null)
+    const reach = await optionCascade(root, r.value, value, { op: 'strip' })
+    if (reach.skipped) return ok(reach)
     const dropped = await dropOptionFromDef(root, propertyId, value)
+    if (!dropped.ok) return dropped
     await clearSchemaJournal(root, record)
-    return dropped
+    return ok(reach)
   })
 }

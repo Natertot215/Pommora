@@ -3,7 +3,7 @@ import { mkdir, readFile, rename, rm, unlink, writeFile } from 'node:fs/promises
 import { join } from '../Paths/posix'
 import { tempRoot } from '../Testing/hostFs'
 import { stabilize } from './treeStabilize'
-import { dropLiveTree, getLiveTree, refreshTree } from './liveTree'
+import { dropLiveTree, getLiveTree, refreshAfterWrite, refreshTree } from './liveTree'
 import { readNexus } from './readNexus'
 import { confirmBy, confirmMutation, confirmRegistry } from './mutatePatch'
 import { patchContainerFromDisk } from './watchPatch'
@@ -405,6 +405,24 @@ describe('confirmBy over the container patcher', () => {
     expect(walkSpy).not.toHaveBeenCalled()
     const live = getLiveTree()
     expect(live?.contexts[0]?.spaces[0]?.values).toEqual({ Status: ['Active'] })
+    expect(stabilize(await readNexus(root), live)).toBe(live)
+  })
+
+  it('a noted Set sidecar write patches its node without a walk', async () => {
+    await mkdir(abs('Notes', 'Deep'), { recursive: true })
+    await writeFile(abs('Notes', 'Deep', '_pageset.json'), JSON.stringify({ id: 's1' }))
+    await refreshAfterWrite(root)
+    walkSpy.mockClear()
+    await writeFile(
+      abs('Notes', 'Deep', '_pageset.json'),
+      JSON.stringify({ id: 's1', views: [{ id: 'view_1', name: 'Deep', type: 'table' }] }),
+    )
+    noteSidecarWrite(abs('Notes', 'Deep'))
+    const pushed = await confirmBy(root, async () => 'ok')
+    expect(pushed).not.toBeNull()
+    expect(walkSpy).not.toHaveBeenCalled()
+    const live = getLiveTree()
+    expect(live?.collections[0]?.sets?.[0]?.views?.[0]?.name).toBe('Deep')
     expect(stabilize(await readNexus(root), live)).toBe(live)
   })
 })

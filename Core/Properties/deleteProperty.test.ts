@@ -1,10 +1,14 @@
-import { describe, it, expect, beforeEach, afterEach } from 'vitest'
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 import { ID_KEY } from '../Nexus/identityMark'
 import { rm, readFile, readdir } from 'node:fs/promises'
 import { dirname, join } from '../Paths/posix'
 import { seedSpaceSidecar, readSpaceSidecar, tempRoot } from '../Testing/hostFs'
 import { deleteProperty } from './deleteProperty'
-import { createProperty } from './registryProperty'
+import { createProperty, removeFromRegistry } from './registryProperty'
+import { fault } from '../Contract/result'
+import { readSchemaJournal, writeSchemaJournal } from './propertyJournal'
+import { replaySchemaCascade } from './replaySchemaCascade'
+import { seedConfigSurfaces, viewOn } from '../Testing/configSurfaces'
 import { assignProperty } from './assignment'
 import { removeProperty } from './removeProperty'
 import { setSpaceProperty } from './setProperty'
@@ -18,6 +22,11 @@ import { readSidecar } from '../Files/sidecar'
 import { pageCollectionSidecar } from '../Nexus/schemas'
 import type { PropertyDefinition } from './properties'
 import { installMachine, machine } from '../Platform/machine'
+
+vi.mock('./registryProperty', async (importOriginal) => {
+  const mod = await importOriginal<typeof import('./registryProperty')>()
+  return { ...mod, removeFromRegistry: vi.fn(mod.removeFromRegistry) }
+})
 
 /** The registry's copy is the ONLY def that addresses the same key the strip path resolves — one invented here would write somewhere no cascade ever looks. */
 const liveDef = async (id: string): Promise<PropertyDefinition> => {
@@ -218,5 +227,80 @@ describe('a global delete reaches a Space sidecar', () => {
     const record = await bundle(id)
     expect(record.partial).toBe(true)
     expect(Object.keys(record.values)).toHaveLength(0)
+  })
+})
+
+describe('a delete reaches saved views', () => {
+  const cleared = {
+    ...viewOn('', ''),
+    property_order: ['_title'],
+    hidden_properties: [],
+    column_widths: {},
+    filter: { match: 'all', rules: [] },
+    sort: [],
+    group: { kind: 'structural' },
+    hidden_groups: [],
+    collapsed_groups: [],
+  }
+
+  async function seeded(): Promise<{
+    id: string
+    surfaces: Awaited<ReturnType<typeof seedConfigSurfaces>>
+  }> {
+    const c = await createProperty(root, {
+      id: '',
+      name: 'Priority',
+      type: 'select',
+      select_options: [{ value: 'hi', label: 'hi' }],
+    } as PropertyDefinition)
+    if (!c.ok) throw new Error('setup failed')
+    await assignProperty(root, notes, c.value.id)
+    return {
+      id: c.value.id,
+      surfaces: await seedConfigSurfaces(root, notes, viewOn(c.value.id, 'hi')),
+    }
+  }
+
+  const expectCleared = async (
+    surfaces: Awaited<ReturnType<typeof seedConfigSurfaces>>,
+  ): Promise<void> => {
+    const views = await surfaces.read()
+    expect([views.collection, views.set, views.tile]).toEqual([cleared, cleared, cleared])
+    expect(views.matrix).toEqual({ match: 'all', rules: [] })
+  }
+
+  it('clears every field that names the property on the Collection, the Set, the tile, and the Matrix', async () => {
+    const { id, surfaces } = await seeded()
+    const r = await deleteProperty(root, id)
+    expect(r.ok && r.value.hosts).toEqual([{ kind: 'space', id: 'sp_home' }])
+    await expectCleared(surfaces)
+  })
+
+  it('the replayed delete clears the views the same way', async () => {
+    const { id, surfaces } = await seeded()
+    await writeSchemaJournal(root, { op: 'delete', id, name: 'Priority' })
+    await replaySchemaCascade(root)
+    await expectCleared(surfaces)
+    expect((await readRegistry(root)).defs[id]).toBeUndefined()
+    expect(await readSchemaJournal(root)).toBeNull()
+  })
+
+  it('a delete whose registry write fails keeps its record, and the next replay heals it', async () => {
+    const { id, surfaces } = await seeded()
+    vi.mocked(removeFromRegistry).mockResolvedValueOnce(fault('refused'))
+    expect((await deleteProperty(root, id)).ok).toBe(false)
+    expect(await readSchemaJournal(root)).toEqual({ op: 'delete', id, name: 'Priority' })
+    await expectCleared(surfaces)
+    await replaySchemaCascade(root)
+    expect((await readRegistry(root)).defs[id]).toBeUndefined()
+    expect(await readSchemaJournal(root)).toBeNull()
+  })
+
+  it('a replay in the freed state with a clean sweep clears the record', async () => {
+    const { id } = await seeded()
+    await writeSchemaJournal(root, { op: 'delete', id, name: 'Priority' })
+    await removeFromRegistry(root, id)
+    await replaySchemaCascade(root)
+    expect(await readSchemaJournal(root)).toBeNull()
   })
 })

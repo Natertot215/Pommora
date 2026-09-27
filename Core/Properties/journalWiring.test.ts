@@ -6,12 +6,14 @@ import { tempRoot } from '../Testing/hostFs'
 import type { PropertyDefinition } from './properties'
 import {
   atomicWriteFile,
+  editJsonStrict,
   rewritePageSerialized,
   rewritePreservingTimes,
   writeJson,
 } from '../Files/atomicWrite'
 import { closeSession, openSession } from '../Nexus/session'
-import { dropLiveTree } from '../Nexus/liveTree'
+import { dropLiveTree, refreshAfterWrite } from '../Nexus/liveTree'
+import { seedConfigSurfaces, viewOn } from '../Testing/configSurfaces'
 import { listBundles } from '../Trash/spend'
 import { readRegistry } from './propertiesRegistry'
 import { createProperty, editProperty, renameProperty } from './registryProperty'
@@ -24,6 +26,7 @@ vi.mock('../Files/atomicWrite', async (importOriginal) => {
   return {
     ...mod,
     atomicWriteFile: vi.fn(mod.atomicWriteFile),
+    editJsonStrict: vi.fn(mod.editJsonStrict),
     writeJson: vi.fn(mod.writeJson),
     rewritePageSerialized: vi.fn(mod.rewritePageSerialized),
     rewritePreservingTimes: vi.fn(mod.rewritePreservingTimes),
@@ -77,12 +80,19 @@ beforeEach(async () => {
     note(path)
     return real.rewritePreservingTimes(path, data)
   })
+  vi.mocked(editJsonStrict).mockImplementation(async (path, mutate) => {
+    const journaled = existsSync(journalFile())
+    const outcome = await real.editJsonStrict(path, mutate)
+    if (outcome === 'written') observed.push({ path, journaled })
+    return outcome
+  })
 })
 afterEach(async () => {
   vi.mocked(atomicWriteFile).mockRestore()
   vi.mocked(writeJson).mockRestore()
   vi.mocked(rewritePageSerialized).mockRestore()
   vi.mocked(rewritePreservingTimes).mockRestore()
+  vi.mocked(editJsonStrict).mockRestore()
   dropLiveTree()
   closeSession()
   await rm(root, { recursive: true, force: true })
@@ -207,6 +217,25 @@ describe('the option-op writers', () => {
     const def = (await readRegistry(root)).defs.prop_t
     expect(def?.select_options?.map((o) => o.value)).toEqual(['Done'])
     expect(await readFile(abs('Col', 'C.md'), 'utf8')).not.toContain('Tags: Draft')
+  })
+
+  it('option-remove writes every saved view while the record is held', async () => {
+    await withOptions()
+    await seedConfigSurfaces(root, abs('Col'), viewOn('prop_t', 'Draft'))
+    await refreshAfterWrite(root)
+    observed = []
+    expect((await removeOption(root, 'prop_t', 'Draft')).ok).toBe(true)
+    const configWrites = observed.filter((o) =>
+      /_page(collection|set)\.json$|_tiles\.json$|matrix\.json$/.test(o.path),
+    )
+    expect(configWrites.map((o) => o.path.slice(root.length + 1)).sort()).toEqual([
+      '.nexus/contexts/Areas/Home/_tiles.json',
+      '.nexus/matrix.json',
+      'Col/Deep/_pageset.json',
+      'Col/_pagecollection.json',
+    ])
+    expect(configWrites.every((w) => w.journaled)).toBe(true)
+    expect(await readSchemaJournal(root)).toBeNull()
   })
 
   it('option-clear never writes a record — its residue disagrees with nothing', async () => {

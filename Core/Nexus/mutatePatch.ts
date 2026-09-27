@@ -30,6 +30,7 @@ import {
 import { flushSidecarWrites } from './valuesChanged'
 import { errText } from '../Contract/result'
 import { dropTileHeadingLinks } from '../Tiles/tilesFile'
+import { CONTEXTS_DIR_REL } from '../Paths/nexusPaths'
 
 /** `'no-change'`: the op cannot move the tree. Null: no transform owns it, so the caller walks. */
 function patchForMutation(
@@ -217,7 +218,10 @@ export async function confirmBy(
     return 'refresh' as const
   })
   for (const dirRel of flushSidecarWrites(root)) {
-    if (route === 'ok' && (await patchSpaceFromDisk(root, dirRel)) === 'refresh') route = 'refresh'
+    const patch = dirRel.startsWith(`${CONTEXTS_DIR_REL}/`)
+      ? patchSpaceFromDisk
+      : patchContainerFromDisk
+    if (route === 'ok' && (await patch(root, dirRel)) === 'refresh') route = 'refresh'
   }
   if (route === 'refresh') {
     try {

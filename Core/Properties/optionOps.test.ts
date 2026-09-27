@@ -1,8 +1,8 @@
-import { describe, it, expect, beforeEach, afterEach } from 'vitest'
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 import { chmod, mkdir, rm, readFile, stat, writeFile } from 'node:fs/promises'
 import { join } from '../Paths/posix'
 import { noModeBits, seedSpaceSidecar, readSpaceSidecar, tempRoot } from '../Testing/hostFs'
-import { fault } from '../Contract/result'
+import { fault, ok } from '../Contract/result'
 import {
   editOption,
   renameOption,
@@ -17,9 +17,17 @@ import { createFolderEntity } from '../Nexus/folderEntity'
 import { createPage, updatePageProperty } from '../Nexus/page'
 import { serializeSchemaOp } from './schemaChain'
 import { machine } from '../Platform/machine'
-import { readRegistry } from './propertiesRegistry'
+import { mutateRegistry, readRegistry } from './propertiesRegistry'
+import { readSchemaJournal } from './propertyJournal'
+import { seedConfigSurfaces, viewOn } from '../Testing/configSurfaces'
+import { sidecarPath } from '../Paths/paths'
 import type { PropertyDefinition, SelectOption } from './properties'
 import { flushValueWrites } from '../Nexus/valuesChanged'
+
+vi.mock('./propertiesRegistry', async (importOriginal) => {
+  const mod = await importOriginal<typeof import('./propertiesRegistry')>()
+  return { ...mod, mutateRegistry: vi.fn(mod.mutateRegistry) }
+})
 
 let root: string
 beforeEach(async () => {
@@ -588,5 +596,133 @@ describe('adoption — a Multi-Select registers an option a page already holds',
     await serializeSchemaOp(() => applyAdoptions(root, [{ propertyId: id, value: 'gamma' }]))
     await applyAdoptions(root, [])
     expect(await values(id)).toEqual(['alpha', 'beta', 'gamma'])
+  })
+})
+
+describe('option cascades reach saved views', () => {
+  const HOME = { kind: 'space', id: 'sp_home' }
+
+  async function seeded(): Promise<{
+    id: string
+    col: string
+    surfaces: Awaited<ReturnType<typeof seedConfigSurfaces>>
+  }> {
+    const id = await mkSelect([
+      { value: 'Done', label: 'Done' },
+      { value: 'Todo', label: 'Todo' },
+    ])
+    const page = await pageHolding(id, 'Done')
+    const col = join(page, '..')
+    return { id, col, surfaces: await seedConfigSurfaces(root, col, viewOn(id, 'Done')) }
+  }
+
+  // A page in a folder that can't be written is one the sweep skips.
+  async function lockedHolder(id: string, col: string): Promise<string> {
+    const set = await createFolderEntity(col, 'set', 'Locked')
+    if (!set.ok) throw new Error('set failed')
+    const p = await createPage(set.value.path, 'Held', { body: 'b' })
+    if (!p.ok) throw new Error('page failed')
+    await updatePageProperty(root, p.value.path, (await readRegistry(root)).defs[id], {
+      kind: 'select',
+      value: 'Done',
+    })
+    await chmod(set.value.path, 0o555)
+    return set.value.path
+  }
+
+  it('a rename reaches the Collection, the Set, the tile, and the Matrix', async () => {
+    const { id, surfaces } = await seeded()
+    expect(await renameOption(root, id, 'Done', 'Closed')).toEqual(
+      ok({ skipped: 0, hosts: [HOME] }),
+    )
+    const views = await surfaces.read()
+    const want = viewOn(id, 'Closed')
+    expect([views.collection, views.set, views.tile]).toEqual([want, want, want])
+    expect(views.matrix).toEqual(want.filter)
+  })
+
+  it('a removal strips the value and drops the rule it emptied', async () => {
+    const { id, surfaces } = await seeded()
+    expect(await removeOption(root, id, 'Done')).toEqual(ok({ skipped: 0, hosts: [HOME] }))
+    const held = viewOn(id, 'Done')
+    const want = {
+      ...held,
+      filter: { match: 'all', rules: [] },
+      sort: [{ property_id: id, direction: 'ascending', order: [] }],
+      group: { ...(held.group as object), order: [] },
+      hidden_groups: [],
+      collapsed_groups: [],
+    }
+    const views = await surfaces.read()
+    expect([views.collection, views.set, views.tile]).toEqual([want, want, want])
+    expect(views.matrix).toEqual(want.filter)
+    expect(await readSchemaJournal(root)).toBeNull()
+  })
+
+  it.skipIf(noModeBits)(
+    'a removal with a page skip leaves every view holding the option and the journal held',
+    async () => {
+      const { id, col, surfaces } = await seeded()
+      const locked = await lockedHolder(id, col)
+      try {
+        expect(await removeOption(root, id, 'Done')).toEqual(ok({ skipped: 1, hosts: [] }))
+      } finally {
+        await chmod(locked, 0o755)
+      }
+      const views = await surfaces.read()
+      const held = viewOn(id, 'Done')
+      expect([views.collection, views.set, views.tile]).toEqual([held, held, held])
+      expect(await readSchemaJournal(root)).toEqual({ op: 'option-remove', id, value: 'Done' })
+      expect((await readRegistry(root)).defs[id].select_options?.map((o) => o.value)).toEqual([
+        'Done',
+        'Todo',
+      ])
+    },
+  )
+
+  it.skipIf(noModeBits)(
+    'a rename with a page skip still reaches the views, answers the skip, and holds the journal',
+    async () => {
+      const { id, col, surfaces } = await seeded()
+      const locked = await lockedHolder(id, col)
+      try {
+        expect(await renameOption(root, id, 'Done', 'Closed')).toEqual(
+          ok({ skipped: 1, hosts: [HOME] }),
+        )
+      } finally {
+        await chmod(locked, 0o755)
+      }
+      expect((await surfaces.read()).set).toEqual(viewOn(id, 'Closed'))
+      expect((await readSchemaJournal(root))?.op).toBe('option-rename')
+    },
+  )
+
+  it('a pass skip holds the drop and the journal', async () => {
+    const { id, surfaces } = await seeded()
+    const setFile = sidecarPath(surfaces.set, 'set')
+    await rm(setFile)
+    await mkdir(setFile)
+    expect(await removeOption(root, id, 'Done')).toEqual(ok({ skipped: 1, hosts: [HOME] }))
+    expect(await readSchemaJournal(root)).toEqual({ op: 'option-remove', id, value: 'Done' })
+    expect((await readRegistry(root)).defs[id].select_options?.map((o) => o.value)).toEqual([
+      'Done',
+      'Todo',
+    ])
+  })
+
+  it('a failed drop keeps the journal', async () => {
+    const { id } = await seeded()
+    vi.mocked(mutateRegistry).mockResolvedValueOnce(fault('refused'))
+    expect((await removeOption(root, id, 'Done')).ok).toBe(false)
+    expect(await readSchemaJournal(root)).toEqual({ op: 'option-remove', id, value: 'Done' })
+  })
+
+  it('a clear reaches no view', async () => {
+    const { id, surfaces } = await seeded()
+    expect(await clearOption(root, id, 'Done')).toEqual(ok(null))
+    const views = await surfaces.read()
+    const held = viewOn(id, 'Done')
+    expect([views.collection, views.set, views.tile]).toEqual([held, held, held])
+    expect(views.matrix).toEqual(held.filter)
   })
 })
