@@ -12,7 +12,7 @@
 
 - **Delete:** a page, Set, or Collection delete clears the Link values naming it from pages and Spaces and records them in the Trash bundle; the notice counts both. A title another page still holds is left alone (F-612). A cache is left as it is until its property is assigned again.
 - **Rename:** a page rename rewrites pages, Spaces, tiles, and caches; a heading rename reaches Spaces too, including one only a Space links, and leaves caches as written. A title another page still holds is left alone.
-- **Restore:** a returning page, Space, or property drops a Link naming a page that doesn't exist, hands one whose page sits in the Trash to that page's bundle so its restore puts it back, and gives an ID-less page the ID adoption would; values a delete stripped go back onto the page or Space, or into its trashed copy when it sits in the Trash. With **Restore Links On Deletion** off, a page in the Trash counts as still there.
+- **Restore:** a returning page, Space, or property drops a Link naming a page that doesn't exist, hands one whose page sits in the Trash to that page's bundle so its restore puts it back, and gives an ID-less page the ID adoption would; values a delete stripped go back onto the page or Space, or into its trashed copy when it sits in the Trash.
 - **Re-assign:** a cached Link naming a page gone leaves the cache, joining that page's bundle when it's in the Trash.
 - **Emptying:** giving a bundle up strips any Link still naming its pages unless another page holds that title, and hands the values its record kept to a namesake still in the Trash.
 - **Undo (F-615):** a bundle restored or deleted from Settings › Trash spends its delete notice's Undo and the chord once that action lands, so ⌘Z walks on to the act beneath.
@@ -28,6 +28,7 @@ The ledger reads 100/556: F-612–F-616 are closed, and F-617 and F-618 are new.
 
 #### Next Session
 
+- **Ruled:** Restore Links On Deletion governs what a restore writes back, not what it keeps (`restoreWorld` removed); a Space's link, like a page's, stays removed after a delete with the switch off or in System Trash mode.
 - **Nathan's call, F-617:** two same-titled pages both deleted, then the first one deleted is restored from the Trash: the links to their title stay stripped until the second bundle returns. The recommended fix records the rows at the first delete without stripping them.
 - **F-618:** Delete All and Restore All walk the whole Trash once per link-carrying bundle; the fix batches the frame's request.
 - **Commit `5003a1c7f` carries a peer session's audit batch (F-190/192/193/207/216/246/247/250/302)** beside this session's cache fold; that session was told and lands its remaining deletions under its own message.
