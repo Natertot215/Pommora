@@ -5,7 +5,7 @@ import { contextDirRel } from '@pommora/core/Paths/nexusPaths'
 import type { NexusTree } from '@pommora/core/Nexus/tree'
 import { nodesOf } from '../Nexus/treeIndex'
 
-/** The matrix is the write path's: a page or Set lands in a container and nowhere else. */
+/** The destination rules are the write path's: a page or Set lands in a container and nowhere else. */
 export function containerTargets(tree: NexusTree | null): MoveTarget[] {
   if (!tree) return []
   const roots: MoveTarget[] = []

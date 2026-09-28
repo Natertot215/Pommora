@@ -75,7 +75,7 @@ function prepareRule(
   if (id === RESERVED_PROPERTY_ID.location) return prepareLocation(op, want, setTree)
   const t = declaredType(id, schema, contextIds)
   if (t === undefined) return undefined
-  // resolveFieldValue('_title') carries row.title as a select-kind string — the text matrix reads it.
+  // resolveFieldValue('_title') carries row.title as a select-kind string — the text evaluator reads it.
   const evaluate = t === 'title' ? evaluateText : evaluatorOf(PROPERTY_TYPES[t].kind)
   return (row) => evaluate(resolveFieldValue(row, id, schema), op, want)
 }

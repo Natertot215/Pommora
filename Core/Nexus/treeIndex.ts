@@ -290,7 +290,7 @@ export function resolveConnection(tree: NexusTree | null, rawTitle: string): Con
 export interface BannerOwner {
   path: string
   kind: Exclude<BannerOwnerKind, 'navview'>
-  name: string
+  title: string
   banner?: string
   icon?: string
   headingIconHidden?: boolean
@@ -368,7 +368,7 @@ export function findSpace(tree: NexusTree | null, id: string): BannerOwner | nul
     ? {
         path: sp.path,
         kind: 'space',
-        name: sp.title,
+        title: sp.title,
         banner: sp.banner,
         icon: sp.icon,
         headingIconHidden: sp.headingIconHidden,
@@ -380,7 +380,7 @@ export function containerOwner(node: CollectionNode | SetNode): BannerOwner {
   return {
     path: node.path,
     kind: node.kind,
-    name: node.title,
+    title: node.title,
     banner: node.banner,
     icon: node.icon,
     headingIconHidden: node.headingIconHidden,

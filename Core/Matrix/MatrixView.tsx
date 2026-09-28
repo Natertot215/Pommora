@@ -6,7 +6,8 @@ import { showEntityMenu } from '../Interface/Menus/entityMenuActions'
 import { pageMoveContext } from '../Interface/Menus/pageMenuActions'
 import { usePublishCount } from '../Interface/Subfield/publish'
 import { useContentHost } from '../Interface/contentHost'
-import { contextTargetToSelect, isOpenInTabs } from '../Navigation/tabsModel'
+import { isOpenInTabs } from '../Navigation/tabsModel'
+import { selectTargetOf } from '../Navigation/navRef'
 import { nodesOf } from '../Nexus/treeIndex'
 import { useSession } from '../Session/store'
 import { MatrixCanvas, toWorldPoint } from './MatrixCanvas'
@@ -42,7 +43,7 @@ export function MatrixView(): React.JSX.Element {
   // Read when the gesture lands, not when it began: a rename mid-press moves the path the tap opens.
   const open = (id: string): void => {
     const rec = recordOf(useSession.getState().tree, id)
-    if (rec) void select(contextTargetToSelect(rec))
+    if (rec) void select(selectTargetOf(rec))
   }
 
   const menu = async (id: string): Promise<void> => {
@@ -59,7 +60,7 @@ export function MatrixView(): React.JSX.Element {
         id: rec.id,
         path: rec.path,
         title: rec.title,
-        alreadyOpen: isOpenInTabs(tabs, pinned, contextTargetToSelect(rec)),
+        alreadyOpen: isOpenInTabs(tabs, pinned, selectTargetOf(rec)),
         host: 'matrix',
         ...(rec.kind === 'page' ? pageMoveContext(tree, rec.path) : {}),
       },

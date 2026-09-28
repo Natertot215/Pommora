@@ -1,6 +1,6 @@
 import { radiusOf } from './forces'
 
-export type NodeKind = 'page' | 'folder' | 'space'
+export type GraphNodeKind = 'page' | 'folder' | 'space'
 export type LinkKind = 'body' | 'citation' | 'frontmatter' | 'space' | 'location'
 export type ConnectionKind = Extract<LinkKind, 'body' | 'citation' | 'frontmatter'>
 export type GroupMode = 'connection' | 'location' | 'space'
@@ -20,7 +20,7 @@ interface BuildOptions {
 
 export interface GraphNode {
   id: string
-  kind: NodeKind
+  kind: GraphNodeKind
   title: string
   icon?: string
   x: number
@@ -62,7 +62,7 @@ export function isGroupingLink(mode: GroupMode, kind: LinkKind): boolean {
 export function buildGraph(input: GraphInput, options: BuildOptions): Graph {
   const nodes: GraphNode[] = []
   const index = new Map<string, number>()
-  const add = (id: string, kind: NodeKind, title: string, icon?: string): void => {
+  const add = (id: string, kind: GraphNodeKind, title: string, icon?: string): void => {
     index.set(id, nodes.length)
     nodes.push({
       id,

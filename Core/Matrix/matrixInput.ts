@@ -8,7 +8,7 @@ import { applyFilter } from '../Views/Pipeline/filter'
 import { buildSetTree, type SetTreeNode, toRow } from '../Views/Pipeline/group'
 import type { ViewRow } from '../Views/viewRow'
 import { type FilterRule, mapRules, OPERANDLESS_OPS } from '../Views/views'
-import type { ConnectionKind, GraphInput } from './Engine/graph'
+import type { GraphInput } from './Engine/graph'
 import type { MatrixConfig } from './matrixConfig'
 import type { MatrixGraphReply } from './matrixGraph'
 
@@ -69,7 +69,7 @@ export function matrixConnections(
   for (const link of links) {
     const hit = resolve(link.target)
     if (hit.status === 'resolved' && hit.page)
-      connections.push({ from: link.pageId, to: hit.page.id, kind: link.kind as ConnectionKind })
+      connections.push({ from: link.pageId, to: hit.page.id, kind: link.kind })
   }
   return connections
 }

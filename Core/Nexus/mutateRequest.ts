@@ -39,7 +39,7 @@ export type BannerOwnerKind = z.infer<typeof bannerOwner>
 export const CONTAINER_KINDS = ['collection', 'set'] as const
 const containerKind = z.enum(CONTAINER_KINDS)
 
-/** Checked against the write path's own matrix: a contradicting claim is refused as malformed. */
+/** Checked against the write path's own destination rules: a contradicting claim is refused as malformed. */
 const restoreDestination = z.object({ kind: z.enum(['container', 'context']), id: z.string() })
 export type RestoreDestination = z.infer<typeof restoreDestination>
 

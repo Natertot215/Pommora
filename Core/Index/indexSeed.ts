@@ -23,8 +23,8 @@ import {
   type ContentIndexStore,
   contentIndexStore,
   type IndexedStat,
-  type MatrixKind,
-  type MatrixNode,
+  type RelationKind,
+  type Relation,
   type PageIndexEntry,
 } from '../Platform/stores'
 import { machine } from '../Platform/machine'
@@ -40,7 +40,7 @@ interface PageRead {
   outline: string[]
 }
 
-const NO_ROWS: PageRead = { entry: { matrix: [], headings: [], values: {} }, outline: [] }
+const NO_ROWS: PageRead = { entry: { relations: [], headings: [], values: {} }, outline: [] }
 
 function extractPageIndex(rel: string, content: string): PageRead {
   if (!sweepAdmitsBody(content)) return NO_ROWS
@@ -49,9 +49,9 @@ function extractPageIndex(rel: string, content: string): PageRead {
   const { body } = splitEnvelope(content)
   const scan = scanDoc(body)
   const outline = headingOutlineOf(scan).map((h) => h.text)
-  const tally = new Map<string, MatrixNode>()
+  const tally = new Map<string, Relation>()
   // A NUL separator: no normalized title or Context key can hold one, so the three parts never blur.
-  const add = (kind: MatrixKind, target: string, qualifier: string): void => {
+  const add = (kind: RelationKind, target: string, qualifier: string): void => {
     const key = `${kind}\0${target}\0${qualifier}`
     const held = tally.get(key)
     if (held) held.count++
@@ -66,7 +66,7 @@ function extractPageIndex(rel: string, content: string): PageRead {
     add('frontmatter', target, qualifier)
   for (const { target, qualifier } of spaceRelations(values)) add('space', target, qualifier)
   const headings = [...new Set(outline.map(normalizeTitle))].filter(Boolean)
-  return { entry: { matrix: [...tally.values()], headings, values }, outline }
+  return { entry: { relations: [...tally.values()], headings, values }, outline }
 }
 
 // Every `<Title>` key counts, registered or not — the same latitude page_values gives an unregistered property name, so a Context created later finds its holders.

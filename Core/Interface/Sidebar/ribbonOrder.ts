@@ -11,7 +11,10 @@ const DEFAULT_ORDER = Object.keys({
   settings: 0,
 } satisfies Record<RibbonKey, 0>) as RibbonKey[]
 
-export function resolveOrder(persisted: string[] | undefined, experimental: boolean): RibbonKey[] {
+export function resolveRibbonOrder(
+  persisted: string[] | undefined,
+  experimental: boolean,
+): RibbonKey[] {
   const order = experimental
     ? DEFAULT_ORDER
     : DEFAULT_ORDER.filter((k) => !EXPERIMENTAL_MODES.has(k))

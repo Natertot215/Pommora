@@ -11,7 +11,7 @@ import { popMenu } from '../../Actions/menuActions'
 import { openLabel } from '../../Actions/toggleLabels'
 import { useSession } from '../../Session/store'
 import { sidebarModeOf, useExperimental } from '@pommora/core/Settings/experimental'
-import { type RibbonKey, resolveOrder, withHidden } from './ribbonOrder'
+import { type RibbonKey, resolveRibbonOrder, withHidden } from './ribbonOrder'
 import { isOpenInTabs } from '../../Navigation/tabsModel'
 import { ctxHandler } from './sidebarRows'
 import { MATRIX_ICON, MATRIX_REF } from '../../Matrix/matrixKind'
@@ -77,7 +77,7 @@ export function Ribbon(): React.JSX.Element {
   const experimental = useExperimental()
   const defaultIcons = useSession((s) => s.personalization.defaultIcons)
   const setPersonalization = useSession((s) => s.setPersonalization)
-  const keys = resolveOrder(order, experimental)
+  const keys = resolveRibbonOrder(order, experimental)
 
   const reorderIcons = (activeId: string, overId: string): void => {
     const next = reorder(

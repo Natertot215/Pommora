@@ -1,9 +1,6 @@
-import {
-  DEFAULT_NEW_NAME,
-  type MutateRequest,
-  type RenameHost,
-  spaceCreator,
-} from '../Nexus/mutateRequest'
+import { DEFAULT_NEW_NAME, type MutateRequest } from '../Nexus/mutateRequest'
+import { spaceCreator } from './createMenu'
+import type { RenameHost } from '../Session/editSlice'
 import { relDirname } from '../Paths/posix'
 import { placeAt, placeNew } from '../Views/creationOrder'
 import { containerAt, findContainerWhere } from '../Nexus/treePatch'

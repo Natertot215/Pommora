@@ -29,12 +29,11 @@ import type {
 } from '@pommora/core/Nexus/tree'
 import { placementOf, type SidebarMode } from '@pommora/core/Settings/personalization'
 import {
-  type Creator,
   DEFAULT_NEW_NAME,
   type MutableKind,
   type MutateRequest,
-  spaceCreator,
 } from '@pommora/core/Nexus/mutateRequest'
+import { type Creator, spaceCreator } from '@pommora/core/Actions/createMenu'
 import { collectionOfPage } from '../../Properties/pageRow'
 import { spaceNodeOf } from '../../Nexus/treeIndex'
 import { SidebarDnd, useSidebarRowEl } from './sidebarDnd'
@@ -44,7 +43,8 @@ import { sidebarModeOf } from '@pommora/core/Settings/experimental'
 import { pageMetaOf, useSession } from '../../Session/store'
 import { glanceShown, hoverGlance, leaveGlance } from '../Glance/glanceAction'
 import { pageMoveContext } from '../Menus/pageMenuActions'
-import { contextTargetToSelect, isOpenInTabs } from '../../Navigation/tabsModel'
+import { isOpenInTabs } from '../../Navigation/tabsModel'
+import { selectTargetOf } from '../../Navigation/navRef'
 import { IconChoice } from '../../Assets/IconChoice'
 import { showEntityMenu } from '../Menus/entityMenuActions'
 import { DragRow, Leaf } from './sidebarRows'
@@ -78,7 +78,7 @@ function showContextFor(
   trigger?: HTMLElement | null,
 ): Promise<void> {
   const { tabs, pinned, tree } = useSession.getState()
-  const alreadyOpen = isOpenInTabs(tabs, pinned, contextTargetToSelect(node))
+  const alreadyOpen = isOpenInTabs(tabs, pinned, selectTargetOf(node))
   return showEntityMenu(
     {
       kind: node.kind,
@@ -99,7 +99,7 @@ function selectRow(
   e?: React.MouseEvent,
 ): void {
   const s = useSession.getState()
-  const target = contextTargetToSelect(node)
+  const target = selectTargetOf(node)
   if (target.kind === 'page' && collectionOfPage(s.tree, target.path)?.openIn === 'page-preview') {
     if (e && isCmd(e)) void s.select(target, { newTab: true })
     else s.openWindowTab(target)
