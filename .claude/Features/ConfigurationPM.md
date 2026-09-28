@@ -106,6 +106,7 @@ The three colors the interface derives from. Each opens the ramp grid without it
 | --- | --- | --- | --- |
 | Confirm Before Deletion | `confirmDeletion` | Asks before deleting a page, a property, or one of a property's options. Collections, Sets, Contexts, Spaces, and views ask regardless, since each carries everything filed under it. | **On** · Off |
 | Permanently Delete Files | `permanentDelete` | Erases an item emptied from the trash rather than handing it to the system trash. | On · **Off** |
+| Restore Links On Deletion | `restoreLinksOnDeletion` | Restoring a deleted page puts it back into the Link property values that pointed at it. Off, those values stay removed. | **On** · Off |
 
 **File History**
 

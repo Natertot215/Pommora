@@ -1,7 +1,7 @@
 ## Properties
 
 
-Pommora's property system. A **property** is a typed field defined once in the nexus-wide registry and filled in on the members of every Collection that assigns it. Three layers hold the system: a **definition** in `.nexus/properties.json` says what a property is — its type and per-type configuration; an **assignment** on a Collection's sidecar says which definitions that Collection carries and shows; a **value** in a Page's frontmatter says what one entity holds. A Space holds values for any registry property as bare keys on its sidecar. A definition, its options included, is one shared object everywhere it's assigned, so the same property means the same thing in every Collection, and genuinely divergent needs get a separate property.
+Pommora's property system. A **property** is a typed field defined once in the nexus-wide registry and filled in on the members of every Collection that assigns it. Three layers hold the system: a **definition** in `.nexus/properties.json` says what a property is — its type and per-type configuration; an **assignment** on a Collection's sidecar says which definitions that Collection carries and shows; a **value** in a Page's frontmatter says what one entity holds. A Space holds values for any registry property as bare keys on its sidecar. A definition, including its options, is a shared object everywhere it's assigned, so the same property means the same thing in every Collection, and genuinely divergent needs get a separate property.
 
 ### The Type Catalog
 
@@ -47,35 +47,37 @@ tags:
 
 Each type's definition-level configuration lives on the `propertyDefinition` schema; its per-view look lives on the view's `column_styles`. The editor frame for each type is a frame of the Property Frame.
 
-#### II. Status
+#### Status
 
 A workflow property whose options sort into **groups**. The group set is open — each group is a stable `id` with a user-editable label, a color, and its own options — seeded with three: `upcoming` (Open, grey), `in_progress` (Active, blue), `done` (Done, green). Every option references its group by id, so status semantics resolve by id rather than position, and further groups drop in with no data change. An option stores its word once, as its `value`, so a rename rewrites that one word and cascades it onto every assigning page; an option without its own color wears its group's. Sort is group position first, then option order within it.
 
 The value renders as a pill in its group's color; the **Compact** style renders it icon-only — the option's own icon, or its group's glyph.
 
-#### II. Checkbox
+#### Checkbox
 
 A boolean with two per-view looks and one property-wide color. The look is **Checkbox** (a rounded box) or **Switch** (a DualSwitch); toggling on writes `true` and toggling off strips the key. The `checkbox_color` applies to the on state only — a checked box fills with it and a switch's on-track tints — while the off state stays neutral; an absent color follows the Nexus's Checkbox Color live. Cells, cards, and filter rows all draw the value in its color and the view's look. The editor pairs a ColorSwatch with a Style picker.
 
-#### II. Number
+#### Number
 
 A bare number with a **property-wide format** and a **per-view look**. The format — a family (Number, Percent, Currency), a currency code, thousands separators, decimal places, and a Fraction toggle rendering "N out of denominator" — is set once in the Number editor and applies everywhere. Percent stores the literal value and appends the sign, keeping the file legible. The look is **Number** (formatted text) or **Bar**, a progress bar filling against a muted track.
 
-#### II. Date & Time
+#### Date & Time
 
 A single ISO value: a date-only string folds into Date on read, and a with-time string carries the clock. Its formats are per-view — a Date format (numeric, worded, or Relative), a weekday offered with the worded formats, and a Time — and a view column follows the Nexus's own **Date Format** and **Time Format** until it picks its own; picking the Nexus's form or clock again returns it to following. A cell opens the CalendarPicker, a calendar grid plus a time editor of hour, minute, and AM/PM parts.
 
-#### II. Select & Multi-Select
+#### Select & Multi-Select
 
-Select stores a one-element list and renders one colored tag chip; Multi-Select stores a list and renders several. The three option types read one shape — a list, with a bare scalar read as a list of one: Select and Status keep the last element that names a registered option (an unregistered one reads as no value; removing that option from the property reveals the registered one before it), Multi-Select keeps every element. A YAML number or boolean names the option it spells, so a hand-written `- 2024` is the option "2024". Both draw from a shared option list, seeded with one starter option at creation. The option editor is an inline list under a Style toggle, grouped under labeled headings where the type has groups, with double-click on a heading to relabel its group: a `+` per list or group, a hover square-pen opening the per-option editor — icon and title fields over the color grid over an **Appearance** toggle (**Filled**, the tinted default, or **Clear**, which drops the fill and keeps the tinted border and label) — drag to reorder within or across groups, and a right-click **Rename · Edit Icon · Remove · Clear** menu. The **Compact** style renders each chip icon-only — the option's own icon, or the single- or double-tag default.
+Select stores a one-element list and renders one colored tag chip; Multi-Select stores a list and renders several. The three option types read one shape — a list, with a bare scalar read as a list of one: Select and Status keep the last element that names a registered option (an unregistered one reads as no value; removing that option from the property reveals the registered one before it), Multi-Select keeps every element. 
 
-#### II. Link
+The option editor is an inline list under a Style toggle, grouped under labeled headings where the type has groups, with double-click on a heading to relabel its group: a `+` per list or group, a hover square-pen opening the per-option editor — icon and title fields over the color grid over an **Appearance** toggle (**Filled**, the tinted default, or **Clear**, which drops the fill and keeps the tinted border and label) — drag to reorder within or across groups, and a right-click **Rename · Edit Icon · Remove · Clear** menu. The **Compact** style renders each chip icon-only — the option's own icon, or the single- or double-tag default.
+
+#### Link
 
 A Link property renders each value as a clickable link and holds either an address or a connection. Its look is set on the property and applies everywhere, though a view's column may read its links differently: a **Format** of Full Link, Short Link, or Page Title; **Underline** on or off; and a **Color** picked from the ramp, defaulting to the External Link Color. A per-value alias, set through Rename and stored as `[alias](url)`, overrides the format for that one link. Page Title is the only format that reaches the network — the page's `<title>` is fetched once per address and cached per machine, showing the bare domain while it loads.
 
-Pasting `[[Title]]`, or a markdown link whose target names a page, stores the value as a connection under the page's own capitalization, with any alias carried through. The cell then reads as a connection — the connection color, a click that opens the page — and the three link formats don't apply; a title no page answers to is refused at commit, as a malformed address is. Renaming a page rewrites the connections held in frontmatter alongside those in bodies.
+Pasting `[[Title]]`, or a markdown link whose target names a page, stores the value as a connection under the page's own capitalization, with any alias carried through. The cell then reads as a connection — the connection color, a click that opens the page — and the three link formats don't apply; a title no page answers to is refused at commit, as a malformed address is. Renaming a page rewrites the connections held in frontmatter alongside those in bodies, and deleting one removes them permanently unless **Restore Links On Deletion** is toggled on, which then restores the deleted page into pages that previously targeted it.
 
-#### II. File
+#### File
 
 A File property holds an ordered list of files that live in the Nexus, each named by a wikilink over its basename:
 
@@ -88,9 +90,10 @@ A File property holds an ordered list of files that live in the Nexus, each name
 The name is the whole reference; no path is stored. It resolves against an in-memory basename index the file watcher keeps current (`Core/Assets/assetMap.ts`), which is what lets the asset directory be re-pointed or a file be moved within it without a value going stale. A name that answers to no file still renders, dimmed, so it can be removed. Each value renders as a **file chip** — the file type's glyph and its name — and the cell clips and scrolls when the run outgrows the column.
 
 The property-wide **Directory** is the folder its files land in, stored relative to the asset root so re-pointing the root carries it along; unset means the root itself. Filling a value opens the operating system's file dialog: clicking a chip replaces the file it names, clicking the value's own area adds one, and a right-click offers **Add File · Replace File · Remove File**. The file is copied into the Nexus before the reference is written, stepping a colliding name aside and skipping the copy when the bytes already match; removing a value drops the reference and leaves the bytes.
-#### II. Context
 
-Context links are the relation layer. They store as `<Title>` keys at the entity root, over a block sequence of bare Space titles, in a page's frontmatter, and at the root of `_space.json`, alike. They are never schema definitions: each registry Context resolves to one column at runtime, alongside the assigned schema rather than inside it.
+#### Context
+
+Context links are the relation layer. They are stored as `<Title>` keys at the entity root, over a block sequence of bare Space titles, in a page's frontmatter, and at the root of `_space.json`, alike. They are never schema definitions: each registry Context resolves to one column at runtime, alongside the assigned schema rather than inside it.
 
 ### Auto-Managed Properties
 
