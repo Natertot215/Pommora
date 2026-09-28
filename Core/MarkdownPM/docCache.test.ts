@@ -79,7 +79,7 @@ const atomicsOf = (perLine: DecoIntent[][]): [number, number][] =>
   perLine
     .flatMap((line) =>
       line.flatMap((it): [number, number][] =>
-        it.kind === 'atomic' && it.to > it.from ? [[it.from, it.to]] : [],
+        (it.kind === 'atomic' || it.kind === 'prefix') && it.to > it.from ? [[it.from, it.to]] : [],
       ),
     )
     .sort((x, y) => x[0] - y[0] || x[1] - y[1])

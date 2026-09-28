@@ -126,14 +126,14 @@ describe('decoration intents', () => {
         (d) => d.kind === 'line' && d.from === 6 && d.className.startsWith('md-blockquote'),
       ),
     ).toBe(true)
-    expect(intents.some((d) => d.kind === 'hide' && d.from === 6 && d.to === 8)).toBe(true)
+    expect(intents.some((d) => d.kind === 'prefix' && d.from === 6 && d.to === 8)).toBe(true)
   })
 
   it('a quoted fence hides only its own depth — a callout-lookalike tag inside is code, not a new box', () => {
     const t = '> [!note] T\n> ```\n> [!warning] inner\n> ```'
     const intents = decorationsFor(t, tokenize(t), new Set(), 0)
-    expect(intents.some((d) => d.kind === 'hide' && d.from === 18 && d.to === 20)).toBe(true)
-    expect(intents.some((d) => d.kind === 'hide' && d.from === 18 && d.to > 20)).toBe(false)
+    expect(intents.some((d) => d.kind === 'prefix' && d.from === 18 && d.to === 20)).toBe(true)
+    expect(intents.some((d) => d.kind === 'prefix' && d.from === 18 && d.to > 20)).toBe(false)
     const lineClass = (cls: string): boolean =>
       intents.some((d) => d.kind === 'line' && d.from === 18 && d.className.includes(cls))
     expect(lineClass('md-callout-first')).toBe(false)
@@ -143,8 +143,8 @@ describe('decoration intents', () => {
   it('a > deeper than its quoted fence is code — the prefix hide stops at the fence depth', () => {
     const t = '> ```\n> > literal\n> ```'
     const intents = decorationsFor(t, tokenize(t), new Set(), 0)
-    expect(intents.some((d) => d.kind === 'hide' && d.from === 6 && d.to === 8)).toBe(true)
-    expect(intents.some((d) => d.kind === 'hide' && d.from === 6 && d.to === 10)).toBe(false)
+    expect(intents.some((d) => d.kind === 'prefix' && d.from === 6 && d.to === 8)).toBe(true)
+    expect(intents.some((d) => d.kind === 'prefix' && d.from === 6 && d.to === 10)).toBe(false)
     expect(
       intents.some((d) => d.kind === 'line' && d.className.includes('md-blockquote-nested')),
     ).toBe(false)
@@ -319,14 +319,14 @@ describe('decoration intents', () => {
     expect(line?.kind === 'line' && line.className).toBe(
       'md-blockquote md-blockquote-first md-blockquote-last',
     )
-    expect(intents.some((d) => d.kind === 'hide' && d.from === 0 && d.to === 2)).toBe(true)
+    expect(intents.some((d) => d.kind === 'prefix' && d.from === 0 && d.to === 2)).toBe(true)
   })
 
   it('a nested > inside a blockquote stays visible; only one quote level hides', () => {
     const t = '> >'
     const intents = decorationsFor(t, tokenize(t), new Set(), 3)
-    expect(intents.some((d) => d.kind === 'hide' && d.from === 0 && d.to === 2)).toBe(true)
-    expect(intents.some((d) => d.kind === 'hide' && d.to > 2)).toBe(false)
+    expect(intents.some((d) => d.kind === 'prefix' && d.from === 0 && d.to === 2)).toBe(true)
+    expect(intents.some((d) => (d.kind === 'hide' || d.kind === 'prefix') && d.to > 2)).toBe(false)
   })
 
   it('a nested quote with content still renders its constructs', () => {
@@ -379,19 +379,23 @@ describe('decoration intents', () => {
   it('an indented typed fence hides its indent and info word — never its own backticks', () => {
     const t = '- item\n  ```yaml\n  key: 1\n  ```'
     const intents = decorationsFor(t, tokenize(t), new Set(), 0)
-    const hides = intents.filter((d): d is Extract<typeof d, { kind: 'hide' }> => d.kind === 'hide')
-    expect(hides.map((h) => t.slice(h.from, h.to))).toEqual(['  ', 'yaml', '  ', '  '])
+    const spans = (kind: 'hide' | 'prefix') =>
+      intents.filter((d) => d.kind === kind).map((d) => ('to' in d ? t.slice(d.from, d.to) : ''))
+    expect(spans('hide')).toEqual(['yaml'])
+    expect(spans('prefix')).toEqual(['  ', '  ', '  '])
     const lang = intents.find((d) => d.kind === 'codeTag')
     expect(lang && 'from' in lang ? lang.from : -1).toBe(t.indexOf('yaml'))
   })
 
-  it('a quoted fence hides its quote prefix as one caret-skipping span', () => {
+  it('a quoted fence hides its quote prefix as a line prefix', () => {
     const t = '> ```\n> x\n> ```'
     const intents = decorationsFor(t, tokenize(t), new Set(), 0)
-    const spans = (kind: 'hide' | 'atomic') =>
-      intents.filter((d) => d.kind === kind).map((d) => ('to' in d ? t.slice(d.from, d.to) : ''))
-    expect(spans('hide')).toEqual(['> ', '> ', '> '])
-    expect(spans('atomic')).toEqual(spans('hide'))
+    const prefixes = intents.filter((d) => d.kind === 'prefix')
+    expect(prefixes.map((d) => ('to' in d ? t.slice(d.from, d.to) : ''))).toEqual([
+      '> ',
+      '> ',
+      '> ',
+    ])
   })
 
   it('a typed fence names its language; a bare one still carries the tag, unnamed', () => {
@@ -460,14 +464,13 @@ describe('citation rows', () => {
     expect(line).toHaveLength(3)
   })
 
-  it('hides the prefix and makes it atomic, ungated by the caret', () => {
+  it('hides the label as a line prefix, ungated by the caret', () => {
     const t = 'a[^1]\n\n[^1]: one'
     const at = t.indexOf('[^1]: one')
     const contentStart = at + '[^1]: '.length
     for (const sel of [NO_CARET, contentStart, at]) {
       const ds = decorationsFor(t, tokenize(t), new Set(), sel)
-      expect(ds.some((d) => d.kind === 'hide' && d.from === at && d.to === contentStart)).toBe(true)
-      expect(ds.some((d) => d.kind === 'atomic' && d.from === at && d.to === contentStart)).toBe(
+      expect(ds.some((d) => d.kind === 'prefix' && d.from === at && d.to === contentStart)).toBe(
         true,
       )
     }
@@ -575,7 +578,7 @@ describe('callout box chrome + nested constructs', () => {
     expect(classes.some((c) => c.includes('md-blockquote-nested-first'))).toBe(true)
     expect(classes.some((c) => c.includes('md-blockquote-nested-last'))).toBe(true)
     expect(classes.filter((c) => c.includes('md-blockquote-nested')).length).toBe(2)
-    expect(ints.some((d) => d.kind === 'hide' && d.to - d.from === 4)).toBe(true)
+    expect(ints.some((d) => d.kind === 'prefix' && d.to - d.from === 4)).toBe(true)
   })
   it('a multi-DEPTH nested-quote run is ONE block — exactly one first + one last, no notch mid-block', () => {
     const t = '> [!callout] head\n> > a\n> >> b\n> > c\n> body'
