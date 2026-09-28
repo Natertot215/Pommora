@@ -42,10 +42,8 @@ function pushMarkerGap(intents: DecoIntent[], from: number, to: number, le: numb
   if (to > from + 1) intents.push({ kind: 'hide', from: from + 1, to })
 }
 
-function pushPrefix(intents: DecoIntent[], from: number, to: number): void {
-  if (to <= from) return
-  intents.push({ kind: 'hide', from, to })
-  intents.push({ kind: 'atomic', from, to })
+function pushPrefix(intents: DecoIntent[], from: number, to: number, drawnOver = false): void {
+  if (to > from) intents.push({ kind: 'prefix', from, to, drawnOver })
 }
 
 function pushListLine(intents: DecoIntent[], ls: number, innerStart: number, lm: ListMarker): void {
@@ -74,6 +72,7 @@ export type DecoIntent =
   | { kind: 'class'; from: number; to: number; className: string }
   | { kind: 'hide'; from: number; to: number }
   | { kind: 'atomic'; from: number; to: number }
+  | { kind: 'prefix'; from: number; to: number; drawnOver: boolean }
   | { kind: 'widget'; from: number; to: number; spec: WidgetSpec }
   | { kind: 'lineWidget'; from: number; className: string; text?: string }
   | { kind: 'codeTag'; from: number; name?: string }
@@ -165,7 +164,6 @@ function pageChrome(
       className: cx('md-callout', co.first && 'md-callout-first', co.last && 'md-callout-last'),
       attributes: co.first ? GRIP_HOST : undefined,
     })
-    if (co.prefixEnd > 0) intents.push({ kind: 'atomic', from: ls, to: ls + co.prefixEnd })
     base = co.prefixEnd
     const inner = line.slice(base)
     const qm = quotePrefix(inner)
@@ -230,7 +228,7 @@ function pageChrome(
 
   // Display math is formula source: a `- b` term must never become a bullet with a live drag glyph inside the formula.
   if (spanAt(scan.maths, ls) !== undefined) {
-    if (base > 0) intents.push({ kind: 'hide', from: ls, to: ls + base })
+    pushPrefix(intents, ls, ls + base)
     return null
   }
 
@@ -456,6 +454,20 @@ export function assembleLineIntents(
   return intents
 }
 
+export function prefixEndAt(cached: CachedLineIntents, scan: DocScan, pos: number): number {
+  const i = lineIndexAt(scan, pos)
+  let end = scan.lineStarts[i]
+  for (let moved = true; moved; ) {
+    moved = false
+    for (const it of cached.perLine[i])
+      if (it.kind === 'prefix' && it.from === end) {
+        end = it.to
+        moved = true
+      }
+  }
+  return end
+}
+
 /** The seat a visible marker hands the caret: past its gap, where the content and any token opening it begin. A pointer landing at the marker's end sits before the zero-width gap, one seat short. */
 export function seatPastMarker(
   cached: CachedLineIntents,
@@ -470,7 +482,7 @@ export function seatPastMarker(
     for (let moved = true; moved; ) {
       moved = false
       for (const it of line)
-        if (it.kind === 'atomic' && end >= it.from && end < it.to) {
+        if ((it.kind === 'atomic' || it.kind === 'prefix') && end >= it.from && end < it.to) {
           end = it.to
           moved = true
         }
@@ -515,8 +527,7 @@ function pushConstruct(
   const bulletAbsorbs = base > 0 && !onMarker && glyph === 'bullet'
   const hrAbsorbs = base > 0 && !caretOnLine && isThematicBreakLine(inner)
   // The prefix is hidden here so a leading widget can ABSORB it: CM drops a widget-replace that merely touches one.
-  if (base > 0 && !bulletAbsorbs && !hrAbsorbs)
-    intents.push({ kind: 'hide', from: ls, to: innerStart })
+  pushPrefix(intents, ls, innerStart, bulletAbsorbs || hrAbsorbs)
 
   if (scope === 'page' && isHeadingLine(inner)) {
     const hm = headingParts(inner)
@@ -565,10 +576,8 @@ function pushConstruct(
   } else if (lm && glyph === 'bullet') {
     // The replace runs THROUGH the marker-content gap, so neither a source tab nor pasted gap spaces occupy the in-flow slot; the visible gap is the glyph's CSS margin.
     intents.push({ kind: 'line', from: ls, className: listLineClass(lm), level: lm.level })
-    if (onMarker) {
-      if (lm.markerStart > 0)
-        intents.push({ kind: 'hide', from: innerStart, to: innerStart + lm.markerStart })
-    } else {
+    if (onMarker) pushPrefix(intents, innerStart, innerStart + lm.markerStart)
+    else {
       const slotStart = bulletAbsorbs ? ls : innerStart
       intents.push({
         kind: 'widget',

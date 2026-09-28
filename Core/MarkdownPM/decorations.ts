@@ -3,6 +3,7 @@ import {
   Decoration,
   type DecorationSet,
   EditorView,
+  keymap,
   ViewPlugin,
   type ViewUpdate,
   WidgetType,
@@ -12,6 +13,7 @@ import {
   EditorState,
   type Extension,
   type Line,
+  Prec,
   type Range,
   type Text,
 } from '@codemirror/state'
@@ -43,6 +45,7 @@ import {
   GLYPH_CLASS,
   NO_CARET,
   railClass,
+  prefixEndAt,
   seatPastMarker,
   tokenIntents,
   type WidgetSpec,
@@ -307,7 +310,8 @@ function atomicsOn(
   const ranges: Range<Decoration>[] = []
   for (let i = from; i < to; i++)
     for (const it of perLine[i])
-      if (it.kind === 'atomic' && it.to > it.from) ranges.push(atomicSpan.range(it.from, it.to))
+      if ((it.kind === 'atomic' || it.kind === 'prefix') && it.to > it.from)
+        ranges.push(atomicSpan.range(it.from, it.to))
   return ranges
 }
 
@@ -422,14 +426,16 @@ function build(view: EditorView, conn: ConnectionsApi | undefined, scope: Markdo
       continue
     }
     if (it.to <= it.from) continue
-    if (it.kind === 'atomic') {
+    if (it.kind === 'atomic' || it.kind === 'prefix') {
       if (caretLine && it.from >= caretLine.from && it.to <= caretLine.to)
         caretAtomics.push(atomicSpan.range(it.from, it.to))
-      continue
+      if (it.kind === 'atomic') continue
     }
     if (it.kind === 'class')
       ranges.push(Decoration.mark({ class: it.className }).range(it.from, it.to))
-    else if (it.kind === 'hide') ranges.push(hideMarker.range(it.from, it.to))
+    else if (it.kind === 'hide' || (it.kind === 'prefix' && !it.drawnOver))
+      ranges.push(hideMarker.range(it.from, it.to))
+    else if (it.kind === 'prefix') continue
     else ranges.push(Decoration.replace({ widget: widgetFor(it.spec) }).range(it.from, it.to))
   }
   tokens.forEach((tk, i) => {
@@ -560,13 +566,52 @@ function build(view: EditorView, conn: ConnectionsApi | undefined, scope: Markdo
   return { deco: Decoration.set(ranges, true), atomic }
 }
 
-const markerSeat = (scope: MarkdownScope): Extension =>
-  EditorState.transactionFilter.of((tr) => {
-    if (!tr.selection?.main.empty || !tr.isUserEvent('select.pointer')) return tr
-    const head = tr.selection.main.head
-    const seat = seatPastMarker(docLineIntentsOf.after(tr, scope), docScan.after(tr), head, scope)
-    return seat === null || seat === head ? tr : [tr, { selection: EditorSelection.cursor(seat) }]
-  })
+const caretSeat = (scope: MarkdownScope): Extension => {
+  const leaveLine = (view: EditorView, extend: boolean): boolean => {
+    const { anchor, head } = view.state.selection.main
+    const lineStart = view.state.doc.lineAt(head).from
+    if ((!extend && anchor !== head) || lineStart === 0 || head === lineStart) return false
+    const visible = prefixEndAt(
+      docLineIntentsOf(view.state.doc, scope),
+      docScan(view.state.doc),
+      head,
+    )
+    if (head !== visible) return false
+    const to = view.moveByChar(EditorSelection.cursor(lineStart), false).head
+    view.dispatch({
+      selection: EditorSelection.range(extend ? anchor : to, to),
+      scrollIntoView: true,
+      userEvent: 'select',
+    })
+    return true
+  }
+  const run = (view: EditorView) => leaveLine(view, false)
+  const shift = (view: EditorView) => leaveLine(view, true)
+  return [
+    EditorState.transactionFilter.of((tr) => {
+      if (!tr.selection && !tr.docChanged) return tr
+      const { anchor, head, empty } = tr.newSelection.main
+      const intents = docLineIntentsOf.after(tr, scope)
+      const scan = docScan.after(tr)
+      const visible = prefixEndAt(intents, scan, head)
+      const seat =
+        head < visible
+          ? visible
+          : empty && tr.isUserEvent('select.pointer')
+            ? seatPastMarker(intents, scan, head, scope)
+            : null
+      if (seat === null || seat === head) return tr
+      const selection = empty ? EditorSelection.cursor(seat) : EditorSelection.range(anchor, seat)
+      return [tr, { selection, sequential: true }]
+    }),
+    Prec.high(
+      keymap.of([
+        { key: 'ArrowLeft', run, shift },
+        { key: 'Mod-ArrowLeft', mac: 'Alt-ArrowLeft', run, shift },
+      ]),
+    ),
+  ]
+}
 
 const stepDocs = (scope: MarkdownScope): Extension =>
   EditorState.transactionExtender.of((tr) => {
@@ -578,7 +623,7 @@ export function markdownDecorations(
   getConn: () => ConnectionsApi | undefined,
   scope: MarkdownScope = 'page',
 ): Extension {
-  return [stepDocs(scope), decorationPlugin(getConn, scope), markerSeat(scope)]
+  return [stepDocs(scope), decorationPlugin(getConn, scope), caretSeat(scope)]
 }
 
 function decorationPlugin(
