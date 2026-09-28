@@ -1,56 +1,48 @@
 ## Handoff — Pommora
 
-> **User Prompt:** Execute `.claude/Planning/Heading Links — Implementation Plan.md` end to end. Each phase gets a dual review, live checks and one commit. Final Verification sends two agents per lens per phase, twelve in all, against each phase's diff, and every fix it drives is net-neutral or net-negative. Nathan is asleep, so the run discloses its calls rather than asking, and the final report states plainly how complete the work is.
+> **User Prompt:** Execute `.claude/Planning/Page Delete Links — Implementation Plan.md` end to end, unattended: every phase closes as its own review that may rewrite the phases after it, findings that would want doing eventually are folded rather than deferred, live checks run headless over CDP with screenshots read into the chat, and the run closes with the final verification chain, the reconciliation, the report, and a push of `main`.
 
 #### Current Focus
 
-**Session ID:** e92e8759-bff4-400c-a24d-cff55a16e599
-**Dates:** 09-24-2026 → 09-25
-**Model:** Opus 5.5 orchestrating; Opus executors and reviewers
+**Session ID:** 5b02769d-d3e0-4b6c-818e-c7b02b4c4229
+**Dates:** 09-27-2026 → 09-28
+**Model:** Fable 5.1 planning; Opus 5.5 orchestrating, with Opus executors and reviewers
 
-**Heading Links is complete in eight commits, `fa0f7f2ca` through `ddc45aacb`, at −186 production lines.**
+**Page Delete Links is complete in ten commits, `7be2744e6` through `6d296248e`, at about +160 production lines.**
 
-- **Renames:** one rename cascade covers page and heading renames alike. It reaches bodies, embeds, Link values and every markdown tile.
-- **Settling:** the editor settles a heading rename once, when the caret leaves the line, the editor blurs or the page closes.
-- **Prefs and folds:** one keyed prefs channel lets every editor that shows a page remember its folds.
-- **Links:** one link target serves every follow surface.
+- **The strip:** deleting a page, Set, or Collection clears every Link property value naming it from the pages the tree holds, through the rename cascade's sweep, and every open view empties the cell without a reload.
+- **The record and the restore:** the Trash bundle records what the strip cleared, and a restore by Undo, the undo chord, or the Trash frame writes it back, rebuilt as `[[Ideas (2)]]` when the page lands beside a new namesake. **Restore Links On Deletion** (on by default, Files & Links › Deletion) turns the refill off.
+- **The notice:** the delete notice counts the affected pages behind the segment divider: `Deleted “Ideas” | 2 Internal Links`. The divided run is `Segments` in `UIX/Elements`, which Page History's date and time caption shares.
+- **Along the way:** `readLiveSetting` replaced five spelled-out host reads of one setting, `stampListed` moved to adoption and re-indexes what it stamps, and undos run in turn.
 
-Twenty audit findings closed: sixteen deleted in the closing ledger commit, plus F-150, F-231, F-467 and F-501, which a peer's reconcile deleted for Phase 2. Seven new ones entered the ledger (F-571 to F-577), so the ledger reads 314/556. The Dashboard was republished.
+Four findings entered the ledger, F-614 to F-616 beside the planned F-612 and F-613, so it reads 103/556; the Dashboard was republished.
 
 #### Completion Criteria
 
-- [x] Phases 1–6 each passed a dual review, a fix round, gates and live CDP checks on an isolated build.
-- [x] Final Verification: twelve reviewers ran, one fix round landed (`ddc45aacb`, −60), a neutral verifier checked the result, and gates were green from a clean checkout of HEAD.
-- [x] Features docs reconciled (Connections, Pages, MarkdownPM, Core, NexusRecord); the ledger reconciled with its header recounted.
-- [ ] Nathan's rulings on the items the report lists under Needs Nathan's Ruling.
+- [x] Phases 1–3 each closed with a simplification pass and an adversarial pass whose findings folded before the next phase opened.
+- [x] A live CDP drive on an isolated build passed all eleven checks; the notice screenshots were read into the chat.
+- [x] Final verification: three per-phase reviews, an outward-cohesion review, a helper-placement judge, and a neutral before/after reader (which picked the after-tree) ran, and one fold round landed (`6d296248e`).
+- [x] Feature docs reconciled (Connections, NexusRecord, Core, Interface, UIX; Properties and Configuration carry Nathan's own wording), and the ledger re-anchored.
 
 #### Next Session
 
 - **Rulings to take:**
-  - Should a glance save the folds a user toggles inside it? Today it saves nothing.
-  - F-571: index tile link mentions (about +40 lines), or leave tile-only heading links to be fixed by hand after an outside rename.
+  - PropertiesPM's Link sentence says deleted values are removed "permanently unless **Restore Links On Deletion** is toggled on"; in System Trash mode a delete strips and mints no bundle, so nothing is restorable whatever the switch says. A condition such as "…unless the page went to the Nexus's own Trash and…" would make it exact.
+  - The notice counts pages stripped; a linker the strip couldn't write appears only in the warning, so two linkers with one unwritable read `1 Internal Link. Couldn’t update links in 1 file.`
 - **New ledger findings, all Low:**
-  - F-572: the tile walker swallows a failed Context-world load.
-  - F-573: a `#` line inside math or HTML lists as a heading.
-  - F-574: a table cell doesn't mark a missing same-page heading as missing.
-  - F-575: a parked tab's warm detail can outlive an outside value change.
-  - F-576: splitting or joining a heading renames it without a settle.
-  - F-577: a footnote marker in an open cell doesn't follow.
+  - F-614: a page restored after the page its Link value names was deleted comes back naming it.
+  - F-615: ⌘Z after a Trash-frame restore of the same bundle retries the spent restore and posts `Path not found.`
+  - F-616: a Link value a property Remove cached sits outside both link cascades.
+- **Inherited:** a deleted page's row leaves the view one to two frames (12–33 ms) before the linker's cell empties, because the tree and `values:changed` arrive as two pushes; Data Layer *B-3* joins them.
 
 #### Session Pointers
 
-- **The plan:** `.claude/Planning/Heading Links — Implementation Plan.md`. Its *§Deviations* record every in-flight call, including the final-verification round.
-- **The rename path:**
-  - the cascade: `Core/Nexus/cascade.ts` (`renameCascade`)
-  - the sweep: `Core/Properties/governedSweep.ts`
-  - the settle: `Core/MarkdownPM/Guards/headingRenameSettle.ts`
-  - the watcher's detector: `indexWrittenPage` in `Core/Index/indexSeed.ts`
-- **The link path:** `titleTarget` and `tokenTarget` in `Core/MarkdownPM/Links/connectionsApi.ts`, `followTarget` and `pageEditorAt` in `Links/linkClicks.ts`, and `useConnections` in `Core/Session/pageConnections.ts`.
-- **Prefs:** `editorPrefs:get` and `editorPrefs:set` in `Core/Contract/bridge.ts`. The host's `prefs`, with the glance's `preview` option, is in `Core/Pages/editorHost.tsx`.
+- **The plan:** `.claude/Planning/Page Delete Links — Implementation Plan.md`. Its *§Deviations* record every in-flight call, each phase's review, the live drive, and the final verification's folds and rulings.
+- **The strip:** `deleteCascade` in `Core/Nexus/cascade.ts`, called from `deleteOp` in `Core/Trash/delete.ts` after the artifact moves; the record's `links` arm in `Core/Trash/record.ts`.
+- **The restore:** the link arm in `restoreArtifact` (`Core/Trash/spend.ts`), beside `reapply`, over `refillValues`.
+- **The notice:** `notifyDeleted` and `notifyUndoable` in `Core/Interface/Notifications/notifications.ts`; `Segments` in `UIX/Elements/Segments.tsx`.
 
 #### Working Notes
 
-- **Parallel sessions share one git index.** A commit made through a temporary index leaves the real index at the old HEAD for those paths, so run `git reset -q -- <paths>` right after, or a peer's plain commit would revert the change.
-- **The isolated live build:** a scratch worktree ran in dev mode on CDP 9444, with its own userData and a copy of `~/Test`, and the store was exposed as `window.__pommora`.
-  - A Page Window's or tile's editor is read-only until clicked, so a scripted edit needs a real tap first.
-  - With the display asleep the document reads `hidden` and animation frames stop, so glides were measured under emulated `prefers-reduced-motion`.
+- **The live build:** a detached worktree built with `.claude/scripts/editor-parity/worktree.sh`, launched from built output on its own CDP port and userData over a copy of `~/Test`. Deletes went through a real right-click with the main process's `Menu.prototype.popup` patched over `--inspect` to click **Delete**, since only that path posts the notice.
+- **A reviewer's scratch setup once wrote self-referential symlinks into the main checkout's `node_modules`** by linking into a stale, unregistered scratch folder; it removed them. Review worktrees link `node_modules` from inside a fresh `git worktree add` only.
