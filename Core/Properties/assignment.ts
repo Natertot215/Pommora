@@ -6,12 +6,13 @@ import { sidecarPath } from '../Paths/paths'
 import { readJsonObject } from '../Files/atomicWrite'
 import { patchSidecar } from '../Files/sidecar'
 import { getLiveTree, liveTreeOf } from '../Nexus/liveTree'
+import { frozenWorld } from '../Nexus/valuesChanged'
 import { projectBaseline } from '../Nexus/remintLedger'
 import type { EntityRecord } from '../Nexus/record'
 import { NO_DEFS } from '../Contexts/contextResolve'
 import { readRegistry } from './propertiesRegistry'
 import type { PropertyDefinition } from './properties'
-import { encodeValue, isBlankValue, reconcilePropertyValue } from './propertyValue'
+import { encodeValue, type Frozen, isBlankValue, reconcilePropertyValue } from './propertyValue'
 import { sweepRootsById } from './governedSweep'
 import { serializeSchemaOp } from './schemaChain'
 import { ok, fail, type Result } from '../Contract/result'
@@ -61,18 +62,19 @@ export function patchCacheBlock(
   return next
 }
 
-/** Puts each value back on the page or Space its ID names wherever that root holds none, and answers the IDs that took theirs. */
+/** Puts each value `frozen` still admits back on the page or Space its ID names wherever that root holds none, and answers the IDs that took theirs. */
 export function refillValues(
   root: string,
   def: PropertyDefinition,
   roots: Record<string, EntityRecord>,
   values: Record<string, unknown>,
+  frozen: Frozen,
 ): Promise<Set<string>> {
   return sweepRootsById(root, roots, values, (raw, value) => {
-    const restored = reconcilePropertyValue(def, value, false).value
+    const restored = reconcilePropertyValue(def, value, frozen).value
     const encoded = isBlankValue(restored) ? undefined : encodeValue(restored)
     if (encoded === undefined) return null
-    if (!isBlankValue(reconcilePropertyValue(def, raw[def.name], false).value)) return null
+    if (!isBlankValue(reconcilePropertyValue(def, raw[def.name], {}).value)) return null
     return { ...raw, [def.name]: encoded }
   })
 }
@@ -92,13 +94,14 @@ async function restoreCachedValues(
   const def = (await readRegistry(root)).defs[propertyId]
   if (!def) return ok(null)
   const under = `${relative(root, collectionFolder)}/`
-  const live = projectBaseline(await liveTreeOf(root)).entries
+  const tree = await liveTreeOf(root)
+  const live = projectBaseline(tree).entries
   const members = Object.fromEntries(
     Object.keys(cached).flatMap((id) =>
       live[id]?.kind === 'page' && live[id].path.startsWith(under) ? [[id, live[id]]] : [],
     ),
   )
-  const spent = await refillValues(root, def, members, cached)
+  const spent = await refillValues(root, def, members, cached, frozenWorld(tree))
   const written = await patchSidecar(collectionFolder, 'collection', (cur) => {
     const left = { ...(cachedValues(cur, propertyId) ?? {}) }
     for (const id of spent) delete left[id]

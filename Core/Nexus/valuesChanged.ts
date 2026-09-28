@@ -2,7 +2,9 @@
 
 import { getLiveTree } from './liveTree'
 import { escapes } from '../Paths/pathSafety'
-import { relDirname, relative } from '../Paths/posix'
+import { relDirname, relative, titleFromPath } from '../Paths/posix'
+import { normalizeTitle } from '../Connections/connections'
+import type { Frozen } from '../Properties/propertyValue'
 import type { NexusTree, ValueChange } from './tree'
 
 // One root at a time: a note under another root is a session that moved, and the old root's unflushed writes have no window left to reach.
@@ -78,6 +80,44 @@ export const liveIdOf = (root: string, absFile: string): string | undefined =>
 /** Null when the tree is not this root's, the id is absent, or two files claim it. */
 export const livePathOf = (root: string, id: string): string | null =>
   liveIndices(root)?.byId.get(id) ?? null
+
+// Walked only when a delete, rename, or restore asks, never on the value writes that rebuild the rest.
+const titles = new WeakMap<NexusTree, ReadonlyMap<string, readonly string[]>>()
+
+function titlesOf(tree: NexusTree): ReadonlyMap<string, readonly string[]> {
+  const held = titles.get(tree)
+  if (held) return held
+  const byTitle = new Map<string, string[]>()
+  for (const path of indicesOf(tree).byPath.keys()) {
+    const title = normalizeTitle(titleFromPath(path))
+    const paths = byTitle.get(title)
+    if (paths) paths.push(path)
+    else byTitle.set(title, [path])
+  }
+  titles.set(tree, byTitle)
+  return byTitle
+}
+
+/** Whether a page outside `rel` still answers `title`, so a link naming it resolves once `rel` is gone. */
+export function titleHeldOutside(root: string, title: string, rel: string): boolean {
+  const tree = getLiveTree()
+  if (tree?.nexus.rootPath !== root) return false
+  return (titlesOf(tree).get(normalizeTitle(title)) ?? []).some(
+    (path) => path !== rel && !path.startsWith(`${rel}/`),
+  )
+}
+
+/** A restore's world: the pages the tree holds, and those landing with it. */
+export function frozenWorld(tree: NexusTree, landing: readonly string[] = []): Frozen {
+  const held = titlesOf(tree)
+  const arriving = new Set(landing.map(normalizeTitle))
+  return {
+    holds: (title) => {
+      const key = normalizeTitle(title)
+      return held.has(key) || arriving.has(key)
+    },
+  }
+}
 
 // `only` takes just those files' notes, leaving the rest to the operation that wrote them.
 export function flushValueWrites(root: string, only?: readonly string[]): ValueChange[] {

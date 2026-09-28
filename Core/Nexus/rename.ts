@@ -9,6 +9,7 @@ import { renamePage } from './page'
 import { landedFolder, landingRefusal, renameFolderEntity } from './folderEntity'
 import { type CascadeReport, renameCascade } from './cascade'
 import { excludedWithin, exclusionWriteRefusal } from '../Settings/settings'
+import { titleHeldOutside } from './valuesChanged'
 
 export async function renameOp(
   { root }: MutateContext,
@@ -42,5 +43,6 @@ export async function renameOp(
   if (!r.ok) return r
   // The index moves first, so the renamed page's own links to its old title are found where it now lives.
   await moveIndexPaths(root, abs, r.value.path)
+  if (titleHeldOutside(root, oldTitle, req.path)) return renamedReply(r.value.path)
   return renamedReply(r.value.path, await renameCascade(root, oldTitle, { title: req.newName }))
 }

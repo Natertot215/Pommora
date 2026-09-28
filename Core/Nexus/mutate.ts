@@ -91,7 +91,7 @@ async function dispatch(ctx: MutateContext, req: MutateRequest): Promise<MutateR
 
     case 'emptyBundle': {
       const resolved = await resolveUnderRoot(root, req.bundlePath)
-      return resolved.ok ? done(await emptyBundle(root, resolved.value, deps)) : resolved
+      return resolved.ok ? emptyBundle(root, resolved.value, deps) : resolved
     }
 
     case 'setProfileImage':
