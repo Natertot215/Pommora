@@ -180,7 +180,6 @@ export function DetailTitleHeader({
               <SearchField
                 inputRef={field}
                 tabIndex={-1}
-                placeholder="Search"
                 value={search.query ?? ''}
                 onValueChange={search.change}
                 className={cx(base, 'detail-title-search')}
