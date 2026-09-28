@@ -11,6 +11,9 @@ import { listBundles } from './spend'
 import { trashRows } from './trashRows'
 import { readNexus } from '../Nexus/readNexus'
 import { closeSession, openSession } from '../Nexus/session'
+import { splitFrontmatter } from '../Files/pageFile'
+import { deleteProperty } from '../Properties/deleteProperty'
+import { renameProperty } from '../Properties/registryProperty'
 import type { TrashDeps } from './bundle'
 
 let root: string
@@ -30,6 +33,11 @@ const del = async (path: string, kind: string) => {
   const r = await confirmedMutate(root, { op: 'delete', path, kind } as never, deps)
   expect(r.ok, `delete ${path}`).toBe(true)
 }
+const beta = join('Journal', 'Daily', 'Beta.md')
+const BETA_ID = '01KVGMT8BFP350FZZXAMG1QDVC'
+const linker = (rel: string, id: string, keys: string) =>
+  writeFile(join(root, rel), `---\nID: ${id}\n${keys}\n---\nlinker\n`)
+const frontmatter = async (rel = beta) => splitFrontmatter(await readFile(join(root, rel), 'utf8'))
 
 beforeEach(async () => {
   handed.length = 0
@@ -52,7 +60,7 @@ beforeEach(async () => {
   await writeFile(
     join(root, '.nexus', 'properties.json'),
     JSON.stringify({
-      order: ['prop_status'],
+      order: ['prop_status', 'prop_related', 'prop_parent'],
       defs: {
         prop_status: {
           id: 'prop_status',
@@ -60,6 +68,8 @@ beforeEach(async () => {
           type: 'select',
           select_options: [{ value: 'live', color: 'green' }],
         },
+        prop_related: { id: 'prop_related', name: 'Related', type: 'link' },
+        prop_parent: { id: 'prop_parent', name: 'Parent', type: 'link' },
       },
     }),
   )
@@ -73,7 +83,10 @@ beforeEach(async () => {
   await mkdir(join(root, 'Journal', 'Daily'), { recursive: true })
   await writeFile(
     join(root, 'Journal', '_pagecollection.json'),
-    JSON.stringify({ id: 'col-journal', properties: ['prop_status'] }),
+    JSON.stringify({
+      id: 'col-journal',
+      properties: ['prop_status', 'prop_related', 'prop_parent'],
+    }),
   )
   await writeFile(
     join(root, 'Journal', 'Daily', '_pageset.json'),
@@ -83,6 +96,7 @@ beforeEach(async () => {
     join(root, 'Journal', 'Daily', 'Alpha.md'),
     '---\nID: 01KVGMT8BFP350FZZXAMG1QDVA\nStatus: live\n---\nbody\n',
   )
+  await linker(beta, BETA_ID, 'Related: "[[Alpha]]"')
   await mkdir(join(root, 'Plain'), { recursive: true })
   await writeFile(join(root, 'Plain', '_pagecollection.json'), JSON.stringify({ id: 'col-plain' }))
   await openSession(root)
@@ -285,6 +299,102 @@ describe('end to end — deleted, listed, restored', () => {
         .ok,
     ).toBe(true)
     expect(handed).toHaveLength(1)
+    expect(await rows()).toHaveLength(0)
+  })
+})
+
+describe('links come back with the page', () => {
+  const restore = async (title: string) => {
+    const { bundlePath } = await find(title)
+    const r = await confirmedMutate(root, { op: 'restore', bundlePath }, deps)
+    expect(r.ok, `restore ${title}`).toBe(true)
+    return r.ok ? r.value.unrestored : undefined
+  }
+  const relink = (propertyId: string) =>
+    confirmedMutate(
+      root,
+      { op: 'setProperty', path: beta, propertyId, value: { kind: 'link', value: '[[Other]]' } },
+      deps,
+    )
+
+  it('a restored page writes its Link values back onto the pages they came from', async () => {
+    await del('Journal/Daily/Alpha.md', 'page')
+    expect((await frontmatter()).Related).toBeUndefined()
+    expect((await listBundles(root))[0].record).toMatchObject({
+      links: [{ page: BETA_ID, property: 'prop_related', value: '[[Alpha]]' }],
+    })
+    expect(await restore('Alpha')).toBeUndefined()
+    expect((await frontmatter()).Related).toBe('[[Alpha]]')
+    expect(await rows()).toHaveLength(0)
+  })
+
+  it.each([
+    ['[[Alpha]]', '[[Alpha (2)]]'],
+    ['[[Alpha#Intro|see]]', '[[Alpha (2)#Intro|see]]'],
+  ])('a page landing beside a new namesake rebuilds %s as %s', async (held, rebuilt) => {
+    await linker(beta, BETA_ID, `Related: "${held}"`)
+    await del('Journal/Daily/Alpha.md', 'page')
+    const created = await confirmedMutate(
+      root,
+      { op: 'createPage', parentPath: 'Journal/Daily', name: 'Alpha' },
+      deps,
+    )
+    expect(created.ok).toBe(true)
+    expect(await restore('Alpha')).toBeUndefined()
+    expect(await pathExists(join(root, 'Journal', 'Daily', 'Alpha (2).md'))).toBe(true)
+    expect((await frontmatter()).Related).toBe(rebuilt)
+  })
+
+  it('a key given another value meanwhile keeps it, and the restore names its page', async () => {
+    await del('Journal/Daily/Alpha.md', 'page')
+    expect((await relink('prop_related')).ok).toBe(true)
+    expect(await restore('Alpha')).toEqual(['Beta'])
+    expect((await frontmatter()).Related).toBe('[[Other]]')
+    expect(await rows()).toHaveLength(0)
+  })
+
+  it('a page refused under two properties is named once', async () => {
+    await linker(beta, BETA_ID, 'Related: "[[Alpha]]"\nParent: "[[Alpha]]"')
+    await del('Journal/Daily/Alpha.md', 'page')
+    expect((await relink('prop_related')).ok).toBe(true)
+    expect((await relink('prop_parent')).ok).toBe(true)
+    expect(await restore('Alpha')).toEqual(['Beta'])
+    expect(await frontmatter()).toMatchObject({ Related: '[[Other]]', Parent: '[[Other]]' })
+  })
+
+  it('a property renamed meanwhile takes the value back under its new name', async () => {
+    await del('Journal/Daily/Alpha.md', 'page')
+    expect((await renameProperty(root, 'prop_related', 'See Also')).ok).toBe(true)
+    expect(await restore('Alpha')).toBeUndefined()
+    expect((await frontmatter())['See Also']).toBe('[[Alpha]]')
+  })
+
+  it('a property deleted meanwhile is left out', async () => {
+    await del('Journal/Daily/Alpha.md', 'page')
+    expect((await deleteProperty(root, 'prop_related')).ok).toBe(true)
+    expect(await restore('Alpha')).toBeUndefined()
+    expect((await frontmatter()).Related).toBeUndefined()
+  })
+
+  it('a Set restore writes back the values its pages lost outside it, verbatim', async () => {
+    const gamma = join('Plain', 'Gamma.md')
+    await linker(gamma, '01KVGMT8BFP350FZZXAMG1QDVD', 'Related: "[[Alpha]]"')
+    await del('Journal/Daily', 'set')
+    expect((await frontmatter(gamma)).Related).toBeUndefined()
+    expect(await restore('Daily')).toBeUndefined()
+    expect((await frontmatter(gamma)).Related).toBe('[[Alpha]]')
+    expect((await frontmatter()).Related).toBe('[[Alpha]]')
+  })
+
+  it('with Restore Links On Deletion off, the values stay removed', async () => {
+    await writeFile(
+      join(root, '.nexus', 'settings.json'),
+      JSON.stringify({ personalization: { restoreLinksOnDeletion: false } }),
+    )
+    await refreshTree(root)
+    await del('Journal/Daily/Alpha.md', 'page')
+    expect(await restore('Alpha')).toBeUndefined()
+    expect((await frontmatter()).Related).toBeUndefined()
     expect(await rows()).toHaveLength(0)
   })
 })

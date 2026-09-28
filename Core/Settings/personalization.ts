@@ -189,6 +189,7 @@ const SETTINGS = {
   permanentDelete: flag(false),
   // Off skips the confirmation only where nothing owns a schema: a page, a tile, a bare folder.
   confirmDeletion: flag(true),
+  restoreLinksOnDeletion: flag(true),
   dateFormat: oneOf(DATE_FORMATS, 'full'),
   timeFormat: oneOf(TIME_FORMAT_SETTINGS, 'twelveHour'),
   trashColumnStyle: setting(columnStyle),
