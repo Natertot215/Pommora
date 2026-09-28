@@ -30,12 +30,14 @@ import { dropSpaceOrder } from '../Nexus/reorder'
 import { machine } from '../Platform/machine'
 import { stampedId } from '../Files/pageFile'
 import { recordWrite } from '../Files/writeEcho'
-import { noteValueWrite } from '../Nexus/valuesChanged'
+import { frozenWorld, noteValueWrite } from '../Nexus/valuesChanged'
 import { getLiveTree, liveTreeOf } from '../Nexus/liveTree'
 
 import { projectBaseline } from '../Nexus/remintLedger'
 import type { EntityRecord } from '../Nexus/record'
-import { type RecordFile, readRecord, bundleArtifact } from './record'
+import { type RecordFile, appendLinks, readRecord, bundleArtifact } from './record'
+import { deleteCascade, type StrippedLink } from '../Nexus/cascade'
+import { normalizeTitle, parseConnectionText } from '../Connections/connections'
 import { findContainerById, resolveRecord, type ArtifactRecord, type Refusal } from './resolve'
 
 export interface ListedBundle {
@@ -115,18 +117,49 @@ async function openBundle(root: string, bundleAbs: string): Promise<Result<Recor
   return record ? ok(record) : fault('That deletion record is unreadable.')
 }
 
-async function trashedPageIds(record: ArtifactRecord, artifactAbs: string): Promise<string[]> {
-  switch (record.entity) {
+async function contentPages(entity: RecordFile['entity'], artifactAbs: string): Promise<string[]> {
+  switch (entity) {
     case 'page':
-      return record.id ? [record.id] : []
+      return [artifactAbs]
     case 'collection':
-    case 'set': {
-      const texts = await Promise.all((await listMarkdownFiles(artifactAbs)).map(readTextOrNull))
-      return texts.flatMap((text) => stampedId(text ?? '') ?? [])
-    }
+    case 'set':
+      return listMarkdownFiles(artifactAbs)
     default:
       return []
   }
+}
+
+async function trashedPageIds(record: ArtifactRecord, pages: string[]): Promise<string[]> {
+  if (record.entity === 'page') return record.id ? [record.id] : []
+  const texts = await Promise.all(pages.map(readTextOrNull))
+  return texts.flatMap((text) => stampedId(text ?? '') ?? [])
+}
+
+/** The newest bundle holding each page title in the Trash. */
+async function trashedTitles(root: string): Promise<Map<string, string>> {
+  const newest = new Map<string, string>()
+  for (const { bundlePath, record, artifactName } of await listBundles(root)) {
+    if (!artifactName) continue
+    for (const page of await contentPages(record.entity, join(root, bundlePath, artifactName))) {
+      const title = normalizeTitle(titleFromPath(page))
+      const held = newest.get(title)
+      if (!held || basename(bundlePath) > basename(held)) newest.set(title, join(root, bundlePath))
+    }
+  }
+  return newest
+}
+
+/** A Link value dropped for naming a page the Trash holds joins that page's newest bundle, so the page's restore writes it back. */
+async function parkLinks(root: string, links: StrippedLink[]): Promise<void> {
+  if (!links.length) return
+  const newest = await trashedTitles(root)
+  const parked = new Map<string, StrippedLink[]>()
+  for (const link of links) {
+    const page = parseConnectionText(link.value)
+    const bundle = page && newest.get(normalizeTitle(page.title))
+    if (bundle) parked.set(bundle, [...(parked.get(bundle) ?? []), link])
+  }
+  for (const [bundle, rows] of parked) await appendLinks(bundle, rows)
 }
 
 // Artifact first: a failed bundle removal then leaves a record with no artifact, litter the listing skips, where the reverse order would orphan a live artifact.
@@ -134,27 +167,34 @@ export async function emptyBundle(
   root: string,
   bundleAbs: string,
   deps: { permanentDelete?: boolean; trashToSystem: (absPath: string) => Promise<void> },
-): Promise<Result<null>> {
+): Promise<MutateReply> {
   const opened = await openBundle(root, bundleAbs)
   if (!opened.ok) return opened
   if (opened.value.entity === 'property') {
     recordWrite(bundleAbs)
     if (deps.permanentDelete === true) await machine().remove(bundleAbs)
     else await deps.trashToSystem(bundleAbs)
-    return ok(null)
+    return ok({})
   }
   const artifactAbs = await bundleArtifact(bundleAbs)
   if (!artifactAbs)
     return fail('not-found', "That deletion didn't finish, or something else is in with it.")
-  const pageIds = await trashedPageIds(opened.value, artifactAbs)
+  const pages = await contentPages(opened.value.entity, artifactAbs)
+  const pageIds = await trashedPageIds(opened.value, pages)
   recordWrite(artifactAbs)
   if (deps.permanentDelete === true) await machine().remove(artifactAbs)
   else await deps.trashToSystem(artifactAbs)
   await dropPageMetadata(root, pageIds, getLiveTree())
   if (opened.value.entity === 'context') await dropSpaceOrder(root, opened.value.registry.id)
+  // Permanent now: a Link value naming one of its pages, recorded by the delete or taken up since, names nothing any more unless another bundle holds that title.
+  const gone = pages.length
+    ? await deleteCascade(root, artifactAbs, pages.map(titleFromPath))
+    : null
   recordWrite(bundleAbs)
   await machine().remove(bundleAbs)
-  return ok(null)
+  const recorded = 'links' in opened.value ? (opened.value.links ?? []) : []
+  await parkLinks(root, [...recorded, ...(gone?.links ?? [])])
+  return ok(gone ? { cascade: gone.cascade } : {})
 }
 
 const NO_DESTINATION = 'That kind cannot be given a destination.'
@@ -206,10 +246,11 @@ async function restoreArtifact(
     if (destination) return fault(NO_DESTINATION)
     const rebuilt = await restoreProperty(root, opened.value)
     if (!rebuilt.ok) return rebuilt
+    await parkLinks(root, rebuilt.value.dropped)
     // A value that no longer fits is named rather than kept: the property is back, so its record could only ever refuse.
     recordWrite(bundleAbs)
     await machine().remove(bundleAbs)
-    return ok(restored(rebuilt.value))
+    return ok(restored(rebuilt.value.unrestored))
   }
   const artifactAbs = await bundleArtifact(bundleAbs)
   if (!artifactAbs)
@@ -242,19 +283,29 @@ async function restoreArtifact(
   // The tree is the resolver's universe; a file the walk cannot see (an Unknown squatter) could still occupy the target — refuse rather than clobber what nothing adjudicated.
   if (await pathExists(targetAbs))
     return fail('exists', 'Something already sits at the restored location.')
+  const was = titleFromPath(artifactAbs)
+  const landed = record.entity === 'page' ? titleFromPath(finalName) : was
+  const frozen = frozenWorld(
+    tree,
+    record.entity === 'page'
+      ? [landed]
+      : (await contentPages(record.entity, artifactAbs)).map(titleFromPath),
+  )
   const owner =
     record.entity === 'collection'
       ? artifactAbs
       : record.entity === 'page' || record.entity === 'set'
         ? tree.collections.find((c) => dir === c.path || dir.startsWith(`${c.path}/`))?.path
         : undefined
-  await scrubReturning(
+  const dropped = await scrubReturning(
     root,
     tree,
     artifactAbs,
     owner === undefined ? null : owner === artifactAbs ? artifactAbs : join(root, owner),
+    frozen,
     record.entity === 'context' ? contextKey(record.registry.title) : undefined,
   )
+  await parkLinks(root, dropped)
   // A Context's identity lives ONLY in its registry entry, so it re-enters BEFORE anything moves: a refused write leaves the bundle intact — the restore is retryable — where an entry written after the move would destroy the evidence on failure and reply ok.
   const title = finalTitle ?? finalName
   if (record.entity === 'context') {
@@ -311,15 +362,13 @@ async function restoreArtifact(
     record.links &&
     (await readLiveSetting(root, 'restoreLinksOnDeletion'))
   ) {
-    const was = titleFromPath(artifactAbs)
-    const landed = record.entity === 'page' ? titleFromPath(finalName) : was
     for (const def of await linkDefs(root)) {
       const values = Object.fromEntries(
         record.links.filter((l) => l.property === def.id).map((l) => [l.page, l.value]),
       )
       const rebuilt =
         landed === was ? {} : rewriteFrontmatterConnections(values, was, { title: landed })
-      const taken = await refillValues(root, def, roots, { ...values, ...rebuilt })
+      const taken = await refillValues(root, def, roots, { ...values, ...rebuilt }, frozen)
       for (const id of Object.keys(values)) if (roots[id] && !taken.has(id)) unlinked.add(id)
     }
   }

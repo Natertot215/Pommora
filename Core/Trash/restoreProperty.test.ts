@@ -311,6 +311,49 @@ describe('restoring a deleted property', () => {
     expect((await readJsonAt(sidecarFile)).Priority).toEqual(['hi'])
   })
 
+  it('a Link value naming a page gone since comes back nowhere', async () => {
+    const c = await createProperty(root, {
+      id: '',
+      name: 'Related',
+      type: 'link',
+    } as PropertyDefinition)
+    if (!c.ok) throw new Error('seed failed')
+    await assignProperty(root, notes, c.value.id)
+    const target = await createPage(notes, 'Target', { body: 'b' })
+    const live = await createPage(notes, 'Live', { body: 'b' })
+    const dead = await createPage(notes, 'Dead', { body: 'b' })
+    if (!target.ok || !live.ok || !dead.ok) throw new Error('pages failed')
+    const def = await liveDef(c.value.id)
+    await updatePageProperty(root, live.value.path, def, { kind: 'link', value: '[[Target]]' })
+    await updatePageProperty(root, dead.value.path, def, { kind: 'link', value: '[[Gone]]' })
+    expect((await deleteProperty(root, c.value.id)).ok).toBe(true)
+    const r = await handleMutate(root, { op: 'restore', bundlePath: await onlyBundlePath() }, deps)
+    expect(r).toEqual({ ok: true, value: {} })
+    expect(await valueOn(live.value.path, 'Related')).toBe('[[Target]]')
+    expect(await valueOn(dead.value.path, 'Related')).toBeUndefined()
+  })
+
+  it('a cached Link value naming no page stays out when the property is assigned again', async () => {
+    const c = await createProperty(root, {
+      id: '',
+      name: 'Related',
+      type: 'link',
+    } as PropertyDefinition)
+    if (!c.ok) throw new Error('seed failed')
+    await assignProperty(root, tasks, c.value.id)
+    const target = await createPage(tasks, 'Target', { body: 'b' })
+    const live = await createPage(tasks, 'Live', { body: 'b' })
+    const dead = await createPage(tasks, 'Dead', { body: 'b' })
+    if (!target.ok || !live.ok || !dead.ok) throw new Error('pages failed')
+    const def = await liveDef(c.value.id)
+    await updatePageProperty(root, live.value.path, def, { kind: 'link', value: '[[Target]]' })
+    await updatePageProperty(root, dead.value.path, def, { kind: 'link', value: '[[Gone]]' })
+    expect((await removeProperty(root, tasks, c.value.id)).ok).toBe(true)
+    expect((await assignProperty(root, tasks, c.value.id)).ok).toBe(true)
+    expect(await valueOn(live.value.path, 'Related')).toBe('[[Target]]')
+    expect(await valueOn(dead.value.path, 'Related')).toBeUndefined()
+  })
+
   it('a Multi-Select value comes back holding only the options the definition still offers', async () => {
     const c = await createProperty(root, {
       id: '',

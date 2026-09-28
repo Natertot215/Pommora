@@ -172,8 +172,9 @@ export const nexusHandlers = {
     )
     if (!reply.ok) return reply
     const { cascade } = reply.value
-    // Ahead of the confirm's `values:changed`, which drops the cached details an absorb replaces; a delete's linkers changed frontmatter alone, which `values:changed` carries.
-    if (cascade?.pages.length && req.op !== 'delete') ctx.push('pages:changed', cascade.pages)
+    // Ahead of the confirm's `values:changed`, which drops the cached details an absorb replaces; a delete's or an empty's linkers changed frontmatter alone, which `values:changed` carries.
+    if (cascade?.pages.length && req.op !== 'delete' && req.op !== 'emptyBundle')
+      ctx.push('pages:changed', cascade.pages)
     for (const host of cascade?.hosts ?? []) ctx.push('tiles:changed', host)
     if (reply.value.rescope) await confirmRescope(ctx, root)
     else await confirmWrite(ctx, root, () => confirmMutation(root, req, reply.value))

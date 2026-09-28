@@ -8,11 +8,13 @@ import { pathExists } from '../Files/atomicWrite'
 import { confirmedMutate } from '../Testing/confirmedMutate'
 import { contextsDir, contextsRegistryFile } from '../Paths/paths'
 import { listBundles } from './spend'
+import { readRecord } from './record'
 import { trashRows } from './trashRows'
 import { readNexus } from '../Nexus/readNexus'
 import { closeSession, openSession } from '../Nexus/session'
 import { splitFrontmatter } from '../Files/pageFile'
 import { deleteProperty } from '../Properties/deleteProperty'
+import { newContentId } from '../Nexus/ids'
 import { renameProperty } from '../Properties/registryProperty'
 import type { TrashDeps } from './bundle'
 
@@ -402,6 +404,196 @@ describe('links come back with the page', () => {
     expect(await restore('Daily')).toBeUndefined()
     expect(await pathExists(join(root, 'Journal', 'Daily (2)', 'Daily.md'))).toBe(true)
     expect((await frontmatter(gamma)).Parent).toBe('[[Daily]]')
+  })
+
+  const recordOf = async (title: string) => readRecord(join(root, (await find(title)).bundlePath))
+  const empty = async (title: string) => {
+    const { bundlePath } = await find(title)
+    expect((await confirmedMutate(root, { op: 'emptyBundle', bundlePath }, deps)).ok).toBe(true)
+  }
+
+  it('a page restored while its link’s page sits in the Trash comes back without it, and that page’s restore puts it back', async () => {
+    await del(beta, 'page')
+    await del('Journal/Daily/Alpha.md', 'page')
+    expect(await restore('Beta')).toBeUndefined()
+    expect(await frontmatter()).not.toHaveProperty('Related')
+    expect(await recordOf('Alpha')).toMatchObject({
+      links: [{ page: BETA_ID, property: 'prop_related', value: '[[Alpha]]' }],
+    })
+    expect(await restore('Alpha')).toBeUndefined()
+    expect((await frontmatter()).Related).toBe('[[Alpha]]')
+  })
+
+  it('a page restored once its link’s page was emptied comes back without it', async () => {
+    await del(beta, 'page')
+    await del('Journal/Daily/Alpha.md', 'page')
+    await empty('Alpha')
+    expect(await restore('Beta')).toBeUndefined()
+    expect(await frontmatter()).not.toHaveProperty('Related')
+  })
+
+  it('a page restored beside its link’s page keeps the link', async () => {
+    await del(beta, 'page')
+    expect(await restore('Beta')).toBeUndefined()
+    expect((await frontmatter()).Related).toBe('[[Alpha]]')
+  })
+
+  it('a Set restore parks a link naming a page in the Trash and keeps one naming a page it carries', async () => {
+    const box = join('Plain', 'Box')
+    const gamma = join(box, 'Gamma.md')
+    await mkdir(join(root, box), { recursive: true })
+    await writeFile(join(root, box, '_pageset.json'), JSON.stringify({ id: 'set-box' }))
+    await linker(join(box, 'Omega.md'), '01KVGMT8BFP350FZZXAMG1QDVF', '')
+    await linker(gamma, '01KVGMT8BFP350FZZXAMG1QDVD', 'Related: "[[Alpha]]"\nParent: "[[Omega]]"')
+    await del(box, 'set')
+    await del('Journal/Daily/Alpha.md', 'page')
+    expect(await restore('Box')).toBeUndefined()
+    expect(await frontmatter(gamma)).toMatchObject({ Parent: '[[Omega]]' })
+    expect(await frontmatter(gamma)).not.toHaveProperty('Related')
+    expect(await restore('Alpha')).toBeUndefined()
+    expect((await frontmatter(gamma)).Related).toBe('[[Alpha]]')
+  })
+
+  it('a Space restored while its link’s page sits in the Trash comes back without it, and that page’s restore puts it back', async () => {
+    const sidecar = join(contextsDir(root), 'Projects', 'Pommora', '_space.json')
+    await writeFile(sidecar, JSON.stringify({ id: 'sp-pom', Related: '[[Alpha]]' }))
+    await del('.nexus/contexts/Projects/Pommora', 'space')
+    await del('Journal/Daily/Alpha.md', 'page')
+    expect(await restore('Pommora')).toBeUndefined()
+    expect(JSON.parse(await readFile(sidecar, 'utf8'))).not.toHaveProperty('Related')
+    expect(await restore('Alpha')).toBeUndefined()
+    expect(JSON.parse(await readFile(sidecar, 'utf8')).Related).toBe('[[Alpha]]')
+  })
+
+  it('a restore leaves a foreign key’s list and blank alone, on a page and on a Space', async () => {
+    const notes = join('Plain', 'Notes.md')
+    await linker(
+      notes,
+      '01KVGMT8BFP350FZZXAMG1QDVD',
+      'Related:\n  - "[[Alpha]]"\n  - "[[Beta]]"\nParent:',
+    )
+    const sidecar = join(contextsDir(root), 'Projects', 'Pommora', '_space.json')
+    const space = { id: 'sp-pom', Related: ['[[Alpha]]', '[[Beta]]'], Parent: '' }
+    await writeFile(sidecar, JSON.stringify(space))
+    const before = await readFile(join(root, notes), 'utf8')
+    await del(notes, 'page')
+    expect(await restore('Notes')).toBeUndefined()
+    expect(await readFile(join(root, notes), 'utf8')).toBe(before)
+    await del('.nexus/contexts/Projects/Pommora', 'space')
+    expect(await restore('Pommora')).toBeUndefined()
+    expect(JSON.parse(await readFile(sidecar, 'utf8'))).toMatchObject(space)
+  })
+
+  it('a page with no ID takes one on a restore that parks its link', async () => {
+    const gamma = join('Plain', 'Gamma.md')
+    await writeFile(join(root, gamma), '---\nRelated: "[[Alpha]]"\n---\ng\n')
+    await del(gamma, 'page')
+    await del('Journal/Daily/Alpha.md', 'page')
+    expect(await restore('Gamma')).toBeUndefined()
+    const id = (await frontmatter(gamma)).ID
+    expect(id).toEqual(expect.any(String))
+    expect(await frontmatter(gamma)).not.toHaveProperty('Related')
+    expect(await restore('Alpha')).toBeUndefined()
+    expect(await frontmatter(gamma)).toMatchObject({ ID: id, Related: '[[Alpha]]' })
+  })
+
+  it('a property restored while its link’s page sits in the Trash parks the value for that page', async () => {
+    await linker(beta, BETA_ID, '')
+    await del('Journal/Daily/Alpha.md', 'page')
+    await linker(beta, BETA_ID, 'Related: "[[Alpha]]"')
+    expect((await deleteProperty(root, 'prop_related')).ok).toBe(true)
+    expect(await restore('Related')).toBeUndefined()
+    expect(await frontmatter()).not.toHaveProperty('Related')
+    expect(await restore('Alpha')).toBeUndefined()
+    expect((await frontmatter()).Related).toBe('[[Alpha]]')
+  })
+
+  it('a link parks with the newest of two namesakes in the Trash', async () => {
+    const plain = join('Plain', 'Alpha.md')
+    await linker(plain, newContentId('page'), '')
+    await del(beta, 'page')
+    await del('Journal/Daily/Alpha.md', 'page')
+    await del(plain, 'page')
+    expect(await restore('Beta')).toBeUndefined()
+    const alphas = (await rows()).filter((r) => r.title === 'Alpha')
+    const newest = alphas.find((r) => r.bundlePath.startsWith('.trash/Plain'))
+    const older = alphas.find((r) => r.bundlePath.startsWith('.trash/Journal'))
+    if (!newest || !older) throw new Error('setup failed')
+    expect(await readRecord(join(root, newest.bundlePath))).toMatchObject({
+      links: [{ page: BETA_ID, property: 'prop_related', value: '[[Alpha]]' }],
+    })
+    expect(await readRecord(join(root, older.bundlePath))).not.toHaveProperty('links')
+  })
+
+  it('emptying one of two namesakes hands its record’s links to the other', async () => {
+    const plain = join('Plain', 'Alpha.md')
+    await linker(plain, newContentId('page'), '')
+    await del(plain, 'page')
+    await del('Journal/Daily/Alpha.md', 'page')
+    expect(await frontmatter()).not.toHaveProperty('Related')
+    const alphas = (await rows()).filter((r) => r.title === 'Alpha')
+    const daily = alphas.find((r) => r.bundlePath.startsWith('.trash/Journal'))
+    const kept = alphas.find((r) => r.bundlePath.startsWith('.trash/Plain'))
+    if (!daily || !kept) throw new Error('setup failed')
+    const emptied = await confirmedMutate(
+      root,
+      { op: 'emptyBundle', bundlePath: daily.bundlePath },
+      deps,
+    )
+    expect(emptied.ok).toBe(true)
+    const restored = await confirmedMutate(
+      root,
+      { op: 'restore', bundlePath: kept.bundlePath },
+      deps,
+    )
+    expect(restored.ok).toBe(true)
+    expect((await frontmatter()).Related).toBe('[[Alpha]]')
+  })
+
+  it('emptying a page strips a Link value a page took up for it since the delete', async () => {
+    await del('Journal/Daily/Alpha.md', 'page')
+    await linker(beta, BETA_ID, 'Related: "[[Alpha]]"')
+    await empty('Alpha')
+    expect(await frontmatter()).not.toHaveProperty('Related')
+  })
+
+  it('emptying a page parks a Link value its namesake in the Trash still answers', async () => {
+    await linker(beta, BETA_ID, '')
+    await linker(join('Plain', 'Alpha.md'), '01KVGMT8BFP350FZZXAMG1QDVF', '')
+    await del('Journal/Daily/Alpha.md', 'page')
+    await del('Plain/Alpha.md', 'page')
+    await linker(beta, BETA_ID, 'Related: "[[Alpha]]"')
+    const alphas = (await rows()).filter((r) => r.title === 'Alpha')
+    const daily = alphas.find((r) => r.bundlePath.startsWith('.trash/Journal'))
+    const plain = alphas.find((r) => r.bundlePath.startsWith('.trash/Plain'))
+    if (!daily || !plain) throw new Error('setup failed')
+    const emptied = await confirmedMutate(
+      root,
+      { op: 'emptyBundle', bundlePath: daily.bundlePath },
+      deps,
+    )
+    expect(emptied.ok).toBe(true)
+    expect(await frontmatter()).not.toHaveProperty('Related')
+    const restored = await confirmedMutate(
+      root,
+      { op: 'restore', bundlePath: plain.bundlePath },
+      deps,
+    )
+    expect(restored.ok).toBe(true)
+    expect((await frontmatter()).Related).toBe('[[Alpha]]')
+  })
+
+  it('emptying a page keeps a Link value a new namesake answers', async () => {
+    await del('Journal/Daily/Alpha.md', 'page')
+    const created = await confirmedMutate(
+      root,
+      { op: 'createPage', parentPath: 'Journal/Daily', name: 'Alpha' },
+      deps,
+    )
+    expect(created.ok).toBe(true)
+    await linker(beta, BETA_ID, 'Related: "[[Alpha]]"')
+    await empty('Alpha')
+    expect((await frontmatter()).Related).toBe('[[Alpha]]')
   })
 
   it('with Restore Links On Deletion off, the values stay removed', async () => {

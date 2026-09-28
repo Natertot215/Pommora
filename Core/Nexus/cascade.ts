@@ -17,7 +17,7 @@ import { readLiveSetting } from '../Settings/settings'
 import { rewriteTileConnections } from '../Tiles/tilesFile'
 import type { TileHostRef } from '../Tiles/tiles'
 import { readLink } from '../Connections/linkValue'
-import { liveIdIndex, livePathOf } from './valuesChanged'
+import { liveIdIndex, livePathOf, titleHeldOutside } from './valuesChanged'
 import { ID_KEY } from './identityMark'
 import { asString } from './coerce'
 import { stampListed } from './adopt'
@@ -45,13 +45,16 @@ export const joinCascades = (a: CascadeReport, b: CascadeReport): CascadeReport 
   warning: [a.warning, b.warning].filter(Boolean).join(' ') || undefined,
 })
 
-/** A delete strips every Link property value naming a page it took from the pages the tree holds outside it; bodies keep their links and read unresolved. Nothing at or under `abs` is swept, since it left with the delete. */
+/** A delete strips every Link property value naming a page it took from the pages the tree holds outside it, unless a page outside it still answers that title; bodies keep their links and read unresolved. Nothing at or under `abs` is swept, since it left with the delete. */
 export async function deleteCascade(
   root: string,
   abs: string,
   titles: string[],
 ): Promise<DeleteCascade> {
-  const gone = new Set(titles.map(normalizeTitle))
+  const deleted = relative(root, abs)
+  const gone = new Set(
+    titles.filter((t) => !titleHeldOutside(root, t, deleted)).map(normalizeTitle),
+  )
   try {
     const defs = new Map((await linkDefs(root)).map((d) => [d.name, d.id]))
     if (!defs.size) return { cascade: { pages: [], hosts: [] }, links: [] }
@@ -70,7 +73,6 @@ export async function deleteCascade(
           ? [{ key, property, value }]
           : []
       })
-    const deleted = relative(root, abs)
     // Tree pages only: a loose file outside every Collection shows in no view and no restore could reach it; dropping this filter strips them too.
     const held = liveIdIndex(root)
     const files = rels

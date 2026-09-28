@@ -5,6 +5,7 @@ import { readRegistry } from '../Properties/propertiesRegistry'
 import type { RecordFile } from './record'
 import { projectBaseline } from '../Nexus/remintLedger'
 import { liveTreeOf } from '../Nexus/liveTree'
+import { frozenWorld } from '../Nexus/valuesChanged'
 import { readJsonObject } from '../Files/atomicWrite'
 import { sidecarPath } from '../Paths/paths'
 import {
@@ -13,7 +14,8 @@ import {
   patchCacheBlock,
   refillValues,
 } from '../Properties/assignment'
-import { isBlankRaw } from '../Properties/propertyValue'
+import { isBlankRaw, namesGonePage } from '../Properties/propertyValue'
+import type { StrippedLink } from '../Nexus/cascade'
 import { createProperty } from '../Properties/registryProperty'
 import { serializeSchemaOp } from '../Properties/schemaChain'
 
@@ -29,12 +31,24 @@ async function foldersById(root: string): Promise<Map<string, string>> {
   return out
 }
 
-/** Answers the titles of what didn't take its value back. */
-export function restoreProperty(root: string, record: PropertyRecord): Promise<Result<string[]>> {
+interface RestoredProperty {
+  /** The titles of what didn't take its value back. */
+  unrestored: string[]
+  /** Each Link value left out for naming a page gone, for the restore to park. */
+  dropped: StrippedLink[]
+}
+
+export function restoreProperty(
+  root: string,
+  record: PropertyRecord,
+): Promise<Result<RestoredProperty>> {
   return serializeSchemaOp(() => restoreInner(root, record))
 }
 
-async function restoreInner(root: string, record: PropertyRecord): Promise<Result<string[]>> {
+async function restoreInner(
+  root: string,
+  record: PropertyRecord,
+): Promise<Result<RestoredProperty>> {
   if ((await readRegistry(root)).defs[record.id])
     return fail('exists', 'Something in the nexus already carries this identity.')
   const parsed = propertyDefinition.safeParse({ ...record.def, id: record.id })
@@ -56,13 +70,22 @@ async function restoreInner(root: string, record: PropertyRecord): Promise<Resul
       await patchSidecar(folder, 'collection', (cur) => patchCacheBlock(cur, record.id, { values }))
   }
 
-  const roots = projectBaseline(await liveTreeOf(root)).entries
+  const tree = await liveTreeOf(root)
+  const roots = projectBaseline(tree).entries
+  const frozen = frozenWorld(tree)
+  const dropped: StrippedLink[] = []
   const values = Object.fromEntries(
-    Object.entries(record.values).filter(
-      ([id, raw]) =>
-        (roots[id]?.kind === 'page' || roots[id]?.kind === 'space') && !isBlankRaw(raw),
-    ),
+    Object.entries(record.values).filter(([id, raw]) => {
+      if ((roots[id]?.kind !== 'page' && roots[id]?.kind !== 'space') || isBlankRaw(raw))
+        return false
+      if (def.type !== 'link' || !namesGonePage(raw, frozen)) return true
+      dropped.push({ page: id, property: def.id, value: String(raw) })
+      return false
+    }),
   )
-  const taken = await refillValues(root, def, roots, values)
-  return ok(Object.keys(values).flatMap((id) => (taken.has(id) ? [] : roots[id].title)))
+  const taken = await refillValues(root, def, roots, values, frozen)
+  return ok({
+    unrestored: Object.keys(values).flatMap((id) => (taken.has(id) ? [] : roots[id].title)),
+    dropped,
+  })
 }

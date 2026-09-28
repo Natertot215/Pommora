@@ -5,6 +5,7 @@ import type { PropertyDefinition } from '../Properties/properties'
 import type { Matcher } from '../Properties/pageValue'
 import {
   type Adoption,
+  type Frozen,
   encodeValue,
   isBlankValue,
   reconcilePropertyValue,
@@ -81,7 +82,7 @@ interface Reconciled {
 export function reconcileGovernedRoot(
   root: Record<string, unknown>,
   world: GovernedWorld,
-  adopt = true,
+  frozen?: Frozen,
 ): Reconciled {
   const out: Record<string, unknown> = {}
   const changed: string[] = []
@@ -94,7 +95,7 @@ export function reconcileGovernedRoot(
   for (const [key, raw] of Object.entries(root)) {
     const def = world.defs.get(key)
     if (def) {
-      const reconciled = reconcilePropertyValue(def, raw, adopt)
+      const reconciled = reconcilePropertyValue(def, raw, frozen)
       adoptions.push(...reconciled.adoptions)
       if (isBlankValue(reconciled.value)) changed.push(key)
       else moved(key, raw, encodeValue(reconciled.value))

@@ -2,7 +2,7 @@ import { join } from '../Paths/posix'
 import { z } from 'zod'
 import { hiddenName, rootSegs } from '../Paths/exclusion'
 import { mintBundle } from './bundle'
-import { readJsonObject, writeJson } from '../Files/atomicWrite'
+import { readJsonObject, rmwJsonStrict, writeJson } from '../Files/atomicWrite'
 import { listEntries } from '../Files/walk'
 import { contextEntry } from '../Contexts/contexts'
 import type { StrippedLink } from '../Nexus/cascade'
@@ -83,6 +83,14 @@ export async function writePropertyBundle(
   const bundle = await mintBundle(root, join(root, `property-${record.id}`))
   await writeRecord(bundle, record)
   return bundle
+}
+
+/** Raw, since a record is never rewritten from its decode. */
+export async function appendLinks(bundleDir: string, links: StrippedLink[]): Promise<void> {
+  await rmwJsonStrict(join(bundleDir, RECORD_FILENAME), (raw) => ({
+    ...raw,
+    links: [...(Array.isArray(raw.links) ? raw.links : []), ...links],
+  }))
 }
 
 export async function readRecord(bundleDir: string): Promise<RecordFile | null> {

@@ -4,6 +4,7 @@ import {
   decodeValue,
   encodeValue,
   isBlankValue,
+  reconcilePropertyValue,
   resolveSingleOption,
   type PropertyValue,
 } from './propertyValue'
@@ -273,5 +274,37 @@ describe('the no-empties rule — no value, no key', () => {
   it('number 0 and a checked checkbox are real values, not blanks', () => {
     expect(isBlankValue({ kind: 'number', value: 0 })).toBe(false)
     expect(isBlankValue({ kind: 'checkbox', value: true })).toBe(false)
+  })
+})
+
+describe('reconcilePropertyValue — a frozen copy names only what still exists', () => {
+  const link = def({ type: 'link' })
+  const holds = (title: string): boolean => title === 'Alpha'
+
+  it('keeps a Link value naming a page the world holds, whatever it carries', () => {
+    const value = '[[Alpha#Intro|see]]'
+    expect(reconcilePropertyValue(link, value, { holds }).value).toEqual({ kind: 'link', value })
+  })
+
+  it('drops a Link value naming a page the world doesn’t hold', () => {
+    expect(reconcilePropertyValue(link, '[[Gone]]', { holds }).value).toEqual({ kind: 'null' })
+  })
+
+  it('keeps a Link value naming only a heading of the page it sits on', () => {
+    const value = '[[#Intro]]'
+    expect(reconcilePropertyValue(link, value, { holds }).value).toEqual({ kind: 'link', value })
+  })
+
+  it('keeps an address, and a live read or an options-only freeze keeps any page', () => {
+    const url = 'https://example.com'
+    expect(reconcilePropertyValue(link, url, { holds }).value).toEqual({ kind: 'link', value: url })
+    expect(reconcilePropertyValue(link, '[[Gone]]').value).toEqual({
+      kind: 'link',
+      value: '[[Gone]]',
+    })
+    expect(reconcilePropertyValue(link, '[[Gone]]', {}).value).toEqual({
+      kind: 'link',
+      value: '[[Gone]]',
+    })
   })
 })

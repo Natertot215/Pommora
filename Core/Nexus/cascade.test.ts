@@ -410,6 +410,27 @@ describe('deleteCascade', () => {
     expect(await readFile(t.path, 'utf8')).toBe(before)
   })
 
+  it('keeps a value a same-titled page outside the delete still answers', async () => {
+    const other = await set(dir, 'Other')
+    if (!(await createPage(other, 'Target')).ok) throw new Error('setup failed')
+    const a = await linker('Cites', '[[Target]]')
+    await refreshTree(root)
+    const r = await deleteCascade(root, target(), ['Target'])
+    expect((await fmOf(a.path)).Related).toBe('[[Target]]')
+    expect(r).toEqual({ cascade: { pages: [], hosts: [] }, links: [] })
+  })
+
+  it('strips a value whose every same-titled page leaves with the delete', async () => {
+    const other = await set(dir, 'Other')
+    if (!(await createPage(other, 'Target')).ok) throw new Error('setup failed')
+    if (!(await createPage(await set(other, 'Deep'), 'Target')).ok) throw new Error('setup failed')
+    const a = await linker('Cites', '[[Target]]')
+    await refreshTree(root)
+    const r = await deleteCascade(root, other, ['Target', 'Target'])
+    expect(await fmOf(a.path)).not.toHaveProperty('Related')
+    expect(r.links).toEqual([{ page: a.id, property: related, value: '[[Target]]' }])
+  })
+
   it('sweeps a sibling whose name extends the deleted folder', async () => {
     const gone = await set(dir, 'Gone')
     await linker('Inner', '[[Other]]', gone)

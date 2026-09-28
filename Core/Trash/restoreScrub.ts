@@ -8,6 +8,11 @@ import {
   survivingChanges,
   type GovernedWorld,
 } from '../Contexts/contextResolve'
+import { type Frozen, namesGonePage } from '../Properties/propertyValue'
+import { newContentId } from '../Nexus/ids'
+import { asString } from '../Nexus/coerce'
+import type { StrippedLink } from '../Nexus/cascade'
+import { ID_KEY } from '../Nexus/identityMark'
 import { rmwJsonStrict } from '../Files/atomicWrite'
 import { mergeFrontmatter, splitEnvelope, splitFrontmatter } from '../Files/pageFile'
 import { basename, isMarkdownFile, join } from '../Paths/posix'
@@ -43,19 +48,39 @@ function reconciledSidecar(
   return r.changed.length ? { ...r.root, ...held } : null
 }
 
+/** Answers each Link value it dropped, by its root's id, so a restore can park the ones naming a page the Trash holds. */
 export async function scrubReturning(
   root: string,
   tree: NexusTree,
   absArtifact: string,
   destCollectionFolder: string | null,
+  frozen: Frozen,
   inTransitKey?: string,
-): Promise<void> {
+): Promise<StrippedLink[]> {
   const world = await liveWorld(root, tree, destCollectionFolder)
+  const links = new Map(tree.registry.filter((d) => d.type === 'link').map((d) => [d.name, d]))
+  const dropped: StrippedLink[] = []
+  // Whether or not the destination assigns its key, a Link naming a page gone leaves, noted by its root's id.
+  const unlinked = (raw: Record<string, unknown>): string[] =>
+    Object.keys(raw).filter((k) => links.has(k) && namesGonePage(raw[k], frozen))
+  const note = (raw: Record<string, unknown>, keys: string[], id: string | undefined): void => {
+    for (const key of keys) {
+      const def = links.get(key)
+      if (def && id) dropped.push({ page: id, property: def.id, value: String(raw[key]) })
+    }
+  }
   const pages = isMarkdownFile(absArtifact) ? [absArtifact] : await listMarkdownFiles(absArtifact)
   const text = (content: string): string | null => {
-    const r = reconcileGovernedRoot(splitFrontmatter(content), world, false)
-    if (!r.changed.length) return null
-    return mergeFrontmatter(content, survivingChanges(r), r.changed, splitEnvelope(content).body)
+    const raw = splitFrontmatter(content)
+    const r = reconcileGovernedRoot(raw, world, frozen)
+    const gone = unlinked(raw)
+    if (!r.changed.length && !gone.length) return null
+    // An ID-less page takes the ID its next open would give it, so what it drops can be parked.
+    const stamp = gone.length && raw[ID_KEY] === undefined ? { [ID_KEY]: newContentId('page') } : {}
+    note(raw, gone, asString(raw[ID_KEY]) ?? stamp[ID_KEY])
+    const changes = { ...survivingChanges(r), ...stamp }
+    const keys = [...new Set([...r.changed, ...gone, ...Object.keys(stamp)])]
+    return mergeFrontmatter(content, changes, keys, splitEnvelope(content).body)
   }
   const { skipped } = await sweepGovernedRoots(root, pages, { text })
   if (skipped.length) throw new Error(unsweptLine(skipped.length))
@@ -63,5 +88,13 @@ export async function scrubReturning(
     kind === 'dir' ? !hiddenFolder(basename(rel)) : basename(rel) === SPACE_SIDECAR,
   )
   for (const rel of sidecars)
-    await rmwJsonStrict(join(root, rel), (raw) => reconciledSidecar(raw, world, inTransitKey))
+    await rmwJsonStrict(join(root, rel), (raw) => {
+      const next = reconciledSidecar(raw, world, inTransitKey)
+      const gone = unlinked(next ?? raw)
+      note(raw, gone, asString(raw.id))
+      return gone.length
+        ? Object.fromEntries(Object.entries(next ?? raw).filter(([k]) => !gone.includes(k)))
+        : next
+    })
+  return dropped
 }

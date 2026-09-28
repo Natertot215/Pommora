@@ -291,6 +291,21 @@ describe('handleMutate — rename', () => {
     expect(await read('Notes/Daily/Alpha.md')).toContain('[[Beta]]')
   })
 
+  it('a rename of one of two same-titled pages leaves the title’s links to the other', async () => {
+    await mkdir(join(root, 'Notes', 'Other'), { recursive: true })
+    await writeFile(join(root, 'Notes', 'Other', '_pageset.json'), JSON.stringify({ id: 'other' }))
+    await writeFile(join(root, 'Notes', 'Other', 'Beta.md'), `---\nID: ${G_ID}\n---\n`)
+    await refreshTree(root)
+    const r = await handleMutate(
+      root,
+      { op: 'rename', path: 'Notes/Daily/Beta.md', kind: 'page', newName: 'Gamma' },
+      nexusDeps,
+    )
+    expect(r.ok).toBe(true)
+    expect(await pathExists(join(root, 'Notes/Daily/Gamma.md'))).toBe(true)
+    expect(await read('Notes/Daily/Alpha.md')).toContain('[[Beta]]')
+  })
+
   it('container rename renames the folder (no cascade)', async () => {
     const r = await handleMutate(
       root,

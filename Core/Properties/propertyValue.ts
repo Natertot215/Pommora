@@ -1,6 +1,7 @@
 import { z } from 'zod'
 import { listOf } from '../Contract/validators'
 import { optionValues, PROPERTY_TYPES, type PropertyDefinition } from './properties'
+import { parseConnectionText } from '../Connections/connections'
 
 const strings = z.array(z.string())
 export const propertyValue = z.discriminatedUnion('kind', [
@@ -79,16 +80,29 @@ export function decodeValue(def: PropertyDefinition, raw: unknown): PropertyValu
   }
 }
 
-// A restore of a frozen copy keeps only the options the definition still offers, so a deleted option never comes back through it.
+/** What a frozen copy may still name: its options are the definition's own, and `holds`, when given, answers which pages still exist. */
+export interface Frozen {
+  holds?: (title: string) => boolean
+}
+
+/** Whether `raw` is a Link naming a page `frozen` doesn't hold; one naming only a heading of its own page always stands. */
+export function namesGonePage(raw: unknown, frozen: Frozen): boolean {
+  const page = typeof raw === 'string' ? parseConnectionText(raw) : null
+  return !!page?.title && frozen.holds !== undefined && !frozen.holds(page.title)
+}
+
+// A restore of a frozen copy keeps only the options the definition still offers and the pages its world holds, so a deleted option or page never comes back through it; a live write adopts instead.
 export function reconcilePropertyValue(
   def: PropertyDefinition,
   raw: unknown,
-  adopt = true,
+  frozen?: Frozen,
 ): { value: PropertyValue; adoptions: Adoption[] } {
   const value = decodeValue(def, raw)
+  if (value.kind === 'link' && frozen && namesGonePage(value.value, frozen))
+    return { value: NULL_VALUE, adoptions: [] }
   if (value.kind !== 'multiSelect') return { value, adoptions: [] }
   const known = optionValues(def)
-  if (adopt) {
+  if (!frozen) {
     const adoptions = value.value
       .filter((v) => !known.includes(v))
       .map((v) => ({ propertyId: def.id, value: v }))
