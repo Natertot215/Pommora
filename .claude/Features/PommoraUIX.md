@@ -128,7 +128,7 @@ Authored once, validated by main and renderer alike; the accent resolves from it
 | Grey              | `SPECTRUM.grey`            | `#8E8E93`                                  |
 | Default           | `GREY_DEFAULT`                              | `#48484A`                                  |
 | Default Accent    | `DEFAULT_ACCENT`                            | `cyan`                                     |
-| Accent            | `--accent`                                  | `applyAccent`                              |
+| Accent            | `--accent`                                  | `var(--system-accent)` · the Accent Color setting |
 | Accent Fill       | `--accent-fill`                             | accent @ 15%                               |
 | Accent Stroke     | `--accent-stroke` / `--accent-stroke-hot`   | accent @ 40% / accent @ 60%                |
 | Drop Slot         | `--drop-slot-fill`                          | accent @ 20%                               |
