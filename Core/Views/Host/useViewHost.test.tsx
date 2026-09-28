@@ -811,3 +811,20 @@ describe('view search', () => {
     expect(api?.paintOrder.map((r) => r.id)).toEqual(['p1', 'p2'])
   })
 })
+
+describe('the value writer', () => {
+  it('a Context edit paints on its row while the save is in flight, and leaves the frontmatter as loaded', async () => {
+    useSession.setState({
+      tree: { collections: [collection()], contexts: [], personalization: {} } as never,
+      mutate: vi.fn(() => new Promise(() => {})) as never,
+    })
+    await mount(collection())
+    const row = api?.rowById.get('p1')
+    if (!row) throw new Error('row p1 missing')
+    act(() => {
+      api?.commitValue(row, { id: 'ctx1', kind: 'context' }, { kind: 'context', value: ['s1'] })
+    })
+    expect(api?.rowById.get('p1')?.contextValues).toEqual({ ctx1: ['s1'] })
+    expect(api?.rowById.get('p1')?.frontmatter).toEqual(VALUES.p1?.frontmatter)
+  })
+})

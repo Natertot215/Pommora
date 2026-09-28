@@ -255,6 +255,23 @@ describe('toRow stamps', () => {
     }
   })
 
+  it('a pending Context patch overrides the node links per Context', () => {
+    const linked: PageNode = { ...page('p1'), contextValues: { g1: ['a'], g2: ['b'] } }
+    const { rows } = flattenContainer(
+      collection([], [linked]),
+      {
+        p1: {
+          frontmatter: { [ID_KEY]: 'p1' },
+          createdAt: null,
+          modifiedAt: null,
+          contextValues: { g2: [] },
+        },
+      },
+      {},
+    )
+    expect(rows[0]?.contextValues).toEqual({ g1: ['a'], g2: [] })
+  })
+
   it('a page absent from the batch stands on a ID-keyed frontmatter', () => {
     expect(frontmatterOf({}, 'p9')).toEqual({ [ID_KEY]: 'p9' })
   })

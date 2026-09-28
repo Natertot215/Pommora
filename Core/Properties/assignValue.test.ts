@@ -48,7 +48,12 @@ describe('assignValue', () => {
       { id: 'prop_tag', kind: 'property' },
       { kind: 'select', value: 'blue' },
     )
-    expect(apply).toHaveBeenCalledWith('page1', { id: 'page1', Tag: ['blue'] }, expect.anything())
+    expect(apply).toHaveBeenCalledWith(
+      'page1',
+      { id: 'page1', Tag: ['blue'] },
+      expect.anything(),
+      undefined,
+    )
     expect(mutate).toHaveBeenCalledWith({
       op: 'setProperty',
       path: row.path,
@@ -70,6 +75,7 @@ describe('assignValue', () => {
       'page1',
       { id: 'page1', Tag: ['red'] },
       expect.anything(),
+      undefined,
     )
     expect(mutate).toHaveBeenLastCalledWith({
       op: 'setProperty',
@@ -89,7 +95,7 @@ describe('assignValue', () => {
     )
     row = rowOf({ id: 'page1', Tag: ['blue'] })
     expect(undoValue(null)).toBe(true)
-    expect(apply).toHaveBeenLastCalledWith('page1', { id: 'page1' }, expect.anything())
+    expect(apply).toHaveBeenLastCalledWith('page1', { id: 'page1' }, expect.anything(), undefined)
     expect(mutate).toHaveBeenLastCalledWith({
       op: 'setProperty',
       path: row.path,
@@ -112,10 +118,11 @@ describe('assignValue', () => {
       'page1',
       { id: 'page1', Tag: ['blue'], Note: 'landed' },
       expect.anything(),
+      undefined,
     )
   })
 
-  it('patches the contextValues rider and mutates the context', () => {
+  it('lays the Context patch beside the frontmatter and mutates the context', () => {
     assignValue(
       writer,
       row,
@@ -125,11 +132,9 @@ describe('assignValue', () => {
         value: ['space1'],
       },
     )
-    expect(apply).toHaveBeenCalledWith(
-      'page1',
-      { id: 'page1', Tag: ['red'], contextValues: { ctx_areas: ['space1'] } },
-      expect.anything(),
-    )
+    expect(apply).toHaveBeenCalledWith('page1', { id: 'page1', Tag: ['red'] }, expect.anything(), {
+      ctx_areas: ['space1'],
+    })
     expect(mutate).toHaveBeenCalledWith({
       op: 'setContext',
       path: row.path,

@@ -22,13 +22,10 @@ describe('spaceRowOf', () => {
     expect(row.path).toBe('.nexus/contexts/Realms/Work')
   })
 
-  it('lets a frontmatter rider stand in for the node values and override the union per Context', () => {
+  it('lets pending frontmatter stand in for the node values and a Context patch override the union per Context', () => {
     const { tree, node } = linked()
-    const fm = {
-      Status: ['Paused'],
-      contextValues: { g2: [] },
-    } as unknown as PageFrontmatter
-    const row = spaceRowOf(tree, node, fm)
+    const fm = { Status: ['Paused'] } as unknown as PageFrontmatter
+    const row = spaceRowOf(tree, node, fm, { g2: [] })
     expect(row.frontmatter).toBe(fm)
     expect(row.contextValues).toEqual({ g2: [] })
   })

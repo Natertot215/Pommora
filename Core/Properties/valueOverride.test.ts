@@ -74,6 +74,19 @@ describe('patchOverride', () => {
     expect(state).toBeNull()
   })
 
+  it('a pending Context patch outlives a later property edit and merges per Context', () => {
+    let state: Overrides | null = null
+    const set: Parameters<typeof patchOverride>[0] = (next) => {
+      state = typeof next === 'function' ? next(state) : next
+    }
+    patchOverride(set, 'a', fm('a'), inFlight, { ctx1: ['s1'] })
+    patchOverride(set, 'a', fm('a2'), inFlight)
+    patchOverride(set, 'a', fm('a2'), inFlight, { ctx2: ['s2'] })
+    expect(state).toEqual({
+      a: { fm: fm('a2'), contexts: { ctx1: ['s1'], ctx2: ['s2'] }, write: inFlight },
+    })
+  })
+
   it('a refused write takes its override with it, leaving the others', async () => {
     let state: Overrides | null = { b: overrides.b }
     const set: Parameters<typeof patchOverride>[0] = (next) => {

@@ -231,7 +231,7 @@ describe('PropertyPanel', () => {
     cachePageDetail(
       detail({
         path: 'Col/Page.md',
-        frontmatter: { contextValues: { ctx_areas: ['area_work'], ctx_topics: ['topic_x'] } },
+        frontmatter: { '<Areas>': ['Work'], '<Topics>': ['Craft'] },
       }),
     )
     await renderPanel(<PropertyPanel subject={PAGE} host="side-pane" />)

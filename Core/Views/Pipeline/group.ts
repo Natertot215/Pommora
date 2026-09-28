@@ -1,7 +1,7 @@
 // The setTree is built from node.sets (the real folder walk), so empty Sets still appear as disclosure groups and a Collection and a Set container flow through the identical structural path.
 
 import type { CollectionNode, PageNode, SetNode } from '@pommora/core/Nexus/tree'
-import type { PageValues, ResolvedGroup, ViewRow } from '@pommora/core/Views/viewRow'
+import type { PageValues, ResolvedGroup, RowValues, ViewRow } from '@pommora/core/Views/viewRow'
 import {
   type DateGranularity,
   type EmptyPlacement,
@@ -105,10 +105,13 @@ export const frontmatterOf = (
 export function toRow(
   page: PageNode,
   parentSetId: string | undefined,
-  values: Record<string, PageValues>,
+  values: Record<string, RowValues>,
   pageMetadata: Record<string, PageMeta>,
 ): ViewRow {
   const v = values[page.id]
+  const contextValues = v?.contextValues
+    ? { ...page.contextValues, ...v.contextValues }
+    : page.contextValues
   return {
     id: page.id,
     title: page.title,
@@ -118,13 +121,13 @@ export function toRow(
     frontmatter: frontmatterOf(values, page.id),
     createdAt: v?.createdAt ?? null,
     modifiedAt: v?.modifiedAt ?? null,
-    ...(page.contextValues !== undefined ? { contextValues: page.contextValues } : {}),
+    ...(contextValues !== undefined ? { contextValues } : {}),
   }
 }
 
 export function flattenContainer(
   node: CollectionNode | SetNode,
-  valuesByPageId: Record<string, PageValues>,
+  valuesByPageId: Record<string, RowValues>,
   pageMetadata: Record<string, PageMeta>,
 ): { rows: ViewRow[]; setTree: SetTreeNode[] } {
   const rows: ViewRow[] = []
