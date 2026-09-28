@@ -1,7 +1,7 @@
 import { join, relative, titleFromPath } from '../Paths/posix'
 import { errText } from '../Contract/result'
 import { splitEnvelope, mergeFrontmatter, splitFrontmatter, stampedId } from '../Files/pageFile'
-import { sweepGovernedRoots, unsweptLine } from '../Properties/governedSweep'
+import { stripKeys, sweepGovernedRoots, unsweptLine } from '../Properties/governedSweep'
 import {
   type RenameChange,
   rewriteConnections,
@@ -19,17 +19,12 @@ import { rewriteTileConnections } from '../Tiles/tilesFile'
 import type { TileHostRef } from '../Tiles/tiles'
 import { readLink } from '../Connections/linkValue'
 import { liveIdIndex } from './valuesChanged'
+import type { StrippedLink } from '../Trash/record'
 
 export interface CascadeReport {
   pages: string[]
   hosts: TileHostRef[]
   warning?: string
-}
-
-export interface StrippedLink {
-  page: string
-  property: string
-  value: string
 }
 
 export interface DeleteCascade {
@@ -56,8 +51,10 @@ export async function deleteCascade(
       ? await nexusCorpus(root)
       : [...new Set(hits.flatMap((h) => h ?? []))]
     const defs = new Map((await linkDefs(root)).map((d) => [d.name, d.id]))
-    const named = (content: string): { key: string; property: string; value: string }[] =>
-      Object.entries(splitFrontmatter(content)).flatMap(([key, value]) => {
+    const named = (
+      raw: Record<string, unknown>,
+    ): { key: string; property: string; value: string }[] =>
+      Object.entries(raw).flatMap(([key, value]) => {
         const property = defs.get(key)
         if (property === undefined || typeof value !== 'string') return []
         const link = readLink(value)
@@ -65,20 +62,20 @@ export async function deleteCascade(
           ? [{ key, property, value }]
           : []
       })
-    const text = (content: string): string | null => {
-      const keys = named(content).map(({ key }) => key)
-      return keys.length ? mergeFrontmatter(content, {}, keys, splitEnvelope(content).body) : null
-    }
     const deleted = relative(root, abs)
     // Tree pages only: a loose file outside every Collection shows in no view and no restore could reach it; dropping this filter strips them too.
     const held = liveIdIndex(root)
     const files = rels
       .filter((rel) => held.has(rel) && rel !== deleted && !rel.startsWith(`${deleted}/`))
       .map((rel) => join(root, rel))
-    const swept = await sweepGovernedRoots(root, files, { text })
+    const swept = await sweepGovernedRoots(root, files, {
+      raw: (raw, file) => stripKeys(...named(raw).map(({ key }) => key))(raw, file),
+    })
     const links = [...swept.touched.values()].flatMap((before) => {
       const page = stampedId(before)
-      return page ? named(before).map(({ property, value }) => ({ page, property, value })) : []
+      return page
+        ? named(splitFrontmatter(before)).map(({ property, value }) => ({ page, property, value }))
+        : []
     })
     return {
       cascade: {

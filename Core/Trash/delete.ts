@@ -8,7 +8,7 @@ import { mutateRegistryFile, readRegistryStrict, withContextAt } from '../Contex
 import { unlinkContextKey, unlinkSpaceValue } from '../Contexts/contextCascade'
 import type { MutateContext } from '../Nexus/mutate'
 import { dropSpaceOrder } from '../Nexus/reorder'
-import { type DeleteCascade, deleteCascade, joinCascades } from '../Nexus/cascade'
+import { deleteCascade, joinCascades } from '../Nexus/cascade'
 import type { MutateReply, MutateRequest } from '../Nexus/mutateRequest'
 import { machine } from '../Platform/machine'
 import { discardFile, mintBundle, settleBundle } from './bundle'
@@ -49,7 +49,7 @@ export async function deleteOp(
     throw e
   }
   let record: RecordFile | null = null
-  let titles: string[] = []
+  let titles: string[] | null = null
   if (req.kind === 'space') {
     const registry = write ? await readRegistryStrict(root) : null
     if (write) await write(await gatherSpaceRecord(abs, registry, null))
@@ -89,16 +89,13 @@ export async function deleteOp(
     if (bundle) await settleBundle(bundle, abs)
     else await discardFile(root, abs, deps)
   })
-  let gone: DeleteCascade | null = null
-  if (req.kind === 'page' || req.kind === 'collection' || req.kind === 'set') {
-    gone = await deleteCascade(root, abs, titles)
-    if (write && record)
-      await write({
-        ...record,
-        ...(gone.links.length ? { links: gone.links } : {}),
-        ...(gone.cascade.warning ? { partial: true as const } : {}),
-      })
-  }
+  const gone = titles ? await deleteCascade(root, abs, titles) : null
+  if (write && record && gone)
+    await write({
+      ...record,
+      ...(gone.links.length ? { links: gone.links } : {}),
+      ...(gone.cascade.warning ? { partial: true as const } : {}),
+    })
   if (req.kind === 'collection' || req.kind === 'set')
     await releaseExcludedFolders(root, relative(root, abs))
   await deindexPath(root, abs)
