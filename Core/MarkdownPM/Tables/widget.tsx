@@ -376,10 +376,6 @@ class TableWidget extends ReactWidget {
     ;(dom as TableDom)._ro?.disconnect()
     this.unmount(dom as TableDom, 'eager')
   }
-
-  ignoreEvent(): boolean {
-    return true
-  }
 }
 
 function heightBoxes(deco: DecorationSet): HeightBox[] {

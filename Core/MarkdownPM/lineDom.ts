@@ -13,3 +13,12 @@ export function inGripStrip(e: { clientX: number }, line: HTMLElement): boolean 
   const inset = parseFloat(getComputedStyle(line).getPropertyValue('--grip-strip')) || 0
   return e.clientX < line.getBoundingClientRect().left + inset
 }
+
+/** Null on the line's own text — a press past the grip's own band is never a grip press. */
+export function gutterLineAt(
+  e: { target: EventTarget | null; clientX: number },
+  selector: string,
+): HTMLElement | null {
+  const line = (e.target as HTMLElement).closest?.(selector) as HTMLElement | null
+  return line && inGripStrip(e, line) ? line : null
+}

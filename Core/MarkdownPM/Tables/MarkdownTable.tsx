@@ -15,8 +15,8 @@ import type { HeadingLinkStyle } from '../../Settings/personalization'
 import { cellToDisplay, cellToSource } from '../Engine/Tables/codec'
 import { decodePayload, encodeRect, rectGrid, type TablePayload } from '../Engine/Tables/clipboard'
 import { foldLabel } from '../Engine/detect'
-import { GLYPH_CLASS } from '../Engine/intents'
-import { inGripStrip } from '../lineDom'
+import { GLYPH_CLASS, GRIP_LINE } from '../Engine/intents'
+import { gutterLineAt } from '../lineDom'
 import { nextCell, type NavDir } from '../Engine/Tables/navigate'
 import type { ConnectionsApi } from '../Links/connectionsApi'
 import type { EditorHost } from '../api'
@@ -140,8 +140,7 @@ export function MarkdownTable({
   readOnly?: () => boolean
   linkStyle?: HeadingLinkStyle
 }): React.JSX.Element {
-  const total =
-    model.columns.reduce((sum, c) => sum + Math.max(1, c.dashes), 0) || model.columns.length
+  const total = model.columns.reduce((sum, c) => sum + Math.max(1, c.dashes), 0)
   const totalRows = model.rows.length + 1
   const cols = model.columns.length
 
@@ -167,8 +166,7 @@ export function MarkdownTable({
     // A list glyph is a drag handle and a checkbox target, and the grip band is the block's. Capture runs first and the gesture singleton is claimed before any threshold, so sweeping here would leave the press dead rather than shared.
     const target = e.target as HTMLElement
     if (target.closest?.(`.${GLYPH_CLASS}`)) return
-    const handle = target.closest?.('.cm-line.md-block-handle') as HTMLElement | null
-    if (handle && inGripStrip(e, handle)) return
+    if (gutterLineAt(e, GRIP_LINE)) return
     const start = cellPosOf(e.target)
     const wrap = wrapRef.current
     if (!start || !wrap) return
@@ -570,7 +568,7 @@ export function MarkdownTable({
                 key={ci}
                 className={cx(
                   'mdpm-tbl-cell',
-                  alignClass(model.columns[ci]?.align ?? null),
+                  alignClass(model.columns[ci].align),
                   colDragged(ci) && 'mdpm-tbl-subject',
                   selected(0, ci) && 'mdpm-tbl-selected',
                 )}
@@ -593,7 +591,7 @@ export function MarkdownTable({
                   key={ci}
                   className={cx(
                     'mdpm-tbl-cell',
-                    alignClass(model.columns[ci]?.align ?? null),
+                    alignClass(model.columns[ci].align),
                     colDragged(ci) && 'mdpm-tbl-subject',
                     headingColumn && ci === 0 && 'mdpm-tbl-heading-col',
                     selected(ri + 1, ci) && 'mdpm-tbl-selected',

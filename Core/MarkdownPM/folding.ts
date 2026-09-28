@@ -27,7 +27,8 @@ export type FoldKind = 'heading' | 'citations'
 const CITATIONS_KEY = '\u0000citations'
 
 /** Kept apart from `md-foldable` ("draws a chevron"): one class would make a non-heading anchor inherit all four behaviors. */
-export const HEADING_FOLD_LINE = 'md-heading-fold'
+export const HEADING_FOLD_CLASS = 'md-heading-fold'
+export const HEADING_LINE = `.cm-line.${HEADING_FOLD_CLASS}`
 
 /** Rides the rendered anchor line only when blank — a table's last row is a block widget, and a fence there reads as body. */
 const CITE_DIVIDER_LINE = 'md-citation-divider'
@@ -188,12 +189,6 @@ class RevealWidget extends WidgetType {
     outer.addEventListener('transitionend', settle)
     return outer
   }
-  get estimatedHeight(): number {
-    return -1
-  }
-  ignoreEvent(): boolean {
-    return true
-  }
 }
 
 const foldField = StateField.define<FoldEntry[]>({
@@ -305,7 +300,7 @@ const chevronDeco = EditorView.decorations.compute(['doc', foldField], (state) =
     if (r.kind === 'heading') {
       ranges.push(
         Decoration.line({
-          class: `${HEADING_FOLD_LINE} md-foldable ${closed ? 'md-fold-closed' : 'md-fold-open'}`,
+          class: `${HEADING_FOLD_CLASS} md-foldable ${closed ? 'md-fold-closed' : 'md-fold-open'}`,
           attributes: HOVER_HOST,
         }).range(r.anchorLine),
       )
@@ -398,7 +393,7 @@ export function markdownFolding(onCitationsToggle: () => void): Extension {
   })
   // A fold can't survive the relocating edit (its body offsets remap to the replace span's ends), so a folded section unfolds at drag-start.
   const headingDrag = createBlockDragGesture({
-    gate: HEADING_FOLD_LINE,
+    selector: HEADING_LINE,
     onClick: (view, line) => {
       toggleFoldAt(view, view.posAtDOM(line))
     },

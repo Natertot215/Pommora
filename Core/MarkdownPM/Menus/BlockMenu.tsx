@@ -4,22 +4,21 @@ import { PickerMenu } from '@pommora/uix/Pickers/PickerMenu'
 import { PICKER_MAX_HEIGHT } from '@pommora/uix/Pickers/picker-base.css'
 import { useHeld } from '@pommora/uix/Animations/useExitPresence'
 import { emphasizeMatch, MenuItem, MenuRowView, MenuScrollFrame } from '@pommora/uix/Menus'
-import type { BlockMenuAction, BlockMenuMatch } from '@pommora/core/Actions/blockMenu'
+import type { BlockMenuAction } from '@pommora/core/Actions/blockMenu'
 import { CLOSED_GEOMETRY, useKeepInView } from './caretPane'
 import type { BlockMenuState } from './useBlockMenu'
 
 interface Props {
-  open: boolean
   state: BlockMenuState | null
-  matches: BlockMenuMatch[]
   selected: BlockMenuAction | null
   onPick: (action: BlockMenuAction) => void
 }
 
-const CLOSED: BlockMenuState = { query: '', from: 0, to: 0, citeSeat: false, ...CLOSED_GEOMETRY }
+const CLOSED: BlockMenuState = { query: '', from: 0, to: 0, matches: [], ...CLOSED_GEOMETRY }
 
-export function BlockMenu({ open, state, matches, selected, onPick }: Props): React.JSX.Element {
-  const v = useHeld({ state: state ?? CLOSED, matches, selected }, open && state !== null)
+export function BlockMenu({ state, selected, onPick }: Props): React.JSX.Element {
+  const open = state !== null
+  const v = useHeld({ state: state ?? CLOSED, selected }, open)
   const matchLen = v.state.query.length
   const keepInView = useKeepInView(v.selected)
 
@@ -36,7 +35,7 @@ export function BlockMenu({ open, state, matches, selected, onPick }: Props): Re
       contentClassName="mdpm-block-menu"
     >
       <MenuScrollFrame maxHeight={PICKER_MAX_HEIGHT}>
-        {v.matches.map((m) => (
+        {v.state.matches.map((m) => (
           <Fragment key={m.title}>
             <MenuRowView row={{ kind: 'heading', label: m.title, caps: true }} />
             {m.rows.map((row) => (

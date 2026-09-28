@@ -183,10 +183,6 @@ class EmbedTileWidget extends ReactWidget {
   destroy(dom: HTMLElement): void {
     this.unmount(dom as ReactDom, 'if-detached')
   }
-
-  ignoreEvent(): boolean {
-    return true
-  }
 }
 
 interface WebTileDom extends ReactDom {
@@ -309,10 +305,6 @@ class WebpageTileWidget extends ReactWidget {
     d._obs?.io.unobserve(d)
     d._obs?.tiles.delete(d)
     this.unmount(d, 'if-detached')
-  }
-
-  ignoreEvent(): boolean {
-    return true
   }
 }
 

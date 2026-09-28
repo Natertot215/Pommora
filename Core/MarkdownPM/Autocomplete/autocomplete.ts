@@ -10,12 +10,13 @@ import {
   encodeLinkTarget,
   escapeAlias,
 } from '@pommora/core/Connections/links'
-import type { TrailSegment } from '@pommora/uix/Elements/NavTrail'
+import { NO_TRAIL, type TrailSegment } from '@pommora/uix/Elements/NavTrail'
 import { type DocScan, inCodeAt } from '../Engine/docScan'
 import { lineIndexAt, type TextEdit } from '../Engine/markdownCode'
 import type { ConnPage, PageIndex } from '@pommora/core/Connections/pageIndex'
 import type { OutlineHeading } from '../Engine/headingScan'
 import type { EditorHost } from '../api'
+import type { ConnectionsApi } from '../Links/connectionsApi'
 
 type ConnectionForm = 'link' | 'embed' | 'alias' | 'target' | 'heading' | 'section'
 
@@ -130,14 +131,11 @@ export function autocompleteQuery(
   return null
 }
 
-export const pageRow = (p: ConnPage): AcRow => ({
+export const pageRow = (p: ConnPage, conn: ConnectionsApi): AcRow => ({
   kind: 'page',
   value: p.title,
   pageId: p.id,
-  location: p.path
-    .split('/')
-    .slice(0, -1)
-    .map((title) => ({ title })),
+  location: conn.location?.(p.id) ?? NO_TRAIL,
 })
 
 export function headingRows(outline: readonly OutlineHeading[], query: string): HeadingRow[] {

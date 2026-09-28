@@ -1,9 +1,10 @@
 import { useMemo } from 'react'
 import type { ConnectionsApi } from '../MarkdownPM/Links/connectionsApi'
 import type { NexusTree } from '../Nexus/tree'
+import { NO_TRAIL, type TrailSegment } from '@pommora/uix/Elements/NavTrail'
 import { showConnectionMenu } from '../Interface/Menus/connectionMenuActions'
 import { useSession, useSetting } from './store'
-import { pageIndexOf } from '../Nexus/treeIndex'
+import { pageIndexOf, recordsByIdOf } from '../Nexus/treeIndex'
 
 /** `preview` follows the Open in Preview preference, `window` lands in the window's own tab strip, and `inert` opens no page, for a glance or a page's history — its own headings and external links still follow. */
 export function useConnections(
@@ -20,7 +21,9 @@ export function useConnections(
     if (!tree) return undefined
     const index = pageIndexOf(tree)
     const headingsOf = (path: string): string[] | undefined => headings[path]
-    if (mode === 'inert') return { ...index, open: () => {}, headingsOf }
+    const location = (id: string): TrailSegment[] =>
+      recordsByIdOf(tree).get(id)?.parents ?? NO_TRAIL
+    if (mode === 'inert') return { ...index, open: () => {}, headingsOf, location }
     return {
       ...index,
       open: ({ id, path }, heading) => {
@@ -31,6 +34,7 @@ export function useConnections(
         void select({ kind: 'page', id, path }, { newTab: true, heading }),
       menu: showConnectionMenu,
       headingsOf,
+      location,
     }
   }, [tree, mode, inWindow, headings, select, openWindowTab])
 }

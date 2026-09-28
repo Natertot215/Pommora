@@ -160,6 +160,7 @@ export function useEditorHost({
   const connRef = useLatest(connections)
   const shown = useSession((s) => citationsVisible(s, pageId))
   const cbLineCount = useSession((s) => s.personalization.codeblockLineCount)
+  const htmlShortcuts = useSession((s) => s.personalization.htmlShortcuts)
   const headingLinkStyle = useSession((s) => s.personalization.headingLinkStyle)
   const inPageHeadingResolution = useSession((s) => s.personalization.inPageHeadingResolution)
   const commands = useSession((s) => s.commands)
@@ -173,6 +174,7 @@ export function useEditorHost({
       preview,
       shown,
       cbLineCount,
+      htmlShortcuts,
       headingLinkStyle,
       inPageHeadingResolution,
       commands,

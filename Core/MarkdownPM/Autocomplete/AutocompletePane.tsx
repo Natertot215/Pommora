@@ -76,7 +76,7 @@ export function AutocompletePane({
     <MenuScrollFrame maxHeight={PICKER_MAX_HEIGHT} className="mdpm-autocomplete-slot">
       {rows.map((row, i) => (
         <MenuItem
-          key={row.value}
+          key={row.kind === 'page' ? row.pageId : row.value}
           ref={active && i === v.index ? keepInView : undefined}
           className={hoverRemoveHost}
           selected={active && i === v.index}

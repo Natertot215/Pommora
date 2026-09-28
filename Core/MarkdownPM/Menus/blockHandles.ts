@@ -1,22 +1,31 @@
 // Content-anchored like the fold chevron so a grip can't drift below callouts or folds. Headings use the chevron, callouts keep their own, and the table widget supplies its own.
-import { Decoration, EditorView, ViewPlugin, type ViewUpdate, WidgetType } from '@codemirror/view'
+import { Decoration, EditorView, ViewPlugin, type ViewUpdate } from '@codemirror/view'
+import { GlyphWidget } from '../decorations'
 import { docScan } from '../docCache'
 import type { Extension, Range } from '@codemirror/state'
-import { blockAt, blockStarts } from '../Engine/blockModel'
-import { GRIP_HOST } from '../Engine/intents'
+import { type Block, blockAt, blockStarts } from '../Engine/blockModel'
+import { GRIP_HOST, GRIP_LINE } from '../Engine/intents'
 import { lineElementAt } from '../lineDom'
 import type { MarkdownScope } from '../Engine/detect'
 import { REVEAL_REACH, type Reach, withinReach } from '@pommora/uix/Interactions/hoverReveal'
 
-const GRIP_KINDS = new Set(['paragraph', 'code', 'list', 'hr', 'math', 'embed', 'webpage'])
+type Kind = Block['kind']
 
-const GRIP_BLOCKS = new Set([...GRIP_KINDS, 'callout', 'blockquote'])
+const GRIP_KINDS: ReadonlySet<Kind> = new Set([
+  'paragraph',
+  'code',
+  'list',
+  'hr',
+  'math',
+  'embed',
+  'webpage',
+])
 
 // A cell speaks the list vocabulary alone, so a list is the only block there with anything for a grip to move or a menu to offer.
-const CELL_KINDS = new Set(['list'])
+const CELL_KINDS: ReadonlySet<Kind> = new Set(['list'])
 
 // Blockquote can't use the rail `::before` grip (its bar and fill take both pseudos), so its grip is a real element.
-class GripWidget extends WidgetType {
+class GripWidget extends GlyphWidget {
   eq(): boolean {
     return true
   }
@@ -26,21 +35,16 @@ class GripWidget extends WidgetType {
     el.setAttribute('aria-hidden', 'true')
     return el
   }
-  ignoreEvent(): boolean {
-    return false
-  }
 }
 const gripWidget = new GripWidget()
+const handleLine = Decoration.line({ class: 'md-block-handle', attributes: GRIP_HOST })
 
 export function blockHandles(scope: MarkdownScope = 'page'): Extension {
   const kinds = scope === 'cell' ? CELL_KINDS : GRIP_KINDS
   return EditorView.decorations.compute(['doc'], (state) => {
     const ranges: Range<Decoration>[] = []
     for (const b of blockStarts(docScan(state.doc))) {
-      if (kinds.has(b.kind))
-        ranges.push(
-          Decoration.line({ class: 'md-block-handle', attributes: GRIP_HOST }).range(b.from),
-        )
+      if (kinds.has(b.kind)) ranges.push(handleLine.range(b.from))
       else if (scope === 'page' && b.kind === 'blockquote')
         ranges.push(Decoration.widget({ widget: gripWidget, side: -1 }).range(b.from))
     }
@@ -140,7 +144,6 @@ class TagReveal {
 
 // Grips can't self-hover, so a grippable block's first line is a script host, turned `on` whenever the pointer sits in the gutter strip of any of its lines. On a page each code tag reveals its copy mark while the pointer is within reach, scaled with the editor's font; that listener is the content's own, so a move over a table or an embed, which the editor's handlers skip, still counts.
 export function pointerReveal(scope: MarkdownScope = 'page'): Extension {
-  const blocks = scope === 'cell' ? CELL_KINDS : GRIP_BLOCKS
   let hotLine: HTMLElement | null = null
   const setHot = (next: HTMLElement | null): void => {
     if (next === hotLine && next?.dataset.revealHost !== 'off') return
@@ -204,10 +207,10 @@ export function pointerReveal(scope: MarkdownScope = 'page'): Extension {
         if (lineFrom !== cachedFrom) {
           cachedFrom = lineFrom
           const block = blockAt(docScan(view.state.doc), pos)
-          cachedFirstFrom =
-            block && blocks.has(block.kind) ? view.state.doc.lineAt(block.from).from : -1
+          cachedFirstFrom = block ? view.state.doc.lineAt(block.from).from : -1
         }
-        setHot(cachedFirstFrom < 0 ? null : lineElementAt(view, cachedFirstFrom))
+        const first = cachedFirstFrom < 0 ? null : lineElementAt(view, cachedFirstFrom)
+        setHot(first?.matches(GRIP_LINE) ? first : null)
       },
       pointerleave() {
         setHot(null)
