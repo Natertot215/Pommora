@@ -6,7 +6,7 @@ import {
   settled,
 } from '../../Properties/valueOverride'
 import type { PageFrontmatter } from '@pommora/core/Nexus/schemas'
-import type { PageValues } from '@pommora/core/Views/viewRow'
+import type { PageValues, RowValues } from '@pommora/core/Views/viewRow'
 import { fetchPageValues } from '../../Properties/pageRow'
 import { useSession } from '../../Session/store'
 import { useLatest } from '@pommora/uix/Utilities/stableApi'
@@ -64,7 +64,7 @@ export function useValuesEpoch(
 /** `canceled` keeps a fast container swap from landing the old path's read. The overrides lay each optimistic write over the loaded values, which never re-read on a write. */
 export function useContainerValues(path: string): {
   values: Record<string, PageValues>
-  effectiveValues: Record<string, PageValues>
+  effectiveValues: Record<string, RowValues>
   setValueOverride: SetOverrides
 } {
   const [values, setValues] = useState<Record<string, PageValues>>({})
@@ -86,13 +86,14 @@ export function useContainerValues(path: string): {
   )
   const effectiveValues = useMemo(() => {
     if (!valueOverride) return values
-    const out = { ...values }
+    const out: Record<string, RowValues> = { ...values }
     for (const [id, e] of Object.entries(valueOverride)) {
       const prior: PageValues | undefined = values[id]
       out[id] = {
         createdAt: prior?.createdAt ?? null,
         modifiedAt: prior?.modifiedAt ?? null,
         frontmatter: e.fm,
+        contextValues: e.contexts,
       }
     }
     return out

@@ -163,12 +163,15 @@ export function PropertyPanel({
     [identity, schema, assetMap],
   )
   const dateFormat = useSetting('dateFormat')
-  const overrideFm = override?.[subjectId]?.fm
+  const pending = override?.[subjectId]
   const row = useMemo<ViewRow | null>(() => {
-    if (isSpace) return tree && spaceNode ? spaceRowOf(tree, spaceNode, overrideFm) : null
-    const frontmatter = overrideFm ?? base
-    return frontmatter ? pageRowOf(tree, { id: subjectId, path, title }, frontmatter) : null
-  }, [isSpace, tree, spaceNode, overrideFm, base, subjectId, path, title])
+    if (isSpace)
+      return tree && spaceNode ? spaceRowOf(tree, spaceNode, pending?.fm, pending?.contexts) : null
+    const frontmatter = pending?.fm ?? base
+    return frontmatter
+      ? pageRowOf(tree, { id: subjectId, path, title }, frontmatter, pending?.contexts)
+      : null
+  }, [isSpace, tree, spaceNode, pending, base, subjectId, path, title])
   const fm = row?.frontmatter ?? null
   const contextValues = row?.contextValues
 
@@ -180,7 +183,7 @@ export function PropertyPanel({
       schema,
       mutate,
       rowOf: (id) => (row?.id === id ? row : undefined),
-      apply: (id, next, write) => patchOverride(setOverride, id, next, write),
+      apply: (id, next, write, contexts) => patchOverride(setOverride, id, next, write, contexts),
     }
     return () => {
       writer.current = null

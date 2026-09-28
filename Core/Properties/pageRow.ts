@@ -21,26 +21,30 @@ export function pageRowOf(
   tree: NexusTree | null,
   page: { id: string; path: string; title: string },
   fm: PageFrontmatter,
+  contexts?: Record<string, string[]>,
 ): ViewRow {
   const links = tree?.contexts ? resolveTreeContextKeys(tree, fm as Record<string, unknown>) : null
-  const rider = fm.contextValues as Record<string, string[]> | undefined
   return {
     ...page,
     icon: tree?.pageMetadata[page.id]?.icon,
     frontmatter: fm,
     createdAt: null,
     modifiedAt: null,
-    ...(links && (links.size || rider)
-      ? { contextValues: { ...Object.fromEntries(links), ...rider } }
+    ...(links && (links.size || contexts)
+      ? { contextValues: { ...Object.fromEntries(links), ...contexts } }
       : {}),
   }
 }
 
 // A Space has no ID key on disk; this one exists to satisfy ViewRow and is never written back.
-export function spaceRowOf(tree: NexusTree, node: SpaceNode, fm?: PageFrontmatter): ViewRow {
+export function spaceRowOf(
+  tree: NexusTree,
+  node: SpaceNode,
+  fm?: PageFrontmatter,
+  contexts?: Record<string, string[]>,
+): ViewRow {
   const frontmatter = fm ?? ({ ...node.values, [ID_KEY]: node.id } as PageFrontmatter)
   const links = spaceLinksOf(tree).get(node.id)
-  const rider = frontmatter.contextValues as Record<string, string[]> | undefined
   return {
     id: node.id,
     title: node.title,
@@ -49,7 +53,7 @@ export function spaceRowOf(tree: NexusTree, node: SpaceNode, fm?: PageFrontmatte
     frontmatter,
     createdAt: null,
     modifiedAt: null,
-    ...(links || rider ? { contextValues: { ...links, ...rider } } : {}),
+    ...(links || contexts ? { contextValues: { ...links, ...contexts } } : {}),
   }
 }
 

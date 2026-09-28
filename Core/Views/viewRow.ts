@@ -13,6 +13,8 @@ export interface PageValues {
   modifiedAt: string | null
 }
 
+export type RowValues = PageValues & Pick<ViewRow, 'contextValues'>
+
 /** `frontmatter` is REQUIRED: when values aren't loaded yet, the flatten step supplies an identity-only entry so the row still sorts/groups/filters on intrinsic fields. */
 export interface ViewRow {
   id: string

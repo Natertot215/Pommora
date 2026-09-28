@@ -2,7 +2,11 @@ import type { Dispatch, SetStateAction } from 'react'
 import type { PageFrontmatter } from '@pommora/core/Nexus/schemas'
 
 // `write` is the save while it's pending and the settle count it took once it lands, so a read retires only what settled before it was issued.
-type OverrideEntry = { fm: PageFrontmatter; write: Promise<boolean> | number }
+type OverrideEntry = {
+  fm: PageFrontmatter
+  contexts?: Record<string, string[]>
+  write: Promise<boolean> | number
+}
 export type Overrides = Record<string, OverrideEntry>
 export type SetOverrides = Dispatch<SetStateAction<Overrides | null>>
 
@@ -15,14 +19,21 @@ export const patchOverride = (
   pageId: string,
   fm: PageFrontmatter,
   write: Promise<boolean>,
+  contexts?: Record<string, string[]>,
 ): void => {
-  set((prev) => ({ ...prev, [pageId]: { fm, write } }))
+  set((prev) => {
+    const held = prev?.[pageId]?.contexts
+    return {
+      ...prev,
+      [pageId]: { fm, contexts: contexts ? { ...held, ...contexts } : held, write },
+    }
+  })
   // A refused write never pushes the values that would retire its override, so the override leaves with the refusal.
   void write.then((landed) =>
     set((prev) => {
       const entry = prev?.[pageId]
       if (entry?.write !== write) return prev
-      if (landed) return { ...prev, [pageId]: { fm: entry.fm, write: settle() } }
+      if (landed) return { ...prev, [pageId]: { ...entry, write: settle() } }
       const { [pageId]: _, ...rest } = prev as Overrides
       return Object.keys(rest).length ? rest : null
     }),

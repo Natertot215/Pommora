@@ -43,15 +43,8 @@ export function resolveFieldValue(
   if (propertyId === RESERVED_PROPERTY_ID.title) return { kind: 'select', value: row.title }
   if (propertyId === RESERVED_PROPERTY_ID.createdAt) return stampValue(row.createdAt)
   if (propertyId === RESERVED_PROPERTY_ID.modifiedAt) return stampValue(row.modifiedAt)
-  {
-    const patched = (row.frontmatter as Record<string, unknown>).contextValues
-    const fromPatch =
-      patched != null && typeof patched === 'object'
-        ? (patched as Record<string, string[] | undefined>)[propertyId]
-        : undefined
-    const ids = fromPatch ?? row.contextValues?.[propertyId]
-    if (ids !== undefined) return ids.length ? { kind: 'context', value: ids } : NULL_VALUE
-  }
+  const ids = row.contextValues?.[propertyId]
+  if (ids !== undefined) return ids.length ? { kind: 'context', value: ids } : NULL_VALUE
   const def = schema.find((d) => d.id === propertyId)
   if (!def) return NULL_VALUE
   let m = resolvedByFm.get(row.frontmatter)

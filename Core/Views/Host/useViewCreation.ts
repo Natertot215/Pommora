@@ -5,7 +5,6 @@ import { UNGROUPED } from '@pommora/core/Views/viewRow'
 import type { PageFrontmatter } from '@pommora/core/Nexus/schemas'
 import { settle } from '../../Properties/valueOverride'
 import {
-  applyContextAtRoot,
   applyValueAtRoot,
   isBlankValue,
   type PropertyValue,
@@ -90,13 +89,13 @@ export function useViewCreation(getCfg: () => ViewCreationConfig): ViewCreation 
     if (entries.length === 0) return
     c.setValueOverride((prev) => {
       let patched = frontmatterOf(c.values, pageId) as Record<string, unknown>
+      let contexts: Record<string, string[]> | undefined
       for (const [propId, value] of entries) {
         const def = c.schema.find((d) => d.id === propId)
         if (def) patched = applyValueAtRoot(patched, def, value)
-        else if (value.kind === 'context')
-          patched = applyContextAtRoot(patched, propId, value.value)
+        else if (value.kind === 'context') contexts = { ...contexts, [propId]: value.value }
       }
-      return { ...prev, [pageId]: { fm: patched as PageFrontmatter, write: settle() } }
+      return { ...prev, [pageId]: { fm: patched as PageFrontmatter, contexts, write: settle() } }
     })
   }
   const glideToRow = (pageId: string): void => {
