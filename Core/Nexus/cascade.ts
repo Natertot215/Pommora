@@ -18,13 +18,21 @@ import { settingOf } from '../Settings/personalization'
 import { rewriteTileConnections } from '../Tiles/tilesFile'
 import type { TileHostRef } from '../Tiles/tiles'
 import { readLink } from '../Connections/linkValue'
-import { liveIdIndex } from './valuesChanged'
-import type { StrippedLink } from '../Trash/record'
+import { liveIdIndex, livePathOf } from './valuesChanged'
+import { ID_KEY } from './identityMark'
+import { asString } from './coerce'
+import { stampListed } from '../Properties/keyHolders'
 
 export interface CascadeReport {
   pages: string[]
   hosts: TileHostRef[]
   warning?: string
+}
+
+export interface StrippedLink {
+  page: string
+  property: string
+  value: string
 }
 
 export interface DeleteCascade {
@@ -69,14 +77,19 @@ export async function deleteCascade(
       .filter((rel) => held.has(rel) && rel !== deleted && !rel.startsWith(`${deleted}/`))
       .map((rel) => join(root, rel))
     const swept = await sweepGovernedRoots(root, files, {
-      raw: (raw, file) => stripKeys(...named(raw).map(({ key }) => key))(raw, file),
+      raw: (raw, file) => {
+        const id = asString(raw[ID_KEY])
+        if (id !== undefined && livePathOf(root, id) === null) return null
+        return stripKeys(...named(raw).map(({ key }) => key))(raw, file)
+      },
     })
-    const links = [...swept.touched.values()].flatMap((before) => {
-      const page = stampedId(before)
-      return page
-        ? named(splitFrontmatter(before)).map(({ property, value }) => ({ page, property, value }))
-        : []
-    })
+    const links: StrippedLink[] = []
+    for (const [file, before] of swept.touched) {
+      const page = stampedId(before) ?? (await stampListed(root, file))
+      if (!page) continue
+      for (const { property, value } of named(splitFrontmatter(before)))
+        links.push({ page, property, value })
+    }
     return {
       cascade: {
         pages: [...swept.touched.keys()].map((file) => relative(root, file)),
