@@ -204,6 +204,22 @@ describe('the Trash pane', () => {
     expect(older).toHaveBeenCalledTimes(1)
   })
 
+  it('a restore here that is refused leaves the bundle’s Undo on the chord', async () => {
+    resetUndo()
+    const { bundlePath } = listed[0]
+    notifyTrashed('Alpha', { trashed: { bundlePath } })
+    mutated.mockResolvedValue({ ok: false, error: { code: 'io', message: 'No.' } })
+    picked = 'restore'
+    const item = host?.querySelector('.trash-row') as HTMLElement
+    await act(async () => {
+      item.dispatchEvent(new MouseEvent('contextmenu', { bubbles: true }))
+    })
+    mutated.mockClear()
+    expect(undoValue(null)).toBe(true)
+    await act(async () => {})
+    expect(mutated).toHaveBeenCalledWith({ op: 'restore', bundlePath })
+  })
+
   it('a Restore All here spends each bundle’s Undo', async () => {
     listed = [row({ title: 'Alpha' }), row({ title: 'Beta' })]
     await act(async () => nexus('B'))
