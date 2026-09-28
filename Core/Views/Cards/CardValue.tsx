@@ -1,9 +1,13 @@
 import { EmptyValue } from '@pommora/uix/Elements/EmptyValue'
-import { useContext, useRef, useState } from 'react'
+import { useContext, useEffect, useRef, useState } from 'react'
 import type { ResolvedColumn, ViewRow } from '@pommora/core/Views/viewRow'
 import { isBlankValue, type PropertyValue } from '@pommora/core/Properties/propertyValue'
 import type { ColumnStyle } from '@pommora/core/Properties/columnStyles'
-import { cellMenuContextFor, cellMenuModel } from '@pommora/core/Actions/cellMenu'
+import {
+  type CellMenuAction,
+  cellMenuContextFor,
+  cellMenuModel,
+} from '@pommora/core/Actions/cellMenu'
 import { parseStyleAction } from '@pommora/core/Actions/columnMenu'
 import { cx } from '@pommora/uix/Utilities/cx'
 import { isSecondaryClick } from '@pommora/uix/Interactions/chords'
@@ -11,20 +15,25 @@ import { text } from '@pommora/uix/Theme/typography.css'
 import { columnType, resolveFieldValue } from '../../Properties/value'
 import { GhostSuppress } from '@pommora/uix/Interactions/ghostCreate'
 import { Cell } from '../../Properties/Cells/Cell'
-import { linkAlias, linkValueFromRename } from '@pommora/core/Connections/linkValue'
 import {
   linkValueMenuTarget,
   showConnectionMenu,
 } from '../../Interface/Menus/connectionMenuActions'
 import { PropertyValueInput } from '../../Properties/Pickers/PropertyValueInput'
 import type { ValueContext } from '../../Properties/valueContext'
-import { EditableInput } from '@pommora/uix/Fields/EditableInput'
-import { fillInput } from '@pommora/uix/Fields/fields.css'
-import { numberDivisor } from '../../Properties/formatValue'
-import { sharedValueClickAction } from '../../Properties/Pickers/valueClick'
+import { numberBarCapable } from '../../Properties/formatValue'
+import {
+  runValueIntent,
+  type ValueIntent,
+  valueClickIntent,
+  valueMenuIntent,
+} from '../../Properties/Pickers/valueClick'
 import { fileChipIndex, pickFileInto, runFileMenuAction } from '../../Properties/Pickers/filePick'
 import { popMenu } from '../../Actions/menuActions'
+import { openWebLink } from '../../Web/openWebLink'
 import { fillsBlank } from './cardValueInput'
+
+export type CardPickerKind = 'picker' | 'dateTime' | 'popover' | 'rename'
 
 export function CardValue({
   row,
@@ -46,7 +55,7 @@ export function CardValue({
   onHide: (colId: string) => void
   onOpenPicker: (
     column: ResolvedColumn,
-    kind: 'picker' | 'dateTime' | 'link',
+    kind: CardPickerKind,
     anchor: HTMLElement,
     clickX?: number,
   ) => void
@@ -54,79 +63,78 @@ export function CardValue({
   allowInlineRemove: boolean
 }): React.JSX.Element {
   const anchorRef = useRef<HTMLSpanElement>(null)
-  const [mode, setMode] = useState<null | 'editor' | 'rename'>(null)
-  const dismiss = (): void => setMode(null)
+  const [editing, setEditing] = useState(false)
+  // The view's ghost stands down while this value's native menu or inline field owns the pointer.
+  const holdGhost = useContext(GhostSuppress)
+  useEffect(() => {
+    if (!editing) return
+    let done = (): void => {}
+    void holdGhost(() => new Promise<void>((settle) => (done = settle)))
+    return () => done()
+  }, [editing, holdGhost])
   const commit = (v: PropertyValue | null): void => onCommit(column, v)
 
   const t = columnType(column, ctx.schema)
   const v = resolveFieldValue(row, column.id, ctx.schema)
-  const schemaDef = ctx.schema.find((d) => d.id === column.id)
+  const def = ctx.schema.find((d) => d.id === column.id)
+
+  const runIntent = (
+    intent: ValueIntent | null,
+    target: EventTarget | null,
+    clickX?: number,
+  ): boolean => {
+    const open = (kind: CardPickerKind): void => {
+      if (anchorRef.current) onOpenPicker(column, kind, anchorRef.current, clickX)
+    }
+    return runValueIntent(intent, {
+      commit: ({ value }) => commit(value),
+      file: () => {
+        if (def) pickFileInto(def, v, fileChipIndex(target), commit)
+      },
+      picker: () => open('picker'),
+      dateTime: () => open('dateTime'),
+      rename: () => open('rename'),
+      numberPicker: () => open('popover'),
+      edit: () => setEditing(true),
+      open: ({ url }) => openWebLink(url),
+      hide: () => onHide(column.id),
+    })
+  }
+  const runMenuIntent = (action: CellMenuAction): boolean =>
+    runIntent(valueMenuIntent(action), null)
 
   const onClick = (e: React.MouseEvent): void => {
     if (isSecondaryClick(e)) return
     e.stopPropagation()
     // React events cross portals along the component tree: a click inside the picker bubbles back through this span and would re-open what the pick just dismissed.
     if (!e.currentTarget.contains(e.target as Node)) return
-    const openPicker = (kind: 'picker' | 'dateTime' | 'link'): void => {
-      if (anchorRef.current) onOpenPicker(column, kind, anchorRef.current, e.clientX)
-    }
-    const shared = sharedValueClickAction(t, v)
-    if (shared) {
-      if (shared.kind === 'commit') commit(shared.value)
-      else if (shared.kind === 'file') {
-        if (schemaDef) pickFileInto(schemaDef, v, fileChipIndex(e.target), commit)
-      } else openPicker(shared.kind)
-    } else if (t === 'number') {
-      setMode('editor')
-    } else if (t === 'link') {
-      openPicker('link')
-    }
+    runIntent(valueClickIntent(t, v, style.look, def), e.target, e.clientX)
   }
 
-  // The view's ghost stands down while this value's native menu owns the pointer.
-  const holdGhost = useContext(GhostSuppress)
   const onContextMenu = async (e: React.MouseEvent): Promise<void> => {
     e.preventDefault()
     e.stopPropagation()
     // Portal events bubble the component tree: a right-click inside an open picker arrives here too — swallow it, never pop a mis-targeted menu.
     if (!e.currentTarget.contains(e.target as Node)) return
     if (t === 'link') {
-      const target = linkValueMenuTarget(
-        v.kind === 'link' ? v.value : '',
-        (action) => {
-          if (action === 'link:clear') return commit(null)
-          if (action === 'link:hide') return onHide(column.id)
-          if (action === 'rename') return setMode('rename')
-          if (anchorRef.current) onOpenPicker(column, 'link', anchorRef.current)
-        },
-        true,
-      )
+      const target = linkValueMenuTarget(v.kind === 'link' ? v.value : '', runMenuIntent, true)
       if (target) {
         await holdGhost(async () => showConnectionMenu(target))
         return
       }
     }
-    const barCapable = t === 'number' && numberDivisor(schemaDef) !== undefined
     const chip = fileChipIndex(e.target)
     const menuCtx = cellMenuContextFor(t, style, !isBlankValue(v), {
       hideable: true,
-      barCapable,
+      barCapable: numberBarCapable(def),
       onChip: chip !== null,
     })
     if (!menuCtx) return
     const action = await holdGhost(() => popMenu(cellMenuModel(menuCtx)))
     if (!action) return
-    if (runFileMenuAction(action, schemaDef, v, chip, commit)) return
-    if (action === 'cell:clear') commit(null)
-    else if (action === 'cell:hide') onHide(column.id)
-    else if (action === 'cell:edit') {
-      if (t === 'link' && anchorRef.current) onOpenPicker(column, 'link', anchorRef.current)
-      else setMode('editor')
-    } else if (action === 'cell:rename') setMode('rename')
-    else if (action.startsWith('style:')) {
-      const parsed = parseStyleAction(action)
-      if (parsed) onStyle(column.id, parsed.key, parsed.value)
-    }
+    if (runFileMenuAction(action, def, v, chip, commit) || runMenuIntent(action)) return
+    const parsed = parseStyleAction(action)
+    if (parsed) onStyle(column.id, parsed.key, parsed.value)
   }
 
   return (
@@ -139,21 +147,13 @@ export function CardValue({
       onClick={onClick}
       onContextMenu={onContextMenu}
     >
-      {mode === 'rename' ? (
-        <EditableInput
-          initial={(v.kind === 'link' && linkAlias(v.value)) || ''}
-          className={fillInput}
-          caretAtEnd
-          onCommit={(raw) => {
-            dismiss()
-            commit(linkValueFromRename(raw, v.kind === 'link' ? v.value : ''))
-          }}
-          onCancel={dismiss}
+      {editing && def ? (
+        <PropertyValueInput
+          def={def}
+          current={v}
+          onCommit={commit}
+          onClose={() => setEditing(false)}
         />
-      ) : mode === 'editor' ? (
-        <PropertyValueInput type={t} current={v} onCommit={commit} onClose={dismiss} />
-      ) : isBlankValue(v) && fillsBlank(t) ? (
-        <EmptyValue className={cx('card-value-empty', text.caption.emphasized)} />
       ) : (
         <Cell
           row={row}
@@ -161,9 +161,12 @@ export function CardValue({
           ctx={ctx}
           hideIcon={false}
           style={style}
-          {...(t !== 'multiSelect' || allowInlineRemove
-            ? { remove: (next: PropertyValue | null) => commit(next) }
-            : {})}
+          empty={
+            fillsBlank(t) ? (
+              <EmptyValue className={cx('card-value-empty', text.caption.emphasized)} />
+            ) : undefined
+          }
+          {...(t !== 'multiSelect' || allowInlineRemove ? { remove: commit } : {})}
         />
       )}
     </span>

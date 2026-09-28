@@ -8,8 +8,6 @@ import { ghostAnchorProps } from '@pommora/uix/Interactions/ghostCreate'
 import { DropLine } from '@pommora/uix/Interactions/DropLine'
 import { nexusReorderIndex } from './paneDrop'
 import { moveItem } from '@pommora/uix/Utilities/moveItem'
-import { TextPicker } from '@pommora/uix/Pickers/TextPicker'
-import { solidColorCss } from '@pommora/uix/Theme/ramp'
 import { cx } from '@pommora/uix/Utilities/cx'
 import { revealTarget } from '@pommora/uix/Interactions/hover-reveal.css'
 import { Reveal } from '@pommora/uix/Animations/Reveal'
@@ -22,8 +20,8 @@ import {
 } from '@pommora/core/Properties/propertyValue'
 import type { PageFrontmatter } from '@pommora/core/Nexus/schemas'
 import type { ResolvedColumn, ViewRow } from '@pommora/core/Views/viewRow'
-import { linkAlias, linkValueFromRename } from '@pommora/core/Connections/linkValue'
 import { propertyMenuModel } from '@pommora/core/Actions/propertyMenu'
+import { type CellMenuAction, cellMenuModel } from '@pommora/core/Actions/cellMenu'
 import { Cell } from './Cells/Cell'
 import {
   PropertyPicker,
@@ -37,7 +35,13 @@ import { useValuesEpoch } from '../Views/Host/useContainerValues'
 import { PropertyValueInput } from './Pickers/PropertyValueInput'
 import { resolveFieldValue } from './value'
 import { buildValueContext, type ValueContext } from './valueContext'
-import { sharedValueClickAction } from './Pickers/valueClick'
+import {
+  runValueIntent,
+  type ValueIntent,
+  valueClickIntent,
+  valueMenuIntent,
+} from './Pickers/valueClick'
+import { openWebLink } from '../Web/openWebLink'
 import { fileChipIndex, fileValueMenu, pickFileInto } from './Pickers/filePick'
 import { useCapitalizeMetadata } from './Cells/columnLabel'
 import { contextPaneTargets, type PaneTarget, schemaTargets } from './Cells/PropertyTypes'
@@ -87,6 +91,7 @@ export function PropertyPanel({
   const [editing, setEditing] = useState<Editing>(null)
   const [addOpen, setAddOpen] = useState<GroupKey | null>(null)
   const triggerRef = useRef<HTMLElement | null>(null)
+  const rootRef = useRef<HTMLDivElement>(null)
   const addRefs = useRef<Record<GroupKey, HTMLButtonElement | null>>({
     contexts: null,
     properties: null,
@@ -274,6 +279,25 @@ export function PropertyPanel({
   )
 
   const reveal = (id: string): void => setRevealed((prev) => new Set([...prev, id]))
+  const runIntent = (
+    def: PropertyDefinition,
+    current: PropertyValue,
+    intent: ValueIntent | null,
+    from: EventTarget | null,
+  ): void => {
+    const editAs = (mode: NonNullable<Editing>['mode']) => () => setEditing({ id: def.id, mode })
+    runValueIntent(intent, {
+      commit: ({ value }) => (value === null ? emptyRow(def.id, true) : commit(def.id, value)),
+      file: () => pickFileInto(def, current, fileChipIndex(from), (next) => commit(def.id, next)),
+      picker: editAs('picker'),
+      dateTime: editAs('picker'),
+      edit: editAs('editor'),
+      rename: editAs('rename'),
+      open: ({ url }) => openWebLink(url),
+      numberPicker: null,
+      hide: null,
+    })
+  }
   const editRow = (
     def: PropertyDefinition,
     el: HTMLElement,
@@ -281,17 +305,7 @@ export function PropertyPanel({
   ): void => {
     triggerRef.current = el
     const current = row ? resolveFieldValue(row, def.id, schema) : NULL_VALUE
-    const shared = sharedValueClickAction(def.type, current)
-    if (shared) {
-      if (shared.kind === 'commit') {
-        commit(def.id, shared.value)
-        if (def.type === 'checkbox' && shared.value === null) reveal(def.id)
-      } else if (shared.kind === 'file') {
-        pickFileInto(def, current, fileChipIndex(from), (next) => commit(def.id, next))
-      } else setEditing({ id: def.id, mode: 'picker' })
-      return
-    }
-    if (def.type === 'number' || def.type === 'link') setEditing({ id: def.id, mode: 'editor' })
+    runIntent(def, current, valueClickIntent(def.type, current), from)
   }
   const emptyRow = (id: string, keep: boolean): void => {
     commit(id, null)
@@ -311,16 +325,13 @@ export function PropertyPanel({
       void fileValueMenu(def, value, target, (next) => commit(id, next))
       return true
     }
-    const link =
-      value.kind === 'link'
-        ? linkValueMenuTarget(value.value, (action) => {
-            if (action === 'link:clear') return emptyRow(id, true)
-            if (action === 'rename' || action === 'editLink')
-              setEditing({ id, mode: action === 'editLink' ? 'editor' : 'rename' })
-          })
-        : null
-    if (!link) return false
-    showConnectionMenu(link)
+    if (!def || value.kind !== 'link') return false
+    const run = (action: CellMenuAction | null): void => {
+      if (action) runIntent(def, value, valueMenuIntent(action), null)
+    }
+    const link = linkValueMenuTarget(value.value, run)
+    if (link) showConnectionMenu(link)
+    else void popMenu(cellMenuModel({ kind: 'link', filled: true })).then(run)
     return true
   }
   const revealAndEdit = (id: string, def?: PropertyDefinition): void => {
@@ -328,7 +339,7 @@ export function PropertyPanel({
     reveal(id)
     requestAnimationFrame(() => {
       const el =
-        document.querySelector<HTMLElement>(`[data-property-row="${id}"]`) ??
+        rootRef.current?.querySelector<HTMLElement>(`[data-property-row="${id}"]`) ??
         addRefs.current[isContextRow(id) ? 'contexts' : 'properties']
       if (def && el) return editRow(def, el)
       triggerRef.current = el
@@ -336,10 +347,6 @@ export function PropertyPanel({
     })
   }
 
-  const rawLinkOf = (id: string): string => {
-    const v = row ? resolveFieldValue(row, id, schema) : NULL_VALUE
-    return v.kind === 'link' ? v.value : ''
-  }
   const editingDef = editing ? schema.find((d) => d.id === editing.id) : undefined
   const panelTarget = ((): PickTarget | null => {
     if (!editing || !row || editing.mode !== 'picker') return null
@@ -384,6 +391,7 @@ export function PropertyPanel({
               className={s.value}
               data-property-row={id}
               onContextMenu={(e) => {
+                triggerRef.current = e.currentTarget
                 if (!valueMenu(id, current, e.target)) return
                 e.preventDefault()
                 e.stopPropagation()
@@ -392,20 +400,21 @@ export function PropertyPanel({
             >
               {editing?.id === id && editing.mode === 'editor' && def ? (
                 <PropertyValueInput
-                  type={def.type}
+                  def={def}
                   current={current}
                   onCommit={(next) => commit(id, next)}
                   onClose={() => setEditing(null)}
                 />
               ) : (
-                (Cell({
-                  row,
-                  column,
-                  ctx,
-                  hideIcon: false,
-                  style: { look: 'standard', ...dateDefaults(dateFormat) },
-                  remove: (next) => commit(id, next),
-                }) ?? <EmptyValue className={s.empty} />)
+                <Cell
+                  row={row}
+                  column={column}
+                  ctx={ctx}
+                  hideIcon={false}
+                  style={{ look: 'standard', ...dateDefaults(dateFormat) }}
+                  remove={(next) => commit(id, next)}
+                  empty={<EmptyValue className={s.empty} />}
+                />
               )}
             </span>
           }
@@ -491,17 +500,14 @@ export function PropertyPanel({
             )
           })}
         </div>
-        {editing?.mode === 'rename' && (
-          <TextPicker
-            open
-            triggerRef={triggerRef}
-            value={linkAlias(rawLinkOf(editing.id)) ?? ''}
-            accent={solidColorCss(editingDef?.link_color)}
-            onCommit={(alias) => {
-              commit(editing.id, linkValueFromRename(alias, rawLinkOf(editing.id)))
-              setEditing(null)
-            }}
-            onDismiss={() => setEditing(null)}
+        {editing?.mode === 'rename' && editingDef && row && (
+          <PropertyValueInput
+            alias
+            popover={{ open: true, triggerRef }}
+            def={editingDef}
+            current={resolveFieldValue(row, editing.id, schema)}
+            onCommit={(next) => commit(editing.id, next)}
+            onClose={() => setEditing(null)}
           />
         )}
         <PropertyPicker
@@ -527,9 +533,9 @@ export function PropertyPanel({
     )
   }
 
-  return panelHost === 'dropdown' ? (
-    <div className={s.frame}>{body()}</div>
-  ) : (
-    <div className="window-panel-column">{body()}</div>
+  return (
+    <div ref={rootRef} className={panelHost === 'dropdown' ? s.frame : 'window-panel-column'}>
+      {body()}
+    </div>
   )
 }

@@ -1,12 +1,9 @@
 import { useState } from 'react'
 import { useLatest } from '@pommora/uix/Utilities/stableApi'
-import { TextPicker } from '@pommora/uix/Pickers/TextPicker'
 import { useHeld } from '@pommora/uix/Animations/useExitPresence'
 import type { PropertyValue } from '@pommora/core/Properties/propertyValue'
-import { solidColorCss } from '@pommora/uix/Theme/ramp'
-import { NumberValuePicker } from '../../Properties/Pickers/NumberValuePicker'
+import { PropertyValueInput } from '../../Properties/Pickers/PropertyValueInput'
 import { PropertyPicker } from '../../Properties/Pickers/PropertyPicker'
-import { editorText, parseEditorValue } from '../../Properties/parseEditorValue'
 import { useSession } from '../../Session/store'
 
 export function ValuePickPresenter(): React.JSX.Element | null {
@@ -18,17 +15,6 @@ export function ValuePickPresenter(): React.JSX.Element | null {
   if (!shown) return null
   const { def, commit, style } = shown
   const current = picked?.id === shown.id ? picked.value : shown.current
-  if (def.type === 'number')
-    return (
-      <NumberValuePicker
-        open={pending !== null}
-        triggerRef={triggerRef}
-        def={def}
-        current={current}
-        onCommit={commit}
-        onDismiss={dismiss}
-      />
-    )
   if (def.type === 'dateTime')
     return (
       <PropertyPicker
@@ -49,17 +35,12 @@ export function ValuePickPresenter(): React.JSX.Element | null {
       />
     )
   return (
-    <TextPicker
-      open={pending !== null}
-      triggerRef={triggerRef}
-      value={editorText(current)}
-      accent={solidColorCss(def.link_color)}
-      onCommit={(raw) => {
-        const next = parseEditorValue(def.type, raw, current)
-        if (next !== undefined) commit(next)
-        dismiss()
-      }}
-      onDismiss={dismiss}
+    <PropertyValueInput
+      popover={{ open: pending !== null, triggerRef }}
+      def={def}
+      current={current}
+      onCommit={commit}
+      onClose={dismiss}
     />
   )
 }

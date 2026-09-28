@@ -96,8 +96,8 @@ describe('cellMenuModel', () => {
   it('link (a filled Link cell): Edit + Rename + Clear, no Style (its look is per-property)', () => {
     const m = cellMenuModel({ kind: 'link', filled: true })
     expect(m.map((i) => [i.label, i.action])).toEqual([
-      ['Edit', 'cell:edit'],
-      ['Rename', 'cell:rename'],
+      ['Edit', 'editLink'],
+      ['Rename', 'rename'],
       ['Clear', 'cell:clear'],
     ])
     expect(m.some((i) => i.submenu)).toBe(false)
@@ -105,7 +105,7 @@ describe('cellMenuModel', () => {
 
   it('link (an empty Link cell): Edit alone — Rename/Clear are no-ops with no value', () => {
     const m = cellMenuModel({ kind: 'link', filled: false })
-    expect(m.map((i) => [i.label, i.action])).toEqual([['Edit', 'cell:edit']])
+    expect(m.map((i) => [i.label, i.action])).toEqual([['Edit', 'editLink']])
   })
 
   it('hideable (cards) appends a separated Remove after the base items', () => {

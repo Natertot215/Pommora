@@ -195,6 +195,13 @@ export function numberDivisor(cfg: NumberConfig | undefined): number | undefined
   return cfg?.number_family === 'percent' ? 100 : fractionDenominator(cfg)
 }
 
+/** A number offers the Bar look only where a divisor gives the bar a ceiling to fill. */
+export const numberBarCapable = (cfg: NumberConfig | undefined): boolean =>
+  numberDivisor(cfg) !== undefined
+
+export const barDivisor = (look: string | undefined, cfg: NumberConfig | undefined) =>
+  look === 'bar' ? numberDivisor(cfg) : undefined
+
 /** The number picker's leading glyph; a currency shows its narrow symbol, where a cell spells out the ambiguous ones (A$, CA$). */
 export function numberFormatGlyph(cfg: NumberConfig): string {
   if (cfg.number_family === 'percent') return '%'

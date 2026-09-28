@@ -1,10 +1,8 @@
 import { optionsOf, type PropertyDefinition } from '@pommora/core/Properties/properties'
 import type { CollectionNode, SetNode } from '@pommora/core/Nexus/tree'
 
-export function findOption(columnId: string, value: string, schema: PropertyDefinition[]) {
-  const def = schema.find((d) => d.id === columnId)
-  return optionsOf(def).find((o) => o.value === value)
-}
+export const findOption = (def: PropertyDefinition | undefined, value: string) =>
+  optionsOf(def).find((o) => o.value === value)
 
 function buildSetMap<T>(source: CollectionNode | SetNode, pick: (s: SetNode) => T): Map<string, T> {
   const m = new Map<string, T>()

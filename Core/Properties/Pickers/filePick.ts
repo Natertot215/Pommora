@@ -1,4 +1,4 @@
-// `sharedValueClickAction` can only NAME an action — it is pure and synchronous — while filling a file value is a three-step async effect, which would otherwise drift one way per surface tail.
+// `valueClickIntent` can only NAME an intent — it is pure and synchronous — while filling a file value is a three-step async effect, which would otherwise drift one way per surface tail.
 
 import { valueOr } from '@pommora/core/Contract/result'
 import type { PropertyDefinition } from '@pommora/core/Properties/properties'

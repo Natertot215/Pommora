@@ -59,15 +59,13 @@ import type { ValueContext } from '../../Properties/valueContext'
 import { NO_TRAIL, type TrailSegment } from '@pommora/uix/Elements/NavTrail'
 import { ancestryOf } from '../../Nexus/treeIndex'
 import { stabilize } from '../../Nexus/treeStabilize'
-import { TextPicker } from '@pommora/uix/Pickers/TextPicker'
-import { solidColorCss } from '@pommora/uix/Theme/ramp'
 import { type PickEntry, PropertyPicker } from '../../Properties/Pickers/PropertyPicker'
-import { NumberValuePicker } from '../../Properties/Pickers/NumberValuePicker'
 import { resolveFieldValue } from '../../Properties/value'
 import { TENTHS_SCALE } from '@pommora/core/Settings/personalization'
 import { propertyIcon, propertyTypeIconName } from '../../Properties/Cells/PropertyTypes'
-import { editorText, parseEditorValue } from '../../Properties/parseEditorValue'
-import { CardValue } from './CardValue'
+import { type CardPickerKind, CardValue } from './CardValue'
+import { PropertyValueInput } from '../../Properties/Pickers/PropertyValueInput'
+import { useHeld } from '@pommora/uix/Animations/useExitPresence'
 import {
   type AddEntry,
   addColumn,
@@ -87,11 +85,13 @@ import './cards-view.css'
 type ValuePickerRequest = {
   rowId: string
   column: ResolvedColumn
-  kind: 'picker' | 'dateTime' | 'link' | 'number' | 'file'
+  kind: CardPickerKind | 'file'
   anchor: HTMLElement
   clickX?: number
   revealOnCommit?: boolean
 }
+
+const PROPERTY_PICKER_KINDS = new Set<ValuePickerRequest['kind']>(['picker', 'dateTime', 'file'])
 
 type AddPickerRequest = {
   rowId: string
@@ -251,11 +251,14 @@ export function CardsView({ host }: { host: ViewHostApi }): React.JSX.Element {
     if (addPicker && !rowById.get(addPicker.rowId)) setAddPicker(null)
   }, [addPicker, rowById])
 
-  const valuePopup =
-    valuePicker && valuePicker.kind !== 'link' && valuePicker.kind !== 'number' ? valuePicker : null
+  const valuePopup = valuePicker && PROPERTY_PICKER_KINDS.has(valuePicker.kind) ? valuePicker : null
   const vRow = valuePicker && rowById.get(valuePicker.rowId)
   const vTarget = valuePicker && vRow ? pickTarget(vRow, valuePicker.column) : null
-  const vRaw = vTarget?.current?.kind === 'link' ? vTarget.current.value : undefined
+  const popoverOpen = valuePicker?.kind === 'popover' || valuePicker?.kind === 'rename'
+  const popover = useHeld(
+    popoverOpen && vTarget ? { ...vTarget, ...valuePicker } : null,
+    popoverOpen,
+  )
   const commitPicked = (v: PropertyValue | null, entry?: PickEntry): void => {
     const req = valuePicker ?? addPicker
     const row = req && rowById.get(req.rowId)
@@ -564,26 +567,15 @@ export function CardsView({ host }: { host: ViewHostApi }): React.JSX.Element {
         )}
         {interactions.iconPicker}
         {bannerEditor}
-        <TextPicker
-          open={valuePicker?.kind === 'link'}
-          onDismiss={() => setValuePicker(null)}
-          triggerRef={pickerAnchorRef}
-          value={editorText(vTarget?.current)}
-          accent={solidColorCss(vTarget?.def.link_color)}
-          onCommit={(raw) => {
-            const nv = parseEditorValue('link', raw, vTarget?.current)
-            if (nv !== undefined && (nv !== null || vRaw)) commitPicked(nv)
-            setValuePicker(null)
-          }}
-        />
-        {vTarget && (
-          <NumberValuePicker
-            open={valuePicker?.kind === 'number'}
-            triggerRef={pickerAnchorRef}
-            def={vTarget.def}
-            current={vTarget.current}
+        {popover && (
+          <PropertyValueInput
+            key={`${popover.rowId}:${popover.column.id}:${popover.kind}`}
+            popover={{ open: popoverOpen, triggerRef: pickerAnchorRef }}
+            def={popover.def}
+            current={popover.current}
+            alias={popover.kind === 'rename'}
             onCommit={commitPicked}
-            onDismiss={() => setValuePicker(null)}
+            onClose={() => setValuePicker(null)}
           />
         )}
         <PropertyPicker
@@ -615,10 +607,7 @@ export function CardsView({ host }: { host: ViewHostApi }): React.JSX.Element {
             setValuePicker({
               rowId: addPicker.rowId,
               column: addColumn(entry.id, tree),
-              kind:
-                src && (src.type === 'dateTime' || src.type === 'number' || src.type === 'file')
-                  ? src.type
-                  : 'link',
+              kind: src && (src.type === 'dateTime' || src.type === 'file') ? src.type : 'popover',
               anchor: addPicker.anchor,
               revealOnCommit: true,
             })

@@ -17,7 +17,7 @@ describe('a link naming a page', () => {
       ['Copy Link', 'title:copylink'],
       ['Copy Path', 'title:copypath'],
     ])
-    expect(rows({ surface: 'cell' })).toEqual([...rows(), ['Clear', 'link:clear']])
+    expect(rows({ surface: 'cell' })).toEqual([...rows(), ['Clear', 'cell:clear']])
   })
 
   it('names editing the title once one exists', () => {
@@ -46,7 +46,7 @@ describe('a link naming a page', () => {
   })
 
   it('a card ends with the Remove every card value offers', () => {
-    expect(rows({ surface: 'cell', hideable: true }).at(-1)).toEqual(['Remove', 'link:hide'])
+    expect(rows({ surface: 'cell', hideable: true }).at(-1)).toEqual(['Remove', 'cell:hide'])
   })
 })
 
@@ -74,7 +74,7 @@ describe('a link naming an address', () => {
       ['Copy Link', 'title:copylink'],
       ['Rename', 'rename'],
       ['Edit Link', 'editLink'],
-      ['Clear', 'link:clear'],
+      ['Clear', 'cell:clear'],
     ])
   })
 

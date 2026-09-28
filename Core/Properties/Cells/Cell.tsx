@@ -1,5 +1,5 @@
 import type { ColumnStyle } from '@pommora/core/Properties/columnStyles'
-import type { PropertyValue } from '@pommora/core/Properties/propertyValue'
+import { isBlankValue, type PropertyValue } from '@pommora/core/Properties/propertyValue'
 import type { ResolvedColumn, ViewRow } from '@pommora/core/Views/viewRow'
 import { EntityIcon } from '../../Assets/EntityIcon'
 import { ProgressBar } from '@pommora/uix/Elements/ProgressBar'
@@ -7,8 +7,8 @@ import { colorNameFor } from '@pommora/uix/Theme/ramp'
 import { OverScroll } from '@pommora/uix/Interactions/OverScroll'
 import { resolveFileValue } from '../../Assets/assetUrl'
 import { FILE_CHIP_INDEX_ATTR, fileValueWithout } from '../Pickers/filePick'
-import { declaredType, fileName, resolveFieldValue } from '../value'
-import { formatDate, formatNumber, numberDivisor } from '../formatValue'
+import { fileName, resolveFieldValue } from '../value'
+import { barDivisor, formatDate, formatNumber } from '../formatValue'
 import { OptionChip } from './OptionChip'
 import { findOption } from './cellResolve'
 import { LinkCell } from './LinkCell'
@@ -24,6 +24,7 @@ export function Cell({
   style,
   showFullLink,
   remove,
+  empty,
 }: {
   row: ViewRow
   column: ResolvedColumn
@@ -32,6 +33,7 @@ export function Cell({
   style: ColumnStyle
   showFullLink?: boolean
   remove?: (next: PropertyValue | null) => void
+  empty?: React.JSX.Element
 }): React.JSX.Element | null {
   if (column.kind === 'title') {
     return (
@@ -43,9 +45,9 @@ export function Cell({
   }
 
   const v = resolveFieldValue(row, column.id, ctx.schema)
-  // A status value is a bare label on disk, indistinguishable from a select — the schema is the only thing that knows the declared type.
-  const dt = declaredType(column.id, ctx.schema)
   const def = ctx.schema.find((d) => d.id === column.id)
+  // A status value is a bare label on disk, indistinguishable from a select — the schema is the only thing that knows the declared type.
+  const dt = def?.type
 
   // Keyed off the schema TYPE rather than value presence, so a checkbox toggles in place without first assigning the property.
   if (dt === 'checkbox')
@@ -56,10 +58,11 @@ export function Cell({
         look={style.look}
       />
     )
+  if (empty !== undefined && isBlankValue(v)) return empty
 
   switch (v.kind) {
     case 'select': {
-      const opt = findOption(column.id, v.value, ctx.schema)
+      const opt = findOption(def, v.value)
       return (
         <OverScroll className="cell-chips">
           <OptionChip
@@ -76,7 +79,7 @@ export function Cell({
       return (
         <OverScroll className="cell-chips">
           {v.value.map((val) => {
-            const o = findOption(column.id, val, ctx.schema)
+            const o = findOption(def, val)
             return (
               <OptionChip
                 key={val}
@@ -117,14 +120,7 @@ export function Cell({
         </OverScroll>
       )
     case 'link':
-      return (
-        <LinkCell
-          raw={v.value}
-          def={ctx.schema.find((d) => d.id === column.id)}
-          look={style.look}
-          showFullLink={showFullLink}
-        />
-      )
+      return <LinkCell raw={v.value} def={def} look={style.look} showFullLink={showFullLink} />
 
     case 'dateTime':
       return (
@@ -133,9 +129,8 @@ export function Cell({
         </OverScroll>
       )
     case 'number': {
-      const def = ctx.schema.find((d) => d.id === column.id)
-      const divisor = numberDivisor(def)
-      if (style.look === 'bar' && divisor !== undefined) {
+      const divisor = barDivisor(style.look, def)
+      if (divisor !== undefined) {
         return (
           <span className="cell-bar">
             <ProgressBar fill={v.value / divisor} />

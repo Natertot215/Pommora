@@ -14,10 +14,10 @@ const schema: PropertyDefinition[] = [
 
 describe('findOption', () => {
   it('returns the option with its color (the chip tint)', () => {
-    expect(findOption('prop_tag', 'opt_a', schema)).toEqual({ value: 'opt_a', color: 'green' })
+    expect(findOption(schema[0], 'opt_a')).toEqual({ value: 'opt_a', color: 'green' })
   })
   it('returns undefined for an unknown value', () => {
-    expect(findOption('prop_tag', 'nope', schema)).toBeUndefined()
+    expect(findOption(schema[0], 'nope')).toBeUndefined()
   })
 })
 

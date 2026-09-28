@@ -64,8 +64,8 @@ export function showConnectionMenu(target: ConnMenuTarget): void {
       case 'editLink':
         target.apply?.(action)
         return
-      case 'link:clear':
-      case 'link:hide':
+      case 'cell:clear':
+      case 'cell:hide':
         target.onCell?.(action)
     }
   })

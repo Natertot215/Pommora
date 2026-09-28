@@ -19,7 +19,7 @@ beforeEach(() => {
   act(() =>
     root.render(
       <PropertyValueInput
-        type="number"
+        def={{ id: 'prop_n', name: 'Count', type: 'number' }}
         current={{ kind: 'number', value: 42 }}
         onCommit={onCommit}
         onClose={onClose}
