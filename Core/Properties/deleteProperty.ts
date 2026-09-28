@@ -1,5 +1,6 @@
 import { writePropertyBundle } from '../Trash/record'
-import { assignedIds, cachedValues, collectionFolders, patchCacheBlock } from './assignment'
+import { assignedIds, collectionFolders } from './assignment'
+import { cachedValues, patchCacheBlock } from './propertyCache'
 import { readRegistry, type PropertyRegistry, NO_PROPERTY } from './propertiesRegistry'
 import { removeFromRegistry } from './registryProperty'
 import { keyedHolders, keyHolderFiles } from './keyHolders'

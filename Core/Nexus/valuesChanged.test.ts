@@ -4,7 +4,9 @@ import type { NexusTree } from './tree'
 import { flushValueWrites, noteValueWrite, pageIdIndex } from './valuesChanged'
 
 const held = { tree: null as NexusTree | null }
-vi.mock('./liveTree', () => ({ getLiveTree: () => held.tree }))
+vi.mock('./liveTree', () => ({
+  heldTreeOf: (root: string) => (held.tree?.nexus.rootPath === root ? held.tree : null),
+}))
 
 const ROOT = '/nexus'
 const tree = (rootPath: string): NexusTree =>

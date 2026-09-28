@@ -13,7 +13,7 @@ import {
   SUBSTRING_OPS,
   savedView,
 } from '../Views/views'
-import { cachedValues, patchCacheBlock } from '../Properties/assignment'
+import { cachedValues, patchCacheBlock } from '../Properties/propertyCache'
 import {
   PROPERTY_TYPES,
   type PropertyDefinition,

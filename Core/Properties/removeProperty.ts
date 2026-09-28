@@ -1,4 +1,5 @@
-import { assignedIds, patchCacheBlock } from './assignment'
+import { assignedIds } from './assignment'
+import { patchCacheBlock } from './propertyCache'
 import { keyedHolders, keyHolderFiles } from './keyHolders'
 import { patchSidecar } from '../Files/sidecar'
 import { sidecarPath } from '../Paths/paths'

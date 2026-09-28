@@ -8,12 +8,8 @@ import { liveTreeOf } from '../Nexus/liveTree'
 import { restoreWorld } from './holdings'
 import { readJsonObject } from '../Files/atomicWrite'
 import { sidecarPath } from '../Paths/paths'
-import {
-  collectionFolders,
-  assignInner,
-  patchCacheBlock,
-  refillValues,
-} from '../Properties/assignment'
+import { collectionFolders, assignInner, refillValues } from '../Properties/assignment'
+import { patchCacheBlock } from '../Properties/propertyCache'
 import { isBlankRaw, namesGonePage } from '../Properties/propertyValue'
 import type { StrippedLink } from '../Nexus/cascade'
 import { createProperty } from '../Properties/registryProperty'

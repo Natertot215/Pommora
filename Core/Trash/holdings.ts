@@ -1,4 +1,4 @@
-// What the Trash holds, read only when a Link value needs somewhere in it to go: the bundles, the page titles they hold, and the pages and Spaces by ID.
+// What the Trash holds — its bundles, the page titles they hold, and the pages and Spaces they hold by ID — and the Link values a restore hands to it.
 
 import { basename, join, relative, titleFromPath } from '../Paths/posix'
 import { SPACE_SIDECAR, TRASH_DIR } from '../Paths/nexusPaths'
@@ -12,7 +12,7 @@ import { sweepGovernedRoots } from '../Properties/governedSweep'
 import { isBlankRaw } from '../Properties/propertyValue'
 import { BUNDLE_SUFFIX } from './bundle'
 import { readLiveSetting } from '../Settings/settings'
-import { frozenWorld } from '../Nexus/valuesChanged'
+import { titlesOf } from '../Nexus/valuesChanged'
 import type { NexusTree } from '../Nexus/tree'
 import type { Frozen } from '../Properties/propertyValue'
 import { type RecordFile, appendLinks, bundleArtifact, readRecord } from './record'
@@ -74,6 +74,18 @@ async function trashedTitles(root: string): Promise<Map<string, string>> {
     }
   }
   return newest
+}
+
+/** A restore's world: the pages the tree holds, and those landing with it. */
+function frozenWorld(tree: NexusTree, landing: readonly string[]): Frozen {
+  const held = titlesOf(tree)
+  const arriving = new Set(landing.map(normalizeTitle))
+  return {
+    holds: (title) => {
+      const key = normalizeTitle(title)
+      return held.has(key) || arriving.has(key)
+    },
+  }
 }
 
 /** What a restore may still name: the pages the tree holds and those landing with it, and, while Restore Links On Deletion is off and nothing parked would come back, the pages the Trash holds. */
