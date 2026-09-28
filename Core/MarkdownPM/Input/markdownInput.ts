@@ -24,7 +24,7 @@ import {
 } from './edits'
 import { renumberAfterNest } from '../Engine/listDragModel'
 import { applyEdit } from './applyEdit'
-import { fenceAt, type TextEdit } from '../Engine/markdownCode'
+import { fenceAt, lineIndexAt, type TextEdit } from '../Engine/markdownCode'
 import { refusedInAlias } from '../Guards/aliasGuard'
 import { commitAliasOnEnter } from '../Links/linkEdit'
 import { headingHash } from '../Links/headingHash'
@@ -33,7 +33,8 @@ import type { DocScan } from '../Engine/docScan'
 import type { MarkdownScope } from '../Engine/detect'
 import { commitCitation, seedTypedCitation } from '../Citations/citationActions'
 import { citationDeleteIntent } from '../Citations/citationEdits'
-import { docScan } from '../docCache'
+import { docLineIntentsOf, docScan } from '../docCache'
+import { prefixEndAt } from '../Engine/intents'
 import { editorHost } from '../api'
 
 const settingsOf = (view: EditorView) => view.state.facet(editorHost).settings()
@@ -106,8 +107,19 @@ const onForwardDelete = (view: EditorView): boolean => {
     return true
   if (scan.text[s.from] !== '\n') return false
   const r = scan.tables.find((r) => r.from === s.from + 1)
-  if (!r) return false
-  view.dispatch({ changes: { from: s.from, to: r.to }, userEvent: 'delete' })
+  if (r) {
+    view.dispatch({ changes: { from: s.from, to: r.to }, userEvent: 'delete' })
+    return true
+  }
+  const next = s.from + 1
+  if (lineIndexAt(scan, next) >= scan.citations.firstLine) return false
+  const visible = prefixEndAt(docLineIntentsOf(view.state.doc, 'page'), scan, next)
+  if (visible === next) return false
+  view.dispatch({
+    changes: { from: s.from, to: visible },
+    selection: { anchor: s.from },
+    userEvent: 'delete',
+  })
   return true
 }
 

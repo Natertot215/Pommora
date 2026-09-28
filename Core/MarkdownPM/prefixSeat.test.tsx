@@ -135,3 +135,27 @@ describe('the rule holds where a widget draws over the prefix, and for every way
     expect(view.state.selection.main.head).toBe(doc.indexOf('world'))
   })
 })
+
+describe('Delete at a line end joins the next line by its visible text', () => {
+  const CASES = [
+    ['a quote into a quote', '> hello\n> world', '> helloworld'],
+    ['a callout body into its head', '> [!note] Head\n> body', '> [!note] Headbody'],
+    ['a nested quote into a quote', '> a\n> > b', '> ab'],
+    ['a quoted code line', '> ```\n> one\n> two\n> ```', '> ```\n> onetwo\n> ```'],
+    ['a quote into a plain line', 'hello\n> world', 'helloworld'],
+  ] as const
+  for (const [name, doc, joined] of CASES)
+    it(name, async () => {
+      const at = doc.includes('one') ? doc.indexOf('one') + 3 : doc.indexOf('\n')
+      const view = await open(doc, at)
+      await press(view, 'Delete')
+      expect(view.state.doc.toString()).toBe(joined)
+    })
+
+  it('leaves the citations run to its own rules', async () => {
+    const doc = 'a[^1] [^2]\n\n[^1]: one\n[^2]: two'
+    const view = await open(doc, doc.indexOf('one') + 3)
+    await press(view, 'Delete')
+    expect(view.state.doc.toString()).not.toBe('a[^1] [^2]\n\n[^1]: onetwo')
+  })
+})
