@@ -68,7 +68,7 @@ async function restoreInner(
 
   const tree = await liveTreeOf(root)
   const roots = projectBaseline(tree).entries
-  const frozen = await restoreWorld(root, tree)
+  const frozen = def.type === 'link' ? await restoreWorld(root, tree) : {}
   const dropped: StrippedLink[] = []
   const values = Object.fromEntries(
     Object.entries(record.values).filter(([id, raw]) => {

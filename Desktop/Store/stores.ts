@@ -1,9 +1,9 @@
 import { foldKey } from '@pommora/core/Paths/caseFold'
-import type { KeyValueStore } from '@pommora/core/Platform/machine'
 import type {
   BaseRecord,
   ContentIndexStore,
   IndexedStat,
+  KeyValueStore,
   MatrixGraphRows,
   MatrixLinkRow,
   SyncStore,

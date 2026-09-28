@@ -13,7 +13,7 @@ import {
   SUBSTRING_OPS,
   savedView,
 } from '../Views/views'
-import { cachedValues, patchCacheBlock } from '../Properties/propertyCache'
+import { editCacheBlocks } from '../Properties/propertyCache'
 import {
   PROPERTY_TYPES,
   type PropertyDefinition,
@@ -308,22 +308,19 @@ export function goneEdit(tree: NexusTree, kind: MutableKind, rel: string): Confi
   }
 }
 
-function cacheEdit(e: OptionReach, cur: Raw): Raw | null {
-  const cached = cachedValues(cur, e.def.id)
-  if (!cached) return null
-  const values = { ...cached }
-  let touched = false
-  for (const [id, held] of Object.entries(cached)) {
-    const edited = editList(listOf(held), namesValue, e.value, e.edit)
-    if (!edited) continue
-    touched = true
-    if (edited.length) values[id] = edited
-    else delete values[id]
-  }
-  return touched
-    ? patchCacheBlock(cur, e.def.id, Object.keys(values).length ? { values } : undefined)
-    : null
-}
+const cacheEdit = (e: OptionReach, cur: Raw): Raw | null =>
+  editCacheBlocks(cur, [e.def.id], (cached) => {
+    const values = { ...cached }
+    let touched = false
+    for (const [id, held] of Object.entries(cached)) {
+      const edited = editList(listOf(held), namesValue, e.value, e.edit)
+      if (!edited) continue
+      touched = true
+      if (edited.length) values[id] = edited
+      else delete values[id]
+    }
+    return touched ? values : null
+  })
 
 type Container = { kind: 'collection' | 'set'; id: string; dir: string }
 

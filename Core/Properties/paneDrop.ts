@@ -5,7 +5,7 @@ import {
   regionScan,
   type SlotFor,
   withinRegion,
-} from '@pommora/uix/Interactions/frameDndModel'
+} from '@pommora/uix/Menus/frameDndModel'
 
 // The schema pane and the view-visibility pane derive from this vocabulary and refuse drops differently by design: the schema pane's bottom zone is the ordered nexus registry and reorders, the view pane's is a derived hidden list with no order and can't.
 // Title and every reserved property is never removable: the schema pane filters reserved ids out of both zones, the view pane refuses to hide Title.

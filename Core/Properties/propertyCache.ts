@@ -28,6 +28,26 @@ export function patchCacheBlock(
   return next
 }
 
+/** Edits `ids`' blocks through `edit`, which answers a block's next values or null to leave it, dropping a block it empties; answers the next sidecar, or null when nothing changed. */
+export function editCacheBlocks(
+  sidecar: Record<string, unknown>,
+  ids: readonly string[],
+  edit: (values: Record<string, unknown>) => Record<string, unknown> | null,
+): Record<string, unknown> | null {
+  let next: Record<string, unknown> | null = null
+  for (const id of ids) {
+    const values = cachedValues(next ?? sidecar, id)
+    const edited = values && edit(values)
+    if (edited)
+      next = patchCacheBlock(
+        next ?? sidecar,
+        id,
+        Object.keys(edited).length ? { values: edited } : undefined,
+      )
+  }
+  return next
+}
+
 /** Edits the values each Collection the tree lists as caching one of `propertyIds` holds, through `edit`, which answers a block's next values or null to leave it; answers the folders it wrote and how many it couldn't edit. */
 export async function editCaches(
   root: string,
@@ -42,17 +62,7 @@ export async function editCaches(
     const folder = join(root, node.path)
     let wrote = false
     const written = await patchSidecar(folder, 'collection', (cur) => {
-      let next: Record<string, unknown> | null = null
-      for (const id of ids) {
-        const values = cachedValues(next ?? cur, id)
-        const edited = values && edit(values)
-        if (edited)
-          next = patchCacheBlock(
-            next ?? cur,
-            id,
-            Object.keys(edited).length ? { values: edited } : undefined,
-          )
-      }
+      const next = editCacheBlocks(cur, ids, edit)
       wrote = next !== null
       return next
     }).catch(() => null)

@@ -36,6 +36,7 @@ const ROOT_VARS: VarWriters = {
     }
   },
   editorScale: (v) => ({ '--editor-scale': String(v ?? SETTING_DEFAULTS.editorScale) }),
+  accent: (v) => ({ '--accent': settingColorCss(v) }),
   connectionColor: (v) => ({ '--connection': settingColorCss(v) }),
   externalLinkColor: (v) => ({ '--link': settingColorCss(v) }),
   checkboxColor: (v) =>
@@ -75,7 +76,7 @@ export function applyPersonalizationKey<K extends keyof Personalization>(
       else el.style.setProperty(name, v)
     return
   }
-  // Anything in no table has no DOM effect at this seam: accent → applyAccent; defaultIcons → resolved per-render.
+  // Anything in no table has no DOM effect at this seam: defaultIcons → resolved per-render.
   const cls = ROOT_CLASSES[key]
   if (cls) el.classList.toggle(cls, value === true)
 }

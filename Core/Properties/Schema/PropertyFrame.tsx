@@ -49,8 +49,8 @@ import { PickerControl } from '@pommora/uix/Pickers/PickerControl'
 import { LinkEditor } from './LinkEditor'
 import { FrameSlide } from '@pommora/uix/Menus/FrameSlide'
 import { PANE_MIN_H, PANE_MIN_W } from '@pommora/uix/Menus/frame-slide.css'
-import { FrameDnd, RowShell, useFrameRegions } from '@pommora/uix/Interactions/FrameDnd'
-import type { FrameRow } from '@pommora/uix/Interactions/frameDndModel'
+import { FrameDnd, RowShell, useFrameRegions } from '@pommora/uix/Menus/FrameDnd'
+import type { FrameRow } from '@pommora/uix/Menus/frameDndModel'
 import { frameSlot, nexusReorderIndex, type PaneDrop } from '../paneDrop'
 import {
   CREATABLE_TYPES,

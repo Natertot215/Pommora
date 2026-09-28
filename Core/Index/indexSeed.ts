@@ -105,15 +105,6 @@ async function relCorpusPath(root: string, abs: string): Promise<string | null> 
   return outsideContent(rel, await readWatchScope(root)) ? null : rel
 }
 
-let reread: { db: ContentIndexStore | null; rels: string[]; cold: boolean } = {
-  db: null,
-  rels: [],
-  cold: true,
-}
-
-export const rereadSinceSeed = (): readonly string[] =>
-  contentIndexStore() === reread.db && !reread.cold ? reread.rels : []
-
 function recordPage(rel: string, content: string, stat: IndexedStat): PageRead {
   const read = extractPageIndex(rel, content)
   upsertPageIndex(rel, read.entry, stat)
@@ -184,12 +175,20 @@ export async function moveIndexPaths(root: string, oldAbs: string, newAbs: strin
   await indexWrittenPage(root, newAbs)
 }
 
-export async function seedContentIndex(root: string): Promise<void> {
+/** The pages a seed re-read, bound to the database it read them into; none when it built a cold index, bailed, or failed. */
+export interface SeedReread {
+  db: ContentIndexStore | null
+  rels: readonly string[]
+}
+
+const NONE_REREAD: SeedReread = { db: null, rels: [] }
+
+export async function seedContentIndex(root: string): Promise<SeedReread> {
   const indexed = readIndexedStats()
-  if (!indexed) return
+  if (!indexed) return NONE_REREAD
   // The handle this seed started against. Every await below is a window for a nexus switch to swap it; a seed that kept writing would pour the OLD corpus's rows into the NEW database, so it bails wherever the identity moved.
   const db0 = contentIndexStore()
-  reread = { db: db0, rels: [], cold: indexed.size === 0 }
+  const reread: string[] = []
   try {
     const rels = await nexusCorpus(root)
     const seen = new Set(rels)
@@ -206,18 +205,20 @@ export async function seedContentIndex(root: string): Promise<void> {
       if (prior && prior.mtimeMs === st.mtimeMs && prior.size === st.size) continue
       const content = await readTextOrNull(abs)
       if (content === null) continue
-      if (contentIndexStore() !== db0) return
+      if (contentIndexStore() !== db0) return NONE_REREAD
       // A maintaining writer that landed while this file's read was in flight left a fresher row than the snapshot knew — keep theirs; this read predates their write.
       const row = readIndexedStat(rel)
       if (row && (row.mtimeMs !== prior?.mtimeMs || row.size !== prior?.size)) continue
       recordPage(rel, content, { mtimeMs: st.mtimeMs, size: st.size })
-      reread.rels.push(rel)
+      reread.push(rel)
     }
-    if (contentIndexStore() !== db0) return
+    if (contentIndexStore() !== db0) return NONE_REREAD
     // Prune only what the pre-seed gate knew and the corpus no longer yields — a page born while the seed ran is absent from the snapshot and must survive this pass.
     for (const rel of indexed.keys()) if (!seen.has(rel)) removePathIndex(rel)
     markIndexReady()
+    return indexed.size === 0 ? NONE_REREAD : { db: db0, rels: reread }
   } catch (e) {
     console.error('content index: seed failed — queries fall back to scans:', errText(e))
+    return NONE_REREAD
   }
 }

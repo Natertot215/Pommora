@@ -1,9 +1,11 @@
 import { reportRefusal } from '@pommora/core/Interface/Notifications/notifications'
-import type { MutateRequest, RenameHost, RenameKind } from '@pommora/core/Nexus/mutateRequest'
+import type { MutateRequest, RenameKind } from '@pommora/core/Nexus/mutateRequest'
 import { contextAt, spaceAt } from '@pommora/core/Nexus/treePatch'
 import type { Slice } from './sessionState'
 import { dialer } from '../Platform/dialer'
 import { flushAllSaves } from './nexusSlice'
+
+export type RenameHost = 'detail' | 'sidebar' | 'matrix'
 
 interface RenameClaim {
   token: number

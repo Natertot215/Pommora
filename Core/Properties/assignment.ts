@@ -84,7 +84,7 @@ async function restoreCachedValues(
       live[id]?.kind === 'page' && live[id].path.startsWith(under) ? [[id, live[id]]] : [],
     ),
   )
-  const frozen = await restoreWorld(root, tree)
+  const frozen = def.type === 'link' ? await restoreWorld(root, tree) : {}
   // A cached Link naming a page gone leaves the cache: one whose page the Trash holds joins its bundle, one naming nothing is dropped.
   const gone =
     def.type === 'link'

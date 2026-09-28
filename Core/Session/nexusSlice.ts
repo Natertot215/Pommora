@@ -18,7 +18,7 @@ import {
   reorderChildrenInTree,
 } from '@pommora/core/Nexus/treePatch'
 import { stabilize } from '@pommora/core/Nexus/treeStabilize'
-import { applyAccent, applySystemAccent } from '@pommora/uix/Theme/ramp'
+import { applySystemAccent } from '@pommora/uix/Theme/ramp'
 import { applyPersonalization } from '../Settings/applyPersonalization'
 import { reconcileIndexOf } from '../Nexus/treeIndex'
 import { numberCheck } from '../Files/decoders'
@@ -214,9 +214,7 @@ export const createNexusSlice: Slice<NexusSlice> = (set, get) => {
           .then((r) => {
             systemAccentCache = valueOr(r, null)
           })
-      const systemColor = systemAccentCache
-      applyAccent(tree.accent, systemColor)
-      applySystemAccent(systemColor)
+      applySystemAccent(systemAccentCache)
       set({ personalization: tree.personalization, commands: tree.commands })
       applyPersonalization(tree.personalization)
     },
