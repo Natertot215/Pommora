@@ -2,7 +2,6 @@ export {
   MenuItem,
   MenuSeparator,
   MenuCaption,
-  MenuSegments,
   MenuTopRow,
   Menu,
   AccessoryButton,

@@ -134,10 +134,13 @@ describe('a delete through the confirmation', () => {
     })
   })
 
-  it('offers no Undo for a system-trash delete, which leaves no bundle', async () => {
-    mutate.mockResolvedValue({})
+  it('offers no Undo for a system-trash delete, which leaves no bundle, and still counts its linkers', async () => {
+    mutate.mockResolvedValue({ cascade: { pages: ['A.md'], hosts: [] } })
     await del('page')
-    expect(currentNotification()?.message).toBe('Deleted “A”')
+    expect(currentNotification()).toMatchObject({
+      message: 'Deleted “A”',
+      segment: '1 Internal Link',
+    })
     expect(currentNotification()?.action).toBeUndefined()
   })
 })
