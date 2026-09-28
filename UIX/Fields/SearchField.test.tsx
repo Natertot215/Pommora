@@ -2,7 +2,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { act, createRef } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
-import { SEARCH_PLACEHOLDER, SearchField } from './SearchField'
+import { SearchField } from './SearchField'
 import { search } from './fields.css'
 ;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
 
@@ -20,10 +20,10 @@ afterEach(() => {
 
 const field = (): HTMLInputElement => host.querySelector('input') as HTMLInputElement
 
-describe('SearchField — the field four surfaces share', () => {
-  it('reads the family copy when a caller passes no placeholder', () => {
+describe('SearchField — the field every search surface shares', () => {
+  it('shows the one search placeholder', () => {
     act(() => root.render(<SearchField value="" onValueChange={() => {}} />))
-    expect(field().getAttribute('placeholder')).toBe(SEARCH_PLACEHOLDER)
+    expect(field().getAttribute('placeholder')).toBe('Search…')
   })
 
   it('keeps the caller class alongside the family reset', () => {
