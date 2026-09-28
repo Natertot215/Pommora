@@ -55,6 +55,18 @@
   padding: var(--header-zone, 90px) 0 90px var(--rail-inset);
   font-size: calc(15px * var(--glyph-scale));
 }
+.mdpm-editor .cm-content .cm-placeholder {
+  color: var(--label-tertiary);
+  animation: empty-page-in var(--duration-fast) var(--ease-base);
+}
+@keyframes empty-page-in {
+  from {
+    opacity: 0;
+  }
+}
+:is(.tile.is-locked, .tile-base.is-inert, .page-history-page, .glance-body) .cm-placeholder {
+  display: none;
+}
 
 .mdpm-divider,
 .mdpm-editor .cm-line.md-citation-divider::after {

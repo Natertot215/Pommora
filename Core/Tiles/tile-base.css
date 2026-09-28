@@ -177,3 +177,11 @@
   padding-block: 8px 28px;
   --interface-inset: var(--surface-lane);
 }
+
+.tile-base .cm-placeholder {
+  opacity: 0;
+  transition: opacity var(--duration-base) var(--ease-base);
+}
+.tile-base:is(:hover, :focus-within, .is-editing-tile) .cm-placeholder {
+  opacity: 1;
+}

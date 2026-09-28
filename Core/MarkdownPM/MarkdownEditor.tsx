@@ -1,7 +1,7 @@
 import { useEffect, useRef, type ReactNode } from 'react'
 import { docScan, docString } from './docCache'
 import { travelToHeading } from './travel'
-import { EditorView, keymap } from '@codemirror/view'
+import { EditorView, keymap, placeholder } from '@codemirror/view'
 import { Compartment, EditorState, Prec } from '@codemirror/state'
 import { history, historyField, historyKeymap } from '@codemirror/commands'
 import { markdown } from '@codemirror/lang-markdown'
@@ -43,6 +43,8 @@ import type { WarmSeam } from './warmSeam'
 import { type EditorHost, editorHost, mirrorBody, mirrored, resolutionNudge } from './api'
 import { useLatest } from '@pommora/uix/Utilities/stableApi'
 import './markdown-pm.css'
+
+export const EMPTY_PAGE_TEXT = 'Click to type or press / for actions'
 
 interface Props {
   initialBody: string
@@ -178,6 +180,7 @@ export function MarkdownEditor({
       // EditorState.readOnly is ADVISORY — it stops the view's input pipeline but not a programmatic dispatch; a mirrored body and the heading-rename settle's link rewrite skip filters and pass.
       EditorState.changeFilter.of((tr) => !(tr.startState.readOnly && tr.docChanged)),
       history(),
+      placeholder(EMPTY_PAGE_TEXT),
       Prec.highest(
         keymap.of([
           ...paneKeys(paneCtls),
