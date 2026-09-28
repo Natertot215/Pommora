@@ -7,7 +7,7 @@ import {
   settingOf,
 } from './personalization'
 import { setOrDrop, updateNexusConfig } from '../Files/atomicWrite'
-import { getLiveTree } from '../Nexus/liveTree'
+import { heldTreeOf } from '../Nexus/liveTree'
 import { normalizeExclusions, readSettings, scopeOf, type SettingsLeaves } from './codec'
 import { foldKey } from '../Paths/caseFold'
 import { remainderUnder, rootSegs, type WatchScope } from '../Paths/exclusion'
@@ -37,8 +37,7 @@ export async function updateCrops(
 async function liveLeaves(
   root: string,
 ): Promise<Pick<SettingsLeaves, 'personalization' | 'excluded' | 'assetDirectory' | 'commands'>> {
-  const tree = getLiveTree()
-  return tree?.nexus.rootPath === root ? tree : readSettings(root)
+  return heldTreeOf(root) ?? readSettings(root)
 }
 
 export const readLivePersonalization = async (root: string): Promise<Personalization> =>

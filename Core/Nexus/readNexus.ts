@@ -12,7 +12,7 @@ import {
 import { resolveContextKeys } from '../Contexts/contextResolve'
 import { spaceFieldsFrom, spaceSidecarsIn } from '../Contexts/spaceSidecar'
 import { coerceOpenIn, cropsFile } from './schemas'
-import { containerFieldsFrom } from './containerFields'
+import { cachedIds, containerFieldsFrom } from './containerFields'
 import type { PropertyDefinition } from '../Properties/properties'
 import { makeCollectionNode, makePageNode, makeSetNode, makeSpaceNode } from './treePatch'
 import { adoptedId } from './ids'
@@ -227,6 +227,7 @@ async function readPageCollection(
     path: relDir,
     properties: resolveAssignedSchema(meta.properties, registry),
     openIn: coerceOpenIn(meta.open_in),
+    cached: cachedIds(meta),
     ...containerFieldsFrom(meta, sets, pages),
   })
 }

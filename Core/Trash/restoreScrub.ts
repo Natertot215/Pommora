@@ -9,7 +9,8 @@ import {
   type GovernedWorld,
 } from '../Contexts/contextResolve'
 import { type Frozen, namesGonePage } from '../Properties/propertyValue'
-import { newContentId } from '../Nexus/ids'
+import { ensurePageId } from '../Nexus/adopt'
+import { valueOr } from '../Contract/result'
 import { asString } from '../Nexus/coerce'
 import type { StrippedLink } from '../Nexus/cascade'
 import { ID_KEY } from '../Nexus/identityMark'
@@ -70,20 +71,23 @@ export async function scrubReturning(
     }
   }
   const pages = isMarkdownFile(absArtifact) ? [absArtifact] : await listMarkdownFiles(absArtifact)
-  const text = (content: string): string | null => {
+  const unstamped = new Map<string, Record<string, unknown>>()
+  const text = (content: string, file: string): string | null => {
     const raw = splitFrontmatter(content)
     const r = reconcileGovernedRoot(raw, world, frozen)
     const gone = unlinked(raw)
     if (!r.changed.length && !gone.length) return null
-    // An ID-less page takes the ID its next open would give it, so what it drops can be parked.
-    const stamp = gone.length && raw[ID_KEY] === undefined ? { [ID_KEY]: newContentId('page') } : {}
-    note(raw, gone, asString(raw[ID_KEY]) ?? stamp[ID_KEY])
-    const changes = { ...survivingChanges(r), ...stamp }
-    const keys = [...new Set([...r.changed, ...gone, ...Object.keys(stamp)])]
-    return mergeFrontmatter(content, changes, keys, splitEnvelope(content).body)
+    if (raw[ID_KEY] === undefined && gone.length)
+      unstamped.set(file, Object.fromEntries(gone.map((k) => [k, raw[k]])))
+    else note(raw, gone, asString(raw[ID_KEY]))
+    const keys = [...new Set([...r.changed, ...gone])]
+    return mergeFrontmatter(content, survivingChanges(r), keys, splitEnvelope(content).body)
   }
   const { skipped } = await sweepGovernedRoots(root, pages, { text })
   if (skipped.length) throw new Error(unsweptLine(skipped.length))
+  // An ID-less page takes the ID its next open would give it, so what it dropped can be parked.
+  for (const [file, lost] of unstamped)
+    note(lost, Object.keys(lost), valueOr(await ensurePageId(file), undefined))
   const sidecars = await listPathsUnder(root, absArtifact, (rel, kind) =>
     kind === 'dir' ? !hiddenFolder(basename(rel)) : basename(rel) === SPACE_SIDECAR,
   )

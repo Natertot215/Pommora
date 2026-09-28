@@ -5,7 +5,7 @@ import { readRegistry } from '../Properties/propertiesRegistry'
 import type { RecordFile } from './record'
 import { projectBaseline } from '../Nexus/remintLedger'
 import { liveTreeOf } from '../Nexus/liveTree'
-import { frozenWorld } from '../Nexus/valuesChanged'
+import { restoreWorld } from './holdings'
 import { readJsonObject } from '../Files/atomicWrite'
 import { sidecarPath } from '../Paths/paths'
 import {
@@ -72,7 +72,7 @@ async function restoreInner(
 
   const tree = await liveTreeOf(root)
   const roots = projectBaseline(tree).entries
-  const frozen = frozenWorld(tree)
+  const frozen = await restoreWorld(root, tree)
   const dropped: StrippedLink[] = []
   const values = Object.fromEntries(
     Object.entries(record.values).filter(([id, raw]) => {

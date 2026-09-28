@@ -24,51 +24,20 @@ import { linkDefs } from '../Properties/propertiesRegistry'
 import { refillValues } from '../Properties/assignment'
 import { BUNDLE_SUFFIX } from './bundle'
 import { pathExists, readJsonObject, readTextOrNull, rmwJsonStrict } from '../Files/atomicWrite'
-import { listEntries, listMarkdownFiles } from '../Files/walk'
 import { dropPageMetadata } from '../Nexus/pageMetadata'
 import { dropSpaceOrder } from '../Nexus/reorder'
 import { machine } from '../Platform/machine'
 import { stampedId } from '../Files/pageFile'
 import { recordWrite } from '../Files/writeEcho'
-import { frozenWorld, noteValueWrite } from '../Nexus/valuesChanged'
+import { noteValueWrite } from '../Nexus/valuesChanged'
 import { getLiveTree, liveTreeOf } from '../Nexus/liveTree'
 
 import { projectBaseline } from '../Nexus/remintLedger'
 import type { EntityRecord } from '../Nexus/record'
-import { type RecordFile, appendLinks, readRecord, bundleArtifact } from './record'
+import { type RecordFile, readRecord, bundleArtifact } from './record'
 import { deleteCascade, type StrippedLink } from '../Nexus/cascade'
-import { normalizeTitle, parseConnectionText } from '../Connections/connections'
+import { contentPages, parkLinks, refillTrashed, restoreWorld } from './holdings'
 import { findContainerById, resolveRecord, type ArtifactRecord, type Refusal } from './resolve'
-
-export interface ListedBundle {
-  bundlePath: string
-  record: RecordFile
-  artifactName?: string
-}
-
-export async function listBundles(root: string): Promise<ListedBundle[]> {
-  const out: ListedBundle[] = []
-  const walk = async (dir: string): Promise<void> => {
-    for (const e of await listEntries(dir)) {
-      if (e.kind !== 'dir') continue
-      const abs = join(dir, e.name)
-      const record = e.name.endsWith(BUNDLE_SUFFIX) ? await readRecord(abs) : null
-      if (!record) {
-        await walk(abs)
-        continue
-      }
-      const artifact = record.entity === 'property' ? null : await bundleArtifact(abs)
-      if (record.entity !== 'property' && !artifact) continue
-      out.push({
-        bundlePath: relative(root, abs),
-        record,
-        ...(artifact ? { artifactName: basename(artifact) } : {}),
-      })
-    }
-  }
-  await walk(join(root, TRASH_DIR))
-  return out
-}
 
 const REFUSAL_TEXT: Record<Refusal, string> = {
   'parent-gone': 'The place this belonged to no longer exists.',
@@ -117,49 +86,10 @@ async function openBundle(root: string, bundleAbs: string): Promise<Result<Recor
   return record ? ok(record) : fault('That deletion record is unreadable.')
 }
 
-async function contentPages(entity: RecordFile['entity'], artifactAbs: string): Promise<string[]> {
-  switch (entity) {
-    case 'page':
-      return [artifactAbs]
-    case 'collection':
-    case 'set':
-      return listMarkdownFiles(artifactAbs)
-    default:
-      return []
-  }
-}
-
 async function trashedPageIds(record: ArtifactRecord, pages: string[]): Promise<string[]> {
   if (record.entity === 'page') return record.id ? [record.id] : []
   const texts = await Promise.all(pages.map(readTextOrNull))
   return texts.flatMap((text) => stampedId(text ?? '') ?? [])
-}
-
-/** The newest bundle holding each page title in the Trash. */
-async function trashedTitles(root: string): Promise<Map<string, string>> {
-  const newest = new Map<string, string>()
-  for (const { bundlePath, record, artifactName } of await listBundles(root)) {
-    if (!artifactName) continue
-    for (const page of await contentPages(record.entity, join(root, bundlePath, artifactName))) {
-      const title = normalizeTitle(titleFromPath(page))
-      const held = newest.get(title)
-      if (!held || basename(bundlePath) > basename(held)) newest.set(title, join(root, bundlePath))
-    }
-  }
-  return newest
-}
-
-/** A Link value dropped for naming a page the Trash holds joins that page's newest bundle, so the page's restore writes it back. */
-async function parkLinks(root: string, links: StrippedLink[]): Promise<void> {
-  if (!links.length) return
-  const newest = await trashedTitles(root)
-  const parked = new Map<string, StrippedLink[]>()
-  for (const link of links) {
-    const page = parseConnectionText(link.value)
-    const bundle = page && newest.get(normalizeTitle(page.title))
-    if (bundle) parked.set(bundle, [...(parked.get(bundle) ?? []), link])
-  }
-  for (const [bundle, rows] of parked) await appendLinks(bundle, rows)
 }
 
 // Artifact first: a failed bundle removal then leaves a record with no artifact, litter the listing skips, where the reverse order would orphan a live artifact.
@@ -285,7 +215,8 @@ async function restoreArtifact(
     return fail('exists', 'Something already sits at the restored location.')
   const was = titleFromPath(artifactAbs)
   const landed = record.entity === 'page' ? titleFromPath(finalName) : was
-  const frozen = frozenWorld(
+  const frozen = await restoreWorld(
+    root,
     tree,
     record.entity === 'page'
       ? [landed]
@@ -362,15 +293,22 @@ async function restoreArtifact(
     record.links &&
     (await readLiveSetting(root, 'restoreLinksOnDeletion'))
   ) {
-    for (const def of await linkDefs(root)) {
+    const defs = await linkDefs(root)
+    const trashed: StrippedLink[] = []
+    for (const def of defs) {
       const values = Object.fromEntries(
         record.links.filter((l) => l.property === def.id).map((l) => [l.page, l.value]),
       )
       const rebuilt =
         landed === was ? {} : rewriteFrontmatterConnections(values, was, { title: landed })
-      const taken = await refillValues(root, def, roots, { ...values, ...rebuilt }, frozen)
-      for (const id of Object.keys(values)) if (roots[id] && !taken.has(id)) unlinked.add(id)
+      const all = { ...values, ...rebuilt }
+      const taken = await refillValues(root, def, roots, all, frozen)
+      for (const id of Object.keys(values))
+        if (!roots[id]) trashed.push({ page: id, property: def.id, value: String(all[id]) })
+        else if (!taken.has(id)) unlinked.add(id)
     }
+    // A page or Space in the Trash takes its value back into its trashed copy, so it returns with it.
+    await refillTrashed(root, trashed, new Map(defs.map((d) => [d.id, d.name])))
   }
   // The record outlives a partial re-tag, so what didn't come back stays written down.
   if (!unspent.length) {

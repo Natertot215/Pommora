@@ -18,7 +18,7 @@ import { seedContentIndex } from '../Index/indexSeed'
 import { readMatrixGraph } from '../Index/contentIndex'
 import { ok } from '../Contract/result'
 import { machine } from '../Platform/machine'
-import { tileHostDir } from '../Paths/paths'
+import { contextsDir, contextsRegistryFile, tileHostDir } from '../Paths/paths'
 import { createMarkdownTile, readMarkdownTile, writeMarkdownTile } from '../Tiles/tilesFile'
 import { landedId } from '../Testing/tileLayouts'
 
@@ -532,5 +532,86 @@ describe('deleteCascade', () => {
     expect(sweptFiles()).toContain(broken)
     expect(r).toEqual({ cascade: { pages: [], hosts: [] }, links: [] })
     expect(await readFile(broken, 'utf8')).toBe(content)
+  })
+})
+
+describe('the link cascades reach Spaces and caches', () => {
+  let related: string
+  const LINKER = '01KVGMT8BFP350FZZXAMG1QDZZ'
+  const OTHER = '01KVGMT8BFP350FZZXAMG1QDZY'
+  const sidecar = (): string => join(contextsDir(root), 'Projects', 'Pommora', '_space.json')
+  const collection = (): string => join(dir, '_pagecollection.json')
+  const readJson = async (p: string) => JSON.parse(await readFile(p, 'utf8'))
+  const space = (values: Record<string, unknown>) =>
+    writeFile(sidecar(), JSON.stringify({ id: 'sp-pom', ...values }))
+  const cache = (values: Record<string, unknown>) =>
+    writeFile(
+      collection(),
+      JSON.stringify({ id: 'col-notes', property_cache: { [related]: { values } } }),
+    )
+  const cached = async () => (await readJson(collection())).property_cache?.[related]?.values
+
+  beforeEach(async () => {
+    await mkdir(join(root, '.nexus'), { recursive: true })
+    await writeFile(
+      join(root, '.nexus', 'nexus.json'),
+      JSON.stringify({ id: 'nx', createdAt: '2026' }),
+    )
+    await mkdir(join(contextsDir(root), 'Projects', 'Pommora'), { recursive: true })
+    await writeFile(
+      contextsRegistryFile(root),
+      JSON.stringify({ contexts: [{ id: 'ctx_projects', title: 'Projects' }] }),
+    )
+    await writeFile(collection(), JSON.stringify({ id: 'col-notes' }))
+    const link = await createProperty(root, {
+      id: '',
+      name: 'Related',
+      type: 'link',
+    } as PropertyDefinition)
+    if (!link.ok) throw new Error('setup failed')
+    related = link.value.id
+    await openSession(root)
+  })
+  afterEach(() => {
+    dropLiveTree()
+    closeSession()
+  })
+
+  it('a delete strips a Space’s Link value naming the page, recording it by the Space’s id, and leaves the cache to its re-assign', async () => {
+    await space({ Related: '[[Target]]' })
+    await cache({ [LINKER]: '[[Target]]' })
+    await refreshTree(root)
+    const r = await deleteCascade(root, join(dir, 'Target.md'), ['Target'])
+    expect(await readJson(sidecar())).toEqual({ id: 'sp-pom' })
+    expect(await cached()).toEqual({ [LINKER]: '[[Target]]' })
+    expect(r.links).toEqual([{ page: 'sp-pom', property: related, value: '[[Target]]' }])
+    expect(r.cascade.pages).toEqual([sidecar().slice(root.length + 1)])
+  })
+
+  it('a title rename moves a Space’s and a cache’s Link value onto the new title', async () => {
+    await space({ Related: '[[Target#Intro|see]]' })
+    await cache({ [LINKER]: '[[Target]]', [OTHER]: '[[Other]]' })
+    await refreshTree(root)
+    await renameCascade(root, 'Target', { title: 'Omega' })
+    expect((await readJson(sidecar())).Related).toBe('[[Omega#Intro|see]]')
+    expect(await cached()).toEqual({ [LINKER]: '[[Omega]]', [OTHER]: '[[Other]]' })
+  })
+
+  it('a heading rename moves a Space’s Link value naming the heading', async () => {
+    await space({ Related: '[[Target#Intro]]' })
+    await refreshTree(root)
+    await renameCascade(root, 'Target', { heading: 'Intro', to: 'Overview' })
+    expect((await readJson(sidecar())).Related).toBe('[[Target#Overview]]')
+  })
+
+  it('opens no Space sidecar, and no Collection the tree lists without a cache, for a title nothing there names', async () => {
+    await space({ Related: '[[Other]]' })
+    await refreshTree(root)
+    await cache({ [LINKER]: '[[Target]]' })
+    sweepSpy.mockClear()
+    await deleteCascade(root, join(dir, 'Target.md'), ['Target'])
+    await renameCascade(root, 'Target', { title: 'Omega' })
+    for (const [, , plan] of sweepSpy.mock.calls) expect(plan).not.toHaveProperty('sidecars')
+    expect(await cached()).toEqual({ [LINKER]: '[[Target]]' })
   })
 })

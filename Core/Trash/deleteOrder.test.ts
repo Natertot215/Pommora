@@ -9,7 +9,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { pathExists, readJsonObject } from '../Files/atomicWrite'
 import { handleMutate } from '../Nexus/mutate'
 import { contextsDir, contextsRegistryFile } from '../Paths/paths'
-import { listBundles } from './spend'
+import { listBundles } from './holdings'
 import { machine } from '../Platform/machine'
 
 import { closeSession, openSession } from '../Nexus/session'

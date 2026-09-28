@@ -30,7 +30,7 @@ import { memoryStores } from '../Testing/memoryStores'
 import { seedContentIndex } from '../Index/indexSeed'
 import { createMarkdownTile, writeMarkdownTile } from '../Tiles/tilesFile'
 import { landedId } from '../Testing/tileLayouts'
-import { tileFilePath } from '../Paths/paths'
+import { contextsDir, contextsRegistryFile, tileFilePath } from '../Paths/paths'
 import { machine } from '../Platform/machine'
 
 vi.mock('../Pages/fileHistory', () => ({ noteExternalEdit: vi.fn() }))
@@ -650,6 +650,36 @@ describe('an outside heading rename', () => {
   })
 })
 
+describe('an outside heading rename a Space alone links', () => {
+  it('cascades into the Space', async () => {
+    await writeFile(
+      abs('.nexus', 'properties.json'),
+      JSON.stringify({
+        order: ['prop_related'],
+        defs: { prop_related: { id: 'prop_related', name: 'Related', type: 'link' } },
+      }),
+    )
+    await writeFile(
+      contextsRegistryFile(root),
+      JSON.stringify({ contexts: [{ id: 'ctx_projects', title: 'Projects' }] }),
+    )
+    const sidecar = join(contextsDir(root), 'Projects', 'Pommora', '_space.json')
+    await mkdir(join(contextsDir(root), 'Projects', 'Pommora'), { recursive: true })
+    await writeFile(sidecar, JSON.stringify({ id: 'sp-pom', Related: '[[A#Keep]]' }))
+    await writeFile(abs('Notes', 'A.md'), `---\nID: ${ULID_A}\n---\n\n## Keep\n`)
+    installStores(memoryStores().stores)
+    try {
+      await refreshTree(root)
+      await seedContentIndex(root)
+      await writeFile(abs('Notes', 'A.md'), `---\nID: ${ULID_A}\n---\n\n## Kept\n`)
+      await applyWatchEvents(root, [ev('change', 'Notes', 'A.md')], scope())
+      expect(JSON.parse(await readFile(sidecar, 'utf8')).Related).toBe('[[A#Kept]]')
+    } finally {
+      installStores(NO_STORES)
+    }
+  })
+})
+
 describe('the file-history timer', () => {
   beforeEach(async () => {
     await refreshTree(root)
@@ -716,6 +746,7 @@ describe('the two container mappers agree', () => {
         view_button: 'labeled',
         disclosure_locked: true,
         active_view: 'view_y',
+        property_cache: { prop_related: { values: { [ULID_B]: '[[Alpha]]' } } },
       }),
     )
   })
@@ -742,6 +773,7 @@ describe('the two container mappers agree', () => {
     expect(await patchContainerFromDisk(root, 'Notes')).toBe('ok')
     const patched = notes()
     expect(patched?.activeView).toBe('view_y')
+    expect(patched).toMatchObject({ cached: ['prop_related'] })
     expect(patched).toEqual(walked)
   })
 })

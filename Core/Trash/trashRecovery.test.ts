@@ -1,5 +1,5 @@
 // Every restoration combination the surface can produce, driven through the same ops the leaf calls, against a real nexus on disk.
-import { mkdir, readFile, rm, writeFile } from 'node:fs/promises'
+import { mkdir, readFile, rm, utimes, writeFile } from 'node:fs/promises'
 import { join } from '../Paths/posix'
 import { tempRoot } from '../Testing/hostFs'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
@@ -7,14 +7,16 @@ import { dropLiveTree, refreshTree } from '../Nexus/liveTree'
 import { pathExists } from '../Files/atomicWrite'
 import { confirmedMutate } from '../Testing/confirmedMutate'
 import { contextsDir, contextsRegistryFile } from '../Paths/paths'
-import { listBundles } from './spend'
+import { listBundles } from './holdings'
 import { readRecord } from './record'
 import { trashRows } from './trashRows'
 import { readNexus } from '../Nexus/readNexus'
 import { closeSession, openSession } from '../Nexus/session'
 import { splitFrontmatter } from '../Files/pageFile'
 import { deleteProperty } from '../Properties/deleteProperty'
-import { newContentId } from '../Nexus/ids'
+import { removeProperty } from '../Properties/removeProperty'
+import { assignProperty } from '../Properties/assignment'
+import { idTime, newContentId } from '../Nexus/ids'
 import { renameProperty } from '../Properties/registryProperty'
 import type { TrashDeps } from './bundle'
 
@@ -484,14 +486,16 @@ describe('links come back with the page', () => {
     expect(JSON.parse(await readFile(sidecar, 'utf8'))).toMatchObject(space)
   })
 
-  it('a page with no ID takes one on a restore that parks its link', async () => {
+  it('a page with no ID takes the one its next open would give it on a restore that parks its link', async () => {
     const gamma = join('Plain', 'Gamma.md')
     await writeFile(join(root, gamma), '---\nRelated: "[[Alpha]]"\n---\ng\n')
+    const then = new Date('2020-01-02T00:00:00Z')
+    await utimes(join(root, gamma), then, then)
     await del(gamma, 'page')
     await del('Journal/Daily/Alpha.md', 'page')
     expect(await restore('Gamma')).toBeUndefined()
     const id = (await frontmatter(gamma)).ID
-    expect(id).toEqual(expect.any(String))
+    expect(idTime(String(id))).toBe(then.getTime())
     expect(await frontmatter(gamma)).not.toHaveProperty('Related')
     expect(await restore('Alpha')).toBeUndefined()
     expect(await frontmatter(gamma)).toMatchObject({ ID: id, Related: '[[Alpha]]' })
@@ -594,6 +598,92 @@ describe('links come back with the page', () => {
     await linker(beta, BETA_ID, 'Related: "[[Alpha]]"')
     await empty('Alpha')
     expect((await frontmatter()).Related).toBe('[[Alpha]]')
+  })
+
+  const journal = () => join(root, 'Journal')
+  const cachedIn = async () =>
+    JSON.parse(await readFile(join(journal(), '_pagecollection.json'), 'utf8')).property_cache
+      ?.prop_related?.values
+
+  it('a Space’s Link value leaves with the page and comes back with it', async () => {
+    const sidecar = join(contextsDir(root), 'Projects', 'Pommora', '_space.json')
+    await writeFile(sidecar, JSON.stringify({ id: 'sp-pom', Related: '[[Alpha]]' }))
+    await del('Journal/Daily/Alpha.md', 'page')
+    expect(JSON.parse(await readFile(sidecar, 'utf8'))).not.toHaveProperty('Related')
+    expect(await restore('Alpha')).toBeUndefined()
+    expect(JSON.parse(await readFile(sidecar, 'utf8')).Related).toBe('[[Alpha]]')
+  })
+
+  it('a delete leaves a cached Link value, and re-assigning hands one whose page sits in the Trash to that page', async () => {
+    expect((await removeProperty(root, journal(), 'prop_related')).ok).toBe(true)
+    await del('Journal/Daily/Alpha.md', 'page')
+    expect(await cachedIn()).toEqual({ [BETA_ID]: '[[Alpha]]' })
+    expect((await assignProperty(root, journal(), 'prop_related')).ok).toBe(true)
+    expect(await frontmatter()).not.toHaveProperty('Related')
+    expect(await cachedIn()).toBeUndefined()
+    expect(await restore('Alpha')).toBeUndefined()
+    expect((await frontmatter()).Related).toBe('[[Alpha]]')
+  })
+
+  it('re-assigning brings a cached Link back once its page is restored, and drops one naming nothing', async () => {
+    expect((await removeProperty(root, journal(), 'prop_related')).ok).toBe(true)
+    await del('Journal/Daily/Alpha.md', 'page')
+    expect(await restore('Alpha')).toBeUndefined()
+    expect((await assignProperty(root, journal(), 'prop_related')).ok).toBe(true)
+    expect((await frontmatter()).Related).toBe('[[Alpha]]')
+    expect((await removeProperty(root, journal(), 'prop_related')).ok).toBe(true)
+    await del('Journal/Daily/Alpha.md', 'page')
+    await empty('Alpha')
+    expect((await assignProperty(root, journal(), 'prop_related')).ok).toBe(true)
+    expect(await frontmatter()).not.toHaveProperty('Related')
+    expect(await cachedIn()).toBeUndefined()
+  })
+
+  it('a page restored while its linker sits in the Trash writes the value into the linker’s trashed copy', async () => {
+    await del('Journal/Daily/Alpha.md', 'page')
+    await del(beta, 'page')
+    expect(await restore('Alpha')).toBeUndefined()
+    expect(await restore('Beta')).toBeUndefined()
+    expect((await frontmatter()).Related).toBe('[[Alpha]]')
+  })
+
+  it('a page restored while a linking Space sits in the Trash writes the value into the Space’s trashed copy', async () => {
+    const sidecar = join(contextsDir(root), 'Projects', 'Pommora', '_space.json')
+    await writeFile(sidecar, JSON.stringify({ id: 'sp-pom', Related: '[[Alpha]]' }))
+    await del('Journal/Daily/Alpha.md', 'page')
+    await del('.nexus/contexts/Projects/Pommora', 'space')
+    expect(await restore('Alpha')).toBeUndefined()
+    expect(await restore('Pommora')).toBeUndefined()
+    expect(JSON.parse(await readFile(sidecar, 'utf8')).Related).toBe('[[Alpha]]')
+  })
+
+  describe('with Restore Links On Deletion off', () => {
+    beforeEach(() =>
+      writeFile(
+        join(root, '.nexus', 'settings.json'),
+        JSON.stringify({ personalization: { restoreLinksOnDeletion: false } }),
+      ),
+    )
+
+    it('a page restored while its link’s page sits in the Trash keeps the link', async () => {
+      await del(beta, 'page')
+      await del('Journal/Daily/Alpha.md', 'page')
+      expect(await restore('Beta')).toBeUndefined()
+      expect((await frontmatter()).Related).toBe('[[Alpha]]')
+      expect(await restore('Alpha')).toBeUndefined()
+      expect((await frontmatter()).Related).toBe('[[Alpha]]')
+    })
+
+    it('re-assigning keeps a cached link whose page sits in the Trash, and drops one naming nothing', async () => {
+      await linker(beta, BETA_ID, 'Related: "[[Alpha]]"\nParent: "[[Nowhere]]"')
+      expect((await removeProperty(root, journal(), 'prop_related')).ok).toBe(true)
+      expect((await removeProperty(root, journal(), 'prop_parent')).ok).toBe(true)
+      await del('Journal/Daily/Alpha.md', 'page')
+      expect((await assignProperty(root, journal(), 'prop_related')).ok).toBe(true)
+      expect((await assignProperty(root, journal(), 'prop_parent')).ok).toBe(true)
+      expect(await frontmatter()).toMatchObject({ Related: '[[Alpha]]' })
+      expect(await frontmatter()).not.toHaveProperty('Parent')
+    })
   })
 
   it('with Restore Links On Deletion off, the values stay removed', async () => {

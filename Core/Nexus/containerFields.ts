@@ -5,6 +5,7 @@ import { containerViewIds, savedView, type SavedView } from '../Views/views'
 import { coerceViewButton } from './schemas'
 import { asString, asStringArray } from './coerce'
 import { resolveOrder } from './order'
+import { isPlainObject } from '../Contract/validators'
 
 function parseViews(raw: unknown): SavedView[] | undefined {
   if (!Array.isArray(raw)) return undefined
@@ -15,6 +16,11 @@ function parseViews(raw: unknown): SavedView[] | undefined {
     if (r.success) out.push({ ...r.data, id: ids[i] })
   })
   return out.length > 0 ? out : undefined
+}
+
+export function cachedIds(meta: Record<string, unknown>): string[] | undefined {
+  const ids = isPlainObject(meta.property_cache) ? Object.keys(meta.property_cache) : []
+  return ids.length ? ids : undefined
 }
 
 // An `active_view` naming no view in `views` is carried verbatim; pickView already falls back.

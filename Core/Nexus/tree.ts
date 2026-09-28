@@ -62,6 +62,8 @@ export interface CollectionNode extends ContainerNode {
   sets: SetNode[]
   properties?: PropertyDefinition[]
   openIn?: OpenIn
+  /** The properties a Remove cached values for, so a Link cascade opens only the sidecars that could hold one. */
+  cached?: string[]
 }
 
 /** Keyed by normalized basename. Every path answering to a name is held, sorted, so display takes the first while a delete refuses to choose and an unlink has something to promote. A path's entry in `versions` moves when it's re-saved under an unchanged name, so only that file is re-requested. */

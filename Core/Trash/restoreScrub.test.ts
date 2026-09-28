@@ -9,7 +9,7 @@ import { dropLiveTree, refreshTree } from '../Nexus/liveTree'
 import { pathExists } from '../Files/atomicWrite'
 import { confirmedMutate } from '../Testing/confirmedMutate'
 import { contextsDir, contextsRegistryFile } from '../Paths/paths'
-import { listBundles } from './spend'
+import { listBundles } from './holdings'
 import { fault } from '../Contract/result'
 
 import { closeSession, openSession } from '../Nexus/session'

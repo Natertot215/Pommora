@@ -14,7 +14,7 @@ import {
 import { closeSession, openSession } from '../Nexus/session'
 import { dropLiveTree, refreshAfterWrite } from '../Nexus/liveTree'
 import { seedConfigSurfaces, viewOn } from '../Testing/configSurfaces'
-import { listBundles } from '../Trash/spend'
+import { listBundles } from '../Trash/holdings'
 import { readRegistry } from './propertiesRegistry'
 import { createProperty, editProperty, renameProperty } from './registryProperty'
 import { deleteProperty } from './deleteProperty'

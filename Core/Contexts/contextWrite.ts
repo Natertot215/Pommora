@@ -11,7 +11,7 @@ import {
 import { contextDirRel, spaceDirRel, SPACE_SIDECAR } from '../Paths/nexusPaths'
 import { seedBoard } from '../Tiles/tiles'
 import { writeTileDocAt } from '../Tiles/tileDoc'
-import { getLiveTree, mutableTarget } from '../Nexus/liveTree'
+import { heldTreeOf, mutableTarget } from '../Nexus/liveTree'
 import type { MutateContext } from '../Nexus/mutate'
 import { done, type MutateReply, type MutateRequest } from '../Nexus/mutateRequest'
 import { assignedDefs, collectionFolderOf, collectionFolders } from '../Properties/assignment'
@@ -157,8 +157,7 @@ export async function loadGovernedWorld(
 ): Promise<GovernedWorld> {
   const defs = await assignedDefs(root, collectionFolderOf(await collectionFolders(root), absFile))
   const skipped: GovernedWorld = { ...NO_CONTEXT_WORLD, defs }
-  const held = getLiveTree()
-  if (!contextDriftPresent(raw, held?.nexus.rootPath === root ? held : null)) return skipped
+  if (!contextDriftPresent(raw, heldTreeOf(root))) return skipped
   const world = await loadContextWorld(root)
   return world.ok ? { ...world.value, defs } : skipped
 }
