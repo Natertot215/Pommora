@@ -47,7 +47,6 @@ const sweepOnTitles = ViewPlugin.fromClass(
 
     constructor(view: EditorView) {
       const titles = view.state.facet(editorHost).linkTitles
-      // Fires on any store write, so the empty case must stay cheap: one array-length read.
       this.unsubscribe = titles.subscribe(() => {
         const pending = view.state.field(pendingTitles, false)
         if (!pending || pending.length === 0) return

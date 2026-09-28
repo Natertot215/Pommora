@@ -71,6 +71,12 @@ describe('subBlockAt', () => {
 })
 
 describe('drag reorders source lines', () => {
+  it("refuses a drop on the dragged item's own edges, so a release there cancels in place", () => {
+    const doc = '- a\n- b\n  - child\n- c'
+    const block = subBlockAt(scanDoc(doc), lineStart(doc, '- b'))!
+    expect(dropChanges(doc, block, { at: block.from })).toBeNull()
+    expect(dropChanges(doc, block, { at: block.to + 1 })).toBeNull()
+  })
   it('moves a bullet item down past a sibling', () => {
     const doc = '- a\n- b\n- c'
     const out = drop(doc, lineStart(doc, 'a'), lineStart(doc, '- c'))

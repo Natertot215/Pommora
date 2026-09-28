@@ -192,10 +192,8 @@ export const createMatrixSlice: Slice<MatrixSlice> = (set, get) => {
     },
 
     // The watcher pushes our own writes back too; every section that reads the same keeps its reference, so only what moved rebuilds.
-    applyMatrixChanged: (config) => {
-      const kept = stabilize(config, get().matrixConfig)
-      if (kept !== get().matrixConfig) set({ matrixConfig: kept })
-    },
+    applyMatrixChanged: (config) =>
+      set((s) => ({ matrixConfig: stabilize(config, s.matrixConfig) })),
 
     refetchMatrixPages: (pageIds) => {
       const tree = get().tree

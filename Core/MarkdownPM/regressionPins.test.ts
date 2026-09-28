@@ -226,10 +226,8 @@ describe('renumberSequencedRun — nested lines are skipped, not terminators', (
 
 describe('calloutDeleteVerdict — repair, not cancel', () => {
   const doc = '> [!callout] head\n> body'
-  const verdict = (from: number, to: number): GuardVerdict => {
-    const s = scanDoc(doc)
-    return calloutDeleteVerdict(doc, from, to, { lines: s.lines, info: s.callouts })
-  }
+  const verdict = (from: number, to: number): GuardVerdict =>
+    calloutDeleteVerdict(doc, from, to, scanDoc(doc))
   it('allows a whole-line removal (line + newline)', () => {
     expect(verdict(18, 25).kind).toBe('ok')
   })

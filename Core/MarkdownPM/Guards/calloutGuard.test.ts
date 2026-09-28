@@ -3,10 +3,8 @@ import { EditorState } from '@codemirror/state'
 import { calloutDeleteVerdict, calloutGuard } from './calloutGuard'
 import { scanDoc } from '../Engine/docScan'
 
-const stripsCalloutPrefix = (doc: string, from: number, to: number): boolean => {
-  const s = scanDoc(doc)
-  return calloutDeleteVerdict(doc, from, to, { lines: s.lines, info: s.callouts }).kind !== 'ok'
-}
+const stripsCalloutPrefix = (doc: string, from: number, to: number): boolean =>
+  calloutDeleteVerdict(doc, from, to, scanDoc(doc)).kind !== 'ok'
 
 describe('calloutGuard — a callout body prefix is uncorruptible', () => {
   const doc = '> [!callout] head\n> body'

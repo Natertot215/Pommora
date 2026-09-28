@@ -564,10 +564,7 @@ export const createNavigationSlice: Slice<NavigationSlice> = (set, get) => {
       }
       pageFetchSeq++
       // Held while walking up the breadcrumb spine so the tail stays dimmed; reset on a branch.
-      {
-        const depth = crumbDepthFor(get().tree, get().crumbDepth, target)
-        if (depth !== get().crumbDepth) set({ crumbDepth: depth })
-      }
+      set((s) => ({ crumbDepth: crumbDepthFor(s.tree, s.crumbDepth, target) }))
       if (get().navSlide?.seq === coldStampSeq) set({ navSlide: null })
       if (pending) {
         const s = get()

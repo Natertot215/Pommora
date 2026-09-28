@@ -187,6 +187,7 @@ class EmbedTileWidget extends ReactWidget {
 
 interface WebTileDom extends ReactDom {
   _visible?: boolean
+  _wanted?: number
   _renderW?: () => void
   _obs?: WebObservers
 }
@@ -194,6 +195,17 @@ interface WebTileDom extends ReactDom {
 // KNOB — the fit cap's breathing room below the port edges: a tile taller than the port minus this margin can never read fully-visible, and a never-fully-visible tile never goes live.
 const WEB_FIT_MARGIN = 96
 const WEB_FULL_RATIO = 0.99
+
+const portHeight = (view: EditorView): number =>
+  Math.min(
+    view.scrollDOM.clientHeight || Number.POSITIVE_INFINITY,
+    document.documentElement.clientHeight,
+  )
+
+function fitHeight(dom: WebTileDom, port: number): void {
+  const wanted = dom._wanted ?? TILE_DEFAULT_PX
+  dom.style.height = `${port > 0 ? clamp(port - WEB_FIT_MARGIN, TILE_MIN_PX, wanted) : wanted}px`
+}
 
 interface WebObservers {
   io: IntersectionObserver
@@ -221,7 +233,8 @@ function observersFor(view: EditorView): WebObservers {
       { threshold: [0, WEB_FULL_RATIO, 1] },
     )
     const ro = new ResizeObserver(() => {
-      for (const d of tiles) d._renderW?.()
+      const port = portHeight(view)
+      for (const d of tiles) fitHeight(d, port)
     })
     ro.observe(view.scrollDOM)
     o = { io, ro, tiles }
@@ -250,13 +263,8 @@ class WebpageTileWidget extends ReactWidget {
   private renderInto(dom: WebTileDom, view: EditorView): void {
     dom.className = 'mdpm-embed-tile tile-base'
     dom.dataset.revealHost = ''
-    const port = Math.min(
-      view.scrollDOM.clientHeight || Number.POSITIVE_INFINITY,
-      document.documentElement.clientHeight,
-    )
-    const wanted = this.height ?? TILE_DEFAULT_PX
-    const capped = port > 0 ? clamp(port - WEB_FIT_MARGIN, TILE_MIN_PX, wanted) : wanted
-    dom.style.height = `${capped}px`
+    dom._wanted = this.height
+    fitHeight(dom, portHeight(view))
     const host = view.state.facet(embedHost)
     const editor = view.state.facet(editorHost)
     this.render(

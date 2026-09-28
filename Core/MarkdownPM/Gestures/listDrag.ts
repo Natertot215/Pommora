@@ -2,7 +2,7 @@ import type { Extension } from '@codemirror/state'
 import { EditorView } from '@codemirror/view'
 import { parseListMarkerPrefixed as parseListMarker } from '../Engine/detect'
 import { docScan, docString } from '../docCache'
-import { forEachLine, nearestBoundary, shadeField, type Boundary } from './dragChrome'
+import { forEachLine, shadeField, type Boundary } from './dragChrome'
 import { beginRelocateDrag, editorGestureCleanup } from './editorGesture'
 import { lineElementAt } from '../lineDom'
 import {
@@ -10,23 +10,11 @@ import {
   dropChanges,
   checkboxToggleChange,
   type SubBlock,
-  type Slot,
 } from '../Engine/listDragModel'
 import { GLYPH_CLASS } from '../Engine/intents'
 
-interface ResolvedSlot extends Slot {
-  lineLeft: number
-  lineTop: number
-  lineWidth: number
-  indent: string
-}
-
 // Measured at drag start and re-measured only on scroll: the doc is static during a drag, so re-measuring per pointermove would be layout thrash.
-interface Cand {
-  from: number
-  to: number
-  top: number
-  bottom: number
+interface Drop {
   left: number
   right: number
   indent: string
@@ -45,14 +33,15 @@ function lineRightEdge(view: EditorView, from: number, fallback: number): number
   )
 }
 
-function collectCands(view: EditorView, block: SubBlock): Cand[] {
+// Each list line offers two insertion boundaries, so a paragraph between two bullets splits to the nearer edge.
+function collectBoundaries(view: EditorView, block: SubBlock): Boundary<Drop>[] {
   const doc = view.state.doc
   const contentRect = view.contentDOM.getBoundingClientRect()
   const padRight = parseFloat(getComputedStyle(view.contentDOM).paddingRight) || 0
   const gutterRight = contentRect.right - padRight
   // A marker-lookalike inside display math is formula source, never a drop target.
   const maths = docScan(doc).maths
-  const out: Cand[] = []
+  const out: Boundary<Drop>[] = []
   for (const { from, to } of view.visibleRanges) {
     forEachLine(doc, from, to, (line) => {
       const lm = parseListMarker(line.text)
@@ -63,44 +52,17 @@ function collectCands(view: EditorView, block: SubBlock): Cand[] {
       const cEnd = view.coordsAtPos(line.to)
       const cMarker = view.coordsAtPos(line.from + lm.markerStart)
       if (cTop && cEnd) {
-        out.push({
-          from: line.from,
-          to: line.to,
-          top: cTop.top,
-          bottom: cEnd.bottom,
+        const slot = {
           left: (cMarker ?? cTop).left,
           right: lineRightEdge(view, line.from, gutterRight),
           indent: line.text.slice(0, lm.markerStart),
-        })
+        }
+        out.push({ at: line.from, y: cTop.top, slot })
+        out.push({ at: line.to < doc.length ? line.to + 1 : doc.length, y: cEnd.bottom, slot })
       }
     })
   }
-  out.sort((a, b) => a.top - b.top)
   return out
-}
-
-// Each candidate offers two insertion boundaries, so a paragraph between two bullets splits to the nearer edge.
-function slotFrom(
-  cands: Cand[],
-  clientY: number,
-  block: SubBlock,
-  docLen: number,
-): ResolvedSlot | null {
-  const bs: Boundary<Cand>[] = []
-  for (const c of cands) {
-    bs.push({ at: c.from, y: c.top, slot: c })
-    bs.push({ at: c.to < docLen ? c.to + 1 : docLen, y: c.bottom, slot: c })
-  }
-  const best = nearestBoundary(bs, clientY)
-  if (best === null) return null
-  if (best.at >= block.from && best.at <= block.to + 1) return null
-  return {
-    at: best.at,
-    lineLeft: best.slot.left,
-    lineTop: best.y,
-    lineWidth: best.slot.right - best.slot.left,
-    indent: best.slot.indent,
-  }
 }
 
 function clickAction(view: EditorView, pos: number): void {
@@ -137,10 +99,13 @@ export const listDragExtension: Extension = [
       e.preventDefault()
 
       beginRelocateDrag(view, e, block, {
-        measure: () => collectCands(view, block),
-        pick: (cands, clientY) => slotFrom(cands, clientY, block, view.state.doc.length),
-        lineFor: (slot) => ({ left: slot.lineLeft, top: slot.lineTop, width: slot.lineWidth }),
-        commit: (slot) => dropChanges(docString(view.state.doc), block, slot),
+        measure: () => collectBoundaries(view, block),
+        lineFor: ({ at, y, slot }) =>
+          at >= block.from && at <= block.to + 1
+            ? null
+            : { left: slot.left, top: y, width: slot.right - slot.left },
+        commit: ({ at, slot }) =>
+          dropChanges(docString(view.state.doc), block, { at, indent: slot.indent }),
         onTap: () => clickAction(view, pos),
       })
       return true

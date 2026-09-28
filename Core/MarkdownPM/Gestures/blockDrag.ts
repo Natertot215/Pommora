@@ -2,7 +2,7 @@ import type { Extension } from '@codemirror/state'
 import { EditorView } from '@codemirror/view'
 import { blockAt, blockStarts } from '../Engine/blockModel'
 import { docScan, docString } from '../docCache'
-import { nearestBoundary, shadeField, type Boundary } from './dragChrome'
+import { shadeField, type Boundary } from './dragChrome'
 import { beginRelocateDrag, editorGestureCleanup } from './editorGesture'
 import { gutterLineAt, lineElementAt } from '../lineDom'
 import { moveRange } from '../Engine/listDragModel'
@@ -16,7 +16,10 @@ function bottomAbove(view: EditorView, at: number): number | null {
 }
 
 // Each block offers two boundaries, so the line snaps to the nearer edge and flips at the midpoint. The dragged block's own edges stay hittable but draw no line, so a release there cancels in place.
-type Cand = Boundary<{ left: number; right: number }>
+interface Drop {
+  left: number
+  right: number
+}
 interface BlockShape {
   starts: number[]
   end: number
@@ -30,15 +33,15 @@ function blockShape(view: EditorView, block: { from: number; to: number }): Bloc
   return { starts, end, afterBlock: starts.find((s) => s > block.to) ?? end }
 }
 
-function collectCands(
+function collectBoundaries(
   view: EditorView,
   block: { from: number; to: number },
   shape: BlockShape,
-): Cand[] {
+): Boundary<Drop>[] {
   const rect = view.contentDOM.getBoundingClientRect()
   const right = rect.right - (parseFloat(getComputedStyle(view.contentDOM).paddingRight) || 0)
   const { starts, end } = shape
-  const out: Cand[] = []
+  const out: Boundary<Drop>[] = []
   // `view.viewport`, never `visibleRanges` — a block widget puts a gap in the visible ranges and would lose the boundary above a table.
   const { from: top, to: bottom } = view.viewport
   for (let i = 0; i < starts.length; i++) {
@@ -72,8 +75,7 @@ export function startBlockDrag(
   e.preventDefault()
   const shape = blockShape(view, block)
   beginRelocateDrag(view, e, block, {
-    measure: () => collectCands(view, block, shape),
-    pick: nearestBoundary<Cand['slot']>,
+    measure: () => collectBoundaries(view, block, shape),
     lineFor: ({ at, y, slot }) =>
       at === block.from || at === shape.afterBlock
         ? null
