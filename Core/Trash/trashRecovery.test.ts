@@ -324,7 +324,8 @@ describe('links come back with the page', () => {
       links: [{ page: BETA_ID, property: 'prop_related', value: '[[Alpha]]' }],
     })
     expect(await restore('Alpha')).toBeUndefined()
-    expect((await frontmatter()).Related).toBe('[[Alpha]]')
+    expect(await frontmatter()).toMatchObject({ Related: '[[Alpha]]' })
+    expect(await frontmatter()).not.toHaveProperty('Parent')
     expect(await rows()).toHaveLength(0)
   })
 
@@ -350,9 +351,10 @@ describe('links come back with the page', () => {
     await del('Journal/Daily/Alpha.md', 'page')
     expect((await relink('prop_related')).ok).toBe(true)
     expect((await relink('prop_parent')).ok).toBe(true)
+    const { bundlePath } = await find('Alpha')
     expect(await restore('Alpha')).toEqual(['Beta'])
     expect(await frontmatter()).toMatchObject({ Related: '[[Other]]', Parent: '[[Other]]' })
-    expect(await rows()).toHaveLength(0)
+    expect(await pathExists(join(root, bundlePath))).toBe(false)
   })
 
   it('a property renamed meanwhile takes the value back under its new name', async () => {
@@ -377,6 +379,22 @@ describe('links come back with the page', () => {
     expect(await restore('Daily')).toBeUndefined()
     expect((await frontmatter(gamma)).Related).toBe('[[Alpha]]')
     expect((await frontmatter()).Related).toBe('[[Alpha]]')
+  })
+
+  it('a Set landing beside a new namesake keeps its inner namesake’s values as they were', async () => {
+    const gamma = join('Plain', 'Gamma.md')
+    await linker(join('Journal', 'Daily', 'Daily.md'), '01KVGMT8BFP350FZZXAMG1QDVE', '')
+    await linker(gamma, '01KVGMT8BFP350FZZXAMG1QDVD', 'Parent: "[[Daily]]"')
+    await del('Journal/Daily', 'set')
+    const created = await confirmedMutate(
+      root,
+      { op: 'createContainer', parentPath: 'Journal', kind: 'set', name: 'Daily' },
+      deps,
+    )
+    expect(created.ok).toBe(true)
+    expect(await restore('Daily')).toBeUndefined()
+    expect(await pathExists(join(root, 'Journal', 'Daily (2)', 'Daily.md'))).toBe(true)
+    expect((await frontmatter(gamma)).Parent).toBe('[[Daily]]')
   })
 
   it('with Restore Links On Deletion off, the values stay removed', async () => {

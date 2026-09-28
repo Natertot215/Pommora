@@ -17,12 +17,7 @@ import type { NexusTree } from '../Nexus/tree'
 import { mutateRegistryFile, withContextAt } from '../Contexts/contextsRegistry'
 import { restoreProperty } from './restoreProperty'
 import { scrubReturning } from './restoreScrub'
-import {
-  exclusionWriteRefusal,
-  readLivePersonalization,
-  reseatExcludedFolders,
-} from '../Settings/settings'
-import { settingOf } from '../Settings/personalization'
+import { exclusionWriteRefusal, readLiveSetting, reseatExcludedFolders } from '../Settings/settings'
 import { sweepRootsById } from '../Properties/governedSweep'
 import { rewriteFrontmatterConnections } from '../Connections/rewrite'
 import { linkDefs } from '../Properties/propertiesRegistry'
@@ -314,7 +309,7 @@ async function restoreArtifact(
   } else if (
     record.entity !== 'space' &&
     record.links &&
-    settingOf(await readLivePersonalization(root), 'restoreLinksOnDeletion')
+    (await readLiveSetting(root, 'restoreLinksOnDeletion'))
   ) {
     const was = titleFromPath(artifactAbs)
     const landed = record.entity === 'page' ? titleFromPath(finalName) : was

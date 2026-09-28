@@ -6,8 +6,7 @@ import { captureLoser } from './Arrival/captures'
 import { liveTreeOf } from '../Nexus/liveTree'
 import { sessionRoot } from '../Nexus/session'
 import { readValue, writeValue } from '../Platform/localState'
-import { readLivePersonalization } from '../Settings/settings'
-import { settingOf } from '../Settings/personalization'
+import { readLiveSetting } from '../Settings/settings'
 import { deleteBase, readAllBases } from './Client/base'
 import {
   answered,
@@ -337,7 +336,7 @@ export const syncHandlers = {
           create: {
             protocol: 1,
             kdf,
-            historyDays: settingOf(await readLivePersonalization(root), 'historyDays'),
+            historyDays: await readLiveSetting(root, 'historyDays'),
             ring: entries,
           },
         })

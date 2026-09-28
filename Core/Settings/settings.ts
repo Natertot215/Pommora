@@ -1,6 +1,11 @@
 import { isPlainObject } from '../Contract/validators'
 import type { Commands } from '../Actions/commands'
-import { type Personalization, settingOf } from './personalization'
+import {
+  type Personalization,
+  type SettingKey,
+  type SettingValue,
+  settingOf,
+} from './personalization'
 import { setOrDrop, updateNexusConfig } from '../Files/atomicWrite'
 import { getLiveTree } from '../Nexus/liveTree'
 import { normalizeExclusions, readSettings, scopeOf, type SettingsLeaves } from './codec'
@@ -45,9 +50,10 @@ export const readLiveCommands = async (root: string): Promise<Commands> =>
 export const readWatchScope = async (root: string): Promise<WatchScope> =>
   scopeOf(await liveLeaves(root))
 
-export async function readPermanentDelete(root: string): Promise<boolean> {
-  return settingOf(await readLivePersonalization(root), 'permanentDelete')
-}
+export const readLiveSetting = async <K extends SettingKey>(
+  root: string,
+  key: K,
+): Promise<SettingValue<K>> => settingOf(await readLivePersonalization(root), key)
 
 const MINUTE_MS = 60_000
 const DAY_MS = 86_400_000

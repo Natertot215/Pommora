@@ -13,12 +13,11 @@ import { type Rewrite, sweepGovernedRoots } from './governedSweep'
 import { applyAdoptions } from './optionOps'
 import { rereadSinceSeed } from '../Index/indexSeed'
 import { contentIndexStore } from '../Platform/stores'
-import { readLivePersonalization } from '../Settings/settings'
-import { settingOf } from '../Settings/personalization'
+import { readLiveSetting } from '../Settings/settings'
 
 export async function runRepairSweep(root: string): Promise<void> {
   const files = rereadSinceSeed()
-  if (!files.length || !settingOf(await readLivePersonalization(root), 'repairOnOpen')) return
+  if (!files.length || !(await readLiveSetting(root, 'repairOnOpen'))) return
   // A nexus switch mid-open swaps the session's database; a sweep that kept writing would index this root's pages into the other nexus's rows.
   const db0 = contentIndexStore()
   const live = (): boolean => contentIndexStore() === db0

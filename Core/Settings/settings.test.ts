@@ -3,7 +3,7 @@ import { rm, mkdir, writeFile, readFile, readdir } from 'node:fs/promises'
 import { tempRoot, readJsonAt } from '../Testing/hostFs'
 import {
   readWatchScope,
-  readPermanentDelete,
+  readLiveSetting,
   updateSettings,
   writeExcludedFolders,
   writePersonalization,
@@ -88,28 +88,28 @@ describe('an unreadable settings.json is never replaced', () => {
 
   it('a corrupt file never read fails the delete switch rather than reading it as off', async () => {
     await writeFile(path(), '{ corrupt', 'utf8')
-    await expect(readPermanentDelete(root)).rejects.toThrow('settings.json')
+    await expect(readLiveSetting(root, 'permanentDelete')).rejects.toThrow('settings.json')
   })
 })
 
-describe('readPermanentDelete — what emptying the trash means', () => {
+describe('readLiveSetting — what emptying the trash means', () => {
   it('an absent file, an absent key, and a non-boolean all read as off', async () => {
-    expect(await readPermanentDelete(root)).toBe(false)
+    expect(await readLiveSetting(root, 'permanentDelete')).toBe(false)
     await write({})
-    expect(await readPermanentDelete(root)).toBe(false)
+    expect(await readLiveSetting(root, 'permanentDelete')).toBe(false)
     await write({ personalization: {} })
-    expect(await readPermanentDelete(root)).toBe(false)
+    expect(await readLiveSetting(root, 'permanentDelete')).toBe(false)
     // Never truthy-coerced: the unsafe direction is not reached by accident.
     for (const v of ['true', 1, ['true'], {}])
       await write({ personalization: { permanentDelete: v } })
-    expect(await readPermanentDelete(root)).toBe(false)
+    expect(await readLiveSetting(root, 'permanentDelete')).toBe(false)
   })
 
   it('reads the switch on, and sees a write without a reopen', async () => {
     await write({ personalization: { permanentDelete: true } })
-    expect(await readPermanentDelete(root)).toBe(true)
+    expect(await readLiveSetting(root, 'permanentDelete')).toBe(true)
     await writePersonalization(root, 'permanentDelete', undefined)
-    expect(await readPermanentDelete(root)).toBe(false)
+    expect(await readLiveSetting(root, 'permanentDelete')).toBe(false)
   })
 })
 
@@ -124,13 +124,13 @@ describe('the live-tree fast path', () => {
     })
     await refreshTree(root)
     await rm(path(), { force: true })
-    expect(await readPermanentDelete(root)).toBe(true)
+    expect(await readLiveSetting(root, 'permanentDelete')).toBe(true)
     expect((await readWatchScope(root)).excluded).toEqual(['Archive'])
   })
 
   it('falls back to disk for a root no tree is held for', async () => {
     await write({ personalization: { permanentDelete: true }, excluded_folders: ['Archive'] })
-    expect(await readPermanentDelete(root)).toBe(true)
+    expect(await readLiveSetting(root, 'permanentDelete')).toBe(true)
     expect((await readWatchScope(root)).excluded).toEqual(['Archive'])
   })
 })
