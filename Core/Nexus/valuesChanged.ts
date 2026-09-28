@@ -1,10 +1,9 @@
 // Main's own page writes are invisible to the watcher (the echo window), so every writer notes the page it touched and one flush per operation pushes them, grouped by container, with page ids resolved from the live tree.
 
-import { getLiveTree } from './liveTree'
+import { heldTreeOf } from './liveTree'
 import { escapes } from '../Paths/pathSafety'
 import { relDirname, relative, titleFromPath } from '../Paths/posix'
 import { normalizeTitle } from '../Connections/connections'
-import type { Frozen } from '../Properties/propertyValue'
 import type { NexusTree, ValueChange } from './tree'
 
 // One root at a time: a note under another root is a session that moved, and the old root's unflushed writes have no window left to reach.
@@ -67,8 +66,8 @@ export const pageIdIndex = (tree: NexusTree | null): ReadonlyMap<string, string>
 
 /** Null when the tree is not this root's, so a stale tree never names ids for another nexus. */
 function liveIndices(root: string): PageIndices | null {
-  const tree = getLiveTree()
-  return tree?.nexus.rootPath === root ? indicesOf(tree) : null
+  const tree = heldTreeOf(root)
+  return tree ? indicesOf(tree) : null
 }
 
 export const liveIdIndex = (root: string): ReadonlyMap<string, string> =>
@@ -84,7 +83,7 @@ export const livePathOf = (root: string, id: string): string | null =>
 // Walked only when a delete, rename, or restore asks, never on the value writes that rebuild the rest.
 const titles = new WeakMap<NexusTree, ReadonlyMap<string, readonly string[]>>()
 
-function titlesOf(tree: NexusTree): ReadonlyMap<string, readonly string[]> {
+export function titlesOf(tree: NexusTree): ReadonlyMap<string, readonly string[]> {
   const held = titles.get(tree)
   if (held) return held
   const byTitle = new Map<string, string[]>()
@@ -100,23 +99,11 @@ function titlesOf(tree: NexusTree): ReadonlyMap<string, readonly string[]> {
 
 /** Whether a page outside `rel` still answers `title`, so a link naming it resolves once `rel` is gone. */
 export function titleHeldOutside(root: string, title: string, rel: string): boolean {
-  const tree = getLiveTree()
-  if (tree?.nexus.rootPath !== root) return false
+  const tree = heldTreeOf(root)
+  if (!tree) return false
   return (titlesOf(tree).get(normalizeTitle(title)) ?? []).some(
     (path) => path !== rel && !path.startsWith(`${rel}/`),
   )
-}
-
-/** A restore's world: the pages the tree holds, and those landing with it. */
-export function frozenWorld(tree: NexusTree, landing: readonly string[] = []): Frozen {
-  const held = titlesOf(tree)
-  const arriving = new Set(landing.map(normalizeTitle))
-  return {
-    holds: (title) => {
-      const key = normalizeTitle(title)
-      return held.has(key) || arriving.has(key)
-    },
-  }
 }
 
 // `only` takes just those files' notes, leaving the rest to the operation that wrote them.
