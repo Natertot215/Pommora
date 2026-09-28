@@ -1,9 +1,13 @@
-import { basename, dirname, join } from '../Paths/posix'
-import { fault, ok, type Result } from '../Contract/result'
+import { basename, dirname, join, relative } from '../Paths/posix'
+import { fault, ok, type Result, valueOr } from '../Contract/result'
 import { machine } from '../Platform/machine'
 import { isContentFile, listEntries } from '../Files/walk'
 import { admitContentFile, ID_KEY, type ContentKind } from './identityMark'
-import { contentIdAt, newId } from './ids'
+import { contentIdAt, isAdoptedId, newId } from './ids'
+import { getLiveTree } from './liveTree'
+import { pageAt } from './treePatch'
+import { patchPageFromDisk } from './watchPatch'
+import { indexWrittenPage } from '../Index/indexSeed'
 import {
   readJsonStrict,
   readTextOrNull,
@@ -81,6 +85,19 @@ export async function ensurePageId(absFile: string): Promise<Result<string>> {
   return admission?.state === 'member'
     ? ok(admission.id)
     : fault('That page has no ID Pommora can file.')
+}
+
+/** A page the tree lists without an ID is given one, and the tree and the index learn it. */
+export async function stampListed(root: string, file: string): Promise<string | null> {
+  const rel = relative(root, file)
+  const tree = getLiveTree()
+  const listed = tree && pageAt(tree, rel)
+  if (!listed || !isAdoptedId(listed.id)) return null
+  const id = valueOr(await ensurePageId(file), null)
+  if (!id) return null
+  await patchPageFromDisk(root, rel)
+  await indexWrittenPage(root, file)
+  return id
 }
 
 type ContainerKind = 'collection' | 'set'

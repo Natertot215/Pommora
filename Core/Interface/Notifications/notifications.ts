@@ -90,6 +90,8 @@ export function notifyDeleted(
   notifyUndoable(message, undo, warning ? 'error' : 'normal', warning ? retry : undefined, segment)
 }
 
+let undoing: Promise<unknown> = Promise.resolve()
+
 export function notifyUndoable(
   message: string,
   undo?: () => void | Promise<void>,
@@ -103,12 +105,12 @@ export function notifyUndoable(
     post({ ...note, action: retried })
     return
   }
-  // The label's Undo and the undo chord are one shot between them, so a restore cannot run twice and mint a second copy.
+  // The label's Undo and the undo chord are one shot between them, so a restore cannot run twice and mint a second copy, and undos run in turn, so each restore reads the tree the one before it left.
   let fired = false
   const once = (): boolean => {
     if (fired) return false
     fired = true
-    void undo()
+    undoing = undoing.then(undo, undo)
     return true
   }
   const id = post({ ...note, action: retried ?? { label: 'Undo', run: () => void once() } })

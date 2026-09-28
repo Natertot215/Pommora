@@ -9,11 +9,11 @@ export const segment = style({
   borderRadius: 'var(--radius-full)',
 })
 
-export const segments = style({ display: 'inline' })
-
-export const inlineSegment = style({
-  display: 'inline-block',
-  height: '1lh',
-  verticalAlign: 'top',
-  marginInline: '6px',
-})
+export const inlineSegment = style([
+  segment,
+  {
+    display: 'inline',
+    paddingInline: 'calc(var(--segment-width, 2px) / 2)',
+    marginInline: '6px',
+  },
+])
