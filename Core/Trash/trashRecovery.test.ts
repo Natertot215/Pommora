@@ -345,21 +345,14 @@ describe('links come back with the page', () => {
     expect((await frontmatter()).Related).toBe(rebuilt)
   })
 
-  it('a key given another value meanwhile keeps it, and the restore names its page', async () => {
-    await del('Journal/Daily/Alpha.md', 'page')
-    expect((await relink('prop_related')).ok).toBe(true)
-    expect(await restore('Alpha')).toEqual(['Beta'])
-    expect((await frontmatter()).Related).toBe('[[Other]]')
-    expect(await rows()).toHaveLength(0)
-  })
-
-  it('a page refused under two properties is named once', async () => {
+  it('a key given another value meanwhile keeps it, and the restore names its page once', async () => {
     await linker(beta, BETA_ID, 'Related: "[[Alpha]]"\nParent: "[[Alpha]]"')
     await del('Journal/Daily/Alpha.md', 'page')
     expect((await relink('prop_related')).ok).toBe(true)
     expect((await relink('prop_parent')).ok).toBe(true)
     expect(await restore('Alpha')).toEqual(['Beta'])
     expect(await frontmatter()).toMatchObject({ Related: '[[Other]]', Parent: '[[Other]]' })
+    expect(await rows()).toHaveLength(0)
   })
 
   it('a property renamed meanwhile takes the value back under its new name', async () => {
@@ -391,7 +384,6 @@ describe('links come back with the page', () => {
       join(root, '.nexus', 'settings.json'),
       JSON.stringify({ personalization: { restoreLinksOnDeletion: false } }),
     )
-    await refreshTree(root)
     await del('Journal/Daily/Alpha.md', 'page')
     expect(await restore('Alpha')).toBeUndefined()
     expect((await frontmatter()).Related).toBeUndefined()
