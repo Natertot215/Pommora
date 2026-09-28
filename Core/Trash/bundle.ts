@@ -5,7 +5,7 @@ import { TRASH_DIR } from '../Paths/nexusPaths'
 import { pathExists } from '../Files/atomicWrite'
 import { recordWrite } from '../Files/writeEcho'
 import type { HostContext } from '../Contract/handlers'
-import { readPermanentDelete } from '../Settings/settings'
+import { readLiveSetting } from '../Settings/settings'
 import type { TrashMode } from './trashRow'
 
 export const BUNDLE_SUFFIX = '.deleted'
@@ -65,7 +65,7 @@ export async function trashDeps(root: string, ctx: HostContext): Promise<TrashDe
     trashMode: await ctx.trashMode(),
     trashToSystem: (p) =>
       machine().trashToSystem?.(p) ?? Promise.reject(new Error('This host has no system trash.')),
-    permanentDelete: await readPermanentDelete(root),
+    permanentDelete: await readLiveSetting(root, 'permanentDelete'),
   }
 }
 

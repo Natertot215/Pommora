@@ -13,8 +13,7 @@ import { headingOutline } from '../MarkdownPM/Engine/headingScan'
 import { queryHeadingMentions, queryMentions } from '../Index/contentIndex'
 import { nexusCorpus } from '../Index/indexSeed'
 import { linkDefs, readKeptRegistry } from '../Properties/propertiesRegistry'
-import { readLivePersonalization } from '../Settings/settings'
-import { settingOf } from '../Settings/personalization'
+import { readLiveSetting } from '../Settings/settings'
 import { rewriteTileConnections } from '../Tiles/tilesFile'
 import type { TileHostRef } from '../Tiles/tiles'
 import { readLink } from '../Connections/linkValue'
@@ -122,7 +121,7 @@ export async function renameCascade(
         : (queryHeadingMentions(titleKey, normalizeTitle(change.heading)) ?? [])
     const runs =
       'heading' in change &&
-      settingOf(await readLivePersonalization(root), 'inPageHeadingResolution') === 'automatic'
+      (await readLiveSetting(root, 'inPageHeadingResolution')) === 'automatic'
     const rewrite = (body: string, own = ''): string =>
       'title' in change
         ? rewriteConnections(body, title, change.title)
