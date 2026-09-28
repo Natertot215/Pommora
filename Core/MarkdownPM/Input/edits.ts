@@ -609,6 +609,11 @@ const inBracket = (doc: string, c: number): boolean => {
   return open !== -1 && !line.slice(open).includes(']')
 }
 
+const lineBodyBefore = (doc: string, pos: number): string => {
+  const ls = lineStartAt(doc, pos)
+  return doc.slice(ls + blockPrefix(doc.slice(ls, lineEndAt(doc, pos))).length, pos)
+}
+
 const opensLine = (doc: string, pos: number): boolean => {
   const before = doc.slice(lineStartAt(doc, pos), pos)
   return before.slice(blockPrefix(before).length).trim() === ''
@@ -658,10 +663,8 @@ export function bullet(
   const doc = scan.text
   const c = selStart
   if (c < 2 || doc[c - 1] !== '^' || doc[c - 2] !== ' ') return null
-  if (isLiteralAt(scan, c) || inBracket(doc, c)) return null
-  const ls = lineStartAt(doc, c)
-  const pfx = blockPrefix(doc.slice(ls, lineEndAt(doc, c)))
-  if (!/\S/.test(doc.slice(ls + pfx.length, c - 2))) return null
+  if (isLiteralAt(scan, c) || inBracket(doc, c) || !/\S/.test(lineBodyBefore(doc, c - 2)))
+    return null
   return { from: c - 1, to: c, insert: '• ', selection: c + 1 }
 }
 
@@ -672,9 +675,9 @@ const PUNCTUATION: Record<string, string> = {
   '!?': '⁉',
   '||': '‖',
 }
-const PUNCTUATION_MARKS = '!?|'
+const PAIR_OF = Object.fromEntries(Object.entries(PUNCTUATION).map(([pair, g]) => [g, pair]))
 
-// A pair resolves on the keystroke after it so a longer run such as `???` stays literal.
+// A third mark expands the glyph back to its pair, so a longer run such as `???` stays literal.
 export function punctuation(
   scan: DocScan,
   selStart: number,
@@ -685,16 +688,16 @@ export function punctuation(
   if (selStart !== selEnd || !settingOf(settings, 'transformPunctuation')) return null
   const doc = scan.text
   const c = selStart
-  const glyph = PUNCTUATION[doc.slice(c - 2, c)]
-  if (!glyph || PUNCTUATION_MARKS.includes(inserted) || PUNCTUATION_MARKS.includes(doc[c - 3]))
-    return null
-  if (isLiteralAt(scan, c)) return null
+  const pair = PAIR_OF[doc[c - 1]]
+  if (pair && PUNCTUATION[pair[1] + inserted])
+    return { from: c - 1, to: c, insert: pair + inserted, selection: c + 2 }
+  const glyph = PUNCTUATION[doc[c - 1] + inserted]
+  if (!glyph || PUNCTUATION[doc.slice(c - 2, c)] || isLiteralAt(scan, c)) return null
   if (glyph === '‖') {
-    const ls = lineStartAt(doc, c)
-    const before = doc.slice(ls + blockPrefix(doc.slice(ls, lineEndAt(doc, c))).length, c - 2)
+    const before = lineBodyBefore(doc, c - 1)
     if (!/\S/.test(before) || before.includes('|')) return null
   }
-  return { from: c - 2, to: c, insert: `${glyph}${inserted}`, selection: c }
+  return { from: c - 1, to: c, insert: glyph, selection: c }
 }
 
 const EQUATIONS: Record<string, string> = {
@@ -763,11 +766,14 @@ export function dashArrow(
     return { from: c - 1, to: c, insert: '«', selection: c }
   if (arrows && inserted === '-' && doc[c - 1] === '<')
     return { from: c - 1, to: c, insert: '←', selection: c }
-  if (dashes && inserted === ' ' && c >= 2 && doc[c - 1] === '-' && doc[c - 2] === ' ') {
-    const ls = lineStartAt(doc, c)
-    const pfx = blockPrefix(doc.slice(ls, lineEndAt(doc, c)))
-    const before = doc.slice(ls + pfx.length, c - 2)
-    if (/\S/.test(before)) return { from: c - 1, to: c, insert: '– ', selection: c + 1 }
-  }
+  if (
+    dashes &&
+    inserted === ' ' &&
+    c >= 2 &&
+    doc[c - 1] === '-' &&
+    doc[c - 2] === ' ' &&
+    /\S/.test(lineBodyBefore(doc, c - 2))
+  )
+    return { from: c - 1, to: c, insert: '– ', selection: c + 1 }
   return null
 }
