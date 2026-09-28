@@ -11,7 +11,7 @@ import {
   type MarkdownScope,
 } from './detect'
 import { codeLanguageName } from './codeLangs'
-import { carriedFrom, type DocScan, spanAt } from './docScan'
+import { carriedFrom, type DocScan, fenceBodyStart, spanAt } from './docScan'
 import { isBlockquoteLine, lineIndexAt, quotePrefix, quotePrefixWidth } from './markdownCode'
 import { cx } from '@pommora/uix/Utilities/cx'
 
@@ -28,7 +28,8 @@ function calloutNestedQuote(
 
 export const GLYPH_CLASS = 'md-list-glyph'
 
-export const GRIP_HOST = { 'data-reveal-host': 'off' }
+export const GRIP_HOST = { 'data-reveal-host': 'off', 'data-grip': '' }
+export const GRIP_LINE = '.cm-line[data-grip]'
 
 // A marker whose text stays on screen needs one real space after it, or the reader's first word joins it into `2.Preserve` and the platform checker underlines the pair. The space is drawn at zero width; the visible gap is the glyph's own padding.
 // An item with nothing after the gap has no word to join, and the collapsed space would be the only thing the caret could sit against, so the whole gap goes.
@@ -39,6 +40,14 @@ function pushMarkerGap(intents: DecoIntent[], from: number, to: number, le: numb
   }
   intents.push({ kind: 'class', from, to: from + 1, className: 'md-list-gap' })
   if (to > from + 1) intents.push({ kind: 'hide', from: from + 1, to })
+}
+
+function pushListLine(intents: DecoIntent[], ls: number, innerStart: number, lm: ListMarker): void {
+  intents.push({ kind: 'line', from: ls, className: listLineClass(lm), level: lm.level })
+  if (lm.markerStart > 0) {
+    intents.push({ kind: 'hide', from: innerStart, to: innerStart + lm.markerStart })
+    intents.push({ kind: 'atomic', from: innerStart, to: innerStart + lm.markerStart })
+  }
 }
 
 const glyphOf = (e: CitationEntry): string => (e.ordinal === null ? '–' : `${e.ordinal}.`)
@@ -187,8 +196,7 @@ function pageChrome(
   }
 
   if (fence) {
-    if (base > 0) base = Math.min(base, quotePrefixWidth(line, fence.depth))
-    const innerStart = ls + base
+    const innerStart = ls + fenceBodyStart(line, fence)
     const caretOnLine = selStart >= ls && selStart <= le
     intents.push({
       kind: 'line',
@@ -199,7 +207,10 @@ function pageChrome(
         fence.role === 'close' && 'codeblock-last',
       ),
     })
-    if (base > 0) intents.push({ kind: 'hide', from: ls, to: innerStart })
+    if (innerStart > ls) {
+      intents.push({ kind: 'hide', from: ls, to: innerStart })
+      intents.push({ kind: 'atomic', from: ls, to: innerStart })
+    }
     // The offset comes from the fence grammar itself (markerEnd), so an indented or quoted fence never hides its own marker.
     const infoStart = ls + fence.markerEnd
     const named = fence.lang ? codeLanguageName(fence.lang) : null
@@ -467,11 +478,7 @@ export function seatPastMarker(
     }
     if (end !== pos) return end
   }
-  const marker = line.find(
-    (it) =>
-      it.kind === 'class' &&
-      (it.className.startsWith('md-list-number') || it.className.startsWith('md-list-arrow')),
-  )
+  const marker = line.find((it) => it.kind === 'class' && it.className.includes(GLYPH_CLASS))
   if (marker?.kind !== 'class' || pos < marker.from || pos > marker.to) return null
   let end = marker.to
   for (const it of line)
@@ -528,16 +535,7 @@ function pushConstruct(
       if (!caretOnLine) intents.push({ kind: 'hide', from: innerStart, to: contentStart })
     }
   } else if (lm?.box && glyph === 'checkbox') {
-    intents.push({
-      kind: 'line',
-      from: ls,
-      className: listLineClass(lm),
-      level: lm.level,
-    })
-    if (lm.markerStart > 0) {
-      intents.push({ kind: 'hide', from: innerStart, to: innerStart + lm.markerStart })
-      intents.push({ kind: 'atomic', from: innerStart, to: innerStart + lm.markerStart })
-    }
+    pushListLine(intents, ls, innerStart, lm)
     if (!onMarker) {
       intents.push({
         kind: 'hide',
@@ -588,37 +586,14 @@ function pushConstruct(
       })
     }
     return lm
-  } else if (lm && glyph === 'arrow') {
-    intents.push({ kind: 'line', from: ls, className: listLineClass(lm), level: lm.level })
-    if (lm.markerStart > 0) {
-      intents.push({ kind: 'hide', from: innerStart, to: innerStart + lm.markerStart })
-      intents.push({ kind: 'atomic', from: innerStart, to: innerStart + lm.markerStart })
-    }
-    intents.push({
-      kind: 'class',
-      from: innerStart + lm.markerStart,
-      to: innerStart + lm.markerEnd,
-      className: `md-list-arrow md-control ${GLYPH_CLASS}`,
-    })
-    pushMarkerGap(intents, innerStart + lm.markerEnd, innerStart + lm.contentStart, le)
-    return lm
-  } else if (lm && glyph === 'number') {
+  } else if (lm && (glyph === 'arrow' || glyph === 'number')) {
     // Literal recolored source, no widget, so typing after the marker can't hit an atomic range.
-    intents.push({
-      kind: 'line',
-      from: ls,
-      className: listLineClass(lm),
-      level: lm.level,
-    })
-    if (lm.markerStart > 0) {
-      intents.push({ kind: 'hide', from: innerStart, to: innerStart + lm.markerStart })
-      intents.push({ kind: 'atomic', from: innerStart, to: innerStart + lm.markerStart })
-    }
+    pushListLine(intents, ls, innerStart, lm)
     intents.push({
       kind: 'class',
       from: innerStart + lm.markerStart,
       to: innerStart + lm.markerEnd,
-      className: `md-list-number md-control ${GLYPH_CLASS}`,
+      className: `md-list-${glyph} md-control ${GLYPH_CLASS}`,
     })
     pushMarkerGap(intents, innerStart + lm.markerEnd, innerStart + lm.contentStart, le)
     return lm

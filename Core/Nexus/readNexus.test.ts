@@ -16,7 +16,12 @@ import { ASSETS_DIR_REL, METADATA_DIR_REL } from '../Paths/nexusPaths'
 import { contentIdAt } from './ids'
 import { corpusFiles } from '../Files/walk'
 import { DEFAULT_COMMANDS } from '../Actions/commands'
-import { HISTORY_DAYS } from '../Settings/personalization'
+import {
+  HISTORY_DAYS,
+  SETTING_DEFAULTS,
+  settingValue,
+  type SettingKey,
+} from '../Settings/personalization'
 
 const PG_LINKED = '01KVGMT8BFP350FZZXAMG1QDRQ'
 const PG_PLAIN = '01KVGMT8BFP350FZZXAMG1QDRR'
@@ -647,35 +652,21 @@ describe('readNexus — personalization', () => {
     const t = await readNexus(mk({ personalization: { defaultIcons: { context: 'anchor' } } }))
     expect(t.personalization.defaultIcons).toEqual({ context: 'anchor' })
   })
-  // A key the writer persists but the reader never parses is silently dropped, so the toggle appears to work and reverts on relaunch. Adding a knob adds it here.
+  // A key the writer persists but the reader never parses is silently dropped, so the toggle appears to work and reverts on relaunch.
   it('every boolean knob survives the round-trip', async () => {
-    const keys = [
-      'hideChevrons',
-      'outlinerLines',
-      'codeblockLineCount',
-      'navCloseOnSelect',
-      'revealTabBarOnHover',
-      'connectionsOpenInPreview',
-      'plainUnresolvedLinks',
-      'muteCheckedItems',
-      'permanentDelete',
-      'pasteLinkIntoText',
-      'citationsShown',
-      'jumpToCitation',
-    ] as const
-    const t = await readNexus(
-      mk({ personalization: Object.fromEntries(keys.map((k) => [k, true])) }),
+    const keys = (Object.keys(SETTING_DEFAULTS) as SettingKey[]).filter(
+      (k) => typeof SETTING_DEFAULTS[k] === 'boolean',
     )
-    for (const k of keys) expect(t.personalization[k], k).toBe(true)
+    const t = await readNexus(
+      mk({ personalization: Object.fromEntries(keys.map((k) => [k, !SETTING_DEFAULTS[k]])) }),
+    )
+    for (const k of keys) expect(t.personalization[k], k).toBe(!SETTING_DEFAULTS[k])
   })
   // A color setting the reader never parses is dropped on the way back in, which reads in the app as a picked color that reverts on relaunch.
   it('every ramp-cell color survives the round-trip', async () => {
-    const keys = [
-      'connectionColor',
-      'externalLinkColor',
-      'checkboxColor',
-      'highlightColor',
-    ] as const
+    const keys = (Object.keys(SETTING_DEFAULTS) as SettingKey[]).filter(
+      (k) => settingValue(k, 'grey-4') === 'grey-4',
+    )
     const t = await readNexus(
       mk({ personalization: Object.fromEntries(keys.map((k) => [k, 'grey-4'])) }),
     )

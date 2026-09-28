@@ -49,7 +49,6 @@ import {
 } from './Engine/intents'
 import { type DocScan, chunksOver, codeBlockTextAt, inCodeAt } from './Engine/docScan'
 import { lineEndOf, lineIndexAt } from './Engine/markdownCode'
-import { blockQueryAt } from './Menus/blockQuery'
 import { resolveMdTarget, wikiLinkView, type ConnectionsApi } from './Links/connectionsApi'
 import type { LinkStatus } from '@pommora/core/Connections/connections'
 import { editorHost, pageEditorAt, resolutionNudge } from './api'
@@ -59,7 +58,14 @@ import { cx } from '@pommora/uix/Utilities/cx'
 
 export const MD_LINK_CLASS = 'md-link'
 
-class ConnGlyphWidget extends WidgetType {
+// WidgetType.ignoreEvent defaults to true, which would swallow the pointerdown the editor's own gestures act on, like listDrag on a bullet.
+export abstract class GlyphWidget extends WidgetType {
+  ignoreEvent(): boolean {
+    return false
+  }
+}
+
+class ConnGlyphWidget extends GlyphWidget {
   constructor(readonly status: LinkStatus) {
     super()
   }
@@ -71,9 +77,6 @@ class ConnGlyphWidget extends WidgetType {
     el.className = `md-connection-glyph md-connection-glyph-${this.status}`
     return el
   }
-  ignoreEvent(): boolean {
-    return false
-  }
 }
 
 function connGlyph(status: LinkStatus, at: number): Range<Decoration> {
@@ -81,7 +84,7 @@ function connGlyph(status: LinkStatus, at: number): Range<Decoration> {
 }
 
 // The `§` is the separator itself: spaced on both sides after a page half, flush against the heading when it stands alone.
-class HeadingJoinWidget extends WidgetType {
+class HeadingJoinWidget extends GlyphWidget {
   constructor(readonly spaced: boolean) {
     super()
   }
@@ -93,9 +96,6 @@ class HeadingJoinWidget extends WidgetType {
     el.className = cx('md-heading-symbol', this.spaced && 'md-heading-symbol-spaced')
     el.textContent = '§'
     return el
-  }
-  ignoreEvent(): boolean {
-    return false
   }
 }
 
@@ -110,7 +110,7 @@ class HrWidget extends WidgetType {
   }
 }
 
-class BulletWidget extends WidgetType {
+class BulletWidget extends GlyphWidget {
   eq(): boolean {
     return true
   }
@@ -120,13 +120,9 @@ class BulletWidget extends WidgetType {
     el.textContent = '•'
     return el
   }
-  // WidgetType.ignoreEvent defaults to true, which would swallow the listDrag pointerdown on a bullet glyph.
-  ignoreEvent(): boolean {
-    return false
-  }
 }
 
-class CheckboxWidget extends WidgetType {
+class CheckboxWidget extends GlyphWidget {
   constructor(readonly checked: boolean) {
     super()
   }
@@ -142,12 +138,9 @@ class CheckboxWidget extends WidgetType {
     zone.appendChild(box)
     return zone
   }
-  ignoreEvent(): boolean {
-    return false
-  }
 }
 
-class LineWidget extends WidgetType {
+class LineWidget extends GlyphWidget {
   constructor(
     readonly className: string,
     readonly text?: string,
@@ -163,9 +156,6 @@ class LineWidget extends WidgetType {
     el.setAttribute('aria-hidden', 'true')
     if (this.text !== undefined) el.textContent = this.text
     return el
-  }
-  ignoreEvent(): boolean {
-    return false
   }
 }
 
@@ -255,7 +245,7 @@ class OutlinerRailWidget extends WidgetType {
   }
 }
 
-export class CiteRefWidget extends WidgetType {
+export class CiteRefWidget extends GlyphWidget {
   constructor(readonly ordinal: number) {
     super()
   }
@@ -267,9 +257,6 @@ export class CiteRefWidget extends WidgetType {
     el.className = 'md-citation-reference'
     el.textContent = String(this.ordinal)
     return el
-  }
-  ignoreEvent(): boolean {
-    return false
   }
 }
 
@@ -287,8 +274,6 @@ function widgetFor(spec: WidgetSpec): WidgetType {
 }
 
 const hideMarker = Decoration.replace({})
-const querySlash = Decoration.mark({ class: 'md-phantom-syntax' })
-const queryText = Decoration.mark({ class: 'md-connection-phantom' })
 const atomicSpan = Decoration.mark({})
 const NO_ACTIVE = new Set<number>()
 
@@ -566,13 +551,6 @@ function build(view: EditorView, conn: ConnectionsApi | undefined, scope: Markdo
         inCodeAt(scan, a + o),
       ))
         ranges.push(sectionMark.range(a + run.from, a + run.to))
-  }
-  if (sel.empty) {
-    const q = blockQueryAt(scan, sel.head)
-    if (q) {
-      ranges.push(querySlash.range(q.from, q.from + 1))
-      if (q.query !== '') ranges.push(queryText.range(q.from + 1, q.to))
-    }
   }
   const bidir = Decoration.mark({ class: 'dual-direction-arrow' })
   for (const { from, to } of view.visibleRanges)

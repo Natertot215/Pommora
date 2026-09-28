@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import { asRenderableIcon } from '@pommora/uix/Symbols'
-import { blockMenuSections, filterBlockMenu } from './blockMenu'
+import { BLOCK_MENU_SECTIONS, filterBlockMenu, insertRows } from './blockMenu'
 
-const seated = blockMenuSections(true)
+const seated = BLOCK_MENU_SECTIONS
 
 describe('the block menu catalog', () => {
   it('titles five sections and lists their rows in order', () => {
@@ -40,9 +40,7 @@ describe('the block menu catalog', () => {
 
   it('offers Footnote only where a marker can bind', () => {
     expect(seated.flatMap((s) => s.rows)).toHaveLength(22)
-    const unseated = blockMenuSections(false)
-    expect(unseated.flatMap((s) => s.rows)).toHaveLength(21)
-    expect(unseated.flatMap((s) => s.rows).map((r) => r.label)).not.toContain('Footnote')
+    expect(insertRows(false).map((r) => r.label)).not.toContain('Footnote')
   })
 
   it('names an icon the registry resolves on every row', () => {

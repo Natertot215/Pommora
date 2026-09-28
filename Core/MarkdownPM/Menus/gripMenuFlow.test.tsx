@@ -7,6 +7,7 @@ import { buildPageIndex } from '@pommora/core/Connections/pageIndex'
 import { cleanupEditor, mountEditor, seedHost, stubEditorBridge } from '../../Testing/editorHarness'
 import { type GripMenuAction, gripMenuItems } from '@pommora/core/Actions/gripMenu'
 import type { ActionItem, PickItem } from '@pommora/core/Actions/menuModel'
+import { HEADING_LINE } from '../folding'
 
 const calls: (readonly ActionItem<string>[])[] = []
 let nextPick: GripMenuAction | null = null
@@ -279,7 +280,7 @@ describe('a read-only heading’s grip', () => {
       },
     })
     const view = await mountEditor({ initialBody: '## Setup\n\nbody', readOnly: true })
-    const line = view.dom.querySelector('.cm-line.md-heading-fold') as HTMLElement
+    const line = view.dom.querySelector(HEADING_LINE) as HTMLElement
     expect(line).toBeTruthy()
     await act(async () => {
       line.dispatchEvent(

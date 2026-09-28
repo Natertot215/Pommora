@@ -733,6 +733,12 @@ export const FRAMES = roster([
             label: 'Show Line Count In Code Blocks',
             hint: "Number a codeblock's lines — display chrome, never editable text.",
           },
+          {
+            kind: 'toggle',
+            key: 'htmlShortcuts',
+            label: 'HTML Shortcuts',
+            hint: 'Use command/ to insert <!---> comments, and recognize </div> classes.',
+          },
         ],
       },
       {

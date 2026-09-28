@@ -1,12 +1,12 @@
-// `createBlockDragGesture` parameterizes only the hit-test class, so the rail grips, the heading chevron, the callout head and the quote grip all share one gesture.
 import type { Extension } from '@codemirror/state'
 import { EditorView } from '@codemirror/view'
 import { blockAt, blockStarts } from '../Engine/blockModel'
 import { docScan, docString } from '../docCache'
 import { nearestBoundary, shadeField, type Boundary } from './dragChrome'
 import { beginRelocateDrag, editorGestureCleanup } from './editorGesture'
-import { inGripStrip, lineElementAt } from '../lineDom'
+import { gutterLineAt, lineElementAt } from '../lineDom'
 import { moveRange } from '../Engine/listDragModel'
+import { GRIP_LINE } from '../Engine/intents'
 
 function bottomAbove(view: EditorView, at: number): number | null {
   if (at === 0) return null
@@ -85,29 +85,25 @@ export function startBlockDrag(
 }
 
 interface DragConfig {
-  gate: string
+  selector: string
   onClick?: (view: EditorView, line: HTMLElement) => void
   onDragStart?: (view: EditorView, block: { from: number; to: number }) => void
 }
 
-export function createBlockDragGesture({ gate, onClick, onDragStart }: DragConfig): Extension {
-  const sel = `.cm-line.${gate}`
+export function createBlockDragGesture({ selector, onClick, onDragStart }: DragConfig): Extension {
   return [
     shadeField,
     editorGestureCleanup,
     EditorView.domEventHandlers({
       mousedown(e) {
-        const line = (e.target as HTMLElement).closest?.(sel) as HTMLElement | null
-        if (e.button === 0 && line && inGripStrip(e, line)) {
-          e.preventDefault()
-          return true
-        }
-        return false
+        if (e.button !== 0 || !gutterLineAt(e, selector)) return false
+        e.preventDefault()
+        return true
       },
       pointerdown(e, view) {
         if (e.button !== 0) return false
-        const line = (e.target as HTMLElement).closest?.(sel) as HTMLElement | null
-        if (!line || !inGripStrip(e, line)) return false
+        const line = gutterLineAt(e, selector)
+        if (!line) return false
         const block = blockAt(docScan(view.state.doc), view.posAtDOM(line))
         if (!block) return false
         startBlockDrag(view, e, block, { onClick, onDragStart, line })
@@ -117,12 +113,4 @@ export function createBlockDragGesture({ gate, onClick, onDragStart }: DragConfi
   ]
 }
 
-export const blockDragExtension: Extension = createBlockDragGesture({ gate: 'md-block-handle' })
-
-// The callout's gutter grip is gated on the head line rather than a rail handle; `blockAt` resolves a callout to its full box.
-export const calloutDragExtension: Extension = createBlockDragGesture({ gate: 'md-callout-first' })
-
-// Blockquote's grip is a widget (its pseudos are taken by the bar and fill), but the gesture is the same.
-export const blockquoteDragExtension: Extension = createBlockDragGesture({
-  gate: 'md-blockquote-first',
-})
+export const blockDragExtension: Extension = createBlockDragGesture({ selector: GRIP_LINE })

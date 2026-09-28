@@ -12,27 +12,17 @@ import { headingParts, webpageEmbedUrlSpan } from '../Engine/detect'
 import { type Block, blockAt } from '../Engine/blockModel'
 import { docScan, docString } from '../docCache'
 import { embeddable } from '../Engine/embedClaims'
-import { HEADING_FOLD_LINE } from '../folding'
+import { HEADING_LINE } from '../folding'
 import { applyEmbedZoom, embedExclusions, embedZoomAt, setWebLinkSeat } from '../Embeds/embedWidget'
 import { focusRange } from '../caretPlacement'
 import { lineEndAt, lineStartAt } from '../Engine/markdownCode'
 import { applyEdit } from '../Input/applyEdit'
 import { type EditorHost, editorHost } from '../api'
-import { inGripStrip } from '../lineDom'
+import { gutterLineAt } from '../lineDom'
+import { GRIP_LINE } from '../Engine/intents'
 
-const GRIP_SELECTOR = ['md-block-handle', 'md-callout-first', 'md-blockquote-first']
-  .map((c) => `.cm-line.${c}`)
-  .join(', ')
-
-/** Null on the line's own text — a press past the grip's own band is never a grip press. */
-function gutterLineAt(e: MouseEvent, selector: string): HTMLElement | null {
-  const line = (e.target as HTMLElement).closest?.(selector) as HTMLElement | null
-  return line && inGripStrip(e, line) ? line : null
-}
-
-const gripLineAt = (e: MouseEvent): HTMLElement | null => gutterLineAt(e, GRIP_SELECTOR)
-const headingLineAt = (e: MouseEvent): HTMLElement | null =>
-  gutterLineAt(e, `.cm-line.${HEADING_FOLD_LINE}`)
+const gripLineAt = (e: MouseEvent): HTMLElement | null => gutterLineAt(e, GRIP_LINE)
+const headingLineAt = (e: MouseEvent): HTMLElement | null => gutterLineAt(e, HEADING_LINE)
 
 export function embedPickTree(
   nodes: readonly PickItem<string>[],

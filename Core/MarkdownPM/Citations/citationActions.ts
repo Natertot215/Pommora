@@ -136,7 +136,8 @@ export function applyCitationAction(
           (m) => m.from === subject.marker.from && m.to === subject.marker.to,
         )
       : undefined
-  if (subject.kind === 'marker' ? !marker : !entry) return
+  const target = subject.kind === 'marker' ? marker : entry
+  if (!target) return
 
   switch (action) {
     case 'cite:edit':
@@ -144,16 +145,14 @@ export function applyCitationAction(
       return
     case 'cite:copy':
       // The raw reference, not the citation's text: pasting it back IS the second reference.
-      void view.state.facet(editorHost).clipboard.write(`[^${(marker ?? entry)?.label ?? ''}]`)
+      void view.state.facet(editorHost).clipboard.write(`[^${target.label}]`)
       return
-    case 'cite:delete': {
-      const changes = marker
-        ? deleteMarkerChanges(scan, marker)
-        : entry
-          ? deleteCitationChanges(scan, entry)
-          : []
-      commitCitation(view, changes, 'delete')
+    case 'cite:delete':
+      commitCitation(
+        view,
+        'from' in target ? deleteMarkerChanges(scan, target) : deleteCitationChanges(scan, target),
+        'delete',
+      )
       return
-    }
   }
 }

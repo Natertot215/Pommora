@@ -324,15 +324,15 @@ export function inJoinedMath(scan: LineScan, i: number, first: number, last: num
 
 export const indentWidth = (line: string): number => /^[ \t]*/.exec(line)![0].length
 
+export function fenceBodyStart(line: string, f: FenceInfo): number {
+  const quote = quotePrefixWidth(line, f.depth)
+  return quote + Math.min(f.indent, indentWidth(line.slice(quote)))
+}
+
 export function codeBlockTextAt(scan: DocScan, pos: number): string {
-  const start = lineIndexAt(scan, pos)
-  const depth = scan.fences[start]?.depth ?? 0
   const out: string[] = []
-  for (let i = start + 1; i < scan.lines.length; i++) {
-    if (scan.fences[i]?.role !== 'content') break
-    const line = scan.lines[i]
-    out.push(line.slice(quotePrefixWidth(line, depth)))
-  }
+  for (let i = lineIndexAt(scan, pos) + 1; scan.fences[i]?.role === 'content'; i++)
+    out.push(scan.lines[i].slice(fenceBodyStart(scan.lines[i], scan.fences[i]!)))
   return out.join('\n')
 }
 

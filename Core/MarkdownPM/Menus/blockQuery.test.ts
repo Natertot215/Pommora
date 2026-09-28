@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
+import { EditorState } from '@codemirror/state'
 import { scanDoc } from '../Engine/docScan'
-import { blockQueryAt } from './blockQuery'
+import { blockQuery, blockQueryAt, closeBlockQuery } from './blockQuery'
 
 const at = (text: string, caret = text.length) => blockQueryAt(scanDoc(text), caret)
 
@@ -59,5 +60,48 @@ describe('the block menu refuses the constructs a lone-line insert refuses', () 
 
   it('refuses a line inside the citations run', () => {
     expect(at('body\n\n[^1]: note\n/')).toBeNull()
+  })
+})
+
+describe('the open query follows typing, not the caret', () => {
+  const state = EditorState.create({ doc: 'a\n', extensions: blockQuery })
+  const typed = state.update({
+    changes: { from: 2, insert: '/he' },
+    selection: { anchor: 5 },
+    userEvent: 'input.type',
+  }).state
+
+  it('opens on the keystroke that writes the slash line', () => {
+    expect(typed.field(blockQuery)).toMatchObject({ query: 'he', from: 2, to: 5 })
+  })
+
+  it('stays closed while nothing matches, and reopens when the query matches again', () => {
+    const none = typed.update({
+      changes: { from: 5, insert: 'zz' },
+      selection: { anchor: 7 },
+      userEvent: 'input.type',
+    }).state
+    expect(none.field(blockQuery)).toBeNull()
+    const back = none.update({
+      changes: { from: 5, to: 7 },
+      selection: { anchor: 5 },
+      userEvent: 'delete.backward',
+    }).state
+    expect(back.field(blockQuery)).toMatchObject({ query: 'he' })
+  })
+
+  it('closes when the caret moves, and a caret landing back at the end reopens nothing', () => {
+    const away = typed.update({ selection: { anchor: 0 } }).state
+    expect(away.field(blockQuery)).toBeNull()
+    expect(away.update({ selection: { anchor: 5 } }).state.field(blockQuery)).toBeNull()
+  })
+
+  it('opens on nothing the person did not type, like a mirrored edit', () => {
+    const mirrored = state.update({ changes: { from: 2, insert: '/he' }, selection: { anchor: 5 } })
+    expect(mirrored.state.field(blockQuery)).toBeNull()
+  })
+
+  it('closes on the close effect with the caret still in place', () => {
+    expect(typed.update({ effects: closeBlockQuery.of(null) }).state.field(blockQuery)).toBeNull()
   })
 })

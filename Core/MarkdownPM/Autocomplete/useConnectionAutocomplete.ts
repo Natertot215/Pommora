@@ -98,7 +98,7 @@ export function useConnectionAutocomplete(
       const taken = state ? embedExclusions(state) : new Set<string>()
       pool = pool.filter((p) => embeddable(p.title, taken))
     }
-    return pool.slice(0, AC_MAX).map(pageRow)
+    return pool.slice(0, AC_MAX).map((p) => pageRow(p, conn))
   }
   // A query that names its one match exactly is a finished link, so the caret resting in one opens nothing; Back is the exception.
   const candidates = useMemo(() => {

@@ -376,11 +376,11 @@ describe('decoration intents', () => {
     expect(onOpen.filter((d) => d.kind === 'codeTag')).toHaveLength(0)
   })
 
-  it('an indented typed fence hides only its info word — never its own backticks', () => {
+  it('an indented typed fence hides its indent and info word — never its own backticks', () => {
     const t = '- item\n  ```yaml\n  key: 1\n  ```'
     const intents = decorationsFor(t, tokenize(t), new Set(), 0)
     const hides = intents.filter((d): d is Extract<typeof d, { kind: 'hide' }> => d.kind === 'hide')
-    expect(hides.map((h) => t.slice(h.from, h.to))).toEqual(['yaml'])
+    expect(hides.map((h) => t.slice(h.from, h.to))).toEqual(['  ', 'yaml', '  ', '  '])
     const lang = intents.find((d) => d.kind === 'codeTag')
     expect(lang && 'from' in lang ? lang.from : -1).toBe(t.indexOf('yaml'))
   })
@@ -415,12 +415,15 @@ describe('decoration intents', () => {
     expect(intents.filter((d) => d.kind === 'hide')).toHaveLength(0)
   })
 
-  it('the tag reads back the block it sits on, fences off and quote prefix stripped', () => {
+  it('the tag reads back the block it sits on, fences off and its quote prefix and indent stripped', () => {
     const plain = '```js\nconst a = 1\n\nconst b = 2\n```\nafter'
     expect(codeBlockTextAt(scanDoc(plain), 2)).toBe('const a = 1\n\nconst b = 2')
 
     const quoted = '> ```py\n> x = 1\n> y = 2\n> ```'
     expect(codeBlockTextAt(scanDoc(quoted), 4)).toBe('x = 1\ny = 2')
+
+    const listed = '- item\n  ```py\n  if x:\n      y\n  ```'
+    expect(codeBlockTextAt(scanDoc(listed), 9)).toBe('if x:\n    y')
 
     expect(codeBlockTextAt(scanDoc('```\n```'), 1)).toBe('')
   })

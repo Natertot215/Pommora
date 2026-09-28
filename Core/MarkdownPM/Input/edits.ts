@@ -1,7 +1,14 @@
 import { type Personalization, settingOf } from '@pommora/core/Settings/personalization'
 import { linkDestinationAt } from '@pommora/core/Connections/links'
 import { aliasSpanAt } from '@pommora/core/Connections/connections'
-import { inCalloutAt, inCodeAt, inFenceAt, spanAt, type DocScan } from '../Engine/docScan'
+import {
+  fenceBodyStart,
+  inCalloutAt,
+  inCodeAt,
+  inFenceAt,
+  spanAt,
+  type DocScan,
+} from '../Engine/docScan'
 import {
   fenceAt,
   isBlockquoteLine,
@@ -219,6 +226,10 @@ export function smartBackspace(
 
   // A cell draws neither, so neither question applies there — and the scan, which is always page-shaped, would answer both wrongly.
   if (scope === 'page') {
+    const fence = scan.fences[lineIndexAt(scan, selStart)]
+    const body = fence ? ls + fenceBodyStart(line, fence) : ls
+    if (body > ls && selStart === body && ls > 0)
+      return { from: ls - 1, to: body, insert: '', selection: ls - 1 }
     // A fence holds literal text, so collapsing a marker there would eat characters the author typed as content.
     if (inCodeAt(scan, selStart)) return null
 

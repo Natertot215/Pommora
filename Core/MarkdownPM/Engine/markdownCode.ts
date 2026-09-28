@@ -33,6 +33,7 @@ interface Fence {
   marker: string
   length: number
   info: string
+  indent: number
   markerEnd: number
 }
 
@@ -75,6 +76,7 @@ export function fenceAt(line: string): Fence | null {
     marker: m[2][0],
     length: m[2].length,
     info: m[3].trim(),
+    indent: m[1].length,
     markerEnd: quote.length + m[1].length + m[2].length,
   }
 }

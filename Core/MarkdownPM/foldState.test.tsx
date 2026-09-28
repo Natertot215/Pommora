@@ -15,7 +15,7 @@ import {
   foldedRegions,
   regionsOf,
   toggleFoldAt,
-  HEADING_FOLD_LINE,
+  HEADING_FOLD_CLASS,
   type FoldKind,
 } from './folding'
 import { commitCitation } from './Citations/citationActions'
@@ -359,13 +359,13 @@ describe('a fold chevron and a heading gesture stop sharing one class', () => {
     const head = lineEls(view)[0]
     expect(head.classList.contains('md-foldable')).toBe(true)
     expect(head.classList.contains('md-fold-open')).toBe(true)
-    expect(head.classList.contains(HEADING_FOLD_LINE)).toBe(true)
+    expect(head.classList.contains(HEADING_FOLD_CLASS)).toBe(true)
   })
 
   it('the section anchor draws no chevron and answers no heading gesture', async () => {
     const view = await mountEditor({ initialBody: CITED, citationsShown: true })
     const divider = lineEls(view)[2]
-    for (const c of ['md-foldable', 'md-fold-open', 'md-fold-closed', HEADING_FOLD_LINE])
+    for (const c of ['md-foldable', 'md-fold-open', 'md-fold-closed', HEADING_FOLD_CLASS])
       expect(divider.classList.contains(c), c).toBe(false)
   })
 
@@ -384,7 +384,7 @@ describe('a fold chevron and a heading gesture stop sharing one class', () => {
     const divider = lineEls(view)[2]
     divider.classList.add('md-foldable')
     expect(rightPress(divider)).toBe(false)
-    divider.classList.add(HEADING_FOLD_LINE)
+    divider.classList.add(HEADING_FOLD_CLASS)
     expect(rightPress(divider)).toBe(true)
   })
 })

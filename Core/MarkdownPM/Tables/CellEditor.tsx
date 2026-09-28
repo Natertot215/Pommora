@@ -1,8 +1,9 @@
 import { useEffect, useLayoutEffect, useRef } from 'react'
 import { EditorView, keymap } from '@codemirror/view'
 import { Annotation, EditorSelection, EditorState, Prec } from '@codemirror/state'
-import { defaultKeymap, deleteCharForward, historyKeymap, redo, undo } from '@codemirror/commands'
-import { useFormatGate } from '../Input/useFormatGate'
+import { deleteCharForward, historyKeymap, redo, undo } from '@codemirror/commands'
+import { useReconfigured } from '../Input/useReconfigured'
+import { editorKeymap, formatKeymap } from '../Input/formatKeymap'
 import { cellCitations } from './cellCitations'
 import {
   autoDelete,
@@ -149,7 +150,7 @@ export function CellEditor({
   const ordinalOfRef = useLatest(ordinalOf)
   const onTablePasteRef = useLatest(onTablePaste)
   const { setAc, acCtl, pane } = useConnectionAutocomplete(viewRef, host, () => connections?.())
-  const formatExt = useFormatGate(viewRef, host.settings().commands)
+  const formatExt = useReconfigured(viewRef, host.settings().commands, formatKeymap)
 
   useEffect(() => {
     const view = new EditorView({
@@ -243,7 +244,7 @@ export function CellEditor({
             ]),
           ),
           formatExt,
-          keymap.of(defaultKeymap),
+          keymap.of(editorKeymap),
           EditorView.domEventHandlers({
             blur: () => {
               setAc(null)

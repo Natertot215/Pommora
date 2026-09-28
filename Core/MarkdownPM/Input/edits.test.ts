@@ -121,6 +121,12 @@ describe('smart backspace (whole marker, all markers)', () => {
     expect(smartBackspace(scanDoc('    # x'), 6, 6)).toBeNull()
     expect(smartBackspace(scanDoc('>x'), 1, 1)).toBeNull()
   })
+  it('joins a fence line at its drawn start, taking the hidden list indent or quote prefix with it', () => {
+    const listed = '- item\n  ```\n  code\n  ```'
+    expect(apply(listed, atContentStart(listed, '```\n  ')!)).toBe('- item\n  ```code\n  ```')
+    const quoted = '> ```\n> code\n> ```'
+    expect(apply(quoted, atContentStart(quoted, '```\n> ')!)).toBe('> ```code\n> ```')
+  })
 })
 
 describe('checkbox canonicalization', () => {

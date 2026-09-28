@@ -17,7 +17,7 @@ import {
 import { highlightTree, styleTags, tags as t } from '@lezer/highlight'
 import { docScan, drawnLast } from './docCache'
 import type { FenceInfo } from './Engine/detect'
-import { type DocScan, indentWidth } from './Engine/docScan'
+import { type DocScan, fenceBodyStart } from './Engine/docScan'
 import { lineEndOf, lineIndexAt, lineOffsetsOf } from './Engine/markdownCode'
 import { perText } from './Engine/perText'
 import { CODE_LANGS, type CodeLangName } from './Engine/codeLangs'
@@ -161,10 +161,7 @@ function paint(
 ): number {
   const open = lineIndexAt(scan, f.from)
   const close = lineIndexAt(scan, f.to)
-  const cut = f.depth === 0 ? indentWidth(scan.lines[open]) : 0
-  const lines = scan.lines
-    .slice(open, close + 1)
-    .map((line) => line.slice(Math.min(cut, indentWidth(line))))
+  const lines = scan.lines.slice(open, close + 1).map((line) => line.slice(fenceBodyStart(line, f)))
   const desc = f.lang ? LanguageDescription.matchLanguageName(codeLanguages, f.lang, true) : null
   if (desc && !desc.support)
     desc.load().then(() => {

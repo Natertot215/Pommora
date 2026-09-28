@@ -10,6 +10,7 @@ import { normalizeTitle } from '@pommora/core/Connections/connections'
 import { targetFragment, targetTitle } from '@pommora/core/Connections/links'
 import { isValidLink } from '@pommora/core/Paths/urlPath'
 import type { ConnPage, PageIndex } from '@pommora/core/Connections/pageIndex'
+import type { TrailSegment } from '@pommora/uix/Elements/NavTrail'
 
 /** `apply` closes over the span it was built for, so no caller can aim an action at a link the menu wasn't popped on; its absence marks a display-only surface. */
 export type ConnMenuTarget = {
@@ -39,6 +40,7 @@ export interface ConnectionsApi extends PageIndex {
   menu?: (target: ConnMenuTarget) => void
   bypass?: (page: ConnPage, heading?: string) => void
   headingsOf?: (path: string) => string[] | undefined
+  location?: (pageId: string) => TrailSegment[]
 }
 
 export type MdTarget =

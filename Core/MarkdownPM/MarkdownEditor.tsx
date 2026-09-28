@@ -3,11 +3,10 @@ import { docScan, docString } from './docCache'
 import { travelToHeading } from './travel'
 import { EditorView, keymap } from '@codemirror/view'
 import { Compartment, EditorState, Prec } from '@codemirror/state'
-import { history, historyField, historyKeymap, defaultKeymap } from '@codemirror/commands'
+import { history, historyField, historyKeymap } from '@codemirror/commands'
 import { markdown } from '@codemirror/lang-markdown'
 import { markdownInput } from './Input/markdownInput'
 import { tableWidgetExtension, applySavedHeadingCols } from './Tables/widget'
-import { blockquoteDragExtension, calloutDragExtension } from './Gestures/blockDrag'
 import {
   embedField,
   embedTiles,
@@ -26,7 +25,9 @@ import { citationGuard } from './Guards/citationGuard'
 import { citationHost, citationOrder } from './Citations/citationActions'
 import { citationRowMenu, citationRowPointer } from './Citations/citationPointer'
 import { markdownFolding, applySavedFolds, applyCitationsVisibility } from './folding'
-import { useFormatGate } from './Input/useFormatGate'
+import { useReconfigured } from './Input/useReconfigured'
+import { htmlShortcuts, htmlTags } from './Input/htmlShortcuts'
+import { editorKeymap, formatKeymap } from './Input/formatKeymap'
 import { inlineSurface } from './surface'
 import {
   useConnectionAutocomplete,
@@ -36,7 +37,7 @@ import {
 import { paneKeys, whenPaneOpen } from './Menus/caretPane'
 import { AutocompletePane } from './Autocomplete/AutocompletePane'
 import { BlockMenu } from './Menus/BlockMenu'
-import { detectBlockQuery, useBlockMenu } from './Menus/useBlockMenu'
+import { useBlockMenu } from './Menus/useBlockMenu'
 import type { ConnectionsApi } from './Links/connectionsApi'
 import type { WarmSeam } from './warmSeam'
 import { type EditorHost, editorHost, mirrorBody, mirrored, resolutionNudge } from './api'
@@ -129,13 +130,7 @@ export function MarkdownEditor({
     if (view && body !== undefined) mirrorBody(view, body)
   }, [body])
 
-  // The mount-time travel already consumed the first value; a later one arrives while the editor stays mounted.
-  const firstArrive = useRef(true)
   useEffect(() => {
-    if (firstArrive.current) {
-      firstArrive.current = false
-      return
-    }
     const view = viewRef.current
     if (!view || !arrive) return
     travelToHeading(view, arrive)
@@ -158,7 +153,8 @@ export function MarkdownEditor({
     host,
     () => connectionsRef.current,
   )
-  const formatExt = useFormatGate(viewRef, host.settings().commands)
+  const formatExt = useReconfigured(viewRef, host.settings().commands, formatKeymap)
+  const htmlExt = useReconfigured(viewRef, host.settings().htmlShortcuts, htmlShortcuts)
   const block = useBlockMenu(viewRef)
 
   // The pane closing (Escape, a commit, a blur) leaves the § bare rather than arming the next keystroke near it.
@@ -189,9 +185,17 @@ export function MarkdownEditor({
         ]),
       ),
       markdownInput,
+      // Ahead of the default keymap, which also binds Mod-i and Mod-[.
       formatExt,
-      keymap.of([...defaultKeymap, ...historyKeymap]),
-      markdown({ addKeymap: false, pasteURLAsLink: false, completeHTMLTags: false, codeLanguages }),
+      htmlExt,
+      keymap.of([...editorKeymap, ...historyKeymap]),
+      markdown({
+        addKeymap: false,
+        pasteURLAsLink: false,
+        completeHTMLTags: false,
+        htmlTagLanguage: htmlTags,
+        codeLanguages,
+      }),
       codeHighlight,
       inlineSurface(() => connectionsRef.current, 'page'),
       citationRowPointer(),
@@ -203,8 +207,6 @@ export function MarkdownEditor({
         tabActive: () => activeRef.current,
       }),
       embedGuard,
-      calloutDragExtension,
-      blockquoteDragExtension,
       calloutGuard,
       headingRenameSettle.of(() => onHeadingRenameRef.current),
       citationGuard,
@@ -213,10 +215,11 @@ export function MarkdownEditor({
         reveal: () => hostRef.current.citations.set(true),
       }),
       citationOrder,
+      block.extension,
       EditorView.domEventHandlers({
         blur: () => {
           setAc(null)
-          block.setState(null)
+          block.close()
           return false
         },
       }),
@@ -247,7 +250,6 @@ export function MarkdownEditor({
         // A click seating the caret inside a rendered [[Title]] would otherwise pop the picker over a surface that can't accept an edit.
         if ((u.docChanged || u.selectionSet) && !u.state.readOnly) {
           detectConnectionQuery(u.view, setAc, true, sectionArmedRef.current ?? undefined)
-          detectBlockQuery(u.view, block.setState, u.docChanged)
         }
       }),
     ]
@@ -369,13 +371,7 @@ export function MarkdownEditor({
       {header}
       <div ref={editorRef} className="mdpm-editor interface-inset" />
       <AutocompletePane {...pane} />
-      <BlockMenu
-        open={block.open}
-        state={block.state}
-        matches={block.matches}
-        selected={block.selected}
-        onPick={block.pick}
-      />
+      <BlockMenu state={block.state} selected={block.selected} onPick={block.pick} />
     </div>
   )
 }

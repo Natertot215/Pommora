@@ -13,7 +13,7 @@ import { Icon, LockGlyph } from '@pommora/uix/Symbols'
 import { cx } from '@pommora/uix/Utilities/cx'
 import { revealTarget } from '@pommora/uix/Interactions/hover-reveal.css'
 import { EditorView } from '@codemirror/view'
-import { HEADING_FOLD_LINE, toggleFoldAt } from '../../MarkdownPM/folding'
+import { HEADING_LINE, toggleFoldAt } from '../../MarkdownPM/folding'
 import type { WarmSeam } from '../../MarkdownPM/warmSeam'
 import { useResizable, type ResizeEdge, type Size } from '@pommora/uix/Interactions/useResizable'
 import { useEscape } from '@pommora/uix/Interactions/dismissalStack'
@@ -389,7 +389,7 @@ export function GlancePane(): React.JSX.Element {
   )
   const onFoldClick = (e: React.MouseEvent): void => {
     if (window.getSelection()?.isCollapsed === false) return
-    const line = (e.target as HTMLElement).closest?.(`.cm-line.${HEADING_FOLD_LINE}`)
+    const line = (e.target as HTMLElement).closest?.(HEADING_LINE)
     const editor = line?.closest('.cm-editor')
     const view = editor && EditorView.findFromDOM(editor as HTMLElement)
     if (line && view) toggleFoldAt(view, view.posAtDOM(line))

@@ -11,6 +11,7 @@ import {
 import { cellToDisplay, cellToSource } from '../Engine/Tables/codec'
 import { linkTokenAt, tokenize } from '../Engine/tokens'
 import { decorationsFor } from '../../Testing/markdownEngine'
+import { GRIP_LINE } from '../Engine/intents'
 
 ;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
 if (!('ResizeObserver' in globalThis)) {
@@ -310,16 +311,12 @@ describe('the list vocabulary inside a table cell', () => {
   it('hangs a grip on a list block in a cell, and on nothing else there', async () => {
     await mountEditor({ initialBody: table('- a<br>- b') })
     await enterCell()
-    expect(
-      editorContainer().querySelectorAll('.mdpm-tbl-cell-editor .cm-line.md-block-handle'),
-    ).toHaveLength(1)
+    expect(editorContainer().querySelectorAll(`.mdpm-tbl-cell-editor ${GRIP_LINE}`)).toHaveLength(1)
 
     await cleanupEditor()
     await mountEditor({ initialBody: table('plain') })
     await enterCell()
-    expect(
-      editorContainer().querySelectorAll('.mdpm-tbl-cell-editor .cm-line.md-block-handle'),
-    ).toHaveLength(0)
+    expect(editorContainer().querySelectorAll(`.mdpm-tbl-cell-editor ${GRIP_LINE}`)).toHaveLength(0)
   })
 
   it('toggles a resting checkbox without promoting the cell to an editor', async () => {

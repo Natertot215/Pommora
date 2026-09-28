@@ -150,6 +150,7 @@ const SETTINGS = {
   outlinerLines: flag(false),
   titleIcon: flag(false),
   codeblockLineCount: flag(false),
+  htmlShortcuts: flag(false),
   navCloseOnSelect: flag(true),
   removeTitleOnLinkChange: flag(true),
   aliasPickerOnCommit: flag(true),

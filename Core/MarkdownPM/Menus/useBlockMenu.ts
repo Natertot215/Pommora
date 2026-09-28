@@ -1,65 +1,45 @@
-import { useMemo, useState, type RefObject } from 'react'
-import { Transaction } from '@codemirror/state'
-import type { EditorView } from '@codemirror/view'
-import {
-  blockMenuSections,
-  filterBlockMenu,
-  type BlockMenuAction,
-  type BlockMenuMatch,
-} from '@pommora/core/Actions/blockMenu'
+import { useState, type RefObject } from 'react'
+import { type Extension, Transaction } from '@codemirror/state'
+import { EditorView } from '@codemirror/view'
+import type { BlockMenuAction } from '@pommora/core/Actions/blockMenu'
 import { caretGeometry, usePaneCtl, type PaneCtl, type CaretGeometry } from './caretPane'
-import { citationSeatAt } from '../Citations/citationActions'
-import { docScan } from '../docCache'
-import { blockQueryAt, type BlockQuery } from './blockQuery'
+import { blockQuery, closeBlockQuery, type OpenBlockQuery } from './blockQuery'
 import { applyEditorAction } from './menu'
 
-export interface BlockMenuState extends BlockQuery, CaretGeometry {
-  citeSeat: boolean
-}
-
-export function detectBlockQuery(
-  view: EditorView,
-  set: (s: BlockMenuState | null) => void,
-  typed: boolean,
-): void {
-  const sel = view.state.selection.main
-  let next: BlockMenuState | null = null
-  if (sel.empty && typed) {
-    const q = blockQueryAt(docScan(view.state.doc), sel.head)
-    if (q) {
-      const g = caretGeometry(view, sel.head)
-      if (g) next = { ...q, ...g, citeSeat: citationSeatAt(view.state) }
-    }
-  }
-  set(next)
-}
+export type BlockMenuState = OpenBlockQuery & CaretGeometry
 
 interface BlockMenu {
+  extension: Extension
   state: BlockMenuState | null
-  setState: (s: BlockMenuState | null) => void
-  matches: BlockMenuMatch[]
+  close: () => void
   selected: BlockMenuAction | null
-  open: boolean
   pick: (action: BlockMenuAction) => void
   ctl: RefObject<PaneCtl>
 }
 
 export function useBlockMenu(viewRef: RefObject<EditorView | null>): BlockMenu {
   const [state, setState] = useState<BlockMenuState | null>(null)
-  const query = state?.query ?? null
-  const citeSeat = state?.citeSeat ?? false
-  const matches = useMemo(
-    () => (query === null ? [] : filterBlockMenu(blockMenuSections(citeSeat), query)),
-    [query, citeSeat],
-  )
-  const rows = matches.flatMap((m) => m.rows)
-  const open = state !== null && rows.length > 0
+  const [extension] = useState<Extension>(() => [
+    blockQuery,
+    EditorView.updateListener.of((u) => {
+      const q = u.state.field(blockQuery)
+      if (q === u.startState.field(blockQuery)) return
+      const g = q && caretGeometry(u.view, q.to)
+      setState(q && g ? { ...q, ...g } : null)
+    }),
+  ])
+  const close = (): void => {
+    const view = viewRef.current
+    if (view?.state.field(blockQuery)) view.dispatch({ effects: closeBlockQuery.of(null) })
+  }
+  const rows = state?.matches.flatMap((m) => m.rows) ?? []
 
   const pick = (action: BlockMenuAction): void => {
     const view = viewRef.current
-    if (!view || !state || !ctl.current.open) return
+    const q = view?.state.field(blockQuery)
+    if (!view || !q) return
     view.dispatch({
-      changes: { from: state.from, to: state.to, insert: '' },
+      changes: { from: q.from, to: q.to, insert: '' },
       annotations: Transaction.addToHistory.of(false),
       userEvent: 'input',
     })
@@ -70,16 +50,16 @@ export function useBlockMenu(viewRef: RefObject<EditorView | null>): BlockMenu {
     rows.length,
     state?.query,
     {
-      open,
+      open: state !== null,
       pick: (i) => {
         const r = rows[i]
         if (r) pick(r.action)
       },
-      close: () => setState(null),
+      close,
     },
     null,
   )
   const selected = index === null ? null : (rows[index]?.action ?? null)
 
-  return { state, setState, matches, selected, open, pick, ctl }
+  return { extension, state, close, selected, pick, ctl }
 }

@@ -75,22 +75,23 @@ export const EMBED_ROWS: readonly LeafItem<BlockMenuAction>[] = [
   { label: 'Webpage', action: 'block:webpage', icon: 'globe' },
 ]
 
-export function blockMenuSections(citeSeat: boolean): BlockMenuSection[] {
-  return [
-    { title: 'Headings', rows: HEADING_ROWS },
-    { title: 'Lists', rows: LIST_ROWS },
-    { title: 'Link', rows: LINK_ROWS },
-    { title: 'Insert', rows: insertRows(citeSeat) },
-    { title: 'Embed', rows: EMBED_ROWS },
-  ]
-}
+export const BLOCK_MENU_SECTIONS: readonly BlockMenuSection[] = [
+  { title: 'Headings', rows: HEADING_ROWS },
+  { title: 'Lists', rows: LIST_ROWS },
+  { title: 'Link', rows: LINK_ROWS },
+  { title: 'Insert', rows: insertRows(true) },
+  { title: 'Embed', rows: EMBED_ROWS },
+]
 
 function matchAt(label: string, query: string): number | null {
   const at = label.toLowerCase().indexOf(query)
   return at === -1 ? null : at
 }
 
-export function filterBlockMenu(sections: BlockMenuSection[], query: string): BlockMenuMatch[] {
+export function filterBlockMenu(
+  sections: readonly BlockMenuSection[],
+  query: string,
+): BlockMenuMatch[] {
   const q = query.toLowerCase()
   const out: BlockMenuMatch[] = []
   for (const s of sections) {

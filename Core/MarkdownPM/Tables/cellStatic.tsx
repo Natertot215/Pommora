@@ -179,8 +179,7 @@ function MarkerGlyph({
     )
   if (glyph === 'bullet') return <span className="md-list-bullet">•</span>
   const text = line.slice(lm.markerStart, lm.markerEnd)
-  const cls = glyph === 'arrow' ? 'md-list-arrow' : 'md-list-number'
-  return <span className={`${cls} md-control`}>{text}</span>
+  return <span className={`md-list-${glyph} md-control`}>{text}</span>
 }
 
 // A cell holding a list draws one block per line, so the indent, the glyph and the rails have something to sit on; a cell holding none stays a single flow, which is what pre-wrap already renders correctly.

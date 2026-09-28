@@ -28,6 +28,7 @@ export interface FenceInfo {
   to: number
   depth: number
   lang?: string
+  indent: number
   markerEnd: number
   ordinal?: number
 }
@@ -54,6 +55,7 @@ export function scanFencedCode(lines: string[], lineStarts: number[]): (FenceInf
       to: lineEndOf({ lines, lineStarts }, close),
       depth: span.fence.depth,
       lang: fenceLang(span.fence) || undefined,
+      indent: span.fence.indent,
       markerEnd: span.fence.markerEnd,
     }
     out[open] = { role: 'open', ...base }

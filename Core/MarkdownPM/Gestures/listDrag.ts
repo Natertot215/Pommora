@@ -12,6 +12,7 @@ import {
   type SubBlock,
   type Slot,
 } from '../Engine/listDragModel'
+import { GLYPH_CLASS } from '../Engine/intents'
 
 interface ResolvedSlot extends Slot {
   lineLeft: number
@@ -118,7 +119,7 @@ export const listDragExtension: Extension = [
   EditorView.domEventHandlers({
     // CM starts its text-selection drag on mousedown, which still arrives when the pointerdown below resolves no block and returns without cancelling.
     mousedown(e) {
-      if (e.button === 0 && (e.target as HTMLElement).closest?.('.md-list-glyph')) {
+      if (e.button === 0 && (e.target as HTMLElement).closest?.(`.${GLYPH_CLASS}`)) {
         e.preventDefault()
         return true
       }
@@ -126,7 +127,7 @@ export const listDragExtension: Extension = [
     },
     pointerdown(e, view) {
       if (e.button !== 0) return false
-      const glyph = (e.target as HTMLElement).closest?.('.md-list-glyph')
+      const glyph = (e.target as HTMLElement).closest?.(`.${GLYPH_CLASS}`)
       if (!glyph) return false
       const pos = view.posAtDOM(glyph)
       const scan = docScan(view.state.doc)
