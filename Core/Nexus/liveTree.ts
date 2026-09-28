@@ -56,9 +56,13 @@ export function refreshTree(root: string): Promise<NexusTree> {
   return entry.promise
 }
 
+/** The held tree when it is `root`'s. */
+export const heldTreeOf = (root: string): NexusTree | null =>
+  tree?.nexus.rootPath === root ? tree : null
+
 /** The held tree when it is `root`'s, or a walk of `root`. */
 export const liveTreeOf = (root: string): Promise<NexusTree> =>
-  Promise.resolve(tree?.nexus.rootPath === root ? tree : refreshTree(root))
+  Promise.resolve(heldTreeOf(root) ?? refreshTree(root))
 
 /** A mutation reaches only what the tree holds, as a kind it claims, so the root, `.nexus`, the trash, and excluded folders are never a target. */
 export async function mutableTarget(

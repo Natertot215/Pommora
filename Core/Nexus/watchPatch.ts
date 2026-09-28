@@ -17,9 +17,9 @@ import { isContentName } from '../Files/walk'
 import { queryHeadingMentions, removePathIndex } from '../Index/contentIndex'
 import { normalizeTitle } from '../Connections/connections'
 import { indexWrittenPage } from '../Index/indexSeed'
-import { type CascadeReport, renameCascade } from './cascade'
+import { type CascadeReport, renameCascade, spacesLinkHeading } from './cascade'
 import { noteExternalEdit } from '../Pages/fileHistory'
-import { getLiveTree, patchLiveTree } from './liveTree'
+import { getLiveTree, heldTreeOf, patchLiveTree } from './liveTree'
 import { resolveOrder } from './order'
 import { nexusConfig } from '../Paths/paths'
 import { HOMEPAGE_HOST, type TileHostRef } from '../Tiles/tiles'
@@ -35,7 +35,7 @@ import {
 import { readSettings, type SettingsLeaves, scopeOf } from '../Settings/codec'
 import { errText } from '../Contract/result'
 import { coerceOpenIn } from './schemas'
-import { containerFieldsFrom } from './containerFields'
+import { cachedIds, containerFieldsFrom } from './containerFields'
 import { spaceFieldsFrom } from '../Contexts/spaceSidecar'
 import {
   containerAt,
@@ -231,7 +231,7 @@ export const applyPatch = (
   root: string,
   fn: (t: NexusTree) => NexusTree | null,
 ): 'ok' | 'refresh' => {
-  if (getLiveTree()?.nexus.rootPath !== root) return 'refresh'
+  if (!heldTreeOf(root)) return 'refresh'
   return patchLiveTree(fn) === null ? 'refresh' : 'ok'
 }
 
@@ -251,7 +251,12 @@ const cascadeSeen = async (
   if (!seen) return
   const title = normalizeTitle(seen.title)
   const linked = queryHeadingMentions(title, seen.old)?.length
-  if (!linked && !(await tilesLinkHeading(root, title, seen.old))) return
+  if (
+    !linked &&
+    !spacesLinkHeading(root, title, seen.old) &&
+    !(await tilesLinkHeading(root, title, seen.old))
+  )
+    return
   const c = await renameCascade(root, seen.title, { heading: seen.old, to: seen.next })
   if (c.warning) console.error('heading rename:', c.warning)
   cascaded.pages.push(...c.pages)
@@ -384,6 +389,7 @@ export async function patchContainerFromDisk(
             Object.fromEntries(tree.registry.map((d) => [d.id, d])),
           ),
           openIn: coerceOpenIn(meta.open_in),
+          cached: cachedIds(meta),
         })
       : makeSetNode(shared)
   return replaceNode(root, dirRel, next)

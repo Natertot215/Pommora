@@ -30,7 +30,7 @@ import { utf8 } from '../Files/utf8'
 import { linksIn } from '../Connections/scan'
 import { discardFile } from '../Trash/bundle'
 import { machine } from '../Platform/machine'
-import { getLiveTree, liveTreeOf } from '../Nexus/liveTree'
+import { heldTreeOf, liveTreeOf } from '../Nexus/liveTree'
 import type { NexusTree } from '../Nexus/tree'
 import { CONTEXTS_DIR_REL, CONTEXTS_REGISTRY_REL } from '../Paths/nexusPaths'
 import { tileFilePath, tileHostDir } from '../Paths/paths'
@@ -63,8 +63,8 @@ export function tileHostsOf(
 
 export async function hostDir(root: string, host: TileHostRef): Promise<string | null> {
   if (host.kind === 'homepage') return tileHostDir(root)
-  const held = getLiveTree()
-  if (held?.nexus.rootPath !== root) return null
+  const held = heldTreeOf(root)
+  if (!held) return null
   const hit = tileHostsOf(root, held).hosts.find(
     (h) => h.host?.kind === 'space' && h.host.id === host.id,
   )

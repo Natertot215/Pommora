@@ -65,6 +65,7 @@ export function makeCollectionNode(f: ContainerInput<CollectionNode>): Collectio
     pages: f.pages ?? [],
     views: f.views,
     openIn: f.openIn,
+    cached: f.cached,
     viewButton: f.viewButton,
     disclosureLocked: f.disclosureLocked ?? false,
     activeView: f.activeView,

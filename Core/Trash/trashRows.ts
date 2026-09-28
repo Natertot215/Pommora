@@ -3,7 +3,7 @@ import type { NexusTree } from '../Nexus/tree'
 import type { TrashCrumb, TrashRow } from './trashRow'
 import { CONTEXTS_DIR_REL, TRASH_DIR } from '../Paths/nexusPaths'
 import { type ArtifactRecord, containerChain, resolveRecord } from './resolve'
-import type { ListedBundle } from './spend'
+import type { ListedBundle } from './holdings'
 import { propertyType } from '../Properties/properties'
 
 const STAMP = /^(\d{4}-\d{2}-\d{2})T(\d{2})-(\d{2})-(\d{2})-(\d{3})Z$/
