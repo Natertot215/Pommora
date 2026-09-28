@@ -85,14 +85,9 @@ export function notifyDeleted(
 ): void {
   const parts = [`Deleted “${title}”`]
   if (pages.length) parts.push(`${pages.length} Internal ${pages.length === 1 ? 'Link' : 'Links'}`)
-  if (warning) parts.push(`${parts.pop()}. ${warning}`)
-  notifyUndoable(
-    parts[0],
-    undo,
-    warning ? 'error' : 'normal',
-    warning ? retry : undefined,
-    parts[1],
-  )
+  if (warning) parts[parts.length - 1] += `. ${warning}`
+  const [message, segment] = parts
+  notifyUndoable(message, undo, warning ? 'error' : 'normal', warning ? retry : undefined, segment)
 }
 
 export function notifyUndoable(
@@ -103,7 +98,7 @@ export function notifyUndoable(
   segment?: string,
 ): void {
   const retried = retry && tryAgain(retry)
-  const note = { message, tone, ...(segment ? { segment } : {}) }
+  const note = { message, segment, tone }
   if (!undo) {
     post({ ...note, action: retried })
     return
