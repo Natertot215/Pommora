@@ -1,6 +1,6 @@
 import type { Db } from './driver'
 
-export const INDEX_GENERATION = 8
+export const INDEX_GENERATION = 9
 
 const DDL = `
   CREATE TABLE IF NOT EXISTS meta (
@@ -13,7 +13,7 @@ const DDL = `
     value TEXT NOT NULL,
     PRIMARY KEY (scope, key)
   );
-  CREATE TABLE IF NOT EXISTS matrix_nodes (
+  CREATE TABLE IF NOT EXISTS relations (
     path TEXT NOT NULL,
     kind TEXT NOT NULL,
     target TEXT NOT NULL,
@@ -21,7 +21,7 @@ const DDL = `
     count INTEGER NOT NULL,
     PRIMARY KEY (path, kind, target, qualifier)
   );
-  CREATE INDEX IF NOT EXISTS matrix_nodes_by_target ON matrix_nodes (target, qualifier, kind);
+  CREATE INDEX IF NOT EXISTS relations_by_target ON relations (target, qualifier, kind);
   CREATE TABLE IF NOT EXISTS headings (
     path TEXT NOT NULL,
     heading TEXT NOT NULL,
@@ -66,10 +66,16 @@ export function writeMeta(db: Db, key: string, value: string): void {
   db.prepare('INSERT OR REPLACE INTO meta (key, value) VALUES (?, ?)').run(key, value)
 }
 
-export const INDEX_TABLES = ['matrix_nodes', 'headings', 'page_values', 'indexed_files'] as const
+export const INDEX_TABLES = ['relations', 'headings', 'page_values', 'indexed_files'] as const
 
 // Names a generation has retired. `applySchema` only ever creates, so a table dropped from the schema is dropped from an existing database here or never.
-const RETIRED_TABLES = ['mentions', 'heading_mentions', 'memberships', 'sync'] as const
+const RETIRED_TABLES = [
+  'mentions',
+  'heading_mentions',
+  'memberships',
+  'sync',
+  'matrix_nodes',
+] as const
 
 // A generation step drops every index table and every retired name outright, so a table whose shape changed is recreated and one whose rows moved elsewhere is gone.
 export function rebuildIndex(db: Db): void {

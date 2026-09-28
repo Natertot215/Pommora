@@ -5,7 +5,7 @@ import {
   type ContentIndexStore,
   contentIndexStore,
   type IndexedStat,
-  type MatrixGraphRows,
+  type PageRelations,
   type PageIndexEntry,
 } from '../Platform/stores'
 
@@ -87,8 +87,8 @@ export function queryMembers(key: string, title?: string): string[] | null {
     : queryPaths((db) => db.queryMembers(key, title))
 }
 
-export function readMatrixGraph(paths?: string[]): MatrixGraphRows | null {
-  return contentIndexStore() !== readyDb ? null : queried((db) => db.readMatrixGraph(paths))
+export function readPageRelations(paths?: string[]): PageRelations | null {
+  return contentIndexStore() !== readyDb ? null : queried((db) => db.readPageRelations(paths))
 }
 
 export function readIndexedStat(path: string): IndexedStat | null {

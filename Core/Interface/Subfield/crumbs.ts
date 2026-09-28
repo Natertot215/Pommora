@@ -54,7 +54,7 @@ export function subfieldCrumbs(
       return [{ title: tree.nexus.name }]
     case 'space': {
       const sp = findSpace(tree, selection.id)
-      return sp ? [{ title: sp.name }] : []
+      return sp ? [{ title: sp.title }] : []
     }
     case 'collection':
     case 'set':

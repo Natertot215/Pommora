@@ -14,7 +14,7 @@ import { propsAtRoot, valuesReply } from '../../Testing/pageValues'
 import { ID_KEY } from '@pommora/core/Nexus/identityMark'
 import { stubDialer } from '../../vitest.setup'
 import { entityMenuItems } from '@pommora/core/Actions/entityMenu'
-import { containerCreators } from '@pommora/core/Nexus/mutateRequest'
+import { containerCreators } from '@pommora/core/Actions/createMenu'
 
 const statusDef: PropertyDefinition = {
   id: 'prop_status',
@@ -379,7 +379,7 @@ describe('sub-group bucket band drag', () => {
   })
 })
 
-describe('sub-group row drop (the set × bucket matrix)', () => {
+describe('sub-group row drop (every set × bucket pair)', () => {
   beforeEach(() => {
     channels['view:loadValues'] = async () => SUB_VALUES
   })

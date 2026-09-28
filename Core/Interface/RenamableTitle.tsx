@@ -1,4 +1,5 @@
-import type { MutableKind, RenameHost } from '@pommora/core/Nexus/mutateRequest'
+import type { MutableKind } from '@pommora/core/Nexus/mutateRequest'
+import type { RenameHost } from '@pommora/core/Session/editSlice'
 import { useEffect, useState } from 'react'
 import { useSession } from '../Session/store'
 import { RenamableLabel } from '@pommora/uix/Fields/RenamableLabel'

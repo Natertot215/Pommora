@@ -15,7 +15,7 @@ import { rewritePageSerialized } from '../Files/atomicWrite'
 import { installStores, NO_STORES } from '../Platform/stores'
 import { memoryStores } from '../Testing/memoryStores'
 import { seedContentIndex } from '../Index/indexSeed'
-import { readMatrixGraph } from '../Index/contentIndex'
+import { readPageRelations } from '../Index/contentIndex'
 import { ok } from '../Contract/result'
 import { machine } from '../Platform/machine'
 import { contextsDir, contextsRegistryFile, tileHostDir } from '../Paths/paths'
@@ -465,7 +465,7 @@ describe('deleteCascade', () => {
     const id = (await fmOf(loose)).ID
     expect(id).toEqual(expect.any(String))
     expect(r.links).toEqual([{ page: id, property: related, value: '[[Target]]' }])
-    expect(readMatrixGraph()?.pages[rel(loose)]?.values.ID).toBe(id)
+    expect(readPageRelations()?.pages[rel(loose)]?.values.ID).toBe(id)
   })
 
   it('never sweeps a page under a deleted folder', async () => {

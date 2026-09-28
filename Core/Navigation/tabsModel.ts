@@ -11,7 +11,6 @@ import {
   type Tab,
   type TabTarget,
 } from '@pommora/core/Navigation/navRef'
-import type { MutableKind } from '@pommora/core/Nexus/mutateRequest'
 import { moveItem, placeAt } from '@pommora/uix/Utilities/moveItem'
 import { reconcileWith, type ReconcileIndex } from '../Session/reconcileSelection'
 
@@ -122,25 +121,6 @@ const showing =
 
 export function isOpenInTabs(tabs: Tab[], pinned: NavRef[], target: SelectTarget): boolean {
   return tabs.some(showing(target)) || pinned.some((p) => navKey(p) === navKey(target))
-}
-
-export function contextTargetToSelect(t: {
-  kind: MutableKind
-  id: string
-  path: string
-}): SelectTarget {
-  switch (t.kind) {
-    case 'page':
-      return { kind: 'page', id: t.id, path: t.path }
-    case 'set':
-      return { kind: 'set', id: t.id, path: t.path }
-    case 'collection':
-      return { kind: 'collection', id: t.id }
-    case 'space':
-      return { kind: 'space', id: t.id }
-    default:
-      return { kind: 'context', id: t.id }
-  }
 }
 
 export function activeUnpinnedTab(tabs: Tab[], activeTabId: string): Tab | undefined {

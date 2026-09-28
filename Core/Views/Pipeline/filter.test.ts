@@ -161,7 +161,7 @@ describe('applyFilter — a blank value answers no positive comparison', () => {
   })
 })
 
-describe('applyFilter — per-type matrix', () => {
+describe('applyFilter — per type', () => {
   it('number: a comparison excludes a row with no value — only is_empty selects absence', () => {
     const rows = [
       row('a', { props: { prop_num: 5 } }),

@@ -4,8 +4,8 @@ import type {
   CaptureStore,
   ContentIndexStore,
   KeyValueStore,
-  MatrixKind,
-  MatrixNode,
+  RelationKind,
+  Relation,
   SnapshotStore,
   SyncStore,
 } from '../Platform/stores'
@@ -56,14 +56,14 @@ export function describeContentIndexStore(name: string, make: () => ContentIndex
     let store: ContentIndexStore
     const STAT = { mtimeMs: 1000, size: 10 }
     // Built rather than spelled: `space` takes (key, title) in `queryMembers` order, so the transposition onto (target, qualifier) reads on one line and a reversed binding reads wrong at the call site.
-    const node = (kind: MatrixKind, target: string, qualifier = ''): MatrixNode => ({
+    const relation = (kind: RelationKind, target: string, qualifier = ''): Relation => ({
       kind,
       target,
       qualifier,
       count: 1,
     })
-    const body = (target: string, qualifier = ''): MatrixNode => node('body', target, qualifier)
-    const space = (key: string, title: string): MatrixNode => node('space', title, key)
+    const body = (target: string, qualifier = ''): Relation => relation('body', target, qualifier)
+    const space = (key: string, title: string): Relation => relation('space', title, key)
     beforeEach(() => {
       store = make()
     })
@@ -72,7 +72,7 @@ export function describeContentIndexStore(name: string, make: () => ContentIndex
       store.upsertPageIndex(
         'Notes/A.md',
         {
-          matrix: [body('beta'), space('<Projects>', 'pommora')],
+          relations: [body('beta'), space('<Projects>', 'pommora')],
           headings: [],
           values: { Status: 'Open', '<Projects>': ['Pommora'] },
         },
@@ -81,7 +81,7 @@ export function describeContentIndexStore(name: string, make: () => ContentIndex
       store.upsertPageIndex(
         'Loose/B.md',
         {
-          matrix: [
+          relations: [
             body('beta'),
             body('gamma'),
             space('<Projects>', 'pommora'),
@@ -104,12 +104,12 @@ export function describeContentIndexStore(name: string, make: () => ContentIndex
     it('a re-upsert replaces the page rows rather than accreting them', () => {
       store.upsertPageIndex(
         'Notes/A.md',
-        { matrix: [body('beta')], headings: [], values: { Status: 'Open' } },
+        { relations: [body('beta')], headings: [], values: { Status: 'Open' } },
         STAT,
       )
       store.upsertPageIndex(
         'Notes/A.md',
-        { matrix: [body('gamma')], headings: [], values: {} },
+        { relations: [body('gamma')], headings: [], values: {} },
         { mtimeMs: 2000, size: 12 },
       )
       expect(store.queryMentions('beta')).toEqual([])
@@ -121,7 +121,7 @@ export function describeContentIndexStore(name: string, make: () => ContentIndex
     it('serializes a null value rather than dropping the key', () => {
       store.upsertPageIndex(
         'Notes/A.md',
-        { matrix: [], headings: [], values: { Blank: null } },
+        { relations: [], headings: [], values: { Blank: null } },
         STAT,
       )
       expect(store.queryKeyHolders('Blank')).toEqual(['Notes/A.md'])
@@ -131,7 +131,7 @@ export function describeContentIndexStore(name: string, make: () => ContentIndex
       store.upsertPageIndex(
         'Notes/A.md',
         {
-          matrix: [body('beta'), space('<Projects>', 'pommora')],
+          relations: [body('beta'), space('<Projects>', 'pommora')],
           headings: [],
           values: { Status: 'Open' },
         },
@@ -148,7 +148,7 @@ export function describeContentIndexStore(name: string, make: () => ContentIndex
       store.upsertPageIndex(
         'Notes/A.md',
         {
-          matrix: [body('beta'), space('<Projects>', 'pommora')],
+          relations: [body('beta'), space('<Projects>', 'pommora')],
           headings: [],
           values: { Status: 'Open' },
         },
@@ -165,7 +165,7 @@ export function describeContentIndexStore(name: string, make: () => ContentIndex
     it('round-trips headings and heading mentions, then carries them across a rename', () => {
       store.upsertPageIndex(
         'Notes/A.md',
-        { matrix: [body('beta', 'setup')], headings: ['setup', 'intro'], values: {} },
+        { relations: [body('beta', 'setup')], headings: ['setup', 'intro'], values: {} },
         STAT,
       )
       expect(store.readHeadings()).toEqual({ 'Notes/A.md': ['setup', 'intro'] })
@@ -177,7 +177,7 @@ export function describeContentIndexStore(name: string, make: () => ContentIndex
     })
 
     it('a page with no headings reads as an empty list, cold and by path alike', () => {
-      store.upsertPageIndex('Notes/H.md', { matrix: [], headings: [], values: {} }, STAT)
+      store.upsertPageIndex('Notes/H.md', { relations: [], headings: [], values: {} }, STAT)
       expect(store.readHeadings()).toEqual({ 'Notes/H.md': [] })
       expect(store.readHeadings(['Notes/H.md'])).toEqual({ 'Notes/H.md': [] })
     })
@@ -186,7 +186,7 @@ export function describeContentIndexStore(name: string, make: () => ContentIndex
       store.upsertPageIndex(
         'Notes/A.md',
         {
-          matrix: [body('beta'), node('citation', 'gamma'), space('<Projects>', 'pommora')],
+          relations: [body('beta'), relation('citation', 'gamma'), space('<Projects>', 'pommora')],
           headings: [],
           values: { ID: 'idA', Status: ['Open'] },
         },
@@ -194,19 +194,19 @@ export function describeContentIndexStore(name: string, make: () => ContentIndex
       )
       store.upsertPageIndex(
         'Notes/B.md',
-        { matrix: [], headings: [], values: { ID: 'idB' } },
+        { relations: [], headings: [], values: { ID: 'idB' } },
         { mtimeMs: 2000, size: 20 },
       )
-      const whole = store.readMatrixGraph()
+      const whole = store.readPageRelations()
       expect(whole.links).toEqual([
         { path: 'Notes/A.md', ...body('beta') },
-        { path: 'Notes/A.md', ...node('citation', 'gamma') },
+        { path: 'Notes/A.md', ...relation('citation', 'gamma') },
       ])
       expect(whole.pages).toEqual({
         'Notes/A.md': { values: { ID: 'idA', Status: ['Open'] }, mtimeMs: 1000 },
         'Notes/B.md': { values: { ID: 'idB' }, mtimeMs: 2000 },
       })
-      const narrowed = store.readMatrixGraph(['Notes/B.md'])
+      const narrowed = store.readPageRelations(['Notes/B.md'])
       expect(narrowed.links).toEqual([])
       expect(narrowed.pages).toEqual({ 'Notes/B.md': { values: { ID: 'idB' }, mtimeMs: 2000 } })
     })
@@ -214,7 +214,7 @@ export function describeContentIndexStore(name: string, make: () => ContentIndex
     it('a heading-naming link answers the bare title query', () => {
       store.upsertPageIndex(
         'Notes/A.md',
-        { matrix: [body('beta', 'setup')], headings: [], values: {} },
+        { relations: [body('beta', 'setup')], headings: [], values: {} },
         STAT,
       )
       expect(store.queryMentions('beta')).toEqual(['Notes/A.md'])
@@ -224,11 +224,11 @@ export function describeContentIndexStore(name: string, make: () => ContentIndex
       store.upsertPageIndex(
         'Notes/A.md',
         {
-          matrix: [
+          relations: [
             body('beta'),
             body('beta', 'setup'),
-            node('embed', 'beta'),
-            node('citation', 'beta'),
+            relation('embed', 'beta'),
+            relation('citation', 'beta'),
           ],
           headings: [],
           values: {},
@@ -241,12 +241,12 @@ export function describeContentIndexStore(name: string, make: () => ContentIndex
     it('keeps space rows out of the title queries and link rows out of the member query', () => {
       store.upsertPageIndex(
         'Notes/A.md',
-        { matrix: [space('<Projects>', 'beta')], headings: [], values: {} },
+        { relations: [space('<Projects>', 'beta')], headings: [], values: {} },
         STAT,
       )
       store.upsertPageIndex(
         'Loose/B.md',
-        { matrix: [body('beta')], headings: [], values: {} },
+        { relations: [body('beta')], headings: [], values: {} },
         STAT,
       )
       expect(store.queryMentions('beta')).toEqual(['Loose/B.md'])
@@ -257,12 +257,12 @@ export function describeContentIndexStore(name: string, make: () => ContentIndex
     it('prefix-renames descendants, exact on a % folder name', () => {
       store.upsertPageIndex(
         '50% Off/A.md',
-        { matrix: [body('beta')], headings: [], values: {} },
+        { relations: [body('beta')], headings: [], values: {} },
         STAT,
       )
       store.upsertPageIndex(
         '50% Off More/B.md',
-        { matrix: [body('beta')], headings: [], values: {} },
+        { relations: [body('beta')], headings: [], values: {} },
         STAT,
       )
       store.renamePathPrefixIndex('50% Off', 'Sale')
@@ -272,7 +272,7 @@ export function describeContentIndexStore(name: string, make: () => ContentIndex
     it('prefix-renames across an astral folder name', () => {
       store.upsertPageIndex(
         'Projects 🚀/A.md',
-        { matrix: [body('beta')], headings: [], values: {} },
+        { relations: [body('beta')], headings: [], values: {} },
         STAT,
       )
       store.renamePathPrefixIndex('Projects 🚀', 'Launchpad')
@@ -282,12 +282,12 @@ export function describeContentIndexStore(name: string, make: () => ContentIndex
     it('removes a prefix, exact on a % folder name', () => {
       store.upsertPageIndex(
         '50% Off/A.md',
-        { matrix: [body('beta')], headings: [], values: {} },
+        { relations: [body('beta')], headings: [], values: {} },
         STAT,
       )
       store.upsertPageIndex(
         '50% Off More/B.md',
-        { matrix: [body('beta')], headings: [], values: {} },
+        { relations: [body('beta')], headings: [], values: {} },
         STAT,
       )
       store.removePathPrefixIndex('50% Off')

@@ -79,13 +79,14 @@ describe('openNexusDb', () => {
       .run()
     first
       .prepare(
-        "INSERT INTO matrix_nodes (path, kind, target, qualifier, count) VALUES ('a.md', 'body', 'x', '', 1)",
+        "INSERT INTO relations (path, kind, target, qualifier, count) VALUES ('a.md', 'body', 'x', '', 1)",
       )
       .run()
     first.prepare("INSERT INTO indexed_files (path, mtime_ms, size) VALUES ('a.md', 1, 1)").run()
     // A table this generation retired, as a database written before the merge still carries it.
     first.exec('CREATE TABLE mentions (path TEXT NOT NULL, title TEXT NOT NULL)')
     first.prepare("INSERT INTO mentions (path, title) VALUES ('a.md', 'x')").run()
+    first.exec('CREATE TABLE matrix_nodes (path TEXT NOT NULL)')
     first.prepare("INSERT OR REPLACE INTO meta (key, value) VALUES ('index_generation', '1')").run()
     first.close()
 
@@ -98,7 +99,7 @@ describe('openNexusDb', () => {
           .prepare("SELECT COUNT(*) AS n FROM sqlite_master WHERE type = 'table' AND name = ?")
           .get(name) as { n: number }
       ).n
-    for (const retired of ['mentions', 'heading_mentions', 'memberships', 'sync'])
+    for (const retired of ['mentions', 'heading_mentions', 'memberships', 'sync', 'matrix_nodes'])
       expect(named(retired)).toBe(0)
     expect(readMeta(second, 'index_generation')).toBe(String(INDEX_GENERATION))
     second.close()
@@ -108,7 +109,7 @@ describe('openNexusDb', () => {
     const first = opened()
     first
       .prepare(
-        "INSERT INTO matrix_nodes (path, kind, target, qualifier, count) VALUES ('a.md', 'embed', 'x', '', 1)",
+        "INSERT INTO relations (path, kind, target, qualifier, count) VALUES ('a.md', 'embed', 'x', '', 1)",
       )
       .run()
     first.prepare("INSERT INTO indexed_files (path, mtime_ms, size) VALUES ('a.md', 1, 1)").run()
@@ -241,7 +242,7 @@ describe('upgrade in place', () => {
     upsertPageIndex(
       'Notes/A.md',
       {
-        matrix: [{ kind: 'body', target: 'beta', qualifier: '', count: 1 }],
+        relations: [{ kind: 'body', target: 'beta', qualifier: '', count: 1 }],
         headings: [],
         values: {},
       },

@@ -9,7 +9,7 @@ export function HomepageView({ tree }: { tree: NexusTree | null }): React.JSX.El
       owner={{
         path: '',
         kind: 'homepage',
-        name: tree?.nexus.name ?? 'Home',
+        title: tree?.nexus.name ?? 'Home',
         banner: tree?.homepage.banner,
         headingIconHidden: tree?.homepage.headingIconHidden,
       }}

@@ -11,7 +11,7 @@ const B = '01KVGMT8BFP350FZZXAMG1QDRW'
 
 let stores: ReturnType<typeof memoryStores>
 
-const node = (kind: 'body' | 'frontmatter', target: string) => ({
+const relation = (kind: 'body' | 'frontmatter', target: string) => ({
   kind,
   target,
   qualifier: '',
@@ -25,17 +25,17 @@ beforeEach(() => {
   const index = stores.stores.contentIndex!
   index.upsertPageIndex(
     'Notes/A.md',
-    { matrix: [node('body', 'beta')], headings: [], values: { ID: A, Status: ['Open'] } },
+    { relations: [relation('body', 'beta')], headings: [], values: { ID: A, Status: ['Open'] } },
     { mtimeMs: 1000, size: 10 },
   )
   index.upsertPageIndex(
     'Notes/B.md',
-    { matrix: [node('frontmatter', 'alpha')], headings: [], values: { ID: B } },
+    { relations: [relation('frontmatter', 'alpha')], headings: [], values: { ID: B } },
     { mtimeMs: 2000, size: 20 },
   )
   index.upsertPageIndex(
     'Notes/Loose.md',
-    { matrix: [node('body', 'alpha')], headings: [], values: {} },
+    { relations: [relation('body', 'alpha')], headings: [], values: {} },
     { mtimeMs: 3000, size: 30 },
   )
 })
@@ -66,7 +66,7 @@ describe('readMatrixGraph', () => {
   it('narrows to the named paths', () => {
     const reply = readMatrixGraph(['Notes/A.md'])!
     expect(Object.keys(reply.values)).toEqual([A])
-    expect(reply.links).toEqual([{ path: 'Notes/A.md', ...node('body', 'beta'), pageId: A }])
+    expect(reply.links).toEqual([{ path: 'Notes/A.md', ...relation('body', 'beta'), pageId: A }])
   })
 
   it('answers null with no index', () => {

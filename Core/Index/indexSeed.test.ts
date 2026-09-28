@@ -3,7 +3,7 @@ import { ASSETS_DIR_REL } from '../Paths/nexusPaths'
 import { mkdir, rm, unlink, utimes, writeFile } from 'node:fs/promises'
 import { join } from '../Paths/posix'
 import { tempRoot } from '../Testing/hostFs'
-import { installStores, type MatrixNode, NO_STORES } from '../Platform/stores'
+import { installStores, type Relation, NO_STORES } from '../Platform/stores'
 import { memoryStores } from '../Testing/memoryStores'
 import {
   queryHeadingMentions,
@@ -26,8 +26,8 @@ const ULID_A = '01ARZ3NDEKPSV4RRFFQ69G5FAV'
 let root: string
 let mem: ReturnType<typeof memoryStores>
 const abs = (...segs: string[]): string => join(root, ...segs)
-const rowsOf = (path: string): MatrixNode[] =>
-  [...mem.index.matrix.values()]
+const rowsOf = (path: string): Relation[] =>
+  [...mem.index.relations.values()]
     .filter((r) => r.path === path)
     .map(({ kind, target, qualifier, count }) => ({ kind, target, qualifier, count }))
     .sort((a, b) =>
@@ -102,8 +102,8 @@ describe('seedContentIndex', () => {
   it('the stat gate skips unmoved files and re-reads moved ones', async () => {
     await seedContentIndex(root)
     // Sabotage a row directly: an unmoved file must NOT be re-read, so the sabotage survives.
-    for (const [key, row] of mem.index.matrix)
-      if (row.path === 'Notes/A.md' && row.kind !== 'space') mem.index.matrix.delete(key)
+    for (const [key, row] of mem.index.relations)
+      if (row.path === 'Notes/A.md' && row.kind !== 'space') mem.index.relations.delete(key)
     await seedContentIndex(root)
     expect(queryMentions('target')).toEqual(['Loose/Note.md'])
     await utimes(abs('Notes', 'A.md'), new Date(), new Date(Date.now() + 5000))
@@ -214,7 +214,7 @@ describe('seedContentIndex', () => {
   })
 })
 
-describe('the matrix a page yields', () => {
+describe('the relations a page yields', () => {
   const page = async (body: string): Promise<void> => {
     await writeFile(abs('Notes', 'A.md'), `---\nID: ${ULID_A}\n---\n\n${body}`)
     await seedContentIndex(root)

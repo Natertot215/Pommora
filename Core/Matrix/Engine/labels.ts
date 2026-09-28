@@ -1,16 +1,16 @@
 import { clamp } from '@pommora/uix/Utilities/clamp'
-import type { GraphNode, NodeKind } from './graph'
+import type { GraphNode, GraphNodeKind } from './graph'
 import { toScreen, type Viewport } from './viewport'
 
 // KNOBs — the label cell, the zoom each node kind reveals its title at, and the share of that zoom the reveal fades across.
-const REVEAL_ZOOM: Record<NodeKind, number> = { page: 0.6, folder: 0.4, space: 0.2 }
+const REVEAL_ZOOM: Record<GraphNodeKind, number> = { page: 0.6, folder: 0.4, space: 0.2 }
 const REVEAL_BAND = 0.35
 const LABEL_CELL_PX = 96
 
-export type LabelReveal = Record<NodeKind, number>
+export type LabelReveal = Record<GraphNodeKind, number>
 
 // A share of each kind's own threshold, so the three bands read as one gesture across a zoom range that spans an order of magnitude.
-const revealOf = (kind: NodeKind, zoom: number): number => {
+const revealOf = (kind: GraphNodeKind, zoom: number): number => {
   const at = REVEAL_ZOOM[kind]
   return clamp((zoom - at) / (at * REVEAL_BAND), 0, 1)
 }

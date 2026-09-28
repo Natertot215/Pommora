@@ -1,19 +1,21 @@
-import { type EntityMenuAction, entityMenuItems } from '@pommora/core/Actions/entityMenu'
-import { createdRequest } from '@pommora/core/Actions/createMenu'
+import {
+  type EntityMenuAction,
+  entityMenuItems,
+  type MenuTarget,
+} from '@pommora/core/Actions/entityMenu'
 import {
   containerCreators,
-  spaceCreator,
-  type ContextTarget,
   type Creator,
-} from '@pommora/core/Nexus/mutateRequest'
-import { isWindowTarget } from '@pommora/core/Navigation/navRef'
+  createdRequest,
+  spaceCreator,
+} from '@pommora/core/Actions/createMenu'
+import { isWindowTarget, selectTargetOf } from '@pommora/core/Navigation/navRef'
 import type { ResolvedColumn, ViewRow } from '@pommora/core/Views/viewRow'
 import type { PropertyDefinition } from '@pommora/core/Properties/properties'
 import type { PropertyValue } from '@pommora/core/Properties/propertyValue'
 import { assignValue, type ValueWriter } from '@pommora/core/Properties/assignValue'
 import { fetchPageRow, schemaForPage, spaceRowOf } from '@pommora/core/Properties/pageRow'
 import { spaceNodeOf } from '@pommora/core/Nexus/treeIndex'
-import { contextTargetToSelect } from '../../Navigation/tabsModel'
 import {
   propertyMenuBranches,
   type PropertyMenuTarget,
@@ -27,7 +29,7 @@ import { settingOf } from '@pommora/core/Settings/personalization'
 import { confirmDelete } from '../Confirm/confirmations'
 import { runPageAction } from './pageMenuActions'
 
-function creatorsFor(target: ContextTarget): Creator[] {
+function creatorsFor(target: MenuTarget): Creator[] {
   switch (target.kind) {
     case 'collection':
     case 'set':
@@ -42,7 +44,7 @@ function creatorsFor(target: ContextTarget): Creator[] {
 }
 
 /** Resolves on close, before the pick runs: a surface holding a hover affordance down needs the close to release it. */
-export async function showEntityMenu(target: ContextTarget, trigger?: HTMLElement): Promise<void> {
+export async function showEntityMenu(target: MenuTarget, trigger?: HTMLElement): Promise<void> {
   const creators = creatorsFor(target)
   const s = useSession.getState()
   const node = target.kind === 'space' && target.id ? spaceNodeOf(s.tree, target.id) : null
@@ -61,7 +63,7 @@ export async function showEntityMenu(target: ContextTarget, trigger?: HTMLElemen
         capitalize: settingOf(s.personalization, 'capitalizeMetadata'),
       }
     : null
-  const shown: ContextTarget = {
+  const shown: MenuTarget = {
     ...target,
     ...(menuTarget ? propertyMenuBranches(menuTarget) : {}),
   }
@@ -94,23 +96,19 @@ function valueCommitFor(
   }
 }
 
-function runEntityAction(
-  target: ContextTarget,
-  creators: Creator[],
-  action: EntityMenuAction,
-): void {
+function runEntityAction(target: MenuTarget, creators: Creator[], action: EntityMenuAction): void {
   const s = useSession.getState()
   const { path, id, kind } = target
   if (kind === 'page' && id && runPageAction(action, { id, path, title: target.title })) return
   const ref = id ? { kind, id, path } : undefined
   switch (action) {
     case 'preview': {
-      const t = ref && contextTargetToSelect(ref)
+      const t = ref && selectTargetOf(ref)
       if (t && isWindowTarget(t)) s.openWindowTab(t)
       return
     }
     case 'open':
-      if (ref) void s.select(contextTargetToSelect(ref), { newTab: true })
+      if (ref) void s.select(selectTargetOf(ref), { newTab: true })
       return
     case 'title:rename':
     case 'rename':

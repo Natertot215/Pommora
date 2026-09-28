@@ -1,9 +1,9 @@
 import { clamp } from '@pommora/uix/Utilities/clamp'
-import type { GraphLink, GraphNode, LinkKind, NodeKind } from './graph'
+import type { GraphLink, GraphNode, LinkKind, GraphNodeKind } from './graph'
 import { type Cell, type Quadtree, visit } from './quadtree'
 
 // KNOBs — the node radii and their growth, the per-kind link strengths, and the four forces the menu scales.
-export const BASE_RADIUS: Record<NodeKind, number> = { page: 25, folder: 35, space: 45 }
+export const BASE_RADIUS: Record<GraphNodeKind, number> = { page: 25, folder: 35, space: 45 }
 const LINK_MULTIPLE: Record<LinkKind, number> = {
   body: 0.075,
   citation: 0.05,
@@ -37,7 +37,7 @@ export interface Forces {
 }
 
 export function radiusOf(
-  kind: NodeKind,
+  kind: GraphNodeKind,
   inbound: Record<LinkKind, number>,
   members: number,
   links = 0,

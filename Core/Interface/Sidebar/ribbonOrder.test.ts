@@ -1,16 +1,16 @@
 import { describe, expect, it } from 'vitest'
-import { resolveOrder, withHidden } from './ribbonOrder'
+import { resolveRibbonOrder, withHidden } from './ribbonOrder'
 
-describe('resolveOrder', () => {
+describe('resolveRibbonOrder', () => {
   it('carries Agenda only while the gate is open', () => {
-    expect(resolveOrder(undefined, true)).toEqual([
+    expect(resolveRibbonOrder(undefined, true)).toEqual([
       'matrix',
       'agenda',
       'contexts',
       'collections',
       'settings',
     ])
-    expect(resolveOrder(undefined, false)).toEqual([
+    expect(resolveRibbonOrder(undefined, false)).toEqual([
       'matrix',
       'contexts',
       'collections',
@@ -20,11 +20,16 @@ describe('resolveOrder', () => {
 
   it('drops Agenda from a saved order once the gate closes', () => {
     const saved = ['agenda', 'settings', 'contexts', 'matrix', 'collections']
-    expect(resolveOrder(saved, false)).toEqual(['settings', 'contexts', 'matrix', 'collections'])
+    expect(resolveRibbonOrder(saved, false)).toEqual([
+      'settings',
+      'contexts',
+      'matrix',
+      'collections',
+    ])
   })
 
   it('drops a key the ribbon no longer carries', () => {
-    expect(resolveOrder(['navigation', 'settings', 'matrix'], false)).toEqual([
+    expect(resolveRibbonOrder(['navigation', 'settings', 'matrix'], false)).toEqual([
       'settings',
       'contexts',
       'collections',

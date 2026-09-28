@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest'
-import type { GraphNode, NodeKind } from './graph'
+import type { GraphNode, GraphNodeKind } from './graph'
 import { cullLabels, labelReveal } from './labels'
 
-const node = (id: string, kind: NodeKind, x: number, radius: number): GraphNode => ({
+const node = (id: string, kind: GraphNodeKind, x: number, radius: number): GraphNode => ({
   id,
   kind,
   title: id,

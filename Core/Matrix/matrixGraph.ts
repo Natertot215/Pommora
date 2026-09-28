@@ -1,10 +1,10 @@
-import { readMatrixGraph as readRows } from '../Index/contentIndex'
+import { readPageRelations } from '../Index/contentIndex'
 import { ID_KEY } from '../Nexus/identityMark'
-import type { MatrixLinkRow } from '../Platform/stores'
+import type { PageRelationRow } from '../Platform/stores'
 import { pageValuesOf } from '../Views/loadValues'
 import type { PageValues } from '../Views/viewRow'
 
-export interface MatrixLink extends MatrixLinkRow {
+export interface MatrixLink extends PageRelationRow {
   pageId: string
 }
 
@@ -15,7 +15,7 @@ export interface MatrixGraphReply {
 
 // `null` when there is no index yet; the renderer keeps what it holds and the next push refetches.
 export function readMatrixGraph(paths?: string[]): MatrixGraphReply | null {
-  const rows = readRows(paths)
+  const rows = readPageRelations(paths)
   if (!rows) return null
   const idOf = new Map<string, string>()
   const values: Record<string, PageValues> = {}

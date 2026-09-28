@@ -38,13 +38,13 @@ const byPath = <T extends { path: string }>(rows: T[], ...keys: (keyof T)[]): T[
   })
 
 const dump = (): unknown => ({
-  matrix: byPath([...mem.index.matrix.values()], 'kind', 'target', 'qualifier'),
+  relations: byPath([...mem.index.relations.values()], 'kind', 'target', 'qualifier'),
   values: byPath([...mem.index.values.values()], 'key'),
 })
 
 async function expectMaintained(): Promise<void> {
   const maintained = dump()
-  mem.index.matrix.clear()
+  mem.index.relations.clear()
   mem.index.values.clear()
   mem.index.stats.clear()
   await seedContentIndex(root)
@@ -229,8 +229,8 @@ describe('the writers maintain the rows', () => {
       deps,
     )
     expect(r.ok).toBe(true)
-    const scratch = dump() as { matrix: unknown[] }
-    expect(scratch.matrix).toEqual([
+    const scratch = dump() as { relations: unknown[] }
+    expect(scratch.relations).toEqual([
       { path: 'Notes/Daily/Alpha.md', kind: 'body', target: 'beta', qualifier: '', count: 1 },
     ])
     await expectMaintained()

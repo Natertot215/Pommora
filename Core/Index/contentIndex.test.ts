@@ -23,7 +23,7 @@ afterEach(() => {
 
 const STAT = { mtimeMs: 1000, size: 10 }
 const TAGGED: PageIndexEntry = {
-  matrix: [
+  relations: [
     { kind: 'body', target: 'beta', qualifier: '', count: 1 },
     { kind: 'space', target: 'pommora', qualifier: '<Projects>', count: 1 },
   ],
@@ -36,7 +36,7 @@ describe('the content index', () => {
     upsertPageIndex(
       'Notes/A.md',
       {
-        matrix: [
+        relations: [
           { kind: 'body', target: 'beta', qualifier: '', count: 1 },
           { kind: 'space', target: 'pommora', qualifier: '<Projects>', count: 1 },
         ],
@@ -48,7 +48,7 @@ describe('the content index', () => {
     upsertPageIndex(
       'Loose/B.md',
       {
-        matrix: [
+        relations: [
           { kind: 'body', target: 'beta', qualifier: '', count: 1 },
           { kind: 'body', target: 'gamma', qualifier: '', count: 1 },
           { kind: 'space', target: 'pommora', qualifier: '<Projects>', count: 1 },
@@ -72,7 +72,7 @@ describe('the content index', () => {
     upsertPageIndex(
       'Notes/A.md',
       {
-        matrix: [
+        relations: [
           { kind: 'body', target: 'beta', qualifier: '', count: 1 },
           { kind: 'space', target: 'pommora', qualifier: '<Projects>', count: 1 },
         ],
@@ -84,7 +84,7 @@ describe('the content index', () => {
     upsertPageIndex(
       'Notes/A.md',
       {
-        matrix: [{ kind: 'body', target: 'gamma', qualifier: '', count: 1 }],
+        relations: [{ kind: 'body', target: 'gamma', qualifier: '', count: 1 }],
         headings: [],
         values: {},
       },
@@ -98,7 +98,7 @@ describe('the content index', () => {
   })
 
   it('no mentions is an empty array; NO INDEX is null — the two never conflate', () => {
-    upsertPageIndex('Notes/A.md', { matrix: [], headings: [], values: {} }, STAT)
+    upsertPageIndex('Notes/A.md', { relations: [], headings: [], values: {} }, STAT)
     expect(queryMentions('beta')).toEqual([])
     installStores(NO_STORES)
     expect(queryMentions('beta')).toBeNull()
@@ -113,7 +113,7 @@ describe('the content index', () => {
     upsertPageIndex(
       'Notes/A.md',
       {
-        matrix: [{ kind: 'body', target: 'beta', qualifier: '', count: 1 }],
+        relations: [{ kind: 'body', target: 'beta', qualifier: '', count: 1 }],
         headings: [],
         values: {},
       },
@@ -128,7 +128,7 @@ describe('the content index', () => {
     upsertPageIndex(
       'Projects 🚀/A.md',
       {
-        matrix: [{ kind: 'body', target: 'beta', qualifier: '', count: 1 }],
+        relations: [{ kind: 'body', target: 'beta', qualifier: '', count: 1 }],
         headings: [],
         values: {},
       },

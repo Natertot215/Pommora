@@ -118,7 +118,7 @@ export function EntityBanner({
   const titleHeader = (
     <DetailTitleHeader
       key={owner.path}
-      title={owner.name}
+      title={owner.title}
       icon={
         owner.kind === 'homepage'
           ? (nexusIcon.profileIcon ?? DEFAULT_NEXUS_ICON)

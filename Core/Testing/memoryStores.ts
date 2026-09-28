@@ -6,8 +6,9 @@ import type {
   ContentIndexStore,
   IndexedStat,
   KeyValueStore,
-  MatrixGraphRows,
-  MatrixLinkRow,
+  PageRelationRow,
+  PageRelations,
+  RelationRow,
   SnapshotRow,
   SnapshotSource,
   SnapshotStore,
@@ -16,7 +17,7 @@ import type {
 } from '../Platform/stores'
 
 interface MemoryIndex {
-  matrix: Map<string, MatrixLinkRow>
+  relations: Map<string, RelationRow>
   headings: Map<string, { path: string; heading: string; ordinal: number }>
   values: Map<string, { path: string; key: string; value: string }>
   stats: Map<string, IndexedStat>
@@ -66,7 +67,7 @@ const tableOf = <R extends { path: string }>(
 
 const contentIndex = (index: MemoryIndex): ContentIndexStore => {
   const tables: IndexTable[] = [
-    tableOf(index.matrix, (r) => [r.kind, r.target, r.qualifier]),
+    tableOf(index.relations, (r) => [r.kind, r.target, r.qualifier]),
     tableOf(index.headings, (r) => [r.heading]),
     tableOf(index.values, (r) => [r.key]),
   ]
@@ -75,12 +76,15 @@ const contentIndex = (index: MemoryIndex): ContentIndexStore => {
     index.stats.delete(path)
   }
   const sortedPaths = (paths: Iterable<string>): string[] => [...new Set(paths)].sort()
-  const nodes = (): MatrixLinkRow[] => [...index.matrix.values()]
+  const relationRows = (): RelationRow[] => [...index.relations.values()]
   return {
     upsertPageIndex(path, entry, stat) {
       clearPath(path)
-      for (const node of entry.matrix)
-        index.matrix.set(k(path, node.kind, node.target, node.qualifier), { path, ...node })
+      for (const relation of entry.relations)
+        index.relations.set(k(path, relation.kind, relation.target, relation.qualifier), {
+          path,
+          ...relation,
+        })
       entry.headings.forEach((heading, ordinal) => {
         index.headings.set(k(path, heading), { path, heading, ordinal })
       })
@@ -119,14 +123,14 @@ const contentIndex = (index: MemoryIndex): ContentIndexStore => {
     },
     queryMentions(normalizedTitle) {
       return sortedPaths(
-        nodes()
+        relationRows()
           .filter((r) => r.target === normalizedTitle && r.kind !== 'space')
           .map((r) => r.path),
       )
     },
     queryHeadingMentions(normalizedTitle, normalizedHeading) {
       return sortedPaths(
-        nodes()
+        relationRows()
           .filter(
             (r) =>
               r.target === normalizedTitle &&
@@ -147,16 +151,16 @@ const contentIndex = (index: MemoryIndex): ContentIndexStore => {
       }
       return out
     },
-    readMatrixGraph(paths) {
+    readPageRelations(paths) {
       const held = (path: string): boolean => !paths || paths.includes(path)
-      const links = nodes()
+      const links = relationRows()
         .filter(
-          (r) =>
+          (r): r is PageRelationRow =>
             (r.kind === 'body' || r.kind === 'citation' || r.kind === 'frontmatter') &&
             held(r.path),
         )
         .sort((a, b) => (a.path < b.path ? -1 : a.path > b.path ? 1 : 0))
-      const pages: MatrixGraphRows['pages'] = {}
+      const pages: PageRelations['pages'] = {}
       for (const [path, stat] of index.stats)
         if (held(path)) pages[path] = { values: {}, mtimeMs: stat.mtimeMs }
       for (const row of index.values.values()) {
@@ -170,7 +174,7 @@ const contentIndex = (index: MemoryIndex): ContentIndexStore => {
     },
     queryMembers(key, title) {
       return sortedPaths(
-        nodes()
+        relationRows()
           .filter((r) => r.kind === 'space' && r.qualifier === key && r.target === title)
           .map((r) => r.path),
       )
@@ -282,7 +286,7 @@ const captures = (): CaptureStore => {
 
 export function memoryStores(): { stores: Stores; index: MemoryIndex } {
   const index: MemoryIndex = {
-    matrix: new Map(),
+    relations: new Map(),
     headings: new Map(),
     values: new Map(),
     stats: new Map(),

@@ -63,12 +63,12 @@ describe('the content index over SQLite', () => {
     const store = contentIndexStore(db)
     store.upsertPageIndex(
       'Notes/A.md',
-      { matrix: [], headings: ['setup'], values: {} },
+      { relations: [], headings: ['setup'], values: {} },
       { mtimeMs: 1, size: 1 },
     )
     const only = ['Notes/A.md', ...Array.from({ length: 40_000 }, (_, i) => `Notes/${i}.md`)]
     expect(store.readHeadings(only)['Notes/A.md']).toEqual(['setup'])
-    expect(Object.keys(store.readMatrixGraph(only).pages)).toEqual(['Notes/A.md'])
+    expect(Object.keys(store.readPageRelations(only).pages)).toEqual(['Notes/A.md'])
   })
 
   it('missing tables answer exactly like a null Db, and writers never throw', () => {
@@ -81,7 +81,7 @@ describe('the content index over SQLite', () => {
     })
     markIndexReady()
     db.exec(
-      'DROP TABLE matrix_nodes; DROP TABLE headings; DROP TABLE page_values; DROP TABLE indexed_files',
+      'DROP TABLE relations; DROP TABLE headings; DROP TABLE page_values; DROP TABLE indexed_files',
     )
     expect(queryMentions('beta')).toBeNull()
     expect(queryKeyHolders('Status')).toBeNull()
@@ -91,7 +91,7 @@ describe('the content index over SQLite', () => {
       upsertPageIndex(
         'Notes/A.md',
         {
-          matrix: [{ kind: 'body', target: 'x', qualifier: '', count: 1 }],
+          relations: [{ kind: 'body', target: 'x', qualifier: '', count: 1 }],
           headings: [],
           values: {},
         },

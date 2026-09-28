@@ -165,7 +165,7 @@ describe('end to end — deleted, listed, restored', () => {
     )
   })
 
-  it('the restoration matrix: every homeless kind lands where it is told', async () => {
+  it('every restoration case: each homeless kind lands where it is told', async () => {
     await del('Journal/Daily/Alpha.md', 'page')
     let row = await find('Alpha')
     expect(

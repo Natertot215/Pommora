@@ -4,7 +4,7 @@ import { describe, it, expect } from 'vitest'
 import { codeMask } from '../MarkdownPM/Engine/markdownCode'
 import { frontmatterMentions, type LinkHit, linksIn, sectionRunsIn } from './scan'
 
-// `extractMentions` and `extractHeadingMentions` were the index's two readers of `linksIn` until the matrix took their place. They are kept here, unchanged, so the properties they pinned keep answering over the one walker that remains.
+// `extractMentions` and `extractHeadingMentions` were the index's two readers of `linksIn` until the relation rows took their place. They are kept here, unchanged, so the properties they pinned keep answering over the one walker that remains.
 function extractMentions(body: string, ownTitle = ''): Set<string> {
   const out = new Set<string>()
   for (const hit of linksIn(body, ownTitle)) out.add(hit.target)

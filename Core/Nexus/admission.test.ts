@@ -64,7 +64,7 @@ const titles = async (): Promise<string[]> => {
 }
 const bytes = (name: string): Promise<string> => readFile(join(root, 'Notes', name), 'utf8')
 
-describe('the Unknown matrix, on disk', () => {
+describe('the Unknown cases, on disk', () => {
   it('keeps every Unknown file out of the walked tree, and admits the two that belong', async () => {
     expect(await titles()).toEqual(['Adoptable', 'Member'])
   })

@@ -4,8 +4,8 @@ import type {
   ContentIndexStore,
   IndexedStat,
   KeyValueStore,
-  MatrixGraphRows,
-  MatrixLinkRow,
+  PageRelations,
+  PageRelationRow,
   SyncStore,
 } from '@pommora/core/Platform/stores'
 import { type Db, inTransaction } from './driver'
@@ -49,11 +49,11 @@ const clearPath = (db: Db, path: string): void => {
 export const contentIndexStore = (db: Db): ContentIndexStore => ({
   upsertPageIndex(path, entry, stat) {
     clearPath(db, path)
-    const insNode = db.prepare(
-      'INSERT OR REPLACE INTO matrix_nodes (path, kind, target, qualifier, count) VALUES (?, ?, ?, ?, ?)',
+    const insRelation = db.prepare(
+      'INSERT OR REPLACE INTO relations (path, kind, target, qualifier, count) VALUES (?, ?, ?, ?, ?)',
     )
-    for (const { kind, target, qualifier, count } of entry.matrix)
-      insNode.run(path, kind, target, qualifier, count)
+    for (const { kind, target, qualifier, count } of entry.relations)
+      insRelation.run(path, kind, target, qualifier, count)
     const insHeading = db.prepare(
       'INSERT OR REPLACE INTO headings (path, heading, ordinal) VALUES (?, ?, ?)',
     )
@@ -98,14 +98,14 @@ export const contentIndexStore = (db: Db): ContentIndexStore => ({
   queryMentions(normalizedTitle) {
     return paths(
       db,
-      "SELECT DISTINCT path FROM matrix_nodes WHERE target = ? AND kind <> 'space' ORDER BY path",
+      "SELECT DISTINCT path FROM relations WHERE target = ? AND kind <> 'space' ORDER BY path",
       normalizedTitle,
     )
   },
   queryHeadingMentions(normalizedTitle, normalizedHeading) {
     return paths(
       db,
-      "SELECT DISTINCT path FROM matrix_nodes WHERE target = ? AND qualifier = ? AND kind <> 'space' ORDER BY path",
+      "SELECT DISTINCT path FROM relations WHERE target = ? AND qualifier = ? AND kind <> 'space' ORDER BY path",
       normalizedTitle,
       normalizedHeading,
     )
@@ -128,21 +128,21 @@ export const contentIndexStore = (db: Db): ContentIndexStore => ({
     }
     return out
   },
-  readMatrixGraph(only) {
+  readPageRelations(only) {
     const inClause = only ? ` AND path IN ${PATHS_OF}` : ''
     const args = only ? [JSON.stringify(only)] : []
     const links = db
       .prepare(
-        `SELECT path, kind, target, qualifier, count FROM matrix_nodes WHERE kind IN ('body','citation','frontmatter')${inClause} ORDER BY path`,
+        `SELECT path, kind, target, qualifier, count FROM relations WHERE kind IN ('body','citation','frontmatter')${inClause} ORDER BY path`,
       )
-      .all(...args) as unknown as MatrixLinkRow[]
+      .all(...args) as unknown as PageRelationRow[]
     const stats = db
       .prepare(`SELECT path, mtime_ms FROM indexed_files WHERE 1=1${inClause}`)
       .all(...args) as { path: string; mtime_ms: number }[]
     const values = db
       .prepare(`SELECT path, key, value FROM page_values WHERE 1=1${inClause}`)
       .all(...args) as { path: string; key: string; value: string }[]
-    const pages: MatrixGraphRows['pages'] = {}
+    const pages: PageRelations['pages'] = {}
     for (const s of stats) pages[s.path] = { values: {}, mtimeMs: s.mtime_ms }
     for (const v of values) {
       const page = pages[v.path]
@@ -157,7 +157,7 @@ export const contentIndexStore = (db: Db): ContentIndexStore => ({
   queryMembers(key, title) {
     return paths(
       db,
-      "SELECT DISTINCT path FROM matrix_nodes WHERE kind = 'space' AND qualifier = ? AND target = ? ORDER BY path",
+      "SELECT DISTINCT path FROM relations WHERE kind = 'space' AND qualifier = ? AND target = ? ORDER BY path",
       key,
       title,
     )

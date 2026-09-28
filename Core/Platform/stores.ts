@@ -6,18 +6,18 @@ export interface KeyValueStore {
 }
 
 // `citation` overlays rather than replaces: a link or embed inside a footnote definition emits its own syntax kind AND a `citation` row, so a reader asking for body links sees it and a reader weighting footnotes sees it too.
-export type MatrixKind = 'body' | 'citation' | 'frontmatter' | 'embed' | 'space'
+export type RelationKind = 'body' | 'citation' | 'frontmatter' | 'embed' | 'space'
 
 /** `target` is a normalized title, never a path — resolution happens at read time. `qualifier` is a normalized heading key for a heading-naming link, a Context key for a `space` row, and '' otherwise. `count` is occurrences for `body`, `citation` and `embed`, and always 1 for `frontmatter` and `space`, whose producers yield each target and qualifier once. */
-export interface MatrixNode {
-  kind: MatrixKind
+export interface Relation {
+  kind: RelationKind
   target: string
   qualifier: string
   count: number
 }
 
 export interface PageIndexEntry {
-  matrix: MatrixNode[]
+  relations: Relation[]
   headings: string[]
   values: Record<string, unknown>
 }
@@ -27,12 +27,18 @@ export interface IndexedStat {
   size: number
 }
 
-export interface MatrixLinkRow extends MatrixNode {
+export interface RelationRow extends Relation {
   path: string
 }
 
-export interface MatrixGraphRows {
-  links: MatrixLinkRow[]
+export type PageRelationKind = Extract<RelationKind, 'body' | 'citation' | 'frontmatter'>
+
+export interface PageRelationRow extends RelationRow {
+  kind: PageRelationKind
+}
+
+export interface PageRelations {
+  links: PageRelationRow[]
   pages: Record<string, { values: Record<string, unknown>; mtimeMs: number }>
 }
 
@@ -50,7 +56,7 @@ export interface ContentIndexStore {
   readIndexedStat(path: string): IndexedStat | null
   readIndexedStats(): Map<string, IndexedStat>
   /** Page → page rows only (`body`, `citation`, `frontmatter`), plus every indexed page's governed values and mtime; `paths` narrows both. */
-  readMatrixGraph(paths?: string[]): MatrixGraphRows
+  readPageRelations(paths?: string[]): PageRelations
 }
 
 export type SnapshotSource = 'edit' | 'external' | 'restore'
