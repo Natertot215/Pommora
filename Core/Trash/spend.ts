@@ -29,14 +29,14 @@ import { dropSpaceOrder } from '../Nexus/reorder'
 import { machine } from '../Platform/machine'
 import { stampedId } from '../Files/pageFile'
 import { recordWrite } from '../Files/writeEcho'
-import { noteValueWrite } from '../Nexus/valuesChanged'
+import { frozenWorld, noteValueWrite } from '../Nexus/valuesChanged'
 import { getLiveTree, liveTreeOf } from '../Nexus/liveTree'
 
 import { projectBaseline } from '../Nexus/remintLedger'
 import type { EntityRecord } from '../Nexus/record'
 import { type RecordFile, readRecord, bundleArtifact } from './record'
 import { deleteCascade, type StrippedLink } from '../Nexus/cascade'
-import { contentPages, parkLinks, refillTrashed, restoreWorld } from './holdings'
+import { contentPages, parkLinks, refillTrashed } from './holdings'
 import { findContainerById, resolveRecord, type ArtifactRecord, type Refusal } from './resolve'
 
 const REFUSAL_TEXT: Record<Refusal, string> = {
@@ -215,8 +215,7 @@ async function restoreArtifact(
     return fail('exists', 'Something already sits at the restored location.')
   const was = titleFromPath(artifactAbs)
   const landed = record.entity === 'page' ? titleFromPath(finalName) : was
-  const frozen = await restoreWorld(
-    root,
+  const frozen = frozenWorld(
     tree,
     record.entity === 'page'
       ? [landed]

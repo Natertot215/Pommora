@@ -11,10 +11,6 @@ import { listEntries, listMarkdownFiles } from '../Files/walk'
 import { sweepGovernedRoots } from '../Properties/governedSweep'
 import { isBlankRaw } from '../Properties/propertyValue'
 import { BUNDLE_SUFFIX } from './bundle'
-import { readLiveSetting } from '../Settings/settings'
-import { titlesOf } from '../Nexus/valuesChanged'
-import type { NexusTree } from '../Nexus/tree'
-import type { Frozen } from '../Properties/propertyValue'
 import { type RecordFile, appendLinks, bundleArtifact, readRecord } from './record'
 
 export interface ListedBundle {
@@ -77,27 +73,6 @@ async function trashedTitles(root: string): Promise<Map<string, string>> {
 }
 
 /** A restore's world: the pages the tree holds, and those landing with it. */
-function frozenWorld(tree: NexusTree, landing: readonly string[]): Frozen {
-  const held = titlesOf(tree)
-  const arriving = new Set(landing.map(normalizeTitle))
-  return {
-    holds: (title) => {
-      const key = normalizeTitle(title)
-      return held.has(key) || arriving.has(key)
-    },
-  }
-}
-
-/** What a restore may still name: the pages the tree holds and those landing with it, and, while Restore Links On Deletion is off and nothing parked would come back, the pages the Trash holds. */
-export async function restoreWorld(
-  root: string,
-  tree: NexusTree,
-  landing: readonly string[] = [],
-): Promise<Frozen> {
-  if (await readLiveSetting(root, 'restoreLinksOnDeletion')) return frozenWorld(tree, landing)
-  return frozenWorld(tree, [...landing, ...(await trashedTitles(root)).keys()])
-}
-
 /** A Link value dropped for naming a page the Trash holds joins that page's newest bundle, so the page's restore writes it back. */
 export async function parkLinks(root: string, links: StrippedLink[]): Promise<void> {
   if (!links.length) return
