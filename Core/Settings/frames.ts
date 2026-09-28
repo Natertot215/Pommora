@@ -535,6 +535,12 @@ export const FRAMES = roster([
             label: 'Permanently Delete Files',
             hint: 'Permanently deleted files will be deleted from this computer, keeping this off will move them to system trash.',
           },
+          {
+            kind: 'toggle',
+            key: 'restoreLinksOnDeletion',
+            label: 'Restore Links On Deletion',
+            hint: 'Restoring a deleted page puts it back into the Link property values that pointed at it.',
+          },
         ],
       },
       {

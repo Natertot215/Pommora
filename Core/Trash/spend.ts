@@ -1,4 +1,4 @@
-import { basename, dirname, join, relative, isMarkdownFile } from '../Paths/posix'
+import { basename, dirname, join, relative, isMarkdownFile, titleFromPath } from '../Paths/posix'
 import { escapes, resolveUnderRoot } from '../Paths/pathSafety'
 import { contextKey } from '../Contexts/contexts'
 import { spaceSidecarsIn, withOrderEntry } from '../Contexts/spaceSidecar'
@@ -17,8 +17,16 @@ import type { NexusTree } from '../Nexus/tree'
 import { mutateRegistryFile, withContextAt } from '../Contexts/contextsRegistry'
 import { restoreProperty } from './restoreProperty'
 import { scrubReturning } from './restoreScrub'
-import { exclusionWriteRefusal, reseatExcludedFolders } from '../Settings/settings'
+import {
+  exclusionWriteRefusal,
+  readLivePersonalization,
+  reseatExcludedFolders,
+} from '../Settings/settings'
+import { settingOf } from '../Settings/personalization'
 import { sweepRootsById } from '../Properties/governedSweep'
+import { rewriteFrontmatterConnections } from '../Connections/rewrite'
+import { linkDefs } from '../Properties/propertiesRegistry'
+import { refillValues } from '../Properties/assignment'
 import { BUNDLE_SUFFIX } from './bundle'
 import { pathExists, readJsonObject, readTextOrNull, rmwJsonStrict } from '../Files/atomicWrite'
 import { listEntries, listMarkdownFiles } from '../Files/walk'
@@ -278,6 +286,7 @@ async function restoreArtifact(
   await moveIndexPaths(root, artifactAbs, targetAbs)
   const roots = projectBaseline(tree).entries
   const unspent: string[] = []
+  const unlinked = new Set<string>()
   if (record.entity === 'context') {
     if (title !== record.registry.title)
       await rekeyPassengers(targetAbs, record.registry.title, title)
@@ -302,13 +311,38 @@ async function restoreArtifact(
       )
       unspent.push(...(await reapply(root, roots, contextKey(group.def.title), additions)))
     }
+  } else if (
+    record.entity !== 'space' &&
+    record.links &&
+    settingOf(await readLivePersonalization(root), 'restoreLinksOnDeletion')
+  ) {
+    const was = titleFromPath(artifactAbs)
+    const landed = record.entity === 'page' ? titleFromPath(finalName) : was
+    for (const def of await linkDefs(root)) {
+      const values = Object.fromEntries(
+        record.links
+          .filter((l) => l.property === def.id)
+          .map((l) => [
+            l.page,
+            landed === was
+              ? l.value
+              : (rewriteFrontmatterConnections({ v: l.value }, was, { title: landed }).v ??
+                l.value),
+          ]),
+      )
+      const taken = await refillValues(root, def, roots, values)
+      for (const id of Object.keys(values)) if (roots[id] && !taken.has(id)) unlinked.add(id)
+    }
   }
   // The record outlives a partial re-tag, so what didn't come back stays written down.
   if (!unspent.length) {
     recordWrite(bundleAbs)
     await machine().remove(bundleAbs)
   }
-  const outcome = { ...restored(unspent.map((id) => roots[id].title)), landed: targetRel }
+  const outcome = {
+    ...restored([...unspent, ...unlinked].map((id) => roots[id].title)),
+    landed: targetRel,
+  }
   if (record.entity !== 'collection' && record.entity !== 'set') return ok(outcome)
   return ok({
     ...outcome,
