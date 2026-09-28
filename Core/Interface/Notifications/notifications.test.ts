@@ -105,6 +105,21 @@ describe('a delete notification', () => {
     expect(older).toHaveBeenCalledTimes(1)
   })
 
+  it('once spent elsewhere, answers neither its label nor the chord, and leaves the screen', async () => {
+    const older = vi.fn()
+    const newer = vi.fn()
+    notifyDeleted('Older', older)
+    const spend = notifyDeleted('Newer', newer)
+    const action = currentNotification()?.action
+    spend()
+    expect(currentNotification()).toBeNull()
+    void action?.run()
+    expect(undoValue(null)).toBe(true)
+    await settle()
+    expect(newer).not.toHaveBeenCalled()
+    expect(older).toHaveBeenCalledTimes(1)
+  })
+
   it('runs undos in turn, so a restore reads the tree the one before it left', async () => {
     let land = (): void => {}
     const newer = vi.fn(() => new Promise<void>((resolve) => (land = resolve)))

@@ -7,6 +7,9 @@ import { countPhrase, filterRows, TrashFrame } from './TrashFrame'
 import { stubDialer } from '../vitest.setup'
 import { useSession } from '../Session/store'
 import { makeTree } from '@pommora/core/Testing/testTree'
+import { notifyTrashed } from '../Interface/Confirm/confirmations'
+import { currentNotification } from '../Interface/Notifications/notifications'
+import { pushUndo, resetUndo, undoValue } from '../Session/undo'
 
 ;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
 
@@ -105,6 +108,7 @@ describe('the Trash pane', () => {
   let root: Root | null = null
   let listed: TrashRow[]
   let picked: string | null
+  let mutated: ReturnType<typeof vi.fn>
 
   const titles = (): string[] =>
     [...(host?.querySelectorAll('[role="checkbox"]') ?? [])].map((n) =>
@@ -118,14 +122,19 @@ describe('the Trash pane', () => {
   beforeEach(async () => {
     listed = [row({ title: 'Alpha' })]
     picked = null
+    mutated = vi.fn(async () => ({ ok: true, value: {} }))
     ;(window as unknown as { nexus: unknown }).nexus = stubDialer({
       'trash:list': vi.fn(async () => ({ ok: true, value: listed })),
       menu: vi.fn(async () => ({ ok: true, value: picked })),
       'personalization:set': vi.fn(async () => ({ ok: true, value: null })),
-      mutate: vi.fn(async () => ({ ok: true, value: {} })),
+      mutate: mutated,
       'theme:systemAccent': vi.fn(async () => ({ ok: true, value: null })),
       'devicePrefs:load': vi.fn(async () => ({ ok: true, value: null })),
       'index:headings': vi.fn(async () => ({ ok: true, value: {} })),
+      'delete:facts': vi.fn(async () => ({
+        ok: true,
+        value: { trashMode: 'nexus', permanentDelete: false },
+      })),
     })
     nexus('A')
     host = document.createElement('div')
@@ -172,6 +181,65 @@ describe('the Trash pane', () => {
     )
     expect(await pickFromDateMenu('style:time_format:none')).toEqual({ time_format: 'none' })
     expect(await pickFromDateMenu('style:time_format:twentyFourHour')).toBeUndefined()
+  })
+
+  it.each([
+    ['restore', 'restore'],
+    ['delete', 'emptyBundle'],
+  ])('a %s here spends the bundle’s Undo, so the chord reaches the entry beneath', async (action, op) => {
+    resetUndo()
+    const older = vi.fn(() => true)
+    pushUndo(older)
+    const { bundlePath } = listed[0]
+    notifyTrashed('Alpha', { trashed: { bundlePath } })
+    useSession.setState({ askConfirm: async () => true })
+    mutated.mockClear()
+    picked = action
+    const item = host?.querySelector('.trash-row') as HTMLElement
+    await act(async () => {
+      item.dispatchEvent(new MouseEvent('contextmenu', { bubbles: true }))
+    })
+    expect(mutated.mock.calls).toEqual([[{ op, bundlePath }]])
+    expect(undoValue(null)).toBe(true)
+    expect(older).toHaveBeenCalledTimes(1)
+  })
+
+  it('a Restore All here spends each bundle’s Undo', async () => {
+    listed = [row({ title: 'Alpha' }), row({ title: 'Beta' })]
+    await act(async () => nexus('B'))
+    resetUndo()
+    const older = vi.fn(() => true)
+    pushUndo(older)
+    notifyTrashed('Alpha', { trashed: { bundlePath: listed[0].bundlePath } })
+    for (const box of host?.querySelectorAll('[role="checkbox"]') ?? [])
+      await act(async () => (box as HTMLButtonElement).click())
+    picked = 'restoreAll'
+    const item = host?.querySelector('.trash-row') as HTMLElement
+    await act(async () => {
+      item.dispatchEvent(new MouseEvent('contextmenu', { bubbles: true }))
+    })
+    expect(mutated).toHaveBeenCalledTimes(2)
+    expect(undoValue(null)).toBe(true)
+    expect(older).toHaveBeenCalledTimes(1)
+  })
+
+  it('carries what a Delete All couldn’t strip into its notice', async () => {
+    listed = [row({ title: 'Alpha' }), row({ title: 'Beta' })]
+    await act(async () => nexus('B'))
+    useSession.setState({ askConfirm: async () => true })
+    const warning = 'Couldn’t update links in 1 file.'
+    mutated.mockResolvedValue({ ok: true, value: { cascade: { pages: [], hosts: [], warning } } })
+    for (const box of host?.querySelectorAll('[role="checkbox"]') ?? [])
+      await act(async () => (box as HTMLButtonElement).click())
+    picked = 'deleteAll'
+    const item = host?.querySelector('.trash-row') as HTMLElement
+    await act(async () => {
+      item.dispatchEvent(new MouseEvent('contextmenu', { bubbles: true }))
+    })
+    expect(currentNotification()).toMatchObject({
+      message: `Deleted 2 pages. ${warning}`,
+      tone: 'error',
+    })
   })
 
   it('lists a delete made elsewhere while it is open', async () => {

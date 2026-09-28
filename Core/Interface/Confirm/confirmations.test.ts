@@ -6,7 +6,9 @@ import {
   askDestroyProperty,
   askRemoveOption,
   confirmDelete,
+  spendBundle,
 } from './confirmations'
+import { resetUndo, undoValue } from '../../Session/undo'
 import { useSession } from '../../Session/store'
 import { clearNotification, currentNotification } from '../Notifications/notifications'
 import type { MutableKind } from '@pommora/core/Nexus/mutateRequest'
@@ -108,6 +110,15 @@ describe('a delete through the confirmation', () => {
     await del('page')
     await currentNotification()?.action?.run()
     expect(mutate).toHaveBeenLastCalledWith({ op: 'restore', bundlePath: '.trash/b1' })
+  })
+
+  it('gives up its Undo and the chord once the Trash spends its bundle', async () => {
+    resetUndo()
+    await del('page')
+    spendBundle('.trash/b1')
+    expect(currentNotification()).toBeNull()
+    expect(undoValue(null)).toBe(false)
+    expect(mutate).not.toHaveBeenCalledWith({ op: 'restore', bundlePath: '.trash/b1' })
   })
 
   it('carries the configuration pass’s warning in the Deleted notice', async () => {
