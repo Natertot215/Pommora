@@ -121,7 +121,7 @@ What holds across every type: the assign surface, the mutations and their safety
 | Mutation | Effect on Existing Values |
 | --- | --- |
 | Create a property | Mints a nexus-wide definition and assigns it to the creating Collection; appears empty on every member, with no member writes until a value is set. |
-| Assign a property | Adds this Collection's reference to an existing definition, then restores any cached values that still conform to the definition's current type and options. |
+| Assign a property | Adds this Collection's reference to an existing definition, then restores any cached values that still conform to the definition's current type and options; a cached Link naming a page gone leaves the cache, joining that page's Trash bundle when it sits there. |
 | Remove a property | Caches each member's value on the Collection's own sidecar (`property_cache`), unassigns, and clears the property from the Collection's views, its Sets' views, and the View Tiles showing them, then strips the value from every member page — cache before strip, so a failure mid-strip never loses anything. A listed member without an ID is given one first, and a copy sharing another member's ID keeps its own value. Re-assigning restores the cache. |
 | Rename a property | Commits the registry, then sweeps every page and Space holding the old key. Never re-dates a page; assignment lists are id-keyed and unaffected. |
 | Reorder properties | Per-Collection assignment order on the sidecar; the All Properties group reorders the nexus-wide display order in the registry. |
