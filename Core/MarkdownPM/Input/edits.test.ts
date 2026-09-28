@@ -13,6 +13,7 @@ import {
   dashArrow,
   ellipsis,
   equations,
+  punctuation,
   bullet,
   sectionSign,
   indentListOnTab,
@@ -583,6 +584,36 @@ describe('equations', () => {
     expect(equations(scanDoc('PATH='), 5, 5, '/')).toBeNull()
     expect(equations(scanDoc('`a >`'), 4, 4, '=')).toBeNull()
     expect(equations(scanDoc('a >'), 3, 3, '=', { transformEquations: false })).toBeNull()
+  })
+})
+
+describe('punctuation', () => {
+  const on = { transformPunctuation: true }
+  it('a pair resolves to its glyph on the next keystroke', () => {
+    const cases: [string, string][] = [
+      ['a!!', 'a‼ '],
+      ['a??', 'a⁇ '],
+      ['a?!', 'a⁈ '],
+      ['a!?', 'a⁉ '],
+      ['a ||', 'a ‖ '],
+    ]
+    for (const [doc, out] of cases) {
+      const e = punctuation(scanDoc(doc), doc.length, doc.length, ' ', on)!
+      expect(apply(doc, e)).toBe(out)
+      expect(e.selection).toBe(doc.length)
+    }
+  })
+  it('a longer run, code, math, and the default leave it literal', () => {
+    expect(punctuation(scanDoc('a??'), 3, 3, '?', on)).toBeNull()
+    expect(punctuation(scanDoc('a???'), 4, 4, ' ', on)).toBeNull()
+    expect(punctuation(scanDoc('`a!!`'), 4, 4, ' ', on)).toBeNull()
+    expect(punctuation(scanDoc('$$\na ||\n$$'), 7, 7, 'x', on)).toBeNull()
+    expect(punctuation(scanDoc('a!!'), 3, 3, ' ')).toBeNull()
+  })
+  it('a pipe pair opening a line or following a pipe stays literal', () => {
+    expect(punctuation(scanDoc('||'), 2, 2, ' ', on)).toBeNull()
+    expect(punctuation(scanDoc('> ||'), 4, 4, ' ', on)).toBeNull()
+    expect(punctuation(scanDoc('| a ||'), 6, 6, ' ', on)).toBeNull()
   })
 })
 

@@ -12,6 +12,7 @@ import {
   closeConstructOnShiftEnter,
   dashArrow,
   ellipsis,
+  punctuation,
   equations,
   bullet,
   sectionSign,
@@ -182,6 +183,7 @@ export const typedInput = (scope: MarkdownScope): Extension =>
         autoPair(scan, from, from, text, settings) ??
         dashArrow(scan, from, from, text, settings) ??
         ellipsis(scan, from, from, text, settings) ??
+        punctuation(scan, from, from, text, settings) ??
         equations(scan, from, from, text, settings) ??
         sectionSign(scan, from, from, text, settings) ??
         bullet(scan, from, from, text, settings),

@@ -652,6 +652,11 @@ export const FRAMES = roster([
           },
           {
             kind: 'toggle',
+            key: 'transformPunctuation',
+            label: 'Punctuation',
+          },
+          {
+            kind: 'toggle',
             key: 'transformEllipses',
             label: 'Ellipses',
           },
