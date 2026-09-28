@@ -579,41 +579,48 @@ describe('equations', () => {
     for (const [doc, ch, out] of cases)
       expect(apply(doc, equations(scanDoc(doc), doc.length, doc.length, ch)!)).toBe(out)
   })
-  it('stays literal after a doubled character, in code, and when off', () => {
+  it('stays literal after a doubled character, in code or math, and when off', () => {
     expect(equations(scanDoc('=='), 2, 2, '/')).toBeNull()
     expect(equations(scanDoc('PATH='), 5, 5, '/')).toBeNull()
     expect(equations(scanDoc('`a >`'), 4, 4, '=')).toBeNull()
+    expect(equations(scanDoc('$$\na >\n$$'), 6, 6, '=')).toBeNull()
     expect(equations(scanDoc('a >'), 3, 3, '=', { transformEquations: false })).toBeNull()
   })
 })
 
 describe('punctuation', () => {
   const on = { transformPunctuation: true }
-  it('a pair resolves to its glyph on the next keystroke', () => {
-    const cases: [string, string][] = [
-      ['a!!', 'a‼ '],
-      ['a??', 'a⁇ '],
-      ['a?!', 'a⁈ '],
-      ['a!?', 'a⁉ '],
-      ['a ||', 'a ‖ '],
+  it('a pair resolves to its glyph as its second mark lands', () => {
+    const cases: [string, string, string][] = [
+      ['a!', '!', 'a‼'],
+      ['a?', '?', 'a⁇'],
+      ['a?', '!', 'a⁈'],
+      ['a!', '?', 'a⁉'],
+      ['a |', '|', 'a ‖'],
     ]
-    for (const [doc, out] of cases) {
-      const e = punctuation(scanDoc(doc), doc.length, doc.length, ' ', on)!
+    for (const [doc, ch, out] of cases) {
+      const e = punctuation(scanDoc(doc), doc.length, doc.length, ch, on)!
       expect(apply(doc, e)).toBe(out)
       expect(e.selection).toBe(doc.length)
     }
   })
-  it('a longer run, code, math, and the default leave it literal', () => {
-    expect(punctuation(scanDoc('a??'), 3, 3, '?', on)).toBeNull()
-    expect(punctuation(scanDoc('a???'), 4, 4, ' ', on)).toBeNull()
-    expect(punctuation(scanDoc('`a!!`'), 4, 4, ' ', on)).toBeNull()
-    expect(punctuation(scanDoc('$$\na ||\n$$'), 7, 7, 'x', on)).toBeNull()
-    expect(punctuation(scanDoc('a!!'), 3, 3, ' ')).toBeNull()
+  it('a third mark expands the glyph back, and a longer run stays literal', () => {
+    const e = punctuation(scanDoc('a⁇'), 2, 2, '?', on)!
+    expect(apply('a⁇', e)).toBe('a???')
+    expect(e.selection).toBe(4)
+    expect(apply('a‼', punctuation(scanDoc('a‼'), 2, 2, '?', on)!)).toBe('a!!?')
+    expect(punctuation(scanDoc('a‖'), 2, 2, '!', on)).toBeNull()
+    expect(punctuation(scanDoc('a???'), 4, 4, '?', on)).toBeNull()
+  })
+  it('code, math, and the default leave it literal', () => {
+    expect(punctuation(scanDoc('`a!`'), 3, 3, '!', on)).toBeNull()
+    expect(punctuation(scanDoc('$$\na |\n$$'), 6, 6, '|', on)).toBeNull()
+    expect(punctuation(scanDoc('a!'), 2, 2, '!')).toBeNull()
   })
   it('a pipe pair opening a line or following a pipe stays literal', () => {
-    expect(punctuation(scanDoc('||'), 2, 2, ' ', on)).toBeNull()
-    expect(punctuation(scanDoc('> ||'), 4, 4, ' ', on)).toBeNull()
-    expect(punctuation(scanDoc('| a ||'), 6, 6, ' ', on)).toBeNull()
+    expect(punctuation(scanDoc('|'), 1, 1, '|', on)).toBeNull()
+    expect(punctuation(scanDoc('> |'), 3, 3, '|', on)).toBeNull()
+    expect(punctuation(scanDoc('| a |'), 5, 5, '|', on)).toBeNull()
   })
 })
 
