@@ -1,6 +1,6 @@
 import { join, relative, titleFromPath } from '../Paths/posix'
 import { errText } from '../Contract/result'
-import { splitEnvelope, mergeFrontmatter, splitFrontmatter } from '../Files/pageFile'
+import { splitEnvelope, mergeFrontmatter, splitFrontmatter, stampedId } from '../Files/pageFile'
 import { sweepGovernedRoots, unsweptLine } from '../Properties/governedSweep'
 import {
   type RenameChange,
@@ -12,16 +12,88 @@ import { normalizeTitle } from '../Connections/connections'
 import { headingOutline } from '../MarkdownPM/Engine/headingScan'
 import { queryHeadingMentions, queryMentions } from '../Index/contentIndex'
 import { nexusCorpus } from '../Index/indexSeed'
-import { readKeptRegistry } from '../Properties/propertiesRegistry'
+import { linkDefs, readKeptRegistry } from '../Properties/propertiesRegistry'
 import { readLivePersonalization } from '../Settings/settings'
 import { settingOf } from '../Settings/personalization'
 import { rewriteTileConnections } from '../Tiles/tilesFile'
 import type { TileHostRef } from '../Tiles/tiles'
+import { readLink } from '../Connections/linkValue'
+import { liveIdIndex } from './valuesChanged'
 
 export interface CascadeReport {
   pages: string[]
   hosts: TileHostRef[]
   warning?: string
+}
+
+export interface StrippedLink {
+  page: string
+  property: string
+  value: string
+}
+
+export interface DeleteCascade {
+  cascade: CascadeReport
+  links: StrippedLink[]
+}
+
+export const joinCascades = (a: CascadeReport, b: CascadeReport): CascadeReport => ({
+  pages: [...a.pages, ...b.pages],
+  hosts: [...a.hosts, ...b.hosts],
+  warning: [a.warning, b.warning].filter(Boolean).join(' ') || undefined,
+})
+
+/** A deleted page leaves every Link property naming it on the pages the tree holds; bodies keep their links and read unresolved. Nothing at or under `abs` is swept, since it left with the delete. */
+export async function deleteCascade(
+  root: string,
+  abs: string,
+  titles: string[],
+): Promise<DeleteCascade> {
+  const gone = new Set(titles.map(normalizeTitle))
+  try {
+    const hits = [...gone].map(queryMentions)
+    const rels = hits.includes(null)
+      ? await nexusCorpus(root)
+      : [...new Set(hits.flatMap((h) => h ?? []))]
+    const defs = new Map((await linkDefs(root)).map((d) => [d.name, d.id]))
+    const named = (content: string): { key: string; property: string; value: string }[] =>
+      Object.entries(splitFrontmatter(content)).flatMap(([key, value]) => {
+        const property = defs.get(key)
+        if (property === undefined || typeof value !== 'string') return []
+        const link = readLink(value)
+        return link.kind === 'page' && gone.has(normalizeTitle(link.title))
+          ? [{ key, property, value }]
+          : []
+      })
+    const text = (content: string): string | null => {
+      const keys = named(content).map(({ key }) => key)
+      return keys.length ? mergeFrontmatter(content, {}, keys, splitEnvelope(content).body) : null
+    }
+    const deleted = relative(root, abs)
+    // Tree pages only: a loose file outside every Collection shows in no view and no restore could reach it; dropping this filter strips them too.
+    const held = liveIdIndex(root)
+    const files = rels
+      .filter((rel) => held.has(rel) && rel !== deleted && !rel.startsWith(`${deleted}/`))
+      .map((rel) => join(root, rel))
+    const swept = await sweepGovernedRoots(root, files, { text })
+    const links = [...swept.touched.values()].flatMap((before) => {
+      const page = stampedId(before)
+      return page ? named(before).map(({ property, value }) => ({ page, property, value })) : []
+    })
+    return {
+      cascade: {
+        pages: [...swept.touched.keys()].map((file) => relative(root, file)),
+        hosts: [],
+        warning: swept.skipped.length ? unsweptLine(swept.skipped.length, 'links in ') : undefined,
+      },
+      links,
+    }
+  } catch (e) {
+    return {
+      cascade: { pages: [], hosts: [], warning: `Links weren’t removed: ${errText(e)}` },
+      links: [],
+    }
+  }
 }
 
 /** A page rename sweeps the files the index names, or the whole corpus before there is one; a heading rename sweeps only what a ready index names, since a corpus scan per heading edit is an on-every-edit cost. Markdown tiles sit outside the index, so every one is read either way. `skipRel` is a page whose editor has already rewritten its own links. */

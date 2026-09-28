@@ -16,6 +16,7 @@ import { closeSession, openSession } from '../Nexus/session'
 import type { TrashDeps } from './bundle'
 
 const PAGE_A = '01KVGMT8BFP350FZZXAMG1QDVA'
+const PAGE_B = '01KVGMT8BFP350FZZXAMG1QDVB'
 const nexusDeps: TrashDeps = { trashMode: 'nexus', trashToSystem: async () => {} }
 
 let root: string
@@ -50,6 +51,17 @@ vi.mock('../Contexts/contextCascade', async (importOriginal) => {
     unlinkContextKey: async (...args: Parameters<typeof actual.unlinkContextKey>) => {
       atSweep = await anyRecord()
       return actual.unlinkContextKey(...args)
+    },
+  }
+})
+
+vi.mock('../Nexus/cascade', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../Nexus/cascade')>()
+  return {
+    ...actual,
+    deleteCascade: async (...args: Parameters<typeof actual.deleteCascade>) => {
+      atSweep = await anyRecord()
+      return actual.deleteCascade(...args)
     },
   }
 })
@@ -90,6 +102,13 @@ beforeEach(async () => {
     JSON.stringify({ id: 'nx', createdAt: '2026' }),
   )
   await writeFile(
+    join(root, '.nexus', 'properties.json'),
+    JSON.stringify({
+      order: ['prop_related'],
+      defs: { prop_related: { id: 'prop_related', name: 'Related', type: 'link' } },
+    }),
+  )
+  await writeFile(
     contextsRegistryFile(root),
     JSON.stringify({ contexts: [{ id: 'ctx_projects', title: 'Projects' }] }),
   )
@@ -109,6 +128,10 @@ beforeEach(async () => {
     join(root, 'Notes', 'Alpha.md'),
     `---\nID: ${PAGE_A}\n<Projects>:\n  - Pommora\n---\nbody`,
   )
+  await writeFile(
+    join(root, 'Notes', 'Beta.md'),
+    `---\nID: ${PAGE_B}\nRelated: "[[Alpha]]"\n---\nbody`,
+  )
   await openSession(root)
 })
 
@@ -120,6 +143,9 @@ afterEach(async () => {
 const tagOf = async (): Promise<unknown> =>
   splitFrontmatter(await readFile(join(root, 'Notes', 'Alpha.md'), 'utf8'))['<Projects>']
 
+const relatedOf = async (): Promise<unknown> =>
+  splitFrontmatter(await readFile(join(root, 'Notes', 'Beta.md'), 'utf8')).Related
+
 describe('the record is written before the destruction it describes', () => {
   it('a content delete records before the artifact moves', async () => {
     const r = await handleMutate(
@@ -129,6 +155,23 @@ describe('the record is written before the destruction it describes', () => {
     )
     expect(r.ok).toBe(true)
     expect(atSettle).toMatchObject({ entity: 'page', id: PAGE_A, parent: { kind: 'container' } })
+  })
+
+  it('a content delete records partial until its Link strip lands', async () => {
+    const r = await handleMutate(
+      root,
+      { op: 'delete', path: 'Notes/Alpha.md', kind: 'page' },
+      nexusDeps,
+    )
+    expect(r.ok).toBe(true)
+    expect(atSettle).toMatchObject({ entity: 'page', partial: true })
+    expect(atSweep).toMatchObject({ entity: 'page', partial: true })
+    const after = await anyRecord()
+    expect(after).toMatchObject({
+      entity: 'page',
+      links: [{ page: PAGE_B, property: 'prop_related', value: '[[Alpha]]' }],
+    })
+    expect(after).not.toHaveProperty('partial')
   })
 
   it('a Space delete records before the sweep strips a single tag', async () => {
@@ -167,6 +210,21 @@ describe('the record is written before the destruction it describes', () => {
     )
     expect(r.ok).toBe(true)
     expect(await anyRecord()).toBeUndefined()
+    expect(await relatedOf()).toBeUndefined()
+  })
+})
+
+describe('the strip runs after the artifact moves', () => {
+  it('a page delete that dies before the settle strips nothing', async () => {
+    settleFails = true
+    const r = await handleMutate(
+      root,
+      { op: 'delete', path: 'Notes/Alpha.md', kind: 'page' },
+      nexusDeps,
+    )
+    expect(r.ok).toBe(false)
+    expect(await pathExists(join(root, 'Notes', 'Alpha.md'))).toBe(true)
+    expect(await relatedOf()).toBe('[[Alpha]]')
   })
 })
 

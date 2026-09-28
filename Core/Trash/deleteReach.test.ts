@@ -1,10 +1,12 @@
-import { mkdir, readFile, rm } from 'node:fs/promises'
+import { chmod, mkdir, readFile, rm } from 'node:fs/promises'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { join } from '../Paths/posix'
-import { putJson, readJsonAt, tempRoot } from '../Testing/hostFs'
+import { noModeBits, putJson, readJsonAt, tempRoot } from '../Testing/hostFs'
 import { type ConfigSurfaces, seedConfigSurfaces, viewOn } from '../Testing/configSurfaces'
 import { confirmedMutate } from '../Testing/confirmedMutate'
 import { createFolderEntity } from '../Nexus/folderEntity'
+import { createPage } from '../Nexus/page'
+import type { PropertyDefinition } from '../Properties/properties'
 import { dropLiveTree, refreshTree } from '../Nexus/liveTree'
 import { closeSession, openSession } from '../Nexus/session'
 import type { MutableKind } from '../Nexus/mutateRequest'
@@ -46,6 +48,22 @@ const entity = async (
 const addWork = (): Promise<void> =>
   putJson(join(contextsDir(root), 'Areas', 'Work', SIDECAR_FILENAME.space), { id: 'sp_work' })
 
+const RELATED = { id: 'prop_related', name: 'Related', type: 'link' } as PropertyDefinition
+
+const addRelated = (): Promise<void> =>
+  putJson(nexusConfig(root, NEXUS_CONFIG_FILES.properties), {
+    order: [RELATED.id],
+    defs: { [RELATED.id]: RELATED },
+  })
+
+const page = async (parent: string, name: string, links?: string): Promise<string> => {
+  const made = await createPage(parent, name, {
+    values: links ? [{ def: RELATED, value: { kind: 'link', value: `[[${links}]]` } }] : [],
+  })
+  if (!made.ok) throw new Error(`${name} failed`)
+  return made.value.path
+}
+
 beforeEach(async () => {
   root = tempRoot('pom-delete-reach-')
   await putJson(nexusConfig(root, NEXUS_CONFIG_FILES.identity), { id: 'nx', createdAt: '2026' })
@@ -57,6 +75,29 @@ afterEach(async () => {
   dropLiveTree()
   closeSession()
   await rm(root, { recursive: true, force: true })
+})
+
+describe('a page delete', () => {
+  beforeEach(async () => {
+    await addRelated()
+    await page(notes, 'Target')
+  })
+
+  it('replies with the pages whose Link values named it', async () => {
+    await page(notes, 'One', 'Target')
+    await page(notes, 'Two', 'Target')
+    await refreshTree(root)
+    const r = await del('Notes/Target.md', 'page')
+    if (!r.ok) throw new Error(r.error.message)
+    r.value.cascade?.pages.sort()
+    expect(r.value.cascade).toEqual({ pages: ['Notes/One.md', 'Notes/Two.md'], hosts: [] })
+  })
+
+  it('replies with an empty report when nothing links it', async () => {
+    await refreshTree(root)
+    const r = await del('Notes/Target.md', 'page')
+    expect(r.ok && r.value.cascade).toEqual({ pages: [], hosts: [] })
+  })
 })
 
 describe('a Space delete', () => {
@@ -225,6 +266,45 @@ describe('a Set delete', () => {
     expect(r.ok && r.value.trashed).toBeUndefined()
     expect(r.ok && r.value.cascade?.hosts).toEqual([{ kind: 'space', id: 'sp_home' }])
     expect((await surfaces.read()).collection).toEqual(stripped)
+  })
+
+  it('strips the Link values naming its pages outside it, and leaves the pages inside as they were', async () => {
+    await addRelated()
+    await page(gone.path, 'Inner')
+    const inside = await page(gone.path, 'Inside', 'Inner')
+    await page(notes, 'Outside', 'Inner')
+    const held = await readFile(inside, 'utf8')
+    await refreshTree(root)
+    const r = await del('Notes/Gone', 'set')
+    if (!r.ok || !r.value.trashed) throw new Error('the delete did not trash')
+    expect(r.value.cascade).toEqual({
+      pages: ['Notes/Outside.md'],
+      hosts: [{ kind: 'space', id: 'sp_home' }],
+    })
+    expect(
+      await readFile(join(root, r.value.trashed.bundlePath, 'Gone', 'Inside.md'), 'utf8'),
+    ).toBe(held)
+  })
+
+  it.skipIf(noModeBits)('joins the strip’s warning and the pass’s in one line', async () => {
+    await addRelated()
+    await page(gone.path, 'Inner')
+    const other = await entity(root, 'collection', 'Other')
+    const locked = await entity(other.path, 'set', 'Locked')
+    await page(locked.path, 'X', 'Inner')
+    await refreshTree(root)
+    const otherFile = sidecarPath(other.path, 'collection')
+    await rm(otherFile)
+    await mkdir(otherFile)
+    await chmod(locked.path, 0o555)
+    try {
+      const r = await del('Notes/Gone', 'set')
+      expect(r.ok && r.value.cascade?.warning).toBe(
+        `${unsweptLine(1, 'links in ')} ${unsweptLine(1)}`,
+      )
+    } finally {
+      await chmod(locked.path, 0o755)
+    }
   })
 
   it('lands and warns when the pass can’t read a sidecar', async () => {

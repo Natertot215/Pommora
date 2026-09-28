@@ -19,6 +19,8 @@ const parentRef = z.discriminatedUnion('kind', [
 const memberRoot = z.object({ id: z.string().optional(), kind: z.enum(['page', 'space']) })
 const spaceRef = z.object({ id: z.string().optional(), title: z.string() })
 
+const strippedLink = z.object({ page: z.string(), property: z.string(), value: z.string() })
+
 const contentRecord = <E extends string>(entity: E) =>
   z.object({
     entity: z.literal(entity),
@@ -26,6 +28,8 @@ const contentRecord = <E extends string>(entity: E) =>
     parent: parentRef,
     /** The excluded entries a Collection or Set held, relative to it, so a restore lands with them wherever it lands. */
     excluded: z.array(z.string().refine((p) => rootSegs(p).length > 0)).optional(),
+    /** Each Link value the delete stripped from a page outside it, by that page's id and the property's, so a restore can put it back. */
+    links: z.array(strippedLink).optional(),
     partial: z.literal(true).optional(),
   })
 

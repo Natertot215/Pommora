@@ -3,9 +3,11 @@ import { chmod, rm, mkdir, readFile, writeFile } from 'node:fs/promises'
 import { join } from '../Paths/posix'
 import { noModeBits, tempRoot } from '../Testing/hostFs'
 import type { PropertyDefinition } from '../Properties/properties'
-import { renameCascade } from './cascade'
-import { sweepGovernedRoots } from '../Properties/governedSweep'
+import { deleteCascade, renameCascade } from './cascade'
+import { sweepGovernedRoots, unsweptLine } from '../Properties/governedSweep'
 import { createPage } from './page'
+import { dropLiveTree, refreshTree } from './liveTree'
+import { closeSession, openSession } from './session'
 import { createProperty } from '../Properties/registryProperty'
 
 import { mergeFrontmatter, splitEnvelope, splitFrontmatter } from '../Files/pageFile'
@@ -273,5 +275,203 @@ describe('renameCascade for a heading', () => {
     await renameCascade(root, 'A', { heading: 'Setup', to: 'Intro' }, 'Notes/A.md')
     installStores(NO_STORES)
     expect(await bodyOf(b.value.path)).toBe('![[A#Intro]]')
+  })
+})
+
+describe('deleteCascade', () => {
+  let related: string
+  const target = (): string => join(dir, 'Target.md')
+  const set = async (parent: string, name: string): Promise<string> => {
+    const folder = join(parent, name)
+    await mkdir(folder, { recursive: true })
+    await writeFile(join(folder, '_pageset.json'), JSON.stringify({ id: `set-${name}` }))
+    return folder
+  }
+  const linker = async (
+    name: string,
+    value: string,
+    parent = dir,
+    key = 'Related',
+  ): Promise<{ id: string; path: string }> => {
+    const made = await createPage(parent, name, { body: 'see [[Target]]' })
+    if (!made.ok) throw new Error('setup failed')
+    await setValue(made.value.path, key, value)
+    return made.value
+  }
+
+  beforeEach(async () => {
+    await mkdir(join(root, '.nexus'), { recursive: true })
+    await writeFile(
+      join(root, '.nexus', 'nexus.json'),
+      JSON.stringify({ id: 'nx', createdAt: '2026' }),
+    )
+    await writeFile(join(dir, '_pagecollection.json'), JSON.stringify({ id: 'col-notes' }))
+    const link = await createProperty(root, {
+      id: '',
+      name: 'Related',
+      type: 'link',
+    } as PropertyDefinition)
+    const select = await createProperty(root, {
+      id: '',
+      name: 'Kind',
+      type: 'select',
+    } as PropertyDefinition)
+    if (!link.ok || !select.ok) throw new Error('setup failed')
+    related = link.value.id
+    await openSession(root)
+  })
+  afterEach(() => {
+    dropLiveTree()
+    closeSession()
+    installStores(NO_STORES)
+  })
+
+  it('strips a Link property naming the page, keeps the body’s link, and records the value', async () => {
+    const a = await linker('Cites', '[[Target]]')
+    await refreshTree(root)
+    const r = await deleteCascade(root, target(), ['Target'])
+    expect(await fmOf(a.path)).not.toHaveProperty('Related')
+    expect(await bodyOf(a.path)).toBe('see [[Target]]')
+    expect(r).toEqual({
+      cascade: { pages: [rel(a.path)], hosts: [] },
+      links: [{ page: a.id, property: related, value: '[[Target]]' }],
+    })
+  })
+
+  it('records an aliased heading value verbatim', async () => {
+    const a = await linker('Cites', '[[Target#Intro|see]]')
+    await refreshTree(root)
+    const r = await deleteCascade(root, target(), ['Target'])
+    expect(await fmOf(a.path)).not.toHaveProperty('Related')
+    expect(r.links).toEqual([{ page: a.id, property: related, value: '[[Target#Intro|see]]' }])
+  })
+
+  it('leaves a non-Link property that reads as a connection', async () => {
+    const a = await linker('Tagged', '[[Target]]', dir, 'Kind')
+    const b = await linker('Cites', '[[Target]]')
+    await refreshTree(root)
+    const before = await readFile(a.path, 'utf8')
+    const r = await deleteCascade(root, target(), ['Target'])
+    expect(await readFile(a.path, 'utf8')).toBe(before)
+    expect(r.cascade.pages).toEqual([rel(b.path)])
+  })
+
+  it('never reaches a loose file outside every Collection', async () => {
+    const loose = join(root, 'Loose', 'Note.md')
+    const content = '---\nRelated: "[[Target]]"\n---\nloose\n'
+    await mkdir(join(root, 'Loose'), { recursive: true })
+    await writeFile(loose, content)
+    const a = await linker('Cites', '[[Target]]')
+    await refreshTree(root)
+    sweepSpy.mockClear()
+    const r = await deleteCascade(root, target(), ['Target'])
+    expect(sweptFiles()).toEqual([a.path])
+    expect(r.cascade.pages).toEqual([rel(a.path)])
+    expect(await readFile(loose, 'utf8')).toBe(content)
+  })
+
+  describe('reaches its linkers', () => {
+    let a: { id: string; path: string }
+    beforeEach(async () => {
+      a = await linker('Cites', '[[Target]]')
+      for (let i = 0; i < 3; i++) {
+        const filler = await createPage(dir, `Filler ${i}`, { body: 'no links here' })
+        if (!filler.ok) throw new Error('setup failed')
+      }
+      await refreshTree(root)
+    })
+
+    it('through the pages the index names', async () => {
+      installStores(memoryStores().stores)
+      await seedContentIndex(root)
+      sweepSpy.mockClear()
+      await deleteCascade(root, target(), ['Target'])
+      expect(sweptFiles()).toEqual([a.path])
+      expect(await fmOf(a.path)).not.toHaveProperty('Related')
+    })
+
+    it('through the corpus when there is no index', async () => {
+      sweepSpy.mockClear()
+      await deleteCascade(root, target(), ['Target'])
+      expect(sweptFiles()).toHaveLength(4)
+      expect(await fmOf(a.path)).not.toHaveProperty('Related')
+    })
+  })
+
+  it('never sweeps the deleted page itself', async () => {
+    const t = await linker('Target', '[[Target]]')
+    const a = await linker('Cites', '[[Target]]')
+    await refreshTree(root)
+    const before = await readFile(t.path, 'utf8')
+    sweepSpy.mockClear()
+    await deleteCascade(root, t.path, ['Target'])
+    expect(sweptFiles()).toEqual([a.path])
+    expect(await readFile(t.path, 'utf8')).toBe(before)
+  })
+
+  it('never sweeps a page under a deleted folder', async () => {
+    const gone = await set(dir, 'Gone')
+    const inner = await linker('Inner', '[[Inner]]', gone)
+    const deeper = await linker('Deeper', '[[Inner]]', await set(gone, 'Deep'))
+    const a = await linker('Cites', '[[Inner]]')
+    await refreshTree(root)
+    const held = [await readFile(inner.path, 'utf8'), await readFile(deeper.path, 'utf8')]
+    sweepSpy.mockClear()
+    const r = await deleteCascade(root, gone, ['Inner', 'Deeper'])
+    expect(sweptFiles()).toEqual([a.path])
+    expect(r.cascade.pages).toEqual([rel(a.path)])
+    expect([await readFile(inner.path, 'utf8'), await readFile(deeper.path, 'utf8')]).toEqual(held)
+  })
+
+  it('strips a linker per title in one sweep', async () => {
+    const a = await linker('Cites A', '[[Alpha]]')
+    const b = await linker('Cites B', '[[Beta]]')
+    await refreshTree(root)
+    installStores(memoryStores().stores)
+    await seedContentIndex(root)
+    sweepSpy.mockClear()
+    const r = await deleteCascade(root, join(dir, 'Gone'), ['Alpha', 'Beta'])
+    expect(sweepSpy.mock.calls.length).toBe(1)
+    expect(r.cascade.pages.sort()).toEqual([rel(a.path), rel(b.path)].sort())
+    expect(r.links).toEqual(
+      expect.arrayContaining([
+        { page: a.id, property: related, value: '[[Alpha]]' },
+        { page: b.id, property: related, value: '[[Beta]]' },
+      ]),
+    )
+    expect(r.links).toHaveLength(2)
+  })
+
+  it.skipIf(noModeBits)(
+    'a linker it can’t write is counted in the warning and recorded nowhere',
+    async () => {
+      const locked = await set(dir, 'Locked')
+      const x = await linker('X', '[[Target]]', locked)
+      await refreshTree(root)
+      await chmod(locked, 0o555)
+      try {
+        const r = await deleteCascade(root, target(), ['Target'])
+        expect(r).toEqual({
+          cascade: { pages: [], hosts: [], warning: unsweptLine(1, 'links in ') },
+          links: [],
+        })
+      } finally {
+        await chmod(locked, 0o755)
+      }
+      expect((await fmOf(x.path)).Related).toBe('[[Target]]')
+    },
+  )
+
+  it('a linker whose frontmatter can’t round-trip is left as it is, with no warning', async () => {
+    const broken = join(dir, 'Broken.md')
+    const content =
+      '---\nID: 01KVGMT8BFP350FZZXAMG1QDVY\nRelated: "[[Target]]"\nsomething: *word\n---\nb'
+    await writeFile(broken, content)
+    await refreshTree(root)
+    sweepSpy.mockClear()
+    const r = await deleteCascade(root, target(), ['Target'])
+    expect(sweptFiles()).toContain(broken)
+    expect(r).toEqual({ cascade: { pages: [], hosts: [] }, links: [] })
+    expect(await readFile(broken, 'utf8')).toBe(content)
   })
 })
