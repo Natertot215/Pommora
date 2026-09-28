@@ -43,7 +43,7 @@ export const notifyTrashed = (
     title,
     trashed &&
       (() => void useSession.getState().mutate({ op: 'restore', bundlePath: trashed.bundlePath })),
-    cascade?.warning,
+    cascade,
     retry,
   )
 

@@ -5,6 +5,7 @@ import { paneSlide } from '@pommora/uix/Animations/paneSlide'
 import { ProgressBar, paintProgress } from '@pommora/uix/Elements/ProgressBar'
 import { useHeld } from '@pommora/uix/Animations/useExitPresence'
 import { cx } from '@pommora/uix/Utilities/cx'
+import { MenuSegments } from '@pommora/uix/Menus'
 import * as s from './notification-label.css'
 import { clamp } from '@pommora/uix/Utilities/clamp'
 
@@ -105,7 +106,9 @@ export function NotificationLabel(): React.JSX.Element {
       inert={!shown}
     >
       <div className={s.row}>
-        <span className={s.message}>{held?.message}</span>
+        <span className={s.message}>
+          {held?.segment ? <MenuSegments parts={[held.message, held.segment]} /> : held?.message}
+        </span>
         {held?.action ? (
           <button
             type="button"
