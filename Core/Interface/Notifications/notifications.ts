@@ -82,28 +82,35 @@ export function notifyDeleted(
   undo?: () => void | Promise<void>,
   { pages = [], warning }: Partial<Pick<CascadeReport, 'pages' | 'warning'>> = {},
   retry?: () => void,
-): void {
+): () => void {
   const parts = [`Deleted “${title}”`]
   if (pages.length) parts.push(`${pages.length} Internal ${pages.length === 1 ? 'Link' : 'Links'}`)
   if (warning) parts[parts.length - 1] += `. ${warning}`
   const [message, segment] = parts
-  notifyUndoable(message, undo, warning ? 'error' : 'normal', warning ? retry : undefined, segment)
+  return notifyUndoable(
+    message,
+    undo,
+    warning ? 'error' : 'normal',
+    warning ? retry : undefined,
+    segment,
+  )
 }
 
 let undoing: Promise<unknown> = Promise.resolve()
 
+/** Answers a spend: once what the undo would reverse is undone some other way, its label leaves and the chord passes it by. */
 export function notifyUndoable(
   message: string,
   undo?: () => void | Promise<void>,
   tone: Notification['tone'] = 'normal',
   retry?: () => void,
   segment?: string,
-): void {
+): () => void {
   const retried = retry && tryAgain(retry)
   const note = { message, segment, tone }
   if (!undo) {
-    post({ ...note, action: retried })
-    return
+    const id = post({ ...note, action: retried })
+    return () => dismissNotification(id)
   }
   // The label's Undo and the undo chord are one shot between them, so a restore cannot run twice and mint a second copy, and undos run in turn, so each restore reads the tree the one before it left.
   let fired = false
@@ -119,4 +126,8 @@ export function notifyUndoable(
     dismissNotification(id)
     return true
   })
+  return () => {
+    fired = true
+    dismissNotification(id)
+  }
 }

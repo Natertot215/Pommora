@@ -33,21 +33,32 @@ const waived = (kind?: MutableKind): boolean =>
   (kind === undefined || !ALWAYS_ASKS.has(kind)) &&
   !settingOf(useSession.getState().personalization, 'confirmDeletion')
 
+const armed = new Map<string, () => void>()
+
+/** A bundle restored or deleted from anywhere spends the Undo its delete's notice offered, so neither the label nor the chord retries it. */
+export function spendBundle(bundlePath: string): void {
+  armed.get(bundlePath)?.()
+  armed.delete(bundlePath)
+}
+
 /** A system-trash delete mints no bundle, so it offers no Undo — the artifact left the nexus and there is nothing to name. */
-export const notifyTrashed = (
+export function notifyTrashed(
   title: string,
   { trashed, cascade }: Pick<MutateOutcome, 'trashed' | 'cascade'>,
   retry?: () => void,
-): void =>
-  notifyDeleted(
+): void {
+  const spend = notifyDeleted(
     title,
     trashed &&
       (async () => {
+        spendBundle(trashed.bundlePath)
         await useSession.getState().mutate({ op: 'restore', bundlePath: trashed.bundlePath })
       }),
     cascade,
     retry,
   )
+  if (trashed) armed.set(trashed.bundlePath, spend)
+}
 
 export const confirmDelete = async (target: {
   path: string

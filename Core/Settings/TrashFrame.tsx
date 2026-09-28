@@ -10,7 +10,7 @@ import { cx } from '@pommora/uix/Utilities/cx'
 import { Icon } from '@pommora/uix/Symbols'
 import { entityIcon } from '../Assets/entityIconPolicy'
 import { text } from '@pommora/uix/Theme'
-import { askEmptyTrash } from '../Interface/Confirm/confirmations'
+import { askEmptyTrash, spendBundle } from '../Interface/Confirm/confirmations'
 import type { MutateRequest } from '@pommora/core/Nexus/mutateRequest'
 import type { Personalization } from '@pommora/core/Settings/personalization'
 import type { TrashRow } from '@pommora/core/Trash/trashRow'
@@ -112,28 +112,39 @@ function TrashBody(): React.JSX.Element {
   )
   const toggle = (bundlePath: string): void => setChecked((prev) => toggled(prev, bundlePath))
 
+  const one = (req: Extract<MutateRequest, { bundlePath: string }>): Promise<unknown> => {
+    spendBundle(req.bundlePath)
+    return mutate(req)
+  }
+
   const many = async (
     targets: TrashRow[],
-    req: (row: TrashRow) => MutateRequest,
-  ): Promise<{ done: TrashRow[]; refused: TrashRow[]; unrestored: string[] }> => {
+    op: 'restore' | 'emptyBundle',
+  ): Promise<{
+    done: TrashRow[]
+    refused: TrashRow[]
+    unrestored: string[]
+    warnings: string[]
+  }> => {
     const done: TrashRow[] = []
     const refused: TrashRow[] = []
     const unrestored: string[] = []
+    const warnings = new Set<string>()
+    for (const row of targets) spendBundle(row.bundlePath)
     for (const row of targets) {
-      const res = await dialer().ask('mutate', req(row))
+      const res = await dialer().ask('mutate', { op, bundlePath: row.bundlePath })
       ;(res.ok ? done : refused).push(row)
-      if (res.ok) unrestored.push(...(res.value.unrestored ?? []))
+      if (!res.ok) continue
+      unrestored.push(...(res.value.unrestored ?? []))
+      if (res.value.cascade?.warning) warnings.add(res.value.cascade.warning)
     }
     await refresh()
-    return { done, refused, unrestored }
+    return { done, refused, unrestored, warnings: [...warnings] }
   }
 
   const restoreBatch = async (targets: TrashRow[]): Promise<void> => {
     const addressable = targets.filter((r) => r.homeResolves)
-    const { done, refused, unrestored } = await many(addressable, (row) => ({
-      op: 'restore',
-      bundlePath: row.bundlePath,
-    }))
+    const { done, refused, unrestored } = await many(addressable, 'restore')
     const homeless = targets.filter((r) => !r.homeResolves)
     const unmet = [
       homeless.length > 0 &&
@@ -146,12 +157,12 @@ function TrashBody(): React.JSX.Element {
 
   const emptyBatch = async (targets: TrashRow[]): Promise<void> => {
     if (!(await askEmptyTrash(targets.length))) return
-    const { done, refused } = await many(targets, (row) => ({
-      op: 'emptyBundle',
-      bundlePath: row.bundlePath,
-    }))
-    const unmet = refused.length > 0 ? ` ${countPhrase(refused)} couldn’t be deleted.` : ''
-    notifyReport(`Deleted ${countPhrase(done)}.${unmet}`, unmet !== '')
+    const { done, refused, warnings } = await many(targets, 'emptyBundle')
+    const unmet = [
+      refused.length > 0 && `${countPhrase(refused)} couldn’t be deleted.`,
+      ...warnings,
+    ].filter(Boolean)
+    notifyReport([`Deleted ${countPhrase(done)}.`, ...unmet].join(' '), unmet.length > 0)
   }
 
   const openColumnMenu = async (): Promise<void> => {
@@ -183,15 +194,15 @@ function TrashBody(): React.JSX.Element {
     if (!action) return
     if (action.startsWith('restoreTo:')) {
       const destination = { kind: destinationKind, id: action.slice('restoreTo:'.length) }
-      await mutate({ op: 'restore', bundlePath: row.bundlePath, destination })
+      await one({ op: 'restore', bundlePath: row.bundlePath, destination })
       return
     }
     switch (action) {
       case 'restore':
-        await mutate({ op: 'restore', bundlePath: row.bundlePath })
+        await one({ op: 'restore', bundlePath: row.bundlePath })
         break
       case 'delete':
-        if (await askEmptyTrash(1)) await mutate({ op: 'emptyBundle', bundlePath: row.bundlePath })
+        if (await askEmptyTrash(1)) await one({ op: 'emptyBundle', bundlePath: row.bundlePath })
         break
       case 'restoreAll':
         await restoreBatch(targets)
