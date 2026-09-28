@@ -1,4 +1,4 @@
-import { basename, dirname, join, relative, isMarkdownFile, titleFromPath } from '../Paths/posix'
+import { basename, dirname, join, relative, titleFromPath } from '../Paths/posix'
 import { escapes, resolveUnderRoot } from '../Paths/pathSafety'
 import { contextKey } from '../Contexts/contexts'
 import { spaceSidecarsIn, withOrderEntry } from '../Contexts/spaceSidecar'
@@ -248,7 +248,6 @@ async function restoreArtifact(
   }
   recordWrite(artifactAbs)
   recordWrite(targetAbs)
-  if (isMarkdownFile(targetAbs)) noteValueWrite(root, targetAbs)
   try {
     await machine().mkdir(dirname(targetAbs))
     await machine().rename(artifactAbs, targetAbs)
@@ -261,6 +260,7 @@ async function restoreArtifact(
     return fault(e)
   }
   await moveIndexPaths(root, artifactAbs, targetAbs)
+  for (const page of await contentPages(record.entity, targetAbs)) noteValueWrite(root, page)
   const roots = projectBaseline(tree).entries
   const unspent: string[] = []
   const unlinked = new Set<string>()

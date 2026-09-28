@@ -17,6 +17,7 @@ import { deleteProperty } from '../Properties/deleteProperty'
 import { removeProperty } from '../Properties/removeProperty'
 import { assignProperty } from '../Properties/assignment'
 import { idTime, newContentId } from '../Nexus/ids'
+import { flushValueWrites } from '../Nexus/valuesChanged'
 import { renameProperty } from '../Properties/registryProperty'
 import type { TrashDeps } from './bundle'
 
@@ -552,6 +553,20 @@ describe('links come back with the page', () => {
     )
     expect(restored.ok).toBe(true)
     expect((await frontmatter()).Related).toBe('[[Alpha]]')
+  })
+
+  it('a Set restore reports the values of every page it lands, so the window rereads what the restore dropped', async () => {
+    const box = join('Plain', 'Box')
+    const gamma = join(box, 'Gamma.md')
+    await mkdir(join(root, box), { recursive: true })
+    await writeFile(join(root, box, '_pageset.json'), JSON.stringify({ id: 'set-box' }))
+    await linker(gamma, '01KVGMT8BFP350FZZXAMG1QDVD', 'Related: "[[Alpha]]"')
+    await del(box, 'set')
+    await del('Journal/Daily/Alpha.md', 'page')
+    flushValueWrites(root)
+    expect(await restore('Box')).toBeUndefined()
+    const changed = flushValueWrites(root).flatMap((c) => c.pageIds)
+    expect(changed).toContain('01KVGMT8BFP350FZZXAMG1QDVD')
   })
 
   it('emptying a page strips a Link value a page took up for it since the delete', async () => {
