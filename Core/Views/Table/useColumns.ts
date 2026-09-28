@@ -15,7 +15,7 @@ import { clamp } from '@pommora/uix/Utilities/clamp'
 import { currentZoom } from '@pommora/uix/Utilities/zoom'
 import { useLatest } from '@pommora/uix/Utilities/stableApi'
 import { popMenu } from '../../Actions/menuActions'
-import { numberDivisor } from '../../Properties/formatValue'
+import { numberBarCapable } from '../../Properties/formatValue'
 import { declaredType } from '../../Properties/value'
 import { useColumnStyleMap } from '../Host/useColumnStyles'
 import type { ViewHostApi } from '../Host/useViewHost'
@@ -161,14 +161,6 @@ export function gapShift(d: DragShift | null, ci: number): string | undefined {
   if (d.to < d.from && ci >= d.to && ci < d.from) return `translateX(${d.width}px)`
   if (d.to > d.from && ci > d.from && ci <= d.to) return `translateX(${-d.width}px)`
   return undefined
-}
-
-/** A number column offers the Bar look only where a divisor gives the bar a ceiling to fill. */
-export function numberBarCapable(schema: PropertyDefinition[], columnId: string): boolean {
-  return (
-    declaredType(columnId, schema) === 'number' &&
-    numberDivisor(schema.find((d) => d.id === columnId)) !== undefined
-  )
 }
 
 // KNOB — px past a column's edge the drag center must travel before the slot flips (sticky zone).
@@ -320,7 +312,7 @@ export function useColumns(host: ViewHostApi) {
   ): Promise<void> => {
     e.preventDefault()
     const t = declaredType(id, schema)
-    const barCapable = numberBarCapable(schema, id)
+    const barCapable = numberBarCapable(schema.find((d) => d.id === id))
     const style =
       t !== undefined && t !== 'title' && t !== 'context'
         ? { type: t, current: colStyle(id), ...(barCapable ? { barCapable: true } : {}) }

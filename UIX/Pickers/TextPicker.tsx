@@ -10,6 +10,7 @@ export function TextPicker({
   triggerRef,
   value,
   onCommit,
+  invalid,
   accent,
   leading,
   trailing,
@@ -19,6 +20,7 @@ export function TextPicker({
   triggerRef: RefObject<HTMLElement | null>
   value: string
   onCommit: (next: string) => void
+  invalid?: (text: string) => boolean
   accent?: string
   leading?: React.ReactNode
   trailing?: React.ReactNode
@@ -31,6 +33,7 @@ export function TextPicker({
       // The bare variant takes the shared field chrome so it truncates rather than letting the eclipse dissolve its own box.
       boxed={!hasAffix}
       caretAtEnd
+      invalid={invalid}
       onCommit={onCommit}
       onCancel={onDismiss}
     />

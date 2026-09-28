@@ -9,6 +9,7 @@ import {
 import type { PropertyAction } from './propertyRows'
 import { PROPERTY_TYPES, type PropertyType } from '../Properties/properties'
 import { type ActionItem, joinGroups } from './menuModel'
+import type { ConnEditAction } from './connectionMenu'
 
 type CellMenuKind =
   | ({ kind: 'title'; alreadyOpen?: boolean } & PageMenuContext)
@@ -29,8 +30,7 @@ export type CellMenuAction =
   | PageMetaAction
   | PageMoveAction
   | PropertyAction
-  | 'cell:edit'
-  | 'cell:rename'
+  | ConnEditAction
   | 'cell:clear'
   | 'cell:hide'
   | 'file:add'
@@ -123,11 +123,11 @@ function baseCellMenuModel(ctx: CellMenuContext): ActionItem<CellMenuAction>[][]
       return [
         ctx.filled
           ? [
-              { label: 'Edit', action: 'cell:edit' },
-              { label: 'Rename', action: 'cell:rename' },
+              { label: 'Edit', action: 'editLink' },
+              { label: 'Rename', action: 'rename' },
               { label: 'Clear', action: 'cell:clear' },
             ]
-          : [{ label: 'Edit', action: 'cell:edit' }],
+          : [{ label: 'Edit', action: 'editLink' }],
       ]
     case 'file':
       return ctx.onChip

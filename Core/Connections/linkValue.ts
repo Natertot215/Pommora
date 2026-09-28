@@ -49,7 +49,7 @@ function parsePastedLink(text: string, resolve?: ResolveTitle): string | null {
 export function urlClickTarget(value: string | undefined): string | null {
   if (!value) return null
   const target = readLink(value)
-  return target.kind === 'url' ? target.url || null : null
+  return target.kind === 'url' && isValidLink(target.url) ? target.url : null
 }
 
 export function linkEditText(raw: string): string {

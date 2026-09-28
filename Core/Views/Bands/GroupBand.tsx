@@ -83,7 +83,7 @@ export function resolveBandHead(
   const def = ctx.schema.find((d) => d.id === propId)
   switch (specOf(groupType)?.kind) {
     case 'select': {
-      const opt = findOption(propId, value, ctx.schema)
+      const opt = findOption(def, value)
       return {
         label: value,
         glyph: <OptionChip type={groupType ?? ''} option={opt ?? { value }} def={def} />,

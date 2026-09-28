@@ -1,20 +1,30 @@
-// One home for the rules that must never drift across surfaces: a checkbox is true-or-absent on disk, never a stored false; the option kinds open their picker; a Date opens the calendar, and a stamp opens nothing.
+// One home for what a click or a value menu means on every surface: a checkbox is true-or-absent on disk, never a stored false; the option kinds open their picker; a Date opens the calendar; a valid address opens, and a stamp opens nothing. Each surface only maps the intent to its own widget.
 
 import type { PropertyValue } from '@pommora/core/Properties/propertyValue'
-import { type PropertyType, specOf } from '../properties'
+import type { ColumnLook } from '@pommora/core/Properties/columnStyles'
+import type { CellMenuAction } from '@pommora/core/Actions/cellMenu'
+import { readLink, urlClickTarget } from '@pommora/core/Connections/linkValue'
+import { type NumberConfig, type PropertyType, specOf } from '../properties'
+import { barDivisor } from '../formatValue'
 
-type ValueClickAction =
+export type ValueIntent =
   | { kind: 'commit'; value: PropertyValue | null }
   | { kind: 'picker' }
   | { kind: 'dateTime' }
   | { kind: 'file' }
-  | null
+  | { kind: 'edit' }
+  | { kind: 'numberPicker' }
+  | { kind: 'rename' }
+  | { kind: 'open'; url: string }
+  | { kind: 'hide' }
 
-/** Null = the click isn't covered by the shared rules — the surface's own tail routes it. */
-export function sharedValueClickAction(
+/** Null = the click does nothing: a stamp, the title, or a page link, whose own text opens it. */
+export function valueClickIntent(
   type: PropertyType | 'title' | undefined,
   value: PropertyValue,
-): ValueClickAction {
+  look?: ColumnLook,
+  config?: NumberConfig,
+): ValueIntent | null {
   const spec = specOf(type)
   if (spec === undefined || spec.origin === 'stamp') return null
   switch (spec.kind) {
@@ -31,7 +41,34 @@ export function sharedValueClickAction(
     case 'file':
       return { kind: 'file' }
     case 'number':
-    case 'link':
-      return null
+      return barDivisor(look, config) === undefined ? { kind: 'edit' } : { kind: 'numberPicker' }
+    case 'link': {
+      const raw = value.kind === 'link' ? value.value : ''
+      const url = urlClickTarget(raw)
+      if (url) return { kind: 'open', url }
+      return readLink(raw).kind === 'page' ? null : { kind: 'edit' }
+    }
   }
+}
+
+const MENU_INTENTS: Partial<Record<CellMenuAction, ValueIntent>> = {
+  editLink: { kind: 'edit' },
+  rename: { kind: 'rename' },
+  'cell:clear': { kind: 'commit', value: null },
+  'cell:hide': { kind: 'hide' },
+}
+
+export const valueMenuIntent = (action: CellMenuAction): ValueIntent | null =>
+  MENU_INTENTS[action] ?? null
+
+export type ValueIntentHandlers = {
+  [K in ValueIntent['kind']]: ((intent: Extract<ValueIntent, { kind: K }>) => void) | null
+}
+
+/** True when a handler ran; a null handler declines its intent. */
+export function runValueIntent(intent: ValueIntent | null, on: ValueIntentHandlers): boolean {
+  if (!intent) return false
+  const handle = on[intent.kind] as ((intent: ValueIntent) => void) | null
+  handle?.(intent)
+  return handle !== null
 }

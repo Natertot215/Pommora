@@ -20,7 +20,7 @@ export interface ConnMenuContext {
 
 export type ConnSurface = 'editor' | 'cell'
 export type ConnEditAction = 'rename' | 'editLink'
-export type ConnCellAction = 'link:clear' | 'link:hide'
+export type ConnCellAction = 'cell:clear' | 'cell:hide'
 export type ConnCellApply = (action: ConnCellAction) => void
 type ConnCopyAction = Extract<PageMetaAction, 'title:copylink' | 'title:copypath'>
 
@@ -59,13 +59,13 @@ export const isConnUrlAction = (action: ConnMenuAction): action is ConnUrlAction
   (CONN_URL_ACTIONS as readonly string[]).includes(action)
 
 export const isConnCellAction = (action: ConnMenuAction): action is ConnCellAction =>
-  action === 'link:clear' || action === 'link:hide'
+  action === 'cell:clear' || action === 'cell:hide'
 
 function closingRows(ctx: ConnMenuContext): readonly ActionItem<ConnMenuAction>[] {
   if (ctx.surface === 'editor') return ctx.external && ctx.editable ? CONN_UNLINK_ROWS : []
   return [
-    { label: 'Clear', action: 'link:clear' },
-    ...(ctx.hideable ? [{ label: 'Remove', action: 'link:hide' as const }] : []),
+    { label: 'Clear', action: 'cell:clear' },
+    ...(ctx.hideable ? [{ label: 'Remove', action: 'cell:hide' as const }] : []),
   ]
 }
 
