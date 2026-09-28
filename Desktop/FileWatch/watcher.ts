@@ -163,26 +163,26 @@ async function settle(root: string, win: CurrentWindow, scope: WatchScope): Prom
       return (await patching).outcome === 'patched' ? 'ok' : 'refresh'
     })
     const patch = await patching
-    const { outcome, touched, cascaded } = patch
     // The map is patch-only, so the fallback walk is where the listing is taken again.
-    if (outcome === 'refresh') await refreshAssetMap(root)
+    if (patch.outcome === 'refresh') await refreshAssetMap(root)
     // A session that switched mid-settle must not receive the OLD root's walked tree — a superseded walk still returns it to its awaiters.
     if (sessionRoot() !== root) return
     if (tree) push(win, 'nexus:changed', tree)
     const classified =
       patch.outcome === 'patched' ? patch.classes : classifyBatch(events, root, scope)
-    const pages = pagesChangedIn(classified, cascaded.pages)
+    const pages = pagesChangedIn(classified, patch.cascaded.pages)
     if (pages.length) push(win, 'pages:changed', pages)
     // A cascaded linker's write was the app's own, so its note waits in the ledger rather than in the batch.
     const changed = [
-      ...valueChangesOf(classified, touched),
-      ...flushValueWrites(root, cascaded.pages),
+      ...valueChangesOf(classified, patch.touched),
+      ...flushValueWrites(root, patch.cascaded.pages),
     ]
     if (changed.length) push(win, 'values:changed', changed)
-    for (const host of tilesChangedIn(classified, cascaded.hosts)) push(win, 'tiles:changed', host)
+    for (const host of tilesChangedIn(classified, patch.cascaded.hosts))
+      push(win, 'tiles:changed', host)
     const assets = getHeldAssetMap(root)
     if (assetsBefore && assets && assets !== assetsBefore) push(win, 'assets:changed', assets)
-    if (outcome !== 'refresh') return
+    if (patch.outcome !== 'refresh') return
     // The corpus may have moved in ways no arm named; the stat-gated seed costs the walk's stats.
     if (touchesCorpus(root, events, scope)) await seedContentIndex(root)
     if (sessionRoot() !== root) return

@@ -181,11 +181,11 @@ export interface SeedReread {
   rels: readonly string[]
 }
 
-const NONE_REREAD: SeedReread = { db: null, rels: [] }
+const NO_REREAD: SeedReread = { db: null, rels: [] }
 
 export async function seedContentIndex(root: string): Promise<SeedReread> {
   const indexed = readIndexedStats()
-  if (!indexed) return NONE_REREAD
+  if (!indexed) return NO_REREAD
   // The handle this seed started against. Every await below is a window for a nexus switch to swap it; a seed that kept writing would pour the OLD corpus's rows into the NEW database, so it bails wherever the identity moved.
   const db0 = contentIndexStore()
   const reread: string[] = []
@@ -205,20 +205,20 @@ export async function seedContentIndex(root: string): Promise<SeedReread> {
       if (prior && prior.mtimeMs === st.mtimeMs && prior.size === st.size) continue
       const content = await readTextOrNull(abs)
       if (content === null) continue
-      if (contentIndexStore() !== db0) return NONE_REREAD
+      if (contentIndexStore() !== db0) return NO_REREAD
       // A maintaining writer that landed while this file's read was in flight left a fresher row than the snapshot knew — keep theirs; this read predates their write.
       const row = readIndexedStat(rel)
       if (row && (row.mtimeMs !== prior?.mtimeMs || row.size !== prior?.size)) continue
       recordPage(rel, content, { mtimeMs: st.mtimeMs, size: st.size })
       reread.push(rel)
     }
-    if (contentIndexStore() !== db0) return NONE_REREAD
+    if (contentIndexStore() !== db0) return NO_REREAD
     // Prune only what the pre-seed gate knew and the corpus no longer yields — a page born while the seed ran is absent from the snapshot and must survive this pass.
     for (const rel of indexed.keys()) if (!seen.has(rel)) removePathIndex(rel)
     markIndexReady()
-    return indexed.size === 0 ? NONE_REREAD : { db: db0, rels: reread }
+    return indexed.size === 0 ? NO_REREAD : { db: db0, rels: reread }
   } catch (e) {
     console.error('content index: seed failed — queries fall back to scans:', errText(e))
-    return NONE_REREAD
+    return NO_REREAD
   }
 }

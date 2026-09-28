@@ -12,7 +12,7 @@ import { lockLabel, openLabel } from './toggleLabels'
 import type { MutableKind } from '../Nexus/mutateRequest'
 import type { RenameHost } from '../Session/editSlice'
 
-export interface MenuTarget extends PageMenuContext {
+export interface EntityMenuTarget extends PageMenuContext {
   kind: MutableKind
   path: string
   title: string
@@ -36,7 +36,7 @@ export type EntityMenuAction =
   | 'changeColor'
 
 export function entityMenuItems(
-  target: MenuTarget,
+  target: EntityMenuTarget,
   creators: readonly Creator[],
 ): ActionItem<EntityMenuAction>[] {
   if (target.kind === 'page')

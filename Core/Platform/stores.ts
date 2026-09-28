@@ -31,14 +31,12 @@ export interface RelationRow extends Relation {
   path: string
 }
 
-export type PageRelationKind = Extract<RelationKind, 'body' | 'citation' | 'frontmatter'>
-
 export interface PageRelationRow extends RelationRow {
-  kind: PageRelationKind
+  kind: Extract<RelationKind, 'body' | 'citation' | 'frontmatter'>
 }
 
 export interface PageRelations {
-  links: PageRelationRow[]
+  relations: PageRelationRow[]
   pages: Record<string, { values: Record<string, unknown>; mtimeMs: number }>
 }
 
