@@ -1,7 +1,7 @@
 import {
   type EntityMenuAction,
   entityMenuItems,
-  type MenuTarget,
+  type EntityMenuTarget,
 } from '@pommora/core/Actions/entityMenu'
 import {
   containerCreators,
@@ -29,7 +29,7 @@ import { settingOf } from '@pommora/core/Settings/personalization'
 import { confirmDelete } from '../Confirm/confirmations'
 import { runPageAction } from './pageMenuActions'
 
-function creatorsFor(target: MenuTarget): Creator[] {
+function creatorsFor(target: EntityMenuTarget): Creator[] {
   switch (target.kind) {
     case 'collection':
     case 'set':
@@ -44,7 +44,10 @@ function creatorsFor(target: MenuTarget): Creator[] {
 }
 
 /** Resolves on close, before the pick runs: a surface holding a hover affordance down needs the close to release it. */
-export async function showEntityMenu(target: MenuTarget, trigger?: HTMLElement): Promise<void> {
+export async function showEntityMenu(
+  target: EntityMenuTarget,
+  trigger?: HTMLElement,
+): Promise<void> {
   const creators = creatorsFor(target)
   const s = useSession.getState()
   const node = target.kind === 'space' && target.id ? spaceNodeOf(s.tree, target.id) : null
@@ -55,7 +58,7 @@ export async function showEntityMenu(target: MenuTarget, trigger?: HTMLElement):
     else if (node && s.tree) row = spaceRowOf(s.tree, node)
   }
   const schema = !row ? [] : node ? (s.tree?.registry ?? []) : schemaForPage(s.tree, target.path)
-  const menuTarget: PropertyMenuTarget | null = row
+  const propertyTarget: PropertyMenuTarget | null = row
     ? {
         tree: s.tree,
         schema,
@@ -63,15 +66,15 @@ export async function showEntityMenu(target: MenuTarget, trigger?: HTMLElement):
         capitalize: settingOf(s.personalization, 'capitalizeMetadata'),
       }
     : null
-  const shown: MenuTarget = {
+  const shown: EntityMenuTarget = {
     ...target,
-    ...(menuTarget ? propertyMenuBranches(menuTarget) : {}),
+    ...(propertyTarget ? propertyMenuBranches(propertyTarget) : {}),
   }
   const action = await popMenu(entityMenuItems(shown, creators))
   if (action === null) return
-  if (menuTarget && trigger) {
-    const commit = valueCommitFor(schema, menuTarget.row)
-    if (runPropertyAction(action, { ...menuTarget, commit, trigger })) return
+  if (propertyTarget && trigger) {
+    const commit = valueCommitFor(schema, propertyTarget.row)
+    if (runPropertyAction(action, { ...propertyTarget, commit, trigger })) return
   }
   runEntityAction(shown, creators, action)
 }
@@ -96,7 +99,11 @@ function valueCommitFor(
   }
 }
 
-function runEntityAction(target: MenuTarget, creators: Creator[], action: EntityMenuAction): void {
+function runEntityAction(
+  target: EntityMenuTarget,
+  creators: Creator[],
+  action: EntityMenuAction,
+): void {
   const s = useSession.getState()
   const { path, id, kind } = target
   if (kind === 'page' && id && runPageAction(action, { id, path, title: target.title })) return

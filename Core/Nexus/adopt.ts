@@ -19,7 +19,7 @@ import { readSidecar } from '../Files/sidecar'
 import { splitEnvelope, mergeFrontmatter, splitFrontmatter } from '../Files/pageFile'
 import { readIdentity } from './identity'
 import { asString } from './coerce'
-import { baseSidecar } from './schemas'
+import { baseSidecar, type ContainerKind } from './schemas'
 import { recordWrite } from '../Files/writeEcho'
 import { renamedSidecar } from './migrateConfig'
 import { outsideContent, type WatchScope } from '../Paths/exclusion'
@@ -98,8 +98,6 @@ export async function stampListed(root: string, file: string): Promise<string | 
   await indexWrittenPage(root, file)
   return id
 }
-
-type ContainerKind = 'collection' | 'set'
 
 type AdoptableKind = Exclude<FolderKind, 'unknown'>
 

@@ -26,7 +26,7 @@ export function readMatrixGraph(paths?: string[]): MatrixGraphReply | null {
     values[id] = pageValuesOf(id, page.values, page.mtimeMs)
   }
   const links: MatrixLink[] = []
-  for (const row of rows.links) {
+  for (const row of rows.relations) {
     const pageId = idOf.get(row.path)
     if (pageId) links.push({ ...row, pageId })
   }

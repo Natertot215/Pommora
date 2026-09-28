@@ -3,7 +3,7 @@ import { vars, tintAt, TINT_STEPS } from '@pommora/uix/Theme'
 import { shape, tinted } from '@pommora/uix/Labels/label-base.css'
 import { cx } from '@pommora/uix/Utilities/cx'
 import { SortableZone, useDragItem, reorder } from '@pommora/uix/Interactions/drag'
-import { accentValue, applyAccent, readCssAccentColor } from '@pommora/uix/Theme/ramp'
+import { applySystemAccent, readCssAccentColor, solidColorCss } from '@pommora/uix/Theme/ramp'
 import { SOLID_COLORS, type AccentSetting } from '@pommora/uix/Theme/colors'
 import { humanize, formatColor, useComputedStyleText, useIsCompact } from './helpers'
 
@@ -103,7 +103,11 @@ function AccentDemo(): React.JSX.Element {
   const [systemColor] = useState(() => readCssAccentColor())
   const pick = (a: AccentSetting): void => {
     setActive(a)
-    applyAccent(a, a === 'system' ? systemColor : null)
+    const root = document.documentElement.style
+    if (a === 'system') {
+      applySystemAccent(systemColor)
+      root.removeProperty('--accent')
+    } else root.setProperty('--accent', solidColorCss(a))
   }
   return (
     <section className="ds-section">
@@ -121,7 +125,7 @@ function AccentDemo(): React.JSX.Element {
               }
               style={{
                 background:
-                  a === 'system' ? (systemColor ?? vars.color.solid.grey) : accentValue(a, null),
+                  a === 'system' ? (systemColor ?? vars.color.solid.grey) : solidColorCss(a),
               }}
               onClick={() => pick(a)}
               title={a}

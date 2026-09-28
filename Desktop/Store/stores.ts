@@ -131,7 +131,7 @@ export const contentIndexStore = (db: Db): ContentIndexStore => ({
   readPageRelations(only) {
     const inClause = only ? ` AND path IN ${PATHS_OF}` : ''
     const args = only ? [JSON.stringify(only)] : []
-    const links = db
+    const relations = db
       .prepare(
         `SELECT path, kind, target, qualifier, count FROM relations WHERE kind IN ('body','citation','frontmatter')${inClause} ORDER BY path`,
       )
@@ -148,7 +148,7 @@ export const contentIndexStore = (db: Db): ContentIndexStore => ({
       const page = pages[v.path]
       if (page) page.values[v.key] = JSON.parse(v.value)
     }
-    return { links, pages }
+    return { relations, pages }
   },
   queryKeyHolders(key) {
     return paths(db, 'SELECT path FROM page_values WHERE key = ? ORDER BY path', key)

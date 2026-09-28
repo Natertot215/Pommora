@@ -1,6 +1,5 @@
 // The palette grid and everything that reads it: a stored color string resolves here to the cell it names and the CSS that cell paints. Every seat is a token from color.css, never a value.
 import {
-  type AccentSetting,
   type CellKey,
   type ColorName,
   DEFAULT_ACCENT,
@@ -163,25 +162,10 @@ export function resolveColor(
   return { name: colorNameFor(color), css: solidColorCss(color) }
 }
 
-const accentCell = (setting: string): string => {
-  const key = colorNameFor(setting)
-  return cellColor(key === 'default' ? ANCHOR_CELLS[DEFAULT_ACCENT] : key)
-}
-
-export function accentValue(setting: AccentSetting, systemColor: string | null): string {
-  if (setting === 'system') return systemColor ?? accentCell(DEFAULT_ACCENT)
-  return accentCell(setting)
-}
-
-export function applyAccent(setting: AccentSetting, systemColor: string | null): void {
-  if (typeof document === 'undefined') return
-  document.documentElement.style.setProperty('--accent', accentValue(setting, systemColor))
-}
-
 /** The OS accent `--link` falls back to, independent of the `--accent` setting. */
 export function applySystemAccent(systemColor: string | null): void {
   if (typeof document === 'undefined') return
-  const value = systemColor ?? readCssAccentColor() ?? accentCell(DEFAULT_ACCENT)
+  const value = systemColor ?? readCssAccentColor() ?? cellColor(ANCHOR_CELLS[DEFAULT_ACCENT])
   document.documentElement.style.setProperty('--system-accent', value)
 }
 

@@ -198,7 +198,7 @@ export function describeContentIndexStore(name: string, make: () => ContentIndex
         { mtimeMs: 2000, size: 20 },
       )
       const whole = store.readPageRelations()
-      expect(whole.links).toEqual([
+      expect(whole.relations).toEqual([
         { path: 'Notes/A.md', ...body('beta') },
         { path: 'Notes/A.md', ...relation('citation', 'gamma') },
       ])
@@ -207,7 +207,7 @@ export function describeContentIndexStore(name: string, make: () => ContentIndex
         'Notes/B.md': { values: { ID: 'idB' }, mtimeMs: 2000 },
       })
       const narrowed = store.readPageRelations(['Notes/B.md'])
-      expect(narrowed.links).toEqual([])
+      expect(narrowed.relations).toEqual([])
       expect(narrowed.pages).toEqual({ 'Notes/B.md': { values: { ID: 'idB' }, mtimeMs: 2000 } })
     })
 

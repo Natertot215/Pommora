@@ -153,7 +153,7 @@ const contentIndex = (index: MemoryIndex): ContentIndexStore => {
     },
     readPageRelations(paths) {
       const held = (path: string): boolean => !paths || paths.includes(path)
-      const links = relationRows()
+      const relations = relationRows()
         .filter(
           (r): r is PageRelationRow =>
             (r.kind === 'body' || r.kind === 'citation' || r.kind === 'frontmatter') &&
@@ -167,7 +167,7 @@ const contentIndex = (index: MemoryIndex): ContentIndexStore => {
         const page = pages[row.path]
         if (page) page.values[row.key] = JSON.parse(row.value)
       }
-      return { links, pages }
+      return { relations, pages }
     },
     queryKeyHolders(key) {
       return sortedPaths([...index.values.values()].filter((r) => r.key === key).map((r) => r.path))
