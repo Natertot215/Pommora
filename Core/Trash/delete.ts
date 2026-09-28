@@ -1,13 +1,14 @@
-import { basename, dirname, relative } from '../Paths/posix'
+import { basename, dirname, relative, titleFromPath } from '../Paths/posix'
 import { liveTreeOf, mutableTarget } from '../Nexus/liveTree'
 import { goneEdit, reachConfig, reachReport } from '../Nexus/configReach'
 import { pathExists } from '../Files/atomicWrite'
-import { deindexPath } from '../Index/indexSeed'
+import { deindexPath, folderCorpus } from '../Index/indexSeed'
 import { fail, ok, valueOr } from '../Contract/result'
 import { mutateRegistryFile, readRegistryStrict, withContextAt } from '../Contexts/contextsRegistry'
 import { unlinkContextKey, unlinkSpaceValue } from '../Contexts/contextCascade'
 import type { MutateContext } from '../Nexus/mutate'
 import { dropSpaceOrder } from '../Nexus/reorder'
+import { type DeleteCascade, deleteCascade, joinCascades } from '../Nexus/cascade'
 import type { MutateReply, MutateRequest } from '../Nexus/mutateRequest'
 import { machine } from '../Platform/machine'
 import { discardFile, mintBundle, settleBundle } from './bundle'
@@ -35,7 +36,7 @@ export async function deleteOp(
     const refused = await exclusionWriteRefusal(root, await excludedWithin(root, req.path))
     if (refused) return refused
   }
-  // Write-ahead: the record lands before the sweep destroys what it describes, and the artifact moves before the configuration pass, so a delete cut short leaves evidence rather than silence.
+  // Write-ahead: the record lands before any sweep destroys what it describes; a Space or Context sweep runs before its artifact moves and refuses on failure, a content strip runs after, so a failed move strips nothing, and the artifact moves before the configuration pass, so a delete cut short leaves evidence rather than silence.
   const bundle = deps.trashMode === 'system' ? null : await mintBundle(root, abs)
   const write = bundle
     ? async (record: RecordFile | null): Promise<void> => {
@@ -47,6 +48,8 @@ export async function deleteOp(
     if (bundle) await machine().remove(bundle)
     throw e
   }
+  let record: RecordFile | null = null
+  let titles: string[] = []
   if (req.kind === 'space') {
     const registry = write ? await readRegistryStrict(root) : null
     if (write) await write(await gatherSpaceRecord(abs, registry, null))
@@ -74,18 +77,35 @@ export async function deleteOp(
     })
     if (entry && !bundle) await dropSpaceOrder(root, entry.id)
     if (write && evidence) await write(buildContextRecord(evidence, valueOr(swept, null)))
-  } else if (write) {
-    await write(await gatherContentRecord(root, req.kind, abs))
+  } else {
+    record = write ? await gatherContentRecord(root, req.kind, abs) : null
+    if (write && record) await write({ ...record, partial: true })
+    titles =
+      req.kind === 'page'
+        ? [titleFromPath(abs)]
+        : (await folderCorpus(root, abs)).map(titleFromPath)
   }
   await machine().lock(abs, async () => {
     if (bundle) await settleBundle(bundle, abs)
     else await discardFile(root, abs, deps)
   })
+  let gone: DeleteCascade | null = null
+  if (req.kind === 'page' || req.kind === 'collection' || req.kind === 'set') {
+    gone = await deleteCascade(root, abs, titles)
+    if (write && record)
+      await write({
+        ...record,
+        ...(gone.links.length ? { links: gone.links } : {}),
+        ...(gone.cascade.warning ? { partial: true as const } : {}),
+      })
+  }
   if (req.kind === 'collection' || req.kind === 'set')
     await releaseExcludedFolders(root, relative(root, abs))
   await deindexPath(root, abs)
+  const reach = edit ? reachReport(await reachConfig(root, edit)) : null
+  const cascade = gone && reach ? joinCascades(gone.cascade, reach) : (gone?.cascade ?? reach)
   return ok({
     ...(bundle ? { trashed: { bundlePath: relative(root, bundle) } } : {}),
-    ...(edit ? { cascade: reachReport(await reachConfig(root, edit)) } : {}),
+    ...(cascade ? { cascade } : {}),
   })
 }
