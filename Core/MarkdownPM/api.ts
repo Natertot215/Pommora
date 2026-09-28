@@ -60,6 +60,7 @@ const EDITOR_SETTING_KEYS = [
   'transformDashes',
   'transformArrows',
   'transformEquations',
+  'transformPunctuation',
   'transformEllipses',
   'transformCallouts',
   'transformSections',

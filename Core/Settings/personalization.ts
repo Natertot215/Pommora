@@ -211,6 +211,7 @@ const SETTINGS = {
   transformDashes: flag(true),
   transformArrows: flag(true),
   transformEquations: flag(true),
+  transformPunctuation: flag(false),
   transformEllipses: flag(true),
   transformCallouts: flag(true),
   transformSections: flag(false),

@@ -597,6 +597,7 @@ const inUrlRun = (doc: string, c: number): boolean => {
 }
 const isLiteralAt = (scan: DocScan, c: number): boolean =>
   inCodeAt(scan, c) ||
+  spanAt(scan.maths, c) !== undefined ||
   inCodeAt(scan, c - 1) ||
   isInsideWikilink(c, scan.text) ||
   inUrlRun(scan.text, c)
@@ -662,6 +663,38 @@ export function bullet(
   const pfx = blockPrefix(doc.slice(ls, lineEndAt(doc, c)))
   if (!/\S/.test(doc.slice(ls + pfx.length, c - 2))) return null
   return { from: c - 1, to: c, insert: '• ', selection: c + 1 }
+}
+
+const PUNCTUATION: Record<string, string> = {
+  '!!': '‼',
+  '??': '⁇',
+  '?!': '⁈',
+  '!?': '⁉',
+  '||': '‖',
+}
+const PUNCTUATION_MARKS = '!?|'
+
+// A pair resolves on the keystroke after it so a longer run such as `???` stays literal.
+export function punctuation(
+  scan: DocScan,
+  selStart: number,
+  selEnd: number,
+  inserted: string,
+  settings: Personalization = {},
+): Edit | null {
+  if (selStart !== selEnd || !settingOf(settings, 'transformPunctuation')) return null
+  const doc = scan.text
+  const c = selStart
+  const glyph = PUNCTUATION[doc.slice(c - 2, c)]
+  if (!glyph || PUNCTUATION_MARKS.includes(inserted) || PUNCTUATION_MARKS.includes(doc[c - 3]))
+    return null
+  if (isLiteralAt(scan, c)) return null
+  if (glyph === '‖') {
+    const ls = lineStartAt(doc, c)
+    const before = doc.slice(ls + blockPrefix(doc.slice(ls, lineEndAt(doc, c))).length, c - 2)
+    if (!/\S/.test(before) || before.includes('|')) return null
+  }
+  return { from: c - 2, to: c, insert: `${glyph}${inserted}`, selection: c }
 }
 
 const EQUATIONS: Record<string, string> = {
