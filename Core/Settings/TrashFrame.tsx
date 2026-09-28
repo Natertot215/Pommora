@@ -112,9 +112,8 @@ function TrashBody(): React.JSX.Element {
   )
   const toggle = (bundlePath: string): void => setChecked((prev) => toggled(prev, bundlePath))
 
-  const one = (req: Extract<MutateRequest, { bundlePath: string }>): Promise<unknown> => {
-    spendBundle(req.bundlePath)
-    return mutate(req)
+  const one = async (req: Extract<MutateRequest, { bundlePath: string }>): Promise<void> => {
+    if (await mutate(req)) spendBundle(req.bundlePath)
   }
 
   const many = async (
@@ -130,11 +129,11 @@ function TrashBody(): React.JSX.Element {
     const refused: TrashRow[] = []
     const unrestored: string[] = []
     const warnings = new Set<string>()
-    for (const row of targets) spendBundle(row.bundlePath)
     for (const row of targets) {
       const res = await dialer().ask('mutate', { op, bundlePath: row.bundlePath })
       ;(res.ok ? done : refused).push(row)
       if (!res.ok) continue
+      spendBundle(row.bundlePath)
       unrestored.push(...(res.value.unrestored ?? []))
       if (res.value.cascade?.warning) warnings.add(res.value.cascade.warning)
     }
