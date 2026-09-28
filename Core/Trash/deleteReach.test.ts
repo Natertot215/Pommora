@@ -1,4 +1,4 @@
-import { chmod, mkdir, readFile, rm } from 'node:fs/promises'
+import { chmod, copyFile, mkdir, readFile, rm, writeFile } from 'node:fs/promises'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { join } from '../Paths/posix'
 import { noModeBits, putJson, readJsonAt, tempRoot } from '../Testing/hostFs'
@@ -6,6 +6,7 @@ import { type ConfigSurfaces, seedConfigSurfaces, viewOn } from '../Testing/conf
 import { confirmedMutate } from '../Testing/confirmedMutate'
 import { createFolderEntity } from '../Nexus/folderEntity'
 import { createPage } from '../Nexus/page'
+import { splitFrontmatter } from '../Files/pageFile'
 import type { PropertyDefinition } from '../Properties/properties'
 import { dropLiveTree, refreshTree } from '../Nexus/liveTree'
 import { closeSession, openSession } from '../Nexus/session'
@@ -64,6 +65,12 @@ const page = async (parent: string, name: string, links?: string): Promise<strin
   return made.value.path
 }
 
+const idOf = async (file: string): Promise<unknown> =>
+  splitFrontmatter(await readFile(file, 'utf8')).ID
+
+const recordOf = (bundlePath: string): Promise<Raw> =>
+  readJsonAt(join(root, bundlePath, '_record.json'))
+
 beforeEach(async () => {
   root = tempRoot('pom-delete-reach-')
   await putJson(nexusConfig(root, NEXUS_CONFIG_FILES.identity), { id: 'nx', createdAt: '2026' })
@@ -91,6 +98,31 @@ describe('a page delete', () => {
     if (!r.ok) throw new Error(r.error.message)
     r.value.cascade?.pages.sort()
     expect(r.value.cascade).toEqual({ pages: ['Notes/One.md', 'Notes/Two.md'], hosts: [] })
+  })
+
+  it('stamps a linker the tree lists without an ID, so its record can find it', async () => {
+    const loose = join(notes, 'Loose.md')
+    await writeFile(loose, '---\nRelated: "[[Target]]"\n---\n')
+    await refreshTree(root)
+    const r = await del('Notes/Target.md', 'page')
+    if (!r.ok || !r.value.trashed) throw new Error('the delete did not trash')
+    expect(r.value.cascade?.pages).toEqual(['Notes/Loose.md'])
+    const id = await idOf(loose)
+    expect(id).toEqual(expect.any(String))
+    expect((await recordOf(r.value.trashed.bundlePath)).links).toEqual([
+      { page: id, property: 'prop_related', value: '[[Target]]' },
+    ])
+  })
+
+  it('leaves two linkers sharing one ID as they were, since a restore couldn’t tell them apart', async () => {
+    const twin = await page(notes, 'Twin', 'Target')
+    await copyFile(twin, join(notes, 'Twin copy.md'))
+    await refreshTree(root)
+    const r = await del('Notes/Target.md', 'page')
+    if (!r.ok || !r.value.trashed) throw new Error('the delete did not trash')
+    expect(r.value.cascade?.pages).toEqual([])
+    expect(splitFrontmatter(await readFile(twin, 'utf8')).Related).toBe('[[Target]]')
+    expect((await recordOf(r.value.trashed.bundlePath)).links).toBeUndefined()
   })
 
   it('replies with an empty report when nothing links it', async () => {
@@ -271,19 +303,28 @@ describe('a Set delete', () => {
   it('strips the Link values naming its pages outside it, and leaves the pages inside as they were', async () => {
     await addRelated()
     await page(gone.path, 'Inner')
+    await page(join(gone.path, 'Sub'), 'Deep')
     const inside = await page(gone.path, 'Inside', 'Inner')
-    await page(notes, 'Outside', 'Inner')
+    const outside = await page(notes, 'Outside', 'Inner')
+    const far = await page(notes, 'Far', 'Deep')
     const held = await readFile(inside, 'utf8')
     await refreshTree(root)
     const r = await del('Notes/Gone', 'set')
     if (!r.ok || !r.value.trashed) throw new Error('the delete did not trash')
+    r.value.cascade?.pages.sort()
     expect(r.value.cascade).toEqual({
-      pages: ['Notes/Outside.md'],
+      pages: ['Notes/Far.md', 'Notes/Outside.md'],
       hosts: [{ kind: 'space', id: 'sp_home' }],
     })
     expect(
       await readFile(join(root, r.value.trashed.bundlePath, 'Gone', 'Inside.md'), 'utf8'),
     ).toBe(held)
+    expect((await recordOf(r.value.trashed.bundlePath)).links).toEqual(
+      expect.arrayContaining([
+        { page: await idOf(outside), property: 'prop_related', value: '[[Inner]]' },
+        { page: await idOf(far), property: 'prop_related', value: '[[Deep]]' },
+      ]),
+    )
   })
 
   it.skipIf(noModeBits)('joins the strip’s warning and the pass’s in one line', async () => {
@@ -299,9 +340,9 @@ describe('a Set delete', () => {
     await chmod(locked.path, 0o555)
     try {
       const r = await del('Notes/Gone', 'set')
-      expect(r.ok && r.value.cascade?.warning).toBe(
-        `${unsweptLine(1, 'links in ')} ${unsweptLine(1)}`,
-      )
+      if (!r.ok || !r.value.trashed) throw new Error('the delete did not trash')
+      expect(r.value.cascade?.warning).toBe(`${unsweptLine(1, 'links in ')} ${unsweptLine(1)}`)
+      expect((await recordOf(r.value.trashed.bundlePath)).partial).toBe(true)
     } finally {
       await chmod(locked.path, 0o755)
     }

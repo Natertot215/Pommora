@@ -66,7 +66,6 @@ const recordFile = z.discriminatedUnion('entity', [
 
 export type RecordFile = z.infer<typeof recordFile>
 export type ParentRef = z.infer<typeof parentRef>
-export type StrippedLink = z.infer<typeof strippedLink>
 
 export async function writeRecord(bundleDir: string, record: RecordFile): Promise<void> {
   await writeJson(join(bundleDir, RECORD_FILENAME), record)

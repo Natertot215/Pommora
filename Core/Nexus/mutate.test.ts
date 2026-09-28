@@ -1058,6 +1058,35 @@ describe('handleMutate — renameHeading', () => {
   })
 })
 
+describe('handleMutate — a page delete’s linkers', () => {
+  it('pushes their values but not their bodies, since only frontmatter moved', async () => {
+    await writeFile(
+      join(root, '.nexus', 'properties.json'),
+      JSON.stringify({
+        order: ['prop_related'],
+        defs: { prop_related: { id: 'prop_related', name: 'Related', type: 'link' } },
+      }),
+    )
+    await writeFile(
+      join(root, 'Notes', 'Daily', 'Alpha.md'),
+      `---\nID: ${A_ID}\nRelated: "[[Beta]]"\n---\n`,
+    )
+    await refreshTree(root)
+    const push = vi.fn()
+    const ctx = { push, trashMode: async () => 'nexus' } as unknown as HostContext
+    const r = await nexusHandlers.mutate(ctx, {
+      op: 'delete',
+      path: 'Notes/Daily/Beta.md',
+      kind: 'page',
+    })
+    await new Promise((resolve) => setTimeout(resolve, 0))
+    expect(r.ok && r.value.cascade?.pages).toEqual(['Notes/Daily/Alpha.md'])
+    const names = push.mock.calls.map(([name]) => name)
+    expect(names).toContain('values:changed')
+    expect(names).not.toContain('pages:changed')
+  })
+})
+
 describe('handleMutate — setBanner', () => {
   let outside: string
   beforeEach(async () => {

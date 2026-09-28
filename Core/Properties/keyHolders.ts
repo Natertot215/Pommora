@@ -77,7 +77,7 @@ export async function keyedHolders(
   }
 }
 
-async function stampListed(root: string, file: string): Promise<string | null> {
+export async function stampListed(root: string, file: string): Promise<string | null> {
   const rel = relative(root, file)
   const tree = getLiveTree()
   const listed = tree && pageAt(tree, rel)
