@@ -92,7 +92,7 @@ describe('an unreadable settings.json is never replaced', () => {
   })
 })
 
-describe('readLiveSetting — what emptying the trash means', () => {
+describe('the permanent-delete switch — what emptying the trash means', () => {
   it('an absent file, an absent key, and a non-boolean all read as off', async () => {
     expect(await readLiveSetting(root, 'permanentDelete')).toBe(false)
     await write({})
@@ -100,9 +100,10 @@ describe('readLiveSetting — what emptying the trash means', () => {
     await write({ personalization: {} })
     expect(await readLiveSetting(root, 'permanentDelete')).toBe(false)
     // Never truthy-coerced: the unsafe direction is not reached by accident.
-    for (const v of ['true', 1, ['true'], {}])
+    for (const v of ['true', 1, ['true'], {}]) {
       await write({ personalization: { permanentDelete: v } })
-    expect(await readLiveSetting(root, 'permanentDelete')).toBe(false)
+      expect(await readLiveSetting(root, 'permanentDelete')).toBe(false)
+    }
   })
 
   it('reads the switch on, and sees a write without a reopen', async () => {

@@ -15,6 +15,7 @@ import { rewritePageSerialized } from '../Files/atomicWrite'
 import { installStores, NO_STORES } from '../Platform/stores'
 import { memoryStores } from '../Testing/memoryStores'
 import { seedContentIndex } from '../Index/indexSeed'
+import { readMatrixGraph } from '../Index/contentIndex'
 import { ok } from '../Contract/result'
 import { machine } from '../Platform/machine'
 import { tileHostDir } from '../Paths/paths'
@@ -407,6 +408,43 @@ describe('deleteCascade', () => {
     await deleteCascade(root, t.path, ['Target'])
     expect(sweptFiles()).toEqual([a.path])
     expect(await readFile(t.path, 'utf8')).toBe(before)
+  })
+
+  it('sweeps a sibling whose name extends the deleted folder', async () => {
+    const gone = await set(dir, 'Gone')
+    await linker('Inner', '[[Other]]', gone)
+    const sib = await linker('Sib', '[[Inner]]', await set(dir, 'Gone Archive'))
+    await refreshTree(root)
+    const r = await deleteCascade(root, gone, ['Inner'])
+    expect(r.cascade.pages).toEqual([rel(sib.path)])
+  })
+
+  it('sweeps nothing when no Link property is defined', async () => {
+    await linker('Cites', '[[Target]]')
+    await writeFile(
+      join(root, '.nexus', 'properties.json'),
+      JSON.stringify({ order: [], defs: {} }),
+    )
+    await refreshTree(root)
+    sweepSpy.mockClear()
+    expect(await deleteCascade(root, target(), ['Target'])).toEqual({
+      cascade: { pages: [], hosts: [] },
+      links: [],
+    })
+    expect(sweepSpy).not.toHaveBeenCalled()
+  })
+
+  it('stamps a linker the tree lists without an ID, and the index learns the ID', async () => {
+    const loose = join(dir, 'Loose.md')
+    await writeFile(loose, '---\nRelated: "[[Target]]"\n---\n')
+    await refreshTree(root)
+    installStores(memoryStores().stores)
+    await seedContentIndex(root)
+    const r = await deleteCascade(root, target(), ['Target'])
+    const id = (await fmOf(loose)).ID
+    expect(id).toEqual(expect.any(String))
+    expect(r.links).toEqual([{ page: id, property: related, value: '[[Target]]' }])
+    expect(readMatrixGraph()?.pages[rel(loose)]?.values.ID).toBe(id)
   })
 
   it('never sweeps a page under a deleted folder', async () => {

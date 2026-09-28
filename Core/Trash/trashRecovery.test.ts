@@ -357,6 +357,13 @@ describe('links come back with the page', () => {
     expect(await pathExists(join(root, bundlePath))).toBe(false)
   })
 
+  it('a page landing under its own name gets each value back as it was spelled', async () => {
+    await linker(beta, BETA_ID, 'Related: "[[alpha#Intro]]"')
+    await del('Journal/Daily/Alpha.md', 'page')
+    expect(await restore('Alpha')).toBeUndefined()
+    expect((await frontmatter()).Related).toBe('[[alpha#Intro]]')
+  })
+
   it('a property renamed meanwhile takes the value back under its new name', async () => {
     await del('Journal/Daily/Alpha.md', 'page')
     expect((await renameProperty(root, 'prop_related', 'See Also')).ok).toBe(true)

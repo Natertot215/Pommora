@@ -20,7 +20,7 @@ import { readLink } from '../Connections/linkValue'
 import { liveIdIndex, livePathOf } from './valuesChanged'
 import { ID_KEY } from './identityMark'
 import { asString } from './coerce'
-import { stampListed } from '../Properties/keyHolders'
+import { stampListed } from './adopt'
 
 export interface CascadeReport {
   pages: string[]
@@ -34,7 +34,7 @@ export interface StrippedLink {
   value: string
 }
 
-export interface DeleteCascade {
+interface DeleteCascade {
   cascade: CascadeReport
   links: StrippedLink[]
 }
@@ -45,7 +45,7 @@ export const joinCascades = (a: CascadeReport, b: CascadeReport): CascadeReport 
   warning: [a.warning, b.warning].filter(Boolean).join(' ') || undefined,
 })
 
-/** A deleted page leaves every Link property naming it on the pages the tree holds; bodies keep their links and read unresolved. Nothing at or under `abs` is swept, since it left with the delete. */
+/** A delete strips every Link property value naming a page it took from the pages the tree holds outside it; bodies keep their links and read unresolved. Nothing at or under `abs` is swept, since it left with the delete. */
 export async function deleteCascade(
   root: string,
   abs: string,
@@ -53,11 +53,12 @@ export async function deleteCascade(
 ): Promise<DeleteCascade> {
   const gone = new Set(titles.map(normalizeTitle))
   try {
+    const defs = new Map((await linkDefs(root)).map((d) => [d.name, d.id]))
+    if (!defs.size) return { cascade: { pages: [], hosts: [] }, links: [] }
     const hits = [...gone].map(queryMentions)
     const rels = hits.includes(null)
       ? await nexusCorpus(root)
       : [...new Set(hits.flatMap((h) => h ?? []))]
-    const defs = new Map((await linkDefs(root)).map((d) => [d.name, d.id]))
     const named = (
       raw: Record<string, unknown>,
     ): { key: string; property: string; value: string }[] =>
@@ -75,13 +76,19 @@ export async function deleteCascade(
     const files = rels
       .filter((rel) => held.has(rel) && rel !== deleted && !rel.startsWith(`${deleted}/`))
       .map((rel) => join(root, rel))
+    let twins = 0
     const swept = await sweepGovernedRoots(root, files, {
       raw: (raw, file) => {
+        const keys = named(raw).map(({ key }) => key)
         const id = asString(raw[ID_KEY])
-        if (id !== undefined && livePathOf(root, id) === null) return null
-        return stripKeys(...named(raw).map(({ key }) => key))(raw, file)
+        if (keys.length && id !== undefined && livePathOf(root, id) === null) {
+          twins++
+          return null
+        }
+        return stripKeys(...keys)(raw, file)
       },
     })
+    const unswept = swept.skipped.length + twins
     const links: StrippedLink[] = []
     for (const [file, before] of swept.touched) {
       const page = stampedId(before) ?? (await stampListed(root, file))
@@ -93,7 +100,7 @@ export async function deleteCascade(
       cascade: {
         pages: [...swept.touched.keys()].map((file) => relative(root, file)),
         hosts: [],
-        warning: swept.skipped.length ? unsweptLine(swept.skipped.length, 'links in ') : undefined,
+        warning: unswept ? unsweptLine(unswept, 'links in ') : undefined,
       },
       links,
     }

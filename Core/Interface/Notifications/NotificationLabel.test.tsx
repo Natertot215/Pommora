@@ -28,8 +28,12 @@ const label = (): Element | null => host.querySelector('[role=status]')
 describe('NotificationLabel', () => {
   it('draws the count after the title behind one hidden divider', () => {
     act(() => notifyDeleted('Ideas', vi.fn(), { pages: ['A.md', 'B.md'] }))
-    expect(label()?.querySelectorAll('[aria-hidden="true"]')).toHaveLength(1)
-    expect(label()?.textContent).toBe('Deleted “Ideas”2 Internal LinksUndo')
+    const dividers = label()?.querySelectorAll('[aria-hidden="true"]') ?? []
+    expect(dividers).toHaveLength(1)
+    expect([
+      dividers[0].previousSibling?.textContent,
+      dividers[0].nextSibling?.textContent,
+    ]).toEqual(['Deleted “Ideas”', '2 Internal Links'])
   })
 
   it('draws a notice without a count as its message alone', () => {

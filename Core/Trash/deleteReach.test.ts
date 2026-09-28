@@ -120,8 +120,13 @@ describe('a page delete', () => {
     await refreshTree(root)
     const r = await del('Notes/Target.md', 'page')
     if (!r.ok || !r.value.trashed) throw new Error('the delete did not trash')
-    expect(r.value.cascade?.pages).toEqual([])
+    expect(r.value.cascade).toEqual({
+      pages: [],
+      hosts: [],
+      warning: unsweptLine(2, 'links in '),
+    })
     expect(splitFrontmatter(await readFile(twin, 'utf8')).Related).toBe('[[Target]]')
+    expect(await recordOf(r.value.trashed.bundlePath)).toMatchObject({ partial: true })
     expect((await recordOf(r.value.trashed.bundlePath)).links).toBeUndefined()
   })
 

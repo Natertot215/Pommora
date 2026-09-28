@@ -5,6 +5,7 @@ import { mintBundle } from './bundle'
 import { readJsonObject, writeJson } from '../Files/atomicWrite'
 import { listEntries } from '../Files/walk'
 import { contextEntry } from '../Contexts/contexts'
+import type { StrippedLink } from '../Nexus/cascade'
 
 /** The underscore is load-bearing: the artifact shares this folder under its own real name, so the record wears a prefix no entity may. The atomic writer's temp sibling inherits it too, so it is skipped alongside Finder's litter. */
 const RECORD_FILENAME = '_record.json'
@@ -19,7 +20,11 @@ const parentRef = z.discriminatedUnion('kind', [
 const memberRoot = z.object({ id: z.string().optional(), kind: z.enum(['page', 'space']) })
 const spaceRef = z.object({ id: z.string().optional(), title: z.string() })
 
-const strippedLink = z.object({ page: z.string(), property: z.string(), value: z.string() })
+const strippedLink: z.ZodType<StrippedLink> = z.object({
+  page: z.string(),
+  property: z.string(),
+  value: z.string(),
+})
 
 const contentRecord = <E extends string>(entity: E) =>
   z.object({

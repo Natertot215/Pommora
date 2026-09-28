@@ -2,16 +2,17 @@ import { renderToStaticMarkup } from 'react-dom/server'
 import { describe, expect, it } from 'vitest'
 import { Segments } from './Segments'
 
-const dividers = (html: string): number => html.split('aria-hidden="true"').length - 1
+const drawn = (parts: string[]): string =>
+  renderToStaticMarkup(<Segments parts={parts} />)
+    .replace(/<span[^>]*aria-hidden="true"[^>]*><\/span>/g, '|')
+    .replace(/<[^>]+>/g, '')
 
 describe('Segments', () => {
   it('draws one hidden divider between each pair of parts, in order', () => {
-    const html = renderToStaticMarkup(<Segments parts={['A', 'B', 'C']} />)
-    expect(dividers(html)).toBe(2)
-    expect(html.replace(/<[^>]+>/g, '')).toBe('ABC')
+    expect(drawn(['A', 'B', 'C'])).toBe('A|B|C')
   })
 
   it('draws no divider around a lone part', () => {
-    expect(dividers(renderToStaticMarkup(<Segments parts={['A']} />))).toBe(0)
+    expect(drawn(['A'])).toBe('A')
   })
 })

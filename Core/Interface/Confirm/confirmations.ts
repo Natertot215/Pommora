@@ -42,7 +42,9 @@ export const notifyTrashed = (
   notifyDeleted(
     title,
     trashed &&
-      (() => void useSession.getState().mutate({ op: 'restore', bundlePath: trashed.bundlePath })),
+      (async () => {
+        await useSession.getState().mutate({ op: 'restore', bundlePath: trashed.bundlePath })
+      }),
     cascade,
     retry,
   )
