@@ -87,7 +87,6 @@ export async function ensurePageId(absFile: string): Promise<Result<string>> {
     : fault('That page has no ID Pommora can file.')
 }
 
-/** A page the tree lists without an ID is given one, and the tree and the index learn it. */
 export async function stampListed(root: string, file: string): Promise<string | null> {
   const rel = relative(root, file)
   const tree = getLiveTree()
