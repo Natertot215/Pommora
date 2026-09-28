@@ -7,7 +7,7 @@ import {
   type GestureHandle,
   type PointerGestureSpec,
 } from '@pommora/uix/Interactions/gesture'
-import { Overlay, setShade } from './dragChrome'
+import { type Boundary, Overlay, nearestBoundary, setShade } from './dragChrome'
 
 // The cleanup plugin is mounted in every editor (a page can run several), so the handle carries the view that started it — otherwise a sibling's unmount would abort the drag in progress.
 let live: { view: EditorView; handle: GestureHandle } | null = null
@@ -33,32 +33,31 @@ export const editorGestureCleanup = ViewPlugin.define((view) => ({
 
 const MIN_LINE_WIDTH = 40
 
-interface RelocateDragSpec<C, S> {
-  measure: () => C[]
-  pick: (cands: C[], clientY: number) => S | null
-  lineFor: (slot: S) => { left: number; top: number; width: number } | null
-  commit: (slot: S) => ChangeSpec[] | null
+interface RelocateDragSpec<T> {
+  measure: () => Boundary<T>[]
+  lineFor: (slot: Boundary<T>) => { left: number; top: number; width: number } | null
+  commit: (slot: Boundary<T>) => ChangeSpec[] | null
   /** Fires before the shade lands, so a heading can unfold first and the shade covers the unfolded content. */
   onDragStart?: () => void
   onTap?: () => void
 }
 
-export function beginRelocateDrag<C, S>(
+export function beginRelocateDrag<T>(
   view: EditorView,
   e: PointerEvent,
   block: { from: number; to: number },
-  spec: RelocateDragSpec<C, S>,
+  spec: RelocateDragSpec<T>,
 ): void {
   const host = view.scrollDOM
   const overlay = new Overlay()
   let activated = false
-  let cands: C[] = []
-  let slot: S | null = null
+  let cands: Boundary<T>[] = []
+  let slot: Boundary<T> | null = null
   let lastY = e.clientY
   let stopScroll: (() => void) | null = null
 
   const repick = (): void => {
-    slot = spec.pick(cands, lastY)
+    slot = nearestBoundary(cands, lastY)
     const line = slot === null ? null : spec.lineFor(slot)
     if (line) overlay.show(line.left, line.top, Math.max(line.width, MIN_LINE_WIDTH))
     else overlay.hide()

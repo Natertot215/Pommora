@@ -72,7 +72,10 @@ function buildEditorHost(
     linkTitles: {
       get: (url) => state().linkTitles[url] ?? null,
       resolve: (url) => state().resolveLinkTitle(url),
-      subscribe: (cb) => useSession.subscribe(cb),
+      subscribe: (cb) =>
+        useSession.subscribe((s, prev) => {
+          if (s.linkTitles !== prev.linkTitles) cb()
+        }),
     },
     citations: {
       shown: () => citationsVisible(state(), pageId),

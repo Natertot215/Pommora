@@ -238,7 +238,7 @@ export function MarkdownEditor({
           const main = u.state.selection.main
           const range = u.view.hasFocus && !main.empty ? { from: main.from, to: main.to } : null
           const last = lastRangeRef.current
-          if (u.docChanged || range?.from !== last?.from || range?.to !== last?.to) {
+          if ((u.docChanged && range) || range?.from !== last?.from || range?.to !== last?.to) {
             lastRangeRef.current = range
             onSelectionRef.current(
               range ? rangeStats(docScan(u.state.doc), range.from, range.to) : null,

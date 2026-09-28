@@ -28,6 +28,8 @@ export function buildPageIndex(pages: ConnPage[]): PageIndex {
     if (holders) holders.push(p)
     else byTitle.set(norm, [p])
   }
+  // Sorted on the first autocomplete, not at build: the index rebuilds on every tree change, and most never reach a picker.
+  let alphabetical: typeof entries | null = null
   return {
     resolve(rawTitle) {
       const holders = byTitle.get(normalizeTitle(rawTitle))
@@ -36,21 +38,16 @@ export function buildPageIndex(pages: ConnPage[]): PageIndex {
       return { status: 'resolved', page: holders[0] }
     },
     candidates(query, limit = 20) {
+      alphabetical ??= [...entries].sort((a, b) => compareTitles(a.p.title, b.p.title))
       const q = normalizeTitle(query)
       // An empty query browses the whole index alphabetically — the just-inserted embed opener's state.
-      if (!q)
-        return entries
-          .map((x) => x.p)
-          .sort((a, b) => compareTitles(a.title, b.title))
-          .slice(0, limit)
-      return entries
+      if (!q) return alphabetical.slice(0, limit).map((x) => x.p)
+      return alphabetical
         .filter((x) => x.norm.startsWith(q))
-        .sort((a, b) => {
-          const exact = (a.norm === q ? 0 : 1) - (b.norm === q ? 0 : 1)
-          if (exact !== 0) return exact
-          if (a.p.title.length !== b.p.title.length) return a.p.title.length - b.p.title.length
-          return compareTitles(a.p.title, b.p.title)
-        })
+        .sort(
+          (a, b) =>
+            (a.norm === q ? 0 : 1) - (b.norm === q ? 0 : 1) || a.p.title.length - b.p.title.length,
+        )
         .slice(0, limit)
         .map((x) => x.p)
     },

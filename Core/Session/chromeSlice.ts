@@ -74,7 +74,7 @@ export const createChromeSlice: Slice<ChromeSlice> = (set, get) => ({
   dismissPick: () => set({ pendingPick: null }),
 
   detailCount: null,
-  setDetailCount: (count) => set((s) => (s.detailCount === count ? {} : { detailCount: count })),
+  setDetailCount: (count) => set({ detailCount: count }),
 
   editorSelection: null,
   // Path-guarded both ways: a blur clears only its own figures, so a rival editor's claim isn't undone by the clear that follows it.

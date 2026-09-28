@@ -28,7 +28,7 @@ export interface GlanceSlice {
 
 const PER_NEXUS = { pinnedGlances: [] } satisfies Partial<GlanceSlice>
 
-export const createGlanceSlice: Slice<GlanceSlice> = (set, get) => ({
+export const createGlanceSlice: Slice<GlanceSlice> = (set) => ({
   ...PER_NEXUS,
   // A lock is the only way a pin is born, so it lands locked; unlock flips it in place rather than removing it.
   pinGlance: (p) =>
@@ -47,13 +47,12 @@ export const createGlanceSlice: Slice<GlanceSlice> = (set, get) => ({
     set((s) => ({
       pinnedGlances: s.pinnedGlances.map((p) => (p.tabId === oldId ? { ...p, tabId: newId } : p)),
     })),
-  reconcileGlance: (index) => {
-    const cur = get().pinnedGlances
-    const { next } = reconcileHeld(cur, (p) => {
-      const r = reconcileWith(index, p.target)
-      return r.kind !== 'page' ? null : r === p.target ? p : { ...p, target: r }
-    })
-    if (next !== cur) set({ pinnedGlances: next })
-  },
+  reconcileGlance: (index) =>
+    set((s) => ({
+      pinnedGlances: reconcileHeld(s.pinnedGlances, (p) => {
+        const r = reconcileWith(index, p.target)
+        return r.kind !== 'page' ? null : r === p.target ? p : { ...p, target: r }
+      }).next,
+    })),
   resetGlance: () => set({ ...PER_NEXUS }),
 })

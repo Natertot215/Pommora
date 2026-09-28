@@ -1,4 +1,4 @@
-import { create } from 'zustand'
+import { type StateCreator, type StoreApi, create } from 'zustand'
 import { createCacheSlice } from './cacheSlice'
 import { createChromeSlice } from './chromeSlice'
 import { createLayoutSlice } from './layoutSlice'
@@ -29,19 +29,38 @@ export {
 export { windowTargetOf } from './windowSlice'
 export { citationsVisible } from './configSlice'
 
-export const useSession = create<SessionState>()((...a) => ({
-  ...createNexusSlice(...a),
-  ...createNavigationSlice(...a),
-  ...createWindowSlice(...a),
-  ...createChromeSlice(...a),
-  ...createLayoutSlice(...a),
-  ...createConfigSlice(...a),
-  ...createEditSlice(...a),
-  ...createCacheSlice(...a),
-  ...createGlanceSlice(...a),
-  ...createMatrixSlice(...a),
-  ...createViewSearchSlice(...a),
-}))
+const changesOnly =
+  (creator: StateCreator<SessionState>): StateCreator<SessionState> =>
+  (set, get, api) => {
+    const write: StoreApi<SessionState>['setState'] = (
+      partial: Partial<SessionState> | ((s: SessionState) => Partial<SessionState>),
+      replace?: boolean,
+    ) => {
+      const s = get()
+      const next = typeof partial === 'function' ? partial(s) : partial
+      if (replace) set(next as SessionState, true)
+      else if ((Object.keys(next) as (keyof SessionState)[]).some((k) => !Object.is(next[k], s[k])))
+        set(next)
+    }
+    api.setState = write
+    return creator(write, get, api)
+  }
+
+export const useSession = create<SessionState>()(
+  changesOnly((...a) => ({
+    ...createNexusSlice(...a),
+    ...createNavigationSlice(...a),
+    ...createWindowSlice(...a),
+    ...createChromeSlice(...a),
+    ...createLayoutSlice(...a),
+    ...createConfigSlice(...a),
+    ...createEditSlice(...a),
+    ...createCacheSlice(...a),
+    ...createGlanceSlice(...a),
+    ...createMatrixSlice(...a),
+    ...createViewSearchSlice(...a),
+  })),
+)
 
 export const pageMetaOf =
   (id: string | undefined) =>
