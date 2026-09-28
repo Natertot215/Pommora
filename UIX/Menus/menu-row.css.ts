@@ -181,13 +181,6 @@ export const titleInput = style([fillInput, { WebkitAppRegion: 'no-drag' } as St
 
 export const subLabel = style([text.caption.standard, { color: c.label.secondary }])
 
-export const subLabelSegments = style({
-  display: 'inline-flex',
-  alignItems: 'center',
-  gap: '6px',
-})
-export const subLabelSegment = style({ alignSelf: 'stretch' })
-
 export const actionRow = style([
   rowBox,
   {

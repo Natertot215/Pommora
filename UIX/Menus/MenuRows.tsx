@@ -1,4 +1,4 @@
-import { Fragment, type ReactNode, type MouseEvent, type CSSProperties, type Ref } from 'react'
+import type { ReactNode, MouseEvent, CSSProperties, Ref } from 'react'
 import { DISCLOSURE_INDENT, type IconSize } from '../Theme/theme-vars.css'
 import { Button } from '../Buttons/Button'
 import { Icon, type IconName, LockGlyph } from '../Symbols'
@@ -6,7 +6,6 @@ import * as s from './menu-row.css'
 import { cx } from '../Utilities/cx'
 import { overScrollEllipsis } from '../Interactions/OverScroll'
 import { onActivateClick } from '../Interactions/activate'
-import { segment } from '../Elements/segment.css'
 
 const BAR_GLYPH = 12 // KNOB
 const CHECK = 12
@@ -175,20 +174,6 @@ export function MenuSeparator({
     <div className={cx(s.separator, flush && s.separatorFlush, className)} aria-hidden="true">
       <span className={s.separatorLine} />
     </div>
-  )
-}
-
-export function MenuSegments({ parts }: { parts: readonly ReactNode[] }): React.JSX.Element {
-  return (
-    <span className={s.subLabelSegments}>
-      {parts.map((part, i) => (
-        // biome-ignore lint/suspicious/noArrayIndexKey: the parts are positional by definition
-        <Fragment key={i}>
-          {i > 0 && <span className={cx(segment, s.subLabelSegment)} aria-hidden="true" />}
-          {part}
-        </Fragment>
-      ))}
-    </span>
   )
 }
 

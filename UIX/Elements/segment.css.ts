@@ -8,3 +8,12 @@ export const segment = style({
   background: vars.color.border.light,
   borderRadius: 'var(--radius-full)',
 })
+
+export const segments = style({ display: 'inline' })
+
+export const inlineSegment = style({
+  display: 'inline-block',
+  height: '1lh',
+  verticalAlign: 'top',
+  marginInline: '6px',
+})

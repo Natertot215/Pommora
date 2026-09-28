@@ -6,7 +6,8 @@ import { relDirname } from '@pommora/core/Paths/posix'
 import { Button } from '@pommora/uix/Buttons/Button'
 import { Checkbox } from '@pommora/uix/Controls/Checkbox'
 import { NavTrail } from '@pommora/uix/Elements/NavTrail'
-import { MenuFooting, MenuItem, MenuSegments, MenuSeparator } from '@pommora/uix/Menus'
+import { MenuFooting, MenuItem, MenuSeparator } from '@pommora/uix/Menus'
+import { Segments } from '@pommora/uix/Elements/Segments'
 import { gutter } from '@pommora/uix/Menus/menu-row.css'
 import { useHeldPresence } from '@pommora/uix/Animations/useExitPresence'
 import { retained, toggled } from '@pommora/uix/Utilities/checkSet'
@@ -143,7 +144,7 @@ function PageHistoryBody({
   const when = (ms: number): React.JSX.Element => {
     const date = new Date(ms)
     return (
-      <MenuSegments
+      <Segments
         parts={[formatDate(date.toISOString(), dateFormat, 'none'), clockOf(date, nexusClock)]}
       />
     )
