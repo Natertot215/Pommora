@@ -11,7 +11,7 @@ import {
   withinRegion,
   type FrameRow,
   type Region,
-} from '@pommora/uix/Interactions/frameDndModel'
+} from '@pommora/uix/Menus/frameDndModel'
 import type { PaneSlot } from '@pommora/core/Properties/paneDrop'
 
 type VisibilityPatch = Pick<SavedView, 'property_order' | 'hidden_properties'>

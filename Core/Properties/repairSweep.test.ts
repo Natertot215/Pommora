@@ -72,8 +72,7 @@ afterEach(async () => {
 describe('runRepairSweep', () => {
   it('canonicalizes a drifted page the seed re-read and adopts its unknown option', async () => {
     await frontmatter('Status: Open\nTags:\n  - alpha\n  - zeta')
-    await seedContentIndex(root)
-    await runRepairSweep(root)
+    await runRepairSweep(root, await seedContentIndex(root))
     const out = await readFile(page, 'utf8')
     expect(out).toContain('Status:\n  - Open')
     expect(out).toContain('- zeta')
@@ -93,9 +92,9 @@ describe('runRepairSweep', () => {
       )
     }
     await frontmatter('Status: Open')
-    await seedContentIndex(root)
+    const reread = await seedContentIndex(root)
     const walks = vi.spyOn(walk, 'readNexus')
-    await runRepairSweep(root)
+    await runRepairSweep(root, reread)
     expect(walks).toHaveBeenCalledTimes(1)
     walks.mockRestore()
   })
@@ -105,8 +104,7 @@ describe('runRepairSweep', () => {
     await refreshAfterWrite(root)
     await frontmatter('Status: Open')
     const before = (await stat(page)).mtimeMs
-    await seedContentIndex(root)
-    await runRepairSweep(root)
+    await runRepairSweep(root, await seedContentIndex(root))
     expect((await stat(page)).mtimeMs).toBe(before)
     expect(await readFile(page, 'utf8')).toContain('Status: Open')
   })
@@ -114,23 +112,21 @@ describe('runRepairSweep', () => {
   it('a canonical page is never rewritten', async () => {
     await frontmatter('Status:\n  - Open')
     const before = (await stat(page)).mtimeMs
-    await seedContentIndex(root)
-    await runRepairSweep(root)
+    await runRepairSweep(root, await seedContentIndex(root))
     expect((await stat(page)).mtimeMs).toBe(before)
   })
 
   it('a sweep whose session database moved writes nothing', async () => {
     await frontmatter('Status: Open')
-    await seedContentIndex(root)
+    const reread = await seedContentIndex(root)
     installStores(NO_STORES)
-    await runRepairSweep(root)
+    await runRepairSweep(root, reread)
     expect(await readFile(page, 'utf8')).toContain('Status: Open')
   })
 
   it('never removes a value — an option outside the definition stays as written', async () => {
     await frontmatter('Status: Blocked\nTags: alpha')
-    await seedContentIndex(root)
-    await runRepairSweep(root)
+    await runRepairSweep(root, await seedContentIndex(root))
     const out = await readFile(page, 'utf8')
     expect(out).toContain('Status: Blocked')
     expect(out).toContain('Tags:\n  - alpha')
@@ -139,8 +135,7 @@ describe('runRepairSweep', () => {
   it('adopts an unknown option on a page that needed no rewrite', async () => {
     await frontmatter('Tags:\n  - alpha\n  - zeta')
     const before = (await stat(page)).mtimeMs
-    await seedContentIndex(root)
-    await runRepairSweep(root)
+    await runRepairSweep(root, await seedContentIndex(root))
     expect((await stat(page)).mtimeMs).toBe(before)
     expect((await readRegistry(root)).defs[tagsId].select_options?.map((o) => o.value)).toEqual([
       'alpha',
@@ -152,15 +147,13 @@ describe('runRepairSweep', () => {
     installStores(NO_STORES)
     await frontmatter('Status: Open')
     installStores(memoryStores().stores)
-    await seedContentIndex(root)
-    await runRepairSweep(root)
+    await runRepairSweep(root, await seedContentIndex(root))
     expect(await readFile(page, 'utf8')).toContain('Status: Open')
   })
 
   it('never removes a value — a mixed Select list keeps its unregistered member', async () => {
     await frontmatter('Status:\n  - Open\n  - Blocked')
-    await seedContentIndex(root)
-    await runRepairSweep(root)
+    await runRepairSweep(root, await seedContentIndex(root))
     const out = await readFile(page, 'utf8')
     expect(out).toContain('- Open')
     expect(out).toContain('- Blocked')
@@ -175,8 +168,7 @@ describe('runRepairSweep', () => {
     await writeFile(join(contextsDir(root), 'Projects', 'Alpha', '_space.json'), '{"id":"sp-a"}')
     await refreshAfterWrite(root)
     await frontmatter('<Projects>:\n  - Alpha\n  - Zeta')
-    await seedContentIndex(root)
-    await runRepairSweep(root)
+    await runRepairSweep(root, await seedContentIndex(root))
     const out = await readFile(page, 'utf8')
     expect(out).toContain('- Alpha')
     expect(out).toContain('- Zeta')
@@ -184,9 +176,9 @@ describe('runRepairSweep', () => {
 
   it('a page the seed did not re-read is not touched', async () => {
     await frontmatter('Status:\n  - Open')
-    await seedContentIndex(root)
+    const reread = await seedContentIndex(root)
     await frontmatter('Status: Open')
-    await runRepairSweep(root)
+    await runRepairSweep(root, reread)
     expect(await readFile(page, 'utf8')).toContain('Status: Open')
   })
 })

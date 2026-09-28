@@ -6,11 +6,7 @@ import {
   type MatrixPatch,
   SECTIONS,
 } from '@pommora/core/Matrix/matrixConfig'
-import {
-  EMPTY_GRAPH_REPLY,
-  type MatrixGraphReply,
-  type MatrixLink,
-} from '@pommora/core/Matrix/matrixGraph'
+import type { MatrixGraphReply, MatrixLink } from '@pommora/core/Matrix/matrixGraph'
 import type { PositionRows, Positions } from '@pommora/core/Matrix/matrixLayout'
 import type { NexusTree } from '../Nexus/tree'
 import { pagesByIdOf, recordsByIdOf } from '../Nexus/treeIndex'
@@ -58,7 +54,7 @@ function withRows(held: Positions, rows: PositionRows): Positions {
 }
 
 const HELD = {
-  matrixGraph: EMPTY_GRAPH_REPLY,
+  matrixGraph: { links: [], values: {} },
   matrixPositions: {},
   matrixLens: null,
 } satisfies Partial<MatrixSlice>

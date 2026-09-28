@@ -5,6 +5,7 @@ import { homedir } from 'node:os'
 import { join } from '../Paths/posix'
 import { posixPath, tempRoot } from '../Testing/hostFs'
 import { readNexus } from './readNexus'
+import { settingOf } from '../Settings/personalization'
 import {
   nexusFolderRefusal,
   readCommands,
@@ -599,23 +600,22 @@ describe('readNexus — personalization', () => {
     }),
   )
 
+  const accentOf = async (settings: Record<string, unknown>): Promise<string> =>
+    settingOf((await readNexus(mk(settings))).personalization, 'accent')
+
   it('reads accent from personalization.accent — its one home', async () => {
-    expect((await readNexus(mk({ personalization: { accent: 'blue' } }))).accent).toBe('blue')
-    expect((await readNexus(mk({ personalization: { accent: 'system' } }))).accent).toBe('system')
+    expect(await accentOf({ personalization: { accent: 'blue' } })).toBe('blue')
+    expect(await accentOf({ personalization: { accent: 'system' } })).toBe('system')
   })
   // The accent speaks the ramp's grammar now, so a stepped cell survives the read; a legacy solid name still does too, since nothing on disk was rewritten.
   it('accepts a ramp cell as the accent', async () => {
-    expect((await readNexus(mk({ personalization: { accent: 'purple-6' } }))).accent).toBe(
-      'purple-6',
-    )
-    expect((await readNexus(mk({ personalization: { accent: 'grey-0' } }))).accent).toBe('grey-0')
+    expect(await accentOf({ personalization: { accent: 'purple-6' } })).toBe('purple-6')
+    expect(await accentOf({ personalization: { accent: 'grey-0' } })).toBe('grey-0')
   })
   it('an unknown accent name or a foreign top-level key follows the system accent', async () => {
-    expect((await readNexus(mk({ personalization: { accent: 'chartreuse' } }))).accent).toBe(
-      'system',
-    )
-    expect((await readNexus(mk({ outside_accent: 'red' }))).accent).toBe('system')
-    expect((await readNexus(mk({ personalization: { accent: 'purple-8' } }))).accent).toBe('system')
+    expect(await accentOf({ personalization: { accent: 'chartreuse' } })).toBe('system')
+    expect(await accentOf({ outside_accent: 'red' })).toBe('system')
+    expect(await accentOf({ personalization: { accent: 'purple-8' } })).toBe('system')
   })
 
   // Each link color defers differently when unset, so each keeps its own sentinel on disk.

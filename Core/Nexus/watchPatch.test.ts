@@ -9,7 +9,7 @@ import { contentIdAt } from './ids'
 import { readNexus } from './readNexus'
 import type { WatchScope } from '../Paths/exclusion'
 import { getHeldAssetMap, liveAssetMap } from '../Assets/assetMap'
-import { syncIgnoredUnder } from './watchSettle'
+import { classifyBatch, syncIgnoredUnder } from './watchSettle'
 import {
   applyWatchEvents,
   classifyEvent,
@@ -191,6 +191,14 @@ describe('applyWatchEvents — must agree with the walk', () => {
     const live = getLiveTree()
     expect(live?.collections[0]?.pages).toHaveLength(0)
     expect(stabilize(await readNexus(root), live)).toBe(live)
+  })
+
+  it('a patched batch carries the classes a fresh classification of the patched tree gives', async () => {
+    await refreshTree(root)
+    const events = [ev('change', 'Notes', 'A.md'), ev('unlink', 'Notes', 'B.md')]
+    const result = await applyWatchEvents(root, events, scope())
+    if (result.outcome !== 'patched') throw new Error('expected a patch')
+    expect(result.classes).toEqual(classifyBatch(events, root, scope()))
   })
 
   it('a file with Unknown admission never enters the tree — the walk owns that bookkeeping', async () => {

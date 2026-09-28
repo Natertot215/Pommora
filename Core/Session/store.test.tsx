@@ -461,7 +461,6 @@ function treeWith(pages: { id: string; path: string }[], spaces: string[] = []):
         pages: pages.map((p) => ({ kind: 'page', id: p.id, title: 'P', path: p.path })),
       },
     ],
-    accent: 'lavender',
     personalization: {},
     commands: DEFAULT_COMMANDS,
     assetDirectory: ASSETS_DIR_REL,

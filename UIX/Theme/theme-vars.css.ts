@@ -85,7 +85,7 @@ globalStyle(':root', {
     '--state-ghost': STATE_OPACITY.ghost,
     '--state-inactive': STATE_OPACITY.inactive,
 
-    '--accent': c.solid[DEFAULT_ACCENT],
+    '--accent': 'var(--system-accent)',
     '--accent-fill': tintAt('var(--accent)', 'quaternary'),
     '--accent-stroke': tintAt('var(--accent)', 'secondary'),
     '--accent-stroke-hot': tintAt('var(--accent)', 'primary'),

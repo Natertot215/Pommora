@@ -209,7 +209,7 @@ describe('seedContentIndex', () => {
 
   it('with no database the seed stands down and queries stay null', async () => {
     installStores(NO_STORES)
-    await expect(seedContentIndex(root)).resolves.toBeUndefined()
+    await expect(seedContentIndex(root)).resolves.toEqual({ db: null, rels: [] })
     expect(queryMentions('target')).toBeNull()
   })
 })

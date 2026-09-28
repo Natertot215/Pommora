@@ -18,6 +18,7 @@ describe('the Embed Scale setting reaches the root', () => {
 
 describe('a cleared color leaves its var to the theme', () => {
   it.each([
+    ['accent', '--accent'],
     ['connectionColor', '--connection'],
     ['externalLinkColor', '--link'],
     ['highlightColor', '--highlight'],

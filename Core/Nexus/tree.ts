@@ -4,7 +4,6 @@ import type { PropertyDefinition } from '../Properties/properties'
 import type { Personalization } from '../Settings/personalization'
 import type { OpenIn, ViewButton } from '../Views/viewRow'
 import type { SavedView } from '../Views/views'
-import type { AccentSetting } from '@pommora/uix/Theme/colors'
 import type { Crop, PageMeta } from './schemas'
 
 export type NodeKind = 'space' | 'collection' | 'set' | 'page'
@@ -105,7 +104,6 @@ export interface NexusTree {
   contexts: ContextGroup[]
   // Not the sidebar's order: `contexts` above carries the registry's, and these two move independently.
   contextOrder?: string[]
-  accent: AccentSetting
   personalization: Personalization
   commands: Commands
   excluded: string[]

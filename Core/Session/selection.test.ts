@@ -22,7 +22,6 @@ function tree(pages: { id: string; path: string }[]): NexusTree {
         pages: pages.map((p) => ({ kind: 'page', id: p.id, title: 'P', path: p.path })),
       },
     ],
-    accent: 'lavender',
     personalization: {},
     commands: DEFAULT_COMMANDS,
     assetDirectory: ASSETS_DIR_REL,

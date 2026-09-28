@@ -1,4 +1,9 @@
-import type { KeyValueStore } from './machine'
+export interface KeyValueStore {
+  get(scope: string, key: string): string | null
+  /** One commit for every row; a null clears its key rather than storing it. */
+  write(scope: string, rows: Record<string, string | null>): void
+  entries(scope: string): Record<string, string>
+}
 
 // `citation` overlays rather than replaces: a link or embed inside a footnote definition emits its own syntax kind AND a `citation` row, so a reader asking for body links sees it and a reader weighting footnotes sees it too.
 export type MatrixKind = 'body' | 'citation' | 'frontmatter' | 'embed' | 'space'

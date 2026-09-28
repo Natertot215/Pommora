@@ -17,7 +17,6 @@ const treeAt = (rootPath: string): NexusTree => ({
   pageMetadata: {},
   contexts: [],
   collections: [],
-  accent: 'lavender',
   personalization: {},
   commands: DEFAULT_COMMANDS,
   assetDirectory: ASSETS_DIR_REL,

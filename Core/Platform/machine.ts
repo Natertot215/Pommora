@@ -35,13 +35,6 @@ export interface Machine {
   trashToSystem?(p: string): Promise<void>
 }
 
-export interface KeyValueStore {
-  get(scope: string, key: string): string | null
-  /** One commit for every row; a null clears its key rather than storing it. */
-  write(scope: string, rows: Record<string, string | null>): void
-  entries(scope: string): Record<string, string>
-}
-
 let installed: Machine | undefined
 
 export function installMachine(m: Machine): void {

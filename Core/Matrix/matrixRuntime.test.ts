@@ -6,7 +6,7 @@ import { makeTree } from '../Testing/testTree'
 import { stubDialer } from '../vitest.setup'
 import type { Stage } from './Engine/viewport'
 import { applyPatch, DEFAULT_MATRIX_CONFIG, type MatrixConfig } from './matrixConfig'
-import { EMPTY_GRAPH_REPLY, type MatrixGraphReply, type MatrixLink } from './matrixGraph'
+import type { MatrixGraphReply, MatrixLink } from './matrixGraph'
 import { matrixRuntime, type Surface } from './matrixRuntime'
 
 const walks = vi.hoisted(() => ({ count: 0 }))
@@ -86,7 +86,7 @@ function seed(over: Record<string, unknown> = {}): void {
   useSession.setState({
     tree: makeTree(),
     matrixConfig: DEFAULT_MATRIX_CONFIG,
-    matrixGraph: EMPTY_GRAPH_REPLY,
+    matrixGraph: { links: [], values: {} },
     matrixPositions: {},
     matrixLens: { cx: 0, cy: 0, w: 800, h: 600 },
     matrixLoad: { kind: 'loaded' },
@@ -481,7 +481,7 @@ describe('matrixRuntime', () => {
     detach?.()
     detach = null
     expect(useSession.getState().matrixLoad.kind).toBe('unloaded')
-    expect(useSession.getState().matrixGraph).toEqual(EMPTY_GRAPH_REPLY)
+    expect(useSession.getState().matrixGraph).toEqual({ links: [], values: {} })
   })
 
   it('clears the graph and asks the store to load once when it unloads', async () => {
@@ -716,7 +716,7 @@ describe('matrixRuntime', () => {
   })
 
   it('reads nothing while a Nexus switch is between its reset and its landing', () => {
-    const graphAsk = vi.fn(async () => ok(EMPTY_GRAPH_REPLY))
+    const graphAsk = vi.fn(async () => ok({ links: [], values: {} }))
     ;(window as unknown as { nexus: unknown }).nexus = stubDialer({
       'matrix:read': async () => ok(DEFAULT_MATRIX_CONFIG),
       'matrix:graph': graphAsk,

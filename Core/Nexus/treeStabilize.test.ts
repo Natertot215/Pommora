@@ -8,7 +8,6 @@ describe('stabilize', () => {
       { id: 'c2', title: 'B', pages: [], sets: [{ id: 's1', title: 'S' }] },
     ],
     contexts: { areas: [{ id: 'a1', title: 'Work' }], topics: [], projects: [] },
-    accent: 'blue',
   }
   const clone = <T>(v: T): T => JSON.parse(JSON.stringify(v))
 

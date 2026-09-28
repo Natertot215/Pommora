@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import type { MeasuredRow } from '@pommora/uix/Interactions/reorderModel'
 import { RESERVED_PROPERTY_ID, type PropertyDefinition } from '@pommora/core/Properties/properties'
 import type { SavedView } from '@pommora/core/Views/views'
-import type { FrameRow } from '@pommora/uix/Interactions/frameDndModel'
+import type { FrameRow } from '@pommora/uix/Menus/frameDndModel'
 import { hiddenListIds, hiddenPaneSlot, hideShown, placeInShown, unhide } from './visibilityModel'
 
 const { title, createdAt, modifiedAt } = RESERVED_PROPERTY_ID

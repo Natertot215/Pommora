@@ -8,7 +8,6 @@ import { showEntityMenu } from '../Interface/Menus/entityMenuActions'
 import { useSession } from '../Session/store'
 import { makeTree } from '../Testing/testTree'
 import { stubDialer } from '../vitest.setup'
-import { EMPTY_GRAPH_REPLY } from './matrixGraph'
 import { DEFAULT_MATRIX_CONFIG } from './matrixConfig'
 import * as s from './matrix.css'
 import { MatrixView } from './MatrixView'
@@ -92,7 +91,7 @@ beforeEach(() => {
     tree: makeTree(),
     select: select as never,
     matrixConfig: DEFAULT_MATRIX_CONFIG,
-    matrixGraph: EMPTY_GRAPH_REPLY,
+    matrixGraph: { links: [], values: {} },
     matrixPositions: Object.fromEntries([
       ['p1', [0, 0]],
       ...['p2', 'c1', 's1', 'a1', 't1', 'pr1'].map((id, i) => [id, far(i)]),

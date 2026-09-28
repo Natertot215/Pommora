@@ -23,6 +23,7 @@ import { openNexusSequence } from '@pommora/core/Nexus/handlers'
 import { isUlidShaped } from '@pommora/core/Nexus/identityMark'
 import { sessionRoot, waitingOpen } from '@pommora/core/Nexus/session'
 import { flushFileHistory } from '@pommora/core/Pages/fileHistory'
+import { ASSET_SCHEME } from '@pommora/core/Platform/assetScheme'
 import { installMachine } from '@pommora/core/Platform/machine'
 import { settingOf } from '@pommora/core/Settings/personalization'
 import {
@@ -82,7 +83,6 @@ if (DEV_ENV.POMMORA_USERDATA) app.setPath('userData', DEV_ENV.POMMORA_USERDATA)
 
 // file://-loaded ES modules are CORS-blocked (opaque origin → blank window); app:// gives the bundle a real origin. Both schemes must be registered before the app is ready.
 const RENDERER_SCHEME = 'app'
-const ASSET_SCHEME = 'nexus-asset'
 protocol.registerSchemesAsPrivileged([
   { scheme: RENDERER_SCHEME, privileges: { standard: true, secure: true, supportFetchAPI: true } },
   {

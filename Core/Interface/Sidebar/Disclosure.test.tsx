@@ -29,7 +29,6 @@ const tree = {
       pages: [{ kind: 'page', id: 'p1', title: 'First', path: 'Notes/First.md' }],
     },
   ],
-  accent: 'lavender',
   personalization: { defaultIcons: {} },
   commands: DEFAULT_COMMANDS,
   assetDirectory: ASSETS_DIR_REL,

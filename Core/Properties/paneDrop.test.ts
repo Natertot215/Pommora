@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import type { FrameRow } from '@pommora/uix/Interactions/frameDndModel'
+import type { FrameRow } from '@pommora/uix/Menus/frameDndModel'
 import type { MeasuredRow } from '@pommora/uix/Interactions/reorderModel'
 import { frameSlot, nexusReorderIndex, type PaneSlot } from './paneDrop'
 

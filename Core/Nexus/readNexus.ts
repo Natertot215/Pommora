@@ -366,7 +366,6 @@ async function walkNexus(root: string): Promise<NexusTree> {
     contexts: contexts ?? [],
     contextOrder: order.contexts,
     collections,
-    accent: leaves.accent,
     personalization: leaves.personalization,
     commands: leaves.commands,
     excluded: leaves.excluded,

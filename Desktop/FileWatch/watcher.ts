@@ -162,13 +162,15 @@ async function settle(root: string, win: CurrentWindow, scope: WatchScope): Prom
       patching = applyWatchEvents(root, events, scope)
       return (await patching).outcome === 'patched' ? 'ok' : 'refresh'
     })
-    const { outcome, touched, cascaded } = await patching
+    const patch = await patching
+    const { outcome, touched, cascaded } = patch
     // The map is patch-only, so the fallback walk is where the listing is taken again.
     if (outcome === 'refresh') await refreshAssetMap(root)
     // A session that switched mid-settle must not receive the OLD root's walked tree — a superseded walk still returns it to its awaiters.
     if (sessionRoot() !== root) return
     if (tree) push(win, 'nexus:changed', tree)
-    const classified = classifyBatch(events, root, scope)
+    const classified =
+      patch.outcome === 'patched' ? patch.classes : classifyBatch(events, root, scope)
     const pages = pagesChangedIn(classified, cascaded.pages)
     if (pages.length) push(win, 'pages:changed', pages)
     // A cascaded linker's write was the app's own, so its note waits in the ledger rather than in the batch.

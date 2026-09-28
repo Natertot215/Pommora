@@ -47,7 +47,6 @@ function tree(): NexusTree {
     pageMetadata: {},
     contexts: [],
     collections: [notes, work],
-    accent: 'lavender',
     personalization: {},
     commands: DEFAULT_COMMANDS,
     assetDirectory: ASSETS_DIR_REL,

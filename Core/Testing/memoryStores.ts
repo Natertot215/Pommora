@@ -1,11 +1,11 @@
 import { foldKey } from '../Paths/caseFold'
-import type { KeyValueStore } from '../Platform/machine'
 import type {
   BaseRecord,
   CaptureReason,
   CaptureStore,
   ContentIndexStore,
   IndexedStat,
+  KeyValueStore,
   MatrixGraphRows,
   MatrixLinkRow,
   SnapshotRow,

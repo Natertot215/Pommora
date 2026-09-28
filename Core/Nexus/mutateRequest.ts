@@ -1,10 +1,8 @@
 import { z } from 'zod'
 import { ok, type Result } from '../Contract/result'
-import type { PageMenuContext } from '../Actions/pageMenu'
 import { propertyValue } from '../Properties/propertyValue'
 import { crop, type PageMetaPatch } from './schemas'
 import type { CascadeReport } from './cascade'
-import { type ContextDef, createSpaceLabel } from '../Contexts/contexts'
 
 /** `renamed` is what actually landed — a from-create rename may disambiguate away from the ask. */
 export interface MutateOutcome {
@@ -40,7 +38,6 @@ export type BannerOwnerKind = z.infer<typeof bannerOwner>
 
 export const CONTAINER_KINDS = ['collection', 'set'] as const
 const containerKind = z.enum(CONTAINER_KINDS)
-type MutableContainerKind = z.infer<typeof containerKind>
 
 /** Checked against the write path's own matrix: a contradicting claim is refused as malformed. */
 const restoreDestination = z.object({ kind: z.enum(['container', 'context']), id: z.string() })
@@ -119,39 +116,3 @@ export const contextSeeds = (req: CreatePageRequest): [contextId: string, spaceI
   )
 
 export const seedsContext = (req: CreatePageRequest): boolean => contextSeeds(req).length > 0
-
-export type RenameHost = 'detail' | 'sidebar' | 'matrix'
-
-export interface ContextTarget extends PageMenuContext {
-  kind: MutableKind
-  path: string
-  title: string
-  id?: string
-  alreadyOpen?: boolean
-  disclosureLocked?: boolean
-  host?: RenameHost
-}
-
-export interface Creator {
-  label: string
-  req: MutateRequest
-}
-
-export function containerCreators(kind: MutableContainerKind, parentPath: string): Creator[] {
-  const name = DEFAULT_NEW_NAME
-  const nested = kind === 'collection' ? 'Set' : 'Sub-Set'
-  return [
-    { label: 'New Page', req: { op: 'createPage', parentPath, name } },
-    {
-      label: `New ${nested}`,
-      req: { op: 'createContainer', parentPath, kind: 'set', name },
-    },
-  ]
-}
-
-export function spaceCreator(
-  def: ContextDef,
-): Creator & { req: Extract<MutateRequest, { op: 'createSpace' }> } {
-  const label = createSpaceLabel(def)
-  return { label, req: { op: 'createSpace', contextId: def.id, name: label } }
-}

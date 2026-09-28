@@ -5,7 +5,7 @@ import type { PageValues } from './viewRow'
 import { idTime } from '../Nexus/ids'
 import { readPageRecord } from '../Nexus/readNexus'
 import { folderCorpus } from '../Index/indexSeed'
-import { liveIdIndex } from '../Nexus/valuesChanged'
+import { livePathOf } from '../Nexus/valuesChanged'
 import { localDayKey, pad } from '@pommora/uix/Utilities/pad'
 
 // Local-clock form, the same shape the date picker writes.
@@ -33,10 +33,10 @@ async function corpus(
   pageIds?: readonly string[],
 ): Promise<string[]> {
   if (!pageIds) return folderCorpus(rootPath, join(rootPath, containerRelPath))
-  const wanted = new Set(pageIds)
-  const files: string[] = []
-  for (const [rel, id] of liveIdIndex(rootPath)) if (wanted.has(id)) files.push(join(rootPath, rel))
-  return files
+  return pageIds.flatMap((id) => {
+    const rel = livePathOf(rootPath, id)
+    return rel ? [join(rootPath, rel)] : []
+  })
 }
 
 export async function loadValues(

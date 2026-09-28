@@ -11,23 +11,21 @@ import { assignedDefs, collectionFolderOf, collectionFolders } from './assignmen
 import { loadContextWorld, NO_CONTEXT_WORLD } from '../Contexts/contextWrite'
 import { type Rewrite, sweepGovernedRoots } from './governedSweep'
 import { applyAdoptions } from './optionOps'
-import { rereadSinceSeed } from '../Index/indexSeed'
+import type { SeedReread } from '../Index/indexSeed'
 import { contentIndexStore } from '../Platform/stores'
 import { readLiveSetting } from '../Settings/settings'
 
-export async function runRepairSweep(root: string): Promise<void> {
-  const files = rereadSinceSeed()
-  if (!files.length || !(await readLiveSetting(root, 'repairOnOpen'))) return
-  // A nexus switch mid-open swaps the session's database; a sweep that kept writing would index this root's pages into the other nexus's rows.
-  const db0 = contentIndexStore()
-  const live = (): boolean => contentIndexStore() === db0
+export async function runRepairSweep(root: string, reread: SeedReread): Promise<void> {
+  // A nexus switch since the seed swaps the session's database; a sweep that kept writing would index this root's pages into the other nexus's rows.
+  const live = (): boolean => contentIndexStore() === reread.db
+  if (!reread.rels.length || !live() || !(await readLiveSetting(root, 'repairOnOpen'))) return
   try {
     const context = await loadContextWorld(root)
     const base = valueOr(context, NO_CONTEXT_WORLD)
     const defsByFolder = new Map<string | null, ReadonlyMap<string, PropertyDefinition>>()
     const worlds = new Map<string, GovernedWorld>()
     const folders = await collectionFolders(root)
-    for (const rel of files) {
+    for (const rel of reread.rels) {
       const abs = join(root, rel)
       const folder = collectionFolderOf(folders, abs)
       let defs = defsByFolder.get(folder)

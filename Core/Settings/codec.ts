@@ -1,5 +1,4 @@
 import { isPlainObject } from '../Contract/validators'
-import type { AccentSetting } from '@pommora/uix/Theme/colors'
 import { chordOf } from '@pommora/uix/Interactions/chords'
 import { COMMAND_IDS, type Commands, DEFAULT_COMMANDS } from '../Actions/commands'
 import { asString } from '../Nexus/coerce'
@@ -8,7 +7,7 @@ import { foldKey } from '../Paths/caseFold'
 import { rootSegs, type WatchScope } from '../Paths/exclusion'
 import { nexusConfig } from '../Paths/paths'
 import { readKept } from '../Files/atomicWrite'
-import { type Personalization, personalizationSchema, settingOf } from './personalization'
+import { type Personalization, personalizationSchema } from './personalization'
 import type { Json } from '../Files/stableJson'
 
 // Per-field: absent/invalid → undefined = the built-in default.
@@ -35,7 +34,6 @@ export function readCommands(raw: unknown): Commands {
 export interface SettingsLeaves {
   excluded: string[]
   assetDirectory: string
-  accent: AccentSetting
   personalization: Personalization
   commands: Commands
   profileImage: string | null
@@ -94,7 +92,6 @@ export function readSettingsLeaves(settings: Json): SettingsLeaves {
   return {
     excluded: readExcludedLeaf(settings.excluded_folders),
     assetDirectory: readAssetDirectoryLeaf(settings.asset_directory),
-    accent: settingOf(personalization, 'accent'),
     personalization,
     commands: readCommands(settings.commands),
     profileImage: asString(settings.profile_image) ?? null,

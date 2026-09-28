@@ -1,9 +1,9 @@
 import { beforeEach, describe, expect, it } from 'vitest'
-import type { KeyValueStore } from '../Platform/machine'
 import type {
   BaseRecord,
   CaptureStore,
   ContentIndexStore,
+  KeyValueStore,
   MatrixKind,
   MatrixNode,
   SnapshotStore,

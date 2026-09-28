@@ -55,7 +55,6 @@ export function makeTree(): NexusTree {
         ],
       },
     ],
-    accent: 'lavender',
     personalization: {},
     commands: DEFAULT_COMMANDS,
     assetDirectory: ASSETS_DIR_REL,

@@ -193,12 +193,11 @@ export function touchesCorpus(root: string, events: WatchEvent[], scope: WatchSc
   })
 }
 
-// The patch reads every upserted page to land it, so the ids it saw travel out with it — the only other way to name them is a walk of the whole tree. `cascaded` names what a heading rename the batch showed rewrote: the app's own writes, which no watch event reports.
-export interface WatchPatch {
-  outcome: 'patched' | 'refresh'
+// The patch reads every upserted page to land it, so the ids it saw travel out with it — the only other way to name them is a walk of the whole tree. `cascaded` names what a heading rename the batch showed rewrote: the app's own writes, which no watch event reports. A walk can place what the patch couldn't, so only a patch carries its classes out.
+export type WatchPatch = {
   touched: ReadonlyMap<string, string>
   cascaded: Pick<CascadeReport, 'pages' | 'hosts'>
-}
+} & ({ outcome: 'patched'; classes: WatchClass[] } | { outcome: 'refresh' })
 
 export async function applyWatchEvents(
   root: string,
@@ -223,7 +222,7 @@ export async function applyWatchEvents(
     console.error('watch: patch failed, walking:', errText(e))
     return walked()
   }
-  return { outcome: 'patched', touched, cascaded }
+  return { outcome: 'patched', classes, touched, cascaded }
 }
 
 /** Null from the transform means the patch could not land — degrade to the walk, never drift. The root pin closes a confirm that outlived its session: a switch mid-apply installs the NEW nexus's tree, and an old-root write must never patch into it. */
@@ -428,7 +427,6 @@ export async function patchSettingsFromDisk(root: string): Promise<'ok' | 'refre
 function applySettingsLeaves(root: string, leaves: SettingsLeaves): 'ok' | 'refresh' {
   return applyPatch(root, (t) => ({
     ...t,
-    accent: leaves.accent,
     personalization: leaves.personalization,
     commands: leaves.commands,
     excluded: leaves.excluded,

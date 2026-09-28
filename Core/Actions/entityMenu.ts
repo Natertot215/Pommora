@@ -1,10 +1,26 @@
 import { type ActionItem, joinGroups, openOrder } from './menuModel'
-import { type CreateMenuAction, createMenuItems } from './createMenu'
-import { type PageMetaAction, type PageMoveAction, pageMetaMenuItems } from './pageMenu'
+import { type CreateMenuAction, type Creator, createMenuItems } from './createMenu'
+import {
+  type PageMenuContext,
+  type PageMetaAction,
+  type PageMoveAction,
+  pageMetaMenuItems,
+} from './pageMenu'
 import { type TitleMenuAction, titleMenuItems } from './identityMenus'
 import { type PropertyAction, propertyBranchRows } from './propertyRows'
 import { lockLabel, openLabel } from './toggleLabels'
-import type { ContextTarget, Creator } from '../Nexus/mutateRequest'
+import type { MutableKind } from '../Nexus/mutateRequest'
+import type { RenameHost } from '../Session/editSlice'
+
+export interface MenuTarget extends PageMenuContext {
+  kind: MutableKind
+  path: string
+  title: string
+  id?: string
+  alreadyOpen?: boolean
+  disclosureLocked?: boolean
+  host?: RenameHost
+}
 
 export type EntityMenuAction =
   | PageMetaAction
@@ -20,7 +36,7 @@ export type EntityMenuAction =
   | 'changeColor'
 
 export function entityMenuItems(
-  target: ContextTarget,
+  target: MenuTarget,
   creators: readonly Creator[],
 ): ActionItem<EntityMenuAction>[] {
   if (target.kind === 'page')
