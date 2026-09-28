@@ -737,7 +737,7 @@ export const FRAMES = roster([
             kind: 'toggle',
             key: 'htmlShortcuts',
             label: 'HTML Shortcuts',
-            hint: 'Use command/ to insert <!---> comments, and recognize </div> classes.',
+            hint: 'Use command/ to insert <!-- --\u200c> comments, and auto-close <div> tags.',
           },
         ],
       },
