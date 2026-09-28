@@ -38,17 +38,53 @@ describe('a delete notification', () => {
 
   it('carries a note beside its Undo', () => {
     const undo = vi.fn()
-    notifyDeleted('X', undo, 'Couldn’t update 1 file.')
+    notifyDeleted('X', undo, { pages: [], warning: 'Couldn’t update 1 file.' })
     expect(currentNotification()?.message).toBe('Deleted “X”. Couldn’t update 1 file.')
+    expect(currentNotification()?.segment).toBeUndefined()
     expect(currentNotification()?.tone).toBe('error')
     void currentNotification()?.action?.run()
+    expect(undo).toHaveBeenCalledTimes(1)
+  })
+
+  it('counts the pages whose links it stripped behind a segment', () => {
+    const undo = vi.fn()
+    notifyDeleted('Ideas', undo, { pages: ['A.md', 'B.md'] })
+    expect(currentNotification()).toMatchObject({
+      message: 'Deleted “Ideas”',
+      segment: '2 Internal Links',
+      tone: 'normal',
+      action: { label: 'Undo' },
+    })
+    notifyDeleted('Ideas', undo, { pages: ['A.md'] })
+    expect(currentNotification()?.segment).toBe('1 Internal Link')
+  })
+
+  it('joins a warning to the count', () => {
+    notifyDeleted('X', vi.fn(), {
+      pages: ['A.md', 'B.md'],
+      warning: 'Couldn’t update links in 1 file.',
+    })
+    expect(currentNotification()).toMatchObject({
+      message: 'Deleted “X”',
+      segment: '2 Internal Links. Couldn’t update links in 1 file.',
+      tone: 'error',
+    })
+  })
+
+  it('keeps Undo on the label when a count arrives without a warning', () => {
+    const undo = vi.fn()
+    const retry = vi.fn()
+    notifyDeleted('X', undo, { pages: ['A.md'] }, retry)
+    expect(currentNotification()?.action?.label).toBe('Undo')
+    void currentNotification()?.action?.run()
+    expect(retry).not.toHaveBeenCalled()
     expect(undo).toHaveBeenCalledTimes(1)
   })
 
   it('offers Try Again beside its note, and keeps Undo on the chord', () => {
     const undo = vi.fn()
     const retry = vi.fn()
-    notifyDeleted('X', undo, 'Couldn’t update 1 file.', retry)
+    notifyDeleted('X', undo, { pages: [], warning: 'Couldn’t update 1 file.' }, retry)
     expect(currentNotification()?.action?.label).toBe('Try Again')
     void currentNotification()?.action?.run()
     expect(retry).toHaveBeenCalledTimes(1)

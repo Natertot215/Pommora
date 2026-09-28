@@ -2,9 +2,11 @@
 import { useSyncExternalStore } from 'react'
 import type { Result } from '@pommora/core/Contract/result'
 import { pushUndo } from '@pommora/core/Session/undo'
+import type { CascadeReport } from '@pommora/core/Nexus/cascade'
 
 export interface Notification {
   message: string
+  segment?: string
   tone: 'normal' | 'error'
   action?: { label: string; run: () => void | Promise<void> }
 }
@@ -75,25 +77,35 @@ export const persist = (
 export const unrestoredLine = (titles: string[]): string =>
   `${titles.join(', ')} didn’t get ${titles.length === 1 ? 'its' : 'their'} value back.`
 
-export const notifyDeleted = (
+export function notifyDeleted(
   title: string,
   undo?: () => void | Promise<void>,
-  note?: string,
+  { pages = [], warning }: Partial<Pick<CascadeReport, 'pages' | 'warning'>> = {},
   retry?: () => void,
-): void =>
-  note
-    ? notifyUndoable(`Deleted “${title}”. ${note}`, undo, 'error', retry)
-    : notifyUndoable(`Deleted “${title}”`, undo)
+): void {
+  const parts = [`Deleted “${title}”`]
+  if (pages.length) parts.push(`${pages.length} Internal ${pages.length === 1 ? 'Link' : 'Links'}`)
+  if (warning) parts.push(`${parts.pop()}. ${warning}`)
+  notifyUndoable(
+    parts[0],
+    undo,
+    warning ? 'error' : 'normal',
+    warning ? retry : undefined,
+    parts[1],
+  )
+}
 
 export function notifyUndoable(
   message: string,
   undo?: () => void | Promise<void>,
   tone: Notification['tone'] = 'normal',
   retry?: () => void,
+  segment?: string,
 ): void {
   const retried = retry && tryAgain(retry)
+  const note = { message, tone, ...(segment ? { segment } : {}) }
   if (!undo) {
-    post({ message, tone, action: retried })
+    post({ ...note, action: retried })
     return
   }
   // The label's Undo and the undo chord are one shot between them, so a restore cannot run twice and mint a second copy.
@@ -104,7 +116,7 @@ export function notifyUndoable(
     void undo()
     return true
   }
-  const id = post({ message, tone, action: retried ?? { label: 'Undo', run: () => void once() } })
+  const id = post({ ...note, action: retried ?? { label: 'Undo', run: () => void once() } })
   pushUndo(() => {
     if (!once()) return false
     dismissNotification(id)
