@@ -320,17 +320,11 @@ async function restoreArtifact(
     const landed = record.entity === 'page' ? titleFromPath(finalName) : was
     for (const def of await linkDefs(root)) {
       const values = Object.fromEntries(
-        record.links
-          .filter((l) => l.property === def.id)
-          .map((l) => [
-            l.page,
-            landed === was
-              ? l.value
-              : (rewriteFrontmatterConnections({ v: l.value }, was, { title: landed }).v ??
-                l.value),
-          ]),
+        record.links.filter((l) => l.property === def.id).map((l) => [l.page, l.value]),
       )
-      const taken = await refillValues(root, def, roots, values)
+      const rebuilt =
+        landed === was ? {} : rewriteFrontmatterConnections(values, was, { title: landed })
+      const taken = await refillValues(root, def, roots, { ...values, ...rebuilt })
       for (const id of Object.keys(values)) if (roots[id] && !taken.has(id)) unlinked.add(id)
     }
   }
