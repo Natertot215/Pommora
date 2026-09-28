@@ -20,8 +20,8 @@ import {
 } from './folding'
 import { commitCitation } from './Citations/citationActions'
 import { mirrorBody } from './api'
-import { Text, type ChangeSet } from '@codemirror/state'
-import { citationGesture, deleteMarkerChanges } from './Citations/citationEdits'
+import { Text, type ChangeSpec } from '@codemirror/state'
+import { deleteMarkerChanges } from './Citations/citationEdits'
 import { docScan } from './docCache'
 import { headingSections } from './Engine/headingScan'
 import { scanDoc } from './Engine/docScan'
@@ -477,12 +477,12 @@ describe('a gesture leaves the section in the visible state it found it', () => 
       (el) => el.closest('.mdpm-fold-clone') === null,
     ).length
 
-  const addSecond = (view: EditorView): ChangeSet => {
-    const scan = docScan(view.state.doc)
-    return citationGesture(scan, [
+  const addSecond = (view: EditorView): ChangeSpec[] => {
+    const end = view.state.doc.length
+    return [
       { from: 7, to: 7, insert: '[^2]' },
-      { from: scan.text.length, to: scan.text.length, insert: '\n[^2]: two' },
-    ])
+      { from: end, to: end, insert: '\n[^2]: two' },
+    ]
   }
 
   it('a section that grows under a hidden fold stays hidden, whole', async () => {

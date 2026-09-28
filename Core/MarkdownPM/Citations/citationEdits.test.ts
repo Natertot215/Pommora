@@ -1,17 +1,17 @@
 import { describe, expect, it } from 'vitest'
-import { ChangeSet, Text } from '@codemirror/state'
+import { ChangeSet, EditorState, Text } from '@codemirror/state'
 import type { ChangeSpec } from '@codemirror/state'
 import { scanDoc } from '../Engine/docScan'
 import { splitWithOffsets } from '../Engine/detect'
 import type { CitationSlice } from './citationEdits'
 import {
   citationDeleteIntent,
-  citationGesture,
   deleteCitationChanges,
   deleteMarkerChanges,
   normalizeCitations,
 } from './citationEdits'
 import { citationScan } from '../../Testing/markdownEngine'
+import { citationOrder } from './citationActions'
 
 const scanOf = (doc: string): CitationSlice => {
   const d = splitWithOffsets(doc)
@@ -22,6 +22,9 @@ const apply = (doc: string, changes: ChangeSpec[]): string =>
   ChangeSet.of(changes, doc.length)
     .apply(Text.of(doc.split('\n')))
     .toString()
+
+const committed = (doc: string, changes: ChangeSpec[]): string =>
+  EditorState.create({ doc, extensions: citationOrder }).update({ changes }).state.doc.toString()
 
 const ONE = 'body[^a] here\n\n[^a]: the citation'
 const TWICE = 'one[^a] and two[^a]\n\n[^a]: shared'
@@ -132,6 +135,13 @@ describe('cascades are keyed to the range, never to the gesture', () => {
 describe('normalizing the section', () => {
   const normalized = (doc: string): string => apply(doc, normalizeCitations(scanOf(doc)))
 
+  it('never rewrites a citation-shaped line inside a code fence', () => {
+    const doc = 'x[^2] y[^1]\n\n```\n[^9]: code\n```\n\n[^1]: one\n[^2]: two'
+    expect(apply(doc, normalizeCitations(scanDoc(doc)))).toBe(
+      'x[^1] y[^2]\n\n```\n[^9]: code\n```\n\n[^1]: two\n[^2]: one',
+    )
+  })
+
   it('renumbers numeric labels to first-use order, body and section together', () => {
     const doc = 'a[^1] b[^note] c[^5]\n\n[^5]: five\n[^note]: n\n[^1]: one'
     expect(normalized(doc)).toBe('a[^1] b[^note] c[^3]\n\n[^1]: one\n[^note]: n\n[^3]: five')
@@ -196,16 +206,11 @@ describe('normalizing the section', () => {
   })
 })
 
-describe('a gesture carries its own renormalization', () => {
-  const gesture = (doc: string, changes: ChangeSpec[]): string =>
-    citationGesture(scanOf(doc), changes)
-      .apply(Text.of(doc.split('\n')))
-      .toString()
-
+describe('a deletion carries its renumbering in the same transaction', () => {
   it('renumbers what is left after a deletion, in the same change set', () => {
     const doc = 'x[^1] y[^2]\n\n[^1]: one\n[^2]: two'
     const s = scanOf(doc)
-    expect(gesture(doc, deleteMarkerChanges(s, s.citations.markers[0]))).toBe(
+    expect(committed(doc, deleteMarkerChanges(s, s.citations.markers[0]))).toBe(
       'x y[^1]\n\n[^1]: two',
     )
   })
@@ -213,31 +218,15 @@ describe('a gesture carries its own renormalization', () => {
   it('renumbers what is left after a citation-side deletion too', () => {
     const doc = 'x[^1] y[^2]\n\n[^1]: one\n[^2]: two'
     const s = scanOf(doc)
-    expect(gesture(doc, deleteCitationChanges(s, s.citations.entries[0]))).toBe(
+    expect(committed(doc, deleteCitationChanges(s, s.citations.entries[0]))).toBe(
       'x y[^1]\n\n[^1]: two',
     )
-  })
-
-  it('composes to nothing when the gesture writes nothing and the section is canonical', () => {
-    expect(citationGesture(scanOf('x[^1]\n\n[^1]: one'), []).empty).toBe(true)
-  })
-
-  it('never rewrites a citation-shaped line inside a code fence', () => {
-    const doc = 'x[^2] y[^1]\n\n```\n[^9]: code\n```\n\n[^1]: one\n[^2]: two'
-    const out = citationGesture(scanDoc(doc), [])
-      .apply(Text.of(doc.split('\n')))
-      .toString()
-    expect(out).toBe('x[^1] y[^2]\n\n```\n[^9]: code\n```\n\n[^1]: two\n[^2]: one')
   })
 })
 
 describe('the last reference takes its footnote in every shape the document can hold', () => {
-  const gesture = (doc: string, pick: (s: CitationSlice) => ChangeSpec[]): string => {
-    const s = scanOf(doc)
-    return citationGesture(s, pick(s))
-      .apply(Text.of(doc.split('\n')))
-      .toString()
-  }
+  const gesture = (doc: string, pick: (s: CitationSlice) => ChangeSpec[]): string =>
+    committed(doc, pick(scanOf(doc)))
   const heads = (doc: string): string[] =>
     doc.split('\n').filter((l) => /^ {0,3}\[\^[^\]\s]+\]:/.test(l))
   const live = (doc: string): number => citationScan(splitWithOffsets(doc), []).entries.length
@@ -320,9 +309,7 @@ describe('an interleaved duplicate survives every gesture at every range', () =>
         ): void => {
           if (!changes) return
           try {
-            const out = citationGesture(s, changes)
-              .apply(Text.of(doc.split('\n')))
-              .toString()
+            const out = committed(doc, changes)
             const bad = stranded(out)
             if (bad.length)
               failures.push(`${name} | ${JSON.stringify(doc)} -> stranded ${JSON.stringify(bad)}`)
