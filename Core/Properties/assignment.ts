@@ -18,7 +18,8 @@ import {
   namesGonePage,
   reconcilePropertyValue,
 } from './propertyValue'
-import { parkLinks, restoreWorld } from '../Trash/holdings'
+import { parkLinks } from '../Trash/holdings'
+import { frozenWorld } from '../Nexus/valuesChanged'
 import { sweepRootsById } from './governedSweep'
 import { serializeSchemaOp } from './schemaChain'
 import { ok, fail, type Result } from '../Contract/result'
@@ -84,7 +85,7 @@ async function restoreCachedValues(
       live[id]?.kind === 'page' && live[id].path.startsWith(under) ? [[id, live[id]]] : [],
     ),
   )
-  const frozen = def.type === 'link' ? await restoreWorld(root, tree) : {}
+  const frozen = frozenWorld(tree)
   // A cached Link naming a page gone leaves the cache: one whose page the Trash holds joins its bundle, one naming nothing is dropped.
   const gone =
     def.type === 'link'

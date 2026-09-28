@@ -4,6 +4,7 @@ import { heldTreeOf } from './liveTree'
 import { escapes } from '../Paths/pathSafety'
 import { relDirname, relative, titleFromPath } from '../Paths/posix'
 import { normalizeTitle } from '../Connections/connections'
+import type { Frozen } from '../Properties/propertyValue'
 import type { NexusTree, ValueChange } from './tree'
 
 // One root at a time: a note under another root is a session that moved, and the old root's unflushed writes have no window left to reach.
@@ -104,6 +105,18 @@ export function titleHeldOutside(root: string, title: string, rel: string): bool
   return (titlesOf(tree).get(normalizeTitle(title)) ?? []).some(
     (path) => path !== rel && !path.startsWith(`${rel}/`),
   )
+}
+
+/** A restore's world: the pages the tree holds, and those landing with it. */
+export function frozenWorld(tree: NexusTree, landing: readonly string[] = []): Frozen {
+  const held = titlesOf(tree)
+  const arriving = new Set(landing.map(normalizeTitle))
+  return {
+    holds: (title) => {
+      const key = normalizeTitle(title)
+      return held.has(key) || arriving.has(key)
+    },
+  }
 }
 
 // `only` takes just those files' notes, leaving the rest to the operation that wrote them.
