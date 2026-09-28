@@ -385,6 +385,15 @@ describe('decoration intents', () => {
     expect(lang && 'from' in lang ? lang.from : -1).toBe(t.indexOf('yaml'))
   })
 
+  it('a quoted fence hides its quote prefix as one caret-skipping span', () => {
+    const t = '> ```\n> x\n> ```'
+    const intents = decorationsFor(t, tokenize(t), new Set(), 0)
+    const spans = (kind: 'hide' | 'atomic') =>
+      intents.filter((d) => d.kind === kind).map((d) => ('to' in d ? t.slice(d.from, d.to) : ''))
+    expect(spans('hide')).toEqual(['> ', '> ', '> '])
+    expect(spans('atomic')).toEqual(spans('hide'))
+  })
+
   it('a typed fence names its language; a bare one still carries the tag, unnamed', () => {
     const t = 'p\n```yaml\nkey: 1\n```'
     const tags = decorationsFor(t, tokenize(t), new Set(), 0).filter(

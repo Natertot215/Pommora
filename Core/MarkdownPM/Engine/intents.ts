@@ -42,12 +42,15 @@ function pushMarkerGap(intents: DecoIntent[], from: number, to: number, le: numb
   if (to > from + 1) intents.push({ kind: 'hide', from: from + 1, to })
 }
 
+function pushPrefix(intents: DecoIntent[], from: number, to: number): void {
+  if (to <= from) return
+  intents.push({ kind: 'hide', from, to })
+  intents.push({ kind: 'atomic', from, to })
+}
+
 function pushListLine(intents: DecoIntent[], ls: number, innerStart: number, lm: ListMarker): void {
   intents.push({ kind: 'line', from: ls, className: listLineClass(lm), level: lm.level })
-  if (lm.markerStart > 0) {
-    intents.push({ kind: 'hide', from: innerStart, to: innerStart + lm.markerStart })
-    intents.push({ kind: 'atomic', from: innerStart, to: innerStart + lm.markerStart })
-  }
+  pushPrefix(intents, innerStart, innerStart + lm.markerStart)
 }
 
 const glyphOf = (e: CitationEntry): string => (e.ordinal === null ? '–' : `${e.ordinal}.`)
@@ -207,10 +210,7 @@ function pageChrome(
         fence.role === 'close' && 'codeblock-last',
       ),
     })
-    if (innerStart > ls) {
-      intents.push({ kind: 'hide', from: ls, to: innerStart })
-      intents.push({ kind: 'atomic', from: ls, to: innerStart })
-    }
+    pushPrefix(intents, ls, innerStart)
     // The offset comes from the fence grammar itself (markerEnd), so an indented or quoted fence never hides its own marker.
     const infoStart = ls + fence.markerEnd
     const named = fence.lang ? codeLanguageName(fence.lang) : null
@@ -255,8 +255,7 @@ function pageChrome(
         className: 'md-citation-number',
         text: glyphOf(entry),
       })
-      intents.push({ kind: 'hide', from: ls, to: contentStart })
-      intents.push({ kind: 'atomic', from: ls, to: contentStart })
+      pushPrefix(intents, ls, contentStart)
     }
     if (contentStart < le)
       intents.push({ kind: 'class', from: contentStart, to: le, className: 'md-citation-text' })
