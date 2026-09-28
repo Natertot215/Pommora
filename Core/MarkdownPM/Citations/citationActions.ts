@@ -13,7 +13,6 @@ import { citationFor, markerEndingAt, markersFor } from '../Engine/detect'
 import { focusRange } from '../caretPlacement'
 import type { CitationScan } from '../Engine/detect'
 import {
-  citationGesture,
   citationRowChanges,
   deleteCitationChanges,
   deleteMarkerChanges,
@@ -47,17 +46,20 @@ export function citationSeatAt(state: EditorState, at = state.selection.main.to)
   return state.doc.lineAt(at).number - 1 < scan.citations.firstLine && !inCodeAt(scan, at)
 }
 
-/** One transaction, so one undo takes the whole act. Returns what landed in the original document's coordinates. */
+/** One transaction, so one undo takes the whole act, and `citationOrder`'s renumbering rides it. Returns what landed in the original document's coordinates, or null where a guard refused it. */
 export function commitCitation(
   view: EditorView,
   changes: ChangeSpec[],
   userEvent: string,
 ): ChangeSet | null {
-  const set = citationGesture(docScan(view.state.doc), changes)
-  if (set.empty) return null
-  const host = view.state.facet(citationHost)
-  editAcrossCitations(view, host.shown(), () => view.dispatch({ changes: set, userEvent }))
-  return set
+  let landed: ChangeSet | null = null
+  editAcrossCitations(view, view.state.facet(citationHost).shown(), () => {
+    const tr = view.state.update({ changes, userEvent })
+    if (!tr.docChanged) return
+    view.dispatch(tr)
+    landed = tr.changes
+  })
+  return landed
 }
 
 /** The pair is found again in the finished document rather than assumed: a minted label is free, not final, and the normalization riding the same transaction may have renumbered it. */

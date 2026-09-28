@@ -1,5 +1,5 @@
 // Cascades are keyed to the RANGE, never to the gesture: one fires only where the deleted range is exactly the construct, so a wide sweep never silently takes citations the reader never saw.
-import { ChangeSet, type ChangeSpec, Text } from '@codemirror/state'
+import type { ChangeSpec } from '@codemirror/state'
 import {
   type CitationEntry,
   type CitationScan,
@@ -11,7 +11,6 @@ import {
   isLastReference,
   markersFor,
 } from '../Engine/detect'
-import { scanDoc } from '../Engine/docScan'
 import { lineEndOf, lineIndexAt } from '../Engine/markdownCode'
 import { diffAsSingleReplace } from '../Engine/listDragModel'
 
@@ -135,13 +134,6 @@ export function normalizeCitations(scan: CitationSlice): ChangeSpec[] {
   ]
 }
 
-/** Never above `at`: a caret on the empty last line sits past the body's last content, and a citation behind it strands the marker. */
-export function citationGesture(scan: CitationSlice, changes: ChangeSpec[]): ChangeSet {
-  const first = ChangeSet.of(changes, scan.text.length)
-  const after = first.apply(Text.of(scan.lines)).toString()
-  return first.compose(ChangeSet.of(normalizeCitations(scanDoc(after)), after.length))
-}
-
 export function mintLabel(c: CitationScan): string {
   const taken = new Set([...c.entries, ...c.markers].map((x) => foldLabel(x.label)))
   let n = 1
@@ -149,7 +141,7 @@ export function mintLabel(c: CitationScan): string {
   return String(n)
 }
 
-/** A citation is one paragraph, and a list marker parses at any indent, so a multi-line paste could end the run it was written into. */
+/** A citation is one paragraph, and a list marker parses at any indent, so a multi-line paste could end the run it was written into. Never above `at`: a caret on the empty last line sits past the body's last content, and a citation behind it strands the marker. */
 function citationSeat(scan: CitationSlice, at: number): { at: number; lead: string } {
   const { lines, citations: c } = scan
   const last = c.entries[c.entries.length - 1]
