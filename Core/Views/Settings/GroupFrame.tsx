@@ -49,6 +49,7 @@ import {
   type GroupPlan,
   groupPlan,
   liveBucketOrder,
+  orderedChildren,
   type PropertyGroup,
   subGroupKey,
 } from '../Pipeline/group'
@@ -63,7 +64,7 @@ import {
 import { type BandDrop, type BandRef, dropBand } from '../Bands/bandRouter'
 import { bandSpec } from '../Bands/GroupBand'
 import { setIndexOf } from '../Bands/setIndex'
-import { mutateAhead, usePainted } from '../Host/pendingView'
+import { mutateAhead, refusedDrop, usePainted } from '../Host/pendingView'
 import { EntityIcon } from '../../Assets/EntityIcon'
 import { cx } from '@pommora/uix/Utilities/cx'
 import { useSetting } from '../../Session/store'
@@ -377,7 +378,7 @@ function LocationHierarchy({
 
   const model = useMemo(() => {
     const walk = (parentKey: string | null): ResolvedGroup[] =>
-      (sets.children.get(parentKey) ?? []).map(
+      orderedChildren(sets, parentKey, plan, view).map(
         (id): ResolvedGroup => ({
           key: id,
           kind: 'set',
@@ -398,23 +399,29 @@ function LocationHierarchy({
       styleFor(id, schema, view, nexus),
     )
     return bandModelOf(walk(null), heads)
-  }, [painted, sets, sub, subDef, subChips, schema, view, nexus])
+  }, [painted, sets, plan, sub, subDef, subChips, schema, view, nexus])
   const collapsed = useMemo(
     () => new Set(sets.preorder.filter((id) => !expanded.has(id))),
     [sets, expanded],
   )
 
-  const drop = (dragged: BandRef, to: BandDrop): void =>
+  const drop = (dragged: BandRef, to: BandDrop): void => {
+    const name = nodeLabel(model.byKey.get(dragged.key))
     void dropBand(
       model,
       dragged,
       to,
       { view, plan, schema, sets, sourcePath: painted.path },
       {
-        persistView: persist,
-        mutate: (req) => mutateAhead(req, nodeLabel(model.byKey.get(dragged.key))),
+        persistView: (patch) =>
+          persist(patch).then((r) => {
+            refusedDrop(r.ok, name)
+            return r
+          }),
+        mutate: (req) => mutateAhead(req, name),
       },
     )
+  }
 
   const subChipRow = (setId: string, o: (typeof subChips)[number]): React.JSX.Element => (
     <LineRow
@@ -427,8 +434,10 @@ function LocationHierarchy({
     </LineRow>
   )
 
+  const setsIn = (parentKey: string | null): SetNode[] =>
+    orderedChildren(sets, parentKey, plan, view).map((id) => sets.node.get(id)!)
   const renderSet = (s: SetNode): React.JSX.Element => {
-    const body = subDef ? subChips.map((o) => subChipRow(s.id, o)) : (s.sets ?? []).map(renderSet)
+    const body = subDef ? subChips.map((o) => subChipRow(s.id, o)) : setsIn(s.id).map(renderSet)
     const disclosable = body.length > 0
     const setHidden = isHidden?.(s.id) ?? false
     const node = model.byKey.get(s.id)
@@ -485,7 +494,7 @@ function LocationHierarchy({
         indent: (depth) => rowDropLine(0, depth),
       })}
     >
-      {(painted.sets ?? []).map(renderSet)}
+      {setsIn(null).map(renderSet)}
     </LineZone>
   )
 }

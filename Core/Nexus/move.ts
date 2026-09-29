@@ -7,7 +7,8 @@ import { movePage } from './page'
 import { landedFolder, landingRefusal, moveFolderEntity } from './folderEntity'
 import { liveTreeOf, mutableTarget } from './liveTree'
 import { goneEdit, reachConfig, reachReport } from './configReach'
-import { setChildOrder } from './reorder'
+import { dropFromChildOrder, setChildOrder } from './reorder'
+import { containerAt, pageAt } from './treePatch'
 import { noteValueWrite } from './valuesChanged'
 import { excludedWithin, exclusionWriteRefusal } from '../Settings/settings'
 
@@ -31,8 +32,10 @@ export async function movePageOp(
   if (!at.ok) return at
   if (dirname(at.value.src) === at.value.dst)
     return req.order ? done(await setChildOrder(at.value.dst, 'page_order', req.order)) : ok({})
+  const id = pageAt(await liveTreeOf(root), req.path)?.id
   const r = await movePage(at.value.src, at.value.dst)
   if (!r.ok) return r
+  if (id) await dropFromChildOrder(dirname(at.value.src), 'page_order', id)
   if (req.order) await setChildOrder(at.value.dst, 'page_order', req.order)
   await moveIndexPaths(root, at.value.src, r.value.path)
   noteValueWrite(root, r.value.path)
@@ -55,9 +58,12 @@ export async function moveSetOp(
   const to = req.newParentPath.split('/')
   const diverge = from.findIndex((seg, i) => seg !== to[i])
   const left = diverge === -1 ? null : from.slice(0, diverge + 1).join('/')
-  const edit = left === null ? null : goneEdit(await liveTreeOf(root), 'set', req.path)
+  const held = await liveTreeOf(root)
+  const edit = left === null ? null : goneEdit(held, 'set', req.path)
+  const id = containerAt(held, req.path)?.id
   const r = await moveFolderEntity(at.value.src, at.value.dst)
   if (!r.ok) return r
+  if (id) await dropFromChildOrder(dirname(at.value.src), 'set_order', id)
   await setChildOrder(at.value.dst, 'set_order', req.order)
   const rescope = await landedFolder(root, at.value.src, r.value.path)
   noteValueWrite(root, r.value.path)

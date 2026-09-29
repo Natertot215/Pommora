@@ -230,6 +230,34 @@ describe('TableView row drop — where the manual order lands', () => {
   })
 })
 
+describe('a same-band reorder keeps every row the view hides', () => {
+  it("a hidden Set's page stays in the written manual_order", async () => {
+    const withHidden = {
+      ...source({ hidden_groups: ['sH'] }),
+      sets: [
+        {
+          kind: 'set',
+          id: 'sH',
+          title: 'H',
+          path: 'Col/H',
+          pages: [{ kind: 'page', id: 'p3', title: 'Three', path: 'Col/H/Three.md' }],
+          sets: [],
+        },
+      ],
+    } as unknown as CollectionNode
+    await renderView(root, withHidden)
+    const box = host.querySelector('.drop-line-host')
+    if (box) stubRect(box, { top: 0, bottom: 48 })
+    for (const [i, id] of ['p1', 'p2'].entries())
+      stubRect(host.querySelector(`[data-rid="${id}"]`) as Element, {
+        top: i * 24,
+        bottom: i * 24 + 24,
+      })
+    await dragSecondRowUp()
+    expect(lastSavedView().manual_order).toEqual(['p2', 'p1', 'p3'])
+  })
+})
+
 describe('CardsView card drop — where the manual order lands', () => {
   it('a reorder under a sort writes manual_order and never touches the fs', async () => {
     await mountCards(SORTED)

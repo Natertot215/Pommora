@@ -504,6 +504,38 @@ describe('handleMutate — move + guards', () => {
     expect((await readJson('Notes/_pagecollection.json')).page_order).toEqual(['b'])
   })
 
+  it("movePage drops the page's id from the source folder's page_order", async () => {
+    await writeFile(
+      join(root, 'Notes', 'Daily', '_pageset.json'),
+      JSON.stringify({ id: 'col', page_order: [B_ID, A_ID] }),
+    )
+    await refreshTree(root)
+    const r = await handleMutate(
+      root,
+      { op: 'movePage', path: 'Notes/Daily/Beta.md', newParentPath: 'Notes', order: [B_ID] },
+      nexusDeps,
+    )
+    expect(r.ok).toBe(true)
+    expect((await readJson('Notes/Daily/_pageset.json')).page_order).toEqual([A_ID])
+  })
+
+  it("moveSet drops the Set's id from the source container's set_order", async () => {
+    await mkdir(join(root, 'Notes', 'Weekly'), { recursive: true })
+    await writeFile(join(root, 'Notes', 'Weekly', '_pageset.json'), JSON.stringify({ id: 'wk' }))
+    await writeFile(
+      join(root, 'Notes', '_pagecollection.json'),
+      JSON.stringify({ id: 'pt', set_order: ['wk', 'col'] }),
+    )
+    await refreshTree(root)
+    const r = await handleMutate(
+      root,
+      { op: 'moveSet', path: 'Notes/Daily', newParentPath: 'Notes/Weekly', order: ['col'] },
+      nexusDeps,
+    )
+    expect(r.ok).toBe(true)
+    expect((await readJson('Notes/_pagecollection.json')).set_order).toEqual(['wk'])
+  })
+
   it('round-trip: in-set reorder writes page_order to a foreign-keyed sidecar AND readNexus applies it', async () => {
     await writeFile(
       join(root, 'Notes', 'Daily', '_pageset.json'),

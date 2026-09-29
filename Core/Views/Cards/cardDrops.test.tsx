@@ -209,12 +209,55 @@ describe('a card dropped across Set bands lands where its slot drew', () => {
     })
   })
 
+  it('a refused move leaves the view order as it was and says the card returned', async () => {
+    mutateSpy.mockImplementation(async () => null)
+    await renderView(root, deep('custom'))
+    seat()
+    await dragTo(card('r1'), 240)
+    await settle()
+    expect(saveSpy).not.toHaveBeenCalled()
+    expect(document.querySelector('[aria-live="assertive"]')?.textContent).toBe(
+      'Root returned to its place.',
+    )
+  })
+
   it('under Location, a slot past the Set’s own pages resolves nothing, so nothing is written', async () => {
     await renderView(root, deep('location'))
     seat()
     await dragTo(card('r1'), 240)
     expect(mutateSpy).not.toHaveBeenCalled()
     expect(saveSpy).not.toHaveBeenCalled()
+  })
+})
+
+describe('a Set card whose view write is refused', () => {
+  it('says the Set returned to its place', async () => {
+    saveSpy.mockImplementation(async () => ({ ok: false, error: { message: 'no' } }))
+    await mount(
+      collection([set('sA', 'A', []), set('sB', 'B', [])], [page('p1', 'One', 'Col/One.md')], {
+        kind: 'property',
+        property_id: 'prop_status',
+      }),
+    )
+    const [a, b] = host.querySelectorAll<HTMLElement>(
+      '.set-cards-row [aria-roledescription="sortable"]',
+    )
+    stubRect(a, { top: -300, bottom: -200, left: 0, right: 200 })
+    stubRect(b, { top: -300, bottom: -200, left: 220, right: 420 })
+    await act(async () => {
+      firePointer(b, 'pointerdown', { x: 320, y: -250 })
+    })
+    await act(async () => {
+      firePointer(window, 'pointermove', { x: 40, y: -250 })
+    })
+    await act(async () => {
+      firePointer(window, 'pointerup')
+    })
+    await settle(400)
+    expect(saveSpy).toHaveBeenCalled()
+    expect(document.querySelector('[aria-live="assertive"]')?.textContent).toBe(
+      'B returned to its place.',
+    )
   })
 })
 

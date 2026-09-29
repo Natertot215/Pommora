@@ -32,7 +32,7 @@
 
 .cards-grid {
   --grid-reach: var(--drag-floor, 0px);
-  padding-bottom: var(--grid-reach);
+  padding-bottom: calc(var(--grid-reach) + var(--drag-spill, 0px));
   margin-bottom: calc(-1 * var(--grid-reach));
 }
 .cards-view .group-band:has(+ .group-band) .cards-grid {

@@ -456,17 +456,19 @@ describe('GroupFrame lists — dragging in the pane', () => {
     await act(async () => land(null))
   })
 
-  it('the pane moves a Set under Group By None', async () => {
+  it('the pane lists and moves Sets in the view order under Group By None', async () => {
     const sets = {
       ...source,
       sets: [
         { kind: 'set', id: 'sA', title: 'Alpha', path: 'Col/Alpha', pages: [], sets: [] },
         { kind: 'set', id: 'sB', title: 'Beta', path: 'Col/Beta', pages: [], sets: [] },
+        { kind: 'set', id: 'sC', title: 'Gamma', path: 'Col/Gamma', pages: [], sets: [] },
       ],
     } as unknown as CollectionNode
-    await withStatus(view({ group: { kind: 'flat' } }), sets)
+    await withStatus(view({ group: { kind: 'flat' }, group_order: ['sC', 'sA', 'sB'] }), sets)
+    expect(lineRows().map((r) => r.textContent)).toEqual(['Gamma', 'Alpha', 'Beta'])
     lay()
-    await dragRow(1, 5)
-    expect(lastSaved().group_order).toEqual(['sB', 'sA'])
+    await dragRow(1, 89)
+    expect(lastSaved().group_order).toEqual(['sC', 'sB', 'sA'])
   })
 })

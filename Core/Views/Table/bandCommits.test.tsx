@@ -236,6 +236,23 @@ describe('structural band reorder', () => {
   })
 })
 
+describe('bands under a two-key page sort', () => {
+  it('still drag, since only row order is locked', async () => {
+    await mountTable(
+      structuralSource({
+        collapsed_groups: ['sA'],
+        sort: [
+          { property_id: '_title', direction: 'ascending' },
+          { property_id: 'prop_status', direction: 'ascending' },
+        ],
+      }),
+    )
+    await dragBand(1, 2)
+    await drop()
+    expect(lastSavedView().group_order).toEqual(['sB', 'sA', 'sA1'])
+  })
+})
+
 describe('property band reorder', () => {
   it('persists group.order + order_mode manual and renders optimistically', async () => {
     // Bands in configured schema order — Not started leads as an EMPTY band (no rows, hide off).
@@ -454,6 +471,81 @@ describe('sub-group row drop (every set × bucket pair)', () => {
     })
   })
 
+  it('under Location a cross-set drop moves the page into its slot in the folder order', async () => {
+    await mountTable(subGroupSource({ structural_order_mode: 'location' }))
+    stubRowRects()
+    await dragRow(1, 150)
+    expect(mutateSpy).toHaveBeenNthCalledWith(2, {
+      op: 'movePage',
+      path: 'Col/A/A Two.md',
+      newParentPath: 'Col/B',
+      order: ['pA2', 'pB'],
+    })
+  })
+
+  it('under Location a same-set drop that changes the position reorders the folder', async () => {
+    await mountTable(subGroupSource({ structural_order_mode: 'location' }))
+    stubRowRects()
+    await dragRow(1, 102)
+    expect(mutateSpy).toHaveBeenNthCalledWith(2, {
+      op: 'movePage',
+      path: 'Col/A/A Two.md',
+      newParentPath: 'Col/A',
+      order: ['pA2', 'pA1'],
+    })
+  })
+
+  it('a drop into the root tail keeps the page’s value and moves it to the root', async () => {
+    await mountTable({
+      ...subGroupSource(),
+      pages: [page('pR', 'Root', 'Col/Root.md')],
+    } as unknown as CollectionNode)
+    stubRowRects()
+    await dragRow(0, 190)
+    expect(mutateSpy).toHaveBeenCalledExactlyOnceWith({
+      op: 'movePage',
+      path: 'Col/A/A One.md',
+      newParentPath: 'Col',
+    })
+  })
+
+  it('under Location a slot outside the page’s own folder run in a mixed bucket resolves nothing', async () => {
+    const src = subGroupSource({ structural_order_mode: 'location' })
+    const [a] = src.sets ?? []
+    const mixed = {
+      ...src,
+      sets: [
+        {
+          ...a,
+          pages: [
+            page('pA1', 'A One', 'Col/A/A One.md'),
+            page('pA3', 'A Three', 'Col/A/A Three.md'),
+          ],
+          sets: [
+            {
+              kind: 'set',
+              id: 'sA1',
+              title: 'A1',
+              path: 'Col/A/A1',
+              pages: [page('pS', 'Sub', 'Col/A/A1/Sub.md')],
+              sets: [],
+            },
+          ],
+        },
+      ],
+    } as unknown as CollectionNode
+    channels['view:loadValues'] = async () =>
+      valuesReply({
+        pA1: { [ID_KEY]: 'pA1', ...propsAtRoot({ prop_status: 'active' }, [statusDef]) },
+        pA3: { [ID_KEY]: 'pA3', ...propsAtRoot({ prop_status: 'active' }, [statusDef]) },
+        pS: { [ID_KEY]: 'pS', ...propsAtRoot({ prop_status: 'active' }, [statusDef]) },
+      })
+    await mountTable(mixed)
+    stubRowRects()
+    await dragRow(0, 168)
+    expect(mutateSpy).not.toHaveBeenCalled()
+  })
+
   it('different set, same bucket → movePage alone', async () => {
     await mountTable(subGroupSource())
     stubRowRects()
@@ -536,7 +628,7 @@ describe('band reparent', () => {
       newParentPath: 'Col',
       order: ['sA', 'sA1', 'sB'],
     })
-    expect(lastSavedView().group_order).toEqual(['sA', 'sA1', 'sB'])
+    expect(saveSpy).not.toHaveBeenCalled()
   })
 })
 
@@ -552,10 +644,14 @@ describe('band header — the sidebar interaction model', () => {
       h.textContent?.includes(label),
     ) as HTMLElement
 
-  it('a single glyph click toggles the disclosure (persisted)', async () => {
+  it("a glyph click toggles a band that doesn't open; the chevron toggles one that does", async () => {
     await mountTable(structuralSource())
     await act(async () => {
-      glyphOf('A').dispatchEvent(new MouseEvent('click', { bubbles: true }))
+      glyphOf('A1').dispatchEvent(new MouseEvent('click', { bubbles: true }))
+    })
+    expect(lastSavedView().collapsed_groups ?? []).toContain('sA1')
+    await act(async () => {
+      headerOf('A').querySelector<HTMLElement>('.group-band-drop-outline')?.click()
     })
     expect(lastSavedView().collapsed_groups ?? []).toContain('sA')
   })
@@ -573,15 +669,14 @@ describe('band header — the sidebar interaction model', () => {
     expect(selectSpy).not.toHaveBeenCalled()
   })
 
-  it('a double click opens the Set and toggles its disclosure only on its first click', async () => {
+  it('a double click on an openable Set’s title opens it and never toggles its disclosure', async () => {
     await mountTable(structuralSource())
     await act(async () => {
       for (const detail of [1, 2])
         glyphOf('A').dispatchEvent(new MouseEvent('click', { bubbles: true, detail }))
       glyphOf('A').dispatchEvent(new MouseEvent('dblclick', { bubbles: true, detail: 2 }))
     })
-    expect(saveSpy).toHaveBeenCalledOnce()
-    expect(lastSavedView().collapsed_groups).toEqual(['sA'])
+    expect(saveSpy).not.toHaveBeenCalled()
     expect(selectSpy).toHaveBeenCalledWith({ kind: 'set', id: 'sA', path: 'Col/A' })
   })
 

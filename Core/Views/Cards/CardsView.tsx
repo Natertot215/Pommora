@@ -27,7 +27,6 @@ import {
   SortableZone,
   useDragItem,
 } from '@pommora/uix/Interactions/drag'
-import { resolveRowOrder } from '@pommora/core/Properties/rowOrder'
 import { cx } from '@pommora/uix/Utilities/cx'
 import { useElementZoom } from '@pommora/uix/Utilities/zoom'
 import { useStableApi } from '@pommora/uix/Utilities/stableApi'
@@ -44,7 +43,7 @@ import { Reveal } from '@pommora/uix/Animations/Reveal'
 import { columnLabel, useCapitalizeMetadata } from '../../Properties/Cells/columnLabel'
 import { useColumnStyleMap } from '../Host/useColumnStyles'
 import { bandSpec, GroupBand } from '../Bands/GroupBand'
-import { viewSetOrder } from '../Pipeline/group'
+import { orderedChildren } from '../Pipeline/group'
 import { rowHover, type TitleMenuContext, useViewInteractions } from '../Host/useViewInteractions'
 import type { ValueContext } from '../../Properties/valueContext'
 import { NO_TRAIL, type TrailSegment } from '@pommora/uix/Elements/NavTrail'
@@ -138,7 +137,6 @@ const INERT_API: ValueApi = {
 
 export function CardsView({ host }: { host: ViewHostApi }): React.JSX.Element {
   const {
-    source,
     view,
     columns,
     groups,
@@ -164,8 +162,8 @@ export function CardsView({ host }: { host: ViewHostApi }): React.JSX.Element {
   // ── Set cards ─────────────────────────────────────────────────────────────
 
   const sets = useMemo(
-    () => resolveRowOrder(source.sets ?? [], (s) => s.id, viewSetOrder(host.plan, view)),
-    [source.sets, host.plan, view],
+    () => orderedChildren(host.sets, null, host.plan, view).map((id) => host.sets.node.get(id)!),
+    [host.sets, host.plan, view],
   )
   const showSetCards = viewOption(view, 'set_cards') && sets.length > 0
 
@@ -443,7 +441,7 @@ export function CardsView({ host }: { host: ViewHostApi }): React.JSX.Element {
             collapsed,
             nests: host.nests,
             drop: interactions.bandDrop,
-            disabled: host.dragDisabled,
+            disabled: searching,
           })}
         >
           {groups.map((g) => (
@@ -455,7 +453,7 @@ export function CardsView({ host }: { host: ViewHostApi }): React.JSX.Element {
                 family={crossBand ? scope : undefined}
                 disclose={crossBand}
                 carry={cardCarry}
-                resolveIndex={(index, id) => interactions.siblingSlot(g.key, index, id)}
+                resolveIndex={(index, id) => interactions.folderSlot(g.key, index, id)}
                 onMove={(id, beforeId) => interactions.onDrop(id, g.key, beforeId)}
                 receive={(item, beforeId) => interactions.onDrop(item, g.key, beforeId)}
                 renderOverlay={cardOverlay}

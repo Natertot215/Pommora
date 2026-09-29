@@ -120,6 +120,35 @@ describe('routeBandDrop — Sets', () => {
     })
   })
 
+  it('a de-nest whose on-screen order already reads that way writes no view order, stored or not', () => {
+    expect(
+      routeBandDrop(
+        setRef('sA2', 'sA'),
+        { kind: 'before', beforeKey: 'sB', parentKey: null },
+        scope({ view: view() }),
+      ),
+    ).toEqual({
+      kind: 'fs',
+      req: { op: 'moveSet', path: 'Col/A/A2', newParentPath: 'Col', order: ['sA', 'sA2', 'sB'] },
+      after: undefined,
+    })
+  })
+
+  it('never writes an adopted placeholder id into group_order', () => {
+    const withAdopted = set('col', 'Col', [
+      set('sA', 'Col/A'),
+      set('adopted-x', 'Col/X'),
+      set('sB', 'Col/B'),
+    ])
+    expect(
+      routeBandDrop(
+        setRef('sB', null),
+        { kind: 'before', beforeKey: 'sA', parentKey: null },
+        scope({ view: view(), sets: setIndexOf(withAdopted) }),
+      ),
+    ).toEqual({ kind: 'view', patch: { group_order: ['sB', 'sA'] } })
+  })
+
   it('a nest whose stored view order already reads that way writes no view order', () => {
     expect(
       routeBandDrop(
@@ -247,12 +276,12 @@ describe('runBandEffect', () => {
     const req = { op: 'reorderTop' as const, order: [] }
     await runBandEffect(
       { kind: 'fs', req, after: { group_order: ['x'] } },
-      { persistView, mutate: async () => null },
+      { persistView, mutate: async () => false },
     )
     expect(persistView).not.toHaveBeenCalled()
     await runBandEffect(
       { kind: 'fs', req, after: { group_order: ['x'] } },
-      { persistView, mutate: async () => ({}) },
+      { persistView, mutate: async () => true },
     )
     expect(persistView).toHaveBeenCalledWith({ group_order: ['x'] })
   })

@@ -355,6 +355,22 @@ describe('the drag engine across zones', () => {
     expect(floorOf('C')).toBe('')
   })
 
+  it('grows a foreign grid by the row its preview spills into, only while it is the landing', async () => {
+    const spillOf = (zid: string): string =>
+      (host.querySelector(`.zone-${zid}`) as HTMLElement).style.getPropertyValue('--drag-spill')
+    await dragHold('a1', 100, 150)
+    expect(BOARD_ZONES.map(spillOf).every((v) => v === '')).toBe(true)
+    await move(100, 358)
+    expect(spillOf('B')).toBe('100.0px')
+    expect(spillOf('A')).toBe('')
+    await move(100, 450)
+    expect(spillOf('B')).toBe('')
+    expect(spillOf('C')).toBe('100.0px')
+    await release(100, 450)
+    await settle()
+    expect(spillOf('C')).toBe('')
+  })
+
   it('re-reads the landing once the floors of empty zones have grown on lift', async () => {
     const grown = (): number =>
       parseFloat(
