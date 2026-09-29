@@ -28,12 +28,12 @@ export type GestureHandle = { abort: () => void; autoScroll: (on: boolean) => vo
 
 function itemActivation(target: EventTarget | null, handle: EventTarget | null): number | null {
   if (!(target instanceof Element) || !(handle instanceof Element)) return ACTIVATION
-  const below = (selector: string): boolean => {
+  const inside = (selector: string, orOn: boolean): boolean => {
     const hit = target.closest(selector)
-    return hit !== null && hit !== handle && handle.contains(hit)
+    return hit !== null && (orOn || hit !== handle) && handle.contains(hit)
   }
-  if (below(EDITABLE_TARGETS)) return null
-  return below(CONTROLS) ? SLOP : ACTIVATION
+  if (inside(EDITABLE_TARGETS, false)) return null
+  return inside(CONTROLS, true) ? SLOP : ACTIVATION
 }
 
 export function scrollMoved(target: EventTarget | null, el: Element | null | undefined): boolean {

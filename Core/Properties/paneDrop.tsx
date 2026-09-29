@@ -22,6 +22,7 @@ export type PaneDrop =
   | { kind: 'unassign'; propId: string }
 
 type PaneSlot = LaneSlot | 'unassign'
+type PaneSnap = Lanes & { bottom: number }
 
 /** The full order still holds every assigned id, so a raw visible index would land the drop among hidden rows. */
 export function nexusReorderIndex(
@@ -39,12 +40,13 @@ export function nexusReorderIndex(
 }
 
 function paneSlot(
-  s: Lanes,
+  s: PaneSnap,
   y: number,
   id: string,
   ordersAll: boolean,
   pinned?: string,
 ): PaneSlot | null {
+  if (y < 0 || y > s.bottom) return null
   const lane = laneAt(s, y)
   if (lane?.key === 'all' && s.home?.key === 'assigned') return id === pinned ? null : 'unassign'
   if (lane?.key === 'all' && !ordersAll) return null
@@ -83,11 +85,12 @@ export function paneSpec({
   glyph: (id: string) => ReactNode
   onDrop: (drop: PaneDrop) => void
   watch: readonly unknown[]
-}): LineSpec<PaneSlot, Lanes> {
+}): LineSpec<PaneSlot, PaneSnap> {
   return {
     snap: (id, g) => {
       const upper = new Set(assigned)
-      return buildLanes(g.rows, id, (x) => (upper.has(x) ? 'assigned' : 'all'), g.groups)
+      const lanes = buildLanes(g.rows, id, (x) => (upper.has(x) ? 'assigned' : 'all'), g.groups)
+      return { ...lanes, bottom: g.bottom }
     },
     resolve: (id, point, s) => paneSlot(s, point.y, id, ordersAll, pinned),
     commit: (id, slot, s) => onDrop(dropOf(id, slot, s.home?.key)),
