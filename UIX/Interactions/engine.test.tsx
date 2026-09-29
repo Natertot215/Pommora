@@ -454,6 +454,19 @@ describe('the drag engine across zones', () => {
     expect(item('a1').style.visibility).toBe('')
   })
 
+  it('a commit that throws still lands, and the next drag lifts', async () => {
+    const error = vi.spyOn(console, 'error').mockImplementation(() => {})
+    onMove.mockImplementationOnce(() => {
+      throw new Error('commit failed')
+    })
+    await dropAt('a1', 100, 150)
+    expect(error).toHaveBeenCalledOnce()
+    expect(item('a1').style.zIndex).toBe('')
+    await dropAt('a1', 100, 150)
+    expect(onMove).toHaveBeenCalledTimes(2)
+    error.mockRestore()
+  })
+
   it('commits at release, then glides', async () => {
     await dragTo('a1', 100, 150)
     expect(onMove).toHaveBeenCalledOnce()
@@ -677,7 +690,50 @@ describe('the drag handle keyboard', () => {
     expect(lifted(handle)).toBe(false)
     expect(spoken().at(-1)).toBe('Canceled moving k.')
     expect(onMove).not.toHaveBeenCalled()
+    expect(document.activeElement).toBe(away)
     away.remove()
+    done()
+  })
+
+  it('a press outside a keyboard-lifted item cancels the lift and leaves focus where it went', async () => {
+    const { handle, done } = await renderZone(undefined, { onMove })
+    const field = document.body.appendChild(document.createElement('input'))
+    await act(async () => handle.focus())
+    await press(handle, ' ')
+    await act(async () => {
+      firePointer(field, 'pointerdown', { x: 500, y: 500 })
+      field.focus()
+    })
+    await settle()
+    expect(spoken().at(-1)).toBe('Canceled moving k.')
+    expect(document.activeElement).toBe(field)
+    field.remove()
+    done()
+  })
+
+  it('a keyboard drop hands focus back to the item once its commit has taken it', async () => {
+    const { handle, done } = await renderZone(undefined, {
+      onMove: () => (document.activeElement as HTMLElement | null)?.blur(),
+    })
+    await act(async () => handle.focus())
+    await press(handle, ' ')
+    await press(document, 'ArrowDown')
+    await press(document, ' ')
+    await settle()
+    expect(document.activeElement).toBe(handle)
+    done()
+  })
+
+  it('prevents Space and Enter on a handle while a drop still glides', async () => {
+    const { handle, done } = await renderZone(undefined, { onMove })
+    const other = handle.nextElementSibling as HTMLElement
+    await act(async () => handle.focus())
+    await press(handle, ' ')
+    await press(document, 'ArrowDown')
+    await press(document, ' ')
+    expect((await press(other, ' ')).defaultPrevented).toBe(true)
+    expect((await press(other, 'Enter')).defaultPrevented).toBe(true)
+    await settle()
     done()
   })
 })

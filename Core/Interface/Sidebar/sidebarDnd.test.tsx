@@ -279,3 +279,65 @@ describe('sidebar drag — the stored Set placement', () => {
     )
   })
 })
+
+describe('sidebar drag — keyboard focus after a remounting drop', () => {
+  it('keeps focus on a page dropped Into a Set once the async move remounts its row', async () => {
+    const nested = {
+      ...tree,
+      collections: [
+        {
+          kind: 'collection',
+          id: 'c1',
+          title: 'C',
+          path: 'C',
+          sets: [{ kind: 'set', id: 's1', title: 'S1', path: 'C/S1', sets: [], pages: [] }],
+          pages: [{ kind: 'page', id: 'p1', title: 'P1', path: 'C/P1.md' }],
+        },
+      ],
+    } as unknown as NexusTree
+    let moved = false
+    const view = (): React.JSX.Element => (
+      <SidebarDnd
+        index={buildIndex(nested)}
+        onCommit={() => {
+          window.setTimeout(() => {
+            moved = true
+            act(() => root.render(view()))
+          }, 40)
+        }}
+      >
+        <Row id="s1" />
+        {moved ? (
+          <section>
+            <Row id="p1" />
+          </section>
+        ) : (
+          <Row id="p1" />
+        )}
+      </SidebarDnd>
+    )
+    const draw = (): Promise<void> => act(async () => root.render(view()))
+    await draw()
+    stubRect(host.querySelector('.drop-line-host') as Element, { top: 0, bottom: 48 })
+    stubRect(row('s1'), { top: 0, bottom: 24 })
+    stubRect(row('p1'), { top: 24, bottom: 48 })
+    const region = (): string =>
+      document.querySelector('[role="status"][aria-live="assertive"]')?.textContent ?? ''
+    await act(async () => row('p1').focus())
+    const key = (el: EventTarget, k: string): Promise<void> =>
+      act(async () => {
+        el.dispatchEvent(new KeyboardEvent('keydown', { key: k, bubbles: true, cancelable: true }))
+      })
+    await key(row('p1'), ' ')
+    for (let i = 0; i < 4 && !region().startsWith('Into'); i++) {
+      await key(document, 'ArrowUp')
+    }
+    expect(region()).toBe('Into S1.')
+    await key(document, ' ')
+    await act(async () => {
+      await new Promise((r) => setTimeout(r, 100))
+    })
+    expect(moved).toBe(true)
+    expect(document.activeElement).toBe(row('p1'))
+  })
+})
