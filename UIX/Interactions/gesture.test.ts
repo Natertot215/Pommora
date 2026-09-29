@@ -321,18 +321,20 @@ describe('the item rule, the cursor, and autoscroll', () => {
     expect(onPlain).toHaveBeenCalledOnce()
   })
 
-  it('owns the grabbing cursor and reports itself live only while active', () => {
-    const root = document.documentElement
+  it('grabs on the captured element alone, and reports itself live only while active', () => {
+    const live = spec({ cursor: 'grabbing' })
+    const grabbing = (): boolean => live.el.hasAttribute('data-grabbing')
     expect(gesture.gestureLive()).toBe(false)
-    gesture.beginPointerGesture(spec({ cursor: 'grabbing' }))
+    gesture.beginPointerGesture(live)
     expect(gesture.gestureLive()).toBe(false)
-    expect(root.classList.contains('is-grabbing')).toBe(false)
+    expect(grabbing()).toBe(false)
     move(20, 0)
     expect(gesture.gestureLive()).toBe(true)
-    expect(root.classList.contains('is-grabbing')).toBe(true)
+    expect(grabbing()).toBe(true)
+    expect(document.documentElement.className).toBe('')
     firePointer(window, 'pointerup')
     expect(gesture.gestureLive()).toBe(false)
-    expect(root.classList.contains('is-grabbing')).toBe(false)
+    expect(grabbing()).toBe(false)
   })
 
   describe('autoscroll', () => {

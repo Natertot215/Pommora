@@ -71,16 +71,16 @@ describe('lineProbes — the keyboard reach of a line list', () => {
   it('probes each row before, into, and after, at 1/8, 1/2, and 7/8', () => {
     const probes = lineProbes(geometry([rowAt('a', 0)], 40))
     expect(probes.slice(0, 3)).toEqual([
-      { y: 5, row: 'a', part: 'before' },
-      { y: 20, row: 'a', part: 'into' },
-      { y: 35, row: 'a', part: 'after' },
+      { y: 5, row: 'a' },
+      { y: 20, row: 'a' },
+      { y: 35, row: 'a' },
     ])
   })
 
   it('always ends with the list-end probe at the geometry bottom', () => {
     const probes = lineProbes(geometry([rowAt('a', 0), rowAt('b', 40)], 90))
     expect(probes).toHaveLength(7)
-    expect(probes.at(-1)).toEqual({ y: 90, row: 'b', part: 'after' })
+    expect(probes.at(-1)).toEqual({ y: 90, row: 'b' })
   })
 
   it('probes nothing for an empty list', () => {

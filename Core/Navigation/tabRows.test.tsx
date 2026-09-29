@@ -165,6 +165,49 @@ describe('the tab strips', () => {
     }
   })
 
+  it('holds the strip still through its own reorder, so the moved tab never replays its entrance', async () => {
+    function Strip(): React.JSX.Element {
+      const [order, setOrder] = useState(MAIN)
+      return (
+        <DragGroup>
+          <TabStripZone
+            items={order}
+            label={(id) => id}
+            forced={false}
+            targetOf={(id) => TARGETS[id]}
+            open={open}
+            onMove={() => setOrder((o) => [...o.slice(1), o[0]])}
+          >
+            {order.map((id) => (
+              <Tab key={id} id={id} />
+            ))}
+          </TabStripZone>
+        </DragGroup>
+      )
+    }
+    await act(async () => root.render(<Strip />))
+    stubRect(container.querySelector('.tab-strip') as Element, {
+      top: 0,
+      bottom: 100,
+      left: 0,
+      right: 400,
+    })
+    MAIN.forEach((id, i) => {
+      stubRect(item(id), { top: 0, bottom: 100, left: i * 100, right: i * 100 + 100 })
+    })
+    const r = item('page').getBoundingClientRect()
+    await act(async () => {
+      firePointer(item('page'), 'pointerdown', { x: r.left + 50, y: r.top + 50 })
+    })
+    await act(async () => {
+      firePointer(window, 'pointermove', { x: 290, y: 50 })
+    })
+    await act(async () => {
+      firePointer(window, 'pointerup', { x: 290, y: 50 })
+    })
+    expect(container.querySelector('.tab-strip')?.classList.contains('is-still')).toBe(true)
+  })
+
   it('a tab with no window target stays on its row', async () => {
     await mount()
     await carryTo('collection', 20, 350)

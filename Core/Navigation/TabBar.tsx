@@ -238,7 +238,7 @@ function UnpinnedTab({
 >): React.JSX.Element {
   // A navigation that swaps this tab's CONTENT slides the icon+label in; a tab SWITCH (`source === 'tab'`) leaves it motionless.
   const slide = useSession((s) =>
-    s.navSlide && s.navSlide.source !== 'tab' && s.navSlide.tabId === entry.tab.id
+    dragged && s.navSlide && s.navSlide.source !== 'tab' && s.navSlide.tabId === entry.tab.id
       ? s.navSlide
       : null,
   )

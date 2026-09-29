@@ -25,13 +25,15 @@ const along = (b: Box, axis: Axis): number => (axis === 'x' ? b.left : b.top)
 const centre = (b: Box, axis: Axis): number => (axis === 'x' ? b.cx : b.cy)
 const extent = (s: Size, axis: Axis): number => (axis === 'x' ? s.width : s.height)
 
-function pitchOf(rects: Box[], fallback: number): number {
+function pitchOf(rects: Box[], gap: number, fallback: number): number {
   let best = Infinity
-  for (let i = 1; i < rects.length; i++) {
-    const step = rects[i].top - rects[i - 1].top
+  let tallest = rects.length ? 0 : fallback
+  for (let i = 0; i < rects.length; i++) {
+    tallest = Math.max(tallest, rects[i].height)
+    const step = i > 0 ? rects[i].top - rects[i - 1].top : 0
     if (step > 1 && step < best) best = step
   }
-  return best === Infinity ? (fallback || rects[0]?.height || 0) + 8 : best
+  return best === Infinity ? tallest + gap : best
 }
 
 function cellAt(f: Frozen, slot: number): Point {
@@ -75,6 +77,8 @@ export function freeze(
   const stride = lefts.length >= 2 ? lefts[1] - lefts[0] : (rects[0]?.width ?? 1) + 1
   const last = rects[rects.length - 1]
   const x0 = lefts[0] ?? 0
+  const zoom = currentZoom(ref)
+  const rowGap = (Number.parseFloat(getComputedStyle(ref).rowGap) || 0) * zoom
   const f: Frozen = {
     ids: kept,
     rects,
@@ -83,8 +87,8 @@ export function freeze(
     centres: axis ? rects.map((r) => centre(r, axis)) : [],
     ref,
     origin: { x: o.left, y: o.top },
-    zoom: currentZoom(ref),
-    pitch: pitchOf(rects, activeHeight),
+    zoom,
+    pitch: pitchOf(rects, rowGap, activeHeight),
     gap:
       axis && rects.length > 1
         ? along(rects[1], axis) - along(rects[0], axis) - extent(rects[0], axis)
@@ -164,20 +168,19 @@ export function slotPoint(
   return axis === 'x' ? { x: p.x + r.width + f.gap, y: p.y } : { x: p.x, y: p.y + r.height + f.gap }
 }
 
-export function distanceTo(
-  f: Frozen,
-  i: number,
-  p: Point,
-  half: Size,
-  axis: Axis | undefined,
-): number {
+export function distanceTo(f: Frozen, i: number, p: Point, half: Size): number {
   const b = f.rects[i]
   if (b) return Math.hypot(b.cx - p.x, b.cy - p.y)
-  const toTail = Math.hypot(f.tail.x + half.width - p.x, f.tail.y + half.height - p.y)
+  return Math.hypot(f.tail.x + half.width - p.x, f.tail.y + half.height - p.y)
+}
+
+function pastLast(f: Frozen, p: Point): boolean {
   const last = f.rects[f.rects.length - 1]
-  return last && !axis
-    ? Math.min(toTail, Math.hypot(last.left + last.width + half.width - p.x, last.cy - p.y))
-    : toTail
+  return (
+    last !== undefined &&
+    p.y >= last.top &&
+    (p.x >= last.left + last.width || p.y >= last.top + last.height)
+  )
 }
 
 export function nearest(
@@ -194,7 +197,8 @@ export function nearest(
     const lo = rank(f.centres, axis === 'x' ? p.x : p.y)
     from = Math.max(0, lo - 1)
     to = Math.min(n, lo + 1)
-  } else if (f.rows.length > 1) {
+  } else if (pastLast(f, p)) return { at: count - 1, dist: 0 }
+  else if (f.rows.length > 1) {
     const row = Math.max(0, rank(f.rowTops, p.y) - 1)
     from = f.rows[Math.max(0, row - 1)]
     to = f.rows[row + 2] ?? n
@@ -202,14 +206,14 @@ export function nearest(
   let at = -1
   let dist = Infinity
   for (let i = from; i < to; i++) {
-    const d = distanceTo(f, i, p, half, axis)
+    const d = distanceTo(f, i, p, half)
     if (d < dist) {
       dist = d
       at = i
     }
   }
   if (count > n) {
-    const d = distanceTo(f, n, p, half, axis)
+    const d = distanceTo(f, n, p, half)
     if (d < dist) {
       dist = d
       at = n

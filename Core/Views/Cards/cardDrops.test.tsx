@@ -6,6 +6,7 @@ import type { CollectionNode } from '@pommora/core/Nexus/tree'
 import { isWindowTarget, type SelectTarget, TAB_FAMILY } from '@pommora/core/Navigation/navRef'
 import { SortableZone, useDragItem } from '@pommora/uix/Interactions/drag'
 import { firePointer, stubRect } from '@pommora/uix/Testing/pointerHarness'
+import { stack } from '@pommora/uix/Theme/stack'
 import { ID_KEY } from '@pommora/core/Nexus/identityMark'
 import { useSession } from '../../Session/store'
 import { mountEachTest, STATUS_DEF, renderView, settle } from '../../Testing/viewHarness'
@@ -276,6 +277,28 @@ describe('a card carried to a tab row', () => {
     expect(received).not.toHaveBeenCalled()
     await carryTo(setCard, 200, 950)
     expect(received).toHaveBeenCalledExactlyOnceWith({ kind: 'set', id: 'sA', path: 'Col/A' })
+  })
+
+  it('carries a Set card on the drag overlay, above every window, with its own card hidden', async () => {
+    await mountBeside(nested())
+    const setCard = host.querySelector(
+      '.set-cards-row [aria-roledescription="sortable"]',
+    ) as HTMLElement
+    stubRect(setCard, { top: -300, bottom: -200, left: 0, right: 200 })
+    await act(async () => {
+      firePointer(setCard, 'pointerdown', { x: 100, y: -250 })
+    })
+    await act(async () => {
+      firePointer(window, 'pointermove', { x: 200, y: 950 })
+    })
+    const chrome = document.querySelector('.card-overlay')?.closest<HTMLElement>('body > div')
+    expect(chrome?.style.zIndex).toBe(String(stack.top.dragOverlay))
+    expect(stack.top.dragOverlay).toBeGreaterThan(stack.top.floating)
+    expect(setCard.style.visibility).toBe('hidden')
+    await act(async () => {
+      firePointer(window, 'pointerup', { x: 200, y: 3000 })
+    })
+    await settle(400)
   })
 
   it('keeps a card home in a view that cannot reorder and still carries it to a tab row', async () => {

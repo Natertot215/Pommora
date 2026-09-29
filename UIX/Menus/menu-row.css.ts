@@ -21,18 +21,23 @@ globalStyle(':root', {
   },
 })
 
+const rowFocus = {
+  outline: 'none',
+  boxShadow: fieldRing(ROW_RING),
+  vars: { '--field-ring': tintAt('var(--accent)', 'secondary') },
+}
+
 export const rowShell = style({
   borderRadius: '8px',
   cursor: 'default',
   selectors: {
     '&:hover': { background: c.state.hover },
-    '&:focus-visible': {
-      outline: 'none',
-      boxShadow: fieldRing(ROW_RING),
-      vars: { '--field-ring': tintAt('var(--accent)', 'secondary') },
-    },
+    '&:focus-visible, [data-line-row]:focus-visible &': rowFocus,
   },
 })
+
+globalStyle('[data-line-row]:focus-visible', { outline: 'none' })
+globalStyle(`[data-line-row]:focus-visible:not(:has(${rowShell}))`, rowFocus)
 
 export const ROW_LEAD = 'var(--row-pad-lead, var(--row-pad-x))'
 export const ROW_TRAIL = 'var(--row-pad-trail, var(--row-pad-x))'

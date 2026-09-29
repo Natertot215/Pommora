@@ -11,7 +11,8 @@ import {
   stubRect,
 } from '@pommora/uix/Testing/pointerHarness'
 import { rowDropLine } from '@pommora/uix/Menus'
-import { useLineRow } from '@pommora/uix/Interactions/drag'
+import { DragGroup, useLineRow, useLooseItem } from '@pommora/uix/Interactions/drag'
+import { TAB_FAMILY } from '@pommora/core/Navigation/navRef'
 import { SidebarDnd } from './sidebarDnd'
 import { buildIndex } from './sidebarDndModel'
 import { useSession } from '../../Session/store'
@@ -88,6 +89,46 @@ const startDrag = async (): Promise<void> => {
   })
 }
 
+function Loose(): React.JSX.Element {
+  const target = useLooseItem(TAB_FAMILY)
+  return <b data-loose={JSON.stringify(target)} />
+}
+
+describe('sidebar drag — carry', () => {
+  it('carries a page row loose as its page target', async () => {
+    await act(async () => {
+      root.render(
+        <DragGroup>
+          <SidebarDnd index={buildIndex(tree)} onCommit={commitSpy}>
+            <Row id="p1" />
+            <Row id="p2" />
+          </SidebarDnd>
+          <Loose />
+        </DragGroup>,
+      )
+    })
+    stubRect(host.querySelector('.drop-line-host') as Element, { top: 0, bottom: 48, right: 200 })
+    stubRect(row('p1'), { top: 0, bottom: 24 })
+    stubRect(row('p2'), { top: 24, bottom: 48 })
+    await act(async () => {
+      firePointer(row('p1'), 'pointerdown', { x: 4, y: 12 })
+    })
+    await act(async () => {
+      firePointer(window, 'pointermove', { x: 600, y: 12 })
+    })
+    expect(
+      JSON.parse(host.querySelector('[data-loose]')?.getAttribute('data-loose') ?? ''),
+    ).toEqual({
+      kind: 'page',
+      id: 'p1',
+      path: 'C/P1.md',
+    })
+    await act(async () => {
+      pressEscape()
+    })
+  })
+})
+
 describe('sidebar drag — Esc abort', () => {
   it('clears the ghost + target and commits nothing on Escape', async () => {
     await startDrag()
@@ -136,7 +177,6 @@ describe('sidebar drag — Esc abort', () => {
 
   it('a scroll with the pointer held still re-aims, so a release without moving resolves fresh', async () => {
     await startDrag()
-    // The host scrolls down with its rows: the pointer now sits above them, so the fresh slot is a no-op while a stale origin would still commit the after-p2 reorder.
     const content = row('p1').parentElement as HTMLElement
     stubRect(content, { top: 48, bottom: 96 })
     stubRect(row('p1'), { top: 48, bottom: 72 })

@@ -20,10 +20,11 @@ const stub = (el: HTMLElement, r: R): void => {
 function frozenOf(
   rects: R[],
   axis: Axis | undefined,
-  opts: { box?: R; activeHeight?: number } = {},
+  opts: { box?: R; activeHeight?: number; rowGap?: number } = {},
 ): Frozen {
   const parent = document.createElement('div')
   stub(parent, opts.box ?? { left: 0, top: 0, width: 0, height: 0 })
+  if (opts.rowGap !== undefined) parent.style.rowGap = `${opts.rowGap}px`
   const els = new Map<string, HTMLElement>()
   const ids = rects.map((_, i) => `i${i}`)
   rects.forEach((r, i) => {
@@ -87,6 +88,18 @@ describe('freeze', () => {
     expect(f.centres).toEqual([100, 264])
     expect(f.gap).toBe(4)
     expect(f.tail).toEqual({ x: 328, y: 0 })
+  })
+
+  it('pitches a one-row grid’s tail row by its tallest item and the box’s row gap', () => {
+    const f = frozenOf(
+      [
+        { left: 0, top: 0, width: 100, height: 233 },
+        { left: 100, top: 0, width: 100, height: 223 },
+      ],
+      undefined,
+      { box: { left: 0, top: 0, width: 200, height: 233 }, activeHeight: 227, rowGap: 10 },
+    )
+    expect(f.tail).toEqual({ x: 0, y: 243 })
   })
 
   it('skips ids with no element and has no frame without a box or an item', () => {
@@ -243,6 +256,22 @@ describe('nearest', () => {
     expect(nearest(f, 6, { x: 150, y: 20 }, cell, undefined).at).toBe(1)
     expect(nearest(f, 6, { x: 50, y: 290 }, cell, undefined).at).toBe(4)
     expect(nearest(f, 6, { x: 60, y: 140 }, cell, undefined).at).toBe(2)
+  })
+})
+
+describe('nearest past the last card of a grid', () => {
+  const cell = { width: 50, height: 50 }
+  const box = { left: 0, top: 0, width: 300, height: 200 }
+
+  it('resolves an empty cell of a partly filled last row to the tail', () => {
+    const f = frozenOf(grid(4, 3), undefined, { box })
+    expect(nearest(f, 5, { x: 250, y: 150 }, cell, undefined)).toEqual({ at: 4, dist: 0 })
+  })
+
+  it('resolves just below a full last row to the tail, or to the last slot in its own zone', () => {
+    const f = frozenOf(grid(4, 2), undefined, { box: { ...box, width: 200 } })
+    expect(nearest(f, 5, { x: 150, y: 205 }, cell, undefined).at).toBe(4)
+    expect(nearest(f, 4, { x: 150, y: 205 }, cell, undefined).at).toBe(3)
   })
 })
 

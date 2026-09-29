@@ -141,7 +141,7 @@ function RibbonTab({
   onClick: () => void
   onMenu?: () => void
 }): React.JSX.Element {
-  const { setNodeRef, style, handle } = useDragItem(tabKey, onClick)
+  const { setNodeRef, style, handle } = useDragItem(tabKey, { open: onClick })
   return (
     <button
       ref={setNodeRef}
