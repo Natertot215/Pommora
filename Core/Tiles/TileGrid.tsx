@@ -10,8 +10,9 @@ import {
 } from 'react'
 import { findScroller } from '@pommora/uix/Interactions/autoscroll'
 import { GLIDE_FEEL } from '@pommora/uix/Animations/feel'
+import { useSettleFallback } from '@pommora/uix/Animations/useExitPresence'
 import { usePointerGesture } from '@pommora/uix/Interactions/gesture'
-import { HYSTERESIS, SETTLE_FALLBACK } from '@pommora/uix/Interactions/shared'
+import { HYSTERESIS } from '@pommora/uix/Interactions/shared'
 import { TILE_MIN_PX } from '@pommora/uix/Utilities/tileMetrics'
 import { type Box, type Reach, withinReach } from '@pommora/uix/Interactions/hoverReveal'
 import { revealTarget } from '@pommora/uix/Interactions/hover-reveal.css'
@@ -291,11 +292,9 @@ export function TileGrid({
     if (s.next && s.next !== live.current.view) live.current.onLayoutChange(s.next)
   }, [])
 
-  useEffect(() => {
-    if (!settle) return
-    const t = setTimeout(() => finishSettle(settle.id), GLIDE_FEEL.duration + SETTLE_FALLBACK)
-    return () => clearTimeout(t)
-  }, [settle, finishSettle])
+  useSettleFallback(settle !== null, 'slow', () => {
+    if (settleRef.current) finishSettle(settleRef.current.id)
+  })
   useEffect(
     () => () => {
       if (settleRef.current) finishSettle(settleRef.current.id)
@@ -454,6 +453,7 @@ export function TileGrid({
         el: e.currentTarget,
         event: e,
         capture: true,
+        cursor: 'grabbing',
         autoScroll: { from: grid, axis: 'xy' },
         onActivate: () => true,
         onDragMove: (ev) => {

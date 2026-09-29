@@ -69,10 +69,10 @@ export function beginRelocateDrag<T>(
   beginEditorGesture(view, {
     el: host,
     event: e,
+    cursor: 'grabbing',
     autoScroll: { from: host, axis: 'y' },
     onActivate: (ev) => {
       activated = true
-      document.body.style.cursor = 'grabbing'
       spec.onDragStart?.()
       view.dispatch({ effects: setShade.of({ from: block.from, to: block.to }) })
       lastY = ev.clientY
@@ -93,7 +93,6 @@ export function beginRelocateDrag<T>(
     onTap: spec.onTap,
     teardown: () => {
       if (!activated) return
-      document.body.style.cursor = ''
       overlay.hide()
       view.dispatch({ effects: setShade.of(null) })
     },

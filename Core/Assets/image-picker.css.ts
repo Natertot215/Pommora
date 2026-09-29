@@ -26,7 +26,6 @@ export const viewport = style({
   touchAction: 'none',
   userSelect: 'none',
 })
-export const grabbing = style({ cursor: 'grabbing' })
 
 export const dimImage = style({
   position: 'absolute',

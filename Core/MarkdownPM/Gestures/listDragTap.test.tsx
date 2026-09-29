@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 // The glyph is one press with two meanings: released in place it's a click, carried past the activation threshold it's a drag. Geometry stays with the model suite; jsdom measures every rect as zero.
-import { afterEach, beforeEach, describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it } from 'vitest'
 import { act } from 'react'
 import type { EditorView } from '@codemirror/view'
 import { cleanupEditor, mountEditor, stubEditorBridge } from '../../Testing/editorHarness'
@@ -16,9 +16,6 @@ class ResizeObserverStub {
 stubPointerCapture()
 stubEditorBridge()
 
-beforeEach(() => {
-  document.body.style.cursor = ''
-})
 afterEach(async () => {
   await cleanupEditor()
 })
@@ -54,7 +51,7 @@ describe('a list glyph press is a click or a drag, never both', () => {
   it('the grab cursor does not outlive the drag', async () => {
     const view = await mountEditor({ initialBody: '- [ ] task' })
     await pressGlyph(view, 40)
-    expect(document.body.style.cursor).toBe('')
+    expect(document.querySelector('[data-grabbing]')).toBeNull()
   })
 })
 
@@ -68,16 +65,16 @@ describe('a sibling editor tearing down leaves a live drag alone', () => {
       firePointer(window, 'pointermove', { x: 40, y: 0 })
       await Promise.resolve()
     })
-    expect(document.body.style.cursor).toBe('grabbing')
+    expect(document.querySelector('[data-grabbing]')).not.toBeNull()
     await act(async () => {
       bystander.destroy()
       await Promise.resolve()
     })
-    expect(document.body.style.cursor).toBe('grabbing')
+    expect(document.querySelector('[data-grabbing]')).not.toBeNull()
     await act(async () => {
       firePointer(window, 'pointerup', { x: 40, y: 0 })
       await Promise.resolve()
     })
-    expect(document.body.style.cursor).toBe('')
+    expect(document.querySelector('[data-grabbing]')).toBeNull()
   })
 })

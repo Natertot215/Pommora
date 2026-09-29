@@ -24,7 +24,6 @@
 
 .tile.is-lifted {
   z-index: var(--z-lifted);
-  cursor: grabbing;
   box-shadow: var(--shadow-strong);
   background: linear-gradient(var(--state-selected), var(--state-selected)), var(--main-bg);
 }

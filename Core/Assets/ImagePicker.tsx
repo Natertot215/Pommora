@@ -54,7 +54,6 @@ export function ImagePicker({
 
   const [draft, setDraft] = useState<Crop>(DEFAULT_CROP)
   const [busy, setBusy] = useState(false)
-  const [dragging, setDragging] = useState(false)
   const [repicking, setRepicking] = useState(false)
   const [pendingValue, setPendingValue] = useState<string | null>(null)
   const draftRef = useLatest(draft)
@@ -152,16 +151,13 @@ export function ImagePicker({
       event: e,
       activation: 0,
       capture: true,
-      onActivate: () => {
-        setDragging(true)
-        return true
-      },
+      cursor: 'grabbing',
+      onActivate: () => true,
       onDragMove: (ev) =>
         setDraft(
           dragRect(anchor, aspectRef.current ?? 0, boxW, boxH, ev.clientX - sx, ev.clientY - sy),
         ),
       onDrop: () => {},
-      teardown: () => setDragging(false),
     })
   }
 
@@ -193,7 +189,6 @@ export function ImagePicker({
       .catch(() => {})
   }
 
-  const viewportClass = dragging ? `${s.viewport} ${s.grabbing}` : s.viewport
   const setZoom = (zoom: number): void => setDraft((d) => ({ ...d, zoom }))
 
   const glyphs = (
@@ -220,7 +215,7 @@ export function ImagePicker({
       <GlassWindow className={s.panel}>
         <div
           ref={frameRef}
-          className={viewportClass}
+          className={s.viewport}
           style={{ width: frameW, height: FRAME_H }}
           onPointerDown={startPan}
         >
