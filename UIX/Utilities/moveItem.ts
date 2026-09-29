@@ -33,6 +33,6 @@ export function nextOrder(
 ): string[] {
   const without = current.filter((id) => id !== draggedId)
   const found = beforeId ? without.indexOf(beforeId) : -1
-  const at = beforeId ? (found === -1 ? without.length : found) : without.length
+  const at = found === -1 ? without.length : found
   return [...without.slice(0, at), draggedId, ...without.slice(at)]
 }
