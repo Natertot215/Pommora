@@ -3,6 +3,7 @@ import { rm, readFile, readdir, writeFile, mkdir } from 'node:fs/promises'
 import { join } from '../Paths/posix'
 import { tempRoot, readJsonAt } from '../Testing/hostFs'
 import {
+  dropFromChildOrder,
   dropSpaceOrder,
   setCollectionOrder,
   setSpaceOrder,
@@ -13,7 +14,7 @@ import { pathExists } from '../Files/atomicWrite'
 import { createFolderEntity } from './folderEntity'
 import { readSidecar } from '../Files/sidecar'
 import { pageCollectionSidecar, pageSetSidecar } from './schemas'
-import { nexusDir, nexusConfig } from '../Paths/paths'
+import { nexusDir, nexusConfig, sidecarPath } from '../Paths/paths'
 import { NEXUS_CONFIG_FILES } from '../Paths/nexusPaths'
 
 let root: string
@@ -142,5 +143,21 @@ describe('setChildOrder', () => {
     expect(await readSidecar(c.value.path, 'collection', pageCollectionSidecar)).toMatchObject({
       set_order: ['s1', 's2'],
     })
+  })
+})
+
+describe('dropFromChildOrder', () => {
+  it('drops the key once its last id leaves, for page and Set order alike', async () => {
+    const c = await createFolderEntity(root, 'collection', 'Notes')
+    if (!c.ok) throw new Error('setup failed')
+    await setChildOrder(c.value.path, 'page_order', ['p1', 'p2'])
+    await setChildOrder(c.value.path, 'set_order', ['s1'])
+    await dropFromChildOrder(c.value.path, 'page_order', 'p1')
+    await dropFromChildOrder(c.value.path, 'set_order', 's1')
+    const raw = await readJsonAt(sidecarPath(c.value.path, 'collection'))
+    expect(raw.page_order).toEqual(['p2'])
+    expect('set_order' in raw).toBe(false)
+    await dropFromChildOrder(c.value.path, 'page_order', 'p2')
+    expect('page_order' in (await readJsonAt(sidecarPath(c.value.path, 'collection')))).toBe(false)
   })
 })

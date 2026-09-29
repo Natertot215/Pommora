@@ -483,6 +483,25 @@ describe('sub-group row drop (every set × bucket pair)', () => {
     })
   })
 
+  it('under Location a cross-set, cross-value drop paints at its destination while the value writes, and a refused value takes it home', async () => {
+    let refuse: (outcome: null) => void = () => {}
+    mutateSpy.mockImplementation(async (req: { op: string }) =>
+      req.op === 'setProperty' ? new Promise((r) => (refuse = r)) : {},
+    )
+    await mountTable(subGroupSource({ structural_order_mode: 'location' }))
+    stubRowRects()
+    const painted = (): string[] =>
+      [...host.querySelectorAll('[data-rid], [role="treeitem"][aria-label="B"]')].map(
+        (el) => el.getAttribute('data-rid') ?? 'B',
+      )
+    await dragRow(1, 150)
+    expect(painted()).toEqual(['pA1', 'B', 'pA2', 'pB'])
+    await act(async () => refuse(null))
+    await settle()
+    expect(painted()).toEqual(['pA1', 'pA2', 'B', 'pB'])
+    expect(mutateSpy).not.toHaveBeenCalledWith(expect.objectContaining({ op: 'movePage' }))
+  })
+
   it('under Location a same-set drop that changes the position reorders the folder', async () => {
     await mountTable(subGroupSource({ structural_order_mode: 'location' }))
     stubRowRects()
