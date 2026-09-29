@@ -92,7 +92,6 @@ beforeEach(() => {
       return { ok: true, value: { hash: `h:${body}`, stale: false } }
     }),
     'sync:captureLocal': vi.fn(async () => ({ ok: true, value: null })),
-    'index:headings': async () => ({ ok: true, value: {} }),
     'page:open': async (path: string) => ({
       ok: true,
       value: detail({ path, body: path === PATH ? disk : 'inner' }),
@@ -219,8 +218,7 @@ describe('one head per page path', () => {
     ;(window as unknown as { nexus: unknown }).nexus = stubDialer({
       'page:updateBody': updateBody,
       'sync:captureLocal': captured,
-      'index:headings': async () => ({ ok: true, value: {} }),
-      'page:open': async (path: string) => ({ ok: true, value: detail({ path, body: disk }) }),
+        'page:open': async (path: string) => ({ ok: true, value: detail({ path, body: disk }) }),
     })
     const { a } = await mountTwo('Hello\n\nother\n')
     type(a, 5, ' wor')
