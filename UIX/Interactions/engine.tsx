@@ -356,7 +356,9 @@ function createEngine(setChrome: (c: Chrome | null) => void): Api {
     const h = s.home
     if (!h) return true
     if (s.axis === 'x') return y >= h.top - BREAKOUT && y <= h.top + h.height + BREAKOUT
-    if (s.axis === 'y') return x >= h.left - BREAKOUT && x <= h.left + h.width + BREAKOUT
+    const across = x >= h.left - BREAKOUT && x <= h.left + h.width + BREAKOUT
+    if (s.axis === 'y') return across
+    if (s.kind === 'line') return across && y >= h.top && y <= h.top + h.height
     return within(h, x, y, 0)
   }
 

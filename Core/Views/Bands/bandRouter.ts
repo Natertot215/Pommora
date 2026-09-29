@@ -64,6 +64,18 @@ export function routeBandDrop(
   }
 }
 
+const showsAlike = (
+  children: ReadonlyMap<string | null, string[]>,
+  a: string[],
+  b: string[] | undefined,
+): boolean =>
+  [...children.values()].every((kids) =>
+    sameIds(
+      resolveRowOrder(kids, (s) => s, a),
+      resolveRowOrder(kids, (s) => s, b),
+    ),
+  )
+
 function routeSet(id: string, drop: BandDrop, scope: BandScope): BandEffect | null {
   const { sets, view } = scope
   const set = sets.node.get(id)
@@ -82,12 +94,21 @@ function routeSet(id: string, drop: BandDrop, scope: BandScope): BandEffect | nu
   const before = into
     ? (ranked?.find((s) => s !== id && sets.parent.get(s) === target) ?? null)
     : drop.beforeKey
+  const from = sets.parent.get(id) ?? null
+  const landed = new Map(sets.children)
+  if (from !== target) {
+    landed.set(
+      from,
+      (landed.get(from) ?? []).filter((s) => s !== id),
+    )
+    landed.set(target, order)
+  }
   const ranks = ranked && nextOrder(ranked, id, before)
   const after =
-    ranks && !sameIds(ranks, ranked)
+    ranks && !showsAlike(landed, ranks, view.group_order)
       ? { group_order: ranks.filter((s) => !isAdoptedId(s)) }
       : undefined
-  if ((sets.parent.get(id) ?? null) !== target)
+  if (from !== target)
     return {
       kind: 'fs',
       req: { op: 'moveSet', path: set.path, newParentPath: targetPath, order },
