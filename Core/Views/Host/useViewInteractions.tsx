@@ -14,6 +14,10 @@ import {
 } from '@pommora/uix/Interactions/ghostCreate'
 import { REVEAL_DWELL_MS } from '@pommora/uix/Interactions/hoverReveal'
 import { announceDrag } from '@pommora/uix/Interactions/a11y'
+import { carries, groupedLine, lineList, rowLine, rowStep } from '@pommora/uix/Interactions/drag'
+import type { Geometry, Row } from '@pommora/uix/Interactions/reorderModel'
+import { TAB_FAMILY } from '@pommora/core/Navigation/tabRows'
+import { EntityIcon } from '../../Assets/EntityIcon'
 import { columnLabel, useCapitalizeMetadata } from '../../Properties/Cells/columnLabel'
 import { notifyUndoable } from '../../Interface/Notifications/notifications'
 import { useSession } from '../../Session/store'
@@ -23,9 +27,9 @@ import { propertyMenuBranches, runPropertyAction } from '../../Interface/Menus/p
 import { findCollectionForSet } from '../../Nexus/treeIndex'
 import { isOpenInTabs } from '../../Navigation/tabsModel'
 import { IconChoice } from '../../Assets/IconChoice'
-import { type BandNode, nodeLabel, springsInto } from '../Bands/bandModel'
-import { type BandDrop, type BandRef, bucketValueAt, dropBand } from '../Bands/bandRouter'
-import type { BandView } from '../Bands/GroupBand'
+import { type BandNode, memberDepth, nodeLabel, springsInto } from '../Bands/bandModel'
+import { bandRouting, bucketValueAt } from '../Bands/bandRouter'
+import { type BandView, bandSpec } from '../Bands/GroupBand'
 import { sameIds, tieOrderWith } from '../creationOrder'
 import { useViewTileScope } from '../ViewTileScope'
 import type { ViewHostApi } from './useViewHost'
@@ -41,6 +45,8 @@ interface ViewInteractionPolicy {
   /** Opens the renderer's naming surface over a page that already exists on disk. */
   rename: (target: { id: string; path: string }, fromCreate: boolean) => void
 }
+
+export const ROW_END = 'end'
 
 export type TitleMenuContext = PageMenuContext & { alreadyOpen: boolean }
 
@@ -89,6 +95,8 @@ export function useViewInteractions(host: ViewHostApi, policy: ViewInteractionPo
     canReassign,
     canRelocate,
     crossBand,
+    dragDisabled,
+    searching,
     reassignBySortRun,
     pageOrder,
     plan,
@@ -106,27 +114,22 @@ export function useViewInteractions(host: ViewHostApi, policy: ViewInteractionPo
   // ── Bands ─────────────────────────────────────────────────────────────────
 
   const valueAt = bucketValueAt(bands.byKey)
-  const bandDrop = (dragged: BandRef, drop: BandDrop): boolean => {
+  const bandBase = { view, plan, schema, sets, sourcePath: source.path }
+  const bandRoutes = bandRouting(bands, bandBase, (dragged) => {
     const node = bands.byKey.get(dragged.key)
     const name = node ? nodeLabel(node) : (sets.node.get(dragged.key)?.title ?? '')
-    return dropBand(
-      bands,
-      dragged,
-      drop,
-      { view, plan, schema, sets, sourcePath: source.path },
-      {
-        ...dropIO(name, persistView),
-        switched: ({ propertyId, prior }) =>
-          notifyUndoable(
-            `Switched to custom ${columnLabel(propertyId, schema, ctx.contexts, capitalize)} order`,
-            () =>
-              void persistView(prior).then((r) => {
-                if (r.ok) announceDrag('return', name)
-              }),
-          ),
-      },
-    )
-  }
+    return {
+      ...dropIO(name, persistView),
+      switched: ({ propertyId, prior }) =>
+        notifyUndoable(
+          `Switched to custom ${columnLabel(propertyId, schema, ctx.contexts, capitalize)} order`,
+          () =>
+            void persistView(prior).then((r) => {
+              if (r.ok) announceDrag('return', name)
+            }),
+        ),
+    }
+  })
   const creation = useViewCreation(() => ({
     ...host,
     bandBucket: valueAt,
@@ -142,6 +145,16 @@ export function useViewInteractions(host: ViewHostApi, policy: ViewInteractionPo
         ? springsInto(bands, dragged, node, nests)
         : rowById.has(dragged) && crossBand,
   }
+
+  const bandZone = (indent?: (depth: number) => string) =>
+    bandSpec({
+      bands,
+      collapsed,
+      nests,
+      routing: bandRoutes,
+      indent: indent && ((depth) => ({ left: `calc(var(--drop-line-inset) + ${indent(depth)})` })),
+      disabled: searching,
+    })
 
   // ── Rows ──────────────────────────────────────────────────────────────────
 
@@ -308,6 +321,42 @@ export function useViewInteractions(host: ViewHostApi, policy: ViewInteractionPo
     return index >= r.first && index <= r.first + r.count ? index : null
   }
 
+  const vacantHeads = (g: Geometry): Map<string, Row> => {
+    const held = new Set(rowBand.values())
+    const heads = new Map<string, Row>()
+    for (const r of g.rows) {
+      const node = bands.byKey.get(r.id)
+      if (!node || held.has(r.id)) continue
+      if (node.kind === 'set' ? canRelocate : node.kind === 'bucket' && canReassign)
+        heads.set(r.id, { ...r, top: r.bottom })
+    }
+    return heads
+  }
+  const listZone = (indent: (depth: number) => string) =>
+    groupedLine(
+      (id) => rowById.has(id),
+      lineList({
+        laneOf: () => (id) => rowBand.get(id),
+        across: crossBand,
+        boxes: vacantHeads,
+        locked: dragDisabled,
+        accepts: (slot, id) => folderSlot(slot.lane, slot.index, id) !== null,
+        end: ROW_END,
+        commit: (id, slot) => onDrop(id, slot.lane, slot.before),
+        line: (slot, s) => {
+          const node = bands.byKey.get(slot.lane)!
+          return rowLine(slot, s, indent(memberDepth(node.kind, node.depth)))
+        },
+        step: (slot, s) => rowStep(slot, s, bands.byKey.get(slot.lane)?.kind !== 'tail'),
+        label: (id) => rowById.get(id)?.title ?? '',
+        glyph: (id) => <EntityIcon kind="page" icon={rowById.get(id)?.icon} />,
+        carry: [carries(TAB_FAMILY, carry)],
+        disclose: crossBand,
+        watch: [rowBand],
+      }),
+      bandZone(indent),
+    )
+
   // ── Carry ─────────────────────────────────────────────────────────────────
 
   const carry = (id: string): PageTarget | null => {
@@ -425,7 +474,9 @@ export function useViewInteractions(host: ViewHostApi, policy: ViewInteractionPo
 
   return {
     bandView,
-    bandDrop,
+    bandDrop: bandRoutes.drop,
+    bandZone,
+    listZone,
     onDrop,
     carry,
     folderSlot,

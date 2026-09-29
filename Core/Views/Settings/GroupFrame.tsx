@@ -34,7 +34,7 @@ import {
   MenuFooting,
   useDisclosureSet,
   pickerRow,
-  rowDropLine,
+  menuDropLine,
 } from '@pommora/uix/Menus'
 import { LineRow, LineZone } from '@pommora/uix/Interactions/drag'
 import { EyeToggle } from '@pommora/uix/Elements/EyeToggle'
@@ -55,7 +55,7 @@ import {
 } from '../Pipeline/group'
 import { NUMERIC_FORMATS } from '../../Properties/formatValue'
 import { bandModelOf, dateLabeller, nodeLabel, springsInto } from '../Bands/bandModel'
-import { type BandDrop, type BandRef, dropBand } from '../Bands/bandRouter'
+import { bandRouting } from '../Bands/bandRouter'
 import { bandSpec } from '../Bands/GroupBand'
 import { dropIO } from '../Host/pendingView'
 import { useBandHeads } from '../Host/useBandHeads'
@@ -396,16 +396,10 @@ function LocationHierarchy({
     [sets, expanded],
   )
 
-  const drop = (dragged: BandRef, to: BandDrop): boolean => {
-    const name = nodeLabel(model.byKey.get(dragged.key))
-    return dropBand(
-      model,
-      dragged,
-      to,
-      { view, plan, schema, sets, sourcePath: painted.path },
-      dropIO(name, persist),
-    )
-  }
+  const base = { view, plan, schema, sets, sourcePath: painted.path }
+  const routing = bandRouting(model, base, (dragged) =>
+    dropIO(nodeLabel(model.byKey.get(dragged.key)), persist),
+  )
 
   const subChipRow = (setId: string, o: (typeof subChips)[number]): React.JSX.Element => (
     <LineRow
@@ -474,8 +468,8 @@ function LocationHierarchy({
         bands: model,
         collapsed,
         nests: true,
-        drop,
-        indent: (depth) => rowDropLine(0, depth),
+        routing,
+        indent: (depth) => menuDropLine({ edge: 0, depth }),
       })}
     >
       {setsIn(null).map(renderSet)}

@@ -19,3 +19,4 @@ export {
   useLooseItem,
 } from './engine'
 export { groupedLine } from './groupedLine'
+export { lineList, rowLine, rowStep } from './lineList'

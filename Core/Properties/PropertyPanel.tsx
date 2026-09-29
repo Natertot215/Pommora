@@ -2,10 +2,10 @@ import { reportRefusal } from '@pommora/core/Interface/Notifications/notificatio
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { EmptyValue } from '@pommora/uix/Elements/EmptyValue'
 import { Icon } from '@pommora/uix/Symbols'
-import { AccessoryButton, MenuItem, heading, laneSpec } from '@pommora/uix/Menus'
+import { AccessoryButton, MenuItem, heading, menuDropLine } from '@pommora/uix/Menus'
 import { ICON } from '@pommora/uix/Menus/frames.css'
 import { ghostAnchorProps } from '@pommora/uix/Interactions/ghostCreate'
-import { LineRow, LineZone } from '@pommora/uix/Interactions/drag'
+import { LineRow, LineZone, lineList } from '@pommora/uix/Interactions/drag'
 import { nexusReorderIndex } from './paneDrop'
 import { moveItem } from '@pommora/uix/Utilities/moveItem'
 import { cx } from '@pommora/uix/Utilities/cx'
@@ -451,8 +451,9 @@ export function PropertyPanel({
                 {(rows.length > 0 || ghost || standing) && (
                   <LineZone
                     className={cx(s.group, panelHost === 'dropdown' && s.groupBordered)}
-                    {...laneSpec({
+                    {...lineList({
                       commit: (id, slot) => commitOrder(key, id, slot.index),
+                      line: menuDropLine,
                       label: (id) => fieldOf(id)?.label ?? id,
                       glyph: glyphOf,
                       watch: [rows.map((f) => f.id).join()],

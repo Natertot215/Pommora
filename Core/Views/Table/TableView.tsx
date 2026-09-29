@@ -1,4 +1,4 @@
-import { memo, useEffect, useMemo, useRef, useState } from 'react'
+import { memo, useEffect, useRef, useState } from 'react'
 import type { ResolvedColumn, ResolvedGroup, ViewRow } from '@pommora/core/Views/viewRow'
 import type { ColumnStyle } from '@pommora/core/Properties/columnStyles'
 import {
@@ -24,7 +24,7 @@ import {
   valueMenuIntent,
 } from '../../Properties/Pickers/valueClick'
 import type { ViewHostApi } from '../Host/useViewHost'
-import { rowHover, useViewInteractions } from '../Host/useViewInteractions'
+import { ROW_END, rowHover, useViewInteractions } from '../Host/useViewInteractions'
 import { fileChipIndex, pickFileInto, runFileMenuAction } from '../../Properties/Pickers/filePick'
 import { useSession } from '../../Session/store'
 import { glanceShown } from '../../Interface/Glance/glanceAction'
@@ -33,7 +33,8 @@ import { isCmd, isSecondaryClick } from '@pommora/uix/Interactions/chords'
 import { Cell } from '../../Properties/Cells/Cell'
 import { EntityIcon } from '../../Assets/EntityIcon'
 import { PropertyTypeIcon, propertyIcon } from '../../Properties/Cells/PropertyTypes'
-import { bandSpec, GroupBand } from '../Bands/GroupBand'
+import { GroupBand } from '../Bands/GroupBand'
+import { memberDepth } from '../Bands/bandModel'
 import { Reveal } from '@pommora/uix/Animations/Reveal'
 import { columnLabel, useCapitalizeMetadata } from '../../Properties/Cells/columnLabel'
 import { type DragShift, gapShift, useColumns } from './useColumns'
@@ -47,17 +48,7 @@ import { ColumnHeader } from './ColumnHeader'
 import './table-view.css'
 import type { GhostAnchor } from '@pommora/uix/Interactions/ghostCreate'
 import { useCellSweep } from './cellSweep'
-import {
-  carries,
-  groupedLine,
-  LineGroup,
-  type LineSpec,
-  LineZone,
-  useLineRow,
-} from '@pommora/uix/Interactions/drag'
-import { laneSlot, type LaneSlot } from '@pommora/uix/Interactions/reorderModel'
-import { TAB_FAMILY } from '@pommora/core/Navigation/tabRows'
-import { ROW_END, rowLine, type RowSnap, rowSnap, rowStep } from './rowInsertion'
+import { LineGroup, LineZone, useLineRow } from '@pommora/uix/Interactions/drag'
 import { openWebLink } from '../../Web/openWebLink'
 import {
   linkValueMenuTarget,
@@ -74,16 +65,13 @@ export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
     groups,
     ctx,
     rowById,
-    rowBand,
     bands,
     collapsed,
-    crossBand,
     dragDisabled,
     commitValue,
     pickTarget,
     mutate,
   } = host
-  const heldBands = useMemo(() => new Set(rowBand.values()), [rowBand])
   const selection = useSession((s) => s.selection)
   const {
     iconsShown,
@@ -338,7 +326,7 @@ export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
   })
   const startSweep = (row: ViewRow, col: ResolvedColumn, e: React.PointerEvent): boolean => {
     if (pickKindOf(columnType(col, schema)) === null) return false
-    if (e.button !== 0) return false
+    if (e.button !== 0 || (e.target as Element).closest('.row-grip')) return false
     cellSweep.begin(row.id, col.id, e)
     return true
   }
@@ -437,8 +425,6 @@ export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
   const indent = (depth: number): string =>
     depth > 0 ? `calc(var(--loose-inset) + var(--row-indent) * ${depth})` : 'var(--loose-inset)'
   const groupIndent = (depth: number): string => `calc(var(--row-indent) * ${depth})`
-  const memberDepth = (kind: ResolvedGroup['kind'], depth: number): number =>
-    kind === 'tail' ? depth : depth + 1
 
   const ghost = interactions.ghost.ghost
   const ghostRowProps = {
@@ -504,38 +490,6 @@ export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
       </GroupBand>,
     ]
   }
-  const vacant = (key: string): boolean => {
-    const node = bands.byKey.get(key)
-    if (!node || heldBands.has(key)) return false
-    return node.kind === 'set' ? host.canRelocate : node.kind === 'bucket' && host.canReassign
-  }
-  const rowDrag: LineSpec<LaneSlot, RowSnap> = {
-    snap: (id, g) => (dragDisabled ? null : rowSnap(g, id, rowBand, vacant)),
-    resolve: (id, point, s) => {
-      const slot = laneSlot(s, point.y, crossBand)
-      return slot && interactions.folderSlot(slot.lane, slot.index, id) !== null ? slot : null
-    },
-    commit: (id, slot) => interactions.onDrop(id, slot.lane, slot.before),
-    line: (slot, s) => {
-      const node = bands.byKey.get(slot.lane)!
-      return rowLine(slot, s, groupIndent(memberDepth(node.kind, node.depth)))
-    },
-    step: (slot, s) => rowStep(slot, s, bands.byKey.get(slot.lane)?.kind !== 'tail'),
-    label: (id) => rowById.get(id)?.title ?? '',
-    glyph: (id) => <EntityIcon kind="page" icon={rowById.get(id)?.icon} />,
-    carry: [carries(TAB_FAMILY, interactions.carry)],
-    disclose: crossBand,
-    watch: [rowBand],
-  }
-  const bandDrag = bandSpec({
-    bands,
-    collapsed,
-    nests: host.nests,
-    drop: interactions.bandDrop,
-    indent: (depth) => ({ left: `calc(var(--drop-line-inset) + ${groupIndent(depth)})` }),
-    disabled: host.searching,
-  })
-
   return (
     <div
       ref={(el) => {
@@ -544,7 +498,7 @@ export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
       className={cx('table table-view', overflowing && 'overflowing')}
     >
       {interactions.iconPicker}
-      <LineZone {...groupedLine((id) => rowById.has(id), rowDrag, bandDrag)}>
+      <LineZone {...interactions.listZone(groupIndent)}>
         <div
           className={cx(
             'table-grid',

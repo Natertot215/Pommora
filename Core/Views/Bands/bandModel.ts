@@ -152,6 +152,9 @@ export function draggable(node: BandNode): node is SetBand | BucketBand {
   }
 }
 
+export const memberDepth = (kind: BandNode['kind'], depth: number): number =>
+  kind === 'tail' ? depth : depth + 1
+
 export const bandBox = (key: string): string => `${key}#box`
 
 export function springsInto(
@@ -190,6 +193,7 @@ export type BandSlot = {
   top: number
   depth: number
   step: { part: StepPart; id: string }
+  moves?: boolean
 }
 
 type Zone = {
@@ -212,6 +216,7 @@ export type BandSnap = {
   to: number
   tail: BandSlot | null
   bottom: number
+  moves: (drop: BandDrop) => boolean
 }
 
 export function bandSnap(
@@ -219,6 +224,7 @@ export function bandSnap(
   heads: readonly BandRef[],
   draggedKey: string,
   nests: boolean,
+  moves: (dragged: BandRef) => (drop: BandDrop) => boolean,
 ): BandSnap | null {
   const rowOf = new Map(g.rows.map((r) => [r.id, r]))
   const dragged = heads.find((h) => h.key === draggedKey)
@@ -318,10 +324,18 @@ export function bandSnap(
     to,
     tail: dragged.kind === 'set' ? endOf(null, 0) : null,
     bottom: g.bottom,
+    moves: moves(dragged),
   }
 }
 
 export function bandSlot(s: BandSnap, y: number): BandSlot | null {
+  const slot = slotAt(s, y)
+  if (!slot) return null
+  slot.moves ??= s.moves(slot.drop)
+  return slot.moves ? slot : null
+}
+
+function slotAt(s: BandSnap, y: number): BandSlot | null {
   if (s.tail && y >= s.bottom) return s.tail
   const k = rank(s.tops, y) - 1
   if (k < 0) return s.zones[0]?.before ?? null
