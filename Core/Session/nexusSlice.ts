@@ -10,12 +10,11 @@ import type { NexusTree } from '@pommora/core/Nexus/tree'
 import type { SyncStatus } from '@pommora/core/Sync/Contract/wire'
 import {
   insertCreatedInTree,
-  moveInTree,
+  orderInTree,
   patchContextGroupsInTree,
   patchNodeInTree,
   removeNodeInTree,
   renameNodeInTree,
-  reorderChildrenInTree,
 } from '@pommora/core/Nexus/treePatch'
 import { stabilize } from '@pommora/core/Nexus/treeStabilize'
 import { applySystemAccent } from '@pommora/uix/Theme/ramp'
@@ -262,7 +261,9 @@ export const createNexusSlice: Slice<NexusSlice> = (set, get) => {
         switch (req.op) {
           case 'movePage':
           case 'moveSet':
-            patched = moveInTree(cur, req)
+          case 'reorderChildren':
+          case 'reorderTop':
+            patched = orderInTree(cur, req)
             break
           case 'rename':
             // The landed name, never the ask — a from-create rename may have disambiguated.
@@ -270,12 +271,6 @@ export const createNexusSlice: Slice<NexusSlice> = (set, get) => {
             break
           case 'delete':
             patched = removeNodeInTree(cur, req.path)
-            break
-          case 'reorderChildren':
-            patched = reorderChildrenInTree(cur, req.parentPath, req.order)
-            break
-          case 'reorderTop':
-            patched = reorderChildrenInTree(cur, '', req.order) ?? cur
             break
           case 'setIcon':
             if (req.kind !== 'page') patched = patchNodeInTree(cur, req.path, { icon: req.icon })

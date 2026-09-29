@@ -8,12 +8,12 @@ const two = row('p2', 'Two')
 const tree = row('p3', 'Tree')
 const titles = new Map([one, two, tree].map((r) => [r.id, r.title.toLowerCase()]))
 const groups: ResolvedGroup[] = [
-  { key: 'g1', kind: 'property', items: [one, two] },
+  { key: 'g1', kind: 'bucket', value: 'g1', items: [one, two] },
   {
     key: 's1',
-    kind: 'structural-set',
+    kind: 'set',
     items: [],
-    children: [{ key: 's2', kind: 'structural-set', items: [tree] }],
+    children: [{ key: 's2', kind: 'set', items: [tree] }],
   },
 ]
 

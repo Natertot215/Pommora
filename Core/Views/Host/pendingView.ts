@@ -9,6 +9,10 @@ import {
 } from '@pommora/core/Views/views'
 import { same } from '@pommora/core/Files/stableJson'
 import { useLatest } from '@pommora/uix/Utilities/stableApi'
+import type { MutateOutcome } from '@pommora/core/Nexus/mutateRequest'
+import { channel } from '@pommora/uix/Utilities/subscribable'
+import type { OrderRequest } from '../../Nexus/treePatch'
+import { useSession } from '../../Session/store'
 
 interface Slot {
   value: unknown
@@ -114,4 +118,19 @@ export function unstageView(sourceId: string, viewId: string, patch: ViewPatch):
   if (!entry) return
   const written = new Set(slotsOf(patch).map(([key]) => key))
   restage(entry, Object.fromEntries(Object.entries(entry.staged).filter(([k]) => !written.has(k))))
+}
+
+// ── Orders painted ahead ────────────────────────────────────────────────────
+
+const ahead = channel<readonly OrderRequest[]>([])
+
+export const useOrdersAhead = (): readonly OrderRequest[] =>
+  useSyncExternalStore(ahead.subscribe, ahead.get)
+
+export function mutateAhead(req: OrderRequest): Promise<MutateOutcome | null> {
+  ahead.set([...ahead.get(), req])
+  return useSession
+    .getState()
+    .mutate(req)
+    .finally(() => ahead.set(ahead.get().filter((r) => r !== req)))
 }

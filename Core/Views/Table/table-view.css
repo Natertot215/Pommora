@@ -60,6 +60,7 @@
   align-items: center;
   color: var(--label-tertiary);
   cursor: grab;
+  touch-action: none;
   transition: opacity var(--reveal-fade) var(--ease-base);
 }
 .row-rail {

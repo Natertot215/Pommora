@@ -2,8 +2,6 @@ import { describe, it, expect } from 'vitest'
 import fixture from '@pommora/core/Testing/fixtures/collection-with-status.json'
 import {
   granularityOf,
-  isLocationFsOrder,
-  LOCATION_SORT,
   mergeViewEdit,
   savedView,
   viewOption,
@@ -472,15 +470,6 @@ describe('viewOption', () => {
     expect(viewOption(view, 'date_separator')).toBe('dash')
     expect(viewOption(view, 'card_banner')).toBe('banner')
     expect(viewOption({ ...view, card_banner: 'none' }, 'card_banner')).toBe('none')
-  })
-  it('orders a Location sort by the filesystem unless the view says custom', () => {
-    const view = savedView.parse({
-      id: 'v',
-      type: 'table',
-      sort: [{ property_id: LOCATION_SORT, direction: 'ascending' }],
-    })
-    expect(isLocationFsOrder(view)).toBe(true)
-    expect(isLocationFsOrder({ ...view, location_order_mode: 'custom' })).toBe(false)
   })
   it('buckets a date group by month unless it names a granularity', () => {
     expect(granularityOf({})).toBe('month')

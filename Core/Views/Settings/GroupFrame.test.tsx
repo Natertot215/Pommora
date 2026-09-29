@@ -5,6 +5,7 @@ import type { Root } from 'react-dom/client'
 import type { CollectionNode } from '@pommora/core/Nexus/tree'
 import type { PropertyDefinition } from '@pommora/core/Properties/properties'
 import type { SavedView } from '@pommora/core/Views/views'
+import { firePointer, stubRect } from '@pommora/uix/Testing/pointerHarness'
 import { useSession } from '../../Session/store'
 import { GroupFrame } from './GroupFrame'
 import { stubDialer } from '../../vitest.setup'
@@ -292,7 +293,7 @@ describe('GroupFrame rows', () => {
     expect(lastSaved().ungrouped_placement).toBe('top')
   })
 
-  it('status default order shows the grouped read-only preview; custom shows the flat Options list', async () => {
+  it('status default order shows the grouped preview; custom shows the flat Options list', async () => {
     await mount(
       view({
         group: {
@@ -349,5 +350,97 @@ describe('GroupFrame rows', () => {
       order_mode: 'manual',
       order: ['Queued'],
     })
+  })
+})
+
+describe('GroupFrame lists — dragging in the pane', () => {
+  const twoStatus: PropertyDefinition = {
+    ...statusDef,
+    status_groups: [
+      {
+        id: 'g1',
+        label: 'Open',
+        color: 'gray',
+        options: [{ value: 'Queued', group_id: 'g1' }],
+      },
+      {
+        id: 'g2',
+        label: 'Closed',
+        color: 'green',
+        options: [{ value: 'Done', group_id: 'g2' }],
+      },
+    ],
+  }
+  const withStatus = (v: SavedView, src: CollectionNode = source): Promise<void> =>
+    act(async () => {
+      root.render(
+        <MenuDoorHost>
+          <GroupFrame
+            source={src}
+            view={v}
+            schema={[twoStatus, dateDef]}
+            label="Settings"
+            onBack={() => {}}
+          />
+        </MenuDoorHost>,
+      )
+    })
+  const statusView = (order_mode: 'configured' | 'reversed'): SavedView =>
+    view({ group: { kind: 'property', property_id: 'prop_status', order_mode } })
+  const lineRows = (): HTMLElement[] => [...host.querySelectorAll<HTMLElement>('[data-line-row]')]
+  const lay = (): void => {
+    const zone = host.querySelector('.drop-line-host')
+    if (zone) stubRect(zone, { top: 0, bottom: lineRows().length * 30 })
+    for (const [i, el] of lineRows().entries()) stubRect(el, { top: i * 30, bottom: i * 30 + 30 })
+  }
+  const dragRow = async (from: number, toY: number): Promise<void> => {
+    await act(async () => {
+      firePointer(lineRows()[from], 'pointerdown', { x: 10, y: from * 30 + 15 })
+    })
+    await act(async () => {
+      firePointer(window, 'pointermove', { x: 10, y: toY })
+    })
+    await act(async () => {
+      firePointer(window, 'pointerup')
+    })
+  }
+
+  it('picking Custom keeps the on-screen order', async () => {
+    await withStatus(statusView('reversed'))
+    await openPicker('Order')
+    await pickOption('Custom')
+    expect(lastSaved().group).toEqual({
+      kind: 'property',
+      property_id: 'prop_status',
+      order_mode: 'manual',
+      order: ['Done', 'Queued'],
+    })
+  })
+
+  it('a Default list drag switches to Custom silently', async () => {
+    await withStatus(statusView('configured'))
+    lay()
+    await dragRow(1, 5)
+    expect(lastSaved().group).toEqual({
+      kind: 'property',
+      property_id: 'prop_status',
+      order_mode: 'manual',
+      order: ['Done', 'Queued'],
+    })
+    expect(document.querySelector('[role="status"]')?.textContent ?? '').not.toContain('Switched')
+  })
+
+  it('the pane moves a Set under Group By None', async () => {
+    const sets = {
+      ...source,
+      sets: [
+        { kind: 'set', id: 'sA', title: 'Alpha', path: 'Col/Alpha', pages: [], sets: [] },
+        { kind: 'set', id: 'sB', title: 'Beta', path: 'Col/Beta', pages: [], sets: [] },
+      ],
+    } as unknown as CollectionNode
+    await withStatus(view({ group: { kind: 'flat' } }), sets)
+    lay()
+    await dragRow(1, 5)
+    expect(lastSaved().group_order).toEqual(['sB', 'sA'])
   })
 })

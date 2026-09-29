@@ -4,18 +4,19 @@ import { orderGroups } from './bandOrder'
 
 const sg = (key: string, children?: ResolvedGroup[]): ResolvedGroup => ({
   key,
-  kind: 'structural-set',
+  kind: 'set',
   items: [],
   ...(children ? { children } : {}),
 })
 const ungrouped: ResolvedGroup = {
   key: '_ungrouped',
-  kind: 'ungrouped',
+  kind: 'tail',
   items: [],
 }
 const prop = (key: string): ResolvedGroup => ({
   key,
-  kind: 'property',
+  kind: 'bucket',
+  value: key,
   items: [],
 })
 const keys = (gs: ResolvedGroup[]): string[] => gs.map((g) => g.key)

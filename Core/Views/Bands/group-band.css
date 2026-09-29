@@ -51,12 +51,3 @@
 .group-band-add {
   color: var(--label-tertiary);
 }
-
-.group-band-head.band-dragging {
-  opacity: var(--state-ghost);
-}
-.group-band-head.band-nest-target {
-  background: var(--state-selected);
-  border-radius: 6px;
-  outline: 4px solid var(--state-selected);
-}

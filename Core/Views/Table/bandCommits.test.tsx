@@ -12,6 +12,7 @@ import { useSession } from '../../Session/store'
 import { propsAtRoot, valuesReply } from '../../Testing/pageValues'
 import { ID_KEY } from '@pommora/core/Nexus/identityMark'
 import { stubDialer } from '../../vitest.setup'
+import { currentNotification } from '../../Interface/Notifications/notifications'
 import { entityMenuItems } from '@pommora/core/Actions/entityMenu'
 import { containerCreators } from '@pommora/core/Actions/createMenu'
 
@@ -157,6 +158,14 @@ function stubBandRects(): void {
   if (box) stubRect(box, { top: 0, bottom: 400 })
   const headers = host.querySelectorAll('.group-band-head')
   for (const [i, el] of [...headers].entries()) stubRect(el, { top: i * 24, bottom: i * 24 + 24 })
+  for (const band of host.querySelectorAll('.group-band')) {
+    const heads = band.querySelectorAll('.group-band-head')
+    if (heads.length === 0) continue
+    stubRect(band, {
+      top: heads[0].getBoundingClientRect().top,
+      bottom: heads[heads.length - 1].getBoundingClientRect().bottom,
+    })
+  }
 }
 
 const headerTexts = (): string[] =>
@@ -264,7 +273,7 @@ describe('location order mode (structural_order_mode: location)', () => {
     expect(saveSpy).not.toHaveBeenCalled()
   })
 
-  it('cross-tree reparent still writes group_order after moveSet (slot preservation, mode-blind)', async () => {
+  it('under Location a nest writes the folder first and no view order', async () => {
     await mountTable(structuralSource({ structural_order_mode: 'location' }))
     await dragBand(2, 12)
     await drop()
@@ -272,10 +281,9 @@ describe('location order mode (structural_order_mode: location)', () => {
       op: 'moveSet',
       path: 'Col/B',
       newParentPath: 'Col/A',
-      order: ['sA1', 'sB'],
+      order: ['sB', 'sA1'],
     })
-    expect(saveSpy).toHaveBeenCalledOnce()
-    expect(lastSavedView().group_order).toEqual(['sA', 'sA1', 'sB'])
+    expect(saveSpy).not.toHaveBeenCalled()
   })
 })
 
@@ -338,12 +346,12 @@ describe('sub-group bucket band drag', () => {
     expect(lastSavedView().sub_group).toEqual({
       property_id: 'prop_status',
       order_mode: 'manual',
-      order: ['complete', 'active'],
+      order: ['complete', 'active', 'not_started'],
     })
     expect(mutateSpy).not.toHaveBeenCalled()
   })
 
-  it('CROSS-SET bucket drag (arrives as reparent) still writes the global sub-order — no moveSet', async () => {
+  it('a cross-set bucket drag (a before-slot in another Set) still writes the global sub-order — no moveSet', async () => {
     await mountTable(subGroupSource())
     await dragBand(2, 98)
     await drop()
@@ -351,7 +359,7 @@ describe('sub-group bucket band drag', () => {
     expect(lastSavedView().sub_group).toEqual({
       property_id: 'prop_status',
       order_mode: 'manual',
-      order: ['complete', 'active'],
+      order: ['complete', 'active', 'not_started'],
     })
     expect(mutateSpy).not.toHaveBeenCalled()
   })
@@ -364,14 +372,30 @@ describe('sub-group bucket band drag', () => {
     expect(mutateSpy).not.toHaveBeenCalled()
   })
 
-  it('outside manual mode the bucket drag is inert', async () => {
+  it('from Default the bucket drag switches to Custom, applies, and notifies', async () => {
     await mountTable(
       subGroupSource({ sub_group: { property_id: 'prop_status', order_mode: 'configured' } }),
     )
     await dragBand(2, 26)
     await drop()
-    expect(saveSpy).not.toHaveBeenCalled()
+    expect(saveSpy).toHaveBeenCalledOnce()
+    expect(lastSavedView().sub_group).toEqual({
+      property_id: 'prop_status',
+      order_mode: 'manual',
+      order: ['not_started', 'complete', 'active'],
+    })
     expect(mutateSpy).not.toHaveBeenCalled()
+    const posted = currentNotification()
+    expect(posted?.message).toBe('Switched to custom Status order')
+    expect(posted?.action?.label).toBe('Undo')
+    saveSpy.mockClear()
+    await act(async () => {
+      await posted?.action?.run()
+    })
+    expect(lastSavedView().sub_group).toEqual({
+      property_id: 'prop_status',
+      order_mode: 'configured',
+    })
   })
 })
 
@@ -440,7 +464,7 @@ describe('sub-group row drop (every set × bucket pair)', () => {
 })
 
 describe('band reparent', () => {
-  it('nest-into commits moveSet with the APPENDED fs order plus the group_order slot', async () => {
+  it('nest-into lands first in the folder and before the first displayed child in group_order', async () => {
     await mountTable(structuralSource())
     await dragBand(2, 12)
     await drop()
@@ -448,20 +472,30 @@ describe('band reparent', () => {
       op: 'moveSet',
       path: 'Col/B',
       newParentPath: 'Col/A',
-      order: ['sA1', 'sB'],
+      order: ['sB', 'sA1'],
     })
     expect(saveSpy).toHaveBeenCalledOnce()
-    expect(lastSavedView().group_order).toEqual(['sA', 'sA1', 'sB'])
+    expect(lastSavedView().group_order).toEqual(['sA', 'sB', 'sA1'])
   })
 
-  it('a FAILED moveSet commits nothing — no phantom group_order, no optimistic reorder', async () => {
-    mutateSpy.mockImplementation(async () => null)
+  it('a failed moveSet commits nothing — no phantom group_order; the band paints ahead, then rolls back', async () => {
+    let refuse: (v: unknown) => void = () => {}
+    mutateSpy.mockImplementation(
+      () =>
+        new Promise((r) => {
+          refuse = r
+        }),
+    )
     await mountTable(structuralSource())
     await dragBand(2, 12)
     await drop()
     expect(mutateSpy).toHaveBeenCalledOnce()
+    expect(headerTexts()).toEqual(['A', 'B', 'A1'])
+    await act(async () => {
+      refuse(null)
+    })
     expect(saveSpy).not.toHaveBeenCalled()
-    expect(headerTexts()[0]).toContain('A')
+    expect(headerTexts()).toEqual(['A', 'A1', 'B'])
   })
 
   it('a persist landing during the reparent round-trip is not clobbered by the deferred commit', async () => {
@@ -485,7 +519,7 @@ describe('band reparent', () => {
       resolveMove({})
     })
     const final = lastSavedView()
-    expect(final.group_order).toEqual(['sA', 'sA1', 'sB'])
+    expect(final.group_order).toEqual(['sA', 'sB', 'sA1'])
     expect(final.collapsed_groups).toEqual(collapsedAtToggle)
   })
 
@@ -497,7 +531,7 @@ describe('band reparent', () => {
       op: 'moveSet',
       path: 'Col/A/A1',
       newParentPath: 'Col',
-      order: ['sA', 'sB', 'sA1'],
+      order: ['sA', 'sA1', 'sB'],
     })
     expect(lastSavedView().group_order).toEqual(['sA', 'sA1', 'sB'])
   })

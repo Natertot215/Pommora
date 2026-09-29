@@ -49,14 +49,13 @@ type ViewCreationConfig = Pick<
   | 'values'
   | 'setValueOverride'
   | 'effectiveValues'
-  | 'structuralOrder'
+  | 'sortKeys'
   | 'persistView'
-  | 'setStructuralPaint'
   | 'rowBand'
   | 'canReassign'
   | 'groupPropId'
   | 'groupPropType'
-  | 'setPaths'
+  | 'sets'
   | 'collapsed'
   | 'toggleCollapse'
   | 'viewRootRef'
@@ -125,8 +124,7 @@ export function useViewCreation(getCfg: () => ViewCreationConfig): ViewCreation 
     const allIds = flattenContainer(latest.source, latest.effectiveValues, {}).rows.map((r) => r.id)
     // The live view already folds a staged order, so the next create composes on this one.
     const next = tieOrderWith(latest.view.manual_order, allIds, createdId, anchorId, where)
-    if (latest.structuralOrder) latest.setStructuralPaint(next)
-    if (!latest.structuralOrder || latest.view.manual_order)
+    if (latest.groupPropId !== undefined || latest.sortKeys > 0 || latest.view.manual_order)
       void latest.persistView({ manual_order: next }, { viewState: true })
   }
   const pageRequest = (parentPath: string, seeds: Record<string, PropertyValue>): CreatePage => ({
@@ -166,7 +164,7 @@ export function useViewCreation(getCfg: () => ViewCreationConfig): ViewCreation 
 
   const bandAdd = (setKey: string): Promise<boolean> => {
     const c = cfg()
-    const setPath = c.setPaths.get(setKey)
+    const setPath = c.sets.node.get(setKey)?.path
     if (!setPath) return Promise.resolve(false)
     if (c.collapsed.has(setKey)) c.toggleCollapse(setKey)
     return addIn(setPath)

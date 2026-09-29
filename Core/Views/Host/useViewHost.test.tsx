@@ -8,6 +8,8 @@ import { LOCATION_SORT, type SavedView } from '@pommora/core/Views/views'
 import { ContentHostContext } from '../../Interface/contentHost'
 import { useSession } from '../../Session/store'
 import { useViewHost, type ViewHostApi } from './useViewHost'
+import { mutateAhead } from './pendingView'
+import type { OrderRequest } from '../../Nexus/treePatch'
 import { useContainerValues, useValuesEpoch } from './useContainerValues'
 import { useViewCreation } from './useViewCreation'
 import { patchOverride } from '../../Properties/valueOverride'
@@ -101,18 +103,18 @@ let api: ViewHostApi | null = null
 
 let creation: ReturnType<typeof useViewCreation>
 
-function Probe({ source, flatten }: { source: CollectionNode | SetNode; flatten: boolean }): null {
-  const host = useViewHost(source, flatten)
+function Probe({ source, nests }: { source: CollectionNode | SetNode; nests: boolean }): null {
+  const host = useViewHost(source, nests)
   api = host
   creation = useViewCreation(() => ({ ...host!, bandBucket: (key) => key, onCreated: () => {} }))
   return null
 }
 
-const mount = async (source: CollectionNode | SetNode, flatten = false): Promise<void> => {
+const mount = async (source: CollectionNode | SetNode, nests = true): Promise<void> => {
   await act(async () => {
     root.render(
       <ContentHostContext.Provider value={{ tabId: 't1', key: 'collection:col1', parked: false }}>
-        <Probe source={source} flatten={flatten} />
+        <Probe source={source} nests={nests} />
       </ContentHostContext.Provider>,
     )
   })
@@ -135,6 +137,12 @@ beforeEach(() => {
   })
 })
 
+const moveP2First: OrderRequest = {
+  op: 'movePage',
+  path: 'Col/Two.md',
+  newParentPath: 'Col',
+  order: ['p2', 'p1'],
+}
 const lastSavedView = (): SavedView => saveSpy.mock.calls.at(-1)?.[2] as SavedView
 const paintOrder = (): string[] | undefined =>
   api?.groups.flatMap((g) =>
@@ -164,7 +172,7 @@ const CONFIGURED = {
 const banded = (group: SavedView['group']): CollectionNode =>
   ({ ...collection({ group }), properties: [threeStatus] }) as CollectionNode
 const bandKeys = (): string[] =>
-  api?.groups.flatMap((g) => (g.kind === 'property' ? [g.key] : [])) ?? []
+  api?.groups.flatMap((g) => (g.kind === 'bucket' ? [g.key] : [])) ?? []
 
 describe('the persist fold', () => {
   it('one save carries a collapse, a style patch, and a resize, the explicit patch winning', async () => {
@@ -242,13 +250,10 @@ describe('the persist fold', () => {
 })
 
 describe('the reset keys', () => {
-  it('a structural paint ignores the stored order, and drops on a source-identity echo', async () => {
+  it('the stored order paints under default Custom and is ignored under Location', async () => {
     await mount(collection({ manual_order: ['p2', 'p1'] }))
-    expect(paintOrder()).toEqual(['p1', 'p2'])
-    await mount(collection())
-    act(() => api?.setStructuralPaint(['p2', 'p1']))
     expect(paintOrder()).toEqual(['p2', 'p1'])
-    await mount(collection())
+    await mount(collection({ manual_order: ['p2', 'p1'], structural_order_mode: 'location' }))
     expect(paintOrder()).toEqual(['p1', 'p2'])
   })
 
@@ -536,41 +541,41 @@ const setCollection = (view?: Partial<SavedView>): CollectionNode =>
     ],
   }) as unknown as CollectionNode
 
-describe('the cards seam (flattenStructural)', () => {
+describe('the cards seam (nests off)', () => {
   it('a type-switched view still carrying sub_group never arms reassign — relocation stays the only cross-band write', async () => {
     const carried = setCollection({
       sub_group: { property_id: 'prop_status', order_mode: 'manual' },
     })
-    await mount(carried, true)
-    expect(api?.subGrouped).toBe(false)
+    await mount(carried, false)
+    expect(api?.plan.kind === 'sets' && api.plan.sub !== undefined).toBe(false)
     expect(api?.groupPropId).toBeUndefined()
     expect(api?.canReassign).toBe(false)
     expect(api?.canRelocate).toBe(true)
-    await mount(carried, false)
-    expect(api?.subGrouped).toBe(true)
+    await mount(carried, true)
+    expect(api?.plan.kind === 'sets' && api.plan.sub !== undefined).toBe(true)
     expect(api?.groupPropId).toBe('prop_status')
   })
 
-  it('location fs order retires reorder only under the flattened seam', async () => {
+  it("a Location sort orders pages by folder only where bands don't nest", async () => {
     const located = setCollection({
       group: { kind: 'flat' },
       sort: [{ property_id: LOCATION_SORT, direction: 'asc' }],
     } as unknown as Partial<SavedView>)
-    await mount(located, true)
-    expect(api?.canReorderWithin).toBe(false)
     await mount(located, false)
-    expect(api?.canReorderWithin).toBe(true)
+    expect(api?.pageOrder).toBe('location')
+    await mount(located, true)
+    expect(api?.pageOrder).toBe('custom')
   })
 
   it('a cards persist mid-collapse keeps the collapse, and a landed style patch yields to a later write', async () => {
-    await mount(setCollection(), true)
+    await mount(setCollection(), false)
     act(() => api?.toggleCollapse('sA'))
     await act(async () => void api?.persistView({}))
     expect(lastSavedView().collapsed_groups).toEqual(['sA'])
     act(() => api?.setStylePatch('prop_status', 'look', 'compact'))
     expect(api?.view.column_styles?.prop_status).toEqual({ look: 'compact' })
-    await mount(setCollection({ column_styles: { prop_status: { look: 'compact' } } }), true)
-    await mount(setCollection(), true)
+    await mount(setCollection({ column_styles: { prop_status: { look: 'compact' } } }), false)
+    await mount(setCollection(), false)
     expect(api?.view.column_styles).toBeUndefined()
   })
 })
@@ -578,7 +583,7 @@ describe('the cards seam (flattenStructural)', () => {
 describe("the engine's grouping", () => {
   it('a sub_group on a property the engine cannot group by never arms reassign', async () => {
     await mount(setCollection({ sub_group: { property_id: 'prop_gone', order_mode: 'manual' } }))
-    expect(api?.subGrouped).toBe(false)
+    expect(api?.plan.kind === 'sets' && api.plan.sub !== undefined).toBe(false)
     expect(api?.groupPropId).toBeUndefined()
     expect(api?.canReassign).toBe(false)
     expect(api?.canRelocate).toBe(true)
@@ -592,7 +597,8 @@ describe("the engine's grouping", () => {
       }),
     )
     expect(api?.groupPropId).toBeUndefined()
-    expect(api?.structuralOrder).toBe(true)
+    expect(api?.plan.kind).toBe('sets')
+    expect(api?.pageOrder).toBe('custom')
     expect(api?.canReassign).toBe(false)
     expect(api?.canRelocate).toBe(true)
   })
@@ -610,13 +616,109 @@ describe('the manual order fold', () => {
     expect(lastSavedView().manual_order).toEqual(['p2', 'p1'])
   })
 
-  it('the crossing: a collapse under a structural paint saves the stored order untouched', async () => {
-    await mount(collection({ manual_order: ['p2', 'p1'] }))
-    expect(api?.structuralOrder).toBe(true)
-    act(() => api?.setStructuralPaint(['p1', 'p2']))
+  it('the crossing: a collapse while a folder move paints ahead saves the stored order untouched', async () => {
+    const source = collection({ manual_order: ['p2', 'p1'], structural_order_mode: 'location' })
+    let settle: () => void = () => {}
+    const pending = new Promise<null>((resolve) => {
+      settle = () => resolve(null)
+    })
+    useSession.setState({
+      tree: { collections: [source], contexts: [], personalization: {} } as never,
+      mutate: vi.fn(() => pending) as never,
+    })
+    await mount(source)
+    expect(paintOrder()).toEqual(['p1', 'p2'])
+    act(() => void mutateAhead(moveP2First))
+    expect(paintOrder()).toEqual(['p2', 'p1'])
     act(() => api?.toggleCollapse('g1'))
     expect(lastSavedView().collapsed_groups).toEqual(['g1'])
     expect(lastSavedView().manual_order).toEqual(['p2', 'p1'])
+    await act(async () => settle())
+  })
+
+  it('a refused move rolls the paint back', async () => {
+    const source = collection({ structural_order_mode: 'location' })
+    useSession.setState({
+      tree: { collections: [source], contexts: [], personalization: {} } as never,
+      mutate: vi.fn(async () => null) as never,
+    })
+    await mount(source)
+    await act(async () => void mutateAhead(moveP2First))
+    expect(paintOrder()).toEqual(['p1', 'p2'])
+  })
+
+  it('two hosts of one Collection, and a Set tile inside it, paint the same pending order', async () => {
+    const pages = ['a1', 'a2'].map((id) => page(id, id, `Col/A/${id}.md`))
+    const inner = { kind: 'set', id: 'sA', title: 'A', path: 'Col/A', pages, sets: [] }
+    const source = {
+      ...collection({ structural_order_mode: 'location' }),
+      sets: [inner],
+    } as unknown as CollectionNode
+    let settle: () => void = () => {}
+    useSession.setState({
+      tree: { collections: [source], contexts: [], personalization: {} } as never,
+      mutate: vi.fn(
+        () =>
+          new Promise<null>((resolve) => {
+            settle = () => resolve(null)
+          }),
+      ) as never,
+    })
+    const seen: Record<string, string[]> = {}
+    function Twin({ id, of }: { id: string; of: CollectionNode | SetNode }): null {
+      const twin = useViewHost(of, true)
+      seen[id] = twin?.rows.map((r) => r.id) ?? []
+      return null
+    }
+    await act(async () => {
+      root.render(
+        <ContentHostContext.Provider value={{ tabId: 't1', key: 'collection:col1', parked: false }}>
+          <Twin id="one" of={source} />
+          <Twin id="two" of={source} />
+          <Twin id="tile" of={inner as unknown as SetNode} />
+        </ContentHostContext.Provider>,
+      )
+    })
+    await act(async () => {})
+    expect(seen.tile).toEqual(['a1', 'a2'])
+    act(
+      () =>
+        void mutateAhead({
+          op: 'movePage',
+          path: 'Col/A/a2.md',
+          newParentPath: 'Col/A',
+          order: ['a2', 'a1'],
+        }),
+    )
+    expect(seen.tile).toEqual(['a2', 'a1'])
+    expect(seen.one).toEqual(seen.two)
+    expect(seen.one).toContain('a2')
+    expect(seen.one?.indexOf('a2')).toBeLessThan(seen.one?.indexOf('a1') ?? -1)
+    await act(async () => settle())
+  })
+
+  it('crossBand is false under two sort keys and under search', async () => {
+    const twoKeys: Partial<SavedView> = {
+      sort: [
+        { property_id: 'prop_status', direction: 'ascending' },
+        { property_id: '_title', direction: 'ascending' },
+      ],
+    }
+    await mount(collection({ group: { kind: 'flat' } } as Partial<SavedView>))
+    expect(api?.crossBand).toBe(false)
+    await mount(setCollection())
+    expect(api?.canRelocate).toBe(true)
+    expect(api?.crossBand).toBe(true)
+    await mount(setCollection(twoKeys))
+    expect(api?.sortKeys).toBe(2)
+    expect(api?.crossBand).toBe(false)
+    await mount(setCollection())
+    act(() =>
+      useSession.setState({
+        viewSearch: { t1: { key: 'collection:col1', query: 'a', summon: 0 } },
+      }),
+    )
+    expect(api?.crossBand).toBe(false)
   })
 
   it('the stored order paints, a sub-grouped view without a group key included, and a landed order yields to a later write', async () => {
@@ -761,7 +863,7 @@ describe('view search', () => {
   it('narrows the groups, the lookups, and the count to title matches, dropping every group left empty', async () => {
     search('loose')
     await mount(setCollection())
-    expect(api?.groups.map((g) => g.kind)).toEqual(['ungrouped'])
+    expect(api?.groups.map((g) => g.kind)).toEqual(['tail'])
     expect([...(api?.rowById.keys() ?? [])]).toEqual(['pLoose'])
     expect(api?.paintOrder.map((r) => r.id)).toEqual(['pLoose'])
     act(() => search('in a'))
@@ -803,7 +905,7 @@ describe('view search', () => {
             setLocked: vi.fn(),
           }}
         >
-          <Probe source={source} flatten={false} />
+          <Probe source={source} nests />
         </ViewTileScopeProvider>,
       )
     })

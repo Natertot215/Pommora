@@ -211,7 +211,7 @@ describe('TableView row drop — where the manual order lands', () => {
   })
 
   it('the same drop on a structural view writes page_order and no manual_order', async () => {
-    await mountTable()
+    await mountTable({ structural_order_mode: 'location' })
     await dragSecondRowUp()
     expect(mutateSpy).toHaveBeenCalledExactlyOnceWith({
       op: 'movePage',
@@ -220,6 +220,13 @@ describe('TableView row drop — where the manual order lands', () => {
       order: ['p2', 'p1'],
     })
     expect(saveSpy).not.toHaveBeenCalled()
+  })
+
+  it('the same drop on a default Set-grouped view writes manual_order and never touches the fs', async () => {
+    await mountTable()
+    await dragSecondRowUp()
+    expect(lastSavedView().manual_order).toEqual(['p2', 'p1'])
+    expect(mutateSpy).not.toHaveBeenCalled()
   })
 })
 
@@ -232,7 +239,7 @@ describe('CardsView card drop — where the manual order lands', () => {
   })
 
   it('the same drop on a structural view writes page_order and no manual_order', async () => {
-    await mountCards()
+    await mountCards({ structural_order_mode: 'location' })
     await dragSecondCardUp()
     expect(mutateSpy).toHaveBeenCalledExactlyOnceWith({
       op: 'movePage',
@@ -241,6 +248,13 @@ describe('CardsView card drop — where the manual order lands', () => {
       order: ['p2', 'p1'],
     })
     expect(saveSpy).not.toHaveBeenCalled()
+  })
+
+  it('the same drop on a default Set-grouped view writes manual_order and never touches the fs', async () => {
+    await mountCards()
+    await dragSecondCardUp()
+    expect(lastSavedView().manual_order).toEqual(['p2', 'p1'])
+    expect(mutateSpy).not.toHaveBeenCalled()
   })
 })
 

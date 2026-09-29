@@ -2,17 +2,25 @@ import { describe, it, expect } from 'vitest'
 import { ID_KEY } from '@pommora/core/Nexus/identityMark'
 import type { CollectionNode, PageNode, SetNode } from '@pommora/core/Nexus/tree'
 import type { ViewRow } from '@pommora/core/Views/viewRow'
-import type { GroupConfig } from '@pommora/core/Views/views'
+import {
+  type GroupConfig,
+  LOCATION_SORT,
+  type SavedView,
+  type SubGroupConfig,
+} from '@pommora/core/Views/views'
 import type { PropertyDefinition } from '@pommora/core/Properties/properties'
 import {
-  bandGrouping,
+  bucketGroupingOf,
   bucketKey,
   dateBucketKey,
   flattenContainer,
   frontmatterOf,
-  groupsStructurally,
+  groupPlan,
+  pageOrderOf,
   pruneEmptyBuckets,
-  resolveGroups,
+  resolveGroups as resolveGroupsOf,
+  type SetTreeNode,
+  setOrderOf,
   subGroupKey,
 } from './group'
 import { pageValues, propsAtRoot } from '../../Testing/pageValues'
@@ -34,6 +42,31 @@ const collection = (sets: SetNode[] = [], pages: PageNode[] = []): CollectionNod
   sets,
   pages,
 })
+const resolveGroups = (
+  rows: ViewRow[],
+  group: GroupConfig,
+  schema: PropertyDefinition[],
+  setTree: SetTreeNode[],
+  sorter: ((rows: ViewRow[]) => ViewRow[]) | null,
+  placement: 'top' | 'bottom',
+  sub?: SubGroupConfig,
+  flatten = false,
+  locationFlatten = false,
+) => {
+  const view = {
+    group,
+    sub_group: sub,
+    ...(locationFlatten ? { sort: [{ property_id: LOCATION_SORT, direction: 'asc' }] } : {}),
+  } as SavedView
+  return resolveGroupsOf(
+    rows,
+    groupPlan(view, schema, !flatten),
+    schema,
+    setTree,
+    sorter,
+    placement,
+  )
+}
 const keys = (groups: { key: string }[]): string[] => groups.map((g) => g.key)
 const itemIds = (g: { items: ViewRow[] }): string[] => g.items.map((r) => r.id)
 
@@ -91,9 +124,9 @@ describe('flattenContainer + structural grouping', () => {
     const groups = resolveGroups(rows, { kind: 'structural' }, [], setTree, null, 'bottom')
 
     expect(groups.map((g) => [g.key, g.kind])).toEqual([
-      ['setA', 'structural-set'],
-      ['setB', 'structural-set'],
-      ['_ungrouped', 'ungrouped'],
+      ['setA', 'set'],
+      ['setB', 'set'],
+      ['_ungrouped', 'tail'],
     ])
     expect(itemIds(groups[0])).toEqual(['p_a'])
     expect(keys(groups[0].children ?? [])).toEqual(['sub'])
@@ -119,9 +152,9 @@ describe('flattenContainer + structural grouping', () => {
     )
 
     expect(groups.map((g) => [g.key, g.kind])).toEqual([
-      ['setA', 'structural-set'],
-      ['setB', 'structural-set'],
-      ['_ungrouped', 'ungrouped'],
+      ['setA', 'set'],
+      ['setB', 'set'],
+      ['_ungrouped', 'tail'],
     ])
     expect(itemIds(groups[0])).toEqual(['p_a', 'p_sub'])
     expect(groups[0].children).toBeUndefined()
@@ -156,7 +189,7 @@ describe('flattenContainer + structural grouping', () => {
     const { rows, setTree } = flattenContainer(col, {}, {})
     const groups = resolveGroups(
       rows,
-      { kind: 'structural' },
+      { kind: 'flat' },
       [],
       setTree,
       null,
@@ -165,30 +198,9 @@ describe('flattenContainer + structural grouping', () => {
       true,
       true,
     )
-    expect(groups.map((g) => [g.key, g.kind])).toEqual([['_ungrouped', 'ungrouped']])
+    expect(groups.map((g) => [g.key, g.kind])).toEqual([['_ungrouped', 'tail']])
     // location order: setA's subtree (p_a, p_sub), then setB (p_b), then the root tail (bottom)
     expect(itemIds(groups[0])).toEqual(['p_a', 'p_sub', 'p_b', 'p_root'])
-  })
-
-  it('locationFlatten wins over a property group (mutually exclusive)', () => {
-    const col = collection([set('setA', [page('p_a')])], [page('p_root')])
-    const { rows, setTree } = flattenContainer(col, {}, {})
-    const groups = resolveGroups(
-      rows,
-      {
-        kind: 'property',
-        property_id: 'x',
-        order_mode: 'configured',
-      },
-      statusSchema,
-      setTree,
-      null,
-      'bottom',
-      undefined,
-      false,
-      true,
-    )
-    expect(groups.map((g) => g.kind)).toEqual(['ungrouped'])
   })
 
   it('groups a Set container identically — Sub-Sets become top groups, own pages band (shared path)', () => {
@@ -214,7 +226,7 @@ describe('flattenContainer + structural grouping', () => {
     const { rows, setTree } = flattenContainer(collection([], [page('p1'), page('p2')]), {}, {})
     const groups = resolveGroups(rows, { kind: 'structural' }, [], setTree, null, 'bottom')
     expect(keys(groups)).toEqual(['_ungrouped'])
-    expect(groups[0].kind).toBe('ungrouped')
+    expect(groups[0].kind).toBe('tail')
     expect(itemIds(groups[0])).toEqual(['p1', 'p2'])
     expect(resolveGroups([], { kind: 'structural' }, [], [], null, 'bottom')).toEqual([])
   })
@@ -355,10 +367,15 @@ describe('sub-grouping (structural + view-level sub_group)', () => {
     const { rows, setTree } = flattenContainer(col, values, {})
     const groups = resolveGroups(rows, structural, statusSchema, setTree, null, 'bottom', sub)
     const setA = groups.find((g) => g.key === 'setA')!
-    expect(setA.kind).toBe('structural-set')
-    expect(setA.children!.map((c) => ({ kind: c.kind, bucket: c.bucket }))).toEqual([
-      { kind: 'property', bucket: 'not_started' },
-      { kind: 'property', bucket: 'done' },
+    expect(setA.kind).toBe('set')
+    expect(
+      setA.children!.map((c) => ({
+        kind: c.kind,
+        value: c.kind === 'bucket' ? c.value : undefined,
+      })),
+    ).toEqual([
+      { kind: 'bucket', value: 'not_started' },
+      { kind: 'bucket', value: 'done' },
     ])
     expect(itemIds(setA.children![1])).toEqual(['p_sub'])
     expect(groups.some((g) => g.key === 'setA1')).toBe(false)
@@ -369,8 +386,12 @@ describe('sub-grouping (structural + view-level sub_group)', () => {
     const groups = resolveGroups(rows, structural, statusSchema, setTree, null, 'bottom', sub)
     const setA = groups.find((g) => g.key === 'setA')!
     const setB = groups.find((g) => g.key === 'setB')!
-    expect(setA.children!.find((c) => c.bucket === 'done')!.key).toBe(subGroupKey('setA', 'done'))
-    expect(setB.children!.find((c) => c.bucket === 'done')!.key).toBe(subGroupKey('setB', 'done'))
+    expect(setA.children!.find((c) => c.kind === 'bucket' && c.value === 'done')!.key).toBe(
+      subGroupKey('setA', 'done'),
+    )
+    expect(setB.children!.find((c) => c.kind === 'bucket' && c.value === 'done')!.key).toBe(
+      subGroupKey('setB', 'done'),
+    )
   })
 
   it('manual sub-order is global; no-value pages sit per-set placed by the knob; loose root pages stay one flat tail', () => {
@@ -394,14 +415,14 @@ describe('sub-grouping (structural + view-level sub_group)', () => {
     )
     const { rows, setTree } = flattenContainer(col2, values2, {})
     const groups = resolveGroups(rows, structural, statusSchema, setTree, null, 'top', manual)
-    expect(groups[0]).toMatchObject({ key: '_ungrouped', kind: 'ungrouped' })
+    expect(groups[0]).toMatchObject({ key: '_ungrouped', kind: 'tail' })
     expect(itemIds(groups[0])).toEqual(['p_loose'])
     const setA = groups.find((g) => g.key === 'setA')!
     expect(setA.children![0]).toMatchObject({
-      kind: 'ungrouped',
+      kind: 'tail',
       key: subGroupKey('setA', '_ungrouped'),
     })
-    expect(setA.children!.filter((c) => c.kind === 'property').map((c) => c.bucket)).toEqual([
+    expect(setA.children!.flatMap((c) => (c.kind === 'bucket' ? [c.value] : []))).toEqual([
       'done',
       'not_started',
     ])
@@ -438,8 +459,8 @@ describe('ungrouped placement (the view-level knob)', () => {
     )
     const groups = resolveGroups(rows, { kind: 'structural' }, [], setTree, null, 'top')
     expect(groups.map((g) => [g.key, g.kind])).toEqual([
-      ['_ungrouped', 'ungrouped'],
-      ['s1', 'structural-set'],
+      ['_ungrouped', 'tail'],
+      ['s1', 'set'],
     ])
   })
 
@@ -465,7 +486,7 @@ describe('ungrouped placement (the view-level knob)', () => {
       {},
     )
     const groups = resolveGroups(rows, { kind: 'structural' }, [], setTree, null, 'bottom')
-    expect(groups[groups.length - 1].kind).toBe('ungrouped')
+    expect(groups[groups.length - 1].kind).toBe('tail')
   })
 })
 
@@ -520,9 +541,9 @@ describe('property grouping — configured / reversed / date', () => {
       {},
     )
     const group = { kind: 'property', property_id: 'prop_done', order_mode: 'configured' } as const
-    expect(groupsStructurally(group, cbSchema)).toBe(true)
+    expect(groupPlan({ group } as SavedView, cbSchema, true).kind).toBe('sets')
     const groups = resolveGroups(rows, group, cbSchema, setTree, null, 'bottom')
-    expect(groups.map((g) => g.kind)).toEqual(['structural-set', 'ungrouped'])
+    expect(groups.map((g) => g.kind)).toEqual(['set', 'tail'])
     const byId = (id: string) => rows.find((r) => r.id === id) as ViewRow
     expect(bucketKey(byId('p1'), 'prop_done', cbSchema, 'day')).toBe('true')
     expect(bucketKey(byId('p2'), 'prop_done', cbSchema, 'day')).toBeNull()
@@ -656,9 +677,13 @@ describe('dateBucketKey', () => {
   })
 })
 
-describe('bandGrouping', () => {
-  const schema: PropertyDefinition[] = [{ id: 'prop_s', name: 'S', type: 'status' }]
+describe('bucketGroupingOf', () => {
+  const schema: PropertyDefinition[] = [
+    { id: 'prop_s', name: 'S', type: 'status' },
+    { id: 'prop_d', name: 'D', type: 'dateTime' },
+  ]
   const sub = { property_id: 'prop_s', order_mode: 'configured' } as const
+  const plan = (view: Partial<SavedView>) => groupPlan(view as SavedView, schema, true)
 
   it('follows the property group the engine draws, else the sub-group, and nothing on a flat view', () => {
     const drawn = { kind: 'property', property_id: 'prop_s', order_mode: 'configured' } as const
@@ -667,11 +692,50 @@ describe('bandGrouping', () => {
       property_id: 'prop_gone',
       order_mode: 'configured',
     } as const
-    expect(bandGrouping({ group: drawn, sub_group: sub }, schema)).toBe(drawn)
-    expect(bandGrouping({ group: degraded, sub_group: sub }, schema)).toBe(sub)
-    expect(bandGrouping({ group: { kind: 'structural' }, sub_group: sub }, schema)).toBe(sub)
-    expect(bandGrouping({ group: { kind: 'flat' }, sub_group: sub }, schema)).toBeUndefined()
+    expect(bucketGroupingOf(plan({ group: drawn, sub_group: sub }))).toBe(drawn)
+    expect(bucketGroupingOf(plan({ group: degraded, sub_group: sub }))).toBe(sub)
+    expect(bucketGroupingOf(plan({ group: { kind: 'structural' }, sub_group: sub }))).toBe(sub)
+    expect(bucketGroupingOf(plan({ group: { kind: 'flat' }, sub_group: sub }))).toBeUndefined()
     const gone = { property_id: 'prop_gone', order_mode: 'configured' } as const
-    expect(bandGrouping({ group: { kind: 'structural' }, sub_group: gone }, schema)).toBeUndefined()
+    expect(
+      bucketGroupingOf(plan({ group: { kind: 'structural' }, sub_group: gone })),
+    ).toBeUndefined()
+  })
+
+  it('reads a Date grouping and a Date sub-grouping stored manual as configured', () => {
+    const group = { kind: 'property', property_id: 'prop_d', order_mode: 'manual' } as const
+    expect(bucketGroupingOf(plan({ group }))).toMatchObject({ order_mode: 'configured' })
+    const dateSub = { property_id: 'prop_d', order_mode: 'manual' } as const
+    expect(
+      bucketGroupingOf(plan({ group: { kind: 'structural' }, sub_group: dateSub })),
+    ).toMatchObject({ order_mode: 'configured' })
+  })
+})
+
+describe('setOrderOf and pageOrderOf', () => {
+  const schema: PropertyDefinition[] = [{ id: 'prop_s', name: 'S', type: 'status' }]
+  const property = { kind: 'property', property_id: 'prop_s', order_mode: 'configured' } as const
+  const locationSort = [{ property_id: LOCATION_SORT, direction: 'asc' }]
+  const planOf = (view: Partial<SavedView>, nests = true) =>
+    groupPlan(view as SavedView, schema, nests)
+
+  it('Sets read structural_order_mode; no grouping reads the Location sort, else custom; a property group is custom', () => {
+    const sets = { group: { kind: 'structural' }, structural_order_mode: 'location' } as const
+    expect(setOrderOf(planOf(sets), sets as SavedView)).toBe('location')
+    const flat = { group: { kind: 'flat' } } as SavedView
+    expect(setOrderOf(planOf(flat), flat)).toBe('custom')
+    const flatLocation = { group: { kind: 'flat' }, sort: locationSort } as SavedView
+    expect(setOrderOf(planOf(flatLocation, false), flatLocation)).toBe('location')
+    const prop = { group: property } as SavedView
+    expect(setOrderOf(planOf(prop), prop)).toBe('custom')
+  })
+
+  it('pages are custom under any effective sort, else follow the plan', () => {
+    const view = { group: { kind: 'flat' }, sort: locationSort } as SavedView
+    const plan = planOf(view, false)
+    expect(pageOrderOf(plan, view, 0)).toBe('location')
+    expect(pageOrderOf(plan, view, 1)).toBe('custom')
+    const prop = { group: property } as SavedView
+    expect(pageOrderOf(planOf(prop), prop, 0)).toBe('custom')
   })
 })
