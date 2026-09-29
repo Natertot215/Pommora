@@ -145,7 +145,7 @@ export function beginPointerGesture(spec: PointerGestureSpec): GestureHandle | n
             } catch {}
           }
           g.active = true
-          if (spec.onDisclose) beginDragDisclose(spec.onDisclose)
+          if (spec.onDisclose) beginDragDisclose(spec.onDisclose, document.body, spec.el)
           let ok: boolean | undefined
           try {
             ok = spec.onActivate(ev)
