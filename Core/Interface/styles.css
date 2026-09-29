@@ -114,6 +114,9 @@ textarea,
   height: calc(var(--app-inset) + var(--toolbar-h));
   z-index: var(--z-titlebar);
 }
+.shell.no-traffic-lights .sidebar-titlebar {
+  display: none;
+}
 
 .content-pane {
   position: absolute;
