@@ -11,6 +11,7 @@ import { GroupFrame } from './GroupFrame'
 import { stubDialer } from '../../vitest.setup'
 import { MenuDoorHost } from '../../Testing/MenuDoorHost'
 import { mountEachTest } from '../../Testing/viewHarness'
+import { makeTree } from '../../Testing/testTree'
 
 const statusDef: PropertyDefinition = {
   id: 'prop_status',
@@ -338,6 +339,11 @@ describe('GroupFrame rows', () => {
     expect(texts().split('Order').length - 1).toBe(1)
   })
 
+  it('Group By None shows no Order picker, since no Set order reads it', async () => {
+    await mount(view({ group: { kind: 'flat' } }))
+    expect(texts()).not.toContain('Order')
+  })
+
   it('switching Group By away and back preserves sub_group (view-level survival)', async () => {
     const v = view({
       sub_group: { property_id: 'prop_status', order_mode: 'manual', order: ['Queued'] },
@@ -428,6 +434,26 @@ describe('GroupFrame lists — dragging in the pane', () => {
       order: ['Done', 'Queued'],
     })
     expect(document.querySelector('[role="status"]')?.textContent ?? '').not.toContain('Switched')
+  })
+
+  it('a Set move paints ahead in the pane while its save is pending', async () => {
+    const sets = {
+      ...source,
+      sets: [
+        { kind: 'set', id: 'sA', title: 'Alpha', path: 'Col/Alpha', pages: [], sets: [] },
+        { kind: 'set', id: 'sB', title: 'Beta', path: 'Col/Beta', pages: [], sets: [] },
+      ],
+    } as unknown as CollectionNode
+    let land: (outcome: null) => void = () => {}
+    useSession.setState({
+      tree: { ...makeTree(), collections: [sets] },
+      mutate: vi.fn(() => new Promise((resolve) => (land = resolve))) as never,
+    })
+    await withStatus(view({ structural_order_mode: 'location' }), sets)
+    lay()
+    await dragRow(1, 5)
+    expect(lineRows().map((r) => r.textContent)).toEqual(['Beta', 'Alpha'])
+    await act(async () => land(null))
   })
 
   it('the pane moves a Set under Group By None', async () => {

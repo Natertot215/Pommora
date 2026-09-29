@@ -5,6 +5,7 @@ import type { PropertyDefinition } from '@pommora/core/Properties/properties'
 import type { SavedView } from '@pommora/core/Views/views'
 import { type BandScope, type BucketRef, routeBandDrop, runBandEffect } from './bandRouter'
 import { setIndexOf } from './setIndex'
+import { groupPlan } from '../Pipeline/group'
 
 const set = (id: string, path: string, sets: SetNode[] = []): SetNode => ({
   kind: 'set',
@@ -45,13 +46,14 @@ const view = (patch: Partial<SavedView> = {}): SavedView =>
     hidden_properties: [],
     ...patch,
   }) as SavedView
-const scope = (patch: Partial<BandScope> = {}): BandScope => ({
-  view: view(),
+const LOCATION = view({ structural_order_mode: 'location' })
+const scope = ({ view: v = LOCATION, ...patch }: Partial<BandScope> = {}): BandScope => ({
+  view: v,
+  plan: groupPlan(v, [statusDef], true),
   schema: [statusDef],
   sets: setIndexOf(source),
   sourcePath: 'Col',
-  custom: false,
-  valueAt: (key) => key.split('/').at(-1) ?? null,
+  valueAt: (key) => key?.split('/').at(-1) ?? null,
   shown: [],
   ...patch,
 })
@@ -83,7 +85,7 @@ describe('routeBandDrop — Sets', () => {
     const effect = routeBandDrop(
       setRef('sB', null),
       { kind: 'before', beforeKey: 'sA', parentKey: null },
-      scope({ custom: true, view: view({ group_order: ['sA2'] }) }),
+      scope({ view: view({ group_order: ['sA2'] }) }),
     )
     expect(effect).toEqual({
       kind: 'view',
@@ -109,7 +111,7 @@ describe('routeBandDrop — Sets', () => {
     const effect = routeBandDrop(
       setRef('sB', null),
       { kind: 'into', parentKey: 'sA' },
-      scope({ custom: true, view: view({ group_order: ['sA', 'sA2', 'sA1', 'sB'] }) }),
+      scope({ view: view({ group_order: ['sA', 'sA2', 'sA1', 'sB'] }) }),
     )
     expect(effect).toEqual({
       kind: 'fs',

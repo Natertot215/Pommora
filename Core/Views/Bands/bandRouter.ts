@@ -6,7 +6,7 @@ import type { SavedView, ViewPatch } from '@pommora/core/Views/views'
 import { nextOrder } from '@pommora/uix/Utilities/moveItem'
 import type { OrderRequest } from '../../Nexus/treePatch'
 import { sameIds } from '../creationOrder'
-import { liveBucketOrder } from '../Pipeline/group'
+import { bucketGroupingOf, type GroupPlan, liveBucketOrder, setOrderOf } from '../Pipeline/group'
 import type { SetIndex } from './setIndex'
 
 export type SetRef = { kind: 'set'; key: string; depth: number; parentKey: string | null }
@@ -28,11 +28,11 @@ export type BandDrop =
 
 export interface BandScope {
   view: SavedView
+  plan: GroupPlan
   schema: PropertyDefinition[]
   sets: SetIndex
   sourcePath: string
-  custom: boolean
-  valueAt: (key: string) => string | null
+  valueAt: (key: string | null) => string | null
   shown: readonly string[]
 }
 
@@ -77,7 +77,8 @@ function routeSet(id: string, drop: BandDrop, scope: BandScope): BandEffect | nu
     id,
     into ? (children.find((s) => s !== id) ?? null) : drop.beforeKey,
   )
-  const ranked = scope.custom ? resolveRowOrder(sets.preorder, (s) => s, view.group_order) : null
+  const custom = setOrderOf(scope.plan, view) === 'custom'
+  const ranked = custom ? resolveRowOrder(sets.preorder, (s) => s, view.group_order) : null
   const before = into
     ? (ranked?.find((s) => s !== id && sets.parent.get(s) === target) ?? null)
     : drop.beforeKey
@@ -97,13 +98,12 @@ function routeSet(id: string, drop: BandDrop, scope: BandScope): BandEffect | nu
 }
 
 function routeBucket(dragged: BucketRef, drop: BandDrop, scope: BandScope): BandEffect | null {
-  const { group, sub_group } = scope.view
-  const top = dragged.parentKey === null
-  const config = top ? (group?.kind === 'property' ? group : undefined) : sub_group
+  const config = bucketGroupingOf(scope.plan)
   if (drop.kind === 'into' || !config) return null
+  const top = scope.plan.kind === 'property'
   const def = scope.schema.find((d) => d.id === config.property_id)
   const current = liveBucketOrder(config, def, scope.shown)
-  const before = drop.beforeKey === null ? null : scope.valueAt(drop.beforeKey)
+  const before = scope.valueAt(drop.beforeKey)
   const order = nextOrder(current, dragged.value, before)
   if (sameIds(order, current)) return null
   const next = { ...config, order_mode: 'manual' as const, order }
@@ -113,7 +113,10 @@ function routeBucket(dragged: BucketRef, drop: BandDrop, scope: BandScope): Band
     switched:
       config.order_mode === 'manual'
         ? undefined
-        : { propertyId: config.property_id, prior: top ? { group } : { sub_group } },
+        : {
+            propertyId: config.property_id,
+            prior: top ? { group: scope.view.group } : { sub_group: scope.view.sub_group },
+          },
   }
 }
 
@@ -137,9 +140,9 @@ function bucketValue(node: BandItem | undefined): string | null {
 }
 
 export const bucketValueAt =
-  (bands: BandList) =>
-  (key: string): string | null =>
-    bucketValue(bands.byKey.get(key))
+  (byKey: ReadonlyMap<string, BandItem>) =>
+  (key: string | null): string | null =>
+    key === null ? null : bucketValue(byKey.get(key))
 
 export function dropBand(
   bands: BandList,
@@ -153,7 +156,7 @@ export function dropBand(
     return value === null ? [] : [value]
   })
   return runBandEffect(
-    routeBandDrop(dragged, drop, { ...base, valueAt: bucketValueAt(bands), shown }),
+    routeBandDrop(dragged, drop, { ...base, valueAt: bucketValueAt(bands.byKey), shown }),
     io,
   )
 }

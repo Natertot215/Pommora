@@ -12,7 +12,7 @@ import { carries, type Family, type LineSpec } from '@pommora/uix/Interactions/d
 import { type Geometry, laneSlot, type Row } from '@pommora/uix/Interactions/reorderModel'
 import { ROW_END, rowLine, rowSnap } from '../Table/rowInsertion'
 import { mountEachTest } from '../../Testing/viewHarness'
-import { BandGlyph, bandSpec, GroupBand, tableSpec } from './GroupBand'
+import { BandGlyph, bandSpec, GroupBand, bandedSpec } from './GroupBand'
 import { bandModelOf, bandNodeOf, headContextOf } from './bandModel'
 import { setIndexOf } from './setIndex'
 
@@ -167,7 +167,7 @@ describe('GroupBand', () => {
   })
 })
 
-describe('tableSpec', () => {
+describe('bandedSpec', () => {
   const geometry: Geometry = { rows: [], groups: new Map(), bottom: 0 }
   const rowsSpec = (over: Partial<LineSpec<string, string>> = {}): LineSpec<string, string> => ({
     snap: () => 'row-snap',
@@ -189,7 +189,7 @@ describe('tableSpec', () => {
 
   it('a band key dispatches to the band spec', () => {
     const bands = bandsSpec()
-    const spec = tableSpec(isRow, rowsSpec(), bands)
+    const spec = bandedSpec(isRow, rowsSpec(), bands)
     const snap = spec.snap('sA', geometry)
     expect(snap).toEqual({ band: 'band-snap' })
     expect(spec.resolve('sA', { x: 0, y: 0 }, snap as never)).toBe('band-slot')
@@ -200,7 +200,7 @@ describe('tableSpec', () => {
 
   it('a row key dispatches to the row spec', () => {
     const rows = rowsSpec()
-    const spec = tableSpec(isRow, rows, bandsSpec())
+    const spec = bandedSpec(isRow, rows, bandsSpec())
     const snap = spec.snap('r1', geometry)
     expect(snap).toEqual({ row: 'row-snap' })
     spec.commit('r1', 'row-slot' as never, snap as never)
@@ -215,24 +215,24 @@ describe('tableSpec', () => {
     } as unknown as Family<string>
     const carry = [carries(family, vi.fn())]
     const rows = rowsSpec({ snap: () => null, carry })
-    const spec = tableSpec(isRow, rows, bandsSpec())
+    const spec = bandedSpec(isRow, rows, bandsSpec())
     expect(spec.snap('r1', geometry)).toBeNull()
     expect(spec.carry).toBe(carry)
   })
 
   it('a disabled band spec snaps nothing', () => {
-    const spec = tableSpec(isRow, rowsSpec(), bandsSpec({ disabled: true }))
+    const spec = bandedSpec(isRow, rowsSpec(), bandsSpec({ disabled: true }))
     expect(spec.snap('sA', geometry)).toBeNull()
   })
 
   it('disclose answers per dragged kind', () => {
     const disclose = vi.fn(() => true)
-    const spec = tableSpec(isRow, rowsSpec({ disclose: false }), bandsSpec({ disclose }))
+    const spec = bandedSpec(isRow, rowsSpec({ disclose: false }), bandsSpec({ disclose }))
     const answer = spec.disclose as (id: string) => boolean
     expect(answer('r1')).toBe(false)
     expect(answer('sA')).toBe(true)
     expect(disclose).toHaveBeenCalledWith('sA')
-    const across = tableSpec(isRow, rowsSpec({ disclose: (id) => id === 'r1' }), bandsSpec())
+    const across = bandedSpec(isRow, rowsSpec({ disclose: (id) => id === 'r1' }), bandsSpec())
     expect((across.disclose as (id: string) => boolean)('r1')).toBe(true)
   })
 
@@ -263,7 +263,7 @@ describe('tableSpec', () => {
       label: () => 'row',
       watch: [bandOf],
     }
-    const spec = tableSpec(isRow, rows, bandsSpec())
+    const spec = bandedSpec(isRow, rows, bandsSpec())
     const snap = spec.snap('r3', g)!
     expect(spec.resolve('r3', { x: 0, y: 36 }, snap)).toMatchObject({ lane: 'a', before: null })
     expect(spec.resolve('r3', { x: 0, y: 44 }, snap)).toMatchObject({

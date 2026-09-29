@@ -14,7 +14,13 @@ import { asRenderableIcon } from '@pommora/uix/Symbols'
 import { findOption } from '../../Properties/Cells/cellResolve'
 import type { OptionChipData } from '../../Properties/Cells/OptionChip'
 import { formatBucketLabel } from '../../Properties/formatValue'
-import type { BandDrop, BandRef, BucketRef, SetRef } from './bandRouter'
+import {
+  type BandDrop,
+  type BandRef,
+  type BucketRef,
+  bucketValueAt,
+  type SetRef,
+} from './bandRouter'
 import type { SetIndex } from './setIndex'
 
 // ── Nodes ───────────────────────────────────────────────────────────────────
@@ -245,10 +251,7 @@ export function bandSnap(
     if (!last.has(p.parentKey)) last.set(p.parentKey, p.key)
   }
   const byKey = new Map(peers.map((p) => [p.key, p]))
-  const valueAt = (key: string | null): string | undefined => {
-    const p = key === null ? undefined : byKey.get(key)
-    return p?.kind === 'bucket' ? p.value : undefined
-  }
+  const valueAt = bucketValueAt(byKey)
   const slots = new Map<string, BandSlot | null>()
   const slot = (drop: BandDrop, top: () => number, depth: number): BandSlot | null => {
     const key =

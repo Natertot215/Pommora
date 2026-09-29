@@ -48,7 +48,7 @@ export function resolveView(input: {
     sorter,
     viewOption(view, 'ungrouped_placement'),
   )
-  if (hidden.size > 0) resolved = dropHiddenGroups(resolved, hidden, view)
+  if (hidden.size > 0) resolved = dropHiddenGroups(resolved, hidden, view, plan)
   if (viewOption(view, 'hide_empty_groups'))
     resolved = pruneEmptyGroups(pruneEmptyBuckets(resolved))
   else if (filtered.length !== rows.length) resolved = pruneEmptyGroups(resolved)

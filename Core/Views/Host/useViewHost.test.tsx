@@ -779,6 +779,13 @@ describe('settleOrders — a create composes with the live order', () => {
     expect(mutate.mock.calls[1][0]).toMatchObject({ order: ['p1', '$new', 'p2'] })
   })
 
+  it('a create under Location page order writes no manual_order, even over a stored one', async () => {
+    await mount(collection({ manual_order: ['p1', 'p2'], structural_order_mode: 'location' }))
+    saveSpy.mockClear()
+    await createBelowFirst()
+    expect(saveSpy).not.toHaveBeenCalled()
+  })
+
   it('an unsorted, ungrouped view mints no manual_order where none existed', async () => {
     await mount(collection())
     saveSpy.mockClear()
