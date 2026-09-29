@@ -172,6 +172,11 @@ describe('the All Properties section (T5)', () => {
     expect(host.textContent).toContain('Checkbox')
   })
 
+  it('the assigned group runs down to the All heading, so its lane owns the space between', async () => {
+    await mountPane()
+    expect(assignedGroup().nextElementSibling).toBe(allGroup())
+  })
+
   it('the assigned group renders inside its region wrapper (T6 hangs rects on it)', async () => {
     await mountPane()
     const assigned = assignedGroup()
@@ -250,6 +255,32 @@ describe('the two-region drag (T6) — state-level; geometry truth lives in the 
       'Into All Properties.',
     )
     pressEscape()
+  })
+
+  it('the keyboard reaches an empty assigned group and names it', async () => {
+    useSession.setState({ tree: { registry: [effortDef] } as never })
+    await mountPane([])
+    await act(async () => {
+      rowFor('All Properties').click()
+    })
+    stubRect(assignedGroup(), { top: 10, bottom: 50 })
+    stubRect(allGroup(), { top: 70, bottom: 110 })
+    stubRect(lineRow('Effort'), { top: 70, bottom: 90 })
+    const row = lineRow('Effort') as HTMLElement
+    await act(async () => {
+      row.focus()
+      row.dispatchEvent(new KeyboardEvent('keydown', { key: ' ', bubbles: true }))
+    })
+    await act(async () => {
+      row.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowUp', bubbles: true }))
+    })
+    expect(document.querySelector('[role="status"][aria-live="assertive"]')?.textContent).toBe(
+      'Into Properties.',
+    )
+    await act(async () => {
+      row.dispatchEvent(new KeyboardEvent('keydown', { key: ' ', bubbles: true }))
+    })
+    expect(assignSpy).toHaveBeenCalledWith('Col', 'prop_x', 0)
   })
 
   it('all → assigned commits the atomic assign at the slot index', async () => {

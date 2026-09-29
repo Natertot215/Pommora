@@ -62,6 +62,8 @@ export function OptionEditor({
     (value, icon) => onEdit({ op: 'icon', value, icon }),
   )
   const def = useMemo(() => ({ status_groups: groups }), [groups])
+  const headingOf = (id: string): string =>
+    grouped ? (groups.find((g) => g.id === id)?.label ?? id) : 'Options'
   const entering = useEntrance(options, (o) => keyOf(o.value))
   const ghostApi = useGhostOptionAnchor(
     adding !== null ||
@@ -143,7 +145,7 @@ export function OptionEditor({
         boxes: true,
         commit: (value, slot) =>
           onEdit({ op: 'move', value, groupId: slot.lane, toIndex: slot.index }),
-        label: (value) => value,
+        label: (value) => (values.includes(value) ? value : headingOf(value)),
         chip: (value) => <OptionChip type={type} option={options.find((o) => o.value === value)} />,
         watch: [groups],
       })}
@@ -161,7 +163,7 @@ export function OptionEditor({
             ) : (
               // biome-ignore lint/a11y/noStaticElementInteractions: a double-click affordance on a heading, not a control — the contents carry their own semantics
               <span onDoubleClick={grouped ? () => setRenamingGroup(g.id) : undefined}>
-                {grouped ? g.label : 'Options'}
+                {headingOf(g.id)}
               </span>
             )}
             <AccessoryButton

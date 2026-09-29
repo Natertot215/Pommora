@@ -30,7 +30,7 @@ function drive(
   const onDrop = vi.fn<(drop: PaneDrop) => void>()
   const spec = paneSpec({
     ...input,
-    allTitle: 'All',
+    titles: { assigned: 'Assigned', all: 'All' },
     label: (x) => x,
     glyph: () => null,
     onDrop,
@@ -81,6 +81,16 @@ describe('paneSpec — the schema pane', () => {
   it('clamps a release outside both regions to the nearest lane', () => {
     expect(at('a1', 200).slot).toBe('unassign')
     expect(at('a1', 55).drop).toEqual({ kind: 'reorder-assigned', propId: 'a1', toIndex: 1 })
+  })
+
+  it('the assigned lane owns the space down to the All heading, both directions', () => {
+    const tall = geometry([r('a1', 10, 30), r('a2', 30, 50), r('x1', 180, 200)], {
+      assigned: [10, 150],
+      all: [150, 200],
+    })
+    const drop = (id: string, y: number) => drive(pane, tall, id, y).drop
+    expect(drop('a1', 120)).toEqual({ kind: 'reorder-assigned', propId: 'a1', toIndex: 1 })
+    expect(drop('x1', 120)).toEqual({ kind: 'assign', propId: 'x1', toIndex: 2 })
   })
 
   it('an empty target region still yields the slot at its top (assign into a bare collection)', () => {
@@ -147,7 +157,7 @@ describe('paneSpec — the visibility pane', () => {
   it('steps into the hidden zone under its own title; row slots name their row', () => {
     const spec = paneSpec({
       ...pane,
-      allTitle: 'Hidden Properties',
+      titles: { assigned: 'Shown Properties', all: 'Hidden Properties' },
       label: (x) => x,
       glyph: () => null,
       onDrop: vi.fn(),

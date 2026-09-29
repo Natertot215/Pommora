@@ -140,6 +140,7 @@ function Board(): React.JSX.Element {
 // ── Line list ───────────────────────────────────────────────────────────────
 
 const ROWS = ['r1', 'r2', 'r3']
+let lineRows = ROWS
 let commit: Mock<(id: string, slot: string) => void>
 let lineSpec: Partial<LineSpec<string, Row[]>>
 let rowOpts: Record<string, { open?: () => void }>
@@ -172,7 +173,7 @@ function Lines(): React.JSX.Element {
         watch={[watch]}
         {...lineSpec}
       >
-        {ROWS.map((id) => (
+        {lineRows.map((id) => (
           <LineRow key={id} id={id} data-id={id} {...rowOpts[id]}>
             <button type="button" data-inner={id} />
           </LineRow>
@@ -240,6 +241,7 @@ beforeEach(() => {
   aside = null
   lineSpec = {}
   rowOpts = {}
+  lineRows = ROWS
   watch = 0
   ITEMS.D = ['d1']
   renders.clear()
@@ -1191,6 +1193,55 @@ describe('the engine seams', () => {
     expect((await press(item('r1'), 'Enter')).defaultPrevented).toBe(true)
     expect(open).toHaveBeenCalledOnce()
     expect(spoken()).toEqual([])
+  })
+
+  it('a held Enter opens a row once, not on its repeats', async () => {
+    View = Lines
+    const open = vi.fn()
+    rowOpts = { r1: { open } }
+    await mount()
+    await act(async () => item('r1').focus())
+    await press(item('r1'), 'Enter', { repeat: true })
+    expect(open).not.toHaveBeenCalled()
+  })
+
+  it('a keyboard drop whose row leaves the list hands focus to the list', async () => {
+    View = Lines
+    commit.mockImplementation((id) => {
+      lineRows = ROWS.filter((x) => x !== id)
+      root.render(<View />)
+    })
+    await mount()
+    await act(async () => item('r1').focus())
+    await press(item('r1'), ' ')
+    await press(document, 'ArrowDown')
+    await press(document, ' ')
+    await settle()
+    expect(commit).toHaveBeenCalledOnce()
+    expect(document.activeElement).toBe(item('r2'))
+  })
+
+  it('keeps the chip inside the viewport, measuring it once at lift', async () => {
+    View = Lines
+    await mount()
+    const width = Object.getOwnPropertyDescriptor(window, 'innerWidth')
+    Object.defineProperty(window, 'innerWidth', { value: 300, configurable: true })
+    const measure = vi
+      .spyOn(HTMLElement.prototype, 'getBoundingClientRect')
+      .mockReturnValue({ top: 0, bottom: 20, left: 0, right: 80, width: 80, height: 20 } as DOMRect)
+    await act(async () => {
+      firePointer(item('r1'), 'pointerdown', { x: 100, y: 15 })
+    })
+    await move(200, 70)
+    const chrome = document.querySelector('.drag-ghost')?.parentElement as HTMLElement
+    const reads = measure.mock.calls.length
+    await move(290, 70)
+    await move(295, 60)
+    expect(measure.mock.calls.length).toBe(reads)
+    expect(chrome.style.transform).toBe('translate3d(120.0px, 45.0px, 0)')
+    pressEscape()
+    measure.mockRestore()
+    if (width) Object.defineProperty(window, 'innerWidth', width)
   })
 
   it('a row-element reader never re-renders on a slot change', async () => {

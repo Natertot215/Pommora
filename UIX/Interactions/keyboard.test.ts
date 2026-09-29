@@ -62,25 +62,41 @@ describe('lineProbes — the keyboard reach of a line list', () => {
     left: 0,
     right: 100,
   })
-  const geometry = (rows: Row[], bottom: number): Geometry => ({
+  const geometry = (rows: Row[], bottom: number, groups: Row[] = []): Geometry => ({
     rows,
-    groups: new Map(),
+    groups: new Map(groups.map((g) => [g.id, g])),
     bottom,
   })
 
   it('probes each row before, into, and after, at 1/8, 1/2, and 7/8', () => {
     const probes = lineProbes(geometry([rowAt('a', 0)], 40))
     expect(probes.slice(0, 3)).toEqual([
-      { y: 5, row: 'a' },
-      { y: 20, row: 'a' },
-      { y: 35, row: 'a' },
+      { y: 5, id: 'a', kind: 'row', base: 0 },
+      { y: 20, id: 'a', kind: 'row', base: 0 },
+      { y: 35, id: 'a', kind: 'row', base: 0 },
     ])
   })
 
   it('always ends with the list-end probe at the geometry bottom', () => {
     const probes = lineProbes(geometry([rowAt('a', 0), rowAt('b', 40)], 90))
     expect(probes).toHaveLength(7)
-    expect(probes.at(-1)).toEqual({ y: 90, row: 'b' })
+    expect(probes.at(-1)).toEqual({ y: 90, id: 'b', kind: 'end' })
+  })
+
+  it('probes an empty group between two held ones, in order, keeping each row trio whole', () => {
+    const rows = [rowAt('a', 0), rowAt('b', 120)]
+    const probes = lineProbes(
+      geometry(rows, 200, [rowAt('upper', 0), rowAt('middle', 60), rowAt('lower', 120)]),
+    )
+    expect(probes.map((p) => p.y)).toEqual([5, 20, 35, 80, 125, 140, 155, 200])
+    expect(probes[3]).toEqual({ y: 80, id: 'middle', kind: 'group' })
+    expect(probes[4]).toEqual({ y: 125, id: 'b', kind: 'row', base: 4 })
+  })
+
+  it('probes a lone empty group with no rows at all', () => {
+    expect(lineProbes(geometry([], 40, [rowAt('only', 0)]))).toEqual([
+      { y: 20, id: 'only', kind: 'group' },
+    ])
   })
 
   it('probes nothing for an empty list', () => {

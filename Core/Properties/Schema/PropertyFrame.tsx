@@ -68,7 +68,7 @@ import { propertyMenuModel } from '@pommora/core/Actions/propertyMenu'
 type SubView = { kind: 'list' } | { kind: 'type' } | { kind: 'edit'; id: string }
 type WriteResult = Result<null>
 
-const ALL_TITLE = 'All Properties'
+const TITLES = { assigned: 'Properties', all: 'All Properties' }
 
 /** Lives outside PropertyFrame so rows never remount on its re-renders. */
 function ListGroups({
@@ -109,7 +109,7 @@ function ListGroups({
   )
   return (
     <>
-      <LineGroup id="assigned">
+      <LineGroup id="assigned" className={cx(s.assignedFill, allOpen && s.assignedFillNone)}>
         {assigned.length === 0 ? (
           <MenuCaption>No properties yet.</MenuCaption>
         ) : (
@@ -137,11 +137,10 @@ function ListGroups({
           })
         )}
       </LineGroup>
-      <div className={cx(s.allSpacer, allOpen && s.allSpacerCollapsed)} aria-hidden />
       <PaneAllGroup>
         <button type="button" className={cx(actionRow, s.allHeading)} onClick={onToggleAll}>
           <DropOutline open={allOpen} />
-          <span>{ALL_TITLE}</span>
+          <span>{TITLES.all}</span>
         </button>
         <Reveal open={allOpen} duration="base">
           <div>
@@ -504,7 +503,7 @@ export function PropertyFrame({
         {...paneSpec({
           assigned: props.map((d) => d.id),
           ordersAll: true,
-          allTitle: ALL_TITLE,
+          titles: TITLES,
           label: nameFor,
           glyph: glyphFor,
           onDrop: (drop) => void handleDrop(drop),

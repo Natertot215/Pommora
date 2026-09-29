@@ -8,6 +8,7 @@ import { useSession } from '../Session/store'
 import { cachePageDetail } from '../Session/pageDetailCache'
 import { PropertyPanel } from './PropertyPanel'
 import { valuesReply } from '../Testing/pageValues'
+import { firePointer, stubPointerCapture, stubRect } from '@pommora/uix/Testing/pointerHarness'
 
 ;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
 
@@ -17,6 +18,7 @@ class ResizeObserverStub {
   disconnect(): void {}
 }
 ;(globalThis as { ResizeObserver?: unknown }).ResizeObserver = ResizeObserverStub
+stubPointerCapture()
 
 const stageDef: PropertyDefinition = {
   id: 'prop_stage',
@@ -246,5 +248,37 @@ describe('PropertyPanel', () => {
     expect(read).toContain('Note')
     expect(read.indexOf('Note')).toBeLessThan(read.indexOf('Stage'))
     expect(read.indexOf('Stage')).toBeLessThan(read.indexOf('Rank'))
+  })
+})
+
+describe('the property row drag', () => {
+  const row = (id: string): Element =>
+    host.querySelector(`[data-property-row="${id}"]`)!.closest('[data-line-row]')!
+  const drag = async (id: string, from: number, ...to: number[]): Promise<void> => {
+    cachePageDetail(detail({ path: 'Col/Page.md', frontmatter: { Stage: 'Alpha', Note: 3 } }))
+    await renderPanel(<PropertyPanel subject={PAGE} host="side-pane" />)
+    stubRect(row('prop_stage').closest('.drop-line-host')!, { top: 0, bottom: 40 })
+    stubRect(row('prop_stage'), { top: 0, bottom: 20 })
+    stubRect(row('prop_note'), { top: 20, bottom: 40 })
+    await act(async () => {
+      firePointer(row(id), 'pointerdown', { x: 50, y: from })
+      for (const y of to) firePointer(window, 'pointermove', { x: 50, y })
+      firePointer(window, 'pointerup', { x: 50, y: to.at(-1) })
+    })
+  }
+
+  it('reorders the schema at the slot index among the shown rows', async () => {
+    await drag('prop_note', 30, 15, 2)
+    expect(ask).toHaveBeenCalledWith('schema:reorder', 'Col', 'prop_note', 0)
+  })
+
+  it('a release on its own slot writes nothing', async () => {
+    await drag('prop_stage', 10, 25, 10)
+    expect(ask).not.toHaveBeenCalledWith(
+      'schema:reorder',
+      expect.anything(),
+      expect.anything(),
+      expect.anything(),
+    )
   })
 })

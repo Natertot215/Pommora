@@ -135,7 +135,7 @@ export function VisibilityFrame({
           assigned: shownIds,
           ordersAll: false,
           pinned: RESERVED_PROPERTY_ID.title,
-          allTitle: 'Hidden Properties',
+          titles: { assigned: 'Shown Properties', all: 'Hidden Properties' },
           label: nameFor,
           glyph: (id) => <Icon name={rowGlyph(id, schema)} />,
           onDrop: handleDrop,

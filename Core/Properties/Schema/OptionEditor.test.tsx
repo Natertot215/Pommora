@@ -7,7 +7,10 @@ import type { PropertyType, StatusGroup } from '@pommora/core/Properties/propert
 import { OptionEditor } from './OptionEditor'
 import { useSession } from '../../Session/store'
 import { stubDialer } from '../../vitest.setup'
+import { firePointer, stubPointerCapture, stubRect } from '@pommora/uix/Testing/pointerHarness'
 ;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
+
+stubPointerCapture()
 
 const status = [
   {
@@ -208,6 +211,91 @@ describe('the group heading', () => {
     render('select', select)
     dblclick('Options')
     expect(host.querySelector('input')).toBeNull()
+    expect(onEdit).not.toHaveBeenCalled()
+  })
+})
+
+describe('the option drag', () => {
+  const three = [
+    {
+      id: 'todo',
+      label: 'To-do',
+      color: 'grey',
+      options: [
+        { value: 'Open', group_id: 'todo' },
+        { value: 'Next', group_id: 'todo' },
+      ],
+    },
+    { id: 'doing', label: 'Doing', color: 'blue', options: [] },
+    { id: 'done', label: 'Done', color: 'green', options: [{ value: 'Closed', group_id: 'done' }] },
+  ] as StatusGroup[]
+  const row = (value: string): Element => span(value)!.closest('[data-line-row]')!
+  const lay = (): void => {
+    stubRect(host.querySelector('.drop-line-host')!, { top: 0, bottom: 200 })
+    const [todo, doing, done] = host.querySelectorAll('[class*="optionList"]')
+    stubRect(todo, { top: 10, bottom: 50 })
+    stubRect(doing, { top: 70, bottom: 90 })
+    stubRect(done, { top: 110, bottom: 130 })
+    stubRect(row('Open'), { top: 10, bottom: 30 })
+    stubRect(row('Next'), { top: 30, bottom: 50 })
+    stubRect(row('Closed'), { top: 110, bottom: 130 })
+  }
+  const drag = (value: string, from: number, ...to: number[]): void => {
+    render('status', three)
+    lay()
+    act(() => {
+      firePointer(row(value), 'pointerdown', { x: 50, y: from })
+      for (const y of to) firePointer(window, 'pointermove', { x: 50, y })
+      firePointer(window, 'pointerup', { x: 50, y: to.at(-1) })
+    })
+  }
+
+  it('moves an option into an empty group at its top', () => {
+    drag('Open', 20, 40, 80)
+    expect(onEdit).toHaveBeenCalledExactlyOnceWith({
+      op: 'move',
+      value: 'Open',
+      groupId: 'doing',
+      toIndex: 0,
+    })
+  })
+
+  it('moves an option across groups at the slot', () => {
+    drag('Closed', 120, 100, 15)
+    expect(onEdit).toHaveBeenCalledExactlyOnceWith({
+      op: 'move',
+      value: 'Closed',
+      groupId: 'todo',
+      toIndex: 0,
+    })
+  })
+
+  it('the keyboard steps into an empty group by its label', () => {
+    render('status', three)
+    lay()
+    const open = row('Open') as HTMLElement
+    const key = (k: string): void =>
+      act(() => {
+        open.dispatchEvent(new KeyboardEvent('keydown', { key: k, bubbles: true }))
+      })
+    act(() => open.focus())
+    key(' ')
+    key('ArrowDown')
+    key('ArrowDown')
+    expect(document.querySelector('[role="status"][aria-live="assertive"]')?.textContent).toBe(
+      'Into Doing.',
+    )
+    key(' ')
+    expect(onEdit).toHaveBeenCalledExactlyOnceWith({
+      op: 'move',
+      value: 'Open',
+      groupId: 'doing',
+      toIndex: 0,
+    })
+  })
+
+  it('a release on its own slot writes nothing', () => {
+    drag('Open', 20, 32, 20)
     expect(onEdit).not.toHaveBeenCalled()
   })
 })
