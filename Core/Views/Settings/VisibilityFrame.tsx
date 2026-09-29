@@ -11,23 +11,20 @@ import { MenuRowView, MenuTopRow, MenuScrollFrame } from '@pommora/uix/Menus'
 import { resolveColumns } from '../Pipeline/columns'
 import { columnLabel, useCapitalizeMetadata } from '../../Properties/Cells/columnLabel'
 import { useSaveView } from '../viewWrite'
-import { LineGroup, LineRow, LineZone, useLineSlot } from '@pommora/uix/Interactions/drag'
-import { type PaneDrop, type PaneSlot, paneSpec } from '@pommora/core/Properties/paneDrop'
+import { LineGroup, LineRow, LineZone } from '@pommora/uix/Interactions/drag'
+import { PaneAllGroup, type PaneDrop, paneSpec } from '@pommora/core/Properties/paneDrop'
 import { contextIdsOf, contextsByIdOf } from '../../Contexts/contextIdentity'
 import { hiddenListIds, hideShown, placeInShown, unhide } from '../visibilityModel'
 import { EyeToggle } from '@pommora/uix/Elements/EyeToggle'
-import { PropertyTypeIcon, propertyIcon } from '../../Properties/Cells/PropertyTypes'
+import { propertyIcon, propertyTypeIconName } from '../../Properties/Cells/PropertyTypes'
 import { Icon } from '@pommora/uix/Symbols'
-import { cx } from '@pommora/uix/Utilities/cx'
 import * as s from '@pommora/uix/Menus/frames.css'
 
-function rowIcon(id: string, schema: PropertyDefinition[]): ReactNode {
+function rowGlyph(id: string, schema: PropertyDefinition[]): string {
   const def = schema.find((d) => d.id === id)
-  if (def) return <Icon name={propertyIcon(def)} size={s.ICON.doc} />
-  if (id === RESERVED_PROPERTY_ID.title) return <PropertyTypeIcon type="title" size={s.ICON.doc} />
-  const stamp = STAMP_TYPE[id]
-  if (stamp) return <PropertyTypeIcon type={stamp} size={s.ICON.doc} />
-  return <PropertyTypeIcon type="context" size={s.ICON.doc} />
+  if (def) return propertyIcon(def)
+  if (id === RESERVED_PROPERTY_ID.title) return propertyTypeIconName('title')
+  return propertyTypeIconName(STAMP_TYPE[id] ?? 'context')
 }
 
 function VisibilityGroups({
@@ -45,7 +42,6 @@ function VisibilityGroups({
   nameFor: (id: string) => string
   onToggle: (id: string, hidden: boolean) => void
 }): React.JSX.Element {
-  const hiding = useLineSlot<PaneSlot>() === 'unassign'
   const row = (id: string): React.JSX.Element => {
     const hidden = hiddenSet.has(id)
     return (
@@ -53,7 +49,7 @@ function VisibilityGroups({
         <MenuRowView
           row={{
             kind: 'item',
-            icon: rowIcon(id, schema),
+            icon: <Icon name={rowGlyph(id, schema)} size={s.ICON.doc} />,
             label: nameFor(id),
             trailing:
               id === RESERVED_PROPERTY_ID.title
@@ -84,9 +80,7 @@ function VisibilityGroups({
   return (
     <>
       <LineGroup id="assigned">{shownIds.map(row)}</LineGroup>
-      <LineGroup id="all" className={cx(s.hiddenZone, hiding && s.allHighlight)}>
-        {hiddenIds.map(row)}
-      </LineGroup>
+      <PaneAllGroup className={s.hiddenZone}>{hiddenIds.map(row)}</PaneAllGroup>
     </>
   )
 }
@@ -136,18 +130,14 @@ export function VisibilityFrame({
       maxHeight={maxHeight}
     >
       <LineZone
-        className={s.frameDnd}
+        className={s.frameZone}
         {...paneSpec({
           assigned: shownIds,
           ordersAll: false,
           pinned: RESERVED_PROPERTY_ID.title,
+          allTitle: 'Hidden Properties',
           label: nameFor,
-          chip: (id) => (
-            <>
-              {rowIcon(id, schema)}
-              {nameFor(id)}
-            </>
-          ),
+          glyph: (id) => <Icon name={rowGlyph(id, schema)} />,
           onDrop: handleDrop,
           watch: [view, schema, tree],
         })}

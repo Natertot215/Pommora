@@ -439,6 +439,21 @@ describe('scrollGlide — the destination is re-read, not resolved once', () => 
     expect(el.scrollTop).toBe(9500)
   })
 
+  it('outlives the keydown that started it, and stops at the next one', () => {
+    const el = makeScroller()
+    const row = document.createElement('div')
+    document.body.appendChild(row)
+    row.addEventListener('keydown', () => void scrollGlide(el, 900, G))
+    row.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }))
+    flush(2)
+    const moving = el.scrollTop
+    expect(moving).toBeGreaterThan(0)
+    window.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown' }))
+    flush(20)
+    expect(el.scrollTop).toBe(moving)
+    row.remove()
+  })
+
   it('a drag claims the scroller from a travel in flight', () => {
     const el = makeScroller()
     scrollGlide(el, 900, G)

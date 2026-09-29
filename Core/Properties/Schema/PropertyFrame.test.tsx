@@ -6,13 +6,29 @@ import { ok } from '@pommora/core/Contract/result'
 import { act } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
 import { defaultStatusSeed, type PropertyDefinition } from '@pommora/core/Properties/properties'
-import { firePointer, stubPointerCapture, stubRect } from '@pommora/uix/Testing/pointerHarness'
+import {
+  firePointer,
+  pressEscape,
+  stubPointerCapture,
+  stubRect,
+} from '@pommora/uix/Testing/pointerHarness'
 import { useSession } from '../../Session/store'
 import { PropertyFrame } from './PropertyFrame'
 import { stubDialer } from '../../vitest.setup'
 ;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
 
 stubPointerCapture()
+
+const titleRenders = vi.hoisted(() => ({ n: 0 }))
+vi.mock('@pommora/uix/Fields/RenamableLabel', async (actual) => {
+  const real = await actual<typeof import('@pommora/uix/Fields/RenamableLabel')>()
+  return {
+    RenamableLabel: (props: Parameters<typeof real.RenamableLabel>[0]) => {
+      titleRenders.n += 1
+      return <real.RenamableLabel {...props} />
+    },
+  }
+})
 
 class ResizeObserverStub {
   observe(): void {}
@@ -87,6 +103,11 @@ const rowFor = (name: string): HTMLElement => {
   return span
 }
 
+const lineRow = (name: string): Element => rowFor(name).closest('[data-line-row]')!
+const zone = (): Element => host.querySelector('.drop-line-host')!
+const assignedGroup = (): Element => zone().children[0]
+const allGroup = (): Element => rowFor('All Properties').closest('button')!.parentElement!
+
 describe('the DRY nested slide (A-7)', () => {
   it('list → editor renders BOTH slots (inner FrameSlide keeps them mounted) with the editor active', async () => {
     await mountPane()
@@ -123,11 +144,10 @@ describe('the All Properties section (T5)', () => {
     await act(async () => {
       rowFor('All Properties').click()
     })
-    const all = host.querySelector('[data-group="all"]')
-    expect(all).not.toBeNull()
-    expect(all?.textContent).toContain('Effort')
-    expect(all?.textContent).not.toContain('Status')
-    expect(all?.textContent).not.toContain('Title')
+    const all = allGroup()
+    expect(all.textContent).toContain('Effort')
+    expect(all.textContent).not.toContain('Status')
+    expect(all.textContent).not.toContain('Title')
   })
 
   it('+ assigns through the IPC; the confirming push carries the promotion, not a reload', async () => {
@@ -154,9 +174,9 @@ describe('the All Properties section (T5)', () => {
 
   it('the assigned group renders inside its region wrapper (T6 hangs rects on it)', async () => {
     await mountPane()
-    const assigned = host.querySelector('[data-group="assigned"]')
-    expect(assigned?.textContent).toContain('Status')
-    expect(assigned?.textContent).toContain('Count')
+    const assigned = assignedGroup()
+    expect(assigned.textContent).toContain('Status')
+    expect(assigned.textContent).toContain('Count')
   })
 })
 
@@ -164,12 +184,11 @@ describe('the two-region drag (T6) — state-level; geometry truth lives in the 
   const deleteSpy = (): ReturnType<typeof vi.fn> => unassignSpy
 
   const stubGeometry = (): void => {
-    stubRect(host.querySelector('[data-group="assigned"]')!, { top: 10, bottom: 50 })
-    stubRect(host.querySelector('[data-group="all"]')!, { top: 70, bottom: 110 })
-    stubRect(host.querySelector('[data-prop="prop_status"]')!, { top: 10, bottom: 30 })
-    stubRect(host.querySelector('[data-prop="prop_n"]')!, { top: 30, bottom: 50 })
-    const x1 = host.querySelector('[data-prop="prop_x"]')
-    if (x1) stubRect(x1, { top: 70, bottom: 90 })
+    stubRect(assignedGroup(), { top: 10, bottom: 50 })
+    stubRect(allGroup(), { top: 70, bottom: 110 })
+    stubRect(lineRow('Status'), { top: 10, bottom: 30 })
+    stubRect(lineRow('Count'), { top: 30, bottom: 50 })
+    stubRect(lineRow('Effort'), { top: 70, bottom: 90 })
   }
 
   it('assigned → all commits the Remove (schema.delete) after an area-highlight hover', async () => {
@@ -179,17 +198,58 @@ describe('the two-region drag (T6) — state-level; geometry truth lives in the 
       rowFor('All Properties').click()
     })
     stubGeometry()
-    const row = host.querySelector('[data-prop="prop_status"]')!
+    const row = lineRow('Status')
     await act(async () => {
       firePointer(row, 'pointerdown', { x: 100, y: 20 })
       firePointer(window, 'pointermove', { x: 100, y: 40 })
       firePointer(window, 'pointermove', { x: 100, y: 80 })
     })
-    expect(host.querySelector('[data-group="all"]')?.className).toContain('allHighlight')
+    expect(allGroup().className).toContain('allHighlight')
     await act(async () => {
       firePointer(window, 'pointerup', { x: 100, y: 80 })
     })
     expect(deleteSpy()).toHaveBeenCalledWith('Col', 'prop_status')
+  })
+
+  it('a slot change repaints the All group alone — no row re-renders', async () => {
+    useSession.setState({ tree: { registry: [effortDef] } as never })
+    await mountPane()
+    await act(async () => {
+      rowFor('All Properties').click()
+    })
+    stubGeometry()
+    await act(async () => {
+      firePointer(lineRow('Status'), 'pointerdown', { x: 100, y: 20 })
+      firePointer(window, 'pointermove', { x: 100, y: 40 })
+    })
+    const before = titleRenders.n
+    await act(async () => {
+      firePointer(window, 'pointermove', { x: 100, y: 80 })
+    })
+    expect(allGroup().className).toContain('allHighlight')
+    expect(titleRenders.n).toBe(before)
+    pressEscape()
+  })
+
+  it('stepping into the All zone announces the group, not the last row', async () => {
+    useSession.setState({ tree: { registry: [effortDef] } as never })
+    await mountPane()
+    await act(async () => {
+      rowFor('All Properties').click()
+    })
+    stubGeometry()
+    const row = lineRow('Count') as HTMLElement
+    await act(async () => {
+      row.focus()
+      row.dispatchEvent(new KeyboardEvent('keydown', { key: ' ', bubbles: true }))
+    })
+    await act(async () => {
+      row.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true }))
+    })
+    expect(document.querySelector('[role="status"][aria-live="assertive"]')?.textContent).toBe(
+      'Into All Properties.',
+    )
+    pressEscape()
   })
 
   it('all → assigned commits the atomic assign at the slot index', async () => {
@@ -199,7 +259,7 @@ describe('the two-region drag (T6) — state-level; geometry truth lives in the 
       rowFor('All Properties').click()
     })
     stubGeometry()
-    const row = host.querySelector('[data-prop="prop_x"]')!
+    const row = lineRow('Effort')
     await act(async () => {
       firePointer(row, 'pointerdown', { x: 100, y: 80 })
       firePointer(window, 'pointermove', { x: 100, y: 60 })
@@ -216,7 +276,7 @@ describe('the two-region drag (T6) — state-level; geometry truth lives in the 
       rowFor('All Properties').click()
     })
     stubGeometry()
-    const row = host.querySelector('[data-prop="prop_status"]')!
+    const row = lineRow('Status')
     await act(async () => {
       firePointer(row, 'pointerdown', { x: 100, y: 20 })
       firePointer(window, 'pointermove', { x: 100, y: 80 })
@@ -234,8 +294,8 @@ describe('the two-region drag (T6) — state-level; geometry truth lives in the 
     })
     stubGeometry()
     // The pane box runs far past the all-block's rendered rows; the region must extend with it.
-    stubRect(host.querySelector('[class*="frameDnd"]')!, { top: 0, bottom: 300 })
-    const row = host.querySelector('[data-prop="prop_status"]')!
+    stubRect(zone(), { top: 0, bottom: 300 })
+    const row = lineRow('Status')
     await act(async () => {
       firePointer(row, 'pointerdown', { x: 100, y: 20 })
       firePointer(window, 'pointermove', { x: 100, y: 40 })
@@ -338,8 +398,7 @@ describe('native menus + the inline-rename channel (T7)', () => {
     propertyMenuSpy.mockResolvedValueOnce('property:rename')
     await mountPane()
     await act(async () => {
-      host
-        .querySelector('[data-prop="prop_status"]')!
+      lineRow('Status')
         .querySelector('[class*="item"]')!
         .dispatchEvent(new MouseEvent('contextmenu', { bubbles: true }))
     })
@@ -375,8 +434,7 @@ describe('native menus + the inline-rename channel (T7)', () => {
       rowFor('All Properties').click()
     })
     await act(async () => {
-      host
-        .querySelector('[data-prop="prop_x"]')!
+      lineRow('Effort')
         .querySelector('[class*="item"]')!
         .dispatchEvent(new MouseEvent('contextmenu', { bubbles: true }))
     })

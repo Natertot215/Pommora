@@ -949,6 +949,16 @@ describe('the line zone', () => {
     expect(host.querySelector('.drop-line')).toBeNull()
   })
 
+  it('builds the chip from the glyph and the label when no custom chip is given', async () => {
+    lineSpec = { chip: undefined, glyph: (id) => <b data-glyph={id} /> }
+    await mount()
+    await dragHold('r1', 100, 70)
+    const ghost = document.querySelector('.drag-ghost')
+    expect(ghost?.querySelector('[data-glyph="r1"]')).not.toBeNull()
+    expect(ghost?.textContent).toBe('r1')
+    pressEscape()
+  })
+
   it('anchors the chip at the grab point', async () => {
     await act(async () => {
       firePointer(item('r1'), 'pointerdown', { x: 7, y: 15 })

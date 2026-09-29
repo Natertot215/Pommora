@@ -28,16 +28,9 @@ export function SidebarDnd({
       line={(slot) => rowDropLine(slot.edge, slot.depth)}
       slotKey={(slot) => `${slot.parentId}/${slot.beforeId}`}
       label={(id) => entry(id)?.title ?? ''}
-      chip={(id) => {
+      glyph={(id) => {
         const e = entry(id)
-        return (
-          e && (
-            <>
-              <Icon name={e.icon} size="body" />
-              {e.title}
-            </>
-          )
-        )
+        return e && <Icon name={e.icon} />
       }}
       carry={[
         carries(TAB_FAMILY, (id) => {

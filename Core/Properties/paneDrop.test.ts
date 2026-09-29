@@ -30,8 +30,9 @@ function drive(
   const onDrop = vi.fn<(drop: PaneDrop) => void>()
   const spec = paneSpec({
     ...input,
+    allTitle: 'All',
     label: (x) => x,
-    chip: () => null,
+    glyph: () => null,
     onDrop,
     watch: [],
   })
@@ -134,13 +135,29 @@ describe('paneSpec — the visibility pane', () => {
     expect(s.slot).toBeNull()
   })
 
-  it('is inert above and below the pane regions', () => {
+  it('clamps below the pane to the hidden zone; above stays its own gap', () => {
     expect(at('a', -10).slot).toBeNull()
     expect(at('a', 150).slot).toBe('unassign')
   })
 
   it('never highlights during a positional drop in the shown zone', () => {
     expect(at('h', 35).slot).not.toBe('unassign')
+  })
+
+  it('steps into the hidden zone under its own title; row slots name their row', () => {
+    const spec = paneSpec({
+      ...pane,
+      allTitle: 'Hidden Properties',
+      label: (x) => x,
+      glyph: () => null,
+      onDrop: vi.fn(),
+      watch: [],
+    })
+    const s = spec.snap('a', g)!
+    const into = spec.step?.('unassign', s)
+    expect(into?.part).toBe('into')
+    expect(into && spec.label(into.id)).toBe('Hidden Properties')
+    expect(spec.step?.(spec.resolve('a', { x: 0, y: 35 }, s)!, s)).toBeNull()
   })
 })
 

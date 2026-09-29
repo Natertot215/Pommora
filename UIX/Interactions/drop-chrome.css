@@ -45,6 +45,12 @@
   gap: 6px;
 }
 
+.drag-ghost > :is(svg, img) {
+  flex: none;
+  width: 1em;
+  height: 1em;
+}
+
 [data-drag-source] {
   opacity: var(--state-ghost);
 }

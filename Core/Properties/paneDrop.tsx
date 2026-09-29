@@ -1,7 +1,7 @@
 // Slot indexes are in the persisted arrays' without-dragged coordinates.
 
 import type { ReactNode } from 'react'
-import type { LineSpec } from '@pommora/uix/Interactions/drag'
+import { LineGroup, type LineSpec, useLineSlot } from '@pommora/uix/Interactions/drag'
 import {
   buildLanes,
   laneAt,
@@ -10,6 +10,8 @@ import {
   rowSlot,
 } from '@pommora/uix/Interactions/reorderModel'
 import { rowDropLine } from '@pommora/uix/Menus'
+import { allHighlight } from '@pommora/uix/Menus/frames.css'
+import { cx } from '@pommora/uix/Utilities/cx'
 
 // The schema pane and the view-visibility pane derive from this vocabulary and refuse drops differently by design: the schema pane's bottom zone is the ordered nexus registry and reorders, the view pane's is a derived hidden list with no order and can't.
 // Title and every reserved property is never removable: the schema pane filters reserved ids out of both zones, the view pane refuses to hide Title.
@@ -67,16 +69,18 @@ export function paneSpec({
   assigned,
   ordersAll,
   pinned,
+  allTitle,
   label,
-  chip,
+  glyph,
   onDrop,
   watch,
 }: {
   assigned: readonly string[]
   ordersAll: boolean
   pinned?: string
+  allTitle: string
   label: (id: string) => string
-  chip: (id: string) => ReactNode
+  glyph: (id: string) => ReactNode
   onDrop: (drop: PaneDrop) => void
   watch: readonly unknown[]
 }): LineSpec<PaneSlot, Lanes> {
@@ -88,8 +92,24 @@ export function paneSpec({
     resolve: (id, point, s) => paneSlot(s, point.y, id, ordersAll, pinned),
     commit: (id, slot, s) => onDrop(dropOf(id, slot, s.home?.key)),
     line: (slot) => (slot === 'unassign' ? null : rowDropLine(slot.edge)),
-    label,
-    chip,
+    step: (slot) => (slot === 'unassign' ? { part: 'into', id: 'all' } : null),
+    label: (id) => (id === 'all' ? allTitle : label(id)),
+    glyph,
     watch,
   }
+}
+
+export function PaneAllGroup({
+  className,
+  children,
+}: {
+  className?: string
+  children: ReactNode
+}): React.JSX.Element {
+  const into = useLineSlot<PaneSlot>() === 'unassign'
+  return (
+    <LineGroup id="all" className={cx(className, into && allHighlight)}>
+      {children}
+    </LineGroup>
+  )
 }
