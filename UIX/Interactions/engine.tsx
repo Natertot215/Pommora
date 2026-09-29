@@ -731,8 +731,12 @@ function createEngine(setChrome: (c: Chrome | null) => void): Api {
     setChrome(null)
   }
 
-  const glide = (s: Session, from: ReadonlyMap<HTMLElement, DOMRect>, guess: Box | null): void => {
+  const glide = (s: Session, from: ReadonlyMap<HTMLElement, DOMRect>): void => {
     const target = zones.get(s.landing?.zone ?? s.zone)?.els.get(s.id)
+    if (chromeEl && !target) {
+      end(s)
+      return
+    }
     const flips: [HTMLElement, string][] = []
     for (const [el, was] of from) {
       if (!el.isConnected) continue
@@ -748,11 +752,11 @@ function createEngine(setChrome: (c: Chrome | null) => void): Api {
       el.style.transform = ''
       touched.add(el)
     }
-    const to = target?.getBoundingClientRect() ?? guess
-    if (chromeEl && to) {
+    if (chromeEl && target) {
+      const to = target.getBoundingClientRect()
       chromeEl.style.transition = GLIDE
       chromeEl.style.transform = translate(to.left - s.rect.left, to.top - s.rect.top)
-      if (target && target !== s.el) {
+      if (target !== s.el) {
         target.style.visibility = 'hidden'
         touched.add(target)
       }
@@ -781,7 +785,6 @@ function createEngine(setChrome: (c: Chrome | null) => void): Api {
       for (const el of touched) from.set(el, el.getBoundingClientRect())
       if (!s.overlaid) from.set(s.el, s.el.getBoundingClientRect())
     }
-    const guess = animates && s.landing ? (slotBoxOf(s, s.landing)?.box ?? null) : null
     const run = (): void => {
       try {
         commit?.()
@@ -792,7 +795,7 @@ function createEngine(setChrome: (c: Chrome | null) => void): Api {
     }
     if (disposing) run()
     else flushSync(run)
-    if (animates) glide(s, from, guess)
+    if (animates) glide(s, from)
     announceDrag(word, s.name)
     if (s.via === 'keyboard')
       requestAnimationFrame(() => (zones.get(s.zone)?.els.get(s.id) ?? s.el).focus())
