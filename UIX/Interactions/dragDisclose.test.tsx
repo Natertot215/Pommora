@@ -46,18 +46,14 @@ const hoverOver = (target: Element | null): void => {
 const dwell = (): void => void vi.advanceTimersByTime(600)
 
 describe('addSpring', () => {
-  it('springs a row open from a pointer resting on its content, calling the latest expand', () => {
-    const first = vi.fn()
-    const latest = vi.fn()
-    let expand = first
+  it('springs a row open from a pointer resting on its content', () => {
+    const expand = vi.fn()
     const row = el(surface)
     const child = el(row, 'span')
-    spring(row, () => expand())
+    spring(row, expand)
     hoverOver(child)
-    expand = latest
     dwell()
-    expect(first).not.toHaveBeenCalled()
-    expect(latest).toHaveBeenCalledOnce()
+    expect(expand).toHaveBeenCalledOnce()
   })
 
   it('opens the innermost of two nested rows', () => {

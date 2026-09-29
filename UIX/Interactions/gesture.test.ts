@@ -412,10 +412,16 @@ describe('the item rule, the cursor, and autoscroll', () => {
       top += 40
       scroller.dispatchEvent(new Event('scroll'))
       expect(onWindowScroll).toHaveBeenCalledTimes(answered + 1)
+      top -= 40
+      scroller.dispatchEvent(new Event('scroll'))
+      expect(onWindowScroll).toHaveBeenCalledTimes(answered + 2)
     })
 
     it('does not arm before the press becomes a drag', () => {
-      gesture.beginPointerGesture(spec({ autoScroll: { from: scroller, axis: 'y' } }))
+      const handle = gesture.beginPointerGesture(
+        spec({ autoScroll: { from: scroller, axis: 'y' } }),
+      )
+      handle?.autoScroll(true)
       move(0, 2)
       flush(3)
       expect(rafMap.size).toBe(0)

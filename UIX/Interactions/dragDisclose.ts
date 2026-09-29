@@ -58,12 +58,7 @@ function schedule(): void {
   else trailing = window.setTimeout(check, wait)
 }
 
-function onMove(e: PointerEvent): void {
-  point.x = e.clientX
-  point.y = e.clientY
-  pointed = true
-  schedule()
-}
+const onMove = (e: PointerEvent): void => pointDisclose(e.clientX, e.clientY)
 
 export function nudgeDragRemeasure(): void {
   if (!armed) return

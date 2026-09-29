@@ -1,6 +1,14 @@
 // @vitest-environment jsdom
 import { describe, expect, it } from 'vitest'
-import { type Axis, beforeIdAt, freeze, nearest, placeItem, slotPoint } from './placement'
+import {
+  type Axis,
+  beforeIdAt,
+  type Frozen,
+  freeze,
+  nearest,
+  placeItem,
+  slotPoint,
+} from './placement'
 
 type R = { left: number; top: number; width: number; height: number }
 
@@ -13,7 +21,7 @@ function frozenOf(
   rects: R[],
   axis: Axis | undefined,
   opts: { box?: R; activeHeight?: number } = {},
-): ReturnType<typeof freeze> {
+): Frozen {
   const parent = document.createElement('div')
   stub(parent, opts.box ?? { left: 0, top: 0, width: 0, height: 0 })
   const els = new Map<string, HTMLElement>()
@@ -24,7 +32,9 @@ function frozenOf(
     parent.append(el)
     els.set(ids[i], el)
   })
-  return freeze(ids, els, opts.box ? parent : null, axis, opts.activeHeight ?? 0) ?? null
+  const f = freeze(ids, els, opts.box ? parent : null, axis, opts.activeHeight ?? 0)
+  if (!f) throw new Error('no frame')
+  return f
 }
 
 const column = (n: number): R[] =>
@@ -51,18 +61,18 @@ describe('freeze', () => {
       undefined,
       { box: { left: 50, top: 20, width: 200, height: 200 } },
     )
-    expect(f?.rects.map((r) => [r.left, r.top, r.cx, r.cy])).toEqual([
+    expect(f.rects.map((r) => [r.left, r.top, r.cx, r.cy])).toEqual([
       [0, 0, 50, 50],
       [100, 0, 150, 50],
       [0, 100, 50, 150],
     ])
-    expect(f?.rows).toEqual([0, 2])
-    expect(f?.rowTops).toEqual([0, 100])
-    expect(f?.centres).toEqual([])
-    expect(f?.origin).toEqual({ x: 50, y: 20 })
-    expect(f?.pitch).toBe(100)
-    expect(f?.grid).toEqual({ x0: 0, stride: 100, cols: 2, col: 0, top: 100 })
-    expect(f?.tail).toEqual({ x: 100, y: 100 })
+    expect(f.rows).toEqual([0, 2])
+    expect(f.rowTops).toEqual([0, 100])
+    expect(f.centres).toEqual([])
+    expect(f.origin).toEqual({ x: 50, y: 20 })
+    expect(f.pitch).toBe(100)
+    expect(f.grid).toEqual({ x0: 0, stride: 100, cols: 2, col: 0, top: 100 })
+    expect(f.tail).toEqual({ x: 100, y: 100 })
   })
 
   it('records each rect’s centre on the axis and the gap between neighbours', () => {
@@ -74,9 +84,9 @@ describe('freeze', () => {
       'x',
       { box: { left: 0, top: 0, width: 400, height: 30 } },
     )
-    expect(f?.centres).toEqual([100, 264])
-    expect(f?.gap).toBe(4)
-    expect(f?.tail).toEqual({ x: 328, y: 0 })
+    expect(f.centres).toEqual([100, 264])
+    expect(f.gap).toBe(4)
+    expect(f.tail).toEqual({ x: 328, y: 0 })
   })
 
   it('skips ids with no element and has no frame without a box or an item', () => {
@@ -92,13 +102,8 @@ describe('freeze', () => {
 })
 
 describe('placeItem — the displacement core', () => {
-  const at = (
-    f: ReturnType<typeof frozenOf>,
-    i: number,
-    active: number,
-    over: number,
-  ): { x: number; y: number } =>
-    placeItem(f as NonNullable<typeof f>, undefined, i, active, over, SIZE)
+  const at = (f: Frozen, i: number, active: number, over: number): { x: number; y: number } =>
+    placeItem(f, undefined, i, active, over, SIZE)
 
   it('shifts the passed-over items up when dragging forward', () => {
     const f = frozenOf(column(4), undefined)
@@ -129,8 +134,7 @@ describe('placeItem — the displacement core', () => {
   it('opens a slot for a foreign item, and walks the grid past the last cell', () => {
     const f = frozenOf(grid(4, 2), undefined, { box: { left: 0, top: 0, width: 200, height: 200 } })
     const size = { width: 100, height: 100 }
-    const place = (i: number, over: number) =>
-      placeItem(f as NonNullable<typeof f>, undefined, i, -1, over, size)
+    const place = (i: number, over: number) => placeItem(f, undefined, i, -1, over, size)
     expect(place(0, 0)).toEqual({ x: 100, y: 0 })
     expect(place(3, 4)).toEqual({ x: 100, y: 100 })
     expect(place(3, 0)).toEqual({ x: 0, y: 200 })
@@ -145,7 +149,7 @@ describe('placeItem — the displacement core', () => {
       ],
       'x',
       { box: { left: 0, top: 0, width: 440, height: 30 } },
-    ) as NonNullable<ReturnType<typeof frozenOf>>
+    )
     const size = { width: 200, height: 30 }
     expect(placeItem(f, 'x', 1, 0, 1, size)).toEqual({ x: 0, y: 0 })
     expect(slotPoint(f, 'x', 0, 1, size)).toEqual({ x: 120, y: 0 })
@@ -160,7 +164,7 @@ describe('placeItem — the displacement core', () => {
       ],
       'x',
       { box: { left: 0, top: 0, width: 448, height: 30 } },
-    ) as NonNullable<ReturnType<typeof frozenOf>>
+    )
     const size = { width: 80, height: 30 }
     expect(placeItem(f, 'x', 1, -1, 1, size)).toEqual({ x: 288, y: 0 })
     expect(slotPoint(f, 'x', -1, 1, size)).toEqual({ x: 204, y: 0 })
@@ -168,7 +172,7 @@ describe('placeItem — the displacement core', () => {
 })
 
 describe('slotPoint', () => {
-  const row = (): NonNullable<ReturnType<typeof frozenOf>> =>
+  const row = (): Frozen =>
     frozenOf(
       [
         { left: 0, top: 0, width: 200, height: 30 },
@@ -177,7 +181,7 @@ describe('slotPoint', () => {
       ],
       'x',
       { box: { left: 0, top: 0, width: 440, height: 30 } },
-    ) as NonNullable<ReturnType<typeof frozenOf>>
+    )
   const size = { width: 80, height: 30 }
 
   it('finds the lifted item’s own slot', () => {
@@ -192,7 +196,7 @@ describe('slotPoint', () => {
   it('finds the tail of a free grid', () => {
     const f = frozenOf(grid(4, 2), undefined, {
       box: { left: 0, top: 0, width: 200, height: 200 },
-    }) as NonNullable<ReturnType<typeof frozenOf>>
+    })
     expect(slotPoint(f, undefined, -1, 1, SIZE)).toEqual({ x: 100, y: 0 })
     expect(slotPoint(f, undefined, -1, 4, SIZE)).toEqual({ x: 0, y: 200 })
   })
@@ -200,14 +204,14 @@ describe('slotPoint', () => {
   it('keeps a single-item axis zone’s own slot where the item stands', () => {
     const f = frozenOf([{ left: 30, top: 10, width: 100, height: 30 }], 'y', {
       box: { left: 0, top: 0, width: 200, height: 100 },
-    }) as NonNullable<ReturnType<typeof frozenOf>>
+    })
     expect(slotPoint(f, 'y', 0, 0, SIZE)).toEqual({ x: 30, y: 10 })
   })
 
   it('puts a foreign item at the origin of an empty axis zone', () => {
     const f = frozenOf([], 'y', {
       box: { left: 0, top: 0, width: 200, height: 100 },
-    }) as NonNullable<ReturnType<typeof frozenOf>>
+    })
     expect(slotPoint(f, 'y', -1, 0, SIZE)).toEqual({ x: 0, y: 0 })
   })
 })
@@ -218,7 +222,7 @@ describe('nearest', () => {
   it('picks between the two neighbours of the pointer on an axis', () => {
     const f = frozenOf(column(5), 'y', {
       box: { left: 0, top: 0, width: 100, height: 50 },
-    }) as NonNullable<ReturnType<typeof frozenOf>>
+    })
     expect(nearest(f, 5, { x: 50, y: 27 }, half, 'y').at).toBe(2)
     expect(nearest(f, 5, { x: 50, y: 31 }, half, 'y').at).toBe(3)
     expect(nearest(f, 5, { x: 50, y: -40 }, half, 'y').at).toBe(0)
@@ -227,14 +231,14 @@ describe('nearest', () => {
   it('reaches the tail slot when the zone holds more than it measured', () => {
     const f = frozenOf(column(5), 'y', {
       box: { left: 0, top: 0, width: 100, height: 50 },
-    }) as NonNullable<ReturnType<typeof frozenOf>>
+    })
     expect(nearest(f, 6, { x: 50, y: 60 }, half, 'y')).toEqual({ at: 5, dist: 5 })
   })
 
-  it('searches only the pointer’s row and the rows beside it on a grid', () => {
+  it('picks the nearest cell across a multi-row grid', () => {
     const f = frozenOf(grid(6, 2), undefined, {
       box: { left: 0, top: 0, width: 200, height: 300 },
-    }) as NonNullable<ReturnType<typeof frozenOf>>
+    })
     const cell = { width: 50, height: 50 }
     expect(nearest(f, 6, { x: 150, y: 20 }, cell, undefined).at).toBe(1)
     expect(nearest(f, 6, { x: 50, y: 290 }, cell, undefined).at).toBe(4)

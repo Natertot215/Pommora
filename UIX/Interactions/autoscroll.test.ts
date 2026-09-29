@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import {
+  AUTOSCROLL,
   accelFactor,
   clampToLimit,
   edgeVelocity,
@@ -12,10 +13,9 @@ import {
   stepPixels,
   stopAutoScroll,
   type Intent,
-  type Params,
 } from './autoscroll'
 
-const P: Params = { edge: 48, speed: 840, ramp: 2, accelStart: 0.5, accelMax: 1.5, accelDist: 600 }
+const P = AUTOSCROLL
 
 describe('edgeVelocity — proximity ramp', () => {
   it('is 0 away from any edge', () => {
@@ -239,7 +239,6 @@ describe('startAutoScroll / stopAutoScroll — loop lifecycle', () => {
     const stopA = startAutoScroll({
       getPoint: () => ({ x: 150, y }),
       scroller: a.el,
-
       axis: 'y',
     })
     startAutoScroll({ getPoint: () => ({ x: 150, y }), scroller: b.el, axis: 'y' })
@@ -352,7 +351,6 @@ describe('startAutoScroll / stopAutoScroll — loop lifecycle', () => {
     startAutoScroll({
       getPoint: () => ({ x: 150, y }),
       scroller: el,
-
       axis: 'y',
       onScrolled,
     })
@@ -410,7 +408,10 @@ describe('scrollGlide — the destination is re-read, not resolved once', () => 
     })
     vi.stubGlobal('cancelAnimationFrame', (id: number) => void rafMap.delete(id))
   })
-  afterEach(() => vi.unstubAllGlobals())
+  afterEach(() => {
+    stopAutoScroll()
+    vi.unstubAllGlobals()
+  })
 
   const G = { speed: 3, minMs: 180, maxMs: 350 }
 
