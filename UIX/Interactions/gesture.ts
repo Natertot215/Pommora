@@ -226,12 +226,12 @@ export function beginPointerGesture(spec: PointerGestureSpec): GestureHandle | n
   }
 }
 
-export function usePointerGesture(): (spec: PointerGestureSpec) => boolean {
+export function usePointerGesture(): (spec: PointerGestureSpec) => GestureHandle | null {
   const handle = useRef<GestureHandle | null>(null)
   useEffect(() => () => handle.current?.abort(), [])
   return useCallback((spec) => {
     const h = beginPointerGesture(spec)
     if (h) handle.current = h
-    return h !== null
+    return h
   }, [])
 }
