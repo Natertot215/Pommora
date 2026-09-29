@@ -229,6 +229,35 @@ describe('a card dropped across Set bands lands where its slot drew', () => {
   })
 })
 
+describe('a flat Location list', () => {
+  it('reorders a root page within the root run, wherever the root pages sit', async () => {
+    await mount(
+      collection(
+        [
+          set('sA', 'A', [
+            page('a1', 'A One', 'Col/A/A One.md'),
+            page('a2', 'A Two', 'Col/A/A Two.md'),
+          ]),
+        ],
+        [page('r1', 'Root One', 'Col/Root One.md'), page('r2', 'Root Two', 'Col/Root Two.md')],
+        { kind: 'flat' },
+        [{ property_id: '__location__', direction: 'ascending' }],
+      ),
+    )
+    const grid = host.querySelector('.cards-grid') as Element
+    stubRect(grid, { top: 0, bottom: 400, left: 0, right: GRID })
+    for (const [i, id] of ['a1', 'a2', 'r1', 'r2'].entries())
+      stubRect(card(id), { top: i * ROW, bottom: i * ROW + ROW, left: 0, right: GRID })
+    await dragTo(card('r2'), 210)
+    expect(mutateSpy).toHaveBeenCalledExactlyOnceWith({
+      op: 'movePage',
+      path: 'Col/Root Two.md',
+      newParentPath: 'Col',
+      order: ['r2', 'r1'],
+    })
+  })
+})
+
 describe('a Set card whose view write is refused', () => {
   it('says the Set returned to its place', async () => {
     saveSpy.mockImplementation(async () => ({ ok: false, error: { message: 'no' } }))

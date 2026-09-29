@@ -368,6 +368,25 @@ describe('sub-group bucket band drag', () => {
     expect(mutateSpy).not.toHaveBeenCalled()
   })
 
+  it('a cross-set bucket drop that leaves the global sub-order as it reads writes nothing and says it returned', async () => {
+    await mountTable(
+      subGroupSource({
+        sub_group: {
+          property_id: 'prop_status',
+          order_mode: 'manual',
+          order: ['not_started', 'active', 'complete'],
+        },
+      }),
+    )
+    await dragBand(2, 115)
+    await drop()
+    expect(saveSpy).not.toHaveBeenCalled()
+    expect(mutateSpy).not.toHaveBeenCalled()
+    expect(document.querySelector('[aria-live="assertive"]')?.textContent).toBe(
+      'complete returned to its place.',
+    )
+  })
+
   it('a cross-set bucket drag (a before-slot in another Set) still writes the global sub-order — no moveSet', async () => {
     await mountTable(subGroupSource())
     await dragBand(2, 98)
@@ -500,6 +519,9 @@ describe('sub-group row drop (every set × bucket pair)', () => {
     await settle()
     expect(painted()).toEqual(['pA1', 'pA2', 'B', 'pB'])
     expect(mutateSpy).not.toHaveBeenCalledWith(expect.objectContaining({ op: 'movePage' }))
+    expect(document.querySelector('[aria-live="assertive"]')?.textContent).toBe(
+      'A Two returned to its place.',
+    )
   })
 
   it('under Location a same-set drop that changes the position reorders the folder', async () => {

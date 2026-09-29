@@ -51,7 +51,7 @@ mountEachTest((h, r) => {
   host = h
   root = r
 })
-let dropSpy: ReturnType<typeof vi.fn<(dragged: unknown, drop: BandDrop) => void>>
+let dropSpy: ReturnType<typeof vi.fn<(dragged: unknown, drop: BandDrop) => boolean>>
 let toggleSpy: ReturnType<typeof vi.fn<(key: string) => void>>
 
 function Bands({
@@ -127,7 +127,7 @@ const mount = async (props: Parameters<typeof Bands>[0] = {}): Promise<void> => 
 }
 
 beforeEach(async () => {
-  dropSpy = vi.fn()
+  dropSpy = vi.fn(() => true)
   toggleSpy = vi.fn()
   await mount()
 })

@@ -180,13 +180,16 @@ export function dropBand(
   drop: BandDrop,
   base: Omit<BandScope, 'valueAt' | 'shown'>,
   io: BandIO,
-): Promise<void> {
+): boolean {
   const shown = bands.nodes.flatMap((n) => {
     const value = bucketValue(n)
     return value === null ? [] : [value]
   })
-  return runBandEffect(
-    routeBandDrop(dragged, drop, { ...base, valueAt: bucketValueAt(bands.byKey), shown }),
-    io,
-  )
+  const effect = routeBandDrop(dragged, drop, {
+    ...base,
+    valueAt: bucketValueAt(bands.byKey),
+    shown,
+  })
+  void runBandEffect(effect, io)
+  return effect !== null
 }

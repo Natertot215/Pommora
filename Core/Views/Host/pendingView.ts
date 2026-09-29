@@ -135,7 +135,7 @@ export function usePainted(source: CollectionNode | SetNode): CollectionNode | S
   )
 }
 
-function refusedDrop(landed: boolean, name: string): boolean {
+export function refusedDrop(landed: boolean, name: string): boolean {
   if (!landed) announceDrag('return', name)
   return landed
 }
