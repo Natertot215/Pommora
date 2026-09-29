@@ -5,6 +5,17 @@ export function nextOrder(current: string[], draggedId: string, beforeId: string
   return [...without.slice(0, at), draggedId, ...without.slice(at)]
 }
 
+export function rank(sorted: readonly number[], y: number): number {
+  let lo = 0
+  let hi = sorted.length
+  while (lo < hi) {
+    const mid = (lo + hi) >> 1
+    if (y < sorted[mid]) hi = mid
+    else lo = mid + 1
+  }
+  return lo
+}
+
 export type MeasuredRow = { id: string; top: number; bottom: number; mid: number }
 
 /** Top half drops before `over`, bottom half after, skipping the dragged id so "after" can't resolve to itself. */

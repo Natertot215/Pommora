@@ -46,6 +46,10 @@ export const BREAKOUT = 24 // px past an axis-locked zone's edges before its ite
 export type Carried = unknown
 export const SETTLE_FALLBACK = 80 // ms slack past the transition, covering the paint-start delay
 
+export function boxAt(left: number, top: number, width: number, height: number): Box {
+  return { left, top, width, height, cx: left + width / 2, cy: top + height / 2 }
+}
+
 export function toBox(el: HTMLElement): Box {
   const r = el.getBoundingClientRect()
   return {
