@@ -8,6 +8,7 @@ import {
   settingOf,
 } from '@pommora/core/Settings/personalization'
 import { nextOrder } from '@pommora/uix/Utilities/moveItem'
+import { isAdoptedId } from '../Nexus/ids'
 import { containerAt, pageIdsIn } from '../Nexus/treePatch'
 
 export const sameIds = (a: string[], b: string[]): boolean =>
@@ -53,7 +54,9 @@ export function tieOrderWith(
   anchorId: string | null,
   where: Slot,
 ): string[] {
-  return spliceBeside(mergedRanking(existing, allIds, newId), anchorId, newId, where)
+  return spliceBeside(mergedRanking(existing, allIds, newId), anchorId, newId, where).filter(
+    (id) => !isAdoptedId(id),
+  )
 }
 
 export const placementSlot = (placement: Placement): Slot =>

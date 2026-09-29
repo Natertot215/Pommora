@@ -524,6 +524,49 @@ describe('sub-group row drop (every set × bucket pair)', () => {
     )
   })
 
+  it('under Location a Set with no pages of its own takes a drop into its bucket, where the page will paint', async () => {
+    const src = subGroupSource({ structural_order_mode: 'location' })
+    const [a, b] = src.sets ?? []
+    channels['view:loadValues'] = async () =>
+      valuesReply({
+        pA1: { [ID_KEY]: 'pA1', ...propsAtRoot({ prop_status: 'active' }, [statusDef]) },
+        pA2: { [ID_KEY]: 'pA2', ...propsAtRoot({ prop_status: 'complete' }, [statusDef]) },
+        pS1: { [ID_KEY]: 'pS1', ...propsAtRoot({ prop_status: 'active' }, [statusDef]) },
+        pS2: { [ID_KEY]: 'pS2', ...propsAtRoot({ prop_status: 'active' }, [statusDef]) },
+      })
+    await mountTable({
+      ...src,
+      sets: [
+        a,
+        {
+          ...b,
+          pages: [],
+          sets: [
+            {
+              kind: 'set',
+              id: 'sB1',
+              title: 'B1',
+              path: 'Col/B/B1',
+              pages: [
+                page('pS1', 'S One', 'Col/B/B1/S One.md'),
+                page('pS2', 'S Two', 'Col/B/B1/S Two.md'),
+              ],
+              sets: [],
+            },
+          ],
+        },
+      ],
+    } as unknown as CollectionNode)
+    stubRowRects()
+    await dragRow(1, 150)
+    expect(mutateSpy).toHaveBeenNthCalledWith(2, {
+      op: 'movePage',
+      path: 'Col/A/A Two.md',
+      newParentPath: 'Col/B',
+      order: ['pA2'],
+    })
+  })
+
   it('under Location a same-set drop that changes the position reorders the folder', async () => {
     await mountTable(subGroupSource({ structural_order_mode: 'location' }))
     stubRowRects()
