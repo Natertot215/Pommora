@@ -3,12 +3,13 @@ import { pathExists, updateNexusConfig } from '../Files/atomicWrite'
 import { patchSidecar } from '../Files/sidecar'
 import { sidecarPath } from '../Paths/paths'
 import { ok, type Result } from '../Contract/result'
+import { isAdoptedId } from './ids'
 import { type ChildOrderKey, CONTAINER_KINDS } from './mutateRequest'
 
 type ContainerOrderKey = ChildOrderKey | 'page_order'
 
 // Adopted-placeholder ids (`adopted-<hash>`) are in-memory only — the open-time adopter stamps a real ULID before any write captures them. Strip them so a transient id never lands in a persisted order array.
-const persistable = (ids: string[]): string[] => ids.filter((id) => !id.startsWith('adopted-'))
+const persistable = (ids: string[]): string[] => ids.filter((id) => !isAdoptedId(id))
 
 type StateOrderWrite = Promise<Result<Record<string, unknown>>>
 
