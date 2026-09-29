@@ -50,6 +50,7 @@ export function App(): React.JSX.Element {
   const ribbonVisible = useSession((s) => s.ribbonVisible)
   const trafficLights = useSession((s) => s.hostPlatform !== 'windows' && !s.fullscreen)
   const commands = useSession((s) => s.commands)
+  const brightness = useSession((s) => s.devicePrefs.brightness)
   useNavThumbnails()
 
   const [sidePaneOpen, setSidePaneOpen] = useState(false)
@@ -75,6 +76,11 @@ export function App(): React.JSX.Element {
   }, [load])
 
   useBridgeSubscriptions()
+
+  // On the root rather than the shell: portaled menus are dimmed too, and the root alone filters without becoming its fixed descendants' containing block.
+  useEffect(() => {
+    document.documentElement.style.filter = brightness ? `brightness(${brightness})` : ''
+  }, [brightness])
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent): void => {
