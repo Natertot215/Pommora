@@ -256,6 +256,13 @@ export const FRAMES = roster([
             label: 'Embed Scale',
             hint: "The scale embedded pages and views start at; a tile's own toggle compounds it.",
           },
+          {
+            kind: 'deviceZoom',
+            key: 'brightness',
+            label: 'Brightness',
+            hint: "Pommora's own brightness, independent of the display's.",
+            range: TENTHS_SCALE,
+          },
         ],
       },
       {

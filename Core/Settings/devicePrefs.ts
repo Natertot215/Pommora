@@ -1,4 +1,4 @@
-// Preferences that belong to the MACHINE rather than the Nexus: menu style, interface scale, pane widths, sidebar and footer folds, window sizes and the navigation layouts are all true of the display and operating system in front of the user, so they stay with the device and travel nowhere.
+// Preferences that belong to the MACHINE rather than the Nexus: menu style, interface scale, brightness, pane widths, sidebar and footer folds, window sizes and the navigation layouts are all true of the display and operating system in front of the user, so they stay with the device and travel nowhere.
 import { z } from 'zod'
 import type { NumberRange } from '@pommora/uix/Utilities/clamp'
 import { readValue } from '../Platform/localState'
@@ -17,6 +17,7 @@ const devicePrefs = looseDecoder(
   z.object({
     nativeMenus: flag,
     interfaceScale: numberCheck(TENTHS_SCALE).optional().catch(undefined),
+    brightness: numberCheck(TENTHS_SCALE).optional().catch(undefined),
     panes: looseDecoder(
       z.object({ sidebar: width(SIDEBAR_WIDTH), sidePane: width(SIDE_PANE_WIDTH) }),
     )
