@@ -1,6 +1,6 @@
 import type { WindowTabTarget, WindowTarget } from '@pommora/core/Navigation/navRef'
 import { clamp } from '@pommora/uix/Utilities/clamp'
-import { moveItem, placeAt } from '@pommora/uix/Utilities/moveItem'
+import { moveBefore, placeAt } from '@pommora/uix/Utilities/moveItem'
 import type { WindowKind } from './windowRecord'
 
 // Bespoke close/spawn (NOT tabsModel's): the last tab closing kills the window, the map tab never closes, and a Matrix window holds no tabs.
@@ -38,12 +38,12 @@ export function openTabIn(
   return { ...win, tabs: [...win.tabs, tab], activeTabId: tab.id }
 }
 
-export function reorderTabIn(win: WindowState, activeId: string, overId: string): WindowState {
-  const from = win.tabs.findIndex((t) => t.id === activeId)
-  const to = win.tabs.findIndex((t) => t.id === overId)
-  if (from === -1 || to === -1 || from === to) return win
-  if (win.tabs[from].target.kind === 'map' || win.tabs[to].target.kind === 'map') return win
-  return { ...win, tabs: moveItem(win.tabs, from, to) }
+export function reorderTabIn(win: WindowState, id: string, beforeId: string | null): WindowState {
+  const isMap = (key: string | null): boolean =>
+    win.tabs.some((t) => t.id === key && t.target.kind === 'map')
+  if (isMap(id) || isMap(beforeId)) return win
+  const tabs = moveBefore(win.tabs, (t) => t.id, id, beforeId)
+  return tabs ? { ...win, tabs } : win
 }
 
 export function closeTabIn(win: WindowState, id: string): WindowState | null {

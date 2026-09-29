@@ -1,7 +1,8 @@
-import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
+import { type ReactNode, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { exitWait } from '@pommora/uix/Animations/useExitPresence'
-import type { Carried } from '@pommora/uix/Interactions/drag'
-import { isWindowTarget, type TabTarget, type WindowTabTarget, type WindowTarget } from './navRef'
+import { carries, type DisplaceSpec, DropSlot, SortableZone } from '@pommora/uix/Interactions/drag'
+import { cx } from '@pommora/uix/Utilities/cx'
+import { isWindowTarget, type SelectTarget, TAB_FAMILY } from './navRef'
 
 interface TabClose<E> {
   liveEntries: E[]
@@ -51,30 +52,45 @@ export function useTabClose<E extends { tab: { id: string } }>(
   }
 }
 
-// A page or a Space travels between rows, and `TAB_FAMILY` is the rows' whole agreement on that — so the carried item is asserted here, beside the `carry` that produced it.
-export function useTabExchange(
-  targetOf: (id: string) => TabTarget | WindowTabTarget | undefined,
-  open: (target: WindowTarget, index: number) => void,
-): {
-  still: boolean
-  carry: (id: string) => WindowTarget | null
-  receive: (item: Carried, index: number) => void
-} {
+export function TabStripZone({
+  forced,
+  targetOf,
+  open,
+  children,
+  ...zone
+}: Omit<DisplaceSpec<SelectTarget>, 'family' | 'axis' | 'carry' | 'receive'> & {
+  forced: boolean
+  targetOf: (id: string) => { kind: string } | undefined
+  open: (target: SelectTarget, index: number) => void
+  children: ReactNode
+}): React.JSX.Element {
   const placing = useRef(false)
   useLayoutEffect(() => {
     placing.current = false
   })
-  return {
-    still: placing.current,
-    carry: (id) => {
-      const target = targetOf(id)
-      return target && isWindowTarget(target) ? target : null
-    },
-    receive: (item, index) => {
-      placing.current = true
-      open(item as WindowTarget, index)
-    },
-  }
+  return (
+    <SortableZone
+      {...zone}
+      className={cx('tab-strip', (placing.current || forced) && 'is-still')}
+      family={TAB_FAMILY}
+      axis="x"
+      opens
+      carry={[
+        carries(TAB_FAMILY, (id) => {
+          const target = targetOf(id)
+          return target && isWindowTarget(target) ? target : null
+        }),
+      ]}
+      receive={(item, beforeId) => {
+        const at = beforeId === null ? -1 : zone.items.indexOf(beforeId)
+        placing.current = true
+        open(item, at < 0 ? zone.items.length : at)
+      }}
+    >
+      <DropSlot foreignOnly />
+      {children}
+    </SortableZone>
+  )
 }
 
 export function useActiveTabInView(

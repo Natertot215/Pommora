@@ -41,10 +41,6 @@
   aspect-ratio: 125 / 90;
   align-self: start;
 }
-.card.is-dragging {
-  opacity: var(--state-ghost);
-}
-
 .card-body {
   display: flex;
   flex-direction: column;

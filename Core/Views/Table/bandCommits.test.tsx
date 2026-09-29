@@ -9,7 +9,6 @@ import type { SavedView } from '@pommora/core/Views/views'
 import { firePointer, pressEscape, stubRect } from '@pommora/uix/Testing/pointerHarness'
 import { mountEachTest, renderView, settle } from '../../Testing/viewHarness'
 import { useSession } from '../../Session/store'
-import { ViewHost } from '../Host/ViewHost'
 import { propsAtRoot, valuesReply } from '../../Testing/pageValues'
 import { ID_KEY } from '@pommora/core/Nexus/identityMark'
 import { stubDialer } from '../../vitest.setup'
@@ -212,10 +211,7 @@ describe('structural band reorder', () => {
     await drop()
     expect(headerTexts()[0]).toContain('B')
     // The moveSet-style load() swaps source identity mid-flight — same content, new object.
-    await act(async () => {
-      root.render(<ViewHost source={structuralSource()} />)
-    })
-    await act(async () => {})
+    await renderView(root, structuralSource())
     expect(headerTexts()[0]).toContain('B')
   })
 

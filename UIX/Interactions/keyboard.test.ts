@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import type { Box } from './shared'
-import { ARROW_DIRS, keyboardNext } from './keyboard'
+import { ARROW_DIRS, keyboardNext, lineProbes } from './keyboard'
+import type { Geometry, Row } from './reorderModel'
 
 // A column of uniform 10px-tall slots at y = 0,10,20,...
 const column = (n: number): Box[] =>
@@ -49,5 +50,40 @@ describe('keyboardNext — arrow navigation', () => {
     expect(keyboardNext(g, 4, ARROW_DIRS.ArrowUp)).toBe(1)
     expect(keyboardNext(g, 4, ARROW_DIRS.ArrowLeft)).toBe(3)
     expect(keyboardNext(g, 4, ARROW_DIRS.ArrowRight)).toBe(5)
+  })
+})
+
+describe('lineProbes — the keyboard reach of a line list', () => {
+  const rowAt = (id: string, top: number): Row => ({
+    id,
+    top,
+    bottom: top + 40,
+    mid: top + 20,
+    left: 0,
+    right: 100,
+  })
+  const geometry = (rows: Row[], bottom: number): Geometry => ({
+    rows,
+    groups: new Map(),
+    bottom,
+  })
+
+  it('probes each row before, into, and after, at 1/8, 1/2, and 7/8', () => {
+    const probes = lineProbes(geometry([rowAt('a', 0)], 40))
+    expect(probes.slice(0, 3)).toEqual([
+      { y: 5, row: 'a', part: 'before' },
+      { y: 20, row: 'a', part: 'into' },
+      { y: 35, row: 'a', part: 'after' },
+    ])
+  })
+
+  it('always ends with the list-end probe at the geometry bottom', () => {
+    const probes = lineProbes(geometry([rowAt('a', 0), rowAt('b', 40)], 90))
+    expect(probes).toHaveLength(7)
+    expect(probes.at(-1)).toEqual({ y: 90, row: 'b', part: 'after' })
+  })
+
+  it('probes nothing for an empty list', () => {
+    expect(lineProbes(geometry([], 0))).toEqual([])
   })
 })

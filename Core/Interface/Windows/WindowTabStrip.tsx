@@ -1,9 +1,9 @@
 import { Fragment, useMemo } from 'react'
 import { cx } from '@pommora/uix/Utilities/cx'
-import { SortableZone, useDragFamily } from '@pommora/uix/Interactions/drag'
+import { useLooseItem } from '@pommora/uix/Interactions/drag'
 import { DEFAULT_ENTITY_ICONS } from '../../Assets/entityIconPolicy'
 import { resolveWith, type ResolveIndex, type ResolvedNav } from '../../Navigation/navResolve'
-import { useActiveTabInView, useTabClose, useTabExchange } from '../../Navigation/tabRows'
+import { TabStripZone, useActiveTabInView, useTabClose } from '../../Navigation/tabRows'
 import { popMenu } from '../../Actions/menuActions'
 import { tabMenuItems } from '@pommora/core/Actions/tabMenu'
 import { bannerMenuItems } from '@pommora/core/Actions/identityMenus'
@@ -79,7 +79,8 @@ export function WindowTabStrip({
   const sentinel = renderEntries.find((e) => e.entry.tab.target.kind === 'map')
   const contentEntries = renderEntries.filter((e) => isWindowTarget(e.entry.tab.target))
 
-  const forced = useDragFamily() === TAB_FAMILY
+  const loose = useLooseItem(TAB_FAMILY)
+  const forced = loose !== null && isWindowTarget(loose)
   const showStrip = (tabs?.length ?? 0) > 1 || ghostCount > 0 || forced
   const titlePresence = useExitPresence(!showStrip, 'base')
   // The exiting title fades out as WHAT IT WAS — crumbs re-derive from the new active tab, so the live node would swap text mid-collapse without this hold.
@@ -88,11 +89,6 @@ export function WindowTabStrip({
   const scrollRef = useActiveTabInView(activeTabId)
 
   const entryOf = (id: string): Entry | undefined => liveEntries.find((e) => e.tab.id === id)
-  const labelOf = (id: string): string => entryOf(id)?.res?.title ?? ''
-  const { still, carry, receive } = useTabExchange(
-    (id) => entryOf(id)?.tab.target,
-    (target, at) => openWindowTab(target, { at }),
-  )
   const runTabMenu =
     (tab: WindowTab) =>
     async (e: React.MouseEvent): Promise<void> => {
@@ -155,16 +151,14 @@ export function WindowTabStrip({
             aria-label="Preview tabs"
             ref={scrollRef}
           >
-            <SortableZone
-              id="tabs-window"
-              className={cx('tab-strip', (still || forced) && 'is-still')}
-              family={TAB_FAMILY}
+            <TabStripZone
               items={contentEntries.filter((e) => !e.ghost).map((e) => e.entry.tab.id)}
-              axis="x"
-              onReorder={reorderWindowTabs}
-              getItemLabel={labelOf}
-              carry={carry}
-              receive={receive}
+              forced={forced}
+              label={(id) => entryOf(id)?.res?.title ?? ''}
+              targetOf={(id) => entryOf(id)?.tab.target}
+              accepts={isWindowTarget}
+              open={(target, at) => isWindowTarget(target) && openWindowTab(target, { at })}
+              onMove={reorderWindowTabs}
               release={closeWindowTab}
               renderOverlay={renderOverlay}
             >
@@ -181,7 +175,7 @@ export function WindowTabStrip({
                   />
                 </Fragment>
               ))}
-            </SortableZone>
+            </TabStripZone>
           </div>
         )}
       </div>

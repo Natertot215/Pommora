@@ -11,7 +11,7 @@ import {
   type Tab,
   type TabTarget,
 } from '@pommora/core/Navigation/navRef'
-import { moveItem, placeAt } from '@pommora/uix/Utilities/moveItem'
+import { placeAt } from '@pommora/uix/Utilities/moveItem'
 import { reconcileWith, type ReconcileIndex } from '../Session/reconcileSelection'
 
 const NEWTAB: TabTarget = { kind: 'newtab' }
@@ -241,14 +241,6 @@ export function closeTab(
     newId,
     left,
   )
-}
-
-export function reorderWithinZone(tabs: Tab[], fromId: string, toIndex: number): Tab[] {
-  const from = tabs.findIndex((t) => t.id === fromId)
-  if (from === -1) return tabs
-  const to = clamp(toIndex, 0, tabs.length - 1)
-  if (from === to) return tabs
-  return moveItem(tabs, from, to)
 }
 
 export function insertUnpinned(tabs: Tab[], activeTabId: string, tab: Tab): Tab[] {

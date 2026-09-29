@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { buildIndex, sidebarSlot, sidebarSnapshot } from './sidebarDndModel'
+import { buildIndex, sidebarCommit, sidebarSlot, sidebarSnapshot } from './sidebarDndModel'
 import type { NexusTree, PageNode, SpaceNode } from '@pommora/core/Nexus/tree'
 import type { Personalization } from '@pommora/core/Settings/personalization'
 import { makeTree } from '../../Testing/testTree'
@@ -114,9 +114,20 @@ const slotOf = (
 ) => {
   const measured = shown
     .filter((id) => id !== draggedId)
-    .map((id, i) => ({ id, top: i * 20, bottom: i * 20 + 20, mid: i * 20 + 10 }))
+    .map((id, i) => ({
+      id,
+      top: i * 20,
+      bottom: i * 20 + 20,
+      mid: i * 20 + 10,
+      left: 0,
+      right: 100,
+    }))
   const snapshot = sidebarSnapshot(idx, prefs as Personalization, draggedId, measured)
-  return snapshot && sidebarSlot(snapshot, y)
+  const slot = snapshot && sidebarSlot(snapshot, y)
+  return (
+    slot &&
+    snapshot && { depth: slot.depth, lineY: slot.edge, commit: sidebarCommit(snapshot, slot) }
+  )
 }
 const moveSet = (path: string, newParentPath: string, order: string[]) => ({
   op: 'moveSet',
@@ -298,11 +309,14 @@ describe('sidebarSlot — the dragged row itself', () => {
       top: i * 20,
       bottom: i * 20 + 20,
       mid: i * 20 + 10,
+      left: 0,
+      right: 100,
     }))
-    const own = { id: 's3', top: 60, bottom: 80, mid: 70 }
-    const snapshot = sidebarSnapshot(idx, {} as Personalization, 's3', measured, own)
+    const own = { id: 's3', top: 60, bottom: 80, mid: 70, left: 0, right: 100 }
+    const snapshot = sidebarSnapshot(idx, {} as Personalization, 's3', [...measured, own])
+    const slot = snapshot && sidebarSlot(snapshot, 22)
     expect(snapshot && sidebarSlot(snapshot, 70)).toBeNull()
-    expect(snapshot && sidebarSlot(snapshot, 22)?.commit).toEqual(
+    expect(snapshot && slot && sidebarCommit(snapshot, slot)).toEqual(
       moveSet('Col/Empty', 'Col', ['s3', 's1']),
     )
   })

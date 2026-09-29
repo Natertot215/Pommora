@@ -494,9 +494,7 @@ export function PropertyPanel({
                         </div>
                       </Reveal>
                     )}
-                    {drag.lineTop !== null ? (
-                      <DropLine style={{ top: drag.lineTop, ...rowDropLine() }} />
-                    ) : null}
+                    {drag.lineTop !== null ? <DropLine style={rowDropLine(drag.lineTop)} /> : null}
                   </div>
                 )}
               </div>

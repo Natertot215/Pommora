@@ -7,7 +7,6 @@ import type { PropertyDefinition } from '@pommora/core/Properties/properties'
 import type { CollectionNode } from '@pommora/core/Nexus/tree'
 import { useSession } from '../../Session/store'
 import { PropertyPicker } from '../../Properties/Pickers/PropertyPicker'
-import { ViewHost } from '../Host/ViewHost'
 import { propsAtRoot, valuesReply } from '../../Testing/pageValues'
 import { ID_KEY } from '@pommora/core/Nexus/identityMark'
 import { stubDialer } from '../../vitest.setup'
@@ -281,10 +280,7 @@ describe('optimistic value persistence', () => {
     })
     expect(doneCell().querySelector('svg')).toBeTruthy()
     // A watcher self-echo re-mints `source`'s object identity; the value override must NOT be dropped, or the glyph reverts to the frozen pre-assign values — the assign-vanish this guards.
-    await act(async () => {
-      root.render(<ViewHost source={sourceWith()} />)
-    })
-    await act(async () => {})
+    await renderView(root, sourceWith())
     expect(doneCell().querySelector('svg')).toBeTruthy()
   })
 })

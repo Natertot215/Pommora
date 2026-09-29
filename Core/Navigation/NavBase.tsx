@@ -2,7 +2,7 @@ import { type Ref, useMemo, useState } from 'react'
 import { cx } from '@pommora/uix/Utilities/cx'
 import { text } from '@pommora/uix/Theme'
 import { SearchField } from '@pommora/uix/Fields/SearchField'
-import { moveByKey } from '@pommora/uix/Utilities/moveItem'
+import { moveBefore } from '@pommora/uix/Utilities/moveItem'
 import type { NavRef } from '@pommora/core/Navigation/navRef'
 import { useSession } from '../Session/store'
 import type { ResolvedNav } from './navResolve'
@@ -35,8 +35,8 @@ export function useNavBase({
   const results = useMemo(() => (query.trim() ? search(query) : null), [query, search])
   // A drag commits the SHOWN order wholesale: the store's live order can lag what's drawn, so splicing against it would land elsewhere than the drop showed.
   const setRecentsOrder = useSession((s) => s.setRecentsOrder)
-  const onReorderRecent = (activeKey: string, overKey: string): void => {
-    const next = moveByKey(recents, (r) => r.key, activeKey, overKey)
+  const onReorderRecent = (key: string, beforeKey: string | null): void => {
+    const next = moveBefore(recents, (r) => r.key, key, beforeKey)
     if (!next) return
     onReordered?.(next)
     setRecentsOrder(next.map((r) => r.key))

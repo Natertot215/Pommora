@@ -2,7 +2,8 @@ import { useState, type CSSProperties } from 'react'
 import { vars, tintAt, TINT_STEPS } from '@pommora/uix/Theme'
 import { shape, tinted } from '@pommora/uix/Labels/label-base.css'
 import { cx } from '@pommora/uix/Utilities/cx'
-import { SortableZone, useDragItem, reorder } from '@pommora/uix/Interactions/drag'
+import { SortableZone, useDragItem } from '@pommora/uix/Interactions/drag'
+import { moveBefore } from '@pommora/uix/Utilities/moveItem'
 import { applySystemAccent, readCssAccentColor, solidColorCss } from '@pommora/uix/Theme/ramp'
 import { SOLID_COLORS, type AccentSetting } from '@pommora/uix/Theme/colors'
 import { humanize, formatColor, useComputedStyleText, useIsCompact } from './helpers'
@@ -86,8 +87,8 @@ function SwatchGroup({
       ) : (
         <SortableZone
           items={items.map((i) => i.id)}
-          getItemLabel={(id) => items.find((i) => i.id === id)?.name ?? id}
-          onReorder={(a, o) => setItems((x) => reorder(x, a, o))}
+          label={(id) => items.find((i) => i.id === id)?.name ?? id}
+          onMove={(id, beforeId) => setItems((x) => moveBefore(x, (i) => i.id, id, beforeId) ?? x)}
         >
           {cells}
         </SortableZone>
@@ -185,16 +186,8 @@ function TintScale(): React.JSX.Element {
   ) : (
     <SortableZone
       items={colors.map(([n]) => n)}
-      getItemLabel={(id) => humanize(id)}
-      onReorder={(a, o) =>
-        setColors((x) =>
-          reorder(
-            x.map(([n, c]) => ({ id: n, c })),
-            a,
-            o,
-          ).map(({ id, c }) => [id, c] as (typeof x)[number]),
-        )
-      }
+      label={(id) => humanize(id)}
+      onMove={(id, beforeId) => setColors((x) => moveBefore(x, ([n]) => n, id, beforeId) ?? x)}
     >
       {colors.map(([name, color]) => (
         <TintRow key={name} name={name} color={color} />

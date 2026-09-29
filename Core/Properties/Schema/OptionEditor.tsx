@@ -209,7 +209,7 @@ export function OptionEditor({
             ))}
             {g.options.length === 0 ? slotAt(g, 0, g.id) : null}
             {reorder.drop?.groupId === g.id ? (
-              <DropLine style={{ top: reorder.drop.top, ...rowDropLine() }} />
+              <DropLine style={rowDropLine(reorder.drop.top)} />
             ) : null}
           </div>
         </div>

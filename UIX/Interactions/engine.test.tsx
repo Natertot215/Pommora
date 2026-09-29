@@ -1,25 +1,39 @@
 // @vitest-environment jsdom
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { act } from 'react'
+import { afterEach, beforeEach, describe, expect, it, type Mock, vi } from 'vitest'
+import { act, type ReactNode } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
 import {
+  type DisplaceSpec,
   DragGroup,
-  placeAxis,
-  placeCell,
+  DropSlot,
+  LineRow,
+  type LineSpec,
+  LineZone,
   SortableZone,
-  useDragFamily,
   useDragItem,
-  useDropSlot,
-  useEscort,
-  type Escort,
+  useLineEl,
+  useLooseItem,
 } from './engine'
 import { firePointer, pressEscape, stubPointerCapture, stubRect } from '../Testing/pointerHarness'
 import { DEFAULT_FEEL } from '../Animations/feel'
-import { type Box, SETTLE_FALLBACK } from './shared'
+import { addSpring } from './dragDisclose'
+import type { Row } from './reorderModel'
+import { type CarryEntry, carries, type Family, SETTLE_FALLBACK } from './shared'
 ;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
 stubPointerCapture()
 
-const ZONES: Record<string, string[]> = {
+// ── Board ───────────────────────────────────────────────────────────────────
+
+type Tab = { id: string; window: boolean }
+type Spy = Mock<(item: unknown, beforeId: string | null) => void>
+
+const BOARD: Family<unknown> = { name: 'board' }
+const TAB: Family<Tab> = { name: 'tab' }
+const tabOf = (id: string): Tab => ({ id, window: id === 'a1' })
+const isWindowTarget = (t: Tab): boolean => t.window
+const BOTH: CarryEntry[] = [carries(BOARD, (id) => id), carries(TAB, tabOf)]
+
+const ITEMS: Record<string, string[]> = {
   E: [],
   A: ['a1', 'a2'],
   B: ['b1'],
@@ -27,24 +41,49 @@ const ZONES: Record<string, string[]> = {
   D: ['d1'],
   F: ['f1'],
   X: ['x1', 'x2', 'x3'],
+  T: [],
+  L: [],
+  P: [],
+  S: ['s1'],
 }
-const BAND: Record<string, number> = { E: -200, A: 0, B: 200, C: 400, D: 600, F: 800, X: 1000 }
+const TOP: Record<string, number> = {
+  E: -200,
+  A: 0,
+  B: 200,
+  C: 400,
+  D: 600,
+  F: 800,
+  X: 1000,
+  T: 1200,
+  L: 1400,
+  P: 200,
+  S: 1600,
+}
+const BOARD_ZONES = ['E', 'A', 'B', 'C', 'D', 'F', 'X', 'T']
 const TAB_W = [200, 120, 120]
 
-let commitSpy: ReturnType<typeof vi.fn<(activeId: string, zone: string, index: number) => void>>
-let fromSpy: ReturnType<typeof vi.fn<(from: string) => void>>
-let reorderSpy: ReturnType<typeof vi.fn<(activeId: string, overId: string) => void>>
-let receiveSpy: ReturnType<typeof vi.fn<(item: unknown, index: number) => void>>
-let resolve: (zoneId: string, index: number, activeId: string) => number | null
-let withOverlay = false
-let zoneOverlay = false
-let stray: 'stick' | 'return' = 'stick'
-let holdGap = false
-let carryA: ((id: string) => unknown) | undefined
-let hidden = new Set<string>()
-let escortRef: Escort | null = null
+let onMove: Mock<(id: string, beforeId: string | null) => void>
+let receives: Record<string, Spy>
+let extra: Record<string, Partial<DisplaceSpec<unknown>>>
+let hidden: Set<string>
+let aside: ReactNode
+const renders = new Map<string, number>()
+const label = (id: string): string => id
+
+function specOf(zid: string): DisplaceSpec<unknown> {
+  const own = { items: ITEMS[zid], label, onMove: (id: string, b: string | null) => onMove(id, b) }
+  if (zid === 'F') return own
+  return {
+    ...own,
+    axis: zid === 'X' ? 'x' : undefined,
+    family: zid === 'T' || zid === 'L' ? TAB : BOARD,
+    carry: [carries(BOARD, (id) => id)],
+    receive: (item, beforeId) => receives[zid](item, beforeId),
+  }
+}
 
 function Item({ id, onOpen }: { id: string; onOpen?: () => void }): React.JSX.Element {
+  renders.set(id, (renders.get(id) ?? 0) + 1)
   const { setNodeRef, style, handle } = useDragItem(id, onOpen)
   return (
     <div ref={setNodeRef} data-id={id} style={style} {...handle}>
@@ -53,119 +92,186 @@ function Item({ id, onOpen }: { id: string; onOpen?: () => void }): React.JSX.El
   )
 }
 
-function Slot(): React.JSX.Element | null {
-  const slot = useDropSlot()
-  return slot ? (
-    <i
-      data-slot
-      style={{ top: slot.top, left: slot.left, width: slot.width, height: slot.height }}
-    />
-  ) : null
+function Zone({ zid }: { zid: string }): React.JSX.Element {
+  return (
+    <SortableZone className={`zone-${zid}`} {...specOf(zid)} {...extra[zid]}>
+      {ITEMS[zid].map((id) => (
+        <Item key={id} id={id} />
+      ))}
+      <DropSlot />
+    </SortableZone>
+  )
 }
 
-function Probe(): React.JSX.Element {
-  escortRef = useEscort()
-  return <b data-family={useDragFamily() ?? ''} />
+function Loose(): React.JSX.Element {
+  const board = useLooseItem(BOARD)
+  const tab = useLooseItem(TAB)
+  return (
+    <b
+      data-loose={board === null ? '' : String(board)}
+      data-tab={tab?.id ?? ''}
+      data-window={String(tab !== null && isWindowTarget(tab))}
+    />
+  )
+}
+
+function Late(): ReactNode {
+  const tab = useLooseItem(TAB)
+  if (tab === null) return null
+  return (
+    <div ref={(el) => void (el && layZone(el, 'L'))}>
+      <Zone zid="L" />
+    </div>
+  )
 }
 
 function Board(): React.JSX.Element {
   return (
-    <DragGroup
-      stray={stray}
-      holdGap={holdGap}
-      onCommit={(activeId, zone, index, from) => {
-        commitSpy(activeId, zone, index)
-        fromSpy(from)
-      }}
-      resolveIndex={(zone, index, activeId) => resolve(zone, index, activeId)}
-      renderOverlay={withOverlay ? (activeId) => <span data-overlay={activeId} /> : undefined}
-    >
-      {Object.entries(ZONES)
-        .filter(([zid]) => !hidden.has(zid))
-        .map(([zid, ids]) => (
-          <SortableZone
-            key={zid}
-            id={zid}
-            items={ids}
-            className={`zone-${zid}`}
-            family={zid === 'F' ? undefined : 'board'}
-            axis={zid === 'X' ? 'x' : undefined}
-            carry={zid === 'A' ? carryA : undefined}
-            receive={zid === 'B' ? (item, index) => receiveSpy(item, index) : undefined}
-            renderOverlay={
-              zoneOverlay && zid === 'A' ? (id) => <span data-zone-overlay={id} /> : undefined
-            }
-            onReorder={(activeId, overId) => reorderSpy(activeId, overId)}
-          >
-            {ids.map((id) => (
-              <Item key={id} id={id} />
-            ))}
-          </SortableZone>
-        ))}
-      <Slot />
-      <Probe />
+    <DragGroup>
+      {BOARD_ZONES.filter((zid) => !hidden.has(zid)).map((zid) => (
+        <Zone key={zid} zid={zid} />
+      ))}
+      {aside}
+      <Loose />
     </DragGroup>
   )
 }
 
+// ── Line list ───────────────────────────────────────────────────────────────
+
+const ROWS = ['r1', 'r2', 'r3']
+let commit: Mock<(id: string, slot: string) => void>
+let lineSpec: Partial<LineSpec<string, Row[]>>
+let rowOpts: Record<string, { open?: () => void }>
+let watch: number
+
+function slotAt(id: string, p: { y: number }, rows: Row[]): string | null {
+  const before = rows.find((r) => r.id !== id && r.mid > p.y)?.id ?? 'end'
+  const home = rows[rows.findIndex((r) => r.id === id) + 1]?.id ?? 'end'
+  return before === home ? null : before
+}
+
+function Reader(): null {
+  useLineEl()
+  renders.set('reader', (renders.get('reader') ?? 0) + 1)
+  return null
+}
+
+function Lines(): React.JSX.Element {
+  return (
+    <DragGroup>
+      <LineZone<string, Row[]>
+        label={label}
+        snap={(_id, g) => g.rows}
+        resolve={slotAt}
+        commit={(id, slot) => commit(id, slot)}
+        line={(slot, rows) => ({
+          top: slot === 'end' ? rows[rows.length - 1].bottom : rows.find((r) => r.id === slot)?.top,
+        })}
+        chip={(id) => <i data-chip>{id}</i>}
+        watch={[watch]}
+        {...lineSpec}
+      >
+        {ROWS.map((id) => (
+          <LineRow key={id} id={id} data-id={id} {...rowOpts[id]}>
+            <button type="button" data-inner={id} />
+          </LineRow>
+        ))}
+        <Reader />
+      </LineZone>
+      {aside}
+    </DragGroup>
+  )
+}
+
+// ── Harness ─────────────────────────────────────────────────────────────────
+
 let host: HTMLDivElement
 let root: Root
+let View: () => React.JSX.Element = Board
 
-beforeEach(async () => {
-  commitSpy = vi.fn()
-  fromSpy = vi.fn()
-  reorderSpy = vi.fn()
-  receiveSpy = vi.fn()
-  resolve = (_zone, index) => index
-  withOverlay = false
-  zoneOverlay = false
-  stray = 'stick'
-  holdGap = false
-  carryA = undefined
+const REGION = '[role="status"][aria-live="assertive"]'
+const said: string[] = []
+const hear = (records: MutationRecord[]): void => {
+  for (const m of records)
+    if (m.target instanceof Element && m.target.matches(REGION))
+      for (const n of m.addedNodes) said.push(n.textContent ?? '')
+}
+const heard = new MutationObserver(hear)
+const spoken = (): string[] => {
+  hear(heard.takeRecords())
+  return said
+}
+
+function layZone(scope: ParentNode, zid: string): void {
+  const box = scope.querySelector(`.zone-${zid}`)
+  if (!box) return
+  const top = TOP[zid]
+  const wide = zid === 'D' || zid === 'X'
+  stubRect(box, { top, bottom: top + (zid === 'X' ? 100 : 200), right: wide ? 1000 : 200 })
+  ITEMS[zid].forEach((id, i) => {
+    const el = box.querySelector(`[data-id="${id}"]`) as Element
+    if (zid === 'X') {
+      const left = TAB_W.slice(0, i).reduce((a, b) => a + b, 0)
+      stubRect(el, { top, bottom: top + 100, left, right: left + TAB_W[i] })
+    } else stubRect(el, { top: top + i * 100, bottom: top + i * 100 + 100, left: 0, right: 200 })
+  })
+}
+
+function layLines(order = ROWS): void {
+  const list = host.querySelector('.drop-line-host')
+  if (!list) return
+  stubRect(list, { top: 0, bottom: 90 })
+  for (const [i, id] of order.entries()) stubRect(item(id), { top: i * 30, bottom: i * 30 + 30 })
+}
+
+const mount = async (): Promise<void> => {
+  await act(async () => root.render(<View />))
+  for (const zid of Object.keys(ITEMS)) layZone(host, zid)
+  layLines()
+}
+
+beforeEach(() => {
+  onMove = vi.fn()
+  receives = Object.fromEntries(Object.keys(ITEMS).map((zid) => [zid, vi.fn()]))
+  commit = vi.fn()
+  extra = {}
   hidden = new Set()
+  aside = null
+  lineSpec = {}
+  rowOpts = {}
+  watch = 0
+  ITEMS.D = ['d1']
+  renders.clear()
+  View = Board
+  said.length = 0
+  heard.observe(document.body, { childList: true, subtree: true })
   host = document.createElement('div')
   document.body.appendChild(host)
   root = createRoot(host)
-  await mount()
 })
-
-const mount = async (): Promise<void> => {
-  await act(async () => root.render(<Board />))
-  for (const [zid, ids] of Object.entries(ZONES)) {
-    if (hidden.has(zid)) continue
-    const top = BAND[zid]
-    const wide = zid === 'D' || zid === 'X'
-    stubRect(host.querySelector(`.zone-${zid}`) as Element, {
-      top,
-      bottom: top + (zid === 'X' ? 100 : 200),
-      right: wide ? 1000 : 200,
-    })
-    ids.forEach((id, i) => {
-      const el = host.querySelector(`.zone-${zid} [data-id="${id}"]`) as Element
-      if (zid === 'X') {
-        const left = TAB_W.slice(0, i).reduce((a, b) => a + b, 0)
-        stubRect(el, { top, bottom: top + 100, left, right: left + TAB_W[i] })
-      } else stubRect(el, { top: top + i * 100, bottom: top + i * 100 + 100, left: 0, right: 200 })
-    })
-  }
-}
 
 afterEach(() => {
   pressEscape()
   act(() => root.unmount())
   host.remove()
+  heard.disconnect()
 })
 
 const item = (id: string): HTMLElement => host.querySelector(`[data-id="${id}"]`) as HTMLElement
+const slotEl = (): HTMLElement | null => document.querySelector('.drop-slot')
+
+const move = (x: number, y: number): Promise<void> =>
+  act(async () => {
+    firePointer(window, 'pointermove', { x, y })
+  })
 
 const dragHold = async (id: string, x: number, y: number): Promise<void> => {
   const r = item(id).getBoundingClientRect()
   await act(async () => {
     firePointer(item(id), 'pointerdown', { x: r.left + r.width / 2, y: r.top + r.height / 2 })
   })
-  await act(async () => {
-    firePointer(window, 'pointermove', { x, y })
-  })
+  await move(x, y)
 }
 
 const release = async (x: number, y: number): Promise<void> => {
@@ -189,76 +295,65 @@ const dropAt = async (id: string, x: number, y: number): Promise<void> => {
   await settle()
 }
 
+const press = (
+  el: EventTarget,
+  key: string,
+  init: KeyboardEventInit = {},
+): Promise<KeyboardEvent> =>
+  act(async () => {
+    const e = new KeyboardEvent('keydown', { key, bubbles: true, cancelable: true, ...init })
+    el.dispatchEvent(e)
+    return e
+  })
+
+// ── Displacement ────────────────────────────────────────────────────────────
+
 describe('the drag engine across zones', () => {
+  beforeEach(mount)
+
   it('reorders within the source zone and reports the slot it landed on', async () => {
     await dropAt('a1', 100, 150)
-    expect(reorderSpy).toHaveBeenCalledExactlyOnceWith('a1', 'a2')
-    expect(commitSpy).toHaveBeenCalledExactlyOnceWith('a1', 'A', 1)
+    expect(onMove).toHaveBeenCalledExactlyOnceWith('a1', null)
   })
 
   it('writes nothing when the item is dropped back on its own slot', async () => {
     await dropAt('a1', 100, 60)
-    expect(reorderSpy).not.toHaveBeenCalled()
-    expect(commitSpy).not.toHaveBeenCalled()
+    expect(onMove).not.toHaveBeenCalled()
+    expect(spoken().at(-1)).toBe('a1 returned to its place.')
   })
 
   it('drops before an item in a foreign zone', async () => {
     await dropAt('a1', 100, 210)
-    expect(commitSpy).toHaveBeenCalledExactlyOnceWith('a1', 'B', 0)
-    expect(reorderSpy).not.toHaveBeenCalled()
+    expect(receives.B).toHaveBeenCalledExactlyOnceWith('a1', 'b1')
+    expect(onMove).not.toHaveBeenCalled()
   })
 
   it('appends past the last item of a foreign zone', async () => {
     await dropAt('a1', 100, 358)
-    expect(commitSpy).toHaveBeenCalledExactlyOnceWith('a1', 'B', 1)
+    expect(receives.B).toHaveBeenCalledExactlyOnceWith('a1', null)
   })
 
   it('appends to the right of the last card in a wide foreign row', async () => {
     await dropAt('a1', 300, 650)
-    expect(commitSpy).toHaveBeenCalledExactlyOnceWith('a1', 'D', 1)
+    expect(receives.D).toHaveBeenCalledExactlyOnceWith('a1', null)
   })
 
-  it('appends past the last card of a full foreign row', async () => {
-    const r = item('a1').getBoundingClientRect()
-    await act(async () => {
-      firePointer(item('a1'), 'pointerdown', { x: r.left + r.width / 2, y: r.top + r.height / 2 })
-    })
-    await act(async () => {
-      firePointer(window, 'pointermove', { x: 100, y: 250 })
-    })
-    await act(async () => {
-      firePointer(window, 'pointermove', { x: 300, y: 250 })
-    })
-    await act(async () => {
-      firePointer(window, 'pointerup', { x: 300, y: 250 })
-    })
-    await settle()
-    expect(commitSpy).toHaveBeenCalledExactlyOnceWith('a1', 'B', 1)
-  })
-
-  it('sizes the landing slot to the cell it lands in and floors every zone to the lifted height while in flight', async () => {
+  it('sizes the landing slot to the cell it lands in and floors only the source and admitted zones while in flight', async () => {
     stubRect(item('b1'), { top: 200, bottom: 350, left: 0, right: 200 })
-    const r = item('a1').getBoundingClientRect()
-    await act(async () => {
-      firePointer(item('a1'), 'pointerdown', { x: r.left + r.width / 2, y: r.top + r.height / 2 })
-    })
-    await act(async () => {
-      firePointer(window, 'pointermove', { x: 100, y: 210 })
-    })
-    const slot = host.querySelector('[data-slot]') as HTMLElement
-    expect(slot.style.height).toBe('150px')
-    const floorOf = (): string =>
-      (host.querySelector('.zone-C') as HTMLElement).style.getPropertyValue('--drag-floor')
-    expect(floorOf()).toBe('100.0px')
-    await act(async () => {
-      firePointer(window, 'pointerup', { x: 100, y: 210 })
-    })
+    const floorOf = (zid: string): string =>
+      (host.querySelector(`.zone-${zid}`) as HTMLElement).style.getPropertyValue('--drag-floor')
+    await dragHold('a1', 100, 210)
+    expect(slotEl()?.style.height).toBe('150px')
+    expect(floorOf('A')).toBe('100.0px')
+    expect(floorOf('C')).toBe('100.0px')
+    expect(floorOf('F')).toBe('')
+    await release(100, 210)
     await settle()
-    expect(floorOf()).toBe('')
+    expect(floorOf('A')).toBe('')
+    expect(floorOf('C')).toBe('')
   })
 
   it('re-reads the landing once the floors of empty zones have grown on lift', async () => {
-    // Zone A sits under E, so A's rects move down by E's floor once a drag is in flight.
     const grown = (): number =>
       parseFloat(
         (host.querySelector('.zone-E') as HTMLElement).style.getPropertyValue('--drag-floor'),
@@ -282,44 +377,39 @@ describe('the drag engine across zones', () => {
     await act(async () => {
       firePointer(item('a1'), 'pointerdown', { x: 100, y: 50 })
     })
-    await act(async () => {
-      firePointer(window, 'pointermove', { x: 100, y: 250 })
-    })
-    const slot = host.querySelector('[data-slot]') as HTMLElement
-    expect(slot.style.top).toBe('200px')
+    await move(100, 250)
+    expect(slotEl()?.style.top).toBe('200px')
     pressEscape()
   })
 
   it('lands at index 0 in an empty zone', async () => {
     await dropAt('a1', 100, 450)
-    expect(commitSpy).toHaveBeenCalledExactlyOnceWith('a1', 'C', 0)
+    expect(receives.C).toHaveBeenCalledExactlyOnceWith('a1', null)
   })
 
   it('snaps back and commits nothing when the landing is refused', async () => {
-    resolve = (zone, index) => (zone === 'B' ? null : index)
+    extra = { B: { resolveIndex: () => null } }
+    await mount()
     await dropAt('a1', 100, 210)
-    expect(commitSpy).not.toHaveBeenCalled()
-    expect(reorderSpy).not.toHaveBeenCalled()
+    expect(receives.B).not.toHaveBeenCalled()
+    expect(onMove).not.toHaveBeenCalled()
   })
 
   it('asks the resolver once per slot change, not once per pointer move', async () => {
-    const spy = vi.fn((_zone: string, index: number) => index)
-    resolve = spy
-    await dragHold('a1', 100, 150)
-    for (const y of [155, 160, 165])
-      await act(async () => {
-        firePointer(window, 'pointermove', { x: 100, y })
-      })
-    expect(spy).toHaveBeenCalledTimes(1)
-    await act(async () => {
-      firePointer(window, 'pointermove', { x: 100, y: 50 })
-    })
-    expect(spy).toHaveBeenCalledTimes(2)
+    const resolveIndex = vi.fn((index: number, _id: string) => index)
+    extra = { B: { resolveIndex } }
+    await mount()
+    await dragHold('a1', 100, 210)
+    for (const y of [215, 220, 225]) await move(100, y)
+    expect(resolveIndex).toHaveBeenCalledExactlyOnceWith(0, 'a1')
+    await move(100, 358)
+    expect(resolveIndex).toHaveBeenCalledTimes(2)
+    expect(resolveIndex).toHaveBeenLastCalledWith(1, 'a1')
     pressEscape()
   })
 
   it('glides the overlay to the landing cell, not to the release point', async () => {
-    withOverlay = true
+    extra = { A: { renderOverlay: (id) => <span data-overlay={id} /> } }
     await mount()
     await dragTo('a1', 100, 130)
     const overlay = document.querySelector('[data-overlay="a1"]')?.parentElement as HTMLElement
@@ -328,17 +418,11 @@ describe('the drag engine across zones', () => {
   })
 
   it('keeps the keyboard lift off the keypress that lifted it', async () => {
-    await act(async () => {
-      item('a1').dispatchEvent(new KeyboardEvent('keydown', { key: ' ', bubbles: true }))
-    })
-    await act(async () => {
-      document.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true }))
-    })
-    await act(async () => {
-      document.dispatchEvent(new KeyboardEvent('keydown', { key: ' ', bubbles: true }))
-    })
+    await press(item('a1'), ' ')
+    await press(document, 'ArrowDown')
+    await press(document, ' ')
     await settle()
-    expect(reorderSpy).toHaveBeenCalledExactlyOnceWith('a1', 'a2')
+    expect(onMove).toHaveBeenCalledExactlyOnceWith('a1', null)
   })
 
   it('marks a disabled zone on its items from the first render', async () => {
@@ -347,7 +431,7 @@ describe('the drag engine across zones', () => {
     const local = createRoot(box)
     await act(async () =>
       local.render(
-        <SortableZone items={['a', 'b']} disabled>
+        <SortableZone items={['a', 'b']} label={label} disabled>
           <Item id="a" />
           <Item id="b" />
         </SortableZone>,
@@ -362,23 +446,87 @@ describe('the drag engine across zones', () => {
 
   it('holds the commit until the drop animation settles', async () => {
     await dragTo('a1', 100, 150)
-    expect(commitSpy).not.toHaveBeenCalled()
+    expect(onMove).not.toHaveBeenCalled()
     await settle()
-    expect(commitSpy).toHaveBeenCalledOnce()
+    expect(onMove).toHaveBeenCalledOnce()
+  })
+
+  it('renders only the lifted item, at most twice', async () => {
+    renders.clear()
+    await dragHold('a1', 100, 150)
+    await move(100, 210)
+    await move(100, 358)
+    await release(100, 358)
+    await settle()
+    expect(receives.B).toHaveBeenCalledExactlyOnceWith('a1', null)
+    expect([...renders.keys()]).toEqual(['a1'])
+    expect(renders.get('a1')).toBeLessThanOrEqual(2)
+  })
+
+  it('a press during a glide fast-forwards the settle', async () => {
+    await dragTo('a1', 100, 150)
+    expect(onMove).not.toHaveBeenCalled()
+    await act(async () => {
+      firePointer(item('b1'), 'pointerdown', { x: 100, y: 250 })
+    })
+    expect(onMove).toHaveBeenCalledExactlyOnceWith('a1', null)
+    await release(100, 250)
+  })
+
+  it('an unmounting source zone ends a live drag', async () => {
+    await dragHold('a1', 100, 150)
+    hidden = new Set(['A'])
+    await act(async () => root.render(<Board />))
+    expect(spoken().at(-1)).toBe('Canceled moving a1.')
+    expect(slotEl()).toBeNull()
+    await release(100, 150)
+    await settle()
+    expect(onMove).not.toHaveBeenCalled()
+  })
+
+  it('a function disclose springs for one id and not another', async () => {
+    extra = { A: { disclose: (id) => id === 'a1' } }
+    await mount()
+    const sprung: string[] = []
+    const offs = ['a1', 'a2'].map((id) => addSpring(item(id), () => sprung.push(id)))
+    const under = vi.spyOn(document, 'elementFromPoint')
+    vi.useFakeTimers()
+    const wait = (ms: number): Promise<void> =>
+      act(async () => {
+        vi.advanceTimersByTime(ms)
+      })
+    try {
+      under.mockReturnValue(item('a2'))
+      await dragHold('a1', 100, 60)
+      await wait(1000)
+      await act(async () => pressEscape())
+      await wait(1000)
+      under.mockReturnValue(item('a1'))
+      await dragHold('a2', 100, 140)
+      await wait(1000)
+      await act(async () => pressEscape())
+      await wait(1000)
+      expect(sprung).toContain('a2')
+      expect(sprung).not.toContain('a1')
+    } finally {
+      for (const off of offs) off()
+      vi.useRealTimers()
+      under.mockRestore()
+    }
   })
 })
 
 describe('the drag handle keyboard', () => {
   const renderZone = async (
     onOpen: (() => void) | undefined,
-    zone: { disabled?: boolean; fixed?: boolean; onReorder?: () => void } = {},
+    zone: Partial<DisplaceSpec<unknown>> = {},
   ): Promise<{ handle: HTMLElement; done: () => void }> => {
     const box = document.createElement('div')
     document.body.appendChild(box)
     const local = createRoot(box)
     await act(async () =>
       local.render(
-        <SortableZone items={['k', 'j']} {...zone}>
+        <SortableZone items={['k', 'j']} label={label} {...zone}>
           <Item id="k" onOpen={onOpen} />
           <Item id="j" />
         </SortableZone>,
@@ -400,12 +548,6 @@ describe('the drag handle keyboard', () => {
       },
     }
   }
-  const press = (el: EventTarget, key: string): Promise<KeyboardEvent> =>
-    act(async () => {
-      const e = new KeyboardEvent('keydown', { key, bubbles: true, cancelable: true })
-      el.dispatchEvent(e)
-      return e
-    })
   const lifted = (el: HTMLElement): boolean => el.getAttribute('aria-pressed') === 'true'
 
   it('opens on Enter when the item opens, without lifting', async () => {
@@ -438,13 +580,12 @@ describe('the drag handle keyboard', () => {
   })
 
   it('keeps a lifted item home in a fixed zone', async () => {
-    const onReorder = vi.fn()
-    const { handle, done } = await renderZone(undefined, { fixed: true, onReorder })
+    const { handle, done } = await renderZone(undefined, { fixed: true, onMove })
     await press(handle, ' ')
     await press(document, 'ArrowDown')
     await press(document, ' ')
     await settle()
-    expect(onReorder).not.toHaveBeenCalled()
+    expect(onMove).not.toHaveBeenCalled()
     done()
   })
 
@@ -482,129 +623,124 @@ describe('the drag handle keyboard', () => {
     expect(openable.handle.hasAttribute('aria-disabled')).toBe(false)
     openable.done()
   })
-})
 
-// A column of uniform 10px-tall slots at y = 0,10,20,...
-const column = (n: number): Box[] =>
-  Array.from({ length: n }, (_, i) => ({
-    left: 0,
-    top: i * 10,
-    width: 100,
-    height: 10,
-    cx: 50,
-    cy: i * 10 + 5,
-  }))
-
-// A `cols`-wide grid of 100px cells.
-const grid = (count: number, cols: number): Box[] =>
-  Array.from({ length: count }, (_, i) => {
-    const c = i % cols
-    const r = Math.floor(i / cols)
-    return {
-      left: c * 100,
-      top: r * 100,
-      width: 100,
-      height: 100,
-      cx: c * 100 + 50,
-      cy: r * 100 + 50,
-    }
+  it('T1: the lifting and dropping Space are both prevented', async () => {
+    const { handle, done } = await renderZone(undefined, { onMove })
+    expect((await press(handle, ' ')).defaultPrevented).toBe(true)
+    await press(document, 'ArrowDown')
+    await press(document, ' ', { repeat: true })
+    expect(lifted(handle)).toBe(true)
+    expect((await press(document, ' ')).defaultPrevented).toBe(true)
+    await settle()
+    expect(onMove).toHaveBeenCalledExactlyOnceWith('k', null)
+    done()
   })
 
-const cellIn = (rects: Box[], over: number, activeIdx: number, index: number): { y: number } =>
-  placeCell(rects, activeIdx, over, index, 10, 100)
-
-describe('placeCell — the displacement core', () => {
-  it('shifts the passed-over items up when dragging forward', () => {
-    const r = column(4)
-    expect(cellIn(r, 2, 0, 1).y).toBe(0)
-    expect(cellIn(r, 2, 0, 2).y).toBe(10)
-    expect(cellIn(r, 2, 0, 3).y).toBe(30)
+  it('T2: a press on the lifted item cancels the lift', async () => {
+    const { handle, done } = await renderZone(undefined)
+    const opened = vi.fn()
+    handle.addEventListener('click', opened)
+    await press(handle, ' ')
+    await act(async () => {
+      firePointer(handle, 'pointerdown', { x: 100, y: 50 })
+      firePointer(handle, 'pointerup', { x: 100, y: 50 })
+      handle.click()
+    })
+    await settle()
+    expect(handle.getAttribute('aria-pressed')).toBeNull()
+    expect(spoken().at(-1)).toBe('Canceled moving k.')
+    expect(opened).not.toHaveBeenCalled()
+    done()
   })
 
-  it('shifts the passed-over items down when dragging backward', () => {
-    const r = column(4)
-    expect(cellIn(r, 1, 3, 0).y).toBe(0)
-    expect(cellIn(r, 1, 3, 1).y).toBe(20)
-    expect(cellIn(r, 1, 3, 2).y).toBe(30)
-  })
-
-  it('is a no-op when over === active (hovering its own slot)', () => {
-    const r = column(4)
-    for (let i = 0; i < 4; i++) expect(cellIn(r, 1, 1, i).y).toBe(i * 10)
-  })
-
-  it('closes the gap when the active item is in another zone', () => {
-    const r = column(4)
-    expect(cellIn(r, -1, 1, 0).y).toBe(0)
-    expect(cellIn(r, -1, 1, 2).y).toBe(10)
-    expect(cellIn(r, -1, 1, 3).y).toBe(20)
-  })
-
-  it('opens a slot for a foreign item, and walks the grid past the last cell', () => {
-    const g = grid(4, 2)
-    expect(placeCell(g, -1, 0, 0, 100, 200)).toEqual({ x: 100, y: 0 })
-    expect(placeCell(g, -1, 4, 3, 100, 200)).toEqual({ x: 100, y: 100 })
-    expect(placeCell(g, -1, 0, 3, 100, 200)).toEqual({ x: 0, y: 200 })
+  it('focus leaving a keyboard-lifted item cancels the lift', async () => {
+    const { handle, done } = await renderZone(undefined, { onMove })
+    const away = document.body.appendChild(document.createElement('button'))
+    await act(async () => handle.focus())
+    await press(handle, ' ')
+    expect(lifted(handle)).toBe(true)
+    await act(async () => away.focus())
+    await settle()
+    expect(lifted(handle)).toBe(false)
+    expect(spoken().at(-1)).toBe('Canceled moving k.')
+    expect(onMove).not.toHaveBeenCalled()
+    away.remove()
+    done()
   })
 })
+
+// ── Families and carries ────────────────────────────────────────────────────
 
 describe('the drag engine across a family', () => {
+  beforeEach(mount)
+
   it('keeps an item home when its zone has no family', async () => {
     await dropAt('f1', 100, 210)
-    expect(commitSpy).not.toHaveBeenCalled()
-    expect(receiveSpy).not.toHaveBeenCalled()
+    expect(onMove).not.toHaveBeenCalled()
+    for (const spy of Object.values(receives)) expect(spy).not.toHaveBeenCalled()
   })
 
   it('keeps an item home when carry declines it', async () => {
-    carryA = () => null
+    extra = { A: { carry: [carries(BOARD, () => null)] } }
     await mount()
     await dropAt('a1', 100, 210)
-    expect(receiveSpy).not.toHaveBeenCalled()
-    expect(commitSpy).toHaveBeenCalledExactlyOnceWith('a1', 'A', 1)
+    expect(receives.B).not.toHaveBeenCalled()
+    expect(onMove).toHaveBeenCalledExactlyOnceWith('a1', null)
   })
 
   it('returns to its slot when released over nothing', async () => {
-    stray = 'return'
-    await mount()
     await dropAt('a1', 300, 250)
-    expect(commitSpy).not.toHaveBeenCalled()
-    expect(reorderSpy).not.toHaveBeenCalled()
+    expect(onMove).not.toHaveBeenCalled()
+    for (const spy of Object.values(receives)) expect(spy).not.toHaveBeenCalled()
   })
 
   it('lands home unchanged when it strays off every zone and comes back to its own slot', async () => {
-    stray = 'return'
-    await mount()
     await dragHold('a1', 300, 250)
-    await act(async () => {
-      firePointer(window, 'pointermove', { x: 100, y: 50 })
-    })
+    await move(100, 50)
     await release(100, 50)
     await settle()
-    expect(commitSpy).not.toHaveBeenCalled()
-    expect(reorderSpy).not.toHaveBeenCalled()
+    expect(onMove).not.toHaveBeenCalled()
+    for (const spy of Object.values(receives)) expect(spy).not.toHaveBeenCalled()
   })
 
   it('holds the source gap open while the landing is foreign', async () => {
-    holdGap = true
-    await mount()
     await dragTo('a1', 100, 210)
-    expect(item('a2').style.transform).toBe('translate3d(0.0px, 0.0px, 0)')
+    expect(item('a2').style.transform).toBe('')
     await settle()
   })
 
-  it('closes the source gap without holdGap', async () => {
+  it('closes the source gap while the landing is foreign when the source releases', async () => {
+    const releaseA = vi.fn()
+    extra = { A: { release: releaseA } }
+    await mount()
     await dragTo('a1', 100, 210)
     expect(item('a2').style.transform).toBe('translate3d(0.0px, -100.0px, 0)')
+    await settle()
+    expect(releaseA).toHaveBeenCalledExactlyOnceWith('a1')
+  })
+
+  it('holds the source gap while previewing another zone of its family, then glides in', async () => {
+    await dragTo('a1', 100, 210)
+    expect(item('a2').style.transform).toBe('')
+    expect(receives.B).not.toHaveBeenCalled()
+    await settle()
+    expect(receives.B).toHaveBeenCalledExactlyOnceWith('a1', 'b1')
+  })
+
+  it('a carry lands at once and announces the open', async () => {
+    extra = { A: { carry: BOTH }, T: { opens: true } }
+    await mount()
+    await dragTo('a1', 100, 1250)
+    expect(receives.T).toHaveBeenCalledExactlyOnceWith(tabOf('a1'), null)
+    expect(spoken().filter((m) => m === 'Opened a1 in new tab.')).toHaveLength(1)
     await settle()
   })
 
   it('hands the carried item to the zone it lands in', async () => {
-    carryA = (id) => ({ id, from: 'A' })
+    extra = { A: { carry: [carries(BOARD, (id) => ({ id, from: 'A' }))] } }
     await mount()
     await dropAt('a1', 100, 210)
-    expect(receiveSpy).toHaveBeenCalledExactlyOnceWith({ id: 'a1', from: 'A' }, 0)
-    expect(commitSpy).toHaveBeenCalledExactlyOnceWith('a1', 'B', 0)
-    expect(fromSpy).toHaveBeenCalledExactlyOnceWith('A')
+    expect(receives.B).toHaveBeenCalledExactlyOnceWith({ id: 'a1', from: 'A' }, 'b1')
   })
 
   it('still receives when the landing zone unmounts during the drop animation', async () => {
@@ -612,122 +748,322 @@ describe('the drag engine across a family', () => {
     hidden = new Set(['B'])
     await act(async () => root.render(<Board />))
     await settle()
-    expect(receiveSpy).toHaveBeenCalledExactlyOnceWith('a1', 0)
+    expect(receives.B).toHaveBeenCalledExactlyOnceWith('a1', 'b1')
   })
 
   it('marks only the lifted zone item as dragging when two zones share an id', async () => {
-    ZONES.D = ['d1', 'a1']
+    ITEMS.D = ['d1', 'a1']
     await mount()
     const twins = host.querySelectorAll('[data-id="a1"]')
     const r = twins[0].getBoundingClientRect()
     await act(async () => {
       firePointer(twins[0], 'pointerdown', { x: r.left + r.width / 2, y: r.top + r.height / 2 })
     })
-    await act(async () => {
-      firePointer(window, 'pointermove', { x: 100, y: 150 })
-    })
+    await move(100, 150)
     expect(twins[0].getAttribute('aria-pressed')).toBe('true')
     expect(twins[1].getAttribute('aria-pressed')).toBeNull()
     pressEscape()
-    ZONES.D = ['d1']
   })
 
   it('reports the family once the item is loose and nothing after', async () => {
+    const loose = (): string | null | undefined =>
+      host.querySelector('[data-loose]')?.getAttribute('data-loose')
     await dragTo('a1', 100, 150)
-    expect(host.querySelector('[data-family]')?.getAttribute('data-family')).toBe('')
+    expect(loose()).toBe('')
     await settle()
     await dragTo('a1', 100, 210)
-    expect(host.querySelector('[data-family]')?.getAttribute('data-family')).toBe('board')
+    expect(loose()).toBe('a1')
     await settle()
-    expect(host.querySelector('[data-family]')?.getAttribute('data-family')).toBe('')
-  })
-
-  it('uses the zone overlay over the group overlay', async () => {
-    withOverlay = true
-    zoneOverlay = true
-    await mount()
-    await dragTo('a1', 100, 130)
-    expect(document.querySelector('[data-zone-overlay="a1"]')).not.toBeNull()
-    expect(document.querySelector('[data-overlay="a1"]')).toBeNull()
-    await settle()
+    expect(loose()).toBe('')
   })
 
   it('parts an axis row by the width of the item coming in', async () => {
     await dragHold('x1', 260, 1050)
     expect(item('x2').style.transform).toBe('translate3d(-200.0px, 0.0px, 0)')
-    const slot = host.querySelector('[data-slot]') as HTMLElement
-    expect(slot.style.left).toBe('120px')
+    expect(slotEl()?.style.left).toBe('120px')
     await release(260, 1050)
     await settle()
   })
 
   it('keeps an axis row item in its row when it overshoots the row end', async () => {
-    stray = 'return'
-    await mount()
     await dropAt('x1', 900, 1050)
-    expect(reorderSpy).toHaveBeenCalledExactlyOnceWith('x1', 'x3')
-    expect(commitSpy).toHaveBeenCalledExactlyOnceWith('x1', 'X', 2)
+    expect(onMove).toHaveBeenCalledExactlyOnceWith('x1', null)
   })
 
   it('lands a foreign item past the last item of an axis row at the row own size', async () => {
     await dragHold('a1', 500, 1050)
-    const slot = host.querySelector('[data-slot]') as HTMLElement
-    expect(slot.style.left).toBe('440px')
-    expect(slot.style.width).toBe('120px')
+    expect(slotEl()?.style.left).toBe('440px')
+    expect(slotEl()?.style.width).toBe('120px')
     await release(500, 1050)
     await settle()
-    expect(commitSpy).toHaveBeenCalledExactlyOnceWith('a1', 'X', 3)
+    expect(receives.X).toHaveBeenCalledExactlyOnceWith('a1', null)
   })
 
-  it('escorts a foreign row into a zone and lands nowhere outside every zone', async () => {
-    const rect: Box = { left: 0, top: -1000, width: 200, height: 24, cx: 100, cy: -988 }
-    const spec = { id: 'row', family: 'board', item: { id: 'row' }, rect, home: rect }
-    await act(async () => {
-      escortRef?.lift(spec)
-    })
-    await act(async () => escortRef?.move(100, 210))
-    expect(escortRef?.loose()).toBe(true)
-    let landed = false
-    await act(async () => {
-      landed = escortRef?.drop() ?? false
-    })
-    expect(landed).toBe(true)
-    expect(receiveSpy).toHaveBeenCalledExactlyOnceWith({ id: 'row' }, 0)
-    await act(async () => {
-      escortRef?.lift(spec)
-    })
-    await act(async () => escortRef?.move(100, 210))
-    await act(async () => escortRef?.move(100, -990))
-    await act(async () => {
-      landed = escortRef?.drop() ?? false
-    })
-    expect(landed).toBe(false)
-    expect(receiveSpy).toHaveBeenCalledOnce()
-    stray = 'return'
+  it('a receiver whose accepts refuses the item shows no slot and receives nothing', async () => {
+    extra = { B: { accepts: (item) => item !== 'a1' } }
     await mount()
-    await act(async () => {
-      escortRef?.lift(spec)
-    })
-    await act(async () => escortRef?.move(300, 250))
-    await act(async () => {
-      landed = escortRef?.drop() ?? false
-    })
-    expect(landed).toBe(false)
+    await dragHold('a1', 100, 210)
+    expect(slotEl()).toBeNull()
+    await release(100, 210)
+    await settle()
+    expect(receives.B).not.toHaveBeenCalled()
+    await dropAt('a2', 100, 210)
+    expect(receives.B).toHaveBeenCalledExactlyOnceWith('a2', 'b1')
+  })
+
+  it('an item carrying two families is admitted by each family receiver', async () => {
+    extra = { A: { carry: BOTH } }
+    await mount()
+    await dropAt('a1', 100, 210)
+    await dropAt('a1', 100, 1250)
+    expect(receives.B).toHaveBeenCalledExactlyOnceWith('a1', 'b1')
+    expect(receives.T).toHaveBeenCalledExactlyOnceWith(tabOf('a1'), null)
+  })
+
+  it('a fixed zone lifts and carries and never previews its own order', async () => {
+    extra = { A: { fixed: true } }
+    await mount()
+    await dragHold('a1', 100, 150)
+    expect(item('a2').style.transform).toBe('')
+    expect(slotEl()).toBeNull()
+    await release(100, 150)
+    await settle()
+    expect(onMove).not.toHaveBeenCalled()
+    await dropAt('a1', 100, 210)
+    expect(receives.B).toHaveBeenCalledExactlyOnceWith('a1', 'b1')
+  })
+
+  it('useLooseItem holds the typed item only while it is loose, and the strip forces only on isWindowTarget', async () => {
+    extra = { A: { carry: BOTH } }
+    await mount()
+    const probe = (): string[] => {
+      const b = host.querySelector('[data-tab]') as HTMLElement
+      return [b.dataset.tab ?? '', b.dataset.window ?? '']
+    }
+    await dragHold('a1', 100, 150)
+    expect(probe()).toEqual(['', 'false'])
+    await move(300, 250)
+    expect(probe()).toEqual(['a1', 'true'])
+    await release(300, 250)
+    await settle()
+    expect(probe()).toEqual(['', 'false'])
+    await dragHold('a2', 300, 250)
+    expect(probe()).toEqual(['a2', 'false'])
+    await release(300, 250)
+    await settle()
   })
 })
 
-describe('placeAxis — the running-offset core', () => {
-  const row: Box[] = [
-    { left: 0, top: 0, width: 200, height: 30, cx: 100, cy: 15 },
-    { left: 200, top: 0, width: 120, height: 30, cx: 260, cy: 15 },
-    { left: 320, top: 0, width: 120, height: 30, cx: 380, cy: 15 },
-  ]
-  it('moves the passed-over item back by the lifted width', () => {
-    expect(placeAxis(row, 'x', 0, { x: 0, y: 0 }, 0, 1, 1, 200)).toEqual({ x: 0, y: 0 })
-    expect(placeAxis(row, 'x', 0, { x: 0, y: 0 }, 0, 1, 0, 200)).toEqual({ x: 120, y: 0 })
+// ── Line zone ───────────────────────────────────────────────────────────────
+
+describe('the line zone', () => {
+  beforeEach(async () => {
+    View = Lines
+    await mount()
   })
-  it('opens a slot the size of a foreign item', () => {
-    expect(placeAxis(row, 'x', 4, { x: 0, y: 0 }, -1, 1, 1, 80)).toEqual({ x: 288, y: 0 })
-    expect(placeAxis(row, 'x', 4, { x: 0, y: 0 }, -1, 1, -1, 80)).toEqual({ x: 204, y: 0 })
+
+  const lineHost = (): HTMLElement => host.querySelector('.drop-line-host') as HTMLElement
+
+  it('shows the chip, marks the source, and commits on release', async () => {
+    await dragHold('r1', 100, 70)
+    expect(document.querySelector('.drag-ghost [data-chip]')?.textContent).toBe('r1')
+    expect(item('r1').hasAttribute('data-drag-source')).toBe(true)
+    expect((host.querySelector('.drop-line') as HTMLElement).style.top).toBe('60px')
+    await release(100, 70)
+    expect(commit).toHaveBeenCalledExactlyOnceWith('r1', 'r3')
+    expect(spoken().at(-1)).toBe('Moved r1.')
+    expect(item('r1').hasAttribute('data-drag-source')).toBe(false)
+    expect(document.querySelector('.drag-ghost')).toBeNull()
+    expect(host.querySelector('.drop-line')).toBeNull()
+  })
+
+  it('refuses a lift with no snapshot and nothing to carry', async () => {
+    lineSpec = { snap: () => null }
+    await mount()
+    await dragHold('r1', 100, 70)
+    await release(100, 70)
+    await act(async () => item('r1').focus())
+    await press(item('r1'), ' ')
+    expect(spoken()).toEqual([])
+    expect(item('r1').hasAttribute('data-drag-source')).toBe(false)
+    lineSpec = { snap: () => null, carry: [carries(BOARD, (id) => id)] }
+    await mount()
+    await dragHold('r1', 100, 70)
+    expect(spoken()).toEqual(['Picked up r1.'])
+    pressEscape()
+  })
+
+  it('steps by keyboard naming the neighbour and commits', async () => {
+    await act(async () => item('r1').focus())
+    await press(item('r1'), ' ')
+    await press(document, 'ArrowDown')
+    expect(spoken().at(-1)).toBe('After r2.')
+    await press(document, 'ArrowDown')
+    expect(spoken().at(-1)).toBe('After r3.')
+    await press(document, 'ArrowUp')
+    expect(spoken().at(-1)).toBe('Before r3.')
+    await press(document, ' ')
+    expect(commit).toHaveBeenCalledExactlyOnceWith('r1', 'r3')
+    expect(spoken().at(-1)).toBe('Moved r1.')
+  })
+
+  it('is one tab stop that forwards to a row and moves between rows', async () => {
+    const away = document.body.appendChild(document.createElement('button'))
+    expect(lineHost().tabIndex).toBe(0)
+    expect(ROWS.map((id) => item(id).tabIndex)).toEqual([-1, -1, -1])
+    await act(async () => lineHost().focus())
+    expect(document.activeElement).toBe(item('r1'))
+    expect(lineHost().tabIndex).toBe(-1)
+    await press(item('r1'), 'ArrowDown')
+    expect(document.activeElement).toBe(item('r2'))
+    await act(async () => away.focus())
+    expect(lineHost().tabIndex).toBe(0)
+    await act(async () => lineHost().focus())
+    expect(document.activeElement).toBe(item('r2'))
+    away.remove()
+  })
+
+  it("a pointer press on the host's blank space focuses no row and holds the scroll", async () => {
+    const scrolled = vi.spyOn(HTMLElement.prototype, 'scrollIntoView')
+    await act(async () => {
+      firePointer(lineHost(), 'pointerdown', { x: 100, y: 88 })
+      lineHost().focus()
+      firePointer(window, 'pointerup', { x: 100, y: 88 })
+    })
+    expect(document.activeElement).toBe(lineHost())
+    expect(scrolled).not.toHaveBeenCalled()
+    scrolled.mockRestore()
+  })
+
+  it('a click inside a row focuses the row', async () => {
+    const inner = item('r2').querySelector('[data-inner]') as HTMLElement
+    await act(async () => {
+      firePointer(inner, 'pointerdown', { x: 100, y: 45 })
+      inner.focus()
+      firePointer(window, 'pointerup', { x: 100, y: 45 })
+    })
+    expect(document.activeElement).toBe(item('r2'))
+  })
+
+  it('a release over nothing returns', async () => {
+    lineSpec = { carry: [carries(BOARD, (id) => id)] }
+    await mount()
+    await dragTo('r1', 100, 300)
+    expect(commit).not.toHaveBeenCalled()
+    expect(spoken().at(-1)).toBe('r1 returned to its place.')
+    expect(item('r1').hasAttribute('data-drag-source')).toBe(false)
+  })
+
+  it('a line row carried into an admitted zone lands at once', async () => {
+    lineSpec = { carry: [carries(BOARD, (id) => id)] }
+    aside = <Zone zid="P" />
+    await mount()
+    await dragTo('r1', 100, 300)
+    expect(receives.P).toHaveBeenCalledExactlyOnceWith('r1', null)
+    expect(commit).not.toHaveBeenCalled()
+    expect(spoken().at(-1)).toBe('Moved r1.')
+  })
+
+  it('a watch change mid-drag re-measures, and the release commits against the fresh slot', async () => {
+    await dragHold('r1', 100, 70)
+    layLines(['r1', 'r3', 'r2'])
+    watch = 1
+    await act(async () => root.render(<Lines />))
+    expect((host.querySelector('.drop-line') as HTMLElement).style.top).toBe('60px')
+    await release(100, 70)
+    expect(commit).toHaveBeenCalledExactlyOnceWith('r1', 'r2')
+  })
+})
+
+// ── Seams ───────────────────────────────────────────────────────────────────
+
+describe('the engine seams', () => {
+  beforeEach(mount)
+
+  it('a zone mounting mid-drag registers, syncs bounds, and receives', async () => {
+    extra = { A: { carry: BOTH } }
+    aside = <Late />
+    await mount()
+    expect(host.querySelector('.zone-L')).toBeNull()
+    await dragHold('a1', 300, 250)
+    const late = host.querySelector('.zone-L') as HTMLElement
+    expect(late.style.getPropertyValue('--drag-floor')).toBe('100.0px')
+    await move(100, 1450)
+    expect(slotEl()).not.toBeNull()
+    await release(100, 1450)
+    expect(receives.L).toHaveBeenCalledExactlyOnceWith(tabOf('a1'), null)
+  })
+
+  it('a zone mounting mid-drag outside a scrolled element keeps its bounds through that scroll', async () => {
+    extra = { A: { carry: BOTH } }
+    aside = (
+      <>
+        <Late />
+        <div className="scroller" style={{ overflowY: 'auto' }}>
+          <Zone zid="S" />
+        </div>
+      </>
+    )
+    await mount()
+    await dragHold('a1', 300, 250)
+    const read = vi.spyOn(host.querySelector('.zone-L') as HTMLElement, 'getBoundingClientRect')
+    await act(async () => {
+      host.querySelector('.scroller')?.dispatchEvent(new Event('scroll'))
+    })
+    expect(read).not.toHaveBeenCalled()
+    await move(100, 1450)
+    await release(100, 1450)
+    expect(receives.L).toHaveBeenCalledExactlyOnceWith(tabOf('a1'), null)
+  })
+
+  it('clips a receiver to its scroller, so its overflow is not a target', async () => {
+    aside = (
+      <div className="scroller" style={{ overflowY: 'auto' }}>
+        <Zone zid="S" />
+      </div>
+    )
+    await mount()
+    stubRect(host.querySelector('.scroller') as Element, { top: 1600, bottom: 1650 })
+    await dragHold('a1', 100, 1700)
+    expect(slotEl()).toBeNull()
+    await move(100, 1620)
+    expect(slotEl()).not.toBeNull()
+    await release(100, 1620)
+    await settle()
+    expect(receives.S).toHaveBeenCalledExactlyOnceWith('a1', 's1')
+  })
+
+  it('the spec names a step when it declares step', async () => {
+    View = Lines
+    lineSpec = { step: (slot) => ({ part: 'into', id: slot }) }
+    await mount()
+    await act(async () => item('r1').focus())
+    await press(item('r1'), ' ')
+    await press(document, 'ArrowDown')
+    expect(spoken().at(-1)).toBe('Into r3.')
+    pressEscape()
+  })
+
+  it('Enter on a focused row calls its open', async () => {
+    View = Lines
+    const open = vi.fn()
+    rowOpts = { r1: { open } }
+    await mount()
+    await act(async () => item('r1').focus())
+    expect((await press(item('r1'), 'Enter')).defaultPrevented).toBe(true)
+    expect(open).toHaveBeenCalledOnce()
+    expect(spoken()).toEqual([])
+  })
+
+  it('a row-element reader never re-renders on a slot change', async () => {
+    View = Lines
+    await mount()
+    renders.clear()
+    await dragHold('r1', 100, 70)
+    await move(100, 88)
+    await move(100, 50)
+    await release(100, 50)
+    expect(commit).toHaveBeenCalledOnce()
+    expect(renders.get('reader')).toBeUndefined()
   })
 })

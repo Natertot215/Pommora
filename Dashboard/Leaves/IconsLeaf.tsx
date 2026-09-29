@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Icon, icons, type IconName } from '@pommora/uix/Symbols'
-import { SortableZone, useDragItem, reorder } from '@pommora/uix/Interactions/drag'
+import { SortableZone, useDragItem } from '@pommora/uix/Interactions/drag'
+import { moveBefore } from '@pommora/uix/Utilities/moveItem'
 import { useIsCompact } from './helpers'
 
 function IconCell({ name }: { name: IconName }): React.JSX.Element {
@@ -39,16 +40,8 @@ export function IconsLeaf(): React.JSX.Element {
         ) : (
           <SortableZone
             items={names}
-            getItemLabel={(id) => id}
-            onReorder={(a, o) =>
-              setNames((x) =>
-                reorder(
-                  x.map((id) => ({ id })),
-                  a,
-                  o,
-                ).map(({ id }) => id),
-              )
-            }
+            label={(id) => id}
+            onMove={(id, beforeId) => setNames((x) => moveBefore(x, (n) => n, id, beforeId) ?? x)}
           >
             {cells}
           </SortableZone>

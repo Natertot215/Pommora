@@ -1,6 +1,7 @@
+import type { Geometry } from './reorderModel'
 import type { Box } from './shared'
 
-type Dir = { x: number; y: number }
+export type Dir = { x: number; y: number }
 
 export const ARROW_DIRS: Record<string, Dir> = {
   ArrowUp: { x: 0, y: -1 },
@@ -28,4 +29,22 @@ export function keyboardNext(rects: Box[], over: number, dir: Dir): number {
     }
   })
   return best
+}
+
+export type StepPart = 'before' | 'into' | 'after'
+type Probe = { y: number; row: string; part: StepPart }
+
+export function lineProbes(g: Geometry): Probe[] {
+  const out: Probe[] = []
+  for (const r of g.rows) {
+    const inset = (r.bottom - r.top) / 8
+    out.push(
+      { y: r.top + inset, row: r.id, part: 'before' },
+      { y: r.mid, row: r.id, part: 'into' },
+      { y: r.bottom - inset, row: r.id, part: 'after' },
+    )
+  }
+  const last = g.rows[g.rows.length - 1]
+  if (last) out.push({ y: g.bottom, row: last.id, part: 'after' })
+  return out
 }

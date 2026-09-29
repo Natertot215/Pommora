@@ -87,7 +87,7 @@ export function FrameDnd<D>({
         : null
     },
     commit: (_id, slot) => onDrop(slot.drop),
-    lineFor: (slot) => (slot.topInBox != null ? { top: slot.topInBox, ...rowDropLine() } : null),
+    lineFor: (slot) => (slot.topInBox != null ? rowDropLine(slot.topInBox) : null),
     label: labelFor,
     rowEl: (id) => els.current.get(id),
     scrollTarget: () => box.current,

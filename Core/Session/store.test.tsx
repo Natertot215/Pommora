@@ -163,6 +163,26 @@ describe('store — tab wiring (Phase 0)', () => {
     expect(s.tabs[0].target).toEqual({ kind: 'newtab' })
     expect(s.selection).toEqual({ kind: 'none' })
   })
+
+  it('reorderTabs moves a tab before another and to the end on null; a no-move persists nothing', async () => {
+    const order = (): string[] => useSession.getState().tabs.map((t) => t.id)
+    seed({
+      tabs: [uTab('t1', ctx('a')), uTab('t2', ctx('b')), uTab('t3', ctx('c'))],
+      activeTabId: 't1',
+    })
+    useSession.getState().reorderTabs('t3', 't1')
+    expect(order()).toEqual(['t3', 't1', 't2'])
+    useSession.getState().reorderTabs('t3', null)
+    expect(order()).toEqual(['t1', 't2', 't3'])
+    await flushAllSessionSaves()
+    channels['tabs:save'].mockClear()
+    useSession.getState().reorderTabs('t3', null)
+    useSession.getState().reorderTabs('t2', 't3')
+    useSession.getState().reorderTabs('missing', 't1')
+    await flushAllSessionSaves()
+    expect(order()).toEqual(['t1', 't2', 't3'])
+    expect(channels['tabs:save']).not.toHaveBeenCalled()
+  })
 })
 
 const pg = (id: string): PageTarget => ({ kind: 'page', id, path: `Notes/${id}.md` })

@@ -35,7 +35,7 @@ export interface WindowSlice {
   closeHistory: () => void
   openWindowTab: (target: WindowTarget, opts?: { at?: number; heading?: string }) => void
   activateWindowTab: (id: string) => void
-  reorderWindowTabs: (activeId: string, overId: string) => void
+  reorderWindowTabs: (id: string, beforeId: string | null) => void
   promoteWindowTab: (id: string, newTab?: boolean) => void
   closeWindowTab: (id: string, exit?: 'dismiss' | 'engulf') => void
   closeWindow: (reason?: 'dismiss' | 'engulf') => void
@@ -181,10 +181,10 @@ export const createWindowSlice: Slice<WindowSlice> = (set, get) => {
       if (!cur || cur.activeTabId === id || !cur.tabs.some((t) => t.id === id)) return
       commitWindow({ ...cur, activeTabId: id }, { windowSlide: stampByOrder(cur, id) })
     },
-    reorderWindowTabs: (activeId, overId) => {
+    reorderWindowTabs: (id, beforeId) => {
       const cur = get().windowSlot
       if (!cur) return
-      const next = reorderTabIn(cur, activeId, overId)
+      const next = reorderTabIn(cur, id, beforeId)
       if (next === cur) return
       commitWindow(next)
     },

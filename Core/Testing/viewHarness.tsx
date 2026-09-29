@@ -1,10 +1,11 @@
 // The jsdom seat every view suite mounts through: the act environment, the ResizeObserver jsdom lacks, pointer capture, and one render-and-flush of the real ViewHost.
 
-import { act } from 'react'
+import { act, type ReactNode } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
 import { afterEach, beforeEach, vi } from 'vitest'
 import type { CollectionNode } from '@pommora/core/Nexus/tree'
 import type { PropertyDefinition } from '@pommora/core/Properties/properties'
+import { DragGroup } from '@pommora/uix/Interactions/drag'
 import { stubPointerCapture } from '@pommora/uix/Testing/pointerHarness'
 import { ViewHost } from '../Views/Host/ViewHost'
 import { useSession } from '../Session/store'
@@ -36,11 +37,20 @@ export function mountEachTest(onMount: (host: HTMLDivElement, root: Root) => voi
   })
 }
 
-export async function renderView(root: Root, source: CollectionNode): Promise<void> {
+export async function renderView(
+  root: Root,
+  source: CollectionNode,
+  beside?: ReactNode,
+): Promise<void> {
   await act(async () => {
     const { tree } = useSession.getState()
     if (tree) useSession.setState({ tree: { ...tree, collections: [source] } })
-    root.render(<ViewHost source={source} />)
+    root.render(
+      <DragGroup>
+        {beside}
+        <ViewHost source={source} />
+      </DragGroup>,
+    )
   })
   await act(async () => {})
 }

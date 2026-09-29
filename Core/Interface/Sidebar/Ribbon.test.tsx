@@ -41,11 +41,11 @@ describe('Ribbon', () => {
     const bs = buttons()
     expect(bs[0].getAttribute('aria-label')).toBe('Homepage')
     const labels = bs.slice(1).map((b) => b.getAttribute('aria-label'))
-    expect(labels).toEqual(['matrix', 'agenda', 'contexts', 'collections', 'settings'])
+    expect(labels).toEqual(['Matrix', 'Agenda', 'Contexts', 'Collections', 'Settings'])
   })
 
   it('a Matrix click opens the Matrix and never switches mode', () => {
-    const matrix = buttons().find((b) => b.getAttribute('aria-label') === 'matrix')!
+    const matrix = buttons().find((b) => b.getAttribute('aria-label') === 'Matrix')!
     act(() => matrix.click())
     expect(selectSpy).toHaveBeenCalledWith({ kind: 'matrix' })
     expect(setPersonalizationSpy).not.toHaveBeenCalled()
@@ -63,7 +63,7 @@ describe('Ribbon', () => {
         },
       }),
     )
-    const matrix = buttons().find((b) => b.getAttribute('aria-label') === 'matrix')!
+    const matrix = buttons().find((b) => b.getAttribute('aria-label') === 'Matrix')!
     act(() => matrix.click())
     expect(openMatrixWindowSpy).toHaveBeenCalledTimes(1)
     expect(selectSpy).not.toHaveBeenCalled()
@@ -84,7 +84,7 @@ describe('Ribbon', () => {
         ],
       }),
     )
-    const matrix = buttons().find((b) => b.getAttribute('aria-label') === 'matrix')!
+    const matrix = buttons().find((b) => b.getAttribute('aria-label') === 'Matrix')!
     act(() => matrix.click())
     expect(selectSpy).toHaveBeenCalledWith({ kind: 'matrix' })
     expect(openMatrixWindowSpy).not.toHaveBeenCalled()
@@ -97,13 +97,13 @@ describe('Ribbon', () => {
   })
 
   it('a mode icon switches sidebarMode', () => {
-    const contexts = buttons().find((b) => b.getAttribute('aria-label') === 'contexts')!
+    const contexts = buttons().find((b) => b.getAttribute('aria-label') === 'Contexts')!
     act(() => contexts.click())
     expect(setPersonalizationSpy).toHaveBeenCalledWith('sidebarMode', 'contexts')
   })
 
   it('settings is a no-op (no mode switch)', () => {
-    const settings = buttons().find((b) => b.getAttribute('aria-label') === 'settings')!
+    const settings = buttons().find((b) => b.getAttribute('aria-label') === 'Settings')!
     act(() => settings.click())
     expect(setPersonalizationSpy).not.toHaveBeenCalled()
   })
@@ -111,17 +111,17 @@ describe('Ribbon', () => {
   it('the Settings icon toggles — the icon that summoned a window dismisses it', () => {
     const toggleSettingsSpy = vi.fn()
     act(() => useSession.setState({ toggleSettings: toggleSettingsSpy as never }))
-    const settings = buttons().find((b) => b.getAttribute('aria-label') === 'settings')!
+    const settings = buttons().find((b) => b.getAttribute('aria-label') === 'Settings')!
     act(() => settings.click())
     act(() => settings.click())
     expect(toggleSettingsSpy).toHaveBeenCalledTimes(2)
   })
 
   it('reflects the active mode via aria-selected, with no highlight class', () => {
-    const collections = buttons().find((b) => b.getAttribute('aria-label') === 'collections')!
+    const collections = buttons().find((b) => b.getAttribute('aria-label') === 'Collections')!
     expect(collections.getAttribute('aria-selected')).toBe('true')
     expect(collections.className).not.toContain('active')
-    const agenda = buttons().find((b) => b.getAttribute('aria-label') === 'agenda')!
+    const agenda = buttons().find((b) => b.getAttribute('aria-label') === 'Agenda')!
     expect(agenda.getAttribute('aria-selected')).toBe('false')
   })
 
@@ -139,28 +139,28 @@ describe('Ribbon', () => {
 
   it('seats a missing key at its default index — a saved four-key order still shows the Matrix first', () => {
     expect(renderWithOrder(['settings', 'agenda', 'contexts', 'collections'])).toEqual([
-      'matrix',
-      'settings',
-      'agenda',
-      'contexts',
-      'collections',
+      'Matrix',
+      'Settings',
+      'Agenda',
+      'Contexts',
+      'Collections',
     ])
   })
 
   it('honors a saved order that places the Matrix itself', () => {
     expect(renderWithOrder(['settings', 'agenda', 'contexts', 'matrix', 'collections'])).toEqual([
-      'settings',
-      'agenda',
-      'contexts',
-      'matrix',
-      'collections',
+      'Settings',
+      'Agenda',
+      'Contexts',
+      'Matrix',
+      'Collections',
     ])
   })
 
   it('drops a key the ribbon no longer carries — a saved order naming Navigation loses it', () => {
     expect(
       renderWithOrder(['settings', 'navigation', 'agenda', 'contexts', 'matrix', 'collections']),
-    ).toEqual(['settings', 'agenda', 'contexts', 'matrix', 'collections'])
+    ).toEqual(['Settings', 'Agenda', 'Contexts', 'Matrix', 'Collections'])
   })
 
   const renderPlain = (personalization: Record<string, unknown>): (string | null)[] => {
@@ -175,22 +175,22 @@ describe('Ribbon', () => {
 
   it('without Experimental Features the Agenda tab is absent, saved order or not', () => {
     expect(renderPlain({ sidebarMode: 'collections' })).toEqual([
-      'matrix',
-      'contexts',
-      'collections',
-      'settings',
+      'Matrix',
+      'Contexts',
+      'Collections',
+      'Settings',
     ])
     expect(
       renderPlain({
         sidebarMode: 'collections',
         ribbonOrder: ['agenda', 'settings', 'contexts', 'matrix', 'collections'],
       }),
-    ).toEqual(['settings', 'contexts', 'matrix', 'collections'])
+    ).toEqual(['Settings', 'Contexts', 'Matrix', 'Collections'])
   })
 
   it('a stored agenda mode reads as collections once the gate closes', () => {
     renderPlain({ sidebarMode: 'agenda' })
-    const collections = buttons().find((b) => b.getAttribute('aria-label') === 'collections')!
+    const collections = buttons().find((b) => b.getAttribute('aria-label') === 'Collections')!
     expect(collections.getAttribute('aria-selected')).toBe('true')
   })
 })

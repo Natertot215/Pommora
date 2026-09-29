@@ -23,7 +23,8 @@ import { ColorPicker } from '@pommora/uix/Pickers/ColorPicker'
 import { PickerMenu } from '@pommora/uix/Pickers/PickerMenu'
 import { AccessoryButton, MenuFooting, MenuItem, MenuScrollFrame } from '@pommora/uix/Menus'
 import { titleInput as rowInput, rowDisabled, spacer } from '@pommora/uix/Menus/menu-row.css'
-import { reorder, SortableZone, useDragItem } from '@pommora/uix/Interactions/drag'
+import { SortableZone, useDragItem } from '@pommora/uix/Interactions/drag'
+import { moveBefore } from '@pommora/uix/Utilities/moveItem'
 import { useHoverReveal } from '@pommora/uix/Interactions/hoverReveal'
 import { revealTarget } from '@pommora/uix/Interactions/hover-reveal.css'
 import { PICKER_MAX_HEIGHT } from '@pommora/uix/Pickers/picker-base.css'
@@ -403,15 +404,12 @@ export function ViewTile({
   }
   presence.deleteView.current = deleteView
 
-  const reorderViews = (activeId: string, overId: string): void => {
-    if (locked) return
+  const moveView = (id: string, beforeId: string | null): void => {
     mutateEntry(entry.id, (raw) => {
       const arr = rawViews(raw)
-      const seq = reorder(
-        embedViewIds(arr, entry.id).map((id, i) => ({ id, i })),
-        activeId,
-        overId,
-      )
+      const indexed = embedViewIds(arr, entry.id).map((v, i) => ({ v, i }))
+      const seq = moveBefore(indexed, (x) => x.v, id, beforeId)
+      if (!seq) return null
       const cur = rawActive(raw, arr.length)
       const newActive = seq.findIndex((x) => x.i === cur)
       return { views: seq.map((x) => arr[x.i]), active: newActive >= 0 ? newActive : 0 }
@@ -568,7 +566,8 @@ export function ViewTile({
         items={views.map((v) => v.id)}
         axis="x"
         disabled={locked}
-        onReorder={reorderViews}
+        label={(id) => viewById(id)?.name ?? ''}
+        onMove={moveView}
       >
         {views.map((v, i) => (
           <ViewPill

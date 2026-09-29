@@ -4,7 +4,8 @@ import { Label } from '@pommora/uix/Labels/Label'
 import { fill, labelColor, roomy, shape, textCap } from '@pommora/uix/Labels/label-base.css'
 import { NeutralChip, FileChip, PlainLabel } from '@pommora/uix/Labels/recipes'
 import { DualSwitch } from '@pommora/uix/Controls/DualSwitch'
-import { SortableZone, useDragItem, reorder } from '@pommora/uix/Interactions/drag'
+import { SortableZone, useDragItem } from '@pommora/uix/Interactions/drag'
+import { moveBefore } from '@pommora/uix/Utilities/moveItem'
 import type { ColorName } from '@pommora/uix/Theme/colors'
 import { ANCHOR_CELLS, cellColor } from '@pommora/uix/Theme/ramp'
 import { cx } from '@pommora/uix/Utilities/cx'
@@ -54,8 +55,8 @@ function PillRow(): React.JSX.Element {
   return (
     <SortableZone
       items={items.map((i) => i.id)}
-      getItemLabel={(id) => items.find((i) => i.id === id)?.name ?? id}
-      onReorder={(a, o) => setItems((x) => reorder(x, a, o))}
+      label={(id) => items.find((i) => i.id === id)?.name ?? id}
+      onMove={(id, beforeId) => setItems((x) => moveBefore(x, (i) => i.id, id, beforeId) ?? x)}
     >
       {cells}
     </SortableZone>
@@ -105,15 +106,9 @@ function ShapeRow({
   return (
     <SortableZone
       items={order.map((k) => `${rowId}:${k}`)}
-      getItemLabel={(id) => id.split(':')[1]}
-      onReorder={(a, o) =>
-        setOrder((x) =>
-          reorder(
-            x.map((k) => ({ id: `${rowId}:${k}` })),
-            a,
-            o,
-          ).map(({ id }) => id.split(':')[1] as ColorName),
-        )
+      label={(id) => id.split(':')[1]}
+      onMove={(id, beforeId) =>
+        setOrder((x) => moveBefore(x, (k) => `${rowId}:${k}`, id, beforeId) ?? x)
       }
     >
       {cells}

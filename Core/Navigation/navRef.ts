@@ -31,7 +31,9 @@ export function selectTargetOf(t: { kind: MutableKind; id: string; path: string 
 
 export type PageTarget = Extract<SelectTarget, { kind: 'page' }>
 export type SpaceTarget = Extract<SelectTarget, { kind: 'space' }>
-export const TAB_FAMILY = 'tabs'
+export const TAB_FAMILY: { readonly name: string; readonly carried?: SelectTarget } = {
+  name: 'tabs',
+}
 
 export type NavRef =
   | { kind: 'homepage' }

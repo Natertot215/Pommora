@@ -11,6 +11,7 @@ export {
   FootingItem,
   MenuScrollFrame,
   emphasizeMatch,
+  laneSpec,
   rowDropLine,
 } from './MenuRows'
 export {

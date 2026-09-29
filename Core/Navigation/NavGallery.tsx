@@ -1,6 +1,12 @@
 import { cx } from '@pommora/uix/Utilities/cx'
 import { revealTarget } from '@pommora/uix/Interactions/hover-reveal.css'
-import { DropSlot, SortableZone, useDragItem, type DragItem } from '@pommora/uix/Interactions/drag'
+import {
+  carries,
+  DropSlot,
+  SortableZone,
+  useDragItem,
+  type DragItem,
+} from '@pommora/uix/Interactions/drag'
 import {
   CardBody,
   CardPlaceholder,
@@ -28,7 +34,7 @@ export function NavGallery({
 }: {
   pins: ResolvedNav[]
   items: ResolvedNav[]
-  onReorderRecent?: (activeKey: string, overKey: string) => void
+  onReorderRecent?: (key: string, beforeKey: string | null) => void
   onSelect: (target: NavRef) => void
   onOpenNewTab?: (target: NavRef) => void
 }): React.JSX.Element {
@@ -52,7 +58,11 @@ export function NavGallery({
       </div>
     ) : null
   }
-  const zone = { family: TAB_FAMILY, carry, renderOverlay }
+  const zone = {
+    label: (key: string) => find(key)?.title ?? '',
+    carry: [carries(TAB_FAMILY, carry)],
+    renderOverlay,
+  }
   const openMenu = (it: ResolvedNav, e: React.MouseEvent): void => {
     e.preventDefault()
     e.stopPropagation()
@@ -65,7 +75,7 @@ export function NavGallery({
     <div className="nav-gallery nav-gallery-list">
       <div className={cx('card-grid', frozen && 'is-fill')}>
         {pins.length > 0 && (
-          <SortableZone items={pins.map((p) => p.key)} onReorder={reorderPin} {...zone}>
+          <SortableZone items={pins.map((p) => p.key)} onMove={reorderPin} {...zone}>
             <DropSlot />
             {pins.map(card)}
           </SortableZone>
@@ -75,7 +85,7 @@ export function NavGallery({
             {items.map(card)}
           </SortableZone>
         ) : (
-          <SortableZone items={items.map((r) => r.key)} onReorder={onReorderRecent} {...zone}>
+          <SortableZone items={items.map((r) => r.key)} onMove={onReorderRecent} {...zone}>
             <DropSlot />
             {items.map(card)}
           </SortableZone>
@@ -110,10 +120,6 @@ function GalleryCard({
 }): React.JSX.Element {
   const active = useSession((s) => s.selection.kind !== 'none' && navKey(s.selection) === it.key)
   const { src, onError } = useThumb(nexusId, it.key)
-  // The drag engine fires a synthesized click after a pointer drag — a reorder-drop must not read as a navigation.
-  const open = (): void => {
-    if (!drag?.isDragging) onSelect(it.target)
-  }
 
   return (
     <CardRoot
@@ -121,7 +127,7 @@ function GalleryCard({
       active={active}
       locked
       data-reveal-host=""
-      onClick={open}
+      onClick={() => onSelect(it.target)}
       onPointerEnter={(e) => {
         const t = pageTargetFromNav(it, useSession.getState().tree)
         if (t) hoverGlance(t, e.currentTarget, 'location', e.shiftKey)

@@ -18,7 +18,6 @@ import {
   liveTarget,
   pushMru,
   reconcileTab,
-  reorderWithinZone,
   settleFocus,
 } from './tabsModel'
 
@@ -226,23 +225,6 @@ describe('tabsModel — closeTab', () => {
     const r = closeTab(tabs, 't1', ['t1'], ['pin:page:p'], 'pin:page:p', 'NEW')
     expect(r.tabs).toBe(tabs)
     expect(r.activeTabId).toBe('t1')
-  })
-})
-
-describe('tabsModel — reorderWithinZone', () => {
-  it('moves a tab to a new index', () => {
-    const tabs = [tab('t1', 'a'), tab('t2', 'b'), tab('t3', 'c')]
-    expect(reorderWithinZone(tabs, 't1', 2).map((t) => t.id)).toEqual(['t2', 't3', 't1'])
-  })
-
-  it('is a no-op at the same index', () => {
-    const tabs = [tab('t1', 'a'), tab('t2', 'b')]
-    expect(reorderWithinZone(tabs, 't1', 0)).toBe(tabs)
-  })
-
-  it('returns the same list for an unknown id', () => {
-    const tabs = [tab('t1', 'a')]
-    expect(reorderWithinZone(tabs, 'x', 0)).toBe(tabs)
   })
 })
 

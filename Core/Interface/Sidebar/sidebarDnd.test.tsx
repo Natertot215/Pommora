@@ -11,7 +11,8 @@ import {
   stubRect,
 } from '@pommora/uix/Testing/pointerHarness'
 import { rowDropLine } from '@pommora/uix/Menus'
-import { SidebarDnd, useSidebarDrag } from './sidebarDnd'
+import { useLineRow } from '@pommora/uix/Interactions/drag'
+import { SidebarDnd } from './sidebarDnd'
 import { buildIndex } from './sidebarDndModel'
 import { useSession } from '../../Session/store'
 ;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
@@ -39,7 +40,7 @@ const tree = {
 } as unknown as NexusTree
 
 function Row({ id }: { id: string }): React.JSX.Element {
-  const { ref, handle } = useSidebarDrag(id)
+  const { ref, handle } = useLineRow(id)
   return <div ref={ref} data-row={id} {...handle} />
 }
 
@@ -135,11 +136,12 @@ describe('sidebar drag — Esc abort', () => {
 
   it('a scroll with the pointer held still re-aims, so a release without moving resolves fresh', async () => {
     await startDrag()
-    // The rows scroll down: p2's fresh span sits below the pointer, so the fresh slot is a no-op while the stale rects would still commit the after-p2 reorder.
-    const p2 = host.querySelector('[data-row="p2"]')
-    if (p2) stubRect(p2, { top: 72, bottom: 96 })
+    // The host scrolls down with its rows: the pointer now sits above them, so the fresh slot is a no-op while a stale origin would still commit the after-p2 reorder.
+    const content = row('p1').parentElement as HTMLElement
+    stubRect(content, { top: 48, bottom: 96 })
+    stubRect(row('p1'), { top: 48, bottom: 72 })
+    stubRect(row('p2'), { top: 72, bottom: 96 })
     await act(async () => {
-      const content = row('p1').parentElement as HTMLElement
       content.dispatchEvent(new Event('scroll', { bubbles: false }))
     })
     await act(async () => {
@@ -166,7 +168,7 @@ describe('sidebar drag — Esc abort', () => {
   })
 })
 
-const indentAt = (depth: number): string => `${rowDropLine(depth).left}px`
+const indentAt = (depth: number): string => `${rowDropLine(0, depth).left}px`
 
 describe('sidebar drag — the line', () => {
   it("draws at the slot's edge in the content's own coordinates, indented to the slot's depth", async () => {

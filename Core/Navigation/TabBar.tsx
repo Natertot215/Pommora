@@ -2,7 +2,7 @@ import { Fragment, useMemo } from 'react'
 import { Button } from '@pommora/uix/Buttons/Button'
 import { cx } from '@pommora/uix/Utilities/cx'
 import { segment } from '@pommora/uix/Elements/segment.css'
-import { SortableZone, useDragFamily, useDragItem } from '@pommora/uix/Interactions/drag'
+import { SortableZone, useLooseItem } from '@pommora/uix/Interactions/drag'
 import { usePointerGesture } from '@pommora/uix/Interactions/gesture'
 import {
   isWindowTarget,
@@ -14,18 +14,11 @@ import { useSession, useSetting } from '../Session/store'
 import { pageMoveContext, runPageAction } from '../Interface/Menus/pageMenuActions'
 import { resolveWith, type ResolvedNav, type ResolveIndex } from './navResolve'
 import { resolveIndexOf } from '../Nexus/treeIndex'
-import { EntityIcon } from '../Assets/EntityIcon'
-import { useActiveTabInView, useTabClose, useTabExchange } from './tabRows'
+import { TabStripZone, useActiveTabInView, useTabClose } from './tabRows'
 import { dialer } from '../Platform/dialer'
 import { popMenu } from '../Actions/menuActions'
 import { tabMenuItems } from '@pommora/core/Actions/tabMenu'
-import {
-  DraggableTabItem,
-  glanceHoverProps,
-  TabItem,
-  type TabItemProps,
-  TabSeparator,
-} from './TabItem'
+import { DraggableTabItem, TabItem, type TabItemProps, TabSeparator } from './TabItem'
 import './tab-base.css'
 
 interface TabEntry {
@@ -50,7 +43,7 @@ export function TabBar(): React.JSX.Element | null {
   const pinnedEntries = useMemo(() => entriesOf(pinnedTabs, index), [index, pinnedTabs])
   const unpinnedEntries = useMemo(() => entriesOf(tabs, index), [index, tabs])
 
-  const forced = useDragFamily() === TAB_FAMILY
+  const forced = useLooseItem(TAB_FAMILY) !== null
   if (
     !forced &&
     pinnedEntries.length === 0 &&
@@ -90,14 +83,9 @@ function TabBarBody({
   const { liveEntries, renderEntries, requestClose } = useTabClose(unpinnedEntries, closeTab)
 
   const entryOf = (id: string): TabEntry | undefined => liveEntries.find((e) => e.tab.id === id)
-  const pinKeyOf = (id: string): string =>
-    pinnedEntries.find((e) => e.tab.id === id)?.res?.key ?? ''
-  const labelOf = (id: string): string => entryOf(id)?.res?.title ?? 'New Tab'
-  // No window means no row to land in, so the tab carries nothing and stays pinned to its axis.
-  const { still, carry, receive } = useTabExchange(
-    (id) => (windowOpen ? entryOf(id)?.tab.target : undefined),
-    openTabAt,
-  )
+  const pins = pinnedEntries.flatMap(({ tab, res }) => (res ? [{ tab, res }] : []))
+  const pinOf = (id: string): ResolvedNav | undefined => pins.find((p) => p.tab.id === id)?.res
+  const pinKeyOf = (id: string): string => pinOf(id)?.key ?? ''
   const renderOverlay = (id: string): React.ReactNode => {
     const entry = entryOf(id)
     return entry ? (
@@ -157,25 +145,30 @@ function TabBarBody({
 
   return (
     <div
-      className={cx('tab-bar', 'tabs-standard', revealOnHover && 'reveal-on-hover')}
+      className={cx('tab-bar', 'tabs-standard', revealOnHover && !forced && 'reveal-on-hover')}
       data-reveal-host=""
       role="tablist"
       aria-label="Open tabs"
       onPointerDown={onBarDown}
       onDoubleClick={onBarDoubleClick}
     >
-      {pinnedEntries.length > 0 && (
+      {pins.length > 0 && (
         <SortableZone
-          items={pinnedEntries.map((e) => e.tab.id)}
+          items={pins.map((e) => e.tab.id)}
           axis="x"
-          onReorder={(a, b) => reorderPin(pinKeyOf(a), pinKeyOf(b))}
+          label={(id) => pinOf(id)?.title ?? ''}
+          onMove={(id, beforeId) => reorderPin(pinKeyOf(id), beforeId && pinKeyOf(beforeId))}
         >
           <div className="tab-pinned-zone">
-            {pinnedEntries.map((e, i) => (
+            {pins.map((e, i) => (
               <Fragment key={e.tab.id}>
                 {i > 0 && <TabSeparator />}
-                <PinnedTab
-                  entry={e}
+                <DraggableTabItem
+                  id={e.tab.id}
+                  label={e.res.title}
+                  icon={e.res}
+                  variant="pinned"
+                  glance={e.tab.target}
                   active={e.tab.id === activeTabId}
                   onActivate={() => activateTab(e.tab.id)}
                   onMenu={runTabMenu(e.tab.id, true, e.tab.target)}
@@ -189,16 +182,13 @@ function TabBarBody({
         <span className={cx(segment, 'tab-divider')} />
       )}
       <div className="tab-scroll scroll-fade-x" ref={stripRef}>
-        <SortableZone
-          id="tabs-main"
-          className={cx('tab-strip', (still || forced) && 'is-still')}
-          family={TAB_FAMILY}
+        <TabStripZone
           items={liveEntries.map((e) => e.tab.id)}
-          axis="x"
-          onReorder={reorderTabs}
-          getItemLabel={labelOf}
-          carry={carry}
-          receive={receive}
+          forced={forced}
+          label={(id) => entryOf(id)?.res?.title ?? 'New Tab'}
+          targetOf={(id) => (windowOpen ? entryOf(id)?.tab.target : undefined)}
+          open={openTabAt}
+          onMove={reorderTabs}
           release={closeTab}
           renderOverlay={renderOverlay}
         >
@@ -217,7 +207,7 @@ function TabBarBody({
               />
             </Fragment>
           ))}
-        </SortableZone>
+        </TabStripZone>
       </div>
       <Button
         size="button-large"
@@ -231,43 +221,6 @@ function TabBarBody({
         title="New Tab"
         onClick={() => openNewTab()}
       />
-    </div>
-  )
-}
-
-function PinnedTab({
-  entry,
-  active,
-  onActivate,
-  onMenu,
-}: {
-  entry: TabEntry
-  active: boolean
-  onActivate: () => void
-  onMenu: (e: React.MouseEvent) => void
-}): React.JSX.Element | null {
-  const drag = useDragItem(entry.tab.id, onActivate)
-  if (!entry.res) return null
-  return (
-    // biome-ignore lint/a11y/useKeyWithClickEvents: the drag handle spread supplies onKeyDown (Space lifts, Enter opens), which a spread hides from static analysis
-    <div
-      ref={drag.setNodeRef}
-      style={drag.style}
-      {...drag.handle}
-      data-tab-id={entry.tab.id}
-      {...glanceHoverProps(entry.tab.target)}
-      className={cx('tab-pinned', active && 'is-active', drag.isDragging && 'is-dragging')}
-      title={entry.res.title}
-      role="tab"
-      aria-selected={active}
-      // Roving tabindex: the strip is ONE tab stop, the active tab holds it.
-      tabIndex={active ? 0 : -1}
-      onClick={() => {
-        if (!drag.isDragging) onActivate()
-      }}
-      onContextMenu={onMenu}
-    >
-      <EntityIcon item={entry.res} size="body" className="tab-icon" />
     </div>
   )
 }

@@ -3,6 +3,8 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { act } from 'react'
 import type { Root } from 'react-dom/client'
 import type { CollectionNode } from '@pommora/core/Nexus/tree'
+import { isWindowTarget, type SelectTarget, TAB_FAMILY } from '@pommora/core/Navigation/navRef'
+import { SortableZone, useDragItem } from '@pommora/uix/Interactions/drag'
 import { firePointer, stubRect } from '@pommora/uix/Testing/pointerHarness'
 import { ID_KEY } from '@pommora/core/Nexus/identityMark'
 import { useSession } from '../../Session/store'
@@ -11,7 +13,12 @@ import { propsAtRoot, valuesReply } from '../../Testing/pageValues'
 import { stubDialer } from '../../vitest.setup'
 import { makeTree } from '../../Testing/testTree'
 
-const collection = (sets: unknown[], pages: unknown[], group: unknown): CollectionNode =>
+const collection = (
+  sets: unknown[],
+  pages: unknown[],
+  group: unknown,
+  sort?: unknown,
+): CollectionNode =>
   ({
     kind: 'collection',
     id: 'col1',
@@ -28,6 +35,7 @@ const collection = (sets: unknown[], pages: unknown[], group: unknown): Collecti
         property_order: ['_title', 'prop_status'],
         hidden_properties: [],
         group,
+        sort,
       },
     ],
   }) as unknown as CollectionNode
@@ -76,12 +84,14 @@ mountEachTest((h, r) => {
   root = r
 })
 let mutateSpy: ReturnType<typeof vi.fn>
+let saveSpy: ReturnType<typeof vi.fn>
 
 beforeEach(() => {
   mutateSpy = vi.fn(async () => ({}))
+  saveSpy = vi.fn(async () => ({ ok: true, value: { id: 'view_1' } }))
   ;(window as unknown as { nexus: unknown }).nexus = stubDialer({
     'view:loadValues': async () => VALUES,
-    'views:save': async () => ({ ok: true, value: { id: 'view_1' } }),
+    'views:save': saveSpy,
     menu: async () => ({ ok: true, value: null }),
   })
   useSession.setState({
@@ -157,5 +167,125 @@ describe('a card dropped across property bands', () => {
       propertyId: 'prop_status',
       value: { kind: 'select', value: 'Complete' },
     })
+  })
+})
+
+const TWO_KEYS = [
+  { property_id: '_title', direction: 'asc' },
+  { property_id: 'prop_status', direction: 'asc' },
+]
+
+function SinkTab(): React.JSX.Element {
+  const { setNodeRef, style, handle } = useDragItem('tab')
+  return <div ref={setNodeRef} data-sink-tab style={style} {...handle} />
+}
+
+function Sink({
+  className,
+  receive,
+  windowRow = false,
+}: {
+  className: string
+  receive: (item: SelectTarget) => void
+  windowRow?: boolean
+}): React.JSX.Element {
+  return (
+    <SortableZone<SelectTarget>
+      className={className}
+      items={['tab']}
+      label={() => 'tab'}
+      family={TAB_FAMILY}
+      accepts={windowRow ? isWindowTarget : undefined}
+      receive={(item) => receive(item)}
+    >
+      <SinkTab />
+    </SortableZone>
+  )
+}
+
+describe('a card carried to a tab row', () => {
+  let received: ReturnType<typeof vi.fn<(item: SelectTarget) => void>>
+  const sinks = (): React.ReactNode => (
+    <>
+      <Sink className="sink-main" receive={received} />
+      <Sink className="sink-window" receive={received} windowRow />
+    </>
+  )
+  const seat = (): void => {
+    for (const [i, name] of ['.sink-main', '.sink-window'].entries()) {
+      const top = 900 + i * 200
+      stubRect(host.querySelector(name) as Element, { top, bottom: top + 100, left: 0, right: 400 })
+      stubRect(host.querySelectorAll('[data-sink-tab]')[i], {
+        top,
+        bottom: top + 100,
+        left: 0,
+        right: 100,
+      })
+    }
+  }
+  const mountBeside = async (source: CollectionNode): Promise<void> => {
+    await renderView(root, source, sinks())
+    layout()
+    seat()
+  }
+  const carryTo = async (from: Element, x: number, y: number): Promise<void> => {
+    const start = from.getBoundingClientRect()
+    await act(async () => {
+      firePointer(from, 'pointerdown', { x: 100, y: start.top + ROW / 2 })
+    })
+    await act(async () => {
+      firePointer(window, 'pointermove', { x, y })
+    })
+    await act(async () => {
+      firePointer(window, 'pointerup', { x, y })
+    })
+    await settle(400)
+  }
+
+  beforeEach(() => {
+    received = vi.fn()
+  })
+
+  it('carries a page card to a tab row with its page target and writes nothing in the view', async () => {
+    await mountBeside(byStatus())
+    await carryTo(card('p1'), 200, 950)
+    expect(received).toHaveBeenCalledExactlyOnceWith({
+      kind: 'page',
+      id: 'p1',
+      path: 'Col/One.md',
+    })
+    expect(mutateSpy).not.toHaveBeenCalled()
+    expect(saveSpy).not.toHaveBeenCalled()
+  })
+
+  it('returns a card released over nothing and writes nothing', async () => {
+    await mountBeside(byStatus())
+    await carryTo(card('p1'), 700, 3000)
+    expect(received).not.toHaveBeenCalled()
+    expect(mutateSpy).not.toHaveBeenCalled()
+    expect(saveSpy).not.toHaveBeenCalled()
+  })
+
+  it('carries a Set card to the main row and never to a row that accepts only window targets', async () => {
+    await mountBeside(nested())
+    const setCard = host.querySelector(
+      '.set-cards-row [aria-roledescription="sortable"]',
+    ) as Element
+    stubRect(setCard, { top: -300, bottom: -200, left: 0, right: 200 })
+    await carryTo(setCard, 200, 1150)
+    expect(received).not.toHaveBeenCalled()
+    await carryTo(setCard, 200, 950)
+    expect(received).toHaveBeenCalledExactlyOnceWith({ kind: 'set', id: 'sA', path: 'Col/A' })
+  })
+
+  it('keeps a card home in a view that cannot reorder and still carries it to a tab row', async () => {
+    await mountBeside(collection([], [page('p1', 'One', 'Col/One.md')], undefined, TWO_KEYS))
+    await carryTo(card('p1'), 200, 950)
+    expect(received).toHaveBeenCalledExactlyOnceWith({
+      kind: 'page',
+      id: 'p1',
+      path: 'Col/One.md',
+    })
+    expect(mutateSpy).not.toHaveBeenCalled()
   })
 })

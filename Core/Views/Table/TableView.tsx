@@ -48,7 +48,16 @@ import { ColumnHeader } from './ColumnHeader'
 import './table-view.css'
 import type { GhostAnchor } from '@pommora/uix/Interactions/ghostCreate'
 import { useCellSweep } from './cellSweep'
-import { TableRowDnd, useTableRowDrag } from '@pommora/uix/Interactions/TableRowDnd'
+import {
+  carries,
+  LineGroup,
+  type LineSpec,
+  LineZone,
+  useLineRow,
+} from '@pommora/uix/Interactions/drag'
+import { laneAt, laneSlot, type LaneSlot } from '@pommora/uix/Interactions/reorderModel'
+import { TAB_FAMILY } from '@pommora/core/Navigation/navRef'
+import { ROW_END, rowLine, type RowSnap, rowSnap } from './rowInsertion'
 import { openWebLink } from '../../Web/openWebLink'
 import {
   linkValueMenuTarget,
@@ -69,7 +78,7 @@ export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
     setIcons,
     setPaths,
     rowById,
-    paintOrder,
+    rowBand,
     bandLabel,
     collapsed,
     toggleCollapse,
@@ -521,6 +530,29 @@ export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
       </ViewGroupBand>,
     ]
   }
+  const across = canReassign || canRelocate
+  const rowDrag: LineSpec<LaneSlot, RowSnap> = {
+    snap: (id, g) => (dragDisabled ? null : rowSnap(g, id, rowBand)),
+    resolve: (_id, point, s) =>
+      canReorderWithin || laneAt(s, point.y) !== s.home ? laneSlot(s, point.y, across) : null,
+    commit: (id, slot) => interactions.onDrop(id, slot.lane, slot.before),
+    line: rowLine,
+    label: (id) => rowById.get(id)?.title ?? '',
+    chip: (id) => {
+      const r = rowById.get(id)
+      return (
+        r && (
+          <>
+            <EntityIcon kind="page" icon={r.icon} size="body" />
+            {r.title}
+          </>
+        )
+      )
+    },
+    carry: [carries(TAB_FAMILY, interactions.carry)],
+    disclose: across,
+    watch: [rowBand],
+  }
 
   return (
     <div
@@ -537,13 +569,7 @@ export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
         nestable={!flat}
         disabled={host.searching}
       >
-        <TableRowDnd
-          rows={paintOrder}
-          disabled={dragDisabled}
-          canReorderWithin={canReorderWithin}
-          crossZone={canReassign || canRelocate}
-          onDrop={interactions.onDrop}
-        >
+        <LineZone {...rowDrag}>
           <div
             className={cx(
               'table-grid',
@@ -578,14 +604,14 @@ export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
                 />
               ))}
               {/* The :last-child anchor that keeps the last real column's right divider (table.css). */}
-              <div className="cell-filler" data-row-end aria-hidden="true" />
+              <LineGroup id={ROW_END} className="cell-filler" aria-hidden="true" />
             </div>
             {groups.flatMap((g) => renderRows(g, 0, true))}
             {interactions.ghostStanding && (
               <GhostRow padLeft={indent(0)} closing={false} {...ghostRowProps} />
             )}
           </div>
-        </TableRowDnd>
+        </LineZone>
       </BandDnd>
       {cellPicker()}
       {massPicker()}
@@ -650,7 +676,7 @@ function GhostRow({
             )}
           </div>
         ))}
-        <div className="cell-filler" data-row-end aria-hidden="true" />
+        <div className="cell-filler" aria-hidden="true" />
       </div>
     </Reveal>
   )
@@ -691,20 +717,15 @@ const DataRow = memo(function DataRow({
   sweepCol: string | null
   lead: boolean
 }): React.JSX.Element {
-  const { ref, handle, isDragging } = useTableRowDrag(row.id)
+  const { ref, handle } = useLineRow(row.id)
   return (
     <div
       ref={ref}
       data-rid={row.id}
       data-reveal-host=""
-      className={cx(
-        'data-row',
-        selected && 'selected',
-        isDragging && 'row-dragging',
-        lead && 'row-lead',
-      )}
+      className={cx('data-row', selected && 'selected', lead && 'row-lead')}
       {...rowHover(row, api.hover)}
-      {...(dragDisabled ? {} : handle)}
+      {...handle}
     >
       {columns.map((c, i) => {
         const style: React.CSSProperties = {
@@ -741,9 +762,7 @@ const DataRow = memo(function DataRow({
             onPointerDown={(e) => {
               if (api.sweep(row, c, e)) e.stopPropagation()
             }}
-            onClick={(e) => {
-              if (!isDragging) api.click(row, c, e)
-            }}
+            onClick={(e) => api.click(row, c, e)}
           >
             {i === 0 && (
               <span
@@ -758,14 +777,9 @@ const DataRow = memo(function DataRow({
               // biome-ignore lint/a11y/useKeyWithClickEvents lint/a11y/noStaticElementInteractions: a bubble guard, not a control
               <span
                 className={cx('row-grip', revealTarget)}
-                {...(dragDisabled ? {} : handle)}
                 // A right-press is defaulted away here — preventing only the context menu comes too late to stop a seated caret.
                 onPointerDown={(e) => {
-                  if (e.button === 2) {
-                    e.preventDefault()
-                    return
-                  }
-                  if (!dragDisabled) handle.onPointerDown?.(e)
+                  if (e.button === 2) e.preventDefault()
                 }}
                 onContextMenu={(e) => api.grip(row, e)}
                 onClick={(e) => e.stopPropagation()}
@@ -778,7 +792,7 @@ const DataRow = memo(function DataRow({
           </div>
         )
       })}
-      <div className="cell-filler" data-row-end aria-hidden="true" />
+      <div className="cell-filler" aria-hidden="true" />
     </div>
   )
 })

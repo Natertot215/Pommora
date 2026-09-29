@@ -37,15 +37,16 @@
 }
 
 .drag-ghost {
-  position: fixed;
   padding: 4px 12px;
   border-radius: 8px;
   color: var(--label-primary);
-  pointer-events: none;
-  z-index: var(--z-drag-slot);
   display: inline-flex;
   align-items: center;
   gap: 6px;
+}
+
+[data-drag-source] {
+  opacity: var(--state-ghost);
 }
 
 :root.is-grabbing,

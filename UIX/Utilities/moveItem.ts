@@ -13,14 +13,26 @@ export function placeAt<T>(list: T[], from: number, at: number, make: () => T): 
   return to === from ? list : moveItem(list, from, to)
 }
 
-export function moveByKey<T>(
+export function moveBefore<T>(
   list: T[],
   keyOf: (item: T) => string,
-  activeKey: string,
-  overKey: string,
+  key: string,
+  beforeKey: string | null,
 ): T[] | null {
-  const from = list.findIndex((i) => keyOf(i) === activeKey)
-  const to = list.findIndex((i) => keyOf(i) === overKey)
-  if (from === -1 || to === -1 || from === to) return null
-  return moveItem(list, from, to)
+  const from = list.findIndex((i) => keyOf(i) === key)
+  const at = beforeKey === null ? list.length : list.findIndex((i) => keyOf(i) === beforeKey)
+  if (from === -1 || at === -1) return null
+  const next = placeAt(list, from, at, () => list[from])
+  return next === list ? null : next
+}
+
+export function nextOrder(
+  current: readonly string[],
+  draggedId: string,
+  beforeId: string | null,
+): string[] {
+  const without = current.filter((id) => id !== draggedId)
+  const found = beforeId ? without.indexOf(beforeId) : -1
+  const at = beforeId ? (found === -1 ? without.length : found) : without.length
+  return [...without.slice(0, at), draggedId, ...without.slice(at)]
 }

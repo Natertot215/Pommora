@@ -67,7 +67,7 @@ export function useGroupingListDrag({
         beforeId: slot.beforeId,
       })
     },
-    lineFor: (slot) => (slot.nestInto ? null : { top: slot.topInBox, ...rowDropLine() }),
+    lineFor: (slot) => (slot.nestInto ? null : rowDropLine(slot.topInBox)),
     label: labelFor,
     rowEl: (id) => els.current.get(id),
     scrollTarget: () => container.current,

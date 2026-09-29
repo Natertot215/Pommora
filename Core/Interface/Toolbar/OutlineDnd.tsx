@@ -78,9 +78,8 @@ export function OutlineDnd({
     },
     commit: (key, slot) => moveHeadingSection(key, slot.beforeKey),
     // A flat insertion line marks the drop — the outline re-nests the moved section by level once the document edit lands, so no depth-indented line is needed.
-    lineFor: (slot) => ({ top: slot.lineY, ...rowDropLine() }),
+    lineFor: (slot) => rowDropLine(slot.lineY),
     label: (key) => flatRef.current.find((x) => x.key === key)?.text ?? '',
-    ghost: 'grab',
     rowEl: (key) => rows.current.get(key),
     scrollTarget: () => contentRef.current,
     watch: flat,

@@ -1,28 +1,16 @@
-import { createPortal } from 'react-dom'
 import type { ReactNode } from 'react'
-import { cx } from '../Utilities/cx'
 import { GHOST_FROST, frostStyle } from '../Glass/glassBase'
 import { text } from '../Theme/typography.css'
+import { cx } from '../Utilities/cx'
 
-/** Portaled to body so it paints above any pane frost; inside one it reads as dragging behind the pane. */
-export function DragGhost({
-  x,
-  y,
-  label,
-}: {
-  x: number | null
-  y: number | null
-  label: ReactNode
-}): ReactNode {
-  if (x === null || y === null || label == null || label === '') return null
-  return createPortal(
+export function DragGhost({ children }: { children: ReactNode }): React.JSX.Element {
+  return (
     <div
       aria-hidden
       className={cx('drag-ghost', text.body.standard)}
-      style={{ ...frostStyle(GHOST_FROST), top: y, left: x }}
+      style={frostStyle(GHOST_FROST)}
     >
-      {label}
-    </div>,
-    document.body,
+      {children}
+    </div>
   )
 }
