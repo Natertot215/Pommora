@@ -60,11 +60,11 @@ export const headerPhotoImg = style({
   borderRadius: '8px',
 })
 
-export const allSpacer = style({
+export const assignedFill = style({
   flex: '1 1 0px',
   transition: `flex-grow ${duration.base} ${easing.baseEase}`,
 })
-export const allSpacerCollapsed = style({ flexGrow: 0 })
+export const assignedFillNone = style({ flexGrow: 0 })
 
 export const allHeading = style([
   flushAffordance,

@@ -18,6 +18,7 @@ import {
 import { createPortal, flushSync } from 'react-dom'
 import { DEFAULT_FEEL } from '../Animations/feel'
 import { stack } from '../Theme/stack'
+import { clamp } from '../Utilities/clamp'
 import { cx } from '../Utilities/cx'
 import { useLatest } from '../Utilities/stableApi'
 import { type Channel, channel } from '../Utilities/subscribable'
@@ -35,7 +36,14 @@ import { DragGhost } from './DragGhost'
 import { addSpring, beginDragDisclose, endDragDisclose, pointDisclose } from './dragDisclose'
 import { DropLine } from './DropLine'
 import { beginPointerGesture, type GestureHandle, scrollMoved } from './gesture'
-import { ARROW_DIRS, type Dir, keyboardNext, lineProbes, type StepPart } from './keyboard'
+import {
+  ARROW_DIRS,
+  type Dir,
+  keyboardNext,
+  lineProbes,
+  type Probe,
+  type StepPart,
+} from './keyboard'
 import {
   type Axis,
   beforeIdAt,
@@ -154,6 +162,7 @@ type Session = {
   landing: Landing | null
   line: LineSnap | null
   cursor: Point
+  fence: Point | null
   release: () => void
 }
 
@@ -354,6 +363,9 @@ function createEngine(setChrome: (c: Chrome | null) => void): Api {
     y: s.axis === 'x' && !s.loose ? 0 : y - s.start.y,
   })
 
+  const chipTravel = (s: Session, x: number, y: number): Point =>
+    s.fence ? travel(s, clamp(x, 0, s.fence.x), clamp(y, 0, s.fence.y)) : travel(s, x, y)
+
   const surfaceOf = (s: Session): Element => {
     let top: Element = s.el
     for (const r of zones.values()) if (r.box?.contains(top)) top = r.box
@@ -540,7 +552,7 @@ function createEngine(setChrome: (c: Chrome | null) => void): Api {
       gesture?.autoScroll(!out)
       loose.set(out ? s.carried : null)
     }
-    const t = travel(s, x, y)
+    const t = chipTravel(s, x, y)
     if (chromeEl) chromeEl.style.transform = translate(t.x, t.y)
     else if (s.kind === 'displace' && !s.overlaid)
       s.el.style.transform = translate((t.x + s.comp.x) / s.zoom, (t.y + s.comp.y) / s.zoom)
@@ -624,6 +636,7 @@ function createEngine(setChrome: (c: Chrome | null) => void): Api {
       landing: null,
       line: null,
       cursor: { x: 0, y: 0 },
+      fence: null,
       release: noop,
     }
     if (k.kind === 'line') {
@@ -816,7 +829,8 @@ function createEngine(setChrome: (c: Chrome | null) => void): Api {
     announceDrag(word, s.name)
     if (s.via === 'keyboard')
       requestAnimationFrame(() => {
-        const el = zones.get(s.zone)?.els.get(s.id)
+        const r = zones.get(s.zone)
+        const el = r?.els.get(s.id) ?? r?.box
         if (el) focusBack(el, s.el)
       })
   }
@@ -901,13 +915,19 @@ function createEngine(setChrome: (c: Chrome | null) => void): Api {
       const got = spec.resolve(s.id, { x: s.cursor.x, y: probes[i].y }, m.snap)
       return got === null ? null : keyOf(spec, got)
     }
-    const partOf = (i: number, key: unknown): StepPart => {
-      if (i >= m.g.rows.length * 3) return 'after'
-      const base = i - (i % 3)
-      const [before, into, after] = [keyAt(base), keyAt(base + 1), keyAt(base + 2)]
-      const middle = Object.is(before, into) === Object.is(into, after)
-      if (Object.is(key, into) && middle) return 'into'
-      return Object.is(key, before) ? 'before' : 'after'
+    const partOf = (p: Probe, key: unknown): StepPart => {
+      switch (p.kind) {
+        case 'group':
+          return 'into'
+        case 'end':
+          return 'after'
+        case 'row': {
+          const [before, into, after] = [keyAt(p.base), keyAt(p.base + 1), keyAt(p.base + 2)]
+          const middle = Object.is(before, into) === Object.is(into, after)
+          if (Object.is(key, into) && middle) return 'into'
+          return Object.is(key, before) ? 'before' : 'after'
+        }
+      }
     }
     const at = probes.findIndex((p) => p.y >= s.cursor.y)
     let i = at < 0 ? probes.length : at
@@ -924,10 +944,11 @@ function createEngine(setChrome: (c: Chrome | null) => void): Api {
       s.cursor = point
       if (!L) announceDrag('return', s.name)
       else {
-        const named = spec.step?.(L.slot, L.snap) ?? { part: partOf(i, key), id: p.row }
+        const named = spec.step?.(L.slot, L.snap) ?? { part: partOf(p, key), id: p.id }
         announce(STEP_WORDS[named.part](spec.label(named.id)))
       }
-      zones.get(s.zone)?.els.get(p.row)?.scrollIntoView({ block: 'nearest' })
+      const r = zones.get(s.zone)
+      ;(p.kind === 'group' ? r?.groups : r?.els)?.get(p.id)?.scrollIntoView({ block: 'nearest' })
       return
     }
   }
@@ -1045,7 +1066,11 @@ function createEngine(setChrome: (c: Chrome | null) => void): Api {
       chromeEl = el
       const s = session
       if (!el || !s) return
-      const t = travel(s, s.last.x, s.last.y)
+      if (s.kind === 'line') {
+        const b = el.getBoundingClientRect()
+        s.fence = { x: window.innerWidth - b.width, y: window.innerHeight - b.height }
+      }
+      const t = chipTravel(s, s.last.x, s.last.y)
       el.style.transform = translate(t.x, t.y)
       if (s.overlaid) s.el.style.visibility = 'hidden'
     },
@@ -1278,7 +1303,7 @@ export function useLineRow(
         const row = e.currentTarget
         if (e.target !== row) return
         const step = e.key === 'ArrowDown' ? 1 : e.key === 'ArrowUp' ? -1 : 0
-        const opening = e.key === 'Enter' && opens && !api.busy()
+        const opening = e.key === 'Enter' && opens && !e.repeat && !api.busy()
         if (e.key !== ' ' && step === 0 && !opening) return
         e.preventDefault()
         if (opening) run.current?.()

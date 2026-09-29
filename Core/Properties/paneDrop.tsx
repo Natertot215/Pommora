@@ -69,7 +69,7 @@ export function paneSpec({
   assigned,
   ordersAll,
   pinned,
-  allTitle,
+  titles,
   label,
   glyph,
   onDrop,
@@ -78,7 +78,7 @@ export function paneSpec({
   assigned: readonly string[]
   ordersAll: boolean
   pinned?: string
-  allTitle: string
+  titles: { assigned: string; all: string }
   label: (id: string) => string
   glyph: (id: string) => ReactNode
   onDrop: (drop: PaneDrop) => void
@@ -93,7 +93,7 @@ export function paneSpec({
     commit: (id, slot, s) => onDrop(dropOf(id, slot, s.home?.key)),
     line: (slot) => (slot === 'unassign' ? null : rowDropLine(slot.edge)),
     step: (slot) => (slot === 'unassign' ? { part: 'into', id: 'all' } : null),
-    label: (id) => (id === 'all' ? allTitle : label(id)),
+    label: (id) => (id === 'assigned' || id === 'all' ? titles[id] : label(id)),
     glyph,
     watch,
   }
