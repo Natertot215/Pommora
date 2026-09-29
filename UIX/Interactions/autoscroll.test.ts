@@ -164,12 +164,11 @@ describe('startAutoScroll / stopAutoScroll — loop lifecycle', () => {
   })
 
   // A drag starting pinned at the edge never scrolls, so tests start at y=150 to arm `down`.
-  const doc = document.documentElement
 
   it('scrolls the fixed scroller toward the edge the point holds near', () => {
     const { el, scrolls } = fakeScroller()
     let y = 150
-    startAutoScroll({ getPoint: () => ({ x: 150, y }), scroller: el, dragEl: doc, axis: 'y' })
+    startAutoScroll({ getPoint: () => ({ x: 150, y }), scroller: el, axis: 'y' })
     flush(3)
     const before = scrolls()
     y = 299
@@ -179,7 +178,7 @@ describe('startAutoScroll / stopAutoScroll — loop lifecycle', () => {
 
   it('does NOT scroll when the drag starts pinned at the edge (direction-intent anti-rocket)', () => {
     const { el, scrolls } = fakeScroller()
-    startAutoScroll({ getPoint: () => ({ x: 150, y: 299 }), scroller: el, dragEl: doc, axis: 'y' })
+    startAutoScroll({ getPoint: () => ({ x: 150, y: 299 }), scroller: el, axis: 'y' })
     flush(40)
     expect(scrolls()).toBe(400)
   })
@@ -187,7 +186,7 @@ describe('startAutoScroll / stopAutoScroll — loop lifecycle', () => {
   it('stopAutoScroll halts the loop — no further scrolling', () => {
     const { el, scrolls } = fakeScroller()
     let y = 150
-    startAutoScroll({ getPoint: () => ({ x: 150, y }), scroller: el, dragEl: doc, axis: 'y' })
+    startAutoScroll({ getPoint: () => ({ x: 150, y }), scroller: el, axis: 'y' })
     flush(3)
     y = 299
     flush(20)
@@ -201,7 +200,7 @@ describe('startAutoScroll / stopAutoScroll — loop lifecycle', () => {
   it('a blur event stops the loop (backstop against a leaked rAF)', () => {
     const { el, scrolls } = fakeScroller()
     let y = 150
-    startAutoScroll({ getPoint: () => ({ x: 150, y }), scroller: el, dragEl: doc, axis: 'y' })
+    startAutoScroll({ getPoint: () => ({ x: 150, y }), scroller: el, axis: 'y' })
     flush(3)
     y = 299
     flush(20)
@@ -216,13 +215,13 @@ describe('startAutoScroll / stopAutoScroll — loop lifecycle', () => {
     const a = fakeScroller()
     const b = fakeScroller()
     let y = 150
-    startAutoScroll({ getPoint: () => ({ x: 150, y }), scroller: a.el, dragEl: doc, axis: 'y' })
+    startAutoScroll({ getPoint: () => ({ x: 150, y }), scroller: a.el, axis: 'y' })
     flush(3)
     y = 299
     flush(20)
     const aBeforeReplace = a.scrolls()
     expect(aBeforeReplace).toBeGreaterThan(400)
-    startAutoScroll({ getPoint: () => ({ x: 150, y }), scroller: b.el, dragEl: doc, axis: 'y' })
+    startAutoScroll({ getPoint: () => ({ x: 150, y }), scroller: b.el, axis: 'y' })
     expect(rafMap.size).toBe(1)
     y = 150
     flush(3)
@@ -240,10 +239,10 @@ describe('startAutoScroll / stopAutoScroll — loop lifecycle', () => {
     const stopA = startAutoScroll({
       getPoint: () => ({ x: 150, y }),
       scroller: a.el,
-      dragEl: doc,
+
       axis: 'y',
     })
-    startAutoScroll({ getPoint: () => ({ x: 150, y }), scroller: b.el, dragEl: doc, axis: 'y' })
+    startAutoScroll({ getPoint: () => ({ x: 150, y }), scroller: b.el, axis: 'y' })
     stopA()
     y = 150
     flush(3)
@@ -279,7 +278,7 @@ describe('startAutoScroll / stopAutoScroll — loop lifecycle', () => {
       },
     } as unknown as HTMLElement
     let y = 150
-    startAutoScroll({ getPoint: () => ({ x: 150, y }), scroller: el, dragEl: doc, axis: 'y' })
+    startAutoScroll({ getPoint: () => ({ x: 150, y }), scroller: el, axis: 'y' })
     flush(3)
     y = 299
     const s0 = top
@@ -318,7 +317,7 @@ describe('startAutoScroll / stopAutoScroll — loop lifecycle', () => {
       },
     } as unknown as HTMLElement
     let y = 150
-    startAutoScroll({ getPoint: () => ({ x: 150, y }), scroller: el, dragEl: doc, axis: 'y' })
+    startAutoScroll({ getPoint: () => ({ x: 150, y }), scroller: el, axis: 'y' })
     flush(3)
     y = 299
     flush(30)
@@ -334,7 +333,7 @@ describe('startAutoScroll / stopAutoScroll — loop lifecycle', () => {
   it('clamps a huge dt so an rAF stall does not teleport the scroll', () => {
     const { el, scrolls } = fakeScroller()
     let y = 150
-    startAutoScroll({ getPoint: () => ({ x: 150, y }), scroller: el, dragEl: doc, axis: 'y' })
+    startAutoScroll({ getPoint: () => ({ x: 150, y }), scroller: el, axis: 'y' })
     flush(3)
     y = 299
     flush(5)
@@ -353,7 +352,7 @@ describe('startAutoScroll / stopAutoScroll — loop lifecycle', () => {
     startAutoScroll({
       getPoint: () => ({ x: 150, y }),
       scroller: el,
-      dragEl: doc,
+
       axis: 'y',
       onScrolled,
     })
@@ -394,7 +393,12 @@ describe('scrollGlide — the destination is re-read, not resolved once', () => 
     }
   }
   const makeScroller = (): HTMLElement =>
-    ({ scrollTop: 0, scrollHeight: 10_000, clientHeight: 500 }) as unknown as HTMLElement
+    ({
+      scrollTop: 0,
+      scrollHeight: 10_000,
+      clientHeight: 500,
+      getBoundingClientRect: () => ({ top: 0, bottom: 500, left: 0, right: 500 }),
+    }) as unknown as HTMLElement
 
   beforeEach(() => {
     rafMap = new Map()
@@ -439,7 +443,7 @@ describe('scrollGlide — the destination is re-read, not resolved once', () => 
     scrollGlide(el, 900, G)
     flush(2)
     const midway = el.scrollTop
-    startAutoScroll({ getPoint: () => ({ x: 0, y: 0 }), scroller: null })
+    startAutoScroll({ getPoint: () => ({ x: 0, y: 0 }), scroller: makeScroller(), axis: 'y' })
     flush(20)
     expect(el.scrollTop).toBe(midway)
   })

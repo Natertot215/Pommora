@@ -284,3 +284,159 @@ describe('a release before activation is a tap, and only a release', () => {
     expect(onTap).not.toHaveBeenCalled()
   })
 })
+
+describe('the item rule, the cursor, and autoscroll', () => {
+  const pressOn = (target: Element): PointerGestureSpec['event'] =>
+    ({
+      button: 0,
+      isPrimary: true,
+      clientX: 0,
+      clientY: 0,
+      pointerId: 1,
+      target,
+      currentTarget: el,
+    }) as unknown as PointerGestureSpec['event']
+
+  it('the item rule: a field refuses, a control below the handle takes the slop', () => {
+    const field = el.appendChild(document.createElement('input'))
+    const control = el.appendChild(document.createElement('button'))
+    const plain = el.appendChild(document.createElement('span'))
+    expect(
+      gesture.beginPointerGesture(spec({ activation: 'item', event: pressOn(field) })),
+    ).toBeNull()
+
+    const onActivate = vi.fn(() => true)
+    gesture.beginPointerGesture(spec({ activation: 'item', event: pressOn(control), onActivate }))
+    move(8, 0)
+    expect(onActivate).not.toHaveBeenCalled()
+    move(13, 0)
+    expect(onActivate).toHaveBeenCalledOnce()
+    firePointer(window, 'pointerup')
+
+    const onPlain = vi.fn(() => true)
+    gesture.beginPointerGesture(
+      spec({ activation: 'item', event: pressOn(plain), onActivate: onPlain }),
+    )
+    move(6, 0)
+    expect(onPlain).toHaveBeenCalledOnce()
+  })
+
+  it('owns the grabbing cursor and reports itself live only while active', () => {
+    const root = document.documentElement
+    expect(gesture.gestureLive()).toBe(false)
+    gesture.beginPointerGesture(spec({ cursor: 'grabbing' }))
+    expect(gesture.gestureLive()).toBe(false)
+    expect(root.classList.contains('is-grabbing')).toBe(false)
+    move(20, 0)
+    expect(gesture.gestureLive()).toBe(true)
+    expect(root.classList.contains('is-grabbing')).toBe(true)
+    firePointer(window, 'pointerup')
+    expect(gesture.gestureLive()).toBe(false)
+    expect(root.classList.contains('is-grabbing')).toBe(false)
+  })
+
+  describe('autoscroll', () => {
+    let rafMap: Map<number, (ts: number) => void>
+    let rafId: number
+    let clock: number
+    let top: number
+    let scroller: HTMLElement
+    let scrollBy: ReturnType<typeof vi.fn>
+
+    const flush = (times: number): void => {
+      for (let i = 0; i < times; i++) {
+        const pending = [...rafMap.values()]
+        rafMap = new Map()
+        clock += 16
+        for (const cb of pending) cb(clock)
+      }
+    }
+
+    beforeEach(() => {
+      rafMap = new Map()
+      rafId = 0
+      clock = 0
+      top = 400
+      vi.stubGlobal('requestAnimationFrame', (cb: (ts: number) => void) => {
+        rafMap.set(++rafId, cb)
+        return rafId
+      })
+      vi.stubGlobal('cancelAnimationFrame', (id: number) => void rafMap.delete(id))
+      scrollBy = vi.fn((_x: number, y: number) => {
+        top += y
+      })
+      scroller = document.createElement('div')
+      scroller.style.overflowY = 'auto'
+      Object.defineProperties(scroller, {
+        scrollTop: { get: () => top, set: (v: number) => (top = v) },
+        scrollLeft: { value: 0 },
+        scrollHeight: { value: 1000 },
+        clientHeight: { value: 300 },
+        scrollWidth: { value: 300 },
+        clientWidth: { value: 300 },
+        scrollBy: { value: scrollBy },
+        getBoundingClientRect: {
+          value: () => ({ top: 0, bottom: 300, left: 0, right: 300, width: 300, height: 300 }),
+        },
+      })
+      document.body.appendChild(scroller)
+    })
+    afterEach(() => {
+      scroller.remove()
+      vi.unstubAllGlobals()
+    })
+
+    const begin = (
+      over: Partial<PointerGestureSpec> = {},
+    ): ReturnType<GestureModule['beginPointerGesture']> => {
+      const handle = gesture.beginPointerGesture(
+        spec({ autoScroll: { from: scroller, axis: 'y' }, ...over }),
+      )
+      move(0, 150)
+      return handle
+    }
+
+    it('arms autoscroll at activation and answers each step once, dropping its native echo', () => {
+      const onWindowScroll = vi.fn()
+      begin({ onWindowScroll })
+      flush(3)
+      expect(scrollBy).not.toHaveBeenCalled()
+      move(0, 299)
+      flush(30)
+      expect(scrollBy.mock.calls.length).toBeGreaterThan(0)
+      expect(onWindowScroll).toHaveBeenCalledTimes(scrollBy.mock.calls.length)
+      expect(onWindowScroll).toHaveBeenLastCalledWith(scroller)
+      const answered = onWindowScroll.mock.calls.length
+      scroller.dispatchEvent(new Event('scroll'))
+      expect(onWindowScroll).toHaveBeenCalledTimes(answered)
+      top += 40
+      scroller.dispatchEvent(new Event('scroll'))
+      expect(onWindowScroll).toHaveBeenCalledTimes(answered + 1)
+    })
+
+    it('does not arm before the press becomes a drag', () => {
+      gesture.beginPointerGesture(spec({ autoScroll: { from: scroller, axis: 'y' } }))
+      move(0, 2)
+      flush(3)
+      expect(rafMap.size).toBe(0)
+    })
+
+    it('autoScroll(false) pauses the loop and autoScroll(true) resumes it', () => {
+      const handle = begin()
+      flush(3)
+      move(0, 299)
+      flush(20)
+      const scrolled = top
+      expect(scrolled).toBeGreaterThan(400)
+      handle?.autoScroll(false)
+      flush(20)
+      expect(top).toBe(scrolled)
+      handle?.autoScroll(true)
+      move(0, 150)
+      flush(3)
+      move(0, 299)
+      flush(20)
+      expect(top).toBeGreaterThan(scrolled)
+    })
+  })
+})

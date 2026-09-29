@@ -1,7 +1,6 @@
 // CM extensions have no unmount hook, and drags run off window listeners, so a destroyed editor would leave a gesture running against a dead view. Include `editorGestureCleanup` in every extension array that starts one.
 import type { ChangeSpec } from '@codemirror/state'
 import { type EditorView, ViewPlugin } from '@codemirror/view'
-import { resolveScroller, startAutoScroll } from '@pommora/uix/Interactions/autoscroll'
 import {
   beginPointerGesture,
   type GestureHandle,
@@ -54,7 +53,6 @@ export function beginRelocateDrag<T>(
   let cands: Boundary<T>[] = []
   let slot: Boundary<T> | null = null
   let lastY = e.clientY
-  let stopScroll: (() => void) | null = null
 
   const repick = (): void => {
     slot = nearestBoundary(cands, lastY)
@@ -71,6 +69,7 @@ export function beginRelocateDrag<T>(
   beginEditorGesture(view, {
     el: host,
     event: e,
+    autoScroll: { from: host, axis: 'y' },
     onActivate: (ev) => {
       activated = true
       document.body.style.cursor = 'grabbing'
@@ -78,13 +77,6 @@ export function beginRelocateDrag<T>(
       view.dispatch({ effects: setShade.of({ from: block.from, to: block.to }) })
       lastY = ev.clientY
       remeasure()
-      // Explicit scroller: findScroller can't derive CM's scrollDOM. Its scrollBy fires the native `scroll`, so off-viewport candidates become targetable as they scroll in.
-      stopScroll = startAutoScroll({
-        getPoint: () => ({ x: 0, y: lastY }),
-        scroller: resolveScroller(host, 'y'),
-        dragEl: host,
-        axis: 'y',
-      })
       return true
     },
     onDragMove: (ev) => {
@@ -100,8 +92,6 @@ export function beginRelocateDrag<T>(
     },
     onTap: spec.onTap,
     teardown: () => {
-      stopScroll?.()
-      stopScroll = null
       if (!activated) return
       document.body.style.cursor = ''
       overlay.hide()

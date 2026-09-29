@@ -3,7 +3,6 @@ import '../markdown-tables.css'
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { usePointerGesture } from '@pommora/uix/Interactions/gesture'
 import { isCmd } from '@pommora/uix/Interactions/chords'
-import { resolveScroller, startAutoScroll } from '@pommora/uix/Interactions/autoscroll'
 import { Icon } from '@pommora/uix/Symbols'
 import { cx } from '@pommora/uix/Utilities/cx'
 import { revealTarget } from '@pommora/uix/Interactions/hover-reveal.css'
@@ -175,7 +174,6 @@ export function MarkdownTable({
     let engaged = false
     let head = start
     let last = { x: e.clientX, y: e.clientY }
-    let stopScroll: (() => void) | null = null
     const resolveAt = (): void => {
       const at: GridPos = {
         r: slotAt('row', geomRef.current, last.y - b.top),
@@ -187,16 +185,6 @@ export function MarkdownTable({
         setActive(null)
         window.getSelection()?.removeAllRanges()
         setSweeping(true)
-        stopScroll = startAutoScroll({
-          getPoint: () => last,
-          scroller: resolveScroller(wrap, 'xy'),
-          dragEl: wrap,
-          axis: 'xy',
-          onScrolled: () => {
-            b = wrap.getBoundingClientRect()
-            resolveAt()
-          },
-        })
       }
       if (at.r !== head.r || at.c !== head.c) {
         head = at
@@ -207,17 +195,19 @@ export function MarkdownTable({
       el: e.currentTarget,
       event: e,
       capture: false,
+      autoScroll: { from: wrap, axis: 'xy' },
       onActivate: () => undefined,
       onDragMove: (ev) => {
         last = { x: ev.clientX, y: ev.clientY }
         resolveAt()
       },
-      onDrop: () => undefined,
-      teardown: () => {
-        stopScroll?.()
-        stopScroll = null
-        setSweeping(false)
+      scrollTarget: () => wrap,
+      onWindowScroll: () => {
+        b = wrap.getBoundingClientRect()
+        resolveAt()
       },
+      onDrop: () => undefined,
+      teardown: () => setSweeping(false),
     })
   }
 
@@ -361,7 +351,6 @@ export function MarkdownTable({
     reOrigin()
     const startRel = (axis === 'col' ? e.clientX : e.clientY) - origin
     let last = { x: e.clientX, y: e.clientY }
-    let stopScroll: (() => void) | null = null
     let current: Drag = { axis, from: index, to: index, delta: 0 }
     const resolve = (): void => {
       const rel = (axis === 'col' ? last.x : last.y) - origin
@@ -373,15 +362,10 @@ export function MarkdownTable({
     beginGesture({
       el: e.currentTarget,
       event: e,
+      autoScroll: { from: wrap, axis: axis === 'col' ? 'x' : 'y' },
       onActivate: () => {
         reOrigin()
         setDrag(current)
-        stopScroll = startAutoScroll({
-          getPoint: () => last,
-          scroller: resolveScroller(wrap, axis === 'col' ? 'x' : 'y'),
-          dragEl: wrap,
-          axis: axis === 'col' ? 'x' : 'y',
-        })
         return undefined
       },
       scrollTarget: () => wrap,
@@ -398,10 +382,6 @@ export function MarkdownTable({
         else remeasure.current = true
       },
       onAbort: () => setDrag(null),
-      teardown: () => {
-        stopScroll?.()
-        stopScroll = null
-      },
     })
   }
 

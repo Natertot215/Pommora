@@ -1,7 +1,7 @@
 import { duration, easeSnap, ms, prefersReducedMotion } from '../Animations/motion'
 import { clamp } from '../Utilities/clamp'
 
-type Axis = 'x' | 'y' | 'xy'
+export type ScrollAxis = 'x' | 'y' | 'xy'
 
 export interface Params {
   edge: number // px band from a container edge where scroll engages
@@ -12,15 +12,14 @@ export interface Params {
   accelDist: number // px of accumulated scroll to climb from start → max
 }
 
-/** Read through `getComputedStyle`, never `var()`, so a token audit finds no consumers. */
-export const AUTOSCROLL_KNOBS = {
-  edge: ['--autoscroll-edge', '48px'],
-  speed: ['--autoscroll-speed', '840px'],
-  ramp: ['--autoscroll-ramp', '2'],
-  accelStart: ['--autoscroll-accel-start', '0.5'],
-  accelMax: ['--autoscroll-accel-max', '1.5'],
-  accelDist: ['--autoscroll-accel-distance', '600px'],
-} as const satisfies Record<keyof Params, readonly [string, string]>
+export const AUTOSCROLL: Params = {
+  edge: 48,
+  speed: 840,
+  ramp: 2,
+  accelStart: 0.5,
+  accelMax: 1.5,
+  accelDist: 600,
+}
 
 export interface Intent {
   up: boolean
@@ -33,7 +32,7 @@ export function scrollableInAxis(
   overflowX: string,
   overflowY: string,
   dims: { scrollWidth: number; clientWidth: number; scrollHeight: number; clientHeight: number },
-  axis: Axis,
+  axis: ScrollAxis,
 ): boolean {
   const y =
     (overflowY === 'auto' || overflowY === 'scroll') && dims.scrollHeight > dims.clientHeight
@@ -43,7 +42,7 @@ export function scrollableInAxis(
   return x || y
 }
 
-export function findScroller(el: HTMLElement | null, axis: Axis = 'xy'): HTMLElement | null {
+export function findScroller(el: HTMLElement | null, axis: ScrollAxis = 'xy'): HTMLElement | null {
   let n = el?.parentElement ?? null
   while (n) {
     const s = getComputedStyle(n)
@@ -53,11 +52,9 @@ export function findScroller(el: HTMLElement | null, axis: Axis = 'xy'): HTMLEle
   return null
 }
 
-export function resolveScroller(el: HTMLElement, axis: Axis = 'xy'): HTMLElement {
+export function resolveScroller(el: HTMLElement, axis: ScrollAxis = 'xy'): HTMLElement | null {
   const cs = getComputedStyle(el)
-  return scrollableInAxis(cs.overflowX, cs.overflowY, el, axis)
-    ? el
-    : (findScroller(el, axis) ?? el)
+  return scrollableInAxis(cs.overflowX, cs.overflowY, el, axis) ? el : findScroller(el, axis)
 }
 
 export function edgeVelocity(
@@ -105,19 +102,13 @@ export function gateIntent(intent: Intent, vx: number, vy: number): { vx: number
 
 interface StartCfg {
   getPoint: () => { x: number; y: number }
-  scroller?: HTMLElement | null
-  dragEl?: HTMLElement | null
-  axis?: Axis
+  scroller: HTMLElement
+  axis: ScrollAxis
   onScrolled?: () => void
 }
 
-interface Live {
+interface Live extends StartCfg {
   raf: number
-  getPoint: () => { x: number; y: number }
-  scroller: HTMLElement
-  axis: Axis
-  params: Params
-  onScrolled?: () => void
   dist: number
   last: number | null
   frac: { x: number; y: number }
@@ -130,23 +121,6 @@ let live: Live | null = null
 // A velocity×dt loop teleports if rAF stalls and resumes with a huge gap.
 const MAX_FRAME_MS = 50
 
-function readParams(el: HTMLElement): Params {
-  const s = getComputedStyle(el)
-  const read = (key: keyof Params): number => {
-    const [name, fallback] = AUTOSCROLL_KNOBS[key]
-    const v = parseFloat(s.getPropertyValue(name))
-    return Number.isFinite(v) ? v : parseFloat(fallback)
-  }
-  return {
-    edge: read('edge'),
-    speed: read('speed'),
-    ramp: read('ramp'),
-    accelStart: read('accelStart'),
-    accelMax: read('accelMax'),
-    accelDist: read('accelDist'),
-  }
-}
-
 export function armAutoScroll(
   dragEl: HTMLElement | null,
   getPoint: () => { x: number; y: number },
@@ -154,26 +128,19 @@ export function armAutoScroll(
 ): (() => void) | null {
   const scroller = findScroller(dragEl, 'y')
   if (!scroller) return null
-  return startAutoScroll({ getPoint, scroller, dragEl, axis: 'y', onScrolled })
+  return startAutoScroll({ getPoint, scroller, axis: 'y', onScrolled })
 }
 
 export function startAutoScroll(cfg: StartCfg): () => void {
   stopAutoScroll()
   stopGlide()
-  const axis = cfg.axis ?? 'xy'
-  const scroller = cfg.scroller ?? findScroller(cfg.dragEl ?? null, axis)
-  if (!scroller) return () => {}
   const onBackstop = (): void => stopAutoScroll()
   window.addEventListener('blur', onBackstop)
   document.addEventListener('visibilitychange', onBackstop)
   window.addEventListener('pointercancel', onBackstop)
   live = {
+    ...cfg,
     raf: 0,
-    getPoint: cfg.getPoint,
-    scroller,
-    axis,
-    params: readParams(cfg.dragEl ?? scroller),
-    onScrolled: cfg.onScrolled,
     dist: 0,
     last: null,
     frac: { x: 0, y: 0 },
@@ -278,11 +245,11 @@ function tick(ts: number): void {
   L.last = ts
   const pt = L.getPoint()
   const r = L.scroller.getBoundingClientRect()
-  let vx = L.axis === 'y' ? 0 : edgeVelocity(r.left, r.right, pt.x, L.params)
-  let vy = L.axis === 'x' ? 0 : edgeVelocity(r.top, r.bottom, pt.y, L.params)
+  let vx = L.axis === 'y' ? 0 : edgeVelocity(r.left, r.right, pt.x, AUTOSCROLL)
+  let vy = L.axis === 'x' ? 0 : edgeVelocity(r.top, r.bottom, pt.y, AUTOSCROLL)
   ;({ vx, vy } = gateIntent(L.intent, vx, vy))
   if (vx === 0 && vy === 0) L.dist = 0
-  const accel = accelFactor(L.dist, L.params)
+  const accel = accelFactor(L.dist, AUTOSCROLL)
   vx = clampToLimit(
     vx * accel,
     L.scroller.scrollLeft,

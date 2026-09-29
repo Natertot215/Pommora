@@ -1,5 +1,6 @@
 import { createContext, useEffect, useState } from 'react'
 import { useLatest } from '../Utilities/stableApi'
+import { gestureLive } from './gesture'
 
 export const GHOST_TRAVEL_HOLD_MS = 1500 // KNOB
 
@@ -43,7 +44,7 @@ export function useGhostAnchor(opts: GhostAnchorOptions): GhostAnchor {
       exit: null,
     }
     let menusOpen = 0
-    const blocked = (): boolean => optsRef.current.suppressed() || menusOpen > 0
+    const blocked = (): boolean => gestureLive() || optsRef.current.suppressed() || menusOpen > 0
     const clearTimer = (key: keyof typeof timers): void => {
       const t = timers[key]
       if (t !== null) window.clearTimeout(t)

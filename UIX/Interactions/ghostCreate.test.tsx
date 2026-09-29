@@ -2,8 +2,11 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { act } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
+import { firePointer, stubPointerCapture } from '../Testing/pointerHarness'
 import { type GhostAnchor, useGhostAnchor } from './ghostCreate'
+import { beginPointerGesture } from './gesture'
 ;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
+stubPointerCapture()
 
 const DWELL = 1000
 const GRACE = 100
@@ -82,6 +85,24 @@ describe('useGhostAnchor', () => {
     suppressed = true
     await tick(DWELL)
     expect(api.ghost).toBeNull()
+  })
+
+  it('a live gesture blocks a dwell until it ends', async () => {
+    beginPointerGesture({
+      el: host,
+      event: { button: 0, isPrimary: true, clientX: 0, clientY: 0, pointerId: 1 } as PointerEvent,
+      onActivate: () => true,
+      onDragMove: () => {},
+      onDrop: () => {},
+    })
+    firePointer(window, 'pointermove', { x: 20, y: 0 })
+    await act(async () => api.onHover('a', true))
+    await tick(DWELL)
+    expect(api.ghost).toBeNull()
+    firePointer(window, 'pointerup')
+    await act(async () => api.onHover('b', true))
+    await tick(DWELL)
+    expect(api.ghost).toEqual({ anchorId: 'b', closing: false })
   })
 
   it('a menu pop stands the ghost down and holds new dwells until it resolves', async () => {

@@ -8,7 +8,7 @@ import {
   useRef,
   useState,
 } from 'react'
-import { findScroller, startAutoScroll } from '@pommora/uix/Interactions/autoscroll'
+import { findScroller } from '@pommora/uix/Interactions/autoscroll'
 import { GLIDE_FEEL } from '@pommora/uix/Animations/feel'
 import { usePointerGesture } from '@pommora/uix/Interactions/gesture'
 import { HYSTERESIS, SETTLE_FALLBACK } from '@pommora/uix/Interactions/shared'
@@ -426,7 +426,6 @@ export function TileGrid({
       let target: DropTarget = null
       let moved = false
       const lastPoint = { x: e.clientX, y: e.clientY }
-      let stopScroll: (() => void) | null = null
 
       const resolve = (clientX: number, clientY: number): void => {
         const dsx = (scroller?.scrollLeft ?? 0) - scroll0.x
@@ -455,31 +454,21 @@ export function TileGrid({
         el: e.currentTarget,
         event: e,
         capture: true,
+        autoScroll: { from: grid, axis: 'xy' },
         onActivate: () => true,
         onDragMove: (ev) => {
           moved = true
           lastPoint.x = ev.clientX
           lastPoint.y = ev.clientY
-          // The instance-scoped stopper (not the global) is what teardown calls, so no teardown can cross drags.
-          if (!stopScroll && scroller) {
-            stopScroll = startAutoScroll({
-              getPoint: () => lastPoint,
-              scroller,
-              dragEl: grid,
-              axis: 'xy',
-              onScrolled: () => resolve(lastPoint.x, lastPoint.y),
-            })
-          }
           resolve(ev.clientX, ev.clientY)
         },
+        scrollTarget: () => grid,
+        onWindowScroll: () => resolve(lastPoint.x, lastPoint.y),
         onDrop: () => settleInto(target && latest !== origin ? latest : null),
         onAbort: () => {
           if (moved) settleInto(null)
         },
-        teardown: () => {
-          stopScroll?.()
-          setPressedId(null)
-        },
+        teardown: () => setPressedId(null),
       })
       if (started) setPressedId(id)
     },

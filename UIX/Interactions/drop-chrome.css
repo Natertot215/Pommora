@@ -47,3 +47,9 @@
   align-items: center;
   gap: 6px;
 }
+
+:root.is-grabbing,
+:root.is-grabbing * {
+  /* biome-ignore lint/complexity/noImportantStyles: the drag's cursor must beat every surface's own cursor rule while a pointer drag is live. */
+  cursor: grabbing !important;
+}

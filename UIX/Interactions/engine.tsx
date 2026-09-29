@@ -676,7 +676,6 @@ export function DragGroup({
           stopScroll.current = startAutoScroll({
             getPoint: () => ({ x: drag.current.lastX, y: drag.current.lastY }),
             scroller,
-            dragEl: el,
             axis: 'xy',
             onScrolled,
           })

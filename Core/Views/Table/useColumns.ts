@@ -6,8 +6,7 @@ import { defaultStyleFor, type ColumnStyle } from '@pommora/core/Properties/colu
 import type { PropertyDefinition, PropertyType } from '@pommora/core/Properties/properties'
 import { type ColumnAlign, type SavedView, viewOption } from '@pommora/core/Views/views'
 import { announce } from '@pommora/uix/Interactions/a11y'
-import { findScroller, startAutoScroll } from '@pommora/uix/Interactions/autoscroll'
-import { reorder } from '@pommora/uix/Interactions/drag'
+import { moveItem } from '@pommora/uix/Utilities/moveItem'
 import { usePointerGesture } from '@pommora/uix/Interactions/gesture'
 import { useSettleFallback } from '@pommora/uix/Animations/useExitPresence'
 import { ICON_PX } from '@pommora/uix/Theme/theme-vars.css'
@@ -143,11 +142,7 @@ export function reorderColumns(
   activeId: string,
   overId: string,
 ): string[] {
-  const next = reorder(
-    visibleIds.map((id) => ({ id })),
-    activeId,
-    overId,
-  ).map((o) => o.id)
+  const next = moveItem(visibleIds, visibleIds.indexOf(activeId), visibleIds.indexOf(overId))
   const hidden = propertyOrder.filter((id) => !visibleIds.includes(id))
   return [...next, ...hidden]
 }
@@ -348,8 +343,6 @@ export function useColumns(host: ViewHostApi) {
     const dragId = columns[from].id
     let current: { from: number; to: number; id: string } | null = null
     let lastX = e.clientX
-    let lastY = e.clientY
-    let stopScroll: (() => void) | null = null
     const resolve = (): void => {
       const projected = startCenter + (lastX - startX)
       const cur = current?.to ?? from
@@ -380,6 +373,7 @@ export function useColumns(host: ViewHostApi) {
     beginGesture({
       el: header,
       event: e,
+      autoScroll: { from: grid, axis: 'x' },
       onActivate: (ev) => {
         zoom = currentZoom(grid)
         const hr = header.getBoundingClientRect()
@@ -394,21 +388,11 @@ export function useColumns(host: ViewHostApi) {
           lefts[i] = acc
           acc += widths[i]
         }
-        const sc = findScroller(grid, 'x')
-        if (sc) {
-          stopScroll = startAutoScroll({
-            getPoint: () => ({ x: lastX, y: lastY }),
-            scroller: sc,
-            dragEl: grid,
-            axis: 'x',
-          })
-        }
         announce('Picked up column.')
         return true
       },
       onDragMove: (ev) => {
         lastX = ev.clientX
-        lastY = ev.clientY
         resolve()
       },
       scrollTarget: () => grid,
@@ -423,8 +407,6 @@ export function useColumns(host: ViewHostApi) {
         }
       },
       teardown: () => {
-        stopScroll?.()
-        stopScroll = null
         grid.style.removeProperty('--col-drag-x')
         setColDrag(null)
       },
