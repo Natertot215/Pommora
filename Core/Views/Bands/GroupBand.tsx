@@ -65,7 +65,6 @@ export function bandSpec({
     resolve: (_key, p, s) => bandSlot(s, p.y),
     commit: (_key, slot, s) => drop(s.dragged, slot.drop),
     line: (slot) => ({ ...indent?.(slot.depth), top: slot.top }),
-    slotKey: (slot) => slot.key,
     step: (slot) => slot.step,
     label: (key) => nodeLabel(nodeOf(key)),
     chip: (key) => {
@@ -75,41 +74,6 @@ export function bandSpec({
     disabled,
     disclose: true,
     watch: [bands],
-  }
-}
-
-type BandedSnap<RS, B> = { row: RS } | { band: B }
-
-export function bandedSpec<R, RS, S, B>(
-  isRow: (id: string) => boolean,
-  rows: LineSpec<R, RS>,
-  bands: LineSpec<S, B>,
-): LineSpec<R | S, BandedSnap<RS, B>> {
-  return {
-    snap: (id, g) => {
-      if (isRow(id)) {
-        const row = rows.snap(id, g)
-        return row === null ? null : { row }
-      }
-      const band = bands.disabled ? null : bands.snap(id, g)
-      return band === null ? null : { band }
-    },
-    resolve: (id, p, s) => ('row' in s ? rows.resolve(id, p, s.row) : bands.resolve(id, p, s.band)),
-    commit: (id, slot, s) =>
-      'row' in s ? rows.commit(id, slot as R, s.row) : bands.commit(id, slot as S, s.band),
-    line: (slot, s) =>
-      ('row' in s ? rows.line?.(slot as R, s.row) : bands.line?.(slot as S, s.band)) ?? null,
-    label: (id) => (isRow(id) ? rows.label(id) : bands.label(id)),
-    glyph: (id) => (isRow(id) ? rows.glyph?.(id) : bands.glyph?.(id)),
-    chip: (id) => (isRow(id) ? rows.chip?.(id) : bands.chip?.(id)),
-    carry: rows.carry,
-    step: (slot, s) =>
-      ('row' in s ? rows.step?.(slot as R, s.row) : bands.step?.(slot as S, s.band)) ?? null,
-    disclose: (id) => {
-      const d = isRow(id) ? rows.disclose : bands.disclose
-      return typeof d === 'function' ? d(id) : d === true
-    },
-    watch: [...rows.watch, ...bands.watch],
   }
 }
 

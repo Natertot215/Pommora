@@ -11,7 +11,8 @@ import { runWindowBanner, windowBannerAdd, windowBannerShown } from './windowTab
 import { pageMoveContext, runPageAction } from '../Menus/pageMenuActions'
 import { useExitPresence } from '@pommora/uix/Animations/useExitPresence'
 import { useHeld } from '@pommora/uix/Animations/useExitPresence'
-import { isWindowTarget, TAB_FAMILY } from '@pommora/core/Navigation/navRef'
+import { isWindowTarget } from '@pommora/core/Navigation/navRef'
+import { TAB_FAMILY } from '@pommora/core/Navigation/tabRows'
 import { useSession } from '../../Session/store'
 import type { WindowTab } from './windowTabs'
 import {

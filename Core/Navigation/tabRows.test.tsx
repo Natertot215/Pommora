@@ -6,7 +6,8 @@ import { carries, DragGroup, SortableZone, useDragItem } from '@pommora/uix/Inte
 import { DEFAULT_FEEL } from '@pommora/uix/Animations/feel'
 import { SETTLE_FALLBACK } from '@pommora/uix/Interactions/shared'
 import { firePointer, stubPointerCapture, stubRect } from '@pommora/uix/Testing/pointerHarness'
-import { isWindowTarget, type SelectTarget, TAB_FAMILY, type TabTarget } from './navRef'
+import { isWindowTarget, type SelectTarget, type TabTarget } from './navRef'
+import { TAB_FAMILY } from './tabRows'
 import { TabStripZone, useTabClose } from './tabRows'
 ;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
 stubPointerCapture()

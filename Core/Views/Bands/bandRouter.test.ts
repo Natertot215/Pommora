@@ -4,7 +4,7 @@ import type { SetNode } from '@pommora/core/Nexus/tree'
 import type { PropertyDefinition } from '@pommora/core/Properties/properties'
 import type { SavedView } from '@pommora/core/Views/views'
 import { type BandScope, type BucketRef, routeBandDrop, runBandEffect } from './bandRouter'
-import { setIndexOf } from './setIndex'
+import { setIndexOf } from '../Pipeline/setIndex'
 import { groupPlan } from '../Pipeline/group'
 
 const set = (id: string, path: string, sets: SetNode[] = []): SetNode => ({

@@ -54,17 +54,11 @@ import {
   subGroupKey,
 } from '../Pipeline/group'
 import { NUMERIC_FORMATS } from '../../Properties/formatValue'
-import {
-  bandModelOf,
-  dateLabeller,
-  headContextOf,
-  nodeLabel,
-  springsInto,
-} from '../Bands/bandModel'
+import { bandModelOf, dateLabeller, nodeLabel, springsInto } from '../Bands/bandModel'
 import { type BandDrop, type BandRef, dropBand } from '../Bands/bandRouter'
 import { bandSpec } from '../Bands/GroupBand'
-import { setIndexOf } from '../Bands/setIndex'
-import { dropIO, usePainted } from '../Host/pendingView'
+import { dropIO } from '../Host/pendingView'
+import { useBandHeads } from '../Host/useBandHeads'
 import { EntityIcon } from '../../Assets/EntityIcon'
 import { cx } from '@pommora/uix/Utilities/cx'
 import { useSetting } from '../../Session/store'
@@ -365,9 +359,7 @@ function LocationHierarchy({
 } & HideControls): React.JSX.Element {
   const hideChevrons = useSetting('hideChevrons')
   const expanded = useDisclosureSet()
-  const nexus = useNexusForms()
-  const painted = usePainted(source)
-  const sets = setIndexOf(painted)
+  const { painted, sets, heads } = useBandHeads(source, sub, schema, view)
 
   const subChips = useMemo(() => {
     if (!sub || !subDef) return []
@@ -397,8 +389,8 @@ function LocationHierarchy({
             : walk(id),
         }),
       )
-    return bandModelOf(walk(null), headContextOf(painted, sets, sub, schema, view, nexus))
-  }, [painted, sets, plan, sub, subDef, subChips, schema, view, nexus])
+    return bandModelOf(walk(null), heads)
+  }, [heads, sets, plan, subDef, subChips, view])
   const collapsed = useMemo(
     () => new Set(sets.preorder.filter((id) => !expanded.has(id))),
     [sets, expanded],

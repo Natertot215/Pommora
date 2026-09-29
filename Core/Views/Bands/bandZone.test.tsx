@@ -11,7 +11,7 @@ import { mountEachTest, settle } from '../../Testing/viewHarness'
 import { type BandView, GroupBand, bandSpec } from './GroupBand'
 import { type BandModel, bandModelOf, headContextOf } from './bandModel'
 import type { BandDrop } from './bandRouter'
-import { setIndexOf } from './setIndex'
+import { setIndexOf } from '../Pipeline/setIndex'
 
 const setNode = (id: string, sets: SetNode[] = []): SetNode =>
   ({ kind: 'set', id, title: id, path: `Col/${id}`, sets, pages: [] }) as unknown as SetNode
@@ -41,10 +41,7 @@ const leaf = (key: string, children?: ResolvedGroup[]): ResolvedGroup => ({
 const modelOf = (groups: ResolvedGroup[]): BandModel =>
   bandModelOf(
     groups,
-    headContextOf(source, setIndexOf(source), undefined, [], view, {
-      dateFormat: 'full',
-      clock: 'twelveHour',
-    }),
+    headContextOf(source, setIndexOf(source), undefined, [], view, () => ({}) as never),
   )
 const BANDS = modelOf([leaf('A', [leaf('A1')]), leaf('B')])
 

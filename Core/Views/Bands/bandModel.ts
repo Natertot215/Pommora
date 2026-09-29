@@ -21,8 +21,7 @@ import {
   bucketValueAt,
   type SetRef,
 } from './bandRouter'
-import type { SetIndex } from './setIndex'
-import { type NexusForms, styleFor } from '../Host/useColumnStyles'
+import type { SetIndex } from '../Pipeline/setIndex'
 
 // ── Nodes ───────────────────────────────────────────────────────────────────
 
@@ -62,13 +61,13 @@ export function headContextOf(
   grouping: SubGroupConfig | undefined,
   schema: PropertyDefinition[],
   view: SavedView,
-  nexus: NexusForms,
+  styleOf: (columnId: string) => ColumnStyle,
 ): HeadContext {
   const def = grouping && schema.find((d) => d.id === grouping.property_id)
   const date =
     grouping &&
     def?.type === 'dateTime' &&
-    dateLabeller(view, grouping, styleFor(grouping.property_id, schema, view, nexus).date_format)
+    dateLabeller(view, grouping, styleOf(grouping.property_id).date_format)
   const icon = asRenderableIcon(def?.icon)
   return {
     sets,
@@ -187,7 +186,6 @@ export function shownHeads(nodes: readonly BandNode[], collapsed: ReadonlySet<st
 // ── The slot model ──────────────────────────────────────────────────────────
 
 export type BandSlot = {
-  key: string
   drop: BandDrop
   top: number
   depth: number
@@ -269,7 +267,7 @@ export function bandSnap(
           : drop.beforeKey === null
             ? { part: 'after' as const, id: last.get(drop.parentKey) ?? '' }
             : { part: 'before' as const, id: drop.beforeKey }
-      slots.set(key, still ? null : { key, drop, top: top(), depth, step })
+      slots.set(key, still ? null : { drop, top: top(), depth, step })
     }
     return slots.get(key) ?? null
   }

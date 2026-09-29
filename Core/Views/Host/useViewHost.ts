@@ -17,8 +17,7 @@ import { type PickTarget, syntheticContextDef } from '../../Properties/Pickers/P
 import { declaredType, resolveFieldValue } from '../../Properties/value'
 import { buildValueContext } from '../../Properties/valueContext'
 import { hideShown, unhide } from '../visibilityModel'
-import { bandModelOf, headContextOf } from '../Bands/bandModel'
-import { setIndexOf } from '../Bands/setIndex'
+import { bandModelOf } from '../Bands/bandModel'
 import { NO_SCHEMA, resolveContainerSchema } from '../Pipeline/pickView'
 import {
   bucketGroupingOf,
@@ -32,10 +31,10 @@ import { searchGroups } from '../Pipeline/search'
 import { foldKey } from '../../Paths/caseFold'
 import { resolvedSortCount } from '../Pipeline/sort'
 import { useActiveView } from './useActiveView'
-import { usePainted } from './pendingView'
+import { useBandHeads } from './useBandHeads'
 import { patchOverride } from '../../Properties/valueOverride'
 import { useContainerValues } from './useContainerValues'
-import { pickedStyle, styleFor, useNexusForms } from './useColumnStyles'
+import { pickedStyle, styleFor } from './useColumnStyles'
 import type { ViewPatch } from '@pommora/core/Views/views'
 import { groupKeyToValue, reassignable, reassignTarget } from '../reassign'
 
@@ -56,7 +55,6 @@ export function useViewHost(source: CollectionNode | SetNode, nests: boolean) {
   const searching = needle !== ''
 
   const { values, effectiveValues, setValueOverride } = useContainerValues(source.path)
-  const painted = usePainted(source)
 
   const schema = useMemo(
     () => (tree ? resolveContainerSchema(tree, source) : NO_SCHEMA),
@@ -64,7 +62,6 @@ export function useViewHost(source: CollectionNode | SetNode, nests: boolean) {
   )
   const view = useActiveView(source, schema)
 
-  const nexus = useNexusForms()
   const collapsed = useMemo(() => new Set(view.collapsed_groups ?? []), [view.collapsed_groups])
 
   const plan = useMemo(() => groupPlan(view, schema, nests), [view, schema, nests])
@@ -72,13 +69,13 @@ export function useViewHost(source: CollectionNode | SetNode, nests: boolean) {
   const pageOrder = pageOrderOf(plan, view, sortKeys)
   const bucketGroup = bucketGroupingOf(plan)
   const groupPropId = bucketGroup?.property_id
+  const { painted, sets, nexus, heads } = useBandHeads(source, bucketGroup, schema, view)
   const groupPropType = groupPropId ? declaredType(groupPropId, schema) : undefined
   const canReassign = reassignable(groupPropType)
   const canRelocate = plan.kind === 'sets' && plan.sub === undefined
   const manualOrder = pageOrder === 'location' ? undefined : view.manual_order
   const dragDisabled = searching || sortKeys >= 2
   const crossBand = !dragDisabled && (canReassign || canRelocate)
-  const sets = setIndexOf(painted)
 
   const contextIds = contextIdsOf(tree)
   const {
@@ -117,10 +114,6 @@ export function useViewHost(source: CollectionNode | SetNode, nests: boolean) {
   const ctx = useMemo(
     () => (identity ? buildValueContext(identity, schema, assetMap) : null),
     [identity, schema, assetMap],
-  )
-  const heads = useMemo(
-    () => headContextOf(painted, sets, bucketGroup, schema, view, nexus),
-    [painted, sets, bucketGroup, schema, view, nexus],
   )
   const bands = useMemo(() => bandModelOf(groups, heads), [groups, heads])
   const { rowById, rowBand, paintOrder } = useMemo(() => {

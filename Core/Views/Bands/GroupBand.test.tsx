@@ -4,17 +4,17 @@ import { act } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
 import type { ReactNode } from 'react'
 import type { PropertyDefinition } from '@pommora/core/Properties/properties'
-import type { DateFormat } from '@pommora/core/Properties/columnStyles'
+import type { ColumnStyle } from '@pommora/core/Properties/columnStyles'
 import type { CollectionNode, SetNode } from '@pommora/core/Nexus/tree'
 import type { ResolvedGroup } from '@pommora/core/Views/viewRow'
 import type { SavedView, SubGroupConfig } from '@pommora/core/Views/views'
-import { carries, type Family, type LineSpec } from '@pommora/uix/Interactions/drag'
+import { groupedLine, type LineSpec } from '@pommora/uix/Interactions/drag'
 import { type Geometry, laneSlot, type Row } from '@pommora/uix/Interactions/reorderModel'
 import { ROW_END, rowLine, rowSnap } from '../Table/rowInsertion'
 import { mountEachTest } from '../../Testing/viewHarness'
-import { BandGlyph, bandSpec, GroupBand, bandedSpec } from './GroupBand'
+import { BandGlyph, bandSpec, GroupBand } from './GroupBand'
 import { bandModelOf, headContextOf } from './bandModel'
-import { setIndexOf } from './setIndex'
+import { setIndexOf } from '../Pipeline/setIndex'
 
 const schema: PropertyDefinition[] = [
   {
@@ -63,8 +63,15 @@ const grouping = (property_id: string, extra: Partial<SubGroupConfig> = {}): Sub
   order_mode: 'configured',
   ...extra,
 })
-const heads = (sub?: SubGroupConfig, dateFormat: DateFormat = 'full') =>
-  headContextOf(source, setIndexOf(source), sub, schema, view, { dateFormat, clock: 'twelveHour' })
+const heads = (sub?: SubGroupConfig, date_format: ColumnStyle['date_format'] = 'full') =>
+  headContextOf(
+    source,
+    setIndexOf(source),
+    sub,
+    schema,
+    view,
+    () => ({ date_format }) as ColumnStyle,
+  )
 const group = (kind: 'set' | 'tail' | 'bucket', key: string, value = key): ResolvedGroup =>
   kind === 'bucket' ? { key, kind, value, items: [] } : { key, kind, items: [] }
 const nodeOf = (g: ResolvedGroup, h: ReturnType<typeof heads>) => {
@@ -163,81 +170,48 @@ describe('GroupBand', () => {
   })
 })
 
-describe('bandedSpec', () => {
-  const geometry: Geometry = { rows: [], groups: new Map(), bottom: 0 }
-  const rowsSpec = (over: Partial<LineSpec<string, string>> = {}): LineSpec<string, string> => ({
+describe('band and row lines grouped in one zone', () => {
+  const rowsSpec = (): LineSpec<string, string> => ({
     snap: () => 'row-snap',
     resolve: () => 'row-slot',
     commit: vi.fn(),
     label: () => 'row',
     watch: [],
-    ...over,
   })
-  const bandsSpec = (over: Partial<LineSpec<string, string>> = {}): LineSpec<string, string> => ({
+  const bandsSpec = (): LineSpec<string, string> => ({
     snap: () => 'band-snap',
     resolve: () => 'band-slot',
     commit: vi.fn(),
     label: () => 'band',
     watch: [],
-    ...over,
   })
   const isRow = (id: string): boolean => id.startsWith('r')
 
-  it('a band key dispatches to the band spec', () => {
-    const bands = bandsSpec()
-    const spec = bandedSpec(isRow, rowsSpec(), bands)
-    const snap = spec.snap('sA', geometry)
-    expect(snap).toEqual({ band: 'band-snap' })
-    expect(spec.resolve('sA', { x: 0, y: 0 }, snap as never)).toBe('band-slot')
-    spec.commit('sA', 'band-slot' as never, snap as never)
-    expect(bands.commit).toHaveBeenCalledWith('sA', 'band-slot', 'band-snap')
-    expect(spec.label('sA')).toBe('band')
-  })
-
-  it('a row key dispatches to the row spec', () => {
-    const rows = rowsSpec()
-    const spec = bandedSpec(isRow, rows, bandsSpec())
-    const snap = spec.snap('r1', geometry)
-    expect(snap).toEqual({ row: 'row-snap' })
-    spec.commit('r1', 'row-slot' as never, snap as never)
-    expect(rows.commit).toHaveBeenCalledWith('r1', 'row-slot', 'row-snap')
-    expect(spec.label('r1')).toBe('row')
-  })
-
-  it('each kind names its own keyboard step', () => {
-    const into = { part: 'into', id: 'sA' } as const
-    const after = { part: 'after', id: 'r2' } as const
-    const spec = bandedSpec(isRow, rowsSpec({ step: () => after }), bandsSpec({ step: () => into }))
-    expect(spec.step?.('row-slot', { row: 'row-snap' })).toBe(after)
-    expect(spec.step?.('band-slot', { band: 'band-snap' })).toBe(into)
-  })
-
-  it('a row whose spec is locked resolves null while its carry still yields the page', () => {
-    const family: Family<string> = {
-      id: 'tabs',
-      to: () => true,
-    } as unknown as Family<string>
-    const carry = [carries(family, vi.fn())]
-    const rows = rowsSpec({ snap: () => null, carry })
-    const spec = bandedSpec(isRow, rows, bandsSpec())
-    expect(spec.snap('r1', geometry)).toBeNull()
-    expect(spec.carry).toBe(carry)
-  })
-
-  it('a disabled band spec snaps nothing', () => {
-    const spec = bandedSpec(isRow, rowsSpec(), bandsSpec({ disabled: true }))
-    expect(spec.snap('sA', geometry)).toBeNull()
-  })
-
-  it('disclose answers per dragged kind', () => {
-    const disclose = vi.fn(() => true)
-    const spec = bandedSpec(isRow, rowsSpec({ disclose: false }), bandsSpec({ disclose }))
-    const answer = spec.disclose as (id: string) => boolean
-    expect(answer('r1')).toBe(false)
-    expect(answer('sA')).toBe(true)
-    expect(disclose).toHaveBeenCalledWith('sA')
-    const across = bandedSpec(isRow, rowsSpec({ disclose: (id) => id === 'r1' }), bandsSpec())
-    expect((across.disclose as (id: string) => boolean)('r1')).toBe(true)
+  it('a band resolves one slot object per slot, so the engine compares its slots by identity', () => {
+    const h = heads(grouping('prop_status'))
+    const bands = bandModelOf(
+      ['a', 'b', 'c'].map((v) => group('bucket', v)),
+      h,
+    )
+    const head = (id: string, top: number): Row => ({
+      id,
+      top,
+      bottom: top + 20,
+      mid: top + 10,
+      left: 0,
+      right: 200,
+    })
+    const g: Geometry = {
+      rows: [head('a', 0), head('b', 30), head('c', 60)],
+      groups: new Map(),
+      bottom: 90,
+    }
+    const band = bandSpec({ bands, collapsed: new Set(), nests: false, drop: vi.fn() })
+    const spec = groupedLine(isRow, rowsSpec(), band)
+    const snap = spec.snap('a', g)!
+    const first = spec.resolve('a', { x: 0, y: 44 }, snap)
+    expect(first).not.toBeNull()
+    expect(spec.resolve('a', { x: 0, y: 47 }, snap)).toBe(first)
   })
 
   it("a band head's lower half targets the start of the band below", () => {
@@ -267,7 +241,7 @@ describe('bandedSpec', () => {
       label: () => 'row',
       watch: [bandOf],
     }
-    const spec = bandedSpec(isRow, rows, bandsSpec())
+    const spec = groupedLine(isRow, rows, bandsSpec())
     const snap = spec.snap('r3', g)!
     expect(spec.resolve('r3', { x: 0, y: 36 }, snap)).toMatchObject({ lane: 'a', before: null })
     expect(spec.resolve('r3', { x: 0, y: 44 }, snap)).toMatchObject({

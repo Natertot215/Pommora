@@ -7,7 +7,7 @@ import { nextOrder } from '@pommora/uix/Utilities/moveItem'
 import type { OrderRequest } from '../../Nexus/treePatch'
 import { sameIds } from '../creationOrder'
 import { bucketGroupingOf, type GroupPlan, liveBucketOrder, setOrderOf } from '../Pipeline/group'
-import type { SetIndex } from './setIndex'
+import type { SetIndex } from '../Pipeline/setIndex'
 
 export type SetRef = { kind: 'set'; key: string; depth: number; parentKey: string | null }
 export type BucketRef = {

@@ -7,6 +7,7 @@ import {
   type Placement,
   settingOf,
 } from '@pommora/core/Settings/personalization'
+import { nextOrder } from '@pommora/uix/Utilities/moveItem'
 import { containerAt, pageIdsIn } from '../Nexus/treePatch'
 
 export const sameIds = (a: string[], b: string[]): boolean =>
@@ -20,11 +21,16 @@ export function spliceBeside(
   item: string,
   where: Slot,
 ): string[] {
-  if (where === 'first') return [item, ...ids]
-  const at = where === 'last' || anchorId === null ? -1 : ids.indexOf(anchorId)
-  if (at === -1) return [...ids, item]
-  const insert = where === 'below' ? at + 1 : at
-  return [...ids.slice(0, insert), item, ...ids.slice(insert)]
+  const at = anchorId === null ? -1 : ids.indexOf(anchorId)
+  const before =
+    where === 'first'
+      ? (ids[0] ?? null)
+      : where === 'above'
+        ? anchorId
+        : where === 'below' && at >= 0
+          ? (ids[at + 1] ?? null)
+          : null
+  return nextOrder(ids, item, before)
 }
 
 function mergedRanking(
