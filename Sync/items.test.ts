@@ -42,6 +42,18 @@ async function pull(cursor: number, waitMs?: number): Promise<Wire.PullReply> {
 
 const only = (reply: Wire.StoreReply): Wire.StoreOutcome => reply.outcomes[0]
 
+const at = (reply: { reply: Wire.StoreReply }): number => {
+  const outcome = only(reply.reply)
+  if (!outcome.ok) throw new Error(`${outcome.path} was refused`)
+  return outcome.version
+}
+
+const write = (path: string, base: number | null, sha256 = DIGEST) =>
+  push([{ kind: 'write', base, record: { ...record(path), sha256 } }])
+
+const rename = (from: string, path: string, base: number) =>
+  push([{ kind: 'rename', base, from, path }])
+
 const countChanges = (): number =>
   withDb(
     hub.dataDir,
@@ -286,16 +298,6 @@ describe('the hub feed', () => {
   })
 
   it('answers only heads that fold to what the full log folds to', async () => {
-    const at = (reply: { reply: Wire.StoreReply }): number => {
-      const outcome = only(reply.reply)
-      if (!outcome.ok) throw new Error(`${outcome.path} was refused`)
-      return outcome.version
-    }
-    const write = (path: string, base: number | null) =>
-      push([{ kind: 'write', base, record: record(path) }])
-    const rename = (from: string, path: string, base: number) =>
-      push([{ kind: 'rename', base, from, path }])
-
     await write('Heads/a.md', at(await write('Heads/a.md', null)))
     await push([{ kind: 'delete', base: at(await write('Heads/b.md', null)), path: 'Heads/b.md' }])
     at(await rename('Heads/c.md', 'Heads/d.md', at(await write('Heads/c.md', null))))
@@ -337,54 +339,64 @@ describe('the hub feed', () => {
 })
 
 describe('the hub retention sweep', () => {
-  const orphanOld = Buffer.from('old orphan')
-  const orphanNew = Buffer.from('new orphan')
-  const captured = Buffer.from('captured bytes')
+  const bytes = {
+    live: Buffer.from('live head'),
+    superseded: Buffer.from('superseded version'),
+    renamedOnce: Buffer.from('renamed once'),
+    renamedTwice: Buffer.from('renamed twice'),
+    orphanOld: Buffer.from('old orphan'),
+    orphanNew: Buffer.from('new orphan'),
+    captured: Buffer.from('captured bytes'),
+  }
   const ancient = Date.now() - 40 * 86_400_000
 
-  const digests = {
-    head: DIGEST,
-    orphanOld: sha256Hex(orphanOld),
-    orphanNew: sha256Hex(orphanNew),
-    captured: sha256Hex(captured),
+  const held = (): Record<keyof typeof bytes, boolean> => {
+    const rows = withDb(hub.dataDir, (db) =>
+      (
+        db.prepare('SELECT sha256 FROM blob WHERE nexus_id = ?').all(NEXUS) as { sha256: string }[]
+      ).map((r) => r.sha256),
+    )
+    const kept = new Set(rows)
+    return Object.fromEntries(
+      Object.entries(bytes).map(([name, b]) => [name, kept.has(sha256Hex(b))]),
+    ) as Record<keyof typeof bytes, boolean>
   }
 
-  const held = (): string[] =>
-    withDb(hub.dataDir, (db) =>
-      (db.prepare('SELECT sha256 FROM blob WHERE nexus_id = ?').all(NEXUS) as { sha256: string }[])
-        .map((r) => r.sha256)
-        .sort(),
-    )
-
-  it('sweeps an old orphaned blob and keeps the head, a fresh orphan, and a captured blob', async () => {
-    await owner.put(NEXUS, orphanOld)
-    await owner.put(NEXUS, orphanNew)
-    await owner.put(NEXUS, captured)
+  it('sweeps old orphaned and superseded blobs and keeps live, renamed, fresh, and captured ones', async () => {
+    for (const b of Object.values(bytes)) await owner.put(NEXUS, b)
     await push([
-      { kind: 'capture', record: { ...record('Notes/kept.md'), sha256: digests.captured } },
+      {
+        kind: 'capture',
+        record: { ...record('Sweep/kept.md'), sha256: sha256Hex(bytes.captured) },
+      },
     ])
+    const replaced = at(await write('Sweep/live.md', null, sha256Hex(bytes.superseded)))
+    at(await write('Sweep/live.md', replaced, sha256Hex(bytes.live)))
+    const once = at(await write('Sweep/once.md', null, sha256Hex(bytes.renamedOnce)))
+    at(await rename('Sweep/once.md', 'Sweep/once-moved.md', once))
+    const twice = at(await write('Sweep/twice.md', null, sha256Hex(bytes.renamedTwice)))
+    const moved = at(await rename('Sweep/twice.md', 'Sweep/twice-moved.md', twice))
+    at(await rename('Sweep/twice-moved.md', 'Sweep/twice-again.md', moved))
     withDb(hub.dataDir, (db) => {
-      db.prepare('UPDATE blob SET at_ms = ? WHERE nexus_id = ? AND sha256 IN (?, ?)').run(
+      db.prepare('UPDATE blob SET at_ms = ? WHERE nexus_id = ? AND sha256 != ?').run(
         ancient,
         NEXUS,
-        digests.orphanOld,
-        digests.captured,
-      )
-      db.prepare('UPDATE blob SET at_ms = ? WHERE nexus_id = ? AND sha256 = ?').run(
-        ancient,
-        NEXUS,
-        digests.head,
+        sha256Hex(bytes.orphanNew),
       )
     })
-    expect(held()).toContain(digests.orphanOld)
+    expect(Object.values(held()).every(Boolean)).toBe(true)
 
     await hub.close()
     hub = await boot({ dataDir: hub.dataDir })
 
-    const after = held()
-    expect(after).not.toContain(digests.orphanOld)
-    expect(after).toContain(digests.head)
-    expect(after).toContain(digests.orphanNew)
-    expect(after).toContain(digests.captured)
+    expect(held()).toEqual({
+      live: true,
+      superseded: false,
+      renamedOnce: true,
+      renamedTwice: true,
+      orphanOld: false,
+      orphanNew: true,
+      captured: true,
+    })
   })
 })
