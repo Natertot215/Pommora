@@ -21,9 +21,8 @@ import { readTileDocAt, writeTileDocAt } from './tileDoc'
 import { newId } from '../Nexus/ids'
 import { mapViews, mintDefaultView, mintViewId } from '../Views/views'
 import { readStoredView } from '../Views/viewsFile'
-import { resolveContainerSchema } from '../Views/Pipeline/pickView'
 import type { Json } from '../Files/stableJson'
-import { findContainerWhere } from '../Nexus/treePatch'
+import { containerSchema, findContainerWhere } from '../Nexus/treePatch'
 import { resolveUnderRoot } from '../Paths/pathSafety'
 import { atomicWriteFile, pathExists, rewritePageSerialized } from '../Files/atomicWrite'
 import { utf8 } from '../Files/utf8'
@@ -209,7 +208,7 @@ async function convertedEntry(root: string, pick: unknown): Promise<Result<Json>
     const folder = await resolveUnderRoot(root, source.path)
     if (!folder.ok) return folder
     config = await readStoredView(folder.value, source.kind, value.view_id)
-  } else config = mintDefaultView(resolveContainerSchema(tree, source))
+  } else config = mintDefaultView(containerSchema(tree, source))
   if (!config) return fail('not-found', 'View not found.')
   const views = [{ source_id: source.id, config: { ...config, id: mintViewId() } }]
   return ok({ type: 'view', views, active: 0 })

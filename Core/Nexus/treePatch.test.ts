@@ -3,7 +3,11 @@ import { ASSETS_DIR_REL } from '../Paths/nexusPaths'
 import type { CollectionNode, NexusTree } from './tree'
 import { NEW_SLOT } from './mutateRequest'
 import {
+  containerSchema,
+  containerTrailWhere,
   insertCreatedInTree,
+  NO_SCHEMA,
+  owningCollection,
   patchContextGroupsInTree,
   patchNodeInTree,
   relocateNodeInTree,
@@ -494,5 +498,34 @@ describe('root-level rename', () => {
     expect(t?.collections[0].path).toBe('Diary')
     expect(t?.collections[0].title).toBe('Diary')
     expect(t?.collections[0].pages[0].path).toBe('Diary/A.md')
+  })
+})
+
+describe('owningCollection', () => {
+  it('names the Collection a path starts in, a Collection its own owner', () => {
+    const t = tree()
+    for (const path of ['Notes', 'Notes/A.md', 'Notes/Sub', 'Notes/Sub/B.md'])
+      expect(owningCollection(t, path)).toBe(t.collections[0])
+    expect(owningCollection(t, 'Tasks/T.md')).toBeUndefined()
+    expect(owningCollection(t, '.nexus/contexts/Areas/Home')).toBeUndefined()
+    expect(owningCollection(t, 'Note')).toBeUndefined()
+    expect(owningCollection(t, t.collections[0].sets[0])).toBe(t.collections[0])
+    const detached = { ...t.collections[1] }
+    expect(owningCollection(null, detached)).toBe(detached)
+  })
+
+  it('hands an unowned path the one empty schema', () => {
+    expect(containerSchema(tree(), 'Tasks/T.md')).toBe(NO_SCHEMA)
+    expect(containerSchema(null, 'Notes/A.md')).toBe(NO_SCHEMA)
+  })
+})
+
+describe('containerTrailWhere', () => {
+  it('returns the matched container under every container above it', () => {
+    const t = tree()
+    const trail = containerTrailWhere(t, (n) => n.id === 's1')
+    expect(trail?.map((n) => n.id)).toEqual(['c1', 's1'])
+    expect(containerTrailWhere(t, (n) => n.id === 'c2')?.map((n) => n.id)).toEqual(['c2'])
+    expect(containerTrailWhere(t, () => false)).toBeNull()
   })
 })

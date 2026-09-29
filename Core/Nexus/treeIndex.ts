@@ -306,30 +306,9 @@ export function findSet(tree: NexusTree | null, id: string): SetNode | undefined
   return hit && hit.kind === 'set' ? hit : undefined
 }
 
-export function findCollectionForSet(
-  tree: NexusTree | null,
-  setId: string,
-): CollectionNode | undefined {
-  if (!tree) return undefined
-  const has = (sets: SetNode[] | undefined): boolean => {
-    for (const set of sets ?? []) {
-      if (set.id === setId) return true
-      if (has(set.sets)) return true
-    }
-    return false
-  }
-  return tree.collections.find((c) => has(c.sets))
-}
-
 /** Tile surfaces run tight tile gutters instead of the content inset. Drives `is-surface`. */
 export function isSurfaceKind(kind: BannerOwnerKind): boolean {
   return kind === 'homepage' || kind === 'space'
-}
-
-/** Tested, not trusted: a reparent plus a Back-nav replay can surface either depth as a `set` selection. */
-export function isDepth1Set(tree: NexusTree | null, setId: string): boolean {
-  const col = findCollectionForSet(tree, setId)
-  return !!col && col.sets.some((s) => s.id === setId)
 }
 
 export function spaceLinksOf(tree: NexusTree): ReadonlyMap<string, Record<string, string[]>> {

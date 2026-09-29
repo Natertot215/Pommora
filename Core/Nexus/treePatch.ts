@@ -188,25 +188,51 @@ export function relocateNodeInTree(
   return repointUnreadable(next, path, newPath)
 }
 
-export function findContainerWhere(
-  tree: NexusTree,
-  match: (node: CollectionNode | SetNode) => boolean,
-): CollectionNode | SetNode | null {
-  const inSets = (sets: SetNode[] | undefined): SetNode | null => {
-    for (const s of sets ?? []) {
-      if (match(s)) return s
-      const deep = inSets(s.sets)
-      if (deep) return deep
+type ContainerMatch = (node: CollectionNode | SetNode) => boolean
+
+function trailIn(
+  containers: (CollectionNode | SetNode)[],
+  match: ContainerMatch,
+): (CollectionNode | SetNode)[] | null {
+  for (const c of containers) {
+    if (match(c)) return [c]
+    const deep = c.sets?.length ? trailIn(c.sets, match) : null
+    if (deep) {
+      deep.unshift(c)
+      return deep
     }
-    return null
-  }
-  for (const c of tree.collections) {
-    if (match(c)) return c
-    const hit = inSets(c.sets)
-    if (hit) return hit
   }
   return null
 }
+
+/** The matched container and every container above it, outermost first. */
+export const containerTrailWhere = (
+  tree: NexusTree,
+  match: ContainerMatch,
+): (CollectionNode | SetNode)[] | null => trailIn(tree.collections, match)
+
+export const findContainerWhere = (
+  tree: NexusTree,
+  match: ContainerMatch,
+): CollectionNode | SetNode | null => containerTrailWhere(tree, match)?.at(-1) ?? null
+
+/** A Collection owns itself; anything else is owned by the Collection its path starts in, since Collections sit only at the Nexus root. */
+export function owningCollection(
+  tree: NexusTree | null,
+  of: string | CollectionNode | SetNode,
+): CollectionNode | undefined {
+  if (typeof of !== 'string' && of.kind === 'collection') return of
+  const top = (typeof of === 'string' ? of : of.path).split('/', 1)[0]
+  return tree?.collections.find((c) => c.path === top)
+}
+
+export const NO_SCHEMA: PropertyDefinition[] = []
+
+/** A Set or page takes its Collection's schema; the one empty schema when nothing owns it. */
+export const containerSchema = (
+  tree: NexusTree | null,
+  of: string | CollectionNode | SetNode,
+): PropertyDefinition[] => owningCollection(tree, of)?.properties ?? NO_SCHEMA
 
 export const containerAt = (tree: NexusTree, rel: string): CollectionNode | SetNode | null =>
   findContainerWhere(tree, (n) => n.path === rel)

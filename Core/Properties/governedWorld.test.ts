@@ -72,11 +72,13 @@ describe('collectionFolderOf', () => {
     if (!inner.ok) throw new Error('setup')
     const page = await createPage(inner.value.path, 'Deep', { body: 'b' })
     if (!page.ok) throw new Error('setup')
-    const folders = await collectionFolders(root)
-    expect(collectionFolderOf(folders, page.value.path)).toBe(notes)
-    expect(collectionFolderOf(folders, join(root, 'Tasks', 'T.md'))).toBeNull()
+    expect(await collectionFolderOf(root, page.value.path)).toBe(notes)
+    expect(await collectionFolderOf(root, join(root, 'Tasks', 'T.md'))).toBeNull()
     expect(
-      collectionFolderOf(folders, join(root, '.nexus', 'contexts', 'Areas', 'Home', '_space.json')),
+      await collectionFolderOf(
+        root,
+        join(root, '.nexus', 'contexts', 'Areas', 'Home', '_space.json'),
+      ),
     ).toBeNull()
   })
 

@@ -9,7 +9,8 @@ import { NavTrail } from '@pommora/uix/Elements/NavTrail'
 import { trailOf } from '../../Nexus/treeIndex'
 import { ICON } from '@pommora/uix/Menus/frames.css'
 import { useSession } from '../../Session/store'
-import { findCollection, findSet, findCollectionForSet } from '../../Nexus/treeIndex'
+import { findCollection, findSet } from '../../Nexus/treeIndex'
+import { owningCollection } from '../../Nexus/treePatch'
 import { viewGlyph } from '../viewIcon'
 import { PropertyFrame } from '../../Properties/Schema/PropertyFrame'
 import { VisibilityFrame } from './VisibilityFrame'
@@ -63,8 +64,7 @@ export function SettingsFrame(): React.JSX.Element | null {
         ? findSet(tree, selection.id)
         : undefined
   const node = scope?.source ?? selectionNode
-  const schemaCollection =
-    node && (node.kind === 'collection' ? node : findCollectionForSet(tree, node.id))
+  const schemaCollection = node && owningCollection(tree, node)
   if (!node || !schemaCollection) return null
   return <ContainerSettings node={node} schemaCollection={schemaCollection} />
 }

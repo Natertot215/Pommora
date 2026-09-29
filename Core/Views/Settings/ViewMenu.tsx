@@ -2,7 +2,8 @@ import { reportRefusal } from '@pommora/core/Interface/Notifications/notificatio
 import type { CollectionNode, SetNode } from '@pommora/core/Nexus/tree'
 import { MenuDropdown } from '@pommora/uix/Menus'
 import { useSession } from '../../Session/store'
-import { findCollection, findSet, findCollectionForSet, isDepth1Set } from '../../Nexus/treeIndex'
+import { findCollection, findSet } from '../../Nexus/treeIndex'
+import { containerSchema } from '../../Nexus/treePatch'
 import { pickView } from '../Pipeline/pickView'
 import { ViewFrame } from './ViewFrame'
 import { viewGlyph } from '../viewIcon'
@@ -15,11 +16,12 @@ import { viewButtonMenuItems } from '@pommora/core/Actions/viewMenus'
 export function ViewMenu(): React.JSX.Element | null {
   const selection = useSession((st) => st.selection)
   const tree = useSession((st) => st.tree)
+  const set = selection.kind === 'set' ? findSet(tree, selection.id) : undefined
   const node =
     selection.kind === 'collection'
       ? findCollection(tree, selection.id)
-      : selection.kind === 'set' && isDepth1Set(tree, selection.id)
-        ? findSet(tree, selection.id)
+      : set?.path.split('/').length === 2
+        ? set
         : undefined
   if (!node) return null
   return <ViewMenuInner key={node.id} node={node} />
@@ -29,10 +31,7 @@ function ViewMenuInner({ node }: { node: CollectionNode | SetNode }): React.JSX.
   const tree = useSession((st) => st.tree)
   const labeled = (node.viewButton ?? 'icon') === 'labeled'
 
-  const schema =
-    node.kind === 'collection'
-      ? (node.properties ?? [])
-      : (findCollectionForSet(tree, node.id)?.properties ?? [])
+  const schema = containerSchema(tree, node)
   const view = pickView(node, schema)
 
   const onContextMenu = async (e: React.MouseEvent): Promise<void> => {
