@@ -104,12 +104,12 @@ export type DisplaceSpec<T = unknown> = ZoneShared & {
 }
 
 export type LineSpec<Slot, Snap> = ZoneShared & {
-  snap(id: string, g: Geometry): Snap | null
-  resolve(id: string, p: Point, s: Snap): Slot | null
-  commit(id: string, slot: Slot, s: Snap): unknown
-  line?(slot: Slot, s: Snap): CSSProperties | null
+  snap(id: string, geometry: Geometry): Snap | null
+  resolve(id: string, point: Point, snap: Snap): Slot | null
+  commit(id: string, slot: Slot, snap: Snap): unknown
+  line?(slot: Slot, snap: Snap): CSSProperties | null
   slotKey?(slot: Slot): string
-  step?(slot: Slot, s: Snap): { part: StepPart; id: string } | null
+  step?(slot: Slot, snap: Snap): { part: StepPart; id: string } | null
   glyph?: (id: string) => ReactNode
   chip?: (id: string) => ReactNode
   watch: readonly unknown[]
@@ -123,11 +123,11 @@ type LineZoneProps<Slot, Snap> = LineSpec<Slot, Snap> & ZoneBody
 
 type AnyLine = LineSpec<unknown, unknown>
 type LinePaint = { slot: unknown; line: CSSProperties | null }
-type ZoneKind =
+type ZoneDef =
   | { kind: 'displace'; spec: DisplaceSpec }
   | { kind: 'line'; spec: AnyLine; paint: (p: LinePaint | null) => void }
-type Reg = {
-  zone: ZoneKind | null
+type ZoneEntry = {
+  def: ZoneDef | null
   els: Map<string, HTMLElement>
   groups: Map<string, HTMLElement>
   box: HTMLElement | null
@@ -136,12 +136,12 @@ type Reg = {
 type DisplaceLanding = { kind: 'displace'; zone: string; index: number }
 type LineLanding = { kind: 'line'; zone: string; slot: unknown; key: unknown; snap: unknown }
 type Landing = DisplaceLanding | LineLanding
-type LineSnap = { g: Geometry; snap: unknown; origin: Point; zoom: number; dirty: boolean }
+type LineSnap = { geometry: Geometry; snap: unknown; origin: Point; zoom: number; dirty: boolean }
 
 type Session = {
   id: string
   zone: string
-  kind: ZoneKind['kind']
+  kind: ZoneDef['kind']
   name: string
   via: 'pointer' | 'keyboard'
   phase: 'live' | 'settling'
@@ -154,7 +154,7 @@ type Session = {
   axis: Axis | undefined
   zoom: number
   index: number
-  comp: Point
+  offset: Point
   carried: ReadonlyMap<Family<unknown>, unknown>
   chain: Element[]
   home: Rect | null
@@ -233,33 +233,34 @@ function sameLanding(a: Landing | null, b: Landing | null): boolean {
   return b.kind === 'line' && a.snap === b.snap && Object.is(a.key, b.key)
 }
 
-function measureLine(r: Reg, spec: AnyLine, id: string): LineSnap | null {
-  if (!r.box) return null
-  const host = r.box.getBoundingClientRect()
-  const zoom = currentZoom(r.box)
+function measureLine(entry: ZoneEntry, spec: AnyLine, id: string): LineSnap | null {
+  if (!entry.box) return null
+  const host = entry.box.getBoundingClientRect()
+  const zoom = currentZoom(entry.box)
   const local = (key: string, el: HTMLElement): Row => {
-    const b = el.getBoundingClientRect()
-    const top = (b.top - host.top) / zoom
-    const bottom = (b.bottom - host.top) / zoom
+    const rect = el.getBoundingClientRect()
+    const top = (rect.top - host.top) / zoom
+    const bottom = (rect.bottom - host.top) / zoom
     return {
       id: key,
       top,
       bottom,
       mid: (top + bottom) / 2,
-      left: (b.left - host.left) / zoom,
-      right: (b.right - host.left) / zoom,
+      left: (rect.left - host.left) / zoom,
+      right: (rect.right - host.left) / zoom,
     }
   }
-  const rows = Array.from(r.els, ([key, el]) => local(key, el)).sort((a, b) => a.top - b.top)
-  const groups = new Map(Array.from(r.groups, ([key, el]) => [key, local(key, el)] as const))
-  const g: Geometry = { rows, groups, bottom: host.height / zoom }
-  return { g, snap: spec.snap(id, g), origin: { x: host.left, y: host.top }, zoom, dirty: false }
+  const rows = Array.from(entry.els, ([key, el]) => local(key, el)).sort((a, b) => a.top - b.top)
+  const groups = new Map(Array.from(entry.groups, ([key, el]) => [key, local(key, el)] as const))
+  const geometry: Geometry = { rows, groups, bottom: host.height / zoom }
+  const origin = { x: host.left, y: host.top }
+  return { geometry, snap: spec.snap(id, geometry), origin, zoom, dirty: false }
 }
 
 // ── Engine ──────────────────────────────────────────────────────────────────
 
 function createEngine(setChrome: (c: Chrome | null) => void): Api {
-  const zones = new Map<string, Reg>()
+  const zones = new Map<string, ZoneEntry>()
   const frozen = new Map<string, Frozen>()
   const bounds = new Map<string, Rect>()
   const clips = new Map<string, Element[]>()
@@ -269,7 +270,7 @@ function createEngine(setChrome: (c: Chrome | null) => void): Api {
   const floored = new Set<HTMLElement>()
   const spilled = new Set<HTMLElement>()
   const active = channel<Active | null>(null)
-  const slot = channel<SlotBox | null>(null)
+  const slotBox = channel<SlotBox | null>(null)
   const loose = channel<ReadonlyMap<Family<unknown>, unknown> | null>(null)
   let session: Session | null = null
   let gesture: GestureHandle | null = null
@@ -278,18 +279,18 @@ function createEngine(setChrome: (c: Chrome | null) => void): Api {
   let refocus: Active | null = null
   let disposing = false
 
-  const reg = (zoneId: string): Reg => {
-    let r = zones.get(zoneId)
-    if (!r) {
-      r = { zone: null, els: new Map(), groups: new Map(), box: null }
-      zones.set(zoneId, r)
+  const entryOf = (zoneId: string): ZoneEntry => {
+    let entry = zones.get(zoneId)
+    if (!entry) {
+      entry = { def: null, els: new Map(), groups: new Map(), box: null }
+      zones.set(zoneId, entry)
     }
-    return r
+    return entry
   }
-  const kindOf = (zoneId: string): ZoneKind | null => zones.get(zoneId)?.zone ?? null
+  const defOf = (zoneId: string): ZoneDef | null => zones.get(zoneId)?.def ?? null
   const displaceOf = (zoneId: string): DisplaceSpec | null => {
-    const k = kindOf(zoneId)
-    return k?.kind === 'displace' ? k.spec : null
+    const def = defOf(zoneId)
+    return def?.kind === 'displace' ? def.spec : null
   }
 
   // ── Admission and geometry ──
@@ -304,42 +305,42 @@ function createEngine(setChrome: (c: Chrome | null) => void): Api {
   const frozenOf = (zoneId: string): Frozen | null => {
     const held = frozen.get(zoneId)
     if (held) return held
-    const r = zones.get(zoneId)
+    const entry = zones.get(zoneId)
     const spec = displaceOf(zoneId)
-    if (!r || !spec || !session) return null
-    const f = freeze(spec.items, r.els, r.box, spec.axis, session.rect.height)
-    if (f) frozen.set(zoneId, f)
-    return f
+    if (!entry || !spec || !session) return null
+    const layout = freeze(spec.items, entry.els, entry.box, spec.axis, session.rect.height)
+    if (layout) frozen.set(zoneId, layout)
+    return layout
   }
 
-  const sizeIn = (s: Session, zoneId: string, f: Frozen): { width: number; height: number } => {
+  const sizeIn = (s: Session, zoneId: string, layout: Frozen): Pick<Box, 'width' | 'height'> => {
     if (zoneId === s.zone) return s.rect
-    const last = f.rects[f.rects.length - 1]
+    const last = layout.rects[layout.rects.length - 1]
     if (last) return last
-    const b = bounds.get(zoneId)
+    const zoneBounds = bounds.get(zoneId)
     return {
-      width: Math.min(s.rect.width, b?.width ?? Infinity),
-      height: displaceOf(zoneId)?.axis ? (b?.height ?? s.rect.height) : s.rect.height,
+      width: Math.min(s.rect.width, zoneBounds?.width ?? Infinity),
+      height: displaceOf(zoneId)?.axis ? (zoneBounds?.height ?? s.rect.height) : s.rect.height,
     }
   }
 
   const syncBounds = (target: EventTarget | null = null): void => {
-    for (const [zoneId, r] of zones) {
-      if (!r.box || r.zone?.kind !== 'displace' || !scrollMoved(target, r.box)) continue
-      const chain = clips.get(zoneId) ?? clipChain(r.box)
+    for (const [zoneId, entry] of zones) {
+      if (!entry.box || entry.def?.kind !== 'displace' || !scrollMoved(target, entry.box)) continue
+      const chain = clips.get(zoneId) ?? clipChain(entry.box)
       clips.set(zoneId, chain)
       const cut = clipOf(chain)
       cuts.set(zoneId, cut)
-      const b = intersect(r.box.getBoundingClientRect(), cut)
-      if (b) bounds.set(zoneId, b)
+      const visible = intersect(entry.box.getBoundingClientRect(), cut)
+      if (visible) bounds.set(zoneId, visible)
       else bounds.delete(zoneId)
     }
   }
 
   const floor = (s: Session, zoneId: string): void => {
-    const r = zones.get(zoneId)
-    const box = r?.box
-    if (!box || r.els.size > 0 || !admits(s, zoneId)) return
+    const entry = zones.get(zoneId)
+    const box = entry?.box
+    if (!box || entry.els.size > 0 || !admits(s, zoneId)) return
     box.style.setProperty('--drag-floor', px(s.rect.height / currentZoom(box)))
     floored.add(box)
   }
@@ -347,19 +348,19 @@ function createEngine(setChrome: (c: Chrome | null) => void): Api {
   const homeOf = (s: Session): Rect | null => {
     if (s.carried.size === 0) return null
     const box = zones.get(s.zone)?.box
-    const f = frozen.get(s.zone)
-    const r = box?.getBoundingClientRect() ?? (f ? unionOf(f) : null)
-    return r ? intersect(r, clipOf(s.chain)) : null
+    const layout = frozen.get(s.zone)
+    const rect = box?.getBoundingClientRect() ?? (layout ? unionOf(layout) : null)
+    return rect ? intersect(rect, clipOf(s.chain)) : null
   }
 
   const atHome = (s: Session, x: number, y: number): boolean => {
-    const h = s.home
-    if (!h) return true
-    if (s.axis === 'x') return y >= h.top - BREAKOUT && y <= h.top + h.height + BREAKOUT
-    const across = x >= h.left - BREAKOUT && x <= h.left + h.width + BREAKOUT
+    const home = s.home
+    if (!home) return true
+    if (s.axis === 'x') return y >= home.top - BREAKOUT && y <= home.top + home.height + BREAKOUT
+    const across = x >= home.left - BREAKOUT && x <= home.left + home.width + BREAKOUT
     if (s.axis === 'y') return across
-    if (s.kind === 'line') return across && y >= h.top && y <= h.top + h.height
-    return within(h, x, y, 0)
+    if (s.kind === 'line') return across && y >= home.top && y <= home.top + home.height
+    return within(home, x, y, 0)
   }
 
   const travel = (s: Session, x: number, y: number): Point => ({
@@ -372,14 +373,14 @@ function createEngine(setChrome: (c: Chrome | null) => void): Api {
 
   const surfaceOf = (s: Session): Element => {
     let top: Element = s.el
-    for (const r of zones.values()) if (r.box?.contains(top)) top = r.box
+    for (const entry of zones.values()) if (entry.box?.contains(top)) top = entry.box
     return top
   }
 
   const lineOf = (s: Session, spec: AnyLine): LineSnap | null => {
     if (!s.line || s.line.dirty) {
-      const r = zones.get(s.zone)
-      s.line = r ? measureLine(r, spec, s.id) : null
+      const entry = zones.get(s.zone)
+      s.line = entry ? measureLine(entry, spec, s.id) : null
     }
     return s.line
   }
@@ -398,51 +399,53 @@ function createEngine(setChrome: (c: Chrome | null) => void): Api {
 
   const paintZone = (s: Session, zoneId: string, to: number): void => {
     const spec = displaceOf(zoneId)
-    const f = frozen.get(zoneId)
-    const r = zones.get(zoneId)
-    if (!spec || !f || !r) return
+    const layout = frozen.get(zoneId)
+    const entry = zones.get(zoneId)
+    if (!spec || !layout || !entry) return
     const own = zoneId === s.zone
-    const a = own ? s.index : -1
-    const from = overs.get(zoneId) ?? a
+    const lifted = own ? s.index : -1
+    const from = overs.get(zoneId) ?? lifted
     if (from === to) return
     overs.set(zoneId, to)
-    if (!own && !spec.axis && r.box)
-      spill(r.box, to < 0 ? 0 : spillOf(f, f.ids.length + 1, s.rect.height) / f.zoom)
-    const n = f.ids.length - (own ? 1 : 0)
+    if (!own && !spec.axis && entry.box) {
+      const grown = spillOf(layout, layout.ids.length + 1, s.rect.height)
+      spill(entry.box, to < 0 ? 0 : grown / layout.zoom)
+    }
+    const count = layout.ids.length - (own ? 1 : 0)
     const lo = from < 0 ? to : to < 0 ? from : Math.min(from, to)
-    const hi = from < 0 || to < 0 ? n : Math.max(from, to)
-    const size = sizeIn(s, zoneId, f)
-    for (let k = lo; k < hi; k++) {
-      const i = own && k >= a ? k + 1 : k
-      const el = r.els.get(f.ids[i])
+    const hi = from < 0 || to < 0 ? count : Math.max(from, to)
+    const size = sizeIn(s, zoneId, layout)
+    for (let at = lo; at < hi; at++) {
+      const i = own && at >= lifted ? at + 1 : at
+      const el = entry.els.get(layout.ids[i])
       if (!el) continue
-      const at = placeItem(f, spec.axis, i, a, to, size)
-      const b = f.rects[i]
+      const { x, y } = placeItem(layout, spec.axis, i, lifted, to, size)
+      const rect = layout.rects[i]
       el.style.transition = GLIDE
       el.style.transform =
-        at.x === b.left && at.y === b.top
+        x === rect.left && y === rect.top
           ? ''
-          : translate((at.x - b.left) / f.zoom, (at.y - b.top) / f.zoom)
+          : translate((x - rect.left) / layout.zoom, (y - rect.top) / layout.zoom)
       touched.add(el)
     }
   }
 
   const placeLifted = (s: Session): void => {
-    const f = frozen.get(s.zone)
+    const layout = frozen.get(s.zone)
     const spec = displaceOf(s.zone)
-    if (!f || !spec) return
-    const L = s.landing
-    const over = L?.kind === 'displace' && L.zone === s.zone ? L.index : s.index
-    const at = slotPoint(f, spec.axis, s.index, over, s.rect)
-    const b = f.rects[s.index]
+    if (!layout || !spec) return
+    const landing = s.landing
+    const over = landing?.kind === 'displace' && landing.zone === s.zone ? landing.index : s.index
+    const { x, y } = slotPoint(layout, spec.axis, s.index, over, s.rect)
+    const rect = layout.rects[s.index]
     s.el.style.transition = GLIDE
-    s.el.style.transform = translate((at.x - b.left) / f.zoom, (at.y - b.top) / f.zoom)
+    s.el.style.transform = translate((x - rect.left) / layout.zoom, (y - rect.top) / layout.zoom)
   }
 
-  const overIn = (s: Session, zoneId: string, L: Landing | null): number => {
-    if (L?.kind === 'displace' && L.zone === zoneId) return L.index
+  const overIn = (s: Session, zoneId: string, landing: Landing | null): number => {
+    if (landing?.kind === 'displace' && landing.zone === zoneId) return landing.index
     if (zoneId !== s.zone) return -1
-    return L !== null && displaceOf(s.zone)?.release ? -1 : s.index
+    return landing !== null && displaceOf(s.zone)?.release ? -1 : s.index
   }
 
   const repaint = (s: Session, prev: Landing | null, next: Landing | null): void => {
@@ -453,23 +456,24 @@ function createEngine(setChrome: (c: Chrome | null) => void): Api {
     if (s.via === 'keyboard' && s.kind === 'displace') placeLifted(s)
   }
 
-  const paintLine = (zoneId: string, L: LineLanding | null): void => {
-    const k = kindOf(zoneId)
-    if (k?.kind !== 'line') return
-    k.paint(L ? { slot: L.slot, line: k.spec.line?.(L.slot, L.snap) ?? null } : null)
+  const paintLine = (zoneId: string, landing: LineLanding | null): void => {
+    const def = defOf(zoneId)
+    if (def?.kind !== 'line') return
+    const line = landing && (def.spec.line?.(landing.slot, landing.snap) ?? null)
+    def.paint(landing ? { slot: landing.slot, line } : null)
   }
 
-  const slotBoxOf = (s: Session, L: Landing | null): SlotBox | null => {
-    if (L?.kind !== 'displace') return null
-    const f = frozen.get(L.zone)
-    const spec = displaceOf(L.zone)
-    if (!f || !spec) return null
-    const own = L.zone === s.zone
-    const incoming = sizeIn(s, L.zone, f)
-    const size = spec.axis ? incoming : (f.rects[L.index] ?? s.rect)
-    const at = slotPoint(f, spec.axis, own ? s.index : -1, L.index, incoming)
-    const box = boxAt(at.x + f.origin.x, at.y + f.origin.y, size.width, size.height)
-    return { zone: L.zone, own, box, clip: cuts.get(L.zone) ?? null }
+  const slotBoxOf = (s: Session, landing: Landing | null): SlotBox | null => {
+    if (landing?.kind !== 'displace') return null
+    const layout = frozen.get(landing.zone)
+    const spec = displaceOf(landing.zone)
+    if (!layout || !spec) return null
+    const own = landing.zone === s.zone
+    const incoming = sizeIn(s, landing.zone, layout)
+    const size = spec.axis ? incoming : (layout.rects[landing.index] ?? s.rect)
+    const at = slotPoint(layout, spec.axis, own ? s.index : -1, landing.index, incoming)
+    const box = boxAt(at.x + layout.origin.x, at.y + layout.origin.y, size.width, size.height)
+    return { zone: landing.zone, own, box, clip: cuts.get(landing.zone) ?? null }
   }
 
   const setLanding = (s: Session, next: Landing | null): void => {
@@ -479,25 +483,26 @@ function createEngine(setChrome: (c: Chrome | null) => void): Api {
     if (prev?.kind === 'line') paintLine(prev.zone, null)
     if (next?.kind === 'line') paintLine(next.zone, next)
     repaint(s, prev, next)
-    slot.set(s.phase === 'live' ? slotBoxOf(s, next) : null)
+    slotBox.set(s.phase === 'live' ? slotBoxOf(s, next) : null)
   }
 
   // ── Routing ──
 
-  const lineAtLocal = (s: Session, spec: AnyLine, p: Point): LineLanding | null => {
-    const m = lineOf(s, spec)
-    if (!m || m.snap === null) return null
-    s.cursor = p
-    const got = spec.resolve(s.id, p, m.snap)
-    return got === null
+  const lineAtLocal = (s: Session, spec: AnyLine, point: Point): LineLanding | null => {
+    const line = lineOf(s, spec)
+    if (!line || line.snap === null) return null
+    s.cursor = point
+    const slot = spec.resolve(s.id, point, line.snap)
+    return slot === null
       ? null
-      : { kind: 'line', zone: s.zone, slot: got, key: keyOf(spec, got), snap: m.snap }
+      : { kind: 'line', zone: s.zone, slot, key: keyOf(spec, slot), snap: line.snap }
   }
 
   const lineAt = (s: Session, spec: AnyLine, x: number, y: number): LineLanding | null => {
-    const m = lineOf(s, spec)
-    if (!m) return null
-    return lineAtLocal(s, spec, { x: (x - m.origin.x) / m.zoom, y: (y - m.origin.y) / m.zoom })
+    const line = lineOf(s, spec)
+    if (!line) return null
+    const { origin, zoom } = line
+    return lineAtLocal(s, spec, { x: (x - origin.x) / zoom, y: (y - origin.y) / zoom })
   }
 
   const pickDisplace = (
@@ -507,16 +512,17 @@ function createEngine(setChrome: (c: Chrome | null) => void): Api {
     x: number,
     y: number,
   ): void => {
-    const f = frozenOf(zoneId)
-    if (!f) return
+    const layout = frozenOf(zoneId)
+    if (!layout) return
     const own = zoneId === s.zone
-    const size = sizeIn(s, zoneId, f)
-    const t = travel(s, x, y)
-    const p = { x: s.aim.x + t.x - f.origin.x, y: s.aim.y + t.y - f.origin.y }
+    const size = sizeIn(s, zoneId, layout)
+    const { x: dx, y: dy } = travel(s, x, y)
+    const { origin } = layout
+    const centre = { x: s.aim.x + dx - origin.x, y: s.aim.y + dy - origin.y }
     const half = { width: size.width / 2, height: size.height / 2 }
-    const near = nearest(f, f.rects.length + (own ? 0 : 1), p, half, spec.axis)
-    if (s.pick.zone === zoneId && distanceTo(f, s.pick.at, p, half) - near.dist <= HYSTERESIS)
-      return
+    const near = nearest(layout, layout.rects.length + (own ? 0 : 1), centre, half, spec.axis)
+    const kept = distanceTo(layout, s.pick.at, centre, half) - near.dist <= HYSTERESIS
+    if (s.pick.zone === zoneId && kept) return
     s.pick = { zone: zoneId, at: near.at }
     const index =
       own && spec.fixed ? s.index : spec.resolveIndex ? spec.resolveIndex(near.at, s.id) : near.at
@@ -529,15 +535,11 @@ function createEngine(setChrome: (c: Chrome | null) => void): Api {
   }
 
   const overTail = (s: Session, zoneId: string, x: number, y: number): boolean => {
-    const f = frozen.get(zoneId)
-    if (!f) return false
-    const { width, height } = sizeIn(s, zoneId, f)
-    return within(
-      { left: f.tail.x + f.origin.x, top: f.tail.y + f.origin.y, width, height },
-      x,
-      y,
-      0,
-    )
+    const layout = frozen.get(zoneId)
+    if (!layout) return false
+    const { width, height } = sizeIn(s, zoneId, layout)
+    const { tail, origin } = layout
+    return within({ left: tail.x + origin.x, top: tail.y + origin.y, width, height }, x, y, 0)
   }
 
   const foreignAt = (s: Session, x: number, y: number): string | null => {
@@ -545,16 +547,16 @@ function createEngine(setChrome: (c: Chrome | null) => void): Api {
     if (held !== s.zone && (within(bounds.get(held), x, y, HYSTERESIS) || overTail(s, held, x, y)))
       return held
     let hit: string | null = null
-    for (const [zoneId, b] of bounds) if (within(b, x, y, 0) && admits(s, zoneId)) hit = zoneId
+    for (const [zoneId, box] of bounds) if (within(box, x, y, 0) && admits(s, zoneId)) hit = zoneId
     return hit
   }
 
   const route = (s: Session, x: number, y: number): void => {
     const zoneId = s.loose ? foreignAt(s, x, y) : s.zone
-    const k = zoneId === null ? null : kindOf(zoneId)
-    if (zoneId === null || !k) setLanding(s, null)
-    else if (k.kind === 'line') setLanding(s, lineAt(s, k.spec, x, y))
-    else pickDisplace(s, zoneId, k.spec, x, y)
+    const def = zoneId === null ? null : defOf(zoneId)
+    if (zoneId === null || !def) setLanding(s, null)
+    else if (def.kind === 'line') setLanding(s, lineAt(s, def.spec, x, y))
+    else pickDisplace(s, zoneId, def.spec, x, y)
   }
 
   const track = (x: number, y: number): void => {
@@ -568,38 +570,38 @@ function createEngine(setChrome: (c: Chrome | null) => void): Api {
       gesture?.autoScroll(!out)
       loose.set(out ? s.carried : null)
     }
-    const t = chipTravel(s, x, y)
-    if (chromeEl) chromeEl.style.transform = translate(t.x, t.y)
+    const { x: dx, y: dy } = chipTravel(s, x, y)
+    if (chromeEl) chromeEl.style.transform = translate(dx, dy)
     else if (s.kind === 'displace' && !s.overlaid)
-      s.el.style.transform = translate((t.x + s.comp.x) / s.zoom, (t.y + s.comp.y) / s.zoom)
+      s.el.style.transform = translate((dx + s.offset.x) / s.zoom, (dy + s.offset.y) / s.zoom)
     route(s, x, y)
   }
 
   const refresh = (s: Session): void => {
-    const k = kindOf(s.zone)
+    const def = defOf(s.zone)
     if (s.via === 'pointer') route(s, s.last.x, s.last.y)
-    else if (k?.kind === 'line') setLanding(s, lineAtLocal(s, k.spec, s.cursor))
+    else if (def?.kind === 'line') setLanding(s, lineAtLocal(s, def.spec, s.cursor))
   }
 
   const rescroll = (target: EventTarget | null): void => {
     const s = session
     if (s?.phase !== 'live') return
-    for (const [zoneId, f] of frozen) {
-      if (!scrollMoved(target, f.ref)) continue
-      const { x, y } = f.origin
-      reorigin(f)
+    for (const [zoneId, layout] of frozen) {
+      if (!scrollMoved(target, layout.ref)) continue
+      const { x, y } = layout.origin
+      reorigin(layout)
       if (zoneId !== s.zone) continue
-      s.comp.x -= f.origin.x - x
-      s.comp.y -= f.origin.y - y
+      s.offset.x -= layout.origin.x - x
+      s.offset.y -= layout.origin.y - y
     }
     const host = zones.get(s.zone)?.box
     if (s.line && host && scrollMoved(target, host)) {
-      const r = host.getBoundingClientRect()
-      s.line.origin = { x: r.left, y: r.top }
+      const rect = host.getBoundingClientRect()
+      s.line.origin = { x: rect.left, y: rect.top }
     }
     syncBounds(target)
     s.home = homeOf(s)
-    slot.set(slotBoxOf(s, s.landing))
+    slotBox.set(slotBoxOf(s, s.landing))
     if (s.via === 'pointer') track(s.last.x, s.last.y)
     else refresh(s)
   }
@@ -621,31 +623,32 @@ function createEngine(setChrome: (c: Chrome | null) => void): Api {
   // ── Lift ──
 
   const lift = (zoneId: string, id: string, via: Session['via'], at?: Point): Session | null => {
-    const r = zones.get(zoneId)
-    const k = r?.zone
-    const el = r?.els.get(id)
-    if (!r || !k || !el || k.spec.disabled) return null
+    const entry = zones.get(zoneId)
+    const def = entry?.def
+    const el = entry?.els.get(id)
+    if (!entry || !def || !el || def.spec.disabled) return null
     const rect = toBox(el)
     const start = at ?? { x: rect.cx, y: rect.cy }
     const s: Session = {
       id,
       zone: zoneId,
-      kind: k.kind,
-      name: k.spec.label(id),
+      kind: def.kind,
+      name: def.spec.label(id),
       via,
       phase: 'live',
       el,
       rect,
       start,
-      aim: k.kind === 'displace' ? { x: rect.cx, y: rect.cy } : start,
+      aim: def.kind === 'displace' ? { x: rect.cx, y: rect.cy } : start,
       last: start,
-      overlaid: k.kind === 'displace' && via === 'pointer' && k.spec.renderOverlay !== undefined,
-      axis: k.kind === 'displace' ? k.spec.axis : undefined,
+      overlaid:
+        def.kind === 'displace' && via === 'pointer' && def.spec.renderOverlay !== undefined,
+      axis: def.kind === 'displace' ? def.spec.axis : undefined,
       zoom: currentZoom(el),
       index: -1,
-      comp: { x: 0, y: 0 },
-      carried: carriedOf(k.spec.carry, id),
-      chain: clipChain(r.box ?? el),
+      offset: { x: 0, y: 0 },
+      carried: carriedOf(def.spec.carry, id),
+      chain: clipChain(entry.box ?? el),
       home: null,
       loose: false,
       pick: { zone: zoneId, at: -1 },
@@ -655,27 +658,28 @@ function createEngine(setChrome: (c: Chrome | null) => void): Api {
       fence: null,
       release: noop,
     }
-    if (k.kind === 'line') {
-      s.line = measureLine(r, k.spec, id)
+    if (def.kind === 'line') {
+      s.line = measureLine(entry, def.spec, id)
       if (!s.line || (s.line.snap === null && (via === 'keyboard' || s.carried.size === 0)))
         return null
-      const own = s.line.g.rows.find((row) => row.id === id)
+      const own = s.line.geometry.rows.find((row) => row.id === id)
       if (own) s.cursor = { x: (own.left + own.right) / 2, y: own.mid }
       el.setAttribute(SOURCE, '')
     }
     session = s
-    for (const zid of zones.keys()) floor(s, zid)
+    for (const other of zones.keys()) floor(s, other)
     syncBounds()
-    if (k.kind === 'displace') {
-      const f = frozenOf(zoneId)
-      s.index = f ? f.ids.indexOf(id) : -1
-      if (!f || s.index < 0) {
+    if (def.kind === 'displace') {
+      const layout = frozenOf(zoneId)
+      s.index = layout ? layout.ids.indexOf(id) : -1
+      if (!layout || s.index < 0) {
         unwind(s)
         end(s)
         return null
       }
-      const b = f.rects[s.index]
-      s.comp = { x: rect.left - b.left - f.origin.x, y: rect.top - b.top - f.origin.y }
+      const slotRect = layout.rects[s.index]
+      const { origin } = layout
+      s.offset = { x: rect.left - slotRect.left - origin.x, y: rect.top - slotRect.top - origin.y }
       s.pick = { zone: zoneId, at: s.index }
       if (!s.overlaid) {
         el.style.zIndex = `${stack.local.lifted}`
@@ -689,13 +693,13 @@ function createEngine(setChrome: (c: Chrome | null) => void): Api {
         pointerEvents: 'none',
         zIndex: stack.top.dragOverlay,
       }
-      if (k.kind === 'line')
+      if (def.kind === 'line')
         setChrome({
           node: (
             <DragGhost>
-              {k.spec.chip?.(id) ?? (
+              {def.spec.chip?.(id) ?? (
                 <>
-                  {k.spec.glyph?.(id)}
+                  {def.spec.glyph?.(id)}
                   {s.name}
                 </>
               )}
@@ -703,9 +707,9 @@ function createEngine(setChrome: (c: Chrome | null) => void): Api {
           ),
           style: { ...base, left: start.x, top: start.y },
         })
-      else if (k.spec.renderOverlay)
+      else if (def.spec.renderOverlay)
         setChrome({
-          node: k.spec.renderOverlay(id, rect),
+          node: def.spec.renderOverlay(id, rect),
           style: {
             ...base,
             left: rect.left,
@@ -714,7 +718,7 @@ function createEngine(setChrome: (c: Chrome | null) => void): Api {
             height: rect.height,
           },
         })
-      const disclose = k.spec.disclose
+      const disclose = def.spec.disclose
       if (typeof disclose === 'function' ? disclose(id) : disclose)
         beginDragDisclose(remeasure, surfaceOf(s), el)
     }
@@ -741,14 +745,10 @@ function createEngine(setChrome: (c: Chrome | null) => void): Api {
     floored.clear()
     for (const box of spilled) box.style.removeProperty('--drag-spill')
     spilled.clear()
-    frozen.clear()
-    bounds.clear()
-    clips.clear()
-    cuts.clear()
-    overs.clear()
+    for (const held of [frozen, bounds, clips, cuts, overs]) held.clear()
     if (s.landing?.kind === 'line') paintLine(s.landing.zone, null)
     active.set(null)
-    slot.set(null)
+    slotBox.set(null)
     loose.set(null)
   }
 
@@ -757,16 +757,14 @@ function createEngine(setChrome: (c: Chrome | null) => void): Api {
     gesture = null
     pending = null
     for (const el of touched) {
-      el.style.transform = ''
       el.style.transition = ''
       el.style.visibility = ''
     }
     touched.clear()
-    const st = s.el.style
     if (s.kind === 'displace') {
-      st.visibility = ''
-      st.pointerEvents = ''
-      st.zIndex = ''
+      s.el.style.visibility = ''
+      s.el.style.pointerEvents = ''
+      s.el.style.zIndex = ''
     }
     setChrome(null)
   }
@@ -851,8 +849,8 @@ function createEngine(setChrome: (c: Chrome | null) => void): Api {
     announceDrag(said, s.name)
     if (s.via === 'keyboard')
       requestAnimationFrame(() => {
-        const r = zones.get(s.zone)
-        const el = r?.els.get(s.id) ?? r?.box
+        const entry = zones.get(s.zone)
+        const el = entry?.els.get(s.id) ?? entry?.box
         if (el) focusBack(el, s.el)
       })
   }
@@ -874,29 +872,29 @@ function createEngine(setChrome: (c: Chrome | null) => void): Api {
     const s = session
     if (s?.phase !== 'live') return
     if (s.line?.dirty) refresh(s)
-    const L = s.landing
-    const target = L ? kindOf(L.zone) : null
-    if (L?.kind === 'line' && target?.kind === 'line') {
-      land(s, 'move', () => target.spec.commit(s.id, L.slot, L.snap), false)
+    const landing = s.landing
+    const target = landing ? defOf(landing.zone) : null
+    if (landing?.kind === 'line' && target?.kind === 'line') {
+      land(s, 'move', () => target.spec.commit(s.id, landing.slot, landing.snap), false)
       return
     }
-    const f = L ? frozen.get(L.zone) : undefined
-    if (L?.kind !== 'displace' || target?.kind !== 'displace' || !f) {
+    const layout = landing ? frozen.get(landing.zone) : undefined
+    if (landing?.kind !== 'displace' || target?.kind !== 'displace' || !layout) {
       land(s, 'return', null, true)
       return
     }
     const spec = target.spec
-    const src = displaceOf(s.zone)
-    const own = L.zone === s.zone
-    const beforeId = beforeIdAt(f.ids, own ? s.id : null, L.index)
+    const source = displaceOf(s.zone)
+    const own = landing.zone === s.zone
+    const beforeId = beforeIdAt(layout.ids, own ? s.id : null, landing.index)
     const item = spec.family && s.carried.get(spec.family)
     const commit = own
       ? () => spec.onMove?.(s.id, beforeId)
       : () => {
           spec.receive?.(item, beforeId)
-          src?.release?.(s.id)
+          source?.release?.(s.id)
         }
-    const kin = own || (src?.family !== undefined && src.family === spec.family)
+    const kin = own || (source?.family !== undefined && source.family === spec.family)
     land(s, kin || !spec.opens ? 'move' : 'open', commit, kin)
   }
 
@@ -916,61 +914,62 @@ function createEngine(setChrome: (c: Chrome | null) => void): Api {
   // ── Keyboard ──
 
   const stepDisplace = (s: Session, spec: DisplaceSpec, dir: Dir): void => {
-    const f = frozen.get(s.zone)
-    if (!f || spec.fixed) return
-    const next = keyboardNext(f.rects, s.pick.at, dir)
+    const layout = frozen.get(s.zone)
+    if (!layout || spec.fixed) return
+    const next = keyboardNext(layout.rects, s.pick.at, dir)
     if (next === s.pick.at) return
     s.pick = { zone: s.zone, at: next }
     const index = spec.resolveIndex ? spec.resolveIndex(next, s.id) : next
     if (index === null) return
     setLanding(s, index === s.index ? null : { kind: 'displace', zone: s.zone, index })
-    announce(STEP_WORDS.position(index + 1, f.rects.length))
+    announce(STEP_WORDS.position(index + 1, layout.rects.length))
   }
 
   const stepLine = (s: Session, spec: AnyLine, dir: 1 | -1): void => {
-    const m = lineOf(s, spec)
-    if (!m || m.snap === null) return
-    const probes = lineProbes(m.g)
-    const own = m.g.rows.find((row) => row.id === s.id)
+    const line = lineOf(s, spec)
+    if (!line || line.snap === null) return
+    const probes = lineProbes(line.geometry)
+    const own = line.geometry.rows.find((row) => row.id === s.id)
     const current = s.landing?.kind === 'line' ? s.landing.key : null
     const keyAt = (i: number): unknown => {
-      const got = spec.resolve(s.id, { x: s.cursor.x, y: probes[i].y }, m.snap)
-      return got === null ? null : keyOf(spec, got)
+      const slot = spec.resolve(s.id, { x: s.cursor.x, y: probes[i].y }, line.snap)
+      return slot === null ? null : keyOf(spec, slot)
     }
-    const partOf = (p: Probe, key: unknown): StepPart => {
-      switch (p.kind) {
+    const partOf = (probe: Probe, key: unknown): StepPart => {
+      switch (probe.kind) {
         case 'group':
           return 'into'
         case 'end':
           return 'after'
         case 'row': {
-          const [before, into, after] = [keyAt(p.base), keyAt(p.base + 1), keyAt(p.base + 2)]
+          const [before, into, after] = [0, 1, 2].map((step) => keyAt(probe.base + step))
           const middle = Object.is(before, into) === Object.is(into, after)
           if (Object.is(key, into) && middle) return 'into'
           return Object.is(key, before) ? 'before' : 'after'
         }
       }
     }
-    const at = probes.findIndex((p) => p.y >= s.cursor.y)
+    const at = probes.findIndex((probe) => probe.y >= s.cursor.y)
     let i = at < 0 ? probes.length : at
     if (dir > 0 && probes[i]?.y === s.cursor.y) i += 1
     if (dir < 0) i -= 1
     for (; i >= 0 && i < probes.length; i += dir) {
-      const p = probes[i]
+      const probe = probes[i]
       const key = keyAt(i)
-      const home = key === null && own !== undefined && p.y >= own.top && p.y <= own.bottom
+      const home = key === null && own !== undefined && probe.y >= own.top && probe.y <= own.bottom
       if ((key === null && !home) || Object.is(key, current)) continue
-      const point = { x: s.cursor.x, y: p.y }
-      const L = key === null ? null : lineAtLocal(s, spec, point)
-      setLanding(s, L)
+      const point = { x: s.cursor.x, y: probe.y }
+      const next = key === null ? null : lineAtLocal(s, spec, point)
+      setLanding(s, next)
       s.cursor = point
-      if (!L) announceDrag('return', s.name)
+      if (!next) announceDrag('return', s.name)
       else {
-        const named = spec.step?.(L.slot, L.snap) ?? { part: partOf(p, key), id: p.id }
-        announce(STEP_WORDS[named.part](spec.label(named.id)))
+        const step = spec.step?.(next.slot, next.snap) ?? { part: partOf(probe, key), id: probe.id }
+        announce(STEP_WORDS[step.part](spec.label(step.id)))
       }
-      const r = zones.get(s.zone)
-      ;(p.kind === 'group' ? r?.groups : r?.els)?.get(p.id)?.scrollIntoView({ block: 'nearest' })
+      const entry = zones.get(s.zone)
+      const shown = probe.kind === 'group' ? entry?.groups : entry?.els
+      shown?.get(probe.id)?.scrollIntoView({ block: 'nearest' })
       return
     }
   }
@@ -982,9 +981,9 @@ function createEngine(setChrome: (c: Chrome | null) => void): Api {
     e.preventDefault()
     e.stopPropagation()
     if (s.phase !== 'live' || (drops && e.repeat)) return
-    const k = kindOf(s.zone)
-    if (dir && k?.kind === 'displace') stepDisplace(s, k.spec, dir)
-    else if (dir && k?.kind === 'line' && dir.y !== 0) stepLine(s, k.spec, dir.y > 0 ? 1 : -1)
+    const def = defOf(s.zone)
+    if (dir && def?.kind === 'displace') stepDisplace(s, def.spec, dir)
+    else if (dir && def?.kind === 'line' && dir.y !== 0) stepLine(s, def.spec, dir.y > 0 ? 1 : -1)
     else if (drops) drop()
     else if (!dir) cancel()
   }
@@ -1013,59 +1012,59 @@ function createEngine(setChrome: (c: Chrome | null) => void): Api {
   const begin = (zoneId: string, id: string, e: ReactPointerEvent): void => {
     if (session?.phase === 'live') return
     pending?.()
-    const k = kindOf(zoneId)
+    const def = defOf(zoneId)
     const el = zones.get(zoneId)?.els.get(id)
-    if (!k || !el || k.spec.disabled) return
+    if (!def || !el || def.spec.disabled) return
     const start = { x: e.clientX, y: e.clientY }
-    const h = beginPointerGesture({
+    const handle = beginPointerGesture({
       el,
       event: e,
       activation: 'item',
       cursor: 'grabbing',
-      autoScroll: { from: el, axis: k.kind === 'line' ? 'y' : 'xy' },
+      autoScroll: { from: el, axis: def.kind === 'line' ? 'y' : 'xy' },
       onActivate: () => lift(zoneId, id, 'pointer', start) !== null,
       onDragMove: (ev) => track(ev.clientX, ev.clientY),
       onWindowScroll: rescroll,
       onDrop: drop,
       onAbort: cancel,
     })
-    if (h) gesture = h
+    if (handle) gesture = handle
   }
 
   // ── Registration ──
 
   return {
     active,
-    slot,
+    slot: slotBox,
     loose,
     setDisplace: (zoneId, spec) => {
-      const r = reg(zoneId)
-      const fresh = r.zone === null
-      r.zone = { kind: 'displace', spec }
+      const entry = entryOf(zoneId)
+      const fresh = entry.def === null
+      entry.def = { kind: 'displace', spec }
       if (fresh) admitLate(zoneId)
     },
     setLine: (zoneId, spec, paint) => {
-      reg(zoneId).zone = { kind: 'line', spec, paint }
+      entryOf(zoneId).def = { kind: 'line', spec, paint }
     },
     forget: (zoneId) => {
       if (session?.zone === zoneId) halt()
       zones.delete(zoneId)
     },
     box: (zoneId, el) => {
-      reg(zoneId).box = el
+      entryOf(zoneId).box = el
       if (el) admitLate(zoneId)
     },
     el: (zoneId, id, el) => {
-      const r = reg(zoneId)
-      if (el) r.els.set(id, el)
-      else r.els.delete(id)
+      const entry = entryOf(zoneId)
+      if (el) entry.els.set(id, el)
+      else entry.els.delete(id)
       if (el && refocus?.zone === zoneId && refocus.id === id) focusBack(el, null)
       if (session?.zone === zoneId && session.line) session.line.dirty = true
     },
     group: (zoneId, key, el) => {
-      const r = reg(zoneId)
-      if (el) r.groups.set(key, el)
-      else r.groups.delete(key)
+      const entry = entryOf(zoneId)
+      if (el) entry.groups.set(key, el)
+      else entry.groups.delete(key)
       if (session?.zone === zoneId && session.line) session.line.dirty = true
     },
     rowEl: (zoneId, id) => zones.get(zoneId)?.els.get(id),
@@ -1086,11 +1085,11 @@ function createEngine(setChrome: (c: Chrome | null) => void): Api {
       const s = session
       if (!el || !s) return
       if (s.kind === 'line') {
-        const b = el.getBoundingClientRect()
-        s.fence = { x: window.innerWidth - b.width, y: window.innerHeight - b.height }
+        const rect = el.getBoundingClientRect()
+        s.fence = { x: window.innerWidth - rect.width, y: window.innerHeight - rect.height }
       }
-      const t = chipTravel(s, s.last.x, s.last.y)
-      el.style.transform = translate(t.x, t.y)
+      const { x: dx, y: dy } = chipTravel(s, s.last.x, s.last.y)
+      el.style.transform = translate(dx, dy)
       if (s.overlaid) s.el.style.visibility = 'hidden'
     },
     dispose: halt,
@@ -1116,9 +1115,15 @@ const insetOf = (box: Rect, clip: Rect): string => {
 }
 
 function useZone(hook: string): ZoneValue {
-  const z = useContext(ZoneCtx)
-  if (!z) throw new Error(`${hook} must be used inside a zone`)
-  return z
+  const zone = useContext(ZoneCtx)
+  if (!zone) throw new Error(`${hook} must be used inside a zone`)
+  return zone
+}
+
+const heldWhileBusy = (api: Api, e: ReactKeyboardEvent): boolean => {
+  if (!api.busy()) return false
+  if (e.key === ' ' || e.key === 'Enter') e.preventDefault()
+  return true
 }
 
 function useDragging(api: Api, zoneId: string, id: string): boolean {
@@ -1273,11 +1278,7 @@ export function useDragItem(id: string, { open }: DragItemOptions = {}): DragIte
     () => ({
       onPointerDown: (e: ReactPointerEvent) => api.begin(zoneId, id, e),
       onKeyDown: (e: ReactKeyboardEvent) => {
-        if (e.target !== e.currentTarget || e.repeat) return
-        if (api.busy()) {
-          if (e.key === ' ' || e.key === 'Enter') e.preventDefault()
-          return
-        }
+        if (e.target !== e.currentTarget || e.repeat || heldWhileBusy(api, e)) return
         if (e.key === 'Enter' && opens) {
           e.preventDefault()
           run.current?.()
@@ -1338,11 +1339,7 @@ export function useLineRow(
       onPointerDown: (e) => api.begin(zoneId, id, e),
       onKeyDown: (e) => {
         const row = e.currentTarget
-        if (e.target !== row) return
-        if (api.busy()) {
-          if (e.key === ' ' || e.key === 'Enter') e.preventDefault()
-          return
-        }
+        if (e.target !== row || heldWhileBusy(api, e)) return
         const step = e.key === 'ArrowDown' ? 1 : e.key === 'ArrowUp' ? -1 : 0
         const opening = e.key === 'Enter' && opens && !e.repeat
         if (e.key !== ' ' && step === 0 && !opening) return
@@ -1394,12 +1391,12 @@ export function useLineEl(): (id: string) => HTMLElement | undefined {
 
 export function DropSlot({ foreignOnly = false }: { foreignOnly?: boolean }): ReactNode {
   const { api, zoneId } = useZone('DropSlot')
-  const v = useSyncExternalStore(api.slot.subscribe, () => {
+  const shown = useSyncExternalStore(api.slot.subscribe, () => {
     const at = api.slot.get()
     return at && at.zone === zoneId && !(foreignOnly && at.own) ? at : null
   })
-  if (!v) return null
-  const { box, clip } = v
+  if (!shown) return null
+  const { box, clip } = shown
   return createPortal(
     <div
       className="drop-slot is-floating"
