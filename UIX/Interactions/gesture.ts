@@ -6,7 +6,7 @@ import { ACTIVATION, EDITABLE_TARGETS, suppressNextClick, suppressReleaseClick }
 
 const SLOP = 12
 const CONTROLS = 'button, a[href], select, [data-drag-slop]'
-const GRABBING = 'is-grabbing'
+const GRABBING = 'data-grabbing'
 
 export type PointerGestureSpec = {
   el: HTMLElement
@@ -68,7 +68,7 @@ function detach(g: LiveGesture): void {
   window.removeEventListener('scroll', g.handlers.scroll, { capture: true })
   window.removeEventListener('keydown', g.handlers.key, { capture: true })
   g.scroll(false)
-  if (g.active && g.spec.cursor) document.documentElement.classList.remove(GRABBING)
+  if (g.active && g.spec.cursor) g.spec.el.removeAttribute(GRABBING)
   try {
     g.spec.el.releasePointerCapture(g.spec.event.pointerId)
   } catch {}
@@ -157,7 +157,7 @@ export function beginPointerGesture(spec: PointerGestureSpec): GestureHandle | n
             g.handlers.cancel()
             return
           }
-          if (spec.cursor) document.documentElement.classList.add(GRABBING)
+          if (spec.cursor) spec.el.setAttribute(GRABBING, '')
           g.scroll(true)
         }
         try {

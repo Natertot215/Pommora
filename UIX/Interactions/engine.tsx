@@ -55,6 +55,7 @@ import {
   boxAt,
   type CarryEntry,
   clipChain,
+  clipOf,
   type DragItem,
   EDITABLE_TARGETS,
   type Family,
@@ -62,8 +63,8 @@ import {
   px,
   type Rect,
   SETTLE_FALLBACK,
+  intersect,
   toBox,
-  visibleBox,
 } from './shared'
 
 // ── Specs ───────────────────────────────────────────────────────────────────
@@ -94,12 +95,12 @@ export type DisplaceSpec<T = unknown> = ZoneShared & {
 }
 
 export type LineSpec<Slot, Snap> = ZoneShared & {
-  snap: (id: string, g: Geometry) => Snap | null
-  resolve: (id: string, p: Point, s: Snap) => Slot | null
-  commit: (id: string, slot: Slot, s: Snap) => void
-  line?: (slot: Slot, s: Snap) => CSSProperties | null
-  slotKey?: (slot: Slot) => string
-  step?: (slot: Slot, s: Snap) => { part: StepPart; id: string } | null
+  snap(id: string, g: Geometry): Snap | null
+  resolve(id: string, p: Point, s: Snap): Slot | null
+  commit(id: string, slot: Slot, s: Snap): void
+  line?(slot: Slot, s: Snap): CSSProperties | null
+  slotKey?(slot: Slot): string
+  step?(slot: Slot, s: Snap): { part: StepPart; id: string } | null
   chip?: (id: string) => ReactNode
   watch: readonly unknown[]
 }
@@ -137,6 +138,7 @@ type Session = {
   el: HTMLElement
   rect: Box
   start: Point
+  aim: Point
   last: Point
   overlaid: boolean
   axis: Axis | undefined
@@ -163,8 +165,9 @@ type LineHandle = {
   'data-line-row': string
 }
 type LineRowOptions = { spring?: (dragged: string) => void; open?: () => void }
+type DragItemOptions = { open?: () => void }
 type Active = { zone: string; id: string }
-type SlotBox = { zone: string; own: boolean; box: Box }
+type SlotBox = { zone: string; own: boolean; box: Box; clip: Rect | null }
 
 type Api = {
   active: Channel<Active | null>
@@ -193,6 +196,8 @@ const SOURCE = 'data-drag-source'
 const rowsOf = (zoneId: string): string => `[data-line-row="${zoneId}"]`
 const GLIDE = `transform ${DEFAULT_FEEL.duration}ms ${DEFAULT_FEEL.easing}`
 const translate = (x: number, y: number): string => `translate3d(${px(x)}, ${px(y)}, 0)`
+
+const keyOf = (spec: AnyLine, slot: unknown): unknown => (spec.slotKey ? spec.slotKey(slot) : slot)
 
 const within = (r: Rect | undefined, x: number, y: number, pad: number): boolean =>
   r !== undefined &&
@@ -247,6 +252,7 @@ function createEngine(setChrome: (c: Chrome | null) => void): Api {
   const frozen = new Map<string, Frozen>()
   const bounds = new Map<string, Rect>()
   const clips = new Map<string, Element[]>()
+  const cuts = new Map<string, Rect | null>()
   const overs = new Map<string, number>()
   const touched = new Set<HTMLElement>()
   const floored = new Set<HTMLElement>()
@@ -309,15 +315,18 @@ function createEngine(setChrome: (c: Chrome | null) => void): Api {
       if (!r.box || r.zone?.kind !== 'displace' || !scrollMoved(target, r.box)) continue
       const chain = clips.get(zoneId) ?? clipChain(r.box)
       clips.set(zoneId, chain)
-      const b = visibleBox(r.box.getBoundingClientRect(), chain)
+      const cut = clipOf(chain)
+      cuts.set(zoneId, cut)
+      const b = intersect(r.box.getBoundingClientRect(), cut)
       if (b) bounds.set(zoneId, b)
       else bounds.delete(zoneId)
     }
   }
 
   const floor = (s: Session, zoneId: string): void => {
-    const box = zones.get(zoneId)?.box
-    if (!box || !displaceOf(zoneId) || (zoneId !== s.zone && !admits(s, zoneId))) return
+    const r = zones.get(zoneId)
+    const box = r?.box
+    if (!box || r.els.size > 0 || !admits(s, zoneId)) return
     box.style.setProperty('--drag-floor', px(s.rect.height / currentZoom(box)))
     floored.add(box)
   }
@@ -327,7 +336,7 @@ function createEngine(setChrome: (c: Chrome | null) => void): Api {
     const box = zones.get(s.zone)?.box
     const f = frozen.get(s.zone)
     const r = box?.getBoundingClientRect() ?? (f ? unionOf(f) : null)
-    return r ? visibleBox(r, s.chain) : null
+    return r ? intersect(r, clipOf(s.chain)) : null
   }
 
   const atHome = (s: Session, x: number, y: number): boolean => {
@@ -430,7 +439,7 @@ function createEngine(setChrome: (c: Chrome | null) => void): Api {
     const size = spec.axis ? incoming : (f.rects[L.index] ?? s.rect)
     const at = slotPoint(f, spec.axis, own ? s.index : -1, L.index, incoming)
     const box = boxAt(at.x + f.origin.x, at.y + f.origin.y, size.width, size.height)
-    return { zone: L.zone, own, box }
+    return { zone: L.zone, own, box, clip: cuts.get(L.zone) ?? null }
   }
 
   const setLanding = (s: Session, next: Landing | null): void => {
@@ -450,12 +459,9 @@ function createEngine(setChrome: (c: Chrome | null) => void): Api {
     if (!m || m.snap === null) return null
     s.cursor = p
     const got = spec.resolve(s.id, p, m.snap)
-    if (got === null) return null
-    const key = spec.slotKey ? spec.slotKey(got) : got
-    const L = s.landing
-    return L?.kind === 'line' && L.snap === m.snap && Object.is(L.key, key)
-      ? L
-      : { kind: 'line', zone: s.zone, slot: got, key, snap: m.snap }
+    return got === null
+      ? null
+      : { kind: 'line', zone: s.zone, slot: got, key: keyOf(spec, got), snap: m.snap }
   }
 
   const lineAt = (s: Session, spec: AnyLine, x: number, y: number): LineLanding | null => {
@@ -476,13 +482,10 @@ function createEngine(setChrome: (c: Chrome | null) => void): Api {
     const own = zoneId === s.zone
     const size = sizeIn(s, zoneId, f)
     const t = travel(s, x, y)
-    const p = { x: s.rect.cx + t.x - f.origin.x, y: s.rect.cy + t.y - f.origin.y }
+    const p = { x: s.aim.x + t.x - f.origin.x, y: s.aim.y + t.y - f.origin.y }
     const half = { width: size.width / 2, height: size.height / 2 }
     const near = nearest(f, f.rects.length + (own ? 0 : 1), p, half, spec.axis)
-    if (
-      s.pick.zone === zoneId &&
-      distanceTo(f, s.pick.at, p, half, spec.axis) - near.dist <= HYSTERESIS
-    )
+    if (s.pick.zone === zoneId && distanceTo(f, s.pick.at, p, half) - near.dist <= HYSTERESIS)
       return
     s.pick = { zone: zoneId, at: near.at }
     const index =
@@ -495,9 +498,22 @@ function createEngine(setChrome: (c: Chrome | null) => void): Api {
     )
   }
 
+  const overTail = (s: Session, zoneId: string, x: number, y: number): boolean => {
+    const f = frozen.get(zoneId)
+    if (!f) return false
+    const { width, height } = sizeIn(s, zoneId, f)
+    return within(
+      { left: f.tail.x + f.origin.x, top: f.tail.y + f.origin.y, width, height },
+      x,
+      y,
+      0,
+    )
+  }
+
   const foreignAt = (s: Session, x: number, y: number): string | null => {
     const held = s.pick.zone
-    if (held !== s.zone && within(bounds.get(held), x, y, HYSTERESIS)) return held
+    if (held !== s.zone && (within(bounds.get(held), x, y, HYSTERESIS) || overTail(s, held, x, y)))
+      return held
     let hit: string | null = null
     for (const [zoneId, b] of bounds) if (within(b, x, y, 0) && admits(s, zoneId)) hit = zoneId
     return hit
@@ -554,7 +570,8 @@ function createEngine(setChrome: (c: Chrome | null) => void): Api {
     syncBounds(target)
     s.home = homeOf(s)
     slot.set(slotBoxOf(s, s.landing))
-    track(s.last.x, s.last.y)
+    if (s.via === 'pointer') track(s.last.x, s.last.y)
+    else refresh(s)
   }
 
   const remeasure = (): void => {
@@ -590,6 +607,7 @@ function createEngine(setChrome: (c: Chrome | null) => void): Api {
       el,
       rect,
       start,
+      aim: k.kind === 'displace' ? { x: rect.cx, y: rect.cy } : start,
       last: start,
       overlaid: k.kind === 'displace' && via === 'pointer' && k.spec.renderOverlay !== undefined,
       axis: k.kind === 'displace' ? k.spec.axis : undefined,
@@ -621,6 +639,7 @@ function createEngine(setChrome: (c: Chrome | null) => void): Api {
       const f = frozenOf(zoneId)
       s.index = f ? f.ids.indexOf(id) : -1
       if (!f || s.index < 0) {
+        unwind(s)
         end(s)
         return null
       }
@@ -636,19 +655,24 @@ function createEngine(setChrome: (c: Chrome | null) => void): Api {
     if (via === 'pointer') {
       const base: CSSProperties = {
         position: 'fixed',
-        left: rect.left,
         pointerEvents: 'none',
         zIndex: stack.top.dragOverlay,
       }
       if (k.kind === 'line')
         setChrome({
           node: <DragGhost>{k.spec.chip?.(id) ?? s.name}</DragGhost>,
-          style: { ...base, top: start.y },
+          style: { ...base, left: start.x, top: start.y },
         })
       else if (k.spec.renderOverlay)
         setChrome({
           node: k.spec.renderOverlay(id, rect),
-          style: { ...base, top: rect.top, width: rect.width, height: rect.height },
+          style: {
+            ...base,
+            left: rect.left,
+            top: rect.top,
+            width: rect.width,
+            height: rect.height,
+          },
         })
       const disclose = k.spec.disclose
       if (typeof disclose === 'function' ? disclose(id) : disclose)
@@ -659,16 +683,41 @@ function createEngine(setChrome: (c: Chrome | null) => void): Api {
     return s
   }
 
-  // ── Drop, settle, end ──
+  // ── Drop, land, glide, end ──
 
-  const end = (s: Session): void => {
-    if (session === s) session = null
-    gesture = null
+  const unwind = (s: Session): void => {
     s.release()
     endDragDisclose()
     for (const el of touched) {
       el.style.transform = ''
       el.style.transition = ''
+    }
+    if (s.kind === 'line') s.el.removeAttribute(SOURCE)
+    else if (!s.overlaid) {
+      s.el.style.transform = ''
+      s.el.style.transition = ''
+    }
+    for (const box of floored) box.style.removeProperty('--drag-floor')
+    floored.clear()
+    frozen.clear()
+    bounds.clear()
+    clips.clear()
+    cuts.clear()
+    overs.clear()
+    if (s.landing?.kind === 'line') paintLine(s.landing.zone, null)
+    active.set(null)
+    slot.set(null)
+    loose.set(null)
+  }
+
+  const end = (s: Session): void => {
+    if (session === s) session = null
+    gesture = null
+    pending = null
+    for (const el of touched) {
+      el.style.transform = ''
+      el.style.transition = ''
+      el.style.visibility = ''
     }
     touched.clear()
     const st = s.el.style
@@ -678,72 +727,43 @@ function createEngine(setChrome: (c: Chrome | null) => void): Api {
       st.visibility = ''
       st.pointerEvents = ''
       st.zIndex = ''
-    } else s.el.removeAttribute(SOURCE)
-    for (const box of floored) box.style.removeProperty('--drag-floor')
-    floored.clear()
-    frozen.clear()
-    bounds.clear()
-    clips.clear()
-    overs.clear()
-    if (s.landing?.kind === 'line') paintLine(s.landing.zone, null)
-    active.set(null)
-    slot.set(null)
-    loose.set(null)
+    }
     setChrome(null)
   }
 
-  const finish = (s: Session, word: DragWord, commit: (() => void) | null): void => {
-    pending = null
-    const run = (): void => {
-      try {
-        commit?.()
-      } finally {
-        end(s)
+  const glide = (s: Session, from: ReadonlyMap<HTMLElement, DOMRect>, guess: Box | null): void => {
+    const target = zones.get(s.landing?.zone ?? s.zone)?.els.get(s.id)
+    const flips: [HTMLElement, string][] = []
+    for (const [el, was] of from) {
+      if (!el.isConnected) continue
+      const now = el.getBoundingClientRect()
+      if (was.left === now.left && was.top === now.top) continue
+      const zoom = currentZoom(el)
+      flips.push([el, translate((was.left - now.left) / zoom, (was.top - now.top) / zoom)])
+    }
+    for (const [el, inverse] of flips) el.style.transform = inverse
+    if (flips.length) document.body.getBoundingClientRect()
+    for (const [el] of flips) {
+      el.style.transition = GLIDE
+      el.style.transform = ''
+      touched.add(el)
+    }
+    const to = target?.getBoundingClientRect() ?? guess
+    if (chromeEl && to) {
+      chromeEl.style.transition = GLIDE
+      chromeEl.style.transform = translate(to.left - s.rect.left, to.top - s.rect.top)
+      if (target && target !== s.el) {
+        target.style.visibility = 'hidden'
+        touched.add(target)
       }
     }
-    if (disposing) run()
-    else flushSync(run)
-    announceDrag(word, s.name)
-    if (s.via === 'keyboard')
-      requestAnimationFrame(() => (zones.get(s.zone)?.els.get(s.id) ?? s.el).focus())
-  }
-
-  const settle = (
-    s: Session,
-    L: DisplaceLanding | null,
-    word: DragWord,
-    commit: (() => void) | null,
-  ): void => {
-    setLanding(s, L)
-    s.phase = 'settling'
-    slot.set(null)
-    const zoneId = L?.zone ?? s.zone
-    const f = frozen.get(zoneId)
-    const spec = displaceOf(zoneId)
-    if (s.kind !== 'displace' || !f || !spec) {
-      finish(s, word, commit)
-      return
-    }
-    const at = slotPoint(
-      f,
-      spec.axis,
-      zoneId === s.zone ? s.index : -1,
-      L?.index ?? s.index,
-      sizeIn(s, zoneId, f),
-    )
-    const x = at.x + f.origin.x
-    const y = at.y + f.origin.y
     const el = chromeEl ?? s.el
-    el.style.transition = GLIDE
-    el.style.transform = chromeEl
-      ? translate(x - s.rect.left, y - s.rect.top)
-      : translate((x - s.rect.left + s.comp.x) / s.zoom, (y - s.rect.top + s.comp.y) / s.zoom)
     let timer = 0
     function settled(): void {
       if (pending !== settled) return
       el.removeEventListener('transitionend', onEnd)
       window.clearTimeout(timer)
-      finish(s, word, commit)
+      end(s)
     }
     function onEnd(e: TransitionEvent): void {
       if (e.target === el && e.propertyName === 'transform') settled()
@@ -753,6 +773,31 @@ function createEngine(setChrome: (c: Chrome | null) => void): Api {
     timer = window.setTimeout(settled, DEFAULT_FEEL.duration + SETTLE_FALLBACK)
   }
 
+  const land = (s: Session, word: DragWord, commit: (() => void) | null, glides: boolean): void => {
+    s.phase = 'settling'
+    const animates = glides && !disposing && s.kind === 'displace'
+    const from = new Map<HTMLElement, DOMRect>()
+    if (animates) {
+      for (const el of touched) from.set(el, el.getBoundingClientRect())
+      if (!s.overlaid) from.set(s.el, s.el.getBoundingClientRect())
+    }
+    const guess = animates && s.landing ? (slotBoxOf(s, s.landing)?.box ?? null) : null
+    const run = (): void => {
+      try {
+        commit?.()
+      } finally {
+        unwind(s)
+        if (!animates) end(s)
+      }
+    }
+    if (disposing) run()
+    else flushSync(run)
+    if (animates) glide(s, from, guess)
+    announceDrag(word, s.name)
+    if (s.via === 'keyboard')
+      requestAnimationFrame(() => (zones.get(s.zone)?.els.get(s.id) ?? s.el).focus())
+  }
+
   const drop = (): void => {
     const s = session
     if (s?.phase !== 'live') return
@@ -760,12 +805,12 @@ function createEngine(setChrome: (c: Chrome | null) => void): Api {
     const L = s.landing
     const target = L ? kindOf(L.zone) : null
     if (L?.kind === 'line' && target?.kind === 'line') {
-      finish(s, 'move', () => target.spec.commit(s.id, L.slot, L.snap))
+      land(s, 'move', () => target.spec.commit(s.id, L.slot, L.snap), false)
       return
     }
     const f = L ? frozen.get(L.zone) : undefined
     if (L?.kind !== 'displace' || target?.kind !== 'displace' || !f) {
-      settle(s, null, 'return', null)
+      land(s, 'return', null, true)
       return
     }
     const spec = target.spec
@@ -779,14 +824,13 @@ function createEngine(setChrome: (c: Chrome | null) => void): Api {
           spec.receive?.(item, beforeId)
           src?.release?.(s.id)
         }
-    if (own || (src?.family !== undefined && src.family === spec.family))
-      settle(s, L, 'move', commit)
-    else finish(s, spec.opens ? 'open' : 'move', commit)
+    const kin = own || (src?.family !== undefined && src.family === spec.family)
+    land(s, kin || !spec.opens ? 'move' : 'open', commit, kin)
   }
 
   const cancel = (): void => {
     const s = session
-    if (s?.phase === 'live') settle(s, null, 'cancel', null)
+    if (s?.phase === 'live') land(s, 'cancel', null, true)
   }
 
   const halt = (): void => {
@@ -819,7 +863,7 @@ function createEngine(setChrome: (c: Chrome | null) => void): Api {
     const current = s.landing?.kind === 'line' ? s.landing.key : null
     const keyAt = (i: number): unknown => {
       const got = spec.resolve(s.id, { x: s.cursor.x, y: probes[i].y }, m.snap)
-      return got === null ? null : spec.slotKey ? spec.slotKey(got) : got
+      return got === null ? null : keyOf(spec, got)
     }
     const partOf = (i: number, key: unknown): StepPart => {
       if (i >= m.g.rows.length * 3) return 'after'
@@ -975,12 +1019,20 @@ function createEngine(setChrome: (c: Chrome | null) => void): Api {
 // ── Contexts and hooks ──────────────────────────────────────────────────────
 
 type ZoneValue = { api: Api; zoneId: string; disabled: boolean }
+type ZoneSeat = { zoneId: string; box: (el: HTMLElement | null) => void; zone: ZoneValue }
 
 const ApiCtx = createContext<Api | null>(null)
 const ZoneCtx = createContext<ZoneValue | null>(null)
 const SlotCtx = createContext<unknown>(null)
 const ITEM_STYLE: CSSProperties = { position: 'relative', touchAction: 'none' }
 const NO_SUB = (): (() => void) => noop
+const insetOf = (box: Rect, clip: Rect): string => {
+  const top = Math.max(0, clip.top - box.top)
+  const right = Math.max(0, box.left + box.width - clip.left - clip.width)
+  const bottom = Math.max(0, box.top + box.height - clip.top - clip.height)
+  const left = Math.max(0, clip.left - box.left)
+  return `inset(${px(top)} ${px(right)} ${px(bottom)} ${px(left)})`
+}
 
 function useZone(hook: string): ZoneValue {
   const z = useContext(ZoneCtx)
@@ -1014,15 +1066,26 @@ export function DragGroup({ children }: { children: ReactNode }): React.JSX.Elem
   )
 }
 
-export function SortableZone<T>(props: SortableZoneProps<T>): React.JSX.Element {
+function useZoneSeat(api: Api, disabled: boolean): ZoneSeat {
+  const zoneId = useId()
+  useEffect(() => () => api.forget(zoneId), [api, zoneId])
+  const box = useCallback((el: HTMLElement | null) => api.box(zoneId, el), [api, zoneId])
+  const zone = useMemo(() => ({ api, zoneId, disabled }), [api, zoneId, disabled])
+  return { zoneId, box, zone }
+}
+
+function InGroup({ children }: { children: (api: Api) => ReactNode }): ReactNode {
   const api = useContext(ApiCtx)
-  if (!api)
-    return (
-      <DragGroup>
-        <SortableZone {...props} />
-      </DragGroup>
-    )
-  return <DisplaceZone api={api} {...props} />
+  if (api) return children(api)
+  return (
+    <DragGroup>
+      <InGroup>{children}</InGroup>
+    </DragGroup>
+  )
+}
+
+export function SortableZone<T>(props: SortableZoneProps<T>): React.JSX.Element {
+  return <InGroup>{(api) => <DisplaceZone api={api} {...props} />}</InGroup>
 }
 
 function DisplaceZone({
@@ -1031,12 +1094,8 @@ function DisplaceZone({
   children,
   ...spec
 }: SortableZoneProps<unknown> & { api: Api }): React.JSX.Element {
-  const zoneId = useId()
+  const { zoneId, box, zone } = useZoneSeat(api, spec.disabled ?? false)
   useEffect(() => api.setDisplace(zoneId, spec))
-  useEffect(() => () => api.forget(zoneId), [api, zoneId])
-  const box = useCallback((el: HTMLElement | null) => api.box(zoneId, el), [api, zoneId])
-  const disabled = spec.disabled ?? false
-  const zone = useMemo(() => ({ api, zoneId, disabled }), [api, zoneId, disabled])
   return (
     <ZoneCtx.Provider value={zone}>
       {className === undefined ? (
@@ -1051,14 +1110,7 @@ function DisplaceZone({
 }
 
 export function LineZone<Slot, Snap>(props: LineZoneProps<Slot, Snap>): React.JSX.Element {
-  const api = useContext(ApiCtx)
-  if (!api)
-    return (
-      <DragGroup>
-        <LineZone {...props} />
-      </DragGroup>
-    )
-  return <LineHost api={api} {...(props as unknown as LineZoneProps<unknown, unknown>)} />
+  return <InGroup>{(api) => <LineHost api={api} {...props} />}</InGroup>
 }
 
 function LineHost({
@@ -1067,17 +1119,14 @@ function LineHost({
   children,
   ...spec
 }: LineZoneProps<unknown, unknown> & { api: Api }): React.JSX.Element {
-  const zoneId = useId()
+  const disabled = spec.disabled ?? false
+  const { zoneId, box, zone } = useZoneSeat(api, disabled)
   const [paint, setPaint] = useState<LinePaint | null>(null)
   const last = useRef<HTMLElement | null>(null)
   const viaPointer = useRef(false)
   useEffect(() => api.setLine(zoneId, spec, setPaint))
-  useEffect(() => () => api.forget(zoneId), [api, zoneId])
   useEffect(() => api.invalidate(zoneId), [api, zoneId, ...spec.watch])
-  const box = useCallback((el: HTMLElement | null) => api.box(zoneId, el), [api, zoneId])
-  const disabled = spec.disabled ?? false
   const stop = disabled ? -1 : 0
-  const zone = useMemo(() => ({ api, zoneId, disabled }), [api, zoneId, disabled])
   const rows = rowsOf(zoneId)
   const onFocus = (e: ReactFocusEvent<HTMLDivElement>): void => {
     const pointed = viaPointer.current
@@ -1122,11 +1171,11 @@ function LineHost({
   )
 }
 
-export function useDragItem(id: string, onOpen?: () => void): DragItem {
+export function useDragItem(id: string, { open }: DragItemOptions = {}): DragItem {
   const { api, zoneId, disabled } = useZone('useDragItem')
   const isDragging = useDragging(api, zoneId, id)
-  const open = useLatest(onOpen)
-  const opens = onOpen !== undefined
+  const run = useLatest(open)
+  const opens = open !== undefined
   const setNodeRef = useCallback(
     (el: HTMLElement | null) => api.el(zoneId, id, el),
     [api, zoneId, id],
@@ -1138,7 +1187,7 @@ export function useDragItem(id: string, onOpen?: () => void): DragItem {
         if (e.target !== e.currentTarget || e.repeat || api.busy()) return
         if (e.key === 'Enter' && opens) {
           e.preventDefault()
-          open.current?.()
+          run.current?.()
         } else if ((e.key === ' ' || e.key === 'Enter') && !disabled) {
           e.preventDefault()
           api.liftKeyboard(zoneId, id)
@@ -1188,7 +1237,7 @@ export function useLineRow(
         const row = e.currentTarget
         if (e.target !== row) return
         const step = e.key === 'ArrowDown' ? 1 : e.key === 'ArrowUp' ? -1 : 0
-        const opening = e.key === 'Enter' && opens
+        const opening = e.key === 'Enter' && opens && !api.busy()
         if (e.key !== ' ' && step === 0 && !opening) return
         e.preventDefault()
         if (opening) run.current?.()
@@ -1238,15 +1287,22 @@ export function useLineEl(): (id: string) => HTMLElement | undefined {
 
 export function DropSlot({ foreignOnly = false }: { foreignOnly?: boolean }): ReactNode {
   const { api, zoneId } = useZone('DropSlot')
-  const box = useSyncExternalStore(api.slot.subscribe, () => {
-    const v = api.slot.get()
-    return v && v.zone === zoneId && !(foreignOnly && v.own) ? v.box : null
+  const v = useSyncExternalStore(api.slot.subscribe, () => {
+    const at = api.slot.get()
+    return at && at.zone === zoneId && !(foreignOnly && at.own) ? at : null
   })
-  if (!box) return null
+  if (!v) return null
+  const { box, clip } = v
   return createPortal(
     <div
       className="drop-slot is-floating"
-      style={{ left: box.left, top: box.top, width: box.width, height: box.height }}
+      style={{
+        left: box.left,
+        top: box.top,
+        width: box.width,
+        height: box.height,
+        clipPath: clip ? insetOf(box, clip) : undefined,
+      }}
     />,
     document.body,
   )

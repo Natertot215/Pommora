@@ -49,8 +49,7 @@
   opacity: var(--state-ghost);
 }
 
-:root.is-grabbing,
-:root.is-grabbing * {
-  /* biome-ignore lint/complexity/noImportantStyles: the drag's cursor must beat every surface's own cursor rule while a pointer drag is live. */
+[data-grabbing] {
+  /* biome-ignore lint/complexity/noImportantStyles: the pointer-captured element sets the cursor over every surface, so it must beat that element's own cursor rule. */
   cursor: grabbing !important;
 }

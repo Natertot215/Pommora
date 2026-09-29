@@ -101,7 +101,7 @@ function DraggableCard(props: {
   onSelect: (t: NavRef) => void
   onMenu: (it: ResolvedNav, e: React.MouseEvent) => void
 }): React.JSX.Element {
-  const drag = useDragItem(props.it.key, () => props.onSelect(props.it.target))
+  const drag = useDragItem(props.it.key, { open: () => props.onSelect(props.it.target) })
   return <GalleryCard {...props} drag={drag} />
 }
 

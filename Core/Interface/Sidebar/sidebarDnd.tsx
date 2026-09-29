@@ -2,7 +2,7 @@ import type { ReactNode } from 'react'
 import { Icon } from '@pommora/uix/Symbols'
 import { rowDropLine } from '@pommora/uix/Menus'
 import { carries, LineZone } from '@pommora/uix/Interactions/drag'
-import { type SelectTarget, TAB_FAMILY } from '@pommora/core/Navigation/navRef'
+import { selectTargetOf, TAB_FAMILY } from '@pommora/core/Navigation/navRef'
 import type { MutateRequest } from '@pommora/core/Nexus/mutateRequest'
 import { useSession } from '../../Session/store'
 import { type Index, sidebarCommit, sidebarSlot, sidebarSnapshot } from './sidebarDndModel'
@@ -40,13 +40,11 @@ export function SidebarDnd({
         )
       }}
       carry={[
-        carries(TAB_FAMILY, (id): SelectTarget | null => {
+        carries(TAB_FAMILY, (id) => {
           const e = entry(id)
-          return e?.kind === 'page'
-            ? { kind: 'page', id, path: e.path }
-            : e?.kind === 'space'
-              ? { kind: 'space', id }
-              : null
+          return e?.kind === 'page' || e?.kind === 'space'
+            ? selectTargetOf({ kind: e.kind, id, path: e.path })
+            : null
         }),
       ]}
       disclose

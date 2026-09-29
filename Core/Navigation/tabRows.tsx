@@ -81,6 +81,10 @@ export function TabStripZone({
           return target && isWindowTarget(target) ? target : null
         }),
       ]}
+      onMove={(id, beforeId) => {
+        placing.current = true
+        zone.onMove?.(id, beforeId)
+      }}
       receive={(item, beforeId) => {
         const at = beforeId === null ? -1 : zone.items.indexOf(beforeId)
         placing.current = true

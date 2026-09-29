@@ -63,17 +63,20 @@ export function clipChain(el: Element): Element[] {
   return chain
 }
 
-export function visibleBox(box: Rect, chain: readonly Element[]): Rect | null {
-  let { left, top } = box
-  let right = left + box.width
-  let bottom = top + box.height
-  for (const n of chain) {
-    const r = n.getBoundingClientRect()
-    left = Math.max(left, r.left)
-    top = Math.max(top, r.top)
-    right = Math.min(right, r.right)
-    bottom = Math.min(bottom, r.bottom)
-  }
+const NOWHERE: Rect = { left: 0, top: 0, width: 0, height: 0 }
+
+export function clipOf(chain: readonly Element[]): Rect | null {
+  let cut: Rect | null = null
+  for (const n of chain) cut = intersect(n.getBoundingClientRect(), cut) ?? NOWHERE
+  return cut
+}
+
+export function intersect(box: Rect, cut: Rect | null): Rect | null {
+  const c = cut ?? box
+  const left = Math.max(box.left, c.left)
+  const top = Math.max(box.top, c.top)
+  const right = Math.min(box.left + box.width, c.left + c.width)
+  const bottom = Math.min(box.top + box.height, c.top + c.height)
   return right > left && bottom > top
     ? { left, top, width: right - left, height: bottom - top }
     : null

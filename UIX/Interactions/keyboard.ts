@@ -32,19 +32,19 @@ export function keyboardNext(rects: Box[], over: number, dir: Dir): number {
 }
 
 export type StepPart = 'before' | 'into' | 'after'
-type Probe = { y: number; row: string; part: StepPart }
+type Probe = { y: number; row: string }
 
 export function lineProbes(g: Geometry): Probe[] {
   const out: Probe[] = []
   for (const r of g.rows) {
     const inset = (r.bottom - r.top) / 8
     out.push(
-      { y: r.top + inset, row: r.id, part: 'before' },
-      { y: r.mid, row: r.id, part: 'into' },
-      { y: r.bottom - inset, row: r.id, part: 'after' },
+      { y: r.top + inset, row: r.id },
+      { y: r.mid, row: r.id },
+      { y: r.bottom - inset, row: r.id },
     )
   }
   const last = g.rows[g.rows.length - 1]
-  if (last) out.push({ y: g.bottom, row: last.id, part: 'after' })
+  if (last) out.push({ y: g.bottom, row: last.id })
   return out
 }

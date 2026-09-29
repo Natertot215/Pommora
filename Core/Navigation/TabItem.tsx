@@ -101,7 +101,7 @@ export function TabItem({
 }
 
 export function DraggableTabItem(props: Omit<TabItemProps, 'drag'>): React.JSX.Element {
-  const drag = useDragItem(props.id, props.onActivate)
+  const drag = useDragItem(props.id, { open: props.onActivate })
   return <TabItem {...props} drag={drag} />
 }
 

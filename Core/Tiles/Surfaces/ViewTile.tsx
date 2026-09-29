@@ -192,7 +192,7 @@ function ViewPill({
   onAnimEnd: () => void
 }): React.JSX.Element {
   const open = renaming ? undefined : onSwitch
-  const { setNodeRef, style, handle } = useDragItem(view.id, open)
+  const { setNodeRef, style, handle } = useDragItem(view.id, { open })
   return (
     <button
       ref={setNodeRef}

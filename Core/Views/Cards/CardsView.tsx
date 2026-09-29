@@ -124,6 +124,7 @@ const CARDS_GHOST_GRACE_MS = 200 // KNOB
 type DefaultIcons = Parameters<typeof entityIcon>[2]
 
 const NOOP = (): void => {}
+const OVERLAY_FILL = { width: '100%', height: '100%' }
 
 const INERT_API: ValueApi = {
   commitValue: NOOP,
@@ -373,39 +374,53 @@ export function CardsView({ host }: { host: ViewHostApi }): React.JSX.Element {
   const [scope] = useState((): Family<string> => ({ name: 'cards' }))
   const crossBand = !searching && canReorderWithin && (canReassign || canRelocate)
   const cardCarry = [carries(scope, (id) => id), carries(TAB_FAMILY, interactions.carry)]
+  const overlayShell = (rect: Box, card: React.ReactNode): React.ReactNode => (
+    <div
+      className={shellClass}
+      style={
+        {
+          zoom: effectiveZoom,
+          '--card-scale': cardScale,
+          width: `${rect.width / effectiveZoom}px`,
+          height: `${rect.height / effectiveZoom}px`,
+        } as React.CSSProperties
+      }
+    >
+      {card}
+    </div>
+  )
   const cardOverlay = (id: string, rect: Box): React.ReactNode => {
     const r = rowById.get(id)
     if (!r) return null
-    return (
-      <div
-        className={shellClass}
-        style={
-          {
-            zoom: effectiveZoom,
-            '--card-scale': cardScale,
-            width: `${rect.width / effectiveZoom}px`,
-            height: `${rect.height / effectiveZoom}px`,
-          } as React.CSSProperties
-        }
-      >
-        <CardRoot className="card-overlay" style={{ width: '100%', height: '100%' }}>
-          <CardBody pop={false}>
-            <OverlayFace
-              row={r}
-              view={view}
-              banner={banner}
-              ctx={ctx}
-              crumbs={trailBySet[r.parentSetId ?? ''] ?? NO_TRAIL}
-              cover={coverOf(r)}
-              iconName={entityIcon('page', r.icon, defaultIcons)}
-              columns={columns}
-              nexusId={nexusId}
-              capitalize={capitalize}
-              styleById={styleById}
-            />
-          </CardBody>
-        </CardRoot>
-      </div>
+    return overlayShell(
+      rect,
+      <CardRoot className="card-overlay" style={OVERLAY_FILL}>
+        <CardBody pop={false}>
+          <OverlayFace
+            row={r}
+            view={view}
+            banner={banner}
+            ctx={ctx}
+            crumbs={trailBySet[r.parentSetId ?? ''] ?? NO_TRAIL}
+            cover={coverOf(r)}
+            iconName={entityIcon('page', r.icon, defaultIcons)}
+            columns={columns}
+            nexusId={nexusId}
+            capitalize={capitalize}
+            styleById={styleById}
+          />
+        </CardBody>
+      </CardRoot>,
+    )
+  }
+  const setOverlay = (id: string, rect: Box): React.ReactNode => {
+    const set = sets.find((x) => x.id === id)
+    if (!set) return null
+    return overlayShell(
+      rect,
+      <CardRoot className="card-overlay" locked style={OVERLAY_FILL}>
+        <SetFace set={set} defaultIcons={defaultIcons} />
+      </CardRoot>,
     )
   }
 
@@ -432,6 +447,7 @@ export function CardsView({ host }: { host: ViewHostApi }): React.JSX.Element {
                 }),
               ]}
               onMove={reorderSets}
+              renderOverlay={setOverlay}
             >
               <DropSlot />
               {sets.map((s) => (
@@ -646,35 +662,51 @@ interface SetCardProps {
 }
 
 function SetCard({ set, defaultIcons, api }: SetCardProps): React.JSX.Element {
-  const drag = useDragItem(set.id, () => api.openSet(set, false))
-  const iconName = entityIcon('set', set.icon, defaultIcons)
+  const drag = useDragItem(set.id, { open: () => api.openSet(set, false) })
   return (
     <CardRoot drag={drag} locked onClick={(e) => api.openSet(set, isCmd(e))}>
-      <CardBody>
-        <CardThumb
-          onContextMenu={(e) => {
-            e.preventDefault()
-            e.stopPropagation()
-            api.banner({ id: set.id, kind: 'set', frame: e.currentTarget, mode: 'menu' })
-          }}
-        >
-          <AssetImage
-            value={set.banner}
-            fallback={
-              <CardPlaceholder>
-                <Icon name={iconName} size="titleLarge" />
-              </CardPlaceholder>
-            }
-          />
-        </CardThumb>
-        <CardText>
-          <CardTitle>
-            <Icon name={iconName} className="card-title-icon" />
-            <span>{set.title}</span>
-          </CardTitle>
-        </CardText>
-      </CardBody>
+      <SetFace
+        set={set}
+        defaultIcons={defaultIcons}
+        onThumbMenu={(e) => {
+          e.preventDefault()
+          e.stopPropagation()
+          api.banner({ id: set.id, kind: 'set', frame: e.currentTarget, mode: 'menu' })
+        }}
+      />
     </CardRoot>
+  )
+}
+
+function SetFace({
+  set,
+  defaultIcons,
+  onThumbMenu,
+}: {
+  set: SetNode
+  defaultIcons: DefaultIcons
+  onThumbMenu?: (e: React.MouseEvent<HTMLDivElement>) => void
+}): React.JSX.Element {
+  const iconName = entityIcon('set', set.icon, defaultIcons)
+  return (
+    <CardBody>
+      <CardThumb onContextMenu={onThumbMenu}>
+        <AssetImage
+          value={set.banner}
+          fallback={
+            <CardPlaceholder>
+              <Icon name={iconName} size="titleLarge" />
+            </CardPlaceholder>
+          }
+        />
+      </CardThumb>
+      <CardText>
+        <CardTitle>
+          <Icon name={iconName} className="card-title-icon" />
+          <span>{set.title}</span>
+        </CardTitle>
+      </CardText>
+    </CardBody>
   )
 }
 
@@ -940,7 +972,7 @@ const PageCard = memo(function PageCard({
   api,
   allowInlineRemove,
 }: PageCardProps): React.JSX.Element {
-  const drag = useDragItem(row.id, () => api.open(row, false))
+  const drag = useDragItem(row.id, { open: () => api.open(row, false) })
   const naming = useSession((s) => s.renamingPath === row.path && s.renamingHost !== 'sidebar')
   const active = useSession((s) => s.selection.kind === 'page' && s.selection.id === row.id)
   const { src, onError } = useThumb(nexusId, previewKeyOf(row, banner))

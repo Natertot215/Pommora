@@ -19,6 +19,12 @@ import * as s from './icon-picker.css'
 
 const { CELL, COLS } = s
 
+const iconLabel = (id: string): string =>
+  id
+    .split('-')
+    .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+    .join(' ')
+
 export interface IconPickerProps {
   open: boolean
   onClose: () => void
@@ -107,7 +113,7 @@ export function IconPicker({
         {iconFavs.length > 0 && (
           <div className={s.iconFavorites}>
             <div className={cx(s.iconFavScroll, 'scroll-fade-x')}>
-              <SortableZone items={iconFavs} axis="x" label={(id) => id} onMove={moveIconFav}>
+              <SortableZone items={iconFavs} axis="x" label={iconLabel} onMove={moveIconFav}>
                 {iconFavs.map((id) => (
                   <IconFavCell
                     key={id}
@@ -185,7 +191,8 @@ function IconFavCell({
   onPick: (id: string) => void
   onContext: (e: MouseEvent, id: string) => void
 }): React.JSX.Element {
-  const { setNodeRef, style, handle } = useDragItem(id, () => onPick(id))
+  const { setNodeRef, style, handle } = useDragItem(id, { open: () => onPick(id) })
+  const label = iconLabel(id)
   return (
     <button
       type="button"
@@ -193,7 +200,8 @@ function IconFavCell({
       style={style}
       {...handle}
       className={cx(s.cell, selected && s.cellSelected)}
-      title={id}
+      aria-label={label}
+      title={label}
       onClick={() => onPick(id)}
       onContextMenu={(e) => onContext(e, id)}
     >
