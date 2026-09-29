@@ -742,6 +742,27 @@ describe('the drag handle keyboard', () => {
     done()
   })
 
+  it('a canceled lift leaves the item with no transform or transition, by keyboard or pointer', async () => {
+    const { handle, done } = await renderZone(undefined, { onMove })
+    await act(async () => handle.focus())
+    await press(handle, ' ')
+    await press(document, 'ArrowDown')
+    expect(handle.style.transform).not.toBe('')
+    await press(document, 'Escape')
+    await settle()
+    expect([handle.style.transform, handle.style.transition]).toEqual(['', ''])
+    await act(async () => {
+      firePointer(handle, 'pointerdown', { x: 100, y: 50 })
+    })
+    await move(100, 150)
+    expect(handle.style.transform).not.toBe('')
+    pressEscape()
+    await settle()
+    expect([handle.style.transform, handle.style.transition]).toEqual(['', ''])
+    expect(onMove).not.toHaveBeenCalled()
+    done()
+  })
+
   it('prevents Space and Enter on a handle while a drop still glides', async () => {
     const { handle, done } = await renderZone(undefined, { onMove })
     const other = handle.nextElementSibling as HTMLElement
@@ -1009,6 +1030,18 @@ describe('the line zone', () => {
     await press(item('r2'), 'Enter')
     expect(open).not.toHaveBeenCalled()
     pressEscape()
+  })
+
+  it('Space on a row lifts nothing while another drop still glides', async () => {
+    aside = <Zone zid="A" />
+    await mount()
+    await act(async () => item('a1').focus())
+    await press(item('a1'), ' ')
+    await press(document, 'ArrowDown')
+    await press(document, ' ')
+    expect((await press(item('r1'), ' ')).defaultPrevented).toBe(true)
+    expect(item('r1').hasAttribute('data-drag-source')).toBe(false)
+    await settle()
   })
 
   it('refuses a lift with no snapshot and nothing to carry', async () => {

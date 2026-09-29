@@ -3,8 +3,6 @@
 import { useRef, useState } from 'react'
 import { UNGROUPED } from '@pommora/core/Views/viewRow'
 import type { ViewRow } from '@pommora/core/Views/viewRow'
-import type { ViewPatch } from '@pommora/core/Views/views'
-import type { Result } from '@pommora/core/Contract/result'
 import type { CollectionNode, SetNode } from '@pommora/core/Nexus/tree'
 import type { PageMenuContext } from '@pommora/core/Actions/pageMenu'
 import { type PageTarget, selectTargetOf } from '@pommora/core/Navigation/navRef'
@@ -32,7 +30,7 @@ import { sameIds, tieOrderWith } from '../creationOrder'
 import { useViewTileScope } from '../ViewTileScope'
 import type { ViewHostApi } from './useViewHost'
 import { useViewCreation } from './useViewCreation'
-import { mutateAhead, refusedDrop, stageView, unstageView } from './pendingView'
+import { dropIO, mutateAhead, stageView, unstageView } from './pendingView'
 
 interface ViewInteractionPolicy {
   ghost: {
@@ -108,15 +106,6 @@ export function useViewInteractions(host: ViewHostApi, policy: ViewInteractionPo
   // ── Bands ─────────────────────────────────────────────────────────────────
 
   const valueAt = bucketValueAt(bands.byKey)
-  const saveDrop = (
-    patch: ViewPatch,
-    name: string,
-    opts?: { viewState?: boolean },
-  ): Promise<Result<unknown>> =>
-    persistView(patch, opts).then((r) => {
-      refusedDrop(r.ok, name)
-      return r
-    })
   const bandDrop = (dragged: BandRef, drop: BandDrop): void => {
     const node = bands.byKey.get(dragged.key)
     const name = node ? nodeLabel(node) : (sets.node.get(dragged.key)?.title ?? '')
@@ -126,8 +115,7 @@ export function useViewInteractions(host: ViewHostApi, policy: ViewInteractionPo
       drop,
       { view, plan, schema, sets, sourcePath: source.path },
       {
-        persistView: (patch) => saveDrop(patch, name),
-        mutate: (req) => mutateAhead(req, name),
+        ...dropIO(name, persistView),
         switched: ({ propertyId, prior }) =>
           notifyUndoable(
             `Switched to custom ${columnLabel(propertyId, schema, ctx.contexts, capitalize)} order`,
@@ -193,7 +181,8 @@ export function useViewInteractions(host: ViewHostApi, policy: ViewInteractionPo
         'above',
       ),
     }
-    const save = (): void => void saveDrop(patch, row.title, { viewState: true })
+    const save = (): void =>
+      void dropIO(row.title, persistView).persistView(patch, { viewState: true })
     if (!landed) {
       save()
       return

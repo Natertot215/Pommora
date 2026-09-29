@@ -4,7 +4,7 @@ import { act } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
 import type { ReactNode } from 'react'
 import type { PropertyDefinition } from '@pommora/core/Properties/properties'
-import type { ColumnStyle } from '@pommora/core/Properties/columnStyles'
+import type { DateFormat } from '@pommora/core/Properties/columnStyles'
 import type { CollectionNode, SetNode } from '@pommora/core/Nexus/tree'
 import type { ResolvedGroup } from '@pommora/core/Views/viewRow'
 import type { SavedView, SubGroupConfig } from '@pommora/core/Views/views'
@@ -13,7 +13,7 @@ import { type Geometry, laneSlot, type Row } from '@pommora/uix/Interactions/reo
 import { ROW_END, rowLine, rowSnap } from '../Table/rowInsertion'
 import { mountEachTest } from '../../Testing/viewHarness'
 import { BandGlyph, bandSpec, GroupBand, bandedSpec } from './GroupBand'
-import { bandModelOf, bandNodeOf, headContextOf } from './bandModel'
+import { bandModelOf, headContextOf } from './bandModel'
 import { setIndexOf } from './setIndex'
 
 const schema: PropertyDefinition[] = [
@@ -63,16 +63,12 @@ const grouping = (property_id: string, extra: Partial<SubGroupConfig> = {}): Sub
   order_mode: 'configured',
   ...extra,
 })
-const styleOf =
-  (date_format: ColumnStyle['date_format'] = 'full') =>
-  (): ColumnStyle =>
-    ({ date_format }) as ColumnStyle
-const heads = (sub?: SubGroupConfig, format: ColumnStyle['date_format'] = 'full') =>
-  headContextOf(source, setIndexOf(source), sub, schema, view, styleOf(format))
+const heads = (sub?: SubGroupConfig, dateFormat: DateFormat = 'full') =>
+  headContextOf(source, setIndexOf(source), sub, schema, view, { dateFormat, clock: 'twelveHour' })
 const group = (kind: 'set' | 'tail' | 'bucket', key: string, value = key): ResolvedGroup =>
   kind === 'bucket' ? { key, kind, value, items: [] } : { key, kind, items: [] }
 const nodeOf = (g: ResolvedGroup, h: ReturnType<typeof heads>) => {
-  const node = bandNodeOf(g, 0, null, h)
+  const [node] = bandModelOf([g], h).nodes
   if (!node || node.kind === 'tail') throw new Error('expected a headed band')
   return node
 }
@@ -141,10 +137,10 @@ describe('GroupBand', () => {
   }
 
   it('a tail renders its rows with no head', () => {
-    const tail = bandNodeOf(group('tail', 'tail'), 0, null, heads())
+    const [tail] = bandModelOf([group('tail', 'tail')], heads()).nodes
     act(() =>
       root.render(
-        <GroupBand node={tail ?? undefined} bands={bandView}>
+        <GroupBand node={tail} bands={bandView}>
           <p>rows</p>
         </GroupBand>,
       ),

@@ -41,7 +41,10 @@ const leaf = (key: string, children?: ResolvedGroup[]): ResolvedGroup => ({
 const modelOf = (groups: ResolvedGroup[]): BandModel =>
   bandModelOf(
     groups,
-    headContextOf(source, setIndexOf(source), undefined, [], view, () => ({}) as never),
+    headContextOf(source, setIndexOf(source), undefined, [], view, {
+      dateFormat: 'full',
+      clock: 'twelveHour',
+    }),
   )
 const BANDS = modelOf([leaf('A', [leaf('A1')]), leaf('B')])
 

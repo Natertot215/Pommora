@@ -4,13 +4,12 @@ import type { CollectionNode, NexusTree } from './tree'
 import { NEW_SLOT } from './mutateRequest'
 import {
   insertCreatedInTree,
-  moveInTree,
   patchContextGroupsInTree,
   patchNodeInTree,
   relocateNodeInTree,
   removeNodeInTree,
   renameNodeInTree,
-  reorderChildrenInTree,
+  orderInTree,
 } from './treePatch'
 import { DEFAULT_COMMANDS } from '../Actions/commands'
 
@@ -372,8 +371,8 @@ describe('patchNodeInTree', () => {
 })
 
 describe('reorder transforms', () => {
-  it('an empty parent path reorders top collections, unknown ids keep relative order at the end', () => {
-    const t = reorderChildrenInTree(tree(), '', ['c2'])
+  it('reorderTop reorders top collections, unknown ids keep relative order at the end', () => {
+    const t = orderInTree(tree(), { op: 'reorderTop', order: ['c2'] })
     expect(t?.collections.map((c) => c.id)).toEqual(['c2', 'c1'])
   })
 
@@ -387,19 +386,29 @@ describe('reorder transforms', () => {
       sets: [],
       pages: [],
     })
-    const t = reorderChildrenInTree(base, 'Notes', ['s2', 's1'])
+    const t = orderInTree(base, {
+      op: 'reorderChildren',
+      parentPath: 'Notes',
+      key: 'set_order',
+      order: ['s2', 's1'],
+    })
     expect(t?.collections[0].sets.map((s) => s.id)).toEqual(['s2', 's1'])
   })
 
   it('reorderChildren with an empty parent reorders top collections', () => {
-    const t = reorderChildrenInTree(tree(), '', ['c2', 'c1'])
+    const t = orderInTree(tree(), {
+      op: 'reorderChildren',
+      parentPath: '',
+      key: 'set_order',
+      order: ['c2', 'c1'],
+    })
     expect(t?.collections.map((c) => c.id)).toEqual(['c2', 'c1'])
   })
 
   it('a moved page lands at the slot its order names, not appended', () => {
     const base = tree()
     base.collections[1].pages.push({ kind: 'page', id: 'p9', title: 'Z', path: 'Work/Z.md' })
-    const t = moveInTree(base, {
+    const t = orderInTree(base, {
       op: 'movePage',
       path: 'Notes/A.md',
       newParentPath: 'Work',
@@ -409,7 +418,7 @@ describe('reorder transforms', () => {
   })
 
   it('a moved page with no order is appended', () => {
-    const t = moveInTree(tree(), { op: 'movePage', path: 'Notes/A.md', newParentPath: 'Work' })
+    const t = orderInTree(tree(), { op: 'movePage', path: 'Notes/A.md', newParentPath: 'Work' })
     expect(t?.collections[1].pages.map((p) => p.id)).toEqual(['p1'])
   })
 
@@ -423,7 +432,7 @@ describe('reorder transforms', () => {
       sets: [],
       pages: [],
     })
-    const t = moveInTree(base, {
+    const t = orderInTree(base, {
       op: 'moveSet',
       path: 'Notes/Z',
       newParentPath: 'Notes',
@@ -431,12 +440,12 @@ describe('reorder transforms', () => {
     })
     expect(t?.collections[0].sets.map((s) => s.id)).toEqual(['s2', 's1'])
     expect(
-      moveInTree(tree(), { op: 'moveSet', path: 'Notes/Ghost', newParentPath: 'Work', order: [] }),
+      orderInTree(tree(), { op: 'moveSet', path: 'Notes/Ghost', newParentPath: 'Work', order: [] }),
     ).toBeNull()
   })
 
   it('a same-parent page move ranks ids absent from its order last, stable', () => {
-    const t = moveInTree(tree(), {
+    const t = orderInTree(tree(), {
       op: 'movePage',
       path: 'Notes/Sub/B.md',
       newParentPath: 'Notes/Sub',

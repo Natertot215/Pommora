@@ -119,10 +119,7 @@ export function useViewHost(source: CollectionNode | SetNode, nests: boolean) {
     [identity, schema, assetMap],
   )
   const heads = useMemo(
-    () =>
-      headContextOf(painted, sets, bucketGroup, schema, view, (id) =>
-        styleFor(id, schema, view, nexus),
-      ),
+    () => headContextOf(painted, sets, bucketGroup, schema, view, nexus),
     [painted, sets, bucketGroup, schema, view, nexus],
   )
   const bands = useMemo(() => bandModelOf(groups, heads), [groups, heads])

@@ -64,7 +64,7 @@ import {
 import { type BandDrop, type BandRef, dropBand } from '../Bands/bandRouter'
 import { bandSpec } from '../Bands/GroupBand'
 import { setIndexOf } from '../Bands/setIndex'
-import { mutateAhead, refusedDrop, usePainted } from '../Host/pendingView'
+import { dropIO, usePainted } from '../Host/pendingView'
 import { EntityIcon } from '../../Assets/EntityIcon'
 import { cx } from '@pommora/uix/Utilities/cx'
 import { useSetting } from '../../Session/store'
@@ -397,10 +397,7 @@ function LocationHierarchy({
             : walk(id),
         }),
       )
-    const heads = headContextOf(painted, sets, sub, schema, view, (id) =>
-      styleFor(id, schema, view, nexus),
-    )
-    return bandModelOf(walk(null), heads)
+    return bandModelOf(walk(null), headContextOf(painted, sets, sub, schema, view, nexus))
   }, [painted, sets, plan, sub, subDef, subChips, schema, view, nexus])
   const collapsed = useMemo(
     () => new Set(sets.preorder.filter((id) => !expanded.has(id))),
@@ -414,14 +411,7 @@ function LocationHierarchy({
       dragged,
       to,
       { view, plan, schema, sets, sourcePath: painted.path },
-      {
-        persistView: (patch) =>
-          persist(patch).then((r) => {
-            refusedDrop(r.ok, name)
-            return r
-          }),
-        mutate: (req) => mutateAhead(req, name),
-      },
+      dropIO(name, persist),
     )
   }
 
