@@ -1,6 +1,7 @@
 import { Fragment, useMemo, useRef, useState } from 'react'
 import { fallbackTitle, type OptionEdit } from '@pommora/core/Properties/optionModel'
 import {
+  groupOptions,
   PROPERTY_TYPES,
   type PropertyType,
   type StatusGroup,
@@ -11,13 +12,13 @@ import { GhostOptionChip, OptionNameCaret, useGhostOptionAnchor } from './GhostO
 import { ghostAnchorProps } from '@pommora/uix/Interactions/ghostCreate'
 import { Reveal } from '@pommora/uix/Animations/Reveal'
 import { useEntrance } from '@pommora/uix/Animations/useEntrance'
-import { DropLine } from '@pommora/uix/Interactions/DropLine'
+import { LineGroup, LineZone } from '@pommora/uix/Interactions/drag'
 import { colorNameFor } from '@pommora/uix/Theme/ramp'
 import { text } from '@pommora/uix/Theme'
 import { OptionSlot, type OptionStyle, useOptionIconChoice } from './OptionRow'
-import { useStatusReorder } from './useStatusReorder'
+import { OptionChip } from '../Cells/OptionChip'
 import * as s from '@pommora/uix/Menus/frames.css'
-import { AccessoryButton, heading, rowDropLine } from '@pommora/uix/Menus'
+import { AccessoryButton, heading, laneSpec } from '@pommora/uix/Menus'
 import { labelColor, shape } from '@pommora/uix/Labels/label-base.css'
 import { optionShapeFor } from '@pommora/uix/Labels/recipes'
 import { popMenu } from '../../Actions/menuActions'
@@ -47,7 +48,7 @@ export function OptionEditor({
   const [editing, setEditing] = useState<{ row: string; value: string } | null>(null)
   const editBtnRef = useRef<HTMLButtonElement>(null)
   const alias = useRef(new Map<string, string>())
-  const options = useMemo(() => groups.flatMap((g) => g.options), [groups])
+  const options = useMemo(() => groups.flatMap(groupOptions), [groups])
   const values = useMemo(() => options.map((o) => o.value), [options])
   const keyOf = (value: string): string => {
     const key = alias.current.get(value)
@@ -61,16 +62,7 @@ export function OptionEditor({
     (value, icon) => onEdit({ op: 'icon', value, icon }),
   )
   const def = useMemo(() => ({ status_groups: groups }), [groups])
-  const order = useMemo(
-    () => groups.map((g) => ({ id: g.id, values: g.options.map((o) => o.value) })),
-    [groups],
-  )
   const entering = useEntrance(options, (o) => keyOf(o.value))
-  const reorder = useStatusReorder(
-    order,
-    (value) => value,
-    (value, groupId, toIndex) => onEdit({ op: 'move', value, groupId, toIndex }),
-  )
   const ghostApi = useGhostOptionAnchor(
     adding !== null ||
       renaming !== null ||
@@ -138,8 +130,26 @@ export function OptionEditor({
     )
 
   return (
-    <div className={s.statusGroups} ref={reorder.containerRef}>
-      {reorder.ghost}
+    <LineZone
+      className={s.statusGroups}
+      {...laneSpec({
+        laneOf: () => {
+          const laneOf = new Map(
+            groups.flatMap((grp) => grp.options.map((o) => [o.value, grp.id] as const)),
+          )
+          return (v) => laneOf.get(v)
+        },
+        across: true,
+        boxes: true,
+        commit: (value, slot) =>
+          onEdit({ op: 'move', value, groupId: slot.lane, toIndex: slot.index }),
+        label: (value) => value,
+        chip: (value) => (
+          <OptionChip type={type} option={options.find((o) => o.value === value)} def={def} />
+        ),
+        watch: [groups],
+      })}
+    >
       {groups.map((g) => (
         <div key={g.id} className={s.statusGroup} data-reveal-host="">
           <div className={heading}>
@@ -165,9 +175,9 @@ export function OptionEditor({
               onClick={() => setAdding({ groupId: g.id, index: g.options.length })}
             />
           </div>
-          <div
-            className={cx('drop-line-host', s.optionList)}
-            ref={(el) => reorder.registerGroup(g.id, el)}
+          <LineGroup
+            id={g.id}
+            className={s.optionList}
             {...(g.options.length === 0 ? ghostAnchorProps(ghostApi, g.id) : {})}
           >
             {g.options.map((o, i) => (
@@ -175,7 +185,6 @@ export function OptionEditor({
                 <Reveal open enterOnMount={entering(keyOf(o.value))} fill>
                   <OptionSlot
                     value={o.value}
-                    drag={reorder}
                     ghost={ghostApi}
                     onOpenMenu={(row) => void openMenu(o.value, row)}
                     type={type}
@@ -208,13 +217,10 @@ export function OptionEditor({
               </Fragment>
             ))}
             {g.options.length === 0 ? slotAt(g, 0, g.id) : null}
-            {reorder.drop?.groupId === g.id ? (
-              <DropLine style={rowDropLine(reorder.drop.top)} />
-            ) : null}
-          </div>
+          </LineGroup>
         </div>
       ))}
       {iconChoice.picker}
-    </div>
+    </LineZone>
   )
 }

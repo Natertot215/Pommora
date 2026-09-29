@@ -1,68 +1,146 @@
-import { describe, expect, it } from 'vitest'
-import type { FrameRow } from '@pommora/uix/Menus/frameDndModel'
-import type { MeasuredRow } from '@pommora/uix/Interactions/reorderModel'
-import { frameSlot, nexusReorderIndex, type PaneSlot } from './paneDrop'
+import { describe, expect, it, vi } from 'vitest'
+import type { Geometry, Row } from '@pommora/uix/Interactions/reorderModel'
+import { rowDropLine } from '@pommora/uix/Menus'
+import { RESERVED_PROPERTY_ID } from './properties'
+import { nexusReorderIndex, type PaneDrop, paneSpec } from './paneDrop'
 
-const r = (id: string, top: number, bottom: number): MeasuredRow => ({
+const r = (id: string, top: number, bottom: number): Row => ({
   id,
   top,
   bottom,
   mid: (top + bottom) / 2,
+  left: 0,
+  right: 100,
 })
 
-// a* = assigned, x* = all (registry)
-const rows = [r('a1', 10, 30), r('a2', 30, 50), r('x1', 70, 90), r('x2', 90, 110)]
-const byId = new Map<string, FrameRow>([
-  ['a1', { id: 'a1', group: 'assigned' }],
-  ['a2', { id: 'a2', group: 'assigned' }],
-  ['x1', { id: 'x1', group: 'all' }],
-  ['x2', { id: 'x2', group: 'all' }],
-])
-const regions = { assigned: { top: 10, bottom: 50 }, all: { top: 70, bottom: 110 } }
+const geometry = (rows: Row[], regions: Record<string, [number, number]>): Geometry => ({
+  rows,
+  groups: new Map(
+    Object.entries(regions).map(([key, [top, bottom]]) => [key, r(key, top, bottom)]),
+  ),
+  bottom: 200,
+})
 
-const slot = (y: number, draggedId: string): PaneSlot | null =>
-  frameSlot(rows, byId, regions, y, draggedId)
+function drive(
+  input: { assigned: string[]; ordersAll: boolean; pinned?: string },
+  g: Geometry,
+  id: string,
+  y: number,
+) {
+  const onDrop = vi.fn<(drop: PaneDrop) => void>()
+  const spec = paneSpec({
+    ...input,
+    label: (x) => x,
+    chip: () => null,
+    onDrop,
+    watch: [],
+  })
+  const s = spec.snap(id, g)
+  const slot = s && spec.resolve(id, { x: 0, y }, s)
+  if (s && slot) spec.commit(id, slot, s)
+  return {
+    slot,
+    line: s && slot ? spec.line?.(slot, s) : undefined,
+    drop: onDrop.mock.calls[0]?.[0],
+  }
+}
 
-describe('frameSlot — region-owned classification (E-4)', () => {
+describe('paneSpec — the schema pane', () => {
+  // a* = assigned, x* = all (registry)
+  const g = geometry([r('a1', 10, 30), r('a2', 30, 50), r('x1', 70, 90), r('x2', 90, 110)], {
+    assigned: [10, 50],
+    all: [70, 110],
+  })
+  const pane = { assigned: ['a1', 'a2'], ordersAll: true }
+  const at = (id: string, y: number) => drive(pane, g, id, y)
+
   it('assigned→assigned reorders at the slot (C-5)', () => {
-    expect(slot(15, 'a2')?.drop).toEqual({ kind: 'reorder-assigned', propId: 'a2', toIndex: 0 })
-    expect(slot(15, 'a2')?.lineY).toBe(10)
+    const s = at('a2', 15)
+    expect(s.drop).toEqual({ kind: 'reorder-assigned', propId: 'a2', toIndex: 0 })
+    expect(s.line).toEqual(rowDropLine(10))
   })
 
   it('assigned→all is unassign with the area highlight and NO line (C-3/C-4)', () => {
-    const s = slot(80, 'a1')
-    expect(s?.drop).toEqual({ kind: 'unassign', propId: 'a1' })
-    expect(s?.highlightAll).toBe(true)
-    expect(s?.lineY).toBeNull()
+    const s = at('a1', 80)
+    expect(s.slot).toBe('unassign')
+    expect(s.drop).toEqual({ kind: 'unassign', propId: 'a1' })
+    expect(s.line).toBeNull()
   })
 
   it('all→assigned assigns at the slot with a line (C-2)', () => {
-    const s = slot(30, 'x1')
-    expect(s?.drop).toEqual({ kind: 'assign', propId: 'x1', toIndex: 1 })
-    expect(s?.lineY).toBe(30)
+    const s = at('x1', 30)
+    expect(s.drop).toEqual({ kind: 'assign', propId: 'x1', toIndex: 1 })
+    expect(s.line).toEqual(rowDropLine(30))
   })
 
   it('all→all reorders the nexus order (C-1)', () => {
-    expect(slot(105, 'x1')?.drop).toEqual({ kind: 'reorder-nexus', propId: 'x1', toIndex: 1 })
+    expect(at('x1', 105).drop).toEqual({ kind: 'reorder-nexus', propId: 'x1', toIndex: 1 })
   })
 
-  it('outside both regions → null (release is a no-op)', () => {
-    expect(slot(200, 'a1')).toBeNull()
-    expect(slot(60, 'a1')).toBeNull()
+  it('clamps a release outside both regions to the nearest lane', () => {
+    expect(at('a1', 200).slot).toBe('unassign')
+    expect(at('a1', 55).drop).toEqual({ kind: 'reorder-assigned', propId: 'a1', toIndex: 1 })
   })
 
   it('an empty target region still yields the slot at its top (assign into a bare collection)', () => {
-    const only = [r('x1', 70, 90)]
-    const ids = new Map<string, FrameRow>([['x1', { id: 'x1', group: 'all' }]])
-    const s = frameSlot(
-      only,
-      ids,
-      { assigned: { top: 10, bottom: 50 }, all: { top: 70, bottom: 110 } },
-      20,
-      'x1',
+    const only = geometry([r('x1', 70, 90)], { assigned: [10, 50], all: [70, 110] })
+    const s = drive({ assigned: [], ordersAll: true }, only, 'x1', 20)
+    expect(s.drop).toEqual({ kind: 'assign', propId: 'x1', toIndex: 0 })
+    expect(s.line).toEqual(rowDropLine(10))
+  })
+})
+
+describe('paneSpec — the visibility pane', () => {
+  const g = geometry([r('a', 0, 20), r('b', 20, 40), r('h', 60, 80)], {
+    assigned: [0, 50],
+    all: [50, 100],
+  })
+  const pane = { assigned: ['a', 'b'], ordersAll: false, pinned: RESERVED_PROPERTY_ID.title }
+  const at = (id: string, y: number) => drive(pane, g, id, y)
+
+  it('reorders a shown row within the properties region', () => {
+    expect(at('a', 35).drop).toEqual({ kind: 'reorder-assigned', propId: 'a', toIndex: 1 })
+  })
+
+  it('unhides a hidden row dragged into the properties region', () => {
+    expect(at('h', 5).drop).toEqual({ kind: 'assign', propId: 'h', toIndex: 0 })
+  })
+
+  it('hides a shown row dropped in the hidden zone — membership drop: highlight, no line', () => {
+    const s = at('a', 70)
+    expect(s.drop).toEqual({ kind: 'unassign', propId: 'a' })
+    expect(s.line).toBeNull()
+    expect(s.slot).toBe('unassign')
+  })
+
+  it('keeps a hidden row inert over its own zone — no reorder within hidden', () => {
+    expect(at('h', 70).slot).toBeNull()
+  })
+
+  it('never hides Title — a drop into the hidden zone is a no-op', () => {
+    const withTitle = geometry(
+      [r(RESERVED_PROPERTY_ID.title, 0, 20), r('b', 20, 40), r('h', 60, 80)],
+      {
+        assigned: [0, 50],
+        all: [50, 100],
+      },
     )
-    expect(s?.drop).toEqual({ kind: 'assign', propId: 'x1', toIndex: 0 })
-    expect(s?.lineY).toBe(10)
+    const s = drive(
+      { ...pane, assigned: [RESERVED_PROPERTY_ID.title, 'b'] },
+      withTitle,
+      RESERVED_PROPERTY_ID.title,
+      70,
+    )
+    expect(s.slot).toBeNull()
+  })
+
+  it('is inert above and below the pane regions', () => {
+    expect(at('a', -10).slot).toBeNull()
+    expect(at('a', 150).slot).toBe('unassign')
+  })
+
+  it('never highlights during a positional drop in the shown zone', () => {
+    expect(at('h', 35).slot).not.toBe('unassign')
   })
 })
 

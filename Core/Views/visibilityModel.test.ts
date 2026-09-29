@@ -1,9 +1,7 @@
 import { describe, expect, it } from 'vitest'
-import type { MeasuredRow } from '@pommora/uix/Interactions/reorderModel'
 import { RESERVED_PROPERTY_ID, type PropertyDefinition } from '@pommora/core/Properties/properties'
 import type { SavedView } from '@pommora/core/Views/views'
-import type { FrameRow } from '@pommora/uix/Menus/frameDndModel'
-import { hiddenListIds, hiddenPaneSlot, hideShown, placeInShown, unhide } from './visibilityModel'
+import { hiddenListIds, hideShown, placeInShown, unhide } from './visibilityModel'
 
 const { title, createdAt, modifiedAt } = RESERVED_PROPERTY_ID
 const [areas, projects] = ['ctx_areas', 'ctx_projects']
@@ -111,60 +109,5 @@ describe('hideShown / unhide', () => {
       property_order: ['a'],
       hidden_properties: [],
     })
-  })
-})
-
-describe('hiddenPaneSlot', () => {
-  const rows: MeasuredRow[] = [
-    { id: 'a', top: 0, bottom: 20, mid: 10 },
-    { id: 'b', top: 20, bottom: 40, mid: 30 },
-    { id: 'h', top: 60, bottom: 80, mid: 70 },
-  ]
-  const byId = new Map<string, FrameRow>([
-    ['a', { id: 'a', group: 'assigned' }],
-    ['b', { id: 'b', group: 'assigned' }],
-    ['h', { id: 'h', group: 'all' }],
-  ])
-  const regions = { assigned: { top: 0, bottom: 50 }, all: { top: 50, bottom: 100 } }
-
-  it('reorders a shown row within the properties region', () => {
-    expect(hiddenPaneSlot(rows, byId, regions, 35, 'a')?.drop).toEqual({
-      kind: 'reorder-assigned',
-      propId: 'a',
-      toIndex: 1,
-    })
-  })
-
-  it('unhides a hidden row dragged into the properties region', () => {
-    expect(hiddenPaneSlot(rows, byId, regions, 5, 'h')?.drop).toEqual({
-      kind: 'assign',
-      propId: 'h',
-      toIndex: 0,
-    })
-  })
-
-  it('hides a shown row dropped in the hidden zone — membership drop: highlight, no line', () => {
-    const slot = hiddenPaneSlot(rows, byId, regions, 70, 'a')
-    expect(slot?.drop).toEqual({ kind: 'unassign', propId: 'a' })
-    expect(slot?.lineY).toBeNull()
-    expect(slot?.highlightAll).toBe(true)
-  })
-
-  it('keeps a hidden row inert over its own zone — no reorder within hidden', () => {
-    expect(hiddenPaneSlot(rows, byId, regions, 70, 'h')).toBeNull()
-  })
-
-  it('never hides Title — a drop into the hidden zone is a no-op', () => {
-    const withTitle = new Map(byId).set(title, { id: title, group: 'assigned' })
-    expect(hiddenPaneSlot(rows, withTitle, regions, 70, title)).toBeNull()
-  })
-
-  it('is inert above and below the pane regions', () => {
-    expect(hiddenPaneSlot(rows, byId, regions, -10, 'a')).toBeNull()
-    expect(hiddenPaneSlot(rows, byId, regions, 150, 'a')).toBeNull()
-  })
-
-  it('never highlights during a positional drop in the shown zone', () => {
-    expect(hiddenPaneSlot(rows, byId, regions, 35, 'h')?.highlightAll).toBe(false)
   })
 })

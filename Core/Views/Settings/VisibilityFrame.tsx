@@ -11,11 +11,10 @@ import { MenuRowView, MenuTopRow, MenuScrollFrame } from '@pommora/uix/Menus'
 import { resolveColumns } from '../Pipeline/columns'
 import { columnLabel, useCapitalizeMetadata } from '../../Properties/Cells/columnLabel'
 import { useSaveView } from '../viewWrite'
-import { FrameDnd, RowShell, useFrameRegions } from '@pommora/uix/Menus/FrameDnd'
-import type { FrameRow } from '@pommora/uix/Menus/frameDndModel'
-import type { PaneDrop } from '@pommora/core/Properties/paneDrop'
+import { LineGroup, LineRow, LineZone, useLineSlot } from '@pommora/uix/Interactions/drag'
+import { type PaneDrop, type PaneSlot, paneSpec } from '@pommora/core/Properties/paneDrop'
 import { contextIdsOf, contextsByIdOf } from '../../Contexts/contextIdentity'
-import { hiddenListIds, hiddenPaneSlot, hideShown, placeInShown, unhide } from '../visibilityModel'
+import { hiddenListIds, hideShown, placeInShown, unhide } from '../visibilityModel'
 import { EyeToggle } from '@pommora/uix/Elements/EyeToggle'
 import { PropertyTypeIcon, propertyIcon } from '../../Properties/Cells/PropertyTypes'
 import { Icon } from '@pommora/uix/Symbols'
@@ -46,11 +45,11 @@ function VisibilityGroups({
   nameFor: (id: string) => string
   onToggle: (id: string, hidden: boolean) => void
 }): React.JSX.Element {
-  const { assignedRef, allRef, allHighlighted } = useFrameRegions()
+  const hiding = useLineSlot<PaneSlot>() === 'unassign'
   const row = (id: string): React.JSX.Element => {
     const hidden = hiddenSet.has(id)
     return (
-      <RowShell key={id} id={id}>
+      <LineRow key={id} id={id}>
         <MenuRowView
           row={{
             kind: 'item',
@@ -79,21 +78,15 @@ function VisibilityGroups({
             className: hidden ? s.hiddenRow : undefined,
           }}
         />
-      </RowShell>
+      </LineRow>
     )
   }
   return (
     <>
-      <div data-group="assigned" ref={assignedRef}>
-        {shownIds.map(row)}
-      </div>
-      <div
-        data-group="all"
-        ref={allRef}
-        className={cx(s.hiddenZone, allHighlighted && s.allHighlight)}
-      >
+      <LineGroup id="assigned">{shownIds.map(row)}</LineGroup>
+      <LineGroup id="all" className={cx(s.hiddenZone, hiding && s.allHighlight)}>
         {hiddenIds.map(row)}
-      </div>
+      </LineGroup>
     </>
   )
 }
@@ -136,18 +129,29 @@ export function VisibilityFrame({
       save(placeInShown(view, shownIds, drop.propId, drop.toIndex))
   }
 
-  const paneRows: FrameRow[] = [
-    ...shownIds.map((id) => ({ id, group: 'assigned' as const })),
-    ...hiddenIds.map((id) => ({ id, group: 'all' as const })),
-  ]
-
   return (
     <MenuScrollFrame
       header={<MenuTopRow label={label} current={current} onBack={onBack} />}
       footer={footer}
       maxHeight={maxHeight}
     >
-      <FrameDnd rows={paneRows} labelFor={nameFor} onDrop={handleDrop} slot={hiddenPaneSlot}>
+      <LineZone
+        className={s.frameDnd}
+        {...paneSpec({
+          assigned: shownIds,
+          ordersAll: false,
+          pinned: RESERVED_PROPERTY_ID.title,
+          label: nameFor,
+          chip: (id) => (
+            <>
+              {rowIcon(id, schema)}
+              {nameFor(id)}
+            </>
+          ),
+          onDrop: handleDrop,
+          watch: [view, schema, tree],
+        })}
+      >
         <VisibilityGroups
           shownIds={shownIds}
           hiddenIds={hiddenIds}
@@ -156,7 +160,7 @@ export function VisibilityFrame({
           nameFor={nameFor}
           onToggle={(id, hidden) => save(hidden ? unhide(view, id) : hideShown(view, id))}
         />
-      </FrameDnd>
+      </LineZone>
     </MenuScrollFrame>
   )
 }

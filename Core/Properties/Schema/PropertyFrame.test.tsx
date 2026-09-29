@@ -245,7 +245,7 @@ describe('the two-region drag (T6) — state-level; geometry truth lives in the 
     expect(deleteSpy()).toHaveBeenCalledWith('Col', 'prop_status')
   })
 
-  it("a press on the row's + button never arms a drag (begin guard)", async () => {
+  it("a drag begun on the row's + button lifts the row past 12px and assigns at the slot", async () => {
     useSession.setState({ tree: { registry: [effortDef] } as never })
     await mountPane()
     await act(async () => {
@@ -258,7 +258,24 @@ describe('the two-region drag (T6) — state-level; geometry truth lives in the 
       firePointer(window, 'pointermove', { x: 100, y: 20 })
       firePointer(window, 'pointerup', { x: 100, y: 20 })
     })
-    expect(assignSpy).not.toHaveBeenCalledWith('Col', 'prop_x', expect.anything())
+    expect(assignSpy).toHaveBeenCalledWith('Col', 'prop_x', 1)
+  })
+
+  it("a sub-12px wobble on the row's + button still clicks", async () => {
+    useSession.setState({ tree: { registry: [effortDef] } as never })
+    await mountPane()
+    await act(async () => {
+      rowFor('All Properties').click()
+    })
+    stubGeometry()
+    const plus = host.querySelector<HTMLButtonElement>('[aria-label="Assign Effort"]')!
+    await act(async () => {
+      firePointer(plus, 'pointerdown', { x: 100, y: 80 })
+      firePointer(window, 'pointermove', { x: 100, y: 84 })
+      firePointer(window, 'pointerup', { x: 100, y: 84 })
+      plus.click()
+    })
+    expect(assignSpy).toHaveBeenCalledWith('Col', 'prop_x')
   })
 })
 

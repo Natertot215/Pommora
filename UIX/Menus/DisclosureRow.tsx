@@ -47,7 +47,7 @@ export function DropOutline({
               e.stopPropagation()
               onToggle()
             },
-            onPointerDown: (e: React.PointerEvent) => e.stopPropagation(),
+            'data-drag-slop': '',
           })}
         />
       )
@@ -69,6 +69,7 @@ export function DisclosureRow({
   selected = false,
   checked,
   className,
+  tabIndex,
   trailing,
   wrap,
   children,
@@ -83,6 +84,7 @@ export function DisclosureRow({
   selected?: boolean
   checked?: boolean
   className?: string
+  tabIndex?: number
   trailing?: ReactNode
   /** Wraps the row ALONE, never the disclosed run — a drag rect must be the row's own height. */
   wrap?: (row: ReactNode) => ReactNode
@@ -93,6 +95,7 @@ export function DisclosureRow({
       selected={selected}
       checked={checked}
       className={className}
+      tabIndex={tabIndex}
       leading={
         <>
           <DropOutline kind={kind} open={open} onToggle={onToggle} />

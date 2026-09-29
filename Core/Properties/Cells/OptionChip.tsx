@@ -4,7 +4,6 @@ import { Label } from '@pommora/uix/Labels/Label'
 import { optionShapeFor } from '@pommora/uix/Labels/recipes'
 import { Icon, type IconName, iconNameOr } from '@pommora/uix/Symbols'
 import { colorNameFor } from '@pommora/uix/Theme/ramp'
-import { statusGroupGlyph, statusGroupOf } from './statusCycle'
 
 export interface OptionChipData {
   value: string
@@ -13,16 +12,21 @@ export interface OptionChipData {
   appearance?: OptionAppearance
 }
 
-const defaultOptionIcon = (type: string): IconName => (type === 'multiSelect' ? 'tags' : 'tag')
+const STATUS_GROUP_GLYPH: Record<string, IconName> = {
+  upcoming: 'circle-dashed',
+  in_progress: 'minus',
+  done: 'check',
+}
 
 export function optionGlyph(
   type: string,
   option: OptionChipData | undefined,
   def?: Pick<PropertyDefinition, 'status_groups'>,
 ): string {
-  return type === 'status'
-    ? iconNameOr(option?.icon, statusGroupGlyph(statusGroupOf(option?.value ?? '', def)))
-    : iconNameOr(option?.icon, defaultOptionIcon(type))
+  if (type !== 'status') return iconNameOr(option?.icon, type === 'multiSelect' ? 'tags' : 'tag')
+  const value = option?.value ?? ''
+  const group = def?.status_groups?.find((g) => g.options.some((o) => o.value === value))
+  return iconNameOr(option?.icon, (group && STATUS_GROUP_GLYPH[group.id]) ?? 'circle-dashed')
 }
 
 export function OptionChip({

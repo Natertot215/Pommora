@@ -50,9 +50,9 @@ export const specOf = (t: PropertyType | 'title' | undefined): TypeSpec | undefi
 export const groupable = (t: PropertyType | 'title' | undefined): boolean =>
   specOf(t)?.groups === true
 
-export type PickKind = Extract<ValueKind, 'select' | 'multiSelect' | 'context'>
+export type OptionPickKind = Extract<ValueKind, 'select' | 'multiSelect' | 'context'>
 
-export function pickKindOf(t: PropertyType | 'title' | undefined): PickKind | null {
+export function pickKindOf(t: PropertyType | 'title' | undefined): OptionPickKind | null {
   const kind = specOf(t)?.kind
   switch (kind) {
     case 'select':
@@ -118,7 +118,6 @@ const selectOptions = z.array(selectOption)
 
 /** An OPEN set: a group is identified by its id, never by its position, so the count is deliberately uncapped. */
 const statusGroupId = z.string()
-export type StatusGroupId = z.infer<typeof statusGroupId>
 
 const statusOption = looseDecoder(
   z.object({

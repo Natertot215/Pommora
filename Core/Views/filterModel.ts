@@ -26,7 +26,6 @@ import {
 
 export type Connector = 'and' | 'or'
 
-/** Named FilterRow, not FrameRow: frameDndModel exports an unrelated FrameRow in this same directory. */
 export interface FilterRow {
   connector: Connector | null
   rule: FilterRule

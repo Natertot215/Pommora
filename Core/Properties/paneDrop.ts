@@ -1,11 +1,15 @@
 // Slot indexes are in the persisted arrays' without-dragged coordinates.
 
+import type { ReactNode } from 'react'
+import type { LineSpec } from '@pommora/uix/Interactions/drag'
 import {
-  type FrameSlot,
-  regionScan,
-  type SlotFor,
-  withinRegion,
-} from '@pommora/uix/Menus/frameDndModel'
+  buildLanes,
+  laneAt,
+  type LaneSlot,
+  type Lanes,
+  rowSlot,
+} from '@pommora/uix/Interactions/reorderModel'
+import { rowDropLine } from '@pommora/uix/Menus'
 
 // The schema pane and the view-visibility pane derive from this vocabulary and refuse drops differently by design: the schema pane's bottom zone is the ordered nexus registry and reorders, the view pane's is a derived hidden list with no order and can't.
 // Title and every reserved property is never removable: the schema pane filters reserved ids out of both zones, the view pane refuses to hide Title.
@@ -15,7 +19,7 @@ export type PaneDrop =
   | { kind: 'assign'; propId: string; toIndex: number }
   | { kind: 'unassign'; propId: string }
 
-export type PaneSlot = FrameSlot<PaneDrop>
+export type PaneSlot = LaneSlot | 'unassign'
 
 /** The full order still holds every assigned id, so a raw visible index would land the drop among hidden rows. */
 export function nexusReorderIndex(
@@ -32,26 +36,60 @@ export function nexusReorderIndex(
   return last !== undefined ? full.indexOf(last) + 1 : full.length
 }
 
-export const frameSlot: SlotFor<PaneDrop> = (rows, byId, regions, pointerY, draggedId) => {
-  const dragged = byId.get(draggedId)
-  if (!dragged) return null
-  const region = withinRegion(regions.assigned, pointerY)
-    ? 'assigned'
-    : withinRegion(regions.all, pointerY)
-      ? 'all'
-      : null
-  if (region === null) return null
+function paneSlot(
+  s: Lanes,
+  y: number,
+  id: string,
+  ordersAll: boolean,
+  pinned?: string,
+): PaneSlot | null {
+  const lane = laneAt(s, y)
+  if (lane?.key === 'all' && s.home?.key === 'assigned') return id === pinned ? null : 'unassign'
+  if (lane?.key === 'all' && !ordersAll) return null
+  return rowSlot(lane, y)
+}
 
-  if (region === 'all' && dragged.group === 'assigned') {
-    return { drop: { kind: 'unassign', propId: draggedId }, lineY: null, highlightAll: true }
+const dropOf = (id: string, slot: PaneSlot, from: string | undefined): PaneDrop =>
+  slot === 'unassign'
+    ? { kind: 'unassign', propId: id }
+    : {
+        kind:
+          slot.lane === 'all'
+            ? 'reorder-nexus'
+            : from === 'assigned'
+              ? 'reorder-assigned'
+              : 'assign',
+        propId: id,
+        toIndex: slot.index,
+      }
+
+export function paneSpec({
+  assigned,
+  ordersAll,
+  pinned,
+  label,
+  chip,
+  onDrop,
+  watch,
+}: {
+  assigned: readonly string[]
+  ordersAll: boolean
+  pinned?: string
+  label: (id: string) => string
+  chip: (id: string) => ReactNode
+  onDrop: (drop: PaneDrop) => void
+  watch: readonly unknown[]
+}): LineSpec<PaneSlot, Lanes> {
+  return {
+    snap: (id, g) => {
+      const upper = new Set(assigned)
+      return buildLanes(g.rows, id, (x) => (upper.has(x) ? 'assigned' : 'all'), g.groups)
+    },
+    resolve: (id, point, s) => paneSlot(s, point.y, id, ordersAll, pinned),
+    commit: (id, slot, s) => onDrop(dropOf(id, slot, s.home?.key)),
+    line: (slot) => (slot === 'unassign' ? null : rowDropLine(slot.edge)),
+    label,
+    chip,
+    watch,
   }
-
-  const { i, lineY } = regionScan(rows, byId, region, draggedId, pointerY, regions[region].top)
-  const drop: PaneDrop =
-    region === 'assigned'
-      ? dragged.group === 'assigned'
-        ? { kind: 'reorder-assigned', propId: draggedId, toIndex: i }
-        : { kind: 'assign', propId: draggedId, toIndex: i }
-      : { kind: 'reorder-nexus', propId: draggedId, toIndex: i }
-  return { drop, lineY, highlightAll: false }
 }

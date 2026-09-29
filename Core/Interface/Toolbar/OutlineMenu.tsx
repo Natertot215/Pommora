@@ -12,10 +12,10 @@ import { RenamableLabel } from '@pommora/uix/Fields/RenamableLabel'
 import { useSession } from '../../Session/store'
 import { renameHeadingAtOffset, travelPageTo, usePageOutline } from '../../Pages/pageEditor'
 import { outlineTree, type OutlineNode } from '../../MarkdownPM/Engine/outlineTree'
-import { OutlineDnd, useOutlineDrag } from './OutlineDnd'
+import { LineRow } from '@pommora/uix/Interactions/drag'
+import { OutlineDnd } from './OutlineDnd'
 import * as s from './toolbar-menu.css'
 import * as o from './outline-menu.css'
-import { rowDragging } from '@pommora/uix/Menus/menu-row.css'
 
 type Disclosure = ReturnType<typeof useDisclosureSet>
 
@@ -83,8 +83,8 @@ function OutlineRow({
   setRenaming: (key: string | null) => void
   children?: React.ReactNode
 }): React.JSX.Element {
-  const drag = useOutlineDrag(node.key)
   const nested = node.children.length > 0
+  const open = disclosure.has(node.key)
   const editing = renaming === node.key
   return (
     <DisclosureRow
@@ -106,7 +106,8 @@ function OutlineRow({
       icon={null}
       className={itemEmphasized}
       dropOutline={nested ? 'chevron' : 'spacer'}
-      open={disclosure.has(node.key)}
+      open={open}
+      tabIndex={-1}
       onToggle={() => disclosure.toggle(node.key)}
       onClick={editing ? undefined : () => travelPageTo(node.from)}
       onContextMenu={(e) => {
@@ -114,9 +115,13 @@ function OutlineRow({
         setRenaming(node.key)
       }}
       wrap={(row) => (
-        <div ref={drag.ref} {...drag.handle} className={drag.isDragging ? rowDragging : undefined}>
+        <LineRow
+          id={node.key}
+          spring={nested && !open ? () => disclosure.toggle(node.key) : undefined}
+          open={editing ? undefined : () => travelPageTo(node.from)}
+        >
           {row}
-        </div>
+        </LineRow>
       )}
     >
       {children}
