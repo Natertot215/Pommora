@@ -1098,6 +1098,13 @@ describe('the line zone', () => {
     expect(item('r1').hasAttribute('data-drag-source')).toBe(false)
   })
 
+  it('a carried line row held in the gutter beside its list still resolves a slot', async () => {
+    lineSpec = { carry: [carries(BOARD, (id) => id)] }
+    await mount()
+    await dragTo('r1', -12, 70)
+    expect(commit).toHaveBeenCalledExactlyOnceWith('r1', 'r3')
+  })
+
   it('a line row carried into an admitted zone lands at once', async () => {
     lineSpec = { carry: [carries(BOARD, (id) => id)] }
     aside = <Zone zid="P" />

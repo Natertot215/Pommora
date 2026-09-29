@@ -560,7 +560,7 @@ describe('sub-group row drop (every set × bucket pair)', () => {
 
 describe('band reparent', () => {
   it('nest-into lands first in the folder and before the first displayed child in group_order', async () => {
-    await mountTable(structuralSource())
+    await mountTable(structuralSource({ group_order: ['sA', 'sA1', 'sB'] }))
     await dragBand(2, 12)
     await drop()
     expect(mutateSpy).toHaveBeenCalledExactlyOnceWith({
@@ -601,7 +601,7 @@ describe('band reparent', () => {
           resolveMove = r
         }),
     )
-    await mountTable(structuralSource())
+    await mountTable(structuralSource({ group_order: ['sA', 'sA1', 'sB'] }))
     await dragBand(2, 12)
     await drop()
     // Mid-flight, the user collapses a group (a sibling persist with fresh state).

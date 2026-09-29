@@ -134,6 +134,16 @@ describe('routeBandDrop — Sets', () => {
     })
   })
 
+  it('a nest on a view with no stored order writes none, since the folder order already shows it', () => {
+    expect(
+      routeBandDrop(setRef('sB', null), { kind: 'into', parentKey: 'sA' }, scope({ view: view() })),
+    ).toEqual({
+      kind: 'fs',
+      req: { op: 'moveSet', path: 'Col/B', newParentPath: 'Col/A', order: ['sB', 'sA1', 'sA2'] },
+      after: undefined,
+    })
+  })
+
   it('never writes an adopted placeholder id into group_order', () => {
     const withAdopted = set('col', 'Col', [
       set('sA', 'Col/A'),
