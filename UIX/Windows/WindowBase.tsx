@@ -30,11 +30,11 @@ export const WINDOW_BASE_PANEL: WindowPanelBounds = { min: 180, default: 260, ma
 
 // A remembered size may come from a larger display, so the opening rect is placed and then clamped to this viewport.
 const opening = (
-  size: Size | undefined,
+  size: Partial<Size> | undefined,
   bounds: WindowBounds,
   region?: () => Rect | null,
 ): Rect => {
-  const s = size ?? bounds.default
+  const s = { ...bounds.default, ...size }
   const r = region?.()
   // A named region is centred on both axes; the bare viewport keeps its upper bias, where the whole screen is the window's to sit in.
   const box = r ?? { x: 0, y: 0, w: window.innerWidth, h: window.innerHeight }
@@ -73,8 +73,8 @@ interface WindowBaseProps {
   onClose: () => void
   onEscape?: () => void
   bounds?: WindowBounds
-  /** Absent opens at `bounds.default`. Read once, at open. */
-  initialSize?: Size
+  /** An axis it lacks opens at `bounds.default`. Read once, at open. */
+  initialSize?: Partial<Size>
   /** Only a resize reports: a move's size may be one clamped onto a smaller viewport at the open. */
   onSizeChange?: (size: Size) => void
   /** Read once, at open. Absent centres on the viewport with its upper bias. */

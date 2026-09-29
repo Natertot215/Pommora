@@ -22,6 +22,7 @@ import {
 } from '../Interface/Glance/glanceAction'
 import { PageTile } from '../Tiles/Surfaces/PageTile'
 import { WebTile } from '../Tiles/Surfaces/WebTile'
+import { windowGeometry } from '../Interface/Windows/useWindowGeometry'
 import { openWebLink } from '../Web/openWebLink'
 import { forgetAlias, rememberAlias } from '../Connections/aliasMemory'
 import { useLatest } from '@pommora/uix/Utilities/stableApi'
@@ -93,6 +94,7 @@ function buildEditorHost(
                 void persist(write[0], dialer().ask('editorPrefs:set', pageId, ...write), true),
         }
       : undefined,
+    paneGeometry: windowGeometry,
     clipboard: {
       read: async () => valueOr(await dialer().ask('clipboard:read'), ''),
       write: async (text) => {

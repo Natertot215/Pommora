@@ -2,12 +2,8 @@ import { Fragment, useCallback, useEffect, useRef, useState } from 'react'
 import { useLatest } from '@pommora/uix/Utilities/stableApi'
 import { useHeld } from '@pommora/uix/Animations/useExitPresence'
 import { LINK_RESOLVE_TIMEOUT_MS } from '@pommora/core/Web/titleScan'
-import {
-  PICKER_PORTAL_ATTR,
-  PickerMenu,
-  VIEWPORT_MARGIN,
-  type PickerDirection,
-} from '@pommora/uix/Pickers/PickerMenu'
+import { PICKER_PORTAL_ATTR, PickerMenu } from '@pommora/uix/Pickers/PickerMenu'
+import { type PaneBounds, usePaneResize } from '@pommora/uix/Pickers/usePaneResize'
 import { lockLabel } from '@pommora/core/Actions/toggleLabels'
 import { Icon, LockGlyph } from '@pommora/uix/Symbols'
 import { cx } from '@pommora/uix/Utilities/cx'
@@ -15,7 +11,7 @@ import { revealTarget } from '@pommora/uix/Interactions/hover-reveal.css'
 import { EditorView } from '@codemirror/view'
 import { HEADING_LINE, toggleFoldAt } from '../../MarkdownPM/folding'
 import type { WarmSeam } from '../../MarkdownPM/warmSeam'
-import { useResizable, type ResizeEdge, type Size } from '@pommora/uix/Interactions/useResizable'
+import type { Size } from '@pommora/uix/Interactions/useResizable'
 import { useEscape } from '@pommora/uix/Interactions/dismissalStack'
 import { WEB_PARTITION } from '@pommora/core/Web/partition'
 import type { PinnedGlance } from '../../Session/glanceSlice'
@@ -40,18 +36,11 @@ import './glance-pane.css'
 
 // KNOB — the default and floor sizes; the ceiling is the viewport and the anchor's band as the glance opens.
 export const GLANCE_DEFAULT: Size = { w: 260, h: 120 }
-const GLANCE_MIN: Size = { w: 180, h: 100 }
+const GLANCE_BOUNDS: PaneBounds = { min: { w: 180, h: 100 }, default: GLANCE_DEFAULT }
 const RECT_SLOP = 6
 // A non-path host chain: no real page path can collide with it in the cycle guard.
 const GLANCE_ANCESTORS = ['glance'] as const
-const EDGES_DOWN: readonly ResizeEdge[] = ['e', 'w', 's', 'se', 'sw']
-const EDGES_UP: readonly ResizeEdge[] = ['e', 'w', 'n', 'ne', 'nw']
 const NOOP = (): void => {}
-
-const clampSize = (s: Size): Size => ({
-  w: Math.max(GLANCE_MIN.w, Math.round(s.w)),
-  h: Math.max(GLANCE_MIN.h, Math.round(s.h)),
-})
 
 export function glanceWarmSeam(id: string, path: string): WarmSeam {
   return warmSeamOf('glance', id, () => knownBody(path))
@@ -108,17 +97,7 @@ export function GlancePane(): React.JSX.Element {
     pendingFetch.current++
     setShownState(null)
   }, [])
-  const geometry = useWindowGeometry('glance')
-  // Clamped on read so a stored value from before a bounds change never reopens out of bounds.
-  const stored = geometry.initialSize ? clampSize(geometry.initialSize) : GLANCE_DEFAULT
-  const [resized, setResized] = useState<Size | null>(null)
-  const size = resized ?? stored
-  const [dir, setDir] = useState<PickerDirection>('down')
-  const [room, setRoom] = useState(Number.POSITIVE_INFINITY)
-  const onDirection = useCallback((next: PickerDirection, nextRoom: number) => {
-    setDir(next)
-    setRoom(nextRoom)
-  }, [])
+  const resize = usePaneResize(shown !== null, GLANCE_BOUNDS, useWindowGeometry('glance'))
   const cardRef = useRef<HTMLDivElement | null>(null)
   // State, not a ref: the portal lands a beat after the open render, so the guest-lifecycle effect must re-run when the element actually exists.
   const [siteEl, setSiteEl] = useState<HTMLElement | null>(null)
@@ -129,26 +108,8 @@ export function GlancePane(): React.JSX.Element {
   const shownRef = useLatest(shown)
   const held = useHeld(shown, !!shown)
 
-  const max = { w: window.innerWidth - 2 * VIEWPORT_MARGIN, h: Math.max(GLANCE_MIN.h, room) }
-  const live = { w: Math.min(size.w, max.w), h: Math.min(size.h, max.h) }
-  const box = useHeld(live, !!shown)
-
   const selectingRef = useRef(false)
-  const resize = useResizable({
-    rect: box,
-    min: GLANCE_MIN,
-    max,
-    equilateral: true,
-    outlined: true,
-    onChange: (next, phase) => {
-      setResized(next)
-      if (phase !== 'drop') return
-      const keep = (axis: 'w' | 'h'): number =>
-        next[axis] >= max[axis] && stored[axis] > max[axis] ? stored[axis] : next[axis]
-      geometry.onSizeChange(clampSize({ w: keep('w'), h: keep('h') }))
-    },
-  })
-  const resizing = resize.active !== null
+  const { resizing } = resize
 
   useEffect(() => {
     const show = (next: GlanceRequest): void => {
@@ -158,7 +119,6 @@ export function GlancePane(): React.JSX.Element {
       }
       const cur = shownRef.current
       if (cur && keyOf(next) === keyOf(cur) && next.el === cur.el) return
-      setRoom(Number.POSITIVE_INFINITY)
       const freshGuest =
         next.target.kind === 'site' &&
         !(cur?.target.kind === 'site' && cur.target.url === next.target.url)
@@ -172,7 +132,6 @@ export function GlancePane(): React.JSX.Element {
         return
       }
       if (freshGuest) setSiteReady(false)
-      setResized(null)
       setShownState(next)
     }
     setGlancePresenter((next) => {
@@ -397,7 +356,8 @@ export function GlancePane(): React.JSX.Element {
 
   // Freeze the ANCHOR POINT (not the pane corner — PickerMenu re-adds gap/origin and re-derives direction) plus the live box size, then dismiss the live pane; the pin renders itself from pinnedGlances.
   const onLock = (): void => {
-    if (!page || !shown) return
+    const card = cardRef.current
+    if (!page || !shown || !card) return
     const a = shown.el.getBoundingClientRect()
     pinGlance({
       tabId: activeTabId,
@@ -405,7 +365,7 @@ export function GlancePane(): React.JSX.Element {
       anchorX: a.left + a.width / 2,
       anchorY: a.top,
       anchorHeight: a.height,
-      size: box,
+      size: { w: card.offsetWidth, h: card.offsetHeight },
     })
     dismiss()
   }
@@ -444,7 +404,7 @@ export function GlancePane(): React.JSX.Element {
         manageFocus={false}
         modal={false}
         origin="center"
-        onDirection={onDirection}
+        resize={resize}
       >
         {/* biome-ignore lint/a11y/noStaticElementInteractions: a pointer-only glance surface — the pane never takes focus by contract */}
         {/* biome-ignore lint/a11y/useKeyWithClickEvents: same — no keyboard path exists into a glance */}
@@ -453,7 +413,7 @@ export function GlancePane(): React.JSX.Element {
           {...{ [GLANCE_BODY_ATTR]: '' }}
           data-reveal-host=""
           className="glance-body"
-          style={{ width: box.w, height: box.h }}
+          style={{ width: resize.size.w, height: resize.size.h }}
           onPointerDownCapture={(e) => {
             if (e.button !== 0) return
             selectingRef.current = true
@@ -492,7 +452,6 @@ export function GlancePane(): React.JSX.Element {
           )}
           {lockBtn}
         </div>
-        {resize.edges(dir === 'up' ? EDGES_UP : EDGES_DOWN)}
       </PickerMenu>
       {pinnedGlances
         .filter((p) => p.tabId === activeTabId)

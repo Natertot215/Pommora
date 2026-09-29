@@ -196,6 +196,7 @@ export function useConnectionAutocomplete(
       onToggleHeading: (value) => setCollapsed((prev) => toggled(prev, value)),
       onAside: (row) => commit(row, { openHeading: true }),
       onBack: () => ctl.current.aside?.(-1),
+      geometry: host.paneGeometry?.('autocomplete'),
     },
   }
 }

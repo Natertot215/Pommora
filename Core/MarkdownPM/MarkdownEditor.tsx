@@ -374,7 +374,12 @@ export function MarkdownEditor({
       {header}
       <div ref={editorRef} className="mdpm-editor interface-inset" />
       <AutocompletePane {...pane} />
-      <BlockMenu state={block.state} selected={block.selected} onPick={block.pick} />
+      <BlockMenu
+        state={block.state}
+        selected={block.selected}
+        onPick={block.pick}
+        geometry={host.paneGeometry?.('block-menu')}
+      />
     </div>
   )
 }

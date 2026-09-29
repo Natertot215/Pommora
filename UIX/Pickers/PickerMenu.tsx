@@ -22,6 +22,7 @@ import { cx } from '../Utilities/cx'
 import { useLatest } from '../Utilities/stableApi'
 import { clamp } from '../Utilities/clamp'
 import { MENU_GAP as GAP } from '../Menus/menuAnchor'
+import type { PaneResize } from './usePaneResize'
 import * as s from './picker-base.css'
 
 export const VIEWPORT_MARGIN = 8
@@ -81,7 +82,7 @@ export function PickerMenu({
   modal = true,
   contentClassName,
   style,
-  onDirection,
+  resize,
 }: {
   children: ReactNode
   open: boolean
@@ -106,7 +107,8 @@ export function PickerMenu({
   modal?: boolean
   contentClassName?: string
   style?: CSSProperties
-  onDirection?: (dir: PickerDirection, room: number) => void
+  /** A pane the user sizes from its free edges — `usePaneResize`'s, held by the host that applies the size. */
+  resize?: PaneResize
 }): React.JSX.Element | null {
   const { mounted, closing } = useExitPresence(open, 'menu')
   const paneRef = useRef<HTMLDivElement>(null)
@@ -139,6 +141,7 @@ export function PickerMenu({
   }, [mounted, closing, onExited])
 
   const body = useHeld(children, open)
+  const placeResize = resize?.place
 
   const glassRef = useRef<HTMLDivElement>(null)
   const [pos, setPosState] = useState<Pos | null>(null)
@@ -203,7 +206,7 @@ export function PickerMenu({
         const other = direction === 'up' ? 'down' : 'up'
         if (ph > room(direction) && room(other) > room(direction)) eff = other
         decidedDir.current = eff
-        onDirection?.(eff, room(eff))
+        placeResize?.({ dir: eff, room: room(eff) })
       }
       const edge = (along: number, at: number): number =>
         clamp(at, CORNER_CLEAR, Math.max(CORNER_CLEAR, along - CORNER_CLEAR))
@@ -263,7 +266,7 @@ export function PickerMenu({
     anchorHeight,
     bounds,
     anchorY,
-    onDirection,
+    placeResize,
   ])
 
   const placed = pos !== null
@@ -280,6 +283,7 @@ export function PickerMenu({
         s.pane,
         !bareSurface && s.surface,
         contentClassName,
+        resize?.resizing && s.resizing,
         closing ? pickerBloom.close : enter ? pickerBloom.open : undefined,
       )}
       style={
@@ -291,6 +295,7 @@ export function PickerMenu({
       }
     >
       {body}
+      {resize?.edges}
     </Shell>
   )
 

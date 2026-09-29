@@ -12,6 +12,11 @@ export interface Size {
   w: number
   h: number
 }
+/** A size remembered across opens, and where a dropped one goes; an axis it lacks takes its host's default. */
+export interface RememberedSize {
+  initialSize?: Partial<Size>
+  onSizeChange: (size: Partial<Size>) => void
+}
 export interface Rect extends Size {
   x: number
   y: number
@@ -22,8 +27,8 @@ export const ALL_EDGES: readonly ResizeEdge[] = ['n', 's', 'e', 'w', 'nw', 'ne',
 const MOVE_KEEP: Size = { w: 80, h: 40 }
 
 export interface ResizableSpec<R extends Partial<Rect>> {
-  /** Read at press when given as a function — for a box whose size is measured, not held. */
-  rect: R | (() => R)
+  /** Read at press when given as a function — for a box whose size is measured, not held — handed the box the pressed handle sits in. */
+  rect: R | ((box: HTMLElement) => R)
   min?: Partial<Size>
   /** The viewport when absent. */
   max?: Partial<Size>
@@ -100,7 +105,8 @@ export function useResizable<R extends Partial<Rect>>(spec: ResizableSpec<R>): R
   const start =
     (grip: ResizeGrip) =>
     (e: ReactPointerEvent<HTMLElement>): void => {
-      const from = { ...(typeof spec.rect === 'function' ? spec.rect() : spec.rect) }
+      const box = e.currentTarget.parentElement ?? e.currentTarget
+      const from = { ...(typeof spec.rect === 'function' ? spec.rect(box) : spec.rect) }
       let last = from
       const sx = e.clientX
       const sy = e.clientY
