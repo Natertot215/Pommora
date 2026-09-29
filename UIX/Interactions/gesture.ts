@@ -200,8 +200,10 @@ export function beginPointerGesture(spec: PointerGestureSpec): GestureHandle | n
           t === echo.el &&
           echo.el.scrollLeft === echo.left &&
           echo.el.scrollTop === echo.top
-        )
+        ) {
+          echo = null
           return
+        }
         if (spec.scrollTarget && !scrollMoved(ev.target, spec.scrollTarget())) return
         fire(t)
       },
