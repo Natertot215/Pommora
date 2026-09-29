@@ -2,7 +2,7 @@ import { globalStyle, style } from '@vanilla-extract/css'
 import { STATE_OPACITY, vars as colorVars } from '../Theme/color.css'
 import type { IconSize } from '../Theme/theme-vars.css'
 import { duration, easing } from '../Animations/motion'
-import { accessoryButton, flushAffordance, rowBox, rowDragging } from './menu-row.css'
+import { accessoryButton, flushAffordance, rowBox } from './menu-row.css'
 import { button as eyeToggleButton } from '../Elements/eye-toggle.css'
 import { menuAnchor } from './menuAnchor'
 import { stack } from '../Theme/stack'
@@ -73,11 +73,9 @@ export const allHeading = style([
 
 export const allRow = style({ color: c.label.secondary })
 
-export { rowDragging }
-
 export const hiddenRow = style({
   opacity: STATE_OPACITY.ghost,
-  selectors: { [`${rowDragging} &`]: { opacity: 1 } },
+  selectors: { '[data-drag-source] &': { opacity: 1 } },
 })
 
 export const hiddenZone = style({ flex: '1 1 auto' })

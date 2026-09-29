@@ -1,34 +1,12 @@
-import {
-  createContext,
-  useContext,
-  useMemo,
-  useRef,
-  type PointerEvent as ReactPointerEvent,
-  type ReactNode,
-} from 'react'
-import { nearestByTop, useInsertionDrag } from '@pommora/uix/Interactions/insertionDrag'
+import type { ReactNode } from 'react'
+import { LineZone } from '@pommora/uix/Interactions/drag'
+import { laneSpec } from '@pommora/uix/Menus'
 import { sectionEnd, type OutlineHeading } from '../../MarkdownPM/Engine/headingScan'
 import { moveHeadingSection } from '../../Pages/pageEditor'
-import { useLatest } from '@pommora/uix/Utilities/stableApi'
-import { rowDropLine } from '@pommora/uix/Menus'
 
-const EMPTY_SECTION: ReadonlySet<string> = new Set()
-
-type MeasuredRow = { key: string; top: number; bottom: number; mid: number }
-type Snapshot = { contentTop: number; measured: MeasuredRow[] }
-type Slot = { beforeKey: string | null; lineY: number }
-
-type Value = {
-  section: ReadonlySet<string>
-  registerRow: (key: string, el: HTMLElement | null) => void
-  begin: (key: string, e: ReactPointerEvent) => void
-}
-const Ctx = createContext<Value | null>(null)
-
-function sectionKeys(flat: OutlineHeading[], key: string): Set<string> {
+function sectionOf(flat: readonly OutlineHeading[], key: string): ReadonlySet<string> {
   const h = flat.findIndex((x) => x.key === key)
-  if (h < 0) return new Set([key])
-  return new Set(flat.slice(h, sectionEnd(flat, h)).map((x) => x.key))
+  return new Set(h < 0 ? [key] : flat.slice(h, sectionEnd(flat, h)).map((x) => x.key))
 }
 
 export function OutlineDnd({
@@ -38,88 +16,20 @@ export function OutlineDnd({
   flat: OutlineHeading[]
   children: ReactNode
 }): React.JSX.Element {
-  const flatRef = useLatest(flat)
-  const rows = useRef(new Map<string, HTMLElement>())
-  const contentRef = useRef<HTMLDivElement | null>(null)
-
-  const drag = useInsertionDrag<Slot, Snapshot>({
-    // The dragged section's own rows are excluded so they never become their own drop target.
-    take: (key) => {
-      const content = contentRef.current
-      if (!content) return null
-      const section = sectionKeys(flatRef.current, key)
-      const contentTop = content.getBoundingClientRect().top
-      const measured: MeasuredRow[] = []
-      for (const [rowKey, el] of rows.current) {
-        if (section.has(rowKey)) continue
-        const r = el.getBoundingClientRect()
-        measured.push({ key: rowKey, top: r.top, bottom: r.bottom, mid: r.top + r.height / 2 })
-      }
-      measured.sort((a, b) => a.top - b.top)
-      return { contentTop, measured }
-    },
-    resolve: (key, point, s) => {
-      if (s.measured.length === 0) return null
-      const flat = flatRef.current
-      const h = flat.findIndex((x) => x.key === key)
-      if (h < 0) return null
-      const end = sectionEnd(flat, h)
-      const over = nearestByTop(s.measured, point.y)
-      const o = flat.findIndex((x) => x.key === over.key)
-      if (o < 0) return null
-      const below = point.y >= over.mid
-      // Insert index in the ORIGINAL flat coordinates: `over` is outside the section, so this lands on one of the section's own edges (a no-op, declined here) or clear of it.
-      const insertIdx = below ? o + 1 : o
-      if (insertIdx === h || insertIdx === end) return null
-      return {
-        beforeKey: insertIdx < flat.length ? flat[insertIdx].key : null,
-        lineY: (below ? over.bottom : over.top) - s.contentTop,
-      }
-    },
-    commit: (key, slot) => moveHeadingSection(key, slot.beforeKey),
-    // A flat insertion line marks the drop — the outline re-nests the moved section by level once the document edit lands, so no depth-indented line is needed.
-    lineFor: (slot) => rowDropLine(slot.lineY),
-    label: (key) => flatRef.current.find((x) => x.key === key)?.text ?? '',
-    rowEl: (key) => rows.current.get(key),
-    scrollTarget: () => contentRef.current,
-    watch: flat,
-  })
-
-  const registerRow = (key: string, el: HTMLElement | null): void => {
-    if (el) rows.current.set(key, el)
-    else rows.current.delete(key)
-  }
-
-  const value = useMemo<Value>(
-    () => ({
-      section: drag.dragging ? sectionKeys(flatRef.current, drag.dragging) : EMPTY_SECTION,
-      registerRow,
-      begin: drag.begin,
-    }),
-    [drag.dragging, drag.begin],
-  )
-
   return (
-    <Ctx.Provider value={value}>
-      <div ref={contentRef} className="drop-line-host">
-        {children}
-        {drag.line}
-      </div>
-      {drag.ghost}
-    </Ctx.Provider>
+    <LineZone
+      {...laneSpec({
+        laneOf: (key) => {
+          const section = sectionOf(flat, key)
+          return (x) => (x === key || !section.has(x) ? 'outline' : undefined)
+        },
+        commit: (key, slot) => moveHeadingSection(key, slot.before),
+        label: (key) => flat.find((x) => x.key === key)?.text ?? '',
+        watch: [flat],
+      })}
+      disclose
+    >
+      {children}
+    </LineZone>
   )
-}
-
-export function useOutlineDrag(key: string): {
-  ref: (el: HTMLElement | null) => void
-  handle: { onPointerDown: (e: ReactPointerEvent) => void }
-  isDragging: boolean
-} {
-  const ctx = useContext(Ctx)
-  if (!ctx) throw new Error('useOutlineDrag must be used inside <OutlineDnd>')
-  return {
-    ref: (el) => ctx.registerRow(key, el),
-    handle: { onPointerDown: (e) => ctx.begin(key, e) },
-    isDragging: ctx.section.has(key),
-  }
 }

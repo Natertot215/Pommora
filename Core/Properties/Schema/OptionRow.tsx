@@ -1,4 +1,5 @@
-import { useRef, useState, type PointerEvent as ReactPointerEvent } from 'react'
+import { useRef, useState } from 'react'
+import { LineRow } from '@pommora/uix/Interactions/drag'
 import { Button } from '@pommora/uix/Buttons/Button'
 
 import { lookOptions, OPTION_LOOKS } from '@pommora/core/Properties/columnStyles'
@@ -103,38 +104,27 @@ function OptionRow({
   )
 }
 
-interface RowDrag {
-  registerRow: (value: string, el: HTMLElement | null) => void
-  onRowPointerDown: (value: string, e: ReactPointerEvent) => void
-  dragging: string | null
-}
-
 export function OptionSlot({
-  drag,
   ghost,
   onOpenMenu,
   ...row
 }: React.ComponentProps<typeof OptionRow> & {
-  drag: RowDrag
   ghost: GhostAnchor
   onOpenMenu: (row: HTMLElement) => void
 }): React.JSX.Element {
-  const { value } = row
   return (
-    // biome-ignore lint/a11y/noStaticElementInteractions: a pointer-only drag affordance; keyboard reordering is not implemented
-    <div
-      ref={(el) => drag.registerRow(value, el)}
-      {...ghostAnchorProps(ghost, value)}
-      className={cx(s.optionRow, drag.dragging === value && s.rowDragging)}
+    <LineRow
+      id={row.value}
+      {...ghostAnchorProps(ghost, row.value)}
+      className={s.optionRow}
       data-reveal-host=""
-      onPointerDown={(e) => drag.onRowPointerDown(value, e)}
       onContextMenu={(e) => {
         e.preventDefault()
         onOpenMenu(e.currentTarget)
       }}
     >
       <OptionRow {...row} />
-    </div>
+    </LineRow>
   )
 }
 

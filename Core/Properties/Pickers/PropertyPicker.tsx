@@ -2,7 +2,7 @@ import { type RefObject, useEffect, useState } from 'react'
 import type { ColumnLook, ColumnStyle } from '@pommora/core/Properties/columnStyles'
 import {
   optionsOf,
-  type PickKind,
+  type OptionPickKind,
   pickKindOf,
   type PickOption,
   type PropertyDefinition,
@@ -50,7 +50,7 @@ export const selectedValues = (current: PropertyValue | null): string[] => {
 export const pickShape = (
   def: PropertyDefinition,
   contextOptions?: PickOption[],
-): { options: PickOption[]; kind: PickKind } => ({
+): { options: PickOption[]; kind: OptionPickKind } => ({
   options: contextOptions ?? optionsOf(def).map((o) => ({ ...o, label: o.value })),
   kind: pickKindOf(def.type) ?? 'select',
 })

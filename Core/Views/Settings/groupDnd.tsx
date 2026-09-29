@@ -74,7 +74,7 @@ export function useGroupingListDrag({
     // The frame's order region is scroll-capped — the edge loop reaches past its fold.
     armFrom: () => container.current,
     // A row's hide-eye is a button inside the drag surface — a shaky press on it must stay a click.
-    alsoBlock: 'button',
+    alsoBlock: 'button, [data-drag-slop]',
     capture: false,
     disclose: true,
     watch: bands,

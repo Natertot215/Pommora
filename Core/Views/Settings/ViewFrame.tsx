@@ -1,4 +1,4 @@
-import { type ReactNode, useRef, useState } from 'react'
+import { useRef, useState } from 'react'
 import type { CollectionNode, SetNode } from '@pommora/core/Nexus/tree'
 import type { PropertyDefinition } from '@pommora/core/Properties/properties'
 import { DEFAULT_VIEW_ID, mintNewView, type SavedView } from '@pommora/core/Views/views'
@@ -7,13 +7,20 @@ import { deleteViewWithUndo } from '../deleteViewWithUndo'
 import { viewGlyph } from '../viewIcon'
 import { Button } from '@pommora/uix/Buttons/Button'
 import { Icon } from '@pommora/uix/Symbols'
-import { Menu, MenuItem, MenuFooting, MenuScrollFrame, AccessoryButton } from '@pommora/uix/Menus'
+import {
+  Menu,
+  MenuItem,
+  MenuFooting,
+  MenuScrollFrame,
+  AccessoryButton,
+  laneSpec,
+} from '@pommora/uix/Menus'
 import { titleInput } from '@pommora/uix/Menus/menu-row.css'
 import { FrameSlide } from '@pommora/uix/Menus/FrameSlide'
 import { LayoutFrame } from './LayoutFrame'
-import { FrameDnd, RowShell, useFrameRegions } from '@pommora/uix/Menus/FrameDnd'
-import type { FrameRow, SlotFor } from '@pommora/uix/Menus/frameDndModel'
-import type { PaneDrop } from '@pommora/core/Properties/paneDrop'
+import { LineRow, LineZone } from '@pommora/uix/Interactions/drag'
+import { moveBefore } from '@pommora/uix/Utilities/moveItem'
+import * as s from '@pommora/uix/Menus/frames.css'
 import { useSaveView } from '../viewWrite'
 import { pickView } from '../Pipeline/pickView'
 import { useLiveView } from '../Host/pendingView'
@@ -29,32 +36,6 @@ import { popMenu } from '../../Actions/menuActions'
 import { viewRowMenuItems } from '@pommora/core/Actions/viewRowMenu'
 
 const PANE_SQUARE = 225
-
-const viewSlot: SlotFor<PaneDrop> = (rows, _byId, _regions, pointerY, draggedId) => {
-  const others = rows.filter((r) => r.id !== draggedId)
-  let i = 0
-  while (i < others.length && pointerY >= others[i].mid) i++
-  const last = others[others.length - 1]
-  const lineY = i < others.length ? others[i].top : last ? last.bottom : null
-  return {
-    drop: { kind: 'reorder-assigned', propId: draggedId, toIndex: i },
-    lineY,
-    highlightAll: false,
-  }
-}
-
-function DragRegion({ children }: { children: ReactNode }): React.JSX.Element {
-  const { assignedRef, allRef } = useFrameRegions()
-  const region = (el: HTMLElement | null): void => {
-    assignedRef(el)
-    allRef(el)
-  }
-  return (
-    <div ref={region} data-group="assigned">
-      {children}
-    </div>
-  )
-}
 
 export function ViewFrame({
   node,
@@ -92,14 +73,7 @@ export function ViewFrame({
     )
   }
 
-  const paneRows: FrameRow[] = rows.map((v) => ({ id: v.id, group: 'assigned' as const }))
-  const nameFor = (id: string): string => rows.find((v) => v.id === id)?.name ?? ''
-  const onDrop = (drop: PaneDrop): void => {
-    if (drop.kind !== 'reorder-assigned' || views.length < 2) return
-    const order = rows.map((v) => v.id).filter((id) => id !== drop.propId)
-    order.splice(drop.toIndex, 0, drop.propId)
-    void dialer().ask('views:reorder', node.path, node.kind, order).then(reportRefusal)
-  }
+  const viewOf = (id: string): SavedView | undefined => rows.find((v) => v.id === id)
 
   const commitRename = (v: SavedView, next: string): void => {
     setRenamingId(null)
@@ -155,45 +129,76 @@ export function ViewFrame({
         />
       }
     >
-      <FrameDnd rows={paneRows} labelFor={nameFor} onDrop={onDrop} slot={viewSlot}>
-        <DragRegion>
-          <Menu>
-            {rows.map((v) => (
-              <RowShell key={v.id} id={v.id}>
-                <MenuItem
-                  className={active.id === v.id ? optionRing : undefined}
-                  leading={<Icon name={viewGlyph(v)} size="headline" />}
-                  trailing={
-                    <Button
-                      paddingX="0"
-                      icon="chevron-right"
-                      iconSize="headline"
-                      className={vd.chevronButton}
-                      aria-label={`Edit ${v.name}`}
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        setEditingId(v.id)
-                      }}
-                    />
-                  }
-                  onClick={renamingId === v.id ? undefined : () => switchTo(v.id)}
-                  onContextMenu={(e) => void rowMenu(v, e)}
-                >
-                  <RenamableLabel
-                    renames="title"
-                    editing={renamingId === v.id}
-                    value={v.name}
-                    className={titleInput}
-                    onBegin={() => setRenamingId(v.id)}
-                    onCommit={(next) => commitRename(v, next)}
-                    onCancel={() => setRenamingId(null)}
+      <LineZone
+        className={s.frameDnd}
+        {...laneSpec({
+          locked: views.length < 2,
+          commit: (id, slot) => {
+            const order = moveBefore(
+              views.map((v) => v.id),
+              (v) => v,
+              id,
+              slot.before,
+            )
+            if (order)
+              void dialer().ask('views:reorder', node.path, node.kind, order).then(reportRefusal)
+          },
+          label: (id) => viewOf(id)?.name ?? '',
+          chip: (id) => {
+            const v = viewOf(id)
+            return (
+              v && (
+                <>
+                  <Icon name={viewGlyph(v)} size="body" />
+                  {v.name}
+                </>
+              )
+            )
+          },
+          watch: [views],
+        })}
+      >
+        <Menu>
+          {rows.map((v) => (
+            <LineRow
+              key={v.id}
+              id={v.id}
+              open={renamingId === v.id ? undefined : () => switchTo(v.id)}
+            >
+              <MenuItem
+                className={active.id === v.id ? optionRing : undefined}
+                leading={<Icon name={viewGlyph(v)} size="headline" />}
+                trailing={
+                  <Button
+                    paddingX="0"
+                    icon="chevron-right"
+                    iconSize="headline"
+                    className={vd.chevronButton}
+                    aria-label={`Edit ${v.name}`}
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      setEditingId(v.id)
+                    }}
                   />
-                </MenuItem>
-              </RowShell>
-            ))}
-          </Menu>
-        </DragRegion>
-      </FrameDnd>
+                }
+                tabIndex={-1}
+                onClick={renamingId === v.id ? undefined : () => switchTo(v.id)}
+                onContextMenu={(e) => void rowMenu(v, e)}
+              >
+                <RenamableLabel
+                  renames="title"
+                  editing={renamingId === v.id}
+                  value={v.name}
+                  className={titleInput}
+                  onBegin={() => setRenamingId(v.id)}
+                  onCommit={(next) => commitRename(v, next)}
+                  onCancel={() => setRenamingId(null)}
+                />
+              </MenuItem>
+            </LineRow>
+          ))}
+        </Menu>
+      </LineZone>
     </MenuScrollFrame>
   )
 

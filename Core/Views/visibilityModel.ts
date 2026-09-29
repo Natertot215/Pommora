@@ -1,18 +1,9 @@
-import type { MeasuredRow } from '@pommora/uix/Interactions/reorderModel'
 import {
   isReservedPropertyId,
   type PropertyDefinition,
-  RESERVED_PROPERTY_ID,
   STAMP_TYPE,
 } from '@pommora/core/Properties/properties'
 import type { SavedView } from '@pommora/core/Views/views'
-import {
-  regionScan,
-  withinRegion,
-  type FrameRow,
-  type Region,
-} from '@pommora/uix/Menus/frameDndModel'
-import type { PaneSlot } from '@pommora/core/Properties/paneDrop'
 
 type VisibilityPatch = Pick<SavedView, 'property_order' | 'hidden_properties'>
 
@@ -61,32 +52,5 @@ export function unhide(view: SavedView, id: string): VisibilityPatch {
       ? view.property_order
       : [...view.property_order, id],
     hidden_properties: view.hidden_properties.filter((x) => x !== id),
-  }
-}
-
-/** The shown zone takes positional drops (reorder or unhide-at-slot); the hidden zone takes a membership drop from a shown row. */
-export function hiddenPaneSlot(
-  rows: MeasuredRow[],
-  byId: Map<string, FrameRow>,
-  regions: { assigned: Region; all: Region },
-  pointerY: number,
-  draggedId: string,
-): PaneSlot | null {
-  const dragged = byId.get(draggedId)
-  if (!dragged) return null
-  if (withinRegion(regions.all, pointerY) && !withinRegion(regions.assigned, pointerY)) {
-    if (dragged.group !== 'assigned' || draggedId === RESERVED_PROPERTY_ID.title) return null
-    return { drop: { kind: 'unassign', propId: draggedId }, lineY: null, highlightAll: true }
-  }
-  if (!withinRegion(regions.assigned, pointerY)) return null
-  const { i, lineY } = regionScan(rows, byId, 'assigned', draggedId, pointerY, regions.assigned.top)
-  return {
-    drop: {
-      kind: dragged.group === 'assigned' ? 'reorder-assigned' : 'assign',
-      propId: draggedId,
-      toIndex: i,
-    },
-    lineY,
-    highlightAll: false,
   }
 }

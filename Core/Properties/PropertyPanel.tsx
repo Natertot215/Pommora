@@ -2,10 +2,10 @@ import { reportRefusal } from '@pommora/core/Interface/Notifications/notificatio
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { EmptyValue } from '@pommora/uix/Elements/EmptyValue'
 import { Icon } from '@pommora/uix/Symbols'
-import { AccessoryButton, MenuItem, heading, rowDropLine } from '@pommora/uix/Menus'
+import { AccessoryButton, MenuItem, heading, laneSpec } from '@pommora/uix/Menus'
 import { ICON } from '@pommora/uix/Menus/frames.css'
 import { ghostAnchorProps } from '@pommora/uix/Interactions/ghostCreate'
-import { DropLine } from '@pommora/uix/Interactions/DropLine'
+import { LineRow, LineZone } from '@pommora/uix/Interactions/drag'
 import { nexusReorderIndex } from './paneDrop'
 import { moveItem } from '@pommora/uix/Utilities/moveItem'
 import { cx } from '@pommora/uix/Utilities/cx'
@@ -46,7 +46,6 @@ import { fileChipIndex, fileValueMenu, pickFileInto } from './Pickers/filePick'
 import { useCapitalizeMetadata } from './Cells/columnLabel'
 import { contextPaneTargets, type PaneTarget, schemaTargets } from './Cells/PropertyTypes'
 import { useGhostOptionAnchor } from './Schema/GhostOptionChip'
-import { useOptionReorder } from './Schema/useOptionReorder'
 import { resolveRowOrder } from './rowOrder'
 import { pushUndo } from '../Session/undo'
 import { readSpaceRowOrder, type SpaceRowOrder } from '../Contexts/spaceSidecar'
@@ -261,25 +260,20 @@ export function PropertyPanel({
     )
   }
 
-  // The hook's geometry snapshot re-arms on the array's identity, so each list is memoized on its joined ids.
-  const contextIdsKey = shown.contexts.map((f) => f.id).join(',')
-  const propertyIdsKey = shown.properties.map((f) => f.id).join(',')
-  const contextIds = useMemo(() => contextIdsKey.split(',').filter(Boolean), [contextIdsKey])
-  const propertyIds = useMemo(() => propertyIdsKey.split(',').filter(Boolean), [propertyIdsKey])
-  const labelOfId = (id: string): string =>
-    [...fields.contexts, ...fields.properties].find((f) => f.id === id)?.label ?? id
-  const contextDrag = useOptionReorder(contextIds, labelOfId, (rowId, to) =>
-    commitOrder('contexts', rowId, to),
-  )
-  const propertyDrag = useOptionReorder(propertyIds, labelOfId, (rowId, to) =>
-    commitOrder('properties', rowId, to),
-  )
-  const ghostApi = useGhostOptionAnchor(
-    editing !== null ||
-      addOpen !== null ||
-      contextDrag.dragging !== null ||
-      propertyDrag.dragging !== null,
-  )
+  const fieldOf = (id: string): Field | undefined =>
+    [...fields.contexts, ...fields.properties].find((f) => f.id === id)
+  const chipOf = (id: string): React.ReactNode => {
+    const f = fieldOf(id)
+    return (
+      f && (
+        <>
+          <Icon name={f.icon} size="control" />
+          {f.label}
+        </>
+      )
+    )
+  }
+  const ghostApi = useGhostOptionAnchor(editing !== null || addOpen !== null)
 
   const reveal = (id: string): void => setRevealed((prev) => new Set([...prev, id]))
   const runIntent = (
@@ -371,18 +365,12 @@ export function PropertyPanel({
 
   const body = (): React.ReactNode => {
     if (!ctx || !row || !fm) return null
-    const renderRow = (
-      { def, id, label, icon }: Field,
-      drag: ReturnType<typeof useOptionReorder>,
-    ): React.ReactNode => {
+    const renderRow = ({ def, id, label, icon }: Field): React.ReactNode => {
       const column: ResolvedColumn = { id, kind: def ? 'property' : 'context' }
       const current = resolveFieldValue(row, id, schema)
       const rowBody = (
         <MenuItem
-          key={id}
-          ref={(el) => drag.registerRow(id, el)}
           className={s.row}
-          onPointerDown={(e) => drag.onRowPointerDown(id, e)}
           leading={<Icon name={icon} size="control" />}
           onContextMenu={(e) => {
             e.preventDefault()
@@ -427,7 +415,7 @@ export function PropertyPanel({
       )
       return (
         <Reveal key={id} open enterOnMount={entering(id)} fill>
-          {rowBody}
+          <LineRow id={id}>{rowBody}</LineRow>
         </Reveal>
       )
     }
@@ -436,7 +424,6 @@ export function PropertyPanel({
         <div className={panelHost === 'dropdown' ? s.pageRows : cx(s.panelRows, 'scroll-fade')}>
           {GROUPS.map(({ key, label, add }) => {
             const rows = shown[key]
-            const drag = key === 'contexts' ? contextDrag : propertyDrag
             const addable = fields[key].some((f) => !isShown(f))
             const standing = addable && rows.length === 0
             const ghost =
@@ -469,16 +456,16 @@ export function PropertyPanel({
                   )}
                 </div>
                 {(rows.length > 0 || ghost || standing) && (
-                  <div
-                    ref={drag.containerRef}
-                    className={cx(
-                      'drop-line-host',
-                      s.group,
-                      panelHost === 'dropdown' && s.groupBordered,
-                    )}
+                  <LineZone
+                    className={cx(s.group, panelHost === 'dropdown' && s.groupBordered)}
+                    {...laneSpec({
+                      commit: (id, slot) => commitOrder(key, id, slot.index),
+                      label: (id) => fieldOf(id)?.label ?? id,
+                      chip: chipOf,
+                      watch: [rows],
+                    })}
                   >
-                    {drag.ghost}
-                    {rows.map((f) => renderRow(f, drag))}
+                    {rows.map(renderRow)}
                     {standing && <div data-ghost-root>{addRow(() => openAdd(key))}</div>}
                     {ghost && (
                       <Reveal open={!ghost.closing} enterOnMount onCollapsed={ghostApi.closed}>
@@ -494,8 +481,7 @@ export function PropertyPanel({
                         </div>
                       </Reveal>
                     )}
-                    {drag.lineTop !== null ? <DropLine style={rowDropLine(drag.lineTop)} /> : null}
-                  </div>
+                  </LineZone>
                 )}
               </div>
             )

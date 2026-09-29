@@ -139,8 +139,6 @@ export const rowDisabled = style({
   },
 })
 
-export const rowDragging = style({ opacity: STATE_OPACITY.ghost })
-
 export const gutter = style({
   selectors: {
     '&&': {

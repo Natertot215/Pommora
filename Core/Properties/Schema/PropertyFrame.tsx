@@ -49,9 +49,8 @@ import { PickerControl } from '@pommora/uix/Pickers/PickerControl'
 import { LinkEditor } from './LinkEditor'
 import { FrameSlide } from '@pommora/uix/Menus/FrameSlide'
 import { PANE_MIN_H, PANE_MIN_W } from '@pommora/uix/Menus/frame-slide.css'
-import { FrameDnd, RowShell, useFrameRegions } from '@pommora/uix/Menus/FrameDnd'
-import type { FrameRow } from '@pommora/uix/Menus/frameDndModel'
-import { frameSlot, nexusReorderIndex, type PaneDrop } from '../paneDrop'
+import { LineGroup, LineRow, LineZone, useLineSlot } from '@pommora/uix/Interactions/drag'
+import { nexusReorderIndex, type PaneDrop, type PaneSlot, paneSpec } from '../paneDrop'
 import {
   CREATABLE_TYPES,
   PropertyTypeIcon,
@@ -94,7 +93,7 @@ function ListGroups({
   onRenameCancel: () => void
 }): React.JSX.Element {
   const capitalize = useCapitalizeMetadata()
-  const { assignedRef, allRef, allHighlighted } = useFrameRegions()
+  const unassigning = useLineSlot<PaneSlot>() === 'unassign'
   const enteringAssigned = useEntrance(assigned, (d) => d.id)
   const enteringAll = useEntrance(unassigned, (d) => d.id)
   const title = (d: PropertyDefinition): ReactNode => (
@@ -109,17 +108,18 @@ function ListGroups({
   )
   return (
     <>
-      <div data-group="assigned" ref={assignedRef}>
+      <LineGroup id="assigned" data-group="assigned">
         {assigned.length === 0 ? (
           <MenuCaption>No properties yet.</MenuCaption>
         ) : (
           assigned.map((d) => (
             <Reveal key={d.id} open enterOnMount={enteringAssigned(d.id)} fill>
-              <RowShell id={d.id}>
+              <LineRow id={d.id} data-prop={d.id} open={() => onOpenEditor(d.id)}>
                 <MenuItem
                   leading={<Icon name={propertyIcon(d)} size={s.ICON.doc} />}
                   detail={propertyTypeLabel(d.type)}
                   trailing={<Icon name="chevron-right" />}
+                  tabIndex={-1}
                   onClick={() => onOpenEditor(d.id)}
                   onContextMenu={(e) => {
                     e.preventDefault()
@@ -128,13 +128,13 @@ function ListGroups({
                 >
                   {title(d)}
                 </MenuItem>
-              </RowShell>
+              </LineRow>
             </Reveal>
           ))
         )}
-      </div>
+      </LineGroup>
       <div className={cx(s.allSpacer, allOpen && s.allSpacerCollapsed)} aria-hidden />
-      <div data-group="all" ref={allRef} className={cx(allHighlighted && s.allHighlight)}>
+      <LineGroup id="all" data-group="all" className={cx(unassigning && s.allHighlight)}>
         <button type="button" className={cx(actionRow, s.allHeading)} onClick={onToggleAll}>
           <DropOutline open={allOpen} />
           <span>All Properties</span>
@@ -143,7 +143,7 @@ function ListGroups({
           <div>
             {unassigned.map((d) => (
               <Reveal key={d.id} open enterOnMount={enteringAll(d.id)} fill>
-                <RowShell id={d.id}>
+                <LineRow id={d.id} data-prop={d.id}>
                   <MenuItem
                     className={s.allRow}
                     leading={<Icon name={propertyIcon(d)} size={s.ICON.doc} />}
@@ -163,12 +163,12 @@ function ListGroups({
                   >
                     {title(d)}
                   </MenuItem>
-                </RowShell>
+                </LineRow>
               </Reveal>
             ))}
           </div>
         </Reveal>
-      </div>
+      </LineGroup>
     </>
   )
 }
@@ -296,15 +296,20 @@ export function PropertyFrame({
             : dialer().ask('schema:unassign', collectionPath, drop.propId),
     )
 
-  const paneRows: FrameRow[] = [
-    ...props.map((d) => ({ id: d.id, group: 'assigned' as const })),
-    ...unassigned.map((d) => ({ id: d.id, group: 'all' as const })),
-  ]
-  const nameFor = (id: string): string =>
-    displayPropertyName(
-      props.find((d) => d.id === id)?.name ?? unassigned.find((d) => d.id === id)?.name ?? '',
-      capitalize,
+  const defOf = (id: string): PropertyDefinition | undefined =>
+    props.find((d) => d.id === id) ?? unassigned.find((d) => d.id === id)
+  const nameFor = (id: string): string => displayPropertyName(defOf(id)?.name ?? '', capitalize)
+  const chipFor = (id: string): ReactNode => {
+    const d = defOf(id)
+    return (
+      d && (
+        <>
+          <Icon name={propertyIcon(d)} size={s.ICON.doc} />
+          {nameFor(id)}
+        </>
+      )
     )
+  }
 
   const editorMenu = async (def: PropertyDefinition): Promise<void> => {
     const action = await popMenu(propertyMenuModel({ kind: 'editor', name: def.name }))
@@ -497,11 +502,16 @@ export function PropertyFrame({
         />
       }
     >
-      <FrameDnd
-        rows={paneRows}
-        labelFor={nameFor}
-        onDrop={(drop) => void handleDrop(drop)}
-        slot={frameSlot}
+      <LineZone
+        className={s.frameDnd}
+        {...paneSpec({
+          assigned: props.map((d) => d.id),
+          ordersAll: true,
+          label: nameFor,
+          chip: chipFor,
+          onDrop: (drop) => void handleDrop(drop),
+          watch: [schema, registry],
+        })}
       >
         <ListGroups
           assigned={props}
@@ -520,7 +530,7 @@ export function PropertyFrame({
           }}
           onRenameCancel={cancelPropertyRename}
         />
-      </FrameDnd>
+      </LineZone>
     </MenuScrollFrame>
   )
 
