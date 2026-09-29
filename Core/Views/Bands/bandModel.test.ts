@@ -31,6 +31,7 @@ const setRef = (key: string, parentKey: string | null, depth: number): BandRef =
   parentKey,
 })
 const drop = (y: number, s: ReturnType<typeof bandSnap>) => (s ? bandSlot(s, y) : undefined)
+const ANY = () => () => true
 
 const tree: BandRef[] = [
   setRef('A', null, 0),
@@ -42,13 +43,13 @@ const g = geo([row('A', 0), row('A1', 40), row('A1a', 80), row('B', 120)], [], 1
 
 describe('bandSlot — Sets', () => {
   it('a nested last child released over its own head returns (the own-row reparent)', () => {
-    const s = bandSnap(g, tree, 'A1a', true)
+    const s = bandSnap(g, tree, 'A1a', true, ANY)
     expect(drop(85, s)).toBeNull()
     expect(drop(95, s)).toBeNull()
   })
 
   it('into a Set with no displayed child lands first, indented one level at its content end', () => {
-    const s = bandSnap(g, tree, 'B', true)
+    const s = bandSnap(g, tree, 'B', true, ANY)
     expect(drop(90, s)).toMatchObject({
       drop: { kind: 'into', parentKey: 'A1a' },
       top: 100,
@@ -57,7 +58,7 @@ describe('bandSlot — Sets', () => {
   })
 
   it('into a Set with a displayed child is the slot before that child', () => {
-    const s = bandSnap(g, tree, 'B', true)
+    const s = bandSnap(g, tree, 'B', true, ANY)
     expect(drop(10, s)).toMatchObject({
       drop: { kind: 'before', beforeKey: 'A1', parentKey: 'A' },
       top: 40,
@@ -66,12 +67,12 @@ describe('bandSlot — Sets', () => {
   })
 
   it("every parent's end is reachable: the last child's after-zone, then past the list the root end", () => {
-    const s = bandSnap(g, tree, 'B', true)
+    const s = bandSnap(g, tree, 'B', true, ANY)
     expect(drop(98, s)).toMatchObject({
       drop: { kind: 'before', beforeKey: null, parentKey: 'A1' },
     })
     expect(drop(58, s)).toMatchObject({ drop: { kind: 'before', beforeKey: null, parentKey: 'A' } })
-    const top = bandSnap(g, tree, 'A1a', true)
+    const top = bandSnap(g, tree, 'A1a', true, ANY)
     expect(drop(200, top)).toMatchObject({
       drop: { kind: 'before', beforeKey: null, parentKey: null },
       depth: 0,
@@ -79,10 +80,10 @@ describe('bandSlot — Sets', () => {
   })
 
   it('a slot that reproduces the current position draws nothing', () => {
-    const s = bandSnap(g, tree, 'A', true)
+    const s = bandSnap(g, tree, 'A', true, ANY)
     expect(drop(122, s)).toBeNull()
     expect(drop(-10, s)).toBeNull()
-    expect(drop(118, bandSnap(g, tree, 'B', true))).toBeNull()
+    expect(drop(118, bandSnap(g, tree, 'B', true, ANY))).toBeNull()
   })
 
   it('a flat surface splits each head at its middle and never nests', () => {
@@ -95,7 +96,7 @@ describe('bandSlot — Sets', () => {
         ['C', 80, 116],
       ],
     )
-    const s = bandSnap(fg, flat, 'A', false)
+    const s = bandSnap(fg, flat, 'A', false, ANY)
     expect(drop(45, s)).toBeNull()
     expect(drop(60, s)).toMatchObject({ drop: { kind: 'before', beforeKey: 'C' }, top: 80 })
     expect(drop(100, s)).toMatchObject({ drop: { beforeKey: null, parentKey: null }, top: 116 })
@@ -121,7 +122,7 @@ describe('bandSlot — buckets', () => {
   )
 
   it('never lights a Set: a Set head resolves to the nearest bucket gap', () => {
-    const s = bandSnap(bg, heads, 'S/x', true)
+    const s = bandSnap(bg, heads, 'S/x', true, ANY)
     expect(drop(90, s)).toMatchObject({ drop: { kind: 'before', beforeKey: null, parentKey: 'S' } })
     expect(drop(118, s)).toMatchObject({
       drop: { kind: 'before', beforeKey: 'T/y', parentKey: 'T' },
@@ -129,8 +130,8 @@ describe('bandSlot — buckets', () => {
   })
 
   it('a slot before the same value in another Set declines', () => {
-    expect(drop(132, bandSnap(bg, heads, 'S/y', true))).toBeNull()
-    expect(drop(132, bandSnap(bg, heads, 'S/x', true))).toMatchObject({
+    expect(drop(132, bandSnap(bg, heads, 'S/y', true, ANY))).toBeNull()
+    expect(drop(132, bandSnap(bg, heads, 'S/x', true, ANY))).toMatchObject({
       drop: { beforeKey: 'T/y' },
     })
   })

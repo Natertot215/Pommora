@@ -127,7 +127,7 @@ beforeEach(() => {
 
 const mountTable = async (view?: Partial<SavedView>): Promise<void> => {
   await renderView(root, source(view))
-  const box = host.querySelector('.drop-line-host')
+  const box = host.querySelector('.line-zone')
   if (box) stubRect(box, { top: 0, bottom: 48 })
   for (const [i, id] of ['p1', 'p2'].entries()) {
     const el = host.querySelector(`[data-rid="${id}"]`)
@@ -136,8 +136,8 @@ const mountTable = async (view?: Partial<SavedView>): Promise<void> => {
 }
 
 // Drag the second row up over the first and release.
-const dragSecondRowUp = async (): Promise<void> => {
-  const el = host.querySelector('[data-rid="p2"]') as HTMLElement
+const dragSecondRowUp = async (from = '[data-rid="p2"]'): Promise<void> => {
+  const el = host.querySelector(from) as HTMLElement
   await act(async () => {
     firePointer(el, 'pointerdown', { x: 4, y: 36 })
   })
@@ -152,7 +152,7 @@ const dragSecondRowUp = async (): Promise<void> => {
 
 const mountBanded = async (view?: Partial<SavedView>): Promise<void> => {
   await renderView(root, banded(view))
-  const box = host.querySelector('.drop-line-host')
+  const box = host.querySelector('.line-zone')
   if (box) stubRect(box, { top: 0, bottom: 96 })
   for (const [i, id] of ['p1', 'p2'].entries()) {
     const el = host.querySelector(`[data-rid="${id}"]`)
@@ -222,6 +222,13 @@ describe('TableView row drop — where the manual order lands', () => {
     expect(saveSpy).not.toHaveBeenCalled()
   })
 
+  it('a grip press drags the row even when a pickable column leads', async () => {
+    await mountTable({ property_order: ['prop_status', '_title'] })
+    await dragSecondRowUp('[data-rid="p2"] .row-grip')
+    expect(lastSavedView().manual_order).toEqual(['p2', 'p1'])
+    expect(host.querySelector('.cell-sweep')).toBeNull()
+  })
+
   it('the same drop on a default Set-grouped view writes manual_order and never touches the fs', async () => {
     await mountTable()
     await dragSecondRowUp()
@@ -246,7 +253,7 @@ describe('a same-band reorder keeps every row the view hides', () => {
       ],
     } as unknown as CollectionNode
     await renderView(root, withHidden)
-    const box = host.querySelector('.drop-line-host')
+    const box = host.querySelector('.line-zone')
     if (box) stubRect(box, { top: 0, bottom: 48 })
     for (const [i, id] of ['p1', 'p2'].entries())
       stubRect(host.querySelector(`[data-rid="${id}"]`) as Element, {

@@ -3,11 +3,11 @@ import {
   PROPERTY_TYPES,
   type PropertyDefinition,
 } from '@pommora/core/Properties/properties'
-import { heading, laneSpec, type PickerRowLook } from '@pommora/uix/Menus'
+import { heading, menuDropLine, type PickerRowLook } from '@pommora/uix/Menus'
 import { side } from '@pommora/uix/Menus/menu-row.css'
 import { hiddenRow, optionRow } from '@pommora/uix/Menus/frames.css'
 import { EyeToggle } from '@pommora/uix/Elements/EyeToggle'
-import { LineRow, LineZone } from '@pommora/uix/Interactions/drag'
+import { LineRow, LineZone, lineList } from '@pommora/uix/Interactions/drag'
 import { moveBefore } from '@pommora/uix/Utilities/moveItem'
 import { cx } from '@pommora/uix/Utilities/cx'
 import { OptionChip } from '../../Properties/Cells/OptionChip'
@@ -79,12 +79,13 @@ export function OptionOrderList({
   )
   return (
     <LineZone
-      {...laneSpec({
+      {...lineList({
         locked: !onSave,
         commit: (v, slot) => {
           const next = moveBefore(order, (x) => x, v, slot.before)
           if (next) onSave?.(next)
         },
+        line: menuDropLine,
         label: (v) => v,
         chip,
         watch: [def, group.order_mode, group.order],

@@ -13,12 +13,12 @@ import {
   MenuFooting,
   MenuScrollFrame,
   AccessoryButton,
-  laneSpec,
+  menuDropLine,
 } from '@pommora/uix/Menus'
 import { titleInput } from '@pommora/uix/Menus/menu-row.css'
 import { FrameSlide } from '@pommora/uix/Menus/FrameSlide'
 import { LayoutFrame } from './LayoutFrame'
-import { LineRow, LineZone } from '@pommora/uix/Interactions/drag'
+import { LineRow, LineZone, lineList } from '@pommora/uix/Interactions/drag'
 import { moveBefore } from '@pommora/uix/Utilities/moveItem'
 import * as s from '@pommora/uix/Menus/frames.css'
 import { useSaveView } from '../viewWrite'
@@ -130,7 +130,7 @@ export function ViewFrame({
     >
       <LineZone
         className={s.frameZone}
-        {...laneSpec({
+        {...lineList({
           locked: views.length < 2,
           commit: (id, slot) => {
             const order = moveBefore(
@@ -142,6 +142,7 @@ export function ViewFrame({
             if (order)
               void dialer().ask('views:reorder', node.path, node.kind, order).then(reportRefusal)
           },
+          line: menuDropLine,
           label: (id) => viewOf(id)?.name ?? '',
           glyph: (id) => {
             const v = viewOf(id)

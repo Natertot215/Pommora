@@ -62,7 +62,7 @@ const mount = async (
       </DragGroup>,
     )
   })
-  const zone = host.querySelector('.drop-line-host')
+  const zone = host.querySelector('.line-zone')
   if (zone) stubRect(zone, { top: 0, bottom: rows().length * 30 })
   for (const [i, el] of rows().entries()) stubRect(el, { top: i * 30, bottom: i * 30 + 30 })
 }

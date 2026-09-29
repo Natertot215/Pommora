@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react'
 import { Icon } from '@pommora/uix/Symbols'
-import { rowDropLine } from '@pommora/uix/Menus'
+import { menuDropLine } from '@pommora/uix/Menus'
 import { carries, LineZone } from '@pommora/uix/Interactions/drag'
 import { selectTargetOf } from '@pommora/core/Navigation/navRef'
 import { TAB_FAMILY } from '@pommora/core/Navigation/tabRows'
@@ -26,7 +26,7 @@ export function SidebarDnd({
         const req = sidebarCommit(s, slot)
         if (req) onCommit(req, id)
       }}
-      line={(slot) => rowDropLine(slot.edge, slot.depth)}
+      line={(slot) => menuDropLine(slot)}
       slotKey={(slot) => `${slot.parentId}/${slot.beforeId}`}
       label={(id) => entry(id)?.title ?? ''}
       glyph={(id) => {

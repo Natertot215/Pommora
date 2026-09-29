@@ -1,9 +1,9 @@
 import { Icon } from '@pommora/uix/Symbols'
 import { cx } from '@pommora/uix/Utilities/cx'
 import { NavTrail } from '@pommora/uix/Elements/NavTrail'
-import { laneSpec, MenuItem } from '@pommora/uix/Menus'
+import { MenuItem, menuDropLine } from '@pommora/uix/Menus'
 import { overlay } from '@pommora/uix/Menus/menu-row.css'
-import { carries, LineRow, LineZone } from '@pommora/uix/Interactions/drag'
+import { carries, LineRow, LineZone, lineList } from '@pommora/uix/Interactions/drag'
 import {
   isWindowTarget,
   type NavRef,
@@ -157,7 +157,7 @@ export function NavList({
 
   return (
     <LineZone
-      {...laneSpec({
+      {...lineList({
         laneOf: () => {
           const pinned = new Set(pins.map((p) => p.key))
           return (k) => (pinned.has(k) ? 'pins' : 'recents')
@@ -165,6 +165,7 @@ export function NavList({
         locked: !onReorderRecent,
         commit: (key, slot) =>
           slot.lane === 'pins' ? reorderPin(key, slot.before) : onReorderRecent?.(key, slot.before),
+        line: menuDropLine,
         label: (key) => find(key)?.title ?? '',
         glyph: (key) => {
           const it = find(key)

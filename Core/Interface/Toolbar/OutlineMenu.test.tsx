@@ -57,7 +57,7 @@ describe('OutlineMenu — the heading drag', () => {
       await new Promise((r) => setTimeout(r, 600))
     })
     expect(row('Alpha One')).toBeUndefined()
-    stubRect(document.querySelector('.drop-line-host')!, { top: 0, bottom: 60 })
+    stubRect(document.querySelector('.line-zone')!, { top: 0, bottom: 60 })
     stubRect(row('Alpha'), { top: 0, bottom: 20 })
     stubRect(row('Beta'), { top: 20, bottom: 40 })
     stubRect(row('Gamma'), { top: 40, bottom: 60 })
@@ -67,7 +67,7 @@ describe('OutlineMenu — the heading drag', () => {
 
   it('a release on its own slot writes nothing', async () => {
     await open()
-    stubRect(document.querySelector('.drop-line-host')!, { top: 0, bottom: 80 })
+    stubRect(document.querySelector('.line-zone')!, { top: 0, bottom: 80 })
     for (const [i, t] of ['Alpha', 'Alpha One', 'Beta', 'Gamma'].entries())
       stubRect(row(t), { top: i * 20, bottom: i * 20 + 20 })
     await drag('Beta', 50, 62, 50)

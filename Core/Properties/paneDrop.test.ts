@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest'
 import type { Geometry, Row } from '@pommora/uix/Interactions/reorderModel'
-import { rowDropLine } from '@pommora/uix/Menus'
+import { menuDropLine } from '@pommora/uix/Menus'
 import { RESERVED_PROPERTY_ID } from './properties'
 import { nexusReorderIndex, type PaneDrop, paneSpec } from './paneDrop'
 
@@ -63,7 +63,7 @@ describe('paneSpec — the schema pane', () => {
   it('assigned→assigned reorders at the slot (C-5)', () => {
     const s = at('a2', 15)
     expect(s.drop).toEqual({ kind: 'reorder-assigned', propId: 'a2', toIndex: 0 })
-    expect(s.line).toEqual(rowDropLine(10))
+    expect(s.line).toEqual(menuDropLine({ edge: 10 }))
   })
 
   it('assigned→all is unassign with the area highlight and NO line (C-3/C-4)', () => {
@@ -76,7 +76,7 @@ describe('paneSpec — the schema pane', () => {
   it('all→assigned assigns at the slot with a line (C-2)', () => {
     const s = at('x1', 30)
     expect(s.drop).toEqual({ kind: 'assign', propId: 'x1', toIndex: 1 })
-    expect(s.line).toEqual(rowDropLine(30))
+    expect(s.line).toEqual(menuDropLine({ edge: 30 }))
   })
 
   it('all→all reorders the nexus order (C-1)', () => {
@@ -102,7 +102,7 @@ describe('paneSpec — the schema pane', () => {
     const only = geometry([r('x1', 70, 90)], { assigned: [10, 50], all: [70, 110] })
     const s = drive({ assigned: [], ordersAll: true }, only, 'x1', 20)
     expect(s.drop).toEqual({ kind: 'assign', propId: 'x1', toIndex: 0 })
-    expect(s.line).toEqual(rowDropLine(10))
+    expect(s.line).toEqual(menuDropLine({ edge: 10 }))
   })
 })
 

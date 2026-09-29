@@ -1248,7 +1248,7 @@ function LineHost({
         {/* biome-ignore lint/a11y/noStaticElementInteractions: the host is the list's one tab stop and hands focus to a row at once; the container role belongs to the list's owner */}
         <div
           ref={box}
-          className={cx('drop-line-host', className)}
+          className={cx('line-zone', className)}
           tabIndex={stop}
           onPointerDownCapture={() => {
             viaPointer.current = true

@@ -86,7 +86,7 @@ function Bands({
           bands: model,
           collapsed: bands.collapsed,
           nests: true,
-          drop: dropSpy,
+          routing: { drop: dropSpy, moves: () => () => true },
           disabled,
           indent: (depth) => ({ left: `${depth * 20}px` }),
         })}
@@ -102,7 +102,7 @@ const head = (key: string): HTMLElement =>
 const line = (): HTMLElement | null => host.querySelector('.drop-line')
 
 const lay = (): void => {
-  const zone = host.querySelector('.drop-line-host')
+  const zone = host.querySelector('.line-zone')
   if (zone) stubRect(zone, { top: 0, bottom: 72 })
   for (const [i, key] of ['A', 'A1', 'B'].entries()) {
     const top = i * 24

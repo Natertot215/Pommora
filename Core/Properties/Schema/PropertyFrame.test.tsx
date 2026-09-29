@@ -104,7 +104,7 @@ const rowFor = (name: string): HTMLElement => {
 }
 
 const lineRow = (name: string): Element => rowFor(name).closest('[data-line-row]')!
-const zone = (): Element => host.querySelector('.drop-line-host')!
+const zone = (): Element => host.querySelector('.line-zone')!
 const assignedGroup = (): Element => zone().children[0]
 const allGroup = (): Element => rowFor('All Properties').closest('button')!.parentElement!
 

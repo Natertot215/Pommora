@@ -5,7 +5,7 @@ import {
   MenuDropdown,
   MenuScrollFrame,
   itemEmphasized,
-  laneSpec,
+  menuDropLine,
   titleInput,
   useDisclosureSet,
 } from '@pommora/uix/Menus'
@@ -19,7 +19,7 @@ import {
 } from '../../Pages/pageEditor'
 import { outlineTree, type OutlineNode } from '../../MarkdownPM/Engine/outlineTree'
 import { type OutlineHeading, sectionEnd } from '../../MarkdownPM/Engine/headingScan'
-import { LineRow, LineZone } from '@pommora/uix/Interactions/drag'
+import { LineRow, LineZone, lineList } from '@pommora/uix/Interactions/drag'
 import * as s from './toolbar-menu.css'
 import * as o from './outline-menu.css'
 
@@ -74,12 +74,13 @@ function OutlinePane(): React.JSX.Element {
     <MenuScrollFrame>
       {tree.length > 0 ? (
         <LineZone
-          {...laneSpec({
+          {...lineList({
             laneOf: (key) => {
               const section = sectionOf(flat, key)
               return (x) => (x === key || !section.has(x) ? 'outline' : undefined)
             },
             commit: (key, slot) => moveHeadingSection(key, slot.before),
+            line: menuDropLine,
             label: (key) => flat.find((x) => x.key === key)?.text ?? '',
             watch: [flat],
           })}

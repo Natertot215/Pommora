@@ -50,7 +50,7 @@ const drag = async (name: string, from: number, ...to: number[]): Promise<void> 
       />,
     )
   })
-  const zone = document.querySelector('.drop-line-host')!
+  const zone = document.querySelector('.line-zone')!
   const [shown, hidden] = zone.children
   stubRect(zone, { top: 0, bottom: 100 })
   stubRect(shown, { top: 0, bottom: 60 })

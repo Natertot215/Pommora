@@ -257,7 +257,7 @@ describe('the property row drag', () => {
   const drag = async (id: string, from: number, ...to: number[]): Promise<void> => {
     cachePageDetail(detail({ path: 'Col/Page.md', frontmatter: { Stage: 'Alpha', Note: 3 } }))
     await renderPanel(<PropertyPanel subject={PAGE} host="side-pane" />)
-    stubRect(row('prop_stage').closest('.drop-line-host')!, { top: 0, bottom: 40 })
+    stubRect(row('prop_stage').closest('.line-zone')!, { top: 0, bottom: 40 })
     stubRect(row('prop_stage'), { top: 0, bottom: 20 })
     stubRect(row('prop_note'), { top: 20, bottom: 40 })
     await act(async () => {

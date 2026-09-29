@@ -26,7 +26,7 @@ import {
   type SetBand,
   shownHeads,
 } from './bandModel'
-import type { BandDrop, BandRef } from './bandRouter'
+import type { BandRouting } from './bandRouter'
 import './group-band.css'
 
 // ── The spec ────────────────────────────────────────────────────────────────
@@ -43,14 +43,14 @@ export function bandSpec({
   bands,
   collapsed,
   nests,
-  drop,
+  routing,
   indent,
   disabled,
 }: {
   bands: BandModel
   collapsed: ReadonlySet<string>
   nests: boolean
-  drop: (dragged: BandRef, drop: BandDrop) => boolean
+  routing: BandRouting
   indent?: (depth: number) => CSSProperties
   disabled?: boolean
 }): LineSpec<BandSlot, BandSnap> {
@@ -59,11 +59,11 @@ export function bandSpec({
     snap: (key, g) => {
       const node = nodeOf(key)
       return node && draggable(node)
-        ? bandSnap(g, shownHeads(bands.nodes, collapsed), key, nests)
+        ? bandSnap(g, shownHeads(bands.nodes, collapsed), key, nests, routing.moves)
         : null
     },
     resolve: (_key, p, s) => bandSlot(s, p.y),
-    commit: (_key, slot, s) => drop(s.dragged, slot.drop),
+    commit: (_key, slot, s) => routing.drop(s.dragged, slot.drop),
     line: (slot) => ({ ...indent?.(slot.depth), top: slot.top }),
     step: (slot) => slot.step,
     label: (key) => nodeLabel(nodeOf(key)),

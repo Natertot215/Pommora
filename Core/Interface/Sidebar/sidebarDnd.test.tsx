@@ -10,7 +10,7 @@ import {
   stubPointerCapture,
   stubRect,
 } from '@pommora/uix/Testing/pointerHarness'
-import { rowDropLine } from '@pommora/uix/Menus'
+import { menuDropLine } from '@pommora/uix/Menus'
 import { DragGroup, useLineRow, useLooseItem } from '@pommora/uix/Interactions/drag'
 import { TAB_FAMILY } from '@pommora/core/Navigation/tabRows'
 import { SidebarDnd } from './sidebarDnd'
@@ -107,7 +107,7 @@ describe('sidebar drag — carry', () => {
         </DragGroup>,
       )
     })
-    stubRect(host.querySelector('.drop-line-host') as Element, { top: 0, bottom: 48, right: 200 })
+    stubRect(host.querySelector('.line-zone') as Element, { top: 0, bottom: 48, right: 200 })
     stubRect(row('p1'), { top: 0, bottom: 24 })
     stubRect(row('p2'), { top: 24, bottom: 48 })
     await act(async () => {
@@ -208,7 +208,7 @@ describe('sidebar drag — Esc abort', () => {
   })
 })
 
-const indentAt = (depth: number): string => `${rowDropLine(0, depth).left}px`
+const indentAt = (depth: number): string => `${menuDropLine({ edge: 0, depth }).left}px`
 
 describe('sidebar drag — the line', () => {
   it("draws at the slot's edge in the content's own coordinates, indented to the slot's depth", async () => {
@@ -318,7 +318,7 @@ describe('sidebar drag — keyboard focus after a remounting drop', () => {
     )
     const draw = (): Promise<void> => act(async () => root.render(view()))
     await draw()
-    stubRect(host.querySelector('.drop-line-host') as Element, { top: 0, bottom: 48 })
+    stubRect(host.querySelector('.line-zone') as Element, { top: 0, bottom: 48 })
     stubRect(row('s1'), { top: 0, bottom: 24 })
     stubRect(row('p1'), { top: 24, bottom: 48 })
     const region = (): string =>

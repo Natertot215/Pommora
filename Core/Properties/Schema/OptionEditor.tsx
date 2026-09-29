@@ -12,13 +12,13 @@ import { GhostOptionChip, OptionNameCaret, useGhostOptionAnchor } from './GhostO
 import { ghostAnchorProps } from '@pommora/uix/Interactions/ghostCreate'
 import { Reveal } from '@pommora/uix/Animations/Reveal'
 import { useEntrance } from '@pommora/uix/Animations/useEntrance'
-import { LineGroup, LineZone } from '@pommora/uix/Interactions/drag'
+import { LineGroup, LineZone, lineList } from '@pommora/uix/Interactions/drag'
 import { colorNameFor } from '@pommora/uix/Theme/ramp'
 import { text } from '@pommora/uix/Theme'
 import { OptionSlot, type OptionStyle, useOptionIconChoice } from './OptionRow'
 import { OptionChip } from '../Cells/OptionChip'
 import * as s from '@pommora/uix/Menus/frames.css'
-import { AccessoryButton, heading, laneSpec } from '@pommora/uix/Menus'
+import { AccessoryButton, heading, menuDropLine } from '@pommora/uix/Menus'
 import { labelColor, shape } from '@pommora/uix/Labels/label-base.css'
 import { optionShapeFor } from '@pommora/uix/Labels/recipes'
 import { popMenu } from '../../Actions/menuActions'
@@ -134,7 +134,7 @@ export function OptionEditor({
   return (
     <LineZone
       className={s.statusGroups}
-      {...laneSpec({
+      {...lineList({
         laneOf: () => {
           const laneOf = new Map(
             groups.flatMap((grp) => grp.options.map((o) => [o.value, grp.id] as const)),
@@ -142,9 +142,10 @@ export function OptionEditor({
           return (v) => laneOf.get(v)
         },
         across: true,
-        boxes: true,
+        boxes: (g) => g.groups,
         commit: (value, slot) =>
           onEdit({ op: 'move', value, groupId: slot.lane, toIndex: slot.index }),
+        line: menuDropLine,
         label: (value) => (values.includes(value) ? value : headingOf(value)),
         chip: (value) => <OptionChip type={type} option={options.find((o) => o.value === value)} />,
         watch: [groups],

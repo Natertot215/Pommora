@@ -100,7 +100,7 @@ describe('ViewFrame — reordering views', () => {
     ...to: number[]
   ): Promise<boolean> => {
     await mount(source(views))
-    stubRect(document.querySelector('.drop-line-host')!, { top: 0, bottom: 60 })
+    stubRect(document.querySelector('.line-zone')!, { top: 0, bottom: 60 })
     for (const [i, v] of views.entries())
       stubRect(row(v.name), { top: i * 20, bottom: i * 20 + 20 })
     await act(async () => {

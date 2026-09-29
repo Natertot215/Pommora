@@ -231,7 +231,7 @@ describe('the option drag', () => {
   ] as StatusGroup[]
   const row = (value: string): Element => span(value)!.closest('[data-line-row]')!
   const lay = (): void => {
-    stubRect(host.querySelector('.drop-line-host')!, { top: 0, bottom: 200 })
+    stubRect(host.querySelector('.line-zone')!, { top: 0, bottom: 200 })
     const [todo, doing, done] = host.querySelectorAll('[class*="optionList"]')
     stubRect(todo, { top: 10, bottom: 50 })
     stubRect(doing, { top: 70, bottom: 90 })

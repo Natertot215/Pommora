@@ -64,12 +64,8 @@ export function routeBandDrop(
   }
 }
 
-const showsAlike = (
-  children: ReadonlyMap<string | null, string[]>,
-  a: string[],
-  b: string[] | undefined,
-): boolean =>
-  [...children.values()].every((kids) =>
+const showsAlike = (parents: readonly string[][], a: string[], b: string[] | undefined): boolean =>
+  parents.every((kids) =>
     sameIds(
       resolveRowOrder(kids, (s) => s, a),
       resolveRowOrder(kids, (s) => s, b),
@@ -95,14 +91,8 @@ function routeSet(id: string, drop: BandDrop, scope: BandScope): BandEffect | nu
     ? (ranked?.find((s) => s !== id && sets.parent.get(s) === target) ?? null)
     : drop.beforeKey
   const from = sets.parent.get(id) ?? null
-  const landed = new Map(sets.children)
-  if (from !== target) {
-    landed.set(
-      from,
-      (landed.get(from) ?? []).filter((s) => s !== id),
-    )
-    landed.set(target, order)
-  }
+  const landed =
+    from === target ? [children] : [(sets.children.get(from) ?? []).filter((s) => s !== id), order]
   const ranks = ranked && nextOrder(ranked, id, before)
   const after =
     ranks && !showsAlike(landed, ranks, view.group_order)
@@ -174,22 +164,36 @@ export const bucketValueAt =
   (key: string | null): string | null =>
     key === null ? null : bucketValue(byKey.get(key))
 
-export function dropBand(
-  bands: BandList,
-  dragged: BandRef,
-  drop: BandDrop,
-  base: Omit<BandScope, 'valueAt' | 'shown'>,
-  io: BandIO,
-): boolean {
-  const shown = bands.nodes.flatMap((n) => {
+type BandBase = Omit<BandScope, 'valueAt' | 'shown'>
+
+const bandScopeOf = (bands: BandList, base: BandBase): BandScope => ({
+  ...base,
+  valueAt: bucketValueAt(bands.byKey),
+  shown: bands.nodes.flatMap((n) => {
     const value = bucketValue(n)
     return value === null ? [] : [value]
-  })
-  const effect = routeBandDrop(dragged, drop, {
-    ...base,
-    valueAt: bucketValueAt(bands.byKey),
-    shown,
-  })
-  void runBandEffect(effect, io)
-  return effect !== null
+  }),
+})
+
+export interface BandRouting {
+  moves: (dragged: BandRef) => (drop: BandDrop) => boolean
+  drop: (dragged: BandRef, drop: BandDrop) => boolean
+}
+
+export function bandRouting(
+  bands: BandList,
+  base: BandBase,
+  io: (dragged: BandRef) => BandIO,
+): BandRouting {
+  return {
+    moves: (dragged) => {
+      const scope = bandScopeOf(bands, base)
+      return (drop) => routeBandDrop(dragged, drop, scope) !== null
+    },
+    drop: (dragged, drop) => {
+      const effect = routeBandDrop(dragged, drop, bandScopeOf(bands, base))
+      void runBandEffect(effect, io(dragged))
+      return effect !== null
+    },
+  }
 }

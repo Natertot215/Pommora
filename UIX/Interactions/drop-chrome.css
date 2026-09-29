@@ -1,7 +1,7 @@
-.drop-line-host {
+.line-zone {
   position: relative;
 }
-.drop-line-host:focus-visible {
+.line-zone:focus-visible {
   outline: none;
 }
 

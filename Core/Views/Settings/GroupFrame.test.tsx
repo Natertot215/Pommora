@@ -395,7 +395,7 @@ describe('GroupFrame lists — dragging in the pane', () => {
     view({ group: { kind: 'property', property_id: 'prop_status', order_mode } })
   const lineRows = (): HTMLElement[] => [...host.querySelectorAll<HTMLElement>('[data-line-row]')]
   const lay = (): void => {
-    const zone = host.querySelector('.drop-line-host')
+    const zone = host.querySelector('.line-zone')
     if (zone) stubRect(zone, { top: 0, bottom: lineRows().length * 30 })
     for (const [i, el] of lineRows().entries()) stubRect(el, { top: i * 30, bottom: i * 30 + 30 })
   }

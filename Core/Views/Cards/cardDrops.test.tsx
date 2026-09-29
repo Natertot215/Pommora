@@ -110,7 +110,7 @@ const GRID = 200
 
 // Each grid owns a 200px slice, its cards a 100px row apiece — enough for zoneAt and the row banding to resolve.
 const layout = (): void => {
-  const box = host.querySelector('.drop-line-host')
+  const box = host.querySelector('.line-zone')
   if (box) stubRect(box, { top: 0, bottom: 800 })
   for (const [i, el] of [...host.querySelectorAll('.group-band-head')].entries())
     stubRect(el, { top: i * 24, bottom: i * 24 + 24 })

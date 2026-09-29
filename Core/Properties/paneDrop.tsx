@@ -9,7 +9,7 @@ import {
   type Lanes,
   rowSlot,
 } from '@pommora/uix/Interactions/reorderModel'
-import { rowDropLine } from '@pommora/uix/Menus'
+import { menuDropLine } from '@pommora/uix/Menus'
 import { allHighlight } from '@pommora/uix/Menus/frames.css'
 import { cx } from '@pommora/uix/Utilities/cx'
 
@@ -94,7 +94,7 @@ export function paneSpec({
     },
     resolve: (id, point, s) => paneSlot(s, point.y, id, ordersAll, pinned),
     commit: (id, slot, s) => onDrop(dropOf(id, slot, s.home?.key)),
-    line: (slot) => (slot === 'unassign' ? null : rowDropLine(slot.edge)),
+    line: (slot) => (slot === 'unassign' ? null : menuDropLine(slot)),
     step: (slot) => (slot === 'unassign' ? { part: 'into', id: 'all' } : null),
     label: (id) => (id === 'assigned' || id === 'all' ? titles[id] : label(id)),
     glyph,

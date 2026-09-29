@@ -8,9 +8,9 @@ import type { ColumnStyle } from '@pommora/core/Properties/columnStyles'
 import type { CollectionNode, SetNode } from '@pommora/core/Nexus/tree'
 import type { ResolvedGroup } from '@pommora/core/Views/viewRow'
 import type { SavedView, SubGroupConfig } from '@pommora/core/Views/views'
-import { groupedLine, type LineSpec } from '@pommora/uix/Interactions/drag'
-import { type Geometry, laneSlot, type Row } from '@pommora/uix/Interactions/reorderModel'
-import { ROW_END, rowLine, rowSnap } from '../Table/rowInsertion'
+import { groupedLine, type LineSpec, lineList, rowLine } from '@pommora/uix/Interactions/drag'
+import type { Geometry, Row } from '@pommora/uix/Interactions/reorderModel'
+import { ROW_END } from '../Host/useViewInteractions'
 import { mountEachTest } from '../../Testing/viewHarness'
 import { BandGlyph, bandSpec, GroupBand } from './GroupBand'
 import { bandModelOf, headContextOf } from './bandModel'
@@ -163,7 +163,7 @@ describe('GroupBand', () => {
       bands,
       collapsed: new Set(),
       nests: false,
-      drop: vi.fn(),
+      routing: { drop: vi.fn(), moves: () => () => true },
     })
     const geometry: Geometry = { rows: [], groups: new Map(), bottom: 0 }
     expect(spec.snap('2026-07', geometry)).toBeNull()
@@ -206,7 +206,12 @@ describe('band and row lines grouped in one zone', () => {
       groups: new Map(),
       bottom: 90,
     }
-    const band = bandSpec({ bands, collapsed: new Set(), nests: false, drop: vi.fn() })
+    const band = bandSpec({
+      bands,
+      collapsed: new Set(),
+      nests: false,
+      routing: { drop: vi.fn(), moves: () => () => true },
+    })
     const spec = groupedLine(isRow, rowsSpec(), band)
     const snap = spec.snap('a', g)!
     const first = spec.resolve('a', { x: 0, y: 44 }, snap)
@@ -233,14 +238,15 @@ describe('band and row lines grouped in one zone', () => {
       ['r2', 'b'],
       ['r3', 'b'],
     ])
-    const rows: LineSpec<ReturnType<typeof laneSlot>, ReturnType<typeof rowSnap>> = {
-      snap: (id, geo) => rowSnap(geo, id, bandOf, () => false),
-      resolve: (_id, p, s) => laneSlot(s!, p.y, true),
+    const rows = lineList({
+      laneOf: () => (id) => bandOf.get(id),
+      across: true,
+      end: ROW_END,
       commit: vi.fn(),
-      line: (slot, s) => rowLine(slot!, s!, '0px'),
+      line: (slot, s) => rowLine(slot, s, '0px'),
       label: () => 'row',
       watch: [bandOf],
-    }
+    })
     const spec = groupedLine(isRow, rows, bandsSpec())
     const snap = spec.snap('r3', g)!
     expect(spec.resolve('r3', { x: 0, y: 36 }, snap)).toMatchObject({ lane: 'a', before: null })

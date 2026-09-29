@@ -154,7 +154,7 @@ const mountTable = async (source: CollectionNode): Promise<void> => {
 }
 
 function stubBandRects(): void {
-  const box = host.querySelector('.drop-line-host')
+  const box = host.querySelector('.line-zone')
   if (box) stubRect(box, { top: 0, bottom: 400 })
   const headers = host.querySelectorAll('.group-band-head')
   for (const [i, el] of [...headers].entries()) stubRect(el, { top: i * 24, bottom: i * 24 + 24 })
@@ -368,7 +368,7 @@ describe('sub-group bucket band drag', () => {
     expect(mutateSpy).not.toHaveBeenCalled()
   })
 
-  it('a cross-set bucket drop that leaves the global sub-order as it reads writes nothing and says it returned', async () => {
+  it('a cross-set bucket drop that leaves the global sub-order as it reads draws no line, writes nothing, and says it returned', async () => {
     await mountTable(
       subGroupSource({
         sub_group: {
@@ -379,6 +379,7 @@ describe('sub-group bucket band drag', () => {
       }),
     )
     await dragBand(2, 115)
+    expect(host.querySelector('.drop-line')).toBeNull()
     await drop()
     expect(saveSpy).not.toHaveBeenCalled()
     expect(mutateSpy).not.toHaveBeenCalled()
@@ -444,7 +445,7 @@ describe('sub-group row drop (every set × bucket pair)', () => {
   })
 
   const stubRowRects = (): void => {
-    const box = host.querySelector('.drop-line-host')
+    const box = host.querySelector('.line-zone')
     if (box) stubRect(box, { top: 0, bottom: 400 })
     const rows = host.querySelectorAll('.data-row')
     for (const [i, el] of [...rows].entries())

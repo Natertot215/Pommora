@@ -26,7 +26,7 @@
 }
 
 .cards-view .group-band + .group-band,
-.cards-view .set-cards-row + .drop-line-host > .group-band:first-child {
+.cards-view .set-cards-row + .line-zone > .group-band:first-child {
   margin-top: var(--band-gap);
 }
 

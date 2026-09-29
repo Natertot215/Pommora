@@ -43,7 +43,7 @@ import { GHOST_TRAVEL_HOLD_MS, GhostSuppress } from '@pommora/uix/Interactions/g
 import { Reveal } from '@pommora/uix/Animations/Reveal'
 import { columnLabel, useCapitalizeMetadata } from '../../Properties/Cells/columnLabel'
 import { useColumnStyleMap } from '../Host/useColumnStyles'
-import { bandSpec, GroupBand } from '../Bands/GroupBand'
+import { GroupBand } from '../Bands/GroupBand'
 import { orderedChildren } from '../Pipeline/group'
 import { rowHover, type TitleMenuContext, useViewInteractions } from '../Host/useViewInteractions'
 import type { ValueContext } from '../../Properties/valueContext'
@@ -144,7 +144,6 @@ export function CardsView({ host }: { host: ViewHostApi }): React.JSX.Element {
     ctx,
     rowById,
     bands,
-    collapsed,
     crossBand,
     searching,
     setStylePatch,
@@ -436,15 +435,7 @@ export function CardsView({ host }: { host: ViewHostApi }): React.JSX.Element {
             </SortableZone>
           </div>
         )}
-        <LineZone
-          {...bandSpec({
-            bands,
-            collapsed,
-            nests: host.nests,
-            drop: interactions.bandDrop,
-            disabled: searching,
-          })}
-        >
+        <LineZone {...interactions.bandZone()}>
           {groups.map((g) => (
             <GroupBand key={g.key} node={bands.byKey.get(g.key)} bands={interactions.bandView} fill>
               <SortableZone

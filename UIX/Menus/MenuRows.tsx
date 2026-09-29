@@ -6,8 +6,6 @@ import * as s from './menu-row.css'
 import { cx } from '../Utilities/cx'
 import { overScrollEllipsis } from '../Interactions/OverScroll'
 import { onActivateClick } from '../Interactions/activate'
-import type { LineSpec } from '../Interactions/drag'
-import { buildLanes, type LaneSlot, type Lanes, laneSlot } from '../Interactions/reorderModel'
 
 const BAR_GLYPH = 12 // KNOB
 const CHECK = 12
@@ -16,45 +14,17 @@ const INDENT_BASE = 8 // KNOB
 const rowLead = (depth: number): number | string =>
   depth ? INDENT_BASE + depth * DISCLOSURE_INDENT : s.ROW_LEAD
 
-export const rowDropLine = (top: number, depth = 0): CSSProperties => ({
-  top,
+export const menuDropLine = ({
+  edge,
+  depth = 0,
+}: {
+  edge: number
+  depth?: number
+}): CSSProperties => ({
+  top: edge,
   left: rowLead(depth),
   right: s.ROW_TRAIL,
 })
-
-export function laneSpec({
-  laneOf,
-  across = false,
-  boxes = false,
-  locked = false,
-  commit,
-  label,
-  glyph,
-  chip,
-  watch,
-}: {
-  laneOf?: (dragged: string) => (id: string) => string | undefined
-  across?: boolean
-  boxes?: boolean
-  locked?: boolean
-  commit: (id: string, slot: LaneSlot) => void
-  label: (id: string) => string
-  glyph?: (id: string) => ReactNode
-  chip?: (id: string) => ReactNode
-  watch: readonly unknown[]
-}): LineSpec<LaneSlot, Lanes> {
-  return {
-    snap: (id, g) =>
-      locked ? null : buildLanes(g.rows, id, laneOf?.(id), boxes ? g.groups : undefined),
-    resolve: (_id, p, l) => laneSlot(l, p.y, across),
-    commit,
-    line: (slot) => rowDropLine(slot.edge),
-    label,
-    glyph,
-    chip,
-    watch,
-  }
-}
 
 /** A searched row's label with the typed match drawn emphasized; `at` is where the matcher found it. */
 export function emphasizeMatch(label: string, at: number | null, len: number): ReactNode {

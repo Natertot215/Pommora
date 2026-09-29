@@ -220,7 +220,7 @@ function layZone(scope: ParentNode, zid: string): void {
 }
 
 function layLines(order = ROWS): void {
-  const list = host.querySelector('.drop-line-host')
+  const list = host.querySelector('.line-zone')
   if (!list) return
   stubRect(list, { top: 0, bottom: 90 })
   for (const [i, id] of order.entries()) stubRect(item(id), { top: i * 30, bottom: i * 30 + 30 })
@@ -973,7 +973,7 @@ describe('the line zone', () => {
     await mount()
   })
 
-  const lineHost = (): HTMLElement => host.querySelector('.drop-line-host') as HTMLElement
+  const lineHost = (): HTMLElement => host.querySelector('.line-zone') as HTMLElement
 
   it('shows the chip, marks the source, and commits on release', async () => {
     await dragHold('r1', 100, 70)
