@@ -196,7 +196,10 @@ export function useViewInteractions(host: ViewHostApi, policy: ViewInteractionPo
       ),
     }
     const save = (): void => void saveDrop(patch, row.title, { viewState: true })
-    if (!landed) return save()
+    if (!landed) {
+      save()
+      return
+    }
     stageView(source.id, view, patch)
     void landed.then((ok) => (ok ? save() : unstageView(source.id, view.id, patch)))
   }
