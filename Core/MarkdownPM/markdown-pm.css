@@ -937,11 +937,6 @@
   user-select: none;
 }
 
-.mdpm-autocomplete-slot {
-  min-width: 180px; /* KNOB */
-  max-width: 320px; /* KNOB */
-}
-
 .mdpm-block-menu {
   width: 140px; /* KNOB */
 }

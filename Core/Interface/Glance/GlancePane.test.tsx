@@ -614,6 +614,12 @@ describe('the stored size', () => {
   const widenBy = async (dx: number): Promise<void> => {
     const edge = document.querySelector<HTMLElement>('[data-picker-portal] .resize-edge-e')
     if (!edge) throw new Error('no east resize edge')
+    // jsdom lays nothing out: the pane's box is what the body was sized to.
+    const b = body()
+    Object.defineProperties(edge.parentElement, {
+      clientWidth: { value: Number.parseFloat(b.style.width) },
+      clientHeight: { value: Number.parseFloat(b.style.height) },
+    })
     await act(async () => {
       firePointer(edge, 'pointerdown', { x: 0 })
       firePointer(edge, 'pointermove', { x: dx })

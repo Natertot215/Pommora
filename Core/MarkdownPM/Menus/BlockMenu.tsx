@@ -1,7 +1,9 @@
 import { Fragment } from 'react'
 import { Icon } from '@pommora/uix/Symbols'
 import { PickerMenu } from '@pommora/uix/Pickers/PickerMenu'
+import type { RememberedSize } from '@pommora/uix/Interactions/useResizable'
 import { PICKER_MAX_HEIGHT } from '@pommora/uix/Pickers/picker-base.css'
+import { type PaneBounds, usePaneResize } from '@pommora/uix/Pickers/usePaneResize'
 import { useHeld } from '@pommora/uix/Animations/useExitPresence'
 import { emphasizeMatch, MenuItem, MenuRowView, MenuScrollFrame } from '@pommora/uix/Menus'
 import type { BlockMenuAction } from '@pommora/core/Actions/blockMenu'
@@ -12,12 +14,17 @@ interface Props {
   state: BlockMenuState | null
   selected: BlockMenuAction | null
   onPick: (action: BlockMenuAction) => void
+  geometry?: RememberedSize
 }
 
 const CLOSED: BlockMenuState = { query: '', from: 0, to: 0, matches: [], ...CLOSED_GEOMETRY }
 
-export function BlockMenu({ state, selected, onPick }: Props): React.JSX.Element {
+// KNOB — a fixed width, resized in height alone: the floor, and the whole list as its ceiling.
+const BLOCK_BOUNDS: PaneBounds = { min: { h: 180 }, default: { h: PICKER_MAX_HEIGHT } }
+
+export function BlockMenu({ state, selected, onPick, geometry }: Props): React.JSX.Element {
   const open = state !== null
+  const resize = usePaneResize(open, BLOCK_BOUNDS, geometry)
   const v = useHeld({ state: state ?? CLOSED, selected }, open)
   const matchLen = v.state.query.length
   const keepInView = useKeepInView(v.selected)
@@ -33,8 +40,9 @@ export function BlockMenu({ state, selected, onPick }: Props): React.JSX.Element
       origin="center"
       manageFocus={false}
       contentClassName="mdpm-block-menu"
+      resize={resize}
     >
-      <MenuScrollFrame maxHeight={PICKER_MAX_HEIGHT}>
+      <MenuScrollFrame maxHeight={resize.size.h}>
         {v.state.matches.map((m) => (
           <Fragment key={m.title}>
             <MenuRowView row={{ kind: 'heading', label: m.title, caps: true }} />

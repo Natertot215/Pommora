@@ -1,5 +1,6 @@
 import type { ConnPage } from '@pommora/core/Connections/pageIndex'
 import type { ReactNode } from 'react'
+import type { RememberedSize } from '@pommora/uix/Interactions/useResizable'
 import { changesTo } from '../Pages/merge3'
 import { docString } from './docCache'
 import { Annotation, Facet, StateEffect, Transaction } from '@codemirror/state'
@@ -153,6 +154,8 @@ export interface EditorHost {
     load(): Promise<EditorPrefs | null>
     save(...write: EditorPrefWrite): void
   }
+  /** A picker pane's remembered size, machine-local. */
+  paneGeometry?: (id: 'autocomplete' | 'block-menu') => RememberedSize
 }
 
 export const editorHost = Facet.define<EditorHost, EditorHost>({ combine: (v) => v[0] })

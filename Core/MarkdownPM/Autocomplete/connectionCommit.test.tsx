@@ -293,6 +293,6 @@ describe('the chevron slides in a page’s headings', () => {
       view.focus()
       view.dispatch({ selection: { anchor: body.indexOf('#') + 1 } })
     })
-    expect(document.querySelectorAll('.mdpm-autocomplete-slot [class*="item"]')).toHaveLength(0)
+    expect(document.querySelectorAll('.mdpm-ac [class*="item"]')).toHaveLength(0)
   })
 })

@@ -9,7 +9,7 @@ export interface DevicePrefs {
   interfaceScale?: number
   panes?: { sidebar?: number; sidePane?: number }
   disclosure?: Partial<Record<string, boolean>>
-  windows?: Record<string, { w: number; h: number }>
+  windows?: Record<string, { w?: number; h?: number }>
   navWindowGallery?: boolean
   navViewGallery?: boolean
 }

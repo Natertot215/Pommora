@@ -3,7 +3,9 @@ import { cx } from '@pommora/uix/Utilities/cx'
 import { EntityIcon } from '../../Assets/EntityIcon'
 import { Icon } from '@pommora/uix/Symbols'
 import { PickerMenu } from '@pommora/uix/Pickers/PickerMenu'
+import type { RememberedSize } from '@pommora/uix/Interactions/useResizable'
 import { PICKER_MAX_HEIGHT } from '@pommora/uix/Pickers/picker-base.css'
+import { type PaneBounds, usePaneResize } from '@pommora/uix/Pickers/usePaneResize'
 import {
   DisclosureRow,
   MenuItem,
@@ -37,9 +39,18 @@ export interface AutocompletePaneProps {
   onToggleHeading?: (value: string) => void
   onAside?: (row: AcRow) => void
   onBack?: () => void
+  geometry?: RememberedSize
 }
 
 const NONE: ReadonlySet<string> = new Set()
+
+// KNOB — the pane fits its titles between the width floor and AC_FIT_MAX until it's first resized.
+const AC_BOUNDS: PaneBounds = {
+  min: { w: 180, h: 120 },
+  max: { w: 480 },
+  default: { h: PICKER_MAX_HEIGHT },
+}
+const AC_FIT_MAX = 320
 
 const CLOSED: AcState = { query: '', from: 0, to: 0, form: 'link', ...CLOSED_GEOMETRY }
 
@@ -55,8 +66,11 @@ export function AutocompletePane({
   onToggleHeading = () => {},
   onAside = () => {},
   onBack = () => {},
+  geometry,
 }: AutocompletePaneProps): React.JSX.Element {
   const live = ac !== null && (candidates.length > 0 || loading)
+  const resize = usePaneResize(live, AC_BOUNDS, geometry)
+  const { w, h } = resize.size
   const v = useHeld(
     { ac: ac ?? CLOSED, candidates, index, viaChevron, headingRows, collapsed },
     live,
@@ -73,7 +87,7 @@ export function AutocompletePane({
   const sliding = (v.ac.form === 'alias' && cameFrom.current.length > 0) || headingSlide
 
   const slot = (rows: AcRow[], active: boolean): React.JSX.Element => (
-    <MenuScrollFrame maxHeight={PICKER_MAX_HEIGHT} className="mdpm-autocomplete-slot">
+    <MenuScrollFrame maxHeight={h}>
       {rows.map((row, i) => (
         <MenuItem
           key={row.kind === 'page' ? row.pageId : row.value}
@@ -176,8 +190,7 @@ export function AutocompletePane({
 
   const headingSlot = (rows: AcRow[]): React.JSX.Element => (
     <MenuScrollFrame
-      maxHeight={PICKER_MAX_HEIGHT}
-      className="mdpm-autocomplete-slot"
+      maxHeight={h}
       header={
         headingSlide ? <MenuTopRow label="Links" current={v.ac.title} onBack={onBack} /> : undefined
       }
@@ -200,9 +213,12 @@ export function AutocompletePane({
       origin="center"
       manageFocus={false}
       contentClassName="mdpm-ac"
+      resize={resize}
     >
       <FrameSlide
         open={sliding}
+        minWidth={w ?? AC_BOUNDS.min.w}
+        maxWidth={w ?? AC_FIT_MAX}
         root={
           sliding
             ? slot(cameFrom.current, false)
