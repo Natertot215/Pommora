@@ -105,14 +105,15 @@ function NavRow({
   onSelect: (t: NavRef) => void
   onMenu: (it: ResolvedNav) => void
 }): React.JSX.Element {
+  const select = (): void => onSelect(it.target)
   return (
-    <LineRow id={it.key} open={() => onSelect(it.target)}>
+    <LineRow id={it.key} open={select}>
       <MenuItem
         tabIndex={-1}
         leading={<EntityIcon item={it} size="headline" />}
         detail={<NavTrail segments={it.path} iconSize="control" />}
         overlay={<NavPinButton it={it} className={cx(overlay, 'nav-pin')} />}
-        onClick={() => onSelect(it.target)}
+        onClick={select}
         onPointerEnter={(e) => {
           const t = pageTargetFromNav(it, useSession.getState().tree)
           if (t) hoverGlance(t, e.currentTarget, 'location', e.shiftKey)
@@ -165,16 +166,9 @@ export function NavList({
         commit: (key, slot) =>
           slot.lane === 'pins' ? reorderPin(key, slot.before) : onReorderRecent?.(key, slot.before),
         label: (key) => find(key)?.title ?? '',
-        chip: (key) => {
+        glyph: (key) => {
           const it = find(key)
-          return (
-            it && (
-              <>
-                <EntityIcon item={it} size="body" />
-                {it.title}
-              </>
-            )
-          )
+          return it && <EntityIcon item={it} />
         },
         watch: [pins, items],
       })}

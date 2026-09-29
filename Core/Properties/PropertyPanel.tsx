@@ -262,16 +262,9 @@ export function PropertyPanel({
 
   const fieldOf = (id: string): Field | undefined =>
     [...fields.contexts, ...fields.properties].find((f) => f.id === id)
-  const chipOf = (id: string): React.ReactNode => {
+  const glyphOf = (id: string): React.ReactNode => {
     const f = fieldOf(id)
-    return (
-      f && (
-        <>
-          <Icon name={f.icon} size="control" />
-          {f.label}
-        </>
-      )
-    )
+    return f && <Icon name={f.icon} />
   }
   const ghostApi = useGhostOptionAnchor(editing !== null || addOpen !== null)
 
@@ -461,8 +454,8 @@ export function PropertyPanel({
                     {...laneSpec({
                       commit: (id, slot) => commitOrder(key, id, slot.index),
                       label: (id) => fieldOf(id)?.label ?? id,
-                      chip: chipOf,
-                      watch: [rows],
+                      glyph: glyphOf,
+                      watch: [rows.map((f) => f.id).join()],
                     })}
                   >
                     {rows.map(renderRow)}

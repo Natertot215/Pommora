@@ -29,6 +29,7 @@ export function laneSpec({
   locked = false,
   commit,
   label,
+  glyph,
   chip,
   watch,
 }: {
@@ -38,6 +39,7 @@ export function laneSpec({
   locked?: boolean
   commit: (id: string, slot: LaneSlot) => void
   label: (id: string) => string
+  glyph?: (id: string) => ReactNode
   chip?: (id: string) => ReactNode
   watch: readonly unknown[]
 }): LineSpec<LaneSlot, Lanes> {
@@ -48,6 +50,7 @@ export function laneSpec({
     commit,
     line: (slot) => rowDropLine(slot.edge),
     label,
+    glyph,
     chip,
     watch,
   }

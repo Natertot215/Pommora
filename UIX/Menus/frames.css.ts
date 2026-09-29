@@ -82,14 +82,14 @@ export const hiddenZone = style({ flex: '1 1 auto' })
 
 globalStyle(`${hiddenRow} ${eyeToggleButton}`, { color: c.label.tertiary, opacity: 1 })
 
-export const frameDnd = style({
+export const frameZone = style({
   display: 'flex',
   flexDirection: 'column',
   flex: '1 1 auto',
 })
 
 export const allHighlight = style({
-  background: c.state.hover,
+  background: 'var(--drop-slot-fill)',
   borderRadius: `${SIZE.dragHighlightRadius}px`,
 })
 

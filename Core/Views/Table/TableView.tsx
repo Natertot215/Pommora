@@ -538,17 +538,7 @@ export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
     commit: (id, slot) => interactions.onDrop(id, slot.lane, slot.before),
     line: rowLine,
     label: (id) => rowById.get(id)?.title ?? '',
-    chip: (id) => {
-      const r = rowById.get(id)
-      return (
-        r && (
-          <>
-            <EntityIcon kind="page" icon={r.icon} size="body" />
-            {r.title}
-          </>
-        )
-      )
-    },
+    glyph: (id) => <EntityIcon kind="page" icon={rowById.get(id)?.icon} />,
     carry: [carries(TAB_FAMILY, interactions.carry)],
     disclose: across,
     watch: [rowBand],

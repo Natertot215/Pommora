@@ -130,7 +130,7 @@ export function ViewFrame({
       }
     >
       <LineZone
-        className={s.frameDnd}
+        className={s.frameZone}
         {...laneSpec({
           locked: views.length < 2,
           commit: (id, slot) => {
@@ -144,59 +144,51 @@ export function ViewFrame({
               void dialer().ask('views:reorder', node.path, node.kind, order).then(reportRefusal)
           },
           label: (id) => viewOf(id)?.name ?? '',
-          chip: (id) => {
+          glyph: (id) => {
             const v = viewOf(id)
-            return (
-              v && (
-                <>
-                  <Icon name={viewGlyph(v)} size="body" />
-                  {v.name}
-                </>
-              )
-            )
+            return v && <Icon name={viewGlyph(v)} />
           },
           watch: [views],
         })}
       >
         <Menu>
-          {rows.map((v) => (
-            <LineRow
-              key={v.id}
-              id={v.id}
-              open={renamingId === v.id ? undefined : () => switchTo(v.id)}
-            >
-              <MenuItem
-                className={active.id === v.id ? optionRing : undefined}
-                leading={<Icon name={viewGlyph(v)} size="headline" />}
-                trailing={
-                  <Button
-                    paddingX="0"
-                    icon="chevron-right"
-                    iconSize="headline"
-                    className={vd.chevronButton}
-                    aria-label={`Edit ${v.name}`}
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      setEditingId(v.id)
-                    }}
+          {rows.map((v) => {
+            const open = renamingId === v.id ? undefined : () => switchTo(v.id)
+            return (
+              <LineRow key={v.id} id={v.id} open={open}>
+                <MenuItem
+                  className={active.id === v.id ? optionRing : undefined}
+                  leading={<Icon name={viewGlyph(v)} size="headline" />}
+                  trailing={
+                    <Button
+                      paddingX="0"
+                      icon="chevron-right"
+                      iconSize="headline"
+                      className={vd.chevronButton}
+                      aria-label={`Edit ${v.name}`}
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        setEditingId(v.id)
+                      }}
+                    />
+                  }
+                  tabIndex={-1}
+                  onClick={open}
+                  onContextMenu={(e) => void rowMenu(v, e)}
+                >
+                  <RenamableLabel
+                    renames="title"
+                    editing={renamingId === v.id}
+                    value={v.name}
+                    className={titleInput}
+                    onBegin={() => setRenamingId(v.id)}
+                    onCommit={(next) => commitRename(v, next)}
+                    onCancel={() => setRenamingId(null)}
                   />
-                }
-                tabIndex={-1}
-                onClick={renamingId === v.id ? undefined : () => switchTo(v.id)}
-                onContextMenu={(e) => void rowMenu(v, e)}
-              >
-                <RenamableLabel
-                  renames="title"
-                  editing={renamingId === v.id}
-                  value={v.name}
-                  className={titleInput}
-                  onBegin={() => setRenamingId(v.id)}
-                  onCommit={(next) => commitRename(v, next)}
-                  onCancel={() => setRenamingId(null)}
-                />
-              </MenuItem>
-            </LineRow>
-          ))}
+                </MenuItem>
+              </LineRow>
+            )
+          })}
         </Menu>
       </LineZone>
     </MenuScrollFrame>

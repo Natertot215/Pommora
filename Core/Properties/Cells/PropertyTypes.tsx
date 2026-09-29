@@ -35,7 +35,7 @@ const TYPE_META: Record<PropertyType | 'title', TypeMeta> = {
 
 export const propertyTypeLabel = (type: PropertyType): string => TYPE_META[type].label
 
-export const propertyTypeIconName = (type: PropertyType): IconName => TYPE_META[type].icon
+export const propertyTypeIconName = (type: PropertyType | 'title'): IconName => TYPE_META[type].icon
 
 export const propertyIcon = (def: PropertyDefinition): string =>
   asRenderableIcon(def.icon) ?? propertyTypeIconName(def.type)

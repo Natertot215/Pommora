@@ -212,8 +212,6 @@ export function scrollGlide(
   // Timed from the first frame, not dispatch — the gap is dead time the easing would have spent.
   let started: number | null = null
   const onInterrupt = (): void => stopGlide()
-  for (const ev of ['wheel', 'touchstart', 'keydown'] as const)
-    window.addEventListener(ev, onInterrupt, { passive: true })
   const teardown = (): void => {
     for (const ev of ['wheel', 'touchstart', 'keydown'] as const)
       window.removeEventListener(ev, onInterrupt)
@@ -221,7 +219,11 @@ export function scrollGlide(
   const step = (now: number): void => {
     const g = glide
     if (!g) return
-    started ??= now
+    if (started === null) {
+      started = now
+      for (const ev of ['wheel', 'touchstart', 'keydown'] as const)
+        window.addEventListener(ev, onInterrupt, { passive: true })
+    }
     const t = Math.min(1, (now - started) / ms)
     scroller.scrollTop = from + (target() - from) * easeSnap(t)
     if (t < 1) {

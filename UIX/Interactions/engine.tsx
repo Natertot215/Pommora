@@ -101,6 +101,7 @@ export type LineSpec<Slot, Snap> = ZoneShared & {
   line?(slot: Slot, s: Snap): CSSProperties | null
   slotKey?(slot: Slot): string
   step?(slot: Slot, s: Snap): { part: StepPart; id: string } | null
+  glyph?: (id: string) => ReactNode
   chip?: (id: string) => ReactNode
   watch: readonly unknown[]
 }
@@ -661,7 +662,16 @@ function createEngine(setChrome: (c: Chrome | null) => void): Api {
       }
       if (k.kind === 'line')
         setChrome({
-          node: <DragGhost>{k.spec.chip?.(id) ?? s.name}</DragGhost>,
+          node: (
+            <DragGhost>
+              {k.spec.chip?.(id) ?? (
+                <>
+                  {k.spec.glyph?.(id)}
+                  {s.name}
+                </>
+              )}
+            </DragGhost>
+          ),
           style: { ...base, left: start.x, top: start.y },
         })
       else if (k.spec.renderOverlay)

@@ -144,9 +144,7 @@ export function OptionEditor({
         commit: (value, slot) =>
           onEdit({ op: 'move', value, groupId: slot.lane, toIndex: slot.index }),
         label: (value) => value,
-        chip: (value) => (
-          <OptionChip type={type} option={options.find((o) => o.value === value)} def={def} />
-        ),
+        chip: (value) => <OptionChip type={type} option={options.find((o) => o.value === value)} />,
         watch: [groups],
       })}
     >
