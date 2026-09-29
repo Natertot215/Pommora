@@ -3,6 +3,7 @@ import { persist } from '@pommora/core/Interface/Notifications/notifications'
 import { useEffect } from 'react'
 import { valueOr } from '@pommora/core/Contract/result'
 import { setCmdModifier } from '@pommora/uix/Interactions/chords'
+import { applySystemAccent } from '@pommora/uix/Theme/ramp'
 import { EMPTY_ASSET_MAP } from '@pommora/core/Nexus/tree'
 import { pagesByIdOf } from '@pommora/core/Nexus/treeIndex'
 import { bodyHead, dropCacheDetail, readBodyBase, readPageDetail } from './pageDetailCache'
@@ -31,12 +32,18 @@ export function useBridgeSubscriptions(): void {
         setCmdModifier(hostPlatform === 'windows')
         setHostWindow({ hostPlatform })
       })
-    const off = dialer().on('win:fullscreen', (fullscreen) => setHostWindow({ fullscreen }))
-    dialer().tell('win:resendFullscreen')
-    return off
+    const offFullscreen = dialer().on('win:fullscreen', (fullscreen) =>
+      setHostWindow({ fullscreen }),
+    )
+    const offAccent = dialer().on('theme:systemAccent', applySystemAccent)
+    dialer().tell('win:resend')
+    return () => {
+      offFullscreen()
+      offAccent()
+    }
   }, [setHostWindow])
 
-  useEffect(() => dialer().on('nexus:changed', (next) => void applyTree(next)), [applyTree])
+  useEffect(() => dialer().on('nexus:changed', applyTree), [applyTree])
 
   const bumpContainerValues = useSession((s) => s.bumpContainerValues)
   useEffect(

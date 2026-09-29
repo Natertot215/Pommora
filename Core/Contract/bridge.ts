@@ -202,7 +202,6 @@ export interface Asks {
     args: [key: keyof Personalization, value: Personalization[keyof Personalization]]
     reply: Result<null>
   }
-  'theme:systemAccent': { args: []; reply: Result<string | null> }
   'host:platform': { args: []; reply: Result<HostPlatform> }
 
   'nav:read': { args: []; reply: Result<NavigationState> }
@@ -216,7 +215,7 @@ export interface Asks {
   'tabs:save': { args: [set: StoredTabSet]; reply: Result<null> }
   'windows:load': { args: []; reply: Result<WindowsFile> }
   'windows:save': { args: [file: WindowsFile]; reply: Result<null> }
-  'devicePrefs:load': { args: []; reply: Result<DevicePrefs | null> }
+  'devicePrefs:load': { args: []; reply: Result<DevicePrefs> }
   'devicePrefs:save': { args: [prefs: DevicePrefs]; reply: Result<null> }
   'sync:state': { args: []; reply: Result<SyncState> }
   'sync:renameDevice': { args: [name: string]; reply: Result<SyncState> }
@@ -258,7 +257,7 @@ export interface Asks {
 export interface Tells {
   'win:dragBy': [dx: number, dy: number]
   'win:zoom': []
-  'win:resendFullscreen': []
+  'win:resend': []
   // The quit handshake's answer: every save the window owed has landed.
   'app:flushed': []
   // Handed to the guest a host-owned pointer covers — the only way it can still scroll beneath it.
@@ -279,6 +278,7 @@ export interface Pushes {
   'pages:changed': string[]
   'sync:changed': SyncStatus
   'win:fullscreen': boolean
+  'theme:systemAccent': string | null
   // A guest's window.open, denied main-side so popups route through the one link adjudicator.
   'web:popup': string
 }

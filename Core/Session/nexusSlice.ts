@@ -17,11 +17,8 @@ import {
   renameNodeInTree,
 } from '@pommora/core/Nexus/treePatch'
 import { stabilize } from '@pommora/core/Nexus/treeStabilize'
-import { applySystemAccent } from '@pommora/uix/Theme/ramp'
 import { applyPersonalization } from '../Settings/applyPersonalization'
 import { reconcileIndexOf } from '../Nexus/treeIndex'
-import { numberCheck } from '../Files/decoders'
-import { SIDE_PANE_WIDTH, SIDEBAR_WIDTH } from './layoutSlice'
 import { flushAllTileDocs, tileBodyWriter } from '../Tiles/tileDocStore'
 import {
   cancelAllSaves,
@@ -44,9 +41,12 @@ export interface NexusSlice {
   /** Bumped by every delete, restore, and empty that lands, so an open Trash pane lists again. */
   trashRevision: number
   bumpTrashRevision: () => void
+  /** Opens the bound Nexus into the window: its device preferences, its tree, then what the window restores from it. */
   load: () => Promise<void>
+  /** Re-reads the bound Nexus's tree, for a root that moved under a Nexus the window already holds. */
+  refetch: () => Promise<void>
   applySyncStatus: (status: SyncStatus) => void
-  applyTree: (tree: NexusTree) => Promise<void>
+  applyTree: (tree: NexusTree) => void
   loadHeadings: (paths?: string[]) => Promise<void>
   choose: () => Promise<void>
   openPath: (path: string) => Promise<void>
@@ -62,16 +62,12 @@ export async function flushAllSaves(): Promise<void> {
   await Promise.all([flushAllPageSaves(), flushAllTileDocs(), flushAllSessionSaves()])
 }
 
-let systemAccentCache: string | null | undefined
-let headingsLoaded = false
-
 export const createNexusSlice: Slice<NexusSlice> = (set, get) => {
   const resetNexusSession = (): void => {
     cancelAllSaves()
-    headingsLoaded = false
     set({ headings: {} })
     // Every key here is per machine PER NEXUS, so nothing of the old one stays on screen while this one's is read, or after a refused read.
-    set({ devicePrefs: {}, devicePrefsState: 'unread' })
+    set({ devicePrefs: {}, devicePrefsLive: false })
     const s = get()
     s.resetNavigation()
     s.resetWindow()
@@ -111,6 +107,22 @@ export const createNexusSlice: Slice<NexusSlice> = (set, get) => {
     }
   }
 
+  /** Whether the host holds an open Nexus, whose tree is then applied. */
+  const readTree = async (): Promise<boolean> => {
+    const res = await dialer().ask('nexus:state')
+    if (!res.ok) {
+      resetNexusSession()
+      set({ status: 'error', error: res.error, tree: null })
+      return false
+    }
+    if (res.value.status === 'empty') {
+      set({ status: 'empty', tree: null })
+      return false
+    }
+    get().applyTree(res.value.tree)
+    return true
+  }
+
   return {
     status: 'idle',
     tree: null,
@@ -129,93 +141,63 @@ export const createNexusSlice: Slice<NexusSlice> = (set, get) => {
     },
 
     load: async () => {
-      // Only the first load shows it; a refetch keeps the tree mounted so selection survives.
+      // Only the first open shows it; a switch keeps the old Nexus drawn until the new tree applies.
       if (!get().tree) set({ status: 'loading', error: undefined })
-      void dialer()
-        .ask('theme:systemAccent')
-        .then((r) => {
-          systemAccentCache = valueOr(r, null)
-        })
       try {
-        const res = await dialer().ask('nexus:state')
-        if (!res.ok) {
-          resetNexusSession()
-          set({ status: 'error', error: res.error, tree: null })
-          return
+        // Ahead of the tree's ask: the panes land at their stored widths in the ready paint, and no push can land between the tree's reply and its apply.
+        const prefs = await dialer().ask('devicePrefs:load')
+        if (prefs.ok) {
+          const { sidebar, sidePane } = prefs.value.panes ?? {}
+          set({
+            devicePrefsLive: true,
+            devicePrefs: prefs.value,
+            ...(sidebar !== undefined && { sidebarWidth: sidebar }),
+            ...(sidePane !== undefined && { sidePaneWidth: sidePane }),
+          })
         }
-        switch (res.value.status) {
-          case 'open':
-            await get().applyTree(res.value.tree)
-            await Promise.all([
-              dialer()
-                .ask('citations:get')
-                .then((r) => set({ citationsShown: valueOr(r, {}) })),
-              dialer()
-                .ask('linkTitles:get')
-                .then((r) => set({ linkTitles: valueOr(r, {}) })),
-            ])
-            // A refetch must not re-read the sidecar: its debounced write trails the live tab set.
-            if (get().activeTabId === '') {
-              // Disk leads only here and on the external-edit push, never again mid-session.
-              const [read, windows, stored] = await Promise.all([
-                dialer().ask('nav:read'),
-                dialer().ask('windows:load'),
-                dialer().ask('tabs:load'),
-              ])
-              if (windows.ok) set({ windowsFile: windows.value })
-              get().restoreNavigation(valueOr(read, null), valueOr(stored, null))
-            }
-            break
-          case 'empty':
-            set({ status: 'empty', tree: null })
-            break
-        }
+        if (!(await readTree())) return
+        void get().loadHeadings()
+        const [, , read, windows, stored] = await Promise.all([
+          dialer()
+            .ask('citations:get')
+            .then((r) => set({ citationsShown: valueOr(r, {}) })),
+          dialer()
+            .ask('linkTitles:get')
+            .then((r) => set({ linkTitles: valueOr(r, {}) })),
+          dialer().ask('nav:read'),
+          dialer().ask('windows:load'),
+          dialer().ask('tabs:load'),
+        ])
+        if (windows.ok) set({ windowsFile: windows.value })
+        get().restoreNavigation(valueOr(read, null), valueOr(stored, null))
       } catch (e) {
         set({ status: 'error', error: caught(e) })
       }
     },
 
-    applyTree: async (incoming) => {
+    refetch: async () => {
+      try {
+        await readTree()
+      } catch (e) {
+        set({ status: 'error', error: caught(e) })
+      }
+    },
+
+    applyTree: (incoming) => {
       // IPC strips identity, so without stabilize() every push would re-render every consumer.
-      const tree = stabilize(incoming, get().tree)
-      // Ahead of the ready paint so the panes land at their stored widths rather than settling after it. A width is seeded only when `panes` holds it; an absent key leaves the slice as it stands.
-      // Once per nexus, never per reconcile: applyTree runs on every tree change and must not round-trip.
-      if (get().devicePrefsState === 'unread') {
-        set({ devicePrefsState: 'asked' })
-        const prefs = await dialer().ask('devicePrefs:load')
-        if (prefs.ok) {
-          const panes = prefs.value?.panes
-          const sidebarWidth = numberCheck(SIDEBAR_WIDTH, true).safeParse(panes?.sidebar).data
-          const sidePaneWidth = numberCheck(SIDE_PANE_WIDTH, true).safeParse(panes?.sidePane).data
-          set({
-            devicePrefsState: 'live',
-            devicePrefs: prefs.value ?? {},
-            ...(sidebarWidth !== undefined && { sidebarWidth }),
-            ...(sidePaneWidth !== undefined && { sidePaneWidth }),
-          })
-        }
-      }
+      const prev = get().tree
+      const tree = stabilize(incoming, prev)
       set({ status: 'ready', tree })
-      if (!headingsLoaded) {
-        headingsLoaded = true
-        void get().loadHeadings()
-      }
       const index = reconcileIndexOf(tree)
       get().reconcileNavigation(index)
       get().reconcileWindow(index)
       get().reconcileGlance(index)
-      // From the module cache: an awaited round-trip here would gate the whole reconcile.
-      if (systemAccentCache === undefined)
-        systemAccentCache = valueOr(await dialer().ask('theme:systemAccent'), null)
-      else
-        void dialer()
-          .ask('theme:systemAccent')
-          .then((r) => {
-            systemAccentCache = valueOr(r, null)
-          })
-      applySystemAccent(systemAccentCache)
-      set({ personalization: tree.personalization, commands: tree.commands })
-      applyPersonalization(tree.personalization)
+      // Only a copy the tree itself changed: an optimistic patch, or a push repeating the copy the tree holds, would roll back a newer change the slice already holds.
+      if (tree.personalization !== prev?.personalization) {
+        set({ personalization: tree.personalization })
+        applyPersonalization(tree.personalization)
+      }
+      if (tree.commands !== prev?.commands) set({ commands: tree.commands })
     },
 
     choose: () => openVia(() => dialer().ask('nexus:choose')),
@@ -297,7 +279,7 @@ export const createNexusSlice: Slice<NexusSlice> = (set, get) => {
             patched = patchContextGroupsInTree(cur, req)
             break
         }
-        if (patched) await get().applyTree(patched)
+        if (patched) get().applyTree(patched)
       }
       // Without the optimistic create the rename input mounts only after the full re-walk.
       let createdShown = false
@@ -306,7 +288,7 @@ export const createNexusSlice: Slice<NexusSlice> = (set, get) => {
         if (optimistic) {
           // The sync body runs first, so its state lands in the commit that mounts the newborn.
           const settled = onCreated(res.value.created)
-          await get().applyTree(optimistic)
+          get().applyTree(optimistic)
           await settled
           createdShown = true
         }

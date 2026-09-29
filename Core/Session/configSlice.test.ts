@@ -1,6 +1,8 @@
 // @vitest-environment jsdom
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { ok } from '@pommora/core/Contract/result'
+import type { NexusTree } from '@pommora/core/Nexus/tree'
+import { makeTree } from '../Testing/testTree'
 import { stubDialer } from '../vitest.setup'
 import { useSession } from './store'
 
@@ -38,5 +40,30 @@ describe('a setting at its fallback stores no key', () => {
     expect(useSession.getState().personalization.tabMaxWidth).toBe(174)
     useSession.getState().setPersonalization('tabMaxWidth', 249.7)
     expect(save).toHaveBeenLastCalledWith('tabMaxWidth', undefined)
+  })
+})
+
+describe('a tree update carries a setting only when the tree itself changed it', () => {
+  beforeEach(() => {
+    ;(window as unknown as { nexus: unknown }).nexus = stubDialer({
+      'personalization:set': vi.fn(async () => ok(null)),
+    })
+    useSession.getState().applyTree(makeTree())
+  })
+
+  // An optimistic patch shares the tree's settings copy, and an older push stabilizes back to it; neither may undo a newer change.
+  it('keeps a change the tree has not caught up with', () => {
+    useSession.getState().setPersonalization('editorScale', 1.2)
+    const tree = useSession.getState().tree as NexusTree
+    useSession.getState().applyTree({ ...tree })
+    useSession.getState().applyTree(structuredClone(tree))
+    expect(useSession.getState().personalization.editorScale).toBe(1.2)
+    expect(document.documentElement.style.getPropertyValue('--editor-scale')).toBe('1.2')
+  })
+
+  it('takes a change the tree brings', () => {
+    const tree = makeTree()
+    useSession.getState().applyTree({ ...tree, personalization: { editorScale: 1.3 } })
+    expect(useSession.getState().personalization.editorScale).toBe(1.3)
   })
 })

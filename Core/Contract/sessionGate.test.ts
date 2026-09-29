@@ -33,7 +33,7 @@ describe('the session gate during a Nexus switch', () => {
     expect(await interfaceHandlers['devicePrefs:save'](ctx, { nativeMenus: true })).toEqual(BUSY)
     expect(await viewsHandlers['views:save'](ctx, 'Notes', 'collection', {}, {})).toEqual(BUSY)
     expect(readValue('devicePrefs')).toBeNull()
-    expect(await interfaceHandlers['devicePrefs:load'](ctx)).toEqual(ok(null))
+    expect(await interfaceHandlers['devicePrefs:load'](ctx)).toEqual(ok({}))
     release()
     await held
     expect(await interfaceHandlers['devicePrefs:save'](ctx, { nativeMenus: true })).toEqual(

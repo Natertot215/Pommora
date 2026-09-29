@@ -41,7 +41,6 @@ async function freshStore(
   const prefsLoad = vi.fn(answer)
   const prefsSave = vi.fn(async () => ok(null))
   const channels: Record<string, unknown> = {
-    'theme:systemAccent': vi.fn(async () => ok('#000000')),
     'devicePrefs:load': prefsLoad,
     'devicePrefs:save': prefsSave,
     'nav:write': vi.fn(async () => ok(null)),
@@ -62,19 +61,18 @@ async function freshStore(
   return { useSession, prefsLoad, prefsSave, flushed: flushAllSessionSaves }
 }
 
-const withPrefs = (prefs: DevicePrefs | null) => async (): Promise<unknown> => ok(prefs)
+const withPrefs = (prefs: DevicePrefs) => async (): Promise<unknown> => ok(prefs)
 
 /** The widths as they stand in the commit that first sets `status: 'ready'` — a settle after the paint is what this whole move exists to avoid. */
 async function widthsAtReady(
   useSession: Session,
-  tree: NexusTree,
 ): Promise<{ sidebar: number; sidePane: number } | null> {
   let seen: { sidebar: number; sidePane: number } | null = null
   const stop = useSession.subscribe((s) => {
     if (seen === null && s.status === 'ready')
       seen = { sidebar: s.sidebarWidth, sidePane: s.sidePaneWidth }
   })
-  await useSession.getState().applyTree(tree)
+  await useSession.getState().load()
   stop()
   return seen
 }
@@ -82,27 +80,12 @@ async function widthsAtReady(
 describe('the panes open at the widths this machine last left them', () => {
   it('carries both stored widths into the ready paint, not after it', async () => {
     const { useSession } = await freshStore(withPrefs({ panes: { sidebar: 300, sidePane: 400 } }))
-    expect(await widthsAtReady(useSession, treeAt('/a'))).toEqual({ sidebar: 300, sidePane: 400 })
-  })
-
-  it('clamps a stored width to the pane bounds', async () => {
-    const { useSession } = await freshStore(withPrefs({ panes: { sidebar: 999, sidePane: 10 } }))
-    await useSession.getState().applyTree(treeAt('/a'))
-    const s = useSession.getState()
-    expect([s.sidebarWidth, s.sidePaneWidth]).toEqual([380, 240])
-  })
-
-  it('reads a stored width that is not a finite number as absent', async () => {
-    const panes = { sidebar: 'wide', sidePane: Number.NaN } as unknown as DevicePrefs['panes']
-    const { useSession } = await freshStore(withPrefs({ panes }))
-    await useSession.getState().applyTree(treeAt('/a'))
-    const s = useSession.getState()
-    expect([s.sidebarWidth, s.sidePaneWidth]).toEqual([240, 300])
+    expect(await widthsAtReady(useSession)).toEqual({ sidebar: 300, sidePane: 400 })
   })
 
   it('seeds only the width the prefs hold', async () => {
     const { useSession } = await freshStore(withPrefs({ panes: { sidebar: 300 } }))
-    await useSession.getState().applyTree(treeAt('/a'))
+    await useSession.getState().load()
     const s = useSession.getState()
     expect(s.sidebarWidth).toBe(300)
     expect(s.sidePaneWidth).toBe(300)
@@ -112,13 +95,13 @@ describe('the panes open at the widths this machine last left them', () => {
   it('leaves a width the prefs do not name exactly as it stands', async () => {
     const { useSession } = await freshStore(withPrefs({ panes: {} }))
     useSession.setState({ sidebarWidth: 320 })
-    await useSession.getState().applyTree(treeAt('/a'))
+    await useSession.getState().load()
     expect(useSession.getState().sidebarWidth).toBe(320)
   })
 
   it('leaves the defaults standing when the machine has stored nothing', async () => {
-    const { useSession } = await freshStore(withPrefs(null))
-    await useSession.getState().applyTree(treeAt('/a'))
+    const { useSession } = await freshStore(withPrefs({}))
+    await useSession.getState().load()
     const s = useSession.getState()
     expect(s.devicePrefs).toEqual({})
     expect([s.sidebarWidth, s.sidePaneWidth]).toEqual([240, 300])
@@ -126,7 +109,7 @@ describe('the panes open at the widths this machine last left them', () => {
 
   it('leaves the defaults standing when no nexus is bound', async () => {
     const { useSession } = await freshStore(async () => NO_NEXUS)
-    await useSession.getState().applyTree(treeAt('/a'))
+    await useSession.getState().load()
     const s = useSession.getState()
     expect(s.devicePrefs).toEqual({})
     expect([s.sidebarWidth, s.sidePaneWidth]).toEqual([240, 300])
@@ -134,16 +117,34 @@ describe('the panes open at the widths this machine last left them', () => {
 })
 
 describe('the prefs are read once per nexus', () => {
-  it('does not re-read on a push carrying the same root', async () => {
+  it("does not re-read on a push or a root rename's re-fetch", async () => {
     const { useSession, prefsLoad } = await freshStore(withPrefs({ panes: { sidebar: 300 } }))
-    await useSession.getState().applyTree(treeAt('/a'))
-    await useSession.getState().applyTree(treeAt('/a'))
+    await useSession.getState().load()
+    useSession.getState().applyTree(treeAt('/a'))
+    await useSession.getState().refetch()
     expect(prefsLoad).toHaveBeenCalledTimes(1)
+  })
+
+  // A push that lands while the record is read must not be overwritten by a tree asked before it.
+  it('asks for the tree only once the record is in', async () => {
+    let arrive = (): void => {}
+    const state = vi.fn(async () => ok({ status: 'open', tree: treeAt('/a') }))
+    const { useSession } = await freshStore(
+      () => new Promise((resolve) => (arrive = () => resolve(ok({})))),
+      undefined,
+      state,
+    )
+    const loading = useSession.getState().load()
+    await Promise.resolve()
+    expect(state).not.toHaveBeenCalled()
+    arrive()
+    await loading
+    expect(state).toHaveBeenCalledTimes(1)
   })
 
   it('re-reads after switching Nexus', async () => {
     const { useSession, prefsLoad } = await freshStore(withPrefs({ panes: { sidebar: 300 } }))
-    await useSession.getState().applyTree(treeAt('/a'))
+    await useSession.getState().load()
     await useSession.getState().choose()
     expect(prefsLoad).toHaveBeenCalledTimes(2)
   })
@@ -152,7 +153,7 @@ describe('the prefs are read once per nexus', () => {
 describe('a pane drop writes back to the device store', () => {
   it('carries both widths in one panes preference', async () => {
     const { useSession, prefsSave } = await freshStore(withPrefs({}))
-    await useSession.getState().applyTree(treeAt('/a'))
+    await useSession.getState().load()
     useSession.getState().setSidebarWidth(300)
     useSession.getState().setSidePaneWidth(400)
     prefsSave.mockClear()
@@ -169,7 +170,7 @@ describe('a nexus switch keeps none of the old nexus', () => {
     const { useSession } = await freshStore(async () =>
       ++call === 1 ? ok({ disclosure: { 'context:areas': true } }) : NO_NEXUS,
     )
-    await useSession.getState().applyTree(treeAt('/a'))
+    await useSession.getState().load()
     expect(useSession.getState().devicePrefs).toEqual({ disclosure: { 'context:areas': true } })
     await useSession.getState().choose()
     expect(useSession.getState().devicePrefs).toEqual({})
@@ -182,11 +183,11 @@ describe('a nexus switch keeps none of the old nexus', () => {
       async () => fail('operation-failed', why),
       async () => fail('operation-failed', why),
     )
-    await useSession.getState().applyTree(treeAt('/a'))
+    useSession.getState().applyTree(treeAt('/a'))
     useSession.getState().openWindowTab({ kind: 'page', id: 'x', path: 'x.md' })
     await useSession.getState().load()
     expect(useSession.getState()).toMatchObject({ status: 'error', tree: null, windowSlot: null })
-    await useSession.getState().applyTree(treeAt('/a'))
+    useSession.getState().applyTree(treeAt('/a'))
     await useSession.getState().choose()
     expect(useSession.getState()).toMatchObject({ status: 'error', tree: null })
   })
@@ -200,7 +201,7 @@ describe('a nexus switch keeps none of the old nexus', () => {
         return ok(false)
       },
     )
-    await useSession.getState().applyTree(treeAt('/a'))
+    useSession.getState().applyTree(treeAt('/a'))
     const page = { kind: 'page', id: 'x', path: 'x.md' } as const
     const s = useSession.getState()
     s.openWindowTab(page)
@@ -244,7 +245,7 @@ describe('a device preference saves only into the Nexus whose record the window 
             arrive = () => resolve(ok({ panes: { sidebar: 300 } }))
           }),
     )
-    await useSession.getState().applyTree(treeAt('/a'))
+    await useSession.getState().load()
     const switching = useSession.getState().choose()
     await vi.waitFor(() => expect(call).toBe(2))
     useSession.getState().setDevicePref('disclosure', fold.disclosure)
@@ -260,7 +261,7 @@ describe('a device preference saves only into the Nexus whose record the window 
     const { useSession, prefsSave } = await freshStore(async () =>
       ++call === 1 ? ok({}) : NO_NEXUS,
     )
-    await useSession.getState().applyTree(treeAt('/a'))
+    await useSession.getState().load()
     await useSession.getState().choose()
     useSession.getState().setDevicePref('disclosure', fold.disclosure)
     expect(prefsSave).not.toHaveBeenCalled()
@@ -268,7 +269,7 @@ describe('a device preference saves only into the Nexus whose record the window 
 
   it('keeps saving into the open Nexus when the switch is canceled', async () => {
     const { useSession, prefsSave } = await freshStore(withPrefs({}), async () => ok(false))
-    await useSession.getState().applyTree(treeAt('/a'))
+    await useSession.getState().load()
     await useSession.getState().choose()
     useSession.getState().setDevicePref('disclosure', fold.disclosure)
     expect(prefsSave).toHaveBeenCalledWith(fold)
@@ -281,7 +282,7 @@ describe('a device preference saves only into the Nexus whose record the window 
       withPrefs({ panes: { sidebar: 300 } }),
       () => new Promise((resolve) => answers.push((opened) => resolve(ok(opened)))),
     )
-    await store.useSession.getState().applyTree(treeAt('/a'))
+    await store.useSession.getState().load()
     const first = store.useSession.getState().choose()
     await vi.waitFor(() => expect(answers).toHaveLength(1))
     const second = store.useSession.getState().choose()
@@ -324,7 +325,7 @@ describe('a device preference saves only into the Nexus whose record the window 
 describe('a nexus switch returns the panes to their defaults', () => {
   it('resetLayout drops both widths back to their defaults', async () => {
     const { useSession } = await freshStore(withPrefs({ panes: { sidebar: 300, sidePane: 400 } }))
-    await useSession.getState().applyTree(treeAt('/a'))
+    await useSession.getState().load()
     useSession.getState().resetLayout()
     const s = useSession.getState()
     expect([s.sidebarWidth, s.sidePaneWidth]).toEqual([240, 300])
@@ -337,7 +338,7 @@ describe('the navigation layouts save as their non-default state', () => {
     'navViewGallery',
   ] as const)('%s saves true and drops back to absent at false', async (key) => {
     const { useSession, prefsSave, flushed } = await freshStore(withPrefs({}))
-    await useSession.getState().applyTree(treeAt('/a'))
+    await useSession.getState().load()
     useSession.getState().setDevicePref(key, true)
     await flushed()
     expect(prefsSave).toHaveBeenLastCalledWith({ [key]: true })
@@ -354,7 +355,7 @@ describe('each footer remembers its own fold on this machine', () => {
   ): Promise<{ folds: Record<string, Fold>; session: Awaited<ReturnType<typeof freshStore>> }> => {
     const session = await freshStore(withPrefs(prefs))
     const { useFold } = await import('./store')
-    await session.useSession.getState().applyTree(treeAt('/a'))
+    await session.useSession.getState().load()
     const folds: Record<string, Fold> = {}
     function Probe(): null {
       folds.main = useFold('footer')

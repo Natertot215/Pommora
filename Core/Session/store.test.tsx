@@ -36,7 +36,7 @@ import type { StoredTabSet } from '@pommora/core/Navigation/navRef'
 import { stubDialer } from '../vitest.setup'
 import { DEFAULT_COMMANDS } from '../Actions/commands'
 
-// Stub the narrow channel set the tab glue reaches (page fetch, recents save, tab persist, the mutation gateway, the applyTree accent read) so it runs in isolation.
+// Stub the narrow channel set the tab glue reaches (page fetch, recents save, tab persist, the mutation gateway, the load's device-prefs read) so it runs in isolation.
 let channels: Record<string, ReturnType<typeof vi.fn>>
 const openPage = (): ReturnType<typeof vi.fn> => channels['page:open']
 
@@ -47,9 +47,7 @@ beforeEach(() => {
     'nav:write': vi.fn(async () => ({ ok: true, value: null })),
     'tabs:save': vi.fn(async () => ({ ok: true, value: null })),
     'tabs:load': vi.fn(async () => ({ ok: true, value: null })),
-    'theme:systemAccent': vi.fn(async () => ok('#000000')),
-    'devicePrefs:load': vi.fn(async () => ({ ok: true, value: null })),
-    'index:headings': vi.fn(async () => ({ ok: true, value: {} })),
+    'devicePrefs:load': vi.fn(async () => ({ ok: true, value: {} })),
     mutate: vi.fn(async () => ({ ok: true, value: {} })),
     'windows:save': vi.fn(async () => ok(null)),
   }
@@ -435,13 +433,12 @@ describe('store — page slots', () => {
       selection: pg('a'),
       pages: { a: ready('a') },
     })
-    const p = useSession.getState().applyTree(treeWith([{ id: 'a', path: 'Notes/moved.md' }]))
+    useSession.getState().applyTree(treeWith([{ id: 'a', path: 'Notes/moved.md' }]))
     let s = useSession.getState()
     expect(s.pages.a?.status).toBe('ready')
     expect(frozenOf(s)).toBe(true)
     expect(openPage()).toHaveBeenCalledWith('Notes/moved.md')
     resolveA({ ok: true, value: detail('a', 'Notes/moved.md') })
-    await p
     await new Promise((r) => setTimeout(r, 0))
     s = useSession.getState()
     expect(shownDetail(s)?.path).toBe('Notes/moved.md')
@@ -503,12 +500,12 @@ describe('store — applyTree reconciles EVERY tab (I-2a)', () => {
     }
     seed({ tabs: [t1, t2], activeTabId: 't1', tabMru: ['t1', 't2'] })
 
-    await useSession.getState().applyTree(treeWith([{ id: 'b', path: 'Notes/Renamed.md' }]))
+    useSession.getState().applyTree(treeWith([{ id: 'b', path: 'Notes/Renamed.md' }]))
     let s = useSession.getState()
     expect(s.activeTabId).toBe('t1')
     expect(s.tabs.find((t) => t.id === 't2')?.target).toEqual(page('b', 'Notes/Renamed.md'))
 
-    await useSession.getState().applyTree(treeWith([]))
+    useSession.getState().applyTree(treeWith([]))
     s = useSession.getState()
     expect(s.tabs.map((t) => t.id)).toEqual(['t1'])
     expect(s.activeTabId).toBe('t1')
@@ -521,7 +518,7 @@ describe('store — applyTree reconciles EVERY tab (I-2a)', () => {
       activeTabId: 't1',
       tabMru: ['t1', 't3', 't2'],
     })
-    await useSession.getState().applyTree(
+    useSession.getState().applyTree(
       treeWith([
         { id: 'b', path: 'Notes/b.md' },
         { id: 'c', path: 'Notes/c.md' },
@@ -538,7 +535,7 @@ describe('store — applyTree reconciles the window tabs (D-6)', () => {
     useSession.getState().openWindowTab({ kind: 'page', id: 'b', path: 'Notes/B.md' })
     useSession.getState().openWindowTab({ kind: 'page', id: 'c', path: 'Notes/C.md' })
 
-    await useSession.getState().applyTree(
+    useSession.getState().applyTree(
       treeWith([
         { id: 'b', path: 'Notes/Renamed.md' },
         { id: 'c', path: 'Notes/C.md' },
@@ -548,22 +545,22 @@ describe('store — applyTree reconciles the window tabs (D-6)', () => {
     expect(p?.tabs[0].target).toMatchObject({ id: 'b', path: 'Notes/Renamed.md' })
     expect(windowTargetOf(useSession.getState())).toMatchObject({ id: 'c', path: 'Notes/C.md' })
 
-    await useSession.getState().applyTree(treeWith([{ id: 'c', path: 'Notes/C.md' }]))
+    useSession.getState().applyTree(treeWith([{ id: 'c', path: 'Notes/C.md' }]))
     p = useSession.getState().windowSlot
     expect(p?.tabs).toHaveLength(1)
 
-    await useSession.getState().applyTree(treeWith([]))
+    useSession.getState().applyTree(treeWith([]))
     expect(useSession.getState().windowSlot).toBeNull()
     expect(windowTargetOf(useSession.getState())).toBeNull()
   })
 
   it('closes a Space tab once its Space is gone', async () => {
-    await useSession.getState().applyTree(treeWith([{ id: 'a', path: 'Notes/A.md' }], ['s1']))
+    useSession.getState().applyTree(treeWith([{ id: 'a', path: 'Notes/A.md' }], ['s1']))
     useSession.getState().openWindowTab({ kind: 'page', id: 'a', path: 'Notes/A.md' })
     useSession.getState().openWindowTab({ kind: 'space', id: 's1' })
     expect(useSession.getState().windowSlot?.tabs).toHaveLength(2)
 
-    await useSession.getState().applyTree(treeWith([{ id: 'a', path: 'Notes/A.md' }]))
+    useSession.getState().applyTree(treeWith([{ id: 'a', path: 'Notes/A.md' }]))
     const p = useSession.getState().windowSlot
     expect(p?.tabs.map((t) => (t.target.kind === 'map' ? 'map' : t.target.id))).toEqual(['a'])
   })
@@ -575,7 +572,7 @@ describe('store — applyTree reconciles the window tabs (D-6)', () => {
     useSession.getState().openWindowTab({ kind: 'page', id: 'd', path: 'Notes/D.md' })
 
     // c and d (the active) die in one push — the active walks left past dead c onto b.
-    await useSession.getState().applyTree(
+    useSession.getState().applyTree(
       treeWith([
         { id: 'a', path: 'Notes/A.md' },
         { id: 'b', path: 'Notes/B.md' },
@@ -587,7 +584,7 @@ describe('store — applyTree reconciles the window tabs (D-6)', () => {
   })
 
   it('a Preview reconciles the remembered set against the live tree, then lands on its own tab', async () => {
-    await useSession.getState().applyTree(
+    useSession.getState().applyTree(
       treeWith([
         { id: 'x', path: 'Notes/x.md' },
         { id: 'y', path: 'Notes/Renamed.md' },
@@ -618,7 +615,7 @@ describe('store — applyTree reconciles the window tabs (D-6)', () => {
     useSession.getState().openNav()
     useSession.getState().openWindowTab({ kind: 'page', id: 'b', path: 'Notes/B.md' })
 
-    await useSession.getState().applyTree(treeWith([]))
+    useSession.getState().applyTree(treeWith([]))
     const p = useSession.getState().windowSlot
     expect(p?.kind).toBe('nav')
     expect(p?.tabs.map((t) => t.target.kind)).toEqual(['map'])
@@ -779,7 +776,7 @@ describe('glance pin lifecycle wiring (Task 10)', () => {
 
 describe('store — the mutate rail patches the tree before main confirms', () => {
   beforeEach(async () => {
-    await useSession.getState().applyTree(treeWith([]))
+    useSession.getState().applyTree(treeWith([]))
   })
 
   it('setActiveView lands on the node optimistically', async () => {

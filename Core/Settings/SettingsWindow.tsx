@@ -22,7 +22,6 @@ import { useExitPresence } from '@pommora/uix/Animations/useExitPresence'
 import { useSession, useSetting } from '../Session/store'
 import { useExperimental } from './experimental'
 import { AssetDirectoryRow } from './AssetDirectoryRow'
-import { interfaceScaleOf } from './devicePrefs'
 import { ExcludedDirectoriesRow } from './ExcludedDirectoriesRow'
 import { ClearActionRow } from './ClearActionRow'
 import { NexusRows } from './NexusRows'
@@ -243,7 +242,7 @@ function ZoomRow({ row }: { row: RowOf<'zoom'> }): React.JSX.Element {
 }
 
 function DeviceZoomRow({ row }: { row: RowOf<'deviceZoom'> }): React.JSX.Element {
-  const value = useSession((s) => interfaceScaleOf(s.devicePrefs))
+  const value = useSession((s) => s.devicePrefs[row.key] ?? row.range.default)
   const setDevicePref = useSession((s) => s.setDevicePref)
   return zoomRow(row, row.range, value, (next) =>
     setDevicePref(row.key, next === row.range.default ? undefined : next),

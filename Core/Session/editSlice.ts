@@ -129,7 +129,7 @@ export const createEditSlice: Slice<EditSlice> = (set, get) => ({
     if (kind === 'homepage') {
       await flushAllSaves()
       const renamed = reportRefusal(await dialer().ask('nexus:rename', newName))
-      if (renamed) await get().load()
+      if (renamed) await get().refetch()
       return renamed
     }
     const landed = async (req: MutateRequest): Promise<boolean> =>

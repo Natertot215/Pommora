@@ -128,9 +128,6 @@ describe('the Trash pane', () => {
       menu: vi.fn(async () => ({ ok: true, value: picked })),
       'personalization:set': vi.fn(async () => ({ ok: true, value: null })),
       mutate: mutated,
-      'theme:systemAccent': vi.fn(async () => ({ ok: true, value: null })),
-      'devicePrefs:load': vi.fn(async () => ({ ok: true, value: null })),
-      'index:headings': vi.fn(async () => ({ ok: true, value: {} })),
       'delete:facts': vi.fn(async () => ({
         ok: true,
         value: { trashMode: 'nexus', permanentDelete: false },
