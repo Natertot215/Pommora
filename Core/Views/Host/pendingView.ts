@@ -8,6 +8,7 @@ import {
   type ViewPatch,
 } from '@pommora/core/Views/views'
 import { same } from '@pommora/core/Files/stableJson'
+import type { Result } from '@pommora/core/Contract/result'
 import { useLatest } from '@pommora/uix/Utilities/stableApi'
 import type { CollectionNode, SetNode } from '@pommora/core/Nexus/tree'
 import { announceDrag } from '@pommora/uix/Interactions/a11y'
@@ -140,7 +141,7 @@ export function usePainted(source: CollectionNode | SetNode): CollectionNode | S
   )
 }
 
-export function refusedDrop(landed: boolean, name: string): boolean {
+function refusedDrop(landed: boolean, name: string): boolean {
   if (!landed) announceDrag('return', name)
   return landed
 }
@@ -152,4 +153,20 @@ export function mutateAhead(req: OrderRequest, name: string): Promise<boolean> {
     .mutate(req)
     .then((outcome) => refusedDrop(outcome !== null, name))
     .finally(() => ahead.set(ahead.get().filter((r) => r !== req)))
+}
+
+type Persist = (patch: ViewPatch, opts?: { viewState?: boolean }) => Promise<Result<unknown>>
+
+export function dropIO(
+  name: string,
+  persist: Persist,
+): { persistView: Persist; mutate: (req: OrderRequest) => Promise<boolean> } {
+  return {
+    persistView: (patch, opts) =>
+      persist(patch, opts).then((r) => {
+        refusedDrop(r.ok, name)
+        return r
+      }),
+    mutate: (req) => mutateAhead(req, name),
+  }
 }

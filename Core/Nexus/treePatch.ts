@@ -493,7 +493,7 @@ export function byOrder<T extends { id: string }>(arr: T[], order: string[]): T[
   return reorderById(arr, order, (item) => item.id)
 }
 
-export function reorderChildrenInTree(
+function reorderChildrenInTree(
   tree: NexusTree,
   parentPath: string,
   order: string[],
@@ -520,7 +520,7 @@ function reorderPagesInTree(
 }
 
 /** A move is its relocation plus the destination's order, and a same-parent move is that order alone; null when neither resolves. */
-export function moveInTree(
+function moveInTree(
   tree: NexusTree,
   req: Extract<MutateRequest, { op: 'movePage' | 'moveSet' }>,
 ): NexusTree | null {

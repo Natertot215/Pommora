@@ -257,7 +257,7 @@ export function CardsView({ host }: { host: ViewHostApi }): React.JSX.Element {
   const bannerOwner = ((): { path: string; value: string | undefined } | null => {
     if (!bannerRequest) return null
     if (bannerRequest.kind === 'set') {
-      const set = sets.find((s) => s.id === bannerRequest.id)
+      const set = host.sets.node.get(bannerRequest.id)
       return set ? { path: set.path, value: set.banner } : null
     }
     const row = rowById.get(bannerRequest.id)
@@ -393,7 +393,7 @@ export function CardsView({ host }: { host: ViewHostApi }): React.JSX.Element {
     )
   }
   const setOverlay = (id: string, rect: Box): React.ReactNode => {
-    const set = sets.find((x) => x.id === id)
+    const set = host.sets.node.get(id)
     if (!set) return null
     return overlayShell(
       rect,
@@ -418,10 +418,10 @@ export function CardsView({ host }: { host: ViewHostApi }): React.JSX.Element {
             <SortableZone
               items={sets.map((s) => s.id)}
               fixed={searching}
-              label={(id) => sets.find((s) => s.id === id)?.title ?? ''}
+              label={(id) => host.sets.node.get(id)?.title ?? ''}
               carry={[
                 carries(TAB_FAMILY, (id) => {
-                  const set = sets.find((s) => s.id === id)
+                  const set = host.sets.node.get(id)
                   return set ? selectTargetOf(set) : null
                 }),
               ]}

@@ -22,6 +22,7 @@ import {
   type SetRef,
 } from './bandRouter'
 import type { SetIndex } from './setIndex'
+import { type NexusForms, styleFor } from '../Host/useColumnStyles'
 
 // ── Nodes ───────────────────────────────────────────────────────────────────
 
@@ -61,13 +62,13 @@ export function headContextOf(
   grouping: SubGroupConfig | undefined,
   schema: PropertyDefinition[],
   view: SavedView,
-  styleOf: (columnId: string) => ColumnStyle,
+  nexus: NexusForms,
 ): HeadContext {
   const def = grouping && schema.find((d) => d.id === grouping.property_id)
   const date =
     grouping &&
     def?.type === 'dateTime' &&
-    dateLabeller(view, grouping, styleOf(grouping.property_id).date_format)
+    dateLabeller(view, grouping, styleFor(grouping.property_id, schema, view, nexus).date_format)
   const icon = asRenderableIcon(def?.icon)
   return {
     sets,
@@ -87,7 +88,7 @@ export function headContextOf(
   }
 }
 
-export function bandNodeOf(
+function bandNodeOf(
   group: ResolvedGroup,
   depth: number,
   parentKey: string | null,

@@ -764,8 +764,6 @@ function createEngine(setChrome: (c: Chrome | null) => void): Api {
     touched.clear()
     const st = s.el.style
     if (s.kind === 'displace') {
-      st.transform = ''
-      st.transition = ''
       st.visibility = ''
       st.pointerEvents = ''
       st.zIndex = ''
@@ -1072,10 +1070,7 @@ function createEngine(setChrome: (c: Chrome | null) => void): Api {
       list[list.indexOf(from as HTMLElement) + step]?.focus()
     },
     invalidate: (zoneId) => {
-      const s = session
-      if (s?.phase !== 'live' || s.zone !== zoneId || !s.line) return
-      s.line.dirty = true
-      refresh(s)
+      if (session?.zone === zoneId) remeasure()
     },
     begin,
     liftKeyboard,
@@ -1338,8 +1333,12 @@ export function useLineRow(
       onKeyDown: (e) => {
         const row = e.currentTarget
         if (e.target !== row) return
+        if (api.busy()) {
+          if (e.key === ' ' || e.key === 'Enter') e.preventDefault()
+          return
+        }
         const step = e.key === 'ArrowDown' ? 1 : e.key === 'ArrowUp' ? -1 : 0
-        const opening = e.key === 'Enter' && opens && !e.repeat && !api.busy()
+        const opening = e.key === 'Enter' && opens && !e.repeat
         if (e.key !== ' ' && step === 0 && !opening) return
         e.preventDefault()
         if (opening) run.current?.()
