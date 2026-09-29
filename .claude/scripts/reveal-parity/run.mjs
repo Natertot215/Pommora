@@ -516,7 +516,7 @@ surface('eyes', async () => {
   await collection('Collection A')
   await settingsMenu()
   await press(MENU('Group'), 'Group row')
-  const row = (label) => `${EYE(label)}?.closest('.drop-line-host > *')`
+  const row = (label) => `${EYE(label)}?.closest('.line-zone > *')`
   const res = { groupEye: await settled({ id: 'groupEye', el: EYE('Hide Set Alpha'), host: row('Hide Set Alpha') }) }
   await press(EYE('Hide Set Alpha'))
   res.groupHiddenEye = await settled({ id: 'groupHiddenEye', el: EYE('Show Set Alpha'), host: row('Show Set Alpha') })

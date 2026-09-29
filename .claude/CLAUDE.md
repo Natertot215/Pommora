@@ -1,14 +1,12 @@
 ## Project Pommora
 
-Pommora is Nathan’s main project — a personal management and all-in-one productivity app leveraging an extremely flexible, properties-based categorization framework through an inherently agentic-legible, local-first approach to create a true local-first, cross-domain organizational platform. Pommora’s long-term vision is an alternative to cloud-based enterprise organizational and project management tools, providing local-first security, case-specific customization, and an agentic-accessible, advantaged platform.
-
-**Nathan Role:** Nathan *doesn’t* understand much of the architectural design, codebase complexities, or the app's inner workings — he’s familiar, and his focus is primarily on the vision, design, features, and interaction. Most behind-the-scenes design *isn’t* Nathan’s own decision; don’t assume he’s always on the same page or understands what you’re talking about regarding these topics.
+Pommora is Nathan’s main project — a personal management and all-in-one productivity app leveraging an extremely flexible, properties-based categorization framework through an inherently agentic-legible, local-first approach as an alternative to popular applications that provides the best of both worlds. Pommora's long-term vision is an alternative to cloud-based enterprise organizational and project management tools, providing local-first security, case-specific customization, and an agentic-accessible, advantaged platform.
 
 ### The Model
 
 Pommora’s model revolves around an individual user-picked folder that’s designated as the “Nexus” that contains all of the content that Pommora’s interacts with — similar to Obsidian's “vault” framework — and the `.nexus/` configuration directory used to define the workspace itself.
 
-The Nexus’ structure is based on  relating **Content** ↔ **Content** through *Connections*, with their attributes given through their **Collection's** schema-based **Properties**, and linking them all together through relationships to **Contexts**.
+The Nexus’ structure is based on relating **Content** ↔ **Content** through *Connections*, with their attributes given through their **Collection's** schema-based **Properties**, and linking them all together through relationships to **Contexts**.
 
 **Contexts:** The organization layer — user-defined **Context** groups (the registry seeds Areas, Topics, and Projects as defaults) hold **Spaces**, the individual members Content entities can relate to, resolved through the registry via `<Title>:` keys. A Space links other Spaces and holds values for any registry property on its own sidecar.
 
@@ -24,21 +22,22 @@ The Nexus’ structure is based on  relating **Content** ↔ **Content** through
 
 ### Codebase Information
 
-**Pommora —** `Core` (the app), `UIX` (the design kit), and `Desktop` (the Electron host), with `Mobile` + `Sync` as near-term priorities. **Stack —** electron-vite • Electron 42 • React 19 • TypeScript 6 • Vite 7 + `@vitejs/plugin-react` 5 • Zustand • TanStack Virtual • YAML • vitest • `lucide-react` + `@tabler/icons-react` as a secondary source to pull from per icon. **MarkdownPM** — a CodeMirror 6 custom-built Markdown editor.
+**Pommora —** `Core` (the app), `UIX` (the design kit), and `Desktop` (the Electron host), with `Mobile` + `Sync` as near-term priorities. **Stack —** electron-vite • Electron 42 • React 19 • TypeScript 6 • Vite 7 + `@vitejs/plugin-react` 5 • Zustand • TanStack Virtual • YAML • vitest • `lucide-react` + `@tabler/icons-react` as a secondary source to pull from per icon. **MarkdownPM** — a CodeMirror 6 custom-built Markdown editor. **Dependencies** are *all* placed behind replacement-enabling seams. 
 
-- **Dependencies:** Every library sits behind a thin seam (SQLite behind `Desktop/Store/driver.ts`, YAML behind `pageFile.ts`, IDs behind `ids.ts`, glass behind `UIX/Glass`) so it's swappable without touching callers. Version numbers are compatibility pins, not endorsements.
+- **Dependencies:** Every library sits behind a thin replacement-enabling seams so they’re swappable without touching callers. Version numbers are compatibility pins, not endorsements.
 - **The [Figma Library](https://www.figma.com/file/EBJXShPFA50yUwmBti452p)** is where the design presentation happens beforehand. `Dashboard/` builds two single-file pages published as Claude artifacts — the Pommora Dashboard (the line ledger) and the Pommora Showcase (the design system, live); post-commit hooks rebuild both.
+- **Nathan Role:** Nathan *doesn’t* understand much of the architectural design, codebase complexities, or the app's inner workings — he’s familiarity and focus is primarily on the vision, design, features, and interaction. Most behind-the-scenes design *isn’t* Nathan’s own decision; don’t assume he’s always on the same page or understands what you’re talking about regarding these topics.
 - **Repos:** `.claude/` is a separate repository from `Pommora` and isn’t tracked remotely — commit code and documentation separately, otherwise don’t treat this as anything special.
 
 ### Hard Rules
 
-- **The host owns the machine.** Core reaches it only through `Core/Platform`; Desktop's implementation is the only place the app calls Node and Electron; `Sync/` is a separate process on Node's built-ins alone; UIX reaches nothing outside itself.
-- **`Core/Contract` is the contract between any interface and any host.** Every channel is declared once in `bridge.ts`, and both sides derive from it; every channel answers with the `Result` envelope, and never throws across the boundary, so adding a channel is one entry and a mismatched end is a compile error.
-- **The engine never depends on the renderer.** The host-run half of Core imports no React and depends on no interface; `Core/Contract/engineGraph.test.ts` and `Desktop/hostGraph.test.ts` fail the moment it does.
-- **Read and write are cleanly separable.** The read path is read-only by construction; mutations are additive, never woven into reads.
-- **Finite states are unions + switch.** Shared logic is hoisted rather than repeated.
-- **Never do expensive work "on every X," never "reload the entire Y."** No O(N), allocating, or layout-reading work on a high-frequency trigger, and no full-Nexus rebuild or re-walk when an incremental or cached update works — it's *the* lag source.
-- **Comments aren't authoritative.** A constraint a comment claims isn't a law, and change-scoping doesn't treat it as fact.
+- **The host owns the machine:** Core reaches it only through `Core/Platform`; Desktop's implementation is the only place the app calls Node and Electron; `Sync/` is a separate process on Node's built-ins alone; UIX reaches nothing outside itself.
+- **`Core/Contract` is the contract between any interface and any host:** Every channel is declared once in `bridge.ts`, and both sides derive from it; every channel answers with the `Result` envelope, and never throws across the boundary, so adding a channel is one entry and a mismatched end is a compile error.
+- **The app never depends on the renderer:** The host-run half of Core imports no React and depends on no interface; `Core/Contract/engineGraph.test.ts` and `Desktop/hostGraph.test.ts` fail the moment it does.
+- **Read-Write Separation:** The read path is read-only by construction; mutations are additive and aren’t woven into read processes.
+- **Finite states are unions + switch:** Shared logic is hoisted rather than repeated.
+- **Never do expensive work "on every X," never "reload the entire Y:”** No O(N), allocating, or layout-reading work on a high-frequency trigger, and no full-Nexus rebuild or re-walk when an incremental or cached update works — it's *the* lag source.
+- **Comments aren't authoritative:** A constraint a comment claims isn't a law, and change-scoping doesn't treat it as fact.
 
 #### Testing Conventions
 
