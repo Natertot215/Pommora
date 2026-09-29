@@ -96,7 +96,7 @@ export type DisplaceSpec<T = unknown> = ZoneShared & {
   family?: Family<T>
   accepts?(item: T): boolean
   opens?: boolean
-  onMove?: (id: string, beforeId: string | null) => void
+  onMove?: (id: string, beforeId: string | null) => unknown
   receive?(item: T, beforeId: string | null): void
   release?: (id: string) => void
   resolveIndex?: (index: number, id: string) => number | null
@@ -106,7 +106,7 @@ export type DisplaceSpec<T = unknown> = ZoneShared & {
 export type LineSpec<Slot, Snap> = ZoneShared & {
   snap(id: string, g: Geometry): Snap | null
   resolve(id: string, p: Point, s: Snap): Slot | null
-  commit(id: string, slot: Slot, s: Snap): void
+  commit(id: string, slot: Slot, s: Snap): unknown
   line?(slot: Slot, s: Snap): CSSProperties | null
   slotKey?(slot: Slot): string
   step?(slot: Slot, s: Snap): { part: StepPart; id: string } | null
@@ -817,7 +817,12 @@ function createEngine(setChrome: (c: Chrome | null) => void): Api {
     timer = window.setTimeout(settled, DEFAULT_FEEL.duration + SETTLE_FALLBACK)
   }
 
-  const land = (s: Session, word: DragWord, commit: (() => void) | null, glides: boolean): void => {
+  const land = (
+    s: Session,
+    word: DragWord,
+    commit: (() => unknown) | null,
+    glides: boolean,
+  ): void => {
     s.phase = 'settling'
     const animates = glides && !disposing && s.kind === 'displace'
     const from = new Map<HTMLElement, DOMRect>()
@@ -825,9 +830,10 @@ function createEngine(setChrome: (c: Chrome | null) => void): Api {
       for (const el of touched) from.set(el, el.getBoundingClientRect())
       if (!s.overlaid) from.set(s.el, s.el.getBoundingClientRect())
     }
+    let said = word
     const run = (): void => {
       try {
-        commit?.()
+        if (commit?.() === false) said = 'return'
       } catch (err) {
         console.error(err)
       }
@@ -842,7 +848,7 @@ function createEngine(setChrome: (c: Chrome | null) => void): Api {
     if (disposing) run()
     else flushSync(run)
     if (animates) glide(s, from)
-    announceDrag(word, s.name)
+    announceDrag(said, s.name)
     if (s.via === 'keyboard')
       requestAnimationFrame(() => {
         const r = zones.get(s.zone)

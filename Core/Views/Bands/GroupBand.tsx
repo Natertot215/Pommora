@@ -50,7 +50,7 @@ export function bandSpec({
   bands: BandModel
   collapsed: ReadonlySet<string>
   nests: boolean
-  drop: (dragged: BandRef, drop: BandDrop) => void
+  drop: (dragged: BandRef, drop: BandDrop) => boolean
   indent?: (depth: number) => CSSProperties
   disabled?: boolean
 }): LineSpec<BandSlot, BandSnap> {

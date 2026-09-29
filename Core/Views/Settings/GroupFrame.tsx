@@ -396,9 +396,9 @@ function LocationHierarchy({
     [sets, expanded],
   )
 
-  const drop = (dragged: BandRef, to: BandDrop): void => {
+  const drop = (dragged: BandRef, to: BandDrop): boolean => {
     const name = nodeLabel(model.byKey.get(dragged.key))
-    void dropBand(
+    return dropBand(
       model,
       dragged,
       to,

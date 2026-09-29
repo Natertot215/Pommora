@@ -30,7 +30,7 @@ import { sameIds, tieOrderWith } from '../creationOrder'
 import { useViewTileScope } from '../ViewTileScope'
 import type { ViewHostApi } from './useViewHost'
 import { useViewCreation } from './useViewCreation'
-import { dropIO, mutateAhead, stageView, unstageView } from './pendingView'
+import { dropIO, mutateAhead, refusedDrop, stageView, unstageView } from './pendingView'
 
 interface ViewInteractionPolicy {
   ghost: {
@@ -106,10 +106,10 @@ export function useViewInteractions(host: ViewHostApi, policy: ViewInteractionPo
   // ── Bands ─────────────────────────────────────────────────────────────────
 
   const valueAt = bucketValueAt(bands.byKey)
-  const bandDrop = (dragged: BandRef, drop: BandDrop): void => {
+  const bandDrop = (dragged: BandRef, drop: BandDrop): boolean => {
     const node = bands.byKey.get(dragged.key)
     const name = node ? nodeLabel(node) : (sets.node.get(dragged.key)?.title ?? '')
-    void dropBand(
+    return dropBand(
       bands,
       dragged,
       drop,
@@ -249,8 +249,10 @@ export function useViewInteractions(host: ViewHostApi, policy: ViewInteractionPo
       (to.kind === 'tail' && to.parentKey === null && plan.kind === 'sets')
     const written = keeps
       ? undefined
-      : (commitGroupValue(row.id, groupPropId, groupPropType, value ?? UNGROUPED) ??
-        Promise.resolve(false))
+      : (
+          commitGroupValue(row.id, groupPropId, groupPropType, value ?? UNGROUPED) ??
+          Promise.resolve(false)
+        ).then((ok) => refusedDrop(ok, row.title))
     land(row, dest, toZone, beforeId, written)
   }
 
@@ -286,15 +288,21 @@ export function useViewInteractions(host: ViewHostApi, policy: ViewInteractionPo
       const dest = destOf(zone, row)
       const destId = dest === source ? undefined : dest?.id
       const destRank = rank.get(destId) ?? Number.POSITIVE_INFINITY
-      const ids = bandRowIds(zone, activeId)
-      let first = ids.length
+      const ids = paintOrder.flatMap((p) => (p.groupKey === zone ? [p.id] : []))
+      let first = -1
+      let past = -1
       let count = 0
+      let seen = 0
       ids.forEach((id, i) => {
+        const at = i - seen
+        if (id === activeId) seen = 1
         const setId = rowById.get(id)?.parentSetId
-        if (setId === destId) count++
-        if (first === ids.length && (rank.get(setId) ?? 0) >= destRank) first = i
+        if (setId === destId) {
+          if (first < 0) first = at
+          if (id !== activeId) count++
+        } else if (past < 0 && (rank.get(setId) ?? 0) > destRank) past = at
       })
-      r = { first, count }
+      r = { first: first >= 0 ? first : past >= 0 ? past : ids.length - seen, count }
       runs.set(zone, r)
     }
     return index >= r.first && index <= r.first + r.count ? index : null

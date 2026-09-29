@@ -202,7 +202,7 @@ export function CardsView({ host }: { host: ViewHostApi }): React.JSX.Element {
     },
   })
   const effectiveZoom = useElementZoom(host.viewRootRef)
-  const reorderSets = (id: string, beforeId: string | null): void =>
+  const reorderSets = (id: string, beforeId: string | null): boolean =>
     interactions.bandDrop(
       { kind: 'set', key: id, depth: 0, parentKey: null },
       { kind: 'before', beforeKey: beforeId, parentKey: null },
