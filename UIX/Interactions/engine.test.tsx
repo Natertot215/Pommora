@@ -445,6 +445,15 @@ describe('the drag engine across zones', () => {
     box.remove()
   })
 
+  it('ends the overlay at once when the landed item has no element to glide to', async () => {
+    extra = { A: { renderOverlay: (id) => <span data-overlay={id} /> } }
+    await mount()
+    await dragTo('a1', 100, 210)
+    expect(receives.B).toHaveBeenCalledExactlyOnceWith('a1', 'b1')
+    expect(document.querySelector('[data-overlay="a1"]')).toBeNull()
+    expect(item('a1').style.visibility).toBe('')
+  })
+
   it('commits at release, then glides', async () => {
     await dragTo('a1', 100, 150)
     expect(onMove).toHaveBeenCalledOnce()
