@@ -173,16 +173,14 @@ export function useViewInteractions(host: ViewHostApi, policy: ViewInteractionPo
     zone: string,
     activeId: string,
     beforeId: string | null,
-  ): string[] => {
+  ): string[] | undefined => {
     const destSetId = dest === source ? undefined : dest.id
     const bandIds = bandRowIds(zone, activeId)
     const at = beforeId === null ? bandIds.length : bandIds.indexOf(beforeId)
     const sibBefore = bandIds.slice(at).find((id) => rowById.get(id)?.parentSetId === destSetId)
-    return nextOrder(
-      dest.pages.map((p) => p.id),
-      activeId,
-      sibBefore ?? null,
-    )
+    const pages = dest.pages.map((p) => p.id)
+    const order = nextOrder(pages, activeId, sibBefore ?? null)
+    return sameIds(order, pages) ? undefined : order
   }
   const placeInView = (row: ViewRow, beforeId: string | null, landed?: Promise<boolean>): void => {
     if (pageOrder !== 'custom') return
@@ -218,13 +216,7 @@ export function useViewInteractions(host: ViewHostApi, policy: ViewInteractionPo
       const folder = folderOf(row.parentSetId)
       if (!folder) return
       const order = folderOrderAt(folder, bandKey, row.id, beforeId)
-      if (
-        !sameIds(
-          order,
-          folder.pages.map((p) => p.id),
-        )
-      )
-        void moveTo(row, folder, order)
+      if (order) void moveTo(row, folder, order)
       return
     }
     const current = paintOrder.flatMap((r) => (r.groupKey === bandKey ? [r.id] : []))
@@ -256,14 +248,7 @@ export function useViewInteractions(host: ViewHostApi, policy: ViewInteractionPo
     const moves = dest !== folderOf(row.parentSetId)
     const order =
       pageOrder === 'location' ? folderOrderAt(dest, toZone, row.id, beforeId) : undefined
-    const repositions =
-      order !== undefined &&
-      !sameIds(
-        order,
-        dest.pages.map((p) => p.id),
-      )
-    const landed =
-      moves || repositions ? written.then((ok) => ok && moveTo(row, dest, order)) : written
+    const landed = moves || order ? written.then((ok) => ok && moveTo(row, dest, order)) : written
     placeInView(row, beforeId, landed)
   }
 

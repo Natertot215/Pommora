@@ -21,7 +21,7 @@ export type PaneDrop =
   | { kind: 'assign'; propId: string; toIndex: number }
   | { kind: 'unassign'; propId: string }
 
-export type PaneSlot = LaneSlot | 'unassign'
+type PaneSlot = LaneSlot | 'unassign'
 
 /** The full order still holds every assigned id, so a raw visible index would land the drop among hidden rows. */
 export function nexusReorderIndex(
