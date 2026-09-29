@@ -189,6 +189,7 @@ describe('the two-region drag (T6) — state-level; geometry truth lives in the 
   const deleteSpy = (): ReturnType<typeof vi.fn> => unassignSpy
 
   const stubGeometry = (): void => {
+    stubRect(zone(), { top: 0, bottom: 300 })
     stubRect(assignedGroup(), { top: 10, bottom: 50 })
     stubRect(allGroup(), { top: 70, bottom: 110 })
     stubRect(lineRow('Status'), { top: 10, bottom: 30 })
@@ -263,6 +264,7 @@ describe('the two-region drag (T6) — state-level; geometry truth lives in the 
     await act(async () => {
       rowFor('All Properties').click()
     })
+    stubRect(zone(), { top: 0, bottom: 300 })
     stubRect(assignedGroup(), { top: 10, bottom: 50 })
     stubRect(allGroup(), { top: 70, bottom: 110 })
     stubRect(lineRow('Effort'), { top: 70, bottom: 90 })

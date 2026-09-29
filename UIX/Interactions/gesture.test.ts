@@ -310,6 +310,25 @@ describe('the item rule, the cursor, and autoscroll', () => {
     expect(onPlain).toHaveBeenCalledOnce()
   })
 
+  it('a handle that is itself a button takes the slop, so a click-first item keeps its click', () => {
+    const button = document.body.appendChild(document.createElement('button'))
+    const onActivate = vi.fn(() => true)
+    gesture.beginPointerGesture(
+      spec({
+        el: button,
+        activation: 'item',
+        event: { ...pressOn(button), currentTarget: button },
+        onActivate,
+      }),
+    )
+    move(8, 0)
+    expect(onActivate).not.toHaveBeenCalled()
+    move(13, 0)
+    expect(onActivate).toHaveBeenCalledOnce()
+    firePointer(window, 'pointerup')
+    button.remove()
+  })
+
   it('grabs on the captured element alone, and reports itself live only while active', () => {
     const live = spec({ cursor: 'grabbing' })
     const grabbing = (): boolean => live.el.hasAttribute('data-grabbing')

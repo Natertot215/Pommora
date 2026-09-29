@@ -55,6 +55,11 @@ describe('paneSpec — the schema pane', () => {
   const pane = { assigned: ['a1', 'a2'], ordersAll: true }
   const at = (id: string, y: number) => drive(pane, g, id, y)
 
+  it('a release below the pane writes nothing', () => {
+    expect(at('a2', 650).drop).toBeUndefined()
+    expect(at('x1', 650).drop).toBeUndefined()
+  })
+
   it('assigned→assigned reorders at the slot (C-5)', () => {
     const s = at('a2', 15)
     expect(s.drop).toEqual({ kind: 'reorder-assigned', propId: 'a2', toIndex: 0 })
@@ -145,9 +150,10 @@ describe('paneSpec — the visibility pane', () => {
     expect(s.slot).toBeNull()
   })
 
-  it('clamps below the pane to the hidden zone; above stays its own gap', () => {
+  it('clamps below the rows to the hidden zone; outside the pane resolves nothing', () => {
     expect(at('a', -10).slot).toBeNull()
     expect(at('a', 150).slot).toBe('unassign')
+    expect(at('a', 650).slot).toBeNull()
   })
 
   it('never highlights during a positional drop in the shown zone', () => {
