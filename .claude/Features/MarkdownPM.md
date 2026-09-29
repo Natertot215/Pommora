@@ -40,10 +40,11 @@ A handful of rewrites fire as you type, implemented in `Input/` as a high-preced
 - **Auto-pairing** — round, square, and curly brackets, the single emphasis and code markers, and quotes pair when the caret has whitespace, a line edge, or existing pair syntax on both sides, so nothing pairs against a character. Paired syntax types over its closing on enter, and doubled emphasis promotes to the stronger form rather than pairing again. A backtick pairs once, so three typed at a line's start are the fence being written. Backspace inside an empty pair removes both halves.
 - **Enter and Shift+Enter** — Enter steps past an open construct's closer, and at the end of a lone code fence or `$$` line it adds the closer with the caret on the line between; Shift+Enter closes an open construct first, then breaks the line.
 - **Dashes, arrows, and ellipses** — `--` becomes `—`, a spaced ` - ` becomes `–`, `->` becomes `→`, `>>` and `<<` become `»` and `«`, and `...` becomes `…`. A `>>` opening a line stays a nested blockquote, while one after a quote's `> ` converts. An arrow list's `->` converts whether or not inline arrows do.
-- **Equations** — `>=` becomes `≥`, `<=` becomes `≤`, `!=`, `/=`, and `=/` become `≠`, `+-` and `-+` become `±`, and `~=` becomes `≈`. A doubled character ahead of the pair, code, links, and URLs leave it literal.
+- **Equations** — `>=` becomes `≥`, `<=` becomes `≤`, `!=`, `/=`, and `=/` become `≠`, `+-` and `-+` become `±`, and `~=` becomes `≈`. A doubled character ahead of the pair, code, math blocks, links, and URLs leave it literal.
+- **Punctuation** — `!!` becomes `‼`, `??` becomes `⁇`, `?!` becomes `⁈`, `!?` becomes `⁉`, and `||` following text becomes `‖` as the second mark lands. A third mark expands the glyph back to its pair, so a longer run stays literal, as does `||` after a pipe on its line, where it's a table row being typed.
 - **Whole-marker backspace** — on a marker line, Backspace removes the whole marker at once, callouts included.
 
-Settings › Pages & Writing turns each group on or off: the Transformations section holds Dashes, Arrows, Equations, Ellipses, Callout, Sections, and Bullets — the last two off by default — and the Autopairing section holds Brackets, Markers, Quotes, Wrap Selections, Delete Pairs Together, and Exit On Enter. Wrap Selections, off by default, wraps a selection in the pair character typed over it and keeps the text selected, so repeating the key steps the wrap through its cycle — markers and backticks go single, double, then unwrapped; quotes go double, single, then unwrapped; brackets go square, double square, curly, double curly, and back to square, with either quote or bracket key entering its cycle at the first step. ⌘8, ⌘', and ⌘9 wrap a single-line selection as `*`, `"`, and `(` do, and ⌘[ as `[`; emphasis and code markers wrap only a single-line selection.
+Settings › Pages & Writing turns each group on or off: the Transformations section holds Dashes, Arrows, Equations, Punctuation, Ellipses, Callout, Sections, and Bullets — Punctuation and the last two off by default — and the Autopairing section holds Brackets, Markers, Quotes, Wrap Selections, Delete Pairs Together, and Exit On Enter. Wrap Selections, off by default, wraps a selection in the pair character typed over it and keeps the text selected, so repeating the key steps the wrap through its cycle — markers and backticks go single, double, then unwrapped; quotes go double, single, then unwrapped; brackets go square, double square, curly, double curly, and back to square, with either quote or bracket key entering its cycle at the first step. ⌘8, ⌘', and ⌘9 wrap a single-line selection as `*`, `"`, and `(` do, and ⌘[ as `[`; emphasis and code markers wrap only a single-line selection.
 
 ### Tables
 
@@ -86,7 +87,7 @@ The handle is also where the grip menu lives. One menu model serves every kind o
 | Page tile | Source ▸ (Collections → Sets → Pages) · Scale ▸ · Delete |
 | Webpage tile | Edit Link · Scale ▸ · Delete |
 
-**Block Menu:** Typing `/` on an otherwise empty line opens a pane under the caret listing the blocks the editor can make — Headings, Lists, Link, Insert, and Embed — filtered by whatever follows the slash, so `/hea` leaves the five headings. The typed query reads dimmed only while the pane is open, so a line that already reads `/word` stays plain when the caret returns to it. Return or a click removes the typed query and writes the block through the editor's own action dispatch, the one the context menu's items also run; one undo reverts it. The pane is the editor's own, drawn in-app, and won't activate inside code, math, footnotes, behind quote or list markers, or inside table cells.
+**Block Menu:** Typing `/` on an otherwise empty line opens a pane under the caret listing the blocks the editor can make — Headings, Lists, Link, Insert, and Embed — filtered by whatever follows the slash, so `/hea` leaves the five headings. The pane's height resizes from its free edge and is remembered per machine, while its width holds. The typed query reads dimmed only while the pane is open, so a line that already reads `/word` stays plain when the caret returns to it. Return or a click removes the typed query and writes the block through the editor's own action dispatch, the one the context menu's items also run; one undo reverts it. The pane is the editor's own, drawn in-app, and won't activate inside code, math, footnotes, behind quote or list markers, or inside table cells.
 
 ### Context Menu + Shortcuts
 
@@ -183,7 +184,7 @@ The tile ring and grip, and the autocomplete pane's own width bounds.
 | --- | --- | --- |
 | Editing / Resizing Tile Ring | `--tile-border-color` | → accent-stroke / accent-stroke-hot · `.mdpm-embed-tile` states |
 | Embed Grip Top | `--grip-top` | `28px` · `.mdpm-embed-line` |
-| Autocomplete | `.mdpm-autocomplete-slot` | `180px`–`320px` wide; the height ceiling is UIX's `PICKER_MAX_HEIGHT` (`240px`) — the pane is a PickerMenu, which owns its radius |
+| Autocomplete | `AC_BOUNDS` | fits its titles `180px`–`320px` wide until its width is resized, then `180px`–`480px`; the height ceiling opens at UIX's `PICKER_MAX_HEIGHT` (`240px`) and resizes from `120px` — the pane is a PickerMenu, which owns its radius |
 
 ---
 
