@@ -18,3 +18,4 @@ export {
   useLineSpring,
   useLooseItem,
 } from './engine'
+export { groupedLine } from './groupedLine'

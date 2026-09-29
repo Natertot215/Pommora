@@ -6,11 +6,11 @@ import { overlay } from '@pommora/uix/Menus/menu-row.css'
 import { carries, LineRow, LineZone } from '@pommora/uix/Interactions/drag'
 import {
   isWindowTarget,
-  TAB_FAMILY,
   type NavRef,
   type WindowTarget,
   type SelectTarget,
 } from '@pommora/core/Navigation/navRef'
+import { TAB_FAMILY } from './tabRows'
 import { useSession } from '../Session/store'
 import { pageMoveContext, runPageAction } from '../Interface/Menus/pageMenuActions'
 import { isOpenInTabs, isPinned, liveTarget } from './tabsModel'

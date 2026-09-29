@@ -33,7 +33,7 @@ import { isCmd, isSecondaryClick } from '@pommora/uix/Interactions/chords'
 import { Cell } from '../../Properties/Cells/Cell'
 import { EntityIcon } from '../../Assets/EntityIcon'
 import { PropertyTypeIcon, propertyIcon } from '../../Properties/Cells/PropertyTypes'
-import { bandSpec, GroupBand, bandedSpec } from '../Bands/GroupBand'
+import { bandSpec, GroupBand } from '../Bands/GroupBand'
 import { Reveal } from '@pommora/uix/Animations/Reveal'
 import { columnLabel, useCapitalizeMetadata } from '../../Properties/Cells/columnLabel'
 import { type DragShift, gapShift, useColumns } from './useColumns'
@@ -49,13 +49,14 @@ import type { GhostAnchor } from '@pommora/uix/Interactions/ghostCreate'
 import { useCellSweep } from './cellSweep'
 import {
   carries,
+  groupedLine,
   LineGroup,
   type LineSpec,
   LineZone,
   useLineRow,
 } from '@pommora/uix/Interactions/drag'
 import { laneSlot, type LaneSlot } from '@pommora/uix/Interactions/reorderModel'
-import { TAB_FAMILY } from '@pommora/core/Navigation/navRef'
+import { TAB_FAMILY } from '@pommora/core/Navigation/tabRows'
 import { ROW_END, rowLine, type RowSnap, rowSnap, rowStep } from './rowInsertion'
 import { openWebLink } from '../../Web/openWebLink'
 import {
@@ -543,7 +544,7 @@ export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
       className={cx('table table-view', overflowing && 'overflowing')}
     >
       {interactions.iconPicker}
-      <LineZone {...bandedSpec((id) => rowById.has(id), rowDrag, bandDrag)}>
+      <LineZone {...groupedLine((id) => rowById.has(id), rowDrag, bandDrag)}>
         <div
           className={cx(
             'table-grid',

@@ -4,12 +4,8 @@ import { cx } from '@pommora/uix/Utilities/cx'
 import { segment } from '@pommora/uix/Elements/segment.css'
 import { SortableZone, useLooseItem } from '@pommora/uix/Interactions/drag'
 import { usePointerGesture } from '@pommora/uix/Interactions/gesture'
-import {
-  isWindowTarget,
-  TAB_FAMILY,
-  type Tab,
-  type TabTarget,
-} from '@pommora/core/Navigation/navRef'
+import { isWindowTarget, type Tab, type TabTarget } from '@pommora/core/Navigation/navRef'
+import { TAB_FAMILY } from './tabRows'
 import { useSession, useSetting } from '../Session/store'
 import { pageMoveContext, runPageAction } from '../Interface/Menus/pageMenuActions'
 import { resolveWith, type ResolvedNav, type ResolveIndex } from './navResolve'

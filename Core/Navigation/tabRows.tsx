@@ -1,8 +1,16 @@
 import { type ReactNode, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { exitWait } from '@pommora/uix/Animations/useExitPresence'
-import { carries, type DisplaceSpec, DropSlot, SortableZone } from '@pommora/uix/Interactions/drag'
+import {
+  carries,
+  type DisplaceSpec,
+  DropSlot,
+  type Family,
+  SortableZone,
+} from '@pommora/uix/Interactions/drag'
 import { cx } from '@pommora/uix/Utilities/cx'
-import { isWindowTarget, type SelectTarget, TAB_FAMILY } from './navRef'
+import { isWindowTarget, type SelectTarget } from './navRef'
+
+export const TAB_FAMILY: Family<SelectTarget> = { name: 'tabs' }
 
 interface TabClose<E> {
   liveEntries: E[]

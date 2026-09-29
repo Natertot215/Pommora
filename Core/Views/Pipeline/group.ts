@@ -27,7 +27,7 @@ import { UNGROUPED, isEmptyBand } from '@pommora/core/Views/viewRow'
 import { declaredType, resolveFieldValue } from '../../Properties/value'
 import { readDate } from '../../Properties/formatValue'
 import { resolveRowOrder } from '@pommora/core/Properties/rowOrder'
-import type { SetIndex } from '../Bands/setIndex'
+import type { SetIndex } from './setIndex'
 
 export type PropertyGroup = Extract<GroupConfig, { kind: 'property' }>
 type Sorter = (rows: ViewRow[]) => ViewRow[]
