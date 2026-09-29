@@ -31,7 +31,12 @@
 }
 
 .cards-grid {
-  min-height: var(--drag-floor, 0px);
+  --grid-reach: var(--drag-floor, 0px);
+  padding-bottom: var(--grid-reach);
+  margin-bottom: calc(-1 * var(--grid-reach));
+}
+.cards-view .group-band:has(+ .group-band) .cards-grid {
+  --grid-reach: var(--band-gap);
 }
 
 .card-overlay .card-body {
