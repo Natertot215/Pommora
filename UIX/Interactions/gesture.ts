@@ -1,7 +1,6 @@
 import { type PointerEvent as ReactPointerEvent, useCallback, useEffect, useRef } from 'react'
 import './drop-chrome.css'
 import { resolveScroller, type ScrollAxis, startAutoScroll } from './autoscroll'
-import { beginDragDisclose, endDragDisclose } from './dragDisclose'
 import { ACTIVATION, EDITABLE_TARGETS, suppressNextClick, suppressReleaseClick } from './shared'
 
 const SLOP = 12
@@ -23,7 +22,6 @@ export type PointerGestureSpec = {
   teardown?: () => void
   onWindowScroll?: (target: EventTarget | null) => void
   scrollTarget?: () => Element | null
-  onDisclose?: () => void
 }
 
 export type GestureHandle = { abort: () => void; autoScroll: (on: boolean) => void }
@@ -72,7 +70,6 @@ function detach(g: LiveGesture): void {
   try {
     g.spec.el.releasePointerCapture(g.spec.event.pointerId)
   } catch {}
-  if (g.active && g.spec.onDisclose) endDragDisclose()
   try {
     g.spec.teardown?.()
   } catch (err) {
@@ -145,7 +142,6 @@ export function beginPointerGesture(spec: PointerGestureSpec): GestureHandle | n
             } catch {}
           }
           g.active = true
-          if (spec.onDisclose) beginDragDisclose(spec.onDisclose, document.body, spec.el)
           let ok: boolean | undefined
           try {
             ok = spec.onActivate(ev)

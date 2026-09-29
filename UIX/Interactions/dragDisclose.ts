@@ -1,6 +1,4 @@
-import { type RefObject, useEffect, useRef } from 'react'
 import { duration, ms } from '../Animations/motion'
-import { useLatest } from '../Utilities/stableApi'
 
 const DWELL_MS = 500
 const CHECK_MS = 100
@@ -11,7 +9,6 @@ type Armed = { remeasure: () => void; within: Element; source: Element }
 const targets = new Map<Element, () => void>()
 const point = { x: 0, y: 0 }
 let armed: Armed | null = null
-let pointed = false
 let hovered: Element | null = null
 let dwell: number | null = null
 let trailing: number | null = null
@@ -19,7 +16,7 @@ let lastCheck = 0
 let remeasureRaf: number | null = null
 
 function targetAt(): Element | null {
-  if (!armed || !pointed) return null
+  if (!armed) return null
   let t = document.elementFromPoint(point.x, point.y)
   while (t && !targets.has(t)) t = t.parentElement
   return t && t !== armed.source && armed.within.contains(t) ? t : null
@@ -58,9 +55,7 @@ function schedule(): void {
   else trailing = window.setTimeout(check, wait)
 }
 
-const onMove = (e: PointerEvent): void => pointDisclose(e.clientX, e.clientY)
-
-export function nudgeDragRemeasure(): void {
+function nudgeDragRemeasure(): void {
   if (!armed) return
   if (remeasureRaf != null) cancelAnimationFrame(remeasureRaf)
   const settle = performance.now() + SETTLE_MS
@@ -80,38 +75,20 @@ export function addSpring(el: Element, expand: () => void): () => void {
   }
 }
 
-export function useDiscloseTarget(
-  collapsed: boolean,
-  expand: () => void,
-): RefObject<HTMLDivElement | null> {
-  const ref = useRef<HTMLDivElement | null>(null)
-  const expandRef = useLatest(expand)
-  useEffect(() => {
-    const el = ref.current
-    if (!collapsed || !el) return
-    return addSpring(el, () => expandRef.current())
-  }, [collapsed])
-  return ref
-}
-
 export function beginDragDisclose(remeasure: () => void, within: Element, source: Element): void {
   armed = { remeasure, within, source }
-  window.addEventListener('pointermove', onMove)
 }
 
 export function pointDisclose(x: number, y: number): void {
   if (!armed) return
   point.x = x
   point.y = y
-  pointed = true
   schedule()
 }
 
 export function endDragDisclose(): void {
-  window.removeEventListener('pointermove', onMove)
   clearHover()
   armed = null
-  pointed = false
   if (trailing != null) {
     clearTimeout(trailing)
     trailing = null

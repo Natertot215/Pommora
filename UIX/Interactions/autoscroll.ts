@@ -121,16 +121,6 @@ let live: Live | null = null
 // A velocity×dt loop teleports if rAF stalls and resumes with a huge gap.
 const MAX_FRAME_MS = 50
 
-export function armAutoScroll(
-  dragEl: HTMLElement | null,
-  getPoint: () => { x: number; y: number },
-  onScrolled?: () => void,
-): (() => void) | null {
-  const scroller = findScroller(dragEl, 'y')
-  if (!scroller) return null
-  return startAutoScroll({ getPoint, scroller, axis: 'y', onScrolled })
-}
-
 export function startAutoScroll(cfg: StartCfg): () => void {
   stopAutoScroll()
   stopGlide()

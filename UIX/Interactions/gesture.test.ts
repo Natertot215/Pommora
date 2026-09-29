@@ -49,17 +49,6 @@ const move = (x: number, y: number, opts: { pointerId?: number; buttons?: number
   firePointer(window, 'pointermove', { x, y, ...opts })
 
 describe('gesture skeleton hardening', () => {
-  it('arms the spring-open listener only once the press becomes a drag', () => {
-    const adds = vi.spyOn(window, 'addEventListener')
-    const moveListeners = (): number => adds.mock.calls.filter(([t]) => t === 'pointermove').length
-    gesture.beginPointerGesture(spec({ onDisclose: () => {} }))
-    move(2, 0)
-    expect(moveListeners()).toBe(1)
-    move(20, 0)
-    expect(moveListeners()).toBe(2)
-    adds.mockRestore()
-  })
-
   it('a throwing onActivate aborts cleanly: onAbort fires, no drop commits, the next begin succeeds', () => {
     const onAbort = vi.fn()
     const onDrop = vi.fn()
@@ -464,26 +453,5 @@ describe('the item rule, the cursor, and autoscroll', () => {
       expect(rafMap.size).toBe(0)
       expect(scrollBy.mock.calls.length).toBe(scrolled)
     })
-  })
-})
-
-describe('the disclose scope', () => {
-  it('spans the document, so a spring outside the gesture element still expands', async () => {
-    vi.useFakeTimers()
-    const stub = vi.fn(() => spring)
-    Object.defineProperty(document, 'elementFromPoint', { value: stub, configurable: true })
-    const spring = document.createElement('div')
-    document.body.appendChild(spring)
-    const { addSpring } = await import('./dragDisclose')
-    const expand = vi.fn()
-    addSpring(spring, expand)
-    gesture.beginPointerGesture(spec({ onDisclose: () => {} }))
-    move(20, 0)
-    move(30, 0)
-    vi.advanceTimersByTime(700)
-    expect(expand).toHaveBeenCalledTimes(1)
-    spring.remove()
-    Reflect.deleteProperty(document, 'elementFromPoint')
-    vi.useRealTimers()
   })
 })

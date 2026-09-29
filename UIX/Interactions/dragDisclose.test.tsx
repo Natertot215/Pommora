@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { addSpring, beginDragDisclose, endDragDisclose } from './dragDisclose'
+import { addSpring, beginDragDisclose, endDragDisclose, pointDisclose } from './dragDisclose'
 
 let under: Element | null = null
 document.elementFromPoint = () => under
@@ -36,7 +36,7 @@ afterEach(() => {
 
 const moveOver = (target: Element | null): void => {
   under = target
-  window.dispatchEvent(new PointerEvent('pointermove'))
+  pointDisclose(0, 0)
 }
 // The hover check is throttled, so each move lands past the last one's window.
 const hoverOver = (target: Element | null): void => {
