@@ -153,7 +153,7 @@ What Pommora remembers, and for how long. Four tiers, told by where a thing is w
 | Fetched link titles | A URL's page title, so the same link never refetches | Nothing — a cached title is kept |
 | Page snapshots (`versions.db`) | The text each page held before an edit, after a burst settled, or before a restore | The History Timeframe sweep at open; deleting a row from the History window; Clear History, which also gives the file's bytes back |
 | The record baseline | What the last open saw, for the deletion record | The next open |
-| Device preferences | Use Native Menus, Interface Scale, the Sidebar and SidePane widths, which sidebar sections are open, whether the main pane's and each floating window's footer is folded, the NavWindow's and NavView's list or gallery layout, and the size each floating window and the glance pane was left at | Toggling, choosing, or dragging them; an out-of-range width self-corrects on read |
+| Device preferences | Use Native Menus, Interface Scale, Brightness, the Sidebar and SidePane widths, which sidebar sections are open, whether the main pane's and each floating window's footer is folded, the NavWindow's and NavView's list or gallery layout, and the size each floating window and the glance pane was left at | Toggling, choosing, or dragging them; an out-of-range width self-corrects on read |
 
 **Stays on this computer, outside every Nexus.** Belongs to the app rather than to any Nexus, so it holds no matter which one is open.
 

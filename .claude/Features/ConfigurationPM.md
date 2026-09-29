@@ -33,6 +33,7 @@ The heading reads the unbound state and three binding states. Unbound shows the 
 | Use Native Highlighting | `nativeHighlight` | Selected text uses the system's own highlight instead of Pommora's drawn one. | On · **Off** |
 | Interface Scale | `interfaceScale` | The scaling factor applied to the entire interface; additional scaling preferences compound this value. Also what ⌘0 resets to. A machine-level preference, stored in the device database rather than the Nexus. | 50%–150% in ten-point steps (**100%**) |
 | Embed Scale | `embedScale` | The scale embedded pages and views start at; a block's own Scale compounds it. | 50%–150% (**90%**) |
+| Brightness | `brightness` | Pommora's own brightness, independent of the display's, applied across the whole window including its webpages. A machine-level preference, stored in the device database rather than the Nexus. | 50%–150% in ten-point steps (**100%**) |
 
 **Creation Placement**
 
