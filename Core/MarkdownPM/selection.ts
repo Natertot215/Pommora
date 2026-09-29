@@ -1,5 +1,5 @@
 // Seated BELOW the text so the tint sits behind the glyphs. Geometry only — fill, corner and bleed are the kit's caret.css.
-import { layer, RectangleMarker, type EditorView } from '@codemirror/view'
+import { EditorView, layer, RectangleMarker } from '@codemirror/view'
 import type { SelectionRange } from '@codemirror/state'
 import { selCorner } from '@pommora/uix/Theme/nativeCaret'
 import { cx } from '@pommora/uix/Utilities/cx'
@@ -31,10 +31,13 @@ function rangeMarkers(view: EditorView, range: SelectionRange): RectangleMarker[
   })
 }
 
-export const customSelection = layer({
-  above: false,
-  class: 'mdpm-sel-layer',
-  markers: (view) =>
-    view.state.selection.ranges.filter((r) => !r.empty).flatMap((r) => rangeMarkers(view, r)),
-  update: (update) => update.docChanged || update.selectionSet || update.viewportChanged,
-})
+export const customSelection = [
+  layer({
+    above: false,
+    class: 'mdpm-sel-layer',
+    markers: (view) =>
+      view.state.selection.ranges.filter((r) => !r.empty).flatMap((r) => rangeMarkers(view, r)),
+    update: (update) => update.docChanged || update.selectionSet || update.viewportChanged,
+  }),
+  EditorView.editorAttributes.of({ class: 'mdpm-drawn-selection' }),
+]
