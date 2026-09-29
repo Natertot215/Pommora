@@ -13,6 +13,9 @@ The Pommora Codebase Audit is the sole focus. Its ledger, `// Planning`'s `Pommo
 ### Pending Focuses
 
 - [ ] **IconSwitchToggle.** A kit toggle in `UIX/Elements/` for icons that switch face on click, drawn from a pair registry in `UIX/Symbols` that generalizes `LockGlyph`'s crossfade and is seeded with the lock, eye, pin, and show/hide pairs. It replaces the sidebar, glance, and View Tile lock buttons and `FooterLockButton`'s internals, takes in `EyeToggle` and `NavPinButton`, and moves those hand-rolled buttons onto `Button`; callers supply the label and cursor. It follows the Hover Reveal plan and consumes its reveal recipe.
+- [ ] Adjust the sidebars' top height on Windows devices only so they don't get extra room they don't need for the macOS traffic lights.
+- [ ] Adding value-dragging for table cells and card bodies for value reordering within an assigned property.
+- [ ] Scrollbars.
 
 #### II. Open Calls
 
@@ -27,7 +30,7 @@ Findings where the correct answer isn't established in the codebase — design a
 - [ ] **A Database window:** a read-only view of `nexus.db`, table by table with row counts, reached from Settings › Nexus.
 - [ ] **View QuickFilter:** A dropdown or toggle that holds single-property filtering options; the View Tile's view strip would be its natural placement for tile embeds, and the Subfield is an initial idea for where this could be placed in full-detail views.
 - [ ] **Auto-Linter:** A MarkdownPM, nexus-level-configurable auto-linter that could place its action button in the subfield, or an approved command combination.
-- [ ] **A Shortcuts settings pane** over the one chord table in `Core/Actions/commands.ts`. It needs a named-key map (`toAccelerator` and `toKeyBinding` capitalize a key's first character only, so `arrowup` would reach Electron as `Arrowup`), a rule for two ids bound to one chord, and a `refreshMenu()` on a commands change if the menu bar is to pick up a rebind before the next adopt or launch.
+- [ ] **A Shortcuts settings pane** over the one chord table in `Core/Actions/commands.ts`. It needs a named-key map (`toAccelerator` and `toKeyBinding` capitalize a key's first character only, so `arrowup` would reach Electron as `Arrowup`), a rule for two IDs bound to one chord, and a `refreshMenu()` on a commands change if the menu bar is to pick up a rebind before the next adopt or launch.
 - [ ] **TokenField — a typed value becomes a Label:** an InputField holding a run of labels beside a bare caret, where Enter turns the draft into a segment resolved against the field's picker (a Set title into an EntityIcon segment, a free string into a PlainLabel) and Backspace on an empty caret removes the last. The pieces exist apart — `EditableInput` names an option chip in place, `SegmentRun` holds a field's values, the Filter pane's Location run is pick-only — and the showcase's capped field already sketches the shape. Its consumers are every location-shaped input: the Location filter, file properties, Context assignment.
 - [ ] **Per-tab Subfield `crumbDepth`**, if cross-tab tail memory is ever wanted. It resets on tab switch today (correct, no leak); a per-tab field would let each tab remember its own dimmed tail across switches — a feature, not a fix.
 
@@ -47,7 +50,6 @@ Findings where the correct answer isn't established in the codebase — design a
 Known shortcuts, none broken today. Each is cheap on its own and best taken when its owning file is next touched — or swept together as one batch session.
 
 - [ ] **Fire-and-forget writes have no seam.** The persisted-chrome family — `editorPrefs:set`, `viewOrders.set`, `personalization.set`, `devicePrefs.save`, `tiles.writeMarkdown`, the alias memory's `setPageMeta`, `nav.write`, `tabs.save` and the rest — is called as `void dialer().ask(…)` at fifteen sites with the failure discarded. Silence is the accepted policy for this class (ruled 08-21-2026); one `persist()` helper wraps the family and states the ruling once, so a change to the policy has one site.
-- [ ] **The remaining style rows.** the thirty plain `.css` sheets on ordinary React components migrate to `.css.ts` as each is next opened, the three loading globally from `Desktop/Renderer/main.tsx` first; the six static `style={{…}}` sites (`TileLab.tsx` ×2, `PickerMenu.tsx`, `PropertyPicker.tsx`, `Core/Views/Table/TableView.tsx`, `CardAddPicker.tsx`) and the `{ minWidth: 96, height: 24 }` pair in `PropertyPicker` and `CardAddPicker` become classes.
 - [ ] **A value edited outside the app doesn’t live-refresh an open table.**
 - [ ] **A moved tab rebuilds cold.** A tab dropped into the other row starts with fresh history and no warm editor state; the two rows' warm caches are separate, and carrying one across is a decision about what a tab's identity includes.
 - [ ] **Scroll waits by timer, and the signal can't simply replace it.** `travel.ts` sleeps `FOLD_SETTLE_MS` for a fold animation's duration; folding's completion signal (`transitionend` → the fold entry dropping) only fires for widgets CM6 has rendered, and an outline jump's target fold is usually off-screen — waiting on it would deadlock travel against render. Retiring the timer means deciding to open off-screen folds without animation first.
@@ -67,7 +69,7 @@ Per-page state moved out of the per-device database and page frontmatter into sy
 #### PM-144 || View Search
 **DATE:** 09-22-2026 → 09-23
 
-Every Collection, Set, and Sub-Set view gained a search in its in-line title, narrowing the view's own rows by fuzzy title match while keeping its filter, grouping, and order. The search belongs to its tab for the session and clears when the tab shows anything else. It opens from a hint beside the title, a title click, the title and banner menus' Search row, or ⌘F, and row and band drag stand down while it's active.
+Every Collection, Set, and Sub-Set view gained a search in its inline title, narrowing the view's own rows by fuzzy title match while keeping its filter, grouping, and order. The search belongs to its tab for the session and clears when the tab shows anything else. It opens from a hint beside the title, a title click, the title and banner menus' Search row, or ⌘F, and the row and band drag stand down while it's active.
 
 #### PM-143 || Space Windows
 **DATE:** 09-21-2026

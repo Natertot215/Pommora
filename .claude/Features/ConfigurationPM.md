@@ -142,6 +142,7 @@ The three colors the interface derives from. Each opens the ramp grid without it
 | Dashes | `transformDashes` | `--` becomes `—` and a spaced ` - ` becomes `–`. | **On** · Off |
 | Arrows | `transformArrows` | `->`, `<-`, `<->`, `>>`, and `<<` become `→`, `←`, `↔`, `»`, and `«`; an arrow list's marker converts either way. | **On** · Off |
 | Equations | `transformEquations` | `>=`, `<=`, `!=` · `/=` · `=/`, `+-` · `-+`, and `~=` become `≥`, `≤`, `≠`, `±`, and `≈`. | **On** · Off |
+| Punctuation | `transformPunctuation` | `!!`, `??`, `?!`, `!?`, and `\|\|` following text become `‼`, `⁇`, `⁈`, `⁉`, and `‖`; a third mark expands the glyph back. | On · **Off** |
 | Ellipses | `transformEllipses` | `...` becomes `…`. | **On** · Off |
 | Callout | `transformCallouts` | `\|\|` at a line's start opens a callout. | **On** · Off |
 | Sections | `transformSections` | `##` becomes `§` away from a line's start, where it opens a heading. | On · **Off** |
