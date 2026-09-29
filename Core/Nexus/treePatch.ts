@@ -531,3 +531,20 @@ export function moveInTree(
   if (!req.order) return moved
   return reorderPagesInTree(moved ?? tree, req.newParentPath, req.order) ?? moved
 }
+
+export type OrderRequest = Extract<
+  MutateRequest,
+  { op: 'movePage' | 'moveSet' | 'reorderChildren' | 'reorderTop' }
+>
+
+export function orderInTree(tree: NexusTree, req: OrderRequest): NexusTree | null {
+  switch (req.op) {
+    case 'movePage':
+    case 'moveSet':
+      return moveInTree(tree, req)
+    case 'reorderChildren':
+      return reorderChildrenInTree(tree, req.parentPath, req.order)
+    case 'reorderTop':
+      return reorderChildrenInTree(tree, '', req.order)
+  }
+}

@@ -1,29 +1,23 @@
-import { useMemo } from 'react'
 import {
-  groupOptions,
+  optionsOf,
   PROPERTY_TYPES,
   type PropertyDefinition,
-  optionsOf,
 } from '@pommora/core/Properties/properties'
-import type { GroupConfig } from '@pommora/core/Views/views'
-import { heading, type PickerRowLook } from '@pommora/uix/Menus'
+import { heading, laneSpec, type PickerRowLook } from '@pommora/uix/Menus'
 import { side } from '@pommora/uix/Menus/menu-row.css'
 import { hiddenRow, optionRow } from '@pommora/uix/Menus/frames.css'
 import { EyeToggle } from '@pommora/uix/Elements/EyeToggle'
-import { nextOrder } from '@pommora/uix/Interactions/reorderModel'
+import { LineRow, LineZone } from '@pommora/uix/Interactions/drag'
+import { moveBefore } from '@pommora/uix/Utilities/moveItem'
 import { cx } from '@pommora/uix/Utilities/cx'
 import { OptionChip } from '../../Properties/Cells/OptionChip'
-import type { Band } from '../Bands/bandDndModel'
-import { bucketOrder } from '../Pipeline/group'
-import { useGroupingListDrag } from './groupDnd'
+import { liveBucketOrder, type PropertyGroup } from '../Pipeline/group'
 import * as oo from './option-order.css'
 
 export const SUB_LOOK: PickerRowLook = {
   className: oo.subOrderRow,
   labelClassName: oo.orderLabel,
 }
-
-export type PropertyGroupConfig = Extract<GroupConfig, { kind: 'property' }>
 
 export interface HideControls {
   isHidden?: (key: string) => boolean
@@ -47,97 +41,70 @@ export function rowEye(
   )
 }
 
-export function PropertyPreview({
-  group,
-  def,
-  isHidden,
-  onToggleHidden,
-}: {
-  group: Pick<PropertyGroupConfig, 'order_mode' | 'order'>
-  def: PropertyDefinition | undefined
-} & HideControls): React.JSX.Element | null {
-  if (!def) return null
-  const chip = (o: { value: string; color?: string }): React.JSX.Element => (
-    <div key={o.value} className={cx(optionRow, isHidden?.(o.value) && hiddenRow)}>
-      <OptionChip type={def.type} option={o} />
-      {rowEye(o.value, o.value, { isHidden, onToggleHidden })}
-    </div>
-  )
-  if (PROPERTY_TYPES[def.type].options === 'status') {
-    const statusGroups = def.status_groups ?? []
-    const groups = group.order_mode === 'reversed' ? [...statusGroups].reverse() : statusGroups
-    return (
-      <>
-        {groups.map((g) => (
-          <div key={g.id}>
-            <div className={heading}>{g.label}</div>
-            {(group.order_mode === 'reversed' ? groupOptions(g).reverse() : groupOptions(g)).map(
-              chip,
-            )}
-          </div>
-        ))}
-      </>
-    )
-  }
-  const all = optionsOf(def)
-  const ordered = bucketOrder(group, def, new Set(all.map((o) => o.value)))
-  const byValue = new Map(all.map((o) => [o.value, o]))
-  return <>{ordered.flatMap((v) => (byValue.has(v) ? [chip(byValue.get(v)!)] : []))}</>
+type Section = { key: string; label: string | null; values: string[] }
+
+function sectionsOf(
+  group: Pick<PropertyGroup, 'order_mode' | 'order'>,
+  def: PropertyDefinition,
+  order: string[],
+): Section[] {
+  if (PROPERTY_TYPES[def.type].options !== 'status' || group.order_mode === 'manual')
+    return [
+      { key: 'options', label: group.order_mode === 'manual' ? 'Options' : null, values: order },
+    ]
+  const reversed = group.order_mode === 'reversed'
+  const groups = def.status_groups ?? []
+  return (reversed ? [...groups].reverse() : groups).map((g) => {
+    const values = g.options.map((o) => o.value)
+    return { key: g.id, label: g.label, values: reversed ? values.reverse() : values }
+  })
 }
 
-export function CustomList({
+export function OptionOrderList({
   group,
   def,
   onSave,
   isHidden,
   onToggleHidden,
 }: {
-  group: Pick<PropertyGroupConfig, 'order_mode' | 'order'>
+  group: Pick<PropertyGroup, 'order_mode' | 'order'>
   def: PropertyDefinition | undefined
-  onSave: (order: string[]) => void
+  onSave?: (order: string[]) => void
 } & HideControls): React.JSX.Element | null {
-  const { ordered, byValue, bands } = useMemo(() => {
-    const all = optionsOf(def)
-    const orderedValues = bucketOrder(group, def, new Set(all.map((o) => o.value)))
-    return {
-      ordered: orderedValues,
-      byValue: new Map(all.map((o) => [o.value, o])),
-      bands: orderedValues.map(
-        (v): Band => ({ id: v, kind: 'property', depth: 0, parentId: null }),
-      ),
-    }
-  }, [group, def])
-  const dnd = useGroupingListDrag({
-    bands,
-    nestable: false,
-    labelFor: (id) => id,
-    onDrop: (draggedId, drop) => onSave(nextOrder(ordered, draggedId, drop.beforeId)),
-  })
   if (!def) return null
+  const byValue = new Map(optionsOf(def).map((o) => [o.value, o]))
+  const order = liveBucketOrder(group, def, [])
+  const chip = (v: string): React.JSX.Element => (
+    <OptionChip type={def.type} option={byValue.get(v)} />
+  )
   return (
-    <div ref={dnd.containerRef} className="drop-line-host">
-      <div className={heading}>Options</div>
-      {ordered.flatMap((v) => {
-        const o = byValue.get(v)
-        if (!o) return []
-        return [
-          <div
-            key={v}
-            ref={dnd.rowRef(v)}
-            {...dnd.rowHandle(v)}
-            className={cx(
-              optionRow,
-              isHidden?.(v) && hiddenRow,
-              dnd.draggingId === v && oo.ghosted,
-            )}
-          >
-            <OptionChip type={def.type} option={o} />
-            {rowEye(v, v, { isHidden, onToggleHidden })}
-          </div>,
-        ]
+    <LineZone
+      {...laneSpec({
+        locked: !onSave,
+        commit: (v, slot) => {
+          const next = moveBefore(order, (x) => x, v, slot.before)
+          if (next) onSave?.(next)
+        },
+        label: (v) => v,
+        chip,
+        watch: [def, group.order_mode, group.order],
       })}
-      {dnd.line}
-      {dnd.ghost}
-    </div>
+    >
+      {sectionsOf(group, def, order).map((section) => (
+        <div key={section.key}>
+          {section.label !== null && <div className={heading}>{section.label}</div>}
+          {section.values.flatMap((v) =>
+            byValue.has(v)
+              ? [
+                  <LineRow key={v} id={v} className={cx(optionRow, isHidden?.(v) && hiddenRow)}>
+                    {chip(v)}
+                    {rowEye(v, v, { isHidden, onToggleHidden })}
+                  </LineRow>,
+                ]
+              : [],
+          )}
+        </div>
+      ))}
+    </LineZone>
   )
 }

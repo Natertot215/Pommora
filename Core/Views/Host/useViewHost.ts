@@ -1,10 +1,9 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef } from 'react'
 import { type PropertyType, specOf } from '@pommora/core/Properties/properties'
 import { UNGROUPED } from '@pommora/core/Views/viewRow'
 import type { CollectionNode, SetNode } from '@pommora/core/Nexus/tree'
 import type { ResolvedColumn, ResolvedGroup, ViewRow } from '@pommora/core/Views/viewRow'
 import type { ColumnStyle } from '@pommora/core/Properties/columnStyles'
-import { isLocationFsOrder } from '@pommora/core/Views/views'
 import type { PropertyValue } from '@pommora/core/Properties/propertyValue'
 import { assignValue, type ValueWriter } from '@pommora/core/Properties/assignValue'
 import type { Result } from '@pommora/core/Contract/result'
@@ -17,22 +16,25 @@ import { contextIdsOf, identityOf } from '../../Contexts/contextIdentity'
 import { type PickTarget, syntheticContextDef } from '../../Properties/Pickers/PropertyPicker'
 import { declaredType, resolveFieldValue } from '../../Properties/value'
 import { buildValueContext } from '../../Properties/valueContext'
-import { buildSetIcons, buildSetNames, buildSetPaths } from '../../Properties/Cells/cellResolve'
+import { containerAt, orderInTree } from '../../Nexus/treePatch'
 import { hideShown, unhide } from '../visibilityModel'
-import { resolveBandHead } from '../Bands/GroupBand'
+import { bandModelOf, headContextOf } from '../Bands/bandModel'
+import { setIndexOf } from '../Bands/setIndex'
 import { NO_SCHEMA, resolveContainerSchema } from '../Pipeline/pickView'
 import {
-  bandGrouping,
+  bucketGroupingOf,
   bucketKey,
-  drawnSubGroup,
   flattenContainer,
-  groupsStructurally,
+  groupPlan,
+  pageOrderOf,
+  setOrderOf,
 } from '../Pipeline/group'
 import { resolveView } from '../Pipeline/resolveView'
 import { searchGroups } from '../Pipeline/search'
 import { foldKey } from '../../Paths/caseFold'
 import { resolvedSortCount } from '../Pipeline/sort'
 import { useActiveView } from './useActiveView'
+import { useOrdersAhead } from './pendingView'
 import { patchOverride } from '../../Properties/valueOverride'
 import { useContainerValues } from './useContainerValues'
 import { pickedStyle, styleFor, useNexusForms } from './useColumnStyles'
@@ -43,7 +45,7 @@ export type ViewHostApi = NonNullable<ReturnType<typeof useViewHost>>
 
 const NO_COLLAPSE = new Set<string>()
 
-export function useViewHost(source: CollectionNode | SetNode, flattenStructural: boolean) {
+export function useViewHost(source: CollectionNode | SetNode, nests: boolean) {
   const tree = useSession((s) => s.tree)
   const assetMap = useSession((s) => s.assetMap)
   const select = useSession((s) => s.select)
@@ -56,6 +58,17 @@ export function useViewHost(source: CollectionNode | SetNode, flattenStructural:
   const searching = needle !== ''
 
   const { values, effectiveValues, setValueOverride } = useContainerValues(source.path)
+  const ahead = useOrdersAhead()
+  const painted = useMemo(
+    () =>
+      tree && ahead.length > 0
+        ? (containerAt(
+            ahead.reduce((t, req) => orderInTree(t, req) ?? t, tree),
+            source.path,
+          ) ?? source)
+        : source,
+    [tree, source, ahead],
+  )
 
   const schema = useMemo(
     () => (tree ? resolveContainerSchema(tree, source) : NO_SCHEMA),
@@ -65,63 +78,34 @@ export function useViewHost(source: CollectionNode | SetNode, flattenStructural:
 
   const nexus = useNexusForms()
   const collapsed = useMemo(() => new Set(view.collapsed_groups ?? []), [view.collapsed_groups])
-  // Painted ahead of the tree push that carries the new page_order; it settles on that push, not on a view save.
-  const [structuralPaint, setStructuralPaint] = useState<string[] | null>(null)
 
+  const plan = useMemo(() => groupPlan(view, schema, nests), [view, schema, nests])
   const sortKeys = useMemo(() => resolvedSortCount(view.sort, schema), [view.sort, schema])
-  const structuralGrouping = groupsStructurally(view.group, schema)
-  // The engine's own sub-group rule: a flattened paint, or a sub_group it won't bucket, must not reassign against it.
-  const subGrouped = !flattenStructural && drawnSubGroup(view, schema) !== undefined
-  const groupPropId =
-    !structuralGrouping || subGrouped ? bandGrouping(view, schema)?.property_id : undefined
+  const pageOrder = pageOrderOf(plan, view, sortKeys)
+  const setOrder = setOrderOf(plan, view)
+  const bucketGroup = bucketGroupingOf(plan)
+  const groupPropId = bucketGroup?.property_id
   const groupPropType = groupPropId ? declaredType(groupPropId, schema) : undefined
   const canReassign = reassignable(groupPropType)
-  const locationFsOrder = flattenStructural && isLocationFsOrder(view)
-  const canReorderWithin = sortKeys < 2 && !locationFsOrder
-  const canRelocate = structuralGrouping && !subGrouped
-  const structuralOrder = groupPropId === undefined && sortKeys === 0
-  useEffect(() => {
-    if (structuralOrder) setStructuralPaint(null)
-  }, [source, structuralOrder])
-
-  const manualOrder = locationFsOrder
-    ? undefined
-    : structuralOrder
-      ? (structuralPaint ?? undefined)
-      : view.manual_order
-  const dragDisabled = searching || !(canReorderWithin || canReassign || canRelocate)
+  const canReorderWithin = sortKeys < 2
+  const canRelocate = plan.kind === 'sets' && plan.sub === undefined
+  const manualOrder = pageOrder === 'location' ? undefined : view.manual_order
+  const dragDisabled = searching || !canReorderWithin
+  const crossBand = !dragDisabled && (canReassign || canRelocate)
+  const sets = setIndexOf(painted)
 
   const contextIds = contextIdsOf(tree)
   const {
     columns,
     groups: resolvedGroups,
-    setTree,
     rows,
   } = useMemo(() => {
-    const { rows, setTree } = flattenContainer(source, effectiveValues, tree?.pageMetadata ?? {})
+    const { rows, setTree } = flattenContainer(painted, effectiveValues, tree?.pageMetadata ?? {})
     return {
-      ...resolveView({
-        rows,
-        setTree,
-        view,
-        schema,
-        manualOrder,
-        flattenStructural,
-        contextIds,
-      }),
-      setTree,
+      ...resolveView({ rows, setTree, view, schema, plan, manualOrder, contextIds }),
       rows,
     }
-  }, [
-    source,
-    effectiveValues,
-    tree?.pageMetadata,
-    view,
-    schema,
-    manualOrder,
-    contextIds,
-    flattenStructural,
-  ])
+  }, [painted, effectiveValues, tree?.pageMetadata, view, schema, plan, manualOrder, contextIds])
   const titles = useMemo(
     () => (searching ? new Map(rows.map((r) => [r.id, foldKey(r.title)])) : null),
     [rows, searching],
@@ -148,9 +132,14 @@ export function useViewHost(source: CollectionNode | SetNode, flattenStructural:
     () => (identity ? buildValueContext(identity, schema, assetMap) : null),
     [identity, schema, assetMap],
   )
-  const setNames = useMemo(() => buildSetNames(source), [source])
-  const setIcons = useMemo(() => buildSetIcons(source), [source])
-  const setPaths = useMemo(() => buildSetPaths(source), [source])
+  const heads = useMemo(
+    () =>
+      headContextOf(painted, sets, bucketGroup, schema, view, (id) =>
+        styleFor(id, schema, view, nexus),
+      ),
+    [painted, sets, bucketGroup, schema, view, nexus],
+  )
+  const bands = useMemo(() => bandModelOf(groups, heads), [groups, heads])
   const { rowById, rowBand, paintOrder } = useMemo(() => {
     const byId = new Map<string, ViewRow>()
     const band = new Map<string, string>()
@@ -168,18 +157,6 @@ export function useViewHost(source: CollectionNode | SetNode, flattenStructural:
     walk(groups)
     return { rowById: byId, rowBand: band, paintOrder: ordered }
   }, [groups])
-  const bandLabel = (id: string): string => {
-    const find = (gs: ResolvedGroup[]): ResolvedGroup | undefined => {
-      for (const g of gs) {
-        if (g.key === id) return g
-        const hit = g.children && find(g.children)
-        if (hit) return hit
-      }
-      return undefined
-    }
-    const g = find(groups)
-    return g && ctx ? resolveBandHead(g, view, ctx, nexus, setNames, setIcons, source).label : id
-  }
 
   const persistView = (
     patch: ViewPatch,
@@ -282,37 +259,35 @@ export function useViewHost(source: CollectionNode | SetNode, flattenStructural:
 
   if (!ctx || !tree) return null
   return {
-    source,
+    source: painted,
     schema,
     view,
-    flat: flattenStructural,
+    plan,
+    nests,
     columns,
     groups,
-    setTree,
     rows,
     ctx,
     contextIds,
-    setNames,
-    setIcons,
-    setPaths,
+    sets,
+    bands,
     rowById,
     rowBand,
     paintOrder,
-    bandLabel,
     collapsed: shownCollapsed,
     toggleCollapse,
-    structuralGrouping,
-    subGrouped,
     groupPropId,
     groupPropType,
     canReassign,
     canReorderWithin,
     canRelocate,
+    crossBand,
     reassignBySortRun,
-    structuralOrder,
+    sortKeys,
+    pageOrder,
+    setOrder,
     dragDisabled,
     searching,
-    setStructuralPaint,
     setStylePatch,
     hideProperty,
     revealProperty,

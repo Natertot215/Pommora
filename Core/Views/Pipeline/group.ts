@@ -9,7 +9,11 @@ import {
   type GroupedView,
   granularityOf,
   isBucketHidden,
+  LOCATION_SORT,
+  type SavedView,
+  type StructuralOrderMode,
   type SubGroupConfig,
+  viewOption,
 } from '@pommora/core/Views/views'
 import { ID_KEY } from '@pommora/core/Nexus/identityMark'
 import { localDayKey, pad } from '@pommora/uix/Utilities/pad'
@@ -23,7 +27,7 @@ import { UNGROUPED, isEmptyBand } from '@pommora/core/Views/viewRow'
 import { declaredType, resolveFieldValue } from '../../Properties/value'
 import { readDate } from '../../Properties/formatValue'
 
-type PropertyGroup = Extract<GroupConfig, { kind: 'property' }>
+export type PropertyGroup = Extract<GroupConfig, { kind: 'property' }>
 type Sorter = (rows: ViewRow[]) => ViewRow[]
 
 export interface SetTreeNode {
@@ -42,7 +46,7 @@ const placeTail = (
   key: string = UNGROUPED,
 ): ResolvedGroup[] => {
   if (tail.length === 0) return groups
-  const band: ResolvedGroup = { key, kind: 'ungrouped', items: applySort(tail, sorter) }
+  const band: ResolvedGroup = { key, kind: 'tail', items: applySort(tail, sorter) }
   return placement === 'top' ? [band, ...groups] : [...groups, band]
 }
 
@@ -61,7 +65,7 @@ export function buildSetTree(sets: SetNode[] | undefined): SetTreeNode[] {
   return (sets ?? []).map((s) => ({ id: s.id, children: buildSetTree(s.sets) }))
 }
 
-export function subtreeIds(node: SetTreeNode): string[] {
+function subtreeIds(node: SetTreeNode): string[] {
   return [node.id, ...node.children.flatMap(subtreeIds)]
 }
 
@@ -80,18 +84,11 @@ export function dropHiddenGroups(
   const top = view.group?.kind === 'property' ? view.group.property_id : undefined
   const sub = view.sub_group?.property_id
   return groups.flatMap((group) => {
-    if (
-      group.kind === 'property' &&
-      top &&
-      isBucketHidden(view, hidden, 'group', top, group.bucket ?? group.key)
-    )
+    if (group.kind === 'bucket' && top && isBucketHidden(view, hidden, 'group', top, group.value))
       return []
     const { children: nested, ...band } = group
     const children = nested?.filter(
-      (c) =>
-        c.kind !== 'property' ||
-        !sub ||
-        !isBucketHidden(view, hidden, 'sub', sub, c.bucket ?? c.key),
+      (c) => c.kind !== 'bucket' || !sub || !isBucketHidden(view, hidden, 'sub', sub, c.value),
     )
     return [children?.length ? { ...band, children } : band]
   })
@@ -210,6 +207,14 @@ function configuredOrder(def: PropertyDefinition | undefined, present: Set<strin
   return [...present].sort()
 }
 
+export function liveBucketOrder(
+  config: Pick<PropertyGroup, 'order_mode' | 'order'>,
+  def: PropertyDefinition | undefined,
+  present: Iterable<string>,
+): string[] {
+  return bucketOrder(config, def, new Set([...(def ? optionValues(def) : []), ...present]))
+}
+
 export function bucketOrder(
   group: Pick<PropertyGroup, 'order_mode' | 'order'>,
   def: PropertyDefinition | undefined,
@@ -238,14 +243,10 @@ function property(
   const groups: ResolvedGroup[] = []
   // Only LIVE schema keys earn an empty band: a stale manual-order key (a deleted option, an old date bucket snapshotted by a band drag) must never render a ghost band.
   const liveKeys = new Set(schemaOptionOrder(def) ?? [])
-  for (const key of bucketOrder(group, def, new Set(buckets.keys()))) {
+  for (const key of liveBucketOrder(group, def, buckets.keys())) {
     const items = buckets.get(key) ?? []
     if (items.length === 0 && !liveKeys.has(key)) continue
-    groups.push({
-      key,
-      kind: 'property',
-      items: applySort(items, sorter),
-    })
+    groups.push({ key, kind: 'bucket', value: key, items: applySort(items, sorter) })
   }
   // No "None" band: value-less rows are a flattened, header-less tail placed by the VIEW-level knob — it holds rows, so hide_empty_groups never touches it.
   return placeTail(groups, noValue, sorter, placement)
@@ -263,7 +264,7 @@ function structural(
     const children = node.children.map(build)
     return {
       key: node.id,
-      kind: 'structural-set',
+      kind: 'set',
       items: applySort(bySet.get(node.id) ?? [], sorter),
       ...(children.length > 0 ? { children } : {}),
     }
@@ -283,7 +284,7 @@ function structuralFlat(
   const rootRows = byParent.get(undefined) ?? []
   const groups: ResolvedGroup[] = setTree.map((node) => ({
     key: node.id,
-    kind: 'structural-set',
+    kind: 'set',
     items: applySort(
       subtreeIds(node).flatMap((id) => byParent.get(id) ?? []),
       sorter,
@@ -299,7 +300,7 @@ function locationFlat(
   placement: EmptyPlacement,
 ): ResolvedGroup[] {
   const bands = structuralFlat(rows, setTree, sorter, placement)
-  return [{ key: UNGROUPED, kind: 'ungrouped', items: bands.flatMap((g) => g.items) }]
+  return [{ key: UNGROUPED, kind: 'tail', items: bands.flatMap((g) => g.items) }]
 }
 
 /** Set ids are ULIDs, never containing `/`, so one set's collapse never bleeds into its twin bucket in another set. */
@@ -328,20 +329,14 @@ function structuralSubGrouped(
     let children = bucketOrder(sub, def, new Set(buckets.keys())).flatMap((b): ResolvedGroup[] => {
       const items = buckets.get(b)
       if (!items) return []
-      const key = subGroupKey(node.id, b)
       return [
-        {
-          key,
-          bucket: b,
-          kind: 'property',
-          items: applySort(items, sorter),
-        },
+        { key: subGroupKey(node.id, b), kind: 'bucket', value: b, items: applySort(items, sorter) },
       ]
     })
     children = placeTail(children, noValue, sorter, placement, subGroupKey(node.id, UNGROUPED))
     return {
       key: node.id,
-      kind: 'structural-set',
+      kind: 'set',
       items: [],
       ...(children.length > 0 ? { children } : {}),
     }
@@ -354,14 +349,14 @@ export function pruneEmptyBuckets(groups: ResolvedGroup[]): ResolvedGroup[] {
   return groups.flatMap((group) => {
     const { children: nested, ...band } = group
     const children = nested ? pruneEmptyBuckets(nested) : undefined
-    if (group.kind === 'property' && isEmptyBand({ ...band, children })) return []
+    if (group.kind === 'bucket' && isEmptyBand({ ...band, children })) return []
     return [children?.length ? { ...band, children } : band]
   })
 }
 
 export function pruneEmptyGroups(groups: ResolvedGroup[]): ResolvedGroup[] {
-  return groups.flatMap((group) => {
-    if (group.kind !== 'structural-set') return [group]
+  return groups.flatMap((group): ResolvedGroup[] => {
+    if (group.kind !== 'set') return [group]
     const { children: nested, ...band } = group
     const children = nested ? pruneEmptyGroups(nested) : []
     if (isEmptyBand({ ...band, children })) return []
@@ -371,61 +366,82 @@ export function pruneEmptyGroups(groups: ResolvedGroup[]): ResolvedGroup[] {
 
 function flat(rows: ViewRow[], sorter: Sorter | null): ResolvedGroup[] {
   if (rows.length === 0) return []
-  return [{ key: UNGROUPED, kind: 'ungrouped', items: applySort(rows, sorter) }]
+  return [{ key: UNGROUPED, kind: 'tail', items: applySort(rows, sorter) }]
 }
 
-/** Every consumer must read this, never the raw `kind`, or they diverge from what the table actually draws. */
-export function groupsStructurally(
-  group: GroupConfig | undefined,
-  schema: PropertyDefinition[],
-): boolean {
-  if (group?.kind === 'flat') return false
-  if (group?.kind !== 'property') return true
-  return !groupable(declaredType(group.property_id, schema))
-}
+export type GroupPlan = (
+  | { kind: 'none' }
+  | { kind: 'sets'; nests: boolean; sub: SubGroupConfig | undefined }
+  | { kind: 'property'; group: PropertyGroup }
+) & { locationSort: StructuralOrderMode | undefined }
 
-/** The sub-group the engine draws inside Set bands: a view grouped by Set, sub-grouped by a groupable property. */
-export function drawnSubGroup(
-  view: { group?: GroupConfig; sub_group?: SubGroupConfig },
+const readable = <C extends SubGroupConfig>(config: C, schema: PropertyDefinition[]): C =>
+  config.order_mode === 'manual' && declaredType(config.property_id, schema) === 'dateTime'
+    ? { ...config, order_mode: 'configured' }
+    : config
+
+export function groupPlan(
+  view: SavedView,
   schema: PropertyDefinition[],
-): SubGroupConfig | undefined {
+  nests: boolean,
+): GroupPlan {
   const { group, sub_group } = view
-  return groupsStructurally(group, schema) &&
-    sub_group &&
-    groupable(declaredType(sub_group.property_id, schema))
-    ? sub_group
-    : undefined
+  const locationSort =
+    !nests && view.sort?.[0]?.property_id === LOCATION_SORT
+      ? viewOption(view, 'location_order_mode')
+      : undefined
+  if (group?.kind === 'flat') return { kind: 'none', locationSort }
+  if (group?.kind === 'property' && groupable(declaredType(group.property_id, schema)))
+    return { kind: 'property', group: readable(group, schema), locationSort }
+  const sub =
+    nests && sub_group && groupable(declaredType(sub_group.property_id, schema))
+      ? readable(sub_group, schema)
+      : undefined
+  return { kind: 'sets', nests, sub, locationSort }
 }
 
-/** The grouping a view's property bands follow: its property group when the engine draws it, else the sub-group it draws inside Set bands. */
-export function bandGrouping(
-  view: { group?: GroupConfig; sub_group?: SubGroupConfig },
-  schema: PropertyDefinition[],
-): PropertyGroup | SubGroupConfig | undefined {
-  const { group } = view
-  return group?.kind === 'property' && !groupsStructurally(group, schema)
-    ? group
-    : drawnSubGroup(view, schema)
+export const bucketGroupingOf = (plan: GroupPlan): SubGroupConfig | undefined =>
+  plan.kind === 'property' ? plan.group : plan.kind === 'sets' ? plan.sub : undefined
+
+export function setOrderOf(plan: GroupPlan, view: SavedView): StructuralOrderMode {
+  switch (plan.kind) {
+    case 'sets':
+      return viewOption(view, 'structural_order_mode')
+    case 'none':
+      return plan.locationSort ?? 'custom'
+    case 'property':
+      return 'custom'
+  }
 }
+
+export const pageOrderOf = (
+  plan: GroupPlan,
+  view: SavedView,
+  sortKeys: number,
+): StructuralOrderMode => (sortKeys > 0 ? 'custom' : (plan.locationSort ?? setOrderOf(plan, view)))
+
+export const viewSetOrder = (plan: GroupPlan, view: SavedView): string[] | undefined =>
+  setOrderOf(plan, view) === 'custom' ? view.group_order : undefined
 
 export function resolveGroups(
   rows: ViewRow[],
-  group: GroupConfig | undefined,
+  plan: GroupPlan,
   schema: PropertyDefinition[],
   setTree: SetTreeNode[],
   sorter: Sorter | null,
   placement: EmptyPlacement,
-  subGroup?: SubGroupConfig,
-  flattenStructural = false,
-  locationFlatten = false,
 ): ResolvedGroup[] {
-  // Sort by Location forces structural resolution and flattens every band into one — it wins over a property group.
-  if (locationFlatten) return locationFlat(rows, setTree, sorter, placement)
-  if (group?.kind === 'flat') return flat(rows, sorter)
-  if (!groupsStructurally(group, schema))
-    return property(rows, group as PropertyGroup, schema, sorter, placement)
-  if (flattenStructural) return structuralFlat(rows, setTree, sorter, placement)
-  const drawn = drawnSubGroup({ group, sub_group: subGroup }, schema)
-  if (drawn) return structuralSubGrouped(rows, setTree, drawn, schema, sorter, placement)
-  return structural(rows, setTree, sorter, placement)
+  switch (plan.kind) {
+    case 'none':
+      return plan.locationSort === 'location'
+        ? locationFlat(rows, setTree, sorter, placement)
+        : flat(rows, sorter)
+    case 'property':
+      return property(rows, plan.group, schema, sorter, placement)
+    case 'sets':
+      if (!plan.nests) return structuralFlat(rows, setTree, sorter, placement)
+      return plan.sub
+        ? structuralSubGrouped(rows, setTree, plan.sub, schema, sorter, placement)
+        : structural(rows, setTree, sorter, placement)
+  }
 }

@@ -1,20 +1,20 @@
 // Everything a row, a band, or a page does in answer to the pointer, defined once for every view kind: band drops, row drops and where the order lands, opening a page, the hover ghost, the title menu's page actions, and the icon picker seat. A kind supplies the policy below and its own presentation, nothing else.
 
-import { useMemo, useRef, useState } from 'react'
+import { useRef, useState } from 'react'
 import { UNGROUPED } from '@pommora/core/Views/viewRow'
 import type { ViewRow } from '@pommora/core/Views/viewRow'
-import { viewOption } from '@pommora/core/Views/views'
+import type { CollectionNode, SetNode } from '@pommora/core/Nexus/tree'
 import type { PageMenuContext } from '@pommora/core/Actions/pageMenu'
-import type { PageTarget } from '@pommora/core/Navigation/navRef'
-import { relDirname } from '@pommora/core/Paths/posix'
-import { nextOrder } from '@pommora/uix/Interactions/reorderModel'
+import { type PageTarget, selectTargetOf } from '@pommora/core/Navigation/navRef'
+import { nextOrder } from '@pommora/uix/Utilities/moveItem'
 import {
   type GhostAnchor,
   useClearStrandedGhost,
   useGhostAnchor,
 } from '@pommora/uix/Interactions/ghostCreate'
 import { REVEAL_DWELL_MS } from '@pommora/uix/Interactions/hoverReveal'
-import { useCapitalizeMetadata } from '../../Properties/Cells/columnLabel'
+import { columnLabel, useCapitalizeMetadata } from '../../Properties/Cells/columnLabel'
+import { notifyUndoable } from '../../Interface/Notifications/notifications'
 import { useSession } from '../../Session/store'
 import { hoverGlance, leaveGlance } from '../../Interface/Glance/glanceAction'
 import { pageMoveContext, runPageAction } from '../../Interface/Menus/pageMenuActions'
@@ -22,20 +22,14 @@ import { propertyMenuBranches, runPropertyAction } from '../../Interface/Menus/p
 import { findCollectionForSet } from '../../Nexus/treeIndex'
 import { isOpenInTabs } from '../../Navigation/tabsModel'
 import { IconChoice } from '../../Assets/IconChoice'
-import type { BandDrop } from '../Bands/BandDnd'
-import {
-  bandReorderPatch,
-  childIdsOf,
-  flattenBands,
-  reparentFsOrder,
-  subGroupOrderPatch,
-} from '../Bands/bandDndModel'
-import { subtreeIds } from '../Pipeline/group'
-import { sameIds, spliceBeside, tieOrderWith } from '../creationOrder'
-import { pageIdsIn } from '../../Nexus/treePatch'
+import { type BandNode, springsInto } from '../Bands/bandModel'
+import { type BandDrop, type BandRef, bucketValueAt, dropBand } from '../Bands/bandRouter'
+import type { BandView } from '../Bands/GroupBand'
+import { sameIds, tieOrderWith } from '../creationOrder'
 import { useViewTileScope } from '../ViewTileScope'
 import type { ViewHostApi } from './useViewHost'
 import { useViewCreation } from './useViewCreation'
+import { mutateAhead } from './pendingView'
 
 interface ViewInteractionPolicy {
   ghost: {
@@ -77,26 +71,27 @@ export function useViewInteractions(host: ViewHostApi, policy: ViewInteractionPo
   const {
     source,
     view,
-    groups,
-    setTree,
     rows,
     rowById,
     rowBand,
     paintOrder,
-    setPaths,
+    sets,
+    bands,
+    nests,
     collapsed,
+    toggleCollapse,
     schema,
     tree,
-    structuralGrouping,
-    subGrouped,
+    ctx,
     groupPropId,
     groupPropType,
     canReassign,
     canReorderWithin,
     canRelocate,
+    crossBand,
     reassignBySortRun,
-    structuralOrder,
-    setStructuralPaint,
+    pageOrder,
+    setOrder,
     persistView,
     commitValue,
     commitGroupValue,
@@ -110,105 +105,61 @@ export function useViewInteractions(host: ViewHostApi, policy: ViewInteractionPo
 
   // ── Bands ─────────────────────────────────────────────────────────────────
 
-  const bands = useMemo(() => flattenBands(groups, collapsed), [groups, collapsed])
-  const onBandDrop = (draggedId: string, drop: BandDrop): void => {
-    const dragged = bands.find((b) => b.id === draggedId)
-    if (!dragged) return
-    if (dragged.kind === 'property') {
-      if (!structuralGrouping && view.group?.kind === 'property') {
-        if (drop.kind !== 'reorder') return
-        const patch = bandReorderPatch({
-          dragged,
-          beforeId: drop.beforeId,
-          view,
-          structuralIds: [],
-          propertyKeys: groups.filter((g) => g.kind === 'property').map((g) => g.key),
-        })
-        if (patch) void persistView(patch)
-        return
-      }
-      if (!subGrouped || !view.sub_group || view.sub_group.order_mode !== 'manual') return
-      const sub = subGroupOrderPatch(groups, view.sub_group, draggedId, drop.beforeId)
-      if (sub) void persistView(sub)
-      return
-    }
-    // The id universe is the set tree, never the rendered groups — a filter prunes emptied bands out of `groups`, and merging against that drops their stored order.
-    const structural = bandReorderPatch({
+  const valueAt = bucketValueAt(bands)
+  const bandDrop = (dragged: BandRef, drop: BandDrop): void =>
+    void dropBand(
+      bands,
       dragged,
-      beforeId: drop.beforeId,
-      view,
-      structuralIds: setTree.flatMap(subtreeIds),
-      propertyKeys: [],
-    })
-    if (!structural) return
-    if (drop.kind === 'reorder') {
-      if (structuralGrouping && viewOption(view, 'structural_order_mode') === 'location') {
-        const parentPath = dragged.parentId === null ? source.path : setPaths.get(dragged.parentId)
-        const siblingIds =
-          dragged.parentId === null
-            ? setTree.map((n) => n.id)
-            : (childIdsOf(setTree, dragged.parentId) ?? [])
-        if (!parentPath) return
-        void mutate({
-          op: 'reorderChildren',
-          parentPath,
-          key: 'set_order',
-          order: nextOrder(siblingIds, draggedId, drop.beforeId),
-        })
-        return
-      }
-      void persistView(structural)
-      return
-    }
-    const path = setPaths.get(draggedId)
-    const destPath = drop.targetParentId === null ? source.path : setPaths.get(drop.targetParentId)
-    const destChildIds =
-      drop.targetParentId === null
-        ? setTree.map((n) => n.id)
-        : childIdsOf(setTree, drop.targetParentId)
-    if (!path || !destPath || !destChildIds) return
-    // The fs move lands before the view write: views.save and set_order are both read-modify-writes on the container sidecar, so a failed move commits nothing.
-    void (async () => {
-      if (
-        !(await mutate({
-          op: 'moveSet',
-          path,
-          newParentPath: destPath,
-          order: reparentFsOrder(destChildIds, draggedId),
-        }))
-      )
-        return
-      void persistView(structural)
-    })()
-  }
-
-  // Which Set and which bucket a nested band names — the create engine seeds from it, and a reassign moves across it.
-  const subTargets = useMemo(() => {
-    const m = new Map<string, { setId: string | null; bucket: string | null }>()
-    for (const g of groups) {
-      if (g.kind === 'structural-set') {
-        for (const c of g.children ?? []) m.set(c.key, { setId: g.key, bucket: c.bucket ?? null })
-      } else if (g.kind === 'ungrouped') m.set(g.key, { setId: null, bucket: null })
-    }
-    return m
-  }, [groups])
+      drop,
+      { view, schema, sets, sourcePath: source.path, custom: setOrder === 'custom' },
+      {
+        persistView,
+        mutate: mutateAhead,
+        switched: ({ propertyId, prior }) =>
+          notifyUndoable(
+            `Switched to custom ${columnLabel(propertyId, schema, ctx.contexts, capitalize)} order`,
+            () => void persistView(prior),
+          ),
+      },
+    )
   const creation = useViewCreation(() => ({
     ...host,
-    bandBucket: (key) => (subGrouped ? (subTargets.get(key)?.bucket ?? null) : key),
+    bandBucket: valueAt,
     onCreated: (created) => policy.rename(created, true),
   }))
+  const bandView: BandView = {
+    collapsed,
+    toggle: toggleCollapse,
+    add: (key) => void creation.bandAdd(key),
+    open: (set) => void select(selectTargetOf(set)),
+    springs: (dragged: string, node: BandNode) =>
+      bands.byKey.has(dragged)
+        ? springsInto(bands, dragged, node, nests)
+        : rowById.has(dragged) && crossBand,
+  }
 
   // ── Rows ──────────────────────────────────────────────────────────────────
 
   const bandRowIds = (bandKey: string, excludeId: string): string[] =>
     paintOrder.flatMap((r) => (r.groupKey === bandKey && r.id !== excludeId ? [r.id] : []))
-  const isSiblingOf = (parent: string, id: string): boolean => {
-    const path = rowById.get(id)?.path
-    return path !== undefined && relDirname(path) === parent
-  }
+  const folderOf = (setId: string | null | undefined): CollectionNode | SetNode | undefined =>
+    setId == null ? source : sets.node.get(setId)
 
   const reorderWithin = (bandKey: string, activeId: string, beforeId: string | null): void => {
+    const row = rowById.get(activeId)
     const bandOrder = nextOrder(bandRowIds(bandKey, activeId), activeId, beforeId)
+    if (pageOrder === 'location') {
+      const folder = folderOf(row?.parentSetId)
+      if (!row || !folder) return
+      const siblings = folder.pages.map((p) => p.id)
+      const after = bandOrder
+        .slice(bandOrder.indexOf(activeId) + 1)
+        .find((id) => rowById.get(id)?.parentSetId === row.parentSetId)
+      const order = nextOrder(siblings, activeId, after ?? null)
+      if (!sameIds(order, siblings))
+        void mutateAhead({ op: 'movePage', path: row.path, newParentPath: folder.path, order })
+      return
+    }
     let placed = false
     const full = paintOrder.flatMap((r) => {
       if (r.groupKey !== bandKey) return r.id === activeId ? [] : [r.id]
@@ -223,70 +174,56 @@ export function useViewInteractions(host: ViewHostApi, policy: ViewInteractionPo
       )
     )
       return
-    if (structuralOrder) {
-      setStructuralPaint(full)
-      const row = rowById.get(activeId)
-      if (!row) return
-      const parent = relDirname(row.path)
-      // The band may gather a whole subtree, so the on-disk order is built from the dragged page's true siblings alone.
-      const after = bandOrder
-        .slice(bandOrder.indexOf(activeId) + 1)
-        .find((id) => isSiblingOf(parent, id))
-      const siblings = pageIdsIn(tree, parent)
-      if (!siblings) return
-      const order = spliceBeside(
-        siblings.filter((id) => id !== activeId),
-        after ?? null,
-        activeId,
-        'above',
-      )
-      if (!sameIds(order, siblings))
-        void mutate({ op: 'movePage', path: row.path, newParentPath: parent, order })
-      return
-    }
     void persistView({ manual_order: full }, { viewState: true })
     reassignBySortRun(full, bandKey, activeId)
   }
 
   const relocate = (activeId: string, toZone: string, beforeId: string | null): void => {
     const row = rowById.get(activeId)
-    const destPath = toZone === UNGROUPED ? source.path : setPaths.get(toZone)
-    if (!row || !destPath || destPath === relDirname(row.path)) return
-    const destIds = pageIdsIn(tree, destPath)
-    if (!destIds) return
+    const node = bands.byKey.get(toZone)
+    const dest = node?.kind === 'set' ? node.set : node?.parentKey === null ? source : undefined
+    if (!row || !dest) return
+    const destSetId = dest === source ? undefined : dest.id
+    if (destSetId === row.parentSetId) return
     const bandIds = bandRowIds(toZone, activeId)
     const at = beforeId === null ? bandIds.length : bandIds.indexOf(beforeId)
-    const sibBefore = bandIds.slice(at).find((id) => isSiblingOf(destPath, id))
-    const order = spliceBeside(destIds, sibBefore ?? null, activeId, 'above')
-    const allIds = rows.map((r) => r.id)
-    const spliceLive = (existing: string[] | undefined): string[] =>
-      tieOrderWith(existing, allIds, activeId, beforeId, 'above')
-    setStructuralPaint((m) => m && spliceLive(m))
+    const sibBefore = bandIds.slice(at).find((id) => rowById.get(id)?.parentSetId === destSetId)
+    const order = nextOrder(
+      dest.pages.map((p) => p.id),
+      activeId,
+      sibBefore ?? null,
+    )
     if (view.manual_order)
-      void persistView({ manual_order: spliceLive(view.manual_order) }, { viewState: true })
-    void mutate({ op: 'movePage', path: row.path, newParentPath: destPath, order })
+      void persistView(
+        {
+          manual_order: tieOrderWith(
+            view.manual_order,
+            rows.map((r) => r.id),
+            activeId,
+            beforeId,
+            'above',
+          ),
+        },
+        { viewState: true },
+      )
+    void mutateAhead({ op: 'movePage', path: row.path, newParentPath: dest.path, order })
   }
 
   const reassign = (activeId: string, toZone: string): void => {
-    if (!groupPropId) return
-    if (!subGrouped) {
-      commitGroupValue(activeId, groupPropId, groupPropType, toZone)
-      return
-    }
-    const path = rowById.get(activeId)?.path
-    const dest = subTargets.get(toZone)
-    if (!path || !dest) return
-    const destPath = dest.setId === null ? source.path : setPaths.get(dest.setId)
-    if (!destPath) return
-    const cur = subTargets.get(rowBand.get(activeId) ?? '')
+    const row = rowById.get(activeId)
+    const to = bands.byKey.get(toZone)
+    const from = bands.byKey.get(rowBand.get(activeId) ?? '')
+    if (!groupPropId || !row || !to || !from || to.kind === 'set') return
+    const value = valueAt(toZone)
     const write =
-      dest.bucket === (cur?.bucket ?? null)
+      value === valueAt(from.key)
         ? Promise.resolve(true)
-        : commitGroupValue(activeId, groupPropId, groupPropType, dest.bucket ?? UNGROUPED)
-    if (dest.setId !== (cur?.setId ?? null))
-      void write?.then((ok) =>
-        ok ? mutate({ op: 'movePage', path, newParentPath: destPath }) : null,
-      )
+        : commitGroupValue(activeId, groupPropId, groupPropType, value ?? UNGROUPED)
+    const dest = folderOf(to.parentKey)
+    if (to.parentKey === from.parentKey || !dest) return
+    void write?.then((ok) =>
+      ok ? mutateAhead({ op: 'movePage', path: row.path, newParentPath: dest.path }) : null,
+    )
   }
 
   /** One entry for every row drop: a same-band slot reorders, a cross-band one moves the page or rewrites its group value. `beforeId` is null at the target band's end. */
@@ -301,24 +238,32 @@ export function useViewInteractions(host: ViewHostApi, policy: ViewInteractionPo
     else if (canReassign) reassign(activeId, toZone)
   }
 
-  /** A structural reorder may only land inside the dragged page's own sibling run: a flattened band gathers a whole subtree. Null refuses the slot. */
-  const structuralSlot = (zoneId: string, index: number, activeId: string): number | null => {
-    if (!structuralOrder || rowBand.get(activeId) !== zoneId) return index
-    const row = rowById.get(activeId)
-    if (!row) return null
-    const parent = relDirname(row.path)
-    let first = -1
-    let count = 0
-    bandRowIds(zoneId, activeId).forEach((id, i) => {
-      if (!isSiblingOf(parent, id)) return
-      if (first < 0) first = i
-      count++
-    })
-    if (first < 0) return null
-    return index >= first && index <= first + count ? index : null
+  const siblingRun = useRef<{
+    order: typeof paintOrder
+    zone: string
+    id: string
+    first: number
+    count: number
+  } | null>(null)
+  const siblingSlot = (zone: string, index: number, activeId: string): number | null => {
+    if (pageOrder !== 'location' || rowBand.get(activeId) !== zone) return index
+    const parent = rowById.get(activeId)?.parentSetId
+    let r = siblingRun.current
+    if (!r || r.order !== paintOrder || r.zone !== zone || r.id !== activeId) {
+      let first = -1
+      let count = 0
+      bandRowIds(zone, activeId).forEach((id, i) => {
+        if (rowById.get(id)?.parentSetId !== parent) return
+        if (first < 0) first = i
+        count++
+      })
+      r = { order: paintOrder, zone, id: activeId, first, count }
+      siblingRun.current = r
+    }
+    return r.first >= 0 && index >= r.first && index <= r.first + r.count ? index : null
   }
 
-  // ── Carry ────────────────────────────────────────────────────────────────
+  // ── Carry ─────────────────────────────────────────────────────────────────
 
   const carry = (id: string): PageTarget | null => {
     const row = rowById.get(id)
@@ -434,12 +379,11 @@ export function useViewInteractions(host: ViewHostApi, policy: ViewInteractionPo
   }
 
   return {
-    bands,
-    bandAdd: creation.bandAdd,
-    onBandDrop,
+    bandView,
+    bandDrop,
     onDrop,
     carry,
-    structuralSlot,
+    siblingSlot,
     openPage,
     titleMenuContext,
     runTitleAction,

@@ -23,10 +23,11 @@ import {
   carries,
   DropSlot,
   type Family,
+  LineZone,
   SortableZone,
   useDragItem,
 } from '@pommora/uix/Interactions/drag'
-import { moveBefore } from '@pommora/uix/Utilities/moveItem'
+import { resolveRowOrder } from '@pommora/core/Properties/rowOrder'
 import { cx } from '@pommora/uix/Utilities/cx'
 import { useElementZoom } from '@pommora/uix/Utilities/zoom'
 import { useStableApi } from '@pommora/uix/Utilities/stableApi'
@@ -36,15 +37,14 @@ import { useSession } from '../../Session/store'
 import { glanceShown } from '../../Interface/Glance/glanceAction'
 import { AssetImage } from '../../Assets/AssetImage'
 import { useBannerMenu } from '../../Interface/Header/useBannerMenu'
-import { byOrder } from '@pommora/core/Nexus/treePatch'
 import { navKey, selectTargetOf, TAB_FAMILY } from '../../Navigation/navRef'
 import type { ViewHostApi } from '../Host/useViewHost'
 import { GHOST_TRAVEL_HOLD_MS, GhostSuppress } from '@pommora/uix/Interactions/ghostCreate'
 import { Reveal } from '@pommora/uix/Animations/Reveal'
 import { columnLabel, useCapitalizeMetadata } from '../../Properties/Cells/columnLabel'
 import { useColumnStyleMap } from '../Host/useColumnStyles'
-import { ViewGroupBand } from '../Bands/ViewGroupBand'
-import { BandDnd } from '../Bands/BandDnd'
+import { bandSpec, GroupBand } from '../Bands/GroupBand'
+import { viewSetOrder } from '../Pipeline/group'
 import { rowHover, type TitleMenuContext, useViewInteractions } from '../Host/useViewInteractions'
 import type { ValueContext } from '../../Properties/valueContext'
 import { NO_TRAIL, type TrailSegment } from '@pommora/uix/Elements/NavTrail'
@@ -143,24 +143,17 @@ export function CardsView({ host }: { host: ViewHostApi }): React.JSX.Element {
     columns,
     groups,
     ctx,
-    setNames,
-    setIcons,
-    setPaths,
     rowById,
-    bandLabel,
+    bands,
     collapsed,
-    toggleCollapse,
-    structuralGrouping: structural,
-    canReassign,
     canReorderWithin,
-    canRelocate,
+    crossBand,
     searching,
     setStylePatch,
     hideProperty,
     revealProperty,
     commitValue,
     pickTarget,
-    mutate,
     select,
     tree,
   } = host
@@ -171,32 +164,16 @@ export function CardsView({ host }: { host: ViewHostApi }): React.JSX.Element {
 
   // ── Set cards ─────────────────────────────────────────────────────────────
 
-  const [setOrderOverride, setSetOrderOverride] = useState<string[] | null>(null)
-  useEffect(() => setSetOrderOverride(null), [source])
-
-  const baseSets = source.sets ?? []
   const sets = useMemo(
-    () => (setOrderOverride ? byOrder(baseSets, setOrderOverride) : baseSets),
-    [baseSets, setOrderOverride],
+    () => resolveRowOrder(source.sets ?? [], (s) => s.id, viewSetOrder(host.plan, view)),
+    [source.sets, host.plan, view],
   )
   const showSetCards = viewOption(view, 'set_cards') && sets.length > 0
-  const reorderSets = (id: string, beforeId: string | null): void => {
-    const moved = moveBefore(sets, (s) => s.id, id, beforeId)
-    if (!moved) return
-    const order = moved.map((s) => s.id)
-    setSetOrderOverride(order)
-    void mutate({ op: 'reorderChildren', parentPath: source.path, key: 'set_order', order }).then(
-      (ok) => {
-        if (!ok) setSetOrderOverride((cur) => (cur === order ? null : cur))
-      },
-    )
-  }
 
   // ── Interactions ──────────────────────────────────────────────────────────
 
   const banner = viewOption(view, 'card_banner')
   const shellClass = cx('cards-view', banner === 'none' && 'is-compact')
-  const flatMode = view.group?.kind === 'flat'
   const hideLocation = viewOption(view, 'hide_location')
 
   const [pendingSeat, setPendingSeat] = useState<string | null>(null)
@@ -227,6 +204,11 @@ export function CardsView({ host }: { host: ViewHostApi }): React.JSX.Element {
     },
   })
   const effectiveZoom = useElementZoom(host.viewRootRef)
+  const reorderSets = (id: string, beforeId: string | null): void =>
+    interactions.bandDrop(
+      { kind: 'set', key: id, depth: 0, parentKey: null },
+      { kind: 'before', beforeKey: beforeId, parentKey: null },
+    )
 
   // ── Value and add pickers ─────────────────────────────────────────────────
 
@@ -334,11 +316,11 @@ export function CardsView({ host }: { host: ViewHostApi }): React.JSX.Element {
       for (const { parentSetId } of rowById.values()) {
         if (!parentSetId || parentSetId in m) continue
         const chain = ancestryOf(tree, { kind: 'set', id: parentSetId })
-        if (chain) m[parentSetId] = chain.slice(structural ? 2 : 1)
+        if (chain) m[parentSetId] = chain.slice(host.plan.kind === 'sets' ? 2 : 1)
       }
     trailHeld.current = stabilize(m, trailHeld.current)
     return trailHeld.current
-  }, [groups, tree, structural, hideLocation])
+  }, [groups, tree, host.plan.kind, hideLocation])
 
   // ── The ghost's seat and its FLIP ─────────────────────────────────────────
 
@@ -372,7 +354,6 @@ export function CardsView({ host }: { host: ViewHostApi }): React.JSX.Element {
   )
   const cardScale = view.card_size ?? TENTHS_SCALE.default
   const [scope] = useState((): Family<string> => ({ name: 'cards' }))
-  const crossBand = !searching && canReorderWithin && (canReassign || canRelocate)
   const cardCarry = [carries(scope, (id) => id), carries(TAB_FAMILY, interactions.carry)]
   const overlayShell = (rect: Box, card: React.ReactNode): React.ReactNode => (
     <div
@@ -456,81 +437,67 @@ export function CardsView({ host }: { host: ViewHostApi }): React.JSX.Element {
             </SortableZone>
           </div>
         )}
-        <BandDnd
-          bands={interactions.bands}
-          labelFor={bandLabel}
-          onDrop={interactions.onBandDrop}
-          nestable={!host.flat}
-          disabled={host.searching}
-        >
-          {groups.map((g) => {
-            const isCollapsed = !flatMode && collapsed.has(g.key)
-            return (
-              <ViewGroupBand
-                key={g.key}
-                group={g}
-                view={view}
-                ctx={ctx}
-                setNames={setNames}
-                setIcons={setIcons}
-                source={source}
-                collapsed={isCollapsed}
-                onToggle={() => toggleCollapse(g.key)}
-                onAdd={setPaths.has(g.key) ? () => interactions.bandAdd(g.key) : undefined}
-                headless={flatMode || (g.kind === 'ungrouped' && structural)}
-                fill
-              >
-                <SortableZone
-                  items={g.items.map((r) => r.id)}
-                  label={(id) => rowById.get(id)?.title ?? ''}
-                  fixed={searching || !canReorderWithin}
-                  family={crossBand ? scope : undefined}
-                  disclose={crossBand}
-                  carry={cardCarry}
-                  resolveIndex={(index, id) => interactions.structuralSlot(g.key, index, id)}
-                  onMove={(id, beforeId) => interactions.onDrop(id, g.key, beforeId)}
-                  receive={(item, beforeId) => interactions.onDrop(item, g.key, beforeId)}
-                  renderOverlay={cardOverlay}
-                  className="cards-grid card-grid is-fill"
-                >
-                  <DropSlot />
-                  {g.items.flatMap((row) => {
-                    const card = (
-                      <PageCard
-                        key={row.id}
-                        row={row}
-                        view={view}
-                        banner={banner}
-                        nexusId={nexusId}
-                        columns={columns}
-                        ctx={ctx}
-                        loc={trailBySet[row.parentSetId ?? '']}
-                        defaultIcons={defaultIcons}
-                        capitalize={capitalize}
-                        styleById={styleById}
-                        api={cardApi}
-                        allowInlineRemove={effectiveZoom >= 0.8}
-                      />
-                    )
-                    if (ghostShown !== row.id && pendingSeat !== row.id) return [card]
-                    return [
-                      card,
-                      // FLIP seats the ghost among its neighbors on the way in; Reveal collapses it on the way out, so an aborted ghost animates away like the sidebar and table ones instead of vanishing.
-                      <Reveal
-                        key={`ghost-${row.id}`}
-                        open={!interactions.ghost.ghost?.closing}
-                        fill
-                        onCollapsed={interactions.ghost.closed}
-                      >
-                        {ghostCard}
-                      </Reveal>,
-                    ]
-                  })}
-                </SortableZone>
-              </ViewGroupBand>
-            )
+        <LineZone
+          {...bandSpec({
+            bands,
+            collapsed,
+            nests: host.nests,
+            drop: interactions.bandDrop,
+            disabled: host.dragDisabled,
           })}
-        </BandDnd>
+        >
+          {groups.map((g) => (
+            <GroupBand key={g.key} node={bands.byKey.get(g.key)} bands={interactions.bandView} fill>
+              <SortableZone
+                items={g.items.map((r) => r.id)}
+                label={(id) => rowById.get(id)?.title ?? ''}
+                fixed={searching || !canReorderWithin}
+                family={crossBand ? scope : undefined}
+                disclose={crossBand}
+                carry={cardCarry}
+                resolveIndex={(index, id) => interactions.siblingSlot(g.key, index, id)}
+                onMove={(id, beforeId) => interactions.onDrop(id, g.key, beforeId)}
+                receive={(item, beforeId) => interactions.onDrop(item, g.key, beforeId)}
+                renderOverlay={cardOverlay}
+                className="cards-grid card-grid is-fill"
+              >
+                <DropSlot />
+                {g.items.flatMap((row) => {
+                  const card = (
+                    <PageCard
+                      key={row.id}
+                      row={row}
+                      view={view}
+                      banner={banner}
+                      nexusId={nexusId}
+                      columns={columns}
+                      ctx={ctx}
+                      loc={trailBySet[row.parentSetId ?? '']}
+                      defaultIcons={defaultIcons}
+                      capitalize={capitalize}
+                      styleById={styleById}
+                      api={cardApi}
+                      allowInlineRemove={effectiveZoom >= 0.8}
+                    />
+                  )
+                  if (ghostShown !== row.id && pendingSeat !== row.id) return [card]
+                  return [
+                    card,
+                    // FLIP seats the ghost among its neighbors on the way in; Reveal collapses it on the way out, so an aborted ghost animates away like the sidebar and table ones instead of vanishing.
+                    <Reveal
+                      key={`ghost-${row.id}`}
+                      open={!interactions.ghost.ghost?.closing}
+                      fill
+                      onCollapsed={interactions.ghost.closed}
+                    >
+                      {ghostCard}
+                    </Reveal>,
+                  ]
+                })}
+              </SortableZone>
+            </GroupBand>
+          ))}
+        </LineZone>
         {interactions.ghostStanding && (
           <div className="cards-grid card-grid is-fill">{ghostCard}</div>
         )}

@@ -35,17 +35,18 @@ export interface ResolvedColumn {
   kind: ColumnKind
 }
 
-export type GroupKind = 'structural-set' | 'property' | 'ungrouped'
-
-export interface ResolvedGroup {
+interface GroupBase {
   key: string
-  kind: GroupKind
   items: ViewRow[]
   children?: ResolvedGroup[]
-  bucket?: string
 }
 
-export const isEmptyBand = (group: Pick<ResolvedGroup, 'items' | 'children'>): boolean =>
+export type ResolvedGroup =
+  | (GroupBase & { kind: 'set' })
+  | (GroupBase & { kind: 'bucket'; value: string })
+  | (GroupBase & { kind: 'tail' })
+
+export const isEmptyBand = (group: Pick<GroupBase, 'items' | 'children'>): boolean =>
   group.items.length === 0 && !group.children?.length
 
 /** Stored on disk in `collapsed_groups`, so it round-trips across builds — the single source the pipeline and the render code both match group keys against. */

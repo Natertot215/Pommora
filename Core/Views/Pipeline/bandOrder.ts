@@ -1,24 +1,22 @@
 // Listed sets lead in array order, unlisted sets trail in fs order; non-structural groups HOLD their slot, so the view-level ungrouped_placement survives a manual band order.
 
 import type { ResolvedGroup } from '@pommora/core/Views/viewRow'
+import { resolveRowOrder } from '@pommora/core/Properties/rowOrder'
 
 export function orderGroups(
   groups: ResolvedGroup[],
   groupOrder: string[] | undefined,
 ): ResolvedGroup[] {
   if (!groupOrder || groupOrder.length === 0) return groups
-  const pos = new Map(groupOrder.map((id, i) => [id, i]))
   const walk = (level: ResolvedGroup[]): ResolvedGroup[] => {
     const recursed = level.map((g) => (g.children ? { ...g, children: walk(g.children) } : g))
-    const sets = recursed.filter((g) => g.kind === 'structural-set')
-    if (sets.length === 0) return recursed
-    const listed = sets
-      .filter((g) => pos.has(g.key))
-      .sort((a, b) => pos.get(a.key)! - pos.get(b.key)!)
-    const unlisted = sets.filter((g) => !pos.has(g.key))
-    const reordered = [...listed, ...unlisted]
+    const sets = resolveRowOrder(
+      recursed.filter((g) => g.kind === 'set'),
+      (g) => g.key,
+      groupOrder,
+    )
     let i = 0
-    return recursed.map((g) => (g.kind === 'structural-set' ? reordered[i++] : g))
+    return recursed.map((g) => (g.kind === 'set' ? sets[i++] : g))
   }
   return walk(groups)
 }

@@ -11,12 +11,11 @@ import type { CollectionNode, NexusTree, SetNode } from './tree'
 import {
   containerAt,
   insertCreatedInTree,
-  moveInTree,
+  orderInTree,
   patchContextGroupsInTree,
   removeNodeInTree,
   renameNodeInTree,
   repointRegistryInTree,
-  reorderChildrenInTree,
 } from './treePatch'
 import { isMarkdownFile, relDirname } from '../Paths/posix'
 import { isAdoptedId } from './ids'
@@ -58,16 +57,14 @@ function patchForMutation(
       return reply.created ? insertCreatedInTree(tree, req, reply.created) : null
     case 'movePage':
     case 'moveSet':
-      return moveInTree(tree, req)
+    case 'reorderChildren':
+    case 'reorderTop':
+      return orderInTree(tree, req)
     case 'rename':
       // The landed name, never the ask: a from-create rename may have disambiguated.
       return renameNodeInTree(tree, req.path, reply.renamed?.name ?? req.newName)
     case 'delete':
       return removeNodeInTree(tree, req.path)
-    case 'reorderChildren':
-      return reorderChildrenInTree(tree, req.parentPath, req.order)
-    case 'reorderTop':
-      return reorderChildrenInTree(tree, '', req.order)
     case 'renameContext':
     case 'renameSpace':
     case 'reorderContexts':

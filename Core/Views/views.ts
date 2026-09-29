@@ -17,17 +17,16 @@ export const DEFAULT_VIEW_TYPE: ViewType = 'table'
 interface ViewKind {
   label: string
   icon: string
-  flat: boolean
+  nests: boolean
 }
 
 export const VIEW_KINDS: Record<ViewType, ViewKind> = {
-  // Table indents its structural groups until Table Flatten lands, at which point flatness becomes the view's own setting with the kind as its default.
-  table: { label: 'Table', icon: 'view-table', flat: false },
-  cards: { label: 'Cards', icon: 'cards-grid', flat: true },
-  list: { label: 'List', icon: 'list-rounded', flat: false },
-  gallery: { label: 'Gallery', icon: 'layout-dashboard', flat: false },
-  calendar: { label: 'Calendar', icon: 'calendar-days', flat: false },
-  timeline: { label: 'Timeline', icon: 'chart-gantt', flat: false },
+  table: { label: 'Table', icon: 'view-table', nests: true },
+  cards: { label: 'Cards', icon: 'cards-grid', nests: false },
+  list: { label: 'List', icon: 'list-rounded', nests: true },
+  gallery: { label: 'Gallery', icon: 'layout-dashboard', nests: true },
+  calendar: { label: 'Calendar', icon: 'calendar-days', nests: true },
+  timeline: { label: 'Timeline', icon: 'chart-gantt', nests: true },
 }
 
 const VIEW_FORMATS = ['standard', 'compact'] as const
@@ -461,14 +460,6 @@ export function clearHiddenBuckets(v: GroupedView, propertyId: string): string[]
 }
 
 export const LOCATION_SORT = '__location__'
-
-/** Both the pipeline and the card drag must read the same predicate: when they disagree, one honors a key the other doesn't. */
-export function isLocationFsOrder(view: SavedView): boolean {
-  return (
-    view.sort?.[0]?.property_id === LOCATION_SORT &&
-    viewOption(view, 'location_order_mode') === 'location'
-  )
-}
 
 const VIEW_ID_PREFIX = 'view_'
 

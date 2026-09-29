@@ -1,6 +1,5 @@
 import type { CollectionNode, SetNode } from '@pommora/core/Nexus/tree'
 import {
-  optionsOf,
   PROPERTY_TYPES,
   type PropertyDefinition,
   specOf,
@@ -16,8 +15,8 @@ import { MenuRowView, MenuTopRow, MenuSeparator, pickerRow } from '@pommora/uix/
 import { useSaveView } from '../viewWrite'
 import { declaredType } from '../../Properties/value'
 import type { PickerOption } from '@pommora/uix/Pickers/PickerControl'
-import { CustomList, PropertyPreview, SUB_LOOK } from './OptionOrderList'
-import { bucketOrder } from '../Pipeline/group'
+import { OptionOrderList, SUB_LOOK } from './OptionOrderList'
+import { liveBucketOrder } from '../Pipeline/group'
 import {
   STAMP_TARGETS,
   schemaTargets,
@@ -125,16 +124,16 @@ export function SortFrame({
     primaryDef && PROPERTY_TYPES[primaryDef.type].kind === 'select' ? primaryDef : undefined
 
   const savePrimary = (next: SortCriterion): void => save(sub ? [next, sub] : [next])
-  const seededOrder = (): string[] =>
-    bucketOrder(
-      { order_mode: primary?.direction === 'descending' ? 'reversed' : 'configured' },
-      finiteDef,
-      new Set(optionsOf(finiteDef).map((o) => o.value)),
-    )
+  const ordering = primary?.order
+    ? { order_mode: 'manual' as const, order: primary.order }
+    : {
+        order_mode:
+          primary?.direction === 'descending' ? ('reversed' as const) : ('configured' as const),
+      }
 
   const listed: PickerOption<string>[] = [
     { value: '_none', label: 'None', icon: 'circle-off' as const },
-    ...(VIEW_KINDS[view.type].flat || primary?.property_id === LOCATION_SORT
+    ...(!VIEW_KINDS[view.type].nests || primary?.property_id === LOCATION_SORT
       ? [{ value: LOCATION_SORT, label: 'Location', icon: 'folder' as const }]
       : []),
     ...targets.filter((t) => t.id !== sub?.property_id).map(targetOption),
@@ -189,7 +188,7 @@ export function SortFrame({
                 (v: OrderChoice) =>
                   savePrimary(
                     v === 'custom'
-                      ? { ...primary, order: seededOrder() }
+                      ? { ...primary, order: liveBucketOrder(ordering, finiteDef, []) }
                       : { property_id: primary.property_id, direction: v },
                   ),
                 sub ? SUB_LOOK : undefined,
@@ -221,20 +220,11 @@ export function SortFrame({
             <>
               <MenuSeparator flush />
               <div className={`${middleRegion} scroll-fade`}>
-                {primary.order ? (
-                  <CustomList
-                    group={{ order_mode: 'manual', order: primary.order }}
-                    def={finiteDef}
-                    onSave={(order) => savePrimary({ ...primary, order })}
-                  />
-                ) : (
-                  <PropertyPreview
-                    group={{
-                      order_mode: primary.direction === 'descending' ? 'reversed' : 'configured',
-                    }}
-                    def={finiteDef}
-                  />
-                )}
+                <OptionOrderList
+                  group={ordering}
+                  def={finiteDef}
+                  onSave={(order) => savePrimary({ ...primary, order })}
+                />
               </div>
             </>
           )}

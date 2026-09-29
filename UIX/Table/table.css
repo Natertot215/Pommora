@@ -131,10 +131,6 @@
 .data-row.selected:hover {
   background: var(--text-selection);
 }
-.data-row.row-dragging {
-  opacity: var(--state-ghost);
-}
-
 /* The heading row keeps its borders so it stays structured over an otherwise lineless body. */
 .table-grid.no-borders .data-row {
   border-top: none;

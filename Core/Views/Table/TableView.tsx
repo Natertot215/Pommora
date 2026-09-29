@@ -29,12 +29,11 @@ import { fileChipIndex, pickFileInto, runFileMenuAction } from '../../Properties
 import { useSession } from '../../Session/store'
 import { glanceShown } from '../../Interface/Glance/glanceAction'
 import type { ValueContext } from '../../Properties/valueContext'
-import { BandDnd } from '../Bands/BandDnd'
 import { isCmd, isSecondaryClick } from '@pommora/uix/Interactions/chords'
 import { Cell } from '../../Properties/Cells/Cell'
 import { EntityIcon } from '../../Assets/EntityIcon'
 import { PropertyTypeIcon, propertyIcon } from '../../Properties/Cells/PropertyTypes'
-import { ViewGroupBand } from '../Bands/ViewGroupBand'
+import { bandSpec, GroupBand, tableSpec } from '../Bands/GroupBand'
 import { Reveal } from '@pommora/uix/Animations/Reveal'
 import { columnLabel, useCapitalizeMetadata } from '../../Properties/Cells/columnLabel'
 import { type DragShift, gapShift, useColumns } from './useColumns'
@@ -55,7 +54,7 @@ import {
   LineZone,
   useLineRow,
 } from '@pommora/uix/Interactions/drag'
-import { laneAt, laneSlot, type LaneSlot } from '@pommora/uix/Interactions/reorderModel'
+import { laneSlot, type LaneSlot } from '@pommora/uix/Interactions/reorderModel'
 import { TAB_FAMILY } from '@pommora/core/Navigation/navRef'
 import { ROW_END, rowLine, type RowSnap, rowSnap } from './rowInsertion'
 import { openWebLink } from '../../Web/openWebLink'
@@ -68,29 +67,20 @@ import { popMenu } from '../../Actions/menuActions'
 export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
   const capitalize = useCapitalizeMetadata()
   const {
-    source,
     schema,
     view,
     columns,
     groups,
     ctx,
-    setNames,
-    setIcons,
-    setPaths,
     rowById,
     rowBand,
-    bandLabel,
+    bands,
     collapsed,
-    toggleCollapse,
-    flat,
-    canReassign,
-    canReorderWithin,
-    canRelocate,
+    crossBand,
     dragDisabled,
     commitValue,
     pickTarget,
     mutate,
-    select,
   } = host
   const selection = useSession((s) => s.selection)
   const {
@@ -458,11 +448,11 @@ export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
   const renderRows = (g: ResolvedGroup, depth: number, visible: boolean): React.JSX.Element[] => {
     const isCollapsed = collapsed.has(g.key)
     const itemsVisible = visible && !isCollapsed
-    const itemDepth = g.kind === 'ungrouped' ? depth : depth + 1
-    const memberIndent = g.kind === 'ungrouped' ? indent : groupIndent
+    const itemDepth = g.kind === 'tail' ? depth : depth + 1
+    const memberIndent = g.kind === 'tail' ? indent : groupIndent
     const members: React.JSX.Element[] = [
       ...g.items.flatMap((row, i) => {
-        const lead = i === 0 && (g.kind !== 'ungrouped' || !renderedAnyRow)
+        const lead = i === 0 && (g.kind !== 'tail' || !renderedAnyRow)
         if (itemsVisible) renderedAnyRow = true
         const rendered = [
           <DataRow
@@ -498,51 +488,36 @@ export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
       }),
       ...(g.children ?? []).flatMap((child) => renderRows(child, itemDepth, itemsVisible)),
     ]
-    if (g.kind === 'ungrouped') return members
     return [
-      <ViewGroupBand
+      <GroupBand
         key={`gb-${g.key}`}
-        group={g}
-        view={view}
-        ctx={ctx}
-        setNames={setNames}
-        setIcons={setIcons}
-        source={source}
-        setPath={g.kind === 'structural-set' ? setPaths.get(g.key) : undefined}
-        onAdd={
-          g.kind === 'structural-set' && setPaths.has(g.key)
-            ? () => interactions.bandAdd(g.key)
-            : undefined
-        }
-        onOpen={
-          g.kind === 'structural-set' &&
-          source.kind === 'collection' &&
-          depth === 0 &&
-          setPaths.has(g.key)
-            ? () => void select({ kind: 'set', id: g.key, path: setPaths.get(g.key) as string })
-            : undefined
-        }
-        collapsed={isCollapsed}
-        onToggle={() => toggleCollapse(g.key)}
+        node={bands.byKey.get(g.key)}
+        bands={interactions.bandView}
         indent={groupIndent(depth)}
       >
         {members}
-      </ViewGroupBand>,
+      </GroupBand>,
     ]
   }
-  const across = canReassign || canRelocate
   const rowDrag: LineSpec<LaneSlot, RowSnap> = {
     snap: (id, g) => (dragDisabled ? null : rowSnap(g, id, rowBand)),
-    resolve: (_id, point, s) =>
-      canReorderWithin || laneAt(s, point.y) !== s.home ? laneSlot(s, point.y, across) : null,
+    resolve: (_id, point, s) => laneSlot(s, point.y, crossBand),
     commit: (id, slot) => interactions.onDrop(id, slot.lane, slot.before),
     line: rowLine,
     label: (id) => rowById.get(id)?.title ?? '',
     glyph: (id) => <EntityIcon kind="page" icon={rowById.get(id)?.icon} />,
     carry: [carries(TAB_FAMILY, interactions.carry)],
-    disclose: across,
+    disclose: crossBand,
     watch: [rowBand],
   }
+  const bandDrag = bandSpec({
+    bands,
+    collapsed,
+    nests: host.nests,
+    drop: interactions.bandDrop,
+    indent: (depth) => ({ left: `calc(var(--drop-line-inset) + ${groupIndent(depth)})` }),
+    disabled: host.dragDisabled,
+  })
 
   return (
     <div
@@ -552,57 +527,49 @@ export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
       className={cx('table table-view', overflowing && 'overflowing')}
     >
       {interactions.iconPicker}
-      <BandDnd
-        bands={interactions.bands}
-        labelFor={bandLabel}
-        onDrop={interactions.onBandDrop}
-        nestable={!flat}
-        disabled={host.searching}
-      >
-        <LineZone {...rowDrag}>
-          <div
-            className={cx(
-              'table-grid',
-              text.body.standard,
-              viewOption(view, 'hide_borders') && 'no-borders',
-              columns.length === 1 && 'single-column',
-              hiding && 'col-hiding',
-              sliding && 'col-sliding',
-              dragShift !== null && 'col-dragging-active',
-              resizing && 'col-resizing-active',
-            )}
-            style={{ minWidth: reflowWidth, '--cols': cols } as React.CSSProperties}
-          >
-            <div className="table-head" onTransitionEnd={onTrackTransitionEnd}>
-              {columns.map((c, i) => (
-                <ColumnHeader
-                  key={c.id}
-                  id={c.id}
-                  label={columnLabel(c.id, schema, ctx.contexts, capitalize)}
-                  icon={headerIcon(c.id)}
-                  width={widthByCol[i]}
-                  align={alignByCol[i]}
-                  transform={gapShift(dragShift, i)}
-                  dragging={dragShift?.from === i}
-                  onDragStart={(e) => startColumnDrag(e, i)}
-                  onResize={resizeColumn}
-                  onResizeStart={startResize}
-                  onResizeAbort={abortResize}
-                  onResizeEnd={endResize}
-                  onResizeCommit={commitResize}
-                  onContextMenu={(e) => void openHeaderMenu(c.id, c.kind === 'title', e)}
-                />
-              ))}
-              {/* The :last-child anchor that keeps the last real column's right divider (table.css). */}
-              <LineGroup id={ROW_END} className="cell-filler" aria-hidden="true" />
-            </div>
-            {groups.flatMap((g) => renderRows(g, 0, true))}
-            {interactions.ghostStanding && (
-              <GhostRow padLeft={indent(0)} closing={false} {...ghostRowProps} />
-            )}
+      <LineZone {...tableSpec((id) => rowById.has(id), rowDrag, bandDrag)}>
+        <div
+          className={cx(
+            'table-grid',
+            text.body.standard,
+            viewOption(view, 'hide_borders') && 'no-borders',
+            columns.length === 1 && 'single-column',
+            hiding && 'col-hiding',
+            sliding && 'col-sliding',
+            dragShift !== null && 'col-dragging-active',
+            resizing && 'col-resizing-active',
+          )}
+          style={{ minWidth: reflowWidth, '--cols': cols } as React.CSSProperties}
+        >
+          <div className="table-head" onTransitionEnd={onTrackTransitionEnd}>
+            {columns.map((c, i) => (
+              <ColumnHeader
+                key={c.id}
+                id={c.id}
+                label={columnLabel(c.id, schema, ctx.contexts, capitalize)}
+                icon={headerIcon(c.id)}
+                width={widthByCol[i]}
+                align={alignByCol[i]}
+                transform={gapShift(dragShift, i)}
+                dragging={dragShift?.from === i}
+                onDragStart={(e) => startColumnDrag(e, i)}
+                onResize={resizeColumn}
+                onResizeStart={startResize}
+                onResizeAbort={abortResize}
+                onResizeEnd={endResize}
+                onResizeCommit={commitResize}
+                onContextMenu={(e) => void openHeaderMenu(c.id, c.kind === 'title', e)}
+              />
+            ))}
+            {/* The :last-child anchor that keeps the last real column's right divider (table.css). */}
+            <LineGroup id={ROW_END} className="cell-filler" aria-hidden="true" />
           </div>
-        </LineZone>
-      </BandDnd>
+          {groups.flatMap((g) => renderRows(g, 0, true))}
+          {interactions.ghostStanding && (
+            <GhostRow padLeft={indent(0)} closing={false} {...ghostRowProps} />
+          )}
+        </div>
+      </LineZone>
       {cellPicker()}
       {massPicker()}
       {popoverField()}
