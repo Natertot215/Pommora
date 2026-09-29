@@ -76,6 +76,12 @@ describe('ViewFrame — switching the active view', () => {
     })
   })
 
+  it('re-selecting the active row issues no mutate', async () => {
+    await mount(source([view('view_a', 'Table'), view('view_b', 'Board')]))
+    await clickRow('Table')
+    expect(mutate).not.toHaveBeenCalled()
+  })
+
   // The placeholder a viewless container shows carries the sentinel id, which has no place in a legible sidecar.
   it('the placeholder row on a container with no views issues no mutate', async () => {
     await mount(source(undefined))

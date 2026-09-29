@@ -760,4 +760,12 @@ describe('column width', () => {
     expect(lastSavedView().collapsed_groups).toEqual(['sA'])
     expect(lastSavedView().column_widths?.prop_status).toBeUndefined()
   })
+
+  it('expanding the last collapsed band drops collapsed_groups rather than writing it empty', async () => {
+    await mountTable(structuralSource({ collapsed_groups: ['sA'] }))
+    const outline = host.querySelectorAll('.group-band-drop-outline')[0]
+    await act(async () => (outline as HTMLElement).click())
+    expect(saveSpy).toHaveBeenCalledOnce()
+    expect(lastSavedView().collapsed_groups).toBeUndefined()
+  })
 })

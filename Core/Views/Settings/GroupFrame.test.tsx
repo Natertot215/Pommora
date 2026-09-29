@@ -423,6 +423,27 @@ describe('GroupFrame lists — dragging in the pane', () => {
     })
   })
 
+  it('picking Default drops the Custom order, and Custom snapshots afresh', async () => {
+    const manual = view({
+      group: {
+        kind: 'property',
+        property_id: 'prop_status',
+        order_mode: 'manual',
+        order: ['Done', 'Queued'],
+      },
+    })
+    await withStatus(manual)
+    await openPicker('Order')
+    await pickOption('Default')
+    const picked = lastSaved().group as { order?: string[]; order_mode?: string }
+    expect(picked.order_mode).toBe('configured')
+    expect(picked.order).toBeUndefined()
+    await withStatus(view({ group: { ...manual.group, order_mode: 'configured' } as never }))
+    await openPicker('Order')
+    await pickOption('Custom')
+    expect((lastSaved().group as { order?: string[] }).order).toEqual(['Queued', 'Done'])
+  })
+
   it('a Default list drag switches to Custom silently', async () => {
     await withStatus(statusView('configured'))
     lay()

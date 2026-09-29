@@ -62,9 +62,8 @@ export function ViewFrame({
     : undefined
   const editingLive = useLiveView(node.id, editing ?? active)
 
-  // The placeholder row a viewless container shows carries the sentinel id, which must never reach a legible sidecar.
   const switchTo = (id: string): void => {
-    if (id === DEFAULT_VIEW_ID) return
+    if (id === active.id) return
     void mutate({ op: 'setActiveView', path: node.path, kind: node.kind, viewId: id })
   }
   const createView = async (): Promise<void> => {

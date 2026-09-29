@@ -144,7 +144,7 @@ const card = (id: string): HTMLElement => host.querySelector(`[data-rid="${id}"]
 const gridOf = (id: string): Element => card(id).closest('.cards-grid') as Element
 
 describe('a card dropped across structural bands', () => {
-  it('moves the page into the Set at the slot it landed on', async () => {
+  it('under Custom, moves the page into the Set without writing the folder order', async () => {
     await mount(nested())
     const dest = gridOf('p2').getBoundingClientRect()
     await dragTo(card('p1'), dest.top + 10)
@@ -152,7 +152,6 @@ describe('a card dropped across structural bands', () => {
       op: 'movePage',
       path: 'Col/One.md',
       newParentPath: 'Col/A',
-      order: ['p1', 'p2'],
     })
   })
 })
@@ -194,7 +193,7 @@ describe('a card dropped across Set bands lands where its slot drew', () => {
     stubRect(card('r1'), { top: 400, bottom: 500, left: 0, right: GRID })
   }
 
-  it('under Custom, a slot between the Sub-Set’s pages writes the view order at that slot', async () => {
+  it('under Custom, a slot between the Sub-Set’s pages writes the view order at that slot and appends to the folder', async () => {
     await renderView(root, deep('custom'))
     seat()
     await dragTo(card('r1'), 240)
@@ -205,7 +204,6 @@ describe('a card dropped across Set bands lands where its slot drew', () => {
       op: 'movePage',
       path: 'Col/Root.md',
       newParentPath: 'Col/A',
-      order: ['a1', 'r1'],
     })
   })
 
