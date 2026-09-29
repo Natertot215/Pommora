@@ -218,7 +218,7 @@ describe('one head per page path', () => {
     ;(window as unknown as { nexus: unknown }).nexus = stubDialer({
       'page:updateBody': updateBody,
       'sync:captureLocal': captured,
-        'page:open': async (path: string) => ({ ok: true, value: detail({ path, body: disk }) }),
+      'page:open': async (path: string) => ({ ok: true, value: detail({ path, body: disk }) }),
     })
     const { a } = await mountTwo('Hello\n\nother\n')
     type(a, 5, ' wor')
