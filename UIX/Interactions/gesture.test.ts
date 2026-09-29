@@ -444,5 +444,44 @@ describe('the item rule, the cursor, and autoscroll', () => {
       flush(20)
       expect(top).toBeGreaterThan(scrolled)
     })
+
+    it.each([
+      ['pointerup', () => firePointer(window, 'pointerup', { x: 0, y: 299 })],
+      ['Escape', () => window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }))],
+      ['blur', () => window.dispatchEvent(new Event('blur'))],
+      ['abort', (handle: ReturnType<GestureModule['beginPointerGesture']>) => handle?.abort()],
+    ])('%s stops the loop', (_name, exit) => {
+      const handle = begin()
+      flush(3)
+      move(0, 299)
+      flush(20)
+      const scrolled = scrollBy.mock.calls.length
+      expect(scrolled).toBeGreaterThan(0)
+      exit(handle)
+      flush(20)
+      expect(rafMap.size).toBe(0)
+      expect(scrollBy.mock.calls.length).toBe(scrolled)
+    })
+  })
+})
+
+describe('the disclose scope', () => {
+  it('spans the document, so a spring outside the gesture element still expands', async () => {
+    vi.useFakeTimers()
+    const stub = vi.fn(() => spring)
+    Object.defineProperty(document, 'elementFromPoint', { value: stub, configurable: true })
+    const spring = document.createElement('div')
+    document.body.appendChild(spring)
+    const { addSpring } = await import('./dragDisclose')
+    const expand = vi.fn()
+    addSpring(spring, expand)
+    gesture.beginPointerGesture(spec({ onDisclose: () => {} }))
+    move(20, 0)
+    move(30, 0)
+    vi.advanceTimersByTime(700)
+    expect(expand).toHaveBeenCalledTimes(1)
+    spring.remove()
+    Reflect.deleteProperty(document, 'elementFromPoint')
+    vi.useRealTimers()
   })
 })

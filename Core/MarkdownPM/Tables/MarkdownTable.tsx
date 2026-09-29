@@ -204,7 +204,7 @@ export function MarkdownTable({
       scrollTarget: () => wrap,
       onWindowScroll: () => {
         b = wrap.getBoundingClientRect()
-        resolveAt()
+        if (engaged) resolveAt()
       },
       onDrop: () => undefined,
       teardown: () => setSweeping(false),
