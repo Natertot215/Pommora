@@ -57,6 +57,15 @@ const patchContainer = async (
   return ok(null)
 }
 
+const withOrder = (
+  cur: Record<string, unknown>,
+  key: ContainerOrderKey,
+  ids: string[],
+): Record<string, unknown> => {
+  const { [key]: _, ...rest } = cur
+  return ids.length > 0 ? { ...cur, [key]: ids } : rest
+}
+
 export const dropFromChildOrder = (
   absFolder: string,
   key: ContainerOrderKey,
@@ -65,7 +74,11 @@ export const dropFromChildOrder = (
   patchContainer(absFolder, (cur) => {
     const ids = cur[key]
     return Array.isArray(ids) && ids.includes(id)
-      ? { ...cur, [key]: ids.filter((x) => x !== id) }
+      ? withOrder(
+          cur,
+          key,
+          ids.filter((x) => x !== id),
+        )
       : null
   })
 
@@ -74,6 +87,6 @@ export async function setChildOrder(
   key: ContainerOrderKey,
   ids: string[],
 ): Promise<Result<null>> {
-  const r = await patchContainer(absFolder, (cur) => ({ ...cur, [key]: persistable(ids) }))
+  const r = await patchContainer(absFolder, (cur) => withOrder(cur, key, persistable(ids)))
   return r.ok ? ok(null) : r
 }

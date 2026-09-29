@@ -194,10 +194,12 @@ export function useViewInteractions(host: ViewHostApi, policy: ViewInteractionPo
     row: ViewRow,
     dest: CollectionNode | SetNode,
     order: string[] | undefined,
+    after?: Promise<boolean>,
   ): Promise<boolean> =>
     mutateAhead(
       { op: 'movePage', path: row.path, newParentPath: dest.path, ...(order ? { order } : {}) },
       row.title,
+      after,
     )
 
   const reorderWithin = (bandKey: string, row: ViewRow, beforeId: string | null): void => {
@@ -228,8 +230,7 @@ export function useViewInteractions(host: ViewHostApi, policy: ViewInteractionPo
       placeInView(row, beforeId, written)
       return
     }
-    const move = (): Promise<boolean> => moveTo(row, dest, order)
-    placeInView(row, beforeId, written?.then((ok) => ok && move()) ?? move())
+    placeInView(row, beforeId, moveTo(row, dest, order, written))
   }
 
   const relocate = (row: ViewRow, toZone: string, beforeId: string | null): void => {

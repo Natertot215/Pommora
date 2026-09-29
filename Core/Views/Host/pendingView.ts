@@ -68,24 +68,18 @@ interface Pending {
   users: number
 }
 const pending = new Map<string, Pending>()
-const listeners = new Set<() => void>()
-const subscribe = (listener: () => void): (() => void) => {
-  listeners.add(listener)
-  return () => {
-    listeners.delete(listener)
-  }
-}
+const restaged = channel(0)
 const restage = (entry: Pending, staged: Staged): void => {
   if (staged === entry.staged) return
   entry.staged = staged
-  for (const listener of listeners) listener()
+  restaged.set(restaged.get() + 1)
 }
 const keyOf = (sourceId: string, viewId: string): string => `${sourceId}\0${viewId}`
 
 export function useLiveView(sourceId: string, view: SavedView): SavedView {
   const key = keyOf(sourceId, view.id)
   const latest = useLatest(view)
-  const staged = useSyncExternalStore(subscribe, () => pending.get(key)?.staged ?? NOTHING)
+  const staged = useSyncExternalStore(restaged.subscribe, () => pending.get(key)?.staged ?? NOTHING)
   useEffect(() => {
     const entry = pending.get(key) ?? { base: latest.current, staged: NOTHING, users: 0 }
     pending.set(key, entry)
@@ -146,13 +140,20 @@ function refusedDrop(landed: boolean, name: string): boolean {
   return landed
 }
 
-export function mutateAhead(req: OrderRequest, name: string): Promise<boolean> {
+export function mutateAhead(
+  req: OrderRequest,
+  name: string,
+  after?: Promise<boolean>,
+): Promise<boolean> {
   ahead.set([...ahead.get(), req])
-  return useSession
-    .getState()
-    .mutate(req)
-    .then((outcome) => refusedDrop(outcome !== null, name))
-    .finally(() => ahead.set(ahead.get().filter((r) => r !== req)))
+  const write = (): Promise<boolean> =>
+    useSession
+      .getState()
+      .mutate(req)
+      .then((outcome) => refusedDrop(outcome !== null, name))
+  return (after ? after.then((ok) => ok && write()) : write()).finally(() =>
+    ahead.set(ahead.get().filter((r) => r !== req)),
+  )
 }
 
 type Persist = (patch: ViewPatch, opts?: { viewState?: boolean }) => Promise<Result<unknown>>
