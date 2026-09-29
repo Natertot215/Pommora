@@ -153,7 +153,7 @@ export function useViewHost(source: CollectionNode | SetNode, nests: boolean) {
     const next = new Set(collapsed)
     if (next.has(key)) next.delete(key)
     else next.add(key)
-    void persistView({ collapsed_groups: [...next] }, { viewState: true })
+    void persistView({ collapsed_groups: next.size ? [...next] : undefined }, { viewState: true })
   }
   const setStylePatch = (colId: string, key: keyof ColumnStyle & string, value: string): void => {
     void persistView({

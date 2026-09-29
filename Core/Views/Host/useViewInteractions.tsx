@@ -226,10 +226,26 @@ export function useViewInteractions(host: ViewHostApi, policy: ViewInteractionPo
     reassignBySortRun(bandOrder, bandKey, row.id)
   }
 
+  const land = (
+    row: ViewRow,
+    dest: CollectionNode | SetNode,
+    toZone: string,
+    beforeId: string | null,
+    written?: Promise<boolean>,
+  ): void => {
+    const order =
+      pageOrder === 'location' ? folderOrderAt(dest, toZone, row.id, beforeId) : undefined
+    if (dest === folderOf(row.parentSetId) && !order) {
+      placeInView(row, beforeId, written)
+      return
+    }
+    const move = (): Promise<boolean> => moveTo(row, dest, order)
+    placeInView(row, beforeId, written?.then((ok) => ok && move()) ?? move())
+  }
+
   const relocate = (row: ViewRow, toZone: string, beforeId: string | null): void => {
     const dest = destOf(toZone, row)
-    if (!dest || dest === folderOf(row.parentSetId)) return
-    placeInView(row, beforeId, moveTo(row, dest, folderOrderAt(dest, toZone, row.id, beforeId)))
+    if (dest && dest !== folderOf(row.parentSetId)) land(row, dest, toZone, beforeId)
   }
 
   const reassign = (row: ViewRow, toZone: string, beforeId: string | null): void => {
@@ -242,14 +258,10 @@ export function useViewInteractions(host: ViewHostApi, policy: ViewInteractionPo
       value === valueAt(from.key) ||
       (to.kind === 'tail' && to.parentKey === null && plan.kind === 'sets')
     const written = keeps
-      ? Promise.resolve(true)
+      ? undefined
       : (commitGroupValue(row.id, groupPropId, groupPropType, value ?? UNGROUPED) ??
         Promise.resolve(false))
-    const moves = dest !== folderOf(row.parentSetId)
-    const order =
-      pageOrder === 'location' ? folderOrderAt(dest, toZone, row.id, beforeId) : undefined
-    const landed = moves || order ? written.then((ok) => ok && moveTo(row, dest, order)) : written
-    placeInView(row, beforeId, landed)
+    land(row, dest, toZone, beforeId, written)
   }
 
   /** One entry for every row drop: a same-band slot reorders, a cross-band one moves the page or rewrites its group value. `beforeId` is null at the target band's end. */

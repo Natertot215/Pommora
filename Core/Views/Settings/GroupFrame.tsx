@@ -115,9 +115,11 @@ const pickOrder = <C extends SubGroupConfig>(
   def: PropertyDefinition | undefined,
   mode: GroupOrderMode,
 ): C =>
-  mode === 'manual' && config.order_mode !== 'manual'
-    ? { ...config, order_mode: mode, order: liveBucketOrder(config, def, []) }
-    : { ...config, order_mode: mode }
+  mode !== 'manual'
+    ? { ...config, order_mode: mode, order: undefined }
+    : config.order_mode !== 'manual'
+      ? { ...config, order_mode: mode, order: liveBucketOrder(config, def, []) }
+      : config
 
 export function GroupFrame({
   source,
