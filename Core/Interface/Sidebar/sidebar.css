@@ -19,6 +19,13 @@
   --ribbon-divider-bottom: 20px;
   --sidebar-hidechevron-pad: 6px;
   --ribbon-hidden-inset: 10px;
+  --sidebar-top: 42px;
+  --ribbon-divider-top: 42px;
+}
+/* Without traffic lights to clear, the top insets mirror the bottom ones. */
+.shell.no-traffic-lights .surface-glass {
+  --sidebar-top: 12px;
+  --ribbon-divider-top: var(--ribbon-divider-bottom);
 }
 .sidebar-ribbon {
   -webkit-app-region: no-drag;
@@ -28,7 +35,7 @@
   bottom: 0;
   width: var(--ribbon-w);
   z-index: 0;
-  padding-top: 42px;
+  padding-top: var(--sidebar-top);
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -42,7 +49,7 @@
 .sidebar-ribbon::after {
   content: "";
   position: absolute;
-  top: 42px;
+  top: var(--ribbon-divider-top);
   bottom: var(--ribbon-divider-bottom);
   right: 0px;
   width: var(--width-175);
@@ -76,7 +83,7 @@
 .sidebar {
   -webkit-app-region: no-drag;
   margin-left: var(--ribbon-w);
-  padding: 42px var(--surface-inset) 12px 0;
+  padding: var(--sidebar-top) var(--surface-inset) 12px 0;
   transition: margin-left var(--duration-base) var(--ease-base);
   overflow-x: hidden;
   overflow-y: auto;
