@@ -263,6 +263,7 @@ function createEngine(setChrome: (c: Chrome | null) => void): Api {
   let gesture: GestureHandle | null = null
   let pending: (() => void) | null = null
   let chromeEl: HTMLDivElement | null = null
+  let refocus: Active | null = null
   let disposing = false
 
   const reg = (zoneId: string): Reg => {
@@ -788,17 +789,39 @@ function createEngine(setChrome: (c: Chrome | null) => void): Api {
     const run = (): void => {
       try {
         commit?.()
-      } finally {
-        unwind(s)
-        if (!animates) end(s)
+      } catch (err) {
+        console.error(err)
       }
+      unwind(s)
+      if (!animates) end(s)
+    }
+    if (s.via === 'keyboard') {
+      refocus = { zone: s.zone, id: s.id }
+      window.addEventListener('pointerdown', settleFocus, { capture: true })
+      window.addEventListener('keydown', settleFocus, { capture: true })
     }
     if (disposing) run()
     else flushSync(run)
     if (animates) glide(s, from)
     announceDrag(word, s.name)
     if (s.via === 'keyboard')
-      requestAnimationFrame(() => (zones.get(s.zone)?.els.get(s.id) ?? s.el).focus())
+      requestAnimationFrame(() => {
+        const el = zones.get(s.zone)?.els.get(s.id)
+        if (el) focusBack(el, s.el)
+      })
+  }
+
+  const settleFocus = (): void => {
+    refocus = null
+    window.removeEventListener('pointerdown', settleFocus, { capture: true })
+    window.removeEventListener('keydown', settleFocus, { capture: true })
+  }
+
+  const focusBack = (el: HTMLElement, was: HTMLElement | null): void => {
+    const at = document.activeElement
+    if (!refocus || !(at === null || at === document.body || el.contains(at) || was?.contains(at)))
+      return
+    el.focus()
   }
 
   const drop = (): void => {
@@ -983,6 +1006,7 @@ function createEngine(setChrome: (c: Chrome | null) => void): Api {
       const r = reg(zoneId)
       if (el) r.els.set(id, el)
       else r.els.delete(id)
+      if (el && refocus?.zone === zoneId && refocus.id === id) focusBack(el, null)
       if (session?.zone === zoneId && session.line) session.line.dirty = true
     },
     group: (zoneId, key, el) => {
@@ -1187,7 +1211,11 @@ export function useDragItem(id: string, { open }: DragItemOptions = {}): DragIte
     () => ({
       onPointerDown: (e: ReactPointerEvent) => api.begin(zoneId, id, e),
       onKeyDown: (e: ReactKeyboardEvent) => {
-        if (e.target !== e.currentTarget || e.repeat || api.busy()) return
+        if (e.target !== e.currentTarget || e.repeat) return
+        if (api.busy()) {
+          if (e.key === ' ' || e.key === 'Enter') e.preventDefault()
+          return
+        }
         if (e.key === 'Enter' && opens) {
           e.preventDefault()
           run.current?.()
