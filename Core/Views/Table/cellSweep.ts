@@ -1,5 +1,4 @@
 import { type PointerEvent as ReactPointerEvent, useState } from 'react'
-import { resolveScroller, startAutoScroll } from '@pommora/uix/Interactions/autoscroll'
 import { beginPointerGesture } from '@pommora/uix/Interactions/gesture'
 
 type CellSweep = { colId: string; rows: Set<string> }
@@ -24,7 +23,6 @@ export function useCellSweep({
     let anchor = -1
     let range: [number, number] | null = null
     let lastY = e.clientY
-    let stopScroll: (() => void) | null = null
 
     const measure = (): boolean => {
       const grid = gridEl()
@@ -54,20 +52,14 @@ export function useCellSweep({
       })
     }
 
+    const grid = gridEl()
     beginPointerGesture({
       el: e.currentTarget as HTMLElement,
       event: e,
+      autoScroll: grid ? { from: grid, axis: 'y' } : undefined,
       onActivate: (ev) => {
         lastY = ev.clientY
-        const grid = gridEl()
-        if (!grid || !measure()) return false
-        stopScroll = startAutoScroll({
-          getPoint: () => ({ x: 0, y: lastY }),
-          scroller: resolveScroller(grid, 'y'),
-          dragEl: grid,
-          axis: 'y',
-        })
-        return true
+        return measure()
       },
       onDragMove: (ev) => {
         lastY = ev.clientY
@@ -88,7 +80,6 @@ export function useCellSweep({
         if (measure()) track(lastY)
       },
       scrollTarget: gridEl,
-      teardown: () => stopScroll?.(),
     })
   }
 
