@@ -7,6 +7,7 @@ import { patchSidecar } from '../Files/sidecar'
 import { cachedValues, patchCacheBlock } from './propertyCache'
 import { heldTreeOf, liveTreeOf } from '../Nexus/liveTree'
 import { projectBaseline } from '../Nexus/remintLedger'
+import { owningCollection } from '../Nexus/treePatch'
 import type { EntityRecord } from '../Nexus/record'
 import { NO_DEFS } from '../Contexts/contextResolve'
 import { readRegistry } from './propertiesRegistry'
@@ -154,8 +155,10 @@ export async function collectionFolders(root: string): Promise<string[]> {
   return (await liveTreeOf(root)).collections.map((c) => join(root, c.path))
 }
 
-export const collectionFolderOf = (folders: string[], absFile: string): string | null =>
-  folders.find((f) => absFile.startsWith(`${f}/`)) ?? null
+export async function collectionFolderOf(root: string, absFile: string): Promise<string | null> {
+  const owner = owningCollection(await liveTreeOf(root), relative(root, absFile))
+  return owner ? join(root, owner.path) : null
+}
 
 export function reorderAssignment(
   collectionFolder: string,

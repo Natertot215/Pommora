@@ -7,7 +7,9 @@ import {
 import type { Adoption } from './propertyValue'
 import type { PropertyDefinition } from './properties'
 import { errText, valueOr } from '../Contract/result'
-import { assignedDefs, collectionFolderOf, collectionFolders } from './assignment'
+import { assignedDefs } from './assignment'
+import { liveTreeOf } from '../Nexus/liveTree'
+import { owningCollection } from '../Nexus/treePatch'
 import { loadContextWorld, NO_CONTEXT_WORLD } from '../Contexts/contextWrite'
 import { type Rewrite, sweepGovernedRoots } from './governedSweep'
 import { applyAdoptions } from './optionOps'
@@ -24,10 +26,11 @@ export async function runRepairSweep(root: string, reread: SeedReread): Promise<
     const base = valueOr(context, NO_CONTEXT_WORLD)
     const defsByFolder = new Map<string | null, ReadonlyMap<string, PropertyDefinition>>()
     const worlds = new Map<string, GovernedWorld>()
-    const folders = await collectionFolders(root)
+    const tree = await liveTreeOf(root)
     for (const rel of reread.rels) {
       const abs = join(root, rel)
-      const folder = collectionFolderOf(folders, abs)
+      const owner = owningCollection(tree, rel)
+      const folder = owner ? join(root, owner.path) : null
       let defs = defsByFolder.get(folder)
       if (!defs) {
         defs = await assignedDefs(root, folder)

@@ -5,6 +5,7 @@ import { titleFromPath } from '../Paths/posix'
 import { freeName } from '../Paths/names'
 import type { CollectionNode, NexusTree, SetNode } from '../Nexus/tree'
 import { projectBaseline } from '../Nexus/remintLedger'
+import { findContainerWhere } from '../Nexus/treePatch'
 import type { RecordFile } from './record'
 
 interface Placement {
@@ -22,27 +23,8 @@ export type ArtifactRecord = Exclude<RecordFile, { entity: 'property' }>
 
 type Container = CollectionNode | SetNode
 
-/** The tree walked structurally rather than a path split, because a crumb chain built from names is the one thing the record model refuses. */
-export function containerChain(tree: NexusTree, id: string): Container[] | null {
-  const inSets = (sets: SetNode[] | undefined, trail: Container[]): Container[] | null => {
-    for (const s of sets ?? []) {
-      const next = [...trail, s]
-      if (s.id === id) return next
-      const hit = inSets(s.sets, next)
-      if (hit) return hit
-    }
-    return null
-  }
-  for (const c of tree.collections) {
-    if (c.id === id) return [c]
-    const hit = inSets(c.sets, [c])
-    if (hit) return hit
-  }
-  return null
-}
-
 export const findContainerById = (tree: NexusTree, id: string): Container | null =>
-  containerChain(tree, id)?.at(-1) ?? null
+  findContainerWhere(tree, (n) => n.id === id)
 
 /** THE decision, against the CURRENT tree — a renamed parent resolves to its renamed path. The acting code branches on nothing: every name and title choice is made here. A live id refusal outranks every other answer — nothing may write over a living identity. */
 export function resolveRecord(

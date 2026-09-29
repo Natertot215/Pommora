@@ -2,7 +2,8 @@ import { basename, dirname, titleFromPath } from '../Paths/posix'
 import type { NexusTree } from '../Nexus/tree'
 import type { TrashCrumb, TrashRow } from './trashRow'
 import { CONTEXTS_DIR_REL, TRASH_DIR } from '../Paths/nexusPaths'
-import { type ArtifactRecord, containerChain, resolveRecord } from './resolve'
+import { type ArtifactRecord, resolveRecord } from './resolve'
+import { containerTrailWhere } from '../Nexus/treePatch'
 import type { ListedBundle } from './holdings'
 import { propertyType } from '../Properties/properties'
 
@@ -35,7 +36,9 @@ function liveCrumbs(record: ArtifactRecord, tree: NexusTree): TrashCrumb[] | nul
   }
   if (record.parent.kind === 'root') return record.entity === 'collection' ? [] : null
   if (record.parent.kind !== 'container') return null
-  const chain = containerChain(tree, record.parent.id)
+  // Walked structurally rather than split from a path, since a crumb chain built from names is what the record model refuses.
+  const parentId = record.parent.id
+  const chain = containerTrailWhere(tree, (n) => n.id === parentId)
   return chain?.map((n) => ({ kind: n.kind, title: n.title })) ?? null
 }
 

@@ -24,7 +24,7 @@ import { useSession } from '../../Session/store'
 import { hoverGlance, leaveGlance } from '../../Interface/Glance/glanceAction'
 import { pageMoveContext, runPageAction } from '../../Interface/Menus/pageMenuActions'
 import { propertyMenuBranches, runPropertyAction } from '../../Interface/Menus/propertyMenuActions'
-import { findCollectionForSet } from '../../Nexus/treeIndex'
+import { owningCollection } from '../../Nexus/treePatch'
 import { isOpenInTabs } from '../../Navigation/tabsModel'
 import { IconChoice } from '../../Assets/IconChoice'
 import { type BandNode, memberDepth, nodeLabel, springsInto } from '../Bands/bandModel'
@@ -378,8 +378,8 @@ export function useViewInteractions(host: ViewHostApi, policy: ViewInteractionPo
       tile.openPage({ id: row.id, title: row.title, path: row.path })
       return
     }
-    const owner = source.kind === 'collection' ? source : findCollectionForSet(tree, source.id)
-    if (owner?.openIn === 'page-preview') useSession.getState().openWindowTab(target)
+    if (owningCollection(tree, source)?.openIn === 'page-preview')
+      useSession.getState().openWindowTab(target)
     else void select(target)
   }
 

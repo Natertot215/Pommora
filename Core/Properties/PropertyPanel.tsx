@@ -30,7 +30,8 @@ import {
   syntheticContextDef,
 } from './Pickers/PropertyPicker'
 import { assignValue, type ValueWriter } from './assignValue'
-import { collectionOfPage, pageRowOf, schemaForPage, spaceRowOf } from './pageRow'
+import { pageRowOf, spaceRowOf } from './pageRow'
+import { containerSchema, owningCollection } from '../Nexus/treePatch'
 import { useValuesEpoch } from '../Views/Host/useContainerValues'
 import { PropertyValueInput } from './Pickers/PropertyValueInput'
 import { resolveFieldValue } from './value'
@@ -153,7 +154,7 @@ export function PropertyPanel({
 
   const title = subject.kind === 'page' ? (subject.title ?? fetchedTitle) : ''
   const schema = useMemo(
-    () => (isSpace ? (tree?.registry ?? []) : schemaForPage(tree, path)),
+    () => (isSpace ? (tree?.registry ?? []) : containerSchema(tree, path)),
     [tree, path, isSpace],
   )
   const identity = tree && identityOf(tree)
@@ -249,7 +250,7 @@ export function PropertyPanel({
       )
       return
     }
-    const collection = collectionOfPage(tree, path)
+    const collection = owningCollection(tree, path)
     if (!collection) return
     const full = schema.map((d) => d.id)
     sendWithUndo(

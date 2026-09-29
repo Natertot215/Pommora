@@ -34,7 +34,7 @@ import { entityIcon } from '../../Assets/entityIconPolicy'
 import { askDeleteView } from '../../Interface/Confirm/confirmations'
 import { notifyDeleted } from '../../Interface/Notifications/notifications'
 import { findCollection, findSet } from '../../Nexus/treeIndex'
-import { NO_SCHEMA, resolveContainerSchema } from '../../Views/Pipeline/pickView'
+import { containerSchema, NO_SCHEMA } from '../../Nexus/treePatch'
 import { viewGlyph } from '../../Views/viewIcon'
 import { ViewHost } from '../../Views/Host/ViewHost'
 import { SettingsFrame } from '../../Views/Settings/SettingsFrame'
@@ -254,10 +254,7 @@ export function ViewTile({
       ? (findCollection(tree, embedded.source_id) ?? findSet(tree, embedded.source_id))
       : undefined
 
-  const schema = useMemo(
-    () => (source && tree ? resolveContainerSchema(tree, source) : NO_SCHEMA),
-    [tree, source],
-  )
+  const schema = useMemo(() => (source ? containerSchema(tree, source) : NO_SCHEMA), [tree, source])
   const views = useMemo(() => {
     if (!source) return []
     const ids = embedViewIds(entry.views, entry.id)

@@ -38,6 +38,7 @@ import { type RecordFile, readRecord, bundleArtifact } from './record'
 import { deleteCascade, type StrippedLink } from '../Nexus/cascade'
 import { contentPages, parkLinks, refillTrashed } from './holdings'
 import { findContainerById, resolveRecord, type ArtifactRecord, type Refusal } from './resolve'
+import { owningCollection } from '../Nexus/treePatch'
 
 const REFUSAL_TEXT: Record<Refusal, string> = {
   'parent-gone': 'The place this belonged to no longer exists.',
@@ -225,7 +226,7 @@ async function restoreArtifact(
     record.entity === 'collection'
       ? artifactAbs
       : record.entity === 'page' || record.entity === 'set'
-        ? tree.collections.find((c) => dir === c.path || dir.startsWith(`${c.path}/`))?.path
+        ? owningCollection(tree, dir)?.path
         : undefined
   const dropped = await scrubReturning(
     root,

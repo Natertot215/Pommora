@@ -14,7 +14,7 @@ import { writeTileDocAt } from '../Tiles/tileDoc'
 import { heldTreeOf, mutableTarget } from '../Nexus/liveTree'
 import type { MutateContext } from '../Nexus/mutate'
 import { done, type MutateReply, type MutateRequest } from '../Nexus/mutateRequest'
-import { assignedDefs, collectionFolderOf, collectionFolders } from '../Properties/assignment'
+import { assignedDefs, collectionFolderOf } from '../Properties/assignment'
 import { applyAdoptions } from '../Properties/optionOps'
 import type { NexusTree, SpaceNode } from '../Nexus/tree'
 import { isColorKey } from '@pommora/uix/Theme/colors'
@@ -118,10 +118,7 @@ export async function setPageContext(
   const { key, value } = applied.value
   const adoptions = await machine().lock(absFile, async () => {
     if (!(await pathExists(absFile))) return fail('not-found', 'Page not found.')
-    const defs = await assignedDefs(
-      root,
-      collectionFolderOf(await collectionFolders(root), absFile),
-    )
+    const defs = await assignedDefs(root, await collectionFolderOf(root, absFile))
     return ok(
       await setGovernedRootKeys(root, absFile, value ? { [key]: value } : {}, [key], {
         ...world,
@@ -155,7 +152,7 @@ export async function loadGovernedWorld(
   absFile: string,
   raw: Json,
 ): Promise<GovernedWorld> {
-  const defs = await assignedDefs(root, collectionFolderOf(await collectionFolders(root), absFile))
+  const defs = await assignedDefs(root, await collectionFolderOf(root, absFile))
   const skipped: GovernedWorld = { ...NO_CONTEXT_WORLD, defs }
   if (!contextDriftPresent(raw, heldTreeOf(root))) return skipped
   const world = await loadContextWorld(root)

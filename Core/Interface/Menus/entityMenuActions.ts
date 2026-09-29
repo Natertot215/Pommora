@@ -14,7 +14,8 @@ import type { ResolvedColumn, ViewRow } from '@pommora/core/Views/viewRow'
 import type { PropertyDefinition } from '@pommora/core/Properties/properties'
 import type { PropertyValue } from '@pommora/core/Properties/propertyValue'
 import { assignValue, type ValueWriter } from '@pommora/core/Properties/assignValue'
-import { fetchPageRow, schemaForPage, spaceRowOf } from '@pommora/core/Properties/pageRow'
+import { fetchPageRow, spaceRowOf } from '@pommora/core/Properties/pageRow'
+import { containerSchema } from '@pommora/core/Nexus/treePatch'
 import { spaceNodeOf } from '@pommora/core/Nexus/treeIndex'
 import {
   propertyMenuBranches,
@@ -57,7 +58,7 @@ export async function showEntityMenu(
       row = await fetchPageRow(s.tree, { id: target.id, path: target.path, title: target.title })
     else if (node && s.tree) row = spaceRowOf(s.tree, node)
   }
-  const schema = !row ? [] : node ? (s.tree?.registry ?? []) : schemaForPage(s.tree, target.path)
+  const schema = !row ? [] : node ? (s.tree?.registry ?? []) : containerSchema(s.tree, target.path)
   const propertyTarget: PropertyMenuTarget | null = row
     ? {
         tree: s.tree,

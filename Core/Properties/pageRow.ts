@@ -1,21 +1,12 @@
 import { valueOr } from '@pommora/core/Contract/result'
 import type { PageFrontmatter } from '@pommora/core/Nexus/schemas'
-import type { CollectionNode, NexusTree, SpaceNode } from '@pommora/core/Nexus/tree'
+import type { NexusTree, SpaceNode } from '@pommora/core/Nexus/tree'
 import { ID_KEY } from '@pommora/core/Nexus/identityMark'
 import { spaceLinksOf } from '@pommora/core/Nexus/treeIndex'
-import type { PropertyDefinition } from '@pommora/core/Properties/properties'
 import type { PageValues, ViewRow } from '@pommora/core/Views/viewRow'
 import { resolveTreeContextKeys } from '@pommora/core/Contexts/contextResolve'
 import { relDirname } from '@pommora/core/Paths/posix'
 import { dialer } from '../Platform/dialer'
-
-export const collectionOfPage = (
-  tree: NexusTree | null,
-  path: string,
-): CollectionNode | undefined => tree?.collections.find((c) => path.startsWith(`${c.path}/`))
-
-export const schemaForPage = (tree: NexusTree | null, path: string): PropertyDefinition[] =>
-  collectionOfPage(tree, path)?.properties ?? []
 
 export function pageRowOf(
   tree: NexusTree | null,

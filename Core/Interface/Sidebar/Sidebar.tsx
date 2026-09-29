@@ -35,7 +35,7 @@ import {
   type MutateRequest,
 } from '@pommora/core/Nexus/mutateRequest'
 import { type Creator, spaceCreator } from '@pommora/core/Actions/createMenu'
-import { collectionOfPage } from '../../Properties/pageRow'
+import { owningCollection } from '../../Nexus/treePatch'
 import { spaceNodeOf } from '../../Nexus/treeIndex'
 import { SidebarDnd } from './sidebarDnd'
 import { buildIndex, type Index } from './sidebarDndModel'
@@ -101,7 +101,7 @@ function selectRow(
 ): void {
   const s = useSession.getState()
   const target = selectTargetOf(node)
-  if (target.kind === 'page' && collectionOfPage(s.tree, target.path)?.openIn === 'page-preview') {
+  if (target.kind === 'page' && owningCollection(s.tree, target.path)?.openIn === 'page-preview') {
     if (e && isCmd(e)) void s.select(target, { newTab: true })
     else s.openWindowTab(target)
     return
