@@ -362,6 +362,7 @@ export function MarkdownTable({
     beginGesture({
       el: e.currentTarget,
       event: e,
+      cursor: 'grabbing',
       autoScroll: { from: wrap, axis: axis === 'col' ? 'x' : 'y' },
       onActivate: () => {
         reOrigin()

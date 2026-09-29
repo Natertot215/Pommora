@@ -373,6 +373,7 @@ export function useColumns(host: ViewHostApi) {
     beginGesture({
       el: header,
       event: e,
+      cursor: 'grabbing',
       autoScroll: { from: grid, axis: 'x' },
       onActivate: (ev) => {
         zoom = currentZoom(grid)

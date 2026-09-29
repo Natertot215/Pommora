@@ -35,10 +35,6 @@
   justify-content: center;
   cursor: default;
 }
-/* Grabbing cursor only for a real left-button drag; a right-press keeps the default cursor for the context menu. */
-.mdpm-tbl-dragging .mdpm-tbl-grip-zone {
-  cursor: grabbing;
-}
 /* Measured off the table's edge, not --md-box-gap — that var is zoom-scaled and would drift the grip off-table at any zoom but one. */
 .mdpm-tbl-grip-col {
   top: calc(-1 * (var(--grip-size) + var(--grip-rise)));
