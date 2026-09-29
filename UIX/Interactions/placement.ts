@@ -102,13 +102,10 @@ export function freeze(
     },
     tail: { x: 0, y: 0 },
   }
-  f.tail = !last
-    ? f.tail
-    : !axis
-      ? cellAt(f, rects.length)
-      : axis === 'x'
-        ? { x: last.left + last.width + f.gap, y: last.top }
-        : { x: last.left, y: last.top + last.height + f.gap }
+  if (!last) return f
+  if (!axis) f.tail = cellAt(f, rects.length)
+  else if (axis === 'x') f.tail = { x: last.left + last.width + f.gap, y: last.top }
+  else f.tail = { x: last.left, y: last.top + last.height + f.gap }
   return f
 }
 
