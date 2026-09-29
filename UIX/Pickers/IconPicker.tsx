@@ -12,7 +12,8 @@ import { PickerMenu } from './PickerMenu'
 import { SearchField } from '../Fields/SearchField'
 import { fullIconSet, Icon, loadFullIconSet, subscribeFullIconSet } from '../Symbols'
 import type { IconEntry } from '../Symbols/allSymbols'
-import { reorder, SortableZone, useDragItem } from '../Interactions/drag'
+import { SortableZone, useDragItem } from '../Interactions/drag'
+import { moveBefore } from '../Utilities/moveItem'
 import { cx } from '../Utilities/cx'
 import * as s from './icon-picker.css'
 
@@ -61,14 +62,9 @@ export function IconPicker({
       iconFavs.includes(id) ? iconFavs.filter((f) => f !== id) : [...iconFavs, id],
     )
   }
-  const reorderIconFavs = (a: string, o: string): void => {
-    iconFavorites.onChange(
-      reorder(
-        iconFavs.map((id) => ({ id })),
-        a,
-        o,
-      ).map((x) => x.id),
-    )
+  const moveIconFav = (id: string, beforeId: string | null): void => {
+    const next = moveBefore(iconFavs, (f) => f, id, beforeId)
+    if (next) iconFavorites.onChange(next)
   }
 
   const openContext = async (e: MouseEvent, id: string): Promise<void> => {
@@ -111,7 +107,7 @@ export function IconPicker({
         {iconFavs.length > 0 && (
           <div className={s.iconFavorites}>
             <div className={cx(s.iconFavScroll, 'scroll-fade-x')}>
-              <SortableZone items={iconFavs} onReorder={reorderIconFavs}>
+              <SortableZone items={iconFavs} axis="x" label={(id) => id} onMove={moveIconFav}>
                 {iconFavs.map((id) => (
                   <IconFavCell
                     key={id}
@@ -189,7 +185,7 @@ function IconFavCell({
   onPick: (id: string) => void
   onContext: (e: MouseEvent, id: string) => void
 }): React.JSX.Element {
-  const { setNodeRef, style, handle, isDragging } = useDragItem(id, () => onPick(id))
+  const { setNodeRef, style, handle } = useDragItem(id, () => onPick(id))
   return (
     <button
       type="button"
@@ -198,9 +194,7 @@ function IconFavCell({
       {...handle}
       className={cx(s.cell, selected && s.cellSelected)}
       title={id}
-      onClick={() => {
-        if (!isDragging) onPick(id)
-      }}
+      onClick={() => onPick(id)}
       onContextMenu={(e) => onContext(e, id)}
     >
       <Icon name={id} size="1em" />

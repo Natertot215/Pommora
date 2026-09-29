@@ -22,6 +22,7 @@ export const glanceHoverProps = (target: TabTarget | WindowTabTarget | undefined
 const VARIANT = {
   standard: { text: text.control.standard, icon: 'body' },
   compact: { text: text.caption.standard, icon: 'control' },
+  pinned: { text: undefined, icon: 'body' },
 } as const
 
 export interface TabItemProps {
@@ -56,6 +57,7 @@ export function TabItem({
   onMenu,
 }: TabItemProps): React.JSX.Element {
   const size = VARIANT[variant].icon
+  const pinned = variant === 'pinned'
   const iconClass = cx('tab-icon', slide?.className)
   return (
     // biome-ignore lint/a11y/useKeyWithClickEvents: the drag handle spread supplies onKeyDown (Space lifts, Enter opens), which a spread hides from static analysis
@@ -67,22 +69,18 @@ export function TabItem({
       {...glanceHoverProps(glance)}
       data-reveal-host=""
       className={cx(
-        'tab',
-        hoverRemoveHost,
+        pinned ? 'tab-pinned' : 'tab',
+        !pinned && hoverRemoveHost,
         VARIANT[variant].text,
         active && 'is-active',
         closing && 'is-closing',
         iconOnly && 'tab-map',
-        drag?.isDragging && 'is-dragging',
       )}
       title={label}
       role="tab"
       aria-selected={active}
-      // Roving tabindex: the strip is ONE tab stop, the active tab holds it.
       tabIndex={active ? 0 : -1}
-      onClick={() => {
-        if (!drag?.isDragging) onActivate?.()
-      }}
+      onClick={onActivate}
       onContextMenu={onMenu}
     >
       <Fragment key={slide?.seq ?? 0}>
@@ -91,7 +89,7 @@ export function TabItem({
         ) : (
           <EntityIcon item={icon} size={size} className={iconClass} />
         )}
-        {!iconOnly && (
+        {!iconOnly && !pinned && (
           <span className={cx(overScrollEllipsis, 'tab-label', slide?.className)}>{label}</span>
         )}
       </Fragment>

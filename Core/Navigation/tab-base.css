@@ -55,10 +55,6 @@
 .tab.is-active {
   color: var(--label-control);
 }
-.tab.is-dragging {
-  opacity: var(--state-ghost);
-}
-
 .tab-overlay {
   display: flex;
   align-items: center;
@@ -222,10 +218,6 @@
 .tab-pinned.is-active {
   color: var(--label-control);
 }
-.tab-pinned.is-dragging {
-  opacity: var(--state-ghost);
-}
-
 .tab-divider {
   height: var(--tab-divider-h);
   margin: 0 4px;

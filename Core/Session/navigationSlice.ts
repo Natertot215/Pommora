@@ -23,7 +23,7 @@ import {
 } from './reconcileSelection'
 import { navKeysOf, reconcileIndexOf } from '../Nexus/treeIndex'
 import { RECENTS_CAP, recordRecent, removeRecentByKey } from '../Navigation/navRecents'
-import { moveByKey } from '@pommora/uix/Utilities/moveItem'
+import { moveBefore } from '@pommora/uix/Utilities/moveItem'
 import { dropCapturedOutside } from '../Navigation/thumbMarkers'
 import {
   activeUnpinnedTab,
@@ -39,7 +39,6 @@ import {
   pinTabId,
   pushMru,
   reconcileTab,
-  reorderWithinZone,
   sameTabs,
   settleFocus,
   type TabFocus,
@@ -85,7 +84,7 @@ export interface NavigationSlice {
   openNewTab: (take?: boolean) => void
   openTabAt: (target: SelectTarget, index: number) => void
   closeTab: (id: string) => void
-  reorderTabs: (activeId: string, overId: string) => void
+  reorderTabs: (id: string, beforeId: string | null) => void
   pinTab: (id: string) => void
   unpinTab: (pinId: string) => void
   goBack: () => void
@@ -99,7 +98,7 @@ export interface NavigationSlice {
   navBanner: string | undefined
   pinTarget: (target: NavRef | SelectTarget) => void
   unpinTarget: (key: string) => void
-  reorderPin: (activeKey: string, overKey: string) => void
+  reorderPin: (key: string, beforeKey: string | null) => void
   applyNavChanged: (nav: Omit<NavigationState, 'recents'>) => void
   thumbVersions: Record<string, number>
   bumpThumb: (key: string) => void
@@ -448,12 +447,9 @@ export const createNavigationSlice: Slice<NavigationSlice> = (set, get) => {
       get().scrubTabPins(id)
       applyTabResult(res)
     },
-    reorderTabs: (activeId, overId) => {
-      const s = get()
-      const to = s.tabs.findIndex((t) => t.id === overId)
-      if (to === -1) return
-      const next = reorderWithinZone(s.tabs, activeId, to)
-      if (next === s.tabs) return
+    reorderTabs: (id, beforeId) => {
+      const next = moveBefore(get().tabs, (t) => t.id, id, beforeId)
+      if (!next) return
       set({ tabs: next })
       persistTabs()
     },
@@ -501,8 +497,8 @@ export const createNavigationSlice: Slice<NavigationSlice> = (set, get) => {
       commitPinned(get().pinned.filter((p) => navKey(p) !== key))
       ensureLiveActive()
     },
-    reorderPin: (activeKey, overKey) => {
-      const pinned = moveByKey(get().pinned, navKey, activeKey, overKey)
+    reorderPin: (key, beforeKey) => {
+      const pinned = moveBefore(get().pinned, navKey, key, beforeKey)
       if (pinned) commitPinned(pinned)
     },
     // The push carries the file's keys: pinned and banner. Recents aren't in the file — the in-memory stream always leads.

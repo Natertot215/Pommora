@@ -5,6 +5,7 @@ import { UNGROUPED } from '@pommora/core/Views/viewRow'
 import type { ViewRow } from '@pommora/core/Views/viewRow'
 import { viewOption } from '@pommora/core/Views/views'
 import type { PageMenuContext } from '@pommora/core/Actions/pageMenu'
+import type { PageTarget } from '@pommora/core/Navigation/navRef'
 import { relDirname } from '@pommora/core/Paths/posix'
 import { nextOrder } from '@pommora/uix/Interactions/reorderModel'
 import {
@@ -48,6 +49,10 @@ interface ViewInteractionPolicy {
 
 export type TitleMenuContext = PageMenuContext & { alreadyOpen: boolean }
 
+function pageTarget(row: ViewRow): PageTarget {
+  return { kind: 'page', id: row.id, path: row.path }
+}
+
 /** The pointer handlers every row uses: the ghost's hover and the location glance. */
 export function rowHover(
   row: ViewRow,
@@ -59,12 +64,7 @@ export function rowHover(
   return {
     onPointerEnter: (e) => {
       onHover(row.id, true)
-      hoverGlance(
-        { kind: 'page', id: row.id, path: row.path },
-        e.currentTarget,
-        'location',
-        e.shiftKey,
-      )
+      hoverGlance(pageTarget(row), e.currentTarget, 'location', e.shiftKey)
     },
     onPointerLeave: () => {
       onHover(row.id, false)
@@ -318,10 +318,17 @@ export function useViewInteractions(host: ViewHostApi, policy: ViewInteractionPo
     return index >= first && index <= first + count ? index : null
   }
 
+  // ── Carry ────────────────────────────────────────────────────────────────
+
+  const carry = (id: string): PageTarget | null => {
+    const row = rowById.get(id)
+    return row ? pageTarget(row) : null
+  }
+
   // ── Pages ─────────────────────────────────────────────────────────────────
 
   const openPage = (row: ViewRow, newTab: boolean): void => {
-    const target = { kind: 'page', id: row.id, path: row.path } as const
+    const target = pageTarget(row)
     // A plain click passes NO option, so the tab-open preference still decides; forcing `false` would override it.
     if (newTab) {
       void select(target, { newTab: true })
@@ -361,7 +368,7 @@ export function useViewInteractions(host: ViewHostApi, policy: ViewInteractionPo
   const titleMenuContext = (row: ViewRow): TitleMenuContext => {
     const { tabs, pinned } = useSession.getState()
     return {
-      alreadyOpen: isOpenInTabs(tabs, pinned, { kind: 'page', id: row.id, path: row.path }),
+      alreadyOpen: isOpenInTabs(tabs, pinned, pageTarget(row)),
       ...pageMoveContext(tree, row.path),
       ...propertyMenuBranches({ tree, schema, row, capitalize }),
     }
@@ -431,6 +438,7 @@ export function useViewInteractions(host: ViewHostApi, policy: ViewInteractionPo
     bandAdd: creation.bandAdd,
     onBandDrop,
     onDrop,
+    carry,
     structuralSlot,
     openPage,
     titleMenuContext,

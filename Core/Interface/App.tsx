@@ -28,7 +28,7 @@ import { KEYED_COMMANDS, runCommand } from '../Actions/commandRouter'
 import { useBridgeSubscriptions } from '../Session/useBridgeSubscriptions'
 import { MenuPresenter } from './Menus/MenuPresenter'
 import { ValuePickPresenter } from './Menus/ValuePickPresenter'
-import { DragGroup, DropSlot } from '@pommora/uix/Interactions/drag'
+import { DragGroup } from '@pommora/uix/Interactions/drag'
 import { cx } from '@pommora/uix/Utilities/cx'
 import { RenderBoundary } from '@pommora/uix/Elements/RenderBoundary'
 
@@ -113,8 +113,7 @@ export function App(): React.JSX.Element {
         if (file) void openDropped(file)
       }}
     >
-      <DragGroup stray="return" holdGap>
-        <DropSlot foreignOnly />
+      <DragGroup>
         <div className="titlebar" />
         {status === 'ready' && (
           <Toolbar

@@ -13,15 +13,13 @@ export function CardRoot({
   drag,
   active,
   locked,
-  dragging = drag?.isDragging,
   className,
   children,
   ...rest
 }: DivProps & {
-  drag?: DragItem | null
+  drag?: DragItem
   active?: boolean
   locked?: boolean
-  dragging?: boolean
 }): React.JSX.Element {
   return (
     // biome-ignore lint/a11y/useSemanticElements: a real <button> cannot host this surface — it doubles as a drag handle and wraps block content
@@ -32,13 +30,7 @@ export function CardRoot({
       tabIndex={0}
       {...(drag?.handle ?? {})}
       {...rest}
-      className={cx(
-        'card',
-        locked && 'is-locked',
-        active && 'is-active',
-        dragging && 'is-dragging',
-        className,
-      )}
+      className={cx('card', locked && 'is-locked', active && 'is-active', className)}
     >
       {children}
     </div>

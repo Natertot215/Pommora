@@ -14,6 +14,7 @@ import {
   useGhostAnchor,
 } from '@pommora/uix/Interactions/ghostCreate'
 import { isCmd } from '@pommora/uix/Interactions/chords'
+import { LineRow, useLineEl } from '@pommora/uix/Interactions/drag'
 import type { IconName } from '@pommora/uix/Symbols'
 import { entityIcon } from '../../Assets/entityIconPolicy'
 import { cx } from '@pommora/uix/Utilities/cx'
@@ -36,7 +37,7 @@ import {
 import { type Creator, spaceCreator } from '@pommora/core/Actions/createMenu'
 import { collectionOfPage } from '../../Properties/pageRow'
 import { spaceNodeOf } from '../../Nexus/treeIndex'
-import { SidebarDnd, useSidebarRowEl } from './sidebarDnd'
+import { SidebarDnd } from './sidebarDnd'
 import { buildIndex, type Index } from './sidebarDndModel'
 import { AgendaMode } from './AgendaMode'
 import { sidebarModeOf } from '@pommora/core/Settings/experimental'
@@ -47,7 +48,7 @@ import { isOpenInTabs } from '../../Navigation/tabsModel'
 import { selectTargetOf } from '../../Navigation/navRef'
 import { IconChoice } from '../../Assets/IconChoice'
 import { showEntityMenu } from '../Menus/entityMenuActions'
-import { DragRow, Leaf } from './sidebarRows'
+import { Leaf } from './sidebarRows'
 import { Disclosure, signalPeek } from './Disclosure'
 import { popMenu } from '../../Actions/menuActions'
 import { createNamed, newPageAdjacent, newSpaceAdjacent } from '../../Actions/createActions'
@@ -126,8 +127,10 @@ const LeafRow = memo(function LeafRow({
   const rowRef = useRef<HTMLDivElement>(null)
   return (
     <>
-      <DragRow
+      <LineRow
         id={node.id}
+        className="tree-item"
+        open={() => selectRow(node)}
         onPointerEnter={(e) => {
           api?.onHover(node.id, true)
           if (node.kind === 'page')
@@ -154,7 +157,7 @@ const LeafRow = memo(function LeafRow({
             rename={{ path: node.path, kind: node.kind }}
           />
         </div>
-      </DragRow>
+      </LineRow>
       {ghost.anchorId === node.id && (
         <GhostLeaf depth={depth} kind={node.kind} label={ghostLabel} />
       )}
@@ -303,7 +306,7 @@ function SidebarIconChoice({ tree, index }: { tree: NexusTree; index: Index }): 
   const iconPath = useSession((s) => (s.iconHost === 'sidebar' ? s.iconPath : null))
   const endIcon = useSession((s) => s.endIcon)
   const mutate = useSession((s) => s.mutate)
-  const rowEl = useSidebarRowEl()
+  const rowEl = useLineEl()
   const trigger = useRef<HTMLElement | null>(null)
   const entry =
     iconPath === null ? undefined : [...index.byId.values()].find((e) => e.path === iconPath)

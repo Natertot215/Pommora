@@ -4,1126 +4,1258 @@ import {
   useContext,
   useEffect,
   useId,
-  useLayoutEffect,
   useMemo,
   useRef,
   useState,
+  useSyncExternalStore,
   type CSSProperties,
+  type FocusEvent as ReactFocusEvent,
+  type HTMLAttributes,
   type KeyboardEvent as ReactKeyboardEvent,
   type PointerEvent as ReactPointerEvent,
   type ReactNode,
 } from 'react'
-import { createPortal } from 'react-dom'
-import { stack } from '../Theme/stack'
+import { createPortal, flushSync } from 'react-dom'
 import { DEFAULT_FEEL } from '../Animations/feel'
-import { clamp } from '../Utilities/clamp'
-import { currentZoom } from '../Utilities/zoom'
-import { findScroller, startAutoScroll } from './autoscroll'
-import { announce, ensureInstructions, INSTRUCTIONS_ID } from './a11y'
-import { nudgeDragRemeasure } from './dragDisclose'
-import { usePointerGesture } from './gesture'
-import { ARROW_DIRS, keyboardNext } from './keyboard'
-import {
-  ACTIVATION,
-  BREAKOUT,
-  HYSTERESIS,
-  SETTLE_FALLBACK,
-  px,
-  toBox,
-  type Box,
-  type Carried,
-  type DragItem,
-  type DropState,
-} from './shared'
+import { stack } from '../Theme/stack'
+import { cx } from '../Utilities/cx'
 import { useLatest } from '../Utilities/stableApi'
+import { type Channel, channel } from '../Utilities/subscribable'
+import { currentZoom } from '../Utilities/zoom'
+import {
+  announce,
+  announceDrag,
+  type DragWord,
+  ensureInstructions,
+  INSTRUCTIONS_ID,
+  STEP_WORDS,
+} from './a11y'
+import { pushDismissal } from './dismissalStack'
+import { DragGhost } from './DragGhost'
+import { addSpring, beginDragDisclose, endDragDisclose, pointDisclose } from './dragDisclose'
+import { DropLine } from './DropLine'
+import { beginPointerGesture, type GestureHandle, scrollMoved } from './gesture'
+import { ARROW_DIRS, type Dir, keyboardNext, lineProbes, type StepPart } from './keyboard'
+import {
+  type Axis,
+  beforeIdAt,
+  distanceTo,
+  type Frozen,
+  freeze,
+  nearest,
+  placeItem,
+  reorigin,
+  slotPoint,
+  unionOf,
+} from './placement'
+import type { Geometry, Row } from './reorderModel'
+import {
+  BREAKOUT,
+  type Box,
+  boxAt,
+  type CarryEntry,
+  clipChain,
+  type DragItem,
+  EDITABLE_TARGETS,
+  type Family,
+  HYSTERESIS,
+  px,
+  type Rect,
+  SETTLE_FALLBACK,
+  toBox,
+  visibleBox,
+} from './shared'
 
-// ── Types & scratch ─────────────────────────────────────────────────────────
-
-// So a tap-wobble opens the control instead of lifting the card.
-const INTERACTIVE_ACTIVATION = 12
-const INTERACTIVE = '[data-drag-slop], button, input, textarea, select, a[href], [contenteditable]'
+// ── Specs ───────────────────────────────────────────────────────────────────
 
 type Point = { x: number; y: number }
-type Axis = 'x' | 'y'
-type Size = { width: number; height: number }
-type Rect = Size & { left: number; top: number }
-type Overlay = (id: string, rect: Box) => ReactNode
 
-type ZoneReg = {
-  ids: string[]
-  els: Map<string, HTMLElement>
-  container: HTMLElement | null
-  onReorder?: (activeId: string, overId: string) => void
-  disabled: boolean
+type Carry = readonly CarryEntry[]
+
+type ZoneShared = {
+  label: (id: string) => string
+  carry?: Carry
+  disabled?: boolean
+  disclose?: boolean | ((id: string) => boolean)
+}
+
+export type DisplaceSpec<T = unknown> = ZoneShared & {
+  items: string[]
   axis?: Axis
-  getItemLabel?: (id: string) => string
-  family?: string
-  fixed: boolean
-  carry?: (id: string) => Carried | null
-  receive?: (item: Carried, index: number) => void
+  fixed?: boolean
+  family?: Family<T>
+  accepts?(item: T): boolean
+  opens?: boolean
+  onMove?: (id: string, beforeId: string | null) => void
+  receive?(item: T, beforeId: string | null): void
   release?: (id: string) => void
-  renderOverlay?: Overlay
-}
-type ZoneProps = Omit<ZoneReg, 'els' | 'container'>
-
-// Taken at lift and only ever shifted: a mid-drag re-measure reads the drag's own transforms.
-type Frozen = {
-  ids: string[]
-  rects: Box[]
-  ref: HTMLElement | null
-  origin: Point
-  start: Point
-  pitch: number
-  gap: number
-  tail: Point
+  resolveIndex?: (index: number, id: string) => number | null
+  renderOverlay?: (id: string, rect: Box) => ReactNode
 }
 
-// Mutable so pointer/rAF/keydown callbacks read it without stale closures. Every lift installs a fresh scratch, so nothing survives the gesture before it.
-type DragScratch = {
+export type LineSpec<Slot, Snap> = ZoneShared & {
+  snap: (id: string, g: Geometry) => Snap | null
+  resolve: (id: string, p: Point, s: Snap) => Slot | null
+  commit: (id: string, slot: Slot, s: Snap) => void
+  line?: (slot: Slot, s: Snap) => CSSProperties | null
+  slotKey?: (slot: Slot) => string
+  step?: (slot: Slot, s: Snap) => { part: StepPart; id: string } | null
+  chip?: (id: string) => ReactNode
+  watch: readonly unknown[]
+}
+
+type ZoneBody = { className?: string; children: ReactNode }
+type SortableZoneProps<T> = DisplaceSpec<T> & ZoneBody
+type LineZoneProps<Slot, Snap> = LineSpec<Slot, Snap> & ZoneBody
+
+// ── Registry and session ────────────────────────────────────────────────────
+
+type AnyLine = LineSpec<unknown, unknown>
+type LinePaint = { slot: unknown; line: CSSProperties | null }
+type ZoneKind =
+  | { kind: 'displace'; spec: DisplaceSpec }
+  | { kind: 'line'; spec: AnyLine; paint: (p: LinePaint | null) => void }
+type Reg = {
+  zone: ZoneKind | null
+  els: Map<string, HTMLElement>
+  groups: Map<string, HTMLElement>
+  box: HTMLElement | null
+}
+
+type DisplaceLanding = { kind: 'displace'; zone: string; index: number }
+type LineLanding = { kind: 'line'; zone: string; slot: unknown; key: unknown; snap: unknown }
+type Landing = DisplaceLanding | LineLanding
+type LineSnap = { g: Geometry; snap: unknown; origin: Point; zoom: number; dirty: boolean }
+
+type Session = {
   id: string
-  zoneId: string
-  el: HTMLElement | null
-  rect: Box | null
-  startX: number
-  startY: number
-  lastX: number
-  lastY: number
-  active: boolean
-  activeIdx: number
-  axis?: Axis
+  zone: string
+  kind: ZoneKind['kind']
+  name: string
+  via: 'pointer' | 'keyboard'
+  phase: 'live' | 'settling'
+  el: HTMLElement
+  rect: Box
+  start: Point
+  last: Point
+  overlaid: boolean
+  axis: Axis | undefined
   zoom: number
-  compX: number
-  compY: number
-  pickZone: string
-  pick: number
-  mapped: number | null
-  family: string | null
-  item: Carried | null
-  loose: boolean
+  index: number
+  comp: Point
+  carried: ReadonlyMap<Family<unknown>, unknown>
+  chain: Element[]
   home: Rect | null
-  overlay: Overlay | null
-  kdown: ((e: KeyboardEvent) => void) | null
+  loose: boolean
+  pick: { zone: string; at: number }
+  landing: Landing | null
+  line: LineSnap | null
+  cursor: Point
+  release: () => void
 }
-const blankDrag = (): DragScratch => ({
-  id: '',
-  zoneId: '',
-  el: null,
-  rect: null,
-  startX: 0,
-  startY: 0,
-  lastX: 0,
-  lastY: 0,
-  active: false,
-  activeIdx: -1,
-  zoom: 1,
-  compX: 0,
-  compY: 0,
-  pickZone: '',
-  pick: -1,
-  mapped: null,
-  family: null,
-  item: null,
-  loose: false,
-  home: null,
-  overlay: null,
-  kdown: null,
-})
 
-const travel = (d: DragScratch, x: number, y: number): Point => ({
-  x: d.axis === 'y' && !d.loose ? 0 : x - d.startX,
-  y: d.axis === 'x' && !d.loose ? 0 : y - d.startY,
-})
+type Chrome = { node: ReactNode; style: CSSProperties }
+type LineHandle = {
+  onPointerDown: (e: ReactPointerEvent) => void
+  onKeyDown: (e: ReactKeyboardEvent) => void
+  tabIndex: number
+  'aria-describedby': string
+  'data-line-row': string
+}
+type LineRowOptions = { spring?: (dragged: string) => void; open?: () => void }
+type Active = { zone: string; id: string }
+type SlotBox = { zone: string; own: boolean; box: Box }
 
-const landingOf = (d: DragScratch): [string, number] =>
-  d.mapped === null ? [d.zoneId, d.activeIdx] : [d.pickZone, d.mapped]
+type Api = {
+  active: Channel<Active | null>
+  slot: Channel<SlotBox | null>
+  loose: Channel<ReadonlyMap<Family<unknown>, unknown> | null>
+  setDisplace: (zoneId: string, spec: DisplaceSpec) => void
+  setLine: (zoneId: string, spec: AnyLine, paint: (p: LinePaint | null) => void) => void
+  forget: (zoneId: string) => void
+  box: (zoneId: string, el: HTMLElement | null) => void
+  el: (zoneId: string, id: string, el: HTMLElement | null) => void
+  group: (zoneId: string, key: string, el: HTMLElement | null) => void
+  rowEl: (zoneId: string, id: string) => HTMLElement | undefined
+  focusRow: (zoneId: string, from: Element, step: number) => void
+  invalidate: (zoneId: string) => void
+  begin: (zoneId: string, id: string, e: ReactPointerEvent) => void
+  liftKeyboard: (zoneId: string, id: string) => void
+  busy: () => boolean
+  holdChrome: (el: HTMLDivElement | null) => void
+  dispose: () => void
+}
 
-const within = (r: Rect, x: number, y: number, pad: number): boolean =>
+// ── Helpers ─────────────────────────────────────────────────────────────────
+
+const noop = (): void => {}
+const SOURCE = 'data-drag-source'
+const rowsOf = (zoneId: string): string => `[data-line-row="${zoneId}"]`
+const GLIDE = `transform ${DEFAULT_FEEL.duration}ms ${DEFAULT_FEEL.easing}`
+const translate = (x: number, y: number): string => `translate3d(${px(x)}, ${px(y)}, 0)`
+
+const within = (r: Rect | undefined, x: number, y: number, pad: number): boolean =>
+  r !== undefined &&
   x >= r.left - pad &&
   x <= r.left + r.width + pad &&
   y >= r.top - pad &&
   y <= r.top + r.height + pad
 
-const along = (b: Box, axis: Axis): number => (axis === 'x' ? b.left : b.top)
-const extent = (s: Size, axis: Axis): number => (axis === 'x' ? s.width : s.height)
-
-function unionOf(rects: Box[]): Rect | null {
-  if (rects.length === 0) return null
-  const left = Math.min(...rects.map((b) => b.left))
-  const top = Math.min(...rects.map((b) => b.top))
-  const right = Math.max(...rects.map((b) => b.left + b.width))
-  const bottom = Math.max(...rects.map((b) => b.top + b.height))
-  return { left, top, width: right - left, height: bottom - top }
+function carriedOf(carry: Carry | undefined, id: string): ReadonlyMap<Family<unknown>, unknown> {
+  const out = new Map<Family<unknown>, unknown>()
+  for (const [family, of] of carry ?? []) {
+    const item = of(id)
+    if (item !== null) out.set(family, item)
+  }
+  return out
 }
 
-// ── Zone registry ───────────────────────────────────────────────────────────
-
-type ZoneMap = Map<string, ZoneReg>
-
-function ensureZone(zones: ZoneMap, zoneId: string): ZoneReg {
-  let z = zones.get(zoneId)
-  if (!z) {
-    z = { ids: [], els: new Map(), container: null, disabled: false, fixed: false }
-    zones.set(zoneId, z)
-  }
-  return z
+function sameLanding(a: Landing | null, b: Landing | null): boolean {
+  if (a === null || b === null) return a === b
+  if (a.zone !== b.zone) return false
+  if (a.kind === 'displace') return b.kind === 'displace' && a.index === b.index
+  return b.kind === 'line' && a.snap === b.snap && Object.is(a.key, b.key)
 }
 
-// ── Measurement ─────────────────────────────────────────────────────────────
-
-// Smallest positive vertical step, not rects[1] - rects[0]: a grid's first two items share a row.
-function pitchOf(rects: Box[], activeHeight: number): number {
-  const tops = [...new Set(rects.map((b) => b.top))].sort((a, b) => a - b)
-  let best = Infinity
-  for (let i = 1; i < tops.length; i++) {
-    const step = tops[i] - tops[i - 1]
-    if (step > 1 && step < best) best = step
-  }
-  return best === Infinity ? (activeHeight || rects[0]?.height || 0) + 8 : best
-}
-
-function freezeZone(z: ZoneReg, activeHeight: number, width: number): Frozen {
-  const ids: string[] = []
-  const rects: Box[] = []
-  for (const id of z.ids) {
-    const el = z.els.get(id)
-    if (!el) continue
-    ids.push(id)
-    rects.push(toBox(el))
-  }
-  const ref = z.container ?? (ids.length ? (z.els.get(ids[0])?.parentElement ?? null) : null)
-  const r = ref?.getBoundingClientRect()
-  const origin = { x: r?.left ?? 0, y: r?.top ?? 0 }
-  const start = rects[0] ? { x: rects[0].left, y: rects[0].top } : origin
-  const pitch = pitchOf(rects, activeHeight)
-  const axis = z.axis
-  const gap =
-    axis && rects.length > 1
-      ? along(rects[1], axis) - along(rects[0], axis) - extent(rects[0], axis)
-      : 0
-  const last = rects[rects.length - 1]
-  const tail = !last
-    ? origin
-    : !axis
-      ? cellAt(rects, rects.length, pitch, width)
-      : axis === 'x'
-        ? { x: last.left + last.width + gap, y: start.y }
-        : { x: start.x, y: last.top + last.height + gap }
-  return { ids, rects, ref, origin, start, pitch, gap, tail }
-}
-
-function shiftFrozen(f: Frozen, dx: number, dy: number): void {
-  f.rects = f.rects.map((b) => ({
-    ...b,
-    left: b.left + dx,
-    top: b.top + dy,
-    cx: b.cx + dx,
-    cy: b.cy + dy,
-  }))
-  f.origin = { x: f.origin.x + dx, y: f.origin.y + dy }
-  f.start = { x: f.start.x + dx, y: f.start.y + dy }
-  f.tail = { x: f.tail.x + dx, y: f.tail.y + dy }
-}
-
-// ── Grid model ──────────────────────────────────────────────────────────────
-
-function cellAt(rects: Box[], slot: number, pitch: number, containerWidth: number): Point {
-  if (slot < rects.length) return { x: rects[slot].left, y: rects[slot].top }
-  // Auto-fill keeps empty tracks, so the column count comes from width, not from the cards present.
-  const lefts = [...new Set(rects.map((r) => Math.round(r.left)))].sort((a, b) => a - b)
-  const stride = lefts.length >= 2 ? lefts[1] - lefts[0] : (rects[0]?.width ?? 1) + 1
-  const cols = Math.max(
-    lefts.length,
-    containerWidth > 0 ? Math.round(containerWidth / stride) : 1,
-    1,
-  )
-  const last = rects[rects.length - 1]
-  let col = Math.max(0, Math.round((last.left - lefts[0]) / stride))
-  let top = last.top
-  for (let s = rects.length; s <= slot; s++) {
-    col++
-    if (col >= cols) {
-      col = 0
-      top += pitch
-    }
-  }
-  return { x: lefts[0] + col * stride, y: top }
-}
-
-// ── Placement ───────────────────────────────────────────────────────────────
-
-function orderOf(count: number, activeIdx: number, over: number): number[] {
-  const order: number[] = []
-  for (let i = 0; i < count; i++) if (i !== activeIdx) order.push(i)
-  if (over >= 0) order.splice(clamp(over, 0, order.length), 0, activeIdx)
-  return order
-}
-
-export function placeCell(
-  rects: Box[],
-  activeIdx: number,
-  over: number,
-  index: number,
-  pitch: number,
-  width: number,
-): Point {
-  const order = orderOf(rects.length, activeIdx, over)
-  return cellAt(rects, Math.max(0, order.indexOf(index)), pitch, width)
-}
-
-export function placeAxis(
-  rects: Box[],
-  axis: Axis,
-  gap: number,
-  start: Point,
-  activeIdx: number,
-  over: number,
-  index: number,
-  activeSize: number,
-): Point {
-  let at = 0
-  for (const i of orderOf(rects.length, activeIdx, over)) {
-    if (i === index) break
-    at += (i === activeIdx ? activeSize : extent(rects[i], axis)) + gap
-  }
-  return axis === 'x' ? { x: start.x + at, y: start.y } : { x: start.x, y: start.y + at }
-}
-
-const STILL = 'translate3d(0,0,0)'
-const translate = (x: number, y: number): string => `translate3d(${px(x)}, ${px(y)}, 0)`
-
-/** Local px, so a zoomed root's items travel the screen distance the pointer did. */
-const placeTransform = (target: Point, base: Box, zoom: number): string =>
-  translate((target.x - base.left) / zoom, (target.y - base.top) / zoom)
-
-// ── Context ─────────────────────────────────────────────────────────────────
-
-type ItemState = { transform: string | undefined; hidden: boolean; animate: boolean }
-type Active = { id: string; zoneId: string }
-
-/** `home` is the escort's own surface; the item is loose once the pointer leaves it. */
-export type EscortSpec = { id: string; family: string; item: Carried; rect: Box; home: Box }
-export type Escort = {
-  lift: (spec: EscortSpec) => boolean
-  move: (x: number, y: number) => void
-  drop: () => boolean
-  abort: () => void
-  loose: () => boolean
-}
-
-type EngineApi = {
-  setZone: (zoneId: string, props: ZoneProps) => void
-  releaseZone: (zoneId: string) => void
-  registerContainer: (zoneId: string, el: HTMLElement | null) => void
-  registerItem: (zoneId: string, id: string, el: HTMLElement | null) => void
-  begin: (zoneId: string, id: string, e: ReactPointerEvent) => void
-  liftKeyboard: (zoneId: string, id: string) => void
-  escort: Escort
-}
-type EngineState = {
-  active: Active | null
-  dropState: DropState
-  family: string | null
-  floor: number | null
-  itemState: (zoneId: string, id: string) => ItemState
-  dropBox: (foreignOnly: boolean, inZone?: string) => Box | null
-}
-const ApiCtx = createContext<EngineApi | null>(null)
-const StateCtx = createContext<EngineState | null>(null)
-const ZoneIdCtx = createContext<{ zoneId: string; disabled: boolean } | null>(null)
-
-type DragGroupProps = {
-  onCommit?: (activeId: string, toZone: string, toIndex: number, fromZone: string) => void
-  /** Over no zone, a loose item keeps its last zone or returns to its lifted slot. */
-  stray?: 'stick' | 'return'
-  /** The source zone keeps the lifted item's slot open while the landing is elsewhere. */
-  holdGap?: boolean
-  /** Null refuses the landing. Must be idempotent: an index it returned maps to itself. */
-  resolveIndex?: (zoneId: string, index: number, activeId: string) => number | null
-  renderOverlay?: Overlay
-  children: ReactNode
-}
-
-export function DragGroup({
-  onCommit,
-  stray = 'stick',
-  holdGap = false,
-  resolveIndex,
-  renderOverlay,
-  children,
-}: DragGroupProps): React.JSX.Element {
-  const onCommitRef = useLatest(onCommit)
-  const strayRef = useLatest(stray)
-  const holdGapRef = useLatest(holdGap)
-  const resolveRef = useLatest(resolveIndex)
-  const resolveAt = (zoneId: string, index: number): number | null =>
-    resolveRef.current ? resolveRef.current(zoneId, index, drag.current.id) : index
-  const overlayRef = useLatest(renderOverlay)
-
-  const zones = useRef<ZoneMap>(new Map())
-  const frozen = useRef(new Map<string, Frozen>())
-  const bounds = useRef(new Map<string, DOMRect>())
-  const drag = useRef(blankDrag())
-  const overlayEl = useRef<HTMLDivElement | null>(null)
-  const pending = useRef<(() => void) | null>(null)
-  const timer = useRef<number | null>(null)
-  const stopScroll = useRef<(() => void) | null>(null)
-
-  const [active, setActive] = useState<Active | null>(null)
-  const [activeRect, setActiveRect] = useState<Box | null>(null)
-  const [landing, setLanding] = useState<[string, number] | null>(null)
-  const [dropState, setDropState] = useState<DropState>('idle')
-  const [keyboard, setKeyboard] = useState(false)
-  const [loose, setLoose] = useState(false)
-  const beginGesture = usePointerGesture()
-
-  const setZone = (zoneId: string, props: ZoneProps): void => {
-    Object.assign(ensureZone(zones.current, zoneId), props)
-  }
-  const releaseZone = (zoneId: string): void => {
-    zones.current.delete(zoneId)
-  }
-  const registerContainer = (zoneId: string, el: HTMLElement | null): void => {
-    ensureZone(zones.current, zoneId).container = el
-    if (el && drag.current.active) {
-      syncBounds()
-      nudgeDragRemeasure()
-    }
-  }
-  const registerItem = (zoneId: string, id: string, el: HTMLElement | null): void => {
-    const z = ensureZone(zones.current, zoneId)
-    if (el) z.els.set(id, el)
-    else z.els.delete(id)
-  }
-  const labelOf = (zoneId: string, id: string): string =>
-    zones.current.get(zoneId)?.getItemLabel?.(id) ?? id
-
-  const widthOf = (zoneId: string): number => bounds.current.get(zoneId)?.width ?? 0
-  const syncBounds = (): void => {
-    for (const [zid, z] of zones.current)
-      if (z.container) bounds.current.set(zid, z.container.getBoundingClientRect())
-  }
-  const freeze = (zoneId: string): Frozen | null => {
-    const held = frozen.current.get(zoneId)
-    if (held) return held
-    const z = zones.current.get(zoneId)
-    if (!z) return null
-    const f = freezeZone(z, drag.current.rect?.height ?? 0, widthOf(zoneId))
-    frozen.current.set(zoneId, f)
-    return f
-  }
-  // Shifted by the reference element's own delta, never re-measured, and never per pointermove.
-  const resync = (): void => {
-    const d = drag.current
-    for (const [zid, f] of frozen.current) {
-      const r = f.ref?.getBoundingClientRect()
-      if (!r) continue
-      const shx = r.left - f.origin.x
-      const shy = r.top - f.origin.y
-      if (!shx && !shy) continue
-      shiftFrozen(f, shx, shy)
-      if (zid === d.zoneId) {
-        d.compX -= shx
-        d.compY -= shy
-        if (d.home) d.home = { ...d.home, left: d.home.left + shx, top: d.home.top + shy }
-      }
-    }
-    syncBounds()
-  }
-  const zoneAt = (x: number, y: number, admit: (zid: string) => boolean): string | null => {
-    let hit: string | null = null
-    for (const [zid, b] of bounds.current) if (admit(zid) && within(b, x, y, 0)) hit = zid
-    return hit
-  }
-  const atHome = (d: DragScratch, x: number, y: number): boolean => {
-    const home = bounds.current.get(d.zoneId) ?? d.home
-    if (!home) return false
-    if (d.axis === 'x') return y >= home.top - BREAKOUT && y <= home.top + home.height + BREAKOUT
-    if (d.axis === 'y') return x >= home.left - BREAKOUT && x <= home.left + home.width + BREAKOUT
-    return within(home, x, y, 0)
-  }
-  const zoneFor = (d: DragScratch, x: number, y: number): string | null => {
-    if (!d.loose) return d.zoneId
-    if (d.pickZone !== d.zoneId) {
-      const b = bounds.current.get(d.pickZone)
-      if (b && within(b, x, y, HYSTERESIS)) return d.pickZone
-    }
-    const hit = zoneAt(x, y, (zid) => {
-      const z = zones.current.get(zid)
-      return zid !== d.zoneId && z?.family === d.family && !!(z.receive ?? onCommitRef.current)
-    })
-    if (hit) return hit
-    if (atHome(d, x, y)) return d.zoneId || null
-    return strayRef.current === 'stick' ? d.pickZone : null
-  }
-  const foreignSize = (zid: string): Size => {
-    const f = frozen.current.get(zid)
-    const last = f?.rects[f.rects.length - 1]
-    if (last) return { width: last.width, height: last.height }
-    const b = bounds.current.get(zid)
-    const r = drag.current.rect
+function measureLine(r: Reg, spec: AnyLine, id: string): LineSnap | null {
+  if (!r.box) return null
+  const host = r.box.getBoundingClientRect()
+  const zoom = currentZoom(r.box)
+  const local = (key: string, el: HTMLElement): Row => {
+    const b = el.getBoundingClientRect()
+    const top = (b.top - host.top) / zoom
+    const bottom = (b.bottom - host.top) / zoom
     return {
-      width: Math.min(r?.width ?? 0, b?.width ?? Infinity),
-      height: b?.height ?? r?.height ?? 0,
+      id: key,
+      top,
+      bottom,
+      mid: (top + bottom) / 2,
+      left: (b.left - host.left) / zoom,
+      right: (b.right - host.left) / zoom,
     }
   }
-  const sizeIn = (zid: string): Size => {
-    const d = drag.current
-    return zid === d.zoneId && d.rect ? d.rect : foreignSize(zid)
+  const rows = Array.from(r.els, ([key, el]) => local(key, el)).sort((a, b) => a.top - b.top)
+  const groups = new Map(Array.from(r.groups, ([key, el]) => [key, local(key, el)] as const))
+  const g: Geometry = { rows, groups, bottom: host.height / zoom }
+  return { g, snap: spec.snap(id, g), origin: { x: host.left, y: host.top }, zoom, dirty: false }
+}
+
+// ── Engine ──────────────────────────────────────────────────────────────────
+
+function createEngine(setChrome: (c: Chrome | null) => void): Api {
+  const zones = new Map<string, Reg>()
+  const frozen = new Map<string, Frozen>()
+  const bounds = new Map<string, Rect>()
+  const clips = new Map<string, Element[]>()
+  const overs = new Map<string, number>()
+  const touched = new Set<HTMLElement>()
+  const floored = new Set<HTMLElement>()
+  const active = channel<Active | null>(null)
+  const slot = channel<SlotBox | null>(null)
+  const loose = channel<ReadonlyMap<Family<unknown>, unknown> | null>(null)
+  let session: Session | null = null
+  let gesture: GestureHandle | null = null
+  let pending: (() => void) | null = null
+  let chromeEl: HTMLDivElement | null = null
+  let disposing = false
+
+  const reg = (zoneId: string): Reg => {
+    let r = zones.get(zoneId)
+    if (!r) {
+      r = { zone: null, els: new Map(), groups: new Map(), box: null }
+      zones.set(zoneId, r)
+    }
+    return r
   }
-  const cellOf = (zid: string, f: Frozen, a: number, over: number, index: number): Point => {
-    const axis = zones.current.get(zid)?.axis
-    return axis
-      ? placeAxis(f.rects, axis, f.gap, f.start, a, over, index, extent(sizeIn(zid), axis))
-      : placeCell(f.rects, a, over, index, f.pitch, widthOf(zid))
-  }
-  const targetCell = (zoneId: string, idx: number): Point | null => {
-    const f = frozen.current.get(zoneId)
-    if (!f) return null
-    if (f.rects.length === 0) return f.tail
-    const a = zoneId === drag.current.zoneId ? drag.current.activeIdx : -1
-    return cellOf(zoneId, f, a, idx, a)
+  const kindOf = (zoneId: string): ZoneKind | null => zones.get(zoneId)?.zone ?? null
+  const displaceOf = (zoneId: string): DisplaceSpec | null => {
+    const k = kindOf(zoneId)
+    return k?.kind === 'displace' ? k.spec : null
   }
 
-  // ── Lift / move / drop ────────────────────────────────────────────────────
+  // ── Admission and geometry ──
 
-  const lift = (zoneId: string, id: string): Frozen | null => {
-    const z = zones.current.get(zoneId)
-    const el = z?.els.get(id) ?? null
-    if (!z || z.disabled || !el) return null
-    syncBounds()
-    frozen.current.clear()
-    const f = freezeZone(z, 0, widthOf(zoneId))
-    const idx = f.ids.indexOf(id)
-    const rect = f.rects[idx]
-    if (!rect) return null
-    frozen.current.set(zoneId, f)
-    const item = z.family === undefined ? null : z.carry ? z.carry(id) : id
-    const d = drag.current
-    d.id = id
-    d.zoneId = zoneId
-    d.el = el
-    d.active = true
-    d.activeIdx = idx
-    d.axis = z.axis
-    // A copy, not the frozen entry: the projection and the overlay's origin both need the lift-time rect, which resync shifts out from under them.
-    d.rect = { ...rect }
-    d.zoom = currentZoom(el)
-    d.pickZone = zoneId
-    d.pick = idx
-    d.mapped = idx
-    d.family = item === null ? null : (z.family ?? null)
-    d.item = item
-    d.loose = false
-    d.home = item === null ? null : (bounds.current.get(zoneId) ?? unionOf(f.rects))
-    d.overlay = z.renderOverlay ?? overlayRef.current ?? null
-    setActive({ id, zoneId })
-    setActiveRect(d.rect)
-    setLanding([zoneId, idx])
-    setDropState('dragging')
+  const admits = (s: Session, zoneId: string): boolean => {
+    const spec = displaceOf(zoneId)
+    if (zoneId === s.zone || !spec?.family || !spec.receive) return false
+    const item = s.carried.get(spec.family)
+    return item !== undefined && (spec.accepts?.(item) ?? true)
+  }
+
+  const frozenOf = (zoneId: string): Frozen | null => {
+    const held = frozen.get(zoneId)
+    if (held) return held
+    const r = zones.get(zoneId)
+    const spec = displaceOf(zoneId)
+    if (!r || !spec || !session) return null
+    const f = freeze(spec.items, r.els, r.box, spec.axis, session.rect.height)
+    if (f) frozen.set(zoneId, f)
     return f
   }
 
-  const track = (cx: number, cy: number): void => {
-    const d = drag.current
-    if (!d.active || !d.rect) return
-    if (d.family !== null && !d.loose && !atHome(d, cx, cy)) {
-      d.loose = true
-      setLoose(true)
-      if (d.axis || strayRef.current === 'return') {
-        stopScroll.current?.()
-        stopScroll.current = null
-      }
-    }
-    const { x: dx, y: dy } = travel(d, cx, cy)
-    // Written straight to the element: a delta in context would re-render every item per pointermove. useDragItem omits `transform` so React never clobbers this write.
-    if (overlayEl.current) overlayEl.current.style.transform = translate(dx, dy)
-    else if (d.el && !d.overlay)
-      d.el.style.transform = translate((dx + d.compX) / d.zoom, (dy + d.compY) / d.zoom)
-
-    const from = d.pickZone
-    const zid = d.family === null ? d.zoneId : zoneFor(d, cx, cy)
-    if (zid === null) {
-      if (d.mapped !== null || from !== d.zoneId) {
-        d.pickZone = d.zoneId
-        d.pick = d.activeIdx
-        d.mapped = null
-        setLanding(landingOf(d))
-      }
-      return
-    }
-    const f = freeze(zid)
-    if (!f) return
-    const z = zones.current.get(zid)
-    const projX = d.rect.cx + dx
-    const projY = d.rect.cy + dy
-    const own = zid === d.zoneId
-    const size = sizeIn(zid)
-    const half = { x: size.width / 2, y: size.height / 2 }
-    const count = f.rects.length + (own ? 0 : 1)
+  const sizeIn = (s: Session, zoneId: string, f: Frozen): { width: number; height: number } => {
+    if (zoneId === s.zone) return s.rect
     const last = f.rects[f.rects.length - 1]
-    const distTo = (i: number): number => {
+    if (last) return last
+    const b = bounds.get(zoneId)
+    return {
+      width: Math.min(s.rect.width, b?.width ?? Infinity),
+      height: b?.height ?? s.rect.height,
+    }
+  }
+
+  const syncBounds = (target: EventTarget | null = null): void => {
+    for (const [zoneId, r] of zones) {
+      if (!r.box || r.zone?.kind !== 'displace' || !scrollMoved(target, r.box)) continue
+      const chain = clips.get(zoneId) ?? clipChain(r.box)
+      clips.set(zoneId, chain)
+      const b = visibleBox(r.box.getBoundingClientRect(), chain)
+      if (b) bounds.set(zoneId, b)
+      else bounds.delete(zoneId)
+    }
+  }
+
+  const floor = (s: Session, zoneId: string): void => {
+    const box = zones.get(zoneId)?.box
+    if (!box || !displaceOf(zoneId) || (zoneId !== s.zone && !admits(s, zoneId))) return
+    box.style.setProperty('--drag-floor', px(s.rect.height / currentZoom(box)))
+    floored.add(box)
+  }
+
+  const homeOf = (s: Session): Rect | null => {
+    if (s.carried.size === 0) return null
+    const box = zones.get(s.zone)?.box
+    const f = frozen.get(s.zone)
+    const r = box?.getBoundingClientRect() ?? (f ? unionOf(f) : null)
+    return r ? visibleBox(r, s.chain) : null
+  }
+
+  const atHome = (s: Session, x: number, y: number): boolean => {
+    const h = s.home
+    if (!h) return true
+    if (s.axis === 'x') return y >= h.top - BREAKOUT && y <= h.top + h.height + BREAKOUT
+    if (s.axis === 'y') return x >= h.left - BREAKOUT && x <= h.left + h.width + BREAKOUT
+    return within(h, x, y, 0)
+  }
+
+  const travel = (s: Session, x: number, y: number): Point => ({
+    x: s.axis === 'y' && !s.loose ? 0 : x - s.start.x,
+    y: s.axis === 'x' && !s.loose ? 0 : y - s.start.y,
+  })
+
+  const surfaceOf = (s: Session): Element => {
+    let top: Element = s.el
+    for (const r of zones.values()) if (r.box?.contains(top)) top = r.box
+    return top
+  }
+
+  const lineOf = (s: Session, spec: AnyLine): LineSnap | null => {
+    if (!s.line || s.line.dirty) {
+      const r = zones.get(s.zone)
+      s.line = r ? measureLine(r, spec, s.id) : null
+    }
+    return s.line
+  }
+
+  // ── Painting ──
+
+  const paintZone = (s: Session, zoneId: string, to: number): void => {
+    const spec = displaceOf(zoneId)
+    const f = frozen.get(zoneId)
+    const r = zones.get(zoneId)
+    if (!spec || !f || !r) return
+    const own = zoneId === s.zone
+    const a = own ? s.index : -1
+    const from = overs.get(zoneId) ?? a
+    if (from === to) return
+    overs.set(zoneId, to)
+    const n = f.ids.length - (own ? 1 : 0)
+    const lo = from < 0 ? to : to < 0 ? from : Math.min(from, to)
+    const hi = from < 0 || to < 0 ? n : Math.max(from, to)
+    const size = sizeIn(s, zoneId, f)
+    for (let k = lo; k < hi; k++) {
+      const i = own && k >= a ? k + 1 : k
+      const el = r.els.get(f.ids[i])
+      if (!el) continue
+      const at = placeItem(f, spec.axis, i, a, to, size)
       const b = f.rects[i]
-      if (b) return Math.hypot(b.cx - projX, b.cy - projY)
-      const toTail = Math.hypot(f.tail.x + half.x - projX, f.tail.y + half.y - projY)
-      return last && !z?.axis
-        ? Math.min(toTail, Math.hypot(last.left + last.width + half.x - projX, last.cy - projY))
-        : toTail
-    }
-    let pick = 0
-    let nearest = Infinity
-    for (let i = 0; i < count; i++) {
-      const at = distTo(i)
-      if (at < nearest) {
-        nearest = at
-        pick = i
-      }
-    }
-    // A new candidate has to beat the standing one; on a zone switch the argmin wins outright.
-    if (zid === from && distTo(d.pick) - nearest <= HYSTERESIS) return
-    const mapped = own && z?.fixed ? d.activeIdx : resolveAt(zid, pick)
-    d.pickZone = zid
-    d.pick = pick
-    if (mapped !== d.mapped || zid !== from) {
-      d.mapped = mapped
-      setLanding(landingOf(d))
+      el.style.transition = GLIDE
+      el.style.transform =
+        at.x === b.left && at.y === b.top
+          ? ''
+          : translate((at.x - b.left) / f.zoom, (at.y - b.top) / f.zoom)
+      touched.add(el)
     }
   }
 
-  const detach = (): void => {
-    stopScroll.current?.()
-    stopScroll.current = null
-    const d = drag.current
-    if (d.kdown) {
-      window.removeEventListener('keydown', d.kdown, { capture: true })
-      d.kdown = null
-    }
+  const placeLifted = (s: Session): void => {
+    const f = frozen.get(s.zone)
+    const spec = displaceOf(s.zone)
+    if (!f || !spec) return
+    const L = s.landing
+    const over = L?.kind === 'displace' && L.zone === s.zone ? L.index : s.index
+    const at = slotPoint(f, spec.axis, s.index, over, s.rect)
+    const b = f.rects[s.index]
+    s.el.style.transition = GLIDE
+    s.el.style.transform = translate((at.x - b.left) / f.zoom, (at.y - b.top) / f.zoom)
   }
 
-  const reset = (): void => {
-    drag.current.active = false
-    frozen.current.clear()
-    bounds.current.clear()
-    setActive(null)
-    setActiveRect(null)
-    setLanding(null)
-    setDropState('idle')
-    setKeyboard(false)
-    setLoose(false)
+  const overIn = (s: Session, zoneId: string, L: Landing | null): number => {
+    if (L?.kind === 'displace' && L.zone === zoneId) return L.index
+    if (zoneId !== s.zone) return -1
+    return L !== null && displaceOf(s.zone)?.release ? -1 : s.index
   }
 
-  const land = (zoneId: string, idx: number, focus: HTMLElement | null): void => {
-    const d = drag.current
-    const { id, zoneId: from, item } = d
-    const label = labelOf(from, id)
-    const moved = zoneId !== from || idx !== d.activeIdx
-    const target = zones.current.get(zoneId)
-    const onReorder = target?.onReorder
-    const receive = target?.receive
-    const release = zones.current.get(from)?.release
-    const overId = frozen.current.get(zoneId)?.ids[idx]
-    settle(zoneId, idx, () => {
-      if (!moved) announce(`${label} returned to its original position.`)
-      else {
-        if (zoneId !== from) {
-          receive?.(item, idx)
-          release?.(id)
-        } else if (overId) onReorder?.(id, overId)
-        onCommitRef.current?.(id, zoneId, idx, from)
-        announce(`Dropped ${label} at position ${idx + 1}.`)
-      }
-      if (focus) requestAnimationFrame(() => focus.focus())
-    })
+  const repaint = (s: Session, prev: Landing | null, next: Landing | null): void => {
+    if (s.kind === 'displace') paintZone(s, s.zone, overIn(s, s.zone, next))
+    if (prev?.kind === 'displace' && prev.zone !== s.zone)
+      paintZone(s, prev.zone, overIn(s, prev.zone, next))
+    if (next?.kind === 'displace' && next.zone !== s.zone) paintZone(s, next.zone, next.index)
+    if (s.via === 'keyboard' && s.kind === 'displace') placeLifted(s)
   }
 
-  // What the preview showed is what lands: track resolves the pair whenever the slot changes, and a disclosure re-tracks.
-  const drop = (): void => {
-    const d = drag.current
-    if (!d.active) return
-    d.active = false
-    const [zone, idx] = landingOf(d)
-    land(zone, idx, null)
+  const paintLine = (zoneId: string, L: LineLanding | null): void => {
+    const k = kindOf(zoneId)
+    if (k?.kind !== 'line') return
+    k.paint(L ? { slot: L.slot, line: k.spec.line?.(L.slot, L.snap) ?? null } : null)
   }
 
-  function onScrolled(): void {
-    resync()
-    if (drag.current.active) track(drag.current.lastX, drag.current.lastY)
+  const slotBoxOf = (s: Session, L: Landing | null): SlotBox | null => {
+    if (L?.kind !== 'displace') return null
+    const f = frozen.get(L.zone)
+    const spec = displaceOf(L.zone)
+    if (!f || !spec) return null
+    const own = L.zone === s.zone
+    const incoming = sizeIn(s, L.zone, f)
+    const size = spec.axis ? incoming : (f.rects[L.index] ?? s.rect)
+    const at = slotPoint(f, spec.axis, own ? s.index : -1, L.index, incoming)
+    const box = boxAt(at.x + f.origin.x, at.y + f.origin.y, size.width, size.height)
+    return { zone: L.zone, own, box }
   }
 
-  const begin = (zoneId: string, id: string, e: ReactPointerEvent): void => {
-    if (drag.current.active) return
-    // A press during the drop animation fast-forwards it instead of being refused.
-    pending.current?.()
-    const z = zones.current.get(zoneId)
-    const el = z?.els.get(id) ?? null
-    if (!z || z.disabled || !el) return
-    const interactive = !!(e.target as Element)?.closest?.(INTERACTIVE)
-    drag.current = {
-      ...blankDrag(),
-      startX: e.clientX,
-      startY: e.clientY,
-      lastX: e.clientX,
-      lastY: e.clientY,
-    }
-    beginGesture({
-      el,
-      event: e,
-      activation: interactive ? INTERACTIVE_ACTIVATION : ACTIVATION,
-      onActivate: () => {
-        if (!lift(zoneId, id)) return false
-        announce(`Picked up ${labelOf(zoneId, id)}.`)
-        const scroller = findScroller(el, 'xy')
-        if (scroller)
-          stopScroll.current = startAutoScroll({
-            getPoint: () => ({ x: drag.current.lastX, y: drag.current.lastY }),
-            scroller,
-            axis: 'xy',
-            onScrolled,
-          })
-        // The activation commit strips React's managed transform; re-assert before the item can paint at origin.
-        requestAnimationFrame(() => {
-          if (drag.current.active) track(drag.current.lastX, drag.current.lastY)
-        })
-        return true
-      },
-      onDragMove: (ev: PointerEvent) => {
-        const d = drag.current
-        d.lastX = ev.clientX
-        d.lastY = ev.clientY
-        track(ev.clientX, ev.clientY)
-      },
-      onDrop: drop,
-      onAbort: () => {
-        const d = drag.current
-        if (!d.active) return
-        d.active = false
-        settle(d.zoneId, d.activeIdx)
-      },
-      onWindowScroll: onScrolled,
-      onDisclose: z.family === undefined ? undefined : onScrolled,
-      teardown: detach,
-    })
+  const setLanding = (s: Session, next: Landing | null): void => {
+    const prev = s.landing
+    if (sameLanding(prev, next)) return
+    s.landing = next
+    if (prev?.kind === 'line') paintLine(prev.zone, null)
+    if (next?.kind === 'line') paintLine(next.zone, next)
+    repaint(s, prev, next)
+    slot.set(s.phase === 'live' ? slotBoxOf(s, next) : null)
   }
 
-  const escort: Escort = {
-    lift: (spec) => {
-      if (drag.current.active) return false
-      pending.current?.()
-      syncBounds()
-      frozen.current.clear()
-      drag.current = {
-        ...blankDrag(),
-        id: spec.id,
-        active: true,
-        rect: { ...spec.rect },
-        startX: spec.rect.cx,
-        startY: spec.rect.cy,
-        lastX: spec.rect.cx,
-        lastY: spec.rect.cy,
-        family: spec.family,
-        item: spec.item,
-        home: spec.home,
-      }
-      setActive({ id: spec.id, zoneId: '' })
-      setActiveRect(drag.current.rect)
-      setLanding(null)
-      setDropState('dragging')
-      return true
-    },
-    move: (x, y) => {
-      const d = drag.current
-      if (!d.active) return
-      d.lastX = x
-      d.lastY = y
-      track(x, y)
-    },
-    drop: () => {
-      const d = drag.current
-      if (!d.active) return false
-      const { id, item, mapped } = d
-      const [zone, idx] = landingOf(d)
-      const receive = zones.current.get(zone)?.receive
-      reset()
-      if (mapped === null) return false
-      receive?.(item, idx)
-      onCommitRef.current?.(id, zone, idx, '')
-      return true
-    },
-    abort: () => {
-      if (drag.current.active) reset()
-    },
-    loose: () => drag.current.active && drag.current.loose,
+  // ── Routing ──
+
+  const lineAtLocal = (s: Session, spec: AnyLine, p: Point): LineLanding | null => {
+    const m = lineOf(s, spec)
+    if (!m || m.snap === null) return null
+    s.cursor = p
+    const got = spec.resolve(s.id, p, m.snap)
+    if (got === null) return null
+    const key = spec.slotKey ? spec.slotKey(got) : got
+    const L = s.landing
+    return L?.kind === 'line' && L.snap === m.snap && Object.is(L.key, key)
+      ? L
+      : { kind: 'line', zone: s.zone, slot: got, key, snap: m.snap }
   }
 
-  // ── Keyboard ──────────────────────────────────────────────────────────────
-
-  const onKeyboard = (e: KeyboardEvent): void => {
-    const d = drag.current
-    const f = frozen.current.get(d.zoneId)
-    if (!d.active || !f) return
-    if (e.key in ARROW_DIRS) {
-      e.preventDefault()
-      const next = keyboardNext(f.rects, d.pick, ARROW_DIRS[e.key])
-      if (next !== d.pick && !zones.current.get(d.zoneId)?.fixed) {
-        d.pick = next
-        d.mapped = resolveAt(d.zoneId, next)
-        setLanding(landingOf(d))
-        announce(`Moved to position ${next + 1} of ${f.rects.length}.`)
-      }
-    } else if (e.key === ' ' || e.key === 'Enter' || e.key === 'Tab') {
-      // Tab drops too: it must commit, not tab focus away mid-drag.
-      e.preventDefault()
-      const [zone, idx] = landingOf(d)
-      land(zone, idx, d.el)
-    } else if (e.key === 'Escape') {
-      e.preventDefault()
-      const el = d.el
-      const label = labelOf(d.zoneId, d.id)
-      settle(d.zoneId, d.activeIdx, () => {
-        announce(`Movement canceled. ${label} returned to its original position.`)
-        requestAnimationFrame(() => el?.focus())
-      })
-    }
+  const lineAt = (s: Session, spec: AnyLine, x: number, y: number): LineLanding | null => {
+    const m = lineOf(s, spec)
+    if (!m) return null
+    return lineAtLocal(s, spec, { x: (x - m.origin.x) / m.zoom, y: (y - m.origin.y) / m.zoom })
   }
 
-  // Window capture runs ahead of the dismissal stack, and a listener added mid-dispatch never sees the lifting keypress.
-  const liftKeyboard = (zoneId: string, id: string): void => {
-    if (drag.current.active) return
-    pending.current?.()
-    drag.current = { ...blankDrag(), kdown: onKeyboard }
-    const f = lift(zoneId, id)
+  const pickDisplace = (
+    s: Session,
+    zoneId: string,
+    spec: DisplaceSpec,
+    x: number,
+    y: number,
+  ): void => {
+    const f = frozenOf(zoneId)
     if (!f) return
-    setKeyboard(true)
-    window.addEventListener('keydown', onKeyboard, { capture: true })
-    announce(
-      `Picked up ${labelOf(zoneId, id)}. Item ${drag.current.activeIdx + 1} of ${f.rects.length}.`,
+    const own = zoneId === s.zone
+    const size = sizeIn(s, zoneId, f)
+    const t = travel(s, x, y)
+    const p = { x: s.rect.cx + t.x - f.origin.x, y: s.rect.cy + t.y - f.origin.y }
+    const half = { width: size.width / 2, height: size.height / 2 }
+    const near = nearest(f, f.rects.length + (own ? 0 : 1), p, half, spec.axis)
+    if (
+      s.pick.zone === zoneId &&
+      distanceTo(f, s.pick.at, p, half, spec.axis) - near.dist <= HYSTERESIS
+    )
+      return
+    s.pick = { zone: zoneId, at: near.at }
+    const index =
+      own && spec.fixed ? s.index : spec.resolveIndex ? spec.resolveIndex(near.at, s.id) : near.at
+    setLanding(
+      s,
+      index === null || (own && index === s.index)
+        ? null
+        : { kind: 'displace', zone: zoneId, index },
     )
   }
 
-  // ── Settle ────────────────────────────────────────────────────────────────
+  const foreignAt = (s: Session, x: number, y: number): string | null => {
+    const held = s.pick.zone
+    if (held !== s.zone && within(bounds.get(held), x, y, HYSTERESIS)) return held
+    let hit: string | null = null
+    for (const [zoneId, b] of bounds) if (within(b, x, y, 0) && admits(s, zoneId)) hit = zoneId
+    return hit
+  }
 
-  // Commits on `transitionend`, not a timer: the transition starts a frame later, so a timer fires mid-flight and snaps the gap items short. The fallback covers no-transition hosts.
-  function settle(zoneId: string, idx: number, commit?: () => void): void {
-    const d = drag.current
-    d.active = false
-    detach()
-    setDropState('dropping')
-    setLanding([zoneId, idx])
-    const target = targetCell(zoneId, idx)
-    const el = overlayEl.current ?? d.el
-    if (overlayEl.current && target && d.rect) {
-      overlayEl.current.style.transition = `transform ${DEFAULT_FEEL.duration}ms ${DEFAULT_FEEL.easing}`
-      overlayEl.current.style.transform = translate(target.x - d.rect.left, target.y - d.rect.top)
+  const route = (s: Session, x: number, y: number): void => {
+    const zoneId = s.loose ? foreignAt(s, x, y) : s.zone
+    const k = zoneId === null ? null : kindOf(zoneId)
+    if (zoneId === null || !k) setLanding(s, null)
+    else if (k.kind === 'line') setLanding(s, lineAt(s, k.spec, x, y))
+    else pickDisplace(s, zoneId, k.spec, x, y)
+  }
+
+  const track = (x: number, y: number): void => {
+    const s = session
+    if (s?.phase !== 'live') return
+    s.last = { x, y }
+    pointDisclose(x, y)
+    const out = !atHome(s, x, y)
+    if (out !== s.loose) {
+      s.loose = out
+      gesture?.autoScroll(!out)
+      loose.set(out ? s.carried : null)
     }
-    let done = false
-    const finish = (): void => {
-      if (done) return
-      done = true
-      pending.current = null
-      if (timer.current != null) {
-        clearTimeout(timer.current)
-        timer.current = null
+    const t = travel(s, x, y)
+    if (chromeEl) chromeEl.style.transform = translate(t.x, t.y)
+    else if (s.kind === 'displace' && !s.overlaid)
+      s.el.style.transform = translate((t.x + s.comp.x) / s.zoom, (t.y + s.comp.y) / s.zoom)
+    route(s, x, y)
+  }
+
+  const refresh = (s: Session): void => {
+    const k = kindOf(s.zone)
+    if (s.via === 'pointer') route(s, s.last.x, s.last.y)
+    else if (k?.kind === 'line') setLanding(s, lineAtLocal(s, k.spec, s.cursor))
+  }
+
+  const rescroll = (target: EventTarget | null): void => {
+    const s = session
+    if (s?.phase !== 'live') return
+    for (const [zoneId, f] of frozen) {
+      if (!scrollMoved(target, f.ref)) continue
+      const { x, y } = f.origin
+      reorigin(f)
+      if (zoneId !== s.zone) continue
+      s.comp.x -= f.origin.x - x
+      s.comp.y -= f.origin.y - y
+    }
+    const host = zones.get(s.zone)?.box
+    if (s.line && host && scrollMoved(target, host)) {
+      const r = host.getBoundingClientRect()
+      s.line.origin = { x: r.left, y: r.top }
+    }
+    syncBounds(target)
+    s.home = homeOf(s)
+    slot.set(slotBoxOf(s, s.landing))
+    track(s.last.x, s.last.y)
+  }
+
+  const remeasure = (): void => {
+    const s = session
+    if (s?.phase !== 'live') return
+    if (s.line) s.line.dirty = true
+    rescroll(null)
+  }
+
+  const admitLate = (zoneId: string): void => {
+    const s = session
+    if (s?.phase !== 'live') return
+    floor(s, zoneId)
+    remeasure()
+  }
+
+  // ── Lift ──
+
+  const lift = (zoneId: string, id: string, via: Session['via'], at?: Point): Session | null => {
+    const r = zones.get(zoneId)
+    const k = r?.zone
+    const el = r?.els.get(id)
+    if (!r || !k || !el || k.spec.disabled) return null
+    const rect = toBox(el)
+    const start = at ?? { x: rect.cx, y: rect.cy }
+    const s: Session = {
+      id,
+      zone: zoneId,
+      kind: k.kind,
+      name: k.spec.label(id),
+      via,
+      phase: 'live',
+      el,
+      rect,
+      start,
+      last: start,
+      overlaid: k.kind === 'displace' && via === 'pointer' && k.spec.renderOverlay !== undefined,
+      axis: k.kind === 'displace' ? k.spec.axis : undefined,
+      zoom: currentZoom(el),
+      index: -1,
+      comp: { x: 0, y: 0 },
+      carried: carriedOf(k.spec.carry, id),
+      chain: clipChain(r.box ?? el),
+      home: null,
+      loose: false,
+      pick: { zone: zoneId, at: -1 },
+      landing: null,
+      line: null,
+      cursor: { x: 0, y: 0 },
+      release: noop,
+    }
+    if (k.kind === 'line') {
+      s.line = measureLine(r, k.spec, id)
+      if (!s.line || (s.line.snap === null && (via === 'keyboard' || s.carried.size === 0)))
+        return null
+      const own = s.line.g.rows.find((row) => row.id === id)
+      if (own) s.cursor = { x: (own.left + own.right) / 2, y: own.mid }
+      el.setAttribute(SOURCE, '')
+    }
+    session = s
+    for (const zid of zones.keys()) floor(s, zid)
+    syncBounds()
+    if (k.kind === 'displace') {
+      const f = frozenOf(zoneId)
+      s.index = f ? f.ids.indexOf(id) : -1
+      if (!f || s.index < 0) {
+        end(s)
+        return null
       }
-      el?.removeEventListener('transitionend', onEnd)
-      reset()
-      commit?.()
+      const b = f.rects[s.index]
+      s.comp = { x: rect.left - b.left - f.origin.x, y: rect.top - b.top - f.origin.y }
+      s.pick = { zone: zoneId, at: s.index }
+      if (!s.overlaid) {
+        el.style.zIndex = `${stack.local.lifted}`
+        if (via === 'pointer') el.style.pointerEvents = 'none'
+      }
     }
-    const onEnd = (e: TransitionEvent): void => {
-      if (e.target === el && e.propertyName === 'transform') finish()
+    s.home = homeOf(s)
+    if (via === 'pointer') {
+      const base: CSSProperties = {
+        position: 'fixed',
+        left: rect.left,
+        pointerEvents: 'none',
+        zIndex: stack.top.dragOverlay,
+      }
+      if (k.kind === 'line')
+        setChrome({
+          node: <DragGhost>{k.spec.chip?.(id) ?? s.name}</DragGhost>,
+          style: { ...base, top: start.y },
+        })
+      else if (k.spec.renderOverlay)
+        setChrome({
+          node: k.spec.renderOverlay(id, rect),
+          style: { ...base, top: rect.top, width: rect.width, height: rect.height },
+        })
+      const disclose = k.spec.disclose
+      if (typeof disclose === 'function' ? disclose(id) : disclose)
+        beginDragDisclose(remeasure, surfaceOf(s), el)
     }
-    pending.current = finish
-    el?.addEventListener('transitionend', onEnd)
-    timer.current = window.setTimeout(finish, DEFAULT_FEEL.duration + SETTLE_FALLBACK)
+    active.set({ zone: zoneId, id })
+    announceDrag('lift', s.name)
+    return s
   }
 
-  useEffect(() => ensureInstructions(), [])
-  useEffect(
-    () => () => {
-      detach()
-      // A view switch mid-drop must still commit what the preview promised; finish clears its own timer.
-      pending.current?.()
-    },
-    [],
-  )
+  // ── Drop, settle, end ──
 
-  // ── Overlay ───────────────────────────────────────────────────────────────
+  const end = (s: Session): void => {
+    if (session === s) session = null
+    gesture = null
+    s.release()
+    endDragDisclose()
+    for (const el of touched) {
+      el.style.transform = ''
+      el.style.transition = ''
+    }
+    touched.clear()
+    const st = s.el.style
+    if (s.kind === 'displace') {
+      st.transform = ''
+      st.transition = ''
+      st.visibility = ''
+      st.pointerEvents = ''
+      st.zIndex = ''
+    } else s.el.removeAttribute(SOURCE)
+    for (const box of floored) box.style.removeProperty('--drag-floor')
+    floored.clear()
+    frozen.clear()
+    bounds.clear()
+    clips.clear()
+    overs.clear()
+    if (s.landing?.kind === 'line') paintLine(s.landing.zone, null)
+    active.set(null)
+    slot.set(null)
+    loose.set(null)
+    setChrome(null)
+  }
 
-  // React commits the lift state on a Scheduler task, so the rAF re-assert can run before the overlay mounts: it seeds its own first frame.
-  const holdOverlay = useCallback((el: HTMLDivElement | null) => {
-    overlayEl.current = el
-    const d = drag.current
-    if (!el || !d.active) return
-    const t = travel(d, d.lastX, d.lastY)
-    el.style.transform = translate(t.x, t.y)
-  }, [])
+  const finish = (s: Session, word: DragWord, commit: (() => void) | null): void => {
+    pending = null
+    const run = (): void => {
+      try {
+        commit?.()
+      } finally {
+        end(s)
+      }
+    }
+    if (disposing) run()
+    else flushSync(run)
+    announceDrag(word, s.name)
+    if (s.via === 'keyboard')
+      requestAnimationFrame(() => (zones.get(s.zone)?.els.get(s.id) ?? s.el).focus())
+  }
 
-  const overlay =
-    active && activeRect && dropState !== 'idle' && !keyboard && drag.current.overlay
-      ? createPortal(
-          <div
-            ref={holdOverlay}
-            style={{
-              position: 'fixed',
-              left: activeRect.left,
-              top: activeRect.top,
-              width: activeRect.width,
-              height: activeRect.height,
-              pointerEvents: 'none',
-              zIndex: stack.top.dragOverlay,
-            }}
-          >
-            {drag.current.overlay(active.id, activeRect)}
-          </div>,
-          document.body,
-        )
-      : null
+  const settle = (
+    s: Session,
+    L: DisplaceLanding | null,
+    word: DragWord,
+    commit: (() => void) | null,
+  ): void => {
+    setLanding(s, L)
+    s.phase = 'settling'
+    slot.set(null)
+    const zoneId = L?.zone ?? s.zone
+    const f = frozen.get(zoneId)
+    const spec = displaceOf(zoneId)
+    if (s.kind !== 'displace' || !f || !spec) {
+      finish(s, word, commit)
+      return
+    }
+    const at = slotPoint(
+      f,
+      spec.axis,
+      zoneId === s.zone ? s.index : -1,
+      L?.index ?? s.index,
+      sizeIn(s, zoneId, f),
+    )
+    const x = at.x + f.origin.x
+    const y = at.y + f.origin.y
+    const el = chromeEl ?? s.el
+    el.style.transition = GLIDE
+    el.style.transform = chromeEl
+      ? translate(x - s.rect.left, y - s.rect.top)
+      : translate((x - s.rect.left + s.comp.x) / s.zoom, (y - s.rect.top + s.comp.y) / s.zoom)
+    let timer = 0
+    function settled(): void {
+      if (pending !== settled) return
+      el.removeEventListener('transitionend', onEnd)
+      window.clearTimeout(timer)
+      finish(s, word, commit)
+    }
+    function onEnd(e: TransitionEvent): void {
+      if (e.target === el && e.propertyName === 'transform') settled()
+    }
+    pending = settled
+    el.addEventListener('transitionend', onEnd)
+    timer = window.setTimeout(settled, DEFAULT_FEEL.duration + SETTLE_FALLBACK)
+  }
 
-  // ── Context & hooks ───────────────────────────────────────────────────────
+  const drop = (): void => {
+    const s = session
+    if (s?.phase !== 'live') return
+    if (s.line?.dirty) refresh(s)
+    const L = s.landing
+    const target = L ? kindOf(L.zone) : null
+    if (L?.kind === 'line' && target?.kind === 'line') {
+      finish(s, 'move', () => target.spec.commit(s.id, L.slot, L.snap))
+      return
+    }
+    const f = L ? frozen.get(L.zone) : undefined
+    if (L?.kind !== 'displace' || target?.kind !== 'displace' || !f) {
+      settle(s, null, 'return', null)
+      return
+    }
+    const spec = target.spec
+    const src = displaceOf(s.zone)
+    const own = L.zone === s.zone
+    const beforeId = beforeIdAt(f.ids, own ? s.id : null, L.index)
+    const item = spec.family && s.carried.get(spec.family)
+    const commit = own
+      ? () => spec.onMove?.(s.id, beforeId)
+      : () => {
+          spec.receive?.(item, beforeId)
+          src?.release?.(s.id)
+        }
+    if (own || (src?.family !== undefined && src.family === spec.family))
+      settle(s, L, 'move', commit)
+    else finish(s, spec.opens ? 'open' : 'move', commit)
+  }
 
-  const itemState = (zoneId: string, id: string): ItemState => {
-    const d = drag.current
-    const animate = dropState !== 'idle'
-    const atRest = (transitioning: boolean): ItemState => ({
-      transform: STILL,
-      hidden: false,
-      animate: transitioning,
+  const cancel = (): void => {
+    const s = session
+    if (s?.phase === 'live') settle(s, null, 'cancel', null)
+  }
+
+  const halt = (): void => {
+    disposing = true
+    gesture?.abort()
+    cancel()
+    pending?.()
+    disposing = false
+  }
+
+  // ── Keyboard ──
+
+  const stepDisplace = (s: Session, spec: DisplaceSpec, dir: Dir): void => {
+    const f = frozen.get(s.zone)
+    if (!f || spec.fixed) return
+    const next = keyboardNext(f.rects, s.pick.at, dir)
+    if (next === s.pick.at) return
+    s.pick = { zone: s.zone, at: next }
+    const index = spec.resolveIndex ? spec.resolveIndex(next, s.id) : next
+    if (index === null) return
+    setLanding(s, index === s.index ? null : { kind: 'displace', zone: s.zone, index })
+    announce(STEP_WORDS.position(index + 1, f.rects.length))
+  }
+
+  const stepLine = (s: Session, spec: AnyLine, dir: 1 | -1): void => {
+    const m = lineOf(s, spec)
+    if (!m || m.snap === null) return
+    const probes = lineProbes(m.g)
+    const own = m.g.rows.find((row) => row.id === s.id)
+    const current = s.landing?.kind === 'line' ? s.landing.key : null
+    const keyAt = (i: number): unknown => {
+      const got = spec.resolve(s.id, { x: s.cursor.x, y: probes[i].y }, m.snap)
+      return got === null ? null : spec.slotKey ? spec.slotKey(got) : got
+    }
+    const partOf = (i: number, key: unknown): StepPart => {
+      if (i >= m.g.rows.length * 3) return 'after'
+      const base = i - (i % 3)
+      const [before, into, after] = [keyAt(base), keyAt(base + 1), keyAt(base + 2)]
+      const middle = Object.is(before, into) === Object.is(into, after)
+      if (Object.is(key, into) && middle) return 'into'
+      return Object.is(key, before) ? 'before' : 'after'
+    }
+    const at = probes.findIndex((p) => p.y >= s.cursor.y)
+    let i = at < 0 ? probes.length : at
+    if (dir > 0 && probes[i]?.y === s.cursor.y) i += 1
+    if (dir < 0) i -= 1
+    for (; i >= 0 && i < probes.length; i += dir) {
+      const p = probes[i]
+      const key = keyAt(i)
+      const home = key === null && own !== undefined && p.y >= own.top && p.y <= own.bottom
+      if ((key === null && !home) || Object.is(key, current)) continue
+      const point = { x: s.cursor.x, y: p.y }
+      const L = key === null ? null : lineAtLocal(s, spec, point)
+      setLanding(s, L)
+      s.cursor = point
+      if (!L) announceDrag('return', s.name)
+      else {
+        const named = spec.step?.(L.slot, L.snap) ?? { part: partOf(i, key), id: p.row }
+        announce(STEP_WORDS[named.part](spec.label(named.id)))
+      }
+      zones.get(s.zone)?.els.get(p.row)?.scrollIntoView({ block: 'nearest' })
+      return
+    }
+  }
+
+  const keyboard = (s: Session, e: KeyboardEvent): void => {
+    const dir = e.key in ARROW_DIRS ? ARROW_DIRS[e.key] : null
+    const drops = e.key === ' ' || e.key === 'Enter' || e.key === 'Tab'
+    if (!dir && !drops && e.key !== 'Escape') return
+    e.preventDefault()
+    e.stopPropagation()
+    if (s.phase !== 'live' || (drops && e.repeat)) return
+    const k = kindOf(s.zone)
+    if (dir && k?.kind === 'displace') stepDisplace(s, k.spec, dir)
+    else if (dir && k?.kind === 'line' && dir.y !== 0) stepLine(s, k.spec, dir.y > 0 ? 1 : -1)
+    else if (drops) drop()
+    else if (!dir) cancel()
+  }
+
+  const liftKeyboard = (zoneId: string, id: string): void => {
+    if (session?.phase === 'live') return
+    pending?.()
+    const s = lift(zoneId, id, 'keyboard')
+    if (!s) return
+    const onKey = (e: KeyboardEvent): void => keyboard(s, e)
+    const onOut = (e: FocusEvent): void => {
+      if (!(e.relatedTarget instanceof Node && s.el.contains(e.relatedTarget))) cancel()
+    }
+    window.addEventListener('keydown', onKey, { capture: true })
+    s.el.addEventListener('focusout', onOut)
+    const outside = pushDismissal({ layer: () => null, trigger: () => s.el, dismiss: cancel })
+    s.release = () => {
+      window.removeEventListener('keydown', onKey, { capture: true })
+      s.el.removeEventListener('focusout', onOut)
+      outside.release()
+    }
+  }
+
+  // ── Pointer ──
+
+  const begin = (zoneId: string, id: string, e: ReactPointerEvent): void => {
+    if (session?.phase === 'live') return
+    pending?.()
+    const k = kindOf(zoneId)
+    const el = zones.get(zoneId)?.els.get(id)
+    if (!k || !el || k.spec.disabled) return
+    const start = { x: e.clientX, y: e.clientY }
+    const h = beginPointerGesture({
+      el,
+      event: e,
+      activation: 'item',
+      cursor: 'grabbing',
+      autoScroll: { from: el, axis: k.kind === 'line' ? 'y' : 'xy' },
+      onActivate: () => lift(zoneId, id, 'pointer', start) !== null,
+      onDragMove: (ev) => track(ev.clientX, ev.clientY),
+      onWindowScroll: rescroll,
+      onDrop: drop,
+      onAbort: cancel,
     })
-    if (!active) return atRest(false)
-    if (id === active.id && zoneId === active.zoneId) {
-      if (d.overlay && !keyboard) return { transform: STILL, hidden: true, animate: false }
-      // Omitted during a live pointer drag so a re-render can't clobber track()'s imperative write.
-      if (dropState === 'dragging' && !keyboard)
-        return { transform: undefined, hidden: false, animate: false }
-      const base = frozen.current.get(d.zoneId)?.rects[d.activeIdx]
-      const target = landing && targetCell(...landing)
-      if (!base || !target) return atRest(animate)
-      return { transform: placeTransform(target, base, d.zoom), hidden: false, animate: true }
-    }
-    const f = frozen.current.get(zoneId)
-    const index = f ? f.ids.indexOf(id) : -1
-    if (!f || index === -1) return atRest(animate)
-    const own = zoneId === d.zoneId
-    const over =
-      landing && landing[0] === zoneId ? landing[1] : own && holdGapRef.current ? d.activeIdx : -1
-    const target = cellOf(zoneId, f, own ? d.activeIdx : -1, over, index)
-    return { transform: placeTransform(target, f.rects[index], d.zoom), hidden: false, animate }
+    if (h) gesture = h
   }
 
-  // Containers grow their drag-time floor on the lift commit, so every measurement is re-read once it has laid out; the landing re-renders because dropBox reads the shifted rects at render.
-  useLayoutEffect(() => {
-    if (dropState !== 'dragging') return
-    resync()
-    setLanding((l) => l && [...l])
-  }, [dropState])
+  // ── Registration ──
 
-  const dropBox = (foreignOnly: boolean, inZone?: string): Box | null => {
-    if (!activeRect || !landing || landing[1] < 0) return null
-    const [zid, idx] = landing
-    const own = zid === drag.current.zoneId
-    if ((foreignOnly && own) || (inZone !== undefined && inZone !== zid)) return null
-    const target = targetCell(zid, idx)
-    if (!target) return null
-    const { width, height } = zones.current.get(zid)?.axis
-      ? sizeIn(zid)
-      : (frozen.current.get(zid)?.rects[idx] ?? activeRect)
-    return {
-      left: target.x,
-      top: target.y,
-      width,
-      height,
-      cx: target.x + width / 2,
-      cy: target.y + height / 2,
-    }
+  return {
+    active,
+    slot,
+    loose,
+    setDisplace: (zoneId, spec) => {
+      const r = reg(zoneId)
+      const fresh = r.zone === null
+      r.zone = { kind: 'displace', spec }
+      if (fresh) admitLate(zoneId)
+    },
+    setLine: (zoneId, spec, paint) => {
+      reg(zoneId).zone = { kind: 'line', spec, paint }
+    },
+    forget: (zoneId) => {
+      if (session?.zone === zoneId) halt()
+      zones.delete(zoneId)
+    },
+    box: (zoneId, el) => {
+      reg(zoneId).box = el
+      if (el) admitLate(zoneId)
+    },
+    el: (zoneId, id, el) => {
+      const r = reg(zoneId)
+      if (el) r.els.set(id, el)
+      else r.els.delete(id)
+      if (session?.zone === zoneId && session.line) session.line.dirty = true
+    },
+    group: (zoneId, key, el) => {
+      const r = reg(zoneId)
+      if (el) r.groups.set(key, el)
+      else r.groups.delete(key)
+      if (session?.zone === zoneId && session.line) session.line.dirty = true
+    },
+    rowEl: (zoneId, id) => zones.get(zoneId)?.els.get(id),
+    focusRow: (zoneId, from, step) => {
+      const rows = zones.get(zoneId)?.box?.querySelectorAll<HTMLElement>(rowsOf(zoneId))
+      if (!rows) return
+      const list = Array.from(rows)
+      list[list.indexOf(from as HTMLElement) + step]?.focus()
+    },
+    invalidate: (zoneId) => {
+      const s = session
+      if (s?.phase !== 'live' || s.zone !== zoneId || !s.line) return
+      s.line.dirty = true
+      refresh(s)
+    },
+    begin,
+    liftKeyboard,
+    busy: () => session !== null,
+    holdChrome: (el) => {
+      chromeEl = el
+      const s = session
+      if (!el || !s) return
+      const t = travel(s, s.last.x, s.last.y)
+      el.style.transform = translate(t.x, t.y)
+      if (s.overlaid) s.el.style.visibility = 'hidden'
+    },
+    dispose: halt,
   }
+}
 
-  const api = useMemo<EngineApi>(
-    () => ({ setZone, releaseZone, registerContainer, registerItem, begin, liftKeyboard, escort }),
-    [],
-  )
-  const state = useMemo<EngineState>(
-    () => ({
-      active,
-      dropState,
-      family: loose ? drag.current.family : null,
-      floor: activeRect && dropState !== 'idle' ? activeRect.height / drag.current.zoom : null,
-      itemState,
-      dropBox,
-    }),
-    [active, activeRect, landing, dropState, keyboard, loose],
-  )
+// ── Contexts and hooks ──────────────────────────────────────────────────────
 
+type ZoneValue = { api: Api; zoneId: string; disabled: boolean }
+
+const ApiCtx = createContext<Api | null>(null)
+const ZoneCtx = createContext<ZoneValue | null>(null)
+const SlotCtx = createContext<unknown>(null)
+const ITEM_STYLE: CSSProperties = { position: 'relative', touchAction: 'none' }
+const NO_SUB = (): (() => void) => noop
+
+function useZone(hook: string): ZoneValue {
+  const z = useContext(ZoneCtx)
+  if (!z) throw new Error(`${hook} must be used inside a zone`)
+  return z
+}
+
+function useDragging(api: Api, zoneId: string, id: string): boolean {
+  return useSyncExternalStore(api.active.subscribe, () => {
+    const a = api.active.get()
+    return a !== null && a.zone === zoneId && a.id === id
+  })
+}
+
+export function DragGroup({ children }: { children: ReactNode }): React.JSX.Element {
+  const [chrome, setChrome] = useState<Chrome | null>(null)
+  const [api] = useState(() => createEngine(setChrome))
+  useEffect(() => ensureInstructions(), [])
+  useEffect(() => api.dispose, [api])
   return (
     <ApiCtx.Provider value={api}>
-      <StateCtx.Provider value={state}>
-        {children}
-        {overlay}
-      </StateCtx.Provider>
+      {children}
+      {chrome &&
+        createPortal(
+          <div ref={api.holdChrome} style={chrome.style}>
+            {chrome.node}
+          </div>,
+          document.body,
+        )}
     </ApiCtx.Provider>
   )
 }
 
-type SortableZoneProps = {
-  /** An addressable zone owns an element, so an empty band is still a drop target. */
-  id?: string
-  items: string[]
-  onReorder?: (activeId: string, overId: string) => void
-  disabled?: boolean
-  axis?: Axis
-  getItemLabel?: (id: string) => string
-  /** Zones of one family exchange items; only a zone with an `id` receives. */
-  family?: string
-  /** Items may leave a fixed zone, but its own order never previews a move. */
-  fixed?: boolean
-  /** Null keeps that item home; absent, the item carries its id. */
-  carry?: (id: string) => Carried | null
-  receive?: (item: Carried, index: number) => void
-  release?: (id: string) => void
-  renderOverlay?: Overlay
-  className?: string
-  children: ReactNode
-}
-
-export function SortableZone(props: SortableZoneProps): React.JSX.Element {
+export function SortableZone<T>(props: SortableZoneProps<T>): React.JSX.Element {
   const api = useContext(ApiCtx)
-  // A standalone surface carries its own provider, so a single-zone host mounts a zone and nothing else.
   if (!api)
     return (
       <DragGroup>
         <SortableZone {...props} />
       </DragGroup>
     )
-  return <ZoneBody api={api} {...props} />
+  return <DisplaceZone api={api} {...props} />
 }
 
-function ZoneBody({
+function DisplaceZone({
   api,
-  id,
-  items,
-  onReorder,
-  disabled = false,
-  axis,
-  getItemLabel,
-  family,
-  fixed = false,
-  carry,
-  receive,
-  release,
-  renderOverlay,
   className,
   children,
-}: SortableZoneProps & { api: EngineApi }): React.JSX.Element {
-  const floor = useContext(StateCtx)?.floor ?? null
-  const auto = useId()
-  const zoneId = id ?? auto
-  useEffect(() => {
-    api.setZone(zoneId, {
-      ids: items,
-      onReorder,
-      disabled,
-      axis,
-      getItemLabel,
-      family,
-      fixed,
-      carry,
-      receive,
-      release,
-      renderOverlay,
-    })
-  })
-  useEffect(() => () => api.releaseZone(zoneId), [zoneId])
-  const zone = useMemo(() => ({ zoneId, disabled }), [zoneId, disabled])
-  const holdContainer = useCallback(
-    (el: HTMLElement | null) => api.registerContainer(zoneId, el),
-    [api, zoneId],
-  )
+  ...spec
+}: SortableZoneProps<unknown> & { api: Api }): React.JSX.Element {
+  const zoneId = useId()
+  useEffect(() => api.setDisplace(zoneId, spec))
+  useEffect(() => () => api.forget(zoneId), [api, zoneId])
+  const box = useCallback((el: HTMLElement | null) => api.box(zoneId, el), [api, zoneId])
+  const disabled = spec.disabled ?? false
+  const zone = useMemo(() => ({ api, zoneId, disabled }), [api, zoneId, disabled])
   return (
-    <ZoneIdCtx.Provider value={zone}>
-      {id == null ? (
+    <ZoneCtx.Provider value={zone}>
+      {className === undefined ? (
         children
       ) : (
-        <div
-          ref={holdContainer}
-          className={className}
-          style={floor === null ? undefined : ({ '--drag-floor': px(floor) } as CSSProperties)}
-        >
+        <div ref={box} className={className}>
           {children}
         </div>
       )}
-    </ZoneIdCtx.Provider>
+    </ZoneCtx.Provider>
   )
 }
 
-/** Inside a zone, only that zone's landings; outside one, any zone's; `foreignOnly` skips the item's own zone. */
-export function useDropSlot(foreignOnly = false): Box | null {
-  const s = useContext(StateCtx)
-  const zone = useContext(ZoneIdCtx)
-  return s && s.dropState === 'dragging' ? s.dropBox(foreignOnly, zone?.zoneId) : null
+export function LineZone<Slot, Snap>(props: LineZoneProps<Slot, Snap>): React.JSX.Element {
+  const api = useContext(ApiCtx)
+  if (!api)
+    return (
+      <DragGroup>
+        <LineZone {...props} />
+      </DragGroup>
+    )
+  return <LineHost api={api} {...(props as unknown as LineZoneProps<unknown, unknown>)} />
 }
 
-export function DropSlot({ foreignOnly }: { foreignOnly?: boolean }): React.JSX.Element | null {
-  const slot = useDropSlot(foreignOnly)
-  if (!slot) return null
-  return createPortal(
-    <div
-      className="drop-slot is-floating"
-      style={{ left: slot.left, top: slot.top, width: slot.width, height: slot.height }}
-    />,
-    document.body,
+function LineHost({
+  api,
+  className,
+  children,
+  ...spec
+}: LineZoneProps<unknown, unknown> & { api: Api }): React.JSX.Element {
+  const zoneId = useId()
+  const [paint, setPaint] = useState<LinePaint | null>(null)
+  const last = useRef<HTMLElement | null>(null)
+  const viaPointer = useRef(false)
+  useEffect(() => api.setLine(zoneId, spec, setPaint))
+  useEffect(() => () => api.forget(zoneId), [api, zoneId])
+  useEffect(() => api.invalidate(zoneId), [api, zoneId, ...spec.watch])
+  const box = useCallback((el: HTMLElement | null) => api.box(zoneId, el), [api, zoneId])
+  const disabled = spec.disabled ?? false
+  const stop = disabled ? -1 : 0
+  const zone = useMemo(() => ({ api, zoneId, disabled }), [api, zoneId, disabled])
+  const rows = rowsOf(zoneId)
+  const onFocus = (e: ReactFocusEvent<HTMLDivElement>): void => {
+    const pointed = viaPointer.current
+    viaPointer.current = false
+    const host = e.currentTarget
+    if (e.target !== host) {
+      host.tabIndex = -1
+      if (!(e.target instanceof HTMLElement)) return
+      const row = e.target.closest<HTMLElement>(rows)
+      if (pointed && row && row !== e.target && !e.target.matches(EDITABLE_TARGETS)) row.focus()
+      else if (row === e.target) last.current = row
+      return
+    }
+    if (pointed) return
+    const held = last.current?.isConnected && host.contains(last.current) ? last.current : null
+    ;(held ?? host.querySelector<HTMLElement>(rows))?.focus()
+  }
+  const onBlur = (e: ReactFocusEvent<HTMLDivElement>): void => {
+    if (e.relatedTarget instanceof Node && e.currentTarget.contains(e.relatedTarget)) return
+    e.currentTarget.tabIndex = stop
+    viaPointer.current = false
+  }
+  return (
+    <ZoneCtx.Provider value={zone}>
+      <SlotCtx.Provider value={paint?.slot ?? null}>
+        {/* biome-ignore lint/a11y/noStaticElementInteractions: the host is the list's one tab stop and hands focus to a row at once; the container role belongs to the list's owner */}
+        <div
+          ref={box}
+          className={cx('drop-line-host', className)}
+          tabIndex={stop}
+          onPointerDownCapture={() => {
+            viaPointer.current = true
+          }}
+          onFocus={onFocus}
+          onBlur={onBlur}
+        >
+          {children}
+          {paint?.line ? <DropLine style={paint.line} /> : null}
+        </div>
+      </SlotCtx.Provider>
+    </ZoneCtx.Provider>
   )
-}
-
-/** Null until an item has left its own zone. */
-export function useDragFamily(): string | null {
-  return useContext(StateCtx)?.family ?? null
-}
-
-export function useEscort(): Escort | null {
-  return useContext(ApiCtx)?.escort ?? null
 }
 
 export function useDragItem(id: string, onOpen?: () => void): DragItem {
-  const api = useContext(ApiCtx)
-  const state = useContext(StateCtx)
-  const zone = useContext(ZoneIdCtx)
-  if (!api || !state || !zone) throw new Error('useDragItem must be used inside a <SortableZone>')
-  const { zoneId, disabled } = zone
-  const { transform, hidden, animate } = state.itemState(zoneId, id)
-  const isDragging = state.active?.id === id && state.active.zoneId === zoneId
-  const inert = disabled && !onOpen
-  return {
-    setNodeRef: (el) => api.registerItem(zoneId, id, el),
-    style: {
-      transform,
-      // At rest the inline transition clears entirely: an inline value (even 'none') replaces the element's whole stylesheet transition list and kills its own color/size motion. Safe because the zone contract forbids an item's stylesheet from transitioning `transform`.
-      transition: animate
-        ? `transform ${DEFAULT_FEEL.duration}ms ${DEFAULT_FEEL.easing}`
-        : undefined,
-      visibility: hidden ? 'hidden' : undefined,
-      // The lifted item must not answer the disclose hit-test it is riding over.
-      pointerEvents: isDragging && !hidden && state.dropState === 'dragging' ? 'none' : undefined,
-      zIndex: isDragging ? stack.local.lifted : undefined,
-      position: 'relative',
-      touchAction: 'none',
-    },
-    handle: {
+  const { api, zoneId, disabled } = useZone('useDragItem')
+  const isDragging = useDragging(api, zoneId, id)
+  const open = useLatest(onOpen)
+  const opens = onOpen !== undefined
+  const setNodeRef = useCallback(
+    (el: HTMLElement | null) => api.el(zoneId, id, el),
+    [api, zoneId, id],
+  )
+  const handle = useMemo(
+    () => ({
       onPointerDown: (e: ReactPointerEvent) => api.begin(zoneId, id, e),
       onKeyDown: (e: ReactKeyboardEvent) => {
-        // A focusable descendant's Space or Enter is its own.
-        if (e.target !== e.currentTarget || isDragging) return
-        if (e.key === 'Enter' && onOpen) {
+        if (e.target !== e.currentTarget || e.repeat || api.busy()) return
+        if (e.key === 'Enter' && opens) {
           e.preventDefault()
-          onOpen()
+          open.current?.()
         } else if ((e.key === ' ' || e.key === 'Enter') && !disabled) {
           e.preventDefault()
           api.liftKeyboard(zoneId, id)
         }
       },
       role: 'button',
-      tabIndex: inert ? -1 : 0,
+      tabIndex: disabled && !opens ? -1 : 0,
       'aria-roledescription': 'sortable',
       'aria-describedby': INSTRUCTIONS_ID,
       'aria-pressed': isDragging || undefined,
-      'aria-disabled': inert || undefined,
+      'aria-disabled': (disabled && !opens) || undefined,
+    }),
+    [api, zoneId, id, disabled, opens, isDragging],
+  )
+  return useMemo(
+    () => ({ setNodeRef, style: ITEM_STYLE, handle, isDragging }),
+    [setNodeRef, handle, isDragging],
+  )
+}
+
+export function useLineRow(
+  id: string,
+  { spring, open }: LineRowOptions = {},
+): { ref: (el: HTMLElement | null) => void; handle: LineHandle } {
+  const { api, zoneId } = useZone('useLineRow')
+  const node = useRef<HTMLElement | null>(null)
+  const expand = useLatest(spring)
+  const run = useLatest(open)
+  const springs = spring !== undefined
+  const opens = open !== undefined
+  const ref = useCallback(
+    (el: HTMLElement | null) => {
+      node.current = el
+      api.el(zoneId, id, el)
     },
-    isDragging,
-  }
+    [api, zoneId, id],
+  )
+  useEffect(() => {
+    const el = node.current
+    if (!springs || !el) return
+    return addSpring(el, () => expand.current?.(api.active.get()?.id ?? ''))
+  }, [springs])
+  const handle = useMemo<LineHandle>(
+    () => ({
+      onPointerDown: (e) => api.begin(zoneId, id, e),
+      onKeyDown: (e) => {
+        const row = e.currentTarget
+        if (e.target !== row) return
+        const step = e.key === 'ArrowDown' ? 1 : e.key === 'ArrowUp' ? -1 : 0
+        const opening = e.key === 'Enter' && opens
+        if (e.key !== ' ' && step === 0 && !opening) return
+        e.preventDefault()
+        if (opening) run.current?.()
+        else if (step !== 0) api.focusRow(zoneId, row, step)
+        else if (!e.repeat) api.liftKeyboard(zoneId, id)
+      },
+      tabIndex: -1,
+      'aria-describedby': INSTRUCTIONS_ID,
+      'data-line-row': zoneId,
+    }),
+    [api, zoneId, id, opens],
+  )
+  return useMemo(() => ({ ref, handle }), [ref, handle])
+}
+
+export function useLineGroup(key: string): (el: HTMLElement | null) => void {
+  const { api, zoneId } = useZone('useLineGroup')
+  return useCallback((el: HTMLElement | null) => api.group(zoneId, key, el), [api, zoneId, key])
+}
+
+export function LineRow({
+  id,
+  spring,
+  open,
+  ...div
+}: { id: string } & LineRowOptions & HTMLAttributes<HTMLDivElement>): React.JSX.Element {
+  const { ref, handle } = useLineRow(id, { spring, open })
+  return <div ref={ref} {...div} {...handle} />
+}
+
+export function LineGroup({
+  id,
+  ...div
+}: { id: string } & HTMLAttributes<HTMLDivElement>): React.JSX.Element {
+  const ref = useLineGroup(id)
+  return <div ref={ref} {...div} />
+}
+
+export function useLineSlot<S>(): S | null {
+  return useContext(SlotCtx) as S | null
+}
+
+export function useLineEl(): (id: string) => HTMLElement | undefined {
+  const { api, zoneId } = useZone('useLineEl')
+  return useCallback((id: string) => api.rowEl(zoneId, id), [api, zoneId])
+}
+
+export function DropSlot({ foreignOnly = false }: { foreignOnly?: boolean }): ReactNode {
+  const { api, zoneId } = useZone('DropSlot')
+  const box = useSyncExternalStore(api.slot.subscribe, () => {
+    const v = api.slot.get()
+    return v && v.zone === zoneId && !(foreignOnly && v.own) ? v.box : null
+  })
+  if (!box) return null
+  return createPortal(
+    <div
+      className="drop-slot is-floating"
+      style={{ left: box.left, top: box.top, width: box.width, height: box.height }}
+    />,
+    document.body,
+  )
+}
+
+export function useLooseItem<T>(family: Family<T>): T | null {
+  const api = useContext(ApiCtx)
+  return useSyncExternalStore(
+    api?.loose.subscribe ?? NO_SUB,
+    () => (api?.loose.get()?.get(family) as T | undefined) ?? null,
+  )
 }

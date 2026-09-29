@@ -1,14 +1,7 @@
 import type { CSSProperties } from 'react'
 
-export type Box = {
-  left: number
-  top: number
-  width: number
-  height: number
-  cx: number
-  cy: number
-}
-export type DropState = 'idle' | 'dragging' | 'dropping'
+export type Rect = { left: number; top: number; width: number; height: number }
+export type Box = Rect & { cx: number; cy: number }
 export type DragItem = {
   setNodeRef: (el: HTMLElement | null) => void
   style: CSSProperties
@@ -19,7 +12,6 @@ export type DragItem = {
 export const ACTIVATION = 5 // px the pointer must travel before a drag starts
 // The CSS side reads this same token as `--drop-line-inset`.
 export { DROP_LINE_INSET } from '../Theme/theme-vars.css'
-export const GHOST_OFFSET = { x: 12, y: 8 }
 export const EDITABLE_TARGETS = 'input, textarea, [contenteditable="true"]'
 
 export function suppressNextClick(): void {
@@ -42,8 +34,12 @@ export function suppressReleaseClick(): void {
 }
 export const HYSTERESIS = 6 // px a new candidate must beat the current `over` by, to switch
 export const BREAKOUT = 24 // px past an axis-locked zone's edges before its item is loose; a free zone lets go at its edge
-/** What an item carries into another zone; both zones agree on its shape. */
-export type Carried = unknown
+export type Family<T> = { readonly name: string; readonly carried?: T }
+export type CarryEntry = readonly [Family<unknown>, (id: string) => unknown]
+export const carries = <T>(family: Family<T>, of: (id: string) => T | null): CarryEntry => [
+  family,
+  of,
+]
 export const SETTLE_FALLBACK = 80 // ms slack past the transition, covering the paint-start delay
 
 export function boxAt(left: number, top: number, width: number, height: number): Box {
@@ -52,15 +48,33 @@ export function boxAt(left: number, top: number, width: number, height: number):
 
 export function toBox(el: HTMLElement): Box {
   const r = el.getBoundingClientRect()
-  return {
-    left: r.left,
-    top: r.top,
-    width: r.width,
-    height: r.height,
-    cx: r.left + r.width / 2,
-    cy: r.top + r.height / 2,
-  }
+  return boxAt(r.left, r.top, r.width, r.height)
 }
 
 /** `.toFixed(1)` keeps sub-pixel sharpness on Retina without blur. */
 export const px = (n: number): string => `${n.toFixed(1)}px`
+
+export function clipChain(el: Element): Element[] {
+  const chain: Element[] = []
+  for (let n = el.parentElement; n; n = n.parentElement) {
+    const s = getComputedStyle(n)
+    if (s.overflowX !== 'visible' || s.overflowY !== 'visible') chain.push(n)
+  }
+  return chain
+}
+
+export function visibleBox(box: Rect, chain: readonly Element[]): Rect | null {
+  let { left, top } = box
+  let right = left + box.width
+  let bottom = top + box.height
+  for (const n of chain) {
+    const r = n.getBoundingClientRect()
+    left = Math.max(left, r.left)
+    top = Math.max(top, r.top)
+    right = Math.min(right, r.right)
+    bottom = Math.min(bottom, r.bottom)
+  }
+  return right > left && bottom > top
+    ? { left, top, width: right - left, height: bottom - top }
+    : null
+}

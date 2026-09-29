@@ -6,9 +6,10 @@ import {
   type PointerEvent as ReactPointerEvent,
   type ReactNode,
 } from 'react'
+import { createPortal } from 'react-dom'
+import { stack } from '../Theme/stack'
 import { usePointerGesture } from './gesture'
-import { EDITABLE_TARGETS, GHOST_OFFSET, toBox, type Box } from './shared'
-import type { Escort, EscortSpec } from './engine'
+import { EDITABLE_TARGETS } from './shared'
 import { DragGhost } from './DragGhost'
 import { DropLine } from './DropLine'
 import { armAutoScroll } from './autoscroll'
@@ -23,9 +24,6 @@ interface InsertionDragSpec<Slot, Snap> {
   lineFor?: (slot: Slot, snap: Snap) => CSSProperties | null
   label: (id: string) => string
   ghostLabel?: (id: string) => ReactNode
-  ghost?: 'offset' | 'grab' | 'none'
-  escort?: Escort | null
-  escortSpec?: (id: string, rect: Box) => EscortSpec | null
   rowEl: (id: string) => HTMLElement | null | undefined
   scrollTarget: () => Element | null
   armFrom?: () => HTMLElement | null
@@ -87,19 +85,13 @@ export function useInsertionDrag<Slot, Snap>(
     if (!d) return
     const cfg = specRef.current
     const s = snapshot()
-    const slot = s && !cfg.escort?.loose() ? cfg.resolve(d.id, lastPoint.current, s) : null
+    const slot = s ? cfg.resolve(d.id, lastPoint.current, s) : null
     live.current = slot
-    const mode = cfg.ghost ?? 'offset'
     setDrag({
       id: d.id,
       slot,
       line: slot !== null && s !== null ? (cfg.lineFor?.(slot, s) ?? null) : null,
-      ghost:
-        mode === 'none'
-          ? null
-          : mode === 'grab'
-            ? { x: lastPoint.current.x - d.grabX, y: lastPoint.current.y }
-            : { x: lastPoint.current.x + GHOST_OFFSET.x, y: lastPoint.current.y + GHOST_OFFSET.y },
+      ghost: { x: lastPoint.current.x - d.grabX, y: lastPoint.current.y },
     })
   }
 
@@ -139,30 +131,16 @@ export function useInsertionDrag<Slot, Snap>(
         announce(`Picked up ${dragged.current.label}.`)
         // No re-resolve callback: the loop's scrollBy raises the window scroll `onWindowScroll` already answers.
         stopScroll.current = armAutoScroll(cfg.armFrom?.() ?? el, () => lastPoint.current)
-        const spec = cfg.escortSpec?.(id, toBox(el))
-        if (spec) cfg.escort?.lift(spec)
         resolveSlot()
         return true
       },
       onDragMove: (ev) => {
         lastPoint.current = { x: ev.clientX, y: ev.clientY }
-        const escort = specRef.current.escort
-        escort?.move(ev.clientX, ev.clientY)
-        if (escort?.loose()) {
-          stopScroll.current?.()
-          stopScroll.current = null
-        }
         resolveSlot()
       },
       scrollTarget: cfg.scrollTarget,
       onWindowScroll: invalidate,
       onDrop: () => {
-        const escort = specRef.current.escort
-        const wasLoose = escort?.loose()
-        if (escort?.drop() || wasLoose) {
-          reset()
-          return
-        }
         if (dirty.current) resolveSlot()
         const d = dragged.current
         const slot = live.current
@@ -173,10 +151,7 @@ export function useInsertionDrag<Slot, Snap>(
         }
         reset()
       },
-      onAbort: () => {
-        specRef.current.escort?.abort()
-        reset()
-      },
+      onAbort: reset,
       teardown: () => {
         stopScroll.current?.()
         stopScroll.current = null
@@ -199,12 +174,23 @@ export function useInsertionDrag<Slot, Snap>(
     slot: drag?.slot ?? null,
     line: drag?.line != null ? <DropLine style={drag.line} /> : null,
     ghost:
-      drag?.ghost != null && dragged.current ? (
-        <DragGhost
-          x={drag.ghost.x}
-          y={drag.ghost.y}
-          label={specRef.current.ghostLabel?.(dragged.current.id) ?? dragged.current.label}
-        />
-      ) : null,
+      drag?.ghost != null && dragged.current
+        ? createPortal(
+            <div
+              style={{
+                position: 'fixed',
+                left: drag.ghost.x,
+                top: drag.ghost.y,
+                pointerEvents: 'none',
+                zIndex: stack.top.dragOverlay,
+              }}
+            >
+              <DragGhost>
+                {specRef.current.ghostLabel?.(dragged.current.id) ?? dragged.current.label}
+              </DragGhost>
+            </div>,
+            document.body,
+          )
+        : null,
   }
 }

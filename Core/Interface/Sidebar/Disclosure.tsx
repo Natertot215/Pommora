@@ -7,7 +7,8 @@ import { Reveal } from '@pommora/uix/Animations/Reveal'
 import { useHoverReveal } from '@pommora/uix/Interactions/hoverReveal'
 import { revealTarget } from '@pommora/uix/Interactions/hover-reveal.css'
 import { useFold, useSession } from '../../Session/store'
-import { ctxHandler, DragRow, type RenameTarget, RowTitle } from './sidebarRows'
+import { LineRow } from '@pommora/uix/Interactions/drag'
+import { ctxHandler, type RenameTarget, RowTitle } from './sidebarRows'
 
 const PEEK_LINGER_MS = 2500 // KNOB
 
@@ -150,7 +151,6 @@ export function Disclosure({
         type="button"
         className={cx('row-lock', revealTarget)}
         aria-label={lockLabel(locked, 'Folder')}
-        onPointerDown={(e) => e.stopPropagation()}
         onClick={(e) => {
           e.stopPropagation()
           lock.press()
@@ -166,6 +166,7 @@ export function Disclosure({
       className="row"
       selected={selected}
       indent={depth}
+      tabIndex={-1}
       onClick={toggle}
       onPointerDown={onHeaderPointerDown}
       onContextMenu={ctxHandler(onContextMenu)}
@@ -175,7 +176,7 @@ export function Disclosure({
         dismissOnLeave(e)
       }}
       trailing={lockToggle}
-      leading={<DropOutline open={open} />}
+      leading={<DropOutline open={open} onToggle={toggle} />}
     >
       {/* biome-ignore lint/a11y/useKeyWithClickEvents lint/a11y/noStaticElementInteractions: the surrounding row is the control; this narrows its hit area */}
       <span onClick={openView}>
@@ -186,14 +187,16 @@ export function Disclosure({
   )
   return (
     <>
-      <DragRow
+      <LineRow
         id={dragId}
-        springOpen={locked ? undefined : { collapsed: !open, onExpand: () => setOpen(true) }}
+        className="tree-item"
+        spring={locked || open ? undefined : () => setOpen(true)}
+        open={toggle}
         onPointerEnter={onHeaderHover && (() => onHeaderHover(true))}
         onPointerLeave={onHeaderHover && (() => onHeaderHover(false))}
       >
         {header}
-      </DragRow>
+      </LineRow>
       {belowHeader}
       <Reveal open={open || peekOnly} fill>
         {/* biome-ignore lint/a11y/noStaticElementInteractions: a right-click affordance on a container, not a control — the contents carry their own semantics */}

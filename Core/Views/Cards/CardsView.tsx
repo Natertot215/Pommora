@@ -1,13 +1,4 @@
-import {
-  memo,
-  useCallback,
-  useContext,
-  useEffect,
-  useLayoutEffect,
-  useMemo,
-  useRef,
-  useState,
-} from 'react'
+import { memo, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react'
 import type { ResolvedColumn, ViewRow } from '@pommora/core/Views/viewRow'
 import type { SetNode } from '@pommora/core/Nexus/tree'
 import { isBlankValue, type PropertyValue } from '@pommora/core/Properties/propertyValue'
@@ -16,7 +7,6 @@ import type { ColumnStyle } from '@pommora/core/Properties/columnStyles'
 import { pickKindOf } from '@pommora/core/Properties/properties'
 import { Icon } from '@pommora/uix/Symbols'
 import { isCmd } from '@pommora/uix/Interactions/chords'
-import { onActivateKey } from '@pommora/uix/Interactions/activate'
 import { entityIcon } from '../../Assets/entityIconPolicy'
 import { text } from '@pommora/uix/Theme/typography.css'
 import {
@@ -29,12 +19,14 @@ import {
   CardTrail,
 } from '@pommora/uix/Cards/Card'
 import {
-  DragGroup,
+  type Box,
+  carries,
   DropSlot,
-  reorder,
+  type Family,
   SortableZone,
   useDragItem,
 } from '@pommora/uix/Interactions/drag'
+import { moveBefore } from '@pommora/uix/Utilities/moveItem'
 import { cx } from '@pommora/uix/Utilities/cx'
 import { useElementZoom } from '@pommora/uix/Utilities/zoom'
 import { useStableApi } from '@pommora/uix/Utilities/stableApi'
@@ -45,10 +37,9 @@ import { glanceShown } from '../../Interface/Glance/glanceAction'
 import { AssetImage } from '../../Assets/AssetImage'
 import { useBannerMenu } from '../../Interface/Header/useBannerMenu'
 import { byOrder } from '@pommora/core/Nexus/treePatch'
-import { navKey } from '../../Navigation/navRef'
+import { navKey, selectTargetOf, TAB_FAMILY } from '../../Navigation/navRef'
 import type { ViewHostApi } from '../Host/useViewHost'
 import { GHOST_TRAVEL_HOLD_MS, GhostSuppress } from '@pommora/uix/Interactions/ghostCreate'
-import { DEFAULT_FEEL } from '@pommora/uix/Animations/feel'
 import { Reveal } from '@pommora/uix/Animations/Reveal'
 import { columnLabel, useCapitalizeMetadata } from '../../Properties/Cells/columnLabel'
 import { useColumnStyleMap } from '../Host/useColumnStyles'
@@ -78,6 +69,7 @@ import { titleInput } from '@pommora/uix/Menus'
 import { useLatest } from '@pommora/uix/Utilities/stableApi'
 import { popMenu } from '../../Actions/menuActions'
 import { cardMenuModel } from '@pommora/core/Actions/cardMenu'
+import { useGhostFlip } from './useGhostFlip'
 import './cards-view.css'
 
 // ── Types and constants ─────────────────────────────────────────────────────
@@ -159,8 +151,9 @@ export function CardsView({ host }: { host: ViewHostApi }): React.JSX.Element {
     toggleCollapse,
     structuralGrouping: structural,
     canReassign,
+    canReorderWithin,
     canRelocate,
-    dragDisabled,
+    searching,
     setStylePatch,
     hideProperty,
     revealProperty,
@@ -186,8 +179,10 @@ export function CardsView({ host }: { host: ViewHostApi }): React.JSX.Element {
     [baseSets, setOrderOverride],
   )
   const showSetCards = viewOption(view, 'set_cards') && sets.length > 0
-  const reorderSets = (activeId: string, overId: string): void => {
-    const order = reorder(sets, activeId, overId).map((s) => s.id)
+  const reorderSets = (id: string, beforeId: string | null): void => {
+    const moved = moveBefore(sets, (s) => s.id, id, beforeId)
+    if (!moved) return
+    const order = moved.map((s) => s.id)
     setSetOrderOverride(order)
     void mutate({ op: 'reorderChildren', parentPath: source.path, key: 'set_order', order }).then(
       (ok) => {
@@ -327,10 +322,7 @@ export function CardsView({ host }: { host: ViewHostApi }): React.JSX.Element {
     titleAction: interactions.runTitleAction,
     addableFor: (row) => addEntriesFor(row, view, ctx, columns, tree, capitalize),
     openSet: (set, newTab) => {
-      void select(
-        { kind: 'set', id: set.id, path: set.path },
-        newTab ? { newTab: true } : undefined,
-      )
+      void select(selectTargetOf(set), newTab ? { newTab: true } : undefined)
     },
     banner: setBannerRequest,
   })
@@ -349,49 +341,12 @@ export function CardsView({ host }: { host: ViewHostApi }): React.JSX.Element {
 
   // ── The ghost's seat and its FLIP ─────────────────────────────────────────
 
-  const feel = DEFAULT_FEEL
-  const flipPrev = useRef<Map<Element, DOMRect> | null>(null)
-  // Kept mounted through `closing` so its Reveal can collapse it out, matching the sidebar and table ghosts; it leaves render only once the ghost is truly gone.
-  const ghostLiveId =
-    interactions.ghost.ghost && !anyNaming ? interactions.ghost.ghost.anchorId : null
-  const [ghostShown, setGhostShown] = useState<string | null>(null)
-  useLayoutEffect(() => {
-    if (ghostLiveId === ghostShown) return
-    const root = host.viewRootRef.current
-    const hardGone = ghostShown !== null && interactions.ghost.ghost === null
-    const anchorId = ghostLiveId ?? ghostShown
-    if (root && !hardGone && anchorId !== null) {
-      // Only the grid holding the anchor reflows horizontally; cards in other grids move vertically alone, which the band rects already cover.
-      const grid = root
-        .querySelector(`[data-rid="${CSS.escape(anchorId)}"]`)
-        ?.closest('.cards-grid')
-      const m = new Map<Element, DOMRect>()
-      for (const el of [
-        ...(grid?.querySelectorAll('.card-displace') ?? []),
-        ...root.querySelectorAll('.group-band'),
-      ])
-        m.set(el, el.getBoundingClientRect())
-      flipPrev.current = m
-    } else flipPrev.current = null
-    setGhostShown(ghostLiveId)
-  }, [ghostLiveId, ghostShown])
-  useLayoutEffect(() => {
-    const prev = flipPrev.current
-    flipPrev.current = null
-    if (!prev) return
-    const z = effectiveZoom || 1
-    for (const [el, before] of prev) {
-      if (!el.isConnected) continue
-      const after = el.getBoundingClientRect()
-      const dx = (before.left - after.left) / z
-      const dy = (before.top - after.top) / z
-      if (dx !== 0 || dy !== 0)
-        el.animate([{ transform: `translate(${dx}px, ${dy}px)` }, { transform: 'none' }], {
-          duration: feel.duration,
-          easing: feel.easing,
-        })
-    }
-  }, [ghostShown])
+  const ghostShown = useGhostFlip(
+    host.viewRootRef,
+    interactions.ghost.ghost && !anyNaming ? interactions.ghost.ghost.anchorId : null,
+    interactions.ghost.ghost === null,
+    effectiveZoom,
+  )
   const ghostCreate = (): void => {
     const seat = interactions.ghost.ghost?.anchorId ?? null
     const created = interactions.ghostCreate()
@@ -414,15 +369,45 @@ export function CardsView({ host }: { host: ViewHostApi }): React.JSX.Element {
       onCreate={ghostCreate}
     />
   )
-  const onCardDrop = (activeId: string, toZone: string, toIndex: number): void =>
-    interactions.onDrop(
-      activeId,
-      toZone,
-      (groups.find((g) => g.key === toZone)?.items.filter((r) => r.id !== activeId) ?? [])[toIndex]
-        ?.id ?? null,
-    )
-
   const cardScale = view.card_size ?? TENTHS_SCALE.default
+  const [scope] = useState((): Family<string> => ({ name: 'cards' }))
+  const crossBand = !searching && canReorderWithin && (canReassign || canRelocate)
+  const cardCarry = [carries(scope, (id) => id), carries(TAB_FAMILY, interactions.carry)]
+  const cardOverlay = (id: string, rect: Box): React.ReactNode => {
+    const r = rowById.get(id)
+    if (!r) return null
+    return (
+      <div
+        className={shellClass}
+        style={
+          {
+            zoom: effectiveZoom,
+            '--card-scale': cardScale,
+            width: `${rect.width / effectiveZoom}px`,
+            height: `${rect.height / effectiveZoom}px`,
+          } as React.CSSProperties
+        }
+      >
+        <CardRoot className="card-overlay" style={{ width: '100%', height: '100%' }}>
+          <CardBody pop={false}>
+            <OverlayFace
+              row={r}
+              view={view}
+              banner={banner}
+              ctx={ctx}
+              crumbs={trailBySet[r.parentSetId ?? ''] ?? NO_TRAIL}
+              cover={coverOf(r)}
+              iconName={entityIcon('page', r.icon, defaultIcons)}
+              columns={columns}
+              nexusId={nexusId}
+              capitalize={capitalize}
+              styleById={styleById}
+            />
+          </CardBody>
+        </CardRoot>
+      </div>
+    )
+  }
 
   return (
     <GhostSuppress.Provider value={interactions.holdGhost}>
@@ -438,8 +423,15 @@ export function CardsView({ host }: { host: ViewHostApi }): React.JSX.Element {
           <div className="set-cards-row">
             <SortableZone
               items={sets.map((s) => s.id)}
-              onReorder={reorderSets}
-              getItemLabel={(id) => sets.find((s) => s.id === id)?.title ?? id}
+              fixed={searching}
+              label={(id) => sets.find((s) => s.id === id)?.title ?? ''}
+              carry={[
+                carries(TAB_FAMILY, (id) => {
+                  const set = sets.find((s) => s.id === id)
+                  return set ? selectTargetOf(set) : null
+                }),
+              ]}
+              onMove={reorderSets}
             >
               <DropSlot />
               {sets.map((s) => (
@@ -448,120 +440,81 @@ export function CardsView({ host }: { host: ViewHostApi }): React.JSX.Element {
             </SortableZone>
           </div>
         )}
-        <DragGroup
-          onCommit={onCardDrop}
-          resolveIndex={interactions.structuralSlot}
-          renderOverlay={(id, rect) => {
-            const r = rowById.get(id)
-            if (!r) return null
-            return (
-              <div
-                className={shellClass}
-                style={
-                  {
-                    zoom: effectiveZoom,
-                    '--card-scale': cardScale,
-                    width: `${rect.width / effectiveZoom}px`,
-                    height: `${rect.height / effectiveZoom}px`,
-                  } as React.CSSProperties
-                }
-              >
-                <CardRoot
-                  dragging
-                  className="card-overlay"
-                  style={{ width: '100%', height: '100%' }}
-                >
-                  <CardBody pop={false}>
-                    <OverlayFace
-                      row={r}
-                      view={view}
-                      banner={banner}
-                      ctx={ctx}
-                      crumbs={trailBySet[r.parentSetId ?? ''] ?? NO_TRAIL}
-                      cover={coverOf(r)}
-                      iconName={entityIcon('page', r.icon, defaultIcons)}
-                      columns={columns}
-                      nexusId={nexusId}
-                      capitalize={capitalize}
-                      styleById={styleById}
-                    />
-                  </CardBody>
-                </CardRoot>
-              </div>
-            )
-          }}
+        <BandDnd
+          bands={interactions.bands}
+          labelFor={bandLabel}
+          onDrop={interactions.onBandDrop}
+          nestable={!host.flat}
+          disabled={host.searching}
         >
-          <DropSlot />
-          <BandDnd
-            bands={interactions.bands}
-            labelFor={bandLabel}
-            onDrop={interactions.onBandDrop}
-            nestable={!host.flat}
-            disabled={host.searching}
-          >
-            {groups.map((g) => {
-              const isCollapsed = !flatMode && collapsed.has(g.key)
-              return (
-                <ViewGroupBand
-                  key={g.key}
-                  group={g}
-                  view={view}
-                  ctx={ctx}
-                  setNames={setNames}
-                  setIcons={setIcons}
-                  source={source}
-                  collapsed={isCollapsed}
-                  onToggle={() => toggleCollapse(g.key)}
-                  onAdd={setPaths.has(g.key) ? () => interactions.bandAdd(g.key) : undefined}
-                  headless={flatMode || (g.kind === 'ungrouped' && structural)}
-                  fill
+          {groups.map((g) => {
+            const isCollapsed = !flatMode && collapsed.has(g.key)
+            return (
+              <ViewGroupBand
+                key={g.key}
+                group={g}
+                view={view}
+                ctx={ctx}
+                setNames={setNames}
+                setIcons={setIcons}
+                source={source}
+                collapsed={isCollapsed}
+                onToggle={() => toggleCollapse(g.key)}
+                onAdd={setPaths.has(g.key) ? () => interactions.bandAdd(g.key) : undefined}
+                headless={flatMode || (g.kind === 'ungrouped' && structural)}
+                fill
+              >
+                <SortableZone
+                  items={g.items.map((r) => r.id)}
+                  label={(id) => rowById.get(id)?.title ?? ''}
+                  fixed={searching || !canReorderWithin}
+                  family={crossBand ? scope : undefined}
+                  disclose={crossBand}
+                  carry={cardCarry}
+                  resolveIndex={(index, id) => interactions.structuralSlot(g.key, index, id)}
+                  onMove={(id, beforeId) => interactions.onDrop(id, g.key, beforeId)}
+                  receive={(item, beforeId) => interactions.onDrop(item, g.key, beforeId)}
+                  renderOverlay={cardOverlay}
+                  className="cards-grid card-grid is-fill"
                 >
-                  <SortableZone
-                    id={g.key}
-                    family={canReassign || canRelocate ? 'cards' : undefined}
-                    items={g.items.map((r) => r.id)}
-                    getItemLabel={(id) => rowById.get(id)?.title ?? 'card'}
-                    className="cards-grid card-grid is-fill"
-                  >
-                    {g.items.flatMap((row) => {
-                      const card = (
-                        <PageCard
-                          key={row.id}
-                          row={row}
-                          view={view}
-                          banner={banner}
-                          nexusId={nexusId}
-                          columns={columns}
-                          ctx={ctx}
-                          loc={trailBySet[row.parentSetId ?? '']}
-                          defaultIcons={defaultIcons}
-                          capitalize={capitalize}
-                          styleById={styleById}
-                          draggable={!dragDisabled}
-                          api={cardApi}
-                          allowInlineRemove={effectiveZoom >= 0.8}
-                        />
-                      )
-                      if (ghostShown !== row.id && pendingSeat !== row.id) return [card]
-                      return [
-                        card,
-                        // FLIP seats the ghost among its neighbors on the way in; Reveal collapses it on the way out, so an aborted ghost animates away like the sidebar and table ones instead of vanishing.
-                        <Reveal
-                          key={`ghost-${row.id}`}
-                          open={!interactions.ghost.ghost?.closing}
-                          fill
-                          onCollapsed={interactions.ghost.closed}
-                        >
-                          {ghostCard}
-                        </Reveal>,
-                      ]
-                    })}
-                  </SortableZone>
-                </ViewGroupBand>
-              )
-            })}
-          </BandDnd>
-        </DragGroup>
+                  <DropSlot />
+                  {g.items.flatMap((row) => {
+                    const card = (
+                      <PageCard
+                        key={row.id}
+                        row={row}
+                        view={view}
+                        banner={banner}
+                        nexusId={nexusId}
+                        columns={columns}
+                        ctx={ctx}
+                        loc={trailBySet[row.parentSetId ?? '']}
+                        defaultIcons={defaultIcons}
+                        capitalize={capitalize}
+                        styleById={styleById}
+                        api={cardApi}
+                        allowInlineRemove={effectiveZoom >= 0.8}
+                      />
+                    )
+                    if (ghostShown !== row.id && pendingSeat !== row.id) return [card]
+                    return [
+                      card,
+                      // FLIP seats the ghost among its neighbors on the way in; Reveal collapses it on the way out, so an aborted ghost animates away like the sidebar and table ones instead of vanishing.
+                      <Reveal
+                        key={`ghost-${row.id}`}
+                        open={!interactions.ghost.ghost?.closing}
+                        fill
+                        onCollapsed={interactions.ghost.closed}
+                      >
+                        {ghostCard}
+                      </Reveal>,
+                    ]
+                  })}
+                </SortableZone>
+              </ViewGroupBand>
+            )
+          })}
+        </BandDnd>
         {interactions.ghostStanding && (
           <div className="cards-grid card-grid is-fill">{ghostCard}</div>
         )}
@@ -696,13 +649,7 @@ function SetCard({ set, defaultIcons, api }: SetCardProps): React.JSX.Element {
   const drag = useDragItem(set.id, () => api.openSet(set, false))
   const iconName = entityIcon('set', set.icon, defaultIcons)
   return (
-    <CardRoot
-      drag={drag}
-      locked
-      onClick={(e) => {
-        if (!drag.isDragging) api.openSet(set, isCmd(e))
-      }}
-    >
+    <CardRoot drag={drag} locked onClick={(e) => api.openSet(set, isCmd(e))}>
       <CardBody>
         <CardThumb
           onContextMenu={(e) => {
@@ -745,7 +692,6 @@ interface PageCardProps {
   capitalize: boolean
   styleById: Map<string, ColumnStyle>
   api: CardApi
-  draggable: boolean
   allowInlineRemove: boolean
 }
 
@@ -992,14 +938,9 @@ const PageCard = memo(function PageCard({
   capitalize,
   styleById,
   api,
-  draggable,
   allowInlineRemove,
 }: PageCardProps): React.JSX.Element {
-  const openRow = (): void => api.open(row, false)
-  const item = useDragItem(row.id, openRow)
-  const drag = draggable ? item : null
-  // The boolean, not the object: `item` is a fresh object per slot flip, so a handler keyed on it would rebuild on every drag frame — exactly when CardFace's memo has to hold.
-  const isDragging = drag?.isDragging ?? false
+  const drag = useDragItem(row.id, () => api.open(row, false))
   const naming = useSession((s) => s.renamingPath === row.path && s.renamingHost !== 'sidebar')
   const active = useSession((s) => s.selection.kind === 'page' && s.selection.id === row.id)
   const { src, onError } = useThumb(nexusId, previewKeyOf(row, banner))
@@ -1009,10 +950,10 @@ const PageCard = memo(function PageCard({
   const openAdd = useCallback(
     (e: React.MouseEvent): void => {
       e.stopPropagation()
-      if (!isDragging && api.addableFor(row).length > 0 && textRef.current)
+      if (api.addableFor(row).length > 0 && textRef.current)
         api.openAddPicker({ rowId: row.id, anchor: textRef.current })
     },
-    [isDragging, api, row],
+    [api, row],
   )
   const holdGhost = useContext(GhostSuppress)
   const cover = coverOf(row)
@@ -1020,7 +961,7 @@ const PageCard = memo(function PageCard({
   const onCardContextMenu = async (e: React.MouseEvent): Promise<void> => {
     e.preventDefault()
     e.stopPropagation()
-    if (drag?.isDragging) return
+    if (drag.isDragging) return
     const anchor = textRef.current ?? (e.currentTarget as HTMLElement)
     const action = await holdGhost(() =>
       popMenu(
@@ -1044,9 +985,8 @@ const PageCard = memo(function PageCard({
       active={active}
       data-rid={row.id}
       {...rowHover(row, api.hover)}
-      {...(!drag && { onKeyDown: onActivateKey(openRow) })}
       onClick={(e) => {
-        if (drag?.isDragging || naming) return
+        if (naming) return
         const hit = document.elementFromPoint(e.clientX, e.clientY)
         if (hit && e.currentTarget.contains(hit) && hit.closest('.card-title, .card-thumb'))
           api.open(row, isCmd(e))

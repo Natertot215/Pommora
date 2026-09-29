@@ -2,8 +2,6 @@ import { Icon } from '@pommora/uix/Symbols'
 import { cx } from '@pommora/uix/Utilities/cx'
 import { DropOutline, MenuItem, titleInput } from '@pommora/uix/Menus'
 import type { MutableKind } from '@pommora/core/Nexus/mutateRequest'
-import { useSidebarDrag } from './sidebarDnd'
-import { useDiscloseTarget } from '@pommora/uix/Interactions/dragDisclose'
 import { RenamableTitle } from '../RenamableTitle'
 
 export function ctxHandler(cb?: () => void): ((e: React.MouseEvent) => void) | undefined {
@@ -59,6 +57,7 @@ export function Leaf({
       className="row"
       selected={selected}
       indent={depth}
+      tabIndex={-1}
       onClick={onSelect}
       onContextMenu={ctxHandler(onContextMenu)}
       leading={<DropOutline kind="spacer" />}
@@ -66,38 +65,5 @@ export function Leaf({
       <Icon name={icon} size="headline" className="row-icon" />
       {rename ? <RowTitle path={rename.path} kind={rename.kind} title={title} /> : title}
     </MenuItem>
-  )
-}
-
-export function DragRow({
-  id,
-  springOpen,
-  onPointerEnter,
-  onPointerLeave,
-  children,
-}: {
-  id: string
-  springOpen?: { collapsed: boolean; onExpand: () => void }
-  onPointerEnter?: (e: React.PointerEvent<HTMLDivElement>) => void
-  onPointerLeave?: () => void
-  children: React.ReactNode
-}): React.JSX.Element {
-  const drag = useSidebarDrag(id)
-  const discloseRef = useDiscloseTarget((springOpen?.collapsed ?? false) && !drag.isDragging, () =>
-    springOpen?.onExpand(),
-  )
-  return (
-    <div
-      ref={(node) => {
-        discloseRef.current = node
-        drag.ref(node)
-      }}
-      className={cx('tree-item', drag.isDragging && 'dragging')}
-      {...drag.handle}
-      onPointerEnter={onPointerEnter}
-      onPointerLeave={onPointerLeave}
-    >
-      {children}
-    </div>
   )
 }

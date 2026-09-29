@@ -5,7 +5,8 @@ import {
 } from '@pommora/core/Settings/personalization'
 import { Icon } from '@pommora/uix/Symbols'
 import { entityIcon } from '../../Assets/entityIconPolicy'
-import { reorder, SortableZone, useDragItem } from '@pommora/uix/Interactions/drag'
+import { SortableZone, useDragItem } from '@pommora/uix/Interactions/drag'
+import { moveBefore } from '@pommora/uix/Utilities/moveItem'
 import { openOrder } from '../../Actions/menuModel'
 import { popMenu } from '../../Actions/menuActions'
 import { openLabel } from '../../Actions/toggleLabels'
@@ -22,19 +23,31 @@ import './sidebar.css'
 const RIBBON: Record<
   RibbonKey,
   {
+    label: string
     icon: (defaults: Personalization['defaultIcons']) => string
     press: () => void
     menu?: () => void
   }
 > = {
-  matrix: { icon: () => MATRIX_ICON, press: pressMatrix, menu: () => void matrixMenu() },
-  agenda: { icon: () => 'calendar', press: () => switchTo('agenda') },
-  contexts: { icon: (d) => entityIcon('context', undefined, d), press: () => switchTo('contexts') },
+  matrix: {
+    label: 'Matrix',
+    icon: () => MATRIX_ICON,
+    press: pressMatrix,
+    menu: () => void matrixMenu(),
+  },
+  agenda: { label: 'Agenda', icon: () => 'calendar', press: () => switchTo('agenda') },
+  contexts: {
+    label: 'Contexts',
+    icon: (d) => entityIcon('context', undefined, d),
+    press: () => switchTo('contexts'),
+  },
   collections: {
+    label: 'Collections',
     icon: (d) => entityIcon('collection', undefined, d),
     press: () => switchTo('collections'),
   },
   settings: {
+    label: 'Settings',
     icon: () => 'sliders-horizontal',
     press: () => useSession.getState().toggleSettings(),
   },
@@ -79,13 +92,9 @@ export function Ribbon(): React.JSX.Element {
   const setPersonalization = useSession((s) => s.setPersonalization)
   const keys = resolveRibbonOrder(order, experimental)
 
-  const reorderIcons = (activeId: string, overId: string): void => {
-    const next = reorder(
-      keys.map((id) => ({ id })),
-      activeId,
-      overId,
-    ).map((x) => x.id)
-    setPersonalization('ribbonOrder', withHidden(order, next))
+  const moveIcon = (id: string, beforeId: string | null): void => {
+    const next = moveBefore(keys, (k) => k, id, beforeId)
+    if (next) setPersonalization('ribbonOrder', withHidden(order, next))
   }
 
   return (
@@ -98,7 +107,12 @@ export function Ribbon(): React.JSX.Element {
       >
         <NexusPhoto size="titleMedium" />
       </button>
-      <SortableZone items={keys} axis="y" onReorder={reorderIcons}>
+      <SortableZone
+        items={keys}
+        axis="y"
+        label={(k) => RIBBON[k as RibbonKey].label}
+        onMove={moveIcon}
+      >
         {keys.map((k) => (
           <RibbonTab
             key={k}
@@ -127,7 +141,7 @@ function RibbonTab({
   onClick: () => void
   onMenu?: () => void
 }): React.JSX.Element {
-  const { setNodeRef, style, handle, isDragging } = useDragItem(tabKey, onClick)
+  const { setNodeRef, style, handle } = useDragItem(tabKey, onClick)
   return (
     <button
       ref={setNodeRef}
@@ -136,11 +150,9 @@ function RibbonTab({
       type="button"
       role="tab"
       className="ribbon-icon"
-      aria-label={tabKey}
+      aria-label={RIBBON[tabKey].label}
       aria-selected={active}
-      onClick={() => {
-        if (!isDragging) onClick()
-      }}
+      onClick={onClick}
       onContextMenu={ctxHandler(onMenu)}
     >
       <Icon name={icon} size="titleSmall" />
