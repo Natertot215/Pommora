@@ -510,7 +510,10 @@ export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
   }
   const rowDrag: LineSpec<LaneSlot, RowSnap> = {
     snap: (id, g) => (dragDisabled ? null : rowSnap(g, id, rowBand, vacant)),
-    resolve: (_id, point, s) => laneSlot(s, point.y, crossBand),
+    resolve: (id, point, s) => {
+      const slot = laneSlot(s, point.y, crossBand)
+      return slot && interactions.folderSlot(slot.lane, slot.index, id) !== null ? slot : null
+    },
     commit: (id, slot) => interactions.onDrop(id, slot.lane, slot.before),
     line: (slot, s) => {
       const node = bands.byKey.get(slot.lane)!
@@ -529,7 +532,7 @@ export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
     nests: host.nests,
     drop: interactions.bandDrop,
     indent: (depth) => ({ left: `calc(var(--drop-line-inset) + ${groupIndent(depth)})` }),
-    disabled: host.dragDisabled,
+    disabled: host.searching,
   })
 
   return (

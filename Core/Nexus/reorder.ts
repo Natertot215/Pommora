@@ -48,6 +48,24 @@ export const dropSpaceOrder = (nexusRoot: string, contextId: string): StateOrder
     return dropped === undefined ? null : { ...order, spaces }
   })
 
+export async function dropFromChildOrder(
+  absFolder: string,
+  key: ContainerOrderKey,
+  id: string,
+): Promise<void> {
+  for (const kind of ['collection', 'set'] as const) {
+    if (await pathExists(sidecarPath(absFolder, kind))) {
+      await patchSidecar(absFolder, kind, (cur) => {
+        const ids = cur[key]
+        return Array.isArray(ids) && ids.includes(id)
+          ? { ...cur, [key]: ids.filter((x) => x !== id) }
+          : null
+      })
+      return
+    }
+  }
+}
+
 export async function setChildOrder(
   absFolder: string,
   key: ContainerOrderKey,

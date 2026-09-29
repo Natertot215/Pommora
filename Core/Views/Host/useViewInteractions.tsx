@@ -3,6 +3,8 @@
 import { useRef, useState } from 'react'
 import { UNGROUPED } from '@pommora/core/Views/viewRow'
 import type { ViewRow } from '@pommora/core/Views/viewRow'
+import type { ViewPatch } from '@pommora/core/Views/views'
+import type { Result } from '@pommora/core/Contract/result'
 import type { CollectionNode, SetNode } from '@pommora/core/Nexus/tree'
 import type { PageMenuContext } from '@pommora/core/Actions/pageMenu'
 import { type PageTarget, selectTargetOf } from '@pommora/core/Navigation/navRef'
@@ -30,7 +32,7 @@ import { sameIds, tieOrderWith } from '../creationOrder'
 import { useViewTileScope } from '../ViewTileScope'
 import type { ViewHostApi } from './useViewHost'
 import { useViewCreation } from './useViewCreation'
-import { mutateAhead } from './pendingView'
+import { mutateAhead, refusedDrop, stageView, unstageView } from './pendingView'
 
 interface ViewInteractionPolicy {
   ghost: {
@@ -106,15 +108,25 @@ export function useViewInteractions(host: ViewHostApi, policy: ViewInteractionPo
   // ── Bands ─────────────────────────────────────────────────────────────────
 
   const valueAt = bucketValueAt(bands.byKey)
+  const saveDrop = (
+    patch: ViewPatch,
+    name: string,
+    opts?: { viewState?: boolean },
+  ): Promise<Result<unknown>> =>
+    persistView(patch, opts).then((r) => {
+      refusedDrop(r.ok, name)
+      return r
+    })
   const bandDrop = (dragged: BandRef, drop: BandDrop): void => {
-    const name = nodeLabel(bands.byKey.get(dragged.key))
+    const node = bands.byKey.get(dragged.key)
+    const name = node ? nodeLabel(node) : (sets.node.get(dragged.key)?.title ?? '')
     void dropBand(
       bands,
       dragged,
       drop,
       { view, plan, schema, sets, sourcePath: source.path },
       {
-        persistView,
+        persistView: (patch) => saveDrop(patch, name),
         mutate: (req) => mutateAhead(req, name),
         switched: ({ propertyId, prior }) =>
           notifyUndoable(
@@ -149,136 +161,153 @@ export function useViewInteractions(host: ViewHostApi, policy: ViewInteractionPo
     paintOrder.flatMap((r) => (r.groupKey === bandKey && r.id !== excludeId ? [r.id] : []))
   const folderOf = (setId: string | null | undefined): CollectionNode | SetNode | undefined =>
     setId == null ? source : sets.node.get(setId)
-  const folderAt = (zone: string): CollectionNode | SetNode | undefined => {
-    const node = bands.byKey.get(zone)
-    return node?.kind === 'set' ? node.set : node?.parentKey === null ? source : undefined
+  const destOf = (zone: string, row: ViewRow): CollectionNode | SetNode | undefined => {
+    const from = bands.byKey.get(rowBand.get(row.id) ?? '')
+    const to = bands.byKey.get(zone)
+    if (!to || !from || to === from) return folderOf(row.parentSetId)
+    if (canRelocate) return to.kind === 'set' ? to.set : to.parentKey === null ? source : undefined
+    return to.parentKey === from.parentKey ? folderOf(row.parentSetId) : folderOf(to.parentKey)
   }
-  const placeInView = (activeId: string, beforeId: string | null): void => {
-    if (pageOrder !== 'custom') return
-    const manual_order = tieOrderWith(
-      view.manual_order,
-      rows.map((r) => r.id),
-      activeId,
-      beforeId,
-      'above',
-    )
-    void persistView({ manual_order }, { viewState: true })
-  }
-
-  const reorderWithin = (bandKey: string, activeId: string, beforeId: string | null): void => {
-    const row = rowById.get(activeId)
-    const bandOrder = nextOrder(bandRowIds(bandKey, activeId), activeId, beforeId)
-    if (pageOrder === 'location') {
-      const folder = folderOf(row?.parentSetId)
-      if (!row || !folder) return
-      const siblings = folder.pages.map((p) => p.id)
-      const after = bandOrder
-        .slice(bandOrder.indexOf(activeId) + 1)
-        .find((id) => rowById.get(id)?.parentSetId === row.parentSetId)
-      const order = nextOrder(siblings, activeId, after ?? null)
-      if (!sameIds(order, siblings))
-        void mutateAhead(
-          { op: 'movePage', path: row.path, newParentPath: folder.path, order },
-          row.title,
-        )
-      return
-    }
-    let placed = false
-    const full = paintOrder.flatMap((r) => {
-      if (r.groupKey !== bandKey) return r.id === activeId ? [] : [r.id]
-      if (placed) return []
-      placed = true
-      return bandOrder
-    })
-    if (
-      sameIds(
-        full,
-        paintOrder.map((r) => r.id),
-      )
-    )
-      return
-    void persistView({ manual_order: full }, { viewState: true })
-    reassignBySortRun(full, bandKey, activeId)
-  }
-
-  const relocate = (activeId: string, toZone: string, beforeId: string | null): void => {
-    const row = rowById.get(activeId)
-    const dest = folderAt(toZone)
-    if (!row || !dest) return
+  const folderOrderAt = (
+    dest: CollectionNode | SetNode,
+    zone: string,
+    activeId: string,
+    beforeId: string | null,
+  ): string[] => {
     const destSetId = dest === source ? undefined : dest.id
-    if (destSetId === row.parentSetId) return
-    const bandIds = bandRowIds(toZone, activeId)
+    const bandIds = bandRowIds(zone, activeId)
     const at = beforeId === null ? bandIds.length : bandIds.indexOf(beforeId)
     const sibBefore = bandIds.slice(at).find((id) => rowById.get(id)?.parentSetId === destSetId)
-    const order = nextOrder(
+    return nextOrder(
       dest.pages.map((p) => p.id),
       activeId,
       sibBefore ?? null,
     )
-    placeInView(activeId, beforeId)
-    void mutateAhead({ op: 'movePage', path: row.path, newParentPath: dest.path, order }, row.title)
+  }
+  const placeInView = (row: ViewRow, beforeId: string | null, landed?: Promise<boolean>): void => {
+    if (pageOrder !== 'custom') return
+    const patch = {
+      manual_order: tieOrderWith(
+        view.manual_order,
+        rows.map((r) => r.id),
+        row.id,
+        beforeId,
+        'above',
+      ),
+    }
+    const save = (): void => void saveDrop(patch, row.title, { viewState: true })
+    if (!landed) return save()
+    stageView(source.id, view, patch)
+    void landed.then((ok) => (ok ? save() : unstageView(source.id, view.id, patch)))
+  }
+  const moveTo = (
+    row: ViewRow,
+    dest: CollectionNode | SetNode,
+    order: string[] | undefined,
+  ): Promise<boolean> =>
+    mutateAhead(
+      { op: 'movePage', path: row.path, newParentPath: dest.path, ...(order ? { order } : {}) },
+      row.title,
+    )
+
+  const reorderWithin = (bandKey: string, row: ViewRow, beforeId: string | null): void => {
+    if (pageOrder === 'location') {
+      const folder = folderOf(row.parentSetId)
+      if (!folder) return
+      const order = folderOrderAt(folder, bandKey, row.id, beforeId)
+      if (
+        !sameIds(
+          order,
+          folder.pages.map((p) => p.id),
+        )
+      )
+        void moveTo(row, folder, order)
+      return
+    }
+    const current = paintOrder.flatMap((r) => (r.groupKey === bandKey ? [r.id] : []))
+    const bandOrder = nextOrder(bandRowIds(bandKey, row.id), row.id, beforeId)
+    if (sameIds(bandOrder, current)) return
+    placeInView(row, beforeId)
+    reassignBySortRun(bandOrder, bandKey, row.id)
   }
 
-  const reassign = (activeId: string, toZone: string, beforeId: string | null): void => {
-    const row = rowById.get(activeId)
+  const relocate = (row: ViewRow, toZone: string, beforeId: string | null): void => {
+    const dest = destOf(toZone, row)
+    if (!dest || dest === folderOf(row.parentSetId)) return
+    placeInView(row, beforeId, moveTo(row, dest, folderOrderAt(dest, toZone, row.id, beforeId)))
+  }
+
+  const reassign = (row: ViewRow, toZone: string, beforeId: string | null): void => {
     const to = bands.byKey.get(toZone)
-    const from = bands.byKey.get(rowBand.get(activeId) ?? '')
-    if (!groupPropId || !row || !to || !from || to.kind === 'set') return
+    const from = bands.byKey.get(rowBand.get(row.id) ?? '')
+    const dest = destOf(toZone, row)
+    if (!groupPropId || !to || !from || to.kind === 'set' || !dest) return
     const value = valueAt(toZone)
-    const write =
-      value === valueAt(from.key)
-        ? Promise.resolve(true)
-        : commitGroupValue(activeId, groupPropId, groupPropType, value ?? UNGROUPED)
-    placeInView(activeId, beforeId)
-    const dest = folderOf(to.parentKey)
-    if (to.parentKey === from.parentKey || !dest) return
-    void write?.then((ok) =>
-      ok
-        ? mutateAhead({ op: 'movePage', path: row.path, newParentPath: dest.path }, row.title)
-        : null,
-    )
+    const keeps =
+      value === valueAt(from.key) ||
+      (to.kind === 'tail' && to.parentKey === null && plan.kind === 'sets')
+    const written = keeps
+      ? Promise.resolve(true)
+      : (commitGroupValue(row.id, groupPropId, groupPropType, value ?? UNGROUPED) ??
+        Promise.resolve(false))
+    const moves = dest !== folderOf(row.parentSetId)
+    const order =
+      pageOrder === 'location' ? folderOrderAt(dest, toZone, row.id, beforeId) : undefined
+    const repositions =
+      order !== undefined &&
+      !sameIds(
+        order,
+        dest.pages.map((p) => p.id),
+      )
+    const landed =
+      moves || repositions ? written.then((ok) => ok && moveTo(row, dest, order)) : written
+    placeInView(row, beforeId, landed)
   }
 
   /** One entry for every row drop: a same-band slot reorders, a cross-band one moves the page or rewrites its group value. `beforeId` is null at the target band's end. */
   const onDrop = (activeId: string, toZone: string, beforeId: string | null): void => {
+    const row = rowById.get(activeId)
     const from = rowBand.get(activeId)
-    if (from === undefined) return
-    if (toZone === from) reorderWithin(toZone, activeId, beforeId)
-    else if (canRelocate) relocate(activeId, toZone, beforeId)
-    else if (canReassign) reassign(activeId, toZone, beforeId)
+    if (!row || from === undefined) return
+    if (toZone === from) reorderWithin(toZone, row, beforeId)
+    else if (canRelocate) relocate(row, toZone, beforeId)
+    else if (canReassign) reassign(row, toZone, beforeId)
   }
 
-  const siblingRuns = useRef<{
+  const folderRuns = useRef<{
     order: typeof paintOrder
     id: string
+    rank: ReadonlyMap<string | undefined, number>
     runs: Map<string, { first: number; count: number }>
   } | null>(null)
-  const siblingSlot = (zone: string, index: number, activeId: string): number | null => {
-    const own = rowBand.get(activeId) === zone
-    if (pageOrder !== 'location' || !(own || canRelocate)) return index
-    let held = siblingRuns.current
+  const folderSlot = (zone: string, index: number, activeId: string): number | null => {
+    const row = rowById.get(activeId)
+    if (pageOrder !== 'location' || !row) return index
+    let held = folderRuns.current
     if (!held || held.order !== paintOrder || held.id !== activeId) {
-      held = { order: paintOrder, id: activeId, runs: new Map() }
-      siblingRuns.current = held
+      const rank = new Map<string | undefined, number>([[undefined, -1]])
+      for (const [i, id] of sets.preorder.entries()) rank.set(id, i)
+      held = { order: paintOrder, id: activeId, rank, runs: new Map() }
+      folderRuns.current = held
     }
-    let r = held.runs.get(zone)
+    const { rank, runs } = held
+    let r = runs.get(zone)
     if (!r) {
-      const parent = own
-        ? rowById.get(activeId)?.parentSetId
-        : bands.byKey.get(zone)?.kind === 'set'
-          ? zone
-          : undefined
-      let first = -1
+      const dest = destOf(zone, row)
+      const destId = dest === source ? undefined : dest?.id
+      const destRank = rank.get(destId) ?? Number.POSITIVE_INFINITY
+      const ids = bandRowIds(zone, activeId)
+      let first = ids.length
       let count = 0
-      bandRowIds(zone, activeId).forEach((id, i) => {
-        if (rowById.get(id)?.parentSetId !== parent) return
-        if (first < 0) first = i
-        count++
+      ids.forEach((id, i) => {
+        const setId = rowById.get(id)?.parentSetId
+        if (setId === destId) count++
+        if (first === ids.length && (rank.get(setId) ?? 0) >= destRank) first = i
       })
-      r = { first: first < 0 && !own ? 0 : first, count }
-      held.runs.set(zone, r)
+      r = { first, count }
+      runs.set(zone, r)
     }
-    return r.first >= 0 && index >= r.first && index <= r.first + r.count ? index : null
+    return index >= r.first && index <= r.first + r.count ? index : null
   }
 
   // ── Carry ─────────────────────────────────────────────────────────────────
@@ -401,7 +430,7 @@ export function useViewInteractions(host: ViewHostApi, policy: ViewInteractionPo
     bandDrop,
     onDrop,
     carry,
-    siblingSlot,
+    folderSlot,
     openPage,
     titleMenuContext,
     runTitleAction,

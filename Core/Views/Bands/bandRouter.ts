@@ -1,5 +1,5 @@
 import type { Result } from '@pommora/core/Contract/result'
-import type { MutateOutcome } from '@pommora/core/Nexus/mutateRequest'
+import { isAdoptedId } from '@pommora/core/Nexus/ids'
 import type { PropertyDefinition } from '@pommora/core/Properties/properties'
 import { resolveRowOrder } from '@pommora/core/Properties/rowOrder'
 import type { SavedView, ViewPatch } from '@pommora/core/Views/views'
@@ -47,7 +47,7 @@ export type BandEffect =
 
 interface BandIO {
   persistView: (patch: ViewPatch) => Promise<Result<unknown>>
-  mutate: (req: OrderRequest) => Promise<MutateOutcome | null>
+  mutate: (req: OrderRequest) => Promise<boolean>
   switched?: (s: Switched) => void
 }
 
@@ -84,7 +84,9 @@ function routeSet(id: string, drop: BandDrop, scope: BandScope): BandEffect | nu
     : drop.beforeKey
   const ranks = ranked && nextOrder(ranked, id, before)
   const after =
-    ranks && !sameIds(ranks, view.group_order ?? []) ? { group_order: ranks } : undefined
+    ranks && !sameIds(ranks, ranked)
+      ? { group_order: ranks.filter((s) => !isAdoptedId(s)) }
+      : undefined
   if ((sets.parent.get(id) ?? null) !== target)
     return {
       kind: 'fs',
@@ -122,11 +124,17 @@ function routeBucket(dragged: BucketRef, drop: BandDrop, scope: BandScope): Band
 }
 
 export async function runBandEffect(effect: BandEffect | null, io: BandIO): Promise<void> {
-  if (effect?.kind === 'view') {
-    const saved = await io.persistView(effect.patch)
-    if (saved.ok && effect.switched) io.switched?.(effect.switched)
-  } else if (effect && (await io.mutate(effect.req)) && effect.after)
-    await io.persistView(effect.after)
+  switch (effect?.kind) {
+    case undefined:
+      return
+    case 'view': {
+      const saved = await io.persistView(effect.patch)
+      if (saved.ok && effect.switched) io.switched?.(effect.switched)
+      return
+    }
+    case 'fs':
+      if ((await io.mutate(effect.req)) && effect.after) await io.persistView(effect.after)
+  }
 }
 
 function bucketValue(node: BandItem | undefined): string | null {

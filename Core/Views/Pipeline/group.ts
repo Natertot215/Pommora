@@ -26,6 +26,8 @@ import {
 import { UNGROUPED, isEmptyBand } from '@pommora/core/Views/viewRow'
 import { declaredType, resolveFieldValue } from '../../Properties/value'
 import { readDate } from '../../Properties/formatValue'
+import { resolveRowOrder } from '@pommora/core/Properties/rowOrder'
+import type { SetIndex } from '../Bands/setIndex'
 
 export type PropertyGroup = Extract<GroupConfig, { kind: 'property' }>
 type Sorter = (rows: ViewRow[]) => ViewRow[]
@@ -423,6 +425,14 @@ export const pageOrderOf = (
 
 export const viewSetOrder = (plan: GroupPlan, view: SavedView): string[] | undefined =>
   setOrderOf(plan, view) === 'custom' ? view.group_order : undefined
+
+export const orderedChildren = (
+  sets: SetIndex,
+  parentKey: string | null,
+  plan: GroupPlan,
+  view: SavedView,
+): string[] =>
+  resolveRowOrder(sets.children.get(parentKey) ?? [], (id) => id, viewSetOrder(plan, view))
 
 export function resolveGroups(
   rows: ViewRow[],

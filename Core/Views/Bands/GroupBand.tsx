@@ -216,7 +216,7 @@ function HeadedBand({
           <span
             className="group-band-glyph"
             onClick={(e) => {
-              if (e.detail < 2 && outsideRename(e)) toggle()
+              if (!set?.opens && outsideRename(e)) toggle()
             }}
             onDoubleClick={
               set?.opens

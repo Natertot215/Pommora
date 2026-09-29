@@ -54,6 +54,7 @@ import {
   placeItem,
   reorigin,
   slotPoint,
+  spillOf,
   unionOf,
 } from './placement'
 import type { Geometry, Row } from './reorderModel'
@@ -266,6 +267,7 @@ function createEngine(setChrome: (c: Chrome | null) => void): Api {
   const overs = new Map<string, number>()
   const touched = new Set<HTMLElement>()
   const floored = new Set<HTMLElement>()
+  const spilled = new Set<HTMLElement>()
   const active = channel<Active | null>(null)
   const slot = channel<SlotBox | null>(null)
   const loose = channel<ReadonlyMap<Family<unknown>, unknown> | null>(null)
@@ -317,7 +319,7 @@ function createEngine(setChrome: (c: Chrome | null) => void): Api {
     const b = bounds.get(zoneId)
     return {
       width: Math.min(s.rect.width, b?.width ?? Infinity),
-      height: b?.height ?? s.rect.height,
+      height: displaceOf(zoneId)?.axis ? (b?.height ?? s.rect.height) : s.rect.height,
     }
   }
 
@@ -382,6 +384,16 @@ function createEngine(setChrome: (c: Chrome | null) => void): Api {
 
   // ── Painting ──
 
+  const spill = (box: HTMLElement, height: number): void => {
+    if (height > 0) {
+      box.style.setProperty('--drag-spill', px(height))
+      spilled.add(box)
+    } else {
+      box.style.removeProperty('--drag-spill')
+      spilled.delete(box)
+    }
+  }
+
   const paintZone = (s: Session, zoneId: string, to: number): void => {
     const spec = displaceOf(zoneId)
     const f = frozen.get(zoneId)
@@ -392,6 +404,8 @@ function createEngine(setChrome: (c: Chrome | null) => void): Api {
     const from = overs.get(zoneId) ?? a
     if (from === to) return
     overs.set(zoneId, to)
+    if (!own && !spec.axis && r.box)
+      spill(r.box, to < 0 ? 0 : spillOf(f, f.ids.length + 1, s.rect.height) / f.zoom)
     const n = f.ids.length - (own ? 1 : 0)
     const lo = from < 0 ? to : to < 0 ? from : Math.min(from, to)
     const hi = from < 0 || to < 0 ? n : Math.max(from, to)
@@ -723,6 +737,8 @@ function createEngine(setChrome: (c: Chrome | null) => void): Api {
     }
     for (const box of floored) box.style.removeProperty('--drag-floor')
     floored.clear()
+    for (const box of spilled) box.style.removeProperty('--drag-spill')
+    spilled.clear()
     frozen.clear()
     bounds.clear()
     clips.clear()

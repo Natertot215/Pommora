@@ -149,6 +149,12 @@ export function placeItem(
   return axis === 'x' ? { x: r.left - out + inn, y: r.top } : { x: r.left, y: r.top - out + inn }
 }
 
+export function spillOf(f: Frozen, count: number, height: number): number {
+  const last = f.rects[f.rects.length - 1]
+  const end = cellAt(f, count - 1).y + (last?.height ?? height)
+  return Math.max(0, end - (last ? last.top + last.height : 0))
+}
+
 export function slotPoint(
   f: Frozen,
   axis: Axis | undefined,

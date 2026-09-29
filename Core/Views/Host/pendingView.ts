@@ -9,7 +9,6 @@ import {
 } from '@pommora/core/Views/views'
 import { same } from '@pommora/core/Files/stableJson'
 import { useLatest } from '@pommora/uix/Utilities/stableApi'
-import type { MutateOutcome } from '@pommora/core/Nexus/mutateRequest'
 import type { CollectionNode, SetNode } from '@pommora/core/Nexus/tree'
 import { announceDrag } from '@pommora/uix/Interactions/a11y'
 import { channel } from '@pommora/uix/Utilities/subscribable'
@@ -141,14 +140,16 @@ export function usePainted(source: CollectionNode | SetNode): CollectionNode | S
   )
 }
 
-export function mutateAhead(req: OrderRequest, name: string): Promise<MutateOutcome | null> {
+export function refusedDrop(landed: boolean, name: string): boolean {
+  if (!landed) announceDrag('return', name)
+  return landed
+}
+
+export function mutateAhead(req: OrderRequest, name: string): Promise<boolean> {
   ahead.set([...ahead.get(), req])
   return useSession
     .getState()
     .mutate(req)
-    .then((outcome) => {
-      if (outcome === null) announceDrag('return', name)
-      return outcome
-    })
+    .then((outcome) => refusedDrop(outcome !== null, name))
     .finally(() => ahead.set(ahead.get().filter((r) => r !== req)))
 }
