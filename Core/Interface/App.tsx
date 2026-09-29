@@ -1,6 +1,6 @@
 import { useEffect, useState, type CSSProperties } from 'react'
 import { useSession } from '../Session/store'
-import { SIDE_PANE_WIDTH, SIDEBAR_WIDTH } from '../Session/layoutSlice'
+import { SIDE_PANE_WIDTH, SIDEBAR_WIDTH } from '../Settings/devicePrefs'
 import { useResizable } from '@pommora/uix/Interactions/useResizable'
 import { GlassPane } from '@pommora/uix/Glass/GlassPane'
 import { paneSlide } from '@pommora/uix/Animations/paneSlide'

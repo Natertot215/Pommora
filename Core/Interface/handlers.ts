@@ -8,15 +8,8 @@ import {
   isString,
   isStringArray,
 } from '../Contract/validators'
-import {
-  readKey,
-  readScope,
-  readValue,
-  type Scope,
-  writeKey,
-  writeValue,
-} from '../Platform/localState'
-import { type DevicePrefs, packDevicePrefs, readInterfaceScale } from '../Settings/devicePrefs'
+import { readKey, readScope, type Scope, writeKey, writeValue } from '../Platform/localState'
+import { packDevicePrefs, readDevicePrefs, readInterfaceScale } from '../Settings/devicePrefs'
 import { readWindowsState, sanitizeWindows, writeWindowsState } from './Windows/windowState'
 
 const isEmptyValue = (v: unknown): boolean =>
@@ -51,7 +44,7 @@ export const interfaceHandlers = {
     return writeWindowsState(clean) ? ok(null) : NO_STORE
   }),
 
-  'devicePrefs:load': withRoot(() => ok(readValue<DevicePrefs>('devicePrefs'))),
+  'devicePrefs:load': withRoot(() => ok(readDevicePrefs())),
   'devicePrefs:save': withWriteRoot(async (_root, ctx, prefs: unknown) => {
     const scale = readInterfaceScale()
     if (!writeValue('devicePrefs', packDevicePrefs(prefs))) return NO_STORE

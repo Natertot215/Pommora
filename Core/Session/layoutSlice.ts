@@ -1,4 +1,5 @@
 import type { HostPlatform } from '@pommora/core/Contract/bridge'
+import { SIDE_PANE_WIDTH, SIDEBAR_WIDTH } from '../Settings/devicePrefs'
 import type { Slice } from './sessionState'
 
 export interface LayoutSlice {
@@ -16,9 +17,6 @@ export interface LayoutSlice {
   setHostWindow: (host: Partial<Pick<LayoutSlice, 'hostPlatform' | 'fullscreen'>>) => void
   resetLayout: () => void
 }
-
-export const SIDEBAR_WIDTH = { min: 180, max: 380, default: 240 }
-export const SIDE_PANE_WIDTH = { min: 240, max: 420, default: 300 }
 
 // devicePrefs is bound to a session root, so a pane width belongs to this Nexus and returns to its default when another one opens.
 const PER_NEXUS = {

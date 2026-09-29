@@ -684,7 +684,7 @@ export const createNavigationSlice: Slice<NavigationSlice> = (set, get) => {
       }
     },
 
-    // Clearing activeTabId marks the tab set never-seeded, so load() re-reads the new nexus's sidecars.
+    // Clearing activeTabId marks the tab set never-seeded until load() restores the new nexus's.
     resetNavigation: () => {
       pageFetchSeq++
       set(PER_NEXUS)

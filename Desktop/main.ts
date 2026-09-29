@@ -193,6 +193,17 @@ function watchNexus(): void {
   else if (root) void startWatcher(root, currentWindow)
 }
 
+function systemAccent(): string | null {
+  try {
+    const c = systemPreferences.getAccentColor?.()
+    return c ? `#${c.slice(0, 6)}` : null
+  } catch {
+    return null
+  }
+}
+
+const pushSystemAccent = (): void => push(currentWindow, 'theme:systemAccent', systemAccent())
+
 async function applyDefaultZoom(win: BrowserWindow): Promise<void> {
   if (win.isDestroyed()) return
   // No-nexus state normalizes to 1.0 so the welcome screen never inherits a prior nexus's host zoom (Electron zoom is per-render-host, shared).
@@ -277,14 +288,6 @@ function hostContext(win: BrowserWindow | null): HostContext {
     },
     reveal: (p) => shell.showItemInFolder(nativePath(p)),
     openExternal: (url) => shell.openExternal(url),
-    systemAccent: () => {
-      try {
-        const c = systemPreferences.getAccentColor?.()
-        return c ? `#${c.slice(0, 6)}` : null
-      } catch {
-        return null
-      }
-    },
     menu: (req) => (win ? popNativeMenu(win, req) : Promise.resolve(null)),
     editorMenu: askEditorMenu,
     thumbnails: {
@@ -338,8 +341,10 @@ const tells: TellHandlers = {
     if (win?.isMaximized()) win.unmaximize()
     else win?.maximize()
   },
-  'win:resendFullscreen': (win) => {
-    if (win) push(win, 'win:fullscreen', win.isFullScreen())
+  'win:resend': (win) => {
+    if (!win) return
+    push(win, 'win:fullscreen', win.isFullScreen())
+    push(win, 'theme:systemAccent', systemAccent())
   },
   'web:wheel': (_win, ...args) => {
     if (args.length === 5 && args.every(isFiniteNumber))
@@ -382,6 +387,12 @@ app
     }
 
     nativeTheme.themeSource = 'dark'
+    if (process.platform === 'darwin')
+      systemPreferences.subscribeNotification(
+        'AppleColorPreferencesChangedNotification',
+        pushSystemAccent,
+      )
+    else systemPreferences.on('accent-color-changed', pushSystemAccent)
     app.setAboutPanelOptions({ applicationName: 'Pommora', applicationVersion: app.getVersion() })
 
     registerRendererProtocol()
