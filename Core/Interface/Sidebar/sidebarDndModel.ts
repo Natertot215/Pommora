@@ -99,7 +99,7 @@ const intoSetRow = (over: Row, y: number): boolean => {
   return y >= over.top + edge && y < over.bottom - edge
 }
 
-export type SidebarSlot = {
+type SidebarSlot = {
   parentId: string | null
   beforeId: string | null
   depth: number

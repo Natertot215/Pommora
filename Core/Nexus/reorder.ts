@@ -3,7 +3,7 @@ import { pathExists, updateNexusConfig } from '../Files/atomicWrite'
 import { patchSidecar } from '../Files/sidecar'
 import { sidecarPath } from '../Paths/paths'
 import { ok, type Result } from '../Contract/result'
-import type { ChildOrderKey } from './mutateRequest'
+import { type ChildOrderKey, CONTAINER_KINDS } from './mutateRequest'
 
 type ContainerOrderKey = ChildOrderKey | 'page_order'
 
@@ -48,34 +48,32 @@ export const dropSpaceOrder = (nexusRoot: string, contextId: string): StateOrder
     return dropped === undefined ? null : { ...order, spaces }
   })
 
-export async function dropFromChildOrder(
+const patchContainer = async (
+  absFolder: string,
+  fn: (cur: Record<string, unknown>) => Record<string, unknown> | null,
+): Promise<Result<unknown>> => {
+  for (const kind of CONTAINER_KINDS)
+    if (await pathExists(sidecarPath(absFolder, kind))) return patchSidecar(absFolder, kind, fn)
+  return ok(null)
+}
+
+export const dropFromChildOrder = (
   absFolder: string,
   key: ContainerOrderKey,
   id: string,
-): Promise<void> {
-  for (const kind of ['collection', 'set'] as const) {
-    if (await pathExists(sidecarPath(absFolder, kind))) {
-      await patchSidecar(absFolder, kind, (cur) => {
-        const ids = cur[key]
-        return Array.isArray(ids) && ids.includes(id)
-          ? { ...cur, [key]: ids.filter((x) => x !== id) }
-          : null
-      })
-      return
-    }
-  }
-}
+): Promise<Result<unknown>> =>
+  patchContainer(absFolder, (cur) => {
+    const ids = cur[key]
+    return Array.isArray(ids) && ids.includes(id)
+      ? { ...cur, [key]: ids.filter((x) => x !== id) }
+      : null
+  })
 
 export async function setChildOrder(
   absFolder: string,
   key: ContainerOrderKey,
   ids: string[],
 ): Promise<Result<null>> {
-  for (const kind of ['collection', 'set'] as const) {
-    if (await pathExists(sidecarPath(absFolder, kind))) {
-      const r = await patchSidecar(absFolder, kind, (cur) => ({ ...cur, [key]: persistable(ids) }))
-      return r.ok ? ok(null) : r
-    }
-  }
-  return ok(null)
+  const r = await patchContainer(absFolder, (cur) => ({ ...cur, [key]: persistable(ids) }))
+  return r.ok ? ok(null) : r
 }

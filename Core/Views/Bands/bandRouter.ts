@@ -41,7 +41,7 @@ interface Switched {
   prior: ViewPatch
 }
 
-export type BandEffect =
+type BandEffect =
   | { kind: 'view'; patch: ViewPatch; switched?: Switched }
   | { kind: 'fs'; req: OrderRequest; after?: ViewPatch }
 
