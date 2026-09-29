@@ -396,6 +396,9 @@ describe('sub-group bucket band drag', () => {
       property_id: 'prop_status',
       order_mode: 'configured',
     })
+    expect(document.querySelector('[aria-live="assertive"]')?.textContent).toBe(
+      'complete returned to its place.',
+    )
   })
 })
 
@@ -568,6 +571,28 @@ describe('band header — the sidebar interaction model', () => {
       glyphOf('A1').dispatchEvent(new MouseEvent('dblclick', { bubbles: true }))
     })
     expect(selectSpy).not.toHaveBeenCalled()
+  })
+
+  it('a double click opens the Set and toggles its disclosure only on its first click', async () => {
+    await mountTable(structuralSource())
+    await act(async () => {
+      for (const detail of [1, 2])
+        glyphOf('A').dispatchEvent(new MouseEvent('click', { bubbles: true, detail }))
+      glyphOf('A').dispatchEvent(new MouseEvent('dblclick', { bubbles: true, detail: 2 }))
+    })
+    expect(saveSpy).toHaveBeenCalledOnce()
+    expect(lastSavedView().collapsed_groups).toEqual(['sA'])
+    expect(selectSpy).toHaveBeenCalledWith({ kind: 'set', id: 'sA', path: 'Col/A' })
+  })
+
+  it('Enter on a focused row opens its page, as a click on its title does', async () => {
+    await mountTable(structuralSource())
+    const row = host.querySelector('[data-rid="pA"]') as HTMLElement
+    await act(async () => {
+      row.focus()
+      row.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }))
+    })
+    expect(selectSpy).toHaveBeenCalledWith({ kind: 'page', id: 'pA', path: 'Col/A/In A.md' })
   })
 
   it('right-clicking a Set band pops the set entity menu', async () => {

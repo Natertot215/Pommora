@@ -208,6 +208,14 @@ describe('bandedSpec', () => {
     expect(spec.label('r1')).toBe('row')
   })
 
+  it('each kind names its own keyboard step', () => {
+    const into = { part: 'into', id: 'sA' } as const
+    const after = { part: 'after', id: 'r2' } as const
+    const spec = bandedSpec(isRow, rowsSpec({ step: () => after }), bandsSpec({ step: () => into }))
+    expect(spec.step?.('row-slot', { row: 'row-snap' })).toBe(after)
+    expect(spec.step?.('band-slot', { band: 'band-snap' })).toBe(into)
+  })
+
   it('a row whose spec is locked resolves null while its carry still yields the page', () => {
     const family: Family<string> = {
       id: 'tabs',
@@ -256,10 +264,10 @@ describe('bandedSpec', () => {
       ['r3', 'b'],
     ])
     const rows: LineSpec<ReturnType<typeof laneSlot>, ReturnType<typeof rowSnap>> = {
-      snap: (id, geo) => rowSnap(geo, id, bandOf),
+      snap: (id, geo) => rowSnap(geo, id, bandOf, () => false),
       resolve: (_id, p, s) => laneSlot(s!, p.y, true),
       commit: vi.fn(),
-      line: (slot, s) => rowLine(slot!, s!),
+      line: (slot, s) => rowLine(slot!, s!, '0px'),
       label: () => 'row',
       watch: [bandOf],
     }

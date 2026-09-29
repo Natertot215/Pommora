@@ -7,7 +7,7 @@ import type { ResolvedGroup } from '@pommora/core/Views/viewRow'
 import type { SavedView } from '@pommora/core/Views/views'
 import { DragGroup, LineZone } from '@pommora/uix/Interactions/drag'
 import { firePointer, pressEscape, stubRect } from '@pommora/uix/Testing/pointerHarness'
-import { mountEachTest } from '../../Testing/viewHarness'
+import { mountEachTest, settle } from '../../Testing/viewHarness'
 import { type BandView, GroupBand, bandSpec } from './GroupBand'
 import { type BandModel, bandModelOf, headContextOf } from './bandModel'
 import type { BandDrop } from './bandRouter'
@@ -57,16 +57,18 @@ let toggleSpy: ReturnType<typeof vi.fn<(key: string) => void>>
 function Bands({
   model = BANDS,
   disabled,
+  collapsed = new Set(),
 }: {
   model?: BandModel
   disabled?: boolean
+  collapsed?: ReadonlySet<string>
 }): React.JSX.Element {
   const bands: BandView = {
-    collapsed: new Set(),
+    collapsed,
     toggle: toggleSpy,
     add: () => {},
     open: () => {},
-    springs: () => false,
+    springs: () => true,
   }
   const render = (key: string): React.JSX.Element => {
     const node = model.byKey.get(key)
@@ -235,6 +237,24 @@ describe('the band zone', () => {
       kind: 'into',
       parentKey: 'A1',
     })
+  })
+
+  it('a collapsed band springs open from anywhere on its head row, not only its label', async () => {
+    await mount({ collapsed: new Set(['B']) })
+    const row = head('B').closest('.group-band-row')
+    const hit = document.elementFromPoint
+    document.elementFromPoint = () => row
+    try {
+      await drag('A1', 60)
+      await act(async () => {
+        firePointer(window, 'pointermove', { x: 300, y: 62 })
+      })
+      await settle(700)
+      expect(toggleSpy).toHaveBeenCalledWith('B')
+    } finally {
+      document.elementFromPoint = hit
+      pressEscape()
+    }
   })
 
   it('a disabled host starts no drag and commits nothing', async () => {

@@ -1053,6 +1053,16 @@ describe('the line zone', () => {
     scrolled.mockRestore()
   })
 
+  it('an arrow key on a pointer-focused host hands focus to a row', async () => {
+    await act(async () => {
+      firePointer(lineHost(), 'pointerdown', { x: 100, y: 88 })
+      lineHost().focus()
+      firePointer(window, 'pointerup', { x: 100, y: 88 })
+    })
+    await press(lineHost(), 'ArrowDown')
+    expect(document.activeElement).toBe(item('r1'))
+  })
+
   it('a click inside a row focuses the row', async () => {
     const inner = item('r2').querySelector('[data-inner]') as HTMLElement
     await act(async () => {

@@ -258,7 +258,7 @@ describe('CardsView card drop — where the manual order lands', () => {
   })
 })
 
-describe('TableView relocate — the condition that refuses to mint', () => {
+describe('TableView relocate — the view order follows the slot', () => {
   it('a stored manual_order is updated in place by the relocate', async () => {
     await mountBanded({ manual_order: ['p1', 'p2'] })
     await dragFirstRowDown()
@@ -266,8 +266,15 @@ describe('TableView relocate — the condition that refuses to mint', () => {
     expect(mutateSpy).toHaveBeenCalledOnce()
   })
 
-  it('a view holding none mints none — the page still moves', async () => {
+  it('under Custom a view holding none mints one at the slot, and the page still moves', async () => {
     await mountBanded()
+    await dragFirstRowDown()
+    expect(lastSavedView().manual_order).toEqual(['p2', 'p1'])
+    expect(mutateSpy).toHaveBeenCalledOnce()
+  })
+
+  it('under Location the relocate writes no view order, even over a stored one', async () => {
+    await mountBanded({ structural_order_mode: 'location', sort: [], manual_order: ['p1', 'p2'] })
     await dragFirstRowDown()
     expect(saveSpy).not.toHaveBeenCalled()
     expect(mutateSpy).toHaveBeenCalledOnce()

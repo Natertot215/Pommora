@@ -53,7 +53,13 @@ import {
   subGroupKey,
 } from '../Pipeline/group'
 import { NUMERIC_FORMATS } from '../../Properties/formatValue'
-import { bandModelOf, dateLabeller, headContextOf, springsInto } from '../Bands/bandModel'
+import {
+  bandModelOf,
+  dateLabeller,
+  headContextOf,
+  nodeLabel,
+  springsInto,
+} from '../Bands/bandModel'
 import { type BandDrop, type BandRef, dropBand } from '../Bands/bandRouter'
 import { bandSpec } from '../Bands/GroupBand'
 import { setIndexOf } from '../Bands/setIndex'
@@ -404,7 +410,10 @@ function LocationHierarchy({
       dragged,
       to,
       { view, plan, schema, sets, sourcePath: painted.path },
-      { persistView: persist, mutate: mutateAhead },
+      {
+        persistView: persist,
+        mutate: (req) => mutateAhead(req, nodeLabel(model.byKey.get(dragged.key))),
+      },
     )
 
   const subChipRow = (setId: string, o: (typeof subChips)[number]): React.JSX.Element => (

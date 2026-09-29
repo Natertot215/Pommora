@@ -363,6 +363,7 @@ export function CardsView({ host }: { host: ViewHostApi }): React.JSX.Element {
           '--card-scale': cardScale,
           width: `${rect.width / effectiveZoom}px`,
           height: `${rect.height / effectiveZoom}px`,
+          padding: 0,
         } as React.CSSProperties
       }
     >

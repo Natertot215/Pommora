@@ -1,6 +1,9 @@
 .drop-line-host {
   position: relative;
 }
+.drop-line-host:focus-visible {
+  outline: none;
+}
 
 .drop-line {
   position: absolute;

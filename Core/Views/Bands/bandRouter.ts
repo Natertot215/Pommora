@@ -82,19 +82,20 @@ function routeSet(id: string, drop: BandDrop, scope: BandScope): BandEffect | nu
   const before = into
     ? (ranked?.find((s) => s !== id && sets.parent.get(s) === target) ?? null)
     : drop.beforeKey
-  const after = ranked ? { group_order: nextOrder(ranked, id, before) } : undefined
+  const ranks = ranked && nextOrder(ranked, id, before)
+  const after =
+    ranks && !sameIds(ranks, view.group_order ?? []) ? { group_order: ranks } : undefined
   if ((sets.parent.get(id) ?? null) !== target)
     return {
       kind: 'fs',
       req: { op: 'moveSet', path: set.path, newParentPath: targetPath, order },
       after,
     }
-  return after
-    ? { kind: 'view', patch: after }
-    : {
-        kind: 'fs',
-        req: { op: 'reorderChildren', parentPath: targetPath, key: 'set_order', order },
-      }
+  if (ranked) return after ? { kind: 'view', patch: after } : null
+  return {
+    kind: 'fs',
+    req: { op: 'reorderChildren', parentPath: targetPath, key: 'set_order', order },
+  }
 }
 
 function routeBucket(dragged: BucketRef, drop: BandDrop, scope: BandScope): BandEffect | null {

@@ -13,6 +13,7 @@ import {
   useGhostAnchor,
 } from '@pommora/uix/Interactions/ghostCreate'
 import { REVEAL_DWELL_MS } from '@pommora/uix/Interactions/hoverReveal'
+import { announceDrag } from '@pommora/uix/Interactions/a11y'
 import { columnLabel, useCapitalizeMetadata } from '../../Properties/Cells/columnLabel'
 import { notifyUndoable } from '../../Interface/Notifications/notifications'
 import { useSession } from '../../Session/store'
@@ -22,7 +23,7 @@ import { propertyMenuBranches, runPropertyAction } from '../../Interface/Menus/p
 import { findCollectionForSet } from '../../Nexus/treeIndex'
 import { isOpenInTabs } from '../../Navigation/tabsModel'
 import { IconChoice } from '../../Assets/IconChoice'
-import { type BandNode, springsInto } from '../Bands/bandModel'
+import { type BandNode, nodeLabel, springsInto } from '../Bands/bandModel'
 import { type BandDrop, type BandRef, bucketValueAt, dropBand } from '../Bands/bandRouter'
 import type { BandView } from '../Bands/GroupBand'
 import { sameIds, tieOrderWith } from '../creationOrder'
@@ -105,7 +106,8 @@ export function useViewInteractions(host: ViewHostApi, policy: ViewInteractionPo
   // ── Bands ─────────────────────────────────────────────────────────────────
 
   const valueAt = bucketValueAt(bands.byKey)
-  const bandDrop = (dragged: BandRef, drop: BandDrop): void =>
+  const bandDrop = (dragged: BandRef, drop: BandDrop): void => {
+    const name = nodeLabel(bands.byKey.get(dragged.key))
     void dropBand(
       bands,
       dragged,
@@ -113,14 +115,18 @@ export function useViewInteractions(host: ViewHostApi, policy: ViewInteractionPo
       { view, plan, schema, sets, sourcePath: source.path },
       {
         persistView,
-        mutate: mutateAhead,
+        mutate: (req) => mutateAhead(req, name),
         switched: ({ propertyId, prior }) =>
           notifyUndoable(
             `Switched to custom ${columnLabel(propertyId, schema, ctx.contexts, capitalize)} order`,
-            () => void persistView(prior),
+            () =>
+              void persistView(prior).then((r) => {
+                if (r.ok) announceDrag('return', name)
+              }),
           ),
       },
     )
+  }
   const creation = useViewCreation(() => ({
     ...host,
     bandBucket: valueAt,
@@ -143,6 +149,21 @@ export function useViewInteractions(host: ViewHostApi, policy: ViewInteractionPo
     paintOrder.flatMap((r) => (r.groupKey === bandKey && r.id !== excludeId ? [r.id] : []))
   const folderOf = (setId: string | null | undefined): CollectionNode | SetNode | undefined =>
     setId == null ? source : sets.node.get(setId)
+  const folderAt = (zone: string): CollectionNode | SetNode | undefined => {
+    const node = bands.byKey.get(zone)
+    return node?.kind === 'set' ? node.set : node?.parentKey === null ? source : undefined
+  }
+  const placeInView = (activeId: string, beforeId: string | null): void => {
+    if (pageOrder !== 'custom') return
+    const manual_order = tieOrderWith(
+      view.manual_order,
+      rows.map((r) => r.id),
+      activeId,
+      beforeId,
+      'above',
+    )
+    void persistView({ manual_order }, { viewState: true })
+  }
 
   const reorderWithin = (bandKey: string, activeId: string, beforeId: string | null): void => {
     const row = rowById.get(activeId)
@@ -156,7 +177,10 @@ export function useViewInteractions(host: ViewHostApi, policy: ViewInteractionPo
         .find((id) => rowById.get(id)?.parentSetId === row.parentSetId)
       const order = nextOrder(siblings, activeId, after ?? null)
       if (!sameIds(order, siblings))
-        void mutateAhead({ op: 'movePage', path: row.path, newParentPath: folder.path, order })
+        void mutateAhead(
+          { op: 'movePage', path: row.path, newParentPath: folder.path, order },
+          row.title,
+        )
       return
     }
     let placed = false
@@ -179,8 +203,7 @@ export function useViewInteractions(host: ViewHostApi, policy: ViewInteractionPo
 
   const relocate = (activeId: string, toZone: string, beforeId: string | null): void => {
     const row = rowById.get(activeId)
-    const node = bands.byKey.get(toZone)
-    const dest = node?.kind === 'set' ? node.set : node?.parentKey === null ? source : undefined
+    const dest = folderAt(toZone)
     if (!row || !dest) return
     const destSetId = dest === source ? undefined : dest.id
     if (destSetId === row.parentSetId) return
@@ -192,23 +215,11 @@ export function useViewInteractions(host: ViewHostApi, policy: ViewInteractionPo
       activeId,
       sibBefore ?? null,
     )
-    if (view.manual_order)
-      void persistView(
-        {
-          manual_order: tieOrderWith(
-            view.manual_order,
-            rows.map((r) => r.id),
-            activeId,
-            beforeId,
-            'above',
-          ),
-        },
-        { viewState: true },
-      )
-    void mutateAhead({ op: 'movePage', path: row.path, newParentPath: dest.path, order })
+    placeInView(activeId, beforeId)
+    void mutateAhead({ op: 'movePage', path: row.path, newParentPath: dest.path, order }, row.title)
   }
 
-  const reassign = (activeId: string, toZone: string): void => {
+  const reassign = (activeId: string, toZone: string, beforeId: string | null): void => {
     const row = rowById.get(activeId)
     const to = bands.byKey.get(toZone)
     const from = bands.byKey.get(rowBand.get(activeId) ?? '')
@@ -218,10 +229,13 @@ export function useViewInteractions(host: ViewHostApi, policy: ViewInteractionPo
       value === valueAt(from.key)
         ? Promise.resolve(true)
         : commitGroupValue(activeId, groupPropId, groupPropType, value ?? UNGROUPED)
+    placeInView(activeId, beforeId)
     const dest = folderOf(to.parentKey)
     if (to.parentKey === from.parentKey || !dest) return
     void write?.then((ok) =>
-      ok ? mutateAhead({ op: 'movePage', path: row.path, newParentPath: dest.path }) : null,
+      ok
+        ? mutateAhead({ op: 'movePage', path: row.path, newParentPath: dest.path }, row.title)
+        : null,
     )
   }
 
@@ -231,21 +245,29 @@ export function useViewInteractions(host: ViewHostApi, policy: ViewInteractionPo
     if (from === undefined) return
     if (toZone === from) reorderWithin(toZone, activeId, beforeId)
     else if (canRelocate) relocate(activeId, toZone, beforeId)
-    else if (canReassign) reassign(activeId, toZone)
+    else if (canReassign) reassign(activeId, toZone, beforeId)
   }
 
-  const siblingRun = useRef<{
+  const siblingRuns = useRef<{
     order: typeof paintOrder
-    zone: string
     id: string
-    first: number
-    count: number
+    runs: Map<string, { first: number; count: number }>
   } | null>(null)
   const siblingSlot = (zone: string, index: number, activeId: string): number | null => {
-    if (pageOrder !== 'location' || rowBand.get(activeId) !== zone) return index
-    const parent = rowById.get(activeId)?.parentSetId
-    let r = siblingRun.current
-    if (!r || r.order !== paintOrder || r.zone !== zone || r.id !== activeId) {
+    const own = rowBand.get(activeId) === zone
+    if (pageOrder !== 'location' || !(own || canRelocate)) return index
+    let held = siblingRuns.current
+    if (!held || held.order !== paintOrder || held.id !== activeId) {
+      held = { order: paintOrder, id: activeId, runs: new Map() }
+      siblingRuns.current = held
+    }
+    let r = held.runs.get(zone)
+    if (!r) {
+      const parent = own
+        ? rowById.get(activeId)?.parentSetId
+        : bands.byKey.get(zone)?.kind === 'set'
+          ? zone
+          : undefined
       let first = -1
       let count = 0
       bandRowIds(zone, activeId).forEach((id, i) => {
@@ -253,8 +275,8 @@ export function useViewInteractions(host: ViewHostApi, policy: ViewInteractionPo
         if (first < 0) first = i
         count++
       })
-      r = { order: paintOrder, zone, id: activeId, first, count }
-      siblingRun.current = r
+      r = { first: first < 0 && !own ? 0 : first, count }
+      held.runs.set(zone, r)
     }
     return r.first >= 0 && index >= r.first && index <= r.first + r.count ? index : null
   }

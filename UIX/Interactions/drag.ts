@@ -15,5 +15,6 @@ export {
   useLineGroup,
   useLineRow,
   useLineSlot,
+  useLineSpring,
   useLooseItem,
 } from './engine'

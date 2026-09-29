@@ -628,7 +628,7 @@ describe('the manual order fold', () => {
     })
     await mount(source)
     expect(paintOrder()).toEqual(['p1', 'p2'])
-    act(() => void mutateAhead(moveP2First))
+    act(() => void mutateAhead(moveP2First, 'Two'))
     expect(paintOrder()).toEqual(['p2', 'p1'])
     act(() => api?.toggleCollapse('g1'))
     expect(lastSavedView().collapsed_groups).toEqual(['g1'])
@@ -643,8 +643,11 @@ describe('the manual order fold', () => {
       mutate: vi.fn(async () => null) as never,
     })
     await mount(source)
-    await act(async () => void mutateAhead(moveP2First))
+    await act(async () => void mutateAhead(moveP2First, 'Two'))
     expect(paintOrder()).toEqual(['p1', 'p2'])
+    expect(document.querySelector('[aria-live="assertive"]')?.textContent).toBe(
+      'Two returned to its place.',
+    )
   })
 
   it('two hosts of one Collection, and a Set tile inside it, paint the same pending order', async () => {
@@ -683,12 +686,10 @@ describe('the manual order fold', () => {
     expect(seen.tile).toEqual(['a1', 'a2'])
     act(
       () =>
-        void mutateAhead({
-          op: 'movePage',
-          path: 'Col/A/a2.md',
-          newParentPath: 'Col/A',
-          order: ['a2', 'a1'],
-        }),
+        void mutateAhead(
+          { op: 'movePage', path: 'Col/A/a2.md', newParentPath: 'Col/A', order: ['a2', 'a1'] },
+          'a2',
+        ),
     )
     expect(seen.tile).toEqual(['a2', 'a1'])
     expect(seen.one).toEqual(seen.two)

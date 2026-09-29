@@ -120,6 +120,20 @@ describe('routeBandDrop — Sets', () => {
     })
   })
 
+  it('a nest whose stored view order already reads that way writes no view order', () => {
+    expect(
+      routeBandDrop(
+        setRef('sB', null),
+        { kind: 'into', parentKey: 'sA' },
+        scope({ view: view({ group_order: ['sA', 'sB', 'sA1', 'sA2'] }) }),
+      ),
+    ).toEqual({
+      kind: 'fs',
+      req: { op: 'moveSet', path: 'Col/B', newParentPath: 'Col/A', order: ['sB', 'sA1', 'sA2'] },
+      after: undefined,
+    })
+  })
+
   it('into its own parent is a reorder to first', () => {
     expect(routeBandDrop(setRef('sA2', 'sA'), { kind: 'into', parentKey: 'sA' }, scope())).toEqual({
       kind: 'fs',

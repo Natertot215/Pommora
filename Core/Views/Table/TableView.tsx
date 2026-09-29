@@ -1,4 +1,4 @@
-import { memo, useEffect, useRef, useState } from 'react'
+import { memo, useEffect, useMemo, useRef, useState } from 'react'
 import type { ResolvedColumn, ResolvedGroup, ViewRow } from '@pommora/core/Views/viewRow'
 import type { ColumnStyle } from '@pommora/core/Properties/columnStyles'
 import {
@@ -56,7 +56,7 @@ import {
 } from '@pommora/uix/Interactions/drag'
 import { laneSlot, type LaneSlot } from '@pommora/uix/Interactions/reorderModel'
 import { TAB_FAMILY } from '@pommora/core/Navigation/navRef'
-import { ROW_END, rowLine, type RowSnap, rowSnap } from './rowInsertion'
+import { ROW_END, rowLine, type RowSnap, rowSnap, rowStep } from './rowInsertion'
 import { openWebLink } from '../../Web/openWebLink'
 import {
   linkValueMenuTarget,
@@ -82,6 +82,7 @@ export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
     pickTarget,
     mutate,
   } = host
+  const heldBands = useMemo(() => new Set(rowBand.values()), [rowBand])
   const selection = useSession((s) => s.selection)
   const {
     iconsShown,
@@ -398,6 +399,7 @@ export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
     },
     sweep: startSweep,
     hover: interactions.ghost.onHover,
+    open: (row) => interactions.openPage(row, false),
   })
   const overlayTarget = editing?.mode === 'editor' ? editing : null
   const popoverTarget = editing?.mode === 'popover' ? editing : null
@@ -434,6 +436,8 @@ export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
   const indent = (depth: number): string =>
     depth > 0 ? `calc(var(--loose-inset) + var(--row-indent) * ${depth})` : 'var(--loose-inset)'
   const groupIndent = (depth: number): string => `calc(var(--row-indent) * ${depth})`
+  const memberDepth = (kind: ResolvedGroup['kind'], depth: number): number =>
+    kind === 'tail' ? depth : depth + 1
 
   const ghost = interactions.ghost.ghost
   const ghostRowProps = {
@@ -448,7 +452,7 @@ export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
   const renderRows = (g: ResolvedGroup, depth: number, visible: boolean): React.JSX.Element[] => {
     const isCollapsed = collapsed.has(g.key)
     const itemsVisible = visible && !isCollapsed
-    const itemDepth = g.kind === 'tail' ? depth : depth + 1
+    const itemDepth = memberDepth(g.kind, depth)
     const memberIndent = g.kind === 'tail' ? indent : groupIndent
     const members: React.JSX.Element[] = [
       ...g.items.flatMap((row, i) => {
@@ -499,11 +503,20 @@ export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
       </GroupBand>,
     ]
   }
+  const vacant = (key: string): boolean => {
+    const node = bands.byKey.get(key)
+    if (!node || heldBands.has(key)) return false
+    return node.kind === 'set' ? host.canRelocate : node.kind === 'bucket' && host.canReassign
+  }
   const rowDrag: LineSpec<LaneSlot, RowSnap> = {
-    snap: (id, g) => (dragDisabled ? null : rowSnap(g, id, rowBand)),
+    snap: (id, g) => (dragDisabled ? null : rowSnap(g, id, rowBand, vacant)),
     resolve: (_id, point, s) => laneSlot(s, point.y, crossBand),
     commit: (id, slot) => interactions.onDrop(id, slot.lane, slot.before),
-    line: rowLine,
+    line: (slot, s) => {
+      const node = bands.byKey.get(slot.lane)!
+      return rowLine(slot, s, groupIndent(memberDepth(node.kind, node.depth)))
+    },
+    step: (slot, s) => rowStep(slot, s, bands.byKey.get(slot.lane)?.kind !== 'tail'),
     label: (id) => rowById.get(id)?.title ?? '',
     glyph: (id) => <EntityIcon kind="page" icon={rowById.get(id)?.icon} />,
     carry: [carries(TAB_FAMILY, interactions.carry)],
@@ -583,6 +596,7 @@ type RowCellApi = {
   overlay: (row: ViewRow, col: ResolvedColumn) => React.ReactNode
   remove: (row: ViewRow, col: ResolvedColumn, next: PropertyValue | null) => void
   grip: (row: ViewRow, e: React.MouseEvent) => void
+  open: (row: ViewRow) => void
   sweep: (row: ViewRow, col: ResolvedColumn, e: React.PointerEvent) => boolean
   hover: GhostAnchor['onHover']
 }
@@ -674,7 +688,7 @@ const DataRow = memo(function DataRow({
   sweepCol: string | null
   lead: boolean
 }): React.JSX.Element {
-  const { ref, handle } = useLineRow(row.id)
+  const { ref, handle } = useLineRow(row.id, { open: () => api.open(row) })
   return (
     <div
       ref={ref}

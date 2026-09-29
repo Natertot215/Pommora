@@ -157,7 +157,75 @@ describe('a card dropped across structural bands', () => {
   })
 })
 
+describe('a card dropped across Set bands lands where its slot drew', () => {
+  const lastSaved = (): { manual_order?: string[] } => saveSpy.mock.calls.at(-1)?.[2] ?? {}
+  const deep = (order: 'custom' | 'location'): CollectionNode => {
+    const src = collection(
+      [
+        {
+          ...(set('sA', 'A', [page('a1', 'A One', 'Col/A/A One.md')]) as object),
+          sets: [
+            {
+              kind: 'set',
+              id: 'sA1',
+              title: 'A1',
+              path: 'Col/A/A1',
+              pages: [
+                page('s1', 'S One', 'Col/A/A1/S One.md'),
+                page('s2', 'S Two', 'Col/A/A1/S Two.md'),
+              ],
+              sets: [],
+            },
+          ],
+        },
+      ],
+      [page('r1', 'Root', 'Col/Root.md')],
+      STRUCTURAL,
+    )
+    const [v] = src.views ?? []
+    return { ...src, views: [{ ...v, structural_order_mode: order }] } as CollectionNode
+  }
+  const seat = (): void => {
+    const [bandA, tail] = [...host.querySelectorAll('.cards-grid')]
+    stubRect(bandA, { top: 0, bottom: 300, left: 0, right: GRID })
+    for (const [i, id] of ['a1', 's1', 's2'].entries())
+      stubRect(card(id), { top: i * ROW, bottom: i * ROW + ROW, left: 0, right: GRID })
+    stubRect(tail, { top: 400, bottom: 500, left: 0, right: GRID })
+    stubRect(card('r1'), { top: 400, bottom: 500, left: 0, right: GRID })
+  }
+
+  it('under Custom, a slot between the Sub-Set’s pages writes the view order at that slot', async () => {
+    await renderView(root, deep('custom'))
+    seat()
+    await dragTo(card('r1'), 240)
+    const order = lastSaved().manual_order ?? []
+    expect(order.indexOf('r1')).toBe(order.indexOf('s2') - 1)
+    expect(order.indexOf('r1')).toBeGreaterThan(order.indexOf('s1'))
+    expect(mutateSpy).toHaveBeenCalledExactlyOnceWith({
+      op: 'movePage',
+      path: 'Col/Root.md',
+      newParentPath: 'Col/A',
+      order: ['a1', 'r1'],
+    })
+  })
+
+  it('under Location, a slot past the Set’s own pages resolves nothing, so nothing is written', async () => {
+    await renderView(root, deep('location'))
+    seat()
+    await dragTo(card('r1'), 240)
+    expect(mutateSpy).not.toHaveBeenCalled()
+    expect(saveSpy).not.toHaveBeenCalled()
+  })
+})
+
 describe('a card dropped across property bands', () => {
+  it('writes the view order at the slot along with the value', async () => {
+    await mount(byStatus())
+    const dest = gridOf('p2').getBoundingClientRect()
+    await dragTo(card('p1'), dest.top + ROW + 50)
+    expect(saveSpy.mock.calls.at(-1)?.[2]?.manual_order).toEqual(['p2', 'p1'])
+  })
+
   it('rewrites the grouped value and never touches the fs', async () => {
     await mount(byStatus())
     const dest = gridOf('p2').getBoundingClientRect()
@@ -293,6 +361,7 @@ describe('a card carried to a tab row', () => {
     })
     const chrome = document.querySelector('.card-overlay')?.closest<HTMLElement>('body > div')
     expect(chrome?.style.zIndex).toBe(String(stack.top.dragOverlay))
+    expect(chrome?.querySelector<HTMLElement>('.cards-view')?.style.padding).toBe('0px')
     expect(stack.top.dragOverlay).toBeGreaterThan(stack.top.floating)
     expect(setCard.style.visibility).toBe('hidden')
     await act(async () => {

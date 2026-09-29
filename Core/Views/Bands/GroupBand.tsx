@@ -3,7 +3,7 @@ import type { SetNode } from '@pommora/core/Nexus/tree'
 import { Reveal } from '@pommora/uix/Animations/Reveal'
 import { Button } from '@pommora/uix/Buttons/Button'
 import { base } from '@pommora/uix/Fields/fields.css'
-import { LineRow, type LineSpec, useLineGroup } from '@pommora/uix/Interactions/drag'
+import { LineRow, type LineSpec, useLineGroup, useLineSpring } from '@pommora/uix/Interactions/drag'
 import { DropOutline } from '@pommora/uix/Menus'
 import { Icon } from '@pommora/uix/Symbols'
 import { text } from '@pommora/uix/Theme'
@@ -103,7 +103,8 @@ export function bandedSpec<R, RS, S, B>(
     glyph: (id) => (isRow(id) ? rows.glyph?.(id) : bands.glyph?.(id)),
     chip: (id) => (isRow(id) ? rows.chip?.(id) : bands.chip?.(id)),
     carry: rows.carry,
-    step: (slot, s) => ('band' in s ? (bands.step?.(slot as S, s.band) ?? null) : null),
+    step: (slot, s) =>
+      ('row' in s ? rows.step?.(slot as R, s.row) : bands.step?.(slot as S, s.band)) ?? null,
     disclose: (id) => {
       const d = isRow(id) ? rows.disclose : bands.disclose
       return typeof d === 'function' ? d(id) : d === true
@@ -158,6 +159,13 @@ function HeadedBand({
   const collapsed = bands.collapsed.has(node.key)
   const toggle = (): void => bands.toggle(node.key)
   const box = useLineGroup(bandBox(node.key))
+  const springRow = useLineSpring(
+    collapsed
+      ? (dragged) => {
+          if (bands.springs(dragged, node)) toggle()
+        }
+      : undefined,
+  )
   const set = node.kind === 'set' ? node : undefined
   const outsideRename = (e: React.MouseEvent): boolean =>
     !(e.target as HTMLElement).closest?.('input')
@@ -167,6 +175,7 @@ function HeadedBand({
       className={cx('group-band', node.kind === 'bucket' && node.parentKey !== null && 'sub-band')}
     >
       <div
+        ref={springRow}
         className="group-band-row"
         data-collapsed={collapsed ? '' : undefined}
         data-empty={node.empty ? '' : undefined}
@@ -174,13 +183,6 @@ function HeadedBand({
       >
         <LineRow
           id={node.key}
-          spring={
-            collapsed
-              ? (dragged) => {
-                  if (bands.springs(dragged, node)) toggle()
-                }
-              : undefined
-          }
           open={toggle}
           className={cx('group-band-head', text.body.emphasized)}
           role="treeitem"
@@ -214,7 +216,7 @@ function HeadedBand({
           <span
             className="group-band-glyph"
             onClick={(e) => {
-              if (outsideRename(e)) toggle()
+              if (e.detail < 2 && outsideRename(e)) toggle()
             }}
             onDoubleClick={
               set?.opens

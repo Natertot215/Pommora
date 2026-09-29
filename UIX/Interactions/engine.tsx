@@ -1190,6 +1190,10 @@ function LineHost({
   useEffect(() => api.invalidate(zoneId), [api, zoneId, ...spec.watch])
   const stop = disabled ? -1 : 0
   const rows = rowsOf(zoneId)
+  const enter = (host: HTMLElement): void => {
+    const held = last.current?.isConnected && host.contains(last.current) ? last.current : null
+    ;(held ?? host.querySelector<HTMLElement>(rows))?.focus()
+  }
   const onFocus = (e: ReactFocusEvent<HTMLDivElement>): void => {
     const pointed = viaPointer.current
     viaPointer.current = false
@@ -1202,9 +1206,12 @@ function LineHost({
       else if (row === e.target) last.current = row
       return
     }
-    if (pointed) return
-    const held = last.current?.isConnected && host.contains(last.current) ? last.current : null
-    ;(held ?? host.querySelector<HTMLElement>(rows))?.focus()
+    if (!pointed) enter(host)
+  }
+  const onKeyDown = (e: ReactKeyboardEvent<HTMLDivElement>): void => {
+    if (e.target !== e.currentTarget || (e.key !== 'ArrowDown' && e.key !== 'ArrowUp')) return
+    e.preventDefault()
+    enter(e.currentTarget)
   }
   const onBlur = (e: ReactFocusEvent<HTMLDivElement>): void => {
     if (e.relatedTarget instanceof Node && e.currentTarget.contains(e.relatedTarget)) return
@@ -1223,6 +1230,7 @@ function LineHost({
             viaPointer.current = true
           }}
           onFocus={onFocus}
+          onKeyDown={onKeyDown}
           onBlur={onBlur}
         >
           {children}
@@ -1274,28 +1282,38 @@ export function useDragItem(id: string, { open }: DragItemOptions = {}): DragIte
   )
 }
 
-export function useLineRow(
-  id: string,
-  { spring, open }: LineRowOptions = {},
-): { ref: (el: HTMLElement | null) => void; handle: LineHandle } {
-  const { api, zoneId } = useZone('useLineRow')
+export function useLineSpring(
+  spring: ((dragged: string) => void) | undefined,
+): (el: HTMLElement | null) => void {
+  const { api } = useZone('useLineSpring')
   const node = useRef<HTMLElement | null>(null)
   const expand = useLatest(spring)
-  const run = useLatest(open)
   const springs = spring !== undefined
-  const opens = open !== undefined
-  const ref = useCallback(
-    (el: HTMLElement | null) => {
-      node.current = el
-      api.el(zoneId, id, el)
-    },
-    [api, zoneId, id],
-  )
   useEffect(() => {
     const el = node.current
     if (!springs || !el) return
     return addSpring(el, () => expand.current?.(api.active.get()?.id ?? ''))
   }, [springs])
+  return useCallback((el: HTMLElement | null) => {
+    node.current = el
+  }, [])
+}
+
+export function useLineRow(
+  id: string,
+  { spring, open }: LineRowOptions = {},
+): { ref: (el: HTMLElement | null) => void; handle: LineHandle } {
+  const { api, zoneId } = useZone('useLineRow')
+  const springRef = useLineSpring(spring)
+  const run = useLatest(open)
+  const opens = open !== undefined
+  const ref = useCallback(
+    (el: HTMLElement | null) => {
+      springRef(el)
+      api.el(zoneId, id, el)
+    },
+    [api, zoneId, id, springRef],
+  )
   const handle = useMemo<LineHandle>(
     () => ({
       onPointerDown: (e) => api.begin(zoneId, id, e),
