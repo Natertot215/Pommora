@@ -46,10 +46,10 @@ import {
   bucketKey,
   bucketOrder,
   flattenContainer,
+  type GroupPlan,
   groupPlan,
   liveBucketOrder,
   type PropertyGroup,
-  setOrderOf,
   subGroupKey,
 } from '../Pipeline/group'
 import { NUMERIC_FORMATS } from '../../Properties/formatValue'
@@ -57,7 +57,7 @@ import { bandModelOf, dateLabeller, headContextOf, springsInto } from '../Bands/
 import { type BandDrop, type BandRef, dropBand } from '../Bands/bandRouter'
 import { bandSpec } from '../Bands/GroupBand'
 import { setIndexOf } from '../Bands/setIndex'
-import { mutateAhead } from '../Host/pendingView'
+import { mutateAhead, usePainted } from '../Host/pendingView'
 import { EntityIcon } from '../../Assets/EntityIcon'
 import { cx } from '@pommora/uix/Utilities/cx'
 import { useSetting } from '../../Session/store'
@@ -248,7 +248,7 @@ export function GroupFrame({
             (m) => saveGroup(pickOrder(plan.group, activeDef, m)),
           )}
         />
-      ) : (
+      ) : plan.kind === 'sets' ? (
         <MenuRowView
           row={pickerRow(
             'arrow-up-down',
@@ -259,7 +259,7 @@ export function GroupFrame({
             subGroup ? SUB_LOOK : undefined,
           )}
         />
-      )}
+      ) : null}
       {plan.kind === 'sets' && plan.nests && (
         <>
           <MenuRowView
@@ -319,8 +319,8 @@ export function GroupFrame({
           <LocationHierarchy
             source={source}
             view={view}
+            plan={plan}
             schema={schema}
-            custom={setOrderOf(plan, view) === 'custom'}
             sub={subGroup}
             subDef={subDef}
             persist={(patch) => saveView(view, patch)}
@@ -336,8 +336,8 @@ export function GroupFrame({
 function LocationHierarchy({
   source,
   view,
+  plan,
   schema,
-  custom,
   sub,
   subDef,
   persist,
@@ -347,8 +347,8 @@ function LocationHierarchy({
 }: {
   source: CollectionNode | SetNode
   view: SavedView
+  plan: GroupPlan
   schema: PropertyDefinition[]
-  custom: boolean
   sub: SubGroupConfig | undefined
   subDef: PropertyDefinition | undefined
   persist: (patch: ViewPatch) => Promise<Result<unknown>>
@@ -357,7 +357,8 @@ function LocationHierarchy({
   const hideChevrons = useSetting('hideChevrons')
   const expanded = useDisclosureSet()
   const nexus = useNexusForms()
-  const sets = setIndexOf(source)
+  const painted = usePainted(source)
+  const sets = setIndexOf(painted)
 
   const subChips = useMemo(() => {
     if (!sub || !subDef) return []
@@ -387,11 +388,11 @@ function LocationHierarchy({
             : walk(id),
         }),
       )
-    const heads = headContextOf(source, sets, sub, schema, view, (id) =>
+    const heads = headContextOf(painted, sets, sub, schema, view, (id) =>
       styleFor(id, schema, view, nexus),
     )
     return bandModelOf(walk(null), heads)
-  }, [source, sets, sub, subDef, subChips, schema, view, nexus])
+  }, [painted, sets, sub, subDef, subChips, schema, view, nexus])
   const collapsed = useMemo(
     () => new Set(sets.preorder.filter((id) => !expanded.has(id))),
     [sets, expanded],
@@ -402,7 +403,7 @@ function LocationHierarchy({
       model,
       dragged,
       to,
-      { view, schema, sets, sourcePath: source.path, custom },
+      { view, plan, schema, sets, sourcePath: painted.path },
       { persistView: persist, mutate: mutateAhead },
     )
 
@@ -475,7 +476,7 @@ function LocationHierarchy({
         indent: (depth) => rowDropLine(0, depth),
       })}
     >
-      {(source.sets ?? []).map(renderSet)}
+      {(painted.sets ?? []).map(renderSet)}
     </LineZone>
   )
 }

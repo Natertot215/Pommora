@@ -16,7 +16,6 @@ import { contextIdsOf, identityOf } from '../../Contexts/contextIdentity'
 import { type PickTarget, syntheticContextDef } from '../../Properties/Pickers/PropertyPicker'
 import { declaredType, resolveFieldValue } from '../../Properties/value'
 import { buildValueContext } from '../../Properties/valueContext'
-import { containerAt, orderInTree } from '../../Nexus/treePatch'
 import { hideShown, unhide } from '../visibilityModel'
 import { bandModelOf, headContextOf } from '../Bands/bandModel'
 import { setIndexOf } from '../Bands/setIndex'
@@ -27,14 +26,13 @@ import {
   flattenContainer,
   groupPlan,
   pageOrderOf,
-  setOrderOf,
 } from '../Pipeline/group'
 import { resolveView } from '../Pipeline/resolveView'
 import { searchGroups } from '../Pipeline/search'
 import { foldKey } from '../../Paths/caseFold'
 import { resolvedSortCount } from '../Pipeline/sort'
 import { useActiveView } from './useActiveView'
-import { useOrdersAhead } from './pendingView'
+import { usePainted } from './pendingView'
 import { patchOverride } from '../../Properties/valueOverride'
 import { useContainerValues } from './useContainerValues'
 import { pickedStyle, styleFor, useNexusForms } from './useColumnStyles'
@@ -58,17 +56,7 @@ export function useViewHost(source: CollectionNode | SetNode, nests: boolean) {
   const searching = needle !== ''
 
   const { values, effectiveValues, setValueOverride } = useContainerValues(source.path)
-  const ahead = useOrdersAhead()
-  const painted = useMemo(
-    () =>
-      tree && ahead.length > 0
-        ? (containerAt(
-            ahead.reduce((t, req) => orderInTree(t, req) ?? t, tree),
-            source.path,
-          ) ?? source)
-        : source,
-    [tree, source, ahead],
-  )
+  const painted = usePainted(source)
 
   const schema = useMemo(
     () => (tree ? resolveContainerSchema(tree, source) : NO_SCHEMA),
@@ -82,15 +70,13 @@ export function useViewHost(source: CollectionNode | SetNode, nests: boolean) {
   const plan = useMemo(() => groupPlan(view, schema, nests), [view, schema, nests])
   const sortKeys = useMemo(() => resolvedSortCount(view.sort, schema), [view.sort, schema])
   const pageOrder = pageOrderOf(plan, view, sortKeys)
-  const setOrder = setOrderOf(plan, view)
   const bucketGroup = bucketGroupingOf(plan)
   const groupPropId = bucketGroup?.property_id
   const groupPropType = groupPropId ? declaredType(groupPropId, schema) : undefined
   const canReassign = reassignable(groupPropType)
-  const canReorderWithin = sortKeys < 2
   const canRelocate = plan.kind === 'sets' && plan.sub === undefined
   const manualOrder = pageOrder === 'location' ? undefined : view.manual_order
-  const dragDisabled = searching || !canReorderWithin
+  const dragDisabled = searching || sortKeys >= 2
   const crossBand = !dragDisabled && (canReassign || canRelocate)
   const sets = setIndexOf(painted)
 
@@ -279,13 +265,11 @@ export function useViewHost(source: CollectionNode | SetNode, nests: boolean) {
     groupPropId,
     groupPropType,
     canReassign,
-    canReorderWithin,
     canRelocate,
     crossBand,
     reassignBySortRun,
     sortKeys,
     pageOrder,
-    setOrder,
     dragDisabled,
     searching,
     setStylePatch,

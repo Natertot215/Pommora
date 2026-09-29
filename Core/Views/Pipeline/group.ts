@@ -80,9 +80,10 @@ export function dropHiddenGroups(
   groups: ResolvedGroup[],
   hidden: ReadonlySet<string>,
   view: GroupedView,
+  plan: GroupPlan,
 ): ResolvedGroup[] {
-  const top = view.group?.kind === 'property' ? view.group.property_id : undefined
-  const sub = view.sub_group?.property_id
+  const top = plan.kind === 'property' ? plan.group.property_id : undefined
+  const sub = plan.kind === 'sets' ? plan.sub?.property_id : undefined
   return groups.flatMap((group) => {
     if (group.kind === 'bucket' && top && isBucketHidden(view, hidden, 'group', top, group.value))
       return []

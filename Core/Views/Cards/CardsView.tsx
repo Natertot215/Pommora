@@ -146,7 +146,6 @@ export function CardsView({ host }: { host: ViewHostApi }): React.JSX.Element {
     rowById,
     bands,
     collapsed,
-    canReorderWithin,
     crossBand,
     searching,
     setStylePatch,
@@ -451,7 +450,7 @@ export function CardsView({ host }: { host: ViewHostApi }): React.JSX.Element {
               <SortableZone
                 items={g.items.map((r) => r.id)}
                 label={(id) => rowById.get(id)?.title ?? ''}
-                fixed={searching || !canReorderWithin}
+                fixed={host.dragDisabled}
                 family={crossBand ? scope : undefined}
                 disclose={crossBand}
                 carry={cardCarry}

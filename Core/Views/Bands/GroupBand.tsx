@@ -78,15 +78,13 @@ export function bandSpec({
   }
 }
 
-// ── The band ────────────────────────────────────────────────────────────────
+type BandedSnap<RS, B> = { row: RS } | { band: B }
 
-type TableSnap<RS, B> = { row: RS } | { band: B }
-
-export function tableSpec<R, RS, S, B>(
+export function bandedSpec<R, RS, S, B>(
   isRow: (id: string) => boolean,
   rows: LineSpec<R, RS>,
   bands: LineSpec<S, B>,
-): LineSpec<R | S, TableSnap<RS, B>> {
+): LineSpec<R | S, BandedSnap<RS, B>> {
   return {
     snap: (id, g) => {
       if (isRow(id)) {
@@ -113,6 +111,8 @@ export function tableSpec<R, RS, S, B>(
     watch: [...rows.watch, ...bands.watch],
   }
 }
+
+// ── The band ────────────────────────────────────────────────────────────────
 
 export function GroupBand({
   node,

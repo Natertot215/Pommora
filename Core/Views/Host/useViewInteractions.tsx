@@ -86,12 +86,11 @@ export function useViewInteractions(host: ViewHostApi, policy: ViewInteractionPo
     groupPropId,
     groupPropType,
     canReassign,
-    canReorderWithin,
     canRelocate,
     crossBand,
     reassignBySortRun,
     pageOrder,
-    setOrder,
+    plan,
     persistView,
     commitValue,
     commitGroupValue,
@@ -105,13 +104,13 @@ export function useViewInteractions(host: ViewHostApi, policy: ViewInteractionPo
 
   // ── Bands ─────────────────────────────────────────────────────────────────
 
-  const valueAt = bucketValueAt(bands)
+  const valueAt = bucketValueAt(bands.byKey)
   const bandDrop = (dragged: BandRef, drop: BandDrop): void =>
     void dropBand(
       bands,
       dragged,
       drop,
-      { view, schema, sets, sourcePath: source.path, custom: setOrder === 'custom' },
+      { view, plan, schema, sets, sourcePath: source.path },
       {
         persistView,
         mutate: mutateAhead,
@@ -230,11 +229,8 @@ export function useViewInteractions(host: ViewHostApi, policy: ViewInteractionPo
   const onDrop = (activeId: string, toZone: string, beforeId: string | null): void => {
     const from = rowBand.get(activeId)
     if (from === undefined) return
-    if (toZone === from) {
-      if (canReorderWithin) reorderWithin(toZone, activeId, beforeId)
-      return
-    }
-    if (canRelocate) relocate(activeId, toZone, beforeId)
+    if (toZone === from) reorderWithin(toZone, activeId, beforeId)
+    else if (canRelocate) relocate(activeId, toZone, beforeId)
     else if (canReassign) reassign(activeId, toZone)
   }
 

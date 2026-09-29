@@ -10,8 +10,9 @@ import {
 import { same } from '@pommora/core/Files/stableJson'
 import { useLatest } from '@pommora/uix/Utilities/stableApi'
 import type { MutateOutcome } from '@pommora/core/Nexus/mutateRequest'
+import type { CollectionNode, SetNode } from '@pommora/core/Nexus/tree'
 import { channel } from '@pommora/uix/Utilities/subscribable'
-import type { OrderRequest } from '../../Nexus/treePatch'
+import { containerAt, type OrderRequest, orderInTree } from '../../Nexus/treePatch'
 import { useSession } from '../../Session/store'
 
 interface Slot {
@@ -124,8 +125,20 @@ export function unstageView(sourceId: string, viewId: string, patch: ViewPatch):
 
 const ahead = channel<readonly OrderRequest[]>([])
 
-export const useOrdersAhead = (): readonly OrderRequest[] =>
-  useSyncExternalStore(ahead.subscribe, ahead.get)
+export function usePainted(source: CollectionNode | SetNode): CollectionNode | SetNode {
+  const tree = useSession((s) => s.tree)
+  const orders = useSyncExternalStore(ahead.subscribe, ahead.get)
+  return useMemo(
+    () =>
+      tree && orders.length > 0
+        ? (containerAt(
+            orders.reduce((t, req) => orderInTree(t, req) ?? t, tree),
+            source.path,
+          ) ?? source)
+        : source,
+    [tree, source, orders],
+  )
+}
 
 export function mutateAhead(req: OrderRequest): Promise<MutateOutcome | null> {
   ahead.set([...ahead.get(), req])

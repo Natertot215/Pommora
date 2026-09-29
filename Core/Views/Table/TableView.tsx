@@ -33,7 +33,7 @@ import { isCmd, isSecondaryClick } from '@pommora/uix/Interactions/chords'
 import { Cell } from '../../Properties/Cells/Cell'
 import { EntityIcon } from '../../Assets/EntityIcon'
 import { PropertyTypeIcon, propertyIcon } from '../../Properties/Cells/PropertyTypes'
-import { bandSpec, GroupBand, tableSpec } from '../Bands/GroupBand'
+import { bandSpec, GroupBand, bandedSpec } from '../Bands/GroupBand'
 import { Reveal } from '@pommora/uix/Animations/Reveal'
 import { columnLabel, useCapitalizeMetadata } from '../../Properties/Cells/columnLabel'
 import { type DragShift, gapShift, useColumns } from './useColumns'
@@ -527,7 +527,7 @@ export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
       className={cx('table table-view', overflowing && 'overflowing')}
     >
       {interactions.iconPicker}
-      <LineZone {...tableSpec((id) => rowById.has(id), rowDrag, bandDrag)}>
+      <LineZone {...bandedSpec((id) => rowById.has(id), rowDrag, bandDrag)}>
         <div
           className={cx(
             'table-grid',
