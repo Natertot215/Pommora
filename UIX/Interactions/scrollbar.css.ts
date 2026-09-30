@@ -26,14 +26,19 @@ export const pill = style([
   {
     height: `clamp(${SCROLLBAR.minLength}px, calc(100cqh * var(--scrollbar-visible, 1)), min(${SCROLLBAR.maxLength}px, ${SCROLLBAR.maxShare * 100}cqh))`,
     borderRadius: 'var(--radius-full)',
-    background: 'var(--fill-secondary)',
+    background: 'var(--border-strong)',
     transition: 'opacity var(--duration-base) var(--ease-base)',
     animationName: travel,
     animationTimingFunction: 'linear',
     animationFillMode: 'both',
     '@starting-style': { opacity: 0 },
     selectors: {
-      '&&:hover': { opacity: 1, pointerEvents: 'auto', background: wash('var(--state-hover)') },
+      '&&:hover': {
+        opacity: 1,
+        pointerEvents: 'auto',
+        cursor: 'pointer',
+        background: wash('var(--state-hover)'),
+      },
       '&&[data-reveal-held]': { background: wash('var(--state-selected)') },
     },
   },
