@@ -34,6 +34,8 @@ The heading reads the unbound state and three binding states. Unbound shows the 
 | Interface Scale | `interfaceScale` | The scaling factor applied to the entire interface; additional scaling preferences compound this value. Also what ⌘0 resets to. A machine-level preference, stored in the device database rather than the Nexus. | 50%–150% in ten-point steps (**100%**) |
 | Embed Scale | `embedScale` | The scale embedded pages and views start at; a block's own Scale compounds it. | 50%–150% (**90%**) |
 | Brightness | `brightness` | Pommora's own brightness, independent of the display's, applied across the whole window including its webpages. A machine-level preference, stored in the device database rather than the Nexus. | 50%–150% in ten-point steps (**100%**) |
+| Scrollbar Presence | `scrollbars` | Which surfaces carry a scrollbar: every scrolling surface, pages alone, or none. A machine-level preference, stored in the device database rather than the Nexus. | All · **Pages Only** · Off |
+| Scrollbar Visibility | `scrollbarReveal` | Whether scrollbars stay shown or appear on scroll and hover. Folds away while Scrollbar Presence is Off. A machine-level preference, stored in the device database rather than the Nexus. | Always · **On Hover** |
 
 **Creation Placement**
 

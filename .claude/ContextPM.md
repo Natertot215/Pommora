@@ -14,7 +14,6 @@ The Pommora Codebase Audit is the sole focus. Its ledger, `// Planning`'s `Pommo
 
 - [ ] **IconSwitchToggle.** A kit toggle in `UIX/Elements/` for icons that switch face on click, drawn from a pair registry in `UIX/Symbols` that generalizes `LockGlyph`'s crossfade and is seeded with the lock, eye, pin, and show/hide pairs. It replaces the sidebar, glance, and View Tile lock buttons and `FooterLockButton`'s internals, takes in `EyeToggle` and `NavPinButton`, and moves those hand-rolled buttons onto `Button`; callers supply the label and cursor. It follows the Hover Reveal plan and consumes its reveal recipe.
 - [ ] Adding value-dragging for table cells and card bodies for value reordering within an assigned property.
-- [ ] Scrollbars.
 
 #### II. Open Calls
 
