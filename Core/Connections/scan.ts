@@ -3,7 +3,7 @@
 import { normalizeTitle, pageEmbedPattern, pageLinkPattern, titleOf } from './connections'
 import { markdownLinkRegex, targetFragment, targetTitle } from './links'
 import { readLink } from './linkValue'
-import { codeMask, type CodeMask } from '../MarkdownPM/Engine/markdownCode'
+import { codeMask, type CodeMask, lineEndAt, lineStartAt } from '../MarkdownPM/Engine/markdownCode'
 import { headingParts } from '../MarkdownPM/Engine/detect'
 
 interface SectionRun {
@@ -36,11 +36,8 @@ export function sectionRunsIn(
   }
   const lengths = [...byLength.keys()].sort((a, b) => b - a)
   const out: SectionRun[] = []
-  const onHeading = (i: number): boolean => {
-    const from = text.lastIndexOf('\n', i) + 1
-    const to = text.indexOf('\n', i)
-    return headingParts(text.slice(from, to === -1 ? text.length : to)) !== null
-  }
+  const onHeading = (i: number): boolean =>
+    headingParts(text.slice(lineStartAt(text, i), lineEndAt(text, i))) !== null
   let link = 0
   for (let i = text.indexOf('§'); i !== -1; i = text.indexOf('§', i + 1)) {
     while (link < links.length && links[link][1] <= i) link++

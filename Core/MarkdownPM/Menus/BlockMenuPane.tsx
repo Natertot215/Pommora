@@ -1,13 +1,12 @@
 import { Fragment } from 'react'
 import { Icon } from '@pommora/uix/Symbols'
-import { PickerMenu } from '@pommora/uix/Pickers/PickerMenu'
 import type { RememberedSize } from '@pommora/uix/Interactions/useResizable'
 import { PICKER_MAX_HEIGHT } from '@pommora/uix/Pickers/picker-base.css'
 import { type PaneBounds, usePaneResize } from '@pommora/uix/Pickers/usePaneResize'
 import { useHeld } from '@pommora/uix/Animations/useExitPresence'
 import { emphasizeMatch, MenuItem, MenuRowView, MenuScrollFrame } from '@pommora/uix/Menus'
 import type { BlockMenuAction } from '../../Actions/blockMenu'
-import { CLOSED_GEOMETRY, useKeepInView } from './caretPane'
+import { CaretPane, CLOSED_GEOMETRY, useKeepInView } from './caretPane'
 import type { BlockMenuState } from './useBlockMenu'
 
 interface Props {
@@ -30,18 +29,7 @@ export function BlockMenuPane({ state, selected, onPick, geometry }: Props): Rea
   const keepInView = useKeepInView(v.selected)
 
   return (
-    <PickerMenu
-      glass="window"
-      open={open}
-      anchorX={v.state.caretX}
-      anchorY={v.state.caretTop}
-      anchorHeight={v.state.caretBottom - v.state.caretTop}
-      bounds={v.state.bounds}
-      origin="center"
-      focus="keep"
-      contentClassName="mdpm-block-menu"
-      resize={resize}
-    >
+    <CaretPane open={open} at={v.state} className="mdpm-block-menu" resize={resize}>
       <MenuScrollFrame maxHeight={resize.size.h}>
         {v.state.matches.map((m) => (
           <Fragment key={m.title}>
@@ -61,6 +49,6 @@ export function BlockMenuPane({ state, selected, onPick, geometry }: Props): Rea
           </Fragment>
         ))}
       </MenuScrollFrame>
-    </PickerMenu>
+    </CaretPane>
   )
 }

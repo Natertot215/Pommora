@@ -2,7 +2,6 @@ import { useEffect, useRef } from 'react'
 import { cx } from '@pommora/uix/Utilities/cx'
 import { EntityIcon } from '../../Assets/EntityIcon'
 import { Icon } from '@pommora/uix/Symbols'
-import { PickerMenu } from '@pommora/uix/Pickers/PickerMenu'
 import type { RememberedSize } from '@pommora/uix/Interactions/useResizable'
 import { PICKER_MAX_HEIGHT } from '@pommora/uix/Pickers/picker-base.css'
 import { type PaneBounds, usePaneResize } from '@pommora/uix/Pickers/usePaneResize'
@@ -20,7 +19,7 @@ import { HoverRemove, hoverRemoveHost } from '@pommora/uix/Interactions/HoverRem
 import { removeButton } from '@pommora/uix/Interactions/hover-remove.css'
 import { revealTarget } from '@pommora/uix/Interactions/hover-reveal.css'
 import { side } from '@pommora/uix/Menus/menu-row.css'
-import { CLOSED_GEOMETRY, useKeepInView } from '../Menus/caretPane'
+import { CaretPane, CLOSED_GEOMETRY, useKeepInView } from '../Menus/caretPane'
 import { NavTrail } from '@pommora/uix/Elements/NavTrail'
 import { text } from '@pommora/uix/Theme/typography.css'
 import { outlineTree, type OutlineNode } from '../Engine/outlineTree'
@@ -197,19 +196,7 @@ export function AutocompletePane({
   const shown = slot(v.candidates, true)
 
   return (
-    // No `onDismiss`, and focus kept by contract: the editor's keymap owns arrows, Return and Escape, and no press in the pane moves the caret out of the alias.
-    <PickerMenu
-      glass="window"
-      open={live}
-      anchorX={v.ac.caretX}
-      anchorY={v.ac.caretTop}
-      anchorHeight={v.ac.caretBottom - v.ac.caretTop}
-      bounds={v.ac.bounds}
-      origin="center"
-      focus="keep"
-      contentClassName="mdpm-ac"
-      resize={resize}
-    >
+    <CaretPane open={live} at={v.ac} className="mdpm-ac" resize={resize}>
       <FrameSlide
         open={sliding}
         minWidth={w ?? AC_BOUNDS.min.w}
@@ -223,6 +210,6 @@ export function AutocompletePane({
         }
         detail={sliding ? (headingSlide ? headingSlot(v.candidates) : shown) : null}
       />
-    </PickerMenu>
+    </CaretPane>
   )
 }
