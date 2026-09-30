@@ -14,6 +14,7 @@ import { headingSections } from './Engine/headingScan'
 import { createBlockDragGesture } from './Gestures/blockDrag'
 import { lineElementAt } from './lineDom'
 import { editorHost, mirrored } from './api'
+import { WEB_GUEST_CLASS } from '../Web/guest'
 
 /** The reveal's beat plus slack for the frame that draws its final height — a travel timed earlier lands on the collapsed document. */
 export const FOLD_SETTLE_MS = ms(duration.fast) + 30
@@ -100,7 +101,7 @@ const settleEffect = StateEffect.define<number>()
 const expandEffect = StateEffect.define<number>()
 const dropEffect = StateEffect.define<number>()
 
-// A picture of the body, never a second copy of it: inert, and without the web guests a copied `<webview>` would start.
+// A picture of the body, never a second copy of it: inert, and without the web guests a copied one would start.
 function cloneBody(view: EditorView, from: number, to: number): HTMLElement {
   const wrap = document.createElement('div')
   wrap.className = 'mdpm-fold-clone'
@@ -116,7 +117,7 @@ function cloneBody(view: EditorView, from: number, to: number): HTMLElement {
     if (line.to >= to) break
     pos = line.to + 1
   }
-  for (const guest of wrap.querySelectorAll('webview')) guest.remove()
+  for (const guest of wrap.querySelectorAll(`.${WEB_GUEST_CLASS}`)) guest.remove()
   return wrap
 }
 

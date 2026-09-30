@@ -23,6 +23,7 @@ import { mirrorBody } from './api'
 import { Text, type ChangeSpec } from '@codemirror/state'
 import { deleteMarkerChanges } from './Citations/citationEdits'
 import { docScan } from './docCache'
+import { WEB_GUEST_CLASS } from '../Web/guest'
 import { headingSections } from './Engine/headingScan'
 import { scanDoc } from './Engine/docScan'
 import { splitWithOffsets } from './Engine/detect'
@@ -152,12 +153,14 @@ describe('the fold animates a picture of its body', () => {
   it('an inert copy with no web guest, and nothing at all once collapsed', async () => {
     const view = await mountEditor({ initialBody: DOC })
     const body = view.contentDOM.querySelectorAll('.cm-line')[1]
-    body.appendChild(document.createElement('webview'))
+    const guest = document.createElement('webview')
+    guest.className = WEB_GUEST_CLASS
+    body.appendChild(guest)
     await fold(view, 0)
     const clone = view.dom.querySelector<HTMLElement>('.mdpm-fold-clone')
     expect(clone?.hasAttribute('inert')).toBe(true)
     expect(clone?.textContent).toContain('body one')
-    expect(clone?.querySelector('webview')).toBeNull()
+    expect(clone?.querySelector(`.${WEB_GUEST_CLASS}`)).toBeNull()
     applySavedFolds(view, ['Two'])
     const reveals = view.dom.querySelectorAll('.mdpm-fold-reveal')
     expect(reveals[reveals.length - 1].childElementCount).toBe(0)

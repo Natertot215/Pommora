@@ -1,0 +1,4 @@
+/* display:flex is the spike-proven form: block leaves the OOPIF with a phantom baseline gap. */
+.web-guest {
+  display: flex;
+}

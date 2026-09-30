@@ -5,21 +5,15 @@ import { overScrollEllipsis } from '@pommora/uix/Interactions/OverScroll'
 import { text } from '@pommora/uix/Theme'
 import { linkDomain } from '../../Paths/urlPath'
 import { linkDisplayText } from '../../Connections/linkValue'
-import { WEB_PARTITION } from '../../Web/partition'
+import { WebGuest, type WebGuestHandle } from '../../Web/WebGuest'
 import { useDismissal } from '@pommora/uix/Interactions/dismissalStack'
 import { useSession, useSetting } from '../../Session/store'
 import { openWebLink } from '../../Web/openWebLink'
 import { webGuestRetention } from './webRetention'
-import { dialer } from '../../Platform/dialer'
 import { revealTarget } from '@pommora/uix/Interactions/hover-reveal.css'
 import { useLatest } from '@pommora/uix/Utilities/stableApi'
 import '../tile-base.css'
 import '../tile-title.css'
-
-type Guest = HTMLElement & {
-  capturePage?: () => Promise<{ toDataURL(): string }>
-  getWebContentsId?: () => number
-}
 
 const CAPTURE_DEADLINE_MS = 200
 
@@ -57,7 +51,7 @@ export function WebTile({
   const [guest, setGuest] = useState(visible)
   const [snap, setSnap] = useState<string | null>(null)
   const [parting, setParting] = useState(false)
-  const ref = useRef<HTMLElement | null>(null)
+  const siteRef = useRef<WebGuestHandle | null>(null)
   const rootRef = useRef<HTMLDivElement | null>(null)
   const guestRef = useLatest(guest)
   const visibleRef = useLatest(visible)
@@ -84,23 +78,19 @@ export function WebTile({
       return
     }
     setEngaged(false)
-    const el = ref.current as Guest | null
-    if (el && document.activeElement === el) {
-      el.blur()
-      refocusRef.current?.()
-    }
+    const site = siteRef.current
+    if (site?.blur()) refocusRef.current?.()
     if (!guestRef.current) return
     const retain = (): void => {
       setParting(false)
       if (!visibleRef.current && guestRef.current) webGuestRetention.hide(id, () => setGuest(false))
     }
-    if (!el?.capturePage) {
+    if (!site) {
       retain()
       return
     }
     setParting(true)
     let settled = false
-    let deadline: ReturnType<typeof setTimeout> | undefined
     const settle = (dataUrl: string | null): void => {
       if (settled) return
       settled = true
@@ -108,16 +98,8 @@ export function WebTile({
       if (dataUrl) setSnap(dataUrl)
       retain()
     }
-    // A pre-attach guest's capturePage throws synchronously (the method exists on the prototype before the guest does), and the clip must still complete without a frame.
-    deadline = setTimeout(() => settle(null), CAPTURE_DEADLINE_MS)
-    try {
-      el.capturePage().then(
-        (img) => settle(img.toDataURL()),
-        () => settle(null),
-      )
-    } catch {
-      settle(null)
-    }
+    const deadline = setTimeout(() => settle(null), CAPTURE_DEADLINE_MS)
+    void site.capture().then(settle)
     // A settle landing after unmount/re-entry would re-insert this guest's freed id as a dead slot.
     return () => {
       settled = true
@@ -128,55 +110,14 @@ export function WebTile({
 
   useEffect(() => () => webGuestRetention.show(id), [id])
 
-  // Sent once the guest is attached (the id read throws before that), and re-sent on Scale change or remount; 1.0 must still be sent — it clears a previous factor's map entry.
-  useEffect(() => {
-    const wv = ref.current as Guest | null
-    if (!wv?.getWebContentsId || !loaded) return
-    try {
-      void dialer().ask('webGuestZoom:set', wv.getWebContentsId(), zoom)
-    } catch {}
-  }, [zoom, loaded])
-
   // Only ever pauses, never plays — returning to the tab leaves media where the pause left it.
   useEffect(() => {
-    if (!tabInactive || !pauseOnTabSwitch) return
-    const wv = ref.current as Guest | null
-    if (!wv?.getWebContentsId || !loaded) return
-    try {
-      void dialer().ask('webGuestMedia:pause', wv.getWebContentsId())
-    } catch {}
+    if (tabInactive && pauseOnTabSwitch && loaded) siteRef.current?.pauseMedia()
   }, [tabInactive, pauseOnTabSwitch, loaded])
 
   useDismissal(engaged, false, {
     layer: () => rootRef.current,
     dismiss: () => setEngaged(false),
-  })
-
-  useEffect(() => {
-    const wv = ref.current
-    if (!wv) return
-    const fail = (): void => {
-      setFailed(true)
-      setGuest(false)
-      webGuestRetention.show(id)
-    }
-    const onFail = (e: Event): void => {
-      // Subframe failures are the site's own business; -3 is the abort every redirect fires.
-      const d = e as Event & { isMainFrame?: boolean; errorCode?: number }
-      if (d.isMainFrame !== false && d.errorCode !== -3) fail()
-    }
-    const onLoad = (): void => {
-      setFailed(false)
-      setLoaded(true)
-    }
-    wv.addEventListener('did-fail-load', onFail)
-    wv.addEventListener('render-process-gone', fail)
-    wv.addEventListener('did-finish-load', onLoad)
-    return () => {
-      wv.removeEventListener('did-fail-load', onFail)
-      wv.removeEventListener('render-process-gone', fail)
-      wv.removeEventListener('did-finish-load', onLoad)
-    }
   })
 
   const live = guest && !failed
@@ -185,15 +126,21 @@ export function WebTile({
   return (
     <div className="web-tile" ref={rootRef}>
       {live ? (
-        <webview
-          ref={(el) => {
-            ref.current = el as HTMLElement | null
-          }}
+        <WebGuest
+          ref={siteRef}
           src={url}
-          partition={WEB_PARTITION}
-          // React only serializes string values for attributes it doesn't know, so a bare boolean never reaches the attach — and popups then die inside Blink.
-          allowpopups={'' as unknown as boolean}
+          popups
+          zoom={zoom}
           className={cx(!onScreen && 'is-retained', !engaged && 'is-inert')}
+          onLoad={() => {
+            setFailed(false)
+            setLoaded(true)
+          }}
+          onFail={() => {
+            setFailed(true)
+            setGuest(false)
+            webGuestRetention.show(id)
+          }}
         />
       ) : null}
       {!shown ? (

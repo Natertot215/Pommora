@@ -1,12 +1,13 @@
 import { describe, expect, it, vi } from 'vitest'
 import type { BrowserWindow } from 'electron'
-import { installWebGuests } from './webGuests'
+import { SETTING_DEFAULTS } from '@pommora/core/Settings/personalization'
+import { installWebGuests, pauseGuestMedia, setGuestTileZoom, wheelGuest } from './webGuests'
 
 type Answer = (granted: boolean) => void
 type RequestHandler = (wc: unknown, permission: string, answer: Answer) => void
 type CheckHandler = (wc: unknown, permission: string) => boolean
 
-const { sessions, appOn } = vi.hoisted(() => {
+const { sessions, appOn, contents } = vi.hoisted(() => {
   const fakeSession = () => ({
     request: null as RequestHandler | null,
     check: null as CheckHandler | null,
@@ -22,6 +23,7 @@ const { sessions, appOn } = vi.hoisted(() => {
   return {
     sessions: { web: fakeSession(), app: fakeSession() },
     appOn: new Map<string, (...args: unknown[]) => void>(),
+    contents: [] as { id: number }[],
   }
 })
 
@@ -32,7 +34,10 @@ vi.mock('electron', () => ({
     on: (event: string, fn: (...args: unknown[]) => void) => appOn.set(event, fn),
   },
   session: { fromPartition: () => sessions.web, defaultSession: sessions.app },
-  webContents: { getAllWebContents: () => [] },
+  webContents: {
+    getAllWebContents: () => contents,
+    fromId: (id: number) => contents.find((wc) => wc.id === id),
+  },
   BrowserWindow: { fromWebContents: () => null },
 }))
 
@@ -71,6 +76,7 @@ describe('web guest permissions', () => {
     const on = new Map<string, (...args: unknown[]) => void>()
     const guest = {
       getType: () => 'webview',
+      isDestroyed: () => false,
       setWindowOpenHandler: () => {},
       on: (event: string, fn: (...args: unknown[]) => void) => on.set(event, fn),
       once: () => {},
@@ -87,5 +93,41 @@ describe('web guest permissions', () => {
     expect(refuse('blob:https://example.com/0f3a')).toBe(false)
     expect(refuse('data:application/pdf;base64,JVBERi0=')).toBe(false)
     expect(refuse('data:text/html,<p>x</p>', true)).toBe(true)
+  })
+})
+
+describe('the guest channels', () => {
+  const contentsOf = (id: number, type: string, destroyed = false) => ({
+    id,
+    getType: () => type,
+    isDestroyed: () => destroyed,
+    hostWebContents: { getZoomFactor: () => 2 },
+    setZoomFactor: vi.fn(),
+    sendInputEvent: vi.fn(),
+    mainFrame: { framesInSubtree: [{ executeJavaScript: vi.fn(() => Promise.resolve()) }] },
+  })
+  const guest = contentsOf(7, 'webview')
+  const app = contentsOf(1, 'window')
+  const gone = contentsOf(9, 'webview', true)
+  contents.push(guest, app, gone)
+
+  it('reach a live guest', () => {
+    setGuestTileZoom(7, 1.5)
+    expect(guest.setZoomFactor).toHaveBeenLastCalledWith(2 * SETTING_DEFAULTS.webZoomFactor * 1.5)
+    wheelGuest(7, 1, 2, 3, 4)
+    expect(guest.sendInputEvent).toHaveBeenCalledTimes(1)
+    pauseGuestMedia(7)
+    expect(guest.mainFrame.framesInSubtree[0].executeJavaScript).toHaveBeenCalledTimes(1)
+  })
+
+  it("never reach the app's own contents or a destroyed guest", () => {
+    for (const wc of [app, gone]) {
+      setGuestTileZoom(wc.id, 2)
+      wheelGuest(wc.id, 1, 2, 3, 4)
+      pauseGuestMedia(wc.id)
+      expect(wc.setZoomFactor).not.toHaveBeenCalled()
+      expect(wc.sendInputEvent).not.toHaveBeenCalled()
+      expect(wc.mainFrame.framesInSubtree[0].executeJavaScript).not.toHaveBeenCalled()
+    }
   })
 })

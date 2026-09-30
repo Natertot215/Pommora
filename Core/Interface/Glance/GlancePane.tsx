@@ -13,7 +13,7 @@ import { HEADING_LINE, toggleFoldAt } from '../../MarkdownPM/folding'
 import type { WarmSeam } from '../../MarkdownPM/warmSeam'
 import type { Size } from '@pommora/uix/Interactions/useResizable'
 import { useEscape } from '@pommora/uix/Interactions/dismissalStack'
-import { WEB_PARTITION } from '../../Web/partition'
+import { WebGuest, type WebGuestHandle } from '../../Web/WebGuest'
 import type { PinnedGlance } from '../../Session/glanceSlice'
 import { useConnections } from '../../Session/pageConnections'
 import { PREVIEW_LINGER_MS } from '../../Settings/personalization'
@@ -29,7 +29,6 @@ import {
   setGlanceShown,
   watchAnchor,
 } from './glanceAction'
-import { dialer } from '../../Platform/dialer'
 import './glance-pane.css'
 
 // Contract: no dismiss backdrop and `focus="leave"` — a glance must never eat the next click or pull focus out of its host.
@@ -54,22 +53,6 @@ const inRect = (r: DOMRect, x: number, y: number): boolean =>
 
 const keyOf = (r: GlanceRequest): string =>
   r.target.kind === 'page' ? `p:${r.target.id}` : `s:${r.target.url}`
-
-type ScrollableGuest = HTMLElement & { getWebContentsId?: () => number }
-
-/** The id read throws before the guest attaches (the method sits on the prototype first), and the wheel's own sign is inverted: a DOM delta counts the content's travel, the input event the wheel's. */
-function scrollGuest(
-  el: ScrollableGuest | null,
-  x: number,
-  y: number,
-  dx: number,
-  dy: number,
-): void {
-  try {
-    const id = el?.getWebContentsId?.()
-    if (id !== undefined) dialer().tell('web:wheel', id, Math.round(x), Math.round(y), -dx, -dy)
-  } catch {}
-}
 
 // Esc blooms out the newest still-open active-tab pin, locked or not (R9 — Esc is the universal escape hatch).
 function PinEscape({
@@ -99,9 +82,7 @@ export function GlancePane(): React.JSX.Element {
   }, [])
   const resize = usePaneResize(shown !== null, GLANCE_BOUNDS, useWindowGeometry('glance'))
   const cardRef = useRef<HTMLDivElement | null>(null)
-  // State, not a ref: the portal lands a beat after the open render, so the guest-lifecycle effect must re-run when the element actually exists.
-  const [siteEl, setSiteEl] = useState<HTMLElement | null>(null)
-  const attachSiteEl = useCallback((el: Element | null) => setSiteEl(el as HTMLElement | null), [])
+  const siteRef = useRef<WebGuestHandle | null>(null)
   // A guest mounted in a hidden pane never reliably attaches (Chromium defers demoted subtrees), so the pane cannot wait veiled for the load behind a cover instead.
   const [siteReady, setSiteReady] = useState(false)
   const anchorRef = useLatest(shown?.el ?? null)
@@ -225,23 +206,6 @@ export function GlancePane(): React.JSX.Element {
   }, [shown])
 
   useEffect(() => {
-    if (shown?.target.kind !== 'site' || !siteEl) return
-    const onLoad = (): void => setSiteReady(true)
-    const onFail = (e: Event): void => {
-      const d = e as Event & { isMainFrame?: boolean; errorCode?: number }
-      if (d.isMainFrame !== false && d.errorCode !== -3) dismiss()
-    }
-    siteEl.addEventListener('did-finish-load', onLoad)
-    siteEl.addEventListener('did-fail-load', onFail)
-    siteEl.addEventListener('render-process-gone', dismiss)
-    return () => {
-      siteEl.removeEventListener('did-finish-load', onLoad)
-      siteEl.removeEventListener('did-fail-load', onFail)
-      siteEl.removeEventListener('render-process-gone', dismiss)
-    }
-  }, [shown, siteEl, dismiss])
-
-  useEffect(() => {
     if (shown?.target.kind !== 'site' || siteReady) return
     const deadline = setTimeout(dismiss, LINK_RESOLVE_TIMEOUT_MS)
     return () => clearTimeout(deadline)
@@ -323,6 +287,7 @@ export function GlancePane(): React.JSX.Element {
   }, [shown, graceMs, dismiss, resizing, dismissOnPointer])
 
   const page = held?.target.kind === 'page' ? held.target : null
+  const siteShown = shown?.target.kind === 'site'
 
   const pinnedGlances = useSession((s) => s.pinnedGlances)
   const pinGlance = useSession((s) => s.pinGlance)
@@ -427,20 +392,21 @@ export function GlancePane(): React.JSX.Element {
           {page && renderPageTile(page, glanceWarmSeam(page.id, page.path))}
           {held?.target.kind === 'site' && (
             <>
-              <webview
+              {/* Heard only while shown: a failure during the exit would otherwise dismiss again and void a page glance's fetch in flight. */}
+              <WebGuest
                 key={held.target.url}
-                ref={attachSiteEl}
+                ref={siteRef}
                 src={held.target.url}
-                partition={WEB_PARTITION}
                 className="glance-web"
+                onLoad={siteShown ? () => setSiteReady(true) : undefined}
+                onFail={siteShown ? dismiss : undefined}
               />
               {/* The shield is the loading face and the pointer owner: always above the guest so the leave lifecycle keeps running over it, and passing only the wheel down. */}
               <div
                 className={cx('glance-web-shield', siteReady && 'is-lifted')}
                 onWheel={(e) => {
                   const rect = e.currentTarget.getBoundingClientRect()
-                  scrollGuest(
-                    siteEl,
+                  siteRef.current?.wheel(
                     e.clientX - rect.left,
                     e.clientY - rect.top,
                     e.deltaX,

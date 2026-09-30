@@ -128,27 +128,22 @@
   animation: none;
 }
 
-/* The guest owns the whole body; display:flex is the spike-proven form (block leaves the OOPIF with a phantom baseline gap). */
 .web-tile {
   position: relative;
   height: 100%;
   overflow: hidden;
   border-radius: inherit;
 }
-/* biome-ignore lint/correctness/noUnknownTypeSelector: webview is Electron's guest element */
-.web-tile webview {
-  display: flex;
+.web-tile .web-guest {
   width: 100%;
   height: 100%;
 }
 /* A retained guest hides rather than unmounts — visibility (never display:none, which tears the guest down) keeps its state alive under the retention cap. */
-/* biome-ignore lint/correctness/noUnknownTypeSelector: webview is Electron's guest element */
-.web-tile webview.is-retained {
+.web-tile .web-guest.is-retained {
   visibility: hidden;
 }
 /* An inert guest takes no input; the catcher above it owns the engaging click, and wheel bubbles past both so an unengaged tile scrolls the document. */
-/* biome-ignore lint/correctness/noUnknownTypeSelector: webview is Electron's guest element */
-.web-tile webview.is-inert {
+.web-tile .web-guest.is-inert {
   pointer-events: none;
 }
 .web-tile-catcher {
