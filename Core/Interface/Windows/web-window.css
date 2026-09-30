@@ -4,9 +4,7 @@
   display: flex;
   padding-top: var(--window-toolbar-h);
 }
-/* biome-ignore lint/correctness/noUnknownTypeSelector: webview is Electron's guest element */
-.wbrowser-body webview {
-  display: flex;
+.wbrowser-body .web-guest {
   flex: 1;
   min-width: 0;
 }

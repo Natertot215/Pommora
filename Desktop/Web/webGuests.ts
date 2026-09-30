@@ -2,7 +2,7 @@
 
 import { app, session, webContents, BrowserWindow, type Session, type WebContents } from 'electron'
 import { isHttpLink, WEB_ADDRESS } from '@pommora/core/Paths/urlPath'
-import { WEB_PARTITION } from '@pommora/core/Web/partition'
+import { WEB_PARTITION } from '@pommora/core/Web/guest'
 import { SETTING_DEFAULTS } from '@pommora/core/Settings/personalization'
 import { readInterfaceScale } from '@pommora/core/Settings/devicePrefs'
 import { clamp } from '@pommora/uix/Utilities/clamp'
@@ -43,8 +43,15 @@ function limitPermissions(ses: Session, allowed: ReadonlySet<string>): void {
   ses.setPermissionCheckHandler((_wc, permission) => allowed.has(permission))
 }
 
-const webviewGuests = (): WebContents[] =>
-  webContents.getAllWebContents().filter((wc) => wc.getType() === 'webview')
+// Only ever a live guest: any other WebContents is the app's own.
+const isGuest = (wc: WebContents): boolean => !wc.isDestroyed() && wc.getType() === 'webview'
+
+const webviewGuests = (): WebContents[] => webContents.getAllWebContents().filter(isGuest)
+
+function guestOf(id: number): WebContents | null {
+  const wc = webContents.fromId(id)
+  return wc && isGuest(wc) ? wc : null
+}
 
 // Not derivable here: settings live per-nexus, so the boot read and the settings write push it in.
 let webZoom = SETTING_DEFAULTS.webZoomFactor
@@ -57,9 +64,11 @@ export function setWebZoomFactor(factor: number): void {
 const tileZooms = new Map<number, number>()
 
 export function setGuestTileZoom(guestId: number, factor: number): void {
+  const guest = guestOf(guestId)
+  if (!guest) return
   if (factor === 1) tileZooms.delete(guestId)
   else tileZooms.set(guestId, factor)
-  for (const g of webviewGuests()) if (g.id === guestId && !g.isDestroyed()) stampGuestZoom(g)
+  stampGuestZoom(guest)
 }
 
 function stampGuestZoom(g: WebContents): void {
@@ -86,7 +95,7 @@ function wireAppLevel(): void {
   })
 
   app.on('web-contents-created', (_event, contents) => {
-    if (contents.getType() !== 'webview') return
+    if (!isGuest(contents)) return
 
     // The renderer's one open-link adjudicator decides where the URL goes; no OS window ever opens.
     contents.setWindowOpenHandler(({ url }) => {
@@ -136,7 +145,7 @@ export function installWebGuests(win: BrowserWindow): void {
 }
 
 function syncGuestZoom(): void {
-  for (const g of webviewGuests()) if (!g.isDestroyed()) stampGuestZoom(g)
+  for (const g of webviewGuests()) stampGuestZoom(g)
 }
 
 export function wheelGuest(
@@ -146,17 +155,14 @@ export function wheelGuest(
   deltaX: number,
   deltaY: number,
 ): void {
-  // Only ever a guest: any other WebContents is the app's own.
-  const guest = webContents.fromId(guestId)
-  if (!guest || guest.isDestroyed() || guest.getType() !== 'webview') return
-  guest.sendInputEvent({ type: 'mouseWheel', x, y, deltaX, deltaY, canScroll: true })
+  guestOf(guestId)?.sendInputEvent({ type: 'mouseWheel', x, y, deltaX, deltaY, canScroll: true })
 }
 
 // A fixed constant, never renderer-supplied; per frame so an iframe player pauses too.
 const PAUSE_MEDIA = 'document.querySelectorAll("video,audio").forEach((m)=>m.pause())'
 export function pauseGuestMedia(guestId: number): void {
-  const guest = webContents.fromId(guestId)
-  if (!guest || guest.isDestroyed() || guest.getType() !== 'webview') return
+  const guest = guestOf(guestId)
+  if (!guest) return
   for (const frame of guest.mainFrame.framesInSubtree)
     void frame.executeJavaScript(PAUSE_MEDIA).catch(() => {})
 }
