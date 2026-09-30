@@ -5,6 +5,8 @@ import { isHttpLink, WEB_ADDRESS } from '@pommora/core/Paths/urlPath'
 import { WEB_PARTITION } from '@pommora/core/Web/guest'
 import { SETTING_DEFAULTS } from '@pommora/core/Settings/personalization'
 import { readInterfaceScale } from '@pommora/core/Settings/devicePrefs'
+import { type KeyedCommand, type KeyPress, matchesCommand } from '@pommora/core/Actions/commands'
+import { heldCommands } from '@pommora/core/Settings/settings'
 import { clamp } from '@pommora/uix/Utilities/clamp'
 import { push } from '../Bridge/ipc'
 import { isWindows } from '../Platform/hostPath'
@@ -47,6 +49,18 @@ function limitPermissions(ses: Session, allowed: ReadonlySet<string>): void {
 const isGuest = (wc: WebContents): boolean => !wc.isDestroyed() && wc.getType() === 'webview'
 
 const webviewGuests = (): WebContents[] => webContents.getAllWebContents().filter(isGuest)
+
+const embedderOf = (guest: WebContents): BrowserWindow | null =>
+  guest.hostWebContents && BrowserWindow.fromWebContents(guest.hostWebContents)
+
+const GUEST_RELAYED: readonly KeyedCommand[] = [
+  'toggle-ribbon',
+  'toggle-nav',
+  'toggle-matrix',
+  'toggle-iteration',
+  'next-tab',
+  'previous-tab',
+]
 
 function guestOf(id: number): WebContents | null {
   const wc = webContents.fromId(id)
@@ -99,10 +113,26 @@ function wireAppLevel(): void {
 
     // The renderer's one open-link adjudicator decides where the URL goes; no OS window ever opens.
     contents.setWindowOpenHandler(({ url }) => {
-      const host =
-        contents.hostWebContents && BrowserWindow.fromWebContents(contents.hostWebContents)
+      const host = embedderOf(contents)
       if (host && isWebUrl(url)) push(host, 'web:popup', url)
       return { action: 'deny' }
+    })
+
+    contents.on('before-input-event', (event, input) => {
+      if (input.type !== 'keyDown' || input.isComposing) return
+      const press: KeyPress = {
+        key: input.key,
+        code: input.code,
+        metaKey: input.meta,
+        ctrlKey: input.control,
+        altKey: input.alt,
+        shiftKey: input.shift,
+      }
+      const commands = heldCommands()
+      if (GUEST_RELAYED.some((id) => matchesCommand(commands[id], press))) event.preventDefault()
+      else if (press.key !== 'Escape') return
+      const host = embedderOf(contents)
+      if (host) push(host, 'web:key', press)
     })
 
     // Re-asserted per navigation in every frame: a guest re-aimed after a clean attach would otherwise sail through on the signed-in partition.

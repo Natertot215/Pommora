@@ -1,5 +1,5 @@
 import { isPlainObject } from '../Contract/validators'
-import type { Commands } from '../Actions/commands'
+import { type Commands, DEFAULT_COMMANDS } from '../Actions/commands'
 import {
   type Personalization,
   type SettingKey,
@@ -8,6 +8,7 @@ import {
 } from './personalization'
 import { setOrDrop, updateNexusConfig } from '../Files/atomicWrite'
 import { heldTreeOf } from '../Nexus/liveTree'
+import { sessionRoot } from '../Nexus/session'
 import { normalizeExclusions, readSettings, scopeOf, type SettingsLeaves } from './codec'
 import { foldKey } from '../Paths/caseFold'
 import { remainderUnder, rootSegs, type WatchScope } from '../Paths/exclusion'
@@ -45,6 +46,11 @@ export const readLivePersonalization = async (root: string): Promise<Personaliza
 
 export const readLiveCommands = async (root: string): Promise<Commands> =>
   (await liveLeaves(root)).commands
+
+export function heldCommands(): Commands {
+  const root = sessionRoot()
+  return (root && heldTreeOf(root)?.commands) || DEFAULT_COMMANDS
+}
 
 export const readWatchScope = async (root: string): Promise<WatchScope> =>
   scopeOf(await liveLeaves(root))

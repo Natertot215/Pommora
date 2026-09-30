@@ -58,6 +58,11 @@ export function WebTile({
   const refocusRef = useLatest(refocusHost)
   const id = useRef(Symbol('webguest')).current
 
+  const release = (): void => {
+    setEngaged(false)
+    if (siteRef.current?.blur()) refocusRef.current?.()
+  }
+
   useEffect(() => {
     setFailed(false)
     setLoaded(false)
@@ -77,9 +82,8 @@ export function WebTile({
       setFailed(false)
       return
     }
-    setEngaged(false)
+    release()
     const site = siteRef.current
-    if (site?.blur()) refocusRef.current?.()
     if (!guestRef.current) return
     const retain = (): void => {
       setParting(false)
@@ -117,7 +121,7 @@ export function WebTile({
 
   useDismissal(engaged, false, {
     layer: () => rootRef.current,
-    dismiss: () => setEngaged(false),
+    dismiss: release,
   })
 
   const live = guest && !failed

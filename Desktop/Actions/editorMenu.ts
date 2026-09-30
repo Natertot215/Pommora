@@ -10,14 +10,9 @@ import {
   editorContextItems,
   PASTE_PLAIN_ACTION,
 } from '@pommora/core/Actions/editorMenu'
-import { type Commands, DEFAULT_COMMANDS } from '@pommora/core/Actions/commands'
 import { PASTE_AS_PREFIX, pasteAsRows } from '@pommora/core/Actions/pasteAsMenu'
+import { heldCommands } from '@pommora/core/Settings/settings'
 import { rowTemplate } from './menu'
-
-let commands: Commands = DEFAULT_COMMANDS
-export function setEditorCommands(c: Commands): void {
-  commands = c
-}
 
 interface EditorMenu {
   req: EditorMenuRequest
@@ -126,7 +121,7 @@ export function installEditorContextMenu(win: BrowserWindow): void {
       items.push(
         { type: 'separator' },
         ...rowTemplate(
-          editorContextItems(editor.req, commands, params.selectionText),
+          editorContextItems(editor.req, heldCommands(), params.selectionText),
           (action) => () => editor.resolve(action),
         ),
       )

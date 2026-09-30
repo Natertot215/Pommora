@@ -33,7 +33,8 @@ import {
 } from '@pommora/core/Settings/settings'
 import { SYSTEM, WINDOW_BG } from '@pommora/uix/Theme/colors'
 import { installAppMenu } from './Actions/appMenu'
-import { askEditorMenu, installEditorContextMenu, setEditorCommands } from './Actions/editorMenu'
+import { askEditorMenu, installEditorContextMenu } from './Actions/editorMenu'
+import { setCmdModifier } from '@pommora/uix/Interactions/chords'
 import { DEFAULT_COMMANDS } from '@pommora/core/Actions/commands'
 import { popNativeMenu } from './Actions/menu'
 import { push, serveIpc, settleAsks, type TellHandlers } from './Bridge/ipc'
@@ -68,6 +69,7 @@ import {
 app.setName('Pommora')
 
 installMachine({ ...nodeMachine, trashToSystem: (p) => shell.trashItem(nativePath(p)) })
+setCmdModifier(isWindows)
 
 // Development switches: a packaged build ignores them, so neither an environment variable nor a launch argument can open it to a debugger, swap its renderer, or move its state.
 const DEV_ENV = app.isPackaged ? {} : process.env
@@ -172,7 +174,6 @@ const dropPaste = (): void => {
 async function refreshMenu(): Promise<void> {
   const root = sessionRoot()
   const commands = root ? await readLiveCommands(root) : DEFAULT_COMMANDS
-  setEditorCommands(commands)
   await installAppMenu(currentWindow, openNexusPath, commands)
 }
 
