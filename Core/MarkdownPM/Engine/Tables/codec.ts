@@ -1,4 +1,5 @@
 import { parseListMarker } from '../detect'
+import { lineStartAt } from '../markdownCode'
 import type { Align, Column, TableModel } from './model'
 
 export interface CellSpan {
@@ -23,7 +24,7 @@ const restoreTrailingItem = (display: string): string => {
   const last = display.slice(cut + 1)
   if (BARE_TASK.test(last)) return `${display} `
   if (cut === -1 || !BARE_MARKER.test(last)) return display
-  const above = display.slice(display.lastIndexOf('\n', cut - 1) + 1, cut)
+  const above = display.slice(lineStartAt(display, cut), cut)
   return parseListMarker(above) ? `${display} ` : display
 }
 

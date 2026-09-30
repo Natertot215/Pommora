@@ -152,20 +152,16 @@ export function useConnectionAutocomplete(
 
   // A collapse reshapes the list, so the highlight starts over rather than landing on whatever the old index now names.
   const resetKey = heading ? `${query}\u0000${[...collapsed].join('\u0000')}` : query
-  const { index, ctl } = usePaneCtl(candidates.length, resetKey, {
+  const { index, row, ctl } = usePaneCtl(candidates, resetKey, {
     open: ac !== null && (candidates.length > 0 || loading),
-    pick: (i) => {
-      const r = candidates[i]
-      if (r) commit(r)
-    },
+    pick: commit,
     close: () => setAc(null),
     aside: (dir) => {
       const view = viewRef.current
       if (!view || !ac) return false
       if (dir === 1 && ac.form === 'link') {
-        const r = candidates[index ?? 0]
-        if (r?.kind !== 'page') return false
-        commit(r, { openHeading: true })
+        if (row?.kind !== 'page') return false
+        commit(row, { openHeading: true })
         return true
       }
       if (dir === -1 && heading && viaChevron) {
