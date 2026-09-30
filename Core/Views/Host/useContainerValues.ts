@@ -5,8 +5,8 @@ import {
   type SetOverrides,
   settled,
 } from '../../Properties/valueOverride'
-import type { PageFrontmatter } from '@pommora/core/Nexus/schemas'
-import type { PageValues, RowValues } from '@pommora/core/Views/viewRow'
+import type { PageFrontmatter } from '../../Nexus/schemas'
+import type { PageValues, RowValues } from '../viewRow'
 import { fetchPageValues } from '../../Properties/pageRow'
 import { useSession } from '../../Session/store'
 import { useLatest } from '@pommora/uix/Utilities/stableApi'

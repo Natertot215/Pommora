@@ -1,10 +1,10 @@
 import { useState } from 'react'
-import { valueOr } from '@pommora/core/Contract/result'
-import type { Crop } from '@pommora/core/Nexus/schemas'
+import { valueOr } from '../Contract/result'
+import type { Crop } from '../Nexus/schemas'
 import { useSession } from '../Session/store'
 import { dialer } from '../Platform/dialer'
 import { popMenu } from '../Actions/menuActions'
-import { type NexusIconAction, nexusIconMenuItems } from '@pommora/core/Actions/identityMenus'
+import { type NexusIconAction, nexusIconMenuItems } from '../Actions/identityMenus'
 import { asRenderableIcon } from '@pommora/uix/Symbols'
 
 export function useNexusIcon() {

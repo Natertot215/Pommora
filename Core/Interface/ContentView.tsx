@@ -1,7 +1,7 @@
 import { memo, useEffect, useLayoutEffect, useMemo, useRef } from 'react'
 import { cx } from '@pommora/uix/Utilities/cx'
 import { RenderBoundary } from '@pommora/uix/Elements/RenderBoundary'
-import { navKey, type SelectionState, type Tab } from '@pommora/core/Navigation/navRef'
+import { navKey, type SelectionState, type Tab } from '../Navigation/navRef'
 import {
   frozenOf,
   readyPageIds,
@@ -19,12 +19,12 @@ import { HomepageView } from './Homepage/HomepageView'
 import { SpaceView } from '../Contexts/SpaceView'
 import { PageView } from '../Pages/PageView'
 import { NavView } from '../Navigation/NavView'
-import { MATRIX_REF } from '@pommora/core/Matrix/matrixKind'
+import { MATRIX_REF } from '../Matrix/matrixKind'
 import { MatrixView } from '../Matrix/MatrixView'
 import { isOpenInTabs } from '../Navigation/tabsModel'
 import { Subfield } from './Subfield/Subfield'
 import { type SubfieldPage, ViewTypeItem } from './Subfield/subfieldItems'
-import { footerLabel } from '@pommora/core/Actions/toggleLabels'
+import { footerLabel } from '../Actions/toggleLabels'
 import { CitationsToggle } from './Subfield/CitationsToggle'
 import { publishChromePart } from './chromeParts'
 import { type ContentHost, ContentHostContext } from './contentHost'

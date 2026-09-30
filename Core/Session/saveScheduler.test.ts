@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { detail } from '@pommora/core/Testing/fixtures'
+import { detail } from '../Testing/fixtures'
 import { machine } from '../Platform/machine'
 import { cachePageDetail, clearCache, readPageDetail } from './pageDetailCache'
 import {

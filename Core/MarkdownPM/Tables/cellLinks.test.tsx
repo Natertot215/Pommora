@@ -6,9 +6,9 @@ import { MarkdownTable } from './MarkdownTable'
 import { testHost } from '../../Testing/editorHarness'
 import type { TableModel } from '../Engine/Tables/model'
 import { EditorView } from '@codemirror/view'
-import type { ConnUrlAction } from '@pommora/core/Actions/connectionMenu'
+import type { ConnUrlAction } from '../../Actions/connectionMenu'
 import type { ConnectionsApi, ConnMenuTarget } from '../Links/connectionsApi'
-import { buildPageIndex } from '@pommora/core/Connections/pageIndex'
+import { buildPageIndex } from '../../Connections/pageIndex'
 import { pushDismissal } from '@pommora/uix/Interactions/dismissalStack'
 
 ;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true

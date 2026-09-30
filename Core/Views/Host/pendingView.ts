@@ -6,11 +6,11 @@ import {
   type SavedView,
   slotsOf,
   type ViewPatch,
-} from '@pommora/core/Views/views'
-import { same } from '@pommora/core/Files/stableJson'
-import type { Result } from '@pommora/core/Contract/result'
+} from '../views'
+import { same } from '../../Files/stableJson'
+import type { Result } from '../../Contract/result'
 import { useLatest } from '@pommora/uix/Utilities/stableApi'
-import type { CollectionNode, SetNode } from '@pommora/core/Nexus/tree'
+import type { CollectionNode, SetNode } from '../../Nexus/tree'
 import { announceDrag } from '@pommora/uix/Interactions/a11y'
 import { channel } from '@pommora/uix/Utilities/subscribable'
 import { containerAt, type OrderRequest, orderInTree } from '../../Nexus/treePatch'

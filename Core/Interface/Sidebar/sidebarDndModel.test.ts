@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import { buildIndex, sidebarCommit, sidebarSlot, sidebarSnapshot } from './sidebarDndModel'
-import type { NexusTree, PageNode, SpaceNode } from '@pommora/core/Nexus/tree'
-import type { Personalization } from '@pommora/core/Settings/personalization'
+import type { NexusTree, PageNode, SpaceNode } from '../../Nexus/tree'
+import type { Personalization } from '../../Settings/personalization'
 import { makeTree } from '../../Testing/testTree'
 
 const page = (id: string, path: string): PageNode => ({ kind: 'page', id, title: id, path })

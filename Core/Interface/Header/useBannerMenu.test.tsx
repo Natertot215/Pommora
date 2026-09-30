@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { ok } from '@pommora/core/Contract/result'
+import { ok } from '../../Contract/result'
 import { act, type ReactElement, useRef } from 'react'
 import type { ImagePicker } from '../../Assets/ImagePicker'
 import { createRoot, type Root } from 'react-dom/client'

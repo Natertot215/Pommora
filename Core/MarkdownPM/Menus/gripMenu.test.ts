@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { blockDeleteSpan, embedPickTree } from './gripMenu'
-import type { PickItem } from '@pommora/core/Actions/menuModel'
+import type { PickItem } from '../../Actions/menuModel'
 
 describe('blockDeleteSpan', () => {
   const del = (doc: string, from: number, to: number): string => {

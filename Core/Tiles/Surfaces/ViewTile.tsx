@@ -1,9 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import type { ConnPage } from '@pommora/core/Connections/pageIndex'
-import type { EntryPatch, ViewTileEntry } from '@pommora/core/Tiles/tiles'
-import { isPlainObject } from '@pommora/core/Contract/validators'
-import type { CollectionNode, SetNode } from '@pommora/core/Nexus/tree'
-import type { PropertyDefinition } from '@pommora/core/Properties/properties'
+import type { ConnPage } from '../../Connections/pageIndex'
+import type { EntryPatch, ViewTileEntry } from '../tiles'
+import { isPlainObject } from '../../Contract/validators'
+import type { CollectionNode, SetNode } from '../../Nexus/tree'
+import type { PropertyDefinition } from '../../Properties/properties'
 import {
   applyViewPatch,
   mergeViewEdit,
@@ -15,8 +15,8 @@ import {
   type SavedView,
   viewIdsOf,
   type ViewPatch,
-} from '@pommora/core/Views/views'
-import { freeName } from '@pommora/core/Paths/names'
+} from '../../Views/views'
+import { freeName } from '../../Paths/names'
 import { Icon, LockGlyph } from '@pommora/uix/Symbols'
 import { cellRing, colorNameFor } from '@pommora/uix/Theme/ramp'
 import { ColorPicker } from '@pommora/uix/Pickers/ColorPicker'
@@ -61,8 +61,8 @@ import {
 import * as s from './view-tile.css'
 import { popMenu } from '../../Actions/menuActions'
 import { viewsLabel } from '../../Actions/toggleLabels'
-import { embedAreaMenuItems, embedTitleMenuItems } from '@pommora/core/Actions/viewMenus'
-import { viewRowMenuItems } from '@pommora/core/Actions/viewRowMenu'
+import { embedAreaMenuItems, embedTitleMenuItems } from '../../Actions/viewMenus'
+import { viewRowMenuItems } from '../../Actions/viewRowMenu'
 import { useLatest, useStableApi } from '@pommora/uix/Utilities/stableApi'
 
 function coerceEmbeddedView(raw: unknown, schema: PropertyDefinition[], id: string): SavedView {

@@ -18,7 +18,7 @@ import { LineRow, useLineEl } from '@pommora/uix/Interactions/drag'
 import type { IconName } from '@pommora/uix/Symbols'
 import { entityIcon } from '../../Assets/entityIconPolicy'
 import { cx } from '@pommora/uix/Utilities/cx'
-import { contextDirRel } from '@pommora/core/Paths/nexusPaths'
+import { contextDirRel } from '../../Paths/nexusPaths'
 import { Reveal } from '@pommora/uix/Animations/Reveal'
 import type {
   CollectionNode,
@@ -27,20 +27,16 @@ import type {
   PageNode,
   SetNode,
   SpaceNode,
-} from '@pommora/core/Nexus/tree'
-import { placementOf, type SidebarMode } from '@pommora/core/Settings/personalization'
-import {
-  DEFAULT_NEW_NAME,
-  type MutableKind,
-  type MutateRequest,
-} from '@pommora/core/Nexus/mutateRequest'
-import { type Creator, spaceCreator } from '@pommora/core/Actions/createMenu'
+} from '../../Nexus/tree'
+import { placementOf, type SidebarMode } from '../../Settings/personalization'
+import { DEFAULT_NEW_NAME, type MutableKind, type MutateRequest } from '../../Nexus/mutateRequest'
+import { type Creator, spaceCreator } from '../../Actions/createMenu'
 import { owningCollection } from '../../Nexus/treePatch'
 import { spaceNodeOf } from '../../Nexus/treeIndex'
 import { SidebarDnd } from './sidebarDnd'
 import { buildIndex, type Index } from './sidebarDndModel'
 import { AgendaMode } from './AgendaMode'
-import { sidebarModeOf } from '@pommora/core/Settings/experimental'
+import { sidebarModeOf } from '../../Settings/experimental'
 import { pageMetaOf, useSession } from '../../Session/store'
 import { glanceShown, hoverGlance, leaveGlance } from '../Glance/glanceAction'
 import { pageMoveContext } from '../Menus/pageMenuActions'

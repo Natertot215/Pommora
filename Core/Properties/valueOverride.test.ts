@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import type { PageFrontmatter } from '@pommora/core/Nexus/schemas'
+import type { PageFrontmatter } from '../Nexus/schemas'
 import {
   patchOverride,
   retireSettled,

@@ -2,8 +2,8 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { act } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
-import type { MutateRequest } from '@pommora/core/Nexus/mutateRequest'
-import type { NexusTree } from '@pommora/core/Nexus/tree'
+import type { MutateRequest } from '../../Nexus/mutateRequest'
+import type { NexusTree } from '../../Nexus/tree'
 import {
   firePointer,
   pressEscape,
@@ -12,7 +12,7 @@ import {
 } from '@pommora/uix/Testing/pointerHarness'
 import { menuDropLine } from '@pommora/uix/Menus'
 import { DragGroup, useLineRow, useLooseItem } from '@pommora/uix/Interactions/drag'
-import { TAB_FAMILY } from '@pommora/core/Navigation/tabRows'
+import { TAB_FAMILY } from '../../Navigation/tabRows'
 import { SidebarDnd } from './sidebarDnd'
 import { buildIndex } from './sidebarDndModel'
 import { useSession } from '../../Session/store'

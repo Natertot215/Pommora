@@ -35,7 +35,7 @@ import {
   perScopedDoc,
 } from './docCache'
 import type { MarkdownScope } from './Engine/detect'
-import { sectionRunsIn } from '@pommora/core/Connections/scan'
+import { sectionRunsIn } from '../Connections/scan'
 import { CHECK_GLYPH, CODE_TAGS, COPY_GLYPH } from './codeGlyphs'
 import { claimedEmbeds } from './Engine/embedClaims'
 import { linkRest, linkTyping } from './Links/linkReveal'
@@ -53,7 +53,7 @@ import {
 import { type DocScan, chunksOver, codeBlockTextAt, inCodeAt } from './Engine/docScan'
 import { lineEndOf, lineIndexAt } from './Engine/markdownCode'
 import { resolveMdTarget, wikiLinkView, type ConnectionsApi } from './Links/connectionsApi'
-import type { LinkStatus } from '@pommora/core/Connections/connections'
+import type { LinkStatus } from '../Connections/connections'
 import { editorHost, pageEditorAt, resolutionNudge } from './api'
 import { checkMarkSvg, checkboxClass } from '@pommora/uix/Controls/Checkbox'
 import { svgFrame } from '@pommora/uix/Symbols/svgFrame'

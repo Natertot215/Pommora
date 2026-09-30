@@ -1,16 +1,12 @@
 import { useEffect } from 'react'
-import {
-  DEFAULT_LINK_DISPLAY,
-  isLinkDisplay,
-  type PropertyDefinition,
-} from '@pommora/core/Properties/properties'
-import type { ColumnLook } from '@pommora/core/Properties/columnStyles'
-import { isHttpLink } from '@pommora/core/Paths/urlPath'
+import { DEFAULT_LINK_DISPLAY, isLinkDisplay, type PropertyDefinition } from '../properties'
+import type { ColumnLook } from '../columnStyles'
+import { isHttpLink } from '../../Paths/urlPath'
 import { useSession } from '../../Session/store'
 import { cx } from '@pommora/uix/Utilities/cx'
 import { isCmd, isSecondaryClick } from '@pommora/uix/Interactions/chords'
 import { OverScroll } from '@pommora/uix/Interactions/OverScroll'
-import { linkDisplayText, readLink, type LinkTarget } from '@pommora/core/Connections/linkValue'
+import { linkDisplayText, readLink, type LinkTarget } from '../../Connections/linkValue'
 import { resolveConnection } from '../../Nexus/treeIndex'
 import { solidColorCss } from '@pommora/uix/Theme/ramp'
 import { openWebLink } from '../../Web/openWebLink'

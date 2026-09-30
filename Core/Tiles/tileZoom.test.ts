@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { ZOOM } from '@pommora/core/Settings/personalization'
+import { ZOOM } from '../Settings/personalization'
 import { ZOOM_STEPS, scaleRows, zoomStep } from './tileZoom'
 
 describe('tileZoom', () => {

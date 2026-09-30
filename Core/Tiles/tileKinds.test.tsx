@@ -1,8 +1,7 @@
 // @vitest-environment jsdom
 import { describe, expect, it } from 'vitest'
 import { isValidElement } from 'react'
-import type { TileEntry } from '@pommora/core/Tiles/tiles'
-import { TILE_KINDS } from '@pommora/core/Tiles/tiles'
+import { type TileEntry, TILE_KINDS } from './tiles'
 import { MarkdownTile } from './Surfaces/MarkdownTile'
 import { PageTile } from './Surfaces/PageTile'
 import { ViewTile } from './Surfaces/ViewTile'

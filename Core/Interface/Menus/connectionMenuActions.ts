@@ -6,9 +6,9 @@ import {
   type ConnCellAction,
   type ConnEditAction,
   type ConnMenuContext,
-} from '@pommora/core/Actions/connectionMenu'
-import { isValidLink } from '@pommora/core/Paths/urlPath'
-import { readLink } from '@pommora/core/Connections/linkValue'
+} from '../../Actions/connectionMenu'
+import { isValidLink } from '../../Paths/urlPath'
+import { readLink } from '../../Connections/linkValue'
 import { resolveConnection } from '../../Nexus/treeIndex'
 import { isOpenInTabs } from '../../Navigation/tabsModel'
 import { shownDetail, useSession, windowTargetOf } from '../../Session/store'

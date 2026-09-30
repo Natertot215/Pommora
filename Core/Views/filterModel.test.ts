@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import type { PropertyDefinition } from '@pommora/core/Properties/properties'
-import type { NexusTree } from '@pommora/core/Nexus/tree'
+import type { PropertyDefinition } from '../Properties/properties'
+import type { NexusTree } from '../Nexus/tree'
 import { decodeFilter, encodeFilter, filterTargets, operatorsFor } from './filterModel'
 
 const r = (

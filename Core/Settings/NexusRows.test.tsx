@@ -1,13 +1,10 @@
 // @vitest-environment jsdom
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import {
-  clearNotification,
-  currentNotification,
-} from '@pommora/core/Interface/Notifications/notifications'
+import { clearNotification, currentNotification } from '../Interface/Notifications/notifications'
 import { act } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
-import type { DeviceRecord, SyncState } from '@pommora/core/Sync/Contract/wire'
-import { deviceRecord } from '@pommora/core/Testing/fixtures'
+import type { DeviceRecord, SyncState } from '../Sync/Contract/wire'
+import { deviceRecord } from '../Testing/fixtures'
 import { NexusRows } from './NexusRows'
 import { useSession } from '../Session/store'
 import { stubDialer } from '../vitest.setup'

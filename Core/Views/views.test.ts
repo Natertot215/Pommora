@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import fixture from '@pommora/core/Testing/fixtures/collection-with-status.json'
+import fixture from '../Testing/fixtures/collection-with-status.json'
 import {
   granularityOf,
   mergeViewEdit,

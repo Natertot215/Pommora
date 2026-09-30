@@ -1,6 +1,6 @@
-import { UNGROUPED } from '@pommora/core/Views/viewRow'
-import type { PropertyValue, ValueKind } from '@pommora/core/Properties/propertyValue'
-import { type PropertyType, specOf } from '@pommora/core/Properties/properties'
+import { UNGROUPED } from './viewRow'
+import type { PropertyValue, ValueKind } from '../Properties/propertyValue'
+import { type PropertyType, specOf } from '../Properties/properties'
 
 /** A date bucket isn't a single date, so date grouping can't be reassigned by drag; a kind without a function here never reassigns. */
 const FROM_GROUP_KEY: Record<ValueKind, ((key: string) => PropertyValue | null) | null> = {

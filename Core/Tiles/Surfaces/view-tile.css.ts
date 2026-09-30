@@ -6,7 +6,7 @@ import { duration, easing } from '@pommora/uix/Animations/motion'
 import { accessoryButton } from '@pommora/uix/Menus/menu-row.css'
 import { REVEAL_FADE, revealTarget } from '@pommora/uix/Interactions/hover-reveal.css'
 import { VIEW_PILL_H, viewStrip } from '@pommora/uix/Elements/view-strip.css'
-import { SETTING_DEFAULTS, embedZoom, viewEmbedZoom } from '@pommora/core/Settings/personalization'
+import { SETTING_DEFAULTS, embedZoom, viewEmbedZoom } from '../../Settings/personalization'
 
 const c = colorVars.color
 

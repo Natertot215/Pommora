@@ -1,9 +1,9 @@
 // @vitest-environment jsdom
-import { cellMenuModel } from '@pommora/core/Actions/cellMenu'
+import { cellMenuModel } from '../../Actions/cellMenu'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { currentNotification } from '@pommora/core/Interface/Notifications/notifications'
-import { ok } from '@pommora/core/Contract/result'
-import type { PropertyDefinition } from '@pommora/core/Properties/properties'
+import { currentNotification } from '../../Interface/Notifications/notifications'
+import { ok } from '../../Contract/result'
+import type { PropertyDefinition } from '../properties'
 import { useSession } from '../../Session/store'
 import {
   fileChipIndex,

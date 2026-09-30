@@ -6,7 +6,7 @@ import { cx } from '@pommora/uix/Utilities/cx'
 import { useSession } from '../Session/store'
 import { useAssetUrl } from './useAssetUrl'
 import type { ResolvedNav } from '../Navigation/navResolve'
-import type { EntityIconKind } from '@pommora/core/Settings/personalization'
+import type { EntityIconKind } from '../Settings/personalization'
 import * as assetImage from './asset-image.css'
 
 type EntityIconProps =

@@ -16,7 +16,7 @@ import {
   CardTitle,
   CardTrail,
 } from '@pommora/uix/Cards/Card'
-import { navKey, type NavRef, type WindowTarget } from '@pommora/core/Navigation/navRef'
+import { navKey, type NavRef, type WindowTarget } from './navRef'
 import { TAB_FAMILY } from './tabRows'
 import { useSession } from '../Session/store'
 import { pageTargetFromNav, type ResolvedNav, windowTargetFromNav } from './navResolve'

@@ -1,14 +1,9 @@
 import { describe, it, expect } from 'vitest'
-import { ID_KEY } from '@pommora/core/Nexus/identityMark'
-import type { CollectionNode, PageNode, SetNode } from '@pommora/core/Nexus/tree'
-import type { ViewRow } from '@pommora/core/Views/viewRow'
-import {
-  type GroupConfig,
-  LOCATION_SORT,
-  type SavedView,
-  type SubGroupConfig,
-} from '@pommora/core/Views/views'
-import type { PropertyDefinition } from '@pommora/core/Properties/properties'
+import { ID_KEY } from '../../Nexus/identityMark'
+import type { CollectionNode, PageNode, SetNode } from '../../Nexus/tree'
+import type { ViewRow } from '../viewRow'
+import { type GroupConfig, LOCATION_SORT, type SavedView, type SubGroupConfig } from '../views'
+import type { PropertyDefinition } from '../../Properties/properties'
 import {
   bucketGroupingOf,
   bucketKey,

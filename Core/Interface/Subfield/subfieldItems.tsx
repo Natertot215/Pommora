@@ -1,4 +1,4 @@
-import type { PageTarget, SelectionState } from '@pommora/core/Navigation/navRef'
+import type { PageTarget, SelectionState } from '../../Navigation/navRef'
 import { Button } from '@pommora/uix/Buttons/Button'
 import { useSession } from '../../Session/store'
 import { pageStats } from '../../MarkdownPM/Engine/subfieldStats'

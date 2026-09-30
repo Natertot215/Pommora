@@ -1,8 +1,8 @@
 // @vitest-environment jsdom
-import { DEFAULT_MATRIX_CONFIG, parseMatrixConfig } from '@pommora/core/Matrix/matrixConfig'
-import type { MatrixGraphReply, MatrixLink } from '@pommora/core/Matrix/matrixGraph'
-import type { NexusTree } from '@pommora/core/Nexus/tree'
-import { makeTree } from '@pommora/core/Testing/testTree'
+import { DEFAULT_MATRIX_CONFIG, parseMatrixConfig } from '../Matrix/matrixConfig'
+import type { MatrixGraphReply, MatrixLink } from '../Matrix/matrixGraph'
+import type { NexusTree } from '../Nexus/tree'
+import { makeTree } from '../Testing/testTree'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { stubDialer } from '../vitest.setup'
 import { cancelAllSaves } from './saveScheduler'

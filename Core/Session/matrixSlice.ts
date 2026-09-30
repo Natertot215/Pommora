@@ -1,13 +1,13 @@
-import type { Lens } from '@pommora/core/Matrix/Engine/viewport'
+import type { Lens } from '../Matrix/Engine/viewport'
 import {
   applyPatch,
   DEFAULT_MATRIX_CONFIG,
   type MatrixConfig,
   type MatrixPatch,
   SECTIONS,
-} from '@pommora/core/Matrix/matrixConfig'
-import type { MatrixGraphReply, MatrixLink } from '@pommora/core/Matrix/matrixGraph'
-import type { PositionRows, Positions } from '@pommora/core/Matrix/matrixLayout'
+} from '../Matrix/matrixConfig'
+import type { MatrixGraphReply, MatrixLink } from '../Matrix/matrixGraph'
+import type { PositionRows, Positions } from '../Matrix/matrixLayout'
 import type { NexusTree } from '../Nexus/tree'
 import { pagesByIdOf, recordsByIdOf } from '../Nexus/treeIndex'
 import { stabilize } from '../Nexus/treeStabilize'

@@ -1,5 +1,5 @@
 import { resolveColor } from '@pommora/uix/Theme/ramp'
-import type { LinkConfig, LinkDisplay } from '@pommora/core/Properties/properties'
+import type { LinkConfig, LinkDisplay } from '../properties'
 import { MenuIndex, pickerRow } from '@pommora/uix/Menus'
 import { LINK_FORMAT_OPTIONS } from './linkFormatOptions'
 import * as s from '@pommora/uix/Menus/frames.css'

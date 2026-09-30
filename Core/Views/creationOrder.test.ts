@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest'
-import { type MutateRequest, NEW_SLOT } from '@pommora/core/Nexus/mutateRequest'
+import { type MutateRequest, NEW_SLOT } from '../Nexus/mutateRequest'
 import { placeAt, placeNew, type Slot, spliceBeside, tieOrderWith } from './creationOrder'
 import { makeTree } from '../Testing/testTree'
 import { makeSorter } from './Pipeline/sort'
-import type { ViewRow } from '@pommora/core/Views/viewRow'
+import type { ViewRow } from './viewRow'
 
 describe('placeAt', () => {
   const page: Extract<MutateRequest, { op: 'createPage' }> = {

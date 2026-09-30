@@ -1,10 +1,10 @@
 // @vitest-environment jsdom
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { ok } from '@pommora/core/Contract/result'
-import type { ConnMenuAction } from '@pommora/core/Actions/connectionMenu'
+import { ok } from '../../Contract/result'
+import type { ConnMenuAction } from '../../Actions/connectionMenu'
 import { useSession } from '../../Session/store'
 import { stubDialer } from '../../vitest.setup'
-import { makeTree } from '@pommora/core/Testing/testTree'
+import { makeTree } from '../../Testing/testTree'
 import { linkValueMenuTarget, showConnectionMenu } from './connectionMenuActions'
 
 const connMenu = vi.fn<(req: unknown) => Promise<ConnMenuAction | null>>()

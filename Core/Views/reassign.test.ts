@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { UNGROUPED } from '@pommora/core/Views/viewRow'
+import { UNGROUPED } from './viewRow'
 import { groupKeyToValue, reassignable, reassignTarget } from './reassign'
 
 describe('groupKeyToValue — destination group key → PropertyValue', () => {

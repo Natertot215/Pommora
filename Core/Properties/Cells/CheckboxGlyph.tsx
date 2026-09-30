@@ -1,4 +1,4 @@
-import type { ColumnLook } from '@pommora/core/Properties/columnStyles'
+import type { ColumnLook } from '../columnStyles'
 import { Checkbox } from '@pommora/uix/Controls/Checkbox'
 import { DualSwitch } from '@pommora/uix/Controls/DualSwitch'
 

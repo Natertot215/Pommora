@@ -3,7 +3,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import { act } from 'react'
 import { matchText } from '@pommora/uix/Menus/menu-row.css'
 import type { ConnectionsApi } from '../Links/connectionsApi'
-import { buildPageIndex } from '@pommora/core/Connections/pageIndex'
+import { buildPageIndex } from '../../Connections/pageIndex'
 import {
   cleanupEditor,
   harnessState,

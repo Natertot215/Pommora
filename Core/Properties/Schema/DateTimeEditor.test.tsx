@@ -2,7 +2,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { act } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
-import { type ColumnStyle, dateDefaults } from '@pommora/core/Properties/columnStyles'
+import { type ColumnStyle, dateDefaults } from '../columnStyles'
 import { DateTimeEditor } from './DateTimeEditor'
 import { MenuDoorHost } from '../../Testing/MenuDoorHost'
 ;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true

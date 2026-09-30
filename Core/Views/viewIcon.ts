@@ -1,5 +1,5 @@
 import { asRenderableIcon } from '@pommora/uix/Symbols'
-import { type SavedView, VIEW_KINDS, type ViewType } from '@pommora/core/Views/views'
+import { type SavedView, VIEW_KINDS, type ViewType } from './views'
 
 type Glyphed = Pick<SavedView, 'icon' | 'type'>
 

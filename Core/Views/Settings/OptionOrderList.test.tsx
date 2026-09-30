@@ -2,7 +2,7 @@
 import { describe, expect, it, vi } from 'vitest'
 import { act } from 'react'
 import type { Root } from 'react-dom/client'
-import type { PropertyDefinition } from '@pommora/core/Properties/properties'
+import type { PropertyDefinition } from '../../Properties/properties'
 import { DragGroup } from '@pommora/uix/Interactions/drag'
 import { firePointer, pressEscape, stubRect } from '@pommora/uix/Testing/pointerHarness'
 import { mountEachTest } from '../../Testing/viewHarness'

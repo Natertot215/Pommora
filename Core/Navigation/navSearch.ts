@@ -1,5 +1,5 @@
-import type { NavRef } from '@pommora/core/Navigation/navRef'
-import { foldKey, matchScore, rankMatches } from '@pommora/core/Paths/caseFold'
+import type { NavRef } from './navRef'
+import { foldKey, matchScore, rankMatches } from '../Paths/caseFold'
 
 export interface SearchEntry {
   key: string

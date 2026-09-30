@@ -1,22 +1,21 @@
 // The page exists on disk as Untitled the moment the gesture fires — seeds and order riding the create — and the caller opens its own naming surface over the row already real.
 
-import type { ViewRow } from '@pommora/core/Views/viewRow'
-import { UNGROUPED } from '@pommora/core/Views/viewRow'
-import type { PageFrontmatter } from '@pommora/core/Nexus/schemas'
+import { type ViewRow, UNGROUPED } from '../viewRow'
+import type { PageFrontmatter } from '../../Nexus/schemas'
 import { settle } from '../../Properties/valueOverride'
 import {
   applyValueAtRoot,
   isBlankValue,
   type PropertyValue,
   type ValueKind,
-} from '@pommora/core/Properties/propertyValue'
-import { specOf } from '@pommora/core/Properties/properties'
-import { viewOption } from '@pommora/core/Views/views'
-import { DEFAULT_NEW_NAME, type MutateRequest } from '@pommora/core/Nexus/mutateRequest'
-import { relDirname } from '@pommora/core/Paths/posix'
+} from '../../Properties/propertyValue'
+import { specOf } from '../../Properties/properties'
+import { viewOption } from '../views'
+import { DEFAULT_NEW_NAME, type MutateRequest } from '../../Nexus/mutateRequest'
+import { relDirname } from '../../Paths/posix'
 import { findScroller, SEEK_GLIDE, scrollGlide } from '@pommora/uix/Interactions/autoscroll'
 import { useSession } from '../../Session/store'
-import { settingOf } from '@pommora/core/Settings/personalization'
+import { settingOf } from '../../Settings/personalization'
 import { declaredType, resolveFieldValue } from '../../Properties/value'
 import { filterSeeds } from '../Pipeline/creationSeeds'
 import { flattenContainer, frontmatterOf } from '../Pipeline/group'

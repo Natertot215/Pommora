@@ -1,6 +1,6 @@
-import { detail } from '@pommora/core/Testing/fixtures'
+import { detail } from '../Testing/fixtures'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import type { PageDetail } from '@pommora/core/Pages/pageDetail'
+import type { PageDetail } from '../Pages/pageDetail'
 import {
   attachBody,
   cachePageDetail,

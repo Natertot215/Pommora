@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import type { NexusTree } from '@pommora/core/Nexus/tree'
+import type { NexusTree } from '../Nexus/tree'
 import { contextOptionsFor } from './contextOptions'
 
 const tree = {

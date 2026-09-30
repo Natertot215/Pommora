@@ -1,9 +1,9 @@
 // Inside a view tile every view-config write lands on the tile payload, never on the source.
 
 import { createContext, useContext } from 'react'
-import type { ConnPage } from '@pommora/core/Connections/pageIndex'
-import type { CollectionNode, SetNode } from '@pommora/core/Nexus/tree'
-import type { SavedView, ViewPatch } from '@pommora/core/Views/views'
+import type { ConnPage } from '../Connections/pageIndex'
+import type { CollectionNode, SetNode } from '../Nexus/tree'
+import type { SavedView, ViewPatch } from './views'
 
 export interface ViewTileScopeValue {
   source: CollectionNode | SetNode

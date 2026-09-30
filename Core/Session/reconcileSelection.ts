@@ -1,7 +1,7 @@
 // After a mutation refetch the prior selection can be stale: the entity was deleted (its id is gone) or renamed/moved (its id survives but its path changed).
 
-import type { NexusTree } from '@pommora/core/Nexus/tree'
-import type { SelectionState } from '@pommora/core/Navigation/navRef'
+import type { NexusTree } from '../Nexus/tree'
+import type { SelectionState } from '../Navigation/navRef'
 import { reconcileIndexOf } from '../Nexus/treeIndex'
 
 export interface ReconcileIndex {

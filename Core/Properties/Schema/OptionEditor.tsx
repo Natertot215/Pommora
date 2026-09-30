@@ -1,11 +1,6 @@
 import { Fragment, useMemo, useRef, useState } from 'react'
-import { fallbackTitle, type OptionEdit } from '@pommora/core/Properties/optionModel'
-import {
-  groupOptions,
-  PROPERTY_TYPES,
-  type PropertyType,
-  type StatusGroup,
-} from '@pommora/core/Properties/properties'
+import { fallbackTitle, type OptionEdit } from '../optionModel'
+import { groupOptions, PROPERTY_TYPES, type PropertyType, type StatusGroup } from '../properties'
 import { askClearOption, askRemoveOption } from '../../Interface/Confirm/confirmations'
 import { cx } from '@pommora/uix/Utilities/cx'
 import { GhostOptionChip, OptionNameCaret, useGhostOptionAnchor } from './GhostOptionChip'
@@ -22,7 +17,7 @@ import { AccessoryButton, heading, menuDropLine } from '@pommora/uix/Menus'
 import { labelColor, shape } from '@pommora/uix/Labels/label-base.css'
 import { optionShapeFor } from '@pommora/uix/Labels/recipes'
 import { popMenu } from '../../Actions/menuActions'
-import { optionMenuModel } from '@pommora/core/Actions/optionMenu'
+import { optionMenuModel } from '../../Actions/optionMenu'
 
 export function OptionEditor({
   type,

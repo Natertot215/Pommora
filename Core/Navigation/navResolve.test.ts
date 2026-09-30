@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import type { NavRef } from '@pommora/core/Navigation/navRef'
+import type { NavRef } from './navRef'
 import {
   pageTargetFromNav,
   type ResolvedNav,

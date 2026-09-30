@@ -1,14 +1,14 @@
 // @vitest-environment jsdom
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { ok } from '@pommora/core/Contract/result'
+import { ok } from '../../Contract/result'
 import { act } from 'react'
 import type { Root } from 'react-dom/client'
-import type { PropertyDefinition } from '@pommora/core/Properties/properties'
-import type { CollectionNode } from '@pommora/core/Nexus/tree'
+import type { PropertyDefinition } from '../../Properties/properties'
+import type { CollectionNode } from '../../Nexus/tree'
 import { useSession } from '../../Session/store'
 import { PropertyPicker } from '../../Properties/Pickers/PropertyPicker'
 import { propsAtRoot, valuesReply } from '../../Testing/pageValues'
-import { ID_KEY } from '@pommora/core/Nexus/identityMark'
+import { ID_KEY } from '../../Nexus/identityMark'
 import { stubDialer } from '../../vitest.setup'
 import { mountEachTest, renderView, settle } from '../../Testing/viewHarness'
 import { makeTree } from '../../Testing/testTree'
@@ -463,7 +463,7 @@ describe('open actions + row-click narrowing', () => {
 
 describe('PropertyPicker (direct mount) — seed values', () => {
   it('a seed status def shows its option values (values show regardless of name)', async () => {
-    const { defaultStatusSeed } = await import('@pommora/core/Properties/properties')
+    const { defaultStatusSeed } = await import('../../Properties/properties')
     const seedDef: PropertyDefinition = {
       id: 'prop_seed',
       name: 'Status',

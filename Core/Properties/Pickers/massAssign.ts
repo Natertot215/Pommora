@@ -1,5 +1,5 @@
-import type { PropertyValue } from '@pommora/core/Properties/propertyValue'
-import type { OptionPickKind } from '@pommora/core/Properties/properties'
+import type { PropertyValue } from '../propertyValue'
+import type { OptionPickKind } from '../properties'
 
 export function massSelected(optionValues: string[], rows: string[][]): string[] {
   return optionValues.filter((v) => rows.every((r) => r.includes(v)))

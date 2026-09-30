@@ -3,11 +3,11 @@ import {
   type PropertyType,
   STAMP_TYPE,
   specOf,
-} from '@pommora/core/Properties/properties'
-import { isBlankValue } from '@pommora/core/Properties/propertyValue'
-import type { NexusTree } from '@pommora/core/Nexus/tree'
-import type { ResolvedColumn, ViewRow } from '@pommora/core/Views/viewRow'
-import { isCompact, type SavedView } from '@pommora/core/Views/views'
+} from '../../Properties/properties'
+import { isBlankValue } from '../../Properties/propertyValue'
+import type { NexusTree } from '../../Nexus/tree'
+import type { ResolvedColumn, ViewRow } from '../viewRow'
+import { isCompact, type SavedView } from '../views'
 import { hiddenListIds } from '../visibilityModel'
 import { contextIdsOf, contextsByIdOf } from '../../Contexts/contextIdentity'
 import { resolveFieldValue } from '../../Properties/value'

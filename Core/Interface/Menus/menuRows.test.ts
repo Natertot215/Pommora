@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import type { ActionItem } from '@pommora/core/Actions/menuModel'
+import type { ActionItem } from '../../Actions/menuModel'
 import { menuRows } from './menuRows'
 
 const items: ActionItem<string>[] = [

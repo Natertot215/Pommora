@@ -2,7 +2,7 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest'
 import { act } from 'react'
 import type { EditorView } from '@codemirror/view'
-import type { Personalization } from '@pommora/core/Settings/personalization'
+import type { Personalization } from '../../Settings/personalization'
 import {
   stubEditorBridge,
   mountEditor,

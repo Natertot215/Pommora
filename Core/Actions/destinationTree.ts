@@ -1,8 +1,8 @@
 // Both askers read the tree index's one walk — the card's Move To ▸, which relocates a live page by path, and the trash's Restore ▸, which files a returning one by id — so the two menus can never disagree about what the nexus will hold.
 
-import type { MoveTarget } from '@pommora/core/Actions/pageMenu'
-import { contextDirRel } from '@pommora/core/Paths/nexusPaths'
-import type { NexusTree } from '@pommora/core/Nexus/tree'
+import type { MoveTarget } from './pageMenu'
+import { contextDirRel } from '../Paths/nexusPaths'
+import type { NexusTree } from '../Nexus/tree'
 import { nodesOf } from '../Nexus/treeIndex'
 
 /** The destination rules are the write path's: a page or Set lands in a container and nowhere else. */

@@ -1,6 +1,6 @@
-import { persist } from '@pommora/core/Interface/Notifications/notifications'
-import type { MutateRequest } from '@pommora/core/Nexus/mutateRequest'
-import type { PommoraError } from '@pommora/core/Contract/result'
+import { persist } from '../Interface/Notifications/notifications'
+import type { MutateRequest } from '../Nexus/mutateRequest'
+import type { PommoraError } from '../Contract/result'
 import {
   type NavigationState,
   type NavRef,
@@ -12,9 +12,9 @@ import {
   type StoredTabSet,
   type Tab,
   toNavRef,
-} from '@pommora/core/Navigation/navRef'
-import type { PageDetail } from '@pommora/core/Pages/pageDetail'
-import { settingOf } from '@pommora/core/Settings/personalization'
+} from '../Navigation/navRef'
+import type { PageDetail } from '../Pages/pageDetail'
+import { settingOf } from '../Settings/personalization'
 import {
   type ReconcileIndex,
   reconcileHeld,

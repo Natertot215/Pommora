@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import type { SetNode } from '@pommora/core/Nexus/tree'
-import type { PropertyDefinition } from '@pommora/core/Properties/properties'
+import type { SetNode } from '../../Nexus/tree'
+import type { PropertyDefinition } from '../../Properties/properties'
 import { pickView } from './pickView'
 
 const set = { kind: 'set', id: 's1', sets: [] } as unknown as SetNode

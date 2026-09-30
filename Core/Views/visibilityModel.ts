@@ -1,9 +1,5 @@
-import {
-  isReservedPropertyId,
-  type PropertyDefinition,
-  STAMP_TYPE,
-} from '@pommora/core/Properties/properties'
-import type { SavedView } from '@pommora/core/Views/views'
+import { isReservedPropertyId, type PropertyDefinition, STAMP_TYPE } from '../Properties/properties'
+import type { SavedView } from './views'
 
 type VisibilityPatch = Pick<SavedView, 'property_order' | 'hidden_properties'>
 

@@ -4,7 +4,7 @@ import { act, createElement } from 'react'
 import { createRoot } from 'react-dom/client'
 import type { EditorView } from '@codemirror/view'
 import type { ConnectionsApi } from './Links/connectionsApi'
-import { buildPageIndex, type ConnPage } from '@pommora/core/Connections/pageIndex'
+import { buildPageIndex, type ConnPage } from '../Connections/pageIndex'
 import { renderCellContent } from './Tables/cellStatic'
 import { cleanupEditor, mountEditor, stubEditorBridge } from '../Testing/editorHarness'
 

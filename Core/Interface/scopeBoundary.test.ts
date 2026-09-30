@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest'
-import { valueOr } from '@pommora/core/Contract/result'
+import { valueOr } from '../Contract/result'
 import type { HostContext } from '../Contract/handlers'
 import { closeSession, openSession } from '../Nexus/session'
 import { installStores, NO_STORES } from '../Platform/stores'

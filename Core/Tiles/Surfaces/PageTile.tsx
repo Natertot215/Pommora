@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
-import { titleFromPath } from '@pommora/core/Paths/posix'
-import { coverOf, type PageDetail } from '@pommora/core/Pages/pageDetail'
+import { titleFromPath } from '../../Paths/posix'
+import { coverOf, type PageDetail } from '../../Pages/pageDetail'
 import { MarkdownEditor } from '../../MarkdownPM/MarkdownEditor'
 import type { WarmSeam } from '../../MarkdownPM/warmSeam'
 import type { ConnectionsApi } from '../../MarkdownPM/Links/connectionsApi'

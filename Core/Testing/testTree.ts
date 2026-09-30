@@ -1,5 +1,5 @@
-import type { NexusTree } from '@pommora/core/Nexus/tree'
-import { ASSETS_DIR_REL } from '@pommora/core/Paths/nexusPaths'
+import type { NexusTree } from '../Nexus/tree'
+import { ASSETS_DIR_REL } from '../Paths/nexusPaths'
 import { DEFAULT_COMMANDS } from '../Actions/commands'
 
 export function makeTree(): NexusTree {

@@ -2,9 +2,8 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 import { act, createElement } from 'react'
 import type { Root } from 'react-dom/client'
-import type { SavedView } from '@pommora/core/Views/views'
+import { type SavedView, foldView, slotsOf, type ViewPatch } from '../views'
 import { mountEachTest } from '../../Testing/viewHarness'
-import { foldView, slotsOf, type ViewPatch } from '@pommora/core/Views/views'
 import { stageView, useLiveView } from './pendingView'
 
 const base = (over: Partial<SavedView> = {}): SavedView =>

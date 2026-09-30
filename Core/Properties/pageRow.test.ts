@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import type { PageFrontmatter } from '@pommora/core/Nexus/schemas'
-import type { NexusTree, SpaceNode } from '@pommora/core/Nexus/tree'
+import type { PageFrontmatter } from '../Nexus/schemas'
+import type { NexusTree, SpaceNode } from '../Nexus/tree'
 import { linkedSpacesTree } from '../Testing/testTree'
 import { spaceRowOf } from './pageRow'
 

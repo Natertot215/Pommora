@@ -10,7 +10,7 @@ import {
   type StoredTab,
   type Tab,
   type TabTarget,
-} from '@pommora/core/Navigation/navRef'
+} from './navRef'
 import { placeAt } from '@pommora/uix/Utilities/moveItem'
 import { reconcileWith, type ReconcileIndex } from '../Session/reconcileSelection'
 

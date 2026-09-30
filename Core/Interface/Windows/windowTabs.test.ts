@@ -1,8 +1,8 @@
 // @vitest-environment jsdom
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import type { NexusTree } from '@pommora/core/Nexus/tree'
+import type { NexusTree } from '../../Nexus/tree'
 import { windowTargetOf, useSession } from '../../Session/store'
-import type { SelectTarget } from '@pommora/core/Navigation/navRef'
+import type { SelectTarget } from '../../Navigation/navRef'
 import { clearWindowCache, WINDOW_OWNER } from './windowCache'
 import { captureWarm, readWarm } from '../../Session/warmCache'
 import { stubDialer } from '../../vitest.setup'

@@ -1,4 +1,4 @@
-import { CHECKBOX_LOOKS, lookOptions } from '@pommora/core/Properties/columnStyles'
+import { CHECKBOX_LOOKS, lookOptions } from '../columnStyles'
 import { resolveColor } from '@pommora/uix/Theme/ramp'
 import { MenuIndex, pickerRow } from '@pommora/uix/Menus'
 import * as s from '@pommora/uix/Menus/frames.css'

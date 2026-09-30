@@ -1,5 +1,5 @@
 import { capSet } from '@pommora/uix/Utilities/capMap'
-import type { Result } from '@pommora/core/Contract/result'
+import type { Result } from '../Contract/result'
 import {
   type EntryPatch,
   knownTile,
@@ -8,7 +8,7 @@ import {
   type TileDoc,
   type TileDocPatch,
   type TileHostRef,
-} from '@pommora/core/Tiles/tiles'
+} from './tiles'
 import { isPlainObject } from '../Contract/validators'
 import { stableStringify } from '../Files/stableJson'
 import { navKey } from '../Navigation/navRef'

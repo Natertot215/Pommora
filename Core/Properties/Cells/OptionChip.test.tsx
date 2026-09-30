@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import type { PropertyDefinition } from '@pommora/core/Properties/properties'
+import type { PropertyDefinition } from '../properties'
 import { optionGlyph } from './OptionChip'
 
 const def: PropertyDefinition = {

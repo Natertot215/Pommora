@@ -11,9 +11,9 @@ import {
 import { resetUndo, undoValue } from '../../Session/undo'
 import { useSession } from '../../Session/store'
 import { clearNotification, currentNotification } from '../Notifications/notifications'
-import type { MutableKind } from '@pommora/core/Nexus/mutateRequest'
+import type { MutableKind } from '../../Nexus/mutateRequest'
 import { stubDialer } from '../../vitest.setup'
-import { ok } from '@pommora/core/Contract/result'
+import { ok } from '../../Contract/result'
 
 const asked: string[] = []
 

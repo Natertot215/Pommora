@@ -1,8 +1,4 @@
-import {
-  type Personalization,
-  type SidebarMode,
-  settingOf,
-} from '@pommora/core/Settings/personalization'
+import { type Personalization, type SidebarMode, settingOf } from '../../Settings/personalization'
 import { Icon } from '@pommora/uix/Symbols'
 import { entityIcon } from '../../Assets/entityIconPolicy'
 import { SortableZone, useDragItem } from '@pommora/uix/Interactions/drag'
@@ -11,7 +7,7 @@ import { openOrder } from '../../Actions/menuModel'
 import { popMenu } from '../../Actions/menuActions'
 import { openLabel } from '../../Actions/toggleLabels'
 import { useSession } from '../../Session/store'
-import { sidebarModeOf, useExperimental } from '@pommora/core/Settings/experimental'
+import { sidebarModeOf, useExperimental } from '../../Settings/experimental'
 import { type RibbonKey, resolveRibbonOrder, withHidden } from './ribbonOrder'
 import { isOpenInTabs } from '../../Navigation/tabsModel'
 import { ctxHandler } from './sidebarRows'

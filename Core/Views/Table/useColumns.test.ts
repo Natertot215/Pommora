@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
-import { RESERVED_PROPERTY_ID, type PropertyDefinition } from '@pommora/core/Properties/properties'
-import { savedView, type SavedView } from '@pommora/core/Views/views'
+import { RESERVED_PROPERTY_ID, type PropertyDefinition } from '../../Properties/properties'
+import { savedView, type SavedView } from '../views'
 import {
   alignFor,
   clampWidth,

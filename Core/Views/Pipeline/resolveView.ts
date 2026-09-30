@@ -1,8 +1,8 @@
 // Composes the pure stages: columns (resolver) + filter → group → sort-within-group. VIEW-SOURCE-AGNOSTIC — `view`, `rows`, `schema`, `setTree` are all passed in, so a future context-dashboard embed reuses this verbatim. Never couple the view to its container or read `views[]` here.
 
-import type { PropertyDefinition } from '@pommora/core/Properties/properties'
-import type { ResolvedColumn, ResolvedGroup, ViewRow } from '@pommora/core/Views/viewRow'
-import { type SavedView, viewOption } from '@pommora/core/Views/views'
+import type { PropertyDefinition } from '../../Properties/properties'
+import type { ResolvedColumn, ResolvedGroup, ViewRow } from '../viewRow'
+import { type SavedView, viewOption } from '../views'
 import { applyFilter } from './filter'
 import { orderGroups } from './bandOrder'
 import {

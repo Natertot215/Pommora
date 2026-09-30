@@ -1,10 +1,7 @@
 // @vitest-environment jsdom
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import {
-  clearNotification,
-  currentNotification,
-} from '@pommora/core/Interface/Notifications/notifications'
-import { undoValue } from '@pommora/core/Session/undo'
+import { clearNotification, currentNotification } from '../Interface/Notifications/notifications'
+import { undoValue } from '../Session/undo'
 import { act } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
 import { EditorView } from '@codemirror/view'

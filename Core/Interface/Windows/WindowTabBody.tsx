@@ -1,5 +1,5 @@
 import { Fragment, memo, useEffect, useMemo, useRef, useState, type RefObject } from 'react'
-import type { PageTarget, SpaceTarget, WindowTarget } from '@pommora/core/Navigation/navRef'
+import type { PageTarget, SpaceTarget, WindowTarget } from '../../Navigation/navRef'
 import { useHeld } from '@pommora/uix/Animations/useExitPresence'
 import { cx } from '@pommora/uix/Utilities/cx'
 import { Scrollbar } from '@pommora/uix/Interactions/Scrollbar'

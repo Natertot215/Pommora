@@ -6,7 +6,7 @@ import {
   WEEKDAY_FORMAT_LABELS,
   WEEKDAY_FORMATS,
   type ColumnStyle,
-} from '@pommora/core/Properties/columnStyles'
+} from '../columnStyles'
 import { MenuRowView, pickerRow } from '@pommora/uix/Menus'
 
 const WEEKDAY_OPTIONS = WEEKDAY_FORMATS.map((value) => ({

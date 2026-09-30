@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { DEFAULT_VIEW_ID } from '@pommora/core/Views/views'
+import { DEFAULT_VIEW_ID } from '../../Views/views'
 import { embedViewIds } from './ViewTile'
 
 const el = (id?: unknown): unknown => ({ source_id: 'c', config: id === undefined ? {} : { id } })

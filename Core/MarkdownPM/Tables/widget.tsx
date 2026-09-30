@@ -45,7 +45,7 @@ import { blockDeleteSpan } from '../Menus/gripMenu'
 import { tableMergeGuard, tablePasteGuard } from '../Guards/tableGuard'
 import type { TableModel } from '../Engine/Tables/model'
 import type { ConnectionsApi } from '../Links/connectionsApi'
-import type { TableMenuAction, TableMenuContext } from '@pommora/core/MarkdownPM/Tables/tableMenu'
+import type { TableMenuAction, TableMenuContext } from './tableMenu'
 import { editorHost, resolutionNudge } from '../api'
 import type { HeadingLinkStyle } from '../../Settings/personalization'
 

@@ -2,11 +2,11 @@
 import { act, createElement, useRef, useState } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
 import { EditorView } from '@codemirror/view'
-import type { PickItem } from '@pommora/core/Actions/menuModel'
+import type { PickItem } from '../Actions/menuModel'
 import { MarkdownEditor } from '../MarkdownPM/MarkdownEditor'
-import { DEFAULT_COMMANDS } from '@pommora/core/Actions/commands'
+import { DEFAULT_COMMANDS } from '../Actions/commands'
 import { type EditorHost, type EditorSettings, editorSettingsOf } from '../MarkdownPM/api'
-import type { EditorPrefs } from '@pommora/core/Contract/bridge'
+import type { EditorPrefs } from '../Contract/bridge'
 import { stubDialer } from '../vitest.setup'
 
 type EditorProps = Parameters<typeof MarkdownEditor>[0]

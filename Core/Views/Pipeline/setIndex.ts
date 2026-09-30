@@ -1,4 +1,4 @@
-import type { CollectionNode, SetNode } from '@pommora/core/Nexus/tree'
+import type { CollectionNode, SetNode } from '../../Nexus/tree'
 
 export interface SetIndex {
   node: ReadonlyMap<string, SetNode>

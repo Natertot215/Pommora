@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useLatest } from '@pommora/uix/Utilities/stableApi'
-import type { ActionItem } from '@pommora/core/Actions/menuModel'
+import type { ActionItem } from '../../Actions/menuModel'
 import { useHeld } from '@pommora/uix/Animations/useExitPresence'
 import { FrameSlide } from '@pommora/uix/Menus/FrameSlide'
 import { MenuItem, MenuScrollFrame, MenuSeparator, MenuTopRow } from '@pommora/uix/Menus'

@@ -17,8 +17,8 @@ import {
   lineEndAt,
   trimmedRange,
 } from '../Engine/markdownCode'
-import type { HeadingLevel, ListKind } from '@pommora/core/Actions/gripMenu'
-import type { BlockFormat, LinkFormat } from '@pommora/core/Actions/blockMenu'
+import type { HeadingLevel, ListKind } from '../../Actions/gripMenu'
+import type { BlockFormat, LinkFormat } from '../../Actions/blockMenu'
 import { emptyTable } from '../Engine/Tables/model'
 import { serialize } from '../Engine/Tables/codec'
 

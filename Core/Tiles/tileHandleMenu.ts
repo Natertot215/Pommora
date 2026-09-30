@@ -1,4 +1,4 @@
-import { lockLabel } from '@pommora/core/Actions/toggleLabels'
+import { lockLabel } from '../Actions/toggleLabels'
 import {
   type EntryPatch,
   TILE_KINDS,
@@ -6,13 +6,13 @@ import {
   type TilePick,
   type TileStyle,
   type ViewPick,
-} from '@pommora/core/Tiles/tiles'
+} from './tiles'
 import { scaleRows } from './tileZoom'
-import { ZOOM } from '@pommora/core/Settings/personalization'
-import { type ActionItem, type PickItem, pickRows } from '@pommora/core/Actions/menuModel'
-import { containerPickTree, type DefaultIcons } from '@pommora/core/Actions/pickTree'
-import type { NexusTree } from '@pommora/core/Nexus/tree'
-import { viewGlyph } from '@pommora/core/Views/viewIcon'
+import { ZOOM } from '../Settings/personalization'
+import { type ActionItem, type PickItem, pickRows } from '../Actions/menuModel'
+import { containerPickTree, type DefaultIcons } from '../Actions/pickTree'
+import type { NexusTree } from '../Nexus/tree'
+import { viewGlyph } from '../Views/viewIcon'
 
 type TileMenuAction =
   | 'tile:open'

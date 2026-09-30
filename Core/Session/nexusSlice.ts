@@ -3,11 +3,11 @@ import {
   notifyReport,
   reportRefusal,
   unrestoredLine,
-} from '@pommora/core/Interface/Notifications/notifications'
-import type { MutateOutcome, MutateRequest } from '@pommora/core/Nexus/mutateRequest'
-import { caught, type PommoraError, type Result, valueOr } from '@pommora/core/Contract/result'
-import type { NexusTree } from '@pommora/core/Nexus/tree'
-import type { SyncStatus } from '@pommora/core/Sync/Contract/wire'
+} from '../Interface/Notifications/notifications'
+import type { MutateOutcome, MutateRequest } from '../Nexus/mutateRequest'
+import { caught, type PommoraError, type Result, valueOr } from '../Contract/result'
+import type { NexusTree } from '../Nexus/tree'
+import type { SyncStatus } from '../Sync/Contract/wire'
 import {
   insertCreatedInTree,
   orderInTree,
@@ -15,8 +15,8 @@ import {
   patchNodeInTree,
   removeNodeInTree,
   renameNodeInTree,
-} from '@pommora/core/Nexus/treePatch'
-import { stabilize } from '@pommora/core/Nexus/treeStabilize'
+} from '../Nexus/treePatch'
+import { stabilize } from '../Nexus/treeStabilize'
 import { applyPersonalization } from '../Settings/applyPersonalization'
 import { reconcileIndexOf } from '../Nexus/treeIndex'
 import { flushAllTileDocs, tileBodyWriter } from '../Tiles/tileDocStore'

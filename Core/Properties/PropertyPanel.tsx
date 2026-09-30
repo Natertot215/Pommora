@@ -1,4 +1,4 @@
-import { reportRefusal } from '@pommora/core/Interface/Notifications/notifications'
+import { reportRefusal } from '../Interface/Notifications/notifications'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { EmptyValue } from '@pommora/uix/Elements/EmptyValue'
 import { Icon } from '@pommora/uix/Symbols'
@@ -12,16 +12,12 @@ import { cx } from '@pommora/uix/Utilities/cx'
 import { revealTarget } from '@pommora/uix/Interactions/hover-reveal.css'
 import { Reveal } from '@pommora/uix/Animations/Reveal'
 import { useEntrance } from '@pommora/uix/Animations/useEntrance'
-import type { PropertyDefinition } from '@pommora/core/Properties/properties'
-import {
-  isBlankValue,
-  type PropertyValue,
-  NULL_VALUE,
-} from '@pommora/core/Properties/propertyValue'
-import type { PageFrontmatter } from '@pommora/core/Nexus/schemas'
-import type { ResolvedColumn, ViewRow } from '@pommora/core/Views/viewRow'
-import { propertyMenuModel } from '@pommora/core/Actions/propertyMenu'
-import { type CellMenuAction, cellMenuModel } from '@pommora/core/Actions/cellMenu'
+import type { PropertyDefinition } from './properties'
+import { isBlankValue, type PropertyValue, NULL_VALUE } from './propertyValue'
+import type { PageFrontmatter } from '../Nexus/schemas'
+import type { ResolvedColumn, ViewRow } from '../Views/viewRow'
+import { propertyMenuModel } from '../Actions/propertyMenu'
+import { type CellMenuAction, cellMenuModel } from '../Actions/cellMenu'
 import { Cell } from './Cells/Cell'
 import {
   PropertyPicker,
@@ -53,7 +49,7 @@ import { readSpaceRowOrder, type SpaceRowOrder } from '../Contexts/spaceSidecar'
 import { dialer } from '../Platform/dialer'
 import { contextOptionsFor } from '../Contexts/contextOptions'
 import { identityOf, isContextColumnId } from '../Contexts/contextIdentity'
-import { relDirname } from '@pommora/core/Paths/posix'
+import { relDirname } from '../Paths/posix'
 import { spaceNodeOf } from '../Nexus/treeIndex'
 import { type Overrides, patchOverride, retireSettled } from './valueOverride'
 import { useSession, useSetting } from '../Session/store'

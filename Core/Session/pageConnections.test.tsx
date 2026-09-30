@@ -2,7 +2,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { act, createElement } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
-import { makeTree } from '@pommora/core/Testing/testTree'
+import { makeTree } from '../Testing/testTree'
 import type { ConnectionsApi } from '../MarkdownPM/Links/connectionsApi'
 import { useConnections } from './pageConnections'
 import { useSession } from './store'

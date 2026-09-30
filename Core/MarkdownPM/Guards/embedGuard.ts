@@ -1,5 +1,5 @@
 import { EditorState, type Text, Transaction } from '@codemirror/state'
-import { pageEmbedText } from '@pommora/core/Connections/connections'
+import { pageEmbedText } from '../../Connections/connections'
 import { loneEmbedTitle, loneWebpageEmbed } from '../Engine/detect'
 import { embedTileRanges } from '../Embeds/embedWidget'
 

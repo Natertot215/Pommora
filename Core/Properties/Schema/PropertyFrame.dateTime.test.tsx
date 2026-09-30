@@ -1,10 +1,10 @@
 // @vitest-environment jsdom
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { ok } from '@pommora/core/Contract/result'
+import { ok } from '../../Contract/result'
 import { act } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
 import { stubPointerCapture } from '@pommora/uix/Testing/pointerHarness'
-import type { PropertyDefinition } from '@pommora/core/Properties/properties'
+import type { PropertyDefinition } from '../properties'
 import { useSession } from '../../Session/store'
 import { PropertyFrame } from './PropertyFrame'
 import { stubDialer } from '../../vitest.setup'

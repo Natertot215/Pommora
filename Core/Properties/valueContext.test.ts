@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import { identityOf } from '../Contexts/contextIdentity'
 import { buildValueContext } from './valueContext'
-import { EMPTY_ASSET_MAP, type NexusTree } from '@pommora/core/Nexus/tree'
+import { EMPTY_ASSET_MAP, type NexusTree } from '../Nexus/tree'
 
 const tree = {
   contexts: [

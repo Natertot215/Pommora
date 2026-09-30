@@ -1,15 +1,15 @@
 import { memo, useEffect, useRef, useState } from 'react'
-import type { ResolvedColumn, ResolvedGroup, ViewRow } from '@pommora/core/Views/viewRow'
-import type { ColumnStyle } from '@pommora/core/Properties/columnStyles'
+import type { ResolvedColumn, ResolvedGroup, ViewRow } from '../viewRow'
+import type { ColumnStyle } from '../../Properties/columnStyles'
 import {
   type CellMenuAction,
   type CellMenuContext,
   cellMenuContextFor,
   cellMenuModel,
-} from '@pommora/core/Actions/cellMenu'
-import { type ColumnAlign, viewOption } from '@pommora/core/Views/views'
-import { isBlankValue, type PropertyValue } from '@pommora/core/Properties/propertyValue'
-import { pickKindOf } from '@pommora/core/Properties/properties'
+} from '../../Actions/cellMenu'
+import { type ColumnAlign, viewOption } from '../views'
+import { isBlankValue, type PropertyValue } from '../../Properties/propertyValue'
+import { pickKindOf } from '../../Properties/properties'
 import { columnType, declaredType, resolveFieldValue } from '../../Properties/value'
 import { PropertyValueInput } from '../../Properties/Pickers/PropertyValueInput'
 import { RenamableLabel } from '@pommora/uix/Fields/RenamableLabel'

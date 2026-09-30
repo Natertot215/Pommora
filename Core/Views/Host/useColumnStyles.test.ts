@@ -1,9 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import { pickedStyle, styleFor } from './useColumnStyles'
-import { dateDefaults } from '@pommora/core/Properties/columnStyles'
-import type { DateFormat } from '@pommora/core/Properties/columnStyles'
-import type { PropertyDefinition } from '@pommora/core/Properties/properties'
-import { savedView, type SavedView } from '@pommora/core/Views/views'
+import { dateDefaults, type DateFormat } from '../../Properties/columnStyles'
+import type { PropertyDefinition } from '../../Properties/properties'
+import { savedView, type SavedView } from '../views'
 
 const nexus = (dateFormat: DateFormat) => ({
   dateFormat,

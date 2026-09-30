@@ -5,7 +5,7 @@ import { claimedEmbeds } from './embedClaims'
 
 const lines = splitWithOffsets
 const docEmbedLines = (doc: string): ReturnType<typeof blockEmbedLines> => scanDoc(doc).embeds
-import type { LinkStatus } from '@pommora/core/Connections/connections'
+import type { LinkStatus } from '../../Connections/connections'
 
 const status =
   (map: Record<string, LinkStatus>) =>

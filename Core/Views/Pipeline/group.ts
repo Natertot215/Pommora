@@ -1,7 +1,14 @@
 // The setTree is built from node.sets (the real folder walk), so empty Sets still appear as disclosure groups and a Collection and a Set container flow through the identical structural path.
 
-import type { CollectionNode, PageNode, SetNode } from '@pommora/core/Nexus/tree'
-import type { PageValues, ResolvedGroup, RowValues, ViewRow } from '@pommora/core/Views/viewRow'
+import type { CollectionNode, PageNode, SetNode } from '../../Nexus/tree'
+import {
+  type PageValues,
+  type ResolvedGroup,
+  type RowValues,
+  type ViewRow,
+  UNGROUPED,
+  isEmptyBand,
+} from '../viewRow'
 import {
   type DateGranularity,
   type EmptyPlacement,
@@ -14,19 +21,14 @@ import {
   type StructuralOrderMode,
   type SubGroupConfig,
   viewOption,
-} from '@pommora/core/Views/views'
-import { ID_KEY } from '@pommora/core/Nexus/identityMark'
+} from '../views'
+import { ID_KEY } from '../../Nexus/identityMark'
 import { localDayKey, pad } from '@pommora/uix/Utilities/pad'
-import type { PageFrontmatter, PageMeta } from '@pommora/core/Nexus/schemas'
-import {
-  groupable,
-  optionValues,
-  type PropertyDefinition,
-} from '@pommora/core/Properties/properties'
-import { UNGROUPED, isEmptyBand } from '@pommora/core/Views/viewRow'
+import type { PageFrontmatter, PageMeta } from '../../Nexus/schemas'
+import { groupable, optionValues, type PropertyDefinition } from '../../Properties/properties'
 import { declaredType, resolveFieldValue } from '../../Properties/value'
 import { readDate } from '../../Properties/formatValue'
-import { resolveRowOrder } from '@pommora/core/Properties/rowOrder'
+import { resolveRowOrder } from '../../Properties/rowOrder'
 import type { SetIndex } from './setIndex'
 
 export type PropertyGroup = Extract<GroupConfig, { kind: 'property' }>

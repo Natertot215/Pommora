@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { findOption } from './cellResolve'
-import type { PropertyDefinition } from '@pommora/core/Properties/properties'
+import type { PropertyDefinition } from '../properties'
 
 const schema: PropertyDefinition[] = [
   {

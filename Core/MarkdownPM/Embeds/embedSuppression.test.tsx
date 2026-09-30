@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { afterEach, describe, expect, it } from 'vitest'
 import type { ConnectionsApi } from '../Links/connectionsApi'
-import { buildPageIndex } from '@pommora/core/Connections/pageIndex'
+import { buildPageIndex } from '../../Connections/pageIndex'
 import {
   cleanupEditor,
   editorContainer,

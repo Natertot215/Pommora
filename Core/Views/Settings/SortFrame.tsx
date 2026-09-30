@@ -1,16 +1,6 @@
-import type { CollectionNode, SetNode } from '@pommora/core/Nexus/tree'
-import {
-  PROPERTY_TYPES,
-  type PropertyDefinition,
-  specOf,
-} from '@pommora/core/Properties/properties'
-import {
-  LOCATION_SORT,
-  type SavedView,
-  type SortCriterion,
-  VIEW_KINDS,
-  viewOption,
-} from '@pommora/core/Views/views'
+import type { CollectionNode, SetNode } from '../../Nexus/tree'
+import { PROPERTY_TYPES, type PropertyDefinition, specOf } from '../../Properties/properties'
+import { LOCATION_SORT, type SavedView, type SortCriterion, VIEW_KINDS, viewOption } from '../views'
 import { MenuRowView, MenuTopRow, MenuSeparator, pickerRow } from '@pommora/uix/Menus'
 import { useSaveView } from '../viewWrite'
 import { declaredType } from '../../Properties/value'

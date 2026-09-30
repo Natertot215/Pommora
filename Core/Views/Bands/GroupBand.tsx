@@ -1,5 +1,5 @@
 import type { CSSProperties, ReactNode } from 'react'
-import type { SetNode } from '@pommora/core/Nexus/tree'
+import type { SetNode } from '../../Nexus/tree'
 import { Reveal } from '@pommora/uix/Animations/Reveal'
 import { Button } from '@pommora/uix/Buttons/Button'
 import { base } from '@pommora/uix/Fields/fields.css'

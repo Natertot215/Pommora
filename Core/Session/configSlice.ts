@@ -1,12 +1,12 @@
-import { persist } from '@pommora/core/Interface/Notifications/notifications'
-import type { DevicePrefs } from '@pommora/core/Settings/devicePrefs'
-import { type Commands, DEFAULT_COMMANDS } from '@pommora/core/Actions/commands'
+import { persist } from '../Interface/Notifications/notifications'
+import type { DevicePrefs } from '../Settings/devicePrefs'
+import { type Commands, DEFAULT_COMMANDS } from '../Actions/commands'
 import {
   type Personalization,
   SETTING_DEFAULTS,
   settingOf,
   settingValue,
-} from '@pommora/core/Settings/personalization'
+} from '../Settings/personalization'
 import { applyPersonalizationKey } from '../Settings/applyPersonalization'
 import type { Slice } from './sessionState'
 import { dialer } from '../Platform/dialer'

@@ -1,15 +1,19 @@
 // @vitest-environment jsdom
-import { detail as pageDetail } from '@pommora/core/Testing/fixtures'
+import { detail as pageDetail } from '../Testing/fixtures'
 import { beforeEach, describe, expect, it, vi, onTestFinished } from 'vitest'
+import { clearNotification, currentNotification } from '../Interface/Notifications/notifications'
+import { ok } from '../Contract/result'
+import { ASSETS_DIR_REL } from '../Paths/nexusPaths'
+import type { NexusTree } from '../Nexus/tree'
+import type { PageDetail } from '../Pages/pageDetail'
 import {
-  clearNotification,
-  currentNotification,
-} from '@pommora/core/Interface/Notifications/notifications'
-import { ok } from '@pommora/core/Contract/result'
-import { ASSETS_DIR_REL } from '@pommora/core/Paths/nexusPaths'
-import type { NexusTree } from '@pommora/core/Nexus/tree'
-import type { PageDetail } from '@pommora/core/Pages/pageDetail'
-import type { PageTarget, SelectTarget, Tab } from '@pommora/core/Navigation/navRef'
+  type PageTarget,
+  type SelectTarget,
+  type Tab,
+  navKey,
+  toNavRef,
+  type StoredTabSet,
+} from '../Navigation/navRef'
 import {
   frozenOf,
   type PageSlot,
@@ -19,7 +23,6 @@ import {
   useSession,
 } from './store'
 import { newTabTab, pinTabId } from '../Navigation/tabsModel'
-import { navKey, toNavRef } from '@pommora/core/Navigation/navRef'
 import { captureWarm, readWarm } from './warmCache'
 import {
   clearCache,
@@ -32,7 +35,6 @@ import { flushAllSessionSaves, schedulePageSave, scheduleTabsSave } from './save
 import { makeTree } from '../Testing/testTree'
 import { tileBodyWriter } from '../Tiles/tileDocStore'
 import { dialer } from '../Platform/dialer'
-import type { StoredTabSet } from '@pommora/core/Navigation/navRef'
 import { stubDialer } from '../vitest.setup'
 import { DEFAULT_COMMANDS } from '../Actions/commands'
 

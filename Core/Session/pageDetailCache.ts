@@ -1,8 +1,8 @@
 // The path-keyed page-detail store — module state, seeded by every landed page and written through by the shared save scheduler so a returning reader always sees the newest body.
 import { useSyncExternalStore } from 'react'
 import { capSet } from '@pommora/uix/Utilities/capMap'
-import type { PageDetail } from '@pommora/core/Pages/pageDetail'
-import { type Result, valueOr } from '@pommora/core/Contract/result'
+import type { PageDetail } from '../Pages/pageDetail'
+import { type Result, valueOr } from '../Contract/result'
 import { clearWarm, dropWarmDetail } from './warmCache'
 import { dialer } from '../Platform/dialer'
 

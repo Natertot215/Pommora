@@ -3,9 +3,9 @@ import type { Root, RootContent, PhrasingContent } from 'mdast'
 import { parse } from './parser'
 import { inlineSpans, type CodeMask } from './markdownCode'
 import { inCodeAt, scanDoc } from './docScan'
-import { markdownLinkRegex } from '@pommora/core/Connections/links'
+import { markdownLinkRegex } from '../../Connections/links'
 import { isInlineMathContent, highlightRegex, inlineLatexRegex, markerRegex } from './detect'
-import { linkSpans, pageEmbedPattern, pageLinkPattern } from '@pommora/core/Connections/connections'
+import { linkSpans, pageEmbedPattern, pageLinkPattern } from '../../Connections/connections'
 
 export type TokenKind =
   | 'italic'

@@ -1,4 +1,4 @@
-import type { PageIndex } from '@pommora/core/Connections/pageIndex'
+import type { PageIndex } from '../../Connections/pageIndex'
 import { headingOutline, type OutlineHeading } from '../Engine/headingScan'
 import type { EditorHost } from '../api'
 

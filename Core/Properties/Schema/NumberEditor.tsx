@@ -1,6 +1,10 @@
-import { lookOptions, NUMBER_LOOKS } from '@pommora/core/Properties/columnStyles'
-import type { NumberConfig, NumberFamily } from '@pommora/core/Properties/properties'
-import { CURRENCY_CODES, DEFAULT_CURRENCY } from '@pommora/core/Properties/properties'
+import { lookOptions, NUMBER_LOOKS } from '../columnStyles'
+import {
+  type NumberConfig,
+  type NumberFamily,
+  CURRENCY_CODES,
+  DEFAULT_CURRENCY,
+} from '../properties'
 import { numberBarCapable } from '../formatValue'
 import type { PickerOption } from '@pommora/uix/Pickers/PickerControl'
 import { MenuRowView, pickerRow, type MenuRow, type Trailing } from '@pommora/uix/Menus'

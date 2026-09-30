@@ -5,7 +5,7 @@ import type { EditorView } from '@codemirror/view'
 import * as commands from '@codemirror/commands'
 import { defaultKeymap, historyKeymap } from '@codemirror/commands'
 import type { ConnectionsApi } from '../Links/connectionsApi'
-import { buildPageIndex } from '@pommora/core/Connections/pageIndex'
+import { buildPageIndex } from '../../Connections/pageIndex'
 import { embedTileRanges } from './embedWidget'
 import { cleanupEditor, mountEditor, stubEditorBridge } from '../../Testing/editorHarness'
 

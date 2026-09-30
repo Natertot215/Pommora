@@ -2,9 +2,9 @@
 import { describe, expect, it } from 'vitest'
 import { act } from 'react'
 import type { Root } from 'react-dom/client'
-import type { CollectionNode } from '@pommora/core/Nexus/tree'
-import type { PropertyDefinition } from '@pommora/core/Properties/properties'
-import { DEFAULT_VIEW_ID, type SavedView } from '@pommora/core/Views/views'
+import type { CollectionNode } from '../../Nexus/tree'
+import type { PropertyDefinition } from '../../Properties/properties'
+import { DEFAULT_VIEW_ID, type SavedView } from '../views'
 import { useActiveView } from './useActiveView'
 import { mountEachTest } from '../../Testing/viewHarness'
 

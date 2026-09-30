@@ -3,10 +3,10 @@ import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 import { act } from 'react'
 import { undo } from '@codemirror/commands'
 import { EditorView } from '@codemirror/view'
-import type { Personalization } from '@pommora/core/Settings/personalization'
+import type { Personalization } from '../../Settings/personalization'
 import { stubEditorBridge, mountEditor, cleanupEditor, seedHost } from '../../Testing/editorHarness'
 import type { ConnectionsApi } from '../Links/connectionsApi'
-import { buildPageIndex } from '@pommora/core/Connections/pageIndex'
+import { buildPageIndex } from '../../Connections/pageIndex'
 import {
   applyCitationAction,
   citationSeatAt,

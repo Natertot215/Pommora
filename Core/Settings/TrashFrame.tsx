@@ -12,9 +12,9 @@ import { Icon } from '@pommora/uix/Symbols'
 import { entityIcon } from '../Assets/entityIconPolicy'
 import { text } from '@pommora/uix/Theme'
 import { askEmptyTrash, spendBundle } from '../Interface/Confirm/confirmations'
-import type { MutateRequest } from '@pommora/core/Nexus/mutateRequest'
-import type { Personalization } from '@pommora/core/Settings/personalization'
-import type { TrashRow } from '@pommora/core/Trash/trashRow'
+import type { MutateRequest } from '../Nexus/mutateRequest'
+import type { Personalization } from './personalization'
+import type { TrashRow } from '../Trash/trashRow'
 import { PropertyTypeIcon, propertyTypeIconName } from '../Properties/Cells/PropertyTypes'
 import { formatDate } from '../Properties/formatValue'
 import { containerTargets, contextTargets } from '../Actions/destinationTree'
@@ -24,14 +24,9 @@ import { notifyReport, unrestoredLine } from '../Interface/Notifications/notific
 import { displayPropertyName, useCapitalizeMetadata } from '../Properties/Cells/columnLabel'
 import { dialer } from '../Platform/dialer'
 import { popMenu } from '../Actions/menuActions'
-import { trashMenuItems } from '@pommora/core/Actions/trashMenu'
-import { parseStyleAction, styleMenuItems } from '@pommora/core/Actions/columnMenu'
-import {
-  dateDefaults,
-  holdsStyle,
-  resolveStyle,
-  storedPick,
-} from '@pommora/core/Properties/columnStyles'
+import { trashMenuItems } from '../Actions/trashMenu'
+import { parseStyleAction, styleMenuItems } from '../Actions/columnMenu'
+import { dateDefaults, holdsStyle, resolveStyle, storedPick } from '../Properties/columnStyles'
 import { useNexusForms } from '../Views/Host/useColumnStyles'
 import '../Navigation/nav-list.css'
 import './trash-frame.css'

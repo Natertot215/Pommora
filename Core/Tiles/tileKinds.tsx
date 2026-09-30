@@ -6,7 +6,7 @@ import {
   type TileEntry,
   type TileHostRef,
   type TileType,
-} from '@pommora/core/Tiles/tiles'
+} from './tiles'
 import { MarkdownTile } from './Surfaces/MarkdownTile'
 import { PageTile } from './Surfaces/PageTile'
 import { ViewTile } from './Surfaces/ViewTile'

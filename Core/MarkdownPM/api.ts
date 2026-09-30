@@ -1,26 +1,19 @@
-import type { ConnPage } from '@pommora/core/Connections/pageIndex'
+import type { ConnPage } from '../Connections/pageIndex'
 import type { ReactNode } from 'react'
 import type { RememberedSize } from '@pommora/uix/Interactions/useResizable'
 import { changesTo } from '../Pages/merge3'
 import { docString } from './docCache'
 import { Annotation, Facet, StateEffect, Transaction } from '@codemirror/state'
 import { EditorView } from '@codemirror/view'
-import {
-  type Personalization,
-  type SettingValue,
-  settingOf,
-} from '@pommora/core/Settings/personalization'
-import type { HostContext } from '@pommora/core/Contract/handlers'
-import type { EditorPrefs, EditorPrefWrite } from '@pommora/core/Contract/bridge'
-import type { Commands } from '@pommora/core/Actions/commands'
-import type { EditorMenuRequest } from '@pommora/core/Actions/editorMenu'
-import type { GripMenuAction, GripMenuContext } from '@pommora/core/Actions/gripMenu'
-import type { PickItem } from '@pommora/core/Actions/menuModel'
-import type { TableMenuAction, TableMenuContext } from '@pommora/core/MarkdownPM/Tables/tableMenu'
-import type {
-  CitationMenuAction,
-  CitationMenuContext,
-} from '@pommora/core/MarkdownPM/Citations/citationMenu'
+import { type Personalization, type SettingValue, settingOf } from '../Settings/personalization'
+import type { HostContext } from '../Contract/handlers'
+import type { EditorPrefs, EditorPrefWrite } from '../Contract/bridge'
+import type { Commands } from '../Actions/commands'
+import type { EditorMenuRequest } from '../Actions/editorMenu'
+import type { GripMenuAction, GripMenuContext } from '../Actions/gripMenu'
+import type { PickItem } from '../Actions/menuModel'
+import type { TableMenuAction, TableMenuContext } from './Tables/tableMenu'
+import type { CitationMenuAction, CitationMenuContext } from './Citations/citationMenu'
 
 export const mirrored = Annotation.define<boolean>()
 

@@ -3,7 +3,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import { act } from 'react'
 import { EditorView } from '@codemirror/view'
 import type { ConnectionsApi } from './connectionsApi'
-import { buildPageIndex, type ConnPage } from '@pommora/core/Connections/pageIndex'
+import { buildPageIndex, type ConnPage } from '../../Connections/pageIndex'
 import {
   cleanupEditor,
   editorContainer,

@@ -1,9 +1,9 @@
-import type { ActionItem, MenuOptions } from '@pommora/core/Actions/menuModel'
-import type { ColumnStyle } from '@pommora/core/Properties/columnStyles'
-import type { PropertyDefinition } from '@pommora/core/Properties/properties'
-import type { PropertyValue } from '@pommora/core/Properties/propertyValue'
+import type { ActionItem, MenuOptions } from '../Actions/menuModel'
+import type { ColumnStyle } from '../Properties/columnStyles'
+import type { PropertyDefinition } from '../Properties/properties'
+import type { PropertyValue } from '../Properties/propertyValue'
 import type { ConfirmRequest } from '../Interface/Confirm/confirmations'
-import type { PageStats } from '@pommora/core/MarkdownPM/Engine/subfieldStats'
+import type { PageStats } from '../MarkdownPM/Engine/subfieldStats'
 import type { Slice } from './sessionState'
 
 interface MenuPending extends MenuOptions {

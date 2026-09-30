@@ -1,7 +1,7 @@
 import { useRef, useState } from 'react'
-import type { CollectionNode, SetNode } from '@pommora/core/Nexus/tree'
-import type { PropertyDefinition } from '@pommora/core/Properties/properties'
-import { DEFAULT_VIEW_ID, mintNewView, type SavedView } from '@pommora/core/Views/views'
+import type { CollectionNode, SetNode } from '../../Nexus/tree'
+import type { PropertyDefinition } from '../../Properties/properties'
+import { DEFAULT_VIEW_ID, mintNewView, type SavedView } from '../views'
 import { reportRefusal } from '../../Interface/Notifications/notifications'
 import { deleteViewWithUndo } from '../deleteViewWithUndo'
 import { viewGlyph } from '../viewIcon'
@@ -33,7 +33,7 @@ import { optionRing } from '@pommora/uix/Pickers/picker-base.css'
 import * as vd from '../../Interface/Toolbar/toolbar-menu.css'
 import { dialer } from '../../Platform/dialer'
 import { popMenu } from '../../Actions/menuActions'
-import { viewRowMenuItems } from '@pommora/core/Actions/viewRowMenu'
+import { viewRowMenuItems } from '../../Actions/viewRowMenu'
 
 const PANE_SQUARE = 225
 

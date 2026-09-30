@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import type { ActionItem, MenuRequest } from '@pommora/core/Actions/menuModel'
-import { ok } from '@pommora/core/Contract/result'
+import type { ActionItem, MenuRequest } from './menuModel'
+import { ok } from '../Contract/result'
 import { stubDialer } from '../vitest.setup'
 import type { ChromeSlice } from '../Session/chromeSlice'
 import { useSession } from '../Session/store'

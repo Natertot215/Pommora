@@ -1,11 +1,11 @@
 // @vitest-environment jsdom
-import { propertyMenuModel } from '@pommora/core/Actions/propertyMenu'
+import { propertyMenuModel } from '../../Actions/propertyMenu'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { currentNotification } from '@pommora/core/Interface/Notifications/notifications'
-import { ok } from '@pommora/core/Contract/result'
+import { currentNotification } from '../../Interface/Notifications/notifications'
+import { ok } from '../../Contract/result'
 import { act } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
-import { defaultStatusSeed, type PropertyDefinition } from '@pommora/core/Properties/properties'
+import { defaultStatusSeed, type PropertyDefinition } from '../properties'
 import {
   firePointer,
   pressEscape,

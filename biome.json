@@ -36,6 +36,28 @@
       }
     }
   },
+  "overrides": [
+    {
+      "includes": ["Core/**"],
+      "linter": {
+        "rules": {
+          "style": {
+            "noRestrictedImports": {
+              "level": "error",
+              "options": {
+                "patterns": [
+                  {
+                    "group": ["@pommora/core/**"],
+                    "message": "Inside a package, import its own files by relative path."
+                  }
+                ]
+              }
+            }
+          }
+        }
+      }
+    }
+  ],
   "javascript": {
     "formatter": {
       "quoteStyle": "single",

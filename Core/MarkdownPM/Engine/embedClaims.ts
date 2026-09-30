@@ -1,9 +1,5 @@
 import type { EmbedLine } from './detect'
-import {
-  embeddableTitle,
-  normalizeTitle,
-  type LinkStatus,
-} from '@pommora/core/Connections/connections'
+import { embeddableTitle, normalizeTitle, type LinkStatus } from '../../Connections/connections'
 
 /** A title not already held by a tile in this document or a host above it, which would land the inert duplicate or a cycle. */
 export function embeddable(title: string, exclude: ReadonlySet<string>): boolean {

@@ -1,12 +1,8 @@
 import { EditorView } from '@codemirror/view'
-import {
-  connectionText,
-  expressibleHeading,
-  pageEmbedText,
-} from '@pommora/core/Connections/connections'
-import type { GripMenuContext, HeadingLevel, ListKind } from '@pommora/core/Actions/gripMenu'
-import type { PickItem } from '@pommora/core/Actions/menuModel'
-import { COPY_LINK_ROW } from '@pommora/core/Actions/pageMenu'
+import { connectionText, expressibleHeading, pageEmbedText } from '../../Connections/connections'
+import type { GripMenuContext, HeadingLevel, ListKind } from '../../Actions/gripMenu'
+import type { PickItem } from '../../Actions/menuModel'
+import { COPY_LINK_ROW } from '../../Actions/pageMenu'
 import { listKindOf, setHeading, setListKind } from '../Input/format'
 import { headingParts, webpageEmbedUrlSpan } from '../Engine/detect'
 import { type Block, blockAt } from '../Engine/blockModel'

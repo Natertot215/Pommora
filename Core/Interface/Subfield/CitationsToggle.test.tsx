@@ -5,7 +5,7 @@ import { createRoot, type Root } from 'react-dom/client'
 import { CitationsToggle } from './CitationsToggle'
 import { useSession } from '../../Session/store'
 import { stubDialer } from '../../vitest.setup'
-import { ok } from '@pommora/core/Contract/result'
+import { ok } from '../../Contract/result'
 
 ;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
 const written: [string, boolean | null][] = []

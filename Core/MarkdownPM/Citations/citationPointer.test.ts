@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { loneTarget } from './citationPointer'
 import { tokenTarget } from '../Links/connectionsApi'
-import { buildPageIndex } from '@pommora/core/Connections/pageIndex'
+import { buildPageIndex } from '../../Connections/pageIndex'
 
 const page = { id: 'p1', title: 'Some Page', path: 'Some Page.md' }
 const index = buildPageIndex([page])

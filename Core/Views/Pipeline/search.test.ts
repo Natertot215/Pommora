@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import type { ResolvedGroup, ViewRow } from '@pommora/core/Views/viewRow'
+import type { ResolvedGroup, ViewRow } from '../viewRow'
 import { searchGroups } from './search'
 
 const row = (id: string, title: string): ViewRow => ({ id, title }) as ViewRow

@@ -1,12 +1,12 @@
 // @vitest-environment jsdom
-import { detail } from '@pommora/core/Testing/fixtures'
+import { detail } from '../../Testing/fixtures'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { act, createElement, useState } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
 import { bumpBodyEpoch, cachePageDetail, clearCache } from '../../Session/pageDetailCache'
-import { ok } from '@pommora/core/Contract/result'
+import { ok } from '../../Contract/result'
 import { NO_PREFS } from '../../Testing/editorHarness'
-import { makeTree } from '@pommora/core/Testing/testTree'
+import { makeTree } from '../../Testing/testTree'
 import { useSession } from '../../Session/store'
 import type { EditorHost } from '../../MarkdownPM/api'
 

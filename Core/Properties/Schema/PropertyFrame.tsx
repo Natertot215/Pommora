@@ -2,7 +2,7 @@ import {
   notifyReport,
   notifyRetry,
   reportRefusal,
-} from '@pommora/core/Interface/Notifications/notifications'
+} from '../../Interface/Notifications/notifications'
 import { useRef, useState, type ReactNode } from 'react'
 import { Icon, type IconName } from '@pommora/uix/Symbols'
 import type { IconSize } from '@pommora/uix/Theme'
@@ -14,11 +14,11 @@ import {
   type PropertyDefinition,
   PROPERTY_TYPES,
   type PropertyType,
-} from '@pommora/core/Properties/properties'
-import type { Result } from '@pommora/core/Contract/result'
-import type { SchemaCascade } from '@pommora/core/Properties/propertyJournal'
-import type { ColumnStyle } from '@pommora/core/Properties/columnStyles'
-import type { CollectionNode, SetNode } from '@pommora/core/Nexus/tree'
+} from '../properties'
+import type { Result } from '../../Contract/result'
+import type { SchemaCascade } from '../propertyJournal'
+import type { ColumnStyle } from '../columnStyles'
+import type { CollectionNode, SetNode } from '../../Nexus/tree'
 import { useActiveView } from '../../Views/Host/useActiveView'
 import { useSaveView } from '../../Views/viewWrite'
 import { pickedStyle, useNexusForms, useStyleFor } from '../../Views/Host/useColumnStyles'
@@ -63,7 +63,7 @@ import { askDestroyProperty, notifyTrashed } from '../../Interface/Confirm/confi
 import { displayPropertyName, useCapitalizeMetadata } from '../Cells/columnLabel'
 import { dialer } from '../../Platform/dialer'
 import { popMenu } from '../../Actions/menuActions'
-import { propertyMenuModel } from '@pommora/core/Actions/propertyMenu'
+import { propertyMenuModel } from '../../Actions/propertyMenu'
 
 type SubView = { kind: 'list' } | { kind: 'type' } | { kind: 'edit'; id: string }
 type WriteResult = Result<null>

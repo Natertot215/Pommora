@@ -1,8 +1,8 @@
 // Pinned to en-US — the ordinal-day style ("March 1st") is English-only, and pinning keeps output deterministic across machines.
 
-import type { DateFormat, TimeFormat, WeekdayFormat } from '@pommora/core/Properties/columnStyles'
-import type { DateGranularity, DateSeparator } from '@pommora/core/Views/views'
-import { DEFAULT_CURRENCY, type NumberConfig } from '@pommora/core/Properties/properties'
+import type { DateFormat, TimeFormat, WeekdayFormat } from './columnStyles'
+import type { DateGranularity, DateSeparator } from '../Views/views'
+import { DEFAULT_CURRENCY, type NumberConfig } from './properties'
 import { pad } from '@pommora/uix/Utilities/pad'
 
 // Intl formatter construction is pricey and the card grid formats per-cell, so formatters cache by options tuple; en-US is pinned everywhere, so the key is the options alone.

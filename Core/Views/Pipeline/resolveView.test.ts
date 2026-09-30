@@ -1,16 +1,10 @@
 import { describe, it, expect } from 'vitest'
-import { ID_KEY } from '@pommora/core/Nexus/identityMark'
-import fixture from '@pommora/core/Testing/fixtures/collection-with-status.json'
-import registry from '@pommora/core/Testing/fixtures/registry.json'
-import type { CollectionNode, PageNode } from '@pommora/core/Nexus/tree'
-import {
-  savedView,
-  mintDefaultView,
-  LOCATION_SORT,
-  type SavedView,
-} from '@pommora/core/Views/views'
-import type { SetNode } from '@pommora/core/Nexus/tree'
-import { propertyDefinition, type PropertyDefinition } from '@pommora/core/Properties/properties'
+import { ID_KEY } from '../../Nexus/identityMark'
+import fixture from '../../Testing/fixtures/collection-with-status.json'
+import registry from '../../Testing/fixtures/registry.json'
+import type { CollectionNode, PageNode, SetNode } from '../../Nexus/tree'
+import { savedView, mintDefaultView, LOCATION_SORT, type SavedView } from '../views'
+import { propertyDefinition, type PropertyDefinition } from '../../Properties/properties'
 import { flattenContainer, groupPlan } from './group'
 import { resolveView as resolveViewOf } from './resolveView'
 import { pageValues, propsAtRoot } from '../../Testing/pageValues'

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { composeWebpageEmbedLine, markdownLinkRegex } from '@pommora/core/Connections/links'
+import { composeWebpageEmbedLine, markdownLinkRegex } from '../../Connections/links'
 import { tokenize } from './tokens'
 import { scanDoc } from './docScan'
 import { isBlockquoteLine, quoteDepthOf } from './markdownCode'
@@ -15,7 +15,7 @@ import {
   scanFencedCode,
   splitWithOffsets,
 } from './detect'
-import { pageEmbedPattern, pageLinkPattern } from '@pommora/core/Connections/connections'
+import { pageEmbedPattern, pageLinkPattern } from '../../Connections/connections'
 
 describe('thematic break (HR)', () => {
   it('treats ---, ***, ___ as HR; rejects too-short / list lines', () => {

@@ -1,4 +1,4 @@
-import { reportRefusal } from '@pommora/core/Interface/Notifications/notifications'
+import { reportRefusal } from '../Interface/Notifications/notifications'
 import { PathField } from '@pommora/uix/Fields/PathField'
 import { SettingsFieldRow } from './SettingsFieldRow'
 import { useSession } from '../Session/store'

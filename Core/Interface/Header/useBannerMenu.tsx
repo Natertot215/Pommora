@@ -1,17 +1,13 @@
 import { type ReactNode, type RefObject, useContext, useState } from 'react'
-import { valueOr } from '@pommora/core/Contract/result'
+import { valueOr } from '../../Contract/result'
 import { useSession } from '../../Session/store'
-import type { BannerOwnerKind } from '@pommora/core/Nexus/mutateRequest'
-import type { Crop } from '@pommora/core/Nexus/schemas'
+import type { BannerOwnerKind } from '../../Nexus/mutateRequest'
+import type { Crop } from '../../Nexus/schemas'
 import { GhostSuppress } from '@pommora/uix/Interactions/ghostCreate'
 import { dialer } from '../../Platform/dialer'
 import { ImagePicker } from '../../Assets/ImagePicker'
 import { popMenu } from '../../Actions/menuActions'
-import {
-  type BannerMenuAction,
-  bannerMenuItems,
-  withSearchRow,
-} from '@pommora/core/Actions/identityMenus'
+import { type BannerMenuAction, bannerMenuItems, withSearchRow } from '../../Actions/identityMenus'
 
 export function useBannerMenu(
   path: string,

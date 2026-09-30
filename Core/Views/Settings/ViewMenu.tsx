@@ -1,5 +1,5 @@
-import { reportRefusal } from '@pommora/core/Interface/Notifications/notifications'
-import type { CollectionNode, SetNode } from '@pommora/core/Nexus/tree'
+import { reportRefusal } from '../../Interface/Notifications/notifications'
+import type { CollectionNode, SetNode } from '../../Nexus/tree'
 import { MenuDropdown } from '@pommora/uix/Menus'
 import { useSession } from '../../Session/store'
 import { findCollection, findSet } from '../../Nexus/treeIndex'
@@ -10,7 +10,7 @@ import { viewGlyph } from '../viewIcon'
 import * as s from '../../Interface/Toolbar/toolbar-menu.css'
 import { dialer } from '../../Platform/dialer'
 import { popMenu } from '../../Actions/menuActions'
-import { viewButtonMenuItems } from '@pommora/core/Actions/viewMenus'
+import { viewButtonMenuItems } from '../../Actions/viewMenus'
 
 /** Renders only on a Collection / depth-1 Set; a sub-Set's edits save to its one view. */
 export function ViewMenu(): React.JSX.Element | null {

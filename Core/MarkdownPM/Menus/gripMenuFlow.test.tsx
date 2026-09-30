@@ -3,10 +3,10 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { act } from 'react'
 import type { EditorView } from '@codemirror/view'
 import type { ConnectionsApi } from '../Links/connectionsApi'
-import { buildPageIndex } from '@pommora/core/Connections/pageIndex'
+import { buildPageIndex } from '../../Connections/pageIndex'
 import { cleanupEditor, mountEditor, seedHost, stubEditorBridge } from '../../Testing/editorHarness'
-import { type GripMenuAction, gripMenuItems } from '@pommora/core/Actions/gripMenu'
-import type { ActionItem, PickItem } from '@pommora/core/Actions/menuModel'
+import { type GripMenuAction, gripMenuItems } from '../../Actions/gripMenu'
+import type { ActionItem, PickItem } from '../../Actions/menuModel'
 import { HEADING_LINE } from '../folding'
 
 const calls: (readonly ActionItem<string>[])[] = []

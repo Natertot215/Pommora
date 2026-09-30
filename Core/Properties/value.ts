@@ -1,15 +1,15 @@
 // Two axes that must not be confused: declaredType is the column's SCHEMA type, whose record entry sort, filter and grouping classify by; resolveFieldValue is the row's VALUE, decoded definition-first — never inferred from a value's shape, so a Link column always reads as a link.
 
-import type { ResolvedColumn, ViewRow } from '@pommora/core/Views/viewRow'
-import type { PageFrontmatter } from '@pommora/core/Nexus/schemas'
+import type { ResolvedColumn, ViewRow } from '../Views/viewRow'
+import type { PageFrontmatter } from '../Nexus/schemas'
 import {
   type PropertyDefinition,
   type PropertyType,
   RESERVED_PROPERTY_ID,
   STAMP_TYPE,
-} from '@pommora/core/Properties/properties'
-import { decodeValue, NULL_VALUE, type PropertyValue } from '@pommora/core/Properties/propertyValue'
-import { parseConnectionText } from '@pommora/core/Connections/connections'
+} from './properties'
+import { decodeValue, NULL_VALUE, type PropertyValue } from './propertyValue'
+import { parseConnectionText } from '../Connections/connections'
 
 export function declaredType(
   propertyId: string,

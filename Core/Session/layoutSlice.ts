@@ -1,4 +1,4 @@
-import type { HostPlatform } from '@pommora/core/Contract/bridge'
+import type { HostPlatform } from '../Contract/bridge'
 import { SIDE_PANE_WIDTH, SIDEBAR_WIDTH } from '../Settings/devicePrefs'
 import type { Slice } from './sessionState'
 

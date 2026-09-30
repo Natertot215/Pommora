@@ -14,7 +14,7 @@ import {
 import { toggled } from '@pommora/uix/Utilities/checkSet'
 import { docOutline, docScan } from '../docCache'
 import { inCodeAt } from '../Engine/docScan'
-import { linkAt, normalizeTitle, pageLinkPattern } from '@pommora/core/Connections/connections'
+import { linkAt, normalizeTitle, pageLinkPattern } from '../../Connections/connections'
 import { restedOnLink } from '../Links/linkReveal'
 import { headingTargetOf } from './headingTarget'
 import type { AutocompletePaneProps } from './AutocompletePane'

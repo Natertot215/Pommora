@@ -1,9 +1,9 @@
 // Per-page value fixtures for view and property suites: frontmatter keyed by the property NAME the file carries, and the loadValues reply a stubbed dialer answers with.
 
-import type { PropertyDefinition } from '@pommora/core/Properties/properties'
-import type { PageFrontmatter } from '@pommora/core/Nexus/schemas'
-import { ok, type Result } from '@pommora/core/Contract/result'
-import type { PageValues } from '@pommora/core/Views/viewRow'
+import type { PropertyDefinition } from '../Properties/properties'
+import type { PageFrontmatter } from '../Nexus/schemas'
+import { ok, type Result } from '../Contract/result'
+import type { PageValues } from '../Views/viewRow'
 
 export const propsAtRoot = (
   props: Record<string, unknown>,

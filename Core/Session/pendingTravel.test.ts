@@ -1,10 +1,10 @@
 // @vitest-environment jsdom
-import { detail } from '@pommora/core/Testing/fixtures'
+import { detail } from '../Testing/fixtures'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { act, createElement } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
-import { ok } from '@pommora/core/Contract/result'
-import type { PageTarget, SelectTarget } from '@pommora/core/Navigation/navRef'
+import { ok } from '../Contract/result'
+import type { PageTarget, SelectTarget } from '../Navigation/navRef'
 import { NO_PREFS } from '../Testing/editorHarness'
 import { PageView } from '../Pages/PageView'
 import { stubDialer } from '../vitest.setup'

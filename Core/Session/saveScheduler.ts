@@ -1,8 +1,8 @@
 // One debounced writer PER PATH, shared by every host that edits a page, so the newest edit from ANY host owns the file's single pending write rather than hosts racing private debounces to last-writer-wins.
 
-import type { WindowsFile } from '@pommora/core/Interface/Windows/windowRecord'
-import type { StoredTabSet } from '@pommora/core/Navigation/navRef'
-import type { Result } from '@pommora/core/Contract/result'
+import type { WindowsFile } from '../Interface/Windows/windowRecord'
+import type { StoredTabSet } from '../Navigation/navRef'
+import type { Result } from '../Contract/result'
 import { persist } from '../Interface/Notifications/notifications'
 import { followBody, readBodyBase, setBodyBase, writeThroughBody } from './pageDetailCache'
 import { dialer } from '../Platform/dialer'

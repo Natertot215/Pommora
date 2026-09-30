@@ -1,13 +1,13 @@
 // @vitest-environment jsdom
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { ok } from '@pommora/core/Contract/result'
+import { ok } from '../../Contract/result'
 import { act } from 'react'
 import type { EditorView } from '@codemirror/view'
-import { type ConnMenuAction, connectionMenuModel } from '@pommora/core/Actions/connectionMenu'
-import { INSERT_LINK_ACTION } from '@pommora/core/Actions/editorMenu'
-import { linkMarkdown } from '@pommora/core/Connections/linkValue'
+import { type ConnMenuAction, connectionMenuModel } from '../../Actions/connectionMenu'
+import { INSERT_LINK_ACTION } from '../../Actions/editorMenu'
+import { linkMarkdown } from '../../Connections/linkValue'
 import type { ConnectionsApi } from './connectionsApi'
-import { buildPageIndex } from '@pommora/core/Connections/pageIndex'
+import { buildPageIndex } from '../../Connections/pageIndex'
 import { showConnectionMenu } from '../../Interface/Menus/connectionMenuActions'
 import { applyEditorAction } from '../Menus/menu'
 import {

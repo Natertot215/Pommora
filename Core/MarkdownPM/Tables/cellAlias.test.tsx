@@ -6,7 +6,7 @@ import { EditorView } from '@codemirror/view'
 import { MarkdownTable } from './MarkdownTable'
 import { testHost } from '../../Testing/editorHarness'
 import type { ConnectionsApi } from '../Links/connectionsApi'
-import { buildPageIndex } from '@pommora/core/Connections/pageIndex'
+import { buildPageIndex } from '../../Connections/pageIndex'
 import type { TableModel } from '../Engine/Tables/model'
 
 ;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true

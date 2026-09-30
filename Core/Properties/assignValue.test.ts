@@ -1,8 +1,8 @@
 // @vitest-environment jsdom
 import { beforeEach, describe, expect, it, type Mock, vi } from 'vitest'
 import type { RefObject } from 'react'
-import type { PageFrontmatter } from '@pommora/core/Nexus/schemas'
-import type { ViewRow } from '@pommora/core/Views/viewRow'
+import type { PageFrontmatter } from '../Nexus/schemas'
+import type { ViewRow } from '../Views/viewRow'
 import type { PropertyDefinition } from './properties'
 import { assignValue, type ValueWriter } from './assignValue'
 import { groupUndo, resetUndo, undoValue } from '../Session/undo'

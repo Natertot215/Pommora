@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import type { TileHostRef } from '@pommora/core/Tiles/tiles'
+import type { TileHostRef } from '../tiles'
 import { MarkdownEditor } from '../../MarkdownPM/MarkdownEditor'
 import type { ConnectionsApi } from '../../MarkdownPM/Links/connectionsApi'
 import { useEditorHost } from '../../Pages/editorHost'
@@ -13,7 +13,7 @@ import {
   writeTileBody,
 } from '../tileDocStore'
 import { dialer } from '../../Platform/dialer'
-import { ok } from '@pommora/core/Contract/result'
+import { ok } from '../../Contract/result'
 import { merge3 } from '../../Pages/merge3'
 import { useLatest } from '@pommora/uix/Utilities/stableApi'
 import { cx } from '@pommora/uix/Utilities/cx'

@@ -1,5 +1,5 @@
 import type { Dispatch, SetStateAction } from 'react'
-import type { PageFrontmatter } from '@pommora/core/Nexus/schemas'
+import type { PageFrontmatter } from '../Nexus/schemas'
 
 // `write` is the save while it's pending and the settle count it took once it lands, so a read retires only what settled before it was issued.
 type OverrideEntry = {

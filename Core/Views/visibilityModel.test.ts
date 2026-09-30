@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import { RESERVED_PROPERTY_ID, type PropertyDefinition } from '@pommora/core/Properties/properties'
-import type { SavedView } from '@pommora/core/Views/views'
+import { RESERVED_PROPERTY_ID, type PropertyDefinition } from '../Properties/properties'
+import type { SavedView } from './views'
 import { hiddenListIds, hideShown, placeInShown, unhide } from './visibilityModel'
 
 const { title, createdAt, modifiedAt } = RESERVED_PROPERTY_ID

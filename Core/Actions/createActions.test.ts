@@ -1,8 +1,8 @@
 // @vitest-environment jsdom
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { DEFAULT_NEW_NAME, type MutateRequest, NEW_SLOT } from '@pommora/core/Nexus/mutateRequest'
-import type { SelectionState } from '@pommora/core/Navigation/navRef'
-import type { Personalization } from '@pommora/core/Settings/personalization'
+import { DEFAULT_NEW_NAME, type MutateRequest, NEW_SLOT } from '../Nexus/mutateRequest'
+import type { SelectionState } from '../Navigation/navRef'
+import type { Personalization } from '../Settings/personalization'
 import { makeTree } from '../Testing/testTree'
 import { useSession } from '../Session/store'
 import { createNamed, newPage, newPageAdjacent, newSpaceAdjacent } from './createActions'

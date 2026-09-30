@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { EditorState } from '@codemirror/state'
 import { embedExclusions, embedTileRanges, embedTiles } from './embedWidget'
 import type { ConnectionsApi } from '../Links/connectionsApi'
-import { buildPageIndex } from '@pommora/core/Connections/pageIndex'
+import { buildPageIndex } from '../../Connections/pageIndex'
 import { editorHost } from '../api'
 import { testHost } from '../../Testing/editorHarness'
 

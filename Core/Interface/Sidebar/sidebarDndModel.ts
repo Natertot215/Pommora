@@ -1,9 +1,9 @@
-import type { NexusTree } from '@pommora/core/Nexus/tree'
-import type { MutateRequest } from '@pommora/core/Nexus/mutateRequest'
-import { placementOf, type Personalization } from '@pommora/core/Settings/personalization'
+import type { NexusTree } from '../../Nexus/tree'
+import type { MutateRequest } from '../../Nexus/mutateRequest'
+import { placementOf, type Personalization } from '../../Settings/personalization'
 import { INTO_EDGE, rank, type Row, walksTo } from '@pommora/uix/Interactions/reorderModel'
 import { nextOrder } from '@pommora/uix/Utilities/moveItem'
-import { contextDirRel } from '@pommora/core/Paths/nexusPaths'
+import { contextDirRel } from '../../Paths/nexusPaths'
 import { entityIcon } from '../../Assets/entityIconPolicy'
 import { nodesOf } from '../../Nexus/treeIndex'
 

@@ -1,6 +1,6 @@
 import { text } from '@pommora/uix/Theme'
 import { cx } from '@pommora/uix/Utilities/cx'
-import type { SelectionState } from '@pommora/core/Navigation/navRef'
+import type { SelectionState } from '../../Navigation/navRef'
 import { BoardLock } from '../../Tiles/BoardLock'
 import { useSession } from '../../Session/store'
 import { subfieldCrumbs } from './crumbs'

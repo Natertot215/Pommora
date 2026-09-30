@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { ok } from '@pommora/core/Contract/result'
-import type { NexusTree } from '@pommora/core/Nexus/tree'
+import { ok } from '../Contract/result'
+import type { NexusTree } from '../Nexus/tree'
 import { makeTree } from '../Testing/testTree'
 import { stubDialer } from '../vitest.setup'
 import { useSession } from './store'

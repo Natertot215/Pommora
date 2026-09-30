@@ -1,6 +1,6 @@
 import { useRef, useState } from 'react'
-import type { CollectionNode, SetNode } from '@pommora/core/Nexus/tree'
-import type { SavedView } from '@pommora/core/Views/views'
+import type { CollectionNode, SetNode } from '../../Nexus/tree'
+import type { SavedView } from '../views'
 import { reportRefusal } from '../../Interface/Notifications/notifications'
 import { deleteViewWithUndo } from '../deleteViewWithUndo'
 import { Icon } from '@pommora/uix/Symbols'

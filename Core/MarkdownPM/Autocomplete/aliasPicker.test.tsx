@@ -2,10 +2,10 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { act } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
-import { aliasSpanAt, emptyAliasPipeAt, linkAt } from '@pommora/core/Connections/connections'
+import { aliasSpanAt, emptyAliasPipeAt, linkAt } from '../../Connections/connections'
 import { aliasRows, type HeadingRow } from './autocomplete'
 import { AutocompletePane } from './AutocompletePane'
-import { buildPageIndex } from '@pommora/core/Connections/pageIndex'
+import { buildPageIndex } from '../../Connections/pageIndex'
 import type { EditorHost } from '../api'
 
 class ResizeObserverStub {

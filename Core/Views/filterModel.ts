@@ -1,19 +1,9 @@
 // Anything the frame can't faithfully represent decodes as `locked` rather than being silently flattened.
 
-import {
-  type PropertyDefinition,
-  RESERVED_PROPERTY_ID,
-  specOf,
-} from '@pommora/core/Properties/properties'
-import type { ValueKind } from '@pommora/core/Properties/propertyValue'
-import {
-  FILTER_OPS,
-  type FilterGroup,
-  type FilterRule,
-  isGroup,
-  type MatchMode,
-} from '@pommora/core/Views/views'
-import type { NexusTree } from '@pommora/core/Nexus/tree'
+import { type PropertyDefinition, RESERVED_PROPERTY_ID, specOf } from '../Properties/properties'
+import type { ValueKind } from '../Properties/propertyValue'
+import { FILTER_OPS, type FilterGroup, type FilterRule, isGroup, type MatchMode } from './views'
+import type { NexusTree } from '../Nexus/tree'
 import { contextIdsOf } from '../Contexts/contextIdentity'
 import { declaredType } from '../Properties/value'
 import {

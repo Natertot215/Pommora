@@ -1,13 +1,9 @@
 import type { RefObject } from 'react'
-import type { PageFrontmatter } from '@pommora/core/Nexus/schemas'
-import type { MutateOutcome, MutateRequest } from '@pommora/core/Nexus/mutateRequest'
-import type { PropertyDefinition } from '@pommora/core/Properties/properties'
-import {
-  applyValueAtRoot,
-  isBlankValue,
-  type PropertyValue,
-} from '@pommora/core/Properties/propertyValue'
-import type { ResolvedColumn, ViewRow } from '@pommora/core/Views/viewRow'
+import type { PageFrontmatter } from '../Nexus/schemas'
+import type { MutateOutcome, MutateRequest } from '../Nexus/mutateRequest'
+import type { PropertyDefinition } from './properties'
+import { applyValueAtRoot, isBlankValue, type PropertyValue } from './propertyValue'
+import type { ResolvedColumn, ViewRow } from '../Views/viewRow'
 import { resolveFieldValue } from './value'
 import { pushUndo } from '../Session/undo'
 

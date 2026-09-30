@@ -1,4 +1,4 @@
-import type { ActionItem } from '@pommora/core/Actions/menuModel'
+import type { ActionItem } from '../../Actions/menuModel'
 
 export type PresenterRow<A> = { kind: 'separator' } | ({ kind: 'item' } & ActionItem<A>)
 

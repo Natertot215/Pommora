@@ -14,17 +14,11 @@ import { IconChoice } from '../Assets/IconChoice'
 import { InlineEditHeader } from '@pommora/uix/Menus/InlineEditHeader'
 import { PropertyPanel } from '../Properties/PropertyPanel'
 import { ICON } from '@pommora/uix/Menus/frames.css'
-import {
-  COPY_LINK_ROW,
-  DELETE_ROW,
-  HISTORY_ROW,
-  RENAME_ROW,
-  REVEAL_ROW,
-} from '@pommora/core/Actions/pageMenu'
-import { joinGroups } from '@pommora/core/Actions/menuModel'
+import { COPY_LINK_ROW, DELETE_ROW, HISTORY_ROW, RENAME_ROW, REVEAL_ROW } from '../Actions/pageMenu'
+import { joinGroups } from '../Actions/menuModel'
 import { runPageAction } from '../Interface/Menus/pageMenuActions'
 import { popMenu } from '../Actions/menuActions'
-import { lockLabel } from '@pommora/core/Actions/toggleLabels'
+import { lockLabel } from '../Actions/toggleLabels'
 import { useExperimental } from '../Settings/experimental'
 
 const FOOTER_ROWS = joinGroups([

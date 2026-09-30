@@ -1,7 +1,7 @@
 // An entry that no longer resolves is RENDER-pruned, never dropped from storage — a cross-nexus switch resolves everything to null, and auto-deleting would wipe durable pins.
 
-import { navKey, type NavRef, type WindowTarget } from '@pommora/core/Navigation/navRef'
-import type { NexusTree } from '@pommora/core/Nexus/tree'
+import { navKey, type NavRef, type WindowTarget } from './navRef'
+import type { NexusTree } from '../Nexus/tree'
 import type { TrailSegment } from '@pommora/uix/Elements/NavTrail'
 import { pagesByIdOf } from '../Nexus/treeIndex'
 

@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useLatest } from '@pommora/uix/Utilities/stableApi'
 import { useHeld } from '@pommora/uix/Animations/useExitPresence'
-import type { PropertyValue } from '@pommora/core/Properties/propertyValue'
+import type { PropertyValue } from '../../Properties/propertyValue'
 import { PropertyValueInput } from '../../Properties/Pickers/PropertyValueInput'
 import { PropertyPicker } from '../../Properties/Pickers/PropertyPicker'
 import { useSession } from '../../Session/store'

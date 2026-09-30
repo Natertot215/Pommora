@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { Compartment, EditorState } from '@codemirror/state'
 import { keymap } from '@codemirror/view'
-import { DEFAULT_COMMANDS, toKeyBinding } from '@pommora/core/Actions/commands'
+import { DEFAULT_COMMANDS, toKeyBinding } from '../../Actions/commands'
 import { FORMAT_ACTIONS, formatKeymap } from './formatKeymap'
 
 const boundKeys = (state: EditorState): (string | undefined)[] =>

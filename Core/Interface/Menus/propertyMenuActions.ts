@@ -1,13 +1,9 @@
-import { parsePropertyAction, type PropertyMenuRow } from '@pommora/core/Actions/propertyRows'
-import type { NexusTree } from '@pommora/core/Nexus/tree'
-import {
-  pickKindOf,
-  PROPERTY_TYPES,
-  type PropertyDefinition,
-} from '@pommora/core/Properties/properties'
-import type { PropertyValue } from '@pommora/core/Properties/propertyValue'
-import type { ColumnStyle } from '@pommora/core/Properties/columnStyles'
-import type { ResolvedColumn, ViewRow } from '@pommora/core/Views/viewRow'
+import { parsePropertyAction, type PropertyMenuRow } from '../../Actions/propertyRows'
+import type { NexusTree } from '../../Nexus/tree'
+import { pickKindOf, PROPERTY_TYPES, type PropertyDefinition } from '../../Properties/properties'
+import type { PropertyValue } from '../../Properties/propertyValue'
+import type { ColumnStyle } from '../../Properties/columnStyles'
+import type { ResolvedColumn, ViewRow } from '../../Views/viewRow'
 import { contextIdsOf, contextsByIdOf } from '../../Contexts/contextIdentity'
 import { contextOptionsFor } from '../../Contexts/contextOptions'
 import { columnLabel } from '../../Properties/Cells/columnLabel'

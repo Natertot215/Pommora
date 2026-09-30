@@ -1,13 +1,8 @@
-import type { CollectionNode, SetNode } from '@pommora/core/Nexus/tree'
-import type { ColumnStyle } from '@pommora/core/Properties/columnStyles'
-import type { PropertyDefinition } from '@pommora/core/Properties/properties'
-import { isEmptyBand, type ResolvedGroup } from '@pommora/core/Views/viewRow'
-import {
-  granularityOf,
-  type SavedView,
-  type SubGroupConfig,
-  viewOption,
-} from '@pommora/core/Views/views'
+import type { CollectionNode, SetNode } from '../../Nexus/tree'
+import type { ColumnStyle } from '../../Properties/columnStyles'
+import type { PropertyDefinition } from '../../Properties/properties'
+import { isEmptyBand, type ResolvedGroup } from '../viewRow'
+import { granularityOf, type SavedView, type SubGroupConfig, viewOption } from '../views'
 import type { StepPart } from '@pommora/uix/Interactions/keyboard'
 import { type Geometry, INTO_EDGE, rank, walksTo } from '@pommora/uix/Interactions/reorderModel'
 import { asRenderableIcon } from '@pommora/uix/Symbols'

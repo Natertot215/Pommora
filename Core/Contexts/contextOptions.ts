@@ -1,4 +1,4 @@
-import type { NexusTree } from '@pommora/core/Nexus/tree'
+import type { NexusTree } from '../Nexus/tree'
 import type { PickOption } from '../Properties/properties'
 import { spacesByIdOf } from './contextIdentity'
 

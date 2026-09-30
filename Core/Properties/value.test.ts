@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest'
-import { ID_KEY } from '@pommora/core/Nexus/identityMark'
-import type { ViewRow } from '@pommora/core/Views/viewRow'
-import type { PropertyDefinition } from '@pommora/core/Properties/properties'
+import { ID_KEY } from '../Nexus/identityMark'
+import type { ViewRow } from '../Views/viewRow'
+import type { PropertyDefinition } from './properties'
 import { columnType, declaredType, fileName, resolveFieldValue } from './value'
 import { propsAtRoot } from '../Testing/pageValues'
 

@@ -1,9 +1,9 @@
 // @vitest-environment jsdom
-import { detail } from '@pommora/core/Testing/fixtures'
-import { makeTree } from '@pommora/core/Testing/testTree'
-import { ok } from '@pommora/core/Contract/result'
+import { detail } from '../Testing/fixtures'
+import { makeTree } from '../Testing/testTree'
+import { ok } from '../Contract/result'
 import { NO_PREFS } from '../Testing/editorHarness'
-import type { PageMeta } from '@pommora/core/Nexus/schemas'
+import type { PageMeta } from '../Nexus/schemas'
 import { describe, expect, it, vi } from 'vitest'
 import { act, createElement, isValidElement, type ReactElement } from 'react'
 import { createRoot } from 'react-dom/client'

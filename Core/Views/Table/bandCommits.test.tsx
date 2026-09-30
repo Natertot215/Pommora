@@ -1,20 +1,20 @@
 // @vitest-environment jsdom
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { ok } from '@pommora/core/Contract/result'
+import { ok } from '../../Contract/result'
 import { act } from 'react'
 import type { Root } from 'react-dom/client'
-import type { PropertyDefinition } from '@pommora/core/Properties/properties'
-import type { CollectionNode } from '@pommora/core/Nexus/tree'
-import type { SavedView } from '@pommora/core/Views/views'
+import type { PropertyDefinition } from '../../Properties/properties'
+import type { CollectionNode } from '../../Nexus/tree'
+import type { SavedView } from '../views'
 import { firePointer, pressEscape, stubRect } from '@pommora/uix/Testing/pointerHarness'
 import { mountEachTest, renderView, settle } from '../../Testing/viewHarness'
 import { useSession } from '../../Session/store'
 import { propsAtRoot, valuesReply } from '../../Testing/pageValues'
-import { ID_KEY } from '@pommora/core/Nexus/identityMark'
+import { ID_KEY } from '../../Nexus/identityMark'
 import { stubDialer } from '../../vitest.setup'
 import { currentNotification } from '../../Interface/Notifications/notifications'
-import { entityMenuItems } from '@pommora/core/Actions/entityMenu'
-import { containerCreators } from '@pommora/core/Actions/createMenu'
+import { entityMenuItems } from '../../Actions/entityMenu'
+import { containerCreators } from '../../Actions/createMenu'
 
 const statusDef: PropertyDefinition = {
   id: 'prop_status',

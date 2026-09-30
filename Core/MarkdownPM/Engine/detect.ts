@@ -11,9 +11,9 @@ import {
   quotePrefixWidth,
   type CodeMask,
 } from './markdownCode'
-import { emptyTolerantLinkRegex, unescapeAlias } from '@pommora/core/Connections/links'
-import { isValidLink, WEB_ADDRESS } from '@pommora/core/Paths/urlPath'
-import type { ListKind } from '@pommora/core/Actions/gripMenu'
+import { emptyTolerantLinkRegex, unescapeAlias } from '../../Connections/links'
+import { isValidLink, WEB_ADDRESS } from '../../Paths/urlPath'
+import type { ListKind } from '../../Actions/gripMenu'
 export const highlightRegex = (): RegExp => /(?<!=)==(?!=)((?:[^=\n]|=(?!=))+)==(?!=)/dg
 export const inlineLatexRegex = (): RegExp => /(?<!\$)\$(?!\$)([^$\n]+?)\$(?!\$)/dg
 

@@ -6,7 +6,7 @@ import {
   spaceIdentityOf,
   spacesByIdOf,
 } from './contextIdentity'
-import type { NexusTree } from '@pommora/core/Nexus/tree'
+import type { NexusTree } from '../Nexus/tree'
 
 const mkTree = (): NexusTree =>
   ({

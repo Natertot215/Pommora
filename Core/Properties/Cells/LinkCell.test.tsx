@@ -2,7 +2,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { act, createElement } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
-import { makeTree } from '@pommora/core/Testing/testTree'
+import { makeTree } from '../../Testing/testTree'
 import { useSession } from '../../Session/store'
 import { LinkCell } from './LinkCell'
 ;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true

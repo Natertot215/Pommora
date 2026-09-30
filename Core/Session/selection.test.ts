@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest'
-import { ASSETS_DIR_REL } from '@pommora/core/Paths/nexusPaths'
-import type { NexusTree } from '@pommora/core/Nexus/tree'
-import type { SelectionState } from '@pommora/core/Navigation/navRef'
+import { ASSETS_DIR_REL } from '../Paths/nexusPaths'
+import type { NexusTree } from '../Nexus/tree'
+import type { SelectionState } from '../Navigation/navRef'
 import { reconcileSelection } from './reconcileSelection'
 import { DEFAULT_COMMANDS } from '../Actions/commands'
 

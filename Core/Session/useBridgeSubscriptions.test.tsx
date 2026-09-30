@@ -2,11 +2,11 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { act, createElement } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
-import { detail } from '@pommora/core/Testing/fixtures'
-import type { SyncStatus } from '@pommora/core/Sync/Contract/wire'
-import { ok } from '@pommora/core/Contract/result'
-import { EMPTY_ASSET_MAP, type ValueChange } from '@pommora/core/Nexus/tree'
-import { makeTree } from '@pommora/core/Testing/testTree'
+import { detail } from '../Testing/fixtures'
+import type { SyncStatus } from '../Sync/Contract/wire'
+import { ok } from '../Contract/result'
+import { EMPTY_ASSET_MAP, type ValueChange } from '../Nexus/tree'
+import { makeTree } from '../Testing/testTree'
 import {
   attachBody,
   cachePageDetail,
