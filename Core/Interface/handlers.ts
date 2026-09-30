@@ -24,15 +24,15 @@ export const scopeSet = (scope: Scope, valid: (v: unknown) => boolean, expected:
     return writeKey(scope, key, isEmptyValue(value) ? null : value) ? ok(null) : NO_STORE
   })
 
-const isHeightMap = (v: unknown): v is Record<string, number> =>
+const isPositiveMap = (v: unknown): v is Record<string, number> =>
   isPlainObject(v) && Object.values(v).every((h) => isFiniteNumber(h) && h > 0)
 const isIndexArray = (v: unknown): v is number[] =>
   Array.isArray(v) && v.every((x) => Number.isInteger(x) && x >= 0)
 
 const editorPrefShapes: Record<keyof EditorPrefs, (v: unknown) => boolean> = {
   folds: isStringArray,
-  embedHeights: isHeightMap,
-  embedZooms: isHeightMap,
+  embedHeights: isPositiveMap,
+  embedZooms: isPositiveMap,
   headingCols: isIndexArray,
 }
 

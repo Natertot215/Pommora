@@ -3,6 +3,7 @@ import { layer, RectangleMarker, type EditorView } from '@codemirror/view'
 import { EditorSelection } from '@codemirror/state'
 import { restartBlink } from '@pommora/uix/Theme/nativeCaret'
 import { embedTileRanges } from './Embeds/embedWidget'
+import { textColumn } from './lineDom'
 
 // A doc-edge tile owns the only legal seats inside its atomic span, and measuring those yields the tile box itself — so draw where the seat's insertion will land.
 function tileEdgeMarker(view: EditorView, head: number): RectangleMarker | null {
@@ -10,11 +11,10 @@ function tileEdgeMarker(view: EditorView, head: number): RectangleMarker | null 
   if (!tile) return null
   const lb = view.lineBlockAt(tile.from)
   const sr = view.scrollDOM.getBoundingClientRect()
-  const cr = view.contentDOM.getBoundingClientRect()
-  const cs = getComputedStyle(view.contentDOM)
   // Body height, not defaultLineHeight — CM measures the latter off its default font, taller than body lines render.
-  const lh = Number.parseFloat(cs.lineHeight) || view.defaultLineHeight
-  const left = cr.left + Number.parseFloat(cs.paddingLeft) - (sr.left - view.scrollDOM.scrollLeft)
+  const lh =
+    Number.parseFloat(getComputedStyle(view.contentDOM).lineHeight) || view.defaultLineHeight
+  const left = textColumn(view).left - (sr.left - view.scrollDOM.scrollLeft)
   const topDoc = head === tile.to ? lb.bottom : lb.top - lh
   const top = view.documentTop + topDoc - (sr.top - view.scrollDOM.scrollTop)
   return new RectangleMarker('caret-bar', left, top, null, lh)

@@ -46,7 +46,7 @@ import { tableMergeGuard, tablePasteGuard } from '../Guards/tableGuard'
 import type { TableModel } from '../Engine/Tables/model'
 import type { ConnectionsApi } from '../Links/connectionsApi'
 import type { TableMenuAction, TableMenuContext } from './tableMenu'
-import { editorHost, resolutionNudge } from '../api'
+import { editorHost, persistPref, resolutionNudge } from '../api'
 import type { HeadingLinkStyle } from '../../Settings/personalization'
 
 type ConnGetter = () => ConnectionsApi | undefined
@@ -556,11 +556,11 @@ export function tableWidgetExtension(connections?: ConnGetter): Extension {
     tablePasteGuard,
     EditorView.atomicRanges.of((view) => view.state.field(widgetField)),
     connections ? tableConnections.of(connections) : [],
-    // Any change to the set is written back — a toggle, or a remap correcting stale ordinals so a reload can't re-apply them — but not a load, which is where the set came from.
-    EditorView.updateListener.of((u) => {
-      if (u.startState.field(headingColField) === u.state.field(headingColField)) return
-      if (u.transactions.some((tr) => tr.effects.some((e) => e.is(setHeadingColsEffect)))) return
-      u.state.facet(editorHost).prefs?.save('headingCols', [...u.state.field(headingColField)])
-    }),
+    // A remap correcting stale ordinals is written back too, so a reload can't re-apply them.
+    persistPref(
+      (s) => s.field(headingColField),
+      setHeadingColsEffect,
+      (set) => ['headingCols', [...set]],
+    ),
   ]
 }

@@ -17,8 +17,18 @@ export function textColumn(view: EditorView): { left: number; right: number } {
   }
 }
 
+// A tile nests whole editors inside this one's content, so an element is this editor's own only when no nearer content claims it.
+export function ownElements<E extends HTMLElement = HTMLElement>(
+  view: EditorView,
+  selector: string,
+): E[] {
+  return [...view.contentDOM.querySelectorAll<E>(selector)].filter(
+    (el) => el.closest('.cm-content') === view.contentDOM,
+  )
+}
+
 // The band a grip answers a press in: the gutter left of the line box on a page, and, where `--grip-strip` names one, that many pixels INTO the box — a table cell has no gutter, so its grip sits in the list's own inset.
-export function inGripStrip(e: { clientX: number }, line: HTMLElement): boolean {
+function inGripStrip(e: { clientX: number }, line: HTMLElement): boolean {
   const inset = parseFloat(getComputedStyle(line).getPropertyValue('--grip-strip')) || 0
   return e.clientX < line.getBoundingClientRect().left + inset
 }

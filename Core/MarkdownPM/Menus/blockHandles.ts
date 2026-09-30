@@ -5,7 +5,7 @@ import { docScan } from '../docCache'
 import type { Extension, Range } from '@codemirror/state'
 import { type Block, blockAt, blockStarts } from '../Engine/blockModel'
 import { GRIP_HOST, GRIP_LINE } from '../Engine/intents'
-import { lineElementAt, textColumn } from '../lineDom'
+import { lineElementAt, ownElements, textColumn } from '../lineDom'
 import type { MarkdownScope } from '../Engine/detect'
 import { REVEAL_REACH, type Reach, withinReach } from '@pommora/uix/Interactions/hoverReveal'
 
@@ -69,9 +69,10 @@ class TagReveal {
     this.request = {
       read: () => ({
         font: parseFloat(getComputedStyle(view.contentDOM).fontSize),
-        tags: Array.from(view.contentDOM.querySelectorAll<HTMLElement>('.codeblock-language'))
-          .filter((el) => el.closest('.cm-content') === view.contentDOM)
-          .map((el) => ({ el, box: el.getBoundingClientRect() })),
+        tags: ownElements(view, '.codeblock-language').map((el) => ({
+          el,
+          box: el.getBoundingClientRect(),
+        })),
       }),
       write: (m) => {
         this.fontPx = m.font
