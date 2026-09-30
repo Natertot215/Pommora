@@ -5,7 +5,7 @@ import {
   filterBlockMenu,
   type BlockMenuMatch,
 } from '@pommora/core/Actions/blockMenu'
-import { inSealedBlockAt, type DocScan } from '../Engine/docScan'
+import { inSealedLine, type DocScan } from '../Engine/docScan'
 import { lineIndexAt } from '../Engine/markdownCode'
 import { docScan } from '../docCache'
 
@@ -20,7 +20,7 @@ export function blockQueryAt(scan: DocScan, caret: number): BlockQuery | null {
   const from = scan.lineStarts[i]
   const match = /^\/(\S*)$/.exec(scan.lines[i])
   if (!match || caret !== from + scan.lines[i].length) return null
-  if (inSealedBlockAt(scan, i) || i >= scan.citations.firstLine) return null
+  if (inSealedLine(scan, i) || i >= scan.citations.firstLine) return null
   return { query: match[1], from, to: caret }
 }
 

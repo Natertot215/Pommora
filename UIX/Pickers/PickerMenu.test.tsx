@@ -16,12 +16,12 @@ class ResizeObserverStub {
 
 function Host({
   open,
-  manageFocus,
+  focus,
   bounds,
   origin,
 }: {
   open: boolean
-  manageFocus?: boolean
+  focus?: 'trap' | 'leave' | 'keep'
   bounds?: { left: number; right: number }
   origin?: 'auto' | 'center' | 'left' | 'right'
 }): React.JSX.Element {
@@ -47,7 +47,7 @@ function Host({
         triggerRef={ref}
         {...(bounds ? { bounds } : {})}
         {...(origin ? { origin } : {})}
-        {...(manageFocus === undefined ? {} : { manageFocus })}
+        {...(focus === undefined ? {} : { focus })}
       >
         {menu}
       </PickerMenu>
@@ -367,11 +367,23 @@ describe('PickerMenu focus contract', () => {
     expect(document.activeElement).not.toBe(field)
   })
 
-  it('takes no focus when manageFocus is off', async () => {
-    await render(<Host open={false} manageFocus={false} />)
+  it('takes no focus on open when focus is left', async () => {
+    await render(<Host open={false} focus="leave" />)
     find('trigger').focus()
-    await render(<Host open manageFocus={false} />)
+    await render(<Host open focus="leave" />)
     expect(document.activeElement).toBe(find('trigger'))
+  })
+
+  it('refuses every press inside the pane only when focus is kept', async () => {
+    const press = (): boolean => {
+      const e = new MouseEvent('mousedown', { bubbles: true, cancelable: true })
+      find('first').dispatchEvent(e)
+      return e.defaultPrevented
+    }
+    await render(<Host open focus="leave" />)
+    expect(press()).toBe(false)
+    await render(<Host open focus="keep" />)
+    expect(press()).toBe(true)
   })
 })
 

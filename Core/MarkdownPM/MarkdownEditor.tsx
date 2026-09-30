@@ -36,7 +36,7 @@ import {
 } from './Autocomplete/useConnectionAutocomplete'
 import { paneKeys, whenPaneOpen } from './Menus/caretPane'
 import { AutocompletePane } from './Autocomplete/AutocompletePane'
-import { BlockMenu } from './Menus/BlockMenu'
+import { BlockMenuPane } from './Menus/BlockMenuPane'
 import { useBlockMenu } from './Menus/useBlockMenu'
 import type { ConnectionsApi } from './Links/connectionsApi'
 import type { WarmSeam } from './warmSeam'
@@ -378,7 +378,7 @@ export function MarkdownEditor({
       <div ref={editorRef} className="mdpm-editor interface-inset" />
       <Scrollbar of={scroller} page timeline="--mdpm-scroll" />
       <AutocompletePane {...pane} />
-      <BlockMenu
+      <BlockMenuPane
         state={block.state}
         selected={block.selected}
         onPick={block.pick}

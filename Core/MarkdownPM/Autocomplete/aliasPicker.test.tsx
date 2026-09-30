@@ -212,6 +212,17 @@ describe('the heading slide’s top row marks how it arrived', () => {
     const pane = document.querySelector('.mdpm-ac') as HTMLElement
     expect(pane.textContent).not.toContain('Links')
   })
+
+  it('no press in the pane takes the caret out of the editor', async () => {
+    await mount(true)
+    const pane = document.querySelector('.mdpm-ac') as HTMLElement
+    const back = [...pane.querySelectorAll('span')].find((n) => n.textContent === 'Links')
+    for (const target of [pane, back]) {
+      const e = new MouseEvent('mousedown', { bubbles: true, cancelable: true })
+      target?.dispatchEvent(e)
+      expect(e.defaultPrevented).toBe(true)
+    }
+  })
 })
 
 describe('linkAt is the one answer to which link holds an offset', () => {

@@ -147,6 +147,18 @@ describe('picking a row writes the block and leaves one undo step', () => {
     expect(view.state.doc.toString()).toBe('')
   })
 
+  it('continues the numbered list above it, and one undo takes the item and its count', async () => {
+    const view = await open('1. a\n2. b\n')
+    await type(view, '/numbered')
+    await press(view, 'ArrowDown')
+    await press(view, 'Enter')
+    expect(view.state.doc.toString()).toBe('1. a\n2. b\n3. ')
+    await act(async () => {
+      undo(view)
+    })
+    expect(view.state.doc.toString()).toBe('1. a\n2. b\n')
+  })
+
   it('writes an empty connection and seats the caret between its brackets', async () => {
     const view = await open('')
     await type(view, '/conn')
@@ -207,6 +219,25 @@ describe('picking a row writes the block and leaves one undo step', () => {
       undo(view)
     })
     expect(view.state.doc.toString()).toBe('')
+  })
+})
+
+describe('a press anywhere in the pane keeps the caret in the editor', () => {
+  it('refuses the focus move on a section title and on the pane itself', async () => {
+    const view = await open('')
+    await type(view, '/')
+    const title = [...(pane()?.querySelectorAll('div') ?? [])].find(
+      (d) => d.childElementCount === 0 && d.textContent === 'Headings',
+    )
+    for (const target of [title, pane()]) {
+      const e = new MouseEvent('mousedown', { bubbles: true, cancelable: true })
+      await act(async () => {
+        target?.dispatchEvent(e)
+      })
+      expect(e.defaultPrevented).toBe(true)
+    }
+    expect(pane()).toBeTruthy()
+    expect(view.state.doc.toString()).toBe('/')
   })
 })
 

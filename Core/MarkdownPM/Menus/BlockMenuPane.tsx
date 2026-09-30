@@ -22,7 +22,7 @@ const CLOSED: BlockMenuState = { query: '', from: 0, to: 0, matches: [], ...CLOS
 // KNOB — a fixed width, resized in height alone: the floor, and the whole list as its ceiling.
 const BLOCK_BOUNDS: PaneBounds = { min: { h: 180 }, default: { h: PICKER_MAX_HEIGHT } }
 
-export function BlockMenu({ state, selected, onPick, geometry }: Props): React.JSX.Element {
+export function BlockMenuPane({ state, selected, onPick, geometry }: Props): React.JSX.Element {
   const open = state !== null
   const resize = usePaneResize(open, BLOCK_BOUNDS, geometry)
   const v = useHeld({ state: state ?? CLOSED, selected }, open)
@@ -38,7 +38,7 @@ export function BlockMenu({ state, selected, onPick, geometry }: Props): React.J
       anchorHeight={v.state.caretBottom - v.state.caretTop}
       bounds={v.state.bounds}
       origin="center"
-      manageFocus={false}
+      focus="keep"
       contentClassName="mdpm-block-menu"
       resize={resize}
     >
@@ -53,10 +53,7 @@ export function BlockMenu({ state, selected, onPick, geometry }: Props): React.J
                 ref={row.action === v.selected ? keepInView : undefined}
                 selected={row.action === v.selected}
                 leading={row.icon && <Icon name={row.icon} size="body" />}
-                onMouseDown={(e) => {
-                  e.preventDefault()
-                  onPick(row.action)
-                }}
+                onMouseDown={() => onPick(row.action)}
               >
                 {emphasizeMatch(row.label, row.at, matchLen)}
               </MenuItem>

@@ -15,7 +15,9 @@ import {
   docLineIntents,
   tokenIntents,
 } from '../MarkdownPM/Engine/intents'
-import { codeMask } from '../MarkdownPM/Engine/markdownCode'
+import { EditorState } from '@codemirror/state'
+import { codeMask, type TextEdit } from '../MarkdownPM/Engine/markdownCode'
+import { listRenumber, RELIST } from '../MarkdownPM/Input/listRenumber'
 import type { Token } from '../MarkdownPM/Engine/tokens'
 
 // The independent parse `modelFromRegion` is pinned against — a second derivation from the same source.
@@ -61,4 +63,11 @@ export function citationScan(d: DocLines, excluded: [number, number][]): Citatio
     (k) => excluded.some(([f, t]) => d.lineStarts[k] >= f && d.lineStarts[k] <= t),
     d.lines.map((line, i) => lineRefs(line, d.lineStarts[i], inCode)),
   )
+}
+
+/** An edit as the editor lands it: its changes, then the list renumber that rides the same transaction. */
+export function landEdit(doc: string, changes: readonly TextEdit[], relist = false): string {
+  return EditorState.create({ doc, extensions: listRenumber('page') })
+    .update({ changes: [...changes], userEvent: relist ? RELIST : 'input' })
+    .state.doc.toString()
 }

@@ -8,14 +8,9 @@ import {
   setBlock,
   type FormatEdit,
 } from './format'
+import { landEdit } from '../../Testing/markdownEngine'
 
-function apply(doc: string, edit: FormatEdit): string {
-  let out = doc
-  for (const c of [...edit.changes].sort((a, b) => b.from - a.from)) {
-    out = out.slice(0, c.from) + c.insert + out.slice(c.to)
-  }
-  return out
-}
+const apply = (doc: string, edit: FormatEdit): string => landEdit(doc, edit.changes, edit.relist)
 
 describe('toggleInline', () => {
   it('wraps a selection', () => {
@@ -62,6 +57,8 @@ describe('toggleInline', () => {
   })
   it('connection wraps the selection in [[ ]], and unwraps from inside', () => {
     expect(apply('Page', toggleInline('Page', 0, 4, 'connection'))).toBe('[[Page]]')
+    expect(toggleInline('Page', 0, 4, 'connection').selection).toBe(6)
+    expect(toggleInline('', 0, 0, 'connection').selection).toBe(2)
     const doc = 'a [[Page]] b'
     expect(apply(doc, toggleInline(doc, 5, 5, 'connection'))).toBe('a Page b')
   })
@@ -107,6 +104,9 @@ describe('setHeading', () => {
 describe('setList', () => {
   it('adds a bullet', () => {
     expect(apply('item', setList('item', 0, 0, 'bullet'))).toBe('- item')
+  })
+  it('seats a caret-only line’s marker at the margin, whatever whitespace it held', () => {
+    expect(apply('   ', setList('   ', 1, 1, 'bullet'))).toBe('- ')
   })
   it('re-applying the same kind clears it', () => {
     expect(apply('- item', setList('- item', 2, 2, 'bullet'))).toBe('item')

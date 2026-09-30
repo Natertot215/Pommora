@@ -27,6 +27,7 @@ export type InlineFormat = keyof typeof WRAP | LinkFormat
 export interface FormatEdit {
   changes: TextEdit[]
   selection?: number
+  relist?: boolean
 }
 
 /** True for a real blockquote, but NOT a callout head, whose `>` is box chrome — stripping it orphans the `[!type]`. */
@@ -42,6 +43,20 @@ const WRAP = {
   inlineCode: '`',
 } as const
 
+interface LinkWrap {
+  kind: 'link' | 'wikiLink'
+  open: string
+  close: string
+  caret: (from: number, to: number) => number
+}
+
+/** Where the caret rests after wrapping: `link` inside the empty `()`, `linkText` at the label's start, `connection` at the title's end. */
+const LINKS: Record<LinkFormat, LinkWrap> = {
+  link: { kind: 'link', open: '[', close: ']()', caret: (_, t) => t + 3 },
+  linkText: { kind: 'link', open: '[', close: ']()', caret: (f) => f + 1 },
+  connection: { kind: 'wikiLink', open: '[[', close: ']]', caret: (_, t) => t + 2 },
+}
+
 const SWAPS: Partial<Record<TokenKind, TokenKind>> = { bold: 'italic', italic: 'bold' }
 const MARKER_CHARS = '*_~=`'
 
@@ -52,10 +67,7 @@ export function toggleInline(
   fmt: InlineFormat,
 ): FormatEdit {
   const [from, to] = trimmedRange(doc, selFrom, selTo)
-  if (fmt === 'link' || fmt === 'linkText')
-    return toggleWrap(doc, from, to, 'link', '[', ']()', (f, t) => (fmt === 'link' ? t + 3 : f + 1))
-  if (fmt === 'connection')
-    return toggleWrap(doc, from, to, 'wikiLink', '[[', ']]', (f, t) => (f === t ? f + 2 : t + 2))
+  if (fmt in LINKS) return toggleWrap(doc, from, to, LINKS[fmt as LinkFormat])
   const kind = fmt as keyof typeof WRAP & TokenKind
   const w = WRAP[kind]
   // Inline marks are line-local, so only the caret's line is tokenized; the hit is shifted back to document coordinates.
@@ -88,7 +100,7 @@ export function toggleInline(
       { from, to: from, insert: w },
       { from: to, to, insert: w },
     ],
-    selection: from === to ? from + w.length : to + w.length,
+    selection: to + w.length,
   }
 }
 
@@ -96,10 +108,7 @@ function toggleWrap(
   doc: string,
   from: number,
   to: number,
-  kind: 'link' | 'wikiLink',
-  open: string,
-  close: string,
-  caret: (from: number, to: number) => number,
+  { kind, open, close, caret }: LinkWrap,
 ): FormatEdit {
   const ls = lineStartAt(doc, from)
   const found = tokenize(doc.slice(ls, lineEndAt(doc, from))).find(
@@ -148,7 +157,7 @@ export function splitPrefix(line: string): { prefix: string; body: string } {
   return { prefix, body: line.slice(prefix.length) }
 }
 
-/** Prefix-aware: `> - item` becomes `> ## item`, never `## - item` popped out of its quote. Blank lines keep their seats. */
+/** Prefix-aware: `> - item` becomes `> ## item`, never `## - item` popped out of its quote. */
 export function setHeading(doc: string, from: number, to: number, level: HeadingLevel): FormatEdit {
   const lines = selectedLines(doc, from, to)
   if (lines.length === 0) return { changes: [] }
@@ -171,9 +180,9 @@ interface SelectedLine {
   indent: string
   inner: string
   kind: ListKind | null
-  level: number
 }
 
+/** A selection passes over its blank lines; a caret alone on one keeps it, so the block starts there. */
 function selectedLines(doc: string, from: number, to: number): SelectedLine[] {
   const out: SelectedLine[] = []
   for (let p = lineStartAt(doc, from); p <= to; p = lineEndAt(doc, p) + 1) {
@@ -184,12 +193,9 @@ function selectedLines(doc: string, from: number, to: number): SelectedLine[] {
       const lm = parseListMarker(body)
       const stripped = stripInnerMarkers(body)
       // An item's indent sits before its marker, a paragraph's leads its words — held apart either way, so converting a nested item keeps its level.
-      const indent =
-        body.trim() === ''
-          ? ''
-          : lm
-            ? body.slice(0, lm.markerStart)
-            : stripped.slice(0, stripped.search(/\S|$/))
+      const indent = lm
+        ? body.slice(0, lm.markerStart)
+        : (/^[ \t]*(?=\S)/.exec(stripped)?.[0] ?? '')
       out.push({
         ls,
         le,
@@ -198,7 +204,6 @@ function selectedLines(doc: string, from: number, to: number): SelectedLine[] {
         indent,
         inner: lm ? stripped : stripped.trimStart(),
         kind: lm?.kind ?? null,
-        level: lm?.level ?? 0,
       })
     }
     if (le >= doc.length) break
@@ -206,24 +211,22 @@ function selectedLines(doc: string, from: number, to: number): SelectedLine[] {
   return out
 }
 
-/** A mixed block becomes one list rather than half a list. Sequenced runs count per indent level. */
+/** A mixed block becomes one list rather than half a list. Each line takes its kind's marker, and the list renumber counts the runs it joined. */
 export function setList(doc: string, from: number, to: number, kind: ListKind): FormatEdit {
   const lines = selectedLines(doc, from, to)
   if (lines.length === 0) return { changes: [] }
-  const strip = lines.every((l) => l.kind === kind)
-  const counters: number[] = []
+  const marker = lines.every((l) => l.kind === kind) ? '' : listMarkerText(kind)
   const changes: FormatEdit['changes'] = []
   let lastEnd = 0
   for (const l of lines) {
-    counters.length = l.level + 1
-    counters[l.level] = (counters[l.level] ?? 0) + 1
-    const marker = strip ? '' : listMarkerText(kind, counters[l.level])
     const next = `${l.pad}${l.indent}${marker}${l.inner}`
     changes.push({ from: l.ls + l.prefix.length, to: l.le, insert: next })
     lastEnd = l.ls + l.prefix.length + next.length
   }
   // One line keeps the caret at its end; across several the selection maps through the edits so it still covers what it covered.
-  return lines.length === 1 ? { changes, selection: lastEnd } : { changes }
+  return lines.length === 1
+    ? { changes, selection: lastEnd, relist: true }
+    : { changes, relist: true }
 }
 
 /** Read prefixed, matching the resolver that decided these lines were one list, so a quoted item's marker is found behind its `>`. */

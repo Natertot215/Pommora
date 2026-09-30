@@ -37,8 +37,7 @@ import {
   subBlockAt,
   dropChanges,
   moveRange,
-  renumberSequencedRun,
-  renumberAfterNest,
+  renumberRuns,
   checkboxToggleChange,
   type Slot,
 } from './listDragModel'
@@ -86,28 +85,6 @@ describe('drag reorders source lines', () => {
     const doc = '- a\n- b\n- c'
     const out = drop(doc, lineStart(doc, 'a'), doc.length)
     expect(out).toBe('- b\n- c\n- a')
-  })
-})
-
-describe('a level change restarts the run it lands in', () => {
-  const nest = (doc: string, edit: { from: number; to: number; insert: string }): string =>
-    applyEdits(applyEdits(doc, [edit]), renumberAfterNest(doc, edit))
-
-  it('an indented item starts its nested run over, and the run it left closes up', () => {
-    const doc = 'A. a\nB. b\nC. c'
-    expect(nest(doc, { from: 5, to: 5, insert: '\t' })).toBe('A. a\n\tA. b\nB. c')
-  })
-  it('an indented item joins a nested run already there', () => {
-    const doc = '1. a\n\t1. kid\n2. b'
-    expect(nest(doc, { from: 13, to: 13, insert: '\t' })).toBe('1. a\n\t1. kid\n\t2. b')
-  })
-  it('an outdented item continues the parent run, and the siblings it now holds start over', () => {
-    const doc = 'A. a\n\tA. b\n\tB. c\nB. d'
-    expect(nest(doc, { from: 5, to: 6, insert: '' })).toBe('A. a\nB. b\n\tA. c\nC. d')
-  })
-  it('an outdented item takes its place in a run that starts past 1', () => {
-    const doc = '5. a\n\t1. b\n6. c'
-    expect(nest(doc, { from: 5, to: 6, insert: '' })).toBe('5. a\n6. b\n7. c')
   })
 })
 
@@ -196,15 +173,15 @@ describe('click (no drag past threshold) toggles a checkbox, never reorders', ()
   })
 })
 
-describe('renumberSequencedRun', () => {
+describe('renumberRuns', () => {
   it('produces minimal digit rewrites', () => {
     const doc = '3. a\n4. b\n5. c'
-    const changes = renumberSequencedRun(doc, 0)
+    const changes = renumberRuns(doc, [0])
     expect(applyEdits(doc, changes)).toBe('3. a\n4. b\n5. c')
   })
   it('fixes a broken run', () => {
     const doc = '1. a\n1. b\n1. c'
-    expect(applyEdits(doc, renumberSequencedRun(doc, 0))).toBe('1. a\n2. b\n3. c')
+    expect(applyEdits(doc, renumberRuns(doc, [0]))).toBe('1. a\n2. b\n3. c')
   })
 })
 

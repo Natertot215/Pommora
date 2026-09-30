@@ -51,7 +51,7 @@ function Pane({
       open={open}
       anchorX={100}
       anchorY={100}
-      manageFocus={false}
+      focus="leave"
       direction={direction}
       resize={resize}
     >

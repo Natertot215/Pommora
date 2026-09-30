@@ -12,7 +12,8 @@ import {
   outdentListOnShiftTab,
 } from './Input/edits'
 import { setHeading, setList } from './Input/format'
-import { subBlockAt, renumberSequencedRun } from './Engine/listDragModel'
+import { landEdit } from '../Testing/markdownEngine'
+import { subBlockAt, renumberRuns } from './Engine/listDragModel'
 import { calloutDeleteVerdict } from './Guards/calloutGuard'
 import type { GuardVerdict } from './Guards/verdictFilter'
 import { headingSections } from './Engine/headingScan'
@@ -148,19 +149,17 @@ describe("closeConstructOnEnter — contractions don't poison quote parity", () 
 describe('continueListOnEnter — nested runs + empty-item continuation', () => {
   it('renumbers past a nested sublist instead of duplicating numbers', () => {
     const doc = '1. a\n\t1. child\n2. b'
-    const edit = continueListOnEnter(scanDoc(doc), 4, 4)
-    expect(edit).not.toBeNull()
-    const next = doc.slice(0, edit!.from) + edit!.insert + doc.slice(edit!.to)
-    expect(next).toBe('1. a\n2. \n\t1. child\n3. b')
+    const edit = continueListOnEnter(scanDoc(doc), 4, 4)!
+    expect(landEdit(doc, [edit], edit.relist)).toBe('1. a\n2. \n\t1. child\n3. b')
   })
   it('continues on an empty item instead of exiting (no auto-exit)', () => {
     const edit = continueListOnEnter(scanDoc('- '), 2, 2)
-    expect(edit).toEqual({ from: 2, to: 2, insert: '\n- ', selection: 5 })
+    expect(edit).toEqual({ from: 2, to: 2, insert: '\n- ', selection: 5, relist: true })
   })
   it('continues an empty item inside a quote, keeping the `> `', () => {
     const doc = '> - '
     const edit = continueListOnEnter(scanDoc(doc), 4, 4)
-    expect(edit).toEqual({ from: 4, to: 4, insert: '\n> - ', selection: 9 })
+    expect(edit).toEqual({ from: 4, to: 4, insert: '\n> - ', selection: 9, relist: true })
   })
 })
 
@@ -183,6 +182,7 @@ describe('outdentListOnShiftTab', () => {
       to: 1,
       insert: '',
       selection: 3,
+      relist: true,
     })
   })
   it('no-ops at top level', () => {
@@ -216,10 +216,10 @@ describe('subBlockAt — continuation lines ride with their item', () => {
   })
 })
 
-describe('renumberSequencedRun — nested lines are skipped, not terminators', () => {
+describe('renumberRuns — nested lines are skipped, not terminators', () => {
   it('renumbers a run past its sublists', () => {
     const doc = '1. a\n\t1. x\n2. b\n2. c'
-    const changes = renumberSequencedRun(doc, 0)
+    const changes = renumberRuns(doc, [0])
     expect(changes).toEqual([{ from: 16, to: 17, insert: '3' }])
   })
 })

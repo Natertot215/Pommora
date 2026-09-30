@@ -45,13 +45,13 @@ export function OptionEditPopup({
   const [iconOpen, setIconOpen] = useState(false)
   return (
     <>
-      {/* manageFocus off: opening is inspection, not an edit — nothing rings or selects on open. */}
+      {/* Focus left where it was: opening is inspection, not an edit — nothing rings or selects on open. */}
       <PickerMenu
         open={open}
         onDismiss={onDismiss}
         triggerRef={triggerRef}
         direction="down"
-        manageFocus={false}
+        focus="leave"
       >
         <div className={s.root}>
           <div className={s.fieldRow}>
