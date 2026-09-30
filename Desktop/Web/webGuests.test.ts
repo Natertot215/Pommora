@@ -7,7 +7,7 @@ type Answer = (granted: boolean) => void
 type RequestHandler = (wc: unknown, permission: string, answer: Answer) => void
 type CheckHandler = (wc: unknown, permission: string) => boolean
 
-const { sessions, appOn, contents } = vi.hoisted(() => {
+const { sessions, appOn, contents, pushed } = vi.hoisted(() => {
   const fakeSession = () => ({
     request: null as RequestHandler | null,
     check: null as CheckHandler | null,
@@ -24,6 +24,7 @@ const { sessions, appOn, contents } = vi.hoisted(() => {
     sessions: { web: fakeSession(), app: fakeSession() },
     appOn: new Map<string, (...args: unknown[]) => void>(),
     contents: [] as { id: number }[],
+    pushed: [] as unknown[][],
   }
 })
 
@@ -38,8 +39,10 @@ vi.mock('electron', () => ({
     getAllWebContents: () => contents,
     fromId: (id: number) => contents.find((wc) => wc.id === id),
   },
-  BrowserWindow: { fromWebContents: () => null },
+  BrowserWindow: { fromWebContents: (wc: unknown) => (wc ? 'host' : null) },
 }))
+
+vi.mock('../Bridge/ipc', () => ({ push: (...args: unknown[]) => pushed.push(args) }))
 
 installWebGuests({ webContents: { on: () => {} } } as unknown as BrowserWindow)
 
@@ -128,6 +131,63 @@ describe('the guest channels', () => {
       expect(wc.setZoomFactor).not.toHaveBeenCalled()
       expect(wc.sendInputEvent).not.toHaveBeenCalled()
       expect(wc.mainFrame.framesInSubtree[0].executeJavaScript).not.toHaveBeenCalled()
+    }
+  })
+})
+
+describe("a guest's keys", () => {
+  const on = new Map<string, (...args: unknown[]) => void>()
+  appOn.get('web-contents-created')?.(
+    {},
+    {
+      getType: () => 'webview',
+      isDestroyed: () => false,
+      hostWebContents: {},
+      setWindowOpenHandler: () => {},
+      on: (event: string, fn: (...args: unknown[]) => void) => on.set(event, fn),
+      once: () => {},
+    },
+  )
+  const press = (key: string, mods: Record<string, boolean> = {}): boolean => {
+    pushed.length = 0
+    const preventDefault = vi.fn()
+    on.get('before-input-event')?.(
+      { preventDefault },
+      {
+        type: 'keyDown',
+        key,
+        code: '',
+        meta: false,
+        control: false,
+        alt: false,
+        shift: false,
+        ...mods,
+      },
+    )
+    return preventDefault.mock.calls.length > 0
+  }
+
+  it('take an app command from the site and hand it to the window', () => {
+    expect(press('o', { meta: true })).toBe(true)
+    expect(pushed).toEqual([
+      [
+        'host',
+        'web:key',
+        { key: 'o', code: '', metaKey: true, ctrlKey: false, altKey: false, shiftKey: false },
+      ],
+    ])
+  })
+
+  it('share Escape with the site, and leave undo, find, and plain typing to it', () => {
+    expect(press('Escape')).toBe(false)
+    expect(pushed).toHaveLength(1)
+    for (const [key, mods] of [
+      ['z', { meta: true }],
+      ['f', { meta: true }],
+      ['o', {}],
+    ] as const) {
+      expect(press(key, mods)).toBe(false)
+      expect(pushed).toHaveLength(0)
     }
   })
 })

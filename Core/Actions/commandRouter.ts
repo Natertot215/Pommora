@@ -2,21 +2,10 @@ import { ownerWindow } from '@pommora/uix/Interactions/dismissalStack'
 import { cycle } from '../Navigation/tabsModel'
 import { useSession } from '../Session/store'
 import { undoValue } from '../Session/undo'
-import type { CommandId, MenuCommand } from './commands'
+import type { KeyedCommand, MenuCommand } from './commands'
 import { newPage } from './createActions'
 
-export const KEYED_COMMANDS = [
-  'toggle-ribbon',
-  'toggle-nav',
-  'toggle-matrix',
-  'toggle-iteration',
-  'search',
-  'next-tab',
-  'previous-tab',
-  'undo-value',
-] as const satisfies readonly CommandId[]
-
-type RoutedCommand = (typeof KEYED_COMMANDS)[number] | MenuCommand
+type RoutedCommand = KeyedCommand | MenuCommand
 
 /** Whether the command acted, so a keydown it answered stops there. */
 export function runCommand(id: RoutedCommand, target: EventTarget | null = null): boolean {

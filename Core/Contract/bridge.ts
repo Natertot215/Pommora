@@ -2,7 +2,7 @@ import type { AssetMap, NexusState, NexusTree, ValueChange } from '../Nexus/tree
 import type { MutateReply, MutateRequest } from '../Nexus/mutateRequest'
 import type { Result } from './result'
 import type { EditorMenuRequest } from '../Actions/editorMenu'
-import type { MenuCommand } from '../Actions/commands'
+import type { KeyPress, MenuCommand } from '../Actions/commands'
 import type { RemovedView, SavedView, ViewPatch } from '../Views/views'
 import type { BodyWrite, PageDetail } from '../Pages/pageDetail'
 import type { TrashMode, TrashRow } from '../Trash/trashRow'
@@ -281,4 +281,5 @@ export interface Pushes {
   'theme:systemAccent': string | null
   // A guest's window.open, denied main-side so popups route through the one link adjudicator.
   'web:popup': string
+  'web:key': KeyPress
 }

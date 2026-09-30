@@ -113,6 +113,16 @@ export function useBridgeSubscriptions(): void {
 
   useEffect(
     () =>
+      dialer().on('web:key', (press) =>
+        (document.activeElement ?? document).dispatchEvent(
+          new KeyboardEvent('keydown', { ...press, bubbles: true, cancelable: true }),
+        ),
+      ),
+    [],
+  )
+
+  useEffect(
+    () =>
       dialer().on('menu:action', (action) => {
         if (action === 'open') void choose()
         else runCommand(action)

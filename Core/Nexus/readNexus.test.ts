@@ -38,17 +38,19 @@ describe('readCommands', () => {
     expect(c['toggle-ribbon']).toBe('cmd+shift+e')
     expect(Object.keys(c)).toEqual(Object.keys(DEFAULT_COMMANDS))
   })
-  it('a non-string, empty, modifier-only, or unmodified value falls back to the default binding', () => {
+  it('a non-string, empty, modifier-only, unmodified, or unknown-key value falls back to the default binding', () => {
     const c = readCommands({
       'toggle-ribbon': 42,
       'toggle-nav': '',
       'new-tab': 'cmd+',
       reload: 'n',
+      search: 'cmd+uparrow',
     })
     expect(c['toggle-ribbon']).toBe(DEFAULT_COMMANDS['toggle-ribbon'])
     expect(c['toggle-nav']).toBe(DEFAULT_COMMANDS['toggle-nav'])
     expect(c['new-tab']).toBe(DEFAULT_COMMANDS['new-tab'])
     expect(c.reload).toBe(DEFAULT_COMMANDS.reload)
+    expect(c.search).toBe(DEFAULT_COMMANDS.search)
   })
 })
 
