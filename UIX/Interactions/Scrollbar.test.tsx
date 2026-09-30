@@ -112,6 +112,20 @@ describe('Scrollbar', () => {
     expect(track.dataset.revealHost).toBe('off')
   })
 
+  it('leaving the reach hides at once unless a scroll is lingering', () => {
+    vi.useFakeTimers()
+    const { scroller, track } = mount(400, 2000)
+    const frame = track.parentElement!
+    frame.dispatchEvent(new PointerEvent('pointermove', { clientX: 0, clientY: 0 }))
+    frame.dispatchEvent(new PointerEvent('pointerleave'))
+    expect(track.dataset.revealHost).toBe('off')
+    window.dispatchEvent(new KeyboardEvent('keydown'))
+    scroller.scrollTop = 300
+    scroller.dispatchEvent(new Event('scroll'))
+    frame.dispatchEvent(new PointerEvent('pointerleave'))
+    expect(track.dataset.revealHost).toBe('on')
+  })
+
   it('a scroll after input reveals, then lingers out from its last event', () => {
     vi.useFakeTimers()
     const { scroller, track } = mount(400, 2000)
