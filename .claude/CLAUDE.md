@@ -91,7 +91,7 @@ Everything about Pommora’s design — what it builds and how it’s built — 
 ├── // Tiles         | • The homepage and Space tile surfaces
 ├── // Trash         | • Deletion, bundling, and restore records
 ├── // Views         | • Collections rendered as views
-└── // Web           | • Web link opening and guest partitions
+└── // Web           | • The web guest element, link opening, and guest partitions
 
 // UIX               | • The design kit — reaches nothing outside itself
 // Desktop           | • The Electron host — the app's only caller of Node

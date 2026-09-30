@@ -168,7 +168,7 @@ What Pommora remembers, and for how long. Four tiers, told by where a thing is w
 | --- | --- | --- |
 | Parked page surfaces | The two most recent page tabs stay built, held off screen, so a flip resumes them | A third tab taking the slot; closing the tab |
 | Warm tab state | Serialized editor state — text, caret, undo history — plus scroll, for every tab beyond the parked ones | Fifty entries per tab, then the oldest goes; closing the tab; an outside edit to that page |
-| Retained web guests | A scrolled-out or parked site stays alive, paused, keeping its scroll, typed input, and playing media | Five hidden guests, then the least recent is torn down |
+| Retained web guests | A scrolled-out or parked site stays alive, keeping its scroll and typed input, with a parked tab's media paused | Five hidden guests, then the least recent is torn down |
 | Embed, glance, and Page Window warmth | The same editor state for tiles inside a page, the glance, and window tabs | The page's body changing since capture, or no body known to check it against; a Nexus switch or a link-rewriting rename; closing the Page Window |
 | Pending page saves | A typed body waiting on its debounce, flushed on unmount, Nexus switch, quit, and window close | The write landing |
 

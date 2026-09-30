@@ -1,7 +1,7 @@
 ## Webview
 
 
-Pommora's web layer: live websites embedded in Page bodies, an in-app browser, one remembered web session, and live glances for website links. Every web surface is an Electron webview guest under one main-process governor, `Desktop/Web/webGuests.ts`, which owns what an attach is allowed to be, which session guests live on, where their popups go, and how they track the host's zoom; no surface carries rules of its own. Exactly three renderer components mount a guest — the webpage tile, the browser window, and the glance pane — all on the shared partition.
+Pommora's web layer: live websites embedded in Page bodies, an in-app browser, one remembered web session, and live glances for website links. Every web surface is an Electron webview guest under one main-process governor, `Desktop/Web/webGuests.ts`, which owns what an attach is allowed to be, which session guests live on, where their popups go, and how they track the host's zoom; no surface carries rules of its own. The webpage tile, the browser window, and the glance pane each render their guest through one component, `Core/Web/WebGuest.tsx`, which holds the renderer's whole contact with the guest element: its shared partition, its load, failure, and navigation events, and the host channels that zoom, pause, and scroll it.
 
 ### Webpage Embeds
 

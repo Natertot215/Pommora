@@ -27,7 +27,7 @@ The host answers one `menu` channel, and `menu.ts` is the one popper behind it: 
 
 ### Web
 
-`Desktop/Web/webGuests.ts` owns every `<webview>` guest: one shared session partition, media pause and resume for retention, popup denial routed back to Core's link adjudicator, and zoom, including the mapping of the Interface Scale setting onto Electron's zoom factor. `linkTitles.ts` fetches a URL's page title once and caches it → [[WebviewPM]]
+`Desktop/Web/webGuests.ts` owns every `<webview>` guest: one shared session partition, media pause on tab switch, popup denial routed back to Core's link adjudicator, and zoom, including the mapping of the Interface Scale setting onto Electron's zoom factor. `linkTitles.ts` fetches a URL's page title once and caches it → [[WebviewPM]]
 
 ### Capture
 
