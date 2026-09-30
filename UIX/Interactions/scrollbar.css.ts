@@ -2,11 +2,9 @@ import { globalStyle, keyframes, style } from '@vanilla-extract/css'
 import { revealTarget } from './hover-reveal.css'
 
 // ── Knobs ──
-/** px, save `maxShare`: the pill's longest length as a share of its track, which keeps a small window's bar in proportion. */
-export const SCROLLBAR = { width: 6, minLength: 32, maxLength: 240, maxShare: 0.5 } as const // KNOB
+const SCROLLBAR = { width: 6, minLength: 32, maxLength: 240, maxShare: 0.5 } as const // KNOB
 
 // ── Track ──
-// Anchored to its scroller's box, pushed clear of any chrome its host names in --scrollbar-top and --scrollbar-right.
 export const track = style({
   position: 'absolute',
   zIndex: 'var(--z-lifted)',
@@ -20,7 +18,6 @@ export const track = style({
 })
 
 // ── Pill ──
-// --scrollbar-visible is the scroller's visible share of its content; a translate percentage is the pill's own length.
 const travel = keyframes({ to: { translate: '0 calc(100cqh - 100%)' } })
 const wash = (state: string): string => `linear-gradient(${state}, ${state}), var(--fill-primary)`
 

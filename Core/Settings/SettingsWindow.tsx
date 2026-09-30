@@ -224,7 +224,6 @@ function ColorRow({ row }: { row: RowOf<'color'> }): React.JSX.Element {
   )
 }
 
-/** One read and one write for either store; a device value at its default is stored as absent. */
 function useRowValue<V>(row: {
   key: SettingKey | DeviceDefaultKey
   device?: true
@@ -237,11 +236,10 @@ function useRowValue<V>(row: {
       : settingOf(s.personalization, row.key as SettingKey),
   ) as V
   const set = (next: V): void => {
-    if (!row.device) setPersonalization(row.key as SettingKey, next as never)
-    else {
+    if (row.device) {
       const key = row.key as DeviceDefaultKey
       setDevicePref(key, (next === DEVICE_DEFAULTS[key] ? undefined : next) as never)
-    }
+    } else setPersonalization(row.key as SettingKey, next as never)
   }
   return [value, set]
 }
