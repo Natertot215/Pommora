@@ -1,4 +1,5 @@
 import { globalStyle, keyframes, style } from '@vanilla-extract/css'
+import { SYSTEM, tintAt } from '../Theme/colors'
 import { revealTarget } from './hover-reveal.css'
 
 // ── Knobs ──
@@ -18,6 +19,10 @@ export const track = style({
 })
 
 // ── Pill ──
+const lift = (amount: number): string => {
+  const white = tintAt(SYSTEM.white, amount)
+  return `linear-gradient(${white}, ${white}), var(--border-strong)`
+}
 const travel = keyframes({ to: { translate: '0 calc(100cqh - 100%)' } })
 
 export const pill = style([
@@ -37,9 +42,9 @@ export const pill = style([
         opacity: 1,
         pointerEvents: 'auto',
         cursor: 'pointer',
-        background: 'var(--label-tertiary)',
+        background: lift(2.5),
       },
-      '&&[data-reveal-held]': { background: 'var(--label-tertiary)' },
+      '&&[data-reveal-held]': { background: lift(5) },
     },
   },
 ])
