@@ -21,6 +21,7 @@ Findings where the correct answer isn't established in the codebase — design a
 
 - [ ] **`cursor: default` versus `cursor: pointer` has no rule** — roughly twenty sites each, design-system components consistently on `default` and feature surfaces mixed. Pick one convention for clickable non-link controls and the sweep is mechanical.
 - [ ] **Where does the floating identity label live?** Embed tiles reveal crumbs or a webpage title on hover, the Web Window shows domain › title always, the Page Window a trail in its tab strip; one design-system element or NavTrail absorbing the webpage case.
+- [ ] **Should the hover and active state washes be white rather than grey?** Change the hovering and active opacities from grey to white so brighter surfaces don't have state variables dim them when they probably shouldn't.
 - [ ] **Escape follows open order, not focus.** The dismissal stack pushes on open and never re-inserts, so raising a floating window on click (Escape then closing the focused window) needs an open-sequence number on each entry; the same machinery would keep a pinned glance's entry in place across a tab round-trip, where today it remounts on top of a window opened after it.
 
 #### II. Next-Feature Candidates
