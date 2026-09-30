@@ -1,17 +1,21 @@
 import { useEffect, useId, useMemo, useRef, useState } from 'react'
 import { flushSync } from 'react-dom'
 import { useHeldPresence } from '@pommora/uix/Animations/useExitPresence'
+import { carries, LineZone } from '@pommora/uix/Interactions/drag'
 import { usePointerGesture } from '@pommora/uix/Interactions/gesture'
+import { EntityIcon } from '../Assets/EntityIcon'
 import { showEntityMenu } from '../Interface/Menus/entityMenuActions'
 import { pageMoveContext } from '../Interface/Menus/pageMenuActions'
 import { usePublishCount } from '../Interface/Subfield/publish'
 import { useContentHost } from '../Interface/contentHost'
 import { isOpenInTabs } from '../Navigation/tabsModel'
 import { selectTargetOf } from '../Navigation/navRef'
+import { TAB_FAMILY } from '../Navigation/tabRows'
 import { nodesOf } from '../Nexus/treeIndex'
 import { useSession } from '../Session/store'
 import { MatrixCanvas, toWorldPoint } from './MatrixCanvas'
 import { MatrixLabel, recordOf } from './MatrixLabel'
+import * as s from './matrix.css'
 import { matrixRuntime, type Surface } from './matrixRuntime'
 import { useMatrixCount, useMatrixHover } from './useMatrixRuntime'
 import { useLatest } from '@pommora/uix/Utilities/stableApi'
@@ -23,6 +27,7 @@ export function MatrixView(): React.JSX.Element {
   const renamingPath = useSession((st) => (st.renamingHost === 'matrix' ? st.renamingPath : null))
   const iconPath = useSession((st) => (st.iconHost === 'matrix' ? st.iconPath : null))
   const colorPath = useSession((st) => (st.colorHost === 'matrix' ? st.colorPath : null))
+  const locked = useSession((st) => st.matrixConfig.display.locked)
   const hoveredId = useMatrixHover()
   usePublishCount(useMatrixCount())
   const begin = usePointerGesture()
@@ -130,21 +135,46 @@ export function MatrixView(): React.JSX.Element {
       onNodeDown={nodeDown}
       onMenu={(id) => void menu(id)}
     >
-      <MatrixLabel
-        surface={surface}
-        id={labelId}
-        closing={liveId === null && labelId !== null}
-        editing={editing}
-        hosts={mine}
-        anchorRef={anchorRef}
-        onPointerDown={(e) => {
-          if (labelId !== null) nodeDown(e, labelId)
+      {/* A locked layout lends its nodes to the tab strips instead: the zone never reorders, it only carries. */}
+      <LineZone
+        className={s.carryZone}
+        disabled={!locked}
+        snap={() => null}
+        resolve={() => null}
+        commit={() => {}}
+        label={(id) => recordOf(useSession.getState().tree, id)?.title ?? ''}
+        glyph={(id) => {
+          const rec = recordOf(useSession.getState().tree, id)
+          return rec && <EntityIcon kind={rec.kind} icon={matrixRuntime.nodeOf(id)?.icon} />
         }}
-        onContextMenu={(e) => {
-          e.preventDefault()
-          if (labelId !== null) void menu(labelId)
-        }}
-      />
+        carry={[
+          carries(TAB_FAMILY, (id) => {
+            const rec = recordOf(useSession.getState().tree, id)
+            return rec && selectTargetOf(rec)
+          }),
+        ]}
+        watch={[]}
+      >
+        <MatrixLabel
+          surface={surface}
+          id={labelId}
+          closing={liveId === null && labelId !== null}
+          editing={editing}
+          hosts={mine}
+          carrying={locked}
+          anchorRef={anchorRef}
+          onPointerDown={(e) => {
+            if (labelId !== null) nodeDown(e, labelId)
+          }}
+          onOpen={() => {
+            if (labelId !== null) open(labelId)
+          }}
+          onContextMenu={(e) => {
+            e.preventDefault()
+            if (labelId !== null) void menu(labelId)
+          }}
+        />
+      </LineZone>
     </MatrixCanvas>
   )
 }

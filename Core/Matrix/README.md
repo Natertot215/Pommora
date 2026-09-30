@@ -41,7 +41,7 @@ drove the loop's own shape rather than a library's:
 | `matrixFile.ts`, `handlers.ts` | `.nexus/matrix.json`, its per-key merge, and the channels over it |
 | `matrixLayout.ts` | The machine-local positions and lens, and the readers that validate them |
 | `matrixKind.ts` | The selection kind, its title, its icon, and a node's record shape |
-| `MatrixView.tsx` | What the surface is told: the label's node, the menu, the tap, the drag |
+| `MatrixView.tsx` | What the surface is told: the label's node, the menu, the tap, the drag, and a locked node's carry to the tab strips |
 | `MatrixCanvas.tsx` | The canvas, its paint read from host-scoped tokens, the pointer gates |
 | `MatrixLabel.tsx` | The one overlay: the anchor, the title, the trail, the rename, the picker, the glance |
 | `MatrixMenu.tsx` | The pane the toolbar's Settings button shows for a Matrix surface |

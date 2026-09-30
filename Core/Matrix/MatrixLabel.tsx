@@ -1,4 +1,5 @@
-import { useEffect, useLayoutEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
+import { useLineRow } from '@pommora/uix/Interactions/drag'
 import { NavTrail } from '@pommora/uix/Elements/NavTrail'
 import { titleInput } from '@pommora/uix/Menus'
 import { ColorPicker } from '@pommora/uix/Pickers/ColorPicker'
@@ -34,8 +35,10 @@ export function MatrixLabel({
   closing,
   editing,
   hosts,
+  carrying,
   anchorRef,
   onPointerDown,
+  onOpen,
   onContextMenu,
 }: {
   surface: Surface
@@ -43,8 +46,10 @@ export function MatrixLabel({
   closing: boolean
   editing: boolean
   hosts: boolean
+  carrying: boolean
   anchorRef: React.RefObject<HTMLDivElement | null>
   onPointerDown: (e: React.PointerEvent) => void
+  onOpen: () => void
   onContextMenu: (e: React.MouseEvent) => void
 }): React.JSX.Element | null {
   const tree = useSession((st) => st.tree)
@@ -59,6 +64,15 @@ export function MatrixLabel({
   const hideIcon = useSession((st) => st.matrixConfig.display.hideIcon)
   const [entered, setEntered] = useState<string | null>(null)
   const labelRef = useRef<HTMLDivElement>(null)
+  const row = useLineRow(id ?? '', { open: onOpen })
+  const seatRow = row.ref
+  const seat = useCallback(
+    (el: HTMLDivElement | null) => {
+      anchorRef.current = el
+      seatRow(el)
+    },
+    [anchorRef, seatRow],
+  )
   const rec = recordOf(tree, id)
   const path = rec?.path
   const kind = rec?.kind
@@ -120,10 +134,10 @@ export function MatrixLabel({
     <>
       {/* biome-ignore lint/a11y/noStaticElementInteractions: the hovered node made real — its own drag, click and menu, which the canvas cannot carry */}
       <div
-        ref={anchorRef}
+        ref={seat}
         data-node-id={rec.id}
         className={cx(s.anchor, closing && s.anchorClosing)}
-        onPointerDown={onPointerDown}
+        {...(carrying ? { ...row.handle, onClick: onOpen } : { onPointerDown })}
         onContextMenu={onContextMenu}
       />
       <IconChoice

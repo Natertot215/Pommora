@@ -69,11 +69,14 @@ export const canvas = style({
   touchAction: 'none',
 })
 
+// The stage's content box is the part of the host no chrome covers. It holds the overlay, so it outranks `.detail`'s scroll rather than racing its sheet.
 export const stage = style({
   position: 'absolute',
   inset: 0,
   pointerEvents: 'none',
-  overflow: 'hidden',
+  selectors: {
+    '&.detail': { overflow: 'hidden' },
+  },
 })
 
 export const anchor = style({
@@ -125,4 +128,13 @@ export const labelRow = style({
 
 export const labelGlyph = style({
   color: c.label.secondary,
+})
+
+// The home a locked node's drag leaves to go loose: it fills the stage's uncovered box, and stays static so the overlay still seats against the host's origin.
+export const carryZone = style({
+  height: '100%',
+  pointerEvents: 'none',
+  selectors: {
+    '&.line-zone': { position: 'static' },
+  },
 })
