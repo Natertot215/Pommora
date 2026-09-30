@@ -1,4 +1,4 @@
-// Preferences that belong to the MACHINE rather than the Nexus: menu style, interface scale, brightness, pane widths, sidebar and footer folds, window sizes and the navigation layouts are all true of the display and operating system in front of the user, so they stay with the device and travel nowhere.
+// Preferences that belong to the MACHINE rather than the Nexus: menu style, interface scale, brightness, scrollbars, pane widths, sidebar and footer folds, window sizes and the navigation layouts are all true of the display and operating system in front of the user, so they stay with the device and travel nowhere.
 import { z } from 'zod'
 import type { NumberRange } from '@pommora/uix/Utilities/clamp'
 import { readValue } from '../Platform/localState'
@@ -7,6 +7,11 @@ import { TENTHS_SCALE } from './personalization'
 
 export const SIDEBAR_WIDTH = { min: 180, max: 380, default: 240 }
 export const SIDE_PANE_WIDTH = { min: 240, max: 420, default: 300 }
+
+export const SCROLLBAR_PRESENCE = ['all', 'pages', 'off'] as const
+export type ScrollbarPresence = (typeof SCROLLBAR_PRESENCE)[number]
+export const SCROLLBAR_REVEAL = ['always', 'hover'] as const
+export type ScrollbarReveal = (typeof SCROLLBAR_REVEAL)[number]
 
 const flag = z.boolean().optional().catch(undefined)
 const size = z.number().optional().catch(undefined)
@@ -18,6 +23,8 @@ const devicePrefs = looseDecoder(
     nativeMenus: flag,
     interfaceScale: numberCheck(TENTHS_SCALE).optional().catch(undefined),
     brightness: numberCheck(TENTHS_SCALE).optional().catch(undefined),
+    scrollbars: z.enum(SCROLLBAR_PRESENCE).optional().catch(undefined),
+    scrollbarReveal: z.enum(SCROLLBAR_REVEAL).optional().catch(undefined),
     panes: looseDecoder(
       z.object({ sidebar: width(SIDEBAR_WIDTH), sidePane: width(SIDE_PANE_WIDTH) }),
     )
@@ -42,5 +49,22 @@ export function packDevicePrefs(raw: unknown): DevicePrefs {
   return Object.fromEntries(kept) as DevicePrefs
 }
 
-export const readInterfaceScale = (): number =>
-  readDevicePrefs().interfaceScale ?? TENTHS_SCALE.default
+/** What a Settings row shows while its device preference is absent; a row stores its default as absent. */
+export const DEVICE_DEFAULTS = {
+  nativeMenus: false,
+  interfaceScale: TENTHS_SCALE.default,
+  brightness: TENTHS_SCALE.default,
+  scrollbars: 'pages',
+  scrollbarReveal: 'hover',
+} as const satisfies Partial<Record<keyof DevicePrefs, unknown>>
+export type DeviceDefaultKey = keyof typeof DEVICE_DEFAULTS
+
+export const DEVICE_RANGES = { interfaceScale: TENTHS_SCALE, brightness: TENTHS_SCALE } as const
+
+export const devicePref = <K extends DeviceDefaultKey>(
+  prefs: DevicePrefs,
+  key: K,
+): NonNullable<DevicePrefs[K]> =>
+  (prefs[key] ?? DEVICE_DEFAULTS[key]) as NonNullable<DevicePrefs[K]>
+
+export const readInterfaceScale = (): number => devicePref(readDevicePrefs(), 'interfaceScale')

@@ -1,6 +1,6 @@
 import { useEffect, useState, type CSSProperties } from 'react'
 import { useSession } from '../Session/store'
-import { SIDE_PANE_WIDTH, SIDEBAR_WIDTH } from '../Settings/devicePrefs'
+import { devicePref, SIDE_PANE_WIDTH, SIDEBAR_WIDTH } from '../Settings/devicePrefs'
 import { useResizable } from '@pommora/uix/Interactions/useResizable'
 import { GlassPane } from '@pommora/uix/Glass/GlassPane'
 import { paneSlide } from '@pommora/uix/Animations/paneSlide'
@@ -51,6 +51,8 @@ export function App(): React.JSX.Element {
   const trafficLights = useSession((s) => s.hostPlatform !== 'windows' && !s.fullscreen)
   const commands = useSession((s) => s.commands)
   const brightness = useSession((s) => s.devicePrefs.brightness)
+  const scrollbars = useSession((s) => devicePref(s.devicePrefs, 'scrollbars'))
+  const scrollbarReveal = useSession((s) => devicePref(s.devicePrefs, 'scrollbarReveal'))
   useNavThumbnails()
 
   const [sidePaneOpen, setSidePaneOpen] = useState(false)
@@ -81,6 +83,10 @@ export function App(): React.JSX.Element {
   useEffect(() => {
     document.documentElement.style.filter = brightness ? `brightness(${brightness})` : ''
   }, [brightness])
+
+  useEffect(() => {
+    Object.assign(document.documentElement.dataset, { scrollbars, scrollbarReveal })
+  }, [scrollbars, scrollbarReveal])
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent): void => {

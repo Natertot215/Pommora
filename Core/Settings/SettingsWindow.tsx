@@ -16,10 +16,17 @@ import { WindowBase } from '@pommora/uix/Windows/WindowBase'
 import { SETTINGS_RAIL, SETTINGS_WIN } from '@pommora/uix/Windows/windowBounds'
 import { steppedPickerProps } from '@pommora/uix/Pickers/PickerControl'
 import { resolveColor } from '@pommora/uix/Theme/ramp'
-import { SETTING_DEFAULTS, SETTING_RANGES } from '@pommora/core/Settings/personalization'
-import type { SteppedRange } from '@pommora/uix/Utilities/clamp'
+import {
+  SETTING_DEFAULTS,
+  SETTING_RANGES,
+  type SettingKey,
+  settingOf,
+} from '@pommora/core/Settings/personalization'
+import { Reveal } from '@pommora/uix/Animations/Reveal'
 import { useExitPresence } from '@pommora/uix/Animations/useExitPresence'
+import type { SessionState } from '../Session/sessionState'
 import { useSession, useSetting } from '../Session/store'
+import { DEVICE_DEFAULTS, DEVICE_RANGES, type DeviceDefaultKey, devicePref } from './devicePrefs'
 import { useExperimental } from './experimental'
 import { AssetDirectoryRow } from './AssetDirectoryRow'
 import { ExcludedDirectoriesRow } from './ExcludedDirectoriesRow'
@@ -138,13 +145,32 @@ function FrameBody({ category }: { category: CategoryKey }): React.JSX.Element {
           {section.title && (
             <MenuRowView row={{ kind: 'heading', label: section.title, caps: true }} />
           )}
-          {section.rows.map((row) => (
+          {section.rows.map((row) =>
             // Keyed on the label: the one row writing a top-level settings key has no personalization key to be identified by, and a label is unique within a section.
-            <RowControl key={row.label} row={row} />
-          ))}
+            row.when ? (
+              <ConditionalRow key={row.label} row={row} when={row.when} />
+            ) : (
+              <RowControl key={row.label} row={row} />
+            ),
+          )}
         </div>
       ))}
     </div>
+  )
+}
+
+function ConditionalRow({
+  row,
+  when,
+}: {
+  row: Row
+  when: (s: SessionState) => boolean
+}): React.JSX.Element {
+  const open = useSession(when)
+  return (
+    <Reveal open={open} fill>
+      <RowControl row={row} />
+    </Reveal>
   )
 }
 
@@ -158,10 +184,6 @@ function RowControl({ row }: { row: Row }): React.JSX.Element {
       return <PickerControlRow row={row} />
     case 'zoom':
       return <ZoomRow row={row} />
-    case 'deviceZoom':
-      return <DeviceZoomRow row={row} />
-    case 'device':
-      return <DeviceRow row={row} />
     case 'path':
       return <AssetDirectoryRow label={row.label} hint={row.hint} />
     case 'exclusions':
@@ -198,60 +220,53 @@ function ColorRow({ row }: { row: RowOf<'color'> }): React.JSX.Element {
   )
 }
 
-const switchRow = (
-  row: RowText,
-  checked: boolean,
-  onChange: (next: boolean) => void,
-): React.JSX.Element => (
-  <MenuRowView
-    row={settingsRow(row, { kind: 'switch', checked, ariaLabel: row.label, onChange })}
-  />
-)
+/** One read and one write for either store; a device value at its default is stored as absent. */
+function useRowValue<V>(row: {
+  key: SettingKey | DeviceDefaultKey
+  device?: true
+}): [V, (next: V) => void] {
+  const setPersonalization = useSession((s) => s.setPersonalization)
+  const setDevicePref = useSession((s) => s.setDevicePref)
+  const value = useSession((s) =>
+    row.device
+      ? devicePref(s.devicePrefs, row.key as DeviceDefaultKey)
+      : settingOf(s.personalization, row.key as SettingKey),
+  ) as V
+  const set = (next: V): void => {
+    if (!row.device) setPersonalization(row.key as SettingKey, next as never)
+    else {
+      const key = row.key as DeviceDefaultKey
+      setDevicePref(key, (next === DEVICE_DEFAULTS[key] ? undefined : next) as never)
+    }
+  }
+  return [value, set]
+}
 
 function ToggleRow({ row }: { row: RowOf<'toggle'> }): React.JSX.Element {
-  const on = useSetting(row.key)
-  const setPersonalization = useSession((s) => s.setPersonalization)
-  return switchRow(row, on, (next) => setPersonalization(row.key, next))
+  const [checked, set] = useRowValue<boolean>(row)
+  return (
+    <MenuRowView
+      row={settingsRow(row, { kind: 'switch', checked, ariaLabel: row.label, onChange: set })}
+    />
+  )
 }
-
-function DeviceRow({ row }: { row: RowOf<'device'> }): React.JSX.Element {
-  const on = useSession((s) => s.devicePrefs[row.key] ?? false)
-  const setDevicePref = useSession((s) => s.setDevicePref)
-  return switchRow(row, on, (next) => setDevicePref(row.key, next || undefined))
-}
-
-const zoomRow = (
-  row: RowOf<'zoom' | 'deviceZoom'>,
-  range: SteppedRange,
-  value: number,
-  onPick: (next: number) => void,
-): React.JSX.Element => (
-  <MenuRowView
-    row={settingsRow(row, {
-      kind: 'picker',
-      ariaLabel: row.label,
-      ...steppedPickerProps({ range, value, unit: row.unit ?? PERCENT, onPick }),
-    })}
-  />
-)
 
 function ZoomRow({ row }: { row: RowOf<'zoom'> }): React.JSX.Element {
-  const value = useSetting(row.key)
-  const setPersonalization = useSession((s) => s.setPersonalization)
-  return zoomRow(row, SETTING_RANGES[row.key], value, (next) => setPersonalization(row.key, next))
-}
-
-function DeviceZoomRow({ row }: { row: RowOf<'deviceZoom'> }): React.JSX.Element {
-  const value = useSession((s) => s.devicePrefs[row.key] ?? row.range.default)
-  const setDevicePref = useSession((s) => s.setDevicePref)
-  return zoomRow(row, row.range, value, (next) =>
-    setDevicePref(row.key, next === row.range.default ? undefined : next),
+  const [value, set] = useRowValue<number>(row)
+  const range = row.device ? DEVICE_RANGES[row.key] : SETTING_RANGES[row.key]
+  return (
+    <MenuRowView
+      row={settingsRow(row, {
+        kind: 'picker',
+        ariaLabel: row.label,
+        ...steppedPickerProps({ range, value, unit: row.unit ?? PERCENT, onPick: set }),
+      })}
+    />
   )
 }
 
 function PickerControlRow({ row }: { row: RowOf<'picker'> }): React.JSX.Element {
-  const value = useSetting(row.key)
-  const setPersonalization = useSession((s) => s.setPersonalization)
+  const [value, set] = useRowValue<string>(row)
   return (
     <MenuRowView
       row={settingsRow(row, {
@@ -259,7 +274,7 @@ function PickerControlRow({ row }: { row: RowOf<'picker'> }): React.JSX.Element 
         ariaLabel: row.label,
         value,
         options: row.options,
-        onPick: (v: typeof value) => setPersonalization(row.key, v),
+        onPick: set,
       })}
     />
   )
