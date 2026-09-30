@@ -2,7 +2,7 @@ import { globalStyle, keyframes, style } from '@vanilla-extract/css'
 import { revealTarget } from './hover-reveal.css'
 
 // ── Knobs ──
-const SCROLLBAR = { width: 6, minLength: 32, maxLength: 240, maxShare: 0.5 } as const // KNOB
+const SCROLLBAR = { width: 6, minLength: 36, maxLength: 240, maxShare: 0.5 } as const // KNOB
 
 // ── Track ──
 export const track = style({
@@ -19,7 +19,6 @@ export const track = style({
 
 // ── Pill ──
 const travel = keyframes({ to: { translate: '0 calc(100cqh - 100%)' } })
-const wash = (state: string): string => `linear-gradient(${state}, ${state}), var(--fill-primary)`
 
 export const pill = style([
   revealTarget,
@@ -32,14 +31,15 @@ export const pill = style([
     animationTimingFunction: 'linear',
     animationFillMode: 'both',
     '@starting-style': { opacity: 0 },
+    // Deliberate violation of hand-rolling state-tokens; --state-selected would read *darker* here.
     selectors: {
       '&&:hover': {
         opacity: 1,
         pointerEvents: 'auto',
         cursor: 'pointer',
-        background: wash('var(--state-hover)'),
+        background: 'var(--label-tertiary)',
       },
-      '&&[data-reveal-held]': { background: wash('var(--state-selected)') },
+      '&&[data-reveal-held]': { background: 'var(--label-tertiary)' },
     },
   },
 ])
