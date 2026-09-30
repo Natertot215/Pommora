@@ -1,7 +1,7 @@
 import { type Handlers, withRoot, withWriteRoot } from '../Contract/handlers'
 import { ok, fault } from '../Contract/result'
 import { isPlainObject, isString } from '../Contract/validators'
-import { NOT_A_PROPERTY_DIR } from './assetRoots'
+import { assetSubfolder, NOT_A_PROPERTY_DIR, validPropertyDir } from './assetRoots'
 import { assetSubRoot } from '../Paths/nexusPaths'
 import { resolveUnderRoot } from '../Paths/pathSafety'
 import { assetsDir } from '../Paths/paths'
@@ -15,7 +15,6 @@ import { validateAssetDir } from '../Settings/assetDirValidate'
 import { readWatchScope, writeAssetDirectory } from '../Settings/settings'
 import { liveAssetMap, refreshAssetMap } from './assetMap'
 import { migrateAssets } from './assetMigrate'
-import { assetSubfolder, validPropertyDir } from './assetRoots'
 import { trashDeps } from '../Trash/bundle'
 
 export const assetsHandlers = {

@@ -1,5 +1,5 @@
 import { join, dirname, basename } from '../Paths/posix'
-import { ID_KEY } from './identityMark'
+import { ID_KEY, PAGE_MODELED_KEYS } from './identityMark'
 import { newContentId } from './ids'
 import { bodyHash, type PageWrite, writePageFile } from '../Files/pageFile'
 import { recordWrite, reportRename } from '../Files/writeEcho'
@@ -11,7 +11,6 @@ import {
   type PropertyValue,
 } from '../Properties/propertyValue'
 import type { GovernedWorld } from '../Contexts/contextResolve'
-import { PAGE_MODELED_KEYS } from './identityMark'
 import { ok, fail, type Result, fault } from '../Contract/result'
 import { pathExists, targetTaken } from '../Files/atomicWrite'
 import { nameError } from '../Paths/names'

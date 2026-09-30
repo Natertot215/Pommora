@@ -5,7 +5,13 @@ import { homedir } from 'node:os'
 import { join } from '../Paths/posix'
 import { posixPath, tempRoot } from '../Testing/hostFs'
 import { readNexus } from './readNexus'
-import { settingOf } from '../Settings/personalization'
+import {
+  HISTORY_DAYS,
+  SETTING_DEFAULTS,
+  type SettingKey,
+  settingOf,
+  settingValue,
+} from '../Settings/personalization'
 import {
   nexusFolderRefusal,
   readCommands,
@@ -17,12 +23,6 @@ import { ASSETS_DIR_REL, METADATA_DIR_REL } from '../Paths/nexusPaths'
 import { contentIdAt } from './ids'
 import { corpusFiles } from '../Files/walk'
 import { DEFAULT_COMMANDS } from '../Actions/commands'
-import {
-  HISTORY_DAYS,
-  SETTING_DEFAULTS,
-  settingValue,
-  type SettingKey,
-} from '../Settings/personalization'
 
 const PG_LINKED = '01KVGMT8BFP350FZZXAMG1QDRQ'
 const PG_PLAIN = '01KVGMT8BFP350FZZXAMG1QDRR'

@@ -1,7 +1,6 @@
 // First: zod probes `new Function` when it builds its first object schema, and the window's content policy forbids eval.
 import './zodConfig'
 import { mountApp } from '@pommora/core/Interface/mount'
-import './drag-region.css'
 
 mountApp(document.getElementById('root') as HTMLElement)
 

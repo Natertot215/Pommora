@@ -3,8 +3,7 @@ import type { HostDevice, TransportReply, TransportRequest } from '../../Contrac
 import { machine } from '../../Platform/machine'
 import { memorySecrets, TEST_PUBLIC_KEY } from '../../Testing/syncDevice'
 import { replyOf } from '../../Testing/transportReplies'
-import { canonicalString } from '../Contract/canonical'
-import { blobPath } from '../Contract/canonical'
+import { blobPath, canonicalString } from '../Contract/canonical'
 import { BLOB_TIMEOUT_MS, call, getBlob, JSON_TIMEOUT_MS, putBlob, type SyncHost } from './call'
 
 const DEVICE_ID = 'fe1c'
