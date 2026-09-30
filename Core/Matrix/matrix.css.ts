@@ -133,7 +133,6 @@ export const labelGlyph = style({
 // The home a locked node's drag leaves to go loose: it fills the stage's uncovered box, and stays static so the overlay still seats against the host's origin.
 export const carryZone = style({
   height: '100%',
-  pointerEvents: 'none',
   selectors: {
     '&.line-zone': { position: 'static' },
   },

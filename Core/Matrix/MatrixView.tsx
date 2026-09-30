@@ -161,7 +161,6 @@ export function MatrixView(): React.JSX.Element {
           closing={liveId === null && labelId !== null}
           editing={editing}
           hosts={mine}
-          carrying={locked}
           anchorRef={anchorRef}
           onPointerDown={(e) => {
             if (labelId !== null) nodeDown(e, labelId)
