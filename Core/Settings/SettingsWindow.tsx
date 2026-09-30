@@ -23,6 +23,7 @@ import {
   settingOf,
 } from '@pommora/core/Settings/personalization'
 import { Reveal } from '@pommora/uix/Animations/Reveal'
+import { Scrollbar } from '@pommora/uix/Interactions/Scrollbar'
 import { useExitPresence } from '@pommora/uix/Animations/useExitPresence'
 import type { SessionState } from '../Session/sessionState'
 import { useSession, useSetting } from '../Session/store'
@@ -135,27 +136,30 @@ function FrameBody({ category }: { category: CategoryKey }): React.JSX.Element {
   if (frame.Surface) return <frame.Surface />
   const { sections } = frame
   return (
-    <div className="window-body settings-body scroll-fade">
-      <h2 className={cx('settings-heading', text.headline.emphasized)}>
-        <Icon name={frame.icon} className="settings-heading-icon" />
-        {frame.label}
-      </h2>
-      {sections.map((section, i) => (
-        <div key={section.title ?? i} className="settings-section">
-          {section.title && (
-            <MenuRowView row={{ kind: 'heading', label: section.title, caps: true }} />
-          )}
-          {section.rows.map((row) =>
-            // Keyed on the label: the one row writing a top-level settings key has no personalization key to be identified by, and a label is unique within a section.
-            row.when ? (
-              <ConditionalRow key={row.label} row={row} when={row.when} />
-            ) : (
-              <RowControl key={row.label} row={row} />
-            ),
-          )}
-        </div>
-      ))}
-    </div>
+    <>
+      <div className="window-body settings-body scroll-fade">
+        <h2 className={cx('settings-heading', text.headline.emphasized)}>
+          <Icon name={frame.icon} className="settings-heading-icon" />
+          {frame.label}
+        </h2>
+        {sections.map((section, i) => (
+          <div key={section.title ?? i} className="settings-section">
+            {section.title && (
+              <MenuRowView row={{ kind: 'heading', label: section.title, caps: true }} />
+            )}
+            {section.rows.map((row) =>
+              // Keyed on the label: the one row writing a top-level settings key has no personalization key to be identified by, and a label is unique within a section.
+              row.when ? (
+                <ConditionalRow key={row.label} row={row} when={row.when} />
+              ) : (
+                <RowControl key={row.label} row={row} />
+              ),
+            )}
+          </div>
+        ))}
+      </div>
+      <Scrollbar />
+    </>
   )
 }
 

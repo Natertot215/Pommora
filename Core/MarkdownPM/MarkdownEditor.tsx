@@ -1,4 +1,4 @@
-import { useEffect, useRef, type ReactNode } from 'react'
+import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { docScan, docString } from './docCache'
 import { travelToHeading } from './travel'
 import { EditorView, keymap, placeholder } from '@codemirror/view'
@@ -42,6 +42,7 @@ import type { ConnectionsApi } from './Links/connectionsApi'
 import type { WarmSeam } from './warmSeam'
 import { type EditorHost, editorHost, mirrorBody, mirrored, resolutionNudge } from './api'
 import { useLatest } from '@pommora/uix/Utilities/stableApi'
+import { Scrollbar } from '@pommora/uix/Interactions/Scrollbar'
 import './markdown-pm.css'
 
 export const EMPTY_PAGE_TEXT = 'Click to type or press / for actions'
@@ -93,6 +94,7 @@ export function MarkdownEditor({
   const editorRef = useRef<HTMLDivElement>(null)
   const shellRef = useRef<HTMLDivElement>(null)
   const viewRef = useRef<EditorView | null>(null)
+  const [scroller, setScroller] = useState<HTMLElement | null>(null)
   const onChangeRef = useLatest(onChange)
   const onSelectionRef = useLatest(onSelection)
   const lastRangeRef = useRef<{ from: number; to: number } | null>(null)
@@ -273,6 +275,7 @@ export function MarkdownEditor({
       warmState ? { state: warmState, parent } : { doc: initialBody, parent, extensions },
     )
     viewRef.current = view
+    setScroller(view.scrollDOM)
     registerRef.current?.(view)
     // At cleanup time React may have already detached the DOM, where reading scrollTop yields 0 and would wipe the saved position.
     let lastScrollTop = saved?.scrollTop ?? 0
@@ -373,6 +376,7 @@ export function MarkdownEditor({
     <div ref={shellRef} className="mdpm-shell">
       {header}
       <div ref={editorRef} className="mdpm-editor interface-inset" />
+      <Scrollbar of={scroller} page timeline="--mdpm-scroll" />
       <AutocompletePane {...pane} />
       <BlockMenu
         state={block.state}

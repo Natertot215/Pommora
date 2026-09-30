@@ -62,7 +62,31 @@ describe('Scrollbar', () => {
 
   it('a scroll before any input never reveals', () => {
     const { scroller, track } = mount(400, 2000)
+    scroller.scrollTop = 300
     scroller.dispatchEvent(new Event('scroll'))
+    expect(track.dataset.revealHost).toBe('off')
+  })
+
+  it('a scroll landing where the bar last saw it never reveals', () => {
+    vi.useFakeTimers()
+    const { scroller, track } = mount(400, 2000)
+    window.dispatchEvent(new KeyboardEvent('keydown'))
+    scroller.scrollTop = 300
+    scroller.dispatchEvent(new Event('scroll'))
+    scroller.dispatchEvent(new Event('scrollend'))
+    vi.advanceTimersByTime(SCROLLBAR_LINGER_MS)
+    scroller.scrollTop = 0
+    scroller.scrollTop = 300
+    scroller.dispatchEvent(new Event('scroll'))
+    expect(track.dataset.revealHost).toBe('off')
+  })
+
+  it('resting near the edge lingers out as a scroll does', () => {
+    vi.useFakeTimers()
+    const { track } = mount(400, 2000)
+    track.parentElement!.dispatchEvent(new PointerEvent('pointermove', { clientX: 0, clientY: 0 }))
+    expect(track.dataset.revealHost).toBe('on')
+    vi.advanceTimersByTime(SCROLLBAR_LINGER_MS)
     expect(track.dataset.revealHost).toBe('off')
   })
 
@@ -70,6 +94,7 @@ describe('Scrollbar', () => {
     vi.useFakeTimers()
     const { scroller, track } = mount(400, 2000)
     window.dispatchEvent(new KeyboardEvent('keydown'))
+    scroller.scrollTop = 300
     scroller.dispatchEvent(new Event('scroll'))
     expect(track.dataset.revealHost).toBe('on')
     scroller.dispatchEvent(new Event('scrollend'))

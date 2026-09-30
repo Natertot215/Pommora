@@ -2,6 +2,8 @@
   padding: var(--app-inset);
   /* Each frame owns its own top — the Trash surface opens on a search row — so this window carries no toolbar. */
   --window-toolbar-h: 0px;
+  --settings-close-clear: 28px; /* KNOB — clearance past the × floating over the corner */
+  --scrollbar-top: calc(var(--app-inset) + var(--settings-close-clear));
 }
 
 .settings-rail-list {
@@ -19,7 +21,7 @@
 
 .settings-body {
   padding: var(--surface-inset);
-  padding-top: 28px; /* KNOB — clearance past the × floating over the corner */
+  padding-top: var(--settings-close-clear);
 }
 .settings-heading {
   display: flex;
