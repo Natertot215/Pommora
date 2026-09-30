@@ -28,7 +28,7 @@
   overflow-y: auto;
 }
 
-/* One tab's view; full-bleed so a banner reaches the pane edges. Its scrollbars clear the toolbar and ride the side pane's slide. */
+/* One tab's view; full-bleed so a banner reaches the pane edges. */
 .detail-host {
   height: 100%;
   overflow: hidden;

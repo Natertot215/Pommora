@@ -4,16 +4,15 @@ import { beginPointerGesture } from './gesture'
 import { type Box, withinReach } from './hoverReveal'
 import { pill as pillClass, track as trackClass } from './scrollbar.css'
 
-export const SCROLLBAR_MIN_OVERFLOW = 1.25 // KNOB — content over visible height before a bar shows
+const SCROLLBAR_MIN_OVERFLOW = 1.25 // KNOB — content over visible height before a bar shows
 export const SCROLLBAR_LINGER_MS = 1000 // KNOB
 
-// Level with the track anywhere along its height, so the pointer never hunts for a hidden pill; each move within it wakes the bar as a scroll does.
 const REACH = { size: 'inline', toward: { x: -1, y: 1 } } as const
 
-// A scroll only reveals once the user has acted with the scroller on screen: a restore, an arrival on open, or a return from off screen lands before any input.
+// Reveals wait on input taken on screen, since restores, arrivals, and returns from off screen scroll before any.
 const ARMING = ['wheel', 'pointerdown', 'touchstart', 'keydown'] as const
 
-/** Declared as its scroller's next sibling, or handed `of` when the scroller sits deeper; `page` keeps it under Pages Only. */
+/** Declared as its scroller's next sibling, or handed `of` when the scroller sits deeper. */
 export function Scrollbar({
   of,
   page = false,
@@ -21,13 +20,11 @@ export function Scrollbar({
 }: {
   of?: HTMLElement | null
   page?: boolean
-  /** A scroll timeline the scroller already names; otherwise the bar names one. */
   timeline?: string
 }): React.JSX.Element {
   const trackRef = useRef<HTMLDivElement>(null)
   const pillRef = useRef<HTMLDivElement>(null)
   const own = `--scrollbar-${useId().replace(/[^\w-]/g, '')}`
-  const name = timeline ?? own
 
   useEffect(() => {
     const track = trackRef.current
@@ -61,7 +58,7 @@ export function Scrollbar({
       linger = window.setTimeout(() => show(false), SCROLLBAR_LINGER_MS)
     }
 
-    // A re-observed target reports afresh, so each child is observed once, as it arrives.
+    // Observed once each: a re-observed target reports again and loops the measure.
     const measure = (): void => {
       box = null
       for (const child of scroller.children)
@@ -89,7 +86,7 @@ export function Scrollbar({
       onScreen = entry.isIntersecting
       if (!onScreen && armed) disarm()
     })
-    // A scroll landing where the bar last saw it isn't movement: a detached tile's heal restores its offset that way.
+    // A scroll back to the last-seen offset is a tile heal's restore, not movement.
     const onScroll = (): void => {
       const top = scroller.scrollTop
       if (top === seen) return
@@ -139,7 +136,7 @@ export function Scrollbar({
     scroller.addEventListener('scroll', onScroll, { passive: true })
     frame.addEventListener('pointermove', onMove, { passive: true })
     frame.addEventListener('pointerenter', forget)
-    // A pane's slide transitions on an ancestor, whose events never bubble down to the frame.
+    // A pane's slide transitions on an ancestor, out of the frame's bubbling reach.
     document.addEventListener('transitionend', forget, true)
     pill.addEventListener('pointerdown', onPress)
     return () => {
@@ -163,7 +160,7 @@ export function Scrollbar({
 
   return (
     <div ref={trackRef} className={trackClass} data-page={page || undefined}>
-      <div ref={pillRef} className={pillClass} style={{ animationTimeline: name }} />
+      <div ref={pillRef} className={pillClass} style={{ animationTimeline: timeline ?? own }} />
     </div>
   )
 }

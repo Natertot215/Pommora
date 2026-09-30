@@ -49,7 +49,6 @@ export function packDevicePrefs(raw: unknown): DevicePrefs {
   return Object.fromEntries(kept) as DevicePrefs
 }
 
-/** What a Settings row shows while its device preference is absent; a row stores its default as absent. */
 export const DEVICE_DEFAULTS = {
   nativeMenus: false,
   interfaceScale: TENTHS_SCALE.default,

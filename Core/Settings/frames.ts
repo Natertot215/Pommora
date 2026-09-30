@@ -63,13 +63,11 @@ type DeviceKeyOf<V> = {
   [K in DeviceDefaultKey]: NonNullable<DevicePrefs[K]> extends V ? K : never
 }[DeviceDefaultKey]
 
-/** Writes the Nexus's synced settings, or this machine's own under `device`. */
 type Scoped<Nexus, Device> = { key: Nexus; device?: never } | { key: Device; device: true }
 
 export interface RowText {
   label: string
   hint?: string
-  /** The row folds away while this reads false. */
   when?: (s: SessionState) => boolean
 }
 
