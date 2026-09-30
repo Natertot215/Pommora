@@ -18,6 +18,18 @@ class ResizeObserverStub {
 }
 ;(globalThis as { ResizeObserver?: unknown }).ResizeObserver = ResizeObserverStub
 
+let onScreen: (visible: boolean) => void = () => {}
+class IntersectionObserverStub {
+  constructor(private readonly callback: IntersectionObserverCallback) {}
+  observe(): void {
+    onScreen = (visible) =>
+      this.callback([{ isIntersecting: visible } as IntersectionObserverEntry], this as never)
+    onScreen(true)
+  }
+  disconnect(): void {}
+}
+;(globalThis as { IntersectionObserver?: unknown }).IntersectionObserver = IntersectionObserverStub
+
 let host: HTMLDivElement
 let root: Root
 beforeEach(() => {
@@ -73,7 +85,6 @@ describe('Scrollbar', () => {
     window.dispatchEvent(new KeyboardEvent('keydown'))
     scroller.scrollTop = 300
     scroller.dispatchEvent(new Event('scroll'))
-    scroller.dispatchEvent(new Event('scrollend'))
     vi.advanceTimersByTime(SCROLLBAR_LINGER_MS)
     scroller.scrollTop = 0
     scroller.scrollTop = 300
@@ -90,14 +101,24 @@ describe('Scrollbar', () => {
     expect(track.dataset.revealHost).toBe('off')
   })
 
-  it('a scroll after input reveals, then lingers out', () => {
+  it('input while off screen never arms, and a return disarms', () => {
+    const { scroller, track } = mount(400, 2000)
+    window.dispatchEvent(new KeyboardEvent('keydown'))
+    onScreen(false)
+    window.dispatchEvent(new KeyboardEvent('keydown'))
+    onScreen(true)
+    scroller.scrollTop = 300
+    scroller.dispatchEvent(new Event('scroll'))
+    expect(track.dataset.revealHost).toBe('off')
+  })
+
+  it('a scroll after input reveals, then lingers out from its last event', () => {
     vi.useFakeTimers()
     const { scroller, track } = mount(400, 2000)
     window.dispatchEvent(new KeyboardEvent('keydown'))
     scroller.scrollTop = 300
     scroller.dispatchEvent(new Event('scroll'))
     expect(track.dataset.revealHost).toBe('on')
-    scroller.dispatchEvent(new Event('scrollend'))
     vi.advanceTimersByTime(SCROLLBAR_LINGER_MS - 1)
     expect(track.dataset.revealHost).toBe('on')
     vi.advanceTimersByTime(1)

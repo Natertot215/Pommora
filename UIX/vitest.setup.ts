@@ -18,6 +18,15 @@ if (typeof globalThis !== 'undefined' && !('ResizeObserver' in globalThis)) {
   }
 }
 
+// jsdom has no IntersectionObserver; every declared Scrollbar observes whether its scroller is on screen.
+if (typeof globalThis !== 'undefined' && !('IntersectionObserver' in globalThis)) {
+  ;(globalThis as { IntersectionObserver?: unknown }).IntersectionObserver = class {
+    observe(): void {}
+    unobserve(): void {}
+    disconnect(): void {}
+  }
+}
+
 // jsdom has no scroller, so a list following its selection has nothing to scroll.
 if (typeof Element !== 'undefined' && !Element.prototype.scrollIntoView) {
   Element.prototype.scrollIntoView = () => {}
