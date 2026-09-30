@@ -13,6 +13,8 @@ A guest is live only while its tile is fully visible in the scrollport, since a 
 
 A live tile is inert until clicked in: wheel and pointer pass to the document, and one click engages the site, after which interaction belongs to the page until a click lands outside the tile, Escape is pressed, or the tile scrolls out. Guests that scroll out of view hide rather than unmount, keeping the site's state alive under a capped least-recently-hidden retention (`Core/Tiles/Surfaces/webRetention.ts`); the cap's eviction tears the oldest hidden guest down and its tile reloads fresh on its next entry. Retention carries across tab switches for the page tabs that stay parked — up to the **Active Tab Cache** count — so a site resumes with its session and scroll; its video and audio, paused when the tab left the main view (**Pause Media On Tab Switch**, on by default), stay where the pause left them rather than resuming. A tab beyond that reach rebuilds and its sites load fresh.
 
+The app's layout and tab shortcuts (the ribbon, navigation, Matrix, the iteration window, and tab cycling) keep working while a site has focus: the host hands each to the window and keeps it from the site. Escape reaches both, and every other key, undo and find included, stays with the site.
+
 ### Link Opening
 
 One renderer adjudicator, `Core/Web/openWebLink.ts`, decides where every external link opens — editor clicks, table cells, tile titles, and guest popups all route through it — honoring **Open Links In Pommora**: off opens the system browser, on summons the floating in-app browser. A guest's `window.open` never opens an OS window; main denies it and hands the address to the same adjudicator.
