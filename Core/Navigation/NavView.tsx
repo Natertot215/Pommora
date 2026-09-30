@@ -1,3 +1,4 @@
+import { Scrollbar } from '@pommora/uix/Interactions/Scrollbar'
 import { useSession } from '../Session/store'
 import { useNavData } from './useNavData'
 import { usePublishCount } from '../Interface/Subfield/publish'
@@ -32,6 +33,7 @@ export function NavView(): React.JSX.Element {
         )}
       />
       <div className="nav-view-scroll interface-inset scroll-fade">{nav.body}</div>
+      <Scrollbar />
     </div>
   )
 }

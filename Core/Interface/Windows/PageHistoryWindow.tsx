@@ -22,6 +22,7 @@ import { useSession, useSetting } from '../../Session/store'
 import type { PageTarget } from '@pommora/core/Navigation/navRef'
 import { askDeleteSnapshots, askRestoreSnapshot } from '../Confirm/confirmations'
 import { WINDOW_BASE_PANEL, WindowBase } from '@pommora/uix/Windows/WindowBase'
+import { Scrollbar } from '@pommora/uix/Interactions/Scrollbar'
 import { dialer } from '../../Platform/dialer'
 import { popMenu } from '../../Actions/menuActions'
 import { fileHistoryMenuItems } from '@pommora/core/Actions/fileHistoryMenu'
@@ -253,6 +254,7 @@ function PageHistoryBody({
           </div>
         )}
       </div>
+      <Scrollbar page />
     </WindowBase>
   )
 }

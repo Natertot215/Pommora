@@ -28,10 +28,12 @@
   overflow-y: auto;
 }
 
-/* One tab's view; full-bleed so a banner reaches the pane edges. */
+/* One tab's view; full-bleed so a banner reaches the pane edges. Its scrollbars clear the toolbar and ride the side pane's slide. */
 .detail-host {
   height: 100%;
   overflow: hidden;
+  --scrollbar-top: calc(var(--app-inset) + 1px + var(--toolbar-h));
+  --scrollbar-right: calc(var(--io) * (var(--app-inset) + var(--side-pane-width)));
 }
 
 /* Moved off screen rather than hidden: embedded webpages then read as out of view and pause under their own retention, where a hidden subtree would keep them painting and unmounting would end their sessions outright, and the Matrix's canvas stops ticking while parked. */

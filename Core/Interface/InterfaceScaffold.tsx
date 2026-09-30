@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react'
 import { cx } from '@pommora/uix/Utilities/cx'
+import { Scrollbar } from '@pommora/uix/Interactions/Scrollbar'
 import { EntityBanner } from './Header/Banner'
 import { isSurfaceKind, type BannerOwner } from '../Nexus/treeIndex'
 import { useContentHost } from './contentHost'
@@ -36,11 +37,14 @@ export function InterfaceScaffold({
 
   const surface = owner !== null && isSurfaceKind(owner.kind)
   return (
-    <div ref={ref} className={cx('detail-scroll', owner && 'has-header')}>
-      {owner ? <EntityBanner owner={owner} /> : null}
-      <div className={cx(surface ? 'tile-host-frame' : 'detail-body', 'interface-inset')}>
-        {children}
+    <>
+      <div ref={ref} className={cx('detail-scroll', owner && 'has-header')}>
+        {owner ? <EntityBanner owner={owner} /> : null}
+        <div className={cx(surface ? 'tile-host-frame' : 'detail-body', 'interface-inset')}>
+          {children}
+        </div>
       </div>
-    </div>
+      <Scrollbar />
+    </>
   )
 }

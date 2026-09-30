@@ -25,6 +25,8 @@
   --window-tab-clear-l: calc(var(--window-panel-inset) + 22px);
   --window-tab-clear-r: calc(var(--window-panel-inset) + 56px + var(--window-title-squeeze, 0px));
   --window-body-pad: var(--window-toolbar-h) var(--window-clear-r) 0 var(--window-clear-l);
+  --scrollbar-top: var(--window-toolbar-h);
+  --scrollbar-right: var(--window-clear-r);
 
   /* Declared HERE so the app-level --io can't inherit into a floating window. */
   --io: 0;

@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Checkbox } from '@pommora/uix/Controls/Checkbox'
 import { SearchField } from '@pommora/uix/Fields/SearchField'
 import { overScrollEllipsis } from '@pommora/uix/Interactions/OverScroll'
+import { Scrollbar } from '@pommora/uix/Interactions/Scrollbar'
 import { NavTrail } from '@pommora/uix/Elements/NavTrail'
 import { MenuItem } from '@pommora/uix/Menus'
 import { overlay } from '@pommora/uix/Menus/menu-row.css'
@@ -247,37 +248,40 @@ function TrashBody(): React.JSX.Element {
           {rows.length === 0 ? 'Trash is empty.' : 'Nothing matches.'}
         </div>
       ) : (
-        <div className="trash-scroll scroll-fade">
-          <div className="nav-list">
-            {shown.map((row) => (
-              <TrashRowView
-                key={row.bundlePath}
-                row={row}
-                checked={checked.has(row.bundlePath)}
-                onToggle={() => toggle(row.bundlePath)}
-                onMenu={() => void openMenu(row)}
-                icon={
-                  row.kind === 'property'
-                    ? row.propertyType
-                      ? propertyTypeIconName(row.propertyType)
-                      : 'tag'
-                    : entityIcon(row.kind, undefined, defaultIcons)
-                }
-                defaultIcons={defaultIcons}
-                when={
-                  row.deletedAt === null
-                    ? ''
-                    : formatDate(
-                        new Date(row.deletedAt).toISOString(),
-                        style.date_format,
-                        style.time_format,
-                        style.weekday,
-                      )
-                }
-              />
-            ))}
+        <>
+          <div className="trash-scroll scroll-fade">
+            <div className="nav-list">
+              {shown.map((row) => (
+                <TrashRowView
+                  key={row.bundlePath}
+                  row={row}
+                  checked={checked.has(row.bundlePath)}
+                  onToggle={() => toggle(row.bundlePath)}
+                  onMenu={() => void openMenu(row)}
+                  icon={
+                    row.kind === 'property'
+                      ? row.propertyType
+                        ? propertyTypeIconName(row.propertyType)
+                        : 'tag'
+                      : entityIcon(row.kind, undefined, defaultIcons)
+                  }
+                  defaultIcons={defaultIcons}
+                  when={
+                    row.deletedAt === null
+                      ? ''
+                      : formatDate(
+                          new Date(row.deletedAt).toISOString(),
+                          style.date_format,
+                          style.time_format,
+                          style.weekday,
+                        )
+                  }
+                />
+              ))}
+            </div>
           </div>
-        </div>
+          <Scrollbar />
+        </>
       )}
     </div>
   )

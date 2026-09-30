@@ -3,6 +3,7 @@ import { Button } from '@pommora/uix/Buttons/Button'
 import { cx } from '@pommora/uix/Utilities/cx'
 import { duration, easing, flipTransform, ms } from '@pommora/uix/Animations/motion'
 import { WindowBase } from '@pommora/uix/Windows/WindowBase'
+import { Scrollbar } from '@pommora/uix/Interactions/Scrollbar'
 import type { NavRef } from '@pommora/core/Navigation/navRef'
 import { useExitPresence } from '@pommora/uix/Animations/useExitPresence'
 import { resolveIndexOf } from '../../Nexus/treeIndex'
@@ -146,6 +147,7 @@ function NavWindowBody({ closing }: { closing: boolean }): React.JSX.Element {
             searchRow
           )}
           <div className="navwindow-main-scroll scroll-fade">{nav.body}</div>
+          <Scrollbar />
         </div>
       </div>
     </WindowBase>

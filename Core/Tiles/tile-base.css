@@ -1,6 +1,8 @@
 /* Transitions are deliberately per-consumer — `transition` is a shorthand, so a shared one here would replace a host's own list instead of merging with it. */
 .tile-base {
   --tile-border: var(--width-125); /* one source — hosts' handle/notch math reads it */
+  --scrollbar-top: 0px;
+  --scrollbar-right: 0px;
   /* Re-anchored on every chassis because custom properties inherit where border-color wouldn't; host triggers still outrank it at (0,2,0)+ on the same element. */
   --tile-border-color: var(--border-base);
   border: var(--tile-border) solid var(--tile-border-color);

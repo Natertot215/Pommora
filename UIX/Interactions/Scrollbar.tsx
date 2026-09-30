@@ -5,9 +5,9 @@ import { type Box, withinReach } from './hoverReveal'
 import { pill as pillClass, track as trackClass } from './scrollbar.css'
 
 export const SCROLLBAR_MIN_OVERFLOW = 1.25 // KNOB — content over visible height before a bar shows
-export const SCROLLBAR_LINGER_MS = 1200 // KNOB
+export const SCROLLBAR_LINGER_MS = 1000 // KNOB
 
-// Level with the track anywhere along its height, so the pointer never hunts for a hidden pill.
+// Level with the track anywhere along its height, so the pointer never hunts for a hidden pill; each move within it wakes the bar as a scroll does.
 const REACH = { size: 'inline', toward: { x: -1, y: 1 } } as const
 
 // A scroll only reveals once the user has acted: a restore or an arrival on open lands before any input.
@@ -43,24 +43,24 @@ export function Scrollbar({
       frame.style.setProperty('timeline-scope', own)
     }
 
-    const state = { near: false, scrolling: false, armed: false }
-    const watched = new Set<Element>()
+    const watched = new WeakSet<Element>()
+    let armed = false
+    let shown = false
+    let seen = scroller.scrollTop
     let box: Box | null = null
     let linger = 0
-    const sync = (): void => {
-      track.dataset.revealHost = state.near || state.scrolling ? 'on' : 'off'
+    const show = (on: boolean): void => {
+      if (on === shown) return
+      shown = on
+      track.dataset.revealHost = on ? 'on' : 'off'
     }
-    const settle = (): void => {
-      state.scrolling = true
-      sync()
+    const wake = (): void => {
+      show(true)
       window.clearTimeout(linger)
-      linger = window.setTimeout(() => {
-        state.scrolling = false
-        sync()
-      }, SCROLLBAR_LINGER_MS)
+      linger = window.setTimeout(() => show(false), SCROLLBAR_LINGER_MS)
     }
 
-    // A re-observed target reports afresh, so each child is observed once.
+    // A re-observed target reports afresh, so each child is observed once, as it arrives.
     const measure = (): void => {
       box = null
       for (const child of scroller.children)
@@ -73,30 +73,27 @@ export function Scrollbar({
       track.style.setProperty('--scrollbar-visible', String(visible))
     }
     const ro = new ResizeObserver(measure)
+    const mo = new MutationObserver(measure)
 
     const arm = (): void => {
-      state.armed = true
+      armed = true
       for (const t of ARMING) window.removeEventListener(t, arm, true)
     }
+    // A scroll landing where the bar last saw it isn't movement: a detached tile's heal restores its offset that way.
     const onScroll = (): void => {
-      if (!state.armed) return
+      const top = scroller.scrollTop
+      if (top === seen) return
+      seen = top
+      if (!armed) return
       window.clearTimeout(linger)
-      state.scrolling = true
-      sync()
+      show(true)
     }
     const onScrollEnd = (): void => {
-      if (state.scrolling) settle()
+      if (shown) wake()
     }
     const onMove = (e: PointerEvent): void => {
       box ??= track.getBoundingClientRect()
-      const near = e.buttons === 0 && withinReach(box, REACH, e.clientX, e.clientY)
-      if (near === state.near) return
-      state.near = near
-      sync()
-    }
-    const onLeave = (): void => {
-      state.near = false
-      sync()
+      if (e.buttons === 0 && withinReach(box, REACH, e.clientX, e.clientY)) wake()
     }
     const forget = (): void => {
       box = null
@@ -106,12 +103,13 @@ export function Scrollbar({
       let ratio = 0
       const release = (): void => {
         pill.removeAttribute('data-reveal-held')
-        settle()
+        wake()
       }
       const gesture = beginPointerGesture({
         el: pill,
         event: e,
         activation: 0,
+        cursor: 'grabbing',
         onActivate: () => {
           from = scroller.scrollTop
           ratio =
@@ -128,25 +126,25 @@ export function Scrollbar({
       if (gesture) pill.setAttribute('data-reveal-held', '')
     }
 
-    sync()
+    track.dataset.revealHost = 'off'
     ro.observe(scroller)
+    mo.observe(scroller, { childList: true })
     for (const t of ARMING) window.addEventListener(t, arm, { capture: true, passive: true })
     scroller.addEventListener('scroll', onScroll, { passive: true })
     scroller.addEventListener('scrollend', onScrollEnd)
     frame.addEventListener('pointermove', onMove, { passive: true })
-    frame.addEventListener('pointerleave', onLeave)
     frame.addEventListener('pointerenter', forget)
     // A pane's slide transitions on an ancestor, whose events never bubble down to the frame.
     document.addEventListener('transitionend', forget, true)
     pill.addEventListener('pointerdown', onPress)
     return () => {
       ro.disconnect()
+      mo.disconnect()
       window.clearTimeout(linger)
       for (const t of ARMING) window.removeEventListener(t, arm, true)
       scroller.removeEventListener('scroll', onScroll)
       scroller.removeEventListener('scrollend', onScrollEnd)
       frame.removeEventListener('pointermove', onMove)
-      frame.removeEventListener('pointerleave', onLeave)
       frame.removeEventListener('pointerenter', forget)
       document.removeEventListener('transitionend', forget, true)
       pill.removeEventListener('pointerdown', onPress)

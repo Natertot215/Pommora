@@ -1,7 +1,8 @@
-import { memo, useEffect, useMemo, useRef, useState, type RefObject } from 'react'
+import { Fragment, memo, useEffect, useMemo, useRef, useState, type RefObject } from 'react'
 import type { PageTarget, SpaceTarget, WindowTarget } from '@pommora/core/Navigation/navRef'
 import { useHeld } from '@pommora/uix/Animations/useExitPresence'
 import { cx } from '@pommora/uix/Utilities/cx'
+import { Scrollbar } from '@pommora/uix/Interactions/Scrollbar'
 import { WindowActions } from '@pommora/uix/Windows/WindowActions'
 import { WINDOW_BASE_PANEL, type WindowBasePanel } from '@pommora/uix/Windows/WindowBase'
 import type { ConnectionsApi } from '../../MarkdownPM/Links/connectionsApi'
@@ -78,24 +79,27 @@ const WindowPage = memo(function WindowPage({
   const [editingPath, setEditingPath] = useState<string | null>(null)
   if (editingPath !== null && !shown) setEditingPath(null)
   return (
-    <div
-      className={cx('window-body', 'scroll-fade', 'page-tile-grows', !shown && 'is-parked')}
-      inert={!shown}
-      ref={shown ? bodyRef : undefined}
-    >
-      <PageTile
-        key={path}
-        path={path}
-        editing={editingPath === path}
-        onBeginEdit={() => setEditingPath(path)}
-        connections={connections}
-        onBody={onBody}
-        warm={windowSeam(id, path)}
-        chrome={chrome}
-        arrive={arrive}
-        onArrived={onArrived}
-      />
-    </div>
+    <>
+      <div
+        className={cx('window-body', 'scroll-fade', 'page-tile-grows', !shown && 'is-parked')}
+        inert={!shown}
+        ref={shown ? bodyRef : undefined}
+      >
+        <PageTile
+          key={path}
+          path={path}
+          editing={editingPath === path}
+          onBeginEdit={() => setEditingPath(path)}
+          connections={connections}
+          onBody={onBody}
+          warm={windowSeam(id, path)}
+          chrome={chrome}
+          arrive={arrive}
+          onArrived={onArrived}
+        />
+      </div>
+      {shown && <Scrollbar page />}
+    </>
   )
 })
 
@@ -189,14 +193,17 @@ export function useWindowTabBody(target: WindowTarget | null): WindowTabBodySlot
         )
       })}
       {spaceTarget && spaceOwner && (
-        <div key={spaceTarget.id} className="window-body scroll-fade" ref={bodyRef}>
-          <SpaceTabBody
-            host={spaceTarget}
-            owner={spaceOwner}
-            banner={spaceBanner}
-            connections={connections}
-          />
-        </div>
+        <Fragment key={spaceTarget.id}>
+          <div className="window-body scroll-fade" ref={bodyRef}>
+            <SpaceTabBody
+              host={spaceTarget}
+              owner={spaceOwner}
+              banner={spaceBanner}
+              connections={connections}
+            />
+          </div>
+          <Scrollbar />
+        </Fragment>
       )}
     </>
   )

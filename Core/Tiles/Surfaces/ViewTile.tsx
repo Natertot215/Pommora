@@ -27,6 +27,7 @@ import { SortableZone, useDragItem } from '@pommora/uix/Interactions/drag'
 import { moveBefore } from '@pommora/uix/Utilities/moveItem'
 import { useHoverReveal } from '@pommora/uix/Interactions/hoverReveal'
 import { revealTarget } from '@pommora/uix/Interactions/hover-reveal.css'
+import { Scrollbar } from '@pommora/uix/Interactions/Scrollbar'
 import { PICKER_MAX_HEIGHT } from '@pommora/uix/Pickers/picker-base.css'
 import { RenamableLabel } from '@pommora/uix/Fields/RenamableLabel'
 import { IconChoice } from '../../Assets/IconChoice'
@@ -646,6 +647,7 @@ export function ViewTile({
             <ViewHost key={source.id} source={source} />
           </div>
         </div>
+        <Scrollbar />
         <PickerMenu
           open={cfgOpen}
           onDismiss={() => setCfgOpen(false)}
