@@ -100,9 +100,11 @@ const settleEffect = StateEffect.define<number>()
 const expandEffect = StateEffect.define<number>()
 const dropEffect = StateEffect.define<number>()
 
+// A picture of the body, never a second copy of it: inert, and without the web guests a copied `<webview>` would start.
 function cloneBody(view: EditorView, from: number, to: number): HTMLElement {
   const wrap = document.createElement('div')
   wrap.className = 'mdpm-fold-clone'
+  wrap.setAttribute('inert', '')
   const seen = new Set<HTMLElement>()
   for (let pos = from; pos <= to; ) {
     const line = view.state.doc.lineAt(pos)
@@ -114,6 +116,7 @@ function cloneBody(view: EditorView, from: number, to: number): HTMLElement {
     if (line.to >= to) break
     pos = line.to + 1
   }
+  for (const guest of wrap.querySelectorAll('webview')) guest.remove()
   return wrap
 }
 
@@ -157,15 +160,12 @@ class RevealWidget extends WidgetType {
   toDOM(view: EditorView): HTMLElement {
     const outer = document.createElement('div')
     outer.className = 'mdpm-fold-reveal'
+    if (this.phase === 'collapsed') return outer
     const inner = document.createElement('div')
     inner.className = 'mdpm-fold-reveal-inner'
     inner.appendChild(this.clone.cloneNode(true))
     outer.appendChild(inner)
 
-    if (this.phase === 'collapsed') {
-      outer.style.gridTemplateRows = '0fr'
-      return outer
-    }
     const open = this.phase === 'expanding'
     outer.style.gridTemplateRows = open ? '0fr' : '1fr'
     const done = open ? dropEffect.of(this.anchor) : settleEffect.of(this.anchor)

@@ -5,7 +5,7 @@ import { docScan, docString } from '../docCache'
 import { inSealedLine } from '../Engine/docScan'
 import { forEachLine, shadeField, type Boundary } from './dragChrome'
 import { beginRelocateDrag, editorGestureCleanup } from './editorGesture'
-import { lineElementAt } from '../lineDom'
+import { lineElementAt, textColumn } from '../lineDom'
 import {
   subBlockAt,
   dropChanges,
@@ -41,9 +41,7 @@ function collectBoundaries(
   scope: MarkdownScope,
 ): Boundary<Drop>[] {
   const doc = view.state.doc
-  const contentRect = view.contentDOM.getBoundingClientRect()
-  const padRight = parseFloat(getComputedStyle(view.contentDOM).paddingRight) || 0
-  const gutterRight = contentRect.right - padRight
+  const gutterRight = textColumn(view).right
   const scan = docScan(doc)
   const out: Boundary<Drop>[] = []
   for (const { from, to } of view.visibleRanges) {

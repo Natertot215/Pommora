@@ -63,28 +63,37 @@ function headerKeyOf(region: TableRegion): string {
   return region.rows[0].cells.map((c) => c.text).join(' ')
 }
 
-// Re-point each toggled ordinal at the table it still names after a doc change: match old header key to new ordinal, consuming matches in order so duplicate headers stay one-to-one. A key with no match keeps its ordinal when the table count is unchanged (an in-place edit never moves tables) and is dropped when the count fell (the table was removed). Returns the same reference when membership holds, so an ordinary edit costs nothing downstream.
-function remapHeadingCols(set: Set<number>, oldDoc: Text, newDoc: Text): Set<number> {
-  if (set.size === 0) return set
-  const oldTables = docScan(oldDoc).tables
-  const newKeys = docScan(newDoc).tables.map(headerKeyOf)
-  const next = new Set<number>()
-  const consumed = new Set<number>()
-  for (const oldIdx of [...set].sort((a, b) => a - b)) {
-    const region = oldTables[oldIdx]
-    if (!region) continue
-    const key = headerKeyOf(region)
-    let matched = -1
-    for (let j = 0; j < newKeys.length; j++) {
-      if (consumed.has(j) || newKeys[j] !== key) continue
-      matched = j
-      break
-    }
-    if (matched === -1 && newKeys.length === oldTables.length) matched = oldIdx
-    if (matched === -1) continue
-    consumed.add(matched)
-    next.add(matched)
+// Each table's ordinal after the transaction, or -1 once it's gone: every piece of per-table memory follows its table through this one rule. Header keys match in order, a tie going to the table nearest where the old one maps, and a table left unmatched keeps its ordinal when the count holds, since an in-place edit never moves tables.
+function tableSuccessors(tr: Transaction): number[] {
+  const oldTables = docScan(tr.startState.doc).tables
+  if (!tr.docChanged) return oldTables.map((_, i) => i)
+  const newTables = docScan(tr.state.doc).tables
+  const newKeys = newTables.map(headerKeyOf)
+  const taken = new Set<number>()
+  const claim = (j: number): number => {
+    if (j >= 0) taken.add(j)
+    return j
   }
+  const next = oldTables.map((old) => {
+    const key = headerKeyOf(old)
+    const at = tr.changes.mapPos(old.from, 1)
+    let best = -1
+    newKeys.forEach((k, j) => {
+      if (k !== key || taken.has(j)) return
+      if (best < 0 || Math.abs(newTables[j].from - at) < Math.abs(newTables[best].from - at))
+        best = j
+    })
+    return claim(best)
+  })
+  if (newTables.length !== oldTables.length) return next
+  return next.map((j, i) => (j < 0 && !taken.has(i) ? claim(i) : j))
+}
+
+// The same reference when membership holds, so an ordinary edit costs nothing downstream.
+function remapHeadingCols(set: Set<number>, tr: Transaction): Set<number> {
+  if (set.size === 0) return set
+  const successors = tableSuccessors(tr)
+  const next = new Set([...set].map((i) => successors[i] ?? -1).filter((j) => j >= 0))
   return next.size === set.size && [...next].every((i) => set.has(i)) ? set : next
 }
 
@@ -101,8 +110,7 @@ const headingColField = StateField.define<Set<number>>({
       }
     }
     // A cell commit never reorders tables, so its self-edit is left to keep the toggle put.
-    if (tr.docChanged && !tr.annotation(tableSelfEdit))
-      next = remapHeadingCols(next, tr.startState.doc, tr.state.doc)
+    if (tr.docChanged && !tr.annotation(tableSelfEdit)) next = remapHeadingCols(next, tr)
     return next
   },
 })
@@ -387,10 +395,19 @@ function heightBoxes(deco: DecorationSet): HeightBox[] {
   return boxes
 }
 
-export function buildWidgetDecorations(state: EditorState, prev?: DecorationSet): DecorationSet {
+export function buildWidgetDecorations(
+  state: EditorState,
+  prev?: { deco: DecorationSet; tr: Transaction },
+): DecorationSet {
   const doc = state.doc
   const headingCols = state.field(headingColField, false) ?? new Set<number>()
-  const boxes = prev ? heightBoxes(prev) : []
+  const boxes: HeightBox[] = []
+  if (prev) {
+    const successors = tableSuccessors(prev.tr)
+    heightBoxes(prev.deco).forEach((box, i) => {
+      if (successors[i] >= 0) boxes[successors[i]] = box
+    })
+  }
   const ranges: Range<Decoration>[] = []
   const scan = docScan(doc)
   const linkStyle = state.facet(editorHost)?.settings().headingLinkStyle
@@ -502,7 +519,7 @@ const widgetField = StateField.define<DecorationSet>({
     }
     if (toggled) return toggledSet
     if (tr.effects.some((e) => e.is(setHeadingColsEffect) || e.is(resolutionNudge)))
-      return buildWidgetDecorations(tr.state, deco)
+      return buildWidgetDecorations(tr.state, { deco, tr })
     // Map the widgets forward and STOP: rebuilding per keystroke makes CM re-measure against React content that hasn't rendered. `refreshTableEffect` does it when the cell demotes.
     if (tr.annotation(tableSelfEdit)) return deco.map(tr.changes)
     let refreshedSet = deco
@@ -514,7 +531,7 @@ const widgetField = StateField.define<DecorationSet>({
     }
     if (refreshed) return refreshedSet
     if (!tr.docChanged) return deco
-    if (editAffectsTables(deco, tr)) return buildWidgetDecorations(tr.state, deco)
+    if (editAffectsTables(deco, tr)) return buildWidgetDecorations(tr.state, { deco, tr })
     const { doc } = tr.state
     let next = deco.map(tr.changes)
     const was = tr.startState.doc

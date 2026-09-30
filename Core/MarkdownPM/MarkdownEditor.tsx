@@ -7,14 +7,7 @@ import { history, historyField, historyKeymap } from '@codemirror/commands'
 import { markdown } from '@codemirror/lang-markdown'
 import { markdownInput } from './Input/markdownInput'
 import { tableWidgetExtension, applySavedHeadingCols } from './Tables/widget'
-import {
-  embedField,
-  embedTiles,
-  refreshTileZooms,
-  rerenderWebTiles,
-  setEmbedHeights,
-  setEmbedZooms,
-} from './Embeds/embedWidget'
+import { applySavedEmbeds, embedTiles, rerenderWebTiles } from './Embeds/embedWidget'
 import { type PageStats, rangeStats } from './Engine/subfieldStats'
 import { codeHighlight, codeLanguages } from './codeHighlight'
 import { registerScrollHeal } from './Embeds/scrollHeal'
@@ -308,19 +301,7 @@ export function MarkdownEditor({
         if (p) {
           const { folds, embedHeights, embedZooms, headingCols } = p
           applySavedFolds(view, folds)
-          if (Object.keys(embedHeights).length > 0)
-            view.dispatch({
-              effects: setEmbedHeights.of({
-                ...embedHeights,
-                ...view.state.field(embedField).heights,
-              }),
-            })
-          if (Object.keys(embedZooms).length > 0) {
-            view.dispatch({
-              effects: setEmbedZooms.of({ ...embedZooms, ...view.state.field(embedField).zooms }),
-            })
-            refreshTileZooms(view, false)
-          }
+          applySavedEmbeds(view, embedHeights, embedZooms)
           applySavedHeadingCols(view, headingCols)
         }
         land()

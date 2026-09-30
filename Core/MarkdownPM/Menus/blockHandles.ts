@@ -5,7 +5,7 @@ import { docScan } from '../docCache'
 import type { Extension, Range } from '@codemirror/state'
 import { type Block, blockAt, blockStarts } from '../Engine/blockModel'
 import { GRIP_HOST, GRIP_LINE } from '../Engine/intents'
-import { lineElementAt } from '../lineDom'
+import { lineElementAt, textColumn } from '../lineDom'
 import type { MarkdownScope } from '../Engine/detect'
 import { REVEAL_REACH, type Reach, withinReach } from '@pommora/uix/Interactions/hoverReveal'
 
@@ -158,10 +158,7 @@ export function pointerReveal(scope: MarkdownScope = 'page'): Extension {
   // Every line's left edge is the content column's, so one measurement covers the gutter test, checked before any parse.
   let textLeft = -1
   const columnLeft = (view: EditorView): number => {
-    if (textLeft < 0) {
-      const box = view.contentDOM.getBoundingClientRect()
-      textLeft = box.left + parseFloat(getComputedStyle(view.contentDOM).paddingLeft || '0')
-    }
+    if (textLeft < 0) textLeft = textColumn(view).left
     return textLeft
   }
 
