@@ -35,7 +35,6 @@ export function MatrixLabel({
   closing,
   editing,
   hosts,
-  carrying,
   anchorRef,
   onPointerDown,
   onOpen,
@@ -46,7 +45,6 @@ export function MatrixLabel({
   closing: boolean
   editing: boolean
   hosts: boolean
-  carrying: boolean
   anchorRef: React.RefObject<HTMLDivElement | null>
   onPointerDown: (e: React.PointerEvent) => void
   onOpen: () => void
@@ -62,6 +60,7 @@ export function MatrixLabel({
   const mutate = useSession((st) => st.mutate)
   const hidePath = useSession((st) => st.matrixConfig.display.hidePath)
   const hideIcon = useSession((st) => st.matrixConfig.display.hideIcon)
+  const locked = useSession((st) => st.matrixConfig.display.locked)
   const [entered, setEntered] = useState<string | null>(null)
   const labelRef = useRef<HTMLDivElement>(null)
   const row = useLineRow(id ?? '', { open: onOpen })
@@ -137,7 +136,7 @@ export function MatrixLabel({
         ref={seat}
         data-node-id={rec.id}
         className={cx(s.anchor, closing && s.anchorClosing)}
-        {...(carrying ? { ...row.handle, onClick: onOpen } : { onPointerDown })}
+        {...(locked ? { ...row.handle, onClick: onOpen } : { onPointerDown })}
         onContextMenu={onContextMenu}
       />
       <IconChoice
