@@ -152,8 +152,9 @@ export function useConnectionAutocomplete(
 
   // A collapse reshapes the list, so the highlight starts over rather than landing on whatever the old index now names.
   const resetKey = heading ? `${query}\u0000${[...collapsed].join('\u0000')}` : query
+  const open = ac !== null && (candidates.length > 0 || loading)
   const { index, row, ctl } = usePaneCtl(candidates, resetKey, {
-    open: ac !== null && (candidates.length > 0 || loading),
+    open,
     pick: commit,
     close: () => setAc(null),
     aside: (dir) => {
@@ -181,6 +182,7 @@ export function useConnectionAutocomplete(
     setAc,
     acCtl: ctl,
     pane: {
+      open,
       ac,
       candidates,
       index: index ?? 0,
