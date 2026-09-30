@@ -23,9 +23,8 @@ import {
   wrapSelection,
   type Edit,
 } from './edits'
-import { renumberAfterNest } from '../Engine/listDragModel'
 import { applyEdit } from './applyEdit'
-import { fenceAt, lineIndexAt, type TextEdit } from '../Engine/markdownCode'
+import { fenceAt, lineIndexAt } from '../Engine/markdownCode'
 import { refusedInAlias } from '../Guards/aliasGuard'
 import { commitAliasOnEnter } from '../Links/linkEdit'
 import { headingHash } from '../Links/headingHash'
@@ -40,16 +39,14 @@ import { editorHost } from '../api'
 
 const settingsOf = (view: EditorView) => view.state.facet(editorHost).settings()
 
-const apply = (view: EditorView, edit: Edit | null, recount: TextEdit[] = []): boolean =>
-  applyEdit(view, edit, { recount, scrollIntoView: true })
+const apply = (view: EditorView, edit: Edit | null): boolean =>
+  applyEdit(view, edit, { scrollIntoView: true })
 
 const nest =
   (transform: (scan: DocScan, selStart: number, selEnd: number) => Edit | null) =>
   (view: EditorView): boolean => {
     const s = view.state.selection.main
-    const scan = docScan(view.state.doc)
-    const edit = transform(scan, s.from, s.to)
-    if (edit) apply(view, edit, renumberAfterNest(scan.text, edit))
+    apply(view, transform(docScan(view.state.doc), s.from, s.to))
     return true
   }
 

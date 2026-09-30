@@ -1,7 +1,7 @@
 import type { EditorState } from '@codemirror/state'
 import type { EditorView } from '@codemirror/view'
 import { blockAt } from '../Engine/blockModel'
-import { inSealedBlockAt } from '../Engine/docScan'
+import { inSealedLine } from '../Engine/docScan'
 import { lineEndAt, lineStartAt, type TextEdit } from '../Engine/markdownCode'
 import { docScan, docString } from '../docCache'
 
@@ -31,7 +31,7 @@ export function embedInsertAfter(
 export function embedSeatAt(state: EditorState, at = state.selection.main.from): boolean {
   const line = state.doc.lineAt(at)
   if (line.text.trim() !== '') return false
-  return !inSealedBlockAt(docScan(state.doc), line.number - 1)
+  return !inSealedLine(docScan(state.doc), line.number - 1)
 }
 
 function insertEmbedToken(view: EditorView, token: string, caretBack: number): boolean {

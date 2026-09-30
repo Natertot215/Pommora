@@ -1,7 +1,8 @@
 import type { Extension } from '@codemirror/state'
 import { EditorView } from '@codemirror/view'
-import { parseListMarkerPrefixed as parseListMarker } from '../Engine/detect'
+import { parseListMarkerPrefixed as parseListMarker, type MarkdownScope } from '../Engine/detect'
 import { docScan, docString } from '../docCache'
+import { inSealedLine } from '../Engine/docScan'
 import { forEachLine, shadeField, type Boundary } from './dragChrome'
 import { beginRelocateDrag, editorGestureCleanup } from './editorGesture'
 import { lineElementAt } from '../lineDom'
@@ -34,20 +35,24 @@ function lineRightEdge(view: EditorView, from: number, fallback: number): number
 }
 
 // Each list line offers two insertion boundaries, so a paragraph between two bullets splits to the nearer edge.
-function collectBoundaries(view: EditorView, block: SubBlock): Boundary<Drop>[] {
+function collectBoundaries(
+  view: EditorView,
+  block: SubBlock,
+  scope: MarkdownScope,
+): Boundary<Drop>[] {
   const doc = view.state.doc
   const contentRect = view.contentDOM.getBoundingClientRect()
   const padRight = parseFloat(getComputedStyle(view.contentDOM).paddingRight) || 0
   const gutterRight = contentRect.right - padRight
-  // A marker-lookalike inside display math is formula source, never a drop target.
-  const maths = docScan(doc).maths
+  const scan = docScan(doc)
   const out: Boundary<Drop>[] = []
   for (const { from, to } of view.visibleRanges) {
     forEachLine(doc, from, to, (line) => {
       const lm = parseListMarker(line.text)
       const inBlock = line.from >= block.from && line.from <= block.to
-      if (lm === null || inBlock) return
-      if (maths.some(([f, t]) => line.from >= f && line.from <= t)) return
+      // A marker-lookalike inside a page's code, math or table is that block's text, never a drop target; a cell draws none of the three.
+      const sealed = scope === 'page' && inSealedLine(scan, line.number - 1)
+      if (lm === null || inBlock || sealed) return
       const cTop = view.coordsAtPos(line.from)
       const cEnd = view.coordsAtPos(line.to)
       const cMarker = view.coordsAtPos(line.from + lm.markerStart)
@@ -75,7 +80,7 @@ function clickAction(view: EditorView, pos: number): void {
   view.focus()
 }
 
-export const listDragExtension: Extension = [
+export const listDragExtension = (scope: MarkdownScope): Extension => [
   shadeField,
   editorGestureCleanup,
   EditorView.domEventHandlers({
@@ -99,7 +104,7 @@ export const listDragExtension: Extension = [
       e.preventDefault()
 
       beginRelocateDrag(view, e, block, {
-        measure: () => collectBoundaries(view, block),
+        measure: () => collectBoundaries(view, block, scope),
         lineFor: ({ at, y, slot }) =>
           at >= block.from && at <= block.to + 1
             ? null

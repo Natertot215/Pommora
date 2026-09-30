@@ -150,31 +150,19 @@ function rebuildMove(
   }
 }
 
-/** Tab and Shift+Tab move one item between levels, so both runs it touched count again: the one it joined and the one it left. `edit` is in `doc`'s coordinates; the changes returned are in the edited document's. */
-export function renumberAfterNest(doc: string, edit: TextEdit): TextEdit[] {
-  const ls = lineStartAt(doc, edit.from)
-  const lm = parseListMarker(doc.slice(ls, lineEndAt(doc, ls)))
-  if (lm === null) return []
-  const left = doc.slice(ls, ls + lm.markerStart)
-  const next = applyEdits(doc, [edit])
-  let leftRow: number | null = null
-  for (let p = lineEndAt(next, ls) + 1; p <= next.length; p = lineEndAt(next, p) + 1) {
-    const t = next.slice(p, lineEndAt(next, p))
-    const plm = parseListMarker(t)
-    if (plm !== null && next.slice(p, p + plm.markerStart) === left) {
-      leftRow = p
-      break
-    }
-    if (!nestedUnder(t, left)) break
-  }
-  return dedupeChanges([
-    ...renumberSequencedRun(next, ls, ls),
-    ...(leftRow === null ? [] : renumberSequencedRun(next, leftRow)),
-  ])
+/** Recounts every sequenced run holding a position in `at`, each once however many positions it holds. A line in `arrived` had its marker written by the edit, so its ordinal came from the writer rather than the run, and never sets a top-level run's start. */
+export function renumberRuns(
+  doc: string,
+  at: readonly number[],
+  arrived: ReadonlySet<number> = new Set(),
+): TextEdit[] {
+  const seen = new Set<number>()
+  return at
+    .flatMap((p) => renumberRun(doc, p, arrived))
+    .filter((c) => !seen.has(c.from) && seen.add(c.from))
 }
 
-/** `arrived` names a line that joined the run from another level: its ordinal belonged to that level, so it never sets a top-level run's start. */
-export function renumberSequencedRun(doc: string, pos: number, arrived = -1): TextEdit[] {
+function renumberRun(doc: string, pos: number, arrived: ReadonlySet<number>): TextEdit[] {
   if (pos < 0 || pos > doc.length) return []
   const ls = lineStartAt(doc, pos)
   const lm = parseListMarker(doc.slice(ls, lineEndAt(doc, pos)))
@@ -182,7 +170,8 @@ export function renumberSequencedRun(doc: string, pos: number, arrived = -1): Te
   const kind = lm.kind
   const indent = doc.slice(ls, ls + lm.markerStart)
 
-  // A nested run counts from 1. A top-level run counts from its SMALLEST present ordinal: a move only permutes the ordinals, so a list that began at 5 stays 5,6,7 while a 1-based one snaps back. Deeper markers and continuations are skipped, not terminators.
+  // A nested run counts from 1. A top-level run counts from its SMALLEST present ordinal: a move only permutes the ordinals, so a list that began at 5 stays 5,6,7 while a 1-based one snaps back. Deeper markers, continuations and blank lines are skipped, not terminators, since items apart by a blank line are one loose list.
+  const carries = (t: string): boolean => t.trim() === '' || nestedUnder(t, indent)
   let runStart = ls
   for (let p = ls; p > 0; ) {
     const prevStart = lineStartAt(doc, p - 1)
@@ -194,7 +183,7 @@ export function renumberSequencedRun(doc: string, pos: number, arrived = -1): Te
       doc.slice(prevStart, prevStart + plm.markerStart) === indent
     )
       runStart = prevStart
-    else if (!nestedUnder(t, indent)) break
+    else if (!carries(t)) break
     p = prevStart
   }
 
@@ -207,10 +196,10 @@ export function renumberSequencedRun(doc: string, pos: number, arrived = -1): Te
     const sameLevel =
       rlm !== null && rlm.kind === kind && doc.slice(p, p + rlm.markerStart) === indent
     if (sameLevel) rows.push({ line: p, from: p + rlm.markerStart, marker: rlm })
-    else if (!nestedUnder(t, indent)) break
+    else if (!carries(t)) break
     p = le + 1
   }
-  const settled = rows.filter((r) => r.line !== arrived)
+  const settled = rows.filter((r) => !arrived.has(r.line))
   const start =
     lm.level > 0
       ? 1
@@ -229,29 +218,13 @@ export function dropChanges(doc: string, block: BlockRange, slot: Slot): TextEdi
   const moved = rebuildMove(doc, block, slot, 'exact')
   if (moved === null) return null
 
-  const renumber = [
-    ...renumberSequencedRun(moved.doc, moved.sourceAt),
-    ...renumberSequencedRun(moved.doc, moved.destAt),
-  ]
-  const finalDoc = applyEdits(moved.doc, dedupeChanges(renumber))
+  const finalDoc = applyEdits(moved.doc, renumberRuns(moved.doc, [moved.sourceAt, moved.destAt]))
   return diffAsSingleReplace(doc, finalDoc)
 }
 
 export function moveRange(doc: string, range: BlockRange, slot: Slot): TextEdit[] | null {
   const moved = rebuildMove(doc, range, slot, 'fenced')
   return moved === null ? null : diffAsSingleReplace(doc, moved.doc)
-}
-
-// Two passes can touch the same run, so a duplicate edit at one offset is dropped.
-export function dedupeChanges(changes: TextEdit[]): TextEdit[] {
-  const seen = new Set<number>()
-  const out: TextEdit[] = []
-  for (const c of changes) {
-    if (seen.has(c.from)) continue
-    seen.add(c.from)
-    out.push(c)
-  }
-  return out
 }
 
 export function diffAsSingleReplace(a: string, b: string): TextEdit[] {

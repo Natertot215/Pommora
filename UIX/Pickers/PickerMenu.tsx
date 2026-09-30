@@ -35,6 +35,7 @@ const stopContextBubble = (e: {
   e.stopPropagation()
   e.preventDefault()
 }
+const keepFocus = (e: { preventDefault: () => void }): void => e.preventDefault()
 
 export type PickerDirection = 'down' | 'up'
 
@@ -78,7 +79,7 @@ export function PickerMenu({
   anchorHeight = 0,
   bounds,
   bareSurface = false,
-  manageFocus = true,
+  focus = 'trap',
   modal = true,
   contentClassName,
   style,
@@ -102,7 +103,8 @@ export function PickerMenu({
   anchorHeight?: number
   bounds?: { left: number; right: number }
   bareSurface?: boolean
-  manageFocus?: boolean
+  /** `trap` takes focus and holds Tab inside; `leave` takes none on open, though a field inside takes it when pressed; `keep` never takes it, so a press anywhere in the pane leaves focus with its owner. */
+  focus?: 'trap' | 'leave' | 'keep'
   /** A glance surface passes false and lets the app's own dismissals through. */
   modal?: boolean
   contentClassName?: string
@@ -270,7 +272,8 @@ export function PickerMenu({
   ])
 
   const placed = pos !== null
-  const trapTab = useFocusScope(paneRef, manageFocus && open, {
+  const trap = focus === 'trap'
+  const trapTab = useFocusScope(paneRef, trap && open, {
     ready: mounted && placed && !closing,
   })
 
@@ -321,10 +324,11 @@ export function PickerMenu({
             ref={paneRef}
             className={s.layer}
             {...{ [PICKER_PORTAL_ATTR]: '' }}
-            tabIndex={manageFocus ? -1 : undefined}
+            tabIndex={trap ? -1 : undefined}
             onPointerDown={stopPointerBubble}
+            onMouseDown={focus === 'keep' ? keepFocus : undefined}
             onContextMenu={stopContextBubble}
-            onKeyDown={manageFocus ? trapTab : undefined}
+            onKeyDown={trap ? trapTab : undefined}
             style={{
               ...(pos?.top !== undefined ? { top: `${pos.top}px` } : null),
               ...(pos?.bottom !== undefined ? { bottom: `${pos.bottom}px` } : null),

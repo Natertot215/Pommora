@@ -89,7 +89,7 @@ function scanLines(d: DocLines): LineScan {
 }
 
 function withCitations(s: LineScan): DocScan {
-  return { ...s, citations: assembleCitations(s, (k) => inSealedBlockAt(s, k), s.refs) }
+  return { ...s, citations: assembleCitations(s, (k) => inSealedLine(s, k), s.refs) }
 }
 
 export function scanDoc(text: string): DocScan {
@@ -351,7 +351,7 @@ export function inCalloutAt(scan: DocScan, pos: number): boolean {
   return scan.callouts[lineIndexAt(scan, pos)] !== undefined
 }
 
-export function inSealedBlockAt(scan: LineScan, i: number): boolean {
+export function inSealedLine(scan: LineScan, i: number): boolean {
   const at = scan.lineStarts[i]
   return (
     scan.fences[i] !== undefined ||

@@ -32,7 +32,7 @@ import {
 import { dialer } from '../../Platform/dialer'
 import './glance-pane.css'
 
-// Contract: no dismiss backdrop and `manageFocus={false}` — a glance must never eat the next click or pull focus out of its host.
+// Contract: no dismiss backdrop and `focus="leave"` — a glance must never eat the next click or pull focus out of its host.
 
 // KNOB — the default and floor sizes; the ceiling is the viewport and the anchor's band as the glance opens.
 export const GLANCE_DEFAULT: Size = { w: 260, h: 120 }
@@ -401,7 +401,7 @@ export function GlancePane(): React.JSX.Element {
         glass="window"
         open={shown !== null}
         triggerRef={anchorRef}
-        manageFocus={false}
+        focus="leave"
         modal={false}
         origin="center"
         resize={resize}
@@ -466,7 +466,7 @@ export function GlancePane(): React.JSX.Element {
               anchorX={p.anchorX}
               anchorY={p.anchorY}
               anchorHeight={p.anchorHeight}
-              manageFocus={false}
+              focus="leave"
               modal={false}
               origin="center"
             >

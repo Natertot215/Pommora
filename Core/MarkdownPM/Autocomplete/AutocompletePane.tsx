@@ -122,17 +122,13 @@ export function AutocompletePane({
                 type="button"
                 className={cx(removeButton, revealTarget, side, 'mdpm-ac-aside')}
                 aria-label={`Headings of ${row.value}`}
-                onMouseDown={(e) => {
-                  e.preventDefault()
-                  onAside(row)
-                }}
+                onMouseDown={() => onAside(row)}
               >
                 <Icon name="chevron-right" />
               </button>
             ) : undefined
           }
           onMouseDown={(e) => {
-            e.preventDefault()
             if ((e.target as HTMLElement).closest?.('.mdpm-ac-forget, .mdpm-ac-aside')) return
             onPick(row)
           }}
@@ -154,11 +150,10 @@ export function AutocompletePane({
       onToggle={() => onToggleHeading(row.value)}
       selected={i === v.index}
       wrap={(node) => (
-        // biome-ignore lint/a11y/noStaticElementInteractions: commits on mousedown so the caret never leaves the editor, the way every autocomplete row does
+        // biome-ignore lint/a11y/noStaticElementInteractions: commits on mousedown, the way every autocomplete row does
         <div
           ref={i === v.index ? keepInView : undefined}
           onMouseDown={(e) => {
-            e.preventDefault()
             // The chevron toggles on click; a mousedown there must not commit the row.
             if ((e.target as HTMLElement).closest?.('[data-drop-outline]')) return
             onPick(row)
@@ -202,7 +197,7 @@ export function AutocompletePane({
   const shown = slot(v.candidates, true)
 
   return (
-    // No `onDismiss` and no focus management, by contract: the editor's keymap owns arrows, Return and Escape, and a row commits on mousedown with preventDefault so the caret never leaves the alias.
+    // No `onDismiss`, and focus kept by contract: the editor's keymap owns arrows, Return and Escape, and no press in the pane moves the caret out of the alias.
     <PickerMenu
       glass="window"
       open={live}
@@ -211,7 +206,7 @@ export function AutocompletePane({
       anchorHeight={v.ac.caretBottom - v.ac.caretTop}
       bounds={v.ac.bounds}
       origin="center"
-      manageFocus={false}
+      focus="keep"
       contentClassName="mdpm-ac"
       resize={resize}
     >

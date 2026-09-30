@@ -1,6 +1,6 @@
 // Kept apart from the fold state machine so the block resolver can ask what a heading is without importing it.
 import { headingParts } from './detect'
-import { type DocScan, inSealedBlockAt, scanDoc } from './docScan'
+import { type DocScan, inSealedLine, scanDoc } from './docScan'
 
 interface HeadingSection {
   from: number
@@ -22,7 +22,7 @@ function scanHeadings(s: DocScan): ScannedHeading[] {
   const seen = new Map<string, number>()
   for (let i = 0; i < s.lines.length; i++) {
     // A `# comment` inside a code or math block is that block's text: treating it as a heading corrupts drag extents and poisons the persisted fold keys.
-    if (!s.headings[i] || inSealedBlockAt(s, i)) continue
+    if (!s.headings[i] || inSealedLine(s, i)) continue
     const m = headingParts(s.lines[i])
     if (!m) continue
     const text = m.content.trim()

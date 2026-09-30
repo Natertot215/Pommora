@@ -6,7 +6,7 @@ import { markdownDecorations } from './decorations'
 import { listDragExtension } from './Gestures/listDrag'
 import { blockDragExtension } from './Gestures/blockDrag'
 import { linkRest, linkTyping } from './Links/linkReveal'
-import { listRenumberOnDelete } from './Input/listRenumber'
+import { listRenumber } from './Input/listRenumber'
 import { typedInput, wrapChords } from './Input/markdownInput'
 import { blockHandles, pointerReveal } from './Menus/blockHandles'
 import { gripMenu } from './Menus/gripMenu'
@@ -26,8 +26,8 @@ export const inlineSurface = (
   scope: MarkdownScope,
 ): Extension => [
   markdownDecorations(getConn, scope),
-  listDragExtension,
-  listRenumberOnDelete(scope),
+  listDragExtension(scope),
+  listRenumber(scope),
   blockHandles(scope),
   pointerReveal(scope),
   blockDragExtension,

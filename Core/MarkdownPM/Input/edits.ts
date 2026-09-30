@@ -25,7 +25,6 @@ import {
   isSequenced,
   ordinalOf,
   ordinalText,
-  nestedUnder,
   MAX_NESTING_LEVEL,
   calloutHeadPrefixLen,
   headingParts,
@@ -38,6 +37,8 @@ import {
 export interface Edit extends TextEdit {
   selection: number
   head?: number
+  /** Writes list markers, so the runs it touches count again. */
+  relist?: boolean
 }
 
 const shorthandCheckboxRe = /^([ \t]*)([-+])\[([ xX]?)\]$/
@@ -52,16 +53,15 @@ function listLineAt(
   selStart: number,
   selEnd: number,
   scope: MarkdownScope,
-): { ls: number; lineEnd: number; line: string; pfx: string; lm: ListMarker } | null {
+): { ls: number; line: string; pfx: string; lm: ListMarker } | null {
   if (selStart !== selEnd) return null
   if (scope === 'page' && inFenceAt(scan, selStart)) return null
   const doc = scan.text
   const ls = lineStartAt(doc, selStart)
-  const lineEnd = lineEndAt(doc, selStart)
-  const line = doc.slice(ls, lineEnd)
+  const line = doc.slice(ls, lineEndAt(doc, selStart))
   const pfx = blockPrefix(line, scope)
   const lm = parseListMarker(line.slice(pfx.length))
-  return lm === null ? null : { ls, lineEnd, line, pfx, lm }
+  return lm === null ? null : { ls, line, pfx, lm }
 }
 
 export function continueListOnEnter(
@@ -72,55 +72,18 @@ export function continueListOnEnter(
 ): Edit | null {
   const at = listLineAt(scan, selStart, selEnd, scope)
   if (at === null) return null
-  const { ls, lineEnd, line, pfx, lm } = at
-  const doc = scan.text
+  const { ls, line, pfx, lm } = at
   if (selStart < ls + pfx.length + lm.contentStart) return null
 
   // Enter ALWAYS continues the list, even on an empty item — the exits are Shift+Enter and Backspace on the empty marker.
   const indent = line.slice(pfx.length, pfx.length + lm.markerStart)
-
-  const kind = lm.kind
-  if (isSequenced(kind)) {
-    const restOfLine = doc.slice(selStart, lineEnd)
-    let counter = ordinalOf(lm) + 1
-    const newPrefix = `\n${pfx}${indent}${ordinalText(kind, counter)}. `
-    const caret = selStart + newPrefix.length
-    let insert = `${newPrefix}${restOfLine}`
-    let to = lineEnd
-    let pendingSkipped = ''
-    counter++
-    for (let p = lineEnd; p < doc.length; ) {
-      const fs = p + 1
-      const fe = lineEndAt(doc, fs)
-      const fline = doc.slice(fs, fe)
-      const fpfx = blockPrefix(fline, scope)
-      const finner = fline.slice(fpfx.length)
-      const flm = parseListMarker(finner)
-      const sameLevel =
-        flm !== null &&
-        flm.kind === kind &&
-        fpfx === pfx &&
-        fline.slice(fpfx.length, fpfx.length + flm.markerStart) === indent
-      if (!sameLevel) {
-        if (fpfx === pfx && nestedUnder(finner, indent)) {
-          pendingSkipped += `\n${fline}`
-          p = fe
-          continue
-        }
-        break
-      }
-      insert += `${pendingSkipped}\n${pfx}${indent}${ordinalText(kind, counter)}. ${finner.slice(flm.contentStart)}`
-      pendingSkipped = ''
-      counter++
-      to = fe
-      p = fe
-    }
-    return { from: selStart, to, insert, selection: caret }
-  }
-
-  const next = lm.kind === 'checkbox' ? `${lm.bullet ?? '-'} [ ] ` : `${lm.bullet ?? '-'} `
+  const next = isSequenced(lm.kind)
+    ? `${ordinalText(lm.kind, ordinalOf(lm) + 1)}. `
+    : lm.kind === 'checkbox'
+      ? `${lm.bullet ?? '-'} [ ] `
+      : `${lm.bullet ?? '-'} `
   const insert = `\n${pfx}${indent}${next}`
-  return { from: selStart, to: selStart, insert, selection: selStart + insert.length }
+  return { from: selStart, to: selStart, insert, selection: selStart + insert.length, relist: true }
 }
 
 export function continueBlockquoteOnEnter(
@@ -188,7 +151,7 @@ export function indentListOnTab(
   const at = listLineAt(scan, selStart, selEnd, scope)
   if (at === null || at.lm.level >= MAX_NESTING_LEVEL) return null
   const from = at.ls + at.pfx.length
-  return { from, to: from, insert: '\t', selection: selStart + 1 }
+  return { from, to: from, insert: '\t', selection: selStart + 1, relist: true }
 }
 
 export function outdentListOnShiftTab(
@@ -202,7 +165,13 @@ export function outdentListOnShiftTab(
   const width = /^(?:\t| {1,2})/.exec(at.line.slice(at.pfx.length))?.[0].length
   if (width === undefined) return null
   const from = at.ls + at.pfx.length
-  return { from, to: from + width, insert: '', selection: Math.max(from, selStart - width) }
+  return {
+    from,
+    to: from + width,
+    insert: '',
+    selection: Math.max(from, selStart - width),
+    relist: true,
+  }
 }
 
 // A cell's `#` and `>` are prose, so only a list marker collapses there.

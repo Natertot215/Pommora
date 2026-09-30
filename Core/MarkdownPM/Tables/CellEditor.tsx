@@ -13,7 +13,6 @@ import {
   smartBackspace,
   type Edit,
 } from '../Input/edits'
-import { renumberAfterNest } from '../Engine/listDragModel'
 import { parseListMarker, type ListMarker, type MarkdownScope } from '../Engine/detect'
 import { cellToSource } from '../Engine/Tables/codec'
 import { decodePayload, type TablePayload } from '../Engine/Tables/clipboard'
@@ -55,21 +54,15 @@ const listEdit =
       selEnd: number,
       scope: MarkdownScope,
     ) => Edit | null,
-    recount = false,
   ) =>
   (view: EditorView): boolean => {
     const s = view.state.selection.main
-    const scan = docScan(view.state.doc)
-    const edit = transform(scan, s.from, s.to, 'cell')
-    // The recount rides a NEST alone: continueListOnEnter renumbers the run it splits itself, and a second pass counts those items twice.
-    return applyEdit(view, edit, {
-      recount: edit && recount ? renumberAfterNest(scan.text, edit) : [],
-    })
+    return applyEdit(view, transform(docScan(view.state.doc), s.from, s.to, 'cell'))
   }
 
 const continueList = listEdit(continueListOnEnter)
-const nestList = listEdit(indentListOnTab, true)
-const unnestList = listEdit(outdentListOnShiftTab, true)
+const nestList = listEdit(indentListOnTab)
+const unnestList = listEdit(outdentListOnShiftTab)
 
 // The glyph, not the parse: a marker nothing draws is prose on both surfaces, so a key that read the raw parse would act on a line showing no list at all.
 const listLineAt = (view: EditorView): ListMarker | null => {
