@@ -47,4 +47,4 @@ The app icon is `Desktop/build/Pommora.icon`, an Icon Composer document whose si
 
 ### Renderer
 
-`Desktop/Renderer` is the entry point alone: `index.html`, `main.ts` calling Core's `mountApp`, the drag-region style, and the Vite environment types.
+`Desktop/Renderer` is the entry point alone: `index.html`, `main.ts` calling Core's `mountApp` after `zodConfig.ts` turns off zod's eval probe, and the Vite environment types.

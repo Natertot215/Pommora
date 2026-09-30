@@ -48,6 +48,7 @@ The Nexus’ structure is based on relating **Content** ↔ **Content** through 
 - **Test Nexus:** `~/Test` is pre-seeded with scratch collections, sets, pages, and contexts.
 - **Iteration Scratchpad:** `Core/Interface/Windows/IterationWindow.tsx`, opened by ⌘⇧T, is for rapid iteration of an otherwise-scoped asset.
 - **Native Context Menus Over CDP:** a real right-click through `Input.dispatchMouseEvent` (`mousePressed` then `mouseReleased` at the target's box) reaches main's listener, where a JS-dispatched `contextmenu` event doesn't; `osascript -e 'tell application "System Events" to key code 53'` dismisses it.
+- **Never** use pkill -f / killall by pattern; kill only by exact PID after confirming what it is — it kills the app *and* the Claude session.
 
 ### Locked Decisions
 
