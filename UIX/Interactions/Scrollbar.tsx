@@ -10,7 +10,7 @@ export const SCROLLBAR_LINGER_MS = 1000 // KNOB
 // Level with the track anywhere along its height, so the pointer never hunts for a hidden pill; each move within it wakes the bar as a scroll does.
 const REACH = { size: 'inline', toward: { x: -1, y: 1 } } as const
 
-// A scroll only reveals once the user has acted: a restore or an arrival on open lands before any input.
+// A scroll only reveals once the user has acted with the scroller on screen: a restore, an arrival on open, or a return from off screen lands before any input.
 const ARMING = ['wheel', 'pointerdown', 'touchstart', 'keydown'] as const
 
 /** Declared as its scroller's next sibling, or handed `of` when the scroller sits deeper; `page` keeps it under Pages Only. */
@@ -45,6 +45,7 @@ export function Scrollbar({
 
     const watched = new WeakSet<Element>()
     let armed = false
+    let onScreen = false
     let shown = false
     let seen = scroller.scrollTop
     let box: Box | null = null
@@ -76,20 +77,24 @@ export function Scrollbar({
     const mo = new MutationObserver(measure)
 
     const arm = (): void => {
+      if (!onScreen) return
       armed = true
       for (const t of ARMING) window.removeEventListener(t, arm, true)
     }
+    const disarm = (): void => {
+      armed = false
+      for (const t of ARMING) window.addEventListener(t, arm, { capture: true, passive: true })
+    }
+    const io = new IntersectionObserver(([entry]) => {
+      onScreen = entry.isIntersecting
+      if (!onScreen && armed) disarm()
+    })
     // A scroll landing where the bar last saw it isn't movement: a detached tile's heal restores its offset that way.
     const onScroll = (): void => {
       const top = scroller.scrollTop
       if (top === seen) return
       seen = top
-      if (!armed) return
-      window.clearTimeout(linger)
-      show(true)
-    }
-    const onScrollEnd = (): void => {
-      if (shown) wake()
+      if (armed) wake()
     }
     const onMove = (e: PointerEvent): void => {
       box ??= track.getBoundingClientRect()
@@ -129,9 +134,9 @@ export function Scrollbar({
     track.dataset.revealHost = 'off'
     ro.observe(scroller)
     mo.observe(scroller, { childList: true })
-    for (const t of ARMING) window.addEventListener(t, arm, { capture: true, passive: true })
+    io.observe(scroller)
+    disarm()
     scroller.addEventListener('scroll', onScroll, { passive: true })
-    scroller.addEventListener('scrollend', onScrollEnd)
     frame.addEventListener('pointermove', onMove, { passive: true })
     frame.addEventListener('pointerenter', forget)
     // A pane's slide transitions on an ancestor, whose events never bubble down to the frame.
@@ -139,11 +144,11 @@ export function Scrollbar({
     pill.addEventListener('pointerdown', onPress)
     return () => {
       ro.disconnect()
+      io.disconnect()
       mo.disconnect()
       window.clearTimeout(linger)
       for (const t of ARMING) window.removeEventListener(t, arm, true)
       scroller.removeEventListener('scroll', onScroll)
-      scroller.removeEventListener('scrollend', onScrollEnd)
       frame.removeEventListener('pointermove', onMove)
       frame.removeEventListener('pointerenter', forget)
       document.removeEventListener('transitionend', forget, true)
