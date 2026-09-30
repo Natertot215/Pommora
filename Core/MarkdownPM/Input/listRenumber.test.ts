@@ -118,6 +118,9 @@ describe('Lists ▸ continues the run a line joins', () => {
     const doc = 'a\n\nb\n\nc'
     expect(listed(doc, 0, doc.length)).toBe('1. a\n\n2. b\n\n3. c')
   })
+  it('a blank line between two quotes ends the quoted run', () => {
+    expect(listed('> 1. a\n\n> b', 10)).toBe('> 1. a\n\n> 1. b')
+  })
   it('a paragraph between runs ends the run', () => {
     expect(listed('1. a\n\nplain\n\nb', 13)).toBe('1. a\n\nplain\n\n1. b')
   })

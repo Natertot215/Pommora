@@ -170,8 +170,9 @@ function renumberRun(doc: string, pos: number, arrived: ReadonlySet<number>): Te
   const kind = lm.kind
   const indent = doc.slice(ls, ls + lm.markerStart)
 
-  // A nested run counts from 1. A top-level run counts from its SMALLEST present ordinal: a move only permutes the ordinals, so a list that began at 5 stays 5,6,7 while a 1-based one snaps back. Deeper markers, continuations and blank lines are skipped, not terminators, since items apart by a blank line are one loose list.
-  const carries = (t: string): boolean => t.trim() === '' || nestedUnder(t, indent)
+  // A nested run counts from 1. A top-level run counts from its SMALLEST present ordinal: a move only permutes the ordinals, so a list that began at 5 stays 5,6,7 while a 1-based one snaps back. Deeper markers, continuations and blank lines are skipped, not terminators, since items apart by a blank line are one loose list; inside a quote a blank line ends the quote, and the run with it.
+  const quoted = quotePrefix(indent) !== ''
+  const carries = (t: string): boolean => (t.trim() === '' && !quoted) || nestedUnder(t, indent)
   let runStart = ls
   for (let p = ls; p > 0; ) {
     const prevStart = lineStartAt(doc, p - 1)
