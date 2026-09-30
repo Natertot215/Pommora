@@ -2,6 +2,7 @@
 
 | Date                    | ID     | Entry                                                |
 | ----------------------- | ------ | ---------------------------------------------------- |
+| 09-29-2026              | PM-146 | Interface Scrollbars                                 |
 | 09-23-2026              | PM-145 | Metadata & Page Locking                              |
 | 09-22-2026 → 09-23      | PM-144 | View Search                                          |
 | 09-21-2026              | PM-143 | Space Windows                                        |
@@ -16,7 +17,7 @@
 | 09-09-2026              | PM-134 | MarkdownPM Block Menu                                |
 | 09-07-2026              | PM-133 | The Engine Boundary                                  |
 | 09-07-2026              | PM-132 | State Placement                                      |
-| 09-06-206               | PM-131 | Cross-Surface Glances                                |
+| 09-06-2026              | PM-131 | Cross-Surface Glances                                |
 | 09-06-2026              | PM-130 | The One Value Picker & Panel                         |
 | 09-05-2026 → 09-06      | PM-129 | The Repo Restructure                                 |
 | 09-05-2026              | PM-128 | Tiles Framework                                      |
@@ -148,6 +149,14 @@
 | 06-14-2026 → 06-15      | PM-002 | The Headless Data Layer                              |
 | 06-14-2026              | PM-001 | Genesis — The Walking Skeleton                       |
 | 05-13-2026 → 06-13-2026 | PM-000 | Swift Origin & Pivot                                 |
+
+#### PM-146 || Interface Scrollbars
+**DATE:** 09-29-2026
+
+Pommora gained its own scrollbars in place of the native ones hidden app-wide: a thin pill each scrolling surface declares at its right edge, sitting at the toolbar's inset, clearing the side pane as it slides, and spanning only the region that scrolls. It appears only when content clearly overflows, reveals on scroll or when the pointer moves anywhere level with its edge, fades a second after either stops, and can be dragged; opening, restoring, or returning to a view never flashes it. Two device settings joined Interface: Scrollbar Presence, covering every scrolling surface, pages alone, or none, and Scrollbar Visibility, keeping bars shown or revealing them on hover, which folds away while Presence is Off. Settings' device-only rows were folded into the regular row kinds, so any control can now write either the Nexus's settings or the machine's own.
+
+- **Commits:** `29cad47e8^..af111aa1c`
+- **Diff:** Net +290 | +450 / −160
 
 #### PM-145 || Metadata & Page Locking
 **DATE:** 09-23-2026
