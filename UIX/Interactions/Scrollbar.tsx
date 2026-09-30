@@ -44,6 +44,7 @@ export function Scrollbar({
     let armed = false
     let onScreen = false
     let shown = false
+    let scrolled = false
     let seen = scroller.scrollTop
     let box: Box | null = null
     let linger = 0
@@ -55,7 +56,15 @@ export function Scrollbar({
     const wake = (): void => {
       show(true)
       window.clearTimeout(linger)
-      linger = window.setTimeout(() => show(false), SCROLLBAR_LINGER_MS)
+      linger = window.setTimeout(() => {
+        scrolled = false
+        show(false)
+      }, SCROLLBAR_LINGER_MS)
+    }
+    const leave = (): void => {
+      if (scrolled || !shown) return
+      window.clearTimeout(linger)
+      show(false)
     }
 
     // Observed once each: a re-observed target reports again and loops the measure.
@@ -91,11 +100,14 @@ export function Scrollbar({
       const top = scroller.scrollTop
       if (top === seen) return
       seen = top
-      if (armed) wake()
+      if (!armed) return
+      scrolled = true
+      wake()
     }
     const onMove = (e: PointerEvent): void => {
       box ??= track.getBoundingClientRect()
       if (e.buttons === 0 && withinReach(box, REACH, e.clientX, e.clientY)) wake()
+      else leave()
     }
     const forget = (): void => {
       box = null
@@ -136,6 +148,7 @@ export function Scrollbar({
     scroller.addEventListener('scroll', onScroll, { passive: true })
     frame.addEventListener('pointermove', onMove, { passive: true })
     frame.addEventListener('pointerenter', forget)
+    frame.addEventListener('pointerleave', leave)
     // A pane's slide transitions on an ancestor, out of the frame's bubbling reach.
     document.addEventListener('transitionend', forget, true)
     pill.addEventListener('pointerdown', onPress)
@@ -148,6 +161,7 @@ export function Scrollbar({
       scroller.removeEventListener('scroll', onScroll)
       frame.removeEventListener('pointermove', onMove)
       frame.removeEventListener('pointerenter', forget)
+      frame.removeEventListener('pointerleave', leave)
       document.removeEventListener('transitionend', forget, true)
       pill.removeEventListener('pointerdown', onPress)
       scroller.style.removeProperty('anchor-name')
