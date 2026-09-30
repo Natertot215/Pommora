@@ -101,6 +101,7 @@ textarea,
   height: var(--toolbar-h);
   z-index: var(--z-titlebar);
   transition: left var(--pane-slide) var(--ease-base);
+  -webkit-app-region: drag;
 }
 .shell.sidebar-hidden .titlebar {
   left: 0;
@@ -113,6 +114,7 @@ textarea,
   width: calc(var(--app-inset) + var(--sidebar-width) - 48px);
   height: calc(var(--app-inset) + var(--toolbar-h));
   z-index: var(--z-titlebar);
+  -webkit-app-region: drag;
 }
 .shell.no-traffic-lights .sidebar-titlebar {
   display: none;
@@ -144,6 +146,7 @@ textarea,
 }
 
 .open-btn {
+  -webkit-app-region: no-drag;
   margin: 12px auto 0;
   color: var(--label-primary);
 }

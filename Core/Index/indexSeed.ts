@@ -7,7 +7,7 @@ import { normalizeTitle } from '../Connections/connections'
 import { headingOutlineOf } from '../MarkdownPM/Engine/headingScan'
 import { inCodeAt, scanDoc } from '../MarkdownPM/Engine/docScan'
 import { parseContextKey } from '../Contexts/contexts'
-import { sweepAdmitsBody } from '../Files/pageFile'
+import { splitEnvelope, splitFrontmatter, sweepAdmitsBody } from '../Files/pageFile'
 import {
   markIndexReady,
   readHeadings,
@@ -29,7 +29,6 @@ import {
 } from '../Platform/stores'
 import { machine } from '../Platform/machine'
 import { readTextOrNull } from '../Files/atomicWrite'
-import { splitEnvelope, splitFrontmatter } from '../Files/pageFile'
 import { corpusFiles, corpusFilesUnder } from '../Files/walk'
 import { outsideContent } from '../Paths/exclusion'
 
