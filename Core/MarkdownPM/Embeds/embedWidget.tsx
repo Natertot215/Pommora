@@ -5,6 +5,7 @@ import {
   type EditorState,
   type Extension,
   Facet,
+  MapMode,
   RangeSetBuilder,
   StateEffect,
   StateField,
@@ -26,7 +27,6 @@ import { TILE_MIN_PX } from '@pommora/uix/Utilities/tileMetrics'
 import { titleFromPath } from '../../Paths/posix'
 import { normalizeTitle } from '../../Connections/connections'
 import '../../Tiles/tile-base.css'
-import { loneWebpageEmbed } from '../Engine/detect'
 import { ZOOM } from '../../Settings/personalization'
 import { zoomStep } from '../../Tiles/tileZoom'
 import { docScan } from '../docCache'
@@ -54,17 +54,40 @@ export const setEmbedHeights = StateEffect.define<Record<string, number>>()
 
 export const setEmbedZooms = StateEffect.define<Record<string, number>>()
 
+const loadEmbedPrefs = StateEffect.define<EmbedPrefs>()
+
 type TileRange =
-  | { kind: 'page'; from: number; to: number; path: string; title: string }
+  | { kind: 'page'; from: number; to: number; path: string; title: string; id: string }
   | { kind: 'webpage'; from: number; to: number; url: string; label: string }
 
-interface EmbedTiles {
-  deco: DecorationSet
-  ranges: TileRange[]
-  editing: string | null
-  seat: number | null
+// What a tile's height and Scale are filed under: the target it shows.
+const keyOf = (t: TileRange): string => (t.kind === 'page' ? t.id : t.url)
+
+// A tile the next build may succeed: the ranges it had, and the tile an Edit Link seat un-formed.
+interface Prior {
+  from: number
+  to: number
+  key: string
+}
+
+interface EmbedPrefs {
   heights: Record<string, number>
   zooms: Record<string, number>
+}
+
+interface Seat {
+  at: number
+  key: string | null
+}
+
+interface EmbedMemory extends EmbedPrefs {
+  editing: string | null
+  seat: Seat | null
+}
+
+interface EmbedTiles extends EmbedMemory {
+  deco: DecorationSet
+  ranges: TileRange[]
   unformed: number
 }
 
@@ -94,7 +117,6 @@ function EmbedResizeHandle({
       }
       const heights = { ...view.state.field(embedField).heights, [targetId]: h }
       view.dispatch({ effects: setEmbedHeights.of(heights) })
-      view.state.facet(editorHost).prefs?.save('embedHeights', heights)
     },
   })
   return resize.edges(['s'])[0]
@@ -102,6 +124,18 @@ function EmbedResizeHandle({
 
 const tileEstimate = (height: number | undefined): number =>
   (height ?? TILE_DEFAULT_PX) + TILE_GAP_PX * 2
+
+// CM never hears a press inside its own tile, but the browser still drags its selection to the line above; the tile's own listener answers for its own editor alone.
+function releaseOnPress(dom: HTMLElement, view: EditorView): void {
+  dom.addEventListener(
+    'pointerdown',
+    () =>
+      requestAnimationFrame(() => {
+        if (view.hasFocus) view.contentDOM.blur()
+      }),
+    true,
+  )
+}
 
 class EmbedTileWidget extends ReactWidget {
   constructor(
@@ -170,6 +204,7 @@ class EmbedTileWidget extends ReactWidget {
       dom.textContent = this.title
       return dom
     }
+    releaseOnPress(dom, view)
     this.renderInto(dom, view)
     return dom
   }
@@ -296,6 +331,7 @@ class WebpageTileWidget extends ReactWidget {
       o.io.observe(dom)
       dom._obs = o
     }
+    releaseOnPress(dom, view)
     this.renderInto(dom, view)
     return dom
   }
@@ -328,13 +364,34 @@ function applyTileZoom(dom: HTMLElement, zoom: number | undefined): void {
   else dom.style.setProperty('--tile-zoom', String(factor))
 }
 
+const moveKey = (map: Record<string, number>, from: string, to: string): Record<string, number> => {
+  if (!(from in map) || to in map) return map
+  const { [from]: kept, ...rest } = map
+  return { ...rest, [to]: kept }
+}
+
+// A tile re-aimed where it stands keeps its height and Scale, unless another tile still shows the old target or the new one has its own.
+function succeed(
+  prefs: EmbedPrefs,
+  tiles: readonly TileRange[],
+  prior: readonly Prior[],
+): EmbedPrefs {
+  let { heights, zooms } = prefs
+  for (const t of tiles) {
+    const key = keyOf(t)
+    const p = prior.find((p) => p.from <= t.to && p.to >= t.from && p.key !== key)
+    if (!p || tiles.some((o) => keyOf(o) === p.key)) continue
+    heights = moveKey(heights, p.key, key)
+    zooms = moveKey(zooms, p.key, key)
+  }
+  return { heights, zooms }
+}
+
 function buildTiles(
   state: EditorState,
-  editing: string | null,
-  heights: Record<string, number>,
-  zooms: Record<string, number>,
+  memory: EmbedMemory,
   prev: readonly TileRange[] | 'mount',
-  seat: number | null,
+  prior: readonly Prior[] = [],
 ): EmbedTiles {
   const host = state.facet(embedHost)
   const conn = host.getConn()
@@ -342,36 +399,19 @@ function buildTiles(
   const interactive = host.ancestors.length <= 1
   let unformed = 0
 
-  const entries: { from: number; to: number; deco: Decoration; range: TileRange }[] = []
+  const tiles: TileRange[] = []
   if (conn && scan.embeds.length > 0) {
     for (const e of claimedEmbeds(scan.embeds, (t) => conn.resolve(t).status)) {
       const r = conn.resolve(e.title)
       if (r.status !== 'resolved' || !r.page) continue
-      const path = r.page.path
-      const cyclic = host.ancestors.includes(path)
-      entries.push({
-        from: e.from,
-        to: e.to,
-        deco: Decoration.replace({
-          widget: new EmbedTileWidget(
-            path,
-            e.title,
-            editing === path,
-            interactive && !cyclic,
-            cyclic,
-            host.ancestors,
-            r.page.id,
-            heights[r.page.id],
-          ),
-        }),
-        range: { kind: 'page', from: e.from, to: e.to, path, title: e.title },
-      })
+      const { path, id } = r.page
+      tiles.push({ kind: 'page', from: e.from, to: e.to, path, title: e.title, id })
     }
   }
   // The formation gate: typing `https://example.c` mid-address passes the grammar, so the grammar alone can't decide.
   for (const w of scan.webpages) {
     const formed =
-      w.from !== seat &&
+      w.from !== memory.seat?.at &&
       (prev === 'mount' ||
         prev.some(
           (p) => p.kind === 'webpage' && p.url === w.url && p.from <= w.to && p.to >= w.from,
@@ -381,29 +421,36 @@ function buildTiles(
       unformed++
       continue
     }
-    entries.push({
-      from: w.from,
-      to: w.to,
-      deco: Decoration.replace({
-        widget: new WebpageTileWidget(w.url, w.label, heights[w.url]),
-      }),
-      range: { kind: 'webpage', from: w.from, to: w.to, url: w.url, label: w.label },
-    })
+    tiles.push({ kind: 'webpage', from: w.from, to: w.to, url: w.url, label: w.label })
   }
-  entries.sort((a, b) => a.from - b.from)
+  tiles.sort((a, b) => a.from - b.from)
+  const { heights, zooms } = succeed(memory, tiles, prior)
 
   const builder = new RangeSetBuilder<Decoration>()
-  const ranges: TileRange[] = []
   let lastFence = -1
-  for (const en of entries) {
-    const tileLine = state.doc.lineAt(en.from)
+  for (const t of tiles) {
+    const cyclic = t.kind === 'page' && host.ancestors.includes(t.path)
+    const widget =
+      t.kind === 'page'
+        ? new EmbedTileWidget(
+            t.path,
+            t.title,
+            memory.editing === t.path,
+            interactive && !cyclic,
+            cyclic,
+            host.ancestors,
+            t.id,
+            heights[t.id],
+          )
+        : new WebpageTileWidget(t.url, t.label, heights[t.url])
+    const tileLine = state.doc.lineAt(t.from)
     if (tileLine.number > 1) {
       const above = state.doc.line(tileLine.number - 1)
       if (above.text.trim() === '' && above.from !== lastFence)
         builder.add(above.from, above.from, fenceLine)
     }
     builder.add(tileLine.from, tileLine.from, embedLine)
-    builder.add(en.from, en.to, en.deco)
+    builder.add(t.from, t.to, Decoration.replace({ widget }))
     if (tileLine.number < state.doc.lines) {
       const below = state.doc.line(tileLine.number + 1)
       if (below.text.trim() === '') {
@@ -411,9 +458,8 @@ function buildTiles(
         lastFence = below.from
       }
     }
-    ranges.push(en.range)
   }
-  return { deco: builder.finish(), ranges, editing, heights, zooms, unformed, seat }
+  return { ...memory, heights, zooms, deco: builder.finish(), ranges: tiles, unformed }
 }
 
 // The SAME cached scan every keystroke already pays for, so the gate can't disagree with the scanner.
@@ -451,59 +497,64 @@ const mapRanges = (ranges: readonly TileRange[], tr: Transaction): TileRange[] =
     to: tr.changes.mapPos(r.to, -1),
   }))
 
+// A range the edit collapsed was deleted, not re-aimed; a seat still held keeps its tile raw, so nothing forms there to succeed it.
+function priorOf(ranges: readonly TileRange[], seat: Seat | null): Prior[] {
+  const prior = ranges.flatMap((r) =>
+    r.to > r.from ? [{ from: r.from, to: r.to, key: keyOf(r) }] : [],
+  )
+  if (seat?.key) prior.push({ from: seat.at, to: seat.at, key: seat.key })
+  return prior
+}
+
 export const embedField = StateField.define<EmbedTiles>({
-  create: (state) => buildTiles(state, null, {}, {}, 'mount', null),
+  create: (state) =>
+    buildTiles(state, { editing: null, seat: null, heights: {}, zooms: {} }, 'mount'),
   update(value, tr) {
-    let editing = value.editing
-    let heights = value.heights
-    let zooms = value.zooms
-    let seat = value.seat === null ? null : tr.changes.mapPos(value.seat, 1)
+    let { editing, heights, zooms } = value
+    const at = value.seat && tr.changes.mapPos(value.seat.at, 1, MapMode.TrackAfter)
+    const mappedSeat = value.seat && at !== null ? { ...value.seat, at } : null
+    let seat = mappedSeat
     let nudged = false
     for (const e of tr.effects) {
-      if (e.is(setWebLinkSeat)) seat = e.value
-      else if (e.is(setEmbedEditing)) editing = e.value
+      if (e.is(setWebLinkSeat)) {
+        const tile = value.ranges.find((r) => r.from === e.value)
+        const key = tile ? keyOf(tile) : seat?.at === e.value ? seat.key : null
+        seat = e.value === null ? null : { at: e.value, key }
+      } else if (e.is(setEmbedEditing)) editing = e.value
       else if (e.is(resolutionNudge)) nudged = true
       else if (e.is(setEmbedHeights)) heights = e.value
       else if (e.is(setEmbedZooms)) zooms = e.value
+      else if (e.is(loadEmbedPrefs)) {
+        heights = { ...e.value.heights, ...heights }
+        zooms = { ...e.value.zooms, ...zooms }
+      }
     }
     const selMoved = !tr.startState.selection.eq(tr.state.selection)
     const formationDue = value.unformed > 0 && selMoved
-    // Leaving the seated line IS the submission; a seat outliving its line would hold the next tile raw.
+    // Leaving the seated line IS the submission, whatever the address reads mid-retype; a seat outliving its line would hold the next tile raw.
     if (seat !== null) {
-      const line = seat <= tr.state.doc.length ? tr.state.doc.lineAt(seat) : null
-      if (!line || line.from !== seat || !loneWebpageEmbed(line.text)) seat = null
-      else if (selMoved && !selectionOn(tr.state, line.from, line.to)) seat = null
+      const line = tr.state.doc.lineAt(seat.at)
+      if (line.from !== seat.at || (selMoved && !selectionOn(tr.state, line.from, line.to)))
+        seat = null
     }
+    const seatMoved = seat?.at !== value.seat?.at
+    const memory = { editing, seat, heights, zooms }
     const restored = tr.isUserEvent('undo') || tr.isUserEvent('redo')
     if (!tr.docChanged) {
       if (
         nudged ||
         editing !== value.editing ||
         heights !== value.heights ||
-        seat !== value.seat ||
+        seatMoved ||
         formationDue
       )
-        return buildTiles(tr.state, editing, heights, zooms, value.ranges, seat)
+        return buildTiles(tr.state, memory, value.ranges, priorOf(value.ranges, mappedSeat))
       return zooms !== value.zooms ? { ...value, zooms } : value
     }
-    if (editAffectsEmbeds(value, tr) || formationDue || restored || seat !== value.seat)
-      return buildTiles(
-        tr.state,
-        editing,
-        heights,
-        zooms,
-        restored ? 'mount' : mapRanges(value.ranges, tr),
-        seat,
-      )
-    return {
-      deco: value.deco.map(tr.changes),
-      ranges: mapRanges(value.ranges, tr),
-      editing,
-      heights,
-      zooms,
-      unformed: value.unformed,
-      seat,
-    }
+    const ranges = mapRanges(value.ranges, tr)
+    if (editAffectsEmbeds(value, tr) || formationDue || restored || seatMoved)
+      return buildTiles(tr.state, memory, restored ? 'mount' : ranges, priorOf(ranges, mappedSeat))
+    return { ...memory, deco: value.deco.map(tr.changes), ranges, unformed: value.unformed }
   },
   provide: (f) => EditorView.decorations.from(f, (v) => v.deco),
 })
@@ -521,20 +572,7 @@ const embedAtomic = EditorView.atomicRanges.of((view) => {
 
 const editingExit = ViewPlugin.fromClass(
   class {
-    private readonly onDown: (e: PointerEvent) => void
     private dismissal: DismissalHandle | null = null
-
-    constructor(view: EditorView) {
-      this.onDown = (e) => {
-        const t = e.target as HTMLElement | null
-        // CM never hears a press inside a tile, but the browser still drags the host's selection to the line above.
-        if (t?.closest?.('.mdpm-embed-tile') && view.dom.contains(t))
-          requestAnimationFrame(() => {
-            if (view.hasFocus) view.contentDOM.blur()
-          })
-      }
-      document.addEventListener('pointerdown', this.onDown, true)
-    }
 
     update(u: ViewUpdate): void {
       const editing = u.state.field(embedField).editing
@@ -552,7 +590,6 @@ const editingExit = ViewPlugin.fromClass(
     }
 
     destroy(): void {
-      document.removeEventListener('pointerdown', this.onDown, true)
       this.dismissal?.release()
     }
   },
@@ -560,10 +597,7 @@ const editingExit = ViewPlugin.fromClass(
 
 function embedPrefKey(state: EditorState, pos: number): string | null {
   const r = state.field(embedField).ranges.find((t) => t.from <= pos && pos <= t.to)
-  if (!r) return null
-  if (r.kind === 'webpage') return r.url
-  const resolved = state.facet(embedHost).getConn()?.resolve(r.title)
-  return resolved?.status === 'resolved' ? (resolved.page?.id ?? null) : null
+  return r ? keyOf(r) : null
 }
 
 export function embedZoomAt(state: EditorState, pos: number): number | null {
@@ -579,7 +613,7 @@ function ownTiles(view: EditorView): WebTileDom[] {
   return tiles
 }
 
-export function refreshTileZooms(view: EditorView, animate: boolean): void {
+function refreshTileZooms(view: EditorView, animate: boolean): void {
   const zooms = view.state.field(embedField).zooms
   for (const span of ownTiles(view)) {
     if (span._renderW) {
@@ -603,9 +637,29 @@ export function applyEmbedZoom(view: EditorView, pos: number, factor: number): v
   if (factor === ZOOM.default) delete zooms[key]
   else zooms[key] = factor
   view.dispatch({ effects: setEmbedZooms.of(zooms) })
-  view.state.facet(editorHost).prefs?.save('embedZooms', zooms)
   refreshTileZooms(view, true)
 }
+
+export function applySavedEmbeds(
+  view: EditorView,
+  heights: Record<string, number>,
+  zooms: Record<string, number>,
+): void {
+  if (Object.keys(heights).length + Object.keys(zooms).length === 0) return
+  view.dispatch({ effects: loadEmbedPrefs.of({ heights, zooms }) })
+  if (Object.keys(zooms).length > 0) refreshTileZooms(view, false)
+}
+
+// Every change to the memory is written back — a resize, a Scale, a re-aim moving it to its new target — but not a load, which is where it came from.
+const persistEmbeds = EditorView.updateListener.of((u) => {
+  const was = u.startState.field(embedField)
+  const now = u.state.field(embedField)
+  if (was.heights === now.heights && was.zooms === now.zooms) return
+  if (u.transactions.some((tr) => tr.effects.some((e) => e.is(loadEmbedPrefs)))) return
+  const prefs = u.state.facet(editorHost).prefs
+  if (was.heights !== now.heights) prefs?.save('embedHeights', now.heights)
+  if (was.zooms !== now.zooms) prefs?.save('embedZooms', now.zooms)
+})
 
 export function embedTileRanges(state: EditorState): readonly TileRange[] {
   return state.field(embedField, false)?.ranges ?? []
@@ -626,7 +680,6 @@ const embedClickSeat = EditorView.domEventHandlers({
     if (event.button !== 0 || event.shiftKey || event.detail > 1) return false
     const { ranges } = view.state.field(embedField)
     if (ranges.length === 0) return false
-    if ((event.target as HTMLElement).closest?.('.mdpm-embed-tile')) return false
     const pos = view.posAtCoords({ x: event.clientX, y: event.clientY })
     if (pos === null) return false
     for (const r of ranges) {
@@ -660,5 +713,13 @@ const reslotHeal = ViewPlugin.fromClass(
 )
 
 export function embedTiles(host: EmbedHost): Extension {
-  return [embedHost.of(host), embedField, embedAtomic, embedClickSeat, editingExit, reslotHeal]
+  return [
+    embedHost.of(host),
+    embedField,
+    embedAtomic,
+    embedClickSeat,
+    editingExit,
+    reslotHeal,
+    persistEmbeds,
+  ]
 }

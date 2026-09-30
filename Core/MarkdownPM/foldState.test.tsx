@@ -148,6 +148,22 @@ describe('the fold state machine', () => {
   })
 })
 
+describe('the fold animates a picture of its body', () => {
+  it('an inert copy with no web guest, and nothing at all once collapsed', async () => {
+    const view = await mountEditor({ initialBody: DOC })
+    const body = view.contentDOM.querySelectorAll('.cm-line')[1]
+    body.appendChild(document.createElement('webview'))
+    await fold(view, 0)
+    const clone = view.dom.querySelector<HTMLElement>('.mdpm-fold-clone')
+    expect(clone?.hasAttribute('inert')).toBe(true)
+    expect(clone?.textContent).toContain('body one')
+    expect(clone?.querySelector('webview')).toBeNull()
+    applySavedFolds(view, ['Two'])
+    const reveals = view.dom.querySelectorAll('.mdpm-fold-reveal')
+    expect(reveals[reveals.length - 1].childElementCount).toBe(0)
+  })
+})
+
 // The section's state is a per-page override rather than a row in the shared fold store, so it skips persistence.
 
 const CITED = '# Notes\nbody[^a] here\n\n[^a]: the citation\n[^b]: another'
@@ -455,7 +471,7 @@ describe('a value arriving after mount is still a seed', () => {
     expect(kinds(view)).toEqual([])
     await rerenderEditor({ initialBody: CITED, citationsShown: false })
     expect(kinds(view)).toEqual(['citations'])
-    expect(revealRows(view)).toBe('0fr')
+    expect(view.dom.querySelector('.mdpm-fold-reveal')?.childElementCount).toBe(0)
   })
 
   it('and every change after it animates', async () => {

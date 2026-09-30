@@ -1,6 +1,14 @@
 import { describe, expect, it } from 'vitest'
 import { EditorState } from '@codemirror/state'
-import { embedExclusions, embedTileRanges, embedTiles } from './embedWidget'
+import {
+  embedExclusions,
+  embedField,
+  embedTileRanges,
+  embedTiles,
+  setEmbedHeights,
+  setEmbedZooms,
+  setWebLinkSeat,
+} from './embedWidget'
 import type { ConnectionsApi } from '../Links/connectionsApi'
 import { buildPageIndex } from '../../Connections/pageIndex'
 import { editorHost } from '../api'
@@ -122,5 +130,98 @@ describe('a page is excluded from embedding itself', () => {
 
   it('a surface naming no page excludes nothing of its own', () => {
     expect(embedExclusions(self('text')).size).toBe(0)
+  })
+})
+
+describe('a tile re-aimed where it stands keeps its height and Scale', () => {
+  const two: ConnectionsApi = {
+    ...buildPageIndex([
+      { id: '1', title: 'Alpha', path: 'Notes/Alpha.md' },
+      { id: '2', title: 'Beta', path: 'Notes/Beta.md' },
+    ]),
+    open: () => {},
+  }
+  const URL2 = 'https://www.example.com/b'
+  const remembering = (doc: string, heights: Record<string, number>): EditorState =>
+    EditorState.create({
+      doc,
+      extensions: [
+        editorHost.of(testHost()),
+        embedTiles({ getConn: () => two, ancestors: ['Host.md'] }),
+      ],
+    }).update({ effects: [setEmbedHeights.of(heights), setEmbedZooms.of({ ...heights })] }).state
+  const memory = (state: EditorState) => {
+    const { heights, zooms } = state.field(embedField)
+    return { heights, zooms }
+  }
+
+  it('a page tile pointed at another page moves both to the new page', () => {
+    let state = remembering('![[Alpha]]', { '1': 300 })
+    state = state.update({ changes: { from: 0, to: 10, insert: '![[Beta]]' } }).state
+    expect(memory(state)).toEqual({ heights: { '2': 300 }, zooms: { '2': 300 } })
+  })
+
+  it('an Edit Link seat carries them across the address it un-formed', () => {
+    let state = remembering(`x\n${W}`, { [URL]: 300 })
+    state = state.update({ effects: setWebLinkSeat.of(2), selection: { anchor: 5 } }).state
+    expect(embedTileRanges(state)).toHaveLength(0)
+    const at = state.doc.toString().indexOf(URL)
+    state = state.update({ changes: { from: at, to: at + URL.length, insert: URL2 } }).state
+    state = state.update({ selection: { anchor: 0 } }).state
+    expect(embedTileRanges(state)).toHaveLength(1)
+    expect(memory(state).heights).toEqual({ [URL2]: 300 })
+  })
+
+  it('a retype keystroke by keystroke still carries them, and a second Edit Link keeps the seat', () => {
+    let state = remembering(`x\n${W}`, { [URL]: 300 })
+    const at = state.doc.toString().indexOf(URL)
+    state = state.update({
+      effects: setWebLinkSeat.of(2),
+      selection: { anchor: at, head: at + URL.length },
+    }).state
+    state = state.update({
+      changes: { from: at, to: at + URL.length },
+      selection: { anchor: at },
+    }).state
+    state = state.update({ effects: setWebLinkSeat.of(2) }).state
+    for (let i = 0; i < URL2.length; i++)
+      state = state.update({
+        changes: { from: at + i, insert: URL2[i] },
+        selection: { anchor: at + i + 1 },
+      }).state
+    state = state.update({ selection: { anchor: 0 } }).state
+    expect(embedTileRanges(state)).toHaveLength(1)
+    expect(memory(state).heights).toEqual({ [URL2]: 300 })
+  })
+
+  it('a deleted tile hands nothing to the neighbour that slides into its place', () => {
+    const doc = 'x\n\n![[Alpha]]\n\n![[Beta]]'
+    let state = remembering(doc, { '1': 300 })
+    const from = doc.indexOf('![[Alpha]]')
+    state = state.update({ changes: { from, to: doc.indexOf('![[Beta]]') } }).state
+    expect(embedTileRanges(state)).toHaveLength(1)
+    expect(memory(state).heights).toEqual({ '1': 300 })
+  })
+
+  it('stays with the old target while another tile still shows it', () => {
+    let state = remembering(`${W}\n\n${W}`, { [URL]: 300 })
+    const at = state.doc.toString().indexOf(URL)
+    state = state.update({
+      changes: { from: at, to: at + URL.length, insert: URL2 },
+      selection: { anchor: state.doc.length },
+    }).state
+    expect(embedTileRanges(state)).toHaveLength(2)
+    expect(memory(state).heights).toEqual({ [URL]: 300 })
+  })
+
+  it('never overwrites what the new target already holds', () => {
+    let state = remembering(`${W}\n\n![](${URL2})`, { [URL]: 300, [URL2]: 500 })
+    const at = state.doc.toString().indexOf(URL)
+    state = state.update({
+      changes: { from: at, to: at + URL.length, insert: URL2 },
+      selection: { anchor: state.doc.length },
+    }).state
+    expect(embedTileRanges(state)).toHaveLength(2)
+    expect(memory(state).heights).toEqual({ [URL]: 300, [URL2]: 500 })
   })
 })

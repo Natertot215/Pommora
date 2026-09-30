@@ -42,6 +42,12 @@ describe('persisted tile heights', () => {
     expect(span.style.height).toBe('480px')
   })
 
+  it('a load writes nothing back', async () => {
+    const save = vi.fn()
+    await mount({ ...hosted, host: { prefs: prefsOf({ embedHeights: { p1: 480 } }, save) } })
+    expect(save).not.toHaveBeenCalled()
+  })
+
   it('a heights effect re-renders in place; an unknown target keeps the KNOB default', async () => {
     const view = await mount(hosted)
     view.dispatch({ effects: setEmbedHeights.of({ other: 200 }) })

@@ -8,6 +8,15 @@ export function lineElementAt(view: EditorView, pos: number): HTMLElement | null
   return node instanceof HTMLElement ? node : null
 }
 
+export function textColumn(view: EditorView): { left: number; right: number } {
+  const box = view.contentDOM.getBoundingClientRect()
+  const cs = getComputedStyle(view.contentDOM)
+  return {
+    left: box.left + (parseFloat(cs.paddingLeft) || 0),
+    right: box.right - (parseFloat(cs.paddingRight) || 0),
+  }
+}
+
 // The band a grip answers a press in: the gutter left of the line box on a page, and, where `--grip-strip` names one, that many pixels INTO the box — a table cell has no gutter, so its grip sits in the list's own inset.
 export function inGripStrip(e: { clientX: number }, line: HTMLElement): boolean {
   const inset = parseFloat(getComputedStyle(line).getPropertyValue('--grip-strip')) || 0

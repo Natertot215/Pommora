@@ -95,3 +95,72 @@ describe('heading-column toggle survives tables shifting around it', () => {
     expect(persisted).toEqual([])
   })
 })
+
+interface TableWidgetLike {
+  text: string
+  model: unknown
+  tableIndex: number
+  headingColumn: boolean
+  page: string
+  linkStyle: unknown
+  height: { px: number }
+}
+
+function drawn(v: EditorView): TableWidgetLike[] {
+  const out: TableWidgetLike[] = []
+  for (const source of v.state.facet(EditorView.decorations)) {
+    if (typeof source === 'function') continue
+    for (const it = source.iter(); it.value; it.next()) {
+      const w = it.value.spec.widget as unknown as TableWidgetLike | undefined
+      if (w && 'tableIndex' in w) out.push(w)
+    }
+  }
+  return out
+}
+
+// Everything the widget is built from except where it sits.
+const memoryOf = ({ text, model, headingColumn, page, linkStyle, height }: TableWidgetLike) => ({
+  text,
+  model,
+  headingColumn,
+  page,
+  linkStyle,
+  height,
+})
+
+describe('a table another table lands above is the same table', () => {
+  it('keeps everything but its position, down to the very height box it measured into', () => {
+    const v = openTwoTables(() => {})
+    v.dispatch({ changes: { from: 0, to: v.state.doc.length, insert: B } })
+    applySavedHeadingCols(v, [0])
+    const [before] = drawn(v)
+    before.height.px = 321
+    const kept = structuredClone(memoryOf(before))
+
+    v.dispatch({ changes: { from: 0, insert: `${C}\n\n` } })
+
+    const [added, after] = drawn(v)
+    expect(after.tableIndex).toBe(1)
+    expect(memoryOf(after)).toEqual(kept)
+    expect(after.height).toBe(before.height)
+    expect(added.headingColumn).toBe(false)
+    expect(added.height.px).toBe(-1)
+  })
+
+  it('holds when both tables carry the same empty header, as fresh tables do', () => {
+    const EMPTY = '|  |  |\n| --- | --- |\n|  |  |'
+    const v = openTwoTables(() => {})
+    v.dispatch({ changes: { from: 0, to: v.state.doc.length, insert: EMPTY } })
+    applySavedHeadingCols(v, [0])
+    const [before] = drawn(v)
+    before.height.px = 321
+
+    v.dispatch({ changes: { from: 0, insert: `${EMPTY}\n\n` } })
+
+    const [added, after] = drawn(v)
+    expect(after.height).toBe(before.height)
+    expect(after.headingColumn).toBe(true)
+    expect(added.headingColumn).toBe(false)
+    expect(added.height.px).toBe(-1)
+  })
+})

@@ -4,7 +4,7 @@ import { blockAt, blockStarts } from '../Engine/blockModel'
 import { docScan, docString } from '../docCache'
 import { shadeField, type Boundary } from './dragChrome'
 import { beginRelocateDrag, editorGestureCleanup } from './editorGesture'
-import { gutterLineAt, lineElementAt } from '../lineDom'
+import { gutterLineAt, lineElementAt, textColumn } from '../lineDom'
 import { moveRange } from '../Engine/listDragModel'
 import { GRIP_LINE } from '../Engine/intents'
 
@@ -38,8 +38,7 @@ function collectBoundaries(
   block: { from: number; to: number },
   shape: BlockShape,
 ): Boundary<Drop>[] {
-  const rect = view.contentDOM.getBoundingClientRect()
-  const right = rect.right - (parseFloat(getComputedStyle(view.contentDOM).paddingRight) || 0)
+  const { right } = textColumn(view)
   const { starts, end } = shape
   const out: Boundary<Drop>[] = []
   // `view.viewport`, never `visibleRanges` — a block widget puts a gap in the visible ranges and would lose the boundary above a table.
