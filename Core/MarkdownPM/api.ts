@@ -3,7 +3,15 @@ import type { ReactNode } from 'react'
 import type { RememberedSize } from '@pommora/uix/Interactions/useResizable'
 import { changesTo } from '../Pages/merge3'
 import { docString } from './docCache'
-import { Annotation, Facet, StateEffect, Transaction } from '@codemirror/state'
+import {
+  Annotation,
+  type EditorState,
+  type Extension,
+  Facet,
+  StateEffect,
+  type StateEffectType,
+  Transaction,
+} from '@codemirror/state'
 import { EditorView } from '@codemirror/view'
 import { type Personalization, type SettingValue, settingOf } from '../Settings/personalization'
 import type { HostContext } from '../Contract/handlers'
@@ -152,3 +160,17 @@ export interface EditorHost {
 }
 
 export const editorHost = Facet.define<EditorHost, EditorHost>({ combine: (v) => v[0] })
+
+// Remembered chrome writes itself back whenever its state changes, except on the load that seeded it, so a gesture changes the state and never saves it.
+export function persistPref<T>(
+  read: (state: EditorState) => T,
+  loaded: StateEffectType<unknown>,
+  write: (value: T) => EditorPrefWrite,
+): Extension {
+  return EditorView.updateListener.of((u) => {
+    const now = read(u.state)
+    if (read(u.startState) === now) return
+    if (u.transactions.some((tr) => tr.effects.some((e) => e.is(loaded)))) return
+    u.state.facet(editorHost).prefs?.save(...write(now))
+  })
+}

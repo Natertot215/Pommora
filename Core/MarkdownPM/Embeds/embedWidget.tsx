@@ -31,9 +31,10 @@ import { ZOOM } from '../../Settings/personalization'
 import { zoomStep } from '../../Tiles/tileZoom'
 import { docScan } from '../docCache'
 import { claimedEmbeds } from '../Engine/embedClaims'
+import { ownElements } from '../lineDom'
 import { healTileScrolls } from './scrollHeal'
 import type { ConnectionsApi } from '../Links/connectionsApi'
-import { editorHost, resolutionNudge } from '../api'
+import { editorHost, persistPref, resolutionNudge } from '../api'
 import { clamp } from '@pommora/uix/Utilities/clamp'
 
 interface EmbedHost {
@@ -298,6 +299,7 @@ class WebpageTileWidget extends ReactWidget {
   private renderInto(dom: WebTileDom, view: EditorView): void {
     dom.className = 'mdpm-embed-tile tile-base'
     dom.dataset.revealHost = ''
+    dom.dataset.embedTarget = this.url
     dom._wanted = this.height
     fitHeight(dom, portHeight(view))
     const host = view.state.facet(embedHost)
@@ -323,7 +325,6 @@ class WebpageTileWidget extends ReactWidget {
 
   toDOM(view: EditorView): HTMLElement {
     const dom = document.createElement('span') as WebTileDom
-    dom.dataset.embedTarget = this.url
     dom._renderW = () => this.renderInto(dom, view)
     if (view.state.facet(editorHost).pageSurface) {
       const o = observersFor(view)
@@ -430,6 +431,7 @@ function buildTiles(
   let lastFence = -1
   for (const t of tiles) {
     const cyclic = t.kind === 'page' && host.ancestors.includes(t.path)
+    const height = heights[keyOf(t)]
     const widget =
       t.kind === 'page'
         ? new EmbedTileWidget(
@@ -440,9 +442,9 @@ function buildTiles(
             cyclic,
             host.ancestors,
             t.id,
-            heights[t.id],
+            height,
           )
-        : new WebpageTileWidget(t.url, t.label, heights[t.url])
+        : new WebpageTileWidget(t.url, t.label, height)
     const tileLine = state.doc.lineAt(t.from)
     if (tileLine.number > 1) {
       const above = state.doc.line(tileLine.number - 1)
@@ -605,17 +607,9 @@ export function embedZoomAt(state: EditorState, pos: number): number | null {
   return key === null ? null : zoomStep(state.field(embedField).zooms[key])
 }
 
-function ownTiles(view: EditorView): WebTileDom[] {
-  const tiles: WebTileDom[] = []
-  for (const el of view.dom.querySelectorAll<HTMLElement>('[data-embed-target]')) {
-    if (el.closest('.cm-content') === view.contentDOM) tiles.push(el as WebTileDom)
-  }
-  return tiles
-}
-
 function refreshTileZooms(view: EditorView, animate: boolean): void {
   const zooms = view.state.field(embedField).zooms
-  for (const span of ownTiles(view)) {
+  for (const span of ownElements<WebTileDom>(view, '[data-embed-target]')) {
     if (span._renderW) {
       span._renderW()
       continue
@@ -627,7 +621,7 @@ function refreshTileZooms(view: EditorView, animate: boolean): void {
 }
 
 export function rerenderWebTiles(view: EditorView): void {
-  for (const span of ownTiles(view)) span._renderW?.()
+  for (const span of ownElements<WebTileDom>(view, '[data-embed-target]')) span._renderW?.()
 }
 
 export function applyEmbedZoom(view: EditorView, pos: number, factor: number): void {
@@ -649,17 +643,6 @@ export function applySavedEmbeds(
   view.dispatch({ effects: loadEmbedPrefs.of({ heights, zooms }) })
   if (Object.keys(zooms).length > 0) refreshTileZooms(view, false)
 }
-
-// Every change to the memory is written back — a resize, a Scale, a re-aim moving it to its new target — but not a load, which is where it came from.
-const persistEmbeds = EditorView.updateListener.of((u) => {
-  const was = u.startState.field(embedField)
-  const now = u.state.field(embedField)
-  if (was.heights === now.heights && was.zooms === now.zooms) return
-  if (u.transactions.some((tr) => tr.effects.some((e) => e.is(loadEmbedPrefs)))) return
-  const prefs = u.state.facet(editorHost).prefs
-  if (was.heights !== now.heights) prefs?.save('embedHeights', now.heights)
-  if (was.zooms !== now.zooms) prefs?.save('embedZooms', now.zooms)
-})
 
 export function embedTileRanges(state: EditorState): readonly TileRange[] {
   return state.field(embedField, false)?.ranges ?? []
@@ -720,6 +703,15 @@ export function embedTiles(host: EmbedHost): Extension {
     embedClickSeat,
     editingExit,
     reslotHeal,
-    persistEmbeds,
+    persistPref(
+      (s) => s.field(embedField).heights,
+      loadEmbedPrefs,
+      (h) => ['embedHeights', h],
+    ),
+    persistPref(
+      (s) => s.field(embedField).zooms,
+      loadEmbedPrefs,
+      (z) => ['embedZooms', z],
+    ),
   ]
 }
