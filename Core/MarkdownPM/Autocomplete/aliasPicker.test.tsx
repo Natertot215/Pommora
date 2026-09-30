@@ -95,6 +95,7 @@ describe('the forget × is inert until it is revealed', () => {
     await act(async () => {
       root?.render(
         <AutocompletePane
+          open
           ac={{
             query: '',
             from: 0,
@@ -190,6 +191,7 @@ describe('the heading slide’s top row marks how it arrived', () => {
     await act(async () => {
       root?.render(
         <AutocompletePane
+          open
           ac={headingAc}
           candidates={rows}
           index={0}

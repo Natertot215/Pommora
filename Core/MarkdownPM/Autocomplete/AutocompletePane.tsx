@@ -27,6 +27,7 @@ import type { AcRow, HeadingRow } from './autocomplete'
 import type { AcState } from './useConnectionAutocomplete'
 
 export interface AutocompletePaneProps {
+  open: boolean
   ac: AcState | null
   candidates: AcRow[]
   index: number
@@ -54,6 +55,7 @@ const AC_FIT_MAX = 320
 const CLOSED: AcState = { query: '', from: 0, to: 0, form: 'link', ...CLOSED_GEOMETRY }
 
 export function AutocompletePane({
+  open,
   ac,
   candidates,
   index,
@@ -67,18 +69,17 @@ export function AutocompletePane({
   onBack = () => {},
   geometry,
 }: AutocompletePaneProps): React.JSX.Element {
-  const live = ac !== null && (candidates.length > 0 || loading)
-  const resize = usePaneResize(live, AC_BOUNDS, geometry)
+  const resize = usePaneResize(open, AC_BOUNDS, geometry)
   const { w, h } = resize.size
   const v = useHeld(
     { ac: ac ?? CLOSED, candidates, index, viaChevron, headingRows, collapsed },
-    live,
+    open,
   )
   const matchLen = v.ac.query.length
   const keepInView = useKeepInView(v.index)
 
   const cameFrom = useRef<AcRow[]>([])
-  if (live && v.ac.form === 'link') cameFrom.current = v.candidates
+  if (open && v.ac.form === 'link') cameFrom.current = v.candidates
   useEffect(() => {
     if (ac === null) cameFrom.current = []
   }, [ac])
@@ -196,7 +197,7 @@ export function AutocompletePane({
   const shown = slot(v.candidates, true)
 
   return (
-    <CaretPane open={live} at={v.ac} className="mdpm-ac" resize={resize}>
+    <CaretPane open={open} at={v.ac} className="mdpm-ac" resize={resize}>
       <FrameSlide
         open={sliding}
         minWidth={w ?? AC_BOUNDS.min.w}
