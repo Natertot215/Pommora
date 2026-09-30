@@ -566,8 +566,9 @@ export function MatrixCanvas({
           if (id !== null) onMenu(id)
         }}
       />
-      <div ref={stageRef} className={cx('detail interface-inset', s.stage)} />
-      {children}
+      <div ref={stageRef} className={cx('detail interface-inset', s.stage)}>
+        {children}
+      </div>
     </div>
   )
 }

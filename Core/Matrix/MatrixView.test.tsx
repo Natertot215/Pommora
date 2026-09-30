@@ -2,9 +2,12 @@
 import { act } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { DragGroup, useLooseItem } from '@pommora/uix/Interactions/drag'
 import { ok } from '../Contract/result'
 import { hoverGlance, leaveGlanceFrom } from '../Interface/Glance/glanceAction'
 import { showEntityMenu } from '../Interface/Menus/entityMenuActions'
+import type { SelectTarget } from '../Navigation/navRef'
+import { TAB_FAMILY } from '../Navigation/tabRows'
 import { useSession } from '../Session/store'
 import { makeTree } from '../Testing/testTree'
 import { stubDialer } from '../vitest.setup'
@@ -56,6 +59,18 @@ const pointer = (type: string, at: { clientX: number; clientY: number }, shiftKe
 let host: HTMLDivElement
 let root: Root
 let select: ReturnType<typeof vi.fn>
+let loose: SelectTarget | null = null
+
+function LooseProbe(): null {
+  loose = useLooseItem(TAB_FAMILY)
+  return null
+}
+
+const held = (type: string, at: { clientX: number; clientY: number }) => {
+  const e = pointer(type, at)
+  Object.defineProperty(e, 'buttons', { value: 1 })
+  return e
+}
 
 const canvas = (): HTMLCanvasElement => host.querySelector('canvas') as HTMLCanvasElement
 const label = (): HTMLElement | null => host.querySelector(`.${s.label.split(' ')[0]}`)
@@ -102,7 +117,14 @@ beforeEach(() => {
   host = document.createElement('div')
   document.body.appendChild(host)
   root = createRoot(host)
-  act(() => root.render(<MatrixView />))
+  act(() =>
+    root.render(
+      <DragGroup>
+        <MatrixView />
+        <LooseProbe />
+      </DragGroup>,
+    ),
+  )
   for (const o of observers) o([{ contentRect: { x: 0, y: 0, width: 800, height: 600 } }])
   drain()
 })
@@ -200,14 +222,45 @@ describe('MatrixView', () => {
   })
 
   it('leaves the hover where a gesture began', () => {
-    const held = (at: { clientX: number; clientY: number }) => {
-      const e = pointer('pointermove', at)
-      Object.defineProperty(e, 'buttons', { value: 1 })
-      return e
-    }
     fire(canvas(), pointer('pointermove', FAR))
-    fire(canvas(), held(CENTRE))
+    fire(canvas(), held('pointermove', CENTRE))
     drain()
     expect(label()).toBeNull()
+  })
+
+  describe('locked', () => {
+    const anchor = (): HTMLElement => host.querySelector('[data-node-id="p1"]') as HTMLElement
+    const hoverP1 = (locked: boolean): void => {
+      const display = { ...DEFAULT_MATRIX_CONFIG.display, locked }
+      act(() => useSession.setState({ matrixConfig: { ...DEFAULT_MATRIX_CONFIG, display } }))
+      fire(canvas(), pointer('pointermove', CENTRE))
+      drain()
+    }
+
+    it('carries the pressed node to the tab strips once it leaves the Matrix', () => {
+      hoverP1(true)
+      const zone = host.querySelector('.line-zone') as HTMLElement
+      vi.spyOn(zone, 'getBoundingClientRect').mockReturnValue(new DOMRect(0, 0, 800, 600))
+      fire(anchor(), pointer('pointerdown', CENTRE))
+      fire(window, held('pointermove', { clientX: 400, clientY: 320 }))
+      expect(loose).toBeNull()
+      fire(window, held('pointermove', { clientX: 400, clientY: -40 }))
+      expect(loose).toMatchObject({ kind: 'page', id: 'p1' })
+      fire(window, held('pointerup', { clientX: 400, clientY: -40 }))
+      expect(loose).toBeNull()
+      expect(select).not.toHaveBeenCalled()
+    })
+
+    it('opens on a tap, once, locked or not', () => {
+      for (const locked of [true, false]) {
+        select.mockClear()
+        hoverP1(locked)
+        fire(anchor(), pointer('pointerdown', CENTRE))
+        fire(window, pointer('pointerup', CENTRE))
+        fire(anchor(), new MouseEvent('click', { bubbles: true }))
+        expect(select).toHaveBeenCalledTimes(1)
+        expect(select.mock.calls[0][0]).toMatchObject({ id: 'p1' })
+      }
+    })
   })
 })
