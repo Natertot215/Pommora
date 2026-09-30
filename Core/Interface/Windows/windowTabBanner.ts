@@ -1,6 +1,6 @@
 import { useEffect } from 'react'
-import type { BannerMenuAction } from '@pommora/core/Actions/identityMenus'
-import type { WindowTarget } from '@pommora/core/Navigation/navRef'
+import type { BannerMenuAction } from '../../Actions/identityMenus'
+import type { WindowTarget } from '../../Navigation/navRef'
 import { resolveAssetUrl } from '../../Assets/assetUrl'
 import { findSpace } from '../../Nexus/treeIndex'
 import { coverOf } from '../../Pages/pageDetail'

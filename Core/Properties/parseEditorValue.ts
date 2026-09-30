@@ -1,6 +1,6 @@
 import type { PropertyValue } from './propertyValue'
 import type { PropertyType } from './properties'
-import { linkEditText, linkValueFromEdit } from '@pommora/core/Connections/linkValue'
+import { linkEditText, linkValueFromEdit } from '../Connections/linkValue'
 import { numberFrom } from '@pommora/uix/Pickers/numberUnit'
 import { resolveTitle } from './Cells/linkResolve'
 

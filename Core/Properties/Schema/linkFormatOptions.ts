@@ -1,8 +1,4 @@
-import {
-  LINK_DISPLAY_LABELS,
-  LINK_DISPLAYS,
-  type LinkDisplay,
-} from '@pommora/core/Properties/properties'
+import { LINK_DISPLAY_LABELS, LINK_DISPLAYS, type LinkDisplay } from '../properties'
 import type { PickerOption } from '@pommora/uix/Pickers/PickerControl'
 
 /** Default first, so `labelOf`'s fallback reads as the default for a value it doesn't recognize. */

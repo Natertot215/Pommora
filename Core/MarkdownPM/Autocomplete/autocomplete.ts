@@ -3,17 +3,17 @@ import {
   linkAt,
   normalizeTitle,
   pageEmbedText,
-} from '@pommora/core/Connections/connections'
+} from '../../Connections/connections'
 import {
   decodeLinkTarget,
   emptyTolerantLinkRegex,
   encodeLinkTarget,
   escapeAlias,
-} from '@pommora/core/Connections/links'
+} from '../../Connections/links'
 import { NO_TRAIL, type TrailSegment } from '@pommora/uix/Elements/NavTrail'
 import { type DocScan, inCodeAt } from '../Engine/docScan'
 import { lineIndexAt, type TextEdit } from '../Engine/markdownCode'
-import type { ConnPage, PageIndex } from '@pommora/core/Connections/pageIndex'
+import type { ConnPage, PageIndex } from '../../Connections/pageIndex'
 import type { OutlineHeading } from '../Engine/headingScan'
 import type { EditorHost } from '../api'
 import type { ConnectionsApi } from '../Links/connectionsApi'

@@ -7,11 +7,10 @@ import {
   Facet,
 } from '@codemirror/state'
 import type { EditorView } from '@codemirror/view'
-import type { CitationMenuAction } from '@pommora/core/MarkdownPM/Citations/citationMenu'
+import type { CitationMenuAction } from './citationMenu'
 import { inCodeAt } from '../Engine/docScan'
-import { citationFor, markerEndingAt, markersFor } from '../Engine/detect'
+import { citationFor, markerEndingAt, markersFor, type CitationScan } from '../Engine/detect'
 import { focusRange } from '../caretPlacement'
-import type { CitationScan } from '../Engine/detect'
 import {
   citationRowChanges,
   deleteCitationChanges,

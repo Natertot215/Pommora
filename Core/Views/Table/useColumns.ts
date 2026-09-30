@@ -1,10 +1,10 @@
 // Everything a table column is: the width table and its clamp, the default alignment, the reorder helper, and the hook that resolves a view's columns into the per-index width, alignment and style the grid paints — plus the resize, hide, align and drag gestures that rewrite them.
 
 import { useEffect, useMemo, useState } from 'react'
-import { columnMenuItems, parseStyleAction } from '@pommora/core/Actions/columnMenu'
-import { defaultStyleFor, type ColumnStyle } from '@pommora/core/Properties/columnStyles'
-import type { PropertyDefinition, PropertyType } from '@pommora/core/Properties/properties'
-import { type ColumnAlign, type SavedView, viewOption } from '@pommora/core/Views/views'
+import { columnMenuItems, parseStyleAction } from '../../Actions/columnMenu'
+import { defaultStyleFor, type ColumnStyle } from '../../Properties/columnStyles'
+import type { PropertyDefinition, PropertyType } from '../../Properties/properties'
+import { type ColumnAlign, type SavedView, viewOption } from '../views'
 import { announce } from '@pommora/uix/Interactions/a11y'
 import { moveItem } from '@pommora/uix/Utilities/moveItem'
 import { usePointerGesture } from '@pommora/uix/Interactions/gesture'

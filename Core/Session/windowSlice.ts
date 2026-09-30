@@ -2,13 +2,8 @@ import {
   EMPTY_WINDOWS,
   type WindowSetRecord,
   type WindowsFile,
-} from '@pommora/core/Interface/Windows/windowRecord'
-import {
-  isWindowTarget,
-  type PageTarget,
-  toNavRef,
-  type WindowTarget,
-} from '@pommora/core/Navigation/navRef'
+} from '../Interface/Windows/windowRecord'
+import { isWindowTarget, type PageTarget, toNavRef, type WindowTarget } from '../Navigation/navRef'
 import { type ReconcileIndex, reconcileHeld, reconcileWith } from './reconcileSelection'
 import { reconcileIndexOf } from '../Nexus/treeIndex'
 import { liveTarget, makeTabId } from '../Navigation/tabsModel'

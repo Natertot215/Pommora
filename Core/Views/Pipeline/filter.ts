@@ -7,21 +7,17 @@ import {
   answerable,
   isGroup,
   ruleOperands,
-} from '@pommora/core/Views/views'
-import type { ViewRow } from '@pommora/core/Views/viewRow'
+} from '../views'
+import type { ViewRow } from '../viewRow'
 import {
   PROPERTY_TYPES,
   type PropertyDefinition,
   RESERVED_PROPERTY_ID,
-} from '@pommora/core/Properties/properties'
-import {
-  isBlankValue,
-  type PropertyValue,
-  type ValueKind,
-} from '@pommora/core/Properties/propertyValue'
+} from '../../Properties/properties'
+import { isBlankValue, type PropertyValue, type ValueKind } from '../../Properties/propertyValue'
 import { declaredType, resolveFieldValue } from '../../Properties/value'
 import type { SetTreeNode } from './group'
-import { linkDisplayText } from '@pommora/core/Connections/linkValue'
+import { linkDisplayText } from '../../Connections/linkValue'
 import { type LocalDate, readDate, startOfDay } from '../../Properties/formatValue'
 import { foldKey } from '../../Paths/caseFold'
 import { numberFrom } from '@pommora/uix/Pickers/numberUnit'

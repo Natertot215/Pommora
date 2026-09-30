@@ -1,5 +1,5 @@
-import { matchScore } from '@pommora/core/Paths/caseFold'
-import { isEmptyBand, type ResolvedGroup } from '@pommora/core/Views/viewRow'
+import { matchScore } from '../../Paths/caseFold'
+import { isEmptyBand, type ResolvedGroup } from '../viewRow'
 
 export function searchGroups(
   groups: ResolvedGroup[],

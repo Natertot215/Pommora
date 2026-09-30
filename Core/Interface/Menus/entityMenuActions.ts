@@ -2,21 +2,21 @@ import {
   type EntityMenuAction,
   entityMenuItems,
   type EntityMenuTarget,
-} from '@pommora/core/Actions/entityMenu'
+} from '../../Actions/entityMenu'
 import {
   containerCreators,
   type Creator,
   createdRequest,
   spaceCreator,
-} from '@pommora/core/Actions/createMenu'
-import { isWindowTarget, selectTargetOf } from '@pommora/core/Navigation/navRef'
-import type { ResolvedColumn, ViewRow } from '@pommora/core/Views/viewRow'
-import type { PropertyDefinition } from '@pommora/core/Properties/properties'
-import type { PropertyValue } from '@pommora/core/Properties/propertyValue'
-import { assignValue, type ValueWriter } from '@pommora/core/Properties/assignValue'
-import { fetchPageRow, spaceRowOf } from '@pommora/core/Properties/pageRow'
-import { containerSchema } from '@pommora/core/Nexus/treePatch'
-import { spaceNodeOf } from '@pommora/core/Nexus/treeIndex'
+} from '../../Actions/createMenu'
+import { isWindowTarget, selectTargetOf } from '../../Navigation/navRef'
+import type { ResolvedColumn, ViewRow } from '../../Views/viewRow'
+import type { PropertyDefinition } from '../../Properties/properties'
+import type { PropertyValue } from '../../Properties/propertyValue'
+import { assignValue, type ValueWriter } from '../../Properties/assignValue'
+import { fetchPageRow, spaceRowOf } from '../../Properties/pageRow'
+import { containerSchema } from '../../Nexus/treePatch'
+import { spaceNodeOf } from '../../Nexus/treeIndex'
 import {
   propertyMenuBranches,
   type PropertyMenuTarget,
@@ -26,7 +26,7 @@ import { dialer } from '../../Platform/dialer'
 import { popMenu } from '../../Actions/menuActions'
 import { createNamed, newPageAdjacent } from '../../Actions/createActions'
 import { useSession } from '../../Session/store'
-import { settingOf } from '@pommora/core/Settings/personalization'
+import { settingOf } from '../../Settings/personalization'
 import { confirmDelete } from '../Confirm/confirmations'
 import { runPageAction } from './pageMenuActions'
 

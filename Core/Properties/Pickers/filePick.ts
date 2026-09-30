@@ -1,11 +1,11 @@
 // `valueClickIntent` can only NAME an intent — it is pure and synchronous — while filling a file value is a three-step async effect, which would otherwise drift one way per surface tail.
 
-import { valueOr } from '@pommora/core/Contract/result'
-import type { PropertyDefinition } from '@pommora/core/Properties/properties'
-import type { PropertyValue } from '@pommora/core/Properties/propertyValue'
-import { type CellMenuAction, cellMenuModel } from '@pommora/core/Actions/cellMenu'
-import { relDirname } from '@pommora/core/Paths/posix'
-import { assetSubRoot } from '@pommora/core/Paths/nexusPaths'
+import { valueOr } from '../../Contract/result'
+import type { PropertyDefinition } from '../properties'
+import type { PropertyValue } from '../propertyValue'
+import { type CellMenuAction, cellMenuModel } from '../../Actions/cellMenu'
+import { relDirname } from '../../Paths/posix'
+import { assetSubRoot } from '../../Paths/nexusPaths'
 import { resolveFileValue } from '../../Assets/assetUrl'
 import { useSession } from '../../Session/store'
 import { dialer } from '../../Platform/dialer'

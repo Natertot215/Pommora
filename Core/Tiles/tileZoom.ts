@@ -1,5 +1,5 @@
-import { ZOOM } from '@pommora/core/Settings/personalization'
-import type { ActionItem } from '@pommora/core/Actions/menuModel'
+import { ZOOM } from '../Settings/personalization'
+import type { ActionItem } from '../Actions/menuModel'
 import { unitLabel } from '@pommora/uix/Pickers/numberUnit'
 
 export const ZOOM_STEPS: readonly number[] = [...ZOOM.steps].reverse()

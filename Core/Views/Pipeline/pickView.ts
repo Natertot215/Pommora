@@ -1,6 +1,6 @@
-import type { PropertyDefinition } from '@pommora/core/Properties/properties'
-import type { CollectionNode, SetNode } from '@pommora/core/Nexus/tree'
-import { DEFAULT_VIEW_ID, mintDefaultView, type SavedView } from '@pommora/core/Views/views'
+import type { PropertyDefinition } from '../../Properties/properties'
+import type { CollectionNode, SetNode } from '../../Nexus/tree'
+import { DEFAULT_VIEW_ID, mintDefaultView, type SavedView } from '../views'
 
 const minted = new WeakMap<PropertyDefinition[], SavedView>()
 

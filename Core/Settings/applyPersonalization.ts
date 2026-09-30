@@ -4,7 +4,7 @@ import {
   type Personalization,
   embedZoom,
   viewEmbedZoom,
-} from '@pommora/core/Settings/personalization'
+} from './personalization'
 import { cellColor, checkboxPaint, colorNameFor } from '@pommora/uix/Theme/ramp'
 
 /** Every sentinel — `accent`, `system`, `default` — reads as no cell, which `colorNameFor` already answers for. */

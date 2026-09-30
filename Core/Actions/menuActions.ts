@@ -1,5 +1,5 @@
-import type { ActionItem, MenuOptions } from '@pommora/core/Actions/menuModel'
-import { valueOr } from '@pommora/core/Contract/result'
+import type { ActionItem, MenuOptions } from './menuModel'
+import { valueOr } from '../Contract/result'
 import { useSession } from '../Session/store'
 import { dialer } from '../Platform/dialer'
 

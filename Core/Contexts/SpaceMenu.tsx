@@ -21,7 +21,7 @@ import { useSession } from '../Session/store'
 import { EDITABLE_TARGETS } from '@pommora/uix/Interactions/shared'
 import { popMenu } from '../Actions/menuActions'
 import { useExperimental } from '../Settings/experimental'
-import { type TitleMenuAction, titleMenuItems } from '@pommora/core/Actions/identityMenus'
+import { type TitleMenuAction, titleMenuItems } from '../Actions/identityMenus'
 
 export function SpaceMenu(): React.JSX.Element | null {
   const selection = useSession((st) => st.selection)

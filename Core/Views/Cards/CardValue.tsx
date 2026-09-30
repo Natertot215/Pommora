@@ -1,14 +1,10 @@
 import { EmptyValue } from '@pommora/uix/Elements/EmptyValue'
 import { useContext, useEffect, useRef, useState } from 'react'
-import type { ResolvedColumn, ViewRow } from '@pommora/core/Views/viewRow'
-import { isBlankValue, type PropertyValue } from '@pommora/core/Properties/propertyValue'
-import type { ColumnStyle } from '@pommora/core/Properties/columnStyles'
-import {
-  type CellMenuAction,
-  cellMenuContextFor,
-  cellMenuModel,
-} from '@pommora/core/Actions/cellMenu'
-import { parseStyleAction } from '@pommora/core/Actions/columnMenu'
+import type { ResolvedColumn, ViewRow } from '../viewRow'
+import { isBlankValue, type PropertyValue } from '../../Properties/propertyValue'
+import type { ColumnStyle } from '../../Properties/columnStyles'
+import { type CellMenuAction, cellMenuContextFor, cellMenuModel } from '../../Actions/cellMenu'
+import { parseStyleAction } from '../../Actions/columnMenu'
 import { cx } from '@pommora/uix/Utilities/cx'
 import { isSecondaryClick } from '@pommora/uix/Interactions/chords'
 import { text } from '@pommora/uix/Theme/typography.css'

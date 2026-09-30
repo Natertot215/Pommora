@@ -1,5 +1,5 @@
 import { useCallback, useEffect } from 'react'
-import type { PageStats } from '@pommora/core/MarkdownPM/Engine/subfieldStats'
+import type { PageStats } from '../../MarkdownPM/Engine/subfieldStats'
 import { useSession } from '../../Session/store'
 import { useContentHost } from '../contentHost'
 

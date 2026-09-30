@@ -1,8 +1,8 @@
-import type { MutableKind, MutateOutcome } from '@pommora/core/Nexus/mutateRequest'
-import { valueOr } from '@pommora/core/Contract/result'
-import { DEFAULT_TRASH_MODE } from '@pommora/core/Trash/trashRow'
+import type { MutableKind, MutateOutcome } from '../../Nexus/mutateRequest'
+import { valueOr } from '../../Contract/result'
+import { DEFAULT_TRASH_MODE } from '../../Trash/trashRow'
 import { useSession } from '../../Session/store'
-import { SETTING_DEFAULTS, settingOf } from '@pommora/core/Settings/personalization'
+import { SETTING_DEFAULTS, settingOf } from '../../Settings/personalization'
 import { notifyDeleted } from '../Notifications/notifications'
 import { dialer } from '../../Platform/dialer'
 

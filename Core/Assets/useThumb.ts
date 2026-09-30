@@ -1,5 +1,5 @@
 import { useCallback, useState } from 'react'
-import { thumbKey, thumbRel } from '@pommora/core/Paths/nexusPaths'
+import { thumbKey, thumbRel } from '../Paths/nexusPaths'
 import { assetUrl } from '../Platform/assetScheme'
 import { useSession } from '../Session/store'
 

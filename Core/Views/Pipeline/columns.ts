@@ -1,12 +1,12 @@
 // One allowlist — in propertyOrder AND not hidden — so a property or Context created after a view stays hidden until the user reveals it: creation never visually changes an existing view.
 
-import type { ColumnKind, ResolvedColumn } from '@pommora/core/Views/viewRow'
-import type { SavedView } from '@pommora/core/Views/views'
+import type { ColumnKind, ResolvedColumn } from '../viewRow'
+import type { SavedView } from '../views'
 import {
   type PropertyDefinition,
   RESERVED_PROPERTY_ID,
   STAMP_TYPE,
-} from '@pommora/core/Properties/properties'
+} from '../../Properties/properties'
 
 function columnKind(id: string, contextIds: readonly string[]): ColumnKind {
   if (id === RESERVED_PROPERTY_ID.title) return 'title'

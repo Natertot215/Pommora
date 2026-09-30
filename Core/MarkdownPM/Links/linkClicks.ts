@@ -1,7 +1,7 @@
 import type { Extension } from '@codemirror/state'
 import { isCmd } from '@pommora/uix/Interactions/chords'
 import type { EditorView } from '@codemirror/view'
-import { normalizeLinkUrl, WEB_ADDRESS } from '@pommora/core/Paths/urlPath'
+import { normalizeLinkUrl, WEB_ADDRESS } from '../../Paths/urlPath'
 import { linkTarget, linkTokenAt } from '../Engine/tokens'
 import {
   linkMenuTarget,

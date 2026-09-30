@@ -6,7 +6,7 @@ import { PICKER_MAX_HEIGHT } from '@pommora/uix/Pickers/picker-base.css'
 import { type PaneBounds, usePaneResize } from '@pommora/uix/Pickers/usePaneResize'
 import { useHeld } from '@pommora/uix/Animations/useExitPresence'
 import { emphasizeMatch, MenuItem, MenuRowView, MenuScrollFrame } from '@pommora/uix/Menus'
-import type { BlockMenuAction } from '@pommora/core/Actions/blockMenu'
+import type { BlockMenuAction } from '../../Actions/blockMenu'
 import { CLOSED_GEOMETRY, useKeepInView } from './caretPane'
 import type { BlockMenuState } from './useBlockMenu'
 

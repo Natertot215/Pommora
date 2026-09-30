@@ -1,5 +1,5 @@
 import { StateEffect, StateField } from '@codemirror/state'
-import { linkAt } from '@pommora/core/Connections/connections'
+import { linkAt } from '../../Connections/connections'
 
 export const restedOnLink = StateEffect.define<number>()
 

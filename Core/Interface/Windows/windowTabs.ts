@@ -1,4 +1,4 @@
-import type { WindowTabTarget, WindowTarget } from '@pommora/core/Navigation/navRef'
+import type { WindowTabTarget, WindowTarget } from '../../Navigation/navRef'
 import { clamp } from '@pommora/uix/Utilities/clamp'
 import { moveBefore, placeAt } from '@pommora/uix/Utilities/moveItem'
 import type { WindowKind } from './windowRecord'

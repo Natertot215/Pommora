@@ -1,18 +1,18 @@
 import type { ReactNode } from 'react'
-import type { CollectionNode, SetNode } from '@pommora/core/Nexus/tree'
+import type { CollectionNode, SetNode } from '../../Nexus/tree'
 import {
   type PropertyDefinition,
   RESERVED_PROPERTY_ID,
   STAMP_TYPE,
-} from '@pommora/core/Properties/properties'
-import type { SavedView } from '@pommora/core/Views/views'
+} from '../../Properties/properties'
+import type { SavedView } from '../views'
 import { useSession } from '../../Session/store'
 import { MenuRowView, MenuTopRow, MenuScrollFrame } from '@pommora/uix/Menus'
 import { resolveColumns } from '../Pipeline/columns'
 import { columnLabel, useCapitalizeMetadata } from '../../Properties/Cells/columnLabel'
 import { useSaveView } from '../viewWrite'
 import { LineGroup, LineRow, LineZone } from '@pommora/uix/Interactions/drag'
-import { PaneAllGroup, type PaneDrop, paneSpec } from '@pommora/core/Properties/paneDrop'
+import { PaneAllGroup, type PaneDrop, paneSpec } from '../../Properties/paneDrop'
 import { contextIdsOf, contextsByIdOf } from '../../Contexts/contextIdentity'
 import { hiddenListIds, hideShown, placeInShown, unhide } from '../visibilityModel'
 import { EyeToggle } from '@pommora/uix/Elements/EyeToggle'

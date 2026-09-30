@@ -1,9 +1,9 @@
 // One home for what a click or a value menu means on every surface: a checkbox is true-or-absent on disk, never a stored false; the option kinds open their picker; a Date opens the calendar; a valid address opens, and a stamp opens nothing. Each surface only maps the intent to its own widget.
 
-import type { PropertyValue } from '@pommora/core/Properties/propertyValue'
-import type { ColumnLook } from '@pommora/core/Properties/columnStyles'
-import type { CellMenuAction } from '@pommora/core/Actions/cellMenu'
-import { readLink, urlClickTarget } from '@pommora/core/Connections/linkValue'
+import type { PropertyValue } from '../propertyValue'
+import type { ColumnLook } from '../columnStyles'
+import type { CellMenuAction } from '../../Actions/cellMenu'
+import { readLink, urlClickTarget } from '../../Connections/linkValue'
 import { type NumberConfig, type PropertyType, specOf } from '../properties'
 import { barDivisor } from '../formatValue'
 

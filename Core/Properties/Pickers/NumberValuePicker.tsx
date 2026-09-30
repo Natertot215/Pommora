@@ -1,7 +1,7 @@
 import type { RefObject } from 'react'
 import { TextPicker } from '@pommora/uix/Pickers/TextPicker'
-import type { PropertyDefinition } from '@pommora/core/Properties/properties'
-import type { PropertyValue } from '@pommora/core/Properties/propertyValue'
+import type { PropertyDefinition } from '../properties'
+import type { PropertyValue } from '../propertyValue'
 import { editorText, parseEditorValue } from '../parseEditorValue'
 import { fractionDenominator, numberFormatGlyph } from '../formatValue'
 

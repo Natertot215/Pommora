@@ -8,7 +8,7 @@ import {
   type TileHostRef,
   TILE_KINDS,
   type TilePick,
-} from '@pommora/core/Tiles/tiles'
+} from './tiles'
 import type { ConnPage } from '../Connections/pageIndex'
 import { pagesByIdOf } from '../Nexus/treeIndex'
 import type { ConnectionsApi } from '../MarkdownPM/Links/connectionsApi'
@@ -18,7 +18,7 @@ import { emptyLayout, findTile, getTile, type TileLayout } from './Layout/model'
 import { TileGrid, type BackdropTarget } from './TileGrid'
 import { useDismissal } from '@pommora/uix/Interactions/dismissalStack'
 import { entityIcon } from '../Assets/entityIconPolicy'
-import { ZOOM } from '@pommora/core/Settings/personalization'
+import { ZOOM } from '../Settings/personalization'
 import { useSession } from '../Session/store'
 import { popMenu } from '../Actions/menuActions'
 import { askRemoveTile } from '../Interface/Confirm/confirmations'

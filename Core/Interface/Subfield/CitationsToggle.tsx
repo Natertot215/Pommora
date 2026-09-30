@@ -1,4 +1,4 @@
-import { citationsLabel } from '@pommora/core/Actions/toggleLabels'
+import { citationsLabel } from '../../Actions/toggleLabels'
 import { text } from '@pommora/uix/Theme/typography.css'
 import { onActivateClick } from '@pommora/uix/Interactions/activate'
 import { citationsVisible, useSession } from '../../Session/store'

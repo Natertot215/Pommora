@@ -1,7 +1,7 @@
 import { Icon } from '@pommora/uix/Symbols'
 import { cx } from '@pommora/uix/Utilities/cx'
 import { DropOutline, MenuItem, titleInput } from '@pommora/uix/Menus'
-import type { MutableKind } from '@pommora/core/Nexus/mutateRequest'
+import type { MutableKind } from '../../Nexus/mutateRequest'
 import { RenamableTitle } from '../RenamableTitle'
 
 export function ctxHandler(cb?: () => void): ((e: React.MouseEvent) => void) | undefined {

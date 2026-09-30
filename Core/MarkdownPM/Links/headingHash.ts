@@ -1,4 +1,4 @@
-import { linkAt } from '@pommora/core/Connections/connections'
+import { linkAt } from '../../Connections/connections'
 import { type DocScan, inCodeAt } from '../Engine/docScan'
 import { lineIndexAt } from '../Engine/markdownCode'
 import type { Edit } from '../Input/edits'

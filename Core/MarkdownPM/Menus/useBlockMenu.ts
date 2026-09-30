@@ -1,7 +1,7 @@
 import { useState, type RefObject } from 'react'
 import { type Extension, Transaction } from '@codemirror/state'
 import { EditorView } from '@codemirror/view'
-import type { BlockMenuAction } from '@pommora/core/Actions/blockMenu'
+import type { BlockMenuAction } from '../../Actions/blockMenu'
 import { caretGeometry, usePaneCtl, type PaneCtl, type CaretGeometry } from './caretPane'
 import { blockQuery, closeBlockQuery, type OpenBlockQuery } from './blockQuery'
 import { applyEditorAction } from './menu'

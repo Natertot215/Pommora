@@ -2,7 +2,7 @@
 import type { GlanceTarget } from '../../MarkdownPM/api'
 import { pushDismissal } from '@pommora/uix/Interactions/dismissalStack'
 import { useSession } from '../../Session/store'
-import { settingOf } from '@pommora/core/Settings/personalization'
+import { settingOf } from '../../Settings/personalization'
 
 export interface GlanceRequest {
   target: GlanceTarget

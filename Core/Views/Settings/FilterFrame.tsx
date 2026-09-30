@@ -1,13 +1,8 @@
 import { useRef, useState } from 'react'
 import { Button } from '@pommora/uix/Buttons/Button'
-import type { CollectionNode, NexusTree, SetNode } from '@pommora/core/Nexus/tree'
-import type { PickOption, PropertyDefinition } from '@pommora/core/Properties/properties'
-import {
-  type FilterRule,
-  type MatchMode,
-  type SavedView,
-  viewOption,
-} from '@pommora/core/Views/views'
+import type { CollectionNode, NexusTree, SetNode } from '../../Nexus/tree'
+import type { PickOption, PropertyDefinition } from '../../Properties/properties'
+import { type FilterRule, type MatchMode, type SavedView, ruleOperands, viewOption } from '../views'
 import { Icon } from '@pommora/uix/Symbols'
 import { FieldRun } from '@pommora/uix/Fields/FieldRun'
 import * as fr from '@pommora/uix/Fields/field-run.css'
@@ -58,7 +53,6 @@ import {
   filterTargets,
   operatorsFor,
 } from '../filterModel'
-import { ruleOperands } from '@pommora/core/Views/views'
 import * as fp from './filter-frame.css'
 import { NeutralChip } from '@pommora/uix/Labels/recipes'
 import { OptionChip } from '../../Properties/Cells/OptionChip'

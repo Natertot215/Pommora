@@ -1,8 +1,4 @@
-import {
-  optionsOf,
-  PROPERTY_TYPES,
-  type PropertyDefinition,
-} from '@pommora/core/Properties/properties'
+import { optionsOf, PROPERTY_TYPES, type PropertyDefinition } from '../../Properties/properties'
 import { heading, menuDropLine, type PickerRowLook } from '@pommora/uix/Menus'
 import { side } from '@pommora/uix/Menus/menu-row.css'
 import { hiddenRow, optionRow } from '@pommora/uix/Menus/frames.css'

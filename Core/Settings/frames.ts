@@ -1,4 +1,4 @@
-import { reportRefusal } from '@pommora/core/Interface/Notifications/notifications'
+import { reportRefusal } from '../Interface/Notifications/notifications'
 import {
   type DEVICE_RANGES,
   type DeviceDefaultKey,
@@ -6,12 +6,12 @@ import {
   devicePref,
   type ScrollbarPresence,
   type ScrollbarReveal,
-} from '@pommora/core/Settings/devicePrefs'
+} from './devicePrefs'
 import type { PickerOption } from '@pommora/uix/Pickers/PickerControl'
 import { type NumberUnit, unitLabel } from '@pommora/uix/Pickers/numberUnit'
 import type { NumberRange } from '@pommora/uix/Utilities/clamp'
 import { LINK_FORMAT_OPTIONS } from '../Properties/Schema/linkFormatOptions'
-import type { LinkDisplay } from '@pommora/core/Properties/properties'
+import type { LinkDisplay } from '../Properties/properties'
 import {
   HEADING_LINK_STYLE_LABELS,
   HEADING_LINK_STYLES,
@@ -31,13 +31,13 @@ import {
   SETTING_DEFAULTS,
   type SettingKey,
   type SettingValue,
-} from '@pommora/core/Settings/personalization'
+} from './personalization'
 import type { ColorSetting } from '@pommora/uix/Theme/colors'
 import {
   DATE_FORMAT_OPTIONS,
   TIME_FORMAT_LABELS,
   type DateFormat,
-} from '@pommora/core/Properties/columnStyles'
+} from '../Properties/columnStyles'
 import { TrashFrame } from './TrashFrame'
 import { askClearExclusions, askClearHistory } from '../Interface/Confirm/confirmations'
 import { dialer } from '../Platform/dialer'

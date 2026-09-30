@@ -1,6 +1,6 @@
 import { useState } from 'react'
-import type { CollectionNode, SetNode } from '@pommora/core/Nexus/tree'
-import type { PropertyDefinition } from '@pommora/core/Properties/properties'
+import type { CollectionNode, SetNode } from '../../Nexus/tree'
+import type { PropertyDefinition } from '../../Properties/properties'
 import {
   type CardBanner,
   type SavedView,
@@ -9,7 +9,7 @@ import {
   VIEW_TYPES,
   type ViewType,
   viewOption,
-} from '@pommora/core/Views/views'
+} from '../views'
 import { Icon, type IconName } from '@pommora/uix/Symbols'
 import {
   MenuIndex,
@@ -30,7 +30,7 @@ import { FrameSlide } from '@pommora/uix/Menus/FrameSlide'
 import { PANE_MIN_H, PANE_MIN_W } from '@pommora/uix/Menus/frame-slide.css'
 import { iconForTypeSwitch } from '../viewIcon'
 import { ViewItemMenu } from './ViewItemMenu'
-import { TENTHS_SCALE } from '@pommora/core/Settings/personalization'
+import { TENTHS_SCALE } from '../../Settings/personalization'
 import { cx } from '@pommora/uix/Utilities/cx'
 import * as vs from './layout-frame.css'
 

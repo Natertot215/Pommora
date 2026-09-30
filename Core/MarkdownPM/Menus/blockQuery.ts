@@ -1,10 +1,6 @@
 import { StateEffect, StateField, Transaction } from '@codemirror/state'
 import { Decoration, EditorView } from '@codemirror/view'
-import {
-  BLOCK_MENU_SECTIONS,
-  filterBlockMenu,
-  type BlockMenuMatch,
-} from '@pommora/core/Actions/blockMenu'
+import { BLOCK_MENU_SECTIONS, filterBlockMenu, type BlockMenuMatch } from '../../Actions/blockMenu'
 import { inSealedLine, type DocScan } from '../Engine/docScan'
 import { lineIndexAt } from '../Engine/markdownCode'
 import { docScan } from '../docCache'

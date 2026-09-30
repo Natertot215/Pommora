@@ -1,5 +1,5 @@
 import { Children, isValidElement, useEffect, useRef, useState } from 'react'
-import { lockLabel } from '@pommora/core/Actions/toggleLabels'
+import { lockLabel } from '../../Actions/toggleLabels'
 import { Icon, type IconName, LockGlyph } from '@pommora/uix/Symbols'
 import { cx } from '@pommora/uix/Utilities/cx'
 import { DropOutline, MenuItem } from '@pommora/uix/Menus'

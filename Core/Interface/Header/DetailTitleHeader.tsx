@@ -1,5 +1,5 @@
 import { type RefObject, useEffect, useRef, useState } from 'react'
-import type { TitleMenuAction } from '@pommora/core/Actions/identityMenus'
+import type { TitleMenuAction } from '../../Actions/identityMenus'
 import { Icon } from '@pommora/uix/Symbols'
 import { Button } from '@pommora/uix/Buttons/Button'
 import { labelSlot, labelSlotHidden } from '@pommora/uix/Buttons/button-base.css'

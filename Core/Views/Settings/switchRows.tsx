@@ -1,4 +1,4 @@
-import { type SavedView, type ViewFlag, viewOption } from '@pommora/core/Views/views'
+import { type SavedView, type ViewFlag, viewOption } from '../views'
 import { Icon, type IconName } from '@pommora/uix/Symbols'
 import type { MenuRow } from '@pommora/uix/Menus'
 import { ICON } from '@pommora/uix/Menus/frames.css'

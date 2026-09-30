@@ -1,7 +1,7 @@
 import { tokenize } from '../Engine/tokens'
 import { parseListMarker, headingParts } from '../Engine/detect'
 import { isQuoteToggleable, splitPrefix } from './format'
-import type { EditorMenuRequest } from '@pommora/core/Actions/editorMenu'
+import type { EditorMenuRequest } from '../../Actions/editorMenu'
 import { lineStartAt, lineEndAt } from '../Engine/markdownCode'
 
 export function readFormatState(

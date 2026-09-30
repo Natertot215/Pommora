@@ -1,7 +1,7 @@
 import { cx } from '@pommora/uix/Utilities/cx'
 import { usePointerGesture } from '@pommora/uix/Interactions/gesture'
 import { currentZoom } from '@pommora/uix/Utilities/zoom'
-import type { ColumnAlign } from '@pommora/core/Views/views'
+import type { ColumnAlign } from '../views'
 
 /** The resize strip stops propagation so a resize never starts a reorder; its pointer delta is divided by the live zoom so a screen drag maps onto the grid's pre-zoom track width. */
 export function ColumnHeader({

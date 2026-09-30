@@ -1,10 +1,5 @@
-import {
-  type AssetMap,
-  EMPTY_ASSET_MAP,
-  type ValueChange,
-  type ValuesEpoch,
-} from '@pommora/core/Nexus/tree'
-import { stabilize } from '@pommora/core/Nexus/treeStabilize'
+import { type AssetMap, EMPTY_ASSET_MAP, type ValueChange, type ValuesEpoch } from '../Nexus/tree'
+import { stabilize } from '../Nexus/treeStabilize'
 import type { Slice } from './sessionState'
 import { dialer } from '../Platform/dialer'
 

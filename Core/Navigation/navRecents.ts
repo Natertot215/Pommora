@@ -1,5 +1,4 @@
-import { navKey, toNavRef } from '@pommora/core/Navigation/navRef'
-import type { NavRef, SelectTarget } from '@pommora/core/Navigation/navRef'
+import { navKey, toNavRef, type NavRef, type SelectTarget } from './navRef'
 
 export const RECENTS_CAP = 100
 

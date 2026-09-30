@@ -1,15 +1,14 @@
-import type { LinkStatus } from '@pommora/core/Connections/connections'
+import { type LinkStatus, normalizeTitle } from '../../Connections/connections'
 import { headingOf, linkTarget, type Token } from '../Engine/tokens'
 import type {
   ConnCellApply,
   ConnEditAction,
   ConnSurface,
   ConnUrlAction,
-} from '@pommora/core/Actions/connectionMenu'
-import { normalizeTitle } from '@pommora/core/Connections/connections'
-import { targetFragment, targetTitle } from '@pommora/core/Connections/links'
-import { isValidLink } from '@pommora/core/Paths/urlPath'
-import type { ConnPage, PageIndex } from '@pommora/core/Connections/pageIndex'
+} from '../../Actions/connectionMenu'
+import { targetFragment, targetTitle } from '../../Connections/links'
+import { isValidLink } from '../../Paths/urlPath'
+import type { ConnPage, PageIndex } from '../../Connections/pageIndex'
 import type { TrailSegment } from '@pommora/uix/Elements/NavTrail'
 
 /** `apply` closes over the span it was built for, so no caller can aim an action at a link the menu wasn't popped on; its absence marks a display-only surface. */

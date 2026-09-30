@@ -1,12 +1,8 @@
 // Every array carries the full membership it governs — a partial write alphabetizes the untouched siblings, and one built from a filtered view permanently re-ranks every row the filter was hiding.
 
-import { NEW_SLOT, type MutateRequest } from '@pommora/core/Nexus/mutateRequest'
-import type { NexusTree } from '@pommora/core/Nexus/tree'
-import {
-  type Personalization,
-  type Placement,
-  settingOf,
-} from '@pommora/core/Settings/personalization'
+import { NEW_SLOT, type MutateRequest } from '../Nexus/mutateRequest'
+import type { NexusTree } from '../Nexus/tree'
+import { type Personalization, type Placement, settingOf } from '../Settings/personalization'
 import { nextOrder } from '@pommora/uix/Utilities/moveItem'
 import { isAdoptedId } from '../Nexus/ids'
 import { containerAt, pageIdsIn } from '../Nexus/treePatch'

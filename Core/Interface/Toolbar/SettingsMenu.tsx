@@ -1,4 +1,4 @@
-import type { SelectionState } from '@pommora/core/Navigation/navRef'
+import type { SelectionState } from '../../Navigation/navRef'
 import { useSession } from '../../Session/store'
 import { MenuSurface } from '@pommora/uix/Menus'
 import { SettingsFrame } from '../../Views/Settings/SettingsFrame'

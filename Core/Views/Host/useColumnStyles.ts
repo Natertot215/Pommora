@@ -7,9 +7,9 @@ import {
   type ColumnStyle,
   type DateFormat,
   type TimeFormat,
-} from '@pommora/core/Properties/columnStyles'
-import type { PropertyDefinition } from '@pommora/core/Properties/properties'
-import type { SavedView } from '@pommora/core/Views/views'
+} from '../../Properties/columnStyles'
+import type { PropertyDefinition } from '../../Properties/properties'
+import type { SavedView } from '../views'
 import { declaredType } from '../../Properties/value'
 import type { ViewHostApi } from './useViewHost'
 import { useSetting } from '../../Session/store'

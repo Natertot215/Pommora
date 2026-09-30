@@ -4,9 +4,9 @@ import {
   type PropertyType,
   RESERVED_PROPERTY_ID,
   STAMP_TYPE,
-} from '@pommora/core/Properties/properties'
+} from '../properties'
 import { asRenderableIcon, Icon, type IconName } from '@pommora/uix/Symbols'
-import type { NexusTree } from '@pommora/core/Nexus/tree'
+import type { NexusTree } from '../../Nexus/tree'
 import { DEFAULT_ENTITY_ICONS } from '../../Assets/entityIconPolicy'
 import { contextsByIdOf } from '../../Contexts/contextIdentity'
 import { displayPropertyName, RESERVED_LABEL } from './columnLabel'

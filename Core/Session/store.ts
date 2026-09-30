@@ -11,12 +11,8 @@ import { createWindowSlice } from './windowSlice'
 import { createEditSlice } from './editSlice'
 import { createViewSearchSlice } from './viewSearchSlice'
 import type { SessionState } from './sessionState'
-import type { PageMeta } from '@pommora/core/Nexus/schemas'
-import {
-  type SettingKey,
-  type SettingValue,
-  settingOf,
-} from '@pommora/core/Settings/personalization'
+import type { PageMeta } from '../Nexus/schemas'
+import { type SettingKey, type SettingValue, settingOf } from '../Settings/personalization'
 
 export type { PageSlot } from './navigationSlice'
 export {

@@ -1,5 +1,5 @@
 import { type ReactNode, useRef, useState } from 'react'
-import type { BannerOwnerKind, MutableKind, RenameKind } from '@pommora/core/Nexus/mutateRequest'
+import type { BannerOwnerKind, MutableKind, RenameKind } from '../../Nexus/mutateRequest'
 import { DEFAULT_NEXUS_ICON, entityIcon } from '../../Assets/entityIconPolicy'
 import { IconChoice } from '../../Assets/IconChoice'
 import { useSession } from '../../Session/store'
@@ -13,11 +13,7 @@ import { AddBannerButton } from './AddBannerButton'
 import { useBannerMenu } from './useBannerMenu'
 import { useWindowBannerSeat } from '../Windows/windowTabBanner'
 import { popMenu } from '../../Actions/menuActions'
-import {
-  nexusTitleMenuItems,
-  titleMenuItems,
-  withSearchRow,
-} from '@pommora/core/Actions/identityMenus'
+import { nexusTitleMenuItems, titleMenuItems, withSearchRow } from '../../Actions/identityMenus'
 import { NexusIconEditors } from '../../Assets/NexusIconEditors'
 import { useNexusIcon } from '../../Assets/useNexusIcon'
 

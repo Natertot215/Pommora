@@ -1,16 +1,16 @@
 // `sort[]` is honored in array order (priority = index), each criterion compared until one breaks the tie, then stable input order.
 
-import type { SortCriterion } from '@pommora/core/Views/views'
-import type { ViewRow } from '@pommora/core/Views/viewRow'
-import { compareTitles } from '@pommora/core/Paths/caseFold'
+import type { SortCriterion } from '../views'
+import type { ViewRow } from '../viewRow'
+import { compareTitles } from '../../Paths/caseFold'
 import {
   optionValues,
   type PropertyDefinition,
   RESERVED_PROPERTY_ID,
   specOf,
-} from '@pommora/core/Properties/properties'
+} from '../../Properties/properties'
 import { declaredType, fileName, resolveFieldValue } from '../../Properties/value'
-import { linkDisplayText } from '@pommora/core/Connections/linkValue'
+import { linkDisplayText } from '../../Connections/linkValue'
 import { readDate } from '../../Properties/formatValue'
 
 type SortKey = number | string

@@ -1,12 +1,12 @@
 import { useMemo } from 'react'
-import type { Result } from '@pommora/core/Contract/result'
-import type { CollectionNode, SetNode } from '@pommora/core/Nexus/tree'
+import type { Result } from '../../Contract/result'
+import type { CollectionNode, SetNode } from '../../Nexus/tree'
 import {
   groupable,
   type PropertyDefinition,
   type PropertyType,
   optionsOf,
-} from '@pommora/core/Properties/properties'
+} from '../../Properties/properties'
 import {
   type DateGranularity,
   type GroupConfig,
@@ -22,8 +22,8 @@ import {
   VIEW_KINDS,
   type ViewPatch,
   viewOption,
-} from '@pommora/core/Views/views'
-import type { ResolvedGroup } from '@pommora/core/Views/viewRow'
+} from '../views'
+import type { ResolvedGroup } from '../viewRow'
 import {
   DisclosureRow,
   FootingItem,

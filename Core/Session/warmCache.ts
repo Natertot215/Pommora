@@ -1,6 +1,6 @@
 // Module state, not store state: it survives React remounts while dying with the session.
 import { capSet } from '@pommora/uix/Utilities/capMap'
-import type { PageDetail } from '@pommora/core/Pages/pageDetail'
+import type { PageDetail } from '../Pages/pageDetail'
 import { fenceWarm, type WarmSeam } from '../MarkdownPM/warmSeam'
 
 interface WarmEntry {

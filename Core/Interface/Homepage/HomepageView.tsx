@@ -1,5 +1,5 @@
-import type { NexusTree } from '@pommora/core/Nexus/tree'
-import { HOMEPAGE_HOST } from '@pommora/core/Tiles/tiles'
+import type { NexusTree } from '../../Nexus/tree'
+import { HOMEPAGE_HOST } from '../../Tiles/tiles'
 import { TileHost } from '../../Tiles/TileHost'
 import { InterfaceScaffold } from '../InterfaceScaffold'
 

@@ -1,11 +1,10 @@
 // Everything a row, a band, or a page does in answer to the pointer, defined once for every view kind: band drops, row drops and where the order lands, opening a page, the hover ghost, the title menu's page actions, and the icon picker seat. A kind supplies the policy below and its own presentation, nothing else.
 
 import { useRef, useState } from 'react'
-import { UNGROUPED } from '@pommora/core/Views/viewRow'
-import type { ViewRow } from '@pommora/core/Views/viewRow'
-import type { CollectionNode, SetNode } from '@pommora/core/Nexus/tree'
-import type { PageMenuContext } from '@pommora/core/Actions/pageMenu'
-import { type PageTarget, selectTargetOf } from '@pommora/core/Navigation/navRef'
+import { UNGROUPED, type ViewRow } from '../viewRow'
+import type { CollectionNode, SetNode } from '../../Nexus/tree'
+import type { PageMenuContext } from '../../Actions/pageMenu'
+import { type PageTarget, selectTargetOf } from '../../Navigation/navRef'
 import { nextOrder } from '@pommora/uix/Utilities/moveItem'
 import {
   type GhostAnchor,
@@ -16,7 +15,7 @@ import { REVEAL_DWELL_MS } from '@pommora/uix/Interactions/hoverReveal'
 import { announceDrag } from '@pommora/uix/Interactions/a11y'
 import { carries, groupedLine, lineList, rowLine, rowStep } from '@pommora/uix/Interactions/drag'
 import type { Geometry, Row } from '@pommora/uix/Interactions/reorderModel'
-import { TAB_FAMILY } from '@pommora/core/Navigation/tabRows'
+import { TAB_FAMILY } from '../../Navigation/tabRows'
 import { EntityIcon } from '../../Assets/EntityIcon'
 import { columnLabel, useCapitalizeMetadata } from '../../Properties/Cells/columnLabel'
 import { notifyUndoable } from '../../Interface/Notifications/notifications'

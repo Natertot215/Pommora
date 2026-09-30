@@ -1,15 +1,9 @@
 // A rule stamps only when it names one value it can be satisfied by: an Is rule on a Select, Status, or Checkbox, or an Is Any, Is All, or Contains rule on a Multi-Select or a Context, where two such rules on one property take both values. Metadata is never changed to satisfy a filter, and a page those exclude simply creates and stays filtered out.
 
-import { type PropertyDefinition, specOf } from '@pommora/core/Properties/properties'
-import type { PropertyValue } from '@pommora/core/Properties/propertyValue'
-import {
-  FILTER_OPS,
-  type FilterGroup,
-  type FilterRule,
-  isGroup,
-  ruleOperands,
-} from '@pommora/core/Views/views'
-import { declaredType } from '@pommora/core/Properties/value'
+import { type PropertyDefinition, specOf } from '../../Properties/properties'
+import type { PropertyValue } from '../../Properties/propertyValue'
+import { FILTER_OPS, type FilterGroup, type FilterRule, isGroup, ruleOperands } from '../views'
+import { declaredType } from '../../Properties/value'
 import { groupKeyToValue } from '../reassign'
 
 const LIST_OPS: ReadonlySet<string> = new Set([FILTER_OPS.containsAny, FILTER_OPS.containsAll])

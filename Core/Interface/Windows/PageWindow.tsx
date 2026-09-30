@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react'
-import { footerLabel } from '@pommora/core/Actions/toggleLabels'
-import type { WindowTarget } from '@pommora/core/Navigation/navRef'
+import { footerLabel } from '../../Actions/toggleLabels'
+import type { WindowTarget } from '../../Navigation/navRef'
 import { cx } from '@pommora/uix/Utilities/cx'
 import { duration, easing, flipTransform, ms } from '@pommora/uix/Animations/motion'
 import { WindowBase } from '@pommora/uix/Windows/WindowBase'

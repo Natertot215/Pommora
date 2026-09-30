@@ -16,12 +16,7 @@ import { WindowBase } from '@pommora/uix/Windows/WindowBase'
 import { SETTINGS_RAIL, SETTINGS_WIN } from '@pommora/uix/Windows/windowBounds'
 import { steppedPickerProps } from '@pommora/uix/Pickers/PickerControl'
 import { resolveColor } from '@pommora/uix/Theme/ramp'
-import {
-  SETTING_DEFAULTS,
-  SETTING_RANGES,
-  type SettingKey,
-  settingOf,
-} from '@pommora/core/Settings/personalization'
+import { SETTING_DEFAULTS, SETTING_RANGES, type SettingKey, settingOf } from './personalization'
 import { Reveal } from '@pommora/uix/Animations/Reveal'
 import { Scrollbar } from '@pommora/uix/Interactions/Scrollbar'
 import { useExitPresence } from '@pommora/uix/Animations/useExitPresence'

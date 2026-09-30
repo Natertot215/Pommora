@@ -1,8 +1,8 @@
 // Store-free, since the slices report through these writers: the notice on screen lives here, beside them.
 import { useSyncExternalStore } from 'react'
-import type { Result } from '@pommora/core/Contract/result'
-import { pushUndo } from '@pommora/core/Session/undo'
-import type { CascadeReport } from '@pommora/core/Nexus/cascade'
+import type { Result } from '../../Contract/result'
+import { pushUndo } from '../../Session/undo'
+import type { CascadeReport } from '../../Nexus/cascade'
 
 export interface Notification {
   message: string

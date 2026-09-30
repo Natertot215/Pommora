@@ -1,13 +1,13 @@
 import { type RefObject, useEffect, useState } from 'react'
-import type { ColumnLook, ColumnStyle } from '@pommora/core/Properties/columnStyles'
+import type { ColumnLook, ColumnStyle } from '../columnStyles'
 import {
   optionsOf,
   type OptionPickKind,
   pickKindOf,
   type PickOption,
   type PropertyDefinition,
-} from '@pommora/core/Properties/properties'
-import { NULL_VALUE, type PropertyValue } from '@pommora/core/Properties/propertyValue'
+} from '../properties'
+import { NULL_VALUE, type PropertyValue } from '../propertyValue'
 import { PickerMenu } from '@pommora/uix/Pickers/PickerMenu'
 import { colorNameFor } from '@pommora/uix/Theme/ramp'
 import { NeutralChip } from '@pommora/uix/Labels/recipes'

@@ -2,8 +2,8 @@
 
 import { z } from 'zod'
 import { TILE_MIN_PX } from '@pommora/uix/Utilities/tileMetrics'
-import { eachOf } from '@pommora/core/Files/decoders'
-import { storedNodeSchema } from '@pommora/core/Tiles/tiles'
+import { eachOf } from '../../Files/decoders'
+import { storedNodeSchema } from '../tiles'
 import type { TileLayout } from './model'
 import { repairLayout } from './ops'
 

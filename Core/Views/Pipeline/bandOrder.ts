@@ -1,7 +1,7 @@
 // Listed sets lead in array order, unlisted sets trail in fs order; non-structural groups HOLD their slot, so the view-level ungrouped_placement survives a manual band order.
 
-import type { ResolvedGroup } from '@pommora/core/Views/viewRow'
-import { resolveRowOrder } from '@pommora/core/Properties/rowOrder'
+import type { ResolvedGroup } from '../viewRow'
+import { resolveRowOrder } from '../../Properties/rowOrder'
 
 export function orderGroups(
   groups: ResolvedGroup[],

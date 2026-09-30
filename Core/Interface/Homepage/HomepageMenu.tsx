@@ -9,7 +9,7 @@ import { InputField } from '@pommora/uix/Fields/InputField'
 import { MenuFooting, MenuScrollFrame } from '@pommora/uix/Menus'
 import { NexusIconEditors } from '../../Assets/NexusIconEditors'
 import { useNexusIcon } from '../../Assets/useNexusIcon'
-import { HOMEPAGE_HOST } from '@pommora/core/Tiles/tiles'
+import { HOMEPAGE_HOST } from '../../Tiles/tiles'
 import { BoardLock } from '../../Tiles/BoardLock'
 
 import * as s from '@pommora/uix/Menus/frames.css'

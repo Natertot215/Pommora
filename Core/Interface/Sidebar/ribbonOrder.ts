@@ -1,4 +1,4 @@
-import { EXPERIMENTAL_MODES, type SidebarMode } from '@pommora/core/Settings/personalization'
+import { EXPERIMENTAL_MODES, type SidebarMode } from '../../Settings/personalization'
 
 export type RibbonKey = SidebarMode | 'matrix' | 'settings'
 

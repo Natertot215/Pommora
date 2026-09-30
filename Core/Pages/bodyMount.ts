@@ -1,4 +1,4 @@
-import { persist } from '@pommora/core/Interface/Notifications/notifications'
+import { persist } from '../Interface/Notifications/notifications'
 import { useState } from 'react'
 import type { EditorView } from '@codemirror/view'
 import { mirrorBody } from '../MarkdownPM/api'

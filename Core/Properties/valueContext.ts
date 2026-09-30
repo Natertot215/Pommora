@@ -1,5 +1,5 @@
-import type { AssetMap } from '@pommora/core/Nexus/tree'
-import type { PropertyDefinition } from '@pommora/core/Properties/properties'
+import type { AssetMap } from '../Nexus/tree'
+import type { PropertyDefinition } from './properties'
 import type { ContextIdentity, IdentityMaps, SpaceIdentity } from '../Contexts/contextIdentity'
 
 export interface ValueContext {

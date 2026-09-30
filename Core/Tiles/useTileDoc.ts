@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useSyncExternalStore } from 'react'
 import { useLatest } from '@pommora/uix/Utilities/stableApi'
-import type { TileHostRef } from '@pommora/core/Tiles/tiles'
+import type { TileHostRef } from './tiles'
 import { navKey } from '../Navigation/navRef'
 import type { TileLayout } from './Layout/model'
 import {

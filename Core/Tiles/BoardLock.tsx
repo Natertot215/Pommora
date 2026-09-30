@@ -1,5 +1,5 @@
-import { lockLabel } from '@pommora/core/Actions/toggleLabels'
-import type { TileHostRef } from '@pommora/core/Tiles/tiles'
+import { lockLabel } from '../Actions/toggleLabels'
+import type { TileHostRef } from './tiles'
 import { FooterLockButton } from '@pommora/uix/Menus'
 import { setTileDocLock } from './tileDocStore'
 import { useTileDocLock } from './useTileDoc'

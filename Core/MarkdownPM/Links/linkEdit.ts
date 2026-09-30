@@ -5,8 +5,8 @@ import {
   emptyAliasPipeAt,
   emptyHeadingHashAt,
   linkAt,
-} from '@pommora/core/Connections/connections'
-import type { ConnEditAction } from '@pommora/core/Actions/connectionMenu'
+} from '../../Connections/connections'
+import type { ConnEditAction } from '../../Actions/connectionMenu'
 import type { ConnectionsApi } from './connectionsApi'
 import { aliasedToken, linkTokenAt, type Token } from '../Engine/tokens'
 import { focusRange } from '../caretPlacement'

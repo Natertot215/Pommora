@@ -1,8 +1,8 @@
 import { keymap, type KeyBinding } from '@codemirror/view'
 import { defaultKeymap, toggleBlockComment, toggleComment } from '@codemirror/commands'
 import type { Extension } from '@codemirror/state'
-import { COMMAND_IDS, type Commands, toKeyBinding } from '@pommora/core/Actions/commands'
-import type { FormatChordAction } from '@pommora/core/Actions/editorMenu'
+import { COMMAND_IDS, type Commands, toKeyBinding } from '../../Actions/commands'
+import type { FormatChordAction } from '../../Actions/editorMenu'
 import { applyEditorAction } from '../Menus/menu'
 
 export const FORMAT_ACTIONS = COMMAND_IDS.filter((id): id is FormatChordAction =>

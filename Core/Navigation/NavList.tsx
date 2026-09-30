@@ -4,12 +4,7 @@ import { NavTrail } from '@pommora/uix/Elements/NavTrail'
 import { MenuItem, menuDropLine } from '@pommora/uix/Menus'
 import { overlay } from '@pommora/uix/Menus/menu-row.css'
 import { carries, LineRow, LineZone, lineList } from '@pommora/uix/Interactions/drag'
-import {
-  isWindowTarget,
-  type NavRef,
-  type WindowTarget,
-  type SelectTarget,
-} from '@pommora/core/Navigation/navRef'
+import { isWindowTarget, type NavRef, type WindowTarget, type SelectTarget } from './navRef'
 import { TAB_FAMILY } from './tabRows'
 import { useSession } from '../Session/store'
 import { pageMoveContext, runPageAction } from '../Interface/Menus/pageMenuActions'
@@ -19,9 +14,9 @@ import { pageTargetFromNav, type ResolvedNav, windowTargetFromNav } from './navR
 import { hoverGlance, leaveGlance } from '../Interface/Glance/glanceAction'
 import { EntityIcon } from '../Assets/EntityIcon'
 import './nav-list.css'
-import { pinLabel } from '@pommora/core/Actions/toggleLabels'
+import { pinLabel } from '../Actions/toggleLabels'
 import { popMenu } from '../Actions/menuActions'
-import { navRowMenuItems } from '@pommora/core/Actions/navRowMenu'
+import { navRowMenuItems } from '../Actions/navRowMenu'
 
 export async function showNavRowMenu(
   item: ResolvedNav,

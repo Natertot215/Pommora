@@ -1,6 +1,6 @@
-import { type Personalization, settingOf } from '@pommora/core/Settings/personalization'
-import { linkDestinationAt } from '@pommora/core/Connections/links'
-import { aliasSpanAt } from '@pommora/core/Connections/connections'
+import { type Personalization, settingOf } from '../../Settings/personalization'
+import { linkDestinationAt } from '../../Connections/links'
+import { aliasSpanAt } from '../../Connections/connections'
 import {
   fenceBodyStart,
   inCalloutAt,

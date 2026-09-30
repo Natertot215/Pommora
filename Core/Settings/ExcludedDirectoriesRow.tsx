@@ -1,4 +1,4 @@
-import { reportRefusal } from '@pommora/core/Interface/Notifications/notifications'
+import { reportRefusal } from '../Interface/Notifications/notifications'
 import { useRef, useState } from 'react'
 import { Button } from '@pommora/uix/Buttons/Button'
 import { PathField } from '@pommora/uix/Fields/PathField'

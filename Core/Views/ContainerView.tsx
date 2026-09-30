@@ -1,4 +1,4 @@
-import type { CollectionNode, SetNode } from '@pommora/core/Nexus/tree'
+import type { CollectionNode, SetNode } from '../Nexus/tree'
 import { InterfaceScaffold } from '../Interface/InterfaceScaffold'
 import { ViewHost } from './Host/ViewHost'
 import { containerOwner } from '../Nexus/treeIndex'
