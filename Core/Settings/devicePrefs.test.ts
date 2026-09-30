@@ -56,8 +56,13 @@ describe("what a machine's record reads as", () => {
   })
 
   it('drops a value of the wrong type alone, keeping its neighbours', () => {
-    writeValue('devicePrefs', { panes: { sidebar: 'wide', sidePane: 300 }, nativeMenus: 'yes' })
-    expect(readDevicePrefs()).toEqual({ panes: { sidePane: 300 } })
+    writeValue('devicePrefs', {
+      panes: { sidebar: 'wide', sidePane: 300 },
+      nativeMenus: 'yes',
+      scrollbars: 'sometimes',
+      scrollbarReveal: 'hover',
+    })
+    expect(readDevicePrefs()).toEqual({ panes: { sidePane: 300 }, scrollbarReveal: 'hover' })
   })
 
   it('carries a key this build does not know through to the save', () => {

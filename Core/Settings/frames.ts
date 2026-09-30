@@ -1,8 +1,15 @@
 import { reportRefusal } from '@pommora/core/Interface/Notifications/notifications'
-import type { DevicePrefs } from '@pommora/core/Settings/devicePrefs'
+import {
+  type DEVICE_RANGES,
+  type DeviceDefaultKey,
+  type DevicePrefs,
+  devicePref,
+  type ScrollbarPresence,
+  type ScrollbarReveal,
+} from '@pommora/core/Settings/devicePrefs'
 import type { PickerOption } from '@pommora/uix/Pickers/PickerControl'
 import { type NumberUnit, unitLabel } from '@pommora/uix/Pickers/numberUnit'
-import type { NumberRange, SteppedRange } from '@pommora/uix/Utilities/clamp'
+import type { NumberRange } from '@pommora/uix/Utilities/clamp'
 import { LINK_FORMAT_OPTIONS } from '../Properties/Schema/linkFormatOptions'
 import type { LinkDisplay } from '@pommora/core/Properties/properties'
 import {
@@ -20,7 +27,6 @@ import {
   type PreviewPersistence,
   type TabOpenBehavior,
   type TimeFormatSetting,
-  TENTHS_SCALE,
   type SteppedKey,
   SETTING_DEFAULTS,
   type SettingKey,
@@ -35,28 +41,42 @@ import {
 import { TrashFrame } from './TrashFrame'
 import { askClearExclusions, askClearHistory } from '../Interface/Confirm/confirmations'
 import { dialer } from '../Platform/dialer'
+import type { SessionState } from '../Session/sessionState'
 import { useSession } from '../Session/store'
 
 const PLACEMENT_OPTIONS: readonly PickerOption<Placement>[] = [
   { value: 'top', label: 'Top' },
   { value: 'bottom', label: 'Bottom' },
 ]
+const SCROLLBAR_PRESENCE_OPTIONS: readonly PickerOption<ScrollbarPresence>[] = [
+  { value: 'all', label: 'All' },
+  { value: 'pages', label: 'Pages Only' },
+  { value: 'off', label: 'Off' },
+]
+const SCROLLBAR_REVEAL_OPTIONS: readonly PickerOption<ScrollbarReveal>[] = [
+  { value: 'always', label: 'Always' },
+  { value: 'hover', label: 'On Hover' },
+]
 
 type KeyOf<V> = { [K in SettingKey]: SettingValue<K> extends V ? K : never }[SettingKey]
 type DeviceKeyOf<V> = {
-  [K in keyof DevicePrefs]-?: NonNullable<DevicePrefs[K]> extends V ? K : never
-}[keyof DevicePrefs]
+  [K in DeviceDefaultKey]: NonNullable<DevicePrefs[K]> extends V ? K : never
+}[DeviceDefaultKey]
+
+/** Writes the Nexus's synced settings, or this machine's own under `device`. */
+type Scoped<Nexus, Device> = { key: Nexus; device?: never } | { key: Device; device: true }
 
 export interface RowText {
   label: string
   hint?: string
+  /** The row folds away while this reads false. */
+  when?: (s: SessionState) => boolean
 }
 
 type PickerControlRow<T extends string> = RowText & {
   kind: 'picker'
-  key: KeyOf<T>
   options: readonly PickerOption<T>[]
-}
+} & Scoped<KeyOf<T>, DeviceKeyOf<T>>
 
 type ZoomSpec = RowText & {
   unit?: NumberUnit
@@ -65,10 +85,7 @@ type ZoomSpec = RowText & {
 type InheritSentinel = 'system' | 'accent' | 'default'
 
 export type Row =
-  | (RowText & {
-      kind: 'toggle'
-      key: KeyOf<boolean>
-    })
+  | (RowText & { kind: 'toggle' } & Scoped<KeyOf<boolean>, DeviceKeyOf<boolean>>)
   | (RowText &
       NumberRange & {
         kind: 'slider'
@@ -76,10 +93,6 @@ export type Row =
         step: number
         format: (v: number) => string
       })
-  | (RowText & {
-      kind: 'device'
-      key: DeviceKeyOf<boolean>
-    })
   | (RowText & {
       kind: 'path'
     })
@@ -105,18 +118,12 @@ export type Row =
   | PickerControlRow<HeadingLinkStyle>
   | PickerControlRow<InPageHeadingResolution>
   | PickerControlRow<Placement>
+  | PickerControlRow<ScrollbarPresence>
+  | PickerControlRow<ScrollbarReveal>
   | (RowText & {
       kind: 'nexus'
     })
-  | (ZoomSpec & {
-      kind: 'zoom'
-      key: SteppedKey
-    })
-  | (ZoomSpec & {
-      kind: 'deviceZoom'
-      key: DeviceKeyOf<number>
-      range: SteppedRange & { default: number }
-    })
+  | (ZoomSpec & { kind: 'zoom' } & Scoped<SteppedKey, keyof typeof DEVICE_RANGES>)
 
 export type RowOf<K extends Row['kind']> = Extract<Row, { kind: K }>
 
@@ -232,8 +239,9 @@ export const FRAMES = roster([
             hint: 'Keep the tab bar hidden until the pointer nears it.',
           },
           {
-            kind: 'device',
+            kind: 'toggle',
             key: 'nativeMenus',
+            device: true,
             label: 'Use Native Menus',
             hint: 'Menus that are plain lists open as system menus. Belongs to this computer rather than to the nexus.',
           },
@@ -244,11 +252,11 @@ export const FRAMES = roster([
             hint: "Selected text uses the system's own highlight instead of Pommora's.",
           },
           {
-            kind: 'deviceZoom',
+            kind: 'zoom',
             key: 'interfaceScale',
+            device: true,
             label: 'Interface Scale',
             hint: 'The scaling factor applied to the entire interface; additional scaling preferences compound this value.',
-            range: TENTHS_SCALE,
           },
           {
             kind: 'zoom',
@@ -257,11 +265,26 @@ export const FRAMES = roster([
             hint: "The scale embedded pages and views start at; a tile's own toggle compounds it.",
           },
           {
-            kind: 'deviceZoom',
+            kind: 'zoom',
             key: 'brightness',
+            device: true,
             label: 'Brightness',
             hint: "Pommora's own brightness, independent of the display's.",
-            range: TENTHS_SCALE,
+          },
+          {
+            kind: 'picker',
+            key: 'scrollbars',
+            device: true,
+            label: 'Scrollbar Presence',
+            options: SCROLLBAR_PRESENCE_OPTIONS,
+          },
+          {
+            kind: 'picker',
+            key: 'scrollbarReveal',
+            device: true,
+            label: 'Scrollbar Visibility',
+            options: SCROLLBAR_REVEAL_OPTIONS,
+            when: (s) => devicePref(s.devicePrefs, 'scrollbars') !== 'off',
           },
         ],
       },
