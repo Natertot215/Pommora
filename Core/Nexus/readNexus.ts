@@ -3,7 +3,16 @@ import { basename, join, relJoin, titleFromPath } from '../Paths/posix'
 import { splitFrontmatter } from '../Files/pageFile'
 import { admitContentFile } from './identityMark'
 import { agendaContext, resolveFolderKind, type FolderKindContext } from './folderKind'
-import type { CollectionNode, ContextGroup, NexusTree, PageNode, SetNode, SpaceNode } from './tree'
+import type {
+  CollectionNode,
+  ContextGroup,
+  NexusConfig,
+  NexusOrder,
+  NexusTree,
+  PageNode,
+  SetNode,
+  SpaceNode,
+} from './tree'
 import {
   contextsRegistry as contextsRegistrySchema,
   parseContextKey,
@@ -40,22 +49,18 @@ import {
 } from '../Paths/nexusPaths'
 import type { Json } from '../Files/stableJson'
 
-export function readHomepageLeaves(config: Json): NexusTree['homepage'] {
+export function readHomepageLeaves(config: Json): NexusConfig['homepage'] {
   return {
     banner: asString(config.banner),
     headingIconHidden: config.heading_icon_hidden === true,
   }
 }
 
-export function readCropLeaves(config: Json): NexusTree['crops'] {
+export function readCropLeaves(config: Json): NexusConfig['crops'] {
   return cropsFile.parse(config).byImage ?? {}
 }
 
-export function readOrder(state: Json): {
-  collections?: string[]
-  contexts?: string[]
-  spaces: Json
-} {
+export function readOrder(state: Json): NexusOrder {
   const order = isPlainObject(state.order) ? state.order : {}
   return {
     collections: asStringArray(order.collections),
@@ -352,25 +357,17 @@ async function walkNexus(root: string): Promise<NexusTree> {
   }
 
   return {
-    nexus: {
-      id,
-      rootPath: root,
-      name: basename(root),
-      profileImage: leaves.profileImage,
-      profileIcon: leaves.profileIcon,
-      profileSubtitle: leaves.profileSubtitle,
-    },
-    homepage: readHomepageLeaves(homepageConfig),
-    crops: readCropLeaves(cropsConfig),
-    pageMetadata,
-    contexts: contexts ?? [],
-    contextOrder: order.contexts,
+    nexus: { id, rootPath: root, name: basename(root) },
     collections,
-    personalization: leaves.personalization,
-    commands: leaves.commands,
-    excluded: leaves.excluded,
-    assetDirectory: leaves.assetDirectory,
-    registry: orderedDefs(registry),
+    contexts: contexts ?? [],
+    config: {
+      ...leaves,
+      homepage: readHomepageLeaves(homepageConfig),
+      crops: readCropLeaves(cropsConfig),
+      pageMetadata,
+      order,
+      registry: orderedDefs(registry),
+    },
     ...(unreadable.length ? { unreadable: unreadable.map((path) => ({ path })) } : {}),
   }
 }

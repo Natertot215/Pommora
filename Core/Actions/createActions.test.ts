@@ -18,9 +18,8 @@ function seed(
   personalization: Personalization = {},
 ): void {
   useSession.setState({
-    tree,
+    tree: { ...tree, config: { ...tree.config, personalization } },
     selection,
-    personalization,
     beginRename,
     select,
     mutate: async (req, onCreated) => {

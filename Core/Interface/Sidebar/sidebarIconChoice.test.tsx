@@ -12,10 +12,7 @@ import { DEFAULT_COMMANDS } from '../../Actions/commands'
 ;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
 
 const tree = {
-  nexus: { id: 'nx', rootPath: '/x', name: 'x', profileImage: null, profileSubtitle: '' },
-  homepage: { headingIconHidden: false },
-  crops: {},
-  pageMetadata: { p1: { icon: 'rocket' } },
+  nexus: { id: 'nx', rootPath: '/x', name: 'x' },
   contexts: [
     {
       def: { id: 'g1', title: 'Areas', icon: 'star' },
@@ -32,11 +29,17 @@ const tree = {
       pages: [{ kind: 'page', id: 'p1', title: 'First', path: 'Notes/First.md' }],
     },
   ],
-  personalization: { defaultIcons: {} },
-  commands: DEFAULT_COMMANDS,
-  assetDirectory: ASSETS_DIR_REL,
-  excluded: [],
-  registry: [],
+  config: {
+    profileImage: null,
+    homepage: { headingIconHidden: false },
+    crops: {},
+    pageMetadata: { p1: { icon: 'rocket' } },
+    personalization: { defaultIcons: {} },
+    commands: DEFAULT_COMMANDS,
+    assetDirectory: ASSETS_DIR_REL,
+    excluded: [],
+    registry: [],
+  },
 } as unknown as NexusTree
 
 let host: HTMLDivElement
@@ -46,10 +49,15 @@ let mutate: ReturnType<typeof vi.fn>
 const mount = (sidebarMode: SidebarMode): void => {
   mutate = vi.fn(async () => {})
   useSession.setState({
-    tree,
+    tree: {
+      ...tree,
+      config: {
+        ...tree.config,
+        personalization: { defaultIcons: {}, iconFavorites: ['anchor'], sidebarMode },
+      },
+    },
     devicePrefs: { disclosure: { c1: true } },
     setDevicePref: vi.fn() as never,
-    personalization: { defaultIcons: {}, iconFavorites: ['anchor'], sidebarMode },
     selection: { kind: 'none' },
     mutate: mutate as never,
   })

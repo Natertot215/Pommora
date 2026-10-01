@@ -17,6 +17,7 @@ import { popMenu } from '../../Actions/menuActions'
 import { nexusTitleMenuItems, titleMenuItems, withSearchRow } from '../../Actions/identityMenus'
 import { NexusIconEditors } from '../../Assets/NexusIconEditors'
 import { useNexusIcon } from '../../Assets/useNexusIcon'
+import { personalizationOf } from '../../Session/configSlice'
 
 /** The one banner: its image, menu, crop editor, and window seat; the caller brings the title and what stands when there is no banner. */
 export function Banner({
@@ -86,7 +87,7 @@ export function EntityBanner({
 }): React.JSX.Element {
   const mutate = useSession((s) => s.mutate)
   const submitRename = useSession((s) => s.submitRename)
-  const defaultIcons = useSession((s) => s.personalization.defaultIcons)
+  const defaultIcons = useSession((s) => personalizationOf(s).defaultIcons)
   const nexusIcon = useNexusIcon()
   const homePhotoSrc = useAssetUrl(nexusIcon.profileImage)
   const [iconPickerOpen, setIconPickerOpen] = useState(false)

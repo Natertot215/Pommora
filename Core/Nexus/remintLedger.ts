@@ -3,7 +3,7 @@ import { machine } from '../Platform/machine'
 import type { EntityRecord } from './record'
 import { errText } from '../Contract/result'
 import { contextDirRel, CONTEXTS_REGISTRY_REL } from '../Paths/nexusPaths'
-import type { NexusTree, PageNode, SetNode } from './tree'
+import { entityMemo, type NexusTree, type PageNode, type SetNode } from './tree'
 import { readKey, writeKey } from '../Platform/localState'
 import { isAdoptedId } from './ids'
 import { refreshTree, seedLiveTree } from './liveTree'
@@ -17,15 +17,7 @@ export interface Projection {
   duplicates: Record<string, EntityRecord[]>
 }
 
-const byTree = new WeakMap<NexusTree, Projection>()
-
-export function projectBaseline(tree: NexusTree): Projection {
-  const memo = byTree.get(tree)
-  if (memo) return memo
-  const projection = buildBaseline(tree)
-  byTree.set(tree, projection)
-  return projection
-}
+export const projectBaseline = entityMemo(buildBaseline)
 
 function buildBaseline(tree: NexusTree): Projection {
   const entries: Record<string, EntityRecord> = {}

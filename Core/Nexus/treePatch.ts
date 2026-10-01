@@ -322,9 +322,9 @@ export function insertCreatedInTree(
   return null
 }
 
-/** Keeps one def reference-identical in both homes (`tree.registry` and each Collection's `properties`); an id the registry dropped falls out, as the walk resolves a dangling ref. */
+/** Keeps one def reference-identical in both homes (`config.registry` and each Collection's `properties`); an id the registry dropped falls out, as the walk resolves a dangling ref. */
 export function repointRegistryInTree(tree: NexusTree, registry: PropertyDefinition[]): NexusTree {
-  const defs = stabilize(registry, tree.registry)
+  const defs = stabilize(registry, tree.config.registry)
   const byId = new Map(defs.map((d) => [d.id, d]))
   let moved = false
   const collections = tree.collections.map((c) => {
@@ -335,8 +335,12 @@ export function repointRegistryInTree(tree: NexusTree, registry: PropertyDefinit
     moved = true
     return { ...c, properties: next.length ? next : undefined }
   })
-  if (!moved && defs === tree.registry) return tree
-  return { ...tree, registry: defs, collections: moved ? collections : tree.collections }
+  if (!moved && defs === tree.config.registry) return tree
+  return {
+    ...tree,
+    config: { ...tree.config, registry: defs },
+    collections: moved ? collections : tree.collections,
+  }
 }
 
 /** Named by title, so a rename moves paths: a Space swaps its tail, a Context prefix-swaps. */

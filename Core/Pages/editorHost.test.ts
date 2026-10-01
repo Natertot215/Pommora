@@ -116,10 +116,8 @@ describe('useEditorHost', () => {
 })
 
 describe('the alias memory', () => {
-  const withAliases = (aliases: string[]) => ({
-    ...makeTree(),
-    pageMetadata: { p1: { aliases } } as Record<string, PageMeta>,
-  })
+  const withAliases = (aliases: string[]) =>
+    makeTree({ pageMetadata: { p1: { aliases } } as Record<string, PageMeta> })
 
   const mountHosts = async (aliases: string[]) => {
     const mutate = vi.fn(async () => ok({}))

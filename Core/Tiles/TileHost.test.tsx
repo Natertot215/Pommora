@@ -10,6 +10,7 @@ import { TileHost, zoomStyle } from './TileHost'
 import { dropAllTileDocs, isTileRemoving, markTileRemoving, readTileBody } from './tileDocStore'
 import { useSession } from '../Session/store'
 import { makeTree } from '../Testing/testTree'
+import { personalizationOf } from '../Session/configSlice'
 import { tileId } from '../Testing/tileLayouts'
 
 vi.stubGlobal(
@@ -155,9 +156,8 @@ describe('the host over the renderer table', () => {
       menu: async () => ({ ok: true, value: 'tile:delete' }),
     })
     useSession.setState((st) => ({
-      tree: makeTree(),
+      tree: makeTree({ personalization: { ...personalizationOf(st), confirmDeletion: false } }),
       devicePrefs: { ...st.devicePrefs, nativeMenus: true },
-      personalization: { ...st.personalization, confirmDeletion: false },
     }))
     clearNotification()
     await act(async () => root.render(<TileHost host={{ kind: 'homepage' }} />))
@@ -190,9 +190,8 @@ describe('the host over the renderer table', () => {
       ...bridge,
     })
     useSession.setState((st) => ({
-      tree: makeTree(),
+      tree: makeTree({ personalization: { ...personalizationOf(st), confirmDeletion: false } }),
       devicePrefs: { ...st.devicePrefs, nativeMenus: true },
-      personalization: { ...st.personalization, confirmDeletion: false },
     }))
     clearNotification()
     await act(async () => root.render(<TileHost host={{ kind: 'homepage' }} />))
@@ -248,9 +247,8 @@ describe('the host over the renderer table', () => {
       menu: async () => ({ ok: true, value: 'tile:delete' }),
     })
     useSession.setState((st) => ({
-      tree: makeTree(),
+      tree: makeTree({ personalization: { ...personalizationOf(st), confirmDeletion: false } }),
       devicePrefs: { ...st.devicePrefs, nativeMenus: true },
-      personalization: { ...st.personalization, confirmDeletion: false },
     }))
     clearNotification()
     await act(async () => root.render(<TileHost host={{ kind: 'homepage' }} />))

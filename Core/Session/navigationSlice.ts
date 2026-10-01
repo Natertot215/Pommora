@@ -60,6 +60,7 @@ import { cancelPageSave, scheduleTabsSave } from './saveScheduler'
 import { crumbDepthFor } from '../Interface/Subfield/crumbs'
 import type { SessionState, Slice } from './sessionState'
 import { dialer } from '../Platform/dialer'
+import { personalizationOf } from './configSlice'
 
 export type PageSlot =
   | { status: 'ready'; target: PageTarget; detail: PageDetail; body: string }
@@ -413,7 +414,7 @@ export const createNavigationSlice: Slice<NavigationSlice> = (set, get) => {
     openNewTab: (take) => {
       const s = get()
       const res = openNewTabModel(s.tabs, makeTabId())
-      if (res.tabs !== s.tabs && !(take ?? settingOf(s.personalization, 'tabTakeFocus'))) {
+      if (res.tabs !== s.tabs && !(take ?? settingOf(personalizationOf(s), 'tabTakeFocus'))) {
         set({ tabs: res.tabs })
         persistTabs()
         return
@@ -538,7 +539,8 @@ export const createNavigationSlice: Slice<NavigationSlice> = (set, get) => {
 
     select: async (target, opts) => {
       const was = get()
-      const newTab = opts?.newTab ?? settingOf(was.personalization, 'tabOpenBehavior') === 'newtab'
+      const newTab =
+        opts?.newTab ?? settingOf(personalizationOf(was), 'tabOpenBehavior') === 'newtab'
       const pending =
         opts?.record === false
           ? null
@@ -551,7 +553,7 @@ export const createNavigationSlice: Slice<NavigationSlice> = (set, get) => {
         pending &&
         newTab &&
         pending.tabs.length > was.tabs.length &&
-        !settingOf(was.personalization, 'tabTakeFocus')
+        !settingOf(personalizationOf(was), 'tabTakeFocus')
       ) {
         set({ tabs: pending.tabs })
         commitRecents(recordRecent(was.recents, target, RECENTS_CAP))

@@ -52,9 +52,11 @@ const render = async (
   experimentalFeatures = true,
 ): Promise<void> => {
   useSession.setState({
-    tree: { nexus: { id: NEXUS_ID } } as never,
+    tree: {
+      nexus: { id: NEXUS_ID },
+      config: { personalization: { experimentalFeatures } },
+    } as never,
     syncStatus: null,
-    personalization: { experimentalFeatures },
   })
   ;(window as unknown as { nexus: unknown }).nexus = stubDialer(channels)
   host = document.createElement('div')
@@ -182,7 +184,7 @@ describe('NexusRows', () => {
     await render({ 'sync:state': ask })
     expect(ask).toHaveBeenCalledTimes(1)
     await act(async () => {
-      useSession.setState({ tree: { nexus: { id: 'OTHERNEXUS' } } as never })
+      useSession.setState((s) => ({ tree: { ...s.tree, nexus: { id: 'OTHERNEXUS' } } as never }))
     })
     expect(ask).toHaveBeenCalledTimes(2)
     expect(host.textContent).toContain('OTHERNEXUS')

@@ -55,7 +55,7 @@ export function buildIndex(tree: NexusTree): Index {
     siblings?.push(r.id)
   }
 
-  const icons = tree.personalization.defaultIcons
+  const icons = tree.config.personalization.defaultIcons
   const spaceIdsByContext = new Map<string, string[]>()
   const contextGroupIds: string[] = []
   for (const [at, g] of tree.contexts.entries()) {

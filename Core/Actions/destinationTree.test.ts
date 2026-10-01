@@ -27,7 +27,11 @@ const collections = [
 ] as unknown as CollectionNode[]
 
 const treeOf = (cols: CollectionNode[]): NexusTree =>
-  ({ nexus: {}, personalization: { defaultIcons: {} }, collections: cols }) as unknown as NexusTree
+  ({
+    nexus: {},
+    config: { personalization: { defaultIcons: {} } },
+    collections: cols,
+  }) as unknown as NexusTree
 
 describe('containerTargets', () => {
   it('walks Collections and their Sets to any depth, in tree order', () => {

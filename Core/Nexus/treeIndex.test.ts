@@ -4,6 +4,7 @@ import { makeTree, linkedSpacesTree } from '../Testing/testTree'
 import { reconcileWith } from '../Session/reconcileSelection'
 import {
   navKeysOf,
+  nodesOf,
   pageIndexOf,
   pagesByIdOf,
   pagesOf,
@@ -13,6 +14,8 @@ import {
   searchEntriesOf,
   spaceLinksOf,
 } from './treeIndex'
+import { pageIdIndex, titlesOf } from './valuesChanged'
+import { projectBaseline } from './remintLedger'
 
 describe('the record walk', () => {
   it('caches every projection on the tree identity — same tree, same object', () => {
@@ -102,7 +105,10 @@ describe('searchEntriesOf', () => {
 describe('page icons', () => {
   it('a page resolves its icon from pageMetadata, and a pageMetadata-only change yields a new index', () => {
     const t = makeTree()
-    const iconed: NexusTree = { ...t, pageMetadata: { p1: { icon: 'star' } } }
+    const iconed: NexusTree = {
+      ...t,
+      config: { ...t.config, pageMetadata: { p1: { icon: 'star' } } },
+    }
     expect(resolveIndexOf(iconed).get('page:p1')?.icon).toBe('star')
     expect(pagesByIdOf(iconed).get('p1')?.icon).toBe('star')
     expect(resolveIndexOf(iconed)).not.toBe(resolveIndexOf(t))
@@ -191,5 +197,25 @@ describe('spaceLinksOf', () => {
   it('caches on the tree identity', () => {
     const t = linkedTree(true)
     expect(spaceLinksOf(t)).toBe(spaceLinksOf(t))
+  })
+})
+
+describe('a configuration patch keeps every entity lookup', () => {
+  it('answers the same objects across a settings change, and rebuilds the index when unreadable moves', () => {
+    const t = makeTree()
+    const held = [nodesOf(t), pageIdIndex(t), titlesOf(t), projectBaseline(t)]
+    const toggled: NexusTree = {
+      ...t,
+      config: { ...t.config, personalization: { hideChevrons: true }, crops: {} },
+    }
+    const kept = [
+      nodesOf(toggled),
+      pageIdIndex(toggled),
+      titlesOf(toggled),
+      projectBaseline(toggled),
+    ]
+    for (const [i, v] of kept.entries()) expect(v).toBe(held[i])
+    const unreadable: NexusTree = { ...toggled, unreadable: [{ path: 'Notes/Bad.md' }] }
+    expect(nodesOf(unreadable)).not.toBe(held[0])
   })
 })

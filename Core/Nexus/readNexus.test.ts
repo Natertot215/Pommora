@@ -378,7 +378,7 @@ describe('readNexus — registry-backed contexts', () => {
   })
 
   it('carries the panel nexus-wide Context order off state.json', async () => {
-    expect((await readNexus(reg)).contextOrder).toEqual(['ctxC', 'ctx_areas'])
+    expect((await readNexus(reg)).config.order.contexts).toEqual(['ctxC', 'ctx_areas'])
   })
 
   it('resolves wrapped page keys onto the node contextValues', async () => {
@@ -452,7 +452,7 @@ describe('readNexus — the walk names what it cannot read', () => {
   })
 
   it('a state.json naming no Context order leaves the field absent', async () => {
-    expect((await readNexus(root)).contextOrder).toBeUndefined()
+    expect((await readNexus(root)).config.order.contexts).toBeUndefined()
   })
 
   it('a damaged settings file fails the walk and names itself', async () => {
@@ -499,9 +499,9 @@ describe('readNexus — the walk names what it cannot read', () => {
       const first = await readNexus(r)
       w(join(r, '.nexus', file), '{ corrupt')
       const next = await readNexus(r)
-      expect(next.excluded).toEqual(['Private'])
-      expect(next.registry).toEqual(first.registry)
-      expect(next.registry).toHaveLength(1)
+      expect(next.config.excluded).toEqual(['Private'])
+      expect(next.config.registry).toEqual(first.config.registry)
+      expect(next.config.registry).toHaveLength(1)
       expect(next.nexus.id).toBe('nxs')
     } finally {
       rmSync(r, { recursive: true, force: true })
@@ -549,7 +549,7 @@ describe('readNexus — the asset root leaves the tree and the corpus together',
     const root = build('file-assets')
     try {
       const tree = await readNexus(root)
-      const scope = scopeOf(tree)
+      const scope = scopeOf(tree.config)
       const corpus = await corpusFiles(root, scope)
       const visible = tree.collections.map((c) => c.path)
       for (const gone of ['file-assets', 'Archive']) {
@@ -569,7 +569,7 @@ describe('readNexus — the asset root leaves the tree and the corpus together',
     const root = build('Media')
     try {
       const tree = await readNexus(root)
-      const corpus = await corpusFiles(root, scopeOf(tree))
+      const corpus = await corpusFiles(root, scopeOf(tree.config))
       expect(tree.collections.map((c) => c.path)).toContain('file-assets')
       expect(corpus).toContain('file-assets/note.md')
     } finally {
@@ -603,7 +603,7 @@ describe('readNexus — personalization', () => {
   )
 
   const accentOf = async (settings: Record<string, unknown>): Promise<string> =>
-    settingOf((await readNexus(mk(settings))).personalization, 'accent')
+    settingOf((await readNexus(mk(settings))).config.personalization, 'accent')
 
   it('reads accent from personalization.accent — its one home', async () => {
     expect(await accentOf({ personalization: { accent: 'blue' } })).toBe('blue')
@@ -623,7 +623,10 @@ describe('readNexus — personalization', () => {
   // Each link color defers differently when unset, so each keeps its own sentinel on disk.
   it('reads both link colors, cells and sentinels alike', async () => {
     const read = async (p: Record<string, unknown>): Promise<Record<string, unknown>> =>
-      (await readNexus(mk({ personalization: p }))).personalization as Record<string, unknown>
+      (await readNexus(mk({ personalization: p }))).config.personalization as Record<
+        string,
+        unknown
+      >
     expect((await read({ connectionColor: 'accent' })).connectionColor).toBe('accent')
     expect((await read({ connectionColor: 'red-6' })).connectionColor).toBe('red-6')
     expect((await read({ externalLinkColor: 'system' })).externalLinkColor).toBe('system')
@@ -644,15 +647,15 @@ describe('readNexus — personalization', () => {
         },
       }),
     )
-    expect(t.personalization.connectionColor).toBe('cyan')
-    expect(t.personalization.hideChevrons).toBe(true)
-    expect(t.personalization.outlinerLines).toBeUndefined()
-    expect(t.personalization.defaultIcons).toEqual({ collection: 'gallery-vertical-end' })
+    expect(t.config.personalization.connectionColor).toBe('cyan')
+    expect(t.config.personalization.hideChevrons).toBe(true)
+    expect(t.config.personalization.outlinerLines).toBeUndefined()
+    expect(t.config.personalization.defaultIcons).toEqual({ collection: 'gallery-vertical-end' })
   })
   // The coercer gates the KIND key, never the glyph name — an override naming a glyph this build won't draw survives the disk round trip intact. Validating names here would put the curated roster, a renderer fact, on the other side of the process boundary.
   it('keeps an override verbatim, whatever glyph it names', async () => {
     const t = await readNexus(mk({ personalization: { defaultIcons: { context: 'anchor' } } }))
-    expect(t.personalization.defaultIcons).toEqual({ context: 'anchor' })
+    expect(t.config.personalization.defaultIcons).toEqual({ context: 'anchor' })
   })
   // A key the writer persists but the reader never parses is silently dropped, so the toggle appears to work and reverts on relaunch.
   it('every boolean knob survives the round-trip', async () => {
@@ -662,7 +665,7 @@ describe('readNexus — personalization', () => {
     const t = await readNexus(
       mk({ personalization: Object.fromEntries(keys.map((k) => [k, !SETTING_DEFAULTS[k]])) }),
     )
-    for (const k of keys) expect(t.personalization[k], k).toBe(!SETTING_DEFAULTS[k])
+    for (const k of keys) expect(t.config.personalization[k], k).toBe(!SETTING_DEFAULTS[k])
   })
   // A color setting the reader never parses is dropped on the way back in, which reads in the app as a picked color that reverts on relaunch.
   it('every ramp-cell color survives the round-trip', async () => {
@@ -672,11 +675,11 @@ describe('readNexus — personalization', () => {
     const t = await readNexus(
       mk({ personalization: Object.fromEntries(keys.map((k) => [k, 'grey-4'])) }),
     )
-    for (const k of keys) expect(t.personalization[k], k).toBe('grey-4')
+    for (const k of keys) expect(t.config.personalization[k], k).toBe('grey-4')
   })
   it('preview persistence survives the round-trip; junk reads as absent (the default)', async () => {
     const at = async (v: unknown): Promise<string | undefined> =>
-      (await readNexus(mk({ personalization: { previewPersistence: v } }))).personalization
+      (await readNexus(mk({ personalization: { previewPersistence: v } }))).config.personalization
         .previewPersistence
     expect(await at('5s')).toBe('5s')
     expect(await at('always')).toBe('always')
@@ -685,20 +688,21 @@ describe('readNexus — personalization', () => {
   })
   it('the nexus date format survives the round-trip, and an unrecognized one reads as absent', async () => {
     const at = async (v: unknown): Promise<string | undefined> =>
-      (await readNexus(mk({ personalization: { dateFormat: v } }))).personalization.dateFormat
+      (await readNexus(mk({ personalization: { dateFormat: v } }))).config.personalization
+        .dateFormat
     expect(await at('relative')).toBe('relative')
     expect(await at('nonsense')).toBeUndefined()
   })
   it('the clock reads from personalization; absent and junk alike read as the default', async () => {
     const at = async (settings: Record<string, unknown>): Promise<string | undefined> =>
-      (await readNexus(mk(settings))).personalization.timeFormat
+      (await readNexus(mk(settings))).config.personalization.timeFormat
     expect(await at({ personalization: { timeFormat: 'twentyFourHour' } })).toBe('twentyFourHour')
     expect(await at({})).toBeUndefined()
     expect(await at({ personalization: { timeFormat: 'nonsense' } })).toBeUndefined()
   })
   it('the trash column style survives the round-trip, and an unrecognized form reads as absent', async () => {
     const at = async (v: unknown): Promise<unknown> =>
-      (await readNexus(mk({ personalization: { trashColumnStyle: v } }))).personalization
+      (await readNexus(mk({ personalization: { trashColumnStyle: v } }))).config.personalization
         .trashColumnStyle
     expect(await at({ date_format: 'dayMonthYear', time_format: 'none' })).toEqual({
       date_format: 'dayMonthYear',
@@ -713,7 +717,7 @@ describe('readNexus — personalization', () => {
   // Both halves in one test on purpose: a coercer that returned undefined unconditionally would satisfy a round-trip that only ever checked the default, so it has to be caught admitting a real value as well as refusing a junk one.
   it('the default link format survives the round-trip, and an unrecognized one reads as absent', async () => {
     const at = async (v: unknown): Promise<string | undefined> =>
-      (await readNexus(mk({ personalization: { defaultLinkFormat: v } }))).personalization
+      (await readNexus(mk({ personalization: { defaultLinkFormat: v } }))).config.personalization
         .defaultLinkFormat
     expect(await at('link-short')).toBe('link-short')
     expect(await at('link-title')).toBe('link-title')
@@ -723,8 +727,8 @@ describe('readNexus — personalization', () => {
   })
   it('absent personalization → empty block', async () => {
     const t = await readNexus(mk({}))
-    expect(t.personalization.connectionColor).toBeUndefined()
-    expect(t.personalization.defaultIcons).toBeUndefined()
+    expect(t.config.personalization.connectionColor).toBeUndefined()
+    expect(t.config.personalization.defaultIcons).toBeUndefined()
   })
 })
 
@@ -744,18 +748,14 @@ describe('readNexus — profile (from settings)', () => {
     }),
   )
 
-  it('reads profile_image (rel path) + profile_subtitle from settings', async () => {
-    const t = await readNexus(
-      mk({ profile_image: '.nexus/assets/nxp/profile-abc.png', profile_subtitle: 'Mine' }),
-    )
-    expect(t.nexus.profileImage).toBe('.nexus/assets/nxp/profile-abc.png')
-    expect(t.nexus.profileSubtitle).toBe('Mine')
+  it('reads profile_image (rel path) from settings', async () => {
+    const t = await readNexus(mk({ profile_image: '.nexus/assets/nxp/profile-abc.png' }))
+    expect(t.config.profileImage).toBe('.nexus/assets/nxp/profile-abc.png')
   })
 
-  it('defaults to null image + empty subtitle when absent', async () => {
+  it('defaults to a null image when absent', async () => {
     const t = await readNexus(mk({}))
-    expect(t.nexus.profileImage).toBeNull()
-    expect(t.nexus.profileSubtitle).toBe('')
+    expect(t.config.profileImage).toBeNull()
   })
 })
 
@@ -792,11 +792,11 @@ describe('readNexus — page metadata', () => {
       JSON.stringify({ pages: { [SEP]: { icon: 'moved' } } }),
     )
     const t = await readNexus(root)
-    expect(t.pageMetadata).toEqual({ [SEP]: { icon: 'star' }, [AUG]: { locked: true } })
+    expect(t.config.pageMetadata).toEqual({ [SEP]: { icon: 'star' }, [AUG]: { locked: true } })
   })
 
   it('reads an empty map without a metadata folder', async () => {
-    expect((await readNexus(mk())).pageMetadata).toEqual({})
+    expect((await readNexus(mk())).config.pageMetadata).toEqual({})
   })
 })
 

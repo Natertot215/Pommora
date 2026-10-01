@@ -222,7 +222,7 @@ describe('the bundle — one folder per deletion, holding the artifact and its r
       expect(await registryIds()).toEqual(['ctx_areas', 'ctx_projects', 'ctx_zeta'])
       const tree = await readNexus(root)
       expect(tree.contexts[1].spaces.map((sp) => sp.id)).toEqual(['sp-sap', 'sp-pom'])
-      expect(tree.contextOrder).toEqual(['ctx_projects', 'ctx_areas'])
+      expect(tree.config.order.contexts).toEqual(['ctx_projects', 'ctx_areas'])
     })
 
     it('a record from before the place was kept restores its Context at the end', async () => {

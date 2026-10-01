@@ -43,26 +43,33 @@ interface TreeIndex {
   spaceLinks?: Map<string, Record<string, string[]>>
 }
 
-const byTree = new WeakMap<NexusTree, TreeIndex>()
+const byCollections = new WeakMap<NexusTree['collections'], { of: NexusTree; ix: TreeIndex }>()
+
+const sameInputs = (a: NexusTree, b: NexusTree): boolean =>
+  a.contexts === b.contexts &&
+  a.unreadable === b.unreadable &&
+  a.nexus.name === b.nexus.name &&
+  a.config.profileIcon === b.config.profileIcon &&
+  a.config.pageMetadata === b.config.pageMetadata &&
+  a.config.personalization.defaultIcons === b.config.personalization.defaultIcons
 
 function indexFor(tree: NexusTree): TreeIndex {
-  let ix = byTree.get(tree)
-  if (!ix) {
-    ix = { nodes: walk(tree) }
-    byTree.set(tree, ix)
-  }
+  const held = byCollections.get(tree.collections)
+  if (held && sameInputs(held.of, tree)) return held.ix
+  const ix: TreeIndex = { nodes: walk(tree) }
+  byCollections.set(tree.collections, { of: tree, ix })
   return ix
 }
 
 function walk(tree: NexusTree): NodeRecord[] {
   const nodes: NodeRecord[] = []
-  const di = tree.personalization.defaultIcons
+  const di = tree.config.personalization.defaultIcons
   nodes.push({
     key: navKey({ kind: 'homepage' }),
     kind: 'homepage',
     id: '',
     title: tree.nexus.name,
-    icon: iconNameOr(tree.nexus.profileIcon, DEFAULT_NEXUS_ICON),
+    icon: iconNameOr(tree.config.profileIcon, DEFAULT_NEXUS_ICON),
     path: '',
     parents: [],
   })
@@ -95,7 +102,7 @@ function walk(tree: NexusTree): NodeRecord[] {
       })
   }
   const addPage = (p: PageNode, parents: TrailNode[]): void => {
-    const ownIcon = tree.pageMetadata[p.id]?.icon
+    const ownIcon = tree.config.pageMetadata[p.id]?.icon
     nodes.push({
       key: navKey({ kind: 'page', id: p.id }),
       kind: 'page',

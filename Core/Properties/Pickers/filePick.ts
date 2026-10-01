@@ -81,7 +81,7 @@ function commitIfDefined(
 
 /** A Directory is stored relative to the ASSET root, so handing it over unjoined would open a same-named folder at the nexus root, and an unset one the nexus root itself. */
 function propertyFolder(def: PropertyDefinition): string {
-  return assetSubRoot(useSession.getState().tree?.assetDirectory ?? '', def.file_directory)
+  return assetSubRoot(useSession.getState().tree?.config.assetDirectory ?? '', def.file_directory)
 }
 
 function folderOf(reference: string): string {

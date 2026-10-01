@@ -671,7 +671,7 @@ describe('matrixRuntime', () => {
 
   it('re-judges a filter when a value it reads arrives', () => {
     const tree = makeTree()
-    tree.registry = [{ id: 'prop_rank', name: 'Rank', type: 'number' }]
+    tree.config.registry = [{ id: 'prop_rank', name: 'Rank', type: 'number' }]
     const reply = linked()
     seed({
       tree,

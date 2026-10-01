@@ -79,12 +79,25 @@ export function useViewHost(source: CollectionNode | SetNode, nests: boolean) {
     groups: resolvedGroups,
     rows,
   } = useMemo(() => {
-    const { rows, setTree } = flattenContainer(painted, effectiveValues, tree?.pageMetadata ?? {})
+    const { rows, setTree } = flattenContainer(
+      painted,
+      effectiveValues,
+      tree?.config.pageMetadata ?? {},
+    )
     return {
       ...resolveView({ rows, setTree, view, schema, plan, manualOrder, contextIds }),
       rows,
     }
-  }, [painted, effectiveValues, tree?.pageMetadata, view, schema, plan, manualOrder, contextIds])
+  }, [
+    painted,
+    effectiveValues,
+    tree?.config.pageMetadata,
+    view,
+    schema,
+    plan,
+    manualOrder,
+    contextIds,
+  ])
   const titles = useMemo(
     () => (searching ? new Map(rows.map((r) => [r.id, foldKey(r.title)])) : null),
     [rows, searching],

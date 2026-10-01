@@ -261,7 +261,7 @@ describe('confirmMutation', () => {
       reads.mockRestore()
     }
     expect(walkSpy).not.toHaveBeenCalled()
-    expect(getLiveTree()?.pageMetadata).toEqual({ [ULID_A]: { locked: true } })
+    expect(getLiveTree()?.config.pageMetadata).toEqual({ [ULID_A]: { locked: true } })
   })
 
   it('a page setIcon confirms by one month-file read — zero walks, the tree holds the icon', async () => {
@@ -279,7 +279,7 @@ describe('confirmMutation', () => {
       reads.mockRestore()
     }
     expect(walkSpy).not.toHaveBeenCalled()
-    expect(getLiveTree()?.pageMetadata).toEqual({ [ULID_A]: { icon: 'star' } })
+    expect(getLiveTree()?.config.pageMetadata).toEqual({ [ULID_A]: { icon: 'star' } })
   })
 
   it('setPageMeta on an ID-less page leaves the tree holding its new ID and entry', async () => {
@@ -299,7 +299,7 @@ describe('confirmMutation', () => {
     const id = splitFrontmatter(await readFile(abs('Notes', 'B.md'), 'utf8'))[ID_KEY] as string
     const live = getLiveTree()
     expect(live?.collections[0]?.pages.find((p) => p.path === 'Notes/B.md')?.id).toBe(id)
-    expect(live?.pageMetadata).toEqual({ [id]: { locked: true } })
+    expect(live?.config.pageMetadata).toEqual({ [id]: { locked: true } })
   })
 })
 
@@ -316,8 +316,8 @@ describe('confirmRegistry', () => {
     expect(pushed).not.toBeNull()
     expect(walkSpy).not.toHaveBeenCalled()
     const live = getLiveTree()
-    expect(live?.registry[0]?.name).toBe('Stage')
-    expect(live?.collections[0]?.properties?.[0]).toBe(live?.registry[0])
+    expect(live?.config.registry[0]?.name).toBe('Stage')
+    expect(live?.collections[0]?.properties?.[0]).toBe(live?.config.registry[0])
     expect(stabilize(await readNexus(root), live)).toBe(live)
   })
 
@@ -369,7 +369,7 @@ describe('confirmRegistry', () => {
     await writeFile(abs('.nexus', 'properties.json'), JSON.stringify({ order: [], defs: {} }))
     await confirmRegistry(root)
     const live = getLiveTree()
-    expect(live?.registry).toEqual([])
+    expect(live?.config.registry).toEqual([])
     expect(live?.collections[0]?.properties).toBeUndefined()
   })
 })

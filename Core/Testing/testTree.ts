@@ -1,13 +1,10 @@
-import type { NexusTree } from '../Nexus/tree'
+import type { NexusConfig, NexusTree } from '../Nexus/tree'
 import { ASSETS_DIR_REL } from '../Paths/nexusPaths'
 import { DEFAULT_COMMANDS } from '../Actions/commands'
 
-export function makeTree(): NexusTree {
+export function makeTree(config: Partial<NexusConfig> = {}): NexusTree {
   return {
-    nexus: { id: 'nx', rootPath: '/x', name: 'TestNexus', profileImage: null, profileSubtitle: '' },
-    homepage: { headingIconHidden: false },
-    crops: {},
-    pageMetadata: {},
+    nexus: { id: 'nx', rootPath: '/x', name: 'TestNexus' },
     contexts: [
       {
         def: { id: 'g1', title: 'Realms', singular: 'Realm' },
@@ -55,11 +52,19 @@ export function makeTree(): NexusTree {
         ],
       },
     ],
-    personalization: {},
-    commands: DEFAULT_COMMANDS,
-    assetDirectory: ASSETS_DIR_REL,
-    excluded: [],
-    registry: [],
+    config: {
+      profileImage: null,
+      homepage: { headingIconHidden: false },
+      crops: {},
+      pageMetadata: {},
+      order: { spaces: {} },
+      personalization: {},
+      commands: DEFAULT_COMMANDS,
+      excluded: [],
+      assetDirectory: ASSETS_DIR_REL,
+      registry: [],
+      ...config,
+    },
   }
 }
 

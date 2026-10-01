@@ -139,7 +139,7 @@ beforeEach(() => {
     tree: {
       collections: [],
       contexts: [],
-      personalization: {},
+      config: { personalization: {} },
     } as never,
     selection: { kind: 'none' } as never,
     select: selectSpy as never,

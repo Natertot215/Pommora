@@ -29,6 +29,7 @@ import { useSession } from '../../Session/store'
 import { settingOf } from '../../Settings/personalization'
 import { confirmDelete } from '../Confirm/confirmations'
 import { runPageAction } from './pageMenuActions'
+import { personalizationOf } from '../../Session/configSlice'
 
 function creatorsFor(target: EntityMenuTarget): Creator[] {
   switch (target.kind) {
@@ -58,13 +59,17 @@ export async function showEntityMenu(
       row = await fetchPageRow(s.tree, { id: target.id, path: target.path, title: target.title })
     else if (node && s.tree) row = spaceRowOf(s.tree, node)
   }
-  const schema = !row ? [] : node ? (s.tree?.registry ?? []) : containerSchema(s.tree, target.path)
+  const schema = !row
+    ? []
+    : node
+      ? (s.tree?.config.registry ?? [])
+      : containerSchema(s.tree, target.path)
   const propertyTarget: PropertyMenuTarget | null = row
     ? {
         tree: s.tree,
         schema,
         row,
-        capitalize: settingOf(s.personalization, 'capitalizeMetadata'),
+        capitalize: settingOf(personalizationOf(s), 'capitalizeMetadata'),
       }
     : null
   const shown: EntityMenuTarget = {

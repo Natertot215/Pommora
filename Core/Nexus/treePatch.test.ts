@@ -44,17 +44,21 @@ function tree(): NexusTree {
     pages: [],
   }
   return {
-    nexus: { id: 'nx', rootPath: '/x', name: 'x', profileImage: null, profileSubtitle: '' },
-    homepage: { headingIconHidden: false },
-    crops: {},
-    pageMetadata: {},
+    nexus: { id: 'nx', rootPath: '/x', name: 'x' },
     contexts: [],
     collections: [notes, work],
-    personalization: {},
-    commands: DEFAULT_COMMANDS,
-    assetDirectory: ASSETS_DIR_REL,
-    excluded: [],
-    registry: [],
+    config: {
+      profileImage: null,
+      homepage: { headingIconHidden: false },
+      crops: {},
+      pageMetadata: {},
+      order: { spaces: {} },
+      personalization: {},
+      commands: DEFAULT_COMMANDS,
+      assetDirectory: ASSETS_DIR_REL,
+      excluded: [],
+      registry: [],
+    },
   }
 }
 

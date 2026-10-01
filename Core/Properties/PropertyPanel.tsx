@@ -150,7 +150,7 @@ export function PropertyPanel({
 
   const title = subject.kind === 'page' ? (subject.title ?? fetchedTitle) : ''
   const schema = useMemo(
-    () => (isSpace ? (tree?.registry ?? []) : containerSchema(tree, path)),
+    () => (isSpace ? (tree?.config.registry ?? []) : containerSchema(tree, path)),
     [tree, path, isSpace],
   )
   const identity = tree && identityOf(tree)
@@ -198,7 +198,7 @@ export function PropertyPanel({
   const isShown = (f: Field): boolean => held(f) || revealed.has(f.id)
   const spaceOrder = useMemo(() => readSpaceRowOrder(spaceNode?.values), [spaceNode])
   const nameOf = (f: Field): string => f.def?.name ?? f.label
-  const nexusWide = resolveRowOrder(contextFields, (f) => f.id, tree?.contextOrder)
+  const nexusWide = resolveRowOrder(contextFields, (f) => f.id, tree?.config.order.contexts)
   const fields: Record<GroupKey, Field[]> = {
     contexts: resolveRowOrder(nexusWide, nameOf, spaceOrder.contexts),
     properties: resolveRowOrder(schemaFields, nameOf, spaceOrder.properties),
@@ -242,7 +242,7 @@ export function PropertyPanel({
       sendWithUndo(
         (o) => void mutate({ op: 'reorderPanelContexts', ids: o }),
         ids,
-        tree?.contextOrder ?? [],
+        tree?.config.order.contexts ?? [],
       )
       return
     }

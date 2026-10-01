@@ -27,7 +27,6 @@ const tree = {
       })),
     },
   ],
-  pageMetadata: {},
   collections: [
     {
       kind: 'collection',
@@ -43,7 +42,7 @@ const tree = {
       sets: [],
     },
   ],
-  personalization: {},
+  config: { pageMetadata: {}, personalization: {} },
 } as unknown as NexusTree
 
 beforeEach(() => {

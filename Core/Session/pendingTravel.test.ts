@@ -10,6 +10,7 @@ import { PageView } from '../Pages/PageView'
 import { stubDialer } from '../vitest.setup'
 import { clearCache } from './pageDetailCache'
 import { useSession } from './store'
+import { makeTree } from '../Testing/testTree'
 
 ;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
 
@@ -63,8 +64,7 @@ afterEach(async () => {
 
 describe('a heading travel waits for the tab it was opened in', () => {
   it('a background tab parks its travel under its own id, and another tab later showing the page leaves it', async () => {
-    const s = useSession.getState()
-    useSession.setState({ personalization: { ...s.personalization, tabTakeFocus: false } })
+    useSession.setState({ tree: makeTree({ personalization: { tabTakeFocus: false } }) })
     await useSession.getState().select(A, { newTab: true, heading: 'Setup' })
     const { tabs, activeTabId, pendingTravel } = useSession.getState()
     expect(activeTabId).toBe('t1')

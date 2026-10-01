@@ -37,6 +37,7 @@ import { useSaveView } from '../viewWrite'
 import { useActiveView } from '../Host/useActiveView'
 import { lockLabel } from '../../Actions/toggleLabels'
 import { dialer } from '../../Platform/dialer'
+import { personalizationOf } from '../../Session/configSlice'
 
 type FrameId = 'configuration' | 'properties' | 'visibility' | ViewRowId
 
@@ -75,7 +76,7 @@ function ContainerSettings({
   node: CollectionNode | SetNode
   schemaCollection: CollectionNode
 }): React.JSX.Element {
-  const defaultIcons = useSession((st) => st.personalization.defaultIcons)
+  const defaultIcons = useSession((st) => personalizationOf(st).defaultIcons)
   const tree = useSession((st) => st.tree)
   const submitRename = useSession((st) => st.submitRename)
   const mutate = useSession((st) => st.mutate)

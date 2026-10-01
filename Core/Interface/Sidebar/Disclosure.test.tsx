@@ -14,10 +14,7 @@ import { DEFAULT_COMMANDS } from '../../Actions/commands'
 ;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
 
 const tree = {
-  nexus: { id: 'nx', rootPath: '/x', name: 'x', profileImage: null, profileSubtitle: '' },
-  homepage: { headingIconHidden: false },
-  crops: {},
-  pageMetadata: {},
+  nexus: { id: 'nx', rootPath: '/x', name: 'x' },
   contexts: [],
   collections: [
     {
@@ -29,11 +26,17 @@ const tree = {
       pages: [{ kind: 'page', id: 'p1', title: 'First', path: 'Notes/First.md' }],
     },
   ],
-  personalization: { defaultIcons: {} },
-  commands: DEFAULT_COMMANDS,
-  assetDirectory: ASSETS_DIR_REL,
-  excluded: [],
-  registry: [],
+  config: {
+    profileImage: null,
+    homepage: { headingIconHidden: false },
+    crops: {},
+    pageMetadata: {},
+    personalization: { defaultIcons: {} },
+    commands: DEFAULT_COMMANDS,
+    assetDirectory: ASSETS_DIR_REL,
+    excluded: [],
+    registry: [],
+  },
 } as unknown as NexusTree
 
 let host: HTMLDivElement
@@ -45,7 +48,7 @@ const mount = (disclosure: Record<string, boolean>): void => {
   useSession.setState({
     devicePrefs: { disclosure },
     setDevicePref: setDevicePref as never,
-    personalization: { defaultIcons: {} },
+    tree,
     selection: { kind: 'none' },
   })
   act(() => root.render(<Sidebar tree={tree} />))

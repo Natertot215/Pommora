@@ -60,7 +60,7 @@ describe('matrixInput', () => {
 
   it('takes a page node’s icon from the page metadata', () => {
     const tree = makeTree()
-    tree.pageMetadata = { p1: { icon: 'star' } }
+    tree.config.pageMetadata = { p1: { icon: 'star' } }
     const { input } = matrixInput(tree, replyOf([]), DEFAULT_MATRIX_CONFIG)
     expect(input.pages.map((p) => p.icon)).toEqual(['star', undefined])
   })
@@ -107,7 +107,7 @@ const spacesTree = (): NexusTree => {
     aValues: { Status: 'Done' },
     aContextValues: { g2: ['b1'] },
   })
-  tree.registry = [STATUS]
+  tree.config.registry = [STATUS]
   return tree
 }
 

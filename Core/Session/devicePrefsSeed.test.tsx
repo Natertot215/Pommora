@@ -11,17 +11,21 @@ import { DEFAULT_COMMANDS } from '../Actions/commands'
 ;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
 
 const treeAt = (rootPath: string): NexusTree => ({
-  nexus: { id: rootPath, rootPath, name: 'x', profileImage: null, profileSubtitle: '' },
-  homepage: { headingIconHidden: false },
-  crops: {},
-  pageMetadata: {},
+  nexus: { id: rootPath, rootPath, name: 'x' },
   contexts: [],
   collections: [],
-  personalization: {},
-  commands: DEFAULT_COMMANDS,
-  assetDirectory: ASSETS_DIR_REL,
-  excluded: [],
-  registry: [],
+  config: {
+    profileImage: null,
+    homepage: { headingIconHidden: false },
+    crops: {},
+    pageMetadata: {},
+    order: { spaces: {} },
+    personalization: {},
+    commands: DEFAULT_COMMANDS,
+    assetDirectory: ASSETS_DIR_REL,
+    excluded: [],
+    registry: [],
+  },
 })
 
 type Session = typeof import('./store')['useSession']

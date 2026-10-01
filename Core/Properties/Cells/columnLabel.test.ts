@@ -20,7 +20,7 @@ describe('columnLabel', () => {
   it('resolves a Context column through the registry, and an unregistered one falls to its id', () => {
     const tree = {
       contexts: [{ def: { id: 'ctx_areas', title: 'Areas', singular: 'Area' }, spaces: [] }],
-      personalization: {},
+      config: { personalization: {} },
     } as unknown as import('../../Nexus/tree').NexusTree
     const contexts = contextsByIdOf(tree)
     expect(columnLabel('ctx_areas', schema, contexts)).toBe('Areas')

@@ -14,7 +14,7 @@ export function NavBanner({
   chrome?: 'detail' | 'window'
 }): ReactNode {
   const ownBanner = useSession((s) => s.navBanner)
-  const homeBanner = useSession((s) => s.tree?.homepage.banner)
+  const homeBanner = useSession((s) => s.tree?.config.homepage.banner)
   // Remove clears only NavView's own override — `noRemove` when the shown banner is inherited.
   return (
     <Banner

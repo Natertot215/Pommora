@@ -5,6 +5,7 @@ import { ok } from '../Contract/result'
 import { NO_PREFS } from '../Testing/editorHarness'
 import { makeTree } from '../Testing/testTree'
 import type { PageMeta } from '../Nexus/schemas'
+import type { Personalization } from '../Settings/personalization'
 import { act, createElement } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
 import { useSession } from '../Session/store'
@@ -229,12 +230,14 @@ describe('a landing under the open page', () => {
 })
 
 describe('the title icon follows Show Icon In Title unless the page overrides it', () => {
-  const treeWith = (pageMetadata: Record<string, PageMeta>) => ({ ...makeTree(), pageMetadata })
+  const treeWith = (
+    pageMetadata: Record<string, PageMeta>,
+    personalization: Personalization = {},
+  ) => makeTree({ pageMetadata, personalization })
 
   const mount = async (titleIcon?: boolean, meta: Record<string, PageMeta> = {}): Promise<void> => {
     useSession.setState({
-      tree: treeWith(meta),
-      personalization: { titleIcon },
+      tree: treeWith(meta, { titleIcon }),
       pages: slot('live', 'live'),
     })
     await act(async () => {
@@ -294,14 +297,16 @@ describe('the title icon follows Show Icon In Title unless the page overrides it
   it('turning the setting on shows a page without an override', async () => {
     await mount(false)
     expect(hidden()).toBe(true)
-    await act(async () => useSession.setState({ personalization: { titleIcon: true } }))
+    await act(async () => useSession.setState({ tree: treeWith({}, { titleIcon: true }) }))
     expect(hidden()).toBe(false)
   })
 
   it('a page hidden under the setting stays hidden when the setting turns off', async () => {
     await mount(true, { a: { title_icon: false } })
     expect(hidden()).toBe(true)
-    await act(async () => useSession.setState({ personalization: { titleIcon: false } }))
+    await act(async () =>
+      useSession.setState({ tree: treeWith({ a: { title_icon: false } }, { titleIcon: false }) }),
+    )
     expect(hidden()).toBe(true)
   })
 

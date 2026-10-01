@@ -1381,7 +1381,7 @@ describe('handleMutate — setBanner', () => {
     )
     expect(r.ok).toBe(true)
     expect((await readJson('.nexus/homepage/homepage.json')).banner).toBe('[[Home.png]]')
-    expect((await readNexus(root)).homepage.banner).toBe('[[Home.png]]')
+    expect((await readNexus(root)).config.homepage.banner).toBe('[[Home.png]]')
   })
 })
 
@@ -2309,7 +2309,7 @@ describe('handleMutate — excluded entries follow their folders', () => {
     expect(await excludedOnDisk()).toEqual(['Archive', 'Elsewhere/Daily'])
     expect(watch).toHaveBeenCalledWith(root)
     const tree = getLiveTree()
-    expect(tree?.excluded).toEqual(['Archive', 'Elsewhere/Daily'])
+    expect(tree?.config.excluded).toEqual(['Archive', 'Elsewhere/Daily'])
     expect(tree?.collections.find((c) => c.path === 'Elsewhere')?.sets).toEqual([])
     expect(push.mock.calls.map(([name]) => name)).toContain('nexus:changed')
   })

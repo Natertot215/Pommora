@@ -27,7 +27,7 @@ export const pagePickTree = <T>(
   containerPickTree(tree, icons, (c) =>
     c.pages.map((p) => ({
       label: p.title,
-      icon: entityIcon('page', tree.pageMetadata[p.id]?.icon, icons),
+      icon: entityIcon('page', tree.config.pageMetadata[p.id]?.icon, icons),
       pick: pick(p),
     })),
   )

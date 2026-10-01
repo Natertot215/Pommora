@@ -13,6 +13,8 @@ import { armPreview, closeGlance, glanceShown, setGlancePresenter } from './glan
 import type { GlanceTarget } from '../../MarkdownPM/api'
 import { cachePageDetail, dropPageDetail } from '../../Session/pageDetailCache'
 import { useSession } from '../../Session/store'
+import { makeTree } from '../../Testing/testTree'
+import { personalizationOf } from '../../Session/configSlice'
 import { stubDialer } from '../../vitest.setup'
 import { NO_PREFS } from '../../Testing/editorHarness'
 ;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
@@ -54,10 +56,7 @@ afterEach(() => {
   act(() => root.unmount())
   host.remove()
   dropPageDetail(page.path)
-  useSession.setState((s) => ({
-    personalization: { ...s.personalization, previewPersistence: undefined },
-    selection: { kind: 'none' },
-  }))
+  useSession.setState({ tree: makeTree(), selection: { kind: 'none' } })
   for (const n of document.querySelectorAll('[data-picker-portal]')) n.remove()
 })
 
@@ -216,7 +215,7 @@ describe('the leave grace', () => {
   const setPersistence = (v: 'off' | '5s' | 'always'): void =>
     act(() =>
       useSession.setState((s) => ({
-        personalization: { ...s.personalization, previewPersistence: v },
+        tree: makeTree({ personalization: { ...personalizationOf(s), previewPersistence: v } }),
       })),
     )
 
@@ -575,7 +574,9 @@ describe('the resize edges', () => {
   beforeEach(() => {
     stubPointerCapture()
     useSession.setState((st) => ({
-      personalization: { ...st.personalization, dismissPreviewOnPointer: true },
+      tree: makeTree({
+        personalization: { ...personalizationOf(st), dismissPreviewOnPointer: true },
+      }),
     }))
   })
 

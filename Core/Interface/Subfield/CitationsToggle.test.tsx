@@ -4,6 +4,7 @@ import { createElement, act } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
 import { CitationsToggle } from './CitationsToggle'
 import { useSession } from '../../Session/store'
+import { makeTree } from '../../Testing/testTree'
 import { stubDialer } from '../../vitest.setup'
 import { ok } from '../../Contract/result'
 
@@ -40,7 +41,7 @@ const click = async (): Promise<void> => {
 
 beforeEach(() => {
   written.length = 0
-  useSession.setState({ citationsShown: {}, personalization: {} })
+  useSession.setState({ citationsShown: {}, tree: makeTree() })
 })
 afterEach(async () => {
   await act(async () => root.unmount())
@@ -82,7 +83,7 @@ describe('the control writes one row, and clears it on the default', () => {
   })
 
   it('and the same holds when the nexus-wide default is shown', async () => {
-    useSession.setState({ personalization: { citationsShown: true } })
+    useSession.setState({ tree: makeTree({ personalization: { citationsShown: true } }) })
     await mount(CITED)
     expect(button()?.textContent).toBe('Hide Footnotes')
     await click()

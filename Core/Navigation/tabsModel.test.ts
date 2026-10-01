@@ -34,7 +34,6 @@ const mkTree = (...ids: string[]): NexusTree =>
   ({
     nexus: { name: 'T' },
     contexts: [],
-    pageMetadata: {},
     collections: [
       {
         kind: 'collection',
@@ -45,7 +44,7 @@ const mkTree = (...ids: string[]): NexusTree =>
         sets: [],
       },
     ],
-    personalization: {},
+    config: { pageMetadata: {}, personalization: {} },
   }) as unknown as NexusTree
 const navTab = (id: string): Tab => newTabTab(id)
 

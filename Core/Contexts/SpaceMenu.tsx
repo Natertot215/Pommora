@@ -22,12 +22,13 @@ import { EDITABLE_TARGETS } from '@pommora/uix/Interactions/shared'
 import { popMenu } from '../Actions/menuActions'
 import { useExperimental } from '../Settings/experimental'
 import { type TitleMenuAction, titleMenuItems } from '../Actions/identityMenus'
+import { personalizationOf } from '../Session/configSlice'
 
 export function SpaceMenu(): React.JSX.Element | null {
   const selection = useSession((st) => st.selection)
   const tree = useSession((st) => st.tree)
   const mutate = useSession((st) => st.mutate)
-  const defaultIcons = useSession((st) => st.personalization.defaultIcons)
+  const defaultIcons = useSession((st) => personalizationOf(st).defaultIcons)
   const id = selection.kind === 'space' ? selection.id : null
   const iconRef = useRef<HTMLButtonElement>(null)
   const colorRef = useRef<HTMLButtonElement>(null)

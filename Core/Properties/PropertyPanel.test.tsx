@@ -51,9 +51,12 @@ const setTree = (values?: Record<string, unknown>, contextOrder?: string[]): voi
     mutate: vi.fn(async () => ({})) as never,
     tree: {
       nexus: { id: 'nx' },
-      personalization: { defaultIcons: {} },
-      registry: [stageDef, noteDef, rankDef],
-      contextOrder,
+      config: {
+        personalization: { defaultIcons: {} },
+        registry: [stageDef, noteDef, rankDef],
+        order: { contexts: contextOrder, spaces: {} },
+        pageMetadata: {},
+      },
       contexts: [
         {
           def: { id: 'ctx_areas', title: 'Areas', singular: 'Area' },
@@ -72,7 +75,6 @@ const setTree = (values?: Record<string, unknown>, contextOrder?: string[]): voi
           ],
         },
       ],
-      pageMetadata: {},
       collections: [
         {
           kind: 'collection',

@@ -13,7 +13,7 @@ export function useConnections(
 ): ConnectionsApi | undefined {
   const select = useSession((s) => s.select)
   const openWindowTab = useSession((s) => s.openWindowTab)
-  // Reads the LIVE personalization slice (setPersonalization updates it before the tree echoes).
+  // Reads the window's tree, which setPersonalization patches before the host's echo lands.
   const preview = useSetting('connectionsOpenInPreview')
   const headings = useSession((s) => s.headings)
   const inWindow = mode === 'window' || (mode === 'preview' && preview)

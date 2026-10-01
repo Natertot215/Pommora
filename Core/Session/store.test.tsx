@@ -451,10 +451,7 @@ describe('store — page slots', () => {
 /** A minimal tree with one Collection holding the given top-level pages (selection.test.ts's shape). */
 function treeWith(pages: { id: string; path: string }[], spaces: string[] = []): NexusTree {
   return {
-    nexus: { id: 'nx', rootPath: '/x', name: 'x', profileImage: null, profileSubtitle: '' },
-    homepage: { headingIconHidden: false },
-    crops: {},
-    pageMetadata: {},
+    nexus: { id: 'nx', rootPath: '/x', name: 'x' },
     contexts:
       spaces.length === 0
         ? []
@@ -480,11 +477,18 @@ function treeWith(pages: { id: string; path: string }[], spaces: string[] = []):
         pages: pages.map((p) => ({ kind: 'page', id: p.id, title: 'P', path: p.path })),
       },
     ],
-    personalization: {},
-    commands: DEFAULT_COMMANDS,
-    assetDirectory: ASSETS_DIR_REL,
-    excluded: [],
-    registry: [],
+    config: {
+      profileImage: null,
+      homepage: { headingIconHidden: false },
+      crops: {},
+      pageMetadata: {},
+      order: { spaces: {} },
+      personalization: {},
+      commands: DEFAULT_COMMANDS,
+      assetDirectory: ASSETS_DIR_REL,
+      excluded: [],
+      registry: [],
+    },
   }
 }
 

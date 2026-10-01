@@ -6,6 +6,7 @@ import { ok } from '../../Contract/result'
 import type { PropertyType, StatusGroup } from '../properties'
 import { OptionEditor } from './OptionEditor'
 import { useSession } from '../../Session/store'
+import { makeTree } from '../../Testing/testTree'
 import { stubDialer } from '../../vitest.setup'
 import { firePointer, stubPointerCapture, stubRect } from '@pommora/uix/Testing/pointerHarness'
 ;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
@@ -42,7 +43,7 @@ beforeEach(() => {
   ;(window as unknown as { nexus: unknown }).nexus = stubDialer({
     menu: async () => ok('option:edit-icon'),
   })
-  useSession.setState({ personalization: { iconFavorites: ['anchor'] } })
+  useSession.setState({ tree: makeTree({ personalization: { iconFavorites: ['anchor'] } }) })
   host = document.createElement('div')
   document.body.appendChild(host)
   root = createRoot(host)

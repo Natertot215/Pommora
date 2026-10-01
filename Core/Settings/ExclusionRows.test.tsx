@@ -15,7 +15,7 @@ let exclusionsSet: ReturnType<typeof vi.fn>
 
 const render = async (excluded: string[]): Promise<void> => {
   exclusionsSet = vi.fn(async () => ({ ok: true, value: excluded }))
-  useSession.setState({ tree: { excluded } as never })
+  useSession.setState({ tree: { config: { excluded } } as never })
   ;(window as unknown as { nexus: unknown }).nexus = stubDialer({
     'exclusions:set': exclusionsSet,
     'exclusions:choose': vi.fn(async () => ({ ok: true, value: 'Picked' })),
@@ -98,7 +98,7 @@ describe('ExcludedDirectoriesRow', () => {
     await act(async () => addButton()?.click())
     expect(fieldButtons().length).toBe(2)
     await act(async () => {
-      useSession.setState({ tree: { excluded: ['Archive', 'Renamed'] } as never })
+      useSession.setState({ tree: { config: { excluded: ['Archive', 'Renamed'] } } as never })
     })
     expect(fieldButtons().length).toBe(3)
   })

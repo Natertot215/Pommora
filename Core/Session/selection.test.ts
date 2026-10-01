@@ -7,10 +7,7 @@ import { DEFAULT_COMMANDS } from '../Actions/commands'
 
 function tree(pages: { id: string; path: string }[]): NexusTree {
   return {
-    nexus: { id: 'nx', rootPath: '/x', name: 'x', profileImage: null, profileSubtitle: '' },
-    homepage: { headingIconHidden: false },
-    crops: {},
-    pageMetadata: {},
+    nexus: { id: 'nx', rootPath: '/x', name: 'x' },
     contexts: [],
     collections: [
       {
@@ -22,11 +19,18 @@ function tree(pages: { id: string; path: string }[]): NexusTree {
         pages: pages.map((p) => ({ kind: 'page', id: p.id, title: 'P', path: p.path })),
       },
     ],
-    personalization: {},
-    commands: DEFAULT_COMMANDS,
-    assetDirectory: ASSETS_DIR_REL,
-    excluded: [],
-    registry: [],
+    config: {
+      profileImage: null,
+      homepage: { headingIconHidden: false },
+      crops: {},
+      pageMetadata: {},
+      order: { spaces: {} },
+      personalization: {},
+      commands: DEFAULT_COMMANDS,
+      assetDirectory: ASSETS_DIR_REL,
+      excluded: [],
+      registry: [],
+    },
   }
 }
 

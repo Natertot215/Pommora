@@ -37,7 +37,7 @@ const mkTree = (): NexusTree =>
         spaces: [{ id: 't1', kind: 'space', title: 'Reading', path: 'R', contextId: 'ctx_topics' }],
       },
     ],
-    personalization: {},
+    config: { personalization: {} },
   }) as unknown as NexusTree
 
 const tree = mkTree()
@@ -65,20 +65,25 @@ describe('spacesByIdOf', () => {
   })
 
   it('keeps its maps across a push that leaves the Contexts and default icons alone', () => {
-    const pushed = { ...tree, pageMetadata: {} } as NexusTree
+    const pushed = { ...tree, config: { ...tree.config, pageMetadata: {} } } as NexusTree
     expect(spacesByIdOf(pushed)).toBe(spacesByIdOf(tree))
     expect(contextIdsOf(pushed)).toBe(contextIdsOf(tree))
     expect(spacesByIdOf(mkTree())).not.toBe(spacesByIdOf(tree))
   })
 
   it('rebuilds when the default icons change under the same Contexts', () => {
-    const iconed = { ...tree, personalization: { defaultIcons: { space: 'star' } } } as NexusTree
+    const iconed = {
+      ...tree,
+      config: { personalization: { defaultIcons: { space: 'star' } } },
+    } as NexusTree
     expect(spacesByIdOf(iconed).get('a1')?.icon).toBe('star')
     expect(spacesByIdOf(tree).get('a1')?.icon).toBe('layout-dashboard')
   })
 
   it('is empty on an unmigrated tree', () => {
-    expect(spacesByIdOf({ contexts: [], personalization: {} } as unknown as NexusTree).size).toBe(0)
+    expect(
+      spacesByIdOf({ contexts: [], config: { personalization: {} } } as unknown as NexusTree).size,
+    ).toBe(0)
   })
 })
 
@@ -111,7 +116,7 @@ describe('context accessors', () => {
 it('an icon-less Space takes the USER default glyph, not the curated seed', () => {
   const personalized = {
     ...mkTree(),
-    personalization: { defaultIcons: { space: 'folder-open' } },
+    config: { personalization: { defaultIcons: { space: 'folder-open' } } },
   } as NexusTree
   expect(spaceIdentityOf(personalized, 'a1')?.icon).toBe('folder-open')
   expect(spaceIdentityOf(personalized, 'a2')?.icon).toBe('anchor')
@@ -121,13 +126,13 @@ it('an icon-less Space takes the USER default glyph, not the curated seed', () =
 it('a Space default leaves a Context on its own glyph, and the Context default moves it', () => {
   const spaceDefault = {
     ...mkTree(),
-    personalization: { defaultIcons: { space: 'folder-open' } },
+    config: { personalization: { defaultIcons: { space: 'folder-open' } } },
   } as NexusTree
   expect(contextsByIdOf(spaceDefault).get('ctx_topics')?.icon).toBe('layout-grid')
 
   const contextDefault = {
     ...mkTree(),
-    personalization: { defaultIcons: { context: 'folder-open' } },
+    config: { personalization: { defaultIcons: { context: 'folder-open' } } },
   } as NexusTree
   expect(contextsByIdOf(contextDefault).get('ctx_topics')?.icon).toBe('folder-open')
   expect(spaceIdentityOf(contextDefault, 'a1')?.icon).toBe('layout-dashboard')

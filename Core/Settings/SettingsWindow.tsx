@@ -39,6 +39,7 @@ import {
   type RowText,
 } from './frames'
 import './settings-window.css'
+import { personalizationOf } from '../Session/configSlice'
 
 const DRAG_SURFACES =
   '.settings-rail-list, .settings-section, .settings-heading, .trash-frame, .trash-head, .trash-head-name, .trash-head-date'
@@ -228,7 +229,7 @@ function useRowValue<V>(row: {
   const value = useSession((s) =>
     row.device
       ? devicePref(s.devicePrefs, row.key as DeviceDefaultKey)
-      : settingOf(s.personalization, row.key as SettingKey),
+      : settingOf(personalizationOf(s), row.key as SettingKey),
   ) as V
   const set = (next: V): void => {
     if (row.device) {

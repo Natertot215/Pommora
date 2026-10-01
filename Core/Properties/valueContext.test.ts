@@ -23,7 +23,7 @@ const tree = {
       spaces: [{ id: 't1', kind: 'space', title: 'Reading', path: 'R', contextId: 'ctx_topics' }],
     },
   ],
-  personalization: {},
+  config: { personalization: {} },
 } as unknown as NexusTree
 
 describe('buildValueContext', () => {

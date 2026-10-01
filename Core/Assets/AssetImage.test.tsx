@@ -18,7 +18,8 @@ const freshMap = (): AssetMap => ({
   files: { 'cover.png': ['file-assets/Cover.png'] },
   versions: { 'file-assets/Cover.png': ver++ },
 })
-const treeWith = (crops: Record<string, Crop>): NexusTree => ({ crops }) as unknown as NexusTree
+const treeWith = (crops: Record<string, Crop>): NexusTree =>
+  ({ config: { crops } }) as unknown as NexusTree
 
 let images: MockImage[] = []
 class MockImage {

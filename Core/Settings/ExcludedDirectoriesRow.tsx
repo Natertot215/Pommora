@@ -20,7 +20,7 @@ export function ExcludedDirectoriesRow({
   label: string
   hint?: string
 }): React.JSX.Element {
-  const stored = useSession((s) => s.tree?.excluded ?? [])
+  const stored = useSession((s) => s.tree?.config.excluded ?? [])
   const [open, setOpen] = useState(false)
   const [drafting, setDrafting] = useState(false)
   const [busy, setBusy] = useState(false)

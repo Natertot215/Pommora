@@ -21,6 +21,7 @@ import { Subfield } from '../Subfield/Subfield'
 import { useSubfieldPage } from '../Subfield/subfieldPage'
 import { useWindowWarm, windowSeam } from './useWindowWarm'
 import { windowBannerShown } from './windowTabBanner'
+import { personalizationOf } from '../../Session/configSlice'
 
 interface WindowTabBodySlots {
   body: React.ReactNode
@@ -108,8 +109,8 @@ export function useWindowTabBody(target: WindowTarget | null): WindowTabBodySlot
   const pendingTravel = useSession((s) => s.pendingTravel)
   const clearPendingTravel = useSession((s) => s.clearPendingTravel)
   const experimental = useExperimental()
-  const pageBanner = useSession((s) => windowBannerShown(s.personalization, 'page'))
-  const spaceBanner = useSession((s) => windowBannerShown(s.personalization, 'space'))
+  const pageBanner = useSession((s) => windowBannerShown(personalizationOf(s), 'page'))
+  const spaceBanner = useSession((s) => windowBannerShown(personalizationOf(s), 'space'))
   const tabCache = useSetting('tabCache')
 
   const pageTarget = target?.kind === 'page' ? target : null

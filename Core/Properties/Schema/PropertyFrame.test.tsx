@@ -76,7 +76,7 @@ beforeEach(() => {
   })
   useSession.setState({
     load: loadSpy as never,
-    tree: { registry: [] } as never,
+    tree: { config: { registry: [] } } as never,
     renamingProperty: null,
   })
 })
@@ -139,7 +139,7 @@ const titleDef: PropertyDefinition = { id: '_title', name: 'Title', type: 'link'
 
 describe('the All Properties section (T5)', () => {
   it('lists only unassigned, unreserved registry defs (A-4/E-5), in registry order (B-1)', async () => {
-    useSession.setState({ tree: { registry: [effortDef, defs[0], titleDef] } as never })
+    useSession.setState({ tree: { config: { registry: [effortDef, defs[0], titleDef] } } as never })
     await mountPane([defs[0]])
     await act(async () => {
       rowFor('All Properties').click()
@@ -151,7 +151,7 @@ describe('the All Properties section (T5)', () => {
   })
 
   it('+ assigns through the IPC; the confirming push carries the promotion, not a reload', async () => {
-    useSession.setState({ tree: { registry: [effortDef] } as never })
+    useSession.setState({ tree: { config: { registry: [effortDef] } } as never })
     await mountPane([])
     await act(async () => {
       rowFor('All Properties').click()
@@ -198,7 +198,7 @@ describe('the two-region drag (T6) — state-level; geometry truth lives in the 
   }
 
   it('assigned → all commits the Remove (schema.delete) after an area-highlight hover', async () => {
-    useSession.setState({ tree: { registry: [effortDef] } as never })
+    useSession.setState({ tree: { config: { registry: [effortDef] } } as never })
     await mountPane()
     await act(async () => {
       rowFor('All Properties').click()
@@ -218,7 +218,7 @@ describe('the two-region drag (T6) — state-level; geometry truth lives in the 
   })
 
   it('a slot change repaints the All group alone — no row re-renders', async () => {
-    useSession.setState({ tree: { registry: [effortDef] } as never })
+    useSession.setState({ tree: { config: { registry: [effortDef] } } as never })
     await mountPane()
     await act(async () => {
       rowFor('All Properties').click()
@@ -238,7 +238,7 @@ describe('the two-region drag (T6) — state-level; geometry truth lives in the 
   })
 
   it('stepping into the All zone announces the group, not the last row', async () => {
-    useSession.setState({ tree: { registry: [effortDef] } as never })
+    useSession.setState({ tree: { config: { registry: [effortDef] } } as never })
     await mountPane()
     await act(async () => {
       rowFor('All Properties').click()
@@ -259,7 +259,7 @@ describe('the two-region drag (T6) — state-level; geometry truth lives in the 
   })
 
   it('the keyboard reaches an empty assigned group and names it', async () => {
-    useSession.setState({ tree: { registry: [effortDef] } as never })
+    useSession.setState({ tree: { config: { registry: [effortDef] } } as never })
     await mountPane([])
     await act(async () => {
       rowFor('All Properties').click()
@@ -286,7 +286,7 @@ describe('the two-region drag (T6) — state-level; geometry truth lives in the 
   })
 
   it('all → assigned commits the atomic assign at the slot index', async () => {
-    useSession.setState({ tree: { registry: [effortDef] } as never })
+    useSession.setState({ tree: { config: { registry: [effortDef] } } as never })
     await mountPane()
     await act(async () => {
       rowFor('All Properties').click()
@@ -303,7 +303,7 @@ describe('the two-region drag (T6) — state-level; geometry truth lives in the 
   })
 
   it('Escape aborts an active drag without committing', async () => {
-    useSession.setState({ tree: { registry: [effortDef] } as never })
+    useSession.setState({ tree: { config: { registry: [effortDef] } } as never })
     await mountPane()
     await act(async () => {
       rowFor('All Properties').click()
@@ -320,7 +320,7 @@ describe('the two-region drag (T6) — state-level; geometry truth lives in the 
   })
 
   it('the all region owns its FIELD — a release in the empty space below the rows still unassigns', async () => {
-    useSession.setState({ tree: { registry: [effortDef] } as never })
+    useSession.setState({ tree: { config: { registry: [effortDef] } } as never })
     await mountPane()
     await act(async () => {
       rowFor('All Properties').click()
@@ -339,7 +339,7 @@ describe('the two-region drag (T6) — state-level; geometry truth lives in the 
   })
 
   it("a drag begun on the row's + button lifts the row past 12px and assigns at the slot", async () => {
-    useSession.setState({ tree: { registry: [effortDef] } as never })
+    useSession.setState({ tree: { config: { registry: [effortDef] } } as never })
     await mountPane()
     await act(async () => {
       rowFor('All Properties').click()
@@ -355,7 +355,7 @@ describe('the two-region drag (T6) — state-level; geometry truth lives in the 
   })
 
   it("a sub-12px wobble on the row's + button still clicks", async () => {
-    useSession.setState({ tree: { registry: [effortDef] } as never })
+    useSession.setState({ tree: { config: { registry: [effortDef] } } as never })
     await mountPane()
     await act(async () => {
       rowFor('All Properties').click()
@@ -460,7 +460,7 @@ describe('native menus + the inline-rename channel (T7)', () => {
   })
 
   it('a registry row offers Rename only (registry-row context)', async () => {
-    useSession.setState({ tree: { registry: [effortDef] } as never })
+    useSession.setState({ tree: { config: { registry: [effortDef] } } as never })
     propertyMenuSpy.mockResolvedValueOnce(null)
     await mountPane()
     await act(async () => {

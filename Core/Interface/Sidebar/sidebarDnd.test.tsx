@@ -16,12 +16,13 @@ import { TAB_FAMILY } from '../../Navigation/tabRows'
 import { SidebarDnd } from './sidebarDnd'
 import { buildIndex } from './sidebarDndModel'
 import { useSession } from '../../Session/store'
+import { personalizationOf } from '../../Session/configSlice'
+import { makeTree } from '../../Testing/testTree'
 ;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
 
 stubPointerCapture()
 
 const tree = {
-  pageMetadata: {},
   collections: [
     {
       kind: 'collection',
@@ -37,7 +38,7 @@ const tree = {
   ],
   contexts: [],
   nexus: {},
-  personalization: { defaultIcons: {} },
+  config: { pageMetadata: {}, personalization: { defaultIcons: {} } },
 } as unknown as NexusTree
 
 function Row({ id }: { id: string }): React.JSX.Element {
@@ -227,9 +228,15 @@ describe('sidebar drag — the line', () => {
 
 describe('sidebar drag — the stored Set placement', () => {
   it("reads a Set's Sets-below-pages from subSetPlacement, whatever setPlacement says", async () => {
-    const personalization = useSession.getState().personalization
+    const held = useSession.getState()
     useSession.setState({
-      personalization: { ...personalization, setPlacement: 'top', subSetPlacement: 'bottom' },
+      tree: makeTree({
+        personalization: {
+          ...personalizationOf(held),
+          setPlacement: 'top',
+          subSetPlacement: 'bottom',
+        },
+      }),
     })
     const placedTree = {
       ...tree,
@@ -272,7 +279,7 @@ describe('sidebar drag — the stored Set placement', () => {
     await act(async () => firePointer(row('p1'), 'pointermove', { x: 4, y: 50 }))
     expect(host.querySelector<HTMLElement>('.drop-line')?.style.left).toBe(indentAt(2))
     await act(async () => firePointer(row('p1'), 'pointerup'))
-    useSession.setState({ personalization })
+    useSession.setState({ tree: held.tree })
     expect(commitSpy).toHaveBeenCalledExactlyOnceWith(
       { op: 'movePage', path: 'C/S/P1.md', newParentPath: 'C/S', order: ['p2', 'p1'] },
       'p1',

@@ -64,6 +64,7 @@ import { viewsLabel } from '../../Actions/toggleLabels'
 import { embedAreaMenuItems, embedTitleMenuItems } from '../../Actions/viewMenus'
 import { viewRowMenuItems } from '../../Actions/viewRowMenu'
 import { useLatest, useStableApi } from '@pommora/uix/Utilities/stableApi'
+import { personalizationOf } from '../../Session/configSlice'
 
 function coerceEmbeddedView(raw: unknown, schema: PropertyDefinition[], id: string): SavedView {
   const r = savedView.safeParse(raw ?? {})
@@ -230,7 +231,7 @@ export function ViewTile({
   openPage?: (page: ConnPage) => void
 }): React.JSX.Element {
   const tree = useSession((st) => st.tree)
-  const defaultIcons = useSession((st) => st.personalization.defaultIcons)
+  const defaultIcons = useSession((st) => personalizationOf(st).defaultIcons)
   const [cfgOpen, setCfgOpen] = useState(false)
   const [listOpen, setListOpen] = useState(false)
   const [renaming, setRenaming] = useState<string | null>(null)

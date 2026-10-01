@@ -83,7 +83,9 @@ const deepSets = (): { a: SetNode; b: SetNode } => {
     properties: [statusDef],
     views: [],
   }
-  useSession.setState({ tree: { collections: [root], contexts: [], personalization: {} } as never })
+  useSession.setState({
+    tree: { collections: [root], contexts: [], config: { personalization: {} } } as never,
+  })
   return { a: a as unknown as SetNode, b: b as unknown as SetNode }
 }
 
@@ -130,7 +132,7 @@ beforeEach(() => {
   }
   ;(window as unknown as { nexus: unknown }).nexus = stubDialer(channels)
   useSession.setState({
-    tree: { collections: [], contexts: [], personalization: {} } as never,
+    tree: { collections: [], contexts: [], config: { personalization: {} } } as never,
     mutate: vi.fn(async () => ({})) as never,
     activeTabId: 't1',
     viewSearch: {},
@@ -623,7 +625,7 @@ describe('the manual order fold', () => {
       settle = () => resolve(null)
     })
     useSession.setState({
-      tree: { collections: [source], contexts: [], personalization: {} } as never,
+      tree: { collections: [source], contexts: [], config: { personalization: {} } } as never,
       mutate: vi.fn(() => pending) as never,
     })
     await mount(source)
@@ -639,7 +641,7 @@ describe('the manual order fold', () => {
   it('a refused move rolls the paint back', async () => {
     const source = collection({ structural_order_mode: 'location' })
     useSession.setState({
-      tree: { collections: [source], contexts: [], personalization: {} } as never,
+      tree: { collections: [source], contexts: [], config: { personalization: {} } } as never,
       mutate: vi.fn(async () => null) as never,
     })
     await mount(source)
@@ -659,7 +661,7 @@ describe('the manual order fold', () => {
     } as unknown as CollectionNode
     let settle: () => void = () => {}
     useSession.setState({
-      tree: { collections: [source], contexts: [], personalization: {} } as never,
+      tree: { collections: [source], contexts: [], config: { personalization: {} } } as never,
       mutate: vi.fn(
         () =>
           new Promise<null>((resolve) => {
@@ -925,7 +927,7 @@ describe('view search', () => {
 describe('the value writer', () => {
   it('a Context edit paints on its row while the save is in flight, and leaves the frontmatter as loaded', async () => {
     useSession.setState({
-      tree: { collections: [collection()], contexts: [], personalization: {} } as never,
+      tree: { collections: [collection()], contexts: [], config: { personalization: {} } } as never,
       mutate: vi.fn(() => new Promise(() => {})) as never,
     })
     await mount(collection())

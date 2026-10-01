@@ -5,6 +5,7 @@ import { createRoot, type Root } from 'react-dom/client'
 import { pushDismissal, useWindowOrder } from '@pommora/uix/Interactions/dismissalStack'
 import type { SelectTarget, Tab } from '../Navigation/navRef'
 import { useSession } from '../Session/store'
+import { makeTree } from '../Testing/testTree'
 import { stubDialer } from '../vitest.setup'
 import { runCommand } from './commandRouter'
 
@@ -104,7 +105,7 @@ describe('tab chords follow focus', () => {
   it('⌘N on the NavWindow’s map tab carries the list into a new main tab it switches to', () => {
     frame.className = 'window navwindow'
     useSession.setState({
-      personalization: { tabTakeFocus: false },
+      tree: makeTree({ personalization: { tabTakeFocus: false } }),
       devicePrefs: { ...useSession.getState().devicePrefs, navWindowGallery: true },
     })
     useSession.getState().openNav()

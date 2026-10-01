@@ -16,13 +16,14 @@ import {
   type GlanceRequest,
 } from './glanceAction'
 import { useSession } from '../../Session/store'
+import { makeTree } from '../../Testing/testTree'
 import type { PreviewPersistence } from '../../Settings/personalization'
 
 const page = { kind: 'page', id: 'p1', path: 'Notes/A.md' } as const
 const site = { kind: 'site', url: 'https://example.com' } as const
 
 const setPersistence = (v: PreviewPersistence | undefined): void =>
-  useSession.setState({ personalization: { previewPersistence: v } })
+  useSession.setState({ tree: makeTree({ personalization: { previewPersistence: v } }) })
 
 const pressShift = (repeat = false): void => {
   window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Shift', repeat }))

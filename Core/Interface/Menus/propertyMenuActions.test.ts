@@ -126,7 +126,7 @@ describe('propertyMenuBranches', () => {
     const node = tree.contexts[0].spaces[0]
     const { spaces } = propertyMenuBranches({
       tree,
-      schema: tree.registry,
+      schema: tree.config.registry,
       row: spaceRowOf(tree, node),
     })
     expect(spaces[0].options?.map((o) => o.value)).toEqual(['t1', 'pr1'])

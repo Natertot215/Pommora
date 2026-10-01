@@ -50,6 +50,7 @@ import { Disclosure, signalPeek } from './Disclosure'
 import { popMenu } from '../../Actions/menuActions'
 import { createNamed, newPageAdjacent, newSpaceAdjacent } from '../../Actions/createActions'
 import { useLatest } from '@pommora/uix/Utilities/stableApi'
+import { personalizationOf } from '../../Session/configSlice'
 
 const NEW_COLLECTION: Creator = {
   label: 'New Collection',
@@ -113,7 +114,7 @@ const LeafRow = memo(function LeafRow({
   ghostLabel: string
 }): React.JSX.Element {
   const selected = useSession((s) => s.selection.kind === node.kind && s.selection.id === node.id)
-  const defaultIcons = useSession((s) => s.personalization.defaultIcons)
+  const defaultIcons = useSession((s) => personalizationOf(s).defaultIcons)
   const pageIcon = useSession(pageMetaOf(node.kind === 'page' ? node.id : undefined))?.icon
   const ghost = useContext(SidebarGhost)
   const api = useContext(SidebarGhostApi)
@@ -184,7 +185,7 @@ function GhostLeaf({
 }): React.JSX.Element {
   const api = useContext(SidebarGhostApi)
   const closing = useContext(SidebarGhost).closing
-  const defaultIcons = useSession((s) => s.personalization.defaultIcons)
+  const defaultIcons = useSession((s) => personalizationOf(s).defaultIcons)
   return (
     <Reveal open={!closing} enterOnMount onCollapsed={api?.closed}>
       {/* biome-ignore lint/a11y/useKeyWithClickEvents lint/a11y/noStaticElementInteractions: a hover-born affordance wearing the row's own chrome — keyboard creation lives in the menus */}
@@ -216,9 +217,9 @@ const ContainerRow = memo(
     depth: number
     selectable: boolean
   }): React.JSX.Element => {
-    const defaultIcons = useSession((s) => s.personalization.defaultIcons)
+    const defaultIcons = useSession((s) => personalizationOf(s).defaultIcons)
     const mutate = useSession((s) => s.mutate)
-    const placement = useSession((s) => placementOf(s.personalization, node.kind))
+    const placement = useSession((s) => placementOf(personalizationOf(s), node.kind))
     const selected = useSession(
       (s) => selectable && s.selection.kind === node.kind && s.selection.id === node.id,
     )
@@ -258,7 +259,7 @@ const ContainerRow = memo(
 )
 
 function ContextGroupDisclosure({ group }: { group: ContextGroup }): React.JSX.Element {
-  const defaultIcons = useSession((s) => s.personalization.defaultIcons)
+  const defaultIcons = useSession((s) => personalizationOf(s).defaultIcons)
   const ghost = useContext(SidebarGhost)
   const api = useContext(SidebarGhostApi)
   const holdGhost = useContext(GhostSuppress)
@@ -312,7 +313,7 @@ function SidebarIconChoice({ tree, index }: { tree: NexusTree; index: Index }): 
       case 'space':
         return spaceNodeOf(tree, entry.id)?.icon
       case 'page':
-        return tree.pageMetadata[entry.id]?.icon
+        return tree.config.pageMetadata[entry.id]?.icon
     }
   }
   return (
@@ -336,7 +337,7 @@ function SidebarIconChoice({ tree, index }: { tree: NexusTree; index: Index }): 
 
 export function Sidebar({ tree }: { tree: NexusTree }): React.JSX.Element {
   const mutate = useSession((s) => s.mutate)
-  const mode: SidebarMode = useSession((s) => sidebarModeOf(s.personalization))
+  const mode: SidebarMode = useSession((s) => sidebarModeOf(personalizationOf(s)))
 
   const navRef = useRef<HTMLElement>(null)
 

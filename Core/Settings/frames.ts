@@ -133,7 +133,7 @@ const EM: NumberUnit = { scale: 1, suffix: 'em', digits: 2 }
 const TABS: NumberUnit = { scale: 1, suffix: ' Tabs', digits: 0 }
 
 const clearExclusions = async (): Promise<boolean> => {
-  const count = useSession.getState().tree?.excluded.length ?? 0
+  const count = useSession.getState().tree?.config.excluded.length ?? 0
   if (count === 0 || !(await askClearExclusions(count))) return false
   const r = await dialer().ask('exclusions:clear')
   return reportRefusal(r) && r.value !== null

@@ -207,7 +207,7 @@ export function PropertyFrame({
   const nexus = useNexusForms()
   const saveView = useSaveView(source)
   const activeView = useActiveView(source, schema)
-  const registry = useSession((st) => st.tree?.registry) ?? []
+  const registry = useSession((st) => st.tree?.config.registry) ?? []
   const bumpValuesEpoch = useSession((st) => st.bumpValuesEpoch)
   const renamingProperty = useSession((st) => st.renamingProperty)
   const beginPropertyRename = useSession((st) => st.beginPropertyRename)

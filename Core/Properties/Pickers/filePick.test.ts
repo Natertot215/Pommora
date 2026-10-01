@@ -37,7 +37,7 @@ beforeEach(() => {
   }
   useSession.setState({
     assetMap: { files: { 'old.pdf': ['file-assets/Specs/Old.pdf'] }, versions: {} },
-    tree: { assetDirectory: 'file-assets' } as never,
+    tree: { config: { assetDirectory: 'file-assets' } } as never,
   })
 })
 

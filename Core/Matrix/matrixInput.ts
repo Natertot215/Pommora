@@ -38,7 +38,7 @@ export function matrixTree(tree: NexusTree): MatrixTree {
       pages.push({
         id: p.id,
         title: p.title,
-        icon: tree.pageMetadata[p.id]?.icon,
+        icon: tree.config.pageMetadata[p.id]?.icon,
         folderId: node.id,
         spaceIds: spaceIdsOf(p.contextValues),
       })
@@ -105,9 +105,9 @@ export function matrixVisible(
   if (!filter.enabled || !filter.rules) return null
   const { tree } = held
   const rules = filter.rules
-  const schema = tree.registry
+  const schema = tree.config.registry
   const contextIds = contextIdsOf(tree)
-  const rows = held.seats.map((s) => toRow(s.page, s.folderId, values, tree.pageMetadata))
+  const rows = held.seats.map((s) => toRow(s.page, s.folderId, values, tree.config.pageMetadata))
   const ids = new Set(
     applyFilter(rows, rules, schema, filterSetTree(tree), contextIds).map((r) => r.id),
   )

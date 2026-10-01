@@ -10,8 +10,8 @@ export function HomepageView({ tree }: { tree: NexusTree | null }): React.JSX.El
         path: '',
         kind: 'homepage',
         title: tree?.nexus.name ?? 'Home',
-        banner: tree?.homepage.banner,
-        headingIconHidden: tree?.homepage.headingIconHidden,
+        banner: tree?.config.homepage.banner,
+        headingIconHidden: tree?.config.homepage.headingIconHidden,
       }}
     >
       <TileHost key={tree?.nexus.rootPath} host={HOMEPAGE_HOST} />

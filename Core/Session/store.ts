@@ -3,7 +3,7 @@ import { createCacheSlice } from './cacheSlice'
 import { createChromeSlice } from './chromeSlice'
 import { createLayoutSlice } from './layoutSlice'
 import { createMatrixSlice } from './matrixSlice'
-import { createConfigSlice } from './configSlice'
+import { createConfigSlice, personalizationOf } from './configSlice'
 import { createGlanceSlice } from './glanceSlice'
 import { createNavigationSlice } from './navigationSlice'
 import { createNexusSlice } from './nexusSlice'
@@ -61,10 +61,10 @@ export const useSession = create<SessionState>()(
 export const pageMetaOf =
   (id: string | undefined) =>
   (s: SessionState): PageMeta | undefined =>
-    id ? s.tree?.pageMetadata[id] : undefined
+    id ? s.tree?.config.pageMetadata[id] : undefined
 
 export const useSetting = <K extends SettingKey>(key: K): SettingValue<K> =>
-  useSession((s) => settingOf(s.personalization, key))
+  useSession((s) => settingOf(personalizationOf(s), key))
 
 /** A fold this machine remembers under `key`, stored only while it differs from `defaultOpen`. Read live, since a surface that outlives a Nexus switch must follow the new record. */
 export function useFold(key: string, defaultOpen = true): [boolean, (open: boolean) => void] {

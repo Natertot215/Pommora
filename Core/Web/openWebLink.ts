@@ -2,9 +2,10 @@
 import { useSession } from '../Session/store'
 import { dialer } from '../Platform/dialer'
 import { settingOf } from '../Settings/personalization'
+import { personalizationOf } from '../Session/configSlice'
 
 export function openWebLink(url: string): void {
   const s = useSession.getState()
-  if (settingOf(s.personalization, 'openLinksInApp')) s.openBrowser(url)
+  if (settingOf(personalizationOf(s), 'openLinksInApp')) s.openBrowser(url)
   else void dialer().ask('link:open', url)
 }

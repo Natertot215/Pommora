@@ -11,7 +11,7 @@ export function AssetDirectoryRow({
   label: string
   hint?: string
 }): React.JSX.Element {
-  const stored = useSession((s) => s.tree?.assetDirectory ?? '')
+  const stored = useSession((s) => s.tree?.config.assetDirectory ?? '')
   const setDir = (dir: string): void => void dialer().ask('assets:setDir', dir).then(reportRefusal)
 
   return (

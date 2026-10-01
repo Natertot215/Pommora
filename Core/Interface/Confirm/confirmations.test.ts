@@ -10,6 +10,7 @@ import {
 } from './confirmations'
 import { resetUndo, undoValue } from '../../Session/undo'
 import { useSession } from '../../Session/store'
+import { makeTree } from '../../Testing/testTree'
 import { clearNotification, currentNotification } from '../Notifications/notifications'
 import type { HeldKind } from '../../Nexus/entities'
 import { stubDialer } from '../../vitest.setup'
@@ -28,12 +29,10 @@ beforeEach(() => {
 })
 
 const switchOff = (): void => {
-  const p = useSession.getState().personalization
-  useSession.setState({ personalization: { ...p, confirmDeletion: false } })
+  useSession.setState({ tree: makeTree({ personalization: { confirmDeletion: false } }) })
 }
 const switchOn = (): void => {
-  const { confirmDeletion: _off, ...p } = useSession.getState().personalization
-  useSession.setState({ personalization: p })
+  useSession.setState({ tree: makeTree() })
 }
 
 describe('what the Confirm Before Deletion switch governs', () => {

@@ -38,7 +38,11 @@ const row = (name: string): Element =>
 const drag = async (name: string, from: number, ...to: number[]): Promise<void> => {
   save.mockClear()
   useSession.setState({
-    tree: { contexts: [], collections: [], personalization: { defaultIcons: {} } } as never,
+    tree: {
+      contexts: [],
+      collections: [],
+      config: { personalization: { defaultIcons: {} } },
+    } as never,
   })
   await act(async () => {
     root.render(

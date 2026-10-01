@@ -413,7 +413,7 @@ describe('a metadata month file under the watcher', () => {
     emit('change', '.nexus', 'metadata', '08-2026.json')
     await settleAll(() => pushMock.mock.calls.some((c) => c[1] === 'nexus:changed'))
     expect(pushMock.mock.calls.filter((c) => c[1] === 'nexus:changed')).toHaveLength(1)
-    expect(getLiveTree()?.pageMetadata).toEqual({ [id]: { locked: true } })
+    expect(getLiveTree()?.config.pageMetadata).toEqual({ [id]: { locked: true } })
   })
 })
 

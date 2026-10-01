@@ -44,7 +44,7 @@ beforeEach(() => {
   })
   useSession.setState({
     load: vi.fn(async () => {}) as never,
-    tree: { registry: [] } as never,
+    tree: { config: { registry: [] } } as never,
     renamingProperty: null,
   })
 })
@@ -96,7 +96,11 @@ describe('the dateTime Format editor writes the ACTIVE view (A-3)', () => {
   })
 
   it("a time on the Nexus's own clock stores as shown, so it keeps following that clock", async () => {
-    useSession.setState({ personalization: { timeFormat: 'twentyFourHour' } })
+    useSession.setState({
+      tree: {
+        config: { registry: [], personalization: { timeFormat: 'twentyFourHour' } },
+      } as never,
+    })
     await openDueEditor()
     await act(async () => {
       buttonFor('Time format').click()

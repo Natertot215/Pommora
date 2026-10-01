@@ -7,6 +7,7 @@ import { countPhrase, filterRows, TrashFrame } from './TrashFrame'
 import { stubDialer } from '../vitest.setup'
 import { useSession } from '../Session/store'
 import { makeTree } from '../Testing/testTree'
+import { personalizationOf } from '../Session/configSlice'
 import { notifyTrashed } from '../Interface/Confirm/confirmations'
 import { currentNotification } from '../Interface/Notifications/notifications'
 import { pushUndo, resetUndo, undoValue } from '../Session/undo'
@@ -160,21 +161,32 @@ describe('the Trash pane', () => {
     await act(async () => {
       head.dispatchEvent(new MouseEvent('contextmenu', { bubbles: true }))
     })
-    return useSession.getState().personalization.trashColumnStyle
+    return personalizationOf(useSession.getState()).trashColumnStyle
   }
 
   it("goes back to following the Nexus when its date menu picks the Nexus's own form", async () => {
     await act(async () =>
-      useSession.setState({
-        personalization: { dateFormat: 'relative', trashColumnStyle: { date_format: 'full' } },
-      }),
+      useSession.setState(({ tree }) => ({
+        tree: tree && {
+          ...tree,
+          config: {
+            ...tree.config,
+            personalization: { dateFormat: 'relative', trashColumnStyle: { date_format: 'full' } },
+          },
+        },
+      })),
     )
     expect(await pickFromDateMenu('style:date_format:relative')).toBeUndefined()
   })
 
   it('stores a hidden time, and nothing once the time is back on the Nexus clock', async () => {
     await act(async () =>
-      useSession.setState({ personalization: { timeFormat: 'twentyFourHour' } }),
+      useSession.setState(({ tree }) => ({
+        tree: tree && {
+          ...tree,
+          config: { ...tree.config, personalization: { timeFormat: 'twentyFourHour' } },
+        },
+      })),
     )
     expect(await pickFromDateMenu('style:time_format:none')).toEqual({ time_format: 'none' })
     expect(await pickFromDateMenu('style:time_format:twentyFourHour')).toBeUndefined()

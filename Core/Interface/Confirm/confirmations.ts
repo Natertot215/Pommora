@@ -6,6 +6,7 @@ import { useSession } from '../../Session/store'
 import { SETTING_DEFAULTS, settingOf } from '../../Settings/personalization'
 import { notifyDeleted } from '../Notifications/notifications'
 import { dialer } from '../../Platform/dialer'
+import { personalizationOf } from '../../Session/configSlice'
 
 const DELETE_FACTS_FALLBACK = {
   trashMode: DEFAULT_TRASH_MODE,
@@ -32,7 +33,7 @@ const ALWAYS_ASKS: ReadonlySet<HeldKind> = new Set<HeldKind>([
 
 const waived = (kind?: HeldKind): boolean =>
   (kind === undefined || !ALWAYS_ASKS.has(kind)) &&
-  !settingOf(useSession.getState().personalization, 'confirmDeletion')
+  !settingOf(personalizationOf(useSession.getState()), 'confirmDeletion')
 
 const armed = new Map<string, () => void>()
 

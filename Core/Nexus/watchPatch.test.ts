@@ -94,10 +94,7 @@ describe('applyWatchEvents — must agree with the walk', () => {
       abs('.nexus', 'contexts', 'Areas', 'Home', '_space.json'),
       JSON.stringify({ id: 'sp1', $color: 'mint', Status: ['Active'] }),
     )
-    await writeFile(
-      abs('.nexus', 'settings.json'),
-      JSON.stringify({ profile_subtitle: 'Second brain' }),
-    )
+    await writeFile(abs('.nexus', 'settings.json'), JSON.stringify({ profile_icon: 'star' }))
     await writeFile(
       abs('.nexus', 'homepage', 'homepage.json'),
       JSON.stringify({ banner: 'Loose/b.png' }),
@@ -126,8 +123,8 @@ describe('applyWatchEvents — must agree with the walk', () => {
     expect(notes?.pages[0]?.contextValues).toEqual({ ctx1: ['sp1'] })
     expect(live?.contexts[0]?.spaces[0]?.color).toBe('mint')
     expect(live?.contexts[0]?.spaces[0]?.values).toEqual({ Status: ['Active'] })
-    expect(live?.nexus.profileSubtitle).toBe('Second brain')
-    expect(live?.homepage.banner).toBe('Loose/b.png')
+    expect(live?.config.profileIcon).toBe('star')
+    expect(live?.config.homepage.banner).toBe('Loose/b.png')
 
     const walked = await readNexus(root)
     expect(stabilize(walked, live)).toBe(live)
@@ -138,7 +135,7 @@ describe('applyWatchEvents — must agree with the walk', () => {
     await writeFile(abs('.nexus', 'state.json'), JSON.stringify({ order: { contexts: ['ctx1'] } }))
     expect(await patchOrderFromDisk(root)).toBe('ok')
     const live = getLiveTree()
-    expect(live?.contextOrder).toEqual(['ctx1'])
+    expect(live?.config.order.contexts).toEqual(['ctx1'])
     expect(stabilize(await readNexus(root), live)).toBe(live)
     expect(await patchOrderFromDisk(root)).toBe('ok')
     expect(getLiveTree()).toBe(live)
@@ -156,8 +153,8 @@ describe('applyWatchEvents — must agree with the walk', () => {
     expect(await patchOrderFromDisk(root)).toBe('ok')
     expect(await patchHomepageFromDisk(root)).toBe('ok')
     const live = getLiveTree()
-    expect(live?.contextOrder).toEqual(['ctx1'])
-    expect(live?.homepage.banner).toBe('Loose/b.png')
+    expect(live?.config.order.contexts).toEqual(['ctx1'])
+    expect(live?.config.homepage.banner).toBe('Loose/b.png')
     expect(stabilize(await readNexus(root), held)).toBe(held)
   })
 
@@ -179,7 +176,7 @@ describe('applyWatchEvents — must agree with the walk', () => {
     )
     expect(result.outcome).toBe('patched')
     const live = getLiveTree()
-    expect(live?.crops).toEqual({ 'Loose/b.png': { x: 0.3, y: 0.4, zoom: 2 } })
+    expect(live?.config.crops).toEqual({ 'Loose/b.png': { x: 0.3, y: 0.4, zoom: 2 } })
     expect(stabilize(await readNexus(root), live)).toBe(live)
   })
 
@@ -267,14 +264,14 @@ describe('settings leaves — the walk and the settings patch must never disagre
     )
     const tree = getLiveTree()
     expect(tree?.collections.map((c) => c.path)).toContain('Fresh')
-    expect(tree?.excluded).toEqual(['Loose'])
+    expect(tree?.config.excluded).toEqual(['Loose'])
   })
 
   // The decoder, the walk's tree literal and applySettingsLeaves must never disagree; a per-function test cannot see that, so this drives both over the same bytes.
   it('an asset_directory appearing on disk reaches the live tree exactly as a fresh walk reads it', async () => {
     await writeFile(abs('.nexus', 'settings.json'), JSON.stringify({}))
     await refreshTree(root)
-    expect(getLiveTree()?.assetDirectory).toBe(ASSETS_DIR_REL)
+    expect(getLiveTree()?.config.assetDirectory).toBe(ASSETS_DIR_REL)
 
     await writeFile(abs('.nexus', 'settings.json'), JSON.stringify({ asset_directory: 'Media/' }))
     // settle re-walks on a structural outcome; the patch alone must otherwise carry the leaf.
@@ -284,11 +281,11 @@ describe('settings leaves — the walk and the settings patch must never disagre
     )
       await refreshTree(root)
 
-    const patched = getLiveTree()?.assetDirectory
+    const patched = getLiveTree()?.config.assetDirectory
     dropLiveTree()
     const walked = await readNexus(root)
     expect(patched).toBe('Media')
-    expect(patched).toBe(walked.assetDirectory)
+    expect(patched).toBe(walked.config.assetDirectory)
   })
 })
 
@@ -449,15 +446,15 @@ describe('the metadata leaf re-reads only its month', () => {
   })
 
   it('a change replaces only its own month, walk-identically', async () => {
-    const august = getLiveTree()?.pageMetadata[AUG]
+    const august = getLiveTree()?.config.pageMetadata[AUG]
     await seed('09-2026', { [SEP]: { icon: 'moon', aliases: ['m'] } })
     expect((await land('change', '09-2026')).outcome).toBe('patched')
     const live = getLiveTree()
-    expect(live?.pageMetadata).toEqual({
+    expect(live?.config.pageMetadata).toEqual({
       [SEP]: { icon: 'moon', aliases: ['m'] },
       [AUG]: { locked: true },
     })
-    expect(live?.pageMetadata[AUG]).toBe(august)
+    expect(live?.config.pageMetadata[AUG]).toBe(august)
     expect(stabilize(await readNexus(root), live)).toBe(live)
   })
 
@@ -465,15 +462,15 @@ describe('the metadata leaf re-reads only its month', () => {
     await unlink(month('09-2026'))
     expect((await land('unlink', '09-2026')).outcome).toBe('patched')
     const live = getLiveTree()
-    expect(live?.pageMetadata).toEqual({ [AUG]: { locked: true } })
+    expect(live?.config.pageMetadata).toEqual({ [AUG]: { locked: true } })
     expect(stabilize(await readNexus(root), live)).toBe(live)
   })
 
   it('a corrupt rewrite leaves its month as held', async () => {
-    const held = getLiveTree()?.pageMetadata
+    const held = getLiveTree()?.config.pageMetadata
     await writeFile(month('09-2026'), '{ bad json')
     expect((await land('change', '09-2026')).outcome).toBe('patched')
-    expect(getLiveTree()?.pageMetadata).toBe(held)
+    expect(getLiveTree()?.config.pageMetadata).toBe(held)
   })
 
   it('an identical re-read leaves the live tree untouched', async () => {

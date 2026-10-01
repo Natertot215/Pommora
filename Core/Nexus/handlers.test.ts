@@ -96,7 +96,7 @@ describe('openNexusSequence', () => {
     await writeFile(settings, '{ corrupt')
     vi.spyOn(console, 'error').mockImplementation(() => {})
     await openNexusSequence(ctx, root, false)
-    expect((await refreshTree(root)).excluded).toEqual(['Private'])
+    expect((await refreshTree(root)).config.excluded).toEqual(['Private'])
   })
 
   it('waits on a Nexus whose identity file is damaged, and opens it once the file parses', async () => {

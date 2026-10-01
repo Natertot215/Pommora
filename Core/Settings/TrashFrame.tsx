@@ -30,6 +30,7 @@ import { dateDefaults, holdsStyle, resolveStyle, storedPick } from '../Propertie
 import { useNexusForms } from '../Views/Host/useColumnStyles'
 import '../Navigation/nav-list.css'
 import './trash-frame.css'
+import { personalizationOf } from '../Session/configSlice'
 
 const PLURALS: Record<TrashRow['kind'], string> = {
   page: 'pages',
@@ -65,12 +66,12 @@ export function TrashFrame(): React.JSX.Element {
 
 function TrashBody(): React.JSX.Element {
   const nexus = useNexusForms()
-  const stored = useSession((s) => s.personalization.trashColumnStyle)
+  const stored = useSession((s) => personalizationOf(s).trashColumnStyle)
   // The Trash shows each deletion's time, where a view's date column leaves it hidden.
   const defaults = { ...dateDefaults(nexus.dateFormat), time_format: nexus.clock }
   const style = resolveStyle(stored, defaults, nexus.clock)
   const setPersonalization = useSession((s) => s.setPersonalization)
-  const defaultIcons = useSession((s) => s.personalization.defaultIcons)
+  const defaultIcons = useSession((s) => personalizationOf(s).defaultIcons)
   const tree = useSession((s) => s.tree)
   const mutate = useSession((s) => s.mutate)
   const trashRevision = useSession((s) => s.trashRevision)

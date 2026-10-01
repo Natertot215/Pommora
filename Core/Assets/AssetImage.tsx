@@ -33,7 +33,7 @@ interface Props {
 
 export function AssetImage({ value, className, style, fallback = null, preview, eager }: Props) {
   const map = useSession((s) => s.assetMap)
-  const crops = useSession((s) => s.tree?.crops)
+  const crops = useSession((s) => s.tree?.config.crops)
   const url = resolveAssetUrl(value, map)
   const crop = preview ?? cropFor(value, map, crops)
 

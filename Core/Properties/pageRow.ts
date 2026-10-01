@@ -17,7 +17,7 @@ export function pageRowOf(
   const links = tree?.contexts ? resolveTreeContextKeys(tree, fm as Record<string, unknown>) : null
   return {
     ...page,
-    icon: tree?.pageMetadata[page.id]?.icon,
+    icon: tree?.config.pageMetadata[page.id]?.icon,
     frontmatter: fm,
     createdAt: null,
     modifiedAt: null,

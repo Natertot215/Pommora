@@ -38,7 +38,7 @@ export async function updateCrops(
 async function liveLeaves(
   root: string,
 ): Promise<Pick<SettingsLeaves, 'personalization' | 'excluded' | 'assetDirectory' | 'commands'>> {
-  return heldTreeOf(root) ?? readSettings(root)
+  return heldTreeOf(root)?.config ?? readSettings(root)
 }
 
 export const readLivePersonalization = async (root: string): Promise<Personalization> =>
@@ -49,7 +49,7 @@ export const readLiveCommands = async (root: string): Promise<Commands> =>
 
 export function heldCommands(): Commands {
   const root = sessionRoot()
-  return (root && heldTreeOf(root)?.commands) || DEFAULT_COMMANDS
+  return (root && heldTreeOf(root)?.config.commands) || DEFAULT_COMMANDS
 }
 
 export const readWatchScope = async (root: string): Promise<WatchScope> =>
