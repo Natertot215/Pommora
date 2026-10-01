@@ -105,7 +105,7 @@ export async function writeBody(
   source: 'edit' | 'restore',
   baseHash?: string,
 ): Promise<Result<BodyWrite>> {
-  const r = await updatePageBody(absPath, body, baseHash)
+  const r = await updatePageBody(absPath, body, baseHash, source === 'edit')
   if (!r.ok) return r
   if ('stale' in r.value) return ok({ stale: true })
   const { previous, written } = r.value
