@@ -444,7 +444,7 @@ export async function patchOrderFromDisk(root: string): Promise<'ok' | 'refresh'
     const held = stabilize(order, t.config.order)
     const moved = collections.some((c, i) => c !== t.collections[i])
     const regrouped = contexts.some((g, i) => g !== t.contexts[i])
-    if (!moved && !regrouped && held.contexts === t.config.order.contexts) return t
+    if (!moved && !regrouped && held === t.config.order) return t
     return {
       ...t,
       collections: moved ? collections : t.collections,
