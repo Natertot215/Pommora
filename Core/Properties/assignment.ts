@@ -8,6 +8,7 @@ import { cachedValues, patchCacheBlock } from './propertyCache'
 import { heldTreeOf, liveTreeOf } from '../Nexus/liveTree'
 import { projectBaseline } from '../Nexus/remintLedger'
 import { owningCollection } from '../Nexus/treePatch'
+import { damagedFolders } from '../Nexus/tree'
 import type { EntityRecord } from '../Nexus/record'
 import { NO_DEFS } from '../Contexts/contextResolve'
 import { readRegistry } from './propertiesRegistry'
@@ -152,7 +153,9 @@ export function assignProperty(
 }
 
 export async function collectionFolders(root: string): Promise<string[]> {
-  return (await liveTreeOf(root)).collections.map((c) => join(root, c.path))
+  const tree = await liveTreeOf(root)
+  const damaged = damagedFolders(tree.unreadable).filter((u) => !u.path.includes('/'))
+  return [...tree.collections, ...damaged].map((c) => join(root, c.path))
 }
 
 export async function collectionFolderOf(root: string, absFile: string): Promise<string | null> {

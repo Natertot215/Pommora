@@ -134,6 +134,15 @@ describe('the property cascades open only the holders', () => {
     expect(await readFile(abs('Loose', 'Note.md'), 'utf8')).toContain('Draft')
   })
 
+  it("a property rename reaches the holders of a Collection whose sidecar doesn't parse, and the un-governed note keeps its key", async () => {
+    await writeFile(abs('Notes', '_pagecollection.json'), '{ not json')
+    dropLiveTree()
+    const r = await renameProperty(root, 'prop_s', 'Phase')
+    expect(r.ok).toBe(true)
+    expect(await readFile(abs('Notes', 'HolderA.md'), 'utf8')).toContain('Phase: Draft')
+    expect(await readFile(abs('Loose', 'Note.md'), 'utf8')).toContain('Stage: Draft')
+  })
+
   it('a corpus-wide governed sweep cannot reach an excluded folder (Requirement 9, total exclusion)', async () => {
     await writeFile(abs('.nexus', 'settings.json'), JSON.stringify({ excluded_folders: ['Vault'] }))
     await mkdir(abs('Vault'), { recursive: true })
