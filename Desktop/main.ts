@@ -21,6 +21,7 @@ import { isFiniteNumber } from '@pommora/core/Contract/validators'
 import { resolveUnderRoot } from '@pommora/core/Paths/pathSafety'
 import { openNexusSequence } from '@pommora/core/Nexus/handlers'
 import { isUlidShaped } from '@pommora/core/Nexus/identityMark'
+import { setCommandsTap } from '@pommora/core/Nexus/liveTree'
 import { sessionRoot, waitingOpen } from '@pommora/core/Nexus/session'
 import { flushFileHistory } from '@pommora/core/Pages/fileHistory'
 import { ASSET_SCHEME } from '@pommora/core/Platform/assetScheme'
@@ -400,6 +401,7 @@ app
     registerAssetProtocol()
     createWindow()
     void refreshMenu()
+    setCommandsTap(() => void refreshMenu())
     watchNexus()
     app.on('activate', () => {
       if (BrowserWindow.getAllWindows().length === 0) createWindow()
