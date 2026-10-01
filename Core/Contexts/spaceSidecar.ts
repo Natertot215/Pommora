@@ -4,7 +4,7 @@ import { asString } from '../Nexus/coerce'
 import type { Json } from '../Files/stableJson'
 import type { Rewrite } from '../Properties/governedSweep'
 import { editList, namesValue } from '../Properties/pageValue'
-import { pathExists } from '../Files/atomicWrite'
+import { pathExists, readJsonObject } from '../Files/atomicWrite'
 import { visibleFolders } from '../Files/walk'
 import { contextsDir, sidecarPath } from '../Paths/paths'
 import { join } from '../Paths/posix'
@@ -24,6 +24,20 @@ export async function spaceSidecarsIn(
     name,
     file: sidecarPath(join(absContextDir, name), 'space'),
   }))
+}
+
+/** Each Space's id by folder name; `unread` when a sidecar is present and unusable, where an absent one is a plain folder. */
+export async function spaceIdsIn(
+  absContextDir: string,
+): Promise<{ ids: Map<string, string>; unread: boolean }> {
+  const ids = new Map<string, string>()
+  let unread = false
+  for (const { name, file } of await spaceSidecarsIn(absContextDir)) {
+    const raw = await readJsonObject(file)
+    if (typeof raw?.id === 'string') ids.set(name, raw.id)
+    else if (await pathExists(file)) unread = true
+  }
+  return { ids, unread }
 }
 
 /** Every Space sidecar on disk, found by folder rather than by registry: a Context mid-rename has moved on disk before the registry or the tree follows it. */

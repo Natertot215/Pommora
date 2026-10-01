@@ -4,8 +4,8 @@ import { basename, join, relative, titleFromPath } from '../Paths/posix'
 import { SPACE_SIDECAR, TRASH_DIR } from '../Paths/nexusPaths'
 import { normalizeTitle, parseConnectionText } from '../Connections/connections'
 import type { StrippedLink } from '../Nexus/cascade'
-import { spaceSidecarsIn } from '../Contexts/spaceSidecar'
-import { readJsonObject, readTextOrNull, rmwJsonStrict } from '../Files/atomicWrite'
+import { spaceIdsIn } from '../Contexts/spaceSidecar'
+import { readTextOrNull, rmwJsonStrict } from '../Files/atomicWrite'
 import { stampedId } from '../Files/pageFile'
 import { listEntries, listMarkdownFiles } from '../Files/walk'
 import { sweepGovernedRoots } from '../Properties/governedSweep'
@@ -72,7 +72,6 @@ async function trashedTitles(root: string): Promise<Map<string, string>> {
   return newest
 }
 
-/** A restore's world: the pages the tree holds, and those landing with it. */
 /** A Link value dropped for naming a page the Trash holds joins that page's newest bundle, so the page's restore writes it back. */
 export async function parkLinks(root: string, links: StrippedLink[]): Promise<void> {
   if (!links.length) return
@@ -110,10 +109,8 @@ async function trashedHolders(
         if (ids.has(record.id)) found.set(record.id, join(artifact, SPACE_SIDECAR))
         break
       case 'context':
-        for (const { file } of await spaceSidecarsIn(artifact)) {
-          const id = (await readJsonObject(file))?.id
-          if (typeof id === 'string' && ids.has(id)) found.set(id, file)
-        }
+        for (const [name, id] of (await spaceIdsIn(artifact)).ids)
+          if (ids.has(id)) found.set(id, join(artifact, name, SPACE_SIDECAR))
         break
     }
   }

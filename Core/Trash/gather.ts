@@ -5,8 +5,8 @@ import type { ContextDef, ContextsRegistry } from '../Contexts/contexts'
 import type { Result } from '../Contract/result'
 import { ensureFolderId } from '../Nexus/adopt'
 import type { SweepCapture, UnlinkOutcome } from '../Contexts/contextCascade'
-import { pathExists, readJsonObject, readTextOrNull } from '../Files/atomicWrite'
-import { spaceSidecarsIn } from '../Contexts/spaceSidecar'
+import { readJsonObject, readTextOrNull } from '../Files/atomicWrite'
+import { spaceIdsIn } from '../Contexts/spaceSidecar'
 import { SIDECAR_FILENAME, SPACE_SIDECAR } from '../Paths/nexusPaths'
 
 import type { RecordFile, ParentRef } from './record'
@@ -88,14 +88,7 @@ export async function gatherContextEvidence(
   entry: ContextDef,
   at: number,
 ): Promise<ContextEvidence> {
-  const spaceIds = new Map<string, string>()
-  let unresolved = false
-  for (const { name, file: sidecar } of await spaceSidecarsIn(abs)) {
-    const raw = await readJsonObject(sidecar)
-    if (typeof raw?.id === 'string') spaceIds.set(name, raw.id)
-    // Absent sidecar = a plain folder, silent; present-but-unusable marks the evidence incomplete rather than silently thinning the membership join.
-    else if (await pathExists(sidecar)) unresolved = true
-  }
+  const { ids: spaceIds, unread: unresolved } = await spaceIdsIn(abs)
   return { entry: { ...entry }, at, spaceIds, unresolved }
 }
 

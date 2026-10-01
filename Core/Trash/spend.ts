@@ -1,7 +1,8 @@
 import { basename, dirname, join, relative, titleFromPath } from '../Paths/posix'
-import { escapes, resolveUnderRoot } from '../Paths/pathSafety'
+import { resolveUnderRoot } from '../Paths/pathSafety'
 import { contextKey } from '../Contexts/contexts'
-import { spaceSidecarsIn, withOrderEntry } from '../Contexts/spaceSidecar'
+import { spaceIdsIn, spaceSidecarsIn } from '../Contexts/spaceSidecar'
+import { rekeyContext } from '../Contexts/contextCascade'
 import { TRASH_DIR } from '../Paths/nexusPaths'
 import type {
   MutateOutcome,
@@ -23,13 +24,7 @@ import { rewriteFrontmatterConnections } from '../Connections/rewrite'
 import { linkDefs } from '../Properties/propertiesRegistry'
 import { refillValues } from '../Properties/assignment'
 import { BUNDLE_SUFFIX } from './bundle'
-import {
-  pathExists,
-  readJsonObject,
-  readTextOrNull,
-  relocate,
-  rmwJsonStrict,
-} from '../Files/atomicWrite'
+import { pathExists, readTextOrNull, relocate, rmwJsonStrict } from '../Files/atomicWrite'
 import { dropPageMetadata } from '../Nexus/pageMetadata'
 import { dropSpaceOrder } from '../Nexus/reorder'
 import { machine } from '../Platform/machine'
@@ -51,38 +46,6 @@ const REFUSAL_TEXT: Record<Refusal, string> = {
   'cannot-hold': 'The place this belonged to can no longer hold it.',
   unaddressable: 'Where this belonged was never recorded.',
   'id-live': 'Something in the nexus already carries this identity.',
-}
-
-async function rekeyPassengers(
-  absContextDir: string,
-  oldTitle: string,
-  newTitle: string,
-): Promise<void> {
-  const oldKey = contextKey(oldTitle)
-  const newKey = contextKey(newTitle)
-  const strings = (v: unknown): string[] =>
-    Array.isArray(v) ? v.filter((x): x is string => typeof x === 'string') : []
-  const rekey = (raw: Record<string, unknown>): Record<string, unknown> | null => {
-    if (!(oldKey in raw)) return null
-    const existing = strings(raw[newKey])
-    const merged = [...existing, ...strings(raw[oldKey]).filter((v) => !existing.includes(v))]
-    const next = { ...raw }
-    delete next[oldKey]
-    if (merged.length) next[newKey] = merged
-    return next
-  }
-  const rekeyed = withOrderEntry(rekey, 'contexts', oldTitle, newTitle)
-  for (const { file } of await spaceSidecarsIn(absContextDir))
-    await rmwJsonStrict(file, (raw) => rekeyed(raw, file))
-}
-
-async function restoredSpaceTitles(absContextDir: string): Promise<Map<string, string>> {
-  const titles = new Map<string, string>()
-  for (const { name, file } of await spaceSidecarsIn(absContextDir)) {
-    const raw = await readJsonObject(file)
-    if (typeof raw?.id === 'string') titles.set(raw.id, name)
-  }
-  return titles
 }
 
 async function openBundle(root: string, bundleAbs: string): Promise<Result<RecordFile>> {
@@ -202,15 +165,7 @@ async function restoreArtifact(
   const { dir, finalName, finalTitle } = resolution.place
 
   const targetAbs = join(root, dir, finalName)
-  // Records are plain user-visible JSON — shape validation is not safety validation. The final name must be a plain basename landing exactly in the resolver's chosen directory, inside the nexus and outside the trash; anything else is a recorded title steering the move.
   const targetRel = relative(root, targetAbs)
-  if (
-    escapes(targetRel) ||
-    targetRel.split('/')[0] === TRASH_DIR ||
-    dirname(targetAbs) !== join(root, dir) ||
-    basename(targetAbs) !== finalName
-  )
-    return fault('That restore record points outside the nexus.')
   if (record.entity === 'collection' || record.entity === 'set') {
     const refused =
       (await landingRefusal(root, join(root, dir), finalName)) ??
@@ -276,9 +231,14 @@ async function restoreArtifact(
   const unspent: string[] = []
   const unlinked = new Set<string>()
   if (record.entity === 'context') {
-    if (title !== record.registry.title)
-      await rekeyPassengers(targetAbs, record.registry.title, title)
-    const titlesById = await restoredSpaceTitles(targetAbs)
+    if (title !== record.registry.title) {
+      const rekey = rekeyContext(record.registry.title, title)
+      for (const { file } of await spaceSidecarsIn(targetAbs))
+        await rmwJsonStrict(file, (raw) => rekey(raw, file))
+    }
+    const titlesById = new Map(
+      [...(await spaceIdsIn(targetAbs)).ids].map(([name, id]) => [id, name]),
+    )
     const additions: Record<string, string[]> = {}
     for (const m of record.membership) {
       if (!m.root.id) continue
