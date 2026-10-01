@@ -30,13 +30,12 @@ import { unsweptLine } from '../Properties/governedSweep'
 import { tileHostsOf } from '../Tiles/tilesFile'
 import type { TileHostRef } from '../Tiles/tiles'
 import { liveTreeOf } from './liveTree'
-import { editJsonStrict, type StrictEdit } from '../Files/atomicWrite'
+import { editJsonStrict, type StrictEdit, updateNexusConfig } from '../Files/atomicWrite'
 import { same } from '../Files/stableJson'
 import { errText } from '../Contract/result'
 import { noteSidecarWrite } from './valuesChanged'
-import { nexusConfig, sidecarPath, tileDocPath } from '../Paths/paths'
+import { sidecarPath, tileDocPath } from '../Paths/paths'
 import { join } from '../Paths/posix'
-import { NEXUS_CONFIG_FILES } from '../Paths/nexusPaths'
 import { isPlainObject, listOf } from '../Contract/validators'
 import type { CollectionNode, NexusTree, SetNode } from './tree'
 import type { CascadeReport } from './cascade'
@@ -375,11 +374,13 @@ export async function reachConfig(
     )
     if (wrote && host) reach.hosts.push(host)
   }
-  if (!under)
-    await written(nexusConfig(root, NEXUS_CONFIG_FILES.matrix), (cur) => {
+  if (!under) {
+    const edited = await updateNexusConfig(root, 'matrix', (cur) => {
       if (!isPlainObject(cur.filter)) return null
       const rules = editRules(cur.filter.rules, rule)
       return same(rules, cur.filter.rules) ? null : { ...cur, filter: { ...cur.filter, rules } }
     })
+    if (!edited.ok) reach.skipped++
+  }
   return reach
 }

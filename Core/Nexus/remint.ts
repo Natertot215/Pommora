@@ -1,7 +1,8 @@
-import { join } from '../Paths/posix'
+import { basename, join } from '../Paths/posix'
 import { ID_KEY } from './identityMark'
 import type { EntityRecord } from './record'
 import type { ContainerKind, HeldKind } from './entities'
+import { mutateRegistryFile } from '../Contexts/contextsRegistry'
 import { errText } from '../Contract/result'
 import { copyEntry } from '../Tiles/tilesFile'
 import { containerViewIds, mapViews, mintViewId } from '../Views/views'
@@ -66,7 +67,7 @@ async function writeFreshId(root: string, target: RemintTarget, fresh: string): 
   try {
     if (target.kind === 'page')
       return await remintPageFile(join(root, target.path), target.id, fresh)
-    if (target.kind === 'context') return false
+    if (target.kind === 'context') return await remintContextEntry(root, target, fresh)
     return await remintSidecar(join(root, target.path), target.kind, target.id, fresh)
   } catch (e) {
     console.error(`remint: the write for ${target.path} refused; the defer stands:`, errText(e))
@@ -80,6 +81,23 @@ async function remintPageFile(absFile: string, oldId: string, fresh: string): Pr
     if (splitFrontmatter(content)[ID_KEY] !== oldId) return null
     return mergeFrontmatter(content, { [ID_KEY]: fresh }, [ID_KEY], splitEnvelope(content).body)
   })
+}
+
+async function remintContextEntry(
+  root: string,
+  target: RemintTarget,
+  fresh: string,
+): Promise<boolean> {
+  const title = basename(target.path)
+  let landed = false
+  const written = await mutateRegistryFile(root, (cur) => ({
+    contexts: cur.contexts.map((c) => {
+      if (landed || c.id !== target.id || c.title !== title) return c
+      landed = true
+      return { ...c, id: fresh }
+    }),
+  }))
+  return written.ok && landed
 }
 
 async function remintSidecar(
