@@ -1,6 +1,7 @@
 import {
   clearNotification,
   notifyReport,
+  notifyUnreadable,
   reportRefusal,
   unrestoredLine,
 } from '../Interface/Notifications/notifications'
@@ -195,6 +196,14 @@ export const createNexusSlice: Slice<NexusSlice> = (set, get) => {
       get().reconcileGlance(index)
       if (tree.config.personalization !== prev?.config.personalization)
         applyPersonalization(tree.config.personalization)
+      const fresh =
+        tree.unreadable !== prev?.unreadable &&
+        tree.unreadable?.find((u) => !prev?.unreadable?.some((p) => p.path === u.path))
+      if (fresh)
+        notifyUnreadable(
+          fresh,
+          () => void get().mutate({ op: 'retryUnreadable', path: fresh.path }),
+        )
     },
 
     choose: () => openVia(() => dialer().ask('nexus:choose')),
