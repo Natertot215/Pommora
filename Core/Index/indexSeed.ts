@@ -22,7 +22,6 @@ import {
 import {
   type ContentIndexStore,
   contentIndexStore,
-  type IndexedStat,
   type PageIndexRow,
   type RelationKind,
   type Relation,
@@ -105,12 +104,6 @@ async function relCorpusPath(root: string, abs: string): Promise<string | null> 
   return outsideContent(rel, await readWatchScope(root)) ? null : rel
 }
 
-function recordPage(rel: string, content: string, stat: IndexedStat): PageRead {
-  const read = extractPageIndex(rel, content)
-  upsertPageIndexes([{ path: rel, entry: read.entry, stat }])
-  return read
-}
-
 interface HeadingRenameSeen {
   title: string
   old: string
@@ -136,7 +129,8 @@ export async function indexWrittenPage(
   if (content === null) return null
   const title = titleFromPath(rel)
   const before = readHeadings([rel])?.[rel] ?? []
-  const { entry, outline } = recordPage(rel, content, { mtimeMs: st.mtimeMs, size: st.size })
+  const { entry, outline } = extractPageIndex(rel, content)
+  upsertPageIndexes([{ path: rel, entry, stat: { mtimeMs: st.mtimeMs, size: st.size } }])
   const after = entry.headings
   if (after.length !== before.length) return null
   const gone = before.filter((k) => !after.includes(k))
