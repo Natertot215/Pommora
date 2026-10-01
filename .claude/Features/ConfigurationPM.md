@@ -248,7 +248,7 @@ The `personalization` object in `settings.json` holds every key the Settings win
 | `sidebarMode` | The ribbon | The sidebar's active content mode, remembered across restarts. |
 | `ribbonOrder` | Drag-to-reorder | The ribbon's icon order below the pinned Homepage; a partial or stale value is repaired on read. |
 
-More keys sit at the settings root beside `personalization`: `excluded_folders`, the anchored Nexus-relative paths the walk, watcher, index, and cascades all skip, written by the Files & Links › Exclusions pane and carried along when the Collection or Set above an entry is renamed, moved, trashed, or restored; and the profile — `profile_image`, `profile_icon`, `profile_subtitle` — written from the ribbon's identity menu. Every `settings.json` write serializes through one per-file lock and preserves unrecognized keys by value, so a key one build doesn't know survives the round trip. A `settings.json` that doesn't parse reads as an error rather than as defaults: opening the Nexus waits with the file named until it parses, an open session keeps the settings it last read, and writes leave the file as it is until it's repaired — a Collection or Set rename, move, trash, or restore that would carry an excluded entry refuses before anything moves.
+More keys sit at the settings root beside `personalization`: `excluded_folders`, the anchored Nexus-relative paths the walk, watcher, index, and cascades all skip, written by the Files & Links › Exclusions pane and carried along when the Collection or Set above an entry is renamed, moved, trashed, or restored; and the profile — `profile_image` and `profile_icon` — written from the ribbon's identity menu. Every `settings.json` write serializes through one per-file lock and preserves unrecognized keys by value, so a key one build doesn't know survives the round trip. A `settings.json` that doesn't parse reads as an error rather than as defaults: opening the Nexus waits with the file named until it parses, an open session keeps the settings it last read, and writes leave the file as it is until it's repaired — a Collection or Set rename, move, trash, or restore that would carry an excluded entry refuses before anything moves.
 
 ### App Configuration (Per-Device)
 
@@ -259,5 +259,5 @@ Cross-session, machine-local state in `pommora.json` under the app's userData di
 #### Pending
 
 - **Knobs without a row** — default icons and the placement keys are hand-set in `settings.json`, with the watcher applying the change live; both are wireable through the existing setter.
-- **Scopes without a renderer setter** — the profile's image and icon are written from the ribbon's identity menu, and its subtitle has an op and handler waiting on a surface.
+- **Scopes without a renderer setter** — the profile's image and icon are written from the ribbon's identity menu.
 - **Command rebinding** — data-ready and unbuilt; shortcuts don't ship without per-shortcut sign-off.
