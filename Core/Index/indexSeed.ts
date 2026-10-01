@@ -7,7 +7,7 @@ import { normalizeTitle } from '../Connections/connections'
 import { headingOutlineOf } from '../MarkdownPM/Engine/headingScan'
 import { inCodeAt, scanDoc } from '../MarkdownPM/Engine/docScan'
 import { parseContextKey } from '../Contexts/contexts'
-import { splitEnvelope, splitFrontmatter, sweepAdmitsBody } from '../Files/pageFile'
+import { parsePage, splitEnvelope } from '../Files/pageFile'
 import {
   markIndexReady,
   readHeadings,
@@ -42,8 +42,8 @@ interface PageRead {
 const NO_ROWS: PageRead = { entry: { relations: [], headings: [], values: {} }, outline: [] }
 
 function extractPageIndex(rel: string, content: string): PageRead {
-  if (!sweepAdmitsBody(content)) return NO_ROWS
-  const values = splitFrontmatter(content)
+  const { frontmatter: values, admission } = parsePage(content)
+  if (admission.state === 'unknown') return NO_ROWS
   const own = titleFromPath(rel)
   const { body } = splitEnvelope(content)
   const scan = scanDoc(body)

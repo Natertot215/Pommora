@@ -8,10 +8,11 @@ import {
   isSeq,
 } from 'yaml'
 import { join, titleFromPath } from '../Paths/posix'
-import { admitContentFile, ID_KEY } from '../Nexus/identityMark'
+import { type Admission, admitContentFile, ID_KEY } from '../Nexus/identityMark'
+import type { ContentKind } from '../Nexus/entities'
 import { isPlainObject } from '../Contract/validators'
 import { asString } from '../Nexus/coerce'
-import { adoptedId } from '../Nexus/ids'
+import { fail, fault, ok, type Result } from '../Contract/result'
 import type { PageDetail } from '../Pages/pageDetail'
 import { atomicWriteFile } from './atomicWrite'
 import { machine } from '../Platform/machine'
@@ -41,6 +42,14 @@ export function splitFrontmatter(content: string): Record<string, unknown> {
   } catch {
     return {}
   }
+}
+
+export function parsePage(
+  content: string,
+  kind: ContentKind = 'page',
+): { frontmatter: Record<string, unknown>; admission: Admission } {
+  const frontmatter = splitFrontmatter(content)
+  return { frontmatter, admission: admitContentFile(frontmatter, kind) }
 }
 
 export const stampedId = (text: string): string | null =>
@@ -165,24 +174,24 @@ export async function writePageFile(
   return { previous, written }
 }
 
-export async function readPageDetail(rootPath: string, relPath: string): Promise<PageDetail> {
-  const absFile = join(rootPath, relPath)
-  const content = await machine().readText(absFile)
-  if (content === null) throw new Error(`Page not found: ${relPath}`)
-  const frontmatter = splitFrontmatter(content)
-  return {
-    id: asString(frontmatter[ID_KEY]) ?? adoptedId(relPath),
+export async function openPage(rootPath: string, relPath: string): Promise<Result<PageDetail>> {
+  const content = await machine().readText(join(rootPath, relPath))
+  if (content === null) return fail('not-found', `Page not found: ${relPath}`)
+  const { frontmatter, admission } = parsePage(content)
+  if (admission.state !== 'member') return fault('That page has no ID Pommora can file.')
+  return ok({
+    id: admission.id,
     title: titleFromPath(relPath),
     path: relPath,
     frontmatter,
     body: splitEnvelope(content).body,
     bodyHash: bodyHash(content),
-  }
+  })
 }
 
 // An identity-less page is admitted deliberately: the sweeps exist to change or clear values, and gating on membership alone would leave a page holding the very value a Remove ran to clear.
 export function sweepAdmitsBody(content: string): boolean {
-  return admitContentFile(splitFrontmatter(content), 'page').state !== 'unknown'
+  return parsePage(content).admission.state !== 'unknown'
 }
 
 // Identity admits it, and its frontmatter must round-trip, so one file nobody can parse is skipped rather than failing the fan-out around it.

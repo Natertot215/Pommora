@@ -2,7 +2,7 @@ import { basename, dirname, join, relative } from '../Paths/posix'
 import { fault, ok, type Result, valueOr } from '../Contract/result'
 import { machine } from '../Platform/machine'
 import { isContentFile, listEntries } from '../Files/walk'
-import { admitContentFile, ID_KEY } from './identityMark'
+import { ID_KEY } from './identityMark'
 import type { ContainerKind, ContentKind } from './entities'
 import { contentIdAt, isAdoptedId, newId } from './ids'
 import { getLiveTree } from './liveTree'
@@ -18,7 +18,7 @@ import {
   rmwJsonStrict,
 } from '../Files/atomicWrite'
 import { readSidecar } from '../Files/sidecar'
-import { splitEnvelope, mergeFrontmatter, splitFrontmatter } from '../Files/pageFile'
+import { mergeFrontmatter, parsePage, splitEnvelope } from '../Files/pageFile'
 import { readIdentity } from './identity'
 import { asString } from './coerce'
 import { baseSidecar } from './schemas'
@@ -64,7 +64,8 @@ async function stampPage(absFile: string, kind: ContentKind): Promise<string | n
   const { birthtimeMs, mtimeMs } = st
   let id: string | null = null
   const landed = await rewritePageSerialized(absFile, (content) => {
-    if (admitContentFile(splitFrontmatter(content), kind).state !== 'missing') return null
+    const { admission } = parsePage(content, kind)
+    if (admission.state !== 'missing') return null
     id = contentIdAt(birthtimeMs ? Math.min(birthtimeMs, mtimeMs) : mtimeMs, kind)
     return mergeFrontmatter(content, { [ID_KEY]: id }, [ID_KEY], splitEnvelope(content).body)
   })
@@ -73,7 +74,7 @@ async function stampPage(absFile: string, kind: ContentKind): Promise<string | n
 
 async function pageAdmission(absFile: string) {
   const content = await readTextOrNull(absFile)
-  return content === null ? null : admitContentFile(splitFrontmatter(content), 'page')
+  return content === null ? null : parsePage(content).admission
 }
 
 export async function ensurePageId(absFile: string): Promise<Result<string>> {
