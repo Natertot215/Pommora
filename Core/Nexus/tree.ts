@@ -1,4 +1,5 @@
 import type { ContextDef } from '../Contexts/contexts'
+import { NEXUS_DIR } from '../Paths/nexusPaths'
 import { isMarkdownFile } from '../Paths/posix'
 import type { PropertyDefinition } from '../Properties/properties'
 import type { SettingsLeaves } from '../Settings/codec'
@@ -136,3 +137,9 @@ export const withheldIn =
     listed.some(
       (u) => !isMarkdownFile(u.path) && (path === u.path || path.startsWith(`${u.path}/`)),
     )
+
+export const damagedFolders = (listed: readonly Unreadable[] = []): Unreadable[] =>
+  listed.filter(
+    (u) =>
+      u.reason === 'unparsed' && !isMarkdownFile(u.path) && !u.path.startsWith(`${NEXUS_DIR}/`),
+  )

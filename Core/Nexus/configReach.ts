@@ -37,7 +37,7 @@ import { noteSidecarWrite } from './valuesChanged'
 import { sidecarPath, tileDocPath } from '../Paths/paths'
 import { join } from '../Paths/posix'
 import { isPlainObject, listOf } from '../Contract/validators'
-import type { CollectionNode, NexusTree, SetNode } from './tree'
+import { type CollectionNode, damagedFolders, type NexusTree, type SetNode } from './tree'
 import type { CascadeReport } from './cascade'
 import type { HeldKind } from './entities'
 import { containerAt, contextAt, spaceAt } from './treePatch'
@@ -323,11 +323,16 @@ const cacheEdit = (e: OptionReach, cur: Raw): Raw | null =>
 
 type Container = { kind: 'collection' | 'set'; id: string; dir: string }
 
+const reaches =
+  (under?: string) =>
+  (dir: string): boolean =>
+    !under || dir === under || dir.startsWith(`${under}/`)
+
 function containersOf(tree: NexusTree, root: string, under?: string): Container[] {
   return tree.collections
     .flatMap(within)
     .map((node) => ({ kind: node.kind, id: node.id, dir: join(root, node.path) }))
-    .filter(({ dir }) => !under || dir === under || dir.startsWith(`${under}/`))
+    .filter(({ dir }) => reaches(under)(dir))
 }
 
 export async function reachConfig(
@@ -342,7 +347,9 @@ export async function reachConfig(
     return { skipped: 1, hosts: [] }
   }
   const tiles = tileHostsOf(root, tree)
-  const reach: ConfigReach = { skipped: tiles.unreadable, hosts: [] }
+  // A Collection or Set whose sidecar doesn't parse is out of the tree and this pass can't reach it, so each counts as a skip and the journal keeps the change owed until it reads.
+  const damaged = damagedFolders(tree.unreadable).filter((u) => reaches(under)(join(root, u.path)))
+  const reach: ConfigReach = { skipped: tiles.unreadable + damaged.length, hosts: [] }
   const written = async (path: string, mutate: (cur: Raw) => Raw | null): Promise<boolean> => {
     const outcome = await editJsonStrict(path, mutate).catch((err): StrictEdit => {
       console.error('configuration pass skipped a file:', errText(err))
