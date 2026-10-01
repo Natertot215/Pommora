@@ -267,7 +267,7 @@ describe('settings leaves — the walk and the settings patch must never disagre
     expect(tree?.config.excluded).toEqual(['Loose'])
   })
 
-  // The decoder, the walk's tree literal and applySettingsLeaves must never disagree; a per-function test cannot see that, so this drives both over the same bytes.
+  // The decoder, the walk's tree literal and patchConfig must never disagree; a per-function test cannot see that, so this drives both over the same bytes.
   it('an asset_directory appearing on disk reaches the live tree exactly as a fresh walk reads it', async () => {
     await writeFile(abs('.nexus', 'settings.json'), JSON.stringify({}))
     await refreshTree(root)

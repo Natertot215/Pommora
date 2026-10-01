@@ -74,30 +74,18 @@ export function useViewHost(source: CollectionNode | SetNode, nests: boolean) {
   const crossBand = !dragDisabled && (canReassign || canRelocate)
 
   const contextIds = contextIdsOf(tree)
+  const pageMetadata = tree?.config.pageMetadata
   const {
     columns,
     groups: resolvedGroups,
     rows,
   } = useMemo(() => {
-    const { rows, setTree } = flattenContainer(
-      painted,
-      effectiveValues,
-      tree?.config.pageMetadata ?? {},
-    )
+    const { rows, setTree } = flattenContainer(painted, effectiveValues, pageMetadata ?? {})
     return {
       ...resolveView({ rows, setTree, view, schema, plan, manualOrder, contextIds }),
       rows,
     }
-  }, [
-    painted,
-    effectiveValues,
-    tree?.config.pageMetadata,
-    view,
-    schema,
-    plan,
-    manualOrder,
-    contextIds,
-  ])
+  }, [painted, effectiveValues, pageMetadata, view, schema, plan, manualOrder, contextIds])
   const titles = useMemo(
     () => (searching ? new Map(rows.map((r) => [r.id, foldKey(r.title)])) : null),
     [rows, searching],
