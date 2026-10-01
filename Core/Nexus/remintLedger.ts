@@ -120,7 +120,7 @@ export async function runOpenLedger(root: string, tree: NexusTree): Promise<void
     if (reminted.length === 0) seedLiveTree(tree)
     else await refreshTree(root)
   } catch (e) {
-    console.error('ledger: the open pass failed; the prior baseline stands:', errText(e))
+    console.error('ledger: the open pass failed:', errText(e))
   }
 }
 
