@@ -1,5 +1,6 @@
 import { type ReactNode, useRef, useState } from 'react'
-import type { BannerOwnerKind, MutableKind, RenameKind } from '../../Nexus/mutateRequest'
+import type { BannerOwnerKind, RenameKind } from '../../Nexus/mutateRequest'
+import type { HeldKind } from '../../Nexus/entities'
 import { DEFAULT_NEXUS_ICON, entityIcon } from '../../Assets/entityIconPolicy'
 import { IconChoice } from '../../Assets/IconChoice'
 import { useSession } from '../../Session/store'
@@ -159,7 +160,7 @@ export function EntityBanner({
         void mutate({
           op: 'setIcon',
           path: owner.path,
-          kind: owner.kind as MutableKind,
+          kind: owner.kind as HeldKind,
           icon: id,
         })
       }

@@ -1,6 +1,7 @@
 import { join } from '../Paths/posix'
 import { ID_KEY } from './identityMark'
-import type { EntityRecord, RecordKind } from './record'
+import type { EntityRecord } from './record'
+import type { ContainerKind, HeldKind } from './entities'
 import { errText } from '../Contract/result'
 import { copyEntry } from '../Tiles/tilesFile'
 import { containerViewIds, mapViews, mintViewId } from '../Views/views'
@@ -16,7 +17,7 @@ import type { Baseline, Projection } from './remintLedger'
 
 interface RemintTarget {
   id: string
-  kind: RecordKind
+  kind: HeldKind
   path: string
 }
 
@@ -83,7 +84,7 @@ async function remintPageFile(absFile: string, oldId: string, fresh: string): Pr
 
 async function remintSidecar(
   absFolder: string,
-  kind: 'space' | 'collection' | 'set',
+  kind: ContainerKind | 'space',
   oldId: string,
   fresh: string,
 ): Promise<boolean> {

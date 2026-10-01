@@ -1,5 +1,6 @@
 import { decodeTime, monotonicFactory, ulid } from 'ulidx'
-import { type ContentKind, markId } from './identityMark'
+import { markId } from './identityMark'
+import type { ContentKind } from './entities'
 import { machine } from '../Platform/machine'
 
 const nextUlid = monotonicFactory()

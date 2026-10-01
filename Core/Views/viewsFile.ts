@@ -1,5 +1,5 @@
 import { isPlainObject } from '../Contract/validators'
-import type { ContainerKind } from '../Nexus/schemas'
+import type { ContainerKind } from '../Nexus/entities'
 import {
   applyViewPatch,
   containerViewIds,

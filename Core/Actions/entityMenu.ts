@@ -9,11 +9,11 @@ import {
 import { type TitleMenuAction, titleMenuItems } from './identityMenus'
 import { type PropertyAction, propertyBranchRows } from './propertyRows'
 import { lockLabel, openLabel } from './toggleLabels'
-import type { MutableKind } from '../Nexus/mutateRequest'
+import type { HeldKind } from '../Nexus/entities'
 import type { RenameHost } from '../Session/editSlice'
 
 export interface EntityMenuTarget extends PageMenuContext {
-  kind: MutableKind
+  kind: HeldKind
   path: string
   title: string
   id?: string

@@ -1,4 +1,5 @@
-import type { MutableKind, MutateOutcome } from '../../Nexus/mutateRequest'
+import type { MutateOutcome } from '../../Nexus/mutateRequest'
+import type { HeldKind } from '../../Nexus/entities'
 import { valueOr } from '../../Contract/result'
 import { DEFAULT_TRASH_MODE } from '../../Trash/trashRow'
 import { useSession } from '../../Session/store'
@@ -22,14 +23,14 @@ export interface ConfirmRequest {
 const ask = (req: ConfirmRequest): Promise<boolean> => useSession.getState().askConfirm(req)
 
 /** A container, a Context, and a Space each carry everything filed under them, so they ask regardless of the Confirm Before Deletion switch — the switch governs what a single delete takes: a page, a property, an option. */
-const ALWAYS_ASKS: ReadonlySet<MutableKind> = new Set<MutableKind>([
+const ALWAYS_ASKS: ReadonlySet<HeldKind> = new Set<HeldKind>([
   'collection',
   'set',
   'space',
   'context',
 ])
 
-const waived = (kind?: MutableKind): boolean =>
+const waived = (kind?: HeldKind): boolean =>
   (kind === undefined || !ALWAYS_ASKS.has(kind)) &&
   !settingOf(useSession.getState().personalization, 'confirmDeletion')
 
@@ -62,7 +63,7 @@ export function notifyTrashed(
 
 export const confirmDelete = async (target: {
   path: string
-  kind: MutableKind
+  kind: HeldKind
   title: string
 }): Promise<void> => {
   if (!waived(target.kind)) {

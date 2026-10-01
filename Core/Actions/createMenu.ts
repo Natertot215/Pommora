@@ -1,7 +1,7 @@
 import type { ActionItem } from './menuModel'
 import { type ContextDef, createSpaceLabel } from '../Contexts/contexts'
 import { DEFAULT_NEW_NAME, type MutateRequest } from '../Nexus/mutateRequest'
-import type { ContainerKind } from '../Nexus/schemas'
+import type { ContainerKind } from '../Nexus/entities'
 
 export interface Creator {
   label: string

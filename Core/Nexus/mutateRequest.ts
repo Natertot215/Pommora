@@ -3,6 +3,7 @@ import { ok, type Result } from '../Contract/result'
 import { propertyValue } from '../Properties/propertyValue'
 import { crop, type PageMetaPatch } from './schemas'
 import type { CascadeReport } from './cascade'
+import { CONTAINER_KINDS, HELD_KINDS, type HeldKind, NODE_KINDS } from './entities'
 
 /** `renamed` is what actually landed — a from-create rename may disambiguate away from the ask. */
 export interface MutateOutcome {
@@ -29,14 +30,12 @@ export const NEW_SLOT = '$new'
 export const fillSlot = (order: string[], id: string): string[] =>
   order.map((x) => (x === NEW_SLOT ? id : x))
 
-const mutableKind = z.enum(['page', 'collection', 'set', 'space', 'context'])
-export type MutableKind = z.infer<typeof mutableKind>
-export type RenameKind = MutableKind | 'homepage'
+const heldKind = z.enum(HELD_KINDS)
+export type RenameKind = HeldKind | 'homepage'
 
-const bannerOwner = z.enum(['collection', 'set', 'space', 'homepage', 'navview', 'page'])
+const bannerOwner = z.enum([...NODE_KINDS, 'homepage', 'navview'])
 export type BannerOwnerKind = z.infer<typeof bannerOwner>
 
-export const CONTAINER_KINDS = ['collection', 'set'] as const
 const containerKind = z.enum(CONTAINER_KINDS)
 
 /** Checked against the write path's own destination rules: a contradicting claim is refused as malformed. */
@@ -72,12 +71,12 @@ export const mutateRequest = z.discriminatedUnion('op', [
   // Membership is keyed by TITLE, so Spaces and Contexts rename through their own ops. `fromCreate` marks a just-created page's first commit: disambiguates like a create, and skips the link cascade a linkless page can't need.
   op('rename', {
     path: z.string(),
-    kind: mutableKind.exclude(['space', 'context']),
+    kind: heldKind.exclude(['space', 'context']),
     newName: z.string(),
     fromCreate: z.literal(true).optional(),
   }),
   op('renameHeading', { path: z.string(), heading: z.string(), to: z.string() }),
-  op('delete', { path: z.string(), kind: mutableKind }),
+  op('delete', { path: z.string(), kind: heldKind }),
   op('restore', { bundlePath: z.string(), destination: restoreDestination.optional() }),
   op('emptyBundle', { bundlePath: z.string() }),
   op('setProfileImage', { source: z.string().nullable() }),
@@ -85,7 +84,7 @@ export const mutateRequest = z.discriminatedUnion('op', [
   op('setBanner', { path: z.string(), kind: bannerOwner, source: z.string().nullable() }),
   op('setCrop', { image: z.string(), crop: crop.nullable() }),
   op('setHeadingIconHidden', { path: z.string(), kind: bannerOwner, hidden: z.boolean() }),
-  op('setIcon', { path: z.string(), kind: mutableKind, icon: z.string().nullable() }),
+  op('setIcon', { path: z.string(), kind: heldKind, icon: z.string().nullable() }),
   op('setDisclosureLock', { path: z.string(), kind: containerKind, locked: z.boolean() }),
   op('setActiveView', { path: z.string(), kind: containerKind, viewId: z.string() }),
   op('setProperty', { path: z.string(), propertyId: z.string(), value: propertyValue.nullable() }),

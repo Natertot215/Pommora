@@ -1,7 +1,7 @@
 // The walk is single-flight: concurrent refreshes share the in-flight promise. A walk that raced a mutation observed pre-mutation disk, so it discards its result and re-runs; a walk whose slot was dropped or superseded installs nothing, and a root other than the open Nexus's is read without a slot, so a caller still working on it can't install it.
 
 import type { NexusTree } from './tree'
-import type { MutableKind } from './mutateRequest'
+import type { HeldKind } from './entities'
 import { pathExists } from '../Files/atomicWrite'
 import { resolveUnderRoot } from '../Paths/pathSafety'
 import { fail, type Result } from '../Contract/result'
@@ -68,7 +68,7 @@ export const liveTreeOf = (root: string): Promise<NexusTree> =>
 export async function mutableTarget(
   root: string,
   rel: string,
-  kinds: readonly MutableKind[],
+  kinds: readonly HeldKind[],
 ): Promise<Result<string>> {
   const tree = await liveTreeOf(root)
   return kinds.some((kind) => holds(tree, rel, kind))
@@ -76,7 +76,7 @@ export async function mutableTarget(
     : fail('invalid-path', 'That item can’t be changed.')
 }
 
-function holds(tree: NexusTree, rel: string, kind: MutableKind): boolean {
+function holds(tree: NexusTree, rel: string, kind: HeldKind): boolean {
   switch (kind) {
     case 'context':
       return !!contextAt(tree, rel)
