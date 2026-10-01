@@ -112,18 +112,6 @@ describe('confirmMutation', () => {
     expect(walkSpy).toHaveBeenCalledTimes(1)
   })
 
-  it('a delete under a folder that held an adopted id walks, since recording the parent stamped it', async () => {
-    await mkdir(abs('Notes', 'Inbox'))
-    await writeFile(abs('Notes', 'Inbox', 'C.md'), 'body')
-    await refreshTree(root)
-    walkSpy.mockClear()
-    await unlink(abs('Notes', 'Inbox', 'C.md'))
-    await writeFile(abs('Notes', 'Inbox', '_pageset.json'), JSON.stringify({ id: 'set-inbox' }))
-    await confirmMutation(root, { op: 'delete', path: 'Notes/Inbox/C.md', kind: 'page' }, {})
-    expect(walkSpy).toHaveBeenCalledTimes(1)
-    expect(getLiveTree()?.collections[0]?.sets?.[0]?.id).toBe('set-inbox')
-  })
-
   it('a delete patches by transform; a create pins its order from the parent sidecar', async () => {
     await writeFile(abs('Notes', 'B.md'), `---\nID: ${ULID_B}\n---\n\nbeta\n`)
     const created = await confirmMutation(

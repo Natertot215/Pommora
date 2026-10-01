@@ -1,4 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
+import * as liveTree from './liveTree'
 import { dropLiveTree, getLiveTree, refreshTree } from './liveTree'
 import { splitFrontmatter } from '../Files/pageFile'
 import { ID_KEY } from './identityMark'
@@ -6,6 +7,7 @@ import { rm, mkdir, writeFile, readFile, readdir, chmod, symlink, stat } from 'n
 import { join } from '../Paths/posix'
 import { readJsonAt, seedSpaceSidecar, tempRoot, noModeBits, windows } from '../Testing/hostFs'
 import { adoptFile } from '../Assets/adoptFile'
+import { confirmedMutate } from '../Testing/confirmedMutate'
 import { handleMutate } from './mutate'
 import { machine } from '../Platform/machine'
 import { contextsDir, nexusConfig, sidecarPath, tileHostDir } from '../Paths/paths'
@@ -80,7 +82,7 @@ afterEach(async () => {
 
 describe('handleMutate — create', () => {
   it('createPage writes a .md in the resolved container + returns its relative path', async () => {
-    const r = await handleMutate(
+    const r = await confirmedMutate(
       root,
       { op: 'createPage', parentPath: 'Notes/Daily', name: 'New' },
       nexusDeps,
@@ -92,7 +94,7 @@ describe('handleMutate — create', () => {
   })
 
   it('createContainer makes a set folder + sidecar', async () => {
-    const r = await handleMutate(
+    const r = await confirmedMutate(
       root,
       { op: 'createContainer', parentPath: 'Notes', kind: 'set', name: 'Weekly' },
       nexusDeps,
@@ -104,12 +106,12 @@ describe('handleMutate — create', () => {
   })
 
   it('disambiguates a colliding create name (Untitled → Untitled (2))', async () => {
-    const first = await handleMutate(
+    const first = await confirmedMutate(
       root,
       { op: 'createPage', parentPath: 'Notes/Daily', name: 'Untitled' },
       nexusDeps,
     )
-    const second = await handleMutate(
+    const second = await confirmedMutate(
       root,
       { op: 'createPage', parentPath: 'Notes/Daily', name: 'Untitled' },
       nexusDeps,
@@ -121,7 +123,7 @@ describe('handleMutate — create', () => {
 
   it('createPage writes its seeds in the birth write; a dead-property seed drops; a blank seed writes no key', async () => {
     await createProperty(root, { id: 'prop_stage', name: 'Stage', type: 'select' })
-    const r = await handleMutate(
+    const r = await confirmedMutate(
       root,
       {
         op: 'createPage',
@@ -139,7 +141,7 @@ describe('handleMutate — create', () => {
     expect(fm.Stage).toEqual(['doing'])
     expect(Object.keys(fm).some((k) => k.includes('gone'))).toBe(false)
 
-    const blank = await handleMutate(
+    const blank = await confirmedMutate(
       root,
       {
         op: 'createPage',
@@ -165,14 +167,14 @@ describe('handleMutate — create', () => {
       name,
       seeds: { ctxA: { kind: 'context', value: [spaceId] } },
     })
-    expect((await handleMutate(root, seeded('In Work', 'sp-work'), nexusDeps)).ok).toBe(true)
+    expect((await confirmedMutate(root, seeded('In Work', 'sp-work'), nexusDeps)).ok).toBe(true)
     expect(splitFrontmatter(await read('Notes/Daily/In Work.md'))['<Areas>']).toEqual(['Work'])
-    expect((await handleMutate(root, seeded('Stale', 'sp-gone'), nexusDeps)).ok).toBe(false)
+    expect((await confirmedMutate(root, seeded('Stale', 'sp-gone'), nexusDeps)).ok).toBe(false)
     expect(await pathExists(join(root, 'Notes/Daily/Stale.md'))).toBe(false)
   })
 
   it('createPage order substitutes NEW_SLOT with the minted id and persists page_order', async () => {
-    const r = await handleMutate(
+    const r = await confirmedMutate(
       root,
       {
         op: 'createPage',
@@ -194,7 +196,7 @@ describe('handleMutate — create', () => {
   it('createContainer order substitutes NEW_SLOT with the minted id and persists set_order', async () => {
     const before = await readNexus(root)
     const siblings = before.collections.find((c) => c.path === 'Notes')?.sets.map((s) => s.id) ?? []
-    const r = await handleMutate(
+    const r = await confirmedMutate(
       root,
       {
         op: 'createContainer',
@@ -217,7 +219,7 @@ describe('handleMutate — create', () => {
       JSON.stringify({ id: 'set-archive' }),
     )
     flushValueWrites(root)
-    const r = await handleMutate(
+    const r = await confirmedMutate(
       root,
       { op: 'movePage', path: 'Notes/Daily/Beta.md', newParentPath: 'Notes/Archive' },
       nexusDeps,
@@ -228,7 +230,7 @@ describe('handleMutate — create', () => {
 
   it('createPage notes the new page for the values push', async () => {
     flushValueWrites(root)
-    const r = await handleMutate(
+    const r = await confirmedMutate(
       root,
       { op: 'createPage', parentPath: 'Notes/Daily', name: 'Noted' },
       nexusDeps,
@@ -240,7 +242,7 @@ describe('handleMutate — create', () => {
 
 describe('handleMutate — rename', () => {
   it('page rename renames the file AND cascades inbound [[links]], reporting the landed name', async () => {
-    const r = await handleMutate(
+    const r = await confirmedMutate(
       root,
       { op: 'rename', path: 'Notes/Daily/Beta.md', kind: 'page', newName: 'Gamma' },
       nexusDeps,
@@ -254,13 +256,13 @@ describe('handleMutate — rename', () => {
   })
 
   it('a fromCreate rename disambiguates a collision instead of rejecting, and reports what landed', async () => {
-    await handleMutate(
+    await confirmedMutate(
       root,
       { op: 'createPage', parentPath: 'Notes/Daily', name: 'Untitled' },
       nexusDeps,
     )
     await refreshTree(root)
-    const r = await handleMutate(
+    const r = await confirmedMutate(
       root,
       {
         op: 'rename',
@@ -280,7 +282,7 @@ describe('handleMutate — rename', () => {
 
   it('a fromCreate rename skips the link cascade — inbound [[links]] to the old title stay put', async () => {
     // Alpha links [[Beta]]; a from-create rename of Beta must NOT rewrite it (an ordinary rename does — the test above goes red if the skip were unconditional).
-    const r = await handleMutate(
+    const r = await confirmedMutate(
       root,
       {
         op: 'rename',
@@ -301,7 +303,7 @@ describe('handleMutate — rename', () => {
     await writeFile(join(root, 'Notes', 'Other', '_pageset.json'), JSON.stringify({ id: 'other' }))
     await writeFile(join(root, 'Notes', 'Other', 'Beta.md'), `---\nID: ${G_ID}\n---\n`)
     await refreshTree(root)
-    const r = await handleMutate(
+    const r = await confirmedMutate(
       root,
       { op: 'rename', path: 'Notes/Daily/Beta.md', kind: 'page', newName: 'Gamma' },
       nexusDeps,
@@ -312,7 +314,7 @@ describe('handleMutate — rename', () => {
   })
 
   it('container rename renames the folder (no cascade)', async () => {
-    const r = await handleMutate(
+    const r = await confirmedMutate(
       root,
       { op: 'rename', path: 'Notes/Daily', kind: 'set', newName: 'Journal' },
       nexusDeps,
@@ -323,7 +325,7 @@ describe('handleMutate — rename', () => {
   })
 
   it('rejects a duplicate name', async () => {
-    const r = await handleMutate(
+    const r = await confirmedMutate(
       root,
       { op: 'rename', path: 'Notes/Daily/Beta.md', kind: 'page', newName: 'Alpha' },
       nexusDeps,
@@ -336,7 +338,7 @@ describe('handleMutate — rename', () => {
 
 describe('handleMutate — delete', () => {
   it('nexus mode moves a page into .trash under the folders it was deleted from', async () => {
-    const r = await handleMutate(
+    const r = await confirmedMutate(
       root,
       { op: 'delete', path: 'Notes/Daily/Beta.md', kind: 'page' },
       nexusDeps,
@@ -351,8 +353,8 @@ describe('handleMutate — delete', () => {
   })
 
   it('system mode delegates to the injected OS-trash fn (not the .trash)', async () => {
-    const trashToSystem = vi.fn(async (_p: string) => {})
-    const r = await handleMutate(
+    const trashToSystem = vi.fn((p: string) => rm(p, { recursive: true, force: true }))
+    const r = await confirmedMutate(
       root,
       { op: 'delete', path: 'Notes/Daily/Beta.md', kind: 'page' },
       { trashMode: 'system', trashToSystem },
@@ -370,13 +372,13 @@ describe('handleMutate — sync tap', () => {
     await mkdir(join(root, 'Notes', 'Archive'), { recursive: true })
     await writeFile(join(root, 'Notes', 'Archive', '_pageset.json'), JSON.stringify({ id: 'arc' }))
 
-    await handleMutate(
+    await confirmedMutate(
       root,
       { op: 'rename', path: 'Notes/Daily/Beta.md', kind: 'page', newName: 'Gamma' },
       nexusDeps,
     )
     await refreshTree(root)
-    await handleMutate(
+    await confirmedMutate(
       root,
       { op: 'movePage', path: 'Notes/Daily/Gamma.md', newParentPath: 'Notes/Archive' },
       nexusDeps,
@@ -393,13 +395,13 @@ describe('handleMutate — sync tap', () => {
     await writeFile(join(root, 'Archive', '_pagecollection.json'), JSON.stringify({ id: 'arc' }))
     await refreshTree(root)
 
-    await handleMutate(
+    await confirmedMutate(
       root,
       { op: 'rename', path: 'Notes', kind: 'collection', newName: 'Journal' },
       nexusDeps,
     )
     await refreshTree(root)
-    await handleMutate(
+    await confirmedMutate(
       root,
       { op: 'moveSet', path: 'Journal/Daily', newParentPath: 'Archive', order: ['col'] },
       nexusDeps,
@@ -416,7 +418,7 @@ describe('handleMutate — sync tap', () => {
       join(root, 'Notes', 'Daily', 'Fresh.md'),
       '---\nID: 01KVGMT8BFP350FZZXAMG1QDRG\n---\n',
     )
-    const r = await handleMutate(
+    const r = await confirmedMutate(
       root,
       {
         op: 'rename',
@@ -442,12 +444,12 @@ describe('handleMutate — sync tap', () => {
     await refreshTree(root)
     const indexMoves = vi.spyOn(indexSeed, 'moveIndexPaths')
     flushValueWrites(root)
-    const set = await handleMutate(
+    const set = await confirmedMutate(
       root,
       { op: 'moveSet', path: 'Notes/Daily/SetA', newParentPath: 'Notes/Daily', order: ['sa'] },
       nexusDeps,
     )
-    const moved = await handleMutate(
+    const moved = await confirmedMutate(
       root,
       {
         op: 'movePage',
@@ -471,7 +473,7 @@ describe('handleMutate — move + guards', () => {
   it('movePage relocates the file to another container', async () => {
     await mkdir(join(root, 'Notes', 'Archive'), { recursive: true })
     await writeFile(join(root, 'Notes', 'Archive', '_pageset.json'), JSON.stringify({ id: 'arc' }))
-    const r = await handleMutate(
+    const r = await confirmedMutate(
       root,
       { op: 'movePage', path: 'Notes/Daily/Beta.md', newParentPath: 'Notes/Archive' },
       nexusDeps,
@@ -482,7 +484,7 @@ describe('handleMutate — move + guards', () => {
   })
 
   it('movePage with order persists the destination page_order (same-parent reorder, no file move)', async () => {
-    const r = await handleMutate(
+    const r = await confirmedMutate(
       root,
       {
         op: 'movePage',
@@ -498,7 +500,7 @@ describe('handleMutate — move + guards', () => {
   })
 
   it('movePage with order reparents the file AND seeds the destination page_order', async () => {
-    const r = await handleMutate(
+    const r = await confirmedMutate(
       root,
       { op: 'movePage', path: 'Notes/Daily/Beta.md', newParentPath: 'Notes', order: ['b'] },
       nexusDeps,
@@ -515,7 +517,7 @@ describe('handleMutate — move + guards', () => {
       JSON.stringify({ id: 'col', page_order: [B_ID, A_ID] }),
     )
     await refreshTree(root)
-    const r = await handleMutate(
+    const r = await confirmedMutate(
       root,
       { op: 'movePage', path: 'Notes/Daily/Beta.md', newParentPath: 'Notes', order: [B_ID] },
       nexusDeps,
@@ -532,7 +534,7 @@ describe('handleMutate — move + guards', () => {
       JSON.stringify({ id: 'pt', set_order: ['wk', 'col'] }),
     )
     await refreshTree(root)
-    const r = await handleMutate(
+    const r = await confirmedMutate(
       root,
       { op: 'moveSet', path: 'Notes/Daily', newParentPath: 'Notes/Weekly', order: ['col'] },
       nexusDeps,
@@ -554,7 +556,7 @@ describe('handleMutate — move + guards', () => {
       join(root, 'Notes', 'Daily', 'Gamma.md'),
       '---\nID: 01KVGMT8BFP350FZZXAMG1QDRG\n---\n\nbody',
     )
-    const r = await handleMutate(
+    const r = await confirmedMutate(
       root,
       {
         op: 'movePage',
@@ -579,7 +581,7 @@ describe('handleMutate — move + guards', () => {
   it('reorderChildren persists set_order on the collection sidecar', async () => {
     await mkdir(join(root, 'Notes', 'Weekly'), { recursive: true })
     await writeFile(join(root, 'Notes', 'Weekly', '_pageset.json'), JSON.stringify({ id: 'wk' }))
-    const r = await handleMutate(
+    const r = await confirmedMutate(
       root,
       { op: 'reorderChildren', parentPath: 'Notes', key: 'set_order', order: ['wk', 'col'] },
       nexusDeps,
@@ -589,7 +591,7 @@ describe('handleMutate — move + guards', () => {
   })
 
   it('reorderTop persists order.collections to .nexus/state.json', async () => {
-    const r = await handleMutate(root, { op: 'reorderTop', order: ['v2', 'v1'] }, nexusDeps)
+    const r = await confirmedMutate(root, { op: 'reorderTop', order: ['v2', 'v1'] }, nexusDeps)
     expect(r.ok).toBe(true)
     expect(
       (await readJson<{ order: { collections: string[] } }>('.nexus/state.json')).order.collections,
@@ -608,7 +610,7 @@ describe('handleMutate — move + guards', () => {
     )
     await mkdir(join(root, 'Notes', 'Weekly'), { recursive: true })
     await writeFile(join(root, 'Notes', 'Weekly', '_pageset.json'), JSON.stringify({ id: 'wk' }))
-    const r = await handleMutate(
+    const r = await confirmedMutate(
       root,
       { op: 'moveSet', path: 'Notes/Daily/SetX', newParentPath: 'Notes/Weekly', order: ['sx'] },
       nexusDeps,
@@ -640,7 +642,7 @@ describe('handleMutate — move + guards', () => {
     const viewsAt = async (rel: string): Promise<unknown> => (await readJson(rel)).views
     const matrix = (): string => nexusConfig(root, NEXUS_CONFIG_FILES.matrix)
     const moveSet = (path: string, newParentPath: string) =>
-      handleMutate(root, { op: 'moveSet', path, newParentPath, order: [] }, nexusDeps)
+      confirmedMutate(root, { op: 'moveSet', path, newParentPath, order: [] }, nexusDeps)
 
     it('strips a Set moved to another Collection, and its Sets, from the Collection it left', async () => {
       const all = ['col', 'ch', 'wk']
@@ -700,7 +702,7 @@ describe('handleMutate — move + guards', () => {
       join(root, 'Notes', 'Daily', 'SetB', '_pageset.json'),
       JSON.stringify({ id: 'sb' }),
     )
-    const r = await handleMutate(
+    const r = await confirmedMutate(
       root,
       {
         op: 'moveSet',
@@ -716,7 +718,7 @@ describe('handleMutate — move + guards', () => {
   })
 
   it('rejects a path that escapes the nexus root', async () => {
-    const r = await handleMutate(
+    const r = await confirmedMutate(
       root,
       { op: 'rename', path: '../evil', kind: 'page', newName: 'x' },
       nexusDeps,
@@ -739,14 +741,14 @@ describe('handleMutate — targets the tree doesn’t hold', () => {
     { op: 'movePage', path: 'Notes/Daily/Beta.md', newParentPath: '.nexus' },
     { op: 'moveSet', path: 'Notes', newParentPath: 'Notes/Daily', order: [] },
   ] as MutateRequest[])('refuses $op on $path$parentPath', async (req) => {
-    const r = await handleMutate(root, req, nexusDeps)
+    const r = await confirmedMutate(root, req, nexusDeps)
     expect(r.ok).toBe(false)
     if (r.ok) return
     expect(r.error.message).toBe('That item can’t be changed.')
   })
 
   it('refuses a Collection anywhere but the top of the Nexus', async () => {
-    const r = await handleMutate(
+    const r = await confirmedMutate(
       root,
       { op: 'createContainer', parentPath: 'Notes', kind: 'collection', name: 'X' },
       nexusDeps,
@@ -758,7 +760,7 @@ describe('handleMutate — targets the tree doesn’t hold', () => {
 
 describe('handleMutate — review-round hardening', () => {
   it('creates a collection at the nexus root (parentPath "")', async () => {
-    const r = await handleMutate(
+    const r = await confirmedMutate(
       root,
       { op: 'createContainer', parentPath: '', kind: 'collection', name: 'Inbox' },
       nexusDeps,
@@ -768,7 +770,7 @@ describe('handleMutate — review-round hardening', () => {
   })
 
   it('refuses to delete the .nexus machinery, leaving it intact', async () => {
-    const r = await handleMutate(
+    const r = await confirmedMutate(
       root,
       { op: 'delete', path: '.nexus', kind: 'collection' },
       nexusDeps,
@@ -778,7 +780,7 @@ describe('handleMutate — review-round hardening', () => {
   })
 
   it('rejects a name containing a NUL byte as invalid-name (not a throw)', async () => {
-    const r = await handleMutate(
+    const r = await confirmedMutate(
       root,
       {
         op: 'createPage',
@@ -793,7 +795,7 @@ describe('handleMutate — review-round hardening', () => {
   })
 
   it('rename to the current name is a no-op success', async () => {
-    const r = await handleMutate(
+    const r = await confirmedMutate(
       root,
       { op: 'rename', path: 'Notes/Daily/Beta.md', kind: 'page', newName: 'Beta' },
       nexusDeps,
@@ -802,20 +804,24 @@ describe('handleMutate — review-round hardening', () => {
     expect(await pathExists(join(root, 'Notes/Daily/Beta.md'))).toBe(true)
   })
 
-  it('delete of an already-gone path returns not-found (no throw)', async () => {
-    await handleMutate(root, { op: 'delete', path: 'Notes/Daily/Beta.md', kind: 'page' }, nexusDeps)
-    const again = await handleMutate(
+  it('delete of an already-gone path answers invalid-path (no throw)', async () => {
+    await confirmedMutate(
+      root,
+      { op: 'delete', path: 'Notes/Daily/Beta.md', kind: 'page' },
+      nexusDeps,
+    )
+    const again = await confirmedMutate(
       root,
       { op: 'delete', path: 'Notes/Daily/Beta.md', kind: 'page' },
       nexusDeps,
     )
     expect(again.ok).toBe(false)
     if (again.ok) return
-    expect(again.error.code).toBe('not-found')
+    expect(again.error.code).toBe('invalid-path')
   })
 
   it('movePage into the current folder is a no-op success; a name collision fails + leaves the source', async () => {
-    const noop = await handleMutate(
+    const noop = await confirmedMutate(
       root,
       { op: 'movePage', path: 'Notes/Daily/Beta.md', newParentPath: 'Notes/Daily' },
       nexusDeps,
@@ -829,7 +835,7 @@ describe('handleMutate — review-round hardening', () => {
       '---\nID: 01KVGMT8BFP350FZZXAMG1QDRZ\n---\n',
     )
     await refreshTree(root)
-    const clash = await handleMutate(
+    const clash = await confirmedMutate(
       root,
       { op: 'movePage', path: 'Notes/Daily/Beta.md', newParentPath: 'Notes/Other' },
       nexusDeps,
@@ -848,7 +854,7 @@ describe('handleMutate — review-round hardening', () => {
   }
 
   it('adopts a picked image under the asset root and names it by wikilink', async () => {
-    const r = await handleMutate(
+    const r = await confirmedMutate(
       root,
       { op: 'setProfileImage', source: await pickImage('Photo.png') },
       nexusDeps,
@@ -859,12 +865,12 @@ describe('handleMutate — review-round hardening', () => {
   })
 
   it('a replaced photo stays where it is, under either asset root', async () => {
-    await handleMutate(
+    await confirmedMutate(
       root,
       { op: 'setProfileImage', source: await pickImage('First.png') },
       nexusDeps,
     )
-    await handleMutate(
+    await confirmedMutate(
       root,
       { op: 'setProfileImage', source: await pickImage('Second.png') },
       nexusDeps,
@@ -875,12 +881,12 @@ describe('handleMutate — review-round hardening', () => {
       JSON.stringify({ asset_directory: 'file-assets' }),
     )
     await mkdir(join(root, 'file-assets'), { recursive: true })
-    await handleMutate(
+    await confirmedMutate(
       root,
       { op: 'setProfileImage', source: await pickImage('Kept.png') },
       nexusDeps,
     )
-    await handleMutate(
+    await confirmedMutate(
       root,
       { op: 'setProfileImage', source: await pickImage('Next.png') },
       nexusDeps,
@@ -889,19 +895,19 @@ describe('handleMutate — review-round hardening', () => {
   })
 
   it('setProfileImage null clears the field and leaves the image', async () => {
-    await handleMutate(
+    await confirmedMutate(
       root,
       { op: 'setProfileImage', source: await pickImage('Held.png') },
       nexusDeps,
     )
-    const r = await handleMutate(root, { op: 'setProfileImage', source: null }, nexusDeps)
+    const r = await confirmedMutate(root, { op: 'setProfileImage', source: null }, nexusDeps)
     expect(r.ok).toBe(true)
     expect((await readJson('.nexus/settings.json')).profile_image).toBeUndefined()
     expect(await pathExists(join(root, '.nexus/assets/Held.png'))).toBe(true)
   })
 
   it('a non-image source is refused, writing nothing', async () => {
-    const r = await handleMutate(
+    const r = await confirmedMutate(
       root,
       { op: 'setProfileImage', source: await pickImage('Notes.txt') },
       nexusDeps,
@@ -911,7 +917,7 @@ describe('handleMutate — review-round hardening', () => {
   })
 
   it('adopts a real local image source the renderer named (no picked-path gate)', async () => {
-    const r = await handleMutate(
+    const r = await confirmedMutate(
       root,
       { op: 'setProfileImage', source: await pickImage('Real.png') },
       nexusDeps,
@@ -922,20 +928,20 @@ describe('handleMutate — review-round hardening', () => {
 
   it('stores an http(s) source by reference', async () => {
     const url = 'https://example.com/photo.png'
-    const r = await handleMutate(root, { op: 'setProfileImage', source: url }, nexusDeps)
+    const r = await confirmedMutate(root, { op: 'setProfileImage', source: url }, nexusDeps)
     expect(r.ok).toBe(true)
     expect((await readJson('.nexus/settings.json')).profile_image).toBe(url)
   })
 
   it('a source that resolves to no image faults and leaves the prior photo untouched', async () => {
-    await handleMutate(
+    await confirmedMutate(
       root,
       { op: 'setProfileImage', source: await pickImage('First.png') },
       nexusDeps,
     )
     expect((await readJson('.nexus/settings.json')).profile_image).toBe('[[First.png]]')
     // A file: URL — like any non-image string — dies in adoptFile with no extension it can show.
-    const r = await handleMutate(
+    const r = await confirmedMutate(
       root,
       { op: 'setProfileImage', source: 'file:///etc/passwd' },
       nexusDeps,
@@ -947,8 +953,8 @@ describe('handleMutate — review-round hardening', () => {
   it('a replaced photo reaches no trash', async () => {
     const trashToSystem = vi.fn(async (_p: string) => {})
     const deps: TrashDeps = { trashMode: 'system', trashToSystem }
-    await handleMutate(root, { op: 'setProfileImage', source: await pickImage('Old.png') }, deps)
-    await handleMutate(root, { op: 'setProfileImage', source: await pickImage('New.png') }, deps)
+    await confirmedMutate(root, { op: 'setProfileImage', source: await pickImage('Old.png') }, deps)
+    await confirmedMutate(root, { op: 'setProfileImage', source: await pickImage('New.png') }, deps)
     expect(trashToSystem).not.toHaveBeenCalled()
   })
 
@@ -959,7 +965,7 @@ describe('handleMutate — review-round hardening', () => {
     )
     const src = join(root, 'Pick.png')
     await writeFile(src, 'bytes')
-    const r = await handleMutate(
+    const r = await confirmedMutate(
       root,
       { op: 'setBanner', kind: 'homepage', path: '', source: src },
       nexusDeps,
@@ -975,7 +981,7 @@ describe('handleMutate — review-round hardening', () => {
   it('navview setBanner writes + clears the state.json navigation banner, never homepage.json', async () => {
     const src = join(root, 'Nav.png')
     await writeFile(src, 'bytes')
-    const r = await handleMutate(
+    const r = await confirmedMutate(
       root,
       { op: 'setBanner', kind: 'navview', path: '', source: src },
       nexusDeps,
@@ -985,7 +991,7 @@ describe('handleMutate — review-round hardening', () => {
       (await readJson<{ navigation?: { banner?: string } }>('.nexus/state.json')).navigation
         ?.banner,
     ).toBe('[[Nav.png]]')
-    const clear = await handleMutate(
+    const clear = await confirmedMutate(
       root,
       { op: 'setBanner', kind: 'navview', path: '', source: null },
       nexusDeps,
@@ -999,7 +1005,7 @@ describe('handleMutate — review-round hardening', () => {
 
   it('a malformed op returns a clean fault, not a throw', async () => {
     const bogus = { op: 'bogus' } as unknown as MutateRequest
-    const r = await handleMutate(root, bogus, nexusDeps)
+    const r = await confirmedMutate(root, bogus, nexusDeps)
     expect(r.ok).toBe(false)
     if (r.ok) return
     expect(r.error.code).toBe('operation-failed')
@@ -1017,7 +1023,7 @@ describe('handleMutate — review-round hardening', () => {
       )
       await chmod(join(root, 'Notes', 'Locked'), 0o555)
       try {
-        const r = await handleMutate(
+        const r = await confirmedMutate(
           root,
           { op: 'rename', path: 'Notes/Daily/Beta.md', kind: 'page', newName: 'Gamma' },
           nexusDeps,
@@ -1104,7 +1110,7 @@ describe('handleMutate — renameHeading', () => {
 
   it('answers a heading rename whose cascade can’t start with a warning, not a fault', async () => {
     await writeFile(join(root, '.nexus', 'properties.json'), '{ not json')
-    const r = await handleMutate(root, req, nexusDeps)
+    const r = await confirmedMutate(root, req, nexusDeps)
     expect(r.ok && r.value.cascade?.warning).toMatch(/^Links to “Beta#Setup” weren't updated: /)
     expect(await read('Notes/Daily/Alpha.md')).toContain('See [[Beta#Setup]].')
   })
@@ -1157,7 +1163,7 @@ describe('handleMutate — a page delete reaches the pages beneath a Set whose s
     )
   })
   const deleteBeta = () =>
-    handleMutate(root, { op: 'delete', path: 'Notes/Daily/Beta.md', kind: 'page' }, nexusDeps)
+    confirmedMutate(root, { op: 'delete', path: 'Notes/Daily/Beta.md', kind: 'page' }, nexusDeps)
 
   it('corrupted mid-session: the delete strips links from its pages', async () => {
     await refreshTree(root)
@@ -1265,7 +1271,7 @@ describe('handleMutate — setBanner', () => {
   const bannerOf = async (): Promise<string | undefined> =>
     (await readJson<{ banner?: string }>('Notes/_pagecollection.json')).banner
   const setBanner = (source: string | null) =>
-    handleMutate(root, { op: 'setBanner', path: 'Notes', kind: 'collection', source }, nexusDeps)
+    confirmedMutate(root, { op: 'setBanner', path: 'Notes', kind: 'collection', source }, nexusDeps)
 
   it('adopts a picked file under its own name and names it by wikilink', async () => {
     const assets = await withAssetDir()
@@ -1401,7 +1407,7 @@ describe('handleMutate — setBanner', () => {
 
   it('clearing one banner leaves an image another banner still shows', async () => {
     expect((await setBanner(await pick('Same.png'))).ok).toBe(true)
-    const set = await handleMutate(
+    const set = await confirmedMutate(
       root,
       { op: 'setBanner', path: 'Notes/Daily', kind: 'set', source: await pick('Same.png') },
       nexusDeps,
@@ -1414,7 +1420,7 @@ describe('handleMutate — setBanner', () => {
 
   it('sets a banner on a set sidecar', async () => {
     await withAssetDir()
-    const r = await handleMutate(
+    const r = await confirmedMutate(
       root,
       { op: 'setBanner', path: 'Notes/Daily', kind: 'set', source: await pick('Set.png') },
       nexusDeps,
@@ -1426,7 +1432,7 @@ describe('handleMutate — setBanner', () => {
   it('readNexus surfaces the banner value on collection + set nodes', async () => {
     await withAssetDir()
     await setBanner(await pick('Coll.png'))
-    await handleMutate(
+    await confirmedMutate(
       root,
       { op: 'setBanner', path: 'Notes/Daily', kind: 'set', source: await pick('Sub.png') },
       nexusDeps,
@@ -1447,7 +1453,7 @@ describe('handleMutate — setBanner', () => {
 
   it('sets a page banner as the `banner` frontmatter key; clearing reverts', async () => {
     const assets = await withAssetDir()
-    const created = await handleMutate(
+    const created = await confirmedMutate(
       root,
       { op: 'createPage', parentPath: 'Notes/Daily', name: 'Cover' },
       nexusDeps,
@@ -1456,7 +1462,7 @@ describe('handleMutate — setBanner', () => {
     expect(created.ok).toBe(true)
     if (!created.ok) return
     const pagePath = created.value.created!.path
-    const r = await handleMutate(
+    const r = await confirmedMutate(
       root,
       { op: 'setBanner', path: pagePath, kind: 'page', source: await pick('Page.png') },
       nexusDeps,
@@ -1464,7 +1470,7 @@ describe('handleMutate — setBanner', () => {
     expect(r.ok).toBe(true)
     expect(await read(pagePath)).toMatch(/banner: ["']\[\[Page\.png\]\]["']/)
     expect(await pathExists(join(assets, 'Page.png'))).toBe(true)
-    const cleared = await handleMutate(
+    const cleared = await confirmedMutate(
       root,
       { op: 'setBanner', path: pagePath, kind: 'page', source: null },
       nexusDeps,
@@ -1475,7 +1481,7 @@ describe('handleMutate — setBanner', () => {
 
   it('sets a homepage banner in .nexus/homepage/homepage.json', async () => {
     await withAssetDir()
-    const r = await handleMutate(
+    const r = await confirmedMutate(
       root,
       { op: 'setBanner', path: '', kind: 'homepage', source: await pick('Home.png') },
       nexusDeps,
@@ -1500,13 +1506,13 @@ describe('handleMutate — setCrop', () => {
     return p
   }
   const setBannerPage = (source: string | null) =>
-    handleMutate(
+    confirmedMutate(
       root,
       { op: 'setBanner', path: 'Notes/Daily/Alpha.md', kind: 'page', source },
       nexusDeps,
     )
   const setCrop = (image: string, crop: Crop | null) =>
-    handleMutate(root, mutateRequest.parse({ op: 'setCrop', image, crop }), nexusDeps)
+    confirmedMutate(root, mutateRequest.parse({ op: 'setCrop', image, crop }), nexusDeps)
   const cropsOf = async (): Promise<Record<string, Crop> | undefined> => {
     try {
       return (await readJson<{ byImage?: Record<string, Crop> }>('.nexus/assets/crops.json'))
@@ -1585,7 +1591,7 @@ describe('handleMutate — setProperty (the D-4 cross-group reassignment write)'
   })
 
   it('writes a typed property into the page frontmatter, preserving id + body', async () => {
-    const r = await handleMutate(
+    const r = await confirmedMutate(
       root,
       {
         op: 'setProperty',
@@ -1603,7 +1609,7 @@ describe('handleMutate — setProperty (the D-4 cross-group reassignment write)'
   })
 
   it('writes no modified_at on a property VALUE change — the file mtime is the edit record', async () => {
-    await handleMutate(
+    await confirmedMutate(
       root,
       {
         op: 'setProperty',
@@ -1617,7 +1623,7 @@ describe('handleMutate — setProperty (the D-4 cross-group reassignment write)'
   })
 
   it('a null value clears the property key', async () => {
-    await handleMutate(
+    await confirmedMutate(
       root,
       {
         op: 'setProperty',
@@ -1627,7 +1633,7 @@ describe('handleMutate — setProperty (the D-4 cross-group reassignment write)'
       },
       nexusDeps,
     )
-    const r = await handleMutate(
+    const r = await confirmedMutate(
       root,
       { op: 'setProperty', path: 'Notes/Daily/Beta.md', propertyId: 'prop_s', value: null },
       nexusDeps,
@@ -1637,7 +1643,7 @@ describe('handleMutate — setProperty (the D-4 cross-group reassignment write)'
   })
 
   it('an emptied value clears the key on disk — the file never holds a [] placeholder', async () => {
-    await handleMutate(
+    await confirmedMutate(
       root,
       {
         op: 'setProperty',
@@ -1647,7 +1653,7 @@ describe('handleMutate — setProperty (the D-4 cross-group reassignment write)'
       },
       nexusDeps,
     )
-    const r = await handleMutate(
+    const r = await confirmedMutate(
       root,
       {
         op: 'setProperty',
@@ -1664,7 +1670,7 @@ describe('handleMutate — setProperty (the D-4 cross-group reassignment write)'
   })
 
   it('never throws on a missing page — returns ok:false', async () => {
-    const r = await handleMutate(
+    const r = await confirmedMutate(
       root,
       { op: 'setProperty', path: 'Notes/Daily/Ghost.md', propertyId: 'prop_s', value: null },
       nexusDeps,
@@ -1675,7 +1681,7 @@ describe('handleMutate — setProperty (the D-4 cross-group reassignment write)'
 
 describe('handleMutate — setIcon and setHeadingIconHidden on a container sidecar', () => {
   it('sets an icon and drops the key again when it is cleared, keeping foreign keys', async () => {
-    const set = await handleMutate(
+    const set = await confirmedMutate(
       root,
       { op: 'setIcon', path: 'Notes', kind: 'collection', icon: 'star' },
       nexusDeps,
@@ -1685,7 +1691,7 @@ describe('handleMutate — setIcon and setHeadingIconHidden on a container sidec
     expect(sc.icon).toBe('star')
     expect(sc.id).toBe('pt')
 
-    const cleared = await handleMutate(
+    const cleared = await confirmedMutate(
       root,
       { op: 'setIcon', path: 'Notes', kind: 'collection', icon: null },
       nexusDeps,
@@ -1703,7 +1709,7 @@ describe('handleMutate — setIcon and setHeadingIconHidden on a container sidec
       JSON.stringify({ contexts: [{ id: 'ctxP', title: 'Projects', singular: 'Project' }] }),
     )
     const path = '.nexus/contexts/Projects/Pom'
-    const set = await handleMutate(
+    const set = await confirmedMutate(
       root,
       { op: 'setIcon', path, kind: 'space', icon: 'star' },
       nexusDeps,
@@ -1711,7 +1717,7 @@ describe('handleMutate — setIcon and setHeadingIconHidden on a container sidec
     expect(set.ok).toBe(true)
     expect(await readJsonAt(file)).toEqual({ id: 'sp1', icon: 'box', $icon: 'star' })
 
-    const cleared = await handleMutate(
+    const cleared = await confirmedMutate(
       root,
       { op: 'setIcon', path, kind: 'space', icon: null },
       nexusDeps,
@@ -1722,7 +1728,7 @@ describe('handleMutate — setIcon and setHeadingIconHidden on a container sidec
 
   it('refuses an icon on a sidecar with no id rather than reseeding one', async () => {
     await writeFile(join(root, 'Notes/_pagecollection.json'), JSON.stringify({ views: [] }))
-    const r = await handleMutate(
+    const r = await confirmedMutate(
       root,
       { op: 'setIcon', path: 'Notes', kind: 'collection', icon: 'star' },
       nexusDeps,
@@ -1731,7 +1737,7 @@ describe('handleMutate — setIcon and setHeadingIconHidden on a container sidec
   })
 
   it('round-trips the heading-icon flag, and absence is the shown default', async () => {
-    const hidden = await handleMutate(
+    const hidden = await confirmedMutate(
       root,
       { op: 'setHeadingIconHidden', path: 'Notes', kind: 'collection', hidden: true },
       nexusDeps,
@@ -1739,7 +1745,7 @@ describe('handleMutate — setIcon and setHeadingIconHidden on a container sidec
     expect(hidden.ok).toBe(true)
     expect((await readJson('Notes/_pagecollection.json')).heading_icon_hidden).toBe(true)
 
-    const shown = await handleMutate(
+    const shown = await confirmedMutate(
       root,
       { op: 'setHeadingIconHidden', path: 'Notes', kind: 'collection', hidden: false },
       nexusDeps,
@@ -1901,7 +1907,7 @@ describe('a file value never destroys what it stops naming', () => {
   })
 
   const setFiles = (path: string, value: string[]) =>
-    handleMutate(
+    confirmedMutate(
       root,
       { op: 'setProperty', path, propertyId: 'prop_f', value: { kind: 'file', value } },
       nexusDeps,
@@ -1951,7 +1957,7 @@ describe('the acceptance chain, read raw off the disk at every step', () => {
     return p
   }
   const setFiles = (value: string[]) =>
-    handleMutate(
+    confirmedMutate(
       root,
       {
         op: 'setProperty',
@@ -2017,7 +2023,7 @@ describe('the acceptance chain, read raw off the disk at every step', () => {
 
 describe('handleMutate — setActiveView', () => {
   it('writes active_view onto the container sidecar', async () => {
-    const r = await handleMutate(
+    const r = await confirmedMutate(
       root,
       { op: 'setActiveView', path: 'Notes/Daily', kind: 'set', viewId: 'view_x' },
       nexusDeps,
@@ -2030,7 +2036,7 @@ describe('handleMutate — setActiveView', () => {
     const folder = await resolveUnderRoot(root, 'Notes/Daily')
     if (!folder.ok) throw new Error('unresolvable')
     const r = await machine().lock(sidecarPath(folder.value, 'set'), () =>
-      handleMutate(
+      confirmedMutate(
         root,
         { op: 'setActiveView', path: 'Notes/Daily', kind: 'set', viewId: 'view_x' },
         nexusDeps,
@@ -2069,12 +2075,12 @@ describe('the Contexts lock', () => {
 
   it('a page tag written during a Context rename lands under the new key beside its other Contexts', async () => {
     const [renamed, tagged] = await Promise.all([
-      handleMutate(
+      confirmedMutate(
         root,
         { op: 'renameContext', contextId: 'ctxP', newName: 'Ventures' },
         nexusDeps,
       ),
-      handleMutate(
+      confirmedMutate(
         root,
         { op: 'setContext', path: 'Notes/Daily/Alpha.md', contextId: 'ctxP', spaceIds: ['sp-pom'] },
         nexusDeps,
@@ -2103,7 +2109,7 @@ describe('the Contexts lock', () => {
         await Promise.race([loaded, lock.contended])
         return taken(from, to)
       })
-    const renaming = handleMutate(
+    const renaming = confirmedMutate(
       root,
       { op: 'renameSpace', spaceId: 'sp-pom', newName: 'Atlas' },
       nexusDeps,
@@ -2116,7 +2122,7 @@ describe('the Contexts lock', () => {
         await renaming
         return folderOf(r, file)
       })
-    const tagged = await handleMutate(
+    const tagged = await confirmedMutate(
       root,
       { op: 'setContext', path: 'Notes/Daily/Alpha.md', contextId: 'ctxP', spaceIds: ['sp-pom'] },
       nexusDeps,
@@ -2149,7 +2155,7 @@ describe('the Contexts lock', () => {
       await Promise.race([loaded, lock.contended])
       return unlink(...args)
     }) as never)
-    const deleting = handleMutate(root, { op: 'delete', path, kind }, nexusDeps)
+    const deleting = confirmedMutate(root, { op: 'delete', path, kind }, nexusDeps)
     const folderOf = assignment.collectionFolderOf
     const tagWaits = vi
       .spyOn(assignment, 'collectionFolderOf')
@@ -2158,7 +2164,7 @@ describe('the Contexts lock', () => {
         await deleting
         return folderOf(r, file)
       })
-    const tagged = await handleMutate(
+    const tagged = await confirmedMutate(
       root,
       { op: 'setContext', path: 'Notes/Daily/Beta.md', contextId: 'ctxA', spaceIds: ['sp-work'] },
       nexusDeps,
@@ -2186,12 +2192,12 @@ describe('the Contexts lock', () => {
 
   it('a Space created during a Context rename lands in the renamed Context', async () => {
     const [renamed, created] = await Promise.all([
-      handleMutate(
+      confirmedMutate(
         root,
         { op: 'renameContext', contextId: 'ctxP', newName: 'Ventures' },
         nexusDeps,
       ),
-      handleMutate(root, { op: 'createSpace', contextId: 'ctxP', name: 'Atlas' }, nexusDeps),
+      confirmedMutate(root, { op: 'createSpace', contextId: 'ctxP', name: 'Atlas' }, nexusDeps),
     ])
     expect(renamed.ok && created.ok).toBe(true)
     expect(await pathExists(join(root, '.nexus/contexts/Ventures/Atlas/_space.json'))).toBe(true)
@@ -2200,12 +2206,12 @@ describe('the Contexts lock', () => {
 
   it('a page created with a Context seed during that Context’s rename carries the new key', async () => {
     const [renamed, created] = await Promise.all([
-      handleMutate(
+      confirmedMutate(
         root,
         { op: 'renameContext', contextId: 'ctxP', newName: 'Ventures' },
         nexusDeps,
       ),
-      handleMutate(
+      confirmedMutate(
         root,
         {
           op: 'createPage',
@@ -2230,7 +2236,7 @@ describe('setContext on a Space', () => {
   beforeEach(seedTwoContexts)
 
   const link = (spaceIds: string[]) =>
-    handleMutate(
+    confirmedMutate(
       root,
       { op: 'setContext', path: '.nexus/contexts/Projects/Pommora', contextId: 'ctxA', spaceIds },
       nexusDeps,
@@ -2242,7 +2248,7 @@ describe('setContext on a Space', () => {
   })
 
   it('createSpace order substitutes NEW_SLOT with the minted id and persists the Space order', async () => {
-    const r = await handleMutate(
+    const r = await confirmedMutate(
       root,
       { op: 'createSpace', contextId: 'ctxP', name: 'Atlas', order: [NEW_SLOT, 'sp-pom'] },
       nexusDeps,
@@ -2259,7 +2265,7 @@ describe('handleMutate — setPageMeta', () => {
     readJson(`.nexus/metadata/${shardOf(id)}.json`)
 
   it('writes a stamped page’s entry into its month', async () => {
-    const r = await handleMutate(
+    const r = await confirmedMutate(
       root,
       { op: 'setPageMeta', path: 'Notes/Daily/Alpha.md', patch: { locked: true } },
       nexusDeps,
@@ -2270,7 +2276,7 @@ describe('handleMutate — setPageMeta', () => {
 
   it('refuses a path that is not a page and leaves its bytes alone', async () => {
     const before = await read('.nexus/settings.json')
-    const r = await handleMutate(
+    const r = await confirmedMutate(
       root,
       { op: 'setPageMeta', path: '.nexus/settings.json', patch: { locked: true } },
       nexusDeps,
@@ -2281,7 +2287,7 @@ describe('handleMutate — setPageMeta', () => {
 
   it('refuses an ID-less page the tree doesn’t hold and leaves its bytes alone', async () => {
     await writeFile(join(root, 'Notes', 'Daily', 'Gamma.md'), 'gamma')
-    const r = await handleMutate(
+    const r = await confirmedMutate(
       root,
       { op: 'setPageMeta', path: 'Notes/Daily/Gamma.md', patch: { title_icon: true } },
       nexusDeps,
@@ -2294,7 +2300,7 @@ describe('handleMutate — setPageMeta', () => {
     const page = join(root, 'Notes', 'Daily', 'Alpha.md')
     const bytes = await read('Notes/Daily/Alpha.md')
     const { mtimeMs } = await stat(page)
-    const set = await handleMutate(
+    const set = await confirmedMutate(
       root,
       { op: 'setIcon', path: 'Notes/Daily/Alpha.md', kind: 'page', icon: 'star' },
       nexusDeps,
@@ -2302,12 +2308,12 @@ describe('handleMutate — setPageMeta', () => {
     expect(set).toEqual({ ok: true, value: {} })
     expect(await month(A_ID)).toEqual({ pages: { [A_ID]: { icon: 'star' } } })
 
-    await handleMutate(
+    await confirmedMutate(
       root,
       { op: 'setPageMeta', path: 'Notes/Daily/Alpha.md', patch: { locked: true } },
       nexusDeps,
     )
-    const cleared = await handleMutate(
+    const cleared = await confirmedMutate(
       root,
       { op: 'setIcon', path: 'Notes/Daily/Alpha.md', kind: 'page', icon: null },
       nexusDeps,
@@ -2330,18 +2336,18 @@ describe('handleMutate — landings Settings keeps out', () => {
     await refreshTree(root)
   })
 
-  const refusal = (r: Awaited<ReturnType<typeof handleMutate>>): string =>
+  const refusal = (r: Awaited<ReturnType<typeof confirmedMutate>>): string =>
     r.ok ? '' : r.error.message
 
   it('refuses a Collection created, or a Set renamed, onto an excluded folder', async () => {
-    const created = await handleMutate(
+    const created = await confirmedMutate(
       root,
       { op: 'createContainer', parentPath: '', kind: 'collection', name: 'Archive' },
       nexusDeps,
     )
     expect(refusal(created)).toContain('"Archive" is currently listed as an excluded directory')
     expect(await pathExists(join(root, 'Archive'))).toBe(false)
-    const renamed = await handleMutate(
+    const renamed = await confirmedMutate(
       root,
       { op: 'rename', path: 'Notes', kind: 'collection', newName: 'archive' },
       nexusDeps,
@@ -2351,7 +2357,7 @@ describe('handleMutate — landings Settings keeps out', () => {
   })
 
   it('leaves a name the primitive refuses to the primitive', async () => {
-    const r = await handleMutate(
+    const r = await confirmedMutate(
       root,
       { op: 'rename', path: 'Notes', kind: 'collection', newName: 'Archive/x' },
       nexusDeps,
@@ -2360,7 +2366,7 @@ describe('handleMutate — landings Settings keeps out', () => {
   })
 
   it('refuses a Collection renamed onto the asset folder', async () => {
-    const r = await handleMutate(
+    const r = await confirmedMutate(
       root,
       { op: 'rename', path: 'Notes', kind: 'collection', newName: 'Media' },
       nexusDeps,
@@ -2369,7 +2375,7 @@ describe('handleMutate — landings Settings keeps out', () => {
   })
 
   it('refuses a Set moved onto an excluded path', async () => {
-    const r = await handleMutate(
+    const r = await confirmedMutate(
       root,
       { op: 'moveSet', path: 'Notes/Daily', newParentPath: 'Other', order: [] },
       nexusDeps,
@@ -2424,13 +2430,13 @@ describe('handleMutate — excluded entries follow their folders', () => {
       { op: 'rename', path: 'Notes', kind: 'collection', newName: 'Elsewhere' },
       { op: 'delete', path: 'Notes', kind: 'collection' },
     ] as const) {
-      const r = await handleMutate(root, req, nexusDeps)
+      const r = await confirmedMutate(root, req, nexusDeps)
       expect(r.ok ? '' : r.error.message).toContain('settings.json')
       expect(await pathExists(join(root, 'Notes', 'Private'))).toBe(true)
     }
     expect(await pathExists(join(root, '.trash'))).toBe(false)
     expect(await read('.nexus/settings.json')).toBe('{ corrupt')
-    const landed = await handleMutate(
+    const landed = await confirmedMutate(
       root,
       { op: 'rename', path: 'Other', kind: 'collection', newName: 'Moved' },
       nexusDeps,
@@ -2446,7 +2452,7 @@ describe('handleMutate — excluded entries follow their folders', () => {
     await mkdir(join(root, 'Third'))
     await writeFile(join(root, 'Third', '_pagecollection.json'), JSON.stringify({ id: 'th' }))
     await exclude(['Notes/Daily/Private', 'Other/Kept/Private'])
-    const deleted = await handleMutate(
+    const deleted = await confirmedMutate(
       root,
       { op: 'delete', path: 'Other', kind: 'collection' },
       nexusDeps,
@@ -2454,17 +2460,17 @@ describe('handleMutate — excluded entries follow their folders', () => {
     const bundlePath = (deleted.ok && deleted.value.trashed?.bundlePath) || ''
     await refreshTree(root)
     await writeFile(join(root, '.nexus', 'settings.json'), '{ corrupt')
-    const moved = await handleMutate(
+    const moved = await confirmedMutate(
       root,
       { op: 'moveSet', path: 'Notes/Daily', newParentPath: 'Third', order: [] },
       nexusDeps,
     )
     expect(moved.ok ? '' : moved.error.message).toContain('settings.json')
-    const restored = await handleMutate(root, { op: 'restore', bundlePath }, nexusDeps)
+    const restored = await confirmedMutate(root, { op: 'restore', bundlePath }, nexusDeps)
     expect(restored.ok ? '' : restored.error.message).toContain('settings.json')
     expect(await pathExists(join(root, 'Notes', 'Daily', 'Private'))).toBe(true)
     expect(await pathExists(join(root, 'Other'))).toBe(false)
-    const reordered = await handleMutate(
+    const reordered = await confirmedMutate(
       root,
       { op: 'moveSet', path: 'Notes/Daily', newParentPath: 'Notes', order: [] },
       nexusDeps,
@@ -2477,7 +2483,7 @@ describe('handleMutate — excluded entries follow their folders', () => {
     await writeFile(join(root, 'Other', '_pagecollection.json'), JSON.stringify({ id: 'ot' }))
     await writeFile(join(root, 'Other', 'Daily', '_pageset.json'), JSON.stringify({ id: 'od' }))
     await exclude(['Other/Daily'])
-    const deleted = await handleMutate(
+    const deleted = await confirmedMutate(
       root,
       { op: 'delete', path: 'Other', kind: 'collection' },
       nexusDeps,
@@ -2485,7 +2491,7 @@ describe('handleMutate — excluded entries follow their folders', () => {
     const bundlePath = deleted.ok ? deleted.value.trashed?.bundlePath : undefined
     expect(bundlePath).toBeDefined()
     expect(await excludedOnDisk()).toBeUndefined()
-    await handleMutate(
+    await confirmedMutate(
       root,
       { op: 'createContainer', parentPath: '', kind: 'collection', name: 'Other' },
       nexusDeps,
@@ -2495,7 +2501,11 @@ describe('handleMutate — excluded entries follow their folders', () => {
       JSON.stringify({ excluded_folders: ['Other/Drafts'] }),
     )
     await refreshTree(root)
-    const r = await handleMutate(root, { op: 'restore', bundlePath: bundlePath ?? '' }, nexusDeps)
+    const r = await confirmedMutate(
+      root,
+      { op: 'restore', bundlePath: bundlePath ?? '' },
+      nexusDeps,
+    )
     expect(r).toEqual({ ok: true, value: { rescope: true, landed: 'Other (2)' } })
     expect(await excludedOnDisk()).toEqual(['Other/Drafts', 'Other (2)/Daily'])
   })
@@ -2504,7 +2514,10 @@ describe('handleMutate — excluded entries follow their folders', () => {
     await mkdir(join(root, 'Other', 'Daily'), { recursive: true })
     await writeFile(join(root, 'Other', '_pagecollection.json'), JSON.stringify({ id: 'ot' }))
     await writeFile(join(root, 'Other', 'Daily', '_pageset.json'), JSON.stringify({ id: 'od' }))
-    await writeFile(join(root, 'Other', 'Page.md'), '# Page\n')
+    await writeFile(
+      join(root, 'Other', 'Page.md'),
+      '---\nID: 01KVGMT8BFP350FZZXAMG1QDRC\n---\n# Page\n',
+    )
     await exclude(['Other/Daily'])
     const folder = join(root, 'Other')
     const renames: { from: string; to: string; excluded: unknown }[] = []
@@ -2520,7 +2533,7 @@ describe('handleMutate — excluded entries follow their folders', () => {
         }),
     })
     try {
-      const deleted = await handleMutate(
+      const deleted = await confirmedMutate(
         root,
         { op: 'delete', path: 'Other', kind: 'collection' },
         nexusDeps,
@@ -2532,7 +2545,7 @@ describe('handleMutate — excluded entries follow their folders', () => {
       expect(bundled.endsWith('.deleted/Other')).toBe(true)
       await refreshTree(root)
       const bundlePath = deleted.ok ? (deleted.value.trashed?.bundlePath ?? '') : ''
-      const restored = await handleMutate(root, { op: 'restore', bundlePath }, nexusDeps)
+      const restored = await confirmedMutate(root, { op: 'restore', bundlePath }, nexusDeps)
       expect(restored.ok).toBe(true)
       expect(renames.map(({ from, to }) => [from, to])).toEqual([
         [folder, bundled],
@@ -2551,7 +2564,7 @@ describe('handleMutate — excluded entries follow their folders', () => {
     await mkdir(join(root, 'Other'), { recursive: true })
     await writeFile(join(root, 'Other', '_pagecollection.json'), JSON.stringify({ id: 'ot' }))
     await exclude(['Notes/Daily/Old'])
-    const r = await handleMutate(
+    const r = await confirmedMutate(
       root,
       { op: 'moveSet', path: 'Notes/Daily', newParentPath: 'Other', order: [] },
       nexusDeps,
@@ -2563,7 +2576,7 @@ describe('handleMutate — excluded entries follow their folders', () => {
   it('writes nothing for a rename no entry sits under', async () => {
     await exclude(['Archive'])
     const before = await read('.nexus/settings.json')
-    const r = await handleMutate(
+    const r = await confirmedMutate(
       root,
       { op: 'rename', path: 'Notes', kind: 'collection', newName: 'Journal' },
       nexusDeps,
@@ -2575,12 +2588,71 @@ describe('handleMutate — excluded entries follow their folders', () => {
   it('rescopes a landing beneath an entry that already names the new path', async () => {
     await exclude(['Job/Daily'])
     const before = await read('.nexus/settings.json')
-    const r = await handleMutate(
+    const r = await confirmedMutate(
       root,
       { op: 'rename', path: 'Notes', kind: 'collection', newName: 'Job' },
       nexusDeps,
     )
     expect(r).toEqual({ ok: true, value: { rescope: true } })
     expect(await read('.nexus/settings.json')).toBe(before)
+  })
+})
+
+describe('each routine operation lands from its own events, with no walk', () => {
+  beforeEach(async () => {
+    await seedTwoContexts()
+    await createProperty(root, { id: 'prop_s', name: 'Stage', type: 'select' })
+    await mkdir(join(root, 'Other'))
+    await writeFile(join(root, 'Other', '_pagecollection.json'), JSON.stringify({ id: 'ot' }))
+    await refreshTree(root)
+  })
+
+  const routine: [string, MutateRequest][] = [
+    ['a page create', { op: 'createPage', parentPath: 'Notes/Daily', name: 'Gamma' }],
+    ['a Set create', { op: 'createContainer', parentPath: 'Notes', kind: 'set', name: 'Weekly' }],
+    [
+      'a Collection create',
+      { op: 'createContainer', parentPath: '', kind: 'collection', name: 'Journal' },
+    ],
+    ['a Space create', { op: 'createSpace', contextId: 'ctxP', name: 'Atlas' }],
+    ['a Context group create', { op: 'createContextGroup', name: 'Topics' }],
+    ['a rename', { op: 'rename', path: 'Notes/Daily/Beta.md', kind: 'page', newName: 'Gamma' }],
+    ['a page move', { op: 'movePage', path: 'Notes/Daily/Beta.md', newParentPath: 'Other' }],
+    ['a Set move', { op: 'moveSet', path: 'Notes/Daily', newParentPath: 'Other', order: [] }],
+    [
+      'a child reorder',
+      { op: 'reorderChildren', parentPath: 'Notes', key: 'set_order', order: ['col'] },
+    ],
+    ['a top-level reorder', { op: 'reorderTop', order: ['ot', 'pt'] }],
+    ['a Context reorder', { op: 'reorderContexts', ids: ['ctxA', 'ctxP'] }],
+    ['a panel Context reorder', { op: 'reorderPanelContexts', ids: ['ctxA', 'ctxP'] }],
+    ['a Space reorder', { op: 'reorderSpaces', contextId: 'ctxP', ids: ['sp-pom'] }],
+    [
+      'a Context tag',
+      { op: 'setContext', path: 'Notes/Daily/Alpha.md', contextId: 'ctxP', spaceIds: ['sp-pom'] },
+    ],
+    [
+      'a page meta write',
+      { op: 'setPageMeta', path: 'Notes/Daily/Alpha.md', patch: { aliases: ['a'] } },
+    ],
+    ['a Set icon', { op: 'setIcon', path: 'Notes/Daily', kind: 'set', icon: 'star' }],
+    ['a page icon', { op: 'setIcon', path: 'Notes/Daily/Alpha.md', kind: 'page', icon: 'star' }],
+    ['a Space color', { op: 'setSpaceColor', spaceId: 'sp-pom', color: 'blue' }],
+    [
+      'a cell edit',
+      {
+        op: 'setProperty',
+        path: 'Notes/Daily/Beta.md',
+        propertyId: 'prop_s',
+        value: { kind: 'select', value: 'done' },
+      },
+    ],
+  ]
+
+  it.each(routine)('%s', async (_, req) => {
+    const walk = vi.spyOn(liveTree, 'refreshAfterWrite')
+    const r = await confirmedMutate(root, req, nexusDeps)
+    expect(r.ok).toBe(true)
+    expect(walk).not.toHaveBeenCalled()
   })
 })

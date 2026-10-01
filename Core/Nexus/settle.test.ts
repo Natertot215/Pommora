@@ -1,0 +1,184 @@
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { mkdir, readFile, rm, writeFile } from 'node:fs/promises'
+import { join } from '../Paths/posix'
+import { tempRoot } from '../Testing/hostFs'
+import type { Pushes } from '../Contract/bridge'
+import type { Changed } from '../Files/writeEcho'
+import * as indexSeed from '../Index/indexSeed'
+import * as liveTree from './liveTree'
+import { dropLiveTree, getLiveTree, refreshTree } from './liveTree'
+import * as readNexusModule from './readNexus'
+import { applyEvents, oweCascade, owedFor } from './fileEvents'
+import { flush, sent } from './settle'
+import { closeSession, openSession, whileAdopting } from './session'
+
+const ULID_A = '01ARZ3NDEKPSV4RRFFQ69G5FAV'
+const ULID_B = '01BX5ZZKBKPCTAV9WEVGEMMVRZ'
+
+let root: string
+let pushes: [keyof Pushes, unknown][]
+const pusher = {
+  push: <K extends keyof Pushes>(channel: K, value: Pushes[K]) => {
+    pushes.push([channel, value])
+  },
+  watch: vi.fn(async () => {}),
+}
+const abs = (...segs: string[]): string => join(root, ...segs)
+const ev = (event: Changed['event'], ...segs: string[]): Changed => ({
+  event,
+  absPath: abs(...segs),
+})
+const channels = (): string[] => pushes.map(([c]) => c)
+const payload = (channel: keyof Pushes): unknown => pushes.find(([c]) => c === channel)?.[1]
+const gate = <T>(): { promise: Promise<T>; open: (v: T) => void; fail: (e: Error) => void } => {
+  let open!: (v: T) => void
+  let fail!: (e: Error) => void
+  const promise = new Promise<T>((res, rej) => {
+    open = res
+    fail = rej
+  })
+  return { promise, open, fail }
+}
+
+beforeEach(async () => {
+  root = tempRoot('pom-settle-')
+  pushes = []
+  await mkdir(abs('.nexus', 'homepage'), { recursive: true })
+  await writeFile(abs('.nexus', 'nexus.json'), JSON.stringify({ id: 'nx1' }))
+  await mkdir(abs('Notes'))
+  await writeFile(abs('Notes', '_pagecollection.json'), JSON.stringify({ id: 'c1' }))
+  await writeFile(abs('Notes', 'A.md'), `---\nID: ${ULID_A}\n---\n\nalpha\n`)
+  await openSession(root)
+  sent(await refreshTree(root))
+})
+afterEach(async () => {
+  dropLiveTree()
+  closeSession()
+  vi.restoreAllMocks()
+  await rm(root, { recursive: true, force: true })
+})
+
+describe('what a flush pushes for a batch', () => {
+  it('names an outside edit of a page in pages:changed and its container in values:changed', async () => {
+    await writeFile(abs('Notes', 'A.md'), `---\nID: ${ULID_A}\n---\n\nedited\n`)
+    await applyEvents(root, [ev('change', 'Notes', 'A.md'), ev('change', 'Notes', 'A.md')])
+    await flush(pusher, root)
+    expect(channels()).toEqual(['pages:changed', 'values:changed'])
+    expect(payload('pages:changed')).toEqual(['Notes/A.md'])
+    expect(payload('values:changed')).toEqual([{ rel: 'Notes', pageIds: [ULID_A] }])
+  })
+
+  it('pushes the tree once when it moved, and a tile host once however often it was named', async () => {
+    await writeFile(abs('Notes', 'B.md'), `---\nID: ${ULID_B}\n---\n\nbeta\n`)
+    await applyEvents(root, [
+      ev('add', 'Notes', 'B.md'),
+      ev('change', '.nexus', 'homepage', '_tiles.json'),
+      ev('change', '.nexus', 'homepage', '_tiles.json'),
+    ])
+    await flush(pusher, root)
+    expect(channels()).toEqual([
+      'nexus:changed',
+      'pages:changed',
+      'values:changed',
+      'tiles:changed',
+    ])
+    expect(payload('nexus:changed')).toBe(getLiveTree())
+    expect(payload('tiles:changed')).toEqual({ kind: 'homepage' })
+  })
+
+  it('merges a cascade’s pages and hosts with the batch’s, once each', async () => {
+    await applyEvents(root, [
+      ev('change', 'Notes', 'A.md'),
+      ev('change', '.nexus', 'homepage', '_tiles.json'),
+    ])
+    oweCascade(
+      root,
+      ['Notes/A.md', 'Other/B.md'],
+      [{ kind: 'homepage' }, { kind: 'space', id: 'sp1' }],
+    )
+    await flush(pusher, root)
+    expect(payload('pages:changed')).toEqual(['Notes/A.md', 'Other/B.md'])
+    expect(pushes.filter(([c]) => c === 'tiles:changed').map(([, v]) => v)).toEqual([
+      { kind: 'homepage' },
+      { kind: 'space', id: 'sp1' },
+    ])
+  })
+
+  it('marks a page whose only writes were its editor’s own saves as body-only', async () => {
+    const text = `---\nID: ${ULID_A}\n---\n\nmine\n`
+    await writeFile(abs('Notes', 'A.md'), text)
+    await applyEvents(root, [{ ...ev('change', 'Notes', 'A.md'), own: { text, held: true } }])
+    await flush(pusher, root)
+    expect(payload('values:changed')).toEqual([
+      { rel: 'Notes', pageIds: [ULID_A], bodyOnly: [ULID_A] },
+    ])
+  })
+
+  it('pushes nothing for a batch that changed nothing', async () => {
+    await applyEvents(root, [ev('change', '.nexus', 'interface', 'sidepane.json')])
+    await flush(pusher, root)
+    expect(pushes).toEqual([])
+  })
+
+  it('owes the walk for an event that arrives with no live tree', async () => {
+    dropLiveTree()
+    await applyEvents(root, [ev('change', 'Notes', 'A.md')])
+    expect(owedFor(root).walk).toBe(true)
+  })
+})
+
+describe('the settle', () => {
+  it('an event whose arm resumes after a concurrent flush has pushed still owes its walk to the next flush', async () => {
+    await writeFile(abs('Notes', 'B.md'), `---\nID: ${ULID_B}\n---\n\nbeta\n`)
+    const reached = gate<void>()
+    const read = gate<never>()
+    vi.spyOn(readNexusModule, 'readPageRecord').mockImplementationOnce(() => {
+      reached.open()
+      return read.promise
+    })
+    const applying = applyEvents(root, [ev('add', 'Notes', 'B.md')])
+    await reached.promise
+    oweCascade(root, ['Notes/A.md'], [])
+    await flush(pusher, root)
+    expect(channels()).toEqual(['pages:changed'])
+    const walk = vi.spyOn(liveTree, 'refreshAfterWrite')
+    read.fail(new Error('mid-read'))
+    await applying
+    expect(owedFor(root).walk).toBe(true)
+    await flush(pusher, root)
+    expect(walk).toHaveBeenCalledTimes(1)
+    expect(getLiveTree()?.collections[0]?.pages.map((p) => p.id)).toEqual([ULID_A, ULID_B])
+  })
+
+  it('a page a walk lists missing, with no event of its own, is not stamped', async () => {
+    await writeFile(abs('Notes', 'Bare.md'), 'bare\n')
+    await applyEvents(root, [ev('change', '.nexus', 'nexus.json')])
+    await flush(pusher, root)
+    expect(getLiveTree()?.unreadable).toEqual([{ path: 'Notes/Bare.md', reason: 'missing' }])
+    expect(await readFile(abs('Notes', 'Bare.md'), 'utf8')).toBe('bare\n')
+  })
+
+  it('a flush while an open is under way pushes nothing, and the next one pushes what was owed', async () => {
+    oweCascade(root, ['Notes/A.md'], [])
+    await whileAdopting(() => flush(pusher, root))
+    expect(pushes).toEqual([])
+    await flush(pusher, root)
+    expect(pushes).toEqual([['pages:changed', ['Notes/A.md']]])
+  })
+
+  it('a flush that owes a reseed doesn’t delay a second flush behind it', async () => {
+    const seeding = gate<indexSeed.SeedReread>()
+    const seed = vi.spyOn(indexSeed, 'seedContentIndex').mockImplementation(() => seeding.promise)
+    owedFor(root).corpus = true
+    let firstDone = false
+    const first = flush(pusher, root).then(() => {
+      firstDone = true
+    })
+    await flush(pusher, root)
+    expect(seed).toHaveBeenCalledTimes(1)
+    expect(firstDone).toBe(false)
+    seeding.open({ db: null, rels: [] })
+    await first
+    expect(firstDone).toBe(true)
+  })
+})

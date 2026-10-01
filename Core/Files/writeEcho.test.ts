@@ -2,7 +2,16 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { mkdtempSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { dropOwnEchoes, isRecentWrite, recordWrite, setWriteTap, writtenHash } from './writeEcho'
+import {
+  type Changed,
+  dropOwnEchoes,
+  emitWatch,
+  isRecentWrite,
+  recordWrite,
+  setWatchTap,
+  setWriteTap,
+  writtenHash,
+} from './writeEcho'
 
 // WINDOW_MS is 2000; PREFIX_WINDOW_MS is 800. The module-level map has no reset, so each test uses a distinct root to keep records from bleeding across tests.
 beforeEach(() => {
@@ -79,5 +88,17 @@ describe('an echo recorded with its bytes', () => {
     vi.useFakeTimers({ toFake: ['Date'] })
     vi.setSystemTime(Date.now() + 10_000)
     expect(await dropOwnEchoes(events)).toEqual([events[1], events[2]])
+  })
+})
+
+describe('emitWatch', () => {
+  it('reaches an installed sink and builds nothing without one', () => {
+    const seen: Changed[] = []
+    emitWatch('change', '/nexus/Notes/Page.md')
+    setWatchTap((ev) => seen.push(ev))
+    emitWatch('change', '/nexus/Notes/Page.md')
+    setWatchTap(null)
+    emitWatch('unlink', '/nexus/Notes/Page.md')
+    expect(seen).toEqual([{ event: 'change', absPath: '/nexus/Notes/Page.md' }])
   })
 })

@@ -10,10 +10,13 @@ import type {
   SetNode,
   SpaceNode,
   Unreadable,
+  UnreadReason,
 } from './tree'
 import type { PropertyDefinition } from '../Properties/properties'
 import { basename, isMarkdownFile, relDirname, relJoin, titleFromPath } from '../Paths/posix'
-import { contextDirRel } from '../Paths/nexusPaths'
+import { CONTEXTS_DIR_REL, contextDirRel } from '../Paths/nexusPaths'
+import { resolveOrder } from './order'
+import { asStringArray } from './coerce'
 
 // The walk's literal node shapes, stated once: every producer builds here, so a transform-built node and a walk-built one carry identical key sets — what lets `stabilize` prove convergence by reference identity. Never fold the factories together, and never drop a possibly-undefined key.
 
@@ -56,6 +59,8 @@ export function makeSetNode(f: ContainerInput<SetNode>): SetNode {
     viewButton: f.viewButton,
     disclosureLocked: f.disclosureLocked ?? false,
     activeView: f.activeView,
+    pageOrder: f.pageOrder,
+    setOrder: f.setOrder,
   }
 }
 
@@ -77,6 +82,8 @@ export function makeCollectionNode(f: ContainerInput<CollectionNode>): Collectio
     viewButton: f.viewButton,
     disclosureLocked: f.disclosureLocked ?? false,
     activeView: f.activeView,
+    pageOrder: f.pageOrder,
+    setOrder: f.setOrder,
   }
 }
 
@@ -495,12 +502,64 @@ export function renameNodeInTree(tree: NexusTree, path: string, newName: string)
   return repointUnreadable(next, path, newPath)
 }
 
-export function removeNodeInTree(tree: NexusTree, path: string): NexusTree | null {
-  return repointUnreadable(
-    updateNodeInTree(tree, path, () => null),
-    path,
-    null,
-  )
+export const removeNodeInTree = (tree: NexusTree, path: string): NexusTree =>
+  repointUnreadable(updateNodeInTree(tree, path, () => null) ?? tree, path, null) ?? tree
+
+export const setUnreadable = (tree: NexusTree, path: string, reason: UnreadReason): NexusTree => ({
+  ...tree,
+  unreadable: [...(tree.unreadable ?? []), { path, reason }],
+})
+
+export function placeNode(tree: NexusTree, node: TreeEntity): NexusTree | null {
+  const others = <T extends { path: string }>(list: T[]): T[] =>
+    list.filter((n) => n.path !== node.path)
+  if (node.kind === 'collection') {
+    const collections = [...others(tree.collections), node]
+    return { ...tree, collections: resolveOrder(collections, tree.config.order.collections) }
+  }
+  if (node.kind === 'space') {
+    const group = tree.contexts.find((g) => g.def.id === node.contextId)
+    if (!group) return null
+    const spaces = resolveOrder(
+      [...others(group.spaces), node],
+      asStringArray(tree.config.order.spaces[group.def.id]),
+    )
+    return { ...tree, contexts: tree.contexts.map((g) => (g === group ? { ...g, spaces } : g)) }
+  }
+  return updateNodeInTree(tree, relDirname(node.path), (parent) => {
+    if (parent.kind !== 'collection' && parent.kind !== 'set') return parent
+    return node.kind === 'page'
+      ? { ...parent, pages: resolveOrder([...others(parent.pages), node], parent.pageOrder) }
+      : { ...parent, sets: resolveOrder([...others(parent.sets ?? []), node], parent.setOrder) }
+  })
+}
+
+export function moveNodeInTree(tree: NexusTree, from: string, to: string): NexusTree | null {
+  const group = contextAt(tree, from)
+  if (group) {
+    if (relDirname(to) !== CONTEXTS_DIR_REL) return null
+    const moved: ContextGroup = {
+      def: { ...group.def, title: basename(to) },
+      spaces: group.spaces.map((s) => ({ ...s, path: relJoin(to, basename(s.path)) })),
+    }
+    const contexts = tree.contexts.map((g) => (g === group ? moved : g))
+    return repointUnreadable({ ...tree, contexts }, from, to)
+  }
+  const node = spaceAt(tree, from) ?? pageAt(tree, from) ?? containerAt(tree, from)
+  if (!node) return null
+  // A Space keeps its Context and a Collection sits only at the root, so a move across either line changes what the folder is.
+  const crosses =
+    node.kind === 'space'
+      ? relDirname(to) !== relDirname(from)
+      : (node.kind === 'collection') !== (relDirname(to) === '')
+  if (crosses) return null
+  const title = node.kind === 'page' ? titleFromPath(to) : basename(to)
+  const moved =
+    node.kind === 'space'
+      ? { ...node, path: to, title }
+      : { ...reparentPaths(node, from, to), title }
+  const pulled = updateNodeInTree(tree, from, () => null)
+  return pulled && repointUnreadable(placeNode(pulled, moved), from, to)
 }
 
 export function patchNodeInTree(

@@ -1,5 +1,5 @@
 import { isPlainObject } from '../Contract/validators'
-import { readJsonStrict, updateNexusFile } from '../Files/atomicWrite'
+import { parseJsonObject, readJsonStrict, updateNexusFile } from '../Files/atomicWrite'
 import { listEntries } from '../Files/walk'
 import { fault, ok, type Result } from '../Contract/result'
 import { liveTreeOf, mutableTarget } from './liveTree'
@@ -26,8 +26,11 @@ const clean = (pages: Record<string, PageMeta> | undefined): Record<string, Page
     Object.entries(pages ?? {}).filter((e): e is [string, PageMeta] => hasFields(e[1])),
   )
 
-export async function readShard(root: string, shard: string): Promise<ShardRead> {
-  const read = await readJsonStrict(metadataShardPath(root, shard))
+export async function readShard(root: string, shard: string, text?: string): Promise<ShardRead> {
+  const read =
+    text === undefined
+      ? await readJsonStrict(metadataShardPath(root, shard))
+      : ok(parseJsonObject(text) ?? {})
   if (read.ok) return { kind: 'ok', pages: clean(metadataShardFile.parse(read.value).pages) }
   return read.error.code === 'not-found' ? { kind: 'absent' } : { kind: 'unreadable' }
 }

@@ -1,7 +1,6 @@
 // After every maintaining seam fires, the rows it kept current are byte-identical to a from-scratch reconcile of the same disk.
 
 import { describe, it, expect, beforeEach, afterEach } from 'vitest'
-import { ASSETS_DIR_REL } from '../Paths/nexusPaths'
 import { rm, mkdir, readFile, writeFile, unlink } from 'node:fs/promises'
 import { join } from '../Paths/posix'
 import { tempRoot } from '../Testing/hostFs'
@@ -13,7 +12,7 @@ import { createProperty } from '../Properties/registryProperty'
 import { listBundles } from '../Trash/holdings'
 import { seedContentIndex } from './indexSeed'
 import { queryKeyHolders, queryMembers, queryMentions } from './contentIndex'
-import { applyWatchEvents } from '../Nexus/watchPatch'
+import { applyEvents, owedFor } from '../Nexus/fileEvents'
 import { dropLiveTree, refreshTree } from '../Nexus/liveTree'
 import type { TrashDeps } from '../Trash/bundle'
 import { tileHostDir } from '../Paths/paths'
@@ -242,35 +241,17 @@ describe('the watcher maintains the rows', () => {
     await refreshTree(root)
     await mkdir(join(root, 'Loose'), { recursive: true })
     await writeFile(join(root, 'Loose', 'Note.md'), 'links [[Alpha]]\n')
-    const added = await applyWatchEvents(
-      root,
-      [{ event: 'add', absPath: join(root, 'Loose', 'Note.md') }],
-      { excluded: [], assetDir: ASSETS_DIR_REL },
-    )
-    expect(added.outcome).toBe('patched')
+    await applyEvents(root, [{ event: 'add', absPath: join(root, 'Loose', 'Note.md') }])
+    expect(owedFor(root).walk).toBe(false)
     expect(queryMentions('alpha')).toEqual(['Loose/Note.md'])
     await expectMaintained()
     await writeFile(join(root, 'Notes', 'Daily', 'Beta.md'), `---\nID: ${B_ID}\n---\n\n[[Alpha]]`)
-    expect(
-      (
-        await applyWatchEvents(
-          root,
-          [{ event: 'change', absPath: join(root, 'Notes', 'Daily', 'Beta.md') }],
-          { excluded: [], assetDir: ASSETS_DIR_REL },
-        )
-      ).outcome,
-    ).toBe('patched')
+    await applyEvents(root, [{ event: 'change', absPath: join(root, 'Notes', 'Daily', 'Beta.md') }])
+    expect(owedFor(root).walk).toBe(false)
     expect(queryMentions('alpha')?.sort()).toEqual(['Loose/Note.md', 'Notes/Daily/Beta.md'])
     await unlink(join(root, 'Loose', 'Note.md'))
-    expect(
-      (
-        await applyWatchEvents(
-          root,
-          [{ event: 'unlink', absPath: join(root, 'Loose', 'Note.md') }],
-          { excluded: [], assetDir: ASSETS_DIR_REL },
-        )
-      ).outcome,
-    ).toBe('patched')
+    await applyEvents(root, [{ event: 'unlink', absPath: join(root, 'Loose', 'Note.md') }])
+    expect(owedFor(root).walk).toBe(false)
     await expectMaintained()
   })
 
@@ -290,14 +271,10 @@ describe('the watcher maintains the rows', () => {
     await seedContentIndex(root)
     await refreshTree(root)
     await writeFile(beta, `---\nID: ${B_ID}\n---\n\n## Intro\n`)
-    const patch = await applyWatchEvents(root, [{ event: 'change', absPath: beta }], {
-      excluded: [],
-      assetDir: ASSETS_DIR_REL,
-    })
-    expect(patch.cascaded).toEqual({
-      pages: ['Notes/Daily/Alpha.md'],
-      hosts: [{ kind: 'homepage' }],
-    })
+    await applyEvents(root, [{ event: 'change', absPath: beta }])
+    const owed = owedFor(root)
+    expect([...owed.pages]).toContain('Notes/Daily/Alpha.md')
+    expect([...owed.tiles.values()]).toEqual([{ kind: 'homepage' }])
     expect(await readFile(alpha, 'utf8')).toContain('[[Beta#Intro]]')
     await expectMaintained()
   })

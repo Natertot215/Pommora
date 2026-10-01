@@ -112,17 +112,17 @@ async function readOwnSidecar(
 const readConfig = (absPath: string): Promise<Record<string, unknown>> =>
   readAppFile(absPath).then((v) => v ?? {})
 
-interface PageRecord {
+export interface PageRecord {
   node: PageNode
   fm: Json
   mtimeMs: number | null
 }
 
-interface Unread {
+export interface Unread {
   unread: UnreadReason
 }
 
-function pageRecordOf(
+export function pageRecordOf(
   content: string,
   relFile: string,
   mtimeMs: number | null,
@@ -226,6 +226,29 @@ async function readSpace(
   const sc = await readOwnSidecar(sidecar, relDir, unreadable, false)
   const node = sc && spaceNodeFrom(sc, { title: name, path: relDir, contextId })
   return node ? { node, sc } : null
+}
+
+export async function readFolder(
+  root: string,
+  rel: string,
+  tree: NexusTree,
+): Promise<{ node: CollectionNode | SetNode | null; unreadable: Unreadable[] }> {
+  const abs = join(root, rel)
+  const name = basename(rel)
+  const walk: Walk = {
+    // An Agenda folder is no Collection or Set whether or not its slot is registered, so the registration isn't read.
+    kindCtx: { agenda: {}, homed: new Set(), root },
+    scope: scopeOf(tree.config),
+    registry: Object.fromEntries(tree.config.registry.map((d) => [d.id, d])),
+    unreadable: [],
+    link: contextLinker(tree.contexts),
+  }
+  const node = !rel.includes('/')
+    ? await readRootFolder(abs, name, walk)
+    : (await resolveFolderKind(abs, 'nested', walk.kindCtx)) === 'set'
+      ? await readContainer('set', abs, rel, name, walk)
+      : null
+  return { node, unreadable: walk.unreadable }
 }
 
 async function readContextGroups(

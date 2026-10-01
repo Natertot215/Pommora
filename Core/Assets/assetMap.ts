@@ -7,7 +7,7 @@ import { relative } from '../Paths/posix'
 import { assetsDir } from '../Paths/paths'
 import { listFilesRecursive } from '../Files/walk'
 import { readWatchScope } from '../Settings/settings'
-import type { WatchEventName } from '../Nexus/watchPatch'
+import type { FileEvent } from '../Files/writeEcho'
 
 /** The root's OWN segments are exempt, exactly as in the watcher's ignore — a root named `.attachments` is the case that exemption exists for. */
 export function indexable(rel: string, assetDir: string): boolean {
@@ -101,7 +101,7 @@ export async function refreshAssetMap(root: string): Promise<AssetMap> {
 export function patchHeldAssetMap(
   root: string,
   rel: string,
-  event: WatchEventName,
+  event: FileEvent['event'],
 ): AssetMap | null {
   if (held?.root !== root) return null
   if (event !== 'add' && event !== 'change' && event !== 'unlink') return null

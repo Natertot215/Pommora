@@ -54,6 +54,16 @@ export function setOwnTap(fn: ((ev: FileEvent) => Promise<void>) | null): void {
 
 export const noteOwn = (ev: FileEvent): Promise<void> => ownTap?.(ev) ?? Promise.resolve()
 
+let watchTap: ((ev: Changed) => void) | null = null
+
+export function setWatchTap(fn: ((ev: Changed) => void) | null): void {
+  watchTap = fn
+}
+
+export function emitWatch(event: Changed['event'], absPath: string): void {
+  watchTap?.({ event, absPath })
+}
+
 const held = (absPath: string): Echo | undefined => {
   const r = recent.get(absPath)
   if (r === undefined || Date.now() - r.at <= WINDOW_MS) return r

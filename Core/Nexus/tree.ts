@@ -50,6 +50,9 @@ interface ContainerNode extends ChromeNode {
   viewButton?: ViewButton
   disclosureLocked?: boolean
   activeView?: string
+  /** The sidecar's order lists as written, which rank a child the tree gains between walks. */
+  pageOrder?: string[]
+  setOrder?: string[]
 }
 
 export interface SetNode extends ContainerNode {

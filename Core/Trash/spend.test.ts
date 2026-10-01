@@ -1,3 +1,5 @@
+import { applyEvents } from '../Nexus/fileEvents'
+import { flush } from '../Nexus/settle'
 import { mkdir, readdir, readFile, rename, rm, writeFile } from 'node:fs/promises'
 import { splitFrontmatter } from '../Files/pageFile'
 import { basename, dirname, join, relative } from '../Paths/posix'
@@ -264,7 +266,10 @@ describe('the bundle — one folder per deletion, holding the artifact and its r
   })
 
   it('system trash mode writes no bundle — the artifact leaves the nexus entirely', async () => {
-    const systemDeps: TrashDeps = { trashMode: 'system', trashToSystem: async () => {} }
+    const systemDeps: TrashDeps = {
+      trashMode: 'system',
+      trashToSystem: (p) => rm(p, { recursive: true, force: true }),
+    }
     const r = await confirmedMutate(
       root,
       { op: 'delete', path: 'Notes/Daily/Alpha.md', kind: 'page' },
@@ -981,6 +986,8 @@ describe('restore — the gate-four pins', () => {
       nexusDeps,
     )
     await writeFile(contextsRegistryFile(root), '{corrupt')
+    await applyEvents(root, [{ event: 'change', absPath: contextsRegistryFile(root) }])
+    await flush({ push: () => {}, watch: async () => {} }, root)
     const [listed] = await listBundles(root)
     const r = await confirmedMutate(
       root,
@@ -1040,6 +1047,7 @@ describe('restore — the gate-four pins', () => {
       join(root, 'Notes', 'Daily', 'Alpha.md'),
       '---\nID: 01KVGMT8BFT350FZZXAMG1QDVD\n---\nsquatter',
     )
+    await applyEvents(root, [{ event: 'add', absPath: join(root, 'Notes', 'Daily', 'Alpha.md') }])
     const [listed] = await listBundles(root)
     const r = await confirmedMutate(
       root,

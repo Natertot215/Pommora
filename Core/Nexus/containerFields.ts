@@ -40,6 +40,8 @@ export function containerFieldsFrom(
     headingIconHidden: meta.heading_icon_hidden === true,
     sets: resolveOrder(sets, asStringArray(meta.set_order)),
     pages: resolveOrder(pages, asStringArray(meta.page_order)),
+    setOrder: asStringArray(meta.set_order),
+    pageOrder: asStringArray(meta.page_order),
     views: parseViews(meta.views),
     viewButton: coerceViewButton(meta.view_button),
     disclosureLocked: meta.disclosure_locked === true,

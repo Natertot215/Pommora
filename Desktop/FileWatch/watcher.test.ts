@@ -1,3 +1,4 @@
+import { liveAssetMap } from '@pommora/core/Assets/assetMap'
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { chmod, mkdir, readFile, rm, writeFile } from 'node:fs/promises'
 import { join } from '@pommora/core/Paths/posix'
@@ -11,18 +12,28 @@ import { recordWrite } from '@pommora/core/Files/writeEcho'
 import { forgetLastReads } from '@pommora/core/Files/atomicWrite'
 import { push } from '../Bridge/ipc'
 import { sessionRoot, type WaitingOpen, waitingOpen } from '@pommora/core/Nexus/session'
-import { syncIgnoredUnder } from '@pommora/core/Nexus/watchSettle'
-import { tileBodyUnder } from '@pommora/core/Nexus/watchPatch'
+import { classifyEvent, tileBodyUnder } from '@pommora/core/Nexus/fileEvents'
+import { sent } from '@pommora/core/Nexus/settle'
+import { readIndexedStat } from '@pommora/core/Index/contentIndex'
 import chokidar from 'chokidar'
-import { startWatcher, stopWatcher, waitUntilReadable } from './watcher'
+import {
+  isConfigPath,
+  startWatcher,
+  stopWatcher,
+  syncIgnoredUnder,
+  waitUntilReadable,
+} from './watcher'
 import { installStores, NO_STORES } from '@pommora/core/Platform/stores'
 import { memoryStores } from '@pommora/core/Testing/memoryStores'
 import * as indexSeed from '@pommora/core/Index/indexSeed'
 import { seedContentIndex } from '@pommora/core/Index/indexSeed'
-import { flushValueWrites, noteValueWrite } from '@pommora/core/Nexus/valuesChanged'
 
 vi.mock('../Bridge/ipc', () => ({ push: vi.fn() }))
-vi.mock('@pommora/core/Nexus/session', () => ({ sessionRoot: vi.fn(), waitingOpen: vi.fn() }))
+vi.mock('@pommora/core/Nexus/session', () => ({
+  sessionRoot: vi.fn(),
+  waitingOpen: vi.fn(),
+  adopting: () => false,
+}))
 
 type Handler = (path: string) => void
 const handlers = new Map<string, Handler>()
@@ -81,7 +92,8 @@ beforeEach(async () => {
   live = open
   pushMock.mockClear()
   handlers.clear()
-  await refreshTree(root)
+  sent(await refreshTree(root))
+  await liveAssetMap(root)
   vi.useFakeTimers()
 })
 afterEach(async () => {
@@ -107,39 +119,36 @@ describe('the watcher settle', () => {
     expect(getLiveTree()?.collections[0]?.pages).toHaveLength(3)
   })
 
-  it('a patch that throws mid-batch walks instead, so the held tree still reaches the disk', async () => {
-    await startWatcher(root, win)
-    await writeFile(abs('Notes', 'B.md'), `---\nID: ${ULID_B}\n---\n\nbeta\n`)
-    const reading = vi
-      .spyOn(indexSeed, 'indexWrittenPage')
-      .mockRejectedValueOnce(new Error('mid-read'))
+  it('an index step that throws still lands its page, and the reseed it owes indexes it', async () => {
+    vi.useRealTimers()
+    installStores(memoryStores().stores)
     const logged = vi.spyOn(console, 'error').mockImplementation(() => {})
-    emit('add', 'Notes', 'B.md')
-    await settleAll(() => pushMock.mock.calls.some((c) => c[1] === 'nexus:changed'))
-    reading.mockRestore()
-    logged.mockRestore()
-    expect(getLiveTree()?.collections[0]?.pages.map((p) => p.id)).toEqual([ULID_A, ULID_B])
-    expect(pushMock.mock.calls.find((c) => c[1] === 'nexus:changed')?.[2]).toBe(getLiveTree())
+    try {
+      await seedContentIndex(root)
+      vi.useFakeTimers()
+      await startWatcher(root, win)
+      await writeFile(abs('Notes', 'B.md'), `---\nID: ${ULID_B}\n---\n\nbeta\n`)
+      const reading = vi
+        .spyOn(indexSeed, 'indexWrittenPage')
+        .mockRejectedValueOnce(new Error('mid-read'))
+      emit('add', 'Notes', 'B.md')
+      await settleAll(() => readIndexedStat('Notes/B.md') !== null)
+      reading.mockRestore()
+      expect(getLiveTree()?.collections[0]?.pages.map((p) => p.id)).toEqual([ULID_A, ULID_B])
+      expect(pushMock.mock.calls.find((c) => c[1] === 'nexus:changed')?.[2]).toBe(getLiveTree())
+      expect(readIndexedStat('Notes/B.md')).not.toBeNull()
+    } finally {
+      logged.mockRestore()
+      installStores(NO_STORES)
+    }
   })
 
   it('pushes nothing when the batch changes nothing anyone renders', async () => {
     await startWatcher(root, win)
-    await writeFile(abs('Loose', 'x.md'), 'loose\n')
-    emit('add', 'Loose', 'x.md')
+    await writeFile(abs('Loose', 'x.txt'), 'loose\n')
+    emit('add', 'Loose', 'x.txt')
     await settleAll()
     expect(pushMock).not.toHaveBeenCalled()
-  })
-
-  it('leaves the value writes a mutation noted to that mutation’s own flush', async () => {
-    await startWatcher(root, win)
-    noteValueWrite(root, abs('Notes', 'A.md'))
-    await writeFile(abs('Notes', 'B.md'), `---\nID: ${ULID_B}\n---\n\nbeta\n`)
-    emit('add', 'Notes', 'B.md')
-    await settleAll(() => pushMock.mock.calls.some((c) => c[1] === 'values:changed'))
-    expect(pushMock.mock.calls.find((c) => c[1] === 'values:changed')?.[2]).toEqual([
-      { rel: 'Notes', pageIds: [ULID_B] },
-    ])
-    expect(flushValueWrites(root)).toEqual([{ rel: 'Notes', pageIds: [ULID_A] }])
   })
 
   it('a mixed batch lands as one walk, pushed once', async () => {
@@ -153,7 +162,7 @@ describe('the watcher settle', () => {
     expect(channels).toEqual(['nexus:changed', 'pages:changed', 'values:changed'])
     expect(pushMock.mock.calls[0][2]).toBe(getLiveTree())
     expect(pushMock.mock.calls[1][2]).toEqual(['Notes/B.md'])
-    expect(pushMock.mock.calls[2][2]).toEqual([{ rel: 'Notes', pageIds: [] }])
+    expect(pushMock.mock.calls[2][2]).toEqual([{ rel: 'Notes', pageIds: [ULID_B] }])
     expect(
       getLiveTree()
         ?.collections[0]?.pages.map((p) => p.title)
@@ -161,7 +170,7 @@ describe('the watcher settle', () => {
     ).toEqual(['A', 'B'])
   })
 
-  it('an external heading rename pushes the linker it rewrote and takes only its own value notes', async () => {
+  it('an external heading rename pushes the linker it rewrote', async () => {
     vi.useRealTimers()
     installStores(memoryStores().stores)
     try {
@@ -174,7 +183,6 @@ describe('the watcher settle', () => {
       await refreshTree(root)
       vi.useFakeTimers()
       await startWatcher(root, win)
-      noteValueWrite(root, abs('Notes', 'C.md'))
       await writeFile(abs('Notes', 'A.md'), `---\nID: ${ULID_A}\n---\n\n## Intro\n`)
       emit('change', 'Notes', 'A.md')
       await settleAll(() => pushMock.mock.calls.some((c) => c[1] === 'values:changed'))
@@ -183,7 +191,6 @@ describe('the watcher settle', () => {
       expect(payload('pages:changed')).toContain('Other/B.md')
       expect(payload('values:changed')).toContainEqual({ rel: 'Other', pageIds: [ULID_B] })
       expect(await readFile(abs('Other', 'B.md'), 'utf8')).toContain('[[A#Intro]]')
-      expect(flushValueWrites(root)).toEqual([{ rel: 'Notes', pageIds: [ULID_C] }])
     } finally {
       installStores(NO_STORES)
     }
@@ -514,5 +521,60 @@ describe('syncIgnoredUnder', () => {
     expect(tileBody('.nexus', 'contexts', 'Areas', 'Home', '01ARZ3NDEKPSV4RRFFQ69G5FAV.md')).toBe(
       true,
     )
+  })
+})
+
+describe('isConfigPath', () => {
+  it('names each config file apart from the other', () => {
+    expect(isConfigPath('/nexus', '/nexus/.nexus/state.json', 'state')).toBe(true)
+    expect(isConfigPath('/nexus', '/nexus/.nexus/matrix.json', 'matrix')).toBe(true)
+    expect(isConfigPath('/nexus', '/nexus/.nexus/matrix.json', 'state')).toBe(false)
+    expect(isConfigPath('/nexus', '/nexus/.nexus/state.json', 'matrix')).toBe(false)
+    expect(isConfigPath('/nexus', '/nexus/Notes/matrix.json', 'matrix')).toBe(false)
+  })
+})
+
+describe('syncIgnoredUnder beside the classifier', () => {
+  const scope = (assetDir: string) => ({ excluded: [], assetDir })
+  const TILE_BODIES = ['.nexus/homepage/t1.md', '.nexus/contexts/Areas/Home/t1.md']
+
+  it('reports a tile body, which tileBodyUnder then names', () => {
+    const sync = syncIgnoredUnder('/nexus', scope('.nexus/assets'))
+    for (const rel of TILE_BODIES) {
+      expect(sync(`/nexus/${rel}`)).toBe(false)
+      expect(tileBodyUnder(rel.split('/'), rel)).toBe(true)
+    }
+  })
+
+  it('still refuses .trash', () => {
+    expect(syncIgnoredUnder('/nexus', scope('.nexus/assets'))('/nexus/.trash/Notes/gone.md')).toBe(
+      true,
+    )
+  })
+
+  it('the asset root escapes the cruft rules; what sits below it does not', () => {
+    // A root named `.attachments` is what the exemption exists for — a `.DS_Store` synced into one is not.
+    expect(syncIgnoredUnder(root, scope('.attachments'))(abs('.attachments', 'x.png'))).toBe(false)
+    expect(syncIgnoredUnder(root, scope('file-assets'))(abs('file-assets', 'x.png'))).toBe(false)
+    for (const junk of ['.DS_Store', 'node_modules', '.git'])
+      expect(syncIgnoredUnder(root, scope('file-assets'))(abs('file-assets', junk, 'x'))).toBe(true)
+  })
+
+  it('the homepage config under its host folder stays watched, though tile bodies do not', () => {
+    expect(
+      syncIgnoredUnder(root, scope('.nexus/assets'))(abs('.nexus', 'homepage', 'homepage.json')),
+    ).toBe(false)
+  })
+
+  it('agrees with classifyEvent about what an asset path is', () => {
+    const tree = getLiveTree()
+    if (!tree) throw new Error('no tree')
+    for (const dir of ['.nexus/assets', 'file-assets', '.attachments']) {
+      const path = abs(...dir.split('/'), 'x.png')
+      // A path the watcher drops but the classifier would have handled is silently lost.
+      expect(syncIgnoredUnder(root, scope(dir))(path)).toBe(false)
+      const scoped = { ...tree, config: { ...tree.config, assetDirectory: dir } }
+      expect(classifyEvent(scoped, root, { event: 'change', absPath: path }).kind).toBe('asset')
+    }
   })
 })

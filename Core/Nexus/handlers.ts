@@ -27,6 +27,7 @@ import { runOpenLedger } from './remintLedger'
 import { openSession, sessionRoot, waitingOpen, waitOn, whileAdopting } from './session'
 import { readNexus, readNexusConfig } from './readNexus'
 import { asString } from './coerce'
+import { sent } from './settle'
 import type { NexusState } from './tree'
 import { trashDeps } from '../Trash/bundle'
 
@@ -114,7 +115,7 @@ export async function adoptNexus(
 export const nexusHandlers = {
   'nexus:state': async (): Promise<Result<NexusState>> => {
     const root = sessionRoot()
-    if (root) return ok({ status: 'open', tree: await liveTreeOf(root) })
+    if (root) return ok({ status: 'open', tree: sent(await liveTreeOf(root)) })
     const open = waitingOpen()
     return open ? fail('operation-failed', open.why) : ok({ status: 'empty' })
   },
