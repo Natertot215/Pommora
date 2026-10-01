@@ -47,31 +47,33 @@ const clearPath = (db: Db, path: string): void => {
 
 // The prefix pair `path >= dir||'/' AND path < dir||'0'` selects `dir`'s descendants by range — exact because '0' is the code point after '/', where a LIKE would let a legal '%' in a folder name over-match.
 export const contentIndexStore = (db: Db): ContentIndexStore => ({
-  upsertPageIndex(path, entry, stat) {
-    clearPath(db, path)
+  upsertPageIndexes(rows) {
     const insRelation = db.prepare(
       'INSERT OR REPLACE INTO relations (path, kind, target, qualifier, count) VALUES (?, ?, ?, ?, ?)',
     )
-    for (const { kind, target, qualifier, count } of entry.relations)
-      insRelation.run(path, kind, target, qualifier, count)
     const insHeading = db.prepare(
       'INSERT OR REPLACE INTO headings (path, heading, ordinal) VALUES (?, ?, ?)',
     )
-    entry.headings.forEach((heading, ordinal) => {
-      insHeading.run(path, heading, ordinal)
-    })
     const insValue = db.prepare(
       'INSERT OR REPLACE INTO page_values (path, key, value) VALUES (?, ?, ?)',
     )
-    for (const [key, value] of Object.entries(entry.values)) {
-      insValue.run(path, key, JSON.stringify(value) ?? 'null')
-    }
-    // The gate row lands LAST, so a write that dies part-way leaves no stat and the next seed re-reads the file.
-    db.prepare('INSERT OR REPLACE INTO indexed_files (path, mtime_ms, size) VALUES (?, ?, ?)').run(
-      path,
-      stat.mtimeMs,
-      stat.size,
+    const insFile = db.prepare(
+      'INSERT OR REPLACE INTO indexed_files (path, mtime_ms, size) VALUES (?, ?, ?)',
     )
+    inTransaction(db, () => {
+      for (const { path, entry, stat } of rows) {
+        clearPath(db, path)
+        for (const { kind, target, qualifier, count } of entry.relations)
+          insRelation.run(path, kind, target, qualifier, count)
+        entry.headings.forEach((heading, ordinal) => {
+          insHeading.run(path, heading, ordinal)
+        })
+        for (const [key, value] of Object.entries(entry.values))
+          insValue.run(path, key, JSON.stringify(value) ?? 'null')
+        // The gate row lands LAST, so a write that dies part-way leaves no stat and the next seed re-reads the file.
+        insFile.run(path, stat.mtimeMs, stat.size)
+      }
+    })
   },
   removePathIndex(path) {
     clearPath(db, path)
