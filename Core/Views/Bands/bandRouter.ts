@@ -1,5 +1,4 @@
 import type { Result } from '../../Contract/result'
-import { isAdoptedId } from '../../Nexus/ids'
 import type { PropertyDefinition } from '../../Properties/properties'
 import { resolveRowOrder } from '../../Properties/rowOrder'
 import type { SavedView, ViewPatch } from '../views'
@@ -95,9 +94,7 @@ function routeSet(id: string, drop: BandDrop, scope: BandScope): BandEffect | nu
     from === target ? [children] : [(sets.children.get(from) ?? []).filter((s) => s !== id), order]
   const ranks = ranked && nextOrder(ranked, id, before)
   const after =
-    ranks && !showsAlike(landed, ranks, view.group_order)
-      ? { group_order: ranks.filter((s) => !isAdoptedId(s)) }
-      : undefined
+    ranks && !showsAlike(landed, ranks, view.group_order) ? { group_order: ranks } : undefined
   if (from !== target)
     return {
       kind: 'fs',

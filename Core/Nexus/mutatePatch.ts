@@ -7,9 +7,8 @@ import {
   type MutateRequest,
 } from './mutateRequest'
 import type { HeldKind } from './entities'
-import type { CollectionNode, NexusTree, SetNode } from './tree'
+import type { NexusTree } from './tree'
 import {
-  containerAt,
   insertCreatedInTree,
   orderInTree,
   patchContextGroupsInTree,
@@ -17,8 +16,7 @@ import {
   renameNodeInTree,
   repointRegistryInTree,
 } from './treePatch'
-import { isMarkdownFile, relDirname } from '../Paths/posix'
-import { isAdoptedId } from './ids'
+import { isMarkdownFile } from '../Paths/posix'
 import { stampMissing } from './adopt'
 import { orderedDefs, readRegistry } from '../Properties/propertiesRegistry'
 import { dropLiveTree, getLiveTree, refreshAfterWrite } from './liveTree'
@@ -74,18 +72,6 @@ function patchForMutation(
     default:
       return null
   }
-}
-
-function subtreeHoldsAdoptedId(tree: NexusTree, path: string): boolean {
-  const under = (p: string): boolean => p === path || p.startsWith(`${path}/`)
-  const scan = (containers: readonly (CollectionNode | SetNode)[]): boolean =>
-    containers.some(
-      (c) =>
-        (under(c.path) && isAdoptedId(c.id)) ||
-        c.pages.some((p) => under(p.path) && isAdoptedId(p.id)) ||
-        (c.sets ? scan(c.sets) : false),
-    )
-  return scan(tree.collections)
 }
 
 // The page patch names the id it landed; a mutation confirm only needs to know that it landed.
@@ -150,13 +136,6 @@ async function routeMutation(
     default: {
       const tree = getLiveTree()
       if (!tree) return 'refresh'
-      // An adopted id hashes the very path a rename or move changes, and a delete records its parent by stamping the adopted one away, so an affected subtree walks rather than hold an id the next walk could never produce.
-      if (
-        ((req.op === 'rename' || req.op === 'movePage' || req.op === 'moveSet') &&
-          subtreeHoldsAdoptedId(tree, req.path)) ||
-        (req.op === 'delete' && isAdoptedId(containerAt(tree, relDirname(req.path))?.id ?? ''))
-      )
-        return 'refresh'
       const patched = patchForMutation(tree, req, reply)
       if (patched === 'no-change') return 'ok'
       if (patched === null) return 'refresh'

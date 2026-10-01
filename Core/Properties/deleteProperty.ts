@@ -84,7 +84,7 @@ async function deleteInner(root: string, propertyId: string): Promise<Result<Pro
 
   // EVERY collection folder, not just current assigners — a Remove-cache block lives on a collection sidecar that no longer assigns the id, and pre-cache dormant values may sit on any page.
   const folders = await collectionFolders(root)
-  const held = await keyedHolders(root, await keyHolderFiles(root, key, folders), key)
+  const held = await keyedHolders(await keyHolderFiles(root, key, folders), key)
   const bundle = await snapshot(root, propertyId, def, folders, held)
   // Journaled AFTER the snapshot — a replay re-runs the strip tail, never the bundle mint.
   const record: SchemaJournal = { op: 'delete', id: propertyId, name: def.name }

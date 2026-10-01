@@ -34,7 +34,6 @@ async function removeInner(
   const key = def.name
 
   const { values, strip } = await keyedHolders(
-    root,
     await keyHolderFiles(root, key, [collectionFolder]),
     key,
   )

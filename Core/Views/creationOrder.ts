@@ -4,7 +4,6 @@ import { NEW_SLOT, type MutateRequest } from '../Nexus/mutateRequest'
 import type { NexusTree } from '../Nexus/tree'
 import { type Personalization, type Placement, settingOf } from '../Settings/personalization'
 import { nextOrder } from '@pommora/uix/Utilities/moveItem'
-import { isAdoptedId } from '../Nexus/ids'
 import { containerAt, pageIdsIn } from '../Nexus/treePatch'
 
 export const sameIds = (a: string[], b: string[]): boolean =>
@@ -50,9 +49,7 @@ export function tieOrderWith(
   anchorId: string | null,
   where: Slot,
 ): string[] {
-  return spliceBeside(mergedRanking(existing, allIds, newId), anchorId, newId, where).filter(
-    (id) => !isAdoptedId(id),
-  )
+  return spliceBeside(mergedRanking(existing, allIds, newId), anchorId, newId, where)
 }
 
 export const placementSlot = (placement: Placement): Slot =>

@@ -20,7 +20,7 @@ import type { NexusTree, SpaceNode } from '../Nexus/tree'
 import { isColorKey } from '@pommora/uix/Theme/colors'
 import { ok, fail, type Result, fault } from '../Contract/result'
 import { mutateRegistryFile, readRegistryStrict, withContextAt } from './contextsRegistry'
-import { adoptedId, newId } from '../Nexus/ids'
+import { newId } from '../Nexus/ids'
 import { freeName, nameError } from '../Paths/names'
 import {
   atomicWriteFile,
@@ -73,7 +73,8 @@ export async function loadContextWorld(root: string): Promise<Result<ContextWorl
         return fault(`Unreadable Space sidecar: ${name}`)
       }
       const rel = spaceDirRel(def.title, name)
-      const id = typeof sc.value.id === 'string' ? sc.value.id : adoptedId(rel)
+      const id = sc.value.id
+      if (typeof id !== 'string') return fault(`Unreadable Space sidecar: ${name}`)
       spaces.push({ kind: 'space', id, title: name, path: rel, contextId: def.id })
       spaceById.set(id, {
         id,

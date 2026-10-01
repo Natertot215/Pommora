@@ -12,7 +12,7 @@ import {
   sameScope,
   type WatchScope,
 } from '../Paths/exclusion'
-import { isAdoptedId, shardOf } from './ids'
+import { shardOf } from './ids'
 import { pathExists, readAppFile, readJsonObject } from '../Files/atomicWrite'
 import { isContentName } from '../Files/walk'
 import { queryHeadingMentions, removePathIndex } from '../Index/contentIndex'
@@ -450,12 +450,7 @@ export async function patchMetadataFromDisk(
 
 export async function patchPageMetaFromDisk(root: string, rel: string): Promise<'ok' | 'refresh'> {
   const held = getLiveTree()
-  let id = (held && pageAt(held, rel))?.id ?? null
-  if (id !== null && isAdoptedId(id)) {
-    const patched = await patchPageFromDisk(root, rel)
-    if (patched === 'refresh') return 'refresh'
-    id = patched.id
-  }
-  const shard = id === null ? null : shardOf(id)
+  const id = held && pageAt(held, rel)?.id
+  const shard = id ? shardOf(id) : null
   return shard === null ? 'refresh' : patchMetadataFromDisk(root, shard)
 }

@@ -3,14 +3,10 @@ import { pathExists, updateNexusConfig } from '../Files/atomicWrite'
 import { patchSidecar } from '../Files/sidecar'
 import { sidecarPath } from '../Paths/paths'
 import { ok, type Result } from '../Contract/result'
-import { isAdoptedId } from './ids'
 import type { ChildOrderKey } from './mutateRequest'
 import { CONTAINER_KINDS } from './entities'
 
 type ContainerOrderKey = ChildOrderKey | 'page_order'
-
-// Adopted-placeholder ids (`adopted-<hash>`) are in-memory only — the open-time adopter stamps a real ULID before any write captures them. Strip them so a transient id never lands in a persisted order array.
-const persistable = (ids: string[]): string[] => ids.filter((id) => !isAdoptedId(id))
 
 type StateOrderWrite = Promise<Result<Record<string, unknown>>>
 
@@ -28,10 +24,10 @@ const spacesOf = (order: Record<string, unknown>): Record<string, unknown> =>
   isPlainObject(order.spaces) ? order.spaces : {}
 
 export const setCollectionOrder = (nexusRoot: string, ids: string[]): StateOrderWrite =>
-  writeStateOrder(nexusRoot, (order) => ({ ...order, collections: persistable(ids) }))
+  writeStateOrder(nexusRoot, (order) => ({ ...order, collections: ids }))
 
 export const setPanelContextOrder = (nexusRoot: string, ids: string[]): StateOrderWrite =>
-  writeStateOrder(nexusRoot, (order) => ({ ...order, contexts: persistable(ids) }))
+  writeStateOrder(nexusRoot, (order) => ({ ...order, contexts: ids }))
 
 export const setSpaceOrder = (
   nexusRoot: string,
@@ -40,7 +36,7 @@ export const setSpaceOrder = (
 ): StateOrderWrite =>
   writeStateOrder(nexusRoot, (order) => ({
     ...order,
-    spaces: { ...spacesOf(order), [contextId]: persistable(ids) },
+    spaces: { ...spacesOf(order), [contextId]: ids },
   }))
 
 /** A Context gone for good takes its Space order with it. */
@@ -89,6 +85,6 @@ export async function setChildOrder(
   key: ContainerOrderKey,
   ids: string[],
 ): Promise<Result<null>> {
-  const r = await patchContainer(absFolder, (cur) => withOrder(cur, key, persistable(ids)))
+  const r = await patchContainer(absFolder, (cur) => withOrder(cur, key, ids))
   return r.ok ? ok(null) : r
 }

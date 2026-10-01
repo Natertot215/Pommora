@@ -2,16 +2,15 @@ import { isPlainObject } from '../Contract/validators'
 import { readJsonStrict, updateNexusFile } from '../Files/atomicWrite'
 import { listEntries } from '../Files/walk'
 import { fault, ok, type Result } from '../Contract/result'
-import { mutableTarget } from './liveTree'
+import { liveTreeOf, mutableTarget } from './liveTree'
 import { metadataShardPath } from '../Paths/paths'
 import { METADATA_DIR_REL, SHARD_FILE_RE } from '../Paths/nexusPaths'
 import { basename, join } from '../Paths/posix'
 import { metadataShardFile, type PageMeta, type PageMetaPatch } from './schemas'
 import { shardOf } from './ids'
-import { ensurePageId } from './adopt'
 import { done, type MutateReply } from './mutateRequest'
 import { stabilize } from './treeStabilize'
-import { findContainerWhere } from './treePatch'
+import { findContainerWhere, pageAt } from './treePatch'
 import type { NexusTree } from './tree'
 
 type ShardRead =
@@ -166,8 +165,7 @@ export async function writePageMeta(
 ): Promise<MutateReply> {
   const resolved = await mutableTarget(root, relPath, ['page'])
   if (!resolved.ok) return resolved
-  const id = await ensurePageId(resolved.value)
-  if (!id.ok) return id
-  const written = await updatePageMetadata(root, id.value, patch)
-  return done(written)
+  const id = pageAt(await liveTreeOf(root), relPath)?.id
+  if (!id) return fault('That page has no ID Pommora can file.')
+  return done(await updatePageMetadata(root, id, patch))
 }
