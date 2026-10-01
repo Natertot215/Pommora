@@ -8,8 +8,8 @@ import { type NexusIconAction, nexusIconMenuItems } from '../Actions/identityMen
 import { asRenderableIcon } from '@pommora/uix/Symbols'
 
 export function useNexusIcon() {
-  const profileImage = useSession((st) => st.tree?.nexus.profileImage ?? null)
-  const profileIcon = useSession((st) => st.tree?.nexus.profileIcon)
+  const profileImage = useSession((st) => st.tree?.config.profileImage ?? null)
+  const profileIcon = useSession((st) => st.tree?.config.profileIcon)
   const mutate = useSession((st) => st.mutate)
   const [editor, setEditor] = useState<'glyph' | 'file' | 'crop' | null>(null)
   const holds = {

@@ -70,6 +70,7 @@ import { popMenu } from '../../Actions/menuActions'
 import { cardMenuModel } from '../../Actions/cardMenu'
 import { useGhostFlip } from './useGhostFlip'
 import './cards-view.css'
+import { personalizationOf } from '../../Session/configSlice'
 
 // ── Types and constants ─────────────────────────────────────────────────────
 
@@ -154,7 +155,7 @@ export function CardsView({ host }: { host: ViewHostApi }): React.JSX.Element {
     tree,
   } = host
   const nexusId = useSession((s) => s.tree?.nexus.id ?? '')
-  const defaultIcons = useSession((s) => s.personalization.defaultIcons)
+  const defaultIcons = useSession((s) => personalizationOf(s).defaultIcons)
   const beginRename = useSession((s) => s.beginRename)
   const anyNaming = useSession((s) => s.renamingPath !== null)
 

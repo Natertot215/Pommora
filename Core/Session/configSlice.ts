@@ -11,11 +11,11 @@ import { applyPersonalizationKey } from '../Settings/applyPersonalization'
 import type { Slice } from './sessionState'
 import { dialer } from '../Platform/dialer'
 import { saveDevicePrefs } from './saveScheduler'
+import type { NexusTree } from '../Nexus/tree'
+import { stabilize } from '../Nexus/treeStabilize'
 
 export interface ConfigSlice {
-  personalization: Personalization
   setPersonalization: <K extends keyof Personalization>(key: K, value: Personalization[K]) => void
-  commands: Commands
   /** Machine-local, not the Nexus's — loaded alongside it, saved to nexus.db. */
   devicePrefs: DevicePrefs
   /** Whether `devicePrefs` is the open Nexus's own record, the only one that saves; a record not yet read or refused holds nothing to save into. */
@@ -28,34 +28,65 @@ export interface ConfigSlice {
   setCitationsVisible: (pageId: string, shown: boolean) => void
 }
 
+type Holding = { tree: NexusTree | null }
+
+const NO_PERSONALIZATION: Personalization = {}
+
+export const personalizationOf = (s: Holding): Personalization =>
+  s.tree?.config.personalization ?? NO_PERSONALIZATION
+
+export const commandsOf = (s: Holding): Commands => s.tree?.config.commands ?? DEFAULT_COMMANDS
+
+const inFlight = new Map<string, number>()
+
+export function withOwnSettings(tree: NexusTree, held: NexusTree | null): NexusTree {
+  if (!held || !inFlight.size) return tree
+  const mine: Record<string, unknown> = held.config.personalization
+  const own = Object.fromEntries([...inFlight.keys()].map((key) => [key, mine[key]]))
+  const personalization: Personalization = stabilize(
+    { ...tree.config.personalization, ...own },
+    held.config.personalization,
+  )
+  return { ...tree, config: { ...tree.config, personalization } }
+}
+
 /** An absent key means hidden. `citationsVisible` is where the fallback happens; the toggle's write compares against it. */
-const citationsDefault = (s: { personalization: Personalization }): boolean =>
-  settingOf(s.personalization, 'citationsShown')
+const citationsDefault = (s: Holding): boolean => settingOf(personalizationOf(s), 'citationsShown')
 
 /** Every surface that draws a page resolves its footnote visibility here, so they can't disagree about one page. */
 export const citationsVisible = (
-  s: { personalization: Personalization; citationsShown: Record<string, boolean> },
+  s: Holding & { citationsShown: Record<string, boolean> },
   pageId: string | undefined,
 ): boolean => (pageId === undefined ? undefined : s.citationsShown[pageId]) ?? citationsDefault(s)
 
 export const createConfigSlice: Slice<ConfigSlice> = (set, get) => ({
-  personalization: {},
   setPersonalization: (key, next) => {
     const settled = settingValue(key, next)
     const value = settled === SETTING_DEFAULTS[key] ? undefined : settled
-    // The tree copy re-identifies only for defaultIcons, the one key tree-keyed derivations resolve — a new tree identity re-runs every tree memo and pipeline, a cost a boolean toggle must never pay. Everything else reads the slice.
-    set((s) => ({
-      personalization: { ...s.personalization, [key]: value },
-      tree:
-        s.tree && key === 'defaultIcons'
-          ? { ...s.tree, personalization: { ...s.tree.personalization, [key]: value } }
-          : s.tree,
-    }))
+    set(({ tree }) =>
+      tree
+        ? {
+            tree: {
+              ...tree,
+              config: {
+                ...tree.config,
+                personalization: { ...tree.config.personalization, [key]: value },
+              },
+            },
+          }
+        : {},
+    )
     applyPersonalizationKey(key, value)
-    void persist('the setting', dialer().ask('personalization:set', key, value))
+    inFlight.set(key, (inFlight.get(key) ?? 0) + 1)
+    const landed = dialer()
+      .ask('personalization:set', key, value)
+      .finally(() => {
+        const left = (inFlight.get(key) ?? 1) - 1
+        if (left) inFlight.set(key, left)
+        else inFlight.delete(key)
+      })
+    void persist('the setting', landed)
   },
-
-  commands: DEFAULT_COMMANDS,
 
   devicePrefs: {},
   devicePrefsLive: false,

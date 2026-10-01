@@ -29,12 +29,13 @@ export function readCommands(raw: unknown): Commands {
 /** Decoded in one place — the walk and the watcher's settings patch read the same file through the same coercions, so they cannot disagree. */
 export interface SettingsLeaves {
   excluded: string[]
+  /** Outside the content corpus and the tree, and watched regardless of `excluded`. */
   assetDirectory: string
   personalization: Personalization
   commands: Commands
+  /** Names an image in the asset directory as a `[[Name.ext]]` wikilink — or, in a nexus the migration hasn't run against, a nexus-relative path. */
   profileImage: string | null
-  profileIcon: string | undefined
-  profileSubtitle: string
+  profileIcon?: string
 }
 
 /** A refused value takes the default rather than narrowing the walk or widening the protocol handler's containment check — `.nexus/contexts` would drop every Space from the walk. */
@@ -92,7 +93,6 @@ export function readSettingsLeaves(settings: Json): SettingsLeaves {
     commands: readCommands(settings.commands),
     profileImage: asString(settings.profile_image) ?? null,
     profileIcon: asString(settings.profile_icon),
-    profileSubtitle: asString(settings.profile_subtitle) ?? '',
   }
 }
 

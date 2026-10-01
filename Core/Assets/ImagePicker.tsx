@@ -48,7 +48,7 @@ export function ImagePicker({
   onRepick?: (source: string) => Promise<string | undefined>
 }): React.JSX.Element | null {
   const map = useSession((st) => st.assetMap)
-  const crops = useSession((st) => st.tree?.crops)
+  const crops = useSession((st) => st.tree?.config.crops)
   const url = resolveAssetUrl(value, map)
   const aspect = useImageAspect(url ?? undefined)
 

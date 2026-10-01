@@ -31,6 +31,7 @@ import {
 import type { Slice } from './sessionState'
 import { resetUndo } from './undo'
 import { dialer } from '../Platform/dialer'
+import { withOwnSettings } from './configSlice'
 
 export interface NexusSlice {
   status: 'idle' | 'loading' | 'ready' | 'error' | 'empty'
@@ -186,18 +187,14 @@ export const createNexusSlice: Slice<NexusSlice> = (set, get) => {
     applyTree: (incoming) => {
       // IPC strips identity, so without stabilize() every push would re-render every consumer.
       const prev = get().tree
-      const tree = stabilize(incoming, prev)
+      const tree = withOwnSettings(stabilize(incoming, prev), prev)
       set({ status: 'ready', tree })
       const index = reconcileIndexOf(tree)
       get().reconcileNavigation(index)
       get().reconcileWindow(index)
       get().reconcileGlance(index)
-      // Only a copy the tree itself changed: an optimistic patch, or a push repeating the copy the tree holds, would roll back a newer change the slice already holds.
-      if (tree.personalization !== prev?.personalization) {
-        set({ personalization: tree.personalization })
-        applyPersonalization(tree.personalization)
-      }
-      if (tree.commands !== prev?.commands) set({ commands: tree.commands })
+      if (tree.config.personalization !== prev?.config.personalization)
+        applyPersonalization(tree.config.personalization)
     },
 
     choose: () => openVia(() => dialer().ask('nexus:choose')),
@@ -266,7 +263,13 @@ export const createNexusSlice: Slice<NexusSlice> = (set, get) => {
           case 'setHeadingIconHidden':
             patched =
               req.kind === 'homepage'
-                ? { ...cur, homepage: { ...cur.homepage, headingIconHidden: req.hidden } }
+                ? {
+                    ...cur,
+                    config: {
+                      ...cur.config,
+                      homepage: { ...cur.config.homepage, headingIconHidden: req.hidden },
+                    },
+                  }
                 : req.kind === 'navview'
                   ? null
                   : patchNodeInTree(cur, req.path, { headingIconHidden: req.hidden })

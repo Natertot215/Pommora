@@ -10,6 +10,7 @@ import { DetailTitleHeader } from '../Interface/Header/DetailTitleHeader'
 import './page-header.css'
 import { popMenu } from '../Actions/menuActions'
 import { titleMenuItems } from '../Actions/identityMenus'
+import { personalizationOf } from '../Session/configSlice'
 
 interface HeaderPage {
   id: string
@@ -32,7 +33,7 @@ export function PageHeader({
   const setting = useSetting('titleIcon')
   const shown = meta?.title_icon ?? setting
   const coverSrc = useAssetUrl(cover)
-  const defaultIcons = useSession((s) => s.personalization.defaultIcons)
+  const defaultIcons = useSession((s) => personalizationOf(s).defaultIcons)
   const submitRename = useSession((s) => s.submitRename)
   const mutate = useSession((s) => s.mutate)
   const [iconPickerOpen, setIconPickerOpen] = useState(false)

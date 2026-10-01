@@ -2,18 +2,19 @@ import type { NexusTree } from '../Nexus/tree'
 import type { PickOption } from '../Properties/properties'
 import { spacesByIdOf } from './contextIdentity'
 
-// The card grid calls this per context value per render, so a STABLE array is cached per (tree, contextId) — keyed on the tree object, so a push invalidates it.
-const optionsCache = new WeakMap<NexusTree, Map<string, PickOption[]>>()
+// The card grid calls this per context value per render, so a STABLE array is cached per Context, on the Space identities it is built from.
+const optionsCache = new WeakMap<object, Map<string, PickOption[]>>()
 
 export function contextOptionsFor(
   contextId: string,
   tree: NexusTree,
   excludeId?: string,
 ): PickOption[] {
-  let byContext = optionsCache.get(tree)
+  const spaces = spacesByIdOf(tree)
+  let byContext = optionsCache.get(spaces)
   if (!byContext) {
     byContext = new Map()
-    optionsCache.set(tree, byContext)
+    optionsCache.set(spaces, byContext)
   }
   let opts = byContext.get(contextId)
   if (!opts) {

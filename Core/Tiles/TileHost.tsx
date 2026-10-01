@@ -47,6 +47,7 @@ import { isUlidShaped } from '../Nexus/identityMark'
 import { cx } from '@pommora/uix/Utilities/cx'
 import { RenderBoundary } from '@pommora/uix/Elements/RenderBoundary'
 import './tile-base.css'
+import { personalizationOf } from '../Session/configSlice'
 
 const NO_PAGES: ReadonlyMap<string, ConnPage> = new Map()
 
@@ -212,9 +213,10 @@ export function TileHost({
   const onHandleMenu = useCallback(
     (id: string, e: React.MouseEvent) => {
       const entry = entries.get(id)
-      const { tree, personalization } = useSession.getState()
+      const s = useSession.getState()
+      const { tree } = s
       if (!tree) return
-      const { defaultIcons } = personalization
+      const { defaultIcons } = personalizationOf(s)
       const page = entry && tileSourceInfo(entry, pagesById)
       const pageItems = pagePickTree(tree, defaultIcons, (p) => p.id)
       const viewItems = viewPickTree(tree, defaultIcons)

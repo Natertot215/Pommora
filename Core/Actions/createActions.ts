@@ -5,6 +5,7 @@ import { relDirname } from '../Paths/posix'
 import { placeAt, placeNew } from '../Views/creationOrder'
 import { containerAt, findContainerWhere } from '../Nexus/treePatch'
 import { useSession, windowTargetOf } from '../Session/store'
+import { personalizationOf } from '../Session/configSlice'
 
 export async function newPageAdjacent(
   path: string,
@@ -46,15 +47,16 @@ export async function newSpaceAdjacent(
 
 /** An unanchored create, placed by its kind's placement setting and named in place. */
 export async function createNamed(req: MutateRequest, host?: RenameHost): Promise<void> {
-  const { tree, personalization, mutate, beginRename } = useSession.getState()
-  await mutate(tree ? placeNew(tree, req, personalization) : req, (created) =>
+  const s = useSession.getState()
+  const { tree, mutate, beginRename } = s
+  await mutate(tree ? placeNew(tree, req, personalizationOf(s)) : req, (created) =>
     beginRename(created.path, true, host),
   )
 }
 
 export async function newPage(inWindow: boolean): Promise<void> {
   const s = useSession.getState()
-  const { tree, personalization, mutate } = s
+  const { tree, mutate } = s
   if (!tree) return
   const from = inWindow ? windowTargetOf(s) : s.selection
   let parentPath: string | null = null
@@ -64,7 +66,7 @@ export async function newPage(inWindow: boolean): Promise<void> {
   if (parentPath === null) parentPath = tree.collections[0]?.path ?? null
   if (parentPath === null) return
   await mutate(
-    placeNew(tree, { op: 'createPage', parentPath, name: DEFAULT_NEW_NAME }, personalization),
+    placeNew(tree, { op: 'createPage', parentPath, name: DEFAULT_NEW_NAME }, personalizationOf(s)),
     (created) => {
       const page = { kind: 'page', id: created.id, path: created.path } as const
       return inWindow ? s.openWindowTab(page) : s.select(page, { newTab: false })

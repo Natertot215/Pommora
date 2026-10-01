@@ -14,6 +14,7 @@ import { ctxHandler } from './sidebarRows'
 import { MATRIX_ICON, MATRIX_REF } from '../../Matrix/matrixKind'
 import { NexusPhoto } from './NexusPhoto'
 import './sidebar.css'
+import { personalizationOf } from '../../Session/configSlice'
 
 // An icon that summoned a window dismisses it on the next press.
 const RIBBON: Record<
@@ -55,7 +56,7 @@ const switchTo = (mode: SidebarMode): void =>
 function pressMatrix(): void {
   const s = useSession.getState()
   if (
-    settingOf(s.personalization, 'matrixOpenIn') === 'window' &&
+    settingOf(personalizationOf(s), 'matrixOpenIn') === 'window' &&
     !isOpenInTabs(s.tabs, s.pinned, MATRIX_REF)
   )
     s.toggleMatrixWindow()
@@ -81,10 +82,10 @@ async function matrixMenu(): Promise<void> {
 
 export function Ribbon(): React.JSX.Element {
   const select = useSession((s) => s.select)
-  const mode = useSession((s) => sidebarModeOf(s.personalization))
-  const order = useSession((s) => s.personalization.ribbonOrder)
+  const mode = useSession((s) => sidebarModeOf(personalizationOf(s)))
+  const order = useSession((s) => personalizationOf(s).ribbonOrder)
   const experimental = useExperimental()
-  const defaultIcons = useSession((s) => s.personalization.defaultIcons)
+  const defaultIcons = useSession((s) => personalizationOf(s).defaultIcons)
   const setPersonalization = useSession((s) => s.setPersonalization)
   const keys = resolveRibbonOrder(order, experimental)
 

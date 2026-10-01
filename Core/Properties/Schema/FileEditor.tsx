@@ -13,7 +13,7 @@ export function FileEditor({
   onSetDirectory: (dir: string) => void
   onBrowse: () => void
 }): React.JSX.Element {
-  const assetRoot = useSession((st) => st.tree?.assetDirectory ?? '')
+  const assetRoot = useSession((st) => st.tree?.config.assetDirectory ?? '')
   return (
     <div className={s.configEditor}>
       <MenuIndex

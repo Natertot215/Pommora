@@ -26,6 +26,7 @@ import { windowGeometry } from '../Interface/Windows/useWindowGeometry'
 import { openWebLink } from '../Web/openWebLink'
 import { forgetAlias, rememberAlias } from '../Connections/aliasMemory'
 import { useLatest } from '@pommora/uix/Utilities/stableApi'
+import { commandsOf, personalizationOf } from '../Session/configSlice'
 
 interface EditorHostOptions {
   pageId?: string
@@ -58,8 +59,8 @@ function buildEditorHost(
   }
   return {
     settings: () => {
-      const { personalization, commands } = state()
-      return editorSettingsOf(personalization, commands)
+      const s = state()
+      return editorSettingsOf(personalizationOf(s), commandsOf(s))
     },
     aliases: {
       list: worn,
@@ -67,7 +68,7 @@ function buildEditorHost(
       forget: (id, alias) => wear(id, forgetAlias(worn(id), alias)),
       subscribe: (cb) =>
         useSession.subscribe((s, prev) => {
-          if (s.tree?.pageMetadata !== prev.tree?.pageMetadata) cb()
+          if (s.tree?.config.pageMetadata !== prev.tree?.config.pageMetadata) cb()
         }),
     },
     linkTitles: {
@@ -138,8 +139,8 @@ function buildEditorHost(
         />
       ),
     pickTree: () => {
-      const { tree, personalization } = state()
-      return tree ? pagePickTree(tree, personalization.defaultIcons, (p) => p.title) : []
+      const s = state()
+      return s.tree ? pagePickTree(s.tree, personalizationOf(s).defaultIcons, (p) => p.title) : []
     },
     openLink: openWebLink,
     warmBody: (page) => {
@@ -164,11 +165,11 @@ export function useEditorHost({
 }: EditorHostOptions): EditorHost {
   const connRef = useLatest(connections)
   const shown = useSession((s) => citationsVisible(s, pageId))
-  const cbLineCount = useSession((s) => s.personalization.codeblockLineCount)
-  const htmlShortcuts = useSession((s) => s.personalization.htmlShortcuts)
-  const headingLinkStyle = useSession((s) => s.personalization.headingLinkStyle)
-  const inPageHeadingResolution = useSession((s) => s.personalization.inPageHeadingResolution)
-  const commands = useSession((s) => s.commands)
+  const cbLineCount = useSession((s) => personalizationOf(s).codeblockLineCount)
+  const htmlShortcuts = useSession((s) => personalizationOf(s).htmlShortcuts)
+  const headingLinkStyle = useSession((s) => personalizationOf(s).headingLinkStyle)
+  const inPageHeadingResolution = useSession((s) => personalizationOf(s).inPageHeadingResolution)
+  const commands = useSession(commandsOf)
   return useMemo(
     () => buildEditorHost({ pageId, inert, pageSurface, preview }, connRef),
     [

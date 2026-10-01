@@ -143,7 +143,7 @@ export function MatrixMenu(): React.JSX.Element {
             locations={tree.collections}
             view={filterView}
             read={() => filterViewOf(useSession.getState().matrixConfig.filter)}
-            schema={tree.registry}
+            schema={tree.config.registry}
             tree={tree}
             label={MATRIX_TITLE}
             onBack={() => setFiltering(false)}

@@ -59,7 +59,9 @@ export async function scrubReturning(
   inTransitKey?: string,
 ): Promise<StrippedLink[]> {
   const world = await liveWorld(root, tree, destCollectionFolder)
-  const links = new Map(tree.registry.filter((d) => d.type === 'link').map((d) => [d.name, d]))
+  const links = new Map(
+    tree.config.registry.filter((d) => d.type === 'link').map((d) => [d.name, d]),
+  )
   const dropped: StrippedLink[] = []
   // Whether or not the destination assigns its key, a Link naming a page gone leaves, noted by its root's id.
   const unlinked = (raw: Record<string, unknown>): string[] =>

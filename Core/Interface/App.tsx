@@ -31,6 +31,7 @@ import { ValuePickPresenter } from './Menus/ValuePickPresenter'
 import { DragGroup } from '@pommora/uix/Interactions/drag'
 import { cx } from '@pommora/uix/Utilities/cx'
 import { RenderBoundary } from '@pommora/uix/Elements/RenderBoundary'
+import { commandsOf } from '../Session/configSlice'
 
 export function App(): React.JSX.Element {
   // Per-field selectors, never the bare hook — the shell must not re-render on every store set().
@@ -49,7 +50,7 @@ export function App(): React.JSX.Element {
   const openDropped = useSession((s) => s.openDropped)
   const ribbonVisible = useSession((s) => s.ribbonVisible)
   const trafficLights = useSession((s) => s.hostPlatform !== 'windows' && !s.fullscreen)
-  const commands = useSession((s) => s.commands)
+  const commands = useSession(commandsOf)
   const brightness = useSession((s) => s.devicePrefs.brightness)
   const scrollbars = useSession((s) => devicePref(s.devicePrefs, 'scrollbars'))
   const scrollbarReveal = useSession((s) => devicePref(s.devicePrefs, 'scrollbarReveal'))

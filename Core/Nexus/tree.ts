@@ -1,7 +1,6 @@
-import type { Commands } from '../Actions/commands'
 import type { ContextDef } from '../Contexts/contexts'
 import type { PropertyDefinition } from '../Properties/properties'
-import type { Personalization } from '../Settings/personalization'
+import type { SettingsLeaves } from '../Settings/codec'
 import type { OpenIn, ViewButton } from '../Views/viewRow'
 import type { SavedView } from '../Views/views'
 import type { NodeKind } from './entities'
@@ -85,32 +84,40 @@ export type ValuesEpoch = { n: number } & (
   | { kind: 'container'; changes: ValueChange[] }
 )
 
-export interface NexusTree {
-  /** `profileImage` names an image in the asset directory as a `[[Name.ext]]` wikilink — or, in a nexus the migration hasn't run against, a nexus-relative path. */
-  nexus: {
-    id: string
-    rootPath: string
-    name: string
-    profileImage: string | null
-    profileIcon?: string
-    profileSubtitle: string
-  }
+export interface NexusOrder {
+  collections?: string[]
+  /** The Properties panel's Context order, which moves independently of the registry's. */
+  contexts?: string[]
+  spaces: Record<string, unknown>
+}
+
+export interface NexusConfig extends SettingsLeaves {
   /** The tile doc's heavy layout and entries stay off the walk, loaded lazily by useTileDoc. */
   homepage: { banner?: string; headingIconHidden: boolean }
   crops: Record<string, Crop>
   pageMetadata: Record<string, PageMeta>
+  order: NexusOrder
+  registry: PropertyDefinition[]
+}
+
+export interface NexusTree {
+  nexus: { id: string; rootPath: string; name: string }
   collections: CollectionNode[]
   contexts: ContextGroup[]
-  // Not the sidebar's order: `contexts` above carries the registry's, and these two move independently.
-  contextOrder?: string[]
-  personalization: Personalization
-  commands: Commands
-  excluded: string[]
-  /** Outside the content corpus and the tree, and watched regardless of `excluded`. */
-  assetDirectory: string
-  registry: PropertyDefinition[]
+  config: NexusConfig
   /** Unparseable, not missing — absence is a missing entry instead. */
   unreadable?: { path: string }[]
 }
 
 export type NexusState = { status: 'empty' } | { status: 'open'; tree: NexusTree }
+
+export function entityMemo<T>(build: (tree: NexusTree) => T): (tree: NexusTree) => T {
+  const held = new WeakMap<CollectionNode[], { contexts: ContextGroup[]; value: T }>()
+  return (tree) => {
+    const hit = held.get(tree.collections)
+    if (hit?.contexts === tree.contexts) return hit.value
+    const value = build(tree)
+    held.set(tree.collections, { contexts: tree.contexts, value })
+    return value
+  }
+}

@@ -8,6 +8,7 @@ import { useAssetUrl } from './useAssetUrl'
 import type { ResolvedNav } from '../Navigation/navResolve'
 import type { EntityIconKind } from '../Settings/personalization'
 import * as assetImage from './asset-image.css'
+import { personalizationOf } from '../Session/configSlice'
 
 type EntityIconProps =
   | { item: ResolvedNav; kind?: undefined; icon?: undefined; size?: IconSize; className?: string }
@@ -32,7 +33,7 @@ function KindGlyph({
   size?: IconSize
   className?: string
 }): React.JSX.Element {
-  const defaults = useSession((s) => s.personalization.defaultIcons)
+  const defaults = useSession((s) => personalizationOf(s).defaultIcons)
   return <Icon name={entityIcon(kind, icon, defaults)} size={size} className={className} />
 }
 
@@ -45,7 +46,7 @@ function NavGlyph({
   size?: IconSize
   className?: string
 }): React.JSX.Element {
-  const profileImage = useSession((s) => s.tree?.nexus?.profileImage ?? null)
+  const profileImage = useSession((s) => s.tree?.config.profileImage ?? null)
   const photoSrc = useAssetUrl(profileImage)
   if (item.kind === 'homepage' && photoSrc) {
     const px = size ? ICON_PX[size] : undefined

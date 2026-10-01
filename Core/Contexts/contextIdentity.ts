@@ -1,4 +1,4 @@
-import type { NexusTree } from '../Nexus/tree'
+import type { NexusConfig, NexusTree } from '../Nexus/tree'
 import { entityIcon } from '../Assets/entityIconPolicy'
 
 export interface ContextIdentity {
@@ -23,12 +23,12 @@ export interface IdentityMaps {
 // Keyed on the two slices it reads, so a push that leaves the Contexts and the default icons alone keeps every map's identity.
 const mapsByContexts = new WeakMap<
   NexusTree['contexts'],
-  { icons: NexusTree['personalization']['defaultIcons']; maps: IdentityMaps }
+  { icons: NexusConfig['personalization']['defaultIcons']; maps: IdentityMaps }
 >()
 
 export function identityOf(tree: NexusTree): IdentityMaps {
   // The user's Space glyph, not the curated seed — personalization rides the tree, so every surface resolving through this seam lands on the same icon the sidebar shows.
-  const di = tree.personalization.defaultIcons
+  const di = tree.config.personalization.defaultIcons
   const held = mapsByContexts.get(tree.contexts)
   if (held && held.icons === di) return held.maps
   const contexts = new Map<string, ContextIdentity>()

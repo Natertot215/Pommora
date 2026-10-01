@@ -24,6 +24,7 @@ import { pageIdsIn } from '../../Nexus/treePatch'
 import { groupKeyToValue } from '../reassign'
 import { useLatest } from '@pommora/uix/Utilities/stableApi'
 import type { ViewHostApi } from './useViewHost'
+import { personalizationOf } from '../../Session/configSlice'
 
 // Sort criteria whose value a new page can inherit from its anchor — single-value user properties, a link aside; under anything else the row simply lands where the sort puts it.
 const SEEDS_FROM_SORT: Record<ValueKind, boolean> = {
@@ -148,8 +149,9 @@ export function useViewCreation(getCfg: () => ViewCreationConfig): ViewCreation 
   const addIn = (parentPath: string): Promise<boolean> => {
     const c = cfg()
     const gestureViewId = c.view.id
-    const { tree, personalization } = useSession.getState()
-    const slot = placementSlot(settingOf(personalization, 'newPagePlacement'))
+    const s = useSession.getState()
+    const { tree } = s
+    const slot = placementSlot(settingOf(personalizationOf(s), 'newPagePlacement'))
     const req = placeAt(
       pageRequest(parentPath, impliedSeeds()),
       pageIdsIn(tree!, parentPath),

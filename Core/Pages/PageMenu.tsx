@@ -20,6 +20,7 @@ import { runPageAction } from '../Interface/Menus/pageMenuActions'
 import { popMenu } from '../Actions/menuActions'
 import { lockLabel } from '../Actions/toggleLabels'
 import { useExperimental } from '../Settings/experimental'
+import { personalizationOf } from '../Session/configSlice'
 
 const FOOTER_ROWS = joinGroups([
   [RENAME_ROW],
@@ -30,7 +31,7 @@ const FOOTER_ROWS = joinGroups([
 export function PageMenu(): React.JSX.Element | null {
   const pageDetail = useSession(shownDetail)
   const ownIcon = useSession(pageMetaOf(pageDetail?.id))?.icon
-  const defaultIcons = useSession((st) => st.personalization.defaultIcons)
+  const defaultIcons = useSession((st) => personalizationOf(st).defaultIcons)
   const submitRename = useSession((st) => st.submitRename)
   const mutate = useSession((st) => st.mutate)
   const experimental = useExperimental()

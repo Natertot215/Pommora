@@ -5,7 +5,7 @@ import { escapes } from '../Paths/pathSafety'
 import { relDirname, relative, titleFromPath } from '../Paths/posix'
 import { normalizeTitle } from '../Connections/connections'
 import type { Frozen } from '../Properties/propertyValue'
-import type { NexusTree, ValueChange } from './tree'
+import { entityMemo, type NexusTree, type ValueChange } from './tree'
 
 // One root at a time: a note under another root is a session that moved, and the old root's unflushed writes have no window left to reach.
 // Each file maps to whether every write it saw this flush was a body edit.
@@ -40,11 +40,7 @@ interface PageIndices {
   byId: ReadonlyMap<string, string | null>
 }
 
-const indices = new WeakMap<NexusTree, PageIndices>()
-
-function indicesOf(tree: NexusTree): PageIndices {
-  const held = indices.get(tree)
-  if (held) return held
+const indicesOf = entityMemo((tree): PageIndices => {
   const byPath = new Map<string, string>()
   const byId = new Map<string, string | null>()
   const walk = (nodes: { pages: { id: string; path: string }[]; sets?: unknown[] }[]): void => {
@@ -57,10 +53,8 @@ function indicesOf(tree: NexusTree): PageIndices {
     }
   }
   walk(tree.collections)
-  const built = { byPath, byId }
-  indices.set(tree, built)
-  return built
-}
+  return { byPath, byId }
+})
 
 export const pageIdIndex = (tree: NexusTree | null): ReadonlyMap<string, string> =>
   tree ? indicesOf(tree).byPath : new Map()
@@ -82,11 +76,7 @@ export const livePathOf = (root: string, id: string): string | null =>
   liveIndices(root)?.byId.get(id) ?? null
 
 // Walked only when a delete, rename, or restore asks, never on the value writes that rebuild the rest.
-const titles = new WeakMap<NexusTree, ReadonlyMap<string, readonly string[]>>()
-
-export function titlesOf(tree: NexusTree): ReadonlyMap<string, readonly string[]> {
-  const held = titles.get(tree)
-  if (held) return held
+export const titlesOf = entityMemo((tree): ReadonlyMap<string, readonly string[]> => {
   const byTitle = new Map<string, string[]>()
   for (const path of indicesOf(tree).byPath.keys()) {
     const title = normalizeTitle(titleFromPath(path))
@@ -94,9 +84,8 @@ export function titlesOf(tree: NexusTree): ReadonlyMap<string, readonly string[]
     if (paths) paths.push(path)
     else byTitle.set(title, [path])
   }
-  titles.set(tree, byTitle)
   return byTitle
-}
+})
 
 /** Whether a page outside `rel` still answers `title`, so a link naming it resolves once `rel` is gone. */
 export function titleHeldOutside(root: string, title: string, rel: string): boolean {

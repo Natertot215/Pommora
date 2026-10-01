@@ -1,6 +1,7 @@
 import { basename, join, relDirname, relative, isMarkdownFile } from '../Paths/posix'
 import { escapes } from '../Paths/pathSafety'
-import type { NexusTree } from './tree'
+import type { NexusConfig, NexusTree } from './tree'
+import { stabilize } from './treeStabilize'
 import { asString, asStringArray } from './coerce'
 import { patchHeldAssetMap } from '../Assets/assetMap'
 import {
@@ -32,7 +33,7 @@ import {
   resolveAssignedSchema,
   resolveEntityContexts,
 } from './readNexus'
-import { readSettings, type SettingsLeaves, scopeOf } from '../Settings/codec'
+import { readSettings, scopeOf } from '../Settings/codec'
 import { errText } from '../Contract/result'
 import { coerceOpenIn } from './schemas'
 import { cachedIds, containerFieldsFrom } from './containerFields'
@@ -385,7 +386,7 @@ export async function patchContainerFromDisk(
           ...shared,
           properties: resolveAssignedSchema(
             meta.properties,
-            Object.fromEntries(tree.registry.map((d) => [d.id, d])),
+            Object.fromEntries(tree.config.registry.map((d) => [d.id, d])),
           ),
           openIn: coerceOpenIn(meta.open_in),
           cached: cachedIds(meta),
@@ -417,27 +418,19 @@ export async function patchSpaceFromDisk(root: string, dirRel: string): Promise<
 
 async function applySettingsLeaf(root: string, watched: WatchScope): Promise<'ok' | 'refresh'> {
   const leaves = await readSettings(root)
-  return sameScope(scopeOf(leaves), watched) ? applySettingsLeaves(root, leaves) : 'refresh'
+  return sameScope(scopeOf(leaves), watched) ? patchConfig(root, leaves) : 'refresh'
 }
 
 export async function patchSettingsFromDisk(root: string): Promise<'ok' | 'refresh'> {
-  return applySettingsLeaves(root, await readSettings(root))
+  return patchConfig(root, await readSettings(root))
 }
 
-function applySettingsLeaves(root: string, leaves: SettingsLeaves): 'ok' | 'refresh' {
-  return applyPatch(root, (t) => ({
-    ...t,
-    personalization: leaves.personalization,
-    commands: leaves.commands,
-    excluded: leaves.excluded,
-    assetDirectory: leaves.assetDirectory,
-    nexus: {
-      ...t.nexus,
-      profileImage: leaves.profileImage,
-      profileIcon: leaves.profileIcon,
-      profileSubtitle: leaves.profileSubtitle,
-    },
-  }))
+function patchConfig(root: string, patch: Partial<NexusConfig>): 'ok' | 'refresh' {
+  return applyPatch(root, (t) => {
+    const kept = stabilize(patch, t.config) as Partial<NexusConfig>
+    const moved = (Object.keys(kept) as (keyof NexusConfig)[]).some((k) => kept[k] !== t.config[k])
+    return moved ? { ...t, config: { ...t.config, ...kept } } : t
+  })
 }
 
 export async function patchOrderFromDisk(root: string): Promise<'ok' | 'refresh'> {
@@ -448,23 +441,27 @@ export async function patchOrderFromDisk(root: string): Promise<'ok' | 'refresh'
       const spaces = resolveOrder(g.spaces, asStringArray(order.spaces[g.def.id]))
       return spaces.some((s, i) => s !== g.spaces[i]) ? { ...g, spaces } : g
     })
-    const contextOrder = order.contexts
-    const reordered = JSON.stringify(contextOrder) !== JSON.stringify(t.contextOrder)
+    const held = stabilize(order, t.config.order)
     const moved = collections.some((c, i) => c !== t.collections[i])
-    return moved || reordered || contexts.some((g, i) => g !== t.contexts[i])
-      ? { ...t, collections, contexts, contextOrder }
-      : t
+    const regrouped = contexts.some((g, i) => g !== t.contexts[i])
+    if (!moved && !regrouped && held.contexts === t.config.order.contexts) return t
+    return {
+      ...t,
+      collections: moved ? collections : t.collections,
+      contexts: regrouped ? contexts : t.contexts,
+      config: { ...t.config, order: held },
+    }
   })
 }
 
 export async function patchHomepageFromDisk(root: string): Promise<'ok' | 'refresh'> {
   const config = (await readAppFile(nexusConfig(root, NEXUS_CONFIG_FILES.homepage))) ?? {}
-  return applyPatch(root, (t) => ({ ...t, homepage: readHomepageLeaves(config) }))
+  return patchConfig(root, { homepage: readHomepageLeaves(config) })
 }
 
 export async function patchCropsFromDisk(root: string): Promise<'ok' | 'refresh'> {
   const config = (await readAppFile(nexusConfig(root, NEXUS_CONFIG_FILES.crops))) ?? {}
-  return applyPatch(root, (t) => ({ ...t, crops: readCropLeaves(config) }))
+  return patchConfig(root, { crops: readCropLeaves(config) })
 }
 
 export async function patchMetadataFromDisk(
@@ -473,9 +470,9 @@ export async function patchMetadataFromDisk(
 ): Promise<'ok' | 'refresh'> {
   const read = await readShard(root, shard)
   if (read.kind === 'unreadable') return 'ok'
-  const held = getLiveTree()?.pageMetadata
+  const held = getLiveTree()?.config.pageMetadata
   const pageMetadata = withShards(held ?? {}, { [shard]: read.kind === 'ok' ? read.pages : {} })
-  return pageMetadata === held ? 'ok' : applyPatch(root, (t) => ({ ...t, pageMetadata }))
+  return pageMetadata === held ? 'ok' : patchConfig(root, { pageMetadata })
 }
 
 export async function patchPageMetaFromDisk(root: string, rel: string): Promise<'ok' | 'refresh'> {

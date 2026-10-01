@@ -20,6 +20,7 @@ import {
   TabSeparator,
 } from '../../Navigation/TabItem'
 import '../../Navigation/tab-base.css'
+import { personalizationOf } from '../../Session/configSlice'
 
 interface Entry {
   tab: WindowTab
@@ -96,7 +97,7 @@ export function WindowTabStrip({
       const target = tab.target
       if (target.kind === 'map') return
       const isPage = target.kind === 'page'
-      const banner = windowBannerShown(useSession.getState().personalization, target.kind)
+      const banner = windowBannerShown(personalizationOf(useSession.getState()), target.kind)
         ? bannerMenuItems({ add: await windowBannerAdd(target) })
         : undefined
       const action = await popMenu(
