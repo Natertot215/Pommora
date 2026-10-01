@@ -1,4 +1,4 @@
-import { basename, dirname, titleFromPath, relJoin } from '../Paths/posix'
+import { basename, dirname, join, titleFromPath, relJoin } from '../Paths/posix'
 import { createDisambiguated } from '../Paths/names'
 import { ok } from '../Contract/result'
 import { mutableTarget } from './liveTree'
@@ -7,6 +7,7 @@ import type { MutateReply, MutateRequest } from './mutateRequest'
 import type { MutateContext } from './mutate'
 import { renamePage } from './page'
 import { landingRefusal, renameFolderEntity } from './folderEntity'
+import { pathExists } from '../Files/atomicWrite'
 import { type CascadeReport, renameCascade } from './cascade'
 import { excludedWithin, exclusionWriteRefusal } from '../Settings/settings'
 import { titleHeldOutside } from './valuesChanged'
@@ -33,7 +34,11 @@ export async function renameOp(
     return ok({ renamed: { path: relJoin(relParent, file), name: titleFromPath(file) }, cascade })
   }
   if (req.fromCreate) {
-    const r = await createDisambiguated(req.newName, (name) => renamePage(abs, name))
+    const r = await createDisambiguated(
+      req.newName,
+      (name) => renamePage(abs, name),
+      (name) => pathExists(join(dirname(abs), `${name}.md`)),
+    )
     if (!r.ok) return r
     await moveIndexPaths(root, abs, r.value.path)
     return renamedReply(r.value.path)

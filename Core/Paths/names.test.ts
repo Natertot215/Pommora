@@ -121,14 +121,40 @@ describe('freeName', () => {
 describe('createDisambiguated', () => {
   it('steps the name aside while the write reports it is taken', async () => {
     const taken = new Set(['Untitled', 'Untitled (2)'])
-    const r = await createDisambiguated('Untitled', async (name) =>
-      taken.has(name) ? fail('exists', 'taken') : ok(name),
+    const r = await createDisambiguated(
+      'Untitled',
+      async (name) => (taken.has(name) ? fail('exists', 'taken') : ok(name)),
+      async (name) => taken.has(name),
     )
     expect(r).toEqual(ok('Untitled (3)'))
   })
 
   it('stops at any error that is not a collision', async () => {
-    const r = await createDisambiguated('X', async () => fail('invalid-name', 'no'))
+    const r = await createDisambiguated(
+      'X',
+      async () => fail('invalid-name', 'no'),
+      async () => false,
+    )
     expect(r.ok).toBe(false)
+  })
+
+  it('counts on from the bare name when a counted name is taken beside it', async () => {
+    const taken = new Set(['Ideas', 'Ideas (2)'])
+    const r = await createDisambiguated(
+      'Ideas (2)',
+      async (name) => (taken.has(name) ? fail('exists', 'taken') : ok(name)),
+      async (name) => taken.has(name),
+    )
+    expect(r).toEqual(ok('Ideas (3)'))
+  })
+
+  it('keeps a number that is part of the name when the bare name is free', async () => {
+    const taken = new Set(['Taxes (2024)'])
+    const r = await createDisambiguated(
+      'Taxes (2024)',
+      async (name) => (taken.has(name) ? fail('exists', 'taken') : ok(name)),
+      async (name) => taken.has(name),
+    )
+    expect(r).toEqual(ok('Taxes (2024) (2)'))
   })
 })
