@@ -15,7 +15,7 @@ export const ENTITIES = {
   Entity
 >
 
-export type EntityKind = keyof typeof ENTITIES
+type EntityKind = keyof typeof ENTITIES
 
 type KindWith<F extends keyof Entity> = {
   [K in EntityKind]: (typeof ENTITIES)[K] extends Record<F, unknown> ? K : never
