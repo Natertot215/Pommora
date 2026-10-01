@@ -1,8 +1,12 @@
 // The walk and the watch patch pass DIFFERENT children — the walk its freshly-read ones, the watch the live node's — so the children arrive as arguments rather than being derived here.
 
-import type { PageNode, SetNode } from './tree'
+import type { CollectionNode, PageNode, SetNode } from './tree'
+import type { ContainerKind } from './entities'
 import { containerViewIds, savedView, type SavedView } from '../Views/views'
-import { coerceViewButton } from './schemas'
+import { coerceOpenIn, coerceViewButton } from './schemas'
+import { makeCollectionNode, makeSetNode } from './treePatch'
+import type { PropertyDefinition } from '../Properties/properties'
+import type { PropertyRegistry } from '../Properties/propertiesRegistry'
 import { asString, asStringArray } from './coerce'
 import { resolveOrder } from './order'
 import { isPlainObject } from '../Contract/validators'
@@ -41,4 +45,36 @@ export function containerFieldsFrom(
     disclosureLocked: meta.disclosure_locked === true,
     activeView: asString(meta.active_view),
   }
+}
+
+function resolveAssignedSchema(
+  ids: unknown,
+  registry: PropertyRegistry,
+): PropertyDefinition[] | undefined {
+  if (!Array.isArray(ids)) return undefined
+  const defs = ids
+    .filter((id): id is string => typeof id === 'string')
+    .map((id) => registry[id])
+    .filter((d): d is PropertyDefinition => Boolean(d))
+  return defs.length ? defs : undefined
+}
+
+export function containerNodeFrom(
+  kind: ContainerKind,
+  at: { title: string; path: string },
+  meta: Record<string, unknown>,
+  sets: SetNode[],
+  pages: PageNode[],
+  registry: PropertyRegistry,
+): CollectionNode | SetNode | null {
+  const id = asString(meta.id)
+  if (!id) return null
+  const shared = { id, ...at, ...containerFieldsFrom(meta, sets, pages) }
+  if (kind === 'set') return makeSetNode(shared)
+  return makeCollectionNode({
+    ...shared,
+    properties: resolveAssignedSchema(meta.properties, registry),
+    openIn: coerceOpenIn(meta.open_in),
+    cached: cachedIds(meta),
+  })
 }

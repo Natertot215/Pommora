@@ -15,17 +15,17 @@ import { machine } from '../Platform/machine'
 import { runRepairSweep } from '../Properties/repairSweep'
 import { replaySchemaCascade } from '../Properties/replaySchemaCascade'
 import { startSession, stopSession } from '../Sync/Client/session'
-import { stampAdopted } from './adopt'
+import { stampAdopted, stampMissing } from './adopt'
 import { confirmRescope, confirmWrite, pushAssetWrites, pushValueChanges } from './confirm'
 import { ensureIdentity } from './identity'
-import { dropLiveTree, liveTreeOf, refreshAfterWrite, refreshTree } from './liveTree'
+import { dropLiveTree, liveTreeOf, refreshAfterWrite, seedLiveTree } from './liveTree'
 import { ensureConfigLayout, normalizePropertyTypes, normalizeSavedViews } from './migrateConfig'
 import { handleMutate } from './mutate'
 import { confirmBy, confirmMutation } from './mutatePatch'
 import { dropTileHeadingLinks } from '../Tiles/tilesFile'
 import { runOpenLedger } from './remintLedger'
 import { openSession, sessionRoot, waitingOpen, waitOn, whileAdopting } from './session'
-import { readNexusConfig } from './readNexus'
+import { readNexus, readNexusConfig } from './readNexus'
 import { asString } from './coerce'
 import type { NexusState } from './tree'
 import { trashDeps } from '../Trash/bundle'
@@ -81,14 +81,13 @@ export async function openNexusSequence(
   await replayPendingRename(root)
   if (root !== priorRoot) {
     void sweepFileHistory(root)
-    if (latchRecord) {
-      await runOpenLedger(root)
-    } else {
-      try {
-        await refreshTree(root)
-      } catch (e) {
-        console.error('adopt: the seed walk failed; reads will retry:', errText(e))
-      }
+    try {
+      let tree = await readNexus(root)
+      while (await stampMissing(root, tree.unreadable)) tree = await readNexus(root)
+      if (latchRecord) await runOpenLedger(root, tree)
+      else seedLiveTree(tree)
+    } catch (e) {
+      console.error('adopt: the seed walk failed; reads will retry:', errText(e))
     }
     const reread = await seedContentIndex(root)
     if ((await replaySchemaCascade(root)) !== null)

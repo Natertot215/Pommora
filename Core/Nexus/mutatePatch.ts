@@ -19,6 +19,7 @@ import {
 } from './treePatch'
 import { isMarkdownFile, relDirname } from '../Paths/posix'
 import { isAdoptedId } from './ids'
+import { stampMissing } from './adopt'
 import { orderedDefs, readRegistry } from '../Properties/propertiesRegistry'
 import { dropLiveTree, getLiveTree, refreshAfterWrite } from './liveTree'
 import {
@@ -212,6 +213,7 @@ async function routeRegistry(root: string, containerPath?: string): Promise<'ok'
 export async function confirmBy(
   root: string,
   work: () => Promise<'ok' | 'refresh'>,
+  named?: (path: string) => boolean,
 ): Promise<NexusTree | null> {
   const before = getLiveTree()
   let route = await work().catch((e) => {
@@ -226,7 +228,15 @@ export async function confirmBy(
   }
   if (route === 'refresh') {
     try {
-      await refreshAfterWrite(root)
+      let walked = await refreshAfterWrite(root)
+      while (
+        named &&
+        (await stampMissing(
+          root,
+          walked.unreadable?.filter((u) => named(u.path)),
+        ))
+      )
+        walked = await refreshAfterWrite(root)
     } catch {
       // The walk failed after the write landed, so the held tree predates it; dropped, reads walk.
       dropLiveTree()

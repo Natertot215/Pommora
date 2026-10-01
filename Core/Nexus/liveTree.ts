@@ -59,6 +59,7 @@ export function dropLiveTree(): void {
 
 export function seedLiveTree(t: NexusTree): void {
   hold(t)
+  slot = null
 }
 
 export function refreshTree(root: string): Promise<NexusTree> {

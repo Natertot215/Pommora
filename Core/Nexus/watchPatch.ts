@@ -2,7 +2,7 @@ import { basename, join, relDirname, relative, isMarkdownFile } from '../Paths/p
 import { escapes } from '../Paths/pathSafety'
 import type { NexusConfig, NexusTree } from './tree'
 import { stabilize } from './treeStabilize'
-import { asString, asStringArray } from './coerce'
+import { asStringArray } from './coerce'
 import { patchHeldAssetMap } from '../Assets/assetMap'
 import {
   assetMatcher,
@@ -12,7 +12,7 @@ import {
   sameScope,
   type WatchScope,
 } from '../Paths/exclusion'
-import { adoptedId, isAdoptedId, shardOf } from './ids'
+import { isAdoptedId, shardOf } from './ids'
 import { pathExists, readAppFile, readJsonObject } from '../Files/atomicWrite'
 import { isContentName } from '../Files/walk'
 import { queryHeadingMentions, removePathIndex } from '../Index/contentIndex'
@@ -30,20 +30,16 @@ import {
   readHomepageLeaves,
   readOrder,
   readPageRecord,
-  resolveAssignedSchema,
-  resolveEntityContexts,
+  contextLinker,
 } from './readNexus'
 import { readSettings, scopeOf } from '../Settings/codec'
 import { errText } from '../Contract/result'
-import { coerceOpenIn } from './schemas'
-import { cachedIds, containerFieldsFrom } from './containerFields'
-import { spaceFieldsFrom } from '../Contexts/spaceSidecar'
+import { containerNodeFrom } from './containerFields'
+import { spaceNodeFrom } from '../Contexts/spaceSidecar'
+import { stampPage } from './adopt'
 import {
   containerAt,
   pageAt,
-  makeCollectionNode,
-  makeSetNode,
-  makeSpaceNode,
   removeNodeInTree,
   spaceAt,
   type TreeEntity,
@@ -319,20 +315,18 @@ type PagePatch = 'refresh' | { id: string | null }
 
 export async function patchPageFromDisk(root: string, rel: string): Promise<PagePatch> {
   const abs = join(root, rel)
-  let record: Awaited<ReturnType<typeof readPageRecord>>
+  let read: Awaited<ReturnType<typeof readPageRecord>>
   try {
-    record = await readPageRecord(abs, rel)
+    read = await readPageRecord(abs, rel)
+    if ('unread' in read && read.unread === 'missing' && (await stampPage(abs, 'page')) !== null)
+      read = await readPageRecord(abs, rel)
   } catch {
     if (await pathExists(abs)) return 'refresh'
     return removePage(root, rel) === 'refresh' ? 'refresh' : { id: null }
   }
   const tree = getLiveTree()
-  if (!tree) return 'refresh'
-  if (record === null) return 'refresh'
-  const node = record.node
-  const links = resolveEntityContexts(record.fm, tree.contexts)
-  if (links) node.contextValues = links
-  else delete node.contextValues
+  if (!tree || 'unread' in read) return 'refresh'
+  const node = contextLinker(tree.contexts)(read.node, read.fm)
   const existing = pageAt(tree, rel)
   if (existing && existing.id === node.id)
     return replaceNode(root, rel, node) === 'refresh' ? 'refresh' : { id: node.id }
@@ -372,27 +366,15 @@ export async function patchContainerFromDisk(
   if (!tree) return 'refresh'
   const node = containerAt(tree, dirRel)
   if (!node) return 'refresh'
-  const id = asString(meta.id) ?? adoptedId(dirRel)
-  if (id !== node.id) return 'refresh'
-  const shared = {
-    id,
-    title: node.title,
-    path: dirRel,
-    ...containerFieldsFrom(meta, node.sets ?? [], node.pages),
-  }
-  const next =
-    node.kind === 'collection'
-      ? makeCollectionNode({
-          ...shared,
-          properties: resolveAssignedSchema(
-            meta.properties,
-            Object.fromEntries(tree.config.registry.map((d) => [d.id, d])),
-          ),
-          openIn: coerceOpenIn(meta.open_in),
-          cached: cachedIds(meta),
-        })
-      : makeSetNode(shared)
-  return replaceNode(root, dirRel, next)
+  const next = containerNodeFrom(
+    node.kind,
+    { title: node.title, path: dirRel },
+    meta,
+    node.sets ?? [],
+    node.pages,
+    Object.fromEntries(tree.config.registry.map((d) => [d.id, d])),
+  )
+  return next?.id === node.id ? replaceNode(root, dirRel, next) : 'refresh'
 }
 
 export async function patchSpaceFromDisk(root: string, dirRel: string): Promise<'ok' | 'refresh'> {
@@ -402,18 +384,9 @@ export async function patchSpaceFromDisk(root: string, dirRel: string): Promise<
   if (!tree) return 'refresh'
   const node = spaceAt(tree, dirRel)
   if (!node) return 'refresh'
-  const id = asString(sc.id) ?? adoptedId(dirRel)
-  if (id !== node.id) return 'refresh'
-  const next = makeSpaceNode({
-    id,
-    title: node.title,
-    path: dirRel,
-    contextId: node.contextId,
-    ...spaceFieldsFrom(sc),
-  })
-  const links = resolveEntityContexts(sc, tree.contexts)
-  if (links) next.contextValues = links
-  return replaceNode(root, dirRel, next)
+  const next = spaceNodeFrom(sc, { title: node.title, path: dirRel, contextId: node.contextId })
+  if (!next || next.id !== node.id) return 'refresh'
+  return replaceNode(root, dirRel, contextLinker(tree.contexts)(next, sc))
 }
 
 async function applySettingsLeaf(root: string, watched: WatchScope): Promise<'ok' | 'refresh'> {

@@ -75,7 +75,7 @@ const serialized = (doc: Document): string | null => {
   }
 }
 
-function frontmatterWritable(content: string): boolean {
+export function frontmatterWritable(content: string): boolean {
   const doc = parseDocument(splitEnvelope(content).frontmatter)
   return mergeable(doc) && serialized(doc) !== null
 }

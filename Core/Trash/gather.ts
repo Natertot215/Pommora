@@ -3,7 +3,8 @@ import { excludedWithin } from '../Settings/settings'
 import { stampedId } from '../Files/pageFile'
 import type { ContextDef, ContextsRegistry } from '../Contexts/contexts'
 import type { Result } from '../Contract/result'
-import { ensureFolderId } from '../Nexus/adopt'
+import { liveTreeOf } from '../Nexus/liveTree'
+import { containerAt } from '../Nexus/treePatch'
 import type { SweepCapture, UnlinkOutcome } from '../Contexts/contextCascade'
 import { readJsonObject, readTextOrNull } from '../Files/atomicWrite'
 import { spaceIdsIn } from '../Contexts/spaceSidecar'
@@ -19,14 +20,7 @@ const sidecarId = async (absFolder: string, name: string): Promise<string | unde
 async function gatherParentRef(root: string, absEntity: string): Promise<ParentRef> {
   const parentDir = dirname(absEntity)
   if (parentDir === root) return { kind: 'root' }
-  const read = async (): Promise<string | undefined> =>
-    (await sidecarId(parentDir, SIDECAR_FILENAME.set)) ??
-    (await sidecarId(parentDir, SIDECAR_FILENAME.collection))
-  let id = await read()
-  if (!id) {
-    await ensureFolderId(root, parentDir)
-    id = await read()
-  }
+  const id = containerAt(await liveTreeOf(root), relative(root, parentDir))?.id
   return id ? { kind: 'container', id } : { kind: 'unaddressable' }
 }
 
