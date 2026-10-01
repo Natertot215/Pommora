@@ -8,6 +8,7 @@ import { fail, type Result } from '../Contract/result'
 import { containerAt, contextAt, pageAt, spaceAt } from './treePatch'
 import { readNexus } from './readNexus'
 import { sessionRoot } from './session'
+import { same } from '../Files/stableJson'
 
 interface WalkSlot {
   root: string
@@ -17,18 +18,31 @@ interface WalkSlot {
 let tree: NexusTree | null = null
 let slot: WalkSlot | null = null
 let epoch = 0
+let commandsTap: (() => void) | null = null
+
+export function setCommandsTap(fn: (() => void) | null): void {
+  commandsTap = fn
+}
+
+function hold(next: NexusTree | null): void {
+  const moved =
+    !!next &&
+    next.config.commands !== tree?.config.commands &&
+    !same(next.config.commands, tree?.config.commands)
+  tree = next
+  if (moved) commandsTap?.()
+}
 
 export function getLiveTree(): NexusTree | null {
   return tree
 }
 
-/** Null — no tree held, or the patch can't resolve — tells the caller to fall back to `refreshTree`. Every call marks disk as moved, so an in-flight walk that started earlier discards its result and re-walks. */
+/** Null — no tree held, or the patch can't resolve — tells the caller to fall back to `refreshTree`. A call that changes the tree, or can't place its change, marks disk as moved, so an in-flight walk that started earlier discards its result and re-walks. */
 export function patchLiveTree(fn: (t: NexusTree) => NexusTree | null): NexusTree | null {
-  epoch++
-  if (!tree) return null
-  const next = fn(tree)
+  const next = tree && fn(tree)
+  if (next === null || next !== tree) epoch++
   if (next === null) return null
-  tree = next
+  hold(next)
   return next
 }
 
@@ -39,12 +53,12 @@ export function refreshAfterWrite(root: string): Promise<NexusTree> {
 }
 
 export function dropLiveTree(): void {
-  tree = null
+  hold(null)
   slot = null
 }
 
 export function seedLiveTree(t: NexusTree): void {
-  tree = t
+  hold(t)
 }
 
 export function refreshTree(root: string): Promise<NexusTree> {
@@ -101,13 +115,13 @@ async function runWalk(root: string, entry: WalkSlot): Promise<NexusTree> {
         slot = null
         // A vanished root must surface as the error, never as the ghost of the last tree — but only if nothing installed a tree while the existence check was in flight (a root switch may have seeded the new nexus by then).
         const held = tree
-        if (!(await pathExists(root)) && tree === held) tree = null
+        if (!(await pathExists(root)) && tree === held) hold(null)
       }
       throw err
     }
     if (slot !== entry) return walked
     if (epoch !== startEpoch) continue
-    tree = walked
+    hold(walked)
     slot = null
     return walked
   }

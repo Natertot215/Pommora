@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import type { NexusTree } from './tree'
-import { dropLiveTree, getLiveTree, patchLiveTree, refreshTree } from './liveTree'
+import { dropLiveTree, getLiveTree, patchLiveTree, refreshTree, setCommandsTap } from './liveTree'
 import { readNexus } from './readNexus'
 import { pathExists } from '../Files/atomicWrite'
 
@@ -12,7 +12,7 @@ vi.mock('./session', () => ({ sessionRoot: () => open }))
 const walk = vi.mocked(readNexus)
 const exists = vi.mocked(pathExists)
 
-const T = (name: string): NexusTree => ({ nexus: { id: name } }) as unknown as NexusTree
+const T = (name: string): NexusTree => ({ nexus: { id: name }, config: {} }) as unknown as NexusTree
 
 function deferred<V>(): {
   promise: Promise<V>
@@ -138,5 +138,56 @@ describe('patchLiveTree', () => {
     const fn = vi.fn()
     expect(patchLiveTree(fn)).toBeNull()
     expect(fn).not.toHaveBeenCalled()
+  })
+})
+
+describe('the commands tap', () => {
+  const withCommands = (t: NexusTree, chord: string): NexusTree =>
+    ({ ...t, config: { ...t.config, commands: { search: chord } } }) as unknown as NexusTree
+
+  it('fires once for a patch that moves config.commands, and never for one that leaves it or a drop', async () => {
+    const tap = vi.fn()
+    setCommandsTap(tap)
+    walk.mockResolvedValueOnce(withCommands(T('a'), 'Mod+F'))
+    await refreshTree('/r')
+    tap.mockClear()
+    patchLiveTree((t) => withCommands(t, 'Mod+G'))
+    expect(tap).toHaveBeenCalledTimes(1)
+    patchLiveTree((t) => ({ ...t, config: { ...t.config } }))
+    patchLiveTree((t) => withCommands(t, 'Mod+G'))
+    dropLiveTree()
+    expect(tap).toHaveBeenCalledTimes(1)
+    setCommandsTap(null)
+  })
+})
+
+describe('a patch mid-walk', () => {
+  it('installs the walk across a patch that answers the held tree', async () => {
+    const tA = T('a')
+    walk.mockResolvedValueOnce(tA)
+    await refreshTree('/r')
+    const d = deferred<NexusTree>()
+    const tB = T('b')
+    walk.mockReturnValueOnce(d.promise)
+    const p = refreshTree('/r')
+    patchLiveTree((t) => t)
+    d.resolve(tB)
+    expect(await p).toBe(tB)
+    expect(walk).toHaveBeenCalledTimes(2)
+  })
+
+  it('re-walks across a patch that changes the tree', async () => {
+    const tA = T('a')
+    walk.mockResolvedValueOnce(tA)
+    await refreshTree('/r')
+    const d = deferred<NexusTree>()
+    const tStale = T('stale')
+    const tFresh = T('fresh')
+    walk.mockReturnValueOnce(d.promise).mockResolvedValueOnce(tFresh)
+    const p = refreshTree('/r')
+    patchLiveTree((t) => ({ ...t }))
+    d.resolve(tStale)
+    expect(await p).toBe(tFresh)
+    expect(walk).toHaveBeenCalledTimes(3)
   })
 })

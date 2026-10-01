@@ -30,6 +30,7 @@ const tree = {
   collections: [
     { kind: 'collection', path: 'Notes', pages: [{ id: 'pA', path: 'Notes/A.md' }], sets: [] },
   ],
+  config: {},
 } as unknown as NexusTree
 
 const at = (rel: string): WatchEvent => ({ event: 'change', absPath: `${root}/${rel}` })
