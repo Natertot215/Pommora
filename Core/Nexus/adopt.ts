@@ -150,13 +150,12 @@ async function stampTree(
   root: string,
 ): Promise<void> {
   const container = kind === 'collection' || kind === 'set'
-  const memberKind: ContentKind = container ? 'page' : agendaKind(kind)
   // A folder Pommora can't write (locked sync target, foreign-owned backup, evicted cloud placeholder) costs only itself — letting it throw would silently abandon every folder after it in readdir order.
   if (container) await stampFolder(absDir, kind).catch(() => {})
 
   for (const e of await listEntries(absDir)) {
     if (isContentFile(e)) {
-      if (!container) await stampPage(join(absDir, e.name), memberKind).catch(() => {})
+      if (!container) await stampPage(join(absDir, e.name), agendaKind(kind)).catch(() => {})
     } else if (e.kind === 'dir' && container) {
       const childRel = `${relDir}/${e.name}`
       if (outsideContent(childRel, scope)) continue
