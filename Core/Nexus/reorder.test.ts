@@ -49,11 +49,6 @@ describe('setCollectionOrder', () => {
     })
   })
 
-  it('never persists adopted- placeholder ids', async () => {
-    await setCollectionOrder(root, ['01ABC', 'adopted-deadbeef', '01XYZ'])
-    expect((await readState()).order).toEqual({ collections: ['01ABC', '01XYZ'] })
-  })
-
   it('setSpaceOrder writes per-context entries in the spaces map', async () => {
     await setSpaceOrder(root, 'ctx_projects', ['s2', 's1'])
     await setSpaceOrder(root, 'ctxC', ['x'])
@@ -134,15 +129,6 @@ describe('setChildOrder', () => {
     const raw = join(root, 'Raw')
     await mkdir(raw, { recursive: true })
     expect((await setChildOrder(raw, 'page_order', ['p1'])).ok).toBe(true)
-  })
-
-  it('strips adopted- placeholder ids before writing', async () => {
-    const c = await createFolderEntity(root, 'collection', 'Notes')
-    if (!c.ok) throw new Error('setup failed')
-    await setChildOrder(c.value.path, 'set_order', ['s1', 'adopted-cafe', 's2'])
-    expect(await readSidecar(c.value.path, 'collection', pageCollectionSidecar)).toMatchObject({
-      set_order: ['s1', 's2'],
-    })
   })
 })
 

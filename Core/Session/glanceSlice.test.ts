@@ -100,7 +100,7 @@ describe('reconcileGlance', () => {
   })
 
   it('re-keys a pin whose ID vanished to the page now at its path', () => {
-    useSession.getState().pinGlance(pin('A', 'adopted-x', 'Notes/1.md'))
+    useSession.getState().pinGlance(pin('A', '01KZSWEW0WPF1PFWWJSKE8Q83P', 'Notes/1.md'))
     useSession.getState().reconcileGlance(indexOf({ p1: 'Notes/1.md' }))
     expect(pins()[0].target).toEqual({ kind: 'page', id: 'p1', path: 'Notes/1.md' })
   })

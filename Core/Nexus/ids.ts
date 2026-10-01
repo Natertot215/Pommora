@@ -1,7 +1,6 @@
 import { decodeTime, monotonicFactory, ulid } from 'ulidx'
 import { markId } from './identityMark'
 import type { ContentKind } from './entities'
-import { machine } from '../Platform/machine'
 
 const nextUlid = monotonicFactory()
 
@@ -23,7 +22,6 @@ export function contentIdAt(atMs: number, kind: ContentKind): string {
 }
 
 export function idTime(id: string): number | null {
-  if (isAdoptedId(id)) return null
   try {
     return decodeTime(id)
   } catch {
@@ -41,14 +39,4 @@ export function shardOf(id: string): string | null {
 
 export function mintPropertyId(): string {
   return `prop_${newId()}`
-}
-
-const ADOPTED_PREFIX = 'adopted-'
-
-export function adoptedId(relPath: string): string {
-  return `${ADOPTED_PREFIX}${machine().sha256Hex(relPath).slice(0, 16)}`
-}
-
-export function isAdoptedId(id: string): boolean {
-  return id.startsWith(ADOPTED_PREFIX)
 }

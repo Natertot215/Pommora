@@ -144,21 +144,6 @@ describe('routeBandDrop — Sets', () => {
     })
   })
 
-  it('never writes an adopted placeholder id into group_order', () => {
-    const withAdopted = set('col', 'Col', [
-      set('sA', 'Col/A'),
-      set('adopted-x', 'Col/X'),
-      set('sB', 'Col/B'),
-    ])
-    expect(
-      routeBandDrop(
-        setRef('sB', null),
-        { kind: 'before', beforeKey: 'sA', parentKey: null },
-        scope({ view: view(), sets: setIndexOf(withAdopted) }),
-      ),
-    ).toEqual({ kind: 'view', patch: { group_order: ['sB', 'sA'] } })
-  })
-
   it('a nest whose stored view order already reads that way writes no view order', () => {
     expect(
       routeBandDrop(

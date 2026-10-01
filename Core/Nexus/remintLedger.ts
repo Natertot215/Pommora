@@ -6,7 +6,6 @@ import { contextDirRel, CONTEXTS_REGISTRY_REL } from '../Paths/nexusPaths'
 import { entityMemo, type NexusTree, type PageNode, type SetNode, withheldIn } from './tree'
 import type { Unreadable } from './tree'
 import { readKey, writeKey } from '../Platform/localState'
-import { isAdoptedId } from './ids'
 import { refreshTree, seedLiveTree } from './liveTree'
 import { applyRemints, runRemintPass } from './remint'
 
@@ -23,7 +22,6 @@ function buildBaseline(tree: NexusTree): Projection {
   const entries: Record<string, EntityRecord> = {}
   const claimants: Record<string, EntityRecord[]> = {}
   const add = (e: EntityRecord): void => {
-    if (isAdoptedId(e.id)) return
     claimants[e.id] ??= []
     claimants[e.id].push(e)
     entries[e.id] ??= e

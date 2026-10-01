@@ -117,7 +117,7 @@ describe('the writer', () => {
   })
 
   it('refuses an ID that maps to no month', async () => {
-    const r = await updatePageMetadata(root, 'adopted-x', { icon: 'star' })
+    const r = await updatePageMetadata(root, '8ZZZZZZZZZZZZZZZZZZZZZZZZZ', { icon: 'star' })
     expect(r.ok).toBe(false)
   })
 

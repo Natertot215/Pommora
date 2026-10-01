@@ -50,7 +50,11 @@ describe('reconcileIndexOf', () => {
 
   it('a page whose ID vanished follows the page now at its path', () => {
     const ix = reconcileIndexOf(makeTree())
-    const selection = { kind: 'page', id: 'adopted-beta', path: 'Notes/Ideas/Beta.md' } as const
+    const selection = {
+      kind: 'page',
+      id: '01KZSWEW0WPF1PFWWJSKE8Q83P',
+      path: 'Notes/Ideas/Beta.md',
+    } as const
     expect(reconcileWith(ix, selection)).toEqual({
       kind: 'page',
       id: 'p2',

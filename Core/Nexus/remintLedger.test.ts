@@ -4,7 +4,6 @@ import { tempRoot } from '../Testing/hostFs'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { EntityRecord } from './record'
 import type { CollectionNode, ContextGroup, NexusTree, PageNode, SetNode } from './tree'
-import { adoptedId } from './ids'
 import {
   type Baseline,
   latchBaseline,
@@ -89,18 +88,6 @@ describe('projectBaseline', () => {
     })
     expect(entries['set-fiction'].kind).toBe('set')
     expect(entries['page-dune'].path).toBe('Library/Fiction/Dune.md')
-  })
-
-  it('filters adopted ids — an un-adopted folder never enters the baseline', () => {
-    const unadopted: SetNode = {
-      kind: 'set',
-      id: adoptedId('Library/Scans'),
-      title: 'Scans',
-      path: 'Library/Scans',
-      pages: [],
-    }
-    const { entries } = projectBaseline(treeWith([], [library([], [unadopted])]))
-    expect(Object.keys(entries)).toEqual(['01COLZZKBKACTAV9WEVGEMMVRZ'])
   })
 
   it('collects every claimant of a duplicated id in walk order, first into entries', () => {

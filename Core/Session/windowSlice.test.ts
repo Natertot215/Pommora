@@ -34,7 +34,7 @@ describe('reconcileWindow', () => {
 
 describe('reconcileWindow — a page re-keyed at its path', () => {
   it('re-keys a window tab and the history target to the page now at their path', () => {
-    const dead = { kind: 'page', id: 'adopted-x', path: 'Notes/x.md' } as const
+    const dead = { kind: 'page', id: '01KZSWEW0WPF1PFWWJSKE8Q83P', path: 'Notes/x.md' } as const
     useSession.getState().openWindowTab(dead)
     useSession.setState({ historyTarget: dead })
     useSession.getState().reconcileWindow(indexOf({ x: 'Notes/x.md' }))

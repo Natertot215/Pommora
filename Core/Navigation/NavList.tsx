@@ -72,7 +72,6 @@ export function NavPinButton({
   )
   const pinTarget = useSession((s) => s.pinTarget)
   const unpinTarget = useSession((s) => s.unpinTarget)
-  if ('id' in it.target && it.target.id.startsWith('adopted-')) return null
   const toggle = (e: React.MouseEvent): void => {
     e.stopPropagation()
     if (pinned) unpinTarget(it.key)

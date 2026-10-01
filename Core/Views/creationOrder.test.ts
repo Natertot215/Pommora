@@ -152,12 +152,3 @@ describe('the created row settles into the live order', () => {
     expect(painted(STALE)).toEqual(['p3', 'p1', 'p2', 'pNew'])
   })
 })
-
-describe('tieOrderWith and adopted ids', () => {
-  it('leaves an unstamped page out of the view order it writes, keeping everyone else in place', () => {
-    expect(tieOrderWith(undefined, ['a', 'adopted-f25d7b35', 'b'], 'b', 'a', 'above')).toEqual([
-      'b',
-      'a',
-    ])
-  })
-})

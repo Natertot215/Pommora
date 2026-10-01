@@ -6,7 +6,6 @@ import { readJsonObject, readTextOrNull } from '../Files/atomicWrite'
 import { splitFrontmatter } from '../Files/pageFile'
 import { ID_KEY } from '../Nexus/identityMark'
 import { asString } from '../Nexus/coerce'
-import { stampListed } from '../Nexus/adopt'
 import { isBlankRaw } from './propertyValue'
 import { spaceSidecars } from '../Contexts/spaceSidecar'
 
@@ -38,9 +37,8 @@ export async function confirmedKeyHolders(
   return holders
 }
 
-/** The values of the pages holding `key`, filed by ID, the files a strip should reach, and whether the values miss a holder: a page the tree lists without an ID is given one first, a holder whose ID another already took, or that the tree doesn't list, is kept out of the strip, and a file that can't be read is stripped once it reads. */
+/** The values of the pages holding `key`, filed by ID, the files a strip should reach, and whether the values miss a holder: a holder with no ID, or whose ID another already took, is kept out of the strip, and a file that can't be read is stripped once it reads. */
 export async function keyedHolders(
-  root: string,
   files: string[],
   key: string,
 ): Promise<{ values: Record<string, unknown>; strip: string[]; partial: boolean }> {
@@ -56,7 +54,7 @@ export async function keyedHolders(
     }
     const fields = splitFrontmatter(content) as Record<string, unknown>
     if (!(key in fields)) continue
-    const id = asString(fields[ID_KEY]) ?? (await stampListed(root, file))
+    const id = asString(fields[ID_KEY])
     if (!id || seen.has(id)) {
       kept.push(file)
       continue

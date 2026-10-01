@@ -493,7 +493,6 @@ export const createNavigationSlice: Slice<NavigationSlice> = (set, get) => {
     pinTarget: (target) => {
       // A pin must resolve for as long as it is stored; agenda kinds resolve against nothing.
       if (target.kind === 'task' || target.kind === 'event') return
-      if ('id' in target && target.id.startsWith('adopted-')) return
       const ref = toNavRef(target)
       const key = navKey(ref)
       if (get().pinned.some((p) => navKey(p) === key)) return

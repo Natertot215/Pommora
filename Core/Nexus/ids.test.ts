@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import { decodeTime } from 'ulidx'
 import { isUlidShaped } from './identityMark'
-import { newId, adoptedId, mintPropertyId, idTime, idAt, contentIdAt, shardOf } from './ids'
+import { newId, mintPropertyId, idTime, idAt, contentIdAt, shardOf } from './ids'
 
 describe('newId / isUlidShaped', () => {
   it('mints valid, unique ULIDs', () => {
@@ -20,7 +20,6 @@ describe('newId / isUlidShaped', () => {
   it('rejects non-ULIDs', () => {
     expect(isUlidShaped('')).toBe(false)
     expect(isUlidShaped('not-a-ulid')).toBe(false)
-    expect(isUlidShaped(adoptedId('x'))).toBe(false)
   })
 })
 
@@ -32,10 +31,6 @@ describe('idTime', () => {
 
   it('returns null for a shape-valid id the decoder refuses', () => {
     expect(idTime(`8${newId().slice(1)}`)).toBeNull()
-  })
-
-  it('returns null for an adopted id', () => {
-    expect(idTime(adoptedId('a/b.md'))).toBeNull()
   })
 })
 
@@ -65,24 +60,6 @@ describe('shardOf', () => {
 
   it('maps a minted page id to its month', () => {
     expect(shardOf('01KZSWEW0WPF1PFWWJSKE8Q83P')).toBe('08-2026')
-  })
-
-  it('returns null for an adopted id', () => {
-    expect(shardOf(adoptedId('a/b.md'))).toBeNull()
-  })
-})
-
-describe('adoptedId', () => {
-  it('is stable for the same path', () => {
-    expect(adoptedId('Notes/Page.md')).toBe(adoptedId('Notes/Page.md'))
-  })
-
-  it('differs for different paths', () => {
-    expect(adoptedId('Notes/A.md')).not.toBe(adoptedId('Notes/B.md'))
-  })
-
-  it('is the adopted-<16 hex> shape', () => {
-    expect(adoptedId('x')).toMatch(/^adopted-[0-9a-f]{16}$/)
   })
 })
 

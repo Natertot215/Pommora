@@ -1,15 +1,11 @@
-import { basename, isMarkdownFile, join, relative } from '../Paths/posix'
-import { fault, ok, type Result, valueOr } from '../Contract/result'
+import { basename, isMarkdownFile, join } from '../Paths/posix'
+import { fault, ok, type Result } from '../Contract/result'
 import { machine } from '../Platform/machine'
 import { isContentFile, listEntries } from '../Files/walk'
 import { ID_KEY } from './identityMark'
 import type { ContainerKind, ContentKind } from './entities'
-import { contentIdAt, isAdoptedId, newId } from './ids'
+import { contentIdAt, newId } from './ids'
 import type { Unreadable } from './tree'
-import { getLiveTree } from './liveTree'
-import { pageAt } from './treePatch'
-import { patchPageFromDisk } from './watchPatch'
-import { indexWrittenPage } from '../Index/indexSeed'
 import {
   readJsonStrict,
   readTextOrNull,
@@ -95,18 +91,6 @@ export async function ensurePageId(absFile: string): Promise<Result<string>> {
   return admission?.state === 'member'
     ? ok(admission.id)
     : fault('That page has no ID Pommora can file.')
-}
-
-export async function stampListed(root: string, file: string): Promise<string | null> {
-  const rel = relative(root, file)
-  const tree = getLiveTree()
-  const listed = tree && pageAt(tree, rel)
-  if (!listed || !isAdoptedId(listed.id)) return null
-  const id = valueOr(await ensurePageId(file), null)
-  if (!id) return null
-  await patchPageFromDisk(root, rel)
-  await indexWrittenPage(root, file)
-  return id
 }
 
 type AdoptableKind = Exclude<FolderKind, 'unknown'>

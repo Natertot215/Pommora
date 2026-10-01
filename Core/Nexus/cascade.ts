@@ -29,7 +29,6 @@ import { readLink } from '../Connections/linkValue'
 import { liveIdIndex, livePathOf, noteSidecarWrite, titleHeldOutside } from './valuesChanged'
 import { ID_KEY } from './identityMark'
 import { asString } from './coerce'
-import { stampListed } from './adopt'
 
 export interface CascadeReport {
   pages: string[]
@@ -135,7 +134,7 @@ export async function deleteCascade(
     for (const [file, before] of swept.touched) {
       const isPage = isMarkdownFile(file)
       const raw = isPage ? splitFrontmatter(before) : (parseJsonObject(before) ?? {})
-      const id = isPage ? (stampedId(before) ?? (await stampListed(root, file))) : asString(raw.id)
+      const id = isPage ? stampedId(before) : asString(raw.id)
       if (!id) continue
       for (const { property, value } of named(raw)) links.push({ page: id, property, value })
     }
