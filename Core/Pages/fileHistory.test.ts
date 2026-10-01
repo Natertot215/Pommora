@@ -28,6 +28,7 @@ import {
   writeBody,
 } from './fileHistory'
 import { openSession } from '../Nexus/session'
+import { type FileEvent, setOwnTap } from '../Files/writeEcho'
 
 const PAGE = '01ARZ3NDEKPSV4RRFFQ69G5FAV'
 const TASK = '01ARZ3NDEKTSV4RRFFQ69G5FAV'
@@ -148,6 +149,20 @@ describe('captureIfDue', () => {
 })
 
 describe('writeBody', () => {
+  it("notes the editor's own save held, and a restore not", async () => {
+    const noted: FileEvent[] = []
+    setOwnTap(async (ev) => {
+      noted.push(ev)
+    })
+    try {
+      await writeBody(root, file, 'two', 'edit')
+      await writeBody(root, file, 'three', 'restore')
+    } finally {
+      setOwnTap(null)
+    }
+    expect(noted.map((ev) => ev.event === 'change' && ev.own?.held)).toEqual([true, false])
+  })
+
   it('writes the body and captures the text it overwrote', async () => {
     const r = await writeBody(root, file, 'two', 'edit')
     expect(r.ok && r.value.stale).toBe(false)

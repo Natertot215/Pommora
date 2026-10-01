@@ -5,6 +5,7 @@ import { rm, mkdir, readFile, readdir, writeFile, stat, utimes } from 'node:fs/p
 import { dirname, join, basename } from '../Paths/posix'
 import { tempRoot, readJsonAt } from '../Testing/hostFs'
 import {
+  atomicWriteBinary,
   atomicWriteFile,
   editJsonStrict,
   landBytes,
@@ -17,10 +18,12 @@ import {
   setRepairSeed,
   updateNexusConfig,
   relocate,
+  rewritePreservingTimes,
   updateNexusFile,
 } from './atomicWrite'
-import { mintBundle, trashFileFlat } from '../Trash/bundle'
-import { isRecentWrite, setWriteTap } from './writeEcho'
+import { discardFile, mintBundle, trashFileFlat } from '../Trash/bundle'
+import { type FileEvent, isRecentWrite, setOwnTap, setWriteTap } from './writeEcho'
+import { machine } from '../Platform/machine'
 
 let dir: string
 beforeEach(async () => {
@@ -371,5 +374,81 @@ describe('landBytes', () => {
     expect(isRecentWrite(p)).toBe(false)
     expect((await stat(p)).mtimeMs).toBe(when)
     expect(await readFile(p, 'utf8')).toBe('arrived')
+  })
+})
+
+describe('the own tap', () => {
+  const noted: { ev: FileEvent; text: string | null; mtimeMs: number | null }[] = []
+  beforeEach(() => {
+    noted.length = 0
+    setOwnTap(async (ev) => {
+      const st = await stat(ev.absPath).catch(() => null)
+      const text = st?.isFile() ? await readFile(ev.absPath, 'utf8') : null
+      noted.push({ ev, text, mtimeMs: st?.mtimeMs ?? null })
+    })
+  })
+  afterEach(() => setOwnTap(null))
+
+  it('notes one change carrying its text, once the file holds it', async () => {
+    const p = join(dir, 'a.md')
+    await atomicWriteFile(p, 'first')
+    expect(noted).toEqual([
+      {
+        ev: { event: 'change', absPath: p, own: { text: 'first', held: false } },
+        text: 'first',
+        mtimeMs: expect.any(Number),
+      },
+    ])
+  })
+
+  it('notes a preserved-time rewrite after the file keeps its old time', async () => {
+    const p = join(dir, 'p.md')
+    await writeFile(p, 'old')
+    const past = new Date('2020-06-01T12:00:00Z')
+    await utimes(p, past, past)
+    await rewritePreservingTimes(p, 'new')
+    expect(noted).toHaveLength(1)
+    expect(noted[0].ev).toEqual({ event: 'change', absPath: p, own: { text: 'new' } })
+    expect(noted[0].text).toBe('new')
+    expect(Math.floor((noted[0].mtimeMs ?? 0) / 1000)).toBe(Math.floor(past.getTime() / 1000))
+  })
+
+  it('notes a binary write as an add', async () => {
+    const p = join(dir, 'x.png')
+    await atomicWriteBinary(p, new TextEncoder().encode('bytes'))
+    expect(noted.map((n) => n.ev)).toEqual([{ event: 'add', absPath: p, own: {} }])
+  })
+
+  it('notes a relocate as a move, with the source free for the tap to lock', async () => {
+    const from = join(dir, 'from.md')
+    const to = join(dir, 'to.md')
+    await writeFile(from, 'moving')
+    const locked: string[] = []
+    setOwnTap((ev) =>
+      ev.event === 'move'
+        ? machine().lock(ev.from, async () => {
+            locked.push(ev.from)
+          })
+        : Promise.resolve(),
+    )
+    await relocate(from, to)
+    expect(locked).toEqual([from])
+    expect(await readFile(to, 'utf8')).toBe('moving')
+  })
+
+  it('notes a discard as an unlink', async () => {
+    const p = join(dir, 'gone.md')
+    await writeFile(p, 'bye')
+    await discardFile(dir, p, { trashMode: 'nexus', trashToSystem: async () => {} })
+    expect(noted.map((n) => n.ev)).toEqual([{ event: 'unlink', absPath: p, own: {} }])
+    expect(noted[0].text).toBeNull()
+  })
+
+  it('with no tap set, a write lands as before', async () => {
+    setOwnTap(null)
+    const p = join(dir, 'quiet.md')
+    await atomicWriteFile(p, 'quiet')
+    expect(await readFile(p, 'utf8')).toBe('quiet')
+    expect(noted).toEqual([])
   })
 })

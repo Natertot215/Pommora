@@ -3,7 +3,7 @@ import { escapes } from '../Paths/pathSafety'
 import { machine } from '../Platform/machine'
 import { TRASH_DIR } from '../Paths/nexusPaths'
 import { pathExists } from '../Files/atomicWrite'
-import { recordWrite } from '../Files/writeEcho'
+import { noteOwn, recordWrite } from '../Files/writeEcho'
 import type { HostContext } from '../Contract/handlers'
 import { readLiveSetting } from '../Settings/settings'
 import type { TrashMode } from './trashRow'
@@ -72,4 +72,5 @@ export async function discardFile(
     recordWrite(absPath)
     await deps.trashToSystem(absPath)
   }
+  await noteOwn({ event: 'unlink', absPath, own: {} })
 }

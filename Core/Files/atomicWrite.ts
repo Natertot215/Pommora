@@ -2,7 +2,7 @@ import { isPlainObject } from '../Contract/validators'
 import { stableStringify } from './stableJson'
 import { fail, ok, type Result } from '../Contract/result'
 import { forgetParse } from './walkCache'
-import { recordWrite, reportRename } from './writeEcho'
+import { noteOwn, recordWrite, reportRename } from './writeEcho'
 import { machine } from '../Platform/machine'
 import { basename, dirname, join } from '../Paths/posix'
 import { foldKey } from '../Paths/caseFold'
@@ -10,20 +10,27 @@ import { newId } from '../Nexus/ids'
 import { nexusConfig } from '../Paths/paths'
 import { NEXUS_CONFIG_FILES } from '../Paths/nexusPaths'
 
-export async function atomicWriteFile(filePath: string, data: string): Promise<void> {
+async function land(filePath: string, data: string): Promise<void> {
   recordWrite(filePath, data)
   await machine().writeText(filePath, data)
+}
+
+export async function atomicWriteFile(filePath: string, data: string, held = false): Promise<void> {
+  await land(filePath, data)
+  await noteOwn({ event: 'change', absPath: filePath, own: { text: data, held } })
 }
 
 export async function rewritePreservingTimes(filePath: string, data: string): Promise<void> {
   const before = await machine().stat(filePath)
   if (!before) throw new Error(`${basename(filePath)} vanished before its rewrite.`)
-  await atomicWriteFile(filePath, data)
+  await land(filePath, data)
   // A volume that refuses utimes leaves the page dated now; the write itself already landed.
   await machine()
     .utimes(filePath, before.mtimeMs)
     .catch(() => {})
   forgetParse(filePath)
+  // After the times settle, so the index records the stat the file keeps.
+  await noteOwn({ event: 'change', absPath: filePath, own: { text: data } })
 }
 
 export async function landBytes(
@@ -41,6 +48,7 @@ export async function landBytes(
 export async function atomicWriteBinary(filePath: string, data: Uint8Array): Promise<void> {
   recordWrite(filePath, data)
   await machine().writeBytes(filePath, data)
+  await noteOwn({ event: 'add', absPath: filePath, own: {} })
 }
 
 /** Under the SOURCE path's lock, the same key every other write to it takes: a write queued behind the move fails not-found rather than recreating the vacated file as a ghost. `landed` runs before sync hears of the rename, so it pushes under what the landing settled. */
@@ -54,6 +62,7 @@ export async function relocate<T>(
     recordWrite(to)
     await machine().rename(from, to)
   })
+  await noteOwn({ event: 'move', absPath: to, from })
   const settled = await landed?.()
   reportRename(from, to)
   return settled

@@ -31,6 +31,29 @@ export function recordWrite(absPath: string, content?: string | Uint8Array): voi
 
 export const reportRename = (absFrom: string, absTo: string): void => tap?.renamed(absFrom, absTo)
 
+export interface Changed {
+  event: 'add' | 'change' | 'unlink' | 'addDir' | 'unlinkDir'
+  absPath: string
+  written?: string
+  own?: { text?: string; held?: boolean }
+}
+
+export interface Moved {
+  event: 'move'
+  absPath: string
+  from: string
+}
+
+export type FileEvent = Changed | Moved
+
+let ownTap: ((ev: FileEvent) => Promise<void>) | null = null
+
+export function setOwnTap(fn: ((ev: FileEvent) => Promise<void>) | null): void {
+  ownTap = fn
+}
+
+export const noteOwn = (ev: FileEvent): Promise<void> => ownTap?.(ev) ?? Promise.resolve()
+
 const held = (absPath: string): Echo | undefined => {
   const r = recent.get(absPath)
   if (r === undefined || Date.now() - r.at <= WINDOW_MS) return r
