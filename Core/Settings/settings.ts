@@ -94,7 +94,7 @@ export function writeExcludedFolders(root: string, folders: string[]): Promise<v
   )
 }
 
-const entryWithin = (entry: string, rel: string): string[] | null =>
+export const entryWithin = (entry: string, rel: string): string[] | null =>
   remainderUnder(rootSegs(entry), rootSegs(rel).map(foldKey))
 
 /** The excluded entries at or under `rel`, each relative to it. */

@@ -12,7 +12,7 @@ export const NO_PROPERTY = fail('not-found', 'Property not found.')
 
 export type PropertyRegistry = Record<string, PropertyDefinition>
 
-type RegistryFile = { order: string[]; defs: PropertyRegistry }
+export type RegistryFile = { order: string[]; defs: PropertyRegistry }
 
 const registryPath = (root: string): string => nexusConfig(root, NEXUS_CONFIG_FILES.properties)
 
@@ -39,15 +39,18 @@ function normalizeRegistry(obj: Record<string, unknown>): {
   return { registry: { order, defs }, unparsed }
 }
 
+export const registryFrom = (raw: Record<string, unknown>): RegistryFile =>
+  normalizeRegistry(raw).registry
+
 export async function readRegistry(root: string): Promise<RegistryFile> {
   const read = await readJsonStrict(registryPath(root))
   if (!read.ok && read.error.code !== 'not-found') throw new Error(read.error.message)
-  return normalizeRegistry(valueOr(read, {})).registry
+  return registryFrom(valueOr(read, {}))
 }
 
 /** A read that writes no definition: a damaged file reads as its last parse. Every reader that gates a registry write stays strict. */
 export async function readKeptRegistry(root: string): Promise<RegistryFile> {
-  return normalizeRegistry((await readKept(registryPath(root))) ?? {}).registry
+  return registryFrom((await readKept(registryPath(root))) ?? {})
 }
 
 export const orderedDefs = (reg: RegistryFile): PropertyDefinition[] =>

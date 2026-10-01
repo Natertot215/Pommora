@@ -1,6 +1,5 @@
 import { setRepairSeed } from '../../Files/atomicWrite'
-import { setWriteTap } from '../../Files/writeEcho'
-import { setWatchTap } from '../../Nexus/watchSettle'
+import { setWatchTap, setWriteTap } from '../../Files/writeEcho'
 import { manifestAdmits, type WatchScope } from '../../Paths/exclusion'
 import { TRASH_DIR } from '../../Paths/nexusPaths'
 import { relative } from '../../Paths/posix'

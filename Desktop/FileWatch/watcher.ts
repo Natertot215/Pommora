@@ -1,38 +1,33 @@
-// Events settle, then classify to targeted patches; the unclassifiable fall back to one walk.
+// Events settle, then apply one at a time through the path the app's own writes take.
 
 import chokidar, { type FSWatcher } from 'chokidar'
-import { sameScope, type WatchScope } from '@pommora/core/Paths/exclusion'
 import {
-  classifyBatch,
-  emitWatch,
-  isConfigPath,
-  pagesChangedIn,
-  syncIgnoredUnder,
-  tilesChangedIn,
-  valueChangesOf,
-} from '@pommora/core/Nexus/watchSettle'
-import { getHeldAssetMap, refreshAssetMap } from '@pommora/core/Assets/assetMap'
+  assetMatcher,
+  excludedMatcher,
+  neverWatched,
+  rootSegs,
+  type WatchScope,
+} from '@pommora/core/Paths/exclusion'
+import { escapes } from '@pommora/core/Paths/pathSafety'
+import { flush } from '@pommora/core/Nexus/settle'
 import { readMatrixFile } from '@pommora/core/Matrix/matrixFile'
 import { readNavigationFile } from '@pommora/core/Navigation/navigationFile'
-import { dropOwnEchoes, isRecentWrite, writtenHash } from '@pommora/core/Files/writeEcho'
-import { isMetadataShardRel, NEXUS_DIR } from '@pommora/core/Paths/nexusPaths'
+import {
+  type Changed,
+  dropOwnEchoes,
+  emitWatch,
+  isRecentWrite,
+  writtenHash,
+} from '@pommora/core/Files/writeEcho'
+import { isMetadataShardRel, NEXUS_CONFIG_FILES, NEXUS_DIR } from '@pommora/core/Paths/nexusPaths'
 import { join, relative } from '@pommora/core/Paths/posix'
 import type { Pushes } from '@pommora/core/Contract/bridge'
 import { type CurrentWindow, push } from '../Bridge/ipc'
 import { posixPath } from '../Platform/hostPath'
-import { seedContentIndex } from '@pommora/core/Index/indexSeed'
 import { sessionRoot, type WaitingOpen, waitingOpen } from '@pommora/core/Nexus/session'
 import { readWatchScope } from '@pommora/core/Settings/settings'
 import { readNexusConfig } from '@pommora/core/Nexus/readNexus'
-import { flushValueWrites } from '@pommora/core/Nexus/valuesChanged'
-import {
-  applyWatchEvents,
-  touchesCorpus,
-  type WatchEvent,
-  type WatchEventName,
-  type WatchPatch,
-} from '@pommora/core/Nexus/watchPatch'
-import { confirmBy } from '@pommora/core/Nexus/mutatePatch'
+import { applyEvents } from '@pommora/core/Nexus/fileEvents'
 
 const SETTLE_MS = 200
 
@@ -40,9 +35,32 @@ let watcher: FSWatcher | null = null
 let starts = 0
 let settling: Promise<void> = Promise.resolve()
 let debounce: ReturnType<typeof setTimeout> | null = null
-let batch: WatchEvent[] = []
+let batch: Changed[] = []
 const configDebounce = new Map<string, ReturnType<typeof setTimeout>>()
 const pushedConfig = new Map<string, string>()
+
+export function isConfigPath(
+  root: string,
+  path: string,
+  file: keyof typeof NEXUS_CONFIG_FILES,
+): boolean {
+  const segs = relative(root, path).split('/')
+  return segs[0] === NEXUS_DIR && segs[1] === NEXUS_CONFIG_FILES[file]
+}
+
+// We DO watch .nexus/ — Contexts and settings/state live there. Checks only the path BELOW the root, so a dot-segment in the root's own absolute path (a nexus under ~/.something) can't blank the whole watch.
+export function syncIgnoredUnder(root: string, scope: WatchScope): (path: string) => boolean {
+  const isExcluded = excludedMatcher(scope.excluded)
+  const isAsset = assetMatcher(scope.assetDir)
+  const assetDepth = rootSegs(scope.assetDir).length
+  return (path) => {
+    const rel = relative(root, path)
+    if (!rel || escapes(rel)) return false
+    const segs = rel.split('/')
+    if (isAsset(segs)) return neverWatched(segs.slice(assetDepth))
+    return neverWatched(segs) || isExcluded(segs)
+  }
+}
 
 // A config file whose section answers live: re-read after the settle, and pushed only when its text moved.
 function pushConfig<K extends keyof Pushes>(
@@ -85,11 +103,11 @@ export async function startWatcher(root: string, win: CurrentWindow): Promise<vo
     awaitWriteFinish: { stabilityThreshold: SETTLE_MS, pollInterval: 50 },
   })
   const onEvent =
-    (event: WatchEventName) =>
+    (event: Changed['event']) =>
     (hostPath: string): void => {
       const path = posixPath(hostPath)
       emitWatch(event, path)
-      // The app's own writes echo back and confirm through their own channels: a bytes-less echo stops here, and one recorded with its bytes is dropped at the settle while the file still holds them. The two live config files and the metadata month files skip the early stop because each settles to no change when nothing moved, so a hand-edit or sync landing right after the app's own write is not swallowed.
+      // The app's own writes echo back after they have already applied as they landed: a bytes-less echo stops here, and one recorded with its bytes is dropped at the settle while the file still holds them. The two live config files and the metadata month files skip the early stop because each settles to no change when nothing moved, so a hand-edit or sync landing right after the app's own write is not swallowed.
       if (isConfigPath(root, path, 'state'))
         pushConfig(root, win, 'nav:changed', readNavigationFile)
       else if (isConfigPath(root, path, 'matrix'))
@@ -97,9 +115,9 @@ export async function startWatcher(root: string, win: CurrentWindow): Promise<vo
       else if (!isMetadataShardRel(relative(root, path)) && isRecentWrite(path)) return
       batch.push({ event, absPath: path, written: writtenHash(path) })
       if (debounce) clearTimeout(debounce)
-      // Chained, so two settles never reseed the index or re-arm the watcher at once.
+      // Chained, so batches apply in the order they settled.
       debounce = setTimeout(() => {
-        settling = settling.then(() => settle(root, win, scope))
+        settling = settling.then(() => settle(root, win))
       }, SETTLE_MS)
     }
   watcher
@@ -149,58 +167,19 @@ export function stopWatcher(): void {
   batch = []
 }
 
-/** Patch what classifies, walk for the rest. Pushes only when the tree object moved — an index-only batch changes nothing anyone renders. */
-async function settle(root: string, win: CurrentWindow, scope: WatchScope): Promise<void> {
+async function settle(root: string, win: CurrentWindow): Promise<void> {
   if (sessionRoot() !== root) return
   const noted = batch
   batch = []
   try {
-    const events = await dropOwnEchoes(noted)
-    const assetsBefore = getHeldAssetMap(root)
-    const named = (path: string): boolean =>
-      events.some((ev) => {
-        const rel = relative(root, ev.absPath)
-        return path === rel || path.startsWith(`${rel}/`)
-      })
-    let patching!: Promise<WatchPatch>
-    const tree = await confirmBy(
-      root,
-      async () => {
-        patching = applyWatchEvents(root, events, scope)
-        return (await patching).outcome === 'patched' ? 'ok' : 'refresh'
+    await applyEvents(root, await dropOwnEchoes(noted))
+    await flush(
+      {
+        push: <K extends keyof Pushes>(channel: K, value: Pushes[K]) => push(win, channel, value),
+        watch: (next) => startWatcher(next, win),
       },
-      named,
+      root,
     )
-    const patch = await patching
-    // The map is patch-only, so the fallback walk is where the listing is taken again.
-    if (patch.outcome === 'refresh') await refreshAssetMap(root)
-    // A session that switched mid-settle must not receive the OLD root's walked tree — a superseded walk still returns it to its awaiters.
-    if (sessionRoot() !== root) return
-    if (tree) push(win, 'nexus:changed', tree)
-    const classified =
-      patch.outcome === 'patched' ? patch.classes : classifyBatch(events, root, scope)
-    const pages = pagesChangedIn(classified, patch.cascaded.pages)
-    if (pages.length) push(win, 'pages:changed', pages)
-    // A cascaded linker's write was the app's own, so its note waits in the ledger rather than in the batch.
-    const changed = [
-      ...valueChangesOf(classified, patch.touched),
-      ...flushValueWrites(root, patch.cascaded.pages),
-    ]
-    if (changed.length) push(win, 'values:changed', changed)
-    for (const host of tilesChangedIn(classified, patch.cascaded.hosts))
-      push(win, 'tiles:changed', host)
-    const assets = getHeldAssetMap(root)
-    if (assetsBefore && assets && assets !== assetsBefore) push(win, 'assets:changed', assets)
-    if (patch.outcome !== 'refresh') return
-    // The corpus may have moved in ways no arm named; the stat-gated seed costs the walk's stats.
-    if (touchesCorpus(root, events, scope)) await seedContentIndex(root)
-    if (sessionRoot() !== root) return
-    // The armed scope is spent state: the classifier and chokidar's ignore filter would keep reading the stale capture, and a changed scope moves the corpus, so its disowned rows are reconciled before the fresh watcher arms.
-    if (!sameScope(await readWatchScope(root), scope)) {
-      await seedContentIndex(root)
-      if (sessionRoot() !== root) return
-      void startWatcher(root, win)
-    }
   } catch {
     // Transient FS state mid-write — the next settle re-reads (Reload is the fallback).
   }

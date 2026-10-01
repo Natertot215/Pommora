@@ -104,19 +104,21 @@ async function relCorpusPath(root: string, abs: string): Promise<string | null> 
   return outsideContent(rel, await readWatchScope(root)) ? null : rel
 }
 
-interface HeadingRenameSeen {
+export interface HeadingRenameSeen {
   title: string
   old: string
   next: string
 }
 
-// Re-indexes a written page and reports a heading rename it reads: one heading gone and one fresh heading at its ordinal, the outline otherwise unchanged. Anything murkier is left to the muted heading.
+// Re-indexes a written page, from `text` when its writer hands it over, and reports a heading rename it reads: one heading gone and one fresh heading at its ordinal, the outline otherwise unchanged. Anything murkier is left to the muted heading.
 export async function indexWrittenPage(
   root: string,
   abs: string,
+  text?: string,
 ): Promise<HeadingRenameSeen | null> {
+  if (!isMarkdownFile(abs)) return null
   const rel = await relCorpusPath(root, abs)
-  if (!rel || !isMarkdownFile(rel)) return null
+  if (!rel) return null
   const st = await machine()
     .stat(abs)
     .catch(() => null)
@@ -125,7 +127,7 @@ export async function indexWrittenPage(
     return null
   }
   // An unreadable page keeps its rows, so a sweep the index seeds still reaches the file and counts it.
-  const content = await readTextOrNull(abs)
+  const content = text ?? (await readTextOrNull(abs))
   if (content === null) return null
   const title = titleFromPath(rel)
   const before = readHeadings([rel])?.[rel] ?? []
