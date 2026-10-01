@@ -40,8 +40,14 @@ export interface PageRelations {
   pages: Record<string, { values: Record<string, unknown>; mtimeMs: number }>
 }
 
+export interface PageIndexRow {
+  path: string
+  entry: PageIndexEntry
+  stat: IndexedStat
+}
+
 export interface ContentIndexStore {
-  upsertPageIndex(path: string, entry: PageIndexEntry, stat: IndexedStat): void
+  upsertPageIndexes(rows: readonly PageIndexRow[]): void
   removePathIndex(path: string): void
   renamePathIndex(oldPath: string, newPath: string): void
   removePathPrefixIndex(dir: string): void

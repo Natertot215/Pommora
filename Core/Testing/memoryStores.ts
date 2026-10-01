@@ -78,19 +78,21 @@ const contentIndex = (index: MemoryIndex): ContentIndexStore => {
   const sortedPaths = (paths: Iterable<string>): string[] => [...new Set(paths)].sort()
   const relationRows = (): RelationRow[] => [...index.relations.values()]
   return {
-    upsertPageIndex(path, entry, stat) {
-      clearPath(path)
-      for (const relation of entry.relations)
-        index.relations.set(k(path, relation.kind, relation.target, relation.qualifier), {
-          path,
-          ...relation,
+    upsertPageIndexes(rows) {
+      for (const { path, entry, stat } of rows) {
+        clearPath(path)
+        for (const relation of entry.relations)
+          index.relations.set(k(path, relation.kind, relation.target, relation.qualifier), {
+            path,
+            ...relation,
+          })
+        entry.headings.forEach((heading, ordinal) => {
+          index.headings.set(k(path, heading), { path, heading, ordinal })
         })
-      entry.headings.forEach((heading, ordinal) => {
-        index.headings.set(k(path, heading), { path, heading, ordinal })
-      })
-      for (const [key, value] of Object.entries(entry.values))
-        index.values.set(k(path, key), { path, key, value: JSON.stringify(value) ?? 'null' })
-      index.stats.set(path, { mtimeMs: stat.mtimeMs, size: stat.size })
+        for (const [key, value] of Object.entries(entry.values))
+          index.values.set(k(path, key), { path, key, value: JSON.stringify(value) ?? 'null' })
+        index.stats.set(path, { mtimeMs: stat.mtimeMs, size: stat.size })
+      }
     },
     removePathIndex(path) {
       clearPath(path)

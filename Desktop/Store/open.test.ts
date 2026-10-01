@@ -9,7 +9,7 @@ import { INDEX_GENERATION, INDEX_TABLES, readMeta } from './ddl'
 import { openDb, type Db } from './driver'
 import { closeSessionDb, openSessionDb } from './sessionDb'
 import { readScope } from '@pommora/core/Platform/localState'
-import { markIndexReady, queryMentions, upsertPageIndex } from '@pommora/core/Index/contentIndex'
+import { markIndexReady, queryMentions, upsertPageIndexes } from '@pommora/core/Index/contentIndex'
 
 // Fixtures
 
@@ -239,15 +239,17 @@ describe('upgrade in place', () => {
     openSessionDb(dir, root)
     markIndexReady()
     expect(readScope('folds')).toEqual({ p1: ['x'] })
-    upsertPageIndex(
-      'Notes/A.md',
+    upsertPageIndexes([
       {
-        relations: [{ kind: 'body', target: 'beta', qualifier: '', count: 1 }],
-        headings: [],
-        values: {},
+        path: 'Notes/A.md',
+        entry: {
+          relations: [{ kind: 'body', target: 'beta', qualifier: '', count: 1 }],
+          headings: [],
+          values: {},
+        },
+        stat: STAT,
       },
-      STAT,
-    )
+    ])
     expect(queryMentions('beta')).toEqual(['Notes/A.md'])
     expect(readScope('folds')).toEqual({ p1: ['x'] })
     closeSessionDb()

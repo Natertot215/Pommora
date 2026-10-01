@@ -10,7 +10,7 @@ import {
   removePathIndex,
   renamePathIndex,
   renamePathPrefixIndex,
-  upsertPageIndex,
+  upsertPageIndexes,
 } from './contentIndex'
 
 beforeEach(() => {
@@ -33,32 +33,36 @@ const TAGGED: PageIndexEntry = {
 
 describe('the content index', () => {
   it('round-trips an upsert through every query', () => {
-    upsertPageIndex(
-      'Notes/A.md',
+    upsertPageIndexes([
       {
-        relations: [
-          { kind: 'body', target: 'beta', qualifier: '', count: 1 },
-          { kind: 'space', target: 'pommora', qualifier: '<Projects>', count: 1 },
-        ],
-        headings: [],
-        values: { Status: 'Open', '<Projects>': ['Pommora'] },
+        path: 'Notes/A.md',
+        entry: {
+          relations: [
+            { kind: 'body', target: 'beta', qualifier: '', count: 1 },
+            { kind: 'space', target: 'pommora', qualifier: '<Projects>', count: 1 },
+          ],
+          headings: [],
+          values: { Status: 'Open', '<Projects>': ['Pommora'] },
+        },
+        stat: STAT,
       },
-      STAT,
-    )
-    upsertPageIndex(
-      'Loose/B.md',
+    ])
+    upsertPageIndexes([
       {
-        relations: [
-          { kind: 'body', target: 'beta', qualifier: '', count: 1 },
-          { kind: 'body', target: 'gamma', qualifier: '', count: 1 },
-          { kind: 'space', target: 'pommora', qualifier: '<Projects>', count: 1 },
-          { kind: 'space', target: 'sapphire', qualifier: '<Projects>', count: 1 },
-        ],
-        headings: [],
-        values: { '<Projects>': ['Pommora', 'Sapphire'] },
+        path: 'Loose/B.md',
+        entry: {
+          relations: [
+            { kind: 'body', target: 'beta', qualifier: '', count: 1 },
+            { kind: 'body', target: 'gamma', qualifier: '', count: 1 },
+            { kind: 'space', target: 'pommora', qualifier: '<Projects>', count: 1 },
+            { kind: 'space', target: 'sapphire', qualifier: '<Projects>', count: 1 },
+          ],
+          headings: [],
+          values: { '<Projects>': ['Pommora', 'Sapphire'] },
+        },
+        stat: STAT,
       },
-      STAT,
-    )
+    ])
     expect(queryMentions('beta')).toEqual(['Loose/B.md', 'Notes/A.md'])
     expect(queryMentions('gamma')).toEqual(['Loose/B.md'])
     expect(queryKeyHolders('Status')).toEqual(['Notes/A.md'])
@@ -69,27 +73,31 @@ describe('the content index', () => {
   })
 
   it("a re-upsert replaces a page's rows rather than accreting them", () => {
-    upsertPageIndex(
-      'Notes/A.md',
+    upsertPageIndexes([
       {
-        relations: [
-          { kind: 'body', target: 'beta', qualifier: '', count: 1 },
-          { kind: 'space', target: 'pommora', qualifier: '<Projects>', count: 1 },
-        ],
-        headings: [],
-        values: { Status: 'Open' },
+        path: 'Notes/A.md',
+        entry: {
+          relations: [
+            { kind: 'body', target: 'beta', qualifier: '', count: 1 },
+            { kind: 'space', target: 'pommora', qualifier: '<Projects>', count: 1 },
+          ],
+          headings: [],
+          values: { Status: 'Open' },
+        },
+        stat: STAT,
       },
-      STAT,
-    )
-    upsertPageIndex(
-      'Notes/A.md',
+    ])
+    upsertPageIndexes([
       {
-        relations: [{ kind: 'body', target: 'gamma', qualifier: '', count: 1 }],
-        headings: [],
-        values: {},
+        path: 'Notes/A.md',
+        entry: {
+          relations: [{ kind: 'body', target: 'gamma', qualifier: '', count: 1 }],
+          headings: [],
+          values: {},
+        },
+        stat: { mtimeMs: 2000, size: 12 },
       },
-      { mtimeMs: 2000, size: 12 },
-    )
+    ])
     expect(queryMentions('beta')).toEqual([])
     expect(queryMentions('gamma')).toEqual(['Notes/A.md'])
     expect(queryKeyHolders('Status')).toEqual([])
@@ -98,7 +106,9 @@ describe('the content index', () => {
   })
 
   it('no mentions is an empty array; NO INDEX is null — the two never conflate', () => {
-    upsertPageIndex('Notes/A.md', { relations: [], headings: [], values: {} }, STAT)
+    upsertPageIndexes([
+      { path: 'Notes/A.md', entry: { relations: [], headings: [], values: {} }, stat: STAT },
+    ])
     expect(queryMentions('beta')).toEqual([])
     installStores(NO_STORES)
     expect(queryMentions('beta')).toBeNull()
@@ -110,36 +120,40 @@ describe('the content index', () => {
   it('queries answer null until a seed stamps the handle ready — empty tables never masquerade', async () => {
     installStores(NO_STORES)
     installStores(memoryStores().stores)
-    upsertPageIndex(
-      'Notes/A.md',
+    upsertPageIndexes([
       {
-        relations: [{ kind: 'body', target: 'beta', qualifier: '', count: 1 }],
-        headings: [],
-        values: {},
+        path: 'Notes/A.md',
+        entry: {
+          relations: [{ kind: 'body', target: 'beta', qualifier: '', count: 1 }],
+          headings: [],
+          values: {},
+        },
+        stat: STAT,
       },
-      STAT,
-    )
+    ])
     expect(queryMentions('beta')).toBeNull()
     markIndexReady()
     expect(queryMentions('beta')).toEqual(['Notes/A.md'])
   })
 
   it('a prefix rename survives an astral folder name (SQL-side character arithmetic)', () => {
-    upsertPageIndex(
-      'Projects 🚀/A.md',
+    upsertPageIndexes([
       {
-        relations: [{ kind: 'body', target: 'beta', qualifier: '', count: 1 }],
-        headings: [],
-        values: {},
+        path: 'Projects 🚀/A.md',
+        entry: {
+          relations: [{ kind: 'body', target: 'beta', qualifier: '', count: 1 }],
+          headings: [],
+          values: {},
+        },
+        stat: STAT,
       },
-      STAT,
-    )
+    ])
     renamePathPrefixIndex('Projects 🚀', 'Launchpad')
     expect(queryMentions('beta')).toEqual(['Launchpad/A.md'])
   })
 
   it('a rename moves every row to the new path', () => {
-    upsertPageIndex('Notes/A.md', TAGGED, STAT)
+    upsertPageIndexes([{ path: 'Notes/A.md', entry: TAGGED, stat: STAT }])
     renamePathIndex('Notes/A.md', 'Notes/Alpha.md')
     expect(queryMentions('beta')).toEqual(['Notes/Alpha.md'])
     expect(queryKeyHolders('Status')).toEqual(['Notes/Alpha.md'])
@@ -149,7 +163,7 @@ describe('the content index', () => {
   })
 
   it('a removal clears every row for the path', () => {
-    upsertPageIndex('Notes/A.md', TAGGED, STAT)
+    upsertPageIndexes([{ path: 'Notes/A.md', entry: TAGGED, stat: STAT }])
     removePathIndex('Notes/A.md')
     expect(queryMentions('beta')).toEqual([])
     expect(queryKeyHolders('Status')).toEqual([])

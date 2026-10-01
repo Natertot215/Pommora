@@ -69,29 +69,33 @@ export function describeContentIndexStore(name: string, make: () => ContentIndex
     })
 
     it('round-trips an upsert through every query', () => {
-      store.upsertPageIndex(
-        'Notes/A.md',
+      store.upsertPageIndexes([
         {
-          relations: [body('beta'), space('<Projects>', 'pommora')],
-          headings: [],
-          values: { Status: 'Open', '<Projects>': ['Pommora'] },
+          path: 'Notes/A.md',
+          entry: {
+            relations: [body('beta'), space('<Projects>', 'pommora')],
+            headings: [],
+            values: { Status: 'Open', '<Projects>': ['Pommora'] },
+          },
+          stat: STAT,
         },
-        STAT,
-      )
-      store.upsertPageIndex(
-        'Loose/B.md',
+      ])
+      store.upsertPageIndexes([
         {
-          relations: [
-            body('beta'),
-            body('gamma'),
-            space('<Projects>', 'pommora'),
-            space('<Projects>', 'sapphire'),
-          ],
-          headings: [],
-          values: { '<Projects>': ['Pommora', 'Sapphire'] },
+          path: 'Loose/B.md',
+          entry: {
+            relations: [
+              body('beta'),
+              body('gamma'),
+              space('<Projects>', 'pommora'),
+              space('<Projects>', 'sapphire'),
+            ],
+            headings: [],
+            values: { '<Projects>': ['Pommora', 'Sapphire'] },
+          },
+          stat: STAT,
         },
-        STAT,
-      )
+      ])
       expect(store.queryMentions('beta')).toEqual(['Loose/B.md', 'Notes/A.md'])
       expect(store.queryMentions('gamma')).toEqual(['Loose/B.md'])
       expect(store.queryKeyHolders('Status')).toEqual(['Notes/A.md'])
@@ -102,16 +106,20 @@ export function describeContentIndexStore(name: string, make: () => ContentIndex
     })
 
     it('a re-upsert replaces the page rows rather than accreting them', () => {
-      store.upsertPageIndex(
-        'Notes/A.md',
-        { relations: [body('beta')], headings: [], values: { Status: 'Open' } },
-        STAT,
-      )
-      store.upsertPageIndex(
-        'Notes/A.md',
-        { relations: [body('gamma')], headings: [], values: {} },
-        { mtimeMs: 2000, size: 12 },
-      )
+      store.upsertPageIndexes([
+        {
+          path: 'Notes/A.md',
+          entry: { relations: [body('beta')], headings: [], values: { Status: 'Open' } },
+          stat: STAT,
+        },
+      ])
+      store.upsertPageIndexes([
+        {
+          path: 'Notes/A.md',
+          entry: { relations: [body('gamma')], headings: [], values: {} },
+          stat: { mtimeMs: 2000, size: 12 },
+        },
+      ])
       expect(store.queryMentions('beta')).toEqual([])
       expect(store.queryMentions('gamma')).toEqual(['Notes/A.md'])
       expect(store.queryKeyHolders('Status')).toEqual([])
@@ -119,24 +127,28 @@ export function describeContentIndexStore(name: string, make: () => ContentIndex
     })
 
     it('serializes a null value rather than dropping the key', () => {
-      store.upsertPageIndex(
-        'Notes/A.md',
-        { relations: [], headings: [], values: { Blank: null } },
-        STAT,
-      )
+      store.upsertPageIndexes([
+        {
+          path: 'Notes/A.md',
+          entry: { relations: [], headings: [], values: { Blank: null } },
+          stat: STAT,
+        },
+      ])
       expect(store.queryKeyHolders('Blank')).toEqual(['Notes/A.md'])
     })
 
     it('removes every row for a path', () => {
-      store.upsertPageIndex(
-        'Notes/A.md',
+      store.upsertPageIndexes([
         {
-          relations: [body('beta'), space('<Projects>', 'pommora')],
-          headings: [],
-          values: { Status: 'Open' },
+          path: 'Notes/A.md',
+          entry: {
+            relations: [body('beta'), space('<Projects>', 'pommora')],
+            headings: [],
+            values: { Status: 'Open' },
+          },
+          stat: STAT,
         },
-        STAT,
-      )
+      ])
       store.removePathIndex('Notes/A.md')
       expect(store.queryMentions('beta')).toEqual([])
       expect(store.queryKeyHolders('Status')).toEqual([])
@@ -145,15 +157,17 @@ export function describeContentIndexStore(name: string, make: () => ContentIndex
     })
 
     it('renames a path across every table', () => {
-      store.upsertPageIndex(
-        'Notes/A.md',
+      store.upsertPageIndexes([
         {
-          relations: [body('beta'), space('<Projects>', 'pommora')],
-          headings: [],
-          values: { Status: 'Open' },
+          path: 'Notes/A.md',
+          entry: {
+            relations: [body('beta'), space('<Projects>', 'pommora')],
+            headings: [],
+            values: { Status: 'Open' },
+          },
+          stat: STAT,
         },
-        STAT,
-      )
+      ])
       store.renamePathIndex('Notes/A.md', 'Notes/Alpha.md')
       expect(store.queryMentions('beta')).toEqual(['Notes/Alpha.md'])
       expect(store.queryKeyHolders('Status')).toEqual(['Notes/Alpha.md'])
@@ -163,11 +177,13 @@ export function describeContentIndexStore(name: string, make: () => ContentIndex
     })
 
     it('round-trips headings and heading mentions, then carries them across a rename', () => {
-      store.upsertPageIndex(
-        'Notes/A.md',
-        { relations: [body('beta', 'setup')], headings: ['setup', 'intro'], values: {} },
-        STAT,
-      )
+      store.upsertPageIndexes([
+        {
+          path: 'Notes/A.md',
+          entry: { relations: [body('beta', 'setup')], headings: ['setup', 'intro'], values: {} },
+          stat: STAT,
+        },
+      ])
       expect(store.readHeadings()).toEqual({ 'Notes/A.md': ['setup', 'intro'] })
       expect(store.readHeadings(['Notes/A.md'])).toEqual({ 'Notes/A.md': ['setup', 'intro'] })
       expect(store.queryHeadingMentions('beta', 'setup')).toEqual(['Notes/A.md'])
@@ -177,26 +193,36 @@ export function describeContentIndexStore(name: string, make: () => ContentIndex
     })
 
     it('a page with no headings reads as an empty list, cold and by path alike', () => {
-      store.upsertPageIndex('Notes/H.md', { relations: [], headings: [], values: {} }, STAT)
+      store.upsertPageIndexes([
+        { path: 'Notes/H.md', entry: { relations: [], headings: [], values: {} }, stat: STAT },
+      ])
       expect(store.readHeadings()).toEqual({ 'Notes/H.md': [] })
       expect(store.readHeadings(['Notes/H.md'])).toEqual({ 'Notes/H.md': [] })
     })
 
     it("reads the page-to-page rows and every page's values, whole and by path", () => {
-      store.upsertPageIndex(
-        'Notes/A.md',
+      store.upsertPageIndexes([
         {
-          relations: [body('beta'), relation('citation', 'gamma'), space('<Projects>', 'pommora')],
-          headings: [],
-          values: { ID: 'idA', Status: ['Open'] },
+          path: 'Notes/A.md',
+          entry: {
+            relations: [
+              body('beta'),
+              relation('citation', 'gamma'),
+              space('<Projects>', 'pommora'),
+            ],
+            headings: [],
+            values: { ID: 'idA', Status: ['Open'] },
+          },
+          stat: STAT,
         },
-        STAT,
-      )
-      store.upsertPageIndex(
-        'Notes/B.md',
-        { relations: [], headings: [], values: { ID: 'idB' } },
-        { mtimeMs: 2000, size: 20 },
-      )
+      ])
+      store.upsertPageIndexes([
+        {
+          path: 'Notes/B.md',
+          entry: { relations: [], headings: [], values: { ID: 'idB' } },
+          stat: { mtimeMs: 2000, size: 20 },
+        },
+      ])
       const whole = store.readPageRelations()
       expect(whole.relations).toEqual([
         { path: 'Notes/A.md', ...body('beta') },
@@ -212,84 +238,102 @@ export function describeContentIndexStore(name: string, make: () => ContentIndex
     })
 
     it('a heading-naming link answers the bare title query', () => {
-      store.upsertPageIndex(
-        'Notes/A.md',
-        { relations: [body('beta', 'setup')], headings: [], values: {} },
-        STAT,
-      )
+      store.upsertPageIndexes([
+        {
+          path: 'Notes/A.md',
+          entry: { relations: [body('beta', 'setup')], headings: [], values: {} },
+          stat: STAT,
+        },
+      ])
       expect(store.queryMentions('beta')).toEqual(['Notes/A.md'])
     })
 
     it('returns a path once however many rows reach the target', () => {
-      store.upsertPageIndex(
-        'Notes/A.md',
+      store.upsertPageIndexes([
         {
-          relations: [
-            body('beta'),
-            body('beta', 'setup'),
-            relation('embed', 'beta'),
-            relation('citation', 'beta'),
-          ],
-          headings: [],
-          values: {},
+          path: 'Notes/A.md',
+          entry: {
+            relations: [
+              body('beta'),
+              body('beta', 'setup'),
+              relation('embed', 'beta'),
+              relation('citation', 'beta'),
+            ],
+            headings: [],
+            values: {},
+          },
+          stat: STAT,
         },
-        STAT,
-      )
+      ])
       expect(store.queryMentions('beta')).toEqual(['Notes/A.md'])
     })
 
     it('keeps space rows out of the title queries and link rows out of the member query', () => {
-      store.upsertPageIndex(
-        'Notes/A.md',
-        { relations: [space('<Projects>', 'beta')], headings: [], values: {} },
-        STAT,
-      )
-      store.upsertPageIndex(
-        'Loose/B.md',
-        { relations: [body('beta')], headings: [], values: {} },
-        STAT,
-      )
+      store.upsertPageIndexes([
+        {
+          path: 'Notes/A.md',
+          entry: { relations: [space('<Projects>', 'beta')], headings: [], values: {} },
+          stat: STAT,
+        },
+      ])
+      store.upsertPageIndexes([
+        {
+          path: 'Loose/B.md',
+          entry: { relations: [body('beta')], headings: [], values: {} },
+          stat: STAT,
+        },
+      ])
       expect(store.queryMentions('beta')).toEqual(['Loose/B.md'])
       expect(store.queryHeadingMentions('beta', '')).toEqual(['Loose/B.md'])
       expect(store.queryMembers('<Projects>', 'beta')).toEqual(['Notes/A.md'])
     })
 
     it('prefix-renames descendants, exact on a % folder name', () => {
-      store.upsertPageIndex(
-        '50% Off/A.md',
-        { relations: [body('beta')], headings: [], values: {} },
-        STAT,
-      )
-      store.upsertPageIndex(
-        '50% Off More/B.md',
-        { relations: [body('beta')], headings: [], values: {} },
-        STAT,
-      )
+      store.upsertPageIndexes([
+        {
+          path: '50% Off/A.md',
+          entry: { relations: [body('beta')], headings: [], values: {} },
+          stat: STAT,
+        },
+      ])
+      store.upsertPageIndexes([
+        {
+          path: '50% Off More/B.md',
+          entry: { relations: [body('beta')], headings: [], values: {} },
+          stat: STAT,
+        },
+      ])
       store.renamePathPrefixIndex('50% Off', 'Sale')
       expect(store.queryMentions('beta')).toEqual(['50% Off More/B.md', 'Sale/A.md'])
     })
 
     it('prefix-renames across an astral folder name', () => {
-      store.upsertPageIndex(
-        'Projects 🚀/A.md',
-        { relations: [body('beta')], headings: [], values: {} },
-        STAT,
-      )
+      store.upsertPageIndexes([
+        {
+          path: 'Projects 🚀/A.md',
+          entry: { relations: [body('beta')], headings: [], values: {} },
+          stat: STAT,
+        },
+      ])
       store.renamePathPrefixIndex('Projects 🚀', 'Launchpad')
       expect(store.queryMentions('beta')).toEqual(['Launchpad/A.md'])
     })
 
     it('removes a prefix, exact on a % folder name', () => {
-      store.upsertPageIndex(
-        '50% Off/A.md',
-        { relations: [body('beta')], headings: [], values: {} },
-        STAT,
-      )
-      store.upsertPageIndex(
-        '50% Off More/B.md',
-        { relations: [body('beta')], headings: [], values: {} },
-        STAT,
-      )
+      store.upsertPageIndexes([
+        {
+          path: '50% Off/A.md',
+          entry: { relations: [body('beta')], headings: [], values: {} },
+          stat: STAT,
+        },
+      ])
+      store.upsertPageIndexes([
+        {
+          path: '50% Off More/B.md',
+          entry: { relations: [body('beta')], headings: [], values: {} },
+          stat: STAT,
+        },
+      ])
       store.removePathPrefixIndex('50% Off')
       expect(store.queryMentions('beta')).toEqual(['50% Off More/B.md'])
     })

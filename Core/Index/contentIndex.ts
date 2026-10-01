@@ -6,7 +6,7 @@ import {
   contentIndexStore,
   type IndexedStat,
   type PageRelations,
-  type PageIndexEntry,
+  type PageIndexRow,
 } from '../Platform/stores'
 
 function guarded(what: string, run: (db: ContentIndexStore) => void): void {
@@ -19,8 +19,8 @@ function guarded(what: string, run: (db: ContentIndexStore) => void): void {
   }
 }
 
-export function upsertPageIndex(path: string, entry: PageIndexEntry, stat: IndexedStat): void {
-  guarded(`upsert ${path}`, (db) => db.upsertPageIndex(path, entry, stat))
+export function upsertPageIndexes(rows: readonly PageIndexRow[]): void {
+  guarded(`upsert of ${rows.length} pages`, (db) => db.upsertPageIndexes(rows))
 }
 
 export function removePathIndex(path: string): void {

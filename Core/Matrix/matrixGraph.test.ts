@@ -23,21 +23,31 @@ beforeEach(() => {
   installStores(stores.stores)
   markIndexReady()
   const index = stores.stores.contentIndex!
-  index.upsertPageIndex(
-    'Notes/A.md',
-    { relations: [relation('body', 'beta')], headings: [], values: { ID: A, Status: ['Open'] } },
-    { mtimeMs: 1000, size: 10 },
-  )
-  index.upsertPageIndex(
-    'Notes/B.md',
-    { relations: [relation('frontmatter', 'alpha')], headings: [], values: { ID: B } },
-    { mtimeMs: 2000, size: 20 },
-  )
-  index.upsertPageIndex(
-    'Notes/Loose.md',
-    { relations: [relation('body', 'alpha')], headings: [], values: {} },
-    { mtimeMs: 3000, size: 30 },
-  )
+  index.upsertPageIndexes([
+    {
+      path: 'Notes/A.md',
+      entry: {
+        relations: [relation('body', 'beta')],
+        headings: [],
+        values: { ID: A, Status: ['Open'] },
+      },
+      stat: { mtimeMs: 1000, size: 10 },
+    },
+  ])
+  index.upsertPageIndexes([
+    {
+      path: 'Notes/B.md',
+      entry: { relations: [relation('frontmatter', 'alpha')], headings: [], values: { ID: B } },
+      stat: { mtimeMs: 2000, size: 20 },
+    },
+  ])
+  index.upsertPageIndexes([
+    {
+      path: 'Notes/Loose.md',
+      entry: { relations: [relation('body', 'alpha')], headings: [], values: {} },
+      stat: { mtimeMs: 3000, size: 30 },
+    },
+  ])
 })
 
 afterEach(() => {

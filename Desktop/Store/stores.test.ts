@@ -8,7 +8,7 @@ import {
   queryMentions,
   readIndexedStats,
   removePathIndex,
-  upsertPageIndex,
+  upsertPageIndexes,
 } from '@pommora/core/Index/contentIndex'
 import { installStores, NO_STORES } from '@pommora/core/Platform/stores'
 import {
@@ -61,14 +61,33 @@ describe('the key-value store over SQLite', () => {
 describe('the content index over SQLite', () => {
   it('reads a batch of paths past SQLite’s variable limit', () => {
     const store = contentIndexStore(db)
-    store.upsertPageIndex(
-      'Notes/A.md',
-      { relations: [], headings: ['setup'], values: {} },
-      { mtimeMs: 1, size: 1 },
-    )
+    store.upsertPageIndexes([
+      {
+        path: 'Notes/A.md',
+        entry: { relations: [], headings: ['setup'], values: {} },
+        stat: { mtimeMs: 1, size: 1 },
+      },
+    ])
     const only = ['Notes/A.md', ...Array.from({ length: 40_000 }, (_, i) => `Notes/${i}.md`)]
     expect(store.readHeadings(only)['Notes/A.md']).toEqual(['setup'])
     expect(Object.keys(store.readPageRelations(only).pages)).toEqual(['Notes/A.md'])
+  })
+
+  it('writes a batch of pages whole or not at all', () => {
+    const store = contentIndexStore(db)
+    const stat = { mtimeMs: 1, size: 1 }
+    expect(() =>
+      store.upsertPageIndexes([
+        { path: 'Notes/A.md', entry: { relations: [], headings: ['a'], values: {} }, stat },
+        {
+          path: 'Notes/B.md',
+          entry: { relations: [], headings: [], values: { Count: BigInt(1) } },
+          stat,
+        },
+      ]),
+    ).toThrow()
+    expect(store.readIndexedStats().size).toBe(0)
+    expect(store.readHeadings(['Notes/A.md'])['Notes/A.md']).toEqual([])
   })
 
   it('missing tables answer exactly like a null Db, and writers never throw', () => {
@@ -88,18 +107,20 @@ describe('the content index over SQLite', () => {
     expect(queryMembers('<Projects>', 'pommora')).toBeNull()
     expect(readIndexedStats()).toBeNull()
     expect(() =>
-      upsertPageIndex(
-        'Notes/A.md',
+      upsertPageIndexes([
         {
-          relations: [{ kind: 'body', target: 'x', qualifier: '', count: 1 }],
-          headings: [],
-          values: {},
+          path: 'Notes/A.md',
+          entry: {
+            relations: [{ kind: 'body', target: 'x', qualifier: '', count: 1 }],
+            headings: [],
+            values: {},
+          },
+          stat: {
+            mtimeMs: 1000,
+            size: 10,
+          },
         },
-        {
-          mtimeMs: 1000,
-          size: 10,
-        },
-      ),
+      ]),
     ).not.toThrow()
     expect(() => removePathIndex('Notes/A.md')).not.toThrow()
   })
