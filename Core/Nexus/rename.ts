@@ -6,7 +6,7 @@ import { moveIndexPaths } from '../Index/indexSeed'
 import type { MutateReply, MutateRequest } from './mutateRequest'
 import type { MutateContext } from './mutate'
 import { renamePage } from './page'
-import { landedFolder, landingRefusal, renameFolderEntity } from './folderEntity'
+import { landingRefusal, renameFolderEntity } from './folderEntity'
 import { type CascadeReport, renameCascade } from './cascade'
 import { excludedWithin, exclusionWriteRefusal } from '../Settings/settings'
 import { titleHeldOutside } from './valuesChanged'
@@ -23,9 +23,8 @@ export async function renameOp(
       (await landingRefusal(root, dirname(abs), req.newName)) ??
       (await exclusionWriteRefusal(root, await excludedWithin(root, req.path)))
     if (refused) return refused
-    const r = await renameFolderEntity(abs, req.newName)
-    if (!r.ok) return r
-    return ok({ rescope: await landedFolder(root, abs, r.value.path) })
+    const r = await renameFolderEntity(root, abs, req.newName)
+    return r.ok ? ok({ rescope: r.value.rescope }) : r
   }
   const oldTitle = titleFromPath(abs)
   const relParent = req.path.split('/').slice(0, -1).join('/')

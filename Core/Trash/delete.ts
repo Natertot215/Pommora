@@ -1,7 +1,7 @@
-import { basename, dirname, relative, titleFromPath } from '../Paths/posix'
+import { basename, dirname, join, relative, titleFromPath } from '../Paths/posix'
 import { liveTreeOf, mutableTarget } from '../Nexus/liveTree'
 import { goneEdit, reachConfig, reachReport } from '../Nexus/configReach'
-import { pathExists } from '../Files/atomicWrite'
+import { pathExists, relocate } from '../Files/atomicWrite'
 import { deindexPath, folderCorpus } from '../Index/indexSeed'
 import { fail, ok, valueOr } from '../Contract/result'
 import { mutateRegistryFile, readRegistryStrict, withContextAt } from '../Contexts/contextsRegistry'
@@ -11,7 +11,7 @@ import { dropSpaceOrder } from '../Nexus/reorder'
 import { deleteCascade, joinCascades } from '../Nexus/cascade'
 import type { MutateReply, MutateRequest } from '../Nexus/mutateRequest'
 import { machine } from '../Platform/machine'
-import { discardFile, mintBundle, settleBundle } from './bundle'
+import { discardFile, mintBundle } from './bundle'
 import {
   buildContextRecord,
   gatherContentRecord,
@@ -85,10 +85,8 @@ export async function deleteOp(
         ? [titleFromPath(abs)]
         : (await folderCorpus(root, abs)).map(titleFromPath)
   }
-  await machine().lock(abs, async () => {
-    if (bundle) await settleBundle(bundle, abs)
-    else await discardFile(root, abs, deps)
-  })
+  if (bundle) await relocate(abs, join(bundle, basename(abs)))
+  else await machine().lock(abs, () => discardFile(root, abs, deps))
   const gone = titles ? await deleteCascade(root, abs, titles) : null
   if (write && record && gone)
     await write({

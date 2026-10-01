@@ -1,8 +1,8 @@
 import { join, dirname, basename, relative } from '../Paths/posix'
 import { machine } from '../Platform/machine'
 import { newId } from './ids'
-import { recordWrite, reportRename } from '../Files/writeEcho'
-import { pathExists, targetTaken, writeJson } from '../Files/atomicWrite'
+import { recordWrite } from '../Files/writeEcho'
+import { pathExists, relocate, targetTaken, writeJson } from '../Files/atomicWrite'
 import { nameError } from '../Paths/names'
 import { sidecarPath } from '../Paths/paths'
 import type { SidecarKind } from '../Paths/nexusPaths'
@@ -29,13 +29,12 @@ export async function landingRefusal(
   return why && why !== 'hidden' ? fail('invalid-path', `"${name}" ${SET_ASIDE[why]}`) : null
 }
 
-/** What follows a Collection or Set landing at a new path: the index moves its rows, excluded entries follow before sync hears of the rename so it pushes under the new scope, and true means the landing moved what the scope keeps out. */
-export async function landedFolder(root: string, fromAbs: string, toAbs: string): Promise<boolean> {
-  await moveIndexPaths(root, fromAbs, toAbs)
-  const rescope = await followExcludedFolders(root, relative(root, fromAbs), relative(root, toAbs))
-  reportRename(fromAbs, toAbs)
-  return rescope
-}
+/** A Collection or Set landing at a new path: the index moves its rows and excluded entries follow before sync hears of the rename, so it pushes under the new scope; true means the landing moved what the scope keeps out. */
+const relocateFolder = async (root: string, from: string, to: string): Promise<boolean> =>
+  (await relocate(from, to, async () => {
+    await moveIndexPaths(root, from, to)
+    return followExcludedFolders(root, relative(root, from), relative(root, to))
+  })) ?? false
 
 export async function createFolderEntity(
   parentDir: string,
@@ -56,30 +55,25 @@ export async function createFolderEntity(
 }
 
 export async function renameFolderEntity(
+  root: string,
   absFolder: string,
   newName: string,
-): Promise<Result<{ path: string }>> {
+): Promise<Result<{ path: string; rescope: boolean }>> {
   const why = nameError(newName, 'directory')
   if (why) return fail('invalid-name', why)
   const target = join(dirname(absFolder), newName)
-  if (target === absFolder) return ok({ path: absFolder })
+  if (target === absFolder) return ok({ path: absFolder, rescope: false })
   if (await targetTaken(absFolder, target)) return fail('exists', `"${newName}" already exists.`)
-  // The watcher's unlinkDir/addDir echo (and every child event under a folder) must not buy a second full walk.
-  recordWrite(absFolder)
-  recordWrite(target)
-  await machine().rename(absFolder, target)
-  return ok({ path: target })
+  return ok({ path: target, rescope: await relocateFolder(root, absFolder, target) })
 }
 
 export async function moveFolderEntity(
+  root: string,
   absFolder: string,
   newParentDir: string,
-): Promise<Result<{ path: string }>> {
+): Promise<Result<{ path: string; rescope: boolean }>> {
   const target = join(newParentDir, basename(absFolder))
   if (await pathExists(target))
     return fail('exists', `"${basename(absFolder)}" already exists there.`)
-  recordWrite(absFolder)
-  recordWrite(target)
-  await machine().rename(absFolder, target)
-  return ok({ path: target })
+  return ok({ path: target, rescope: await relocateFolder(root, absFolder, target) })
 }

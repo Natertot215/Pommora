@@ -23,7 +23,13 @@ import { rewriteFrontmatterConnections } from '../Connections/rewrite'
 import { linkDefs } from '../Properties/propertiesRegistry'
 import { refillValues } from '../Properties/assignment'
 import { BUNDLE_SUFFIX } from './bundle'
-import { pathExists, readJsonObject, readTextOrNull, rmwJsonStrict } from '../Files/atomicWrite'
+import {
+  pathExists,
+  readJsonObject,
+  readTextOrNull,
+  relocate,
+  rmwJsonStrict,
+} from '../Files/atomicWrite'
 import { dropPageMetadata } from '../Nexus/pageMetadata'
 import { dropSpaceOrder } from '../Nexus/reorder'
 import { machine } from '../Platform/machine'
@@ -246,11 +252,16 @@ async function restoreArtifact(
     )
     if (!committed.ok) return committed
   }
-  recordWrite(artifactAbs)
-  recordWrite(targetAbs)
+  let rescope: boolean | undefined
   try {
     await machine().mkdir(dirname(targetAbs))
-    await machine().rename(artifactAbs, targetAbs)
+    rescope = await relocate(
+      artifactAbs,
+      targetAbs,
+      record.entity === 'collection' || record.entity === 'set'
+        ? () => reseatExcludedFolders(root, targetRel, record.excluded ?? [])
+        : undefined,
+    )
   } catch (e) {
     // The move is the irreversible half; the entry is the reversible one. Reversing it keeps the failure retryable — a ghost entry would trip the next attempt's own id-live guard.
     if (record.entity === 'context')
@@ -319,11 +330,7 @@ async function restoreArtifact(
     ...restored([...unspent, ...unlinked].map((id) => roots[id].title)),
     landed: targetRel,
   }
-  if (record.entity !== 'collection' && record.entity !== 'set') return ok(outcome)
-  return ok({
-    ...outcome,
-    rescope: await reseatExcludedFolders(root, targetRel, record.excluded ?? []),
-  })
+  return ok(rescope === undefined ? outcome : { ...outcome, rescope })
 }
 
 /** The ids of what's still here and didn't take its tag back; a root gone since has nothing to take it. */

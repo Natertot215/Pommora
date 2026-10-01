@@ -13,6 +13,7 @@ import {
   readJsonStrict,
   readTextOrNull,
   pathExists,
+  relocate,
   rewritePageSerialized,
   rmwJsonStrict,
 } from '../Files/atomicWrite'
@@ -122,10 +123,7 @@ async function migrateContainerSidecar(absDir: string, kind: ContainerKind): Pro
   const read = await readJsonStrict(from)
   if (!read.ok || !asString(read.value.id)) return
   const to = join(absDir, SIDECAR_FILENAME[kind])
-  // Both endpoints — else the rename reads as an external edit and triggers a full re-walk.
-  recordWrite(from)
-  recordWrite(to)
-  await machine().rename(from, to)
+  await relocate(from, to)
 }
 
 async function stampTree(

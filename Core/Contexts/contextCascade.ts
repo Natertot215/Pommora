@@ -8,12 +8,12 @@ import { mutateRegistryFile, readRegistryStrict } from './contextsRegistry'
 import {
   pathExists,
   readJsonStrict,
+  relocate,
   rewritePreservingTimes,
   setOrDrop,
   targetTaken,
 } from '../Files/atomicWrite'
 import { renameFrontmatterKey, type KeyCollision } from '../Files/pageFile'
-import { recordWrite, reportRename } from '../Files/writeEcho'
 import { machine } from '../Platform/machine'
 import type { Json } from '../Files/stableJson'
 import { contextsDir } from '../Paths/paths'
@@ -225,12 +225,7 @@ export async function renameContextOp(
   const oldDir = join(contextsDir(root), entry.title)
   const newDir = join(contextsDir(root), newName)
   try {
-    if (await pathExists(oldDir)) {
-      recordWrite(oldDir)
-      recordWrite(newDir)
-      await machine().rename(oldDir, newDir)
-      reportRename(oldDir, newDir)
-    }
+    if (await pathExists(oldDir)) await relocate(oldDir, newDir)
   } catch (e) {
     await clearJournal(root, j)
     return fault(e)
@@ -242,12 +237,7 @@ export async function renameContextOp(
   if (!committed.ok) {
     await cascadeTitle(root, reg.value, { ...j, oldTitle: newName, newTitle: entry.title })
     try {
-      if (await pathExists(newDir)) {
-        recordWrite(newDir)
-        recordWrite(oldDir)
-        await machine().rename(newDir, oldDir)
-        reportRename(newDir, oldDir)
-      }
+      if (await pathExists(newDir)) await relocate(newDir, oldDir)
     } catch {}
     await clearJournal(root, j)
     return committed
@@ -281,10 +271,7 @@ export async function renameSpaceOp(
   }
   await writeJournal(root, j)
   try {
-    recordWrite(ref.dir)
-    recordWrite(target)
-    await machine().rename(ref.dir, target)
-    reportRename(ref.dir, target)
+    await relocate(ref.dir, target)
   } catch (e) {
     await clearJournal(root, j)
     return fault(e)
@@ -319,8 +306,7 @@ export async function replayPendingRename(root: string): Promise<void> {
     }
     const oldDir = join(contextsDir(root), j.oldTitle)
     const newDir = join(contextsDir(root), j.newTitle)
-    if ((await pathExists(oldDir)) && !(await pathExists(newDir)))
-      await machine().rename(oldDir, newDir)
+    if ((await pathExists(oldDir)) && !(await pathExists(newDir))) await relocate(oldDir, newDir)
     const cascade = await cascadeTitle(root, reg.value, j)
     if (entry.title !== j.newTitle) {
       const committed = await commitTitle(root, j.contextId, j.newTitle)
@@ -354,7 +340,7 @@ export async function replayPendingRename(root: string): Promise<void> {
       await clearJournal(root, j)
       return
     }
-    await machine().rename(join(ctxDir, j.oldTitle), target)
+    await relocate(join(ctxDir, j.oldTitle), target)
   }
   const cascade = await cascadeTitle(root, reg.value, j)
   await settleJournal(root, j, cascade.skipped)
