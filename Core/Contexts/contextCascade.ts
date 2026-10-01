@@ -40,24 +40,28 @@ import { nameError } from '../Paths/names'
 /** A Context rename commits its registry LAST, so a tag written mid-cascade still lands under the OLD key while a key already wearing the new title can only be inert or hand-authored — neither list is fresher, so dropping either would silently lose tags. */
 const NEITHER_KEY_IS_FRESHER: KeyCollision = 'merge'
 
-function rewriteRoot(raw: Json, contextTitle: string, j: RenameJournal): Json | null {
-  if (j.spaceId === undefined) {
-    const oldKey = contextKey(j.oldTitle)
-    const newKey = contextKey(j.newTitle)
-    if (!(oldKey in raw)) return null
-    const oldV = raw[oldKey]
-    const existing = raw[newKey]
-    const moved =
-      Array.isArray(oldV) && Array.isArray(existing)
-        ? [...existing, ...oldV.filter((v) => !existing.includes(v))]
-        : oldV
-    const out: Json = {}
-    for (const [k, v] of Object.entries(raw)) {
-      if (k === oldKey) out[newKey] = moved
-      else if (k !== newKey) out[k] = v
-    }
-    return out
+function rekeyRoot(raw: Json, oldTitle: string, newTitle: string): Json | null {
+  const oldKey = contextKey(oldTitle)
+  const newKey = contextKey(newTitle)
+  if (!(oldKey in raw)) return null
+  const oldV = raw[oldKey]
+  const existing = raw[newKey]
+  const moved =
+    Array.isArray(oldV) && Array.isArray(existing)
+      ? [...existing, ...oldV.filter((v) => !existing.includes(v))]
+      : oldV
+  const out: Json = {}
+  for (const [k, v] of Object.entries(raw)) {
+    if (k === oldKey) out[newKey] = moved
+    else if (k !== newKey) out[k] = v
   }
+  return out
+}
+
+export const rekeyContext = (oldTitle: string, newTitle: string): Rewrite =>
+  withOrderEntry((raw) => rekeyRoot(raw, oldTitle, newTitle), 'contexts', oldTitle, newTitle)
+
+function retitleSpace(raw: Json, contextTitle: string, j: RenameJournal): Json | null {
   const key = contextKey(contextTitle)
   const next = editList(listOf(raw[key]), namesSpace, j.oldTitle, {
     op: 'replace',
@@ -121,13 +125,11 @@ async function cascadeTitle(
     j.spaceId === undefined
       ? { key: contextKey(j.oldTitle) }
       : { key: contextKey(def.title), spaceTitle: j.oldTitle }
-  const rewrite: Rewrite = (raw) => rewriteRoot(raw, def.title, j)
-  return sweepMembers(
-    root,
-    member,
-    j.spaceId === undefined ? withOrderEntry(rewrite, 'contexts', j.oldTitle, j.newTitle) : rewrite,
-    pageLeg(j),
-  )
+  const rewrite: Rewrite =
+    j.spaceId === undefined
+      ? rekeyContext(j.oldTitle, j.newTitle)
+      : (raw) => retitleSpace(raw, def.title, j)
+  return sweepMembers(root, member, rewrite, pageLeg(j))
 }
 
 export async function unlinkContextKey(
