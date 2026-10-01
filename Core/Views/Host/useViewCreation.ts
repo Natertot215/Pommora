@@ -150,11 +150,10 @@ export function useViewCreation(getCfg: () => ViewCreationConfig): ViewCreation 
     const c = cfg()
     const gestureViewId = c.view.id
     const s = useSession.getState()
-    const { tree } = s
     const slot = placementSlot(settingOf(personalizationOf(s), 'newPagePlacement'))
     const req = placeAt(
       pageRequest(parentPath, impliedSeeds()),
-      pageIdsIn(tree!, parentPath),
+      pageIdsIn(s.tree!, parentPath),
       null,
       slot,
     )
