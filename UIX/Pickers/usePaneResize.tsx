@@ -11,16 +11,13 @@ import { VIEWPORT_MARGIN, type PickerDirection } from './PickerMenu'
 /** An axis resizes when it has a floor; one without a default fits its content until it's first resized. */
 export interface PaneBounds {
   min: Partial<Size>
-  /** Capped further by the viewport and the room the pane opened into. */
   max?: Partial<Size>
   default: Partial<Size>
 }
 
 export interface PaneResize {
-  /** The resizable axes, for the host to apply to its content — a held box or a list's ceiling. */
   size: Partial<Size>
   resizing: boolean
-  /** PickerMenu's: the direction it decided on this open and the room that leaves. */
   place: (placed: { dir: PickerDirection; room: number }) => void
   edges: React.JSX.Element[]
 }
@@ -51,7 +48,6 @@ function contentBox(box: HTMLElement): Size {
 export function usePaneResize(
   open: boolean,
   bounds: PaneBounds,
-  /** Absent, a resized pane forgets its size on close. */
   geometry?: RememberedSize,
 ): PaneResize {
   const [placed, setPlaced] = useState(UNPLACED)

@@ -132,7 +132,7 @@ export function PickerMenu({
     },
     [],
   )
-  // Fire onExited once a real close has played through: closing latches, then the mounted→false at the end of the exit is its completion. An instant unmount (never closing) stays silent, which is what a filtered-out point-anchored menu needs.
+  // Fire onExited once a real close has played through: closing latches, then the mounted→false at the end of the exit is its completion.
   const wasClosing = useRef(false)
   useEffect(() => {
     if (closing) wasClosing.current = true
