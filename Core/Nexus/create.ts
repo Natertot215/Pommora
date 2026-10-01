@@ -1,5 +1,8 @@
-import { basename, relJoin } from '../Paths/posix'
+import { basename, join, relJoin } from '../Paths/posix'
 import { createDisambiguated } from '../Paths/names'
+import { contextsDir } from '../Paths/paths'
+import { pathExists } from '../Files/atomicWrite'
+import { readRegistryStrict } from '../Contexts/contextsRegistry'
 import { fail, ok } from '../Contract/result'
 import {
   type ContextWorld,
@@ -50,8 +53,10 @@ export async function createPageOp(
       return def ? [{ def, value }] : []
     })
   }
-  const r = await createDisambiguated(req.name, (name) =>
-    createPage(parent.value, name, { values }),
+  const r = await createDisambiguated(
+    req.name,
+    (name) => createPage(parent.value, name, { values }),
+    (name) => pathExists(join(parent.value, `${name}.md`)),
   )
   if (!r.ok) return r
   if (world)
@@ -82,6 +87,7 @@ export async function createContainerOp(
     async (name) =>
       (await landingRefusal(root, parent.value, name)) ??
       createFolderEntity(parent.value, req.kind, name, extra),
+    (name) => pathExists(join(parent.value, name)),
   )
   if (!r.ok) return r
   if (req.order) await setChildOrder(parent.value, 'set_order', fillSlot(req.order, r.value.id))
@@ -92,7 +98,15 @@ export async function createSpaceOp(
   { root }: MutateContext,
   req: Extract<MutateRequest, { op: 'createSpace' }>,
 ): Promise<MutateReply> {
-  const r = await createDisambiguated(req.name, (name) => createSpace(root, req.contextId, name))
+  const r = await createDisambiguated(
+    req.name,
+    (name) => createSpace(root, req.contextId, name),
+    async (name) => {
+      const reg = await readRegistryStrict(root)
+      const def = reg.ok && reg.value.contexts.find((c) => c.id === req.contextId)
+      return !!def && pathExists(join(contextsDir(root), def.title, name))
+    },
+  )
   if (!r.ok) return r
   if (req.order) await setSpaceOrder(root, req.contextId, fillSlot(req.order, r.value.id))
   return ok({ created: r.value })

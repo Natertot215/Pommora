@@ -63,10 +63,13 @@ export function freeName(name: string, taken: Iterable<string>): string {
 export async function createDisambiguated<T>(
   name: string,
   attempt: (name: string) => Promise<Result<T>>,
+  taken: (name: string) => Promise<boolean>,
 ): Promise<Result<T>> {
   let last = await attempt(name)
-  for (let n = 2; n <= 50 && !last.ok && last.error.code === 'exists'; n++) {
-    last = await attempt(stepped(name, n))
-  }
+  if (last.ok || last.error.code !== 'exists') return last
+  const bare = name.replace(STEP_SUFFIX, '')
+  const base = bare !== name && (await taken(bare)) ? bare : name
+  for (let n = 2; n <= 50 && !last.ok && last.error.code === 'exists'; n++)
+    last = await attempt(stepped(base, n))
   return last
 }

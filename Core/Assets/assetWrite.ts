@@ -19,14 +19,19 @@ export async function writeAssetFile(
   await machine().mkdir(dir)
   const ext = extname(base)
   const map = await liveAssetMap(root)
-  return createDisambiguated(basename(base, ext), async (stem) => {
-    const file = `${stem}${ext}`
-    const abs = join(dir, file)
-    if (resolveAssetName(map, file) !== null || (await pathExists(abs)))
-      return fail('exists', `${file} already exists.`)
-    await atomicWriteBinary(abs, bytes)
-    // `atomicWriteBinary` records the write and the echo is dropped, so the map is the writer's to keep current or the banner renders blank.
-    patchHeldAssetMap(root, relative(root, abs), 'add')
-    return ok(connectionText(file))
-  })
+  const taken = async (stem: string): Promise<boolean> =>
+    resolveAssetName(map, `${stem}${ext}`) !== null || pathExists(join(dir, `${stem}${ext}`))
+  return createDisambiguated(
+    basename(base, ext),
+    async (stem) => {
+      const file = `${stem}${ext}`
+      if (await taken(stem)) return fail('exists', `${file} already exists.`)
+      const abs = join(dir, file)
+      await atomicWriteBinary(abs, bytes)
+      // `atomicWriteBinary` records the write and the echo is dropped, so the map is the writer's to keep current or the banner renders blank.
+      patchHeldAssetMap(root, relative(root, abs), 'add')
+      return ok(connectionText(file))
+    },
+    taken,
+  )
 }
