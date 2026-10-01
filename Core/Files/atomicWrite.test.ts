@@ -16,9 +16,10 @@ import {
   readKept,
   setRepairSeed,
   updateNexusConfig,
+  relocate,
   updateNexusFile,
 } from './atomicWrite'
-import { mintBundle, settleBundle, trashFileFlat } from '../Trash/bundle'
+import { mintBundle, trashFileFlat } from '../Trash/bundle'
 import { isRecentWrite, setWriteTap } from './writeEcho'
 
 let dir: string
@@ -302,13 +303,13 @@ describe('mintBundle', () => {
   })
 })
 
-describe('settleBundle', () => {
+describe('relocate', () => {
   it('moves the artifact in under its original basename and clears the original', async () => {
     const p = join(dir, '12__Notes.md')
     await atomicWriteFile(p, 'bye')
     const bundle = await mintBundle(dir, p)
-    const dest = await settleBundle(bundle, p)
-    expect(dest).toBe(join(bundle, '12__Notes.md'))
+    const dest = join(bundle, '12__Notes.md')
+    await relocate(p, dest)
     expect(await readFile(dest, 'utf8')).toBe('bye')
     await expect(stat(p)).rejects.toThrow()
   })
@@ -316,7 +317,7 @@ describe('settleBundle', () => {
   it('rejects when the source vanished — the caller surfaces it', async () => {
     const p = join(dir, 'ghost.md')
     const bundle = await mintBundle(dir, p)
-    await expect(settleBundle(bundle, p)).rejects.toThrow()
+    await expect(relocate(p, join(bundle, 'ghost.md'))).rejects.toThrow()
   })
 })
 

@@ -2,7 +2,7 @@ import { isPlainObject } from '../Contract/validators'
 import { stableStringify } from './stableJson'
 import { fail, ok, type Result } from '../Contract/result'
 import { forgetParse } from './walkCache'
-import { recordWrite } from './writeEcho'
+import { recordWrite, reportRename } from './writeEcho'
 import { machine } from '../Platform/machine'
 import { basename, dirname, join } from '../Paths/posix'
 import { foldKey } from '../Paths/caseFold'
@@ -41,6 +41,22 @@ export async function landBytes(
 export async function atomicWriteBinary(filePath: string, data: Uint8Array): Promise<void> {
   recordWrite(filePath, data)
   await machine().writeBytes(filePath, data)
+}
+
+/** Under the SOURCE path's lock, the same key every other write to it takes: a write queued behind the move fails not-found rather than recreating the vacated file as a ghost. `landed` runs before sync hears of the rename, so it pushes under what the landing settled. */
+export async function relocate<T>(
+  from: string,
+  to: string,
+  landed?: () => Promise<T>,
+): Promise<T | undefined> {
+  await machine().lock(from, async () => {
+    recordWrite(from)
+    recordWrite(to)
+    await machine().rename(from, to)
+  })
+  const settled = await landed?.()
+  reportRename(from, to)
+  return settled
 }
 
 // A leading BOM is encoding, not corruption.

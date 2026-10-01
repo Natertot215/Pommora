@@ -2,18 +2,18 @@
 
 import { mkdir, readdir, readFile, rm, writeFile } from 'node:fs/promises'
 import { splitFrontmatter } from '../Files/pageFile'
-import { join } from '../Paths/posix'
+import { dirname, join } from '../Paths/posix'
 import { tempRoot, readJsonAt } from '../Testing/hostFs'
 import { lockContention } from '../Testing/machines'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { pathExists, readJsonObject } from '../Files/atomicWrite'
+import { pathExists } from '../Files/atomicWrite'
 import { handleMutate } from '../Nexus/mutate'
 import { contextsDir, contextsRegistryFile } from '../Paths/paths'
 import { listBundles } from './holdings'
 import { machine } from '../Platform/machine'
 
 import { closeSession, openSession } from '../Nexus/session'
-import type { TrashDeps } from './bundle'
+import { BUNDLE_SUFFIX, type TrashDeps } from './bundle'
 
 const PAGE_A = '01KVGMT8BFP350FZZXAMG1QDVA'
 const PAGE_B = '01KVGMT8BFP350FZZXAMG1QDVB'
@@ -66,14 +66,17 @@ vi.mock('../Nexus/cascade', async (importOriginal) => {
   }
 })
 
-vi.mock('./bundle', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('./bundle')>()
+vi.mock('../Files/atomicWrite', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../Files/atomicWrite')>()
   return {
     ...actual,
-    settleBundle: async (bundleDir: string, absPath: string) => {
-      atSettle = await readJsonObject(join(bundleDir, '_record.json'))
-      if (settleFails) throw new Error('the process died before the artifact moved')
-      return actual.settleBundle(bundleDir, absPath)
+    relocate: async (...args: Parameters<typeof actual.relocate>) => {
+      const bundleDir = dirname(args[1])
+      if (bundleDir.endsWith(BUNDLE_SUFFIX)) {
+        atSettle = await actual.readJsonObject(join(bundleDir, '_record.json'))
+        if (settleFails) throw new Error('the process died before the artifact moved')
+      }
+      return actual.relocate(...args)
     },
   }
 })

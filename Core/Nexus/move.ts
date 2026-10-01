@@ -5,7 +5,7 @@ import { done, type MutateReply, type MutateRequest } from './mutateRequest'
 import { CONTAINER_KINDS } from './entities'
 import type { MutateContext } from './mutate'
 import { movePage } from './page'
-import { landedFolder, landingRefusal, moveFolderEntity } from './folderEntity'
+import { landingRefusal, moveFolderEntity } from './folderEntity'
 import { liveTreeOf, mutableTarget } from './liveTree'
 import { goneEdit, reachConfig, reachReport } from './configReach'
 import { dropFromChildOrder, setChildOrder } from './reorder'
@@ -62,12 +62,11 @@ export async function moveSetOp(
   const held = await liveTreeOf(root)
   const edit = left === null ? null : goneEdit(held, 'set', req.path)
   const id = containerAt(held, req.path)?.id
-  const r = await moveFolderEntity(at.value.src, at.value.dst)
+  const r = await moveFolderEntity(root, at.value.src, at.value.dst)
   if (!r.ok) return r
   if (id) await dropFromChildOrder(dirname(at.value.src), 'set_order', id)
   await setChildOrder(at.value.dst, 'set_order', req.order)
-  const rescope = await landedFolder(root, at.value.src, r.value.path)
   noteValueWrite(root, r.value.path)
   const reach = left && edit ? await reachConfig(root, edit, join(root, left)) : null
-  return ok({ rescope, ...(reach ? { cascade: reachReport(reach) } : {}) })
+  return ok({ rescope: r.value.rescope, ...(reach ? { cascade: reachReport(reach) } : {}) })
 }

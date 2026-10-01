@@ -56,7 +56,7 @@ describe('renameFolderEntity', () => {
   it('renames the folder, carrying the sidecar', async () => {
     const c = await createFolderEntity(root, 'collection', 'Old')
     if (!c.ok) throw new Error('setup failed')
-    const r = await renameFolderEntity(c.value.path, 'New')
+    const r = await renameFolderEntity(root, c.value.path, 'New')
     expect(r.ok).toBe(true)
     if (!r.ok) return
     expect(r.value.path.endsWith('New')).toBe(true)
@@ -69,20 +69,20 @@ describe('renameFolderEntity', () => {
   it('is a no-op when the name is unchanged', async () => {
     const c = await createFolderEntity(root, 'collection', 'Same')
     if (!c.ok) throw new Error('setup failed')
-    expect((await renameFolderEntity(c.value.path, 'Same')).ok).toBe(true)
+    expect((await renameFolderEntity(root, c.value.path, 'Same')).ok).toBe(true)
   })
 
   it('rejects renaming onto an existing name', async () => {
     const a = await createFolderEntity(root, 'collection', 'A')
     await createFolderEntity(root, 'collection', 'B')
     if (!a.ok) throw new Error('setup failed')
-    expect((await renameFolderEntity(a.value.path, 'B')).ok).toBe(false)
+    expect((await renameFolderEntity(root, a.value.path, 'B')).ok).toBe(false)
   })
 
   it('lands a case-only rename', async () => {
     const c = await createFolderEntity(root, 'collection', 'notes')
     if (!c.ok) throw new Error('setup failed')
-    expect((await renameFolderEntity(c.value.path, 'Notes')).ok).toBe(true)
+    expect((await renameFolderEntity(root, c.value.path, 'Notes')).ok).toBe(true)
     expect(await readdir(root)).toEqual(['Notes'])
   })
 })

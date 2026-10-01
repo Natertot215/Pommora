@@ -34,14 +34,6 @@ export async function mintBundle(nexusRoot: string, absSource: string): Promise<
   }
 }
 
-export async function settleBundle(bundleDir: string, absPath: string): Promise<string> {
-  const dest = join(bundleDir, basename(absPath))
-  recordWrite(absPath)
-  recordWrite(dest)
-  await machine().rename(absPath, dest)
-  return dest
-}
-
 export async function trashFileFlat(nexusRoot: string, absPath: string): Promise<string> {
   recordWrite(absPath)
   const dir = await trashChainDir(nexusRoot, absPath)

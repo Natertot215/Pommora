@@ -2,7 +2,6 @@ import { join, dirname, basename } from '../Paths/posix'
 import { ID_KEY, PAGE_MODELED_KEYS } from './identityMark'
 import { newContentId } from './ids'
 import { bodyHash, type PageWrite, writePageFile } from '../Files/pageFile'
-import { recordWrite, reportRename } from '../Files/writeEcho'
 import { machine } from '../Platform/machine'
 import {
   type Adoption,
@@ -12,7 +11,7 @@ import {
 } from '../Properties/propertyValue'
 import type { GovernedWorld } from '../Contexts/contextResolve'
 import { ok, fail, type Result, fault } from '../Contract/result'
-import { pathExists, targetTaken } from '../Files/atomicWrite'
+import { pathExists, relocate, targetTaken } from '../Files/atomicWrite'
 import { nameError } from '../Paths/names'
 import { setGovernedRootKeys } from '../Properties/governedWrite'
 import type { PropertyDefinition } from '../Properties/properties'
@@ -50,16 +49,6 @@ export async function createPage(
   })
 }
 
-async function relocatePage(absFile: string, target: string): Promise<void> {
-  // Under the SOURCE path's lock, the same key every other write to this page takes: a write queued behind the move fails not-found rather than recreating the vacated file as a ghost.
-  await machine().lock(absFile, async () => {
-    recordWrite(absFile)
-    recordWrite(target)
-    await machine().rename(absFile, target)
-  })
-  reportRename(absFile, target)
-}
-
 export async function renamePage(
   absFile: string,
   newName: string,
@@ -69,7 +58,7 @@ export async function renamePage(
   const target = join(dirname(absFile), newName + MD)
   if (target === absFile) return ok({ path: absFile })
   if (await targetTaken(absFile, target)) return fail('exists', `"${newName}" already exists.`)
-  await relocatePage(absFile, target)
+  await relocate(absFile, target)
   return ok({ path: target })
 }
 
@@ -97,7 +86,7 @@ export async function movePage(
   const target = join(newParentDir, basename(absFile))
   if (await pathExists(target))
     return fail('exists', `A page named "${basename(absFile)}" already exists there.`)
-  await relocatePage(absFile, target)
+  await relocate(absFile, target)
   return ok({ path: target })
 }
 

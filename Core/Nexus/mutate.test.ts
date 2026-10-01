@@ -24,6 +24,8 @@ import { flushValueWrites } from './valuesChanged'
 import { readNexus } from './readNexus'
 import { forgetLastReads, pathExists } from '../Files/atomicWrite'
 import { captureWriteTap } from '../Testing/writeTap'
+import { setWriteTap } from '../Files/writeEcho'
+import { readFileSync } from 'node:fs'
 import { createProperty } from '../Properties/registryProperty'
 import { liveAssetMap, resolveAssetName, takeAssetMapPush } from '../Assets/assetMap'
 import type { TrashDeps } from '../Trash/bundle'
@@ -2398,6 +2400,53 @@ describe('handleMutate — excluded entries follow their folders', () => {
     const r = await handleMutate(root, { op: 'restore', bundlePath: bundlePath ?? '' }, nexusDeps)
     expect(r).toEqual({ ok: true, value: { rescope: true, landed: 'Other (2)' } })
     expect(await excludedOnDisk()).toEqual(['Other/Drafts', 'Other (2)/Daily'])
+  })
+
+  it('reports a Collection delete and its restore to Sync as one rename each, the restore after its entries hold again', async () => {
+    await mkdir(join(root, 'Other', 'Daily'), { recursive: true })
+    await writeFile(join(root, 'Other', '_pagecollection.json'), JSON.stringify({ id: 'ot' }))
+    await writeFile(join(root, 'Other', 'Daily', '_pageset.json'), JSON.stringify({ id: 'od' }))
+    await writeFile(join(root, 'Other', 'Page.md'), '# Page\n')
+    await exclude(['Other/Daily'])
+    const folder = join(root, 'Other')
+    const renames: { from: string; to: string; excluded: unknown }[] = []
+    const wrote: string[] = []
+    setWriteTap({
+      wrote: (path) => wrote.push(path),
+      renamed: (from, to) =>
+        renames.push({
+          from,
+          to,
+          excluded: JSON.parse(readFileSync(join(root, '.nexus', 'settings.json'), 'utf8'))
+            .excluded_folders,
+        }),
+    })
+    try {
+      const deleted = await handleMutate(
+        root,
+        { op: 'delete', path: 'Other', kind: 'collection' },
+        nexusDeps,
+      )
+      expect(deleted.ok).toBe(true)
+      expect(renames).toHaveLength(1)
+      const bundled = renames[0].to
+      expect(renames[0].from).toBe(folder)
+      expect(bundled.endsWith('.deleted/Other')).toBe(true)
+      await refreshTree(root)
+      const bundlePath = deleted.ok ? (deleted.value.trashed?.bundlePath ?? '') : ''
+      const restored = await handleMutate(root, { op: 'restore', bundlePath }, nexusDeps)
+      expect(restored.ok).toBe(true)
+      expect(renames.map(({ from, to }) => [from, to])).toEqual([
+        [folder, bundled],
+        [bundled, folder],
+      ])
+      expect(renames[1].excluded).toEqual(['Other/Daily'])
+      const inside = (path: string): boolean =>
+        path.startsWith(`${folder}/`) || path.startsWith(`${bundled}/`)
+      expect(wrote.filter(inside)).toEqual([])
+    } finally {
+      setWriteTap(null)
+    }
   })
 
   it('carries an entry with a moved Set', async () => {
