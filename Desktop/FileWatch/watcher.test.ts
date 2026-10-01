@@ -363,14 +363,15 @@ describe('state.json under the watcher', () => {
     expect(getLiveTree()?.collections.map((c) => c.id)).toEqual(['c2', 'c1'])
   })
 
-  it('an order that did not move pushes no tree', async () => {
+  it('an order list that moves nothing updates the held order and keeps the collections', async () => {
     await startWatcher(root, win)
     const before = getLiveTree()
     await writeFile(abs('.nexus', 'state.json'), JSON.stringify({ order: { collections: ['c1'] } }))
     emit('change', '.nexus', 'state.json')
     await settleAll()
-    expect(pushMock.mock.calls.map((c) => c[1])).toEqual(['nav:changed'])
-    expect(getLiveTree()).toBe(before)
+    expect(pushMock.mock.calls.map((c) => c[1])).toEqual(['nav:changed', 'nexus:changed'])
+    expect(getLiveTree()?.config.order.collections).toEqual(['c1'])
+    expect(getLiveTree()?.collections).toBe(before?.collections)
   })
 })
 
