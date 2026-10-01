@@ -345,10 +345,10 @@ describe('renameNodeInTree', () => {
   it('re-points an unreadable entry for an uppercase-.MD page onto the canonical .md path', () => {
     const t = tree()
     t.collections[0].pages[0].path = 'Notes/A.MD'
-    t.unreadable = [{ path: 'Notes/A.MD' }]
+    t.unreadable = [{ path: 'Notes/A.MD', reason: 'unparsed' }]
     const next = renameNodeInTree(t, 'Notes/A.MD', 'Alpha')
     expect(next?.collections[0].pages[0].path).toBe('Notes/Alpha.md')
-    expect(next?.unreadable).toEqual([{ path: 'Notes/Alpha.md' }])
+    expect(next?.unreadable).toEqual([{ path: 'Notes/Alpha.md', reason: 'unparsed' }])
   })
 })
 

@@ -2,7 +2,8 @@ import { isPlainObject } from '../Contract/validators'
 import { join } from '../Paths/posix'
 import { baseSidecar } from './schemas'
 import { pathExists } from '../Files/atomicWrite'
-import { visibleFolders } from '../Files/walk'
+import { isContentFile, listEntries, visibleFolders } from '../Files/walk'
+import { outsideContent, type WatchScope } from '../Paths/exclusion'
 import { AGENDA_FOLDERS, type AgendaFolder, SIDECAR_FILENAME } from '../Paths/nexusPaths'
 import { readSidecar } from '../Files/sidecar'
 
@@ -96,4 +97,16 @@ export async function agendaContext(
     if (claimants >= 1) homed.add(slot)
   }
   return { agenda, homed, root, adopting }
+}
+
+export async function holdsContent(
+  absDir: string,
+  relDir: string,
+  scope: WatchScope,
+): Promise<boolean> {
+  for (const e of await listEntries(absDir)) {
+    if (isContentFile(e)) return true
+    if (e.kind === 'dir' && !outsideContent(`${relDir}/${e.name}`, scope)) return true
+  }
+  return false
 }

@@ -1,6 +1,6 @@
-import { describe, it, expect, beforeAll, afterAll } from 'vitest'
+import { describe, it, expect, beforeAll, afterAll, vi } from 'vitest'
 import { splitFrontmatter } from '../Files/pageFile'
-import { mkdirSync, writeFileSync, rmSync, existsSync } from 'node:fs'
+import { mkdirSync, writeFileSync, rmSync, existsSync, renameSync, utimesSync } from 'node:fs'
 import { homedir } from 'node:os'
 import { join } from '../Paths/posix'
 import { posixPath, tempRoot } from '../Testing/hostFs'
@@ -23,6 +23,7 @@ import { ASSETS_DIR_REL, METADATA_DIR_REL } from '../Paths/nexusPaths'
 import { contentIdAt } from './ids'
 import { corpusFiles } from '../Files/walk'
 import { DEFAULT_COMMANDS } from '../Actions/commands'
+import { machine } from '../Platform/machine'
 
 const PG_LINKED = '01KVGMT8BFP350FZZXAMG1QDRQ'
 const PG_PLAIN = '01KVGMT8BFP350FZZXAMG1QDRR'
@@ -209,8 +210,11 @@ beforeAll(() => {
     JSON.stringify({ id: 'col-notes', properties: ['prop_p1'] }),
   )
   w(join(sidecar, 'Notes', 'Daily', '_pageset.json'), JSON.stringify({ id: 'set-daily' }))
-  w(join(sidecar, 'Notes', 'Daily', 'Entry.md'), '---\nid: e1\n---\n')
-  w(join(sidecar, 'Notes', 'Loose.md'), 'collection-root page')
+  w(join(sidecar, 'Notes', 'Daily', 'Entry.md'), '---\nID: 01KVGMT8BFP350FZZXAMG1QDE1\n---\n')
+  w(
+    join(sidecar, 'Notes', 'Loose.md'),
+    '---\nID: 01KVGMT8BFP350FZZXAMG1QDE2\n---\ncollection-root page',
+  )
   d(join(sidecar, 'Archive'))
   w(join(sidecar, 'Archive', '_pagecollection.json'), JSON.stringify({ id: 'col-arch' }))
   d(join(sidecar, 'PlainFolder'))
@@ -440,11 +444,11 @@ describe('readNexus — the walk names what it cannot read', () => {
     ])
   })
 
-  it('an unreadable container still walks — its children keep their identity', async () => {
+  it('an unreadable container is left out with what lies beneath it, and listed unparsed', async () => {
     const t = await readNexus(root)
-    const broken = t.collections!.find((c) => c.title === 'Broken')!
-    expect(broken.id.startsWith('adopted-')).toBe(true)
-    expect(broken.pages.map((p) => p.id)).toEqual([INSIDE])
+    expect(t.collections!.find((c) => c.title === 'Broken')).toBeUndefined()
+    expect(JSON.stringify(t.collections)).not.toContain(INSIDE)
+    expect(t.unreadable).toContainEqual({ path: 'Broken', reason: 'unparsed' })
   })
 
   it('a clean walk carries no list', async () => {
@@ -811,7 +815,10 @@ describe('readNexus — container paths (nexus-relative, for mutation addressing
     w(join(root, 'Notes', '_pagecollection.json'), JSON.stringify({ id: 'c-notes' }))
     w(join(root, 'Notes', 'Daily', '_pageset.json'), JSON.stringify({ id: 's-daily' }))
     w(join(root, 'Notes', 'Daily', 'Morning', '_pageset.json'), JSON.stringify({ id: 's-morning' }))
-    w(join(root, 'Notes', 'Daily', 'Morning', 'Entry.md'), '---\nid: e1\n---\n')
+    w(
+      join(root, 'Notes', 'Daily', 'Morning', 'Entry.md'),
+      '---\nID: 01KVGMT8BFP350FZZXAMG1QDE1\n---\n',
+    )
   })
   afterAll(() => rmSync(root, { recursive: true, force: true }))
 
@@ -856,5 +863,91 @@ describe('PropertiesV2 — registry-resolved collection schema', () => {
     expect(notes.properties?.map((p) => p.id)).toEqual(['prop_a', 'prop_b'])
     expect(notes.properties?.map((p) => p.name)).toEqual(['Priority', 'Done'])
     rmSync(root, { recursive: true, force: true })
+  })
+})
+
+describe('readNexus — what the walk leaves out, and why', () => {
+  const HELD = '01KVGMT8BFP350FZZXAMG1QDH1'
+  const TASK = '01KVGMT8BFT350FZZXAMG1QDH2'
+  const PAST = new Date('2020-01-01T00:00:00Z')
+  let root: string
+  beforeAll(() => {
+    root = tempRoot('pom-left-out-')
+    d(join(root, '.nexus'))
+    w(join(root, '.nexus', 'nexus.json'), JSON.stringify({ id: 'nxl', createdAt: '2026' }))
+    d(join(root, 'Notes', 'Bare'))
+    d(join(root, 'Notes', 'Corrupt'))
+    w(join(root, 'Notes', '_pagecollection.json'), JSON.stringify({ id: 'col-n' }))
+    w(join(root, 'Notes', 'Held.md'), `---\nID: ${HELD}\n---\nbody`)
+    w(join(root, 'Notes', 'NoId.md'), 'just prose')
+    w(join(root, 'Notes', 'Bare', 'Inside.md'), '---\nID: 01KVGMT8BFP350FZZXAMG1QDH3\n---\nbody')
+    w(join(root, 'Notes', 'Foreign.md'), '---\nID: 42\n---\nbody')
+    w(join(root, 'Notes', 'Task.md'), `---\nID: ${TASK}\n---\nbody`)
+    w(join(root, 'Notes', 'Corrupt', '_pageset.json'), '{corrupt')
+    w(join(root, 'Notes', 'Corrupt', 'In.md'), '---\nID: 01KVGMT8BFP350FZZXAMG1QDH4\n---\nbody')
+    w(join(root, 'Notes', 'List.md'), '---\n- a\n- b\n---\nbody')
+    utimesSync(join(root, 'Notes', 'Foreign.md'), PAST, PAST)
+  })
+  afterAll(() => rmSync(root, { recursive: true, force: true }))
+
+  it('holds only what reads, and lists everything else with its reason', async () => {
+    const t = await readNexus(root)
+    const notes = t.collections[0]
+    expect(notes.pages.map((p) => p.id)).toEqual([HELD])
+    expect(notes.sets).toEqual([])
+    expect([...(t.unreadable ?? [])].sort((a, b) => a.path.localeCompare(b.path))).toEqual([
+      { path: 'Notes/Bare', reason: 'missing' },
+      { path: 'Notes/Corrupt', reason: 'unparsed' },
+      { path: 'Notes/Foreign.md', reason: 'malformed' },
+      { path: 'Notes/List.md', reason: 'unparsed' },
+      { path: 'Notes/NoId.md', reason: 'missing' },
+      { path: 'Notes/Task.md', reason: 'contradicting' },
+    ])
+  })
+
+  it('a second walk of an unchanged foreign-ID page parses nothing', async () => {
+    await readNexus(root)
+    const reads = vi.spyOn(machine(), 'readText')
+    try {
+      const t = await readNexus(root)
+      expect(t.unreadable).toContainEqual({ path: 'Notes/Foreign.md', reason: 'malformed' })
+      expect(reads.mock.calls.map(([p]) => p)).not.toContain(join(root, 'Notes', 'Foreign.md'))
+    } finally {
+      reads.mockRestore()
+    }
+  })
+})
+
+describe('readNexus — Context links never write the node the parse cache holds', () => {
+  const PAGE = '01KVGMT8BFP350FZZXAMG1QDH5'
+  const PAST = new Date('2020-01-01T00:00:00Z')
+  let root: string
+  beforeAll(() => {
+    root = tempRoot('pom-links-')
+    d(join(root, '.nexus', 'contexts', 'Areas', 'Alpha'))
+    w(join(root, '.nexus', 'nexus.json'), JSON.stringify({ id: 'nxk', createdAt: '2026' }))
+    w(
+      join(root, '.nexus', 'contexts', 'contexts.json'),
+      JSON.stringify({ contexts: [{ id: 'ctx_a', title: 'Areas', singular: 'Area' }] }),
+    )
+    w(join(root, '.nexus', 'contexts', 'Areas', 'Alpha', '_space.json'), '{"id":"sp-a"}')
+    d(join(root, 'Notes'))
+    w(join(root, 'Notes', '_pagecollection.json'), JSON.stringify({ id: 'col-n' }))
+    w(join(root, 'Notes', 'Linked.md'), `---\nID: ${PAGE}\n<Areas>:\n  - Alpha\n---\nbody`)
+    utimesSync(join(root, 'Notes', 'Linked.md'), PAST, PAST)
+  })
+  afterAll(() => rmSync(root, { recursive: true, force: true }))
+
+  it('a second walk after a Space is renamed on disk leaves the first walk’s pages as they were', async () => {
+    const first = await readNexus(root)
+    const page = first.collections[0].pages[0]
+    expect(page.contextValues).toEqual({ ctx_a: ['sp-a'] })
+    renameSync(
+      join(root, '.nexus', 'contexts', 'Areas', 'Alpha'),
+      join(root, '.nexus', 'contexts', 'Areas', 'Beta'),
+    )
+    const second = await readNexus(root)
+    expect(second.collections[0].pages[0].contextValues).toBeUndefined()
+    expect(page.contextValues).toEqual({ ctx_a: ['sp-a'] })
   })
 })

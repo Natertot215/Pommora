@@ -6,7 +6,7 @@ import type { PropertyDefinition } from '../Properties/properties'
 import { deleteCascade, renameCascade } from './cascade'
 import { sweepGovernedRoots, unsweptLine } from '../Properties/governedSweep'
 import { createPage } from './page'
-import { dropLiveTree, refreshTree } from './liveTree'
+import { dropLiveTree, getLiveTree, refreshTree } from './liveTree'
 import { closeSession, openSession } from './session'
 import { createProperty } from '../Properties/registryProperty'
 
@@ -15,7 +15,6 @@ import { rewritePageSerialized } from '../Files/atomicWrite'
 import { installStores, NO_STORES } from '../Platform/stores'
 import { memoryStores } from '../Testing/memoryStores'
 import { seedContentIndex } from '../Index/indexSeed'
-import { readPageRelations } from '../Index/contentIndex'
 import { ok } from '../Contract/result'
 import { machine } from '../Platform/machine'
 import { contextsDir, contextsRegistryFile, tileHostDir } from '../Paths/paths'
@@ -358,9 +357,8 @@ describe('deleteCascade', () => {
   })
 
   it('never reaches a loose file outside every Collection', async () => {
-    const loose = join(root, 'Loose', 'Note.md')
+    const loose = join(root, 'Note.md')
     const content = '---\nRelated: "[[Target]]"\n---\nloose\n'
-    await mkdir(join(root, 'Loose'), { recursive: true })
     await writeFile(loose, content)
     const a = await linker('Cites', '[[Target]]')
     await refreshTree(root)
@@ -455,17 +453,15 @@ describe('deleteCascade', () => {
     expect(sweepSpy).not.toHaveBeenCalled()
   })
 
-  it('stamps a linker the tree lists without an ID, and the index learns the ID', async () => {
+  it('an ID-less linker isn’t held, isn’t stamped by the sweep, and keeps its bytes', async () => {
     const loose = join(dir, 'Loose.md')
-    await writeFile(loose, '---\nRelated: "[[Target]]"\n---\n')
+    const content = '---\nRelated: "[[Target]]"\n---\n'
+    await writeFile(loose, content)
     await refreshTree(root)
-    installStores(memoryStores().stores)
-    await seedContentIndex(root)
+    expect(getLiveTree()?.unreadable).toContainEqual({ path: rel(loose), reason: 'missing' })
     const r = await deleteCascade(root, target(), ['Target'])
-    const id = (await fmOf(loose)).ID
-    expect(id).toEqual(expect.any(String))
-    expect(r.links).toEqual([{ page: id, property: related, value: '[[Target]]' }])
-    expect(readPageRelations()?.pages[rel(loose)]?.values.ID).toBe(id)
+    expect(r.links).toEqual([])
+    expect(await readFile(loose, 'utf8')).toBe(content)
   })
 
   it('never sweeps a page under a deleted folder', async () => {
@@ -521,7 +517,7 @@ describe('deleteCascade', () => {
     },
   )
 
-  it('a linker whose frontmatter can’t round-trip is left as it is, with no warning', async () => {
+  it('a linker whose frontmatter can’t round-trip is listed unparsed, never swept, and left as it is', async () => {
     const broken = join(dir, 'Broken.md')
     const content =
       '---\nID: 01KVGMT8BFP350FZZXAMG1QDVY\nRelated: "[[Target]]"\nsomething: *word\n---\nb'
@@ -529,7 +525,8 @@ describe('deleteCascade', () => {
     await refreshTree(root)
     sweepSpy.mockClear()
     const r = await deleteCascade(root, target(), ['Target'])
-    expect(sweptFiles()).toContain(broken)
+    expect(getLiveTree()?.unreadable).toContainEqual({ path: rel(broken), reason: 'unparsed' })
+    expect(sweptFiles()).not.toContain(broken)
     expect(r).toEqual({ cascade: { pages: [], hosts: [] }, links: [] })
     expect(await readFile(broken, 'utf8')).toBe(content)
   })

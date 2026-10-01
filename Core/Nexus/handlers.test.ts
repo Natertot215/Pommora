@@ -14,6 +14,10 @@ import { type HubHost, hubHost } from '../Testing/syncHub'
 import { nexusHandlers, openNexusSequence } from './handlers'
 import { dropLiveTree, getLiveTree, refreshTree } from './liveTree'
 import { closeSession, sessionRoot, waitingOpen } from './session'
+import * as readNexusModule from './readNexus'
+import { readBaseline } from './remintLedger'
+import { splitFrontmatter } from '../Files/pageFile'
+import { ID_KEY, isUlidShaped } from './identityMark'
 
 const NEXUS = '01KVGMT8BFP350FZZXAMG1QDRN'
 const NOTES = '01KVGMT8BFP350FZZXAMG1QDRW'
@@ -159,6 +163,40 @@ describe('openNexusSequence', () => {
     expect((await readJsonAt<{ defs: { a: { type: string } } }>(registry)).defs.a.type).toBe(
       'multiSelect',
     )
+  })
+
+  it('stamps a folder of ID-less notes and holds each under the ID in its file', async () => {
+    await mkdir(join(root, 'Inbox', 'Later'), { recursive: true })
+    await writeFile(join(root, 'Inbox', 'One.md'), 'one')
+    await writeFile(join(root, 'Inbox', 'Two.md'), '---\nicon: star\n---\ntwo')
+    await writeFile(join(root, 'Inbox', 'Later', 'Three.md'), 'three')
+    await openNexusSequence(ctx, root, true)
+    const idIn = async (...segs: string[]): Promise<unknown> =>
+      splitFrontmatter(await readFile(join(root, 'Inbox', ...segs), 'utf8'))[ID_KEY]
+    const inbox = getLiveTree()?.collections.find((c) => c.path === 'Inbox')
+    expect(inbox?.pages.map((p) => p.id).sort()).toEqual(
+      [await idIn('One.md'), await idIn('Two.md')].sort(),
+    )
+    expect(inbox?.sets[0]?.pages.map((p) => p.id)).toEqual([await idIn('Later', 'Three.md')])
+    for (const p of [...(inbox?.pages ?? []), ...(inbox?.sets[0]?.pages ?? [])])
+      expect(isUlidShaped(p.id)).toBe(true)
+    expect(getLiveTree()?.unreadable).toBeUndefined()
+  })
+
+  it('a failed walk retains the prior baseline and the open proceeds', async () => {
+    await openNexusSequence(ctx, root, true)
+    const first = readBaseline()
+    expect(first).not.toBeNull()
+    closeSession()
+    dropLiveTree()
+    const walk = vi
+      .spyOn(readNexusModule, 'readNexus')
+      .mockRejectedValueOnce(new Error('walk failed'))
+    vi.spyOn(console, 'error').mockImplementation(() => {})
+    await openNexusSequence(ctx, root, true)
+    expect(walk).toHaveBeenCalled()
+    expect(readBaseline()).toEqual(first)
+    expect(sessionRoot()).toBe(root)
   })
 
   it('drains an in-flight push before the stores swap', async () => {

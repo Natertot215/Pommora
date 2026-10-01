@@ -19,7 +19,6 @@ import { splitFrontmatter } from '../Files/pageFile'
 import { pageCollectionSidecar } from '../Nexus/schemas'
 import { closeSession, openSession } from '../Nexus/session'
 import { getLiveTree, refreshTree } from '../Nexus/liveTree'
-import { pageAt } from '../Nexus/treePatch'
 import type { PropertyDefinition } from './properties'
 
 vi.mock('../Files/atomicWrite', async (importOriginal) => {
@@ -104,22 +103,20 @@ describe('removeProperty — strip + cache (C-3/C-6)', () => {
     expect(vals).toEqual(expect.arrayContaining([['active'], ['done']]))
   })
 
-  it('stamps an identity-less holder before caching it, so re-assigning brings its value back', async () => {
+  it('an identity-less holder isn’t held, isn’t stamped by the strip, and keeps its bytes', async () => {
     const raw = await readFile(pageA, 'utf8')
-    await writeFile(pageA, raw.replace(new RegExp(`^${ID_KEY}:.*\\n`, 'm'), ''))
+    const bare = raw.replace(new RegExp(`^${ID_KEY}:.*\\n`, 'm'), '')
+    await writeFile(pageA, bare)
     await openSession(root)
     await refreshTree(root)
-    await writeFile(join(folder, 'Late.md'), `---\n${liveDef.name}: done\n---\n`)
+    expect(getLiveTree()?.unreadable).toContainEqual({
+      path: relative(root, pageA),
+      reason: 'missing',
+    })
 
-    expect((await removeProperty(root, folder, propId)).ok).toBe(true)
-    expect(await pageValue(pageA)).toBeUndefined()
-    const stamped = String(splitFrontmatter(await readFile(pageA, 'utf8'))[ID_KEY])
-    expect(pageAt(getLiveTree()!, relative(root, pageA))?.id).toBe(stamped)
-    // A page the tree hasn't listed yet keeps its value where it is.
-    expect(await pageValue(join(folder, 'Late.md'))).toBe('done')
-    await assignProperty(root, folder, propId)
-    expect(await pageValue(pageA)).toEqual(['active'])
-    expect(await pageValue(pageB)).toEqual(['done'])
+    const r = await removeProperty(root, folder, propId)
+    expect(await readFile(pageA, 'utf8')).toBe(bare)
+    expect(r.ok).toBe(true)
     closeSession()
   })
 

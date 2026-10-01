@@ -1,7 +1,13 @@
 import { isPlainObject } from '../Contract/validators'
 import { basename, join, relJoin, titleFromPath } from '../Paths/posix'
-import { parsePage } from '../Files/pageFile'
-import { agendaContext, resolveFolderKind, type FolderKindContext } from './folderKind'
+import { frontmatterWritable, parsePage } from '../Files/pageFile'
+import {
+  agendaContext,
+  holdsContent,
+  resolveFolderKind,
+  type FolderKindContext,
+} from './folderKind'
+import type { ContainerKind } from './entities'
 import type {
   CollectionNode,
   ContextGroup,
@@ -11,19 +17,18 @@ import type {
   PageNode,
   SetNode,
   SpaceNode,
+  Unreadable,
+  UnreadReason,
 } from './tree'
 import {
   contextsRegistry as contextsRegistrySchema,
-  parseContextKey,
   type ContextsRegistry,
 } from '../Contexts/contexts'
 import { resolveContextKeys } from '../Contexts/contextResolve'
-import { spaceFieldsFrom, spaceSidecarsIn } from '../Contexts/spaceSidecar'
-import { coerceOpenIn, cropsFile } from './schemas'
-import { cachedIds, containerFieldsFrom } from './containerFields'
-import type { PropertyDefinition } from '../Properties/properties'
-import { makeCollectionNode, makePageNode, makeSetNode, makeSpaceNode } from './treePatch'
-import { adoptedId } from './ids'
+import { spaceNodeFrom, spaceSidecarsIn } from '../Contexts/spaceSidecar'
+import { cropsFile } from './schemas'
+import { containerNodeFrom } from './containerFields'
+import { makePageNode } from './treePatch'
 import { readPageMetadata } from './pageMetadata'
 import { readSettings, scopeOf } from '../Settings/codec'
 import { pathExists, readAppFile, readJsonObject } from '../Files/atomicWrite'
@@ -68,54 +73,44 @@ export function readOrder(state: Json): NexusOrder {
   }
 }
 
-export function resolveEntityContexts(
-  raw: Json,
+export function contextLinker(
   groups: ContextGroup[],
-): Record<string, string[]> | undefined {
-  if (!groups.length) return undefined
+): <N extends PageNode | SpaceNode>(node: N, raw: Json) => N {
   const registry: ContextsRegistry = { contexts: groups.map((g) => g.def) }
   const spacesByContext = new Map(groups.map((g) => [g.def.id, g.spaces]))
-  const links = resolveContextKeys(raw, registry, spacesByContext)
-  return links.size ? Object.fromEntries(links) : undefined
+  return (node, raw) => {
+    const links = groups.length ? resolveContextKeys(raw, registry, spacesByContext) : null
+    return links?.size ? { ...node, contextValues: Object.fromEntries(links) } : node
+  }
 }
 
 const readSidecar = (absPath: string): Promise<Json | null> =>
   cachedParse(absPath, () => readJsonObject(absPath))
 
-async function readSidecarNaming(
-  absSidecar: string,
-  relOwner: string,
-  unreadable: string[],
-): Promise<Json | null> {
-  const meta = await readSidecar(absSidecar)
-  if (meta === null && (await pathExists(absSidecar))) unreadable.push(relOwner)
-  return meta
+interface Walk {
+  kindCtx: FolderKindContext
+  scope: WatchScope
+  registry: PropertyRegistry
+  unreadable: Unreadable[]
+  link: ReturnType<typeof contextLinker>
 }
 
-const readContainerMeta = (
-  absDir: string,
-  relDir: string,
-  sidecar: string,
-  unreadable: string[],
-): Promise<Json> =>
-  readSidecarNaming(join(absDir, sidecar), relDir, unreadable).then((m) => m ?? {})
+async function readOwnSidecar(
+  absSidecar: string,
+  relOwner: string,
+  unreadable: Unreadable[],
+  bare: boolean,
+): Promise<Json | null> {
+  const meta = await readSidecar(absSidecar)
+  if (asString(meta?.id)) return meta
+  const unparsed = meta === null && (await pathExists(absSidecar))
+  if (meta !== null || unparsed || bare)
+    unreadable.push({ path: relOwner, reason: unparsed ? 'unparsed' : 'missing' })
+  return null
+}
 
 const readConfig = (absPath: string): Promise<Record<string, unknown>> =>
   readAppFile(absPath).then((v) => v ?? {})
-
-// Registry-independent, so the parse cache never needs busting for registry changes.
-const rawContextByNode = new WeakMap<object, Json>()
-
-function retainContextKeys(node: object, raw: Json): void {
-  let kept: Json | null = null
-  for (const [k, v] of Object.entries(raw)) {
-    if (parseContextKey(k) !== null) {
-      kept ??= {}
-      kept[k] = v
-    }
-  }
-  if (kept) rawContextByNode.set(node, kept)
-}
 
 interface PageRecord {
   node: PageNode
@@ -123,116 +118,102 @@ interface PageRecord {
   mtimeMs: number | null
 }
 
-export async function readPageRecord(absFile: string, relFile: string): Promise<PageRecord | null> {
-  return cachedParse(absFile, async (stat) => {
+interface Unread {
+  unread: UnreadReason
+}
+
+function pageRecordOf(
+  content: string,
+  relFile: string,
+  mtimeMs: number | null,
+): PageRecord | Unread {
+  const { frontmatter: fm, admission } = parsePage(content)
+  if (admission.state === 'missing')
+    return { unread: frontmatterWritable(content) ? 'missing' : 'unparsed' }
+  if (admission.state === 'unknown') return { unread: admission.reason }
+  const node = makePageNode({ id: admission.id, title: titleFromPath(relFile), path: relFile })
+  return { node, fm, mtimeMs }
+}
+
+export async function readPageRecord(
+  absFile: string,
+  relFile: string,
+): Promise<PageRecord | Unread> {
+  return cachedParse(absFile, async (stat): Promise<PageRecord | Unread> => {
     const content = await machine().readText(absFile)
     if (content === null) throw new Error(`Page not found: ${relFile}`)
-    const { frontmatter: fm, admission } = parsePage(content)
-    if (admission.state === 'unknown') return null
-    const node = makePageNode({
-      id: admission.state === 'member' ? admission.id : adoptedId(relFile),
-      title: titleFromPath(absFile),
-      path: relFile,
-    })
-    retainContextKeys(node, fm)
-    return { node, fm, mtimeMs: stat?.mtimeMs ?? null }
+    return pageRecordOf(content, relFile, stat?.mtimeMs ?? null)
   })
 }
 
-async function readDirectPages(
-  absDir: string,
-  relDir: string,
-  unreadable: string[],
-): Promise<PageNode[]> {
+async function readDirectPages(absDir: string, relDir: string, walk: Walk): Promise<PageNode[]> {
   const files = (await listEntries(absDir)).filter(isContentFile)
   const out = await Promise.all(
     files.map(async (e) => {
       const rel = relJoin(relDir, e.name)
-      const node = (await readPageRecord(join(absDir, e.name), rel).catch(() => null))?.node ?? null
-      if (node === null) unreadable.push(rel)
-      return node
+      const read = await readPageRecord(join(absDir, e.name), rel).catch(
+        (): Unread => ({ unread: 'unparsed' }),
+      )
+      if ('node' in read) return walk.link(read.node, read.fm)
+      walk.unreadable.push({ path: rel, reason: read.unread })
+      return null
     }),
   )
   return out.filter((n): n is PageNode => n !== null)
 }
 
-async function readChildSets(
-  absDir: string,
-  relDir: string,
-  kindCtx: FolderKindContext,
-  scope: WatchScope,
-  unreadable: string[],
-): Promise<SetNode[]> {
+async function readChildSets(absDir: string, relDir: string, walk: Walk): Promise<SetNode[]> {
   const dirs = (await listEntries(absDir)).filter(
-    (e) => e.kind === 'dir' && !outsideContent(`${relDir}/${e.name}`, scope),
+    (e) => e.kind === 'dir' && !outsideContent(`${relDir}/${e.name}`, walk.scope),
   )
   const kinds = await Promise.all(
-    dirs.map((e) => resolveFolderKind(join(absDir, e.name), 'nested', kindCtx)),
+    dirs.map((e) => resolveFolderKind(join(absDir, e.name), 'nested', walk.kindCtx)),
   )
-  const sets = dirs.filter((_, i) => kinds[i] === 'set')
-  return Promise.all(
-    sets.map((e) =>
-      readSet(join(absDir, e.name), `${relDir}/${e.name}`, e.name, kindCtx, scope, unreadable),
-    ),
+  const read = await Promise.all(
+    dirs
+      .filter((_, i) => kinds[i] === 'set')
+      .map((e) => readContainer('set', join(absDir, e.name), `${relDir}/${e.name}`, e.name, walk)),
   )
+  return read.filter((n): n is SetNode => n?.kind === 'set')
 }
 
-async function readSet(
+async function readContainer(
+  kind: ContainerKind,
   absDir: string,
   relDir: string,
   name: string,
-  kindCtx: FolderKindContext,
-  scope: WatchScope,
-  unreadable: string[],
-): Promise<SetNode> {
-  const [meta, sets, pages] = await Promise.all([
-    readContainerMeta(absDir, relDir, SIDECAR_FILENAME.set, unreadable),
-    readChildSets(absDir, relDir, kindCtx, scope, unreadable),
-    readDirectPages(absDir, relDir, unreadable),
+  walk: Walk,
+): Promise<CollectionNode | SetNode | null> {
+  const meta = await readOwnSidecar(
+    join(absDir, SIDECAR_FILENAME[kind]),
+    relDir,
+    walk.unreadable,
+    true,
+  )
+  if (!meta) return null
+  const [sets, pages] = await Promise.all([
+    readChildSets(absDir, relDir, walk),
+    readDirectPages(absDir, relDir, walk),
   ])
-  return makeSetNode({
-    id: asString(meta.id) ?? adoptedId(relDir),
-    title: name,
-    path: relDir,
-    ...containerFieldsFrom(meta, sets, pages),
-  })
+  return containerNodeFrom(kind, { title: name, path: relDir }, meta, sets, pages, walk.registry)
 }
 
-export function resolveAssignedSchema(
-  ids: unknown,
-  registry: PropertyRegistry,
-): PropertyDefinition[] | undefined {
-  if (!Array.isArray(ids)) return undefined
-  const defs = ids
-    .filter((id): id is string => typeof id === 'string')
-    .map((id) => registry[id])
-    .filter((d): d is PropertyDefinition => Boolean(d))
-  return defs.length ? defs : undefined
-}
-
-async function readPageCollection(
-  absDir: string,
-  relDir: string,
+async function readRootFolder(
+  abs: string,
   name: string,
-  kindCtx: FolderKindContext,
-  scope: WatchScope,
-  registry: PropertyRegistry,
-  unreadable: string[],
-): Promise<CollectionNode> {
-  const [meta, sets, pages] = await Promise.all([
-    readContainerMeta(absDir, relDir, SIDECAR_FILENAME.collection, unreadable),
-    readChildSets(absDir, relDir, kindCtx, scope, unreadable),
-    readDirectPages(absDir, relDir, unreadable),
-  ])
-  return makeCollectionNode({
-    id: asString(meta.id) ?? adoptedId(relDir),
-    title: name,
-    path: relDir,
-    properties: resolveAssignedSchema(meta.properties, registry),
-    openIn: coerceOpenIn(meta.open_in),
-    cached: cachedIds(meta),
-    ...containerFieldsFrom(meta, sets, pages),
-  })
+  walk: Walk,
+): Promise<CollectionNode | SetNode | null> {
+  if ((await resolveFolderKind(abs, 'root', walk.kindCtx)) === 'collection')
+    return readContainer('collection', abs, name, name, walk)
+  const adoptable = await resolveFolderKind(abs, 'root', { ...walk.kindCtx, adopting: true })
+  if (adoptable === 'collection' && (await holdsContent(abs, name, walk.scope)))
+    walk.unreadable.push({ path: name, reason: 'missing' })
+  return null
+}
+
+interface SpaceRead {
+  node: SpaceNode
+  sc: Json
 }
 
 async function readSpace(
@@ -240,28 +221,20 @@ async function readSpace(
   relDir: string,
   name: string,
   contextId: string,
-  unreadable: string[],
-): Promise<SpaceNode | null> {
-  const sc = await readSidecarNaming(sidecar, relDir, unreadable)
-  if (!sc) return null
-  const node = makeSpaceNode({
-    id: asString(sc.id) ?? adoptedId(relDir),
-    title: name,
-    path: relDir,
-    contextId,
-    ...spaceFieldsFrom(sc),
-  })
-  retainContextKeys(node, sc)
-  return node
+  unreadable: Unreadable[],
+): Promise<SpaceRead | null> {
+  const sc = await readOwnSidecar(sidecar, relDir, unreadable, false)
+  const node = sc && spaceNodeFrom(sc, { title: name, path: relDir, contextId })
+  return node ? { node, sc } : null
 }
 
 async function readContextGroups(
   root: string,
   registry: ContextsRegistry,
   spaceOrders: Json,
-  unreadable: string[],
+  unreadable: Unreadable[],
 ): Promise<ContextGroup[]> {
-  return Promise.all(
+  const groups = await Promise.all(
     registry.contexts.map(async (def) => {
       const dir = join(contextsDir(root), def.title)
       const read = await Promise.all(
@@ -269,10 +242,19 @@ async function readContextGroups(
           readSpace(file, spaceDirRel(def.title, name), name, def.id, unreadable),
         ),
       )
-      const spaces = read.filter((n): n is SpaceNode => n !== null)
-      return { def, spaces: resolveOrder(spaces, asStringArray(spaceOrders[def.id])) }
+      return { def, read: read.filter((r): r is SpaceRead => r !== null) }
     }),
   )
+  const link = contextLinker(
+    groups.map(({ def, read }) => ({ def, spaces: read.map((r) => r.node) })),
+  )
+  return groups.map(({ def, read }) => ({
+    def,
+    spaces: resolveOrder(
+      read.map((r) => link(r.node, r.sc)),
+      asStringArray(spaceOrders[def.id]),
+    ),
+  }))
 }
 
 export async function readNexus(root: string): Promise<NexusTree> {
@@ -305,59 +287,43 @@ async function walkNexus(root: string): Promise<NexusTree> {
     readPageMetadata(root),
     readSidecar(contextsRegistryFile(root)),
   ])
-  const id = asString(identity?.id) ?? adoptedId(root)
+  const id = asString(identity?.id) ?? `unidentified-${machine().sha256Hex(root).slice(0, 16)}`
   const kindCtx = await agendaContext(root, identity)
 
   const scope = scopeOf(leaves)
   const ctxParsed = ctxRegistryRaw ? contextsRegistrySchema.safeParse(ctxRegistryRaw) : null
   const ctxRegistry = ctxParsed?.success ? ctxParsed.data : null
   const order = readOrder(state)
-  const unreadable: string[] = []
+  const unreadable: Unreadable[] = []
   // An unusable registry blanks the whole Contexts layer for the session. Absent stays silent; present names the registry so the record reads the blank layer as unreadable, never as mass deletion.
   if (!ctxRegistry && (await pathExists(contextsRegistryFile(root))))
-    unreadable.push(CONTEXTS_REGISTRY_REL)
+    unreadable.push({ path: CONTEXTS_REGISTRY_REL, reason: 'unparsed' })
   const contexts = ctxRegistry
     ? await readContextGroups(root, ctxRegistry, order.spaces, unreadable)
-    : undefined
+    : []
 
   const rootDirs = (await listEntries(root)).filter(
     (e) => e.kind === 'dir' && !outsideContent(e.name, scope),
   )
-  const maybeCollections = await Promise.all(
-    rootDirs.map(async (e) => {
-      const abs = join(root, e.name)
-      if ((await resolveFolderKind(abs, 'root', kindCtx)) !== 'collection') return null
-      return readPageCollection(abs, e.name, e.name, kindCtx, scope, registry.defs, unreadable)
-    }),
-  )
-  const allCollections = maybeCollections.filter((c): c is CollectionNode => c !== null)
-  const collections = resolveOrder(allCollections, order.collections)
-
-  if (ctxRegistry && contexts) {
-    const spacesByContext = new Map(contexts.map((g) => [g.def.id, g.spaces]))
-    const attach = (node: PageNode | SpaceNode): void => {
-      const raw = rawContextByNode.get(node)
-      const links = raw ? resolveContextKeys(raw, ctxRegistry, spacesByContext) : null
-      if (links?.size) node.contextValues = Object.fromEntries(links)
-      else delete node.contextValues
-    }
-    for (const g of contexts) for (const s of g.spaces) attach(s)
-    const visitSets = (sets: SetNode[] | undefined): void => {
-      for (const s of sets ?? []) {
-        s.pages.forEach(attach)
-        visitSets(s.sets)
-      }
-    }
-    for (const c of collections) {
-      c.pages.forEach(attach)
-      visitSets(c.sets)
-    }
+  const walk: Walk = {
+    kindCtx,
+    scope,
+    registry: registry.defs,
+    unreadable,
+    link: contextLinker(contexts),
   }
+  const maybeCollections = await Promise.all(
+    rootDirs.map((e) => readRootFolder(join(root, e.name), e.name, walk)),
+  )
+  const allCollections = maybeCollections.filter(
+    (c): c is CollectionNode => c?.kind === 'collection',
+  )
+  const collections = resolveOrder(allCollections, order.collections)
 
   return {
     nexus: { id, rootPath: root, name: basename(root) },
     collections,
-    contexts: contexts ?? [],
+    contexts,
     config: {
       ...leaves,
       homepage: readHomepageLeaves(homepageConfig),
@@ -366,6 +332,6 @@ async function walkNexus(root: string): Promise<NexusTree> {
       order,
       registry: orderedDefs(registry),
     },
-    ...(unreadable.length ? { unreadable: unreadable.map((path) => ({ path })) } : {}),
+    ...(unreadable.length ? { unreadable } : {}),
   }
 }

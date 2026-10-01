@@ -28,7 +28,6 @@ type RegistryFile = { order: string[]; defs: Record<string, PropDefLike> }
 import { readSchemaJournal } from './propertyJournal'
 import { unsweptLine } from './governedSweep'
 import { type ConfigSurfaces, seedConfigSurfaces, viewOn } from '../Testing/configSurfaces'
-import { sidecarPath } from '../Paths/paths'
 import type { PropertyDefinition, SelectOption } from './properties'
 import { flushValueWrites } from '../Nexus/valuesChanged'
 
@@ -737,14 +736,16 @@ describe('option cascades reach saved views', () => {
     },
   )
 
-  it('a pass skip holds the drop and the journal', async () => {
+  it.skipIf(noModeBits)('a pass skip holds the drop and the journal', async () => {
     const { id, surfaces } = await seeded()
-    const setFile = sidecarPath(surfaces.set, 'set')
-    await rm(setFile)
-    await mkdir(setFile)
-    expect(await removeOption(root, id, 'Done')).toEqual(
-      ok({ cascade: { pages: [], hosts: [HOME], warning: unsweptLine(1) }, replayable: true }),
-    )
+    await chmod(surfaces.set, 0o555)
+    try {
+      expect(await removeOption(root, id, 'Done')).toEqual(
+        ok({ cascade: { pages: [], hosts: [HOME], warning: unsweptLine(1) }, replayable: true }),
+      )
+    } finally {
+      await chmod(surfaces.set, 0o755)
+    }
     expect(await readSchemaJournal(root)).toEqual({ op: 'option-remove', id, value: 'Done' })
     expect((await readRegistry(root)).defs[id].select_options?.map((o) => o.value)).toEqual([
       'Done',

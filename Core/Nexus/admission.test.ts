@@ -16,6 +16,10 @@ import { openSession, closeSession } from './session'
 import { contextsDir, contextsRegistryFile, nexusDir, nexusConfig } from '../Paths/paths'
 import { NEXUS_CONFIG_FILES, SIDECAR_FILENAME } from '../Paths/nexusPaths'
 import type { TrashDeps } from '../Trash/bundle'
+import type { HostContext } from '../Contract/handlers'
+import { openNexusSequence } from './handlers'
+import { installStores, NO_STORES } from '../Platform/stores'
+import { memoryStores } from '../Testing/memoryStores'
 
 const TASK_ULID = '01KVGMT8BFT350FZZXAMG1QDRD'
 const deps: TrashDeps = { trashMode: 'nexus', trashToSystem: async () => {} }
@@ -63,26 +67,42 @@ const titles = async (): Promise<string[]> => {
   return (t.collections?.[0]?.pages ?? []).map((p) => p.title).sort()
 }
 const bytes = (name: string): Promise<string> => readFile(join(root, 'Notes', name), 'utf8')
+const ctx = {
+  push: () => {},
+  device: null,
+  openStores: () => installStores(memoryStores().stores),
+} as unknown as HostContext
+const openNexus = async (): Promise<void> => {
+  try {
+    await openNexusSequence(ctx, root, false)
+  } finally {
+    installStores(NO_STORES)
+  }
+}
 
 describe('the Unknown cases, on disk', () => {
-  it('keeps every Unknown file out of the walked tree, and admits the two that belong', async () => {
-    expect(await titles()).toEqual(['Adoptable', 'Member'])
+  it('keeps every Unknown file out of the walked tree, admits the member, and lists the ID-less page missing', async () => {
+    expect(await titles()).toEqual(['Member'])
+    expect((await readNexus(root)).unreadable).toContainEqual({
+      path: 'Notes/Adoptable.md',
+      reason: 'missing',
+    })
   })
 
-  it('leaves every Unknown file byte-identical through adoption', async () => {
+  it('leaves every Unknown file byte-identical through the open', async () => {
     const before = await Promise.all(Object.keys(UNKNOWN_FILES).map(bytes))
-    await stampAdopted(root)
+    await openNexus()
     expect(await Promise.all(Object.keys(UNKNOWN_FILES).map(bytes))).toEqual(before)
   })
 
-  it('adopts the id-less page in the same pass that refuses the Unknown ones', async () => {
-    await stampAdopted(root)
+  it('the open stamps the id-less page in the same pass that refuses the Unknown ones', async () => {
+    await openNexus()
     // The control proves the pass ran at all — otherwise "untouched" is vacuously true.
     expect(await bytes('Adoptable.md')).toContain(`${ID_KEY}:`)
   })
 
   it('never stamps a SECOND key onto a file that already contradicts its folder', async () => {
-    await stampAdopted(root)
+    await openNexus()
     const after = await bytes('Contradicting.md')
     expect(after).toContain(`${ID_KEY}: ${TASK_ULID}`)
     expect(after.match(new RegExp(`^${ID_KEY}:`, 'gm'))).toHaveLength(1)

@@ -13,6 +13,12 @@ import { nexusConfig, nexusDir, sidecarPath } from '../Paths/paths'
 import { NEXUS_CONFIG_FILES, SIDECAR_FILENAME } from '../Paths/nexusPaths'
 import { machine } from '../Platform/machine'
 import { readJsonStrict, writeJson } from '../Files/atomicWrite'
+import type { HostContext } from '../Contract/handlers'
+import { openNexusSequence } from './handlers'
+import { closeSession } from './session'
+import { dropLiveTree } from './liveTree'
+import { installStores, NO_STORES } from '../Platform/stores'
+import { memoryStores } from '../Testing/memoryStores'
 
 let root: string
 
@@ -30,8 +36,18 @@ beforeEach(async () => {
   )
 })
 afterEach(async () => {
+  closeSession()
+  dropLiveTree()
+  installStores(NO_STORES)
   await rm(root, { recursive: true, force: true })
 })
+
+const ctx = {
+  push: () => {},
+  device: null,
+  openStores: () => installStores(memoryStores().stores),
+} as unknown as HostContext
+const open = (): Promise<void> => openNexusSequence(ctx, root, false)
 
 const coll = (p: string) => readSidecar(p, 'collection', pageCollectionSidecar)
 const set = (p: string) => readSidecar(p, 'set', pageSetSidecar)
@@ -75,8 +91,8 @@ describe('stampAdopted', () => {
     expect(new Set([notes!.id, daily!.id, deep!.id]).size).toBe(3)
   })
 
-  it('stamps a frontmatter-less page id and preserves foreign frontmatter', async () => {
-    await stampAdopted(root)
+  it('the open stamps a frontmatter-less page id and preserves foreign frontmatter', async () => {
+    await open()
 
     const note1 = splitFrontmatter(await readFile(join(root, 'Notes', 'Note1.md'), 'utf8'))
     expect(isUlidShaped(note1[ID_KEY])).toBe(true)
@@ -86,11 +102,11 @@ describe('stampAdopted', () => {
     expect(isUlidShaped(day1[ID_KEY])).toBe(true)
   })
 
-  it("an adopted page's id decodes to the file's mtime when that is older than now", async () => {
+  it("a page the open stamps has an id that decodes to the file's mtime when that is older than now", async () => {
     const file = join(root, 'Notes', 'Note1.md')
     const past = new Date('2020-06-01T12:00:00Z')
     await utimes(file, past, past)
-    await stampAdopted(root)
+    await open()
     const id = splitFrontmatter(await readFile(file, 'utf8'))[ID_KEY] as string
     expect(Math.floor(idTime(id)! / 1000)).toBe(Math.floor(past.getTime() / 1000))
   })
@@ -99,12 +115,12 @@ describe('stampAdopted', () => {
     const file = join(root, 'Notes', 'Note1.md')
     const past = new Date('2020-06-01T12:00:00Z')
     await utimes(file, past, past)
-    await stampAdopted(root)
+    await open()
     expect(Math.floor((await stat(file)).mtimeMs / 1000)).toBe(Math.floor(past.getTime() / 1000))
   })
 
-  it('is idempotent — a second run stamps nothing and leaves ids unchanged', async () => {
-    await stampAdopted(root)
+  it('is idempotent — a second open stamps nothing and leaves ids unchanged', async () => {
+    await open()
     const files = [
       sidecarPath(join(root, 'Notes'), 'collection'),
       sidecarPath(join(root, 'Notes', 'Daily'), 'set'),
@@ -115,7 +131,7 @@ describe('stampAdopted', () => {
     const read = () => Promise.all(files.map((f) => readFile(f, 'utf8')))
     const first = await read()
 
-    await stampAdopted(root)
+    await open()
     expect(await read()).toEqual(first)
   })
 
@@ -172,7 +188,7 @@ describe('stampAdopted', () => {
   it('a page whose frontmatter refuses the id write is skipped, not clobbered', async () => {
     const page = join(root, 'Notes', 'Broken.md')
     await writeFile(page, '---\nbad: [unclosed\n---\nprose', 'utf8')
-    await stampAdopted(root)
+    await open()
     expect(await readFile(page, 'utf8')).toBe('---\nbad: [unclosed\n---\nprose')
   })
 })

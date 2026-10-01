@@ -215,7 +215,10 @@ describe('a configuration patch keeps every entity lookup', () => {
       projectBaseline(toggled),
     ]
     for (const [i, v] of kept.entries()) expect(v).toBe(held[i])
-    const unreadable: NexusTree = { ...toggled, unreadable: [{ path: 'Notes/Bad.md' }] }
+    const unreadable: NexusTree = {
+      ...toggled,
+      unreadable: [{ path: 'Notes/Bad.md', reason: 'unparsed' }],
+    }
     expect(nodesOf(unreadable)).not.toBe(held[0])
   })
 })

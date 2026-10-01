@@ -1,4 +1,5 @@
 import type { ContextDef } from '../Contexts/contexts'
+import { isMarkdownFile } from '../Paths/posix'
 import type { PropertyDefinition } from '../Properties/properties'
 import type { SettingsLeaves } from '../Settings/codec'
 import type { OpenIn, ViewButton } from '../Views/viewRow'
@@ -100,13 +101,20 @@ export interface NexusConfig extends SettingsLeaves {
   registry: PropertyDefinition[]
 }
 
+export type UnreadReason = 'missing' | 'malformed' | 'contradicting' | 'unparsed'
+
+export interface Unreadable {
+  path: string
+  reason: UnreadReason
+}
+
 export interface NexusTree {
   nexus: { id: string; rootPath: string; name: string }
   collections: CollectionNode[]
   contexts: ContextGroup[]
   config: NexusConfig
-  /** Unparseable, not missing — absence is a missing entry instead. */
-  unreadable?: { path: string }[]
+  /** The files the Nexus holds and the tree doesn't: each is absent from `collections` and `contexts` until it reads. */
+  unreadable?: Unreadable[]
 }
 
 export type NexusState = { status: 'empty' } | { status: 'open'; tree: NexusTree }
@@ -121,3 +129,10 @@ export function entityMemo<T>(build: (tree: NexusTree) => T): (tree: NexusTree) 
     return value
   }
 }
+
+export const withheldIn =
+  (listed: readonly Unreadable[] = []) =>
+  (path: string): boolean =>
+    listed.some(
+      (u) => !isMarkdownFile(u.path) && (path === u.path || path.startsWith(`${u.path}/`)),
+    )

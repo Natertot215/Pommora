@@ -3,11 +3,11 @@ import { machine } from '../Platform/machine'
 import type { EntityRecord } from './record'
 import { errText } from '../Contract/result'
 import { contextDirRel, CONTEXTS_REGISTRY_REL } from '../Paths/nexusPaths'
-import { entityMemo, type NexusTree, type PageNode, type SetNode } from './tree'
+import { entityMemo, type NexusTree, type PageNode, type SetNode, withheldIn } from './tree'
+import type { Unreadable } from './tree'
 import { readKey, writeKey } from '../Platform/localState'
 import { isAdoptedId } from './ids'
 import { refreshTree, seedLiveTree } from './liveTree'
-import { readNexus } from './readNexus'
 import { applyRemints, runRemintPass } from './remint'
 
 export type Baseline = Record<string, EntityRecord>
@@ -59,10 +59,11 @@ function buildBaseline(tree: NexusTree): Projection {
 
 export function latchBaseline(
   projection: Projection,
-  unreadablePaths: readonly string[],
+  listed: readonly Unreadable[],
   prior: Baseline | null,
 ): Baseline {
-  const unreadable = new Set(unreadablePaths)
+  const unreadable = new Set(listed.map((u) => u.path))
+  const withheld = withheldIn(listed)
   const recorded: Baseline = prior ?? {}
   const out: Baseline = {}
   for (const [id, e] of Object.entries(projection.entries)) out[id] = e
@@ -73,7 +74,8 @@ export function latchBaseline(
     else delete out[id]
   }
   for (const [id, p] of Object.entries(recorded)) {
-    if (!(id in out) && !(id in projection.duplicates) && unreadable.has(p.path)) out[id] = p
+    if (id in out || id in projection.duplicates) continue
+    if (unreadable.has(p.path) || withheld(p.path)) out[id] = p
   }
   // An unusable registry blanks the whole Contexts layer in one stroke — carry every prior group and Space as unreadable rather than reading the blank as mass deletion.
   if (unreadable.has(CONTEXTS_REGISTRY_REL)) {
@@ -106,9 +108,8 @@ async function recordEldest(
   }
 }
 
-export async function runOpenLedger(root: string): Promise<void> {
+export async function runOpenLedger(root: string, tree: NexusTree): Promise<void> {
   try {
-    const tree = await readNexus(root)
     const prior = readBaseline()
     const unreadablePaths = (tree.unreadable ?? []).map((u) => u.path)
     // The re-mint runs between the walk and the latch — the baseline must record the re-minted state, or the next open reports every fresh id as a creation.
@@ -116,19 +117,10 @@ export async function runOpenLedger(root: string): Promise<void> {
     const reminted = await runRemintPass(root, walked, prior, unreadablePaths)
     const projection = applyRemints(walked, reminted)
     await recordEldest(root, projection, prior)
-    writeBaseline(latchBaseline(projection, unreadablePaths, prior))
-    // This walk observed pre-remint disk, so it may seed the session only when the remint wrote nothing — otherwise two entities would share an id, colliding every id-keyed store.
-    seedLiveTree(tree)
-    if (reminted.length > 0) {
-      try {
-        await refreshTree(root)
-      } catch (e) {
-        console.error(
-          'ledger: the post-remint walk failed; the pre-remint tree serves:',
-          errText(e),
-        )
-      }
-    }
+    writeBaseline(latchBaseline(projection, tree.unreadable ?? [], prior))
+    // This walk observed pre-remint disk, so it seeds the session only when the remint wrote nothing; otherwise two entities would share an id, colliding every id-keyed store, and a re-walk that fails leaves no tree, which the next read walks for.
+    if (reminted.length === 0) seedLiveTree(tree)
+    else await refreshTree(root)
   } catch (e) {
     console.error('ledger: the open pass failed; the prior baseline stands:', errText(e))
   }

@@ -316,15 +316,15 @@ describe('what the pass skips', () => {
     expect(await readFile(join(root, '.nexus', aside[0]), 'utf8')).toBe('{ not json')
   })
 
-  it('counts a directory at a Set sidecar as one skip', async () => {
+  it('a Set whose sidecar is a directory is out of the app, so the pass counts no skip', async () => {
     await rm(setFile())
     await mkdir(setFile())
-    expect((await reachConfig(root, rename)).skipped).toBe(1)
+    expect((await reachConfig(root, rename)).skipped).toBe(0)
   })
 
-  it('counts a corrupt sidecar as one skip and leaves its bytes', async () => {
+  it('a Set whose sidecar doesn’t parse is out of the app: no skip, and its bytes stay', async () => {
     await writeFile(setFile(), '{ not json')
-    expect((await reachConfig(root, rename)).skipped).toBe(1)
+    expect((await reachConfig(root, rename)).skipped).toBe(0)
     expect(await readFile(setFile(), 'utf8')).toBe('{ not json')
   })
 
@@ -402,11 +402,11 @@ describe('a pass scoped under one Collection', () => {
     expect(outside).toEqual(rich('tv_out'))
   })
 
-  it('counts the Collection’s own unreadable sidecar', async () => {
+  it('a Collection whose own sidecar is unreadable is out of the app, so no pass counts a skip', async () => {
     await rm(colFile())
     await mkdir(colFile())
-    expect((await reachConfig(root, clear, col())).skipped).toBe(1)
-    expect((await reachConfig(root, clear)).skipped).toBe(1)
+    expect((await reachConfig(root, clear, col())).skipped).toBe(0)
+    expect((await reachConfig(root, clear)).skipped).toBe(0)
   })
 })
 

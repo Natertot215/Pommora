@@ -157,11 +157,20 @@ async function settle(root: string, win: CurrentWindow, scope: WatchScope): Prom
   try {
     const events = await dropOwnEchoes(noted)
     const assetsBefore = getHeldAssetMap(root)
+    const named = (path: string): boolean =>
+      events.some((ev) => {
+        const rel = relative(root, ev.absPath)
+        return path === rel || path.startsWith(`${rel}/`)
+      })
     let patching!: Promise<WatchPatch>
-    const tree = await confirmBy(root, async () => {
-      patching = applyWatchEvents(root, events, scope)
-      return (await patching).outcome === 'patched' ? 'ok' : 'refresh'
-    })
+    const tree = await confirmBy(
+      root,
+      async () => {
+        patching = applyWatchEvents(root, events, scope)
+        return (await patching).outcome === 'patched' ? 'ok' : 'refresh'
+      },
+      named,
+    )
     const patch = await patching
     // The map is patch-only, so the fallback walk is where the listing is taken again.
     if (patch.outcome === 'refresh') await refreshAssetMap(root)

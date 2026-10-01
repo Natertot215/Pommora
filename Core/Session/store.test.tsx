@@ -629,6 +629,62 @@ describe('store — applyTree reconciles the window tabs (D-6)', () => {
   })
 })
 
+describe('store — a Set whose sidecar doesn’t parse keeps what belongs to its pages', () => {
+  const P2: SelectTarget = { kind: 'page', id: 'p2', path: 'Notes/Ideas/Beta.md' }
+  const P3: SelectTarget = { kind: 'page', id: 'p3', path: 'Notes/Ideas/Gamma.md' }
+  const readable = (): NexusTree => {
+    const t = makeTree()
+    const ideas = t.collections[0].sets[0]
+    ideas.pages = [...ideas.pages, { kind: 'page', id: 'p3', title: 'Gamma', path: P3.path }]
+    return t
+  }
+  const withheld = (): NexusTree => {
+    const t = makeTree()
+    t.collections[0].sets = []
+    t.unreadable = [{ path: 'Notes/Ideas', reason: 'unparsed' }]
+    return t
+  }
+
+  beforeEach(() => {
+    useSession.getState().resetGlance()
+    useSession.getState().resetWindow()
+  })
+
+  it('corrupted mid-session: the tabs, window tabs, glance pins, and pinned tabs on its pages stay open', () => {
+    seed({ tabs: [uTab('t1', P2, [P2], 0)], activeTabId: 't1', tabMru: ['t1'] })
+    useSession.getState().applyTree(readable())
+    useSession.getState().applyNavChanged({ pinned: [toNavRef(P3)], banner: undefined })
+    useSession.getState().openWindowTab(P2 as PageTarget)
+    useSession.getState().pinGlance({
+      tabId: 't1',
+      target: P2 as PageTarget,
+      anchorX: 0,
+      anchorY: 0,
+      anchorHeight: 0,
+      size: { w: 260, h: 120 },
+    })
+
+    useSession.getState().applyTree(withheld())
+    const s = useSession.getState()
+    expect(s.tabs.map((t) => t.target)).toEqual([P2])
+    expect(s.pinned).toEqual([toNavRef(P3)])
+    expect(s.pinnedTabs.map((t) => t.target)).toEqual([P3])
+    expect(s.windowSlot?.tabs.map((t) => t.target)).toEqual([P2])
+    expect(s.pinnedGlances.map((g) => g.tabId)).toEqual(['t1'])
+  })
+
+  it('already corrupt at the open: its pages’ pinned refs stay, and their tabs return when it reads', () => {
+    seed({})
+    useSession.getState().applyTree(withheld())
+    useSession.getState().applyNavChanged({ pinned: [toNavRef(P3)], banner: undefined })
+    expect(useSession.getState().pinned).toEqual([toNavRef(P3)])
+    expect(useSession.getState().pinnedTabs).toEqual([])
+
+    useSession.getState().applyTree(readable())
+    expect(useSession.getState().pinnedTabs.map((t) => t.target)).toEqual([P3])
+  })
+})
+
 describe('store — recents reorder + batched close', () => {
   const savedRecents = (): ReturnType<typeof vi.fn> => channels['nav:write']
 

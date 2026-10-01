@@ -1,6 +1,13 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import type { NexusTree } from './tree'
-import { dropLiveTree, getLiveTree, patchLiveTree, refreshTree, setCommandsTap } from './liveTree'
+import {
+  dropLiveTree,
+  getLiveTree,
+  patchLiveTree,
+  refreshTree,
+  seedLiveTree,
+  setCommandsTap,
+} from './liveTree'
 import { readNexus } from './readNexus'
 import { pathExists } from '../Files/atomicWrite'
 
@@ -112,6 +119,19 @@ describe('refreshTree', () => {
     exists.mockResolvedValueOnce(false)
     await expect(refreshTree('/r')).rejects.toThrow('not found')
     expect(getLiveTree()).toBeNull()
+  })
+})
+
+describe('seedLiveTree', () => {
+  it('a walk in flight when the open seeds its tree installs nothing over it', async () => {
+    const d = deferred<NexusTree>()
+    walk.mockReturnValueOnce(d.promise)
+    const inFlight = refreshTree('/r')
+    const seeded = T('seeded')
+    seedLiveTree(seeded)
+    d.resolve(T('walked'))
+    await inFlight
+    expect(getLiveTree()).toBe(seeded)
   })
 })
 

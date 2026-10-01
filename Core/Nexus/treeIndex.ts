@@ -5,6 +5,7 @@ import type { BannerOwnerKind } from './mutateRequest'
 import { navKey, type NavRef, type SelectTarget, toNavRef } from '../Navigation/navRef'
 import { MATRIX_ICON, MATRIX_TITLE } from '../Matrix/matrixKind'
 import type { CollectionNode, NexusTree, PageNode, SetNode, SpaceNode } from './tree'
+import { withheldIn } from './tree'
 import { findContainerWhere } from './treePatch'
 import { iconNameOr } from '@pommora/uix/Symbols'
 import { DEFAULT_NEXUS_ICON, entityIcon } from '../Assets/entityIconPolicy'
@@ -177,7 +178,8 @@ export function reconcileIndexOf(tree: NexusTree): ReconcileIndex {
           pagesByPath.set(r.path, r.id)
           break
       }
-    ix.reconcile = { spaces, collections, sets, pages, pagesByPath }
+    const withheld = withheldIn(tree.unreadable)
+    ix.reconcile = { spaces, collections, sets, pages, pagesByPath, withheld }
   }
   return ix.reconcile
 }

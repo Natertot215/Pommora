@@ -413,16 +413,18 @@ describe('the bundle — one folder per deletion, holding the artifact and its r
     expect(await readRecord(dir)).toBeNull()
   })
 
-  it('an unreadable parent sidecar degrades to unaddressable — the record is still written', async () => {
+  it('a page beneath an unreadable parent sidecar refuses the delete and leaves its bytes', async () => {
     await writeFile(join(root, 'Notes', 'Daily', '_pageset.json'), '{corrupt')
+    await refreshTree(root)
+    const before = await readFile(join(root, 'Notes', 'Daily', 'Alpha.md'), 'utf8')
     const r = await confirmedMutate(
       root,
       { op: 'delete', path: 'Notes/Daily/Alpha.md', kind: 'page' },
       nexusDeps,
     )
-    expect(r.ok).toBe(true)
-    const { record } = await onlyBundle()
-    expect(record).toMatchObject({ entity: 'page', id: PAGE_A, parent: { kind: 'unaddressable' } })
+    expect(r.ok).toBe(false)
+    expect(await listBundles(root)).toEqual([])
+    expect(await readFile(join(root, 'Notes', 'Daily', 'Alpha.md'), 'utf8')).toBe(before)
   })
 
   it('a refused root marks the Space record partial — the members list is thinner than the truth', async () => {

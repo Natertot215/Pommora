@@ -100,18 +100,16 @@ describe('a page delete', () => {
     expect(r.value.cascade).toEqual({ pages: ['Notes/One.md', 'Notes/Two.md'], hosts: [] })
   })
 
-  it('stamps a linker the tree lists without an ID, so its record can find it', async () => {
+  it('leaves an ID-less linker the tree doesn’t hold unstamped and byte-identical', async () => {
     const loose = join(notes, 'Loose.md')
-    await writeFile(loose, '---\nRelated: "[[Target]]"\n---\n')
+    const content = '---\nRelated: "[[Target]]"\n---\n'
+    await writeFile(loose, content)
     await refreshTree(root)
     const r = await del('Notes/Target.md', 'page')
     if (!r.ok || !r.value.trashed) throw new Error('the delete did not trash')
-    expect(r.value.cascade?.pages).toEqual(['Notes/Loose.md'])
-    const id = await idOf(loose)
-    expect(id).toEqual(expect.any(String))
-    expect((await recordOf(r.value.trashed.bundlePath)).links).toEqual([
-      { page: id, property: 'prop_related', value: '[[Target]]' },
-    ])
+    expect(r.value.cascade?.pages ?? []).toEqual([])
+    expect((await recordOf(r.value.trashed.bundlePath)).links ?? []).toEqual([])
+    expect(await readFile(loose, 'utf8')).toBe(content)
   })
 
   it('leaves two linkers sharing one ID as they were, since a restore couldn’t tell them apart', async () => {

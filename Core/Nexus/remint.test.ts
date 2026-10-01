@@ -7,6 +7,7 @@ import { isUlidShaped } from './identityMark'
 import type { EntityRecord } from './record'
 import { readKey, writeKey } from '../Platform/localState'
 import { readBaseline, runOpenLedger } from './remintLedger'
+import { readNexus } from './readNexus'
 import type { Baseline } from './remintLedger'
 import { adjudicate } from './remint'
 import { machine } from '../Platform/machine'
@@ -166,13 +167,13 @@ describe('the re-mint writes', () => {
     Object.keys(baseline).filter((id) => !SEEDED.includes(id))
 
   it('a copied page re-mints: the copy takes a fresh id, the original never moves', async () => {
-    await runOpenLedger(root)
+    await runOpenLedger(root, await readNexus(root))
     const originalBytes = await readFile(join(root, 'Library', 'Notes.md'), 'utf8')
     await writeFile(join(root, 'Library', 'Notes copy.md'), originalBytes)
     writeKey('folds', PAGE, ['intro'])
     writeKey('headingCols', PAGE, [0])
 
-    await runOpenLedger(root)
+    await runOpenLedger(root, await readNexus(root))
 
     expect(await readFile(join(root, 'Library', 'Notes.md'), 'utf8')).toBe(originalBytes)
     const copyBytes = await readFile(join(root, 'Library', 'Notes copy.md'), 'utf8')
@@ -191,7 +192,7 @@ describe('the re-mint writes', () => {
     expect(readKey('headingCols', fresh)).toEqual([0])
 
     // The must-agree crossing: the re-minted file re-enters through a GENUINE walk — read off disk, through admission, into the projection — not through the in-memory fix-up.
-    await runOpenLedger(root)
+    await runOpenLedger(root, await readNexus(root))
     const rewalked = readBaseline()!
     expect(rewalked[fresh]).toMatchObject({
       kind: 'page',
@@ -201,13 +202,13 @@ describe('the re-mint writes', () => {
   })
 
   it('a reminted copy carries its metadata entry under the fresh ID’s month', async () => {
-    await runOpenLedger(root)
+    await runOpenLedger(root, await readNexus(root))
     await updatePageMetadata(root, PAGE, { icon: 'star' })
     await writeFile(
       join(root, 'Library', 'Notes copy.md'),
       await readFile(join(root, 'Library', 'Notes.md'), 'utf8'),
     )
-    await runOpenLedger(root)
+    await runOpenLedger(root, await readNexus(root))
     const [fresh] = freshIdsIn(readBaseline()!)
     const month = await readShard(root, shardOf(fresh)!)
     expect(month.kind === 'ok' && month.pages[fresh]).toEqual({ icon: 'star' })
@@ -234,7 +235,7 @@ describe('the re-mint writes', () => {
         },
       ],
     }))
-    await runOpenLedger(root)
+    await runOpenLedger(root, await readNexus(root))
     await cp(join(root, 'Library', 'Fiction'), join(root, 'Library', 'Fiction copy'), {
       recursive: true,
     })
@@ -244,7 +245,7 @@ describe('the re-mint writes', () => {
       { recursive: true },
     )
 
-    await runOpenLedger(root)
+    await runOpenLedger(root, await readNexus(root))
 
     type SetSidecar = {
       id: unknown
@@ -303,14 +304,14 @@ describe('the re-mint writes', () => {
       const copy = join(root, '.nexus', 'contexts', 'Areas', 'Work copy')
       const tiles = [{ id: 'tile-1', type: 'view', views: [{ config: { id: 'cfg-original' } }] }]
       await writeTileDocAt(work, (cur) => ({ ...cur, tiles }))
-      await runOpenLedger(root)
+      await runOpenLedger(root, await readNexus(root))
       await cp(work, copy, { recursive: true })
       await chmod(join(copy, '_tiles.json'), 0o000)
-      await runOpenLedger(root)
+      await runOpenLedger(root, await readNexus(root))
       const idOf = async () => (await readJsonAt(join(copy, '_space.json'))).id
       expect(await idOf()).toBe(SPACE)
       await chmod(join(copy, '_tiles.json'), 0o644)
-      await runOpenLedger(root)
+      await runOpenLedger(root, await readNexus(root))
       expect(await idOf()).not.toBe(SPACE)
       const board = await readJsonAt<{
         tiles: { views: { config: { id: string } }[] }[]
@@ -326,8 +327,8 @@ describe('the re-mint writes', () => {
     await mkdir(join(root, 'Library', 'Fiction copy'), { recursive: true })
     await writeFile(join(root, 'Library', 'Fiction copy', '_pageset.json'), bytes)
 
-    await runOpenLedger(root)
-    await runOpenLedger(root)
+    await runOpenLedger(root, await readNexus(root))
+    await runOpenLedger(root, await readNexus(root))
 
     const copySet = await readJsonAt(join(root, 'Library', 'Fiction copy', '_pageset.json'))
     expect(copySet.id).not.toBe(SET)
@@ -337,7 +338,7 @@ describe('the re-mint writes', () => {
   })
 
   it('two registry entries sharing an id open with distinct ids, the recorded Context keeping its own', async () => {
-    await runOpenLedger(root)
+    await runOpenLedger(root, await readNexus(root))
     await writeFile(
       join(root, '.nexus', 'contexts', 'contexts.json'),
       JSON.stringify({
@@ -347,7 +348,7 @@ describe('the re-mint writes', () => {
         ],
       }),
     )
-    await runOpenLedger(root)
+    await runOpenLedger(root, await readNexus(root))
     const { contexts } = await readJsonAt(join(root, '.nexus', 'contexts', 'contexts.json'))
     const [areas, topics] = contexts as { id: string; title: string }[]
     expect(areas).toMatchObject({ id: 'ctx_a', title: 'Areas' })
@@ -359,11 +360,11 @@ describe('the re-mint writes', () => {
     const bytes = await readFile(join(root, 'Library', 'Notes.md'), 'utf8')
     await writeFile(join(root, 'Library', 'Notes copy.md'), bytes)
 
-    await runOpenLedger(root)
+    await runOpenLedger(root, await readNexus(root))
     expect(await readFile(join(root, 'Library', 'Notes copy.md'), 'utf8')).toBe(bytes)
     const recorded = readBaseline()![PAGE]
 
-    await runOpenLedger(root)
+    await runOpenLedger(root, await readNexus(root))
     // The recorded path adjudicates: its claimant keeps the id, the other re-mints.
     const baseline = readBaseline()!
     expect(baseline[PAGE].path).toBe(recorded.path)
@@ -372,7 +373,7 @@ describe('the re-mint writes', () => {
   })
 
   it('a container write held across the pass keeps both facts — the re-mint takes the sidecar lock', async () => {
-    await runOpenLedger(root)
+    await runOpenLedger(root, await readNexus(root))
     await cp(join(root, 'Library', 'Fiction'), join(root, 'Library', 'Fiction copy'), {
       recursive: true,
     })
@@ -388,7 +389,7 @@ describe('the re-mint writes', () => {
       })
       if (cur.ok) await writeJson(copyFile, { ...cur.value, banner: 'Wallpaper.png' })
     })
-    const pass = runOpenLedger(root)
+    const pass = readNexus(root).then((tree) => runOpenLedger(root, tree))
     await Promise.race([pass, lock.contended])
     lock.restore()
     release()
@@ -425,10 +426,10 @@ describe('the whole-Collection copy — the acceptance shape', () => {
       )
       installStores(memoryStores().stores)
 
-      await runOpenLedger(root2)
+      await runOpenLedger(root2, await readNexus(root2))
       await cp(join(root2, 'Library'), join(root2, 'Library copy'), { recursive: true })
-      await runOpenLedger(root2)
-      await runOpenLedger(root2)
+      await runOpenLedger(root2, await readNexus(root2))
+      await runOpenLedger(root2, await readNexus(root2))
 
       const original = {
         col: await readJsonAt<{ id: string }>(join(root2, 'Library', '_pagecollection.json')),

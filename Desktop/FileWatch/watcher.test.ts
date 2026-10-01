@@ -1,9 +1,12 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
-import { mkdir, readFile, rm, writeFile } from 'node:fs/promises'
+import { chmod, mkdir, readFile, rm, writeFile } from 'node:fs/promises'
 import { join } from '@pommora/core/Paths/posix'
-import { tempRoot } from '@pommora/core/Testing/hostFs'
+import { noModeBits, tempRoot } from '@pommora/core/Testing/hostFs'
 import type { BrowserWindow } from 'electron'
+import * as liveTree from '@pommora/core/Nexus/liveTree'
 import { dropLiveTree, getLiveTree, refreshTree } from '@pommora/core/Nexus/liveTree'
+import { splitFrontmatter } from '@pommora/core/Files/pageFile'
+import { ID_KEY, isUlidShaped } from '@pommora/core/Nexus/identityMark'
 import { recordWrite } from '@pommora/core/Files/writeEcho'
 import { forgetLastReads } from '@pommora/core/Files/atomicWrite'
 import { push } from '../Bridge/ipc'
@@ -289,6 +292,68 @@ describe('a waiting open', () => {
     emit('all', '.nexus', 'settings.json')
     await settleAll(() => reopen.mock.calls.length > 0)
     expect(reopen).toHaveBeenCalledWith(`${root}-raw`)
+  })
+})
+
+describe('a file made outside the app', () => {
+  const idIn = async (...segs: string[]): Promise<unknown> =>
+    splitFrontmatter(await readFile(abs(...segs), 'utf8'))[ID_KEY]
+
+  it('an ID-less page is stamped and held without a walk', async () => {
+    await startWatcher(root, win)
+    const walks = vi.spyOn(liveTree, 'refreshAfterWrite')
+    try {
+      await writeFile(abs('Notes', 'B.md'), 'beta\n')
+      emit('add', 'Notes', 'B.md')
+      await settleAll(() => getLiveTree()?.collections[0]?.pages.length === 2)
+      const id = await idIn('Notes', 'B.md')
+      expect(isUlidShaped(id)).toBe(true)
+      expect(getLiveTree()?.collections[0]?.pages.map((p) => p.id)).toContain(id)
+      expect(walks).not.toHaveBeenCalled()
+    } finally {
+      walks.mockRestore()
+    }
+  })
+
+  it('a nested folder with a page becomes a Set', async () => {
+    await startWatcher(root, win)
+    await mkdir(abs('Notes', 'Sub'))
+    await writeFile(abs('Notes', 'Sub', 'P.md'), 'p\n')
+    emit('addDir', 'Notes', 'Sub')
+    emit('add', 'Notes', 'Sub', 'P.md')
+    await settleAll(() => !!getLiveTree()?.collections[0]?.sets[0]?.pages.length)
+    const sub = getLiveTree()?.collections[0]?.sets[0]
+    const sidecar = JSON.parse(await readFile(abs('Notes', 'Sub', '_pageset.json'), 'utf8'))
+    expect(sub?.id).toBe(sidecar.id)
+    expect(sub?.pages.map((p) => p.id)).toEqual([await idIn('Notes', 'Sub', 'P.md')])
+    expect(getLiveTree()?.unreadable).toBeUndefined()
+  })
+
+  it.skipIf(noModeBits)('a page in a read-only folder stays listed missing', async () => {
+    await mkdir(abs('Notes', 'Locked'))
+    await writeFile(abs('Notes', 'Locked', '_pageset.json'), JSON.stringify({ id: 's-locked' }))
+    await refreshTree(root)
+    await startWatcher(root, win)
+    await writeFile(abs('Notes', 'Locked', 'P.md'), 'p\n')
+    await chmod(abs('Notes', 'Locked'), 0o555)
+    try {
+      emit('add', 'Notes', 'Locked', 'P.md')
+      await settleAll(() => !!getLiveTree()?.unreadable)
+      expect(getLiveTree()?.unreadable).toEqual([{ path: 'Notes/Locked/P.md', reason: 'missing' }])
+      expect(await readFile(abs('Notes', 'Locked', 'P.md'), 'utf8')).toBe('p\n')
+    } finally {
+      await chmod(abs('Notes', 'Locked'), 0o755)
+    }
+  })
+
+  it('a page whose own event hasn’t settled is not stamped by another write’s walk', async () => {
+    await startWatcher(root, win)
+    await writeFile(abs('Notes', 'C.md'), 'still writing\n')
+    await writeFile(abs('.nexus', 'nexus.json'), JSON.stringify({ id: 'nx1' }))
+    emit('change', '.nexus', 'nexus.json')
+    await settleAll(() => !!getLiveTree()?.unreadable)
+    expect(getLiveTree()?.unreadable).toEqual([{ path: 'Notes/C.md', reason: 'missing' }])
+    expect(await readFile(abs('Notes', 'C.md'), 'utf8')).toBe('still writing\n')
   })
 })
 

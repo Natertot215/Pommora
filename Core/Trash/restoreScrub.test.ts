@@ -10,6 +10,8 @@ import { pathExists } from '../Files/atomicWrite'
 import { confirmedMutate } from '../Testing/confirmedMutate'
 import { contextsDir, contextsRegistryFile } from '../Paths/paths'
 import { listBundles } from './holdings'
+import { stampMissing } from '../Nexus/adopt'
+import { readNexus } from '../Nexus/readNexus'
 import { fault } from '../Contract/result'
 
 import { closeSession, openSession } from '../Nexus/session'
@@ -413,12 +415,14 @@ describe('a Space sidecar is a context root too', () => {
 
 describe('a parent the filesystem handed Pommora can still be named by id', () => {
   it('a page deleted from a Finder-made folder records a real parent and restores', async () => {
-    // No sidecar: exactly what appears when a folder is created outside the app.
+    // No sidecar: exactly what appears when a folder is created outside the app, until the open stamps it.
     await mkdir(join(root, 'Notes', 'Inbox'), { recursive: true })
     await writeFile(
       join(root, 'Notes', 'Inbox', 'Idea.md'),
       `---\nID: 01KVGMT8BFP350FZZXAMG1QDVC\n---\nbody`,
     )
+    await stampMissing(root, (await readNexus(root)).unreadable)
+    await refreshTree(root)
     const d = await confirmedMutate(
       root,
       { op: 'delete', path: 'Notes/Inbox/Idea.md', kind: 'page' },
@@ -437,21 +441,20 @@ describe('a parent the filesystem handed Pommora can still be named by id', () =
     expect(await pathExists(join(root, 'Notes', 'Inbox', 'Idea.md'))).toBe(true)
   })
 
-  it('a sidecar that exists but cannot be read is never minted over', async () => {
+  it('a page beneath a sidecar that cannot be read refuses the delete and leaves every byte', async () => {
     await mkdir(join(root, 'Notes', 'Broken'), { recursive: true })
     await writeFile(join(root, 'Notes', 'Broken', '_pageset.json'), '{corrupt')
-    await writeFile(
-      join(root, 'Notes', 'Broken', 'Idea.md'),
-      `---\nID: 01KVGMT8BFP350FZZXAMG1QDVD\n---\nbody`,
-    )
-    await confirmedMutate(
+    const page = `---\nID: 01KVGMT8BFP350FZZXAMG1QDVD\n---\nbody`
+    await writeFile(join(root, 'Notes', 'Broken', 'Idea.md'), page)
+    await refreshTree(root)
+    const d = await confirmedMutate(
       root,
       { op: 'delete', path: 'Notes/Broken/Idea.md', kind: 'page' },
       nexusDeps,
     )
-    const [listed] = await listBundles(root)
-    // Honest rather than destructive: the folder keeps the schema and views it still holds.
-    expect(listed.record).toMatchObject({ parent: { kind: 'unaddressable' } })
+    expect(d.ok).toBe(false)
+    expect(await listBundles(root)).toEqual([])
+    expect(await readFile(join(root, 'Notes', 'Broken', 'Idea.md'), 'utf8')).toBe(page)
     expect(await readFile(join(root, 'Notes', 'Broken', '_pageset.json'), 'utf8')).toBe('{corrupt')
   })
 })

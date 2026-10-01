@@ -2,7 +2,15 @@
 
 import { NEW_SLOT, type MutateRequest } from './mutateRequest'
 import { stabilize } from './treeStabilize'
-import type { CollectionNode, ContextGroup, NexusTree, PageNode, SetNode, SpaceNode } from './tree'
+import type {
+  CollectionNode,
+  ContextGroup,
+  NexusTree,
+  PageNode,
+  SetNode,
+  SpaceNode,
+  Unreadable,
+} from './tree'
 import type { PropertyDefinition } from '../Properties/properties'
 import { basename, isMarkdownFile, relDirname, relJoin, titleFromPath } from '../Paths/posix'
 import { contextDirRel } from '../Paths/nexusPaths'
@@ -161,10 +169,10 @@ function repointUnreadable(
   const list = tree.unreadable
   const hit = (p: string): boolean => p === oldPath || p.startsWith(`${oldPath}/`)
   if (!list?.some((u) => hit(u.path))) return tree
-  const kept: { path: string }[] = []
+  const kept: Unreadable[] = []
   for (const u of list) {
     if (!hit(u.path)) kept.push(u)
-    else if (newPath !== null) kept.push({ path: newPath + u.path.slice(oldPath.length) })
+    else if (newPath !== null) kept.push({ ...u, path: newPath + u.path.slice(oldPath.length) })
   }
   const next = { ...tree }
   if (kept.length) next.unreadable = kept

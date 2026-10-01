@@ -268,7 +268,14 @@ export const createNavigationSlice: Slice<NavigationSlice> = (set, get) => {
     void persist('navigation', dialer().ask('nav:write', patch), true)
 
   const setPinned = (pinned: NavRef[], index: ReconcileIndex | null): void => {
-    const next = derivePinnedTabs(pinned, index)
+    const derived = derivePinnedTabs(pinned, index)
+    const prev = get().pinnedTabs
+    const next = pinned.flatMap((ref) => {
+      const at = (t: Tab): boolean => tabKey(t.target) === tabKey(ref)
+      const held = (t: Tab): boolean =>
+        at(t) && 'path' in t.target && !!index?.withheld(t.target.path)
+      return derived.find(at) ?? prev.find(held) ?? []
+    })
     // A pinned tab whose id vanishes here is a tab close for the glance pins and the search tagged to it (unpin, or its target deleted) — scrub them, the pinned-tab analog of closeTab. unpinTab retags before it reaches here, so its migration is already off the vanishing id.
     for (const t of get().pinnedTabs) {
       if (next.some((n) => n.id === t.id)) continue

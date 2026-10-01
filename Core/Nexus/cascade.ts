@@ -10,7 +10,7 @@ import {
 import { editCaches } from '../Properties/propertyCache'
 import { parseJsonObject } from '../Files/atomicWrite'
 import { heldTreeOf } from './liveTree'
-import type { NexusTree } from './tree'
+import { type NexusTree, withheldIn } from './tree'
 import {
   type RenameChange,
   rewriteConnections,
@@ -108,14 +108,22 @@ export async function deleteCascade(
         return property !== undefined && namesGone(value) ? [{ key, property, value }] : []
       })
     const strip: Rewrite = (raw, file) => stripKeys(...named(raw).map(({ key }) => key))(raw, file)
-    // Tree pages only: a loose file outside every Collection shows in no view and no restore could reach it; dropping this filter strips them too.
+    // Tree pages, and the pages beneath a folder the tree withholds: a loose file outside every Collection shows in no view and no restore could reach it; dropping this filter strips them too.
     const held = liveIdIndex(root)
-    const files = rels.filter((rel) => held.has(rel) && !inside(rel)).map((rel) => join(root, rel))
+    const withheld = withheldIn(heldTreeOf(root)?.unreadable)
+    const files = rels
+      .filter((rel) => (held.has(rel) || withheld(rel)) && !inside(rel))
+      .map((rel) => join(root, rel))
     let twins = 0
     const swept = await sweepGovernedRoots(root, files, {
       raw: (raw, file) => {
         const id = asString(raw[ID_KEY])
-        if (named(raw).length && id !== undefined && livePathOf(root, id) === null) {
+        if (
+          named(raw).length &&
+          id !== undefined &&
+          livePathOf(root, id) === null &&
+          !withheld(relative(root, file))
+        ) {
           twins++
           return null
         }

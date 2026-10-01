@@ -1,7 +1,7 @@
 import { mkdir, readFile, rename, rm, writeFile } from 'node:fs/promises'
 import { join } from '../Paths/posix'
 import { tempRoot } from '../Testing/hostFs'
-import { afterEach, beforeEach, describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { EntityRecord } from './record'
 import type { CollectionNode, ContextGroup, NexusTree, PageNode, SetNode } from './tree'
 import { adoptedId } from './ids'
@@ -15,8 +15,10 @@ import {
 } from './remintLedger'
 import { installStores, NO_STORES } from '../Platform/stores'
 import { memoryStores } from '../Testing/memoryStores'
+import * as liveTree from './liveTree'
 import { dropLiveTree, getLiveTree } from './liveTree'
 import { openSession } from './session'
+import { readNexus } from './readNexus'
 
 const page = (id: string, title: string, dir: string): PageNode => ({
   kind: 'page',
@@ -132,8 +134,29 @@ describe('latchBaseline', () => {
         path: 'Library/Gone.md',
       },
     }
-    const latched = latchBaseline(projected(), ['Library/Gone.md'], prior)
+    const latched = latchBaseline(
+      projected(),
+      [{ path: 'Library/Gone.md', reason: 'unparsed' }],
+      prior,
+    )
     expect(latched['page-gone']).toEqual(prior['page-gone'])
+  })
+
+  it('an id the walk lost beneath a folder whose sidecar doesn’t parse carries through', () => {
+    const prior: Baseline = {
+      'page-under': {
+        id: 'page-under',
+        kind: 'page',
+        title: 'Under',
+        path: 'Library/Daily/Under.md',
+      },
+    }
+    const latched = latchBaseline(
+      projected(),
+      [{ path: 'Library/Daily', reason: 'unparsed' }],
+      prior,
+    )
+    expect(latched['page-under']).toEqual(prior['page-under'])
   })
 
   it('an id the walk lost with a readable home leaves the baseline — a real deletion', () => {
@@ -217,7 +240,11 @@ describe('latchBaseline', () => {
         path: 'Library/Gone.md',
       },
     }
-    const latched = latchBaseline(projected(), ['.nexus/contexts/contexts.json'], prior)
+    const latched = latchBaseline(
+      projected(),
+      [{ path: '.nexus/contexts/contexts.json', reason: 'unparsed' }],
+      prior,
+    )
     expect(latched['ctx-areas']).toEqual(prior['ctx-areas'])
     expect(latched['space-personal']).toEqual(prior['space-personal'])
     expect(latched['page-gone']).toBeUndefined()
@@ -234,7 +261,7 @@ describe('latchBaseline', () => {
     }
     const latched = latchBaseline(
       projected(page('page-dup', 'A', 'Library'), page('page-dup', 'B', 'Library')),
-      ['Library/Original.md'],
+      [{ path: 'Library/Original.md', reason: 'unparsed' }],
       prior,
     )
     expect(latched['page-dup']).toEqual(prior['page-dup'])
@@ -307,80 +334,89 @@ describe('runOpenLedger — the open sequence', () => {
   })
 
   it('latches silently, and a closed-window rename follows the id to its new path', async () => {
-    await runOpenLedger(root)
+    await runOpenLedger(root, await readNexus(root))
     expect(readBaseline()?.[NOTES]?.path).toBe('Library/Notes.md')
 
     await rename(join(root, 'Library', 'Notes.md'), join(root, 'Library', 'Journal.md'))
-    await runOpenLedger(root)
+    await runOpenLedger(root, await readNexus(root))
     expect(readBaseline()?.[NOTES]?.path).toBe('Library/Journal.md')
 
-    await runOpenLedger(root)
+    await runOpenLedger(root, await readNexus(root))
     expect(readBaseline()?.[NOTES]?.path).toBe('Library/Journal.md')
-  })
-
-  it('a failed walk retains the prior baseline and the open proceeds', async () => {
-    await runOpenLedger(root)
-    const first = readBaseline()
-    await expect(runOpenLedger(join(root, 'no-such-root'))).resolves.toBeUndefined()
-    expect(readBaseline()).toEqual(first)
   })
 
   it('a nexus with zero entities latches an empty baseline — written, not skipped', async () => {
     await rm(join(root, 'Library'), { recursive: true, force: true })
-    await runOpenLedger(root)
+    await runOpenLedger(root, await readNexus(root))
     expect(readBaseline()).toEqual({})
   })
 
   it('with no prior evidence the eldest claimant records — the original never re-mints', async () => {
     const body = `---\nID: ${NOTES}\n---\nbody`
-    await runOpenLedger(root)
+    await runOpenLedger(root, await readNexus(root))
     // Closed window: the original renamed (birth time survives) AND copied. The copy's name sorts first, so a walk-order pick would crown it and re-mint the original.
     await rename(join(root, 'Library', 'Notes.md'), join(root, 'Library', 'Zed.md'))
     await new Promise((r) => setTimeout(r, 20))
     await writeFile(join(root, 'Library', 'Aaa.md'), body)
 
-    await runOpenLedger(root)
-    await runOpenLedger(root)
+    await runOpenLedger(root, await readNexus(root))
+    await runOpenLedger(root, await readNexus(root))
     expect(readBaseline()?.[NOTES]?.path).toBe('Library/Zed.md')
 
-    await runOpenLedger(root)
+    await runOpenLedger(root, await readNexus(root))
     expect(await readFile(join(root, 'Library', 'Zed.md'), 'utf8')).toContain(NOTES)
     expect(await readFile(join(root, 'Library', 'Aaa.md'), 'utf8')).not.toContain(NOTES)
     expect(readBaseline()?.[NOTES]?.path).toBe('Library/Zed.md')
   })
 
   it('a dropped duplicate leaves the baseline without being recorded as a removal', async () => {
-    await runOpenLedger(root)
+    await runOpenLedger(root, await readNexus(root))
     const body = `---\nID: ${NOTES}\n---\nbody`
     await rename(join(root, 'Library', 'Notes.md'), join(root, 'Library', 'A.md'))
     await writeFile(join(root, 'Library', 'B.md'), body)
-    await runOpenLedger(root)
+    await runOpenLedger(root, await readNexus(root))
     // Two claimants, neither at the recorded path: the entry drops from the baseline, because two copies on disk are not a deletion and the id is in flux until one is adjudicated.
     expect(readBaseline()?.[NOTES]).toBeUndefined()
   })
 
   it('a clean open seeds the live tree from the record walk', async () => {
     dropLiveTree()
-    await runOpenLedger(root)
+    await runOpenLedger(root, await readNexus(root))
     const tree = getLiveTree()
     expect(tree).not.toBeNull()
     expect(tree?.collections[0]?.pages[0]?.id).toBe(NOTES)
   })
 
   it('a reminted open re-walks, so the live tree never holds a shared id', async () => {
-    await runOpenLedger(root)
+    await runOpenLedger(root, await readNexus(root))
     await writeFile(join(root, 'Library', 'Copy.md'), `---\nID: ${NOTES}\n---\nbody`)
     dropLiveTree()
-    await runOpenLedger(root)
+    await runOpenLedger(root, await readNexus(root))
     const ids = (getLiveTree()?.collections[0]?.pages ?? []).map((p) => p.id)
     expect(ids).toHaveLength(2)
     expect(new Set(ids).size).toBe(2)
   })
 
+  it('a re-mint whose re-walk throws leaves no tree held', async () => {
+    await runOpenLedger(root, await readNexus(root))
+    await writeFile(join(root, 'Library', 'Copy.md'), `---\nID: ${NOTES}\n---\nbody`)
+    dropLiveTree()
+    const walk = vi.spyOn(liveTree, 'refreshTree').mockRejectedValueOnce(new Error('walk failed'))
+    const logged = vi.spyOn(console, 'error').mockImplementation(() => {})
+    try {
+      await runOpenLedger(root, await readNexus(root))
+      expect(walk).toHaveBeenCalled()
+      expect(getLiveTree()).toBeNull()
+    } finally {
+      walk.mockRestore()
+      logged.mockRestore()
+    }
+  })
+
   it('a sidecar corrupted while closed keeps its entry, never a removal', async () => {
-    await runOpenLedger(root)
+    await runOpenLedger(root, await readNexus(root))
     await writeFile(join(root, 'Library', '_pagecollection.json'), '{corrupt')
-    await runOpenLedger(root)
+    await runOpenLedger(root, await readNexus(root))
     const baseline = readBaseline()
     expect(baseline?.['col-lib']).toEqual({
       id: 'col-lib',

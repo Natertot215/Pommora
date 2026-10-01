@@ -212,6 +212,10 @@ describe('handleMutate — create', () => {
 
   it('movePage notes the moved page under its destination for the values push', async () => {
     await mkdir(join(root, 'Notes', 'Archive'), { recursive: true })
+    await writeFile(
+      join(root, 'Notes', 'Archive', '_pageset.json'),
+      JSON.stringify({ id: 'set-archive' }),
+    )
     flushValueWrites(root)
     const r = await handleMutate(
       root,
@@ -1132,6 +1136,43 @@ describe('handleMutate — a page delete’s linkers', () => {
     const names = push.mock.calls.map(([name]) => name)
     expect(names).toContain('values:changed')
     expect(names).not.toContain('pages:changed')
+  })
+})
+
+describe('handleMutate — a page delete reaches the pages beneath a Set whose sidecar doesn’t parse', () => {
+  const sidecar = (): string => join(root, 'Notes', 'Archive', '_pageset.json')
+  beforeEach(async () => {
+    await writeFile(
+      join(root, '.nexus', 'properties.json'),
+      JSON.stringify({
+        order: ['prop_related'],
+        defs: { prop_related: { id: 'prop_related', name: 'Related', type: 'link' } },
+      }),
+    )
+    await mkdir(join(root, 'Notes', 'Archive'))
+    await writeFile(sidecar(), JSON.stringify({ id: 'set-archive' }))
+    await writeFile(
+      join(root, 'Notes', 'Archive', 'Gamma.md'),
+      `---\nID: ${G_ID}\nRelated: "[[Beta]]"\n---\n`,
+    )
+  })
+  const deleteBeta = () =>
+    handleMutate(root, { op: 'delete', path: 'Notes/Daily/Beta.md', kind: 'page' }, nexusDeps)
+
+  it('corrupted mid-session: the delete strips links from its pages', async () => {
+    await refreshTree(root)
+    await writeFile(sidecar(), '{corrupt')
+    await refreshTree(root)
+    expect(getLiveTree()?.unreadable).toEqual([{ path: 'Notes/Archive', reason: 'unparsed' }])
+    expect((await deleteBeta()).ok).toBe(true)
+    expect(splitFrontmatter(await read('Notes/Archive/Gamma.md'))).not.toHaveProperty('Related')
+  })
+
+  it('already corrupt at the open: the delete strips links from its pages', async () => {
+    await writeFile(sidecar(), '{corrupt')
+    await refreshTree(root)
+    expect((await deleteBeta()).ok).toBe(true)
+    expect(splitFrontmatter(await read('Notes/Archive/Gamma.md'))).not.toHaveProperty('Related')
   })
 })
 
@@ -2180,16 +2221,15 @@ describe('handleMutate — setPageMeta', () => {
     expect(await read('.nexus/settings.json')).toBe(before)
   })
 
-  it('stamps an ID-less page, then writes under the new ID’s month', async () => {
+  it('refuses an ID-less page the tree doesn’t hold and leaves its bytes alone', async () => {
     await writeFile(join(root, 'Notes', 'Daily', 'Gamma.md'), 'gamma')
     const r = await handleMutate(
       root,
       { op: 'setPageMeta', path: 'Notes/Daily/Gamma.md', patch: { title_icon: true } },
       nexusDeps,
     )
-    expect(r).toEqual({ ok: true, value: {} })
-    const id = splitFrontmatter(await read('Notes/Daily/Gamma.md'))[ID_KEY] as string
-    expect(await month(id)).toEqual({ pages: { [id]: { title_icon: true } } })
+    expect(r.ok).toBe(false)
+    expect(await read('Notes/Daily/Gamma.md')).toBe('gamma')
   })
 
   it('a page icon lands in its month and leaves the page file’s bytes and mtime alone', async () => {

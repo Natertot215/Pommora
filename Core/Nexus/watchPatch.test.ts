@@ -50,7 +50,7 @@ const ev = (event: WatchEvent['event'], ...segs: string[]): WatchEvent => ({
   absPath: abs(...segs),
 })
 
-// A sidecar-mode nexus with one Collection (one page), one Context group with one Space, and one un-adopted folder holding a loose note — the live tree's whole vocabulary in miniature.
+// A sidecar-mode nexus with one Collection (one page), one Context group with one Space, an empty folder, and a loose note at the Nexus root — the live tree's whole vocabulary in miniature.
 beforeEach(async () => {
   root = tempRoot('pom-watch-')
   await openSession(root)
@@ -70,7 +70,7 @@ beforeEach(async () => {
   await writeFile(abs('Notes', '_pagecollection.json'), JSON.stringify({ id: 'c1' }))
   await writeFile(abs('Notes', 'A.md'), `---\nID: ${ULID_A}\n---\n\nalpha\n`)
   await mkdir(abs('Loose'), { recursive: true })
-  await writeFile(abs('Loose', 'note.md'), 'links [[A]]\n')
+  await writeFile(abs('note.md'), 'links [[A]]\n')
 })
 afterEach(async () => {
   dropLiveTree()
@@ -85,7 +85,7 @@ describe('applyWatchEvents — must agree with the walk', () => {
       `---\nID: ${ULID_B}\nicon: book\n<Areas>:\n  - Home\n---\n\nbeta\n`,
     )
     await writeFile(abs('Notes', 'A.md'), `---\nID: ${ULID_A}\nicon: star\n---\n\nalpha\n`)
-    await writeFile(abs('Loose', 'second.md'), 'more\n')
+    await writeFile(abs('second.md'), 'more\n')
     await writeFile(
       abs('Notes', '_pagecollection.json'),
       JSON.stringify({ id: 'c1', icon: 'folder', page_order: [ULID_B, ULID_A] }),
@@ -105,7 +105,7 @@ describe('applyWatchEvents — must agree with the walk', () => {
       [
         ev('add', 'Notes', 'B.md'),
         ev('change', 'Notes', 'A.md'),
-        ev('add', 'Loose', 'second.md'),
+        ev('add', 'second.md'),
         ev('change', 'Notes', '_pagecollection.json'),
         ev('change', '.nexus', 'contexts', 'Areas', 'Home', '_space.json'),
         ev('change', '.nexus', 'settings.json'),
@@ -128,6 +128,30 @@ describe('applyWatchEvents — must agree with the walk', () => {
 
     const walked = await readNexus(root)
     expect(stabilize(walked, live)).toBe(live)
+  })
+
+  it('a Set whose sidecar broke mid-session is held again by its own event once the file is fixed', async () => {
+    const sidecar = abs('Notes', 'Daily', '_pageset.json')
+    await mkdir(abs('Notes', 'Daily'))
+    await writeFile(sidecar, JSON.stringify({ id: 's1' }))
+    await writeFile(abs('Notes', 'Daily', 'D.md'), `---\nID: ${ULID_B}\n---\n\ndaily\n`)
+    await refreshTree(root)
+    const settle = (...events: WatchEvent[]) =>
+      confirmBy(root, async () =>
+        (await applyWatchEvents(root, events, scope())).outcome === 'patched' ? 'ok' : 'refresh',
+      )
+
+    await writeFile(sidecar, '{corrupt')
+    await settle(ev('change', 'Notes', 'Daily', '_pageset.json'))
+    expect(getLiveTree()?.collections[0]?.sets).toEqual([])
+    expect(getLiveTree()?.unreadable).toEqual([{ path: 'Notes/Daily', reason: 'unparsed' }])
+
+    await writeFile(sidecar, JSON.stringify({ id: 's1' }))
+    await settle(ev('change', 'Notes', 'Daily', '_pageset.json'))
+    const daily = getLiveTree()?.collections[0]?.sets[0]
+    expect(daily?.id).toBe('s1')
+    expect(daily?.pages.map((p) => p.id)).toEqual([ULID_B])
+    expect(getLiveTree()?.unreadable).toBeUndefined()
   })
 
   it('patches the panel Context order off state.json, and holds the tree when it did not move', async () => {

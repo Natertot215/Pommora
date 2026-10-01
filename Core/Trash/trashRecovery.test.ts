@@ -1,5 +1,5 @@
 // Every restoration combination the surface can produce, driven through the same ops the leaf calls, against a real nexus on disk.
-import { mkdir, readFile, rm, utimes, writeFile } from 'node:fs/promises'
+import { mkdir, readFile, rm, writeFile } from 'node:fs/promises'
 import { join } from '../Paths/posix'
 import { tempRoot } from '../Testing/hostFs'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
@@ -16,7 +16,7 @@ import { splitFrontmatter } from '../Files/pageFile'
 import { deleteProperty } from '../Properties/deleteProperty'
 import { removeProperty } from '../Properties/removeProperty'
 import { assignProperty } from '../Properties/assignment'
-import { idTime, newContentId } from '../Nexus/ids'
+import { newContentId } from '../Nexus/ids'
 import { flushValueWrites } from '../Nexus/valuesChanged'
 import { renameProperty } from '../Properties/registryProperty'
 import type { TrashDeps } from './bundle'
@@ -487,19 +487,15 @@ describe('links come back with the page', () => {
     expect(JSON.parse(await readFile(sidecar, 'utf8'))).toMatchObject(space)
   })
 
-  it('a page with no ID takes the one its next open would give it on a restore that parks its link', async () => {
+  it('a page with no ID isn’t held, so its delete refuses and leaves its bytes', async () => {
     const gamma = join('Plain', 'Gamma.md')
-    await writeFile(join(root, gamma), '---\nRelated: "[[Alpha]]"\n---\ng\n')
-    const then = new Date('2020-01-02T00:00:00Z')
-    await utimes(join(root, gamma), then, then)
-    await del(gamma, 'page')
-    await del('Journal/Daily/Alpha.md', 'page')
-    expect(await restore('Gamma')).toBeUndefined()
-    const id = (await frontmatter(gamma)).ID
-    expect(idTime(String(id))).toBe(then.getTime())
-    expect(await frontmatter(gamma)).not.toHaveProperty('Related')
-    expect(await restore('Alpha')).toBeUndefined()
-    expect(await frontmatter(gamma)).toMatchObject({ ID: id, Related: '[[Alpha]]' })
+    const content = '---\nRelated: "[[Alpha]]"\n---\ng\n'
+    await writeFile(join(root, gamma), content)
+    await refreshTree(root)
+    const r = await confirmedMutate(root, { op: 'delete', path: gamma, kind: 'page' }, deps)
+    expect(r.ok).toBe(false)
+    expect(await listBundles(root)).toEqual([])
+    expect(await readFile(join(root, gamma), 'utf8')).toBe(content)
   })
 
   it('a property restored while its link’s page sits in the Trash parks the value for that page', async () => {

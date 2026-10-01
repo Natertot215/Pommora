@@ -1,10 +1,11 @@
-import { basename, dirname, join, relative } from '../Paths/posix'
+import { basename, isMarkdownFile, join, relative } from '../Paths/posix'
 import { fault, ok, type Result, valueOr } from '../Contract/result'
 import { machine } from '../Platform/machine'
 import { isContentFile, listEntries } from '../Files/walk'
 import { ID_KEY } from './identityMark'
 import type { ContainerKind, ContentKind } from './entities'
 import { contentIdAt, isAdoptedId, newId } from './ids'
+import type { Unreadable } from './tree'
 import { getLiveTree } from './liveTree'
 import { pageAt } from './treePatch'
 import { patchPageFromDisk } from './watchPatch'
@@ -28,12 +29,13 @@ import { outsideContent, type WatchScope } from '../Paths/exclusion'
 import { readSettings, scopeOf } from '../Settings/codec'
 import {
   agendaContext,
+  holdsContent,
   resolveFolderKind,
   type FolderKind,
   type FolderKindContext,
 } from './folderKind'
 import { sidecarPath } from '../Paths/paths'
-import { AGENDA_FOLDERS, agendaKind, SIDECAR_FILENAME } from '../Paths/nexusPaths'
+import { AGENDA_FOLDERS, agendaKind, CONTEXTS_DIR_REL, SIDECAR_FILENAME } from '../Paths/nexusPaths'
 
 async function reHomeRegistered(
   absDir: string,
@@ -57,7 +59,11 @@ async function reHomeRegistered(
   return false
 }
 
-async function stampPage(absFile: string, kind: ContentKind): Promise<string | null> {
+export async function stampPage(
+  absFile: string,
+  kind: ContentKind,
+  overForeign = false,
+): Promise<string | null> {
   const st = await machine().stat(absFile)
   if (!st) return null
   // A filesystem with no birthtime reports 0 or null, and mtime is then the honest floor.
@@ -65,7 +71,8 @@ async function stampPage(absFile: string, kind: ContentKind): Promise<string | n
   let id: string | null = null
   const landed = await rewritePageSerialized(absFile, (content) => {
     const { admission } = parsePage(content, kind)
-    if (admission.state !== 'missing') return null
+    const foreign = admission.state === 'unknown' && admission.reason === 'malformed'
+    if (admission.state !== 'missing' && !(overForeign && foreign)) return null
     id = contentIdAt(birthtimeMs ? Math.min(birthtimeMs, mtimeMs) : mtimeMs, kind)
     return mergeFrontmatter(content, { [ID_KEY]: id }, [ID_KEY], splitEnvelope(content).body)
   })
@@ -104,10 +111,10 @@ export async function stampListed(root: string, file: string): Promise<string | 
 
 type AdoptableKind = Exclude<FolderKind, 'unknown'>
 
-async function stampFolder(absDir: string, kind: ContainerKind): Promise<void> {
+async function stampFolder(absDir: string, kind: ContainerKind | 'space'): Promise<boolean> {
   const file = sidecarPath(absDir, kind)
-  if (!(await pathExists(file))) await migrateContainerSidecar(absDir, kind)
-  await rmwJsonStrict(
+  if (kind !== 'space' && !(await pathExists(file))) await migrateContainerSidecar(absDir, kind)
+  const written = await rmwJsonStrict(
     file,
     (cur) => {
       const renamed = renamedSidecar(cur)
@@ -116,6 +123,7 @@ async function stampFolder(absDir: string, kind: ContainerKind): Promise<void> {
     },
     () => ({}),
   )
+  return written.ok
 }
 
 async function migrateContainerSidecar(absDir: string, kind: ContainerKind): Promise<void> {
@@ -125,6 +133,28 @@ async function migrateContainerSidecar(absDir: string, kind: ContainerKind): Pro
   if (!read.ok || !asString(read.value.id)) return
   const to = join(absDir, SIDECAR_FILENAME[kind])
   await relocate(from, to)
+}
+
+export async function stampMissing(
+  root: string,
+  listed: readonly Unreadable[] = [],
+): Promise<boolean> {
+  let landed = false
+  for (const { path, reason } of listed) {
+    if (reason !== 'missing') continue
+    const abs = join(root, path)
+    if (isMarkdownFile(path)) {
+      landed = (await stampPage(abs, 'page').catch(() => null)) !== null || landed
+      continue
+    }
+    const kind = path.startsWith(`${CONTEXTS_DIR_REL}/`)
+      ? 'space'
+      : path.includes('/')
+        ? 'set'
+        : 'collection'
+    landed = (await stampFolder(abs, kind).catch(() => false)) || landed
+  }
+  return landed
 }
 
 async function stampTree(
@@ -142,7 +172,7 @@ async function stampTree(
 
   for (const e of await listEntries(absDir)) {
     if (isContentFile(e)) {
-      await stampPage(join(absDir, e.name), memberKind).catch(() => {})
+      if (!container) await stampPage(join(absDir, e.name), memberKind).catch(() => {})
     } else if (e.kind === 'dir' && container) {
       const childRel = `${relDir}/${e.name}`
       if (outsideContent(childRel, scope)) continue
@@ -153,14 +183,6 @@ async function stampTree(
       await stampTree(abs, childRel, childKind, scope, kindCtx, root).catch(() => {})
     }
   }
-}
-
-export async function ensureFolderId(root: string, absDir: string): Promise<void> {
-  const identity = await readIdentity(root)
-  const kindCtx = await agendaContext(root, identity, false)
-  const depth = dirname(absDir) === root ? 'root' : 'nested'
-  const kind = await resolveFolderKind(absDir, depth, kindCtx)
-  if (kind === 'collection' || kind === 'set') await stampFolder(absDir, kind)
 }
 
 export async function stampAdopted(root: string): Promise<void> {
@@ -181,22 +203,10 @@ export async function stampAdopted(root: string): Promise<void> {
     // Don't fabricate a Collection from an empty, sidecar-less folder (stray junk). One that already has a sidecar, or holds pages/subfolders, is real content and gets adopted.
     if (
       !(await pathExists(join(abs, SIDECAR_FILENAME.collection))) &&
-      (await isEmptyOfContent(abs, e.name, scope))
+      !(await holdsContent(abs, e.name, scope))
     ) {
       continue
     }
     await stampTree(abs, e.name, 'collection', scope, kindCtx, root).catch(() => {})
   }
-}
-
-async function isEmptyOfContent(
-  absDir: string,
-  relDir: string,
-  scope: WatchScope,
-): Promise<boolean> {
-  for (const e of await listEntries(absDir)) {
-    if (isContentFile(e)) return false
-    if (e.kind === 'dir' && !outsideContent(`${relDir}/${e.name}`, scope)) return false
-  }
-  return true
 }

@@ -10,6 +10,7 @@ export interface ReconcileIndex {
   sets: ReadonlyMap<string, string>
   pages: ReadonlyMap<string, string>
   pagesByPath: ReadonlyMap<string, string>
+  withheld: (path: string) => boolean
 }
 
 /** Returns the SAME reference when nothing changed, so callers can skip a redundant state update. */
@@ -27,12 +28,13 @@ export function reconcileWith(index: ReconcileIndex, selection: SelectionState):
       return index.collections.has(selection.id) ? selection : { kind: 'none' }
     case 'set': {
       const path = index.sets.get(selection.id)
-      if (path === undefined) return { kind: 'none' }
+      if (path === undefined) return index.withheld(selection.path) ? selection : { kind: 'none' }
       return path === selection.path ? selection : { kind: 'set', id: selection.id, path }
     }
     case 'page': {
       const path = index.pages.get(selection.id)
       if (path === undefined) {
+        if (index.withheld(selection.path)) return selection
         const id = index.pagesByPath.get(selection.path)
         return id === undefined ? { kind: 'none' } : { kind: 'page', id, path: selection.path }
       }

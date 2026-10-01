@@ -68,22 +68,15 @@ describe('loadValues', () => {
     expect(Date.parse(values[P1].createdAt!)).toBe(Math.floor(decodeTime(P1) / 1000) * 1000)
   })
 
-  // An identity-less page must reach the value batch whole — a row landing in the map with its values dropped renders blank, which reads as data loss rather than a page awaiting adoption.
-  it('keys an id-less page by its adopted id, carrying its values intact', async () => {
+  it('an ID-less page is absent from the values', async () => {
     await mkdir(join(root, 'Col'), { recursive: true })
+    await writeFile(join(root, 'Col', 'p1.md'), `---\nID: ${P1}\n---\n\nbody\n`)
     await writeFile(
       join(root, 'Col', 'noid.md'),
       '---\ntitle: x\n<Areas>:\n  - Work\nStatus: in_progress\n---\n\nbody\n',
     )
 
-    const values = await loadValues(root, 'Col')
-    const keys = Object.keys(values)
-    expect(keys).toHaveLength(1)
-    expect(keys[0]).toMatch(/^adopted-/)
-    const row = values[keys[0]].frontmatter as Record<string, unknown>
-    expect(row['<Areas>']).toEqual(['Work'])
-    expect(row.Status).toBe('in_progress')
-    expect(values[keys[0]].createdAt).toBeNull()
+    expect(Object.keys(await loadValues(root, 'Col'))).toEqual([P1])
   })
 
   // An editor that clears a field leaves `banner:` null; the page still has an id, properties, and a mtime — none of which a blank banner may take away.

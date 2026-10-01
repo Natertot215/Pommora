@@ -22,6 +22,7 @@ const indexOf = (pages: Record<string, string>): ReconcileIndex => ({
   sets: new Map(),
   pages: new Map(Object.entries(pages)),
   pagesByPath: new Map(Object.entries(pages).map(([id, path]) => [path, id])),
+  withheld: () => false,
 })
 
 const pins = (): PinnedGlance[] => useSession.getState().pinnedGlances
