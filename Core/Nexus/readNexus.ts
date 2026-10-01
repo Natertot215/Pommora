@@ -1,7 +1,6 @@
 import { isPlainObject } from '../Contract/validators'
 import { basename, join, relJoin, titleFromPath } from '../Paths/posix'
-import { splitFrontmatter } from '../Files/pageFile'
-import { admitContentFile } from './identityMark'
+import { parsePage } from '../Files/pageFile'
 import { agendaContext, resolveFolderKind, type FolderKindContext } from './folderKind'
 import type {
   CollectionNode,
@@ -128,8 +127,7 @@ export async function readPageRecord(absFile: string, relFile: string): Promise<
   return cachedParse(absFile, async (stat) => {
     const content = await machine().readText(absFile)
     if (content === null) throw new Error(`Page not found: ${relFile}`)
-    const fm = splitFrontmatter(content)
-    const admission = admitContentFile(fm, 'page')
+    const { frontmatter: fm, admission } = parsePage(content)
     if (admission.state === 'unknown') return null
     const node = makePageNode({
       id: admission.state === 'member' ? admission.id : adoptedId(relFile),
