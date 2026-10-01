@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { chmod, mkdir, readFile, rm, stat, writeFile } from 'node:fs/promises'
+import { chmod, mkdir, readdir, readFile, rm, stat, writeFile } from 'node:fs/promises'
 import { join } from '../Paths/posix'
 import { noModeBits, putJson, readJsonAt, tempRoot } from '../Testing/hostFs'
 import { contextsDir, contextsRegistryFile, nexusConfig, tileHostDir } from '../Paths/paths'
@@ -302,6 +302,18 @@ describe('what the pass skips', () => {
     expect(await reachConfig(root, rename)).toEqual({ skipped: 0, hosts: [] })
     await expect(stat(matrixFile())).rejects.toThrow()
     await expect(stat(spaceTiles())).rejects.toThrow()
+  })
+
+  it('rebuilds a corrupt matrix.json a delete reaches and sets the damaged copy aside', async () => {
+    await writeFile(matrixFile(), '{ not json')
+    const gone = { kind: 'gone' as const, propertyId: '_location', ids: ['set_deep'] }
+    expect(await reachConfig(root, gone)).toEqual({ skipped: 0, hosts: [] })
+    expect(await readJsonAt(matrixFile())).toEqual({})
+    const aside = (await readdir(join(root, '.nexus'))).filter((n) =>
+      n.startsWith('.matrix.json.bad-'),
+    )
+    expect(aside).toHaveLength(1)
+    expect(await readFile(join(root, '.nexus', aside[0]), 'utf8')).toBe('{ not json')
   })
 
   it('counts a directory at a Set sidecar as one skip', async () => {

@@ -336,6 +336,25 @@ describe('the re-mint writes', () => {
     expect(copySet.active_view).toBeUndefined()
   })
 
+  it('two registry entries sharing an id open with distinct ids, the recorded Context keeping its own', async () => {
+    await runOpenLedger(root)
+    await writeFile(
+      join(root, '.nexus', 'contexts', 'contexts.json'),
+      JSON.stringify({
+        contexts: [
+          { id: 'ctx_a', title: 'Areas', singular: 'Area' },
+          { id: 'ctx_a', title: 'Topics', singular: 'Topic' },
+        ],
+      }),
+    )
+    await runOpenLedger(root)
+    const { contexts } = await readJsonAt(join(root, '.nexus', 'contexts', 'contexts.json'))
+    const [areas, topics] = contexts as { id: string; title: string }[]
+    expect(areas).toMatchObject({ id: 'ctx_a', title: 'Areas' })
+    expect(topics.title).toBe('Topics')
+    expect(topics.id).not.toBe('ctx_a')
+  })
+
   it('duplicates present at the very first open converge: record one, adjudicate next open', async () => {
     const bytes = await readFile(join(root, 'Library', 'Notes.md'), 'utf8')
     await writeFile(join(root, 'Library', 'Notes copy.md'), bytes)

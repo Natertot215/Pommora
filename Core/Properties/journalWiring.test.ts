@@ -9,8 +9,11 @@ import {
   editJsonStrict,
   rewritePageSerialized,
   rewritePreservingTimes,
+  updateNexusConfig,
   writeJson,
 } from '../Files/atomicWrite'
+import { nexusConfig } from '../Paths/paths'
+import { NEXUS_CONFIG_FILES } from '../Paths/nexusPaths'
 import { closeSession, openSession } from '../Nexus/session'
 import { dropLiveTree, refreshAfterWrite } from '../Nexus/liveTree'
 import { seedConfigSurfaces, viewOn } from '../Testing/configSurfaces'
@@ -30,6 +33,7 @@ vi.mock('../Files/atomicWrite', async (importOriginal) => {
     writeJson: vi.fn(mod.writeJson),
     rewritePageSerialized: vi.fn(mod.rewritePageSerialized),
     rewritePreservingTimes: vi.fn(mod.rewritePreservingTimes),
+    updateNexusConfig: vi.fn(mod.updateNexusConfig),
   }
 })
 
@@ -86,6 +90,18 @@ beforeEach(async () => {
     if (outcome === 'written') observed.push({ path, journaled })
     return outcome
   })
+  vi.mocked(updateNexusConfig).mockImplementation(async (at, file, mutate) => {
+    const journaled = existsSync(journalFile())
+    let changed = false
+    const r = await real.updateNexusConfig(at, file, (cur) => {
+      const next = mutate(cur)
+      changed = next !== null
+      return next
+    })
+    if (r.ok && changed)
+      observed.push({ path: nexusConfig(at, NEXUS_CONFIG_FILES[file]), journaled })
+    return r
+  })
 })
 afterEach(async () => {
   vi.mocked(atomicWriteFile).mockRestore()
@@ -93,6 +109,7 @@ afterEach(async () => {
   vi.mocked(rewritePageSerialized).mockRestore()
   vi.mocked(rewritePreservingTimes).mockRestore()
   vi.mocked(editJsonStrict).mockRestore()
+  vi.mocked(updateNexusConfig).mockRestore()
   dropLiveTree()
   closeSession()
   await rm(root, { recursive: true, force: true })

@@ -1,7 +1,14 @@
 import { describe, it, expect, beforeEach } from 'vitest'
 import { rmSync, symlinkSync } from 'node:fs'
 import { tempRoot } from '../Testing/hostFs'
-import { sessionRoot, openSession, closeSession, waitOn, waitingOpen } from './session'
+import {
+  sessionRoot,
+  openSession,
+  closeSession,
+  waitOn,
+  waitingOpen,
+  whileAdopting,
+} from './session'
 
 describe('session — open/close', () => {
   beforeEach(() => closeSession())
@@ -39,5 +46,26 @@ describe('session — open/close', () => {
     closeSession()
     rmSync(raw)
     rmSync(real, { recursive: true, force: true })
+  })
+})
+
+describe('whileAdopting', () => {
+  it('runs two overlapping adoptions one after the other', async () => {
+    const steps: string[] = []
+    let release: () => void = () => {}
+    const first = whileAdopting(async () => {
+      steps.push('first:start')
+      await new Promise<void>((r) => {
+        release = r
+      })
+      steps.push('first:end')
+    })
+    const second = whileAdopting(async () => {
+      steps.push('second:start')
+    })
+    await new Promise((r) => setTimeout(r, 0))
+    release()
+    await Promise.all([first, second])
+    expect(steps).toEqual(['first:start', 'first:end', 'second:start'])
   })
 })
