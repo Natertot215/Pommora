@@ -1,4 +1,4 @@
-import type { MutableKind } from '../Nexus/mutateRequest'
+import type { HeldKind } from '../Nexus/entities'
 import type { RenameHost } from '../Session/editSlice'
 import { useEffect, useState } from 'react'
 import { useSession } from '../Session/store'
@@ -16,7 +16,7 @@ export function RenamableTitle({
   doubleClick = true,
 }: {
   path: string
-  kind: MutableKind
+  kind: HeldKind
   title: string
   className: string
   renames?: 'title' | 'row'

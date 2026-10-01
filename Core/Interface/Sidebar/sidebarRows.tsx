@@ -1,7 +1,7 @@
 import { Icon } from '@pommora/uix/Symbols'
 import { cx } from '@pommora/uix/Utilities/cx'
 import { DropOutline, MenuItem, titleInput } from '@pommora/uix/Menus'
-import type { MutableKind } from '../../Nexus/mutateRequest'
+import type { HeldKind } from '../../Nexus/entities'
 import { RenamableTitle } from '../RenamableTitle'
 
 export function ctxHandler(cb?: () => void): ((e: React.MouseEvent) => void) | undefined {
@@ -13,7 +13,7 @@ export function ctxHandler(cb?: () => void): ((e: React.MouseEvent) => void) | u
     : undefined
 }
 
-export type RenameTarget = { path: string; kind: MutableKind }
+export type RenameTarget = { path: string; kind: HeldKind }
 
 export function RowTitle({
   path,
@@ -21,7 +21,7 @@ export function RowTitle({
   title,
 }: {
   path: string
-  kind: MutableKind
+  kind: HeldKind
   title: string
 }): React.JSX.Element {
   return (

@@ -1,5 +1,5 @@
 import { isPlainObject } from '../Contract/validators'
-import type { MutableKind } from '../Nexus/mutateRequest'
+import type { HeldKind } from '../Nexus/entities'
 
 export type SelectionState =
   | { kind: 'none' }
@@ -14,7 +14,7 @@ export type SelectionState =
 
 export type SelectTarget = Exclude<SelectionState, { kind: 'none' }>
 
-export function selectTargetOf(t: { kind: MutableKind; id: string; path: string }): SelectTarget {
+export function selectTargetOf(t: { kind: HeldKind; id: string; path: string }): SelectTarget {
   switch (t.kind) {
     case 'page':
       return { kind: 'page', id: t.id, path: t.path }

@@ -1,6 +1,6 @@
 // open_in is collection-owned; a Set write is refused.
 
-import type { ContainerKind } from '../Nexus/schemas'
+import type { ContainerKind } from '../Nexus/entities'
 import type { OpenIn, ViewButton } from './viewRow'
 import { ok, type Result, fault } from '../Contract/result'
 import { patchSidecar } from '../Files/sidecar'

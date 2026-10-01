@@ -40,7 +40,7 @@ import { NEXUS_CONFIG_FILES } from '../Paths/nexusPaths'
 import { isPlainObject, listOf } from '../Contract/validators'
 import type { CollectionNode, NexusTree, SetNode } from './tree'
 import type { CascadeReport } from './cascade'
-import type { MutableKind } from './mutateRequest'
+import type { HeldKind } from './entities'
 import { containerAt, contextAt, spaceAt } from './treePatch'
 
 // ── Roles ──
@@ -282,7 +282,7 @@ const within = (node: CollectionNode | SetNode): (CollectionNode | SetNode)[] =>
   ...(node.sets ?? []).flatMap(within),
 ]
 
-export function goneEdit(tree: NexusTree, kind: MutableKind, rel: string): ConfigEdit | null {
+export function goneEdit(tree: NexusTree, kind: HeldKind, rel: string): ConfigEdit | null {
   switch (kind) {
     case 'page':
       return null

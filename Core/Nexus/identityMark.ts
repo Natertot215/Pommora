@@ -1,21 +1,13 @@
-import type { AgendaKind } from '../Paths/nexusPaths'
-
-export type ContentKind = 'page' | AgendaKind
+import { CONTENT_KINDS, ENTITIES, type ContentKind } from './entities'
 
 export const ID_KEY = 'ID'
 
 export const RETIRED_ID_KEYS = ['PageID', 'TaskID', 'EventID'] as const
 
-const KIND_MARK = {
-  page: 'P',
-  task: 'T',
-  event: 'E',
-} as const satisfies Record<ContentKind, string>
-
 const MARK_INDEX = 10
 
 const MARK_KIND = new Map<string, ContentKind>(
-  (Object.entries(KIND_MARK) as [ContentKind, string][]).map(([kind, mark]) => [mark, kind]),
+  CONTENT_KINDS.map((kind) => [ENTITIES[kind].mark, kind]),
 )
 
 export const PAGE_MODELED_KEYS = [ID_KEY, 'banner'] as const
@@ -28,7 +20,7 @@ export function isUlidShaped(value: unknown): value is string {
 }
 
 export function markId(id: string, kind: ContentKind): string {
-  return id.slice(0, MARK_INDEX) + KIND_MARK[kind] + id.slice(MARK_INDEX + 1)
+  return id.slice(0, MARK_INDEX) + ENTITIES[kind].mark + id.slice(MARK_INDEX + 1)
 }
 
 export function kindOf(id: string): ContentKind | null {

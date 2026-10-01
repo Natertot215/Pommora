@@ -24,13 +24,8 @@ import {
 } from '../Contexts/contextWrite'
 import { renameContextOp, renameSpaceOp } from '../Contexts/contextCascade'
 import { reorderContextsOp } from '../Contexts/reorderContexts'
-import {
-  CONTAINER_KINDS,
-  done,
-  seedsContext,
-  type MutateReply,
-  type MutateRequest,
-} from './mutateRequest'
+import { done, seedsContext, type MutateReply, type MutateRequest } from './mutateRequest'
+import { CONTAINER_KINDS } from './entities'
 import { setActiveView } from '../Views/viewsFile'
 import type { TrashDeps } from '../Trash/bundle'
 import { createContainerOp, createPageOp, createSpaceOp } from './create'

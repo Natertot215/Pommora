@@ -10,7 +10,7 @@ import { splitFrontmatter } from '../Files/pageFile'
 import type { PropertyDefinition } from '../Properties/properties'
 import { dropLiveTree, refreshTree } from '../Nexus/liveTree'
 import { closeSession, openSession } from '../Nexus/session'
-import type { MutableKind } from '../Nexus/mutateRequest'
+import type { HeldKind } from '../Nexus/entities'
 import { contextsDir, contextsRegistryFile, nexusConfig, sidecarPath } from '../Paths/paths'
 import { NEXUS_CONFIG_FILES, SIDECAR_FILENAME } from '../Paths/nexusPaths'
 import { unsweptLine } from '../Properties/governedSweep'
@@ -33,7 +33,7 @@ const view = (rules: unknown[], extra: Raw = {}): Raw => ({
   ...extra,
 })
 
-const del = (path: string, kind: MutableKind) =>
+const del = (path: string, kind: HeldKind) =>
   confirmedMutate(root, { op: 'delete', path, kind }, nexusDeps)
 
 const entity = async (

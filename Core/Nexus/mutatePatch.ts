@@ -3,10 +3,10 @@
 import {
   seedsContext,
   type BannerOwnerKind,
-  type MutableKind,
   type MutateOutcome,
   type MutateRequest,
 } from './mutateRequest'
+import type { HeldKind } from './entities'
 import type { CollectionNode, NexusTree, SetNode } from './tree'
 import {
   containerAt,
@@ -93,7 +93,7 @@ const patchPage = async (root: string, path: string): Promise<'ok' | 'refresh'> 
 
 function patchEntityFromDisk(
   root: string,
-  kind: MutableKind | BannerOwnerKind,
+  kind: HeldKind | BannerOwnerKind,
   path: string,
 ): Promise<'ok' | 'refresh'> | null {
   switch (kind) {

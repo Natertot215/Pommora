@@ -4,7 +4,8 @@ import { patchSidecar } from '../Files/sidecar'
 import { sidecarPath } from '../Paths/paths'
 import { ok, type Result } from '../Contract/result'
 import { isAdoptedId } from './ids'
-import { type ChildOrderKey, CONTAINER_KINDS } from './mutateRequest'
+import type { ChildOrderKey } from './mutateRequest'
+import { CONTAINER_KINDS } from './entities'
 
 type ContainerOrderKey = ChildOrderKey | 'page_order'
 

@@ -13,13 +13,8 @@ import { mintDefaultView } from '../Views/views'
 import { readRegistry } from '../Properties/propertiesRegistry'
 import type { PropertyDefinition } from '../Properties/properties'
 import type { PropertyValue } from '../Properties/propertyValue'
-import {
-  CONTAINER_KINDS,
-  contextSeeds,
-  fillSlot,
-  type MutateReply,
-  type MutateRequest,
-} from './mutateRequest'
+import { contextSeeds, fillSlot, type MutateReply, type MutateRequest } from './mutateRequest'
+import { CONTAINER_KINDS } from './entities'
 import type { MutateContext } from './mutate'
 import { createPage } from './page'
 import { createFolderEntity, landingRefusal } from './folderEntity'

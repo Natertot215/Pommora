@@ -4,9 +4,8 @@ import type { PropertyDefinition } from '../Properties/properties'
 import type { Personalization } from '../Settings/personalization'
 import type { OpenIn, ViewButton } from '../Views/viewRow'
 import type { SavedView } from '../Views/views'
+import type { NodeKind } from './entities'
 import type { Crop, PageMeta } from './schemas'
-
-export type NodeKind = 'space' | 'collection' | 'set' | 'page'
 
 interface BaseNode {
   id: string

@@ -11,7 +11,7 @@ import {
 import { resetUndo, undoValue } from '../../Session/undo'
 import { useSession } from '../../Session/store'
 import { clearNotification, currentNotification } from '../Notifications/notifications'
-import type { MutableKind } from '../../Nexus/mutateRequest'
+import type { HeldKind } from '../../Nexus/entities'
 import { stubDialer } from '../../vitest.setup'
 import { ok } from '../../Contract/result'
 
@@ -77,7 +77,7 @@ describe('what the Confirm Before Deletion switch governs', () => {
 
 describe('a delete through the confirmation', () => {
   const mutate = vi.fn()
-  const del = (kind: MutableKind): Promise<void> =>
+  const del = (kind: HeldKind): Promise<void> =>
     confirmDelete({ path: 'Notes/A', kind, title: 'A' })
 
   beforeEach(() => {

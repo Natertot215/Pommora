@@ -68,5 +68,3 @@ export const pageFrontmatter = z.looseObject({
   banner: z.string().optional().catch(undefined),
 })
 export type PageFrontmatter = z.infer<typeof pageFrontmatter>
-
-export type ContainerKind = 'collection' | 'set'
