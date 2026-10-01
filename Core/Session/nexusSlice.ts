@@ -187,7 +187,7 @@ export const createNexusSlice: Slice<NexusSlice> = (set, get) => {
     applyTree: (incoming) => {
       // IPC strips identity, so without stabilize() every push would re-render every consumer.
       const prev = get().tree
-      const tree = withOwnSettings(stabilize(incoming, prev), prev)
+      const tree = stabilize(withOwnSettings(incoming, prev), prev)
       set({ status: 'ready', tree })
       const index = reconcileIndexOf(tree)
       get().reconcileNavigation(index)
