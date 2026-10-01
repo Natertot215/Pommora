@@ -3,6 +3,8 @@ import { useSyncExternalStore } from 'react'
 import type { Result } from '../../Contract/result'
 import { pushUndo } from '../../Session/undo'
 import type { CascadeReport } from '../../Nexus/cascade'
+import type { Unreadable } from '../../Nexus/tree'
+import { titleFromPath } from '../../Paths/posix'
 
 export interface Notification {
   message: string
@@ -59,6 +61,12 @@ const tryAgain = (run: () => void): Notification['action'] => ({ label: 'Try Aga
 /** A refusal that may pass on a second attempt, which its label offers. */
 export function notifyRetry(message: string, retry: () => void): void {
   post({ message, tone: 'error', action: tryAgain(retry) })
+}
+
+export function notifyUnreadable(file: Unreadable, retry: () => void): void {
+  const what =
+    file.reason === 'contradicting' || file.reason === 'unparsed' ? 'invalid' : 'unreadable'
+  notifyRetry(`'${titleFromPath(file.path)}' contains ${what} metadata`, retry)
 }
 
 /** A write nothing waits on still answers: a refusal posts a notice naming `what`, or, for `quiet` chrome, logs it. */

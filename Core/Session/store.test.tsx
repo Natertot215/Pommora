@@ -685,6 +685,53 @@ describe('store — a Set whose sidecar doesn’t parse keeps what belongs to it
   })
 })
 
+describe('store — a file the Nexus can’t read posts a notice with Try Again', () => {
+  const listing = (...unreadable: NonNullable<NexusTree['unreadable']>): NexusTree => {
+    const t = makeTree()
+    t.unreadable = unreadable
+    return t
+  }
+
+  beforeEach(() => {
+    seed({})
+    useSession.getState().applyTree(listing())
+    clearNotification()
+  })
+
+  it('a malformed entry posts the unreadable notice, whose Try Again retries that file', async () => {
+    useSession.getState().applyTree(listing({ path: 'Notes/Foreign.md', reason: 'malformed' }))
+    const notice = currentNotification()
+    expect(notice?.message).toBe("'Foreign' contains unreadable metadata")
+    expect(notice?.action?.label).toBe('Try Again')
+    await notice?.action?.run()
+    await vi.waitFor(() =>
+      expect(channels.mutate).toHaveBeenCalledWith({
+        op: 'retryUnreadable',
+        path: 'Notes/Foreign.md',
+      }),
+    )
+  })
+
+  it('a contradicting entry posts the invalid notice', () => {
+    useSession.getState().applyTree(listing({ path: 'Notes/Task.md', reason: 'contradicting' }))
+    expect(currentNotification()?.message).toBe("'Task' contains invalid metadata")
+    expect(currentNotification()?.action?.label).toBe('Try Again')
+  })
+
+  it('an unparsed entry posts the invalid notice', () => {
+    useSession.getState().applyTree(listing({ path: 'Notes/Ideas', reason: 'unparsed' }))
+    expect(currentNotification()?.message).toBe("'Ideas' contains invalid metadata")
+    expect(currentNotification()?.action?.label).toBe('Try Again')
+  })
+
+  it('a tree whose list didn’t change posts nothing', () => {
+    useSession.getState().applyTree(listing({ path: 'Notes/Foreign.md', reason: 'malformed' }))
+    clearNotification()
+    useSession.getState().applyTree(listing({ path: 'Notes/Foreign.md', reason: 'malformed' }))
+    expect(currentNotification()).toBeNull()
+  })
+})
+
 describe('store — recents reorder + batched close', () => {
   const savedRecents = (): ReturnType<typeof vi.fn> => channels['nav:write']
 

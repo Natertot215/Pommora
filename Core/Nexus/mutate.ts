@@ -2,7 +2,7 @@
 
 import { setOrDrop } from '../Files/atomicWrite'
 import { patchSidecar } from '../Files/sidecar'
-import { titleFromPath } from '../Paths/posix'
+import { join, titleFromPath } from '../Paths/posix'
 import { resolveUnderRoot } from '../Paths/pathSafety'
 import { contextsDir } from '../Paths/paths'
 import { machine } from '../Platform/machine'
@@ -34,7 +34,8 @@ import { writePageMeta } from './pageMetadata'
 import { renameOp } from './rename'
 import { renameCascade } from './cascade'
 import { setChildOrder, setCollectionOrder, setPanelContextOrder, setSpaceOrder } from './reorder'
-import { mutableTarget } from './liveTree'
+import { liveTreeOf, mutableTarget } from './liveTree'
+import { stampMissing, stampPage } from './adopt'
 
 export interface MutateContext {
   root: string
@@ -178,6 +179,13 @@ async function dispatch(ctx: MutateContext, req: MutateRequest): Promise<MutateR
       const resolved = await mutableTarget(root, req.path, ['space'])
       if (!resolved.ok) return resolved
       return done(await setSpaceRowOrder(resolved.value, req.contexts, req.properties))
+    }
+
+    case 'retryUnreadable': {
+      const entry = (await liveTreeOf(root)).unreadable?.find((u) => u.path === req.path)
+      if (entry?.reason === 'malformed') await stampPage(join(root, entry.path), 'page', true)
+      if (entry?.reason === 'missing') await stampMissing(root, [entry])
+      return ok({})
     }
 
     default: {
