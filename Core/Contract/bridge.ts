@@ -17,7 +17,7 @@ import type { PageValues } from '../Views/viewRow'
 import type { ContainerConfigPatch } from '../Views/containerConfig'
 import type { OptionEdit } from '../Properties/optionModel'
 import type { PropertyDeletion } from '../Properties/deleteProperty'
-import type { SchemaCascade } from '../Properties/propertyJournal'
+import type { SchemaCascade, SchemaJournal } from '../Properties/propertyJournal'
 import type { PropertyRename } from '../Properties/registryProperty'
 import type { Personalization } from '../Settings/personalization'
 import type {
@@ -144,7 +144,7 @@ export interface Asks {
     reply: Result<PropertyRename | null>
   }
   'property:delete': { args: [propertyId: string]; reply: Result<PropertyDeletion> }
-  'property:replay': { args: [propertyId: string]; reply: Result<null> }
+  'property:replay': { args: [record: SchemaJournal]; reply: Result<null> }
   'property:setLinkConfig': {
     args: [propertyId: string, patch: LinkConfig]
     reply: Result<null>

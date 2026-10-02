@@ -443,7 +443,7 @@ describe('unreadable holders hold the record', () => {
       const deleted = await deleteProperty(root, 'prop_s')
       await chmod(b, 0o644)
       if (!deleted.ok) throw new Error('delete refused')
-      expect(deleted.value.replayable).toBe(true)
+      expect(deleted.value.owed).toEqual({ op: 'delete', id: 'prop_s', name: 'Stage' })
       expect(deleted.value.cascade.warning).toBeDefined()
       expect(await readRecord(join(root, deleted.value.trashed.bundlePath))).toMatchObject({
         partial: true,

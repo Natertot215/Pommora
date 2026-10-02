@@ -1,7 +1,7 @@
 import { NOT_A_PROPERTY_DIR, validPropertyDir } from '../Assets/assetRoots'
 import { type Handlers, withWriteRoot } from '../Contract/handlers'
 import { ok, type Result, fault } from '../Contract/result'
-import { isFiniteNumber, NEEDS_CONFIG_PATCH } from '../Contract/validators'
+import { isFiniteNumber, isPlainObject, NEEDS_CONFIG_PATCH } from '../Contract/validators'
 import { mutableTarget } from '../Nexus/liveTree'
 import { oweCascade } from '../Nexus/fileEvents'
 import { readWatchScope } from '../Settings/settings'
@@ -26,7 +26,7 @@ import {
 import { removeProperty } from './removeProperty'
 import { replaySchemaCascade } from './replaySchemaCascade'
 import { unsweptLine } from './governedSweep'
-import type { SchemaCascade } from './propertyJournal'
+import { decodeSchemaJournal, type SchemaCascade, type SchemaJournal } from './propertyJournal'
 import type { TileHostRef } from '../Tiles/tiles'
 import { type ConfigReach, NO_REACH } from '../Nexus/configReach'
 
@@ -89,6 +89,11 @@ const schemaChannel = <A extends unknown[], T = null, R = T>(
 
 const idOnly = ([id]: unknown[]): [string] | Result<never> =>
   typeof id === 'string' ? [id] : NEEDS_PROPERTY_ID
+
+const journalRecord = ([raw]: unknown[]): [SchemaJournal] | Result<never> => {
+  const record = isPlainObject(raw) ? decodeSchemaJournal(raw) : null
+  return record ? [record] : fault('A schema record is required.')
+}
 
 const idAndIndex = ([id, at]: unknown[]): [string, number] | Result<never> =>
   typeof id === 'string' && isFiniteNumber(at) ? [id, at] : NEEDS_ID_AND_INDEX
@@ -154,8 +159,8 @@ export const propertiesHandlers = {
   'property:rename': registryChannel(idAndValue, renameProperty),
   'property:delete': registryChannel(idOnly, deleteProperty, cascadeReply),
   'property:replay': registryChannel(
-    idOnly,
-    async (root, id) => (await replaySchemaCascade(root, id)) ?? ok(NO_REACH),
+    journalRecord,
+    async (root, record) => (await replaySchemaCascade(root, record)) ?? ok(NO_REACH),
     unsweptReply,
   ),
 

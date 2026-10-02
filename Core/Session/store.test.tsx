@@ -1017,6 +1017,21 @@ describe('store — the mutate rail', () => {
     expect(moved).not.toBeNull()
     expect(currentNotification()?.message).toBe('W')
   })
+
+  it('posts a warning that carries a retry with Try Again, which sends the retry', async () => {
+    const retry = { op: 'renameSpace', spaceId: 'sp', newName: 'Pom', from: 'Pommora' } as const
+    channels.mutate = vi.fn(async () =>
+      ok({ cascade: { pages: [], hosts: [], warning: 'W' }, retry }),
+    )
+    clearNotification()
+    await useSession.getState().mutate({ op: 'renameSpace', spaceId: 'sp', newName: 'Pom' })
+    const note = currentNotification()
+    expect(note?.message).toBe('W')
+    expect(note?.action?.label).toBe('Try Again')
+    channels.mutate = vi.fn(async () => ok({}))
+    await note?.action?.run()
+    await vi.waitFor(() => expect(channels.mutate).toHaveBeenCalledWith(retry))
+  })
 })
 
 describe('store — a Nexus switch lands every owed save first', () => {

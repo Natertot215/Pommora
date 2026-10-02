@@ -14,13 +14,12 @@ import { serializeSchemaOp } from './schemaChain'
 
 export function replaySchemaCascade(
   root: string,
-  propertyId?: string,
+  record?: SchemaJournal,
 ): Promise<Result<ConfigReach> | null> {
   return serializeSchemaOp(async () => {
     try {
-      const journal = await readSchemaJournal(root)
+      const journal = record ?? (await readSchemaJournal(root))
       if (!journal) return null
-      if (propertyId !== undefined && journal.id !== propertyId) return null
       const owed = await replay(root, journal)
       if (!owed.skipped) await clearSchemaJournal(root, journal)
       return ok(owed)
@@ -35,8 +34,9 @@ async function replay(root: string, journal: SchemaJournal): Promise<ConfigReach
   const defs = (await readRegistry(root)).defs
   switch (journal.op) {
     case 'rename': {
-      // Only the journaled def's own name decides: `to` means the commit landed and the sweep is owed; anything else is a state the record no longer maps.
-      if (defs[journal.id]?.name !== journal.to) return NO_REACH
+      // The def still named `to`, with `from` taken by no other, means the commit landed and the sweep is owed; anything else is a state the record no longer maps.
+      const taken = Object.values(defs).some((d) => d.name === journal.from)
+      if (defs[journal.id]?.name !== journal.to || taken) return NO_REACH
       return { skipped: await renameSweep(root, journal.from, journal.to), hosts: [] }
     }
     case 'delete': {

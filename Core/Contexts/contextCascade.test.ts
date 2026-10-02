@@ -1,8 +1,8 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 import { splitFrontmatter } from '../Files/pageFile'
-import { rm, mkdir, symlink, writeFile, readFile } from 'node:fs/promises'
+import { chmod, rm, mkdir, symlink, writeFile, readFile } from 'node:fs/promises'
 import { join, relative } from '../Paths/posix'
-import { tempRoot, windows, readJsonAt } from '../Testing/hostFs'
+import { noModeBits, tempRoot, windows, readJsonAt } from '../Testing/hostFs'
 import {
   renameContextOp,
   renameSpaceOp,
@@ -10,7 +10,7 @@ import {
   unlinkContextKey,
   unlinkSpaceValue,
 } from './contextCascade'
-import { sweepGovernedRoots } from '../Properties/governedSweep'
+import { sweepGovernedRoots, unsweptLine } from '../Properties/governedSweep'
 import { installStores, NO_STORES } from '../Platform/stores'
 import { memoryStores } from '../Testing/memoryStores'
 import { seedContentIndex } from '../Index/indexSeed'
@@ -20,7 +20,7 @@ import type { ContextsRegistry } from './contexts'
 
 import { pathExists } from '../Files/atomicWrite'
 import { captureWriteTap } from '../Testing/writeTap'
-import { fault } from '../Contract/result'
+import { fault, ok } from '../Contract/result'
 import { mutateRegistryFile } from './contextsRegistry'
 import { closeSession, openSession } from '../Nexus/session'
 import { getLiveTree, refreshTree } from '../Nexus/liveTree'
@@ -30,6 +30,7 @@ import { spaceAt } from '../Nexus/treePatch'
 import { contextWorldOf } from './contextResolve'
 import { settledMutate } from '../Testing/settledMutate'
 import type { TrashDeps } from '../Trash/bundle'
+import { newId } from '../Nexus/ids'
 
 vi.mock('../Properties/governedSweep', async (importOriginal) => {
   const mod = await importOriginal<typeof import('../Properties/governedSweep')>()
@@ -186,6 +187,26 @@ describe('renameContextOp', () => {
     expect(await readFile(contextsRegistryFile(root), 'utf8')).toBe(registryBefore)
   })
 
+  it.skipIf(noModeBits)(
+    'a failed title commit journals its way back, and the next open finishes a file the reversal couldn’t reach',
+    async () => {
+      vi.mocked(mutateRegistryFile).mockImplementationOnce(async () => {
+        await chmod(page(), 0o000)
+        return fault('refused')
+      })
+      const r = await renameContextOp(root, 'ctx_projects', 'Ventures')
+      await chmod(page(), 0o644)
+      expect(r).toEqual(fault('refused'))
+      expect((await fmOf(page()))['<Ventures>']).toEqual(['Pommora', 'pommora'])
+      expect((await readJournal(root))?.skipped).toEqual([page()])
+      await replayPendingRename(root)
+      expect((await fmOf(page()))['<Projects>']).toEqual(['Pommora', 'pommora'])
+      expect((await fmOf(page()))['<Ventures>']).toBeUndefined()
+      expect(await readJournal(root)).toBeNull()
+      expect(await regTitle('ctx_projects')).toBe('Projects')
+    },
+  )
+
   it('rejects a taken title without journaling; a sigil glyph is legal', async () => {
     expect((await renameContextOp(root, 'ctx_projects', 'Classes')).ok).toBe(false)
     expect(await readJournal(root)).toBeNull()
@@ -305,6 +326,66 @@ describe('renameSpaceOp', () => {
     const after = contextWorldOf(getLiveTree()?.contexts ?? [])
     expect(after).not.toBe(before)
     expect(after.spaceById.get('sp-pom')?.title).toBe('Pom')
+  })
+})
+
+describe('a rename the journal refused reports what it skipped, with a retry', () => {
+  const broken = (): string => join(root, 'Notes', 'Broken.md')
+  const rename = { op: 'renameSpace', spaceId: 'sp-pom', newName: 'Pom' } as const
+  const retry = { ...rename, from: 'Pommora' }
+  const readable = async (): Promise<void> => {
+    await rm(broken())
+    await writeFile(broken(), '---\nid: pb\n<Projects>:\n  - Pommora\n---\nbody')
+    await refreshTree(root)
+  }
+  beforeEach(async () => {
+    await writeJournal(root, {
+      contextId: 'ctxC',
+      spaceId: 'sp-cs',
+      oldTitle: 'CS 161',
+      newTitle: 'CS 162',
+      skipped: [],
+    })
+    await refreshTree(root)
+  })
+
+  it('answers neither when every member reads', async () => {
+    expect(await settledMutate(root, rename, deps)).toEqual(ok({}))
+    expect((await fmOf(page()))['<Projects>']).toEqual(['Pom'])
+  })
+
+  it.skipIf(windows)(
+    'answers the line and a retry, which updates the member once it reads',
+    async () => {
+      await symlink(join(root, 'Notes', 'Nowhere.md'), broken())
+      expect(await settledMutate(root, rename, deps)).toEqual(
+        ok({ cascade: { pages: [], hosts: [], warning: unsweptLine(1) }, retry }),
+      )
+      expect((await readJournal(root))?.spaceId).toBe('sp-cs')
+      await readable()
+      expect(await settledMutate(root, retry, deps)).toEqual(ok({}))
+      expect((await fmOf(broken()))['<Projects>']).toEqual(['Pom'])
+    },
+  )
+
+  it.skipIf(windows)('a retry changes nothing once the Space is renamed again', async () => {
+    await symlink(join(root, 'Notes', 'Nowhere.md'), broken())
+    expect((await settledMutate(root, rename, deps)).ok).toBe(true)
+    await readable()
+    const again = { op: 'renameSpace', spaceId: 'sp-pom', newName: 'Atlas' } as const
+    expect((await settledMutate(root, again, deps)).ok).toBe(true)
+    expect(await settledMutate(root, retry, deps)).toEqual(ok({}))
+    expect((await fmOf(broken()))['<Projects>']).toEqual(['Pommora'])
+  })
+
+  it.skipIf(windows)('a retry changes nothing once another Space takes the old name', async () => {
+    await symlink(join(root, 'Notes', 'Nowhere.md'), broken())
+    expect((await settledMutate(root, rename, deps)).ok).toBe(true)
+    const create = { op: 'createSpace', id: newId(), contextId: 'ctx_projects', name: 'Pommora' }
+    expect((await settledMutate(root, create as never, deps)).ok).toBe(true)
+    await readable()
+    expect(await settledMutate(root, retry, deps)).toEqual(ok({}))
+    expect((await fmOf(broken()))['<Projects>']).toEqual(['Pommora'])
   })
 })
 

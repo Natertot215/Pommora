@@ -112,6 +112,23 @@ function pageLeg(j: RenameJournal): RewriteText | undefined {
   return (content) => renameFrontmatterKey(content, oldKey, newKey, NEITHER_KEY_IS_FRESHER)
 }
 
+export interface Unswept {
+  skipped: number
+  from: string
+}
+
+const unswept = (journaled: boolean, skipped: string[], from: string): Unswept | null =>
+  !journaled && skipped.length ? { skipped: skipped.length, from } : null
+
+async function sweepAgain(
+  root: string,
+  contextTitle: string,
+  j: RenameJournal,
+): Promise<Result<Unswept | null>> {
+  const again = await cascadeTitle(root, contextTitle, j)
+  return ok(unswept(false, again.skipped, j.oldTitle))
+}
+
 async function cascadeTitle(
   root: string,
   contextTitle: string,
@@ -194,18 +211,25 @@ const commitTitle = (root: string, id: string, title: string) =>
     contexts: cur.contexts.map((c) => (c.id === id ? { ...c, title } : c)),
   }))
 
-/** Order: journal → folder rename → KEY cascade → registry title commit → journal settle; a live failure aborts with a best-effort reverse and a cleared journal. */
+/** Order: journal → folder rename → KEY cascade → registry title commit → journal settle; a live failure aborts with a best-effort reverse and a journal that holds what the reverse skipped. */
 export async function renameContextOp(
   root: string,
   contextId: string,
   newName: string,
-): Promise<Result<null>> {
+  from?: string,
+): Promise<Result<Unswept | null>> {
   const why = nameError(newName, 'directory')
   if (why) return fail('invalid-name', why)
   const reg = await readRegistryStrict(root)
   if (!reg.ok) return reg
   const entry = reg.value.contexts.find((c) => c.id === contextId)
   if (!entry) return fail('not-found', 'Unknown Context.')
+  if (from !== undefined) {
+    const moved = entry.title !== newName || reg.value.contexts.some((c) => c.title === from)
+    return moved
+      ? ok(null)
+      : sweepAgain(root, newName, { contextId, oldTitle: from, newTitle: newName, skipped: [] })
+  }
   if (entry.title === newName) return ok(null)
   if (
     reg.value.contexts.some(
@@ -215,7 +239,7 @@ export async function renameContextOp(
     return fail('exists', `"${newName}" already exists.`)
 
   const j: RenameJournal = { contextId, oldTitle: entry.title, newTitle: newName, skipped: [] }
-  await writeJournal(root, j)
+  const journaled = await writeJournal(root, j)
 
   const oldDir = join(contextsDir(root), entry.title)
   const newDir = join(contextsDir(root), newName)
@@ -230,29 +254,39 @@ export async function renameContextOp(
 
   const committed = await commitTitle(root, contextId, newName)
   if (!committed.ok) {
-    await cascadeTitle(root, entry.title, { ...j, oldTitle: newName, newTitle: entry.title })
+    // The way back is a rename of its own, journaled so the next open finishes the files it can't reach now.
+    const back: RenameJournal = { ...j, oldTitle: newName, newTitle: entry.title }
+    const backed = await writeJournal(root, back)
+    const undone = await cascadeTitle(root, entry.title, back)
     try {
       if (await pathExists(newDir)) await relocate(newDir, oldDir)
     } catch {}
-    await clearJournal(root, j)
-    return committed
+    await settleJournal(root, back, undone.skipped)
+    const left = unswept(backed, undone.skipped, newName)
+    return left ? fault(`${committed.error.message} ${unsweptLine(left.skipped)}`) : committed
   }
 
   await settleJournal(root, j, cascade.skipped)
-  return ok(null)
+  return ok(unswept(journaled, cascade.skipped, j.oldTitle))
 }
 
 export async function renameSpaceOp(
   root: string,
   spaceId: string,
   newName: string,
-): Promise<Result<null>> {
+  from?: string,
+): Promise<Result<Unswept | null>> {
   const why = nameError(newName, 'directory')
   if (why) return fail('invalid-name', why)
   const { groupById, spaceById } = contextWorldOf((await liveTreeOf(root)).contexts)
   const space = spaceById.get(spaceId)
   const group = space && groupById.get(space.contextId)
   if (!space || !group) return fail('not-found', 'Unknown Space.')
+  if (from !== undefined) {
+    const moved = space.title !== newName || group.spaces.some((s) => s.title === from)
+    const again = { contextId: space.contextId, spaceId, oldTitle: from, newTitle: newName }
+    return moved ? ok(null) : sweepAgain(root, group.def.title, { ...again, skipped: [] })
+  }
   if (space.title === newName) return ok(null)
   const dir = join(root, space.path)
   const target = join(dirname(dir), newName)
@@ -265,7 +299,7 @@ export async function renameSpaceOp(
     newTitle: newName,
     skipped: [],
   }
-  await writeJournal(root, j)
+  const journaled = await writeJournal(root, j)
   try {
     await relocate(dir, target)
   } catch (e) {
@@ -275,7 +309,7 @@ export async function renameSpaceOp(
 
   const cascade = await cascadeTitle(root, group.def.title, j)
   await settleJournal(root, j, cascade.skipped)
-  return ok(null)
+  return ok(unswept(journaled, cascade.skipped, j.oldTitle))
 }
 
 export async function replayPendingRename(root: string): Promise<void> {

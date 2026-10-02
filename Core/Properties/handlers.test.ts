@@ -112,13 +112,14 @@ describe('the property channels', () => {
     await rm(setFile)
     await mkdir(setFile)
     const r = await propertiesHandlers['property:renameOption'](ctx, propId, 'Done', 'Closed')
+    const record = { op: 'option-rename', id: propId, from: 'Done', to: 'Closed' }
     expect(r.ok && r.value.cascade.warning).toBe(unsweptLine(1))
-    expect(r.ok && r.value.replayable).toBe(true)
+    expect(r.ok && r.value.owed).toEqual(record)
     expect((liveViewAt(col) as { filter: unknown }).filter).toEqual(viewOn(propId, 'Closed').filter)
     await rm(setFile, { recursive: true })
     await writeFile(setFile, held)
     await refreshTree(root)
-    expect(await propertiesHandlers['property:replay'](ctx, propId)).toEqual(ok(null))
+    expect(await propertiesHandlers['property:replay'](ctx, record)).toEqual(ok(null))
     expect((await readJsonAt(setFile)).views).toEqual([viewOn(propId, 'Closed')])
     expect(await readSchemaJournal(root)).toBeNull()
   })
@@ -129,7 +130,7 @@ describe('the property channels', () => {
     await mkdir(setFile)
     const r = await propertiesHandlers['property:removeOption'](ctx, propId, 'Done')
     expect(r.ok && r.value.cascade.warning).toBe(unsweptLine(1))
-    expect(r.ok && r.value.replayable).toBe(true)
+    expect(r.ok && r.value.owed).toEqual({ op: 'option-remove', id: propId, value: 'Done' })
     expect((liveViewAt(col) as { filter: unknown }).filter).toEqual({ match: 'all', rules: [] })
     expect(tilePushes()).toEqual([HOME])
   })
@@ -140,14 +141,15 @@ describe('the property channels', () => {
     await rm(setFile)
     await mkdir(setFile)
     const r = await propertiesHandlers['property:delete'](ctx, propId)
+    const record = { op: 'delete', id: propId, name: 'Stage' }
     expect(r.ok && r.value.cascade?.warning).toBe(unsweptLine(1))
-    expect(r.ok && r.value.replayable).toBe(true)
+    expect(r.ok && r.value.owed).toEqual(record)
     expect(tilePushes()).toEqual([HOME])
-    expect(await propertiesHandlers['property:replay'](ctx, propId)).toEqual(fault(unsweptLine(1)))
+    expect(await propertiesHandlers['property:replay'](ctx, record)).toEqual(fault(unsweptLine(1)))
     await rm(setFile, { recursive: true })
     await writeFile(setFile, held)
     await refreshTree(root)
-    expect(await propertiesHandlers['property:replay'](ctx, propId)).toEqual({
+    expect(await propertiesHandlers['property:replay'](ctx, record)).toEqual({
       ok: true,
       value: null,
     })
@@ -155,23 +157,21 @@ describe('the property channels', () => {
     expect(views[0].filter).toEqual({ match: 'all', rules: [] })
   })
 
-  it('a delete that finds another operation owed in the journal offers no replay of its own', async () => {
+  it('a delete that finds another operation owed in the journal answers its own record, whose replay leaves the journal’s', async () => {
     const owed = { op: 'rename' as const, id: 'prop_other', from: 'A', to: 'B' }
     await writeSchemaJournal(root, owed)
     const setFile = sidecarPath(surfaces.set, 'set')
     await rm(setFile)
     await mkdir(setFile)
     const r = await propertiesHandlers['property:delete'](ctx, propId)
+    const record = { op: 'delete', id: propId, name: 'Stage' }
     expect(r.ok && r.value.cascade.warning).toBe(unsweptLine(1))
-    expect(r.ok && r.value.replayable).toBeUndefined()
-    expect(await propertiesHandlers['property:replay'](ctx, propId)).toEqual({
-      ok: true,
-      value: null,
-    })
+    expect(r.ok && r.value.owed).toEqual(record)
+    expect(await propertiesHandlers['property:replay'](ctx, record)).toEqual(fault(unsweptLine(1)))
     expect(await readSchemaJournal(root)).toEqual(owed)
   })
 
-  it('an option removal that finds another operation owed in the journal offers no replay of its own', async () => {
+  it('an option removal that finds another operation owed in the journal answers its own record', async () => {
     const owed = { op: 'rename' as const, id: 'prop_other', from: 'A', to: 'B' }
     await writeSchemaJournal(root, owed)
     const setFile = sidecarPath(surfaces.set, 'set')
@@ -179,7 +179,7 @@ describe('the property channels', () => {
     await mkdir(setFile)
     const r = await propertiesHandlers['property:removeOption'](ctx, propId, 'Done')
     expect(r.ok && r.value.cascade.warning).toBe(unsweptLine(1))
-    expect(r.ok && r.value.replayable).toBeUndefined()
+    expect(r.ok && r.value.owed).toEqual({ op: 'option-remove', id: propId, value: 'Done' })
     expect(await readSchemaJournal(root)).toEqual(owed)
   })
 
@@ -191,5 +191,129 @@ describe('the property channels', () => {
       match: 'all',
       rules: [],
     })
+  })
+})
+
+describe('a schema op answers the record its replay owes, whether or not the journal took it', () => {
+  const other = { op: 'rename' as const, id: 'prop_other', from: 'A', to: 'B' }
+  const pageA = (): string => `${col}/A.md`
+  const unreadable = async <T>(fn: () => T): Promise<Awaited<T>> => {
+    await chmod(pageA(), 0o000)
+    try {
+      return await fn()
+    } finally {
+      await chmod(pageA(), 0o644)
+    }
+  }
+  const fm = async (): Promise<string> => readFile(pageA(), 'utf8')
+  beforeEach(async () => {
+    await writeSchemaJournal(root, other)
+  })
+
+  it.skipIf(noModeBits)('an option rename', async () => {
+    const record = { op: 'option-rename', id: propId, from: 'Done', to: 'Closed' }
+    const r = await unreadable(() =>
+      propertiesHandlers['property:renameOption'](ctx, propId, 'Done', 'Closed'),
+    )
+    expect(r.ok && r.value.cascade.warning).toBe(unsweptLine(1))
+    expect(r.ok && r.value.owed).toEqual(record)
+    expect(await propertiesHandlers['property:replay'](ctx, record)).toEqual(ok(null))
+    expect(await fm()).toContain('Stage:\n  - Closed')
+    expect(await readSchemaJournal(root)).toEqual(other)
+  })
+
+  it.skipIf(noModeBits)('an option removal', async () => {
+    const record = { op: 'option-remove', id: propId, value: 'Done' }
+    const r = await unreadable(() =>
+      propertiesHandlers['property:removeOption'](ctx, propId, 'Done'),
+    )
+    expect(r.ok && r.value.cascade.warning).toBe(unsweptLine(1))
+    expect(r.ok && r.value.owed).toEqual(record)
+    expect(await propertiesHandlers['property:replay'](ctx, record)).toEqual(ok(null))
+    expect(await fm()).not.toContain('Stage')
+    expect(await readSchemaJournal(root)).toEqual(other)
+  })
+
+  it.skipIf(noModeBits)('a property delete', async () => {
+    const record = { op: 'delete', id: propId, name: 'Stage' }
+    const r = await unreadable(() => propertiesHandlers['property:delete'](ctx, propId))
+    expect(r.ok && r.value.cascade.warning).toBe(unsweptLine(1))
+    expect(r.ok && r.value.owed).toEqual(record)
+    expect(await propertiesHandlers['property:replay'](ctx, record)).toEqual(ok(null))
+    expect(await fm()).not.toContain('Stage')
+    expect(await readSchemaJournal(root)).toEqual(other)
+  })
+
+  describe('a property rename', () => {
+    const record = { op: 'rename' as const, id: '', from: 'Stage', to: 'Phase' }
+    const renamed = async () => {
+      const r = await unreadable(() => propertiesHandlers['property:rename'](ctx, propId, 'Phase'))
+      expect(r.ok && r.value?.cascade.warning).toBe(unsweptLine(1))
+      expect(r.ok && r.value?.owed).toEqual({ ...record, id: propId })
+      return { ...record, id: propId }
+    }
+
+    it.skipIf(noModeBits)('replays its record once the holder reads', async () => {
+      const owed = await renamed()
+      expect(await propertiesHandlers['property:replay'](ctx, owed)).toEqual(ok(null))
+      expect(await fm()).toContain('Phase:\n  - Done')
+      expect(await fm()).not.toContain('Stage')
+      expect(await readSchemaJournal(root)).toEqual(other)
+    })
+
+    it.skipIf(noModeBits)('changes nothing once the property is renamed again', async () => {
+      const owed = await renamed()
+      expect((await propertiesHandlers['property:rename'](ctx, propId, 'Phase 2')).ok).toBe(true)
+      const before = await fm()
+      expect(await propertiesHandlers['property:replay'](ctx, owed)).toEqual(ok(null))
+      expect(await fm()).toBe(before)
+    })
+
+    it.skipIf(noModeBits)('changes nothing once another property takes the old name', async () => {
+      const owed = await renamed()
+      expect((await createProperty(root, { id: '', name: 'Stage', type: 'number' })).ok).toBe(true)
+      const before = await fm()
+      expect(await propertiesHandlers['property:replay'](ctx, owed)).toEqual(ok(null))
+      expect(await fm()).toBe(before)
+    })
+  })
+})
+
+describe('a Collection whose sidecar doesn’t parse', () => {
+  const colFile = (): string => sidecarPath(col, 'collection')
+  const damaged = async (): Promise<string> => {
+    const held = await readFile(colFile(), 'utf8')
+    await writeFile(colFile(), '{corrupt')
+    await refreshTree(root)
+    return held
+  }
+  const repaired = async (held: string): Promise<void> => {
+    await writeFile(colFile(), held)
+    await refreshTree(root)
+  }
+
+  it('an option rename answers its record, and the replay brings the Collection current once it reads', async () => {
+    const held = await damaged()
+    const record = { op: 'option-rename', id: propId, from: 'Done', to: 'Closed' }
+    const r = await propertiesHandlers['property:renameOption'](ctx, propId, 'Done', 'Closed')
+    expect(r.ok && r.value.cascade.warning).toBeDefined()
+    expect(r.ok && r.value.owed).toEqual(record)
+    await repaired(held)
+    expect(await propertiesHandlers['property:replay'](ctx, record)).toEqual(ok(null))
+    expect((await readJsonAt(colFile())).views).toEqual([viewOn(propId, 'Closed')])
+  })
+
+  it('an option removal answers its record, and the replay brings the Collection current once it reads', async () => {
+    const held = await damaged()
+    const record = { op: 'option-remove', id: propId, value: 'Done' }
+    const r = await propertiesHandlers['property:removeOption'](ctx, propId, 'Done')
+    expect(r.ok && r.value.cascade.warning).toBeDefined()
+    expect(r.ok && r.value.owed).toEqual(record)
+    await repaired(held)
+    expect(await propertiesHandlers['property:replay'](ctx, record)).toEqual(ok(null))
+    const views = (await readJsonAt(colFile())).views as { filter: unknown }[]
+    expect(views[0].filter).toEqual({ match: 'all', rules: [] })
+    const options = (await readRegistry(root)).defs[propId].select_options?.map((o) => o.value)
+    expect(options).toEqual(['Todo'])
   })
 })

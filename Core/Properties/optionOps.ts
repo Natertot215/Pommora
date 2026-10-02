@@ -166,8 +166,8 @@ export async function optionCascade(
 }
 
 /** Staged BEFORE the commit: a crash between commit and cascade is recoverable only from this record, and one stranded by a refusal is disposed of by the replay's holds-to-and-not-from gate. */
-async function stageOptionRename(root: string, record: SchemaJournal): Promise<boolean> {
-  return (await readRegistry(root)).defs[record.id] ? writeSchemaJournal(root, record) : false
+async function stageOptionRename(root: string, record: SchemaJournal): Promise<void> {
+  if ((await readRegistry(root)).defs[record.id]) await writeSchemaJournal(root, record)
 }
 
 export function renameOption(
@@ -183,7 +183,7 @@ export function renameOption(
       from: oldValue,
       to: newTitle,
     }
-    const journaled = await stageOptionRename(root, record)
+    await stageOptionRename(root, record)
     const edit = await mutateRegistry<Result<PropertyDefinition>>(root, (registry, stored) => {
       const def = registry.defs[propertyId]
       if (!def) return { result: NO_PROPERTY }
@@ -206,7 +206,7 @@ export function renameOption(
     }
     const reach = await optionCascade(root, edit.value, oldValue, { op: 'replace', to: newTitle })
     if (!reach.skipped) await clearSchemaJournal(root, record)
-    return ok(schemaCascade(reach, journaled))
+    return ok(schemaCascade(reach, record))
   })
 }
 
@@ -232,13 +232,13 @@ export function removeOption(
     const r = await resolveForCascade(root, propertyId, value)
     if (!r.ok) return r
     const record: SchemaJournal = { op: 'option-remove', id: propertyId, value }
-    const journaled = await writeSchemaJournal(root, record)
+    await writeSchemaJournal(root, record)
     const reach = await optionCascade(root, r.value, value, { op: 'strip' })
     if (!reach.skipped) {
       const dropped = await dropOptionFromDef(root, propertyId, value)
       if (!dropped.ok) return dropped
       await clearSchemaJournal(root, record)
     }
-    return ok(schemaCascade(reach, journaled))
+    return ok(schemaCascade(reach, record))
   })
 }

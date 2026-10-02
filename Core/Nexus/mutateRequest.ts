@@ -23,6 +23,7 @@ export interface MutateOutcome {
   unrestored?: string[]
   /** Where a restored page, Collection, Set, Space, or Context landed. */
   landed?: string
+  retry?: MutateRequest
 }
 export type MutateReply = Result<MutateOutcome>
 
@@ -103,8 +104,8 @@ export const mutateRequest = z.discriminatedUnion('op', [
     name: z.string(),
     order: ids.optional(),
   }),
-  op('renameContext', { contextId: z.string(), newName: z.string() }),
-  op('renameSpace', { spaceId: z.string(), newName: z.string() }),
+  op('renameContext', { contextId: z.string(), newName: z.string(), from: z.string().optional() }),
+  op('renameSpace', { spaceId: z.string(), newName: z.string(), from: z.string().optional() }),
   op('setContext', { path: z.string(), contextId: z.string(), spaceIds: ids }),
   op('setSpaceColor', { spaceId: z.string(), color: z.string().optional() }),
   op('reorderContexts', { ids }),

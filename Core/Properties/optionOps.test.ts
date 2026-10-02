@@ -717,7 +717,10 @@ describe('option cascades reach saved views', () => {
       const locked = await lockedHolder(id, col)
       try {
         expect(await removeOption(root, id, 'Done')).toEqual(
-          ok({ cascade: { pages: [], hosts: [], warning: unsweptLine(1) }, replayable: true }),
+          ok({
+            cascade: { pages: [], hosts: [], warning: unsweptLine(1) },
+            owed: { op: 'option-remove', id, value: 'Done' },
+          }),
         )
       } finally {
         await chmod(locked, 0o755)
@@ -740,7 +743,10 @@ describe('option cascades reach saved views', () => {
       const locked = await lockedHolder(id, col)
       try {
         expect(await renameOption(root, id, 'Done', 'Closed')).toEqual(
-          ok({ cascade: { pages: [], hosts: [HOME], warning: unsweptLine(1) }, replayable: true }),
+          ok({
+            cascade: { pages: [], hosts: [HOME], warning: unsweptLine(1) },
+            owed: { op: 'option-rename', id, from: 'Done', to: 'Closed' },
+          }),
         )
       } finally {
         await chmod(locked, 0o755)
@@ -756,7 +762,10 @@ describe('option cascades reach saved views', () => {
     await rm(setFile)
     await mkdir(setFile)
     expect(await removeOption(root, id, 'Done')).toEqual(
-      ok({ cascade: { pages: [], hosts: [HOME], warning: unsweptLine(1) }, replayable: true }),
+      ok({
+        cascade: { pages: [], hosts: [HOME], warning: unsweptLine(1) },
+        owed: { op: 'option-remove', id, value: 'Done' },
+      }),
     )
     expect(await readSchemaJournal(root)).toEqual({ op: 'option-remove', id, value: 'Done' })
     expect((await readRegistry(root)).defs[id].select_options?.map((o) => o.value)).toEqual([

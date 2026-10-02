@@ -156,7 +156,7 @@ describe('renameProperty and editProperty', () => {
     expect(await renameProperty(root, c.value.id, 'Status ')).toEqual({ ok: true, value: null })
     expect(await renameProperty(root, c.value.id, 'Phase')).toEqual({
       ok: true,
-      value: { from: 'Status', to: 'Phase' },
+      value: { from: 'Status', to: 'Phase', cascade: { pages: [], hosts: [] } },
     })
     expect(await readFile(p.value.path, 'utf8')).toContain('foo: bar')
   })
