@@ -210,7 +210,7 @@ describe('PropertyPanel', () => {
     expect(ask.mock.calls.map((c) => c[0])).not.toContain('view:loadValues')
   })
 
-  it('a Space keeps its edit until the confirming push, then reads its node', async () => {
+  it('a Space keeps its edit until the push, then reads its node', async () => {
     ask = vi.fn(async () => ({ ok: true, value: 'value:remove' }))
     ;(window as unknown as { nexus: unknown }).nexus = {
       ask,

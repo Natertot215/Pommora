@@ -164,7 +164,7 @@ describe('the All Properties section (T5)', () => {
     expect(all.textContent).not.toContain('Title')
   })
 
-  it('+ assigns through the IPC; the confirming push carries the promotion, not a reload', async () => {
+  it('+ assigns through the IPC; the push carries the promotion, not a reload', async () => {
     useSession.setState({ tree: { config: { registry: [effortDef] } } as never })
     await mountPane([])
     await act(async () => {
