@@ -283,7 +283,9 @@ export async function renameSpaceOp(
   const group = space && groupById.get(space.contextId)
   if (!space || !group) return fail('not-found', 'Unknown Space.')
   if (from !== undefined) {
-    const moved = space.title !== newName || group.spaces.some((s) => s.title === from)
+    const moved =
+      space.title !== newName ||
+      group.spaces.some((s) => normalizeTitle(s.title) === normalizeTitle(from))
     const again = { contextId: space.contextId, spaceId, oldTitle: from, newTitle: newName }
     return moved ? ok(null) : sweepAgain(root, group.def.title, { ...again, skipped: [] })
   }
