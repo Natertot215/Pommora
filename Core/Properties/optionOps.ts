@@ -1,9 +1,8 @@
-import { mutateRegistry, readRegistry, NO_PROPERTY } from './propertiesRegistry'
+import { mutateRegistry, readRegistry, NO_PROPERTY, serializeSchemaOp } from './propertiesRegistry'
 import { validateOptionValues } from './schema'
 import { collectionFolders } from './assignment'
 import { keyHolderFiles } from './keyHolders'
 import { sweepGovernedRoots, unsweptLine } from './governedSweep'
-import { serializeSchemaOp } from './schemaChain'
 import { valueEditRewrite, type ValueEdit } from './pageValue'
 import { ok, fail, fault, type Result } from '../Contract/result'
 import type { Adoption } from './propertyValue'
@@ -59,7 +58,7 @@ function admitOptionEdit(def: PropertyDefinition, e: OptionEdit): Result<null> {
 }
 
 export function editOption(root: string, propertyId: string, e: OptionEdit): Promise<Result<null>> {
-  return serializeSchemaOp(() =>
+  return serializeSchemaOp(root, () =>
     mutateRegistry<Result<null>>(root, (registry, stored) => {
       const def = registry.defs[propertyId]
       if (!def) return { result: NO_PROPERTY }
@@ -171,7 +170,7 @@ export function renameOption(
   oldValue: string,
   newTitle: string,
 ): Promise<Result<SchemaCascade>> {
-  return serializeSchemaOp(async () => {
+  return serializeSchemaOp(root, async () => {
     const record: SchemaJournal = {
       op: 'option-rename',
       id: propertyId,
@@ -211,7 +210,7 @@ export function clearOption(
   propertyId: string,
   value: string,
 ): Promise<Result<null>> {
-  return serializeSchemaOp(async () => {
+  return serializeSchemaOp(root, async () => {
     const r = await resolveForCascade(root, propertyId, value)
     if (!r.ok) return r
     const skipped = await valueEditSweep(root, r.value.name, value, { op: 'strip' })
@@ -224,7 +223,7 @@ export function removeOption(
   propertyId: string,
   value: string,
 ): Promise<Result<SchemaCascade>> {
-  return serializeSchemaOp(async () => {
+  return serializeSchemaOp(root, async () => {
     const r = await resolveForCascade(root, propertyId, value)
     if (!r.ok) return r
     const record: SchemaJournal = { op: 'option-remove', id: propertyId, value }

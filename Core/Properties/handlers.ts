@@ -149,9 +149,7 @@ export const propertiesHandlers = {
     return ok({ id: created.value.id })
   }),
 
-  'schema:reorder': schemaChannel(idAndIndex, (_root, folder, id, at) =>
-    reorderAssignment(folder, id, at),
-  ),
+  'schema:reorder': schemaChannel(idAndIndex, reorderAssignment),
   'schema:unassign': schemaChannel(idOnly, removeProperty, unsweptReply),
   'schema:assign': schemaChannel(idAndOptionalIndex, assignProperty),
 
