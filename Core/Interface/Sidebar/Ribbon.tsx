@@ -7,6 +7,7 @@ import { openOrder } from '../../Actions/menuModel'
 import { popMenu } from '../../Actions/menuActions'
 import { openLabel } from '../../Actions/toggleLabels'
 import { useSession } from '../../Session/store'
+import { personalizationOf } from '../../Session/configSlice'
 import { sidebarModeOf, useExperimental } from '../../Settings/experimental'
 import { type RibbonKey, resolveRibbonOrder, withHidden } from './ribbonOrder'
 import { isOpenInTabs } from '../../Navigation/tabsModel'
@@ -14,7 +15,6 @@ import { ctxHandler } from './sidebarRows'
 import { MATRIX_ICON, MATRIX_REF } from '../../Matrix/matrixKind'
 import { NexusPhoto } from './NexusPhoto'
 import './sidebar.css'
-import { personalizationOf } from '../../Session/configSlice'
 
 // An icon that summoned a window dismisses it on the next press.
 const RIBBON: Record<

@@ -32,7 +32,7 @@ const SETTLE_MS = 200
 
 let watcher: FSWatcher | null = null
 let starts = 0
-let settling: Promise<void> = Promise.resolve()
+let batchQueue: Promise<void> = Promise.resolve()
 let debounce: ReturnType<typeof setTimeout> | null = null
 let batch: Changed[] = []
 const configDebounce = new Map<string, ReturnType<typeof setTimeout>>()
@@ -116,7 +116,7 @@ export async function startWatcher(root: string, win: CurrentWindow): Promise<vo
       if (debounce) clearTimeout(debounce)
       // Chained, so batches apply in the order they settled.
       debounce = setTimeout(() => {
-        settling = settling.then(() => settle(root, win))
+        batchQueue = batchQueue.then(() => settle(root, win))
       }, SETTLE_MS)
     }
   watcher

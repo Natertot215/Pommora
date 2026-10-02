@@ -33,6 +33,7 @@ import { useLatest, useStableApi } from '@pommora/uix/Utilities/stableApi'
 import { useThumb } from '../../Assets/useThumb'
 import { coverOf } from '../../Pages/pageDetail'
 import { useSession } from '../../Session/store'
+import { personalizationOf } from '../../Session/configSlice'
 import { glanceShown } from '../../Interface/Glance/glanceAction'
 import { AssetImage } from '../../Assets/AssetImage'
 import { useBannerMenu } from '../../Interface/Header/useBannerMenu'
@@ -70,7 +71,6 @@ import { popMenu } from '../../Actions/menuActions'
 import { cardMenuModel } from '../../Actions/cardMenu'
 import { useGhostFlip } from './useGhostFlip'
 import './cards-view.css'
-import { personalizationOf } from '../../Session/configSlice'
 
 // ── Types and constants ─────────────────────────────────────────────────────
 

@@ -20,6 +20,7 @@ import { useDismissal } from '@pommora/uix/Interactions/dismissalStack'
 import { entityIcon } from '../Assets/entityIconPolicy'
 import { ZOOM } from '../Settings/personalization'
 import { useSession } from '../Session/store'
+import { personalizationOf } from '../Session/configSlice'
 import { popMenu } from '../Actions/menuActions'
 import { askRemoveTile } from '../Interface/Confirm/confirmations'
 import { notifyUndoable, reportRefusal } from '../Interface/Notifications/notifications'
@@ -47,7 +48,6 @@ import { isUlidShaped } from '../Nexus/identityMark'
 import { cx } from '@pommora/uix/Utilities/cx'
 import { RenderBoundary } from '@pommora/uix/Elements/RenderBoundary'
 import './tile-base.css'
-import { personalizationOf } from '../Session/configSlice'
 
 const NO_PAGES: ReadonlyMap<string, ConnPage> = new Map()
 
