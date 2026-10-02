@@ -1,4 +1,4 @@
-// Events settle, then apply one at a time through the path the app's own writes take.
+// Events settle, then apply one at a time through the path the app's own writes take; what they listed missing is stamped before the batch's settle.
 
 import chokidar, { type FSWatcher } from 'chokidar'
 import {
@@ -9,7 +9,7 @@ import {
   type WatchScope,
 } from '@pommora/core/Paths/exclusion'
 import { escapes } from '@pommora/core/Paths/pathSafety'
-import { flush } from '@pommora/core/Nexus/settle'
+import { settleBatch } from '@pommora/core/Nexus/settle'
 import { readMatrixFile } from '@pommora/core/Matrix/matrixFile'
 import { readNavigationFile } from '@pommora/core/Navigation/navigationFile'
 import {
@@ -27,7 +27,6 @@ import { posixPath } from '../Platform/hostPath'
 import { sessionRoot, type WaitingOpen, waitingOpen } from '@pommora/core/Nexus/session'
 import { readWatchScope } from '@pommora/core/Settings/settings'
 import { readNexusConfig } from '@pommora/core/Nexus/readNexus'
-import { applyEvents } from '@pommora/core/Nexus/fileEvents'
 
 const SETTLE_MS = 200
 
@@ -172,13 +171,13 @@ async function settle(root: string, win: CurrentWindow): Promise<void> {
   const noted = batch
   batch = []
   try {
-    await applyEvents(root, await dropOwnEchoes(noted))
-    await flush(
+    await settleBatch(
       {
         push: <K extends keyof Pushes>(channel: K, value: Pushes[K]) => push(win, channel, value),
         watch: (next) => startWatcher(next, win),
       },
       root,
+      await dropOwnEchoes(noted),
     )
   } catch {
     // Transient FS state mid-write — the next settle re-reads (Reload is the fallback).
