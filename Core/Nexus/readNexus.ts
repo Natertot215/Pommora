@@ -241,7 +241,7 @@ export async function readFolder(
   const name = basename(rel)
   const walk: Walk = {
     // An Agenda folder is no Collection or Set whether or not its slot is registered, so the registration isn't read.
-    kindCtx: { agenda: {}, homed: new Set(), root },
+    kindCtx: await agendaContext(root, null),
     scope: scopeOf(tree.config),
     registry: Object.fromEntries(tree.config.registry.map((d) => [d.id, d])),
     unreadable: [],
