@@ -410,7 +410,8 @@ async function applySpace(root: string, dirRel: string, ev: Changed, owed: Owed)
     const built =
       group && spaceNodeFrom(sc, { title: basename(dirRel), path: dirRel, contextId: group.def.id })
     const held = spaceAt(t, dirRel)
-    // A Space the tree doesn't hold lands from the app's own write alone, which relinks nothing, as the app's create never has; an outside one walks, so a tag it now resolves gains its link.
+    // A Space the tree doesn't hold lands from the app's own create alone, which relinks nothing, as the app's create never has; an outside one, or the stamp of one the tree listed unreadable, walks, so a tag it now resolves gains its link.
+    if (t.unreadable?.some((u) => u.path === dirRel)) return null
     if (!built || (held ? held.id !== built.id : ev.origin === 'watched')) return null
     const node = contextLinker(t.contexts)(built, sc)
     return held

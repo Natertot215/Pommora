@@ -15,7 +15,7 @@ import { updatePageBody } from './page'
 import { splitFrontmatter } from '../Files/pageFile'
 import { ID_KEY } from './identityMark'
 import { stabilize } from './treeStabilize'
-import { applyEvents, oweCascade, owedFor } from './fileEvents'
+import { applyEvents, oweCascade, owedFor, oweWalk } from './fileEvents'
 import { flush, sent, settleBatch } from './settle'
 import type { NexusChange, NexusTree } from './tree'
 import { patch } from './treeDelta'
@@ -240,6 +240,26 @@ describe('the settle', () => {
     expect(await readFile(abs('Notes', 'Fresh.md'), 'utf8')).toBe('fresh\n')
     const bare = heldTreeOf(root)?.collections[0]?.pages.find((p) => p.path === 'Notes/Bare.md')
     expect(bare?.id).toBe(splitFrontmatter(await readFile(abs('Notes', 'Bare.md'), 'utf8'))[ID_KEY])
+  })
+
+  it('a Space a walk lists missing its ID holds the pages tagged with it once its stamp lands', async () => {
+    await mkdir(abs('.nexus', 'contexts', 'Areas', 'Home'), { recursive: true })
+    await writeFile(
+      abs('.nexus', 'contexts', 'contexts.json'),
+      JSON.stringify({ contexts: [{ id: 'ctx1', title: 'Areas' }] }),
+    )
+    await writeFile(abs('Notes', 'B.md'), `---\nID: ${ULID_B}\n<Areas>:\n  - Home\n---\n\nbeta\n`)
+    oweWalk(root)
+    await flush(pusher, root)
+    await writeFile(abs('.nexus', 'contexts', 'Areas', 'Home', '_space.json'), '{}')
+    oweWalk(root)
+    await flush(pusher, root)
+    const held = heldTreeOf(root)
+    const home = held?.contexts[0]?.spaces[0]
+    expect(held?.collections[0]?.pages.find((p) => p.id === ULID_B)?.contextValues).toEqual({
+      ctx1: [home?.id],
+    })
+    expect(held && stabilize(await readNexus(root), held)).toBe(held)
   })
 
   it.each([
