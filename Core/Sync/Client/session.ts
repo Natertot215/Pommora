@@ -1,6 +1,7 @@
 import type { HostContext } from '../../Contract/handlers'
 import { errText } from '../../Contract/result'
 import type { WatchScope } from '../../Paths/exclusion'
+import { inTurns } from '../../Platform/inTurns'
 import { readValue } from '../../Platform/localState'
 import { captureStore } from '../../Platform/stores'
 import { readWatchScope } from '../../Settings/settings'
@@ -32,18 +33,9 @@ const LONGEST_BACKOFF_MS = 30_000
 let session: Session | null = null
 let generation = 0
 let retry: ReturnType<typeof setTimeout> | null = null
-let chain: Promise<void> = Promise.resolve()
+const run = inTurns()
 
 export const currentSession = (): Session | null => session
-
-function run<T>(work: () => Promise<T>): Promise<T> {
-  const next = chain.then(work)
-  chain = next.then(
-    () => {},
-    () => {},
-  )
-  return next
-}
 
 function settled(self: Session): void {
   if (session !== self) return
@@ -233,7 +225,7 @@ export function stopSession(ctx: Pick<HostContext, 'push'>): Promise<void> {
   uninstallTap()
   session = null
   setStatus(ctx, { state: 'off' })
-  return chain
+  return run(() => {})
 }
 
 export async function syncNow(): Promise<void> {

@@ -1,3 +1,4 @@
+import { inTurns } from '../Platform/inTurns'
 import { machine } from '../Platform/machine'
 
 export interface WaitingOpen {
@@ -9,18 +10,16 @@ export interface WaitingOpen {
 // A waiting open is one refused by a file that doesn't parse; no session is open while it waits.
 let session: { kind: 'open'; root: string } | { kind: 'waiting'; open: WaitingOpen } | null = null
 let adoptingDepth = 0
-let adoption: Promise<unknown> = Promise.resolve()
+const adoption = inTurns()
 
 export const adopting = (): boolean => adoptingDepth > 0
 
 /** Writes answer BUSY while this runs, so a save from the old Nexus's still-open UI can't land in the one being opened. Each adoption waits for the one before it, so two opens never interleave. */
 export function whileAdopting<T>(work: () => Promise<T>): Promise<T> {
   adoptingDepth++
-  const run = adoption.then(work).finally(() => {
+  return adoption(work).finally(() => {
     adoptingDepth--
   })
-  adoption = run.catch(() => {})
-  return run
 }
 
 export function sessionRoot(): string | null {

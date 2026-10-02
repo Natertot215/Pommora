@@ -28,12 +28,13 @@ import { posixPath } from '../Platform/hostPath'
 import { sessionRoot, type WaitingOpen, waitingOpen } from '@pommora/core/Nexus/session'
 import { readWatchScope } from '@pommora/core/Settings/settings'
 import { readNexusConfig } from '@pommora/core/Nexus/readNexus'
+import { inTurns } from '@pommora/core/Platform/inTurns'
 
 const SETTLE_MS = 200
 
 let watcher: FSWatcher | null = null
 let starts = 0
-let batchQueue: Promise<void> = Promise.resolve()
+const batchQueue = inTurns()
 let debounce: ReturnType<typeof setTimeout> | null = null
 let batch: Changed[] = []
 const configDebounce = new Map<string, ReturnType<typeof setTimeout>>()
@@ -117,7 +118,7 @@ export async function startWatcher(root: string, win: CurrentWindow): Promise<vo
       if (debounce) clearTimeout(debounce)
       // Chained, so batches apply in the order they settled.
       debounce = setTimeout(() => {
-        batchQueue = batchQueue.then(() => drainBatch(root, win))
+        void batchQueue(() => drainBatch(root, win))
       }, SETTLE_MS)
     }
   watcher
