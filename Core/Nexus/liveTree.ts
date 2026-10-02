@@ -47,12 +47,6 @@ export function diskMoved(): void {
   epoch++
 }
 
-/** The epoch bump comes first because `refreshTree` joins any in-flight walk, and one that started before the change would otherwise install pre-change disk as canon with nothing scheduled to correct it. */
-export function refreshAfterWrite(root: string): Promise<NexusTree> {
-  diskMoved()
-  return refreshTree(root)
-}
-
 export function dropLiveTree(): void {
   hold(null)
   slot = null

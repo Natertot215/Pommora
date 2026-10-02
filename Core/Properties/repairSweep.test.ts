@@ -12,7 +12,7 @@ import { readRegistry } from './propertiesRegistry'
 import { seedContentIndex } from '../Index/indexSeed'
 import { runRepairSweep } from './repairSweep'
 import * as walk from '../Nexus/readNexus'
-import { refreshAfterWrite } from '../Nexus/liveTree'
+import { refreshTree } from '../Nexus/liveTree'
 import { contextsDir, contextsRegistryFile } from '../Paths/paths'
 import { installStores, NO_STORES } from '../Platform/stores'
 import { memoryStores } from '../Testing/memoryStores'
@@ -62,7 +62,7 @@ beforeEach(async () => {
   if (!p.ok) throw new Error('page failed')
   page = p.value.path
   installStores(memoryStores().stores)
-  await refreshAfterWrite(root)
+  await refreshTree(root)
   await seedContentIndex(root)
 })
 afterEach(async () => {
@@ -102,7 +102,7 @@ describe('runRepairSweep', () => {
 
   it('with the toggle off nothing is written', async () => {
     await settings(false)
-    await refreshAfterWrite(root)
+    await refreshTree(root)
     await frontmatter('Status: Open')
     const before = (await stat(page)).mtimeMs
     await runRepairSweep(root, await seedContentIndex(root))
@@ -167,7 +167,7 @@ describe('runRepairSweep', () => {
     )
     await mkdir(join(contextsDir(root), 'Projects', 'Alpha'), { recursive: true })
     await writeFile(join(contextsDir(root), 'Projects', 'Alpha', '_space.json'), '{"id":"sp-a"}')
-    await refreshAfterWrite(root)
+    await refreshTree(root)
     await frontmatter('<Projects>:\n  - Alpha\n  - Zeta')
     await runRepairSweep(root, await seedContentIndex(root))
     const out = await readFile(page, 'utf8')

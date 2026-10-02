@@ -313,7 +313,7 @@ describe('a file made outside the app', () => {
 
   it('an ID-less page is stamped and held without a walk', async () => {
     await startWatcher(root, win)
-    const walks = vi.spyOn(liveTree, 'refreshAfterWrite')
+    const walks = vi.spyOn(liveTree, 'refreshTree')
     try {
       await writeFile(abs('Notes', 'B.md'), 'beta\n')
       emit('add', 'Notes', 'B.md')

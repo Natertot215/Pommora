@@ -89,7 +89,7 @@ import {
   SPACE_SIDECAR,
   TILE_DOC_FILENAME,
 } from '../Paths/nexusPaths'
-import { readShard, withShards } from './pageMetadata'
+import { shardPages, withShards } from './pageMetadata'
 
 interface Owed {
   root: string
@@ -280,7 +280,7 @@ export async function indexEvent(root: string, ev: FileEvent): Promise<HeadingRe
         return await indexWrittenPage(root, ev.absPath, ev.text)
     }
   } catch (e) {
-    console.error('settle: the index missed an event and reseeds:', errText(e))
+    console.error('events: the index missed an event and reseeds:', errText(e))
     owedFor(root).corpus = true
     return null
   }
@@ -503,10 +503,11 @@ async function applySettings(root: string, ev: Changed, owed: Owed): Promise<App
 }
 
 async function applyShard(root: string, shard: string, ev: Changed): Promise<Applied> {
-  const read = await readShard(root, shard, ev.text)
-  if (read.kind === 'unreadable') return 'ok'
+  const raw = await jsonOf(ev)
+  // A month that can't be read keeps what the tree holds; the event says whether it left.
+  if (raw === null && ev.event !== 'unlink') return 'ok'
   const held = heldTreeOf(root)?.config.pageMetadata
-  const pageMetadata = withShards(held ?? {}, { [shard]: read.kind === 'ok' ? read.pages : {} })
+  const pageMetadata = withShards(held ?? {}, { [shard]: raw ? shardPages(raw) : {} })
   return pageMetadata === held ? 'ok' : patchConfig(root, { pageMetadata })
 }
 
@@ -621,7 +622,7 @@ export async function applyEvents(
       if (applied === 'later') later.set(ev.absPath, ev)
       if (applied !== 'walk') continue
     } catch (e) {
-      console.error('settle: an event could not be placed, walking:', errText(e))
+      console.error('events: an event could not be placed, walking:', errText(e))
     }
     owed.walk = true
   }
