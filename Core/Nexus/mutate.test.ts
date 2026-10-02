@@ -2648,9 +2648,12 @@ describe('the Contexts lock', () => {
     )
   }
 
-  it.skipIf(noModeBits)(
-    'a swept page made unparsable before a refused delete puts it back doesn’t stop the pages after it, and the refusal counts it',
-    async () => {
+  it.skipIf(noModeBits).each([
+    ['unparsable', '---\nID: [unclosed\n---\n\nbroken'],
+    ['foreign', '---\nID: 42\n---\n\nforeign'],
+  ])(
+    'a swept page made %s before a refused delete puts it back doesn’t stop the pages after it, and the refusal counts it',
+    async (_, made) => {
       const locked = join(root, 'Notes', 'Daily', 'Locked.md')
       const second = join(root, 'Notes', 'Daily', 'Second.md')
       await writeFile(
@@ -2676,9 +2679,10 @@ describe('the Contexts lock', () => {
         const [first, last] = [join(root, 'Notes', 'Daily', 'Alpha.md'), second].sort(
           (a, b) => files.indexOf(a) - files.indexOf(b),
         )
-        await writeFile(first, '---\nID: [unclosed\n---\n\nbroken')
+        await writeFile(first, made)
         paused.release()
         const reply = await running
+        expect(await readFile(first, 'utf8')).toBe(made)
         expect(splitFrontmatter(await readFile(last, 'utf8'))['<Areas>']).toEqual(['Work'])
         expect(reply).toEqual(fault(governedSweep.unsweptLine(2)))
       } finally {
