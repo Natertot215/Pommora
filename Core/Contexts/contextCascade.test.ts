@@ -72,6 +72,7 @@ beforeEach(async () => {
   await mkdir(join(contextsDir(root), 'Classes', 'CS 161'), { recursive: true })
   await writeFile(csSidecar(), JSON.stringify({ id: 'sp-cs', '<Projects>': ['Pommora'] }))
   await mkdir(join(root, 'Notes'), { recursive: true })
+  await writeFile(join(root, 'Notes', '_pagecollection.json'), JSON.stringify({ id: 'c-notes' }))
   await writeFile(page(), '---\nid: p1\n<Projects>:\n  - Pommora\n  - pommora\n---\nbody')
 })
 afterEach(async () => {

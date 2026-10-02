@@ -24,7 +24,8 @@ async function applyOwn(ev: FileEvent): Promise<void> {
   // Every own write marks the disk moved, since one that leaves the tree as it already stood (a rename's later writes) would otherwise let a walk in flight install what it read before it; the editor's body save is the exception, since it leaves the frontmatter a walk reads as it was.
   if (ev.event === 'move' || !ev.bodyOnly) diskMoved()
   if (heldTreeOf(root)) {
-    owedFor(root).later.push(...(await applyEvents(root, [ev])))
+    // Under a folder awaiting its stamp, that folder's read holds the page if it carries its ID, and otherwise leaves it for its own event or a walk.
+    await applyEvents(root, [ev])
     return
   }
   // No tree to patch: an open stamps before it holds a tree, and the tree it seeds is read after its stamps.
@@ -103,9 +104,9 @@ async function settle(pusher: Pusher, root: string): Promise<{ rescope: boolean 
   // An open in progress has no window on this Nexus yet, so what is owed waits for the settle that follows it.
   if (sessionRoot() !== root || adopting()) return null
   const owed = owedFor(root)
-  // An arm still awaiting its file writes to this record after the push, so it is emptied in place and never replaced; the walk, the stamps still owed, and the own events awaiting a stamp outlive it, and the paths newly in reach outlive it while a stamp is owed or a pass is stamping.
-  const { pages, values, tiles, assets, corpus, rescope, stamp, walk, later, whole } = owed
-  Object.assign(owed, nothingOwed(root), { stamp, walk, later, whole })
+  // An arm still awaiting its file writes to this record after the push, so it is emptied in place and never replaced; the walk and the stamps still owed outlive it, and the paths newly in reach outlive it while a stamp is owed or a pass is stamping.
+  const { pages, values, tiles, assets, corpus, rescope, stamp, walk, whole } = owed
+  Object.assign(owed, nothingOwed(root), { stamp, walk, whole })
   if (!stamp.length && !stamping) owed.whole = []
   const held = heldTreeOf(root)
   const tree = held && shown(held, stamp)
@@ -128,20 +129,13 @@ async function reseed(pusher: Pusher, root: string, rescope: boolean): Promise<v
   if (rescope && sessionRoot() === root) await pusher.watch(root)
 }
 
-// A stamp's own write lands as an event that may list more, so a turn stamps until nothing is listed, then applies once more the own events that waited on those stamps and stamps what they list; one that waits again is dropped. A gate leaves both to a batch in its turn, which may still be reading the files it listed.
+// A stamp's own write lands as an event that may list more, so a turn stamps until nothing is listed. A gate leaves the list to a batch in its turn, which may still be reading the files it listed.
 async function stampListed(root: string, gate: boolean): Promise<void> {
   if (sessionRoot() !== root) return
   const owed = owedFor(root)
-  const pass = async (): Promise<void> => {
-    while (owed.stamp.length && !(gate && batching)) await stampMissing(root, owed.stamp.splice(0))
-  }
   stamping++
   try {
-    await pass()
-    if (gate && batching) return
-    const again = owed.later.splice(0)
-    await applyEvents(root, again)
-    await pass()
+    while (owed.stamp.length && !(gate && batching)) await stampMissing(root, owed.stamp.splice(0))
   } finally {
     stamping--
   }

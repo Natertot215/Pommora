@@ -295,21 +295,22 @@ describe('applyEvents — must agree with the walk', () => {
     expect(watch).not.toHaveBeenCalled()
   })
 
-  it('a folder of several hundred notes with no sidecar is read once, and listed once', async () => {
+  it('a folder of several hundred notes with no sidecar is read by its batch and by its stamp alone, and every note is held and stamped', async () => {
     await refreshTree(root)
     await mkdir(abs('Notes', 'Import'))
     const names = Array.from({ length: 400 }, (_, i) => `n${i}.md`)
     for (const name of names) await writeFile(abs('Notes', 'Import', name), `${name}\n`)
     const readFolder = vi.spyOn(readNexusModule, 'readFolder')
-    const later = await applyEvents(root, [
+    await settleBatch(QUIET, root, [
       ev('addDir', 'Notes', 'Import'),
       ...names.map((name) => ev('add', 'Notes', 'Import', name)),
     ])
-    expect(readFolder).toHaveBeenCalledTimes(1)
-    expect(owedFor(root).stamp).toEqual([{ path: 'Notes/Import', kind: 'set', reason: 'missing' }])
-    expect(later).toHaveLength(names.length)
-    await settleBatch(QUIET, root, later)
-    expect(held().collections[0]?.sets[0]?.pages).toHaveLength(400)
+    expect(readFolder).toHaveBeenCalledTimes(2)
+    const pages = held().collections[0]?.sets[0]?.pages
+    expect(pages).toHaveLength(400)
+    for (const p of pages ?? [])
+      expect(p.id).toBe(splitFrontmatter(await readFile(abs(...p.path.split('/')), 'utf8'))[ID_KEY])
+    expect(held().unreadable).toBeUndefined()
     await agrees()
   })
 })

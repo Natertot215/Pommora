@@ -100,8 +100,6 @@ interface Owed {
   stamp: Unreadable[]
   // Paths newly in reach, under which a listing stamps every page missing its ID.
   whole: string[]
-  // The app's own events that waited on a folder's stamp, which the next stamp pass applies once more; a watched batch keeps its own.
-  later: FileEvent[]
   pages: Set<string>
   // True while every write of the page was the editor's own body save.
   values: Map<string, boolean>
@@ -116,7 +114,6 @@ export const nothingOwed = (root: string): Owed => ({
   assets: false,
   stamp: [],
   whole: [],
-  later: [],
   pages: new Set(),
   values: new Map(),
   tiles: new Map(),
@@ -160,7 +157,7 @@ export function oweCascade(
   for (const host of hosts) owed.tiles.set(navKey(host), host)
 }
 
-// `later` is a page whose folder the tree doesn't hold yet, under a folder whose stamp is owed: it applies once more after the stamp pass that lands that stamp.
+// `later` is a page whose folder the tree doesn't hold yet, under a folder whose stamp is owed: a watcher's batch applies it once more after that stamp lands.
 type Applied = 'ok' | 'walk' | 'later'
 
 type EventClass =
