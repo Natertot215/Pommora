@@ -22,6 +22,8 @@ import { createFolderEntity } from '../Nexus/folderEntity'
 import { createTestPage } from '../Testing/createTestPage'
 import { unsweptLine } from '../Properties/governedSweep'
 import type { TrashDeps } from '../Trash/bundle'
+import { createProperty } from '../Properties/registryProperty'
+import { readRegistry } from '../Properties/propertiesRegistry'
 
 let root: string
 beforeEach(async () => {
@@ -231,6 +233,27 @@ describe('setContext reads the held tree', () => {
     ])
     expect((await readJsonAt(sidecarOf('Projects', 'Athena')))['<Projects>']).toEqual(['Pommora'])
     expect(await readFile(sidecarOf('Projects', 'Sapphire'), 'utf8')).toBe('{corrupt')
+  })
+
+  it('a Space link edit whose own sidecar is unwritable still adopts the option a far Space’s write found', async () => {
+    const tags = await createProperty(root, {
+      id: '',
+      name: 'Tags',
+      type: 'multiSelect',
+      select_options: [{ value: 'alpha' }],
+    })
+    if (!tags.ok) throw new Error('setup')
+    await mkdir(join(contextsDir(root), 'Projects', 'Athena'), { recursive: true })
+    await writeFile(
+      sidecarOf('Projects', 'Athena'),
+      JSON.stringify({ id: 'sp-ath', Tags: ['zeta'] }),
+    )
+    await refreshTree(root)
+    await writeFile(sidecarOf('Projects', 'Pommora'), '{corrupt')
+    expect((await link('ctx_projects', ['sp-ath'])).ok).toBe(false)
+    expect((await readJsonAt(sidecarOf('Projects', 'Athena')))['<Projects>']).toEqual(['Pommora'])
+    const options = (await readRegistry(root)).defs[tags.value.id].select_options
+    expect(options?.map((o) => o.value)).toEqual(['alpha', 'zeta'])
   })
 
   describe('a Space’s links (G-1, cross-context)', () => {
