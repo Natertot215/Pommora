@@ -58,7 +58,8 @@ function retireAgendaKey(identity: Record<string, unknown>): Record<string, unkn
 async function seedAgenda(root: string): Promise<AgendaRegistration> {
   const out: AgendaRegistration = {}
   for (const slot of AGENDA_FOLDERS) {
-    const made = await createFolderEntity(root, slot, slot.charAt(0).toUpperCase() + slot.slice(1))
+    const title = slot.charAt(0).toUpperCase() + slot.slice(1)
+    const made = await createFolderEntity(root, slot, title, newId())
     if (made.ok) out[slot] = made.value.id
   }
   return out

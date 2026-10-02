@@ -7,6 +7,7 @@ import type { SavedView } from '../Views/views'
 import type { PropertyDefinition } from '../Properties/properties'
 import { machine } from '../Platform/machine'
 import { createFolderEntity } from '../Nexus/folderEntity'
+import { newId } from '../Nexus/ids'
 import { createPage, updatePageBody, renamePage, updatePageProperty } from '../Nexus/page'
 import { setChildOrder } from '../Nexus/reorder'
 import { saveView } from '../Views/viewsFile'
@@ -26,7 +27,7 @@ let root: string
 let folder: string
 beforeEach(async () => {
   root = tempRoot('pom-sidecar-race-')
-  const c = await createFolderEntity(root, 'collection', 'Notes')
+  const c = await createFolderEntity(root, 'collection', 'Notes', newId())
   if (!c.ok) throw new Error('setup failed')
   folder = c.value.path
 })

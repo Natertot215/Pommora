@@ -14,6 +14,7 @@ import { refreshTree, dropLiveTree } from '../Nexus/liveTree'
 import { readRegistry } from './propertiesRegistry'
 import { assignProperty } from './assignment'
 import { contextDriftPresent } from '../Contexts/contextWrite'
+import { newId } from '../Nexus/ids'
 import { createFolderEntity } from '../Nexus/folderEntity'
 import { createPage } from '../Nexus/page'
 import { createProperty } from './registryProperty'
@@ -50,7 +51,7 @@ beforeEach(async () => {
     join(contextsDir(root), 'Areas', 'Work', '_space.json'),
     JSON.stringify({ id: 'sp-work' }),
   )
-  const col = await createFolderEntity(root, 'collection', 'Notes')
+  const col = await createFolderEntity(root, 'collection', 'Notes', newId())
   if (!col.ok) throw new Error('setup')
   notes = col.value.path
   const status = await createProperty(root, {

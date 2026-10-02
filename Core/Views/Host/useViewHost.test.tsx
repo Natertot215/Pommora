@@ -785,9 +785,11 @@ describe('settleOrders — a create composes with the live order', () => {
     const mutate = useSession.getState().mutate as ReturnType<typeof vi.fn>
     await mount(source)
     await act(async () => void creation.createFirst())
-    expect(mutate.mock.calls[0][0]).toMatchObject({ order: ['p1', 'p2', '$new'] })
+    const first = mutate.mock.calls[0][0]
+    expect(first).toMatchObject({ order: ['p1', 'p2', first.id] })
     await createBelowFirst()
-    expect(mutate.mock.calls[1][0]).toMatchObject({ order: ['p1', '$new', 'p2'] })
+    const second = mutate.mock.calls[1][0]
+    expect(second).toMatchObject({ order: ['p1', second.id, 'p2'] })
   })
 
   it('a create under Location page order writes no manual_order, even over a stored one', async () => {

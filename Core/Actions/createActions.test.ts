@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { DEFAULT_NEW_NAME, type MutateRequest, NEW_SLOT } from '../Nexus/mutateRequest'
+import { type CreateRequest, DEFAULT_NEW_NAME, type MutateRequest } from '../Nexus/mutateRequest'
 import type { SelectionState } from '../Navigation/navRef'
 import type { Personalization } from '../Settings/personalization'
 import { makeTree } from '../Testing/testTree'
@@ -10,6 +10,7 @@ import { createNamed, newPage, newPageAdjacent, newSpaceAdjacent } from './creat
 const CREATED = { id: 'new', path: 'Notes/Untitled.md' }
 const asked: MutateRequest[] = []
 const beginRename = vi.fn()
+const askedId = (): string => (asked[0] as CreateRequest).id
 const select = vi.fn()
 
 function seed(
@@ -45,7 +46,7 @@ describe('newPage', () => {
         id: expect.any(String),
         parentPath: 'Notes/Ideas',
         name: DEFAULT_NEW_NAME,
-        order: [NEW_SLOT, 'p2'],
+        order: [askedId(), 'p2'],
       },
     ])
     expect(select).toHaveBeenCalledWith({ kind: 'page', ...CREATED }, { newTab: false })
@@ -95,7 +96,7 @@ describe('adjacent creates', () => {
     seed({ kind: 'none' }, tree)
     await newPageAdjacent('Notes/Gamma.md', 'above', 'sidebar')
     expect(asked).toMatchObject([
-      { op: 'createPage', parentPath: 'Notes', order: ['p1', NEW_SLOT, 'p3'] },
+      { op: 'createPage', parentPath: 'Notes', order: ['p1', askedId(), 'p3'] },
     ])
     expect(beginRename).toHaveBeenCalledWith(CREATED.path, true, 'sidebar')
   })
@@ -108,7 +109,7 @@ describe('adjacent creates', () => {
         op: 'createSpace',
         contextId: 'g1',
         name: 'New Realm',
-        order: ['a1', NEW_SLOT, 't1', 'pr1'],
+        order: ['a1', askedId(), 't1', 'pr1'],
       },
     ])
     expect(beginRename).toHaveBeenCalledWith(CREATED.path, true, undefined)
@@ -118,13 +119,17 @@ describe('adjacent creates', () => {
 describe('createNamed', () => {
   it("places the request by its kind's placement setting and opens its name field", async () => {
     seed({ kind: 'none' }, makeTree(), { newSpacePlacement: 'top' })
-    await createNamed({ op: 'createSpace', contextId: 'g1', name: 'New Realm' }, 'matrix')
+    await createNamed(
+      { op: 'createSpace', id: 'sp9', contextId: 'g1', name: 'New Realm' },
+      'matrix',
+    )
     expect(asked).toEqual([
       {
         op: 'createSpace',
+        id: 'sp9',
         contextId: 'g1',
         name: 'New Realm',
-        order: [NEW_SLOT, 'a1', 't1', 'pr1'],
+        order: ['sp9', 'a1', 't1', 'pr1'],
       },
     ])
     expect(beginRename).toHaveBeenCalledWith(CREATED.path, true, 'matrix')

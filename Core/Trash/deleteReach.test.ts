@@ -2,7 +2,7 @@ import { applyEvents } from '../Nexus/fileEvents'
 import { flush } from '../Nexus/settle'
 import { chmod, copyFile, mkdir, readFile, rm, writeFile } from 'node:fs/promises'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
-import { newContentId } from '../Nexus/ids'
+import { newContentId, newId } from '../Nexus/ids'
 import { join } from '../Paths/posix'
 import { noModeBits, putJson, readJsonAt, tempRoot } from '../Testing/hostFs'
 import { type ConfigSurfaces, seedConfigSurfaces, viewOn } from '../Testing/configSurfaces'
@@ -44,7 +44,7 @@ const entity = async (
   kind: 'collection' | 'set',
   name: string,
 ): Promise<{ id: string; path: string }> => {
-  const made = await createFolderEntity(parent, kind, name)
+  const made = await createFolderEntity(parent, kind, name, newId())
   if (!made.ok) throw new Error(`${name} failed`)
   return made.value
 }

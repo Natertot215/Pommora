@@ -116,3 +116,21 @@ describe('the sidebar icon picker', () => {
     ])
   })
 })
+
+describe('the sidebar create control', () => {
+  it('mints a fresh ID for each create it sends', async () => {
+    ;(window as unknown as { nexus: unknown }).nexus = stubDialer({
+      menu: () => ({ ok: true, value: 'create' }),
+    })
+    mount('collections')
+    const body = document.querySelector<HTMLElement>('.mode-body')
+    if (!body) throw new Error('no mode body')
+    for (let i = 0; i < 2; i++)
+      await act(async () => {
+        body.dispatchEvent(new MouseEvent('contextmenu', { bubbles: true }))
+      })
+    const ids = mutate.mock.calls.map(([req]) => req.id)
+    expect(mutate.mock.calls.map(([req]) => req.op)).toEqual(['createContainer', 'createContainer'])
+    expect(ids[0]).not.toBe(ids[1])
+  })
+})

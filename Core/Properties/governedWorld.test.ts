@@ -6,6 +6,7 @@ import type { PropertyDefinition } from './properties'
 import * as liveTree from '../Nexus/liveTree'
 import { assignedDefs, assignProperty, collectionFolderOf, collectionFolders } from './assignment'
 import { createFolderEntity } from '../Nexus/folderEntity'
+import { newId } from '../Nexus/ids'
 import { createPage } from '../Nexus/page'
 import { createProperty } from './registryProperty'
 import { openSession } from '../Nexus/session'
@@ -19,7 +20,7 @@ beforeEach(async () => {
   await openSession(root)
   await mkdir(join(root, '.nexus'), { recursive: true })
   await writeFile(join(root, '.nexus', 'nexus.json'), JSON.stringify({ id: 'nx', createdAt: 'x' }))
-  const col = await createFolderEntity(root, 'collection', 'Notes')
+  const col = await createFolderEntity(root, 'collection', 'Notes', newId())
   if (!col.ok) throw new Error('setup')
   notes = col.value.path
   const status = await createProperty(root, {
@@ -65,9 +66,9 @@ describe('assignedDefs', () => {
 
 describe('collectionFolderOf', () => {
   it('resolves a page two Sets deep to its Collection, and an Agenda page to null', async () => {
-    const set = await createFolderEntity(notes, 'set', 'Daily')
+    const set = await createFolderEntity(notes, 'set', 'Daily', newId())
     if (!set.ok) throw new Error('setup')
-    const inner = await createFolderEntity(set.value.path, 'set', 'Week')
+    const inner = await createFolderEntity(set.value.path, 'set', 'Week', newId())
     if (!inner.ok) throw new Error('setup')
     const page = await createPage(inner.value.path, 'Deep', { body: 'b' })
     if (!page.ok) throw new Error('setup')

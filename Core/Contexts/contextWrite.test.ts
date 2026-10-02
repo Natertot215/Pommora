@@ -12,6 +12,7 @@ import {
   setSpaceContext,
   setSpaceRowOrder,
 } from './contextWrite'
+import { newId } from '../Nexus/ids'
 import { rawLayoutSchema } from '../Tiles/tiles'
 import { readTileDocAt } from '../Tiles/tileDoc'
 import { contextsRegistryFile, contextsDir, nexusDir } from '../Paths/paths'
@@ -54,7 +55,7 @@ const world = async () => {
 
 describe('createContextGroup', () => {
   it('appends a ULID entry and mkdirs the context folder', async () => {
-    const r = await createContextGroup(root, 'Clients')
+    const r = await createContextGroup(root, 'Clients', newId())
     expect(r.ok).toBe(true)
     if (!r.ok) return
     const reg = await readJsonAt<ContextsRegistry>(contextsRegistryFile(root))
@@ -66,23 +67,23 @@ describe('createContextGroup', () => {
   })
 
   it('disambiguates a taken title, and accepts one carrying a sigil glyph', async () => {
-    const dup = await createContextGroup(root, 'Projects')
+    const dup = await createContextGroup(root, 'Projects', newId())
     expect(dup.ok).toBe(true)
     if (dup.ok) expect(dup.value.path).toBe('.nexus/contexts/Projects (2)')
     // The key is stripped positionally, so a glyph in the title round-trips — no ban needed.
-    const glyph = await createContextGroup(root, 'No[pe]')
+    const glyph = await createContextGroup(root, 'No[pe]', newId())
     expect(glyph.ok).toBe(true)
   })
 
   it('uniqueness folds case — a case-variant twin would share one folder', async () => {
-    const dup = await createContextGroup(root, 'projects')
+    const dup = await createContextGroup(root, 'projects', newId())
     expect(dup.ok).toBe(true)
     if (dup.ok) expect(dup.value.path).toBe('.nexus/contexts/projects (2)')
   })
 
   it('refuses any title carrying a period — a dotted folder reads as a file and can shadow a config leaf', async () => {
     for (const name of ['contexts.json', 'Contexts.JSON', 'Q3.2025']) {
-      const r = await createContextGroup(root, name)
+      const r = await createContextGroup(root, name, newId())
       expect(r.ok).toBe(false)
       if (!r.ok) expect(r.error.code).toBe('invalid-name')
     }
@@ -91,7 +92,7 @@ describe('createContextGroup', () => {
 
 describe('createSpace', () => {
   it('creates folder + sidecar (no icon, no color) seeded with the 2×2 tile doc', async () => {
-    const r = await createSpace(root, 'ctx_projects', 'Sapphire')
+    const r = await createSpace(root, 'ctx_projects', 'Sapphire', newId())
     expect(r.ok).toBe(true)
     if (!r.ok) return
     expect(r.value.path).toBe('.nexus/contexts/Projects/Sapphire')
@@ -112,7 +113,7 @@ describe('createSpace', () => {
   })
 
   it('fails on an unknown context id', async () => {
-    const r = await createSpace(root, 'nope', 'X')
+    const r = await createSpace(root, 'nope', 'X', newId())
     expect(r.ok).toBe(false)
   })
 })

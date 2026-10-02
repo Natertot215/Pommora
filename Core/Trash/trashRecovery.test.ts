@@ -16,7 +16,7 @@ import { splitFrontmatter } from '../Files/pageFile'
 import { deleteProperty } from '../Properties/deleteProperty'
 import { removeProperty } from '../Properties/removeProperty'
 import { assignProperty } from '../Properties/assignment'
-import { newContentId } from '../Nexus/ids'
+import { newContentId, newId } from '../Nexus/ids'
 import { handleMutate } from '../Nexus/mutate'
 import { flush } from '../Nexus/settle'
 import type { ValueChange } from '../Nexus/tree'
@@ -402,7 +402,7 @@ describe('links come back with the page', () => {
     await del('Journal/Daily', 'set')
     const created = await settledMutate(
       root,
-      { op: 'createContainer', parentPath: 'Journal', kind: 'set', name: 'Daily' },
+      { op: 'createContainer', id: newId(), parentPath: 'Journal', kind: 'set', name: 'Daily' },
       deps,
     )
     expect(created.ok).toBe(true)

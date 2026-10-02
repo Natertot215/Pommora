@@ -12,11 +12,11 @@ import { handleMutate } from './mutate'
 import { machine } from '../Platform/machine'
 import { contextsDir, nexusConfig, sidecarPath, tileHostDir } from '../Paths/paths'
 import { resolveUnderRoot } from '../Paths/pathSafety'
-import { NEW_SLOT, type MutateRequest, mutateRequest } from './mutateRequest'
+import { type MutateRequest, mutateRequest } from './mutateRequest'
 import type { Crop } from './schemas'
 import { cropKeyFor, NEXUS_CONFIG_FILES } from '../Paths/nexusPaths'
 import { assetFilePath } from '../Assets/assetRoots'
-import { newContentId, shardOf } from './ids'
+import { newContentId, newId, shardOf } from './ids'
 
 const A_ID = '01KVGMT8BFP350FZZXAMG1QDRA'
 const B_ID = '01KVGMT8BFP350FZZXAMG1QDRB'
@@ -115,7 +115,7 @@ describe('handleMutate — create', () => {
   it('createContainer makes a set folder + sidecar', async () => {
     const r = await settledMutate(
       root,
-      { op: 'createContainer', parentPath: 'Notes', kind: 'set', name: 'Weekly' },
+      { op: 'createContainer', id: newId(), parentPath: 'Notes', kind: 'set', name: 'Weekly' },
       nexusDeps,
     )
     expect(r.ok).toBe(true)
@@ -195,44 +195,65 @@ describe('handleMutate — create', () => {
     expect(await pathExists(join(root, 'Notes/Daily/Stale.md'))).toBe(false)
   })
 
-  it('createPage order substitutes NEW_SLOT with the minted id and persists page_order', async () => {
+  it('a page create lands under the ID its request carried, at the slot its order named', async () => {
+    const id = newContentId('page')
     const r = await settledMutate(
       root,
       {
         op: 'createPage',
-        id: newContentId('page'),
+        id,
         parentPath: 'Notes/Daily',
         name: 'Ordered',
-        order: [NEW_SLOT, A_ID, B_ID],
+        order: [A_ID, id, B_ID],
       },
       nexusDeps,
     )
     expect(r.ok).toBe(true)
-    if (!r.ok) return
     const sidecar = await readJson<{ page_order?: string[] }>('Notes/Daily/_pageset.json')
-    expect(sidecar.page_order).toEqual([r.value.created?.id, A_ID, B_ID])
+    expect(sidecar.page_order).toEqual([A_ID, id, B_ID])
     const tree = await readNexus(root)
     const daily = tree.collections.flatMap((c) => c.sets).find((s) => s.path === 'Notes/Daily')
-    expect(daily?.pages.map((p) => p.title).slice(0, 3)).toEqual(['Ordered', 'Alpha', 'Beta'])
+    expect(daily?.pages.map((p) => [p.id, p.title])).toEqual([
+      [A_ID, 'Alpha'],
+      [id, 'Ordered'],
+      [B_ID, 'Beta'],
+    ])
   })
 
-  it('createContainer order substitutes NEW_SLOT with the minted id and persists set_order', async () => {
-    const before = await readNexus(root)
-    const siblings = before.collections.find((c) => c.path === 'Notes')?.sets.map((s) => s.id) ?? []
+  it('a Set create lands under the ID its request carried, at the slot its order named', async () => {
+    const id = newId()
     const r = await settledMutate(
       root,
       {
         op: 'createContainer',
+        id,
         parentPath: 'Notes',
         kind: 'set',
         name: 'Leading',
-        order: [NEW_SLOT, ...siblings],
+        order: [id, 'col'],
       },
       nexusDeps,
     )
     expect(r.ok).toBe(true)
+    expect((await readJson('Notes/Leading/_pageset.json')).id).toBe(id)
+    const notes = (await readNexus(root)).collections.find((c) => c.path === 'Notes')
+    expect(notes?.sets.map((s) => [s.id, s.title])).toEqual([
+      [id, 'Leading'],
+      ['col', 'Daily'],
+    ])
+  })
+
+  it('a Collection create lands under the ID its request carried', async () => {
+    const id = newId()
+    const r = await settledMutate(
+      root,
+      { op: 'createContainer', id, parentPath: '', kind: 'collection', name: 'Journal' },
+      nexusDeps,
+    )
+    expect(r.ok).toBe(true)
+    expect((await readJson('Journal/_pagecollection.json')).id).toBe(id)
     const tree = await readNexus(root)
-    expect(tree.collections.find((c) => c.path === 'Notes')?.sets[0]?.title).toBe('Leading')
+    expect(tree.collections.find((c) => c.path === 'Journal')?.id).toBe(id)
   })
 
   it('movePage notes the moved page under its destination for the values push', async () => {
@@ -769,7 +790,7 @@ describe('handleMutate — targets the tree doesn’t hold', () => {
     { op: 'setPageMeta', path: '.trash/Alpha.md', patch: {} },
     { op: 'setProperty', path: '', propertyId: 'p', value: null },
     { op: 'createPage', id: newContentId('page'), parentPath: '.nexus', name: 'X' },
-    { op: 'createContainer', parentPath: '', kind: 'set', name: 'X' },
+    { op: 'createContainer', id: newId(), parentPath: '', kind: 'set', name: 'X' },
     { op: 'movePage', path: 'Notes/_pagecollection.json', newParentPath: 'Notes/Daily' },
     { op: 'movePage', path: 'Notes/Daily/Beta.md', newParentPath: '.nexus' },
     { op: 'moveSet', path: 'Notes', newParentPath: 'Notes/Daily', order: [] },
@@ -783,7 +804,7 @@ describe('handleMutate — targets the tree doesn’t hold', () => {
   it('refuses a Collection anywhere but the top of the Nexus', async () => {
     const r = await settledMutate(
       root,
-      { op: 'createContainer', parentPath: 'Notes', kind: 'collection', name: 'X' },
+      { op: 'createContainer', id: newId(), parentPath: 'Notes', kind: 'collection', name: 'X' },
       nexusDeps,
     )
     expect(r.ok).toBe(false)
@@ -805,7 +826,7 @@ describe('handleMutate — a new Collection lands last', () => {
   const create = () =>
     settledMutate(
       root,
-      { op: 'createContainer', parentPath: '', kind: 'collection', name: 'Alpha' },
+      { op: 'createContainer', id: newId(), parentPath: '', kind: 'collection', name: 'Alpha' },
       nexusDeps,
     )
 
@@ -839,7 +860,7 @@ describe('handleMutate — review-round hardening', () => {
   it('creates a collection at the nexus root (parentPath "")', async () => {
     const r = await settledMutate(
       root,
-      { op: 'createContainer', parentPath: '', kind: 'collection', name: 'Inbox' },
+      { op: 'createContainer', id: newId(), parentPath: '', kind: 'collection', name: 'Inbox' },
       nexusDeps,
     )
     expect(r.ok && r.value.created?.path).toBe('Inbox')
@@ -2302,7 +2323,11 @@ describe('the Contexts lock', () => {
         { op: 'renameContext', contextId: 'ctxP', newName: 'Ventures' },
         nexusDeps,
       ),
-      settledMutate(root, { op: 'createSpace', contextId: 'ctxP', name: 'Atlas' }, nexusDeps),
+      settledMutate(
+        root,
+        { op: 'createSpace', id: newId(), contextId: 'ctxP', name: 'Atlas' },
+        nexusDeps,
+      ),
     ])
     expect(renamed.ok && created.ok).toBe(true)
     expect(await pathExists(join(root, '.nexus/contexts/Ventures/Atlas/_space.json'))).toBe(true)
@@ -2353,16 +2378,29 @@ describe('setContext on a Space', () => {
     expect((await sidecar('Areas', 'Work'))['<Projects>']).toEqual(['Pommora'])
   })
 
-  it('createSpace order substitutes NEW_SLOT with the minted id and persists the Space order', async () => {
+  it('a Space create lands under the ID its request carried, at the slot its order named', async () => {
+    const id = newId()
     const r = await settledMutate(
       root,
-      { op: 'createSpace', contextId: 'ctxP', name: 'Atlas', order: [NEW_SLOT, 'sp-pom'] },
+      { op: 'createSpace', id, contextId: 'ctxP', name: 'Atlas', order: ['sp-pom', id] },
       nexusDeps,
     )
     expect(r.ok).toBe(true)
+    expect((await sidecar('Projects', 'Atlas')).id).toBe(id)
     const tree = await readNexus(root)
     const projects = tree.contexts.find((g) => g.def.id === 'ctxP')
-    expect(projects?.spaces.map((sp) => sp.title)).toEqual(['Atlas', 'Pommora'])
+    expect(projects?.spaces.map((sp) => [sp.id, sp.title])).toEqual([
+      ['sp-pom', 'Pommora'],
+      [id, 'Atlas'],
+    ])
+  })
+
+  it('a Context group create lands under the ID its request carried', async () => {
+    const id = newId()
+    const r = await settledMutate(root, { op: 'createContextGroup', id, name: 'Topics' }, nexusDeps)
+    expect(r.ok).toBe(true)
+    const tree = await readNexus(root)
+    expect(tree.contexts.find((g) => g.def.title === 'Topics')?.def.id).toBe(id)
   })
 })
 
@@ -2448,7 +2486,7 @@ describe('handleMutate — landings Settings keeps out', () => {
   it('refuses a Collection created, or a Set renamed, onto an excluded folder', async () => {
     const created = await settledMutate(
       root,
-      { op: 'createContainer', parentPath: '', kind: 'collection', name: 'Archive' },
+      { op: 'createContainer', id: newId(), parentPath: '', kind: 'collection', name: 'Archive' },
       nexusDeps,
     )
     expect(refusal(created)).toContain('"Archive" is currently listed as an excluded directory')
@@ -2599,7 +2637,7 @@ describe('handleMutate — excluded entries follow their folders', () => {
     expect(await excludedOnDisk()).toBeUndefined()
     await settledMutate(
       root,
-      { op: 'createContainer', parentPath: '', kind: 'collection', name: 'Other' },
+      { op: 'createContainer', id: newId(), parentPath: '', kind: 'collection', name: 'Other' },
       nexusDeps,
     )
     await writeFile(
@@ -2714,13 +2752,16 @@ describe('each routine operation lands from its own events, with no walk', () =>
       'a page create',
       { op: 'createPage', id: newContentId('page'), parentPath: 'Notes/Daily', name: 'Gamma' },
     ],
-    ['a Set create', { op: 'createContainer', parentPath: 'Notes', kind: 'set', name: 'Weekly' }],
+    [
+      'a Set create',
+      { op: 'createContainer', id: newId(), parentPath: 'Notes', kind: 'set', name: 'Weekly' },
+    ],
     [
       'a Collection create',
-      { op: 'createContainer', parentPath: '', kind: 'collection', name: 'Journal' },
+      { op: 'createContainer', id: newId(), parentPath: '', kind: 'collection', name: 'Journal' },
     ],
-    ['a Space create', { op: 'createSpace', contextId: 'ctxP', name: 'Atlas' }],
-    ['a Context group create', { op: 'createContextGroup', name: 'Topics' }],
+    ['a Space create', { op: 'createSpace', id: newId(), contextId: 'ctxP', name: 'Atlas' }],
+    ['a Context group create', { op: 'createContextGroup', id: newId(), name: 'Topics' }],
     ['a rename', { op: 'rename', path: 'Notes/Daily/Beta.md', kind: 'page', newName: 'Gamma' }],
     ['a page move', { op: 'movePage', path: 'Notes/Daily/Beta.md', newParentPath: 'Other' }],
     ['a Set move', { op: 'moveSet', path: 'Notes/Daily', newParentPath: 'Other', order: [] }],

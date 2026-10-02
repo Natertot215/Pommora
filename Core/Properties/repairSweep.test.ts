@@ -5,6 +5,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { PropertyDefinition } from './properties'
 import { assignProperty } from './assignment'
 import { createFolderEntity } from '../Nexus/folderEntity'
+import { newId } from '../Nexus/ids'
 import { createPage } from '../Nexus/page'
 import { createProperty } from './registryProperty'
 import { readRegistry } from './propertiesRegistry'
@@ -53,7 +54,7 @@ beforeEach(async () => {
   } as PropertyDefinition)
   if (!status.ok || !tags.ok) throw new Error('registry failed')
   tagsId = tags.value.id
-  const col = await createFolderEntity(root, 'collection', 'Col')
+  const col = await createFolderEntity(root, 'collection', 'Col', newId())
   if (!col.ok) throw new Error('folder failed')
   await assignProperty(root, col.value.path, status.value.id)
   await assignProperty(root, col.value.path, tagsId)

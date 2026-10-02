@@ -3,8 +3,14 @@ import { ok, type Result } from '../Contract/result'
 import { propertyValue } from '../Properties/propertyValue'
 import { crop, type PageMetaPatch } from './schemas'
 import type { CascadeReport } from './cascade'
-import { CONTAINER_KINDS, HELD_KINDS, type HeldKind, NODE_KINDS } from './entities'
-import { newContentId } from './ids'
+import {
+  CONTAINER_KINDS,
+  type ContainerKind,
+  HELD_KINDS,
+  type HeldKind,
+  NODE_KINDS,
+} from './entities'
+import { newContentId, newId } from './ids'
 
 /** `renamed` is what actually landed — a from-create rename may disambiguate away from the ask. */
 export interface MutateOutcome {
@@ -23,11 +29,6 @@ export type MutateReply = Result<MutateOutcome>
 export const done = (r: Result<unknown>): MutateReply => (r.ok ? ok({}) : r)
 
 export const DEFAULT_NEW_NAME = 'Untitled'
-
-export const NEW_SLOT = '$new'
-
-export const fillSlot = (order: string[], id: string): string[] =>
-  order.map((x) => (x === NEW_SLOT ? id : x))
 
 const heldKind = z.enum(HELD_KINDS)
 export type RenameKind = HeldKind | 'homepage'
@@ -63,6 +64,7 @@ export const mutateRequest = z.discriminatedUnion('op', [
     order: ids.optional(),
   }),
   op('createContainer', {
+    id: z.string(),
     parentPath: z.string(),
     kind: containerKind,
     name: z.string(),
@@ -94,8 +96,13 @@ export const mutateRequest = z.discriminatedUnion('op', [
   op('moveSet', { path: z.string(), newParentPath: z.string(), order: ids }),
   op('reorderChildren', { parentPath: z.string(), key: childOrderKey, order: ids }),
   op('reorderTop', { order: ids }),
-  op('createContextGroup', { name: z.string() }),
-  op('createSpace', { contextId: z.string(), name: z.string(), order: ids.optional() }),
+  op('createContextGroup', { id: z.string(), name: z.string() }),
+  op('createSpace', {
+    id: z.string(),
+    contextId: z.string(),
+    name: z.string(),
+    order: ids.optional(),
+  }),
   op('renameContext', { contextId: z.string(), newName: z.string() }),
   op('renameSpace', { spaceId: z.string(), newName: z.string() }),
   op('setContext', { path: z.string(), contextId: z.string(), spaceIds: ids }),
@@ -108,13 +115,39 @@ export const mutateRequest = z.discriminatedUnion('op', [
 ])
 export type MutateRequest = z.infer<typeof mutateRequest>
 
-export type CreatePageRequest = Extract<MutateRequest, { op: 'createPage' }>
+export type CreateRequest = Extract<
+  MutateRequest,
+  { op: 'createPage' | 'createContainer' | 'createSpace' | 'createContextGroup' }
+>
+export type CreatePageRequest = Extract<CreateRequest, { op: 'createPage' }>
 
+// The window mints every create's ID as it builds the ask, so what it keys by the newborn is staged before the host's push lands it.
 export const newPageRequest = (parentPath: string): CreatePageRequest => ({
   op: 'createPage',
   id: newContentId('page'),
   parentPath,
   name: DEFAULT_NEW_NAME,
+})
+
+export const newContainerRequest = (parentPath: string, kind: ContainerKind): CreateRequest => ({
+  op: 'createContainer',
+  id: newId(),
+  parentPath,
+  kind,
+  name: DEFAULT_NEW_NAME,
+})
+
+export const newSpaceRequest = (contextId: string, name: string): CreateRequest => ({
+  op: 'createSpace',
+  id: newId(),
+  contextId,
+  name,
+})
+
+export const newContextGroupRequest = (name: string): CreateRequest => ({
+  op: 'createContextGroup',
+  id: newId(),
+  name,
 })
 
 export const contextSeeds = (req: CreatePageRequest): [contextId: string, spaceIds: string[]][] =>

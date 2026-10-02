@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { type MutateRequest, NEW_SLOT } from '../Nexus/mutateRequest'
+import type { MutateRequest } from '../Nexus/mutateRequest'
 import { placeAt, placeNew, type Slot, spliceBeside, tieOrderWith } from './creationOrder'
 import { makeTree } from '../Testing/testTree'
 import { makeSorter } from './Pipeline/sort'
@@ -16,9 +16,9 @@ describe('placeAt', () => {
     placeAt(page, ...at).order
 
   it('appends for a band-add and splices beside an anchor', () => {
-    expect(orderWithSlot(['a', 'b'], null, 'last')).toEqual(['a', 'b', NEW_SLOT])
-    expect(orderWithSlot(['a', 'b', 'c'], 'b', 'above')).toEqual(['a', NEW_SLOT, 'b', 'c'])
-    expect(orderWithSlot(['a', 'b', 'c'], 'b', 'below')).toEqual(['a', 'b', NEW_SLOT, 'c'])
+    expect(orderWithSlot(['a', 'b'], null, 'last')).toEqual(['a', 'b', 'p9'])
+    expect(orderWithSlot(['a', 'b', 'c'], 'b', 'above')).toEqual(['a', 'p9', 'b', 'c'])
+    expect(orderWithSlot(['a', 'b', 'c'], 'b', 'below')).toEqual(['a', 'b', 'p9', 'c'])
   })
 
   it('carries the FULL sibling list — a filtered subset would re-rank hidden rows', () => {
@@ -27,24 +27,30 @@ describe('placeAt', () => {
       'visible1',
       'hidden1',
       'visible2',
-      NEW_SLOT,
+      'p9',
       'hidden2',
     ])
   })
 
   it('appends when the anchor is not among the siblings', () => {
-    expect(orderWithSlot(['a', 'b'], 'ghost', 'above')).toEqual(['a', 'b', NEW_SLOT])
+    expect(orderWithSlot(['a', 'b'], 'ghost', 'above')).toEqual(['a', 'b', 'p9'])
   })
 
   it('leads the siblings at the first slot', () => {
-    expect(orderWithSlot(['a', 'b'], null, 'first')).toEqual([NEW_SLOT, 'a', 'b'])
+    expect(orderWithSlot(['a', 'b'], null, 'first')).toEqual(['p9', 'a', 'b'])
   })
 })
 
 describe('placeNew', () => {
   const page = { op: 'createPage', id: 'p9', parentPath: 'Notes/Ideas', name: 'Untitled' } as const
-  const set = { op: 'createContainer', parentPath: 'Notes', kind: 'set', name: 'Untitled' } as const
-  const space = { op: 'createSpace', contextId: 'g1', name: 'New Realm' } as const
+  const set = {
+    op: 'createContainer',
+    id: 's9',
+    parentPath: 'Notes',
+    kind: 'set',
+    name: 'Untitled',
+  } as const
+  const space = { op: 'createSpace', id: 'sp9', contextId: 'g1', name: 'New Realm' } as const
   const top = {
     newPagePlacement: 'top',
     newFolderPlacement: 'top',
@@ -52,23 +58,23 @@ describe('placeNew', () => {
   } as const
 
   it("leads each kind's siblings at its own Top placement", () => {
-    expect(placeNew(makeTree(), page, top)).toEqual({ ...page, order: [NEW_SLOT, 'p2'] })
-    expect(placeNew(makeTree(), set, top)).toEqual({ ...set, order: [NEW_SLOT, 's1'] })
+    expect(placeNew(makeTree(), page, top)).toEqual({ ...page, order: ['p9', 'p2'] })
+    expect(placeNew(makeTree(), set, top)).toEqual({ ...set, order: ['s9', 's1'] })
     expect(placeNew(makeTree(), space, top)).toEqual({
       ...space,
-      order: [NEW_SLOT, 'a1', 't1', 'pr1'],
+      order: ['sp9', 'a1', 't1', 'pr1'],
     })
   })
 
   it("trails each kind's siblings at Bottom, the unset placement", () => {
-    expect(placeNew(makeTree(), page, {})).toEqual({ ...page, order: ['p2', NEW_SLOT] })
+    expect(placeNew(makeTree(), page, {})).toEqual({ ...page, order: ['p2', 'p9'] })
     expect(placeNew(makeTree(), set, { newPagePlacement: 'top' })).toEqual({
       ...set,
-      order: ['s1', NEW_SLOT],
+      order: ['s1', 's9'],
     })
     expect(placeNew(makeTree(), space, {})).toEqual({
       ...space,
-      order: ['a1', 't1', 'pr1', NEW_SLOT],
+      order: ['a1', 't1', 'pr1', 'sp9'],
     })
   })
 

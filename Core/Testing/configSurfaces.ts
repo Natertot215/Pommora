@@ -3,6 +3,7 @@ import { contextsDir, contextsRegistryFile, nexusConfig, sidecarPath } from '../
 import { NEXUS_CONFIG_FILES, SIDECAR_FILENAME, TILE_DOC_FILENAME } from '../Paths/nexusPaths'
 import { pathExists } from '../Files/atomicWrite'
 import { createFolderEntity } from '../Nexus/folderEntity'
+import { newId } from '../Nexus/ids'
 import { putJson, readJsonAt } from './hostFs'
 
 type Raw = Record<string, unknown>
@@ -43,7 +44,7 @@ export async function seedConfigSurfaces(
   if (!(await pathExists(identity))) await putJson(identity, { id: 'nx', createdAt: '2026' })
   const colFile = sidecarPath(collection, 'collection')
   await putJson(colFile, { ...(await readJsonAt(colFile)), views: [view] })
-  const set = await createFolderEntity(collection, 'set', 'Deep', { views: [view] })
+  const set = await createFolderEntity(collection, 'set', 'Deep', newId(), { views: [view] })
   if (!set.ok) throw new Error('set failed')
   await putJson(contextsRegistryFile(root), { contexts: [{ id: 'ctx_areas', title: 'Areas' }] })
   const space = join(contextsDir(root), 'Areas', 'Home')

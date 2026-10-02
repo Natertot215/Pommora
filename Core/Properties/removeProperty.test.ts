@@ -14,6 +14,7 @@ import { removeProperty } from './removeProperty'
 import { assignProperty } from './assignment'
 import { createProperty, editProperty } from './registryProperty'
 import { createFolderEntity } from '../Nexus/folderEntity'
+import { newId } from '../Nexus/ids'
 import { createPage, updatePageProperty } from '../Nexus/page'
 import { readSidecar } from '../Files/sidecar'
 import { readRegistry } from './propertiesRegistry'
@@ -57,7 +58,7 @@ const stageDef = {
 
 beforeEach(async () => {
   root = tempRoot('pom-remove-')
-  const c = await createFolderEntity(root, 'collection', 'Notes')
+  const c = await createFolderEntity(root, 'collection', 'Notes', newId())
   const p = await createProperty(root, stageDef)
   if (!c.ok || !p.ok) throw new Error('setup failed')
   folder = c.value.path
@@ -152,7 +153,7 @@ describe('removeProperty — strip + cache (C-3/C-6)', () => {
   it.skipIf(noModeBits)(
     'a holder it can’t write is answered as a skip, which the channel turns into the fault',
     async () => {
-      const set = await createFolderEntity(folder, 'set', 'Locked')
+      const set = await createFolderEntity(folder, 'set', 'Locked', newId())
       if (!set.ok) throw new Error('setup failed')
       const held = await createPage(set.value.path, 'C', { body: 'b' })
       if (!held.ok) throw new Error('setup failed')
@@ -196,7 +197,7 @@ describe('removeProperty reaches saved views (B-6)', () => {
   it('clears its own views in the one sidecar write, then its Set and the tile sourcing it, and leaves another source and the Matrix', async () => {
     const held = viewOn(propId, 'done')
     const surfaces = await seedConfigSurfaces(root, folder, held)
-    const other = await createFolderEntity(root, 'collection', 'Other')
+    const other = await createFolderEntity(root, 'collection', 'Other', newId())
     if (!other.ok) throw new Error('setup failed')
     type TileDoc = {
       tiles: { id: string; type: string; views: { source_id: string; config: unknown }[] }[]

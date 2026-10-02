@@ -7,7 +7,7 @@ const shape = (items: ReturnType<typeof entityMenuItems>): string[] =>
 const creators = [
   {
     label: 'New Page',
-    req: { op: 'createPage' as const, id: 'p9', parentPath: 'Notes', name: 'Untitled' },
+    request: () => ({ op: 'createPage' as const, id: 'p9', parentPath: 'Notes', name: 'Untitled' }),
   },
 ]
 

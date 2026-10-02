@@ -14,6 +14,7 @@ import { removeProperty } from './removeProperty'
 import { setSpaceProperty } from './setProperty'
 import { spaceFieldsFrom } from '../Contexts/spaceSidecar'
 import { createFolderEntity } from '../Nexus/folderEntity'
+import { newId } from '../Nexus/ids'
 import { dropLiveTree } from '../Nexus/liveTree'
 import { createPage, updatePageProperty } from '../Nexus/page'
 import { splitFrontmatter } from '../Files/pageFile'
@@ -55,8 +56,8 @@ installMachine({
 
 beforeEach(async () => {
   root = tempRoot('pom-del-')
-  const a = await createFolderEntity(root, 'collection', 'Notes')
-  const b = await createFolderEntity(root, 'collection', 'Tasks')
+  const a = await createFolderEntity(root, 'collection', 'Notes', newId())
+  const b = await createFolderEntity(root, 'collection', 'Tasks', newId())
   if (!a.ok || !b.ok) throw new Error('setup failed')
   notes = a.value.path
   tasks = b.value.path

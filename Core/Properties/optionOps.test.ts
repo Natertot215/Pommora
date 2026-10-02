@@ -14,6 +14,7 @@ import {
 import { createProperty, editProperty } from './registryProperty'
 import { assignProperty } from './assignment'
 import { createFolderEntity } from '../Nexus/folderEntity'
+import { newId } from '../Nexus/ids'
 import { createPage, updatePageProperty } from '../Nexus/page'
 import { serializeSchemaOp } from './schemaChain'
 import { machine } from '../Platform/machine'
@@ -61,7 +62,7 @@ const mkSelect = (select_options: SelectOption[]): Promise<string> =>
 const mkStatus = (): Promise<string> => mkProperty({ name: 'Stage', type: 'status' })
 
 async function pageHolding(id: string, value: string): Promise<string> {
-  const col = await createFolderEntity(root, 'collection', 'Col')
+  const col = await createFolderEntity(root, 'collection', 'Col', newId())
   if (!col.ok) throw new Error('folder failed')
   await assignProperty(root, col.value.path, id)
   const p = await createPage(col.value.path, 'One', { body: 'b' })
@@ -423,7 +424,7 @@ describe('renameOption', () => {
       ['Col', ['One', 'Two']],
       ['Col2', ['Three']],
     ] as const) {
-      const col = await createFolderEntity(root, 'collection', folder)
+      const col = await createFolderEntity(root, 'collection', folder, newId())
       if (!col.ok) throw new Error('folder failed')
       await assignProperty(root, col.value.path, id)
       for (const title of titles) {
@@ -511,7 +512,7 @@ describe('clearOption', () => {
   it.skipIf(noModeBits)('a clear that can’t write a holder faults', async () => {
     const id = await mkSelect([{ value: 'hi' }])
     await pageHolding(id, 'hi')
-    const set = await createFolderEntity(join(root, 'Col'), 'set', 'Locked')
+    const set = await createFolderEntity(join(root, 'Col'), 'set', 'Locked', newId())
     if (!set.ok) throw new Error('set failed')
     const p = await createPage(set.value.path, 'Two', { body: 'b' })
     if (!p.ok) throw new Error('page failed')
@@ -665,7 +666,7 @@ describe('option cascades reach saved views', () => {
   }
 
   async function lockedHolder(id: string, col: string): Promise<string> {
-    const set = await createFolderEntity(col, 'set', 'Locked')
+    const set = await createFolderEntity(col, 'set', 'Locked', newId())
     if (!set.ok) throw new Error('set failed')
     const p = await createPage(set.value.path, 'Held', { body: 'b' })
     if (!p.ok) throw new Error('page failed')

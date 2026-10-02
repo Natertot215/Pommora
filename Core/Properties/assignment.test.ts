@@ -4,6 +4,7 @@ import { tempRoot } from '../Testing/hostFs'
 import { assignProperty, reorderAssignment, collectionFolders } from './assignment'
 import { dropLiveTree } from '../Nexus/liveTree'
 import { createFolderEntity } from '../Nexus/folderEntity'
+import { newId } from '../Nexus/ids'
 import { readSidecar } from '../Files/sidecar'
 import { pageCollectionSidecar } from '../Nexus/schemas'
 import type { PropertyDefinition } from './properties'
@@ -12,7 +13,7 @@ let root: string
 let notes: string
 beforeEach(async () => {
   root = tempRoot('pom-assign-')
-  const c = await createFolderEntity(root, 'collection', 'Notes')
+  const c = await createFolderEntity(root, 'collection', 'Notes', newId())
   if (!c.ok) throw new Error('setup failed')
   notes = c.value.path
 })
@@ -39,7 +40,7 @@ it('reorder moves within the assignment array', async () => {
 })
 
 it('collectionFolders lists every collection folder from the live tree', async () => {
-  const t = await createFolderEntity(root, 'collection', 'Tasks')
+  const t = await createFolderEntity(root, 'collection', 'Tasks', newId())
   if (!t.ok) throw new Error('setup failed')
   expect((await collectionFolders(root)).sort()).toEqual([notes, t.value.path].sort())
 })

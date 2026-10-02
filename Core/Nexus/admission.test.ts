@@ -12,6 +12,7 @@ import { agendaContext, resolveFolderKind } from './folderKind'
 import { pathExists, readJsonObject } from '../Files/atomicWrite'
 import { renameCascade } from './cascade'
 import { handleMutate } from './mutate'
+import { newId } from './ids'
 import { openSession, closeSession } from './session'
 import { contextsDir, contextsRegistryFile, nexusDir, nexusConfig } from '../Paths/paths'
 import { NEXUS_CONFIG_FILES, SIDECAR_FILENAME } from '../Paths/nexusPaths'
@@ -133,7 +134,11 @@ describe('the nexus-wide write sweeps', () => {
 
   it('a Context RENAME sweeps a member but leaves an Unknown file alone', async () => {
     await openSession(root)
-    const made = await handleMutate(root, { op: 'createContextGroup', name: 'Projects' }, deps)
+    const made = await handleMutate(
+      root,
+      { op: 'createContextGroup', id: newId(), name: 'Projects' },
+      deps,
+    )
     expect(made.ok).toBe(true)
     if (!made.ok) return
     const contextId = made.value.created!.id

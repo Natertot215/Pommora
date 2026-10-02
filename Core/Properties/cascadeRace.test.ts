@@ -10,6 +10,7 @@ import { renameOption } from './optionOps'
 import { createProperty } from './registryProperty'
 import { assignProperty } from './assignment'
 import { createFolderEntity } from '../Nexus/folderEntity'
+import { newId } from '../Nexus/ids'
 import { createPage, updatePageProperty } from '../Nexus/page'
 import { machine } from '../Platform/machine'
 import { openSession, closeSession, sessionRoot } from '../Nexus/session'
@@ -43,7 +44,7 @@ async function setup(root: string, value: string): Promise<{ propertyId: string;
     select_options: [{ value }],
   } as PropertyDefinition)
   if (!c.ok) throw new Error('createProperty failed')
-  const col = await createFolderEntity(root, 'collection', 'Col')
+  const col = await createFolderEntity(root, 'collection', 'Col', newId())
   if (!col.ok) throw new Error('collection failed')
   await assignProperty(root, col.value.path, c.value.id)
   const p = await createPage(col.value.path, 'Target', { body: 'b' })

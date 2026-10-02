@@ -10,6 +10,7 @@ import { closeSession, openSession } from '../Nexus/session'
 import { dropLiveTree, getLiveTree, refreshTree } from '../Nexus/liveTree'
 import { findContainerWhere } from '../Nexus/treePatch'
 import { createFolderEntity } from '../Nexus/folderEntity'
+import { newId } from '../Nexus/ids'
 import { createPage, updatePageProperty } from '../Nexus/page'
 import { createProperty } from './registryProperty'
 import { assignProperty } from './assignment'
@@ -46,7 +47,7 @@ const liveViewAt = (abs: string): unknown =>
 beforeEach(async () => {
   pushes = []
   root = tempRoot('pom-prop-handlers-')
-  const c = await createFolderEntity(root, 'collection', 'Notes')
+  const c = await createFolderEntity(root, 'collection', 'Notes', newId())
   const p = await createProperty(root, {
     id: '',
     name: 'Stage',
@@ -84,7 +85,7 @@ describe('the property channels', () => {
   it.skipIf(noModeBits)(
     'an unassign with a skipped page still lands the Set it cleared in the held tree, then answers the fault',
     async () => {
-      const locked = await createFolderEntity(col, 'set', 'Locked')
+      const locked = await createFolderEntity(col, 'set', 'Locked', newId())
       if (!locked.ok) throw new Error('setup failed')
       const held = await createPage(locked.value.path, 'C', { body: 'b' })
       if (!held.ok) throw new Error('setup failed')

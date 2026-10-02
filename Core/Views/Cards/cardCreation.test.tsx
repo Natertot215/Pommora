@@ -104,11 +104,12 @@ describe('the cards ghost — dwell, create, and exit', () => {
     await act(async () => {
       ghost()?.click()
     })
+    const { id } = mutateSpy.mock.calls[0][0]
     expect(mutateSpy).toHaveBeenCalledWith(
       expect.objectContaining({
         op: 'createPage',
         parentPath: 'Col',
-        order: ['p1', '$new', 'p2'],
+        order: ['p1', id, 'p2'],
       }),
     )
     expect(renameSpy).toHaveBeenCalledWith('Col/Untitled.md', true, 'detail')

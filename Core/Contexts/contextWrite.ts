@@ -221,10 +221,10 @@ export async function setContextOp(
 export async function createContextGroup(
   root: string,
   name: string,
+  id: string,
 ): Promise<Result<{ id: string; path: string }>> {
   const why = nameError(name, 'directory')
   if (why) return fail('invalid-name', why)
-  const id = newId()
   let title = name
   const written = await mutateRegistryFile(root, (cur) => {
     title = freeName(
@@ -243,6 +243,7 @@ export async function createSpace(
   root: string,
   contextId: string,
   name: string,
+  id: string,
 ): Promise<Result<{ id: string; path: string }>> {
   const reg = await readRegistryStrict(root)
   if (!reg.ok) return reg
@@ -250,7 +251,7 @@ export async function createSpace(
   if (!def) return fail('not-found', 'Unknown Context.')
   const parent = join(contextsDir(root), def.title)
   await machine().mkdir(parent)
-  const created = await createFolderEntity(parent, 'space', name)
+  const created = await createFolderEntity(parent, 'space', name, id)
   if (!created.ok) return created
   const tileIds = [newId(), newId(), newId(), newId()]
   for (const tid of tileIds) await atomicWriteFile(tileFilePath(created.value.path, tid), '')

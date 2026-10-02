@@ -4,6 +4,7 @@ import { join } from '../Paths/posix'
 import { tempRoot, readJsonAt } from '../Testing/hostFs'
 import { contextsDir, contextsRegistryFile, nexusDir } from '../Paths/paths'
 import { createContextGroup, createSpace } from '../Contexts/contextWrite'
+import { newId } from '../Nexus/ids'
 import { createProperty } from './registryProperty'
 import { readRegistry } from './propertiesRegistry'
 import { setPropertyOp } from './setProperty'
@@ -28,9 +29,9 @@ beforeEach(async () => {
   await mkdir(contextsDir(root), { recursive: true })
   await mkdir(nexusDir(root), { recursive: true })
   await writeFile(contextsRegistryFile(root), JSON.stringify({ contexts: [] }))
-  const group = await createContextGroup(root, 'Projects')
+  const group = await createContextGroup(root, 'Projects', newId())
   if (!group.ok) throw new Error('setup failed')
-  const space = await createSpace(root, group.value.id, 'Pommora')
+  const space = await createSpace(root, group.value.id, 'Pommora', newId())
   if (!space.ok) throw new Error('setup failed')
   spaceRel = space.value.path
   const made = await createProperty(root, def({ name: 'Status', type: 'select' }))

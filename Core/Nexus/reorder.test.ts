@@ -12,6 +12,7 @@ import {
 } from './reorder'
 import { pathExists } from '../Files/atomicWrite'
 import { createFolderEntity } from './folderEntity'
+import { newId } from './ids'
 import { readSidecar } from '../Files/sidecar'
 import { pageCollectionSidecar, pageSetSidecar } from './schemas'
 import { nexusDir, nexusConfig, sidecarPath } from '../Paths/paths'
@@ -106,7 +107,7 @@ describe('setCollectionOrder', () => {
 
 describe('setChildOrder', () => {
   it('detects the folder kind from its sidecar and writes page_order (a set)', async () => {
-    const s = await createFolderEntity(root, 'set', 'Reading')
+    const s = await createFolderEntity(root, 'set', 'Reading', newId())
     if (!s.ok) throw new Error('setup failed')
     const r = await setChildOrder(s.value.path, 'page_order', ['p3', 'p1', 'p2'])
     expect(r.ok).toBe(true)
@@ -116,7 +117,7 @@ describe('setChildOrder', () => {
   })
 
   it('writes set_order to a collection sidecar', async () => {
-    const c = await createFolderEntity(root, 'collection', 'Notes', { icon: 'box' })
+    const c = await createFolderEntity(root, 'collection', 'Notes', newId(), { icon: 'box' })
     if (!c.ok) throw new Error('setup failed')
     const r = await setChildOrder(c.value.path, 'set_order', ['s2', 's1'])
     expect(r.ok).toBe(true)
@@ -134,7 +135,7 @@ describe('setChildOrder', () => {
 
 describe('dropFromChildOrder', () => {
   it('drops the key once its last id leaves, for page and Set order alike', async () => {
-    const c = await createFolderEntity(root, 'collection', 'Notes')
+    const c = await createFolderEntity(root, 'collection', 'Notes', newId())
     if (!c.ok) throw new Error('setup failed')
     await setChildOrder(c.value.path, 'page_order', ['p1', 'p2'])
     await setChildOrder(c.value.path, 'set_order', ['s1'])

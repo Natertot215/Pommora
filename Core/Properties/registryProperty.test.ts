@@ -11,6 +11,7 @@ import {
 } from './registryProperty'
 import { assignProperty } from './assignment'
 import { createFolderEntity } from '../Nexus/folderEntity'
+import { newId } from '../Nexus/ids'
 import { createPage, updatePageProperty } from '../Nexus/page'
 import { pathExists } from '../Files/atomicWrite'
 import { readRegistry } from './propertiesRegistry'
@@ -138,7 +139,7 @@ describe('renameProperty and editProperty', () => {
 
   it('refuses a rename onto a key a Collection page already holds, and stages no journal', async () => {
     const c = await createProperty(root, def({ name: 'Status', type: 'select' }))
-    const col = await createFolderEntity(root, 'collection', 'Col')
+    const col = await createFolderEntity(root, 'collection', 'Col', newId())
     if (!c.ok || !col.ok) return
     await assignProperty(root, col.value.path, c.value.id)
     const p = await createPage(col.value.path, 'Holder', { body: 'b' })
@@ -189,7 +190,7 @@ describe('renameProperty and editProperty', () => {
   it('sweeps every page, and one unparseable page never ends the walk', async () => {
     const c = await createProperty(root, def({ name: 'Old', type: 'number' }))
     if (!c.ok) return
-    const col = await createFolderEntity(root, 'collection', 'Col')
+    const col = await createFolderEntity(root, 'collection', 'Col', newId())
     if (!col.ok) return
     await assignProperty(root, col.value.path, c.value.id)
     const live = (await readRegistry(root)).defs[c.value.id]

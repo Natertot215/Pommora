@@ -3,6 +3,7 @@ import { join } from '../Paths/posix'
 import { contextsDir, contextsRegistryFile } from '../Paths/paths'
 import { tempRoot, readJsonAt } from '../Testing/hostFs'
 import { createContextGroup, createSpace } from '../Contexts/contextWrite'
+import { newId } from '../Nexus/ids'
 import { setSpaceProperty } from '../Properties/setProperty'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { pageCollectionSidecar } from '../Nexus/schemas'
@@ -65,8 +66,8 @@ const onlyBundlePath = async (): Promise<string> => {
 
 beforeEach(async () => {
   root = tempRoot('pom-restoreprop-')
-  const a = await createFolderEntity(root, 'collection', 'Notes')
-  const b = await createFolderEntity(root, 'collection', 'Tasks')
+  const a = await createFolderEntity(root, 'collection', 'Notes', newId())
+  const b = await createFolderEntity(root, 'collection', 'Tasks', newId())
   if (!a.ok || !b.ok) throw new Error('setup failed')
   notes = a.value.path
   tasks = b.value.path
@@ -261,9 +262,9 @@ describe('restoring a deleted property', () => {
   it('a Space value comes back on its sidecar and decodes', async () => {
     await mkdir(contextsDir(root), { recursive: true })
     await writeFile(contextsRegistryFile(root), JSON.stringify({ contexts: [] }))
-    const group = await createContextGroup(root, 'Projects')
+    const group = await createContextGroup(root, 'Projects', newId())
     if (!group.ok) throw new Error('context failed')
-    const space = await createSpace(root, group.value.id, 'Pommora')
+    const space = await createSpace(root, group.value.id, 'Pommora', newId())
     if (!space.ok) throw new Error('space failed')
     const sidecarFile = join(root, space.value.path, '_space.json')
     const sidecar = async (): Promise<Record<string, unknown>> => await readJsonAt(sidecarFile)
@@ -290,9 +291,9 @@ describe('restoring a deleted property', () => {
   it('a Space whose Context folder differs in case from its title still takes its value back', async () => {
     await mkdir(contextsDir(root), { recursive: true })
     await writeFile(contextsRegistryFile(root), JSON.stringify({ contexts: [] }))
-    const group = await createContextGroup(root, 'Projects')
+    const group = await createContextGroup(root, 'Projects', newId())
     if (!group.ok) throw new Error('context failed')
-    const space = await createSpace(root, group.value.id, 'Pommora')
+    const space = await createSpace(root, group.value.id, 'Pommora', newId())
     if (!space.ok) throw new Error('space failed')
     await rename(join(contextsDir(root), 'Projects'), join(contextsDir(root), 'moved'))
     await rename(join(contextsDir(root), 'moved'), join(contextsDir(root), 'projects'))

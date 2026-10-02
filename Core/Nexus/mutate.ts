@@ -145,7 +145,7 @@ async function dispatch(ctx: MutateContext, req: MutateRequest): Promise<MutateR
       return done(await setCollectionOrder(root, req.order))
 
     case 'createContextGroup': {
-      const r = await createContextGroup(root, req.name)
+      const r = await createContextGroup(root, req.name, req.id)
       return r.ok ? ok({ created: r.value }) : r
     }
 
