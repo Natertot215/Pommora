@@ -1,6 +1,5 @@
 import { basename, join, relJoin } from '../Paths/posix'
 import { createDisambiguated } from '../Paths/names'
-import { contextsDir } from '../Paths/paths'
 import { pathExists } from '../Files/atomicWrite'
 import { fail, ok } from '../Contract/result'
 import { contextWorldOf } from '../Contexts/contextResolve'
@@ -83,12 +82,7 @@ export async function createSpaceOp(
   { root }: MutateContext,
   req: Extract<MutateRequest, { op: 'createSpace' }>,
 ): Promise<MutateReply> {
-  const group = contextWorldOf((await liveTreeOf(root)).contexts).groupById.get(req.contextId)
-  const r = await createDisambiguated(
-    req.name,
-    (name) => createSpace(root, req.contextId, name, req.id),
-    async (name) => !!group && pathExists(join(contextsDir(root), group.def.title, name)),
-  )
+  const r = await createSpace(root, req.contextId, req.name, req.id)
   if (!r.ok) return r
   if (req.order) await setSpaceOrder(root, req.contextId, req.order)
   return ok({ created: r.value })
