@@ -44,14 +44,15 @@ export async function seedConfigSurfaces(
   if (!(await pathExists(identity))) await putJson(identity, { id: 'nx', createdAt: '2026' })
   const colFile = sidecarPath(collection, 'collection')
   await putJson(colFile, { ...(await readJsonAt(colFile)), views: [view] })
-  const set = await createFolderEntity(collection, 'set', 'Deep', newId(), { views: [view] })
+  const setId = newId()
+  const set = await createFolderEntity(collection, 'set', 'Deep', setId, { views: [view] })
   if (!set.ok) throw new Error('set failed')
   await putJson(contextsRegistryFile(root), { contexts: [{ id: 'ctx_areas', title: 'Areas' }] })
   const space = join(contextsDir(root), 'Areas', 'Home')
   await putJson(join(space, SIDECAR_FILENAME.space), { id: 'sp_home' })
   const tiles = join(space, TILE_DOC_FILENAME)
   await putJson(tiles, {
-    tiles: [{ id: 't', type: 'view', views: [{ source_id: set.value.id, config: view }] }],
+    tiles: [{ id: 't', type: 'view', views: [{ source_id: setId, config: view }] }],
   })
   const matrix = nexusConfig(root, NEXUS_CONFIG_FILES.matrix)
   await putJson(matrix, { filter: { rules: view.filter, enabled: true } })

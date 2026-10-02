@@ -44,9 +44,10 @@ const entity = async (
   kind: 'collection' | 'set',
   name: string,
 ): Promise<{ id: string; path: string }> => {
-  const made = await createFolderEntity(parent, kind, name, newId())
+  const id = newId()
+  const made = await createFolderEntity(parent, kind, name, id)
   if (!made.ok) throw new Error(`${name} failed`)
-  return made.value
+  return { id, ...made.value }
 }
 
 const addWork = (): Promise<void> =>

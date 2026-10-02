@@ -198,13 +198,14 @@ describe('removeProperty reaches saved views (B-6)', () => {
   it('clears its own views in the one sidecar write, then its Set and the tile sourcing it, and leaves another source and the Matrix', async () => {
     const held = viewOn(propId, 'done')
     const surfaces = await seedConfigSurfaces(root, folder, held)
-    const other = await createFolderEntity(root, 'collection', 'Other', newId())
+    const otherId = newId()
+    const other = await createFolderEntity(root, 'collection', 'Other', otherId)
     if (!other.ok) throw new Error('setup failed')
     type TileDoc = {
       tiles: { id: string; type: string; views: { source_id: string; config: unknown }[] }[]
     }
     const doc = await readJsonAt<TileDoc>(surfaces.tiles)
-    doc.tiles.push({ id: 'u', type: 'view', views: [{ source_id: other.value.id, config: held }] })
+    doc.tiles.push({ id: 'u', type: 'view', views: [{ source_id: otherId, config: held }] })
     await writeFile(surfaces.tiles, JSON.stringify(doc))
     vi.mocked(editJsonStrict).mockClear()
 

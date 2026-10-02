@@ -33,9 +33,10 @@ beforeEach(async () => {
   await mkdir(contextsDir(root), { recursive: true })
   await mkdir(nexusDir(root), { recursive: true })
   await writeFile(contextsRegistryFile(root), JSON.stringify({ contexts: [] }))
-  const group = await createContextGroup(root, 'Projects', newId())
+  const groupId = newId()
+  const group = await createContextGroup(root, 'Projects', groupId)
   if (!group.ok) throw new Error('setup failed')
-  const space = await createSpace(root, group.value.id, 'Pommora', newId())
+  const space = await createSpace(root, groupId, 'Pommora', newId())
   if (!space.ok) throw new Error('setup failed')
   spaceRel = space.value.path
   const made = await createProperty(root, def({ name: 'Status', type: 'select' }))

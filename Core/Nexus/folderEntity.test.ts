@@ -5,7 +5,6 @@ import { createFolderEntity, renameFolderEntity } from './folderEntity'
 import { newId } from './ids'
 import { readSidecar } from '../Files/sidecar'
 import { baseSidecar, pageCollectionSidecar } from './schemas'
-import { isUlidShaped } from './identityMark'
 
 let root: string
 beforeEach(async () => {
@@ -16,16 +15,16 @@ afterEach(async () => {
 })
 
 describe('createFolderEntity', () => {
-  it('creates a folder + sidecar with a fresh ULID (one factory for all kinds)', async () => {
-    const r = await createFolderEntity(root, 'space', 'Health', newId(), {
+  it('creates a folder + sidecar under the given ID (one factory for all kinds)', async () => {
+    const id = newId()
+    const r = await createFolderEntity(root, 'space', 'Health', id, {
       icon: 'folder',
       color: 'green',
     })
     expect(r.ok).toBe(true)
     if (!r.ok) return
-    expect(isUlidShaped(r.value.id)).toBe(true)
     expect(await readSidecar(r.value.path, 'space', baseSidecar)).toMatchObject({
-      id: r.value.id,
+      id,
       icon: 'folder',
       color: 'green',
     })
@@ -58,7 +57,8 @@ describe('createFolderEntity', () => {
 
 describe('renameFolderEntity', () => {
   it('renames the folder, carrying the sidecar', async () => {
-    const c = await createFolderEntity(root, 'collection', 'Old', newId())
+    const id = newId()
+    const c = await createFolderEntity(root, 'collection', 'Old', id)
     if (!c.ok) throw new Error('setup failed')
     const r = await renameFolderEntity(root, c.value.path, 'New')
     expect(r.ok).toBe(true)
@@ -66,7 +66,7 @@ describe('renameFolderEntity', () => {
     expect(r.value.path.endsWith('New')).toBe(true)
     await expect(stat(c.value.path)).rejects.toThrow()
     expect(await readSidecar(r.value.path, 'collection', pageCollectionSidecar)).toMatchObject({
-      id: c.value.id,
+      id,
     })
   })
 

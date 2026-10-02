@@ -37,7 +37,7 @@ export async function createFolderEntity(
   name: string,
   id: string,
   extra: Record<string, unknown> = {},
-): Promise<Result<{ id: string; path: string }>> {
+): Promise<Result<{ path: string }>> {
   const why = nameError(name, 'directory')
   if (why) return fail('invalid-name', why)
   const folder = join(parentDir, name)
@@ -46,7 +46,7 @@ export async function createFolderEntity(
   // The mkdir doesn't suppress its own addDir echo as the sidecar write does; recorded here, the folder is never read before its sidecar lands.
   recordWrite(folder)
   await writeJson(sidecarPath(folder, kind), { id, ...extra })
-  return ok({ id, path: folder })
+  return ok({ path: folder })
 }
 
 export async function renameFolderEntity(

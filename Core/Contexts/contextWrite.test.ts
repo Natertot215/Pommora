@@ -59,12 +59,13 @@ const world = async () => contextWorldOf((await readNexus(root)).contexts)
 
 describe('createContextGroup', () => {
   it('appends a ULID entry and mkdirs the context folder', async () => {
-    const r = await createContextGroup(root, 'Clients', newId())
+    const id = newId()
+    const r = await createContextGroup(root, 'Clients', id)
     expect(r.ok).toBe(true)
     if (!r.ok) return
     const reg = await readJsonAt<ContextsRegistry>(contextsRegistryFile(root))
     const entry = reg.contexts.find((c) => c.title === 'Clients')
-    expect(entry!.id).toBe(r.value.id)
+    expect(entry!.id).toBe(id)
     expect(entry!.singular).toBeUndefined()
     const entries = await readdir(join(contextsDir(root), 'Clients'))
     expect(entries).toEqual([])

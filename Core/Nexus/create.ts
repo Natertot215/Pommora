@@ -81,7 +81,7 @@ export async function createContainerOp(
   )
   if (!r.ok) return r
   if (req.order) await setChildOrder(parent.value, 'set_order', req.order)
-  if (req.kind === 'collection') await appendCollection(root, r.value.id)
+  if (req.kind === 'collection') await appendCollection(root, req.id)
   return created(req.parentPath, r.value)
 }
 
@@ -100,5 +100,5 @@ export async function createSpaceOp(
   )
   if (!r.ok) return r
   if (req.order) await setSpaceOrder(root, req.contextId, req.order)
-  return ok({ created: { path: r.value.path } })
+  return ok({ created: r.value })
 }
