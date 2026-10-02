@@ -38,6 +38,16 @@ export const stripKeys =
 export const unsweptLine = (count: number, what = ''): string =>
   `Couldn’t update ${what}${count} ${count === 1 ? 'file' : 'files'}.`
 
+/** The root a governed file holds: a page's frontmatter, or a Space sidecar's object. */
+export const rootOf = (file: string, text: string): Json =>
+  isMarkdownFile(file) ? splitFrontmatter(text) : (parseJsonObject(text) ?? {})
+
+// A file whose lock or write throws costs only itself, so the files after it are still reached.
+const guarded = (file: string, missed: string[], body: () => Promise<void>): Promise<void> =>
+  machine()
+    .lock(file, body)
+    .catch(() => void missed.push(file))
+
 const changedKeys = (raw: Json, next: Json): string[] =>
   [...new Set([...Object.keys(raw), ...Object.keys(next)])].filter(
     (k) => JSON.stringify(raw[k]) !== JSON.stringify(next[k]),
@@ -61,13 +71,9 @@ export async function sweepGovernedRoots(
   plan: SweepPlan,
 ): Promise<SweepResult> {
   const out: SweepResult = { touched: new Map(), skipped: [], refused: [] }
-  const guarded = (file: string, body: () => Promise<void>): Promise<void> =>
-    machine()
-      .lock(file, body)
-      .catch(() => void out.skipped.push(file))
 
   for (const file of files) {
-    await guarded(file, async () => {
+    await guarded(file, out.skipped, async () => {
       const content = await readTextOrNull(file)
       if (content === null) {
         out.skipped.push(file)
@@ -88,7 +94,7 @@ export async function sweepGovernedRoots(
   const sidecars = plan.sidecars
   if (sidecars)
     for (const file of await spaceSidecars(root)) {
-      await guarded(file, async () => {
+      await guarded(file, out.skipped, async () => {
         const text = await readTextOrNull(file)
         if (text === null) {
           out.skipped.push(file)
@@ -110,23 +116,22 @@ export async function sweepGovernedRoots(
   return out
 }
 
-/** Returns each file a sweep wrote to what it held before: whole while it still holds what the sweep wrote, and otherwise only the keys the sweep changed, so a write landed since is kept. */
-export async function undoSweep(touched: SweepResult['touched']): Promise<void> {
+/** Returns the keys a sweep changed to what they held, each file whole while it still holds the sweep's write, so a write since to any other key or to the body is kept; answers the files it couldn't put back. */
+export async function undoSweep(touched: SweepResult['touched']): Promise<string[]> {
+  const missed: string[] = []
   for (const [file, { before, after }] of touched)
-    await machine().lock(file, async () => {
+    await guarded(file, missed, async () => {
       const now = await readTextOrNull(file)
       if (now === null) return
       const back = now === after ? before : keysPutBack(file, now, before, after)
       if (back !== null) await rewritePreservingTimes(file, back)
     })
+  return missed
 }
 
 function keysPutBack(file: string, now: string, before: string, after: string): string | null {
-  const page = isMarkdownFile(file)
-  const read = (text: string): Json =>
-    page ? splitFrontmatter(text) : (parseJsonObject(text) ?? {})
-  const was = read(before)
-  const keys = changedKeys(was, read(after))
+  const was = rootOf(file, before)
+  const keys = changedKeys(was, rootOf(file, after))
   const putBack: Rewrite = (raw) => {
     const next = { ...raw }
     for (const k of keys) {
@@ -135,9 +140,10 @@ function keysPutBack(file: string, now: string, before: string, after: string): 
     }
     return next
   }
-  if (page) return rewriteRaw(putBack, now, file)
+  if (isMarkdownFile(file)) return rewriteRaw(putBack, now, file)
   const raw = parseJsonObject(now)
-  return raw && jsonText(putBack(raw, file))
+  if (!raw) throw new Error('The sidecar no longer parses.')
+  return jsonText(putBack(raw, file))
 }
 
 /** Rewrites each page or Space whose ID is in `values` — found where `roots` places it, matched by the ID it carries — and answers the IDs whose root now holds what its rewrite asked for; a null rewrite leaves its root as it is. */

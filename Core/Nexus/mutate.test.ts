@@ -2614,6 +2614,46 @@ describe('the Contexts lock', () => {
     )
   }
 
+  it.skipIf(noModeBits)(
+    'a swept page made unparsable before a refused delete puts it back doesn’t stop the pages after it, and the refusal counts it',
+    async () => {
+      const locked = join(root, 'Notes', 'Daily', 'Locked.md')
+      const second = join(root, 'Notes', 'Daily', 'Second.md')
+      await writeFile(
+        locked,
+        '---\nID: 01KVGMT8BFP350FZZXAMG1QDRK\n<Areas>:\n  - Work\n---\n\nlocked',
+      )
+      await writeFile(
+        second,
+        '---\nID: 01KVGMT8BFP350FZZXAMG1QDRS\n<Areas>:\n  - Work\n---\n\nsecond',
+      )
+      await refreshTree(root)
+      await chmod(locked, 0o000)
+      try {
+        const sweeps = (files: unknown) => (files as string[]).includes(locked)
+        const paused = pauseOn(governedSweep, 'sweepGovernedRoots', 'after', (_, files) =>
+          sweeps(files),
+        )
+        const running = handleMutate(root, deletes[0][1], nexusDeps)
+        await paused.reached
+        const files =
+          vi.mocked(governedSweep.sweepGovernedRoots).mock.calls.find(([, f]) => sweeps(f))?.[1] ??
+          []
+        const [first, last] = [join(root, 'Notes', 'Daily', 'Alpha.md'), second].sort(
+          (a, b) => files.indexOf(a) - files.indexOf(b),
+        )
+        await writeFile(first, '---\nID: [unclosed\n---\n\nbroken')
+        paused.release()
+        const reply = await running
+        expect(splitFrontmatter(await readFile(last, 'utf8'))['<Areas>']).toEqual(['Work'])
+        expect(reply).toEqual(fault(governedSweep.unsweptLine(2)))
+      } finally {
+        vi.restoreAllMocks()
+        await chmod(locked, 0o644)
+      }
+    },
+  )
+
   it('a Space created during a Context rename lands in the renamed Context', async () => {
     await refreshTree(root)
     const [renamed, created] = await Promise.all([

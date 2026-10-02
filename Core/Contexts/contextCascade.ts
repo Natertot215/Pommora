@@ -177,7 +177,7 @@ export async function unlinkSpaceValue(
   return ok({ ...(await unlinkMembers(root, { key, spaceTitle }, take)), captured })
 }
 
-// A refused delete leaves no record to restore from, so a sweep that missed a member puts back what it took and refuses. What sits under `skipUnder` leaves with the deleted folder, so it's neither rewritten nor owed.
+// A refused delete leaves no record to restore from, so a sweep that missed a member puts back what it took and refuses, counting each file it missed or couldn’t put back. What sits under `skipUnder` leaves with the deleted folder, so it's neither rewritten nor owed.
 async function unlinkMembers(
   root: string,
   member: Member,
@@ -190,8 +190,8 @@ async function unlinkMembers(
   )
   const missed = swept.skipped.filter((file) => !leaves(file))
   if (!missed.length) return swept
-  await undoSweep(swept.touched)
-  throw new Error(unsweptLine(missed.length))
+  const unrestored = await undoSweep(swept.touched)
+  throw new Error(unsweptLine(missed.length + unrestored.length))
 }
 
 async function settleJournal(root: string, j: RenameJournal, skipped: string[]): Promise<void> {
