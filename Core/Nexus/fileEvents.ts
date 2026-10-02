@@ -307,9 +307,9 @@ async function applyFolder(
   owed: Owed,
 ): Promise<Applied> {
   const parent = relDirname(rel)
-  // A folder whose parent the tree doesn't hold waits for the event that lands the parent.
-  if (rel === '' || containerAt(tree, rel) || (parent !== '' && !containerAt(tree, parent)))
-    return 'ok'
+  if (rel === '' || containerAt(tree, rel)) return 'ok'
+  // A folder whose parent the tree doesn't hold lands with the parent's read.
+  if (parent !== '' && !containerAt(tree, parent)) return applyFolder(root, tree, parent, owed)
   // Its stamp's own event reads it again.
   if (owed.stamp.some((u) => u.path === rel)) return 'ok'
   if (!(await pathExists(join(root, rel)))) return applyPatch(root, (t) => removeNodeInTree(t, rel))
