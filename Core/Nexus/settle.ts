@@ -72,7 +72,7 @@ function valueChangesOf(root: string, values: ReadonlyMap<string, boolean>): Val
   return [...out.values()]
 }
 
-export async function walkOwed(root: string): Promise<void> {
+async function walkDue(root: string): Promise<void> {
   if (sessionRoot() !== root) return
   const due = owedFor(root)
   while (due.walk) {
@@ -91,7 +91,7 @@ export async function walkOwed(root: string): Promise<void> {
 }
 
 async function settle(pusher: Pusher, root: string): Promise<{ rescope: boolean } | null> {
-  await walkOwed(root)
+  await walkDue(root)
   // An open in progress has no window on this Nexus yet, so what is owed waits for the settle that follows it.
   if (sessionRoot() !== root || adopting()) return null
   const due = owedFor(root)
@@ -142,12 +142,18 @@ export async function settleBatch(
   await flush(pusher, root)
 }
 
+function inTurn<T>(step: () => Promise<T>): Promise<T> {
+  const turn = settling.then(step)
+  settling = turn.catch((e) => console.error('settle failed:', errText(e)))
+  return turn
+}
+
+export const walkOwed = (root: string): Promise<void> => inTurn(() => walkDue(root))
+
 // One settle at a time, and one reseed at a time on a chain of its own: a reply waits for the settles ahead of its own, and for a reseed only when its own settle found the corpus or the scope moved.
 export async function flush(pusher: Pusher, root: string): Promise<void> {
   await stampListed(root, true)
-  const turn = settling.then(() => settle(pusher, root))
-  settling = turn.catch((e) => console.error('settle failed:', errText(e)))
-  const moved = await turn.catch(() => null)
+  const moved = await inTurn(() => settle(pusher, root)).catch(() => null)
   if (!moved) return
   reseeding = reseeding
     .then(() => reseed(pusher, root, moved.rescope))
