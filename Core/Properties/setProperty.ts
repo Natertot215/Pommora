@@ -1,33 +1,43 @@
 import { machine } from '../Platform/machine'
-import { mutableTarget } from '../Nexus/liveTree'
+import { liveTreeOf, mutableTarget } from '../Nexus/liveTree'
 import { readTextOrNull } from '../Files/atomicWrite'
 
 import { isMarkdownFile } from '../Paths/posix'
-import { governedWorldOf, writeSpaceSidecar } from '../Contexts/contextWrite'
+import {
+  governedWorldOf,
+  repairedSpace,
+  spaceWorldOf,
+  writeSpaceSidecar,
+} from '../Contexts/contextWrite'
 import { noShape, updatePageProperty } from '../Nexus/page'
 import { fail, ok, type Result } from '../Contract/result'
 import type { MutateContext } from '../Nexus/mutate'
 import { done, type MutateReply, type MutateRequest } from '../Nexus/mutateRequest'
 import type { PropertyDefinition } from './properties'
-import { encodeValue, isBlankValue, type PropertyValue } from './propertyValue'
+import { type Adoption, encodeValue, isBlankValue, type PropertyValue } from './propertyValue'
 import { applyAdoptions } from './optionOps'
 import { readRegistry, NO_PROPERTY } from './propertiesRegistry'
 
-export function setSpaceProperty(
+export async function setSpaceProperty(
+  root: string,
   absSpaceDir: string,
   def: PropertyDefinition,
   value: PropertyValue | null,
 ): Promise<Result<null>> {
   const clear = value === null || isBlankValue(value)
   const encoded = clear ? undefined : encodeValue(value)
-  if (!clear && encoded === undefined) return Promise.resolve(noShape(def.name))
-  return writeSpaceSidecar(absSpaceDir, (raw) => {
+  if (!clear && encoded === undefined) return noShape(def.name)
+  const world = spaceWorldOf(await liveTreeOf(root))
+  const adoptions: Adoption[] = []
+  const written = await writeSpaceSidecar(absSpaceDir, (raw) => {
     if (clear && !(def.name in raw)) return null
-    const next = { ...raw }
+    const next = repairedSpace(raw, world, adoptions, [def.name])
     if (clear) delete next[def.name]
     else next[def.name] = encoded
     return next
   })
+  if (written.ok) await applyAdoptions(root, adoptions)
+  return written
 }
 
 export async function setPropertyOp(
@@ -39,8 +49,7 @@ export async function setPropertyOp(
   if (!isMarkdownFile(req.path)) {
     const def = (await readRegistry(root)).defs[req.propertyId]
     if (!def) return NO_PROPERTY
-    const written = await setSpaceProperty(resolved.value, def, req.value)
-    return done(written)
+    return done(await setSpaceProperty(root, resolved.value, def, req.value))
   }
   // Resolved inside the lock: a rename sweeps on its own chain, so a name read before the lock can send the write to a key the sweep has already passed.
   const adoptions = await machine().lock(resolved.value, async () => {

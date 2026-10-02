@@ -478,7 +478,7 @@ describe('links come back with the page', () => {
       'Related:\n  - "[[Alpha]]"\n  - "[[Beta]]"\nParent:',
     )
     const sidecar = join(contextsDir(root), 'Projects', 'Pommora', '_space.json')
-    const space = { id: 'sp-pom', Related: ['[[Alpha]]', '[[Beta]]'], Parent: '' }
+    const space = { id: 'sp-pom', Mentions: ['[[Alpha]]', '[[Beta]]'], Upstream: '' }
     await writeFile(sidecar, JSON.stringify(space))
     const before = await readFile(join(root, notes), 'utf8')
     await del(notes, 'page')

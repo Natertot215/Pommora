@@ -273,7 +273,7 @@ describe('restoring a deleted property', () => {
     const id = await seedPriority()
     expect(
       (
-        await setSpaceProperty(join(root, space.value.path), await liveDef(id), {
+        await setSpaceProperty(root, join(root, space.value.path), await liveDef(id), {
           kind: 'select',
           value: 'hi',
         })
@@ -300,7 +300,7 @@ describe('restoring a deleted property', () => {
     await rename(join(contextsDir(root), 'moved'), join(contextsDir(root), 'projects'))
     const sidecarFile = join(contextsDir(root), 'projects', 'Pommora', '_space.json')
     const id = await seedPriority()
-    await setSpaceProperty(join(root, space.value.path), await liveDef(id), {
+    await setSpaceProperty(root, join(root, space.value.path), await liveDef(id), {
       kind: 'select',
       value: 'hi',
     })

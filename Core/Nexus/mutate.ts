@@ -58,7 +58,7 @@ export async function handleMutate(
 
 async function dispatch(ctx: MutateContext, req: MutateRequest): Promise<MutateReply> {
   const { root, deps } = ctx
-  // Every Contexts write and rename reads the held tree, and a tag written mid-rename must land under the new key, so each runs under the folder's one lock, which holds until the walk a write owed has been paid.
+  // Every Contexts write, every value write, and every rename reads the held tree, and a tag or a value written mid-rename must land under the new key, so each runs under the folder's one lock, which holds until the walk a write owed has been paid. A write that names a Space by a path the rename has moved answers the refusal.
   const underContexts = <T>(fn: () => Promise<T>): Promise<T> =>
     machine().lock(contextsDir(root), async () => {
       try {
@@ -132,7 +132,7 @@ async function dispatch(ctx: MutateContext, req: MutateRequest): Promise<MutateR
     }
 
     case 'setProperty':
-      return setPropertyOp(ctx, req)
+      return underContexts(() => setPropertyOp(ctx, req))
 
     case 'setPageMeta':
       return writePageMeta(root, req.path, req.patch)
@@ -163,7 +163,7 @@ async function dispatch(ctx: MutateContext, req: MutateRequest): Promise<MutateR
       return underContexts(() => setContextOp(ctx, req))
 
     case 'setSpaceColor':
-      return done(await setSpaceColor(root, req.spaceId, req.color))
+      return done(await underContexts(() => setSpaceColor(root, req.spaceId, req.color)))
 
     case 'renameContext':
       return done(await underContexts(() => renameContextOp(root, req.contextId, req.newName)))
@@ -180,11 +180,12 @@ async function dispatch(ctx: MutateContext, req: MutateRequest): Promise<MutateR
     case 'reorderSpaces':
       return done(await setSpaceOrder(root, req.contextId, req.ids))
 
-    case 'setSpaceRowOrder': {
-      const resolved = await mutableTarget(root, req.path, ['space'])
-      if (!resolved.ok) return resolved
-      return done(await setSpaceRowOrder(resolved.value, req.contexts, req.properties))
-    }
+    case 'setSpaceRowOrder':
+      return underContexts(async () => {
+        const resolved = await mutableTarget(root, req.path, ['space'])
+        if (!resolved.ok) return resolved
+        return done(await setSpaceRowOrder(resolved.value, req.contexts, req.properties))
+      })
 
     case 'retryUnreadable': {
       const entry = (await liveTreeOf(root)).unreadable?.find((u) => u.path === req.path)

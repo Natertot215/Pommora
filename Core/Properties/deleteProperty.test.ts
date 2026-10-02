@@ -206,7 +206,7 @@ describe('a global delete reaches a Space sidecar', () => {
       icon: 'https://draft.example',
     })
 
-    const set = await setSpaceProperty(dirname(pom), await liveDef(c.value.id), {
+    const set = await setSpaceProperty(root, dirname(pom), await liveDef(c.value.id), {
       kind: 'link',
       value: 'https://final.example',
     })

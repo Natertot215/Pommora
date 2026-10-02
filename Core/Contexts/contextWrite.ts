@@ -4,7 +4,6 @@ import { editList } from '../Properties/pageValue'
 import {
   contextWorldOf,
   namesSpace,
-  NO_DEFS,
   preservedChanges,
   reconcileGovernedRoot,
   type ContextWorld,
@@ -21,6 +20,7 @@ import { done, type MutateReply, type MutateRequest } from '../Nexus/mutateReque
 import { assignedDefs, collectionFolderOf } from '../Properties/assignment'
 import { applyAdoptions } from '../Properties/optionOps'
 import type { NexusTree } from '../Nexus/tree'
+import type { Adoption } from '../Properties/propertyValue'
 import { isColorKey } from '@pommora/uix/Theme/colors'
 import { ok, fail, type Result, fault } from '../Contract/result'
 import { mutateRegistryFile, readRegistryStrict, withContextAt } from './contextsRegistry'
@@ -77,6 +77,25 @@ export async function governedWorldOf(root: string, absFile: string): Promise<Go
   return { contexts: contextWorldOf(tree.contexts), defs }
 }
 
+// A Space holds any registry property, so its own values reconcile against every definition, by name.
+export const spaceWorldOf = (tree: NexusTree): GovernedWorld => ({
+  contexts: contextWorldOf(tree.contexts),
+  defs: new Map(tree.config.registry.map((d) => [d.name, d])),
+})
+
+// The keys a write is about to set stay out of the reconcile, as `setGovernedRootKeys` keeps them out of a page's.
+export function repairedSpace(
+  raw: Json,
+  world: GovernedWorld,
+  adoptions: Adoption[],
+  govern: readonly string[],
+): Json {
+  const own = Object.fromEntries(Object.entries(raw).filter(([k]) => !govern.includes(k)))
+  const reconciled = reconcileGovernedRoot(own, world)
+  adoptions.push(...reconciled.adoptions)
+  return { ...raw, ...preservedChanges(reconciled, own) }
+}
+
 export async function writeSpaceSidecar(
   absSpaceDir: string,
   mutate: (raw: Json) => Json | null,
@@ -92,7 +111,7 @@ export async function setSpaceContext(
   contextId: string,
   targetSpaceIds: string[],
 ): Promise<Result<number>> {
-  const world: GovernedWorld = { contexts: contextWorldOf(tree.contexts), defs: NO_DEFS }
+  const world = spaceWorldOf(tree)
   const { groupById, spaceById } = world.contexts
   const a = spaceById.get(spaceId)
   if (!a) return fail('not-found', 'Unknown Space.')
@@ -103,10 +122,7 @@ export async function setSpaceContext(
   const own = groupById.get(a.contextId)
   if (!own) return fail('not-found', 'Unknown Context.')
   const backKey = contextKey(own.def.title)
-  const repaired = (raw: Json): Json => ({
-    ...raw,
-    ...preservedChanges(reconcileGovernedRoot(raw, world), raw),
-  })
+  const adoptions: Adoption[] = []
   let skipped = 0
   const namesA = namesSpace(a.title)
   for (const far of groupById.get(contextId)?.spaces ?? []) {
@@ -115,7 +131,7 @@ export async function setSpaceContext(
     // Decided on what the far file holds, inside its own read-modify-write, never on the tree's copy of it.
     const half = await writeSpaceSidecar(join(root, far.path), (raw) => {
       if (listOf(raw[backKey]).some(namesA) === wants) return null
-      const base = repaired(raw)
+      const base = repairedSpace(raw, world, adoptions, [backKey])
       const held = base[backKey] == null ? [] : listOf(base[backKey])
       const without = editList(held, namesSpace, a.title, { op: 'strip' }) ?? held
       const next = wants ? [...without, a.title] : without
@@ -124,9 +140,10 @@ export async function setSpaceContext(
     if (!half.ok) skipped++
   }
   const written = await writeSpaceSidecar(join(root, a.path), (raw) =>
-    setOrDrop(repaired(raw), key, value),
+    setOrDrop(repairedSpace(raw, world, adoptions, [key]), key, value),
   )
   if (!written.ok) return written
+  await applyAdoptions(root, adoptions)
   return ok(skipped)
 }
 

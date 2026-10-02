@@ -2261,6 +2261,61 @@ describe('the Contexts lock', () => {
     expect(splitFrontmatter(await read('Notes/Daily/Alpha.md'))['<Projects>']).toEqual(['Atlas'])
   })
 
+  it('a color queued behind a Space rename lands on the renamed Space, and a value addressed to its old path is refused', async () => {
+    const stage = await createProperty(root, { id: '', name: 'Stage', type: 'number' })
+    if (!stage.ok) throw new Error('setup')
+    await refreshTree(root)
+    // Unlocked, the rename waits until the color has read the Space's path, and the color writes only once the rename is done; locked, it waits until the color queues on the lock.
+    let pathRead = (): void => {}
+    const read = new Promise<void>((resolve) => {
+      pathRead = resolve
+    })
+    const lock = lockContention(contextsDir(root))
+    const taken = atomicWrite.targetTaken
+    const renameWaits = vi
+      .spyOn(atomicWrite, 'targetTaken')
+      .mockImplementation(async (from, to) => {
+        await Promise.race([read, lock.contended])
+        return taken(from, to)
+      })
+    const renaming = settledMutate(
+      root,
+      { op: 'renameSpace', spaceId: 'sp-pom', newName: 'Atlas' },
+      nexusDeps,
+    )
+    const rmw = atomicWrite.rmwJsonStrict
+    const writeWaits = vi
+      .spyOn(atomicWrite, 'rmwJsonStrict')
+      .mockImplementation(async (path, mutate, seed) => {
+        pathRead()
+        await renaming
+        return rmw(path, mutate, seed)
+      })
+    const [colored, valued] = await Promise.all([
+      settledMutate(root, { op: 'setSpaceColor', spaceId: 'sp-pom', color: 'cyan' }, nexusDeps),
+      settledMutate(
+        root,
+        {
+          op: 'setProperty',
+          path: '.nexus/contexts/Projects/Pommora',
+          propertyId: stage.value.id,
+          value: { kind: 'number', value: 3 },
+        },
+        nexusDeps,
+      ),
+    ])
+    renameWaits.mockRestore()
+    writeWaits.mockRestore()
+    lock.restore()
+    expect((await renaming).ok && colored.ok).toBe(true)
+    expect(valued.ok).toBe(false)
+    expect(await readJson('.nexus/contexts/Projects/Atlas/_space.json')).toEqual({
+      id: 'sp-pom',
+      $color: 'cyan',
+    })
+    expect(await pathExists(join(root, '.nexus/contexts/Projects/Pommora'))).toBe(false)
+  })
+
   const sweeps = {
     unlinkSpaceValue: contextCascade.unlinkSpaceValue,
     unlinkContextKey: contextCascade.unlinkContextKey,
