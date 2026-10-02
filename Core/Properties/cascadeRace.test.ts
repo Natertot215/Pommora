@@ -11,7 +11,8 @@ import { createProperty } from './registryProperty'
 import { assignProperty } from './assignment'
 import { createFolderEntity } from '../Nexus/folderEntity'
 import { newId } from '../Nexus/ids'
-import { createPage, updatePageProperty } from '../Nexus/page'
+import { updatePageProperty } from '../Nexus/page'
+import { createTestPage } from '../Testing/createTestPage'
 import { machine } from '../Platform/machine'
 import { openSession, closeSession, sessionRoot } from '../Nexus/session'
 import { resolveUnderRoot } from '../Paths/pathSafety'
@@ -47,7 +48,7 @@ async function setup(root: string, value: string): Promise<{ propertyId: string;
   const col = await createFolderEntity(root, 'collection', 'Col', newId())
   if (!col.ok) throw new Error('collection failed')
   await assignProperty(root, col.value.path, c.value.id)
-  const p = await createPage(col.value.path, 'Target', { body: 'b' })
+  const p = await createTestPage(col.value.path, 'Target', { body: 'b' })
   if (!p.ok) throw new Error('page failed')
   await updatePageProperty(p.value.path, defOf(c.value.id), { kind: 'select', value })
   return { propertyId: c.value.id, rel: relative(root, p.value.path) }

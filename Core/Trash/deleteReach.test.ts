@@ -8,7 +8,7 @@ import { noModeBits, putJson, readJsonAt, tempRoot } from '../Testing/hostFs'
 import { type ConfigSurfaces, seedConfigSurfaces, viewOn } from '../Testing/configSurfaces'
 import { settledMutate } from '../Testing/settledMutate'
 import { createFolderEntity } from '../Nexus/folderEntity'
-import { createPage } from '../Nexus/page'
+import { createTestPage } from '../Testing/createTestPage'
 import { splitFrontmatter } from '../Files/pageFile'
 import type { PropertyDefinition } from '../Properties/properties'
 import { dropLiveTree, refreshTree } from '../Nexus/liveTree'
@@ -61,7 +61,7 @@ const addRelated = (): Promise<void> =>
   })
 
 const page = async (parent: string, name: string, links?: string): Promise<string> => {
-  const made = await createPage(parent, name, {
+  const made = await createTestPage(parent, name, {
     values: links ? [{ def: RELATED, value: { kind: 'link', value: `[[${links}]]` } }] : [],
   })
   if (!made.ok) throw new Error(`${name} failed`)

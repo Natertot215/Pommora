@@ -5,6 +5,7 @@ import { assignProperty, reorderAssignment, collectionFolders } from './assignme
 import { dropLiveTree } from '../Nexus/liveTree'
 import { createFolderEntity } from '../Nexus/folderEntity'
 import { newId } from '../Nexus/ids'
+import { createTestPage } from '../Testing/createTestPage'
 import { readSidecar } from '../Files/sidecar'
 import { pageCollectionSidecar } from '../Nexus/schemas'
 import type { PropertyDefinition } from './properties'
@@ -48,7 +49,7 @@ it('collectionFolders lists every collection folder from the live tree', async (
 it('a Remove racing an Assign on ONE collection never loses either write (breaker H-2)', async () => {
   const { createProperty } = await import('./registryProperty')
   const { removeProperty } = await import('./removeProperty')
-  const { createPage, updatePageProperty } = await import('../Nexus/page')
+  const { updatePageProperty } = await import('../Nexus/page')
   const { readFile } = await import('node:fs/promises')
   const { splitFrontmatter } = await import('../Files/pageFile')
   const mk = async (name: string): Promise<string> => {
@@ -59,7 +60,7 @@ it('a Remove racing an Assign on ONE collection never loses either write (breake
   const pC = await mk('Gone')
   const pB = await mk('Incoming')
   await assignProperty(root, notes, pC)
-  const page = await createPage(notes, 'A', { body: 'b' })
+  const page = await createTestPage(notes, 'A', { body: 'b' })
   if (!page.ok) throw new Error('setup failed')
   await updatePageProperty(
     page.value.path,

@@ -11,7 +11,8 @@ import { dropLiveTree, getLiveTree, refreshTree } from '../Nexus/liveTree'
 import { findContainerWhere } from '../Nexus/treePatch'
 import { createFolderEntity } from '../Nexus/folderEntity'
 import { newId } from '../Nexus/ids'
-import { createPage, updatePageProperty } from '../Nexus/page'
+import { updatePageProperty } from '../Nexus/page'
+import { createTestPage } from '../Testing/createTestPage'
 import { createProperty } from './registryProperty'
 import { assignProperty } from './assignment'
 import { mutateRegistry, readRegistry } from './propertiesRegistry'
@@ -58,7 +59,7 @@ beforeEach(async () => {
   col = c.value.path
   propId = p.value.id
   await assignProperty(root, col, propId)
-  const page = await createPage(col, 'A', { body: 'b' })
+  const page = await createTestPage(col, 'A', { body: 'b' })
   if (!page.ok) throw new Error('setup failed')
   await updatePageProperty(page.value.path, (await readRegistry(root)).defs[propId], {
     kind: 'select',
@@ -87,7 +88,7 @@ describe('the property channels', () => {
     async () => {
       const locked = await createFolderEntity(col, 'set', 'Locked', newId())
       if (!locked.ok) throw new Error('setup failed')
-      const held = await createPage(locked.value.path, 'C', { body: 'b' })
+      const held = await createTestPage(locked.value.path, 'C', { body: 'b' })
       if (!held.ok) throw new Error('setup failed')
       await updatePageProperty(held.value.path, (await readRegistry(root)).defs[propId], {
         kind: 'select',

@@ -12,7 +12,8 @@ import {
 import { assignProperty } from './assignment'
 import { createFolderEntity } from '../Nexus/folderEntity'
 import { newId } from '../Nexus/ids'
-import { createPage, updatePageProperty } from '../Nexus/page'
+import { updatePageProperty } from '../Nexus/page'
+import { createTestPage } from '../Testing/createTestPage'
 import { pathExists } from '../Files/atomicWrite'
 import { readRegistry } from './propertiesRegistry'
 import { nexusConfig } from '../Paths/paths'
@@ -142,7 +143,7 @@ describe('renameProperty and editProperty', () => {
     const col = await createFolderEntity(root, 'collection', 'Col', newId())
     if (!c.ok || !col.ok) return
     await assignProperty(root, col.value.path, c.value.id)
-    const p = await createPage(col.value.path, 'Holder', { body: 'b' })
+    const p = await createTestPage(col.value.path, 'Holder', { body: 'b' })
     if (!p.ok) return
     await writeFile(p.value.path, `---\nID: 01ARZ3NDEKPSV4RRFFQ69G5FAV\nfoo: bar\n---\nb\n`)
 
@@ -196,7 +197,7 @@ describe('renameProperty and editProperty', () => {
     const live = (await readRegistry(root)).defs[c.value.id]
     const pages: string[] = []
     for (const title of ['A', 'B', 'C']) {
-      const p = await createPage(col.value.path, title, { body: 'b' })
+      const p = await createTestPage(col.value.path, title, { body: 'b' })
       if (!p.ok) return
       pages.push(p.value.path)
       await updatePageProperty(p.value.path, live, { kind: 'number', value: 1 })

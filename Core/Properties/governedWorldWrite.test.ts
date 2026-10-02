@@ -16,7 +16,7 @@ import { assignProperty } from './assignment'
 import { contextDriftPresent } from '../Contexts/contextWrite'
 import { newId } from '../Nexus/ids'
 import { createFolderEntity } from '../Nexus/folderEntity'
-import { createPage } from '../Nexus/page'
+import { createTestPage } from '../Testing/createTestPage'
 import { createProperty } from './registryProperty'
 import type { TrashDeps } from '../Trash/bundle'
 
@@ -104,7 +104,7 @@ describe('contextDriftPresent', () => {
 
 describe('a property write reconciles the whole file', () => {
   it('setting Priority on a page holding a scalar Status rewrites Status to a list', async () => {
-    const page = await createPage(notes, 'A', { body: 'b' })
+    const page = await createTestPage(notes, 'A', { body: 'b' })
     if (!page.ok) throw new Error('setup')
     await writeFile(page.value.path, `---\nID: 01ARZ3NDEKPSV4RRFFQ69G5FAV\nStatus: Open\n---\nb\n`)
     const r = await handleMutate(
@@ -124,8 +124,8 @@ describe('a property write reconciles the whole file', () => {
   })
 
   it('a clean page pays no Space read; a drifted one loads the strict world and repairs', async () => {
-    const clean = await createPage(notes, 'Clean', { body: 'b' })
-    const drifted = await createPage(notes, 'Drifted', { body: 'b' })
+    const clean = await createTestPage(notes, 'Clean', { body: 'b' })
+    const drifted = await createTestPage(notes, 'Drifted', { body: 'b' })
     if (!clean.ok || !drifted.ok) throw new Error('setup')
     await writeFile(
       clean.value.path,
@@ -158,7 +158,7 @@ describe('a property write reconciles the whole file', () => {
   })
 
   it('a corrupt Space sidecar skips the context arm on a property write and refuses a context write', async () => {
-    const page = await createPage(notes, 'B', { body: 'b' })
+    const page = await createTestPage(notes, 'B', { body: 'b' })
     if (!page.ok) throw new Error('setup')
     await writeFile(
       page.value.path,
@@ -201,7 +201,7 @@ describe('a property write reconciles the whole file', () => {
     } as PropertyDefinition)
     if (!tags.ok) throw new Error('setup')
     await assignProperty(root, notes, tags.value.id)
-    const page = await createPage(notes, 'C', { body: 'b' })
+    const page = await createTestPage(notes, 'C', { body: 'b' })
     if (!page.ok) throw new Error('setup')
     await writeFile(
       page.value.path,

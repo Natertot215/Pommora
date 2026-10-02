@@ -16,7 +16,8 @@ import { readSidecar } from '../Files/sidecar'
 import { closeSession, openSession } from '../Nexus/session'
 import { assignProperty } from '../Properties/assignment'
 import { createFolderEntity } from '../Nexus/folderEntity'
-import { createPage, updatePageProperty } from '../Nexus/page'
+import { updatePageProperty } from '../Nexus/page'
+import { createTestPage } from '../Testing/createTestPage'
 import { deleteProperty } from '../Properties/deleteProperty'
 import { removeProperty } from '../Properties/removeProperty'
 import { createProperty } from '../Properties/registryProperty'
@@ -95,8 +96,8 @@ describe('restoring a deleted property', () => {
 
   it('fills only pages that hold no value, names the one that kept its own, and re-dates none', async () => {
     const id = await seedPriority()
-    const p1 = await createPage(notes, 'A', { body: 'b' })
-    const p2 = await createPage(tasks, 'B', { body: 'b' })
+    const p1 = await createTestPage(notes, 'A', { body: 'b' })
+    const p2 = await createTestPage(tasks, 'B', { body: 'b' })
     if (!p1.ok || !p2.ok) throw new Error('pages failed')
     await updatePageProperty(p1.value.path, await liveDef(id), {
       kind: 'select',
@@ -124,8 +125,8 @@ describe('restoring a deleted property', () => {
 
   it('comes back defined, assigned where it was, and holding its values', async () => {
     const id = await seedPriority()
-    const p1 = await createPage(notes, 'A', { body: 'b' })
-    const p2 = await createPage(tasks, 'B', { body: 'b' })
+    const p1 = await createTestPage(notes, 'A', { body: 'b' })
+    const p2 = await createTestPage(tasks, 'B', { body: 'b' })
     if (!p1.ok || !p2.ok) throw new Error('pages failed')
     await updatePageProperty(p1.value.path, await liveDef(id), {
       kind: 'select',
@@ -188,8 +189,8 @@ describe('restoring a deleted property', () => {
 
   it('a value that no longer validates does not return', async () => {
     const id = await seedPriority()
-    const page = await createPage(notes, 'A', { body: 'b' })
-    const good = await createPage(notes, 'B', { body: 'b' })
+    const page = await createTestPage(notes, 'A', { body: 'b' })
+    const good = await createTestPage(notes, 'B', { body: 'b' })
     if (!page.ok || !good.ok) throw new Error('pages failed')
     const def = await liveDef(id)
     await updatePageProperty(good.value.path, def, { kind: 'select', value: 'hi' })
@@ -209,7 +210,7 @@ describe('restoring a deleted property', () => {
 
   it('a value a Remove had cached goes back to its cache, and re-assigning brings it home', async () => {
     const id = await seedPriority()
-    const page = await createPage(tasks, 'A', { body: 'b' })
+    const page = await createTestPage(tasks, 'A', { body: 'b' })
     if (!page.ok) throw new Error('page failed')
     await updatePageProperty(page.value.path, await liveDef(id), {
       kind: 'select',
@@ -229,7 +230,7 @@ describe('restoring a deleted property', () => {
 
   it('a page that held the key blank neither returns a value nor is named', async () => {
     const id = await seedPriority()
-    const blank = await createPage(notes, 'Blank', { body: 'b' })
+    const blank = await createTestPage(notes, 'Blank', { body: 'b' })
     if (!blank.ok) throw new Error('page failed')
     await writeFile(
       blank.value.path,
@@ -242,8 +243,8 @@ describe('restoring a deleted property', () => {
 
   it('a page and a collection gone since the delete are skipped, and the rest still lands', async () => {
     const id = await seedPriority()
-    const p1 = await createPage(notes, 'A', { body: 'b' })
-    const doomed = await createPage(tasks, 'B', { body: 'b' })
+    const p1 = await createTestPage(notes, 'A', { body: 'b' })
+    const doomed = await createTestPage(tasks, 'B', { body: 'b' })
     if (!p1.ok || !doomed.ok) throw new Error('pages failed')
     const def = await liveDef(id)
     await updatePageProperty(p1.value.path, def, { kind: 'select', value: 'hi' })
@@ -318,9 +319,9 @@ describe('restoring a deleted property', () => {
     } as PropertyDefinition)
     if (!c.ok) throw new Error('seed failed')
     await assignProperty(root, notes, c.value.id)
-    const target = await createPage(notes, 'Target', { body: 'b' })
-    const live = await createPage(notes, 'Live', { body: 'b' })
-    const dead = await createPage(notes, 'Dead', { body: 'b' })
+    const target = await createTestPage(notes, 'Target', { body: 'b' })
+    const live = await createTestPage(notes, 'Live', { body: 'b' })
+    const dead = await createTestPage(notes, 'Dead', { body: 'b' })
     if (!target.ok || !live.ok || !dead.ok) throw new Error('pages failed')
     const def = await liveDef(c.value.id)
     await updatePageProperty(live.value.path, def, { kind: 'link', value: '[[Target]]' })
@@ -340,9 +341,9 @@ describe('restoring a deleted property', () => {
     } as PropertyDefinition)
     if (!c.ok) throw new Error('seed failed')
     await assignProperty(root, tasks, c.value.id)
-    const target = await createPage(tasks, 'Target', { body: 'b' })
-    const live = await createPage(tasks, 'Live', { body: 'b' })
-    const dead = await createPage(tasks, 'Dead', { body: 'b' })
+    const target = await createTestPage(tasks, 'Target', { body: 'b' })
+    const live = await createTestPage(tasks, 'Live', { body: 'b' })
+    const dead = await createTestPage(tasks, 'Dead', { body: 'b' })
     if (!target.ok || !live.ok || !dead.ok) throw new Error('pages failed')
     const def = await liveDef(c.value.id)
     await updatePageProperty(live.value.path, def, { kind: 'link', value: '[[Target]]' })
@@ -362,7 +363,7 @@ describe('restoring a deleted property', () => {
     } as PropertyDefinition)
     if (!c.ok) throw new Error('seed failed')
     await assignProperty(root, notes, c.value.id)
-    const page = await createPage(notes, 'T', { body: 'b' })
+    const page = await createTestPage(notes, 'T', { body: 'b' })
     if (!page.ok) throw new Error('page failed')
     await updatePageProperty(page.value.path, await liveDef(c.value.id), {
       kind: 'multiSelect',

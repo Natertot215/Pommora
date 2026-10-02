@@ -8,7 +8,8 @@ import type { PropertyDefinition } from '../Properties/properties'
 import { machine } from '../Platform/machine'
 import { createFolderEntity } from '../Nexus/folderEntity'
 import { newId } from '../Nexus/ids'
-import { createPage, updatePageBody, renamePage, updatePageProperty } from '../Nexus/page'
+import { updatePageBody, renamePage, updatePageProperty } from '../Nexus/page'
+import { createTestPage } from '../Testing/createTestPage'
 import { setChildOrder } from '../Nexus/reorder'
 import { saveView } from '../Views/viewsFile'
 import { setContainerConfig } from '../Views/containerConfig'
@@ -73,7 +74,7 @@ describe('concurrent sidecar writers', () => {
 describe('a value write racing a body write on one page', () => {
   // `updatePageProperty` deliberately takes no lock of its own — its callers need a wider span — so this pins the law at the shape both of them use.
   it('keeps both, since each caller writes under the page key', async () => {
-    const p = await createPage(folder, 'Note', { body: 'first' })
+    const p = await createTestPage(folder, 'Note', { body: 'first' })
     if (!p.ok) throw new Error('setup failed')
     const def: PropertyDefinition = { id: 'p1', name: 'Priority', type: 'select' }
 
@@ -92,7 +93,7 @@ describe('a value write racing a body write on one page', () => {
 
 describe('a rename racing the body write it interrupted', () => {
   it('leaves exactly one page — no ghost at the vacated path', async () => {
-    const p = await createPage(folder, 'Old', { body: 'first' })
+    const p = await createTestPage(folder, 'Old', { body: 'first' })
     if (!p.ok) throw new Error('setup failed')
 
     // Both dispatched before either resolves — the shape of typing, then renaming inside the editor's autosave debounce.
@@ -103,7 +104,7 @@ describe('a rename racing the body write it interrupted', () => {
   })
 
   it('reports not-found for a body write that arrives after the rename', async () => {
-    const p = await createPage(folder, 'Old', { body: 'first' })
+    const p = await createTestPage(folder, 'Old', { body: 'first' })
     if (!p.ok) throw new Error('setup failed')
     const renamed = await renamePage(p.value.path, 'New')
     expect(renamed.ok).toBe(true)

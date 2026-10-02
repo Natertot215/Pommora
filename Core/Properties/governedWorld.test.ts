@@ -7,7 +7,7 @@ import * as liveTree from '../Nexus/liveTree'
 import { assignedDefs, assignProperty, collectionFolderOf, collectionFolders } from './assignment'
 import { createFolderEntity } from '../Nexus/folderEntity'
 import { newId } from '../Nexus/ids'
-import { createPage } from '../Nexus/page'
+import { createTestPage } from '../Testing/createTestPage'
 import { createProperty } from './registryProperty'
 import { openSession } from '../Nexus/session'
 
@@ -70,7 +70,7 @@ describe('collectionFolderOf', () => {
     if (!set.ok) throw new Error('setup')
     const inner = await createFolderEntity(set.value.path, 'set', 'Week', newId())
     if (!inner.ok) throw new Error('setup')
-    const page = await createPage(inner.value.path, 'Deep', { body: 'b' })
+    const page = await createTestPage(inner.value.path, 'Deep', { body: 'b' })
     if (!page.ok) throw new Error('setup')
     expect(await collectionFolderOf(root, page.value.path)).toBe(notes)
     expect(await collectionFolderOf(root, join(root, 'Tasks', 'T.md'))).toBeNull()

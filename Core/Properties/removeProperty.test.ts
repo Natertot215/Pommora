@@ -15,7 +15,8 @@ import { assignProperty } from './assignment'
 import { createProperty, editProperty } from './registryProperty'
 import { createFolderEntity } from '../Nexus/folderEntity'
 import { newId } from '../Nexus/ids'
-import { createPage, updatePageProperty } from '../Nexus/page'
+import { updatePageProperty } from '../Nexus/page'
+import { createTestPage } from '../Testing/createTestPage'
 import { readSidecar } from '../Files/sidecar'
 import { readRegistry } from './propertiesRegistry'
 import { splitFrontmatter } from '../Files/pageFile'
@@ -65,8 +66,8 @@ beforeEach(async () => {
   propId = p.value.id
   liveDef = { ...stageDef, id: propId } as PropertyDefinition
   await assignProperty(root, folder, propId)
-  const a = await createPage(folder, 'A', { body: 'b' })
-  const b = await createPage(folder, 'B', { body: 'b' })
+  const a = await createTestPage(folder, 'A', { body: 'b' })
+  const b = await createTestPage(folder, 'B', { body: 'b' })
   if (!a.ok || !b.ok) throw new Error('setup failed')
   pageA = a.value.path
   pageB = b.value.path
@@ -155,7 +156,7 @@ describe('removeProperty — strip + cache (C-3/C-6)', () => {
     async () => {
       const set = await createFolderEntity(folder, 'set', 'Locked', newId())
       if (!set.ok) throw new Error('setup failed')
-      const held = await createPage(set.value.path, 'C', { body: 'b' })
+      const held = await createTestPage(set.value.path, 'C', { body: 'b' })
       if (!held.ok) throw new Error('setup failed')
       await updatePageProperty(held.value.path, liveDef, { kind: 'select', value: 'done' })
       await chmod(set.value.path, 0o555)
@@ -169,7 +170,7 @@ describe('removeProperty — strip + cache (C-3/C-6)', () => {
   )
 
   it.skipIf(noModeBits)('a holder it can’t read is answered as a skip, not left out', async () => {
-    const held = await createPage(folder, 'C', { body: 'b' })
+    const held = await createTestPage(folder, 'C', { body: 'b' })
     if (!held.ok) throw new Error('setup failed')
     await updatePageProperty(held.value.path, liveDef, { kind: 'select', value: 'done' })
     await chmod(held.value.path, 0o000)
@@ -325,7 +326,7 @@ describe('restore on re-assign — per-value schema-currency reconciliation (C-3
     if (!sel.ok) throw new Error('setup failed')
     const id = sel.value.id
     await assignProperty(root, folder, id)
-    const c = await createPage(folder, 'C', { body: 'b' })
+    const c = await createTestPage(folder, 'C', { body: 'b' })
     if (!c.ok) throw new Error('setup failed')
     const selDef = (await readRegistry(root)).defs[id]
     await updatePageProperty(c.value.path, selDef, { kind: 'select', value: '2024-01-01' })
@@ -344,7 +345,7 @@ describe('restore on re-assign — per-value schema-currency reconciliation (C-3
     } as PropertyDefinition)
     if (!tags.ok) throw new Error('setup failed')
     await assignProperty(root, folder, tags.value.id)
-    const p = await createPage(folder, 'T', { body: 'b' })
+    const p = await createTestPage(folder, 'T', { body: 'b' })
     if (!p.ok) throw new Error('setup failed')
     await updatePageProperty(p.value.path, (await readRegistry(root)).defs[tags.value.id], {
       kind: 'multiSelect',

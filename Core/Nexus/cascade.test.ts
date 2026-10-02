@@ -5,7 +5,7 @@ import { noModeBits, tempRoot } from '../Testing/hostFs'
 import type { PropertyDefinition } from '../Properties/properties'
 import { deleteCascade, renameCascade } from './cascade'
 import { sweepGovernedRoots, unsweptLine } from '../Properties/governedSweep'
-import { createPage } from './page'
+import { createTestPage } from '../Testing/createTestPage'
 import { dropLiveTree, getLiveTree, refreshTree } from './liveTree'
 import { closeSession, openSession } from './session'
 import { createProperty } from '../Properties/registryProperty'
@@ -51,12 +51,12 @@ const setValue = (path: string, key: string, value: string) =>
 
 describe('renameCascade', () => {
   it('rewrites inbound links nexus-wide (incl. nested), leaves frontmatter untouched', async () => {
-    const a = await createPage(dir, 'A', { body: 'go to [[Target]] now' })
-    const b = await createPage(dir, 'B', { body: '[[target]] and [[Other]]' })
-    const c = await createPage(dir, 'C', { body: 'no links' })
+    const a = await createTestPage(dir, 'A', { body: 'go to [[Target]] now' })
+    const b = await createTestPage(dir, 'B', { body: '[[target]] and [[Other]]' })
+    const c = await createTestPage(dir, 'C', { body: 'no links' })
     const sub = join(dir, 'Collection')
     await mkdir(sub, { recursive: true })
-    const nested = await createPage(sub, 'Nested', { body: 'deep [[Target]]' })
+    const nested = await createTestPage(sub, 'Nested', { body: 'deep [[Target]]' })
     if (!a.ok || !b.ok || !c.ok || !nested.ok) throw new Error('setup failed')
 
     const before = await fmBytesOf(a.value.path)
@@ -72,7 +72,7 @@ describe('renameCascade', () => {
   })
 
   it('touches nothing when no page links the old title', async () => {
-    await createPage(dir, 'Solo', { body: 'nothing here' })
+    await createTestPage(dir, 'Solo', { body: 'nothing here' })
     const r = await renameCascade(root, 'Ghost', { title: 'Phantom' })
     expect(r.pages).toEqual([])
   })
@@ -80,7 +80,7 @@ describe('renameCascade', () => {
   it.skipIf(noModeBits)(
     'a linker it can’t write is skipped, the rest still move, and the warning counts it',
     async () => {
-      const cites = await createPage(dir, 'Cites', { body: 'see [[Target]]' })
+      const cites = await createTestPage(dir, 'Cites', { body: 'see [[Target]]' })
       if (!cites.ok) throw new Error('setup failed')
       const locked = join(dir, 'Locked')
       await mkdir(locked, { recursive: true })
@@ -111,11 +111,11 @@ describe('the cascade queries the index', () => {
       JSON.stringify({ excluded_folders: ['Hidden'] }),
     )
     for (let i = 0; i < 37; i++) {
-      const c = await createPage(dir, `Filler ${i}`, { body: 'no links here' })
+      const c = await createTestPage(dir, `Filler ${i}`, { body: 'no links here' })
       if (!c.ok) throw new Error('setup failed')
     }
-    const a = await createPage(dir, 'Cites A', { body: 'see [[Target]]' })
-    const b = await createPage(dir, 'Cites B', { body: '[[target]] again' })
+    const a = await createTestPage(dir, 'Cites A', { body: 'see [[Target]]' })
+    const b = await createTestPage(dir, 'Cites B', { body: '[[target]] again' })
     if (!a.ok || !b.ok) throw new Error('setup failed')
     await mkdir(join(root, 'Loose'), { recursive: true })
     await writeFile(join(root, 'Loose', 'Note.md'), 'un-adopted [[Target]]\n')
@@ -162,7 +162,7 @@ describe('renameCascade over frontmatter', () => {
     }
   })
   it('moves a Link property naming the page, and the body’s links with it', async () => {
-    const a = await createPage(dir, 'Cites', { body: 'see [[Target]]' })
+    const a = await createTestPage(dir, 'Cites', { body: 'see [[Target]]' })
     if (!a.ok) throw new Error('setup failed')
     await setValue(a.value.path, SOURCE, '[[Target|the brief]]')
 
@@ -172,7 +172,7 @@ describe('renameCascade over frontmatter', () => {
   })
 
   it('reaches a page whose ONLY reference is its frontmatter, through the index', async () => {
-    const a = await createPage(dir, 'Only Frontmatter', { body: 'no links here' })
+    const a = await createTestPage(dir, 'Only Frontmatter', { body: 'no links here' })
     if (!a.ok) throw new Error('setup failed')
     await setValue(a.value.path, SOURCE, '[[Target]]')
     installStores(memoryStores().stores)
@@ -185,7 +185,7 @@ describe('renameCascade over frontmatter', () => {
   })
 
   it('leaves an address alone when its last segment happens to match', async () => {
-    const a = await createPage(dir, 'Address', { body: 'no links here' })
+    const a = await createTestPage(dir, 'Address', { body: 'no links here' })
     if (!a.ok) throw new Error('setup failed')
     await setValue(a.value.path, SITE, 'https://example.com/Target')
 
@@ -196,8 +196,8 @@ describe('renameCascade over frontmatter', () => {
 
 describe('renameCascade for a heading', () => {
   const seedAB = async (): Promise<{ a: string; b: string }> => {
-    const a = await createPage(dir, 'A', { body: '## Setup\n[[#Setup]]' })
-    const b = await createPage(dir, 'B', { body: '[[A#Setup]]' })
+    const a = await createTestPage(dir, 'A', { body: '## Setup\n[[#Setup]]' })
+    const b = await createTestPage(dir, 'B', { body: '[[A#Setup]]' })
     if (!a.ok || !b.ok) throw new Error('setup failed')
     return { a: a.value.path, b: b.value.path }
   }
@@ -234,7 +234,7 @@ describe('renameCascade for a heading', () => {
   })
 
   it('rewrites a markdown tile’s heading link even when no page links the heading', async () => {
-    const a = await createPage(dir, 'A', { body: '## Setup' })
+    const a = await createTestPage(dir, 'A', { body: '## Setup' })
     if (!a.ok) throw new Error('setup failed')
     installStores(memoryStores().stores)
     await seedContentIndex(root)
@@ -254,8 +254,8 @@ describe('renameCascade for a heading', () => {
 
   it('moves a Link property aimed at the renamed heading, found through the index', async () => {
     await createProperty(root, { id: '', name: 'Source', type: 'link' } as PropertyDefinition)
-    const a = await createPage(dir, 'A', { body: '## Setup' })
-    const c = await createPage(dir, 'C', { body: 'no links' })
+    const a = await createTestPage(dir, 'A', { body: '## Setup' })
+    const c = await createTestPage(dir, 'C', { body: 'no links' })
     if (!a.ok || !c.ok) throw new Error('setup failed')
     await setValue(c.value.path, 'Source', '[[A#Setup|the brief]]')
     installStores(memoryStores().stores)
@@ -267,8 +267,8 @@ describe('renameCascade for a heading', () => {
   })
 
   it('reaches a page whose only reference is a heading embed', async () => {
-    const a = await createPage(dir, 'A', { body: '## Setup' })
-    const b = await createPage(dir, 'B', { body: '![[A#Setup]]' })
+    const a = await createTestPage(dir, 'A', { body: '## Setup' })
+    const b = await createTestPage(dir, 'B', { body: '![[A#Setup]]' })
     if (!a.ok || !b.ok) throw new Error('setup failed')
     installStores(memoryStores().stores)
     await seedContentIndex(root)
@@ -293,7 +293,7 @@ describe('deleteCascade', () => {
     parent = dir,
     key = 'Related',
   ): Promise<{ id: string; path: string }> => {
-    const made = await createPage(parent, name, { body: 'see [[Target]]' })
+    const made = await createTestPage(parent, name, { body: 'see [[Target]]' })
     if (!made.ok) throw new Error('setup failed')
     await setValue(made.value.path, key, value)
     return made.value
@@ -374,7 +374,7 @@ describe('deleteCascade', () => {
     beforeEach(async () => {
       a = await linker('Cites', '[[Target]]')
       for (let i = 0; i < 3; i++) {
-        const filler = await createPage(dir, `Filler ${i}`, { body: 'no links here' })
+        const filler = await createTestPage(dir, `Filler ${i}`, { body: 'no links here' })
         if (!filler.ok) throw new Error('setup failed')
       }
       await refreshTree(root)
@@ -410,7 +410,7 @@ describe('deleteCascade', () => {
 
   it('keeps a value a same-titled page outside the delete still answers', async () => {
     const other = await set(dir, 'Other')
-    if (!(await createPage(other, 'Target')).ok) throw new Error('setup failed')
+    if (!(await createTestPage(other, 'Target')).ok) throw new Error('setup failed')
     const a = await linker('Cites', '[[Target]]')
     await refreshTree(root)
     const r = await deleteCascade(root, target(), ['Target'])
@@ -420,8 +420,9 @@ describe('deleteCascade', () => {
 
   it('strips a value whose every same-titled page leaves with the delete', async () => {
     const other = await set(dir, 'Other')
-    if (!(await createPage(other, 'Target')).ok) throw new Error('setup failed')
-    if (!(await createPage(await set(other, 'Deep'), 'Target')).ok) throw new Error('setup failed')
+    if (!(await createTestPage(other, 'Target')).ok) throw new Error('setup failed')
+    if (!(await createTestPage(await set(other, 'Deep'), 'Target')).ok)
+      throw new Error('setup failed')
     const a = await linker('Cites', '[[Target]]')
     await refreshTree(root)
     const r = await deleteCascade(root, other, ['Target', 'Target'])

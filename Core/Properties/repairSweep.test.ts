@@ -6,7 +6,7 @@ import type { PropertyDefinition } from './properties'
 import { assignProperty } from './assignment'
 import { createFolderEntity } from '../Nexus/folderEntity'
 import { newId } from '../Nexus/ids'
-import { createPage } from '../Nexus/page'
+import { createTestPage } from '../Testing/createTestPage'
 import { createProperty } from './registryProperty'
 import { readRegistry } from './propertiesRegistry'
 import { seedContentIndex } from '../Index/indexSeed'
@@ -58,7 +58,7 @@ beforeEach(async () => {
   if (!col.ok) throw new Error('folder failed')
   await assignProperty(root, col.value.path, status.value.id)
   await assignProperty(root, col.value.path, tagsId)
-  const p = await createPage(col.value.path, 'One', { body: 'b' })
+  const p = await createTestPage(col.value.path, 'One', { body: 'b' })
   if (!p.ok) throw new Error('page failed')
   page = p.value.path
   installStores(memoryStores().stores)
@@ -85,7 +85,7 @@ describe('runRepairSweep', () => {
 
   it('walks the tree once however many re-read pages it checks', async () => {
     for (const title of ['Two', 'Three']) {
-      const p = await createPage(join(root, 'Col'), title, { body: 'b' })
+      const p = await createTestPage(join(root, 'Col'), title, { body: 'b' })
       if (!p.ok) throw new Error('page failed')
       await writeFile(
         p.value.path,

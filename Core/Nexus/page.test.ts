@@ -3,7 +3,8 @@ import { ID_KEY, isUlidShaped } from './identityMark'
 import { chmod, rm, mkdir, readdir, stat, readFile, writeFile } from 'node:fs/promises'
 import { join } from '../Paths/posix'
 import { tempRoot, noModeBits } from '../Testing/hostFs'
-import { createPage, renamePage, updatePageBody, movePage, updatePageProperty } from './page'
+import { renamePage, updatePageBody, movePage, updatePageProperty } from './page'
+import { createTestPage } from '../Testing/createTestPage'
 import { splitEnvelope, assembleEnvelope, splitFrontmatter } from '../Files/pageFile'
 import { machine } from '../Platform/machine'
 
@@ -32,7 +33,7 @@ const bytesOf = (file: string): Promise<string> => readFile(file, 'utf8')
 
 describe('createPage', () => {
   it('writes a .md holding exactly the id key and the body — no context keys', async () => {
-    const r = await createPage(typeDir, 'My Page', { body: 'Hello' })
+    const r = await createTestPage(typeDir, 'My Page', { body: 'Hello' })
     expect(r.ok).toBe(true)
     if (!r.ok) return
     expect(r.value.path.endsWith('My Page.md')).toBe(true)
@@ -44,19 +45,22 @@ describe('createPage', () => {
   })
 
   it('rejects duplicate + unsafe names', async () => {
-    await createPage(typeDir, 'Dup')
-    expect((await createPage(typeDir, 'Dup')).ok).toBe(false)
-    expect((await createPage(typeDir, 'a/b')).ok).toBe(false)
-    expect((await createPage(typeDir, 'Note.md')).ok).toBe(false)
+    await createTestPage(typeDir, 'Dup')
+    expect((await createTestPage(typeDir, 'Dup')).ok).toBe(false)
+    expect((await createTestPage(typeDir, 'a/b')).ok).toBe(false)
+    expect((await createTestPage(typeDir, 'Note.md')).ok).toBe(false)
   })
 
   it('gives two same-name creates at the same moment one file each', async () => {
-    const both = await Promise.all([createPage(typeDir, 'Twin'), createPage(typeDir, 'Twin')])
+    const both = await Promise.all([
+      createTestPage(typeDir, 'Twin'),
+      createTestPage(typeDir, 'Twin'),
+    ])
     expect(both.map((r) => r.ok).sort()).toEqual([false, true])
   })
 
   it('writes resolved values in the birth write; blank values write no key', async () => {
-    const r = await createPage(typeDir, 'Born Stamped', {
+    const r = await createTestPage(typeDir, 'Born Stamped', {
       values: [
         { def: defOf('prop_status'), value: { kind: 'select', value: 'doing' } },
         { def: defOf('prop_empty'), value: { kind: 'select', value: '' } },
@@ -73,7 +77,7 @@ describe('createPage', () => {
 
 describe('renamePage', () => {
   it('renames the file', async () => {
-    const c = await createPage(typeDir, 'Old', { body: 'b' })
+    const c = await createTestPage(typeDir, 'Old', { body: 'b' })
     if (!c.ok) throw new Error('setup failed')
     const r = await renamePage(c.value.path, 'New')
     expect(r.ok).toBe(true)
@@ -84,7 +88,7 @@ describe('renamePage', () => {
   })
 
   it('leaves the file bytes untouched — a rename is not an edit', async () => {
-    const c = await createPage(typeDir, 'Old', { body: 'b' })
+    const c = await createTestPage(typeDir, 'Old', { body: 'b' })
     if (!c.ok) throw new Error('setup failed')
     const before = await bytesOf(c.value.path)
     const r = await renamePage(c.value.path, 'New')
@@ -93,14 +97,14 @@ describe('renamePage', () => {
   })
 
   it('rejects renaming onto an existing page', async () => {
-    const a = await createPage(typeDir, 'A')
-    await createPage(typeDir, 'B')
+    const a = await createTestPage(typeDir, 'A')
+    await createTestPage(typeDir, 'B')
     if (!a.ok) throw new Error('setup failed')
     expect((await renamePage(a.value.path, 'B')).ok).toBe(false)
   })
 
   it('lands a case-only rename', async () => {
-    const c = await createPage(typeDir, 'title', { body: 'b' })
+    const c = await createTestPage(typeDir, 'title', { body: 'b' })
     if (!c.ok) throw new Error('setup failed')
     const r = await renamePage(c.value.path, 'Title')
     expect(r.ok).toBe(true)
@@ -110,7 +114,7 @@ describe('renamePage', () => {
 
 describe('updatePageBody', () => {
   it('refuses a body whose base hash is not the disk body and leaves the file', async () => {
-    const c = await createPage(typeDir, 'P', { body: 'one' })
+    const c = await createTestPage(typeDir, 'P', { body: 'one' })
     if (!c.ok) throw new Error('setup failed')
     const before = await readFile(c.value.path, 'utf8')
     const r = await updatePageBody(c.value.path, 'two', machine().sha256Hex('elsewhere'))
@@ -119,7 +123,7 @@ describe('updatePageBody', () => {
   })
 
   it('writes under the right base hash and answers the new hash', async () => {
-    const c = await createPage(typeDir, 'P', { body: 'one' })
+    const c = await createTestPage(typeDir, 'P', { body: 'one' })
     if (!c.ok) throw new Error('setup failed')
     const disk = splitEnvelope(await readFile(c.value.path, 'utf8')).body
     const r = await updatePageBody(c.value.path, 'two', machine().sha256Hex(disk))
@@ -128,7 +132,7 @@ describe('updatePageBody', () => {
   })
 
   it('writes unconditionally with no base hash', async () => {
-    const c = await createPage(typeDir, 'P', { body: 'one' })
+    const c = await createTestPage(typeDir, 'P', { body: 'one' })
     if (!c.ok) throw new Error('setup failed')
     await writeFile(
       c.value.path,
@@ -143,7 +147,7 @@ describe('updatePageBody', () => {
   })
 
   it('replaces the body and preserves frontmatter incl. foreign keys', async () => {
-    const c = await createPage(typeDir, 'P', { body: 'one' })
+    const c = await createTestPage(typeDir, 'P', { body: 'one' })
     if (!c.ok) throw new Error('setup failed')
     const withForeign = assembleEnvelope(
       `${splitEnvelope(await readFile(c.value.path, 'utf8')).frontmatter}\nplugin_key: keep`,
@@ -162,7 +166,7 @@ describe('updatePageBody', () => {
   })
 
   it('answers the overwritten and the written text', async () => {
-    const c = await createPage(typeDir, 'P', { body: 'one' })
+    const c = await createTestPage(typeDir, 'P', { body: 'one' })
     if (!c.ok) throw new Error('setup failed')
     const before = await bytesOf(c.value.path)
     const r = await updatePageBody(c.value.path, 'two')
@@ -173,7 +177,7 @@ describe('updatePageBody', () => {
   })
 
   it.skipIf(noModeBits)('a read failure refuses and leaves the file alone', async () => {
-    const c = await createPage(typeDir, 'P', { body: 'one' })
+    const c = await createTestPage(typeDir, 'P', { body: 'one' })
     if (!c.ok) throw new Error('setup failed')
     const before = await bytesOf(c.value.path)
     await chmod(c.value.path, 0o000)
@@ -190,7 +194,7 @@ describe('movePage', () => {
   it('moves a page to another container', async () => {
     const other = join(root, 'Journal')
     await mkdir(other, { recursive: true })
-    const c = await createPage(typeDir, 'Movable', { body: 'x' })
+    const c = await createTestPage(typeDir, 'Movable', { body: 'x' })
     if (!c.ok) throw new Error('setup failed')
     const r = await movePage(c.value.path, other)
     expect(r.ok).toBe(true)
@@ -203,7 +207,7 @@ describe('movePage', () => {
   it('leaves the file bytes untouched — a location change is not an edit', async () => {
     const other = join(root, 'Journal')
     await mkdir(other, { recursive: true })
-    const c = await createPage(typeDir, 'Movable', { body: 'x' })
+    const c = await createTestPage(typeDir, 'Movable', { body: 'x' })
     if (!c.ok) throw new Error('setup failed')
     const before = await bytesOf(c.value.path)
     const r = await movePage(c.value.path, other)
@@ -214,8 +218,8 @@ describe('movePage', () => {
   it('refuses to move onto an existing page of the same name', async () => {
     const other = join(root, 'Journal')
     await mkdir(other, { recursive: true })
-    const a = await createPage(typeDir, 'Clash', { body: 'a' })
-    await createPage(other, 'Clash', { body: 'b' })
+    const a = await createTestPage(typeDir, 'Clash', { body: 'a' })
+    await createTestPage(other, 'Clash', { body: 'b' })
     if (!a.ok) throw new Error('setup failed')
     expect((await movePage(a.value.path, other)).ok).toBe(false)
   })
@@ -223,7 +227,7 @@ describe('movePage', () => {
 
 describe('updatePageProperty', () => {
   it('sets, replaces, and clears values; preserves siblings + other frontmatter', async () => {
-    const c = await createPage(typeDir, 'Props', { body: 'x' })
+    const c = await createTestPage(typeDir, 'Props', { body: 'x' })
     if (!c.ok) throw new Error('setup failed')
     const f = c.value.path
     const at = async (name: string): Promise<unknown> =>
@@ -247,7 +251,7 @@ describe('updatePageProperty', () => {
   })
 
   it('a value kind the schema has no shape for is refused, never a clear', async () => {
-    const c = await createPage(typeDir, 'Unknown Kind', { body: 'x' })
+    const c = await createTestPage(typeDir, 'Unknown Kind', { body: 'x' })
     if (!c.ok) throw new Error('setup failed')
     const f = c.value.path
     await updatePageProperty(f, defOf('prop_status'), { kind: 'select', value: 'todo' })

@@ -16,7 +16,8 @@ import { spaceFieldsFrom } from '../Contexts/spaceSidecar'
 import { createFolderEntity } from '../Nexus/folderEntity'
 import { newId } from '../Nexus/ids'
 import { dropLiveTree } from '../Nexus/liveTree'
-import { createPage, updatePageProperty } from '../Nexus/page'
+import { updatePageProperty } from '../Nexus/page'
+import { createTestPage } from '../Testing/createTestPage'
 import { splitFrontmatter } from '../Files/pageFile'
 import { readRegistry } from './propertiesRegistry'
 import { readRecord } from '../Trash/record'
@@ -79,8 +80,8 @@ describe('deleteProperty', () => {
     const id = c.value.id
     await assignProperty(root, notes, id)
     await assignProperty(root, tasks, id)
-    const p1 = await createPage(notes, 'A', { body: 'b' })
-    const p2 = await createPage(tasks, 'B', { body: 'b' })
+    const p1 = await createTestPage(notes, 'A', { body: 'b' })
+    const p2 = await createTestPage(tasks, 'B', { body: 'b' })
     if (!p1.ok || !p2.ok) return
     await updatePageProperty(p1.value.path, await liveDef(id), {
       kind: 'select',
@@ -133,7 +134,7 @@ describe('deleteProperty', () => {
     if (!c.ok) return
     const id = c.value.id
     await assignProperty(root, notes, id)
-    const p = await createPage(notes, 'A', { body: 'b' })
+    const p = await createTestPage(notes, 'A', { body: 'b' })
     if (!p.ok) return
     await updatePageProperty(p.value.path, await liveDef(id), { kind: 'select', value: 'hi' })
     await removeProperty(root, notes, id)
