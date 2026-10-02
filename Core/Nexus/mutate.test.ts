@@ -138,6 +138,17 @@ describe('handleMutate — create', () => {
     expect(await pathExists(join(root, 'Notes/Weekly/_pageset.json'))).toBe(true)
   })
 
+  it('createContextGroup over a folder the registry lost lands with the Spaces the folder holds', async () => {
+    await seedSpaceSidecar(root, 'Realms', 'Home', { id: 'sp-home' })
+    await writeFile(join(contextsDir(root), 'contexts.json'), JSON.stringify({ contexts: [] }))
+    await refreshTree(root)
+    const id = newId()
+    const r = await settledMutate(root, { op: 'createContextGroup', id, name: 'Realms' }, nexusDeps)
+    expect(r).toEqual(ok({ created: { path: '.nexus/contexts/Realms' } }))
+    const group = heldTreeOf(root)?.contexts.find((g) => g.def.id === id)
+    expect(group?.spaces.map((s) => s.title)).toEqual(['Home'])
+  })
+
   it('disambiguates a colliding create name (Untitled → Untitled (2))', async () => {
     const first = await settledMutate(
       root,
