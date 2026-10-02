@@ -104,6 +104,7 @@ async function readOwnSidecar(
   const meta = await readSidecar(absSidecar)
   if (asString(meta?.id)) return meta
   const unparsed = meta === null && (await pathExists(absSidecar))
+  // A Space folder with no sidecar isn’t listed unreadable, since a folder with no Space sidecar is a plain folder, as `spaceIdsIn` reads it.
   if (meta !== null || unparsed || kind !== 'space')
     unreadable.push({ path: relOwner, kind, reason: unparsed ? 'unparsed' : 'missing' })
   return null
