@@ -21,8 +21,8 @@ import { liveIdIndex } from './heldPages'
 async function applyOwn(ev: FileEvent): Promise<void> {
   const root = sessionRoot()
   if (root === null || escapes(relative(root, ev.absPath))) return
-  // Every own write marks the disk moved, since one that leaves the tree as it already stood (a rename's later writes) would otherwise let a walk in flight install what it read before it; the cost is that walk reading again.
-  diskMoved()
+  // Every own write marks the disk moved, since one that leaves the tree as it already stood (a rename's later writes) would otherwise let a walk in flight install what it read before it; the editor's body save is the exception, since it leaves the frontmatter a walk reads as it was.
+  if (ev.event === 'move' || !ev.bodyOnly) diskMoved()
   if (heldTreeOf(root)) return applyEvents(root, [ev])
   // No tree to patch: an open stamps before its stores are bound, and its own seed follows its walk.
   if (!adopting()) await indexEvent(root, ev)

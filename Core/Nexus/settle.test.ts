@@ -11,6 +11,7 @@ import * as readNexusModule from './readNexus'
 import { readNexus } from './readNexus'
 import * as adopt from './adopt'
 import { atomicWriteFile } from '../Files/atomicWrite'
+import { updatePageBody } from './page'
 import { splitFrontmatter } from '../Files/pageFile'
 import { ID_KEY } from './identityMark'
 import { stabilize } from './treeStabilize'
@@ -233,6 +234,28 @@ describe('the settle', () => {
       { path: 'Notes/Bare.md', kind: 'page', reason: 'missing' },
     ])
     expect(await readFile(abs('Notes', 'Bare.md'), 'utf8')).toBe('bare\n')
+  })
+
+  it('an editor save during a walk doesn’t restart it, and the walk installs what a fresh read answers', async () => {
+    const reading = gate<void>()
+    const release = gate<void>()
+    const walk = readNexusModule.readNexus
+    const reads = vi.spyOn(readNexusModule, 'readNexus').mockImplementation(async (r) => {
+      const walked = await walk(r)
+      reading.open()
+      await release.promise
+      return walked
+    })
+    const walking = refreshTree(root)
+    await reading.promise
+    for (let i = 0; i < 5; i++)
+      await updatePageBody(abs('Notes', 'A.md'), `edit ${i}\n`, undefined, true)
+    release.open()
+    await walking
+    expect(reads).toHaveBeenCalledTimes(1)
+    vi.restoreAllMocks()
+    const held = heldTreeOf(root)
+    expect(held && stabilize(await readNexus(root), held)).toBe(held)
   })
 
   it('un-excluding folders of ID-less notes stamps and holds them, and re-arms the watch once', async () => {
