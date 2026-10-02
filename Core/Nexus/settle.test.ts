@@ -559,6 +559,25 @@ describe('the settle', () => {
     expect(pusher.watch).toHaveBeenCalledTimes(1)
   })
 
+  it('a settings file rewritten outside and read by a walk before its event re-arms the watch once, and stamps and holds the notes it un-excludes', async () => {
+    await mkdir(abs('Archive'))
+    await writeFile(abs('Archive', 'X.md'), 'x\n')
+    await writeExcludedFolders(root, ['Archive'])
+    await settleNow(pusher, root)
+    pusher.watch.mockClear()
+    await writeFile(abs('.nexus', 'settings.json'), '{}\n')
+    oweWalk(root)
+    await settleNow(pusher, root)
+    await settleBatch(pusher, root, [ev('change', '.nexus', 'settings.json')])
+    const held = heldTreeOf(root)
+    expect(held?.unreadable).toBeUndefined()
+    expect(held?.collections.find((c) => c.path === 'Archive')?.pages.map((p) => p.id)).toEqual([
+      splitFrontmatter(await readFile(abs('Archive', 'X.md'), 'utf8'))[ID_KEY],
+    ])
+    expect(held && stabilize(await readNexus(root), held)).toBe(held)
+    expect(pusher.watch).toHaveBeenCalledTimes(1)
+  })
+
   it('a settle while an open is under way pushes nothing, and the next one pushes what was owed', async () => {
     oweCascade(root, ['Notes/A.md'], [])
     await whileAdopting(() => settleNow(pusher, root))
