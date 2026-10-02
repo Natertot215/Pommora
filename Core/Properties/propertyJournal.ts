@@ -11,7 +11,7 @@ export type SchemaJournal =
   | { op: 'option-rename'; id: string; from: string; to: string }
   | { op: 'option-remove'; id: string; value: string }
 
-function sameRecord(a: SchemaJournal, b: SchemaJournal): boolean {
+export function sameRecord(a: SchemaJournal, b: SchemaJournal): boolean {
   if (a.op !== b.op || a.id !== b.id) return false
   switch (a.op) {
     case 'rename':
@@ -51,7 +51,7 @@ export const clearSchemaJournal = slot.clear
 /** A schema op's answer: its cascade, and the record whose replay reaches the files it skipped. */
 export type SchemaCascade = { cascade: CascadeReport; owed?: SchemaJournal }
 
-export const schemaCascade = (reach: ConfigReach, record: SchemaJournal): SchemaCascade => ({
+export const schemaCascade = (reach: ConfigReach, record?: SchemaJournal): SchemaCascade => ({
   cascade: reachReport(reach),
-  ...(reach.skipped ? { owed: record } : {}),
+  ...(reach.skipped && record ? { owed: record } : {}),
 })

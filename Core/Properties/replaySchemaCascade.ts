@@ -9,7 +9,12 @@ import { renameSweep } from './registryProperty'
 import { stripAndRemove } from './deleteProperty'
 import { dropOptionFromDef, optionCascade } from './optionOps'
 import { optionValues } from './properties'
-import { clearSchemaJournal, readSchemaJournal, type SchemaJournal } from './propertyJournal'
+import {
+  clearSchemaJournal,
+  readSchemaJournal,
+  sameRecord,
+  type SchemaJournal,
+} from './propertyJournal'
 import { serializeSchemaOp } from './schemaChain'
 
 export function replaySchemaCascade(
@@ -69,9 +74,11 @@ async function replay(
       return optionCascade(root, def, journal.from, { op: 'replace', to: journal.to })
     }
     case 'option-remove': {
-      // Pages-first order holds the value in the def until the strip completes, so the value still listed is the owed state; gone means only the clear failed.
+      // Pages-first order holds the value in the def until the strip completes, so the value still listed is the owed state; gone means only the clear failed. An option has no identity, so an answer's record is owed only while the slot still holds it: past that, the value listed may have been added again.
       const def = defs[journal.id]
-      if (!def || !optionValues(def).includes(journal.value)) return NO_REACH
+      const held = answered ? await readSchemaJournal(root) : journal
+      if (!def || !held || !sameRecord(held, journal)) return NO_REACH
+      if (!optionValues(def).includes(journal.value)) return NO_REACH
       const owed = await optionCascade(root, def, journal.value, { op: 'strip' })
       if (owed.skipped) return owed
       return (await dropOptionFromDef(root, journal.id, journal.value)).ok

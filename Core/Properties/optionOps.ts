@@ -228,13 +228,13 @@ export function removeOption(
     const r = await resolveForCascade(root, propertyId, value)
     if (!r.ok) return r
     const record: SchemaJournal = { op: 'option-remove', id: propertyId, value }
-    await writeSchemaJournal(root, record)
+    const journaled = await writeSchemaJournal(root, record)
     const reach = await optionCascade(root, r.value, value, { op: 'strip' })
     if (!reach.skipped) {
       const dropped = await dropOptionFromDef(root, propertyId, value)
       if (!dropped.ok) return dropped
       await clearSchemaJournal(root, record)
     }
-    return ok(schemaCascade(reach, record))
+    return ok(schemaCascade(reach, journaled ? record : undefined))
   })
 }
