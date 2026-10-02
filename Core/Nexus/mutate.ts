@@ -37,6 +37,7 @@ import { setChildOrder, setCollectionOrder, setPanelContextOrder, setSpaceOrder 
 import { liveTreeOf, mutableTarget } from './liveTree'
 import { stampMissing, stampPage } from './adopt'
 import { owedFor } from './fileEvents'
+import { walkOwed } from './settle'
 
 export interface MutateContext {
   root: string
@@ -57,9 +58,15 @@ export async function handleMutate(
 
 async function dispatch(ctx: MutateContext, req: MutateRequest): Promise<MutateReply> {
   const { root, deps } = ctx
-  // A Space's link write decides each far half from the world it loaded, and a tag written mid-rename must land under the new key, so every Contexts write and rename runs under the folder's one lock.
+  // Every Contexts write and rename reads the held tree, and a tag written mid-rename must land under the new key, so each runs under the folder's one lock, which holds until the walk a write owed has been paid.
   const underContexts = <T>(fn: () => Promise<T>): Promise<T> =>
-    machine().lock(contextsDir(root), fn)
+    machine().lock(contextsDir(root), async () => {
+      try {
+        return await fn()
+      } finally {
+        await walkOwed(root)
+      }
+    })
   switch (req.op) {
     case 'createPage':
       return seedsContext(req)

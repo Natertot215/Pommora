@@ -72,8 +72,8 @@ function valueChangesOf(root: string, values: ReadonlyMap<string, boolean>): Val
   return [...out.values()]
 }
 
-async function settle(pusher: Pusher, root: string): Promise<{ rescope: boolean } | null> {
-  if (sessionRoot() !== root) return null
+export async function walkOwed(root: string): Promise<void> {
+  if (sessionRoot() !== root) return
   const due = owedFor(root)
   while (due.walk) {
     due.walk = false
@@ -88,8 +88,13 @@ async function settle(pusher: Pusher, root: string): Promise<{ rescope: boolean 
       dropLiveTree()
     }
   }
+}
+
+async function settle(pusher: Pusher, root: string): Promise<{ rescope: boolean } | null> {
+  await walkOwed(root)
   // An open in progress has no window on this Nexus yet, so what is owed waits for the settle that follows it.
   if (sessionRoot() !== root || adopting()) return null
+  const due = owedFor(root)
   // An arm still awaiting its file writes to this record after the push, so it is emptied in place and never replaced.
   const { pages, values, tiles, assets, corpus, rescope, stamp } = due
   Object.assign(due, nothingOwed(root), { stamp })
