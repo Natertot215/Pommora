@@ -10,7 +10,6 @@ import {
   renameFrontmatterKey,
   writePageFile,
   sweepAdmits,
-  sweepAdmitsBody,
 } from './pageFile'
 
 describe('splitEnvelope / assembleEnvelope', () => {
@@ -325,10 +324,5 @@ describe('sweepAdmits — the field-write gate', () => {
 
   it('admits a page whose frontmatter round-trips', () => {
     expect(sweepAdmits(HEALTHY)).toBe(true)
-  })
-
-  it('a body-only rewrite asks the identity half alone — a link still heals on a broken page', () => {
-    expect(sweepAdmitsBody(TAB)).toBe(true)
-    expect(sweepAdmitsBody(HEALTHY)).toBe(true)
   })
 })
