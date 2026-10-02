@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 import { ID_KEY } from '../Nexus/identityMark'
-import { rm, readFile, readdir } from 'node:fs/promises'
+import { rm, readFile, readdir, writeFile } from 'node:fs/promises'
 import { dirname, join } from '../Paths/posix'
 import { seedSpaceSidecar, readJsonAt, tempRoot } from '../Testing/hostFs'
 import { deleteProperty } from './deleteProperty'
@@ -14,6 +14,7 @@ import { removeProperty } from './removeProperty'
 import { setSpaceProperty } from './setProperty'
 import { spaceFieldsFrom } from '../Contexts/spaceSidecar'
 import { createFolderEntity } from '../Nexus/folderEntity'
+import { dropLiveTree } from '../Nexus/liveTree'
 import { createPage, updatePageProperty } from '../Nexus/page'
 import { splitFrontmatter } from '../Files/pageFile'
 import { readRegistry } from './propertiesRegistry'
@@ -227,6 +228,16 @@ describe('a global delete reaches a Space sidecar', () => {
     const record = await bundle(id)
     expect(record.partial).toBe(true)
     expect(Object.keys(record.values)).toHaveLength(0)
+  })
+
+  it("marks the record partial for a Collection whose sidecar doesn't parse", async () => {
+    const id = await mkProperty()
+    await writeFile(join(notes, '_pagecollection.json'), '{ not json')
+    dropLiveTree()
+
+    expect((await deleteProperty(root, id)).ok).toBe(true)
+
+    expect((await bundle(id)).partial).toBe(true)
   })
 })
 
