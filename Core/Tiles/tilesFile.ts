@@ -31,7 +31,6 @@ import { discardFile } from '../Trash/bundle'
 import { machine } from '../Platform/machine'
 import { heldTreeOf, liveTreeOf } from '../Nexus/liveTree'
 import type { NexusTree } from '../Nexus/tree'
-import { CONTEXTS_DIR_REL, CONTEXTS_REGISTRY_REL } from '../Paths/nexusPaths'
 import { tileFilePath, tileHostDir } from '../Paths/paths'
 import type { BodyWrite } from '../Pages/pageDetail'
 import { captureLoser } from '../Sync/Arrival/captures'
@@ -42,7 +41,7 @@ export function tileHostsOf(
   root: string,
   tree: NexusTree,
 ): { hosts: { host?: TileHostRef; dir: string }[]; unreadable: number } {
-  const unread = (tree.unreadable ?? []).map((u) => u.path)
+  const unread = tree.unreadable ?? []
   return {
     hosts: [
       { host: HOMEPAGE_HOST, dir: tileHostDir(root) },
@@ -52,11 +51,9 @@ export function tileHostsOf(
           dir: join(root, s.path),
         })),
       ),
-      ...unread
-        .filter((p) => p.startsWith(`${CONTEXTS_DIR_REL}/`) && p !== CONTEXTS_REGISTRY_REL)
-        .map((p) => ({ dir: join(root, p) })),
+      ...unread.filter((u) => u.kind === 'space').map((u) => ({ dir: join(root, u.path) })),
     ],
-    unreadable: unread.includes(CONTEXTS_REGISTRY_REL) ? 1 : 0,
+    unreadable: unread.some((u) => u.kind === 'registry') ? 1 : 0,
   }
 }
 
