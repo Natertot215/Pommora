@@ -89,7 +89,7 @@ import {
   SPACE_SIDECAR,
   TILE_DOC_FILENAME,
 } from '../Paths/nexusPaths'
-import { readShard, withShards } from './pageMetadata'
+import { shardPages, withShards } from './pageMetadata'
 
 interface Owed {
   root: string
@@ -503,10 +503,11 @@ async function applySettings(root: string, ev: Changed, owed: Owed): Promise<App
 }
 
 async function applyShard(root: string, shard: string, ev: Changed): Promise<Applied> {
-  const read = await readShard(root, shard, ev.text)
-  if (read.kind === 'unreadable') return 'ok'
+  const raw = await jsonOf(ev)
+  // A month that can't be read keeps what the tree holds; the event says whether it left.
+  if (raw === null && ev.event !== 'unlink') return 'ok'
   const held = heldTreeOf(root)?.config.pageMetadata
-  const pageMetadata = withShards(held ?? {}, { [shard]: read.kind === 'ok' ? read.pages : {} })
+  const pageMetadata = withShards(held ?? {}, { [shard]: raw ? shardPages(raw) : {} })
   return pageMetadata === held ? 'ok' : patchConfig(root, { pageMetadata })
 }
 
