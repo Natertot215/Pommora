@@ -9,7 +9,7 @@ import {
   isBlankValue,
   reconcilePropertyValue,
 } from '../Properties/propertyValue'
-import type { ContextGroup, SpaceNode } from '../Nexus/tree'
+import type { ContextGroup, NexusTree, SpaceNode } from '../Nexus/tree'
 import { listOf } from '../Contract/validators'
 
 type ResolvedLinks = Map<string, string[]>
@@ -51,6 +51,12 @@ export interface GovernedWorld {
 }
 
 export const NO_DEFS: ReadonlyMap<string, PropertyDefinition> = new Map()
+
+// A Space holds any registry property, so its own values reconcile against every definition, by name.
+export const spaceWorldOf = (tree: NexusTree): GovernedWorld => ({
+  contexts: contextWorldOf(tree.contexts),
+  defs: new Map(tree.config.registry.map((d) => [d.name, d])),
+})
 
 export function resolveContextKeys(
   root: Record<string, unknown>,

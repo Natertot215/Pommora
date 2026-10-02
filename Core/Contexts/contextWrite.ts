@@ -6,6 +6,7 @@ import {
   namesSpace,
   preservedChanges,
   reconcileGovernedRoot,
+  spaceWorldOf,
   type ContextWorld,
   type GovernedWorld,
 } from './contextResolve'
@@ -77,12 +78,6 @@ export async function governedWorldOf(root: string, absFile: string): Promise<Go
   const defs = await assignedDefs(root, owner ? join(root, owner.path) : null)
   return { contexts: contextWorldOf(tree.contexts), defs }
 }
-
-// A Space holds any registry property, so its own values reconcile against every definition, by name.
-export const spaceWorldOf = (tree: NexusTree): GovernedWorld => ({
-  contexts: contextWorldOf(tree.contexts),
-  defs: new Map(tree.config.registry.map((d) => [d.name, d])),
-})
 
 // The keys a write is about to set stay out of the reconcile, as `setGovernedRootKeys` keeps them out of a page's.
 export function repairedSpace(
