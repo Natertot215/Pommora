@@ -190,12 +190,7 @@ export async function openPage(rootPath: string, relPath: string): Promise<Resul
   })
 }
 
-// An identity-less page is admitted deliberately: the sweeps exist to change or clear values, and gating on membership alone would leave a page holding the very value a Remove ran to clear.
-export function sweepAdmitsBody(content: string): boolean {
-  return parsePage(content).admission.state !== 'unknown'
-}
-
-// Identity admits it, and its frontmatter must round-trip, so one file nobody can parse is skipped rather than failing the fan-out around it.
+// Any identity short of unknown admits it, so an identity-less page is still swept: the sweeps exist to change or clear values, and gating on membership alone would leave a page holding the very value a Remove ran to clear. Its frontmatter must round-trip, so one file nobody can parse is skipped rather than failing the fan-out around it.
 export function sweepAdmits(content: string): boolean {
-  return sweepAdmitsBody(content) && frontmatterWritable(content)
+  return parsePage(content).admission.state !== 'unknown' && frontmatterWritable(content)
 }
