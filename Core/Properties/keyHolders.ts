@@ -17,7 +17,7 @@ export async function keyHolderFiles(
   return corpusUnder(root, queryKeyHolders(key) ?? (await nexusCorpus(root)), folders)
 }
 
-// The disk confirm stays: the index answers a file as its last settled event read it, and an outside edit not yet settled can have changed it.
+// Both loops answer from disk: the index holds a page as its last settled event read it, which an outside edit not yet settled can have changed, and the Spaces come from the folder enumeration the sweeps write through, which also finds those under a Context folder a rename cut short has moved ahead of the registry.
 export async function confirmedKeyHolders(
   root: string,
   key: string,
