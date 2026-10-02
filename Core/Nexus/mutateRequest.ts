@@ -6,17 +6,13 @@ import type { CascadeReport } from './cascade'
 import { CONTAINER_KINDS, HELD_KINDS, type HeldKind, NODE_KINDS } from './entities'
 import { newContentId, newId } from './ids'
 
-/** `renamed` is what actually landed — a from-create rename may disambiguate away from the ask. */
 export interface MutateOutcome {
   created?: { path: string }
-  renamed?: { path: string; name: string }
   cascade?: CascadeReport
   adopted?: string
   trashed?: { bundlePath: string }
   /** The titles of what a restore brought back without all it held. */
   unrestored?: string[]
-  /** Where a restored page, Collection, Set, Space, or Context landed. */
-  landed?: string
   retry?: MutateRequest
 }
 export type MutateReply = Result<MutateOutcome>
