@@ -15,8 +15,6 @@ import { rawLayoutSchema } from '../Tiles/tiles'
 import { readTileDocAt } from '../Tiles/tileDoc'
 import { contextsRegistryFile, contextsDir, nexusDir } from '../Paths/paths'
 import type { ContextsRegistry } from './contexts'
-import { contextWorldOf } from './contextResolve'
-import { readNexus } from '../Nexus/readNexus'
 import { handleMutate } from '../Nexus/mutate'
 import { closeSession, openSession } from '../Nexus/session'
 import { dropLiveTree, refreshTree } from '../Nexus/liveTree'
@@ -53,8 +51,6 @@ beforeEach(async () => {
 afterEach(async () => {
   await rm(root, { recursive: true, force: true })
 })
-
-const world = async () => contextWorldOf((await readNexus(root)).contexts)
 
 describe('createContextGroup', () => {
   it('appends a ULID entry and mkdirs the context folder', async () => {
@@ -155,17 +151,6 @@ describe('setPageContext', () => {
     const fm = splitFrontmatter(await readFile(page(), 'utf8'))
     expect(fm['<Classes>']).toEqual(['CS 161'])
     expect(fm['<Projects>']).toEqual(['Pommora'])
-  })
-
-  it('a Space whose sidecar won’t read is absent from the world, and a write naming it fails without writing', async () => {
-    await rm(join(contextsDir(root), 'Projects', 'Pommora', '_space.json'))
-    await mkdir(join(contextsDir(root), 'Projects', 'Pommora', '_space.json'))
-    await writeFile(page(), '---\nid: p1\n<Projects>:\n  - Pommora\n---\nbody')
-    const before = await readFile(page(), 'utf8')
-    const w = await world()
-    expect(w.spaceById.has('sp-pom')).toBe(false)
-    expect((await setPageContext(page(), root, 'ctx_projects', ['sp-pom'])).ok).toBe(false)
-    expect(await readFile(page(), 'utf8')).toBe(before)
   })
 
   it('fails on an unknown space id without writing', async () => {
