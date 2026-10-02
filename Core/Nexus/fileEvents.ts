@@ -69,7 +69,7 @@ import {
   placeNode,
   removeNodeInTree,
   repointRegistryInTree,
-  setUnreadable,
+  listUnreadable,
   spaceAt,
   updateNodeInTree,
 } from './treePatch'
@@ -324,7 +324,7 @@ async function applyFolder(
   return applyPatch(root, (t) => {
     const cleared = removeNodeInTree(t, rel)
     const landed = read.node ? placeNode(cleared, read.node) : cleared
-    return landed && setUnreadable(landed, read.unreadable)
+    return landed && listUnreadable(landed, read.unreadable)
   })
 }
 
@@ -348,13 +348,13 @@ async function applyPage(
     if (await pathExists(abs)) return 'walk'
     return applyPatch(root, (t) => removeNodeInTree(t, rel))
   }
-  owed.values.set(rel, !!ev.own?.held && (owed.values.get(rel) ?? true))
+  owed.values.set(rel, !!ev.own?.bodyOnly && (owed.values.get(rel) ?? true))
   if (!ev.own) owed.pages.add(rel)
   if ('unread' in read && read.unread === 'missing')
     owed.stamp.push({ path: rel, kind: 'page', reason: 'missing' })
   const landed = applyPatch(root, (t) => {
     if ('unread' in read)
-      return setUnreadable(removeNodeInTree(t, rel), [
+      return listUnreadable(removeNodeInTree(t, rel), [
         { path: rel, kind: 'page', reason: read.unread },
       ])
     const node = contextLinker(t.contexts)(read.node, read.fm)
@@ -377,7 +377,7 @@ async function applyContainer(
   if (meta === null)
     return (await pathExists(ev.absPath))
       ? applyPatch(root, (t) =>
-          setUnreadable(removeNodeInTree(t, dirRel), [
+          listUnreadable(removeNodeInTree(t, dirRel), [
             { path: dirRel, kind: of, reason: 'unparsed' },
           ]),
         )

@@ -35,7 +35,7 @@ export interface Changed {
   event: 'add' | 'change' | 'unlink' | 'addDir' | 'unlinkDir'
   absPath: string
   written?: string
-  own?: { text?: string; held?: boolean }
+  own?: { text?: string; bodyOnly?: boolean }
 }
 
 export interface Moved {

@@ -9,7 +9,7 @@ import {
 } from './folderKind'
 import type { ContainerKind } from './entities'
 import {
-  byPath,
+  comparePaths,
   type CollectionNode,
   type ContextGroup,
   type NexusConfig,
@@ -360,6 +360,6 @@ async function walkNexus(root: string): Promise<NexusTree> {
       order,
       registry: orderedDefs(registry),
     },
-    ...(unreadable.length ? { unreadable: unreadable.sort(byPath) } : {}),
+    ...(unreadable.length ? { unreadable: unreadable.sort(comparePaths) } : {}),
   }
 }

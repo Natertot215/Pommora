@@ -116,7 +116,7 @@ export async function startWatcher(root: string, win: CurrentWindow): Promise<vo
       if (debounce) clearTimeout(debounce)
       // Chained, so batches apply in the order they settled.
       debounce = setTimeout(() => {
-        batchQueue = batchQueue.then(() => settle(root, win))
+        batchQueue = batchQueue.then(() => drainBatch(root, win))
       }, SETTLE_MS)
     }
   watcher
@@ -166,7 +166,7 @@ export function stopWatcher(): void {
   batch = []
 }
 
-async function settle(root: string, win: CurrentWindow): Promise<void> {
+async function drainBatch(root: string, win: CurrentWindow): Promise<void> {
   if (sessionRoot() !== root) return
   const noted = batch
   batch = []

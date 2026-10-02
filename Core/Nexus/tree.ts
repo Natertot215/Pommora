@@ -112,7 +112,7 @@ export interface Unreadable {
   reason: UnreadReason
 }
 
-export const byPath = (a: Unreadable, b: Unreadable): number =>
+export const comparePaths = (a: Unreadable, b: Unreadable): number =>
   a.path < b.path ? -1 : a.path > b.path ? 1 : 0
 
 export interface NexusTree {
