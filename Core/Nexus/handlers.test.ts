@@ -261,6 +261,35 @@ describe('openNexusSequence', () => {
     expect(stabilize(await readNexus(root), held)).toBe(held)
   })
 
+  it('a reopen that re-mints a duplicated Context holds the Spaces its folder holds and the pages tagged with them', async () => {
+    await openNexusSequence(ctx, root, true)
+    const registry = await readJsonAt<{ contexts: { id: string; title: string }[] }>(
+      contextsRegistryFile(root),
+    )
+    const areas = registry.contexts.find((c) => c.title === 'Areas')
+    if (!areas) throw new Error('no Areas Context seeded')
+    registry.contexts.push({ ...areas, title: 'Realms' })
+    await writeFile(contextsRegistryFile(root), JSON.stringify(registry))
+    const home = join(contextsDir(root), 'Realms', 'Home')
+    await mkdir(home, { recursive: true })
+    await writeFile(join(home, '_space.json'), JSON.stringify({ id: HOME }))
+    await writeFile(
+      join(root, 'Library', 'Tagged.md'),
+      `---\nID: ${THIRD_PAGE}\n<Realms>:\n  - Home\n---\nbody`,
+    )
+    closeSession()
+    dropLiveTree()
+    await openNexusSequence(ctx, root, true)
+    const held = heldTreeOf(root)
+    if (!held) throw new Error('no tree held')
+    const realms = held.contexts.find((g) => g.def.title === 'Realms')
+    expect(realms?.def.id).not.toBe(areas.id)
+    expect(realms?.spaces.map((s) => s.id)).toEqual([HOME])
+    const tagged = held.collections[0]?.pages.find((p) => p.id === THIRD_PAGE)
+    expect(tagged?.contextValues).toEqual({ [realms?.def.id ?? '']: [HOME] })
+    expect(stabilize(await readNexus(root), held)).toBe(held)
+  })
+
   it('a failed walk retains the prior baseline and the open proceeds', async () => {
     await openNexusSequence(ctx, root, true)
     const first = readBaseline()

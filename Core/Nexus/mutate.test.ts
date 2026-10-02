@@ -3043,7 +3043,6 @@ describe('each routine operation lands from its own events, with no walk', () =>
       { op: 'createContainer', id: newId(), parentPath: '', kind: 'collection', name: 'Journal' },
     ],
     ['a Space create', { op: 'createSpace', id: newId(), contextId: 'ctxP', name: 'Atlas' }],
-    ['a Context group create', { op: 'createContextGroup', id: newId(), name: 'Topics' }],
     ['a rename', { op: 'rename', path: 'Notes/Daily/Beta.md', kind: 'page', newName: 'Gamma' }],
     ['a page move', { op: 'movePage', path: 'Notes/Daily/Beta.md', newParentPath: 'Other' }],
     ['a Set move', { op: 'moveSet', path: 'Notes/Daily', newParentPath: 'Other', order: [] }],

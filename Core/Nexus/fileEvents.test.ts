@@ -963,20 +963,12 @@ describe('the app’s own events', () => {
     expect(held().contexts[0]?.spaces.map((s) => s.id)).toEqual(['sp1', 'sp2'])
   })
 
-  it('the Context registry lands from its text, a new group among it', async () => {
+  it('the Context registry lands from its text', async () => {
     await ownUnderLock(
       '.nexus/contexts/contexts.json',
-      JSON.stringify({
-        contexts: [
-          { id: 'ctx1', title: 'Areas', icon: 'star' },
-          { id: 'ctx2', title: 'Topics' },
-        ],
-      }),
+      JSON.stringify({ contexts: [{ id: 'ctx1', title: 'Areas', icon: 'star' }] }),
     )
-    expect(held().contexts.map((g) => [g.def.id, g.def.icon])).toEqual([
-      ['ctx1', 'star'],
-      ['ctx2', undefined],
-    ])
+    expect(held().contexts.map((g) => [g.def.id, g.def.icon])).toEqual([['ctx1', 'star']])
   })
 
   it('properties.json lands from its text, a new definition among it', async () => {
