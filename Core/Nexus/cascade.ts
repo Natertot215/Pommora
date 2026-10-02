@@ -3,7 +3,7 @@ import { errText } from '../Contract/result'
 import { splitEnvelope, mergeFrontmatter, splitFrontmatter, stampedId } from '../Files/pageFile'
 import {
   type Rewrite,
-  rootOf,
+  governedRoot,
   stripKeys,
   sweepGovernedRoots,
   unsweptLine,
@@ -133,7 +133,7 @@ export async function deleteCascade(
     })
     const links: StrippedLink[] = []
     for (const [file, { before }] of swept.touched) {
-      const raw = rootOf(file, before)
+      const raw = governedRoot(file, before)
       const id = isMarkdownFile(file) ? stampedId(before) : asString(raw.id)
       if (!id) continue
       for (const { property, value } of named(raw)) links.push({ page: id, property, value })

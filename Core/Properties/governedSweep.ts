@@ -39,7 +39,7 @@ export const unsweptLine = (count: number, what = ''): string =>
   `Couldn’t update ${what}${count} ${count === 1 ? 'file' : 'files'}.`
 
 /** The root a governed file holds: a page's frontmatter, or a Space sidecar's object. */
-export const rootOf = (file: string, text: string): Json =>
+export const governedRoot = (file: string, text: string): Json =>
   isMarkdownFile(file) ? splitFrontmatter(text) : (parseJsonObject(text) ?? {})
 
 // A file whose lock or write throws costs only itself, so the files after it are still reached.
@@ -130,8 +130,8 @@ export async function undoSweep(touched: SweepResult['touched']): Promise<string
 }
 
 function keysPutBack(file: string, now: string, before: string, after: string): string | null {
-  const was = rootOf(file, before)
-  const keys = changedKeys(was, rootOf(file, after))
+  const was = governedRoot(file, before)
+  const keys = changedKeys(was, governedRoot(file, after))
   const putBack: Rewrite = (raw) => {
     const next = { ...raw }
     for (const k of keys) {
@@ -140,7 +140,10 @@ function keysPutBack(file: string, now: string, before: string, after: string): 
     }
     return next
   }
-  if (isMarkdownFile(file)) return rewriteRaw(putBack, now, file)
+  if (isMarkdownFile(file)) {
+    if (!sweepAdmits(now)) throw new Error('The page no longer admits a sweep.')
+    return rewriteRaw(putBack, now, file)
+  }
   const raw = parseJsonObject(now)
   if (!raw) throw new Error('The sidecar no longer parses.')
   return jsonText(putBack(raw, file))
