@@ -132,12 +132,16 @@ export function entityMemo<T>(
   inputs: readonly ((tree: NexusTree) => unknown)[],
   build: (tree: NexusTree) => T,
 ): (tree: NexusTree) => T {
-  const held = new WeakMap<CollectionNode[], { of: NexusTree; value: T }>()
+  const held = new WeakMap<CollectionNode[], { read: unknown[]; value: T }>()
+  const same = (read: unknown[], tree: NexusTree): boolean => {
+    for (let i = 0; i < inputs.length; i++) if (inputs[i](tree) !== read[i]) return false
+    return true
+  }
   return (tree) => {
     const hit = held.get(tree.collections)
-    if (hit && inputs.every((read) => read(hit.of) === read(tree))) return hit.value
+    if (hit && same(hit.read, tree)) return hit.value
     const value = build(tree)
-    held.set(tree.collections, { of: tree, value })
+    held.set(tree.collections, { read: inputs.map((input) => input(tree)), value })
     return value
   }
 }
