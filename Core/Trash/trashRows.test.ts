@@ -6,7 +6,7 @@ import { dropLiveTree } from '../Nexus/liveTree'
 import type { MutateReply } from '../Nexus/mutateRequest'
 import type { NexusTree } from '../Nexus/tree'
 import type { TrashRow } from './trashRow'
-import { confirmedMutate } from '../Testing/confirmedMutate'
+import { settledMutate } from '../Testing/settledMutate'
 import { contextsDir, contextsRegistryFile } from '../Paths/paths'
 import { writePropertyBundle } from './record'
 import { listBundles } from './holdings'
@@ -25,7 +25,7 @@ const rows = async (): Promise<TrashRow[]> =>
 const del = (
   path: string,
   kind: 'page' | 'collection' | 'set' | 'space' | 'context',
-): Promise<MutateReply> => confirmedMutate(root, { op: 'delete', path, kind }, nexusDeps)
+): Promise<MutateReply> => settledMutate(root, { op: 'delete', path, kind }, nexusDeps)
 
 beforeEach(async () => {
   root = tempRoot('pom-rows-')
@@ -105,7 +105,7 @@ describe('trashRows — a bundle as the browser reads it', () => {
 
   it('a renamed ancestor reads true, because the crumb resolves by id', async () => {
     await del('Notes/Daily/Alpha.md', 'page')
-    const renamed = await confirmedMutate(
+    const renamed = await settledMutate(
       root,
       { op: 'rename', path: 'Notes', kind: 'collection', newName: 'Journals' },
       nexusDeps,
@@ -207,7 +207,7 @@ describe('trashRows — `homeResolves` agrees with the resolver', () => {
     await del('Notes/Daily/Alpha.md', 'page')
     const [row] = await rows()
     expect(row.homeResolves).toBe(true)
-    const restored = await confirmedMutate(
+    const restored = await settledMutate(
       root,
       { op: 'restore', bundlePath: row.bundlePath },
       nexusDeps,
@@ -221,7 +221,7 @@ describe('trashRows — `homeResolves` agrees with the resolver', () => {
     await del('Notes/Daily', 'set')
     const page = (await rows()).find((r) => r.kind === 'page') as TrashRow
     expect(page.homeResolves).toBe(false)
-    const restored = await confirmedMutate(
+    const restored = await settledMutate(
       root,
       { op: 'restore', bundlePath: page.bundlePath },
       nexusDeps,

@@ -6,7 +6,7 @@ import { basename, dirname, join, relative } from '../Paths/posix'
 import { tempRoot, noModeBits, readJsonAt } from '../Testing/hostFs'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { pathExists } from '../Files/atomicWrite'
-import { confirmedMutate } from '../Testing/confirmedMutate'
+import { settledMutate } from '../Testing/settledMutate'
 import { contextsDir, contextsRegistryFile } from '../Paths/paths'
 import { bundleArtifact, readRecord, writePropertyBundle } from './record'
 import { resolveRecord } from './resolve'
@@ -102,7 +102,7 @@ describe('the bundle — one folder per deletion, holding the artifact and its r
     const dailyId = tree.collections[0].sets[0].id
     expect(dailyId).toBe('set-daily')
 
-    const r = await confirmedMutate(
+    const r = await settledMutate(
       root,
       { op: 'delete', path: 'Notes/Daily/Alpha.md', kind: 'page' },
       nexusDeps,
@@ -120,7 +120,7 @@ describe('the bundle — one folder per deletion, holding the artifact and its r
   })
 
   it('a root Collection delete records parent root; the folder sits inside the bundle', async () => {
-    const r = await confirmedMutate(
+    const r = await settledMutate(
       root,
       { op: 'delete', path: 'Notes', kind: 'collection' },
       nexusDeps,
@@ -136,7 +136,7 @@ describe('the bundle — one folder per deletion, holding the artifact and its r
   })
 
   it('a Space delete records its context parent and the id-bearing roots that tagged it', async () => {
-    const r = await confirmedMutate(
+    const r = await settledMutate(
       root,
       { op: 'delete', path: '.nexus/contexts/Projects/Pommora', kind: 'space' },
       nexusDeps,
@@ -155,7 +155,7 @@ describe('the bundle — one folder per deletion, holding the artifact and its r
   })
 
   it('a Context delete records its registry entry and the outside membership map, spaces as {id, title}', async () => {
-    const r = await confirmedMutate(
+    const r = await settledMutate(
       root,
       { op: 'delete', path: '.nexus/contexts/Projects', kind: 'context' },
       nexusDeps,
@@ -190,11 +190,7 @@ describe('the bundle — one folder per deletion, holding the artifact and its r
       contexts: ['ctx_projects', 'ctx_areas'],
     }
     const deleteProjects = (deps: TrashDeps) =>
-      confirmedMutate(
-        root,
-        { op: 'delete', path: '.nexus/contexts/Projects', kind: 'context' },
-        deps,
-      )
+      settledMutate(root, { op: 'delete', path: '.nexus/contexts/Projects', kind: 'context' }, deps)
 
     beforeEach(async () => {
       await writeFile(
@@ -218,7 +214,7 @@ describe('the bundle — one folder per deletion, holding the artifact and its r
       expect(await stateOrder()).toEqual(seeded)
       const listed = r.ok ? r.value.trashed : undefined
       expect(
-        (await confirmedMutate(root, { op: 'restore', bundlePath: listed!.bundlePath }, nexusDeps))
+        (await settledMutate(root, { op: 'restore', bundlePath: listed!.bundlePath }, nexusDeps))
           .ok,
       ).toBe(true)
       expect(await registryIds()).toEqual(['ctx_areas', 'ctx_projects', 'ctx_zeta'])
@@ -233,7 +229,7 @@ describe('the bundle — one folder per deletion, holding the artifact and its r
       const recordFile = join(root, bundlePath, '_record.json')
       const { at: _, ...older } = await readJsonAt(recordFile)
       await writeFile(recordFile, JSON.stringify(older))
-      expect((await confirmedMutate(root, { op: 'restore', bundlePath }, nexusDeps)).ok).toBe(true)
+      expect((await settledMutate(root, { op: 'restore', bundlePath }, nexusDeps)).ok).toBe(true)
       expect(await registryIds()).toEqual(['ctx_areas', 'ctx_zeta', 'ctx_projects'])
     })
 
@@ -242,7 +238,7 @@ describe('the bundle — one folder per deletion, holding the artifact and its r
       const listed = r.ok ? r.value.trashed : undefined
       expect(
         (
-          await confirmedMutate(
+          await settledMutate(
             root,
             { op: 'emptyBundle', bundlePath: listed!.bundlePath },
             nexusDeps,
@@ -270,7 +266,7 @@ describe('the bundle — one folder per deletion, holding the artifact and its r
       trashMode: 'system',
       trashToSystem: (p) => rm(p, { recursive: true, force: true }),
     }
-    const r = await confirmedMutate(
+    const r = await settledMutate(
       root,
       { op: 'delete', path: 'Notes/Daily/Alpha.md', kind: 'page' },
       systemDeps,
@@ -281,7 +277,7 @@ describe('the bundle — one folder per deletion, holding the artifact and its r
 
   it('an unreadable registry refuses a Context delete before anything moves', async () => {
     await writeFile(contextsRegistryFile(root), '{corrupt')
-    const r = await confirmedMutate(
+    const r = await settledMutate(
       root,
       { op: 'delete', path: '.nexus/contexts/Projects', kind: 'context' },
       nexusDeps,
@@ -308,7 +304,7 @@ describe('the bundle — one folder per deletion, holding the artifact and its r
       )
       await chmod(join(root, 'Notes', 'Daily'), 0o555)
       try {
-        const r = await confirmedMutate(
+        const r = await settledMutate(
           root,
           { op: 'delete', path: '.nexus/contexts/Projects', kind: 'context' },
           nexusDeps,
@@ -319,7 +315,7 @@ describe('the bundle — one folder per deletion, holding the artifact and its r
       }
       const reg = await readJsonAt<ContextsRegistry>(contextsRegistryFile(root))
       expect(reg.contexts.map((c) => c.id)).toEqual(['ctx_a', 'ctx_projects', 'ctx_z'])
-      const retried = await confirmedMutate(
+      const retried = await settledMutate(
         root,
         { op: 'delete', path: '.nexus/contexts/Projects', kind: 'context' },
         nexusDeps,
@@ -358,13 +354,13 @@ describe('the bundle — one folder per deletion, holding the artifact and its r
       await seedContentIndex(root)
       const before = await texts()
       await chmod(join(root, 'Notes', 'Daily'), 0o555)
-      const r = await confirmedMutate(root, { op: 'delete', path, kind }, nexusDeps)
+      const r = await settledMutate(root, { op: 'delete', path, kind }, nexusDeps)
       await chmod(join(root, 'Notes', 'Daily'), 0o755)
       expect(r.ok).toBe(false)
       expect(await texts()).toEqual(before)
       expect(await pathExists(join(root, path))).toBe(true)
       expect(await bundleDirs(join(root, '.trash'))).toEqual([])
-      const retried = await confirmedMutate(root, { op: 'delete', path, kind }, nexusDeps)
+      const retried = await settledMutate(root, { op: 'delete', path, kind }, nexusDeps)
       expect(retried.ok).toBe(true)
     } finally {
       await chmod(join(root, 'Notes', 'Daily'), 0o755)
@@ -394,7 +390,7 @@ describe('the bundle — one folder per deletion, holding the artifact and its r
   it('system trash mode refuses the same Context delete', async () => {
     await writeFile(contextsRegistryFile(root), '{corrupt')
     const trashToSystem = vi.fn(async () => {})
-    const r = await confirmedMutate(
+    const r = await settledMutate(
       root,
       { op: 'delete', path: '.nexus/contexts/Projects', kind: 'context' },
       { trashMode: 'system', trashToSystem },
@@ -405,7 +401,7 @@ describe('the bundle — one folder per deletion, holding the artifact and its r
   })
 
   it('writeRecord → readRecord round-trips exactly; a malformed record reads null', async () => {
-    await confirmedMutate(
+    await settledMutate(
       root,
       { op: 'delete', path: 'Notes/Daily/Alpha.md', kind: 'page' },
       nexusDeps,
@@ -422,7 +418,7 @@ describe('the bundle — one folder per deletion, holding the artifact and its r
     await writeFile(join(root, 'Notes', 'Daily', '_pageset.json'), '{corrupt')
     await refreshTree(root)
     const before = await readFile(join(root, 'Notes', 'Daily', 'Alpha.md'), 'utf8')
-    const r = await confirmedMutate(
+    const r = await settledMutate(
       root,
       { op: 'delete', path: 'Notes/Daily/Alpha.md', kind: 'page' },
       nexusDeps,
@@ -437,7 +433,7 @@ describe('the bundle — one folder per deletion, holding the artifact and its r
       join(root, 'Notes', 'Daily', 'Alien.md'),
       '---\nID: 01KVGMT8BFT350FZZXAMG1QDVB\n<Projects>:\n  - Pommora\n---\n',
     )
-    await confirmedMutate(
+    await settledMutate(
       root,
       { op: 'delete', path: '.nexus/contexts/Projects/Pommora', kind: 'space' },
       nexusDeps,
@@ -448,7 +444,7 @@ describe('the bundle — one folder per deletion, holding the artifact and its r
 
   it('an id-less tagging root marks the Space record partial — its membership is unrestorable', async () => {
     await writeFile(join(root, 'Notes', 'Daily', 'NoId.md'), '---\n<Projects>:\n  - Pommora\n---\n')
-    await confirmedMutate(
+    await settledMutate(
       root,
       { op: 'delete', path: '.nexus/contexts/Projects/Pommora', kind: 'space' },
       nexusDeps,
@@ -462,7 +458,7 @@ describe('the bundle — one folder per deletion, holding the artifact and its r
   it('an unreadable Space sidecar inside the Context marks its record partial', async () => {
     await mkdir(join(contextsDir(root), 'Projects', 'Broken'), { recursive: true })
     await writeFile(join(contextsDir(root), 'Projects', 'Broken', '_space.json'), '{corrupt')
-    const r = await confirmedMutate(
+    const r = await settledMutate(
       root,
       { op: 'delete', path: '.nexus/contexts/Projects', kind: 'context' },
       nexusDeps,
@@ -479,7 +475,7 @@ describe('the bundle — one folder per deletion, holding the artifact and its r
     const broken = join(contextsDir(root), 'Areas', 'Broken', '_space.json')
     await mkdir(dirname(broken), { recursive: true })
     await writeFile(broken, '{ corrupt')
-    const r = await confirmedMutate(root, { op: 'delete', path, kind }, nexusDeps)
+    const r = await settledMutate(root, { op: 'delete', path, kind }, nexusDeps)
     expect(r.ok).toBe(true)
     const { record } = await onlyBundle()
     expect(record).toMatchObject({ entity: kind, partial: true })
@@ -511,7 +507,7 @@ describe('writePropertyBundle — the artifact-less shape', () => {
 
 describe('listBundles — what the trash offers', () => {
   it('an incomplete deletion is skipped, and left on disk as evidence', async () => {
-    await confirmedMutate(
+    await settledMutate(
       root,
       { op: 'delete', path: 'Notes/Daily/Alpha.md', kind: 'page' },
       nexusDeps,
@@ -540,7 +536,7 @@ describe('listBundles — what the trash offers', () => {
       join(root, 'record.json', '_pagecollection.json'),
       JSON.stringify({ id: 'col-odd' }),
     )
-    const r = await confirmedMutate(
+    const r = await settledMutate(
       root,
       { op: 'delete', path: 'record.json', kind: 'collection' },
       nexusDeps,
@@ -548,7 +544,7 @@ describe('listBundles — what the trash offers', () => {
     expect(r.ok).toBe(true)
     const [listed] = await listBundles(root)
     expect(listed.record).toMatchObject({ entity: 'collection', id: 'col-odd' })
-    const restored = await confirmedMutate(
+    const restored = await settledMutate(
       root,
       { op: 'restore', bundlePath: listed.bundlePath },
       nexusDeps,
@@ -558,7 +554,7 @@ describe('listBundles — what the trash offers', () => {
   })
 
   it('Finder litter beside the artifact changes nothing', async () => {
-    await confirmedMutate(
+    await settledMutate(
       root,
       { op: 'delete', path: 'Notes/Daily/Alpha.md', kind: 'page' },
       nexusDeps,
@@ -570,7 +566,7 @@ describe('listBundles — what the trash offers', () => {
   })
 
   it('a bundle’s interior is trashed content, never trash structure', async () => {
-    await confirmedMutate(root, { op: 'delete', path: 'Notes', kind: 'collection' }, nexusDeps)
+    await settledMutate(root, { op: 'delete', path: 'Notes', kind: 'collection' }, nexusDeps)
     const [dir] = await bundleDirs(join(root, '.trash'))
     const phantom = join(dir, 'Notes', 'Archive.deleted')
     await mkdir(phantom, { recursive: true })
@@ -594,7 +590,7 @@ describe('listBundles — what the trash offers', () => {
       join(root, 'Archive.deleted', 'Beta.md'),
       '---\nID: 01KVGMT8BFP350FZZXAMG1QDVF\n---\nbody',
     )
-    const r = await confirmedMutate(
+    const r = await settledMutate(
       root,
       { op: 'delete', path: 'Archive.deleted/Beta.md', kind: 'page' },
       nexusDeps,
@@ -802,7 +798,7 @@ describe('resolveRecord — a placement with final names, or a typed refusal', (
 
 describe('restore — the record spends, headless', () => {
   it('a page returns into its since-renamed parent', async () => {
-    await confirmedMutate(
+    await settledMutate(
       root,
       { op: 'delete', path: 'Notes/Daily/Alpha.md', kind: 'page' },
       nexusDeps,
@@ -810,18 +806,14 @@ describe('restore — the record spends, headless', () => {
     await rename(join(root, 'Notes', 'Daily'), join(root, 'Notes', 'Journal'))
     await refreshTree(root)
     const [listed] = await listBundles(root)
-    const r = await confirmedMutate(
-      root,
-      { op: 'restore', bundlePath: listed.bundlePath },
-      nexusDeps,
-    )
+    const r = await settledMutate(root, { op: 'restore', bundlePath: listed.bundlePath }, nexusDeps)
     expect(r.ok).toBe(true)
     expect(await readFile(join(root, 'Notes', 'Journal', 'Alpha.md'), 'utf8')).toContain(PAGE_A)
     expect(await bundleDirs(join(root, '.trash'))).toHaveLength(0)
   })
 
   it('a Space round-trips: the surviving roots carry its tag again', async () => {
-    await confirmedMutate(
+    await settledMutate(
       root,
       { op: 'delete', path: '.nexus/contexts/Projects/Pommora', kind: 'space' },
       nexusDeps,
@@ -833,11 +825,7 @@ describe('restore — the record spends, headless', () => {
     ).toBeUndefined()
 
     const [listed] = await listBundles(root)
-    const r = await confirmedMutate(
-      root,
-      { op: 'restore', bundlePath: listed.bundlePath },
-      nexusDeps,
-    )
+    const r = await settledMutate(root, { op: 'restore', bundlePath: listed.bundlePath }, nexusDeps)
     expect(r.ok).toBe(true)
     expect(await pathExists(join(contextsDir(root), 'Projects', 'Pommora', '_space.json'))).toBe(
       true,
@@ -852,19 +840,19 @@ describe('restore — the record spends, headless', () => {
   })
 
   it('a Space restored during its Context’s rename lands in the renamed Context, its tags under the new key', async () => {
-    await confirmedMutate(
+    await settledMutate(
       root,
       { op: 'delete', path: '.nexus/contexts/Projects/Pommora', kind: 'space' },
       nexusDeps,
     )
     const [listed] = await listBundles(root)
     const [renamed, restored] = await Promise.all([
-      confirmedMutate(
+      settledMutate(
         root,
         { op: 'renameContext', contextId: 'ctx_projects', newName: 'Ventures' },
         nexusDeps,
       ),
-      confirmedMutate(root, { op: 'restore', bundlePath: listed.bundlePath }, nexusDeps),
+      settledMutate(root, { op: 'restore', bundlePath: listed.bundlePath }, nexusDeps),
     ])
     expect(renamed.ok && restored.ok).toBe(true)
     expect(await pathExists(join(contextsDir(root), 'Ventures', 'Pommora', '_space.json'))).toBe(
@@ -877,7 +865,7 @@ describe('restore — the record spends, headless', () => {
   })
 
   it('a tag that can’t go back is named, and the record stays', async () => {
-    await confirmedMutate(
+    await settledMutate(
       root,
       { op: 'delete', path: '.nexus/contexts/Projects/Pommora', kind: 'space' },
       nexusDeps,
@@ -885,11 +873,7 @@ describe('restore — the record spends, headless', () => {
     const alpha = join(root, 'Notes', 'Daily', 'Alpha.md')
     await writeFile(alpha, `---\nID: ${PAGE_A}\nbroken: [\n---\nbody`)
     const [listed] = await listBundles(root)
-    const r = await confirmedMutate(
-      root,
-      { op: 'restore', bundlePath: listed.bundlePath },
-      nexusDeps,
-    )
+    const r = await settledMutate(root, { op: 'restore', bundlePath: listed.bundlePath }, nexusDeps)
     expect(r).toEqual({
       ok: true,
       value: { unrestored: ['Alpha'], landed: '.nexus/contexts/Projects/Pommora' },
@@ -898,7 +882,7 @@ describe('restore — the record spends, headless', () => {
   })
 
   it('a root gone since is no reason to keep the record', async () => {
-    await confirmedMutate(
+    await settledMutate(
       root,
       { op: 'delete', path: '.nexus/contexts/Projects/Pommora', kind: 'space' },
       nexusDeps,
@@ -906,27 +890,19 @@ describe('restore — the record spends, headless', () => {
     await rm(join(root, 'Notes', 'Daily', 'Alpha.md'))
     await refreshTree(root)
     const [listed] = await listBundles(root)
-    const r = await confirmedMutate(
-      root,
-      { op: 'restore', bundlePath: listed.bundlePath },
-      nexusDeps,
-    )
+    const r = await settledMutate(root, { op: 'restore', bundlePath: listed.bundlePath }, nexusDeps)
     expect(r).toEqual({ ok: true, value: { landed: '.nexus/contexts/Projects/Pommora' } })
     expect(await pathExists(join(root, listed.bundlePath))).toBe(false)
   })
 
   it('a Context round-trips: the registry entry appends and membership re-applies', async () => {
-    await confirmedMutate(
+    await settledMutate(
       root,
       { op: 'delete', path: '.nexus/contexts/Projects', kind: 'context' },
       nexusDeps,
     )
     const [listed] = await listBundles(root)
-    const r = await confirmedMutate(
-      root,
-      { op: 'restore', bundlePath: listed.bundlePath },
-      nexusDeps,
-    )
+    const r = await settledMutate(root, { op: 'restore', bundlePath: listed.bundlePath }, nexusDeps)
     expect(r.ok).toBe(true)
     const reg = await readJsonAt<ContextsRegistry>(contextsRegistryFile(root))
     expect(reg.contexts).toContainEqual({
@@ -945,30 +921,26 @@ describe('restore — the record spends, headless', () => {
   })
 
   it('the resolver re-runs inside the op — a parent gone between list and restore refuses', async () => {
-    await confirmedMutate(
+    await settledMutate(
       root,
       { op: 'delete', path: 'Notes/Daily/Alpha.md', kind: 'page' },
       nexusDeps,
     )
     const [listed] = await listBundles(root)
-    await confirmedMutate(root, { op: 'delete', path: 'Notes/Daily', kind: 'set' }, nexusDeps)
-    const r = await confirmedMutate(
-      root,
-      { op: 'restore', bundlePath: listed.bundlePath },
-      nexusDeps,
-    )
+    await settledMutate(root, { op: 'delete', path: 'Notes/Daily', kind: 'set' }, nexusDeps)
+    const r = await settledMutate(root, { op: 'restore', bundlePath: listed.bundlePath }, nexusDeps)
     expect(r.ok).toBe(false)
   })
 
   it('an incomplete deletion refuses, and its record stays put', async () => {
-    await confirmedMutate(
+    await settledMutate(
       root,
       { op: 'delete', path: 'Notes/Daily/Alpha.md', kind: 'page' },
       nexusDeps,
     )
     const [dir] = await bundleDirs(join(root, '.trash'))
     await rm(join(dir, 'Alpha.md'), { force: true })
-    const r = await confirmedMutate(
+    const r = await settledMutate(
       root,
       { op: 'restore', bundlePath: join('.trash', 'Notes', 'Daily', basename(dir)) },
       nexusDeps,
@@ -980,7 +952,7 @@ describe('restore — the record spends, headless', () => {
 
 describe('restore — the gate-four pins', () => {
   it('a corrupt registry refuses a Context restore with the bundle intact', async () => {
-    await confirmedMutate(
+    await settledMutate(
       root,
       { op: 'delete', path: '.nexus/contexts/Projects', kind: 'context' },
       nexusDeps,
@@ -989,11 +961,7 @@ describe('restore — the gate-four pins', () => {
     await applyEvents(root, [{ event: 'change', absPath: contextsRegistryFile(root) }])
     await flush({ push: () => {}, watch: async () => {} }, root)
     const [listed] = await listBundles(root)
-    const r = await confirmedMutate(
-      root,
-      { op: 'restore', bundlePath: listed.bundlePath },
-      nexusDeps,
-    )
+    const r = await settledMutate(root, { op: 'restore', bundlePath: listed.bundlePath }, nexusDeps)
     expect(r.ok).toBe(false)
     // Nothing moved and the evidence survives — the restore is retryable once the registry heals.
     expect(await bundleDirs(join(root, '.trash'))).toHaveLength(1)
@@ -1001,7 +969,7 @@ describe('restore — the gate-four pins', () => {
   })
 
   it('a Context restore under a title collision lands the FINAL title everywhere', async () => {
-    await confirmedMutate(
+    await settledMutate(
       root,
       { op: 'delete', path: '.nexus/contexts/Projects', kind: 'context' },
       nexusDeps,
@@ -1014,11 +982,7 @@ describe('restore — the gate-four pins', () => {
     await refreshTree(root)
 
     const [listed] = await listBundles(root)
-    const r = await confirmedMutate(
-      root,
-      { op: 'restore', bundlePath: listed.bundlePath },
-      nexusDeps,
-    )
+    const r = await settledMutate(root, { op: 'restore', bundlePath: listed.bundlePath }, nexusDeps)
     expect(r.ok).toBe(true)
     // Folder, registry entry, and membership key all wear the resolver's final title.
     expect(
@@ -1037,7 +1001,7 @@ describe('restore — the gate-four pins', () => {
   })
 
   it('an occupant the tree cannot see refuses the restore — never a clobber', async () => {
-    await confirmedMutate(
+    await settledMutate(
       root,
       { op: 'delete', path: 'Notes/Daily/Alpha.md', kind: 'page' },
       nexusDeps,
@@ -1049,29 +1013,21 @@ describe('restore — the gate-four pins', () => {
     )
     await applyEvents(root, [{ event: 'add', absPath: join(root, 'Notes', 'Daily', 'Alpha.md') }])
     const [listed] = await listBundles(root)
-    const r = await confirmedMutate(
-      root,
-      { op: 'restore', bundlePath: listed.bundlePath },
-      nexusDeps,
-    )
+    const r = await settledMutate(root, { op: 'restore', bundlePath: listed.bundlePath }, nexusDeps)
     expect(r.ok).toBe(false)
     expect(await readFile(join(root, 'Notes', 'Daily', 'Alpha.md'), 'utf8')).toContain('squatter')
     expect(await bundleDirs(join(root, '.trash'))).toHaveLength(1)
   })
 
   it('a Set restored onto a folder Settings excludes refuses, the bundle intact', async () => {
-    await confirmedMutate(root, { op: 'delete', path: 'Notes/Daily', kind: 'set' }, nexusDeps)
+    await settledMutate(root, { op: 'delete', path: 'Notes/Daily', kind: 'set' }, nexusDeps)
     await writeFile(
       join(root, '.nexus', 'settings.json'),
       JSON.stringify({ excluded_folders: ['Notes/Daily'] }),
     )
     await refreshTree(root)
     const [listed] = await listBundles(root)
-    const r = await confirmedMutate(
-      root,
-      { op: 'restore', bundlePath: listed.bundlePath },
-      nexusDeps,
-    )
+    const r = await settledMutate(root, { op: 'restore', bundlePath: listed.bundlePath }, nexusDeps)
     expect(r.ok ? '' : r.error.message).toContain(
       '"Daily" is currently listed as an excluded directory',
     )
@@ -1084,7 +1040,7 @@ describe('restore — the gate-four pins', () => {
       join(root, 'Notes', 'fake.deleted', '_record.json'),
       JSON.stringify({ entity: 'page', id: 'x', parent: { kind: 'root' } }),
     )
-    const r = await confirmedMutate(
+    const r = await settledMutate(
       root,
       { op: 'restore', bundlePath: 'Notes/fake.deleted' },
       nexusDeps,
@@ -1101,11 +1057,7 @@ describe('restore — the gate-four pins', () => {
       values: {},
     })
     const [listed] = await listBundles(root)
-    const r = await confirmedMutate(
-      root,
-      { op: 'restore', bundlePath: listed.bundlePath },
-      nexusDeps,
-    )
+    const r = await settledMutate(root, { op: 'restore', bundlePath: listed.bundlePath }, nexusDeps)
     expect(r.ok).toBe(false)
     expect(await pathExists(join(bundle, '_record.json'))).toBe(true)
     expect(await pathExists(join(root, '.nexus', 'properties.json'))).toBe(false)
@@ -1114,7 +1066,7 @@ describe('restore — the gate-four pins', () => {
 
 describe('restore — the attack folds', () => {
   it('a record cannot steer the artifact outside the nexus', async () => {
-    await confirmedMutate(
+    await settledMutate(
       root,
       { op: 'delete', path: '.nexus/contexts/Projects', kind: 'context' },
       nexusDeps,
@@ -1126,7 +1078,7 @@ describe('restore — the attack folds', () => {
     record.registry.title = '../../../escape-target'
     await writeFile(join(dir, '_record.json'), JSON.stringify(record))
     expect(await listBundles(root)).toEqual([])
-    const r = await confirmedMutate(
+    const r = await settledMutate(
       root,
       { op: 'restore', bundlePath: relative(root, dir) },
       nexusDeps,
@@ -1140,17 +1092,13 @@ describe('restore — the attack folds', () => {
       join(root, 'Notes', 'Daily', '12__Notes.md'),
       '---\nID: 01KVGMT8BFP350FZZXAMG1QDVE\n---\nbody',
     )
-    await confirmedMutate(
+    await settledMutate(
       root,
       { op: 'delete', path: 'Notes/Daily/12__Notes.md', kind: 'page' },
       nexusDeps,
     )
     const [listed] = await listBundles(root)
-    const r = await confirmedMutate(
-      root,
-      { op: 'restore', bundlePath: listed.bundlePath },
-      nexusDeps,
-    )
+    const r = await settledMutate(root, { op: 'restore', bundlePath: listed.bundlePath }, nexusDeps)
     expect(r.ok).toBe(true)
     expect(await pathExists(join(root, 'Notes', 'Daily', '12__Notes.md'))).toBe(true)
     expect(await pathExists(join(root, 'Notes', 'Daily', 'Notes.md'))).toBe(false)
@@ -1160,7 +1108,7 @@ describe('restore — the attack folds', () => {
     'a failed move rolls the registry re-entry back — the restore stays retryable',
     async () => {
       const { chmod } = await import('node:fs/promises')
-      await confirmedMutate(
+      await settledMutate(
         root,
         { op: 'delete', path: '.nexus/contexts/Projects', kind: 'context' },
         nexusDeps,
@@ -1168,7 +1116,7 @@ describe('restore — the attack folds', () => {
       await chmod(join(root, '.nexus', 'contexts'), 0o555)
       try {
         const [listed] = await listBundles(root)
-        const failed = await confirmedMutate(
+        const failed = await settledMutate(
           root,
           { op: 'restore', bundlePath: listed.bundlePath },
           nexusDeps,
@@ -1181,7 +1129,7 @@ describe('restore — the attack folds', () => {
         await chmod(join(root, '.nexus', 'contexts'), 0o755)
       }
       const [listed] = await listBundles(root)
-      const retried = await confirmedMutate(
+      const retried = await settledMutate(
         root,
         { op: 'restore', bundlePath: listed.bundlePath },
         nexusDeps,
@@ -1193,7 +1141,7 @@ describe('restore — the attack folds', () => {
 
   it('a disambiguated Context restore re-keys its own passengers to the final title', async () => {
     // Sapphire tags Pommora INSIDE Projects — a passenger link the delete never strips.
-    await confirmedMutate(
+    await settledMutate(
       root,
       { op: 'delete', path: '.nexus/contexts/Projects', kind: 'context' },
       nexusDeps,
@@ -1205,11 +1153,7 @@ describe('restore — the attack folds', () => {
     await refreshTree(root)
 
     const [listed] = await listBundles(root)
-    const r = await confirmedMutate(
-      root,
-      { op: 'restore', bundlePath: listed.bundlePath },
-      nexusDeps,
-    )
+    const r = await settledMutate(root, { op: 'restore', bundlePath: listed.bundlePath }, nexusDeps)
     expect(r.ok).toBe(true)
     const sap = await readJsonAt(join(contextsDir(root), 'Projects (2)', 'Sapphire', '_space.json'))
     // The passenger's key follows the final title — never left pointing at the impostor.
@@ -1226,7 +1170,7 @@ describe('restore — the attack folds', () => {
         $order: { contexts: ['Projects'] },
       }),
     )
-    await confirmedMutate(
+    await settledMutate(
       root,
       { op: 'delete', path: '.nexus/contexts/Projects', kind: 'context' },
       nexusDeps,
@@ -1239,7 +1183,7 @@ describe('restore — the attack folds', () => {
 
     const [listed] = await listBundles(root)
     expect(
-      (await confirmedMutate(root, { op: 'restore', bundlePath: listed.bundlePath }, nexusDeps)).ok,
+      (await settledMutate(root, { op: 'restore', bundlePath: listed.bundlePath }, nexusDeps)).ok,
     ).toBe(true)
     const sap = await readJsonAt(join(contextsDir(root), 'Projects (2)', 'Sapphire', '_space.json'))
     expect(sap.$order).toEqual({ contexts: ['Projects (2)'] })
@@ -1250,17 +1194,13 @@ describe('emptyBundle — giving a bundle up for good', () => {
   it('hands the artifact to the system trash and removes the spent bundle behind it', async () => {
     const handed: string[] = []
     const deps: TrashDeps = { ...nexusDeps, trashToSystem: async (p) => void handed.push(p) }
-    await confirmedMutate(
+    await settledMutate(
       root,
       { op: 'delete', path: 'Notes/Daily/Alpha.md', kind: 'page' },
       nexusDeps,
     )
     const [listed] = await listBundles(root)
-    const r = await confirmedMutate(
-      root,
-      { op: 'emptyBundle', bundlePath: listed.bundlePath },
-      deps,
-    )
+    const r = await settledMutate(root, { op: 'emptyBundle', bundlePath: listed.bundlePath }, deps)
     expect(r.ok).toBe(true)
     // The artifact leaves under its own name — never a stamped folder wrapping it.
     expect(handed).toHaveLength(1)
@@ -1276,17 +1216,13 @@ describe('emptyBundle — giving a bundle up for good', () => {
       permanentDelete: true,
       trashToSystem: async (p) => void handed.push(p),
     }
-    await confirmedMutate(
+    await settledMutate(
       root,
       { op: 'delete', path: 'Notes/Daily/Alpha.md', kind: 'page' },
       nexusDeps,
     )
     const [listed] = await listBundles(root)
-    const r = await confirmedMutate(
-      root,
-      { op: 'emptyBundle', bundlePath: listed.bundlePath },
-      deps,
-    )
+    const r = await settledMutate(root, { op: 'emptyBundle', bundlePath: listed.bundlePath }, deps)
     expect(r.ok).toBe(true)
     expect(handed).toEqual([])
     expect(await pathExists(join(root, listed.bundlePath))).toBe(false)
@@ -1303,11 +1239,11 @@ describe('emptyBundle — giving a bundle up for good', () => {
       const month = await readShard(root, shardOf(PAGE_A)!)
       return month.kind === 'ok' ? month.pages : null
     }
-    await confirmedMutate(root, { op: 'delete', path: 'Notes/Daily', kind: 'set' }, nexusDeps)
+    await settledMutate(root, { op: 'delete', path: 'Notes/Daily', kind: 'set' }, nexusDeps)
     await refreshTree(root)
     expect(await pages()).toEqual({ [PAGE_A]: { icon: 'star' }, [PAGE_B]: { locked: true } })
     const [listed] = await listBundles(root)
-    const r = await confirmedMutate(
+    const r = await settledMutate(
       root,
       { op: 'emptyBundle', bundlePath: listed.bundlePath },
       { ...nexusDeps, permanentDelete },
@@ -1319,14 +1255,14 @@ describe('emptyBundle — giving a bundle up for good', () => {
   it('emptying a copy’s bundle keeps the entry of the live page sharing its ID', async () => {
     await updatePageMetadata(root, PAGE_A, { icon: 'star' })
     await writeFile(join(root, 'Notes', 'Daily', 'Alpha copy.md'), `---\nID: ${PAGE_A}\n---\ncopy`)
-    await confirmedMutate(
+    await settledMutate(
       root,
       { op: 'delete', path: 'Notes/Daily/Alpha copy.md', kind: 'page' },
       nexusDeps,
     )
     await refreshTree(root)
     const [listed] = await listBundles(root)
-    const r = await confirmedMutate(
+    const r = await settledMutate(
       root,
       { op: 'emptyBundle', bundlePath: listed.bundlePath },
       nexusDeps,
@@ -1338,7 +1274,7 @@ describe('emptyBundle — giving a bundle up for good', () => {
 
   it('refuses a chain folder that merely wears the suffix, bundles and all', async () => {
     // `.trash` mirrors the nexus, so a user's own folder can wear the bundle name anywhere in the chain. Path, root and suffix all pass here; only the record test refuses it.
-    await confirmedMutate(
+    await settledMutate(
       root,
       { op: 'delete', path: 'Notes/Daily/Alpha.md', kind: 'page' },
       nexusDeps,
@@ -1347,7 +1283,7 @@ describe('emptyBundle — giving a bundle up for good', () => {
     const chain = join(root, '.trash', 'Archive.deleted')
     await mkdir(chain, { recursive: true })
     await rename(join(root, listed.bundlePath), join(chain, basename(listed.bundlePath)))
-    const r = await confirmedMutate(
+    const r = await settledMutate(
       root,
       { op: 'emptyBundle', bundlePath: '.trash/Archive.deleted' },
       nexusDeps,
@@ -1359,30 +1295,26 @@ describe('emptyBundle — giving a bundle up for good', () => {
 
   it('refuses a path inside the nexus but outside the trash, and one that escapes the root', async () => {
     expect(
-      (await confirmedMutate(root, { op: 'emptyBundle', bundlePath: 'Notes' }, nexusDeps)).ok,
+      (await settledMutate(root, { op: 'emptyBundle', bundlePath: 'Notes' }, nexusDeps)).ok,
     ).toBe(false)
     expect(await pathExists(join(root, 'Notes'))).toBe(true)
-    const out = await confirmedMutate(
-      root,
-      { op: 'emptyBundle', bundlePath: '../escape' },
-      nexusDeps,
-    )
+    const out = await settledMutate(root, { op: 'emptyBundle', bundlePath: '../escape' }, nexusDeps)
     expect(out.ok).toBe(false)
   })
 
   it('a spent bundle refuses rather than reporting success twice', async () => {
-    await confirmedMutate(
+    await settledMutate(
       root,
       { op: 'delete', path: 'Notes/Daily/Alpha.md', kind: 'page' },
       nexusDeps,
     )
     const [listed] = await listBundles(root)
     expect(
-      (await confirmedMutate(root, { op: 'emptyBundle', bundlePath: listed.bundlePath }, nexusDeps))
+      (await settledMutate(root, { op: 'emptyBundle', bundlePath: listed.bundlePath }, nexusDeps))
         .ok,
     ).toBe(true)
     expect(
-      (await confirmedMutate(root, { op: 'emptyBundle', bundlePath: listed.bundlePath }, nexusDeps))
+      (await settledMutate(root, { op: 'emptyBundle', bundlePath: listed.bundlePath }, nexusDeps))
         .ok,
     ).toBe(false)
   })
@@ -1391,7 +1323,7 @@ describe('emptyBundle — giving a bundle up for good', () => {
     // `bundleArtifact` answers only for exactly one visible entry, so a sync client's conflict copy reads as no artifact at all. Removing the folder anyway would destroy the file with the switch OFF — the setting that promises the operating system keeps the last undo.
     const handed: string[] = []
     const deps: TrashDeps = { ...nexusDeps, trashToSystem: async (p) => void handed.push(p) }
-    await confirmedMutate(
+    await settledMutate(
       root,
       { op: 'delete', path: 'Notes/Daily/Alpha.md', kind: 'page' },
       nexusDeps,
@@ -1399,7 +1331,7 @@ describe('emptyBundle — giving a bundle up for good', () => {
     const [listed] = await listBundles(root)
     const bundlePath = listed.bundlePath
     await writeFile(join(root, bundlePath, 'Alpha 2.md'), 'conflict copy')
-    const r = await confirmedMutate(root, { op: 'emptyBundle', bundlePath }, deps)
+    const r = await settledMutate(root, { op: 'emptyBundle', bundlePath }, deps)
     expect(r.ok).toBe(false)
     expect(handed).toEqual([])
     expect(await pathExists(join(root, bundlePath, 'Alpha.md'))).toBe(true)
@@ -1412,17 +1344,13 @@ describe('emptyBundle — giving a bundle up for good', () => {
         throw new Error('nope')
       },
     }
-    await confirmedMutate(
+    await settledMutate(
       root,
       { op: 'delete', path: 'Notes/Daily/Alpha.md', kind: 'page' },
       nexusDeps,
     )
     const [listed] = await listBundles(root)
-    const r = await confirmedMutate(
-      root,
-      { op: 'emptyBundle', bundlePath: listed.bundlePath },
-      deps,
-    )
+    const r = await settledMutate(root, { op: 'emptyBundle', bundlePath: listed.bundlePath }, deps)
     expect(r.ok).toBe(false)
     expect(await listBundles(root)).toHaveLength(1)
   })
@@ -1436,16 +1364,16 @@ describe('restore — into a chosen destination', () => {
   }
 
   it('a page whose Set is gone lands in the Collection the user picks', async () => {
-    await confirmedMutate(
+    await settledMutate(
       root,
       { op: 'delete', path: 'Notes/Daily/Alpha.md', kind: 'page' },
       nexusDeps,
     )
-    await confirmedMutate(root, { op: 'delete', path: 'Notes/Daily', kind: 'set' }, nexusDeps)
+    await settledMutate(root, { op: 'delete', path: 'Notes/Daily', kind: 'set' }, nexusDeps)
     const bundlePath = await lastBundle('Alpha.md')
     // Nothing climbs on its own: the plain restore refuses first.
-    expect((await confirmedMutate(root, { op: 'restore', bundlePath }, nexusDeps)).ok).toBe(false)
-    const r = await confirmedMutate(
+    expect((await settledMutate(root, { op: 'restore', bundlePath }, nexusDeps)).ok).toBe(false)
+    const r = await settledMutate(
       root,
       { op: 'restore', bundlePath, destination: { kind: 'container', id: 'col-notes' } },
       nexusDeps,
@@ -1460,7 +1388,7 @@ describe('restore — into a chosen destination', () => {
       join(root, 'Notes', 'Weekly', '_pageset.json'),
       JSON.stringify({ id: 'set-week' }),
     )
-    await confirmedMutate(
+    await settledMutate(
       root,
       { op: 'delete', path: 'Notes/Daily/Alpha.md', kind: 'page' },
       nexusDeps,
@@ -1468,7 +1396,7 @@ describe('restore — into a chosen destination', () => {
     const pageBundle = await lastBundle('Alpha.md')
     expect(
       (
-        await confirmedMutate(
+        await settledMutate(
           root,
           {
             op: 'restore',
@@ -1481,11 +1409,11 @@ describe('restore — into a chosen destination', () => {
     ).toBe(true)
     expect(await pathExists(join(root, 'Notes', 'Weekly', 'Alpha.md'))).toBe(true)
 
-    await confirmedMutate(root, { op: 'delete', path: 'Notes/Weekly', kind: 'set' }, nexusDeps)
+    await settledMutate(root, { op: 'delete', path: 'Notes/Weekly', kind: 'set' }, nexusDeps)
     const setBundle = await lastBundle('Weekly')
     expect(
       (
-        await confirmedMutate(
+        await settledMutate(
           root,
           {
             op: 'restore',
@@ -1505,19 +1433,19 @@ describe('restore — into a chosen destination', () => {
     await writeFile(contextsRegistryFile(root), JSON.stringify(reg))
     await mkdir(join(contextsDir(root), 'Areas'), { recursive: true })
 
-    await confirmedMutate(
+    await settledMutate(
       root,
       { op: 'delete', path: '.nexus/contexts/Projects/Pommora', kind: 'space' },
       nexusDeps,
     )
-    await confirmedMutate(
+    await settledMutate(
       root,
       { op: 'delete', path: '.nexus/contexts/Projects', kind: 'context' },
       nexusDeps,
     )
     const bundlePath = await lastBundle('Pommora')
-    expect((await confirmedMutate(root, { op: 'restore', bundlePath }, nexusDeps)).ok).toBe(false)
-    const r = await confirmedMutate(
+    expect((await settledMutate(root, { op: 'restore', bundlePath }, nexusDeps)).ok).toBe(false)
+    const r = await settledMutate(
       root,
       { op: 'restore', bundlePath, destination: { kind: 'context', id: 'ctx_areas' } },
       nexusDeps,
@@ -1527,21 +1455,21 @@ describe('restore — into a chosen destination', () => {
   })
 
   it('refuses the destination the move check would refuse — a Space is not a container', async () => {
-    await confirmedMutate(
+    await settledMutate(
       root,
       { op: 'delete', path: 'Notes/Daily/Alpha.md', kind: 'page' },
       nexusDeps,
     )
-    await confirmedMutate(root, { op: 'delete', path: 'Notes/Daily', kind: 'set' }, nexusDeps)
+    await settledMutate(root, { op: 'delete', path: 'Notes/Daily', kind: 'set' }, nexusDeps)
     const bundlePath = await lastBundle('Alpha.md')
     // The Space's own id, offered as a container — the same answer the move check gives a page dragged onto a Space folder.
-    const r = await confirmedMutate(
+    const r = await settledMutate(
       root,
       { op: 'restore', bundlePath, destination: { kind: 'container', id: 'sp-pom' } },
       nexusDeps,
     )
     expect(r.ok).toBe(false)
-    const moved = await confirmedMutate(
+    const moved = await settledMutate(
       root,
       {
         op: 'movePage',
@@ -1555,13 +1483,13 @@ describe('restore — into a chosen destination', () => {
 
   it('refuses a destination whose own label contradicts the id it carries', async () => {
     // A live Context id, arriving labeled as a container. Honoring it would place the Space correctly by accident on a message that is malformed — a claim that disagrees with its own id is not a claim this path acts on.
-    await confirmedMutate(
+    await settledMutate(
       root,
       { op: 'delete', path: '.nexus/contexts/Projects/Pommora', kind: 'space' },
       nexusDeps,
     )
     const bundlePath = await lastBundle('Pommora')
-    const r = await confirmedMutate(
+    const r = await settledMutate(
       root,
       { op: 'restore', bundlePath, destination: { kind: 'container', id: 'ctx_projects' } },
       nexusDeps,
@@ -1571,7 +1499,7 @@ describe('restore — into a chosen destination', () => {
   })
 
   it('refuses a Space offered a container, and a container id naming nothing', async () => {
-    await confirmedMutate(
+    await settledMutate(
       root,
       { op: 'delete', path: '.nexus/contexts/Projects/Pommora', kind: 'space' },
       nexusDeps,
@@ -1579,7 +1507,7 @@ describe('restore — into a chosen destination', () => {
     const spaceBundle = await lastBundle('Pommora')
     expect(
       (
-        await confirmedMutate(
+        await settledMutate(
           root,
           {
             op: 'restore',
@@ -1593,7 +1521,7 @@ describe('restore — into a chosen destination', () => {
     // Never falls back to the recorded parent when the pick names nothing.
     expect(
       (
-        await confirmedMutate(
+        await settledMutate(
           root,
           {
             op: 'restore',
@@ -1608,9 +1536,9 @@ describe('restore — into a chosen destination', () => {
   })
 
   it('refuses a destination for a kind that cannot be homeless', async () => {
-    await confirmedMutate(root, { op: 'delete', path: 'Notes', kind: 'collection' }, nexusDeps)
+    await settledMutate(root, { op: 'delete', path: 'Notes', kind: 'collection' }, nexusDeps)
     const bundlePath = await lastBundle('Notes')
-    const r = await confirmedMutate(
+    const r = await settledMutate(
       root,
       { op: 'restore', bundlePath, destination: { kind: 'container', id: 'col-notes' } },
       nexusDeps,
@@ -1619,7 +1547,7 @@ describe('restore — into a chosen destination', () => {
   })
 
   it('a live identity still refuses, destination or not', async () => {
-    await confirmedMutate(
+    await settledMutate(
       root,
       { op: 'delete', path: 'Notes/Daily/Alpha.md', kind: 'page' },
       nexusDeps,
@@ -1627,7 +1555,7 @@ describe('restore — into a chosen destination', () => {
     const bundlePath = await lastBundle('Alpha.md')
     await writeFile(join(root, 'Notes', 'Twin.md'), `---\nID: ${PAGE_A}\n---\nbody`)
     await refreshTree(root)
-    const r = await confirmedMutate(
+    const r = await settledMutate(
       root,
       { op: 'restore', bundlePath, destination: { kind: 'container', id: 'col-notes' } },
       nexusDeps,
@@ -1663,14 +1591,14 @@ describe('restore — into a chosen destination', () => {
       join(root, 'Notes', 'Daily', 'Beta.md'),
       '---\nID: 01KVGMT8BFP350FZZXAMG1QDVB\nStatus: live\n---\nbody',
     )
-    await confirmedMutate(
+    await settledMutate(
       root,
       { op: 'delete', path: 'Notes/Daily/Beta.md', kind: 'page' },
       nexusDeps,
     )
-    await confirmedMutate(root, { op: 'delete', path: 'Notes/Daily', kind: 'set' }, nexusDeps)
+    await settledMutate(root, { op: 'delete', path: 'Notes/Daily', kind: 'set' }, nexusDeps)
     const bundlePath = await lastBundle('Beta.md')
-    const r = await confirmedMutate(
+    const r = await settledMutate(
       root,
       { op: 'restore', bundlePath, destination: { kind: 'container', id: 'col-plain' } },
       nexusDeps,
@@ -1705,14 +1633,14 @@ describe('restore — into a chosen destination', () => {
       join(root, 'Notes', 'Daily', 'Beta.md'),
       '---\nID: 01KVGMT8BFP350FZZXAMG1QDVB\nStatus: live\n---\nbody',
     )
-    await confirmedMutate(
+    await settledMutate(
       root,
       { op: 'delete', path: 'Notes/Daily/Beta.md', kind: 'page' },
       nexusDeps,
     )
-    await confirmedMutate(root, { op: 'delete', path: 'Notes/Daily', kind: 'set' }, nexusDeps)
+    await settledMutate(root, { op: 'delete', path: 'Notes/Daily', kind: 'set' }, nexusDeps)
     const bundlePath = await lastBundle('Beta.md')
-    const r = await confirmedMutate(
+    const r = await settledMutate(
       root,
       { op: 'restore', bundlePath, destination: { kind: 'container', id: 'col-notes' } },
       nexusDeps,

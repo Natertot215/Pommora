@@ -5,7 +5,7 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { join } from '../Paths/posix'
 import { noModeBits, putJson, readJsonAt, tempRoot } from '../Testing/hostFs'
 import { type ConfigSurfaces, seedConfigSurfaces, viewOn } from '../Testing/configSurfaces'
-import { confirmedMutate } from '../Testing/confirmedMutate'
+import { settledMutate } from '../Testing/settledMutate'
 import { createFolderEntity } from '../Nexus/folderEntity'
 import { createPage } from '../Nexus/page'
 import { splitFrontmatter } from '../Files/pageFile'
@@ -36,7 +36,7 @@ const view = (rules: unknown[], extra: Raw = {}): Raw => ({
 })
 
 const del = (path: string, kind: HeldKind) =>
-  confirmedMutate(root, { op: 'delete', path, kind }, nexusDeps)
+  settledMutate(root, { op: 'delete', path, kind }, nexusDeps)
 
 const entity = async (
   parent: string,
@@ -178,7 +178,7 @@ describe('a Space delete', () => {
     expect((await del('.nexus/contexts/Areas/Work', 'space')).ok).toBe(true)
     const { collection } = await surfaces.read()
     const seeds = filterSeeds(collection.filter as FilterGroup, true, [], ['ctx_areas'])
-    const r = await confirmedMutate(
+    const r = await settledMutate(
       root,
       { op: 'createPage', parentPath: 'Notes', name: 'Fresh', seeds },
       nexusDeps,
@@ -285,7 +285,7 @@ describe('a Set delete', () => {
 
   it('restores the Set with its own views and none of the configuration that named it', async () => {
     const bundlePath = await trashGone()
-    expect((await confirmedMutate(root, { op: 'restore', bundlePath }, nexusDeps)).ok).toBe(true)
+    expect((await settledMutate(root, { op: 'restore', bundlePath }, nexusDeps)).ok).toBe(true)
     expect((await readJsonAt(sidecarPath(gone.path, 'set'))).views).toEqual([located])
     expect((await surfaces.read()).collection).toEqual(stripped)
   })
@@ -295,7 +295,7 @@ describe('a Set delete', () => {
       trashMode: 'system',
       trashToSystem: (abs) => rm(abs, { recursive: true, force: true }),
     }
-    const r = await confirmedMutate(
+    const r = await settledMutate(
       root,
       { op: 'delete', path: 'Notes/Gone', kind: 'set' },
       systemDeps,

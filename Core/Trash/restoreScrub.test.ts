@@ -7,7 +7,7 @@ import { tempRoot, readJsonAt } from '../Testing/hostFs'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { dropLiveTree, refreshTree } from '../Nexus/liveTree'
 import { pathExists } from '../Files/atomicWrite'
-import { confirmedMutate } from '../Testing/confirmedMutate'
+import { settledMutate } from '../Testing/settledMutate'
 import { contextsDir, contextsRegistryFile } from '../Paths/paths'
 import { listBundles } from './holdings'
 import { stampMissing } from '../Nexus/adopt'
@@ -42,12 +42,12 @@ const registry = (assigned: string[]): string =>
   JSON.stringify({ id: 'col-notes', properties: assigned })
 
 async function cycle(rel: string, kind: 'page' | 'set', mutateWorld: () => Promise<void>) {
-  const d = await confirmedMutate(root, { op: 'delete', path: rel, kind }, nexusDeps)
+  const d = await settledMutate(root, { op: 'delete', path: rel, kind }, nexusDeps)
   expect(d.ok).toBe(true)
   await mutateWorld()
   await refreshTree(root)
   const [listed] = await listBundles(root)
-  const r = await confirmedMutate(root, { op: 'restore', bundlePath: listed.bundlePath }, nexusDeps)
+  const r = await settledMutate(root, { op: 'restore', bundlePath: listed.bundlePath }, nexusDeps)
   expect(r.ok).toBe(true)
 }
 
@@ -168,7 +168,7 @@ describe('a returning artifact is reconciled against the world it comes back to'
       join(contextsDir(root), 'Projects', 'Sapphire', '_space.json'),
       JSON.stringify({ id: 'sp-sap' }),
     )
-    const d = await confirmedMutate(
+    const d = await settledMutate(
       root,
       { op: 'delete', path: 'Notes/Alpha.md', kind: 'page' },
       nexusDeps,
@@ -179,7 +179,7 @@ describe('a returning artifact is reconciled against the world it comes back to'
     const [listed] = await listBundles(root)
     trashWrites.fail = true
     try {
-      const r = await confirmedMutate(
+      const r = await settledMutate(
         root,
         { op: 'restore', bundlePath: listed.bundlePath },
         nexusDeps,
@@ -359,7 +359,7 @@ describe('a Space sidecar is a context root too', () => {
     await seedPassenger()
     expect(
       (
-        await confirmedMutate(
+        await settledMutate(
           root,
           { op: 'delete', path: '.nexus/contexts/Projects', kind: 'context' },
           nexusDeps,
@@ -368,7 +368,7 @@ describe('a Space sidecar is a context root too', () => {
     ).toBe(true)
     expect(
       (
-        await confirmedMutate(
+        await settledMutate(
           root,
           { op: 'delete', path: '.nexus/contexts/Areas/Work', kind: 'space' },
           nexusDeps,
@@ -379,7 +379,7 @@ describe('a Space sidecar is a context root too', () => {
       (b) => b.record.entity === 'context' && b.bundlePath.includes('Projects'),
     )
     expect(projects).toBeDefined()
-    const r = await confirmedMutate(
+    const r = await settledMutate(
       root,
       { op: 'restore', bundlePath: projects?.bundlePath ?? '' },
       nexusDeps,
@@ -400,14 +400,14 @@ describe('a Space sidecar is a context root too', () => {
       join(contextsDir(root), 'Projects', 'Sapphire', '_space.json'),
       JSON.stringify({ id: 'sp-sap', '<Projects>': ['Pommora'] }),
     )
-    await confirmedMutate(
+    await settledMutate(
       root,
       { op: 'delete', path: '.nexus/contexts/Projects', kind: 'context' },
       nexusDeps,
     )
     const [listed] = await listBundles(root)
     expect(
-      (await confirmedMutate(root, { op: 'restore', bundlePath: listed.bundlePath }, nexusDeps)).ok,
+      (await settledMutate(root, { op: 'restore', bundlePath: listed.bundlePath }, nexusDeps)).ok,
     ).toBe(true)
     expect((await sidecar('Projects/Sapphire'))['<Projects>']).toEqual(['Pommora'])
   })
@@ -423,7 +423,7 @@ describe('a parent the filesystem handed Pommora can still be named by id', () =
     )
     await stampMissing(root, (await readNexus(root)).unreadable)
     await refreshTree(root)
-    const d = await confirmedMutate(
+    const d = await settledMutate(
       root,
       { op: 'delete', path: 'Notes/Inbox/Idea.md', kind: 'page' },
       nexusDeps,
@@ -432,11 +432,7 @@ describe('a parent the filesystem handed Pommora can still be named by id', () =
 
     const [listed] = await listBundles(root)
     expect(listed.record).toMatchObject({ entity: 'page', parent: { kind: 'container' } })
-    const r = await confirmedMutate(
-      root,
-      { op: 'restore', bundlePath: listed.bundlePath },
-      nexusDeps,
-    )
+    const r = await settledMutate(root, { op: 'restore', bundlePath: listed.bundlePath }, nexusDeps)
     expect(r.ok).toBe(true)
     expect(await pathExists(join(root, 'Notes', 'Inbox', 'Idea.md'))).toBe(true)
   })
@@ -447,7 +443,7 @@ describe('a parent the filesystem handed Pommora can still be named by id', () =
     const page = `---\nID: 01KVGMT8BFP350FZZXAMG1QDVD\n---\nbody`
     await writeFile(join(root, 'Notes', 'Broken', 'Idea.md'), page)
     await refreshTree(root)
-    const d = await confirmedMutate(
+    const d = await settledMutate(
       root,
       { op: 'delete', path: 'Notes/Broken/Idea.md', kind: 'page' },
       nexusDeps,

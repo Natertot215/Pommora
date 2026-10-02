@@ -5,7 +5,7 @@ import { tempRoot } from '../Testing/hostFs'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { dropLiveTree, refreshTree } from '../Nexus/liveTree'
 import { pathExists } from '../Files/atomicWrite'
-import { confirmedMutate } from '../Testing/confirmedMutate'
+import { settledMutate } from '../Testing/settledMutate'
 import { contextsDir, contextsRegistryFile } from '../Paths/paths'
 import { listBundles } from './holdings'
 import { readRecord } from './record'
@@ -38,7 +38,7 @@ const find = async (title: string) => {
 }
 const del = async (path: string, kind: string) => {
   await refreshTree(root)
-  const r = await confirmedMutate(root, { op: 'delete', path, kind } as never, deps)
+  const r = await settledMutate(root, { op: 'delete', path, kind } as never, deps)
   expect(r.ok, `delete ${path}`).toBe(true)
 }
 const beta = join('Journal', 'Daily', 'Beta.md')
@@ -122,7 +122,7 @@ describe('end to end — deleted, listed, restored', () => {
     const row = await find('Alpha')
     expect(row.homeResolves).toBe(true)
     expect(row.crumbs.map((c) => c.title)).toEqual(['Journal', 'Daily'])
-    const r = await confirmedMutate(root, { op: 'restore', bundlePath: row.bundlePath }, deps)
+    const r = await settledMutate(root, { op: 'restore', bundlePath: row.bundlePath }, deps)
     expect(r.ok).toBe(true)
     expect(await pathExists(join(root, 'Journal', 'Daily', 'Alpha.md'))).toBe(true)
     expect(await rows()).toHaveLength(0)
@@ -132,7 +132,7 @@ describe('end to end — deleted, listed, restored', () => {
     await del('Journal/Daily/Alpha.md', 'page')
     expect(
       (
-        await confirmedMutate(
+        await settledMutate(
           root,
           { op: 'rename', path: 'Journal', kind: 'collection', newName: 'Logbook' },
           deps,
@@ -142,7 +142,7 @@ describe('end to end — deleted, listed, restored', () => {
     const row = await find('Alpha')
     expect(row.crumbs.map((c) => c.title)).toEqual(['Logbook', 'Daily'])
     expect(
-      (await confirmedMutate(root, { op: 'restore', bundlePath: row.bundlePath }, deps)).ok,
+      (await settledMutate(root, { op: 'restore', bundlePath: row.bundlePath }, deps)).ok,
     ).toBe(true)
     expect(await pathExists(join(root, 'Logbook', 'Daily', 'Alpha.md'))).toBe(true)
   })
@@ -151,7 +151,7 @@ describe('end to end — deleted, listed, restored', () => {
     await del('.nexus/contexts/Projects/Pommora', 'space')
     expect(
       (
-        await confirmedMutate(
+        await settledMutate(
           root,
           { op: 'renameContext', contextId: 'ctx_projects', newName: 'Ventures' },
           deps,
@@ -161,7 +161,7 @@ describe('end to end — deleted, listed, restored', () => {
     const row = await find('Pommora')
     expect(row.crumbs).toEqual([{ kind: 'context', title: 'Ventures' }])
     expect(
-      (await confirmedMutate(root, { op: 'restore', bundlePath: row.bundlePath }, deps)).ok,
+      (await settledMutate(root, { op: 'restore', bundlePath: row.bundlePath }, deps)).ok,
     ).toBe(true)
     expect(await pathExists(join(contextsDir(root), 'Ventures', 'Pommora', '_space.json'))).toBe(
       true,
@@ -173,7 +173,7 @@ describe('end to end — deleted, listed, restored', () => {
     let row = await find('Alpha')
     expect(
       (
-        await confirmedMutate(
+        await settledMutate(
           root,
           {
             op: 'restore',
@@ -193,11 +193,11 @@ describe('end to end — deleted, listed, restored', () => {
     expect(row.homeResolves).toBe(false)
     expect(row.historical).toBe(true)
     expect(
-      (await confirmedMutate(root, { op: 'restore', bundlePath: row.bundlePath }, deps)).ok,
+      (await settledMutate(root, { op: 'restore', bundlePath: row.bundlePath }, deps)).ok,
     ).toBe(false)
     expect(
       (
-        await confirmedMutate(
+        await settledMutate(
           root,
           {
             op: 'restore',
@@ -213,7 +213,7 @@ describe('end to end — deleted, listed, restored', () => {
     const setRow = await find('Daily')
     expect(
       (
-        await confirmedMutate(
+        await settledMutate(
           root,
           {
             op: 'restore',
@@ -232,7 +232,7 @@ describe('end to end — deleted, listed, restored', () => {
     expect(spaceRow.homeResolves).toBe(false)
     expect(
       (
-        await confirmedMutate(
+        await settledMutate(
           root,
           {
             op: 'restore',
@@ -252,7 +252,7 @@ describe('end to end — deleted, listed, restored', () => {
     const row = await find('Alpha')
     expect(
       (
-        await confirmedMutate(
+        await settledMutate(
           root,
           {
             op: 'restore',
@@ -280,7 +280,7 @@ describe('end to end — deleted, listed, restored', () => {
     expect(homeless.map((r) => r.title)).toEqual(['Alpha'])
     for (const r of addressable)
       expect(
-        (await confirmedMutate(root, { op: 'restore', bundlePath: r.bundlePath }, deps)).ok,
+        (await settledMutate(root, { op: 'restore', bundlePath: r.bundlePath }, deps)).ok,
       ).toBe(true)
     expect((await rows()).map((r) => r.title)).toEqual(['Alpha'])
   })
@@ -289,7 +289,7 @@ describe('end to end — deleted, listed, restored', () => {
     await del('Journal/Daily/Alpha.md', 'page')
     let row = await find('Alpha')
     expect(
-      (await confirmedMutate(root, { op: 'emptyBundle', bundlePath: row.bundlePath }, deps)).ok,
+      (await settledMutate(root, { op: 'emptyBundle', bundlePath: row.bundlePath }, deps)).ok,
     ).toBe(true)
     expect(handed).toHaveLength(1)
     expect(handed[0].endsWith('Alpha.md')).toBe(true)
@@ -303,8 +303,7 @@ describe('end to end — deleted, listed, restored', () => {
     row = await find('Beta')
     const permanent: TrashDeps = { ...deps, permanentDelete: true }
     expect(
-      (await confirmedMutate(root, { op: 'emptyBundle', bundlePath: row.bundlePath }, permanent))
-        .ok,
+      (await settledMutate(root, { op: 'emptyBundle', bundlePath: row.bundlePath }, permanent)).ok,
     ).toBe(true)
     expect(handed).toHaveLength(1)
     expect(await rows()).toHaveLength(0)
@@ -314,12 +313,12 @@ describe('end to end — deleted, listed, restored', () => {
 describe('links come back with the page', () => {
   const restore = async (title: string) => {
     const { bundlePath } = await find(title)
-    const r = await confirmedMutate(root, { op: 'restore', bundlePath }, deps)
+    const r = await settledMutate(root, { op: 'restore', bundlePath }, deps)
     expect(r.ok, `restore ${title}`).toBe(true)
     return r.ok ? r.value.unrestored : undefined
   }
   const relink = (propertyId: string) =>
-    confirmedMutate(
+    settledMutate(
       root,
       { op: 'setProperty', path: beta, propertyId, value: { kind: 'link', value: '[[Other]]' } },
       deps,
@@ -343,7 +342,7 @@ describe('links come back with the page', () => {
   ])('a page landing beside a new namesake rebuilds %s as %s', async (held, rebuilt) => {
     await linker(beta, BETA_ID, `Related: "${held}"`)
     await del('Journal/Daily/Alpha.md', 'page')
-    const created = await confirmedMutate(
+    const created = await settledMutate(
       root,
       { op: 'createPage', parentPath: 'Journal/Daily', name: 'Alpha' },
       deps,
@@ -401,7 +400,7 @@ describe('links come back with the page', () => {
     await linker(join('Journal', 'Daily', 'Daily.md'), '01KVGMT8BFP350FZZXAMG1QDVE', '')
     await linker(gamma, '01KVGMT8BFP350FZZXAMG1QDVD', 'Parent: "[[Daily]]"')
     await del('Journal/Daily', 'set')
-    const created = await confirmedMutate(
+    const created = await settledMutate(
       root,
       { op: 'createContainer', parentPath: 'Journal', kind: 'set', name: 'Daily' },
       deps,
@@ -415,7 +414,7 @@ describe('links come back with the page', () => {
   const recordOf = async (title: string) => readRecord(join(root, (await find(title)).bundlePath))
   const empty = async (title: string) => {
     const { bundlePath } = await find(title)
-    expect((await confirmedMutate(root, { op: 'emptyBundle', bundlePath }, deps)).ok).toBe(true)
+    expect((await settledMutate(root, { op: 'emptyBundle', bundlePath }, deps)).ok).toBe(true)
   }
 
   it('a page restored while its link’s page sits in the Trash comes back without it, and that page’s restore puts it back', async () => {
@@ -495,7 +494,7 @@ describe('links come back with the page', () => {
     const content = '---\nRelated: "[[Alpha]]"\n---\ng\n'
     await writeFile(join(root, gamma), content)
     await refreshTree(root)
-    const r = await confirmedMutate(root, { op: 'delete', path: gamma, kind: 'page' }, deps)
+    const r = await settledMutate(root, { op: 'delete', path: gamma, kind: 'page' }, deps)
     expect(r.ok).toBe(false)
     expect(await listBundles(root)).toEqual([])
     expect(await readFile(join(root, gamma), 'utf8')).toBe(content)
@@ -539,17 +538,13 @@ describe('links come back with the page', () => {
     const daily = alphas.find((r) => r.bundlePath.startsWith('.trash/Journal'))
     const kept = alphas.find((r) => r.bundlePath.startsWith('.trash/Plain'))
     if (!daily || !kept) throw new Error('setup failed')
-    const emptied = await confirmedMutate(
+    const emptied = await settledMutate(
       root,
       { op: 'emptyBundle', bundlePath: daily.bundlePath },
       deps,
     )
     expect(emptied.ok).toBe(true)
-    const restored = await confirmedMutate(
-      root,
-      { op: 'restore', bundlePath: kept.bundlePath },
-      deps,
-    )
+    const restored = await settledMutate(root, { op: 'restore', bundlePath: kept.bundlePath }, deps)
     expect(restored.ok).toBe(true)
     expect((await frontmatter()).Related).toBe('[[Alpha]]')
   })
@@ -591,14 +586,14 @@ describe('links come back with the page', () => {
     const daily = alphas.find((r) => r.bundlePath.startsWith('.trash/Journal'))
     const plain = alphas.find((r) => r.bundlePath.startsWith('.trash/Plain'))
     if (!daily || !plain) throw new Error('setup failed')
-    const emptied = await confirmedMutate(
+    const emptied = await settledMutate(
       root,
       { op: 'emptyBundle', bundlePath: daily.bundlePath },
       deps,
     )
     expect(emptied.ok).toBe(true)
     expect(await frontmatter()).not.toHaveProperty('Related')
-    const restored = await confirmedMutate(
+    const restored = await settledMutate(
       root,
       { op: 'restore', bundlePath: plain.bundlePath },
       deps,
@@ -609,7 +604,7 @@ describe('links come back with the page', () => {
 
   it('emptying a page keeps a Link value a new namesake answers', async () => {
     await del('Journal/Daily/Alpha.md', 'page')
-    const created = await confirmedMutate(
+    const created = await settledMutate(
       root,
       { op: 'createPage', parentPath: 'Journal/Daily', name: 'Alpha' },
       deps,

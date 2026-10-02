@@ -10,7 +10,7 @@ import type { TrashDeps } from '../Trash/bundle'
 const QUIET = { push: () => {}, watch: async () => {} }
 
 /** A mutation as the host runs one: the write, whose events land as it goes, then the settle. The held tree must then be what a fresh read of the disk answers, which proves every arm the operation reached. */
-export async function confirmedMutate(
+export async function settledMutate(
   root: string,
   req: MutateRequest,
   deps: TrashDeps,
