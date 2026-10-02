@@ -10,12 +10,7 @@ import { mintDefaultView } from '../Views/views'
 import { readRegistry } from '../Properties/propertiesRegistry'
 import type { PropertyDefinition } from '../Properties/properties'
 import type { PropertyValue } from '../Properties/propertyValue'
-import {
-  contextSeeds,
-  type CreatePageRequest,
-  type MutateReply,
-  type MutateRequest,
-} from './mutateRequest'
+import { contextSeeds, type MutateReply, type MutateRequest } from './mutateRequest'
 import { CONTAINER_KINDS } from './entities'
 import type { MutateContext } from './mutate'
 import { createPage } from './page'
@@ -28,7 +23,7 @@ const created = (parentPath: string, r: { path: string }): MutateReply =>
 
 export async function createPageOp(
   { root }: MutateContext,
-  req: CreatePageRequest,
+  req: Extract<MutateRequest, { op: 'createPage' }>,
 ): Promise<MutateReply> {
   const parent = await mutableTarget(root, req.parentPath, CONTAINER_KINDS)
   if (!parent.ok) return parent
