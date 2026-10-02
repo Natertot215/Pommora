@@ -60,14 +60,14 @@ export function sent(tree: NexusTree): { tree: NexusTree; version: number } {
 function valueChangesOf(root: string, values: ReadonlyMap<string, boolean>): ValueChange[] {
   const byPath = liveIdIndex(root)
   const out = new Map<string, ValueChange>()
-  for (const [file, held] of values) {
+  for (const [file, bodyOnly] of values) {
     const rel = relDirname(file)
     const change = out.get(rel) ?? { rel, pageIds: [] }
     out.set(rel, change)
     const id = byPath.get(file)
     if (!id) continue
     change.pageIds.push(id)
-    if (!held) continue
+    if (!bodyOnly) continue
     change.bodyOnly ??= []
     change.bodyOnly.push(id)
   }
