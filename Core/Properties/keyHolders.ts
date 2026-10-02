@@ -17,7 +17,7 @@ export async function keyHolderFiles(
   return corpusUnder(root, queryKeyHolders(key) ?? (await nexusCorpus(root)), folders)
 }
 
-// The disk confirm stays: a row inside the write-echo window can be missing from the index.
+// The disk confirm stays: the index answers a file as its last settled event read it, and an outside edit not yet settled can have changed it.
 export async function confirmedKeyHolders(
   root: string,
   key: string,
