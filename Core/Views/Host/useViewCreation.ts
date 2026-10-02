@@ -115,7 +115,7 @@ export function useViewCreation(getCfg: () => ViewCreationConfig): ViewCreation 
       SEEK_GLIDE,
     )
   }
-  // Every live order settles in the create's own act — onCreated runs ahead of the optimistic tree apply, so the splice and the newborn's mount land in ONE commit.
+  // The host's push has mounted the newborn by the time onCreated runs, so its seeds and its slot in the live order land in the commit after.
   const settleOrders = (
     latest: ViewCreationConfig,
     createdId: string,

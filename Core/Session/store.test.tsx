@@ -458,7 +458,6 @@ describe('store — page slots', () => {
   })
 })
 
-/** A minimal tree with one Collection holding the given top-level pages (selection.test.ts's shape). */
 // What the host does before it replies to a write: pushes the difference its settle found.
 function hostPushes(next: NexusTree): void {
   const { tree, version, applyChange } = useSession.getState()
@@ -466,6 +465,7 @@ function hostPushes(next: NexusTree): void {
   if (delta) applyChange({ version: version + 1, delta })
 }
 
+/** A minimal tree with one Collection holding the given top-level pages (selection.test.ts's shape). */
 function treeWith(pages: { id: string; path: string }[], spaces: string[] = []): NexusTree {
   return {
     nexus: { id: 'nx', rootPath: '/x', name: 'x' },
