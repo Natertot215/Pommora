@@ -35,12 +35,7 @@ function reparentPaths<T extends PageNode | SetNode | CollectionNode>(
 }
 
 /** `newPath` null prunes. A stale entry lists a file at a dead address. */
-function repointUnreadable(
-  tree: NexusTree | null,
-  oldPath: string,
-  newPath: string | null,
-): NexusTree | null {
-  if (!tree) return null
+function repointUnreadable(tree: NexusTree, oldPath: string, newPath: string | null): NexusTree {
   const list = tree.unreadable
   const hit = (p: string): boolean => p === oldPath || p.startsWith(`${oldPath}/`)
   if (!list?.some((u) => hit(u.path))) return tree
@@ -201,7 +196,7 @@ function updateInContainers(
 }
 
 export const removeNodeInTree = (tree: NexusTree, path: string): NexusTree =>
-  repointUnreadable(updateNodeInTree(tree, path, () => null) ?? tree, path, null) ?? tree
+  repointUnreadable(updateNodeInTree(tree, path, () => null) ?? tree, path, null)
 
 export const setUnreadable = (tree: NexusTree, listed: readonly Unreadable[]): NexusTree =>
   listed.length
@@ -257,5 +252,5 @@ export function moveNodeInTree(tree: NexusTree, from: string, to: string): Nexus
       ? { ...node, path: to, title }
       : { ...reparentPaths(node, from, to), title }
   const pulled = updateNodeInTree(tree, from, () => null)
-  return pulled && repointUnreadable(placeNode(pulled, moved), from, to)
+  return pulled && placeNode(repointUnreadable(pulled, from, to), moved)
 }
