@@ -10,7 +10,6 @@ import {
   type SetNode,
   type SpaceNode,
   type Unreadable,
-  type UnreadReason,
 } from './tree'
 import type { PropertyDefinition } from '../Properties/properties'
 import { basename, relDirname, relJoin, titleFromPath } from '../Paths/posix'
@@ -204,10 +203,10 @@ function updateInContainers(
 export const removeNodeInTree = (tree: NexusTree, path: string): NexusTree =>
   repointUnreadable(updateNodeInTree(tree, path, () => null) ?? tree, path, null) ?? tree
 
-export const setUnreadable = (tree: NexusTree, path: string, reason: UnreadReason): NexusTree => ({
-  ...tree,
-  unreadable: [...(tree.unreadable ?? []), { path, reason }].sort(byPath),
-})
+export const setUnreadable = (tree: NexusTree, listed: readonly Unreadable[]): NexusTree =>
+  listed.length
+    ? { ...tree, unreadable: [...(tree.unreadable ?? []), ...listed].sort(byPath) }
+    : tree
 
 export function placeNode(tree: NexusTree, node: TreeEntity): NexusTree | null {
   const others = <T extends { path: string }>(list: T[]): T[] =>

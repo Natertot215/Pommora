@@ -319,9 +319,7 @@ async function applyFolder(
   return applyPatch(root, (t) => {
     const cleared = removeNodeInTree(t, rel)
     const landed = read.node ? placeNode(cleared, read.node) : cleared
-    return (
-      landed && read.unreadable.reduce((next, u) => setUnreadable(next, u.path, u.reason), landed)
-    )
+    return landed && setUnreadable(landed, read.unreadable)
   })
 }
 
@@ -350,7 +348,8 @@ async function applyPage(
   if ('unread' in read && read.unread === 'missing')
     owed.stamp.push({ path: rel, reason: 'missing' })
   const landed = applyPatch(root, (t) => {
-    if ('unread' in read) return setUnreadable(removeNodeInTree(t, rel), rel, read.unread)
+    if ('unread' in read)
+      return setUnreadable(removeNodeInTree(t, rel), [{ path: rel, reason: read.unread }])
     const node = contextLinker(t.contexts)(read.node, read.fm)
     const held = pageAt(t, rel)
     if (held?.id !== node.id) return placeNode(removeNodeInTree(t, rel), node)
@@ -365,7 +364,9 @@ async function applyContainer(root: string, dirRel: string, ev: Changed): Promis
   const meta = await jsonOf(ev)
   if (meta === null)
     return (await pathExists(ev.absPath))
-      ? applyPatch(root, (t) => setUnreadable(removeNodeInTree(t, dirRel), dirRel, 'unparsed'))
+      ? applyPatch(root, (t) =>
+          setUnreadable(removeNodeInTree(t, dirRel), [{ path: dirRel, reason: 'unparsed' }]),
+        )
       : 'walk'
   return applyPatch(root, (t) => {
     const node = containerAt(t, dirRel)
