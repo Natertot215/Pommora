@@ -8,8 +8,14 @@ import * as indexSeed from '../Index/indexSeed'
 import * as liveTree from './liveTree'
 import { dropLiveTree, getLiveTree, refreshTree } from './liveTree'
 import * as readNexusModule from './readNexus'
+import { readNexus } from './readNexus'
+import * as adopt from './adopt'
+import { atomicWriteFile } from '../Files/atomicWrite'
+import { splitFrontmatter } from '../Files/pageFile'
+import { ID_KEY } from './identityMark'
+import { stabilize } from './treeStabilize'
 import { applyEvents, oweCascade, owedFor } from './fileEvents'
-import { flush, sent } from './settle'
+import { flush, sent, settleBatch } from './settle'
 import type { NexusChange, NexusTree } from './tree'
 import { patch } from './treeDelta'
 import { closeSession, openSession, whileAdopting } from './session'
@@ -218,8 +224,7 @@ describe('the settle', () => {
 
   it('a page a walk lists missing, with no event of its own, is not stamped', async () => {
     await writeFile(abs('Notes', 'Bare.md'), 'bare\n')
-    await applyEvents(root, [ev('change', '.nexus', 'nexus.json')])
-    await flush(pusher, root)
+    await settleBatch(pusher, root, [ev('change', '.nexus', 'nexus.json')])
     expect(getLiveTree()?.unreadable).toEqual([{ path: 'Notes/Bare.md', reason: 'missing' }])
     expect(await readFile(abs('Notes', 'Bare.md'), 'utf8')).toBe('bare\n')
   })
@@ -246,5 +251,105 @@ describe('the settle', () => {
     seeding.open({ db: null, rels: [] })
     await first
     expect(firstDone).toBe(true)
+  })
+})
+
+describe('an outside batch’s turn', () => {
+  const ULID_N = '01NX5ZZKBKPCTAV9WEVGEMMVRN'
+  const bytes = (...segs: string[]): Promise<string> => readFile(abs(...segs), 'utf8')
+  // An editor write and its gate's flush, answered by whether the flush returned before a wait no stamp of the batch's could fit in.
+  const reply = async (): Promise<'replied' | 'waited'> => {
+    await atomicWriteFile(abs('Notes', 'New.md'), `---\nID: ${ULID_N}\n---\n\nnew\n`)
+    return Promise.race([
+      flush(pusher, root).then(() => 'replied' as const),
+      new Promise<'waited'>((r) => setTimeout(() => r('waited'), 200)),
+    ])
+  }
+  // What the window holds once it applies every tree it was pushed.
+  const windowTree = (): NexusTree =>
+    pushes
+      .filter(([c]) => c === 'nexus:changed')
+      .reduce((t, [, v]) => patch(t, (v as NexusChange).delta), shown)
+  const agrees = async (): Promise<void> => {
+    const live = getLiveTree()
+    expect(live && stabilize(await readNexus(root), live)).toBe(live)
+  }
+  const held = (rel: string): string | undefined =>
+    getLiveTree()?.collections[0]?.pages.find((p) => p.path === rel)?.id
+
+  it('a reply’s flush doesn’t wait on the stamps of a batch that has applied', async () => {
+    await writeFile(abs('Notes', 'Bare.md'), 'bare\n')
+    const stamping = gate<void>()
+    const release = gate<void>()
+    const stampMissing = adopt.stampMissing
+    vi.spyOn(adopt, 'stampMissing').mockImplementationOnce(async (...args) => {
+      stamping.open()
+      await release.promise
+      return stampMissing(...args)
+    })
+    const batch = settleBatch(pusher, root, [ev('add', 'Notes', 'Bare.md')])
+    await stamping.promise
+    expect(await reply()).toBe('replied')
+    expect(held('Notes/New.md')).toBe(ULID_N)
+    release.open()
+    await batch
+    expect(held('Notes/Bare.md')).toBe(splitFrontmatter(await bytes('Notes', 'Bare.md'))[ID_KEY])
+    await agrees()
+  })
+
+  it('a reply while a batch applies stamps nothing the batch listed, and the window isn’t shown it as unreadable', async () => {
+    await writeFile(abs('Notes', 'Bare.md'), 'bare\n')
+    await writeFile(abs('Notes', 'Late.md'), 'late\n')
+    const reached = gate<void>()
+    const release = gate<void>()
+    const read = readNexusModule.readPageRecord
+    vi.spyOn(readNexusModule, 'readPageRecord').mockImplementation(async (file, rel) => {
+      if (rel === 'Notes/Late.md') {
+        reached.open()
+        await release.promise
+      }
+      return read(file, rel)
+    })
+    const batch = settleBatch(pusher, root, [
+      ev('add', 'Notes', 'Bare.md'),
+      ev('add', 'Notes', 'Late.md'),
+    ])
+    await reached.promise
+    expect(await reply()).toBe('replied')
+    expect(await bytes('Notes', 'Bare.md')).toBe('bare\n')
+    expect(windowTree().unreadable).toBeUndefined()
+    release.open()
+    await batch
+    expect(getLiveTree()?.unreadable).toBeUndefined()
+    expect(windowTree()).toEqual(getLiveTree())
+    await agrees()
+  })
+
+  it('a stamp never lands on a file while the batch that listed it is still reading it', async () => {
+    await writeFile(abs('Notes', 'Bare.md'), 'bare\n')
+    const reached = gate<void>()
+    const release = gate<void>()
+    const read = readNexusModule.readPageRecord
+    let reads = 0
+    vi.spyOn(readNexusModule, 'readPageRecord').mockImplementation(async (file, rel) => {
+      const record = await read(file, rel)
+      if (++reads === 2) {
+        reached.open()
+        await release.promise
+      }
+      return record
+    })
+    const batch = settleBatch(pusher, root, [
+      ev('add', 'Notes', 'Bare.md'),
+      ev('change', 'Notes', 'Bare.md'),
+    ])
+    await reached.promise
+    await reply()
+    expect(await bytes('Notes', 'Bare.md')).toBe('bare\n')
+    release.open()
+    await batch
+    expect(held('Notes/Bare.md')).toBe(splitFrontmatter(await bytes('Notes', 'Bare.md'))[ID_KEY])
+    expect(getLiveTree()?.unreadable).toBeUndefined()
+    await agrees()
   })
 })

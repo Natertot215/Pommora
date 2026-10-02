@@ -1307,6 +1307,20 @@ describe('nexusHandlers.mutate — retryUnreadable', () => {
     expect(held('Notes/Daily/Alpha.md')).toBe(true)
     expect(getLiveTree()?.unreadable).toBeUndefined()
   })
+
+  it('stamps a root folder listed missing, then its ID-less pages and its subfolder, and holds them all', async () => {
+    await mkdir(join(root, 'Raw', 'Sub'), { recursive: true })
+    await writeFile(join(root, 'Raw', 'P.md'), 'p\n')
+    await writeFile(join(root, 'Raw', 'Sub', 'Q.md'), 'q\n')
+    await refreshTree(root)
+    expect(getLiveTree()?.unreadable).toEqual([{ path: 'Raw', reason: 'missing' }])
+    expect((await retry('Raw')).ok).toBe(true)
+    expect(held('Raw/P.md')).toBe(true)
+    expect(held('Raw/Sub/Q.md')).toBe(true)
+    expect(getLiveTree()?.unreadable).toBeUndefined()
+    const live = getLiveTree()
+    expect(live && stabilize(await readNexus(root), live)).toBe(live)
+  })
 })
 
 describe('handleMutate — setBanner', () => {
