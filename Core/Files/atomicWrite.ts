@@ -52,20 +52,19 @@ export async function atomicWriteBinary(filePath: string, data: Uint8Array): Pro
 }
 
 /** Under the SOURCE path's lock, the same key every other write to it takes: a write queued behind the move fails not-found rather than recreating the vacated file as a ghost. `landed` runs before sync hears of the rename, so it pushes under what the landing settled. */
-export async function relocate<T>(
+export async function relocate(
   from: string,
   to: string,
-  landed?: () => Promise<T>,
-): Promise<T | undefined> {
+  landed?: () => Promise<void>,
+): Promise<void> {
   await machine().lock(from, async () => {
     recordWrite(from)
     recordWrite(to)
     await machine().rename(from, to)
   })
   await noteOwn({ event: 'move', absPath: to, from })
-  const settled = await landed?.()
+  await landed?.()
   reportRename(from, to)
-  return settled
 }
 
 // A leading BOM is encoding, not corruption.

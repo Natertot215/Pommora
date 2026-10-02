@@ -14,7 +14,7 @@ import {
   searchEntriesOf,
   spaceLinksOf,
 } from './treeIndex'
-import { pageIdIndex, titlesOf } from './valuesChanged'
+import { pageIdIndex, titlesOf } from './heldPages'
 import { projectBaseline } from './remintLedger'
 
 describe('the record walk', () => {

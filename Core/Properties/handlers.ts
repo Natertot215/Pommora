@@ -1,9 +1,9 @@
 import { NOT_A_PROPERTY_DIR, validPropertyDir } from '../Assets/assetRoots'
-import { type Handlers, type HostContext, withWriteRoot } from '../Contract/handlers'
+import { type Handlers, withWriteRoot } from '../Contract/handlers'
 import { ok, type Result, fault } from '../Contract/result'
 import { isFiniteNumber, NEEDS_CONFIG_PATCH } from '../Contract/validators'
 import { mutableTarget } from '../Nexus/liveTree'
-import { confirmRegistryWrite } from '../Nexus/confirm'
+import { oweCascade } from '../Nexus/fileEvents'
 import { readWatchScope } from '../Settings/settings'
 import { assignProperty, reorderAssignment } from './assignment'
 import { deleteProperty } from './deleteProperty'
@@ -37,14 +37,13 @@ const NEEDS_RENAME_ARGS = fault('propertyId, oldValue, and newTitle are required
 const NEEDS_OPTION_EDIT = fault('An option edit is required.')
 
 // containerPath is the schema-owning Collection's folder — a Set inherits the schema, so the renderer passes the ancestor's path.
-async function resolveSchemaFolder(
+const resolveSchemaFolder = async (
   root: string,
   containerPath: unknown,
-): Promise<Result<{ folder: string; rel: string }>> {
-  if (typeof containerPath !== 'string') return fault('A container path is required.')
-  const resolved = await mutableTarget(root, containerPath, ['collection'])
-  return resolved.ok ? ok({ folder: resolved.value, rel: containerPath }) : resolved
-}
+): Promise<Result<string>> =>
+  typeof containerPath === 'string'
+    ? mutableTarget(root, containerPath, ['collection'])
+    : fault('A container path is required.')
 
 type Reply<R> = { hosts: TileHostRef[]; result: Result<R> }
 const asIs = <T>(value: T): Reply<T> => ({ hosts: [], result: ok(value) })
@@ -57,17 +56,11 @@ const cascadeReply = <T extends SchemaCascade>(r: T): Reply<T> => ({
   result: ok(r),
 })
 
-async function answer<T, R>(
-  ctx: HostContext,
-  root: string,
-  r: Result<T>,
-  reply: (value: T) => Reply<R>,
-  containerPath?: string,
-): Promise<Result<R>> {
-  const replied = r.ok ? reply(r.value) : null
-  for (const host of replied?.hosts ?? []) ctx.push('tiles:changed', host)
-  await confirmRegistryWrite(ctx, root, containerPath)
-  return replied ? replied.result : (r as Result<never>)
+function answer<T, R>(root: string, r: Result<T>, reply: (value: T) => Reply<R>): Result<R> {
+  if (!r.ok) return r
+  const replied = reply(r.value)
+  oweCascade(root, [], replied.hosts)
+  return replied.result
 }
 
 const registryChannel = <A extends unknown[], T, R = T>(
@@ -75,10 +68,10 @@ const registryChannel = <A extends unknown[], T, R = T>(
   write: (root: string, ...args: A) => Promise<Result<T>>,
   reply: (value: T) => Reply<R> = asIs as (value: T) => Reply<R>,
 ) =>
-  withWriteRoot(async (root, ctx, ...args: unknown[]): Promise<Result<R>> => {
+  withWriteRoot(async (root, _ctx, ...args: unknown[]): Promise<Result<R>> => {
     const narrowed = narrow(args)
     if (!Array.isArray(narrowed)) return narrowed
-    return answer(ctx, root, await write(root, ...narrowed), reply)
+    return answer(root, await write(root, ...narrowed), reply)
   })
 
 const schemaChannel = <A extends unknown[], T = null, R = T>(
@@ -86,12 +79,12 @@ const schemaChannel = <A extends unknown[], T = null, R = T>(
   write: (root: string, folder: string, ...args: A) => Promise<Result<T>>,
   reply: (value: T) => Reply<R> = asIs as (value: T) => Reply<R>,
 ) =>
-  withWriteRoot(async (root, ctx, containerPath: unknown, ...args: unknown[]) => {
+  withWriteRoot(async (root, _ctx, containerPath: unknown, ...args: unknown[]) => {
     const c = await resolveSchemaFolder(root, containerPath)
     if (!c.ok) return c
     const narrowed = narrow(args)
     if (!Array.isArray(narrowed)) return narrowed
-    return answer(ctx, root, await write(root, c.value.folder, ...narrowed), reply, c.value.rel)
+    return answer(root, await write(root, c.value, ...narrowed), reply)
   })
 
 const idOnly = ([id]: unknown[]): [string] | Result<never> =>
@@ -124,7 +117,7 @@ const defEditOp = (
   narrow: (payload: unknown) => DefChanges | null,
   check?: (root: string, changes: DefChanges) => Promise<Result<null>>,
 ) =>
-  withWriteRoot(async (root, ctx: HostContext, propertyId: unknown, payload: unknown) => {
+  withWriteRoot(async (root, _ctx, propertyId: unknown, payload: unknown) => {
     if (typeof propertyId !== 'string') return NEEDS_PROPERTY_ID
     const changes = narrow(payload)
     if (changes === null) return NEEDS_CONFIG_PATCH
@@ -132,25 +125,22 @@ const defEditOp = (
       const verdict = await check(root, changes)
       if (!verdict.ok) return verdict
     }
-    const r = await editProperty(root, propertyId, changes)
-    if (r.ok) await confirmRegistryWrite(ctx, root)
-    return r
+    return editProperty(root, propertyId, changes)
   })
 
 export const propertiesHandlers = {
-  'schema:add': withWriteRoot(async (root, ctx, containerPath: unknown, def: unknown) => {
+  'schema:add': withWriteRoot(async (root, _ctx, containerPath: unknown, def: unknown) => {
     const c = await resolveSchemaFolder(root, containerPath)
     if (!c.ok) return c
     const parsed = propertyDefinition.safeParse(def)
     if (!parsed.success) return fault('Invalid property definition.')
     const created = await createProperty(root, parsed.data)
     if (!created.ok) return created
-    const assigned = await assignProperty(root, c.value.folder, created.value.id)
+    const assigned = await assignProperty(root, c.value, created.value.id)
     if (!assigned.ok) {
       await removeFromRegistry(root, created.value.id)
       return assigned
     }
-    await confirmRegistryWrite(ctx, root, c.value.rel)
     return ok({ id: created.value.id })
   }),
 

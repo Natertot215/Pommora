@@ -36,23 +36,21 @@ import { renameCascade } from './cascade'
 import { setChildOrder, setCollectionOrder, setPanelContextOrder, setSpaceOrder } from './reorder'
 import { liveTreeOf, mutableTarget } from './liveTree'
 import { stampMissing, stampPage } from './adopt'
+import { owedFor } from './fileEvents'
 
 export interface MutateContext {
   root: string
   deps: TrashDeps
 }
 
-/** A thrown write can stop partway through what it wrote, so `afterThrow` gets the chance to re-read the disk; a refusal returned as a result wrote nothing. */
 export async function handleMutate(
   root: string,
   req: MutateRequest,
   deps: TrashDeps,
-  afterThrow?: () => Promise<void>,
 ): Promise<MutateReply> {
   try {
     return await dispatch({ root, deps }, req)
   } catch (e) {
-    await afterThrow?.()
     return fault(e)
   }
 }
@@ -185,6 +183,7 @@ async function dispatch(ctx: MutateContext, req: MutateRequest): Promise<MutateR
       const entry = (await liveTreeOf(root)).unreadable?.find((u) => u.path === req.path)
       if (entry?.reason === 'malformed') await stampPage(join(root, entry.path), 'page', true)
       if (entry?.reason === 'missing') await stampMissing(root, [entry])
+      owedFor(root).walk = true
       return ok({})
     }
 

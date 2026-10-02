@@ -1,6 +1,5 @@
 import { basename, dirname, join } from '../Paths/posix'
 import { ok, type Result } from '../Contract/result'
-import { moveIndexPaths } from '../Index/indexSeed'
 import { done, type MutateReply, type MutateRequest } from './mutateRequest'
 import { CONTAINER_KINDS } from './entities'
 import type { MutateContext } from './mutate'
@@ -10,7 +9,6 @@ import { liveTreeOf, mutableTarget } from './liveTree'
 import { goneEdit, reachConfig, reachReport } from './configReach'
 import { dropFromChildOrder, setChildOrder } from './reorder'
 import { containerAt, pageAt } from './treePatch'
-import { noteValueWrite } from './valuesChanged'
 import { excludedWithin, exclusionWriteRefusal } from '../Settings/settings'
 
 async function ends(
@@ -38,8 +36,6 @@ export async function movePageOp(
   if (!r.ok) return r
   if (id) await dropFromChildOrder(dirname(at.value.src), 'page_order', id)
   if (req.order) await setChildOrder(at.value.dst, 'page_order', req.order)
-  await moveIndexPaths(root, at.value.src, r.value.path)
-  noteValueWrite(root, r.value.path)
   return ok({})
 }
 
@@ -66,7 +62,6 @@ export async function moveSetOp(
   if (!r.ok) return r
   if (id) await dropFromChildOrder(dirname(at.value.src), 'set_order', id)
   await setChildOrder(at.value.dst, 'set_order', req.order)
-  noteValueWrite(root, r.value.path)
   const reach = left && edit ? await reachConfig(root, edit, join(root, left)) : null
-  return ok({ rescope: r.value.rescope, ...(reach ? { cascade: reachReport(reach) } : {}) })
+  return ok(reach ? { cascade: reachReport(reach) } : {})
 }

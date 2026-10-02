@@ -79,7 +79,7 @@ describe('a value write racing a body write on one page', () => {
     await Promise.all([
       updatePageBody(p.value.path, 'second'),
       machine().lock(p.value.path, () =>
-        updatePageProperty(root, p.value.path, def, { kind: 'select', value: 'hi' }),
+        updatePageProperty(p.value.path, def, { kind: 'select', value: 'hi' }),
       ),
     ])
 

@@ -14,7 +14,7 @@ import { usePublishSelection } from '../../Interface/Subfield/publish'
 import { Banner } from '../../Interface/Header/Banner'
 import { NavTrail } from '@pommora/uix/Elements/NavTrail'
 import { ancestryOf } from '../../Nexus/treeIndex'
-import { pageIdIndex } from '../../Nexus/valuesChanged'
+import { pageIdIndex } from '../../Nexus/heldPages'
 
 import { useLatest } from '@pommora/uix/Utilities/stableApi'
 import { cx } from '@pommora/uix/Utilities/cx'

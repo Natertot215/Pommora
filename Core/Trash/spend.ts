@@ -12,7 +12,6 @@ import type {
 } from '../Nexus/mutateRequest'
 import { landingRefusal } from '../Nexus/folderEntity'
 import type { MutateContext } from '../Nexus/mutate'
-import { moveIndexPaths } from '../Index/indexSeed'
 import { fail, ok, type Result, fault } from '../Contract/result'
 import type { NexusTree } from '../Nexus/tree'
 import { mutateRegistryFile, withContextAt } from '../Contexts/contextsRegistry'
@@ -30,7 +29,7 @@ import { dropSpaceOrder } from '../Nexus/reorder'
 import { machine } from '../Platform/machine'
 import { stampedId } from '../Files/pageFile'
 import { recordWrite } from '../Files/writeEcho'
-import { frozenWorld, noteValueWrite } from '../Nexus/valuesChanged'
+import { frozenWorld } from '../Nexus/heldPages'
 import { getLiveTree, liveTreeOf } from '../Nexus/liveTree'
 
 import { projectBaseline } from '../Nexus/remintLedger'
@@ -122,7 +121,7 @@ function withDestination(
   }
 }
 
-type Restored = Pick<MutateOutcome, 'unrestored' | 'rescope' | 'landed'>
+type Restored = Pick<MutateOutcome, 'unrestored' | 'landed'>
 
 const restored = (unrestored: string[]): Restored => (unrestored.length ? { unrestored } : {})
 
@@ -207,10 +206,9 @@ async function restoreArtifact(
     )
     if (!committed.ok) return committed
   }
-  let rescope: boolean | undefined
   try {
     await machine().mkdir(dirname(targetAbs))
-    rescope = await relocate(
+    await relocate(
       artifactAbs,
       targetAbs,
       record.entity === 'collection' || record.entity === 'set'
@@ -225,8 +223,6 @@ async function restoreArtifact(
       }))
     return fault(e)
   }
-  await moveIndexPaths(root, artifactAbs, targetAbs)
-  for (const page of await contentPages(record.entity, targetAbs)) noteValueWrite(root, page)
   const roots = projectBaseline(tree).entries
   const unspent: string[] = []
   const unlinked = new Set<string>()
@@ -290,7 +286,7 @@ async function restoreArtifact(
     ...restored([...unspent, ...unlinked].map((id) => roots[id].title)),
     landed: targetRel,
   }
-  return ok(rescope === undefined ? outcome : { ...outcome, rescope })
+  return ok(outcome)
 }
 
 /** The ids of what's still here and didn't take its tag back; a root gone since has nothing to take it. */

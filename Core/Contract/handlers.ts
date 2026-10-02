@@ -1,6 +1,7 @@
 import type { Asks, Pushes } from './bridge'
 import { BUSY, NO_NEXUS } from './result'
 import { adopting, sessionRoot } from '../Nexus/session'
+import { flush } from '../Nexus/settle'
 import type { EditorMenuRequest } from '../Actions/editorMenu'
 import type { MenuRequest } from '../Actions/menuModel'
 import type { ThumbRect } from '../Interface/chrome'
@@ -93,9 +94,17 @@ export const withRoot =
     return root === null ? ((whenClosed ?? NO_NEXUS) as C) : fn(root, ctx, ...args)
   }
 
-/** The one session gate for a write: also refused while a Nexus switch is binding the new root. */
+/** The one session gate for a write: also refused while a Nexus switch is binding the new root. Whatever the handler wrote has applied as it landed; the gate settles it and pushes what moved before the reply leaves, so the reply finds the window current. */
 export const withWriteRoot = <A extends unknown[], R>(fn: RootFn<A, R>) => {
-  const gated = withRoot(fn)
-  return (ctx: HostContext, ...args: A): R | typeof NO_NEXUS | typeof BUSY =>
+  const gated = withRoot(
+    async (root: string, ctx: HostContext, ...args: A): Promise<Awaited<R>> => {
+      try {
+        return await fn(root, ctx, ...args)
+      } finally {
+        await flush(ctx, root)
+      }
+    },
+  )
+  return (ctx: HostContext, ...args: A): Promise<Awaited<R>> | typeof NO_NEXUS | typeof BUSY =>
     adopting() ? BUSY : gated(ctx, ...args)
 }

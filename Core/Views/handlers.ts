@@ -5,7 +5,6 @@ import { coerceOpenIn, coerceViewButton } from '../Nexus/schemas'
 import type { ContainerKind } from '../Nexus/entities'
 import { resolveUnderRoot } from '../Paths/pathSafety'
 import { mutableTarget } from '../Nexus/liveTree'
-import { confirmContainerWrite } from '../Nexus/confirm'
 import { setContainerConfig } from './containerConfig'
 import { loadValues } from './loadValues'
 import { removedView, savedView } from './views'
@@ -15,14 +14,12 @@ import { deleteView, duplicateView, reorderViews, restoreView, saveView } from '
 const containerWrite = <A extends unknown[], T>(
   run: (folder: string, kind: ContainerKind, ...args: A) => Promise<Result<T>>,
 ) =>
-  withWriteRoot(async (root, ctx, containerPath: unknown, kind: unknown, ...args: A) => {
+  withWriteRoot(async (root, _ctx, containerPath: unknown, kind: unknown, ...args: A) => {
     if (typeof containerPath !== 'string') return fault('A container path is required.')
     if (kind !== 'collection' && kind !== 'set') return fault('kind must be "collection" or "set".')
     const folder = await mutableTarget(root, containerPath, [kind])
     if (!folder.ok) return folder
-    const r = await run(folder.value, kind, ...args)
-    if (r.ok) await confirmContainerWrite(ctx, root, containerPath)
-    return r
+    return run(folder.value, kind, ...args)
   })
 
 export const viewsHandlers = {

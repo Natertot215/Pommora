@@ -7,7 +7,9 @@ import { fault, ok } from '../Contract/result'
 import { editJsonStrict } from '../Files/atomicWrite'
 import { seedConfigSurfaces, viewOn } from '../Testing/configSurfaces'
 import { sidecarPath } from '../Paths/paths'
-import { flushValueWrites } from '../Nexus/valuesChanged'
+import { flush } from '../Nexus/settle'
+import type { ValueChange } from '../Nexus/tree'
+import type { Pushes } from '../Contract/bridge'
 import { removeProperty } from './removeProperty'
 import { assignProperty } from './assignment'
 import { createProperty, editProperty } from './registryProperty'
@@ -67,10 +69,11 @@ beforeEach(async () => {
   if (!a.ok || !b.ok) throw new Error('setup failed')
   pageA = a.value.path
   pageB = b.value.path
-  await updatePageProperty(root, pageA, liveDef, { kind: 'select', value: 'active' })
-  await updatePageProperty(root, pageB, liveDef, { kind: 'select', value: 'done' })
+  await updatePageProperty(pageA, liveDef, { kind: 'select', value: 'active' })
+  await updatePageProperty(pageB, liveDef, { kind: 'select', value: 'done' })
 })
 afterEach(async () => {
+  closeSession()
   await rm(root, { recursive: true, force: true })
 })
 
@@ -87,9 +90,15 @@ const cacheBlock = async (): Promise<{ values: Record<string, unknown> } | undef
 
 describe('removeProperty — strip + cache (C-3/C-6)', () => {
   it('strips the value from every member page, caches {pageId: raw}, and unassigns — one transaction', async () => {
-    flushValueWrites(root)
+    await openSession(root)
+    await refreshTree(root)
     const r = await removeProperty(root, folder, propId)
-    expect(flushValueWrites(root).map((c) => c.rel)).toEqual(['Notes'])
+    const rels: string[] = []
+    const push = (channel: keyof Pushes, value: unknown): void => {
+      if (channel === 'values:changed') rels.push(...(value as ValueChange[]).map((c) => c.rel))
+    }
+    await flush({ push, watch: async () => {} }, root)
+    expect(rels).toEqual(['Notes'])
     expect(r.ok).toBe(true)
     expect(await pageValue(pageA)).toBeUndefined()
     expect(await pageValue(pageB)).toBeUndefined()
@@ -147,7 +156,7 @@ describe('removeProperty — strip + cache (C-3/C-6)', () => {
       if (!set.ok) throw new Error('setup failed')
       const held = await createPage(set.value.path, 'C', { body: 'b' })
       if (!held.ok) throw new Error('setup failed')
-      await updatePageProperty(root, held.value.path, liveDef, { kind: 'select', value: 'done' })
+      await updatePageProperty(held.value.path, liveDef, { kind: 'select', value: 'done' })
       await chmod(set.value.path, 0o555)
       try {
         const r = await removeProperty(root, folder, propId).catch(fault)
@@ -161,7 +170,7 @@ describe('removeProperty — strip + cache (C-3/C-6)', () => {
   it.skipIf(noModeBits)('a holder it can’t read is answered as a skip, not left out', async () => {
     const held = await createPage(folder, 'C', { body: 'b' })
     if (!held.ok) throw new Error('setup failed')
-    await updatePageProperty(root, held.value.path, liveDef, { kind: 'select', value: 'done' })
+    await updatePageProperty(held.value.path, liveDef, { kind: 'select', value: 'done' })
     await chmod(held.value.path, 0o000)
     try {
       expect(await removeProperty(root, folder, propId)).toEqual(ok({ skipped: 1, hosts: [] }))
@@ -318,7 +327,7 @@ describe('restore on re-assign — per-value schema-currency reconciliation (C-3
     const c = await createPage(folder, 'C', { body: 'b' })
     if (!c.ok) throw new Error('setup failed')
     const selDef = (await readRegistry(root)).defs[id]
-    await updatePageProperty(root, c.value.path, selDef, { kind: 'select', value: '2024-01-01' })
+    await updatePageProperty(c.value.path, selDef, { kind: 'select', value: '2024-01-01' })
     await removeProperty(root, folder, id)
     await assignProperty(root, folder, id)
     const root2 = splitFrontmatter(await readFile(c.value.path, 'utf8')) as Record<string, unknown>
@@ -336,7 +345,7 @@ describe('restore on re-assign — per-value schema-currency reconciliation (C-3
     await assignProperty(root, folder, tags.value.id)
     const p = await createPage(folder, 'T', { body: 'b' })
     if (!p.ok) throw new Error('setup failed')
-    await updatePageProperty(root, p.value.path, (await readRegistry(root)).defs[tags.value.id], {
+    await updatePageProperty(p.value.path, (await readRegistry(root)).defs[tags.value.id], {
       kind: 'multiSelect',
       value: ['alpha', 'zeta'],
     })

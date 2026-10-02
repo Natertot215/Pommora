@@ -5,8 +5,11 @@ import { noModeBits, putJson, readJsonAt, tempRoot } from '../Testing/hostFs'
 import { contextsDir, contextsRegistryFile, nexusConfig, tileHostDir } from '../Paths/paths'
 import { NEXUS_CONFIG_FILES, SIDECAR_FILENAME, TILE_DOC_FILENAME } from '../Paths/nexusPaths'
 import type { PropertyDefinition } from '../Properties/properties'
-import { dropLiveTree, liveTreeOf } from './liveTree'
-import { flushSidecarWrites } from './valuesChanged'
+import { dropLiveTree, getLiveTree, liveTreeOf, refreshTree } from './liveTree'
+import { readNexus } from './readNexus'
+import { closeSession, openSession } from './session'
+import './settle'
+import { stabilize } from './treeStabilize'
 import { goneEdit, propertyClear, reachConfig, reachReport } from './configReach'
 import { unsweptLine } from '../Properties/governedSweep'
 
@@ -135,7 +138,6 @@ beforeEach(async () => {
       enabled: true,
     },
   })
-  flushSidecarWrites(root)
 })
 
 afterEach(async () => {
@@ -222,9 +224,13 @@ describe('an option rename', () => {
     expect(await Promise.all(files.map(async (f) => (await stat(f)).mtimeMs))).toEqual(before)
   })
 
-  it('notes each container it wrote for the confirm', async () => {
+  it('the held tree follows each container it wrote', async () => {
+    await openSession(root)
+    await refreshTree(root)
     await reachConfig(root, rename)
-    expect(flushSidecarWrites(root).sort()).toEqual(['Notes', 'Notes/Deep'])
+    const held = getLiveTree()
+    expect(stabilize(await readNexus(root), held)).toBe(held)
+    closeSession()
   })
 })
 

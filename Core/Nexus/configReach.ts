@@ -33,7 +33,6 @@ import { liveTreeOf } from './liveTree'
 import { editJsonStrict, type StrictEdit, updateNexusConfig } from '../Files/atomicWrite'
 import { same } from '../Files/stableJson'
 import { errText } from '../Contract/result'
-import { noteSidecarWrite } from './valuesChanged'
 import { sidecarPath, tileDocPath } from '../Paths/paths'
 import { join } from '../Paths/posix'
 import { isPlainObject, listOf } from '../Contract/validators'
@@ -361,12 +360,11 @@ export async function reachConfig(
   const { view: edit, rule } = editsOf(e)
   const containers = containersOf(tree, root, under)
   for (const { kind, dir } of containers) {
-    const wrote = await written(sidecarPath(dir, kind), (cur) => {
+    await written(sidecarPath(dir, kind), (cur) => {
       const views = mapViews(cur, edit)
       const cache = kind === 'collection' && e.kind === 'option' ? cacheEdit(e, views ?? cur) : null
       return cache ?? views
     })
-    if (wrote) noteSidecarWrite(dir)
   }
   const sources = new Set(containers.map((c) => c.id))
   const inScope = (entry: unknown): boolean => {

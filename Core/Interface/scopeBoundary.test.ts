@@ -25,20 +25,20 @@ const set = (key: string, value: boolean | null) => write(ctx, key, value)
 const get = interfaceHandlers['citations:get']
 
 describe('the citations override refuses what it cannot store and clears on a null', () => {
-  it('stores both settings a page can be pinned to', () => {
-    expect(set('page-1', true).ok).toBe(true)
-    expect(set('page-2', false).ok).toBe(true)
+  it('stores both settings a page can be pinned to', async () => {
+    expect((await set('page-1', true)).ok).toBe(true)
+    expect((await set('page-2', false)).ok).toBe(true)
     expect(valueOr(get(ctx), {})).toEqual({ 'page-1': true, 'page-2': false })
   })
 
-  it('a null deletes the row rather than storing one, so the default reaches the page again', () => {
-    set('page-1', true)
-    expect(set('page-1', null).ok).toBe(true)
+  it('a null deletes the row rather than storing one, so the default reaches the page again', async () => {
+    await set('page-1', true)
+    expect((await set('page-1', null)).ok).toBe(true)
     expect(valueOr(get(ctx), {})).toEqual({})
   })
 
-  it('refuses a non-boolean with a structured error and writes nothing', () => {
-    const r = set('page-1', 'yes' as unknown as boolean)
+  it('refuses a non-boolean with a structured error and writes nothing', async () => {
+    const r = await set('page-1', 'yes' as unknown as boolean)
     expect(r.ok).toBe(false)
     expect(valueOr(get(ctx), {})).toEqual({})
   })
@@ -54,9 +54,9 @@ describe('editor prefs read one page’s rows', () => {
       embedZooms: {},
       headingCols: [],
     })
-    expect(interfaceHandlers['editorPrefs:set'](ctx, 'p1', 'headingCols', ['x'] as never).ok).toBe(
-      false,
-    )
+    expect(
+      (await interfaceHandlers['editorPrefs:set'](ctx, 'p1', 'headingCols', ['x'] as never)).ok,
+    ).toBe(false)
   })
 })
 

@@ -23,7 +23,10 @@ import { captureWriteTap } from '../Testing/writeTap'
 import { fault } from '../Contract/result'
 import { mutateRegistryFile } from './contextsRegistry'
 import { closeSession, openSession } from '../Nexus/session'
-import { flushSidecarWrites } from '../Nexus/valuesChanged'
+import { getLiveTree, refreshTree } from '../Nexus/liveTree'
+import { readNexus } from '../Nexus/readNexus'
+import '../Nexus/settle'
+import { spaceAt } from '../Nexus/treePatch'
 
 vi.mock('../Properties/governedSweep', async (importOriginal) => {
   const mod = await importOriginal<typeof import('../Properties/governedSweep')>()
@@ -369,20 +372,19 @@ describe('the sweep tells the truth about what it did (G-2)', () => {
     expect(captured).toHaveLength(3)
   })
 
-  it('a sweep that misses a member puts each Space back and notes it, so the next confirm reads it again', async () => {
+  it('a sweep that misses a member puts each Space back, and the held tree follows the rollback', async () => {
+    await refreshTree(root)
     const original = sweepSpy.getMockImplementation()
     sweepSpy.mockImplementationOnce(async (...args) => {
       const swept = await original!(...args)
-      // A watcher settle between the strip and the rollback takes the strip's notes.
-      flushSidecarWrites(root)
       return { ...swept, skipped: [join(root, 'Notes', 'Gone.md')] }
     })
     const { unlinkSpaceValue } = await import('./contextCascade')
     await expect(unlinkSpaceValue(root, 'Projects', 'Pommora')).rejects.toThrow()
     expect((await readJsonAt(csSidecar()))['<Projects>']).toEqual(['Pommora'])
-    expect(flushSidecarWrites(root)).toEqual([
-      `${relative(root, contextsDir(root))}/Classes/CS 161`,
-    ])
+    const rel = `${relative(root, contextsDir(root))}/Classes/CS 161`
+    const held = getLiveTree()
+    expect(held && spaceAt(held, rel)).toEqual(spaceAt(await readNexus(root), rel))
   })
 
   it('unlinkSpaceValue captures the removed title per root; zero matches is an empty list', async () => {

@@ -3,7 +3,6 @@ import { fault } from '../Contract/result'
 import { isFiniteNumber, isString } from '../Contract/validators'
 import { openPage } from '../Files/pageFile'
 import { resolveUnderRoot } from '../Paths/pathSafety'
-import { pushValueChanges } from '../Nexus/confirm'
 import {
   clearHistory,
   deleteHistory,
@@ -25,15 +24,13 @@ export const pagesHandlers = {
   }),
 
   'page:updateBody': withWriteRoot(
-    async (root, ctx, relPath: unknown, body: unknown, baseHash: unknown) => {
+    async (root, _ctx, relPath: unknown, body: unknown, baseHash: unknown) => {
       if (!isString(relPath)) return fault('A page path is required.')
       if (!isString(body)) return fault('A body string is required.')
       if (!isString(baseHash)) return fault('A base hash is required.')
       const resolved = await resolveUnderRoot(root, relPath)
       if (!resolved.ok) return resolved
-      const r = await writeBody(root, resolved.value, body, 'edit', baseHash)
-      pushValueChanges(ctx, root)
-      return r
+      return writeBody(root, resolved.value, body, 'edit', baseHash)
     },
   ),
 
@@ -45,12 +42,9 @@ export const pagesHandlers = {
     isString(pageId) && isFiniteNumber(ts) ? readHistoryBody(pageId, ts) : NEEDS_SNAPSHOT_KEY,
   ),
 
-  'history:restore': withWriteRoot(async (root, ctx, pageId: unknown, ts: unknown) => {
-    if (!isString(pageId) || !isFiniteNumber(ts)) return NEEDS_SNAPSHOT_KEY
-    const r = await restoreSnapshot(root, pageId, ts)
-    pushValueChanges(ctx, root)
-    return r
-  }),
+  'history:restore': withWriteRoot(async (root, _ctx, pageId: unknown, ts: unknown) =>
+    isString(pageId) && isFiniteNumber(ts) ? restoreSnapshot(root, pageId, ts) : NEEDS_SNAPSHOT_KEY,
+  ),
 
   'history:delete': withWriteRoot(async (_root, _ctx, pageId: unknown, ts: unknown) =>
     isString(pageId) && Array.isArray(ts) && ts.every(isFiniteNumber)

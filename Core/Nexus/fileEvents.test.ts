@@ -13,7 +13,8 @@ import { getHeldAssetMap, liveAssetMap } from '../Assets/assetMap'
 import { applyEvents, classifyEvent, owedFor, tileBodyUnder } from './fileEvents'
 import { flush } from './settle'
 import type { Changed, FileEvent } from '../Files/writeEcho'
-import type { NexusTree } from './tree'
+import type { CollectionNode, NexusTree, SetNode } from './tree'
+import { findContainerWhere } from './treePatch'
 import { noteExternalEdit } from '../Pages/fileHistory'
 import { closeSession, openSession } from './session'
 import { installStores, NO_STORES } from '../Platform/stores'
@@ -948,5 +949,85 @@ describe('the app’s own events', () => {
     const id = splitFrontmatter(await readFile(abs('Notes', 'Bare.md'), 'utf8'))[ID_KEY]
     expect(held().collections[0]?.pages.find((p) => p.path === 'Notes/Bare.md')?.id).toBe(id)
     await agrees()
+  })
+})
+
+// The walk and the container sidecar's event each decode its meta. A field added to one alone would go red here.
+describe('the two container mappers agree', () => {
+  const SET_A = '01ARZ3NDEKPSV4RRFFQ69G5S0A'
+  const SET_B = '01ARZ3NDEKPSV4RRFFQ69G5S0B'
+  const view = (id: string): Record<string, unknown> => ({
+    id,
+    name: id,
+    type: 'table',
+    property_order: ['_title'],
+    hidden_properties: [],
+  })
+  const nine = (node: CollectionNode | SetNode | null): Record<string, unknown> | null =>
+    node && {
+      icon: node.icon,
+      banner: node.banner,
+      headingIconHidden: node.headingIconHidden,
+      sets: node.sets,
+      pages: node.pages,
+      views: node.views,
+      viewButton: node.viewButton,
+      disclosureLocked: node.disclosureLocked,
+      activeView: node.activeView,
+    }
+  const notes = (): CollectionNode | SetNode | null => {
+    const tree = getLiveTree()
+    return tree ? findContainerWhere(tree, (n) => n.path === 'Notes') : null
+  }
+
+  beforeEach(async () => {
+    await mkdir(abs('Notes', 'One'), { recursive: true })
+    await mkdir(abs('Notes', 'Two'), { recursive: true })
+    await writeFile(abs('Notes', 'One', '_pageset.json'), JSON.stringify({ id: SET_A }))
+    await writeFile(abs('Notes', 'Two', '_pageset.json'), JSON.stringify({ id: SET_B }))
+    await writeFile(abs('Notes', 'B.md'), `---\nID: ${ULID_B}\n---\n\nbeta\n`)
+    await writeFile(
+      abs('Notes', '_pagecollection.json'),
+      JSON.stringify({
+        id: 'c1',
+        icon: 'folder',
+        banner: 'Loose/b.png',
+        heading_icon_hidden: true,
+        set_order: [SET_B, SET_A],
+        page_order: [ULID_B, ULID_A],
+        views: [view('view_x'), view('view_y')],
+        view_button: 'labeled',
+        disclosure_locked: true,
+        active_view: 'view_y',
+        property_cache: { prop_related: { values: { [ULID_B]: '[[Alpha]]' } } },
+      }),
+    )
+  })
+
+  it('the walk decodes every field the sidecar carries', async () => {
+    await refreshTree(root)
+    expect(nine(notes())).toEqual({
+      icon: 'folder',
+      banner: 'Loose/b.png',
+      headingIconHidden: true,
+      sets: [expect.objectContaining({ id: SET_B }), expect.objectContaining({ id: SET_A })],
+      pages: [expect.objectContaining({ id: ULID_B }), expect.objectContaining({ id: ULID_A })],
+      views: [expect.objectContaining({ id: 'view_x' }), expect.objectContaining({ id: 'view_y' })],
+      viewButton: 'labeled',
+      disclosureLocked: true,
+      activeView: 'view_y',
+    })
+  })
+
+  // Whole nodes rather than a projection: a field added to one mapper alone is only caught by comparing everything the node carries.
+  it('the sidecar event decodes to exactly what the walk produced, field for field', async () => {
+    await refreshTree(root)
+    const walked = structuredClone(notes())
+    await applyEvents(root, [ev('change', 'Notes', '_pagecollection.json')])
+    expect(owedFor(root).walk).toBe(false)
+    const patched = notes()
+    expect(patched?.activeView).toBe('view_y')
+    expect(patched).toMatchObject({ cached: ['prop_related'] })
+    expect(patched).toEqual(walked)
   })
 })

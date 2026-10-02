@@ -59,7 +59,7 @@ beforeEach(async () => {
   await assignProperty(root, col, propId)
   const page = await createPage(col, 'A', { body: 'b' })
   if (!page.ok) throw new Error('setup failed')
-  await updatePageProperty(root, page.value.path, (await readRegistry(root)).defs[propId], {
+  await updatePageProperty(page.value.path, (await readRegistry(root)).defs[propId], {
     kind: 'select',
     value: 'Done',
   })
@@ -88,7 +88,7 @@ describe('the property channels', () => {
       if (!locked.ok) throw new Error('setup failed')
       const held = await createPage(locked.value.path, 'C', { body: 'b' })
       if (!held.ok) throw new Error('setup failed')
-      await updatePageProperty(root, held.value.path, (await readRegistry(root)).defs[propId], {
+      await updatePageProperty(held.value.path, (await readRegistry(root)).defs[propId], {
         kind: 'select',
         value: 'Done',
       })

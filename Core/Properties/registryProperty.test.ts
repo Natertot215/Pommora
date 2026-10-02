@@ -198,7 +198,7 @@ describe('renameProperty and editProperty', () => {
       const p = await createPage(col.value.path, title, { body: 'b' })
       if (!p.ok) return
       pages.push(p.value.path)
-      await updatePageProperty(root, p.value.path, live, { kind: 'number', value: 1 })
+      await updatePageProperty(p.value.path, live, { kind: 'number', value: 1 })
     }
     // Hand-edited into unparseable YAML. It sorts between the two healthy pages, so a sweep that throws on it leaves C behind on the old key.
     await writeFile(pages[1], '---\ntitle: B\nOld: 1\nbroken: {oops\n---\nb\n', 'utf8')

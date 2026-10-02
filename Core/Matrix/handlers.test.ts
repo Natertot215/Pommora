@@ -49,17 +49,17 @@ describe('matrix config channels', () => {
 })
 
 describe('the layout channels', () => {
-  it('refuses a non-finite coordinate', () => {
-    expect(matrixHandlers['matrixLayout:save'](ctx, { positions: { a: [0, Number.NaN] } })).toEqual(
-      {
-        ok: false,
-        error: {
-          code: 'operation-failed',
-          message: 'A layout patch needs finite positions or a finite lens.',
-        },
+  it('refuses a non-finite coordinate', async () => {
+    expect(
+      await matrixHandlers['matrixLayout:save'](ctx, { positions: { a: [0, Number.NaN] } }),
+    ).toEqual({
+      ok: false,
+      error: {
+        code: 'operation-failed',
+        message: 'A layout patch needs finite positions or a finite lens.',
       },
-    )
-    expect(matrixHandlers['matrixLayout:save'](ctx, {})).toEqual({
+    })
+    expect(await matrixHandlers['matrixLayout:save'](ctx, {})).toEqual({
       ok: false,
       error: {
         code: 'operation-failed',
@@ -68,9 +68,13 @@ describe('the layout channels', () => {
     })
   })
 
-  it('refuses a position carrying anything past its pair', () => {
-    expect(matrixHandlers['matrixLayout:save'](ctx, { positions: { a: [1, 2, 1] } }).ok).toBe(false)
-    expect(matrixHandlers['matrixLayout:save'](ctx, { positions: { a: [1] } }).ok).toBe(false)
+  it('refuses a position carrying anything past its pair', async () => {
+    expect(
+      (await matrixHandlers['matrixLayout:save'](ctx, { positions: { a: [1, 2, 1] } })).ok,
+    ).toBe(false)
+    expect((await matrixHandlers['matrixLayout:save'](ctx, { positions: { a: [1] } })).ok).toBe(
+      false,
+    )
   })
 
   it('reads a stored layout row by row, keeping every pair it understands', async () => {
@@ -80,8 +84,8 @@ describe('the layout channels', () => {
   })
 
   it('writes either half alone and loads both back', async () => {
-    matrixHandlers['matrixLayout:save'](ctx, { positions: { a: [1, 2] } })
-    matrixHandlers['matrixLayout:save'](ctx, { lens: { cx: 5, cy: 6, w: 7, h: 8 } })
+    await matrixHandlers['matrixLayout:save'](ctx, { positions: { a: [1, 2] } })
+    await matrixHandlers['matrixLayout:save'](ctx, { lens: { cx: 5, cy: 6, w: 7, h: 8 } })
     const reply = await matrixHandlers['matrixLayout:load'](ctx)
     expect(reply).toEqual({
       ok: true,
@@ -99,8 +103,8 @@ describe('the layout channels', () => {
   })
 
   it('stores a row per node, clearing a node sent as null', async () => {
-    matrixHandlers['matrixLayout:save'](ctx, { positions: { a: [1, 2], b: [3, 4] } })
-    matrixHandlers['matrixLayout:save'](ctx, { positions: { a: null, c: [5, 6] } })
+    await matrixHandlers['matrixLayout:save'](ctx, { positions: { a: [1, 2], b: [3, 4] } })
+    await matrixHandlers['matrixLayout:save'](ctx, { positions: { a: null, c: [5, 6] } })
     expect(readScope('matrixLayout')).toEqual({ b: [3, 4], c: [5, 6] })
     const reply = await matrixHandlers['matrixLayout:load'](ctx)
     expect(reply.ok && reply.value.positions).toEqual({ b: [3, 4], c: [5, 6] })
@@ -111,7 +115,7 @@ describe('the layout channels', () => {
     const before = await matrixHandlers['matrixLayout:load'](ctx)
     expect(before.ok && before.value.positions).toEqual({ a: [1, 2], b: [3, 4], c: [5, 5] })
     expect(readValue('matrixLayout')).not.toBeNull()
-    matrixHandlers['matrixLayout:save'](ctx, { positions: { b: [9, 9], a: null } })
+    await matrixHandlers['matrixLayout:save'](ctx, { positions: { b: [9, 9], a: null } })
     expect(readValue('matrixLayout')).toBeNull()
     expect(readScope('matrixLayout')).toEqual({ b: [9, 9], c: [5, 5] })
   })

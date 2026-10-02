@@ -14,6 +14,8 @@ import { closeSession, openSession, whileAdopting } from './session'
 
 const ULID_A = '01ARZ3NDEKPSV4RRFFQ69G5FAV'
 const ULID_B = '01BX5ZZKBKPCTAV9WEVGEMMVRZ'
+const ULID_C = '01CX5ZZKBKPCTAV9WEVGEMMVRC'
+const ULID_D = '01DX5ZZKBKPCTAV9WEVGEMMVRD'
 
 let root: string
 let pushes: [keyof Pushes, unknown][]
@@ -112,6 +114,56 @@ describe('what a flush pushes for a batch', () => {
     expect(payload('values:changed')).toEqual([
       { rel: 'Notes', pageIds: [ULID_A], bodyOnly: [ULID_A] },
     ])
+  })
+
+  it('groups the value push by container, resolving ids through nested Sets', async () => {
+    await mkdir(abs('Notes', 'Deep'))
+    await writeFile(abs('Notes', 'Deep', '_pageset.json'), JSON.stringify({ id: ULID_C }))
+    await writeFile(abs('Notes', 'Deep', 'D.md'), `---\nID: ${ULID_D}\n---\n\ndelta\n`)
+    sent(await refreshTree(root))
+    await applyEvents(root, [
+      ev('change', 'Notes', 'A.md'),
+      ev('change', 'Notes', 'Deep', 'D.md'),
+      ev('change', 'Notes', 'A.md'),
+    ])
+    await flush(pusher, root)
+    expect(payload('values:changed')).toEqual([
+      { rel: 'Notes', pageIds: [ULID_A] },
+      { rel: 'Notes/Deep', pageIds: [ULID_D] },
+    ])
+  })
+
+  it('a page written outside the editor as well as by it isn’t body-only', async () => {
+    const text = `---\nID: ${ULID_A}\n---\n\nmine\n`
+    await writeFile(abs('Notes', 'A.md'), text)
+    await applyEvents(root, [
+      { ...ev('change', 'Notes', 'A.md'), own: { text, held: true } },
+      { ...ev('change', 'Notes', 'A.md'), own: { text } },
+    ])
+    await flush(pusher, root)
+    expect(payload('values:changed')).toEqual([{ rel: 'Notes', pageIds: [ULID_A] }])
+  })
+
+  it('a flush drains what it pushed', async () => {
+    await applyEvents(root, [ev('change', 'Notes', 'A.md')])
+    await flush(pusher, root)
+    pushes = []
+    await flush(pusher, root)
+    expect(pushes).toEqual([])
+  })
+
+  it('a page the tree doesn’t hold still names its container, with no id', async () => {
+    await writeFile(abs('Notes', 'Foreign.md'), '---\nID: 42\n---\n\nforeign\n')
+    await applyEvents(root, [ev('add', 'Notes', 'Foreign.md')])
+    await flush(pusher, root)
+    expect(payload('values:changed')).toEqual([{ rel: 'Notes', pageIds: [] }])
+  })
+
+  it('what one root owed is dropped once another root’s event arrives', async () => {
+    await applyEvents(root, [ev('change', 'Notes', 'A.md')])
+    owedFor('/elsewhere')
+    await flush(pusher, root)
+    expect(pushes).toEqual([])
   })
 
   it('pushes nothing for a batch that changed nothing', async () => {

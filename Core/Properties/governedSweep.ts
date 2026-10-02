@@ -5,12 +5,10 @@ import {
   writeJson,
 } from '../Files/atomicWrite'
 import { machine } from '../Platform/machine'
-import { noteSidecarWrite, noteValueWrite } from '../Nexus/valuesChanged'
-import { dirname, join } from '../Paths/posix'
+import { join } from '../Paths/posix'
 import { ID_KEY } from '../Nexus/identityMark'
 import { asString } from '../Nexus/coerce'
 import type { EntityRecord } from '../Nexus/record'
-import { indexWrittenPage } from '../Index/indexSeed'
 import { mergeFrontmatter, splitEnvelope, splitFrontmatter, sweepAdmits } from '../Files/pageFile'
 import type { Json } from '../Files/stableJson'
 import { spaceSidecars } from '../Contexts/spaceSidecar'
@@ -85,8 +83,6 @@ export async function sweepGovernedRoots(
       if (next === null) return
       await rewritePreservingTimes(file, next)
       out.touched.set(file, content)
-      noteValueWrite(root, file)
-      await indexWrittenPage(root, file)
     })
   }
 
@@ -109,7 +105,6 @@ export async function sweepGovernedRoots(
         if (next === null) return
         await writeJson(file, next)
         out.touched.set(file, text)
-        noteSidecarWrite(dirname(file))
       })
     }
   return out

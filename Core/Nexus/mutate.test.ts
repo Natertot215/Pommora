@@ -20,16 +20,20 @@ import { shardOf } from './ids'
 
 const A_ID = '01KVGMT8BFP350FZZXAMG1QDRA'
 const B_ID = '01KVGMT8BFP350FZZXAMG1QDRB'
+const C_ID = '01KVGMT8BFP350FZZXAMG1QDRC'
 const G_ID = '01KVGMT8BFP350FZZXAMG1QDRG'
 import { openSession, closeSession } from './session'
-import { flushValueWrites } from './valuesChanged'
+import { flush } from './settle'
+import { stabilize } from './treeStabilize'
+import type { AssetMap, ValueChange } from './tree'
+import type { Pushes } from '../Contract/bridge'
 import { readNexus } from './readNexus'
 import { forgetLastReads, pathExists } from '../Files/atomicWrite'
 import { captureWriteTap } from '../Testing/writeTap'
 import { setWriteTap } from '../Files/writeEcho'
 import { readFileSync } from 'node:fs'
 import { createProperty } from '../Properties/registryProperty'
-import { liveAssetMap, resolveAssetName, takeAssetMapPush } from '../Assets/assetMap'
+import { liveAssetMap, resolveAssetName } from '../Assets/assetMap'
 import type { TrashDeps } from '../Trash/bundle'
 import type { HostContext } from '../Contract/handlers'
 import { installStores, NO_STORES } from '../Platform/stores'
@@ -51,6 +55,21 @@ const nexusDeps: TrashDeps = { trashMode: 'nexus', trashToSystem: (p) => rm(p, {
 const read = async (rel: string): Promise<string> => readFile(join(root, rel), 'utf8')
 const readJson = <T = Record<string, unknown>>(rel: string): Promise<T> =>
   readJsonAt<T>(join(root, rel))
+
+// A mutation driven as `confirmedMutate` drives one, answering its reply and the values push its settle made.
+const withValuesPush = async (
+  req: MutateRequest,
+): Promise<{ ok: boolean; values: ValueChange[] }> => {
+  const reply = await handleMutate(root, req, nexusDeps)
+  const values: ValueChange[] = []
+  const push = (channel: keyof Pushes, value: unknown): void => {
+    if (channel === 'values:changed') values.push(...(value as ValueChange[]))
+  }
+  await flush({ push, watch: async () => {} }, root)
+  const held = getLiveTree()
+  if (held) expect(stabilize(await readNexus(root), held)).toBe(held)
+  return { ok: reply.ok, values }
+}
 
 beforeEach(async () => {
   root = tempRoot('pom-mutate-')
@@ -218,25 +237,21 @@ describe('handleMutate — create', () => {
       join(root, 'Notes', 'Archive', '_pageset.json'),
       JSON.stringify({ id: 'set-archive' }),
     )
-    flushValueWrites(root)
-    const r = await confirmedMutate(
-      root,
-      { op: 'movePage', path: 'Notes/Daily/Beta.md', newParentPath: 'Notes/Archive' },
-      nexusDeps,
-    )
+    await refreshTree(root)
+    const r = await withValuesPush({
+      op: 'movePage',
+      path: 'Notes/Daily/Beta.md',
+      newParentPath: 'Notes/Archive',
+    })
     expect(r.ok).toBe(true)
-    expect(flushValueWrites(root).map((c) => c.rel)).toEqual(['Notes/Archive'])
+    expect(r.values.map((c) => c.rel)).toEqual(['Notes/Archive'])
   })
 
   it('createPage notes the new page for the values push', async () => {
-    flushValueWrites(root)
-    const r = await confirmedMutate(
-      root,
-      { op: 'createPage', parentPath: 'Notes/Daily', name: 'Noted' },
-      nexusDeps,
-    )
+    await refreshTree(root)
+    const r = await withValuesPush({ op: 'createPage', parentPath: 'Notes/Daily', name: 'Noted' })
     expect(r.ok).toBe(true)
-    expect(flushValueWrites(root).map((c) => c.rel)).toEqual(['Notes/Daily'])
+    expect(r.values.map((c) => c.rel)).toEqual(['Notes/Daily'])
   })
 })
 
@@ -253,6 +268,19 @@ describe('handleMutate — rename', () => {
     expect(await pathExists(join(root, 'Notes/Daily/Gamma.md'))).toBe(true)
     expect(await pathExists(join(root, 'Notes/Daily/Beta.md'))).toBe(false)
     expect(await read('Notes/Daily/Alpha.md')).toContain('[[Gamma]]')
+  })
+
+  it('a case-only page rename rewrites the links to it', async () => {
+    await writeFile(join(root, 'Notes', 'Daily', 'foo.md'), `---\nID: ${C_ID}\n---\n\nfoo`)
+    await writeFile(join(root, 'Notes', 'Daily', 'Alpha.md'), `---\nID: ${A_ID}\n---\n\n[[foo]]`)
+    await refreshTree(root)
+    const r = await confirmedMutate(
+      root,
+      { op: 'rename', path: 'Notes/Daily/foo.md', kind: 'page', newName: 'Foo' },
+      nexusDeps,
+    )
+    expect(r.ok && r.value.renamed).toEqual({ path: 'Notes/Daily/Foo.md', name: 'Foo' })
+    expect(await read('Notes/Daily/Alpha.md')).toContain('[[Foo]]')
   })
 
   it('a fromCreate rename disambiguates a collision instead of rejecting, and reports what landed', async () => {
@@ -443,28 +471,24 @@ describe('handleMutate — sync tap', () => {
     )
     await refreshTree(root)
     const indexMoves = vi.spyOn(indexSeed, 'moveIndexPaths')
-    flushValueWrites(root)
-    const set = await confirmedMutate(
-      root,
-      { op: 'moveSet', path: 'Notes/Daily/SetA', newParentPath: 'Notes/Daily', order: ['sa'] },
-      nexusDeps,
-    )
-    const moved = await confirmedMutate(
-      root,
-      {
-        op: 'movePage',
-        path: 'Notes/Daily/Beta.md',
-        newParentPath: 'Notes/Daily',
-        order: [B_ID, A_ID],
-      },
-      nexusDeps,
-    )
+    const set = await withValuesPush({
+      op: 'moveSet',
+      path: 'Notes/Daily/SetA',
+      newParentPath: 'Notes/Daily',
+      order: ['sa'],
+    })
+    const moved = await withValuesPush({
+      op: 'movePage',
+      path: 'Notes/Daily/Beta.md',
+      newParentPath: 'Notes/Daily',
+      order: [B_ID, A_ID],
+    })
     expect(set.ok && moved.ok).toBe(true)
     const sidecar = await readJson('Notes/Daily/_pageset.json')
     expect([sidecar.set_order, sidecar.page_order]).toEqual([['sa'], [B_ID, A_ID]])
     expect(tap.renames).toEqual([])
     expect(indexMoves).not.toHaveBeenCalled()
-    expect(flushValueWrites(root)).toEqual([])
+    expect([...set.values, ...moved.values]).toEqual([])
     indexMoves.mockRestore()
   })
 })
@@ -1090,6 +1114,7 @@ describe('handleMutate — renameHeading', () => {
     ({ push, trashMode: async () => 'nexus' }) as unknown as HostContext
 
   it('rewrites what the index and the tile walk name, leaves the renamed page to its editor, and pushes it ahead of values:changed', async () => {
+    await refreshTree(root)
     const push = vi.fn()
     const r = await nexusHandlers.mutate(handlerCtx(push), req)
     await new Promise((resolve) => setTimeout(resolve, 0))
@@ -1365,10 +1390,20 @@ describe('handleMutate — setBanner', () => {
   // `atomicWriteBinary` records its own write and the watcher drops the echo, so a test that rebuilds the map from the directory passes while the app renders blank. The adopted value must resolve against the map main is HOLDING.
   it('the adopted value resolves against the map main holds, and that map is owed a push', async () => {
     await withAssetDir()
+    await refreshTree(root)
     await liveAssetMap(root)
-    const r = await setBanner(await pick('Live.png'))
+    const source = await pick('Live.png')
+    const r = await handleMutate(
+      root,
+      { op: 'setBanner', path: 'Notes', kind: 'collection', source },
+      nexusDeps,
+    )
     expect(r.ok).toBe(true)
-    const pushed = takeAssetMapPush(root)
+    let pushed: AssetMap | null = null
+    const push = (channel: keyof Pushes, value: unknown): void => {
+      if (channel === 'assets:changed') pushed = value as AssetMap
+    }
+    await flush({ push, watch: async () => {} }, root)
     expect(pushed).not.toBeNull()
     expect(resolveAssetName(pushed!, 'Live.png')).toBe('file-assets/Live.png')
   })
@@ -1766,6 +1801,7 @@ describe('adoptFile — the shared adoption seam', () => {
       JSON.stringify({ asset_directory: 'file-assets' }),
     )
     await mkdir(join(root, 'file-assets'), { recursive: true })
+    await refreshTree(root)
   })
   afterEach(async () => {
     await rm(outside, { recursive: true, force: true })
@@ -1947,6 +1983,7 @@ describe('the acceptance chain, read raw off the disk at every step', () => {
       JSON.stringify({ asset_directory: 'file-assets' }),
     )
     await mkdir(join(root, 'file-assets'), { recursive: true })
+    await refreshTree(root)
   })
   afterEach(async () => {
     await rm(outside, { recursive: true, force: true })
@@ -2411,7 +2448,7 @@ describe('handleMutate — excluded entries follow their folders', () => {
       newName: 'Elsewhere',
     })
     await new Promise((resolve) => setTimeout(resolve, 0))
-    expect(r).toEqual({ ok: true, value: { rescope: true } })
+    expect(r).toEqual({ ok: true, value: {} })
     expect(await excludedOnDisk()).toEqual(['Archive', 'Elsewhere/Daily'])
     expect(watch).toHaveBeenCalledWith(root)
     const tree = getLiveTree()
@@ -2506,7 +2543,7 @@ describe('handleMutate — excluded entries follow their folders', () => {
       { op: 'restore', bundlePath: bundlePath ?? '' },
       nexusDeps,
     )
-    expect(r).toEqual({ ok: true, value: { rescope: true, landed: 'Other (2)' } })
+    expect(r).toEqual({ ok: true, value: { landed: 'Other (2)' } })
     expect(await excludedOnDisk()).toEqual(['Other/Drafts', 'Other (2)/Daily'])
   })
 
@@ -2569,7 +2606,7 @@ describe('handleMutate — excluded entries follow their folders', () => {
       { op: 'moveSet', path: 'Notes/Daily', newParentPath: 'Other', order: [] },
       nexusDeps,
     )
-    expect(r).toEqual({ ok: true, value: { rescope: true, cascade: { pages: [], hosts: [] } } })
+    expect(r).toEqual({ ok: true, value: { cascade: { pages: [], hosts: [] } } })
     expect(await excludedOnDisk()).toEqual(['Other/Daily/Old'])
   })
 
@@ -2581,7 +2618,7 @@ describe('handleMutate — excluded entries follow their folders', () => {
       { op: 'rename', path: 'Notes', kind: 'collection', newName: 'Journal' },
       nexusDeps,
     )
-    expect(r).toEqual({ ok: true, value: { rescope: false } })
+    expect(r).toEqual({ ok: true, value: {} })
     expect(await read('.nexus/settings.json')).toBe(before)
   })
 
@@ -2593,7 +2630,7 @@ describe('handleMutate — excluded entries follow their folders', () => {
       { op: 'rename', path: 'Notes', kind: 'collection', newName: 'Job' },
       nexusDeps,
     )
-    expect(r).toEqual({ ok: true, value: { rescope: true } })
+    expect(r).toEqual({ ok: true, value: {} })
     expect(await read('.nexus/settings.json')).toBe(before)
   })
 })

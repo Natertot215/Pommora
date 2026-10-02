@@ -2,7 +2,6 @@ import { basename, dirname, join, titleFromPath, relJoin } from '../Paths/posix'
 import { createDisambiguated } from '../Paths/names'
 import { ok } from '../Contract/result'
 import { mutableTarget } from './liveTree'
-import { moveIndexPaths } from '../Index/indexSeed'
 import type { MutateReply, MutateRequest } from './mutateRequest'
 import type { MutateContext } from './mutate'
 import { renamePage } from './page'
@@ -10,7 +9,7 @@ import { landingRefusal, renameFolderEntity } from './folderEntity'
 import { pathExists } from '../Files/atomicWrite'
 import { type CascadeReport, renameCascade } from './cascade'
 import { excludedWithin, exclusionWriteRefusal } from '../Settings/settings'
-import { titleHeldOutside } from './valuesChanged'
+import { titleHeldOutside } from './heldPages'
 
 export async function renameOp(
   { root }: MutateContext,
@@ -25,7 +24,7 @@ export async function renameOp(
       (await exclusionWriteRefusal(root, await excludedWithin(root, req.path)))
     if (refused) return refused
     const r = await renameFolderEntity(root, abs, req.newName)
-    return r.ok ? ok({ rescope: r.value.rescope }) : r
+    return r.ok ? ok({}) : r
   }
   const oldTitle = titleFromPath(abs)
   const relParent = req.path.split('/').slice(0, -1).join('/')
@@ -40,13 +39,11 @@ export async function renameOp(
       (name) => pathExists(join(dirname(abs), `${name}.md`)),
     )
     if (!r.ok) return r
-    await moveIndexPaths(root, abs, r.value.path)
     return renamedReply(r.value.path)
   }
+  const heldOutside = titleHeldOutside(root, oldTitle, req.path)
   const r = await renamePage(abs, req.newName)
   if (!r.ok) return r
-  // The index moves first, so the renamed page's own links to its old title are found where it now lives.
-  await moveIndexPaths(root, abs, r.value.path)
-  if (titleHeldOutside(root, oldTitle, req.path)) return renamedReply(r.value.path)
+  if (heldOutside) return renamedReply(r.value.path)
   return renamedReply(r.value.path, await renameCascade(root, oldTitle, { title: req.newName }))
 }

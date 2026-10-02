@@ -7,8 +7,6 @@ import { createPage, renamePage, updatePageBody, movePage, updatePageProperty } 
 import { splitEnvelope, assembleEnvelope, splitFrontmatter } from '../Files/pageFile'
 import { machine } from '../Platform/machine'
 
-import { closeSession, openSession } from './session'
-import { flushValueWrites } from './valuesChanged'
 import type { PropertyDefinition, PropertyType } from '../Properties/properties'
 import type { PropertyValue } from '../Properties/propertyValue'
 
@@ -231,8 +229,8 @@ describe('updatePageProperty', () => {
     const at = async (name: string): Promise<unknown> =>
       (splitFrontmatter(await readFile(f, 'utf8')) as Record<string, unknown>)[name]
 
-    await updatePageProperty(root, f, defOf('prop_status'), { kind: 'select', value: 'todo' })
-    await updatePageProperty(root, f, defOf('prop_tags', 'multiSelect'), {
+    await updatePageProperty(f, defOf('prop_status'), { kind: 'select', value: 'todo' })
+    await updatePageProperty(f, defOf('prop_tags', 'multiSelect'), {
       kind: 'multiSelect',
       value: ['a', 'b'],
     })
@@ -240,10 +238,10 @@ describe('updatePageProperty', () => {
     expect(await at('tags')).toEqual(['a', 'b'])
     expect(splitFrontmatter(await readFile(f, 'utf8'))[ID_KEY]).toBe(c.value.id)
 
-    await updatePageProperty(root, f, defOf('prop_status'), { kind: 'select', value: 'done' })
+    await updatePageProperty(f, defOf('prop_status'), { kind: 'select', value: 'done' })
     expect(await at('status')).toEqual(['done'])
 
-    await updatePageProperty(root, f, defOf('prop_status'), null)
+    await updatePageProperty(f, defOf('prop_status'), null)
     expect(await at('status')).toBeUndefined()
     expect(await at('tags')).toEqual(['a', 'b'])
   })
@@ -252,9 +250,9 @@ describe('updatePageProperty', () => {
     const c = await createPage(typeDir, 'Unknown Kind', { body: 'x' })
     if (!c.ok) throw new Error('setup failed')
     const f = c.value.path
-    await updatePageProperty(root, f, defOf('prop_status'), { kind: 'select', value: 'todo' })
+    await updatePageProperty(f, defOf('prop_status'), { kind: 'select', value: 'todo' })
 
-    const r = await updatePageProperty(root, f, defOf('prop_status'), {
+    const r = await updatePageProperty(f, defOf('prop_status'), {
       kind: 'status',
       value: 'done',
     } as unknown as PropertyValue)
@@ -265,32 +263,10 @@ describe('updatePageProperty', () => {
   })
 
   it('errors when the page is missing', async () => {
-    const r = await updatePageProperty(root, join(typeDir, 'nope.md'), defOf('p'), {
+    const r = await updatePageProperty(join(typeDir, 'nope.md'), defOf('p'), {
       kind: 'select',
       value: 'x',
     })
     expect(r.ok).toBe(false)
-  })
-
-  it('notes the value write against the root it was handed, not the open session', async () => {
-    const open = tempRoot('pom-page-open-')
-    await mkdir(join(open, '.nexus'), { recursive: true })
-    await writeFile(
-      join(open, '.nexus', 'nexus.json'),
-      JSON.stringify({ id: 'nx', createdAt: 'x' }),
-    )
-    await openSession(open)
-    try {
-      const c = await createPage(join(root, 'Notes'), 'Elsewhere', { body: 'x' })
-      if (!c.ok) throw new Error('setup failed')
-      await updatePageProperty(root, c.value.path, defOf('prop_status'), {
-        kind: 'select',
-        value: 'todo',
-      })
-      expect(flushValueWrites(root).map((v) => v.rel)).toEqual(['Notes'])
-    } finally {
-      closeSession()
-      await rm(open, { recursive: true, force: true })
-    }
   })
 })

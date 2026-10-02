@@ -21,7 +21,7 @@ import {
   reconcilePropertyValue,
 } from './propertyValue'
 import { parkLinks } from '../Trash/holdings'
-import { frozenWorld } from '../Nexus/valuesChanged'
+import { frozenWorld } from '../Nexus/heldPages'
 import { sweepRootsById } from './governedSweep'
 import { serializeSchemaOp } from './schemaChain'
 import { ok, fail, type Result } from '../Contract/result'

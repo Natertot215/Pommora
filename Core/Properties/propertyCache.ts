@@ -48,26 +48,21 @@ export function editCacheBlocks(
   return next
 }
 
-/** Edits the values each Collection the tree lists as caching one of `propertyIds` holds, through `edit`, which answers a block's next values or null to leave it; answers the folders it wrote and how many it couldn't edit. */
+/** Edits the values each Collection the tree lists as caching one of `propertyIds` holds, through `edit`, which answers a block's next values or null to leave it; answers how many it couldn't edit. */
 export async function editCaches(
   root: string,
   collections: readonly CollectionNode[],
   propertyIds: ReadonlySet<string>,
   edit: (values: Record<string, unknown>) => Record<string, unknown> | null,
-): Promise<{ written: string[]; skipped: number }> {
-  const out = { written: [] as string[], skipped: 0 }
+): Promise<number> {
+  let skipped = 0
   for (const node of collections) {
     const ids = (node.cached ?? []).filter((id) => propertyIds.has(id))
     if (!ids.length) continue
-    const folder = join(root, node.path)
-    let wrote = false
-    const written = await patchSidecar(folder, 'collection', (cur) => {
-      const next = editCacheBlocks(cur, ids, edit)
-      wrote = next !== null
-      return next
-    }).catch(() => null)
-    if (!written?.ok) out.skipped++
-    else if (wrote) out.written.push(folder)
+    const written = await patchSidecar(join(root, node.path), 'collection', (cur) =>
+      editCacheBlocks(cur, ids, edit),
+    ).catch(() => null)
+    if (!written?.ok) skipped++
   }
-  return out
+  return skipped
 }

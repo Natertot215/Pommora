@@ -6,14 +6,13 @@ import { assetSubRoot } from '../Paths/nexusPaths'
 import { resolveUnderRoot } from '../Paths/pathSafety'
 import { assetsDir } from '../Paths/paths'
 import { join, relative } from '../Paths/posix'
-import { confirmRescope, pushAssetWrites } from '../Nexus/confirm'
 
 import { adoptFile } from './adoptFile'
 import { sessionRoot } from '../Nexus/session'
 import { EMPTY_ASSET_MAP } from '../Nexus/tree'
 import { validateAssetDir } from '../Settings/assetDirValidate'
 import { readWatchScope, writeAssetDirectory } from '../Settings/settings'
-import { liveAssetMap, refreshAssetMap } from './assetMap'
+import { liveAssetMap } from './assetMap'
 import { migrateAssets } from './assetMigrate'
 import { trashDeps } from '../Trash/bundle'
 
@@ -57,8 +56,6 @@ export const assetsHandlers = {
     } catch (e) {
       console.error('assets: the migration stopped partway:', e)
     }
-    await confirmRescope(ctx, root)
-    ctx.push('assets:changed', await refreshAssetMap(root))
     return ok(next)
   }),
 
@@ -74,14 +71,12 @@ export const assetsHandlers = {
 
   'nexus:pasteImage': async (ctx) => ok(await ctx.pasteImage()),
 
-  'assets:adopt': withWriteRoot(async (root, ctx, source: unknown, subfolder: unknown) => {
+  'assets:adopt': withWriteRoot(async (root, _ctx, source: unknown, subfolder: unknown) => {
     if (!isString(source)) return fault('A source path is required.')
     if (subfolder !== undefined && !isString(subfolder)) return fault('Invalid subfolder.')
-    const adopted = await adoptFile(root, source, {
+    return adoptFile(root, source, {
       allow: 'any',
       ...(subfolder ? { subfolder } : {}),
     })
-    if (adopted.ok) pushAssetWrites(ctx, root)
-    return adopted
   }),
 } satisfies Partial<Handlers>

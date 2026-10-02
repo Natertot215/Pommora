@@ -2,7 +2,6 @@ import { describe, it, expect, afterEach, vi } from 'vitest'
 import { chmod, mkdir, readFile, rm, writeFile } from 'node:fs/promises'
 import { join } from '../Paths/posix'
 import { noModeBits, tempRoot } from '../Testing/hostFs'
-import { flushValueWrites } from '../Nexus/valuesChanged'
 import { indexWrittenPage } from '../Index/indexSeed'
 import { sweepGovernedRoots } from './governedSweep'
 
@@ -14,7 +13,6 @@ vi.mock('../Index/indexSeed', async (importOriginal) => ({
 const roots: string[] = []
 afterEach(async () => {
   for (const r of roots.splice(0)) {
-    flushValueWrites(r)
     await rm(r, { recursive: true, force: true })
   }
 })

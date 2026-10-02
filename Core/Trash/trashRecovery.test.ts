@@ -17,7 +17,10 @@ import { deleteProperty } from '../Properties/deleteProperty'
 import { removeProperty } from '../Properties/removeProperty'
 import { assignProperty } from '../Properties/assignment'
 import { newContentId } from '../Nexus/ids'
-import { flushValueWrites } from '../Nexus/valuesChanged'
+import { handleMutate } from '../Nexus/mutate'
+import { flush } from '../Nexus/settle'
+import type { ValueChange } from '../Nexus/tree'
+import type { Pushes } from '../Contract/bridge'
 import { renameProperty } from '../Properties/registryProperty'
 import type { TrashDeps } from './bundle'
 
@@ -559,9 +562,15 @@ describe('links come back with the page', () => {
     await linker(gamma, '01KVGMT8BFP350FZZXAMG1QDVD', 'Related: "[[Alpha]]"')
     await del(box, 'set')
     await del('Journal/Daily/Alpha.md', 'page')
-    flushValueWrites(root)
-    expect(await restore('Box')).toBeUndefined()
-    const changed = flushValueWrites(root).flatMap((c) => c.pageIds)
+    const { bundlePath } = await find('Box')
+    const r = await handleMutate(root, { op: 'restore', bundlePath }, deps)
+    expect(r.ok && r.value.unrestored).toBeUndefined()
+    const changed: string[] = []
+    const push = (channel: keyof Pushes, value: unknown): void => {
+      if (channel === 'values:changed')
+        changed.push(...(value as ValueChange[]).flatMap((c) => c.pageIds))
+    }
+    await flush({ push, watch: async () => {} }, root)
     expect(changed).toContain('01KVGMT8BFP350FZZXAMG1QDVD')
   })
 

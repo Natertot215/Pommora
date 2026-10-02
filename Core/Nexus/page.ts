@@ -93,7 +93,6 @@ export async function movePage(
 
 // Takes no lock of its own: callers hold the page's lock over a wider span, and a re-take would be refused.
 export async function updatePageProperty(
-  root: string,
   absFile: string,
   def: PropertyDefinition,
   value: PropertyValue | null,
@@ -104,5 +103,5 @@ export async function updatePageProperty(
   const clear = value === null || isBlankValue(value)
   const encoded = clear ? undefined : encodeValue(value)
   if (!clear && encoded === undefined) return noShape(key)
-  return ok(await setGovernedRootKeys(root, absFile, clear ? {} : { [key]: encoded }, [key], world))
+  return ok(await setGovernedRootKeys(absFile, clear ? {} : { [key]: encoded }, [key], world))
 }

@@ -30,7 +30,11 @@ import { unsweptLine } from './governedSweep'
 import { type ConfigSurfaces, seedConfigSurfaces, viewOn } from '../Testing/configSurfaces'
 import { sidecarPath } from '../Paths/paths'
 import type { PropertyDefinition, SelectOption } from './properties'
-import { flushValueWrites } from '../Nexus/valuesChanged'
+import { flush } from '../Nexus/settle'
+import type { ValueChange } from '../Nexus/tree'
+import type { Pushes } from '../Contract/bridge'
+import { closeSession, openSession } from '../Nexus/session'
+import { refreshTree } from '../Nexus/liveTree'
 
 vi.mock('./propertiesRegistry', async (importOriginal) => {
   const mod = await importOriginal<typeof import('./propertiesRegistry')>()
@@ -64,7 +68,7 @@ async function pageHolding(id: string, value: string): Promise<string> {
   if (!p.ok) throw new Error('page failed')
   const def = (await readRegistry(root)).defs[id]
   if (!def) throw new Error('definition missing')
-  await updatePageProperty(root, p.value.path, def, { kind: 'select', value })
+  await updatePageProperty(p.value.path, def, { kind: 'select', value })
   return p.value.path
 }
 
@@ -399,7 +403,7 @@ describe('renameOption', () => {
   it('is refused for a value the definition lacks, and rewrites no page', async () => {
     const id = await mkSelect([{ value: 'A' }])
     const page = await pageHolding(id, 'A')
-    await updatePageProperty(root, page, (await readRegistry(root)).defs[id], {
+    await updatePageProperty(page, (await readRegistry(root)).defs[id], {
       kind: 'select',
       value: 'Stray',
     })
@@ -425,13 +429,20 @@ describe('renameOption', () => {
       for (const title of titles) {
         const p = await createPage(col.value.path, title, { body: 'b' })
         if (!p.ok) throw new Error('page failed')
-        await updatePageProperty(root, p.value.path, def, { kind: 'select', value: 'A' })
+        await updatePageProperty(p.value.path, def, { kind: 'select', value: 'A' })
       }
     }
-    flushValueWrites(root)
+    await openSession(root)
+    await refreshTree(root)
     expect((await renameOption(root, id, 'A', 'B')).ok).toBe(true)
-    expect(flushValueWrites(root).map((c) => c.rel)).toEqual(['Col', 'Col2'])
-    expect(flushValueWrites(root)).toEqual([])
+    const rels: string[][] = []
+    const push = (channel: keyof Pushes, value: unknown): void => {
+      if (channel === 'values:changed') rels.push((value as ValueChange[]).map((c) => c.rel))
+    }
+    await flush({ push, watch: async () => {} }, root)
+    await flush({ push, watch: async () => {} }, root)
+    expect(rels).toEqual([['Col', 'Col2']])
+    closeSession()
   })
 })
 
@@ -455,7 +466,7 @@ describe('remove and clear on a value the definition lacks', () => {
   const stray = async (): Promise<{ id: string; page: string; bytes: string }> => {
     const id = await mkSelect([{ value: 'A' }])
     const page = await pageHolding(id, 'A')
-    await updatePageProperty(root, page, (await readRegistry(root)).defs[id], {
+    await updatePageProperty(page, (await readRegistry(root)).defs[id], {
       kind: 'select',
       value: 'Stray',
     })
@@ -506,7 +517,7 @@ describe('clearOption', () => {
     if (!p.ok) throw new Error('page failed')
     const def = (await readRegistry(root)).defs[id]
     if (!def) throw new Error('definition missing')
-    await updatePageProperty(root, p.value.path, def, { kind: 'select', value: 'hi' })
+    await updatePageProperty(p.value.path, def, { kind: 'select', value: 'hi' })
     await chmod(set.value.path, 0o555)
     try {
       const r = await clearOption(root, id, 'hi').catch(fault)
@@ -658,7 +669,7 @@ describe('option cascades reach saved views', () => {
     if (!set.ok) throw new Error('set failed')
     const p = await createPage(set.value.path, 'Held', { body: 'b' })
     if (!p.ok) throw new Error('page failed')
-    await updatePageProperty(root, p.value.path, (await readRegistry(root)).defs[id], {
+    await updatePageProperty(p.value.path, (await readRegistry(root)).defs[id], {
       kind: 'select',
       value: 'Done',
     })

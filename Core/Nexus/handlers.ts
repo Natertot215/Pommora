@@ -16,18 +16,17 @@ import { runRepairSweep } from '../Properties/repairSweep'
 import { replaySchemaCascade } from '../Properties/replaySchemaCascade'
 import { startSession, stopSession } from '../Sync/Client/session'
 import { stampAdopted, stampMissing } from './adopt'
-import { confirmRescope, confirmWrite, pushAssetWrites, pushValueChanges } from './confirm'
+import { oweCascade } from './fileEvents'
 import { ensureIdentity } from './identity'
-import { dropLiveTree, liveTreeOf, refreshAfterWrite, seedLiveTree } from './liveTree'
+import { dropLiveTree, liveTreeOf, seedLiveTree } from './liveTree'
 import { ensureConfigLayout, normalizePropertyTypes, normalizeSavedViews } from './migrateConfig'
 import { handleMutate } from './mutate'
-import { confirmBy, confirmMutation } from './mutatePatch'
 import { dropTileHeadingLinks } from '../Tiles/tilesFile'
 import { runOpenLedger } from './remintLedger'
 import { openSession, sessionRoot, waitingOpen, waitOn, whileAdopting } from './session'
 import { readNexus, readNexusConfig } from './readNexus'
 import { asString } from './coerce'
-import { sent } from './settle'
+import { flush, sent } from './settle'
 import type { NexusState } from './tree'
 import { trashDeps } from '../Trash/bundle'
 
@@ -91,11 +90,9 @@ export async function openNexusSequence(
       console.error('adopt: the seed walk failed; reads will retry:', errText(e))
     }
     const reread = await seedContentIndex(root)
-    if ((await replaySchemaCascade(root)) !== null)
-      await refreshAfterWrite(root).catch((e) =>
-        console.error('adopt: the replayed schema walk failed; reads will retry:', errText(e)),
-      )
-    void runRepairSweep(root, reread).then(() => pushValueChanges(ctx, root))
+    await replaySchemaCascade(root)
+    await flush(ctx, root)
+    void runRepairSweep(root, reread).then(() => flush(ctx, root))
   }
   if (nexusId !== null) void startSession(ctx, root, nexusId)
 }
@@ -167,18 +164,12 @@ export const nexusHandlers = {
     const read = mutateRequest.safeParse(raw)
     if (!read.success) return fault('Malformed request.')
     const req = read.data
-    const reply = await handleMutate(root, req, await trashDeps(root, ctx), () =>
-      confirmWrite(ctx, root, () => confirmBy(root, async () => 'refresh')),
-    )
+    const reply = await handleMutate(root, req, await trashDeps(root, ctx))
     if (!reply.ok) return reply
     const { cascade } = reply.value
-    // Ahead of the confirm's `values:changed`, which drops the cached details an absorb replaces; a delete's or an empty's linkers changed frontmatter alone, which `values:changed` carries.
-    if (cascade?.pages.length && req.op !== 'delete' && req.op !== 'emptyBundle')
-      ctx.push('pages:changed', cascade.pages)
-    for (const host of cascade?.hosts ?? []) ctx.push('tiles:changed', host)
-    if (reply.value.rescope) await confirmRescope(ctx, root)
-    else await confirmWrite(ctx, root, () => confirmMutation(root, req, reply.value))
-    pushAssetWrites(ctx, root)
+    // A delete's or an empty's linkers changed frontmatter alone, which `values:changed` carries.
+    const absorbed = req.op === 'delete' || req.op === 'emptyBundle' ? [] : (cascade?.pages ?? [])
+    oweCascade(root, absorbed, cascade?.hosts ?? [])
     return reply
   }),
 } satisfies Partial<Handlers>

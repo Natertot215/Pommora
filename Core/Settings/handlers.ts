@@ -4,7 +4,6 @@ import { fail, ok, fault } from '../Contract/result'
 import { machine } from '../Platform/machine'
 import { rootSegs } from '../Paths/exclusion'
 import { relative } from '../Paths/posix'
-import { confirmRescope, confirmSettingsWrite } from '../Nexus/confirm'
 import { sweepFileHistory } from '../Pages/fileHistory'
 import { nexusFolderRefusal } from './codec'
 import { personalizationSchema, settingValue } from './personalization'
@@ -17,11 +16,10 @@ import {
 } from './settings'
 
 export const settingsHandlers = {
-  'exclusions:set': withWriteRoot(async (root, ctx, folders: unknown) => {
+  'exclusions:set': withWriteRoot(async (root, _ctx, folders: unknown) => {
     const sanitized = sanitizeExclusions(folders)
     if (!sanitized.ok) return sanitized
     await writeExcludedFolders(root, sanitized.value)
-    await confirmRescope(ctx, root)
     return sanitized
   }),
 
@@ -44,8 +42,6 @@ export const settingsHandlers = {
   'personalization:set': withWriteRoot(async (root, ctx, key: unknown, value: unknown) => {
     if (!isKeyOf(personalizationSchema.shape, key)) return fault('Invalid personalization key.')
     await writePersonalization(root, key, settingValue(key, value))
-    // No renderer confirm exists for this channel (the slice patches optimistically), yet it writes a field the walk reads — the push set's membership predicate.
-    await confirmSettingsWrite(ctx, root)
     if (key === 'webZoomFactor') await ctx.applyZoom()
     if (key === 'historyDays') void sweepFileHistory(root)
     return ok(null)

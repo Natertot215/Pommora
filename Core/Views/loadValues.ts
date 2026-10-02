@@ -5,7 +5,7 @@ import type { PageValues } from './viewRow'
 import { idTime } from '../Nexus/ids'
 import { readPageRecord } from '../Nexus/readNexus'
 import { folderCorpus } from '../Index/indexSeed'
-import { livePathOf } from '../Nexus/valuesChanged'
+import { livePathOf } from '../Nexus/heldPages'
 import { localDayKey, pad } from '@pommora/uix/Utilities/pad'
 
 // Local-clock form, the same shape the date picker writes.

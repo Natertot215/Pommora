@@ -13,7 +13,7 @@ import { applyEvents, indexEvent, nothingOwed, owedFor } from './fileEvents'
 import { diskMoved, dropLiveTree, heldTreeOf, refreshAfterWrite } from './liveTree'
 import { adopting, sessionRoot } from './session'
 import type { NexusTree, ValueChange } from './tree'
-import { liveIdIndex } from './valuesChanged'
+import { liveIdIndex } from './heldPages'
 
 // ── The app's own events ──
 

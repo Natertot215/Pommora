@@ -2,7 +2,7 @@ import { basename, dirname, join, relative, titleFromPath } from '../Paths/posix
 import { liveTreeOf, mutableTarget } from '../Nexus/liveTree'
 import { goneEdit, reachConfig, reachReport } from '../Nexus/configReach'
 import { pathExists, relocate } from '../Files/atomicWrite'
-import { deindexPath, folderCorpus } from '../Index/indexSeed'
+import { folderCorpus } from '../Index/indexSeed'
 import { fail, ok, valueOr } from '../Contract/result'
 import { mutateRegistryFile, readRegistryStrict, withContextAt } from '../Contexts/contextsRegistry'
 import { unlinkContextKey, unlinkSpaceValue } from '../Contexts/contextCascade'
@@ -96,7 +96,6 @@ export async function deleteOp(
     })
   if (req.kind === 'collection' || req.kind === 'set')
     await releaseExcludedFolders(root, relative(root, abs))
-  await deindexPath(root, abs)
   const reach = edit ? reachReport(await reachConfig(root, edit)) : null
   const cascade = gone && reach ? joinCascades(gone.cascade, reach) : (gone?.cascade ?? reach)
   return ok({

@@ -26,7 +26,7 @@ import { readLiveSetting } from '../Settings/settings'
 import { rewriteTileConnections } from '../Tiles/tilesFile'
 import type { TileHostRef } from '../Tiles/tiles'
 import { readLink } from '../Connections/linkValue'
-import { liveIdIndex, livePathOf, noteSidecarWrite, titleHeldOutside } from './valuesChanged'
+import { liveIdIndex, livePathOf, titleHeldOutside } from './heldPages'
 import { ID_KEY } from './identityMark'
 import { asString } from './coerce'
 
@@ -219,12 +219,9 @@ export async function renameCascade(
     const tiles = await rewriteTileConnections(root, rewrite)
     // A heading edit settles often and a cached Link still reaches its page, so only a title reaches the caches.
     const linkIds = new Set(defs.filter((d) => d.type === 'link').map((d) => d.id))
-    const caches =
-      'title' in change && tree
-        ? await editCaches(root, tree.collections, linkIds, moved)
-        : { written: [], skipped: 0 }
-    for (const folder of caches.written) noteSidecarWrite(folder)
-    const unmoved = swept.skipped.length + tiles.failed + caches.skipped
+    const uncached =
+      'title' in change && tree ? await editCaches(root, tree.collections, linkIds, moved) : 0
+    const unmoved = swept.skipped.length + tiles.failed + uncached
     return {
       pages: [...swept.touched.keys()].filter(isMarkdownFile).map((file) => relative(root, file)),
       hosts: tiles.hosts,
