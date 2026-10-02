@@ -23,7 +23,9 @@ const B_ID = '01KVGMT8BFP350FZZXAMG1QDRB'
 const C_ID = '01KVGMT8BFP350FZZXAMG1QDRC'
 const G_ID = '01KVGMT8BFP350FZZXAMG1QDRG'
 import { openSession, closeSession } from './session'
-import { flush } from './settle'
+import { flush, settleBatch } from './settle'
+import * as readNexusModule from './readNexus'
+import * as contextsRegistry from '../Contexts/contextsRegistry'
 import { stabilize } from './treeStabilize'
 import type { AssetMap, NexusTree, ValueChange } from './tree'
 import type { Pushes } from '../Contract/bridge'
@@ -2431,6 +2433,54 @@ describe('the Contexts lock', () => {
     const fm = splitFrontmatter(await read('Notes/Daily/Gamma.md'))
     expect(fm['<Ventures>']).toEqual(['Pommora'])
     expect('<Projects>' in fm).toBe(false)
+  })
+
+  it('a walk that read the disk before a Context rename committed its registry reads it again', async () => {
+    await refreshTree(root)
+    const gamma = join(root, '.nexus', 'contexts', 'Projects', 'Gamma')
+    await mkdir(gamma)
+    await writeFile(join(gamma, '_space.json'), JSON.stringify({ id: newId() }))
+    const signal = (): { promise: Promise<void>; open: () => void } => {
+      let open = (): void => {}
+      const promise = new Promise<void>((resolve) => {
+        open = resolve
+      })
+      return { promise, open }
+    }
+    const atCommit = signal()
+    const walkRead = signal()
+    const committed = signal()
+    const commit = contextsRegistry.mutateRegistryFile
+    vi.spyOn(contextsRegistry, 'mutateRegistryFile').mockImplementation(async (r, fn) => {
+      atCommit.open()
+      await walkRead.promise
+      const out = await commit(r, fn)
+      committed.open()
+      return out
+    })
+    const walk = readNexusModule.readNexus
+    vi.spyOn(readNexusModule, 'readNexus').mockImplementationOnce(async (r) => {
+      const walked = await walk(r)
+      walkRead.open()
+      await committed.promise
+      return walked
+    })
+    const renaming = settledMutate(
+      root,
+      { op: 'renameContext', contextId: 'ctxA', newName: 'Zones' },
+      nexusDeps,
+    )
+    await atCommit.promise
+    const batch = settleBatch({ push: () => {}, watch: async () => {} }, root, [
+      { event: 'addDir', absPath: gamma },
+      { event: 'add', absPath: join(gamma, '_space.json') },
+    ])
+    expect((await renaming).ok).toBe(true)
+    await batch
+    vi.restoreAllMocks()
+    const held = heldTreeOf(root)
+    expect(held?.contexts.map((g) => g.def.title)).toEqual(['Projects', 'Zones'])
+    expect(held && stabilize(await readNexus(root), held)).toBe(held)
   })
 })
 
