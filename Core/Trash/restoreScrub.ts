@@ -5,10 +5,10 @@ import { assignedDefs } from '../Properties/assignment'
 import {
   contextWorldOf,
   reconcileGovernedRoot,
+  spaceWorldOf,
   survivingChanges,
   type GovernedWorld,
 } from '../Contexts/contextResolve'
-import { spaceWorldOf } from '../Contexts/contextWrite'
 import { type Frozen, namesGonePage } from '../Properties/propertyValue'
 import { ensurePageId } from '../Nexus/adopt'
 import { valueOr } from '../Contract/result'

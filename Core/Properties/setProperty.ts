@@ -3,12 +3,8 @@ import { liveTreeOf, mutableTarget } from '../Nexus/liveTree'
 import { readTextOrNull } from '../Files/atomicWrite'
 
 import { isMarkdownFile } from '../Paths/posix'
-import {
-  governedWorldOf,
-  repairedSpace,
-  spaceWorldOf,
-  writeSpaceSidecar,
-} from '../Contexts/contextWrite'
+import { governedWorldOf, repairedSpace, writeSpaceSidecar } from '../Contexts/contextWrite'
+import { spaceWorldOf } from '../Contexts/contextResolve'
 import { noShape, updatePageProperty } from '../Nexus/page'
 import { fail, ok, type Result } from '../Contract/result'
 import type { MutateContext } from '../Nexus/mutate'
