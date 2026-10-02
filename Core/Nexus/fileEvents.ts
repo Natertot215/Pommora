@@ -162,7 +162,7 @@ type Applied = 'ok' | 'walk' | 'later'
 
 type EventClass =
   | { kind: 'page'; rel: string }
-  | { kind: 'folder'; rel: string }
+  | { kind: 'folder'; rel: string; sidecar?: true }
   | { kind: 'gone'; rel: string; sidecar?: true }
   | { kind: 'container-meta'; dirRel: string; of: ContainerKind }
   | { kind: 'space'; dirRel: string }
@@ -249,7 +249,7 @@ export function classifyEvent(tree: NexusTree, root: string, ev: Changed): Event
       return { kind: 'walk' }
     if (gone) return { kind: 'gone', rel: dirRel, sidecar: true }
     const container = containerAt(tree, dirRel)
-    if (!container) return { kind: 'folder', rel: dirRel }
+    if (!container) return { kind: 'folder', rel: dirRel, sidecar: true }
     return name === SIDECAR_FILENAME[container.kind]
       ? { kind: 'container-meta', dirRel, of: container.kind }
       : { kind: 'walk' }
@@ -332,13 +332,14 @@ async function applyFolder(
   tree: NexusTree,
   rel: string,
   owed: Owed,
+  sidecar?: true,
 ): Promise<Applied> {
   const parent = relDirname(rel)
   if (rel === '' || containerAt(tree, rel)) return 'ok'
   // A folder whose parent the tree doesn't hold lands with the parent's read.
   if (parent !== '' && !containerAt(tree, parent)) return applyFolder(root, tree, parent, owed)
-  // Its owed stamp's write lands as an event that reads it again; a stamp that writes nothing leaves it to the next walk.
-  if (owed.stamp.some((u) => u.path === rel)) return 'ok'
+  // A sidecar's event reads the folder; any other event under a folder whose stamp is owed waits for that read or is covered by it.
+  if (!sidecar && owed.stamp.some((u) => u.path === rel)) return 'ok'
   if (!(await pathExists(join(root, rel)))) return applyPatch(root, (t) => removeNodeInTree(t, rel))
   const read = await readFolder(root, rel, tree)
   const stamps = new Set(stampable(owed, read.unreadable))
@@ -573,7 +574,7 @@ async function applyOne(root: string, ev: FileEvent, owed: Owed): Promise<Applie
       return c.sidecar && (await pathExists(join(root, c.rel))) ? 'walk' : cleared
     }
     case 'folder':
-      return applyFolder(root, tree, c.rel, owed)
+      return applyFolder(root, tree, c.rel, owed, c.sidecar)
     case 'container-meta':
       return applyContainer(root, c.dirRel, c.of, ev)
     case 'space':
@@ -604,21 +605,25 @@ async function applyOne(root: string, ev: FileEvent, owed: Owed): Promise<Applie
   }
 }
 
-// Answers the events that wait on a folder's stamp.
-export async function applyEvents(root: string, events: FileEvent[]): Promise<FileEvent[]> {
+// Answers the events that wait on a folder's stamp, one per path. A replay places events already indexed, so it neither indexes nor cascades them again.
+export async function applyEvents(
+  root: string,
+  events: FileEvent[],
+  replay = false,
+): Promise<FileEvent[]> {
   const owed = owedFor(root)
-  const later: FileEvent[] = []
+  const later = new Map<string, FileEvent>()
   for (const ev of events) {
-    const seen = await indexEvent(root, ev)
+    const seen = replay ? null : await indexEvent(root, ev)
     try {
       if (seen && ev.event !== 'move' && ev.origin === 'watched') await cascadeSeen(root, seen)
       const applied = await applyOne(root, ev, owed)
-      if (applied === 'later') later.push(ev)
+      if (applied === 'later') later.set(ev.absPath, ev)
       if (applied !== 'walk') continue
     } catch (e) {
       console.error('settle: an event could not be placed, walking:', errText(e))
     }
     owed.walk = true
   }
-  return later
+  return [...later.values()]
 }

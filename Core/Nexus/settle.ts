@@ -151,7 +151,7 @@ export async function settleBatch(
   try {
     const later = await applyEvents(root, events)
     await stampListed(root, false)
-    await applyEvents(root, later)
+    await applyEvents(root, later, true)
     await stampListed(root, false)
   } finally {
     batching = false
