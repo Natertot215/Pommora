@@ -98,13 +98,13 @@ async function readOwnSidecar(
   absSidecar: string,
   relOwner: string,
   unreadable: Unreadable[],
-  bare: boolean,
+  kind: ContainerKind | 'space',
 ): Promise<Json | null> {
   const meta = await readSidecar(absSidecar)
   if (asString(meta?.id)) return meta
   const unparsed = meta === null && (await pathExists(absSidecar))
-  if (meta !== null || unparsed || bare)
-    unreadable.push({ path: relOwner, reason: unparsed ? 'unparsed' : 'missing' })
+  if (meta !== null || unparsed || kind !== 'space')
+    unreadable.push({ path: relOwner, kind, reason: unparsed ? 'unparsed' : 'missing' })
   return null
 }
 
@@ -159,7 +159,7 @@ async function readDirectPages(absDir: string, relDir: string, walk: Walk): Prom
         (): Unread => ({ unread: 'unparsed' }),
       )
       if ('node' in read) return walk.link(read.node, read.fm)
-      walk.unreadable.push({ path: rel, reason: read.unread })
+      walk.unreadable.push({ path: rel, kind: 'page', reason: read.unread })
       return null
     }),
   )
@@ -192,7 +192,7 @@ async function readContainer(
     join(absDir, SIDECAR_FILENAME[kind]),
     relDir,
     walk.unreadable,
-    true,
+    kind,
   )
   if (!meta) return null
   const [sets, pages] = await Promise.all([
@@ -211,7 +211,7 @@ async function readRootFolder(
     return readContainer('collection', abs, name, name, walk)
   const adoptable = await resolveFolderKind(abs, 'root', { ...walk.kindCtx, adopting: true })
   if (adoptable === 'collection' && (await adoptsAsCollection(abs, name, walk.scope)))
-    walk.unreadable.push({ path: name, reason: 'missing' })
+    walk.unreadable.push({ path: name, kind: 'collection', reason: 'missing' })
   return null
 }
 
@@ -227,7 +227,7 @@ async function readSpace(
   contextId: string,
   unreadable: Unreadable[],
 ): Promise<SpaceRead | null> {
-  const sc = await readOwnSidecar(sidecar, relDir, unreadable, false)
+  const sc = await readOwnSidecar(sidecar, relDir, unreadable, 'space')
   const node = sc && spaceNodeFrom(sc, { title: name, path: relDir, contextId })
   return node ? { node, sc } : null
 }
@@ -325,7 +325,7 @@ async function walkNexus(root: string): Promise<NexusTree> {
   const unreadable: Unreadable[] = []
   // An unusable registry blanks the whole Contexts layer for the session. Absent stays silent; present names the registry so the record reads the blank layer as unreadable, never as mass deletion.
   if (!ctxRegistry && (await pathExists(contextsRegistryFile(root))))
-    unreadable.push({ path: CONTEXTS_REGISTRY_REL, reason: 'unparsed' })
+    unreadable.push({ path: CONTEXTS_REGISTRY_REL, kind: 'registry', reason: 'unparsed' })
   const contexts = ctxRegistry
     ? await readContextGroups(root, ctxRegistry, order.spaces, unreadable)
     : []

@@ -1,4 +1,4 @@
-import { basename, isMarkdownFile, join } from '../Paths/posix'
+import { basename, join } from '../Paths/posix'
 import { fault, ok, type Result } from '../Contract/result'
 import { machine } from '../Platform/machine'
 import { isContentFile, listEntries } from '../Files/walk'
@@ -31,7 +31,7 @@ import {
   type FolderKindContext,
 } from './folderKind'
 import { sidecarPath } from '../Paths/paths'
-import { AGENDA_FOLDERS, agendaKind, CONTEXTS_DIR_REL, SIDECAR_FILENAME } from '../Paths/nexusPaths'
+import { AGENDA_FOLDERS, agendaKind, SIDECAR_FILENAME } from '../Paths/nexusPaths'
 
 async function reHomeRegistered(
   absDir: string,
@@ -124,19 +124,12 @@ export async function stampMissing(
   listed: readonly Unreadable[] = [],
 ): Promise<boolean> {
   let landed = false
-  for (const { path, reason } of listed) {
-    if (reason !== 'missing') continue
+  for (const { path, kind, reason } of listed) {
+    if (reason !== 'missing' || kind === 'registry') continue
     const abs = join(root, path)
-    if (isMarkdownFile(path)) {
+    if (kind === 'page')
       landed = (await stampPage(abs, 'page').catch(() => null)) !== null || landed
-      continue
-    }
-    const kind = path.startsWith(`${CONTEXTS_DIR_REL}/`)
-      ? 'space'
-      : path.includes('/')
-        ? 'set'
-        : 'collection'
-    landed = (await stampFolder(abs, kind).catch(() => false)) || landed
+    else landed = (await stampFolder(abs, kind).catch(() => false)) || landed
   }
   return landed
 }
