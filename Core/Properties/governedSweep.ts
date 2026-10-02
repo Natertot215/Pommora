@@ -63,9 +63,7 @@ export async function sweepGovernedRoots(
   const guarded = (file: string, body: () => Promise<void>): Promise<void> =>
     machine()
       .lock(file, body)
-      .catch(() => {
-        if (!out.touched.has(file)) out.skipped.push(file)
-      })
+      .catch(() => void out.skipped.push(file))
 
   for (const file of files) {
     await guarded(file, async () => {
