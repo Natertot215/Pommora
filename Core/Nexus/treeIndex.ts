@@ -5,7 +5,7 @@ import type { BannerOwnerKind } from './mutateRequest'
 import { navKey, type NavRef, type SelectTarget, toNavRef } from '../Navigation/navRef'
 import { MATRIX_ICON, MATRIX_TITLE } from '../Matrix/matrixKind'
 import type { CollectionNode, NexusTree, PageNode, SetNode, SpaceNode } from './tree'
-import { withheldIn } from './tree'
+import { entityMemo, withheldIn } from './tree'
 import { findContainerWhere } from './treePatch'
 import { iconNameOr } from '@pommora/uix/Symbols'
 import { DEFAULT_NEXUS_ICON, entityIcon } from '../Assets/entityIconPolicy'
@@ -45,23 +45,17 @@ interface TreeIndex {
   spaceLinks?: Map<string, Record<string, string[]>>
 }
 
-const byCollections = new WeakMap<NexusTree['collections'], { of: NexusTree; ix: TreeIndex }>()
-
-const sameInputs = (a: NexusTree, b: NexusTree): boolean =>
-  a.contexts === b.contexts &&
-  a.unreadable === b.unreadable &&
-  a.nexus.name === b.nexus.name &&
-  a.config.profileIcon === b.config.profileIcon &&
-  a.config.pageMetadata === b.config.pageMetadata &&
-  a.config.personalization.defaultIcons === b.config.personalization.defaultIcons
-
-function indexFor(tree: NexusTree): TreeIndex {
-  const held = byCollections.get(tree.collections)
-  if (held && sameInputs(held.of, tree)) return held.ix
-  const ix: TreeIndex = { nodes: walk(tree) }
-  byCollections.set(tree.collections, { of: tree, ix })
-  return ix
-}
+const indexFor = entityMemo(
+  [
+    (t) => t.contexts,
+    (t) => t.unreadable,
+    (t) => t.nexus.name,
+    (t) => t.config.profileIcon,
+    (t) => t.config.pageMetadata,
+    (t) => t.config.personalization.defaultIcons,
+  ],
+  (tree): TreeIndex => ({ nodes: walk(tree) }),
+)
 
 function walk(tree: NexusTree): NodeRecord[] {
   const nodes: NodeRecord[] = []
