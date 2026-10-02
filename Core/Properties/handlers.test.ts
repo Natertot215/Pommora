@@ -194,7 +194,7 @@ describe('the property channels', () => {
     expect(await readSchemaJournal(root)).toEqual(owed)
   })
 
-  it('an option removal that finds another operation owed in the journal answers its own record', async () => {
+  it('an option removal that finds another operation owed in the journal answers its line with no record', async () => {
     const owed = { op: 'rename' as const, id: 'prop_other', from: 'A', to: 'B' }
     await writeSchemaJournal(root, owed)
     const setFile = sidecarPath(surfaces.set, 'set')
@@ -202,8 +202,33 @@ describe('the property channels', () => {
     await mkdir(setFile)
     const r = await propertiesHandlers['property:removeOption'](ctx, propId, 'Done')
     expect(r.ok && r.value.cascade.warning).toBe(unsweptLine(1))
-    expect(r.ok && r.value.owed).toEqual({ op: 'option-remove', id: propId, value: 'Done' })
+    expect(r.ok && r.value.owed).toBeUndefined()
     expect(await readSchemaJournal(root)).toEqual(owed)
+  })
+
+  it('an option removal’s record replayed after the option is removed and added again leaves the option and its values', async () => {
+    const setFile = sidecarPath(surfaces.set, 'set')
+    const held = await readFile(setFile, 'utf8')
+    await rm(setFile)
+    await mkdir(setFile)
+    const r = await propertiesHandlers['property:removeOption'](ctx, propId, 'Done')
+    if (!r.ok || !r.value.owed) throw new Error('setup failed')
+    const record = r.value.owed
+    await rm(setFile, { recursive: true })
+    await writeFile(setFile, held)
+    await refreshTree(root)
+    expect((await propertiesHandlers['property:removeOption'](ctx, propId, 'Done')).ok).toBe(true)
+    const add = { op: 'add' as const, groupId: 'select', title: 'Done' }
+    expect((await propertiesHandlers['property:editOption'](ctx, propId, add)).ok).toBe(true)
+    const page = `${col}/A.md`
+    const def = (await readRegistry(root)).defs[propId]
+    await updatePageProperty(page, def, { kind: 'select', value: 'Done' })
+    const before = await readFile(page, 'utf8')
+    expect(await propertiesHandlers['property:replay'](ctx, record)).toEqual(ok(null))
+    expect(await readFile(page, 'utf8')).toBe(before)
+    expect((await readRegistry(root)).defs[propId]?.select_options).toContainEqual({
+      value: 'Done',
+    })
   })
 
   it('a removal whose drop fails still lands the Set it wrote in the held tree', async () => {
@@ -217,7 +242,7 @@ describe('the property channels', () => {
   })
 })
 
-describe('a schema op answers the record its replay owes, whether or not the journal took it', () => {
+describe('a schema op started while another operation’s record holds the journal', () => {
   const other = { op: 'rename' as const, id: 'prop_other', from: 'A', to: 'B' }
   const pageA = (): string => `${col}/A.md`
   const unreadable = async <T>(fn: () => T): Promise<Awaited<T>> => {
@@ -245,15 +270,12 @@ describe('a schema op answers the record its replay owes, whether or not the jou
     expect(await readSchemaJournal(root)).toEqual(other)
   })
 
-  it.skipIf(noModeBits)('an option removal', async () => {
-    const record = { op: 'option-remove', id: propId, value: 'Done' }
+  it.skipIf(noModeBits)('an option removal answers its line with no record', async () => {
     const r = await unreadable(() =>
       propertiesHandlers['property:removeOption'](ctx, propId, 'Done'),
     )
     expect(r.ok && r.value.cascade.warning).toBe(unsweptLine(1))
-    expect(r.ok && r.value.owed).toEqual(record)
-    expect(await propertiesHandlers['property:replay'](ctx, record)).toEqual(ok(null))
-    expect(await fm()).not.toContain('Stage')
+    expect(r.ok && r.value.owed).toBeUndefined()
     expect(await readSchemaJournal(root)).toEqual(other)
   })
 
