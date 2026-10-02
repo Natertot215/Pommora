@@ -1,4 +1,4 @@
-// The one place a change to the tree, pages, values, tiles, or assets reaches the window. The app's own writes land here as events while they happen; a write's gate and the watcher's batch then stamp what their events listed missing, and settle: the walk the events owed, whose own listing of a folder missing its ID is stamped and settled in turn, and one push of what moved.
+// The one place a change to the tree, pages, values, tiles, or assets reaches the window. The app's own writes land here as events while they happen; a write's gate and the watcher's batch then stamp what their events listed missing, and settle: the walk the events owed, whose own listing of what is missing its ID is stamped and settled in turn, and one push of what moved.
 
 import { relDirname, relative } from '../Paths/posix'
 import { escapes } from '../Paths/pathSafety'
@@ -8,7 +8,7 @@ import { type FileEvent, setOwnTap } from '../Files/writeEcho'
 import { getHeldAssetMap, refreshAssetMap } from '../Assets/assetMap'
 import { seedContentIndex } from '../Index/indexSeed'
 import { dropTileHeadingLinks } from '../Tiles/tilesFile'
-import { stampMissing } from './adopt'
+import { stampMissing, stillListed } from './adopt'
 import { applyEvents, indexEvent, nothingOwed, owedFor } from './fileEvents'
 import { diskMoved, dropLiveTree, heldTreeOf, refreshAfterWrite } from './liveTree'
 import { adopting, sessionRoot } from './session'
@@ -84,9 +84,8 @@ async function walkDue(root: string): Promise<void> {
     const assets = getHeldAssetMap(root)
     try {
       const walked = await refreshAfterWrite(root)
-      // A page a walk lists may still be mid-write by the tool that made it, and only its own settled event shows the write finished, so only folders are stamped here: a folder's stamp writes a sidecar no other writer holds.
       due.stamp.push(
-        ...(walked.unreadable ?? []).filter((u) => u.reason === 'missing' && u.kind !== 'page'),
+        ...(await stillListed(root, walked.unreadable)).filter((u) => u.reason === 'missing'),
       )
       // The map is patch-only, so the fallback walk is where the listing is taken again.
       if (assets && (await refreshAssetMap(root)) !== assets) due.assets = true

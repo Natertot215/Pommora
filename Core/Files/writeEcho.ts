@@ -6,6 +6,8 @@ import { machine } from '../Platform/machine'
 type Echo = { at: number; hash?: string }
 const recent = new Map<string, Echo>()
 const WINDOW_MS = 2000
+// How long a file stays unchanged before the watcher reports it, and before a listed page missing its ID is stamped.
+export const SETTLE_MS = 200
 // Descendant (prefix) suppression gets a tighter window: a folder rename's child echoes all land within chokidar's settle pipeline (~400ms), while every prefix-suppressed millisecond is also a blind spot for a genuine EXTERNAL write into that folder.
 const PREFIX_WINDOW_MS = 800
 
