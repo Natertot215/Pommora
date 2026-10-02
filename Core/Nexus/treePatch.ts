@@ -1,4 +1,4 @@
-// The tree's path-addressed steps. The host applies them as file events land; the window applies the same ones to paint a drag ahead of its write. Null means the step can't resolve against the given tree, and the host walks.
+// The tree's path-addressed steps, and the order and filters of its unreadable list. The host applies the steps as file events land; the window applies the same ones to paint a drag ahead of its write. Null means the step can't resolve against the given tree, and the host walks.
 
 import { stabilize } from './treeStabilize'
 import type {
