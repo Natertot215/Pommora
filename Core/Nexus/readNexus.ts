@@ -111,13 +111,13 @@ async function readOwnSidecar(
 const readConfig = (absPath: string): Promise<Record<string, unknown>> =>
   readAppFile(absPath).then((v) => v ?? {})
 
-export interface PageRecord {
+interface PageRecord {
   node: PageNode
   fm: Json
   mtimeMs: number | null
 }
 
-export interface Unread {
+interface Unread {
   unread: UnreadReason
 }
 

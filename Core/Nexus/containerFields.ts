@@ -21,7 +21,7 @@ function parseViews(raw: unknown): SavedView[] | undefined {
   return out.length > 0 ? out : undefined
 }
 
-export function cachedIds(meta: Record<string, unknown>): string[] | undefined {
+function cachedIds(meta: Record<string, unknown>): string[] | undefined {
   const ids = isPlainObject(meta.property_cache) ? Object.keys(meta.property_cache) : []
   return ids.length ? ids : undefined
 }
