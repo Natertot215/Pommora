@@ -19,6 +19,7 @@ import { applyEvents, oweCascade, owedFor, oweWalk } from './fileEvents'
 import { settleNow, recordHanded, settleBatch } from './settle'
 import type { NexusChange, NexusTree } from './tree'
 import { applyDelta } from './treeDelta'
+import * as session from './session'
 import { closeSession, openSession, whileAdopting } from './session'
 import { writeExcludedFolders } from '../Settings/settings'
 
@@ -351,6 +352,73 @@ describe('the settle', () => {
     ])
     expect(held?.unreadable).toBeUndefined()
     expect(held && stabilize(await readNexus(root), held)).toBe(held)
+  })
+
+  it('a note in an Agenda folder nested in a folder that just appeared without a sidecar is left as it is', async () => {
+    await mkdir(abs('Stuff', 'Tasks'), { recursive: true })
+    await writeFile(abs('Stuff', 'Tasks', '_taskconfig.json'), JSON.stringify({ id: ULID_D }))
+    await writeFile(abs('Stuff', 'Tasks', 't.md'), 'task\n')
+    await settleBatch(pusher, root, [
+      ev('addDir', 'Stuff'),
+      ev('addDir', 'Stuff', 'Tasks'),
+      ev('add', 'Stuff', 'Tasks', '_taskconfig.json'),
+      ev('add', 'Stuff', 'Tasks', 't.md'),
+    ])
+    expect(await readFile(abs('Stuff', 'Tasks', 't.md'), 'utf8')).toBe('task\n')
+  })
+
+  it('a note that left before its batch applied, beside a folder that just appeared without a sidecar, owes no walk', async () => {
+    await mkdir(abs('A'))
+    await writeFile(abs('A', 'x.md'), 'x\n')
+    const walk = vi.spyOn(liveTree, 'refreshAfterWrite')
+    await settleBatch(pusher, root, [
+      ev('addDir', 'A'),
+      ev('add', 'A', 'x.md'),
+      ev('add', 'A', 'Gone.md'),
+    ])
+    expect(walk).not.toHaveBeenCalled()
+    expect(
+      heldTreeOf(root)
+        ?.collections.find((c) => c.path === 'A')
+        ?.pages.map((p) => p.title),
+    ).toEqual(['x'])
+  })
+
+  it('a settle landing while a stamp pass is under way keeps the folders newly in reach for the pass', async () => {
+    await mkdir(abs('Archive', 'Sub'), { recursive: true })
+    await writeFile(abs('Archive', 'X.md'), 'x\n')
+    await writeFile(abs('Archive', 'Sub', 'Q.md'), 'q\n')
+    await writeExcludedFolders(root, ['Archive'])
+    await settleNow(pusher, root)
+    const read = readNexusModule.readFolder
+    let fired = false
+    vi.spyOn(readNexusModule, 'readFolder').mockImplementation(async (r, rel, tree) => {
+      if (rel === 'Archive/Sub' && !fired) {
+        fired = true
+        await settleNow(pusher, root)
+      }
+      return read(r, rel, tree)
+    })
+    await writeExcludedFolders(root, [])
+    await settleNow(pusher, root)
+    expect(fired).toBe(true)
+    const text = await readFile(abs('Archive', 'Sub', 'Q.md'), 'utf8')
+    const held = heldTreeOf(root)
+    expect(
+      held?.collections.find((c) => c.path === 'Archive')?.sets[0]?.pages.map((p) => p.id),
+    ).toEqual([splitFrontmatter(text)[ID_KEY]])
+    expect(held?.unreadable).toBeUndefined()
+  })
+
+  it('a walk owed while a settle is past its walk is paid by the next settle', async () => {
+    await writeFile(abs('Notes', 'B.md'), `---\nID: ${ULID_B}\n---\n\nbeta\n`)
+    vi.spyOn(session, 'adopting').mockImplementationOnce(() => {
+      oweWalk(root)
+      return false
+    })
+    await settleNow(pusher, root)
+    await settleNow(pusher, root)
+    expect(heldTreeOf(root)?.collections[0]?.pages.map((p) => p.id)).toEqual([ULID_A, ULID_B])
   })
 
   it('a note that carries its ID, arriving with a folder that has no sidecar, keeps every byte of a rewrite a later walk finds half written', async () => {

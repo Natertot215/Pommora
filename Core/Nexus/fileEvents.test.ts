@@ -11,7 +11,7 @@ import * as readNexusModule from './readNexus'
 import { readNexus } from './readNexus'
 import { getHeldAssetMap, liveAssetMap } from '../Assets/assetMap'
 import { applyEvents, classifyEvent, owedFor } from './fileEvents'
-import { settleNow } from './settle'
+import { settleBatch, settleNow } from './settle'
 import { handleMutate } from './mutate'
 import type { TrashDeps } from '../Trash/bundle'
 import type { Changed, FileEvent } from '../Files/writeEcho'
@@ -301,16 +301,14 @@ describe('applyEvents — must agree with the walk', () => {
     const names = Array.from({ length: 400 }, (_, i) => `n${i}.md`)
     for (const name of names) await writeFile(abs('Notes', 'Import', name), `${name}\n`)
     const readFolder = vi.spyOn(readNexusModule, 'readFolder')
-    await applyEvents(root, [
+    const later = await applyEvents(root, [
       ev('addDir', 'Notes', 'Import'),
       ...names.map((name) => ev('add', 'Notes', 'Import', name)),
     ])
     expect(readFolder).toHaveBeenCalledTimes(1)
-    expect(owedFor(root).stamp).toEqual([
-      { path: 'Notes/Import', kind: 'set', reason: 'missing' },
-      ...names.map((name) => ({ path: `Notes/Import/${name}`, kind: 'page', reason: 'missing' })),
-    ])
-    await settleNow(QUIET, root)
+    expect(owedFor(root).stamp).toEqual([{ path: 'Notes/Import', kind: 'set', reason: 'missing' }])
+    expect(later).toHaveLength(names.length)
+    await settleBatch(QUIET, root, later)
     expect(held().collections[0]?.sets[0]?.pages).toHaveLength(400)
     await agrees()
   })
@@ -322,10 +320,7 @@ describe('the parity cases', () => {
     await refreshTree(root)
     walk = vi.spyOn(liveTree, 'refreshAfterWrite')
   })
-  const settled = async (events: FileEvent[]): Promise<void> => {
-    await applyEvents(root, events)
-    await settleNow(QUIET, root)
-  }
+  const settled = (events: FileEvent[]): Promise<void> => settleBatch(QUIET, root, events)
 
   it('a folder of notes added outside the app lands without a walk', async () => {
     await mkdir(abs('Notes', 'Batch'))
