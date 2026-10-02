@@ -125,7 +125,7 @@ export async function stampMissing(
 ): Promise<boolean> {
   let landed = false
   for (const { path, kind, reason } of listed) {
-    if (reason !== 'missing' || kind === 'registry') continue
+    if (reason !== 'missing') continue
     const abs = join(root, path)
     if (kind === 'page')
       landed = (await stampPage(abs, 'page').catch(() => null)) !== null || landed
