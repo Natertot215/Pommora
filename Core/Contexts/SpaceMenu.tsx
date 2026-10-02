@@ -18,11 +18,11 @@ import { InlineEditHeader } from '@pommora/uix/Menus/InlineEditHeader'
 import { spaceNodeOf } from '../Nexus/treeIndex'
 import { PropertyPanel } from '../Properties/PropertyPanel'
 import { useSession } from '../Session/store'
+import { personalizationOf } from '../Session/configSlice'
 import { EDITABLE_TARGETS } from '@pommora/uix/Interactions/shared'
 import { popMenu } from '../Actions/menuActions'
 import { useExperimental } from '../Settings/experimental'
 import { type TitleMenuAction, titleMenuItems } from '../Actions/identityMenus'
-import { personalizationOf } from '../Session/configSlice'
 
 export function SpaceMenu(): React.JSX.Element | null {
   const selection = useSession((st) => st.selection)

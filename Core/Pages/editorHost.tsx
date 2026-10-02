@@ -9,6 +9,7 @@ import { type EditorHost, editorSettingsOf } from '../MarkdownPM/api'
 import type { ConnectionsApi } from '../MarkdownPM/Links/connectionsApi'
 import type { WarmSeam } from '../MarkdownPM/warmSeam'
 import { citationsVisible, pageMetaOf, useSession } from '../Session/store'
+import { commandsOf, personalizationOf } from '../Session/configSlice'
 import { pagesByIdOf } from '../Nexus/treeIndex'
 import { fetchPageDetail, knownBody } from '../Session/pageDetailCache'
 import { warmSeamOf } from '../Session/warmCache'
@@ -26,7 +27,6 @@ import { windowGeometry } from '../Interface/Windows/useWindowGeometry'
 import { openWebLink } from '../Web/openWebLink'
 import { forgetAlias, rememberAlias } from '../Connections/aliasMemory'
 import { useLatest } from '@pommora/uix/Utilities/stableApi'
-import { commandsOf, personalizationOf } from '../Session/configSlice'
 
 interface EditorHostOptions {
   pageId?: string

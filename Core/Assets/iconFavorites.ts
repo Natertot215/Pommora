@@ -1,9 +1,9 @@
 import { useCallback } from 'react'
 import { useSession } from '../Session/store'
+import { personalizationOf } from '../Session/configSlice'
 import type { IconFavorites } from '@pommora/uix/Pickers/IconPicker'
 import { popMenu } from '../Actions/menuActions'
 import { iconFavoriteMenuItems } from '../Actions/identityMenus'
-import { personalizationOf } from '../Session/configSlice'
 
 const NONE: string[] = []
 

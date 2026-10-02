@@ -1,6 +1,7 @@
 import { useRef, useState } from 'react'
 import { cx } from '@pommora/uix/Utilities/cx'
 import { pageMetaOf, useSession, useSetting } from '../Session/store'
+import { personalizationOf } from '../Session/configSlice'
 import { useAssetUrl } from '../Assets/useAssetUrl'
 import { IconChoice } from '../Assets/IconChoice'
 import { entityIcon } from '../Assets/entityIconPolicy'
@@ -10,7 +11,6 @@ import { DetailTitleHeader } from '../Interface/Header/DetailTitleHeader'
 import './page-header.css'
 import { popMenu } from '../Actions/menuActions'
 import { titleMenuItems } from '../Actions/identityMenus'
-import { personalizationOf } from '../Session/configSlice'
 
 interface HeaderPage {
   id: string

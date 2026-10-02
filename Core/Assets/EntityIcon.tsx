@@ -4,11 +4,11 @@ import { entityIcon } from './entityIconPolicy'
 import { ICON_PX, type IconSize } from '@pommora/uix/Theme/theme-vars.css'
 import { cx } from '@pommora/uix/Utilities/cx'
 import { useSession } from '../Session/store'
+import { personalizationOf } from '../Session/configSlice'
 import { useAssetUrl } from './useAssetUrl'
 import type { ResolvedNav } from '../Navigation/navResolve'
 import type { EntityIconKind } from '../Settings/personalization'
 import * as assetImage from './asset-image.css'
-import { personalizationOf } from '../Session/configSlice'
 
 type EntityIconProps =
   | { item: ResolvedNav; kind?: undefined; icon?: undefined; size?: IconSize; className?: string }

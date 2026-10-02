@@ -39,6 +39,7 @@ import { buildIndex, type Index } from './sidebarDndModel'
 import { AgendaMode } from './AgendaMode'
 import { sidebarModeOf } from '../../Settings/experimental'
 import { pageMetaOf, useSession } from '../../Session/store'
+import { personalizationOf } from '../../Session/configSlice'
 import { glanceShown, hoverGlance, leaveGlance } from '../Glance/glanceAction'
 import { pageMoveContext } from '../Menus/pageMenuActions'
 import { isOpenInTabs } from '../../Navigation/tabsModel'
@@ -50,7 +51,6 @@ import { Disclosure, signalPeek } from './Disclosure'
 import { popMenu } from '../../Actions/menuActions'
 import { createNamed, newPageAdjacent, newSpaceAdjacent } from '../../Actions/createActions'
 import { useLatest } from '@pommora/uix/Utilities/stableApi'
-import { personalizationOf } from '../../Session/configSlice'
 
 const NEW_COLLECTION: Creator = {
   label: 'New Collection',

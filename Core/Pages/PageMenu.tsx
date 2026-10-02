@@ -2,6 +2,7 @@ import { useRef, useState } from 'react'
 import { Icon } from '@pommora/uix/Symbols'
 import { entityIcon } from '../Assets/entityIconPolicy'
 import { pageMetaOf, shownDetail, useSession } from '../Session/store'
+import { personalizationOf } from '../Session/configSlice'
 import {
   FooterIconButton,
   FooterLockButton,
@@ -20,7 +21,6 @@ import { runPageAction } from '../Interface/Menus/pageMenuActions'
 import { popMenu } from '../Actions/menuActions'
 import { lockLabel } from '../Actions/toggleLabels'
 import { useExperimental } from '../Settings/experimental'
-import { personalizationOf } from '../Session/configSlice'
 
 const FOOTER_ROWS = joinGroups([
   [RENAME_ROW],

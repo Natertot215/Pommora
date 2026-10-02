@@ -9,6 +9,7 @@ import { NavTrail } from '@pommora/uix/Elements/NavTrail'
 import { trailOf, findCollection, findSet } from '../../Nexus/treeIndex'
 import { ICON } from '@pommora/uix/Menus/frames.css'
 import { useSession } from '../../Session/store'
+import { personalizationOf } from '../../Session/configSlice'
 import { owningCollection } from '../../Nexus/treePatch'
 import { viewGlyph } from '../viewIcon'
 import { PropertyFrame } from '../../Properties/Schema/PropertyFrame'
@@ -37,7 +38,6 @@ import { useSaveView } from '../viewWrite'
 import { useActiveView } from '../Host/useActiveView'
 import { lockLabel } from '../../Actions/toggleLabels'
 import { dialer } from '../../Platform/dialer'
-import { personalizationOf } from '../../Session/configSlice'
 
 type FrameId = 'configuration' | 'properties' | 'visibility' | ViewRowId
 

@@ -4,6 +4,7 @@ import type { HeldKind } from '../../Nexus/entities'
 import { DEFAULT_NEXUS_ICON, entityIcon } from '../../Assets/entityIconPolicy'
 import { IconChoice } from '../../Assets/IconChoice'
 import { useSession } from '../../Session/store'
+import { personalizationOf } from '../../Session/configSlice'
 import { useContentHost } from '../contentHost'
 import { useAssetUrl } from '../../Assets/useAssetUrl'
 import { AssetImage } from '../../Assets/AssetImage'
@@ -17,7 +18,6 @@ import { popMenu } from '../../Actions/menuActions'
 import { nexusTitleMenuItems, titleMenuItems, withSearchRow } from '../../Actions/identityMenus'
 import { NexusIconEditors } from '../../Assets/NexusIconEditors'
 import { useNexusIcon } from '../../Assets/useNexusIcon'
-import { personalizationOf } from '../../Session/configSlice'
 
 /** The one banner: its image, menu, crop editor, and window seat; the caller brings the title and what stands when there is no banner. */
 export function Banner({

@@ -43,6 +43,7 @@ import { hostedGutter } from '@pommora/uix/Menus/menu-surface.css'
 import { ViewTileScopeProvider } from '../../Views/ViewTileScope'
 import { inertTile, type MutateEntry } from '../tileKinds'
 import { useSession } from '../../Session/store'
+import { personalizationOf } from '../../Session/configSlice'
 import { cx } from '@pommora/uix/Utilities/cx'
 import { labelSlot, labelSlotHidden, labelText } from '@pommora/uix/Buttons/button-base.css'
 import { titleActionFadeHidden } from '@pommora/uix/Animations/animations.css'
@@ -64,7 +65,6 @@ import { viewsLabel } from '../../Actions/toggleLabels'
 import { embedAreaMenuItems, embedTitleMenuItems } from '../../Actions/viewMenus'
 import { viewRowMenuItems } from '../../Actions/viewRowMenu'
 import { useLatest, useStableApi } from '@pommora/uix/Utilities/stableApi'
-import { personalizationOf } from '../../Session/configSlice'
 
 function coerceEmbeddedView(raw: unknown, schema: PropertyDefinition[], id: string): SavedView {
   const r = savedView.safeParse(raw ?? {})
