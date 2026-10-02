@@ -187,17 +187,46 @@ describe('openNexusSequence', () => {
     expect(heldTreeOf(root)?.unreadable).toBeUndefined()
   })
 
-  it('an open with ID-less pages walks the Nexus once', async () => {
+  it('an open that stamps nothing reads once, and one that stamps reads again and holds every page it stamped', async () => {
+    const reads = vi.spyOn(readNexusModule, 'readNexus')
+    await openNexusSequence(ctx, root, true)
+    expect(reads).toHaveBeenCalledTimes(1)
+    closeSession()
+    dropLiveTree()
     await writeFile(join(root, 'Library', 'Bare.md'), 'bare')
     await mkdir(join(root, 'Inbox'))
     await writeFile(join(root, 'Inbox', 'One.md'), 'one')
-    const walks = vi.spyOn(readNexusModule, 'readNexus')
+    reads.mockClear()
     await openNexusSequence(ctx, root, true)
-    expect(walks).toHaveBeenCalledTimes(1)
-    vi.restoreAllMocks()
+    expect(reads).toHaveBeenCalledTimes(2)
+    reads.mockRestore()
     const held = heldTreeOf(root)
     expect(held?.unreadable).toBeUndefined()
+    expect(held?.collections.flatMap((c) => c.pages.map((p) => p.title)).sort()).toEqual([
+      'Bare',
+      'Notes',
+      'One',
+    ])
     expect(held && stabilize(await readNexus(root), held)).toBe(held)
+  })
+
+  it('an open stamps a Space missing its ID before it holds the tree, so a page tagged with it holds its link', async () => {
+    const home = join(root, '.nexus', 'contexts', 'Areas', 'Home')
+    await mkdir(home, { recursive: true })
+    await writeFile(join(home, '_space.json'), '{}')
+    await writeFile(
+      join(root, 'Library', 'Tagged.md'),
+      `---\nID: ${THIRD_PAGE}\n<Areas>:\n  - Home\n---\nbody`,
+    )
+    await openNexusSequence(ctx, root, true)
+    const held = heldTreeOf(root)
+    if (!held) throw new Error('no tree held')
+    const areas = held.contexts.find((g) => g.def.title === 'Areas')
+    const space = areas?.spaces.find((s) => s.title === 'Home')
+    if (!areas || !space) throw new Error('no Home Space held')
+    const tagged = held.collections[0]?.pages.find((p) => p.id === THIRD_PAGE)
+    expect(tagged?.contextValues).toEqual({ [areas.def.id]: [space.id] })
+    expect(stabilize(await readNexus(root), held)).toBe(held)
   })
 
   it('a reopen that re-mints a duplicated page, Set, and Space holds no shared ID and agrees with a fresh read', async () => {

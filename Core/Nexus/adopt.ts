@@ -136,13 +136,16 @@ export async function stillListed(
 export async function stampMissing(
   root: string,
   listed: readonly Unreadable[] = [],
-): Promise<void> {
+): Promise<boolean> {
+  let landed = false
   for (const { path, kind, reason } of listed) {
     if (reason !== 'missing') continue
     const abs = join(root, path)
-    if (kind === 'page') await stampPage(abs, 'page').catch(() => {})
-    else await stampFolder(abs, kind).catch(() => {})
+    if (kind === 'page')
+      landed = (await stampPage(abs, 'page').catch(() => null)) !== null || landed
+    else landed = (await stampFolder(abs, kind).catch(() => false)) || landed
   }
+  return landed
 }
 
 async function stampTree(
