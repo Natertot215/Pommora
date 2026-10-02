@@ -48,7 +48,7 @@ import { dropTileHeadingLinks, tilesLinkHeading } from '../Tiles/tilesFile'
 import {
   contextLinker,
   pageRecordOf,
-  type PageRead,
+  type PageRecord,
   readCropLeaves,
   readFolder,
   readHomepageLeaves,
@@ -368,7 +368,7 @@ async function applyPage(
   }
   const abs = join(root, rel)
   const text = textOf(ev)
-  let read: PageRead
+  let read: PageRecord
   try {
     read = text === undefined ? await readPageRecord(abs, rel) : pageRecordOf(text, rel, null)
   } catch {

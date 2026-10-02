@@ -16,7 +16,7 @@ import { splitFrontmatter } from '../Files/pageFile'
 import { ID_KEY } from './identityMark'
 import { stabilize } from './treeStabilize'
 import { applyEvents, oweCascade, owedFor, oweWalk } from './fileEvents'
-import { settleNow, handed, settleBatch } from './settle'
+import { settleNow, recordHanded, settleBatch } from './settle'
 import type { NexusChange, NexusTree } from './tree'
 import { applyDelta } from './treeDelta'
 import { closeSession, openSession, whileAdopting } from './session'
@@ -65,7 +65,7 @@ beforeEach(async () => {
   await writeFile(abs('Notes', '_pagecollection.json'), JSON.stringify({ id: 'c1' }))
   await writeFile(abs('Notes', 'A.md'), `---\nID: ${ULID_A}\n---\n\nalpha\n`)
   await openSession(root)
-  shown = handed(await refreshTree(root)).tree
+  shown = recordHanded(await refreshTree(root)).tree
 })
 afterEach(async () => {
   dropLiveTree()
@@ -138,7 +138,7 @@ describe('what a settle pushes for a batch', () => {
     await mkdir(abs('Notes', 'Deep'))
     await writeFile(abs('Notes', 'Deep', '_pageset.json'), JSON.stringify({ id: ULID_C }))
     await writeFile(abs('Notes', 'Deep', 'D.md'), `---\nID: ${ULID_D}\n---\n\ndelta\n`)
-    handed(await refreshTree(root))
+    recordHanded(await refreshTree(root))
     await applyEvents(root, [
       ev('change', 'Notes', 'A.md'),
       ev('change', 'Notes', 'Deep', 'D.md'),
@@ -185,7 +185,10 @@ describe('what a settle pushes for a batch', () => {
   })
 
   it('sends the whole tree, under the next version, to a window that holds none of this root', async () => {
-    const { version } = handed({ ...shown, nexus: { ...shown.nexus, rootPath: '/elsewhere' } })
+    const { version } = recordHanded({
+      ...shown,
+      nexus: { ...shown.nexus, rootPath: '/elsewhere' },
+    })
     await writeFile(abs('Notes', 'B.md'), `---\nID: ${ULID_B}\n---\n\nbeta\n`)
     await applyEvents(root, [ev('add', 'Notes', 'B.md')])
     await settleNow(pusher, root)
@@ -341,7 +344,7 @@ describe('the settle', () => {
   it('un-excluding a folder that was adopted before holds the notes added while it was excluded', async () => {
     await mkdir(abs('Archive'))
     await writeFile(abs('Archive', '_pagecollection.json'), JSON.stringify({ id: ULID_C }))
-    handed(await refreshTree(root))
+    recordHanded(await refreshTree(root))
     await writeExcludedFolders(root, ['Archive'])
     await settleNow(pusher, root)
     await writeFile(abs('Archive', 'New.md'), 'new\n')

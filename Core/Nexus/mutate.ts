@@ -57,7 +57,7 @@ export async function handleMutate(
   }
 }
 
-// A rename's Try Again is the request again with the title it left, since a rename the journal slot refused has no record to replay; a property cascade's replays its record through `property:replay`.
+// A rename's Try Again is the request again with the title it left, whether the journal took the rename or its slot refused it, since a refused one has no record to replay and a later rename displaces a taken one's; a property cascade's replays its record through `property:replay`.
 function renamed(
   req: Extract<MutateRequest, { op: 'renameContext' | 'renameSpace' }>,
   r: Result<Unswept | null>,
@@ -70,7 +70,7 @@ function renamed(
 
 async function dispatch(ctx: MutateContext, req: MutateRequest): Promise<MutateReply> {
   const { root, deps } = ctx
-  // renameContext, renameSpace, createSpace, setContext, setSpaceColor, setSpaceRowOrder, a Space's setProperty, restore, a Space or Context delete, and a create that seeds a Context run under the Contexts folder's one lock until the walk each owed is paid, so a tag or value written mid-rename lands under the new key. A page's setProperty runs outside it, since it resolves its world inside the page's own lock, which every sweep takes too. A write that names a Space by a path the rename has moved answers the refusal.
+  // A write sent here changes which Contexts and Spaces exist or what they're titled, or resolves a Space by title or path to write a tag or the Space's sidecar, so it holds the Contexts folder's one lock until the walk it owed is paid and resolves against a world no rename or delete is moving: a tag or Space value written mid-rename lands under the new key, and one naming a Space by a path the rename moved answers the refusal. A page's value write runs outside it, since it takes the page's own lock, which every sweep takes too, and never shrinks or drops a key it can't resolve (`preservedChanges` in `contextResolve.ts`), so it lands right whether it comes before or after a sweep reaches the page.
   const underContexts = <T>(fn: () => Promise<T>): Promise<T> =>
     machine().lock(contextsDir(root), async () => {
       try {

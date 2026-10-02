@@ -112,11 +112,11 @@ async function readOwnSidecar(
 const readConfig = (absPath: string): Promise<Record<string, unknown>> =>
   readAppFile(absPath).then((v) => v ?? {})
 
-export type PageRead =
+export type PageRecord =
   | { kind: 'read'; node: PageNode; fm: Json; mtimeMs: number | null }
   | { kind: 'unread'; reason: UnreadReason }
 
-export function pageRecordOf(content: string, relFile: string, mtimeMs: number | null): PageRead {
+export function pageRecordOf(content: string, relFile: string, mtimeMs: number | null): PageRecord {
   const { frontmatter: fm, admission } = parsePage(content)
   if (admission.state === 'missing')
     return { kind: 'unread', reason: frontmatterWritable(content) ? 'missing' : 'unparsed' }
@@ -130,8 +130,8 @@ export function pageRecordOf(content: string, relFile: string, mtimeMs: number |
   return { kind: 'read', node, fm, mtimeMs }
 }
 
-export async function readPageRecord(absFile: string, relFile: string): Promise<PageRead> {
-  return cachedParse(absFile, async (stat): Promise<PageRead> => {
+export async function readPageRecord(absFile: string, relFile: string): Promise<PageRecord> {
+  return cachedParse(absFile, async (stat): Promise<PageRecord> => {
     const content = await machine().readText(absFile)
     if (content === null) throw new Error(`Page not found: ${relFile}`)
     return pageRecordOf(content, relFile, stat?.mtimeMs ?? null)
@@ -144,7 +144,7 @@ async function readDirectPages(absDir: string, relDir: string, walk: Walk): Prom
     files.map(async (e) => {
       const rel = relJoin(relDir, e.name)
       const read = await readPageRecord(join(absDir, e.name), rel).catch(
-        (): PageRead => ({ kind: 'unread', reason: 'unparsed' }),
+        (): PageRecord => ({ kind: 'unread', reason: 'unparsed' }),
       )
       if (read.kind === 'read') return walk.link(read.node, read.fm)
       walk.unreadable.push({ path: rel, kind: 'page', reason: read.reason })

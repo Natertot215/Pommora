@@ -12,7 +12,7 @@ import { forgetLastReads } from '@pommora/core/Files/atomicWrite'
 import { push } from '../Bridge/ipc'
 import { sessionRoot, type WaitingOpen, waitingOpen } from '@pommora/core/Nexus/session'
 import { classifyEvent } from '@pommora/core/Nexus/fileEvents'
-import { handed } from '@pommora/core/Nexus/settle'
+import { recordHanded } from '@pommora/core/Nexus/settle'
 import { applyDelta } from '@pommora/core/Nexus/treeDelta'
 import type { NexusChange, NexusTree } from '@pommora/core/Nexus/tree'
 import { readIndexedStat } from '@pommora/core/Index/contentIndex'
@@ -96,7 +96,7 @@ beforeEach(async () => {
   live = open
   pushMock.mockClear()
   handlers.clear()
-  shown = handed(await refreshTree(root)).tree
+  shown = recordHanded(await refreshTree(root)).tree
   vi.useFakeTimers()
 })
 afterEach(async () => {
