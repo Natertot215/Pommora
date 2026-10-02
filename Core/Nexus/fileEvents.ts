@@ -91,6 +91,7 @@ import {
 } from '../Paths/nexusPaths'
 import { shardPages, withShards } from './pageMetadata'
 
+// Declared here, where events owe it; the settle in `settle.ts` pays it and empties it.
 interface Owed {
   root: string
   walk: boolean
