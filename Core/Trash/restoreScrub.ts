@@ -4,11 +4,11 @@ import type { NexusTree } from '../Nexus/tree'
 import { assignedDefs } from '../Properties/assignment'
 import {
   contextWorldOf,
-  NO_DEFS,
   reconcileGovernedRoot,
   survivingChanges,
   type GovernedWorld,
 } from '../Contexts/contextResolve'
+import { spaceWorldOf } from '../Contexts/contextWrite'
 import { type Frozen, namesGonePage } from '../Properties/propertyValue'
 import { ensurePageId } from '../Nexus/adopt'
 import { valueOr } from '../Contract/result'
@@ -34,7 +34,7 @@ function reconciledSidecar(
   const rest = held
     ? Object.fromEntries(Object.entries(raw).filter(([k]) => k !== inTransitKey))
     : raw
-  const r = reconcileGovernedRoot(rest, { ...world, defs: NO_DEFS })
+  const r = reconcileGovernedRoot(rest, world, {})
   return r.changed.length ? { ...r.root, ...held } : null
 }
 
@@ -51,6 +51,7 @@ export async function scrubReturning(
     contexts: contextWorldOf(tree.contexts),
     defs: await assignedDefs(root, destCollectionFolder),
   }
+  const spaceWorld = spaceWorldOf(tree)
   const links = new Map(
     tree.config.registry.filter((d) => d.type === 'link').map((d) => [d.name, d]),
   )
@@ -87,7 +88,7 @@ export async function scrubReturning(
   )
   for (const rel of sidecars)
     await rmwJsonStrict(join(root, rel), (raw) => {
-      const next = reconciledSidecar(raw, world, inTransitKey)
+      const next = reconciledSidecar(raw, spaceWorld, inTransitKey)
       const gone = unlinked(next ?? raw)
       note(raw, gone, asString(raw.id))
       return gone.length
