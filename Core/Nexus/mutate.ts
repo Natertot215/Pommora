@@ -15,7 +15,7 @@ import { setCropOp } from '../Assets/setCrop'
 import { setBannerOp } from '../Pages/setBanner'
 import { setIconOp } from '../Pages/setIcon'
 import { setHeadingIconHiddenOp } from '../Pages/setHeadingIconHidden'
-import { setPropertyOp } from '../Properties/setProperty'
+import { setPagePropertyOp, setSpacePropertyOp } from '../Properties/setProperty'
 import {
   createContextGroup,
   setContextOp,
@@ -144,8 +144,8 @@ async function dispatch(ctx: MutateContext, req: MutateRequest): Promise<MutateR
 
     case 'setProperty':
       return isMarkdownFile(req.path)
-        ? setPropertyOp(ctx, req)
-        : underContexts(() => setPropertyOp(ctx, req))
+        ? setPagePropertyOp(ctx, req)
+        : underContexts(() => setSpacePropertyOp(ctx, req))
 
     case 'setPageMeta':
       return writePageMeta(root, req.path, req.patch)
