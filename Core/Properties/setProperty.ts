@@ -1,12 +1,11 @@
 import { machine } from '../Platform/machine'
 import { liveTreeOf, mutableTarget } from '../Nexus/liveTree'
-import { readTextOrNull } from '../Files/atomicWrite'
 
 import { isMarkdownFile } from '../Paths/posix'
 import { governedWorldOf, repairedSpace, writeSpaceSidecar } from '../Contexts/contextWrite'
 import { spaceWorldOf } from '../Contexts/contextResolve'
 import { noShape, updatePageProperty } from '../Nexus/page'
-import { fail, ok, type Result } from '../Contract/result'
+import { ok, type Result } from '../Contract/result'
 import type { MutateContext } from '../Nexus/mutate'
 import { done, type MutateReply, type MutateRequest } from '../Nexus/mutateRequest'
 import type { PropertyDefinition } from './properties'
@@ -51,8 +50,6 @@ export async function setPropertyOp(
   const adoptions = await machine().lock(resolved.value, async () => {
     const def = (await readRegistry(root)).defs[req.propertyId]
     if (!def) return NO_PROPERTY
-    const content = await readTextOrNull(resolved.value)
-    if (content === null) return fail('not-found', 'That page could not be read.')
     return updatePageProperty(
       resolved.value,
       def,
