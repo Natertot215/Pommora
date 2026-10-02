@@ -273,7 +273,7 @@ export async function indexEvent(root: string, ev: FileEvent): Promise<HeadingRe
         return null
       case 'add':
       case 'change':
-        return await indexWrittenPage(root, ev.absPath, ev.text)
+        return await indexWrittenPage(root, ev.absPath, textOf(ev))
     }
   } catch (e) {
     console.error('settle: the index missed an event and reseeds:', errText(e))
@@ -314,11 +314,15 @@ function patchConfig(root: string, patch: Partial<NexusConfig>): Applied {
 }
 
 // The app's own event carries the text it wrote, since its writer still holds the file's lock.
+const textOf = (ev: Changed): string | undefined => (ev.origin === 'own' ? ev.text : undefined)
+
 const jsonOf = (
   ev: Changed,
   read: (absPath: string) => Promise<Json | null> = readJsonObject,
-): Promise<Json | null> =>
-  ev.text === undefined ? read(ev.absPath) : Promise.resolve(parseJsonObject(ev.text))
+): Promise<Json | null> => {
+  const text = textOf(ev)
+  return text === undefined ? read(ev.absPath) : Promise.resolve(parseJsonObject(text))
+}
 
 const pagePathsIn = (node: CollectionNode | SetNode | null): string[] =>
   node ? [...node.pages.map((p) => p.path), ...(node.sets ?? []).flatMap(pagePathsIn)] : []
@@ -363,14 +367,15 @@ async function applyPage(
     return applied
   }
   const abs = join(root, rel)
+  const text = textOf(ev)
   let read: PageRead
   try {
-    read = ev.text === undefined ? await readPageRecord(abs, rel) : pageRecordOf(ev.text, rel, null)
+    read = text === undefined ? await readPageRecord(abs, rel) : pageRecordOf(text, rel, null)
   } catch {
     if (await pathExists(abs)) return 'walk'
     return applyPatch(root, (t) => removeNodeInTree(t, rel))
   }
-  owed.values.set(rel, !!ev.bodyOnly && (owed.values.get(rel) ?? true))
+  owed.values.set(rel, ev.origin === 'own' && !!ev.bodyOnly && (owed.values.get(rel) ?? true))
   if (ev.origin === 'watched') owed.pages.add(rel)
   if (read.kind === 'unread' && read.reason === 'missing')
     owed.stamp.push({ path: rel, kind: 'page', reason: 'missing' })
@@ -492,7 +497,7 @@ async function applySettings(root: string, ev: Changed, owed: Owed): Promise<App
 }
 
 async function applyShard(root: string, shard: string, ev: Changed): Promise<Applied> {
-  const read = await readShard(root, shard, ev.text)
+  const read = await readShard(root, shard, textOf(ev))
   if (read.kind === 'unreadable') return 'ok'
   const held = heldTreeOf(root)?.config.pageMetadata
   const pageMetadata = withShards(held ?? {}, { [shard]: read.kind === 'ok' ? read.pages : {} })

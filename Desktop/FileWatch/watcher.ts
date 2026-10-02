@@ -14,6 +14,7 @@ import { readMatrixFile } from '@pommora/core/Matrix/matrixFile'
 import { readNavigationFile } from '@pommora/core/Navigation/navigationFile'
 import {
   type Changed,
+  type ChangeEvent,
   dropOwnEchoes,
   emitWatch,
   isRecentWrite,
@@ -102,7 +103,7 @@ export async function startWatcher(root: string, win: CurrentWindow): Promise<vo
     awaitWriteFinish: { stabilityThreshold: SETTLE_MS, pollInterval: 50 },
   })
   const onEvent =
-    (event: Changed['event']) =>
+    (event: ChangeEvent) =>
     (hostPath: string): void => {
       const path = posixPath(hostPath)
       emitWatch(event, path)
