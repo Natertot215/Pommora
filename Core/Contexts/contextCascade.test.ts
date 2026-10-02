@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 import { splitFrontmatter } from '../Files/pageFile'
-import { chmod, rm, mkdir, symlink, writeFile, readFile } from 'node:fs/promises'
+import { chmod, rm, mkdir, symlink, writeFile, readFile, utimes } from 'node:fs/promises'
 import { join, relative } from '../Paths/posix'
 import { noModeBits, tempRoot, windows, readJsonAt } from '../Testing/hostFs'
 import {
@@ -73,6 +73,7 @@ beforeEach(async () => {
   await writeFile(csSidecar(), JSON.stringify({ id: 'sp-cs', '<Projects>': ['Pommora'] }))
   await mkdir(join(root, 'Notes'), { recursive: true })
   await writeFile(page(), '---\nid: p1\n<Projects>:\n  - Pommora\n  - pommora\n---\nbody')
+  await utimes(page(), new Date(Date.now() - 1000), new Date(Date.now() - 1000))
 })
 afterEach(async () => {
   installStores(NO_STORES)
