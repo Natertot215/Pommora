@@ -29,7 +29,3 @@ graphify-out/
 
 # Playwright MCP — tool console logs / page traces (regeneratable)
 .playwright-mcp/
-
-# Claude Code — the project's agentic documentation and tooling. It is its own
-# repository inside this one: versioned on this machine, never on the remote.
-.claude/
