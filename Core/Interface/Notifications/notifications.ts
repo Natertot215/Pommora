@@ -5,6 +5,7 @@ import { pushUndo } from '../../Session/undo'
 import type { CascadeReport } from '../../Nexus/cascade'
 import type { Unreadable } from '../../Nexus/tree'
 import { titleFromPath } from '../../Paths/posix'
+import { inTurns } from '../../Platform/inTurns'
 
 export interface Notification {
   message: string
@@ -104,7 +105,7 @@ export function notifyDeleted(
   )
 }
 
-let undoing: Promise<unknown> = Promise.resolve()
+const undoing = inTurns()
 
 /** Answers a spend: once what the undo would reverse is undone some other way, its label leaves and the chord passes it by. */
 export function notifyUndoable(
@@ -125,7 +126,7 @@ export function notifyUndoable(
   const once = (): boolean => {
     if (fired) return false
     fired = true
-    undoing = undoing.then(undo, undo)
+    void undoing(undo)
     return true
   }
   const id = post({ ...note, action: retried ?? { label: 'Undo', run: () => void once() } })

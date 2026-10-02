@@ -19,6 +19,7 @@ import {
   hiddenFolder,
   outsideContent,
   sameScope,
+  type WatchScope,
 } from '../Paths/exclusion'
 import {
   parseJsonObject,
@@ -91,6 +92,7 @@ import {
 } from '../Paths/nexusPaths'
 import { shardPages, withShards } from './pageMetadata'
 
+// Declared here, where events owe it; the settle in `settle.ts` pays it and empties it.
 interface Owed {
   root: string
   walk: boolean
@@ -207,6 +209,7 @@ function tileHostAt(tree: NexusTree, rel: string): TileHostRef | null {
   return space ? { kind: 'space', id: space.id } : null
 }
 
+// Exported for tests alone.
 export function classifyEvent(tree: NexusTree, root: string, ev: Changed): EventClass {
   const rel = relative(root, ev.absPath)
   if (!rel || escapes(rel)) return { kind: 'walk' }
@@ -344,8 +347,9 @@ async function applyFolder(
   const read = await readFolder(root, rel, tree)
   const stamps = new Set(stampable(owed, read.unreadable))
   owed.stamp.push(...stamps)
-  // A page missing its ID that isn't stamped stays out of the tree, since the window posts a Try Again notice when a push lists a new entry and the page's own event may still be coming; a walk lists it.
-  const listed = read.unreadable.filter((u) => u.reason !== 'missing' || stamps.has(u))
+  // A page missing its ID that isn't stamped stays out of the tree, since the window posts a Try Again notice when a push lists a new entry and the page's own event may still be coming; a walk lists it, and so does the read of a folder the tree listed unreadable, since a note added while it couldn't be read has spent its event.
+  const unread = tree.unreadable?.some((u) => u.path === rel && u.reason !== 'missing')
+  const listed = read.unreadable.filter((u) => unread || u.reason !== 'missing' || stamps.has(u))
   for (const path of pagePathsIn(read.node)) owed.values.set(path, false)
   return applyPatch(root, (t) => {
     const cleared = removeNodeInTree(t, rel)
@@ -496,10 +500,15 @@ async function applySettings(root: string, ev: Changed, owed: Owed): Promise<App
   const scope = scopeOf(leaves)
   // The scope lands at once, so what runs before the walk (the asset migration) reads the scope just written.
   const patched = patchConfig(root, leaves)
-  if (!was || sameScope(scope, was)) return patched
+  return was && oweRescope(owed, was, scope) ? 'walk' : patched
+}
+
+// A scope change, seen by the settings event or by a walk that read the file first, re-arms the watcher and stamps what came into reach: what it no longer excludes and the asset root it left.
+export function oweRescope(owed: Owed, was: WatchScope, scope: WatchScope): boolean {
+  if (sameScope(scope, was)) return false
   owed.whole.push(...[...was.excluded, was.assetDir].filter((rel) => !outsideContent(rel, scope)))
   owed.rescope = true
-  return 'walk'
+  return true
 }
 
 async function applyShard(root: string, shard: string, ev: Changed): Promise<Applied> {

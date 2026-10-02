@@ -29,6 +29,7 @@ export const shardPages = (raw: Record<string, unknown>): Record<string, PageMet
     ),
   )
 
+// Exported for tests alone.
 export async function readShard(root: string, shard: string): Promise<ShardRead> {
   const read = await readJsonStrict(metadataShardPath(root, shard))
   if (read.ok) return { kind: 'ok', pages: shardPages(read.value) }
