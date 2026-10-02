@@ -208,6 +208,7 @@ function tileHostAt(tree: NexusTree, rel: string): TileHostRef | null {
   return space ? { kind: 'space', id: space.id } : null
 }
 
+// Exported for tests alone.
 export function classifyEvent(tree: NexusTree, root: string, ev: Changed): EventClass {
   const rel = relative(root, ev.absPath)
   if (!rel || escapes(rel)) return { kind: 'walk' }
