@@ -3,12 +3,12 @@ import { errText } from '../Contract/result'
 import { splitEnvelope, mergeFrontmatter, splitFrontmatter, stampedId } from '../Files/pageFile'
 import {
   type Rewrite,
+  rootOf,
   stripKeys,
   sweepGovernedRoots,
   unsweptLine,
 } from '../Properties/governedSweep'
 import { editCaches } from '../Properties/propertyCache'
-import { parseJsonObject } from '../Files/atomicWrite'
 import { heldTreeOf } from './liveTree'
 import type { NexusTree } from './tree'
 import { withheldIn } from './treePatch'
@@ -133,9 +133,8 @@ export async function deleteCascade(
     })
     const links: StrippedLink[] = []
     for (const [file, { before }] of swept.touched) {
-      const isPage = isMarkdownFile(file)
-      const raw = isPage ? splitFrontmatter(before) : (parseJsonObject(before) ?? {})
-      const id = isPage ? stampedId(before) : asString(raw.id)
+      const raw = rootOf(file, before)
+      const id = isMarkdownFile(file) ? stampedId(before) : asString(raw.id)
       if (!id) continue
       for (const { property, value } of named(raw)) links.push({ page: id, property, value })
     }
