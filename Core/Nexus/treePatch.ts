@@ -1,15 +1,14 @@
 // The tree's path-addressed steps. The host applies them as file events land; the window applies the same ones to paint a drag ahead of its write. Null means the step can't resolve against the given tree, and the host walks.
 
 import { stabilize } from './treeStabilize'
-import {
-  comparePaths,
-  type CollectionNode,
-  type ContextGroup,
-  type NexusTree,
-  type PageNode,
-  type SetNode,
-  type SpaceNode,
-  type Unreadable,
+import type {
+  CollectionNode,
+  ContextGroup,
+  NexusTree,
+  PageNode,
+  SetNode,
+  SpaceNode,
+  Unreadable,
 } from './tree'
 import type { PropertyDefinition } from '../Properties/properties'
 import { basename, relDirname, relJoin, titleFromPath } from '../Paths/posix'
@@ -198,6 +197,9 @@ function updateInContainers(
 export const removeNodeInTree = (tree: NexusTree, path: string): NexusTree =>
   repointUnreadable(updateNodeInTree(tree, path, () => null) ?? tree, path, null)
 
+export const comparePaths = (a: Unreadable, b: Unreadable): number =>
+  a.path < b.path ? -1 : a.path > b.path ? 1 : 0
+
 export const listUnreadable = (tree: NexusTree, listed: readonly Unreadable[]): NexusTree =>
   listed.length
     ? { ...tree, unreadable: [...(tree.unreadable ?? []), ...listed].sort(comparePaths) }
@@ -254,3 +256,11 @@ export function moveNodeInTree(tree: NexusTree, from: string, to: string): Nexus
   const pulled = updateNodeInTree(tree, from, () => null)
   return pulled && placeNode(repointUnreadable(pulled, from, to), moved)
 }
+
+export const withheldIn =
+  (listed: readonly Unreadable[] = []) =>
+  (path: string): boolean =>
+    listed.some((u) => u.kind !== 'page' && (path === u.path || path.startsWith(`${u.path}/`)))
+
+export const damagedFolders = (listed: readonly Unreadable[] = []): Unreadable[] =>
+  listed.filter((u) => u.reason === 'unparsed' && (u.kind === 'collection' || u.kind === 'set'))

@@ -10,7 +10,8 @@ import {
 import { editCaches } from '../Properties/propertyCache'
 import { parseJsonObject } from '../Files/atomicWrite'
 import { heldTreeOf } from './liveTree'
-import { type NexusTree, withheldIn } from './tree'
+import type { NexusTree } from './tree'
+import { withheldIn } from './treePatch'
 import {
   type RenameChange,
   rewriteConnections,

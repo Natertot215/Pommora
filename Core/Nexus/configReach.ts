@@ -36,10 +36,10 @@ import { errText } from '../Contract/result'
 import { sidecarPath, tileDocPath } from '../Paths/paths'
 import { join } from '../Paths/posix'
 import { isPlainObject, listOf } from '../Contract/validators'
-import { type CollectionNode, damagedFolders, type NexusTree, type SetNode } from './tree'
+import type { CollectionNode, NexusTree, SetNode } from './tree'
 import type { CascadeReport } from './cascade'
 import type { HeldKind } from './entities'
-import { containerAt, contextAt, spaceAt } from './treePatch'
+import { containerAt, contextAt, damagedFolders, spaceAt } from './treePatch'
 
 // ── Roles ──
 type Role =

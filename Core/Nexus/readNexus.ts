@@ -8,18 +8,17 @@ import {
   type FolderKindContext,
 } from './folderKind'
 import type { ContainerKind } from './entities'
-import {
-  comparePaths,
-  type CollectionNode,
-  type ContextGroup,
-  type NexusConfig,
-  type NexusOrder,
-  type NexusTree,
-  type PageNode,
-  type SetNode,
-  type SpaceNode,
-  type Unreadable,
-  type UnreadReason,
+import type {
+  CollectionNode,
+  ContextGroup,
+  NexusConfig,
+  NexusOrder,
+  NexusTree,
+  PageNode,
+  SetNode,
+  SpaceNode,
+  Unreadable,
+  UnreadReason,
 } from './tree'
 import {
   contextsRegistry as contextsRegistrySchema,
@@ -28,6 +27,7 @@ import {
 import { contextWorldOf, resolveContextKeys } from '../Contexts/contextResolve'
 import { spaceNodeFrom, spaceSidecarsIn } from '../Contexts/spaceSidecar'
 import { cropsFile } from './schemas'
+import { comparePaths } from './treePatch'
 import { containerNodeFrom } from './containerFields'
 import { readPageMetadata } from './pageMetadata'
 import { readSettings, scopeOf } from '../Settings/codec'
