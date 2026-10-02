@@ -132,13 +132,16 @@ export interface NexusChange {
   delta: Delta
 }
 
-export function entityMemo<T>(build: (tree: NexusTree) => T): (tree: NexusTree) => T {
-  const held = new WeakMap<CollectionNode[], { contexts: ContextGroup[]; value: T }>()
+export function entityMemo<T>(
+  inputs: readonly ((tree: NexusTree) => unknown)[],
+  build: (tree: NexusTree) => T,
+): (tree: NexusTree) => T {
+  const held = new WeakMap<CollectionNode[], { of: NexusTree; value: T }>()
   return (tree) => {
     const hit = held.get(tree.collections)
-    if (hit?.contexts === tree.contexts) return hit.value
+    if (hit && inputs.every((read) => read(hit.of) === read(tree))) return hit.value
     const value = build(tree)
-    held.set(tree.collections, { contexts: tree.contexts, value })
+    held.set(tree.collections, { of: tree, value })
     return value
   }
 }

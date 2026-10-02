@@ -16,7 +16,7 @@ export interface Projection {
   duplicates: Record<string, EntityRecord[]>
 }
 
-export const projectBaseline = entityMemo(buildBaseline)
+export const projectBaseline = entityMemo([(t) => t.contexts], buildBaseline)
 
 function buildBaseline(tree: NexusTree): Projection {
   const entries: Record<string, EntityRecord> = {}

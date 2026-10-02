@@ -12,7 +12,7 @@ interface PageIndices {
   byId: ReadonlyMap<string, string | null>
 }
 
-const indicesOf = entityMemo((tree): PageIndices => {
+const indicesOf = entityMemo([], (tree): PageIndices => {
   const byPath = new Map<string, string>()
   const byId = new Map<string, string | null>()
   const walk = (nodes: { pages: { id: string; path: string }[]; sets?: unknown[] }[]): void => {
@@ -48,7 +48,7 @@ export const idHeld = (root: string, id: string): boolean =>
   liveIndices(root)?.byId.has(id) ?? false
 
 // Walked only when a delete, rename, or restore asks, never on the value writes that rebuild the rest.
-export const titlesOf = entityMemo((tree): ReadonlyMap<string, readonly string[]> => {
+export const titlesOf = entityMemo([], (tree): ReadonlyMap<string, readonly string[]> => {
   const byTitle = new Map<string, string[]>()
   for (const path of indicesOf(tree).byPath.keys()) {
     const title = normalizeTitle(titleFromPath(path))
