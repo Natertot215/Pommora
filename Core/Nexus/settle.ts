@@ -73,7 +73,7 @@ async function settle(pusher: Pusher, root: string): Promise<{ rescope: boolean 
     try {
       await refreshAfterWrite(root)
       // The map is patch-only, so the fallback walk is where the listing is taken again.
-      if ((await refreshAssetMap(root)) !== assets) due.assets = true
+      if (assets && (await refreshAssetMap(root)) !== assets) due.assets = true
     } catch {
       // The walk failed after the write landed, so the held tree predates it; dropped, reads walk.
       dropLiveTree()

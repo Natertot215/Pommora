@@ -1,4 +1,3 @@
-import { liveAssetMap } from '@pommora/core/Assets/assetMap'
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { chmod, mkdir, readFile, rm, writeFile } from 'node:fs/promises'
 import { join } from '@pommora/core/Paths/posix'
@@ -98,7 +97,6 @@ beforeEach(async () => {
   pushMock.mockClear()
   handlers.clear()
   shown = sent(await refreshTree(root)).tree
-  await liveAssetMap(root)
   vi.useFakeTimers()
 })
 afterEach(async () => {
