@@ -280,7 +280,7 @@ export async function indexEvent(root: string, ev: FileEvent): Promise<HeadingRe
         return await indexWrittenPage(root, ev.absPath, ev.text)
     }
   } catch (e) {
-    console.error('settle: the index missed an event and reseeds:', errText(e))
+    console.error('events: the index missed an event and reseeds:', errText(e))
     owedFor(root).corpus = true
     return null
   }
@@ -622,7 +622,7 @@ export async function applyEvents(
       if (applied === 'later') later.set(ev.absPath, ev)
       if (applied !== 'walk') continue
     } catch (e) {
-      console.error('settle: an event could not be placed, walking:', errText(e))
+      console.error('events: an event could not be placed, walking:', errText(e))
     }
     owed.walk = true
   }
