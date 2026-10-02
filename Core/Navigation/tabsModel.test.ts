@@ -94,7 +94,7 @@ describe('tabsModel — openTab', () => {
   })
 
   it('spawns a new tab when the active tab is pinned (D-2)', () => {
-    const pinned = derivePinnedTabs([pin('p')], reconcileIndexOf(mkTree('p')))
+    const pinned = derivePinnedTabs([pin('p')], reconcileIndexOf(mkTree('p')), [])
     const r = openTab([], pinTabId(pt('p')), pinned, pt('b'), {}, 'NEW')
     expect(r.tabs).toHaveLength(1)
     expect(r.tabs[0].id).toBe('NEW')
@@ -108,7 +108,7 @@ describe('tabsModel — openTab', () => {
   })
 
   it('focuses a pinned tab when opening its entity from a scratch tab — never replaces the scratch (I-1)', () => {
-    const pinned = derivePinnedTabs([pin('p')], reconcileIndexOf(mkTree('p')))
+    const pinned = derivePinnedTabs([pin('p')], reconcileIndexOf(mkTree('p')), [])
     const tabs = [tab('t1', 'a')]
     const r = openTab(tabs, 't1', pinned, pt('p'), {}, 'NEW')
     expect(r.tabs).toBe(tabs)
@@ -425,7 +425,7 @@ describe('tabsModel — hydrateTabs (the lockstep owner)', () => {
 
 describe('tabsModel — derivePinnedTabs', () => {
   it('hydrates in array order with minted paths, stable ids + a one-entry history', () => {
-    const tabs = derivePinnedTabs([pin('a'), pin('b')], reconcileIndexOf(mkTree('a', 'b')))
+    const tabs = derivePinnedTabs([pin('a'), pin('b')], reconcileIndexOf(mkTree('a', 'b')), [])
     expect(tabs.map((t) => t.id)).toEqual(['pin:page:a', 'pin:page:b'])
     expect(tabs[0].target).toEqual(pt('a'))
     expect(tabs[0].navStack).toEqual([pt('a')])
@@ -435,7 +435,7 @@ describe('tabsModel — derivePinnedTabs', () => {
   it('drops agenda refs and refs that no longer resolve', () => {
     const agendaRef: NavRef = { kind: 'task', id: 'tk' }
     expect(
-      derivePinnedTabs([agendaRef, pin('gone'), pin('a')], reconcileIndexOf(mkTree('a'))).map(
+      derivePinnedTabs([agendaRef, pin('gone'), pin('a')], reconcileIndexOf(mkTree('a')), []).map(
         (t) => t.id,
       ),
     ).toEqual(['pin:page:a'])

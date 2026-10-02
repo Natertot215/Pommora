@@ -94,7 +94,7 @@ export function reconcileTab(
 export function derivePinnedTabs(
   pinned: NavRef[],
   index: ReconcileIndex | null,
-  prev: Tab[] = [],
+  prev: Tab[],
 ): Tab[] {
   if (!index) return []
   return pinned.flatMap((ref) => {
