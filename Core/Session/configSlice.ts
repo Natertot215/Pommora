@@ -37,6 +37,7 @@ export const personalizationOf = (s: Holding): Personalization =>
 
 export const commandsOf = (s: Holding): Commands => s.tree?.config.commands ?? DEFAULT_COMMANDS
 
+// A tree read before a newer local toggle would roll that toggle back if it lands after it, so a key with an ask in flight keeps the value the slice holds.
 const inFlight = new Map<string, number>()
 
 export function withOwnSettings(tree: NexusTree, held: NexusTree | null): NexusTree {
