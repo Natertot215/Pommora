@@ -3,8 +3,9 @@
 import { isPlainObject } from '../Contract/validators'
 import { same } from '../Files/stableJson'
 
-export type Delta =
-  | { set: unknown }
+// Each member has one required key and one producer and crosses IPC, so the members are told apart by that key rather than a tag.
+export type Delta<T = unknown> =
+  | { set: T }
   | { drop: true }
   | { at: Record<string, Delta>; keys?: string[] }
 
@@ -37,7 +38,7 @@ function fields(prev: Map<string, unknown>, next: Map<string, unknown>): Record<
 }
 
 /** Null when nothing differs. A subtree both trees share by reference is never entered, which is what keeps the cost to what changed. */
-export function diff(prev: unknown, next: unknown): Delta | null {
+export function diff<T>(prev: T | undefined, next: T): Delta<T> | null {
   if (Object.is(prev, next)) return null
   if (Array.isArray(prev) && Array.isArray(next)) {
     const a = keyed(prev)

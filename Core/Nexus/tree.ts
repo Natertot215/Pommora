@@ -125,7 +125,7 @@ export type NexusState = { status: 'empty' } | { status: 'open'; tree: NexusTree
 /** What a settle changed in the tree, as the window applies it. A window that holds any version but the one before asks for the whole tree. */
 export interface NexusChange {
   version: number
-  delta: Delta
+  delta: Delta<NexusTree>
 }
 
 /** Keys on the tree's `collections` array and serves a held value while each of `inputs` reads the same as when it was built. A caller lists every tree field its builder reads beyond `collections`, since an unlisted one serves a stale value. */
