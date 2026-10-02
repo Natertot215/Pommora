@@ -443,14 +443,14 @@ async function applySpace(root: string, dirRel: string, ev: Changed, owed: Owed)
   })
 }
 
-// Null when an entry left, a held group's title moved, or an entry the tree doesn't hold arrived from outside: each changes which Spaces exist.
-function regroup(held: ContextGroup[], defs: ContextDef[], own: boolean): ContextGroup[] | null {
+// Null when an entry left or arrived, or a held group's title moved: each changes which Spaces exist, and only a walk reads the Spaces a folder already holds under an arriving entry.
+function regroup(held: ContextGroup[], defs: ContextDef[]): ContextGroup[] | null {
   if (held.some((g) => !defs.some((d) => d.id === g.def.id))) return null
   const next: ContextGroup[] = []
   for (const def of defs) {
     const group = held.find((g) => g.def.id === def.id)
-    if (group ? group.def.title !== def.title : !own) return null
-    next.push(group ? { ...group, def } : { def, spaces: [] })
+    if (!group || group.def.title !== def.title) return null
+    next.push({ ...group, def })
   }
   return next
 }
@@ -460,7 +460,7 @@ async function applyContexts(root: string, ev: Changed): Promise<Applied> {
   const parsed = raw && contextsRegistrySchema.safeParse(raw)
   if (!parsed?.success) return 'walk'
   return applyPatch(root, (t) => {
-    const groups = regroup(t.contexts, parsed.data.contexts, ev.origin === 'own')
+    const groups = regroup(t.contexts, parsed.data.contexts)
     if (!groups) return null
     const contexts = stabilize(groups, t.contexts)
     return contexts === t.contexts ? t : { ...t, contexts }

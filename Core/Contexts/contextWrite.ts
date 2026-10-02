@@ -32,7 +32,6 @@ import { machine } from '../Platform/machine'
 import { setGovernedRootKeys } from '../Properties/governedWrite'
 import { contextsDir, tileFilePath } from '../Paths/paths'
 import { createFolderEntity } from '../Nexus/folderEntity'
-import { oweWalk } from '../Nexus/fileEvents'
 import { COLOR_KEY, ORDER_KEY } from './spaceSidecar'
 import type { Json } from '../Files/stableJson'
 import { listOf } from '../Contract/validators'
@@ -179,8 +178,7 @@ export async function createContextGroup(
     return withContextAt({ id, title })(cur)
   })
   if (!written.ok) return written
-  // A folder the registry lost holds Spaces no event of this create carries.
-  if ((await machine().mkdir(join(contextsDir(root), title))) === 'exists') oweWalk(root)
+  await machine().mkdir(join(contextsDir(root), title))
   return ok({ path: contextDirRel(title) })
 }
 
