@@ -161,7 +161,7 @@ describe('applyEvents — must agree with the walk', () => {
     await writeFile(sidecar, JSON.stringify({ id: 's1' }))
     await writeFile(abs('Notes', 'Daily', 'D.md'), `---\nID: ${ULID_B}\n---\n\ndaily\n`)
     await refreshTree(root)
-    const walk = vi.spyOn(liveTree, 'refreshAfterWrite')
+    const walk = vi.spyOn(liveTree, 'refreshTree')
 
     await writeFile(sidecar, '{corrupt')
     await applyEvents(root, [ev('change', 'Notes', 'Daily', '_pageset.json')])
@@ -319,7 +319,7 @@ describe('the parity cases', () => {
   let walk: ReturnType<typeof vi.spyOn>
   beforeEach(async () => {
     await refreshTree(root)
-    walk = vi.spyOn(liveTree, 'refreshAfterWrite')
+    walk = vi.spyOn(liveTree, 'refreshTree')
   })
   const settled = (events: FileEvent[]): Promise<void> => settleBatch(QUIET, root, events)
 
@@ -344,6 +344,7 @@ describe('the parity cases', () => {
     await writeFile(abs('Notes', 'Daily', '_pageset.json'), JSON.stringify({ id: 's1' }))
     await writeFile(abs('Notes', 'Daily', 'D.md'), `---\nID: ${ULID_B}\n---\n\ndaily\n`)
     await refreshTree(root)
+    walk.mockClear()
   }
   const removed = async (dir: string): Promise<FileEvent[]> => {
     const files = await filesUnder(dir)
@@ -459,6 +460,7 @@ describe('the parity cases', () => {
       JSON.stringify({ id: 'c1', properties: ['prop_status'] }),
     )
     await refreshTree(root)
+    walk.mockClear()
     await registry({ prop_status: { id: 'prop_status', name: 'State', type: 'number' } })
     await settled([ev('change', '.nexus', 'properties.json')])
     expect(held().collections[0]?.properties?.map((d) => d.name)).toEqual(['State'])
@@ -469,6 +471,7 @@ describe('the parity cases', () => {
   it('a properties.json edit that adds a definition walks', async () => {
     await registry({ prop_status: { id: 'prop_status', name: 'Status', type: 'number' } })
     await refreshTree(root)
+    walk.mockClear()
     await registry({
       prop_status: { id: 'prop_status', name: 'Status', type: 'number' },
       prop_due: { id: 'prop_due', name: 'Due', type: 'dateTime' },
@@ -491,6 +494,7 @@ describe('the parity cases', () => {
     )
     await mkdir(join(contextsDir(root), 'Topics'))
     await refreshTree(root)
+    walk.mockClear()
     await writeFile(
       contextsRegistryFile(root),
       JSON.stringify({

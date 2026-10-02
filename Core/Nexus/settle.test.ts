@@ -226,7 +226,7 @@ describe('the settle', () => {
     oweCascade(root, ['Notes/A.md'], [])
     await settleNow(pusher, root)
     expect(channels()).toEqual(['pages:changed'])
-    const walk = vi.spyOn(liveTree, 'refreshAfterWrite')
+    const walk = vi.spyOn(liveTree, 'refreshTree')
     read.fail(new Error('mid-read'))
     await applying
     expect(owedFor(root).walk).toBe(true)
@@ -370,7 +370,7 @@ describe('the settle', () => {
   it('a note that left before its batch applied, beside a folder that just appeared without a sidecar, owes no walk', async () => {
     await mkdir(abs('A'))
     await writeFile(abs('A', 'x.md'), 'x\n')
-    const walk = vi.spyOn(liveTree, 'refreshAfterWrite')
+    const walk = vi.spyOn(liveTree, 'refreshTree')
     await settleBatch(pusher, root, [
       ev('addDir', 'A'),
       ev('add', 'A', 'x.md'),

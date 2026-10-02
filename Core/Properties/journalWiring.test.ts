@@ -15,7 +15,7 @@ import {
 import { nexusConfig } from '../Paths/paths'
 import { NEXUS_CONFIG_FILES } from '../Paths/nexusPaths'
 import { closeSession, openSession } from '../Nexus/session'
-import { dropLiveTree, refreshAfterWrite } from '../Nexus/liveTree'
+import { dropLiveTree, refreshTree } from '../Nexus/liveTree'
 import { seedConfigSurfaces, viewOn } from '../Testing/configSurfaces'
 import { listBundles } from '../Trash/holdings'
 import { readRegistry } from './propertiesRegistry'
@@ -236,7 +236,7 @@ describe('the option-op writers', () => {
   it('option-remove writes every saved view while the record is held', async () => {
     await withOptions()
     await seedConfigSurfaces(root, abs('Col'), viewOn('prop_t', 'Draft'))
-    await refreshAfterWrite(root)
+    await refreshTree(root)
     observed = []
     expect((await removeOption(root, 'prop_t', 'Draft')).ok).toBe(true)
     const configWrites = observed.filter((o) =>

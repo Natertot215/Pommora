@@ -3227,9 +3227,10 @@ describe('each routine operation lands from its own events, with no walk', () =>
   ]
 
   it.each(routine)('%s', async (_, req) => {
-    const walk = vi.spyOn(liveTree, 'refreshAfterWrite')
+    const walk = vi.spyOn(liveTree, 'refreshTree')
     const r = await settledMutate(root, req, nexusDeps)
     expect(r.ok).toBe(true)
     expect(walk).not.toHaveBeenCalled()
+    walk.mockRestore()
   })
 })
