@@ -12,7 +12,7 @@ import {
   restoreView,
   setActiveView,
 } from './viewsFile'
-import { containerFieldsFrom } from '../Nexus/containerFields'
+import { containerNodeFrom } from '../Nexus/containerFields'
 
 const upsert = (folder: string, kind: 'collection' | 'set', v: SavedView) =>
   saveView(folder, kind, v, v)
@@ -285,7 +285,9 @@ describe('a view without an id of its own', () => {
     { id: 'view_x', name: 'C', type: 'table', property_order: [], hidden_properties: [] },
   ]
   const MINTED = /^view_[0-9A-HJKMNP-TV-Z]{26}$/
-  const shown = () => containerFieldsFrom({ views: stored }, [], []).views ?? []
+  const shown = () =>
+    containerNodeFrom('set', { title: 'S', path: 'S' }, { id: 's', views: stored }, [], [], {})
+      ?.views ?? []
   const onDisk = async () => (await readRaw('_pagecollection.json')) as Record<string, unknown>
   const named = async () => ((await onDisk()).views as SavedView[]).map((v) => v.name)
 

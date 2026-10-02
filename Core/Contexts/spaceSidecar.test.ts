@@ -3,7 +3,7 @@ import { mkdir, rm, writeFile } from 'node:fs/promises'
 import { join } from '../Paths/posix'
 import { contextsDir } from '../Paths/paths'
 import { tempRoot } from '../Testing/hostFs'
-import { readSpaceRowOrder, spaceFieldsFrom, spaceSidecars, withOrderEntry } from './spaceSidecar'
+import { readSpaceRowOrder, spaceNodeFrom, spaceSidecars, withOrderEntry } from './spaceSidecar'
 
 describe('spaceSidecars', () => {
   it('finds each Space sidecar one level into each Context folder, hidden and plain folders aside', async () => {
@@ -22,17 +22,25 @@ describe('spaceSidecars', () => {
   })
 })
 
-describe('spaceFieldsFrom', () => {
+const AT = { title: 'Home', path: '.nexus/contexts/Areas/Home', contextId: 'g1' }
+
+describe('spaceNodeFrom', () => {
   it('reads the four modeled fields and leaves values undefined when nothing is left', () => {
-    const fields = spaceFieldsFrom({
+    const node = spaceNodeFrom(
+      {
+        id: 'sp1',
+        $icon: 'folder',
+        banner: 'Loose/b.png',
+        heading_icon_hidden: true,
+        $color: 'mint',
+        '<Areas>': ['Home'],
+      },
+      AT,
+    )
+    expect(node).toEqual({
+      kind: 'space',
       id: 'sp1',
-      $icon: 'folder',
-      banner: 'Loose/b.png',
-      heading_icon_hidden: true,
-      $color: 'mint',
-      '<Areas>': ['Home'],
-    })
-    expect(fields).toEqual({
+      ...AT,
       icon: 'folder',
       banner: 'Loose/b.png',
       headingIconHidden: true,
@@ -42,26 +50,29 @@ describe('spaceFieldsFrom', () => {
   })
 
   it('collects exactly the unmodeled, unwrapped keys into values', () => {
-    const fields = spaceFieldsFrom({
-      id: 'sp1',
-      $icon: 'folder',
-      $color: 'mint',
-      '<Areas>': ['Home'],
-      Status: 'Active',
-      $order: { contexts: ['g1'], properties: ['prop_a'] },
-    })
-    expect(fields.values).toEqual({
+    const node = spaceNodeFrom(
+      {
+        id: 'sp1',
+        $icon: 'folder',
+        $color: 'mint',
+        '<Areas>': ['Home'],
+        Status: 'Active',
+        $order: { contexts: ['g1'], properties: ['prop_a'] },
+      },
+      AT,
+    )
+    expect(node?.values).toEqual({
       Status: 'Active',
       $order: { contexts: ['g1'], properties: ['prop_a'] },
     })
   })
 })
 
-describe('spaceFieldsFrom — the glyph key', () => {
+describe('spaceNodeFrom — the glyph key', () => {
   it('reads the glyph from $icon and a bare icon key as a property value', () => {
-    const fields = spaceFieldsFrom({ id: 'sp1', $icon: 'folder', icon: 'Draft' })
-    expect(fields.icon).toBe('folder')
-    expect(fields.values).toEqual({ icon: 'Draft' })
+    const node = spaceNodeFrom({ id: 'sp1', $icon: 'folder', icon: 'Draft' }, AT)
+    expect(node?.icon).toBe('folder')
+    expect(node?.values).toEqual({ icon: 'Draft' })
   })
 })
 

@@ -12,7 +12,6 @@ import { type ConfigSurfaces, seedConfigSurfaces, viewOn } from '../Testing/conf
 import { assignProperty } from './assignment'
 import { removeProperty } from './removeProperty'
 import { setSpaceProperty } from './setProperty'
-import { spaceFieldsFrom } from '../Contexts/spaceSidecar'
 import { createFolderEntity } from '../Nexus/folderEntity'
 import { newId } from '../Nexus/ids'
 import { dropLiveTree } from '../Nexus/liveTree'
@@ -211,13 +210,15 @@ describe('a global delete reaches a Space sidecar', () => {
       value: 'https://final.example',
     })
     expect(set.ok).toBe(true)
-    const pomFields = spaceFieldsFrom(await readJsonAt(pom))
-    expect(pomFields.icon).toBe('box')
-    expect(pomFields.values).toEqual({ icon: 'https://final.example' })
+    expect(await readJsonAt(pom)).toEqual({
+      id: 'sp1',
+      $icon: 'box',
+      icon: 'https://final.example',
+    })
 
     expect((await deleteProperty(root, c.value.id)).ok).toBe(true)
     expect(await readJsonAt(pom)).toEqual({ id: 'sp1', $icon: 'box' })
-    expect(spaceFieldsFrom(await readJsonAt(atlas)).icon).toBe('map')
+    expect((await readJsonAt(atlas)).$icon).toBe('map')
     expect('icon' in (await readJsonAt(atlas))).toBe(false)
   })
 

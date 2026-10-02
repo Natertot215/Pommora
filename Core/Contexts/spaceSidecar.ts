@@ -56,13 +56,12 @@ export interface SpaceRowOrder {
   properties: string[]
 }
 
-export function spaceFieldsFrom(sc: Json): {
-  icon?: string
-  banner?: string
-  headingIconHidden: boolean
-  color?: string
-  values?: Json
-} {
+export function spaceNodeFrom(
+  sc: Json,
+  at: { title: string; path: string; contextId: string },
+): SpaceNode | null {
+  const id = asString(sc.id)
+  if (!id) return null
   let values: Json | undefined
   for (const [k, v] of Object.entries(sc)) {
     if (MODELED.has(k) || parseContextKey(k) !== null) continue
@@ -70,20 +69,15 @@ export function spaceFieldsFrom(sc: Json): {
     values[k] = v
   }
   return {
+    kind: 'space',
+    id,
+    ...at,
     icon: asString(sc[ICON_KEY]),
     banner: asString(sc.banner),
     headingIconHidden: sc.heading_icon_hidden === true,
     color: asString(sc[COLOR_KEY]),
     values,
   }
-}
-
-export function spaceNodeFrom(
-  sc: Json,
-  at: { title: string; path: string; contextId: string },
-): SpaceNode | null {
-  const id = asString(sc.id)
-  return id ? { kind: 'space', id, ...at, ...spaceFieldsFrom(sc) } : null
 }
 
 export function readSpaceRowOrder(values: Json | undefined): SpaceRowOrder {
