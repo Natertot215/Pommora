@@ -59,6 +59,7 @@ import { seedContentIndex } from '../Index/indexSeed'
 import { createMarkdownTile, readMarkdownTile, writeMarkdownTile } from '../Tiles/tilesFile'
 import { landedId } from '../Testing/tileLayouts'
 import { lockContention } from '../Testing/machines'
+import { listBundles } from '../Trash/holdings'
 import { fault, ok } from '../Contract/result'
 import { nexusHandlers } from './handlers'
 
@@ -2446,6 +2447,102 @@ describe('the Contexts lock', () => {
       'not-found: Unknown Space.',
     )
   })
+
+  // A page's value takes no Contexts lock: written while a Space or Context delete or restore stands paused before or after its sweep, it lands beside what the operation leaves, and the held tree agrees with a fresh read.
+  const pauseOn = <T extends object>(
+    target: T,
+    name: keyof T,
+    when: 'before' | 'after',
+    match: (...args: unknown[]) => boolean = () => true,
+  ): { reached: Promise<void>; release: () => void } => {
+    const original = target[name] as (...args: unknown[]) => Promise<unknown>
+    let reach = (): void => {}
+    let release = (): void => {}
+    const reached = new Promise<void>((resolve) => {
+      reach = resolve
+    })
+    const released = new Promise<void>((resolve) => {
+      release = resolve
+    })
+    let armed = true
+    vi.spyOn(target, name as never).mockImplementation((async (...args: unknown[]) => {
+      if (!armed || !match(...args)) return original.apply(target, args)
+      armed = false
+      if (when === 'before') {
+        reach()
+        await released
+        return original.apply(target, args)
+      }
+      const out = await original.apply(target, args)
+      reach()
+      await released
+      return out
+    }) as never)
+    return { reached, release }
+  }
+  const valueDuring = async (
+    op: MutateRequest,
+    pause: () => { reached: Promise<void>; release: () => void },
+    tagged: boolean,
+  ): Promise<void> => {
+    const stage = await createProperty(root, { id: '', name: 'Stage', type: 'number' })
+    if (!stage.ok) throw new Error('setup')
+    await refreshTree(root)
+    const paused = pause()
+    const running = handleMutate(root, op, nexusDeps)
+    await paused.reached
+    const valued = await handleMutate(
+      root,
+      {
+        op: 'setProperty',
+        path: 'Notes/Daily/Alpha.md',
+        propertyId: stage.value.id,
+        value: { kind: 'number', value: 3 },
+      },
+      nexusDeps,
+    )
+    await flush({ push: () => {}, watch: async () => {} }, root)
+    paused.release()
+    expect((await running).ok && valued.ok).toBe(true)
+    vi.restoreAllMocks()
+    await flush({ push: () => {}, watch: async () => {} }, root)
+    const fm = splitFrontmatter(await read('Notes/Daily/Alpha.md'))
+    expect(fm.Stage).toBe(3)
+    expect(fm['<Areas>']).toEqual(tagged ? ['Work'] : undefined)
+    const held = heldTreeOf(root)
+    expect(held && stabilize(await readNexus(root), held)).toBe(held)
+  }
+  const deletes = [
+    [
+      'Space',
+      { op: 'delete', path: '.nexus/contexts/Areas/Work', kind: 'space' },
+      'unlinkSpaceValue',
+    ],
+    [
+      'Context',
+      { op: 'delete', path: '.nexus/contexts/Areas', kind: 'context' },
+      'unlinkContextKey',
+    ],
+  ] as const
+  for (const [entity, op, sweep] of deletes)
+    for (const when of ['before', 'after'] as const) {
+      it(`a page value written ${when} a ${entity} delete's sweep lands, and the tag is gone`, async () => {
+        await valueDuring(op, () => pauseOn(contextCascade, sweep, when), false)
+      })
+
+      it(`a page value written while a ${entity} restore stands ${when === 'before' ? 'after its move' : 'after its re-tag'} lands, and the tag is back`, async () => {
+        expect((await settledMutate(root, op, nexusDeps)).ok).toBe(true)
+        const [bundle] = await listBundles(root)
+        await valueDuring(
+          { op: 'restore', bundlePath: bundle.bundlePath },
+          () =>
+            when === 'before'
+              ? pauseOn(atomicWrite, 'relocate', 'after')
+              : pauseOn(machine(), 'remove', 'before', (p) => p === join(root, bundle.bundlePath)),
+          true,
+        )
+      })
+    }
 
   it('a Space created during a Context rename lands in the renamed Context', async () => {
     await refreshTree(root)
