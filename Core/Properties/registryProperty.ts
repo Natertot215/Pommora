@@ -20,7 +20,9 @@ import { withOrderEntry } from '../Contexts/spaceSidecar'
 import {
   clearSchemaJournal,
   readSchemaJournal,
+  schemaCascade,
   writeSchemaJournal,
+  type SchemaCascade,
   type SchemaJournal,
 } from './propertyJournal'
 import { serializeSchemaOp } from './schemaChain'
@@ -90,7 +92,7 @@ export async function renameSweep(root: string, oldName: string, newName: string
   return swept.skipped.length
 }
 
-export type PropertyRename = { from: string; to: string }
+export type PropertyRename = { from: string; to: string } & SchemaCascade
 
 /** Validated before the journal and again on the registry it commits to, since a create can land between the two. The journal is staged BEFORE the commit: registry-first ordering means a crash between commit and sweep is recoverable from nowhere else, so the old name survives only there. */
 export function renameProperty(
@@ -110,7 +112,7 @@ export function renameProperty(
     if (holders.length) return fail('invalid-property', KEY_REFUSAL.held(to, holders.length))
     const record: SchemaJournal = { op: 'rename', id: propertyId, from: prior.name, to }
     await writeSchemaJournal(root, record)
-    const edit = await mutateRegistry<Result<PropertyRename>>(root, (registry) => {
+    const edit = await mutateRegistry<Result<{ from: string; to: string }>>(root, (registry) => {
       const current = registry.defs[propertyId]
       if (!current) return { result: NO_PROPERTY }
       const v = validateName(to, Object.values(registry.defs), propertyId)
@@ -124,8 +126,9 @@ export function renameProperty(
       await clearSchemaJournal(root, record)
       return edit
     }
-    if (!(await renameSweep(root, edit.value.from, to))) await clearSchemaJournal(root, record)
-    return edit
+    const skipped = await renameSweep(root, edit.value.from, to)
+    if (!skipped) await clearSchemaJournal(root, record)
+    return ok({ ...edit.value, ...schemaCascade({ skipped, hosts: [] }, record) })
   })
 }
 

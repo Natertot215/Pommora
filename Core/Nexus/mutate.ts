@@ -6,7 +6,7 @@ import { join, titleFromPath } from '../Paths/posix'
 import { resolveUnderRoot } from '../Paths/pathSafety'
 import { contextsDir } from '../Paths/paths'
 import { machine } from '../Platform/machine'
-import { fault, ok } from '../Contract/result'
+import { fault, ok, type Result } from '../Contract/result'
 import { emptyBundle, restoreOp } from '../Trash/spend'
 import { deleteOp } from '../Trash/delete'
 import { updateSettings } from '../Settings/settings'
@@ -22,7 +22,7 @@ import {
   setSpaceColor,
   setSpaceRowOrder,
 } from '../Contexts/contextWrite'
-import { renameContextOp, renameSpaceOp } from '../Contexts/contextCascade'
+import { renameContextOp, renameSpaceOp, type Unswept } from '../Contexts/contextCascade'
 import { reorderContextsOp } from '../Contexts/reorderContexts'
 import { done, seedsContext, type MutateReply, type MutateRequest } from './mutateRequest'
 import { CONTAINER_KINDS } from './entities'
@@ -37,6 +37,7 @@ import { setChildOrder, setCollectionOrder, setPanelContextOrder, setSpaceOrder 
 import { liveTreeOf, mutableTarget } from './liveTree'
 import { stampMissing, stampPage } from './adopt'
 import { owedFor } from './fileEvents'
+import { reachReport } from './configReach'
 import { walkOwed } from './settle'
 
 export interface MutateContext {
@@ -54,6 +55,16 @@ export async function handleMutate(
   } catch (e) {
     return fault(e)
   }
+}
+
+function renamed(
+  req: Extract<MutateRequest, { op: 'renameContext' | 'renameSpace' }>,
+  r: Result<Unswept | null>,
+): MutateReply {
+  if (!r.ok) return r
+  if (!r.value) return ok({})
+  const { skipped, from } = r.value
+  return ok({ cascade: reachReport({ skipped, hosts: [] }), retry: { ...req, from } })
 }
 
 async function dispatch(ctx: MutateContext, req: MutateRequest): Promise<MutateReply> {
@@ -166,10 +177,16 @@ async function dispatch(ctx: MutateContext, req: MutateRequest): Promise<MutateR
       return done(await underContexts(() => setSpaceColor(root, req.spaceId, req.color)))
 
     case 'renameContext':
-      return done(await underContexts(() => renameContextOp(root, req.contextId, req.newName)))
+      return renamed(
+        req,
+        await underContexts(() => renameContextOp(root, req.contextId, req.newName, req.from)),
+      )
 
     case 'renameSpace':
-      return done(await underContexts(() => renameSpaceOp(root, req.spaceId, req.newName)))
+      return renamed(
+        req,
+        await underContexts(() => renameSpaceOp(root, req.spaceId, req.newName, req.from)),
+      )
 
     case 'reorderContexts':
       return reorderContextsOp(ctx, req)

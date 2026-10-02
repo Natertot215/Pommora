@@ -1,8 +1,4 @@
-import {
-  notifyReport,
-  notifyRetry,
-  reportRefusal,
-} from '../../Interface/Notifications/notifications'
+import { notifyRetry, reportRefusal } from '../../Interface/Notifications/notifications'
 import { useRef, useState, type ReactNode } from 'react'
 import { Icon, type IconName } from '@pommora/uix/Symbols'
 import type { IconSize } from '@pommora/uix/Theme'
@@ -16,7 +12,7 @@ import {
   type PropertyType,
 } from '../properties'
 import type { Result } from '../../Contract/result'
-import type { SchemaCascade } from '../propertyJournal'
+import type { SchemaCascade, SchemaJournal } from '../propertyJournal'
 import type { ColumnStyle } from '../columnStyles'
 import type { CollectionNode, SetNode } from '../../Nexus/tree'
 import { useActiveView } from '../../Views/Host/useActiveView'
@@ -176,19 +172,20 @@ function ListGroups({
   )
 }
 
-const replay = (propertyId: string) => (): void =>
+const replay = (record: SchemaJournal) => (): void =>
   void dialer()
-    .ask('property:replay', propertyId)
+    .ask('property:replay', record)
     .then((r) => {
-      if (!r.ok) notifyRetry(r.error.message, replay(propertyId))
+      if (!r.ok) notifyRetry(r.error.message, replay(record))
     })
 
-async function warnOwed(propertyId: string, res: Promise<Result<SchemaCascade>>): Promise<void> {
+const retryOwed = ({ cascade, owed }: SchemaCascade): void => {
+  if (cascade.warning && owed) notifyRetry(cascade.warning, replay(owed))
+}
+
+async function warnOwed(res: Promise<Result<SchemaCascade>>): Promise<void> {
   const r = await res
-  const warning = reportRefusal(r) && r.value.cascade.warning
-  if (!warning) return
-  if (r.ok && r.value.replayable) notifyRetry(warning, replay(propertyId))
-  else notifyReport(warning, true)
+  if (reportRefusal(r)) retryOwed(r.value)
 }
 
 export function PropertyFrame({
@@ -260,7 +257,9 @@ export function PropertyFrame({
   }
   const rename = async (id: string, name: string): Promise<void> => {
     const res = await dialer().ask('property:rename', id, name)
-    if (reportRefusal(res) && res.value) bumpValuesEpoch(res.value.from, res.value.to)
+    if (!reportRefusal(res) || !res.value) return
+    bumpValuesEpoch(res.value.from, res.value.to)
+    retryOwed(res.value)
   }
   const remove = async (id: string): Promise<void> => {
     if (reportRefusal(await dialer().ask('schema:unassign', collectionPath, id))) backToList()
@@ -318,7 +317,7 @@ export function PropertyFrame({
       notifyTrashed(
         displayPropertyName(def.name, capitalize),
         deleted.value,
-        deleted.value.replayable && replay(def.id),
+        deleted.value.owed && replay(deleted.value.owed),
       )
     }
   }
@@ -362,10 +361,10 @@ export function PropertyFrame({
       look={look}
       onEdit={(edit) => void write(dialer().ask('property:editOption', def.id, edit))}
       onRenameOption={(oldValue, newTitle) =>
-        void warnOwed(def.id, dialer().ask('property:renameOption', def.id, oldValue, newTitle))
+        void warnOwed(dialer().ask('property:renameOption', def.id, oldValue, newTitle))
       }
       onRemoveOption={(value) =>
-        void warnOwed(def.id, dialer().ask('property:removeOption', def.id, value))
+        void warnOwed(dialer().ask('property:removeOption', def.id, value))
       }
       onClearOption={(value) => void write(dialer().ask('property:clearOption', def.id, value))}
     />

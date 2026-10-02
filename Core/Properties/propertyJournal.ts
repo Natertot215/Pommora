@@ -24,7 +24,7 @@ function sameRecord(a: SchemaJournal, b: SchemaJournal): boolean {
   }
 }
 
-function decode(raw: Record<string, unknown>): SchemaJournal | null {
+export function decodeSchemaJournal(raw: Record<string, unknown>): SchemaJournal | null {
   if (typeof raw.id !== 'string') return null
   switch (raw.op) {
     case 'rename':
@@ -42,16 +42,16 @@ function decode(raw: Record<string, unknown>): SchemaJournal | null {
   }
 }
 
-const slot = journalSlot<SchemaJournal>(PROPERTY_JOURNAL_FILENAME, decode, sameRecord)
+const slot = journalSlot<SchemaJournal>(PROPERTY_JOURNAL_FILENAME, decodeSchemaJournal, sameRecord)
 
 export const writeSchemaJournal = slot.write
 export const readSchemaJournal = slot.read
 export const clearSchemaJournal = slot.clear
 
-/** A journaled op's answer: its cascade, and whether a replay the user can run still owes what it skipped. */
-export type SchemaCascade = { cascade: CascadeReport; replayable?: true }
+/** A schema op's answer: its cascade, and the record whose replay reaches the files it skipped. */
+export type SchemaCascade = { cascade: CascadeReport; owed?: SchemaJournal }
 
-export const schemaCascade = (reach: ConfigReach, journaled: boolean): SchemaCascade => ({
+export const schemaCascade = (reach: ConfigReach, record: SchemaJournal): SchemaCascade => ({
   cascade: reachReport(reach),
-  ...(reach.skipped && journaled ? { replayable: true as const } : {}),
+  ...(reach.skipped ? { owed: record } : {}),
 })
