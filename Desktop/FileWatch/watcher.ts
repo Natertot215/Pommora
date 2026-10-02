@@ -40,6 +40,7 @@ let batch: Changed[] = []
 const configDebounce = new Map<string, ReturnType<typeof setTimeout>>()
 const pushedConfig = new Map<string, string>()
 
+// Exported for tests alone.
 export function isConfigPath(
   root: string,
   path: string,
@@ -50,6 +51,7 @@ export function isConfigPath(
 }
 
 // We DO watch .nexus/ — Contexts and settings/state live there. Checks only the path BELOW the root, so a dot-segment in the root's own absolute path (a nexus under ~/.something) can't blank the whole watch.
+// Exported for tests alone.
 export function syncIgnoredUnder(root: string, scope: WatchScope): (path: string) => boolean {
   const isExcluded = excludedMatcher(scope.excluded)
   const isAsset = assetMatcher(scope.assetDir)
