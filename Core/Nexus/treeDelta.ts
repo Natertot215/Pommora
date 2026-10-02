@@ -3,7 +3,7 @@
 import { isPlainObject } from '../Contract/validators'
 import { same } from '../Files/stableJson'
 
-// Each member has one required key and one producer and crosses IPC, so the members are told apart by that key rather than a tag.
+// Each member's one required key is its tag; a `kind` beside it would repeat it on every node of every push.
 export type Delta<T = unknown> =
   | { set: T }
   | { drop: true }

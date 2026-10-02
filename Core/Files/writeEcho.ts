@@ -37,16 +37,14 @@ export const reportRename = (absFrom: string, absTo: string): void => tap?.renam
 
 type ChangeEvent = 'add' | 'change' | 'unlink' | 'addDir' | 'unlinkDir'
 
-export type Changed =
-  | {
-      event: ChangeEvent
-      absPath: string
-      origin: 'watched'
-      written?: string
-      text?: never
-      bodyOnly?: never
-    }
-  | { event: ChangeEvent; absPath: string; origin: 'own'; text?: string; bodyOnly?: boolean }
+export interface Changed {
+  event: ChangeEvent
+  absPath: string
+  origin: 'watched' | 'own'
+  written?: string
+  text?: string
+  bodyOnly?: boolean
+}
 
 export interface Moved {
   event: 'move'
