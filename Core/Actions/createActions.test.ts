@@ -122,17 +122,14 @@ describe('adjacent creates', () => {
 describe('createNamed', () => {
   it("places the request by its kind's placement setting and opens its name field", async () => {
     seed({ kind: 'none' }, makeTree(), { newSpacePlacement: 'top' })
-    await createNamed(
-      { op: 'createSpace', id: 'sp9', contextId: 'g1', name: 'New Realm' },
-      'matrix',
-    )
+    await createNamed({ op: 'createSpace', contextId: 'g1', name: 'New Realm' }, 'matrix')
     expect(asked).toEqual([
       {
         op: 'createSpace',
-        id: 'sp9',
+        id: expect.any(String),
         contextId: 'g1',
         name: 'New Realm',
-        order: ['sp9', 'a1', 't1', 'pr1'],
+        order: [askedId(), 'a1', 't1', 'pr1'],
       },
     ])
     expect(beginRename).toHaveBeenCalledWith(CREATED.path, true, 'matrix')

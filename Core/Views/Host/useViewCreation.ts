@@ -11,7 +11,7 @@ import {
 } from '../../Properties/propertyValue'
 import { specOf } from '../../Properties/properties'
 import { type ViewPatch, viewOption } from '../views'
-import { type CreatePageRequest, newPageRequest } from '../../Nexus/mutateRequest'
+import { type CreatePageRequest, DEFAULT_NEW_NAME, minted } from '../../Nexus/mutateRequest'
 import { relDirname } from '../../Paths/posix'
 import { findScroller, SEEK_GLIDE, scrollGlide } from '@pommora/uix/Interactions/autoscroll'
 import { useSession } from '../../Session/store'
@@ -140,10 +140,13 @@ export function useViewCreation(getCfg: () => ViewCreationConfig): ViewCreation 
   const pageRequest = (
     parentPath: string,
     seeds: Record<string, PropertyValue>,
-  ): CreatePageRequest => ({
-    ...newPageRequest(parentPath),
-    ...(Object.keys(seeds).length ? { seeds } : {}),
-  })
+  ): CreatePageRequest =>
+    minted({
+      op: 'createPage',
+      parentPath,
+      name: DEFAULT_NEW_NAME,
+      ...(Object.keys(seeds).length ? { seeds } : {}),
+    })
   // Seeds and slot are staged with the ask, so the push that mounts the newborn paints it in its band at its slot; the order is written once the page exists, and a refusal takes back both.
   const createPageIn = (
     req: CreatePageRequest,

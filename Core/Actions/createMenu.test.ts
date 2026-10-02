@@ -1,17 +1,16 @@
 import { describe, expect, it } from 'vitest'
 import { containerCreators, createMenuItems, createdRequest, spaceCreator } from './createMenu'
 
-const PAGE = { op: 'createPage' as const, id: 'p9', parentPath: 'Notes', name: 'Untitled' }
+const PAGE = { op: 'createPage' as const, parentPath: 'Notes', name: 'Untitled' }
 const SET = {
   op: 'createContainer' as const,
-  id: 's9',
   parentPath: 'Notes',
   kind: 'set' as const,
   name: 'Untitled',
 }
 const creators = [
-  { label: 'New Page', request: () => PAGE },
-  { label: 'New Set', request: () => SET },
+  { label: 'New Page', req: PAGE },
+  { label: 'New Set', req: SET },
 ]
 
 describe('the create menu', () => {
@@ -31,7 +30,7 @@ describe('the create menu', () => {
 
 describe('containerCreators — a container offers the same things wherever it is asked', () => {
   const ops = (kind: 'collection' | 'set'): string[] =>
-    containerCreators(kind, 'Some/Path').map((c) => c.request().op)
+    containerCreators(kind, 'Some/Path').map((c) => c.req.op)
 
   it('offers a Set the same operations it offers a Collection', () => {
     // The defect this pins: the sidebar's context menu gave a Set no way to make a nested one, while the subfield's add button did.
@@ -47,7 +46,7 @@ describe('containerCreators — a container offers the same things wherever it i
 
   it('creates into the container it was asked about', () => {
     for (const c of containerCreators('set', 'A/B')) {
-      const req = c.request()
+      const { req } = c
       expect('parentPath' in req && req.parentPath).toBe('A/B')
     }
   })
@@ -57,9 +56,8 @@ describe('spaceCreator', () => {
   it('labels and names a createSpace request for its Context', () => {
     const creator = spaceCreator({ id: 'g1', title: 'Realms', singular: 'Realm' })
     expect(creator.label).toBe('New Realm')
-    expect(creator.request()).toEqual({
+    expect(creator.req).toEqual({
       op: 'createSpace',
-      id: expect.any(String),
       contextId: 'g1',
       name: 'New Realm',
     })

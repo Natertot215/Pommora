@@ -5,10 +5,7 @@ const shape = (items: ReturnType<typeof entityMenuItems>): string[] =>
   items.flatMap((i) => [...(i.separatorBefore ? ['—'] : []), i.label])
 
 const creators = [
-  {
-    label: 'New Page',
-    request: () => ({ op: 'createPage' as const, id: 'p9', parentPath: 'Notes', name: 'Untitled' }),
-  },
+  { label: 'New Page', req: { op: 'createPage' as const, parentPath: 'Notes', name: 'Untitled' } },
 ]
 
 const SPACE = {
