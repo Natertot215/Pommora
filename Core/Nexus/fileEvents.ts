@@ -312,6 +312,7 @@ async function applyFolder(
     return 'ok'
   // Its stamp's own event reads it again.
   if (owed.stamp.some((u) => u.path === rel)) return 'ok'
+  if (!(await pathExists(join(root, rel)))) return applyPatch(root, (t) => removeNodeInTree(t, rel))
   const read = await readFolder(root, rel, tree)
   owed.stamp.push(...read.unreadable.filter((u) => u.reason === 'missing'))
   for (const path of pagePathsIn(read.node)) owed.values.set(path, false)

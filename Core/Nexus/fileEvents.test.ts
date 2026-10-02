@@ -12,6 +12,8 @@ import { readNexus } from './readNexus'
 import { getHeldAssetMap, liveAssetMap } from '../Assets/assetMap'
 import { applyEvents, classifyEvent, owedFor, tileBodyUnder } from './fileEvents'
 import { flush } from './settle'
+import { handleMutate } from './mutate'
+import type { TrashDeps } from '../Trash/bundle'
 import type { Changed, FileEvent } from '../Files/writeEcho'
 import type { CollectionNode, NexusTree, SetNode } from './tree'
 import { findContainerWhere } from './treePatch'
@@ -397,6 +399,21 @@ describe('the parity cases', () => {
     await agrees()
     expect(walk).not.toHaveBeenCalled()
   })
+
+  const DEPS: TrashDeps = { trashMode: 'nexus', trashToSystem: async () => {} }
+  for (const [label, req] of [
+    ['renames', { op: 'rename', path: 'Notes/Daily', kind: 'set', newName: 'Weekly' }],
+    ['deletes', { op: 'delete', path: 'Notes/Daily', kind: 'set' }],
+  ] as const) {
+    it(`a page event that settles after the app ${label} its Set lists nothing unreadable`, async () => {
+      await withDaily()
+      expect((await handleMutate(root, req, DEPS)).ok).toBe(true)
+      await flush(QUIET, root)
+      await settled([ev('change', 'Notes', 'Daily', 'D.md')])
+      expect(held().unreadable).toBeUndefined()
+      await agrees()
+    })
+  }
 
   it('a root folder gaining its first note becomes a Collection, stamped by the settle', async () => {
     await mkdir(abs('Ideas'))
