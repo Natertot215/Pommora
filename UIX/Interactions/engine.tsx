@@ -176,7 +176,7 @@ type LineHandle = {
   'data-line-row': string
 }
 type LineRowOptions = { spring?: (dragged: string) => void; open?: () => void }
-type DragItemOptions = { open?: () => void }
+type DragItemOptions = { open?: () => void; tabStop?: boolean }
 type Active = { zone: string; id: string }
 type SlotBox = { zone: string; own: boolean; box: Box; clip: Rect | null }
 
@@ -1265,7 +1265,7 @@ function LineHost({
   )
 }
 
-export function useDragItem(id: string, { open }: DragItemOptions = {}): DragItem {
+export function useDragItem(id: string, { open, tabStop = true }: DragItemOptions = {}): DragItem {
   const { api, zoneId, disabled } = useZone('useDragItem')
   const isDragging = useDragging(api, zoneId, id)
   const run = useLatest(open)
@@ -1288,13 +1288,13 @@ export function useDragItem(id: string, { open }: DragItemOptions = {}): DragIte
         }
       },
       role: 'button',
-      tabIndex: disabled && !opens ? -1 : 0,
+      tabIndex: tabStop && (opens || !disabled) ? 0 : -1,
       'aria-roledescription': 'sortable',
       'aria-describedby': INSTRUCTIONS_ID,
       'aria-pressed': isDragging || undefined,
       'aria-disabled': (disabled && !opens) || undefined,
     }),
-    [api, zoneId, id, disabled, opens, isDragging],
+    [api, zoneId, id, disabled, opens, tabStop, isDragging],
   )
   return useMemo(
     () => ({ setNodeRef, style: ITEM_STYLE, handle, isDragging }),

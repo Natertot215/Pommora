@@ -382,7 +382,7 @@ export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
     menu: (row, col, e) => void openCellMenu(row, col, e),
     click: onCellClick,
     overlay: cellEditor,
-    remove: commitValue,
+    commit: commitValue,
     grip: (row, e) => {
       if (titleCol) void openCellMenu(row, titleCol, e)
     },
@@ -552,7 +552,7 @@ type RowCellApi = {
   menu: (row: ViewRow, col: ResolvedColumn, e: React.MouseEvent) => void
   click: (row: ViewRow, col: ResolvedColumn, e: React.MouseEvent) => void
   overlay: (row: ViewRow, col: ResolvedColumn) => React.ReactNode
-  remove: (row: ViewRow, col: ResolvedColumn, next: PropertyValue | null) => void
+  commit: (row: ViewRow, col: ResolvedColumn, next: PropertyValue | null) => void
   grip: (row: ViewRow, e: React.MouseEvent) => void
   open: (row: ViewRow) => void
   sweep: (row: ViewRow, col: ResolvedColumn, e: React.PointerEvent) => boolean
@@ -672,7 +672,7 @@ const DataRow = memo(function DataRow({
             hideIcon={hideIcon}
             style={styleByCol[i]}
             showFullLink={popoverCol === c.id}
-            remove={(next) => api.remove(row, c, next)}
+            commit={(next) => api.commit(row, c, next)}
           />
         )
         return (
