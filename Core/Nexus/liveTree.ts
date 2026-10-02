@@ -24,6 +24,7 @@ export function setCommandsTap(fn: (() => void) | null): void {
   commandsTap = fn
 }
 
+// Every tree that becomes the held one passes through here, so a change to the commands is seen whichever route brought it.
 function hold(next: NexusTree | null): void {
   const moved =
     !!next &&

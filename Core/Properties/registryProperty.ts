@@ -1,5 +1,5 @@
 import { clamp } from '@pommora/uix/Utilities/clamp'
-import { mutateRegistry, readRegistry, NO_PROPERTY } from './propertiesRegistry'
+import { mutateRegistry, readRegistry, NO_PROPERTY, serializeSchemaOp } from './propertiesRegistry'
 import { validateDefinition, validateName } from './schema'
 import { mintPropertyId } from '../Nexus/ids'
 import { freeName } from '../Paths/names'
@@ -25,7 +25,6 @@ import {
   type SchemaCascade,
   type SchemaJournal,
 } from './propertyJournal'
-import { serializeSchemaOp } from './schemaChain'
 
 // Seeds only when the field is undefined; an EMPTY array is a deliberate state, or emptying a select's options then making any unrelated edit would resurrect the seed.
 function seeded(def: PropertyDefinition): PropertyDefinition {
@@ -101,7 +100,7 @@ export function renameProperty(
   name: string,
 ): Promise<Result<PropertyRename | null>> {
   const to = normalizePropertyName(name)
-  return serializeSchemaOp(async () => {
+  return serializeSchemaOp(root, async () => {
     const { defs } = await readRegistry(root)
     const prior = defs[propertyId]
     if (!prior) return NO_PROPERTY
@@ -138,7 +137,7 @@ export function editProperty(
   propertyId: string,
   changes: Omit<Partial<PropertyDefinition>, 'id' | 'name'>,
 ): Promise<Result<null>> {
-  return serializeSchemaOp(() =>
+  return serializeSchemaOp(root, () =>
     mutateRegistry<Result<null>>(root, (registry) => {
       const current = registry.defs[propertyId]
       if (!current) return { result: NO_PROPERTY }

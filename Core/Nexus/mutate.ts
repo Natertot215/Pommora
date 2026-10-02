@@ -2,7 +2,7 @@
 
 import { setOrDrop } from '../Files/atomicWrite'
 import { patchSidecar } from '../Files/sidecar'
-import { join, titleFromPath } from '../Paths/posix'
+import { isMarkdownFile, join, titleFromPath } from '../Paths/posix'
 import { resolveUnderRoot } from '../Paths/pathSafety'
 import { contextsDir } from '../Paths/paths'
 import { machine } from '../Platform/machine'
@@ -15,7 +15,7 @@ import { setCropOp } from '../Assets/setCrop'
 import { setBannerOp } from '../Pages/setBanner'
 import { setIconOp } from '../Pages/setIcon'
 import { setHeadingIconHiddenOp } from '../Pages/setHeadingIconHidden'
-import { setPropertyOp } from '../Properties/setProperty'
+import { setPagePropertyOp, setSpacePropertyOp } from '../Properties/setProperty'
 import {
   createContextGroup,
   setContextOp,
@@ -35,10 +35,10 @@ import { renameOp } from './rename'
 import { renameCascade } from './cascade'
 import { setChildOrder, setCollectionOrder, setPanelContextOrder, setSpaceOrder } from './reorder'
 import { liveTreeOf, mutableTarget } from './liveTree'
-import { stampMissing, stampPage } from './adopt'
-import { oweWalk } from './fileEvents'
+import { stampPage } from './adopt'
+import { oweRetry, oweWalk } from './fileEvents'
 import { reachReport } from './configReach'
-import { walkOwed } from './settle'
+import { payOwedWalk } from './settle'
 
 export interface MutateContext {
   root: string
@@ -57,6 +57,7 @@ export async function handleMutate(
   }
 }
 
+// A rename's Try Again is the request again with the title it left, whether the journal took the rename or its slot refused it, since a refused one has no record to replay and a later rename displaces a taken one's; a property cascade's replays its record through `property:replay`.
 function renamed(
   req: Extract<MutateRequest, { op: 'renameContext' | 'renameSpace' }>,
   r: Result<Unswept | null>,
@@ -69,13 +70,13 @@ function renamed(
 
 async function dispatch(ctx: MutateContext, req: MutateRequest): Promise<MutateReply> {
   const { root, deps } = ctx
-  // renameContext, renameSpace, createSpace, setContext, setSpaceColor, setSpaceRowOrder, setProperty, restore, a Space or Context delete, and a create that seeds a Context run under the Contexts folder's one lock until the walk each owed is paid, so a tag or value written mid-rename lands under the new key. A write that names a Space by a path the rename has moved answers the refusal.
+  // A write sent here changes which Contexts and Spaces exist or what they're titled, or resolves a Space by title or path to write a tag or the Space's sidecar, so it holds the Contexts folder's one lock until the walk it owed is paid and resolves against a world no rename or delete is moving: a tag or Space value written mid-rename lands under the new key, and one naming a Space by a path the rename moved answers the refusal. A page's value write runs outside it, since it takes the page's own lock, which every sweep takes too, and never shrinks or drops a key it can't resolve (`preservedChanges` in `contextResolve.ts`), so it lands right whether it comes before or after a sweep reaches the page.
   const underContexts = <T>(fn: () => Promise<T>): Promise<T> =>
     machine().lock(contextsDir(root), async () => {
       try {
         return await fn()
       } finally {
-        await walkOwed(root)
+        await payOwedWalk(root)
       }
     })
   switch (req.op) {
@@ -143,7 +144,9 @@ async function dispatch(ctx: MutateContext, req: MutateRequest): Promise<MutateR
     }
 
     case 'setProperty':
-      return underContexts(() => setPropertyOp(ctx, req))
+      return isMarkdownFile(req.path)
+        ? setPagePropertyOp(ctx, req)
+        : underContexts(() => setSpacePropertyOp(ctx, req))
 
     case 'setPageMeta':
       return writePageMeta(root, req.path, req.patch)
@@ -207,7 +210,7 @@ async function dispatch(ctx: MutateContext, req: MutateRequest): Promise<MutateR
     case 'retryUnreadable': {
       const entry = (await liveTreeOf(root)).unreadable?.find((u) => u.path === req.path)
       if (entry?.reason === 'malformed') await stampPage(join(root, entry.path), 'page', true)
-      if (entry?.reason === 'missing') await stampMissing(root, [entry])
+      if (entry?.reason === 'missing') oweRetry(root, entry)
       oweWalk(root)
       return ok({})
     }

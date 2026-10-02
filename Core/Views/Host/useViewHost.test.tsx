@@ -9,7 +9,7 @@ import { ContentHostContext } from '../../Interface/contentHost'
 import { useSession } from '../../Session/store'
 import { useViewHost, type ViewHostApi } from './useViewHost'
 import { mutateAhead } from './pendingView'
-import type { OrderRequest } from './pendingView'
+import type { OrderRequest } from '../../Nexus/mutateRequest'
 import { useContainerValues, useValuesEpoch } from './useContainerValues'
 import { useViewCreation } from './useViewCreation'
 import { patchOverride } from '../../Properties/valueOverride'
@@ -19,7 +19,7 @@ import { stubDialer } from '../../vitest.setup'
 import { mountEachTest, renderView } from '../../Testing/viewHarness'
 import { ViewTileScopeProvider } from '../ViewTileScope'
 import { makeTree } from '../../Testing/testTree'
-import { diff } from '../../Nexus/treeDelta'
+import { deltaOf } from '../../Nexus/treeDelta'
 import type { NexusTree } from '../../Nexus/tree'
 
 const mint = vi.hoisted(() => ({ n: 2 }))
@@ -188,7 +188,7 @@ const bandKeys = (): string[] =>
   api?.groups.flatMap((g) => (g.kind === 'bucket' ? [g.key] : [])) ?? []
 
 describe('the persist fold', () => {
-  it('one save carries a collapse, a style patch, and a resize, the explicit patch winning', async () => {
+  it('one save carries a collapse, a style applyDelta, and a resize, the explicit patch winning', async () => {
     await mount(
       collection({
         column_styles: { prop_status: { look: 'compact' } },
@@ -876,7 +876,7 @@ describe('a create placed ahead of its reply', () => {
     const held = useSession.getState().tree!
     const next = { ...held, collections: [source(['p3', 'p1', 'p2'])] } as NexusTree
     await act(async () => {
-      useSession.getState().applyChange({ version: 2, delta: diff(held, next)! })
+      useSession.getState().applyChange({ version: 2, delta: deltaOf(held, next)! })
     })
     expect(commits.find((c) => c.band !== undefined)).toEqual({
       band: 'complete',

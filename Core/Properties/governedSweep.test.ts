@@ -34,7 +34,15 @@ describe('sweepGovernedRoots', () => {
         expect(r).toEqual({
           skipped: [b],
           refused: [],
-          touched: new Map([[a, '---\nID: 01KVGMT8BFP350FZZXAMG1QDRA\n---\nbody\n']]),
+          touched: new Map([
+            [
+              a,
+              {
+                before: '---\nID: 01KVGMT8BFP350FZZXAMG1QDRA\n---\nbody\n',
+                after: '---\nID: 01KVGMT8BFP350FZZXAMG1QDRA\n---\nbody\nx',
+              },
+            ],
+          ]),
         })
       } finally {
         await chmod(join(root, 'Locked'), 0o755)

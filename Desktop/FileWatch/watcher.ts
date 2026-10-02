@@ -14,6 +14,7 @@ import { readMatrixFile } from '@pommora/core/Matrix/matrixFile'
 import { readNavigationFile } from '@pommora/core/Navigation/navigationFile'
 import {
   type Changed,
+  type ChangeEvent,
   dropOwnEchoes,
   emitWatch,
   isRecentWrite,
@@ -102,7 +103,7 @@ export async function startWatcher(root: string, win: CurrentWindow): Promise<vo
     awaitWriteFinish: { stabilityThreshold: SETTLE_MS, pollInterval: 50 },
   })
   const onEvent =
-    (event: Changed['event']) =>
+    (event: ChangeEvent) =>
     (hostPath: string): void => {
       const path = posixPath(hostPath)
       emitWatch(event, path)
@@ -112,7 +113,7 @@ export async function startWatcher(root: string, win: CurrentWindow): Promise<vo
       else if (isConfigPath(root, path, 'matrix'))
         pushConfig(root, win, 'matrix:changed', readMatrixFile)
       else if (!isMetadataShardRel(relative(root, path)) && isRecentWrite(path)) return
-      batch.push({ event, absPath: path, written: writtenHash(path) })
+      batch.push({ event, absPath: path, origin: 'watched', written: writtenHash(path) })
       if (debounce) clearTimeout(debounce)
       // Chained, so batches apply in the order they settled.
       debounce = setTimeout(() => {

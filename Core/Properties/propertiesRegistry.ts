@@ -1,4 +1,5 @@
-import { nexusConfig } from '../Paths/paths'
+import { nexusConfig, nexusDir } from '../Paths/paths'
+import { machine } from '../Platform/machine'
 import { NEXUS_CONFIG_FILES } from '../Paths/nexusPaths'
 import { fail, valueOr } from '../Contract/result'
 import { readJsonStrict, readKept, updateNexusFile } from '../Files/atomicWrite'
@@ -56,6 +57,9 @@ export async function readKeptRegistry(root: string): Promise<RegistryFile> {
 export const orderedDefs = (reg: RegistryFile): PropertyDefinition[] =>
   resolveRowOrder(Object.entries(reg.defs), ([key]) => key, reg.order).map(([, d]) => d)
 
+export const registryOf = (defs: PropertyDefinition[]): PropertyRegistry =>
+  Object.fromEntries(defs.map((d) => [d.id, d]))
+
 export const linkDefs = async (root: string): Promise<PropertyDefinition[]> =>
   Object.values((await readKeptRegistry(root)).defs).filter((d) => d.type === 'link')
 
@@ -112,3 +116,7 @@ export async function mutateRegistry<T>(
   if (!written.ok) throw new Error(written.error.message)
   return result
 }
+
+// Schema ops that cascade to pages queue on the `.nexus` folder's lock, which nothing they run takes, so one can't land inside another's cascade; a re-taken lock rejects, so only entry points are wrapped.
+export const serializeSchemaOp = <T>(root: string, fn: () => Promise<T>): Promise<T> =>
+  machine().lock(nexusDir(root), fn)

@@ -238,16 +238,22 @@ describe('the watcher maintains the rows', () => {
     await refreshTree(root)
     await mkdir(join(root, 'Loose'), { recursive: true })
     await writeFile(join(root, 'Loose', 'Note.md'), 'links [[Alpha]]\n')
-    await applyEvents(root, [{ event: 'add', absPath: join(root, 'Loose', 'Note.md') }])
+    await applyEvents(root, [
+      { event: 'add', absPath: join(root, 'Loose', 'Note.md'), origin: 'watched' },
+    ])
     expect(owedFor(root).walk).toBe(false)
     expect(queryMentions('alpha')).toEqual(['Loose/Note.md'])
     await expectMaintained()
     await writeFile(join(root, 'Notes', 'Daily', 'Beta.md'), `---\nID: ${B_ID}\n---\n\n[[Alpha]]`)
-    await applyEvents(root, [{ event: 'change', absPath: join(root, 'Notes', 'Daily', 'Beta.md') }])
+    await applyEvents(root, [
+      { event: 'change', absPath: join(root, 'Notes', 'Daily', 'Beta.md'), origin: 'watched' },
+    ])
     expect(owedFor(root).walk).toBe(false)
     expect(queryMentions('alpha')?.sort()).toEqual(['Loose/Note.md', 'Notes/Daily/Beta.md'])
     await unlink(join(root, 'Loose', 'Note.md'))
-    await applyEvents(root, [{ event: 'unlink', absPath: join(root, 'Loose', 'Note.md') }])
+    await applyEvents(root, [
+      { event: 'unlink', absPath: join(root, 'Loose', 'Note.md'), origin: 'watched' },
+    ])
     expect(owedFor(root).walk).toBe(false)
     await expectMaintained()
   })
@@ -268,7 +274,7 @@ describe('the watcher maintains the rows', () => {
     await seedContentIndex(root)
     await refreshTree(root)
     await writeFile(beta, `---\nID: ${B_ID}\n---\n\n## Intro\n`)
-    await applyEvents(root, [{ event: 'change', absPath: beta }])
+    await applyEvents(root, [{ event: 'change', absPath: beta, origin: 'watched' }])
     const owed = owedFor(root)
     expect([...owed.pages]).toContain('Notes/Daily/Alpha.md')
     expect([...owed.tiles.values()]).toEqual([{ kind: 'homepage' }])

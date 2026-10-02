@@ -160,7 +160,7 @@ describe('writeBody', () => {
     } finally {
       setOwnTap(null)
     }
-    expect(noted.map((ev) => ev.event === 'change' && ev.own?.bodyOnly)).toEqual([true, false])
+    expect(noted.map((ev) => ev.event === 'change' && ev.bodyOnly)).toEqual([true, false])
   })
 
   it('writes the body and captures the text it overwrote', async () => {

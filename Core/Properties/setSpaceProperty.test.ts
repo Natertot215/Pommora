@@ -7,7 +7,7 @@ import { createContextGroup, createSpace } from '../Contexts/contextWrite'
 import { newId } from '../Nexus/ids'
 import { createProperty } from './registryProperty'
 import { readRegistry } from './propertiesRegistry'
-import { setPropertyOp } from './setProperty'
+import { setSpacePropertyOp } from './setProperty'
 import type { MutateContext } from '../Nexus/mutate'
 import type { TrashDeps } from '../Trash/bundle'
 import type { PropertyDefinition } from './properties'
@@ -51,7 +51,7 @@ const sidecarFile = (): string => join(root, spaceRel, '_space.json')
 const sidecar = async (): Promise<Record<string, unknown>> => await readJsonAt(sidecarFile())
 
 const write = (value: PropertyValue | null) =>
-  setPropertyOp(ctx(), { op: 'setProperty', path: spaceRel, propertyId: statusId, value })
+  setSpacePropertyOp(ctx(), { op: 'setProperty', path: spaceRel, propertyId: statusId, value })
 
 describe('setProperty on a Space path', () => {
   it('lands a bare root key and moves nothing else', async () => {

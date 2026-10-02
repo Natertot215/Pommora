@@ -80,10 +80,14 @@ describe('an echo recorded with its bytes', () => {
     writeFileSync(own, 'mine')
     writeFileSync(theirs, 'an outside edit')
     expect(isRecentWrite(own)).toBe(false)
-    const events = [own, theirs, join(dir, 'gone.md')].map((absPath) => ({
-      absPath,
-      written: writtenHash(absPath),
-    }))
+    const events = [own, theirs, join(dir, 'gone.md')].map(
+      (absPath): Changed => ({
+        event: 'change',
+        absPath,
+        origin: 'watched',
+        written: writtenHash(absPath),
+      }),
+    )
     // A settle long past the window still judges by what arrival named.
     vi.useFakeTimers({ toFake: ['Date'] })
     vi.setSystemTime(Date.now() + 10_000)
@@ -99,6 +103,6 @@ describe('emitWatch', () => {
     emitWatch('change', '/nexus/Notes/Page.md')
     setWatchTap(null)
     emitWatch('unlink', '/nexus/Notes/Page.md')
-    expect(seen).toEqual([{ event: 'change', absPath: '/nexus/Notes/Page.md' }])
+    expect(seen).toEqual([{ event: 'change', absPath: '/nexus/Notes/Page.md', origin: 'watched' }])
   })
 })

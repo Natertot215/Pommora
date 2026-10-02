@@ -36,7 +36,7 @@ it('reorder moves within the assignment array', async () => {
   await assignProperty(root, notes, 'prop_a')
   await assignProperty(root, notes, 'prop_b')
   await assignProperty(root, notes, 'prop_c')
-  await reorderAssignment(notes, 'prop_c', 0)
+  await reorderAssignment(root, notes, 'prop_c', 0)
   expect(await ids(notes)).toEqual(['prop_c', 'prop_a', 'prop_b'])
 })
 

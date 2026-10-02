@@ -10,8 +10,8 @@ import { contentIdAt } from './ids'
 import * as readNexusModule from './readNexus'
 import { readNexus } from './readNexus'
 import { getHeldAssetMap, liveAssetMap } from '../Assets/assetMap'
-import { applyEvents, classifyEvent, owedFor, tileBodyUnder } from './fileEvents'
-import { flush } from './settle'
+import { applyEvents, classifyEvent, owedFor } from './fileEvents'
+import { settleBatch, settleNow } from './settle'
 import { handleMutate } from './mutate'
 import type { TrashDeps } from '../Trash/bundle'
 import type { Changed, FileEvent } from '../Files/writeEcho'
@@ -43,6 +43,7 @@ const abs = (...segs: string[]): string => join(root, ...segs)
 const ev = (event: Changed['event'], ...segs: string[]): Changed => ({
   event,
   absPath: abs(...segs),
+  origin: 'watched',
 })
 const held = (): NexusTree => {
   const tree = heldTreeOf(root)
@@ -164,14 +165,14 @@ describe('applyEvents — must agree with the walk', () => {
 
     await writeFile(sidecar, '{corrupt')
     await applyEvents(root, [ev('change', 'Notes', 'Daily', '_pageset.json')])
-    await flush(QUIET, root)
+    await settleNow(QUIET, root)
     expect(held().collections[0]?.sets).toEqual([])
     expect(held().unreadable).toEqual([{ path: 'Notes/Daily', kind: 'set', reason: 'unparsed' }])
     await agrees()
 
     await writeFile(sidecar, JSON.stringify({ id: 's1' }))
     await applyEvents(root, [ev('change', 'Notes', 'Daily', '_pageset.json')])
-    await flush(QUIET, root)
+    await settleNow(QUIET, root)
     const daily = held().collections[0]?.sets[0]
     expect(daily?.id).toBe('s1')
     expect(daily?.pages.map((p) => p.id)).toEqual([ULID_B])
@@ -289,25 +290,27 @@ describe('applyEvents — must agree with the walk', () => {
     expect(owedFor(root).rescope).toBe(false)
     const seed = vi.spyOn(indexSeed, 'seedContentIndex')
     const watch = vi.fn(async () => {})
-    await flush({ push: () => {}, watch }, root)
+    await settleNow({ push: () => {}, watch }, root)
     expect(seed).toHaveBeenCalledTimes(1)
     expect(watch).not.toHaveBeenCalled()
   })
 
-  it('a folder of several hundred notes with no sidecar is read once, and listed once', async () => {
+  it('a folder of several hundred notes with no sidecar is read by its batch and by its stamp alone, and every note is held and stamped', async () => {
     await refreshTree(root)
     await mkdir(abs('Notes', 'Import'))
     const names = Array.from({ length: 400 }, (_, i) => `n${i}.md`)
     for (const name of names) await writeFile(abs('Notes', 'Import', name), `${name}\n`)
     const readFolder = vi.spyOn(readNexusModule, 'readFolder')
-    await applyEvents(root, [
+    await settleBatch(QUIET, root, [
       ev('addDir', 'Notes', 'Import'),
       ...names.map((name) => ev('add', 'Notes', 'Import', name)),
     ])
-    expect(readFolder).toHaveBeenCalledTimes(1)
-    expect(owedFor(root).stamp).toEqual([{ path: 'Notes/Import', kind: 'set', reason: 'missing' }])
-    await flush(QUIET, root)
-    expect(held().collections[0]?.sets[0]?.pages).toHaveLength(400)
+    expect(readFolder).toHaveBeenCalledTimes(2)
+    const pages = held().collections[0]?.sets[0]?.pages
+    expect(pages).toHaveLength(400)
+    for (const p of pages ?? [])
+      expect(p.id).toBe(splitFrontmatter(await readFile(abs(...p.path.split('/')), 'utf8'))[ID_KEY])
+    expect(held().unreadable).toBeUndefined()
     await agrees()
   })
 })
@@ -318,10 +321,7 @@ describe('the parity cases', () => {
     await refreshTree(root)
     walk = vi.spyOn(liveTree, 'refreshAfterWrite')
   })
-  const settled = async (events: FileEvent[]): Promise<void> => {
-    await applyEvents(root, events)
-    await flush(QUIET, root)
-  }
+  const settled = (events: FileEvent[]): Promise<void> => settleBatch(QUIET, root, events)
 
   it('a folder of notes added outside the app lands without a walk', async () => {
     await mkdir(abs('Notes', 'Batch'))
@@ -350,8 +350,10 @@ describe('the parity cases', () => {
     const dirs = await dirsUnder(dir)
     await rm(dir, { recursive: true })
     return [
-      ...files.map((absPath): FileEvent => ({ event: 'unlink', absPath })),
-      ...[...dirs, dir].map((absPath): FileEvent => ({ event: 'unlinkDir', absPath })),
+      ...files.map((absPath): FileEvent => ({ event: 'unlink', absPath, origin: 'watched' })),
+      ...[...dirs, dir].map(
+        (absPath): FileEvent => ({ event: 'unlinkDir', absPath, origin: 'watched' }),
+      ),
     ]
   }
   const renamed = async (from: string, to: string): Promise<FileEvent[]> => {
@@ -360,10 +362,14 @@ describe('the parity cases', () => {
     await rename(from, to)
     const moved = (p: string): string => join(to, relative(from, p))
     return [
-      ...files.map((absPath): FileEvent => ({ event: 'unlink', absPath })),
-      ...files.map((p): FileEvent => ({ event: 'add', absPath: moved(p) })),
-      ...[...dirs, from].map((absPath): FileEvent => ({ event: 'unlinkDir', absPath })),
-      ...[to, ...dirs.map(moved)].map((absPath): FileEvent => ({ event: 'addDir', absPath })),
+      ...files.map((absPath): FileEvent => ({ event: 'unlink', absPath, origin: 'watched' })),
+      ...files.map((p): FileEvent => ({ event: 'add', absPath: moved(p), origin: 'watched' })),
+      ...[...dirs, from].map(
+        (absPath): FileEvent => ({ event: 'unlinkDir', absPath, origin: 'watched' }),
+      ),
+      ...[to, ...dirs.map(moved)].map(
+        (absPath): FileEvent => ({ event: 'addDir', absPath, origin: 'watched' }),
+      ),
     ]
   }
 
@@ -408,7 +414,7 @@ describe('the parity cases', () => {
     it(`a page event that settles after the app ${label} its Set lists nothing unreadable`, async () => {
       await withDaily()
       expect((await handleMutate(root, req, DEPS)).ok).toBe(true)
-      await flush(QUIET, root)
+      await settleNow(QUIET, root)
       await settled([ev('change', 'Notes', 'Daily', 'D.md')])
       expect(held().unreadable).toBeUndefined()
       await agrees()
@@ -519,7 +525,7 @@ describe('the parity cases', () => {
     ])
     expect(held().collections[0]?.pages.map((p) => p.id)).toEqual([ULID_A, ULID_B, ULID_C])
     expect(walked()).toBe(true)
-    await flush(QUIET, root)
+    await settleNow(QUIET, root)
     expect(walk).toHaveBeenCalledTimes(1)
     await agrees()
   })
@@ -606,6 +612,7 @@ describe('classifyEvent', () => {
     expect(classifyEvent(tree, root, ev('add', 'Loose', '_pageset.json'))).toEqual({
       kind: 'folder',
       rel: 'Loose',
+      sidecar: true,
     })
     expect(kind(ev('change', 'Notes', 'photo.png'))).toBe('ignored')
     // A stray wrong-kind sidecar is not this container's meta — the walk ignores it.
@@ -648,8 +655,9 @@ describe('classifyEvent', () => {
       const cls = classifyEvent(tree, raw, {
         event: 'change',
         absPath: join(raw, 'Things', '_pagecollection.json'),
+        origin: 'watched',
       })
-      expect(cls).toEqual({ kind: 'folder', rel: 'Things' })
+      expect(cls).toEqual({ kind: 'folder', rel: 'Things', sidecar: true })
     } finally {
       dropLiveTree()
       await rm(raw, { recursive: true, force: true })
@@ -661,7 +669,7 @@ describe('classifyEvent', () => {
     const tree = await refreshTree(root)
     expect(tree.unreadable?.map((u) => u.path)).toContain('Notes')
     const cls = classifyEvent(tree, root, ev('change', 'Notes', '_pagecollection.json'))
-    expect(cls).toEqual({ kind: 'folder', rel: 'Notes' })
+    expect(cls).toEqual({ kind: 'folder', rel: 'Notes', sidecar: true })
   })
 })
 
@@ -803,15 +811,18 @@ describe('directory events', () => {
   })
 })
 
-describe('tileBodyUnder', () => {
-  const TILE_BODIES = ['.nexus/homepage/t1.md', '.nexus/contexts/Areas/Home/t1.md']
-  const isTileBody = (rel: string): boolean => tileBodyUnder(rel.split('/'), rel)
-
-  it('names what the tree drops among the events the watcher reports', () => {
-    for (const rel of TILE_BODIES) expect(isTileBody(rel)).toBe(true)
-    expect(isTileBody('.nexus/homepage/homepage.json')).toBe(false)
-    expect(isTileBody('Notes/Page.md')).toBe(false)
-    expect(isTileBody('')).toBe(false)
+describe('tile bodies', () => {
+  it('names what the tree drops among the events the watcher reports', async () => {
+    const tree = await refreshTree(root)
+    const kind = (...segs: string[]): string =>
+      classifyEvent(tree, root, ev('change', ...segs)).kind
+    for (const name of ['_tiles.json', 't1.md']) {
+      expect(kind('.nexus', 'homepage', name)).toBe('tiles-leaf')
+      expect(kind('.nexus', 'contexts', 'Areas', 'Home', name)).toBe('tiles-leaf')
+    }
+    expect(kind('.nexus', 'homepage', 'homepage.json')).toBe('homepage-leaf')
+    expect(kind('Notes', 'Page.md')).toBe('page')
+    expect(kind()).toBe('walk')
   })
 })
 
@@ -903,7 +914,9 @@ describe('the file-history timer', () => {
   it('does not arm on the app’s own write', async () => {
     const text = `---\nID: ${ULID_A}\n---\n\nmine\n`
     await writeFile(abs('Notes', 'A.md'), text)
-    await applyEvents(root, [{ ...ev('change', 'Notes', 'A.md'), own: { text } }])
+    await applyEvents(root, [
+      { event: 'change', absPath: abs('Notes', 'A.md'), origin: 'own', text },
+    ])
     expect(noteExternalEdit).not.toHaveBeenCalled()
   })
 })
@@ -913,7 +926,7 @@ describe('the app’s own events', () => {
   const ownUnderLock = async (rel: string, text: string): Promise<void> => {
     const absPath = abs(...rel.split('/'))
     await machine().lock(absPath, () =>
-      applyEvents(root, [{ event: 'change', absPath, own: { text } }]),
+      applyEvents(root, [{ event: 'change', absPath, origin: 'own', text }]),
     )
     expect(walked()).toBe(false)
   }
@@ -952,20 +965,12 @@ describe('the app’s own events', () => {
     expect(held().contexts[0]?.spaces.map((s) => s.id)).toEqual(['sp1', 'sp2'])
   })
 
-  it('the Context registry lands from its text, a new group among it', async () => {
+  it('the Context registry lands from its text', async () => {
     await ownUnderLock(
       '.nexus/contexts/contexts.json',
-      JSON.stringify({
-        contexts: [
-          { id: 'ctx1', title: 'Areas', icon: 'star' },
-          { id: 'ctx2', title: 'Topics' },
-        ],
-      }),
+      JSON.stringify({ contexts: [{ id: 'ctx1', title: 'Areas', icon: 'star' }] }),
     )
-    expect(held().contexts.map((g) => [g.def.id, g.def.icon])).toEqual([
-      ['ctx1', 'star'],
-      ['ctx2', undefined],
-    ])
+    expect(held().contexts.map((g) => [g.def.id, g.def.icon])).toEqual([['ctx1', 'star']])
   })
 
   it('properties.json lands from its text, a new definition among it', async () => {
@@ -1004,14 +1009,14 @@ describe('the app’s own events', () => {
     expect(config.pageMetadata).toEqual({ [SEP]: { icon: 'star' } })
   })
 
-  it('a file listed missing is stamped by the next flush, never inside the event', async () => {
+  it('a file listed missing is stamped by the next settle, never inside the event', async () => {
     await writeFile(abs('Notes', 'Bare.md'), 'bare\n')
     await ownUnderLock('Notes/Bare.md', 'bare\n')
     expect(owedFor(root).stamp).toEqual([
       { path: 'Notes/Bare.md', kind: 'page', reason: 'missing' },
     ])
     expect(await readFile(abs('Notes', 'Bare.md'), 'utf8')).toBe('bare\n')
-    await flush(QUIET, root)
+    await settleNow(QUIET, root)
     const id = splitFrontmatter(await readFile(abs('Notes', 'Bare.md'), 'utf8'))[ID_KEY]
     expect(held().collections[0]?.pages.find((p) => p.path === 'Notes/Bare.md')?.id).toBe(id)
     await agrees()

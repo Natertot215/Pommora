@@ -1,7 +1,7 @@
 import { type Handlers, withRoot, withWriteRoot } from '../Contract/handlers'
 import { fault } from '../Contract/result'
 import { isFiniteNumber, isString } from '../Contract/validators'
-import { openPage } from '../Files/pageFile'
+import { readPage } from '../Files/pageFile'
 import { resolveUnderRoot } from '../Paths/pathSafety'
 import {
   clearHistory,
@@ -20,7 +20,7 @@ export const pagesHandlers = {
     const resolved = await resolveUnderRoot(root, relPath)
     if (!resolved.ok) return resolved
     // relPath stays the page's identity (PageDetail.path); the canonical absolute would mis-key it.
-    return openPage(root, relPath)
+    return readPage(root, relPath)
   }),
 
   'page:updateBody': withWriteRoot(

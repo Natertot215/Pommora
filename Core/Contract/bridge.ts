@@ -15,6 +15,7 @@ import type { WindowsFile } from '../Interface/Windows/windowRecord'
 import type { ThumbRect } from '../Interface/chrome'
 import type { PageValues } from '../Views/viewRow'
 import type { ContainerConfigPatch } from '../Views/containerConfig'
+import type { ContainerKind } from '../Nexus/entities'
 import type { OptionEdit } from '../Properties/optionModel'
 import type { PropertyDeletion } from '../Properties/deleteProperty'
 import type { SchemaCascade, SchemaJournal } from '../Properties/propertyJournal'
@@ -97,27 +98,27 @@ export interface Asks {
   'citations:set': { args: [pageId: string, shown: boolean | null]; reply: Result<null> }
 
   'views:save': {
-    args: [containerPath: string, kind: 'collection' | 'set', base: SavedView, patch: ViewPatch]
+    args: [containerPath: string, kind: ContainerKind, base: SavedView, patch: ViewPatch]
     reply: Result<{ id: string }>
   }
   'views:duplicate': {
-    args: [containerPath: string, kind: 'collection' | 'set', viewId: string]
+    args: [containerPath: string, kind: ContainerKind, viewId: string]
     reply: Result<null>
   }
   'views:reorder': {
-    args: [containerPath: string, kind: 'collection' | 'set', orderedIds: string[]]
+    args: [containerPath: string, kind: ContainerKind, orderedIds: string[]]
     reply: Result<null>
   }
   'views:delete': {
-    args: [containerPath: string, kind: 'collection' | 'set', viewId: string]
+    args: [containerPath: string, kind: ContainerKind, viewId: string]
     reply: Result<RemovedView>
   }
   'views:restore': {
-    args: [containerPath: string, kind: 'collection' | 'set', removed: RemovedView]
+    args: [containerPath: string, kind: ContainerKind, removed: RemovedView]
     reply: Result<null>
   }
   'container:configure': {
-    args: [containerPath: string, kind: 'collection' | 'set', patch: ContainerConfigPatch]
+    args: [containerPath: string, kind: ContainerKind, patch: ContainerConfigPatch]
     reply: Result<null>
   }
   'view:loadValues': {

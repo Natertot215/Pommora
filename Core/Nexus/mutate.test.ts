@@ -3,7 +3,17 @@ import * as liveTree from './liveTree'
 import { dropLiveTree, heldTreeOf, refreshTree } from './liveTree'
 import { splitFrontmatter } from '../Files/pageFile'
 import { ID_KEY } from './identityMark'
-import { rm, mkdir, writeFile, readFile, readdir, chmod, symlink, stat } from 'node:fs/promises'
+import {
+  rm,
+  mkdir,
+  open,
+  writeFile,
+  readFile,
+  readdir,
+  chmod,
+  symlink,
+  stat,
+} from 'node:fs/promises'
 import { join } from '../Paths/posix'
 import { readJsonAt, seedSpaceSidecar, tempRoot, noModeBits, windows } from '../Testing/hostFs'
 import { adoptFile } from '../Assets/adoptFile'
@@ -23,8 +33,8 @@ const B_ID = '01KVGMT8BFP350FZZXAMG1QDRB'
 const C_ID = '01KVGMT8BFP350FZZXAMG1QDRC'
 const G_ID = '01KVGMT8BFP350FZZXAMG1QDRG'
 import { openSession, closeSession } from './session'
-import { flush, settleBatch } from './settle'
-import { applyEvents } from './fileEvents'
+import { settleNow, settleBatch } from './settle'
+import { applyEvents, oweWalk } from './fileEvents'
 import * as readNexusModule from './readNexus'
 import * as contextsRegistry from '../Contexts/contextsRegistry'
 import { stabilize } from './treeStabilize'
@@ -45,10 +55,13 @@ import * as indexSeed from '../Index/indexSeed'
 import * as assignment from '../Properties/assignment'
 import * as contextCascade from '../Contexts/contextCascade'
 import * as atomicWrite from '../Files/atomicWrite'
+import * as governedSweep from '../Properties/governedSweep'
+import { updatePageBody } from './page'
 import { seedContentIndex } from '../Index/indexSeed'
 import { createMarkdownTile, readMarkdownTile, writeMarkdownTile } from '../Tiles/tilesFile'
 import { landedId } from '../Testing/tileLayouts'
 import { lockContention } from '../Testing/machines'
+import { listBundles } from '../Trash/holdings'
 import { fault, ok } from '../Contract/result'
 import { nexusHandlers } from './handlers'
 
@@ -68,7 +81,7 @@ const withValuesPush = async (
   const push = (channel: keyof Pushes, value: unknown): void => {
     if (channel === 'values:changed') values.push(...(value as ValueChange[]))
   }
-  await flush({ push, watch: async () => {} }, root)
+  await settleNow({ push, watch: async () => {} }, root)
   const held = heldTreeOf(root)
   if (held) expect(stabilize(await readNexus(root), held)).toBe(held)
   return { ok: reply.ok, values }
@@ -125,6 +138,17 @@ describe('handleMutate — create', () => {
     if (!r.ok) return
     expect(r.value.created?.path).toBe('Notes/Weekly')
     expect(await pathExists(join(root, 'Notes/Weekly/_pageset.json'))).toBe(true)
+  })
+
+  it('createContextGroup over a folder the registry lost lands with the Spaces the folder holds', async () => {
+    await seedSpaceSidecar(root, 'Realms', 'Home', { id: 'sp-home' })
+    await writeFile(join(contextsDir(root), 'contexts.json'), JSON.stringify({ contexts: [] }))
+    await refreshTree(root)
+    const id = newId()
+    const r = await settledMutate(root, { op: 'createContextGroup', id, name: 'Realms' }, nexusDeps)
+    expect(r).toEqual(ok({ created: { path: '.nexus/contexts/Realms' } }))
+    const group = heldTreeOf(root)?.contexts.find((g) => g.def.id === id)
+    expect(group?.spaces.map((s) => s.title)).toEqual(['Home'])
   })
 
   it('disambiguates a colliding create name (Untitled → Untitled (2))', async () => {
@@ -979,8 +1003,10 @@ describe('handleMutate — review-round hardening', () => {
       JSON.stringify({ asset_directory: 'file-assets' }),
     )
     await mkdir(join(root, 'file-assets'), { recursive: true })
-    await applyEvents(root, [{ event: 'change', absPath: join(root, '.nexus', 'settings.json') }])
-    await flush({ push: () => {}, watch: async () => {} }, root)
+    await applyEvents(root, [
+      { event: 'change', absPath: join(root, '.nexus', 'settings.json'), origin: 'watched' },
+    ])
+    await settleNow({ push: () => {}, watch: async () => {} }, root)
     await settledMutate(
       root,
       { op: 'setProfileImage', source: await pickImage('Kept.png') },
@@ -1367,6 +1393,30 @@ describe('nexusHandlers.mutate — retryUnreadable', () => {
     const live = heldTreeOf(root)
     expect(live && stabilize(await readNexus(root), live)).toBe(live)
   })
+
+  it.skipIf(noModeBits)(
+    'a root folder its Try Again couldn’t stamp, stamped later by a walk, keeps every byte of a note still being written in it',
+    async () => {
+      await mkdir(join(root, 'Raw'))
+      await writeFile(join(root, 'Raw', 'P.md'), 'p\n')
+      await refreshTree(root)
+      await chmod(join(root, 'Raw'), 0o555)
+      try {
+        expect((await retry('Raw')).ok).toBe(true)
+      } finally {
+        await chmod(join(root, 'Raw'), 0o755)
+      }
+      expect(await readdir(join(root, 'Raw'))).toEqual(['P.md'])
+      const writer = await open(join(root, 'Raw', 'P.md'), 'w')
+      await writer.write('first half\n')
+      oweWalk(root)
+      await settleNow(ctx, root)
+      await writer.write('second half\n')
+      await writer.close()
+      expect(held('Raw')).toBe(true)
+      expect(await read('Raw/P.md')).toBe('first half\nsecond half\n')
+    },
+  )
 })
 
 describe('nexusHandlers.mutate — a create’s ID', () => {
@@ -1532,7 +1582,7 @@ describe('handleMutate — setBanner', () => {
     const push = (channel: keyof Pushes, value: unknown): void => {
       if (channel === 'assets:changed') pushed = value as AssetMap
     }
-    await flush({ push, watch: async () => {} }, root)
+    await settleNow({ push, watch: async () => {} }, root)
     expect(pushed).not.toBeNull()
     expect(resolveAssetName(pushed!, 'Live.png')).toBe('file-assets/Live.png')
   })
@@ -2274,7 +2324,7 @@ describe('the Contexts lock', () => {
         nexusDeps,
       ),
     ])
-    await flush({ push: () => {}, watch: async () => {} }, root)
+    await settleNow({ push: () => {}, watch: async () => {} }, root)
     const held = heldTreeOf(root)
     expect(held && stabilize(await readNexus(root), held)).toBe(held)
     expect(renamed.ok && tagged.ok).toBe(true)
@@ -2432,6 +2482,216 @@ describe('the Contexts lock', () => {
     )
   })
 
+  // A page's value takes no Contexts lock: written while a Space or Context delete or restore stands paused before or after its sweep, it lands beside what the operation leaves, and the held tree agrees with a fresh read.
+  const pauseOn = <T extends object>(
+    target: T,
+    name: keyof T,
+    when: 'before' | 'after',
+    match: (...args: unknown[]) => boolean = () => true,
+  ): { reached: Promise<void>; release: () => void } => {
+    const original = target[name] as (...args: unknown[]) => Promise<unknown>
+    let reach = (): void => {}
+    let release = (): void => {}
+    const reached = new Promise<void>((resolve) => {
+      reach = resolve
+    })
+    const released = new Promise<void>((resolve) => {
+      release = resolve
+    })
+    let armed = true
+    vi.spyOn(target, name as never).mockImplementation((async (...args: unknown[]) => {
+      if (!armed || !match(...args)) return original.apply(target, args)
+      armed = false
+      if (when === 'before') {
+        reach()
+        await released
+        return original.apply(target, args)
+      }
+      const out = await original.apply(target, args)
+      reach()
+      await released
+      return out
+    }) as never)
+    return { reached, release }
+  }
+  const valueDuring = async (
+    op: MutateRequest,
+    pause: () => { reached: Promise<void>; release: () => void },
+    tagged: boolean,
+  ): Promise<void> => {
+    const stage = await createProperty(root, { id: '', name: 'Stage', type: 'number' })
+    if (!stage.ok) throw new Error('setup')
+    await refreshTree(root)
+    const paused = pause()
+    const running = handleMutate(root, op, nexusDeps)
+    await paused.reached
+    const valued = await handleMutate(
+      root,
+      {
+        op: 'setProperty',
+        path: 'Notes/Daily/Alpha.md',
+        propertyId: stage.value.id,
+        value: { kind: 'number', value: 3 },
+      },
+      nexusDeps,
+    )
+    await settleNow({ push: () => {}, watch: async () => {} }, root)
+    paused.release()
+    expect((await running).ok && valued.ok).toBe(true)
+    vi.restoreAllMocks()
+    await settleNow({ push: () => {}, watch: async () => {} }, root)
+    const fm = splitFrontmatter(await read('Notes/Daily/Alpha.md'))
+    expect(fm.Stage).toBe(3)
+    expect(fm['<Areas>']).toEqual(tagged ? ['Work'] : undefined)
+    const held = heldTreeOf(root)
+    expect(held && stabilize(await readNexus(root), held)).toBe(held)
+  }
+  const deletes = [
+    [
+      'Space',
+      { op: 'delete', path: '.nexus/contexts/Areas/Work', kind: 'space' },
+      'unlinkSpaceValue',
+    ],
+    [
+      'Context',
+      { op: 'delete', path: '.nexus/contexts/Areas', kind: 'context' },
+      'unlinkContextKey',
+    ],
+  ] as const
+  for (const [entity, op, sweep] of deletes)
+    for (const when of ['before', 'after'] as const) {
+      it(`a page value written ${when} a ${entity} delete's sweep lands, and the tag is gone`, async () => {
+        await valueDuring(op, () => pauseOn(contextCascade, sweep, when), false)
+      })
+
+      it(`a page value written while a ${entity} restore stands ${when === 'before' ? 'after its move' : 'after its re-tag'} lands, and the tag is back`, async () => {
+        expect((await settledMutate(root, op, nexusDeps)).ok).toBe(true)
+        const [bundle] = await listBundles(root)
+        await valueDuring(
+          { op: 'restore', bundlePath: bundle.bundlePath },
+          () =>
+            when === 'before'
+              ? pauseOn(atomicWrite, 'relocate', 'after')
+              : pauseOn(machine(), 'remove', 'before', (p) => p === join(root, bundle.bundlePath)),
+          true,
+        )
+      })
+    }
+
+  // A delete whose sweep missed a member refuses and puts back what it took; a page written after the sweep reached it keeps that write, and its tag is back.
+  const writtenDuringRefusal = async (
+    op: MutateRequest,
+    write: (alpha: string) => Promise<unknown>,
+  ): Promise<string> => {
+    const locked = join(root, 'Notes', 'Daily', 'Locked.md')
+    await writeFile(
+      locked,
+      '---\nID: 01KVGMT8BFP350FZZXAMG1QDRK\n<Areas>:\n  - Work\n---\n\nlocked',
+    )
+    await refreshTree(root)
+    await chmod(locked, 0o000)
+    try {
+      const alpha = join(root, 'Notes', 'Daily', 'Alpha.md')
+      const paused = pauseOn(governedSweep, 'sweepGovernedRoots', 'after', (_, files) =>
+        (files as string[]).includes(alpha),
+      )
+      const running = handleMutate(root, op, nexusDeps)
+      await paused.reached
+      expect(splitFrontmatter(await read('Notes/Daily/Alpha.md'))['<Areas>']).toBeUndefined()
+      await write(alpha)
+      paused.release()
+      expect((await running).ok).toBe(false)
+    } finally {
+      vi.restoreAllMocks()
+      await chmod(locked, 0o644)
+    }
+    await applyEvents(root, [{ event: 'change', absPath: locked, origin: 'watched' }])
+    await settleNow({ push: () => {}, watch: async () => {} }, root)
+    const held = heldTreeOf(root)
+    expect(held && stabilize(await readNexus(root), held)).toBe(held)
+    return read('Notes/Daily/Alpha.md')
+  }
+  for (const [entity, op] of deletes) {
+    it.skipIf(noModeBits)(
+      `a page value written after a refused ${entity} delete's sweep reached the page survives the refusal, and the tag is back`,
+      async () => {
+        const stage = await createProperty(root, { id: '', name: 'Stage', type: 'number' })
+        if (!stage.ok) throw new Error('setup')
+        const text = await writtenDuringRefusal(op, async () => {
+          const valued = await handleMutate(
+            root,
+            {
+              op: 'setProperty',
+              path: 'Notes/Daily/Alpha.md',
+              propertyId: stage.value.id,
+              value: { kind: 'number', value: 3 },
+            },
+            nexusDeps,
+          )
+          expect(valued.ok).toBe(true)
+        })
+        const fm = splitFrontmatter(text)
+        expect(fm.Stage).toBe(3)
+        expect(fm['<Areas>']).toEqual(['Work'])
+      },
+    )
+
+    it.skipIf(noModeBits)(
+      `a body saved after a refused ${entity} delete's sweep reached the page survives the refusal, and the tag is back`,
+      async () => {
+        const text = await writtenDuringRefusal(op, (alpha) =>
+          updatePageBody(alpha, 'saved meanwhile\n', undefined, true),
+        )
+        expect(text).toContain('saved meanwhile')
+        expect(splitFrontmatter(text)['<Areas>']).toEqual(['Work'])
+      },
+    )
+  }
+
+  it.skipIf(noModeBits).each([
+    ['unparsable', '---\nID: [unclosed\n---\n\nbroken'],
+    ['foreign', '---\nID: 42\n---\n\nforeign'],
+  ])(
+    'a swept page made %s before a refused delete puts it back doesn’t stop the pages after it, and the refusal counts it',
+    async (_, made) => {
+      const locked = join(root, 'Notes', 'Daily', 'Locked.md')
+      const second = join(root, 'Notes', 'Daily', 'Second.md')
+      await writeFile(
+        locked,
+        '---\nID: 01KVGMT8BFP350FZZXAMG1QDRK\n<Areas>:\n  - Work\n---\n\nlocked',
+      )
+      await writeFile(
+        second,
+        '---\nID: 01KVGMT8BFP350FZZXAMG1QDRS\n<Areas>:\n  - Work\n---\n\nsecond',
+      )
+      await refreshTree(root)
+      await chmod(locked, 0o000)
+      try {
+        const sweeps = (files: unknown) => (files as string[]).includes(locked)
+        const paused = pauseOn(governedSweep, 'sweepGovernedRoots', 'after', (_, files) =>
+          sweeps(files),
+        )
+        const running = handleMutate(root, deletes[0][1], nexusDeps)
+        await paused.reached
+        const files =
+          vi.mocked(governedSweep.sweepGovernedRoots).mock.calls.find(([, f]) => sweeps(f))?.[1] ??
+          []
+        const [first, last] = [join(root, 'Notes', 'Daily', 'Alpha.md'), second].sort(
+          (a, b) => files.indexOf(a) - files.indexOf(b),
+        )
+        await writeFile(first, made)
+        paused.release()
+        const reply = await running
+        expect(await readFile(first, 'utf8')).toBe(made)
+        expect(splitFrontmatter(await readFile(last, 'utf8'))['<Areas>']).toEqual(['Work'])
+        expect(reply).toEqual(fault(governedSweep.unsweptLine(2)))
+      } finally {
+        vi.restoreAllMocks()
+        await chmod(locked, 0o644)
+      }
+    },
+  )
+
   it('a Space created during a Context rename lands in the renamed Context', async () => {
     await refreshTree(root)
     const [renamed, created] = await Promise.all([
@@ -2446,7 +2706,7 @@ describe('the Contexts lock', () => {
         nexusDeps,
       ),
     ])
-    await flush({ push: () => {}, watch: async () => {} }, root)
+    await settleNow({ push: () => {}, watch: async () => {} }, root)
     const held = heldTreeOf(root)
     expect(held && stabilize(await readNexus(root), held)).toBe(held)
     expect(renamed.ok && created.ok).toBe(true)
@@ -2474,7 +2734,7 @@ describe('the Contexts lock', () => {
         nexusDeps,
       ),
     ])
-    await flush({ push: () => {}, watch: async () => {} }, root)
+    await settleNow({ push: () => {}, watch: async () => {} }, root)
     const held = heldTreeOf(root)
     expect(held && stabilize(await readNexus(root), held)).toBe(held)
     expect(renamed.ok && created.ok).toBe(true)
@@ -2520,8 +2780,8 @@ describe('the Contexts lock', () => {
     )
     await atCommit.promise
     const batch = settleBatch({ push: () => {}, watch: async () => {} }, root, [
-      { event: 'addDir', absPath: gamma },
-      { event: 'add', absPath: join(gamma, '_space.json') },
+      { event: 'addDir', absPath: gamma, origin: 'watched' },
+      { event: 'add', absPath: join(gamma, '_space.json'), origin: 'watched' },
     ])
     expect((await renaming).ok).toBe(true)
     await batch
@@ -2933,7 +3193,6 @@ describe('each routine operation lands from its own events, with no walk', () =>
       { op: 'createContainer', id: newId(), parentPath: '', kind: 'collection', name: 'Journal' },
     ],
     ['a Space create', { op: 'createSpace', id: newId(), contextId: 'ctxP', name: 'Atlas' }],
-    ['a Context group create', { op: 'createContextGroup', id: newId(), name: 'Topics' }],
     ['a rename', { op: 'rename', path: 'Notes/Daily/Beta.md', kind: 'page', newName: 'Gamma' }],
     ['a page move', { op: 'movePage', path: 'Notes/Daily/Beta.md', newParentPath: 'Other' }],
     ['a Set move', { op: 'moveSet', path: 'Notes/Daily', newParentPath: 'Other', order: [] }],

@@ -4,10 +4,10 @@ import { act, createElement } from 'react'
 import type { Root } from 'react-dom/client'
 import { type SavedView, foldView, slotsOf, type ViewPatch } from '../views'
 import { mountEachTest } from '../../Testing/viewHarness'
-import { type OrderRequest, mutateAhead, stageView, useLiveView, usePainted } from './pendingView'
+import { mutateAhead, stageView, useLiveView, usePainted } from './pendingView'
 import { useSession } from '../../Session/store'
 import type { CollectionNode, NexusTree, SetNode } from '../../Nexus/tree'
-import type { MutateOutcome } from '../../Nexus/mutateRequest'
+import type { MutateOutcome, OrderRequest } from '../../Nexus/mutateRequest'
 
 const base = (over: Partial<SavedView> = {}): SavedView =>
   ({

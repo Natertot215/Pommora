@@ -3,7 +3,7 @@ import { heldTreeOf, liveTreeOf } from '../Nexus/liveTree'
 import { handleMutate } from '../Nexus/mutate'
 import type { MutateReply, MutateRequest } from '../Nexus/mutateRequest'
 import { readNexus } from '../Nexus/readNexus'
-import { flush } from '../Nexus/settle'
+import { settleNow } from '../Nexus/settle'
 import { stabilize } from '../Nexus/treeStabilize'
 import type { TrashDeps } from '../Trash/bundle'
 
@@ -17,7 +17,7 @@ export async function settledMutate(
 ): Promise<MutateReply> {
   await liveTreeOf(root)
   const reply = await handleMutate(root, req, deps)
-  await flush(QUIET, root)
+  await settleNow(QUIET, root)
   const held = heldTreeOf(root)
   if (held) expect(stabilize(await readNexus(root), held)).toBe(held)
   return reply

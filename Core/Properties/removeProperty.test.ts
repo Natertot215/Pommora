@@ -7,17 +7,17 @@ import { fault, ok } from '../Contract/result'
 import { editJsonStrict } from '../Files/atomicWrite'
 import { seedConfigSurfaces, viewOn } from '../Testing/configSurfaces'
 import { sidecarPath } from '../Paths/paths'
-import { flush } from '../Nexus/settle'
+import { settleNow } from '../Nexus/settle'
 import type { ValueChange } from '../Nexus/tree'
 import type { Pushes } from '../Contract/bridge'
 import { removeProperty } from './removeProperty'
-import { assignProperty } from './assignment'
+import { assignedIds, assignProperty } from './assignment'
 import { createProperty, editProperty } from './registryProperty'
 import { createFolderEntity } from '../Nexus/folderEntity'
 import { newId } from '../Nexus/ids'
 import { updatePageProperty } from '../Nexus/page'
 import { createTestPage } from '../Testing/createTestPage'
-import { readSidecar } from '../Files/sidecar'
+import { patchSidecar, readSidecar } from '../Files/sidecar'
 import { readRegistry } from './propertiesRegistry'
 import { splitFrontmatter } from '../Files/pageFile'
 import { pageCollectionSidecar } from '../Nexus/schemas'
@@ -99,7 +99,7 @@ describe('removeProperty — strip + cache (C-3/C-6)', () => {
     const push = (channel: keyof Pushes, value: unknown): void => {
       if (channel === 'values:changed') rels.push(...(value as ValueChange[]).map((c) => c.rel))
     }
-    await flush({ push, watch: async () => {} }, root)
+    await settleNow({ push, watch: async () => {} }, root)
     expect(rels).toEqual(['Notes'])
     expect(r.ok).toBe(true)
     expect(await pageValue(pageA)).toBeUndefined()
@@ -258,6 +258,19 @@ describe('restore on re-assign — per-value schema-currency reconciliation (C-3
     expect(await pageValue(pageB)).toEqual(['done'])
     expect(await cacheBlock()).toBeUndefined()
     expect((await sidecar())?.properties).toContain(propId)
+  })
+
+  it('a Remove after a refill that didn’t reach every page keeps the cached values, so the next Assign leaves every page its value', async () => {
+    await removeProperty(root, folder, propId)
+    await patchSidecar(folder, 'collection', (cur) => ({
+      ...cur,
+      properties: [...assignedIds(cur), propId],
+    }))
+    await updatePageProperty(pageA, liveDef, { kind: 'select', value: 'active' })
+    await removeProperty(root, folder, propId)
+    await assignProperty(root, folder, propId)
+    expect(await pageValue(pageA)).toEqual(['active'])
+    expect(await pageValue(pageB)).toEqual(['done'])
   })
 
   it('a page that regained the key itself keeps its own value; a page without it still gets the cached one', async () => {

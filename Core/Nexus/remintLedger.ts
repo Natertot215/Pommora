@@ -6,7 +6,6 @@ import { contextDirRel } from '../Paths/nexusPaths'
 import { entityMemo, type NexusTree, type PageNode, type SetNode, type Unreadable } from './tree'
 import { withheldIn } from './treePatch'
 import { readKey, writeKey } from '../Platform/localState'
-import { refreshTree, seedLiveTree } from './liveTree'
 import { applyRemints, runRemintPass } from './remint'
 
 export type Baseline = Record<string, EntityRecord>
@@ -116,9 +115,6 @@ export async function runOpenLedger(root: string, tree: NexusTree): Promise<void
     const projection = applyRemints(walked, reminted)
     await recordEldest(root, projection, prior)
     writeBaseline(latchBaseline(projection, tree.unreadable ?? [], prior))
-    // This walk observed pre-remint disk, so it seeds the session only when the remint wrote nothing; otherwise two entities would share an id, colliding every id-keyed store, and a re-walk that fails leaves no tree, which the next read walks for.
-    if (reminted.length === 0) seedLiveTree(tree)
-    else await refreshTree(root)
   } catch (e) {
     console.error('ledger: the open pass failed:', errText(e))
   }

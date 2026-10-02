@@ -1,5 +1,5 @@
 import { applyEvents } from '../Nexus/fileEvents'
-import { flush } from '../Nexus/settle'
+import { settleNow } from '../Nexus/settle'
 import { mkdir, readdir, readFile, rename, rm, writeFile } from 'node:fs/promises'
 import { splitFrontmatter } from '../Files/pageFile'
 import { basename, dirname, join, relative } from '../Paths/posix'
@@ -955,8 +955,10 @@ describe('restore — the gate-four pins', () => {
       nexusDeps,
     )
     await writeFile(contextsRegistryFile(root), '{corrupt')
-    await applyEvents(root, [{ event: 'change', absPath: contextsRegistryFile(root) }])
-    await flush({ push: () => {}, watch: async () => {} }, root)
+    await applyEvents(root, [
+      { event: 'change', absPath: contextsRegistryFile(root), origin: 'watched' },
+    ])
+    await settleNow({ push: () => {}, watch: async () => {} }, root)
     const [listed] = await listBundles(root)
     const r = await settledMutate(root, { op: 'restore', bundlePath: listed.bundlePath }, nexusDeps)
     expect(r.ok).toBe(false)
@@ -1008,7 +1010,9 @@ describe('restore — the gate-four pins', () => {
       join(root, 'Notes', 'Daily', 'Alpha.md'),
       '---\nID: 01KVGMT8BFT350FZZXAMG1QDVD\n---\nsquatter',
     )
-    await applyEvents(root, [{ event: 'add', absPath: join(root, 'Notes', 'Daily', 'Alpha.md') }])
+    await applyEvents(root, [
+      { event: 'add', absPath: join(root, 'Notes', 'Daily', 'Alpha.md'), origin: 'watched' },
+    ])
     const [listed] = await listBundles(root)
     const r = await settledMutate(root, { op: 'restore', bundlePath: listed.bundlePath }, nexusDeps)
     expect(r.ok).toBe(false)

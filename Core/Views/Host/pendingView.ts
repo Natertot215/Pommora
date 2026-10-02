@@ -13,7 +13,7 @@ import { useLatest } from '@pommora/uix/Utilities/stableApi'
 import type { CollectionNode, NexusTree, SetNode } from '../../Nexus/tree'
 import { announceDrag } from '@pommora/uix/Interactions/a11y'
 import { channel } from '@pommora/uix/Utilities/subscribable'
-import type { MutateRequest } from '../../Nexus/mutateRequest'
+import type { OrderRequest } from '../../Nexus/mutateRequest'
 import { resolveOrder } from '../../Nexus/order'
 import { containerAt, moveNodeInTree, updateNodeInTree } from '../../Nexus/treePatch'
 import { basename, relJoin } from '../../Paths/posix'
@@ -120,11 +120,6 @@ export function unstageView(sourceId: string, viewId: string, patch: ViewPatch):
 }
 
 // ── Orders painted ahead ────────────────────────────────────────────────────
-
-export type OrderRequest = Extract<
-  MutateRequest,
-  { op: 'movePage' | 'moveSet' | 'reorderChildren' }
->
 
 function withChildOrder(
   tree: NexusTree,

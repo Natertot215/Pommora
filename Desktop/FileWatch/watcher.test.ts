@@ -11,9 +11,9 @@ import { recordWrite } from '@pommora/core/Files/writeEcho'
 import { forgetLastReads } from '@pommora/core/Files/atomicWrite'
 import { push } from '../Bridge/ipc'
 import { sessionRoot, type WaitingOpen, waitingOpen } from '@pommora/core/Nexus/session'
-import { classifyEvent, tileBodyUnder } from '@pommora/core/Nexus/fileEvents'
-import { sent } from '@pommora/core/Nexus/settle'
-import { patch } from '@pommora/core/Nexus/treeDelta'
+import { classifyEvent } from '@pommora/core/Nexus/fileEvents'
+import { recordHanded } from '@pommora/core/Nexus/settle'
+import { applyDelta } from '@pommora/core/Nexus/treeDelta'
 import type { NexusChange, NexusTree } from '@pommora/core/Nexus/tree'
 import { readIndexedStat } from '@pommora/core/Index/contentIndex'
 import chokidar from 'chokidar'
@@ -70,7 +70,7 @@ const ULID_C = '01CX5ZZKBKPCTAV9WEVGEMMVRC'
 let root: string
 let shown: NexusTree
 // What the window holds once it applies a pushed difference to the tree it was sent.
-const applied = (change: unknown): NexusTree => patch(shown, (change as NexusChange).delta)
+const applied = (change: unknown): NexusTree => applyDelta(shown, (change as NexusChange).delta)
 const abs = (...segs: string[]): string => join(root, ...segs)
 const emit = (event: string, ...segs: string[]): void => handlers.get(event)?.(abs(...segs))
 // After the fake-timer debounce fires, the settle's apply work runs on real time — poll for the outcome (with a hard ceiling) rather than sleeping a fixed budget a loaded suite can overrun.
@@ -96,7 +96,7 @@ beforeEach(async () => {
   live = open
   pushMock.mockClear()
   handlers.clear()
-  shown = sent(await refreshTree(root)).tree
+  shown = recordHanded(await refreshTree(root)).tree
   vi.useFakeTimers()
 })
 afterEach(async () => {
@@ -502,7 +502,6 @@ describe('a metadata month file under the watcher', () => {
 describe('syncIgnoredUnder', () => {
   const ignored = (...segs: string[]): boolean =>
     syncIgnoredUnder('/nexus', { excluded: [], assetDir: '' })(join('/nexus', ...segs))
-  const tileBody = (...segs: string[]): boolean => tileBodyUnder(segs, segs.join('/'))
 
   it('ignores a store, its journal, and a quarantined store wherever it sits, and nothing else under .nexus', () => {
     expect(ignored('.nexus', 'versions.db')).toBe(true)
@@ -515,7 +514,7 @@ describe('syncIgnoredUnder', () => {
     expect(ignored('Notes', 'report.md')).toBe(false)
   })
 
-  it('reports a tile body the tree then drops, and lets chokidar descend into the homepage folder', () => {
+  it('watches every tile document and body, and lets chokidar descend into the homepage folder', () => {
     for (const segs of [
       ['.nexus', 'homepage'],
       ['.nexus', 'homepage', '_tiles.json'],
@@ -524,12 +523,6 @@ describe('syncIgnoredUnder', () => {
       ['.nexus', 'contexts', 'Areas', 'Home', '01ARZ3NDEKPSV4RRFFQ69G5FAV.md'],
     ])
       expect(ignored(...segs)).toBe(false)
-    expect(tileBody('.nexus', 'homepage', '_tiles.json')).toBe(false)
-    expect(tileBody('.nexus', 'homepage', '01ARZ3NDEKPSV4RRFFQ69G5FAV.md')).toBe(true)
-    expect(tileBody('.nexus', 'contexts', 'Areas', 'Home', '_tiles.json')).toBe(false)
-    expect(tileBody('.nexus', 'contexts', 'Areas', 'Home', '01ARZ3NDEKPSV4RRFFQ69G5FAV.md')).toBe(
-      true,
-    )
   })
 })
 
@@ -574,7 +567,9 @@ describe('syncIgnoredUnder beside the classifier', () => {
       // A path the watcher drops but the classifier would have handled is silently lost.
       expect(syncIgnoredUnder(root, scope(dir))(path)).toBe(false)
       const scoped = { ...tree, config: { ...tree.config, assetDirectory: dir } }
-      expect(classifyEvent(scoped, root, { event: 'change', absPath: path }).kind).toBe('asset')
+      expect(
+        classifyEvent(scoped, root, { event: 'change', absPath: path, origin: 'watched' }).kind,
+      ).toBe('asset')
     }
   })
 })

@@ -53,7 +53,7 @@ export async function loadValues(
   )
   const out: Record<string, PageValues> = {}
   for (const rec of records) {
-    if (!rec || 'unread' in rec) continue
+    if (rec?.kind !== 'read') continue
     out[rec.node.id] = pageValuesOf(rec.node.id, rec.fm, rec.mtimeMs)
   }
   return out

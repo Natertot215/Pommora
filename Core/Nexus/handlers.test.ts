@@ -15,7 +15,9 @@ import { nexusHandlers, openNexusSequence } from './handlers'
 import { dropLiveTree, heldTreeOf, refreshTree } from './liveTree'
 import { closeSession, sessionRoot, waitingOpen } from './session'
 import * as readNexusModule from './readNexus'
-import { readBaseline } from './remintLedger'
+import { readNexus } from './readNexus'
+import { projectBaseline, readBaseline } from './remintLedger'
+import { stabilize } from './treeStabilize'
 import { splitFrontmatter } from '../Files/pageFile'
 import { ID_KEY, isUlidShaped } from './identityMark'
 
@@ -23,6 +25,8 @@ const NEXUS = '01KVGMT8BFP350FZZXAMG1QDRN'
 const NOTES = '01KVGMT8BFP350FZZXAMG1QDRW'
 const OTHER = '01KVGMT8BFP350FZZXAMG1QDRX'
 const THIRD_PAGE = '01KVGMT8BFP350FZZXAMG1QDRY'
+const SHELF = '01KVGMT8BFP350FZZXAMG1QDRZ'
+const HOME = '01KVGMT8BFP350FZZXAMG1QDS0'
 const ADDRESS = 'http://127.0.0.1:7473'
 
 let root: string
@@ -181,6 +185,109 @@ describe('openNexusSequence', () => {
     for (const p of [...(inbox?.pages ?? []), ...(inbox?.sets[0]?.pages ?? [])])
       expect(isUlidShaped(p.id)).toBe(true)
     expect(heldTreeOf(root)?.unreadable).toBeUndefined()
+  })
+
+  it('an open that stamps nothing reads once, and one that stamps reads again and holds every page it stamped', async () => {
+    const reads = vi.spyOn(readNexusModule, 'readNexus')
+    await openNexusSequence(ctx, root, true)
+    expect(reads).toHaveBeenCalledTimes(1)
+    closeSession()
+    dropLiveTree()
+    await writeFile(join(root, 'Library', 'Bare.md'), 'bare')
+    await mkdir(join(root, 'Inbox'))
+    await writeFile(join(root, 'Inbox', 'One.md'), 'one')
+    reads.mockClear()
+    await openNexusSequence(ctx, root, true)
+    expect(reads).toHaveBeenCalledTimes(2)
+    reads.mockRestore()
+    const held = heldTreeOf(root)
+    expect(held?.unreadable).toBeUndefined()
+    expect(held?.collections.flatMap((c) => c.pages.map((p) => p.title)).sort()).toEqual([
+      'Bare',
+      'Notes',
+      'One',
+    ])
+    expect(held && stabilize(await readNexus(root), held)).toBe(held)
+  })
+
+  it('an open stamps a Space missing its ID before it holds the tree, so a page tagged with it holds its link', async () => {
+    const home = join(root, '.nexus', 'contexts', 'Areas', 'Home')
+    await mkdir(home, { recursive: true })
+    await writeFile(join(home, '_space.json'), '{}')
+    await writeFile(
+      join(root, 'Library', 'Tagged.md'),
+      `---\nID: ${THIRD_PAGE}\n<Areas>:\n  - Home\n---\nbody`,
+    )
+    await openNexusSequence(ctx, root, true)
+    const held = heldTreeOf(root)
+    if (!held) throw new Error('no tree held')
+    const areas = held.contexts.find((g) => g.def.title === 'Areas')
+    const space = areas?.spaces.find((s) => s.title === 'Home')
+    if (!areas || !space) throw new Error('no Home Space held')
+    const tagged = held.collections[0]?.pages.find((p) => p.id === THIRD_PAGE)
+    expect(tagged?.contextValues).toEqual({ [areas.def.id]: [space.id] })
+    expect(stabilize(await readNexus(root), held)).toBe(held)
+  })
+
+  it('a reopen that re-mints a duplicated page, Set, and Space holds no shared ID and agrees with a fresh read', async () => {
+    const reopen = async (): Promise<void> => {
+      closeSession()
+      dropLiveTree()
+      await openNexusSequence(ctx, root, true)
+    }
+    const space = join(root, '.nexus', 'contexts', 'Areas', 'Home')
+    await mkdir(join(root, 'Library', 'Shelf'))
+    await writeFile(join(root, 'Library', 'Shelf', '_pageset.json'), JSON.stringify({ id: SHELF }))
+    await openNexusSequence(ctx, root, true)
+    await mkdir(space, { recursive: true })
+    await writeFile(join(space, '_space.json'), JSON.stringify({ id: HOME }))
+    await reopen()
+    await writeFile(join(root, 'Library', 'Copy.md'), `---\nID: ${NOTES}\n---\nbody`)
+    await mkdir(join(root, 'Library', 'Shelf Copy'))
+    await writeFile(
+      join(root, 'Library', 'Shelf Copy', '_pageset.json'),
+      JSON.stringify({ id: SHELF }),
+    )
+    await mkdir(`${space} Copy`)
+    await writeFile(join(`${space} Copy`, '_space.json'), JSON.stringify({ id: HOME }))
+    await reopen()
+    const held = heldTreeOf(root)
+    if (!held) throw new Error('no tree held')
+    const { entries, duplicates } = projectBaseline(held)
+    expect(duplicates).toEqual({})
+    expect(Object.keys(entries)).toEqual(expect.arrayContaining([NOTES, SHELF, HOME]))
+    expect(Object.keys(entries)).toHaveLength(10)
+    expect(held.unreadable).toBeUndefined()
+    expect(stabilize(await readNexus(root), held)).toBe(held)
+  })
+
+  it('a reopen that re-mints a duplicated Context holds the Spaces its folder holds and the pages tagged with them', async () => {
+    await openNexusSequence(ctx, root, true)
+    const registry = await readJsonAt<{ contexts: { id: string; title: string }[] }>(
+      contextsRegistryFile(root),
+    )
+    const areas = registry.contexts.find((c) => c.title === 'Areas')
+    if (!areas) throw new Error('no Areas Context seeded')
+    registry.contexts.push({ ...areas, title: 'Realms' })
+    await writeFile(contextsRegistryFile(root), JSON.stringify(registry))
+    const home = join(contextsDir(root), 'Realms', 'Home')
+    await mkdir(home, { recursive: true })
+    await writeFile(join(home, '_space.json'), JSON.stringify({ id: HOME }))
+    await writeFile(
+      join(root, 'Library', 'Tagged.md'),
+      `---\nID: ${THIRD_PAGE}\n<Realms>:\n  - Home\n---\nbody`,
+    )
+    closeSession()
+    dropLiveTree()
+    await openNexusSequence(ctx, root, true)
+    const held = heldTreeOf(root)
+    if (!held) throw new Error('no tree held')
+    const realms = held.contexts.find((g) => g.def.title === 'Realms')
+    expect(realms?.def.id).not.toBe(areas.id)
+    expect(realms?.spaces.map((s) => s.id)).toEqual([HOME])
+    const tagged = held.collections[0]?.pages.find((p) => p.id === THIRD_PAGE)
+    expect(tagged?.contextValues).toEqual({ [realms?.def.id ?? '']: [HOME] })
+    expect(stabilize(await readNexus(root), held)).toBe(held)
   })
 
   it('a failed walk retains the prior baseline and the open proceeds', async () => {

@@ -394,7 +394,7 @@ describe('the own tap', () => {
     await atomicWriteFile(p, 'first')
     expect(noted).toEqual([
       {
-        ev: { event: 'change', absPath: p, own: { text: 'first', bodyOnly: false } },
+        ev: { event: 'change', absPath: p, origin: 'own', text: 'first', bodyOnly: false },
         text: 'first',
         mtimeMs: expect.any(Number),
       },
@@ -408,7 +408,7 @@ describe('the own tap', () => {
     await utimes(p, past, past)
     await rewritePreservingTimes(p, 'new')
     expect(noted).toHaveLength(1)
-    expect(noted[0].ev).toEqual({ event: 'change', absPath: p, own: { text: 'new' } })
+    expect(noted[0].ev).toEqual({ event: 'change', absPath: p, origin: 'own', text: 'new' })
     expect(noted[0].text).toBe('new')
     expect(Math.floor((noted[0].mtimeMs ?? 0) / 1000)).toBe(Math.floor(past.getTime() / 1000))
   })
@@ -416,7 +416,7 @@ describe('the own tap', () => {
   it('notes a binary write as an add', async () => {
     const p = join(dir, 'x.png')
     await atomicWriteBinary(p, new TextEncoder().encode('bytes'))
-    expect(noted.map((n) => n.ev)).toEqual([{ event: 'add', absPath: p, own: {} }])
+    expect(noted.map((n) => n.ev)).toEqual([{ event: 'add', absPath: p, origin: 'own' }])
   })
 
   it('notes a relocate as a move, with the source free for the tap to lock', async () => {
@@ -440,7 +440,7 @@ describe('the own tap', () => {
     const p = join(dir, 'gone.md')
     await writeFile(p, 'bye')
     await discardFile(dir, p, { trashMode: 'nexus', trashToSystem: async () => {} })
-    expect(noted.map((n) => n.ev)).toEqual([{ event: 'unlink', absPath: p, own: {} }])
+    expect(noted.map((n) => n.ev)).toEqual([{ event: 'unlink', absPath: p, origin: 'own' }])
     expect(noted[0].text).toBeNull()
   })
 
