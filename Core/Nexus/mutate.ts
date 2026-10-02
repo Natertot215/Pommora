@@ -36,7 +36,7 @@ import { renameCascade } from './cascade'
 import { setChildOrder, setCollectionOrder, setPanelContextOrder, setSpaceOrder } from './reorder'
 import { liveTreeOf, mutableTarget } from './liveTree'
 import { stampMissing, stampPage } from './adopt'
-import { owedFor } from './fileEvents'
+import { oweWalk } from './fileEvents'
 import { reachReport } from './configReach'
 import { walkOwed } from './settle'
 
@@ -208,7 +208,7 @@ async function dispatch(ctx: MutateContext, req: MutateRequest): Promise<MutateR
       const entry = (await liveTreeOf(root)).unreadable?.find((u) => u.path === req.path)
       if (entry?.reason === 'malformed') await stampPage(join(root, entry.path), 'page', true)
       if (entry?.reason === 'missing') await stampMissing(root, [entry])
-      owedFor(root).walk = true
+      oweWalk(root)
       return ok({})
     }
 
