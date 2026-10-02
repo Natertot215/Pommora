@@ -28,7 +28,7 @@ async function applyOwn(ev: FileEvent): Promise<void> {
   if (!adopting()) await indexEvent(root, ev)
 }
 
-// The writers reach the settle through a tap rather than an import because the settle's own imports (`adopt`, `fileEvents`, `liveTree`) import `Core/Files`, so a writer importing the settle would close a cycle.
+// The writers reach the settle through a tap rather than an import because the settle's own imports (`adopt`, `fileEvents`, `liveTree`) import `Core/Files`, so a writer importing the settle would close a cycle; it is installed on import, not by a host's call, since it is the same function for the life of the process, where the Sync taps are a session's to set and clear and the commands tap is the host's.
 setOwnTap(applyOwn)
 
 // ── The settle ──
@@ -160,6 +160,7 @@ export const payOwedWalk = (root: string): Promise<void> => inTurn(() => walkWhi
 export async function settleNow(pusher: Pusher, root: string): Promise<void> {
   await stampListed(root, true)
   const moved = await inTurn(() => settle(pusher, root)).catch(() => null)
+  // The settle's walk may list more to stamp, which takes a settle of its own; while a batch applies, its turn takes them instead.
   if (owedFor(root).stamp.length && !batching) await settleNow(pusher, root)
   if (!moved) return
   reseeding = reseeding
