@@ -21,9 +21,10 @@ import { liveIdIndex } from './heldPages'
 async function applyOwn(ev: FileEvent): Promise<void> {
   const root = sessionRoot()
   if (root === null || escapes(relative(root, ev.absPath))) return
-  if (heldTreeOf(root)) return applyEvents(root, [ev])
-  // No tree to patch: a walk in flight reads the disk again. An open stamps before its stores are bound, and its own seed follows its walk.
+  // A walk in flight reads the disk again.
   diskMoved()
+  if (heldTreeOf(root)) return applyEvents(root, [ev])
+  // No tree to patch: an open stamps before its stores are bound, and its own seed follows its walk.
   if (!adopting()) await indexEvent(root, ev)
 }
 
