@@ -979,7 +979,9 @@ describe('handleMutate — review-round hardening', () => {
       JSON.stringify({ asset_directory: 'file-assets' }),
     )
     await mkdir(join(root, 'file-assets'), { recursive: true })
-    await applyEvents(root, [{ event: 'change', absPath: join(root, '.nexus', 'settings.json') }])
+    await applyEvents(root, [
+      { event: 'change', absPath: join(root, '.nexus', 'settings.json'), origin: 'watched' },
+    ])
     await flush({ push: () => {}, watch: async () => {} }, root)
     await settledMutate(
       root,
@@ -2520,8 +2522,8 @@ describe('the Contexts lock', () => {
     )
     await atCommit.promise
     const batch = settleBatch({ push: () => {}, watch: async () => {} }, root, [
-      { event: 'addDir', absPath: gamma },
-      { event: 'add', absPath: join(gamma, '_space.json') },
+      { event: 'addDir', absPath: gamma, origin: 'watched' },
+      { event: 'add', absPath: join(gamma, '_space.json'), origin: 'watched' },
     ])
     expect((await renaming).ok).toBe(true)
     await batch

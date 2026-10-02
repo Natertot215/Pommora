@@ -574,7 +574,9 @@ describe('syncIgnoredUnder beside the classifier', () => {
       // A path the watcher drops but the classifier would have handled is silently lost.
       expect(syncIgnoredUnder(root, scope(dir))(path)).toBe(false)
       const scoped = { ...tree, config: { ...tree.config, assetDirectory: dir } }
-      expect(classifyEvent(scoped, root, { event: 'change', absPath: path }).kind).toBe('asset')
+      expect(
+        classifyEvent(scoped, root, { event: 'change', absPath: path, origin: 'watched' }).kind,
+      ).toBe('asset')
     }
   })
 })

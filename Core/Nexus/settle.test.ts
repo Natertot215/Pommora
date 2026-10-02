@@ -39,6 +39,7 @@ const abs = (...segs: string[]): string => join(root, ...segs)
 const ev = (event: Changed['event'], ...segs: string[]): Changed => ({
   event,
   absPath: abs(...segs),
+  origin: 'watched',
 })
 const channels = (): string[] => pushes.map(([c]) => c)
 const payload = (channel: keyof Pushes): unknown => pushes.find(([c]) => c === channel)?.[1]
@@ -119,7 +120,9 @@ describe('what a flush pushes for a batch', () => {
   it('marks a page whose only writes were its editor’s own saves as body-only', async () => {
     const text = `---\nID: ${ULID_A}\n---\n\nmine\n`
     await writeFile(abs('Notes', 'A.md'), text)
-    await applyEvents(root, [{ ...ev('change', 'Notes', 'A.md'), own: { text, bodyOnly: true } }])
+    await applyEvents(root, [
+      { ...ev('change', 'Notes', 'A.md'), origin: 'own', text, bodyOnly: true },
+    ])
     await flush(pusher, root)
     expect(payload('values:changed')).toEqual([
       { rel: 'Notes', pageIds: [ULID_A], bodyOnly: [ULID_A] },
@@ -147,8 +150,8 @@ describe('what a flush pushes for a batch', () => {
     const text = `---\nID: ${ULID_A}\n---\n\nmine\n`
     await writeFile(abs('Notes', 'A.md'), text)
     await applyEvents(root, [
-      { ...ev('change', 'Notes', 'A.md'), own: { text, bodyOnly: true } },
-      { ...ev('change', 'Notes', 'A.md'), own: { text } },
+      { ...ev('change', 'Notes', 'A.md'), origin: 'own', text, bodyOnly: true },
+      { ...ev('change', 'Notes', 'A.md'), origin: 'own', text },
     ])
     await flush(pusher, root)
     expect(payload('values:changed')).toEqual([{ rel: 'Notes', pageIds: [ULID_A] }])

@@ -43,6 +43,7 @@ const abs = (...segs: string[]): string => join(root, ...segs)
 const ev = (event: Changed['event'], ...segs: string[]): Changed => ({
   event,
   absPath: abs(...segs),
+  origin: 'watched',
 })
 const held = (): NexusTree => {
   const tree = heldTreeOf(root)
@@ -350,8 +351,10 @@ describe('the parity cases', () => {
     const dirs = await dirsUnder(dir)
     await rm(dir, { recursive: true })
     return [
-      ...files.map((absPath): FileEvent => ({ event: 'unlink', absPath })),
-      ...[...dirs, dir].map((absPath): FileEvent => ({ event: 'unlinkDir', absPath })),
+      ...files.map((absPath): FileEvent => ({ event: 'unlink', absPath, origin: 'watched' })),
+      ...[...dirs, dir].map(
+        (absPath): FileEvent => ({ event: 'unlinkDir', absPath, origin: 'watched' }),
+      ),
     ]
   }
   const renamed = async (from: string, to: string): Promise<FileEvent[]> => {
@@ -360,10 +363,14 @@ describe('the parity cases', () => {
     await rename(from, to)
     const moved = (p: string): string => join(to, relative(from, p))
     return [
-      ...files.map((absPath): FileEvent => ({ event: 'unlink', absPath })),
-      ...files.map((p): FileEvent => ({ event: 'add', absPath: moved(p) })),
-      ...[...dirs, from].map((absPath): FileEvent => ({ event: 'unlinkDir', absPath })),
-      ...[to, ...dirs.map(moved)].map((absPath): FileEvent => ({ event: 'addDir', absPath })),
+      ...files.map((absPath): FileEvent => ({ event: 'unlink', absPath, origin: 'watched' })),
+      ...files.map((p): FileEvent => ({ event: 'add', absPath: moved(p), origin: 'watched' })),
+      ...[...dirs, from].map(
+        (absPath): FileEvent => ({ event: 'unlinkDir', absPath, origin: 'watched' }),
+      ),
+      ...[to, ...dirs.map(moved)].map(
+        (absPath): FileEvent => ({ event: 'addDir', absPath, origin: 'watched' }),
+      ),
     ]
   }
 
@@ -648,6 +655,7 @@ describe('classifyEvent', () => {
       const cls = classifyEvent(tree, raw, {
         event: 'change',
         absPath: join(raw, 'Things', '_pagecollection.json'),
+        origin: 'watched',
       })
       expect(cls).toEqual({ kind: 'folder', rel: 'Things' })
     } finally {
@@ -903,7 +911,7 @@ describe('the file-history timer', () => {
   it('does not arm on the app’s own write', async () => {
     const text = `---\nID: ${ULID_A}\n---\n\nmine\n`
     await writeFile(abs('Notes', 'A.md'), text)
-    await applyEvents(root, [{ ...ev('change', 'Notes', 'A.md'), own: { text } }])
+    await applyEvents(root, [{ ...ev('change', 'Notes', 'A.md'), origin: 'own', text }])
     expect(noteExternalEdit).not.toHaveBeenCalled()
   })
 })
@@ -913,7 +921,7 @@ describe('the app’s own events', () => {
   const ownUnderLock = async (rel: string, text: string): Promise<void> => {
     const absPath = abs(...rel.split('/'))
     await machine().lock(absPath, () =>
-      applyEvents(root, [{ event: 'change', absPath, own: { text } }]),
+      applyEvents(root, [{ event: 'change', absPath, origin: 'own', text }]),
     )
     expect(walked()).toBe(false)
   }

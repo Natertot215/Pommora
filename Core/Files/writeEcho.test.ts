@@ -99,6 +99,6 @@ describe('emitWatch', () => {
     emitWatch('change', '/nexus/Notes/Page.md')
     setWatchTap(null)
     emitWatch('unlink', '/nexus/Notes/Page.md')
-    expect(seen).toEqual([{ event: 'change', absPath: '/nexus/Notes/Page.md' }])
+    expect(seen).toEqual([{ event: 'change', absPath: '/nexus/Notes/Page.md', origin: 'watched' }])
   })
 })

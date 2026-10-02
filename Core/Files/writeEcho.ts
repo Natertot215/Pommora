@@ -33,12 +33,18 @@ export function recordWrite(absPath: string, content?: string | Uint8Array): voi
 
 export const reportRename = (absFrom: string, absTo: string): void => tap?.renamed(absFrom, absTo)
 
-export interface Changed {
-  event: 'add' | 'change' | 'unlink' | 'addDir' | 'unlinkDir'
-  absPath: string
-  written?: string
-  own?: { text?: string; bodyOnly?: boolean }
-}
+type ChangeEvent = 'add' | 'change' | 'unlink' | 'addDir' | 'unlinkDir'
+
+export type Changed =
+  | {
+      event: ChangeEvent
+      absPath: string
+      origin: 'watched'
+      written?: string
+      text?: never
+      bodyOnly?: never
+    }
+  | { event: ChangeEvent; absPath: string; origin: 'own'; text?: string; bodyOnly?: boolean }
 
 export interface Moved {
   event: 'move'
@@ -62,8 +68,8 @@ export function setWatchTap(fn: ((ev: Changed) => void) | null): void {
   watchTap = fn
 }
 
-export function emitWatch(event: Changed['event'], absPath: string): void {
-  watchTap?.({ event, absPath })
+export function emitWatch(event: ChangeEvent, absPath: string): void {
+  watchTap?.({ event, absPath, origin: 'watched' })
 }
 
 const held = (absPath: string): Echo | undefined => {

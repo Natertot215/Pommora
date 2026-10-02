@@ -345,8 +345,8 @@ describe('a Set delete', () => {
     await rm(otherFile)
     await mkdir(otherFile)
     await applyEvents(root, [
-      { event: 'unlink', absPath: otherFile },
-      { event: 'addDir', absPath: otherFile },
+      { event: 'unlink', absPath: otherFile, origin: 'watched' },
+      { event: 'addDir', absPath: otherFile, origin: 'watched' },
     ])
     await flush({ push: () => {}, watch: async () => {} }, root)
     await chmod(locked.path, 0o555)
@@ -367,8 +367,8 @@ describe('a Set delete', () => {
     await rm(otherFile)
     await mkdir(otherFile)
     await applyEvents(root, [
-      { event: 'unlink', absPath: otherFile },
-      { event: 'addDir', absPath: otherFile },
+      { event: 'unlink', absPath: otherFile, origin: 'watched' },
+      { event: 'addDir', absPath: otherFile, origin: 'watched' },
     ])
     await flush({ push: () => {}, watch: async () => {} }, root)
     const r = await del('Notes/Gone', 'set')
