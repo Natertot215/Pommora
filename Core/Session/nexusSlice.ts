@@ -43,7 +43,6 @@ export interface NexusSlice {
   /** Re-reads the bound Nexus's tree, for a root that moved under a Nexus the window already holds. */
   refetch: () => Promise<void>
   applySyncStatus: (status: SyncStatus) => void
-  applyTree: (tree: NexusTree, version: number) => void
   applyChange: (change: NexusChange) => void
   loadHeadings: (paths?: string[]) => Promise<void>
   choose: () => Promise<void>
@@ -132,7 +131,7 @@ export const createNexusSlice: Slice<NexusSlice> = (set, get) => {
       set({ status: 'empty', tree: null })
       return false
     }
-    get().applyTree(res.value.tree, res.value.version)
+    install(res.value.tree, res.value.version)
     return true
   }
 
@@ -197,11 +196,9 @@ export const createNexusSlice: Slice<NexusSlice> = (set, get) => {
       }
     },
 
-    applyTree: install,
-
     // A difference that doesn't follow the tree held, or doesn't fit it, asks for the whole tree.
     applyChange: ({ version, delta }) => {
-      if ('set' in delta) return get().applyTree(delta.set as NexusTree, version)
+      if ('set' in delta) return install(delta.set as NexusTree, version)
       const held = get().tree
       if (!held || version !== get().version + 1) return void get().refetch()
       let next: NexusTree
