@@ -48,6 +48,7 @@ import { dropTileHeadingLinks, tilesLinkHeading } from '../Tiles/tilesFile'
 import {
   contextLinker,
   pageRecordOf,
+  type PageRead,
   readCropLeaves,
   readFolder,
   readHomepageLeaves,
@@ -340,7 +341,7 @@ async function applyPage(
   const dirRel = relDirname(rel)
   if (!containerAt(tree, dirRel)) return applyFolder(root, tree, dirRel, owed)
   const abs = join(root, rel)
-  let read: Awaited<ReturnType<typeof readPageRecord>>
+  let read: PageRead
   try {
     read = ev.text === undefined ? await readPageRecord(abs, rel) : pageRecordOf(ev.text, rel, null)
   } catch {

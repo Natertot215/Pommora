@@ -112,7 +112,7 @@ async function readOwnSidecar(
 const readConfig = (absPath: string): Promise<Record<string, unknown>> =>
   readAppFile(absPath).then((v) => v ?? {})
 
-type PageRead =
+export type PageRead =
   | { kind: 'read'; node: PageNode; fm: Json; mtimeMs: number | null }
   | { kind: 'unread'; reason: UnreadReason }
 
