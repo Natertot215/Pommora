@@ -17,6 +17,7 @@ import { assignValue, type ValueWriter } from '../../Properties/assignValue'
 import { fetchPageRow, spaceRowOf } from '../../Properties/pageRow'
 import { containerSchema } from '../../Nexus/treePatch'
 import { spaceNodeOf } from '../../Nexus/treeIndex'
+import type { ContainerKind } from '../../Nexus/entities'
 import {
   propertyMenuBranches,
   type PropertyMenuTarget,
@@ -148,7 +149,7 @@ function runEntityAction(
       void s.mutate({
         op: 'setDisclosureLock',
         path,
-        kind: kind as 'collection' | 'set',
+        kind: kind as ContainerKind,
         locked: !target.disclosureLocked,
       })
       return
