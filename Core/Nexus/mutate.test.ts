@@ -2240,14 +2240,12 @@ describe('the Contexts lock', () => {
       { op: 'renameSpace', spaceId: 'sp-pom', newName: 'Atlas' },
       nexusDeps,
     )
-    const folderOf = assignment.collectionFolderOf
-    const tagWaits = vi
-      .spyOn(assignment, 'collectionFolderOf')
-      .mockImplementation(async (r, file) => {
-        worldLoaded()
-        await renaming
-        return folderOf(r, file)
-      })
+    const defsOf = assignment.assignedDefs
+    const tagWaits = vi.spyOn(assignment, 'assignedDefs').mockImplementation(async (r, folder) => {
+      worldLoaded()
+      await renaming
+      return defsOf(r, folder)
+    })
     const tagged = await settledMutate(
       root,
       { op: 'setContext', path: 'Notes/Daily/Alpha.md', contextId: 'ctxP', spaceIds: ['sp-pom'] },
@@ -2337,14 +2335,12 @@ describe('the Contexts lock', () => {
       return unlink(...args)
     }) as never)
     const deleting = settledMutate(root, { op: 'delete', path, kind }, nexusDeps)
-    const folderOf = assignment.collectionFolderOf
-    const tagWaits = vi
-      .spyOn(assignment, 'collectionFolderOf')
-      .mockImplementation(async (r, file) => {
-        worldLoaded()
-        await deleting
-        return folderOf(r, file)
-      })
+    const defsOf = assignment.assignedDefs
+    const tagWaits = vi.spyOn(assignment, 'assignedDefs').mockImplementation(async (r, folder) => {
+      worldLoaded()
+      await deleting
+      return defsOf(r, folder)
+    })
     const tagged = await settledMutate(
       root,
       { op: 'setContext', path: 'Notes/Daily/Beta.md', contextId: 'ctxA', spaceIds: ['sp-work'] },

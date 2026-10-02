@@ -1,4 +1,4 @@
-import { basename, join, isMarkdownFile } from '../Paths/posix'
+import { basename, join, isMarkdownFile, relative } from '../Paths/posix'
 import { contextKey } from './contexts'
 import { editList } from '../Properties/pageValue'
 import {
@@ -14,10 +14,10 @@ import { seedBoard } from '../Tiles/tiles'
 import { writeTileDocAt } from '../Tiles/tileDoc'
 import { liveTreeOf, mutableTarget } from '../Nexus/liveTree'
 import { reachReport } from '../Nexus/configReach'
-import { spaceAt } from '../Nexus/treePatch'
+import { owningCollection, spaceAt } from '../Nexus/treePatch'
 import type { MutateContext } from '../Nexus/mutate'
 import { done, type MutateReply, type MutateRequest } from '../Nexus/mutateRequest'
-import { assignedDefs, collectionFolderOf } from '../Properties/assignment'
+import { assignedDefs } from '../Properties/assignment'
 import { applyAdoptions } from '../Properties/optionOps'
 import type { NexusTree } from '../Nexus/tree'
 import type { Adoption } from '../Properties/propertyValue'
@@ -73,7 +73,8 @@ export async function setPageContext(
 
 export async function governedWorldOf(root: string, absFile: string): Promise<GovernedWorld> {
   const tree = await liveTreeOf(root)
-  const defs = await assignedDefs(root, await collectionFolderOf(root, absFile))
+  const owner = owningCollection(tree, relative(root, absFile))
+  const defs = await assignedDefs(root, owner ? join(root, owner.path) : null)
   return { contexts: contextWorldOf(tree.contexts), defs }
 }
 

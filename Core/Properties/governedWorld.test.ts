@@ -4,7 +4,8 @@ import { tempRoot } from '../Testing/hostFs'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { PropertyDefinition } from './properties'
 import * as liveTree from '../Nexus/liveTree'
-import { assignedDefs, assignProperty, collectionFolderOf, collectionFolders } from './assignment'
+import { assignedDefs, assignProperty, collectionFolders } from './assignment'
+import { governedWorldOf } from '../Contexts/contextWrite'
 import { createFolderEntity } from '../Nexus/folderEntity'
 import { newId } from '../Nexus/ids'
 import { createTestPage } from '../Testing/createTestPage'
@@ -64,24 +65,26 @@ describe('assignedDefs', () => {
   })
 })
 
-describe('collectionFolderOf', () => {
-  it('resolves a page two Sets deep to its Collection, and an Agenda page to null', async () => {
+describe('governedWorldOf', () => {
+  it('reads a page two Sets deep by its Collection’s definitions, and an Agenda page or a Space by none', async () => {
     const set = await createFolderEntity(notes, 'set', 'Daily', newId())
     if (!set.ok) throw new Error('setup')
     const inner = await createFolderEntity(set.value.path, 'set', 'Week', newId())
     if (!inner.ok) throw new Error('setup')
     const page = await createTestPage(inner.value.path, 'Deep', { body: 'b' })
     if (!page.ok) throw new Error('setup')
-    expect(await collectionFolderOf(root, page.value.path)).toBe(notes)
-    expect(await collectionFolderOf(root, join(root, 'Tasks', 'T.md'))).toBeNull()
-    expect(
-      await collectionFolderOf(
-        root,
-        join(root, '.nexus', 'contexts', 'Areas', 'Home', '_space.json'),
-      ),
-    ).toBeNull()
+    const names = async (file: string): Promise<string[]> => [
+      ...(await governedWorldOf(root, file)).defs.keys(),
+    ]
+    expect(await names(page.value.path)).toEqual(['Status'])
+    expect(await names(join(root, 'Tasks', 'T.md'))).toEqual([])
+    expect(await names(join(root, '.nexus', 'contexts', 'Areas', 'Home', '_space.json'))).toEqual(
+      [],
+    )
   })
+})
 
+describe('collectionFolders', () => {
   it('never walks the disk while the live tree holds this root', async () => {
     await liveTree.refreshTree(root)
     const spy = vi.spyOn(liveTree, 'refreshTree')
