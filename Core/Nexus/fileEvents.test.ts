@@ -166,7 +166,7 @@ describe('applyEvents — must agree with the walk', () => {
     await applyEvents(root, [ev('change', 'Notes', 'Daily', '_pageset.json')])
     await flush(QUIET, root)
     expect(held().collections[0]?.sets).toEqual([])
-    expect(held().unreadable).toEqual([{ path: 'Notes/Daily', reason: 'unparsed' }])
+    expect(held().unreadable).toEqual([{ path: 'Notes/Daily', kind: 'set', reason: 'unparsed' }])
     await agrees()
 
     await writeFile(sidecar, JSON.stringify({ id: 's1' }))
@@ -305,7 +305,7 @@ describe('applyEvents — must agree with the walk', () => {
       ...names.map((name) => ev('add', 'Notes', 'Import', name)),
     ])
     expect(readFolder).toHaveBeenCalledTimes(1)
-    expect(owedFor(root).stamp).toEqual([{ path: 'Notes/Import', reason: 'missing' }])
+    expect(owedFor(root).stamp).toEqual([{ path: 'Notes/Import', kind: 'set', reason: 'missing' }])
     await flush(QUIET, root)
     expect(held().collections[0]?.sets[0]?.pages).toHaveLength(400)
     await agrees()
@@ -531,7 +531,9 @@ describe('the parity cases', () => {
       await settled([ev('change', 'Notes', 'Foreign.md')])
     }
     expect(reads.mock.calls.filter(([p]) => p === abs('Notes', 'Foreign.md'))).toHaveLength(2)
-    expect(held().unreadable).toEqual([{ path: 'Notes/Foreign.md', reason: 'malformed' }])
+    expect(held().unreadable).toEqual([
+      { path: 'Notes/Foreign.md', kind: 'page', reason: 'malformed' },
+    ])
     await agrees()
     expect(walk).not.toHaveBeenCalled()
   })
@@ -1005,7 +1007,9 @@ describe('the app’s own events', () => {
   it('a file listed missing is stamped by the next flush, never inside the event', async () => {
     await writeFile(abs('Notes', 'Bare.md'), 'bare\n')
     await ownUnderLock('Notes/Bare.md', 'bare\n')
-    expect(owedFor(root).stamp).toEqual([{ path: 'Notes/Bare.md', reason: 'missing' }])
+    expect(owedFor(root).stamp).toEqual([
+      { path: 'Notes/Bare.md', kind: 'page', reason: 'missing' },
+    ])
     expect(await readFile(abs('Notes', 'Bare.md'), 'utf8')).toBe('bare\n')
     await flush(QUIET, root)
     const id = splitFrontmatter(await readFile(abs('Notes', 'Bare.md'), 'utf8'))[ID_KEY]

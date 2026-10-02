@@ -27,6 +27,7 @@ import {
   readKept,
 } from '../Files/atomicWrite'
 import type { Changed, FileEvent, Moved } from '../Files/writeEcho'
+import type { ContainerKind } from './entities'
 import type { Json } from '../Files/stableJson'
 import { isContentName } from '../Files/walk'
 import { queryHeadingMentions } from '../Index/contentIndex'
@@ -141,7 +142,7 @@ type EventClass =
   | { kind: 'page'; rel: string }
   | { kind: 'folder'; rel: string }
   | { kind: 'gone'; rel: string; sidecar?: true }
-  | { kind: 'container-meta'; dirRel: string }
+  | { kind: 'container-meta'; dirRel: string; of: ContainerKind }
   | { kind: 'space'; dirRel: string }
   | { kind: 'contexts-leaf' }
   | { kind: 'registry-leaf' }
@@ -228,7 +229,7 @@ export function classifyEvent(tree: NexusTree, root: string, ev: Changed): Event
     const container = containerAt(tree, dirRel)
     if (!container) return { kind: 'folder', rel: dirRel }
     return name === SIDECAR_FILENAME[container.kind]
-      ? { kind: 'container-meta', dirRel }
+      ? { kind: 'container-meta', dirRel, of: container.kind }
       : { kind: 'walk' }
   }
   if (hiddenFolder(name)) return { kind: 'ignored' }
@@ -350,10 +351,12 @@ async function applyPage(
   owed.values.set(rel, !!ev.own?.held && (owed.values.get(rel) ?? true))
   if (!ev.own) owed.pages.add(rel)
   if ('unread' in read && read.unread === 'missing')
-    owed.stamp.push({ path: rel, reason: 'missing' })
+    owed.stamp.push({ path: rel, kind: 'page', reason: 'missing' })
   const landed = applyPatch(root, (t) => {
     if ('unread' in read)
-      return setUnreadable(removeNodeInTree(t, rel), [{ path: rel, reason: read.unread }])
+      return setUnreadable(removeNodeInTree(t, rel), [
+        { path: rel, kind: 'page', reason: read.unread },
+      ])
     const node = contextLinker(t.contexts)(read.node, read.fm)
     const held = pageAt(t, rel)
     if (held?.id !== node.id) return placeNode(removeNodeInTree(t, rel), node)
@@ -364,12 +367,19 @@ async function applyPage(
   return landed
 }
 
-async function applyContainer(root: string, dirRel: string, ev: Changed): Promise<Applied> {
+async function applyContainer(
+  root: string,
+  dirRel: string,
+  of: ContainerKind,
+  ev: Changed,
+): Promise<Applied> {
   const meta = await jsonOf(ev)
   if (meta === null)
     return (await pathExists(ev.absPath))
       ? applyPatch(root, (t) =>
-          setUnreadable(removeNodeInTree(t, dirRel), [{ path: dirRel, reason: 'unparsed' }]),
+          setUnreadable(removeNodeInTree(t, dirRel), [
+            { path: dirRel, kind: of, reason: 'unparsed' },
+          ]),
         )
       : 'walk'
   return applyPatch(root, (t) => {
@@ -393,7 +403,7 @@ async function applySpace(root: string, dirRel: string, ev: Changed, owed: Owed)
   if (sc === null || !tree) return 'walk'
   if (!contextAt(tree, relDirname(dirRel))) return 'ok'
   if (!asString(sc.id)) {
-    owed.stamp.push({ path: dirRel, reason: 'missing' })
+    owed.stamp.push({ path: dirRel, kind: 'space', reason: 'missing' })
     return 'walk'
   }
   return applyPatch(root, (t) => {
@@ -530,7 +540,7 @@ async function applyOne(root: string, ev: FileEvent, owed: Owed): Promise<Applie
     case 'folder':
       return applyFolder(root, tree, c.rel, owed)
     case 'container-meta':
-      return applyContainer(root, c.dirRel, ev)
+      return applyContainer(root, c.dirRel, c.of, ev)
     case 'space':
       return applySpace(root, c.dirRel, ev, owed)
     case 'contexts-leaf':

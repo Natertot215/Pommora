@@ -86,6 +86,7 @@ describe('the Unknown cases, on disk', () => {
     expect(await titles()).toEqual(['Member'])
     expect((await readNexus(root)).unreadable).toContainEqual({
       path: 'Notes/Adoptable.md',
+      kind: 'page',
       reason: 'missing',
     })
   })

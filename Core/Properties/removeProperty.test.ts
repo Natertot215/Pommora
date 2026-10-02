@@ -122,6 +122,7 @@ describe('removeProperty — strip + cache (C-3/C-6)', () => {
     await refreshTree(root)
     expect(heldTreeOf(root)?.unreadable).toContainEqual({
       path: relative(root, pageA),
+      kind: 'page',
       reason: 'missing',
     })
 

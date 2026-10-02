@@ -1,6 +1,4 @@
 import type { ContextDef } from '../Contexts/contexts'
-import { NEXUS_DIR } from '../Paths/nexusPaths'
-import { isMarkdownFile } from '../Paths/posix'
 import type { PropertyDefinition } from '../Properties/properties'
 import type { SettingsLeaves } from '../Settings/codec'
 import type { OpenIn, ViewButton } from '../Views/viewRow'
@@ -110,6 +108,7 @@ export type UnreadReason = 'missing' | 'malformed' | 'contradicting' | 'unparsed
 
 export interface Unreadable {
   path: string
+  kind: NodeKind | 'registry'
   reason: UnreadReason
 }
 
@@ -147,12 +146,7 @@ export function entityMemo<T>(build: (tree: NexusTree) => T): (tree: NexusTree) 
 export const withheldIn =
   (listed: readonly Unreadable[] = []) =>
   (path: string): boolean =>
-    listed.some(
-      (u) => !isMarkdownFile(u.path) && (path === u.path || path.startsWith(`${u.path}/`)),
-    )
+    listed.some((u) => u.kind !== 'page' && (path === u.path || path.startsWith(`${u.path}/`)))
 
 export const damagedFolders = (listed: readonly Unreadable[] = []): Unreadable[] =>
-  listed.filter(
-    (u) =>
-      u.reason === 'unparsed' && !isMarkdownFile(u.path) && !u.path.startsWith(`${NEXUS_DIR}/`),
-  )
+  listed.filter((u) => u.reason === 'unparsed' && (u.kind === 'collection' || u.kind === 'set'))

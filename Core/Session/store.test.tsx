@@ -679,7 +679,7 @@ describe('store — a Set whose sidecar doesn’t parse keeps what belongs to it
   const withheld = (): NexusTree => {
     const t = makeTree()
     t.collections[0].sets = []
-    t.unreadable = [{ path: 'Notes/Ideas', reason: 'unparsed' }]
+    t.unreadable = [{ path: 'Notes/Ideas', kind: 'set', reason: 'unparsed' }]
     return t
   }
 
@@ -739,7 +739,7 @@ describe('store — a file the Nexus can’t read posts a notice with Try Again'
   it('a malformed entry posts the unreadable notice, whose Try Again retries that file', async () => {
     useSession.getState().applyChange({
       version: 0,
-      delta: { set: listing({ path: 'Notes/Foreign.md', reason: 'malformed' }) },
+      delta: { set: listing({ path: 'Notes/Foreign.md', kind: 'page', reason: 'malformed' }) },
     })
     const notice = currentNotification()
     expect(notice?.message).toBe("'Foreign' contains unreadable metadata")
@@ -756,7 +756,7 @@ describe('store — a file the Nexus can’t read posts a notice with Try Again'
   it('a contradicting entry posts the invalid notice', () => {
     useSession.getState().applyChange({
       version: 0,
-      delta: { set: listing({ path: 'Notes/Task.md', reason: 'contradicting' }) },
+      delta: { set: listing({ path: 'Notes/Task.md', kind: 'page', reason: 'contradicting' }) },
     })
     expect(currentNotification()?.message).toBe("'Task' contains invalid metadata")
     expect(currentNotification()?.action?.label).toBe('Try Again')
@@ -765,7 +765,7 @@ describe('store — a file the Nexus can’t read posts a notice with Try Again'
   it('an unparsed entry posts the invalid notice', () => {
     useSession.getState().applyChange({
       version: 0,
-      delta: { set: listing({ path: 'Notes/Ideas', reason: 'unparsed' }) },
+      delta: { set: listing({ path: 'Notes/Ideas', kind: 'set', reason: 'unparsed' }) },
     })
     expect(currentNotification()?.message).toBe("'Ideas' contains invalid metadata")
     expect(currentNotification()?.action?.label).toBe('Try Again')
@@ -774,12 +774,12 @@ describe('store — a file the Nexus can’t read posts a notice with Try Again'
   it('a tree whose list didn’t change posts nothing', () => {
     useSession.getState().applyChange({
       version: 0,
-      delta: { set: listing({ path: 'Notes/Foreign.md', reason: 'malformed' }) },
+      delta: { set: listing({ path: 'Notes/Foreign.md', kind: 'page', reason: 'malformed' }) },
     })
     clearNotification()
     useSession.getState().applyChange({
       version: 0,
-      delta: { set: listing({ path: 'Notes/Foreign.md', reason: 'malformed' }) },
+      delta: { set: listing({ path: 'Notes/Foreign.md', kind: 'page', reason: 'malformed' }) },
     })
     expect(currentNotification()).toBeNull()
   })

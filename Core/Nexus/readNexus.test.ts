@@ -448,7 +448,7 @@ describe('readNexus — the walk names what it cannot read', () => {
     const t = await readNexus(root)
     expect(t.collections!.find((c) => c.title === 'Broken')).toBeUndefined()
     expect(JSON.stringify(t.collections)).not.toContain(INSIDE)
-    expect(t.unreadable).toContainEqual({ path: 'Broken', reason: 'unparsed' })
+    expect(t.unreadable).toContainEqual({ path: 'Broken', kind: 'collection', reason: 'unparsed' })
   })
 
   it('a clean walk carries no list', async () => {
@@ -896,12 +896,12 @@ describe('readNexus — what the walk leaves out, and why', () => {
     expect(notes.pages.map((p) => p.id)).toEqual([HELD])
     expect(notes.sets).toEqual([])
     expect([...(t.unreadable ?? [])].sort((a, b) => a.path.localeCompare(b.path))).toEqual([
-      { path: 'Notes/Bare', reason: 'missing' },
-      { path: 'Notes/Corrupt', reason: 'unparsed' },
-      { path: 'Notes/Foreign.md', reason: 'malformed' },
-      { path: 'Notes/List.md', reason: 'unparsed' },
-      { path: 'Notes/NoId.md', reason: 'missing' },
-      { path: 'Notes/Task.md', reason: 'contradicting' },
+      { path: 'Notes/Bare', kind: 'set', reason: 'missing' },
+      { path: 'Notes/Corrupt', kind: 'set', reason: 'unparsed' },
+      { path: 'Notes/Foreign.md', kind: 'page', reason: 'malformed' },
+      { path: 'Notes/List.md', kind: 'page', reason: 'unparsed' },
+      { path: 'Notes/NoId.md', kind: 'page', reason: 'missing' },
+      { path: 'Notes/Task.md', kind: 'page', reason: 'contradicting' },
     ])
   })
 
@@ -910,7 +910,11 @@ describe('readNexus — what the walk leaves out, and why', () => {
     const reads = vi.spyOn(machine(), 'readText')
     try {
       const t = await readNexus(root)
-      expect(t.unreadable).toContainEqual({ path: 'Notes/Foreign.md', reason: 'malformed' })
+      expect(t.unreadable).toContainEqual({
+        path: 'Notes/Foreign.md',
+        kind: 'page',
+        reason: 'malformed',
+      })
       expect(reads.mock.calls.map(([p]) => p)).not.toContain(join(root, 'Notes', 'Foreign.md'))
     } finally {
       reads.mockRestore()

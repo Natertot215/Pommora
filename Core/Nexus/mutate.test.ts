@@ -1270,7 +1270,9 @@ describe('handleMutate — a page delete reaches the pages beneath a Set whose s
     await refreshTree(root)
     await writeFile(sidecar(), '{corrupt')
     await refreshTree(root)
-    expect(heldTreeOf(root)?.unreadable).toEqual([{ path: 'Notes/Archive', reason: 'unparsed' }])
+    expect(heldTreeOf(root)?.unreadable).toEqual([
+      { path: 'Notes/Archive', kind: 'set', reason: 'unparsed' },
+    ])
     expect((await deleteBeta()).ok).toBe(true)
     expect(splitFrontmatter(await read('Notes/Archive/Gamma.md'))).not.toHaveProperty('Related')
   })
@@ -1296,7 +1298,7 @@ describe('nexusHandlers.mutate — retryUnreadable', () => {
     await writeFile(join(root, 'Notes', 'Foreign.md'), '---\nID: 42\n---\nbody')
     await refreshTree(root)
     expect(heldTreeOf(root)?.unreadable).toEqual([
-      { path: 'Notes/Foreign.md', reason: 'malformed' },
+      { path: 'Notes/Foreign.md', kind: 'page', reason: 'malformed' },
     ])
     expect((await retry('Notes/Foreign.md')).ok).toBe(true)
     const id = splitFrontmatter(await read('Notes/Foreign.md'))[ID_KEY]
@@ -1315,7 +1317,9 @@ describe('nexusHandlers.mutate — retryUnreadable', () => {
     expect(splitFrontmatter(await read('Notes/One.md'))[ID_KEY]).not.toBe(42)
     expect(await read('Notes/Two.md')).toBe('---\nID: 42\n---\nbody')
     expect(held('Notes/One.md')).toBe(true)
-    expect(heldTreeOf(root)?.unreadable).toEqual([{ path: 'Notes/Two.md', reason: 'malformed' }])
+    expect(heldTreeOf(root)?.unreadable).toEqual([
+      { path: 'Notes/Two.md', kind: 'page', reason: 'malformed' },
+    ])
   })
 
   it('writes nothing for a Task’s file in a Collection', async () => {
@@ -1323,12 +1327,12 @@ describe('nexusHandlers.mutate — retryUnreadable', () => {
     await writeFile(join(root, 'Notes', 'Task.md'), bytes)
     await refreshTree(root)
     expect(heldTreeOf(root)?.unreadable).toEqual([
-      { path: 'Notes/Task.md', reason: 'contradicting' },
+      { path: 'Notes/Task.md', kind: 'page', reason: 'contradicting' },
     ])
     expect((await retry('Notes/Task.md')).ok).toBe(true)
     expect(await read('Notes/Task.md')).toBe(bytes)
     expect(heldTreeOf(root)?.unreadable).toEqual([
-      { path: 'Notes/Task.md', reason: 'contradicting' },
+      { path: 'Notes/Task.md', kind: 'page', reason: 'contradicting' },
     ])
   })
 
@@ -1336,7 +1340,9 @@ describe('nexusHandlers.mutate — retryUnreadable', () => {
     const sidecar = join(root, 'Notes', 'Daily', '_pageset.json')
     await writeFile(sidecar, '{corrupt')
     await refreshTree(root)
-    expect(heldTreeOf(root)?.unreadable).toEqual([{ path: 'Notes/Daily', reason: 'unparsed' }])
+    expect(heldTreeOf(root)?.unreadable).toEqual([
+      { path: 'Notes/Daily', kind: 'set', reason: 'unparsed' },
+    ])
     const fixed = JSON.stringify({ id: 'col' })
     await writeFile(sidecar, fixed)
     expect((await retry('Notes/Daily')).ok).toBe(true)
@@ -1351,7 +1357,9 @@ describe('nexusHandlers.mutate — retryUnreadable', () => {
     await writeFile(join(root, 'Raw', 'P.md'), 'p\n')
     await writeFile(join(root, 'Raw', 'Sub', 'Q.md'), 'q\n')
     await refreshTree(root)
-    expect(heldTreeOf(root)?.unreadable).toEqual([{ path: 'Raw', reason: 'missing' }])
+    expect(heldTreeOf(root)?.unreadable).toEqual([
+      { path: 'Raw', kind: 'collection', reason: 'missing' },
+    ])
     expect((await retry('Raw')).ok).toBe(true)
     expect(held('Raw/P.md')).toBe(true)
     expect(held('Raw/Sub/Q.md')).toBe(true)

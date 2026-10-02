@@ -123,7 +123,7 @@ describe('latchBaseline', () => {
     }
     const latched = latchBaseline(
       projected(),
-      [{ path: 'Library/Gone.md', reason: 'unparsed' }],
+      [{ path: 'Library/Gone.md', kind: 'page', reason: 'unparsed' }],
       prior,
     )
     expect(latched['page-gone']).toEqual(prior['page-gone'])
@@ -140,7 +140,7 @@ describe('latchBaseline', () => {
     }
     const latched = latchBaseline(
       projected(),
-      [{ path: 'Library/Daily', reason: 'unparsed' }],
+      [{ path: 'Library/Daily', kind: 'set', reason: 'unparsed' }],
       prior,
     )
     expect(latched['page-under']).toEqual(prior['page-under'])
@@ -229,7 +229,7 @@ describe('latchBaseline', () => {
     }
     const latched = latchBaseline(
       projected(),
-      [{ path: '.nexus/contexts/contexts.json', reason: 'unparsed' }],
+      [{ path: '.nexus/contexts/contexts.json', kind: 'registry', reason: 'unparsed' }],
       prior,
     )
     expect(latched['ctx-areas']).toEqual(prior['ctx-areas'])
@@ -248,7 +248,7 @@ describe('latchBaseline', () => {
     }
     const latched = latchBaseline(
       projected(page('page-dup', 'A', 'Library'), page('page-dup', 'B', 'Library')),
-      [{ path: 'Library/Original.md', reason: 'unparsed' }],
+      [{ path: 'Library/Original.md', kind: 'page', reason: 'unparsed' }],
       prior,
     )
     expect(latched['page-dup']).toEqual(prior['page-dup'])

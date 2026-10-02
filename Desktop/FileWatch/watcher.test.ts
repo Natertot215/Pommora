@@ -352,7 +352,7 @@ describe('a file made outside the app', () => {
       emit('add', 'Notes', 'Locked', 'P.md')
       await settleAll(() => !!heldTreeOf(root)?.unreadable)
       expect(heldTreeOf(root)?.unreadable).toEqual([
-        { path: 'Notes/Locked/P.md', reason: 'missing' },
+        { path: 'Notes/Locked/P.md', kind: 'page', reason: 'missing' },
       ])
       expect(await readFile(abs('Notes', 'Locked', 'P.md'), 'utf8')).toBe('p\n')
     } finally {
@@ -366,7 +366,9 @@ describe('a file made outside the app', () => {
     await writeFile(abs('.nexus', 'nexus.json'), JSON.stringify({ id: 'nx1' }))
     emit('change', '.nexus', 'nexus.json')
     await settleAll(() => !!heldTreeOf(root)?.unreadable)
-    expect(heldTreeOf(root)?.unreadable).toEqual([{ path: 'Notes/C.md', reason: 'missing' }])
+    expect(heldTreeOf(root)?.unreadable).toEqual([
+      { path: 'Notes/C.md', kind: 'page', reason: 'missing' },
+    ])
     expect(await readFile(abs('Notes', 'C.md'), 'utf8')).toBe('still writing\n')
   })
 })

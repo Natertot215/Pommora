@@ -1,6 +1,6 @@
 // The one place a change to the tree, pages, values, tiles, or assets reaches the window. The app's own writes land here as events while they happen; a write's gate and the watcher's batch then stamp what their events listed missing, and settle: the walk the events owed, whose own listing of a folder missing its ID is stamped and settled in turn, and one push of what moved.
 
-import { isMarkdownFile, relDirname, relative } from '../Paths/posix'
+import { relDirname, relative } from '../Paths/posix'
 import { escapes } from '../Paths/pathSafety'
 import type { HostContext } from '../Contract/handlers'
 import { errText } from '../Contract/result'
@@ -83,9 +83,7 @@ async function walkDue(root: string): Promise<void> {
     try {
       const walked = await refreshAfterWrite(root)
       due.stamp.push(
-        ...(walked.unreadable ?? []).filter(
-          (u) => u.reason === 'missing' && !isMarkdownFile(u.path),
-        ),
+        ...(walked.unreadable ?? []).filter((u) => u.reason === 'missing' && u.kind !== 'page'),
       )
       // The map is patch-only, so the fallback walk is where the listing is taken again.
       if (assets && (await refreshAssetMap(root)) !== assets) due.assets = true

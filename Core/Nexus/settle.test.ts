@@ -226,7 +226,9 @@ describe('the settle', () => {
   it('a page a walk lists missing, with no event of its own, is not stamped', async () => {
     await writeFile(abs('Notes', 'Bare.md'), 'bare\n')
     await settleBatch(pusher, root, [ev('change', '.nexus', 'nexus.json')])
-    expect(heldTreeOf(root)?.unreadable).toEqual([{ path: 'Notes/Bare.md', reason: 'missing' }])
+    expect(heldTreeOf(root)?.unreadable).toEqual([
+      { path: 'Notes/Bare.md', kind: 'page', reason: 'missing' },
+    ])
     expect(await readFile(abs('Notes', 'Bare.md'), 'utf8')).toBe('bare\n')
   })
 
