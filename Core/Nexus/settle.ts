@@ -10,7 +10,7 @@ import { seedContentIndex } from '../Index/indexSeed'
 import { dropTileHeadingLinks } from '../Tiles/tilesFile'
 import { stampMissing } from './adopt'
 import { applyEvents, indexEvent, nothingOwed, owedFor, stampable } from './fileEvents'
-import { diskMoved, dropLiveTree, heldTreeOf, refreshAfterWrite } from './liveTree'
+import { diskMoved, dropLiveTree, heldTreeOf, refreshTree } from './liveTree'
 import { adopting, sessionRoot } from './session'
 import type { NexusTree, Unreadable, ValueChange } from './tree'
 import { deltaOf } from './treeDelta'
@@ -88,7 +88,9 @@ async function walkWhileOwed(root: string): Promise<void> {
     dropTileHeadingLinks()
     const assets = getHeldAssetMap(root)
     try {
-      const walked = await refreshAfterWrite(root)
+      // The epoch bump comes first because `refreshTree` joins any in-flight walk, and one that started before the change would otherwise install pre-change disk as canon with nothing scheduled to correct it.
+      diskMoved()
+      const walked = await refreshTree(root)
       owed.stamp.push(...stampable(owed, walked.unreadable ?? []))
       // The map is patch-only, so the fallback walk is where the listing is taken again.
       if (assets && (await refreshAssetMap(root)) !== assets) owed.assets = true
