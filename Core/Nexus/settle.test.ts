@@ -42,8 +42,8 @@ const ev = (event: Changed['event'], ...segs: string[]): Changed => ({
   absPath: abs(...segs),
   origin: 'watched',
 })
-const backdate = (...segs: string[]): Promise<void> =>
-  utimes(abs(...segs), new Date(Date.now() - 1000), new Date(Date.now() - 1000))
+const ahead = (...segs: string[]): Promise<void> =>
+  utimes(abs(...segs), new Date(Date.now() + 86_400_000), new Date(Date.now() + 86_400_000))
 const channels = (): string[] => pushes.map(([c]) => c)
 const payload = (channel: keyof Pushes): unknown => pushes.find(([c]) => c === channel)?.[1]
 const gate = <T>(): { promise: Promise<T>; open: (v: T) => void; fail: (e: Error) => void } => {
@@ -231,17 +231,19 @@ describe('the settle', () => {
     expect(heldTreeOf(root)?.collections[0]?.pages.map((p) => p.id)).toEqual([ULID_A, ULID_B])
   })
 
-  it('a page a walk lists missing is stamped once still, and a fresh one is left for its own event', async () => {
+  it('a walk leaves a page it lists missing for the page’s own event, and a walk a scope change owed stamps it', async () => {
     await writeFile(abs('Notes', 'Bare.md'), 'bare\n')
-    await backdate('Notes', 'Bare.md')
-    await writeFile(abs('Notes', 'Fresh.md'), 'fresh\n')
     await settleBatch(pusher, root, [ev('change', '.nexus', 'nexus.json')])
     expect(heldTreeOf(root)?.unreadable).toEqual([
-      { path: 'Notes/Fresh.md', kind: 'page', reason: 'missing' },
+      { path: 'Notes/Bare.md', kind: 'page', reason: 'missing' },
     ])
-    expect(await readFile(abs('Notes', 'Fresh.md'), 'utf8')).toBe('fresh\n')
-    const bare = heldTreeOf(root)?.collections[0]?.pages.find((p) => p.path === 'Notes/Bare.md')
+    expect(await readFile(abs('Notes', 'Bare.md'), 'utf8')).toBe('bare\n')
+    await writeExcludedFolders(root, ['Elsewhere'])
+    await settleNow(pusher, root)
+    const held = heldTreeOf(root)
+    const bare = held?.collections[0]?.pages.find((p) => p.path === 'Notes/Bare.md')
     expect(bare?.id).toBe(splitFrontmatter(await readFile(abs('Notes', 'Bare.md'), 'utf8'))[ID_KEY])
+    expect(held?.unreadable).toBeUndefined()
   })
 
   it('a Space a walk lists missing its ID holds the pages tagged with it once its stamp lands', async () => {
@@ -299,6 +301,43 @@ describe('the settle', () => {
     expect(await readFile(abs('Notes', 'Fresh', 'Note.md'), 'utf8')).toBe('note\n')
   })
 
+  it('a future-dated note that is the first in a new root folder is stamped and held', async () => {
+    await mkdir(abs('Ideas'))
+    await writeFile(abs('Ideas', 'First.md'), 'first\n')
+    await ahead('Ideas', 'First.md')
+    await settleBatch(pusher, root, [ev('add', 'Ideas', 'First.md')])
+    const held = heldTreeOf(root)
+    expect(held?.collections.find((c) => c.path === 'Ideas')?.pages.map((p) => p.id)).toEqual([
+      splitFrontmatter(await readFile(abs('Ideas', 'First.md'), 'utf8'))[ID_KEY],
+    ])
+    expect(held?.unreadable).toBeUndefined()
+    expect(held && stabilize(await readNexus(root), held)).toBe(held)
+  })
+
+  it.each([
+    ['the folder', ['addDir', 'add']],
+    ['the note', ['add', 'addDir']],
+  ] as const)('a Set and its note arriving in one batch hold the note, whichever event comes first (%s first)', async (_, order) => {
+    await mkdir(abs('Notes', 'Fresh'))
+    await writeFile(abs('Notes', 'Fresh', 'Note.md'), 'note\n')
+    await ahead('Notes', 'Fresh', 'Note.md')
+    const of = {
+      addDir: ev('addDir', 'Notes', 'Fresh'),
+      add: ev('add', 'Notes', 'Fresh', 'Note.md'),
+    }
+    await settleBatch(
+      pusher,
+      root,
+      order.map((e) => of[e]),
+    )
+    const held = heldTreeOf(root)
+    expect(held?.collections[0]?.sets[0]?.pages.map((p) => p.id)).toEqual([
+      splitFrontmatter(await readFile(abs('Notes', 'Fresh', 'Note.md'), 'utf8'))[ID_KEY],
+    ])
+    expect(held?.unreadable).toBeUndefined()
+    expect(held && stabilize(await readNexus(root), held)).toBe(held)
+  })
+
   it('un-excluding a folder that was adopted before holds the notes added while it was excluded', async () => {
     await mkdir(abs('Archive'))
     await writeFile(abs('Archive', '_pagecollection.json'), JSON.stringify({ id: ULID_C }))
@@ -306,7 +345,6 @@ describe('the settle', () => {
     await writeExcludedFolders(root, ['Archive'])
     await settleNow(pusher, root)
     await writeFile(abs('Archive', 'New.md'), 'new\n')
-    await backdate('Archive', 'New.md')
     await writeExcludedFolders(root, [])
     await settleNow(pusher, root)
     const held = heldTreeOf(root)
@@ -346,9 +384,6 @@ describe('the settle', () => {
     await writeFile(abs('Archive', 'Old', 'Y.md'), 'y\n')
     await mkdir(abs('Notes', 'Sub'))
     await writeFile(abs('Notes', 'Sub', 'Z.md'), 'z\n')
-    await backdate('Archive', 'X.md')
-    await backdate('Archive', 'Old', 'Y.md')
-    await backdate('Notes', 'Sub', 'Z.md')
     await writeExcludedFolders(root, ['Archive', 'Notes/Sub'])
     await settleNow(pusher, root)
     pusher.watch.mockClear()

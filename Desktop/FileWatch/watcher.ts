@@ -17,7 +17,6 @@ import {
   dropOwnEchoes,
   emitWatch,
   isRecentWrite,
-  STILL_MS,
   writtenHash,
 } from '@pommora/core/Files/writeEcho'
 import { isMetadataShardRel, NEXUS_CONFIG_FILES, NEXUS_DIR } from '@pommora/core/Paths/nexusPaths'
@@ -28,6 +27,8 @@ import { posixPath } from '../Platform/hostPath'
 import { sessionRoot, type WaitingOpen, waitingOpen } from '@pommora/core/Nexus/session'
 import { readWatchScope } from '@pommora/core/Settings/settings'
 import { readNexusConfig } from '@pommora/core/Nexus/readNexus'
+
+const SETTLE_MS = 200
 
 let watcher: FSWatcher | null = null
 let starts = 0
@@ -82,7 +83,7 @@ function pushConfig<K extends keyof Pushes>(
       } catch {
         // Transient FS state mid-sync — the next settle re-reads.
       }
-    }, STILL_MS),
+    }, SETTLE_MS),
   )
 }
 
@@ -98,7 +99,7 @@ export async function startWatcher(root: string, win: CurrentWindow): Promise<vo
     ignored: (path: string) => skip(posixPath(path)),
     ignoreInitial: true,
     persistent: true,
-    awaitWriteFinish: { stabilityThreshold: STILL_MS, pollInterval: 50 },
+    awaitWriteFinish: { stabilityThreshold: SETTLE_MS, pollInterval: 50 },
   })
   const onEvent =
     (event: Changed['event']) =>
@@ -116,7 +117,7 @@ export async function startWatcher(root: string, win: CurrentWindow): Promise<vo
       // Chained, so batches apply in the order they settled.
       debounce = setTimeout(() => {
         batchQueue = batchQueue.then(() => drainBatch(root, win))
-      }, STILL_MS)
+      }, SETTLE_MS)
     }
   watcher
     .on('add', onEvent('add'))
@@ -143,7 +144,7 @@ export function waitUntilReadable(open: WaitingOpen, reopen: (path: string) => v
         if (!readable || waitingOpen() !== open) return
         stopWatcher()
         reopen(open.path)
-      }, STILL_MS)
+      }, SETTLE_MS)
     })
     .on('error', (error: unknown) => console.error('Nexus watcher error (non-fatal):', error))
 }

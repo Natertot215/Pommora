@@ -36,7 +36,7 @@ import { renameCascade } from './cascade'
 import { setChildOrder, setCollectionOrder, setPanelContextOrder, setSpaceOrder } from './reorder'
 import { liveTreeOf, mutableTarget } from './liveTree'
 import { stampMissing, stampPage } from './adopt'
-import { oweWalk } from './fileEvents'
+import { owedFor, oweWalk, stillListed } from './fileEvents'
 import { reachReport } from './configReach'
 import { payOwedWalk } from './settle'
 
@@ -210,8 +210,9 @@ async function dispatch(ctx: MutateContext, req: MutateRequest): Promise<MutateR
     case 'retryUnreadable': {
       const entry = (await liveTreeOf(root)).unreadable?.find((u) => u.path === req.path)
       if (entry?.reason === 'malformed') await stampPage(join(root, entry.path), 'page', true)
-      // Try Again is the user's own gesture, so the entry is stamped without waiting for stillness.
-      if (entry?.reason === 'missing') await stampMissing(root, [entry])
+      // Try Again is the user's own gesture, so the entry is stamped whole: a folder's read then stamps every page it lists.
+      if (entry?.reason === 'missing')
+        await stampMissing(root, stillListed(owedFor(root), [entry], true))
       oweWalk(root)
       return ok({})
     }

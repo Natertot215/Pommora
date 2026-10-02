@@ -89,7 +89,6 @@ import {
   TILE_DOC_FILENAME,
 } from '../Paths/nexusPaths'
 import { readShard, withShards } from './pageMetadata'
-import { onlyStill } from './adopt'
 
 interface Owed {
   root: string
@@ -98,6 +97,8 @@ interface Owed {
   rescope: boolean
   assets: boolean
   stamp: Unreadable[]
+  // Pages whose own event was spent on a folder whose stamp is owed, and folders whose read stamps every page it lists.
+  still: Set<string>
   pages: Set<string>
   // True while every write of the page was the editor's own body save.
   values: Map<string, boolean>
@@ -111,6 +112,7 @@ export const nothingOwed = (root: string): Owed => ({
   rescope: false,
   assets: false,
   stamp: [],
+  still: new Set(),
   pages: new Set(),
   values: new Map(),
   tiles: new Map(),
@@ -126,6 +128,20 @@ export function owedFor(root: string): Owed {
 
 export function oweWalk(root: string): void {
   owedFor(root).walk = true
+}
+
+// A page missing its ID is stamped only once known to be still, since a stamp's rename would cut off bytes still being written: by its own event (the watcher reports a file once it stops changing, and the app's own write has landed), or whole by the open, a change of scope, or Try Again, which reach files no event reports; a page whose event was spent on a folder not yet held waits in `still` for that folder's read, and any other is left out of a folder read's listing and stays listed by a walk until its event or Try Again.
+export function stillListed(
+  owed: Owed,
+  listed: readonly Unreadable[],
+  whole: boolean,
+): Unreadable[] {
+  return listed.filter((u) => {
+    if (u.kind === 'page') return owed.still.delete(u.path) || whole || u.reason !== 'missing'
+    if (whole && u.reason === 'missing' && (u.kind === 'collection' || u.kind === 'set'))
+      owed.still.add(u.path)
+    return true
+  })
 }
 
 export function oweCascade(
@@ -321,7 +337,7 @@ async function applyFolder(
   if (owed.stamp.some((u) => u.path === rel)) return 'ok'
   if (!(await pathExists(join(root, rel)))) return applyPatch(root, (t) => removeNodeInTree(t, rel))
   const read = await readFolder(root, rel, tree)
-  const listed = await onlyStill(root, read.unreadable)
+  const listed = stillListed(owed, read.unreadable, owed.still.delete(rel))
   owed.stamp.push(...listed.filter((u) => u.reason === 'missing'))
   for (const path of pagePathsIn(read.node)) owed.values.set(path, false)
   return applyPatch(root, (t) => {
@@ -339,7 +355,13 @@ async function applyPage(
   owed: Owed,
 ): Promise<Applied> {
   const dirRel = relDirname(rel)
-  if (!containerAt(tree, dirRel)) return applyFolder(root, tree, dirRel, owed)
+  if (!containerAt(tree, dirRel)) {
+    owed.still.add(rel)
+    const applied = await applyFolder(root, tree, dirRel, owed)
+    // Kept only while a folder above the page owes the stamp whose read lists it.
+    if (!owed.stamp.some((u) => rel.startsWith(`${u.path}/`))) owed.still.delete(rel)
+    return applied
+  }
   const abs = join(root, rel)
   let read: PageRead
   try {
