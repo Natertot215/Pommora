@@ -114,6 +114,11 @@ export type CreateRequest = Extract<
 >
 export type CreatePageRequest = Extract<CreateRequest, { op: 'createPage' }>
 
+export type OrderRequest = Extract<
+  MutateRequest,
+  { op: 'movePage' | 'moveSet' | 'reorderChildren' }
+>
+
 export type UnmintedCreate<R = CreateRequest> = R extends unknown ? Omit<R, 'id'> : never
 
 // The window mints every create's ID as it sends the ask, so what it keys by the newborn is staged before the host's push lands it.
