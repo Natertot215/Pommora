@@ -137,7 +137,7 @@ export function repointRegistryInTree(tree: NexusTree, registry: PropertyDefinit
   }
 }
 
-export type TreeEntity = PageNode | SetNode | CollectionNode | SpaceNode
+type TreeEntity = PageNode | SetNode | CollectionNode | SpaceNode
 
 export function updateNodeInTree(
   tree: NexusTree,

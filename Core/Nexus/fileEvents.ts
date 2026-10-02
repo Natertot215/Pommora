@@ -83,7 +83,7 @@ import {
 } from '../Paths/nexusPaths'
 import { readShard, withShards } from './pageMetadata'
 
-export interface Owed {
+interface Owed {
   root: string
   walk: boolean
   corpus: boolean
@@ -128,7 +128,7 @@ export function oweCascade(
 
 type Applied = 'ok' | 'walk'
 
-export type EventClass =
+type EventClass =
   | { kind: 'page'; rel: string }
   | { kind: 'folder'; rel: string }
   | { kind: 'gone'; rel: string; sidecar?: true }
@@ -166,7 +166,7 @@ export function tileBodyUnder(segs: string[], rel: string): boolean {
   )
 }
 
-export function tileHostAt(tree: NexusTree, rel: string): TileHostRef | null {
+function tileHostAt(tree: NexusTree, rel: string): TileHostRef | null {
   const segs = rel.split('/')
   if (segs[0] !== NEXUS_DIR) return null
   if (segs.length === 3 && segs[1] === HOMEPAGE_HOST_DIRNAME) return HOMEPAGE_HOST
