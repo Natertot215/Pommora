@@ -1,4 +1,4 @@
-// A whole tree arrives over IPC without identity, so without this every open and refetch would re-render every consumer. `stabilize` recycles the prior value's subobjects wherever the new content is deep-equal, and returns the prior value itself when nothing differs, which is also how the host tells a file that changed nothing from one that did. It works in one pass and reuses by position inside a list that has no keys, where `treeDelta`'s `diff` compares by key, so each keeps its own walk.
+// A whole tree arrives over IPC without identity, so without this every open and refetch would re-render every consumer. `stabilize` recycles the prior value's subobjects wherever the new content is deep-equal, and returns the prior value itself when nothing differs, which is also how the host tells a file that changed nothing from one that did. It works in one pass and reuses by position inside a list that has no keys, where `treeDelta`'s `deltaOf` compares by key, so each keeps its own walk.
 
 import { isPlainObject } from '../Contract/validators'
 

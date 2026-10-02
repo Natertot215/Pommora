@@ -1,7 +1,7 @@
 import type { Asks, Pushes } from './bridge'
 import { BUSY, NO_NEXUS } from './result'
 import { adopting, sessionRoot } from '../Nexus/session'
-import { flush } from '../Nexus/settle'
+import { settleNow } from '../Nexus/settle'
 import type { EditorMenuRequest } from '../Actions/editorMenu'
 import type { MenuRequest } from '../Actions/menuModel'
 import type { ThumbRect } from '../Interface/chrome'
@@ -101,7 +101,7 @@ export const withWriteRoot = <A extends unknown[], R>(fn: RootFn<A, R>) => {
       try {
         return await fn(root, ctx, ...args)
       } finally {
-        await flush(ctx, root)
+        await settleNow(ctx, root)
       }
     },
   )

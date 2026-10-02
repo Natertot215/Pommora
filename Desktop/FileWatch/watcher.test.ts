@@ -12,8 +12,8 @@ import { forgetLastReads } from '@pommora/core/Files/atomicWrite'
 import { push } from '../Bridge/ipc'
 import { sessionRoot, type WaitingOpen, waitingOpen } from '@pommora/core/Nexus/session'
 import { classifyEvent, tileBodyUnder } from '@pommora/core/Nexus/fileEvents'
-import { sent } from '@pommora/core/Nexus/settle'
-import { patch } from '@pommora/core/Nexus/treeDelta'
+import { handed } from '@pommora/core/Nexus/settle'
+import { applyDelta } from '@pommora/core/Nexus/treeDelta'
 import type { NexusChange, NexusTree } from '@pommora/core/Nexus/tree'
 import { readIndexedStat } from '@pommora/core/Index/contentIndex'
 import chokidar from 'chokidar'
@@ -70,7 +70,7 @@ const ULID_C = '01CX5ZZKBKPCTAV9WEVGEMMVRC'
 let root: string
 let shown: NexusTree
 // What the window holds once it applies a pushed difference to the tree it was sent.
-const applied = (change: unknown): NexusTree => patch(shown, (change as NexusChange).delta)
+const applied = (change: unknown): NexusTree => applyDelta(shown, (change as NexusChange).delta)
 const abs = (...segs: string[]): string => join(root, ...segs)
 const emit = (event: string, ...segs: string[]): void => handlers.get(event)?.(abs(...segs))
 // After the fake-timer debounce fires, the settle's apply work runs on real time — poll for the outcome (with a hard ceiling) rather than sleeping a fixed budget a loaded suite can overrun.
@@ -96,7 +96,7 @@ beforeEach(async () => {
   live = open
   pushMock.mockClear()
   handlers.clear()
-  shown = sent(await refreshTree(root)).tree
+  shown = handed(await refreshTree(root)).tree
   vi.useFakeTimers()
 })
 afterEach(async () => {

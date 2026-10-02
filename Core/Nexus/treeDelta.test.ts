@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { diff, patch } from './treeDelta'
+import { deltaOf, applyDelta } from './treeDelta'
 
 type Page = { kind: 'page'; id: string; title: string; path: string }
 type Collection = { kind: 'collection'; id: string; title: string; path: string; pages: Page[] }
@@ -120,14 +120,14 @@ function edited(r: () => number, a: Tree): Tree {
   return t
 }
 
-describe('diff and patch', () => {
+describe('deltaOf and applyDelta', () => {
   it('a patch of the difference lands on the tree it was taken to, over generated pairs', () => {
     for (let seed = 1; seed <= 300; seed++) {
       const r = random(seed)
       const a = treeFrom(r)
       const b = edited(r, a)
-      const delta = diff(a, b)
-      const landed = delta ? patch(a, delta) : a
+      const delta = deltaOf(a, b)
+      const landed = delta ? applyDelta(a, delta) : a
       expect(landed, `seed ${seed}`).toEqual(b)
     }
   })
@@ -137,8 +137,8 @@ describe('diff and patch', () => {
       const r = random(seed)
       const a = treeFrom(r)
       const b = edited(r, a)
-      const delta = diff(a, b)
-      const landed = delta ? patch(a, delta) : a
+      const delta = deltaOf(a, b)
+      const landed = delta ? applyDelta(a, delta) : a
       for (const c of b.collections) {
         const held = a.collections.find((x) => x === c)
         if (held) expect(landed.collections.find((x) => x.path === c.path)).toBe(held)
@@ -151,19 +151,19 @@ describe('diff and patch', () => {
 
   it('two deep-equal trees differ in nothing', () => {
     const a = treeFrom(random(7))
-    expect(diff(a, structuredClone(a))).toBeNull()
+    expect(deltaOf(a, structuredClone(a))).toBeNull()
   })
 
   it('a difference naming a member the tree never held throws', () => {
     const a = treeFrom(random(7))
     expect(() =>
-      patch(a, { at: { collections: { at: { Ghost: { at: { title: { set: 'x' } } } } } } }),
+      applyDelta(a, { at: { collections: { at: { Ghost: { at: { title: { set: 'x' } } } } } } }),
     ).toThrow()
-    expect(() => patch(a, { at: { collections: { at: {}, keys: ['Ghost'] } } })).toThrow()
+    expect(() => applyDelta(a, { at: { collections: { at: {}, keys: ['Ghost'] } } })).toThrow()
   })
 
   it('a difference against nothing is the whole tree', () => {
     const a = treeFrom(random(7))
-    expect(diff(undefined, a)).toEqual({ set: a })
+    expect(deltaOf(undefined, a)).toEqual({ set: a })
   })
 })

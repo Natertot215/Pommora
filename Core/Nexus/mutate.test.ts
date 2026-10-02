@@ -33,7 +33,7 @@ const B_ID = '01KVGMT8BFP350FZZXAMG1QDRB'
 const C_ID = '01KVGMT8BFP350FZZXAMG1QDRC'
 const G_ID = '01KVGMT8BFP350FZZXAMG1QDRG'
 import { openSession, closeSession } from './session'
-import { flush, settleBatch } from './settle'
+import { settleNow, settleBatch } from './settle'
 import { applyEvents } from './fileEvents'
 import * as readNexusModule from './readNexus'
 import * as contextsRegistry from '../Contexts/contextsRegistry'
@@ -79,7 +79,7 @@ const withValuesPush = async (
   const push = (channel: keyof Pushes, value: unknown): void => {
     if (channel === 'values:changed') values.push(...(value as ValueChange[]))
   }
-  await flush({ push, watch: async () => {} }, root)
+  await settleNow({ push, watch: async () => {} }, root)
   const held = heldTreeOf(root)
   if (held) expect(stabilize(await readNexus(root), held)).toBe(held)
   return { ok: reply.ok, values }
@@ -1004,7 +1004,7 @@ describe('handleMutate — review-round hardening', () => {
     await applyEvents(root, [
       { event: 'change', absPath: join(root, '.nexus', 'settings.json'), origin: 'watched' },
     ])
-    await flush({ push: () => {}, watch: async () => {} }, root)
+    await settleNow({ push: () => {}, watch: async () => {} }, root)
     await settledMutate(
       root,
       { op: 'setProfileImage', source: await pickImage('Kept.png') },
@@ -1559,7 +1559,7 @@ describe('handleMutate — setBanner', () => {
     const push = (channel: keyof Pushes, value: unknown): void => {
       if (channel === 'assets:changed') pushed = value as AssetMap
     }
-    await flush({ push, watch: async () => {} }, root)
+    await settleNow({ push, watch: async () => {} }, root)
     expect(pushed).not.toBeNull()
     expect(resolveAssetName(pushed!, 'Live.png')).toBe('file-assets/Live.png')
   })
@@ -2301,7 +2301,7 @@ describe('the Contexts lock', () => {
         nexusDeps,
       ),
     ])
-    await flush({ push: () => {}, watch: async () => {} }, root)
+    await settleNow({ push: () => {}, watch: async () => {} }, root)
     const held = heldTreeOf(root)
     expect(held && stabilize(await readNexus(root), held)).toBe(held)
     expect(renamed.ok && tagged.ok).toBe(true)
@@ -2512,11 +2512,11 @@ describe('the Contexts lock', () => {
       },
       nexusDeps,
     )
-    await flush({ push: () => {}, watch: async () => {} }, root)
+    await settleNow({ push: () => {}, watch: async () => {} }, root)
     paused.release()
     expect((await running).ok && valued.ok).toBe(true)
     vi.restoreAllMocks()
-    await flush({ push: () => {}, watch: async () => {} }, root)
+    await settleNow({ push: () => {}, watch: async () => {} }, root)
     const fm = splitFrontmatter(await read('Notes/Daily/Alpha.md'))
     expect(fm.Stage).toBe(3)
     expect(fm['<Areas>']).toEqual(tagged ? ['Work'] : undefined)
@@ -2569,7 +2569,7 @@ describe('the Contexts lock', () => {
         nexusDeps,
       ),
     ])
-    await flush({ push: () => {}, watch: async () => {} }, root)
+    await settleNow({ push: () => {}, watch: async () => {} }, root)
     const held = heldTreeOf(root)
     expect(held && stabilize(await readNexus(root), held)).toBe(held)
     expect(renamed.ok && created.ok).toBe(true)
@@ -2597,7 +2597,7 @@ describe('the Contexts lock', () => {
         nexusDeps,
       ),
     ])
-    await flush({ push: () => {}, watch: async () => {} }, root)
+    await settleNow({ push: () => {}, watch: async () => {} }, root)
     const held = heldTreeOf(root)
     expect(held && stabilize(await readNexus(root), held)).toBe(held)
     expect(renamed.ok && created.ok).toBe(true)

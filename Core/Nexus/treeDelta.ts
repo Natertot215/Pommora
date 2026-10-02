@@ -30,7 +30,7 @@ function keyed(list: unknown[]): Map<string, unknown> | null {
 function fields(prev: Map<string, unknown>, next: Map<string, unknown>): Record<string, Delta> {
   const at: Record<string, Delta> = {}
   for (const [key, value] of next) {
-    const d = prev.has(key) ? diff(prev.get(key), value) : { set: value }
+    const d = prev.has(key) ? deltaOf(prev.get(key), value) : { set: value }
     if (d) at[key] = d
   }
   for (const key of prev.keys()) if (!next.has(key)) at[key] = { drop: true }
@@ -38,7 +38,7 @@ function fields(prev: Map<string, unknown>, next: Map<string, unknown>): Record<
 }
 
 /** Null when nothing differs. A subtree both trees share by reference is never entered, which is what keeps the cost to what changed. */
-export function diff<T>(prev: T | undefined, next: T): Delta<T> | null {
+export function deltaOf<T>(prev: T | undefined, next: T): Delta<T> | null {
   if (Object.is(prev, next)) return null
   if (Array.isArray(prev) && Array.isArray(next)) {
     const a = keyed(prev)
@@ -62,14 +62,14 @@ function edit(held: Map<string, unknown>, at: Record<string, Delta>): Map<string
   for (const [key, d] of Object.entries(at)) {
     if ('drop' in d) out.delete(key)
     else if ('set' in d) out.set(key, d.set)
-    else if (out.has(key)) out.set(key, patch(out.get(key), d))
+    else if (out.has(key)) out.set(key, applyDelta(out.get(key), d))
     else throw new Error(`The difference names "${key}", which the tree never held.`)
   }
   return out
 }
 
 /** Throws when the difference doesn't fit what is held, which tells the window to ask for the whole tree. Whatever the difference doesn't name keeps its identity. */
-export function patch<T>(prev: T, delta: Delta): T {
+export function applyDelta<T>(prev: T, delta: Delta): T {
   if (!('at' in delta)) return ('set' in delta ? delta.set : undefined) as T
   if (Array.isArray(prev)) {
     const held = keyed(prev)

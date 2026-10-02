@@ -18,7 +18,7 @@ import { removeProperty } from '../Properties/removeProperty'
 import { assignProperty } from '../Properties/assignment'
 import { newContentId, newId } from '../Nexus/ids'
 import { handleMutate } from '../Nexus/mutate'
-import { flush } from '../Nexus/settle'
+import { settleNow } from '../Nexus/settle'
 import type { ValueChange } from '../Nexus/tree'
 import type { Pushes } from '../Contract/bridge'
 import { renameProperty } from '../Properties/registryProperty'
@@ -565,7 +565,7 @@ describe('links come back with the page', () => {
       if (channel === 'values:changed')
         changed.push(...(value as ValueChange[]).flatMap((c) => c.pageIds))
     }
-    await flush({ push, watch: async () => {} }, root)
+    await settleNow({ push, watch: async () => {} }, root)
     expect(changed).toContain('01KVGMT8BFP350FZZXAMG1QDVD')
   })
 

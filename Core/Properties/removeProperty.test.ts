@@ -7,7 +7,7 @@ import { fault, ok } from '../Contract/result'
 import { editJsonStrict } from '../Files/atomicWrite'
 import { seedConfigSurfaces, viewOn } from '../Testing/configSurfaces'
 import { sidecarPath } from '../Paths/paths'
-import { flush } from '../Nexus/settle'
+import { settleNow } from '../Nexus/settle'
 import type { ValueChange } from '../Nexus/tree'
 import type { Pushes } from '../Contract/bridge'
 import { removeProperty } from './removeProperty'
@@ -99,7 +99,7 @@ describe('removeProperty — strip + cache (C-3/C-6)', () => {
     const push = (channel: keyof Pushes, value: unknown): void => {
       if (channel === 'values:changed') rels.push(...(value as ValueChange[]).map((c) => c.rel))
     }
-    await flush({ push, watch: async () => {} }, root)
+    await settleNow({ push, watch: async () => {} }, root)
     expect(rels).toEqual(['Notes'])
     expect(r.ok).toBe(true)
     expect(await pageValue(pageA)).toBeUndefined()

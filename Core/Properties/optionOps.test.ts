@@ -32,7 +32,7 @@ import { unsweptLine } from './governedSweep'
 import { type ConfigSurfaces, seedConfigSurfaces, viewOn } from '../Testing/configSurfaces'
 import { sidecarPath } from '../Paths/paths'
 import type { PropertyDefinition, SelectOption } from './properties'
-import { flush } from '../Nexus/settle'
+import { settleNow } from '../Nexus/settle'
 import type { ValueChange } from '../Nexus/tree'
 import type { Pushes } from '../Contract/bridge'
 import { closeSession, openSession } from '../Nexus/session'
@@ -441,8 +441,8 @@ describe('renameOption', () => {
     const push = (channel: keyof Pushes, value: unknown): void => {
       if (channel === 'values:changed') rels.push((value as ValueChange[]).map((c) => c.rel))
     }
-    await flush({ push, watch: async () => {} }, root)
-    await flush({ push, watch: async () => {} }, root)
+    await settleNow({ push, watch: async () => {} }, root)
+    await settleNow({ push, watch: async () => {} }, root)
     expect(rels).toEqual([['Col', 'Col2']])
     closeSession()
   })

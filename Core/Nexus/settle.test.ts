@@ -16,9 +16,9 @@ import { splitFrontmatter } from '../Files/pageFile'
 import { ID_KEY } from './identityMark'
 import { stabilize } from './treeStabilize'
 import { applyEvents, oweCascade, owedFor, oweWalk } from './fileEvents'
-import { flush, sent, settleBatch } from './settle'
+import { settleNow, handed, settleBatch } from './settle'
 import type { NexusChange, NexusTree } from './tree'
-import { patch } from './treeDelta'
+import { applyDelta } from './treeDelta'
 import { closeSession, openSession, whileAdopting } from './session'
 import { writeExcludedFolders } from '../Settings/settings'
 
@@ -65,7 +65,7 @@ beforeEach(async () => {
   await writeFile(abs('Notes', '_pagecollection.json'), JSON.stringify({ id: 'c1' }))
   await writeFile(abs('Notes', 'A.md'), `---\nID: ${ULID_A}\n---\n\nalpha\n`)
   await openSession(root)
-  shown = sent(await refreshTree(root)).tree
+  shown = handed(await refreshTree(root)).tree
 })
 afterEach(async () => {
   dropLiveTree()
@@ -74,11 +74,11 @@ afterEach(async () => {
   await rm(root, { recursive: true, force: true })
 })
 
-describe('what a flush pushes for a batch', () => {
+describe('what a settle pushes for a batch', () => {
   it('names an outside edit of a page in pages:changed and its container in values:changed', async () => {
     await writeFile(abs('Notes', 'A.md'), `---\nID: ${ULID_A}\n---\n\nedited\n`)
     await applyEvents(root, [ev('change', 'Notes', 'A.md'), ev('change', 'Notes', 'A.md')])
-    await flush(pusher, root)
+    await settleNow(pusher, root)
     expect(channels()).toEqual(['pages:changed', 'values:changed'])
     expect(payload('pages:changed')).toEqual(['Notes/A.md'])
     expect(payload('values:changed')).toEqual([{ rel: 'Notes', pageIds: [ULID_A] }])
@@ -91,14 +91,16 @@ describe('what a flush pushes for a batch', () => {
       ev('change', '.nexus', 'homepage', '_tiles.json'),
       ev('change', '.nexus', 'homepage', '_tiles.json'),
     ])
-    await flush(pusher, root)
+    await settleNow(pusher, root)
     expect(channels()).toEqual([
       'nexus:changed',
       'pages:changed',
       'values:changed',
       'tiles:changed',
     ])
-    expect(patch(shown, (payload('nexus:changed') as NexusChange).delta)).toEqual(heldTreeOf(root))
+    expect(applyDelta(shown, (payload('nexus:changed') as NexusChange).delta)).toEqual(
+      heldTreeOf(root),
+    )
     expect(payload('tiles:changed')).toEqual({ kind: 'homepage' })
   })
 
@@ -112,7 +114,7 @@ describe('what a flush pushes for a batch', () => {
       ['Notes/A.md', 'Other/B.md'],
       [{ kind: 'homepage' }, { kind: 'space', id: 'sp1' }],
     )
-    await flush(pusher, root)
+    await settleNow(pusher, root)
     expect(payload('pages:changed')).toEqual(['Notes/A.md', 'Other/B.md'])
     expect(pushes.filter(([c]) => c === 'tiles:changed').map(([, v]) => v)).toEqual([
       { kind: 'homepage' },
@@ -126,7 +128,7 @@ describe('what a flush pushes for a batch', () => {
     await applyEvents(root, [
       { ...ev('change', 'Notes', 'A.md'), origin: 'own', text, bodyOnly: true },
     ])
-    await flush(pusher, root)
+    await settleNow(pusher, root)
     expect(payload('values:changed')).toEqual([
       { rel: 'Notes', pageIds: [ULID_A], bodyOnly: [ULID_A] },
     ])
@@ -136,13 +138,13 @@ describe('what a flush pushes for a batch', () => {
     await mkdir(abs('Notes', 'Deep'))
     await writeFile(abs('Notes', 'Deep', '_pageset.json'), JSON.stringify({ id: ULID_C }))
     await writeFile(abs('Notes', 'Deep', 'D.md'), `---\nID: ${ULID_D}\n---\n\ndelta\n`)
-    sent(await refreshTree(root))
+    handed(await refreshTree(root))
     await applyEvents(root, [
       ev('change', 'Notes', 'A.md'),
       ev('change', 'Notes', 'Deep', 'D.md'),
       ev('change', 'Notes', 'A.md'),
     ])
-    await flush(pusher, root)
+    await settleNow(pusher, root)
     expect(payload('values:changed')).toEqual([
       { rel: 'Notes', pageIds: [ULID_A] },
       { rel: 'Notes/Deep', pageIds: [ULID_D] },
@@ -156,37 +158,37 @@ describe('what a flush pushes for a batch', () => {
       { ...ev('change', 'Notes', 'A.md'), origin: 'own', text, bodyOnly: true },
       { ...ev('change', 'Notes', 'A.md'), origin: 'own', text },
     ])
-    await flush(pusher, root)
+    await settleNow(pusher, root)
     expect(payload('values:changed')).toEqual([{ rel: 'Notes', pageIds: [ULID_A] }])
   })
 
-  it('a flush drains what it pushed', async () => {
+  it('a settle drains what it pushed', async () => {
     await applyEvents(root, [ev('change', 'Notes', 'A.md')])
-    await flush(pusher, root)
+    await settleNow(pusher, root)
     pushes = []
-    await flush(pusher, root)
+    await settleNow(pusher, root)
     expect(pushes).toEqual([])
   })
 
   it('a page the tree doesn’t hold still names its container, with no id', async () => {
     await writeFile(abs('Notes', 'Foreign.md'), '---\nID: 42\n---\n\nforeign\n')
     await applyEvents(root, [ev('add', 'Notes', 'Foreign.md')])
-    await flush(pusher, root)
+    await settleNow(pusher, root)
     expect(payload('values:changed')).toEqual([{ rel: 'Notes', pageIds: [] }])
   })
 
   it('what one root owed is dropped once another root’s event arrives', async () => {
     await applyEvents(root, [ev('change', 'Notes', 'A.md')])
     owedFor('/elsewhere')
-    await flush(pusher, root)
+    await settleNow(pusher, root)
     expect(pushes).toEqual([])
   })
 
   it('sends the whole tree, under the next version, to a window that holds none of this root', async () => {
-    const { version } = sent({ ...shown, nexus: { ...shown.nexus, rootPath: '/elsewhere' } })
+    const { version } = handed({ ...shown, nexus: { ...shown.nexus, rootPath: '/elsewhere' } })
     await writeFile(abs('Notes', 'B.md'), `---\nID: ${ULID_B}\n---\n\nbeta\n`)
     await applyEvents(root, [ev('add', 'Notes', 'B.md')])
-    await flush(pusher, root)
+    await settleNow(pusher, root)
     expect(payload('nexus:changed')).toEqual({
       version: version + 1,
       delta: { set: heldTreeOf(root) },
@@ -195,7 +197,7 @@ describe('what a flush pushes for a batch', () => {
 
   it('pushes nothing for a batch that changed nothing', async () => {
     await applyEvents(root, [ev('change', '.nexus', 'interface', 'sidepane.json')])
-    await flush(pusher, root)
+    await settleNow(pusher, root)
     expect(pushes).toEqual([])
   })
 
@@ -207,7 +209,7 @@ describe('what a flush pushes for a batch', () => {
 })
 
 describe('the settle', () => {
-  it('an event whose arm resumes after a concurrent flush has pushed still owes its walk to the next flush', async () => {
+  it('an event whose arm resumes after a concurrent settle has pushed still owes its walk to the next settle', async () => {
     await writeFile(abs('Notes', 'B.md'), `---\nID: ${ULID_B}\n---\n\nbeta\n`)
     const reached = gate<void>()
     const read = gate<never>()
@@ -218,13 +220,13 @@ describe('the settle', () => {
     const applying = applyEvents(root, [ev('add', 'Notes', 'B.md')])
     await reached.promise
     oweCascade(root, ['Notes/A.md'], [])
-    await flush(pusher, root)
+    await settleNow(pusher, root)
     expect(channels()).toEqual(['pages:changed'])
     const walk = vi.spyOn(liveTree, 'refreshAfterWrite')
     read.fail(new Error('mid-read'))
     await applying
     expect(owedFor(root).walk).toBe(true)
-    await flush(pusher, root)
+    await settleNow(pusher, root)
     expect(walk).toHaveBeenCalledTimes(1)
     expect(heldTreeOf(root)?.collections[0]?.pages.map((p) => p.id)).toEqual([ULID_A, ULID_B])
   })
@@ -250,10 +252,10 @@ describe('the settle', () => {
     )
     await writeFile(abs('Notes', 'B.md'), `---\nID: ${ULID_B}\n<Areas>:\n  - Home\n---\n\nbeta\n`)
     oweWalk(root)
-    await flush(pusher, root)
+    await settleNow(pusher, root)
     await writeFile(abs('.nexus', 'contexts', 'Areas', 'Home', '_space.json'), '{}')
     oweWalk(root)
-    await flush(pusher, root)
+    await settleNow(pusher, root)
     const held = heldTreeOf(root)
     const home = held?.contexts[0]?.spaces[0]
     expect(held?.collections[0]?.pages.find((p) => p.id === ULID_B)?.contextValues).toEqual({
@@ -293,20 +295,20 @@ describe('the settle', () => {
     await applyEvents(root, [ev('addDir', 'Notes', 'Fresh')])
     expect(heldTreeOf(root)?.unreadable).toBeUndefined()
     expect(owedFor(root).stamp).toEqual([])
-    await flush(pusher, root)
+    await settleNow(pusher, root)
     expect(await readFile(abs('Notes', 'Fresh', 'Note.md'), 'utf8')).toBe('note\n')
   })
 
   it('un-excluding a folder that was adopted before holds the notes added while it was excluded', async () => {
     await mkdir(abs('Archive'))
     await writeFile(abs('Archive', '_pagecollection.json'), JSON.stringify({ id: ULID_C }))
-    sent(await refreshTree(root))
+    handed(await refreshTree(root))
     await writeExcludedFolders(root, ['Archive'])
-    await flush(pusher, root)
+    await settleNow(pusher, root)
     await writeFile(abs('Archive', 'New.md'), 'new\n')
     await backdate('Archive', 'New.md')
     await writeExcludedFolders(root, [])
-    await flush(pusher, root)
+    await settleNow(pusher, root)
     const held = heldTreeOf(root)
     expect(held?.unreadable).toBeUndefined()
     const archive = held?.collections.find((c) => c.path === 'Archive')
@@ -348,10 +350,10 @@ describe('the settle', () => {
     await backdate('Archive', 'Old', 'Y.md')
     await backdate('Notes', 'Sub', 'Z.md')
     await writeExcludedFolders(root, ['Archive', 'Notes/Sub'])
-    await flush(pusher, root)
+    await settleNow(pusher, root)
     pusher.watch.mockClear()
     await writeExcludedFolders(root, [])
-    await flush(pusher, root)
+    await settleNow(pusher, root)
     const held = heldTreeOf(root)
     expect(held?.unreadable).toBeUndefined()
     const paths = held?.collections.flatMap((c) => [
@@ -365,23 +367,23 @@ describe('the settle', () => {
     expect(pusher.watch).toHaveBeenCalledTimes(1)
   })
 
-  it('a flush while an open is under way pushes nothing, and the next one pushes what was owed', async () => {
+  it('a settle while an open is under way pushes nothing, and the next one pushes what was owed', async () => {
     oweCascade(root, ['Notes/A.md'], [])
-    await whileAdopting(() => flush(pusher, root))
+    await whileAdopting(() => settleNow(pusher, root))
     expect(pushes).toEqual([])
-    await flush(pusher, root)
+    await settleNow(pusher, root)
     expect(pushes).toEqual([['pages:changed', ['Notes/A.md']]])
   })
 
-  it('a flush that owes a reseed doesn’t delay a second flush behind it', async () => {
+  it('a settle that owes a reseed doesn’t delay a second settle behind it', async () => {
     const seeding = gate<indexSeed.SeedReread>()
     const seed = vi.spyOn(indexSeed, 'seedContentIndex').mockImplementation(() => seeding.promise)
     owedFor(root).corpus = true
     let firstDone = false
-    const first = flush(pusher, root).then(() => {
+    const first = settleNow(pusher, root).then(() => {
       firstDone = true
     })
-    await flush(pusher, root)
+    await settleNow(pusher, root)
     expect(seed).toHaveBeenCalledTimes(1)
     expect(firstDone).toBe(false)
     seeding.open({ db: null, rels: [] })
@@ -393,11 +395,11 @@ describe('the settle', () => {
 describe('an outside batch’s turn', () => {
   const ULID_N = '01NX5ZZKBKPCTAV9WEVGEMMVRN'
   const bytes = (...segs: string[]): Promise<string> => readFile(abs(...segs), 'utf8')
-  // An editor write and its gate's flush, answered by whether the flush returned before a wait no stamp of the batch's could fit in.
+  // An editor write and its gate's settle, answered by whether the settle returned before a wait no stamp of the batch's could fit in.
   const reply = async (): Promise<'replied' | 'waited'> => {
     await atomicWriteFile(abs('Notes', 'New.md'), `---\nID: ${ULID_N}\n---\n\nnew\n`)
     return Promise.race([
-      flush(pusher, root).then(() => 'replied' as const),
+      settleNow(pusher, root).then(() => 'replied' as const),
       new Promise<'waited'>((r) => setTimeout(() => r('waited'), 200)),
     ])
   }
@@ -405,7 +407,7 @@ describe('an outside batch’s turn', () => {
   const windowTree = (): NexusTree =>
     pushes
       .filter(([c]) => c === 'nexus:changed')
-      .reduce((t, [, v]) => patch(t, (v as NexusChange).delta), shown)
+      .reduce((t, [, v]) => applyDelta(t, (v as NexusChange).delta), shown)
   const agrees = async (): Promise<void> => {
     const live = heldTreeOf(root)
     expect(live && stabilize(await readNexus(root), live)).toBe(live)
@@ -413,7 +415,7 @@ describe('an outside batch’s turn', () => {
   const held = (rel: string): string | undefined =>
     heldTreeOf(root)?.collections[0]?.pages.find((p) => p.path === rel)?.id
 
-  it('a reply’s flush doesn’t wait on the stamps of a batch that has applied', async () => {
+  it('a reply’s settle doesn’t wait on the stamps of a batch that has applied', async () => {
     await writeFile(abs('Notes', 'Bare.md'), 'bare\n')
     const stamping = gate<void>()
     const release = gate<void>()
@@ -486,7 +488,7 @@ describe('an outside batch’s turn', () => {
     const batch = settleBatch(pusher, root, [ev('add', 'Notes', 'Bare.md')])
     await stamping.promise
     await applyEvents(root, [ev('change', '.nexus', 'nexus.json')])
-    const replied = flush(pusher, root)
+    const replied = settleNow(pusher, root)
     await walking.promise
     release.open()
     await stamped.promise

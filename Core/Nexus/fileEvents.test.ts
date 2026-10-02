@@ -11,7 +11,7 @@ import * as readNexusModule from './readNexus'
 import { readNexus } from './readNexus'
 import { getHeldAssetMap, liveAssetMap } from '../Assets/assetMap'
 import { applyEvents, classifyEvent, owedFor, tileBodyUnder } from './fileEvents'
-import { flush } from './settle'
+import { settleNow } from './settle'
 import { handleMutate } from './mutate'
 import type { TrashDeps } from '../Trash/bundle'
 import type { Changed, FileEvent } from '../Files/writeEcho'
@@ -165,14 +165,14 @@ describe('applyEvents — must agree with the walk', () => {
 
     await writeFile(sidecar, '{corrupt')
     await applyEvents(root, [ev('change', 'Notes', 'Daily', '_pageset.json')])
-    await flush(QUIET, root)
+    await settleNow(QUIET, root)
     expect(held().collections[0]?.sets).toEqual([])
     expect(held().unreadable).toEqual([{ path: 'Notes/Daily', kind: 'set', reason: 'unparsed' }])
     await agrees()
 
     await writeFile(sidecar, JSON.stringify({ id: 's1' }))
     await applyEvents(root, [ev('change', 'Notes', 'Daily', '_pageset.json')])
-    await flush(QUIET, root)
+    await settleNow(QUIET, root)
     const daily = held().collections[0]?.sets[0]
     expect(daily?.id).toBe('s1')
     expect(daily?.pages.map((p) => p.id)).toEqual([ULID_B])
@@ -290,7 +290,7 @@ describe('applyEvents — must agree with the walk', () => {
     expect(owedFor(root).rescope).toBe(false)
     const seed = vi.spyOn(indexSeed, 'seedContentIndex')
     const watch = vi.fn(async () => {})
-    await flush({ push: () => {}, watch }, root)
+    await settleNow({ push: () => {}, watch }, root)
     expect(seed).toHaveBeenCalledTimes(1)
     expect(watch).not.toHaveBeenCalled()
   })
@@ -311,7 +311,7 @@ describe('applyEvents — must agree with the walk', () => {
     ])
     expect(readFolder).toHaveBeenCalledTimes(1)
     expect(owedFor(root).stamp).toEqual([{ path: 'Notes/Import', kind: 'set', reason: 'missing' }])
-    await flush(QUIET, root)
+    await settleNow(QUIET, root)
     expect(held().collections[0]?.sets[0]?.pages).toHaveLength(400)
     await agrees()
   })
@@ -325,7 +325,7 @@ describe('the parity cases', () => {
   })
   const settled = async (events: FileEvent[]): Promise<void> => {
     await applyEvents(root, events)
-    await flush(QUIET, root)
+    await settleNow(QUIET, root)
   }
 
   it('a folder of notes added outside the app lands without a walk', async () => {
@@ -419,7 +419,7 @@ describe('the parity cases', () => {
     it(`a page event that settles after the app ${label} its Set lists nothing unreadable`, async () => {
       await withDaily()
       expect((await handleMutate(root, req, DEPS)).ok).toBe(true)
-      await flush(QUIET, root)
+      await settleNow(QUIET, root)
       await settled([ev('change', 'Notes', 'Daily', 'D.md')])
       expect(held().unreadable).toBeUndefined()
       await agrees()
@@ -531,7 +531,7 @@ describe('the parity cases', () => {
     ])
     expect(held().collections[0]?.pages.map((p) => p.id)).toEqual([ULID_A, ULID_B, ULID_C])
     expect(walked()).toBe(true)
-    await flush(QUIET, root)
+    await settleNow(QUIET, root)
     expect(walk).toHaveBeenCalledTimes(1)
     await agrees()
   })
@@ -1017,14 +1017,14 @@ describe('the app’s own events', () => {
     expect(config.pageMetadata).toEqual({ [SEP]: { icon: 'star' } })
   })
 
-  it('a file listed missing is stamped by the next flush, never inside the event', async () => {
+  it('a file listed missing is stamped by the next settle, never inside the event', async () => {
     await writeFile(abs('Notes', 'Bare.md'), 'bare\n')
     await ownUnderLock('Notes/Bare.md', 'bare\n')
     expect(owedFor(root).stamp).toEqual([
       { path: 'Notes/Bare.md', kind: 'page', reason: 'missing' },
     ])
     expect(await readFile(abs('Notes', 'Bare.md'), 'utf8')).toBe('bare\n')
-    await flush(QUIET, root)
+    await settleNow(QUIET, root)
     const id = splitFrontmatter(await readFile(abs('Notes', 'Bare.md'), 'utf8'))[ID_KEY]
     expect(held().collections[0]?.pages.find((p) => p.path === 'Notes/Bare.md')?.id).toBe(id)
     await agrees()

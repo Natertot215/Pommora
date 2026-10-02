@@ -1,5 +1,5 @@
 import { applyEvents } from '../Nexus/fileEvents'
-import { flush } from '../Nexus/settle'
+import { settleNow } from '../Nexus/settle'
 import { mkdir, readdir, readFile, rename, rm, writeFile } from 'node:fs/promises'
 import { splitFrontmatter } from '../Files/pageFile'
 import { basename, dirname, join, relative } from '../Paths/posix'
@@ -958,7 +958,7 @@ describe('restore — the gate-four pins', () => {
     await applyEvents(root, [
       { event: 'change', absPath: contextsRegistryFile(root), origin: 'watched' },
     ])
-    await flush({ push: () => {}, watch: async () => {} }, root)
+    await settleNow({ push: () => {}, watch: async () => {} }, root)
     const [listed] = await listBundles(root)
     const r = await settledMutate(root, { op: 'restore', bundlePath: listed.bundlePath }, nexusDeps)
     expect(r.ok).toBe(false)

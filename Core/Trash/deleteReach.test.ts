@@ -1,5 +1,5 @@
 import { applyEvents } from '../Nexus/fileEvents'
-import { flush } from '../Nexus/settle'
+import { settleNow } from '../Nexus/settle'
 import { chmod, copyFile, mkdir, readFile, rm, writeFile } from 'node:fs/promises'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { newContentId, newId } from '../Nexus/ids'
@@ -348,7 +348,7 @@ describe('a Set delete', () => {
       { event: 'unlink', absPath: otherFile, origin: 'watched' },
       { event: 'addDir', absPath: otherFile, origin: 'watched' },
     ])
-    await flush({ push: () => {}, watch: async () => {} }, root)
+    await settleNow({ push: () => {}, watch: async () => {} }, root)
     await chmod(locked.path, 0o555)
     try {
       const r = await del('Notes/Gone', 'set')
@@ -370,7 +370,7 @@ describe('a Set delete', () => {
       { event: 'unlink', absPath: otherFile, origin: 'watched' },
       { event: 'addDir', absPath: otherFile, origin: 'watched' },
     ])
-    await flush({ push: () => {}, watch: async () => {} }, root)
+    await settleNow({ push: () => {}, watch: async () => {} }, root)
     const r = await del('Notes/Gone', 'set')
     expect(r.ok && r.value.cascade?.warning).toBe(unsweptLine(1))
   })

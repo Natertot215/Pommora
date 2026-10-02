@@ -5,7 +5,7 @@ import { clearNotification, currentNotification } from '../Interface/Notificatio
 import { ok } from '../Contract/result'
 import { ASSETS_DIR_REL } from '../Paths/nexusPaths'
 import type { NexusTree } from '../Nexus/tree'
-import { diff } from '../Nexus/treeDelta'
+import { deltaOf } from '../Nexus/treeDelta'
 import type { PageDetail } from '../Pages/pageDetail'
 import {
   type PageTarget,
@@ -463,7 +463,7 @@ describe('store — page slots', () => {
 // What the host does before it replies to a write: pushes the difference its settle found.
 function hostPushes(next: NexusTree): void {
   const { tree, version, applyChange } = useSession.getState()
-  const delta = diff(tree, next)
+  const delta = deltaOf(tree, next)
   if (delta) applyChange({ version: version + 1, delta })
 }
 
@@ -955,7 +955,7 @@ describe('store — a pushed difference', () => {
   it('with the next version applies, and keeps the identity of what it didn’t name', () => {
     useSession.getState().applyChange({ version: 3, delta: { set: two() } })
     const held = useSession.getState().tree
-    const delta = diff(held, moved())
+    const delta = deltaOf(held, moved())
     if (!delta) throw new Error('no difference')
     useSession.getState().applyChange({ version: 4, delta })
     const s = useSession.getState()
@@ -971,7 +971,7 @@ describe('store — a pushed difference', () => {
   it('with a gap in its version asks for the whole tree', async () => {
     const state = asked()
     useSession.getState().applyChange({ version: 3, delta: { set: two() } })
-    const delta = diff(useSession.getState().tree, moved())
+    const delta = deltaOf(useSession.getState().tree, moved())
     if (!delta) throw new Error('no difference')
     useSession.getState().applyChange({ version: 5, delta })
     await vi.waitFor(() => expect(state).toHaveBeenCalled())
