@@ -98,6 +98,9 @@ export function remainderUnder(segs: string[], dirSegs: string[]): string[] | nu
   return under ? segs.slice(dirSegs.length) : null
 }
 
+export const entryWithin = (entry: string, rel: string): string[] | null =>
+  remainderUnder(rootSegs(entry), rootSegs(rel).map(foldKey))
+
 function prefixMatcher(paths: string[]): (segs: string[]) => boolean {
   const prefixes = paths.map((p) => rootSegs(p).map(foldKey)).filter((p) => p.length > 0)
   if (!prefixes.length) return () => false

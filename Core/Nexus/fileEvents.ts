@@ -12,7 +12,13 @@ import type {
 } from './tree'
 import { asString, asStringArray } from './coerce'
 import { patchHeldAssetMap } from '../Assets/assetMap'
-import { assetMatcher, excludedMatcher, hiddenFolder, sameScope } from '../Paths/exclusion'
+import {
+  assetMatcher,
+  entryWithin,
+  excludedMatcher,
+  hiddenFolder,
+  sameScope,
+} from '../Paths/exclusion'
 import {
   parseJsonObject,
   pathExists,
@@ -48,7 +54,6 @@ import {
   readPageRecord,
 } from './readNexus'
 import { readSettingsLeaves, scopeOf } from '../Settings/codec'
-import { entryWithin } from '../Settings/settings'
 import { errText } from '../Contract/result'
 import { containerNodeFrom } from './containerFields'
 import { contextsRegistry as contextsRegistrySchema, type ContextDef } from '../Contexts/contexts'
