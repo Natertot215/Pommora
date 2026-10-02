@@ -82,10 +82,10 @@ export async function openNexusSequence(
   if (root !== priorRoot) {
     void sweepFileHistory(root)
     try {
-      let tree = await readNexus(root)
-      while (await stampMissing(root, tree.unreadable)) tree = await readNexus(root)
-      if (latchRecord) await runOpenLedger(root, tree)
-      else seedLiveTree(tree)
+      const tree = await readNexus(root)
+      seedLiveTree(tree)
+      await stampMissing(root, tree.unreadable)
+      if (latchRecord) await runOpenLedger(root, await liveTreeOf(root))
     } catch (e) {
       console.error('adopt: the seed walk failed; reads will retry:', errText(e))
     }
