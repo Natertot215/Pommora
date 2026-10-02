@@ -70,7 +70,6 @@ export const contentIndexStore = (db: Db): ContentIndexStore => ({
         })
         for (const [key, value] of Object.entries(entry.values))
           insValue.run(path, key, JSON.stringify(value) ?? 'null')
-        // The gate row lands LAST, so a write that dies part-way leaves no stat and the next seed re-reads the file.
         insFile.run(path, stat.mtimeMs, stat.size)
       }
     })

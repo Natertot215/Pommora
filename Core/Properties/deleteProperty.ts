@@ -39,6 +39,7 @@ async function snapshot(
   for (const folder of folders) {
     // Gathered before the unassign strips it — a property restored into no Collection is defined but belongs nowhere.
     const sidecar = await readJsonObject(sidecarPath(folder, 'collection'))
+    if (!sidecar) partial = true
     const id = typeof sidecar?.id === 'string' ? sidecar.id : null
     const holds = assignedIds(sidecar).includes(propertyId)
     const cached = cachedValues(sidecar, propertyId)
