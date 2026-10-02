@@ -20,7 +20,7 @@ export function replaySchemaCascade(
     try {
       const journal = record ?? (await readSchemaJournal(root))
       if (!journal) return null
-      const owed = await replay(root, journal)
+      const owed = await replay(root, journal, record !== undefined)
       if (!owed.skipped) await clearSchemaJournal(root, journal)
       return ok(owed)
     } catch (e) {
@@ -30,7 +30,11 @@ export function replaySchemaCascade(
   })
 }
 
-async function replay(root: string, journal: SchemaJournal): Promise<ConfigReach> {
+async function replay(
+  root: string,
+  journal: SchemaJournal,
+  answered: boolean,
+): Promise<ConfigReach> {
   const defs = (await readRegistry(root)).defs
   switch (journal.op) {
     case 'rename': {
@@ -40,9 +44,9 @@ async function replay(root: string, journal: SchemaJournal): Promise<ConfigReach
       return { skipped: await renameSweep(root, journal.from, journal.to), hosts: [] }
     }
     case 'delete': {
-      // The registry commits LAST in a delete, so the def still present under its journaled name is the crash state. The id under another name is alive on purpose — a restore or re-create consumes the record at createProperty; this arm catches what the delete left owed.
+      // The registry commits LAST in a delete, so the def still present under its journaled name is the crash state. The id under another name is alive on purpose — a restore or re-create consumes the record at createProperty; this arm catches what the delete left owed. A record a delete's answer carried exists only once its registry commit landed, so for it a present def is a restore.
       const def = defs[journal.id]
-      const crashed = def?.name === journal.name
+      const crashed = !answered && def?.name === journal.name
       const freed = !def && !Object.values(defs).some((d) => d.name === journal.name)
       if (!crashed && !freed) return NO_REACH
       const folders = await collectionFolders(root)
