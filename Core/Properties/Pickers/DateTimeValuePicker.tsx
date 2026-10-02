@@ -23,6 +23,7 @@ export function DateTimeValuePicker({
   const fmt = shown === 'relative' ? 'short' : shown
   return (
     <CalendarPicker
+      span
       value={value?.kind === 'dateTime' ? readDate(value.value) : null}
       timeFormat={clock}
       formatDateValue={(k) => formatDate(k, fmt, 'none')}

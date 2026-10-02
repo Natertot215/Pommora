@@ -212,6 +212,23 @@ describe('applyFilter — per type', () => {
     ).toEqual(['c'])
   })
 
+  it('date span: is matches a spanned day, Starts reads the start, Ends reads the end', () => {
+    const rows = [
+      row('span', { props: { prop_when: '2026-06-10/2026-06-20' } }),
+      row('single', { props: { prop_when: '2026-06-15' } }),
+    ]
+    const match = (op: string, value: string) =>
+      ids(rows, { match: 'all', rules: [{ property_id: 'prop_when', op, value }] })
+    expect(match('is', '2026-06-12')).toEqual(['span'])
+    expect(match('is', '2026-06-15')).toEqual(['span', 'single'])
+    expect(match('on_or_before', '2026-06-12')).toEqual(['span'])
+    expect(match('on_or_after', '2026-06-12')).toEqual(['single'])
+    expect(match('ends_on_or_before', '2026-06-15')).toEqual(['single'])
+    expect(match('ends_on_or_after', '2026-06-18')).toEqual(['span'])
+    expect(match('ends_on_or_after', '2026-06-20T10:00:00')).toEqual(['span'])
+    expect(match('ends_on_or_before', '2026-06-20T10:00:00')).toEqual(['single'])
+  })
+
   it('select (text): is / contains / does_not_contain', () => {
     const rows = [
       row('a', { props: { prop_sel: 'alpha' } }),

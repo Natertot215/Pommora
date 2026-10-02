@@ -106,20 +106,36 @@ export const pill = style({
   zIndex: -1,
   selectors: { [`${day}:hover &`]: { background: c.state.hover } },
 })
-export const pillToday = style({ boxShadow: 'inset 0 0 0 var(--width-100)' })
 export const pillSelected = style({
-  background: `${tintAt('var(--accent)', 'secondary')} !important`,
+  background: `${tintAt('var(--accent)', 'primary')} !important`,
+})
+/** A span's band runs edge to edge beneath its days, from each end's center, rounding where a week wraps. */
+export const band = style({
+  position: 'absolute',
+  inset: `${PILL_INSET} 0`,
+  zIndex: -1,
+  background: tintAt('var(--accent)', 'tertiary'),
+})
+export const bandFromCenter = style({ insetInlineStart: '50%' })
+export const bandToCenter = style({ insetInlineEnd: '50%' })
+export const bandHead = style({
+  insetInlineStart: PILL_INSET,
+  borderStartStartRadius: PILL_RADIUS,
+  borderEndStartRadius: PILL_RADIUS,
+})
+export const bandTail = style({
+  insetInlineEnd: PILL_INSET,
+  borderStartEndRadius: PILL_RADIUS,
+  borderEndEndRadius: PILL_RADIUS,
 })
 export const daySelected = style({ fontWeight: font.weight.semibold })
 
 export const divider = style({ ...hairline, margin: `7px ${GUTTER} 8px` })
 
-export const fields = style({
-  display: 'flex',
-  gap: '6px',
-  padding: `0 ${GUTTER}`,
-  marginBottom: '8px',
-})
+export const fields = style({ padding: `0 ${GUTTER}`, marginBottom: '8px' })
+export const fieldRow = style({ display: 'flex', gap: '6px' })
+/** Inside the Reveal, so the gap folds away with the row. */
+export const fieldRowEnd = style({ paddingTop: '6px' })
 export const field = style({
   flex: 1,
   minWidth: 0,

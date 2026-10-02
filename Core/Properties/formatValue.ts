@@ -43,11 +43,12 @@ export function clockOf(date: Date, timeFormat: TimeFormat): string {
 
 const WEEK_DAYS = 7 // |Δdays| ≤ this shows named/day-count form (with clock when time-shown)
 
-export const startOfDay = (d: Date): Date => new Date(d.getFullYear(), d.getMonth(), d.getDate())
+export const dayMs = (d: Date): number =>
+  new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime()
 
 function formatRelative(date: Date, hasTime: boolean, timeFormat: TimeFormat, now: Date): string {
   const DAY = 86_400_000
-  const diffDays = Math.round((startOfDay(date).getTime() - startOfDay(now).getTime()) / DAY)
+  const diffDays = Math.round((dayMs(date) - dayMs(now)) / DAY)
   const ago = diffDays < 0
   const n = Math.abs(diffDays)
 
@@ -68,13 +69,13 @@ function formatRelative(date: Date, hasTime: boolean, timeFormat: TimeFormat, no
   return ago ? `${count} ${plural} Ago` : `${count} ${plural} from now`
 }
 
-export type LocalDate = { at: Date; timed: boolean }
+/** `end` is set when the value is a span; one `timed` covers both ends. */
+type LocalDate = { at: Date; timed: boolean; end?: Date }
 
 const ISO_DATE =
   /^(\d{4})-(\d{2})-(\d{2})(?:[T ](\d{2}):(\d{2})(?::(\d{2})(?:\.\d+)?)?(Z|[+-]\d{2}:?\d{2})?)?$/
 
-/** The one reading of a stored date: an ISO day or date-time is read in the local clock unless it carries a zone, which is honored; anything else names no date. */
-export function readDate(iso: string): LocalDate | null {
+function readPoint(iso: string): LocalDate | null {
   const m = ISO_DATE.exec(iso)
   if (!m) return null
   const [, y, mo, d, h, min, sec, zone] = m
@@ -84,16 +85,25 @@ export function readDate(iso: string): LocalDate | null {
   return Number.isNaN(at.getTime()) ? null : { at, timed: h !== undefined }
 }
 
-export function formatDate(
-  iso: string,
+/** The one reading of a stored date: an ISO day or date-time is read in the local clock unless it carries a zone, which is honored; an ISO interval `start/end` reads as a span in chronological order, timed when either end carries a clock; anything else names no date. */
+export function readDate(iso: string): LocalDate | null {
+  const [first, second, ...rest] = iso.split(/\s*\/\s*/)
+  const start = readPoint(first)
+  if (!start || second === undefined) return start
+  const end = rest.length === 0 ? readPoint(second) : null
+  if (!end) return null
+  const [at, last] = end.at < start.at ? [end.at, start.at] : [start.at, end.at]
+  return { at, timed: start.timed || end.timed, end: last }
+}
+
+function formatPoint(
+  date: Date,
+  hasTime: boolean,
   dateFormat: DateFormat,
   timeFormat: TimeFormat,
-  weekday: WeekdayFormat = 'none',
-  now: Date = new Date(),
+  weekday: WeekdayFormat,
+  now: Date,
 ): string {
-  const read = readDate(iso)
-  if (!read) return iso
-  const { at: date, timed: hasTime } = read
   if (dateFormat === 'relative') return formatRelative(date, hasTime, timeFormat, now)
 
   const month = dateFmt({ month: 'long' }).format(date)
@@ -119,6 +129,24 @@ export function formatDate(
   }
   if (hasTime && timeFormat !== 'none') out += ` ${clockOf(date, timeFormat)}`
   return out
+}
+
+/** A span reads as its start → its end, and one inside a day as its start → the end's clock; an unreadable value shows as written. */
+export function formatDate(
+  iso: string,
+  dateFormat: DateFormat,
+  timeFormat: TimeFormat,
+  weekday: WeekdayFormat = 'none',
+  now: Date = new Date(),
+): string {
+  const read = readDate(iso)
+  if (!read) return iso
+  const point = (d: Date): string =>
+    formatPoint(d, read.timed, dateFormat, timeFormat, weekday, now)
+  const start = point(read.at)
+  if (!read.end) return start
+  if (dayMs(read.at) !== dayMs(read.end)) return `${start} → ${point(read.end)}`
+  return read.timed && timeFormat !== 'none' ? `${start} → ${clockOf(read.end, timeFormat)}` : start
 }
 
 export const NUMERIC_FORMATS = new Set<DateFormat>(['dayMonthYear', 'monthDayYear'])

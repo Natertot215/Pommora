@@ -121,6 +121,62 @@ describe('readDate', () => {
   })
 })
 
+describe('readDate span', () => {
+  it('reads an ISO interval as a start and an end', () => {
+    expect(readDate('2026-06-15/2026-06-18')).toEqual({
+      at: new Date(2026, 5, 15),
+      timed: false,
+      end: new Date(2026, 5, 18),
+    })
+    expect(readDate('2026-06-15T09:00:00/2026-06-15T17:00:00')).toEqual({
+      at: new Date(2026, 5, 15, 9),
+      timed: true,
+      end: new Date(2026, 5, 15, 17),
+    })
+  })
+
+  it('orders a hand-written span chronologically', () => {
+    expect(readDate('2026-06-18/2026-06-15')).toEqual({
+      at: new Date(2026, 5, 15),
+      timed: false,
+      end: new Date(2026, 5, 18),
+    })
+  })
+
+  it('reads a hand-spaced span, timed when either end carries a clock', () => {
+    expect(readDate('2026-06-15 / 2026-06-18')?.end).toEqual(new Date(2026, 5, 18))
+    expect(readDate('2026-06-15/2026-06-18T17:00')).toEqual({
+      at: new Date(2026, 5, 15),
+      timed: true,
+      end: new Date(2026, 5, 18, 17),
+    })
+  })
+
+  it('names no date when either end is unreadable', () => {
+    for (const text of [
+      '2026-06-15/',
+      '2026-06-15/P3D',
+      '/2026-06-15',
+      '2026-06-15/2026-06-16/2026-06-17',
+    ])
+      expect(readDate(text)).toBeNull()
+  })
+})
+
+describe('formatDate span', () => {
+  it('formats a span as its start → its end, and one inside a day with the end clock alone', () => {
+    expect(formatDate('2026-03-01/2026-03-04', 'short', 'none')).toBe('March 1st → March 4th')
+    expect(formatDate('2026-03-01T09:00:00/2026-03-01T17:30:00', 'short', 'twelveHour')).toBe(
+      'March 1st 9:00 AM → 5:30 PM',
+    )
+  })
+
+  it('shows a span inside one day once when its clock is hidden or absent', () => {
+    expect(formatDate('2026-03-01T09:00:00/2026-03-01T17:30:00', 'short', 'none')).toBe('March 1st')
+    expect(formatDate('2026-03-01/2026-03-01', 'short', 'none')).toBe('March 1st')
+  })
+})
+
 describe('formatNumber', () => {
   it('groups by default and honors separators off', () => {
     expect(formatNumber(1234.5, { number_family: 'number', number_separators: true })).toBe(

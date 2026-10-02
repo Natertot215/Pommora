@@ -63,7 +63,7 @@ export function ComponentsLeaf(): React.JSX.Element {
         <h2>Popups</h2>
         <div className="ds-switcher">
           <PopupButton label="CalendarPicker">
-            <CalendarPicker timeFormat="twelveHour" formatDateValue={showcaseDate} />
+            <CalendarPicker span timeFormat="twelveHour" formatDateValue={showcaseDate} />
           </PopupButton>
           <PopupButton label="PickerMenu">
             {(open, close, trigger) => (

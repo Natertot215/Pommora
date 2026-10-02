@@ -22,11 +22,15 @@ afterEach(() => {
   vi.useRealTimers()
 })
 
-function mount(value: { at: Date; timed: boolean } | null): ReturnType<typeof vi.fn> {
+function mount(
+  value: { at: Date; timed: boolean; end?: Date } | null,
+  span = false,
+): ReturnType<typeof vi.fn> {
   const onChange = vi.fn()
   act(() => {
     root.render(
       <CalendarPicker
+        span={span}
         value={value}
         timeFormat="twelveHour"
         formatDateValue={(k) => k}
@@ -139,5 +143,106 @@ describe('CalendarPicker typing a time part', () => {
     typePart(1, '45', 'Escape')
     expect(onChange).not.toHaveBeenCalled()
     expect(host.querySelector('input')).toBeNull()
+  })
+})
+
+describe('CalendarPicker End Date', () => {
+  const endDate = (): HTMLButtonElement =>
+    host.querySelector<HTMLButtonElement>('[aria-label="End Date"]') as HTMLButtonElement
+
+  it('offers End Date only where a span is allowed', () => {
+    mount({ at: new Date(2026, 5, 10), timed: false })
+    expect(host.querySelector('[aria-label="End Date"]')).toBeNull()
+  })
+
+  it('opens the end on the start day an hour later, and saves a clockless one as the day', () => {
+    const onChange = mount({ at: new Date(2026, 5, 10, 9), timed: true }, true)
+    act(() => endDate().click())
+    act(() => vi.advanceTimersByTime(150))
+    expect(onChange).toHaveBeenLastCalledWith('2026-06-10T09:00:00/2026-06-10T10:00:00')
+    act(() => root.render(null))
+    const untimed = mount({ at: new Date(2026, 5, 10), timed: false }, true)
+    act(() => endDate().click())
+    act(() => vi.advanceTimersByTime(150))
+    expect(untimed).not.toHaveBeenCalled()
+  })
+
+  it('stretches the span toward a pick outside it and pulls in the nearer end from inside', () => {
+    const onChange = mount(
+      { at: new Date(2026, 5, 10), timed: false, end: new Date(2026, 5, 20) },
+      true,
+    )
+    const pickSaved = (k: string): void => {
+      act(() => day(k).click())
+      act(() => vi.advanceTimersByTime(150))
+    }
+    pickSaved('2026-06-24')
+    expect(onChange).toHaveBeenLastCalledWith('2026-06-10/2026-06-24')
+    pickSaved('2026-06-06')
+    expect(onChange).toHaveBeenLastCalledWith('2026-06-06/2026-06-24')
+    pickSaved('2026-06-09')
+    expect(onChange).toHaveBeenLastCalledWith('2026-06-09/2026-06-24')
+    pickSaved('2026-06-21')
+    expect(onChange).toHaveBeenLastCalledWith('2026-06-09/2026-06-21')
+  })
+
+  it('folds the span onto a picked end, and clears on that day picked again', () => {
+    const onChange = mount(
+      { at: new Date(2026, 5, 10), timed: false, end: new Date(2026, 5, 13) },
+      true,
+    )
+    act(() => day('2026-06-13').click())
+    act(() => vi.advanceTimersByTime(150))
+    expect(onChange).toHaveBeenLastCalledWith('2026-06-13')
+    act(() => day('2026-06-11').click())
+    act(() => vi.advanceTimersByTime(150))
+    expect(onChange).toHaveBeenLastCalledWith('2026-06-11/2026-06-13')
+    act(() => day('2026-06-11').click())
+    act(() => day('2026-06-11').click())
+    act(() => vi.advanceTimersByTime(150))
+    expect(onChange).toHaveBeenLastCalledWith(null)
+  })
+
+  it('bands the span beneath its days from each end, its ends primary', () => {
+    mount({ at: new Date(2026, 5, 10), timed: false, end: new Date(2026, 5, 13) }, true)
+    const band = (k: string) => day(k).querySelector(`.${s.band}`)?.className ?? null
+    const pill = (k: string) => day(k).querySelector(`.${s.pill}`)?.className ?? ''
+    expect(pill('2026-06-10')).toContain(s.pillSelected)
+    expect(pill('2026-06-13')).toContain(s.pillSelected)
+    expect(pill('2026-06-11')).not.toContain(s.pillSelected)
+    expect(band('2026-06-10')).toContain(s.bandFromCenter)
+    expect(band('2026-06-13')).toContain(s.bandToCenter)
+    expect(band('2026-06-11')).not.toBeNull()
+    expect(band('2026-06-14')).toBeNull()
+  })
+
+  it('rounds the band where a week wraps', () => {
+    mount({ at: new Date(2026, 5, 12), timed: false, end: new Date(2026, 5, 15) }, true)
+    const band = (k: string) => day(k).querySelector(`.${s.band}`)?.className ?? ''
+    expect(band('2026-06-13')).toContain(s.bandTail)
+    expect(band('2026-06-14')).toContain(s.bandHead)
+  })
+
+  it('holds the end clock of a one-day span at or after its start', () => {
+    const onChange = mount(
+      { at: new Date(2026, 5, 10, 17), timed: true, end: new Date(2026, 5, 12, 9) },
+      true,
+    )
+    act(() => day('2026-06-10').click())
+    act(() => vi.advanceTimersByTime(150))
+    expect(onChange).toHaveBeenLastCalledWith('2026-06-10T17:00:00/2026-06-10T17:00:00')
+  })
+
+  it('saves both clocks, and drops the end when End Date turns off', () => {
+    const onChange = mount(
+      { at: new Date(2026, 5, 10, 9), timed: true, end: new Date(2026, 5, 12, 17) },
+      true,
+    )
+    act(() => day('2026-06-15').click())
+    act(() => vi.advanceTimersByTime(150))
+    expect(onChange).toHaveBeenLastCalledWith('2026-06-10T09:00:00/2026-06-15T17:00:00')
+    act(() => endDate().click())
+    act(() => vi.advanceTimersByTime(150))
+    expect(onChange).toHaveBeenLastCalledWith('2026-06-10T09:00:00')
   })
 })
