@@ -29,7 +29,7 @@ The operator families are type-aware, defined in `Core/Views/filterModel.ts`:
 | --- | --- |
 | Text (Title) | Is · Isn't · Starts With · Contains · Doesn't Contain |
 | Number | Is · Isn't · Greater Than · At Least · Less Than · At Most · Is Empty · Isn't Empty |
-| Date | Is (calendar day) · Before · After (both inclusive) · Is Empty · Isn't Empty |
+| Date | Is (a calendar day the value spans) · Starts Before · Starts After · Ends Before · Ends After (all inclusive; a single date starts and ends on itself) · Is Empty · Isn't Empty |
 | Checkbox | Is (true / false) |
 | Select · Status | Is · Isn't (chips read as any-of / none-of) · Is Empty · Isn't Empty |
 | Multi-select | Is Any · Is All · Isn't · Is Empty · Isn't Empty |

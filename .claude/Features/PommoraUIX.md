@@ -370,7 +370,7 @@ The elements that draw and frame a stored image — `AssetImage`, `ImagePicker`,
 | Title | Export | What it is |
 | ------------- | -------------------- | ------------------------------------------------------------------- |
 | PickerMenu | `PickerMenu` | The rectangle every menu, dropdown panel, and picker mounts — anchoring to an element or a bare point, the collision flip decided once per open, dismissal, focus, and an opt-in resize from its free edges (`usePaneResize`).                   |
-| CalendarPicker | `CalendarPicker` | Date and time selection. |
+| CalendarPicker | `CalendarPicker` | Date and time selection, with an optional End Date span. |
 | ColorPicker | `ColorPicker` | The 8×8 ramp grid; clicking the selected cell clears. |
 | IconPicker | `IconPicker` · `IconFavorites` | The searchable glyph grid with a reorderable icon-favorites strip; the app binds icon favorites through `UIX/Pickers/IconPicker`. |
 | TextPicker | `TextPicker` | A typed-value picker in the shared pane. |

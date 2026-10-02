@@ -33,9 +33,9 @@ The Nexus’ structure is based on relating **Content** ↔ **Content** through 
 
 - **The host owns the machine:** Core reaches it only through `Core/Platform`; Desktop's implementation is the only place the app calls Node and Electron; `Sync/` is a separate process on Node's built-ins alone; UIX reaches nothing outside itself.
 - **`Core/Contract` is the contract between any interface and any host:** Every channel is declared once in `bridge.ts`, and both sides derive from it; every channel answers with the `Result` envelope, and never throws across the boundary, so adding a channel is one entry and a mismatched end is a compile error.
-- **The app never depends on the renderer:** The host-run half of Core imports no React and depends on no interface; `Core/Contract/engineGraph.test.ts` and `Desktop/hostGraph.test.ts` fail the moment it does.
-- **Read-Write Separation:** The read path is read-only by construction; mutations are additive and aren’t woven into read processes.
+- **The app never depends on the renderer:** The host-run half of Core imports no React and depends on no interface; `Core/Contract/engineGraph.test.ts` and `Desktop/hostGraph.test.ts` fails the moment it does.
 - **Finite states are unions + switch:** Shared logic is hoisted rather than repeated.
+- **Read-Write Separation:** The read path is read-only by construction, with mutations being clearly separable in processes.
 - **Never do expensive work "on every X," never "reload the entire Y:”** No O(N), allocating, or layout-reading work on a high-frequency trigger, and no full-Nexus rebuild or re-walk when an incremental or cached update works — it's *the* lag source.
 - **Comments aren't authoritative:** A constraint a comment claims isn't a law, and change-scoping doesn't treat it as fact.
 

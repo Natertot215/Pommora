@@ -11,7 +11,7 @@ The eleven types are the type ids in `Core/Properties/properties.ts`; the on-dis
 | ----------------- | ---------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------- |
 | **Number**        | `Count: 42`                                                            | Bare number                                                                                             |
 | **Checkbox**      | `Done: true`                                                           | `true`, or the key absent                                                                               |
-| **Date**          | `2026-06-15` (date-only) or `2026-06-15T14:30:00` (with time, no zone) | A bare date-only value folds into Date on read                                                          |
+| **Date**          | `2026-06-15` (date-only) or `2026-06-15T14:30:00` (with time, no zone); a span as `2026-06-15/2026-06-18` | A bare date-only value folds into Date on read                                                          |
 | **Select**        | `Stage:` over a one-element block sequence                             | A list holding one option; one colored chip. A list holding several reads as its last registered option |
 | **Multi-select**  | `Tags:` over a block sequence                                          | Bare array; tag-style multi-pick                                                                        |
 | **Status**        | `Status:` over a one-element block sequence                            | The option's own value, in a list of one; grouped by workflow phase. Resolves like Select               |
@@ -63,7 +63,7 @@ A bare number with a **property-wide format** and a **per-view look**. The forma
 
 #### Date & Time
 
-A single ISO value: a date-only string folds into Date on read, and a with-time string carries the clock. Its formats are per-view — a Date format (numeric, worded, or Relative), a weekday offered with the worded formats, and a Time — and a view column follows the Nexus's own **Date Format** and **Time Format** until it picks its own; picking the Nexus's form or clock again returns it to following. A cell opens the CalendarPicker, a calendar grid plus a time editor of hour, minute, and AM/PM parts.
+A single ISO value: a date-only string folds into Date on read, a with-time string carries the clock, and an ISO interval `start/end` holds a span whose ends share the clock setting. Its formats are per-view — a Date format (numeric, worded, or Relative), a weekday offered with the worded formats, and a Time — and a view column follows the Nexus's own **Date Format** and **Time Format** until it picks its own; picking the Nexus's form or clock again returns it to following. A cell opens the CalendarPicker, a calendar grid plus a time editor of hour, minute, and AM/PM parts; its **End Date** switch unfolds a second date and time for the span's end, picked on the same grid. A span shows as its start → its end, and sorts and groups by its start.
 
 #### Select & Multi-Select
 
