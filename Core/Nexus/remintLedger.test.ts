@@ -1,7 +1,7 @@
 import { mkdir, readFile, rename, rm, writeFile } from 'node:fs/promises'
 import { join } from '../Paths/posix'
 import { tempRoot } from '../Testing/hostFs'
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import type { EntityRecord } from './record'
 import type { CollectionNode, ContextGroup, NexusTree, PageNode, SetNode } from './tree'
 import {
@@ -14,8 +14,6 @@ import {
 } from './remintLedger'
 import { installStores, NO_STORES } from '../Platform/stores'
 import { memoryStores } from '../Testing/memoryStores'
-import * as liveTree from './liveTree'
-import { dropLiveTree, heldTreeOf } from './liveTree'
 import { openSession } from './session'
 import { readNexus } from './readNexus'
 
@@ -364,40 +362,6 @@ describe('runOpenLedger — the open sequence', () => {
     await runOpenLedger(root, await readNexus(root))
     // Two claimants, neither at the recorded path: the entry drops from the baseline, because two copies on disk are not a deletion and the id is in flux until one is adjudicated.
     expect(readBaseline()?.[NOTES]).toBeUndefined()
-  })
-
-  it('a clean open seeds the live tree from the record walk', async () => {
-    dropLiveTree()
-    await runOpenLedger(root, await readNexus(root))
-    const tree = heldTreeOf(root)
-    expect(tree).not.toBeNull()
-    expect(tree?.collections[0]?.pages[0]?.id).toBe(NOTES)
-  })
-
-  it('a reminted open re-walks, so the live tree never holds a shared id', async () => {
-    await runOpenLedger(root, await readNexus(root))
-    await writeFile(join(root, 'Library', 'Copy.md'), `---\nID: ${NOTES}\n---\nbody`)
-    dropLiveTree()
-    await runOpenLedger(root, await readNexus(root))
-    const ids = (heldTreeOf(root)?.collections[0]?.pages ?? []).map((p) => p.id)
-    expect(ids).toHaveLength(2)
-    expect(new Set(ids).size).toBe(2)
-  })
-
-  it('a re-mint whose re-walk throws leaves no tree held', async () => {
-    await runOpenLedger(root, await readNexus(root))
-    await writeFile(join(root, 'Library', 'Copy.md'), `---\nID: ${NOTES}\n---\nbody`)
-    dropLiveTree()
-    const walk = vi.spyOn(liveTree, 'refreshTree').mockRejectedValueOnce(new Error('walk failed'))
-    const logged = vi.spyOn(console, 'error').mockImplementation(() => {})
-    try {
-      await runOpenLedger(root, await readNexus(root))
-      expect(walk).toHaveBeenCalled()
-      expect(heldTreeOf(root)).toBeNull()
-    } finally {
-      walk.mockRestore()
-      logged.mockRestore()
-    }
   })
 
   it('a sidecar corrupted while closed keeps its entry, never a removal', async () => {

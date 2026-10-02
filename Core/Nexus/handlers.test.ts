@@ -15,7 +15,9 @@ import { nexusHandlers, openNexusSequence } from './handlers'
 import { dropLiveTree, heldTreeOf, refreshTree } from './liveTree'
 import { closeSession, sessionRoot, waitingOpen } from './session'
 import * as readNexusModule from './readNexus'
-import { readBaseline } from './remintLedger'
+import { readNexus } from './readNexus'
+import { projectBaseline, readBaseline } from './remintLedger'
+import { stabilize } from './treeStabilize'
 import { splitFrontmatter } from '../Files/pageFile'
 import { ID_KEY, isUlidShaped } from './identityMark'
 
@@ -23,6 +25,8 @@ const NEXUS = '01KVGMT8BFP350FZZXAMG1QDRN'
 const NOTES = '01KVGMT8BFP350FZZXAMG1QDRW'
 const OTHER = '01KVGMT8BFP350FZZXAMG1QDRX'
 const THIRD_PAGE = '01KVGMT8BFP350FZZXAMG1QDRY'
+const SHELF = '01KVGMT8BFP350FZZXAMG1QDRZ'
+const HOME = '01KVGMT8BFP350FZZXAMG1QDS0'
 const ADDRESS = 'http://127.0.0.1:7473'
 
 let root: string
@@ -181,6 +185,51 @@ describe('openNexusSequence', () => {
     for (const p of [...(inbox?.pages ?? []), ...(inbox?.sets[0]?.pages ?? [])])
       expect(isUlidShaped(p.id)).toBe(true)
     expect(heldTreeOf(root)?.unreadable).toBeUndefined()
+  })
+
+  it('an open with ID-less pages walks the Nexus once', async () => {
+    await writeFile(join(root, 'Library', 'Bare.md'), 'bare')
+    await mkdir(join(root, 'Inbox'))
+    await writeFile(join(root, 'Inbox', 'One.md'), 'one')
+    const walks = vi.spyOn(readNexusModule, 'readNexus')
+    await openNexusSequence(ctx, root, true)
+    expect(walks).toHaveBeenCalledTimes(1)
+    vi.restoreAllMocks()
+    const held = heldTreeOf(root)
+    expect(held?.unreadable).toBeUndefined()
+    expect(held && stabilize(await readNexus(root), held)).toBe(held)
+  })
+
+  it('a reopen that re-mints a duplicated page, Set, and Space holds no shared ID and agrees with a fresh read', async () => {
+    const reopen = async (): Promise<void> => {
+      closeSession()
+      dropLiveTree()
+      await openNexusSequence(ctx, root, true)
+    }
+    const space = join(root, '.nexus', 'contexts', 'Areas', 'Home')
+    await mkdir(join(root, 'Library', 'Shelf'))
+    await writeFile(join(root, 'Library', 'Shelf', '_pageset.json'), JSON.stringify({ id: SHELF }))
+    await openNexusSequence(ctx, root, true)
+    await mkdir(space, { recursive: true })
+    await writeFile(join(space, '_space.json'), JSON.stringify({ id: HOME }))
+    await reopen()
+    await writeFile(join(root, 'Library', 'Copy.md'), `---\nID: ${NOTES}\n---\nbody`)
+    await mkdir(join(root, 'Library', 'Shelf Copy'))
+    await writeFile(
+      join(root, 'Library', 'Shelf Copy', '_pageset.json'),
+      JSON.stringify({ id: SHELF }),
+    )
+    await mkdir(`${space} Copy`)
+    await writeFile(join(`${space} Copy`, '_space.json'), JSON.stringify({ id: HOME }))
+    await reopen()
+    const held = heldTreeOf(root)
+    if (!held) throw new Error('no tree held')
+    const { entries, duplicates } = projectBaseline(held)
+    expect(duplicates).toEqual({})
+    expect(Object.keys(entries)).toEqual(expect.arrayContaining([NOTES, SHELF, HOME]))
+    expect(Object.keys(entries)).toHaveLength(10)
+    expect(held.unreadable).toBeUndefined()
+    expect(stabilize(await readNexus(root), held)).toBe(held)
   })
 
   it('a failed walk retains the prior baseline and the open proceeds', async () => {

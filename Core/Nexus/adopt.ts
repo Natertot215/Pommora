@@ -120,16 +120,13 @@ async function migrateContainerSidecar(absDir: string, kind: ContainerKind): Pro
 export async function stampMissing(
   root: string,
   listed: readonly Unreadable[] = [],
-): Promise<boolean> {
-  let landed = false
+): Promise<void> {
   for (const { path, kind, reason } of listed) {
     if (reason !== 'missing') continue
     const abs = join(root, path)
-    if (kind === 'page')
-      landed = (await stampPage(abs, 'page').catch(() => null)) !== null || landed
-    else landed = (await stampFolder(abs, kind).catch(() => false)) || landed
+    if (kind === 'page') await stampPage(abs, 'page').catch(() => {})
+    else await stampFolder(abs, kind).catch(() => {})
   }
-  return landed
 }
 
 async function stampTree(
