@@ -128,6 +128,7 @@ export interface NexusChange {
   delta: Delta
 }
 
+/** Keys on the tree's `collections` array and serves a held value while each of `inputs` reads the same as when it was built. A caller lists every tree field its builder reads beyond `collections`, since an unlisted one serves a stale value. */
 export function entityMemo<T>(
   inputs: readonly ((tree: NexusTree) => unknown)[],
   build: (tree: NexusTree) => T,
