@@ -10,7 +10,7 @@ import { contentIdAt } from './ids'
 import * as readNexusModule from './readNexus'
 import { readNexus } from './readNexus'
 import { getHeldAssetMap, liveAssetMap } from '../Assets/assetMap'
-import { applyEvents, classifyEvent, owedFor, tileBodyUnder } from './fileEvents'
+import { applyEvents, classifyEvent, owedFor } from './fileEvents'
 import { settleNow } from './settle'
 import { handleMutate } from './mutate'
 import type { TrashDeps } from '../Trash/bundle'
@@ -816,15 +816,18 @@ describe('directory events', () => {
   })
 })
 
-describe('tileBodyUnder', () => {
-  const TILE_BODIES = ['.nexus/homepage/t1.md', '.nexus/contexts/Areas/Home/t1.md']
-  const isTileBody = (rel: string): boolean => tileBodyUnder(rel.split('/'), rel)
-
-  it('names what the tree drops among the events the watcher reports', () => {
-    for (const rel of TILE_BODIES) expect(isTileBody(rel)).toBe(true)
-    expect(isTileBody('.nexus/homepage/homepage.json')).toBe(false)
-    expect(isTileBody('Notes/Page.md')).toBe(false)
-    expect(isTileBody('')).toBe(false)
+describe('tile bodies', () => {
+  it('names what the tree drops among the events the watcher reports', async () => {
+    const tree = await refreshTree(root)
+    const kind = (...segs: string[]): string =>
+      classifyEvent(tree, root, ev('change', ...segs)).kind
+    for (const name of ['_tiles.json', 't1.md']) {
+      expect(kind('.nexus', 'homepage', name)).toBe('tiles-leaf')
+      expect(kind('.nexus', 'contexts', 'Areas', 'Home', name)).toBe('tiles-leaf')
+    }
+    expect(kind('.nexus', 'homepage', 'homepage.json')).toBe('homepage-leaf')
+    expect(kind('Notes', 'Page.md')).toBe('page')
+    expect(kind()).toBe('walk')
   })
 })
 

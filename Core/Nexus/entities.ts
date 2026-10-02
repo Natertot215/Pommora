@@ -25,6 +25,7 @@ type KindWith<F extends keyof Entity> = {
 
 export type HeldKind = KindWith<'held'> // collection | set | page | space | context
 export type NodeKind = KindWith<'node'> // collection | set | page | space
+export type FolderNodeKind = Exclude<NodeKind, 'page'> // collection | set | space
 export type ContainerKind = KindWith<'container'> // collection | set
 export type ContentKind = KindWith<'mark'> // page | task | event
 

@@ -164,7 +164,7 @@ const configRel = (file: keyof typeof NEXUS_CONFIG_FILES): string =>
 // ── Classification ──
 
 // A tile body is no part of the tree; a change to one names its host, like the host's own document.
-export function tileBodyUnder(segs: string[], rel: string): boolean {
+function tileBodyUnder(segs: string[], rel: string): boolean {
   return (
     (segs[0] === NEXUS_DIR &&
       segs[1] === HOMEPAGE_HOST_DIRNAME &&

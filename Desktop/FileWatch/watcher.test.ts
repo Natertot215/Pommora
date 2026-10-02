@@ -11,7 +11,7 @@ import { recordWrite } from '@pommora/core/Files/writeEcho'
 import { forgetLastReads } from '@pommora/core/Files/atomicWrite'
 import { push } from '../Bridge/ipc'
 import { sessionRoot, type WaitingOpen, waitingOpen } from '@pommora/core/Nexus/session'
-import { classifyEvent, tileBodyUnder } from '@pommora/core/Nexus/fileEvents'
+import { classifyEvent } from '@pommora/core/Nexus/fileEvents'
 import { handed } from '@pommora/core/Nexus/settle'
 import { applyDelta } from '@pommora/core/Nexus/treeDelta'
 import type { NexusChange, NexusTree } from '@pommora/core/Nexus/tree'
@@ -507,7 +507,6 @@ describe('a metadata month file under the watcher', () => {
 describe('syncIgnoredUnder', () => {
   const ignored = (...segs: string[]): boolean =>
     syncIgnoredUnder('/nexus', { excluded: [], assetDir: '' })(join('/nexus', ...segs))
-  const tileBody = (...segs: string[]): boolean => tileBodyUnder(segs, segs.join('/'))
 
   it('ignores a store, its journal, and a quarantined store wherever it sits, and nothing else under .nexus', () => {
     expect(ignored('.nexus', 'versions.db')).toBe(true)
@@ -520,7 +519,7 @@ describe('syncIgnoredUnder', () => {
     expect(ignored('Notes', 'report.md')).toBe(false)
   })
 
-  it('reports a tile body the tree then drops, and lets chokidar descend into the homepage folder', () => {
+  it('watches every tile document and body, and lets chokidar descend into the homepage folder', () => {
     for (const segs of [
       ['.nexus', 'homepage'],
       ['.nexus', 'homepage', '_tiles.json'],
@@ -529,12 +528,6 @@ describe('syncIgnoredUnder', () => {
       ['.nexus', 'contexts', 'Areas', 'Home', '01ARZ3NDEKPSV4RRFFQ69G5FAV.md'],
     ])
       expect(ignored(...segs)).toBe(false)
-    expect(tileBody('.nexus', 'homepage', '_tiles.json')).toBe(false)
-    expect(tileBody('.nexus', 'homepage', '01ARZ3NDEKPSV4RRFFQ69G5FAV.md')).toBe(true)
-    expect(tileBody('.nexus', 'contexts', 'Areas', 'Home', '_tiles.json')).toBe(false)
-    expect(tileBody('.nexus', 'contexts', 'Areas', 'Home', '01ARZ3NDEKPSV4RRFFQ69G5FAV.md')).toBe(
-      true,
-    )
   })
 })
 
