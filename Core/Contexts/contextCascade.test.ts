@@ -395,11 +395,10 @@ describe('a rename the journal refused reports what it skipped, with a retry', (
       expect((await settledMutate(root, rename, deps)).ok).toBe(true)
       const create = { op: 'createSpace', id: newId(), contextId: 'ctx_projects', name: 'pommora' }
       expect((await settledMutate(root, create as never, deps)).ok).toBe(true)
-      const second = join(root, 'Notes', 'Second.md')
-      await writeFile(second, '---\nid: p3\n<Projects>:\n  - pommora\n---\nbody')
+      await writeFile(page(), '---\nid: p1\n<Projects>:\n  - pommora\n---\nbody')
       await readable()
       expect(await settledMutate(root, retry, deps)).toEqual(ok({}))
-      expect((await fmOf(second))['<Projects>']).toEqual(['pommora'])
+      expect((await fmOf(page()))['<Projects>']).toEqual(['pommora'])
       expect((await fmOf(broken()))['<Projects>']).toEqual(['Pommora'])
     },
   )
