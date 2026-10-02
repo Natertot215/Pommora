@@ -14,7 +14,7 @@ import { newContentId, newId } from './ids'
 
 /** `renamed` is what actually landed — a from-create rename may disambiguate away from the ask. */
 export interface MutateOutcome {
-  created?: { id: string; path: string }
+  created?: { path: string }
   renamed?: { path: string; name: string }
   cascade?: CascadeReport
   adopted?: string

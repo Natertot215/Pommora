@@ -146,7 +146,7 @@ async function dispatch(ctx: MutateContext, req: MutateRequest): Promise<MutateR
 
     case 'createContextGroup': {
       const r = await createContextGroup(root, req.name, req.id)
-      return r.ok ? ok({ created: r.value }) : r
+      return r.ok ? ok({ created: { path: r.value.path } }) : r
     }
 
     case 'createSpace':

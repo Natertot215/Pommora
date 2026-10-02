@@ -15,7 +15,12 @@ import { mintDefaultView } from '../Views/views'
 import { readRegistry } from '../Properties/propertiesRegistry'
 import type { PropertyDefinition } from '../Properties/properties'
 import type { PropertyValue } from '../Properties/propertyValue'
-import { contextSeeds, type MutateReply, type MutateRequest } from './mutateRequest'
+import {
+  contextSeeds,
+  type CreatePageRequest,
+  type MutateReply,
+  type MutateRequest,
+} from './mutateRequest'
 import { CONTAINER_KINDS } from './entities'
 import type { MutateContext } from './mutate'
 import { createPage } from './page'
@@ -23,12 +28,12 @@ import { createFolderEntity, landingRefusal } from './folderEntity'
 import { appendCollection, setChildOrder, setSpaceOrder } from './reorder'
 import { mutableTarget } from './liveTree'
 
-const created = (parentPath: string, r: { id: string; path: string }): MutateReply =>
-  ok({ created: { id: r.id, path: relJoin(parentPath, basename(r.path)) } })
+const created = (parentPath: string, r: { path: string }): MutateReply =>
+  ok({ created: { path: relJoin(parentPath, basename(r.path)) } })
 
 export async function createPageOp(
   { root }: MutateContext,
-  req: Extract<MutateRequest, { op: 'createPage' }>,
+  req: CreatePageRequest,
 ): Promise<MutateReply> {
   const parent = await mutableTarget(root, req.parentPath, CONTAINER_KINDS)
   if (!parent.ok) return parent
@@ -106,5 +111,5 @@ export async function createSpaceOp(
   )
   if (!r.ok) return r
   if (req.order) await setSpaceOrder(root, req.contextId, req.order)
-  return ok({ created: r.value })
+  return ok({ created: { path: r.value.path } })
 }

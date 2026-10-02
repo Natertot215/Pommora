@@ -69,6 +69,6 @@ export async function newPage(inWindow: boolean): Promise<void> {
   const req = placeNew(tree, newPageRequest(parentPath), personalizationOf(s))
   const created = (await mutate(req))?.created
   if (!created) return
-  const page = { kind: 'page', id: created.id, path: created.path } as const
+  const page = { kind: 'page', id: req.id, path: created.path } as const
   await (inWindow ? s.openWindowTab(page) : s.select(page, { newTab: false }))
 }
