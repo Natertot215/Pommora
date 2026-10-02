@@ -28,6 +28,7 @@ async function applyOwn(ev: FileEvent): Promise<void> {
   if (!adopting()) await indexEvent(root, ev)
 }
 
+// The writers reach the settle through a tap rather than an import because the settle's own imports (`adopt`, `fileEvents`, `liveTree`) import `Core/Files`, so a writer importing the settle would close a cycle.
 setOwnTap(applyOwn)
 
 // ── The settle ──
