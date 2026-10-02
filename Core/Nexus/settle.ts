@@ -4,6 +4,7 @@ import { relDirname, relative } from '../Paths/posix'
 import { escapes } from '../Paths/pathSafety'
 import type { HostContext } from '../Contract/handlers'
 import { errText } from '../Contract/result'
+import { inTurns } from '../Platform/inTurns'
 import { type FileEvent, setOwnTap } from '../Files/writeEcho'
 import { getHeldAssetMap, refreshAssetMap } from '../Assets/assetMap'
 import { seedContentIndex } from '../Index/indexSeed'
@@ -39,8 +40,8 @@ setOwnTap(applyOwn)
 
 type Pusher = Pick<HostContext, 'push' | 'watch'>
 
-let settling: Promise<unknown> = Promise.resolve()
-let reseeding: Promise<void> = Promise.resolve()
+const inTurn = inTurns((e) => console.error('settle failed:', errText(e)))
+const reseeding = inTurns((e) => console.error('reseed failed:', errText(e)))
 let pushed: NexusTree | null = null
 let version = 0
 let batching = false
@@ -161,12 +162,6 @@ export async function settleBatch(
   await settleNow(pusher, root)
 }
 
-function inTurn<T>(step: () => Promise<T>): Promise<T> {
-  const turn = settling.then(step)
-  settling = turn.catch((e) => console.error('settle failed:', errText(e)))
-  return turn
-}
-
 export const payOwedWalk = (root: string): Promise<void> => inTurn(() => walkWhileOwed(root))
 
 // One settle at a time, and one reseed at a time on a chain of its own: a reply waits for the settles ahead of its own, and for a reseed only when its own settle found the corpus or the scope moved.
@@ -176,8 +171,5 @@ export async function settleNow(pusher: Pusher, root: string): Promise<void> {
   // The settle's walk may list more to stamp, which takes a settle of its own; while a batch applies, its turn takes them instead.
   if (owedFor(root).stamp.length && !batching) await settleNow(pusher, root)
   if (!moved) return
-  reseeding = reseeding
-    .then(() => reseed(pusher, root, moved.rescope))
-    .catch((e) => console.error('reseed failed:', errText(e)))
-  await reseeding
+  await reseeding(() => reseed(pusher, root, moved.rescope)).catch(() => {})
 }
