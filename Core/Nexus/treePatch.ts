@@ -1,6 +1,5 @@
-// The one set of tree transforms both processes apply — the renderer optimistically, main as canon. Null means unresolvable against the given tree, and the caller falls back to a full walk.
+// The tree's path-addressed steps. The host applies them as file events land; the window applies the same ones to paint a drag ahead of its write. Null means the step can't resolve against the given tree, and the host walks.
 
-import { NEW_SLOT, type MutateRequest } from './mutateRequest'
 import { stabilize } from './treeStabilize'
 import type {
   CollectionNode,
@@ -13,79 +12,10 @@ import type {
   UnreadReason,
 } from './tree'
 import type { PropertyDefinition } from '../Properties/properties'
-import { basename, isMarkdownFile, relDirname, relJoin, titleFromPath } from '../Paths/posix'
+import { basename, relDirname, relJoin, titleFromPath } from '../Paths/posix'
 import { CONTEXTS_DIR_REL, contextDirRel } from '../Paths/nexusPaths'
-import { resolveOrder } from './order'
 import { asStringArray } from './coerce'
-
-// The walk's literal node shapes, stated once: every producer builds here, so a transform-built node and a walk-built one carry identical key sets — what lets `stabilize` prove convergence by reference identity. Never fold the factories together, and never drop a possibly-undefined key.
-
-export function makePageNode(f: { id: string; title: string; path: string }): PageNode {
-  return { kind: 'page', id: f.id, title: f.title, path: f.path }
-}
-
-export function makeSpaceNode(f: Omit<SpaceNode, 'kind' | 'contextValues'>): SpaceNode {
-  return {
-    kind: 'space',
-    id: f.id,
-    title: f.title,
-    icon: f.icon,
-    path: f.path,
-    banner: f.banner,
-    headingIconHidden: f.headingIconHidden ?? false,
-    color: f.color,
-    contextId: f.contextId,
-    values: f.values,
-  }
-}
-
-type ContainerInput<N extends SetNode | CollectionNode> = Omit<N, 'kind' | 'sets' | 'pages'> & {
-  sets?: SetNode[]
-  pages?: PageNode[]
-}
-
-export function makeSetNode(f: ContainerInput<SetNode>): SetNode {
-  return {
-    kind: 'set',
-    id: f.id,
-    title: f.title,
-    icon: f.icon,
-    path: f.path,
-    banner: f.banner,
-    headingIconHidden: f.headingIconHidden ?? false,
-    sets: f.sets ?? [],
-    pages: f.pages ?? [],
-    views: f.views,
-    viewButton: f.viewButton,
-    disclosureLocked: f.disclosureLocked ?? false,
-    activeView: f.activeView,
-    pageOrder: f.pageOrder,
-    setOrder: f.setOrder,
-  }
-}
-
-export function makeCollectionNode(f: ContainerInput<CollectionNode>): CollectionNode {
-  return {
-    kind: 'collection',
-    id: f.id,
-    title: f.title,
-    icon: f.icon,
-    path: f.path,
-    banner: f.banner,
-    headingIconHidden: f.headingIconHidden ?? false,
-    properties: f.properties,
-    sets: f.sets ?? [],
-    pages: f.pages ?? [],
-    views: f.views,
-    openIn: f.openIn,
-    cached: f.cached,
-    viewButton: f.viewButton,
-    disclosureLocked: f.disclosureLocked ?? false,
-    activeView: f.activeView,
-    pageOrder: f.pageOrder,
-    setOrder: f.setOrder,
-  }
-}
+import { resolveOrder } from './order'
 
 /** The ORIGINAL paths thread through: swapping against an already-swapped child re-prepends. */
 function reparentPaths<T extends PageNode | SetNode | CollectionNode>(
@@ -104,69 +34,7 @@ function reparentPaths<T extends PageNode | SetNode | CollectionNode>(
   } as T
 }
 
-function extract(
-  containers: (CollectionNode | SetNode)[],
-  path: string,
-): { containers: (CollectionNode | SetNode)[]; node: PageNode | SetNode | null } {
-  let node: PageNode | SetNode | null = null
-  const next = containers.map((c) => {
-    if (node) return c
-    const page = c.pages.find((p) => p.path === path)
-    if (page) {
-      node = page
-      return { ...c, pages: c.pages.filter((p) => p.path !== path) }
-    }
-    const set = c.sets?.find((s) => s.path === path)
-    if (set) {
-      node = set
-      return { ...c, sets: (c.sets ?? []).filter((s) => s.path !== path) }
-    }
-    if (c.sets?.length) {
-      const r = extract(c.sets, path)
-      if (r.node) {
-        node = r.node
-        return { ...c, sets: r.containers as SetNode[] }
-      }
-    }
-    return c
-  })
-  return { containers: next, node }
-}
-
-// The order array already names the slot; an appended row would flash at the bottom first.
-function atSlot<T>(list: T[], node: T, order: string[] | undefined): T[] {
-  const slot = order ? order.indexOf(NEW_SLOT) : -1
-  const at = slot >= 0 ? Math.min(slot, list.length) : list.length
-  return [...list.slice(0, at), node, ...list.slice(at)]
-}
-
-function insert(
-  containers: (CollectionNode | SetNode)[],
-  parentPath: string,
-  node: PageNode | SetNode,
-  order?: string[],
-): { containers: (CollectionNode | SetNode)[]; done: boolean } {
-  let done = false
-  const next = containers.map((c) => {
-    if (done) return c
-    if (c.path === parentPath) {
-      done = true
-      if (node.kind !== 'page') return { ...c, sets: atSlot(c.sets ?? [], node, order) }
-      return { ...c, pages: atSlot(c.pages, node, order) }
-    }
-    if (c.sets?.length) {
-      const r = insert(c.sets, parentPath, node, order)
-      if (r.done) {
-        done = true
-        return { ...c, sets: r.containers as SetNode[] }
-      }
-    }
-    return c
-  })
-  return { containers: next, done }
-}
-
-/** `newPath` null prunes. A stale entry buys spurious walks at a dead address. */
+/** `newPath` null prunes. A stale entry lists a file at a dead address. */
 function repointUnreadable(
   tree: NexusTree | null,
   oldPath: string,
@@ -185,22 +53,6 @@ function repointUnreadable(
   if (kept.length) next.unreadable = kept
   else delete next.unreadable
   return next
-}
-
-export function relocateNodeInTree(
-  tree: NexusTree,
-  path: string,
-  newParentPath: string,
-): NexusTree | null {
-  if (relDirname(path) === newParentPath) return null
-  const newPath = relJoin(newParentPath, basename(path))
-  const pulled = extract(tree.collections, path)
-  if (!pulled.node) return null
-  const moved = reparentPaths(pulled.node, path, newPath)
-  const placed = insert(pulled.containers, newParentPath, moved)
-  if (!placed.done) return null
-  const next = { ...tree, collections: placed.containers as CollectionNode[] }
-  return repointUnreadable(next, path, newPath)
 }
 
 type ContainerMatch = (node: CollectionNode | SetNode) => boolean
@@ -264,79 +116,6 @@ export const contextAt = (tree: NexusTree, rel: string): ContextGroup | null =>
 export const pageIdsIn = (tree: NexusTree, path: string): string[] | undefined =>
   containerAt(tree, path)?.pages.map((p) => p.id)
 
-function holdsPath(containers: (CollectionNode | SetNode)[], path: string): boolean {
-  return containers.some(
-    (c) =>
-      c.path === path ||
-      c.pages.some((p) => p.path === path) ||
-      (c.sets ? holdsPath(c.sets, path) : false),
-  )
-}
-
-/** Null when already present: an echo or replay can hand a tree that holds the newborn. */
-export function insertCreatedInTree(
-  tree: NexusTree,
-  req: MutateRequest,
-  created: { id: string; path: string },
-): NexusTree | null {
-  const present =
-    req.op === 'createContextGroup'
-      ? tree.contexts.some((g) => g.def.id === created.id)
-      : req.op === 'createSpace'
-        ? !!spaceAt(tree, created.path)
-        : holdsPath(tree.collections, created.path)
-  if (present) return null
-  if (req.op === 'createContextGroup') {
-    const title = basename(created.path)
-    const group: ContextGroup = {
-      def: { id: created.id, title },
-      spaces: [],
-    }
-    return { ...tree, contexts: [...tree.contexts, group] }
-  }
-  if (req.op === 'createSpace') {
-    if (!tree.contexts.some((g) => g.def.id === req.contextId)) return null
-    const node = makeSpaceNode({
-      id: created.id,
-      title: basename(created.path),
-      path: created.path,
-      contextId: req.contextId,
-    })
-    return {
-      ...tree,
-      contexts: tree.contexts.map((g) =>
-        g.def.id === req.contextId ? { ...g, spaces: atSlot(g.spaces, node, req.order) } : g,
-      ),
-    }
-  }
-  if (req.op === 'createContainer' && req.kind === 'collection') {
-    const node = makeCollectionNode({
-      id: created.id,
-      title: basename(created.path),
-      path: created.path,
-    })
-    return { ...tree, collections: [...tree.collections, node] }
-  }
-  if (req.op === 'createContainer' || req.op === 'createPage') {
-    const node: PageNode | SetNode =
-      req.op === 'createPage'
-        ? makePageNode({
-            id: created.id,
-            title: titleFromPath(created.path),
-            path: created.path,
-          })
-        : makeSetNode({
-            id: created.id,
-            title: basename(created.path),
-            path: created.path,
-          })
-    const placed = insert(tree.collections, req.parentPath, node, req.order)
-    if (!placed.done) return null
-    return { ...tree, collections: placed.containers as CollectionNode[] }
-  }
-  return null
-}
-
 /** Keeps one def reference-identical in both homes (`config.registry` and each Collection's `properties`); an id the registry dropped falls out, as the walk resolves a dangling ref. */
 export function repointRegistryInTree(tree: NexusTree, registry: PropertyDefinition[]): NexusTree {
   const defs = stabilize(registry, tree.config.registry)
@@ -356,72 +135,6 @@ export function repointRegistryInTree(tree: NexusTree, registry: PropertyDefinit
     config: { ...tree.config, registry: defs },
     collections: moved ? collections : tree.collections,
   }
-}
-
-/** Named by title, so a rename moves paths: a Space swaps its tail, a Context prefix-swaps. */
-export function patchContextGroupsInTree(tree: NexusTree, req: MutateRequest): NexusTree | null {
-  const groups = tree.contexts
-  if (!groups.length) return null
-  const withGroups = (next: ContextGroup[]): NexusTree => ({ ...tree, contexts: next })
-  switch (req.op) {
-    case 'renameContext':
-      return withGroups(
-        groups.map((g) =>
-          g.def.id === req.contextId
-            ? {
-                ...g,
-                def: { ...g.def, title: req.newName },
-                spaces: g.spaces.map((s) => {
-                  const groupDir = relDirname(s.path)
-                  const newDir = relJoin(relDirname(groupDir), req.newName)
-                  return { ...s, path: relJoin(newDir, basename(s.path)) }
-                }),
-              }
-            : g,
-        ),
-      )
-    case 'renameSpace':
-      return withGroups(
-        groups.map((g) => ({
-          ...g,
-          spaces: g.spaces.map((s) =>
-            s.id === req.spaceId
-              ? { ...s, title: req.newName, path: relJoin(relDirname(s.path), req.newName) }
-              : s,
-          ),
-        })),
-      )
-    case 'setSpaceColor':
-      return withGroups(
-        groups.map((g) => ({
-          ...g,
-          spaces: g.spaces.map((s) => {
-            if (s.id !== req.spaceId) return s
-            // The key stays when cleared: `stabilize` counts keys, so a dropped one reads as drift.
-            return { ...s, color: req.color ?? undefined }
-          }),
-        })),
-      )
-    case 'reorderContexts':
-      return withGroups(reorderById(groups, req.ids, (g) => g.def.id))
-    case 'reorderSpaces':
-      return withGroups(
-        groups.map((g) =>
-          g.def.id === req.contextId
-            ? { ...g, spaces: reorderById(g.spaces, req.ids, (s) => s.id) }
-            : g,
-        ),
-      )
-    default:
-      return null
-  }
-}
-
-function reorderById<T>(items: T[], ids: string[], idOf: (item: T) => string): T[] {
-  const rank = new Map(ids.map((id, i) => [id, i]))
-  return [...items].sort(
-    (a, b) => (rank.get(idOf(a)) ?? ids.length) - (rank.get(idOf(b)) ?? ids.length),
-  )
 }
 
 export type TreeEntity = PageNode | SetNode | CollectionNode | SpaceNode
@@ -487,21 +200,6 @@ function updateInContainers(
   return { containers: out, found }
 }
 
-/** Only valid after the write succeeded — a collision fails main-side and never patches. */
-export function renameNodeInTree(tree: NexusTree, path: string, newName: string): NexusTree | null {
-  const parent = relDirname(path)
-  // Case-insensitive to match the walk's admit: a `.MD` page takes the canonical extension.
-  const newPath = isMarkdownFile(path) ? relJoin(parent, `${newName}.md`) : relJoin(parent, newName)
-  const next = updateNodeInTree(tree, path, (node) => {
-    if (node.kind === 'page')
-      return { ...node, title: newName, path: relJoin(parent, `${newName}.md`) }
-    if (node.kind === 'collection' || node.kind === 'set')
-      return { ...reparentPaths(node, path, relJoin(parent, newName)), title: newName }
-    return { ...node, title: newName, path: relJoin(parent, newName) }
-  })
-  return repointUnreadable(next, path, newPath)
-}
-
 export const removeNodeInTree = (tree: NexusTree, path: string): NexusTree =>
   repointUnreadable(updateNodeInTree(tree, path, () => null) ?? tree, path, null) ?? tree
 
@@ -560,88 +258,4 @@ export function moveNodeInTree(tree: NexusTree, from: string, to: string): Nexus
       : { ...reparentPaths(node, from, to), title }
   const pulled = updateNodeInTree(tree, from, () => null)
   return pulled && repointUnreadable(placeNode(pulled, moved), from, to)
-}
-
-export function patchNodeInTree(
-  tree: NexusTree,
-  path: string,
-  patch: {
-    icon?: string | null
-    headingIconHidden?: boolean
-    disclosureLocked?: boolean
-    activeView?: string
-  },
-): NexusTree | null {
-  return updateNodeInTree(tree, path, (node) => {
-    if (node.kind === 'page') return node
-    const next = { ...node }
-    // A cleared icon keeps its key, undefined-valued: `stabilize` counts keys.
-    if ('icon' in patch) next.icon = patch.icon ?? undefined
-    if (patch.headingIconHidden !== undefined) next.headingIconHidden = patch.headingIconHidden
-    if ('disclosureLocked' in patch && (next.kind === 'collection' || next.kind === 'set'))
-      next.disclosureLocked = patch.disclosureLocked
-    if ('activeView' in patch && (next.kind === 'collection' || next.kind === 'set'))
-      next.activeView = patch.activeView
-    return next
-  })
-}
-
-export function byOrder<T extends { id: string }>(arr: T[], order: string[]): T[] {
-  return reorderById(arr, order, (item) => item.id)
-}
-
-function reorderChildrenInTree(
-  tree: NexusTree,
-  parentPath: string,
-  order: string[],
-): NexusTree | null {
-  if (parentPath === '') return { ...tree, collections: byOrder(tree.collections, order) }
-  return updateNodeInTree(tree, parentPath, (node) =>
-    node.kind === 'collection' || node.kind === 'set'
-      ? { ...node, sets: byOrder(node.sets ?? [], order) }
-      : node,
-  )
-}
-
-/** Composed after relocateNodeInTree so a moved page lands at its slot rather than appended. */
-function reorderPagesInTree(
-  tree: NexusTree,
-  parentPath: string,
-  order: string[],
-): NexusTree | null {
-  return updateNodeInTree(tree, parentPath, (node) =>
-    node.kind === 'collection' || node.kind === 'set'
-      ? { ...node, pages: byOrder(node.pages, order) }
-      : node,
-  )
-}
-
-/** A move is its relocation plus the destination's order, and a same-parent move is that order alone; null when neither resolves. */
-function moveInTree(
-  tree: NexusTree,
-  req: Extract<MutateRequest, { op: 'movePage' | 'moveSet' }>,
-): NexusTree | null {
-  const moved = relocateNodeInTree(tree, req.path, req.newParentPath)
-  if (!moved && relDirname(req.path) !== req.newParentPath) return null
-  if (req.op === 'moveSet')
-    return reorderChildrenInTree(moved ?? tree, req.newParentPath, req.order) ?? moved
-  if (!req.order) return moved
-  return reorderPagesInTree(moved ?? tree, req.newParentPath, req.order) ?? moved
-}
-
-export type OrderRequest = Extract<
-  MutateRequest,
-  { op: 'movePage' | 'moveSet' | 'reorderChildren' | 'reorderTop' }
->
-
-export function orderInTree(tree: NexusTree, req: OrderRequest): NexusTree | null {
-  switch (req.op) {
-    case 'movePage':
-    case 'moveSet':
-      return moveInTree(tree, req)
-    case 'reorderChildren':
-      return reorderChildrenInTree(tree, req.parentPath, req.order)
-    case 'reorderTop':
-      return reorderChildrenInTree(tree, '', req.order)
-  }
 }

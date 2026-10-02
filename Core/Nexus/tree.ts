@@ -7,6 +7,7 @@ import type { OpenIn, ViewButton } from '../Views/viewRow'
 import type { SavedView } from '../Views/views'
 import type { NodeKind } from './entities'
 import type { Crop, PageMeta } from './schemas'
+import type { Delta } from './treeDelta'
 
 interface BaseNode {
   id: string
@@ -121,7 +122,13 @@ export interface NexusTree {
   unreadable?: Unreadable[]
 }
 
-export type NexusState = { status: 'empty' } | { status: 'open'; tree: NexusTree }
+export type NexusState = { status: 'empty' } | { status: 'open'; tree: NexusTree; version: number }
+
+/** What a settle changed in the tree, as the window applies it. A window that holds any version but the one before asks for the whole tree. */
+export interface NexusChange {
+  version: number
+  delta: Delta
+}
 
 export function entityMemo<T>(build: (tree: NexusTree) => T): (tree: NexusTree) => T {
   const held = new WeakMap<CollectionNode[], { contexts: ContextGroup[]; value: T }>()

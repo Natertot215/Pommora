@@ -28,7 +28,6 @@ import { resolveContextKeys } from '../Contexts/contextResolve'
 import { spaceNodeFrom, spaceSidecarsIn } from '../Contexts/spaceSidecar'
 import { cropsFile } from './schemas'
 import { containerNodeFrom } from './containerFields'
-import { makePageNode } from './treePatch'
 import { readPageMetadata } from './pageMetadata'
 import { readSettings, scopeOf } from '../Settings/codec'
 import { pathExists, readAppFile, readJsonObject } from '../Files/atomicWrite'
@@ -131,7 +130,12 @@ export function pageRecordOf(
   if (admission.state === 'missing')
     return { unread: frontmatterWritable(content) ? 'missing' : 'unparsed' }
   if (admission.state === 'unknown') return { unread: admission.reason }
-  const node = makePageNode({ id: admission.id, title: titleFromPath(relFile), path: relFile })
+  const node: PageNode = {
+    kind: 'page',
+    id: admission.id,
+    title: titleFromPath(relFile),
+    path: relFile,
+  }
   return { node, fm, mtimeMs }
 }
 

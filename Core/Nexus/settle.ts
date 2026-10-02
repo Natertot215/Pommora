@@ -13,6 +13,7 @@ import { applyEvents, indexEvent, nothingOwed, owedFor } from './fileEvents'
 import { diskMoved, dropLiveTree, heldTreeOf, refreshAfterWrite } from './liveTree'
 import { adopting, sessionRoot } from './session'
 import type { NexusTree, ValueChange } from './tree'
+import { diff } from './treeDelta'
 import { liveIdIndex } from './heldPages'
 
 // ── The app's own events ──
@@ -35,10 +36,11 @@ type Pusher = Pick<HostContext, 'push' | 'watch'>
 let settling: Promise<unknown> = Promise.resolve()
 let reseeding: Promise<void> = Promise.resolve()
 let pushed: NexusTree | null = null
+let version = 0
 
-export function sent(tree: NexusTree): NexusTree {
+export function sent(tree: NexusTree): { tree: NexusTree; version: number } {
   pushed = tree
-  return tree
+  return { tree, version }
 }
 
 function valueChangesOf(root: string, values: ReadonlyMap<string, boolean>): ValueChange[] {
@@ -83,7 +85,9 @@ async function settle(pusher: Pusher, root: string): Promise<{ rescope: boolean 
   const { pages, values, tiles, assets, corpus, rescope } = due
   Object.assign(due, nothingOwed(root))
   const tree = heldTreeOf(root)
-  if (tree && tree !== pushed) pusher.push('nexus:changed', sent(tree))
+  const delta = tree && diff(pushed?.nexus.rootPath === root ? pushed : undefined, tree)
+  if (tree) pushed = tree
+  if (delta) pusher.push('nexus:changed', { version: ++version, delta })
   if (pages.size) pusher.push('pages:changed', [...pages])
   const changes = valueChangesOf(root, values)
   if (changes.length) pusher.push('values:changed', changes)

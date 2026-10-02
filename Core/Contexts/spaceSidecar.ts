@@ -9,7 +9,6 @@ import { visibleFolders } from '../Files/walk'
 import { contextsDir, sidecarPath } from '../Paths/paths'
 import { join } from '../Paths/posix'
 import type { SpaceNode } from '../Nexus/tree'
-import { makeSpaceNode } from '../Nexus/treePatch'
 
 export const COLOR_KEY = '$color'
 export const ORDER_KEY = '$order'
@@ -84,7 +83,7 @@ export function spaceNodeFrom(
   at: { title: string; path: string; contextId: string },
 ): SpaceNode | null {
   const id = asString(sc.id)
-  return id ? makeSpaceNode({ id, ...at, ...spaceFieldsFrom(sc) }) : null
+  return id ? { kind: 'space', id, ...at, ...spaceFieldsFrom(sc) } : null
 }
 
 export function readSpaceRowOrder(values: Json | undefined): SpaceRowOrder {

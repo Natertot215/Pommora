@@ -10,10 +10,13 @@ import {
 import { same } from '../../Files/stableJson'
 import type { Result } from '../../Contract/result'
 import { useLatest } from '@pommora/uix/Utilities/stableApi'
-import type { CollectionNode, SetNode } from '../../Nexus/tree'
+import type { CollectionNode, NexusTree, SetNode } from '../../Nexus/tree'
 import { announceDrag } from '@pommora/uix/Interactions/a11y'
 import { channel } from '@pommora/uix/Utilities/subscribable'
-import { containerAt, type OrderRequest, orderInTree } from '../../Nexus/treePatch'
+import type { MutateRequest } from '../../Nexus/mutateRequest'
+import { resolveOrder } from '../../Nexus/order'
+import { containerAt, moveNodeInTree, updateNodeInTree } from '../../Nexus/treePatch'
+import { basename, relJoin } from '../../Paths/posix'
 import { useSession } from '../../Session/store'
 
 interface Slot {
@@ -117,6 +120,36 @@ export function unstageView(sourceId: string, viewId: string, patch: ViewPatch):
 }
 
 // ── Orders painted ahead ────────────────────────────────────────────────────
+
+export type OrderRequest = Extract<
+  MutateRequest,
+  { op: 'movePage' | 'moveSet' | 'reorderChildren' }
+>
+
+function withChildOrder(
+  tree: NexusTree,
+  parentPath: string,
+  key: 'pageOrder' | 'setOrder',
+  order: string[],
+): NexusTree | null {
+  return updateNodeInTree(tree, parentPath, (parent) => {
+    if (parent.kind !== 'collection' && parent.kind !== 'set') return parent
+    return key === 'pageOrder'
+      ? { ...parent, pageOrder: order, pages: resolveOrder(parent.pages, order) }
+      : { ...parent, setOrder: order, sets: resolveOrder(parent.sets ?? [], order) }
+  })
+}
+
+// A drag's order as the tree holds it once the drag's write lands, shown before then.
+function orderInTree(tree: NexusTree, req: OrderRequest): NexusTree | null {
+  if (req.op === 'reorderChildren')
+    return withChildOrder(tree, req.parentPath, 'setOrder', req.order)
+  const to = relJoin(req.newParentPath, basename(req.path))
+  const moved = to === req.path ? tree : moveNodeInTree(tree, req.path, to)
+  if (!moved || !req.order) return moved
+  const key = req.op === 'movePage' ? 'pageOrder' : 'setOrder'
+  return withChildOrder(moved, req.newParentPath, key, req.order)
+}
 
 const ahead = channel<readonly OrderRequest[]>([])
 
