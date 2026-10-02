@@ -1,6 +1,5 @@
 import { join, dirname, basename } from '../Paths/posix'
 import { ID_KEY, PAGE_MODELED_KEYS } from './identityMark'
-import { newContentId } from './ids'
 import { bodyHash, type PageWrite, writePageFile } from '../Files/pageFile'
 import { machine } from '../Platform/machine'
 import {
@@ -25,15 +24,15 @@ export async function createPage(
   parentDir: string,
   name: string,
   opts: {
-    id?: string
+    id: string
     body?: string
     values?: { def: PropertyDefinition; value: PropertyValue }[]
-  } = {},
+  },
 ): Promise<Result<{ id: string; path: string }>> {
   const why = nameError(name, 'page')
   if (why) return fail('invalid-name', why)
   const file = join(parentDir, name + MD)
-  const id = opts.id ?? newContentId('page')
+  const { id } = opts
   const modeled: Record<string, unknown> = { [ID_KEY]: id }
   const keys: string[] = [...PAGE_MODELED_KEYS]
   for (const { def, value } of opts.values ?? []) {
