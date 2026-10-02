@@ -44,6 +44,9 @@ export const liveIdOf = (root: string, absFile: string): string | undefined =>
 export const livePathOf = (root: string, id: string): string | null =>
   liveIndices(root)?.byId.get(id) ?? null
 
+export const idHeld = (root: string, id: string): boolean =>
+  liveIndices(root)?.byId.has(id) ?? false
+
 // Walked only when a delete, rename, or restore asks, never on the value writes that rebuild the rest.
 export const titlesOf = entityMemo((tree): ReadonlyMap<string, readonly string[]> => {
   const byTitle = new Map<string, string[]>()
