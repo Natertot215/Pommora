@@ -106,11 +106,10 @@ export interface NexusConfig extends SettingsLeaves {
 
 export type UnreadReason = 'missing' | 'malformed' | 'contradicting' | 'unparsed'
 
-export interface Unreadable {
-  path: string
-  kind: NodeKind | 'registry'
-  reason: UnreadReason
-}
+export type Unreadable = { path: string } & (
+  | { kind: NodeKind; reason: UnreadReason }
+  | { kind: 'registry'; reason: 'unparsed' }
+)
 
 export interface NexusTree {
   nexus: { id: string; rootPath: string; name: string }
