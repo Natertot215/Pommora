@@ -13,8 +13,7 @@ import { useSession } from '../../Session/store'
 import { usePublishSelection } from '../../Interface/Subfield/publish'
 import { Banner } from '../../Interface/Header/Banner'
 import { NavTrail } from '@pommora/uix/Elements/NavTrail'
-import { ancestryOf } from '../../Nexus/treeIndex'
-import { pageIdIndex } from '../../Nexus/heldPages'
+import { ancestryOf, reconcileIndexOf } from '../../Nexus/treeIndex'
 
 import { useLatest } from '@pommora/uix/Utilities/stableApi'
 import { cx } from '@pommora/uix/Utilities/cx'
@@ -73,7 +72,8 @@ export function PageTile({
     const cached = readPageDetail(path)
     const slot = cached ? entryFrom(path, cached) : null
     if (typeof doc !== 'string') return { epoch, entry: slot }
-    const id = pageIdIndex(useSession.getState().tree).get(path)
+    const tree = useSession.getState().tree
+    const id = tree ? reconcileIndexOf(tree).pagesByPath.get(path) : undefined
     return { epoch, entry: { path, id, ...slot, body: doc } }
   })
   if (seed.epoch !== epoch) {
