@@ -5,6 +5,7 @@ import { crop, type PageMetaPatch } from './schemas'
 import type { CascadeReport } from './cascade'
 import { CONTAINER_KINDS, HELD_KINDS, type HeldKind, NODE_KINDS } from './entities'
 import { newContentId, newId } from './ids'
+import { isUlidShaped } from './identityMark'
 
 export interface MutateOutcome {
   created?: { path: string }
@@ -36,6 +37,7 @@ export type RestoreDestination = z.infer<typeof restoreDestination>
 const childOrderKey = z.literal('set_order')
 export type ChildOrderKey = z.infer<typeof childOrderKey>
 const ids = z.array(z.string())
+const mintedId = z.string().refine(isUlidShaped)
 const pageMetaPatch: z.ZodType<Omit<PageMetaPatch, 'icon'>> = z.object({
   aliases: z.array(z.string()).nullable().optional(),
   title_icon: z.boolean().nullable().optional(),
@@ -48,14 +50,14 @@ const op = <K extends string, S extends z.ZodRawShape>(literal: K, fields: S) =>
 // Every structural write enters through this one shape: a key it doesn't name is dropped, and a value off its type is refused before anything is written.
 export const mutateRequest = z.discriminatedUnion('op', [
   op('createPage', {
-    id: z.string(),
+    id: mintedId,
     parentPath: z.string(),
     name: z.string(),
     seeds: z.record(z.string(), propertyValue).optional(),
     order: ids.optional(),
   }),
   op('createContainer', {
-    id: z.string(),
+    id: mintedId,
     parentPath: z.string(),
     kind: containerKind,
     name: z.string(),
@@ -87,9 +89,9 @@ export const mutateRequest = z.discriminatedUnion('op', [
   op('moveSet', { path: z.string(), newParentPath: z.string(), order: ids }),
   op('reorderChildren', { parentPath: z.string(), key: childOrderKey, order: ids }),
   op('reorderTop', { order: ids }),
-  op('createContextGroup', { id: z.string(), name: z.string() }),
+  op('createContextGroup', { id: mintedId, name: z.string() }),
   op('createSpace', {
-    id: z.string(),
+    id: mintedId,
     contextId: z.string(),
     name: z.string(),
     order: ids.optional(),
