@@ -175,11 +175,13 @@ export async function writePageFile(
   return { previous, written }
 }
 
+export const NO_FILEABLE_ID = fault('That page has no ID Pommora can file.')
+
 export async function openPage(rootPath: string, relPath: string): Promise<Result<PageDetail>> {
   const content = await machine().readText(join(rootPath, relPath))
   if (content === null) return fail('not-found', `Page not found: ${relPath}`)
   const { frontmatter, admission } = parsePage(content)
-  if (admission.state !== 'member') return fault('That page has no ID Pommora can file.')
+  if (admission.state !== 'member') return NO_FILEABLE_ID
   return ok({
     id: admission.id,
     title: titleFromPath(relPath),

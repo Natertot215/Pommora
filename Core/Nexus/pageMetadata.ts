@@ -1,6 +1,7 @@
 import { isPlainObject } from '../Contract/validators'
 import { parseJsonObject, readJsonStrict, updateNexusFile } from '../Files/atomicWrite'
 import { listEntries } from '../Files/walk'
+import { NO_FILEABLE_ID } from '../Files/pageFile'
 import { fault, ok, type Result } from '../Contract/result'
 import { liveTreeOf, NOT_HELD } from './liveTree'
 import { metadataShardPath } from '../Paths/paths'
@@ -95,7 +96,7 @@ export async function updatePageMetadata(
   patch: PageMetaPatch,
 ): Promise<Result<null>> {
   const shard = shardOf(id)
-  if (shard === null) return fault('That page has no ID Pommora can file.')
+  if (shard === null) return NO_FILEABLE_ID
   const written = await updateNexusFile(
     metadataShardPath(root, shard),
     (cur) => {

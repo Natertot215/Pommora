@@ -15,7 +15,7 @@ import {
   rmwJsonStrict,
 } from '../Files/atomicWrite'
 import { readSidecar } from '../Files/sidecar'
-import { mergeFrontmatter, parsePage, splitEnvelope } from '../Files/pageFile'
+import { mergeFrontmatter, NO_FILEABLE_ID, parsePage, splitEnvelope } from '../Files/pageFile'
 import { readIdentity } from './identity'
 import { asString } from './coerce'
 import { baseSidecar } from './schemas'
@@ -88,9 +88,7 @@ export async function ensurePageId(absFile: string): Promise<Result<string>> {
     if (stamped !== null) return ok(stamped)
     admission = await pageAdmission(absFile)
   }
-  return admission?.state === 'member'
-    ? ok(admission.id)
-    : fault('That page has no ID Pommora can file.')
+  return admission?.state === 'member' ? ok(admission.id) : NO_FILEABLE_ID
 }
 
 type AdoptableKind = Exclude<FolderKind, 'unknown'>
