@@ -2,7 +2,7 @@ import { join } from '../Paths/posix'
 import { machine } from '../Platform/machine'
 import type { EntityRecord } from './record'
 import { errText } from '../Contract/result'
-import { contextDirRel, CONTEXTS_REGISTRY_REL } from '../Paths/nexusPaths'
+import { contextDirRel } from '../Paths/nexusPaths'
 import { entityMemo, type NexusTree, type PageNode, type SetNode, type Unreadable } from './tree'
 import { withheldIn } from './treePatch'
 import { readKey, writeKey } from '../Platform/localState'
@@ -76,7 +76,7 @@ export function latchBaseline(
     if (unreadable.has(p.path) || withheld(p.path)) out[id] = p
   }
   // An unusable registry blanks the whole Contexts layer in one stroke — carry every prior group and Space as unreadable rather than reading the blank as mass deletion.
-  if (unreadable.has(CONTEXTS_REGISTRY_REL)) {
+  if (listed.some((u) => u.kind === 'registry')) {
     for (const [id, p] of Object.entries(recorded)) {
       if ((p.kind === 'context' || p.kind === 'space') && !(id in out)) out[id] = p
     }

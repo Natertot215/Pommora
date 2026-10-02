@@ -148,8 +148,9 @@ export async function setContextOp(
   const tree = await liveTreeOf(root)
   const world = contextWorldOf(tree.contexts)
   const group = world.groupById.get(contextId)
+  const under = group && `${contextDirRel(group.def.title)}/`
   const unread =
-    group && tree.unreadable?.find((u) => u.path.startsWith(`${contextDirRel(group.def.title)}/`))
+    under && tree.unreadable?.find((u) => u.kind === 'space' && u.path.startsWith(under))
   if (unread) return fault(`Unreadable Space sidecar: ${basename(unread.path)}`)
   if (isMarkdownFile(path))
     return done(await setPageContext(target.value, root, contextId, spaceIds))

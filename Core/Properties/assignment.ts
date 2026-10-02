@@ -153,7 +153,7 @@ export function assignProperty(
 
 export async function collectionFolders(root: string): Promise<string[]> {
   const tree = await liveTreeOf(root)
-  const damaged = damagedFolders(tree.unreadable).filter((u) => !u.path.includes('/'))
+  const damaged = damagedFolders(tree.unreadable).filter((u) => u.kind === 'collection')
   return [...tree.collections, ...damaged].map((c) => join(root, c.path))
 }
 
