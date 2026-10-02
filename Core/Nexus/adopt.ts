@@ -25,7 +25,7 @@ import { outsideContent, type WatchScope } from '../Paths/exclusion'
 import { readSettings, scopeOf } from '../Settings/codec'
 import {
   agendaContext,
-  holdsContent,
+  adoptsAsCollection,
   resolveFolderKind,
   type FolderKind,
   type FolderKindContext,
@@ -183,13 +183,7 @@ export async function stampAdopted(root: string): Promise<void> {
       await stampTree(abs, e.name, kind, scope, kindCtx, root).catch(() => {})
       continue
     }
-    // Don't fabricate a Collection from an empty, sidecar-less folder (stray junk). One that already has a sidecar, or holds pages/subfolders, is real content and gets adopted.
-    if (
-      !(await pathExists(join(abs, SIDECAR_FILENAME.collection))) &&
-      !(await holdsContent(abs, e.name, scope))
-    ) {
-      continue
-    }
+    if (!(await adoptsAsCollection(abs, e.name, scope))) continue
     await stampTree(abs, e.name, 'collection', scope, kindCtx, root).catch(() => {})
   }
 }
