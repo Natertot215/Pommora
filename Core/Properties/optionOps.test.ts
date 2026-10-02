@@ -17,9 +17,8 @@ import { createFolderEntity } from '../Nexus/folderEntity'
 import { newId } from '../Nexus/ids'
 import { updatePageProperty } from '../Nexus/page'
 import { createTestPage } from '../Testing/createTestPage'
-import { serializeSchemaOp } from './schemaChain'
 import { machine } from '../Platform/machine'
-import { mutateRegistry, readRegistry } from './propertiesRegistry'
+import { mutateRegistry, readRegistry, serializeSchemaOp } from './propertiesRegistry'
 
 type PropDefLike = Record<string, unknown> & {
   select_options?: unknown[]
@@ -102,15 +101,15 @@ describe('editOption', () => {
     expect((await editOption(root, 'prop_nope', { op: 'recolor', value: 'A' })).ok).toBe(false)
   })
 
-  it('serializes on the schema chain — queues behind an in-flight schema op, never interleaving', async () => {
+  it('serializes on the schema lock — queues behind an in-flight schema op, never interleaving', async () => {
     const id = await mkSelect([{ value: 'A' }])
     const order: string[] = []
     let release!: () => void
     const gate = new Promise<void>((r) => {
       release = r
     })
-    // Occupy the shared schema chain with a gated op, THEN fire editOption: on a different lock it would slip past the gate and land first.
-    const slow = serializeSchemaOp(async () => {
+    // Occupy the schema lock with a gated op, THEN fire editOption: on a different lock it would slip past the gate and land first.
+    const slow = serializeSchemaOp(root, async () => {
       await gate
       order.push('schema-op')
     })
@@ -638,7 +637,7 @@ describe('adoption — a Multi-Select registers an option a page already holds',
     expect((await readRegistry(root)).defs[sel].select_options?.map((o) => o.value)).toEqual(['a'])
   })
 
-  it('applyAdoptions resolves from inside a page lock and from inside the schema chain', async () => {
+  it('applyAdoptions resolves from inside a page lock and from inside the schema lock', async () => {
     const id = await mkMulti()
     await machine().lock(join(root, 'any.md'), () =>
       applyAdoptions(root, [
@@ -646,7 +645,7 @@ describe('adoption — a Multi-Select registers an option a page already holds',
         { propertyId: id, value: 'beta' },
       ]),
     )
-    await serializeSchemaOp(() => applyAdoptions(root, [{ propertyId: id, value: 'gamma' }]))
+    await serializeSchemaOp(root, () => applyAdoptions(root, [{ propertyId: id, value: 'gamma' }]))
     await applyAdoptions(root, [])
     expect(await values(id)).toEqual(['alpha', 'beta', 'gamma'])
   })

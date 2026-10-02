@@ -1,7 +1,12 @@
 import { writePropertyBundle } from '../Trash/record'
 import { assignedIds, collectionFolders } from './assignment'
 import { cachedValues, patchCacheBlock } from './propertyCache'
-import { readRegistry, type PropertyRegistry, NO_PROPERTY } from './propertiesRegistry'
+import {
+  readRegistry,
+  type PropertyRegistry,
+  NO_PROPERTY,
+  serializeSchemaOp,
+} from './propertiesRegistry'
 import { removeFromRegistry } from './registryProperty'
 import { keyedHolders, keyHolderFiles } from './keyHolders'
 import {
@@ -11,7 +16,6 @@ import {
   type SchemaJournal,
   writeSchemaJournal,
 } from './propertyJournal'
-import { serializeSchemaOp } from './schemaChain'
 import { stripKeys, sweepGovernedRoots } from './governedSweep'
 import { patchSidecar } from '../Files/sidecar'
 import { readJsonObject } from '../Files/atomicWrite'
@@ -75,7 +79,7 @@ export function deleteProperty(
   root: string,
   propertyId: string,
 ): Promise<Result<PropertyDeletion>> {
-  return serializeSchemaOp(() => deleteInner(root, propertyId))
+  return serializeSchemaOp(root, () => deleteInner(root, propertyId))
 }
 
 async function deleteInner(root: string, propertyId: string): Promise<Result<PropertyDeletion>> {

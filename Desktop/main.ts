@@ -448,6 +448,7 @@ app.on('before-quit', (e) => {
   }
   void flushWindow()
     .then(() => bounded(settleAsks()))
+    // Unbounded: a Context or schema cascade in flight holds a machine lock, so it finishes before the quit.
     .then(drainFileLocks)
     .then(() => {
       const root = sessionRoot()

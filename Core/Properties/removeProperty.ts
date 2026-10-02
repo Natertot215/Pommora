@@ -5,8 +5,7 @@ import { patchSidecar } from '../Files/sidecar'
 import { sidecarPath } from '../Paths/paths'
 import { readJsonObject } from '../Files/atomicWrite'
 import { stripKeys, sweepGovernedRoots } from './governedSweep'
-import { readRegistry } from './propertiesRegistry'
-import { serializeSchemaOp } from './schemaChain'
+import { readRegistry, serializeSchemaOp } from './propertiesRegistry'
 import { ok, type Result } from '../Contract/result'
 import { mapViews } from '../Views/views'
 import { type ConfigReach, NO_REACH, propertyClear, reachConfig } from '../Nexus/configReach'
@@ -18,7 +17,7 @@ export function removeProperty(
   collectionFolder: string,
   propertyId: string,
 ): Promise<Result<ConfigReach>> {
-  return serializeSchemaOp(() => removeInner(root, collectionFolder, propertyId))
+  return serializeSchemaOp(root, () => removeInner(root, collectionFolder, propertyId))
 }
 
 async function removeInner(

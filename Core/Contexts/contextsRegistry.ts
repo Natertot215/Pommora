@@ -1,4 +1,4 @@
-// Mutations serialize on the registry file's own per-file lock, NOT the global schema-op chain — nesting a schema op there would deadlock.
+// Mutations serialize on the registry file's own lock, a different key from the schema ops' `.nexus` lock, so a schema op can write the registry without re-taking the lock it holds.
 
 import {
   type ContextDef,
