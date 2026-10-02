@@ -117,8 +117,8 @@ export interface Unswept {
   from: string
 }
 
-const unswept = (journaled: boolean, skipped: string[], from: string): Unswept | null =>
-  !journaled && skipped.length ? { skipped: skipped.length, from } : null
+const unswept = (skipped: string[], from: string): Unswept | null =>
+  skipped.length ? { skipped: skipped.length, from } : null
 
 async function sweepAgain(
   root: string,
@@ -126,7 +126,8 @@ async function sweepAgain(
   j: RenameJournal,
 ): Promise<Result<Unswept | null>> {
   const again = await cascadeTitle(root, contextTitle, j)
-  return ok(unswept(false, again.skipped, j.oldTitle))
+  await settleJournal(root, j, again.skipped)
+  return ok(unswept(again.skipped, j.oldTitle))
 }
 
 async function cascadeTitle(
@@ -239,7 +240,7 @@ export async function renameContextOp(
     return fail('exists', `"${newName}" already exists.`)
 
   const j: RenameJournal = { contextId, oldTitle: entry.title, newTitle: newName, skipped: [] }
-  const journaled = await writeJournal(root, j)
+  await writeJournal(root, j)
 
   const oldDir = join(contextsDir(root), entry.title)
   const newDir = join(contextsDir(root), newName)
@@ -256,18 +257,18 @@ export async function renameContextOp(
   if (!committed.ok) {
     // The way back is a rename of its own, journaled so the next open finishes the files it can't reach now.
     const back: RenameJournal = { ...j, oldTitle: newName, newTitle: entry.title }
-    const backed = await writeJournal(root, back)
+    await writeJournal(root, back)
     const undone = await cascadeTitle(root, entry.title, back)
     try {
       if (await pathExists(newDir)) await relocate(newDir, oldDir)
     } catch {}
     await settleJournal(root, back, undone.skipped)
-    const left = !backed && undone.skipped.length
+    const left = undone.skipped.length
     return left ? fault(`${committed.error.message} ${unsweptLine(left)}`) : committed
   }
 
   await settleJournal(root, j, cascade.skipped)
-  return ok(unswept(journaled, cascade.skipped, j.oldTitle))
+  return ok(unswept(cascade.skipped, j.oldTitle))
 }
 
 export async function renameSpaceOp(
@@ -301,7 +302,7 @@ export async function renameSpaceOp(
     newTitle: newName,
     skipped: [],
   }
-  const journaled = await writeJournal(root, j)
+  await writeJournal(root, j)
   try {
     await relocate(dir, target)
   } catch (e) {
@@ -311,7 +312,7 @@ export async function renameSpaceOp(
 
   const cascade = await cascadeTitle(root, group.def.title, j)
   await settleJournal(root, j, cascade.skipped)
-  return ok(unswept(journaled, cascade.skipped, j.oldTitle))
+  return ok(unswept(cascade.skipped, j.oldTitle))
 }
 
 export async function replayPendingRename(root: string): Promise<void> {

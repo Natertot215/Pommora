@@ -197,7 +197,7 @@ describe('renameContextOp', () => {
       })
       const r = await renameContextOp(root, 'ctx_projects', 'Ventures')
       await chmod(page(), 0o644)
-      expect(r).toEqual(fault('refused'))
+      expect(r).toEqual(fault(`refused ${unsweptLine(1)}`))
       expect((await fmOf(page()))['<Ventures>']).toEqual(['Pommora', 'pommora'])
       expect((await readJournal(root))?.skipped).toEqual([page()])
       await replayPendingRename(root)
@@ -401,6 +401,40 @@ describe('a rename the journal refused reports what it skipped, with a retry', (
       expect(await settledMutate(root, retry, deps)).toEqual(ok({}))
       expect((await fmOf(page()))['<Projects>']).toEqual(['pommora'])
       expect((await fmOf(broken()))['<Projects>']).toEqual(['Pommora'])
+    },
+  )
+})
+
+describe('a rename the journal took reports what it skipped, with a retry', () => {
+  const broken = (): string => join(root, 'Notes', 'Broken.md')
+  const rename = { op: 'renameSpace', spaceId: 'sp-pom', newName: 'Pom' } as const
+  const retry = { ...rename, from: 'Pommora' }
+  const skippedLine = ok({ cascade: { pages: [], hosts: [], warning: unsweptLine(1) }, retry })
+  beforeEach(async () => {
+    await symlink(join(root, 'Notes', 'Nowhere.md'), broken())
+    await refreshTree(root)
+  })
+
+  it.skipIf(windows)(
+    'answers the line and a retry, and a retry that reaches everything clears the journal',
+    async () => {
+      expect(await settledMutate(root, rename, deps)).toEqual(skippedLine)
+      expect((await readJournal(root))?.skipped).toEqual([broken()])
+      await rm(broken())
+      await writeFile(broken(), '---\nid: pb\n<Projects>:\n  - Pommora\n---\nbody')
+      await refreshTree(root)
+      expect(await settledMutate(root, retry, deps)).toEqual(ok({}))
+      expect((await fmOf(broken()))['<Projects>']).toEqual(['Pom'])
+      expect(await readJournal(root)).toBeNull()
+    },
+  )
+
+  it.skipIf(windows)(
+    'a retry that skips again answers the line again and keeps the journal',
+    async () => {
+      expect(await settledMutate(root, rename, deps)).toEqual(skippedLine)
+      expect(await settledMutate(root, retry, deps)).toEqual(skippedLine)
+      expect((await readJournal(root))?.skipped).toEqual([broken()])
     },
   )
 })
