@@ -26,7 +26,7 @@ export function readCommands(raw: unknown): Commands {
   return commands
 }
 
-/** Decoded in one place — the walk and the watcher's settings patch read the same file through the same coercions, so they cannot disagree. */
+/** Decoded in one place — the walk and the watcher's settings event read the same file through the same coercions, so they cannot disagree. */
 export interface SettingsLeaves {
   excluded: string[]
   /** Outside the content corpus and the tree, and watched regardless of `excluded`. */
