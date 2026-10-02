@@ -38,7 +38,7 @@ import { liveTreeOf, mutableTarget } from './liveTree'
 import { stampMissing, stampPage } from './adopt'
 import { oweWalk } from './fileEvents'
 import { reachReport } from './configReach'
-import { walkOwed } from './settle'
+import { payOwedWalk } from './settle'
 
 export interface MutateContext {
   root: string
@@ -75,7 +75,7 @@ async function dispatch(ctx: MutateContext, req: MutateRequest): Promise<MutateR
       try {
         return await fn()
       } finally {
-        await walkOwed(root)
+        await payOwedWalk(root)
       }
     })
   switch (req.op) {
