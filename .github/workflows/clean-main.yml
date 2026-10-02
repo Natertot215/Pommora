@@ -23,7 +23,5 @@ jobs:
       - run: >
           git filter-repo --force --refs active --invert-paths
           --path .claude/ --path .github/
-          --path Core/Testing/ --path Sync/Testing/ --path UIX/Testing/
-          --path-glob '*.test.ts' --path-glob '*.test.tsx' --path-glob '*.test.mjs'
-          --path-glob '*vitest.config.ts' --path-glob '*vitest.setup.ts'
+          --path-regex '(?i)(^|/)[^/]*(testing|tests)/|\.(test|spec)\.[cm]?[jt]sx?$|(^|/)vitest\.(config|setup)\.[cm]?[jt]s$'
       - run: git push --force "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" active:main
