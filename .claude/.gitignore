@@ -4,6 +4,13 @@ settings.local.json
 # Symlinks into the Studio's own folders.
 skills
 commands
+agents
+
+# Private working material: session records and planning documents.
+Sessions/
+Planning/
+
+scheduled_tasks.lock
 
 # Per-session scratch worktrees.
 worktrees/

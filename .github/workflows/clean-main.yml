@@ -1,0 +1,29 @@
+name: Clean Main
+
+on:
+  push:
+    branches: [active]
+
+permissions:
+  contents: write
+
+concurrency:
+  group: clean-main
+  cancel-in-progress: true
+
+jobs:
+  mirror:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: active
+          fetch-depth: 0
+      - run: pip install git-filter-repo
+      - run: >
+          git filter-repo --force --refs active --invert-paths
+          --path .claude/ --path .github/
+          --path Core/Testing/ --path Sync/Testing/ --path UIX/Testing/
+          --path-glob '*.test.ts' --path-glob '*.test.tsx' --path-glob '*.test.mjs'
+          --path-glob '*vitest.config.ts' --path-glob '*vitest.setup.ts'
+      - run: git push --force "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" active:main

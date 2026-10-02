@@ -27,7 +27,7 @@ The Nexus’ structure is based on relating **Content** ↔ **Content** through 
 - **Dependencies:** They're all placed behind thin replacement-enabling seams so they’re swappable without touching callers. Version numbers are compatibility pins, not endorsements.
 - **The [Figma Library](https://www.figma.com/file/EBJXShPFA50yUwmBti452p)** is where the design presentation happens beforehand. `Dashboard/` builds two single-file private Claude artifacts — the Pommora Dashboard (the line ledger) and the Pommora Showcase (the design system). Post-commit hooks manage both; don’t emphasize it in-chat.
 - **Nathan Role:** Nathan *doesn’t* understand much of the architectural design, codebase complexities, or the app's inner workings — his familiarity and focus are primarily on the vision, design, features, and interaction. Most behind-the-scenes design *isn’t* Nathan’s own decision; don’t assume he’s always on the same page or understands what you’re talking about regarding these topics.
-- **Repos:** `.claude/` is a separate repository from `Pommora` and isn’t tracked remotely — commit code and documentation separately.
+- **Branches:** `active` is the development branch, and every commit lands there; `main` is GitHub's default branch, regenerated from `active` on each push without `.claude/` or the tests, so it's never committed to directly. `.claude/Sessions/` and `.claude/Planning/` stay local and untracked.
 
 ### Hard Rules
 
