@@ -126,7 +126,7 @@ describe('what a settle pushes for a batch', () => {
     const text = `---\nID: ${ULID_A}\n---\n\nmine\n`
     await writeFile(abs('Notes', 'A.md'), text)
     await applyEvents(root, [
-      { ...ev('change', 'Notes', 'A.md'), origin: 'own', text, bodyOnly: true },
+      { event: 'change', absPath: abs('Notes', 'A.md'), origin: 'own', text, bodyOnly: true },
     ])
     await settleNow(pusher, root)
     expect(payload('values:changed')).toEqual([
@@ -155,8 +155,8 @@ describe('what a settle pushes for a batch', () => {
     const text = `---\nID: ${ULID_A}\n---\n\nmine\n`
     await writeFile(abs('Notes', 'A.md'), text)
     await applyEvents(root, [
-      { ...ev('change', 'Notes', 'A.md'), origin: 'own', text, bodyOnly: true },
-      { ...ev('change', 'Notes', 'A.md'), origin: 'own', text },
+      { event: 'change', absPath: abs('Notes', 'A.md'), origin: 'own', text, bodyOnly: true },
+      { event: 'change', absPath: abs('Notes', 'A.md'), origin: 'own', text },
     ])
     await settleNow(pusher, root)
     expect(payload('values:changed')).toEqual([{ rel: 'Notes', pageIds: [ULID_A] }])

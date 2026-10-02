@@ -914,7 +914,9 @@ describe('the file-history timer', () => {
   it('does not arm on the app’s own write', async () => {
     const text = `---\nID: ${ULID_A}\n---\n\nmine\n`
     await writeFile(abs('Notes', 'A.md'), text)
-    await applyEvents(root, [{ ...ev('change', 'Notes', 'A.md'), origin: 'own', text }])
+    await applyEvents(root, [
+      { event: 'change', absPath: abs('Notes', 'A.md'), origin: 'own', text },
+    ])
     expect(noteExternalEdit).not.toHaveBeenCalled()
   })
 })
