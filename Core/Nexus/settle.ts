@@ -21,7 +21,7 @@ import { liveIdIndex } from './heldPages'
 async function applyOwn(ev: FileEvent): Promise<void> {
   const root = sessionRoot()
   if (root === null || escapes(relative(root, ev.absPath))) return
-  // A walk in flight reads the disk again.
+  // Every own write marks the disk moved, since one that leaves the tree as it already stood (a rename's later writes) would otherwise let a walk in flight install what it read before it; the cost is that walk reading again.
   diskMoved()
   if (heldTreeOf(root)) return applyEvents(root, [ev])
   // No tree to patch: an open stamps before its stores are bound, and its own seed follows its walk.
@@ -51,6 +51,7 @@ function shown(tree: NexusTree, stamp: readonly Unreadable[]): NexusTree {
   return next
 }
 
+// Records the tree the window was handed, the baseline the next difference is taken against.
 export function sent(tree: NexusTree): { tree: NexusTree; version: number } {
   pushed = shown(tree, owedFor(tree.nexus.rootPath).stamp)
   return { tree: pushed, version }
@@ -82,6 +83,7 @@ async function walkDue(root: string): Promise<void> {
     const assets = getHeldAssetMap(root)
     try {
       const walked = await refreshAfterWrite(root)
+      // A page a walk lists may still be mid-write by the tool that made it, and only its own settled event shows the write finished, so only folders are stamped here: a folder's stamp writes a sidecar no other writer holds.
       due.stamp.push(
         ...(walked.unreadable ?? []).filter((u) => u.reason === 'missing' && u.kind !== 'page'),
       )

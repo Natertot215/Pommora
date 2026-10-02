@@ -1,4 +1,4 @@
-// The difference between two trees, as the host takes it and the window applies it. A plain object recurses by key, a list whose members each carry a key recurses by member, and everything else is replaced whole. A difference carries absolute values, never offsets, so one applied twice lands the same place.
+// The difference between two trees, as the host takes it and the window applies it: a whole tree costs the window a clone, a compare, and an index rebuild that each grow with the Nexus (about 30 ms at 10,000 pages), where a difference costs what moved. A plain object recurses by key, a list whose members each carry a key recurses by member, and everything else is replaced whole. A difference carries absolute values, never offsets, so one applied twice lands the same place.
 
 import { isPlainObject } from '../Contract/validators'
 import { same } from '../Files/stableJson'
