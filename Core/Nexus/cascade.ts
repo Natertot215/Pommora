@@ -132,7 +132,7 @@ export async function deleteCascade(
       ...spaceArm(heldTreeOf(root), strip),
     })
     const links: StrippedLink[] = []
-    for (const [file, before] of swept.touched) {
+    for (const [file, { before }] of swept.touched) {
       const isPage = isMarkdownFile(file)
       const raw = isPage ? splitFrontmatter(before) : (parseJsonObject(before) ?? {})
       const id = isPage ? stampedId(before) : asString(raw.id)
