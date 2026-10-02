@@ -2,7 +2,7 @@
 
 import { setOrDrop } from '../Files/atomicWrite'
 import { patchSidecar } from '../Files/sidecar'
-import { join, titleFromPath } from '../Paths/posix'
+import { isMarkdownFile, join, titleFromPath } from '../Paths/posix'
 import { resolveUnderRoot } from '../Paths/pathSafety'
 import { contextsDir } from '../Paths/paths'
 import { machine } from '../Platform/machine'
@@ -69,7 +69,7 @@ function renamed(
 
 async function dispatch(ctx: MutateContext, req: MutateRequest): Promise<MutateReply> {
   const { root, deps } = ctx
-  // renameContext, renameSpace, createSpace, setContext, setSpaceColor, setSpaceRowOrder, setProperty, restore, a Space or Context delete, and a create that seeds a Context run under the Contexts folder's one lock until the walk each owed is paid, so a tag or value written mid-rename lands under the new key. A write that names a Space by a path the rename has moved answers the refusal.
+  // renameContext, renameSpace, createSpace, setContext, setSpaceColor, setSpaceRowOrder, a Space's setProperty, restore, a Space or Context delete, and a create that seeds a Context run under the Contexts folder's one lock until the walk each owed is paid, so a tag or value written mid-rename lands under the new key. A page's setProperty runs outside it, since it resolves its world inside the page's own lock, which every sweep takes too. A write that names a Space by a path the rename has moved answers the refusal.
   const underContexts = <T>(fn: () => Promise<T>): Promise<T> =>
     machine().lock(contextsDir(root), async () => {
       try {
@@ -143,7 +143,9 @@ async function dispatch(ctx: MutateContext, req: MutateRequest): Promise<MutateR
     }
 
     case 'setProperty':
-      return underContexts(() => setPropertyOp(ctx, req))
+      return isMarkdownFile(req.path)
+        ? setPropertyOp(ctx, req)
+        : underContexts(() => setPropertyOp(ctx, req))
 
     case 'setPageMeta':
       return writePageMeta(root, req.path, req.patch)
