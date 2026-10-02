@@ -11,6 +11,7 @@ import { spaceIdsIn } from '../Contexts/spaceSidecar'
 import { SIDECAR_FILENAME, SPACE_SIDECAR } from '../Paths/nexusPaths'
 
 import type { RecordFile, ParentRef } from './record'
+import type { ContainerKind } from '../Nexus/entities'
 
 const sidecarId = async (absFolder: string, name: string): Promise<string | undefined> => {
   const raw = await readJsonObject(join(absFolder, name))
@@ -26,7 +27,7 @@ async function gatherParentRef(root: string, absEntity: string): Promise<ParentR
 
 export async function gatherContentRecord(
   root: string,
-  kind: 'page' | 'collection' | 'set',
+  kind: 'page' | ContainerKind,
   abs: string,
 ): Promise<RecordFile> {
   const parent = await gatherParentRef(root, abs)
