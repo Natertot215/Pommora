@@ -19,6 +19,8 @@ import { mutateRegistry, readRegistry } from './propertiesRegistry'
 import { unsweptLine } from './governedSweep'
 import { readSchemaJournal, writeSchemaJournal } from './propertyJournal'
 import { propertiesHandlers } from './handlers'
+import { handleMutate } from '../Nexus/mutate'
+import type { TrashDeps } from '../Trash/bundle'
 
 vi.mock('./propertiesRegistry', async (importOriginal) => {
   const mod = await importOriginal<typeof import('./propertiesRegistry')>()
@@ -26,6 +28,7 @@ vi.mock('./propertiesRegistry', async (importOriginal) => {
 })
 
 const HOME = { kind: 'space', id: 'sp_home' }
+const deps: TrashDeps = { trashMode: 'nexus', trashToSystem: async () => {} }
 
 let root: string
 let col: string
@@ -155,6 +158,26 @@ describe('the property channels', () => {
     })
     const views = (await readJsonAt(setFile)).views as { filter: unknown }[]
     expect(views[0].filter).toEqual({ match: 'all', rules: [] })
+  })
+
+  it('a delete’s record replayed after the property is restored leaves the restored property as it is', async () => {
+    const setFile = sidecarPath(surfaces.set, 'set')
+    const held = await readFile(setFile, 'utf8')
+    await rm(setFile)
+    await mkdir(setFile)
+    const r = await propertiesHandlers['property:delete'](ctx, propId)
+    if (!r.ok || !r.value.owed || !r.value.trashed) throw new Error('setup failed')
+    const record = r.value.owed
+    expect(await propertiesHandlers['property:replay'](ctx, record)).toEqual(fault(unsweptLine(1)))
+    await rm(setFile, { recursive: true })
+    await writeFile(setFile, held)
+    await refreshTree(root)
+    const bundlePath = r.value.trashed.bundlePath
+    expect((await handleMutate(root, { op: 'restore', bundlePath }, deps)).ok).toBe(true)
+    const page = await readFile(`${col}/A.md`, 'utf8')
+    expect(await propertiesHandlers['property:replay'](ctx, record)).toEqual(ok(null))
+    expect((await readRegistry(root)).defs[propId]?.name).toBe('Stage')
+    expect(await readFile(`${col}/A.md`, 'utf8')).toBe(page)
   })
 
   it('a delete that finds another operation owed in the journal answers its own record, whose replay leaves the journal’s', async () => {
