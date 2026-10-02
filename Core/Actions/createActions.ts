@@ -1,4 +1,4 @@
-import { type MutateRequest, newPageRequest } from '../Nexus/mutateRequest'
+import { type CreateRequest, newPageRequest } from '../Nexus/mutateRequest'
 import { spaceCreator } from './createMenu'
 import type { RenameHost } from '../Session/editSlice'
 import { relDirname } from '../Paths/posix'
@@ -38,7 +38,7 @@ export async function newSpaceAdjacent(
   const group = tree?.contexts.find((g) => g.spaces.some((s) => s.id === id))
   if (!group) return
   const req = placeAt(
-    spaceCreator(group.def).req,
+    spaceCreator(group.def).request(),
     group.spaces.map((s) => s.id),
     id,
     where,
@@ -48,7 +48,7 @@ export async function newSpaceAdjacent(
 }
 
 /** An unanchored create, placed by its kind's placement setting and named in place. */
-export async function createNamed(req: MutateRequest, host?: RenameHost): Promise<void> {
+export async function createNamed(req: CreateRequest, host?: RenameHost): Promise<void> {
   const s = useSession.getState()
   const { tree, mutate, beginRename } = s
   const done = await mutate(tree ? placeNew(tree, req, personalizationOf(s)) : req)

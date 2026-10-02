@@ -1,6 +1,6 @@
 // Every array carries the full membership it governs — a partial write alphabetizes the untouched siblings, and one built from a filtered view permanently re-ranks every row the filter was hiding.
 
-import { NEW_SLOT, type MutateRequest } from '../Nexus/mutateRequest'
+import type { CreateRequest } from '../Nexus/mutateRequest'
 import type { NexusTree } from '../Nexus/tree'
 import { type Personalization, type Placement, settingOf } from '../Settings/personalization'
 import { nextOrder } from '@pommora/uix/Utilities/moveItem'
@@ -56,7 +56,7 @@ export const placementSlot = (placement: Placement): Slot =>
   placement === 'top' ? 'first' : 'last'
 
 // A parent the tree lacks leaves the request bare, since an order naming only the newborn would drop every sibling from the folder's order.
-export function placeAt<R extends MutateRequest & { order?: string[] }>(
+export function placeAt<R extends CreateRequest>(
   req: R,
   siblingIds: string[] | undefined,
   anchorId: string | null,
@@ -65,20 +65,15 @@ export function placeAt<R extends MutateRequest & { order?: string[] }>(
   return siblingIds
     ? {
         ...req,
-        order: spliceBeside(
-          siblingIds.filter((id) => id !== NEW_SLOT),
-          anchorId,
-          NEW_SLOT,
-          where,
-        ),
+        order: spliceBeside(siblingIds, anchorId, req.id, where),
       }
     : req
 }
 
-export function placeNew<R extends MutateRequest>(tree: NexusTree, req: R, p: Personalization): R {
+export function placeNew<R extends CreateRequest>(tree: NexusTree, req: R, p: Personalization): R {
   const at = (siblingIds: string[] | undefined, placement: Placement): R =>
     placeAt(req, siblingIds, null, placementSlot(placement))
-  const r: MutateRequest = req
+  const r: CreateRequest = req
   switch (r.op) {
     case 'createPage':
       return at(pageIdsIn(tree, r.parentPath), settingOf(p, 'newPagePlacement'))

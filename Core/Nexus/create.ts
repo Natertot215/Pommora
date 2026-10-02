@@ -15,7 +15,7 @@ import { mintDefaultView } from '../Views/views'
 import { readRegistry } from '../Properties/propertiesRegistry'
 import type { PropertyDefinition } from '../Properties/properties'
 import type { PropertyValue } from '../Properties/propertyValue'
-import { contextSeeds, fillSlot, type MutateReply, type MutateRequest } from './mutateRequest'
+import { contextSeeds, type MutateReply, type MutateRequest } from './mutateRequest'
 import { CONTAINER_KINDS } from './entities'
 import type { MutateContext } from './mutate'
 import { createPage } from './page'
@@ -60,7 +60,7 @@ export async function createPageOp(
   if (world)
     for (const [contextId, spaceIds] of contexts)
       await setPageContext(r.value.path, root, world, contextId, spaceIds)
-  if (req.order) await setChildOrder(parent.value, 'page_order', fillSlot(req.order, r.value.id))
+  if (req.order) await setChildOrder(parent.value, 'page_order', req.order)
   return created(req.parentPath, r.value)
 }
 
@@ -82,11 +82,11 @@ export async function createContainerOp(
     req.name,
     async (name) =>
       (await landingRefusal(root, parent.value, name)) ??
-      createFolderEntity(parent.value, req.kind, name, extra),
+      createFolderEntity(parent.value, req.kind, name, req.id, extra),
     (name) => pathExists(join(parent.value, name)),
   )
   if (!r.ok) return r
-  if (req.order) await setChildOrder(parent.value, 'set_order', fillSlot(req.order, r.value.id))
+  if (req.order) await setChildOrder(parent.value, 'set_order', req.order)
   if (req.kind === 'collection') await appendCollection(root, r.value.id)
   return created(req.parentPath, r.value)
 }
@@ -97,7 +97,7 @@ export async function createSpaceOp(
 ): Promise<MutateReply> {
   const r = await createDisambiguated(
     req.name,
-    (name) => createSpace(root, req.contextId, name),
+    (name) => createSpace(root, req.contextId, name, req.id),
     async (name) => {
       const reg = await readRegistryStrict(root)
       const def = reg.ok && reg.value.contexts.find((c) => c.id === req.contextId)
@@ -105,6 +105,6 @@ export async function createSpaceOp(
     },
   )
   if (!r.ok) return r
-  if (req.order) await setSpaceOrder(root, req.contextId, fillSlot(req.order, r.value.id))
+  if (req.order) await setSpaceOrder(root, req.contextId, req.order)
   return ok({ created: r.value })
 }

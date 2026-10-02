@@ -1,6 +1,5 @@
 import { join, dirname, basename, relative } from '../Paths/posix'
 import { machine } from '../Platform/machine'
-import { newId } from './ids'
 import { recordWrite } from '../Files/writeEcho'
 import { pathExists, relocate, targetTaken, writeJson } from '../Files/atomicWrite'
 import { nameError } from '../Paths/names'
@@ -36,6 +35,7 @@ export async function createFolderEntity(
   parentDir: string,
   kind: SidecarKind,
   name: string,
+  id: string,
   extra: Record<string, unknown> = {},
 ): Promise<Result<{ id: string; path: string }>> {
   const why = nameError(name, 'directory')
@@ -43,7 +43,6 @@ export async function createFolderEntity(
   const folder = join(parentDir, name)
   if ((await machine().mkdir(folder)) === 'exists')
     return fail('exists', `"${name}" already exists.`)
-  const id = newId()
   // The mkdir doesn't suppress its own addDir echo as the sidecar write does; recorded here, the folder is never read before its sidecar lands.
   recordWrite(folder)
   await writeJson(sidecarPath(folder, kind), { id, ...extra })
