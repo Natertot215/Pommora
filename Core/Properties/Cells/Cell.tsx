@@ -1,3 +1,4 @@
+import { Fragment } from 'react'
 import type { ColumnStyle } from '../columnStyles'
 import { isBlankValue, type PropertyValue } from '../propertyValue'
 import type { ResolvedColumn, ViewRow } from '../../Views/viewRow'
@@ -15,6 +16,8 @@ import { LinkCell } from './LinkCell'
 import { CheckboxGlyph } from './CheckboxGlyph'
 import type { ValueContext } from '../valueContext'
 import { FileChip, NeutralChip } from '@pommora/uix/Labels/recipes'
+import { SortableZone, useDragItem } from '@pommora/uix/Interactions/drag'
+import { moveBefore } from '@pommora/uix/Utilities/moveItem'
 
 export function Cell({
   row,
@@ -23,7 +26,8 @@ export function Cell({
   hideIcon,
   style,
   showFullLink,
-  remove,
+  commit,
+  hideRemove,
   empty,
 }: {
   row: ViewRow
@@ -32,7 +36,8 @@ export function Cell({
   hideIcon: boolean
   style: ColumnStyle
   showFullLink?: boolean
-  remove?: (next: PropertyValue | null) => void
+  commit?: (next: PropertyValue | null) => void
+  hideRemove?: boolean
   empty?: React.JSX.Element
 }): React.JSX.Element | null {
   if (column.kind === 'title') {
@@ -59,6 +64,8 @@ export function Cell({
       />
     )
   if (empty !== undefined && isBlankValue(v)) return empty
+  const remove = hideRemove ? undefined : commit
+  const removesOption = remove && style.look !== 'compact'
 
   switch (v.kind) {
     case 'select': {
@@ -70,41 +77,36 @@ export function Cell({
             look={style.look}
             option={opt ?? { value: v.value }}
             def={def}
-            {...(remove && style.look !== 'compact' ? { onRemove: () => remove(null) } : {})}
+            {...(removesOption ? { onRemove: () => remove(null) } : {})}
           />
         </OverScroll>
       )
     }
     case 'multiSelect':
       return (
-        <OverScroll className="cell-chips">
-          {v.value.map((val) => {
-            const o = findOption(def, val)
-            return (
-              <OptionChip
-                key={val}
-                type={dt ?? ''}
-                look={style.look}
-                option={o ?? { value: val }}
-                {...(remove && style.look !== 'compact'
-                  ? {
-                      onRemove: () =>
-                        remove({ kind: 'multiSelect', value: v.value.filter((x) => x !== val) }),
-                    }
-                  : {})}
-              />
-            )
-          })}
-        </OverScroll>
+        <Chips value={v} label={(val) => val} commit={commit}>
+          {(val) => (
+            <OptionChip
+              type={dt ?? ''}
+              look={style.look}
+              option={findOption(def, val) ?? { value: val }}
+              {...(removesOption
+                ? {
+                    onRemove: () =>
+                      remove({ kind: 'multiSelect', value: v.value.filter((x) => x !== val) }),
+                  }
+                : {})}
+            />
+          )}
+        </Chips>
       )
     case 'context':
       return (
-        <OverScroll className="cell-chips">
-          {v.value.map((id) => {
+        <Chips value={v} label={(id) => ctx.contextsById.get(id)?.title ?? id} commit={commit}>
+          {(id) => {
             const c = ctx.contextsById.get(id)
             return (
               <NeutralChip
-                key={id}
                 color={colorNameFor(c?.color)}
                 title={c?.title ?? id}
                 icon={c?.icon}
@@ -116,8 +118,8 @@ export function Cell({
                   : {})}
               />
             )
-          })}
-        </OverScroll>
+          }}
+        </Chips>
       )
     case 'link':
       return <LinkCell raw={v.value} def={def} look={style.look} showFullLink={showFullLink} />
@@ -141,13 +143,9 @@ export function Cell({
     }
     case 'file':
       return (
-        <OverScroll className="cell-chips">
-          {v.value.map((f, i) => (
-            <span
-              // Positional, never the value: two identical wikilinks would collide as keys and send the hover-× to the wrong one.
-              key={String(i)}
-              {...{ [FILE_CHIP_INDEX_ATTR]: i }}
-            >
+        <Chips value={v} label={fileName} commit={commit}>
+          {(f, i) => (
+            <span {...{ [FILE_CHIP_INDEX_ATTR]: i }}>
               <FileChip
                 name={fileName(f)}
                 // Renders even unresolved, so the user can still see and remove it.
@@ -155,11 +153,72 @@ export function Cell({
                 {...(remove ? { onRemove: () => remove(fileValueWithout(v, i)) } : {})}
               />
             </span>
-          ))}
-        </OverScroll>
+          )}
+        </Chips>
       )
     case 'checkbox':
     case 'null':
       return null
   }
+}
+
+function Chips({
+  value,
+  label,
+  commit,
+  children,
+}: {
+  value: Extract<PropertyValue, { kind: 'multiSelect' | 'context' | 'file' }>
+  label: (item: string) => string
+  commit?: (next: PropertyValue | null) => void
+  children: (item: string, i: number) => React.JSX.Element
+}): React.JSX.Element {
+  const items = value.value
+  // A repeat written outside the app gets its own key, so it never shares a chip's identity.
+  const seen = new Map<string, number>()
+  const keys = items.map((item) => {
+    const n = seen.get(item) ?? 0
+    seen.set(item, n + 1)
+    return n === 0 ? item : `${item}\u0000${n}`
+  })
+  const itemOf = (key: string): string => items[keys.indexOf(key)]
+  if (!commit || items.length < 2)
+    return (
+      <OverScroll className="cell-chips">
+        {items.map((item, i) => (
+          <Fragment key={keys[i]}>{children(item, i)}</Fragment>
+        ))}
+      </OverScroll>
+    )
+  const onMove = (id: string, beforeId: string | null): false | undefined => {
+    const next = moveBefore(keys, (key) => key, id, beforeId)
+    if (!next) return false
+    commit({ ...value, value: next.map(itemOf) })
+  }
+  return (
+    <SortableZone items={keys} axis="x" label={(key) => label(itemOf(key))} onMove={onMove}>
+      <OverScroll className="cell-chips">
+        {items.map((item, i) => (
+          <SortableChip key={keys[i]} id={keys[i]}>
+            {children(item, i)}
+          </SortableChip>
+        ))}
+      </OverScroll>
+    </SortableZone>
+  )
+}
+
+function SortableChip({
+  id,
+  children,
+}: {
+  id: string
+  children: React.JSX.Element
+}): React.JSX.Element {
+  const { setNodeRef, style, handle } = useDragItem(id, { tabStop: false })
+  return (
+    <span ref={setNodeRef} style={style} data-drag-slop="" {...handle}>
+      {children}
+    </span>
+  )
 }

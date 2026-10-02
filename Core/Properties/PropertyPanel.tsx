@@ -393,7 +393,7 @@ export function PropertyPanel({
                   ctx={ctx}
                   hideIcon={false}
                   style={{ look: 'standard', ...dateDefaults(dateFormat) }}
-                  remove={(next) => commit(id, next)}
+                  commit={(next) => commit(id, next)}
                   empty={<EmptyValue className={s.empty} />}
                 />
               )}

@@ -1,9 +1,10 @@
 // @vitest-environment jsdom
-import { afterEach, beforeEach, describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { act } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
 import { type ColumnStyle, dateDefaults } from '../columnStyles'
 import type { PropertyDefinition } from '../properties'
+import type { PropertyValue } from '../propertyValue'
 import type { ResolvedColumn, ViewRow } from '../../Views/viewRow'
 
 import { EMPTY_ASSET_MAP } from '../../Nexus/tree'
@@ -52,6 +53,7 @@ const schema: PropertyDefinition[] = [
   { id: 'prop_when', name: 'When', type: 'dateTime' },
   { id: 'prop_n', name: 'Count', type: 'number' },
   { id: 'prop_files', name: 'Files', type: 'file' },
+  { id: 'prop_tags', name: 'Tags', type: 'multiSelect' },
 ]
 const ctx = {
   schema,
@@ -80,7 +82,12 @@ afterEach(() => {
   host.remove()
 })
 
-const mount = (row: ViewRow, columnId: string, style: Partial<ColumnStyle>): void => {
+const mount = (
+  row: ViewRow,
+  columnId: string,
+  style: Partial<ColumnStyle>,
+  edit: { commit?: (next: PropertyValue | null) => void; hideRemove?: boolean } = {},
+): void => {
   act(() =>
     root.render(
       <Cell
@@ -89,6 +96,7 @@ const mount = (row: ViewRow, columnId: string, style: Partial<ColumnStyle>): voi
         ctx={ctx}
         hideIcon={false}
         style={{ ...dateDefaults('full'), ...style }}
+        {...edit}
       />,
     ),
   )
@@ -188,5 +196,69 @@ describe('a file value', () => {
     expect(host.textContent).toContain('trip.png')
     expect(host.textContent).toContain('doc.pdf')
     expect(host.textContent).not.toContain('[[')
+  })
+})
+
+describe('a chip list', () => {
+  const press = (target: EventTarget, key: string): void =>
+    act(() => {
+      target.dispatchEvent(new KeyboardEvent('keydown', { key, bubbles: true, cancelable: true }))
+    })
+  const chips = (): HTMLElement[] =>
+    Array.from(host.querySelectorAll<HTMLElement>('[aria-roledescription="sortable"]'))
+
+  it('reorders through the same commit that removes, keeping the value kind', () => {
+    const commit = vi.fn()
+    mount(rowWith({ prop_tags: ['a', 'b', 'c'] }), 'prop_tags', {}, { commit })
+    chips().forEach((chip, i) => {
+      chip.getBoundingClientRect = () => new DOMRect(i * 50, 0, 40, 20)
+    })
+    press(chips()[0], 'Enter')
+    press(window, 'ArrowRight')
+    press(window, 'Enter')
+    expect(commit).toHaveBeenCalledWith({ kind: 'multiSelect', value: ['b', 'a', 'c'] })
+  })
+
+  it('gives a repeated value its own chip, so the one pressed is the one that moves', () => {
+    const commit = vi.fn()
+    mount(rowWith({ prop_tags: ['a', 'b', 'a'] }), 'prop_tags', {}, { commit })
+    chips().forEach((chip, i) => {
+      chip.getBoundingClientRect = () => new DOMRect(i * 50, 0, 40, 20)
+    })
+    press(chips()[0], 'Enter')
+    press(window, 'ArrowRight')
+    press(window, 'Enter')
+    expect(commit).toHaveBeenCalledWith({ kind: 'multiSelect', value: ['b', 'a', 'a'] })
+  })
+
+  it('keeps every chip off the tab order', () => {
+    mount(
+      rowWith({ prop_files: ['[[a.png]]', '[[b.png]]'] }),
+      'prop_files',
+      {},
+      { commit: vi.fn() },
+    )
+    expect(chips().map((c) => c.tabIndex)).toEqual([-1, -1])
+  })
+
+  it('offers no drag for a lone chip or a read-only value', () => {
+    mount(rowWith({ prop_tags: ['a'] }), 'prop_tags', {}, { commit: vi.fn() })
+    expect(chips()).toHaveLength(0)
+    mount(rowWith({ prop_tags: ['a', 'b'] }), 'prop_tags', {})
+    expect(chips()).toHaveLength(0)
+  })
+
+  it('hideRemove drops the hover-× on every kind while the drag stays', () => {
+    mount(
+      rowWith({ prop_files: ['[[a.png]]', '[[b.png]]'] }),
+      'prop_files',
+      {},
+      {
+        commit: vi.fn(),
+        hideRemove: true,
+      },
+    )
+    expect(host.querySelector('button')).toBeNull()
+    expect(chips()).toHaveLength(2)
   })
 })

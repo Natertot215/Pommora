@@ -101,6 +101,12 @@ describe('runFilePick', () => {
     expect(next).toEqual(held(['[[New.pdf]]']))
   })
 
+  it('a file the value already holds changes nothing, whether added or swapped in', async () => {
+    adoptFile.mockResolvedValue({ ok: true, value: '[[Old.pdf]]' })
+    expect(await runFilePick(def(), held(['[[Old.pdf]]']), null)).toBeUndefined()
+    expect(await runFilePick(def(), held(['[[Old.pdf]]', '[[B.pdf]]']), 1)).toBeUndefined()
+  })
+
   it('an unresolved label falls back to the property’s Directory, never the dialog’s own memory', async () => {
     await runFilePick(def({ file_directory: 'Attachments' }), held(['[[Gone.pdf]]']), 0)
     expect(pickFile).toHaveBeenCalledWith({ any: true, dir: 'file-assets/Attachments' })

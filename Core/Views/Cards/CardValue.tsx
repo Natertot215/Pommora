@@ -55,7 +55,6 @@ export function CardValue({
     anchor: HTMLElement,
     clickX?: number,
   ) => void
-  /** Gates ONLY the multi-select hover-×; select and context keep their × always (clearing the whole value vs. removing just that one context). */
   allowInlineRemove: boolean
 }): React.JSX.Element {
   const anchorRef = useRef<HTMLSpanElement>(null)
@@ -162,7 +161,8 @@ export function CardValue({
               <EmptyValue className={cx('card-value-empty', text.caption.emphasized)} />
             ) : undefined
           }
-          {...(t !== 'multiSelect' || allowInlineRemove ? { remove: commit } : {})}
+          commit={commit}
+          hideRemove={!allowInlineRemove}
         />
       )}
     </span>

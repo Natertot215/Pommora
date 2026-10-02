@@ -53,10 +53,9 @@ async function adoptInto(
 ): Promise<PropertyValue | undefined> {
   const adopted = await dialer().ask('assets:adopt', source, def.file_directory)
   if (!reportRefusal(adopted)) return undefined
-  const next =
-    chip === null
-      ? [...files, adopted.value]
-      : files.map((f, i) => (i === chip ? adopted.value : f))
+  const file = adopted.value
+  if (files.includes(file)) return undefined
+  const next = chip === null ? [...files, file] : files.map((f, i) => (i === chip ? file : f))
   return { kind: 'file', value: next }
 }
 
