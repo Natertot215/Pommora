@@ -172,7 +172,7 @@ export async function createContextGroup(
   root: string,
   name: string,
   id: string,
-): Promise<Result<{ id: string; path: string }>> {
+): Promise<Result<{ path: string }>> {
   const why = nameError(name, 'directory')
   if (why) return fail('invalid-name', why)
   let title = name
@@ -186,7 +186,7 @@ export async function createContextGroup(
   })
   if (!written.ok) return written
   await machine().mkdir(join(contextsDir(root), title))
-  return ok({ id, path: contextDirRel(title) })
+  return ok({ path: contextDirRel(title) })
 }
 
 export async function createSpace(
@@ -194,7 +194,7 @@ export async function createSpace(
   contextId: string,
   name: string,
   id: string,
-): Promise<Result<{ id: string; path: string }>> {
+): Promise<Result<{ path: string }>> {
   const reg = await readRegistryStrict(root)
   if (!reg.ok) return reg
   const def = reg.value.contexts.find((c) => c.id === contextId)
@@ -206,10 +206,7 @@ export async function createSpace(
   const tileIds = [newId(), newId(), newId(), newId()]
   for (const tid of tileIds) await atomicWriteFile(tileFilePath(created.value.path, tid), '')
   await writeTileDocAt(created.value.path, () => seedBoard(tileIds))
-  return ok({
-    id: created.value.id,
-    path: spaceDirRel(def.title, name),
-  })
+  return ok({ path: spaceDirRel(def.title, name) })
 }
 
 export async function setSpaceColor(

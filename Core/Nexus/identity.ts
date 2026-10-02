@@ -59,8 +59,8 @@ async function seedAgenda(root: string): Promise<AgendaRegistration> {
   const out: AgendaRegistration = {}
   for (const slot of AGENDA_FOLDERS) {
     const title = slot.charAt(0).toUpperCase() + slot.slice(1)
-    const made = await createFolderEntity(root, slot, title, newId())
-    if (made.ok) out[slot] = made.value.id
+    const id = newId()
+    if ((await createFolderEntity(root, slot, title, id)).ok) out[slot] = id
   }
   return out
 }

@@ -28,12 +28,11 @@ export async function createPage(
     body?: string
     values?: { def: PropertyDefinition; value: PropertyValue }[]
   },
-): Promise<Result<{ id: string; path: string }>> {
+): Promise<Result<{ path: string }>> {
   const why = nameError(name, 'page')
   if (why) return fail('invalid-name', why)
   const file = join(parentDir, name + MD)
-  const { id } = opts
-  const modeled: Record<string, unknown> = { [ID_KEY]: id }
+  const modeled: Record<string, unknown> = { [ID_KEY]: opts.id }
   const keys: string[] = [...PAGE_MODELED_KEYS]
   for (const { def, value } of opts.values ?? []) {
     if (isBlankValue(value)) continue
@@ -45,7 +44,7 @@ export async function createPage(
   return machine().lock(file, async () => {
     if (await pathExists(file)) return fail('exists', `"${name}" already exists.`)
     await writePageFile(file, modeled, keys, opts.body ?? '')
-    return ok({ id, path: file })
+    return ok({ path: file })
   })
 }
 
