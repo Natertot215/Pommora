@@ -208,7 +208,7 @@ async function dispatch(ctx: MutateContext, req: MutateRequest): Promise<MutateR
 
     case 'retryUnreadable': {
       const entry = (await liveTreeOf(root)).unreadable?.find((u) => u.path === req.path)
-      if (entry && entry.reason !== 'unparsed') oweRetry(root, entry)
+      if (entry?.reason === 'missing' || entry?.reason === 'malformed') oweRetry(root, entry)
       oweWalk(root)
       return ok({})
     }
