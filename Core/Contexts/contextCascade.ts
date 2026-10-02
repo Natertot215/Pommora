@@ -262,8 +262,8 @@ export async function renameContextOp(
       if (await pathExists(newDir)) await relocate(newDir, oldDir)
     } catch {}
     await settleJournal(root, back, undone.skipped)
-    const left = unswept(backed, undone.skipped, newName)
-    return left ? fault(`${committed.error.message} ${unsweptLine(left.skipped)}`) : committed
+    const left = !backed && undone.skipped.length
+    return left ? fault(`${committed.error.message} ${unsweptLine(left)}`) : committed
   }
 
   await settleJournal(root, j, cascade.skipped)

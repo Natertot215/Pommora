@@ -165,11 +165,6 @@ export async function optionCascade(
   return { skipped: pages + reach.skipped, hosts: reach.hosts }
 }
 
-/** Staged BEFORE the commit: a crash between commit and cascade is recoverable only from this record, and one stranded by a refusal is disposed of by the replay's holds-to-and-not-from gate. */
-async function stageOptionRename(root: string, record: SchemaJournal): Promise<void> {
-  if ((await readRegistry(root)).defs[record.id]) await writeSchemaJournal(root, record)
-}
-
 export function renameOption(
   root: string,
   propertyId: string,
@@ -183,7 +178,8 @@ export function renameOption(
       from: oldValue,
       to: newTitle,
     }
-    await stageOptionRename(root, record)
+    // Staged BEFORE the commit: a crash between commit and cascade is recoverable only from this record, and one stranded by a refusal is disposed of by the replay's holds-to-and-not-from gate.
+    if ((await readRegistry(root)).defs[propertyId]) await writeSchemaJournal(root, record)
     const edit = await mutateRegistry<Result<PropertyDefinition>>(root, (registry, stored) => {
       const def = registry.defs[propertyId]
       if (!def) return { result: NO_PROPERTY }
