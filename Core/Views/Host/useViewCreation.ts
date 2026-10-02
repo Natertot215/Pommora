@@ -2,7 +2,7 @@
 
 import { type ViewRow, UNGROUPED } from '../viewRow'
 import type { PageFrontmatter } from '../../Nexus/schemas'
-import { settle } from '../../Properties/valueOverride'
+import { patchOverride } from '../../Properties/valueOverride'
 import {
   applyValueAtRoot,
   isBlankValue,
@@ -10,8 +10,12 @@ import {
   type ValueKind,
 } from '../../Properties/propertyValue'
 import { specOf } from '../../Properties/properties'
-import { viewOption } from '../views'
-import { DEFAULT_NEW_NAME, type MutateRequest } from '../../Nexus/mutateRequest'
+import { type ViewPatch, viewOption } from '../views'
+import {
+  type CreatePageRequest,
+  type MutateOutcome,
+  newPageRequest,
+} from '../../Nexus/mutateRequest'
 import { relDirname } from '../../Paths/posix'
 import { findScroller, SEEK_GLIDE, scrollGlide } from '@pommora/uix/Interactions/autoscroll'
 import { useSession } from '../../Session/store'
@@ -25,6 +29,7 @@ import { groupKeyToValue } from '../reassign'
 import { useLatest } from '@pommora/uix/Utilities/stableApi'
 import type { ViewHostApi } from './useViewHost'
 import { personalizationOf } from '../../Session/configSlice'
+import { stageView, unstageView } from './pendingView'
 
 // Sort criteria whose value a new page can inherit from its anchor — single-value user properties, a link aside; under anything else the row simply lands where the sort puts it.
 const SEEDS_FROM_SORT: Record<ValueKind, boolean> = {
@@ -38,7 +43,7 @@ const SEEDS_FROM_SORT: Record<ValueKind, boolean> = {
   file: false,
 }
 
-type CreatePage = Extract<MutateRequest, { op: 'createPage' }>
+type Created = NonNullable<MutateOutcome['created']>
 
 type ViewCreationConfig = Pick<
   ViewHostApi,
@@ -62,14 +67,13 @@ type ViewCreationConfig = Pick<
   | 'viewRootRef'
 > & {
   bandBucket: (key: string) => string | null
-  onCreated: (created: { id: string; path: string }) => void
 }
 
 interface ViewCreation {
-  bandAdd: (setKey: string) => Promise<boolean>
-  createFirst: () => Promise<boolean>
-  createAdjacent: (row: ViewRow, where: 'above' | 'below') => Promise<boolean>
-  createAfter: (row: ViewRow) => Promise<boolean>
+  bandAdd: (setKey: string) => Promise<Created | null>
+  createFirst: () => Promise<Created | null>
+  createAdjacent: (row: ViewRow, where: 'above' | 'below') => Promise<Created | null>
+  createAfter: (row: ViewRow) => Promise<Created | null>
 }
 
 /** `getCfg` is read when a gesture fires, so a create reads the host as of the latest render. */
@@ -83,20 +87,22 @@ export function useViewCreation(getCfg: () => ViewCreationConfig): ViewCreation 
     return filterSeeds(c.view.filter, viewOption(c.view, 'filter_enabled'), c.schema, c.contextIds)
   }
   // The created page's seeds reach the pipeline the way a band-drop's reassign does.
-  const patchSeedValues = (pageId: string, seeds: Record<string, PropertyValue>): void => {
+  const patchSeedValues = (
+    pageId: string,
+    seeds: Record<string, PropertyValue>,
+    landed: Promise<boolean>,
+  ): void => {
     const c = cfg()
     const entries = Object.entries(seeds)
     if (entries.length === 0) return
-    c.setValueOverride((prev) => {
-      let patched = frontmatterOf(c.values, pageId) as Record<string, unknown>
-      let contexts: Record<string, string[]> | undefined
-      for (const [propId, value] of entries) {
-        const def = c.schema.find((d) => d.id === propId)
-        if (def) patched = applyValueAtRoot(patched, def, value)
-        else if (value.kind === 'context') contexts = { ...contexts, [propId]: value.value }
-      }
-      return { ...prev, [pageId]: { fm: patched as PageFrontmatter, contexts, write: settle() } }
-    })
+    let patched = frontmatterOf(c.values, pageId) as Record<string, unknown>
+    let contexts: Record<string, string[]> | undefined
+    for (const [propId, value] of entries) {
+      const def = c.schema.find((d) => d.id === propId)
+      if (def) patched = applyValueAtRoot(patched, def, value)
+      else if (value.kind === 'context') contexts = { ...contexts, [propId]: value.value }
+    }
+    patchOverride(c.setValueOverride, pageId, patched as PageFrontmatter, landed, contexts)
   }
   const glideToRow = (pageId: string): void => {
     const viewEl = cfg().viewRootRef.current
@@ -115,40 +121,54 @@ export function useViewCreation(getCfg: () => ViewCreationConfig): ViewCreation 
       SEEK_GLIDE,
     )
   }
-  // The host's push has mounted the newborn by the time onCreated runs, so its seeds and its slot in the live order land in the commit after.
-  const settleOrders = (
-    latest: ViewCreationConfig,
+  // A non-structural view ranks by its own array — absent any live one, the read-side title fallback would rank the newborn mid-band.
+  const orderPatch = (
+    c: ViewCreationConfig,
     createdId: string,
     anchorId: string | null,
     where: Slot,
-  ): void => {
-    const allIds = flattenContainer(latest.source, latest.effectiveValues, {}).rows.map((r) => r.id)
-    // The live view already folds a staged order, so the next create composes on this one.
-    const next = tieOrderWith(latest.view.manual_order, allIds, createdId, anchorId, where)
+  ): ViewPatch | null => {
     if (
-      latest.pageOrder === 'custom' &&
-      (latest.groupPropId !== undefined || latest.sortKeys > 0 || latest.view.manual_order)
+      c.pageOrder !== 'custom' ||
+      (c.groupPropId === undefined && c.sortKeys === 0 && !c.view.manual_order)
     )
-      void latest.persistView({ manual_order: next }, { viewState: true })
+      return null
+    const allIds = flattenContainer(c.source, c.effectiveValues, {}).rows.map((r) => r.id)
+    // The live view already folds a staged order, so the next create composes on this one.
+    return { manual_order: tieOrderWith(c.view.manual_order, allIds, createdId, anchorId, where) }
   }
-  const pageRequest = (parentPath: string, seeds: Record<string, PropertyValue>): CreatePage => ({
-    op: 'createPage',
-    parentPath,
-    name: DEFAULT_NEW_NAME,
+  const pageRequest = (
+    parentPath: string,
+    seeds: Record<string, PropertyValue>,
+  ): CreatePageRequest => ({
+    ...newPageRequest(parentPath),
     ...(Object.keys(seeds).length ? { seeds } : {}),
   })
-  const createPageIn = (
-    req: CreatePage,
-    then: (created: { id: string; path: string }) => void,
-  ): Promise<boolean> =>
-    mutate(req, (created) => {
-      patchSeedValues(created.id, req.seeds ?? {})
-      then(created)
-    }).then((done) => done !== null)
-
-  const addIn = (parentPath: string): Promise<boolean> => {
+  // Seeds and slot are staged with the ask, so the push that mounts the newborn paints it in its band at its slot; the order is written once the page exists, and a refusal takes back both.
+  const createPageIn = async (
+    req: CreatePageRequest,
+    anchorId: string | null,
+    where: Slot,
+  ): Promise<Created | null> => {
     const c = cfg()
-    const gestureViewId = c.view.id
+    const staged = orderPatch(c, req.id, anchorId, where)
+    if (staged) stageView(c.source.id, c.view, staged)
+    const flight = mutate(req)
+    patchSeedValues(
+      req.id,
+      req.seeds ?? {},
+      flight.then((done) => done !== null),
+    )
+    const created = (await flight)?.created ?? null
+    const latest = cfg()
+    const order =
+      created && latest.view.id === c.view.id ? orderPatch(latest, req.id, anchorId, where) : null
+    if (order) void latest.persistView(order, { viewState: true })
+    else if (staged) unstageView(c.source.id, c.view.id, staged)
+    return created
+  }
+
+  const addIn = async (parentPath: string): Promise<Created | null> => {
     const s = useSession.getState()
     const slot = placementSlot(settingOf(personalizationOf(s), 'newPagePlacement'))
     const req = placeAt(
@@ -157,29 +177,24 @@ export function useViewCreation(getCfg: () => ViewCreationConfig): ViewCreation 
       null,
       slot,
     )
-    return createPageIn(req, (created) => {
-      // A non-structural view ranks by its own array — absent any live one, the read-side title fallback would rank the newborn mid-band.
-      const latest = cfg()
-      latest.onCreated(created)
-      if (latest.view.id === gestureViewId) settleOrders(latest, created.id, null, slot)
-      requestAnimationFrame(() => glideToRow(created.id))
-    })
+    const created = await createPageIn(req, null, slot)
+    if (created) requestAnimationFrame(() => glideToRow(created.id))
+    return created
   }
 
-  const bandAdd = (setKey: string): Promise<boolean> => {
+  const bandAdd = (setKey: string): Promise<Created | null> => {
     const c = cfg()
     const setPath = c.sets.node.get(setKey)?.path
-    if (!setPath) return Promise.resolve(false)
+    if (!setPath) return Promise.resolve(null)
     if (c.collapsed.has(setKey)) c.toggleCollapse(setKey)
     return addIn(setPath)
   }
 
   // New Page Above / Below: the anchor's group value and sort-criteria values tie the newborn beside it, and the order write breaks the tie at the gesture slot.
-  const createAdjacent = (row: ViewRow, where: 'above' | 'below'): Promise<boolean> => {
+  const createAdjacent = (row: ViewRow, where: 'above' | 'below'): Promise<Created | null> => {
     const c = cfg()
     const parentPath = relDirname(row.path)
     const seeds = impliedSeeds()
-    const gestureViewId = c.view.id
     const gKey = c.rowBand.get(row.id)
     if (c.groupPropId && c.canReassign && gKey !== undefined) {
       const v = groupKeyToValue(c.bandBucket(gKey) ?? UNGROUPED, c.groupPropType)
@@ -194,11 +209,8 @@ export function useViewCreation(getCfg: () => ViewCreationConfig): ViewCreation 
     const siblings = pageIdsIn(useSession.getState().tree!, parentPath)
     return createPageIn(
       placeAt(pageRequest(parentPath, seeds), siblings, row.id, where),
-      (created) => {
-        const latest = cfg()
-        latest.onCreated(created)
-        if (latest.view.id === gestureViewId) settleOrders(latest, created.id, row.id, where)
-      },
+      row.id,
+      where,
     )
   }
 

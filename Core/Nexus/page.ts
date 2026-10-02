@@ -25,6 +25,7 @@ export async function createPage(
   parentDir: string,
   name: string,
   opts: {
+    id?: string
     body?: string
     values?: { def: PropertyDefinition; value: PropertyValue }[]
   } = {},
@@ -32,7 +33,7 @@ export async function createPage(
   const why = nameError(name, 'page')
   if (why) return fail('invalid-name', why)
   const file = join(parentDir, name + MD)
-  const id = newContentId('page')
+  const id = opts.id ?? newContentId('page')
   const modeled: Record<string, unknown> = { [ID_KEY]: id }
   const keys: string[] = [...PAGE_MODELED_KEYS]
   for (const { def, value } of opts.values ?? []) {

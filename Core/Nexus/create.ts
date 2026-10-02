@@ -53,7 +53,7 @@ export async function createPageOp(
   }
   const r = await createDisambiguated(
     req.name,
-    (name) => createPage(parent.value, name, { values }),
+    (name) => createPage(parent.value, name, { id: req.id, values }),
     (name) => pathExists(join(parent.value, `${name}.md`)),
   )
   if (!r.ok) return r

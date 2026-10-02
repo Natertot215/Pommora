@@ -48,10 +48,7 @@ export interface NexusSlice {
   choose: () => Promise<void>
   openPath: (path: string) => Promise<void>
   openDropped: (file: File) => Promise<void>
-  mutate: (
-    req: MutateRequest,
-    onCreated?: (created: { id: string; path: string }) => void | Promise<void>,
-  ) => Promise<MutateOutcome | null>
+  mutate: (req: MutateRequest) => Promise<MutateOutcome | null>
 }
 
 /** Every save the window still owes, landed: awaited while the OLD root is bound before a switch, and before the host closes its stores on quit. */
@@ -221,7 +218,7 @@ export const createNexusSlice: Slice<NexusSlice> = (set, get) => {
     openPath: (path) => openVia(() => dialer().ask('nexus:openPath', path)),
     openDropped: (file) => openVia(() => dialer().openDropped(file)),
 
-    mutate: async (req, onCreated) => {
+    mutate: async (req) => {
       const nexus = get().tree?.nexus.id
       // A save queued for a path this op moves would land on the old path and be refused.
       switch (req.op) {
@@ -254,7 +251,6 @@ export const createNexusSlice: Slice<NexusSlice> = (set, get) => {
         get().bumpTrashRevision()
       // The host pushed what this write changed before it replied, so the tree already holds it.
       get().patchPagesFor(req)
-      if (res.value.created && onCreated) await onCreated(res.value.created)
       return res.value
     },
   }
