@@ -1,3 +1,5 @@
+// The app's own writes report here: each lands as an event through the own tap, which `Core/Nexus/settle.ts` installs when it's imported, so a process that writes without importing the settle has its writes reach neither the tree nor the index.
+
 import { machine } from '../Platform/machine'
 
 // A write recorded with its bytes is an echo only while the file still holds them, so an outside write landing inside the window still reaches the watcher; a move or rename, recorded without bytes, is an echo for the whole window.

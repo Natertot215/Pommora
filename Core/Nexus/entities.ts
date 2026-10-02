@@ -1,3 +1,5 @@
+// The one list of entity kinds and what each one is; every alias below is derived from this table, with its resolved members beside it.
+
 import type { AgendaKind } from '../Paths/nexusPaths'
 
 type Entity = { held?: true; node?: true; container?: true; mark?: string }
@@ -21,10 +23,10 @@ type KindWith<F extends keyof Entity> = {
   [K in EntityKind]: (typeof ENTITIES)[K] extends Record<F, unknown> ? K : never
 }[EntityKind]
 
-export type HeldKind = KindWith<'held'>
-export type NodeKind = KindWith<'node'>
-export type ContainerKind = KindWith<'container'>
-export type ContentKind = KindWith<'mark'>
+export type HeldKind = KindWith<'held'> // collection | set | page | space | context
+export type NodeKind = KindWith<'node'> // collection | set | page | space
+export type ContainerKind = KindWith<'container'> // collection | set
+export type ContentKind = KindWith<'mark'> // page | task | event
 
 const kindsWith = <F extends keyof Entity>(flag: F): KindWith<F>[] =>
   (Object.keys(ENTITIES) as EntityKind[]).filter((k): k is KindWith<F> => flag in ENTITIES[k])

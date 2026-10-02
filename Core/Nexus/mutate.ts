@@ -69,7 +69,7 @@ function renamed(
 
 async function dispatch(ctx: MutateContext, req: MutateRequest): Promise<MutateReply> {
   const { root, deps } = ctx
-  // Every Contexts write, every value write, and every rename reads the held tree, and a tag or a value written mid-rename must land under the new key, so each runs under the folder's one lock, which holds until the walk a write owed has been paid. A write that names a Space by a path the rename has moved answers the refusal.
+  // renameContext, renameSpace, createSpace, setContext, setSpaceColor, setSpaceRowOrder, setProperty, restore, a Space or Context delete, and a create that seeds a Context run under the Contexts folder's one lock until the walk each owed is paid, so a tag or value written mid-rename lands under the new key. A write that names a Space by a path the rename has moved answers the refusal.
   const underContexts = <T>(fn: () => Promise<T>): Promise<T> =>
     machine().lock(contextsDir(root), async () => {
       try {
