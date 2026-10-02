@@ -19,6 +19,7 @@ import { noteExternalEdit } from '../Pages/fileHistory'
 import { closeSession, openSession } from './session'
 import { installStores, NO_STORES } from '../Platform/stores'
 import { memoryStores } from '../Testing/memoryStores'
+import * as indexSeed from '../Index/indexSeed'
 import { seedContentIndex } from '../Index/indexSeed'
 import { createMarkdownTile, writeMarkdownTile } from '../Tiles/tilesFile'
 import { landedId } from '../Testing/tileLayouts'
@@ -271,6 +272,41 @@ describe('applyEvents — must agree with the walk', () => {
     expect(walked()).toBe(true)
     expect(owedFor(root).rescope).toBe(true)
     expect(held().config.excluded).toEqual(['Loose'])
+  })
+
+  it('a folder landing over an excluded entry beneath it owes the walk and the reseed, and no new watch', async () => {
+    await writeFile(
+      abs('.nexus', 'settings.json'),
+      JSON.stringify({ excluded_folders: ['Moved/Private'] }),
+    )
+    await refreshTree(root)
+    await rename(abs('Loose'), abs('Moved'))
+    await applyEvents(root, [{ event: 'move', from: abs('Loose'), absPath: abs('Moved') }])
+    expect(walked()).toBe(true)
+    expect(owedFor(root).corpus).toBe(true)
+    expect(owedFor(root).rescope).toBe(false)
+    const seed = vi.spyOn(indexSeed, 'seedContentIndex')
+    const watch = vi.fn(async () => {})
+    await flush({ push: () => {}, watch }, root)
+    expect(seed).toHaveBeenCalledTimes(1)
+    expect(watch).not.toHaveBeenCalled()
+  })
+
+  it('a folder of several hundred notes with no sidecar is read once, and listed once', async () => {
+    await refreshTree(root)
+    await mkdir(abs('Notes', 'Import'))
+    const names = Array.from({ length: 400 }, (_, i) => `n${i}.md`)
+    for (const name of names) await writeFile(abs('Notes', 'Import', name), `${name}\n`)
+    const readFolder = vi.spyOn(readNexusModule, 'readFolder')
+    await applyEvents(root, [
+      ev('addDir', 'Notes', 'Import'),
+      ...names.map((name) => ev('add', 'Notes', 'Import', name)),
+    ])
+    expect(readFolder).toHaveBeenCalledTimes(1)
+    expect(owedFor(root).stamp).toEqual([{ path: 'Notes/Import', reason: 'missing' }])
+    await flush(QUIET, root)
+    expect(held().collections[0]?.sets[0]?.pages).toHaveLength(400)
+    await agrees()
   })
 })
 
