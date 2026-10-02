@@ -181,6 +181,30 @@ describe('applyEvents — must agree with the walk', () => {
     expect(walk).not.toHaveBeenCalled()
   })
 
+  it('a Set fixed after a note was added while its sidecar was broken lists the note missing its ID, with no walk', async () => {
+    const sidecar = abs('Notes', 'Daily', '_pageset.json')
+    await mkdir(abs('Notes', 'Daily'))
+    await writeFile(sidecar, JSON.stringify({ id: 's1' }))
+    await refreshTree(root)
+    const walk = vi.spyOn(liveTree, 'refreshTree')
+
+    await writeFile(sidecar, '{corrupt')
+    await applyEvents(root, [ev('change', 'Notes', 'Daily', '_pageset.json')])
+    await settleNow(QUIET, root)
+    await writeFile(abs('Notes', 'Daily', 'New.md'), 'new\n')
+    await applyEvents(root, [ev('add', 'Notes', 'Daily', 'New.md')])
+    await settleNow(QUIET, root)
+
+    await writeFile(sidecar, JSON.stringify({ id: 's1' }))
+    await applyEvents(root, [ev('change', 'Notes', 'Daily', '_pageset.json')])
+    await settleNow(QUIET, root)
+    expect(held().unreadable).toEqual([
+      { path: 'Notes/Daily/New.md', kind: 'page', reason: 'missing' },
+    ])
+    await agrees()
+    expect(walk).not.toHaveBeenCalled()
+  })
+
   it('patches the panel Context order off state.json, and holds the tree when it did not move', async () => {
     await refreshTree(root)
     await writeFile(abs('.nexus', 'state.json'), JSON.stringify({ order: { contexts: ['ctx1'] } }))
