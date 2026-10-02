@@ -26,6 +26,14 @@ const spacesOf = (order: Record<string, unknown>): Record<string, unknown> =>
 export const setCollectionOrder = (nexusRoot: string, ids: string[]): StateOrderWrite =>
   writeStateOrder(nexusRoot, (order) => ({ ...order, collections: ids }))
 
+// With no order written, the newest id already sorts last.
+export const appendCollection = (nexusRoot: string, id: string): StateOrderWrite =>
+  writeStateOrder(nexusRoot, (order) =>
+    Array.isArray(order.collections) && order.collections.length
+      ? { ...order, collections: [...order.collections, id] }
+      : null,
+  )
+
 export const setPanelContextOrder = (nexusRoot: string, ids: string[]): StateOrderWrite =>
   writeStateOrder(nexusRoot, (order) => ({ ...order, contexts: ids }))
 
