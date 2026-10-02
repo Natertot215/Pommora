@@ -74,7 +74,7 @@ afterEach(async () => {
 })
 
 describe('the property channels', () => {
-  it('a rename pushes each board it wrote once and confirms the containers', async () => {
+  it('a rename pushes each board it wrote once, and the held tree holds the containers it wrote', async () => {
     const r = await propertiesHandlers['property:renameOption'](ctx, propId, 'Done', 'Closed')
     expect(r).toEqual(ok({ cascade: { pages: [], hosts: [HOME] } }))
     expect(tilePushes()).toEqual([HOME])
@@ -82,7 +82,7 @@ describe('the property channels', () => {
   })
 
   it.skipIf(noModeBits)(
-    'an unassign with a skipped page still confirms the Set it cleared, then answers the fault',
+    'an unassign with a skipped page still lands the Set it cleared in the held tree, then answers the fault',
     async () => {
       const locked = await createFolderEntity(col, 'set', 'Locked')
       if (!locked.ok) throw new Error('setup failed')
@@ -181,7 +181,7 @@ describe('the property channels', () => {
     expect(await readSchemaJournal(root)).toEqual(owed)
   })
 
-  it('a removal whose drop fails still confirms the Set it wrote', async () => {
+  it('a removal whose drop fails still lands the Set it wrote in the held tree', async () => {
     vi.mocked(mutateRegistry).mockResolvedValueOnce(fault('refused'))
     const r = await propertiesHandlers['property:removeOption'](ctx, propId, 'Done')
     expect(r.ok).toBe(false)

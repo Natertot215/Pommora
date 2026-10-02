@@ -134,7 +134,7 @@ describe('the alias memory', () => {
     return { mutate, hosts, root }
   }
 
-  it('a forget writes the page’s metadata, and the host re-reads once the confirm lands', async () => {
+  it('a forget writes the page’s metadata, and the host re-reads once the push lands', async () => {
     const { mutate, hosts, root } = await mountHosts(['the notes', 'my draft'])
     const before = hosts[hosts.length - 1]
     expect(before.aliases.list('p1')).toEqual(['the notes', 'my draft'])
