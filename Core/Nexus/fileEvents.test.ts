@@ -429,6 +429,20 @@ describe('the parity cases', () => {
     expect(walk).not.toHaveBeenCalled()
   })
 
+  it('a root folder whose first note lands in a subfolder becomes a Collection', async () => {
+    await mkdir(abs('Ideas'))
+    await settled([ev('addDir', 'Ideas')])
+    await mkdir(abs('Ideas', 'Sub'))
+    await settled([ev('addDir', 'Ideas', 'Sub')])
+    await writeFile(abs('Ideas', 'Sub', 'First.md'), 'first\n')
+    await settled([ev('add', 'Ideas', 'Sub', 'First.md')])
+    const ideas = held().collections.find((c) => c.path === 'Ideas')
+    expect(ideas?.sets[0]?.pages.map((p) => p.title)).toEqual(['First'])
+    expect(held().unreadable).toBeUndefined()
+    await agrees()
+    expect(walk).not.toHaveBeenCalled()
+  })
+
   const registry = (defs: Record<string, object>): Promise<void> =>
     writeFile(abs('.nexus', 'properties.json'), JSON.stringify({ order: Object.keys(defs), defs }))
 
