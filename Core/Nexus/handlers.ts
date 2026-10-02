@@ -83,8 +83,14 @@ export async function openNexusSequence(
     void sweepFileHistory(root)
     try {
       let tree = await readNexus(root)
-      // Every page it lists is stamped, since the watcher starts after the open, so neither a file that predates it nor one written during the open gets an event; and read again rather than patched, since a first adoption stamps every page and one more read costs less than a patch per stamp.
-      while (await stampMissing(root, tree.unreadable)) tree = await readNexus(root)
+      // Every file it lists missing its ID is stamped, since the watcher starts after the open, so neither a file that predates it nor one written during the open gets an event; and read again rather than patched, since a first adoption stamps every page and one more read costs less than a patch per stamp; a page with a foreign ID is written over only by its Try Again.
+      while (
+        await stampMissing(
+          root,
+          tree.unreadable?.filter((u) => u.reason === 'missing'),
+        )
+      )
+        tree = await readNexus(root)
       seedLiveTree(tree)
       if (latchRecord) await runOpenLedger(root, tree)
     } catch (e) {

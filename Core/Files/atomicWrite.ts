@@ -15,6 +15,7 @@ async function land(filePath: string, data: string): Promise<void> {
   await machine().writeText(filePath, data)
 }
 
+// Both text writers report 'change' for a new file too, since the tree and the index take an add and a change alike.
 export async function atomicWriteFile(
   filePath: string,
   data: string,
@@ -37,6 +38,7 @@ export async function rewritePreservingTimes(filePath: string, data: string): Pr
   await noteOwn({ event: 'change', absPath: filePath, origin: 'own', text: data })
 }
 
+// Sync's landing records no echo and notes no event, so the watcher reports it like any outside write and the tree and index take it from that event.
 export async function landBytes(
   filePath: string,
   bytes: Uint8Array,
@@ -52,6 +54,7 @@ export async function landBytes(
 export async function atomicWriteBinary(filePath: string, data: Uint8Array): Promise<void> {
   recordWrite(filePath, data)
   await machine().writeBytes(filePath, data)
+  // 'add', since the asset arm lists a path only on an add, where a 'change' bumps the version of one already listed.
   await noteOwn({ event: 'add', absPath: filePath, origin: 'own' })
 }
 

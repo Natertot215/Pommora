@@ -2,7 +2,7 @@
 
 import { setOrDrop } from '../Files/atomicWrite'
 import { patchSidecar } from '../Files/sidecar'
-import { isMarkdownFile, join, titleFromPath } from '../Paths/posix'
+import { isMarkdownFile, titleFromPath } from '../Paths/posix'
 import { resolveUnderRoot } from '../Paths/pathSafety'
 import { contextsDir } from '../Paths/paths'
 import { machine } from '../Platform/machine'
@@ -35,7 +35,6 @@ import { renameOp } from './rename'
 import { renameCascade } from './cascade'
 import { setChildOrder, setCollectionOrder, setPanelContextOrder, setSpaceOrder } from './reorder'
 import { liveTreeOf, mutableTarget } from './liveTree'
-import { stampPage } from './adopt'
 import { oweRetry, oweWalk } from './fileEvents'
 import { reachReport } from './configReach'
 import { payOwedWalk } from './settle'
@@ -209,8 +208,7 @@ async function dispatch(ctx: MutateContext, req: MutateRequest): Promise<MutateR
 
     case 'retryUnreadable': {
       const entry = (await liveTreeOf(root)).unreadable?.find((u) => u.path === req.path)
-      if (entry?.reason === 'malformed') await stampPage(join(root, entry.path), 'page', true)
-      if (entry?.reason === 'missing') oweRetry(root, entry)
+      if (entry?.reason === 'missing' || entry?.reason === 'malformed') oweRetry(root, entry)
       oweWalk(root)
       return ok({})
     }

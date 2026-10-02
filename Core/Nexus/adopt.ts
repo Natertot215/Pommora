@@ -123,11 +123,13 @@ export async function stampMissing(
 ): Promise<boolean> {
   let landed = false
   for (const { path, kind, reason } of listed) {
-    if (reason !== 'missing') continue
+    if (reason !== 'missing' && reason !== 'malformed') continue
     const abs = join(root, path)
     if (kind === 'page')
-      landed = (await stampPage(abs, 'page').catch(() => null)) !== null || landed
-    else landed = (await stampFolder(abs, kind).catch(() => false)) || landed
+      landed =
+        (await stampPage(abs, 'page', reason === 'malformed').catch(() => null)) !== null || landed
+    else if (reason === 'missing')
+      landed = (await stampFolder(abs, kind).catch(() => false)) || landed
   }
   return landed
 }
