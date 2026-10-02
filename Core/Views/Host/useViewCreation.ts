@@ -70,7 +70,7 @@ type ViewCreationConfig = Pick<
 }
 
 interface ViewCreation {
-  bandAdd: (setKey: string) => CreateFlight | null
+  bandAdd: (setKey: string) => void
   createFirst: () => CreateFlight
   createAdjacent: (row: ViewRow, where: 'above' | 'below') => CreateFlight
   createAfter: (row: ViewRow) => CreateFlight
@@ -193,12 +193,12 @@ export function useViewCreation(getCfg: () => ViewCreationConfig): ViewCreation 
     return flight
   }
 
-  const bandAdd = (setKey: string): CreateFlight | null => {
+  const bandAdd = (setKey: string): void => {
     const c = cfg()
     const setPath = c.sets.node.get(setKey)?.path
-    if (!setPath) return null
+    if (!setPath) return
     if (c.collapsed.has(setKey)) c.toggleCollapse(setKey)
-    return addIn(setPath)
+    addIn(setPath)
   }
 
   // New Page Above / Below: the anchor's group value and sort-criteria values tie the newborn beside it, and the order write breaks the tie at the gesture slot.
