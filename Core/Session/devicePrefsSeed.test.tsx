@@ -187,11 +187,11 @@ describe('a nexus switch keeps none of the old nexus', () => {
       async () => fail('operation-failed', why),
       async () => fail('operation-failed', why),
     )
-    useSession.getState().applyTree(treeAt('/a'))
+    useSession.getState().applyTree(treeAt('/a'), 0)
     useSession.getState().openWindowTab({ kind: 'page', id: 'x', path: 'x.md' })
     await useSession.getState().load()
     expect(useSession.getState()).toMatchObject({ status: 'error', tree: null, windowSlot: null })
-    useSession.getState().applyTree(treeAt('/a'))
+    useSession.getState().applyTree(treeAt('/a'), 0)
     await useSession.getState().choose()
     expect(useSession.getState()).toMatchObject({ status: 'error', tree: null })
   })
@@ -205,7 +205,7 @@ describe('a nexus switch keeps none of the old nexus', () => {
         return ok(false)
       },
     )
-    useSession.getState().applyTree(treeAt('/a'))
+    useSession.getState().applyTree(treeAt('/a'), 0)
     const page = { kind: 'page', id: 'x', path: 'x.md' } as const
     const s = useSession.getState()
     s.openWindowTab(page)

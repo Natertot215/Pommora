@@ -42,7 +42,7 @@ export interface NexusSlice {
   /** Re-reads the bound Nexus's tree, for a root that moved under a Nexus the window already holds. */
   refetch: () => Promise<void>
   applySyncStatus: (status: SyncStatus) => void
-  applyTree: (tree: NexusTree, version?: number) => void
+  applyTree: (tree: NexusTree, version: number) => void
   applyChange: (change: NexusChange) => void
   loadHeadings: (paths?: string[]) => Promise<void>
   choose: () => Promise<void>
@@ -198,7 +198,7 @@ export const createNexusSlice: Slice<NexusSlice> = (set, get) => {
     },
 
     // A whole tree arrives without identity, so stabilize() spares every consumer whose part didn't change.
-    applyTree: (incoming, version = get().version) => {
+    applyTree: (incoming, version) => {
       const held = get().tree
       install(stabilize(withOwnSettings(incoming, held), held), version)
     },
@@ -253,7 +253,7 @@ export const createNexusSlice: Slice<NexusSlice> = (set, get) => {
       if (req.op === 'delete' || req.op === 'restore' || req.op === 'emptyBundle')
         get().bumpTrashRevision()
       // The host pushed what this write changed before it replied, so the tree already holds it.
-      if (get().tree) get().patchPagesFor(req)
+      get().patchPagesFor(req)
       if (res.value.created && onCreated) await onCreated(res.value.created)
       return res.value
     },
