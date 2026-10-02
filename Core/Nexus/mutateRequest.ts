@@ -3,13 +3,7 @@ import { ok, type Result } from '../Contract/result'
 import { propertyValue } from '../Properties/propertyValue'
 import { crop, type PageMetaPatch } from './schemas'
 import type { CascadeReport } from './cascade'
-import {
-  CONTAINER_KINDS,
-  type ContainerKind,
-  HELD_KINDS,
-  type HeldKind,
-  NODE_KINDS,
-} from './entities'
+import { CONTAINER_KINDS, HELD_KINDS, type HeldKind, NODE_KINDS } from './entities'
 import { newContentId, newId } from './ids'
 
 /** `renamed` is what actually landed — a from-create rename may disambiguate away from the ask. */
@@ -122,33 +116,12 @@ export type CreateRequest = Extract<
 >
 export type CreatePageRequest = Extract<CreateRequest, { op: 'createPage' }>
 
-// The window mints every create's ID as it builds the ask, so what it keys by the newborn is staged before the host's push lands it.
-export const newPageRequest = (parentPath: string): CreatePageRequest => ({
-  op: 'createPage',
-  id: newContentId('page'),
-  parentPath,
-  name: DEFAULT_NEW_NAME,
-})
+export type UnmintedCreate<R = CreateRequest> = R extends unknown ? Omit<R, 'id'> : never
 
-export const newContainerRequest = (parentPath: string, kind: ContainerKind): CreateRequest => ({
-  op: 'createContainer',
-  id: newId(),
-  parentPath,
-  kind,
-  name: DEFAULT_NEW_NAME,
-})
-
-export const newSpaceRequest = (contextId: string, name: string): CreateRequest => ({
-  op: 'createSpace',
-  id: newId(),
-  contextId,
-  name,
-})
-
-export const newContextGroupRequest = (name: string): CreateRequest => ({
-  op: 'createContextGroup',
-  id: newId(),
-  name,
+// The window mints every create's ID as it sends the ask, so what it keys by the newborn is staged before the host's push lands it.
+export const minted = <R extends UnmintedCreate>(req: R): R & { id: string } => ({
+  ...req,
+  id: req.op === 'createPage' ? newContentId('page') : newId(),
 })
 
 export const contextSeeds = (req: CreatePageRequest): [contextId: string, spaceIds: string[]][] =>

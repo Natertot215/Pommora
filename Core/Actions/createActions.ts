@@ -1,4 +1,4 @@
-import { type CreateRequest, newPageRequest } from '../Nexus/mutateRequest'
+import { DEFAULT_NEW_NAME, minted, type UnmintedCreate } from '../Nexus/mutateRequest'
 import { spaceCreator } from './createMenu'
 import type { RenameHost } from '../Session/editSlice'
 import { relDirname } from '../Paths/posix'
@@ -20,7 +20,7 @@ export async function newPageAdjacent(
   const anchor = container.pages.find((p) => p.path === path)
   if (!anchor) return
   const req = placeAt(
-    newPageRequest(parentPath),
+    minted({ op: 'createPage', parentPath, name: DEFAULT_NEW_NAME }),
     container.pages.map((p) => p.id),
     anchor.id,
     where,
@@ -38,7 +38,7 @@ export async function newSpaceAdjacent(
   const group = tree?.contexts.find((g) => g.spaces.some((s) => s.id === id))
   if (!group) return
   const req = placeAt(
-    spaceCreator(group.def).request(),
+    minted(spaceCreator(group.def).req),
     group.spaces.map((s) => s.id),
     id,
     where,
@@ -48,9 +48,10 @@ export async function newSpaceAdjacent(
 }
 
 /** An unanchored create, placed by its kind's placement setting and named in place. */
-export async function createNamed(req: CreateRequest, host?: RenameHost): Promise<void> {
+export async function createNamed(ask: UnmintedCreate, host?: RenameHost): Promise<void> {
   const s = useSession.getState()
   const { tree, mutate, beginRename } = s
+  const req = minted(ask)
   const done = await mutate(tree ? placeNew(tree, req, personalizationOf(s)) : req)
   if (done?.created) beginRename(done.created.path, true, host)
 }
@@ -66,7 +67,11 @@ export async function newPage(inWindow: boolean): Promise<void> {
   else if (from?.kind === 'page') parentPath = relDirname(from.path)
   if (parentPath === null) parentPath = tree.collections[0]?.path ?? null
   if (parentPath === null) return
-  const req = placeNew(tree, newPageRequest(parentPath), personalizationOf(s))
+  const req = placeNew(
+    tree,
+    minted({ op: 'createPage', parentPath, name: DEFAULT_NEW_NAME }),
+    personalizationOf(s),
+  )
   const created = (await mutate(req))?.created
   if (!created) return
   const page = { kind: 'page', id: req.id, path: created.path } as const

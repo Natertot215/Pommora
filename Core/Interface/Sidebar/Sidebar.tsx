@@ -29,11 +29,7 @@ import type {
   SpaceNode,
 } from '../../Nexus/tree'
 import { placementOf, type SidebarMode } from '../../Settings/personalization'
-import {
-  type MutateRequest,
-  newContainerRequest,
-  newContextGroupRequest,
-} from '../../Nexus/mutateRequest'
+import { DEFAULT_NEW_NAME, type MutateRequest } from '../../Nexus/mutateRequest'
 import type { HeldKind } from '../../Nexus/entities'
 import { type Creator, spaceCreator } from '../../Actions/createMenu'
 import { owningCollection } from '../../Nexus/treePatch'
@@ -58,16 +54,16 @@ import { personalizationOf } from '../../Session/configSlice'
 
 const NEW_COLLECTION: Creator = {
   label: 'New Collection',
-  request: () => newContainerRequest('', 'collection'),
+  req: { op: 'createContainer', parentPath: '', kind: 'collection', name: DEFAULT_NEW_NAME },
 }
 const NEW_CONTEXT: Creator = {
   label: 'New Context',
-  request: () => newContextGroupRequest('New Context'),
+  req: { op: 'createContextGroup', name: 'New Context' },
 }
 
 async function createFromMenu(item: Creator): Promise<void> {
   if (await popMenu([{ label: item.label, action: 'create' }]))
-    await createNamed(item.request(), 'sidebar')
+    await createNamed(item.req, 'sidebar')
 }
 
 function showContextFor(
@@ -375,7 +371,7 @@ export function Sidebar({ tree }: { tree: NexusTree }): React.JSX.Element {
       switch (entry?.kind) {
         case 'contextGroup': {
           const def = useSession.getState().tree?.contexts.find((g) => g.def.id === entry.id)?.def
-          if (def) void createNamed(spaceCreator(def).request(), 'sidebar')
+          if (def) void createNamed(spaceCreator(def).req, 'sidebar')
           return
         }
         case 'space':
