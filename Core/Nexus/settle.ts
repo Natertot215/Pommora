@@ -8,7 +8,7 @@ import { type FileEvent, setOwnTap } from '../Files/writeEcho'
 import { getHeldAssetMap, refreshAssetMap } from '../Assets/assetMap'
 import { seedContentIndex } from '../Index/indexSeed'
 import { dropTileHeadingLinks } from '../Tiles/tilesFile'
-import { stampMissing, stillListed } from './adopt'
+import { stampMissing, onlyStill } from './adopt'
 import { applyEvents, indexEvent, nothingOwed, owedFor } from './fileEvents'
 import { diskMoved, dropLiveTree, heldTreeOf, refreshAfterWrite } from './liveTree'
 import { adopting, sessionRoot } from './session'
@@ -75,7 +75,7 @@ function valueChangesOf(root: string, values: ReadonlyMap<string, boolean>): Val
   return [...out.values()]
 }
 
-async function payWalks(root: string): Promise<void> {
+async function walkWhileOwed(root: string): Promise<void> {
   if (sessionRoot() !== root) return
   const owed = owedFor(root)
   while (owed.walk) {
@@ -85,7 +85,7 @@ async function payWalks(root: string): Promise<void> {
     try {
       const walked = await refreshAfterWrite(root)
       owed.stamp.push(
-        ...(await stillListed(root, walked.unreadable)).filter((u) => u.reason === 'missing'),
+        ...(await onlyStill(root, walked.unreadable)).filter((u) => u.reason === 'missing'),
       )
       // The map is patch-only, so the fallback walk is where the listing is taken again.
       if (assets && (await refreshAssetMap(root)) !== assets) owed.assets = true
@@ -97,7 +97,7 @@ async function payWalks(root: string): Promise<void> {
 }
 
 async function settle(pusher: Pusher, root: string): Promise<{ rescope: boolean } | null> {
-  await payWalks(root)
+  await walkWhileOwed(root)
   // An open in progress has no window on this Nexus yet, so what is owed waits for the settle that follows it.
   if (sessionRoot() !== root || adopting()) return null
   const owed = owedFor(root)
@@ -154,7 +154,7 @@ function inTurn<T>(step: () => Promise<T>): Promise<T> {
   return turn
 }
 
-export const payOwedWalk = (root: string): Promise<void> => inTurn(() => payWalks(root))
+export const payOwedWalk = (root: string): Promise<void> => inTurn(() => walkWhileOwed(root))
 
 // One settle at a time, and one reseed at a time on a chain of its own: a reply waits for the settles ahead of its own, and for a reseed only when its own settle found the corpus or the scope moved.
 export async function flush(pusher: Pusher, root: string): Promise<void> {

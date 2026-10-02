@@ -17,7 +17,7 @@ import {
   dropOwnEchoes,
   emitWatch,
   isRecentWrite,
-  SETTLE_MS,
+  STILL_MS,
   writtenHash,
 } from '@pommora/core/Files/writeEcho'
 import { isMetadataShardRel, NEXUS_CONFIG_FILES, NEXUS_DIR } from '@pommora/core/Paths/nexusPaths'
@@ -82,7 +82,7 @@ function pushConfig<K extends keyof Pushes>(
       } catch {
         // Transient FS state mid-sync — the next settle re-reads.
       }
-    }, SETTLE_MS),
+    }, STILL_MS),
   )
 }
 
@@ -98,7 +98,7 @@ export async function startWatcher(root: string, win: CurrentWindow): Promise<vo
     ignored: (path: string) => skip(posixPath(path)),
     ignoreInitial: true,
     persistent: true,
-    awaitWriteFinish: { stabilityThreshold: SETTLE_MS, pollInterval: 50 },
+    awaitWriteFinish: { stabilityThreshold: STILL_MS, pollInterval: 50 },
   })
   const onEvent =
     (event: Changed['event']) =>
@@ -116,7 +116,7 @@ export async function startWatcher(root: string, win: CurrentWindow): Promise<vo
       // Chained, so batches apply in the order they settled.
       debounce = setTimeout(() => {
         batchQueue = batchQueue.then(() => drainBatch(root, win))
-      }, SETTLE_MS)
+      }, STILL_MS)
     }
   watcher
     .on('add', onEvent('add'))
@@ -143,7 +143,7 @@ export function waitUntilReadable(open: WaitingOpen, reopen: (path: string) => v
         if (!readable || waitingOpen() !== open) return
         stopWatcher()
         reopen(open.path)
-      }, SETTLE_MS)
+      }, STILL_MS)
     })
     .on('error', (error: unknown) => console.error('Nexus watcher error (non-fatal):', error))
 }
