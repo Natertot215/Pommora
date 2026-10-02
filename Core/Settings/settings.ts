@@ -10,8 +10,7 @@ import { setOrDrop, updateNexusConfig } from '../Files/atomicWrite'
 import { heldTreeOf } from '../Nexus/liveTree'
 import { sessionRoot } from '../Nexus/session'
 import { normalizeExclusions, readSettings, scopeOf, type SettingsLeaves } from './codec'
-import { foldKey } from '../Paths/caseFold'
-import { remainderUnder, rootSegs, type WatchScope } from '../Paths/exclusion'
+import { entryWithin, type WatchScope } from '../Paths/exclusion'
 import { fail, ok, type Result, fault } from '../Contract/result'
 
 export async function updateSettings(
@@ -83,9 +82,6 @@ export function writeExcludedFolders(root: string, folders: string[]): Promise<v
     setOrDrop(cur, 'excluded_folders', folders.length ? folders : null),
   )
 }
-
-export const entryWithin = (entry: string, rel: string): string[] | null =>
-  remainderUnder(rootSegs(entry), rootSegs(rel).map(foldKey))
 
 /** The excluded entries at or under `rel`, each relative to it. */
 export const excludedWithin = async (root: string, rel: string): Promise<string[]> =>
