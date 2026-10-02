@@ -3,7 +3,17 @@ import * as liveTree from './liveTree'
 import { dropLiveTree, heldTreeOf, refreshTree } from './liveTree'
 import { splitFrontmatter } from '../Files/pageFile'
 import { ID_KEY } from './identityMark'
-import { rm, mkdir, writeFile, readFile, readdir, chmod, symlink, stat } from 'node:fs/promises'
+import {
+  rm,
+  mkdir,
+  open,
+  writeFile,
+  readFile,
+  readdir,
+  chmod,
+  symlink,
+  stat,
+} from 'node:fs/promises'
 import { join } from '../Paths/posix'
 import { readJsonAt, seedSpaceSidecar, tempRoot, noModeBits, windows } from '../Testing/hostFs'
 import { adoptFile } from '../Assets/adoptFile'
@@ -24,7 +34,7 @@ const C_ID = '01KVGMT8BFP350FZZXAMG1QDRC'
 const G_ID = '01KVGMT8BFP350FZZXAMG1QDRG'
 import { openSession, closeSession } from './session'
 import { settleNow, settleBatch } from './settle'
-import { applyEvents } from './fileEvents'
+import { applyEvents, oweWalk } from './fileEvents'
 import * as readNexusModule from './readNexus'
 import * as contextsRegistry from '../Contexts/contextsRegistry'
 import { stabilize } from './treeStabilize'
@@ -1383,6 +1393,30 @@ describe('nexusHandlers.mutate — retryUnreadable', () => {
     const live = heldTreeOf(root)
     expect(live && stabilize(await readNexus(root), live)).toBe(live)
   })
+
+  it.skipIf(noModeBits)(
+    'a root folder its Try Again couldn’t stamp, stamped later by a walk, keeps every byte of a note still being written in it',
+    async () => {
+      await mkdir(join(root, 'Raw'))
+      await writeFile(join(root, 'Raw', 'P.md'), 'p\n')
+      await refreshTree(root)
+      await chmod(join(root, 'Raw'), 0o555)
+      try {
+        expect((await retry('Raw')).ok).toBe(true)
+      } finally {
+        await chmod(join(root, 'Raw'), 0o755)
+      }
+      expect(await readdir(join(root, 'Raw'))).toEqual(['P.md'])
+      const writer = await open(join(root, 'Raw', 'P.md'), 'w')
+      await writer.write('first half\n')
+      oweWalk(root)
+      await settleNow(ctx, root)
+      await writer.write('second half\n')
+      await writer.close()
+      expect(held('Raw')).toBe(true)
+      expect(await read('Raw/P.md')).toBe('first half\nsecond half\n')
+    },
+  )
 })
 
 describe('nexusHandlers.mutate — a create’s ID', () => {

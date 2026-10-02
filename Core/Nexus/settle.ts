@@ -1,4 +1,4 @@
-// The one place a change to the tree, pages, values, tiles, or assets reaches the window. The app's own writes land here as events while they happen; a write's gate and the watcher's batch then stamp what their events listed missing, and settle: the walk the events owed, whose own listing of what is missing its ID is stamped as `stillListed` allows and settled in turn, and one push of what moved.
+// The one place a change to the tree, pages, values, tiles, or assets reaches the window. The app's own writes land here as events while they happen; a write's gate and the watcher's batch then stamp what their events listed missing, and settle: the walk the events owed, whose own listing of what is missing its ID is stamped as `stampable` allows and settled in turn, and one push of what moved.
 
 import { relDirname, relative } from '../Paths/posix'
 import { escapes } from '../Paths/pathSafety'
@@ -9,7 +9,7 @@ import { getHeldAssetMap, refreshAssetMap } from '../Assets/assetMap'
 import { seedContentIndex } from '../Index/indexSeed'
 import { dropTileHeadingLinks } from '../Tiles/tilesFile'
 import { stampMissing } from './adopt'
-import { applyEvents, indexEvent, nothingOwed, owedFor, stillListed } from './fileEvents'
+import { applyEvents, indexEvent, nothingOwed, owedFor, stampable } from './fileEvents'
 import { diskMoved, dropLiveTree, heldTreeOf, refreshAfterWrite } from './liveTree'
 import { adopting, sessionRoot } from './session'
 import type { NexusTree, Unreadable, ValueChange } from './tree'
@@ -85,9 +85,7 @@ async function walkWhileOwed(root: string): Promise<void> {
     try {
       const walked = await refreshAfterWrite(root)
       owed.stamp.push(
-        ...stillListed(owed, walked.unreadable ?? [], owed.rescope).filter(
-          (u) => u.reason === 'missing',
-        ),
+        ...stampable(owed, walked.unreadable ?? []).filter((u) => u.reason === 'missing'),
       )
       // The map is patch-only, so the fallback walk is where the listing is taken again.
       if (assets && (await refreshAssetMap(root)) !== assets) owed.assets = true
@@ -103,9 +101,9 @@ async function settle(pusher: Pusher, root: string): Promise<{ rescope: boolean 
   // An open in progress has no window on this Nexus yet, so what is owed waits for the settle that follows it.
   if (sessionRoot() !== root || adopting()) return null
   const owed = owedFor(root)
-  // An arm still awaiting its file writes to this record after the push, so it is emptied in place and never replaced; the stamps still owed and the `still` record their folders' reads consult outlive it.
-  const { pages, values, tiles, assets, corpus, rescope, stamp, still } = owed
-  Object.assign(owed, nothingOwed(root), { stamp, still })
+  // An arm still awaiting its file writes to this record after the push, so it is emptied in place and never replaced; the stamps still owed outlive it, and the folders newly in reach outlive it while any are.
+  const { pages, values, tiles, assets, corpus, rescope, stamp, whole } = owed
+  Object.assign(owed, nothingOwed(root), stamp.length ? { stamp, whole } : { stamp })
   const held = heldTreeOf(root)
   const tree = held && shown(held, stamp)
   const delta = tree && deltaOf(pushed?.nexus.rootPath === root ? pushed : undefined, tree)

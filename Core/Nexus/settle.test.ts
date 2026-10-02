@@ -234,18 +234,30 @@ describe('the settle', () => {
     expect(heldTreeOf(root)?.collections[0]?.pages.map((p) => p.id)).toEqual([ULID_A, ULID_B])
   })
 
-  it('a walk leaves a page it lists missing for the page’s own event, and a walk a scope change owed stamps it', async () => {
+  it('a walk leaves a page it lists missing for the page’s own event, and a scope change that excludes or admits an unrelated folder leaves it listed while it is written, for its own event to stamp', async () => {
     await writeFile(abs('Notes', 'Bare.md'), 'bare\n')
     await settleBatch(pusher, root, [ev('change', '.nexus', 'nexus.json')])
     expect(heldTreeOf(root)?.unreadable).toEqual([
       { path: 'Notes/Bare.md', kind: 'page', reason: 'missing' },
     ])
     expect(await readFile(abs('Notes', 'Bare.md'), 'utf8')).toBe('bare\n')
-    await writeExcludedFolders(root, ['Elsewhere'])
-    await settleNow(pusher, root)
+    const writer = await open(abs('Notes', 'Bare.md'), 'w')
+    await writer.write('first half\n')
+    for (const excluded of [['Elsewhere'], []]) {
+      await writeExcludedFolders(root, excluded)
+      await settleNow(pusher, root)
+      expect(heldTreeOf(root)?.unreadable).toEqual([
+        { path: 'Notes/Bare.md', kind: 'page', reason: 'missing' },
+      ])
+    }
+    await writer.write('second half\n')
+    await writer.close()
+    await settleBatch(pusher, root, [ev('change', 'Notes', 'Bare.md')])
+    const text = await readFile(abs('Notes', 'Bare.md'), 'utf8')
+    expect(text).toContain('first half\nsecond half\n')
     const held = heldTreeOf(root)
     const bare = held?.collections[0]?.pages.find((p) => p.path === 'Notes/Bare.md')
-    expect(bare?.id).toBe(splitFrontmatter(await readFile(abs('Notes', 'Bare.md'), 'utf8'))[ID_KEY])
+    expect(bare?.id).toBe(splitFrontmatter(text)[ID_KEY])
     expect(held?.unreadable).toBeUndefined()
   })
 
@@ -336,6 +348,43 @@ describe('the settle', () => {
     const held = heldTreeOf(root)
     expect(held?.collections[0]?.sets[0]?.pages.map((p) => p.id)).toEqual([
       splitFrontmatter(await readFile(abs('Notes', 'Fresh', 'Note.md'), 'utf8'))[ID_KEY],
+    ])
+    expect(held?.unreadable).toBeUndefined()
+    expect(held && stabilize(await readNexus(root), held)).toBe(held)
+  })
+
+  it('a note that carries its ID, arriving with a folder that has no sidecar, keeps every byte of a rewrite a later walk finds half written', async () => {
+    await mkdir(abs('Ideas'))
+    await writeFile(abs('Ideas', 'Kept.md'), `---\nID: ${ULID_B}\n---\n\nkept\n`)
+    await settleBatch(pusher, root, [ev('addDir', 'Ideas'), ev('add', 'Ideas', 'Kept.md')])
+    expect(
+      heldTreeOf(root)
+        ?.collections.find((c) => c.path === 'Ideas')
+        ?.pages.map((p) => p.id),
+    ).toEqual([ULID_B])
+    const writer = await open(abs('Ideas', 'Kept.md'), 'w')
+    await writer.write('first half\n')
+    oweWalk(root)
+    await settleNow(pusher, root)
+    await writer.write('second half\n')
+    await writer.close()
+    expect(await readFile(abs('Ideas', 'Kept.md'), 'utf8')).toBe('first half\nsecond half\n')
+  })
+
+  it.each([
+    ['the folders', ['A', 'A/B', 'A/B/note.md']],
+    ['the note', ['A/B/note.md', 'A', 'A/B']],
+  ] as const)('a note two sidecar-less folders deep, arriving with neither folder held, is stamped and held (%s first)', async (_, order) => {
+    await mkdir(abs('A', 'B'), { recursive: true })
+    await writeFile(abs('A', 'B', 'note.md'), 'note\n')
+    await settleBatch(
+      pusher,
+      root,
+      order.map((rel) => ev(rel.endsWith('.md') ? 'add' : 'addDir', ...rel.split('/'))),
+    )
+    const held = heldTreeOf(root)
+    expect(held?.collections.find((c) => c.path === 'A')?.sets[0]?.pages.map((p) => p.id)).toEqual([
+      splitFrontmatter(await readFile(abs('A', 'B', 'note.md'), 'utf8'))[ID_KEY],
     ])
     expect(held?.unreadable).toBeUndefined()
     expect(held && stabilize(await readNexus(root), held)).toBe(held)

@@ -17,6 +17,7 @@ import {
   entryWithin,
   excludedMatcher,
   hiddenFolder,
+  outsideContent,
   sameScope,
 } from '../Paths/exclusion'
 import {
@@ -97,8 +98,8 @@ interface Owed {
   rescope: boolean
   assets: boolean
   stamp: Unreadable[]
-  // Pages whose own event was spent on a folder whose stamp is owed, and folders whose read stamps every page it lists.
-  still: Set<string>
+  // Folders newly in reach, under which a listing stamps every page missing its ID; replaced rather than pushed to, since `excludedMatcher` caches by the array.
+  whole: string[]
   pages: Set<string>
   // True while every write of the page was the editor's own body save.
   values: Map<string, boolean>
@@ -112,7 +113,7 @@ export const nothingOwed = (root: string): Owed => ({
   rescope: false,
   assets: false,
   stamp: [],
-  still: new Set(),
+  whole: [],
   pages: new Set(),
   values: new Map(),
   tiles: new Map(),
@@ -130,18 +131,19 @@ export function oweWalk(root: string): void {
   owedFor(root).walk = true
 }
 
-// A page missing its ID is stamped only once known to be still, since a stamp's rename would cut off bytes still being written: by its own event (the watcher reports a file once it stops changing, and the app's own write has landed), or whole by the open, a change of scope, or Try Again, which reach files no event reports; a page whose event was spent on a folder not yet held waits in `still` for that folder's read, and any other is left out of a folder read's listing and stays listed by a walk until its event or Try Again.
-export function stillListed(
-  owed: Owed,
-  listed: readonly Unreadable[],
-  whole: boolean,
-): Unreadable[] {
-  return listed.filter((u) => {
-    if (u.kind === 'page') return owed.still.delete(u.path) || whole || u.reason !== 'missing'
-    if (whole && u.reason === 'missing' && (u.kind === 'collection' || u.kind === 'set'))
-      owed.still.add(u.path)
-    return true
-  })
+// Try Again reaches what no event reports, so the folder it names is newly in reach.
+export function oweRetry(root: string, entry: Unreadable): void {
+  const owed = owedFor(root)
+  owed.stamp.push(entry)
+  owed.whole = [...owed.whole, entry.path]
+}
+
+// A page missing its ID is stamped by its own event, since the watcher reports a file once it stops changing and a stamp's rename would cut off bytes still arriving; a listing stamps one only under a folder newly in reach, which no event reports. A folder's read leaves any other out of the tree too, since the window posts a Try Again notice for each newly listed entry and the page's own event may still be coming; a walk lists it.
+export function stampable(owed: Owed, listed: readonly Unreadable[]): Unreadable[] {
+  const reached = excludedMatcher(owed.whole)
+  return listed.filter(
+    (u) => u.kind !== 'page' || u.reason !== 'missing' || reached(u.path.split('/')),
+  )
 }
 
 export function oweCascade(
@@ -320,6 +322,14 @@ const jsonOf = (
   return ev.text === undefined ? read(ev.absPath) : Promise.resolve(parseJsonObject(ev.text))
 }
 
+const pageOf = async (ev: Changed, rel: string): Promise<PageRecord> =>
+  ev.text === undefined ? readPageRecord(ev.absPath, rel) : pageRecordOf(ev.text, rel, null)
+
+function owePageStamp(owed: Owed, rel: string, page: PageRecord): void {
+  if (page.kind === 'unread' && page.reason === 'missing')
+    owed.stamp.push({ path: rel, kind: 'page', reason: 'missing' })
+}
+
 const pagePathsIn = (node: CollectionNode | SetNode | null): string[] =>
   node ? [...node.pages.map((p) => p.path), ...(node.sets ?? []).flatMap(pagePathsIn)] : []
 
@@ -337,7 +347,7 @@ async function applyFolder(
   if (owed.stamp.some((u) => u.path === rel)) return 'ok'
   if (!(await pathExists(join(root, rel)))) return applyPatch(root, (t) => removeNodeInTree(t, rel))
   const read = await readFolder(root, rel, tree)
-  const listed = stillListed(owed, read.unreadable, owed.still.delete(rel))
+  const listed = stampable(owed, read.unreadable)
   owed.stamp.push(...listed.filter((u) => u.reason === 'missing'))
   for (const path of pagePathsIn(read.node)) owed.values.set(path, false)
   return applyPatch(root, (t) => {
@@ -356,24 +366,25 @@ async function applyPage(
 ): Promise<Applied> {
   const dirRel = relDirname(rel)
   if (!containerAt(tree, dirRel)) {
-    owed.still.add(rel)
     const applied = await applyFolder(root, tree, dirRel, owed)
-    // Kept only while a folder above the page owes the stamp whose read lists it.
-    if (!owed.stamp.some((u) => rel.startsWith(`${u.path}/`))) owed.still.delete(rel)
+    const now = heldTreeOf(root)
+    // The folder's read leaves a page missing its ID out, so the page's own event places it or owes its stamp; under a folder whose stamp is owed, that stamp sits behind the folder's.
+    if (now && containerAt(now, dirRel)) return applyPage(root, now, rel, ev, owed)
+    if (owed.stamp.some((u) => rel.startsWith(`${u.path}/`)))
+      owePageStamp(owed, rel, await pageOf(ev, rel))
     return applied
   }
   const abs = join(root, rel)
   let read: PageRecord
   try {
-    read = ev.text === undefined ? await readPageRecord(abs, rel) : pageRecordOf(ev.text, rel, null)
+    read = await pageOf(ev, rel)
   } catch {
     if (await pathExists(abs)) return 'walk'
     return applyPatch(root, (t) => removeNodeInTree(t, rel))
   }
   owed.values.set(rel, !!ev.bodyOnly && (owed.values.get(rel) ?? true))
   if (ev.origin === 'watched') owed.pages.add(rel)
-  if (read.kind === 'unread' && read.reason === 'missing')
-    owed.stamp.push({ path: rel, kind: 'page', reason: 'missing' })
+  owePageStamp(owed, rel, read)
   const landed = applyPatch(root, (t) => {
     if (read.kind === 'unread')
       return listUnreadable(removeNodeInTree(t, rel), [
@@ -483,10 +494,13 @@ async function applyRegistry(root: string, ev: Changed): Promise<Applied> {
 async function applySettings(root: string, ev: Changed, owed: Owed): Promise<Applied> {
   const leaves = readSettingsLeaves((await jsonOf(ev, readKept)) ?? {})
   const tree = heldTreeOf(root)
-  const rescoped = !!tree && !sameScope(scopeOf(leaves), scopeOf(tree.config))
+  const was = tree && scopeOf(tree.config)
+  const scope = scopeOf(leaves)
   // The scope lands at once, so what runs before the walk (the asset migration) reads the scope just written.
   const patched = patchConfig(root, leaves)
-  if (!rescoped) return patched
+  if (!was || sameScope(scope, was)) return patched
+  const heldOut = was.assetDir === scope.assetDir ? was.excluded : [...was.excluded, was.assetDir]
+  owed.whole = [...owed.whole, ...heldOut.filter((rel) => !outsideContent(rel, scope))]
   owed.rescope = true
   return 'walk'
 }

@@ -306,7 +306,10 @@ describe('applyEvents — must agree with the walk', () => {
       ...names.map((name) => ev('add', 'Notes', 'Import', name)),
     ])
     expect(readFolder).toHaveBeenCalledTimes(1)
-    expect(owedFor(root).stamp).toEqual([{ path: 'Notes/Import', kind: 'set', reason: 'missing' }])
+    expect(owedFor(root).stamp).toEqual([
+      { path: 'Notes/Import', kind: 'set', reason: 'missing' },
+      ...names.map((name) => ({ path: `Notes/Import/${name}`, kind: 'page', reason: 'missing' })),
+    ])
     await settleNow(QUIET, root)
     expect(held().collections[0]?.sets[0]?.pages).toHaveLength(400)
     await agrees()
