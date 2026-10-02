@@ -7,7 +7,7 @@ import {
   resolveFolderKind,
   type FolderKindContext,
 } from './folderKind'
-import type { ContainerKind } from './entities'
+import type { ContainerKind, FolderNodeKind } from './entities'
 import type {
   CollectionNode,
   ContextGroup,
@@ -99,7 +99,7 @@ async function readOwnSidecar(
   absSidecar: string,
   relOwner: string,
   unreadable: Unreadable[],
-  kind: ContainerKind | 'space',
+  kind: FolderNodeKind,
 ): Promise<Json | null> {
   const meta = await readSidecar(absSidecar)
   if (asString(meta?.id)) return meta
