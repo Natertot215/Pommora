@@ -314,6 +314,7 @@ async function walkNexus(root: string): Promise<NexusTree> {
     readPageMetadata(root),
     readSidecar(contextsRegistryFile(root)),
   ])
+  // An identity the open couldn't write (a read-only folder) or one deleted while the Nexus is open reads as no id, so the tree takes one derived from its root.
   const id = asString(identity?.id) ?? `unidentified-${machine().sha256Hex(root).slice(0, 16)}`
   const kindCtx = await agendaContext(root, identity)
 
