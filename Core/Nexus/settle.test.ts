@@ -19,6 +19,7 @@ import { flush, sent, settleBatch } from './settle'
 import type { NexusChange, NexusTree } from './tree'
 import { patch } from './treeDelta'
 import { closeSession, openSession, whileAdopting } from './session'
+import { writeExcludedFolders } from '../Settings/settings'
 
 const ULID_A = '01ARZ3NDEKPSV4RRFFQ69G5FAV'
 const ULID_B = '01BX5ZZKBKPCTAV9WEVGEMMVRZ'
@@ -227,6 +228,30 @@ describe('the settle', () => {
     await settleBatch(pusher, root, [ev('change', '.nexus', 'nexus.json')])
     expect(heldTreeOf(root)?.unreadable).toEqual([{ path: 'Notes/Bare.md', reason: 'missing' }])
     expect(await readFile(abs('Notes', 'Bare.md'), 'utf8')).toBe('bare\n')
+  })
+
+  it('un-excluding folders of ID-less notes stamps and holds them, and re-arms the watch once', async () => {
+    await mkdir(abs('Archive', 'Old'), { recursive: true })
+    await writeFile(abs('Archive', 'X.md'), 'x\n')
+    await writeFile(abs('Archive', 'Old', 'Y.md'), 'y\n')
+    await mkdir(abs('Notes', 'Sub'))
+    await writeFile(abs('Notes', 'Sub', 'Z.md'), 'z\n')
+    await writeExcludedFolders(root, ['Archive', 'Notes/Sub'])
+    await flush(pusher, root)
+    pusher.watch.mockClear()
+    await writeExcludedFolders(root, [])
+    await flush(pusher, root)
+    const held = heldTreeOf(root)
+    expect(held?.unreadable).toBeUndefined()
+    const paths = held?.collections.flatMap((c) => [
+      ...c.pages.map((p) => p.path),
+      ...(c.sets ?? []).flatMap((s) => s.pages.map((p) => p.path)),
+    ])
+    expect(paths).toEqual(
+      expect.arrayContaining(['Archive/X.md', 'Archive/Old/Y.md', 'Notes/Sub/Z.md']),
+    )
+    expect(held && stabilize(await readNexus(root), held)).toBe(held)
+    expect(pusher.watch).toHaveBeenCalledTimes(1)
   })
 
   it('a flush while an open is under way pushes nothing, and the next one pushes what was owed', async () => {
