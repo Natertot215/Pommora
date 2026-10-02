@@ -2,7 +2,7 @@ import { describe, it, expect, beforeAll, afterAll } from 'vitest'
 import { mkdirSync, writeFileSync, rmSync } from 'node:fs'
 import { join } from '../Paths/posix'
 import { tempRoot } from '../Testing/hostFs'
-import { openPage } from './pageFile'
+import { readPage } from './pageFile'
 import { ID_KEY, markId } from '../Nexus/identityMark'
 
 const PAGE_A = '01KVGMT8BFP350FZZXAMG1QDRC'
@@ -30,13 +30,13 @@ afterAll(() => {
 })
 
 const refusalOf = async (name: string): Promise<string | null> => {
-  const r = await openPage(root, `${DIR}/${name}`)
+  const r = await readPage(root, `${DIR}/${name}`)
   return r.ok ? null : r.error.message
 }
 
-describe('openPage', () => {
+describe('readPage', () => {
   it('opens a member, deriving title + path from the rel path', async () => {
-    const r = await openPage(root, `${DIR}/Page A.md`)
+    const r = await readPage(root, `${DIR}/Page A.md`)
     if (!r.ok) throw new Error(r.error.message)
     expect(r.value.id).toBe(PAGE_A)
     expect(r.value.title).toBe('Page A')
@@ -58,7 +58,7 @@ describe('openPage', () => {
   })
 
   it('answers not-found when the file does not exist', async () => {
-    const r = await openPage(root, `${DIR}/Nope.md`)
+    const r = await readPage(root, `${DIR}/Nope.md`)
     expect(r.ok ? null : r.error.code).toBe('not-found')
   })
 })
