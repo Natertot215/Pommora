@@ -26,7 +26,7 @@ import { isColorKey } from '@pommora/uix/Theme/colors'
 import { ok, fail, type Result, fault } from '../Contract/result'
 import { mutateRegistryFile, withContextAt } from './contextsRegistry'
 import { newId } from '../Nexus/ids'
-import { freeName, nameError } from '../Paths/names'
+import { createDisambiguated, freeName, nameError } from '../Paths/names'
 import { atomicWriteFile, pathExists, rmwJsonStrict, setOrDrop } from '../Files/atomicWrite'
 import { machine } from '../Platform/machine'
 import { setGovernedRootKeys } from '../Properties/governedWrite'
@@ -192,12 +192,16 @@ export async function createSpace(
   if (!group) return fail('not-found', 'Unknown Context.')
   const parent = join(contextsDir(root), group.def.title)
   await machine().mkdir(parent)
-  const created = await createFolderEntity(parent, 'space', name, id)
+  const created = await createDisambiguated(
+    name,
+    (n) => createFolderEntity(parent, 'space', n, id),
+    (n) => pathExists(join(parent, n)),
+  )
   if (!created.ok) return created
   const tileIds = [newId(), newId(), newId(), newId()]
   for (const tid of tileIds) await atomicWriteFile(tileFilePath(created.value.path, tid), '')
   await writeTileDocAt(created.value.path, () => seedBoard(tileIds))
-  return ok({ path: spaceDirRel(group.def.title, name) })
+  return ok({ path: spaceDirRel(group.def.title, basename(created.value.path)) })
 }
 
 export async function setSpaceColor(
