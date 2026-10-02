@@ -148,6 +148,7 @@ export async function setContextOp(
   const world = contextWorldOf(tree.contexts)
   const group = world.groupById.get(contextId)
   const under = group && `${contextDirRel(group.def.title)}/`
+  // A Space missing from its group has no id to pick, so a page's tag write would drop it from the list it replaces and a Space link would give it no far half; the other Space writes keep what they can't resolve as written.
   const unread =
     under && tree.unreadable?.find((u) => u.kind === 'space' && u.path.startsWith(under))
   if (unread) return fault(`Unreadable Space sidecar: ${basename(unread.path)}`)

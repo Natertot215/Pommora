@@ -1,4 +1,4 @@
-// The app's own writes report here: each lands as an event through the own tap, which `Core/Nexus/settle.ts` installs when it's imported, so a process that writes without importing the settle has its writes reach neither the tree nor the index.
+// The app's writes and the watcher's events pass through here: the echo window tells the app's writes from outside ones, the own tap lands each write as an event (`Core/Nexus/settle.ts` installs it when imported, so a process that writes without importing the settle reaches neither the tree nor the index), and the write and watch taps feed sync.
 
 import { machine } from '../Platform/machine'
 
