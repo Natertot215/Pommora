@@ -445,7 +445,9 @@ describe('store — page slots', () => {
       selection: pg('a'),
       pages: { a: ready('a') },
     })
-    useSession.getState().applyTree(treeWith([{ id: 'a', path: 'Notes/moved.md' }]), 0)
+    useSession
+      .getState()
+      .applyChange({ version: 0, delta: { set: treeWith([{ id: 'a', path: 'Notes/moved.md' }]) } })
     let s = useSession.getState()
     expect(s.pages.a?.status).toBe('ready')
     expect(frozenOf(s)).toBe(true)
@@ -509,7 +511,7 @@ function treeWith(pages: { id: string; path: string }[], spaces: string[] = []):
   }
 }
 
-describe('store — applyTree reconciles EVERY tab (I-2a)', () => {
+describe('store — a whole tree reconciles EVERY tab (I-2a)', () => {
   const page = (id: string, path: string): SelectTarget => ({ kind: 'page', id, path })
 
   it('refreshes an inactive tab on a rename and closes it on a delete, without activating it', async () => {
@@ -523,12 +525,15 @@ describe('store — applyTree reconciles EVERY tab (I-2a)', () => {
     }
     seed({ tabs: [t1, t2], activeTabId: 't1', tabMru: ['t1', 't2'] })
 
-    useSession.getState().applyTree(treeWith([{ id: 'b', path: 'Notes/Renamed.md' }]), 0)
+    useSession.getState().applyChange({
+      version: 0,
+      delta: { set: treeWith([{ id: 'b', path: 'Notes/Renamed.md' }]) },
+    })
     let s = useSession.getState()
     expect(s.activeTabId).toBe('t1')
     expect(s.tabs.find((t) => t.id === 't2')?.target).toEqual(page('b', 'Notes/Renamed.md'))
 
-    useSession.getState().applyTree(treeWith([]), 0)
+    useSession.getState().applyChange({ version: 0, delta: { set: treeWith([]) } })
     s = useSession.getState()
     expect(s.tabs.map((t) => t.id)).toEqual(['t1'])
     expect(s.activeTabId).toBe('t1')
@@ -541,49 +546,62 @@ describe('store — applyTree reconciles EVERY tab (I-2a)', () => {
       activeTabId: 't1',
       tabMru: ['t1', 't3', 't2'],
     })
-    useSession.getState().applyTree(
-      treeWith([
-        { id: 'b', path: 'Notes/b.md' },
-        { id: 'c', path: 'Notes/c.md' },
-      ]),
-    )
+    useSession.getState().applyChange({
+      version: 0,
+      delta: {
+        set: treeWith([
+          { id: 'b', path: 'Notes/b.md' },
+          { id: 'c', path: 'Notes/c.md' },
+        ]),
+      },
+    })
     const s = useSession.getState()
     expect(s.tabs.map((t) => t.id)).toEqual(['t2', 't3'])
     expect(s.activeTabId).toBe('t3')
   })
 })
 
-describe('store — applyTree reconciles the window tabs (D-6)', () => {
+describe('store — a whole tree reconciles the window tabs (D-6)', () => {
   it('re-paths a renamed tab and closes the window when all tabs die', async () => {
     useSession.getState().openWindowTab({ kind: 'page', id: 'b', path: 'Notes/B.md' })
     useSession.getState().openWindowTab({ kind: 'page', id: 'c', path: 'Notes/C.md' })
 
-    useSession.getState().applyTree(
-      treeWith([
-        { id: 'b', path: 'Notes/Renamed.md' },
-        { id: 'c', path: 'Notes/C.md' },
-      ]),
-    )
+    useSession.getState().applyChange({
+      version: 0,
+      delta: {
+        set: treeWith([
+          { id: 'b', path: 'Notes/Renamed.md' },
+          { id: 'c', path: 'Notes/C.md' },
+        ]),
+      },
+    })
     let p = useSession.getState().windowSlot
     expect(p?.tabs[0].target).toMatchObject({ id: 'b', path: 'Notes/Renamed.md' })
     expect(windowTargetOf(useSession.getState())).toMatchObject({ id: 'c', path: 'Notes/C.md' })
 
-    useSession.getState().applyTree(treeWith([{ id: 'c', path: 'Notes/C.md' }]), 0)
+    useSession
+      .getState()
+      .applyChange({ version: 0, delta: { set: treeWith([{ id: 'c', path: 'Notes/C.md' }]) } })
     p = useSession.getState().windowSlot
     expect(p?.tabs).toHaveLength(1)
 
-    useSession.getState().applyTree(treeWith([]), 0)
+    useSession.getState().applyChange({ version: 0, delta: { set: treeWith([]) } })
     expect(useSession.getState().windowSlot).toBeNull()
     expect(windowTargetOf(useSession.getState())).toBeNull()
   })
 
   it('closes a Space tab once its Space is gone', async () => {
-    useSession.getState().applyTree(treeWith([{ id: 'a', path: 'Notes/A.md' }], ['s1']), 0)
+    useSession.getState().applyChange({
+      version: 0,
+      delta: { set: treeWith([{ id: 'a', path: 'Notes/A.md' }], ['s1']) },
+    })
     useSession.getState().openWindowTab({ kind: 'page', id: 'a', path: 'Notes/A.md' })
     useSession.getState().openWindowTab({ kind: 'space', id: 's1' })
     expect(useSession.getState().windowSlot?.tabs).toHaveLength(2)
 
-    useSession.getState().applyTree(treeWith([{ id: 'a', path: 'Notes/A.md' }]), 0)
+    useSession
+      .getState()
+      .applyChange({ version: 0, delta: { set: treeWith([{ id: 'a', path: 'Notes/A.md' }]) } })
     const p = useSession.getState().windowSlot
     expect(p?.tabs.map((t) => (t.target.kind === 'map' ? 'map' : t.target.id))).toEqual(['a'])
   })
@@ -607,12 +625,15 @@ describe('store — applyTree reconciles the window tabs (D-6)', () => {
   })
 
   it('a Preview reconciles the remembered set against the live tree, then lands on its own tab', async () => {
-    useSession.getState().applyTree(
-      treeWith([
-        { id: 'x', path: 'Notes/x.md' },
-        { id: 'y', path: 'Notes/Renamed.md' },
-      ]),
-    )
+    useSession.getState().applyChange({
+      version: 0,
+      delta: {
+        set: treeWith([
+          { id: 'x', path: 'Notes/x.md' },
+          { id: 'y', path: 'Notes/Renamed.md' },
+        ]),
+      },
+    })
     useSession.setState({
       windowsFile: {
         sets: {
@@ -638,7 +659,7 @@ describe('store — applyTree reconciles the window tabs (D-6)', () => {
     useSession.getState().openNav()
     useSession.getState().openWindowTab({ kind: 'page', id: 'b', path: 'Notes/B.md' })
 
-    useSession.getState().applyTree(treeWith([]), 0)
+    useSession.getState().applyChange({ version: 0, delta: { set: treeWith([]) } })
     const p = useSession.getState().windowSlot
     expect(p?.kind).toBe('nav')
     expect(p?.tabs.map((t) => t.target.kind)).toEqual(['map'])
@@ -669,7 +690,7 @@ describe('store — a Set whose sidecar doesn’t parse keeps what belongs to it
 
   it('corrupted mid-session: the tabs, window tabs, glance pins, and pinned tabs on its pages stay open', () => {
     seed({ tabs: [uTab('t1', P2, [P2], 0)], activeTabId: 't1', tabMru: ['t1'] })
-    useSession.getState().applyTree(readable(), 0)
+    useSession.getState().applyChange({ version: 0, delta: { set: readable() } })
     useSession.getState().applyNavChanged({ pinned: [toNavRef(P3)], banner: undefined })
     useSession.getState().openWindowTab(P2 as PageTarget)
     useSession.getState().pinGlance({
@@ -681,7 +702,7 @@ describe('store — a Set whose sidecar doesn’t parse keeps what belongs to it
       size: { w: 260, h: 120 },
     })
 
-    useSession.getState().applyTree(withheld(), 0)
+    useSession.getState().applyChange({ version: 0, delta: { set: withheld() } })
     const s = useSession.getState()
     expect(s.tabs.map((t) => t.target)).toEqual([P2])
     expect(s.pinned).toEqual([toNavRef(P3)])
@@ -692,12 +713,12 @@ describe('store — a Set whose sidecar doesn’t parse keeps what belongs to it
 
   it('already corrupt at the open: its pages’ pinned refs stay, and their tabs return when it reads', () => {
     seed({})
-    useSession.getState().applyTree(withheld(), 0)
+    useSession.getState().applyChange({ version: 0, delta: { set: withheld() } })
     useSession.getState().applyNavChanged({ pinned: [toNavRef(P3)], banner: undefined })
     expect(useSession.getState().pinned).toEqual([toNavRef(P3)])
     expect(useSession.getState().pinnedTabs).toEqual([])
 
-    useSession.getState().applyTree(readable(), 0)
+    useSession.getState().applyChange({ version: 0, delta: { set: readable() } })
     expect(useSession.getState().pinnedTabs.map((t) => t.target)).toEqual([P3])
   })
 })
@@ -711,12 +732,15 @@ describe('store — a file the Nexus can’t read posts a notice with Try Again'
 
   beforeEach(() => {
     seed({})
-    useSession.getState().applyTree(listing(), 0)
+    useSession.getState().applyChange({ version: 0, delta: { set: listing() } })
     clearNotification()
   })
 
   it('a malformed entry posts the unreadable notice, whose Try Again retries that file', async () => {
-    useSession.getState().applyTree(listing({ path: 'Notes/Foreign.md', reason: 'malformed' }), 0)
+    useSession.getState().applyChange({
+      version: 0,
+      delta: { set: listing({ path: 'Notes/Foreign.md', reason: 'malformed' }) },
+    })
     const notice = currentNotification()
     expect(notice?.message).toBe("'Foreign' contains unreadable metadata")
     expect(notice?.action?.label).toBe('Try Again')
@@ -730,21 +754,33 @@ describe('store — a file the Nexus can’t read posts a notice with Try Again'
   })
 
   it('a contradicting entry posts the invalid notice', () => {
-    useSession.getState().applyTree(listing({ path: 'Notes/Task.md', reason: 'contradicting' }), 0)
+    useSession.getState().applyChange({
+      version: 0,
+      delta: { set: listing({ path: 'Notes/Task.md', reason: 'contradicting' }) },
+    })
     expect(currentNotification()?.message).toBe("'Task' contains invalid metadata")
     expect(currentNotification()?.action?.label).toBe('Try Again')
   })
 
   it('an unparsed entry posts the invalid notice', () => {
-    useSession.getState().applyTree(listing({ path: 'Notes/Ideas', reason: 'unparsed' }), 0)
+    useSession.getState().applyChange({
+      version: 0,
+      delta: { set: listing({ path: 'Notes/Ideas', reason: 'unparsed' }) },
+    })
     expect(currentNotification()?.message).toBe("'Ideas' contains invalid metadata")
     expect(currentNotification()?.action?.label).toBe('Try Again')
   })
 
   it('a tree whose list didn’t change posts nothing', () => {
-    useSession.getState().applyTree(listing({ path: 'Notes/Foreign.md', reason: 'malformed' }), 0)
+    useSession.getState().applyChange({
+      version: 0,
+      delta: { set: listing({ path: 'Notes/Foreign.md', reason: 'malformed' }) },
+    })
     clearNotification()
-    useSession.getState().applyTree(listing({ path: 'Notes/Foreign.md', reason: 'malformed' }), 0)
+    useSession.getState().applyChange({
+      version: 0,
+      delta: { set: listing({ path: 'Notes/Foreign.md', reason: 'malformed' }) },
+    })
     expect(currentNotification()).toBeNull()
   })
 })
@@ -917,7 +953,7 @@ describe('store — a pushed difference', () => {
   }
 
   it('with the next version applies, and keeps the identity of what it didn’t name', () => {
-    useSession.getState().applyTree(two(), 3)
+    useSession.getState().applyChange({ version: 3, delta: { set: two() } })
     const held = useSession.getState().tree
     const delta = diff(held, moved())
     if (!delta) throw new Error('no difference')
@@ -934,7 +970,7 @@ describe('store — a pushed difference', () => {
 
   it('with a gap in its version asks for the whole tree', async () => {
     const state = asked()
-    useSession.getState().applyTree(two(), 3)
+    useSession.getState().applyChange({ version: 3, delta: { set: two() } })
     const delta = diff(useSession.getState().tree, moved())
     if (!delta) throw new Error('no difference')
     useSession.getState().applyChange({ version: 5, delta })
@@ -944,7 +980,7 @@ describe('store — a pushed difference', () => {
 
   it('that doesn’t fit the tree held asks for the whole tree', async () => {
     const state = asked()
-    useSession.getState().applyTree(two(), 3)
+    useSession.getState().applyChange({ version: 3, delta: { set: two() } })
     useSession.getState().applyChange({
       version: 4,
       delta: { at: { collections: { at: { Ghost: { at: { title: { set: 'x' } } } } } } },
@@ -964,7 +1000,7 @@ describe('store — a pushed difference', () => {
 
 describe('store — the mutate rail', () => {
   beforeEach(async () => {
-    useSession.getState().applyTree(treeWith([]), 0)
+    useSession.getState().applyChange({ version: 0, delta: { set: treeWith([]) } })
   })
 
   it('a page rename lands the pending save on the old path first', async () => {

@@ -50,28 +50,30 @@ describe('a tree update carries a setting only when the tree itself changed it',
     ;(window as unknown as { nexus: unknown }).nexus = stubDialer({
       'personalization:set': vi.fn(async () => ok(null)),
     })
-    useSession.getState().applyTree(makeTree(), 0)
+    useSession.getState().applyChange({ version: 0, delta: { set: makeTree() } })
   })
 
   // An optimistic patch shares the tree's settings copy, and an older push stabilizes back to it; neither may undo a newer change.
   it('keeps a change the tree has not caught up with', () => {
     useSession.getState().setPersonalization('editorScale', 1.2)
     const tree = useSession.getState().tree as NexusTree
-    useSession.getState().applyTree({ ...tree }, 0)
-    useSession.getState().applyTree(structuredClone(tree), 0)
+    useSession.getState().applyChange({ version: 0, delta: { set: { ...tree } } })
+    useSession.getState().applyChange({ version: 0, delta: { set: structuredClone(tree) } })
     expect(personalizationOf(useSession.getState()).editorScale).toBe(1.2)
     expect(document.documentElement.style.getPropertyValue('--editor-scale')).toBe('1.2')
   })
 
   it('takes a change the tree brings', () => {
     const tree = makeTree()
-    useSession.getState().applyTree(
-      {
-        ...tree,
-        config: { ...tree.config, personalization: { editorScale: 1.3 } },
+    useSession.getState().applyChange({
+      version: 0,
+      delta: {
+        set: {
+          ...tree,
+          config: { ...tree.config, personalization: { editorScale: 1.3 } },
+        },
       },
-      0,
-    )
+    })
     expect(personalizationOf(useSession.getState()).editorScale).toBe(1.3)
   })
 })
@@ -86,13 +88,16 @@ describe('a setting with an ask in flight', () => {
         }),
     })
     const older = makeTree({ personalization: { editorScale: 1.1 } })
-    useSession.getState().applyTree(older, 0)
+    useSession.getState().applyChange({ version: 0, delta: { set: older } })
     useSession.getState().setPersonalization('editorScale', 1.2)
-    useSession.getState().applyTree(structuredClone(older), 0)
+    useSession.getState().applyChange({ version: 0, delta: { set: structuredClone(older) } })
     expect(personalizationOf(useSession.getState()).editorScale).toBe(1.2)
     settle(ok(null))
     await new Promise((r) => setTimeout(r, 0))
-    useSession.getState().applyTree(makeTree({ personalization: { editorScale: 1.4 } }), 0)
+    useSession.getState().applyChange({
+      version: 0,
+      delta: { set: makeTree({ personalization: { editorScale: 1.4 } }) },
+    })
     expect(personalizationOf(useSession.getState()).editorScale).toBe(1.4)
   })
 })
