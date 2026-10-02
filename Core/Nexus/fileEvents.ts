@@ -19,6 +19,7 @@ import {
   hiddenFolder,
   outsideContent,
   sameScope,
+  type WatchScope,
 } from '../Paths/exclusion'
 import {
   parseJsonObject,
@@ -498,10 +499,15 @@ async function applySettings(root: string, ev: Changed, owed: Owed): Promise<App
   const scope = scopeOf(leaves)
   // The scope lands at once, so what runs before the walk (the asset migration) reads the scope just written.
   const patched = patchConfig(root, leaves)
-  if (!was || sameScope(scope, was)) return patched
+  return was && oweRescope(owed, was, scope) ? 'walk' : patched
+}
+
+// A scope change, seen by the settings event or by a walk that read the file first, re-arms the watcher and stamps what came into reach: what it no longer excludes and the asset root it left.
+export function oweRescope(owed: Owed, was: WatchScope, scope: WatchScope): boolean {
+  if (sameScope(scope, was)) return false
   owed.whole.push(...[...was.excluded, was.assetDir].filter((rel) => !outsideContent(rel, scope)))
   owed.rescope = true
-  return 'walk'
+  return true
 }
 
 async function applyShard(root: string, shard: string, ev: Changed): Promise<Applied> {
