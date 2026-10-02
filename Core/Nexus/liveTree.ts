@@ -83,6 +83,8 @@ export const heldTreeOf = (root: string): NexusTree | null =>
 export const liveTreeOf = (root: string): Promise<NexusTree> =>
   Promise.resolve(heldTreeOf(root) ?? refreshTree(root))
 
+export const NOT_HELD = fail('invalid-path', 'That item can’t be changed.')
+
 /** A mutation reaches only what the tree holds, as a kind it claims, so the root, `.nexus`, the trash, and excluded folders are never a target. */
 export async function mutableTarget(
   root: string,
@@ -90,9 +92,7 @@ export async function mutableTarget(
   kinds: readonly HeldKind[],
 ): Promise<Result<string>> {
   const tree = await liveTreeOf(root)
-  return kinds.some((kind) => holds(tree, rel, kind))
-    ? resolveUnderRoot(root, rel)
-    : fail('invalid-path', 'That item can’t be changed.')
+  return kinds.some((kind) => holds(tree, rel, kind)) ? resolveUnderRoot(root, rel) : NOT_HELD
 }
 
 function holds(tree: NexusTree, rel: string, kind: HeldKind): boolean {

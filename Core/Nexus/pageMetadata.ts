@@ -2,7 +2,7 @@ import { isPlainObject } from '../Contract/validators'
 import { parseJsonObject, readJsonStrict, updateNexusFile } from '../Files/atomicWrite'
 import { listEntries } from '../Files/walk'
 import { fault, ok, type Result } from '../Contract/result'
-import { liveTreeOf, mutableTarget } from './liveTree'
+import { liveTreeOf, NOT_HELD } from './liveTree'
 import { metadataShardPath } from '../Paths/paths'
 import { METADATA_DIR_REL, SHARD_FILE_RE } from '../Paths/nexusPaths'
 import { basename, join } from '../Paths/posix'
@@ -166,9 +166,6 @@ export async function writePageMeta(
   relPath: string,
   patch: PageMetaPatch,
 ): Promise<MutateReply> {
-  const resolved = await mutableTarget(root, relPath, ['page'])
-  if (!resolved.ok) return resolved
   const id = pageAt(await liveTreeOf(root), relPath)?.id
-  if (!id) return fault('That page has no ID Pommora can file.')
-  return done(await updatePageMetadata(root, id, patch))
+  return id ? done(await updatePageMetadata(root, id, patch)) : NOT_HELD
 }
