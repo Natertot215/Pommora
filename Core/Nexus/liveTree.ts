@@ -33,10 +33,6 @@ function hold(next: NexusTree | null): void {
   if (moved) commandsTap?.()
 }
 
-export function getLiveTree(): NexusTree | null {
-  return tree
-}
-
 /** Null — no tree held, or the patch can't resolve — tells the caller to fall back to `refreshTree`. A call that changes the tree, or can't place its change, marks disk as moved, so an in-flight walk that started earlier discards its result and re-walks. */
 export function patchLiveTree(fn: (t: NexusTree) => NexusTree | null): NexusTree | null {
   const next = tree && fn(tree)

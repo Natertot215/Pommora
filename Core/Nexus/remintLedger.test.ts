@@ -15,7 +15,7 @@ import {
 import { installStores, NO_STORES } from '../Platform/stores'
 import { memoryStores } from '../Testing/memoryStores'
 import * as liveTree from './liveTree'
-import { dropLiveTree, getLiveTree } from './liveTree'
+import { dropLiveTree, heldTreeOf } from './liveTree'
 import { openSession } from './session'
 import { readNexus } from './readNexus'
 
@@ -369,7 +369,7 @@ describe('runOpenLedger — the open sequence', () => {
   it('a clean open seeds the live tree from the record walk', async () => {
     dropLiveTree()
     await runOpenLedger(root, await readNexus(root))
-    const tree = getLiveTree()
+    const tree = heldTreeOf(root)
     expect(tree).not.toBeNull()
     expect(tree?.collections[0]?.pages[0]?.id).toBe(NOTES)
   })
@@ -379,7 +379,7 @@ describe('runOpenLedger — the open sequence', () => {
     await writeFile(join(root, 'Library', 'Copy.md'), `---\nID: ${NOTES}\n---\nbody`)
     dropLiveTree()
     await runOpenLedger(root, await readNexus(root))
-    const ids = (getLiveTree()?.collections[0]?.pages ?? []).map((p) => p.id)
+    const ids = (heldTreeOf(root)?.collections[0]?.pages ?? []).map((p) => p.id)
     expect(ids).toHaveLength(2)
     expect(new Set(ids).size).toBe(2)
   })
@@ -393,7 +393,7 @@ describe('runOpenLedger — the open sequence', () => {
     try {
       await runOpenLedger(root, await readNexus(root))
       expect(walk).toHaveBeenCalled()
-      expect(getLiveTree()).toBeNull()
+      expect(heldTreeOf(root)).toBeNull()
     } finally {
       walk.mockRestore()
       logged.mockRestore()

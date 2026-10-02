@@ -7,7 +7,7 @@ import type { HostContext } from '../Contract/handlers'
 import { fault, ok } from '../Contract/result'
 import { sidecarPath } from '../Paths/paths'
 import { closeSession, openSession } from '../Nexus/session'
-import { dropLiveTree, getLiveTree, refreshTree } from '../Nexus/liveTree'
+import { dropLiveTree, heldTreeOf, refreshTree } from '../Nexus/liveTree'
 import { findContainerWhere } from '../Nexus/treePatch'
 import { createFolderEntity } from '../Nexus/folderEntity'
 import { newId } from '../Nexus/ids'
@@ -46,7 +46,7 @@ const tilePushes = (): unknown[] =>
   pushes.filter((p) => p.channel === 'tiles:changed').map((p) => p.payload)
 
 const liveViewAt = (abs: string): unknown =>
-  findContainerWhere(getLiveTree()!, (c) => c.path === relative(root, abs))?.views?.[0]
+  findContainerWhere(heldTreeOf(root)!, (c) => c.path === relative(root, abs))?.views?.[0]
 
 beforeEach(async () => {
   pushes = []

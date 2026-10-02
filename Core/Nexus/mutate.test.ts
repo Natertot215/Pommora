@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 import * as liveTree from './liveTree'
-import { dropLiveTree, getLiveTree, refreshTree } from './liveTree'
+import { dropLiveTree, heldTreeOf, refreshTree } from './liveTree'
 import { splitFrontmatter } from '../Files/pageFile'
 import { ID_KEY } from './identityMark'
 import { rm, mkdir, writeFile, readFile, readdir, chmod, symlink, stat } from 'node:fs/promises'
@@ -66,7 +66,7 @@ const withValuesPush = async (
     if (channel === 'values:changed') values.push(...(value as ValueChange[]))
   }
   await flush({ push, watch: async () => {} }, root)
-  const held = getLiveTree()
+  const held = heldTreeOf(root)
   if (held) expect(stabilize(await readNexus(root), held)).toBe(held)
   return { ok: reply.ok, values }
 }
@@ -839,7 +839,7 @@ describe('handleMutate — a new Collection lands last', () => {
     ).toEqual({
       collections: [ZETA, NOTES, id],
     })
-    expect(lastOf(getLiveTree())).toBe('Alpha')
+    expect(lastOf(heldTreeOf(root))).toBe('Alpha')
     expect(lastOf(await readNexus(root))).toBe('Alpha')
   })
 
@@ -847,7 +847,7 @@ describe('handleMutate — a new Collection lands last', () => {
     await refreshTree(root)
     expect((await create()).ok).toBe(true)
     expect(await pathExists(join(root, '.nexus', 'state.json'))).toBe(false)
-    expect(lastOf(getLiveTree())).toBe('Alpha')
+    expect(lastOf(heldTreeOf(root))).toBe('Alpha')
     expect(lastOf(await readNexus(root))).toBe('Alpha')
   })
 })
@@ -1265,7 +1265,7 @@ describe('handleMutate — a page delete reaches the pages beneath a Set whose s
     await refreshTree(root)
     await writeFile(sidecar(), '{corrupt')
     await refreshTree(root)
-    expect(getLiveTree()?.unreadable).toEqual([{ path: 'Notes/Archive', reason: 'unparsed' }])
+    expect(heldTreeOf(root)?.unreadable).toEqual([{ path: 'Notes/Archive', reason: 'unparsed' }])
     expect((await deleteBeta()).ok).toBe(true)
     expect(splitFrontmatter(await read('Notes/Archive/Gamma.md'))).not.toHaveProperty('Related')
   })
@@ -1283,21 +1283,23 @@ describe('nexusHandlers.mutate — retryUnreadable', () => {
   const ctx = { push: vi.fn(), trashMode: async () => 'nexus' } as unknown as HostContext
   const retry = (path: string) => nexusHandlers.mutate(ctx, { op: 'retryUnreadable', path })
   const held = (rel: string): boolean =>
-    getLiveTree()?.collections.some((c) =>
+    heldTreeOf(root)?.collections.some((c) =>
       [c, ...(c.sets ?? [])].some((n) => n.path === rel || n.pages.some((p) => p.path === rel)),
     ) ?? false
 
   it('writes a Pommora ID over an ID: 42 page, and the page is held', async () => {
     await writeFile(join(root, 'Notes', 'Foreign.md'), '---\nID: 42\n---\nbody')
     await refreshTree(root)
-    expect(getLiveTree()?.unreadable).toEqual([{ path: 'Notes/Foreign.md', reason: 'malformed' }])
+    expect(heldTreeOf(root)?.unreadable).toEqual([
+      { path: 'Notes/Foreign.md', reason: 'malformed' },
+    ])
     expect((await retry('Notes/Foreign.md')).ok).toBe(true)
     const id = splitFrontmatter(await read('Notes/Foreign.md'))[ID_KEY]
     expect(id).not.toBe(42)
-    expect(getLiveTree()?.collections[0].pages.find((p) => p.path === 'Notes/Foreign.md')?.id).toBe(
-      id,
-    )
-    expect(getLiveTree()?.unreadable).toBeUndefined()
+    expect(
+      heldTreeOf(root)?.collections[0].pages.find((p) => p.path === 'Notes/Foreign.md')?.id,
+    ).toBe(id)
+    expect(heldTreeOf(root)?.unreadable).toBeUndefined()
   })
 
   it('over one of two ID: 42 pages rewrites only the one it names', async () => {
@@ -1308,31 +1310,35 @@ describe('nexusHandlers.mutate — retryUnreadable', () => {
     expect(splitFrontmatter(await read('Notes/One.md'))[ID_KEY]).not.toBe(42)
     expect(await read('Notes/Two.md')).toBe('---\nID: 42\n---\nbody')
     expect(held('Notes/One.md')).toBe(true)
-    expect(getLiveTree()?.unreadable).toEqual([{ path: 'Notes/Two.md', reason: 'malformed' }])
+    expect(heldTreeOf(root)?.unreadable).toEqual([{ path: 'Notes/Two.md', reason: 'malformed' }])
   })
 
   it('writes nothing for a Task’s file in a Collection', async () => {
     const bytes = `---\nID: ${TASK_ID}\n---\nbody`
     await writeFile(join(root, 'Notes', 'Task.md'), bytes)
     await refreshTree(root)
-    expect(getLiveTree()?.unreadable).toEqual([{ path: 'Notes/Task.md', reason: 'contradicting' }])
+    expect(heldTreeOf(root)?.unreadable).toEqual([
+      { path: 'Notes/Task.md', reason: 'contradicting' },
+    ])
     expect((await retry('Notes/Task.md')).ok).toBe(true)
     expect(await read('Notes/Task.md')).toBe(bytes)
-    expect(getLiveTree()?.unreadable).toEqual([{ path: 'Notes/Task.md', reason: 'contradicting' }])
+    expect(heldTreeOf(root)?.unreadable).toEqual([
+      { path: 'Notes/Task.md', reason: 'contradicting' },
+    ])
   })
 
   it('writes nothing for a Set whose corrupt sidecar has since been fixed, and the Set is held', async () => {
     const sidecar = join(root, 'Notes', 'Daily', '_pageset.json')
     await writeFile(sidecar, '{corrupt')
     await refreshTree(root)
-    expect(getLiveTree()?.unreadable).toEqual([{ path: 'Notes/Daily', reason: 'unparsed' }])
+    expect(heldTreeOf(root)?.unreadable).toEqual([{ path: 'Notes/Daily', reason: 'unparsed' }])
     const fixed = JSON.stringify({ id: 'col' })
     await writeFile(sidecar, fixed)
     expect((await retry('Notes/Daily')).ok).toBe(true)
     expect(await readFile(sidecar, 'utf8')).toBe(fixed)
     expect(held('Notes/Daily')).toBe(true)
     expect(held('Notes/Daily/Alpha.md')).toBe(true)
-    expect(getLiveTree()?.unreadable).toBeUndefined()
+    expect(heldTreeOf(root)?.unreadable).toBeUndefined()
   })
 
   it('stamps a root folder listed missing, then its ID-less pages and its subfolder, and holds them all', async () => {
@@ -1340,12 +1346,12 @@ describe('nexusHandlers.mutate — retryUnreadable', () => {
     await writeFile(join(root, 'Raw', 'P.md'), 'p\n')
     await writeFile(join(root, 'Raw', 'Sub', 'Q.md'), 'q\n')
     await refreshTree(root)
-    expect(getLiveTree()?.unreadable).toEqual([{ path: 'Raw', reason: 'missing' }])
+    expect(heldTreeOf(root)?.unreadable).toEqual([{ path: 'Raw', reason: 'missing' }])
     expect((await retry('Raw')).ok).toBe(true)
     expect(held('Raw/P.md')).toBe(true)
     expect(held('Raw/Sub/Q.md')).toBe(true)
-    expect(getLiveTree()?.unreadable).toBeUndefined()
-    const live = getLiveTree()
+    expect(heldTreeOf(root)?.unreadable).toBeUndefined()
+    const live = heldTreeOf(root)
     expect(live && stabilize(await readNexus(root), live)).toBe(live)
   })
 })
@@ -2605,7 +2611,7 @@ describe('handleMutate — excluded entries follow their folders', () => {
     expect(r).toEqual({ ok: true, value: {} })
     expect(await excludedOnDisk()).toEqual(['Archive', 'Elsewhere/Daily'])
     expect(watch).toHaveBeenCalledWith(root)
-    const tree = getLiveTree()
+    const tree = heldTreeOf(root)
     expect(tree?.config.excluded).toEqual(['Archive', 'Elsewhere/Daily'])
     expect(tree?.collections.find((c) => c.path === 'Elsewhere')?.sets).toEqual([])
     expect(push.mock.calls.map(([name]) => name)).toContain('nexus:changed')

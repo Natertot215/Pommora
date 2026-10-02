@@ -6,7 +6,7 @@ import type { PropertyDefinition } from '../Properties/properties'
 import { deleteCascade, renameCascade } from './cascade'
 import { sweepGovernedRoots, unsweptLine } from '../Properties/governedSweep'
 import { createTestPage } from '../Testing/createTestPage'
-import { dropLiveTree, getLiveTree, refreshTree } from './liveTree'
+import { dropLiveTree, heldTreeOf, refreshTree } from './liveTree'
 import { closeSession, openSession } from './session'
 import { createProperty } from '../Properties/registryProperty'
 
@@ -459,7 +459,7 @@ describe('deleteCascade', () => {
     const content = '---\nRelated: "[[Target]]"\n---\n'
     await writeFile(loose, content)
     await refreshTree(root)
-    expect(getLiveTree()?.unreadable).toContainEqual({ path: rel(loose), reason: 'missing' })
+    expect(heldTreeOf(root)?.unreadable).toContainEqual({ path: rel(loose), reason: 'missing' })
     const r = await deleteCascade(root, target(), ['Target'])
     expect(r.links).toEqual([])
     expect(await readFile(loose, 'utf8')).toBe(content)
@@ -526,7 +526,7 @@ describe('deleteCascade', () => {
     await refreshTree(root)
     sweepSpy.mockClear()
     const r = await deleteCascade(root, target(), ['Target'])
-    expect(getLiveTree()?.unreadable).toContainEqual({ path: rel(broken), reason: 'unparsed' })
+    expect(heldTreeOf(root)?.unreadable).toContainEqual({ path: rel(broken), reason: 'unparsed' })
     expect(sweptFiles()).not.toContain(broken)
     expect(r).toEqual({ cascade: { pages: [], hosts: [] }, links: [] })
     expect(await readFile(broken, 'utf8')).toBe(content)

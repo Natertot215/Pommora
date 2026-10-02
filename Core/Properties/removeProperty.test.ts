@@ -22,7 +22,7 @@ import { readRegistry } from './propertiesRegistry'
 import { splitFrontmatter } from '../Files/pageFile'
 import { pageCollectionSidecar } from '../Nexus/schemas'
 import { closeSession, openSession } from '../Nexus/session'
-import { getLiveTree, refreshTree } from '../Nexus/liveTree'
+import { heldTreeOf, refreshTree } from '../Nexus/liveTree'
 import type { PropertyDefinition } from './properties'
 
 vi.mock('../Files/atomicWrite', async (importOriginal) => {
@@ -120,7 +120,7 @@ describe('removeProperty — strip + cache (C-3/C-6)', () => {
     await writeFile(pageA, bare)
     await openSession(root)
     await refreshTree(root)
-    expect(getLiveTree()?.unreadable).toContainEqual({
+    expect(heldTreeOf(root)?.unreadable).toContainEqual({
       path: relative(root, pageA),
       reason: 'missing',
     })

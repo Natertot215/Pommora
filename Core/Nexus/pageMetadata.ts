@@ -10,8 +10,8 @@ import { metadataShardFile, type PageMeta, type PageMetaPatch } from './schemas'
 import { shardOf } from './ids'
 import { done, type MutateReply } from './mutateRequest'
 import { stabilize } from './treeStabilize'
-import { findContainerWhere, pageAt } from './treePatch'
-import type { NexusTree } from './tree'
+import { pageAt } from './treePatch'
+import { idHeld } from './heldPages'
 
 type ShardRead =
   | { kind: 'ok'; pages: Record<string, PageMeta> }
@@ -113,18 +113,8 @@ export async function updatePageMetadata(
   return written.ok ? ok(null) : written
 }
 
-export async function dropPageMetadata(
-  root: string,
-  ids: readonly string[],
-  live: NexusTree | null,
-): Promise<void> {
-  const held = new Set<string>()
-  if (live)
-    findContainerWhere(live, (c) => {
-      for (const p of c.pages) held.add(p.id)
-      return false
-    })
-  for (const [shard, gone] of byShard(ids.filter((id) => !held.has(id)))) {
+export async function dropPageMetadata(root: string, ids: readonly string[]): Promise<void> {
+  for (const [shard, gone] of byShard(ids.filter((id) => !idHeld(root, id)))) {
     const written = await updateNexusFile(
       metadataShardPath(root, shard),
       (cur) => {

@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import type { NexusTree } from './tree'
 import {
   dropLiveTree,
-  getLiveTree,
+  heldTreeOf,
   patchLiveTree,
   refreshTree,
   seedLiveTree,
@@ -19,7 +19,8 @@ vi.mock('./session', () => ({ sessionRoot: () => open }))
 const walk = vi.mocked(readNexus)
 const exists = vi.mocked(pathExists)
 
-const T = (name: string): NexusTree => ({ nexus: { id: name }, config: {} }) as unknown as NexusTree
+const T = (name: string, rootPath = '/r'): NexusTree =>
+  ({ nexus: { id: name, rootPath }, config: {} }) as unknown as NexusTree
 
 function deferred<V>(): {
   promise: Promise<V>
@@ -53,7 +54,7 @@ describe('refreshTree', () => {
     expect(await a).toBe(tA)
     expect(await b).toBe(tA)
     expect(walk).toHaveBeenCalledTimes(1)
-    expect(getLiveTree()).toBe(tA)
+    expect(heldTreeOf('/r')).toBe(tA)
   })
 
   it('a mutation landing mid-walk discards the result and re-walks', async () => {
@@ -66,7 +67,7 @@ describe('refreshTree', () => {
     d.resolve(tStale)
     expect(await p).toBe(tFresh)
     expect(walk).toHaveBeenCalledTimes(2)
-    expect(getLiveTree()).toBe(tFresh)
+    expect(heldTreeOf('/r')).toBe(tFresh)
   })
 
   it('a root switch mid-walk discards the result', async () => {
@@ -76,26 +77,26 @@ describe('refreshTree', () => {
     const p = refreshTree('/a')
     dropLiveTree()
     open = '/b'
-    d.resolve(T('a'))
+    d.resolve(T('a', '/a'))
     await p
-    expect(getLiveTree()).toBeNull()
-    const tB = T('b')
+    expect(heldTreeOf('/a')).toBeNull()
+    const tB = T('b', '/b')
     walk.mockResolvedValueOnce(tB)
     expect(await refreshTree('/b')).toBe(tB)
-    expect(getLiveTree()).toBe(tB)
+    expect(heldTreeOf('/b')).toBe(tB)
   })
 
   it('a walk of the previous root, asked after a switch, reads it without replacing the open walk', async () => {
     open = '/b'
     const dB = deferred<NexusTree>()
-    const tA = T('a')
-    const tB = T('b')
+    const tA = T('a', '/a')
+    const tB = T('b', '/b')
     walk.mockReturnValueOnce(dB.promise).mockResolvedValueOnce(tA)
     const opening = refreshTree('/b')
     expect(await refreshTree('/a')).toBe(tA)
     dB.resolve(tB)
     expect(await opening).toBe(tB)
-    expect(getLiveTree()).toBe(tB)
+    expect(heldTreeOf('/b')).toBe(tB)
   })
 
   it('a transient rejection keeps the held tree and clears the slot for a retry', async () => {
@@ -105,7 +106,7 @@ describe('refreshTree', () => {
     walk.mockRejectedValueOnce(new Error('EBUSY'))
     exists.mockResolvedValueOnce(true)
     await expect(refreshTree('/r')).rejects.toThrow('EBUSY')
-    expect(getLiveTree()).toBe(tA)
+    expect(heldTreeOf('/r')).toBe(tA)
     const tB = T('b')
     walk.mockResolvedValueOnce(tB)
     expect(await refreshTree('/r')).toBe(tB)
@@ -118,7 +119,7 @@ describe('refreshTree', () => {
     walk.mockRejectedValueOnce(new Error('Nexus root not found: /r'))
     exists.mockResolvedValueOnce(false)
     await expect(refreshTree('/r')).rejects.toThrow('not found')
-    expect(getLiveTree()).toBeNull()
+    expect(heldTreeOf('/r')).toBeNull()
   })
 })
 
@@ -131,7 +132,7 @@ describe('seedLiveTree', () => {
     seedLiveTree(seeded)
     d.resolve(T('walked'))
     await inFlight
-    expect(getLiveTree()).toBe(seeded)
+    expect(heldTreeOf('/r')).toBe(seeded)
   })
 })
 
@@ -143,7 +144,7 @@ describe('patchLiveTree', () => {
     const next = patchLiveTree((t) => ({ ...t }))
     expect(next).not.toBeNull()
     expect(next).not.toBe(tA)
-    expect(getLiveTree()).toBe(next)
+    expect(heldTreeOf('/r')).toBe(next)
   })
 
   it('signals fallback with null when the patch cannot resolve, leaving the tree held', async () => {
@@ -151,7 +152,7 @@ describe('patchLiveTree', () => {
     walk.mockResolvedValueOnce(tA)
     await refreshTree('/r')
     expect(patchLiveTree(() => null)).toBeNull()
-    expect(getLiveTree()).toBe(tA)
+    expect(heldTreeOf('/r')).toBe(tA)
   })
 
   it('returns null on a held nothing without invoking the patch', () => {

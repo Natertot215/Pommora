@@ -1,5 +1,5 @@
 import { expect } from 'vitest'
-import { getLiveTree } from '../Nexus/liveTree'
+import { heldTreeOf } from '../Nexus/liveTree'
 import { handleMutate } from '../Nexus/mutate'
 import type { MutateReply, MutateRequest } from '../Nexus/mutateRequest'
 import { readNexus } from '../Nexus/readNexus'
@@ -17,7 +17,7 @@ export async function settledMutate(
 ): Promise<MutateReply> {
   const reply = await handleMutate(root, req, deps)
   await flush(QUIET, root)
-  const held = getLiveTree()
+  const held = heldTreeOf(root)
   if (held) expect(stabilize(await readNexus(root), held)).toBe(held)
   return reply
 }

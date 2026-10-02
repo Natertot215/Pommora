@@ -4,7 +4,7 @@ import { join } from '@pommora/core/Paths/posix'
 import { noModeBits, tempRoot } from '@pommora/core/Testing/hostFs'
 import type { BrowserWindow } from 'electron'
 import * as liveTree from '@pommora/core/Nexus/liveTree'
-import { dropLiveTree, getLiveTree, refreshTree } from '@pommora/core/Nexus/liveTree'
+import { dropLiveTree, heldTreeOf, refreshTree } from '@pommora/core/Nexus/liveTree'
 import { splitFrontmatter } from '@pommora/core/Files/pageFile'
 import { ID_KEY, isUlidShaped } from '@pommora/core/Nexus/identityMark'
 import { recordWrite } from '@pommora/core/Files/writeEcho'
@@ -116,10 +116,10 @@ describe('the watcher settle', () => {
     await settleAll(() => pushMock.mock.calls.length > 0)
     const channels = pushMock.mock.calls.map((c) => c[1])
     expect(channels).toEqual(['nexus:changed', 'pages:changed', 'values:changed'])
-    expect(applied(pushMock.mock.calls[0][2])).toEqual(getLiveTree())
+    expect(applied(pushMock.mock.calls[0][2])).toEqual(heldTreeOf(root))
     expect(pushMock.mock.calls[1][2]).toEqual(['Notes/B.md', 'Notes/C.md'])
     expect(pushMock.mock.calls[2][2]).toEqual([{ rel: 'Notes', pageIds: [ULID_B, ULID_C] }])
-    expect(getLiveTree()?.collections[0]?.pages).toHaveLength(3)
+    expect(heldTreeOf(root)?.collections[0]?.pages).toHaveLength(3)
   })
 
   it('an index step that throws still lands its page, and the reseed it owes indexes it', async () => {
@@ -137,9 +137,9 @@ describe('the watcher settle', () => {
       emit('add', 'Notes', 'B.md')
       await settleAll(() => readIndexedStat('Notes/B.md') !== null)
       reading.mockRestore()
-      expect(getLiveTree()?.collections[0]?.pages.map((p) => p.id)).toEqual([ULID_A, ULID_B])
+      expect(heldTreeOf(root)?.collections[0]?.pages.map((p) => p.id)).toEqual([ULID_A, ULID_B])
       expect(applied(pushMock.mock.calls.find((c) => c[1] === 'nexus:changed')?.[2])).toEqual(
-        getLiveTree(),
+        heldTreeOf(root),
       )
       expect(readIndexedStat('Notes/B.md')).not.toBeNull()
     } finally {
@@ -165,11 +165,11 @@ describe('the watcher settle', () => {
     await settleAll(() => pushMock.mock.calls.length > 0)
     const channels = pushMock.mock.calls.map((c) => c[1])
     expect(channels).toEqual(['nexus:changed', 'pages:changed', 'values:changed'])
-    expect(applied(pushMock.mock.calls[0][2])).toEqual(getLiveTree())
+    expect(applied(pushMock.mock.calls[0][2])).toEqual(heldTreeOf(root))
     expect(pushMock.mock.calls[1][2]).toEqual(['Notes/B.md'])
     expect(pushMock.mock.calls[2][2]).toEqual([{ rel: 'Notes', pageIds: [ULID_B] }])
     expect(
-      getLiveTree()
+      heldTreeOf(root)
         ?.collections[0]?.pages.map((p) => p.title)
         .sort(),
     ).toEqual(['A', 'B'])
@@ -317,10 +317,10 @@ describe('a file made outside the app', () => {
     try {
       await writeFile(abs('Notes', 'B.md'), 'beta\n')
       emit('add', 'Notes', 'B.md')
-      await settleAll(() => getLiveTree()?.collections[0]?.pages.length === 2)
+      await settleAll(() => heldTreeOf(root)?.collections[0]?.pages.length === 2)
       const id = await idIn('Notes', 'B.md')
       expect(isUlidShaped(id)).toBe(true)
-      expect(getLiveTree()?.collections[0]?.pages.map((p) => p.id)).toContain(id)
+      expect(heldTreeOf(root)?.collections[0]?.pages.map((p) => p.id)).toContain(id)
       expect(walks).not.toHaveBeenCalled()
     } finally {
       walks.mockRestore()
@@ -333,12 +333,12 @@ describe('a file made outside the app', () => {
     await writeFile(abs('Notes', 'Sub', 'P.md'), 'p\n')
     emit('addDir', 'Notes', 'Sub')
     emit('add', 'Notes', 'Sub', 'P.md')
-    await settleAll(() => !!getLiveTree()?.collections[0]?.sets[0]?.pages.length)
-    const sub = getLiveTree()?.collections[0]?.sets[0]
+    await settleAll(() => !!heldTreeOf(root)?.collections[0]?.sets[0]?.pages.length)
+    const sub = heldTreeOf(root)?.collections[0]?.sets[0]
     const sidecar = JSON.parse(await readFile(abs('Notes', 'Sub', '_pageset.json'), 'utf8'))
     expect(sub?.id).toBe(sidecar.id)
     expect(sub?.pages.map((p) => p.id)).toEqual([await idIn('Notes', 'Sub', 'P.md')])
-    expect(getLiveTree()?.unreadable).toBeUndefined()
+    expect(heldTreeOf(root)?.unreadable).toBeUndefined()
   })
 
   it.skipIf(noModeBits)('a page in a read-only folder stays listed missing', async () => {
@@ -350,8 +350,10 @@ describe('a file made outside the app', () => {
     await chmod(abs('Notes', 'Locked'), 0o555)
     try {
       emit('add', 'Notes', 'Locked', 'P.md')
-      await settleAll(() => !!getLiveTree()?.unreadable)
-      expect(getLiveTree()?.unreadable).toEqual([{ path: 'Notes/Locked/P.md', reason: 'missing' }])
+      await settleAll(() => !!heldTreeOf(root)?.unreadable)
+      expect(heldTreeOf(root)?.unreadable).toEqual([
+        { path: 'Notes/Locked/P.md', reason: 'missing' },
+      ])
       expect(await readFile(abs('Notes', 'Locked', 'P.md'), 'utf8')).toBe('p\n')
     } finally {
       await chmod(abs('Notes', 'Locked'), 0o755)
@@ -363,8 +365,8 @@ describe('a file made outside the app', () => {
     await writeFile(abs('Notes', 'C.md'), 'still writing\n')
     await writeFile(abs('.nexus', 'nexus.json'), JSON.stringify({ id: 'nx1' }))
     emit('change', '.nexus', 'nexus.json')
-    await settleAll(() => !!getLiveTree()?.unreadable)
-    expect(getLiveTree()?.unreadable).toEqual([{ path: 'Notes/C.md', reason: 'missing' }])
+    await settleAll(() => !!heldTreeOf(root)?.unreadable)
+    expect(heldTreeOf(root)?.unreadable).toEqual([{ path: 'Notes/C.md', reason: 'missing' }])
     expect(await readFile(abs('Notes', 'C.md'), 'utf8')).toBe('still writing\n')
   })
 })
@@ -375,9 +377,9 @@ describe('the watcher with the window closed', () => {
     live = null
     await writeFile(abs('Notes', 'B.md'), `---\nID: ${ULID_B}\n---\n\nbeta\n`)
     emit('add', 'Notes', 'B.md')
-    await settleAll(() => getLiveTree()?.collections[0]?.pages.length === 2)
+    await settleAll(() => heldTreeOf(root)?.collections[0]?.pages.length === 2)
     expect(
-      getLiveTree()
+      heldTreeOf(root)
         ?.collections[0]?.pages.map((p) => p.title)
         .sort(),
     ).toEqual(['A', 'B'])
@@ -437,18 +439,18 @@ describe('state.json under the watcher', () => {
     expect(channels.filter((c) => c === 'nav:changed')).toHaveLength(1)
     expect(pushMock.mock.calls.find((c) => c[1] === 'nav:changed')?.[2]).toEqual(nav)
     expect(channels.filter((c) => c === 'nexus:changed')).toHaveLength(1)
-    expect(getLiveTree()?.collections.map((c) => c.id)).toEqual(['c2', 'c1'])
+    expect(heldTreeOf(root)?.collections.map((c) => c.id)).toEqual(['c2', 'c1'])
   })
 
   it('an order list that moves nothing updates the held order and keeps the collections', async () => {
     await startWatcher(root, win)
-    const before = getLiveTree()
+    const before = heldTreeOf(root)
     await writeFile(abs('.nexus', 'state.json'), JSON.stringify({ order: { collections: ['c1'] } }))
     emit('change', '.nexus', 'state.json')
     await settleAll()
     expect(pushMock.mock.calls.map((c) => c[1])).toEqual(['nav:changed', 'nexus:changed'])
-    expect(getLiveTree()?.config.order.collections).toEqual(['c1'])
-    expect(getLiveTree()?.collections).toBe(before?.collections)
+    expect(heldTreeOf(root)?.config.order.collections).toEqual(['c1'])
+    expect(heldTreeOf(root)?.collections).toBe(before?.collections)
   })
 })
 
@@ -491,7 +493,7 @@ describe('a metadata month file under the watcher', () => {
     emit('change', '.nexus', 'metadata', '08-2026.json')
     await settleAll(() => pushMock.mock.calls.some((c) => c[1] === 'nexus:changed'))
     expect(pushMock.mock.calls.filter((c) => c[1] === 'nexus:changed')).toHaveLength(1)
-    expect(getLiveTree()?.config.pageMetadata).toEqual({ [id]: { locked: true } })
+    expect(heldTreeOf(root)?.config.pageMetadata).toEqual({ [id]: { locked: true } })
   })
 })
 
@@ -563,7 +565,7 @@ describe('syncIgnoredUnder beside the classifier', () => {
   })
 
   it('agrees with classifyEvent about what an asset path is', () => {
-    const tree = getLiveTree()
+    const tree = heldTreeOf(root)
     if (!tree) throw new Error('no tree')
     for (const dir of ['.nexus/assets', 'file-assets', '.attachments']) {
       const path = abs(...dir.split('/'), 'x.png')

@@ -6,7 +6,7 @@ import type { Pushes } from '../Contract/bridge'
 import type { Changed } from '../Files/writeEcho'
 import * as indexSeed from '../Index/indexSeed'
 import * as liveTree from './liveTree'
-import { dropLiveTree, getLiveTree, refreshTree } from './liveTree'
+import { dropLiveTree, heldTreeOf, refreshTree } from './liveTree'
 import * as readNexusModule from './readNexus'
 import { readNexus } from './readNexus'
 import * as adopt from './adopt'
@@ -93,7 +93,7 @@ describe('what a flush pushes for a batch', () => {
       'values:changed',
       'tiles:changed',
     ])
-    expect(patch(shown, (payload('nexus:changed') as NexusChange).delta)).toEqual(getLiveTree())
+    expect(patch(shown, (payload('nexus:changed') as NexusChange).delta)).toEqual(heldTreeOf(root))
     expect(payload('tiles:changed')).toEqual({ kind: 'homepage' })
   })
 
@@ -182,7 +182,7 @@ describe('what a flush pushes for a batch', () => {
     await flush(pusher, root)
     expect(payload('nexus:changed')).toEqual({
       version: version + 1,
-      delta: { set: getLiveTree() },
+      delta: { set: heldTreeOf(root) },
     })
   })
 
@@ -219,13 +219,13 @@ describe('the settle', () => {
     expect(owedFor(root).walk).toBe(true)
     await flush(pusher, root)
     expect(walk).toHaveBeenCalledTimes(1)
-    expect(getLiveTree()?.collections[0]?.pages.map((p) => p.id)).toEqual([ULID_A, ULID_B])
+    expect(heldTreeOf(root)?.collections[0]?.pages.map((p) => p.id)).toEqual([ULID_A, ULID_B])
   })
 
   it('a page a walk lists missing, with no event of its own, is not stamped', async () => {
     await writeFile(abs('Notes', 'Bare.md'), 'bare\n')
     await settleBatch(pusher, root, [ev('change', '.nexus', 'nexus.json')])
-    expect(getLiveTree()?.unreadable).toEqual([{ path: 'Notes/Bare.md', reason: 'missing' }])
+    expect(heldTreeOf(root)?.unreadable).toEqual([{ path: 'Notes/Bare.md', reason: 'missing' }])
     expect(await readFile(abs('Notes', 'Bare.md'), 'utf8')).toBe('bare\n')
   })
 
@@ -271,11 +271,11 @@ describe('an outside batch’s turn', () => {
       .filter(([c]) => c === 'nexus:changed')
       .reduce((t, [, v]) => patch(t, (v as NexusChange).delta), shown)
   const agrees = async (): Promise<void> => {
-    const live = getLiveTree()
+    const live = heldTreeOf(root)
     expect(live && stabilize(await readNexus(root), live)).toBe(live)
   }
   const held = (rel: string): string | undefined =>
-    getLiveTree()?.collections[0]?.pages.find((p) => p.path === rel)?.id
+    heldTreeOf(root)?.collections[0]?.pages.find((p) => p.path === rel)?.id
 
   it('a reply’s flush doesn’t wait on the stamps of a batch that has applied', async () => {
     await writeFile(abs('Notes', 'Bare.md'), 'bare\n')
@@ -320,8 +320,8 @@ describe('an outside batch’s turn', () => {
     expect(windowTree().unreadable).toBeUndefined()
     release.open()
     await batch
-    expect(getLiveTree()?.unreadable).toBeUndefined()
-    expect(windowTree()).toEqual(getLiveTree())
+    expect(heldTreeOf(root)?.unreadable).toBeUndefined()
+    expect(windowTree()).toEqual(heldTreeOf(root))
     await agrees()
   })
 
@@ -358,8 +358,8 @@ describe('an outside batch’s turn', () => {
     await replied
     await batch
     expect(held('Notes/Bare.md')).toBe(splitFrontmatter(await bytes('Notes', 'Bare.md'))[ID_KEY])
-    expect(getLiveTree()?.unreadable).toBeUndefined()
-    expect(windowTree()).toEqual(getLiveTree())
+    expect(heldTreeOf(root)?.unreadable).toBeUndefined()
+    expect(windowTree()).toEqual(heldTreeOf(root))
     await agrees()
   })
 
@@ -387,7 +387,7 @@ describe('an outside batch’s turn', () => {
     release.open()
     await batch
     expect(held('Notes/Bare.md')).toBe(splitFrontmatter(await bytes('Notes', 'Bare.md'))[ID_KEY])
-    expect(getLiveTree()?.unreadable).toBeUndefined()
+    expect(heldTreeOf(root)?.unreadable).toBeUndefined()
     await agrees()
   })
 })

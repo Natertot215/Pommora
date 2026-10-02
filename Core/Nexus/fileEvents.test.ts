@@ -4,7 +4,7 @@ import { join, relative } from '../Paths/posix'
 import { tempRoot } from '../Testing/hostFs'
 import { stabilize } from './treeStabilize'
 import * as liveTree from './liveTree'
-import { dropLiveTree, getLiveTree, refreshTree } from './liveTree'
+import { dropLiveTree, heldTreeOf, refreshTree } from './liveTree'
 import { ASSETS_DIR_REL } from '../Paths/nexusPaths'
 import { contentIdAt } from './ids'
 import * as readNexusModule from './readNexus'
@@ -43,7 +43,7 @@ const ev = (event: Changed['event'], ...segs: string[]): Changed => ({
   absPath: abs(...segs),
 })
 const held = (): NexusTree => {
-  const tree = getLiveTree()
+  const tree = heldTreeOf(root)
   if (tree === null) throw new Error('no tree')
   return tree
 }
@@ -187,7 +187,7 @@ describe('applyEvents — must agree with the walk', () => {
     expect(live.config.order.contexts).toEqual(['ctx1'])
     await agrees()
     await applyEvents(root, [ev('change', '.nexus', 'state.json')])
-    expect(getLiveTree()).toBe(live)
+    expect(heldTreeOf(root)).toBe(live)
   })
 
   it('holds the order and the homepage through a damaged state.json and homepage.json, and the walk agrees', async () => {
@@ -259,10 +259,10 @@ describe('applyEvents — must agree with the walk', () => {
 
   it('an empty batch is a no-op that preserves tree identity', async () => {
     await refreshTree(root)
-    const before = getLiveTree()
+    const before = heldTreeOf(root)
     await applyEvents(root, [])
     expect(walked()).toBe(false)
-    expect(getLiveTree()).toBe(before)
+    expect(heldTreeOf(root)).toBe(before)
   })
 
   it('an exclusion change in settings lands the scope at once and owes the walk and the rescope', async () => {
@@ -473,7 +473,7 @@ describe('the parity cases', () => {
     const before = held()
     await writeFile(abs('Notes', 'photo.png'), 'bytes')
     await settled([ev('add', 'Notes', 'photo.png')])
-    expect(getLiveTree()).toBe(before)
+    expect(heldTreeOf(root)).toBe(before)
     await agrees()
     expect(walk).not.toHaveBeenCalled()
   })
@@ -688,7 +688,7 @@ describe('the metadata leaf re-reads only its month', () => {
     const live = held()
     await land('change', '09-2026')
     expect(walked()).toBe(false)
-    expect(getLiveTree()).toBe(live)
+    expect(heldTreeOf(root)).toBe(live)
   })
 })
 
@@ -1007,7 +1007,7 @@ describe('the walk and the sidecar event agree on a container', () => {
       activeView: node.activeView,
     }
   const notes = (): CollectionNode | SetNode | null => {
-    const tree = getLiveTree()
+    const tree = heldTreeOf(root)
     return tree ? findContainerWhere(tree, (n) => n.path === 'Notes') : null
   }
 

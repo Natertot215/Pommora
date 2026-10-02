@@ -9,7 +9,7 @@ import { atomicWriteFile } from '../Files/atomicWrite'
 import { bodyHash } from '../Files/pageFile'
 import { assetsHandlers } from '../Assets/handlers'
 import { nexusHandlers } from '../Nexus/handlers'
-import { dropLiveTree, getLiveTree, refreshTree } from '../Nexus/liveTree'
+import { dropLiveTree, heldTreeOf, refreshTree } from '../Nexus/liveTree'
 import { updatePageMetadata } from '../Nexus/pageMetadata'
 import { readNexus } from '../Nexus/readNexus'
 import { closeSession, openSession } from '../Nexus/session'
@@ -38,7 +38,7 @@ const ctx = {
 const abs = (...segs: string[]): string => join(root, ...segs)
 const channels = (): (keyof Pushes)[] => pushes.map(([c]) => c)
 const agrees = async (): Promise<void> => {
-  const held = getLiveTree()
+  const held = heldTreeOf(root)
   expect(held).not.toBeNull()
   expect(stabilize(await readNexus(root), held)).toBe(held)
 }
@@ -99,7 +99,7 @@ describe('the write gate settles what its handler wrote before the reply leaves'
     expect(r.ok).toBe(true)
     expect(channels()).toContain('nexus:changed')
     expect(
-      getLiveTree()
+      heldTreeOf(root)
         ?.collections.find((c) => c.path === 'Notes')
         ?.pages.map((p) => p.path),
     ).toContain('Notes/New.md')
@@ -190,7 +190,7 @@ describe('one write through each channel leaves the held tree as the disk reads,
   it('exclusions:set re-arms the watcher under the new scope', async () => {
     await settingsHandlers['exclusions:set'](ctx, ['Archive', 'Drafts'])
     expect(watch).toHaveBeenCalledWith(root)
-    expect(getLiveTree()?.collections.map((c) => c.path)).toEqual(['Notes'])
+    expect(heldTreeOf(root)?.collections.map((c) => c.path)).toEqual(['Notes'])
   })
 
   it('page:updateBody names the page body-only', async () => {

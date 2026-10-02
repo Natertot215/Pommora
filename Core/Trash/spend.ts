@@ -30,7 +30,7 @@ import { machine } from '../Platform/machine'
 import { stampedId } from '../Files/pageFile'
 import { recordWrite } from '../Files/writeEcho'
 import { frozenWorld } from '../Nexus/heldPages'
-import { getLiveTree, liveTreeOf } from '../Nexus/liveTree'
+import { liveTreeOf } from '../Nexus/liveTree'
 
 import { projectBaseline } from '../Nexus/remintLedger'
 import type { EntityRecord } from '../Nexus/record'
@@ -83,7 +83,7 @@ export async function emptyBundle(
   recordWrite(artifactAbs)
   if (deps.permanentDelete === true) await machine().remove(artifactAbs)
   else await deps.trashToSystem(artifactAbs)
-  await dropPageMetadata(root, pageIds, getLiveTree())
+  await dropPageMetadata(root, pageIds)
   if (opened.value.entity === 'context') await dropSpaceOrder(root, opened.value.registry.id)
   // Permanent now: a Link value naming one of its pages, recorded by the delete or taken up since, names nothing any more unless another bundle holds that title.
   const gone = pages.length

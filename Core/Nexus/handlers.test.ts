@@ -12,7 +12,7 @@ import { tempRoot, readJsonAt } from '../Testing/hostFs'
 import { memoryStores } from '../Testing/memoryStores'
 import { type HubHost, hubHost } from '../Testing/syncHub'
 import { nexusHandlers, openNexusSequence } from './handlers'
-import { dropLiveTree, getLiveTree, refreshTree } from './liveTree'
+import { dropLiveTree, heldTreeOf, refreshTree } from './liveTree'
 import { closeSession, sessionRoot, waitingOpen } from './session'
 import * as readNexusModule from './readNexus'
 import { readBaseline } from './remintLedger'
@@ -139,7 +139,7 @@ describe('openNexusSequence', () => {
     await turn(100)
     expect(waitingOpen()?.why).toBe('Couldn’t read “properties.json”.')
     expect(await readFile(loose, 'utf8')).toBe('no id yet')
-    expect(getLiveTree()).toBeNull()
+    expect(heldTreeOf(root)).toBeNull()
     expect(currentSession()).toBeNull()
   })
 
@@ -173,14 +173,14 @@ describe('openNexusSequence', () => {
     await openNexusSequence(ctx, root, true)
     const idIn = async (...segs: string[]): Promise<unknown> =>
       splitFrontmatter(await readFile(join(root, 'Inbox', ...segs), 'utf8'))[ID_KEY]
-    const inbox = getLiveTree()?.collections.find((c) => c.path === 'Inbox')
+    const inbox = heldTreeOf(root)?.collections.find((c) => c.path === 'Inbox')
     expect(inbox?.pages.map((p) => p.id).sort()).toEqual(
       [await idIn('One.md'), await idIn('Two.md')].sort(),
     )
     expect(inbox?.sets[0]?.pages.map((p) => p.id)).toEqual([await idIn('Later', 'Three.md')])
     for (const p of [...(inbox?.pages ?? []), ...(inbox?.sets[0]?.pages ?? [])])
       expect(isUlidShaped(p.id)).toBe(true)
-    expect(getLiveTree()?.unreadable).toBeUndefined()
+    expect(heldTreeOf(root)?.unreadable).toBeUndefined()
   })
 
   it('a failed walk retains the prior baseline and the open proceeds', async () => {

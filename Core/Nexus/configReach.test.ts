@@ -5,7 +5,7 @@ import { noModeBits, putJson, readJsonAt, tempRoot } from '../Testing/hostFs'
 import { contextsDir, contextsRegistryFile, nexusConfig, tileHostDir } from '../Paths/paths'
 import { NEXUS_CONFIG_FILES, SIDECAR_FILENAME, TILE_DOC_FILENAME } from '../Paths/nexusPaths'
 import type { PropertyDefinition } from '../Properties/properties'
-import { dropLiveTree, getLiveTree, liveTreeOf, refreshTree } from './liveTree'
+import { dropLiveTree, heldTreeOf, liveTreeOf, refreshTree } from './liveTree'
 import { readNexus } from './readNexus'
 import { closeSession, openSession } from './session'
 import './settle'
@@ -228,7 +228,7 @@ describe('an option rename', () => {
     await openSession(root)
     await refreshTree(root)
     await reachConfig(root, rename)
-    const held = getLiveTree()
+    const held = heldTreeOf(root)
     expect(stabilize(await readNexus(root), held)).toBe(held)
     closeSession()
   })

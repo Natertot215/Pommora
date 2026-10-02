@@ -23,7 +23,7 @@ import { captureWriteTap } from '../Testing/writeTap'
 import { fault, ok } from '../Contract/result'
 import { mutateRegistryFile } from './contextsRegistry'
 import { closeSession, openSession } from '../Nexus/session'
-import { getLiveTree, refreshTree } from '../Nexus/liveTree'
+import { heldTreeOf, refreshTree } from '../Nexus/liveTree'
 import { readNexus } from '../Nexus/readNexus'
 import '../Nexus/settle'
 import { spaceAt } from '../Nexus/treePatch'
@@ -320,10 +320,10 @@ describe('renameSpaceOp', () => {
 
   it('one groups array answers one world, and a settled Space rename answers a new one', async () => {
     const before = contextWorldOf((await refreshTree(root)).contexts)
-    expect(contextWorldOf(getLiveTree()?.contexts ?? [])).toBe(before)
+    expect(contextWorldOf(heldTreeOf(root)?.contexts ?? [])).toBe(before)
     const req = { op: 'renameSpace', spaceId: 'sp-pom', newName: 'Pom' } as const
     expect((await settledMutate(root, req, deps)).ok).toBe(true)
-    const after = contextWorldOf(getLiveTree()?.contexts ?? [])
+    const after = contextWorldOf(heldTreeOf(root)?.contexts ?? [])
     expect(after).not.toBe(before)
     expect(after.spaceById.get('sp-pom')?.title).toBe('Pom')
   })
@@ -493,7 +493,7 @@ describe('the sweep tells the truth about what it did (G-2)', () => {
     await expect(unlinkSpaceValue(root, 'Projects', 'Pommora')).rejects.toThrow()
     expect((await readJsonAt(csSidecar()))['<Projects>']).toEqual(['Pommora'])
     const rel = `${relative(root, contextsDir(root))}/Classes/CS 161`
-    const held = getLiveTree()
+    const held = heldTreeOf(root)
     expect(held && spaceAt(held, rel)).toEqual(spaceAt(await readNexus(root), rel))
   })
 

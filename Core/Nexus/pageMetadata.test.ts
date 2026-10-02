@@ -125,7 +125,7 @@ describe('the writer', () => {
     await updatePageMetadata(root, SEP_A, { icon: 'a' })
     await updatePageMetadata(root, SEP_B, { icon: 'b' })
     await updatePageMetadata(root, AUG, { icon: 'c' })
-    await dropPageMetadata(root, [SEP_A, AUG], null)
+    await dropPageMetadata(root, [SEP_A, AUG])
     expect(await shardOnDisk('09-2026')).toEqual({ pages: { [SEP_B]: { icon: 'b' } } })
     expect(await shardOnDisk('08-2026')).toEqual({ pages: {} })
   })
@@ -153,7 +153,7 @@ describe('the writer', () => {
   it('a corrupt month refuses a drop, logs, and keeps its bytes', async () => {
     const bytes = await corruptSeptember()
     const logged = vi.spyOn(console, 'error').mockImplementation(() => {})
-    await dropPageMetadata(root, [SEP_B], null)
+    await dropPageMetadata(root, [SEP_B])
     expect(logged).toHaveBeenCalledWith(
       'metadata: 09-2026 kept dropped entries:',
       'Corrupt JSON: 09-2026.json',

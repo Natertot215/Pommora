@@ -4,7 +4,6 @@ import { parseContextKey } from '../Contexts/contexts'
 import { ID_KEY } from '../Nexus/identityMark'
 import { asString } from '../Nexus/coerce'
 import { dropPageMetadata } from '../Nexus/pageMetadata'
-import { getLiveTree } from '../Nexus/liveTree'
 import { fault, ok, type Result } from '../Contract/result'
 import {
   type Rewrite,
@@ -88,7 +87,7 @@ export async function clearExclusionData(
   const cleared = new Map<string, string>()
   const swept = await sweepGovernedRoots(root, pages, { raw: clearRewrite(cleared) })
   const ids = [...swept.touched.keys()].flatMap((file) => cleared.get(file) ?? [])
-  await dropPageMetadata(root, ids, getLiveTree())
+  await dropPageMetadata(root, ids)
   if (swept.skipped.length) return fault(unsweptLine(swept.skipped.length))
   return ok({ pages: swept.touched.size, sidecars: removed, refused: swept.refused.length })
 }
