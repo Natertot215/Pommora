@@ -21,6 +21,7 @@ export function setWriteTap(next: WriteTap | null): void {
   tap = next
 }
 
+// Recorded before the bytes land, so no echo of the landing arrives ahead of its record; `noteOwn` follows the landing, so its event reports the file as it now stands.
 export function recordWrite(absPath: string, content?: string | Uint8Array): void {
   recent.set(absPath, {
     at: Date.now(),

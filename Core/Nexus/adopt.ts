@@ -175,6 +175,7 @@ async function stampTree(
   }
 }
 
+// Before the open's read: the walk stops at a folder with no sidecar and never lists an Agenda file, so these are stamped first and the read lists every page missing its ID, which `stampMissing` stamps.
 export async function stampAdopted(root: string): Promise<void> {
   const scope = scopeOf(await readSettings(root))
   const identity = await readIdentity(root)

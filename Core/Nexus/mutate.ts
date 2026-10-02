@@ -57,6 +57,7 @@ export async function handleMutate(
   }
 }
 
+// A rename's Try Again is the request again with the title it left, since a rename the journal slot refused has no record to replay; a property cascade's replays its record through `property:replay`.
 function renamed(
   req: Extract<MutateRequest, { op: 'renameContext' | 'renameSpace' }>,
   r: Result<Unswept | null>,
