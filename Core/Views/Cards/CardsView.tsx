@@ -173,7 +173,7 @@ export function CardsView({ host }: { host: ViewHostApi }): React.JSX.Element {
   const shellClass = cx('cards-view', banner === 'none' && 'is-compact')
   const hideLocation = viewOption(view, 'hide_location')
 
-  const [pendingSeat, setPendingSeat] = useState<string | null>(null)
+  const [pendingSeat, setPendingSeat] = useState<{ anchor: string; id: string } | null>(null)
   const [valuePicker, setValuePicker] = useState<ValuePickerRequest | null>(null)
   const [addPicker, setAddPicker] = useState<AddPickerRequest | null>(null)
   const ghostRowmate = (enteringId: string): boolean => {
@@ -195,10 +195,7 @@ export function CardsView({ host }: { host: ViewHostApi }): React.JSX.Element {
         glanceShown(),
       travelHold: { inZone: ghostRowmate, holdMs: GHOST_TRAVEL_HOLD_MS },
     },
-    rename: (target, fromCreate) => {
-      if (fromCreate) setPendingSeat(null)
-      beginRename(target.path, fromCreate, 'detail')
-    },
+    rename: (target, fromCreate) => beginRename(target.path, fromCreate, 'detail'),
   })
   const effectiveZoom = useElementZoom(host.viewRootRef)
   const reorderSets = (id: string, beforeId: string | null): boolean =>
@@ -328,14 +325,13 @@ export function CardsView({ host }: { host: ViewHostApi }): React.JSX.Element {
     effectiveZoom,
   )
   const ghostCreate = (): void => {
-    const seat = interactions.ghost.ghost?.anchorId ?? null
-    const created = interactions.ghostCreate()
-    if (!created) return
-    setPendingSeat(seat)
-    void created.then((ok) => {
-      if (!ok) setPendingSeat(null)
-    })
+    const anchor = interactions.ghost.ghost?.anchorId
+    const flight = interactions.ghostCreate()
+    if (!flight || !anchor) return
+    setPendingSeat({ anchor, id: flight.id })
+    void flight.path.finally(() => setPendingSeat(null))
   }
+  const seat = pendingSeat && !rowById.has(pendingSeat.id) ? pendingSeat.anchor : null
   const ghostCard = (
     <GhostCard
       banner={banner}
@@ -470,7 +466,7 @@ export function CardsView({ host }: { host: ViewHostApi }): React.JSX.Element {
                       allowInlineRemove={effectiveZoom >= 0.8}
                     />
                   )
-                  if (ghostShown !== row.id && pendingSeat !== row.id) return [card]
+                  if (ghostShown !== row.id && seat !== row.id) return [card]
                   return [
                     card,
                     // FLIP seats the ghost among its neighbors on the way in; Reveal collapses it on the way out, so an aborted ghost animates away like the sidebar and table ones instead of vanishing.

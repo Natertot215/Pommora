@@ -39,7 +39,10 @@ const SEEDS_FROM_SORT: Record<ValueKind, boolean> = {
   file: false,
 }
 
-type Created = { id: string; path: string }
+export interface CreateFlight {
+  id: string
+  path: Promise<string | null>
+}
 
 type ViewCreationConfig = Pick<
   ViewHostApi,
@@ -66,10 +69,10 @@ type ViewCreationConfig = Pick<
 }
 
 interface ViewCreation {
-  bandAdd: (setKey: string) => Promise<Created | null>
-  createFirst: () => Promise<Created | null>
-  createAdjacent: (row: ViewRow, where: 'above' | 'below') => Promise<Created | null>
-  createAfter: (row: ViewRow) => Promise<Created | null>
+  bandAdd: (setKey: string) => CreateFlight | null
+  createFirst: () => CreateFlight
+  createAdjacent: (row: ViewRow, where: 'above' | 'below') => CreateFlight
+  createAfter: (row: ViewRow) => CreateFlight
 }
 
 /** `getCfg` is read when a gesture fires, so a create reads the host as of the latest render. */
@@ -141,11 +144,11 @@ export function useViewCreation(getCfg: () => ViewCreationConfig): ViewCreation 
     ...(Object.keys(seeds).length ? { seeds } : {}),
   })
   // Seeds and slot are staged with the ask, so the push that mounts the newborn paints it in its band at its slot; the order is written once the page exists, and a refusal takes back both.
-  const createPageIn = async (
+  const createPageIn = (
     req: CreatePageRequest,
     anchorId: string | null,
     where: Slot,
-  ): Promise<Created | null> => {
+  ): CreateFlight => {
     const c = cfg()
     const staged = orderPatch(c, req.id, anchorId, where)
     if (staged) stageView(c.source.id, c.view, staged)
@@ -155,17 +158,21 @@ export function useViewCreation(getCfg: () => ViewCreationConfig): ViewCreation 
       req.seeds ?? {},
       flight.then((done) => done !== null),
     )
-    const landed = (await flight)?.created
-    const created = landed ? { id: req.id, path: landed.path } : null
-    const latest = cfg()
-    const order =
-      created && latest.view.id === c.view.id ? orderPatch(latest, req.id, anchorId, where) : null
-    if (order) void latest.persistView(order, { viewState: true })
-    else if (staged) unstageView(c.source.id, c.view.id, staged)
-    return created
+    const path = flight.then((done) => {
+      const landed = done?.created?.path ?? null
+      const latest = cfg()
+      const order =
+        landed !== null && latest.view.id === c.view.id
+          ? orderPatch(latest, req.id, anchorId, where)
+          : null
+      if (order) void latest.persistView(order, { viewState: true })
+      else if (staged) unstageView(c.source.id, c.view.id, staged)
+      return landed
+    })
+    return { id: req.id, path }
   }
 
-  const addIn = async (parentPath: string): Promise<Created | null> => {
+  const addIn = (parentPath: string): CreateFlight => {
     const s = useSession.getState()
     const slot = placementSlot(settingOf(personalizationOf(s), 'newPagePlacement'))
     const req = placeAt(
@@ -174,21 +181,23 @@ export function useViewCreation(getCfg: () => ViewCreationConfig): ViewCreation 
       null,
       slot,
     )
-    const created = await createPageIn(req, null, slot)
-    if (created) requestAnimationFrame(() => glideToRow(req.id))
-    return created
+    const flight = createPageIn(req, null, slot)
+    void flight.path.then((path) => {
+      if (path !== null) requestAnimationFrame(() => glideToRow(req.id))
+    })
+    return flight
   }
 
-  const bandAdd = (setKey: string): Promise<Created | null> => {
+  const bandAdd = (setKey: string): CreateFlight | null => {
     const c = cfg()
     const setPath = c.sets.node.get(setKey)?.path
-    if (!setPath) return Promise.resolve(null)
+    if (!setPath) return null
     if (c.collapsed.has(setKey)) c.toggleCollapse(setKey)
     return addIn(setPath)
   }
 
   // New Page Above / Below: the anchor's group value and sort-criteria values tie the newborn beside it, and the order write breaks the tie at the gesture slot.
-  const createAdjacent = (row: ViewRow, where: 'above' | 'below'): Promise<Created | null> => {
+  const createAdjacent = (row: ViewRow, where: 'above' | 'below'): CreateFlight => {
     const c = cfg()
     const parentPath = relDirname(row.path)
     const seeds = impliedSeeds()

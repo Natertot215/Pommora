@@ -32,7 +32,7 @@ import { type BandView, bandSpec } from '../Bands/GroupBand'
 import { sameIds, tieOrderWith } from '../creationOrder'
 import { useViewTileScope } from '../ViewTileScope'
 import type { ViewHostApi } from './useViewHost'
-import { useViewCreation } from './useViewCreation'
+import { type CreateFlight, useViewCreation } from './useViewCreation'
 import { dropIO, mutateAhead, refusedDrop, stageView, unstageView } from './pendingView'
 
 interface ViewInteractionPolicy {
@@ -130,15 +130,19 @@ export function useViewInteractions(host: ViewHostApi, policy: ViewInteractionPo
     }
   })
   const creation = useViewCreation(() => ({ ...host, bandBucket: valueAt }))
-  const named = async (flight: Promise<{ id: string; path: string } | null>): Promise<boolean> => {
-    const created = await flight
-    if (created) policy.rename(created, true)
-    return created !== null
+  const named = (flight: CreateFlight): CreateFlight => {
+    void flight.path.then((path) => {
+      if (path !== null) policy.rename({ id: flight.id, path }, true)
+    })
+    return flight
   }
   const bandView: BandView = {
     collapsed,
     toggle: toggleCollapse,
-    add: (key) => void named(creation.bandAdd(key)),
+    add: (key) => {
+      const flight = creation.bandAdd(key)
+      if (flight) named(flight)
+    },
     open: (set) => void select(selectTargetOf(set)),
     springs: (dragged: string, node: BandNode) =>
       bands.byKey.has(dragged)
@@ -435,10 +439,10 @@ export function useViewInteractions(host: ViewHostApi, policy: ViewInteractionPo
         openIconPicker(row, anchor)
         return true
       case 'title:newabove':
-        void named(creation.createAdjacent(row, 'above'))
+        named(creation.createAdjacent(row, 'above'))
         return true
       case 'title:newbelow':
-        void named(creation.createAdjacent(row, 'below'))
+        named(creation.createAdjacent(row, 'below'))
         return true
       default:
         return false
@@ -456,19 +460,20 @@ export function useViewInteractions(host: ViewHostApi, policy: ViewInteractionPo
   useClearStrandedGhost(ghost, rowById)
   // The container itself holds nothing, so the ghost stands on its own as its first New Page instead of waiting on a hover anchor. Reading the container rather than the pipeline keeps it off a view whose filter is what emptied the paint — there the create would land a page the filter hides again.
   const ghostStanding = rows.length === 0
-  const standingFlight = useRef<Promise<boolean> | null>(null)
+  const standingFlight = useRef<CreateFlight | null>(null)
   /** Claims the ghost's anchor and creates below it, or creates the container's first page under a standing ghost; undefined when no ghost stands. */
-  const ghostCreate = (): Promise<boolean> | undefined => {
+  const ghostCreate = (): CreateFlight | undefined => {
     const anchorId = ghost.take()
     const anchor = anchorId ? rowById.get(anchorId) : undefined
     if (anchor) return named(creation.createAfter(anchor))
     if (!ghostStanding) return undefined
     // The standing ghost stays mounted until the row lands, so the create is claimed for its whole flight.
     if (standingFlight.current) return standingFlight.current
-    const flight = named(creation.createFirst()).finally(() => {
+    const flight = named(creation.createFirst())
+    standingFlight.current = flight
+    void flight.path.finally(() => {
       standingFlight.current = null
     })
-    standingFlight.current = flight
     return flight
   }
 
