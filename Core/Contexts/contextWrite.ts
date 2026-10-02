@@ -24,7 +24,7 @@ import type { ContextGroup, NexusTree, SpaceNode } from '../Nexus/tree'
 import type { Adoption } from '../Properties/propertyValue'
 import { isColorKey } from '@pommora/uix/Theme/colors'
 import { ok, fail, type Result, fault } from '../Contract/result'
-import { mutateRegistryFile, readRegistryStrict, withContextAt } from './contextsRegistry'
+import { mutateRegistryFile, withContextAt } from './contextsRegistry'
 import { newId } from '../Nexus/ids'
 import { freeName, nameError } from '../Paths/names'
 import { atomicWriteFile, pathExists, rmwJsonStrict, setOrDrop } from '../Files/atomicWrite'
@@ -188,18 +188,16 @@ export async function createSpace(
   name: string,
   id: string,
 ): Promise<Result<{ path: string }>> {
-  const reg = await readRegistryStrict(root)
-  if (!reg.ok) return reg
-  const def = reg.value.contexts.find((c) => c.id === contextId)
-  if (!def) return fail('not-found', 'Unknown Context.')
-  const parent = join(contextsDir(root), def.title)
+  const group = contextWorldOf((await liveTreeOf(root)).contexts).groupById.get(contextId)
+  if (!group) return fail('not-found', 'Unknown Context.')
+  const parent = join(contextsDir(root), group.def.title)
   await machine().mkdir(parent)
   const created = await createFolderEntity(parent, 'space', name, id)
   if (!created.ok) return created
   const tileIds = [newId(), newId(), newId(), newId()]
   for (const tid of tileIds) await atomicWriteFile(tileFilePath(created.value.path, tid), '')
   await writeTileDocAt(created.value.path, () => seedBoard(tileIds))
-  return ok({ path: spaceDirRel(def.title, name) })
+  return ok({ path: spaceDirRel(group.def.title, name) })
 }
 
 export async function setSpaceColor(
