@@ -6,9 +6,8 @@ import type { RecordFile } from './record'
 import { projectBaseline } from '../Nexus/remintLedger'
 import { liveTreeOf } from '../Nexus/liveTree'
 import { frozenWorld } from '../Nexus/heldPages'
-import { readJsonObject } from '../Files/atomicWrite'
-import { sidecarPath } from '../Paths/paths'
-import { collectionFolders, assignInner, refillValues } from '../Properties/assignment'
+import { join } from '../Paths/posix'
+import { assignInner, refillValues } from '../Properties/assignment'
 import { patchCacheBlock } from '../Properties/propertyCache'
 import { isBlankRaw, namesGonePage } from '../Properties/propertyValue'
 import type { StrippedLink } from '../Nexus/cascade'
@@ -16,16 +15,6 @@ import { createProperty } from '../Properties/registryProperty'
 import { serializeSchemaOp } from '../Properties/schemaChain'
 
 type PropertyRecord = Extract<RecordFile, { entity: 'property' }>
-
-/** The tree is the wrong source here: it answers with a path-derived placeholder for a folder with no persisted id, which is an address rather than the identity recorded. */
-async function foldersById(root: string): Promise<Map<string, string>> {
-  const out = new Map<string, string>()
-  for (const folder of await collectionFolders(root)) {
-    const id = (await readJsonObject(sidecarPath(folder, 'collection')))?.id
-    if (typeof id === 'string') out.set(id, folder)
-  }
-  return out
-}
 
 interface RestoredProperty {
   /** The titles of what didn't take its value back. */
@@ -55,7 +44,7 @@ async function restoreInner(
   const def = (await readRegistry(root)).defs[record.id]
   if (!def) return fault('The restored property could not be read back.')
 
-  const byId = await foldersById(root)
+  const byId = new Map((await liveTreeOf(root)).collections.map((c) => [c.id, join(root, c.path)]))
   for (const collectionId of record.assignments ?? []) {
     const folder = byId.get(collectionId)
     if (folder) await assignInner(root, folder, record.id)
