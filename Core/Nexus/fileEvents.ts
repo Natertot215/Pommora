@@ -59,7 +59,7 @@ import { errText } from '../Contract/result'
 import { containerNodeFrom } from './containerFields'
 import { contextsRegistry as contextsRegistrySchema, type ContextDef } from '../Contexts/contexts'
 import { spaceNodeFrom } from '../Contexts/spaceSidecar'
-import { orderedDefs, registryFrom } from '../Properties/propertiesRegistry'
+import { orderedDefs, registryFrom, registryOf } from '../Properties/propertiesRegistry'
 import { stabilize } from './treeStabilize'
 import {
   containerAt,
@@ -391,7 +391,7 @@ async function applyContainer(
       meta,
       node.sets ?? [],
       node.pages,
-      Object.fromEntries(t.config.registry.map((d) => [d.id, d])),
+      registryOf(t.config.registry),
     )
     return next?.id === node.id ? updateNodeInTree(t, dirRel, () => next) : null
   })
