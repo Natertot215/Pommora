@@ -77,8 +77,10 @@ export const createNexusSlice: Slice<NexusSlice> = (set, get) => {
     clearNotification()
   }
 
-  const install = (tree: NexusTree, version: number): void => {
+  // A whole tree arrives without identity, so stabilize() spares every consumer whose part didn't change.
+  const install = (incoming: NexusTree, version: number): void => {
     const prev = get().tree
+    const tree = stabilize(withOwnSettings(incoming, prev), prev)
     set({ status: 'ready', tree, version })
     const index = reconcileIndexOf(tree)
     get().reconcileNavigation(index)
@@ -195,11 +197,7 @@ export const createNexusSlice: Slice<NexusSlice> = (set, get) => {
       }
     },
 
-    // A whole tree arrives without identity, so stabilize() spares every consumer whose part didn't change.
-    applyTree: (incoming, version) => {
-      const held = get().tree
-      install(stabilize(withOwnSettings(incoming, held), held), version)
-    },
+    applyTree: install,
 
     // A difference that doesn't follow the tree held, or doesn't fit it, asks for the whole tree.
     applyChange: ({ version, delta }) => {
@@ -212,7 +210,7 @@ export const createNexusSlice: Slice<NexusSlice> = (set, get) => {
       } catch {
         return void get().refetch()
       }
-      install(stabilize(withOwnSettings(next, held), held), version)
+      install(next, version)
     },
 
     choose: () => openVia(() => dialer().ask('nexus:choose')),
