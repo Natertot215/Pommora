@@ -6,11 +6,11 @@ import {
 } from '../Contexts/contextResolve'
 import type { Adoption } from './propertyValue'
 import type { PropertyDefinition } from './properties'
-import { errText, valueOr } from '../Contract/result'
+import { errText } from '../Contract/result'
 import { assignedDefs } from './assignment'
 import { liveTreeOf } from '../Nexus/liveTree'
 import { owningCollection } from '../Nexus/treePatch'
-import { loadContextWorld, NO_CONTEXT_WORLD } from '../Contexts/contextWrite'
+import { contextWorldOf } from '../Contexts/contextResolve'
 import { type Rewrite, sweepGovernedRoots } from './governedSweep'
 import { applyAdoptions } from './optionOps'
 import type { SeedReread } from '../Index/indexSeed'
@@ -22,11 +22,10 @@ export async function runRepairSweep(root: string, reread: SeedReread): Promise<
   const live = (): boolean => contentIndexStore() === reread.db
   if (!reread.rels.length || !live() || !(await readLiveSetting(root, 'repairOnOpen'))) return
   try {
-    const context = await loadContextWorld(root)
-    const base = valueOr(context, NO_CONTEXT_WORLD)
     const defsByFolder = new Map<string | null, ReadonlyMap<string, PropertyDefinition>>()
     const worlds = new Map<string, GovernedWorld>()
     const tree = await liveTreeOf(root)
+    const contexts = contextWorldOf(tree.contexts)
     for (const rel of reread.rels) {
       const abs = join(root, rel)
       const owner = owningCollection(tree, rel)
@@ -36,7 +35,7 @@ export async function runRepairSweep(root: string, reread: SeedReread): Promise<
         defs = await assignedDefs(root, folder)
         defsByFolder.set(folder, defs)
       }
-      worlds.set(abs, { ...base, defs })
+      worlds.set(abs, { contexts, defs })
     }
     if (!live()) return
     // The sweep canonicalizes shape and never removes a value: a key the reconcile would delete stays as written, for the user to settle on the page.

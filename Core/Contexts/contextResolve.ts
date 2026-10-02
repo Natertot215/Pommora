@@ -1,4 +1,3 @@
-import type { ContextsRegistry } from './contexts'
 import { normalizeTitle } from '../Connections/connections'
 import { parseContextKey } from './contexts'
 import type { PropertyDefinition } from '../Properties/properties'
@@ -10,7 +9,7 @@ import {
   isBlankValue,
   reconcilePropertyValue,
 } from '../Properties/propertyValue'
-import type { NexusTree, SpaceNode } from '../Nexus/tree'
+import type { ContextGroup, SpaceNode } from '../Nexus/tree'
 import { listOf } from '../Contract/validators'
 
 type ResolvedLinks = Map<string, string[]>
@@ -20,57 +19,58 @@ export const namesSpace =
   (el) =>
     typeof el === 'string' && normalizeTitle(el) === normalizeTitle(title)
 
+export interface ContextWorld {
+  groupById: ReadonlyMap<string, ContextGroup>
+  /** Keys must match EXACTLY — the coercion classes apply to values only, so a case-drifted key is foreign data, never a link. */
+  idByTitle: ReadonlyMap<string, string>
+  spacesByTitle: ReadonlyMap<string, ReadonlyMap<string, SpaceNode>>
+  spaceById: ReadonlyMap<string, SpaceNode>
+}
+
+const worlds = new WeakMap<ContextGroup[], ContextWorld>()
+
+// Held against the groups array it was built from: whatever changes a group's def or a Space's id, title, or path answers a new array, so a world never outlives what it describes.
+export function contextWorldOf(groups: ContextGroup[]): ContextWorld {
+  const held = worlds.get(groups)
+  if (held) return held
+  const world: ContextWorld = {
+    groupById: new Map(groups.map((g) => [g.def.id, g])),
+    idByTitle: new Map(groups.map((g) => [g.def.title, g.def.id])),
+    spacesByTitle: new Map(
+      groups.map((g) => [g.def.id, new Map(g.spaces.map((s) => [normalizeTitle(s.title), s]))]),
+    ),
+    spaceById: new Map(groups.flatMap((g) => g.spaces.map((s): [string, SpaceNode] => [s.id, s]))),
+  }
+  worlds.set(groups, world)
+  return world
+}
+
 export interface GovernedWorld {
-  registry: ContextsRegistry | null
-  spacesByContext: Map<string, SpaceNode[]>
+  contexts: ContextWorld
   defs: ReadonlyMap<string, PropertyDefinition>
 }
 
 export const NO_DEFS: ReadonlyMap<string, PropertyDefinition> = new Map()
 
-/** Keys must match EXACTLY — the coercion classes apply to values only, so a case-drifted key is foreign data, never a link. */
-function idsByExactTitle(registry: ContextsRegistry): Map<string, string> {
-  const m = new Map<string, string>()
-  for (const c of registry.contexts) m.set(c.title, c.id)
-  return m
-}
-
-function spacesByTitle(spaces: SpaceNode[] | undefined): Map<string, SpaceNode> {
-  const m = new Map<string, SpaceNode>()
-  for (const s of spaces ?? []) m.set(normalizeTitle(s.title), s)
-  return m
-}
-
 export function resolveContextKeys(
   root: Record<string, unknown>,
-  registry: ContextsRegistry,
-  spacesByContext: Map<string, SpaceNode[]>,
+  world: ContextWorld,
 ): ResolvedLinks {
   const links: ResolvedLinks = new Map()
-  const contextIds = idsByExactTitle(registry)
   for (const [key, raw] of Object.entries(root)) {
     const title = parseContextKey(key)
     if (title === null || raw == null) continue
-    const contextId = contextIds.get(title)
+    const contextId = world.idByTitle.get(title)
     if (contextId === undefined) continue
-    const byTitle = spacesByTitle(spacesByContext.get(contextId))
+    const byTitle = world.spacesByTitle.get(contextId)
     const ids: string[] = []
     for (const value of listOf(raw)) {
-      const match = byTitle.get(normalizeTitle(value))
+      const match = byTitle?.get(normalizeTitle(value))
       if (match) ids.push(match.id)
     }
     if (ids.length) links.set(contextId, ids)
   }
   return links
-}
-
-export function resolveTreeContextKeys(
-  tree: NexusTree,
-  root: Record<string, unknown>,
-): ResolvedLinks {
-  const registry: ContextsRegistry = { contexts: tree.contexts.map((g) => g.def) }
-  const spacesByContext = new Map(tree.contexts.map((g) => [g.def.id, g.spaces]))
-  return resolveContextKeys(root, registry, spacesByContext)
 }
 
 interface Reconciled {
@@ -87,7 +87,6 @@ export function reconcileGovernedRoot(
   const out: Record<string, unknown> = {}
   const changed: string[] = []
   const adoptions: Adoption[] = []
-  const contextIds = world.registry ? idsByExactTitle(world.registry) : null
   const moved = (key: string, raw: unknown, next: unknown): void => {
     if (JSON.stringify(next) !== JSON.stringify(raw)) changed.push(key)
     out[key] = next
@@ -102,15 +101,15 @@ export function reconcileGovernedRoot(
       continue
     }
     const title = parseContextKey(key)
-    const contextId = title !== null && contextIds ? contextIds.get(title) : undefined
+    const contextId = title === null ? undefined : world.contexts.idByTitle.get(title)
     if (contextId === undefined) {
       out[key] = raw
       continue
     }
-    const byTitle = spacesByTitle(world.spacesByContext.get(contextId))
+    const byTitle = world.contexts.spacesByTitle.get(contextId)
     const repaired: string[] = []
     for (const value of listOf(raw)) {
-      const match = byTitle.get(normalizeTitle(value))
+      const match = byTitle?.get(normalizeTitle(value))
       if (match) repaired.push(match.title)
     }
     if (repaired.length) moved(key, raw, repaired)
