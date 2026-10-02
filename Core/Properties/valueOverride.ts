@@ -11,7 +11,7 @@ export type Overrides = Record<string, OverrideEntry>
 export type SetOverrides = Dispatch<SetStateAction<Overrides | null>>
 
 let settles = 0
-export const settle = (): number => ++settles
+const settle = (): number => ++settles
 export const settled = (): number => settles
 
 export const patchOverride = (
