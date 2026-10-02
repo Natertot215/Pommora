@@ -44,8 +44,8 @@ let batching = false
 // A file whose stamp is still owed is about to land under its ID, so the window isn't sent it as unreadable meanwhile.
 function shown(tree: NexusTree, stamp: readonly Unreadable[]): NexusTree {
   if (!stamp.length || !tree.unreadable) return tree
-  const owed = new Set(stamp.map((u) => u.path))
-  const unreadable = tree.unreadable.filter((u) => !owed.has(u.path))
+  const pending = new Set(stamp.map((u) => u.path))
+  const unreadable = tree.unreadable.filter((u) => !pending.has(u.path))
   if (unreadable.length === tree.unreadable.length) return tree
   const next: NexusTree = { ...tree, unreadable }
   if (!unreadable.length) delete next.unreadable
@@ -75,20 +75,20 @@ function valueChangesOf(root: string, values: ReadonlyMap<string, boolean>): Val
   return [...out.values()]
 }
 
-async function walkDue(root: string): Promise<void> {
+async function payWalks(root: string): Promise<void> {
   if (sessionRoot() !== root) return
-  const due = owedFor(root)
-  while (due.walk) {
-    due.walk = false
+  const owed = owedFor(root)
+  while (owed.walk) {
+    owed.walk = false
     dropTileHeadingLinks()
     const assets = getHeldAssetMap(root)
     try {
       const walked = await refreshAfterWrite(root)
-      due.stamp.push(
+      owed.stamp.push(
         ...(await stillListed(root, walked.unreadable)).filter((u) => u.reason === 'missing'),
       )
       // The map is patch-only, so the fallback walk is where the listing is taken again.
-      if (assets && (await refreshAssetMap(root)) !== assets) due.assets = true
+      if (assets && (await refreshAssetMap(root)) !== assets) owed.assets = true
     } catch {
       // The walk failed after the write landed, so the held tree predates it; dropped, reads walk.
       dropLiveTree()
@@ -97,13 +97,13 @@ async function walkDue(root: string): Promise<void> {
 }
 
 async function settle(pusher: Pusher, root: string): Promise<{ rescope: boolean } | null> {
-  await walkDue(root)
+  await payWalks(root)
   // An open in progress has no window on this Nexus yet, so what is owed waits for the settle that follows it.
   if (sessionRoot() !== root || adopting()) return null
-  const due = owedFor(root)
+  const owed = owedFor(root)
   // An arm still awaiting its file writes to this record after the push, so it is emptied in place and never replaced.
-  const { pages, values, tiles, assets, corpus, rescope, stamp } = due
-  Object.assign(due, nothingOwed(root), { stamp })
+  const { pages, values, tiles, assets, corpus, rescope, stamp } = owed
+  Object.assign(owed, nothingOwed(root), { stamp })
   const held = heldTreeOf(root)
   const tree = held && shown(held, stamp)
   const delta = tree && diff(pushed?.nexus.rootPath === root ? pushed : undefined, tree)
@@ -128,8 +128,8 @@ async function reseed(pusher: Pusher, root: string, rescope: boolean): Promise<v
 // A stamp's own write lands as an event that may list more, so a turn stamps until nothing is listed. A gate leaves the list to a batch in its turn, which may still be reading the files it listed.
 async function stampListed(root: string, gate: boolean): Promise<void> {
   if (sessionRoot() !== root) return
-  const due = owedFor(root)
-  while (due.stamp.length && !(gate && batching)) await stampMissing(root, due.stamp.splice(0))
+  const owed = owedFor(root)
+  while (owed.stamp.length && !(gate && batching)) await stampMissing(root, owed.stamp.splice(0))
 }
 
 // The watcher's turn: the batch applies, and what it listed is stamped before its settle, so a reply's settle never waits on those stamps.
@@ -154,7 +154,7 @@ function inTurn<T>(step: () => Promise<T>): Promise<T> {
   return turn
 }
 
-export const walkOwed = (root: string): Promise<void> => inTurn(() => walkDue(root))
+export const payOwedWalk = (root: string): Promise<void> => inTurn(() => payWalks(root))
 
 // One settle at a time, and one reseed at a time on a chain of its own: a reply waits for the settles ahead of its own, and for a reseed only when its own settle found the corpus or the scope moved.
 export async function flush(pusher: Pusher, root: string): Promise<void> {
