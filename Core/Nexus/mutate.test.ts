@@ -25,7 +25,7 @@ const G_ID = '01KVGMT8BFP350FZZXAMG1QDRG'
 import { openSession, closeSession } from './session'
 import { flush } from './settle'
 import { stabilize } from './treeStabilize'
-import type { AssetMap, ValueChange } from './tree'
+import type { AssetMap, NexusTree, ValueChange } from './tree'
 import type { Pushes } from '../Contract/bridge'
 import { readNexus } from './readNexus'
 import { forgetLastReads, pathExists } from '../Files/atomicWrite'
@@ -779,6 +779,50 @@ describe('handleMutate — targets the tree doesn’t hold', () => {
     )
     expect(r.ok).toBe(false)
     expect(await pathExists(join(root, 'Notes', 'X'))).toBe(false)
+  })
+})
+
+describe('handleMutate — a new Collection lands last', () => {
+  const NOTES = '01ARZ3NDEKPSV4RRFFQ69G5FAV'
+  const ZETA = '01BX5ZZKBKPCTAV9WEVGEMMVRZ'
+  const lastOf = (tree: NexusTree | null): string | undefined => tree?.collections.at(-1)?.path
+
+  beforeEach(async () => {
+    await writeFile(join(root, 'Notes', '_pagecollection.json'), JSON.stringify({ id: NOTES }))
+    await mkdir(join(root, 'Zeta'))
+    await writeFile(join(root, 'Zeta', '_pagecollection.json'), JSON.stringify({ id: ZETA }))
+  })
+
+  const create = () =>
+    confirmedMutate(
+      root,
+      { op: 'createContainer', parentPath: '', kind: 'collection', name: 'Alpha' },
+      nexusDeps,
+    )
+
+  it('with an order written, the create appends its id, and it is last held and read', async () => {
+    await writeFile(
+      join(root, '.nexus', 'state.json'),
+      JSON.stringify({ order: { collections: [ZETA, NOTES] } }),
+    )
+    await refreshTree(root)
+    const r = await create()
+    const id = r.ok ? r.value.created?.id : undefined
+    expect(
+      (await readJson<{ order: { collections: string[] } }>('.nexus/state.json')).order,
+    ).toEqual({
+      collections: [ZETA, NOTES, id],
+    })
+    expect(lastOf(getLiveTree())).toBe('Alpha')
+    expect(lastOf(await readNexus(root))).toBe('Alpha')
+  })
+
+  it('with no order written, the newest id is last held and read, and no order is written', async () => {
+    await refreshTree(root)
+    expect((await create()).ok).toBe(true)
+    expect(await pathExists(join(root, '.nexus', 'state.json'))).toBe(false)
+    expect(lastOf(getLiveTree())).toBe('Alpha')
+    expect(lastOf(await readNexus(root))).toBe('Alpha')
   })
 })
 

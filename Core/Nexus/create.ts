@@ -20,7 +20,7 @@ import { CONTAINER_KINDS } from './entities'
 import type { MutateContext } from './mutate'
 import { createPage } from './page'
 import { createFolderEntity, landingRefusal } from './folderEntity'
-import { setChildOrder, setSpaceOrder } from './reorder'
+import { appendCollection, setChildOrder, setSpaceOrder } from './reorder'
 import { mutableTarget } from './liveTree'
 
 const created = (parentPath: string, r: { id: string; path: string }): MutateReply =>
@@ -87,6 +87,7 @@ export async function createContainerOp(
   )
   if (!r.ok) return r
   if (req.order) await setChildOrder(parent.value, 'set_order', fillSlot(req.order, r.value.id))
+  if (req.kind === 'collection') await appendCollection(root, r.value.id)
   return created(req.parentPath, r.value)
 }
 
