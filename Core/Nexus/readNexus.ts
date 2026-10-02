@@ -8,17 +8,18 @@ import {
   type FolderKindContext,
 } from './folderKind'
 import type { ContainerKind } from './entities'
-import type {
-  CollectionNode,
-  ContextGroup,
-  NexusConfig,
-  NexusOrder,
-  NexusTree,
-  PageNode,
-  SetNode,
-  SpaceNode,
-  Unreadable,
-  UnreadReason,
+import {
+  byPath,
+  type CollectionNode,
+  type ContextGroup,
+  type NexusConfig,
+  type NexusOrder,
+  type NexusTree,
+  type PageNode,
+  type SetNode,
+  type SpaceNode,
+  type Unreadable,
+  type UnreadReason,
 } from './tree'
 import {
   contextsRegistry as contextsRegistrySchema,
@@ -358,6 +359,6 @@ async function walkNexus(root: string): Promise<NexusTree> {
       order,
       registry: orderedDefs(registry),
     },
-    ...(unreadable.length ? { unreadable } : {}),
+    ...(unreadable.length ? { unreadable: unreadable.sort(byPath) } : {}),
   }
 }

@@ -1,15 +1,16 @@
 // The tree's path-addressed steps. The host applies them as file events land; the window applies the same ones to paint a drag ahead of its write. Null means the step can't resolve against the given tree, and the host walks.
 
 import { stabilize } from './treeStabilize'
-import type {
-  CollectionNode,
-  ContextGroup,
-  NexusTree,
-  PageNode,
-  SetNode,
-  SpaceNode,
-  Unreadable,
-  UnreadReason,
+import {
+  byPath,
+  type CollectionNode,
+  type ContextGroup,
+  type NexusTree,
+  type PageNode,
+  type SetNode,
+  type SpaceNode,
+  type Unreadable,
+  type UnreadReason,
 } from './tree'
 import type { PropertyDefinition } from '../Properties/properties'
 import { basename, relDirname, relJoin, titleFromPath } from '../Paths/posix'
@@ -50,7 +51,7 @@ function repointUnreadable(
     else if (newPath !== null) kept.push({ ...u, path: newPath + u.path.slice(oldPath.length) })
   }
   const next = { ...tree }
-  if (kept.length) next.unreadable = kept
+  if (kept.length) next.unreadable = kept.sort(byPath)
   else delete next.unreadable
   return next
 }
@@ -205,7 +206,7 @@ export const removeNodeInTree = (tree: NexusTree, path: string): NexusTree =>
 
 export const setUnreadable = (tree: NexusTree, path: string, reason: UnreadReason): NexusTree => ({
   ...tree,
-  unreadable: [...(tree.unreadable ?? []), { path, reason }],
+  unreadable: [...(tree.unreadable ?? []), { path, reason }].sort(byPath),
 })
 
 export function placeNode(tree: NexusTree, node: TreeEntity): NexusTree | null {
