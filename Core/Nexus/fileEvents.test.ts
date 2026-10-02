@@ -612,6 +612,7 @@ describe('classifyEvent', () => {
     expect(classifyEvent(tree, root, ev('add', 'Loose', '_pageset.json'))).toEqual({
       kind: 'folder',
       rel: 'Loose',
+      sidecar: true,
     })
     expect(kind(ev('change', 'Notes', 'photo.png'))).toBe('ignored')
     // A stray wrong-kind sidecar is not this container's meta — the walk ignores it.
@@ -656,7 +657,7 @@ describe('classifyEvent', () => {
         absPath: join(raw, 'Things', '_pagecollection.json'),
         origin: 'watched',
       })
-      expect(cls).toEqual({ kind: 'folder', rel: 'Things' })
+      expect(cls).toEqual({ kind: 'folder', rel: 'Things', sidecar: true })
     } finally {
       dropLiveTree()
       await rm(raw, { recursive: true, force: true })
@@ -668,7 +669,7 @@ describe('classifyEvent', () => {
     const tree = await refreshTree(root)
     expect(tree.unreadable?.map((u) => u.path)).toContain('Notes')
     const cls = classifyEvent(tree, root, ev('change', 'Notes', '_pagecollection.json'))
-    expect(cls).toEqual({ kind: 'folder', rel: 'Notes' })
+    expect(cls).toEqual({ kind: 'folder', rel: 'Notes', sidecar: true })
   })
 })
 

@@ -421,6 +421,43 @@ describe('the settle', () => {
     expect(heldTreeOf(root)?.collections[0]?.pages.map((p) => p.id)).toEqual([ULID_A, ULID_B])
   })
 
+  it('a folder listed again while its stamp is in flight is held once the stamp lands', async () => {
+    await mkdir(abs('A'))
+    await writeFile(abs('A', 'x.md'), `---\nID: ${ULID_B}\n---\n\nx\n`)
+    const reached = gate<void>()
+    const release = gate<void>()
+    const stampMissing = adopt.stampMissing
+    vi.spyOn(adopt, 'stampMissing').mockImplementationOnce(async (r, listed) => {
+      reached.open()
+      await release.promise
+      return stampMissing(r, listed)
+    })
+    const batch = settleBatch(pusher, root, [ev('addDir', 'A')])
+    await reached.promise
+    oweWalk(root)
+    await settleNow(pusher, root)
+    release.open()
+    await batch
+    const held = heldTreeOf(root)
+    expect(held?.collections.find((c) => c.path === 'A')?.pages.map((p) => p.id)).toEqual([ULID_B])
+    expect(held?.unreadable).toBeUndefined()
+  })
+
+  it('a batch of notes under a folder that just appeared without a sidecar indexes each note at most twice', async () => {
+    await mkdir(abs('Bulk'))
+    const names = Array.from({ length: 50 }, (_, i) => `n${i}.md`)
+    for (const name of names) await writeFile(abs('Bulk', name), `${name}\n`)
+    const indexed = vi.spyOn(indexSeed, 'indexWrittenPage')
+    await settleBatch(pusher, root, [
+      ev('addDir', 'Bulk'),
+      ...names.map((name) => ev('add', 'Bulk', name)),
+    ])
+    expect(heldTreeOf(root)?.collections.find((c) => c.path === 'Bulk')?.pages).toHaveLength(50)
+    const times = new Map<string, number>()
+    for (const [, file] of indexed.mock.calls) times.set(file, (times.get(file) ?? 0) + 1)
+    for (const name of names) expect(times.get(abs('Bulk', name))).toBeLessThanOrEqual(2)
+  })
+
   it('a note that carries its ID, arriving with a folder that has no sidecar, keeps every byte of a rewrite a later walk finds half written', async () => {
     await mkdir(abs('Ideas'))
     await writeFile(abs('Ideas', 'Kept.md'), `---\nID: ${ULID_B}\n---\n\nkept\n`)
