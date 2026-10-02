@@ -24,6 +24,7 @@ const C_ID = '01KVGMT8BFP350FZZXAMG1QDRC'
 const G_ID = '01KVGMT8BFP350FZZXAMG1QDRG'
 import { openSession, closeSession } from './session'
 import { flush, settleBatch } from './settle'
+import { applyEvents } from './fileEvents'
 import * as readNexusModule from './readNexus'
 import * as contextsRegistry from '../Contexts/contextsRegistry'
 import { stabilize } from './treeStabilize'
@@ -978,6 +979,8 @@ describe('handleMutate — review-round hardening', () => {
       JSON.stringify({ asset_directory: 'file-assets' }),
     )
     await mkdir(join(root, 'file-assets'), { recursive: true })
+    await applyEvents(root, [{ event: 'change', absPath: join(root, '.nexus', 'settings.json') }])
+    await flush({ push: () => {}, watch: async () => {} }, root)
     await settledMutate(
       root,
       { op: 'setProfileImage', source: await pickImage('Kept.png') },
@@ -1208,7 +1211,7 @@ describe('handleMutate — renameHeading', () => {
 
   it('answers a heading rename whose cascade can’t start with a warning, not a fault', async () => {
     await writeFile(join(root, '.nexus', 'properties.json'), '{ not json')
-    const r = await settledMutate(root, req, nexusDeps)
+    const r = await handleMutate(root, req, nexusDeps)
     expect(r.ok && r.value.cascade?.warning).toMatch(/^Links to “Beta#Setup” weren't updated: /)
     expect(await read('Notes/Daily/Alpha.md')).toContain('See [[Beta#Setup]].')
   })
@@ -2225,18 +2228,22 @@ describe('the Contexts lock', () => {
   beforeEach(seedTwoContexts)
 
   it('a page tag written during a Context rename lands under the new key beside its other Contexts', async () => {
+    await refreshTree(root)
     const [renamed, tagged] = await Promise.all([
-      settledMutate(
+      handleMutate(
         root,
         { op: 'renameContext', contextId: 'ctxP', newName: 'Ventures' },
         nexusDeps,
       ),
-      settledMutate(
+      handleMutate(
         root,
         { op: 'setContext', path: 'Notes/Daily/Alpha.md', contextId: 'ctxP', spaceIds: ['sp-pom'] },
         nexusDeps,
       ),
     ])
+    await flush({ push: () => {}, watch: async () => {} }, root)
+    const held = heldTreeOf(root)
+    expect(held && stabilize(await readNexus(root), held)).toBe(held)
     expect(renamed.ok && tagged.ok).toBe(true)
     const fm = splitFrontmatter(await read('Notes/Daily/Alpha.md'))
     expect(fm['<Ventures>']).toEqual(['Pommora'])
@@ -2393,31 +2400,36 @@ describe('the Contexts lock', () => {
   })
 
   it('a Space created during a Context rename lands in the renamed Context', async () => {
+    await refreshTree(root)
     const [renamed, created] = await Promise.all([
-      settledMutate(
+      handleMutate(
         root,
         { op: 'renameContext', contextId: 'ctxP', newName: 'Ventures' },
         nexusDeps,
       ),
-      settledMutate(
+      handleMutate(
         root,
         { op: 'createSpace', id: newId(), contextId: 'ctxP', name: 'Atlas' },
         nexusDeps,
       ),
     ])
+    await flush({ push: () => {}, watch: async () => {} }, root)
+    const held = heldTreeOf(root)
+    expect(held && stabilize(await readNexus(root), held)).toBe(held)
     expect(renamed.ok && created.ok).toBe(true)
     expect(await pathExists(join(root, '.nexus/contexts/Ventures/Atlas/_space.json'))).toBe(true)
     expect(await pathExists(join(root, '.nexus/contexts/Projects'))).toBe(false)
   })
 
   it('a page created with a Context seed during that Context’s rename carries the new key', async () => {
+    await refreshTree(root)
     const [renamed, created] = await Promise.all([
-      settledMutate(
+      handleMutate(
         root,
         { op: 'renameContext', contextId: 'ctxP', newName: 'Ventures' },
         nexusDeps,
       ),
-      settledMutate(
+      handleMutate(
         root,
         {
           op: 'createPage',
@@ -2429,6 +2441,9 @@ describe('the Contexts lock', () => {
         nexusDeps,
       ),
     ])
+    await flush({ push: () => {}, watch: async () => {} }, root)
+    const held = heldTreeOf(root)
+    expect(held && stabilize(await readNexus(root), held)).toBe(held)
     expect(renamed.ok && created.ok).toBe(true)
     const fm = splitFrontmatter(await read('Notes/Daily/Gamma.md'))
     expect(fm['<Ventures>']).toEqual(['Pommora'])
