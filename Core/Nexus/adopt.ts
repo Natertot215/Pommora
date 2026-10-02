@@ -19,7 +19,7 @@ import { mergeFrontmatter, NO_FILEABLE_ID, parsePage, splitEnvelope } from '../F
 import { readIdentity } from './identity'
 import { asString } from './coerce'
 import { baseSidecar } from './schemas'
-import { recordWrite } from '../Files/writeEcho'
+import { recordWrite, SETTLE_MS } from '../Files/writeEcho'
 import { renamedSidecar } from './migrateConfig'
 import { outsideContent, type WatchScope } from '../Paths/exclusion'
 import { readSettings, scopeOf } from '../Settings/codec'
@@ -115,6 +115,22 @@ async function migrateContainerSidecar(absDir: string, kind: ContainerKind): Pro
   if (!read.ok || !asString(read.value.id)) return
   const to = join(absDir, SIDECAR_FILENAME[kind])
   await relocate(from, to)
+}
+
+// A page missing its ID that changed within the watcher's settle may still be mid-write, and a stamp's rename would cut off the bytes still coming; it is left out of the listing, and its own event arrives once it is still.
+export async function stillListed(
+  root: string,
+  listed: readonly Unreadable[] = [],
+): Promise<Unreadable[]> {
+  const now = Date.now()
+  const still = await Promise.all(
+    listed.map(async (u) => {
+      if (u.kind !== 'page' || u.reason !== 'missing') return true
+      const st = await machine().stat(join(root, u.path))
+      return !st || now - st.mtimeMs >= SETTLE_MS
+    }),
+  )
+  return listed.filter((_, i) => still[i])
 }
 
 export async function stampMissing(

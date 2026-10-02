@@ -17,6 +17,7 @@ import {
   dropOwnEchoes,
   emitWatch,
   isRecentWrite,
+  SETTLE_MS,
   writtenHash,
 } from '@pommora/core/Files/writeEcho'
 import { isMetadataShardRel, NEXUS_CONFIG_FILES, NEXUS_DIR } from '@pommora/core/Paths/nexusPaths'
@@ -27,8 +28,6 @@ import { posixPath } from '../Platform/hostPath'
 import { sessionRoot, type WaitingOpen, waitingOpen } from '@pommora/core/Nexus/session'
 import { readWatchScope } from '@pommora/core/Settings/settings'
 import { readNexusConfig } from '@pommora/core/Nexus/readNexus'
-
-const SETTLE_MS = 200
 
 let watcher: FSWatcher | null = null
 let starts = 0

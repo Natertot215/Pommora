@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
-import { chmod, mkdir, readFile, rm, writeFile } from 'node:fs/promises'
+import { chmod, mkdir, readFile, rm, utimes, writeFile } from 'node:fs/promises'
 import { join } from '@pommora/core/Paths/posix'
 import { noModeBits, tempRoot } from '@pommora/core/Testing/hostFs'
 import type { BrowserWindow } from 'electron'
@@ -331,6 +331,11 @@ describe('a file made outside the app', () => {
     await startWatcher(root, win)
     await mkdir(abs('Notes', 'Sub'))
     await writeFile(abs('Notes', 'Sub', 'P.md'), 'p\n')
+    await utimes(
+      abs('Notes', 'Sub', 'P.md'),
+      new Date(Date.now() - 1000),
+      new Date(Date.now() - 1000),
+    )
     emit('addDir', 'Notes', 'Sub')
     emit('add', 'Notes', 'Sub', 'P.md')
     await settleAll(() => !!heldTreeOf(root)?.collections[0]?.sets[0]?.pages.length)

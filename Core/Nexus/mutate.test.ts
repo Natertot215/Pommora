@@ -3,7 +3,17 @@ import * as liveTree from './liveTree'
 import { dropLiveTree, heldTreeOf, refreshTree } from './liveTree'
 import { splitFrontmatter } from '../Files/pageFile'
 import { ID_KEY } from './identityMark'
-import { rm, mkdir, writeFile, readFile, readdir, chmod, symlink, stat } from 'node:fs/promises'
+import {
+  rm,
+  mkdir,
+  writeFile,
+  readFile,
+  readdir,
+  chmod,
+  symlink,
+  stat,
+  utimes,
+} from 'node:fs/promises'
 import { join } from '../Paths/posix'
 import { readJsonAt, seedSpaceSidecar, tempRoot, noModeBits, windows } from '../Testing/hostFs'
 import { adoptFile } from '../Assets/adoptFile'
@@ -1358,6 +1368,9 @@ describe('nexusHandlers.mutate — retryUnreadable', () => {
     await mkdir(join(root, 'Raw', 'Sub'), { recursive: true })
     await writeFile(join(root, 'Raw', 'P.md'), 'p\n')
     await writeFile(join(root, 'Raw', 'Sub', 'Q.md'), 'q\n')
+    const still = new Date(Date.now() - 1000)
+    await utimes(join(root, 'Raw', 'P.md'), still, still)
+    await utimes(join(root, 'Raw', 'Sub', 'Q.md'), still, still)
     await refreshTree(root)
     expect(heldTreeOf(root)?.unreadable).toEqual([
       { path: 'Raw', kind: 'collection', reason: 'missing' },

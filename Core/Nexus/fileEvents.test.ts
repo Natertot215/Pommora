@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
-import { mkdir, readFile, rename, rm, unlink, writeFile } from 'node:fs/promises'
+import { mkdir, readFile, rename, rm, unlink, utimes, writeFile } from 'node:fs/promises'
 import { join, relative } from '../Paths/posix'
 import { tempRoot } from '../Testing/hostFs'
 import { stabilize } from './treeStabilize'
@@ -299,7 +299,11 @@ describe('applyEvents — must agree with the walk', () => {
     await refreshTree(root)
     await mkdir(abs('Notes', 'Import'))
     const names = Array.from({ length: 400 }, (_, i) => `n${i}.md`)
-    for (const name of names) await writeFile(abs('Notes', 'Import', name), `${name}\n`)
+    const still = new Date(Date.now() - 1000)
+    for (const name of names) {
+      await writeFile(abs('Notes', 'Import', name), `${name}\n`)
+      await utimes(abs('Notes', 'Import', name), still, still)
+    }
     const readFolder = vi.spyOn(readNexusModule, 'readFolder')
     await applyEvents(root, [
       ev('addDir', 'Notes', 'Import'),
@@ -425,6 +429,7 @@ describe('the parity cases', () => {
   it('a root folder gaining its first note becomes a Collection, stamped by the settle', async () => {
     await mkdir(abs('Ideas'))
     await writeFile(abs('Ideas', 'First.md'), 'first\n')
+    await utimes(abs('Ideas', 'First.md'), new Date(Date.now() - 1000), new Date(Date.now() - 1000))
     await settled([ev('addDir', 'Ideas'), ev('add', 'Ideas', 'First.md')])
     const ideas = held().collections.find((c) => c.path === 'Ideas')
     expect(ideas?.pages.map((p) => p.title)).toEqual(['First'])

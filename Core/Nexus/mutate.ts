@@ -207,6 +207,7 @@ async function dispatch(ctx: MutateContext, req: MutateRequest): Promise<MutateR
     case 'retryUnreadable': {
       const entry = (await liveTreeOf(root)).unreadable?.find((u) => u.path === req.path)
       if (entry?.reason === 'malformed') await stampPage(join(root, entry.path), 'page', true)
+      // Try Again is the user's own gesture, so the entry is stamped without waiting for stillness.
       if (entry?.reason === 'missing') await stampMissing(root, [entry])
       oweWalk(root)
       return ok({})

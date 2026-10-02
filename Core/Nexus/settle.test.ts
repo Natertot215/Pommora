@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { mkdir, readFile, rm, writeFile } from 'node:fs/promises'
+import { mkdir, open, readFile, rm, utimes, writeFile } from 'node:fs/promises'
 import { join } from '../Paths/posix'
 import { tempRoot } from '../Testing/hostFs'
 import type { Pushes } from '../Contract/bridge'
@@ -42,6 +42,8 @@ const ev = (event: Changed['event'], ...segs: string[]): Changed => ({
   absPath: abs(...segs),
   origin: 'watched',
 })
+const backdate = (...segs: string[]): Promise<void> =>
+  utimes(abs(...segs), new Date(Date.now() - 1000), new Date(Date.now() - 1000))
 const channels = (): string[] => pushes.map(([c]) => c)
 const payload = (channel: keyof Pushes): unknown => pushes.find(([c]) => c === channel)?.[1]
 const gate = <T>(): { promise: Promise<T>; open: (v: T) => void; fail: (e: Error) => void } => {
@@ -227,13 +229,71 @@ describe('the settle', () => {
     expect(heldTreeOf(root)?.collections[0]?.pages.map((p) => p.id)).toEqual([ULID_A, ULID_B])
   })
 
-  it('a page a walk lists missing, with no event of its own, is not stamped', async () => {
+  it('a page a walk lists missing is stamped once still, and a fresh one is left for its own event', async () => {
     await writeFile(abs('Notes', 'Bare.md'), 'bare\n')
+    await backdate('Notes', 'Bare.md')
+    await writeFile(abs('Notes', 'Fresh.md'), 'fresh\n')
     await settleBatch(pusher, root, [ev('change', '.nexus', 'nexus.json')])
     expect(heldTreeOf(root)?.unreadable).toEqual([
-      { path: 'Notes/Bare.md', kind: 'page', reason: 'missing' },
+      { path: 'Notes/Fresh.md', kind: 'page', reason: 'missing' },
     ])
-    expect(await readFile(abs('Notes', 'Bare.md'), 'utf8')).toBe('bare\n')
+    expect(await readFile(abs('Notes', 'Fresh.md'), 'utf8')).toBe('fresh\n')
+    const bare = heldTreeOf(root)?.collections[0]?.pages.find((p) => p.path === 'Notes/Bare.md')
+    expect(bare?.id).toBe(splitFrontmatter(await readFile(abs('Notes', 'Bare.md'), 'utf8'))[ID_KEY])
+  })
+
+  it.each([
+    ['a Set with a sidecar', ['Notes', 'Fresh'], true],
+    ['a Set without one', ['Notes', 'Fresh'], false],
+    ['a root folder', ['Fresh'], false],
+  ] as const)('a note still being written into a folder that just appeared keeps every byte, and is stamped by its own event once still (%s)', async (_, dir, sidecar) => {
+    await mkdir(abs(...dir))
+    if (sidecar) await writeFile(abs(...dir, '_pageset.json'), JSON.stringify({ id: ULID_C }))
+    const writer = await open(abs(...dir, 'Note.md'), 'w')
+    await writer.write('first half\n')
+    await settleBatch(pusher, root, [ev('addDir', ...dir)])
+    await writer.write('second half\n')
+    await writer.close()
+    await settleBatch(pusher, root, [ev('add', ...dir, 'Note.md')])
+    const text = await readFile(abs(...dir, 'Note.md'), 'utf8')
+    expect(text).toContain('first half\nsecond half\n')
+    const held = heldTreeOf(root)
+    const pages = held?.collections.flatMap((c) => [...c.pages, ...c.sets.flatMap((s) => s.pages)])
+    expect(pages?.find((p) => p.path === [...dir, 'Note.md'].join('/'))?.id).toBe(
+      splitFrontmatter(text)[ID_KEY],
+    )
+    expect(held?.unreadable).toBeUndefined()
+    expect(held && stabilize(await readNexus(root), held)).toBe(held)
+  })
+
+  it('a folder that appears with a fresh ID-less note doesn’t list it', async () => {
+    await mkdir(abs('Notes', 'Fresh'))
+    await writeFile(abs('Notes', 'Fresh', '_pageset.json'), JSON.stringify({ id: ULID_C }))
+    await writeFile(abs('Notes', 'Fresh', 'Note.md'), 'note\n')
+    await applyEvents(root, [ev('addDir', 'Notes', 'Fresh')])
+    expect(heldTreeOf(root)?.unreadable).toBeUndefined()
+    expect(owedFor(root).stamp).toEqual([])
+    await flush(pusher, root)
+    expect(await readFile(abs('Notes', 'Fresh', 'Note.md'), 'utf8')).toBe('note\n')
+  })
+
+  it('un-excluding a folder that was adopted before holds the notes added while it was excluded', async () => {
+    await mkdir(abs('Archive'))
+    await writeFile(abs('Archive', '_pagecollection.json'), JSON.stringify({ id: ULID_C }))
+    sent(await refreshTree(root))
+    await writeExcludedFolders(root, ['Archive'])
+    await flush(pusher, root)
+    await writeFile(abs('Archive', 'New.md'), 'new\n')
+    await backdate('Archive', 'New.md')
+    await writeExcludedFolders(root, [])
+    await flush(pusher, root)
+    const held = heldTreeOf(root)
+    expect(held?.unreadable).toBeUndefined()
+    const archive = held?.collections.find((c) => c.path === 'Archive')
+    expect(archive?.pages.map((p) => p.id)).toEqual([
+      splitFrontmatter(await readFile(abs('Archive', 'New.md'), 'utf8'))[ID_KEY],
+    ])
+    expect(held && stabilize(await readNexus(root), held)).toBe(held)
   })
 
   it('an editor save during a walk doesn’t restart it, and the walk installs what a fresh read answers', async () => {
@@ -264,6 +324,9 @@ describe('the settle', () => {
     await writeFile(abs('Archive', 'Old', 'Y.md'), 'y\n')
     await mkdir(abs('Notes', 'Sub'))
     await writeFile(abs('Notes', 'Sub', 'Z.md'), 'z\n')
+    await backdate('Archive', 'X.md')
+    await backdate('Archive', 'Old', 'Y.md')
+    await backdate('Notes', 'Sub', 'Z.md')
     await writeExcludedFolders(root, ['Archive', 'Notes/Sub'])
     await flush(pusher, root)
     pusher.watch.mockClear()
