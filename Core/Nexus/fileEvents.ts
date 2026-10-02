@@ -88,7 +88,7 @@ import {
   TILE_DOC_FILENAME,
 } from '../Paths/nexusPaths'
 import { readShard, withShards } from './pageMetadata'
-import { stillListed } from './adopt'
+import { onlyStill } from './adopt'
 
 interface Owed {
   root: string
@@ -320,7 +320,7 @@ async function applyFolder(
   if (owed.stamp.some((u) => u.path === rel)) return 'ok'
   if (!(await pathExists(join(root, rel)))) return applyPatch(root, (t) => removeNodeInTree(t, rel))
   const read = await readFolder(root, rel, tree)
-  const listed = await stillListed(root, read.unreadable)
+  const listed = await onlyStill(root, read.unreadable)
   owed.stamp.push(...listed.filter((u) => u.reason === 'missing'))
   for (const path of pagePathsIn(read.node)) owed.values.set(path, false)
   return applyPatch(root, (t) => {
