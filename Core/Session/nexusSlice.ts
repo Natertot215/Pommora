@@ -198,7 +198,7 @@ export const createNexusSlice: Slice<NexusSlice> = (set, get) => {
 
     // A difference that doesn't follow the tree held, or doesn't fit it, asks for the whole tree.
     applyChange: ({ version, delta }) => {
-      if ('set' in delta) return install(delta.set as NexusTree, version)
+      if ('set' in delta) return install(delta.set, version)
       const held = get().tree
       if (!held || version !== get().version + 1) return void get().refetch()
       let next: NexusTree
