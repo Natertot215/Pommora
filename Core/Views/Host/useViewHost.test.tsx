@@ -118,7 +118,7 @@ let creation: ReturnType<typeof useViewCreation>
 function Probe({ source, nests }: { source: CollectionNode | SetNode; nests: boolean }): null {
   const host = useViewHost(source, nests)
   api = host
-  creation = useViewCreation(() => ({ ...host!, bandBucket: (key) => key }))
+  creation = useViewCreation(() => ({ ...host!, bandBucket: (key) => key, rename: () => {} }))
   return null
 }
 
@@ -816,7 +816,7 @@ describe('a create placed ahead of its reply', () => {
     const source = useSession((s) => s.tree?.collections.find((c) => c.id === 'col1'))!
     const host = useViewHost(source, true)
     api = host
-    creation = useViewCreation(() => ({ ...host!, bandBucket: (key) => key }))
+    creation = useViewCreation(() => ({ ...host!, bandBucket: (key) => key, rename: () => {} }))
     const band = host?.rowBand.get('p3')
     const order = host?.paintOrder.map((r) => r.id) ?? []
     useLayoutEffect(() => {
