@@ -368,15 +368,18 @@ describe('a rename the journal refused reports what it skipped, with a retry', (
     },
   )
 
-  it.skipIf(windows)('a retry changes nothing once the Space is renamed again', async () => {
-    await symlink(join(root, 'Notes', 'Nowhere.md'), broken())
-    expect((await settledMutate(root, rename, deps)).ok).toBe(true)
-    await readable()
-    const again = { op: 'renameSpace', spaceId: 'sp-pom', newName: 'Atlas' } as const
-    expect((await settledMutate(root, again, deps)).ok).toBe(true)
-    expect(await settledMutate(root, retry, deps)).toEqual(ok({}))
-    expect((await fmOf(broken()))['<Projects>']).toEqual(['Pommora'])
-  })
+  it.skipIf(windows)(
+    'a retry once the Space is renamed again sweeps the member to the title held now',
+    async () => {
+      await symlink(join(root, 'Notes', 'Nowhere.md'), broken())
+      expect((await settledMutate(root, rename, deps)).ok).toBe(true)
+      await readable()
+      const again = { op: 'renameSpace', spaceId: 'sp-pom', newName: 'Atlas' } as const
+      expect((await settledMutate(root, again, deps)).ok).toBe(true)
+      expect(await settledMutate(root, retry, deps)).toEqual(ok({}))
+      expect((await fmOf(broken()))['<Projects>']).toEqual(['Atlas'])
+    },
+  )
 
   it.skipIf(windows)('a retry changes nothing once another Space takes the old name', async () => {
     await symlink(join(root, 'Notes', 'Nowhere.md'), broken())
@@ -434,6 +437,37 @@ describe('a rename the journal took reports what it skipped, with a retry', () =
       expect(await settledMutate(root, rename, deps)).toEqual(skippedLine)
       expect(await settledMutate(root, retry, deps)).toEqual(skippedLine)
       expect((await readJournal(root))?.skipped).toEqual([broken()])
+    },
+  )
+
+  it.skipIf(windows).each([
+    [
+      'Space',
+      rename,
+      { ...rename, newName: 'Pomelo' },
+      (fm: Record<string, unknown>) => fm['<Projects>'],
+      ['Pomelo'],
+    ],
+    [
+      'Context',
+      { op: 'renameContext', contextId: 'ctx_projects', newName: 'Ventures' } as const,
+      { op: 'renameContext', contextId: 'ctx_projects', newName: 'Quests' } as const,
+      (fm: Record<string, unknown>) => fm['<Quests>'],
+      ['Pommora'],
+    ],
+  ] as const)(
+    'a %s rename’s retry after a second rename sweeps what the first left to the title held now',
+    async (_, first, second, held, expected) => {
+      const answered = await settledMutate(root, first, deps)
+      const retry = answered.ok && 'retry' in answered.value ? answered.value.retry : null
+      if (!retry) throw new Error('no retry answered')
+      await rm(broken())
+      await writeFile(broken(), '---\nid: pb\n<Projects>:\n  - Pommora\n---\nbody')
+      await refreshTree(root)
+      expect((await settledMutate(root, second, deps)).ok).toBe(true)
+      expect(await settledMutate(root, retry, deps)).toEqual(ok({}))
+      expect(held(await fmOf(broken()))).toEqual(expected)
+      expect(await readJournal(root)).toBeNull()
     },
   )
 })

@@ -217,11 +217,11 @@ export async function renameContextOp(
   if (!reg.ok) return reg
   const entry = reg.value.contexts.find((c) => c.id === contextId)
   if (!entry) return fail('not-found', 'Unknown Context.')
+  // A retry sweeps what the rename left to the title the Context holds now, which a later rename may have moved on.
   if (from !== undefined) {
-    const moved = entry.title !== newName || reg.value.contexts.some((c) => c.title === from)
-    return moved
-      ? ok(null)
-      : sweepAgain(root, newName, { contextId, oldTitle: from, newTitle: newName, skipped: [] })
+    const taken = reg.value.contexts.some((c) => c.id !== contextId && c.title === from)
+    const again = { contextId, oldTitle: from, newTitle: entry.title, skipped: [] }
+    return taken ? ok(null) : sweepAgain(root, entry.title, again)
   }
   if (entry.title === newName) return ok(null)
   if (
@@ -276,11 +276,11 @@ export async function renameSpaceOp(
   const group = space && groupById.get(space.contextId)
   if (!space || !group) return fail('not-found', 'Unknown Space.')
   if (from !== undefined) {
-    const moved =
-      space.title !== newName ||
-      group.spaces.some((s) => normalizeTitle(s.title) === normalizeTitle(from))
-    const again = { contextId: space.contextId, spaceId, oldTitle: from, newTitle: newName }
-    return moved ? ok(null) : sweepAgain(root, group.def.title, { ...again, skipped: [] })
+    const taken = group.spaces.some(
+      (s) => s.id !== spaceId && normalizeTitle(s.title) === normalizeTitle(from),
+    )
+    const again = { contextId: space.contextId, spaceId, oldTitle: from, newTitle: space.title }
+    return taken ? ok(null) : sweepAgain(root, group.def.title, { ...again, skipped: [] })
   }
   if (space.title === newName) return ok(null)
   const dir = join(root, space.path)
