@@ -164,7 +164,7 @@ async function stampTree(
 export async function stampAdopted(root: string): Promise<void> {
   const scope = scopeOf(await readSettings(root))
   const identity = await readIdentity(root)
-  const kindCtx = await agendaContext(root, identity, true)
+  const kindCtx = await agendaContext(root, identity)
 
   for (const e of await listEntries(root)) {
     if (e.kind !== 'dir') continue

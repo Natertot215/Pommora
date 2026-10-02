@@ -207,10 +207,10 @@ async function readRootFolder(
   name: string,
   walk: Walk,
 ): Promise<CollectionNode | SetNode | null> {
-  if ((await resolveFolderKind(abs, 'root', walk.kindCtx)) === 'collection')
+  if ((await resolveFolderKind(abs, 'root', walk.kindCtx)) !== 'collection') return null
+  if (await pathExists(join(abs, SIDECAR_FILENAME.collection)))
     return readContainer('collection', abs, name, name, walk)
-  const adoptable = await resolveFolderKind(abs, 'root', { ...walk.kindCtx, adopting: true })
-  if (adoptable === 'collection' && (await adoptsAsCollection(abs, name, walk.scope)))
+  if (await adoptsAsCollection(abs, name, walk.scope))
     walk.unreadable.push({ path: name, kind: 'collection', reason: 'missing' })
   return null
 }

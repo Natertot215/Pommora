@@ -324,7 +324,7 @@ describe('agenda singleton adoption', () => {
     expect(await pathExists(join(root, 'Notes', 'Tasks copy'))).toBe(true)
     expect(await pathExists(join(root, 'Tasks copy'))).toBe(false)
     const identity = await readJsonObject(nexusConfig(root, NEXUS_CONFIG_FILES.identity))
-    const ctx = await agendaContext(root, identity, true)
+    const ctx = await agendaContext(root, identity)
     expect(await resolveFolderKind(join(root, 'Tasks'), 'root', ctx)).toBe('tasks')
   })
 

@@ -15,7 +15,6 @@ export interface FolderKindContext {
   agenda: AgendaRegistration
   homed: ReadonlySet<AgendaFolder>
   root: string
-  adopting?: boolean
 }
 
 export function readAgendaRegistration(
@@ -52,9 +51,7 @@ export async function resolveFolderKind(
     return sidecar && registered && sidecar.id === registered ? slot : 'unknown'
   }
 
-  if (depth === 'nested') return 'set'
-  if (ctx.adopting) return 'collection'
-  return (await pathExists(join(absDir, SIDECAR_FILENAME.collection))) ? 'collection' : 'unknown'
+  return depth === 'nested' ? 'set' : 'collection'
 }
 
 async function hasContainerSidecar(absDir: string): Promise<boolean> {
@@ -68,11 +65,10 @@ async function hasContainerSidecar(absDir: string): Promise<boolean> {
 export async function agendaContext(
   root: string,
   identity: Record<string, unknown> | null,
-  adopting = false,
 ): Promise<FolderKindContext> {
   const registered = readAgendaRegistration(identity)
   if (Object.keys(registered).length === 0) {
-    return { agenda: {}, homed: new Set(), root, adopting }
+    return { agenda: {}, homed: new Set(), root }
   }
 
   // An unreadable root yields no entries, so no claims are counted and the recorded registration stands — a root Pommora cannot list is no evidence that anything duplicated it.
@@ -96,7 +92,7 @@ export async function agendaContext(
     if (claimants <= 1) agenda[slot] = id
     if (claimants >= 1) homed.add(slot)
   }
-  return { agenda, homed, root, adopting }
+  return { agenda, homed, root }
 }
 
 // A root folder is a Collection once it has a Collection sidecar or holds pages or subfolders, so an empty, sidecar-less folder (stray junk) never becomes one.

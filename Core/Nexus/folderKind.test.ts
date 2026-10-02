@@ -18,7 +18,7 @@ const REG = (): FolderKindContext => ({
   homed: new Set(),
   root,
 })
-const ADOPTING = (): FolderKindContext => ({ agenda: {}, homed: new Set(), root, adopting: true })
+const UNREGISTERED = (): FolderKindContext => ({ agenda: {}, homed: new Set(), root })
 beforeEach(async () => {
   root = tempRoot('pom-kind-')
 })
@@ -64,7 +64,7 @@ describe('readAgendaRegistration', () => {
 
 describe('agendaContext', () => {
   it('keeps the recorded registration when the root cannot be listed', async () => {
-    const ctx = await agendaContext(join(root, 'gone'), { agenda_folders: { tasks: TASKS } }, true)
+    const ctx = await agendaContext(join(root, 'gone'), { agenda_folders: { tasks: TASKS } })
     expect(ctx.agenda).toEqual({ tasks: TASKS })
   })
 
@@ -72,11 +72,7 @@ describe('agendaContext', () => {
     await dir('Tasks', { [SIDECAR_FILENAME.tasks]: { id: TASKS } })
     await dir('Tasks copy', { [SIDECAR_FILENAME.tasks]: { id: TASKS } })
     await dir('Events', { [SIDECAR_FILENAME.events]: { id: EVENTS } })
-    const ctx = await agendaContext(
-      root,
-      { agenda_folders: { tasks: TASKS, events: EVENTS } },
-      true,
-    )
+    const ctx = await agendaContext(root, { agenda_folders: { tasks: TASKS, events: EVENTS } })
     expect(ctx.agenda).toEqual({ events: EVENTS })
   })
 })
@@ -130,18 +126,13 @@ describe('resolveFolderKind', () => {
     expect(await resolveFolderKind(bare, 'nested', REG())).toBe('set')
   })
 
-  it('leaves a sidecar-less root folder unknown in sidecar mode', async () => {
+  it('classifies a sidecar-less root folder as a Collection, which its sidecar or content then decides', async () => {
     const d = await dir('Stray')
-    expect(await resolveFolderKind(d, 'root', REG())).toBe('unknown')
+    expect(await resolveFolderKind(d, 'root', REG())).toBe('collection')
   })
 
-  it('classifies a sidecar-less root folder as a Collection in raw mode', async () => {
-    const d = await dir('Stray')
-    expect(await resolveFolderKind(d, 'root', ADOPTING())).toBe('collection')
-  })
-
-  it('still refuses an agenda config in raw mode when nothing registers it', async () => {
+  it('still refuses an agenda config when nothing registers it', async () => {
     const d = await dir('Tasks', { [SIDECAR_FILENAME.tasks]: { id: TASKS } })
-    expect(await resolveFolderKind(d, 'root', ADOPTING())).toBe('unknown')
+    expect(await resolveFolderKind(d, 'root', UNREGISTERED())).toBe('unknown')
   })
 })
