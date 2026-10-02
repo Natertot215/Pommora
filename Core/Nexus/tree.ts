@@ -112,9 +112,6 @@ export interface Unreadable {
   reason: UnreadReason
 }
 
-export const comparePaths = (a: Unreadable, b: Unreadable): number =>
-  a.path < b.path ? -1 : a.path > b.path ? 1 : 0
-
 export interface NexusTree {
   nexus: { id: string; rootPath: string; name: string }
   collections: CollectionNode[]
@@ -145,11 +142,3 @@ export function entityMemo<T>(
     return value
   }
 }
-
-export const withheldIn =
-  (listed: readonly Unreadable[] = []) =>
-  (path: string): boolean =>
-    listed.some((u) => u.kind !== 'page' && (path === u.path || path.startsWith(`${u.path}/`)))
-
-export const damagedFolders = (listed: readonly Unreadable[] = []): Unreadable[] =>
-  listed.filter((u) => u.reason === 'unparsed' && (u.kind === 'collection' || u.kind === 'set'))
