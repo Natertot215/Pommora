@@ -115,6 +115,31 @@ describe('the cards ghost — dwell, create, and exit', () => {
     expect(renameSpy).toHaveBeenCalledWith('Col/Untitled.md', true, 'detail')
   })
 
+  it('the ghost holds its seat through the flight and retires in the commit its card appears', async () => {
+    let reply!: (outcome: unknown) => void
+    mutateSpy.mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          reply = resolve
+        }),
+    )
+    await dwellOn('p1')
+    await act(async () => {
+      ghost()?.click()
+    })
+    expect(ghost()).toBeTruthy()
+    const { id } = mutateSpy.mock.calls[0][0]
+    const born = source()
+    born.pages.splice(1, 0, { kind: 'page', id, title: 'Untitled', path: 'Col/Untitled.md' })
+    await renderView(root, born)
+    expect(card(id)).toBeTruthy()
+    expect(ghost()).toBeNull()
+    await act(async () => {
+      reply({ created: { path: 'Col/Untitled.md' } })
+    })
+    expect(ghost()).toBeNull()
+  })
+
   it('leaving the card past the grace closes the ghost out', async () => {
     await dwellOn('p1')
     await act(async () => {

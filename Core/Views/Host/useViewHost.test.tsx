@@ -866,7 +866,7 @@ describe('a create placed ahead of its reply', () => {
     let flight!: Promise<unknown>
     const p1 = api?.rowById.get('p1')
     await act(async () => {
-      flight = creation.createAdjacent(p1!, 'above')
+      flight = creation.createAdjacent(p1!, 'above').path
     })
     return { flight }
   }
