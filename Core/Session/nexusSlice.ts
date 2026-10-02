@@ -10,7 +10,7 @@ import type { MutateOutcome, MutateRequest } from '../Nexus/mutateRequest'
 import { caught, type PommoraError, type Result, valueOr } from '../Contract/result'
 import type { NexusChange, NexusTree } from '../Nexus/tree'
 import type { SyncStatus } from '../Sync/Contract/wire'
-import { patch } from '../Nexus/treeDelta'
+import { applyDelta } from '../Nexus/treeDelta'
 import { stabilize } from '../Nexus/treeStabilize'
 import { applyPersonalization } from '../Settings/applyPersonalization'
 import { reconcileIndexOf } from '../Nexus/treeIndex'
@@ -203,7 +203,7 @@ export const createNexusSlice: Slice<NexusSlice> = (set, get) => {
       if (!held || version !== get().version + 1) return void get().refetch()
       let next: NexusTree
       try {
-        next = patch(held, delta)
+        next = applyDelta(held, delta)
       } catch {
         return void get().refetch()
       }

@@ -13,7 +13,7 @@ import { applyEvents, indexEvent, nothingOwed, owedFor } from './fileEvents'
 import { diskMoved, dropLiveTree, heldTreeOf, refreshAfterWrite } from './liveTree'
 import { adopting, sessionRoot } from './session'
 import type { NexusTree, Unreadable, ValueChange } from './tree'
-import { diff } from './treeDelta'
+import { deltaOf } from './treeDelta'
 import { liveIdIndex } from './heldPages'
 
 // ── The app's own events ──
@@ -53,7 +53,7 @@ function shown(tree: NexusTree, stamp: readonly Unreadable[]): NexusTree {
 }
 
 // Records the tree the window was handed, the baseline the next difference is taken against.
-export function sent(tree: NexusTree): { tree: NexusTree; version: number } {
+export function handed(tree: NexusTree): { tree: NexusTree; version: number } {
   pushed = shown(tree, owedFor(tree.nexus.rootPath).stamp)
   return { tree: pushed, version }
 }
@@ -106,7 +106,7 @@ async function settle(pusher: Pusher, root: string): Promise<{ rescope: boolean 
   Object.assign(owed, nothingOwed(root), { stamp })
   const held = heldTreeOf(root)
   const tree = held && shown(held, stamp)
-  const delta = tree && diff(pushed?.nexus.rootPath === root ? pushed : undefined, tree)
+  const delta = tree && deltaOf(pushed?.nexus.rootPath === root ? pushed : undefined, tree)
   if (tree) pushed = tree
   if (delta) pusher.push('nexus:changed', { version: ++version, delta })
   if (pages.size) pusher.push('pages:changed', [...pages])
@@ -145,7 +145,7 @@ export async function settleBatch(
   } finally {
     batching = false
   }
-  await flush(pusher, root)
+  await settleNow(pusher, root)
 }
 
 function inTurn<T>(step: () => Promise<T>): Promise<T> {
@@ -157,10 +157,10 @@ function inTurn<T>(step: () => Promise<T>): Promise<T> {
 export const payOwedWalk = (root: string): Promise<void> => inTurn(() => walkWhileOwed(root))
 
 // One settle at a time, and one reseed at a time on a chain of its own: a reply waits for the settles ahead of its own, and for a reseed only when its own settle found the corpus or the scope moved.
-export async function flush(pusher: Pusher, root: string): Promise<void> {
+export async function settleNow(pusher: Pusher, root: string): Promise<void> {
   await stampListed(root, true)
   const moved = await inTurn(() => settle(pusher, root)).catch(() => null)
-  if (owedFor(root).stamp.length && !batching) await flush(pusher, root)
+  if (owedFor(root).stamp.length && !batching) await settleNow(pusher, root)
   if (!moved) return
   reseeding = reseeding
     .then(() => reseed(pusher, root, moved.rescope))
