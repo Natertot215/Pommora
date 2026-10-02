@@ -91,12 +91,22 @@ export function reconcileTab(
   return { ...t, target, navStack: history.navStack, navIndex: history.navIndex }
 }
 
-export function derivePinnedTabs(pinned: NavRef[], index: ReconcileIndex | null): Tab[] {
+export function derivePinnedTabs(
+  pinned: NavRef[],
+  index: ReconcileIndex | null,
+  prev: Tab[] = [],
+): Tab[] {
   if (!index) return []
-  return pinned
-    .map((ref) => liveTarget(index, ref))
-    .filter((t): t is SelectTarget => t !== null)
-    .map((target) => tabFor(pinTabId(target), target))
+  return pinned.flatMap((ref) => {
+    const target = liveTarget(index, ref)
+    if (target) return tabFor(pinTabId(target), target)
+    return (
+      prev.find(
+        (t) =>
+          tabKey(t.target) === tabKey(ref) && 'path' in t.target && index.withheld(t.target.path),
+      ) ?? []
+    )
+  })
 }
 
 /** Lets a derive writer keep the previous array when nothing changed, so an echo push invalidates no memo. */
