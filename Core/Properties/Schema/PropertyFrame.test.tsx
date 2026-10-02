@@ -57,7 +57,10 @@ beforeEach(() => {
   root = createRoot(host)
   loadSpy = vi.fn(async () => {})
   assignSpy = vi.fn(async () => ({ ok: true, value: null }))
-  renameSpy = vi.fn(async () => ({ ok: true, value: { from: 'Status', to: 'Stage' } }))
+  renameSpy = vi.fn(async () => ({
+    ok: true,
+    value: { from: 'Status', to: 'Stage', cascade: { pages: [], hosts: [] } },
+  }))
   propertyMenuSpy = vi.fn(async () => null)
   destroySpy = vi.fn(async () => ({
     ok: true,
