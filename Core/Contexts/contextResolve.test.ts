@@ -1,9 +1,13 @@
 import { describe, expect, it } from 'vitest'
-import { type GovernedWorld, reconcileGovernedRoot, resolveContextKeys } from './contextResolve'
+import {
+  contextWorldOf,
+  type GovernedWorld,
+  reconcileGovernedRoot,
+  resolveContextKeys,
+} from './contextResolve'
 import type { PropertyDefinition } from '../Properties/properties'
 import { decodeValue } from '../Properties/propertyValue'
-import type { ContextsRegistry } from './contexts'
-import type { SpaceNode } from '../Nexus/tree'
+import type { ContextGroup, SpaceNode } from '../Nexus/tree'
 
 const space = (id: string, title: string, contextId: string): SpaceNode => ({
   id,
@@ -13,36 +17,29 @@ const space = (id: string, title: string, contextId: string): SpaceNode => ({
   contextId,
 })
 
-const registry: ContextsRegistry = {
-  contexts: [
-    { id: 'ctx_projects', title: 'Projects', singular: 'Project' },
-    { id: 'ctxA', title: 'Classes', singular: 'Class' },
-  ],
-}
+const groups: ContextGroup[] = [
+  {
+    def: { id: 'ctx_projects', title: 'Projects', singular: 'Project' },
+    spaces: [space('sp1', 'Pommora', 'ctx_projects'), space('sp2', 'CS 161', 'ctx_projects')],
+  },
+  {
+    def: { id: 'ctxA', title: 'Classes', singular: 'Class' },
+    spaces: [space('sp3', '2024', 'ctxA'), space('sp4', 'true', 'ctxA')],
+  },
+]
 
-const spacesByContext = new Map<string, SpaceNode[]>([
-  [
-    'ctx_projects',
-    [space('sp1', 'Pommora', 'ctx_projects'), space('sp2', 'CS 161', 'ctx_projects')],
-  ],
-  ['ctxA', [space('sp3', '2024', 'ctxA'), space('sp4', 'true', 'ctxA')]],
-])
+const contexts = contextWorldOf(groups)
 
 describe('resolveContextKeys', () => {
   it('resolves a valid wrapped key + exact values to ids', () => {
-    const links = resolveContextKeys(
-      { '<Projects>': ['Pommora', 'CS 161'] },
-      registry,
-      spacesByContext,
-    )
+    const links = resolveContextKeys({ '<Projects>': ['Pommora', 'CS 161'] }, contexts)
     expect(links.get('ctx_projects')).toEqual(['sp1', 'sp2'])
   })
 
   it('ignores unbracketed keys and unknown titles', () => {
     const links = resolveContextKeys(
       { Projects: ['Pommora'], '<Nonexistent>': ['Pommora'] },
-      registry,
-      spacesByContext,
+      contexts,
     )
     expect(links.size).toBe(0)
   })
@@ -50,19 +47,14 @@ describe('resolveContextKeys', () => {
   it('matches values through coercion + NFC (scalars, case, whitespace)', () => {
     const links = resolveContextKeys(
       { '<Classes>': [2024, true], '<Projects>': [' pommora '] },
-      registry,
-      spacesByContext,
+      contexts,
     )
     expect(links.get('ctxA')).toEqual(['sp3', 'sp4'])
     expect(links.get('ctx_projects')).toEqual(['sp1'])
   })
 
   it('drops only the unmatched values, keeping valid siblings', () => {
-    const links = resolveContextKeys(
-      { '<Projects>': ['Pommora', 'Pomora'] },
-      registry,
-      spacesByContext,
-    )
+    const links = resolveContextKeys({ '<Projects>': ['Pommora', 'Pomora'] }, contexts)
     expect(links.get('ctx_projects')).toEqual(['sp1'])
   })
 })
@@ -80,8 +72,7 @@ const tagsDef: PropertyDefinition = {
   select_options: [{ value: 'alpha' }],
 }
 const world: GovernedWorld = {
-  registry,
-  spacesByContext,
+  contexts,
   defs: new Map([
     ['Status', statusDef],
     ['Tags', tagsDef],
@@ -106,7 +97,10 @@ describe('reconcileGovernedRoot — the context arm', () => {
   it('removes a key whose values all drop, a present-but-empty list, and a bare key (no empties)', () => {
     const { root, changed } = reconcileGovernedRoot(
       { '<Projects>': ['Pomora'], '<Classes>': [], '<Areas>': null },
-      { ...world, registry: { contexts: [...registry.contexts, { id: 'ctxB', title: 'Areas' }] } },
+      {
+        ...world,
+        contexts: contextWorldOf([...groups, { def: { id: 'ctxB', title: 'Areas' }, spaces: [] }]),
+      },
     )
     expect('<Projects>' in root).toBe(false)
     expect('<Classes>' in root).toBe(false)
@@ -118,11 +112,9 @@ describe('reconcileGovernedRoot — the context arm', () => {
     const { root, changed } = reconcileGovernedRoot({ '<Projects>': 'pommora' }, world)
     expect(root['<Projects>']).toEqual(['Pommora'])
     expect(changed).toEqual(['<Projects>'])
-    expect(
-      resolveContextKeys({ '<Projects>': 'Pommora' }, registry, spacesByContext).get(
-        'ctx_projects',
-      ),
-    ).toEqual(['sp1'])
+    expect(resolveContextKeys({ '<Projects>': 'Pommora' }, contexts).get('ctx_projects')).toEqual([
+      'sp1',
+    ])
   })
 
   it('leaves unknown wrapped keys and foreign keys verbatim', () => {
@@ -132,10 +124,10 @@ describe('reconcileGovernedRoot — the context arm', () => {
     expect(changed).toEqual([])
   })
 
-  it('a null registry skips the context arm while the property arm still runs', () => {
+  it('a world holding no Contexts skips the context arm while the property arm still runs', () => {
     const { root, changed } = reconcileGovernedRoot(
       { '<Projects>': ['pommora'], Status: 'Active' },
-      { ...world, registry: null },
+      { ...world, contexts: contextWorldOf([]) },
     )
     expect(root['<Projects>']).toEqual(['pommora'])
     expect(root.Status).toEqual(['Active'])

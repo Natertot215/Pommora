@@ -3,6 +3,7 @@
 import type { NexusTree } from '../Nexus/tree'
 import { assignedDefs } from '../Properties/assignment'
 import {
+  contextWorldOf,
   NO_DEFS,
   reconcileGovernedRoot,
   survivingChanges,
@@ -22,18 +23,6 @@ import { hiddenFolder } from '../Paths/exclusion'
 
 import { SPACE_SIDECAR } from '../Paths/nexusPaths'
 import { sweepGovernedRoots, unsweptLine } from '../Properties/governedSweep'
-
-async function liveWorld(
-  root: string,
-  tree: NexusTree,
-  destCollectionFolder: string | null,
-): Promise<GovernedWorld> {
-  return {
-    registry: { contexts: tree.contexts.map((g) => g.def) },
-    spacesByContext: new Map(tree.contexts.map((g) => [g.def.id, g.spaces])),
-    defs: await assignedDefs(root, destCollectionFolder),
-  }
-}
 
 function reconciledSidecar(
   raw: Record<string, unknown>,
@@ -58,7 +47,10 @@ export async function scrubReturning(
   frozen: Frozen,
   inTransitKey?: string,
 ): Promise<StrippedLink[]> {
-  const world = await liveWorld(root, tree, destCollectionFolder)
+  const world: GovernedWorld = {
+    contexts: contextWorldOf(tree.contexts),
+    defs: await assignedDefs(root, destCollectionFolder),
+  }
   const links = new Map(
     tree.config.registry.filter((d) => d.type === 'link').map((d) => [d.name, d]),
   )

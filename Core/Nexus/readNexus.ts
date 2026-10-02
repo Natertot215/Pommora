@@ -24,7 +24,7 @@ import {
   contextsRegistry as contextsRegistrySchema,
   type ContextsRegistry,
 } from '../Contexts/contexts'
-import { resolveContextKeys } from '../Contexts/contextResolve'
+import { contextWorldOf, resolveContextKeys } from '../Contexts/contextResolve'
 import { spaceNodeFrom, spaceSidecarsIn } from '../Contexts/spaceSidecar'
 import { cropsFile } from './schemas'
 import { containerNodeFrom } from './containerFields'
@@ -75,11 +75,10 @@ export function readOrder(state: Json): NexusOrder {
 export function contextLinker(
   groups: ContextGroup[],
 ): <N extends PageNode | SpaceNode>(node: N, raw: Json) => N {
-  const registry: ContextsRegistry = { contexts: groups.map((g) => g.def) }
-  const spacesByContext = new Map(groups.map((g) => [g.def.id, g.spaces]))
+  const world = contextWorldOf(groups)
   return (node, raw) => {
-    const links = groups.length ? resolveContextKeys(raw, registry, spacesByContext) : null
-    return links?.size ? { ...node, contextValues: Object.fromEntries(links) } : node
+    const links = resolveContextKeys(raw, world)
+    return links.size ? { ...node, contextValues: Object.fromEntries(links) } : node
   }
 }
 

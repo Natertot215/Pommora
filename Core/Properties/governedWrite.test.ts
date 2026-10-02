@@ -2,7 +2,7 @@ import { readFile, rm, stat, utimes, writeFile } from 'node:fs/promises'
 import { join } from '../Paths/posix'
 import { tempRoot } from '../Testing/hostFs'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
-import type { GovernedWorld } from '../Contexts/contextResolve'
+import { contextWorldOf, type GovernedWorld } from '../Contexts/contextResolve'
 import { splitFrontmatter } from '../Files/pageFile'
 import type { PropertyDefinition } from './properties'
 import { setGovernedRootKeys } from './governedWrite'
@@ -94,12 +94,11 @@ describe('setGovernedRootKeys with a world — the three precedence rules', () =
     select_options: [{ value: 'Open' }],
   }
   const world: GovernedWorld = {
-    registry: { contexts: [{ id: 'ctx_areas', title: 'Areas' }] },
-    spacesByContext: new Map([
-      [
-        'ctx_areas',
-        [{ kind: 'space', id: 'sp', title: 'Health', path: 'x', contextId: 'ctx_areas' }],
-      ],
+    contexts: contextWorldOf([
+      {
+        def: { id: 'ctx_areas', title: 'Areas' },
+        spaces: [{ kind: 'space', id: 'sp', title: 'Health', path: 'x', contextId: 'ctx_areas' }],
+      },
     ]),
     defs: new Map([
       ['Priority', priority],

@@ -2,10 +2,8 @@ import { mkdir, readFile, rm, writeFile } from 'node:fs/promises'
 import { splitFrontmatter } from '../Files/pageFile'
 import { join } from '../Paths/posix'
 import { tempRoot } from '../Testing/hostFs'
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import type { PropertyDefinition } from './properties'
-import type { NexusTree } from '../Nexus/tree'
-import * as atomicWrite from '../Files/atomicWrite'
 import { handleMutate } from '../Nexus/mutate'
 import { contextsDir, contextsRegistryFile } from '../Paths/paths'
 
@@ -13,20 +11,11 @@ import { closeSession, openSession } from '../Nexus/session'
 import { refreshTree, dropLiveTree } from '../Nexus/liveTree'
 import { readRegistry } from './propertiesRegistry'
 import { assignProperty } from './assignment'
-import { contextDriftPresent } from '../Contexts/contextWrite'
 import { newId } from '../Nexus/ids'
 import { createFolderEntity } from '../Nexus/folderEntity'
 import { createTestPage } from '../Testing/createTestPage'
 import { createProperty } from './registryProperty'
 import type { TrashDeps } from '../Trash/bundle'
-
-vi.mock('../Files/atomicWrite', async (importOriginal) => {
-  const mod = await importOriginal<typeof import('../Files/atomicWrite')>()
-  return { ...mod, readJsonStrict: vi.fn(mod.readJsonStrict) }
-})
-const sidecarReads = vi.mocked(atomicWrite.readJsonStrict)
-const spaceReads = () =>
-  sidecarReads.mock.calls.filter(([p]) => String(p).endsWith('_space.json')).length
 
 const deps: TrashDeps = { trashMode: 'nexus', trashToSystem: async () => {} }
 let root: string
@@ -71,35 +60,11 @@ beforeEach(async () => {
   await assignProperty(root, notes, statusId)
   await assignProperty(root, notes, priorityId)
   await openSession(root)
-  sidecarReads.mockClear()
 })
 afterEach(async () => {
   dropLiveTree()
   closeSession()
   await rm(root, { recursive: true, force: true })
-})
-
-const tree = (): NexusTree =>
-  ({
-    contexts: [
-      {
-        def: { id: 'ctx_areas', title: 'Areas' },
-        spaces: [
-          { kind: 'space', id: 'sp-work', title: 'Work', path: 'x', contextId: 'ctx_areas' },
-        ],
-      },
-    ],
-  }) as unknown as NexusTree
-
-describe('contextDriftPresent', () => {
-  it('is false only when every registered Context key holds exact Space titles', () => {
-    expect(contextDriftPresent({ '<Areas>': ['Work'] }, tree())).toBe(false)
-    expect(contextDriftPresent({ '<Areas>': ['work'] }, tree())).toBe(true)
-    expect(contextDriftPresent({ '<Areas>': [] }, tree())).toBe(true)
-    expect(contextDriftPresent({ '<Notes>': ['x'] }, tree())).toBe(false)
-    expect(contextDriftPresent({ '<Areas>': ['Work'] }, null)).toBe(true)
-    expect(contextDriftPresent({ '<Areas>': 'Work' }, tree())).toBe(true)
-  })
 })
 
 describe('a property write reconciles the whole file', () => {
@@ -123,41 +88,7 @@ describe('a property write reconciles the whole file', () => {
     expect(out.Status).toEqual(['Open'])
   })
 
-  it('a clean page pays no Space read; a drifted one loads the strict world and repairs', async () => {
-    const clean = await createTestPage(notes, 'Clean', { body: 'b' })
-    const drifted = await createTestPage(notes, 'Drifted', { body: 'b' })
-    if (!clean.ok || !drifted.ok) throw new Error('setup')
-    await writeFile(
-      clean.value.path,
-      `---\nID: 01ARZ3NDEKPSV4RRFFQ69G5FAA\n<Areas>:\n  - Work\n---\nb\n`,
-    )
-    await writeFile(
-      drifted.value.path,
-      `---\nID: 01ARZ3NDEKPSV4RRFFQ69G5FAB\n<Areas>:\n  - work\n---\nb\n`,
-    )
-    const set = (path: string) =>
-      handleMutate(
-        root,
-        {
-          op: 'setProperty',
-          path: rel(path),
-          propertyId: priorityId,
-          value: { kind: 'number', value: 1 },
-        },
-        deps,
-      )
-    await refreshTree(root)
-    sidecarReads.mockClear()
-    expect((await set(clean.value.path)).ok).toBe(true)
-    expect(spaceReads()).toBe(0)
-    expect((await fm(clean.value.path))['<Areas>']).toEqual(['Work'])
-
-    expect((await set(drifted.value.path)).ok).toBe(true)
-    expect(spaceReads()).toBeGreaterThan(0)
-    expect((await fm(drifted.value.path))['<Areas>']).toEqual(['Work'])
-  })
-
-  it('a corrupt Space sidecar skips the context arm on a property write and refuses a context write', async () => {
+  it('a Space the tree doesn’t hold leaves a property write’s tags naming it as written', async () => {
     const page = await createTestPage(notes, 'B', { body: 'b' })
     if (!page.ok) throw new Error('setup')
     await writeFile(
@@ -165,6 +96,7 @@ describe('a property write reconciles the whole file', () => {
       `---\nID: 01ARZ3NDEKPSV4RRFFQ69G5FAC\n<Areas>:\n  - work\n---\nb\n`,
     )
     await writeFile(join(contextsDir(root), 'Areas', 'Work', '_space.json'), '{corrupt')
+    await refreshTree(root)
     const r = await handleMutate(
       root,
       {
@@ -179,17 +111,20 @@ describe('a property write reconciles the whole file', () => {
     const out = await fm(page.value.path)
     expect(out.Priority).toBe(2)
     expect(out['<Areas>']).toEqual(['work'])
-    const ctx = await handleMutate(
+  })
+
+  it('a Context write that targets a Space the tree doesn’t hold answers not-found', async () => {
+    const sidecar = join(contextsDir(root), 'Areas', 'Work', '_space.json')
+    await writeFile(sidecar, '{corrupt')
+    await refreshTree(root)
+    const r = await handleMutate(
       root,
-      {
-        op: 'setContext',
-        path: rel(page.value.path),
-        contextId: 'ctx_areas',
-        spaceIds: ['sp-work'],
-      },
+      { op: 'setSpaceColor', spaceId: 'sp-work', color: 'cyan' },
       deps,
     )
-    expect(ctx.ok).toBe(false)
+    expect(r.ok).toBe(false)
+    if (!r.ok) expect(r.error.code).toBe('not-found')
+    expect(await readFile(sidecar, 'utf8')).toBe('{corrupt')
   })
 
   it('a Multi-Select value the page holds is adopted by the write that finds it', async () => {

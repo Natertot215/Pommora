@@ -14,6 +14,7 @@ import { buildPageIndex, type ConnPage, type PageIndex } from '../Connections/pa
 import type { NavCore, ResolveIndex } from '../Navigation/navResolve'
 import type { SearchEntry } from '../Navigation/navSearch'
 import { foldKey } from '../Paths/caseFold'
+import { contextWorldOf } from '../Contexts/contextResolve'
 import type { ReconcileIndex } from '../Session/reconcileSelection'
 
 /** `id` and `path` are '' for the two folderless singletons, the Homepage and the Matrix. */
@@ -336,13 +337,8 @@ export function spaceLinksOf(tree: NexusTree): ReadonlyMap<string, Record<string
   return out
 }
 
-export function spaceNodeOf(tree: NexusTree | null, id: string): SpaceNode | null {
-  for (const g of tree?.contexts ?? []) {
-    const sp = g.spaces.find((s) => s.id === id)
-    if (sp) return sp
-  }
-  return null
-}
+export const spaceNodeOf = (tree: NexusTree | null, id: string): SpaceNode | null =>
+  (tree && contextWorldOf(tree.contexts).spaceById.get(id)) ?? null
 
 export function findSpace(tree: NexusTree | null, id: string): BannerOwner | null {
   const sp = spaceNodeOf(tree, id)

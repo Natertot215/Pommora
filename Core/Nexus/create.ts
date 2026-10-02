@@ -4,13 +4,8 @@ import { contextsDir } from '../Paths/paths'
 import { pathExists } from '../Files/atomicWrite'
 import { readRegistryStrict } from '../Contexts/contextsRegistry'
 import { fail, ok } from '../Contract/result'
-import {
-  type ContextWorld,
-  contextTarget,
-  createSpace,
-  loadContextWorld,
-  setPageContext,
-} from '../Contexts/contextWrite'
+import { contextWorldOf } from '../Contexts/contextResolve'
+import { contextTarget, createSpace, setPageContext } from '../Contexts/contextWrite'
 import { mintDefaultView } from '../Views/views'
 import { readRegistry } from '../Properties/propertiesRegistry'
 import type { PropertyDefinition } from '../Properties/properties'
@@ -26,7 +21,7 @@ import type { MutateContext } from './mutate'
 import { createPage } from './page'
 import { createFolderEntity, landingRefusal } from './folderEntity'
 import { appendCollection, setChildOrder, setSpaceOrder } from './reorder'
-import { mutableTarget } from './liveTree'
+import { liveTreeOf, mutableTarget } from './liveTree'
 
 const created = (parentPath: string, r: { path: string }): MutateReply =>
   ok({ created: { path: relJoin(parentPath, basename(r.path)) } })
@@ -38,15 +33,10 @@ export async function createPageOp(
   const parent = await mutableTarget(root, req.parentPath, CONTAINER_KINDS)
   if (!parent.ok) return parent
   const contexts = contextSeeds(req)
-  let world: ContextWorld | undefined
-  if (contexts.length) {
-    const loaded = await loadContextWorld(root)
-    if (!loaded.ok) return loaded
-    world = loaded.value
-    for (const [contextId, spaceIds] of contexts) {
-      const target = contextTarget(world, contextId, spaceIds)
-      if (!target.ok) return target
-    }
+  const world = contextWorldOf((await liveTreeOf(root)).contexts)
+  for (const [contextId, spaceIds] of contexts) {
+    const target = contextTarget(world, contextId, spaceIds)
+    if (!target.ok) return target
   }
   let values: { def: PropertyDefinition; value: PropertyValue }[] | undefined
   if (req.seeds) {
@@ -62,9 +52,8 @@ export async function createPageOp(
     (name) => pathExists(join(parent.value, `${name}.md`)),
   )
   if (!r.ok) return r
-  if (world)
-    for (const [contextId, spaceIds] of contexts)
-      await setPageContext(r.value.path, root, world, contextId, spaceIds)
+  for (const [contextId, spaceIds] of contexts)
+    await setPageContext(r.value.path, root, contextId, spaceIds)
   if (req.order) await setChildOrder(parent.value, 'page_order', req.order)
   return created(req.parentPath, r.value)
 }

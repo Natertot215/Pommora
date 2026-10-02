@@ -1,93 +1,39 @@
-import { join, isMarkdownFile } from '../Paths/posix'
-import { contextKey, parseContextKey, type ContextsRegistry } from './contexts'
+import { basename, join, isMarkdownFile } from '../Paths/posix'
+import { contextKey } from './contexts'
 import { editList } from '../Properties/pageValue'
 import {
+  contextWorldOf,
   namesSpace,
   NO_DEFS,
   preservedChanges,
   reconcileGovernedRoot,
+  type ContextWorld,
   type GovernedWorld,
 } from './contextResolve'
 import { contextDirRel, spaceDirRel, SPACE_SIDECAR } from '../Paths/nexusPaths'
 import { seedBoard } from '../Tiles/tiles'
 import { writeTileDocAt } from '../Tiles/tileDoc'
-import { heldTreeOf, mutableTarget } from '../Nexus/liveTree'
+import { liveTreeOf, mutableTarget } from '../Nexus/liveTree'
+import { reachReport } from '../Nexus/configReach'
+import { spaceAt } from '../Nexus/treePatch'
 import type { MutateContext } from '../Nexus/mutate'
 import { done, type MutateReply, type MutateRequest } from '../Nexus/mutateRequest'
 import { assignedDefs, collectionFolderOf } from '../Properties/assignment'
 import { applyAdoptions } from '../Properties/optionOps'
-import type { NexusTree, SpaceNode } from '../Nexus/tree'
+import type { NexusTree } from '../Nexus/tree'
 import { isColorKey } from '@pommora/uix/Theme/colors'
 import { ok, fail, type Result, fault } from '../Contract/result'
 import { mutateRegistryFile, readRegistryStrict, withContextAt } from './contextsRegistry'
 import { newId } from '../Nexus/ids'
 import { freeName, nameError } from '../Paths/names'
-import {
-  atomicWriteFile,
-  pathExists,
-  readJsonStrict,
-  rmwJsonStrict,
-  setOrDrop,
-} from '../Files/atomicWrite'
+import { atomicWriteFile, pathExists, rmwJsonStrict, setOrDrop } from '../Files/atomicWrite'
 import { machine } from '../Platform/machine'
 import { setGovernedRootKeys } from '../Properties/governedWrite'
 import { contextsDir, tileFilePath } from '../Paths/paths'
 import { createFolderEntity } from '../Nexus/folderEntity'
-import { COLOR_KEY, ORDER_KEY, spaceSidecarsIn } from './spaceSidecar'
+import { COLOR_KEY, ORDER_KEY } from './spaceSidecar'
 import type { Json } from '../Files/stableJson'
 import { listOf } from '../Contract/validators'
-
-interface SpaceRef {
-  id: string
-  title: string
-  contextId: string
-  contextTitle: string
-  dir: string
-  raw: Json
-}
-
-export interface ContextWorld extends GovernedWorld {
-  registry: ContextsRegistry
-  spaceById: Map<string, SpaceRef>
-}
-
-export const NO_CONTEXT_WORLD: Omit<GovernedWorld, 'defs'> = {
-  registry: null,
-  spacesByContext: new Map(),
-}
-
-export async function loadContextWorld(root: string): Promise<Result<ContextWorld>> {
-  const reg = await readRegistryStrict(root)
-  if (!reg.ok) return reg
-  const spacesByContext = new Map<string, SpaceNode[]>()
-  const spaceById = new Map<string, SpaceRef>()
-  for (const def of reg.value.contexts) {
-    const dir = join(contextsDir(root), def.title)
-    const spaces: SpaceNode[] = []
-    for (const { name, file } of await spaceSidecarsIn(dir)) {
-      // STRICT per sidecar: a folder without one simply isn't a Space, but an unreadable/corrupt one fails the whole load — a world missing a real Space would make the reconcile silently strip that Space's valid tags from every file it touches.
-      const sc = await readJsonStrict(file)
-      if (!sc.ok) {
-        if (sc.error.code === 'not-found') continue
-        return fault(`Unreadable Space sidecar: ${name}`)
-      }
-      const rel = spaceDirRel(def.title, name)
-      const id = sc.value.id
-      if (typeof id !== 'string') return fault(`Unreadable Space sidecar: ${name}`)
-      spaces.push({ kind: 'space', id, title: name, path: rel, contextId: def.id })
-      spaceById.set(id, {
-        id,
-        title: name,
-        contextId: def.id,
-        contextTitle: def.title,
-        dir: join(dir, name),
-        raw: sc.value,
-      })
-    }
-    spacesByContext.set(def.id, spaces)
-  }
-  return ok({ registry: reg.value, spacesByContext, spaceById, defs: NO_DEFS })
-}
 
 /** Unknown ids fail — a stale renderer id must never serialize as a guess. */
 export function contextTarget(
@@ -97,66 +43,38 @@ export function contextTarget(
 ): Result<{ key: string; value: string[] | undefined }> {
   const titles: string[] = []
   for (const id of spaceIds) {
-    const ref = world.spaceById.get(id)
-    if (!ref) return fail('not-found', 'Unknown Space.')
-    titles.push(ref.title)
+    const space = world.spaceById.get(id)
+    if (!space) return fail('not-found', 'Unknown Space.')
+    titles.push(space.title)
   }
-  const def = world.registry.contexts.find((c) => c.id === contextId)
-  if (!def) return fail('not-found', 'Unknown Context.')
-  return ok({ key: contextKey(def.title), value: titles.length ? titles : undefined })
+  const group = world.groupById.get(contextId)
+  if (!group) return fail('not-found', 'Unknown Context.')
+  return ok({ key: contextKey(group.def.title), value: titles.length ? titles : undefined })
 }
 
 export async function setPageContext(
   absFile: string,
   root: string,
-  world: ContextWorld,
   contextId: string,
   spaceIds: string[],
 ): Promise<Result<null>> {
-  const applied = contextTarget(world, contextId, spaceIds)
-  if (!applied.ok) return applied
-  const { key, value } = applied.value
   const adoptions = await machine().lock(absFile, async () => {
     if (!(await pathExists(absFile))) return fail('not-found', 'Page not found.')
-    const defs = await assignedDefs(root, await collectionFolderOf(root, absFile))
-    return ok(
-      await setGovernedRootKeys(absFile, value ? { [key]: value } : {}, [key], {
-        ...world,
-        defs,
-      }),
-    )
+    const governed = await governedWorldOf(root, absFile)
+    const applied = contextTarget(governed.contexts, contextId, spaceIds)
+    if (!applied.ok) return applied
+    const { key, value } = applied.value
+    return ok(await setGovernedRootKeys(absFile, value ? { [key]: value } : {}, [key], governed))
   })
   if (!adoptions.ok) return adoptions
   await applyAdoptions(root, adoptions.value)
   return ok(null)
 }
 
-export function contextDriftPresent(raw: Json, tree: NexusTree | null): boolean {
-  if (!tree) return true
-  const spaces = new Map(
-    tree.contexts.map((g) => [g.def.title, new Set(g.spaces.map((s) => s.title))]),
-  )
-  for (const [key, value] of Object.entries(raw)) {
-    const title = parseContextKey(key)
-    if (title === null) continue
-    const titles = spaces.get(title)
-    if (!titles) continue
-    if (!Array.isArray(value) || value.length === 0) return true
-    if (!value.every((v) => typeof v === 'string' && titles.has(v))) return true
-  }
-  return false
-}
-
-export async function loadGovernedWorld(
-  root: string,
-  absFile: string,
-  raw: Json,
-): Promise<GovernedWorld> {
+export async function governedWorldOf(root: string, absFile: string): Promise<GovernedWorld> {
+  const tree = await liveTreeOf(root)
   const defs = await assignedDefs(root, await collectionFolderOf(root, absFile))
-  const skipped: GovernedWorld = { ...NO_CONTEXT_WORLD, defs }
-  if (!contextDriftPresent(raw, heldTreeOf(root))) return skipped
-  const world = await loadContextWorld(root)
-  return world.ok ? { ...world.value, defs } : skipped
+  return { contexts: contextWorldOf(tree.contexts), defs }
 }
 
 export async function writeSpaceSidecar(
@@ -168,38 +86,48 @@ export async function writeSpaceSidecar(
 }
 
 export async function setSpaceContext(
-  world: ContextWorld,
+  root: string,
+  tree: NexusTree,
   spaceId: string,
   contextId: string,
   targetSpaceIds: string[],
-): Promise<Result<null>> {
-  const a = world.spaceById.get(spaceId)
+): Promise<Result<number>> {
+  const world: GovernedWorld = { contexts: contextWorldOf(tree.contexts), defs: NO_DEFS }
+  const { groupById, spaceById } = world.contexts
+  const a = spaceById.get(spaceId)
   if (!a) return fail('not-found', 'Unknown Space.')
   if (targetSpaceIds.includes(spaceId)) return fault('A Space can’t link itself.')
-  const applied = contextTarget(world, contextId, targetSpaceIds)
+  const applied = contextTarget(world.contexts, contextId, targetSpaceIds)
   if (!applied.ok) return applied
   const { key, value } = applied.value
-  const backKey = contextKey(a.contextTitle)
+  const own = groupById.get(a.contextId)
+  if (!own) return fail('not-found', 'Unknown Context.')
+  const backKey = contextKey(own.def.title)
   const repaired = (raw: Json): Json => ({
     ...raw,
     ...preservedChanges(reconcileGovernedRoot(raw, world), raw),
   })
-
+  let skipped = 0
   const namesA = namesSpace(a.title)
-  for (const s of world.spacesByContext.get(contextId) ?? []) {
-    const far = world.spaceById.get(s.id)
-    const wants = targetSpaceIds.includes(s.id)
-    if (!far || far.id === a.id || listOf(far.raw[backKey]).some(namesA) === wants) continue
-    const half = await writeSpaceSidecar(far.dir, (raw) => {
+  for (const far of groupById.get(contextId)?.spaces ?? []) {
+    if (far.id === a.id) continue
+    const wants = targetSpaceIds.includes(far.id)
+    // Decided on what the far file holds, inside its own read-modify-write, never on the tree's copy of it.
+    const half = await writeSpaceSidecar(join(root, far.path), (raw) => {
+      if (listOf(raw[backKey]).some(namesA) === wants) return null
       const base = repaired(raw)
       const held = base[backKey] == null ? [] : listOf(base[backKey])
       const without = editList(held, namesSpace, a.title, { op: 'strip' }) ?? held
       const next = wants ? [...without, a.title] : without
       return setOrDrop(base, backKey, next.length > 0 && next)
     })
-    if (!half.ok) return half
+    if (!half.ok) skipped++
   }
-  return writeSpaceSidecar(a.dir, (raw) => setOrDrop(repaired(raw), key, value))
+  const written = await writeSpaceSidecar(join(root, a.path), (raw) =>
+    setOrDrop(repaired(raw), key, value),
+  )
+  if (!written.ok) return written
+  return ok(skipped)
 }
 
 export async function setContextOp(
@@ -208,14 +136,19 @@ export async function setContextOp(
 ): Promise<MutateReply> {
   const target = await mutableTarget(root, path, ['page', 'space'])
   if (!target.ok) return target
-  const abs = target.value
-  const world = await loadContextWorld(root)
-  if (!world.ok) return world
-  if (isMarkdownFile(abs))
-    return done(await setPageContext(abs, root, world.value, contextId, spaceIds))
-  const owner = [...world.value.spaceById.values()].find((ref) => ref.dir === abs)
+  const tree = await liveTreeOf(root)
+  const world = contextWorldOf(tree.contexts)
+  const group = world.groupById.get(contextId)
+  const unread =
+    group && tree.unreadable?.find((u) => u.path.startsWith(`${contextDirRel(group.def.title)}/`))
+  if (unread) return fault(`Unreadable Space sidecar: ${basename(unread.path)}`)
+  if (isMarkdownFile(path))
+    return done(await setPageContext(target.value, root, contextId, spaceIds))
+  const owner = spaceAt(tree, path)
   if (!owner) return fail('invalid-path', 'Not a context-taggable entity.')
-  return done(await setSpaceContext(world.value, owner.id, contextId, spaceIds))
+  const linked = await setSpaceContext(root, tree, owner.id, contextId, spaceIds)
+  if (!linked.ok) return linked
+  return ok(linked.value ? { cascade: reachReport({ skipped: linked.value, hosts: [] }) } : {})
 }
 
 export async function createContextGroup(
@@ -269,11 +202,9 @@ export async function setSpaceColor(
 ): Promise<Result<null>> {
   if (color !== undefined && !isColorKey(color))
     return fail('invalid-name', `"${color}" is not a chip color.`)
-  const world = await loadContextWorld(root)
-  if (!world.ok) return world
-  const ref = world.value.spaceById.get(spaceId)
-  if (!ref) return fail('not-found', 'Unknown Space.')
-  return writeSpaceSidecar(ref.dir, (cur) => setOrDrop(cur, COLOR_KEY, color))
+  const space = contextWorldOf((await liveTreeOf(root)).contexts).spaceById.get(spaceId)
+  if (!space) return fail('not-found', 'Unknown Space.')
+  return writeSpaceSidecar(join(root, space.path), (cur) => setOrDrop(cur, COLOR_KEY, color))
 }
 
 export const setSpaceRowOrder = (

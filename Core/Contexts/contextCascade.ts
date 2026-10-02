@@ -1,6 +1,6 @@
-import { basename, join } from '../Paths/posix'
+import { basename, dirname, join } from '../Paths/posix'
 import { normalizeTitle } from '../Connections/connections'
-import { contextKey, type ContextsRegistry } from './contexts'
+import { contextKey } from './contexts'
 import { ID_KEY } from '../Nexus/identityMark'
 import { asString } from '../Nexus/coerce'
 import { ok, fail, type Result, fault } from '../Contract/result'
@@ -27,10 +27,10 @@ import {
   sweepGovernedRoots,
   unsweptLine,
 } from '../Properties/governedSweep'
-import { loadContextWorld } from './contextWrite'
 import { withOrderEntry } from './spaceSidecar'
 import { editList } from '../Properties/pageValue'
-import { namesSpace } from './contextResolve'
+import { contextWorldOf, namesSpace } from './contextResolve'
+import { liveTreeOf } from '../Nexus/liveTree'
 import { listOf } from '../Contract/validators'
 import { queryMembers } from '../Index/contentIndex'
 import { nexusCorpus } from '../Index/indexSeed'
@@ -114,20 +114,18 @@ function pageLeg(j: RenameJournal): RewriteText | undefined {
 
 async function cascadeTitle(
   root: string,
-  registry: ContextsRegistry,
+  contextTitle: string,
   j: RenameJournal,
 ): Promise<SweepResult> {
-  const def = registry.contexts.find((c) => c.id === j.contextId)
-  if (!def) return { touched: new Map(), skipped: [], refused: [] }
   // The key being rewritten comes from the journal, never the registry title, which may already read old or new.
   const member: Member =
     j.spaceId === undefined
       ? { key: contextKey(j.oldTitle) }
-      : { key: contextKey(def.title), spaceTitle: j.oldTitle }
+      : { key: contextKey(contextTitle), spaceTitle: j.oldTitle }
   const rewrite: Rewrite =
     j.spaceId === undefined
       ? rekeyContext(j.oldTitle, j.newTitle)
-      : (raw) => retitleSpace(raw, def.title, j)
+      : (raw) => retitleSpace(raw, contextTitle, j)
   return sweepMembers(root, member, rewrite, pageLeg(j))
 }
 
@@ -228,11 +226,11 @@ export async function renameContextOp(
     return fault(e)
   }
 
-  const cascade = await cascadeTitle(root, reg.value, j)
+  const cascade = await cascadeTitle(root, entry.title, j)
 
   const committed = await commitTitle(root, contextId, newName)
   if (!committed.ok) {
-    await cascadeTitle(root, reg.value, { ...j, oldTitle: newName, newTitle: entry.title })
+    await cascadeTitle(root, entry.title, { ...j, oldTitle: newName, newTitle: entry.title })
     try {
       if (await pathExists(newDir)) await relocate(newDir, oldDir)
     } catch {}
@@ -251,30 +249,31 @@ export async function renameSpaceOp(
 ): Promise<Result<null>> {
   const why = nameError(newName, 'directory')
   if (why) return fail('invalid-name', why)
-  const world = await loadContextWorld(root)
-  if (!world.ok) return world
-  const ref = world.value.spaceById.get(spaceId)
-  if (!ref) return fail('not-found', 'Unknown Space.')
-  if (ref.title === newName) return ok(null)
-  const target = join(contextsDir(root), ref.contextTitle, newName)
-  if (await targetTaken(ref.dir, target)) return fail('exists', `"${newName}" already exists.`)
+  const { groupById, spaceById } = contextWorldOf((await liveTreeOf(root)).contexts)
+  const space = spaceById.get(spaceId)
+  const group = space && groupById.get(space.contextId)
+  if (!space || !group) return fail('not-found', 'Unknown Space.')
+  if (space.title === newName) return ok(null)
+  const dir = join(root, space.path)
+  const target = join(dirname(dir), newName)
+  if (await targetTaken(dir, target)) return fail('exists', `"${newName}" already exists.`)
 
   const j: RenameJournal = {
-    contextId: ref.contextId,
+    contextId: space.contextId,
     spaceId,
-    oldTitle: ref.title,
+    oldTitle: space.title,
     newTitle: newName,
     skipped: [],
   }
   await writeJournal(root, j)
   try {
-    await relocate(ref.dir, target)
+    await relocate(dir, target)
   } catch (e) {
     await clearJournal(root, j)
     return fault(e)
   }
 
-  const cascade = await cascadeTitle(root, world.value.registry, j)
+  const cascade = await cascadeTitle(root, group.def.title, j)
   await settleJournal(root, j, cascade.skipped)
   return ok(null)
 }
@@ -304,7 +303,7 @@ export async function replayPendingRename(root: string): Promise<void> {
     const oldDir = join(contextsDir(root), j.oldTitle)
     const newDir = join(contextsDir(root), j.newTitle)
     if ((await pathExists(oldDir)) && !(await pathExists(newDir))) await relocate(oldDir, newDir)
-    const cascade = await cascadeTitle(root, reg.value, j)
+    const cascade = await cascadeTitle(root, entry.title, j)
     if (entry.title !== j.newTitle) {
       const committed = await commitTitle(root, j.contextId, j.newTitle)
       if (!committed.ok) return
@@ -339,6 +338,6 @@ export async function replayPendingRename(root: string): Promise<void> {
     }
     await relocate(join(ctxDir, j.oldTitle), target)
   }
-  const cascade = await cascadeTitle(root, reg.value, j)
+  const cascade = await cascadeTitle(root, entry.title, j)
   await settleJournal(root, j, cascade.skipped)
 }

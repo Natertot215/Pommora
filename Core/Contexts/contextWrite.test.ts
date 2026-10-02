@@ -6,7 +6,6 @@ import { readJsonAt, tempRoot } from '../Testing/hostFs'
 import {
   createContextGroup,
   createSpace,
-  loadContextWorld,
   setPageContext,
   setSpaceColor,
   setSpaceContext,
@@ -17,6 +16,15 @@ import { rawLayoutSchema } from '../Tiles/tiles'
 import { readTileDocAt } from '../Tiles/tileDoc'
 import { contextsRegistryFile, contextsDir, nexusDir } from '../Paths/paths'
 import type { ContextsRegistry } from './contexts'
+import { contextWorldOf } from './contextResolve'
+import { readNexus } from '../Nexus/readNexus'
+import { handleMutate } from '../Nexus/mutate'
+import { closeSession, openSession } from '../Nexus/session'
+import { dropLiveTree, refreshTree } from '../Nexus/liveTree'
+import { createFolderEntity } from '../Nexus/folderEntity'
+import { createTestPage } from '../Testing/createTestPage'
+import { unsweptLine } from '../Properties/governedSweep'
+import type { TrashDeps } from '../Trash/bundle'
 
 let root: string
 beforeEach(async () => {
@@ -47,11 +55,7 @@ afterEach(async () => {
   await rm(root, { recursive: true, force: true })
 })
 
-const world = async () => {
-  const w = await loadContextWorld(root)
-  if (!w.ok) throw new Error('world load failed')
-  return w.value
-}
+const world = async () => contextWorldOf((await readNexus(root)).contexts)
 
 describe('createContextGroup', () => {
   it('appends a ULID entry and mkdirs the context folder', async () => {
@@ -126,7 +130,7 @@ describe('setPageContext', () => {
 
   it('writes the wrapped key with titles resolved from ids (H-1)', async () => {
     await writeFile(page(), '---\nid: p1\n---\nbody')
-    const r = await setPageContext(page(), root, await world(), 'ctx_projects', ['sp-pom'])
+    const r = await setPageContext(page(), root, 'ctx_projects', ['sp-pom'])
     expect(r.ok).toBe(true)
     const content = await readFile(page(), 'utf8')
     expect(content).toContain('<Projects>:')
@@ -136,7 +140,7 @@ describe('setPageContext', () => {
 
   it('clears the key entirely on an empty list (A-5)', async () => {
     await writeFile(page(), '---\nid: p1\n<Projects>:\n  - Pommora\n---\nbody')
-    await setPageContext(page(), root, await world(), 'ctx_projects', [])
+    await setPageContext(page(), root, 'ctx_projects', [])
     const fm = splitFrontmatter(await readFile(page(), 'utf8'))
     expect('<Projects>' in fm).toBe(false)
   })
@@ -146,28 +150,28 @@ describe('setPageContext', () => {
       page(),
       '---\nid: p1\n<Projects>:\n  - pommora\n<Classes>:\n  - cs 161\n  - Bogus\n---\nbody',
     )
-    const r = await setPageContext(page(), root, await world(), 'ctxC', ['sp-cs'])
+    const r = await setPageContext(page(), root, 'ctxC', ['sp-cs'])
     expect(r.ok).toBe(true)
     const fm = splitFrontmatter(await readFile(page(), 'utf8'))
     expect(fm['<Classes>']).toEqual(['CS 161'])
     expect(fm['<Projects>']).toEqual(['Pommora'])
   })
 
-  it('fails without writing when ANY space sidecar is unreadable (never strips siblings)', async () => {
-    // An unreadable sibling sidecar (evicted cloud placeholder) must fail the world load — a world missing that Space would make the reconcile drop its valid tags.
+  it('a Space whose sidecar won’t read is absent from the world, and a write naming it fails without writing', async () => {
     await rm(join(contextsDir(root), 'Projects', 'Pommora', '_space.json'))
     await mkdir(join(contextsDir(root), 'Projects', 'Pommora', '_space.json'))
     await writeFile(page(), '---\nid: p1\n<Projects>:\n  - Pommora\n---\nbody')
     const before = await readFile(page(), 'utf8')
-    const w = await loadContextWorld(root)
-    expect(w.ok).toBe(false)
+    const w = await world()
+    expect(w.spaceById.has('sp-pom')).toBe(false)
+    expect((await setPageContext(page(), root, 'ctx_projects', ['sp-pom'])).ok).toBe(false)
     expect(await readFile(page(), 'utf8')).toBe(before)
   })
 
   it('fails on an unknown space id without writing', async () => {
     await writeFile(page(), '---\nid: p1\n---\nbody')
     const before = await readFile(page(), 'utf8')
-    const r = await setPageContext(page(), root, await world(), 'ctx_projects', ['nope'])
+    const r = await setPageContext(page(), root, 'ctx_projects', ['nope'])
     expect(r.ok).toBe(false)
     expect(await readFile(page(), 'utf8')).toBe(before)
   })
@@ -175,7 +179,7 @@ describe('setPageContext', () => {
 
 describe('setSpaceContext (G-1, cross-context)', () => {
   it('tags a Space into a different Context through its own sidecar', async () => {
-    const r = await setSpaceContext(await world(), 'sp-pom', 'ctxC', ['sp-cs'])
+    const r = await setSpaceContext(root, await readNexus(root), 'sp-pom', 'ctxC', ['sp-cs'])
     expect(r.ok).toBe(true)
     const sc = await readJsonAt(join(contextsDir(root), 'Projects', 'Pommora', '_space.json'))
     expect(sc['<Classes>']).toEqual(['CS 161'])
@@ -186,7 +190,7 @@ describe('setSpaceContext (G-1, cross-context)', () => {
   it('repairs a near-miss sibling key on the sidecar in the same write', async () => {
     const path = join(contextsDir(root), 'Projects', 'Pommora', '_space.json')
     await writeFile(path, JSON.stringify({ id: 'sp-pom', '<Classes>': ['cs 161'] }))
-    const r = await setSpaceContext(await world(), 'sp-pom', 'ctx_projects', [])
+    const r = await setSpaceContext(root, await readNexus(root), 'sp-pom', 'ctx_projects', [])
     expect(r.ok).toBe(true)
     expect((await readJsonAt(path))['<Classes>']).toEqual(['CS 161'])
   })
@@ -195,7 +199,7 @@ describe('setSpaceContext (G-1, cross-context)', () => {
   const csFile = (): string => join(contextsDir(root), 'Classes', 'CS 161', '_space.json')
 
   it('writes the pair onto both files', async () => {
-    const r = await setSpaceContext(await world(), 'sp-pom', 'ctxC', ['sp-cs'])
+    const r = await setSpaceContext(root, await readNexus(root), 'sp-pom', 'ctxC', ['sp-cs'])
     expect(r.ok).toBe(true)
     expect((await readJsonAt(pomFile()))['<Classes>']).toEqual(['CS 161'])
     expect((await readJsonAt(csFile()))['<Projects>']).toEqual(['Pommora'])
@@ -205,22 +209,26 @@ describe('setSpaceContext (G-1, cross-context)', () => {
     const athena = join(contextsDir(root), 'Projects', 'Athena')
     await mkdir(athena, { recursive: true })
     await writeFile(join(athena, '_space.json'), JSON.stringify({ id: 'sp-ath' }))
-    const r = await setSpaceContext(await world(), 'sp-pom', 'ctx_projects', ['sp-ath'])
+    const r = await setSpaceContext(root, await readNexus(root), 'sp-pom', 'ctx_projects', [
+      'sp-ath',
+    ])
     expect(r.ok).toBe(true)
     expect((await readJsonAt(pomFile()))['<Projects>']).toEqual(['Athena'])
     expect((await readJsonAt(join(athena, '_space.json')))['<Projects>']).toEqual(['Pommora'])
   })
 
   it('strips the pair from both files, leaving no emptied array', async () => {
-    expect((await setSpaceContext(await world(), 'sp-pom', 'ctxC', ['sp-cs'])).ok).toBe(true)
-    expect((await setSpaceContext(await world(), 'sp-pom', 'ctxC', [])).ok).toBe(true)
+    expect(
+      (await setSpaceContext(root, await readNexus(root), 'sp-pom', 'ctxC', ['sp-cs'])).ok,
+    ).toBe(true)
+    expect((await setSpaceContext(root, await readNexus(root), 'sp-pom', 'ctxC', [])).ok).toBe(true)
     expect('<Classes>' in (await readJsonAt(pomFile()))).toBe(false)
     expect('<Projects>' in (await readJsonAt(csFile()))).toBe(false)
   })
 
   it('strips a link whose only half is far (C-6)', async () => {
     await writeFile(csFile(), JSON.stringify({ id: 'sp-cs', '<Projects>': ['Pommora'] }))
-    const r = await setSpaceContext(await world(), 'sp-pom', 'ctxC', [])
+    const r = await setSpaceContext(root, await readNexus(root), 'sp-pom', 'ctxC', [])
     expect(r.ok).toBe(true)
     expect('<Projects>' in (await readJsonAt(csFile()))).toBe(false)
   })
@@ -228,7 +236,7 @@ describe('setSpaceContext (G-1, cross-context)', () => {
   it('completes a kept link’s missing half and leaves the far file untouched (C-5)', async () => {
     await writeFile(csFile(), JSON.stringify({ id: 'sp-cs', '<Projects>': ['Pommora'] }))
     const before = await readFile(csFile(), 'utf8')
-    const r = await setSpaceContext(await world(), 'sp-pom', 'ctxC', ['sp-cs'])
+    const r = await setSpaceContext(root, await readNexus(root), 'sp-pom', 'ctxC', ['sp-cs'])
     expect(r.ok).toBe(true)
     expect((await readJsonAt(pomFile()))['<Classes>']).toEqual(['CS 161'])
     expect(await readFile(csFile(), 'utf8')).toBe(before)
@@ -236,24 +244,98 @@ describe('setSpaceContext (G-1, cross-context)', () => {
 
   it('keeps an element it can’t read on the far half, linking and unlinking around it', async () => {
     await writeFile(csFile(), JSON.stringify({ id: 'sp-cs', '<Projects>': [7] }))
-    expect((await setSpaceContext(await world(), 'sp-pom', 'ctxC', ['sp-cs'])).ok).toBe(true)
+    expect(
+      (await setSpaceContext(root, await readNexus(root), 'sp-pom', 'ctxC', ['sp-cs'])).ok,
+    ).toBe(true)
     expect((await readJsonAt(csFile()))['<Projects>']).toEqual([7, 'Pommora'])
-    expect((await setSpaceContext(await world(), 'sp-pom', 'ctxC', [])).ok).toBe(true)
+    expect((await setSpaceContext(root, await readNexus(root), 'sp-pom', 'ctxC', [])).ok).toBe(true)
     expect((await readJsonAt(csFile()))['<Projects>']).toEqual([7])
   })
 
   it('refuses a self-link and writes nothing', async () => {
     const before = await readFile(pomFile(), 'utf8')
-    const r = await setSpaceContext(await world(), 'sp-pom', 'ctx_projects', ['sp-pom'])
+    const r = await setSpaceContext(root, await readNexus(root), 'sp-pom', 'ctx_projects', [
+      'sp-pom',
+    ])
     expect(r.ok).toBe(false)
     expect(await readFile(pomFile(), 'utf8')).toBe(before)
   })
 
   it('leaves an unresolvable sibling key verbatim (B-8)', async () => {
     await writeFile(pomFile(), JSON.stringify({ id: 'sp-pom', '<Classes>': ['Vanished'] }))
-    const r = await setSpaceContext(await world(), 'sp-pom', 'ctx_projects', [])
+    const r = await setSpaceContext(root, await readNexus(root), 'sp-pom', 'ctx_projects', [])
     expect(r.ok).toBe(true)
     expect((await readJsonAt(pomFile()))['<Classes>']).toEqual(['Vanished'])
+  })
+})
+
+describe('setContext reads the held tree', () => {
+  const deps: TrashDeps = { trashMode: 'nexus', trashToSystem: async () => {} }
+  const sidecarOf = (context: string, space: string): string =>
+    join(contextsDir(root), context, space, '_space.json')
+  const rel = (abs: string): string => abs.slice(root.length + 1)
+  const setContext = (path: string, contextId: string, spaceIds: string[]) =>
+    handleMutate(root, { op: 'setContext', path, contextId, spaceIds }, deps)
+
+  beforeEach(async () => {
+    await writeFile(
+      join(nexusDir(root), 'nexus.json'),
+      JSON.stringify({ id: 'nx', createdAt: 'x' }),
+    )
+    await openSession(root)
+  })
+  afterEach(() => {
+    dropLiveTree()
+    closeSession()
+  })
+
+  it('refuses a tag edit on a Context holding an unreadable Space and lands one on another', async () => {
+    await mkdir(join(contextsDir(root), 'Classes', 'Broken'), { recursive: true })
+    await writeFile(sidecarOf('Classes', 'Broken'), '{corrupt')
+    const col = await createFolderEntity(root, 'collection', 'Notes', newId())
+    if (!col.ok) throw new Error('setup')
+    const made = await createTestPage(col.value.path, 'A', { body: 'b' })
+    if (!made.ok) throw new Error('setup')
+    const file = made.value.path
+    const id = splitFrontmatter(await readFile(file, 'utf8')).ID
+    await writeFile(
+      file,
+      `---\nID: ${id}\n<Classes>:\n  - CS 161\n<Projects>:\n  - Pommora\n---\nb\n`,
+    )
+    await refreshTree(root)
+    const before = await readFile(file, 'utf8')
+    expect((await setContext(rel(file), 'ctxC', [])).ok).toBe(false)
+    expect(await readFile(file, 'utf8')).toBe(before)
+    expect((await setContext(rel(file), 'ctx_projects', [])).ok).toBe(true)
+    const fm = splitFrontmatter(await readFile(file, 'utf8'))
+    expect('<Projects>' in fm).toBe(false)
+    expect(fm['<Classes>']).toEqual(['CS 161'])
+  })
+
+  it('a Space link edit with one far Space unwritable links the rest and answers the line for one file', async () => {
+    for (const [name, id] of [
+      ['Athena', 'sp-ath'],
+      ['Sapphire', 'sp-sap'],
+    ]) {
+      await mkdir(join(contextsDir(root), 'Projects', name), { recursive: true })
+      await writeFile(sidecarOf('Projects', name), JSON.stringify({ id }))
+    }
+    await refreshTree(root)
+    await writeFile(sidecarOf('Projects', 'Sapphire'), '{corrupt')
+    const r = await setContext('.nexus/contexts/Projects/Pommora', 'ctx_projects', [
+      'sp-ath',
+      'sp-sap',
+    ])
+    expect(r).toEqual({
+      ok: true,
+      value: { cascade: { pages: [], hosts: [], warning: unsweptLine(1) } },
+    })
+    expect((await readJsonAt(sidecarOf('Projects', 'Pommora')))['<Projects>']).toEqual([
+      'Athena',
+      'Sapphire',
+    ])
+    expect((await readJsonAt(sidecarOf('Projects', 'Athena')))['<Projects>']).toEqual(['Pommora'])
+    expect(await readFile(sidecarOf('Projects', 'Sapphire'), 'utf8')).toBe('{corrupt')
   })
 })
 

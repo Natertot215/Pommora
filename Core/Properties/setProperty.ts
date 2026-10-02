@@ -1,10 +1,9 @@
 import { machine } from '../Platform/machine'
-import { splitFrontmatter } from '../Files/pageFile'
 import { mutableTarget } from '../Nexus/liveTree'
 import { readTextOrNull } from '../Files/atomicWrite'
 
 import { isMarkdownFile } from '../Paths/posix'
-import { loadGovernedWorld, writeSpaceSidecar } from '../Contexts/contextWrite'
+import { governedWorldOf, writeSpaceSidecar } from '../Contexts/contextWrite'
 import { noShape, updatePageProperty } from '../Nexus/page'
 import { fail, ok, type Result } from '../Contract/result'
 import type { MutateContext } from '../Nexus/mutate'
@@ -49,9 +48,12 @@ export async function setPropertyOp(
     if (!def) return NO_PROPERTY
     const content = await readTextOrNull(resolved.value)
     if (content === null) return fail('not-found', 'That page could not be read.')
-    const world = await loadGovernedWorld(root, resolved.value, splitFrontmatter(content))
-    const r = await updatePageProperty(resolved.value, def, req.value, world)
-    return r
+    return updatePageProperty(
+      resolved.value,
+      def,
+      req.value,
+      await governedWorldOf(root, resolved.value),
+    )
   })
   if (!adoptions.ok) return adoptions
   await applyAdoptions(root, adoptions.value)

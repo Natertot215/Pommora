@@ -4,7 +4,7 @@ import type { NexusTree, SpaceNode } from '../Nexus/tree'
 import { ID_KEY } from '../Nexus/identityMark'
 import { spaceLinksOf } from '../Nexus/treeIndex'
 import type { PageValues, ViewRow } from '../Views/viewRow'
-import { resolveTreeContextKeys } from '../Contexts/contextResolve'
+import { contextWorldOf, resolveContextKeys } from '../Contexts/contextResolve'
 import { relDirname } from '../Paths/posix'
 import { dialer } from '../Platform/dialer'
 
@@ -14,7 +14,7 @@ export function pageRowOf(
   fm: PageFrontmatter,
   contexts?: Record<string, string[]>,
 ): ViewRow {
-  const links = tree?.contexts ? resolveTreeContextKeys(tree, fm as Record<string, unknown>) : null
+  const links = tree ? resolveContextKeys(fm, contextWorldOf(tree.contexts)) : null
   return {
     ...page,
     icon: tree?.config.pageMetadata[page.id]?.icon,

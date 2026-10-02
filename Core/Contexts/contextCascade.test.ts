@@ -27,6 +27,9 @@ import { getLiveTree, refreshTree } from '../Nexus/liveTree'
 import { readNexus } from '../Nexus/readNexus'
 import '../Nexus/settle'
 import { spaceAt } from '../Nexus/treePatch'
+import { contextWorldOf } from './contextResolve'
+import { settledMutate } from '../Testing/settledMutate'
+import type { TrashDeps } from '../Trash/bundle'
 
 vi.mock('../Properties/governedSweep', async (importOriginal) => {
   const mod = await importOriginal<typeof import('../Properties/governedSweep')>()
@@ -39,6 +42,7 @@ vi.mock('./contextsRegistry', async (importOriginal) => {
 })
 
 const sweepSpy = vi.mocked(sweepGovernedRoots)
+const deps: TrashDeps = { trashMode: 'nexus', trashToSystem: async () => {} }
 
 let root: string
 const page = () => join(root, 'Notes', 'A.md')
@@ -291,6 +295,16 @@ describe('renameSpaceOp', () => {
     const r = await renameSpaceOp(root, 'sp-pom', 'Sapphire')
     expect(r.ok).toBe(true)
     expect((await fmOf(other()))['<Projects>']).toEqual(['Sapphire'])
+  })
+
+  it('one groups array answers one world, and a settled Space rename answers a new one', async () => {
+    const before = contextWorldOf((await refreshTree(root)).contexts)
+    expect(contextWorldOf(getLiveTree()?.contexts ?? [])).toBe(before)
+    const req = { op: 'renameSpace', spaceId: 'sp-pom', newName: 'Pom' } as const
+    expect((await settledMutate(root, req, deps)).ok).toBe(true)
+    const after = contextWorldOf(getLiveTree()?.contexts ?? [])
+    expect(after).not.toBe(before)
+    expect(after.spaceById.get('sp-pom')?.title).toBe('Pom')
   })
 })
 
