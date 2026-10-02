@@ -5,16 +5,8 @@ import { ID_KEY } from '../Nexus/identityMark'
 import { asString } from '../Nexus/coerce'
 import { ok, fail, type Result, fault } from '../Contract/result'
 import { mutateRegistryFile, readRegistryStrict } from './contextsRegistry'
-import {
-  pathExists,
-  readJsonStrict,
-  relocate,
-  rewritePreservingTimes,
-  setOrDrop,
-  targetTaken,
-} from '../Files/atomicWrite'
+import { pathExists, readJsonStrict, relocate, setOrDrop, targetTaken } from '../Files/atomicWrite'
 import { renameFrontmatterKey, type KeyCollision } from '../Files/pageFile'
-import { machine } from '../Platform/machine'
 import type { Json } from '../Files/stableJson'
 import { contextsDir } from '../Paths/paths'
 import { SPACE_SIDECAR } from '../Paths/nexusPaths'
@@ -25,6 +17,7 @@ import {
   type SweepResult,
   stripKeys,
   sweepGovernedRoots,
+  undoSweep,
   unsweptLine,
 } from '../Properties/governedSweep'
 import { withOrderEntry } from './spaceSidecar'
@@ -184,7 +177,7 @@ export async function unlinkSpaceValue(
   return ok({ ...(await unlinkMembers(root, { key, spaceTitle }, take)), captured })
 }
 
-// A refused delete leaves no record to restore from, so a sweep that missed a member returns every file it wrote to the bytes it held and refuses. What sits under `skipUnder` leaves with the deleted folder, so it's neither rewritten nor owed.
+// A refused delete leaves no record to restore from, so a sweep that missed a member puts back what it took and refuses. What sits under `skipUnder` leaves with the deleted folder, so it's neither rewritten nor owed.
 async function unlinkMembers(
   root: string,
   member: Member,
@@ -197,8 +190,7 @@ async function unlinkMembers(
   )
   const missed = swept.skipped.filter((file) => !leaves(file))
   if (!missed.length) return swept
-  for (const [file, text] of swept.touched)
-    await machine().lock(file, () => rewritePreservingTimes(file, text))
+  await undoSweep(swept.touched)
   throw new Error(unsweptLine(missed.length))
 }
 

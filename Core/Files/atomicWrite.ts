@@ -84,8 +84,10 @@ export function parseJsonObject(text: string): Record<string, unknown> | null {
   }
 }
 
+export const jsonText = (value: unknown): string => `${stableStringify(value)}\n`
+
 export async function writeJson(filePath: string, value: unknown): Promise<void> {
-  await atomicWriteFile(filePath, `${stableStringify(value)}\n`)
+  await atomicWriteFile(filePath, jsonText(value))
 }
 
 type StrictRead =

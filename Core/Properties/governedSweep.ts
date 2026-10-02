@@ -1,11 +1,12 @@
 import {
+  atomicWriteFile,
+  jsonText,
   parseJsonObject,
   readTextOrNull,
   rewritePreservingTimes,
-  writeJson,
 } from '../Files/atomicWrite'
 import { machine } from '../Platform/machine'
-import { join } from '../Paths/posix'
+import { isMarkdownFile, join } from '../Paths/posix'
 import { ID_KEY } from '../Nexus/identityMark'
 import { asString } from '../Nexus/coerce'
 import type { EntityRecord } from '../Nexus/record'
@@ -14,8 +15,8 @@ import type { Json } from '../Files/stableJson'
 import { spaceSidecars } from '../Contexts/spaceSidecar'
 
 export interface SweepResult {
-  /** Each file the sweep wrote, with the text it held before the write. */
-  touched: Map<string, string>
+  /** Each file the sweep wrote, with the text it held before the write and the text the write left. */
+  touched: Map<string, { before: string; after: string }>
   skipped: string[]
   refused: string[]
 }
@@ -80,7 +81,7 @@ export async function sweepGovernedRoots(
       const next = 'text' in plan ? plan.text(content, file) : rewriteRaw(plan.raw, content, file)
       if (next === null) return
       await rewritePreservingTimes(file, next)
-      out.touched.set(file, content)
+      out.touched.set(file, { before: content, after: next })
     })
   }
 
@@ -101,11 +102,42 @@ export async function sweepGovernedRoots(
         }
         const next = sidecars(raw, file)
         if (next === null) return
-        await writeJson(file, next)
-        out.touched.set(file, text)
+        const after = jsonText(next)
+        await atomicWriteFile(file, after)
+        out.touched.set(file, { before: text, after })
       })
     }
   return out
+}
+
+/** Returns each file a sweep wrote to what it held before: whole while it still holds what the sweep wrote, and otherwise only the keys the sweep changed, so a write landed since is kept. */
+export async function undoSweep(touched: SweepResult['touched']): Promise<void> {
+  for (const [file, { before, after }] of touched)
+    await machine().lock(file, async () => {
+      const now = await readTextOrNull(file)
+      if (now === null) return
+      const back = now === after ? before : keysPutBack(file, now, before, after)
+      if (back !== null) await rewritePreservingTimes(file, back)
+    })
+}
+
+function keysPutBack(file: string, now: string, before: string, after: string): string | null {
+  const page = isMarkdownFile(file)
+  const read = (text: string): Json =>
+    page ? splitFrontmatter(text) : (parseJsonObject(text) ?? {})
+  const was = read(before)
+  const keys = changedKeys(was, read(after))
+  const putBack: Rewrite = (raw) => {
+    const next = { ...raw }
+    for (const k of keys) {
+      if (k in was) next[k] = was[k]
+      else delete next[k]
+    }
+    return next
+  }
+  if (page) return rewriteRaw(putBack, now, file)
+  const raw = parseJsonObject(now)
+  return raw && jsonText(putBack(raw, file))
 }
 
 /** Rewrites each page or Space whose ID is in `values` — found where `roots` places it, matched by the ID it carries — and answers the IDs whose root now holds what its rewrite asked for; a null rewrite leaves its root as it is. */
