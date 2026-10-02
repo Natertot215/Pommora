@@ -65,14 +65,14 @@ export async function updatePageBody(
   absFile: string,
   body: string,
   baseHash?: string,
-  held = false,
+  bodyOnly = false,
 ): Promise<Result<PageWrite | { stale: true }>> {
   return machine().lock(absFile, async () => {
     if (!(await pathExists(absFile))) return fail('not-found', 'Page not found.')
     if (baseHash !== undefined && bodyHash((await machine().readText(absFile)) ?? '') !== baseHash)
       return ok({ stale: true })
     try {
-      return ok(await writePageFile(absFile, {}, [], body, held))
+      return ok(await writePageFile(absFile, {}, [], body, bodyOnly))
     } catch (e) {
       return fault(e)
     }

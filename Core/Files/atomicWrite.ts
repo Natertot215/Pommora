@@ -15,9 +15,13 @@ async function land(filePath: string, data: string): Promise<void> {
   await machine().writeText(filePath, data)
 }
 
-export async function atomicWriteFile(filePath: string, data: string, held = false): Promise<void> {
+export async function atomicWriteFile(
+  filePath: string,
+  data: string,
+  bodyOnly = false,
+): Promise<void> {
   await land(filePath, data)
-  await noteOwn({ event: 'change', absPath: filePath, own: { text: data, held } })
+  await noteOwn({ event: 'change', absPath: filePath, own: { text: data, bodyOnly } })
 }
 
 export async function rewritePreservingTimes(filePath: string, data: string): Promise<void> {

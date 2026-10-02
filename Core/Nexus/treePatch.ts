@@ -2,7 +2,7 @@
 
 import { stabilize } from './treeStabilize'
 import {
-  byPath,
+  comparePaths,
   type CollectionNode,
   type ContextGroup,
   type NexusTree,
@@ -45,7 +45,7 @@ function repointUnreadable(tree: NexusTree, oldPath: string, newPath: string | n
     else if (newPath !== null) kept.push({ ...u, path: newPath + u.path.slice(oldPath.length) })
   }
   const next = { ...tree }
-  if (kept.length) next.unreadable = kept.sort(byPath)
+  if (kept.length) next.unreadable = kept.sort(comparePaths)
   else delete next.unreadable
   return next
 }
@@ -198,9 +198,9 @@ function updateInContainers(
 export const removeNodeInTree = (tree: NexusTree, path: string): NexusTree =>
   repointUnreadable(updateNodeInTree(tree, path, () => null) ?? tree, path, null)
 
-export const setUnreadable = (tree: NexusTree, listed: readonly Unreadable[]): NexusTree =>
+export const listUnreadable = (tree: NexusTree, listed: readonly Unreadable[]): NexusTree =>
   listed.length
-    ? { ...tree, unreadable: [...(tree.unreadable ?? []), ...listed].sort(byPath) }
+    ? { ...tree, unreadable: [...(tree.unreadable ?? []), ...listed].sort(comparePaths) }
     : tree
 
 export function placeNode(tree: NexusTree, node: TreeEntity): NexusTree | null {

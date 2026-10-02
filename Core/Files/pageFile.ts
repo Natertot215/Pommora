@@ -167,11 +167,11 @@ export async function writePageFile(
   modeled: Record<string, unknown>,
   modeledKeys: readonly string[],
   body: string,
-  held = false,
+  bodyOnly = false,
 ): Promise<PageWrite> {
   const previous = await machine().readText(absPath)
   const written = mergeFrontmatter(previous ?? '', modeled, modeledKeys, body)
-  await atomicWriteFile(absPath, written, held)
+  await atomicWriteFile(absPath, written, bodyOnly)
   return { previous, written }
 }
 

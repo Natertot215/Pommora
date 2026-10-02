@@ -119,7 +119,7 @@ describe('what a flush pushes for a batch', () => {
   it('marks a page whose only writes were its editor’s own saves as body-only', async () => {
     const text = `---\nID: ${ULID_A}\n---\n\nmine\n`
     await writeFile(abs('Notes', 'A.md'), text)
-    await applyEvents(root, [{ ...ev('change', 'Notes', 'A.md'), own: { text, held: true } }])
+    await applyEvents(root, [{ ...ev('change', 'Notes', 'A.md'), own: { text, bodyOnly: true } }])
     await flush(pusher, root)
     expect(payload('values:changed')).toEqual([
       { rel: 'Notes', pageIds: [ULID_A], bodyOnly: [ULID_A] },
@@ -147,7 +147,7 @@ describe('what a flush pushes for a batch', () => {
     const text = `---\nID: ${ULID_A}\n---\n\nmine\n`
     await writeFile(abs('Notes', 'A.md'), text)
     await applyEvents(root, [
-      { ...ev('change', 'Notes', 'A.md'), own: { text, held: true } },
+      { ...ev('change', 'Notes', 'A.md'), own: { text, bodyOnly: true } },
       { ...ev('change', 'Notes', 'A.md'), own: { text } },
     ])
     await flush(pusher, root)

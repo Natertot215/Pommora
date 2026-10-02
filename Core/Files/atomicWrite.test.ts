@@ -394,7 +394,7 @@ describe('the own tap', () => {
     await atomicWriteFile(p, 'first')
     expect(noted).toEqual([
       {
-        ev: { event: 'change', absPath: p, own: { text: 'first', held: false } },
+        ev: { event: 'change', absPath: p, own: { text: 'first', bodyOnly: false } },
         text: 'first',
         mtimeMs: expect.any(Number),
       },
