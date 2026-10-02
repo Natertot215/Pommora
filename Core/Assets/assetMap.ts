@@ -70,17 +70,8 @@ export function resolveAssetName(map: AssetMap, name: string): string | null | t
 // Pinned to the root it was built for, so a session switch needs no teardown — the pin makes the previous nexus's map unreadable.
 let held: { root: string; assetDir: string; map: AssetMap } | null = null
 
-// `atomicWriteBinary` records its own write and the watcher drops the echo, so the writer is the only thing that knows the renderer is owed a push.
-let owedPush = false
-
 export function getHeldAssetMap(root: string): AssetMap | null {
   return held?.root === root ? held.map : null
-}
-
-export function takeAssetMapPush(root: string): AssetMap | null {
-  if (!owedPush || held?.root !== root) return null
-  owedPush = false
-  return held.map
 }
 
 /** A changed `asset_directory` rebuilds: the held listing describes the folder it was taken from, so patching a new root's events into it would answer with paths that moved away. */
@@ -108,6 +99,5 @@ export function patchHeldAssetMap(
   const next = patchAssetMap(held.map, rel, event, held.assetDir)
   if (next === held.map) return null
   held = { ...held, map: next }
-  owedPush = true
   return next
 }

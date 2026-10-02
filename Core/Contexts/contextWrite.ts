@@ -29,7 +29,6 @@ import {
   rmwJsonStrict,
   setOrDrop,
 } from '../Files/atomicWrite'
-import { noteSidecarWrite } from '../Nexus/valuesChanged'
 import { machine } from '../Platform/machine'
 import { setGovernedRootKeys } from '../Properties/governedWrite'
 import { contextsDir, tileFilePath } from '../Paths/paths'
@@ -121,7 +120,7 @@ export async function setPageContext(
     if (!(await pathExists(absFile))) return fail('not-found', 'Page not found.')
     const defs = await assignedDefs(root, await collectionFolderOf(root, absFile))
     return ok(
-      await setGovernedRootKeys(root, absFile, value ? { [key]: value } : {}, [key], {
+      await setGovernedRootKeys(absFile, value ? { [key]: value } : {}, [key], {
         ...world,
         defs,
       }),
@@ -165,9 +164,7 @@ export async function writeSpaceSidecar(
   mutate: (raw: Json) => Json | null,
 ): Promise<Result<null>> {
   const written = await rmwJsonStrict(join(absSpaceDir, SPACE_SIDECAR), mutate)
-  if (!written.ok) return written
-  noteSidecarWrite(absSpaceDir)
-  return ok(null)
+  return written.ok ? ok(null) : written
 }
 
 export async function setSpaceContext(

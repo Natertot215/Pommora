@@ -26,7 +26,7 @@ export async function setBannerOp(
       const adopted = await adopt()
       if (!adopted.ok) return adopted
       const rel = adopted.value
-      await setGovernedRootKeys(root, abs, rel ? { banner: rel } : {}, ['banner'])
+      await setGovernedRootKeys(abs, rel ? { banner: rel } : {}, ['banner'])
       return landed(rel)
     })
   }

@@ -1,4 +1,4 @@
-import { basename, dirname, isMarkdownFile, join } from '../Paths/posix'
+import { basename, join } from '../Paths/posix'
 import { normalizeTitle } from '../Connections/connections'
 import { contextKey, type ContextsRegistry } from './contexts'
 import { ID_KEY } from '../Nexus/identityMark'
@@ -33,8 +33,7 @@ import { editList } from '../Properties/pageValue'
 import { namesSpace } from './contextResolve'
 import { listOf } from '../Contract/validators'
 import { queryMembers } from '../Index/contentIndex'
-import { indexWrittenPage, nexusCorpus } from '../Index/indexSeed'
-import { noteSidecarWrite } from '../Nexus/valuesChanged'
+import { nexusCorpus } from '../Index/indexSeed'
 import { nameError } from '../Paths/names'
 
 /** A Context rename commits its registry LAST, so a tag written mid-cascade still lands under the OLD key while a key already wearing the new title can only be inert or hand-authored — neither list is fresher, so dropping either would silently lose tags. */
@@ -183,11 +182,7 @@ async function unlinkMembers(
   const missed = swept.skipped.filter((file) => !leaves(file))
   if (!missed.length) return swept
   for (const [file, text] of swept.touched)
-    await machine().lock(file, async () => {
-      await rewritePreservingTimes(file, text)
-      if (isMarkdownFile(file)) await indexWrittenPage(root, file)
-      else noteSidecarWrite(dirname(file))
-    })
+    await machine().lock(file, () => rewritePreservingTimes(file, text))
   throw new Error(unsweptLine(missed.length))
 }
 

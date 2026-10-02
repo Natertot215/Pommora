@@ -9,7 +9,6 @@ import type { SidecarKind } from '../Paths/nexusPaths'
 import { ok, fail, type Result } from '../Contract/result'
 import { outsideContent } from '../Paths/exclusion'
 import { followExcludedFolders, readWatchScope } from '../Settings/settings'
-import { moveIndexPaths } from '../Index/indexSeed'
 
 const SET_ASIDE = {
   excluded:
@@ -29,12 +28,9 @@ export async function landingRefusal(
   return why && why !== 'hidden' ? fail('invalid-path', `"${name}" ${SET_ASIDE[why]}`) : null
 }
 
-/** A Collection or Set landing at a new path: the index moves its rows and excluded entries follow before sync hears of the rename, so it pushes under the new scope; true means the landing moved what the scope keeps out. */
-const relocateFolder = async (root: string, from: string, to: string): Promise<boolean> =>
-  (await relocate(from, to, async () => {
-    await moveIndexPaths(root, from, to)
-    return followExcludedFolders(root, relative(root, from), relative(root, to))
-  })) ?? false
+/** A Collection or Set landing at a new path: excluded entries follow before sync hears of the rename, so it pushes under the new scope. */
+const relocateFolder = (root: string, from: string, to: string): Promise<void> =>
+  relocate(from, to, () => followExcludedFolders(root, relative(root, from), relative(root, to)))
 
 export async function createFolderEntity(
   parentDir: string,
@@ -58,22 +54,24 @@ export async function renameFolderEntity(
   root: string,
   absFolder: string,
   newName: string,
-): Promise<Result<{ path: string; rescope: boolean }>> {
+): Promise<Result<{ path: string }>> {
   const why = nameError(newName, 'directory')
   if (why) return fail('invalid-name', why)
   const target = join(dirname(absFolder), newName)
-  if (target === absFolder) return ok({ path: absFolder, rescope: false })
+  if (target === absFolder) return ok({ path: absFolder })
   if (await targetTaken(absFolder, target)) return fail('exists', `"${newName}" already exists.`)
-  return ok({ path: target, rescope: await relocateFolder(root, absFolder, target) })
+  await relocateFolder(root, absFolder, target)
+  return ok({ path: target })
 }
 
 export async function moveFolderEntity(
   root: string,
   absFolder: string,
   newParentDir: string,
-): Promise<Result<{ path: string; rescope: boolean }>> {
+): Promise<Result<{ path: string }>> {
   const target = join(newParentDir, basename(absFolder))
   if (await pathExists(target))
     return fail('exists', `"${basename(absFolder)}" already exists there.`)
-  return ok({ path: target, rescope: await relocateFolder(root, absFolder, target) })
+  await relocateFolder(root, absFolder, target)
+  return ok({ path: target })
 }

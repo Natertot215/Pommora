@@ -11,7 +11,6 @@ import {
   loadContextWorld,
   setPageContext,
 } from '../Contexts/contextWrite'
-import { indexWrittenPage } from '../Index/indexSeed'
 import { mintDefaultView } from '../Views/views'
 import { readRegistry } from '../Properties/propertiesRegistry'
 import type { PropertyDefinition } from '../Properties/properties'
@@ -23,7 +22,6 @@ import { createPage } from './page'
 import { createFolderEntity, landingRefusal } from './folderEntity'
 import { setChildOrder, setSpaceOrder } from './reorder'
 import { mutableTarget } from './liveTree'
-import { noteValueWrite } from './valuesChanged'
 
 const created = (parentPath: string, r: { id: string; path: string }): MutateReply =>
   ok({ created: { id: r.id, path: relJoin(parentPath, basename(r.path)) } })
@@ -63,8 +61,6 @@ export async function createPageOp(
     for (const [contextId, spaceIds] of contexts)
       await setPageContext(r.value.path, root, world, contextId, spaceIds)
   if (req.order) await setChildOrder(parent.value, 'page_order', fillSlot(req.order, r.value.id))
-  await indexWrittenPage(root, r.value.path)
-  noteValueWrite(root, r.value.path)
   return created(req.parentPath, r.value)
 }
 

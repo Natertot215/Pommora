@@ -1,7 +1,6 @@
 import { join } from '../Paths/posix'
 import { kindOf } from '../Nexus/identityMark'
 import { errText, fail, ok, type Result, fault } from '../Contract/result'
-import { indexWrittenPage } from '../Index/indexSeed'
 import { readTextOrNull } from '../Files/atomicWrite'
 import { bodyHash, splitEnvelope } from '../Files/pageFile'
 import { utf8 } from '../Files/utf8'
@@ -12,7 +11,7 @@ import {
   snapshotStore,
 } from '../Platform/stores'
 import { readFileHistoryConfig } from '../Settings/settings'
-import { liveIdOf, livePathOf, noteValueWrite } from '../Nexus/valuesChanged'
+import { liveIdOf, livePathOf } from '../Nexus/heldPages'
 import { updatePageBody } from '../Nexus/page'
 import type { BodyWrite } from './pageDetail'
 
@@ -113,8 +112,6 @@ export async function writeBody(
   const known = pageId ? lastWritten.get(pageId) : undefined
   const writtenHash = bodyHash(written)
   if (pageId) lastWritten.set(pageId, writtenHash)
-  await indexWrittenPage(root, absPath)
-  noteValueWrite(root, absPath, source === 'edit')
   if (pageId) {
     const previousHash = previous === null ? writtenHash : bodyHash(previous)
     if (previous !== null && previousHash !== writtenHash) {

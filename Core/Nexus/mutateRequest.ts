@@ -16,8 +16,6 @@ export interface MutateOutcome {
   unrestored?: string[]
   /** Where a restored page, Collection, Set, Space, or Context landed. */
   landed?: string
-  /** A Collection or Set landed with content Settings keeps out beneath it, so the confirm rescopes rather than patches. */
-  rescope?: boolean
 }
 export type MutateReply = Result<MutateOutcome>
 

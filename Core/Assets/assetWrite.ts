@@ -3,7 +3,7 @@ import { machine } from '../Platform/machine'
 import { connectionText } from '../Connections/connections'
 import { ok, fail, type Result } from '../Contract/result'
 import { atomicWriteBinary, pathExists } from '../Files/atomicWrite'
-import { liveAssetMap, patchHeldAssetMap, resolveAssetName } from './assetMap'
+import { liveAssetMap, resolveAssetName } from './assetMap'
 import { createDisambiguated, reservedAssetLeaf } from '../Paths/names'
 import { assetsDir } from '../Paths/paths'
 
@@ -28,8 +28,6 @@ export async function writeAssetFile(
       if (await taken(stem)) return fail('exists', `${file} already exists.`)
       const abs = join(dir, file)
       await atomicWriteBinary(abs, bytes)
-      // `atomicWriteBinary` records the write and the echo is dropped, so the map is the writer's to keep current or the banner renders blank.
-      patchHeldAssetMap(root, relative(root, abs), 'add')
       return ok(connectionText(file))
     },
     taken,

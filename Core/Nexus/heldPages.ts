@@ -1,38 +1,10 @@
-// Main's own page writes are invisible to the watcher (the echo window), so every writer notes the page it touched and one flush per operation pushes them, grouped by container, with page ids resolved from the live tree.
+// The held tree's pages by path, by id, and by title, for the host's writers.
 
 import { heldTreeOf } from './liveTree'
-import { escapes } from '../Paths/pathSafety'
-import { relDirname, relative, titleFromPath } from '../Paths/posix'
+import { relative, titleFromPath } from '../Paths/posix'
 import { normalizeTitle } from '../Connections/connections'
 import type { Frozen } from '../Properties/propertyValue'
-import { entityMemo, type NexusTree, type ValueChange } from './tree'
-
-// One root at a time: a note under another root is a session that moved, and the old root's unflushed writes have no window left to reach.
-// Each file maps to whether every write it saw this flush was a body edit.
-let ledger: { root: string; byRel: Map<string, boolean> } | null = null
-
-export function noteValueWrite(root: string | null, absFile: string, body = false): void {
-  if (root === null) return
-  const rel = relative(root, absFile)
-  if (!rel || escapes(rel)) return
-  if (ledger?.root !== root) ledger = { root, byRel: new Map() }
-  ledger.byRel.set(rel, body && (ledger.byRel.get(rel) ?? true))
-}
-
-// A sidecar write silences its own watcher echo, so its writer notes the folder here and the confirm patches that node.
-const sidecarWrites = new Set<string>()
-
-export function noteSidecarWrite(absDir: string): void {
-  sidecarWrites.add(absDir)
-}
-
-export function flushSidecarWrites(root: string): string[] {
-  const rels = [...sidecarWrites]
-    .map((abs) => relative(root, abs))
-    .filter((rel) => rel && !escapes(rel))
-  sidecarWrites.clear()
-  return rels
-}
+import { entityMemo, type NexusTree } from './tree'
 
 interface PageIndices {
   byPath: ReadonlyMap<string, string>
@@ -106,27 +78,4 @@ export function frozenWorld(tree: NexusTree, landing: readonly string[] = []): F
       return held.has(key) || arriving.has(key)
     },
   }
-}
-
-// `only` takes just those files' notes, leaving the rest to the operation that wrote them.
-export function flushValueWrites(root: string, only?: readonly string[]): ValueChange[] {
-  if (ledger?.root !== root) return []
-  const { byRel } = ledger
-  const byPath = liveIdIndex(root)
-  const out = new Map<string, ValueChange>()
-  for (const file of only ?? byRel.keys()) {
-    const body = byRel.get(file)
-    if (body === undefined) continue
-    byRel.delete(file)
-    const rel = relDirname(file)
-    const change = out.get(rel) ?? { rel, pageIds: [] }
-    out.set(rel, change)
-    const id = byPath.get(file)
-    if (!id) continue
-    change.pageIds.push(id)
-    if (!body) continue
-    change.bodyOnly ??= []
-    change.bodyOnly.push(id)
-  }
-  return [...out.values()]
 }

@@ -13,7 +13,6 @@ import { normalizeExclusions, readSettings, scopeOf, type SettingsLeaves } from 
 import { foldKey } from '../Paths/caseFold'
 import { remainderUnder, rootSegs, type WatchScope } from '../Paths/exclusion'
 import { fail, ok, type Result, fault } from '../Contract/result'
-import { patchSettingsFromDisk } from '../Nexus/watchPatch'
 
 export async function updateSettings(
   root: string,
@@ -74,22 +73,13 @@ export async function readFileHistoryConfig(
   }
 }
 
-// A scope write lands in the held tree at once, so what runs before the session rescopes (the asset migration) reads the scope it wrote.
-async function updateScope(
-  root: string,
-  mutate: (current: Record<string, unknown>) => Record<string, unknown>,
-): Promise<void> {
-  await updateSettings(root, mutate)
-  await patchSettingsFromDisk(root)
-}
-
 /** An emptied value deletes the key rather than storing a blank — absent is what the default means, and the reader answers it either way. */
 export function writeAssetDirectory(root: string, dir: string): Promise<void> {
-  return updateScope(root, (cur) => setOrDrop(cur, 'asset_directory', dir))
+  return updateSettings(root, (cur) => setOrDrop(cur, 'asset_directory', dir))
 }
 
 export function writeExcludedFolders(root: string, folders: string[]): Promise<void> {
-  return updateScope(root, (cur) =>
+  return updateSettings(root, (cur) =>
     setOrDrop(cur, 'excluded_folders', folders.length ? folders : null),
   )
 }
@@ -101,35 +91,22 @@ export const entryWithin = (entry: string, rel: string): string[] | null =>
 export const excludedWithin = async (root: string, rel: string): Promise<string[]> =>
   (await readWatchScope(root)).excluded.flatMap((entry) => entryWithin(entry, rel)?.join('/') ?? [])
 
-const holdsUnder = (excluded: string[], rel: string): boolean =>
-  excluded.some((entry) => entryWithin(entry, rel) !== null)
-
-async function editExcluded(
-  root: string,
-  edit: (excluded: string[]) => string[],
-): Promise<string[]> {
+async function editExcluded(root: string, edit: (excluded: string[]) => string[]): Promise<void> {
   const { excluded } = await readWatchScope(root)
   const next = normalizeExclusions(edit(excluded)).folders
   if (next.length !== excluded.length || next.some((entry, i) => entry !== excluded[i]))
     await writeExcludedFolders(root, next)
-  return next
 }
 
-/** An excluded entry follows the folder it names: a Collection or Set landing at `to` carries every entry at or under `from` with it. True when an entry now sits under `to`, since the landing moved content the scope keeps out. */
-export async function followExcludedFolders(
-  root: string,
-  from: string,
-  to: string,
-): Promise<boolean> {
-  if (from === to) return false
-  const next = await editExcluded(root, (excluded) =>
+/** An excluded entry follows the folder it names: a Collection or Set landing at `to` carries every entry at or under `from` with it. */
+export async function followExcludedFolders(root: string, from: string, to: string): Promise<void> {
+  if (from === to) return
+  await editExcluded(root, (excluded) =>
     excluded.map((entry) => {
       const rest = entryWithin(entry, from)
       return rest ? [to, ...rest].join('/') : entry
     }),
   )
-  // A case-only rename changes no entry's reach, since matching folds case.
-  return foldKey(from) !== foldKey(to) && holdsUnder(next, to)
 }
 
 /** A landing that moves excluded entries rewrites the settings file, so it refuses before anything moves while that file can't be written. */
@@ -149,18 +126,9 @@ export async function releaseExcludedFolders(root: string, rel: string): Promise
   )
 }
 
-/** A restored Collection or Set lands with the entries its record kept. True when an entry sits under it. */
-export async function reseatExcludedFolders(
-  root: string,
-  rel: string,
-  within: string[],
-): Promise<boolean> {
-  const next = await editExcluded(root, (excluded) => [
-    ...excluded,
-    ...within.map((rest) => `${rel}/${rest}`),
-  ])
-  return holdsUnder(next, rel)
-}
+/** A restored Collection or Set lands with the entries its record kept. */
+export const reseatExcludedFolders = (root: string, rel: string, within: string[]): Promise<void> =>
+  editExcluded(root, (excluded) => [...excluded, ...within.map((rest) => `${rel}/${rest}`)])
 
 /** An `undefined` value resets the key to its built-in default — JSON omits it. */
 export function writePersonalization(root: string, key: string, value: unknown): Promise<void> {
