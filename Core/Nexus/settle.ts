@@ -22,7 +22,7 @@ async function applyOwn(ev: FileEvent): Promise<void> {
   const root = sessionRoot()
   if (root === null || escapes(relative(root, ev.absPath))) return
   // Every own write marks the disk moved, since one that leaves the tree as it already stood (a rename's later writes) would otherwise let a walk in flight install what it read before it; the editor's body save is the exception, since it leaves the frontmatter a walk reads as it was.
-  if (ev.event === 'move' || !ev.bodyOnly) diskMoved()
+  if (ev.event === 'move' || ev.origin === 'watched' || !ev.bodyOnly) diskMoved()
   if (heldTreeOf(root)) return applyEvents(root, [ev])
   // No tree to patch: an open stamps before it holds a tree, and the tree it seeds is read after its stamps.
   if (!adopting()) await indexEvent(root, ev)

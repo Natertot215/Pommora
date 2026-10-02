@@ -34,16 +34,12 @@ export function recordWrite(absPath: string, content?: string | Uint8Array): voi
 
 export const reportRename = (absFrom: string, absTo: string): void => tap?.renamed(absFrom, absTo)
 
-type ChangeEvent = 'add' | 'change' | 'unlink' | 'addDir' | 'unlinkDir'
+export type ChangeEvent = 'add' | 'change' | 'unlink' | 'addDir' | 'unlinkDir'
 
-export interface Changed {
-  event: ChangeEvent
-  absPath: string
-  origin: 'watched' | 'own'
-  written?: string
-  text?: string
-  bodyOnly?: boolean
-}
+export type Changed = { event: ChangeEvent; absPath: string } & (
+  | { origin: 'watched'; written?: string }
+  | { origin: 'own'; text?: string; bodyOnly?: boolean }
+)
 
 export interface Moved {
   event: 'move'
@@ -98,12 +94,10 @@ export function isRecentWrite(absPath: string): boolean {
 export const writtenHash = (absPath: string): string | undefined => held(absPath)?.hash
 
 /** Drops the events whose file still holds exactly the bytes their arrival named, however late the settle runs. */
-export async function dropOwnEchoes<E extends { absPath: string; written?: string }>(
-  events: E[],
-): Promise<E[]> {
+export async function dropOwnEchoes(events: Changed[]): Promise<Changed[]> {
   const kept = await Promise.all(
     events.map(async (e) => {
-      if (e.written === undefined) return true
+      if (e.origin === 'own' || e.written === undefined) return true
       const bytes = await machine().readBytes(e.absPath)
       return bytes === null || machine().sha256Hex(bytes) !== e.written
     }),
