@@ -305,6 +305,8 @@ async function applyFolder(
   // A folder whose parent the tree doesn't hold waits for the event that lands the parent.
   if (rel === '' || containerAt(tree, rel) || (parent !== '' && !containerAt(tree, parent)))
     return 'ok'
+  // Its stamp's own event reads it again.
+  if (owed.stamp.some((u) => u.path === rel)) return 'ok'
   const read = await readFolder(root, rel, tree)
   owed.stamp.push(...read.unreadable.filter((u) => u.reason === 'missing'))
   for (const path of pagePathsIn(read.node)) owed.values.set(path, false)
@@ -476,9 +478,9 @@ async function applyMove(root: string, ev: Moved, owed: Owed): Promise<Applied> 
   const from = relative(root, ev.from)
   const to = relative(root, ev.absPath)
   const tree = heldTreeOf(root)
-  // A folder landing where an excluded entry already names a path at or beneath it moves the corpus with no settings write to report it, so it walks and re-arms as a moved scope does.
+  // A folder landing where an excluded entry already names a path at or beneath it moves the corpus with no settings write to report it, so it walks and reseeds; the entries themselves are unchanged, so the watch stands.
   if (tree && scopeOf(tree.config).excluded.some((entry) => entryWithin(entry, to) !== null)) {
-    owed.rescope = true
+    owed.corpus = true
     return 'walk'
   }
   if (applyPatch(root, (t) => moveNodeInTree(t, from, to)) === 'ok') {
