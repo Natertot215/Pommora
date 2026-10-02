@@ -1,4 +1,4 @@
-// The page exists on disk as Untitled the moment the gesture fires — seeds and order riding the create — and the caller opens its own naming surface over the row already real.
+// The page exists on disk as Untitled the moment the gesture fires — seeds and order riding the create — and the caller's rename opens its naming surface over the row once it lands.
 
 import { type ViewRow, UNGROUPED } from '../viewRow'
 import type { PageFrontmatter } from '../../Nexus/schemas'
@@ -66,6 +66,7 @@ type ViewCreationConfig = Pick<
   | 'viewRootRef'
 > & {
   bandBucket: (key: string) => string | null
+  rename: (target: { id: string; path: string }) => void
 }
 
 interface ViewCreation {
@@ -167,6 +168,7 @@ export function useViewCreation(getCfg: () => ViewCreationConfig): ViewCreation 
           : null
       if (order) void latest.persistView(order, { viewState: true })
       else if (staged) unstageView(c.source.id, c.view.id, staged)
+      if (landed !== null) latest.rename({ id: req.id, path: landed })
       return landed
     })
     return { id: req.id, path }

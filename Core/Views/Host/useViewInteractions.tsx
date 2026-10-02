@@ -129,20 +129,15 @@ export function useViewInteractions(host: ViewHostApi, policy: ViewInteractionPo
         ),
     }
   })
-  const creation = useViewCreation(() => ({ ...host, bandBucket: valueAt }))
-  const named = (flight: CreateFlight): CreateFlight => {
-    void flight.path.then((path) => {
-      if (path !== null) policy.rename({ id: flight.id, path }, true)
-    })
-    return flight
-  }
+  const creation = useViewCreation(() => ({
+    ...host,
+    bandBucket: valueAt,
+    rename: (target) => policy.rename(target, true),
+  }))
   const bandView: BandView = {
     collapsed,
     toggle: toggleCollapse,
-    add: (key) => {
-      const flight = creation.bandAdd(key)
-      if (flight) named(flight)
-    },
+    add: creation.bandAdd,
     open: (set) => void select(selectTargetOf(set)),
     springs: (dragged: string, node: BandNode) =>
       bands.byKey.has(dragged)
@@ -439,10 +434,10 @@ export function useViewInteractions(host: ViewHostApi, policy: ViewInteractionPo
         openIconPicker(row, anchor)
         return true
       case 'title:newabove':
-        named(creation.createAdjacent(row, 'above'))
+        creation.createAdjacent(row, 'above')
         return true
       case 'title:newbelow':
-        named(creation.createAdjacent(row, 'below'))
+        creation.createAdjacent(row, 'below')
         return true
       default:
         return false
@@ -465,11 +460,11 @@ export function useViewInteractions(host: ViewHostApi, policy: ViewInteractionPo
   const ghostCreate = (): CreateFlight | undefined => {
     const anchorId = ghost.take()
     const anchor = anchorId ? rowById.get(anchorId) : undefined
-    if (anchor) return named(creation.createAfter(anchor))
+    if (anchor) return creation.createAfter(anchor)
     if (!ghostStanding) return undefined
     // The standing ghost stays mounted until the row lands, so the create is claimed for its whole flight.
     if (standingFlight.current) return standingFlight.current
-    const flight = named(creation.createFirst())
+    const flight = creation.createFirst()
     standingFlight.current = flight
     void flight.path.finally(() => {
       standingFlight.current = null
