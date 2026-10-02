@@ -1,5 +1,5 @@
 import { isPlainObject } from '../Contract/validators'
-import { parseJsonObject, readJsonStrict, updateNexusFile } from '../Files/atomicWrite'
+import { readJsonStrict, updateNexusFile } from '../Files/atomicWrite'
 import { listEntries } from '../Files/walk'
 import { NO_FILEABLE_ID } from '../Files/pageFile'
 import { fault, ok, type Result } from '../Contract/result'
@@ -22,17 +22,16 @@ type ShardRead =
 const hasFields = (meta: PageMeta | undefined): meta is PageMeta =>
   meta !== undefined && Object.values(meta).some((v) => v !== undefined)
 
-const clean = (pages: Record<string, PageMeta> | undefined): Record<string, PageMeta> =>
+export const shardPages = (raw: Record<string, unknown>): Record<string, PageMeta> =>
   Object.fromEntries(
-    Object.entries(pages ?? {}).filter((e): e is [string, PageMeta] => hasFields(e[1])),
+    Object.entries(metadataShardFile.parse(raw).pages ?? {}).filter((e): e is [string, PageMeta] =>
+      hasFields(e[1]),
+    ),
   )
 
-export async function readShard(root: string, shard: string, text?: string): Promise<ShardRead> {
-  const read =
-    text === undefined
-      ? await readJsonStrict(metadataShardPath(root, shard))
-      : ok(parseJsonObject(text) ?? {})
-  if (read.ok) return { kind: 'ok', pages: clean(metadataShardFile.parse(read.value).pages) }
+export async function readShard(root: string, shard: string): Promise<ShardRead> {
+  const read = await readJsonStrict(metadataShardPath(root, shard))
+  if (read.ok) return { kind: 'ok', pages: shardPages(read.value) }
   return read.error.code === 'not-found' ? { kind: 'absent' } : { kind: 'unreadable' }
 }
 
