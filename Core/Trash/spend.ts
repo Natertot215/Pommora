@@ -121,7 +121,7 @@ function withDestination(
   }
 }
 
-type Restored = Pick<MutateOutcome, 'unrestored' | 'landed'>
+type Restored = Pick<MutateOutcome, 'unrestored'>
 
 const restored = (unrestored: string[]): Restored => (unrestored.length ? { unrestored } : {})
 
@@ -282,11 +282,7 @@ async function restoreArtifact(
     recordWrite(bundleAbs)
     await machine().remove(bundleAbs)
   }
-  const outcome = {
-    ...restored([...unspent, ...unlinked].map((id) => roots[id].title)),
-    landed: targetRel,
-  }
-  return ok(outcome)
+  return ok(restored([...unspent, ...unlinked].map((id) => roots[id].title)))
 }
 
 /** The ids of what's still here and didn't take its tag back; a root gone since has nothing to take it. */

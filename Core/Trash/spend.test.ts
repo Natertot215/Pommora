@@ -874,10 +874,7 @@ describe('restore — the record spends, headless', () => {
     await writeFile(alpha, `---\nID: ${PAGE_A}\nbroken: [\n---\nbody`)
     const [listed] = await listBundles(root)
     const r = await settledMutate(root, { op: 'restore', bundlePath: listed.bundlePath }, nexusDeps)
-    expect(r).toEqual({
-      ok: true,
-      value: { unrestored: ['Alpha'], landed: '.nexus/contexts/Projects/Pommora' },
-    })
+    expect(r).toEqual({ ok: true, value: { unrestored: ['Alpha'] } })
     expect(await pathExists(join(root, listed.bundlePath, '_record.json'))).toBe(true)
   })
 
@@ -891,7 +888,7 @@ describe('restore — the record spends, headless', () => {
     await refreshTree(root)
     const [listed] = await listBundles(root)
     const r = await settledMutate(root, { op: 'restore', bundlePath: listed.bundlePath }, nexusDeps)
-    expect(r).toEqual({ ok: true, value: { landed: '.nexus/contexts/Projects/Pommora' } })
+    expect(r).toEqual({ ok: true, value: {} })
     expect(await pathExists(join(root, listed.bundlePath))).toBe(false)
   })
 

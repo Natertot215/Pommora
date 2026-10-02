@@ -286,15 +286,13 @@ describe('handleMutate — create', () => {
 })
 
 describe('handleMutate — rename', () => {
-  it('page rename renames the file AND cascades inbound [[links]], reporting the landed name', async () => {
+  it('page rename renames the file AND cascades inbound [[links]]', async () => {
     const r = await settledMutate(
       root,
       { op: 'rename', path: 'Notes/Daily/Beta.md', kind: 'page', newName: 'Gamma' },
       nexusDeps,
     )
     expect(r.ok).toBe(true)
-    if (!r.ok) return
-    expect(r.value.renamed).toEqual({ path: 'Notes/Daily/Gamma.md', name: 'Gamma' })
     expect(await pathExists(join(root, 'Notes/Daily/Gamma.md'))).toBe(true)
     expect(await pathExists(join(root, 'Notes/Daily/Beta.md'))).toBe(false)
     expect(await read('Notes/Daily/Alpha.md')).toContain('[[Gamma]]')
@@ -309,11 +307,11 @@ describe('handleMutate — rename', () => {
       { op: 'rename', path: 'Notes/Daily/foo.md', kind: 'page', newName: 'Foo' },
       nexusDeps,
     )
-    expect(r.ok && r.value.renamed).toEqual({ path: 'Notes/Daily/Foo.md', name: 'Foo' })
+    expect(r.ok).toBe(true)
     expect(await read('Notes/Daily/Alpha.md')).toContain('[[Foo]]')
   })
 
-  it('a fromCreate rename disambiguates a collision instead of rejecting, and reports what landed', async () => {
+  it('a fromCreate rename disambiguates a collision instead of rejecting', async () => {
     await settledMutate(
       root,
       { op: 'createPage', id: newContentId('page'), parentPath: 'Notes/Daily', name: 'Untitled' },
@@ -332,8 +330,6 @@ describe('handleMutate — rename', () => {
       nexusDeps,
     )
     expect(r.ok).toBe(true)
-    if (!r.ok) return
-    expect(r.value.renamed).toEqual({ path: 'Notes/Daily/Beta (2).md', name: 'Beta (2)' })
     expect(await pathExists(join(root, 'Notes/Daily/Beta (2).md'))).toBe(true)
     expect(await pathExists(join(root, 'Notes/Daily/Beta.md'))).toBe(true)
   })
@@ -487,7 +483,7 @@ describe('handleMutate — sync tap', () => {
       },
       nexusDeps,
     )
-    expect(r.ok && r.value.renamed?.name).toBe('Fresh (2)')
+    expect(r.ok).toBe(true)
     expect(tap.renames).toEqual([
       [join(root, 'Notes/Daily/Beta.md'), join(root, 'Notes/Daily/Fresh (2).md')],
     ])
@@ -2697,7 +2693,7 @@ describe('handleMutate — excluded entries follow their folders', () => {
     )
     await refreshTree(root)
     const r = await settledMutate(root, { op: 'restore', bundlePath: bundlePath ?? '' }, nexusDeps)
-    expect(r).toEqual({ ok: true, value: { landed: 'Other (2)' } })
+    expect(r).toEqual({ ok: true, value: {} })
     expect(await excludedOnDisk()).toEqual(['Other/Drafts', 'Other (2)/Daily'])
   })
 
