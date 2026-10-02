@@ -3,7 +3,7 @@ import { basename, join, relJoin, titleFromPath } from '../Paths/posix'
 import { frontmatterWritable, parsePage } from '../Files/pageFile'
 import {
   agendaContext,
-  holdsContent,
+  adoptsAsCollection,
   resolveFolderKind,
   type FolderKindContext,
 } from './folderKind'
@@ -210,7 +210,7 @@ async function readRootFolder(
   if ((await resolveFolderKind(abs, 'root', walk.kindCtx)) === 'collection')
     return readContainer('collection', abs, name, name, walk)
   const adoptable = await resolveFolderKind(abs, 'root', { ...walk.kindCtx, adopting: true })
-  if (adoptable === 'collection' && (await holdsContent(abs, name, walk.scope)))
+  if (adoptable === 'collection' && (await adoptsAsCollection(abs, name, walk.scope)))
     walk.unreadable.push({ path: name, reason: 'missing' })
   return null
 }

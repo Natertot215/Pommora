@@ -99,11 +99,13 @@ export async function agendaContext(
   return { agenda, homed, root, adopting }
 }
 
-export async function holdsContent(
+// A root folder is a Collection once it has a Collection sidecar or holds pages or subfolders, so an empty, sidecar-less folder (stray junk) never becomes one.
+export async function adoptsAsCollection(
   absDir: string,
   relDir: string,
   scope: WatchScope,
 ): Promise<boolean> {
+  if (await pathExists(join(absDir, SIDECAR_FILENAME.collection))) return true
   for (const e of await listEntries(absDir)) {
     if (isContentFile(e)) return true
     if (e.kind === 'dir' && !outsideContent(`${relDir}/${e.name}`, scope)) return true
