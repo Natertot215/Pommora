@@ -325,6 +325,44 @@ describe('an outside batch’s turn', () => {
     await agrees()
   })
 
+  it('a walk that read a file before the batch stamped it walks again, and holds the stamp', async () => {
+    await writeFile(abs('Notes', 'Bare.md'), 'bare\n')
+    const stamping = gate<void>()
+    const release = gate<void>()
+    const stamped = gate<void>()
+    const stampMissing = adopt.stampMissing
+    vi.spyOn(adopt, 'stampMissing').mockImplementationOnce(async (...args) => {
+      stamping.open()
+      await release.promise
+      const landed = await stampMissing(...args)
+      stamped.open()
+      return landed
+    })
+    const walking = gate<void>()
+    const walkRelease = gate<void>()
+    const walk = readNexusModule.readNexus
+    vi.spyOn(readNexusModule, 'readNexus').mockImplementationOnce(async (at) => {
+      const tree = await walk(at)
+      walking.open()
+      await walkRelease.promise
+      return tree
+    })
+    const batch = settleBatch(pusher, root, [ev('add', 'Notes', 'Bare.md')])
+    await stamping.promise
+    await applyEvents(root, [ev('change', '.nexus', 'nexus.json')])
+    const replied = flush(pusher, root)
+    await walking.promise
+    release.open()
+    await stamped.promise
+    walkRelease.open()
+    await replied
+    await batch
+    expect(held('Notes/Bare.md')).toBe(splitFrontmatter(await bytes('Notes', 'Bare.md'))[ID_KEY])
+    expect(getLiveTree()?.unreadable).toBeUndefined()
+    expect(windowTree()).toEqual(getLiveTree())
+    await agrees()
+  })
+
   it('a stamp never lands on a file while the batch that listed it is still reading it', async () => {
     await writeFile(abs('Notes', 'Bare.md'), 'bare\n')
     const reached = gate<void>()
