@@ -1,4 +1,4 @@
-// The one place a change reaches the window. The app's own writes land here as events while they happen; a write's gate and the watcher's batch then stamp what their events listed missing, and settle: the walk the events owed, and one push of what moved.
+// The one place a change to the tree, pages, values, tiles, or assets reaches the window. The app's own writes land here as events while they happen; a write's gate and the watcher's batch then stamp what their events listed missing, and settle: the walk the events owed, and one push of what moved.
 
 import { relDirname, relative } from '../Paths/posix'
 import { escapes } from '../Paths/pathSafety'
