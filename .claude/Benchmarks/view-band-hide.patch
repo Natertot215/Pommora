@@ -1,0 +1,512 @@
+From 5b1dc8a412a9f94857d6051c439f393b8b76e10b Mon Sep 17 00:00:00 2001
+From: Nathan Taichman <ntaichmanalt@gmail.com>
+Date: Tue, 22 Sep 2026 19:16:49 -0400
+Subject: [PATCH] =?UTF-8?q?feat(tiles):=20a=20view=20tile's=20ActionBand?=
+ =?UTF-8?q?=20hides=20=E2=80=94=20Hide=20Views=20on=20the=20band's=20and?=
+ =?UTF-8?q?=20title's=20menus=20collapses=20it=20upward,=20the=20title,=20?=
+ =?UTF-8?q?a=20table's=20heading=20row,=20or=20the=20first=20card=20band?=
+ =?UTF-8?q?=20or=20row=20drops=20it=20back=20on=20the=20ghost-create=20dwe?=
+ =?UTF-8?q?ll,=20and=20a=20lock=20at=20the=20band's=20end=20locks=20or=20u?=
+ =?UTF-8?q?nlocks=20it=20in=20place?=
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Co-Authored-By: Claude Opus 5.5 (1M context) <noreply@anthropic.com>
+---
+ Core/Actions/toggleLabels.ts         |   3 +
+ Core/Actions/viewMenus.test.ts       |  46 +++++---
+ Core/Actions/viewMenus.ts            |  15 ++-
+ Core/Tiles/Surfaces/ViewTile.tsx     | 154 ++++++++++++++++++++++++---
+ Core/Tiles/Surfaces/view-tile.css.ts |  19 +++-
+ Core/Tiles/tiles.test.ts             |   9 +-
+ Core/Tiles/tiles.ts                  |   2 +
+ 7 files changed, 218 insertions(+), 30 deletions(-)
+
+diff --git a/Core/Actions/toggleLabels.ts b/Core/Actions/toggleLabels.ts
+index 16fb1544f..9b6063fa4 100644
+--- a/Core/Actions/toggleLabels.ts
++++ b/Core/Actions/toggleLabels.ts
+@@ -8,6 +8,9 @@
+ 
+ export const iconLabel = (iconShown: boolean): string => (iconShown ? 'Hide Icon' : 'Show Icon')
+ 
++export const viewsLabel = (viewsShown: boolean): string =>
++  viewsShown ? 'Hide Views' : 'Show Views'
++
+ export const lockLabel = (locked: boolean, noun?: string): string => {
+   const verb = locked ? 'Unlock' : 'Lock'
+   return noun ? `${verb} ${noun}` : verb
+diff --git a/Core/Actions/viewMenus.test.ts b/Core/Actions/viewMenus.test.ts
+index 8b0cb40de..7ce2c9ce4 100644
+--- a/Core/Actions/viewMenus.test.ts
++++ b/Core/Actions/viewMenus.test.ts
+@@ -5,12 +5,12 @@ const labels = (rows: { label: string }[]): string[] => rows.map((r) => r.label)
+ 
+ describe('the view embed’s title menu', () => {
+   it('offers Edit Icon only while an icon is shown', () => {
+-    expect(labels(embedTitleMenuItems(true, 2))).toContain('Edit Icon')
+-    expect(labels(embedTitleMenuItems(false, 2))).not.toContain('Edit Icon')
++    expect(labels(embedTitleMenuItems(true, 2, true))).toContain('Edit Icon')
++    expect(labels(embedTitleMenuItems(false, 2, true))).not.toContain('Edit Icon')
+   })
+ 
+   it('marks the heading level the title is at, out of the full six', () => {
+-    const sizes = embedTitleMenuItems(true, 3).find((r) => r.label === 'Title Size')?.submenu
++    const sizes = embedTitleMenuItems(true, 3, true).find((r) => r.label === 'Title Size')?.submenu
+     expect(sizes?.map((r) => r.label)).toEqual([
+       'Heading 1',
+       'Heading 2',
+@@ -21,22 +21,44 @@ describe('the view embed’s title menu', () => {
+     ])
+     expect(sizes?.filter((r) => r.checked).map((r) => r.label)).toEqual(['Heading 3'])
+   })
++
++  it('sits the views toggle right below Hide Title, named after what pressing it does', () => {
++    expect(labels(embedTitleMenuItems(true, 2, true)).slice(-2)).toEqual([
++      'Hide Title',
++      'Hide Views',
++    ])
++    expect(labels(embedTitleMenuItems(true, 2, false)).slice(-2)).toEqual([
++      'Hide Title',
++      'Show Views',
++    ])
++  })
+ })
+ 
+ describe('the view embed’s area menu', () => {
+   it('offers Show Title only while the title row is hidden', () => {
+-    expect(labels(embedAreaMenuItems({ viewStyle: 'dropdown', titleShown: false }))).toContain(
+-      'Show Title',
+-    )
+-    expect(labels(embedAreaMenuItems({ viewStyle: 'dropdown', titleShown: true }))).not.toContain(
+-      'Show Title',
+-    )
++    expect(
++      labels(embedAreaMenuItems({ viewStyle: 'dropdown', titleShown: false, viewsShown: true })),
++    ).toContain('Show Title')
++    expect(
++      labels(embedAreaMenuItems({ viewStyle: 'dropdown', titleShown: true, viewsShown: true })),
++    ).not.toContain('Show Title')
++  })
++
++  it('names the views toggle after what pressing it does', () => {
++    expect(
++      labels(embedAreaMenuItems({ viewStyle: 'toolbar', titleShown: true, viewsShown: true })),
++    ).toContain('Hide Views')
++    expect(
++      labels(embedAreaMenuItems({ viewStyle: 'toolbar', titleShown: true, viewsShown: false })),
++    ).toContain('Show Views')
+   })
+ 
+   it('marks the style in force on the Style submenu', () => {
+-    const style = embedAreaMenuItems({ viewStyle: 'toolbar', titleShown: true }).find(
+-      (r) => r.label === 'Style',
+-    )?.submenu
++    const style = embedAreaMenuItems({
++      viewStyle: 'toolbar',
++      titleShown: true,
++      viewsShown: true,
++    }).find((r) => r.label === 'Style')?.submenu
+     expect(style?.map((r) => [r.label, r.checked])).toEqual([
+       ['Dropdown', false],
+       ['Toolbar', true],
+diff --git a/Core/Actions/viewMenus.ts b/Core/Actions/viewMenus.ts
+index 234ab7a97..9bfd1891b 100644
+--- a/Core/Actions/viewMenus.ts
++++ b/Core/Actions/viewMenus.ts
+@@ -1,14 +1,19 @@
+ import type { ActionItem } from './menuModel'
+ import type { ViewButton, ViewStyle } from '../Views/viewRow'
+-import { iconLabel } from './toggleLabels'
++import { iconLabel, viewsLabel } from './toggleLabels'
+ 
+ type ViewStyleAction = 'style-dropdown' | 'style-toolbar'
+ 
+ type ViewButtonMenuAction = 'toggle-title'
+ 
+-type EmbedTitleMenuAction = 'toggle-icon' | 'change-icon' | 'hide-title' | `size-${number}`
++type EmbedTitleMenuAction =
++  | 'toggle-icon'
++  | 'change-icon'
++  | 'hide-title'
++  | 'toggle-views'
++  | `size-${number}`
+ 
+-type EmbedAreaMenuAction = 'show-title' | 'new-view' | ViewStyleAction
++type EmbedAreaMenuAction = 'show-title' | 'new-view' | 'toggle-views' | ViewStyleAction
+ 
+ const EMBED_TITLE_SIZES = [1, 2, 3, 4, 5, 6] as const
+ 
+@@ -33,6 +38,7 @@ function styleRow<A extends ViewStyleAction>(current: ViewStyle): ActionItem<A>
+ export function embedTitleMenuItems(
+   iconShown: boolean,
+   level: number,
++  viewsShown: boolean,
+ ): ActionItem<EmbedTitleMenuAction>[] {
+   return [
+     ...(iconShown ? [{ label: 'Edit Icon', action: 'change-icon' as const }] : []),
+@@ -47,16 +53,19 @@ export function embedTitleMenuItems(
+       })),
+     },
+     { label: 'Hide Title', action: 'hide-title', separatorBefore: true },
++    { label: viewsLabel(viewsShown), action: 'toggle-views' },
+   ]
+ }
+ 
+ export function embedAreaMenuItems(current: {
+   viewStyle: ViewStyle
+   titleShown: boolean
++  viewsShown: boolean
+ }): ActionItem<EmbedAreaMenuAction>[] {
+   return [
+     ...(current.titleShown ? [] : [{ label: 'Show Title', action: 'show-title' as const }]),
+     { label: 'New View', action: 'new-view' },
++    { label: viewsLabel(current.viewsShown), action: 'toggle-views' },
+     styleRow(current.viewStyle),
+   ]
+ }
+diff --git a/Core/Tiles/Surfaces/ViewTile.tsx b/Core/Tiles/Surfaces/ViewTile.tsx
+index 1351be8ee..3bfe9b34e 100644
+--- a/Core/Tiles/Surfaces/ViewTile.tsx
++++ b/Core/Tiles/Surfaces/ViewTile.tsx
+@@ -12,7 +12,7 @@ import {
+   type SavedView,
+   type ViewState,
+ } from '@pommora/core/Views/views'
+-import { Icon } from '@pommora/uix/Symbols'
++import { Icon, LockGlyph } from '@pommora/uix/Symbols'
+ import { cellRing } from '@pommora/uix/Theme/ramp'
+ import { labelColorFor } from '@pommora/uix/Theme/ramp'
+ import { ColorPicker } from '@pommora/uix/Pickers/ColorPicker'
+@@ -20,6 +20,7 @@ import { PickerMenu, PickerRow } from '@pommora/uix/Pickers/picker-base'
+ import { AccessoryButton, MenuFooting, MenuScrollFrame } from '@pommora/uix/Menus'
+ import { titleInput as rowInput, rowDisabled } from '@pommora/uix/Menus/menu-base.css'
+ import { reorder, SortableZone, useDragItem } from '@pommora/uix/Interactions/drag'
++import { GHOST_DWELL_MS } from '@pommora/uix/Interactions/ghostCreate'
+ import { PICKER_MAX_HEIGHT } from '@pommora/uix/Pickers/picker-base.css'
+ import { RenamableLabel } from '@pommora/uix/Fields/RenamableLabel'
+ import { IconChoice } from '../../Assets/IconChoice'
+@@ -50,6 +51,7 @@ import {
+ } from '@pommora/uix/Elements/action-band.css'
+ import * as s from './view-tile.css'
+ import { popMenu } from '../../Actions/menuActions'
++import { viewsLabel } from '../../Actions/toggleLabels'
+ import { embedAreaMenuItems, embedTitleMenuItems } from '@pommora/core/Actions/viewMenus'
+ import { viewRowMenuItems } from '@pommora/core/Actions/viewRowMenu'
+ 
+@@ -98,6 +100,79 @@ function usePillPresence(views: SavedView[]): {
+   return { entering, exiting, beginExit: setExiting, onAnimEnd }
+ }
+ 
++// KNOB — how long the band's lock stays after locking before it fades
++const BAND_LOCK_LINGER_MS = 2000
++
++// KNOB — the beat that carries the pointer between reveal zones (title → band → heading row)
++const PEEK_GRACE_MS = 150
++
++// Turns on after the ghost-create dwell and off after the grace; `held` keeps it on while something anchored in its zone is open.
++function useHoverDwell(
++  active: boolean,
++  held: boolean,
++): { on: boolean; hover: (inside: boolean) => void; enter: () => void } {
++  const [peek, setPeek] = useState(false)
++  const peekRef = useRef(peek)
++  peekRef.current = peek
++  const heldRef = useRef(held)
++  heldRef.current = held
++  const inside = useRef(false)
++  const pending = useRef<{ id: number; open: boolean } | null>(null)
++  const cancel = (): void => {
++    if (pending.current) window.clearTimeout(pending.current.id)
++    pending.current = null
++  }
++  const settle = (): void => {
++    const open = inside.current || heldRef.current
++    if (pending.current?.open === open) return
++    cancel()
++    if (open === peekRef.current) return
++    const id = window.setTimeout(
++      () => {
++        pending.current = null
++        setPeek(open)
++      },
++      open ? GHOST_DWELL_MS : PEEK_GRACE_MS,
++    )
++    pending.current = { id, open }
++  }
++  const hover = (v: boolean): void => {
++    inside.current = v
++    settle()
++  }
++  const enter = (): void => {
++    inside.current = true
++    cancel()
++    setPeek(true)
++  }
++  useEffect(settle, [held])
++  useEffect(
++    () => () => {
++      cancel()
++      inside.current = false
++      setPeek(false)
++    },
++    [active],
++  )
++  return { on: active && peek, hover, enter }
++}
++
++// A table reveals from its heading row; cards, which have none, from the first group band, else the first row of cards.
++function isPeekAnchor(target: EventTarget, body: Element): boolean {
++  if (!(target instanceof Element)) return false
++  if (target.closest('.table-head')) return true
++  if (!target.closest('.cards-view')) return false
++  const band = body.querySelector('.group-band-row')
++  if (band) return band.contains(target)
++  const card = target.closest('.card')
++  const first = body.querySelector('.card')
++  return (
++    card !== null &&
++    first !== null &&
++    Math.abs(card.getBoundingClientRect().top - first.getBoundingClientRect().top) < 1
++  )
++}
++
+ const rawViews = (raw: Record<string, unknown>): unknown[] =>
+   Array.isArray(raw.views) ? [...(raw.views as unknown[])] : []
+ 
+@@ -205,6 +280,28 @@ export function ViewTile({
+     ? entry.views.map((v, i) => coerceEmbeddedView(v.config, schema, `embed:${entry.id}:${i}`))
+     : []
+   const presence = usePillPresence(views)
++  const viewsShown = entry.view_band !== false
++  const bandPeek = useHoverDwell(!viewsShown, listOpen || cfgOpen || renaming !== null)
++  const unlockOffer = useHoverDwell(viewsShown, false)
++  const bandOpen = viewsShown || bandPeek.on
++  const [lockLingers, setLockLingers] = useState(false)
++  useEffect(() => {
++    if (!lockLingers) return
++    const id = window.setTimeout(() => setLockLingers(false), BAND_LOCK_LINGER_MS)
++    return () => window.clearTimeout(id)
++  }, [lockLingers])
++  // The lock's press hands the pointer to whichever dwell the toggle activates, so the band and lock stay put until it leaves.
++  const lockPressed = useRef(false)
++  useEffect(() => {
++    if (!lockPressed.current) return
++    lockPressed.current = false
++    ;(viewsShown ? unlockOffer : bandPeek).enter()
++  }, [viewsShown])
++  const hoverProps = (dwell: typeof bandPeek) => ({
++    onPointerEnter: () => dwell.hover(true),
++    onPointerLeave: () => dwell.hover(false),
++  })
++  const peekHover = viewsShown ? undefined : hoverProps(bandPeek)
+ 
+   if (!embedded || !source || !tree) return <div className="tile-inert" />
+ 
+@@ -315,24 +412,27 @@ export function ViewTile({
+   const titleMenu = async (e: React.MouseEvent): Promise<void> => {
+     e.preventDefault()
+     if (locked) return
+-    const action = await popMenu(embedTitleMenuItems(iconShown, titleLevel))
++    const action = await popMenu(embedTitleMenuItems(iconShown, titleLevel, viewsShown))
+     if (action === 'toggle-icon') patchEntry({ icon: iconShown ? false : undefined })
+     else if (action === 'change-icon') {
+       menuAnchorRef.current = titleIconRef.current
+       setIconFor('title')
+     } else if (action === 'hide-title') patchEntry({ title: false })
++    else if (action === 'toggle-views') toggleViews()
+     else if (action?.startsWith('size-')) {
+       const n = Number(action.slice(5))
+       patchEntry({ title_level: n === 4 ? undefined : n })
+     }
+   }
++  const toggleViews = (): void => patchEntry({ view_band: viewsShown ? false : undefined })
+   const areaMenu = async (e: React.MouseEvent): Promise<void> => {
+     e.preventDefault()
+     if (locked) return
+     const action = await popMenu(
+-      embedAreaMenuItems({ viewStyle: dropdown ? 'dropdown' : 'toolbar', titleShown }),
++      embedAreaMenuItems({ viewStyle: dropdown ? 'dropdown' : 'toolbar', titleShown, viewsShown }),
+     )
+     if (action === 'show-title') patchEntry({ title: undefined })
++    else if (action === 'toggle-views') toggleViews()
+     else if (action === 'new-view') addView()
+     else if (action === 'style-dropdown') patchEntry({ view_style: 'dropdown' })
+     else if (action === 'style-toolbar') patchEntry({ view_style: undefined })
+@@ -391,6 +491,24 @@ export function ViewTile({
+     </button>
+   )
+ 
++  const lockShown = bandPeek.on || unlockOffer.on || lockLingers
++  const bandLock = !locked && (
++    <span className={cx(s.bandLock, !lockShown && s.bandLockHidden)}>
++      <button
++        type="button"
++        className={settingsBtn}
++        aria-label={viewsLabel(viewsShown)}
++        onClick={() => {
++          lockPressed.current = true
++          toggleViews()
++          setLockLingers(!viewsShown)
++        }}
++      >
++        <LockGlyph locked={viewsShown} size="body" />
++      </button>
++    </span>
++  )
++
+   const newViewButton = (
+     <AccessoryButton
+       icon="plus"
+@@ -461,7 +579,7 @@ export function ViewTile({
+         <div className={cx(s.titleSpace, !titleShown && s.titleSpaceHidden)}>
+           <div className={s.titleSpaceInner}>
+             {/* biome-ignore lint/a11y/noStaticElementInteractions: a right-click affordance on a container, not a control — the contents carry their own semantics */}
+-            <div className={s.titleRow} onContextMenu={(e) => void titleMenu(e)}>
++            <div className={s.titleRow} onContextMenu={(e) => void titleMenu(e)} {...peekHover}>
+               <span className={cx(s.titleSlide, !titleShown && s.titleSlideHidden)}>
+                 <Icon
+                   ref={titleIconRef}
+@@ -499,17 +617,27 @@ export function ViewTile({
+             </div>
+           </div>
+         </div>
+-        {/* biome-ignore lint/a11y/noStaticElementInteractions: a right-click affordance on a container, not a control — the contents carry their own semantics */}
+-        <div className={s.switcherRow} onContextMenu={(e) => void areaMenu(e)}>
+-          {switcher}
+-          {!titleShown && (
+-            <>
++        <div
++          className={cx(s.bandSpace, !bandOpen && s.bandSpaceHidden)}
++          {...hoverProps(viewsShown ? unlockOffer : bandPeek)}
++        >
++          <div className={s.titleSpaceInner}>
++            {/* biome-ignore lint/a11y/noStaticElementInteractions: a right-click affordance on a container, not a control — the contents carry their own semantics */}
++            <div className={s.switcherRow} onContextMenu={(e) => void areaMenu(e)}>
++              {switcher}
+               <span className={s.spacer} />
+-              {configButton}
+-            </>
+-          )}
++              {!titleShown && configButton}
++              {bandLock}
++            </div>
++          </div>
+         </div>
+-        <div className={`${s.body} over-scroll`}>
++        <div
++          className={cx(s.body, !bandOpen && s.bodyFlush, 'over-scroll')}
++          onPointerOver={
++            viewsShown ? undefined : (e) => bandPeek.hover(isPeekAnchor(e.target, e.currentTarget))
++          }
++          onPointerLeave={viewsShown ? undefined : () => bandPeek.hover(false)}
++        >
+           <div
+             key={index}
+             className={s.slideWrap}
+diff --git a/Core/Tiles/Surfaces/view-tile.css.ts b/Core/Tiles/Surfaces/view-tile.css.ts
+index 1c4564894..ab0916580 100644
+--- a/Core/Tiles/Surfaces/view-tile.css.ts
++++ b/Core/Tiles/Surfaces/view-tile.css.ts
+@@ -13,6 +13,8 @@ const c = colorVars.color
+ 
+ const HEAD_PAD_L = '14px'
+ const HEAD_PAD_R = '12px'
++const BAND_PAD_Y = '6px'
++const bandReveal = `${duration.menu} var(--ease-base)`
+ 
+ // KNOB — how far the scroll region rises BEHIND the transparent switcher so rows flow UNDER the whole toolbar and dissolve at the title divider, matching the switcher's full height.
+ const FADE_RISE = `calc(${SEGMENT_H} + 12px)`
+@@ -66,6 +68,12 @@ export const titleSpaceHidden = style({
+   gridTemplateRows: '0fr',
+   transitionDelay: duration.menu,
+ })
++export const bandSpace = style({
++  display: 'grid',
++  gridTemplateRows: '1fr',
++  transition: `grid-template-rows ${bandReveal}`,
++})
++export const bandSpaceHidden = style({ gridTemplateRows: '0fr' })
+ export const titleSpaceInner = style({ minHeight: 0, overflow: 'hidden' })
+ 
+ export const titleIcon = style({ color: c.label.control })
+@@ -87,7 +95,7 @@ export const titleText = style({
+ export const switcherRow = style([
+   segmentRow,
+   {
+-    padding: `6px ${HEAD_PAD_R} 6px ${HEAD_PAD_L}`,
++    padding: `${BAND_PAD_Y} ${HEAD_PAD_R} ${BAND_PAD_Y} ${HEAD_PAD_L}`,
+     flex: 'none',
+     position: 'relative',
+     zIndex: 1, // paints over the scroll region that rises behind it (FADE_RISE)
+@@ -116,6 +124,12 @@ globalStyle(`${switcherRow}:hover ${newViewReveal}`, { opacity: 1 })
+ 
+ globalStyle(`${tile}:hover ${settingsBtn}`, { opacity: 1 })
+ 
++export const bandLock = style({
++  display: 'inline-flex',
++  transition: 'opacity var(--duration-base) var(--ease-base)',
++})
++export const bandLockHidden = style({ opacity: 0, pointerEvents: 'none' })
++
+ export const listPane = style({ minWidth: 150 })
+ 
+ export const body = style({
+@@ -126,9 +140,12 @@ export const body = style({
+   overflowY: 'auto',
+   marginTop: `calc(-1 * ${FADE_RISE})`,
+   paddingTop: FADE_RISE,
++  transition: `margin-top ${bandReveal}, padding-top ${bandReveal}`,
+   vars: { '--over-scroll-fade': FADE_RISE },
+ })
+ 
++export const bodyFlush = style({ marginTop: 0, paddingTop: BAND_PAD_Y })
++
+ globalStyle(`${body} .table-view`, {
+   vars: { '--zoom': `var(--view-embed-zoom, ${viewEmbedZoom(EMBED_SCALE_DEFAULT)})` },
+ })
+diff --git a/Core/Tiles/tiles.test.ts b/Core/Tiles/tiles.test.ts
+index d8297e505..e69efa089 100644
+--- a/Core/Tiles/tiles.test.ts
++++ b/Core/Tiles/tiles.test.ts
+@@ -57,8 +57,15 @@ describe('knownTile', () => {
+         icon: false,
+         view_button: 'icon',
+         view_style: 'dropdown',
++        view_band: false,
+       }),
+-    ).toMatchObject({ title: false, icon: false, view_button: 'icon', view_style: 'dropdown' })
++    ).toMatchObject({
++      title: false,
++      icon: false,
++      view_button: 'icon',
++      view_style: 'dropdown',
++      view_band: false,
++    })
+     expect(
+       knownTile({
+         id: 'c',
+diff --git a/Core/Tiles/tiles.ts b/Core/Tiles/tiles.ts
+index 81f67ef99..1db43ab40 100644
+--- a/Core/Tiles/tiles.ts
++++ b/Core/Tiles/tiles.ts
+@@ -104,6 +104,7 @@ export interface ViewTileEntry {
+   title_level?: number
+   view_button?: ViewButton
+   view_style?: ViewStyle
++  view_band?: boolean
+   locked?: boolean
+   zoom?: number
+ }
+@@ -146,6 +147,7 @@ const viewEntry = z.looseObject({
+   title_level: z.number().int().min(1).max(6).optional().catch(undefined),
+   view_button: z.enum(VIEW_BUTTONS).optional().catch(undefined),
+   view_style: z.enum(VIEW_STYLES).optional().catch(undefined),
++  view_band: boolField,
+ })
+ export type TileType = TileEntry['type']
+ 
+-- 
+2.54.0 (Apple Git-157)
+

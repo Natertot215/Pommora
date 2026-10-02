@@ -1,0 +1,263 @@
+## Configuration
+
+
+Configuration reads at three scopes. A **Nexus** is configured from the Settings window, whose knobs live in `.nexus/settings.json` and travel with the Nexus; a **Collection** from its own sidecar, governing how its pages open and how its views present themselves; a **Page** from its own frontmatter, its page metadata, and its per-machine chrome. Beneath all three sits a per-device layer: the app config beside the application, which is never part of a Nexus, and the machine-and-Nexus preferences in that Nexus's database under the app's userData directory. This document is the one roster of every knob; other documents name a setting by its label and point here.
+
+### Settings
+
+The Nexus Settings window is a floating window summoned from the ribbon's Settings glyph, mounted on the shared window chassis. Its rail lists the frames below; most rows write one key of the `personalization` object (`Personalization` in `Core/Settings/personalization.ts`), and a row at its default stores no key; the Nexus heading reads and writes the device and the server binding instead. Defaults are bold.
+
+#### General
+
+| Setting | Key | Description | Options |
+| --- | --- | --- | --- |
+| Date Format | `dateFormat` | The date format every interface without one of its own takes. | MM/DD/YYYY · DD/MM/YYYY · Short Date · **Full Date** · Relative |
+| Time Format | `timeFormat` | The Nexus's clock, wherever a time renders. | **12 Hours** · 24 Hours |
+| Experimental Features | `experimentalFeatures` | Under Advanced; carries the surfaces still being built, which are absent while it is off. | On · **Off** |
+
+**Nexus**
+
+The Nexus heading holds the sync identity: This Device, whose name is editable and whose hint is the first twelve characters of the device fingerprint; Nexus ID, the identifier of the open Nexus; Nexus Password, a masked field held only until it rides the next connect, which reads "Held in this device's keychain" wherever a binding exists past its pending stage and sync reports no password reason; Server, an editable address with a Pin field beside it for an `https:` hub, Connect until the binding is approved, and Refresh and Disconnect once a binding exists; a Sync row whose hint reports what sync is doing and whose button runs a pass on demand; and, when the binding is approved, one row per device carrying its name, fingerprint, state, and `· paired` where the device has published an agreement key, with Approve on a pending device and Revoke on an approved one. This device's own row carries neither, since the server refuses a self-revoke.
+
+The heading reads the unbound state and three binding states. Unbound shows the password field, the address field, and Connect, with Sync Now disabled. Approved captions the Server row "Approved" and lists the devices. Awaiting approval captions it "Awaiting approval from an approved device" and lists nothing, with Connect still reachable, since a revoked device reads as pending and re-registers by connecting again. An unreachable server captions the failure. The Sync row's hint follows the client's own four states: off reads its reason, idle reads the clock time the last pass finished in the Nexus's own time format, syncing reads "Syncing…", and an error reads its message; the heading takes each transition from the `sync:changed` push, and a transition out of the pending reason refetches the binding so a remote approval reaches the rows on its own. None of these rows writes a `personalization` key.
+
+#### Interface
+
+**General Preferences**
+
+| Setting | Key | Description | Options |
+| --- | --- | --- | --- |
+| Hide Disclosure Chevrons | `hideChevrons` | Collapses the sidebar's chevron gutter. | On · **Off** |
+| Reveal Tab Bar On Hover | `revealTabBarOnHover` | Keeps the tab bar hidden until the pointer nears it. | On · **Off** |
+| Use Native Menus | `nativeMenus` | Draws the click-triggered lists that hang from a control, pickers and the tile handle, as system menus; every other menu, click or right-click, is the system's either way. A machine-level preference, stored in the device database rather than the Nexus. | On · **Off** |
+| Use Native Highlighting | `nativeHighlight` | Selected text uses the system's own highlight instead of Pommora's drawn one. | On · **Off** |
+| Interface Scale | `interfaceScale` | The scaling factor applied to the entire interface; additional scaling preferences compound this value. Also what ⌘0 resets to. A machine-level preference, stored in the device database rather than the Nexus. | 50%–150% in ten-point steps (**100%**) |
+| Embed Scale | `embedScale` | The scale embedded pages and views start at; a block's own Scale compounds it. | 50%–150% (**90%**) |
+| Brightness | `brightness` | Pommora's own brightness, independent of the display's, applied across the whole window including its webpages. A machine-level preference, stored in the device database rather than the Nexus. | 50%–150% in ten-point steps (**100%**) |
+| Scrollbar Presence | `scrollbars` | Which surfaces carry a scrollbar: every scrolling surface, pages alone, or none. A machine-level preference, stored in the device database rather than the Nexus. | All · **Pages Only** · Off |
+| Scrollbar Visibility | `scrollbarReveal` | Whether scrollbars stay shown or appear on scroll and hover. Folds away while Scrollbar Presence is Off. A machine-level preference, stored in the device database rather than the Nexus. | Always · **On Hover** |
+
+**Creation Placement**
+
+| Setting | Key | Description | Options |
+| --- | --- | --- | --- |
+| New Page Placement | `newPagePlacement` | Where a new page lands among its siblings when it isn't created beside another — from the sidebar, a view, or New Page. | Top · **Bottom** |
+| New Folder Placement | `newFolderPlacement` | Where a new Set or Sub-Set lands among its siblings. | Top · **Bottom** |
+| New Space Placement | `newSpacePlacement` | Where a new Space lands in its Context when it isn't created beside another. | Top · **Bottom** |
+
+**Webpages & Links**
+
+| Setting | Key | Description | Options |
+| --- | --- | --- | --- |
+| Open Links In Pommora | `openLinksInApp` | External links open the floating browser instead of the system one. | On · **Off** |
+| Webpage Zoom | `webZoomFactor` | How embedded webpages scale, relative to the window. | 50%–150% (**100%**) |
+
+#### Navigation
+
+| Setting | Key | Description | Options |
+| --- | --- | --- | --- |
+| Close Navigation On Select | `navCloseOnSelect` | Picking an entity dismisses the Navigation window. | **On** · Off |
+| Open Connections In Preview | `connectionsOpenInPreview` | A connection click opens the Page Window instead of navigating; ⌘-click takes the other route. | On · **Off** |
+| Hover Previews | `previewPersistence` | Whether a preview raises at all, and how long it lingers after hovering off. | Off · **1 Second** · 5 Seconds · 10 Seconds · Until Closed |
+| Dismiss Preview On Pointer Actions | `dismissPreviewOnPointer` | A click outside the live preview dismisses it; a locked preview stays. | On · **Off** |
+| Default Opening Behavior | `tabOpenBehavior` | What opening an entity does: overtake the active tab, or open a new one. | **Overtake** · New Tab |
+| Focus New Tabs | `tabTakeFocus` | A newly opened tab activates; off opens it in the background — including New Tab. | **On** · Off |
+| Minimum Tab Width | `tabMinWidth` | The narrowest a tab shrinks before the strip scrolls. | 50–100px · **70px** |
+| Maximum Tab Width | `tabMaxWidth` | The widest a tab grows. | 150–350px · **250px** |
+| Active Tab Cache | `tabCache` | The most open tabs kept active before older ones fall to on-demand loading. | **5** · 10 · 15 · 20 · 25 Tabs |
+| Pause Media On Tab Switch | `pauseMediaOnTabSwitch` | A tab's video and audio pause when it leaves the main view; playback does not resume on return. | **On** · Off |
+| Open Matrix In | `matrixOpenIn` | Where the ribbon's Matrix icon opens it. | **New Tab** · Window |
+| Show Banners In Windowed Pages | `windowPageBanners` | A Page opened in a floating window draws its banner with the title over it, managed from the tab's own menu. | On · **Off** |
+| Show Banners In Windowed Spaces | `windowSpaceBanners` | A Space opened in a floating window carries its banner; off, its title stands alone above the board. | On · **Off** |
+| Show Banner In Navigation Window | `windowNavBanner` | The Navigation Window's map tab carries NavView's banner, with the search field over it. | On · **Off** |
+
+#### Appearance
+
+The three colors the interface derives from. Each opens the ramp grid without its greyscale families, and each clears to what it inherits rather than to nothing.
+
+| Setting | Key | Description | Options |
+| --- | --- | --- | --- |
+| Accent Color | `accent` | The color every accented surface derives from. | A ramp cell · **the system accent** |
+| Internal Link Color | `connectionColor` | Connections to other pages. | A ramp cell · **the accent** |
+| External Link Color | `externalLinkColor` | Links out to the web. | A ramp cell · **the system accent** |
+
+#### Files & Links
+
+**Pasted Links**
+
+| Setting | Key | Description | Options |
+| --- | --- | --- | --- |
+| Default Format | `defaultLinkFormat` | Which form a pasted address is written in. | **Full Link** · Short Link · Page Title |
+| Paste Link Into Text | `pasteLinkIntoText` | Pasting an address over selected text turns that text into the link instead of replacing it. | On · **Off** |
+
+**Connections**
+
+| Setting | Key | Description | Options |
+| --- | --- | --- | --- |
+| Remove Title On Link Change | `removeTitleOnLinkChange` | Pointing a connection at another page drops the alias it was wearing. | **On** · Off |
+| Automatically Suggest Existing Aliases When Linking A Page | `aliasPickerOnCommit` | Accepting a page from the connection picker offers the names it already carries. | **On** · Off |
+
+**Assets**
+
+| Setting | Key | Description | Options |
+| --- | --- | --- | --- |
+| Default Asset Directory | `asset_directory` | Where banners, the profile image, and file attachments are stored. Written at the settings root rather than under `personalization`. | Any folder in the Nexus · **`.nexus/assets`** |
+
+**Deletion**
+
+| Setting | Key | Description | Options |
+| --- | --- | --- | --- |
+| Confirm Before Deletion | `confirmDeletion` | Asks before deleting a page, a property, or one of a property's options. Collections, Sets, Contexts, Spaces, and views ask regardless, since each carries everything filed under it. | **On** · Off |
+| Permanently Delete Files | `permanentDelete` | Erases an item emptied from the trash rather than handing it to the system trash. | On · **Off** |
+| Restore Links On Deletion | `restoreLinksOnDeletion` | Restoring a deleted page puts it back into the Link property values that pointed at it. Off, those values stay removed. | **On** · Off |
+
+**File History**
+
+| Setting | Key | Description | Options |
+| --- | --- | --- | --- |
+| File History | `fileHistory` | Stores recoverable snapshots of device-local file history. | **On** · Off |
+| History Timeframe | `historyDays` | How long a snapshot is kept before the open-time sweep removes it; a typed value clamps into the range. | 7 · 14 · 30 · 60 · **90** Days |
+| Snapshot Interval | `historyInterval` | The least time between two edit snapshots of one page, and the quiet timer's length; a typed value clamps into the range. | **5** · 10 · 15 · 20 Min |
+| Clear History | — | Permanently delete stored snapshots for all files; this cannot be undone. Confirms, then reads Cleared for a moment. | Clear |
+
+**Exclusions**
+
+| Setting | Key | Description | Options |
+| --- | --- | --- | --- |
+
+#### Properties
+
+**Metadata**
+
+| Setting | Key | Description | Options |
+| --- | --- | --- | --- |
+| Repair Properties On Open | `repairOnOpen` | Canonicalizes drifted property and Context values on the pages changed since the last open. | On · **Off** |
+| Capitalize All Metadata | `capitalizeMetadata` | Presents every property name Title Cased; the stored key and the rename fields are untouched. | On · **Off** |
+
+#### Pages & Writing
+
+| Setting | Key | Description | Options |
+| --- | --- | --- | --- |
+| Editor Scale | `editorScale` | How large a page reads — its text, its title, and the chrome around them. An embedded page keeps its own scale. | 50%–150% (**100%**) |
+| Heading 1–6 Size | `heading1Size` … `heading6Size` | Each heading level's size in em of the page text; the space above a heading follows its size. | 0.50em–2.50em (**1.80 · 1.60 · 1.40 · 1.20 · 1.10 · 1.00**) |
+| Outliner Lines | `outlinerLines` | Draws indent rails on nested lists in the editor. | On · **Off** |
+| Show Icon In Title | `titleIcon` | Draws each page's icon beside its title; a page can override it from its title's menu. | On · **Off** |
+| Dashes | `transformDashes` | `--` becomes `—` and a spaced ` - ` becomes `–`. | **On** · Off |
+| Arrows | `transformArrows` | `->`, `<-`, `<->`, `>>`, and `<<` become `→`, `←`, `↔`, `»`, and `«`; an arrow list's marker converts either way. | **On** · Off |
+| Equations | `transformEquations` | `>=`, `<=`, `!=` · `/=` · `=/`, `+-` · `-+`, and `~=` become `≥`, `≤`, `≠`, `±`, and `≈`. | **On** · Off |
+| Punctuation | `transformPunctuation` | `!!`, `??`, `?!`, `!?`, and `\|\|` following text become `‼`, `⁇`, `⁈`, `⁉`, and `‖`; a third mark expands the glyph back. | On · **Off** |
+| Ellipses | `transformEllipses` | `...` becomes `…`. | **On** · Off |
+| Callout | `transformCallouts` | `\|\|` at a line's start opens a callout. | **On** · Off |
+| Sections | `transformSections` | `##` becomes `§` away from a line's start, where it opens a heading. | On · **Off** |
+| Bullets | `transformBullets` | A spaced ` ^ ` becomes `•`, following text on the line. | On · **Off** |
+| Brackets | `pairBrackets` | `(`, `[`, and `{` add their closers, and a typed closer steps over its own. | **On** · Off |
+| Markers | `pairMarkers` | Emphasis, code, strikethrough, and highlight markers pair. | **On** · Off |
+| Quotes | `pairQuotes` | `"` and `'` pair. | **On** · Off |
+| Wrap Selections | `wrapSelections` | Typing a pair character over a selection wraps it, within that character's enabled group. | On · **Off** |
+| Delete Pairs Together | `deletePairsTogether` | Backspace inside an empty pair removes both halves. | **On** · Off |
+| Exit On Enter | `exitPairsOnEnter` | Enter moves the caret past the closer of an open pair. | **On** · Off |
+| Show Footnotes By Default | `citationsShown` | Opens a page with its footnotes section showing. A page's own setting outranks this. | On · **Off** |
+| Jump To Citation On Creation | `jumpToCitation` | Carries the caret down to the citation a new footnote just made. | **On** · Off |
+| Highlight Color | `highlightColor` | The wash behind highlighted text. Cleared follows the accent. | Any ramp cell · **the accent** |
+| Checkbox Color | `checkboxColor` | The color checkboxes and switches fill with, the greyscale row included; a checkbox property's own color overrides it. Cleared follows the accent. | Any ramp cell · **the accent** |
+| Code Color | `codeColor` | Inline code and the wash behind it. | Any ramp cell, greyscale included · **red** |
+| Show Line Count In Code Blocks | `codeblockLineCount` | Numbers a code block's content lines. | On · **Off** |
+| HTML Shortcuts | `htmlShortcuts` | Use ⌘/ to insert <!-- --> comments, and auto-close <div> tags. | On · **Off** |
+| Mute Checked Items | `muteCheckedItems` | A checked task reads as done — dimmed and struck through. Drawn, never written. | On · **Off** |
+| Display Unresolved Links As Plain Syntax | `plainUnresolvedLinks` | A link leading nowhere reads as the prose it is written as rather than muted with its syntax showing. Page prose only. | On · **Off** |
+| Heading Link Style | `headingLinkStyle` | How a link naming a heading reads — the page and the heading together, or the heading alone. A link to a heading on its own page reads as the heading either way. | **Page & Heading** · Heading Only |
+| In-Page Heading Resolution | `inPageHeadingResolution` | What reaches a heading on the page being written — link syntax alone, or a bare `§Heading` in prose as well. | **Explicit** · Automatic |
+
+#### Automations
+
+Seated and empty.
+
+#### Shortcuts
+
+Keyboard shortcuts are data: the `commands` object in `settings.json` maps command ids to shortcut specs, with defaults in code (`DEFAULT_COMMANDS`) overlaid by the on-disk block on read, so a malformed, absent, or unrecognized entry falls back to its built-in binding. Specs are `+`-joined modifier chains ending in a key: a single character, or a named key (`plus`, `space`, `arrowup` and the other arrows, `escape`, `enter`, `tab`, `backspace`, `delete`, `home`, `end`, `pageup`, `pagedown`, `f1`–`f12`). One parser in `Core/Actions/commands.ts` reads them for every consumer, and one table spells each named key the way its reader names it: the application menu and the editor's context menu spell Electron accelerators from the table, the editor's formatting keymap binds CodeMirror keys from it, and the window's own key handlers match presses against it, an Option chord by its physical key. A press inside an embedded website that matches one of the window's layout or tab commands is handed to the window rather than the site. A renderer picks a rebinding up as soon as it is read from disk; the native menus take theirs at the next adopt or launch. The leaf is seated and empty; rebinding is hand-edited.
+
+| Command | Key | Description | Binding |
+| --- | --- | --- | --- |
+| New Tab | `new-tab` | Opens a tab. | ⌘N |
+| New Page | `new-page` | Creates a page. | ⌘⇧N |
+| Reload | `reload` | Reloads the window. | ⌘R |
+| Toggle Sidebar | `toggle-sidebar` | Shows and hides the sidebar. | ⌘\ |
+| Actual Size | `actual-size` | Returns the window to its configured interface scale. | ⌘0 |
+| Zoom In | `zoom-in` | Steps the host zoom up. | ⌘+ |
+| Zoom In (Alias) | `zoom-in-alias` | The unshifted zoom-in a US layout reaches. | ⌘= |
+| Zoom Out | `zoom-out` | Steps the host zoom down. | ⌘- |
+| Toggle Ribbon | `toggle-ribbon` | Slides the sidebar's ribbon strip away and back. | ⌘T |
+| Toggle Navigation | `toggle-nav` | Summons the Navigation window. | ⌘O |
+| Toggle Matrix | `toggle-matrix` | Summons the Matrix window. | ⌘⇧M |
+| Toggle Iteration | `toggle-iteration` | Summons the iteration window. | ⌘⇧T |
+| Search | `search` | Opens View Search on the open Collection or Set, or refocuses it. | ⌘F |
+| Next Tab | `next-tab` | Moves to the next tab in visual order. | ⌃Tab |
+| Previous Tab | `previous-tab` | Moves to the previous tab in visual order. | ⌃⇧Tab |
+| Undo Value | `undo-value` | Reverts the last property value, Space link, or panel row order written outside a text field, and restores the last deletion that offered an Undo. | ⌘Z |
+| Inverse Paste | `paste-inverse` | Pastes the opposite way a plain paste behaves. | ⌘⇧V |
+| Bold | `format:bold` | Bolds the selection. | ⌘B |
+| Italic | `format:italic` | Italicizes the selection. | ⌘I |
+| Strikethrough | `format:strikethrough` | Strikes the selection through. | ⌘⇧X |
+| Highlight | `format:highlight` | Highlights the selection. | ⌘L |
+| Inline Code | `format:inlineCode` | Marks the selection as inline code. | ⌘E |
+| Link | `format:link` | Wraps the selection in a link. | ⌘K |
+| Connection | `format:connection` | Wraps the selection in a connection. | ⌘⇧K |
+
+#### Trash
+
+The one frame that is a surface of its own, anchored below the rail's separator. Its body is the deletion record's browser, and its column heading's menu carries the same Style list a view's date column does.
+
+| Setting | Key | Description | Options |
+| --- | --- | --- | --- |
+| Date Column | `trashColumnStyle` | How the browser writes a deletion's date and time. Unset, it follows the Nexus's Date Format and shows the time on its clock, and picking the Nexus's own form or clock returns it to following. | Every date form · Day · 12 Hours · 24 Hours · Hidden |
+
+### Collections
+
+A Collection's own configuration, stored in its `_pagecollection.json` sidecar and set from the container's Configuration pane. A Set carries the same keys in `_pageset.json` at any depth, except `open_in`, which is Collection-owned and proxied by its Sets.
+
+| Setting | Key | Description | Options |
+| --- | --- | --- | --- |
+| Open In | `open_in` | How a page opens from its container. | **Full Page** · Page Preview |
+| Show Title | `view_button` | Whether the view menu button shows the view's name beside its glyph. | **Icon** · Labeled |
+
+The sidecar's remaining fields are structure rather than configuration: the entity's id and icon, its banner, its page and set ordering, its property assignment list, and its saved views.
+
+### Pages
+
+A page's own configuration splits by where it lives: identity and banner in the file, icon and title-icon override in page metadata, chrome per machine.
+
+| Setting | Where | Description | Set from |
+| --- | --- | --- | --- |
+| Icon | `icon` in `.nexus/metadata/MM-YYYY.json` | The page's glyph, shown beside its title. | The header's or a row's Edit Icon |
+| Banner | `banner` in frontmatter, its crop in `.nexus/assets/crops.json` | The banner image and how it is framed. | The header's banner menu |
+| Title icon | `title_icon` in `.nexus/metadata/MM-YYYY.json` | Whether the header draws the glyph, overriding Show Icon In Title; stored only where it differs from the setting. | The header's Hide Icon / Show Icon |
+| Footnotes | `nexus.db` | Whether the citations section shows, overriding Show Footnotes By Default. | The Subfield's Show / Hide Footnotes |
+| Heading folds | `nexus.db` | Which headings are collapsed. | The fold chevrons |
+| Embed heights and Scale | `nexus.db` | Each embedded tile's dragged height and Scale factor, per host page and target. | The tile's edge and grip menu |
+| Heading columns | `nexus.db` | Per-table heading-column choices. | The table grip menu |
+
+### Personalization
+
+The `personalization` object in `settings.json` holds every key the Settings window writes, tabled above, plus the keys the app writes for itself. A key the schema doesn't parse falls back to its default on read.
+
+| Key | Written by | Description |
+| --- | --- | --- |
+| `defaultIcons` | Hand-edited | The per-kind default icon, overriding the built-in seed; an entity's own icon still wins. |
+| `iconFavorites` | The Icon Picker | The picker's icon favorites, in display order. |
+| `setPlacement` · `subSetPlacement` | Hand-edited | Whether a Collection's depth-1 Sets, and a Set's Sub-Sets, sit above (the default) or below their container's loose pages. The folder block stays contiguous. |
+| `sidebarMode` | The ribbon | The sidebar's active content mode, remembered across restarts. |
+| `ribbonOrder` | Drag-to-reorder | The ribbon's icon order below the pinned Homepage; a partial or stale value is repaired on read. |
+
+More keys sit at the settings root beside `personalization`: `excluded_folders`, the anchored Nexus-relative paths the walk, watcher, index, and cascades all skip, written by the Files & Links › Exclusions pane and carried along when the Collection or Set above an entry is renamed, moved, trashed, or restored; and the profile — `profile_image` and `profile_icon` — written from the ribbon's identity menu. Every `settings.json` write serializes through one per-file lock and preserves unrecognized keys by value, so a key one build doesn't know survives the round trip. A `settings.json` that doesn't parse reads as an error rather than as defaults: opening the Nexus waits with the file named until it parses, an open session keeps the settings it last read, and writes leave the file as it is until it's repaired — a Collection or Set rename, move, trash, or restore that would carry an excluded entry refuses before anything moves.
+
+### App Configuration (Per-Device)
+
+Cross-session, machine-local state in `pommora.json` under the app's userData directory (`Desktop/Config/appConfig.ts`): the last-opened Nexus, the roll-off list of recently opened Nexuses behind Open Recent, the delete target — the in-Nexus `.trash` or the system trash — and the device, whose public key, fingerprint, and name identify this install. The device's two private keys — the signing key and the agreement key — sit keychain-encrypted in the same folder's `secrets.json`, beside each bound Nexus's password and its wrapped ring entries. Neither file is ever part of a Nexus and neither syncs. A second class of machine-local state lives in each Nexus's database in the same directory, as preferences for a machine-and-Nexus pair; Use Native Menus is the first.
+
+---
+
+#### Pending
+
+- **Knobs without a row** — default icons and the placement keys are hand-set in `settings.json`, with the watcher applying the change live; both are wireable through the existing setter.
+- **Scopes without a renderer setter** — the profile's image and icon are written from the ribbon's identity menu.
+- **Command rebinding** — data-ready and unbuilt; shortcuts don't ship without per-shortcut sign-off.

@@ -1,0 +1,110 @@
+## Interaction & Motion
+
+
+The named motions and the interaction primitives, built on the duration ladder and the two curves in the design system's `UIX/Animations/` folder. Drag-specific motion — the reorder feel, the insertion line, auto-scroll — belongs to PommoraDND. Motion is Pommora-native, inspired by Apple, and adopted only where it deepens the minimalism: one progress variable drives a coordinated move, one primitive serves each pattern, and the pointer drives what should feel attached to it.
+
+### Motion Tokens
+
+Every permanent transition reads `UIX/Animations/motion.ts` — `duration.fast/menu/base/slow` and `easing.baseEase/baseSnap`, bridged to CSS as `--duration-*`, `--ease-base`, and `--ease-snap`. The Bloom curve in `animations.css.ts` is the one named curve outside the token set: the open-and-close curve both Bloom rungs share. Debounces and zero-delay cleanups are not motion and never take a token.
+
+### Named Animations
+
+Each motion is named for what it does; the code name beside it is what a grep finds.
+
+#### II. Bloom
+
+Pommora's canonical menu open, the `menu-bloom` / `menu-bloom-out` keyframe pair: a zoom from the trigger — scale to 1 plus a fade on the Bloom curve, no blur — run on the `slow` token through the `menuBloom` and `menuBloomClosing` classes. It is symmetric, so a click-off retracts the menu rather than cutting it, and the parent keeps the menu mounted through the exit with `useExitPresence`. The origin is the consumer's: the class reads `--menu-origin`, and a beaked surface (`GlassSurface`'s `notch`) writes its own beak tip there, so a beaked surface blooms from its beak while a plain menu blooms from the point on its anchored edge nearest the trigger. `MenuSurface`, the shell every large toolbar menu mounts, carries this motion. A menu's placement and collision flip are decided once per open, and a picker marks its chosen row with a trailing check, carried only by a list that has a selection so a menu of plain commands keeps its gutter. The accent ring is the saved-views menu's alone, naming the container's active view.
+
+#### II. Menu
+
+The same keyframes and curve on the `menu` token through `bloomOpen` and `bloomClose` — snappier, also symmetric, reading the same origin and retracting through the same `useExitPresence`. Pickers, the autocomplete, and the glance pane take this variant. The overtake sweep the sidebar plays when its mode switches is its own pair, `sidebar-mode-*` in `Core/Interface/Sidebar/sidebar.css`: the incoming mode slides in from the ribbon edge over the sitting content.
+
+#### II. Header Scroll-Park
+
+The page banner and title zone slides up under the toolbar on scroll: a scroll-timeline animation (`header-park` in `Core/Pages/page-header.css`, shared by a page embed's banner) bound to the editor's scroller and ranged over `--header-zone`, the live header height. Compositor-driven, with no duration.
+
+#### II. Floating Windows
+
+Every in-app window opens and closes on the `windowIn` / `windowOut` scale-fade in `Animation`, on the `fast` token, its exit held by `useExitPresence`. The confirmation window takes the same pair, its scrim fading alongside on the same duration. A window that wants its own exit suppresses that scale-out rather than layering a second motion on top: the Page Window's promote plays the **engulf** (`engulfing` in `PageWindow.tsx`), a WAAPI FLIP from the window's live rect onto the detail pane's on the `base` token, and opening the NavWindow over a live Page Window plays the **morph**, the same FLIP between the two windows. A window moves by a press on its bare surfaces: the shell itself, the body, the side panel, and the toolbar spanning the toolbar clearance its host reserves — the Settings window puts its own controls at the top, reserves none, and moves by its inset ring instead. A side pane opens the way the shell's SidePane does — parked off the edge and carried home by the `--io` progress — while the body's content clears that width and a banner runs on beneath the pane.
+
+### Primitives
+
+The interaction layer in `UIX/Interactions/` and `UIX/Animations/`: content-agnostic pointer, scroll, and motion primitives that fields and labels depend down into.
+
+**The `--io` progress:** One registered `@property --io` (0 closed, 1 open) transitions on `--pane-slide` and drives the SidePane's moving parts in lockstep: the SidePane slide, the toolbar trio's swallow as the pill rides the pane's edge, and the trio's glass void. `.shell.is-resizing` sets `--pane-slide` to `0s` for 1:1 cursor tracking during an edge drag, the sidebar collapse is a sibling slide on the same token, and a floating window parks a leading pane on the mirrored `--io-l`.
+
+**Reveal:** `UIX/Animations/Reveal.tsx` is the canonical body open and close: a `grid-template-rows: 0fr ↔ 1fr` transition on the `fast` token, mounting at 0fr and unmounting on `transitionend`, that stops clipping once open so overhanging affordances aren't cut off. It backs the sidebar's nested trees, the settings panes, and the heading-fold body. Disclosure chevrons rotate through the shared `dropOutline` on the same beat, so rotate and unfold land together.
+
+**Hover Reveal:** `UIX/Interactions/hover-reveal.css.ts` and `hoverReveal.ts` show every control that appears on hover, keyboard focus, or the pointer's approach. An element marked `data-reveal-host` scopes the reveal for everything inside it: `""` reveals on its own hover or focus and rests revealed on a touch screen, while `"on"` and `"off"` are written by script. A control takes `revealTarget`, or `revealDim` to rest at the ghost opacity while its host is hovered; it answers to its nearest host alone, ignores the pointer while hidden, and stays shown while `data-reveal-held` marks it engaged. `useHoverReveal` carries the timed cases — a dwell before opening, a grace before closing, and a linger that holds a toggle's control after its own press — and `withinReach` is the one proximity test, at an inline, an edge, and a corner reach.
+
+**Entrance:** `UIX/Animations/useEntrance.ts` names which rows in a list arrived since the last render, so the list hands `enterOnMount` to those alone and a new row discloses in on the same unfold. It compares key sets rather than array identity, so a list rebuilt on every render still reports an arrival once, and a surface's first render seeds silently — an opening pane presents rather than cascading. The exclusion pane, filter rules, page-property rows, option chips, and the property frame's lists all disclose new rows on it.
+
+**PaneSlide:** The sidebar's and the SidePane's in-out: the `--io` progress carries a pane home from its parked edge while the body beside it gives up the width, on the base tokens.
+
+**Resizable:** `UIX/Interactions/useResizable.tsx` is every drag-to-size and drag-to-move gesture in the app — the floating windows' corners and move, a picker pane's free edges, the sidebar, SidePane, and window side-pane strips. A host owns its rect and whatever remembers it, and declares its floor, its ceiling, whether it is **equilateral** (the box holds its origin and grows the same size from either side, as the glance does around its anchor) or free (a pull on a leading edge carries the origin, and `move` carries it alone, clamped so a grab's worth stays on screen), and whether it is **outlined** (the chassis the handles sit in eases its stroke to accent while one is hovered or held). The hook reports each move, the drop, and on Escape the start rect, so a cancelled drag lands back where it began; the handles render as direct children of the box they size, and a strip a host seats itself takes the same handle with only its placement in the host's own CSS. An embed tile's bottom edge is a resizable box too, its rect measured at press (the `rect` may be a function, handed the box the handle sits in) and its floor the tile minimum. A PickerMenu pane opts in through `UIX/Pickers/usePaneResize.tsx`, as the glance, the link autocomplete, and the block menu do: it resizes on each axis it gives a floor, from the edges facing away from its anchor, within the viewport and the room it opened into, and reopens at the size it remembers, an axis it was never pulled on still fitting its content. A list pane applies its height as a ceiling over its rows, so a drag starts from the box on screen and a pull outward keeps the ceiling a short list sits under. Surface tiles keep their own gesture on the same engine — a tile edge is a boundary negotiated with its neighbors, not a box — on the hook's handle classes, so the handles and cursors have one definition.
+
+**FrameSlide:** `UIX/Menus/FrameSlide.tsx` is the two-slot push and back every frame runs on — root and detail on the base tokens — and it nests. Both slots stay mounted and measured, so the target size is known the instant the active slot flips; a slot needing a ceiling or a pinned footer wraps its content in the shared menu scroll frame.
+
+**Scroll Glide:** Travel to a known destination in a document you're already in — the page Outline's jump is its first caller. It shares its module with the drag auto-scroll and its one-owner-at-a-time rule, re-reads the destination every frame so a lazily rendering host's estimate is absorbed into the motion, fixes its beat from the opening distance, and cancels on any real scroll input.
+
+#### II. The Caret
+
+One text-insertion identity for the whole app: every CodeMirror surface mounts the caret layer, and the same bar paints over the native text fields, the inline-rename inputs among them, from a caret layer seated in the focused field's parent, so it travels with the field (`caret.css`, `nativeCaret.ts`, `Core/MarkdownPM/caret.ts`). The drawn caret fades on a symmetric cycle via twin keyframes, swapped on selection change to restart the cycle without reflow; on a fresh focus the overlay settles by re-measuring each frame until the bar holds still.
+
+**SOURCE:** `UIX/Theme/caret.css`
+
+| Title | Token | Value |
+| --- | --- | --- |
+| Bar Thickness | `--caret-width` | `2px` |
+| Fill | `--caret-color` | → `var(--label-primary)` |
+| Blink Cycle | `--caret-gap` | `1.3s` (a blink cycle, outside the duration scale) |
+| Blink | `--caret-blink` | the `caret-blink` animation over one `--caret-gap`, worn by the field bar and the editor's caret layer |
+| I-Beam Cursor | `--caret-cursor` | inline SVG data-URI, hotspot `7 12` |
+
+#### II. Scroll Fade
+
+The edge fade on a scroller: its hidden edge dissolves into the surface along its own scroll timeline. `scroll-fade` works on the block axis and `scroll-fade-x` on the inline axis, and `scroll-fade-gated` holds the leading fade until a full fade-width has scrolled past; `--scroll-fade` is non-inheriting, so the width knob sits on the element carrying the class.
+
+**SOURCE:** `UIX/Interactions/scroll-fade.css`
+
+| Title | Token | Value |
+| --- | --- | --- |
+| Lead / Trail Progress | `@property --scroll-fade-lead` / `--scroll-fade-trail` | `<number>`, non-inheriting, initial `0` |
+| Width Knob | `@property --scroll-fade` | `syntax "*"`, non-inheriting |
+| House Default | `--scroll-fade-default` | `22px` block axis; `--fade-base` inline; `0` under an ellipsis |
+| Axis | `--scroll-fade-dir` | `to bottom` fallback; `to right` on the inline axis |
+
+#### II. OverScroll
+
+The capped label: a label truncates at rest, scrolls sideways under the wheel while hovered to reveal its full text, and slides back to its start on `easeBase` when the pointer leaves, yielding to any other scroll of the label mid-slide. `over-scroll-cap` makes the capped box, which carries the inline scroll fade, and a label that can't hover itself takes the hovered state from an ancestor with `over-scroll-host`. The wheel listener exists only while a label is hovered.
+
+**SOURCE:** `UIX/Interactions/OverScroll.tsx` · `UIX/Interactions/over-scroll.css`
+
+| Title | Token | Value |
+| --- | --- | --- |
+| Read Distance | `--over-scroll-offset` | live `scrollLeft` on the cap; `0px` fallback |
+
+#### II. Hover Remove
+
+The hover-revealed remove ×, with the label-tail melt as an option: the × is its own reveal host over a chip's right third, so hovering there reveals it while the label's tail blurs into the fill beneath it; inside a tab or a menu row it answers to that row instead. It acts on a click only once it is more than half revealed.
+
+**SOURCE:** `UIX/Interactions/HoverRemove.tsx` · `UIX/Interactions/hover-remove.css.ts`
+
+| Title | Token | Value |
+| --- | --- | --- |
+| Melt Ground | `--melt-ground` | what the blurred twin smears into; follows the host's fill |
+| × Ink | `--hover-remove-ink` | `inherit` fallback; a neutral-filled label paints its own |
+
+### Principles
+
+- **One progress variable** drives a coordinated multi-element move rather than N independent transitions that can desync — and it is the variable that transitions, never a property derived from it.
+- **One primitive per pattern** — `Reveal` for expand and collapse, hover reveal for a control shown on hover, the shared Bloom keyframes for a menu open, `FrameSlide` for a drill-down, the drag engine for reorder.
+- **Tokens over literals** — duration and easing come from `motion.ts`; a hardcoded duration in a permanent surface reads a token or justifies a new one.
+- **Compositor- and pointer-driven where it counts** — scroll-park, drag chrome, and edge-resize run 1:1 with input, so motion never lags it.
+
+---
+
+#### Pending
+
+- **Spacing and radius** stay partly ad-hoc pending a Figma lift.
+- **Whether the content insets derive from `--io`** or stay independent per-surface transitions is open.

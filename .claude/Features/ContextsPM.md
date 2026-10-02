@@ -1,0 +1,45 @@
+## Contexts & Spaces
+
+
+The organization layer. A **Context** is a user-defined group — a fresh nexus seeds Areas, Topics, and Projects on open, as ordinary, fully manageable entries — and a **Space** is an individual member inside one Context. Content relates *to* Spaces; no Context contains or parents another, and an entity tags whichever Spaces fit, independently. Contexts carry no pages and assign no properties; a Space is a categorical anchor with a tile surface of its own, links to other Spaces, and property values.
+
+### The Registry Model
+
+Context identity lives in one file, `.nexus/contexts/contexts.json`, modeled by `contextsRegistry` in `Core/Contexts/contexts.ts`: each entry carries an `id` (a minted ULID, seeded and user-created alike), a `title`, an optional `singular` (the seeded three carry one, so their create entries read "New Area" rather than "New Space"), and an optional `icon`, with array position as the display order. Everything else about the layer follows from the filesystem and the files that name a Space.
+
+- **Spaces are folders** at `.nexus/contexts/<Context>/<Space>/`, each gated by a `_space.json` sidecar holding the Space's ID, `$icon`, `$color`, banner, its own relation keys, its property values as bare keys, and `$order`, its panel row order. A folder without the sidecar isn't a Space. The Space's Context is its parent folder and nothing else records it, so re-homing a Space is a move, and a Context rename is a folder rename plus a cascade.
+- **Membership lives in member files** as `<Title>` keys at the root, over an array of bare Space titles — the same shape in a page's frontmatter and in a `_space.json`, where JSON quotes the key. Member files carry IDs; the registry resolves titles at read time, and an emptied key is removed rather than written empty.
+- **Validation is registry membership at read.** A key must exactly match a registry title; a value matches through one normalizer (`normalizeContextValue`) that folds case, whitespace, composition, and scalar drift, so `- 2024` still finds the Space titled "2024". A drifted-but-resolvable value displays and repairs on that file's next context write; an unknown value sits inert. Any other membership shape is a foreign key, preserved and read by nothing. One lookup, built from the tree's groups and held against them, answers every resolution of a key or a Space title, whether the walk's, a write's, or a view's.
+- **Title uniqueness folds case** at create and rename, since the filesystem does; a case-only rename of an entity itself passes.
+
+```yaml
+<Projects>:
+  - Pommora
+```
+
+### Writes
+
+Every Context write runs through `Core/Contexts/contextWrite.ts` and `contextCascade.ts` under per-file locks for each root it rewrites. Tag writes, value writes, Context and Space renames, Space creation and deletion, Context deletion, a page created with Contexts seeded, and Trash restores run one at a time under one lock on the Contexts folder, taken where the mutation is dispatched (`Core/Nexus/mutate.ts`). The lock holds until the walk a write owed is paid, so the next write reads the tree as the last one left it.
+
+- **Membership** — one write per entity kind (a content file, or a Space's sidecar), reconciling the whole root it rewrites. A Space-to-Space link takes the same shape on both sidecars: linking writes the pair, removing strips it, and either half alone reads as a link, completed by the next link write on either Space. A Space is absent from its own picker. It draws one line in the Matrix's Space mode.
+- **Values** — a Space takes a value for any registry property through the same operation a page's value takes, landing as a bare key on its sidecar and reconciled on write, and on a Trash restore, as a page's is; a property's rename, its option edits, and its delete and restore carry a Space's value as they carry a page's.
+- **Renames** are journaled and cascade the title across every context-bearing root — each page's frontmatter and each Space's sidecar — with the registry committed last, so a crash replays forward on the next open, holding its record while a file the replay reads can't be read, and a failed commit reverses the cascade. A rename whose sweep skipped files the journal couldn't record reports them with Try Again, which sends the rename again over what still holds the old title; a property operation's Try Again replays a record instead, since the two registries keep separate journals. Sync hears the folder's move as a rename. The key is renamed where it sits, keeping its position and any comment attached to it.
+- **Cascades open only members.** The content index records every `<Title>` key a page carries and each Space title under it, normalized the way resolution matches, so a rename or unlink sweeps the pages the index names — the holders of a Context's key, or the pages naming one Space — and every Space sidecar, which no index covers; the rewrite changes every spelling that resolution matches, a single value included. Without an index every page is a candidate and the rewrite decides. `queryMembers` in `Core/Index/contentIndex.ts` is the same question asked read-only: the pages holding a Context key, or those tagging a given Space.
+- **Deletes unlink first.** A Space's title, or a Context's whole key and registry entry, is stripped from every member file before the folder moves to the trash, and the stripped membership is captured in the deletion record so a restore re-applies it. Once the folder has moved, every saved view, View Tile, and the Matrix filter drop the deleted Space from their Context rules, or the deleted Context wherever they name it, and a restore brings none of that back. Neither losing a tag nor a rename re-dates the page — the file changes for a schema reason, not an edit.
+- **Creates** — a new Context appends to the registry and opens straight into an inline rename; a new Space is written with its 2×2 tile board seeded.
+
+### Surfaces
+
+Contexts appear in three places, each reading the registry through the walk-resolved tree.
+
+- **Sidebar (Contexts mode)** — every Context renders as a disclosure of Space rows. Group headers drag to reorder the registry, Spaces drag within their group, right-click inside a group creates a Space (labeled from the Context's singular), right-click on the background creates a Context, and the header's native menu carries New, Rename, Edit Icon, and Delete. The sidebar's hover ghost extends beneath a Space row, creating the new Space in that slot, and beneath a Context's header, creating one at the New Space Placement. A Space row's menu opens with **Preview** and **New Tab**, which reads *Open* and leads where the Space already holds a tab, then carries Rename and Edit Icon, then **Spaces ▸** and **Properties ▸**, which set its links and values in place, with its icon picker opening on the row. A Context is a disclosure rather than a destination: selecting one renders nothing.
+- **SpaceView** — selecting a Space renders its banner scaffold over its tile surface, the second tile host beside the Homepage, with a per-Space board lock and its Subfield breadcrumb. One document backs a Space wherever it is shown, so a board open in both the main pane and a window is one board. Below the stacking width it draws as one column in reading order and answers no geometry gesture, as a locked one does.
+- **The Space settings pane** — reached from the toolbar's settings button: the icon and title heading, outlined in the Space's color, over the Properties panel and the footer's board lock and color button. Right-clicking the heading offers Rename, Edit Icon, and Change Color, its color picker opening on the field right-clicked. The app-level Settings window is separate.
+- **Views** — each registry Context is one column, off by default, so creating a Context never changes an existing view. Cells read each row's resolved context values, and chips everywhere wear the Space's icon and assigned color. A page created in a view filtered by one Space joins that Space.
+
+---
+
+#### Pending
+
+- **Space-create labels** — the entries read a stored singular, so a renamed seeded Context keeps its old label.
+- **ContextView and Linked-From** — a Context's own aggregate surface, and the inbound list of every entity tagging a Space. The index answers the page side through `queryMembers`; neither surface exists, and Space sidecars stay outside the index.

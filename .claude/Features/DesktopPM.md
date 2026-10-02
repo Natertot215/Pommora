@@ -1,0 +1,50 @@
+## Desktop
+
+
+What is true only because Pommora is running as a desktop app: the process that owns the machine, the window it draws into, native menus, the file watcher, and packaging. Per-domain depth lives in each domain's own document.
+
+### The Shape of the App
+
+Two programs share one window. The **host** (`Desktop/main.ts`) is the one that touches the computer: it creates the window, registers the `nexus-asset://` protocol, holds the single-instance lock, pops native menus, and implements the machine seam Core reads and writes files through. The **window** is the React app, drawing everything and holding the working state, unable to touch a file directly. Between them sits a deliberately narrow **bridge** (`Desktop/Bridge`, typed by `Core/Contract/bridge.ts`): the window asks, the host answers, and every ask is declared in one shared contract both sides compile against.
+
+**Platform.** `Desktop/Platform` implements Core's machine seam — `nodeMachine.ts` for the filesystem over `node:fs`, `fileLock.ts` for the in-process advisory lock, `hostPath.ts` for the one conversion between the host's native path spelling and Core's forward-slash spelling. `nodeMachine.test.ts` runs it against the `Machine` contract suite in `Core/Testing`, the same proof a second host applies to its own implementation.
+
+**Bridge.** Every channel is declared once, in a types-only map (`Core/Contract/bridge.ts`): its direction, what it carries, and what it answers with. `Desktop/Bridge/preload.ts` derives the `window.nexus` dialer's `ask`, `tell`, and `on` from that map, and `ipc.ts` registers every handler through one loop that demands a handler per channel, so a channel on only one side or a drifted signature is a build error. Every channel answers with the `Result` envelope — the value, or a structured refusal naming what went wrong — and never throws across the boundary; a handler is typed to receive unknowns, so what the window sent is narrowed before it acts, and a tell that throws is logged rather than taking main down.
+
+**The Push Path.** Change flows one way. The window asks; the host writes, each write noting itself as a file event, and the write's gate settles what moved and pushes it before the reply leaves — the app's own writes and the watcher share that one path. The tree reaches the window as a versioned difference, and a window that missed a version asks for the whole tree. The window's structural-sharing pass then collapses unchanged subtrees to their previous identities, so an echoed push re-renders nothing and a real change re-renders only what moved.
+
+### The Store
+
+`Desktop/Store` is the SQLite seam. `driver.ts` wraps `node:sqlite` — Electron's own runtime, so there is no native module to rebuild — and `ddl.ts` holds the schema. `sessionDb.ts` opens `nexus.db` for this machine's chrome and the content index; `versionsDb.ts` opens `versions.db` for page file history. Both open from `<userData>/Nexuses/<nexusId>/`, and `nexus.db` records the Nexus root it last opened, so a Nexus opened from another folder, moved or copied, keeps its state and starts with an empty `sync` table. `stores.test.ts` runs the key-value, content-index, and snapshot stores against the store contract suites in `Core/Testing`, holding the SQL to the behavior any host's implementation must meet.
+
+### The File Watcher
+
+Out-of-band changes — Obsidian, vim, Finder, cloud sync — reach the app without a restart through a recursive watch on the Nexus root (`Desktop/FileWatch/watcher.ts`). The database and its WAL siblings, `.trash`, `node_modules`, dotfiles, the contents of `_`-prefixed folders, and the user's excluded folders are ignored at intake; `.nexus/` itself stays watched, since Contexts, settings, and ordering live there, and so does the asset directory. Every event reaches the sync client's tap first, above the write-echo check, so the app's own writes are offered to the transport; a tile body stays out of the tree's own work, an outside change to one pushing its host instead, and `.trash` reaches the tap through the write funnel, since it is unwatched. Past the tap, the watcher skips the app's own writes, since each applied as it landed: a write is recognized by the bytes it left, while the file still holds them, and a move or rename by its path for a short window; between writes, the newest on-disk state wins. Events accumulate through a debounced settle, then apply one at a time through the same path the app's own writes take: each maintains the content index and patches the live tree from the one file it changed — a page, a folder, a sidecar, a Space, the registries, the order record, and the settings, homepage, crops, and metadata leaves — and an asset event patches that folder's listing. What a batch listed as missing an ID is stamped before the batch settles. An event no arm can place — a Space or Context leaving, a registry entry arriving from outside, a change to the exclusion scope or asset directory, a sidecar vanishing from a folder that remains, a page that exists but can't be read — owes a verification walk that reuses the parse of any page or sidecar whose mtime and size are unchanged, and the rest of the batch still applies. Identity survives an external rename because the id rides in the file itself. An open waiting on a damaged hand-authored file watches that Nexus's `.nexus/` folder alone, and opens it through Open Recent's path once the files parse.
+
+### Actions
+
+The host answers one `menu` channel, and `menu.ts` is the one popper behind it: it takes the row model any Core menu emits, converts it to an Electron template, pops it under the anchor the request carries or at the cursor when it carries none, and resolves to the action chosen or to nothing. Every menu in the window opens through one door, which decides what reaches the channel: a press with no trigger element — every right-click on content — always pops natively, while a menu hanging from a control pops natively only while Use Native Menus is on and otherwise draws in the window's own presenter, which the host never sees. `appMenu.ts` builds the application menu and `editorMenu.ts` pops the editor's context menu for the editor that asked. Both spell their accelerators from Core's one chord table, read once per menu refresh, and the labels and gating live in Core's tested models, so the window and the host cannot disagree about what a menu says or what a shortcut is.
+
+### Web
+
+`Desktop/Web/webGuests.ts` owns every `<webview>` guest: one shared session partition, media pause on tab switch, popup denial routed back to Core's link adjudicator, and zoom, including the mapping of the Interface Scale setting onto Electron's zoom factor. `linkTitles.ts` fetches a URL's page title once and caches it → [[WebviewPM]]
+
+### Capture
+
+`Desktop/Capture/thumbnails.ts` renders a page to an offscreen image for the Navigation gallery's card previews.
+
+### Config
+
+`Desktop/Config/appConfig.ts` reads and writes `pommora.json` in the app's own support folder — the last Nexus opened, the recent list, the trash mode, and the device. It belongs to the app rather than to any Nexus, so it holds no matter which one is open.
+
+`secrets.ts` holds the values the config must not carry in the clear: `secrets.json` sits beside `pommora.json` and each value is encrypted by the OS keychain through Electron's `safeStorage`, so the config file itself stays hand-readable. `device.ts` mints one Ed25519 key per install through WebCrypto — the public half, its SHA-256 fingerprint as the device id, and the machine's hostname go into `pommora.json`, the PKCS8 private half into the secret store under `device-key`, and the key lives on in the host process as a `CryptoKey` the module never hands out. An X25519 agreement key is minted beside it under `device-x25519`, its public half carried in `pommora.json` as well, so an approving device can wrap the Nexus key ring to this one. The store also holds a Nexus's password and its wrapped ring entries, under `sync:<nexusId>:password` and `sync:<nexusId>:ring`. A config naming a key the secret store no longer holds is a lost identity: the host reports it once and mints again; a key the store holds but cannot decrypt, or a secret store that doesn't parse, leaves the launch identity-less and reported, and the files untouched. A `pommora.json` that doesn't parse is left as it is, and recents stop saving until it's repaired. The host hands the result to Core as two `HostContext` members, `device` — id, public key, name, `sign`, `agree`, and `rename` — and `transport`. The transport sends one request over `node:http` or `node:https`, carries bytes in both directions, and takes an optional certificate fingerprint, which it checks against the peer certificate on a fresh and on a reused socket alike; a pinned request needs an `https:` address. Neither private key leaves the host; Core sees a base64url signature or a shared secret.
+
+### Packaging
+
+`electron.vite.config.ts` builds the three bundles — main, preload, renderer — and `electron-builder.yml` packages them, taking its build resources from `Desktop/build/` and flipping Electron's Node-surface fuses off in the packaged binary alone. Core and UIX are `devDependencies` of Desktop rather than dependencies, because electron-vite externalizes every runtime dependency and Electron's own Node refuses TypeScript under `node_modules`; as dev dependencies they are bundled instead, from source.
+
+The app icon is `Desktop/build/Pommora.icon`, an Icon Composer document whose single layer is the Pommora mark; `electron-builder` compiles it into the bundle's asset catalog, and macOS renders the container, material, and lighting from it. A development launch shows Electron's own icon regardless of the bundle, so the host hands the Dock `Desktop/build/icon.png`, a render of the same document inset to Apple's icon grid. `npm run icon` regenerates both from the mark's geometry.
+
+### Renderer
+
+`Desktop/Renderer` is the entry point alone: `index.html`, `main.ts` calling Core's `mountApp` after `zodConfig.ts` turns off zod's eval probe, and the Vite environment types.
