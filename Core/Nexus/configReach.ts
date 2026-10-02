@@ -322,16 +322,14 @@ const cacheEdit = (e: OptionReach, cur: Raw): Raw | null =>
 
 type Container = { kind: 'collection' | 'set'; id: string; dir: string }
 
-const reaches =
-  (under?: string) =>
-  (dir: string): boolean =>
-    !under || dir === under || dir.startsWith(`${under}/`)
+const reaches = (dir: string, under?: string): boolean =>
+  !under || dir === under || dir.startsWith(`${under}/`)
 
 function containersOf(tree: NexusTree, root: string, under?: string): Container[] {
   return tree.collections
     .flatMap(within)
     .map((node) => ({ kind: node.kind, id: node.id, dir: join(root, node.path) }))
-    .filter(({ dir }) => reaches(under)(dir))
+    .filter(({ dir }) => reaches(dir, under))
 }
 
 export async function reachConfig(
@@ -347,7 +345,7 @@ export async function reachConfig(
   }
   const tiles = tileHostsOf(root, tree)
   // A Collection or Set whose sidecar doesn't parse is out of the tree and this pass can't reach it, so each counts as a skip and the journal keeps the change owed until it reads.
-  const damaged = damagedFolders(tree.unreadable).filter((u) => reaches(under)(join(root, u.path)))
+  const damaged = damagedFolders(tree.unreadable).filter((u) => reaches(join(root, u.path), under))
   const reach: ConfigReach = { skipped: tiles.unreadable + damaged.length, hosts: [] }
   const written = async (path: string, mutate: (cur: Raw) => Raw | null): Promise<boolean> => {
     const outcome = await editJsonStrict(path, mutate).catch((err): StrictEdit => {
