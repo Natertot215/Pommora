@@ -1,6 +1,5 @@
 // A write displaces nothing it can't read and no different stranded record — its owed heal outranks the op now starting, which runs unjournaled — while a corrupt slot is set aside by the next write, and a clear lands only for the caller's own record.
 import { readJsonStrictly, setAside, type StrictMiss, writeJson } from '../Files/atomicWrite'
-import { recordWrite } from '../Files/writeEcho'
 import { machine } from '../Platform/machine'
 import { nexusConfig } from '../Paths/paths'
 
@@ -44,8 +43,6 @@ export function journalSlot<J>(
       machine().lock(path(root), async () => {
         const h = await held(root)
         if (h.kind !== 'held' || !same(h.record, own)) return
-        // The unlink is a `.nexus` event the watcher classifies full-refresh; echo it away.
-        recordWrite(path(root))
         await machine().remove(path(root))
       }),
   }
