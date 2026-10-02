@@ -23,6 +23,6 @@ jobs:
       - run: pip install git-filter-repo
       - run: >
           git filter-repo --force --refs active --invert-paths
-          --path .claude/ --path .github/
+          --path .claude/ --path .github/ --path Dashboard/
           --path-regex '(?i)(^|/)[^/]*(testing|tests)/|\.(test|spec)\.[cm]?[jt]sx?$|(^|/)vitest\.(config|setup)\.[cm]?[jt]s$'
       - run: git push --force "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" active:main
