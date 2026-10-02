@@ -26,28 +26,6 @@ function cachedIds(meta: Record<string, unknown>): string[] | undefined {
   return ids.length ? ids : undefined
 }
 
-// An `active_view` naming no view in `views` is carried verbatim; pickView already falls back.
-export function containerFieldsFrom(
-  meta: Record<string, unknown>,
-  sets: SetNode[],
-  pages: PageNode[],
-): Omit<SetNode, 'kind' | 'id' | 'title' | 'path'> &
-  Required<Pick<SetNode, 'sets' | 'headingIconHidden' | 'disclosureLocked'>> {
-  return {
-    icon: asString(meta.icon),
-    banner: asString(meta.banner),
-    headingIconHidden: meta.heading_icon_hidden === true,
-    sets: resolveOrder(sets, asStringArray(meta.set_order)),
-    pages: resolveOrder(pages, asStringArray(meta.page_order)),
-    setOrder: asStringArray(meta.set_order),
-    pageOrder: asStringArray(meta.page_order),
-    views: parseViews(meta.views),
-    viewButton: coerceViewButton(meta.view_button),
-    disclosureLocked: meta.disclosure_locked === true,
-    activeView: asString(meta.active_view),
-  }
-}
-
 function resolveAssignedSchema(
   ids: unknown,
   registry: PropertyRegistry,
@@ -60,6 +38,7 @@ function resolveAssignedSchema(
   return defs.length ? defs : undefined
 }
 
+// An `active_view` naming no view in `views` is carried verbatim; pickView already falls back.
 export function containerNodeFrom(
   kind: ContainerKind,
   at: { title: string; path: string },
@@ -70,7 +49,21 @@ export function containerNodeFrom(
 ): CollectionNode | SetNode | null {
   const id = asString(meta.id)
   if (!id) return null
-  const shared = { id, ...at, ...containerFieldsFrom(meta, sets, pages) }
+  const shared = {
+    id,
+    ...at,
+    icon: asString(meta.icon),
+    banner: asString(meta.banner),
+    headingIconHidden: meta.heading_icon_hidden === true,
+    sets: resolveOrder(sets, asStringArray(meta.set_order)),
+    pages: resolveOrder(pages, asStringArray(meta.page_order)),
+    setOrder: asStringArray(meta.set_order),
+    pageOrder: asStringArray(meta.page_order),
+    views: parseViews(meta.views),
+    viewButton: coerceViewButton(meta.view_button),
+    disclosureLocked: meta.disclosure_locked === true,
+    activeView: asString(meta.active_view),
+  }
   if (kind === 'set') return { kind, ...shared }
   return {
     kind,
