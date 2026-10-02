@@ -1768,6 +1768,27 @@ describe('handleMutate — setProperty (the D-4 cross-group reassignment write)'
     expect(splitFrontmatter(await read('Notes/Daily/Beta.md')).Stage).toBeUndefined()
   })
 
+  it('answers that the page could not be read when its file refuses the read', async () => {
+    const file = join(root, 'Notes/Daily/Beta.md')
+    await refreshTree(root)
+    await chmod(file, 0o000)
+    try {
+      const r = await handleMutate(
+        root,
+        {
+          op: 'setProperty',
+          path: 'Notes/Daily/Beta.md',
+          propertyId: 'prop_s',
+          value: { kind: 'select', value: 'done' },
+        },
+        nexusDeps,
+      )
+      expect(r).toMatchObject({ ok: false, error: { message: 'That page could not be read.' } })
+    } finally {
+      await chmod(file, 0o644)
+    }
+  })
+
   it('an emptied value clears the key on disk — the file never holds a [] placeholder', async () => {
     await settledMutate(
       root,

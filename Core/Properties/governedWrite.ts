@@ -6,8 +6,7 @@ import {
   type GovernedWorld,
 } from '../Contexts/contextResolve'
 import type { Adoption } from './propertyValue'
-import { atomicWriteFile } from '../Files/atomicWrite'
-import { machine } from '../Platform/machine'
+import { atomicWriteFile, readTextOrNull } from '../Files/atomicWrite'
 import { mergeFrontmatter, splitEnvelope, splitFrontmatter } from '../Files/pageFile'
 
 export async function setGovernedRootKeys(
@@ -16,8 +15,8 @@ export async function setGovernedRootKeys(
   govern: readonly string[],
   world?: GovernedWorld,
 ): Promise<Adoption[]> {
-  const existing = await machine().readText(absFile)
-  if (existing === null) throw new Error(`Page not found: ${absFile}`)
+  const existing = await readTextOrNull(absFile)
+  if (existing === null) throw new Error('That page could not be read.')
   const raw = splitFrontmatter(existing)
   const own = Object.fromEntries(Object.entries(raw).filter(([k]) => !govern.includes(k)))
   const reconciled = world
