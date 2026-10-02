@@ -112,6 +112,8 @@ export const FILTER_OPS = {
   lessThan: 'less_than',
   onOrAfter: 'on_or_after',
   onOrBefore: 'on_or_before',
+  endsOnOrAfter: 'ends_on_or_after',
+  endsOnOrBefore: 'ends_on_or_before',
   startsWith: 'starts_with',
   containsAll: 'contains_all',
   containsAny: 'contains_any',

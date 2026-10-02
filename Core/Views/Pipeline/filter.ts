@@ -18,7 +18,7 @@ import { isBlankValue, type PropertyValue, type ValueKind } from '../../Properti
 import { declaredType, resolveFieldValue } from '../../Properties/value'
 import type { SetTreeNode } from './group'
 import { linkDisplayText } from '../../Connections/linkValue'
-import { type LocalDate, readDate, startOfDay } from '../../Properties/formatValue'
+import { dayMs, readDate } from '../../Properties/formatValue'
 import { foldKey } from '../../Paths/caseFold'
 import { numberFrom } from '@pommora/uix/Pickers/numberUnit'
 
@@ -184,9 +184,7 @@ function evaluateNumber(v: PropertyValue, op: string, want: string[]): boolean {
   }
 }
 
-const dayMs = (d: LocalDate): number => startOfDay(d.at).getTime()
-
-/** Days are the local days the cells show. `is` compares days; a bare-day operand orders by day, and one carrying a time orders by instant. */
+/** Days are the local days the cells show. `is` matches a day the value spans; a bare-day operand orders by day, and one carrying a time orders by instant. The Starts ops and the strict pair read a span's start, the Ends ops its end. */
 function evaluateDate(v: PropertyValue, op: string, want: string[]): boolean {
   const value = v.kind === 'dateTime' ? readDate(v.value) : null
   switch (op) {
@@ -197,20 +195,33 @@ function evaluateDate(v: PropertyValue, op: string, want: string[]): boolean {
   }
   const target = readDate(want[0])
   if (target === null) return true
-  const ms = (x: LocalDate): number => (target.timed ? x.at.getTime() : dayMs(x))
-  const d = value && ms(value)
-  const e = ms(target)
+  const ms = (x: Date): number => (target.timed ? x.getTime() : dayMs(x))
+  const last = value && (value.end ?? value.at)
+  const start = value && ms(value.at)
+  // A clockless end holds its whole day, so a timed operand meets it at the day's last instant.
+  const end =
+    last &&
+    (value.timed || !target.timed
+      ? ms(last)
+      : new Date(last.getFullYear(), last.getMonth(), last.getDate() + 1).getTime() - 1)
+  const e = ms(target.at)
   switch (op) {
-    case FILTER_OPS.is:
-      return value !== null && dayMs(value) === dayMs(target)
+    case FILTER_OPS.is: {
+      const day = dayMs(target.at)
+      return value !== null && dayMs(value.at) <= day && day <= dayMs(value.end ?? value.at)
+    }
     case FILTER_OPS.isBefore:
-      return d !== null && d < e
+      return start !== null && start < e
     case FILTER_OPS.isAfter:
-      return d !== null && d > e
+      return start !== null && start > e
     case FILTER_OPS.onOrAfter:
-      return d !== null && d >= e
+      return start !== null && start >= e
     case FILTER_OPS.onOrBefore:
-      return d !== null && d <= e
+      return start !== null && start <= e
+    case FILTER_OPS.endsOnOrAfter:
+      return end !== null && end >= e
+    case FILTER_OPS.endsOnOrBefore:
+      return end !== null && end <= e
     default:
       return true
   }

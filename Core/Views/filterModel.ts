@@ -96,11 +96,13 @@ const TEXT_OPS: OperatorChoice[] = [
   { op: FILTER_OPS.doesNotContain, label: "Doesn't Contain", slot: 'text' },
 ]
 
-/** Before/After are the inclusive ops — the strict variants stay registered for hand-authored files, but the frame doesn't offer a second near-identical pair. */
+/** The Starts and Ends ops are inclusive — the strict variants stay registered for hand-authored files, but the frame doesn't offer a second near-identical set. */
 const DATE_OPS: OperatorChoice[] = [
   { op: FILTER_OPS.is, label: 'Is', slot: 'date' },
-  { op: FILTER_OPS.onOrBefore, label: 'Before', slot: 'date' },
-  { op: FILTER_OPS.onOrAfter, label: 'After', slot: 'date' },
+  { op: FILTER_OPS.onOrBefore, label: 'Starts Before', slot: 'date' },
+  { op: FILTER_OPS.onOrAfter, label: 'Starts After', slot: 'date' },
+  { op: FILTER_OPS.endsOnOrBefore, label: 'Ends Before', slot: 'date' },
+  { op: FILTER_OPS.endsOnOrAfter, label: 'Ends After', slot: 'date' },
   ...EMPTIES,
 ]
 
