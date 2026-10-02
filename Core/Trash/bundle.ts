@@ -72,5 +72,5 @@ export async function discardFile(
     recordWrite(absPath)
     await deps.trashToSystem(absPath)
   }
-  await noteOwn({ event: 'unlink', absPath, own: {} })
+  await noteOwn({ event: 'unlink', absPath, origin: 'own' })
 }

@@ -19,6 +19,7 @@ export function setWriteTap(next: WriteTap | null): void {
   tap = next
 }
 
+// Recorded before the bytes land, so no echo of the landing arrives ahead of its record; `noteOwn` follows the landing, so its event reports the file as it now stands.
 export function recordWrite(absPath: string, content?: string | Uint8Array): void {
   recent.set(absPath, {
     at: Date.now(),
@@ -33,12 +34,13 @@ export function recordWrite(absPath: string, content?: string | Uint8Array): voi
 
 export const reportRename = (absFrom: string, absTo: string): void => tap?.renamed(absFrom, absTo)
 
-export interface Changed {
-  event: 'add' | 'change' | 'unlink' | 'addDir' | 'unlinkDir'
-  absPath: string
-  written?: string
-  own?: { text?: string; bodyOnly?: boolean }
-}
+export type ChangeEvent = 'add' | 'change' | 'unlink' | 'addDir' | 'unlinkDir'
+
+// The app's own event carries the text it wrote, since its writer still holds the file's lock.
+export type Changed = { event: ChangeEvent; absPath: string } & (
+  | { origin: 'watched'; written?: string; text?: never; bodyOnly?: never }
+  | { origin: 'own'; text?: string; bodyOnly?: boolean; written?: never }
+)
 
 export interface Moved {
   event: 'move'
@@ -62,8 +64,8 @@ export function setWatchTap(fn: ((ev: Changed) => void) | null): void {
   watchTap = fn
 }
 
-export function emitWatch(event: Changed['event'], absPath: string): void {
-  watchTap?.({ event, absPath })
+export function emitWatch(event: ChangeEvent, absPath: string): void {
+  watchTap?.({ event, absPath, origin: 'watched' })
 }
 
 const held = (absPath: string): Echo | undefined => {
@@ -93,9 +95,7 @@ export function isRecentWrite(absPath: string): boolean {
 export const writtenHash = (absPath: string): string | undefined => held(absPath)?.hash
 
 /** Drops the events whose file still holds exactly the bytes their arrival named, however late the settle runs. */
-export async function dropOwnEchoes<E extends { absPath: string; written?: string }>(
-  events: E[],
-): Promise<E[]> {
+export async function dropOwnEchoes(events: Changed[]): Promise<Changed[]> {
   const kept = await Promise.all(
     events.map(async (e) => {
       if (e.written === undefined) return true

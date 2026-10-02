@@ -38,7 +38,7 @@ import { join } from '../Paths/posix'
 import { isPlainObject, listOf } from '../Contract/validators'
 import type { CollectionNode, NexusTree, SetNode } from './tree'
 import type { CascadeReport } from './cascade'
-import type { HeldKind } from './entities'
+import type { ContainerKind, HeldKind } from './entities'
 import { containerAt, contextAt, damagedFolders, spaceAt } from './treePatch'
 
 // ── Roles ──
@@ -320,7 +320,7 @@ const cacheEdit = (e: OptionReach, cur: Raw): Raw | null =>
     return touched ? values : null
   })
 
-type Container = { kind: 'collection' | 'set'; id: string; dir: string }
+type Container = { kind: ContainerKind; id: string; dir: string }
 
 const reaches = (dir: string, under?: string): boolean =>
   !under || dir === under || dir.startsWith(`${under}/`)

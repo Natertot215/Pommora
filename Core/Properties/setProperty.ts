@@ -1,7 +1,5 @@
 import { machine } from '../Platform/machine'
 import { liveTreeOf, mutableTarget } from '../Nexus/liveTree'
-
-import { isMarkdownFile } from '../Paths/posix'
 import { governedWorldOf, repairedSpace, writeSpaceSidecar } from '../Contexts/contextWrite'
 import { spaceWorldOf } from '../Contexts/contextResolve'
 import { noShape, updatePageProperty } from '../Nexus/page'
@@ -35,18 +33,24 @@ export async function setSpaceProperty(
   return written
 }
 
-export async function setPropertyOp(
+export async function setSpacePropertyOp(
   { root }: MutateContext,
   req: Extract<MutateRequest, { op: 'setProperty' }>,
 ): Promise<MutateReply> {
-  const resolved = await mutableTarget(root, req.path, ['page', 'space'])
+  const resolved = await mutableTarget(root, req.path, ['space'])
   if (!resolved.ok) return resolved
-  if (!isMarkdownFile(req.path)) {
-    const def = (await readRegistry(root)).defs[req.propertyId]
-    if (!def) return NO_PROPERTY
-    return done(await setSpaceProperty(root, resolved.value, def, req.value))
-  }
-  // Resolved inside the lock: a rename sweeps on its own chain, so a name read before the lock can send the write to a key the sweep has already passed.
+  const def = (await readRegistry(root)).defs[req.propertyId]
+  if (!def) return NO_PROPERTY
+  return done(await setSpaceProperty(root, resolved.value, def, req.value))
+}
+
+export async function setPagePropertyOp(
+  { root }: MutateContext,
+  req: Extract<MutateRequest, { op: 'setProperty' }>,
+): Promise<MutateReply> {
+  const resolved = await mutableTarget(root, req.path, ['page'])
+  if (!resolved.ok) return resolved
+  // Resolved inside the lock: a rename sweeps under the schema lock, not this one, so a name read before the lock can send the write to a key the sweep has already passed.
   const adoptions = await machine().lock(resolved.value, async () => {
     const def = (await readRegistry(root)).defs[req.propertyId]
     if (!def) return NO_PROPERTY

@@ -134,9 +134,8 @@ async function setSpaceContext(
   const written = await writeSpaceSidecar(join(root, a.path), (raw) =>
     setOrDrop(repairedSpace(raw, world, adoptions, [key]), key, value),
   )
-  if (!written.ok) return written
   await applyAdoptions(root, adoptions)
-  return ok(skipped)
+  return written.ok ? ok(skipped) : written
 }
 
 export async function setContextOp(

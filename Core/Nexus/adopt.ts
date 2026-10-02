@@ -3,7 +3,7 @@ import { fault, ok, type Result } from '../Contract/result'
 import { machine } from '../Platform/machine'
 import { isContentFile, listEntries } from '../Files/walk'
 import { ID_KEY } from './identityMark'
-import type { ContainerKind, ContentKind } from './entities'
+import type { ContainerKind, ContentKind, FolderNodeKind } from './entities'
 import { contentIdAt, newId } from './ids'
 import type { Unreadable } from './tree'
 import {
@@ -93,7 +93,7 @@ export async function ensurePageId(absFile: string): Promise<Result<string>> {
 
 type AdoptableKind = Exclude<FolderKind, 'unknown'>
 
-async function stampFolder(absDir: string, kind: ContainerKind | 'space'): Promise<boolean> {
+async function stampFolder(absDir: string, kind: FolderNodeKind): Promise<boolean> {
   const file = sidecarPath(absDir, kind)
   if (kind !== 'space' && !(await pathExists(file))) await migrateContainerSidecar(absDir, kind)
   const written = await rmwJsonStrict(
@@ -159,6 +159,7 @@ async function stampTree(
   }
 }
 
+// Before the open's read: the walk stops at a folder with no sidecar and never lists an Agenda file, so these are stamped first and the read lists every page missing its ID, which `stampMissing` stamps.
 export async function stampAdopted(root: string): Promise<void> {
   const scope = scopeOf(await readSettings(root))
   const identity = await readIdentity(root)

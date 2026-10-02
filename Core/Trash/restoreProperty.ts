@@ -1,7 +1,7 @@
 import { propertyDefinition } from '../Properties/properties'
 import { patchSidecar } from '../Files/sidecar'
 import { fail, ok, type Result, fault } from '../Contract/result'
-import { readRegistry } from '../Properties/propertiesRegistry'
+import { readRegistry, serializeSchemaOp } from '../Properties/propertiesRegistry'
 import type { RecordFile } from './record'
 import { projectBaseline } from '../Nexus/remintLedger'
 import { liveTreeOf } from '../Nexus/liveTree'
@@ -12,7 +12,6 @@ import { patchCacheBlock } from '../Properties/propertyCache'
 import { isBlankRaw, namesGonePage } from '../Properties/propertyValue'
 import type { StrippedLink } from '../Nexus/cascade'
 import { createProperty } from '../Properties/registryProperty'
-import { serializeSchemaOp } from '../Properties/schemaChain'
 
 type PropertyRecord = Extract<RecordFile, { entity: 'property' }>
 
@@ -27,7 +26,7 @@ export function restoreProperty(
   root: string,
   record: PropertyRecord,
 ): Promise<Result<RestoredProperty>> {
-  return serializeSchemaOp(() => restoreInner(root, record))
+  return serializeSchemaOp(root, () => restoreInner(root, record))
 }
 
 async function restoreInner(

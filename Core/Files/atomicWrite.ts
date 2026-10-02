@@ -21,7 +21,7 @@ export async function atomicWriteFile(
   bodyOnly = false,
 ): Promise<void> {
   await land(filePath, data)
-  await noteOwn({ event: 'change', absPath: filePath, own: { text: data, bodyOnly } })
+  await noteOwn({ event: 'change', absPath: filePath, origin: 'own', text: data, bodyOnly })
 }
 
 export async function rewritePreservingTimes(filePath: string, data: string): Promise<void> {
@@ -34,7 +34,7 @@ export async function rewritePreservingTimes(filePath: string, data: string): Pr
     .catch(() => {})
   forgetParse(filePath)
   // After the times settle, so the index records the stat the file keeps.
-  await noteOwn({ event: 'change', absPath: filePath, own: { text: data } })
+  await noteOwn({ event: 'change', absPath: filePath, origin: 'own', text: data })
 }
 
 export async function landBytes(
@@ -52,7 +52,7 @@ export async function landBytes(
 export async function atomicWriteBinary(filePath: string, data: Uint8Array): Promise<void> {
   recordWrite(filePath, data)
   await machine().writeBytes(filePath, data)
-  await noteOwn({ event: 'add', absPath: filePath, own: {} })
+  await noteOwn({ event: 'add', absPath: filePath, origin: 'own' })
 }
 
 /** Under the SOURCE path's lock, the same key every other write to it takes: a write queued behind the move fails not-found rather than recreating the vacated file as a ghost. `landed` runs before sync hears of the rename, so it pushes under what the landing settled. */
@@ -84,8 +84,10 @@ export function parseJsonObject(text: string): Record<string, unknown> | null {
   }
 }
 
+export const jsonText = (value: unknown): string => `${stableStringify(value)}\n`
+
 export async function writeJson(filePath: string, value: unknown): Promise<void> {
-  await atomicWriteFile(filePath, `${stableStringify(value)}\n`)
+  await atomicWriteFile(filePath, jsonText(value))
 }
 
 type StrictRead =

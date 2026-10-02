@@ -1,7 +1,7 @@
 import { basename, join } from '../Paths/posix'
 import { ID_KEY } from './identityMark'
 import type { EntityRecord } from './record'
-import type { ContainerKind, HeldKind } from './entities'
+import type { FolderNodeKind, HeldKind } from './entities'
 import { mutateRegistryFile } from '../Contexts/contextsRegistry'
 import { errText } from '../Contract/result'
 import { copyEntry } from '../Tiles/tilesFile'
@@ -102,7 +102,7 @@ async function remintContextEntry(
 
 async function remintSidecar(
   absFolder: string,
-  kind: ContainerKind | 'space',
+  kind: FolderNodeKind,
   oldId: string,
   fresh: string,
 ): Promise<boolean> {

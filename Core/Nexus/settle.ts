@@ -1,4 +1,4 @@
-// The one place a change to the tree, pages, values, tiles, or assets reaches the window. The app's own writes land here as events while they happen; a write's gate and the watcher's batch then stamp what their events listed missing, and settle: the walk the events owed, whose own listing of a folder missing its ID is stamped and settled in turn, and one push of what moved.
+// The one place a change to the tree, pages, values, tiles, or assets reaches the window. The app's own writes land here as events while they happen; a write's gate and the watcher's batch then stamp what their events listed missing, and settle: the walk the events owed, whose own listing of what is missing its ID is stamped as `stampable` allows and settled in turn, and one push of what moved.
 
 import { relDirname, relative } from '../Paths/posix'
 import { escapes } from '../Paths/pathSafety'
@@ -9,11 +9,11 @@ import { getHeldAssetMap, refreshAssetMap } from '../Assets/assetMap'
 import { seedContentIndex } from '../Index/indexSeed'
 import { dropTileHeadingLinks } from '../Tiles/tilesFile'
 import { stampMissing } from './adopt'
-import { applyEvents, indexEvent, nothingOwed, owedFor } from './fileEvents'
+import { applyEvents, indexEvent, nothingOwed, owedFor, stampable } from './fileEvents'
 import { diskMoved, dropLiveTree, heldTreeOf, refreshAfterWrite } from './liveTree'
 import { adopting, sessionRoot } from './session'
 import type { NexusTree, Unreadable, ValueChange } from './tree'
-import { diff } from './treeDelta'
+import { deltaOf } from './treeDelta'
 import { liveIdIndex } from './heldPages'
 
 // ── The app's own events ──
@@ -21,14 +21,18 @@ import { liveIdIndex } from './heldPages'
 async function applyOwn(ev: FileEvent): Promise<void> {
   const root = sessionRoot()
   if (root === null || escapes(relative(root, ev.absPath))) return
-  // Every own write marks the disk moved, since one that leaves the tree as it already stood (a rename's later writes) would otherwise let a walk in flight install what it read before it; the cost is that walk reading again.
-  diskMoved()
-  if (heldTreeOf(root)) return applyEvents(root, [ev])
-  // No tree to patch: an open stamps before its stores are bound, and its own seed follows its walk.
+  // Every own write marks the disk moved, since one that leaves the tree as it already stood (a rename's later writes) would otherwise let a walk in flight install what it read before it; the editor's body save is the exception, since it leaves the frontmatter a walk reads as it was.
+  if (ev.event === 'move' || !ev.bodyOnly) diskMoved()
+  if (heldTreeOf(root)) {
+    // Under a folder awaiting its stamp, that folder's read holds the page if it carries its ID, and otherwise leaves it for its own event or a walk.
+    await applyEvents(root, [ev])
+    return
+  }
+  // No tree to patch: an open stamps before it holds a tree, and the tree it seeds is read after its stamps.
   if (!adopting()) await indexEvent(root, ev)
 }
 
-// The writers reach the settle through a tap rather than an import because the settle's own imports (`adopt`, `fileEvents`, `liveTree`) import `Core/Files`, so a writer importing the settle would close a cycle.
+// The writers reach the settle through a tap rather than an import because the settle's own imports (`adopt`, `fileEvents`, `liveTree`) import `Core/Files`, so a writer importing the settle would close a cycle; it is installed on import, not by a host's call, since it is the same function for the life of the process, where the Sync taps are a session's to set and clear and the commands tap is the host's.
 setOwnTap(applyOwn)
 
 // ── The settle ──
@@ -40,12 +44,13 @@ let reseeding: Promise<void> = Promise.resolve()
 let pushed: NexusTree | null = null
 let version = 0
 let batching = false
+let stamping = 0
 
 // A file whose stamp is still owed is about to land under its ID, so the window isn't sent it as unreadable meanwhile.
 function shown(tree: NexusTree, stamp: readonly Unreadable[]): NexusTree {
   if (!stamp.length || !tree.unreadable) return tree
-  const owed = new Set(stamp.map((u) => u.path))
-  const unreadable = tree.unreadable.filter((u) => !owed.has(u.path))
+  const pending = new Set(stamp.map((u) => u.path))
+  const unreadable = tree.unreadable.filter((u) => !pending.has(u.path))
   if (unreadable.length === tree.unreadable.length) return tree
   const next: NexusTree = { ...tree, unreadable }
   if (!unreadable.length) delete next.unreadable
@@ -53,7 +58,7 @@ function shown(tree: NexusTree, stamp: readonly Unreadable[]): NexusTree {
 }
 
 // Records the tree the window was handed, the baseline the next difference is taken against.
-export function sent(tree: NexusTree): { tree: NexusTree; version: number } {
+export function recordHanded(tree: NexusTree): { tree: NexusTree; version: number } {
   pushed = shown(tree, owedFor(tree.nexus.rootPath).stamp)
   return { tree: pushed, version }
 }
@@ -75,21 +80,18 @@ function valueChangesOf(root: string, values: ReadonlyMap<string, boolean>): Val
   return [...out.values()]
 }
 
-async function walkDue(root: string): Promise<void> {
+async function walkWhileOwed(root: string): Promise<void> {
   if (sessionRoot() !== root) return
-  const due = owedFor(root)
-  while (due.walk) {
-    due.walk = false
+  const owed = owedFor(root)
+  while (owed.walk) {
+    owed.walk = false
     dropTileHeadingLinks()
     const assets = getHeldAssetMap(root)
     try {
       const walked = await refreshAfterWrite(root)
-      // A page a walk lists may still be mid-write by the tool that made it, and only its own settled event shows the write finished, so only folders are stamped here: a folder's stamp writes a sidecar no other writer holds.
-      due.stamp.push(
-        ...(walked.unreadable ?? []).filter((u) => u.reason === 'missing' && u.kind !== 'page'),
-      )
+      owed.stamp.push(...stampable(owed, walked.unreadable ?? []))
       // The map is patch-only, so the fallback walk is where the listing is taken again.
-      if (assets && (await refreshAssetMap(root)) !== assets) due.assets = true
+      if (assets && (await refreshAssetMap(root)) !== assets) owed.assets = true
     } catch {
       // The walk failed after the write landed, so the held tree predates it; dropped, reads walk.
       dropLiveTree()
@@ -98,16 +100,17 @@ async function walkDue(root: string): Promise<void> {
 }
 
 async function settle(pusher: Pusher, root: string): Promise<{ rescope: boolean } | null> {
-  await walkDue(root)
+  await walkWhileOwed(root)
   // An open in progress has no window on this Nexus yet, so what is owed waits for the settle that follows it.
   if (sessionRoot() !== root || adopting()) return null
-  const due = owedFor(root)
-  // An arm still awaiting its file writes to this record after the push, so it is emptied in place and never replaced.
-  const { pages, values, tiles, assets, corpus, rescope, stamp } = due
-  Object.assign(due, nothingOwed(root), { stamp })
+  const owed = owedFor(root)
+  // An arm still awaiting its file writes to this record after the push, so it is emptied in place and never replaced; the walk and the stamps still owed outlive it, and the paths newly in reach outlive it while a stamp is owed or a pass is stamping.
+  const { pages, values, tiles, assets, corpus, rescope, stamp, walk, whole } = owed
+  Object.assign(owed, nothingOwed(root), { stamp, walk, whole })
+  if (!stamp.length && !stamping) owed.whole = []
   const held = heldTreeOf(root)
   const tree = held && shown(held, stamp)
-  const delta = tree && diff(pushed?.nexus.rootPath === root ? pushed : undefined, tree)
+  const delta = tree && deltaOf(pushed?.nexus.rootPath === root ? pushed : undefined, tree)
   if (tree) pushed = tree
   if (delta) pusher.push('nexus:changed', { version: ++version, delta })
   if (pages.size) pusher.push('pages:changed', [...pages])
@@ -129,11 +132,16 @@ async function reseed(pusher: Pusher, root: string, rescope: boolean): Promise<v
 // A stamp's own write lands as an event that may list more, so a turn stamps until nothing is listed. A gate leaves the list to a batch in its turn, which may still be reading the files it listed.
 async function stampListed(root: string, gate: boolean): Promise<void> {
   if (sessionRoot() !== root) return
-  const due = owedFor(root)
-  while (due.stamp.length && !(gate && batching)) await stampMissing(root, due.stamp.splice(0))
+  const owed = owedFor(root)
+  stamping++
+  try {
+    while (owed.stamp.length && !(gate && batching)) await stampMissing(root, owed.stamp.splice(0))
+  } finally {
+    stamping--
+  }
 }
 
-// The watcher's turn: the batch applies, and what it listed is stamped before its settle, so a reply's settle never waits on those stamps.
+// The watcher's turn: the batch applies, and what it listed is stamped before its settle, so a reply's settle never waits on those stamps; an event that waited on a folder's stamp applies once more after it, and is dropped if it waits again.
 export async function settleBatch(
   pusher: Pusher,
   root: string,
@@ -141,12 +149,14 @@ export async function settleBatch(
 ): Promise<void> {
   batching = true
   try {
-    await applyEvents(root, events)
+    const later = await applyEvents(root, events)
+    await stampListed(root, false)
+    await applyEvents(root, later, true)
     await stampListed(root, false)
   } finally {
     batching = false
   }
-  await flush(pusher, root)
+  await settleNow(pusher, root)
 }
 
 function inTurn<T>(step: () => Promise<T>): Promise<T> {
@@ -155,13 +165,14 @@ function inTurn<T>(step: () => Promise<T>): Promise<T> {
   return turn
 }
 
-export const walkOwed = (root: string): Promise<void> => inTurn(() => walkDue(root))
+export const payOwedWalk = (root: string): Promise<void> => inTurn(() => walkWhileOwed(root))
 
 // One settle at a time, and one reseed at a time on a chain of its own: a reply waits for the settles ahead of its own, and for a reseed only when its own settle found the corpus or the scope moved.
-export async function flush(pusher: Pusher, root: string): Promise<void> {
+export async function settleNow(pusher: Pusher, root: string): Promise<void> {
   await stampListed(root, true)
   const moved = await inTurn(() => settle(pusher, root)).catch(() => null)
-  if (owedFor(root).stamp.length && !batching) await flush(pusher, root)
+  // The settle's walk may list more to stamp, which takes a settle of its own; while a batch applies, its turn takes them instead.
+  if (owedFor(root).stamp.length && !batching) await settleNow(pusher, root)
   if (!moved) return
   reseeding = reseeding
     .then(() => reseed(pusher, root, moved.rescope))

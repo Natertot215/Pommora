@@ -5,16 +5,8 @@ import { ID_KEY } from '../Nexus/identityMark'
 import { asString } from '../Nexus/coerce'
 import { ok, fail, type Result, fault } from '../Contract/result'
 import { mutateRegistryFile, readRegistryStrict } from './contextsRegistry'
-import {
-  pathExists,
-  readJsonStrict,
-  relocate,
-  rewritePreservingTimes,
-  setOrDrop,
-  targetTaken,
-} from '../Files/atomicWrite'
+import { pathExists, readJsonStrict, relocate, setOrDrop, targetTaken } from '../Files/atomicWrite'
 import { renameFrontmatterKey, type KeyCollision } from '../Files/pageFile'
-import { machine } from '../Platform/machine'
 import type { Json } from '../Files/stableJson'
 import { contextsDir } from '../Paths/paths'
 import { SPACE_SIDECAR } from '../Paths/nexusPaths'
@@ -25,6 +17,7 @@ import {
   type SweepResult,
   stripKeys,
   sweepGovernedRoots,
+  undoSweep,
   unsweptLine,
 } from '../Properties/governedSweep'
 import { withOrderEntry } from './spaceSidecar'
@@ -117,8 +110,8 @@ export interface Unswept {
   from: string
 }
 
-const unswept = (journaled: boolean, skipped: string[], from: string): Unswept | null =>
-  !journaled && skipped.length ? { skipped: skipped.length, from } : null
+const unswept = (skipped: string[], from: string): Unswept | null =>
+  skipped.length ? { skipped: skipped.length, from } : null
 
 async function sweepAgain(
   root: string,
@@ -126,7 +119,8 @@ async function sweepAgain(
   j: RenameJournal,
 ): Promise<Result<Unswept | null>> {
   const again = await cascadeTitle(root, contextTitle, j)
-  return ok(unswept(false, again.skipped, j.oldTitle))
+  await settleJournal(root, j, again.skipped)
+  return ok(unswept(again.skipped, j.oldTitle))
 }
 
 async function cascadeTitle(
@@ -183,7 +177,7 @@ export async function unlinkSpaceValue(
   return ok({ ...(await unlinkMembers(root, { key, spaceTitle }, take)), captured })
 }
 
-// A refused delete leaves no record to restore from, so a sweep that missed a member returns every file it wrote to the bytes it held and refuses. What sits under `skipUnder` leaves with the deleted folder, so it's neither rewritten nor owed.
+// A refused delete leaves no record to restore from, so a sweep that missed a member puts back what it took and refuses, counting each file it missed or couldn’t put back. What sits under `skipUnder` leaves with the deleted folder, so it's neither rewritten nor owed.
 async function unlinkMembers(
   root: string,
   member: Member,
@@ -196,9 +190,8 @@ async function unlinkMembers(
   )
   const missed = swept.skipped.filter((file) => !leaves(file))
   if (!missed.length) return swept
-  for (const [file, text] of swept.touched)
-    await machine().lock(file, () => rewritePreservingTimes(file, text))
-  throw new Error(unsweptLine(missed.length))
+  const unrestored = await undoSweep(swept.touched)
+  throw new Error(unsweptLine(missed.length + unrestored.length))
 }
 
 async function settleJournal(root: string, j: RenameJournal, skipped: string[]): Promise<void> {
@@ -224,11 +217,11 @@ export async function renameContextOp(
   if (!reg.ok) return reg
   const entry = reg.value.contexts.find((c) => c.id === contextId)
   if (!entry) return fail('not-found', 'Unknown Context.')
+  // A retry sweeps what the rename left to the title the Context holds now, which a later rename may have moved on.
   if (from !== undefined) {
-    const moved = entry.title !== newName || reg.value.contexts.some((c) => c.title === from)
-    return moved
-      ? ok(null)
-      : sweepAgain(root, newName, { contextId, oldTitle: from, newTitle: newName, skipped: [] })
+    const taken = reg.value.contexts.some((c) => c.id !== contextId && c.title === from)
+    const again = { contextId, oldTitle: from, newTitle: entry.title, skipped: [] }
+    return taken ? ok(null) : sweepAgain(root, entry.title, again)
   }
   if (entry.title === newName) return ok(null)
   if (
@@ -239,7 +232,7 @@ export async function renameContextOp(
     return fail('exists', `"${newName}" already exists.`)
 
   const j: RenameJournal = { contextId, oldTitle: entry.title, newTitle: newName, skipped: [] }
-  const journaled = await writeJournal(root, j)
+  await writeJournal(root, j)
 
   const oldDir = join(contextsDir(root), entry.title)
   const newDir = join(contextsDir(root), newName)
@@ -256,18 +249,18 @@ export async function renameContextOp(
   if (!committed.ok) {
     // The way back is a rename of its own, journaled so the next open finishes the files it can't reach now.
     const back: RenameJournal = { ...j, oldTitle: newName, newTitle: entry.title }
-    const backed = await writeJournal(root, back)
+    await writeJournal(root, back)
     const undone = await cascadeTitle(root, entry.title, back)
     try {
       if (await pathExists(newDir)) await relocate(newDir, oldDir)
     } catch {}
     await settleJournal(root, back, undone.skipped)
-    const left = !backed && undone.skipped.length
+    const left = undone.skipped.length
     return left ? fault(`${committed.error.message} ${unsweptLine(left)}`) : committed
   }
 
   await settleJournal(root, j, cascade.skipped)
-  return ok(unswept(journaled, cascade.skipped, j.oldTitle))
+  return ok(unswept(cascade.skipped, j.oldTitle))
 }
 
 export async function renameSpaceOp(
@@ -283,11 +276,11 @@ export async function renameSpaceOp(
   const group = space && groupById.get(space.contextId)
   if (!space || !group) return fail('not-found', 'Unknown Space.')
   if (from !== undefined) {
-    const moved =
-      space.title !== newName ||
-      group.spaces.some((s) => normalizeTitle(s.title) === normalizeTitle(from))
-    const again = { contextId: space.contextId, spaceId, oldTitle: from, newTitle: newName }
-    return moved ? ok(null) : sweepAgain(root, group.def.title, { ...again, skipped: [] })
+    const taken = group.spaces.some(
+      (s) => s.id !== spaceId && normalizeTitle(s.title) === normalizeTitle(from),
+    )
+    const again = { contextId: space.contextId, spaceId, oldTitle: from, newTitle: space.title }
+    return taken ? ok(null) : sweepAgain(root, group.def.title, { ...again, skipped: [] })
   }
   if (space.title === newName) return ok(null)
   const dir = join(root, space.path)
@@ -301,7 +294,7 @@ export async function renameSpaceOp(
     newTitle: newName,
     skipped: [],
   }
-  const journaled = await writeJournal(root, j)
+  await writeJournal(root, j)
   try {
     await relocate(dir, target)
   } catch (e) {
@@ -311,7 +304,7 @@ export async function renameSpaceOp(
 
   const cascade = await cascadeTitle(root, group.def.title, j)
   await settleJournal(root, j, cascade.skipped)
-  return ok(unswept(journaled, cascade.skipped, j.oldTitle))
+  return ok(unswept(cascade.skipped, j.oldTitle))
 }
 
 export async function replayPendingRename(root: string): Promise<void> {

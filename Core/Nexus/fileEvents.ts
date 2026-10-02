@@ -17,6 +17,7 @@ import {
   entryWithin,
   excludedMatcher,
   hiddenFolder,
+  outsideContent,
   sameScope,
 } from '../Paths/exclusion'
 import {
@@ -48,6 +49,7 @@ import { dropTileHeadingLinks, tilesLinkHeading } from '../Tiles/tilesFile'
 import {
   contextLinker,
   pageRecordOf,
+  type PageRecord,
   readCropLeaves,
   readFolder,
   readHomepageLeaves,
@@ -59,7 +61,7 @@ import { errText } from '../Contract/result'
 import { containerNodeFrom } from './containerFields'
 import { contextsRegistry as contextsRegistrySchema, type ContextDef } from '../Contexts/contexts'
 import { spaceNodeFrom } from '../Contexts/spaceSidecar'
-import { orderedDefs, registryFrom } from '../Properties/propertiesRegistry'
+import { orderedDefs, registryFrom, registryOf } from '../Properties/propertiesRegistry'
 import { stabilize } from './treeStabilize'
 import {
   containerAt,
@@ -96,6 +98,8 @@ interface Owed {
   rescope: boolean
   assets: boolean
   stamp: Unreadable[]
+  // Paths newly in reach, under which a listing stamps every page missing its ID.
+  whole: string[]
   pages: Set<string>
   // True while every write of the page was the editor's own body save.
   values: Map<string, boolean>
@@ -109,6 +113,7 @@ export const nothingOwed = (root: string): Owed => ({
   rescope: false,
   assets: false,
   stamp: [],
+  whole: [],
   pages: new Set(),
   values: new Map(),
   tiles: new Map(),
@@ -126,6 +131,22 @@ export function oweWalk(root: string): void {
   owedFor(root).walk = true
 }
 
+// Try Again reaches what no event reports, so the path it names is newly in reach.
+export function oweRetry(root: string, entry: Unreadable): void {
+  const owed = owedFor(root)
+  owed.stamp.push(entry)
+  owed.whole.push(entry.path)
+}
+
+// A page missing its ID is stamped by its own event, since the watcher reports a file once it stops changing and a stamp's rename would cut off bytes still arriving; a listing stamps one only under a path newly in reach, whose files no event reports.
+export function stampable(owed: Owed, listed: readonly Unreadable[]): Unreadable[] {
+  return listed.filter(
+    (u) =>
+      u.reason === 'missing' &&
+      (u.kind !== 'page' || owed.whole.some((dir) => entryWithin(u.path, dir) !== null)),
+  )
+}
+
 export function oweCascade(
   root: string,
   pages: readonly string[],
@@ -136,11 +157,12 @@ export function oweCascade(
   for (const host of hosts) owed.tiles.set(navKey(host), host)
 }
 
-type Applied = 'ok' | 'walk'
+// `later` is a page whose folder the tree doesn't hold yet, under a folder whose stamp is owed: a watcher's batch applies it once more after that stamp lands.
+type Applied = 'ok' | 'walk' | 'later'
 
 type EventClass =
   | { kind: 'page'; rel: string }
-  | { kind: 'folder'; rel: string }
+  | { kind: 'folder'; rel: string; sidecar?: true }
   | { kind: 'gone'; rel: string; sidecar?: true }
   | { kind: 'container-meta'; dirRel: string; of: ContainerKind }
   | { kind: 'space'; dirRel: string }
@@ -162,7 +184,7 @@ const configRel = (file: keyof typeof NEXUS_CONFIG_FILES): string =>
 // ── Classification ──
 
 // A tile body is no part of the tree; a change to one names its host, like the host's own document.
-export function tileBodyUnder(segs: string[], rel: string): boolean {
+function tileBodyUnder(segs: string[], rel: string): boolean {
   return (
     (segs[0] === NEXUS_DIR &&
       segs[1] === HOMEPAGE_HOST_DIRNAME &&
@@ -227,7 +249,7 @@ export function classifyEvent(tree: NexusTree, root: string, ev: Changed): Event
       return { kind: 'walk' }
     if (gone) return { kind: 'gone', rel: dirRel, sidecar: true }
     const container = containerAt(tree, dirRel)
-    if (!container) return { kind: 'folder', rel: dirRel }
+    if (!container) return { kind: 'folder', rel: dirRel, sidecar: true }
     return name === SIDECAR_FILENAME[container.kind]
       ? { kind: 'container-meta', dirRel, of: container.kind }
       : { kind: 'walk' }
@@ -255,7 +277,7 @@ export async function indexEvent(root: string, ev: FileEvent): Promise<HeadingRe
         return null
       case 'add':
       case 'change':
-        return await indexWrittenPage(root, ev.absPath, ev.own?.text)
+        return await indexWrittenPage(root, ev.absPath, ev.text)
     }
   } catch (e) {
     console.error('settle: the index missed an event and reseeds:', errText(e))
@@ -295,12 +317,12 @@ function patchConfig(root: string, patch: Partial<NexusConfig>): Applied {
   })
 }
 
-// The app's own event carries the text it wrote, since its writer still holds the file's lock.
 const jsonOf = (
   ev: Changed,
   read: (absPath: string) => Promise<Json | null> = readJsonObject,
-): Promise<Json | null> =>
-  ev.own?.text === undefined ? read(ev.absPath) : Promise.resolve(parseJsonObject(ev.own.text))
+): Promise<Json | null> => {
+  return ev.text === undefined ? read(ev.absPath) : Promise.resolve(parseJsonObject(ev.text))
+}
 
 const pagePathsIn = (node: CollectionNode | SetNode | null): string[] =>
   node ? [...node.pages.map((p) => p.path), ...(node.sets ?? []).flatMap(pagePathsIn)] : []
@@ -310,21 +332,25 @@ async function applyFolder(
   tree: NexusTree,
   rel: string,
   owed: Owed,
+  sidecar?: true,
 ): Promise<Applied> {
   const parent = relDirname(rel)
   if (rel === '' || containerAt(tree, rel)) return 'ok'
   // A folder whose parent the tree doesn't hold lands with the parent's read.
   if (parent !== '' && !containerAt(tree, parent)) return applyFolder(root, tree, parent, owed)
-  // Its stamp's own event reads it again.
-  if (owed.stamp.some((u) => u.path === rel)) return 'ok'
+  // A sidecar's event reads the folder; any other event under a folder whose stamp is owed waits for that read or is covered by it.
+  if (!sidecar && owed.stamp.some((u) => u.path === rel)) return 'ok'
   if (!(await pathExists(join(root, rel)))) return applyPatch(root, (t) => removeNodeInTree(t, rel))
   const read = await readFolder(root, rel, tree)
-  owed.stamp.push(...read.unreadable.filter((u) => u.reason === 'missing'))
+  const stamps = new Set(stampable(owed, read.unreadable))
+  owed.stamp.push(...stamps)
+  // A page missing its ID that isn't stamped stays out of the tree, since the window posts a Try Again notice when a push lists a new entry and the page's own event may still be coming; a walk lists it.
+  const listed = read.unreadable.filter((u) => u.reason !== 'missing' || stamps.has(u))
   for (const path of pagePathsIn(read.node)) owed.values.set(path, false)
   return applyPatch(root, (t) => {
     const cleared = removeNodeInTree(t, rel)
     const landed = read.node ? placeNode(cleared, read.node) : cleared
-    return landed && listUnreadable(landed, read.unreadable)
+    return landed && listUnreadable(landed, listed)
   })
 }
 
@@ -336,26 +362,31 @@ async function applyPage(
   owed: Owed,
 ): Promise<Applied> {
   const dirRel = relDirname(rel)
-  if (!containerAt(tree, dirRel)) return applyFolder(root, tree, dirRel, owed)
+  if (!containerAt(tree, dirRel)) {
+    const applied = await applyFolder(root, tree, dirRel, owed)
+    const now = heldTreeOf(root)
+    // The folder's read leaves a page missing its ID out, so the page's own event places it or owes its stamp, once a folder above it whose stamp is owed has been stamped and read.
+    if (!now || !containerAt(now, dirRel))
+      return applied === 'ok' && owed.stamp.some((u) => rel.startsWith(`${u.path}/`))
+        ? 'later'
+        : applied
+  }
   const abs = join(root, rel)
-  let read: Awaited<ReturnType<typeof readPageRecord>>
+  let read: PageRecord
   try {
-    read =
-      ev.own?.text === undefined
-        ? await readPageRecord(abs, rel)
-        : pageRecordOf(ev.own.text, rel, null)
+    read = ev.text === undefined ? await readPageRecord(abs, rel) : pageRecordOf(ev.text, rel, null)
   } catch {
     if (await pathExists(abs)) return 'walk'
     return applyPatch(root, (t) => removeNodeInTree(t, rel))
   }
-  owed.values.set(rel, !!ev.own?.bodyOnly && (owed.values.get(rel) ?? true))
-  if (!ev.own) owed.pages.add(rel)
-  if ('unread' in read && read.unread === 'missing')
+  owed.values.set(rel, !!ev.bodyOnly && (owed.values.get(rel) ?? true))
+  if (ev.origin === 'watched') owed.pages.add(rel)
+  if (read.kind === 'unread' && read.reason === 'missing')
     owed.stamp.push({ path: rel, kind: 'page', reason: 'missing' })
   const landed = applyPatch(root, (t) => {
-    if ('unread' in read)
+    if (read.kind === 'unread')
       return listUnreadable(removeNodeInTree(t, rel), [
-        { path: rel, kind: 'page', reason: read.unread },
+        { path: rel, kind: 'page', reason: read.reason },
       ])
     const node = contextLinker(t.contexts)(read.node, read.fm)
     const held = pageAt(t, rel)
@@ -363,7 +394,7 @@ async function applyPage(
     const kept = stabilize(node, held)
     return kept === held ? t : updateNodeInTree(t, rel, () => kept)
   })
-  if (!ev.own) noteExternalEdit(root, abs)
+  if (ev.origin === 'watched') noteExternalEdit(root, abs)
   return landed
 }
 
@@ -391,7 +422,7 @@ async function applyContainer(
       meta,
       node.sets ?? [],
       node.pages,
-      Object.fromEntries(t.config.registry.map((d) => [d.id, d])),
+      registryOf(t.config.registry),
     )
     return next?.id === node.id ? updateNodeInTree(t, dirRel, () => next) : null
   })
@@ -411,8 +442,9 @@ async function applySpace(root: string, dirRel: string, ev: Changed, owed: Owed)
     const built =
       group && spaceNodeFrom(sc, { title: basename(dirRel), path: dirRel, contextId: group.def.id })
     const held = spaceAt(t, dirRel)
-    // A Space the tree doesn't hold lands from the app's own write alone, which relinks nothing, as the app's create never has; an outside one walks, so a tag it now resolves gains its link.
-    if (!built || (held ? held.id !== built.id : !ev.own)) return null
+    // A Space the tree doesn't hold lands from the app's own create alone, which relinks nothing, as the app's create never has; an outside one, or the stamp of one the tree listed unreadable, walks, so a tag it now resolves gains its link.
+    if (t.unreadable?.some((u) => u.path === dirRel)) return null
+    if (!built || (held ? held.id !== built.id : ev.origin === 'watched')) return null
     const node = contextLinker(t.contexts)(built, sc)
     return held
       ? updateNodeInTree(t, dirRel, () => node)
@@ -420,14 +452,14 @@ async function applySpace(root: string, dirRel: string, ev: Changed, owed: Owed)
   })
 }
 
-// Null when an entry left, a held group's title moved, or an entry the tree doesn't hold arrived from outside: each changes which Spaces exist.
-function regroup(held: ContextGroup[], defs: ContextDef[], own: boolean): ContextGroup[] | null {
+// Null when an entry left or arrived, or a held group's title moved: each changes which Spaces exist, and only a walk reads the Spaces a folder already holds under an arriving entry.
+function regroup(held: ContextGroup[], defs: ContextDef[]): ContextGroup[] | null {
   if (held.some((g) => !defs.some((d) => d.id === g.def.id))) return null
   const next: ContextGroup[] = []
   for (const def of defs) {
     const group = held.find((g) => g.def.id === def.id)
-    if (group ? group.def.title !== def.title : !own) return null
-    next.push(group ? { ...group, def } : { def, spaces: [] })
+    if (!group || group.def.title !== def.title) return null
+    next.push({ ...group, def })
   }
   return next
 }
@@ -437,7 +469,7 @@ async function applyContexts(root: string, ev: Changed): Promise<Applied> {
   const parsed = raw && contextsRegistrySchema.safeParse(raw)
   if (!parsed?.success) return 'walk'
   return applyPatch(root, (t) => {
-    const groups = regroup(t.contexts, parsed.data.contexts, !!ev.own)
+    const groups = regroup(t.contexts, parsed.data.contexts)
     if (!groups) return null
     const contexts = stabilize(groups, t.contexts)
     return contexts === t.contexts ? t : { ...t, contexts }
@@ -451,23 +483,27 @@ async function applyRegistry(root: string, ev: Changed): Promise<Applied> {
     const arrived = Object.keys(registry.defs).some(
       (id) => !t.config.registry.some((d) => d.id === id),
     )
-    return arrived && !ev.own ? null : repointRegistryInTree(t, orderedDefs(registry))
+    return arrived && ev.origin === 'watched'
+      ? null
+      : repointRegistryInTree(t, orderedDefs(registry))
   })
 }
 
 async function applySettings(root: string, ev: Changed, owed: Owed): Promise<Applied> {
   const leaves = readSettingsLeaves((await jsonOf(ev, readKept)) ?? {})
   const tree = heldTreeOf(root)
-  const rescoped = !!tree && !sameScope(scopeOf(leaves), scopeOf(tree.config))
+  const was = tree && scopeOf(tree.config)
+  const scope = scopeOf(leaves)
   // The scope lands at once, so what runs before the walk (the asset migration) reads the scope just written.
   const patched = patchConfig(root, leaves)
-  if (!rescoped) return patched
+  if (!was || sameScope(scope, was)) return patched
+  owed.whole.push(...[...was.excluded, was.assetDir].filter((rel) => !outsideContent(rel, scope)))
   owed.rescope = true
   return 'walk'
 }
 
 async function applyShard(root: string, shard: string, ev: Changed): Promise<Applied> {
-  const read = await readShard(root, shard, ev.own?.text)
+  const read = await readShard(root, shard, ev.text)
   if (read.kind === 'unreadable') return 'ok'
   const held = heldTreeOf(root)?.config.pageMetadata
   const pageMetadata = withShards(held ?? {}, { [shard]: read.kind === 'ok' ? read.pages : {} })
@@ -511,9 +547,9 @@ async function applyMove(root: string, ev: Moved, owed: Owed): Promise<Applied> 
   // A Space or Context that left or came back changes how members resolve, which only the walk re-derives.
   if ([from, to].some((rel) => rel.startsWith(`${CONTEXTS_DIR_REL}/`))) return 'walk'
   // Not a move the tree makes in place (one end is the Trash, or outside what it holds): what left and what arrived are two events.
-  const left = await applyOne(root, { event: 'unlink', absPath: ev.from, own: {} }, owed)
+  const left = await applyOne(root, { event: 'unlink', absPath: ev.from, origin: 'own' }, owed)
   const arrived = isMarkdownFile(to) ? 'add' : 'addDir'
-  const landed = await applyOne(root, { event: arrived, absPath: ev.absPath, own: {} }, owed)
+  const landed = await applyOne(root, { event: arrived, absPath: ev.absPath, origin: 'own' }, owed)
   return left === 'ok' ? landed : 'walk'
 }
 
@@ -538,7 +574,7 @@ async function applyOne(root: string, ev: FileEvent, owed: Owed): Promise<Applie
       return c.sidecar && (await pathExists(join(root, c.rel))) ? 'walk' : cleared
     }
     case 'folder':
-      return applyFolder(root, tree, c.rel, owed)
+      return applyFolder(root, tree, c.rel, owed, c.sidecar)
     case 'container-meta':
       return applyContainer(root, c.dirRel, c.of, ev)
     case 'space':
@@ -551,7 +587,7 @@ async function applyOne(root: string, ev: FileEvent, owed: Owed): Promise<Applie
       return applySettings(root, ev, owed)
     case 'tiles-leaf':
       dropTileHeadingLinks()
-      if (ev.own) return 'ok'
+      if (ev.origin === 'own') return 'ok'
       owed.tiles.set(navKey(c.host), c.host)
       // A host off screen isn't re-read by the window, so its document's last read would otherwise stay where it was.
       if (basename(c.rel) === TILE_DOC_FILENAME) await readAppFile(join(root, c.rel))
@@ -569,16 +605,25 @@ async function applyOne(root: string, ev: FileEvent, owed: Owed): Promise<Applie
   }
 }
 
-export async function applyEvents(root: string, events: FileEvent[]): Promise<void> {
+// Answers the events that wait on a folder's stamp, one per path. A replay places events already indexed, so it neither indexes nor cascades them again.
+export async function applyEvents(
+  root: string,
+  events: FileEvent[],
+  replay = false,
+): Promise<FileEvent[]> {
   const owed = owedFor(root)
+  const later = new Map<string, FileEvent>()
   for (const ev of events) {
-    const seen = await indexEvent(root, ev)
+    const seen = replay ? null : await indexEvent(root, ev)
     try {
-      if (seen && ev.event !== 'move' && !ev.own) await cascadeSeen(root, seen)
-      if ((await applyOne(root, ev, owed)) === 'ok') continue
+      if (seen && ev.event !== 'move' && ev.origin === 'watched') await cascadeSeen(root, seen)
+      const applied = await applyOne(root, ev, owed)
+      if (applied === 'later') later.set(ev.absPath, ev)
+      if (applied !== 'walk') continue
     } catch (e) {
       console.error('settle: an event could not be placed, walking:', errText(e))
     }
     owed.walk = true
   }
+  return [...later.values()]
 }

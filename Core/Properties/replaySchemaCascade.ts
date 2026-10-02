@@ -2,7 +2,7 @@
 
 import { errText, fault, ok, type Result } from '../Contract/result'
 import { type ConfigReach, NO_REACH } from '../Nexus/configReach'
-import { readRegistry } from './propertiesRegistry'
+import { readRegistry, serializeSchemaOp } from './propertiesRegistry'
 import { collectionFolders } from './assignment'
 import { keyHolderFiles } from './keyHolders'
 import { renameSweep } from './registryProperty'
@@ -15,13 +15,12 @@ import {
   sameRecord,
   type SchemaJournal,
 } from './propertyJournal'
-import { serializeSchemaOp } from './schemaChain'
 
 export function replaySchemaCascade(
   root: string,
   record?: SchemaJournal,
 ): Promise<Result<ConfigReach> | null> {
-  return serializeSchemaOp(async () => {
+  return serializeSchemaOp(root, async () => {
     try {
       const journal = record ?? (await readSchemaJournal(root))
       if (!journal) return null

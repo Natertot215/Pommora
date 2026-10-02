@@ -1,11 +1,12 @@
 import {
+  atomicWriteFile,
+  jsonText,
   parseJsonObject,
   readTextOrNull,
   rewritePreservingTimes,
-  writeJson,
 } from '../Files/atomicWrite'
 import { machine } from '../Platform/machine'
-import { join } from '../Paths/posix'
+import { isMarkdownFile, join } from '../Paths/posix'
 import { ID_KEY } from '../Nexus/identityMark'
 import { asString } from '../Nexus/coerce'
 import type { EntityRecord } from '../Nexus/record'
@@ -14,8 +15,8 @@ import type { Json } from '../Files/stableJson'
 import { spaceSidecars } from '../Contexts/spaceSidecar'
 
 export interface SweepResult {
-  /** Each file the sweep wrote, with the text it held before the write. */
-  touched: Map<string, string>
+  /** Each file the sweep wrote, with the text it held before the write and the text the write left. */
+  touched: Map<string, { before: string; after: string }>
   skipped: string[]
   refused: string[]
 }
@@ -36,6 +37,16 @@ export const stripKeys =
 
 export const unsweptLine = (count: number, what = ''): string =>
   `Couldn’t update ${what}${count} ${count === 1 ? 'file' : 'files'}.`
+
+/** The root a governed file holds: a page's frontmatter, or a Space sidecar's object. */
+export const governedRoot = (file: string, text: string): Json =>
+  isMarkdownFile(file) ? splitFrontmatter(text) : (parseJsonObject(text) ?? {})
+
+// A file whose lock or write throws costs only itself, so the files after it are still reached.
+const guarded = (file: string, missed: string[], body: () => Promise<void>): Promise<void> =>
+  machine()
+    .lock(file, body)
+    .catch(() => void missed.push(file))
 
 const changedKeys = (raw: Json, next: Json): string[] =>
   [...new Set([...Object.keys(raw), ...Object.keys(next)])].filter(
@@ -60,13 +71,9 @@ export async function sweepGovernedRoots(
   plan: SweepPlan,
 ): Promise<SweepResult> {
   const out: SweepResult = { touched: new Map(), skipped: [], refused: [] }
-  const guarded = (file: string, body: () => Promise<void>): Promise<void> =>
-    machine()
-      .lock(file, body)
-      .catch(() => void out.skipped.push(file))
 
   for (const file of files) {
-    await guarded(file, async () => {
+    await guarded(file, out.skipped, async () => {
       const content = await readTextOrNull(file)
       if (content === null) {
         out.skipped.push(file)
@@ -80,14 +87,14 @@ export async function sweepGovernedRoots(
       const next = 'text' in plan ? plan.text(content, file) : rewriteRaw(plan.raw, content, file)
       if (next === null) return
       await rewritePreservingTimes(file, next)
-      out.touched.set(file, content)
+      out.touched.set(file, { before: content, after: next })
     })
   }
 
   const sidecars = plan.sidecars
   if (sidecars)
     for (const file of await spaceSidecars(root)) {
-      await guarded(file, async () => {
+      await guarded(file, out.skipped, async () => {
         const text = await readTextOrNull(file)
         if (text === null) {
           out.skipped.push(file)
@@ -101,11 +108,45 @@ export async function sweepGovernedRoots(
         }
         const next = sidecars(raw, file)
         if (next === null) return
-        await writeJson(file, next)
-        out.touched.set(file, text)
+        const after = jsonText(next)
+        await atomicWriteFile(file, after)
+        out.touched.set(file, { before: text, after })
       })
     }
   return out
+}
+
+/** Returns the keys a sweep changed to what they held, each file whole while it still holds the sweep's write, so a write since to any other key or to the body is kept; answers the files it couldn't put back. */
+export async function undoSweep(touched: SweepResult['touched']): Promise<string[]> {
+  const missed: string[] = []
+  for (const [file, { before, after }] of touched)
+    await guarded(file, missed, async () => {
+      const now = await readTextOrNull(file)
+      if (now === null) return
+      const back = now === after ? before : keysPutBack(file, now, before, after)
+      if (back !== null) await rewritePreservingTimes(file, back)
+    })
+  return missed
+}
+
+function keysPutBack(file: string, now: string, before: string, after: string): string | null {
+  const was = governedRoot(file, before)
+  const keys = changedKeys(was, governedRoot(file, after))
+  const putBack: Rewrite = (raw) => {
+    const next = { ...raw }
+    for (const k of keys) {
+      if (k in was) next[k] = was[k]
+      else delete next[k]
+    }
+    return next
+  }
+  if (isMarkdownFile(file)) {
+    if (!sweepAdmits(now)) throw new Error('The page no longer admits a sweep.')
+    return rewriteRaw(putBack, now, file)
+  }
+  const raw = parseJsonObject(now)
+  if (!raw) throw new Error('The sidecar no longer parses.')
+  return jsonText(putBack(raw, file))
 }
 
 /** Rewrites each page or Space whose ID is in `values` — found where `roots` places it, matched by the ID it carries — and answers the IDs whose root now holds what its rewrite asked for; a null rewrite leaves its root as it is. */

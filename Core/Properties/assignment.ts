@@ -10,7 +10,7 @@ import { projectBaseline } from '../Nexus/remintLedger'
 import { damagedFolders } from '../Nexus/treePatch'
 import type { EntityRecord } from '../Nexus/record'
 import { NO_DEFS } from '../Contexts/contextResolve'
-import { readRegistry } from './propertiesRegistry'
+import { readRegistry, serializeSchemaOp } from './propertiesRegistry'
 import type { PropertyDefinition } from './properties'
 import {
   encodeValue,
@@ -22,7 +22,6 @@ import {
 import { parkLinks } from '../Trash/holdings'
 import { frozenWorld } from '../Nexus/heldPages'
 import { sweepRootsById } from './governedSweep'
-import { serializeSchemaOp } from './schemaChain'
 import { ok, fail, type Result } from '../Contract/result'
 
 export const assignedIds = (raw: Record<string, unknown> | null): string[] =>
@@ -105,7 +104,7 @@ async function restoreCachedValues(
   return written.ok ? ok(null) : written
 }
 
-// A chained fn awaiting another chained fn would deadlock the schema chain, so these are unchained internals a chained op composes in its own slot.
+// The schema lock rejects a re-taken lock, so these are unwrapped internals a wrapped op composes inside its own hold.
 export async function assignInner(
   root: string,
   collectionFolder: string,
@@ -144,7 +143,7 @@ export function assignProperty(
   propertyId: string,
   toIndex?: number,
 ): Promise<Result<null>> {
-  return serializeSchemaOp(async () => {
+  return serializeSchemaOp(root, async () => {
     const a = await assignInner(root, collectionFolder, propertyId)
     if (!a.ok || toIndex === undefined) return a
     return reorderInner(collectionFolder, propertyId, toIndex)
@@ -158,9 +157,10 @@ export async function collectionFolders(root: string): Promise<string[]> {
 }
 
 export function reorderAssignment(
+  root: string,
   collectionFolder: string,
   propertyId: string,
   toIndex: number,
 ): Promise<Result<null>> {
-  return serializeSchemaOp(() => reorderInner(collectionFolder, propertyId, toIndex))
+  return serializeSchemaOp(root, () => reorderInner(collectionFolder, propertyId, toIndex))
 }
