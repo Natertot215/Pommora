@@ -2,7 +2,10 @@ import { describe, expect, it } from 'vitest'
 import { containerCreators, createMenuItems, createdRequest, spaceCreator } from './createMenu'
 
 const creators = [
-  { label: 'New Page', req: { op: 'createPage' as const, parentPath: 'Notes', name: 'Untitled' } },
+  {
+    label: 'New Page',
+    req: { op: 'createPage' as const, id: 'p9', parentPath: 'Notes', name: 'Untitled' },
+  },
   {
     label: 'New Set',
     req: {

@@ -2,6 +2,7 @@ import { applyEvents } from '../Nexus/fileEvents'
 import { flush } from '../Nexus/settle'
 import { chmod, copyFile, mkdir, readFile, rm, writeFile } from 'node:fs/promises'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
+import { newContentId } from '../Nexus/ids'
 import { join } from '../Paths/posix'
 import { noModeBits, putJson, readJsonAt, tempRoot } from '../Testing/hostFs'
 import { type ConfigSurfaces, seedConfigSurfaces, viewOn } from '../Testing/configSurfaces'
@@ -180,7 +181,7 @@ describe('a Space delete', () => {
     const seeds = filterSeeds(collection.filter as FilterGroup, true, [], ['ctx_areas'])
     const r = await settledMutate(
       root,
-      { op: 'createPage', parentPath: 'Notes', name: 'Fresh', seeds },
+      { op: 'createPage', id: newContentId('page'), parentPath: 'Notes', name: 'Fresh', seeds },
       nexusDeps,
     )
     expect(r.ok ? 'created' : r.error.message).toBe('created')

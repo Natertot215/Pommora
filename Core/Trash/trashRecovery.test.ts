@@ -344,7 +344,7 @@ describe('links come back with the page', () => {
     await del('Journal/Daily/Alpha.md', 'page')
     const created = await settledMutate(
       root,
-      { op: 'createPage', parentPath: 'Journal/Daily', name: 'Alpha' },
+      { op: 'createPage', id: newContentId('page'), parentPath: 'Journal/Daily', name: 'Alpha' },
       deps,
     )
     expect(created.ok).toBe(true)
@@ -606,7 +606,7 @@ describe('links come back with the page', () => {
     await del('Journal/Daily/Alpha.md', 'page')
     const created = await settledMutate(
       root,
-      { op: 'createPage', parentPath: 'Journal/Daily', name: 'Alpha' },
+      { op: 'createPage', id: newContentId('page'), parentPath: 'Journal/Daily', name: 'Alpha' },
       deps,
     )
     expect(created.ok).toBe(true)

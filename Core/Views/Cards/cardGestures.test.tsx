@@ -55,10 +55,9 @@ let menuSpy: ReturnType<typeof vi.fn>
 let menuAnswer: string | null
 
 beforeEach(() => {
-  mutateSpy = vi.fn(async (req: { op: string }, onCreated?: (c: unknown) => void) => {
-    if (req.op === 'createPage') onCreated?.({ id: 'p3', path: 'Col/Untitled.md' })
-    return {}
-  })
+  mutateSpy = vi.fn(async (req: { op: string; id?: string }) =>
+    req.op === 'createPage' ? { created: { id: req.id, path: 'Col/Untitled.md' } } : {},
+  )
   selectSpy = vi.fn(async () => {})
   menuAnswer = null
   menuSpy = vi.fn(async () => ok(menuAnswer))
@@ -166,9 +165,6 @@ describe('the card menu', () => {
   it('answering New Page Below creates one seated after the anchor', async () => {
     await renderView(root, source())
     await rightClick('p1', 'title:newbelow')
-    expect(mutateSpy).toHaveBeenCalledWith(
-      expect.objectContaining({ op: 'createPage' }),
-      expect.any(Function),
-    )
+    expect(mutateSpy).toHaveBeenCalledWith(expect.objectContaining({ op: 'createPage' }))
   })
 })

@@ -129,15 +129,16 @@ export function useViewInteractions(host: ViewHostApi, policy: ViewInteractionPo
         ),
     }
   })
-  const creation = useViewCreation(() => ({
-    ...host,
-    bandBucket: valueAt,
-    onCreated: (created) => policy.rename(created, true),
-  }))
+  const creation = useViewCreation(() => ({ ...host, bandBucket: valueAt }))
+  const named = async (flight: Promise<{ id: string; path: string } | null>): Promise<boolean> => {
+    const created = await flight
+    if (created) policy.rename(created, true)
+    return created !== null
+  }
   const bandView: BandView = {
     collapsed,
     toggle: toggleCollapse,
-    add: (key) => void creation.bandAdd(key),
+    add: (key) => void named(creation.bandAdd(key)),
     open: (set) => void select(selectTargetOf(set)),
     springs: (dragged: string, node: BandNode) =>
       bands.byKey.has(dragged)
@@ -434,10 +435,10 @@ export function useViewInteractions(host: ViewHostApi, policy: ViewInteractionPo
         openIconPicker(row, anchor)
         return true
       case 'title:newabove':
-        void creation.createAdjacent(row, 'above')
+        void named(creation.createAdjacent(row, 'above'))
         return true
       case 'title:newbelow':
-        void creation.createAdjacent(row, 'below')
+        void named(creation.createAdjacent(row, 'below'))
         return true
       default:
         return false
@@ -460,11 +461,11 @@ export function useViewInteractions(host: ViewHostApi, policy: ViewInteractionPo
   const ghostCreate = (): Promise<boolean> | undefined => {
     const anchorId = ghost.take()
     const anchor = anchorId ? rowById.get(anchorId) : undefined
-    if (anchor) return creation.createAfter(anchor)
+    if (anchor) return named(creation.createAfter(anchor))
     if (!ghostStanding) return undefined
     // The standing ghost stays mounted until the row lands, so the create is claimed for its whole flight.
     if (standingFlight.current) return standingFlight.current
-    const flight = creation.createFirst().finally(() => {
+    const flight = named(creation.createFirst()).finally(() => {
       standingFlight.current = null
     })
     standingFlight.current = flight

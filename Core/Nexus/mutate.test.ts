@@ -16,7 +16,7 @@ import { NEW_SLOT, type MutateRequest, mutateRequest } from './mutateRequest'
 import type { Crop } from './schemas'
 import { cropKeyFor, NEXUS_CONFIG_FILES } from '../Paths/nexusPaths'
 import { assetFilePath } from '../Assets/assetRoots'
-import { shardOf } from './ids'
+import { newContentId, shardOf } from './ids'
 
 const A_ID = '01KVGMT8BFP350FZZXAMG1QDRA'
 const B_ID = '01KVGMT8BFP350FZZXAMG1QDRB'
@@ -103,7 +103,7 @@ describe('handleMutate — create', () => {
   it('createPage writes a .md in the resolved container + returns its relative path', async () => {
     const r = await settledMutate(
       root,
-      { op: 'createPage', parentPath: 'Notes/Daily', name: 'New' },
+      { op: 'createPage', id: newContentId('page'), parentPath: 'Notes/Daily', name: 'New' },
       nexusDeps,
     )
     expect(r.ok).toBe(true)
@@ -127,12 +127,12 @@ describe('handleMutate — create', () => {
   it('disambiguates a colliding create name (Untitled → Untitled (2))', async () => {
     const first = await settledMutate(
       root,
-      { op: 'createPage', parentPath: 'Notes/Daily', name: 'Untitled' },
+      { op: 'createPage', id: newContentId('page'), parentPath: 'Notes/Daily', name: 'Untitled' },
       nexusDeps,
     )
     const second = await settledMutate(
       root,
-      { op: 'createPage', parentPath: 'Notes/Daily', name: 'Untitled' },
+      { op: 'createPage', id: newContentId('page'), parentPath: 'Notes/Daily', name: 'Untitled' },
       nexusDeps,
     )
     expect(first.ok && first.value.created?.path).toBe('Notes/Daily/Untitled.md')
@@ -146,6 +146,7 @@ describe('handleMutate — create', () => {
       root,
       {
         op: 'createPage',
+        id: newContentId('page'),
         parentPath: 'Notes/Daily',
         name: 'Seeded',
         seeds: {
@@ -164,6 +165,7 @@ describe('handleMutate — create', () => {
       root,
       {
         op: 'createPage',
+        id: newContentId('page'),
         parentPath: 'Notes/Daily',
         name: 'Blank Seed',
         seeds: { prop_stage: { kind: 'select', value: '' } },
@@ -182,6 +184,7 @@ describe('handleMutate — create', () => {
     )
     const seeded = (name: string, spaceId: string): MutateRequest => ({
       op: 'createPage',
+      id: newContentId('page'),
       parentPath: 'Notes/Daily',
       name,
       seeds: { ctxA: { kind: 'context', value: [spaceId] } },
@@ -197,6 +200,7 @@ describe('handleMutate — create', () => {
       root,
       {
         op: 'createPage',
+        id: newContentId('page'),
         parentPath: 'Notes/Daily',
         name: 'Ordered',
         order: [NEW_SLOT, A_ID, B_ID],
@@ -249,7 +253,12 @@ describe('handleMutate — create', () => {
 
   it('createPage notes the new page for the values push', async () => {
     await refreshTree(root)
-    const r = await withValuesPush({ op: 'createPage', parentPath: 'Notes/Daily', name: 'Noted' })
+    const r = await withValuesPush({
+      op: 'createPage',
+      id: newContentId('page'),
+      parentPath: 'Notes/Daily',
+      name: 'Noted',
+    })
     expect(r.ok).toBe(true)
     expect(r.values.map((c) => c.rel)).toEqual(['Notes/Daily'])
   })
@@ -286,7 +295,7 @@ describe('handleMutate — rename', () => {
   it('a fromCreate rename disambiguates a collision instead of rejecting, and reports what landed', async () => {
     await settledMutate(
       root,
-      { op: 'createPage', parentPath: 'Notes/Daily', name: 'Untitled' },
+      { op: 'createPage', id: newContentId('page'), parentPath: 'Notes/Daily', name: 'Untitled' },
       nexusDeps,
     )
     await refreshTree(root)
@@ -759,7 +768,7 @@ describe('handleMutate — targets the tree doesn’t hold', () => {
     { op: 'setActiveView', path: 'Notes', kind: 'set', viewId: 'v' },
     { op: 'setPageMeta', path: '.trash/Alpha.md', patch: {} },
     { op: 'setProperty', path: '', propertyId: 'p', value: null },
-    { op: 'createPage', parentPath: '.nexus', name: 'X' },
+    { op: 'createPage', id: newContentId('page'), parentPath: '.nexus', name: 'X' },
     { op: 'createContainer', parentPath: '', kind: 'set', name: 'X' },
     { op: 'movePage', path: 'Notes/_pagecollection.json', newParentPath: 'Notes/Daily' },
     { op: 'movePage', path: 'Notes/Daily/Beta.md', newParentPath: '.nexus' },
@@ -852,6 +861,7 @@ describe('handleMutate — review-round hardening', () => {
       root,
       {
         op: 'createPage',
+        id: newContentId('page'),
         parentPath: 'Notes/Daily',
         name: `bad${String.fromCharCode(0)}name`,
       },
@@ -1548,7 +1558,7 @@ describe('handleMutate — setBanner', () => {
     const assets = await withAssetDir()
     const created = await settledMutate(
       root,
-      { op: 'createPage', parentPath: 'Notes/Daily', name: 'Cover' },
+      { op: 'createPage', id: newContentId('page'), parentPath: 'Notes/Daily', name: 'Cover' },
       nexusDeps,
     )
     await refreshTree(root)
@@ -2310,6 +2320,7 @@ describe('the Contexts lock', () => {
         root,
         {
           op: 'createPage',
+          id: newContentId('page'),
           parentPath: 'Notes/Daily',
           name: 'Gamma',
           seeds: { ctxP: { kind: 'context', value: ['sp-pom'] } },
@@ -2699,7 +2710,10 @@ describe('each routine operation lands from its own events, with no walk', () =>
   })
 
   const routine: [string, MutateRequest][] = [
-    ['a page create', { op: 'createPage', parentPath: 'Notes/Daily', name: 'Gamma' }],
+    [
+      'a page create',
+      { op: 'createPage', id: newContentId('page'), parentPath: 'Notes/Daily', name: 'Gamma' },
+    ],
     ['a Set create', { op: 'createContainer', parentPath: 'Notes', kind: 'set', name: 'Weekly' }],
     [
       'a Collection create',

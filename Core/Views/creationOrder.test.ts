@@ -8,6 +8,7 @@ import type { ViewRow } from './viewRow'
 describe('placeAt', () => {
   const page: Extract<MutateRequest, { op: 'createPage' }> = {
     op: 'createPage',
+    id: 'p9',
     parentPath: 'Notes',
     name: 'Untitled',
   }
@@ -41,7 +42,7 @@ describe('placeAt', () => {
 })
 
 describe('placeNew', () => {
-  const page = { op: 'createPage', parentPath: 'Notes/Ideas', name: 'Untitled' } as const
+  const page = { op: 'createPage', id: 'p9', parentPath: 'Notes/Ideas', name: 'Untitled' } as const
   const set = { op: 'createContainer', parentPath: 'Notes', kind: 'set', name: 'Untitled' } as const
   const space = { op: 'createSpace', contextId: 'g1', name: 'New Realm' } as const
   const top = {

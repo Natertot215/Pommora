@@ -4,6 +4,7 @@ import { propertyValue } from '../Properties/propertyValue'
 import { crop, type PageMetaPatch } from './schemas'
 import type { CascadeReport } from './cascade'
 import { CONTAINER_KINDS, HELD_KINDS, type HeldKind, NODE_KINDS } from './entities'
+import { newContentId } from './ids'
 
 /** `renamed` is what actually landed — a from-create rename may disambiguate away from the ask. */
 export interface MutateOutcome {
@@ -55,6 +56,7 @@ const op = <K extends string, S extends z.ZodRawShape>(literal: K, fields: S) =>
 // Every structural write enters through this one shape: a key it doesn't name is dropped, and a value off its type is refused before anything is written.
 export const mutateRequest = z.discriminatedUnion('op', [
   op('createPage', {
+    id: z.string(),
     parentPath: z.string(),
     name: z.string(),
     seeds: z.record(z.string(), propertyValue).optional(),
@@ -106,7 +108,14 @@ export const mutateRequest = z.discriminatedUnion('op', [
 ])
 export type MutateRequest = z.infer<typeof mutateRequest>
 
-type CreatePageRequest = Extract<MutateRequest, { op: 'createPage' }>
+export type CreatePageRequest = Extract<MutateRequest, { op: 'createPage' }>
+
+export const newPageRequest = (parentPath: string): CreatePageRequest => ({
+  op: 'createPage',
+  id: newContentId('page'),
+  parentPath,
+  name: DEFAULT_NEW_NAME,
+})
 
 export const contextSeeds = (req: CreatePageRequest): [contextId: string, spaceIds: string[]][] =>
   Object.entries(req.seeds ?? {}).flatMap(([id, v]) =>

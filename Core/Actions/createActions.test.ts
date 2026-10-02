@@ -22,10 +22,9 @@ function seed(
     selection,
     beginRename,
     select,
-    mutate: async (req, onCreated) => {
+    mutate: async (req) => {
       asked.push(req)
-      await onCreated?.(CREATED)
-      return null
+      return { created: CREATED }
     },
   })
 }
@@ -43,6 +42,7 @@ describe('newPage', () => {
     expect(asked).toEqual([
       {
         op: 'createPage',
+        id: expect.any(String),
         parentPath: 'Notes/Ideas',
         name: DEFAULT_NEW_NAME,
         order: [NEW_SLOT, 'p2'],

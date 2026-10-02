@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { newContentId } from '../Nexus/ids'
 import { mkdir, readFile, rm, writeFile } from 'node:fs/promises'
 import { join } from '../Paths/posix'
 import { tempRoot } from '../Testing/hostFs'
@@ -91,6 +92,7 @@ describe('the write gate settles what its handler wrote before the reply leaves'
   it('a mutate create has pushed the tree by the time its reply resolves', async () => {
     const r = await nexusHandlers.mutate(ctx, {
       op: 'createPage',
+      id: newContentId('page'),
       parentPath: 'Notes',
       name: 'New',
     })

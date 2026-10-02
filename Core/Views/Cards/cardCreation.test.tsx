@@ -47,10 +47,9 @@ let mutateSpy: ReturnType<typeof vi.fn>
 let renameSpy: ReturnType<typeof vi.fn>
 
 beforeEach(() => {
-  mutateSpy = vi.fn(async (req: { op: string }, onCreated?: (c: unknown) => void) => {
-    if (req.op === 'createPage') onCreated?.({ id: 'p3', path: 'Col/Untitled.md' })
-    return {}
-  })
+  mutateSpy = vi.fn(async (req: { op: string; id?: string }) =>
+    req.op === 'createPage' ? { created: { id: req.id, path: 'Col/Untitled.md' } } : {},
+  )
   renameSpy = vi.fn()
   ;(window as unknown as { nexus: unknown }).nexus = stubDialer({
     'view:loadValues': async () => VALUES,
@@ -111,7 +110,6 @@ describe('the cards ghost — dwell, create, and exit', () => {
         parentPath: 'Col',
         order: ['p1', '$new', 'p2'],
       }),
-      expect.any(Function),
     )
     expect(renameSpy).toHaveBeenCalledWith('Col/Untitled.md', true, 'detail')
   })

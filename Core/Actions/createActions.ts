@@ -1,4 +1,4 @@
-import { DEFAULT_NEW_NAME, type MutateRequest } from '../Nexus/mutateRequest'
+import { type MutateRequest, newPageRequest } from '../Nexus/mutateRequest'
 import { spaceCreator } from './createMenu'
 import type { RenameHost } from '../Session/editSlice'
 import { relDirname } from '../Paths/posix'
@@ -20,12 +20,13 @@ export async function newPageAdjacent(
   const anchor = container.pages.find((p) => p.path === path)
   if (!anchor) return
   const req = placeAt(
-    { op: 'createPage', parentPath, name: DEFAULT_NEW_NAME },
+    newPageRequest(parentPath),
     container.pages.map((p) => p.id),
     anchor.id,
     where,
   )
-  await mutate(req, (created) => beginRename(created.path, true, host))
+  const done = await mutate(req)
+  if (done?.created) beginRename(done.created.path, true, host)
 }
 
 export async function newSpaceAdjacent(
@@ -42,16 +43,16 @@ export async function newSpaceAdjacent(
     id,
     where,
   )
-  await mutate(req, (created) => beginRename(created.path, true, host))
+  const done = await mutate(req)
+  if (done?.created) beginRename(done.created.path, true, host)
 }
 
 /** An unanchored create, placed by its kind's placement setting and named in place. */
 export async function createNamed(req: MutateRequest, host?: RenameHost): Promise<void> {
   const s = useSession.getState()
   const { tree, mutate, beginRename } = s
-  await mutate(tree ? placeNew(tree, req, personalizationOf(s)) : req, (created) =>
-    beginRename(created.path, true, host),
-  )
+  const done = await mutate(tree ? placeNew(tree, req, personalizationOf(s)) : req)
+  if (done?.created) beginRename(done.created.path, true, host)
 }
 
 export async function newPage(inWindow: boolean): Promise<void> {
@@ -65,11 +66,9 @@ export async function newPage(inWindow: boolean): Promise<void> {
   else if (from?.kind === 'page') parentPath = relDirname(from.path)
   if (parentPath === null) parentPath = tree.collections[0]?.path ?? null
   if (parentPath === null) return
-  await mutate(
-    placeNew(tree, { op: 'createPage', parentPath, name: DEFAULT_NEW_NAME }, personalizationOf(s)),
-    (created) => {
-      const page = { kind: 'page', id: created.id, path: created.path } as const
-      return inWindow ? s.openWindowTab(page) : s.select(page, { newTab: false })
-    },
-  )
+  const req = placeNew(tree, newPageRequest(parentPath), personalizationOf(s))
+  const created = (await mutate(req))?.created
+  if (!created) return
+  const page = { kind: 'page', id: created.id, path: created.path } as const
+  await (inWindow ? s.openWindowTab(page) : s.select(page, { newTab: false }))
 }

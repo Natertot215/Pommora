@@ -1,6 +1,6 @@
 import type { ActionItem } from './menuModel'
 import { type ContextDef, createSpaceLabel } from '../Contexts/contexts'
-import { DEFAULT_NEW_NAME, type MutateRequest } from '../Nexus/mutateRequest'
+import { DEFAULT_NEW_NAME, type MutateRequest, newPageRequest } from '../Nexus/mutateRequest'
 import type { ContainerKind } from '../Nexus/entities'
 
 export interface Creator {
@@ -12,7 +12,7 @@ export function containerCreators(kind: ContainerKind, parentPath: string): Crea
   const name = DEFAULT_NEW_NAME
   const nested = kind === 'collection' ? 'Set' : 'Sub-Set'
   return [
-    { label: 'New Page', req: { op: 'createPage', parentPath, name } },
+    { label: 'New Page', req: newPageRequest(parentPath) },
     {
       label: `New ${nested}`,
       req: { op: 'createContainer', parentPath, kind: 'set', name },

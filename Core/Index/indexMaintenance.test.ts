@@ -1,6 +1,7 @@
 // After every maintaining seam fires, the rows it kept current are byte-identical to a from-scratch reconcile of the same disk.
 
 import { describe, it, expect, beforeEach, afterEach } from 'vitest'
+import { newContentId } from '../Nexus/ids'
 import { rm, mkdir, readFile, writeFile, unlink } from 'node:fs/promises'
 import { join } from '../Paths/posix'
 import { tempRoot } from '../Testing/hostFs'
@@ -142,7 +143,7 @@ describe('the writers maintain the rows', () => {
     expect(queryKeyHolders('Stage')).toEqual(['Notes/Daily/Alpha.md'])
     const created = await settledMutate(
       root,
-      { op: 'createPage', parentPath: 'Notes', name: 'Fresh' },
+      { op: 'createPage', id: newContentId('page'), parentPath: 'Notes', name: 'Fresh' },
       deps,
     )
     expect(created.ok).toBe(true)

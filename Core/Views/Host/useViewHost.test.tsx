@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { act } from 'react'
+import { act, useLayoutEffect } from 'react'
 import type { Root } from 'react-dom/client'
 import type { PropertyDefinition } from '../../Properties/properties'
 import type { CollectionNode, SetNode } from '../../Nexus/tree'
@@ -19,6 +19,16 @@ import { stubDialer } from '../../vitest.setup'
 import { mountEachTest, renderView } from '../../Testing/viewHarness'
 import { ViewTileScopeProvider } from '../ViewTileScope'
 import { makeTree } from '../../Testing/testTree'
+import { diff } from '../../Nexus/treeDelta'
+import type { NexusTree } from '../../Nexus/tree'
+
+const mint = vi.hoisted(() => ({ n: 2 }))
+vi.mock('../../Nexus/ids', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('../../Nexus/ids')>()),
+  newContentId: () => `p${++mint.n}`,
+}))
+
+const realMutate = useSession.getState().mutate
 
 const statusDef: PropertyDefinition = {
   id: 'prop_status',
@@ -108,7 +118,7 @@ let creation: ReturnType<typeof useViewCreation>
 function Probe({ source, nests }: { source: CollectionNode | SetNode; nests: boolean }): null {
   const host = useViewHost(source, nests)
   api = host
-  creation = useViewCreation(() => ({ ...host!, bandBucket: (key) => key, onCreated: () => {} }))
+  creation = useViewCreation(() => ({ ...host!, bandBucket: (key) => key }))
   return null
 }
 
@@ -125,6 +135,7 @@ const mount = async (source: CollectionNode | SetNode, nests = true): Promise<vo
 
 beforeEach(() => {
   api = null
+  mint.n = 2
   saveSpy = vi.fn(async () => ({ ok: true, value: { id: 'v1' } }))
   channels = {
     'view:loadValues': async () => ({ ok: true, value: VALUES }),
@@ -744,13 +755,10 @@ describe('settleOrders — a create composes with the live order', () => {
   }
 
   beforeEach(() => {
-    let n = 2
     useSession.setState({
-      mutate: vi.fn(async (_req: unknown, then?: (c: { id: string; path: string }) => void) => {
-        n += 1
-        then?.({ id: `p${n}`, path: `Col/New ${n}.md` })
-        return {}
-      }) as never,
+      mutate: vi.fn(async (req: { id: string }) => ({
+        created: { id: req.id, path: `Col/${req.id}.md` },
+      })) as never,
     })
   })
 
@@ -797,6 +805,100 @@ describe('settleOrders — a create composes with the live order', () => {
   })
 })
 
+describe('a create placed ahead of its reply', () => {
+  const complete = propsAtRoot({ prop_status: 'complete' }, [threeStatus])
+  const commits: { band?: string; order: string[] }[] = []
+  let reply: (r: unknown) => void
+
+  function Recorder(): null {
+    const source = useSession((s) => s.tree?.collections.find((c) => c.id === 'col1'))!
+    const host = useViewHost(source, true)
+    api = host
+    creation = useViewCreation(() => ({ ...host!, bandBucket: (key) => key }))
+    const band = host?.rowBand.get('p3')
+    const order = host?.paintOrder.map((r) => r.id) ?? []
+    useLayoutEffect(() => {
+      commits.push({ band, order })
+    })
+    return null
+  }
+
+  const pages = (...ids: string[]): unknown[] =>
+    ids.map((id) => page(id, id === 'p3' ? 'Untitled' : id, `Col/${id}.md`))
+  const source = (ids: string[]): CollectionNode =>
+    ({
+      ...banded(CONFIGURED),
+      pages: pages(...ids),
+      views: [{ ...banded(CONFIGURED).views?.[0], ...SORTED, manual_order: ['p2', 'p1'] }],
+    }) as unknown as CollectionNode
+
+  beforeEach(async () => {
+    commits.length = 0
+    channels['view:loadValues'] = async () => ({
+      ok: true,
+      value: pageValues({
+        p1: { [ID_KEY]: 'p1', ...complete },
+        p2: { [ID_KEY]: 'p2', ...complete },
+      }),
+    })
+    channels.mutate = () =>
+      new Promise((res) => {
+        reply = res
+      })
+    useSession.setState({
+      tree: { ...makeTree(), collections: [source(['p1', 'p2'])] } as NexusTree,
+      version: 1,
+      mutate: realMutate,
+    })
+    await act(async () => {
+      root.render(
+        <ContentHostContext.Provider value={{ tabId: 't1', key: 'collection:col1', parked: false }}>
+          <Recorder />
+        </ContentHostContext.Provider>,
+      )
+    })
+    await act(async () => {})
+  })
+
+  const createAboveFirst = async (): Promise<{ flight: Promise<unknown> }> => {
+    let flight!: Promise<unknown>
+    const p1 = api?.rowById.get('p1')
+    await act(async () => {
+      flight = creation.createAdjacent(p1!, 'above')
+    })
+    return { flight }
+  }
+
+  it('the push that mounts the row paints it in its seeded band, at the gesture slot', async () => {
+    const { flight } = await createAboveFirst()
+    const held = useSession.getState().tree!
+    const next = { ...held, collections: [source(['p3', 'p1', 'p2'])] } as NexusTree
+    await act(async () => {
+      useSession.getState().applyChange({ version: 2, delta: diff(held, next)! })
+    })
+    expect(commits.find((c) => c.band !== undefined)).toEqual({
+      band: 'complete',
+      order: ['p2', 'p3', 'p1'],
+    })
+    await act(async () => {
+      reply({ ok: true, value: { created: { id: 'p3', path: 'Col/Untitled.md' } } })
+      await flight
+    })
+    expect(lastSavedView().manual_order).toEqual(['p2', 'p3', 'p1'])
+  })
+
+  it('a refused create leaves no seed and no order behind', async () => {
+    const { flight } = await createAboveFirst()
+    await act(async () => {
+      reply({ ok: false, error: { code: 'exists', message: 'Taken.' } })
+      await flight
+    })
+    expect(api?.effectiveValues.p3).toBeUndefined()
+    expect(api?.view.manual_order).toEqual(['p2', 'p1'])
+    expect(saveSpy).not.toHaveBeenCalled()
+  })
+})
+
 describe('the root seat', () => {
   const mountSeat = (source: CollectionNode): Promise<void> => renderView(root, source)
   const mutateSpy = (): ReturnType<typeof vi.fn> =>
@@ -823,7 +925,6 @@ describe('the root seat', () => {
     await clickGhost('.ghost-row')
     expect(mutateSpy()).toHaveBeenCalledWith(
       expect.objectContaining({ op: 'createPage', parentPath: 'Col' }),
-      expect.any(Function),
     )
   })
 
