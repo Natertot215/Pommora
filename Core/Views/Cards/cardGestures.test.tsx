@@ -56,7 +56,7 @@ let menuAnswer: string | null
 
 beforeEach(() => {
   mutateSpy = vi.fn(async (req: { op: string; id?: string }) =>
-    req.op === 'createPage' ? { created: { id: req.id, path: 'Col/Untitled.md' } } : {},
+    req.op === 'createPage' ? { created: { path: 'Col/Untitled.md' } } : {},
   )
   selectSpy = vi.fn(async () => {})
   menuAnswer = null

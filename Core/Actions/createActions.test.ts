@@ -7,7 +7,7 @@ import { makeTree } from '../Testing/testTree'
 import { useSession } from '../Session/store'
 import { createNamed, newPage, newPageAdjacent, newSpaceAdjacent } from './createActions'
 
-const CREATED = { id: 'new', path: 'Notes/Untitled.md' }
+const CREATED = { path: 'Notes/Untitled.md' }
 const asked: MutateRequest[] = []
 const beginRename = vi.fn()
 const askedId = (): string => (asked[0] as CreateRequest).id
@@ -49,7 +49,10 @@ describe('newPage', () => {
         order: [askedId(), 'p2'],
       },
     ])
-    expect(select).toHaveBeenCalledWith({ kind: 'page', ...CREATED }, { newTab: false })
+    expect(select).toHaveBeenCalledWith(
+      { kind: 'page', id: askedId(), ...CREATED },
+      { newTab: false },
+    )
   })
 
   it("creates beside the selected page, in the page's own folder", async () => {
@@ -79,7 +82,7 @@ describe('newPage', () => {
     })
     await newPage(true)
     expect(asked).toMatchObject([{ parentPath: 'Notes/Ideas' }])
-    expect(openWindowTab).toHaveBeenCalledWith({ kind: 'page', ...CREATED })
+    expect(openWindowTab).toHaveBeenCalledWith({ kind: 'page', id: askedId(), ...CREATED })
     expect(select).not.toHaveBeenCalled()
   })
 })

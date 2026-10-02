@@ -11,11 +11,7 @@ import {
 } from '../../Properties/propertyValue'
 import { specOf } from '../../Properties/properties'
 import { type ViewPatch, viewOption } from '../views'
-import {
-  type CreatePageRequest,
-  type MutateOutcome,
-  newPageRequest,
-} from '../../Nexus/mutateRequest'
+import { type CreatePageRequest, newPageRequest } from '../../Nexus/mutateRequest'
 import { relDirname } from '../../Paths/posix'
 import { findScroller, SEEK_GLIDE, scrollGlide } from '@pommora/uix/Interactions/autoscroll'
 import { useSession } from '../../Session/store'
@@ -43,7 +39,7 @@ const SEEDS_FROM_SORT: Record<ValueKind, boolean> = {
   file: false,
 }
 
-type Created = NonNullable<MutateOutcome['created']>
+type Created = { id: string; path: string }
 
 type ViewCreationConfig = Pick<
   ViewHostApi,
@@ -159,7 +155,8 @@ export function useViewCreation(getCfg: () => ViewCreationConfig): ViewCreation 
       req.seeds ?? {},
       flight.then((done) => done !== null),
     )
-    const created = (await flight)?.created ?? null
+    const landed = (await flight)?.created
+    const created = landed ? { id: req.id, path: landed.path } : null
     const latest = cfg()
     const order =
       created && latest.view.id === c.view.id ? orderPatch(latest, req.id, anchorId, where) : null
@@ -178,7 +175,7 @@ export function useViewCreation(getCfg: () => ViewCreationConfig): ViewCreation 
       slot,
     )
     const created = await createPageIn(req, null, slot)
-    if (created) requestAnimationFrame(() => glideToRow(created.id))
+    if (created) requestAnimationFrame(() => glideToRow(req.id))
     return created
   }
 

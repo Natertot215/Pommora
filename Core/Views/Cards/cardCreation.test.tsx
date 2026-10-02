@@ -48,7 +48,7 @@ let renameSpy: ReturnType<typeof vi.fn>
 
 beforeEach(() => {
   mutateSpy = vi.fn(async (req: { op: string; id?: string }) =>
-    req.op === 'createPage' ? { created: { id: req.id, path: 'Col/Untitled.md' } } : {},
+    req.op === 'createPage' ? { created: { path: 'Col/Untitled.md' } } : {},
   )
   renameSpy = vi.fn()
   ;(window as unknown as { nexus: unknown }).nexus = stubDialer({

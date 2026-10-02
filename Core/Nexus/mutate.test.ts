@@ -823,10 +823,10 @@ describe('handleMutate — a new Collection lands last', () => {
     await writeFile(join(root, 'Zeta', '_pagecollection.json'), JSON.stringify({ id: ZETA }))
   })
 
-  const create = () =>
+  const create = (id = newId()) =>
     settledMutate(
       root,
-      { op: 'createContainer', id: newId(), parentPath: '', kind: 'collection', name: 'Alpha' },
+      { op: 'createContainer', id, parentPath: '', kind: 'collection', name: 'Alpha' },
       nexusDeps,
     )
 
@@ -836,8 +836,8 @@ describe('handleMutate — a new Collection lands last', () => {
       JSON.stringify({ order: { collections: [ZETA, NOTES] } }),
     )
     await refreshTree(root)
-    const r = await create()
-    const id = r.ok ? r.value.created?.id : undefined
+    const id = newId()
+    await create(id)
     expect(
       (await readJson<{ order: { collections: string[] } }>('.nexus/state.json')).order,
     ).toEqual({

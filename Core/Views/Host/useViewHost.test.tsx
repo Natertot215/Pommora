@@ -757,7 +757,7 @@ describe('settleOrders — a create composes with the live order', () => {
   beforeEach(() => {
     useSession.setState({
       mutate: vi.fn(async (req: { id: string }) => ({
-        created: { id: req.id, path: `Col/${req.id}.md` },
+        created: { path: `Col/${req.id}.md` },
       })) as never,
     })
   })
@@ -883,7 +883,7 @@ describe('a create placed ahead of its reply', () => {
       order: ['p2', 'p3', 'p1'],
     })
     await act(async () => {
-      reply({ ok: true, value: { created: { id: 'p3', path: 'Col/Untitled.md' } } })
+      reply({ ok: true, value: { created: { path: 'Col/Untitled.md' } } })
       await flight
     })
     expect(lastSavedView().manual_order).toEqual(['p2', 'p3', 'p1'])

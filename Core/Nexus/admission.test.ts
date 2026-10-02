@@ -134,14 +134,14 @@ describe('the nexus-wide write sweeps', () => {
 
   it('a Context RENAME sweeps a member but leaves an Unknown file alone', async () => {
     await openSession(root)
+    const contextId = newId()
     const made = await handleMutate(
       root,
-      { op: 'createContextGroup', id: newId(), name: 'Projects' },
+      { op: 'createContextGroup', id: contextId, name: 'Projects' },
       deps,
     )
     expect(made.ok).toBe(true)
     if (!made.ok) return
-    const contextId = made.value.created!.id
 
     const tagged = (key: string, id: string): string =>
       `---\n${key}: ${id}\n<Projects>:\n  - Pommora\n---\nbody\n`
