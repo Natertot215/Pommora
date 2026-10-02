@@ -1,7 +1,7 @@
 import { join } from '../Paths/posix'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { NexusTree } from './tree'
-import { liveIdIndex, liveIdOf, livePathOf, pageIdIndex } from './heldPages'
+import { liveIdIndex, liveIdOf, livePathOf } from './heldPages'
 
 const held = { tree: null as NexusTree | null }
 vi.mock('./liveTree', () => ({
@@ -50,9 +50,5 @@ describe('the held tree’s pages', () => {
     held.tree = tree('/elsewhere')
     expect(liveIdOf(ROOT, join(ROOT, 'Notes/A.md'))).toBeUndefined()
     expect(livePathOf(ROOT, 'pA')).toBeNull()
-  })
-
-  it('pageIdIndex without a tree is empty', () => {
-    expect(pageIdIndex(null).size).toBe(0)
   })
 })

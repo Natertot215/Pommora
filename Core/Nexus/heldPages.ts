@@ -28,9 +28,6 @@ const indicesOf = entityMemo((tree): PageIndices => {
   return { byPath, byId }
 })
 
-export const pageIdIndex = (tree: NexusTree | null): ReadonlyMap<string, string> =>
-  tree ? indicesOf(tree).byPath : new Map()
-
 /** Null when the tree is not this root's, so a stale tree never names ids for another nexus. */
 function liveIndices(root: string): PageIndices | null {
   const tree = heldTreeOf(root)

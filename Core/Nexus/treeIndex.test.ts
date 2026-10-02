@@ -14,7 +14,7 @@ import {
   searchEntriesOf,
   spaceLinksOf,
 } from './treeIndex'
-import { pageIdIndex, titlesOf } from './heldPages'
+import { titlesOf } from './heldPages'
 import { projectBaseline } from './remintLedger'
 
 describe('the record walk', () => {
@@ -207,17 +207,12 @@ describe('spaceLinksOf', () => {
 describe('a configuration patch keeps every entity lookup', () => {
   it('answers the same objects across a settings change, and rebuilds the index when unreadable moves', () => {
     const t = makeTree()
-    const held = [nodesOf(t), pageIdIndex(t), titlesOf(t), projectBaseline(t)]
+    const held = [nodesOf(t), titlesOf(t), projectBaseline(t)]
     const toggled: NexusTree = {
       ...t,
       config: { ...t.config, personalization: { hideChevrons: true }, crops: {} },
     }
-    const kept = [
-      nodesOf(toggled),
-      pageIdIndex(toggled),
-      titlesOf(toggled),
-      projectBaseline(toggled),
-    ]
+    const kept = [nodesOf(toggled), titlesOf(toggled), projectBaseline(toggled)]
     for (const [i, v] of kept.entries()) expect(v).toBe(held[i])
     const unreadable: NexusTree = {
       ...toggled,
