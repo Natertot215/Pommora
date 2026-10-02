@@ -255,7 +255,7 @@ export async function indexEvent(root: string, ev: FileEvent): Promise<HeadingRe
         return null
       case 'add':
       case 'change':
-        return await indexWrittenPage(root, ev.absPath, ev.own?.text)
+        return await indexWrittenPage(root, ev.absPath, ev.text)
     }
   } catch (e) {
     console.error('settle: the index missed an event and reseeds:', errText(e))
@@ -300,7 +300,7 @@ const jsonOf = (
   ev: Changed,
   read: (absPath: string) => Promise<Json | null> = readJsonObject,
 ): Promise<Json | null> =>
-  ev.own?.text === undefined ? read(ev.absPath) : Promise.resolve(parseJsonObject(ev.own.text))
+  ev.text === undefined ? read(ev.absPath) : Promise.resolve(parseJsonObject(ev.text))
 
 const pagePathsIn = (node: CollectionNode | SetNode | null): string[] =>
   node ? [...node.pages.map((p) => p.path), ...(node.sets ?? []).flatMap(pagePathsIn)] : []
@@ -340,16 +340,13 @@ async function applyPage(
   const abs = join(root, rel)
   let read: Awaited<ReturnType<typeof readPageRecord>>
   try {
-    read =
-      ev.own?.text === undefined
-        ? await readPageRecord(abs, rel)
-        : pageRecordOf(ev.own.text, rel, null)
+    read = ev.text === undefined ? await readPageRecord(abs, rel) : pageRecordOf(ev.text, rel, null)
   } catch {
     if (await pathExists(abs)) return 'walk'
     return applyPatch(root, (t) => removeNodeInTree(t, rel))
   }
-  owed.values.set(rel, !!ev.own?.bodyOnly && (owed.values.get(rel) ?? true))
-  if (!ev.own) owed.pages.add(rel)
+  owed.values.set(rel, !!ev.bodyOnly && (owed.values.get(rel) ?? true))
+  if (ev.origin === 'watched') owed.pages.add(rel)
   if ('unread' in read && read.unread === 'missing')
     owed.stamp.push({ path: rel, kind: 'page', reason: 'missing' })
   const landed = applyPatch(root, (t) => {
@@ -363,7 +360,7 @@ async function applyPage(
     const kept = stabilize(node, held)
     return kept === held ? t : updateNodeInTree(t, rel, () => kept)
   })
-  if (!ev.own) noteExternalEdit(root, abs)
+  if (ev.origin === 'watched') noteExternalEdit(root, abs)
   return landed
 }
 
@@ -412,7 +409,7 @@ async function applySpace(root: string, dirRel: string, ev: Changed, owed: Owed)
       group && spaceNodeFrom(sc, { title: basename(dirRel), path: dirRel, contextId: group.def.id })
     const held = spaceAt(t, dirRel)
     // A Space the tree doesn't hold lands from the app's own write alone, which relinks nothing, as the app's create never has; an outside one walks, so a tag it now resolves gains its link.
-    if (!built || (held ? held.id !== built.id : !ev.own)) return null
+    if (!built || (held ? held.id !== built.id : ev.origin === 'watched')) return null
     const node = contextLinker(t.contexts)(built, sc)
     return held
       ? updateNodeInTree(t, dirRel, () => node)
@@ -437,7 +434,7 @@ async function applyContexts(root: string, ev: Changed): Promise<Applied> {
   const parsed = raw && contextsRegistrySchema.safeParse(raw)
   if (!parsed?.success) return 'walk'
   return applyPatch(root, (t) => {
-    const groups = regroup(t.contexts, parsed.data.contexts, !!ev.own)
+    const groups = regroup(t.contexts, parsed.data.contexts, ev.origin === 'own')
     if (!groups) return null
     const contexts = stabilize(groups, t.contexts)
     return contexts === t.contexts ? t : { ...t, contexts }
@@ -451,7 +448,9 @@ async function applyRegistry(root: string, ev: Changed): Promise<Applied> {
     const arrived = Object.keys(registry.defs).some(
       (id) => !t.config.registry.some((d) => d.id === id),
     )
-    return arrived && !ev.own ? null : repointRegistryInTree(t, orderedDefs(registry))
+    return arrived && ev.origin === 'watched'
+      ? null
+      : repointRegistryInTree(t, orderedDefs(registry))
   })
 }
 
@@ -467,7 +466,7 @@ async function applySettings(root: string, ev: Changed, owed: Owed): Promise<App
 }
 
 async function applyShard(root: string, shard: string, ev: Changed): Promise<Applied> {
-  const read = await readShard(root, shard, ev.own?.text)
+  const read = await readShard(root, shard, ev.text)
   if (read.kind === 'unreadable') return 'ok'
   const held = heldTreeOf(root)?.config.pageMetadata
   const pageMetadata = withShards(held ?? {}, { [shard]: read.kind === 'ok' ? read.pages : {} })
@@ -511,9 +510,9 @@ async function applyMove(root: string, ev: Moved, owed: Owed): Promise<Applied> 
   // A Space or Context that left or came back changes how members resolve, which only the walk re-derives.
   if ([from, to].some((rel) => rel.startsWith(`${CONTEXTS_DIR_REL}/`))) return 'walk'
   // Not a move the tree makes in place (one end is the Trash, or outside what it holds): what left and what arrived are two events.
-  const left = await applyOne(root, { event: 'unlink', absPath: ev.from, own: {} }, owed)
+  const left = await applyOne(root, { event: 'unlink', absPath: ev.from, origin: 'own' }, owed)
   const arrived = isMarkdownFile(to) ? 'add' : 'addDir'
-  const landed = await applyOne(root, { event: arrived, absPath: ev.absPath, own: {} }, owed)
+  const landed = await applyOne(root, { event: arrived, absPath: ev.absPath, origin: 'own' }, owed)
   return left === 'ok' ? landed : 'walk'
 }
 
@@ -551,7 +550,7 @@ async function applyOne(root: string, ev: FileEvent, owed: Owed): Promise<Applie
       return applySettings(root, ev, owed)
     case 'tiles-leaf':
       dropTileHeadingLinks()
-      if (ev.own) return 'ok'
+      if (ev.origin === 'own') return 'ok'
       owed.tiles.set(navKey(c.host), c.host)
       // A host off screen isn't re-read by the window, so its document's last read would otherwise stay where it was.
       if (basename(c.rel) === TILE_DOC_FILENAME) await readAppFile(join(root, c.rel))
@@ -574,7 +573,7 @@ export async function applyEvents(root: string, events: FileEvent[]): Promise<vo
   for (const ev of events) {
     const seen = await indexEvent(root, ev)
     try {
-      if (seen && ev.event !== 'move' && !ev.own) await cascadeSeen(root, seen)
+      if (seen && ev.event !== 'move' && ev.origin === 'watched') await cascadeSeen(root, seen)
       if ((await applyOne(root, ev, owed)) === 'ok') continue
     } catch (e) {
       console.error('settle: an event could not be placed, walking:', errText(e))
