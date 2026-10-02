@@ -38,6 +38,7 @@ import { machine } from '../Platform/machine'
 import {
   orderedDefs,
   readKeptRegistry,
+  registryOf,
   type PropertyRegistry,
 } from '../Properties/propertiesRegistry'
 import { asString, asStringArray } from './coerce'
@@ -243,7 +244,7 @@ export async function readFolder(
     // An Agenda folder is no Collection or Set whether or not its slot is registered, so the registration isn't read.
     kindCtx: await agendaContext(root, null),
     scope: scopeOf(tree.config),
-    registry: Object.fromEntries(tree.config.registry.map((d) => [d.id, d])),
+    registry: registryOf(tree.config.registry),
     unreadable: [],
     link: contextLinker(tree.contexts),
   }

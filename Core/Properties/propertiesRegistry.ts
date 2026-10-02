@@ -56,6 +56,9 @@ export async function readKeptRegistry(root: string): Promise<RegistryFile> {
 export const orderedDefs = (reg: RegistryFile): PropertyDefinition[] =>
   resolveRowOrder(Object.entries(reg.defs), ([key]) => key, reg.order).map(([, d]) => d)
 
+export const registryOf = (defs: PropertyDefinition[]): PropertyRegistry =>
+  Object.fromEntries(defs.map((d) => [d.id, d]))
+
 export const linkDefs = async (root: string): Promise<PropertyDefinition[]> =>
   Object.values((await readKeptRegistry(root)).defs).filter((d) => d.type === 'link')
 
