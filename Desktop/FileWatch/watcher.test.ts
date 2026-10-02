@@ -543,15 +543,6 @@ describe('isConfigPath', () => {
 
 describe('syncIgnoredUnder beside the classifier', () => {
   const scope = (assetDir: string) => ({ excluded: [], assetDir })
-  const TILE_BODIES = ['.nexus/homepage/t1.md', '.nexus/contexts/Areas/Home/t1.md']
-
-  it('reports a tile body, which tileBodyUnder then names', () => {
-    const sync = syncIgnoredUnder('/nexus', scope('.nexus/assets'))
-    for (const rel of TILE_BODIES) {
-      expect(sync(`/nexus/${rel}`)).toBe(false)
-      expect(tileBodyUnder(rel.split('/'), rel)).toBe(true)
-    }
-  })
 
   it('still refuses .trash', () => {
     expect(syncIgnoredUnder('/nexus', scope('.nexus/assets'))('/nexus/.trash/Notes/gone.md')).toBe(

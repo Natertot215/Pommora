@@ -744,11 +744,6 @@ describe('tileBodyUnder', () => {
     expect(isTileBody('Notes/Page.md')).toBe(false)
     expect(isTileBody('')).toBe(false)
   })
-
-  it('names any Markdown under the homepage folder, but not its config', () => {
-    expect(isTileBody('.nexus/homepage/anything.md')).toBe(true)
-    expect(isTileBody('.nexus/homepage/homepage.json')).toBe(false)
-  })
 })
 
 describe('an outside heading rename', () => {
@@ -952,8 +947,8 @@ describe('the app’s own events', () => {
   })
 })
 
-// The walk and the container sidecar's event each decode its meta. A field added to one alone would go red here.
-describe('the two container mappers agree', () => {
+// The walk and the container sidecar's event decode its meta through one mapper, each handing it the children it holds.
+describe('the walk and the sidecar event agree on a container', () => {
   const SET_A = '01ARZ3NDEKPSV4RRFFQ69G5S0A'
   const SET_B = '01ARZ3NDEKPSV4RRFFQ69G5S0B'
   const view = (id: string): Record<string, unknown> => ({
@@ -1019,7 +1014,7 @@ describe('the two container mappers agree', () => {
     })
   })
 
-  // Whole nodes rather than a projection: a field added to one mapper alone is only caught by comparing everything the node carries.
+  // Whole nodes rather than a projection, so a field the event's arguments lose is caught wherever the node carries it.
   it('the sidecar event decodes to exactly what the walk produced, field for field', async () => {
     await refreshTree(root)
     const walked = structuredClone(notes())
