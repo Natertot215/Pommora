@@ -49,7 +49,7 @@ import { seedContentIndex } from '../Index/indexSeed'
 import { createMarkdownTile, readMarkdownTile, writeMarkdownTile } from '../Tiles/tilesFile'
 import { landedId } from '../Testing/tileLayouts'
 import { lockContention } from '../Testing/machines'
-import { ok } from '../Contract/result'
+import { fault, ok } from '../Contract/result'
 import { nexusHandlers } from './handlers'
 
 let root: string
@@ -1358,6 +1358,31 @@ describe('nexusHandlers.mutate — retryUnreadable', () => {
     expect(heldTreeOf(root)?.unreadable).toBeUndefined()
     const live = heldTreeOf(root)
     expect(live && stabilize(await readNexus(root), live)).toBe(live)
+  })
+})
+
+describe('nexusHandlers.mutate — a create’s ID', () => {
+  const ctx = { push: vi.fn(), trashMode: async () => 'nexus' } as unknown as HostContext
+  const listing = async (): Promise<string[]> => (await readdir(root, { recursive: true })).sort()
+
+  it('refuses a create whose ID is not ULID-shaped as malformed, and writes nothing', async () => {
+    const before = await listing()
+    for (const req of [
+      { op: 'createPage', id: '../Escape', parentPath: 'Notes/Daily', name: 'New' },
+      { op: 'createContainer', id: 'set-1', parentPath: 'Notes', kind: 'set', name: 'Weekly' },
+      { op: 'createContextGroup', id: 'realms', name: 'Realms' },
+      { op: 'createSpace', id: 'sp9', contextId: G_ID, name: 'Realm' },
+    ])
+      expect(await nexusHandlers.mutate(ctx, req)).toEqual(fault('Malformed request.'))
+    expect(await listing()).toEqual(before)
+  })
+
+  it('admits a page ID carrying its kind mark', async () => {
+    const id = newContentId('page')
+    const req = { op: 'createPage', id, parentPath: 'Notes/Daily', name: 'Marked' }
+    expect(await nexusHandlers.mutate(ctx, req)).toEqual(
+      ok({ created: { path: 'Notes/Daily/Marked.md' } }),
+    )
   })
 })
 
