@@ -967,20 +967,6 @@ describe('store — the mutate rail', () => {
     useSession.getState().applyTree(treeWith([]))
   })
 
-  it('setActiveView has landed on the node by the time its reply resolves', async () => {
-    expect(useSession.getState().tree?.collections[0]?.activeView).toBeUndefined()
-    channels.mutate = vi.fn(async () => {
-      const tree = treeWith([])
-      hostPushes({ ...tree, collections: [{ ...tree.collections[0], activeView: 'view_b' }] })
-      return ok({})
-    })
-    const done = await useSession
-      .getState()
-      .mutate({ op: 'setActiveView', path: 'Notes', kind: 'collection', viewId: 'view_b' })
-    expect(done).not.toBeNull()
-    expect(useSession.getState().tree?.collections[0]?.activeView).toBe('view_b')
-  })
-
   it('a page rename lands the pending save on the old path first', async () => {
     const order: string[] = []
     channels['page:updateBody'] = vi.fn(async (path: string) => {

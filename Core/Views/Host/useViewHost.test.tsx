@@ -762,11 +762,11 @@ describe('settleOrders — a create composes with the live order', () => {
     expect(lastSavedView().manual_order).toEqual(['p1', 'p4', 'p3', 'p2'])
   })
 
-  it("the override survives the create's own optimistic push — only a page_order-backed view resets on it", async () => {
+  it('the override survives a push that re-identifies its source — only a page_order-backed view resets on it', async () => {
     await mount(collection({ ...SORTED, manual_order: ['p1', 'p2'] }))
     await createBelowFirst()
     expect(api?.view.manual_order).toEqual(['p1', 'p3', 'p2'])
-    // The create's own mutate pushes an optimistic tree: same content, new source identity.
+    // A later push hands the view the same content under a new source identity.
     await mount(collection({ ...SORTED, manual_order: ['p1', 'p2'] }))
     expect(api?.view.manual_order).toEqual(['p1', 'p3', 'p2'])
   })
