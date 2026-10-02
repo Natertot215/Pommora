@@ -1,4 +1,8 @@
-import { notifyRetry, reportRefusal } from '../../Interface/Notifications/notifications'
+import {
+  notifyReport,
+  notifyRetry,
+  reportRefusal,
+} from '../../Interface/Notifications/notifications'
 import { useRef, useState, type ReactNode } from 'react'
 import { Icon, type IconName } from '@pommora/uix/Symbols'
 import type { IconSize } from '@pommora/uix/Theme'
@@ -180,7 +184,9 @@ const replay = (record: SchemaJournal) => (): void =>
     })
 
 const retryOwed = ({ cascade, owed }: SchemaCascade): void => {
-  if (cascade.warning && owed) notifyRetry(cascade.warning, replay(owed))
+  if (!cascade.warning) return
+  if (owed) notifyRetry(cascade.warning, replay(owed))
+  else notifyReport(cascade.warning, true)
 }
 
 async function warnOwed(res: Promise<Result<SchemaCascade>>): Promise<void> {
