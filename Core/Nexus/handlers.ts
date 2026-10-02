@@ -26,7 +26,7 @@ import { runOpenLedger } from './remintLedger'
 import { openSession, sessionRoot, waitingOpen, waitOn, whileAdopting } from './session'
 import { readNexus, readNexusConfig } from './readNexus'
 import { asString } from './coerce'
-import { settleNow, handed } from './settle'
+import { settleNow, recordHanded } from './settle'
 import type { NexusState } from './tree'
 import { trashDeps } from '../Trash/bundle'
 
@@ -83,7 +83,7 @@ export async function openNexusSequence(
     void sweepFileHistory(root)
     try {
       let tree = await readNexus(root)
-      // Every page it lists is stamped, since no event comes for a file that predates the watcher, and read again rather than patched, since a first adoption stamps every page and one more read costs less than a patch per stamp.
+      // Every page it lists is stamped, since the watcher starts after the open, so neither a file that predates it nor one written during the open gets an event; and read again rather than patched, since a first adoption stamps every page and one more read costs less than a patch per stamp.
       while (await stampMissing(root, tree.unreadable)) tree = await readNexus(root)
       seedLiveTree(tree)
       if (latchRecord) await runOpenLedger(root, tree)
@@ -113,7 +113,7 @@ export async function adoptNexus(
 export const nexusHandlers = {
   'nexus:state': async (): Promise<Result<NexusState>> => {
     const root = sessionRoot()
-    if (root) return ok({ status: 'open', ...handed(await liveTreeOf(root)) })
+    if (root) return ok({ status: 'open', ...recordHanded(await liveTreeOf(root)) })
     const open = waitingOpen()
     return open ? fail('operation-failed', open.why) : ok({ status: 'empty' })
   },

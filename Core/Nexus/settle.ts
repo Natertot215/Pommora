@@ -53,7 +53,7 @@ function shown(tree: NexusTree, stamp: readonly Unreadable[]): NexusTree {
 }
 
 // Records the tree the window was handed, the baseline the next difference is taken against.
-export function handed(tree: NexusTree): { tree: NexusTree; version: number } {
+export function recordHanded(tree: NexusTree): { tree: NexusTree; version: number } {
   pushed = shown(tree, owedFor(tree.nexus.rootPath).stamp)
   return { tree: pushed, version }
 }
