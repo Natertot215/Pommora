@@ -3,10 +3,10 @@ import type { HeldKind } from '../../Nexus/entities'
 import { valueOr } from '../../Contract/result'
 import { DEFAULT_TRASH_MODE } from '../../Trash/trashRow'
 import { useSession } from '../../Session/store'
+import { personalizationOf } from '../../Session/configSlice'
 import { SETTING_DEFAULTS, settingOf } from '../../Settings/personalization'
 import { notifyDeleted } from '../Notifications/notifications'
 import { dialer } from '../../Platform/dialer'
-import { personalizationOf } from '../../Session/configSlice'
 
 const DELETE_FACTS_FALLBACK = {
   trashMode: DEFAULT_TRASH_MODE,

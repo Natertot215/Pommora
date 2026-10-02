@@ -59,8 +59,8 @@ import { dropAllTileDocs } from '../Tiles/tileDocStore'
 import { cancelPageSave, scheduleTabsSave } from './saveScheduler'
 import { crumbDepthFor } from '../Interface/Subfield/crumbs'
 import type { SessionState, Slice } from './sessionState'
-import { dialer } from '../Platform/dialer'
 import { personalizationOf } from './configSlice'
+import { dialer } from '../Platform/dialer'
 
 export type PageSlot =
   | { status: 'ready'; target: PageTarget; detail: PageDetail; body: string }

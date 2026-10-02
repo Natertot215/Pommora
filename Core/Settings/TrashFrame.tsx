@@ -20,6 +20,7 @@ import { formatDate } from '../Properties/formatValue'
 import { containerTargets, contextTargets } from '../Actions/destinationTree'
 import { foldKey, matchScore, rankMatches } from '../Paths/caseFold'
 import { useSession } from '../Session/store'
+import { personalizationOf } from '../Session/configSlice'
 import { notifyReport, unrestoredLine } from '../Interface/Notifications/notifications'
 import { displayPropertyName, useCapitalizeMetadata } from '../Properties/Cells/columnLabel'
 import { dialer } from '../Platform/dialer'
@@ -30,7 +31,6 @@ import { dateDefaults, holdsStyle, resolveStyle, storedPick } from '../Propertie
 import { useNexusForms } from '../Views/Host/useColumnStyles'
 import '../Navigation/nav-list.css'
 import './trash-frame.css'
-import { personalizationOf } from '../Session/configSlice'
 
 const PLURALS: Record<TrashRow['kind'], string> = {
   page: 'pages',

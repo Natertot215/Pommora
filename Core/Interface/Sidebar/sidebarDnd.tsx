@@ -6,8 +6,8 @@ import { selectTargetOf } from '../../Navigation/navRef'
 import { TAB_FAMILY } from '../../Navigation/tabRows'
 import type { MutateRequest } from '../../Nexus/mutateRequest'
 import { useSession } from '../../Session/store'
-import { type Index, sidebarCommit, sidebarSlot, sidebarSnapshot } from './sidebarDndModel'
 import { personalizationOf } from '../../Session/configSlice'
+import { type Index, sidebarCommit, sidebarSlot, sidebarSnapshot } from './sidebarDndModel'
 
 export function SidebarDnd({
   index,

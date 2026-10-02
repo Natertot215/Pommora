@@ -12,6 +12,7 @@ import { pageMoveContext, runPageAction } from '../Menus/pageMenuActions'
 import { useExitPresence, useHeld } from '@pommora/uix/Animations/useExitPresence'
 import { isWindowTarget } from '../../Navigation/navRef'
 import { useSession } from '../../Session/store'
+import { personalizationOf } from '../../Session/configSlice'
 import type { WindowTab } from './windowTabs'
 import {
   DraggableTabItem,
@@ -20,7 +21,6 @@ import {
   TabSeparator,
 } from '../../Navigation/TabItem'
 import '../../Navigation/tab-base.css'
-import { personalizationOf } from '../../Session/configSlice'
 
 interface Entry {
   tab: WindowTab

@@ -10,6 +10,7 @@ import { type BannerOwner, findSpace } from '../../Nexus/treeIndex'
 import { PropertyPanel } from '../../Properties/PropertyPanel'
 import { useConnections } from '../../Session/pageConnections'
 import { useSession, useSetting } from '../../Session/store'
+import { personalizationOf } from '../../Session/configSlice'
 import { useExperimental } from '../../Settings/experimental'
 import { PageTile } from '../../Tiles/Surfaces/PageTile'
 import { TileHost } from '../../Tiles/TileHost'
@@ -21,7 +22,6 @@ import { Subfield } from '../Subfield/Subfield'
 import { useSubfieldPage } from '../Subfield/subfieldPage'
 import { useWindowWarm, windowSeam } from './useWindowWarm'
 import { windowBannerShown } from './windowTabBanner'
-import { personalizationOf } from '../../Session/configSlice'
 
 interface WindowTabBodySlots {
   body: React.ReactNode

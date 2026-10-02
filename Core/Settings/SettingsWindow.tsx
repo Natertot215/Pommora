@@ -22,6 +22,7 @@ import { Scrollbar } from '@pommora/uix/Interactions/Scrollbar'
 import { useExitPresence } from '@pommora/uix/Animations/useExitPresence'
 import type { SessionState } from '../Session/sessionState'
 import { useSession, useSetting } from '../Session/store'
+import { personalizationOf } from '../Session/configSlice'
 import { DEVICE_DEFAULTS, DEVICE_RANGES, type DeviceDefaultKey, devicePref } from './devicePrefs'
 import { useExperimental } from './experimental'
 import { AssetDirectoryRow } from './AssetDirectoryRow'
@@ -39,7 +40,6 @@ import {
   type RowText,
 } from './frames'
 import './settings-window.css'
-import { personalizationOf } from '../Session/configSlice'
 
 const DRAG_SURFACES =
   '.settings-rail-list, .settings-section, .settings-heading, .trash-frame, .trash-head, .trash-head-name, .trash-head-date'
