@@ -19,7 +19,7 @@ import { mergeFrontmatter, NO_FILEABLE_ID, parsePage, splitEnvelope } from '../F
 import { readIdentity } from './identity'
 import { asString } from './coerce'
 import { baseSidecar } from './schemas'
-import { recordWrite, STILL_MS } from '../Files/writeEcho'
+import { recordWrite } from '../Files/writeEcho'
 import { renamedSidecar } from './migrateConfig'
 import { outsideContent, type WatchScope } from '../Paths/exclusion'
 import { readSettings, scopeOf } from '../Settings/codec'
@@ -115,22 +115,6 @@ async function migrateContainerSidecar(absDir: string, kind: ContainerKind): Pro
   if (!read.ok || !asString(read.value.id)) return
   const to = join(absDir, SIDECAR_FILENAME[kind])
   await relocate(from, to)
-}
-
-// A page missing its ID that changed within STILL_MS may still be mid-write, and a stamp's rename would cut off the bytes still coming, so it isn't stamped here; a folder's read leaves it out of its listing too, since the watcher reports the file once it is still; a walk installs what it read, so there it stays listed until that report, Try Again, or the next walk.
-export async function onlyStill(
-  root: string,
-  listed: readonly Unreadable[] = [],
-): Promise<Unreadable[]> {
-  const now = Date.now()
-  const still = await Promise.all(
-    listed.map(async (u) => {
-      if (u.kind !== 'page' || u.reason !== 'missing') return true
-      const st = await machine().stat(join(root, u.path))
-      return !st || now - st.mtimeMs >= STILL_MS
-    }),
-  )
-  return listed.filter((_, i) => still[i])
 }
 
 export async function stampMissing(

@@ -83,7 +83,7 @@ export async function openNexusSequence(
     void sweepFileHistory(root)
     try {
       let tree = await readNexus(root)
-      // Stamped without waiting for stillness, since no event comes for a file that predates the watcher, and read again rather than patched, since a first adoption stamps every page and one more read costs less than a patch per stamp.
+      // Every page it lists is stamped, since no event comes for a file that predates the watcher, and read again rather than patched, since a first adoption stamps every page and one more read costs less than a patch per stamp.
       while (await stampMissing(root, tree.unreadable)) tree = await readNexus(root)
       seedLiveTree(tree)
       if (latchRecord) await runOpenLedger(root, tree)
