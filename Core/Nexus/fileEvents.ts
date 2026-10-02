@@ -121,6 +121,10 @@ export function owedFor(root: string): Owed {
   return owed
 }
 
+export function oweWalk(root: string): void {
+  owedFor(root).walk = true
+}
+
 export function oweCascade(
   root: string,
   pages: readonly string[],
