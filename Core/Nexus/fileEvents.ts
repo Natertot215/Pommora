@@ -347,12 +347,12 @@ async function applyPage(
   }
   owed.values.set(rel, !!ev.bodyOnly && (owed.values.get(rel) ?? true))
   if (ev.origin === 'watched') owed.pages.add(rel)
-  if ('unread' in read && read.unread === 'missing')
+  if (read.kind === 'unread' && read.reason === 'missing')
     owed.stamp.push({ path: rel, kind: 'page', reason: 'missing' })
   const landed = applyPatch(root, (t) => {
-    if ('unread' in read)
+    if (read.kind === 'unread')
       return listUnreadable(removeNodeInTree(t, rel), [
-        { path: rel, kind: 'page', reason: read.unread },
+        { path: rel, kind: 'page', reason: read.reason },
       ])
     const node = contextLinker(t.contexts)(read.node, read.fm)
     const held = pageAt(t, rel)

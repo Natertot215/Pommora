@@ -112,39 +112,26 @@ async function readOwnSidecar(
 const readConfig = (absPath: string): Promise<Record<string, unknown>> =>
   readAppFile(absPath).then((v) => v ?? {})
 
-interface PageRecord {
-  node: PageNode
-  fm: Json
-  mtimeMs: number | null
-}
+type PageRead =
+  | { kind: 'read'; node: PageNode; fm: Json; mtimeMs: number | null }
+  | { kind: 'unread'; reason: UnreadReason }
 
-interface Unread {
-  unread: UnreadReason
-}
-
-export function pageRecordOf(
-  content: string,
-  relFile: string,
-  mtimeMs: number | null,
-): PageRecord | Unread {
+export function pageRecordOf(content: string, relFile: string, mtimeMs: number | null): PageRead {
   const { frontmatter: fm, admission } = parsePage(content)
   if (admission.state === 'missing')
-    return { unread: frontmatterWritable(content) ? 'missing' : 'unparsed' }
-  if (admission.state === 'unknown') return { unread: admission.reason }
+    return { kind: 'unread', reason: frontmatterWritable(content) ? 'missing' : 'unparsed' }
+  if (admission.state === 'unknown') return { kind: 'unread', reason: admission.reason }
   const node: PageNode = {
     kind: 'page',
     id: admission.id,
     title: titleFromPath(relFile),
     path: relFile,
   }
-  return { node, fm, mtimeMs }
+  return { kind: 'read', node, fm, mtimeMs }
 }
 
-export async function readPageRecord(
-  absFile: string,
-  relFile: string,
-): Promise<PageRecord | Unread> {
-  return cachedParse(absFile, async (stat): Promise<PageRecord | Unread> => {
+export async function readPageRecord(absFile: string, relFile: string): Promise<PageRead> {
+  return cachedParse(absFile, async (stat): Promise<PageRead> => {
     const content = await machine().readText(absFile)
     if (content === null) throw new Error(`Page not found: ${relFile}`)
     return pageRecordOf(content, relFile, stat?.mtimeMs ?? null)
@@ -157,10 +144,10 @@ async function readDirectPages(absDir: string, relDir: string, walk: Walk): Prom
     files.map(async (e) => {
       const rel = relJoin(relDir, e.name)
       const read = await readPageRecord(join(absDir, e.name), rel).catch(
-        (): Unread => ({ unread: 'unparsed' }),
+        (): PageRead => ({ kind: 'unread', reason: 'unparsed' }),
       )
-      if ('node' in read) return walk.link(read.node, read.fm)
-      walk.unreadable.push({ path: rel, kind: 'page', reason: read.unread })
+      if (read.kind === 'read') return walk.link(read.node, read.fm)
+      walk.unreadable.push({ path: rel, kind: 'page', reason: read.reason })
       return null
     }),
   )
