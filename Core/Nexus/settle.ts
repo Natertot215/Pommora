@@ -1,6 +1,6 @@
-// The one place a change to the tree, pages, values, tiles, or assets reaches the window. The app's own writes land here as events while they happen; a write's gate and the watcher's batch then stamp what their events listed missing, and settle: the walk the events owed, and one push of what moved.
+// The one place a change to the tree, pages, values, tiles, or assets reaches the window. The app's own writes land here as events while they happen; a write's gate and the watcher's batch then stamp what their events listed missing, and settle: the walk the events owed, whose own listing of a folder missing its ID is stamped and settled in turn, and one push of what moved.
 
-import { relDirname, relative } from '../Paths/posix'
+import { isMarkdownFile, relDirname, relative } from '../Paths/posix'
 import { escapes } from '../Paths/pathSafety'
 import type { HostContext } from '../Contract/handlers'
 import { errText } from '../Contract/result'
@@ -81,7 +81,12 @@ async function walkDue(root: string): Promise<void> {
     dropTileHeadingLinks()
     const assets = getHeldAssetMap(root)
     try {
-      await refreshAfterWrite(root)
+      const walked = await refreshAfterWrite(root)
+      due.stamp.push(
+        ...(walked.unreadable ?? []).filter(
+          (u) => u.reason === 'missing' && !isMarkdownFile(u.path),
+        ),
+      )
       // The map is patch-only, so the fallback walk is where the listing is taken again.
       if (assets && (await refreshAssetMap(root)) !== assets) due.assets = true
     } catch {
@@ -155,6 +160,7 @@ export const walkOwed = (root: string): Promise<void> => inTurn(() => walkDue(ro
 export async function flush(pusher: Pusher, root: string): Promise<void> {
   await stampListed(root, true)
   const moved = await inTurn(() => settle(pusher, root)).catch(() => null)
+  if (owedFor(root).stamp.length && !batching) await flush(pusher, root)
   if (!moved) return
   reseeding = reseeding
     .then(() => reseed(pusher, root, moved.rescope))
