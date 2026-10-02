@@ -14,6 +14,8 @@ import { push } from '../Bridge/ipc'
 import { sessionRoot, type WaitingOpen, waitingOpen } from '@pommora/core/Nexus/session'
 import { classifyEvent, tileBodyUnder } from '@pommora/core/Nexus/fileEvents'
 import { sent } from '@pommora/core/Nexus/settle'
+import { patch } from '@pommora/core/Nexus/treeDelta'
+import type { NexusChange, NexusTree } from '@pommora/core/Nexus/tree'
 import { readIndexedStat } from '@pommora/core/Index/contentIndex'
 import chokidar from 'chokidar'
 import {
@@ -67,6 +69,9 @@ const ULID_B = '01BX5ZZKBKPCTAV9WEVGEMMVRZ'
 const ULID_C = '01CX5ZZKBKPCTAV9WEVGEMMVRC'
 
 let root: string
+let shown: NexusTree
+// What the window holds once it applies a pushed difference to the tree it was sent.
+const applied = (change: unknown): NexusTree => patch(shown, (change as NexusChange).delta)
 const abs = (...segs: string[]): string => join(root, ...segs)
 const emit = (event: string, ...segs: string[]): void => handlers.get(event)?.(abs(...segs))
 // After the fake-timer debounce fires, the settle's apply work runs on real time — poll for the outcome (with a hard ceiling) rather than sleeping a fixed budget a loaded suite can overrun.
@@ -92,7 +97,7 @@ beforeEach(async () => {
   live = open
   pushMock.mockClear()
   handlers.clear()
-  sent(await refreshTree(root))
+  shown = sent(await refreshTree(root)).tree
   await liveAssetMap(root)
   vi.useFakeTimers()
 })
@@ -113,7 +118,7 @@ describe('the watcher settle', () => {
     await settleAll(() => pushMock.mock.calls.length > 0)
     const channels = pushMock.mock.calls.map((c) => c[1])
     expect(channels).toEqual(['nexus:changed', 'pages:changed', 'values:changed'])
-    expect(pushMock.mock.calls[0][2]).toBe(getLiveTree())
+    expect(applied(pushMock.mock.calls[0][2])).toEqual(getLiveTree())
     expect(pushMock.mock.calls[1][2]).toEqual(['Notes/B.md', 'Notes/C.md'])
     expect(pushMock.mock.calls[2][2]).toEqual([{ rel: 'Notes', pageIds: [ULID_B, ULID_C] }])
     expect(getLiveTree()?.collections[0]?.pages).toHaveLength(3)
@@ -135,7 +140,9 @@ describe('the watcher settle', () => {
       await settleAll(() => readIndexedStat('Notes/B.md') !== null)
       reading.mockRestore()
       expect(getLiveTree()?.collections[0]?.pages.map((p) => p.id)).toEqual([ULID_A, ULID_B])
-      expect(pushMock.mock.calls.find((c) => c[1] === 'nexus:changed')?.[2]).toBe(getLiveTree())
+      expect(applied(pushMock.mock.calls.find((c) => c[1] === 'nexus:changed')?.[2])).toEqual(
+        getLiveTree(),
+      )
       expect(readIndexedStat('Notes/B.md')).not.toBeNull()
     } finally {
       logged.mockRestore()
@@ -160,7 +167,7 @@ describe('the watcher settle', () => {
     await settleAll(() => pushMock.mock.calls.length > 0)
     const channels = pushMock.mock.calls.map((c) => c[1])
     expect(channels).toEqual(['nexus:changed', 'pages:changed', 'values:changed'])
-    expect(pushMock.mock.calls[0][2]).toBe(getLiveTree())
+    expect(applied(pushMock.mock.calls[0][2])).toEqual(getLiveTree())
     expect(pushMock.mock.calls[1][2]).toEqual(['Notes/B.md'])
     expect(pushMock.mock.calls[2][2]).toEqual([{ rel: 'Notes', pageIds: [ULID_B] }])
     expect(

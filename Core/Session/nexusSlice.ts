@@ -7,16 +7,9 @@ import {
 } from '../Interface/Notifications/notifications'
 import type { MutateOutcome, MutateRequest } from '../Nexus/mutateRequest'
 import { caught, type PommoraError, type Result, valueOr } from '../Contract/result'
-import type { NexusTree } from '../Nexus/tree'
+import type { NexusChange, NexusTree } from '../Nexus/tree'
 import type { SyncStatus } from '../Sync/Contract/wire'
-import {
-  insertCreatedInTree,
-  orderInTree,
-  patchContextGroupsInTree,
-  patchNodeInTree,
-  removeNodeInTree,
-  renameNodeInTree,
-} from '../Nexus/treePatch'
+import { patch } from '../Nexus/treeDelta'
 import { stabilize } from '../Nexus/treeStabilize'
 import { applyPersonalization } from '../Settings/applyPersonalization'
 import { reconcileIndexOf } from '../Nexus/treeIndex'
@@ -37,6 +30,7 @@ import { withOwnSettings } from './configSlice'
 export interface NexusSlice {
   status: 'idle' | 'loading' | 'ready' | 'error' | 'empty'
   tree: NexusTree | null
+  version: number
   error?: PommoraError
   syncStatus: SyncStatus | null
   headings: Record<string, string[]>
@@ -48,7 +42,8 @@ export interface NexusSlice {
   /** Re-reads the bound Nexus's tree, for a root that moved under a Nexus the window already holds. */
   refetch: () => Promise<void>
   applySyncStatus: (status: SyncStatus) => void
-  applyTree: (tree: NexusTree) => void
+  applyTree: (tree: NexusTree, version?: number) => void
+  applyChange: (change: NexusChange) => void
   loadHeadings: (paths?: string[]) => Promise<void>
   choose: () => Promise<void>
   openPath: (path: string) => Promise<void>
@@ -82,6 +77,22 @@ export const createNexusSlice: Slice<NexusSlice> = (set, get) => {
     s.resetViewSearch()
     resetUndo()
     clearNotification()
+  }
+
+  const install = (tree: NexusTree, version: number): void => {
+    const prev = get().tree
+    set({ status: 'ready', tree, version })
+    const index = reconcileIndexOf(tree)
+    get().reconcileNavigation(index)
+    get().reconcileWindow(index)
+    get().reconcileGlance(index)
+    if (tree.config.personalization !== prev?.config.personalization)
+      applyPersonalization(tree.config.personalization)
+    const fresh =
+      tree.unreadable !== prev?.unreadable &&
+      tree.unreadable?.find((u) => !prev?.unreadable?.some((p) => p.path === u.path))
+    if (fresh)
+      notifyUnreadable(fresh, () => void get().mutate({ op: 'retryUnreadable', path: fresh.path }))
   }
 
   const openVia = async (attempt: () => Promise<Result<boolean>>): Promise<void> => {
@@ -121,13 +132,14 @@ export const createNexusSlice: Slice<NexusSlice> = (set, get) => {
       set({ status: 'empty', tree: null })
       return false
     }
-    get().applyTree(res.value.tree)
+    get().applyTree(res.value.tree, res.value.version)
     return true
   }
 
   return {
     status: 'idle',
     tree: null,
+    version: 0,
     error: undefined,
     syncStatus: null,
     headings: {},
@@ -185,25 +197,24 @@ export const createNexusSlice: Slice<NexusSlice> = (set, get) => {
       }
     },
 
-    applyTree: (incoming) => {
-      // IPC strips identity, so without stabilize() every push would re-render every consumer.
-      const prev = get().tree
-      const tree = stabilize(withOwnSettings(incoming, prev), prev)
-      set({ status: 'ready', tree })
-      const index = reconcileIndexOf(tree)
-      get().reconcileNavigation(index)
-      get().reconcileWindow(index)
-      get().reconcileGlance(index)
-      if (tree.config.personalization !== prev?.config.personalization)
-        applyPersonalization(tree.config.personalization)
-      const fresh =
-        tree.unreadable !== prev?.unreadable &&
-        tree.unreadable?.find((u) => !prev?.unreadable?.some((p) => p.path === u.path))
-      if (fresh)
-        notifyUnreadable(
-          fresh,
-          () => void get().mutate({ op: 'retryUnreadable', path: fresh.path }),
-        )
+    // A whole tree arrives without identity, so stabilize() spares every consumer whose part didn't change.
+    applyTree: (incoming, version = get().version) => {
+      const held = get().tree
+      install(stabilize(withOwnSettings(incoming, held), held), version)
+    },
+
+    // A difference that doesn't follow the tree held, or doesn't fit it, asks for the whole tree.
+    applyChange: ({ version, delta }) => {
+      if ('set' in delta) return get().applyTree(delta.set as NexusTree, version)
+      const held = get().tree
+      if (!held || version !== get().version + 1) return void get().refetch()
+      let next: NexusTree
+      try {
+        next = patch(held, delta)
+      } catch {
+        return void get().refetch()
+      }
+      install(stabilize(withOwnSettings(next, held), held), version)
     },
 
     choose: () => openVia(() => dialer().ask('nexus:choose')),
@@ -241,71 +252,9 @@ export const createNexusSlice: Slice<NexusSlice> = (set, get) => {
         notifyReport(res.value.cascade.warning, true)
       if (req.op === 'delete' || req.op === 'restore' || req.op === 'emptyBundle')
         get().bumpTrashRevision()
-      // Instant optimistic patch; main's confirming push lands a beat later with no flicker.
-      const cur = get().tree
-      let patched: NexusTree | null = null
-      if (cur) {
-        get().patchPagesFor(req)
-        switch (req.op) {
-          case 'movePage':
-          case 'moveSet':
-          case 'reorderChildren':
-          case 'reorderTop':
-            patched = orderInTree(cur, req)
-            break
-          case 'rename':
-            // The landed name, never the ask — a from-create rename may have disambiguated.
-            patched = renameNodeInTree(cur, req.path, res.value.renamed?.name ?? req.newName)
-            break
-          case 'delete':
-            patched = removeNodeInTree(cur, req.path)
-            break
-          case 'setIcon':
-            if (req.kind !== 'page') patched = patchNodeInTree(cur, req.path, { icon: req.icon })
-            break
-          case 'setDisclosureLock':
-            patched = patchNodeInTree(cur, req.path, { disclosureLocked: req.locked })
-            break
-          case 'setActiveView':
-            patched = patchNodeInTree(cur, req.path, { activeView: req.viewId })
-            break
-          case 'setHeadingIconHidden':
-            patched =
-              req.kind === 'homepage'
-                ? {
-                    ...cur,
-                    config: {
-                      ...cur.config,
-                      homepage: { ...cur.config.homepage, headingIconHidden: req.hidden },
-                    },
-                  }
-                : req.kind === 'navview'
-                  ? null
-                  : patchNodeInTree(cur, req.path, { headingIconHidden: req.hidden })
-            break
-          case 'renameContext':
-          case 'renameSpace':
-          case 'setSpaceColor':
-          case 'reorderContexts':
-          case 'reorderSpaces':
-            patched = patchContextGroupsInTree(cur, req)
-            break
-        }
-        if (patched) get().applyTree(patched)
-      }
-      // Without the optimistic create the rename input mounts only after the full re-walk.
-      let createdShown = false
-      if (cur && res.value.created && onCreated) {
-        const optimistic = insertCreatedInTree(cur, req, res.value.created)
-        if (optimistic) {
-          // The sync body runs first, so its state lands in the commit that mounts the newborn.
-          const settled = onCreated(res.value.created)
-          get().applyTree(optimistic)
-          await settled
-          createdShown = true
-        }
-      }
-      if (!createdShown && res.value.created && onCreated) await onCreated(res.value.created)
+      // The host pushed what this write changed before it replied, so the tree already holds it.
+      if (get().tree) get().patchPagesFor(req)
+      if (res.value.created && onCreated) await onCreated(res.value.created)
       return res.value
     },
   }

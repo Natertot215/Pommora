@@ -1,19 +1,14 @@
 import { describe, it, expect } from 'vitest'
 import { ASSETS_DIR_REL } from '../Paths/nexusPaths'
-import type { CollectionNode, NexusTree } from './tree'
-import { NEW_SLOT } from './mutateRequest'
+import type { CollectionNode, NexusTree, SetNode, SpaceNode } from './tree'
 import {
   containerSchema,
   containerTrailWhere,
-  insertCreatedInTree,
+  moveNodeInTree,
   NO_SCHEMA,
   owningCollection,
-  patchContextGroupsInTree,
-  patchNodeInTree,
-  relocateNodeInTree,
+  placeNode,
   removeNodeInTree,
-  renameNodeInTree,
-  orderInTree,
 } from './treePatch'
 import { DEFAULT_COMMANDS } from '../Actions/commands'
 
@@ -62,296 +57,6 @@ function tree(): NexusTree {
   }
 }
 
-describe('relocateNodeInTree', () => {
-  it('moves a page to another collection, updating its path', () => {
-    const t = relocateNodeInTree(tree(), 'Notes/A.md', 'Work')
-    expect(t).not.toBeNull()
-    expect(t?.collections[0].pages.find((p) => p.id === 'p1')).toBeUndefined()
-    const moved = t?.collections[1].pages.find((p) => p.id === 'p1')
-    expect(moved?.path).toBe('Work/A.md')
-  })
-
-  it('moves a page out of a nested Set into a collection root', () => {
-    const t = relocateNodeInTree(tree(), 'Notes/Sub/B.md', 'Work')
-    expect(t?.collections[0].sets[0].pages.find((p) => p.id === 'p2')).toBeUndefined()
-    expect(t?.collections[1].pages.find((p) => p.id === 'p2')?.path).toBe('Work/B.md')
-  })
-
-  it('moves a Set with its subtree, reparenting every descendant path', () => {
-    const t = relocateNodeInTree(tree(), 'Notes/Sub', 'Work')
-    expect(t?.collections[0].sets).toHaveLength(0)
-    const moved = t?.collections[1].sets.find((s) => s.id === 's1')
-    expect(moved?.path).toBe('Work/Sub')
-    expect(moved?.pages[0].path).toBe('Work/Sub/B.md')
-  })
-
-  it('returns null for a no-op (already in that parent)', () => {
-    expect(relocateNodeInTree(tree(), 'Notes/A.md', 'Notes')).toBeNull()
-  })
-
-  it('returns null when the node or destination is unresolved', () => {
-    expect(relocateNodeInTree(tree(), 'Notes/Ghost.md', 'Work')).toBeNull()
-    expect(relocateNodeInTree(tree(), 'Notes/A.md', 'Nowhere')).toBeNull()
-  })
-})
-
-describe('insertCreatedInTree', () => {
-  it('appends a created top-level collection', () => {
-    const t = insertCreatedInTree(
-      tree(),
-      { op: 'createContainer', parentPath: '', kind: 'collection', name: 'New' },
-      { id: 'x2', path: 'Ideas' },
-    )
-    expect(t?.collections.at(-1)?.title).toBe('Ideas')
-    expect(t?.collections.at(-1)?.kind).toBe('collection')
-  })
-
-  it('inserts a created set under its parent collection', () => {
-    const t = insertCreatedInTree(
-      tree(),
-      { op: 'createContainer', parentPath: 'Work', kind: 'set', name: 'New' },
-      { id: 'x3', path: 'Work/Drafts' },
-    )
-    expect(t?.collections[1].sets.at(-1)?.path).toBe('Work/Drafts')
-  })
-
-  it('inserts a created page (title minus .md) under a nested set', () => {
-    const t = insertCreatedInTree(
-      tree(),
-      { op: 'createPage', parentPath: 'Notes/Sub', name: 'New' },
-      { id: 'x4', path: 'Notes/Sub/C.md' },
-    )
-    const page = t?.collections[0].sets[0].pages.at(-1)
-    expect(page?.title).toBe('C')
-    expect(page?.path).toBe('Notes/Sub/C.md')
-  })
-
-  it('a positional create appears AT its slot, not appended — the row must not flash at the bottom', () => {
-    const t = insertCreatedInTree(
-      tree(),
-      { op: 'createPage', parentPath: 'Notes/Sub', name: 'New', order: [NEW_SLOT, 'p2'] },
-      { id: 'x5', path: 'Notes/Sub/C.md' },
-    )
-    expect(t?.collections[0].sets[0].pages.map((p) => p.id)).toEqual(['x5', 'p2'])
-  })
-
-  it('a positional Set create appears AT its slot, not appended', () => {
-    const t = insertCreatedInTree(
-      tree(),
-      {
-        op: 'createContainer',
-        parentPath: 'Notes',
-        kind: 'set',
-        name: 'New',
-        order: [NEW_SLOT, 's1'],
-      },
-      { id: 'x7', path: 'Notes/New' },
-    )
-    expect(t?.collections[0].sets.map((s) => s.id)).toEqual(['x7', 's1'])
-  })
-
-  it('is idempotent: an entity the tree already holds inserts as null, never a duplicate', () => {
-    const withPage = insertCreatedInTree(
-      tree(),
-      { op: 'createPage', parentPath: 'Notes', name: 'C' },
-      { id: 'x9', path: 'Notes/C.md' },
-    )
-    expect(withPage).not.toBeNull()
-    expect(
-      insertCreatedInTree(
-        withPage as NexusTree,
-        { op: 'createPage', parentPath: 'Notes', name: 'C' },
-        { id: 'x9', path: 'Notes/C.md' },
-      ),
-    ).toBeNull()
-    expect(
-      insertCreatedInTree(
-        tree(),
-        { op: 'createContainer', parentPath: '', kind: 'collection', name: 'Work' },
-        { id: 'c2', path: 'Work' },
-      ),
-    ).toBeNull()
-  })
-
-  it('returns null when the parent container is unresolved', () => {
-    expect(
-      insertCreatedInTree(
-        tree(),
-        { op: 'createPage', parentPath: 'Nowhere', name: 'New' },
-        { id: 'x5', path: 'Nowhere/D.md' },
-      ),
-    ).toBeNull()
-  })
-
-  it('appends a created Context group and a created Space under it', () => {
-    const withGroup = insertCreatedInTree(
-      tree(),
-      { op: 'createContextGroup', name: 'Realms' },
-      { id: 'g1', path: '.nexus/contexts/Realms' },
-    )
-    // Mirrors createContextGroup exactly — no singular, so its create entry reads "New Space"; no icon, so it resolves to the kind's glyph and still follows a nexus default.
-    expect(withGroup?.contexts?.at(-1)?.def).toEqual({ id: 'g1', title: 'Realms' })
-    const withSpace = insertCreatedInTree(
-      withGroup as NexusTree,
-      { op: 'createSpace', contextId: 'g1', name: 'Astral' },
-      { id: 'sp1', path: '.nexus/contexts/Realms/Astral' },
-    )
-    const space = withSpace?.contexts?.at(-1)?.spaces.at(-1)
-    expect(space).toEqual({
-      kind: 'space',
-      id: 'sp1',
-      title: 'Astral',
-      path: '.nexus/contexts/Realms/Astral',
-      headingIconHidden: false,
-      contextId: 'g1',
-    })
-  })
-
-  it('a positional Space create appears AT its slot, not appended', () => {
-    const withGroup = insertCreatedInTree(
-      tree(),
-      { op: 'createContextGroup', name: 'Realms' },
-      { id: 'g1', path: '.nexus/contexts/Realms' },
-    ) as NexusTree
-    const withFirst = insertCreatedInTree(
-      withGroup,
-      { op: 'createSpace', contextId: 'g1', name: 'Astral' },
-      { id: 'sp1', path: '.nexus/contexts/Realms/Astral' },
-    ) as NexusTree
-    const t = insertCreatedInTree(
-      withFirst,
-      { op: 'createSpace', contextId: 'g1', name: 'Umbral', order: [NEW_SLOT, 'sp1'] },
-      { id: 'sp3', path: '.nexus/contexts/Realms/Umbral' },
-    )
-    expect(t?.contexts.at(-1)?.spaces.map((sp) => sp.id)).toEqual(['sp3', 'sp1'])
-  })
-
-  it('skips Space optimism when the owning group is unknown', () => {
-    expect(
-      insertCreatedInTree(
-        tree(),
-        { op: 'createSpace', contextId: 'ghost', name: 'X' },
-        { id: 'sp2', path: '.nexus/contexts/Ghost/X' },
-      ),
-    ).toBeNull()
-  })
-})
-
-describe('patchContextGroupsInTree', () => {
-  const groupedTree = (): NexusTree => ({
-    ...tree(),
-    contexts: [
-      {
-        def: { id: 'g1', title: 'Realms', singular: 'Realm' },
-        spaces: [
-          {
-            kind: 'space',
-            id: 'sp1',
-            title: 'Astral',
-            path: '.nexus/contexts/Realms/Astral',
-            contextId: 'g1',
-          },
-          {
-            kind: 'space',
-            id: 'sp2',
-            title: 'Umbral',
-            path: '.nexus/contexts/Realms/Umbral',
-            contextId: 'g1',
-          },
-        ],
-      },
-      { def: { id: 'g2', title: 'Moods', singular: 'Mood' }, spaces: [] },
-    ],
-  })
-
-  it('renames a Context group, moving every member Space path under the new group dir', () => {
-    const t1 = patchContextGroupsInTree(groupedTree(), {
-      op: 'renameContext',
-      contextId: 'g1',
-      newName: 'Planes',
-    })
-    expect(t1?.contexts?.[0].def.title).toBe('Planes')
-    expect(t1?.contexts?.[0].spaces.map((s) => s.path)).toEqual([
-      '.nexus/contexts/Planes/Astral',
-      '.nexus/contexts/Planes/Umbral',
-    ])
-  })
-
-  it('renames a Space in place, swapping its own path tail', () => {
-    const t2 = patchContextGroupsInTree(groupedTree(), {
-      op: 'renameSpace',
-      spaceId: 'sp2',
-      newName: 'Shade',
-    })
-    expect(t2?.contexts?.[0].spaces[1].title).toBe('Shade')
-    expect(t2?.contexts?.[0].spaces[1].path).toBe('.nexus/contexts/Realms/Shade')
-  })
-
-  it('sets and clears a Space color', () => {
-    const set = patchContextGroupsInTree(groupedTree(), {
-      op: 'setSpaceColor',
-      spaceId: 'sp1',
-      color: 'mint',
-    })
-    expect(set?.contexts?.[0].spaces[0].color).toBe('mint')
-    const cleared = patchContextGroupsInTree(set as NexusTree, {
-      op: 'setSpaceColor',
-      spaceId: 'sp1',
-    })
-    // The key survives the clear, undefined-valued — the factories emit every key the walk does, and stabilize counts keys, so a dropped one would read as drift.
-    expect(cleared?.contexts?.[0].spaces[0].color).toBeUndefined()
-    expect('color' in (cleared?.contexts?.[0].spaces[0] ?? {})).toBe(true)
-  })
-
-  it('reorders groups and spaces, keeping unlisted items at the tail', () => {
-    const t1 = patchContextGroupsInTree(groupedTree(), { op: 'reorderContexts', ids: ['g2'] })
-    expect(t1?.contexts?.map((g) => g.def.id)).toEqual(['g2', 'g1'])
-    const t2 = patchContextGroupsInTree(groupedTree(), {
-      op: 'reorderSpaces',
-      contextId: 'g1',
-      ids: ['sp2', 'sp1'],
-    })
-    expect(t2?.contexts?.[0].spaces.map((s) => s.id)).toEqual(['sp2', 'sp1'])
-  })
-
-  it('returns null on a tree without groups or an unowned op', () => {
-    expect(
-      patchContextGroupsInTree(tree(), { op: 'renameContext', contextId: 'g1', newName: 'X' }),
-    ).toBeNull()
-    expect(patchContextGroupsInTree(groupedTree(), { op: 'setProfileIcon', icon: 'x' })).toBeNull()
-  })
-})
-
-describe('renameNodeInTree', () => {
-  it('renames a page (title + .md path)', () => {
-    const t = renameNodeInTree(tree(), 'Notes/A.md', 'Alpha')
-    const page = t?.collections[0].pages[0]
-    expect(page?.title).toBe('Alpha')
-    expect(page?.path).toBe('Notes/Alpha.md')
-  })
-
-  it('renames a set, rewriting descendant paths', () => {
-    const t = renameNodeInTree(tree(), 'Notes/Sub', 'Nested')
-    const set = t?.collections[0].sets[0]
-    expect(set?.title).toBe('Nested')
-    expect(set?.path).toBe('Notes/Nested')
-    expect(set?.pages[0].path).toBe('Notes/Nested/B.md')
-  })
-
-  it('returns null for an unknown path', () => {
-    expect(renameNodeInTree(tree(), 'Ghost', 'X')).toBeNull()
-  })
-
-  it('re-points an unreadable entry for an uppercase-.MD page onto the canonical .md path', () => {
-    const t = tree()
-    t.collections[0].pages[0].path = 'Notes/A.MD'
-    t.unreadable = [{ path: 'Notes/A.MD', reason: 'unparsed' }]
-    const next = renameNodeInTree(t, 'Notes/A.MD', 'Alpha')
-    expect(next?.collections[0].pages[0].path).toBe('Notes/Alpha.md')
-    expect(next?.unreadable).toEqual([{ path: 'Notes/Alpha.md', reason: 'unparsed' }])
-  })
-})
-
 describe('removeNodeInTree', () => {
   it('removes a page from a nested set', () => {
     const t = removeNodeInTree(tree(), 'Notes/Sub/B.md')
@@ -364,144 +69,145 @@ describe('removeNodeInTree', () => {
   })
 })
 
-describe('patchNodeInTree', () => {
-  it('sets and clears an icon', () => {
-    const withIcon = patchNodeInTree(tree(), 'Notes', { icon: 'book' })
-    expect(withIcon?.collections[0].icon).toBe('book')
-    const cleared = patchNodeInTree(withIcon as NexusTree, 'Notes', { icon: null })
-    expect(cleared?.collections[0].icon).toBeUndefined()
-  })
-
-  it('sets headingIconHidden on a set', () => {
-    const t = patchNodeInTree(tree(), 'Notes/Sub', { headingIconHidden: true })
-    expect(t?.collections[0].sets[0].headingIconHidden).toBe(true)
-  })
+const HOME = '.nexus/contexts/Areas/Home'
+const space = (
+  id: string,
+  title: string,
+  contextTitle = 'Areas',
+  contextId = 'ctx1',
+): SpaceNode => ({
+  kind: 'space',
+  id,
+  title,
+  path: `.nexus/contexts/${contextTitle}/${title}`,
+  contextId,
+  headingIconHidden: false,
 })
+const withContexts = (): NexusTree => ({
+  ...tree(),
+  contexts: [
+    { def: { id: 'ctx1', title: 'Areas' }, spaces: [space('sp1', 'Home')] },
+    { def: { id: 'ctx2', title: 'Topics' }, spaces: [] },
+  ],
+})
+const deepSet = (): SetNode => ({
+  kind: 'set',
+  id: 's9',
+  title: 'Deep',
+  path: 'Notes/Sub/Deep',
+  sets: [],
+  pages: [{ kind: 'page', id: 'p9', title: 'C', path: 'Notes/Sub/Deep/C.md' }],
+})
+const deepTree = (): NexusTree => {
+  const t = tree()
+  t.collections[0].sets[0].sets = [deepSet()]
+  return t
+}
 
-describe('reorder transforms', () => {
-  it('reorderTop reorders top collections, unknown ids keep relative order at the end', () => {
-    const t = orderInTree(tree(), { op: 'reorderTop', order: ['c2'] })
-    expect(t?.collections.map((c) => c.id)).toEqual(['c2', 'c1'])
+describe('placeNode', () => {
+  it('lands a page where its parent’s order ranks it', () => {
+    const base = tree()
+    base.collections[0].pageOrder = ['p3', 'p1']
+    const t = placeNode(base, { kind: 'page', id: 'p3', title: 'C', path: 'Notes/C.md' })
+    expect(t?.collections[0].pages.map((p) => p.id)).toEqual(['p3', 'p1'])
   })
 
-  it("reorderChildren reorders a collection's sets", () => {
+  it('ranks an id the order doesn’t list after the listed ones, by title', () => {
     const base = tree()
-    base.collections[0].sets.push({
-      kind: 'set',
-      id: 's2',
-      title: 'Z',
-      path: 'Notes/Z',
+    base.collections[0].pages.push({ kind: 'page', id: 'p8', title: 'Z', path: 'Notes/Z.md' })
+    base.collections[0].pageOrder = ['p8']
+    const t = placeNode(base, { kind: 'page', id: 'p0', title: 'B', path: 'Notes/B.md' })
+    expect(t?.collections[0].pages.map((p) => p.id)).toEqual(['p8', 'p1', 'p0'])
+  })
+
+  it('replaces what the tree held at the same path', () => {
+    const t = placeNode(tree(), { kind: 'page', id: 'p7', title: 'A', path: 'Notes/A.md' })
+    expect(t?.collections[0].pages.map((p) => p.id)).toEqual(['p7'])
+  })
+
+  it('lands a Set with its subtree under its parent, by the parent’s set order', () => {
+    const base = tree()
+    base.collections[1].setOrder = ['s9']
+    const moved = { ...deepSet(), path: 'Work/Deep', pages: [] }
+    const t = placeNode(base, moved)
+    expect(t?.collections[1].sets).toEqual([moved])
+  })
+
+  it('lands a Collection at the root, by the Collection order', () => {
+    const base = tree()
+    base.config.order = { ...base.config.order, collections: ['c3', 'c1', 'c2'] }
+    const t = placeNode(base, {
+      kind: 'collection',
+      id: 'c3',
+      title: 'Inbox',
+      path: 'Inbox',
       sets: [],
       pages: [],
     })
-    const t = orderInTree(base, {
-      op: 'reorderChildren',
-      parentPath: 'Notes',
-      key: 'set_order',
-      order: ['s2', 's1'],
-    })
-    expect(t?.collections[0].sets.map((s) => s.id)).toEqual(['s2', 's1'])
+    expect(t?.collections.map((c) => c.id)).toEqual(['c3', 'c1', 'c2'])
   })
 
-  it('reorderChildren with an empty parent reorders top collections', () => {
-    const t = orderInTree(tree(), {
-      op: 'reorderChildren',
-      parentPath: '',
-      key: 'set_order',
-      order: ['c2', 'c1'],
-    })
-    expect(t?.collections.map((c) => c.id)).toEqual(['c2', 'c1'])
-  })
-
-  it('a moved page lands at the slot its order names, not appended', () => {
-    const base = tree()
-    base.collections[1].pages.push({ kind: 'page', id: 'p9', title: 'Z', path: 'Work/Z.md' })
-    const t = orderInTree(base, {
-      op: 'movePage',
-      path: 'Notes/A.md',
-      newParentPath: 'Work',
-      order: ['p1', 'p9'],
-    })
-    expect(t?.collections[1].pages.map((p) => p.id)).toEqual(['p1', 'p9'])
-  })
-
-  it('a moved page with no order is appended', () => {
-    const t = orderInTree(tree(), { op: 'movePage', path: 'Notes/A.md', newParentPath: 'Work' })
-    expect(t?.collections[1].pages.map((p) => p.id)).toEqual(['p1'])
-  })
-
-  it('a same-parent move is its order alone, and a move of nothing is null', () => {
-    const base = tree()
-    base.collections[0].sets.push({
-      kind: 'set',
-      id: 's2',
-      title: 'Z',
-      path: 'Notes/Z',
-      sets: [],
-      pages: [],
-    })
-    const t = orderInTree(base, {
-      op: 'moveSet',
-      path: 'Notes/Z',
-      newParentPath: 'Notes',
-      order: ['s2', 's1'],
-    })
-    expect(t?.collections[0].sets.map((s) => s.id)).toEqual(['s2', 's1'])
-    expect(
-      orderInTree(tree(), { op: 'moveSet', path: 'Notes/Ghost', newParentPath: 'Work', order: [] }),
-    ).toBeNull()
-  })
-
-  it('a same-parent page move ranks ids absent from its order last, stable', () => {
-    const t = orderInTree(tree(), {
-      op: 'movePage',
-      path: 'Notes/Sub/B.md',
-      newParentPath: 'Notes/Sub',
-      order: ['p2'],
-    })
-    expect(t?.collections[0].sets[0].pages.map((p) => p.id)).toEqual(['p2'])
+  it('lands a Space in its Context, by that Context’s Space order, and refuses one whose Context isn’t held', () => {
+    const base = withContexts()
+    base.config.order = { ...base.config.order, spaces: { ctx1: ['sp2', 'sp1'] } }
+    const t = placeNode(base, space('sp2', 'Work'))
+    expect(t?.contexts[0].spaces.map((s) => s.id)).toEqual(['sp2', 'sp1'])
+    expect(placeNode(base, space('sp3', 'Odd', 'Nowhere', 'ctx9'))).toBeNull()
   })
 })
 
-describe('reparentPaths depth coverage (via rename + relocate)', () => {
-  function deepTree(): NexusTree {
-    const t = tree()
-    t.collections[0].sets[0].sets = [
-      {
-        kind: 'set',
-        id: 's9',
-        title: 'Deep',
-        path: 'Notes/Sub/Deep',
-        sets: [],
-        pages: [{ kind: 'page', id: 'p9', title: 'C', path: 'Notes/Sub/Deep/C.md' }],
-      },
-    ]
-    return t
-  }
-
-  it('collection rename rewrites grandchild paths without duplicating segments', () => {
-    const t = renameNodeInTree(deepTree(), 'Notes', 'Diary')
-    const sub = t?.collections[0].sets[0]
-    expect(sub?.path).toBe('Diary/Sub')
-    expect(sub?.pages[0].path).toBe('Diary/Sub/B.md')
-    expect(sub?.sets?.[0].path).toBe('Diary/Sub/Deep')
-    expect(sub?.sets?.[0].pages[0].path).toBe('Diary/Sub/Deep/C.md')
+describe('moveNodeInTree', () => {
+  it('renames a page in place, title and path', () => {
+    const t = moveNodeInTree(tree(), 'Notes/A.md', 'Notes/Alpha.md')
+    expect(t?.collections[0].pages).toEqual([
+      { kind: 'page', id: 'p1', title: 'Alpha', path: 'Notes/Alpha.md' },
+    ])
   })
 
-  it('set move rewrites nested-set descendant paths without duplicating segments', () => {
-    const t = relocateNodeInTree(deepTree(), 'Notes/Sub', 'Work')
+  it('moves a page to another container', () => {
+    const t = moveNodeInTree(tree(), 'Notes/Sub/B.md', 'Work/B.md')
+    expect(t?.collections[0].sets[0].pages).toEqual([])
+    expect(t?.collections[1].pages.map((p) => p.path)).toEqual(['Work/B.md'])
+  })
+
+  it('moves a Set with its subtree, reparenting every descendant path', () => {
+    const t = moveNodeInTree(deepTree(), 'Notes/Sub', 'Work/Sub')
     const moved = t?.collections[1].sets.find((s) => s.id === 's1')
+    expect(moved?.pages[0].path).toBe('Work/Sub/B.md')
     expect(moved?.sets?.[0].path).toBe('Work/Sub/Deep')
     expect(moved?.sets?.[0].pages[0].path).toBe('Work/Sub/Deep/C.md')
+    expect(t?.collections[0].sets).toEqual([])
   })
-})
 
-describe('root-level rename', () => {
-  it('renames a top-level collection without corrupting the path', () => {
-    const t = renameNodeInTree(tree(), 'Notes', 'Diary')
-    expect(t?.collections[0].path).toBe('Diary')
-    expect(t?.collections[0].title).toBe('Diary')
-    expect(t?.collections[0].pages[0].path).toBe('Diary/A.md')
+  it('renames a Collection at the root without corrupting its descendants’ paths', () => {
+    const t = moveNodeInTree(deepTree(), 'Notes', 'Diary')
+    const diary = t?.collections.find((c) => c.id === 'c1')
+    expect([diary?.path, diary?.title]).toEqual(['Diary', 'Diary'])
+    expect(diary?.pages[0].path).toBe('Diary/A.md')
+    expect(diary?.sets[0].sets?.[0].pages[0].path).toBe('Diary/Sub/Deep/C.md')
+  })
+
+  it('renames a Space within its Context', () => {
+    const t = moveNodeInTree(withContexts(), HOME, '.nexus/contexts/Areas/House')
+    expect(t?.contexts[0].spaces[0]).toMatchObject({
+      id: 'sp1',
+      title: 'House',
+      path: '.nexus/contexts/Areas/House',
+    })
+  })
+
+  it('renames a Context group, moving every member Space path under it', () => {
+    const t = moveNodeInTree(withContexts(), '.nexus/contexts/Areas', '.nexus/contexts/Realms')
+    expect(t?.contexts[0].def).toEqual({ id: 'ctx1', title: 'Realms' })
+    expect(t?.contexts[0].spaces[0].path).toBe('.nexus/contexts/Realms/Home')
+  })
+
+  it('refuses a move that changes what the folder is, or names nothing held', () => {
+    expect(moveNodeInTree(tree(), 'Work', 'Notes/Work')).toBeNull()
+    expect(moveNodeInTree(tree(), 'Notes/Sub', 'Sub')).toBeNull()
+    expect(moveNodeInTree(withContexts(), HOME, '.nexus/contexts/Topics/Home')).toBeNull()
+    expect(moveNodeInTree(withContexts(), '.nexus/contexts/Areas', 'Areas')).toBeNull()
+    expect(moveNodeInTree(tree(), 'Notes/Ghost.md', 'Work/Ghost.md')).toBeNull()
   })
 })
 

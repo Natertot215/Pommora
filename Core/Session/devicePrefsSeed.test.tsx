@@ -124,7 +124,7 @@ describe('the prefs are read once per nexus', () => {
   it("does not re-read on a push or a root rename's re-fetch", async () => {
     const { useSession, prefsLoad } = await freshStore(withPrefs({ panes: { sidebar: 300 } }))
     await useSession.getState().load()
-    useSession.getState().applyTree(treeAt('/a'))
+    useSession.getState().applyChange({ version: 1, delta: { set: treeAt('/a') } })
     await useSession.getState().refetch()
     expect(prefsLoad).toHaveBeenCalledTimes(1)
   })

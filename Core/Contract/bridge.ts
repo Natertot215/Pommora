@@ -1,4 +1,4 @@
-import type { AssetMap, NexusState, NexusTree, ValueChange } from '../Nexus/tree'
+import type { AssetMap, NexusChange, NexusState, ValueChange } from '../Nexus/tree'
 import type { MutateReply, MutateRequest } from '../Nexus/mutateRequest'
 import type { Result } from './result'
 import type { EditorMenuRequest } from '../Actions/editorMenu'
@@ -272,7 +272,7 @@ export interface Pushes {
   'nav:changed': Omit<NavigationState, 'recents'>
   'matrix:changed': MatrixConfig
   'assets:changed': AssetMap
-  'nexus:changed': NexusTree
+  'nexus:changed': NexusChange
   'values:changed': ValueChange[]
   'tiles:changed': TileHostRef
   'pages:changed': string[]

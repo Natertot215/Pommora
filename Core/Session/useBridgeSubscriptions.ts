@@ -16,7 +16,7 @@ import { dialer } from '../Platform/dialer'
 import { runCommand } from '../Actions/commandRouter'
 
 export function useBridgeSubscriptions(): void {
-  const applyTree = useSession((s) => s.applyTree)
+  const applyChange = useSession((s) => s.applyChange)
   const applyNavChanged = useSession((s) => s.applyNavChanged)
   const applyAssetMap = useSession((s) => s.applyAssetMap)
   const nexusRoot = useSession((s) => s.tree?.nexus.rootPath)
@@ -43,7 +43,7 @@ export function useBridgeSubscriptions(): void {
     }
   }, [setHostWindow])
 
-  useEffect(() => dialer().on('nexus:changed', applyTree), [applyTree])
+  useEffect(() => dialer().on('nexus:changed', applyChange), [applyChange])
 
   const bumpContainerValues = useSession((s) => s.bumpContainerValues)
   useEffect(

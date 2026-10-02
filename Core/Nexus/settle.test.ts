@@ -10,6 +10,8 @@ import { dropLiveTree, getLiveTree, refreshTree } from './liveTree'
 import * as readNexusModule from './readNexus'
 import { applyEvents, oweCascade, owedFor } from './fileEvents'
 import { flush, sent } from './settle'
+import type { NexusChange, NexusTree } from './tree'
+import { patch } from './treeDelta'
 import { closeSession, openSession, whileAdopting } from './session'
 
 const ULID_A = '01ARZ3NDEKPSV4RRFFQ69G5FAV'
@@ -18,6 +20,7 @@ const ULID_C = '01CX5ZZKBKPCTAV9WEVGEMMVRC'
 const ULID_D = '01DX5ZZKBKPCTAV9WEVGEMMVRD'
 
 let root: string
+let shown: NexusTree
 let pushes: [keyof Pushes, unknown][]
 const pusher = {
   push: <K extends keyof Pushes>(channel: K, value: Pushes[K]) => {
@@ -51,7 +54,7 @@ beforeEach(async () => {
   await writeFile(abs('Notes', '_pagecollection.json'), JSON.stringify({ id: 'c1' }))
   await writeFile(abs('Notes', 'A.md'), `---\nID: ${ULID_A}\n---\n\nalpha\n`)
   await openSession(root)
-  sent(await refreshTree(root))
+  shown = sent(await refreshTree(root)).tree
 })
 afterEach(async () => {
   dropLiveTree()
@@ -84,7 +87,7 @@ describe('what a flush pushes for a batch', () => {
       'values:changed',
       'tiles:changed',
     ])
-    expect(payload('nexus:changed')).toBe(getLiveTree())
+    expect(patch(shown, (payload('nexus:changed') as NexusChange).delta)).toEqual(getLiveTree())
     expect(payload('tiles:changed')).toEqual({ kind: 'homepage' })
   })
 
@@ -164,6 +167,17 @@ describe('what a flush pushes for a batch', () => {
     owedFor('/elsewhere')
     await flush(pusher, root)
     expect(pushes).toEqual([])
+  })
+
+  it('sends the whole tree, under the next version, to a window that holds none of this root', async () => {
+    const { version } = sent({ ...shown, nexus: { ...shown.nexus, rootPath: '/elsewhere' } })
+    await writeFile(abs('Notes', 'B.md'), `---\nID: ${ULID_B}\n---\n\nbeta\n`)
+    await applyEvents(root, [ev('add', 'Notes', 'B.md')])
+    await flush(pusher, root)
+    expect(payload('nexus:changed')).toEqual({
+      version: version + 1,
+      delta: { set: getLiveTree() },
+    })
   })
 
   it('pushes nothing for a batch that changed nothing', async () => {

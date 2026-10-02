@@ -1,10 +1,9 @@
-// The walk and the watch patch pass DIFFERENT children — the walk its freshly-read ones, the watch the live node's — so the children arrive as arguments rather than being derived here.
+// The walk and a container sidecar's event pass DIFFERENT children — the walk its freshly-read ones, the event the held node's — so the children arrive as arguments rather than being derived here.
 
 import type { CollectionNode, PageNode, SetNode } from './tree'
 import type { ContainerKind } from './entities'
 import { containerViewIds, savedView, type SavedView } from '../Views/views'
 import { coerceOpenIn, coerceViewButton } from './schemas'
-import { makeCollectionNode, makeSetNode } from './treePatch'
 import type { PropertyDefinition } from '../Properties/properties'
 import type { PropertyRegistry } from '../Properties/propertiesRegistry'
 import { asString, asStringArray } from './coerce'
@@ -72,11 +71,12 @@ export function containerNodeFrom(
   const id = asString(meta.id)
   if (!id) return null
   const shared = { id, ...at, ...containerFieldsFrom(meta, sets, pages) }
-  if (kind === 'set') return makeSetNode(shared)
-  return makeCollectionNode({
+  if (kind === 'set') return { kind, ...shared }
+  return {
+    kind,
     ...shared,
     properties: resolveAssignedSchema(meta.properties, registry),
     openIn: coerceOpenIn(meta.open_in),
     cached: cachedIds(meta),
-  })
+  }
 }

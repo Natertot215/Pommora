@@ -5,6 +5,7 @@ import { clearNotification, currentNotification } from '../Interface/Notificatio
 import { ok } from '../Contract/result'
 import { ASSETS_DIR_REL } from '../Paths/nexusPaths'
 import type { NexusTree } from '../Nexus/tree'
+import { diff } from '../Nexus/treeDelta'
 import type { PageDetail } from '../Pages/pageDetail'
 import {
   type PageTarget,
@@ -393,6 +394,15 @@ describe('store — page slots', () => {
     seedLinkerAndParked()
     setBodyBase('Notes/tile.md', { text: 'seen', hash: 'h' })
     const slotA = useSession.getState().pages.a
+    channels.mutate = vi.fn(async () => {
+      hostPushes(
+        treeWith([
+          { id: 'a', path: 'Notes/a.md' },
+          { id: 'b', path: 'Notes/d.md' },
+        ]),
+      )
+      return ok({})
+    })
     await useSession
       .getState()
       .mutate({ op: 'rename', path: 'Notes/b.md', kind: 'page', newName: 'd' })
@@ -449,6 +459,13 @@ describe('store — page slots', () => {
 })
 
 /** A minimal tree with one Collection holding the given top-level pages (selection.test.ts's shape). */
+// What the host does before it replies to a write: pushes the difference its settle found.
+function hostPushes(next: NexusTree): void {
+  const { tree, version, applyChange } = useSession.getState()
+  const delta = diff(tree, next)
+  if (delta) applyChange({ version: version + 1, delta })
+}
+
 function treeWith(pages: { id: string; path: string }[], spaces: string[] = []): NexusTree {
   return {
     nexus: { id: 'nx', rootPath: '/x', name: 'x' },
@@ -578,7 +595,7 @@ describe('store — applyTree reconciles the window tabs (D-6)', () => {
     useSession.getState().openWindowTab({ kind: 'page', id: 'd', path: 'Notes/D.md' })
 
     // c and d (the active) die in one push — the active walks left past dead c onto b.
-    useSession.getState().applyTree(
+    hostPushes(
       treeWith([
         { id: 'a', path: 'Notes/A.md' },
         { id: 'b', path: 'Notes/B.md' },
@@ -883,13 +900,80 @@ describe('glance pin lifecycle wiring (Task 10)', () => {
   })
 })
 
-describe('store — the mutate rail patches the tree before main confirms', () => {
+describe('store — a pushed difference', () => {
+  const two = (): NexusTree =>
+    treeWith([
+      { id: 'a', path: 'Notes/A.md' },
+      { id: 'b', path: 'Notes/B.md' },
+    ])
+  const moved = (): NexusTree =>
+    treeWith([
+      { id: 'a', path: 'Notes/A.md' },
+      { id: 'b', path: 'Notes/Moved.md' },
+    ])
+  const asked = (): ReturnType<typeof vi.fn> => {
+    channels['nexus:state'] = vi.fn(async () => ok({ status: 'open', tree: moved(), version: 9 }))
+    return channels['nexus:state']
+  }
+
+  it('with the next version applies, and keeps the identity of what it didn’t name', () => {
+    useSession.getState().applyTree(two(), 3)
+    const held = useSession.getState().tree
+    const delta = diff(held, moved())
+    if (!delta) throw new Error('no difference')
+    useSession.getState().applyChange({ version: 4, delta })
+    const s = useSession.getState()
+    expect(s.version).toBe(4)
+    expect(s.tree?.collections[0]?.pages.map((p) => p.path)).toEqual([
+      'Notes/A.md',
+      'Notes/Moved.md',
+    ])
+    expect(s.tree?.collections[0]?.pages[0]).toBe(held?.collections[0]?.pages[0])
+    expect(s.tree?.config).toBe(held?.config)
+  })
+
+  it('with a gap in its version asks for the whole tree', async () => {
+    const state = asked()
+    useSession.getState().applyTree(two(), 3)
+    const delta = diff(useSession.getState().tree, moved())
+    if (!delta) throw new Error('no difference')
+    useSession.getState().applyChange({ version: 5, delta })
+    await vi.waitFor(() => expect(state).toHaveBeenCalled())
+    await vi.waitFor(() => expect(useSession.getState().version).toBe(9))
+  })
+
+  it('that doesn’t fit the tree held asks for the whole tree', async () => {
+    const state = asked()
+    useSession.getState().applyTree(two(), 3)
+    useSession.getState().applyChange({
+      version: 4,
+      delta: { at: { collections: { at: { Ghost: { at: { title: { set: 'x' } } } } } } },
+    })
+    await vi.waitFor(() => expect(state).toHaveBeenCalled())
+  })
+
+  it('a whole tree sent to a window in its error state makes it ready', () => {
+    useSession.setState({ status: 'error', tree: null })
+    useSession.getState().applyChange({ version: 1, delta: { set: two() } })
+    const s = useSession.getState()
+    expect(s.status).toBe('ready')
+    expect(s.tree).toEqual(two())
+    expect(s.version).toBe(1)
+  })
+})
+
+describe('store — the mutate rail', () => {
   beforeEach(async () => {
     useSession.getState().applyTree(treeWith([]))
   })
 
-  it('setActiveView lands on the node optimistically', async () => {
+  it('setActiveView has landed on the node by the time its reply resolves', async () => {
     expect(useSession.getState().tree?.collections[0]?.activeView).toBeUndefined()
+    channels.mutate = vi.fn(async () => {
+      const tree = treeWith([])
+      hostPushes({ ...tree, collections: [{ ...tree.collections[0], activeView: 'view_b' }] })
+      return ok({})
+    })
     const done = await useSession
       .getState()
       .mutate({ op: 'setActiveView', path: 'Notes', kind: 'collection', viewId: 'view_b' })

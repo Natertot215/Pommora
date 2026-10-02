@@ -112,7 +112,7 @@ export async function adoptNexus(
 export const nexusHandlers = {
   'nexus:state': async (): Promise<Result<NexusState>> => {
     const root = sessionRoot()
-    if (root) return ok({ status: 'open', tree: sent(await liveTreeOf(root)) })
+    if (root) return ok({ status: 'open', ...sent(await liveTreeOf(root)) })
     const open = waitingOpen()
     return open ? fail('operation-failed', open.why) : ok({ status: 'empty' })
   },

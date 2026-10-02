@@ -268,7 +268,12 @@ describe('runBandEffect', () => {
 
   it('writes the view order only after the folder move lands', async () => {
     const persistView = vi.fn(async () => ok({}))
-    const req = { op: 'reorderTop' as const, order: [] }
+    const req = {
+      op: 'reorderChildren' as const,
+      parentPath: '',
+      key: 'set_order' as const,
+      order: [],
+    }
     await runBandEffect(
       { kind: 'fs', req, after: { group_order: ['x'] } },
       { persistView, mutate: async () => false },
