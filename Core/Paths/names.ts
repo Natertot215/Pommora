@@ -67,6 +67,7 @@ export async function createDisambiguated<T>(
 ): Promise<Result<T>> {
   let last = await attempt(name)
   if (last.ok || last.error.code !== 'exists') return last
+  // freeName's base rule, asked of the disk: freeName decides over a held list, often inside a synchronous edit that can't await a probe.
   const bare = name.replace(STEP_SUFFIX, '')
   const base = bare !== name && (await taken(bare)) ? bare : name
   for (let n = 2; n <= 50 && !last.ok && last.error.code === 'exists'; n++)
