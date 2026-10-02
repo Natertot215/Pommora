@@ -36,9 +36,10 @@ export const reportRename = (absFrom: string, absTo: string): void => tap?.renam
 
 export type ChangeEvent = 'add' | 'change' | 'unlink' | 'addDir' | 'unlinkDir'
 
+// The app's own event carries the text it wrote, since its writer still holds the file's lock.
 export type Changed = { event: ChangeEvent; absPath: string } & (
-  | { origin: 'watched'; written?: string }
-  | { origin: 'own'; text?: string; bodyOnly?: boolean }
+  | { origin: 'watched'; written?: string; text?: never; bodyOnly?: never }
+  | { origin: 'own'; text?: string; bodyOnly?: boolean; written?: never }
 )
 
 export interface Moved {
@@ -97,7 +98,7 @@ export const writtenHash = (absPath: string): string | undefined => held(absPath
 export async function dropOwnEchoes(events: Changed[]): Promise<Changed[]> {
   const kept = await Promise.all(
     events.map(async (e) => {
-      if (e.origin === 'own' || e.written === undefined) return true
+      if (e.written === undefined) return true
       const bytes = await machine().readBytes(e.absPath)
       return bytes === null || machine().sha256Hex(bytes) !== e.written
     }),
