@@ -8,7 +8,6 @@ import {
   createSpace,
   setPageContext,
   setSpaceColor,
-  setSpaceContext,
   setSpaceRowOrder,
 } from './contextWrite'
 import { newId } from '../Nexus/ids'
@@ -178,98 +177,6 @@ describe('setPageContext', () => {
   })
 })
 
-describe('setSpaceContext (G-1, cross-context)', () => {
-  it('tags a Space into a different Context through its own sidecar', async () => {
-    const r = await setSpaceContext(root, await readNexus(root), 'sp-pom', 'ctxC', ['sp-cs'])
-    expect(r.ok).toBe(true)
-    const sc = await readJsonAt(join(contextsDir(root), 'Projects', 'Pommora', '_space.json'))
-    expect(sc['<Classes>']).toEqual(['CS 161'])
-    expect(sc.id).toBe('sp-pom')
-    expect('modified_at' in sc).toBe(false)
-  })
-
-  it('repairs a near-miss sibling key on the sidecar in the same write', async () => {
-    const path = join(contextsDir(root), 'Projects', 'Pommora', '_space.json')
-    await writeFile(path, JSON.stringify({ id: 'sp-pom', '<Classes>': ['cs 161'] }))
-    const r = await setSpaceContext(root, await readNexus(root), 'sp-pom', 'ctx_projects', [])
-    expect(r.ok).toBe(true)
-    expect((await readJsonAt(path))['<Classes>']).toEqual(['CS 161'])
-  })
-
-  const pomFile = (): string => join(contextsDir(root), 'Projects', 'Pommora', '_space.json')
-  const csFile = (): string => join(contextsDir(root), 'Classes', 'CS 161', '_space.json')
-
-  it('writes the pair onto both files', async () => {
-    const r = await setSpaceContext(root, await readNexus(root), 'sp-pom', 'ctxC', ['sp-cs'])
-    expect(r.ok).toBe(true)
-    expect((await readJsonAt(pomFile()))['<Classes>']).toEqual(['CS 161'])
-    expect((await readJsonAt(csFile()))['<Projects>']).toEqual(['Pommora'])
-  })
-
-  it('writes the pair under one key when both Spaces share a Context', async () => {
-    const athena = join(contextsDir(root), 'Projects', 'Athena')
-    await mkdir(athena, { recursive: true })
-    await writeFile(join(athena, '_space.json'), JSON.stringify({ id: 'sp-ath' }))
-    const r = await setSpaceContext(root, await readNexus(root), 'sp-pom', 'ctx_projects', [
-      'sp-ath',
-    ])
-    expect(r.ok).toBe(true)
-    expect((await readJsonAt(pomFile()))['<Projects>']).toEqual(['Athena'])
-    expect((await readJsonAt(join(athena, '_space.json')))['<Projects>']).toEqual(['Pommora'])
-  })
-
-  it('strips the pair from both files, leaving no emptied array', async () => {
-    expect(
-      (await setSpaceContext(root, await readNexus(root), 'sp-pom', 'ctxC', ['sp-cs'])).ok,
-    ).toBe(true)
-    expect((await setSpaceContext(root, await readNexus(root), 'sp-pom', 'ctxC', [])).ok).toBe(true)
-    expect('<Classes>' in (await readJsonAt(pomFile()))).toBe(false)
-    expect('<Projects>' in (await readJsonAt(csFile()))).toBe(false)
-  })
-
-  it('strips a link whose only half is far (C-6)', async () => {
-    await writeFile(csFile(), JSON.stringify({ id: 'sp-cs', '<Projects>': ['Pommora'] }))
-    const r = await setSpaceContext(root, await readNexus(root), 'sp-pom', 'ctxC', [])
-    expect(r.ok).toBe(true)
-    expect('<Projects>' in (await readJsonAt(csFile()))).toBe(false)
-  })
-
-  it('completes a kept link’s missing half and leaves the far file untouched (C-5)', async () => {
-    await writeFile(csFile(), JSON.stringify({ id: 'sp-cs', '<Projects>': ['Pommora'] }))
-    const before = await readFile(csFile(), 'utf8')
-    const r = await setSpaceContext(root, await readNexus(root), 'sp-pom', 'ctxC', ['sp-cs'])
-    expect(r.ok).toBe(true)
-    expect((await readJsonAt(pomFile()))['<Classes>']).toEqual(['CS 161'])
-    expect(await readFile(csFile(), 'utf8')).toBe(before)
-  })
-
-  it('keeps an element it can’t read on the far half, linking and unlinking around it', async () => {
-    await writeFile(csFile(), JSON.stringify({ id: 'sp-cs', '<Projects>': [7] }))
-    expect(
-      (await setSpaceContext(root, await readNexus(root), 'sp-pom', 'ctxC', ['sp-cs'])).ok,
-    ).toBe(true)
-    expect((await readJsonAt(csFile()))['<Projects>']).toEqual([7, 'Pommora'])
-    expect((await setSpaceContext(root, await readNexus(root), 'sp-pom', 'ctxC', [])).ok).toBe(true)
-    expect((await readJsonAt(csFile()))['<Projects>']).toEqual([7])
-  })
-
-  it('refuses a self-link and writes nothing', async () => {
-    const before = await readFile(pomFile(), 'utf8')
-    const r = await setSpaceContext(root, await readNexus(root), 'sp-pom', 'ctx_projects', [
-      'sp-pom',
-    ])
-    expect(r.ok).toBe(false)
-    expect(await readFile(pomFile(), 'utf8')).toBe(before)
-  })
-
-  it('leaves an unresolvable sibling key verbatim (B-8)', async () => {
-    await writeFile(pomFile(), JSON.stringify({ id: 'sp-pom', '<Classes>': ['Vanished'] }))
-    const r = await setSpaceContext(root, await readNexus(root), 'sp-pom', 'ctx_projects', [])
-    expect(r.ok).toBe(true)
-    expect((await readJsonAt(pomFile()))['<Classes>']).toEqual(['Vanished'])
-  })
-})
-
 describe('setContext reads the held tree', () => {
   const deps: TrashDeps = { trashMode: 'nexus', trashToSystem: async () => {} }
   const sidecarOf = (context: string, space: string): string =>
@@ -277,6 +184,8 @@ describe('setContext reads the held tree', () => {
   const rel = (abs: string): string => abs.slice(root.length + 1)
   const setContext = (path: string, contextId: string, spaceIds: string[]) =>
     handleMutate(root, { op: 'setContext', path, contextId, spaceIds }, deps)
+  const link = (contextId: string, spaceIds: string[]) =>
+    setContext('.nexus/contexts/Projects/Pommora', contextId, spaceIds)
 
   beforeEach(async () => {
     await writeFile(
@@ -337,6 +246,91 @@ describe('setContext reads the held tree', () => {
     ])
     expect((await readJsonAt(sidecarOf('Projects', 'Athena')))['<Projects>']).toEqual(['Pommora'])
     expect(await readFile(sidecarOf('Projects', 'Sapphire'), 'utf8')).toBe('{corrupt')
+  })
+
+  describe('a Space’s links (G-1, cross-context)', () => {
+    it('tags a Space into a different Context through its own sidecar', async () => {
+      const r = await link('ctxC', ['sp-cs'])
+      expect(r.ok).toBe(true)
+      const sc = await readJsonAt(join(contextsDir(root), 'Projects', 'Pommora', '_space.json'))
+      expect(sc['<Classes>']).toEqual(['CS 161'])
+      expect(sc.id).toBe('sp-pom')
+      expect('modified_at' in sc).toBe(false)
+    })
+
+    it('repairs a near-miss sibling key on the sidecar in the same write', async () => {
+      const path = join(contextsDir(root), 'Projects', 'Pommora', '_space.json')
+      await writeFile(path, JSON.stringify({ id: 'sp-pom', '<Classes>': ['cs 161'] }))
+      const r = await link('ctx_projects', [])
+      expect(r.ok).toBe(true)
+      expect((await readJsonAt(path))['<Classes>']).toEqual(['CS 161'])
+    })
+
+    const pomFile = (): string => join(contextsDir(root), 'Projects', 'Pommora', '_space.json')
+    const csFile = (): string => join(contextsDir(root), 'Classes', 'CS 161', '_space.json')
+
+    it('writes the pair onto both files', async () => {
+      const r = await link('ctxC', ['sp-cs'])
+      expect(r.ok).toBe(true)
+      expect((await readJsonAt(pomFile()))['<Classes>']).toEqual(['CS 161'])
+      expect((await readJsonAt(csFile()))['<Projects>']).toEqual(['Pommora'])
+    })
+
+    it('writes the pair under one key when both Spaces share a Context', async () => {
+      const athena = join(contextsDir(root), 'Projects', 'Athena')
+      await mkdir(athena, { recursive: true })
+      await writeFile(join(athena, '_space.json'), JSON.stringify({ id: 'sp-ath' }))
+      await refreshTree(root)
+      const r = await link('ctx_projects', ['sp-ath'])
+      expect(r.ok).toBe(true)
+      expect((await readJsonAt(pomFile()))['<Projects>']).toEqual(['Athena'])
+      expect((await readJsonAt(join(athena, '_space.json')))['<Projects>']).toEqual(['Pommora'])
+    })
+
+    it('strips the pair from both files, leaving no emptied array', async () => {
+      expect((await link('ctxC', ['sp-cs'])).ok).toBe(true)
+      expect((await link('ctxC', [])).ok).toBe(true)
+      expect('<Classes>' in (await readJsonAt(pomFile()))).toBe(false)
+      expect('<Projects>' in (await readJsonAt(csFile()))).toBe(false)
+    })
+
+    it('strips a link whose only half is far (C-6)', async () => {
+      await writeFile(csFile(), JSON.stringify({ id: 'sp-cs', '<Projects>': ['Pommora'] }))
+      const r = await link('ctxC', [])
+      expect(r.ok).toBe(true)
+      expect('<Projects>' in (await readJsonAt(csFile()))).toBe(false)
+    })
+
+    it('completes a kept link’s missing half and leaves the far file untouched (C-5)', async () => {
+      await writeFile(csFile(), JSON.stringify({ id: 'sp-cs', '<Projects>': ['Pommora'] }))
+      const before = await readFile(csFile(), 'utf8')
+      const r = await link('ctxC', ['sp-cs'])
+      expect(r.ok).toBe(true)
+      expect((await readJsonAt(pomFile()))['<Classes>']).toEqual(['CS 161'])
+      expect(await readFile(csFile(), 'utf8')).toBe(before)
+    })
+
+    it('keeps an element it can’t read on the far half, linking and unlinking around it', async () => {
+      await writeFile(csFile(), JSON.stringify({ id: 'sp-cs', '<Projects>': [7] }))
+      expect((await link('ctxC', ['sp-cs'])).ok).toBe(true)
+      expect((await readJsonAt(csFile()))['<Projects>']).toEqual([7, 'Pommora'])
+      expect((await link('ctxC', [])).ok).toBe(true)
+      expect((await readJsonAt(csFile()))['<Projects>']).toEqual([7])
+    })
+
+    it('refuses a self-link and writes nothing', async () => {
+      const before = await readFile(pomFile(), 'utf8')
+      const r = await link('ctx_projects', ['sp-pom'])
+      expect(r.ok).toBe(false)
+      expect(await readFile(pomFile(), 'utf8')).toBe(before)
+    })
+
+    it('leaves an unresolvable sibling key verbatim (B-8)', async () => {
+      await writeFile(pomFile(), JSON.stringify({ id: 'sp-pom', '<Classes>': ['Vanished'] }))
+      const r = await link('ctx_projects', [])
+      expect(r.ok).toBe(true)
+      expect((await readJsonAt(pomFile()))['<Classes>']).toEqual(['Vanished'])
+    })
   })
 })
 

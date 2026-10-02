@@ -19,7 +19,7 @@ import type { MutateContext } from '../Nexus/mutate'
 import { done, type MutateReply, type MutateRequest } from '../Nexus/mutateRequest'
 import { assignedDefs } from '../Properties/assignment'
 import { applyAdoptions } from '../Properties/optionOps'
-import type { NexusTree } from '../Nexus/tree'
+import type { ContextGroup, NexusTree, SpaceNode } from '../Nexus/tree'
 import type { Adoption } from '../Properties/propertyValue'
 import { isColorKey } from '@pommora/uix/Theme/colors'
 import { ok, fail, type Result, fault } from '../Contract/result'
@@ -105,28 +105,24 @@ export async function writeSpaceSidecar(
   return written.ok ? ok(null) : written
 }
 
-export async function setSpaceContext(
+async function setSpaceContext(
   root: string,
   tree: NexusTree,
-  spaceId: string,
+  a: SpaceNode,
+  own: ContextGroup,
   contextId: string,
   targetSpaceIds: string[],
 ): Promise<Result<number>> {
   const world = spaceWorldOf(tree)
-  const { groupById, spaceById } = world.contexts
-  const a = spaceById.get(spaceId)
-  if (!a) return fail('not-found', 'Unknown Space.')
-  if (targetSpaceIds.includes(spaceId)) return fault('A Space can’t link itself.')
+  if (targetSpaceIds.includes(a.id)) return fault('A Space can’t link itself.')
   const applied = contextTarget(world.contexts, contextId, targetSpaceIds)
   if (!applied.ok) return applied
   const { key, value } = applied.value
-  const own = groupById.get(a.contextId)
-  if (!own) return fail('not-found', 'Unknown Context.')
   const backKey = contextKey(own.def.title)
   const adoptions: Adoption[] = []
   let skipped = 0
   const namesA = namesSpace(a.title)
-  for (const far of groupById.get(contextId)?.spaces ?? []) {
+  for (const far of world.contexts.groupById.get(contextId)?.spaces ?? []) {
     if (far.id === a.id) continue
     const wants = targetSpaceIds.includes(far.id)
     // Decided on what the far file holds, inside its own read-modify-write, never on the tree's copy of it.
@@ -163,8 +159,9 @@ export async function setContextOp(
   if (isMarkdownFile(path))
     return done(await setPageContext(target.value, root, contextId, spaceIds))
   const owner = spaceAt(tree, path)
-  if (!owner) return fail('invalid-path', 'Not a context-taggable entity.')
-  const linked = await setSpaceContext(root, tree, owner.id, contextId, spaceIds)
+  const own = owner && world.groupById.get(owner.contextId)
+  if (!owner || !own) return fail('invalid-path', 'Not a context-taggable entity.')
+  const linked = await setSpaceContext(root, tree, owner, own, contextId, spaceIds)
   if (!linked.ok) return linked
   return ok(linked.value ? { cascade: reachReport({ skipped: linked.value, hosts: [] }) } : {})
 }
