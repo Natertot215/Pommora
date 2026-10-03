@@ -20,14 +20,14 @@ import type { ReconcileIndex } from '../Session/reconcileSelection'
 /** `id` and `path` are '' for the two folderless singletons, the Homepage and the Matrix. */
 export interface NodeRecord extends TrailNode {
   key: string
-  kind: 'homepage' | 'matrix' | 'space' | 'collection' | 'set' | 'page'
+  kind: NavRef['kind']
   /** The raw icon field — surfaces that render absence read this, not the resolved glyph. */
   ownIcon?: string
   parents: TrailNode[]
 }
 
 export interface TrailNode extends Pick<EntityRecord, 'id' | 'title' | 'path'> {
-  kind: 'homepage' | 'matrix' | 'context' | 'space' | 'collection' | 'set' | 'page'
+  kind: NavRef['kind'] | 'context'
   icon: string
 }
 

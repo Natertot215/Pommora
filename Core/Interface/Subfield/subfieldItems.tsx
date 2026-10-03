@@ -14,7 +14,6 @@ export const DEFAULT_ITEMS: Record<SelectionState['kind'], SubfieldItemId[]> = {
   none: ['count'],
   homepage: [],
   matrix: ['count'],
-  context: [],
   space: [],
   collection: ['count'],
   set: ['count'],

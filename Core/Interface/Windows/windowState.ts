@@ -5,9 +5,7 @@ import { readValue, writeValue } from '../../Platform/localState'
 import { eachOf, entriesOf } from '../../Files/decoders'
 
 // `NavRef` keeps its one validator; the schema decodes the file's shape around it.
-const windowTarget = z
-  .custom<NavRef>((v) => isNavRef(v) && isWindowTarget(v))
-  .transform((t) => toNavRef(t))
+const windowTarget = z.custom<NavRef>((v) => isNavRef(v) && isWindowTarget(v)).transform(toNavRef)
 
 const windowTab = z.object({ target: windowTarget })
 

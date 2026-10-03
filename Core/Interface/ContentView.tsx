@@ -34,7 +34,6 @@ type Host = ContentHost & { target: SelectionState }
 const HOMEPAGE: SelectionState = { kind: 'homepage' }
 const SUBFIELD: Record<Exclude<SelectionState['kind'], 'none'>, boolean> = {
   homepage: false,
-  context: false,
   space: true,
   collection: true,
   set: true,
@@ -61,8 +60,6 @@ const HostView = memo(function HostView({ host }: { host: Host }): React.JSX.Ele
       )
     case 'homepage':
       return <HomepageView tree={tree} />
-    case 'context':
-      return <div className="detail interface-inset" />
     case 'space':
       return <SpaceView tree={tree} id={target.id} />
     case 'collection': {

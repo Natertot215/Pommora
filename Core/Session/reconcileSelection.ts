@@ -20,8 +20,6 @@ export function reconcileWith(index: ReconcileIndex, selection: SelectionState):
     case 'homepage':
     case 'matrix':
       return selection
-    case 'context':
-      return { kind: 'none' }
     case 'space':
       return index.spaces.has(selection.id) ? selection : { kind: 'none' }
     case 'collection':

@@ -6,8 +6,9 @@ import { isContentFile, listEntries, visibleFolders } from '../Files/walk'
 import { outsideContent, type WatchScope } from '../Paths/exclusion'
 import { AGENDA_FOLDERS, type AgendaFolder, SIDECAR_FILENAME } from '../Paths/nexusPaths'
 import { readSidecar } from '../Files/sidecar'
+import type { ContainerKind } from './entities'
 
-export type FolderKind = 'collection' | 'set' | AgendaFolder | 'unknown'
+export type FolderKind = ContainerKind | AgendaFolder | 'unknown'
 
 export type AgendaRegistration = Partial<Record<AgendaFolder, string>>
 

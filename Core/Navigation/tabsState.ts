@@ -1,17 +1,10 @@
 import { z } from 'zod'
 import { eachOf } from '../Files/decoders'
-import {
-  isNavRef,
-  type NavRef,
-  type StoredTab,
-  type StoredTabSet,
-  TAB_KINDS,
-  toNavRef,
-} from './navRef'
+import { isNavRef, type NavRef, type StoredTab, type StoredTabSet, toNavRef } from './navRef'
 import { readValue, writeValue } from '../Platform/localState'
 
 // `NavRef` keeps its one validator; the schema decodes the file's shape around it.
-const tabTarget = z.custom<NavRef>((v) => isNavRef(v, TAB_KINDS)).transform((t) => toNavRef(t))
+const tabTarget = z.custom<NavRef>((v) => isNavRef(v)).transform(toNavRef)
 
 // An empty tab carries no target to restore, so it skips the stack entirely.
 const newTab = z
@@ -25,7 +18,7 @@ const openTab = z.object({
   target: tabTarget,
   navStack: z
     .array(z.unknown())
-    .transform((ts) => ts.filter((t) => isNavRef(t, TAB_KINDS)).map((t) => toNavRef(t as NavRef)))
+    .transform((ts) => ts.filter((t) => isNavRef(t)).map(toNavRef))
     .catch([]),
   navIndex: z.number().int().catch(-1).default(-1),
 })

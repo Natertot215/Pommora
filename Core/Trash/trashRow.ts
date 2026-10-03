@@ -1,16 +1,16 @@
-import type { EntityIconKind } from '../Settings/personalization'
+import type { HeldKind } from '../Nexus/entities'
 import type { PropertyType } from '../Properties/properties'
 
 /** `kind` is absent on a historical crumb, which is a frozen folder name rather than a live entity. */
 export interface TrashCrumb {
-  kind?: EntityIconKind
+  kind?: HeldKind
   title: string
 }
 
 /** Main owns the parse: the renderer never sees a `.deleted` suffix, a folder stamp, or the record union. */
 export interface TrashRow {
   bundlePath: string
-  kind: EntityIconKind | 'property'
+  kind: HeldKind | 'property'
   title: string
   /** A property row's type, which picks its icon. */
   propertyType?: PropertyType

@@ -1,5 +1,6 @@
 import { basename, dirname, join, relative, titleFromPath } from '../Paths/posix'
 import { liveTreeOf, mutableTarget } from '../Nexus/liveTree'
+import { isContainer } from '../Nexus/entities'
 import { goneEdit, reachConfig, reachReport } from '../Nexus/configReach'
 import { pathExists, relocate } from '../Files/atomicWrite'
 import { folderCorpus } from '../Index/indexSeed'
@@ -32,7 +33,7 @@ export async function deleteOp(
   const edit = goneEdit(await liveTreeOf(root), req.kind, req.path)
   const contexts = req.kind === 'context' ? await readRegistryStrict(root) : null
   if (contexts && !contexts.ok) return contexts
-  if (req.kind === 'collection' || req.kind === 'set') {
+  if (isContainer(req)) {
     const refused = await exclusionWriteRefusal(root, await excludedWithin(root, req.path))
     if (refused) return refused
   }
@@ -94,8 +95,7 @@ export async function deleteOp(
       ...(gone.links.length ? { links: gone.links } : {}),
       ...(gone.cascade.warning ? { partial: true as const } : {}),
     })
-  if (req.kind === 'collection' || req.kind === 'set')
-    await releaseExcludedFolders(root, relative(root, abs))
+  if (isContainer(req)) await releaseExcludedFolders(root, relative(root, abs))
   const reach = edit ? reachReport(await reachConfig(root, edit)) : null
   const cascade = gone && reach ? joinCascades(gone.cascade, reach) : (gone?.cascade ?? reach)
   return ok({

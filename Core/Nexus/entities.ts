@@ -36,3 +36,10 @@ export const HELD_KINDS = kindsWith('held')
 export const NODE_KINDS = kindsWith('node')
 export const CONTAINER_KINDS = kindsWith('container')
 export const CONTENT_KINDS = kindsWith('mark')
+
+export const isContainerKind = (kind: unknown): kind is ContainerKind =>
+  CONTAINER_KINDS.includes(kind as ContainerKind)
+
+export const isContainer = <T extends { kind: unknown }>(
+  n: T | null | undefined,
+): n is T & { kind: ContainerKind } => n != null && isContainerKind(n.kind)

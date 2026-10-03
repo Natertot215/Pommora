@@ -30,7 +30,7 @@ import type {
 } from '../../Nexus/tree'
 import { placementOf, type SidebarMode } from '../../Settings/personalization'
 import { DEFAULT_NEW_NAME, type MutateRequest } from '../../Nexus/mutateRequest'
-import type { HeldKind } from '../../Nexus/entities'
+import type { NodeKind } from '../../Nexus/entities'
 import { type Creator, spaceCreator } from '../../Actions/createMenu'
 import { owningCollection } from '../../Nexus/treePatch'
 import { spaceNodeOf } from '../../Nexus/treeIndex'
@@ -68,7 +68,7 @@ async function createFromMenu(item: Creator): Promise<void> {
 
 function showContextFor(
   node: {
-    kind: HeldKind
+    kind: NodeKind
     id: string
     path: string
     title: string
@@ -93,7 +93,7 @@ function showContextFor(
   )
 }
 
-function selectRow(node: { kind: HeldKind; id: string; path: string }, e?: React.MouseEvent): void {
+function selectRow(node: { kind: NodeKind; id: string; path: string }, e?: React.MouseEvent): void {
   const s = useSession.getState()
   const target = selectTargetOf(node)
   if (target.kind === 'page' && owningCollection(s.tree, target.path)?.openIn === 'page-preview') {

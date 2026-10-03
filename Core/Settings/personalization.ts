@@ -2,6 +2,7 @@ import { z } from 'zod'
 import { eachOf, numberCheck } from '../Files/decoders'
 import { columnStyle, DATE_FORMATS, type TimeFormat } from '../Properties/columnStyles'
 import { DEFAULT_LINK_DISPLAY, LINK_DISPLAYS } from '../Properties/properties'
+import { HELD_KINDS, type HeldKind } from '../Nexus/entities'
 import { type ColorSetting, isColorKey } from '@pommora/uix/Theme/colors'
 import { type NumberRange, type SteppedRange, steppedRange } from '@pommora/uix/Utilities/clamp'
 
@@ -24,8 +25,7 @@ export const TIME_FORMAT_SETTINGS = [
 ] as const satisfies readonly TimeFormat[]
 export type TimeFormatSetting = (typeof TIME_FORMAT_SETTINGS)[number]
 
-const ENTITY_ICON_KINDS = ['collection', 'set', 'space', 'page', 'context'] as const
-export type EntityIconKind = (typeof ENTITY_ICON_KINDS)[number]
+export type DefaultIcons = Partial<Record<HeldKind, string>> | undefined
 
 const PLACEMENTS = ['top', 'bottom'] as const
 export type Placement = (typeof PLACEMENTS)[number]
@@ -125,9 +125,9 @@ const iconsByKind = () =>
     z
       .record(z.string(), z.unknown())
       .transform(
-        (r): Partial<Record<EntityIconKind, string>> =>
+        (r): NonNullable<DefaultIcons> =>
           Object.fromEntries(
-            ENTITY_ICON_KINDS.flatMap((k) =>
+            HELD_KINDS.flatMap((k) =>
               typeof r[k] === 'string' && r[k].length > 0 ? [[k, r[k]]] : [],
             ),
           ),

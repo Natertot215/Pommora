@@ -6,8 +6,9 @@ import { nextOrder } from '@pommora/uix/Utilities/moveItem'
 import { contextDirRel } from '../../Paths/nexusPaths'
 import { entityIcon } from '../../Assets/entityIconPolicy'
 import { nodesOf } from '../../Nexus/treeIndex'
+import { isContainer, isContainerKind, type NodeKind } from '../../Nexus/entities'
 
-type Kind = 'collection' | 'set' | 'page' | 'space' | 'contextGroup'
+type Kind = NodeKind | 'contextGroup'
 type Entry = {
   id: string
   kind: Kind
@@ -31,18 +32,19 @@ export function buildIndex(tree: NexusTree): Index {
   const byId = new Map<string, Entry>()
   const collectionIds: string[] = []
   for (const r of nodesOf(tree)) {
-    if (r.kind !== 'collection' && r.kind !== 'set' && r.kind !== 'page') continue
+    const { kind } = r
+    if (kind !== 'page' && !isContainerKind(kind)) continue
     const parent = r.parents.at(-1) ?? null
     const holder = parent ? byId.get(parent.id) : undefined
     const siblings =
-      r.kind === 'collection'
+      kind === 'collection'
         ? collectionIds
-        : r.kind === 'page'
+        : kind === 'page'
           ? holder?.pageIds
           : holder?.containerIds
     byId.set(r.id, {
       id: r.id,
-      kind: r.kind,
+      kind,
       path: r.path,
       title: r.title,
       icon: r.icon,
@@ -255,7 +257,7 @@ function setSlot(s: SidebarSnapshot, y: number): SidebarSlot | null {
   const beside = entry.kind === 'set' && !intoSetRow(over, y)
   const targetId = beside || entry.kind === 'page' ? entry.parentId : entry.id
   const target = targetId ? idx.byId.get(targetId) : undefined
-  if (target?.kind !== 'collection' && target?.kind !== 'set') return null
+  if (!isContainer(target)) return null
   if (walksTo(target.id, dragged.id, (id) => idx.byId.get(id)?.parentId)) return null
   if (beside) {
     const above = y < over.mid

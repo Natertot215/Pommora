@@ -11,6 +11,7 @@ import { same } from '../../Files/stableJson'
 import type { Result } from '../../Contract/result'
 import { useLatest } from '@pommora/uix/Utilities/stableApi'
 import type { CollectionNode, NexusTree, SetNode } from '../../Nexus/tree'
+import { isContainer } from '../../Nexus/entities'
 import { announceDrag } from '@pommora/uix/Interactions/a11y'
 import { channel } from '@pommora/uix/Utilities/subscribable'
 import type { OrderRequest } from '../../Nexus/mutateRequest'
@@ -128,7 +129,7 @@ function withChildOrder(
   order: string[],
 ): NexusTree | null {
   return updateNodeInTree(tree, parentPath, (parent) => {
-    if (parent.kind !== 'collection' && parent.kind !== 'set') return parent
+    if (!isContainer(parent)) return parent
     return key === 'pageOrder'
       ? { ...parent, pageOrder: order, pages: resolveOrder(parent.pages, order) }
       : { ...parent, setOrder: order, sets: resolveOrder(parent.sets ?? [], order) }

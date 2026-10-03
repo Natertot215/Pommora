@@ -3,7 +3,12 @@ import { fault, ok, type Result } from '../Contract/result'
 import { machine } from '../Platform/machine'
 import { isContentFile, listEntries } from '../Files/walk'
 import { ID_KEY } from './identityMark'
-import type { ContainerKind, ContentKind, FolderNodeKind } from './entities'
+import {
+  type ContainerKind,
+  type ContentKind,
+  type FolderNodeKind,
+  isContainerKind,
+} from './entities'
 import { contentIdAt, newId } from './ids'
 import type { Unreadable } from './tree'
 import {
@@ -142,7 +147,7 @@ async function stampTree(
   kindCtx: FolderKindContext,
   root: string,
 ): Promise<void> {
-  const container = kind === 'collection' || kind === 'set'
+  const container = isContainerKind(kind)
   // A folder Pommora can't write (locked sync target, foreign-owned backup, evicted cloud placeholder) costs only itself — letting it throw would silently abandon every folder after it in readdir order.
   if (container) await stampFolder(absDir, kind).catch(() => {})
 

@@ -8,6 +8,7 @@ import { pickKindOf } from '../../Properties/properties'
 import { Icon } from '@pommora/uix/Symbols'
 import { isCmd } from '@pommora/uix/Interactions/chords'
 import { entityIcon } from '../../Assets/entityIconPolicy'
+import type { DefaultIcons } from '../../Settings/personalization'
 import { text } from '@pommora/uix/Theme/typography.css'
 import {
   CardBody,
@@ -120,8 +121,6 @@ const previewKeyOf = (row: ViewRow, banner: CardBanner): string | undefined =>
   banner === 'preview' ? navKey({ kind: 'page', id: row.id }) : undefined
 
 const CARDS_GHOST_GRACE_MS = 200 // KNOB
-
-type DefaultIcons = Parameters<typeof entityIcon>[2]
 
 const NOOP = (): void => {}
 const OVERLAY_FILL = { width: '100%', height: '100%' }

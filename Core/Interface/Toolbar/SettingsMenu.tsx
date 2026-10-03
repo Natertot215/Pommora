@@ -21,8 +21,6 @@ function scopePane(kind: SelectionState['kind']): React.JSX.Element | null {
       return <HomepageMenu />
     case 'matrix':
       return <MatrixMenu />
-    case 'context':
-      return null
     case 'none':
       return <div style={{ minHeight: 24 }} />
   }

@@ -1,13 +1,14 @@
 import type { NexusTree } from '../../Nexus/tree'
+import { type ContainerKind, isContainer } from '../../Nexus/entities'
 import type { SelectionState, SelectTarget } from '../../Navigation/navRef'
 import { titleFromPath } from '../../Paths/posix'
 import type { TrailSegment } from '@pommora/uix/Elements/NavTrail'
 import { ancestryOf, type TrailNode, findSpace } from '../../Nexus/treeIndex'
 
-type SpineTarget = Extract<SelectTarget, { kind: 'collection' | 'set' | 'page' }>
+type SpineTarget = Extract<SelectTarget, { kind: ContainerKind | 'page' }>
 
 const hasSpine = (target: SelectTarget): target is SpineTarget =>
-  target.kind === 'collection' || target.kind === 'set' || target.kind === 'page'
+  isContainer(target) || target.kind === 'page'
 
 function spineOf(tree: NexusTree, target: SelectTarget): TrailNode[] | null {
   return hasSpine(target) ? ancestryOf(tree, target) : null
@@ -46,7 +47,6 @@ export function subfieldCrumbs(
   if (!tree) return []
   switch (selection.kind) {
     case 'none':
-    case 'context':
     case 'matrix':
       return []
     case 'homepage':
