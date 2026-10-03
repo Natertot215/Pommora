@@ -61,7 +61,6 @@ import {
 import { cx } from '@pommora/uix/Utilities/cx'
 import * as s from '@pommora/uix/Menus/frames.css'
 import { askDestroyProperty, notifyTrashed } from '../../Interface/Confirm/confirmations'
-import { displayPropertyName, useCapitalizeMetadata } from '../Cells/columnLabel'
 import { dialer } from '../../Platform/dialer'
 import { popMenu } from '../../Actions/menuActions'
 import { propertyMenuModel } from '../../Actions/propertyMenu'
@@ -95,7 +94,6 @@ function ListGroups({
   onRenameCommit: (id: string, next: string) => void
   onRenameCancel: () => void
 }): React.JSX.Element {
-  const capitalize = useCapitalizeMetadata()
   const enteringAssigned = useEntrance(assigned, (d) => d.id)
   const enteringAll = useEntrance(unassigned, (d) => d.id)
   const title = (d: PropertyDefinition): ReactNode => (
@@ -159,7 +157,7 @@ function ListGroups({
                       <AccessoryButton
                         icon="plus"
                         size={s.ICON.rowPlus}
-                        ariaLabel={`Assign ${displayPropertyName(d.name, capitalize)}`}
+                        ariaLabel={`Assign ${d.name}`}
                         create
                         onClick={() => onAssign(d.id)}
                       />
@@ -206,7 +204,6 @@ export function PropertyFrame({
   onBack: () => void
   source: CollectionNode | SetNode
 }): React.JSX.Element {
-  const capitalize = useCapitalizeMetadata()
   const styleFor = useStyleFor()
   const nexus = useNexusForms()
   const saveView = useSaveView(source)
@@ -306,7 +303,7 @@ export function PropertyFrame({
 
   const defOf = (id: string): PropertyDefinition | undefined =>
     props.find((d) => d.id === id) ?? unassigned.find((d) => d.id === id)
-  const nameFor = (id: string): string => displayPropertyName(defOf(id)?.name ?? '', capitalize)
+  const nameFor = (id: string): string => defOf(id)?.name ?? ''
   const glyphFor = (id: string): ReactNode => {
     const d = defOf(id)
     return d && <Icon name={propertyIcon(d)} />
@@ -320,11 +317,7 @@ export function PropertyFrame({
       if (!reportRefusal(deleted)) return
       trashChanged.emit()
       backToList()
-      notifyTrashed(
-        displayPropertyName(def.name, capitalize),
-        deleted.value,
-        deleted.value.owed && replay(deleted.value.owed),
-      )
+      notifyTrashed(def.name, deleted.value, deleted.value.owed && replay(deleted.value.owed))
     }
   }
   const rowMenu = async (d: PropertyDefinition, group: 'assigned' | 'all'): Promise<void> => {

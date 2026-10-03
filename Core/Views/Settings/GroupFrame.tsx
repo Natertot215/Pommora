@@ -69,7 +69,6 @@ import * as gp from './group-frame.css'
 import * as oo from './option-order.css'
 import { type HideControls, OptionOrderList, rowEye, SUB_LOOK } from './OptionOrderList'
 import { OptionChip } from '../../Properties/Cells/OptionChip'
-import { useCapitalizeMetadata } from '../../Properties/Cells/columnLabel'
 import { styleFor, useNexusForms } from '../Host/useColumnStyles'
 
 const STRUCTURAL_ORDER: PickerOption<StructuralOrderMode>[] = [
@@ -128,7 +127,6 @@ export function GroupFrame({
   label: string
   onBack: () => void
 }): React.JSX.Element {
-  const capitalize = useCapitalizeMetadata()
   const nexus = useNexusForms()
   const saveView = useSaveView(source)
   const save = (patch: Partial<SavedView>): void => void saveView(view, patch)
@@ -151,9 +149,7 @@ export function GroupFrame({
   const group = view.group ?? { kind: 'structural' as const }
   const nests = VIEW_KINDS[view.type].nests
   const plan = groupPlan(view, schema, nests)
-  const propertyOptions = schemaTargets(schema, (d) => groupable(d.type), capitalize).map(
-    targetOption,
-  )
+  const propertyOptions = schemaTargets(schema, (d) => groupable(d.type)).map(targetOption)
   const activeDef =
     plan.kind === 'property' ? schema.find((d) => d.id === plan.group.property_id) : undefined
   const subGroup = plan.kind === 'sets' ? plan.sub : undefined

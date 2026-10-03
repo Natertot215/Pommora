@@ -42,7 +42,6 @@ export function addEntriesFor(
   ctx: ValueContext,
   columns: ResolvedColumn[],
   tree: NexusTree | null = null,
-  capitalize = false,
 ): AddEntry[] {
   const contextIds = contextIdsOf(tree)
   const shownIds = new Set(shownColumnsFor(row, columns, ctx, isCompact(view)).map((c) => c.id))
@@ -61,7 +60,7 @@ export function addEntriesFor(
       const type = STAMP_TYPE[id] ?? def?.type ?? 'context'
       return {
         id,
-        name: columnLabel(id, ctx.schema, contextsByIdOf(tree), capitalize),
+        name: columnLabel(id, ctx.schema, contextsByIdOf(tree)),
         type,
         def,
         revealOnly: !fillsBlank(type) || !isBlankValue(resolveFieldValue(row, id, ctx.schema)),

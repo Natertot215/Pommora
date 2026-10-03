@@ -17,7 +17,7 @@ import { carries, groupedLine, lineList, rowLine, rowStep } from '@pommora/uix/I
 import type { Geometry, Row } from '@pommora/uix/Interactions/reorderModel'
 import { TAB_FAMILY } from '../../Navigation/tabRows'
 import { EntityIcon } from '../../Assets/EntityIcon'
-import { columnLabel, useCapitalizeMetadata } from '../../Properties/Cells/columnLabel'
+import { columnLabel } from '../../Properties/Cells/columnLabel'
 import { notifyUndoable } from '../../Interface/Notifications/notifications'
 import { useSession } from '../../Session/store'
 import { hoverGlance, leaveGlance } from '../../Interface/Glance/glanceAction'
@@ -107,7 +107,6 @@ export function useViewInteractions(host: ViewHostApi, policy: ViewInteractionPo
     styleOf,
   } = host
 
-  const capitalize = useCapitalizeMetadata()
   const tile = useViewTileScope()
 
   // ── Bands ─────────────────────────────────────────────────────────────────
@@ -121,7 +120,7 @@ export function useViewInteractions(host: ViewHostApi, policy: ViewInteractionPo
       ...dropIO(name, persistView),
       switched: ({ propertyId, prior }) =>
         notifyUndoable(
-          `Switched to custom ${columnLabel(propertyId, schema, ctx.contexts, capitalize)} order`,
+          `Switched to custom ${columnLabel(propertyId, schema, ctx.contexts)} order`,
           () =>
             void persistView(prior).then((r) => {
               if (r.ok) announceDrag('return', name)
@@ -408,7 +407,7 @@ export function useViewInteractions(host: ViewHostApi, policy: ViewInteractionPo
     return {
       alreadyOpen: isOpenInTabs(tabs, pinned, pageTarget(row)),
       ...pageMoveContext(tree, row.path),
-      ...propertyMenuBranches({ tree, schema, row, capitalize }),
+      ...propertyMenuBranches({ tree, schema, row }),
     }
   }
   /** The page half of any title menu; `anchor` seats the icon picker. Returns false for an action the caller owns. */
@@ -419,7 +418,6 @@ export function useViewInteractions(host: ViewHostApi, policy: ViewInteractionPo
         tree,
         schema,
         row,
-        capitalize,
         trigger: anchor,
         commit: (column, value) => commitValue(row, column, value),
         styleOf,

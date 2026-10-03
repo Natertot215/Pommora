@@ -27,8 +27,6 @@ import { dialer } from '../../Platform/dialer'
 import { popMenu } from '../../Actions/menuActions'
 import { createNamed, newPageAdjacent } from '../../Actions/createActions'
 import { useSession } from '../../Session/store'
-import { personalizationOf } from '../../Session/configSlice'
-import { settingOf } from '../../Settings/personalization'
 import { confirmDelete } from '../Confirm/confirmations'
 import { runPageAction } from './pageMenuActions'
 
@@ -65,14 +63,7 @@ export async function showEntityMenu(
     : node
       ? (s.tree?.config.registry ?? [])
       : containerSchema(s.tree, target.path)
-  const propertyTarget: PropertyMenuTarget | null = row
-    ? {
-        tree: s.tree,
-        schema,
-        row,
-        capitalize: settingOf(personalizationOf(s), 'capitalizeMetadata'),
-      }
-    : null
+  const propertyTarget: PropertyMenuTarget | null = row ? { tree: s.tree, schema, row } : null
   const shown: EntityMenuTarget = {
     ...target,
     ...(propertyTarget ? propertyMenuBranches(propertyTarget) : {}),

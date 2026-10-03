@@ -178,7 +178,6 @@ export function filterTargets(
   schema: PropertyDefinition[],
   tree: NexusTree | null,
   hasLocations = true,
-  capitalize = false,
 ): PaneTarget[] {
   const contextIds = contextIdsOf(tree)
   return [
@@ -189,6 +188,6 @@ export function filterTargets(
       : []),
     ...STAMP_TARGETS,
     ...contextPaneTargets(tree),
-    ...schemaTargets(schema, (d) => operatorsFor(d.id, schema, contextIds).length > 0, capitalize),
+    ...schemaTargets(schema, (d) => operatorsFor(d.id, schema, contextIds).length > 0),
   ]
 }

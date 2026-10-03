@@ -9,7 +9,7 @@ import { asRenderableIcon, Icon, type IconName } from '@pommora/uix/Symbols'
 import type { NexusTree } from '../../Nexus/tree'
 import { DEFAULT_ENTITY_ICONS } from '../../Assets/entityIconPolicy'
 import { contextsByIdOf } from '../../Contexts/contextIdentity'
-import { displayPropertyName, RESERVED_LABEL } from './columnLabel'
+import { RESERVED_LABEL } from './columnLabel'
 import type { PickerOption } from '@pommora/uix/Pickers/PickerControl'
 
 interface TypeMeta {
@@ -76,11 +76,10 @@ export const contextPaneTargets = (tree: NexusTree | null): PaneTarget[] =>
 export const schemaTargets = (
   schema: PropertyDefinition[],
   qualifies: (def: PropertyDefinition) => boolean,
-  capitalize = false,
 ): (PaneTarget & { def: PropertyDefinition })[] =>
   schema.filter(qualifies).map((d) => ({
     id: d.id,
-    label: displayPropertyName(d.name, capitalize),
+    label: d.name,
     icon: propertyIcon(d),
     def: d,
   }))

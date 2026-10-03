@@ -144,7 +144,7 @@ const SETTINGS = {
   muteCheckedItems: flag(false),
   hideChevrons: flag(false),
   repairOnOpen: flag(false),
-  capitalizeMetadata: flag(false),
+  resolveCaseConflicts: flag(false),
   outlinerLines: flag(false),
   titleIcon: flag(false),
   codeblockLineCount: flag(false),

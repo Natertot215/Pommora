@@ -1,6 +1,5 @@
 import { type PropertyDefinition, RESERVED_PROPERTY_ID } from '../properties'
 import type { ContextIdentity } from '../../Contexts/contextIdentity'
-import { useSetting } from '../../Session/store'
 
 export const RESERVED_LABEL: Readonly<Record<string, string>> = {
   [RESERVED_PROPERTY_ID.title]: 'Title',
@@ -8,20 +7,13 @@ export const RESERVED_LABEL: Readonly<Record<string, string>> = {
   [RESERVED_PROPERTY_ID.modifiedAt]: 'Last Modified',
 }
 
-export const displayPropertyName = (name: string, capitalize: boolean): string =>
-  capitalize ? name.replace(/(?:^|\s)\p{Ll}/gu, (m) => m.toUpperCase()) : name
-
-export const useCapitalizeMetadata = (): boolean => useSetting('capitalizeMetadata')
-
 /** `contexts` is REQUIRED and deliberately un-defaulted: a caller that omits them falls through to the raw id, a header reading as a ULID. */
 export function columnLabel(
   columnId: string,
   schema: PropertyDefinition[],
   contexts: ReadonlyMap<string, ContextIdentity>,
-  capitalize = false,
 ): string {
   const title = contexts.get(columnId)?.title
   if (title) return title
-  const def = schema.find((d) => d.id === columnId)
-  return RESERVED_LABEL[columnId] ?? (def ? displayPropertyName(def.name, capitalize) : columnId)
+  return RESERVED_LABEL[columnId] ?? schema.find((d) => d.id === columnId)?.name ?? columnId
 }

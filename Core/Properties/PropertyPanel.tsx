@@ -40,7 +40,6 @@ import {
 } from './Pickers/valueClick'
 import { openWebLink } from '../Web/openWebLink'
 import { fileChipIndex, fileValueMenu, pickFileInto } from './Pickers/filePick'
-import { useCapitalizeMetadata } from './Cells/columnLabel'
 import { contextPaneTargets, type PaneTarget, schemaTargets } from './Cells/PropertyTypes'
 import { useGhostOptionAnchor } from './Schema/GhostOptionChip'
 import { resolveRowOrder } from './rowOrder'
@@ -80,7 +79,6 @@ export function PropertyPanel({
   host: 'dropdown' | 'side-pane'
 }): React.JSX.Element {
   const isSpace = subject.kind === 'space'
-  const capitalize = useCapitalizeMetadata()
   const tree = useSession((st) => st.tree)
   const mutate = useSession((st) => st.mutate)
   const assetMap = useSession((st) => st.assetMap)
@@ -190,7 +188,7 @@ export function PropertyPanel({
   }
 
   const contextFields: Field[] = contextPaneTargets(tree).map((t) => ({ ...t, def: null }))
-  const schemaFields: Field[] = schemaTargets(schema, () => true, capitalize)
+  const schemaFields: Field[] = schemaTargets(schema, () => true)
   const held = (f: Field): boolean =>
     f.def
       ? (fm as Record<string, unknown> | null)?.[f.def.name] !== undefined

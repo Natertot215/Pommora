@@ -36,7 +36,7 @@ import { PropertyTypeIcon, propertyIcon } from '../../Properties/Cells/PropertyT
 import { GroupBand } from '../Bands/GroupBand'
 import { memberDepth } from '../Bands/bandModel'
 import { Reveal } from '@pommora/uix/Animations/Reveal'
-import { columnLabel, useCapitalizeMetadata } from '../../Properties/Cells/columnLabel'
+import { columnLabel } from '../../Properties/Cells/columnLabel'
 import { type DragShift, gapShift, useColumns } from './useColumns'
 import { numberBarCapable } from '../../Properties/formatValue'
 import { cx } from '@pommora/uix/Utilities/cx'
@@ -57,7 +57,6 @@ import {
 import { popMenu } from '../../Actions/menuActions'
 
 export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
-  const capitalize = useCapitalizeMetadata()
   const {
     schema,
     view,
@@ -517,7 +516,7 @@ export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
               <ColumnHeader
                 key={c.id}
                 id={c.id}
-                label={columnLabel(c.id, schema, ctx.contexts, capitalize)}
+                label={columnLabel(c.id, schema, ctx.contexts)}
                 icon={headerIcon(c.id)}
                 width={widthByCol[i]}
                 align={alignByCol[i]}

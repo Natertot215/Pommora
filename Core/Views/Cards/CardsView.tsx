@@ -42,7 +42,7 @@ import { TAB_FAMILY } from '../../Navigation/tabRows'
 import type { ViewHostApi } from '../Host/useViewHost'
 import { GHOST_TRAVEL_HOLD_MS, GhostSuppress } from '@pommora/uix/Interactions/ghostCreate'
 import { Reveal } from '@pommora/uix/Animations/Reveal'
-import { columnLabel, useCapitalizeMetadata } from '../../Properties/Cells/columnLabel'
+import { columnLabel } from '../../Properties/Cells/columnLabel'
 import { useColumnStyleMap } from '../Host/useColumnStyles'
 import { GroupBand } from '../Bands/GroupBand'
 import { orderedChildren } from '../Pipeline/group'
@@ -204,7 +204,6 @@ export function CardsView({ host }: { host: ViewHostApi }): React.JSX.Element {
 
   // ── Value and add pickers ─────────────────────────────────────────────────
 
-  const capitalize = useCapitalizeMetadata()
   const styleById = useColumnStyleMap(host)
   const pickerAnchorRef = useLatest((valuePicker ?? addPicker)?.anchor ?? null)
 
@@ -241,7 +240,7 @@ export function CardsView({ host }: { host: ViewHostApi }): React.JSX.Element {
 
   const addRow = addPicker ? rowById.get(addPicker.rowId) : undefined
   const addEntries = addRow
-    ? orderAddableEntries(addEntriesFor(addRow, view, ctx, columns, tree, capitalize))
+    ? orderAddableEntries(addEntriesFor(addRow, view, ctx, columns, tree))
     : []
 
   // ── The root banner seat ──────────────────────────────────────────────────
@@ -295,7 +294,7 @@ export function CardsView({ host }: { host: ViewHostApi }): React.JSX.Element {
     hover: interactions.ghost.onHover,
     titleMenuContext: interactions.titleMenuContext,
     titleAction: interactions.runTitleAction,
-    addableFor: (row) => addEntriesFor(row, view, ctx, columns, tree, capitalize),
+    addableFor: (row) => addEntriesFor(row, view, ctx, columns, tree),
     openSet: (set, newTab) => {
       void select(selectTargetOf(set), newTab ? { newTab: true } : undefined)
     },
@@ -336,7 +335,6 @@ export function CardsView({ host }: { host: ViewHostApi }): React.JSX.Element {
       view={view}
       columns={columns}
       ctx={ctx}
-      capitalize={capitalize}
       iconName={entityIcon('page', undefined, defaultIcons)}
       onEnter={interactions.ghost.onGhostEnter}
       onLeave={interactions.ghost.onGhostLeave}
@@ -379,7 +377,6 @@ export function CardsView({ host }: { host: ViewHostApi }): React.JSX.Element {
             iconName={entityIcon('page', r.icon, defaultIcons)}
             columns={columns}
             nexusId={nexusId}
-            capitalize={capitalize}
             styleById={styleById}
           />
         </CardBody>
@@ -458,7 +455,6 @@ export function CardsView({ host }: { host: ViewHostApi }): React.JSX.Element {
                       ctx={ctx}
                       loc={trailBySet[row.parentSetId ?? '']}
                       defaultIcons={defaultIcons}
-                      capitalize={capitalize}
                       styleById={styleById}
                       api={cardApi}
                       allowInlineRemove={effectiveZoom >= 0.8}
@@ -549,7 +545,6 @@ function GhostCard({
   view,
   columns,
   ctx,
-  capitalize,
   iconName,
   onEnter,
   onLeave,
@@ -559,7 +554,6 @@ function GhostCard({
   view: SavedView
   columns: ResolvedColumn[]
   ctx: ValueContext
-  capitalize: boolean
   iconName: string
   onEnter: () => void
   onLeave: () => void
@@ -592,7 +586,7 @@ function GhostCard({
               {props.map((c) => (
                 <div key={c.id} className="card-prop-row">
                   <span className={cx('card-prop-label', text.caption.emphasized)}>
-                    {columnLabel(c.id, ctx.schema, ctx.contexts, capitalize)}
+                    {columnLabel(c.id, ctx.schema, ctx.contexts)}
                   </span>
                 </div>
               ))}
@@ -672,7 +666,6 @@ interface PageCardProps {
   ctx: ValueContext
   loc?: TrailSegment[]
   defaultIcons: Personalization['defaultIcons']
-  capitalize: boolean
   styleById: Map<string, ColumnStyle>
   api: CardApi
   allowInlineRemove: boolean
@@ -682,16 +675,12 @@ function CardProperties({
   row,
   view,
   ctx,
-  capitalize,
   styleById,
   shown,
   onZoneClick,
   api,
   allowInlineRemove,
-}: Pick<
-  PageCardProps,
-  'row' | 'view' | 'ctx' | 'capitalize' | 'styleById' | 'allowInlineRemove'
-> & {
+}: Pick<PageCardProps, 'row' | 'view' | 'ctx' | 'styleById' | 'allowInlineRemove'> & {
   api: ValueApi
   shown: ResolvedColumn[]
   onZoneClick: (e: React.MouseEvent) => void
@@ -728,7 +717,7 @@ function CardProperties({
       {shown.map((c) => (
         <div key={c.id} className="card-prop-row">
           <span className={cx('card-prop-label', text.caption.emphasized)}>
-            {columnLabel(c.id, ctx.schema, ctx.contexts, capitalize)}
+            {columnLabel(c.id, ctx.schema, ctx.contexts)}
           </span>
           {value(c)}
         </div>
@@ -744,7 +733,6 @@ const CardFace = memo(function CardFace({
   view,
   banner,
   ctx,
-  capitalize,
   styleById,
   crumbs,
   src,
@@ -764,7 +752,6 @@ const CardFace = memo(function CardFace({
   view: SavedView
   banner: CardBanner
   ctx: ValueContext
-  capitalize: boolean
   styleById: Map<string, ColumnStyle>
   crumbs: TrailSegment[]
   src: string | undefined
@@ -845,7 +832,6 @@ const CardFace = memo(function CardFace({
             row={row}
             view={view}
             ctx={ctx}
-            capitalize={capitalize}
             styleById={styleById}
             shown={shown}
             api={api}
@@ -866,7 +852,6 @@ function OverlayFace({
   view,
   banner,
   ctx,
-  capitalize,
   styleById,
   crumbs,
   cover,
@@ -878,7 +863,6 @@ function OverlayFace({
   view: SavedView
   banner: CardBanner
   ctx: ValueContext
-  capitalize: boolean
   styleById: Map<string, ColumnStyle>
   crumbs: TrailSegment[]
   cover?: string
@@ -893,7 +877,6 @@ function OverlayFace({
       view={view}
       banner={banner}
       ctx={ctx}
-      capitalize={capitalize}
       styleById={styleById}
       crumbs={crumbs}
       src={src}
@@ -918,7 +901,6 @@ const PageCard = memo(function PageCard({
   ctx,
   loc,
   defaultIcons,
-  capitalize,
   styleById,
   api,
   allowInlineRemove,
@@ -983,7 +965,6 @@ const PageCard = memo(function PageCard({
             view={view}
             banner={banner}
             ctx={ctx}
-            capitalize={capitalize}
             styleById={styleById}
             crumbs={loc ?? NO_TRAIL}
             src={src}
