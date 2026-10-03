@@ -11,7 +11,7 @@ The Pommora design system — the code counterpart of the Figma library, which l
 
 ### Theme
 
-`UIX/Theme/` — the value source; every token republishes as a `--kebab-name` CSS variable through `theme-vars.css.ts`. `color.css.ts` (`vars`), `theme-vars.css.ts` (`size`, `ICON_PX`, the geometry consts), `typography.css.ts` (`font`, `text`), `stack.ts` (`stack`), `colors.ts` (`tintAt`, `mixAt`, `TINT_STEPS`, `RAMP_FAMILIES`, `RAMP_STEPS`, `ColorName`, `WINDOW_BG`), and `ramp.ts` (`cellColor`, `colorNameFor`, `resolveColor`, `cellPaint`, `cellRing`, `solidColorCss`, `applyAccent`, `ANCHOR_CELLS`). The text-insertion vocabulary every editable surface shares lives here as well: `caret.css` holds the drawn caret's and selection's look, and `nativeCaret.ts` paints both over the native text fields. `index.ts` is the barrel.
+`UIX/Theme/` — the value source; every token republishes as a `--kebab-name` CSS variable through `theme-vars.css.ts`. `color.css.ts` (`vars`), `theme-vars.css.ts` (`size`, `ICON_PX`, the geometry consts), `typography.css.ts` (`font`, `text`), `stack.ts` (`stack`), `colors.ts` (`tintAt`, `mixAt`, `TINT_STEPS`, `RAMP_FAMILIES`, `RAMP_STEPS`, `ColorName`, `WINDOW_BG`), and `ramp.ts` (`cellColor`, `colorNameFor`, `resolveColor`, `cellPaint`, `cellRing`, `solidColorCss`, `applySystemAccent`, `ANCHOR_CELLS`). The text-insertion vocabulary every editable surface shares lives here as well: `caret.css` holds the drawn caret's and selection's look, and `nativeCaret.ts` paints both over the native text fields. `index.ts` is the barrel.
 
 #### Primitives
 
@@ -206,7 +206,7 @@ Where each goes: menu and sidebar rows → Body (Standard) or Control (Compact, 
 | Ease      | `easing.baseEase` · `--ease-base`                                             | `ease` — the everyday curve.                                                                                                                             |
 | Snap      | `easing.baseSnap` · `--ease-snap`                                             | `cubic-bezier(0.22, 1, 0.36, 1)` — the decelerate drag and tiles ride.                                                                                   |
 | Feel      | `DEFAULT_FEEL` · `GLIDE_FEEL`                                                 | Duration + snap as numbers for the drag engine — the `menu` and `slow` rungs.                                                                            |
-| Bloom     | `menuBloom` · `menuBloomClosing` · `bloomOpen` · `bloomClose` · `titleReveal` | The menu open/close keyframes at the `slow` and `menu` rungs.                                                                                            |
+| Bloom     | `menuBloom` · `pickerBloom` · `titleReveal` | The menu open/close keyframes at the `slow` and `menu` rungs.                                                                                            |
 | Window    | `windowIn` · `windowOut`                                                      | The floating window's scale-fade open and withdraw on the `fast` rung — the confirmation modal takes it too.                                             |
 | Reveal    | `Reveal`                                                                      | The `0fr ↔ 1fr` body open/close on the `fast` rung.                                                                                                      |
 | PaneSlide | `paneSlide`                                                                   | A docked pane's in-out motion — the `--io` overlay park or the in-flow reflow, by side and mode.                                                         |
@@ -386,7 +386,7 @@ The elements that draw and frame a stored image — `AssetImage`, `ImagePicker`,
 
 ### Utilities
 
-`UIX/Utilities/` — `cx` · `clamp` (with the `NumberRange` and `steppedRange` vocabulary for bounded numbers) · `pad` · `moveItem` (with the before-id helpers `moveBefore` and `nextOrder`) · `subscribable` (`channel`, the one subscribable value) · `capMap` · `checkSet` · `tileMetrics`, with no catalog beyond this line. The two writers that put runtime values on the root live with what they compute: `applyAccent` in `UIX/Theme/ramp.ts` and `applyPersonalization` in `Core/Settings/applyPersonalization.ts`.
+`UIX/Utilities/` — `cx` · `clamp` (with the `NumberRange` and `steppedRange` vocabulary for bounded numbers) · `pad` · `moveItem` (with the before-id helpers `moveBefore` and `nextOrder`) · `subscribable` (`channel`, the one subscribable value) · `capMap` · `checkSet` · `tileMetrics`, with no catalog beyond this line. The two writers that put runtime values on the root live with what they compute: `applySystemAccent` in `UIX/Theme/ramp.ts` and `applyPersonalization` in `Core/Settings/applyPersonalization.ts`.
 
 ### Windows
 
