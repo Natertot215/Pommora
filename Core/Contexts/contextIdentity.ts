@@ -1,5 +1,6 @@
-import type { NexusConfig, NexusTree } from '../Nexus/tree'
+import type { NexusTree } from '../Nexus/tree'
 import { entityIcon } from '../Assets/entityIconPolicy'
+import type { Personalization } from '../Settings/personalization'
 
 export interface ContextIdentity {
   title: string
@@ -23,7 +24,7 @@ export interface IdentityMaps {
 // Keyed on the two slices it reads, so a push that leaves the Contexts and the default icons alone keeps every map's identity.
 const mapsByContexts = new WeakMap<
   NexusTree['contexts'],
-  { icons: NexusConfig['personalization']['defaultIcons']; maps: IdentityMaps }
+  { icons: Personalization['defaultIcons']; maps: IdentityMaps }
 >()
 
 export function identityOf(tree: NexusTree): IdentityMaps {

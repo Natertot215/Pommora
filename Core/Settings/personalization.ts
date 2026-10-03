@@ -25,8 +25,6 @@ export const TIME_FORMAT_SETTINGS = [
 ] as const satisfies readonly TimeFormat[]
 export type TimeFormatSetting = (typeof TIME_FORMAT_SETTINGS)[number]
 
-export type DefaultIcons = Partial<Record<HeldKind, string>> | undefined
-
 const PLACEMENTS = ['top', 'bottom'] as const
 export type Placement = (typeof PLACEMENTS)[number]
 
@@ -125,7 +123,7 @@ const iconsByKind = () =>
     z
       .record(z.string(), z.unknown())
       .transform(
-        (r): NonNullable<DefaultIcons> =>
+        (r): Partial<Record<HeldKind, string>> =>
           Object.fromEntries(
             HELD_KINDS.flatMap((k) =>
               typeof r[k] === 'string' && r[k].length > 0 ? [[k, r[k]]] : [],

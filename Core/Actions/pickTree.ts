@@ -1,12 +1,12 @@
 import { entityIcon } from '../Assets/entityIconPolicy'
-import type { DefaultIcons } from '../Settings/personalization'
+import type { Personalization } from '../Settings/personalization'
 import type { CollectionNode, NexusTree, PageNode, SetNode } from '../Nexus/tree'
 import type { PickItem } from './menuModel'
 
 /** Every Collection and Set as a branch, its Sets before its own leaves as the sidebar lists them. */
 export function containerPickTree<T>(
   tree: NexusTree,
-  icons: DefaultIcons,
+  icons: Personalization['defaultIcons'],
   leaves: (c: CollectionNode | SetNode) => PickItem<T>[],
 ): PickItem<T>[] {
   const branch = (c: CollectionNode | SetNode): PickItem<T> => ({
@@ -19,7 +19,7 @@ export function containerPickTree<T>(
 
 export const pagePickTree = <T>(
   tree: NexusTree,
-  icons: DefaultIcons,
+  icons: Personalization['defaultIcons'],
   pick: (p: PageNode) => T,
 ): PickItem<T>[] =>
   containerPickTree(tree, icons, (c) =>
