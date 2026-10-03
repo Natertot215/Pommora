@@ -63,10 +63,10 @@ textarea,
   --sidebar-clearance: calc(var(--app-inset) + var(--sidebar-width));
   --side-pane-clearance: 0px;
   --surface-lane: 8px;
-  --expand-left: 96px;
+  --toolbar-lead: 104px;
 }
 .shell.no-traffic-lights {
-  --expand-left: calc(var(--app-inset) + 4px);
+  --toolbar-lead: calc(var(--app-inset) + 4px);
 }
 .shell.sidebar-hidden {
   --sidebar-clearance: 0px;

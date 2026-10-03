@@ -24,11 +24,13 @@
   --slide-cluster-w: var(--trio-w);
   --slide-breathing: var(--trio-inset);
 
-  transition: left var(--pane-slide) var(--ease-base);
+  transition:
+    left var(--pane-slide) var(--ease-base),
+    padding-left var(--pane-slide) var(--ease-base);
 }
 .shell.sidebar-hidden .app-toolbar {
   left: 0;
-  padding-left: calc(var(--expand-left) + var(--button-large-height) + 7px);
+  padding-left: var(--toolbar-lead);
 }
 
 .app-toolbar-cluster {
@@ -42,6 +44,41 @@
   align-items: flex-start;
   gap: 8px;
   pointer-events: none;
+}
+
+/* The sidebar toggle is the pill's leading segment only while the sidebar is hidden: the glass slides out to show it as the sidebar leaves and folds back over it as the sidebar returns, the glyph pinned to the trailing edge so the pill's edge uncovers it. */
+.app-toolbar-cluster--nav {
+  interpolate-size: allow-keywords;
+}
+.app-toolbar-cluster--nav button {
+  --btn-pad: 6px;
+}
+.app-toolbar-cluster--nav button:first-of-type {
+  justify-content: flex-end;
+  min-width: 0;
+  overflow: hidden;
+  transition:
+    width var(--pane-slide) var(--ease-base),
+    padding-inline var(--pane-slide) var(--ease-base),
+    opacity var(--pane-slide) var(--ease-base),
+    visibility var(--pane-slide),
+    background var(--duration-fast) var(--ease-base),
+    color var(--duration-fast) var(--ease-base);
+}
+.app-toolbar-cluster--nav button:first-of-type + span {
+  transition:
+    width var(--pane-slide) var(--ease-base),
+    opacity var(--pane-slide) var(--ease-base);
+}
+.shell:not(.sidebar-hidden) .app-toolbar-cluster--nav button:first-of-type {
+  width: 0;
+  --btn-pad: 0px;
+  opacity: 0;
+  visibility: hidden;
+}
+.shell:not(.sidebar-hidden) .app-toolbar-cluster--nav button:first-of-type + span {
+  width: 0;
+  opacity: 0;
 }
 
 .app-toolbar-cluster--trio {

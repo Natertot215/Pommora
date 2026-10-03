@@ -23,7 +23,8 @@ export function WindowActions({
       {onToggleSidePane && (
         <Button
           size="button-inline"
-          icon="panel-right"
+          icon={sidePaneOpen ? 'panel-right-close' : 'panel-right-open'}
+          nearMark
           iconSize="body"
           title="Side Pane"
           pressed={sidePaneOpen}

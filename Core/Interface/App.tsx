@@ -22,7 +22,6 @@ import { NotificationLabel } from './Notifications/NotificationLabel'
 import { GlancePane } from './Glance/GlancePane'
 import { useNavThumbnails } from '../Navigation/useNavThumbnails'
 import { Button } from '@pommora/uix/Buttons/Button'
-import { Icon } from '@pommora/uix/Symbols'
 import { KEYED_COMMANDS, matchesCommand } from '../Actions/commands'
 import { runCommand } from '../Actions/commandRouter'
 import { useBridgeSubscriptions } from '../Session/useBridgeSubscriptions'
@@ -146,14 +145,15 @@ export function App(): React.JSX.Element {
           <Button
             size="button-large"
             paddingX="0"
-            className="sidebar-toggle sidebar-collapse"
+            iconSize="titleSmall"
+            icon="panel-left-close"
+            nearMark
+            className="sidebar-toggle"
             reveal
             onClick={toggleSidebar}
             aria-label="Collapse sidebar"
             title="Collapse sidebar"
-          >
-            <Icon name="log-out" size="titleSmall" className="flip-x" />
-          </Button>
+          />
           {status === 'loading' && <div className="state">Loading Nexus…</div>}
           {status === 'empty' && (
             <div className="state">
@@ -181,16 +181,6 @@ export function App(): React.JSX.Element {
             aria-hidden="true"
           />
         )}
-        <Button
-          size="button-large"
-          paddingX="0"
-          className="sidebar-toggle sidebar-expand"
-          onClick={toggleSidebar}
-          aria-label="Show sidebar"
-          title="Show sidebar"
-        >
-          <Icon name="log-out" size="titleSmall" />
-        </Button>
         {status === 'ready' && <SidePane open={sidePaneOpen} />}
         {status === 'ready' && <NavWindow />}
         {status === 'ready' && <MatrixWindow />}

@@ -53,6 +53,7 @@ export function Toolbar({
   const flat = useSession((s) => s.hostPlatform === 'windows')
   const toggleNav = useSession((s) => s.toggleNav)
   const navOpen = useSession((s) => s.windowSlot?.kind === 'nav')
+  const toggleSidebar = useSession((s) => s.toggleSidebar)
   const goBack = useSession((s) => s.goBack)
   const goForward = useSession((s) => s.goForward)
   const canGoBack = useSession((s) => {
@@ -65,6 +66,12 @@ export function Toolbar({
   })
 
   const backForward: Segment[] = [
+    {
+      icon: 'panel-left-open',
+      nearMark: true,
+      title: 'Show sidebar',
+      onClick: toggleSidebar,
+    },
     { icon: 'chevron-left', title: 'Back', onClick: goBack, disabled: !canGoBack },
     { icon: 'chevron-right', title: 'Forward', onClick: goForward, disabled: !canGoForward },
   ]
@@ -76,13 +83,19 @@ export function Toolbar({
       onClick: () => setSettingsOpen((v) => !v),
       active: settingsOpen,
     },
-    { icon: 'panel-right', title: 'Side Pane', onClick: onToggleSidePane, active: sidePaneOpen },
+    {
+      icon: sidePaneOpen ? 'panel-right-close' : 'panel-right-open',
+      nearMark: true,
+      title: 'Side Pane',
+      onClick: onToggleSidePane,
+      active: sidePaneOpen,
+    },
   ]
 
   return (
     <div className="app-toolbar" ref={publishChromePart('toolbar')}>
       <div className="app-toolbar-cluster app-toolbar-cluster--nav">
-        <Segmented glass segments={backForward} paddingX="6px" iconSize="titleSmall" />
+        <Segmented glass segments={backForward} iconSize="titleSmall" />
       </div>
       <TabBar />
       <div className="app-toolbar-right">
