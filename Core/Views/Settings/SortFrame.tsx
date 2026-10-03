@@ -14,7 +14,6 @@ import {
   targetOption,
 } from '../../Properties/Cells/PropertyTypes'
 import { middleRegion } from '@pommora/uix/Menus/frames.css'
-import { useCapitalizeMetadata } from '../../Properties/Cells/columnLabel'
 
 type Direction = SortCriterion['direction']
 
@@ -80,11 +79,10 @@ export function SortFrame({
 
   const primary = view.sort?.[0]
   const sub = view.sort?.[1]
-  const capitalize = useCapitalizeMetadata()
   const targets = [
     TITLE_TARGET,
     ...STAMP_TARGETS,
-    ...schemaTargets(schema, (d) => PROPERTY_TYPES[d.type].origin === 'user', capitalize),
+    ...schemaTargets(schema, (d) => PROPERTY_TYPES[d.type].origin === 'user'),
   ]
 
   const pickPrimary = (id: string | null): void => {

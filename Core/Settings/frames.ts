@@ -618,9 +618,9 @@ export const FRAMES = roster([
           },
           {
             kind: 'toggle',
-            key: 'capitalizeMetadata',
-            label: 'Capitalize All Metadata',
-            hint: 'Present all Markdown frontmatter as capitalized; useful when working in a shared directory with specific metadata standards.',
+            key: 'resolveCaseConflicts',
+            label: 'Automatically Resolve Case Conflicts',
+            hint: 'Rewrite property names, Context keys, and values to their registered casing whenever Pommora writes or repairs a page or Space, joining keys that differ only by case.',
           },
         ],
       },

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { columnLabel, displayPropertyName } from './columnLabel'
+import { columnLabel } from './columnLabel'
 import { contextsByIdOf } from '../../Contexts/contextIdentity'
 import { RESERVED_PROPERTY_ID, type PropertyDefinition } from '../properties'
 
@@ -38,20 +38,5 @@ describe('columnLabel', () => {
 
   it('falls back to the id for an unknown column (never throws)', () => {
     expect(columnLabel('prop_gone', schema, NO_CONTEXTS)).toBe('prop_gone')
-  })
-})
-
-describe('displayPropertyName', () => {
-  it('Title Cases each word only when the toggle is on, and leaves a cased name alone', () => {
-    expect(displayPropertyName('due date', true)).toBe('Due Date')
-    expect(displayPropertyName('tags', false)).toBe('tags')
-    expect(displayPropertyName('PageID', true)).toBe('PageID')
-  })
-
-  it('columnLabel capitalizes the property branch only', () => {
-    const lower: PropertyDefinition[] = [{ id: 'prop_tags', name: 'tags', type: 'multiSelect' }]
-    expect(columnLabel('prop_tags', lower, NO_CONTEXTS, true)).toBe('Tags')
-    expect(columnLabel('prop_tags', lower, NO_CONTEXTS)).toBe('tags')
-    expect(columnLabel('prop_gone', lower, NO_CONTEXTS, true)).toBe('prop_gone')
   })
 })

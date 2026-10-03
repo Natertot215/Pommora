@@ -56,7 +56,6 @@ import {
 import * as fp from './filter-frame.css'
 import { NeutralChip } from '@pommora/uix/Labels/recipes'
 import { OptionChip } from '../../Properties/Cells/OptionChip'
-import { useCapitalizeMetadata } from '../../Properties/Cells/columnLabel'
 import { EditableInput } from '@pommora/uix/Fields/EditableInput'
 
 const MATCH_OPTIONS: PickerOption<MatchMode>[] = [
@@ -368,8 +367,7 @@ export function FilterFrame({
   const entering = useEntrance(rows, (_, i) => String(i))
 
   const contextIds = contextIdsOf(tree)
-  const capitalize = useCapitalizeMetadata()
-  const targets = filterTargets(schema, tree, locations.length > 0, capitalize)
+  const targets = filterTargets(schema, tree, locations.length > 0)
   const defById = new Map(schema.map((d) => [d.id, d]))
   const targetById = new Map(targets.map((t) => [t.id, t]))
 

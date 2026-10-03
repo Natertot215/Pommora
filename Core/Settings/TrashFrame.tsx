@@ -23,7 +23,6 @@ import { useSession } from '../Session/store'
 import { trashChanged } from '../Session/nexusSlice'
 import { personalizationOf } from '../Session/configSlice'
 import { notifyReport, unrestoredLine } from '../Interface/Notifications/notifications'
-import { displayPropertyName, useCapitalizeMetadata } from '../Properties/Cells/columnLabel'
 import { dialer } from '../Platform/dialer'
 import { popMenu } from '../Actions/menuActions'
 import { trashMenuItems } from '../Actions/trashMenu'
@@ -97,17 +96,7 @@ function TrashBody(): React.JSX.Element {
     return trashChanged.subscribe(() => void refresh())
   }, [refresh])
 
-  const capitalize = useCapitalizeMetadata()
-  const shown = useMemo(
-    () =>
-      filterRows(
-        (rows ?? []).map((r) =>
-          r.kind === 'property' ? { ...r, title: displayPropertyName(r.title, capitalize) } : r,
-        ),
-        query,
-      ),
-    [rows, query, capitalize],
-  )
+  const shown = useMemo(() => filterRows(rows ?? [], query), [rows, query])
   const toggle = (bundlePath: string): void => setChecked((prev) => toggled(prev, bundlePath))
 
   const one = async (req: Extract<MutateRequest, { bundlePath: string }>): Promise<void> => {

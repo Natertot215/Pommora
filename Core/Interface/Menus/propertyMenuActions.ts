@@ -26,7 +26,6 @@ export interface PropertyMenuTarget {
   tree: NexusTree | null
   schema: PropertyDefinition[]
   row: ViewRow
-  capitalize?: boolean
 }
 
 const contextOptionsOf = (
@@ -36,15 +35,13 @@ const contextOptionsOf = (
 ): ReturnType<typeof contextOptionsFor> | undefined =>
   def.type === 'context' && tree ? contextOptionsFor(def.id, tree, excludeId) : undefined
 
-export function propertyMenuBranches({
-  tree,
-  schema,
-  row,
-  capitalize = false,
-}: PropertyMenuTarget): { spaces: PropertyMenuRow[]; properties: PropertyMenuRow[] } {
+export function propertyMenuBranches({ tree, schema, row }: PropertyMenuTarget): {
+  spaces: PropertyMenuRow[]
+  properties: PropertyMenuRow[]
+} {
   const contexts = contextsByIdOf(tree)
   const build = (id: string, def: PropertyDefinition): PropertyMenuRow => {
-    const base = { id, name: columnLabel(id, schema, contexts, capitalize) }
+    const base = { id, name: columnLabel(id, schema, contexts) }
     const current = resolveFieldValue(row, id, schema)
     if (def.type === 'checkbox') {
       const checked = current.kind === 'checkbox' && current.value

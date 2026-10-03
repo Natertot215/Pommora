@@ -9,7 +9,7 @@ import type { SavedView } from '../views'
 import { useSession } from '../../Session/store'
 import { MenuRowView, MenuTopRow, MenuScrollFrame } from '@pommora/uix/Menus'
 import { resolveColumns } from '../Pipeline/columns'
-import { columnLabel, useCapitalizeMetadata } from '../../Properties/Cells/columnLabel'
+import { columnLabel } from '../../Properties/Cells/columnLabel'
 import { useSaveView } from '../viewWrite'
 import { LineGroup, LineRow, LineZone } from '@pommora/uix/Interactions/drag'
 import { PaneAllGroup, type PaneDrop, paneSpec } from '../../Properties/paneDrop'
@@ -106,7 +106,6 @@ export function VisibilityFrame({
 }): React.JSX.Element | null {
   const saveView = useSaveView(source)
   const tree = useSession((st) => st.tree)
-  const capitalize = useCapitalizeMetadata()
   if (!tree) return null
 
   const contextIds = contextIdsOf(tree)
@@ -114,7 +113,7 @@ export function VisibilityFrame({
   const hiddenIds = hiddenListIds(view, schema, contextIds)
   // The hidden list's own membership, not hidden_properties: a prop absent from property_order is hidden by absence and reads as such.
   const hiddenSet = new Set(hiddenIds)
-  const nameFor = (id: string): string => columnLabel(id, schema, contextsByIdOf(tree), capitalize)
+  const nameFor = (id: string): string => columnLabel(id, schema, contextsByIdOf(tree))
 
   const save = (patch: Partial<SavedView>): void => void saveView(view, patch)
   const handleDrop = (drop: PaneDrop): void => {
