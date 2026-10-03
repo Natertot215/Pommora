@@ -59,7 +59,7 @@ describe('Segmented', () => {
   it('closes the run on one more segment when trailingDivider is set', () => {
     act(() =>
       root.render(
-        <Segmented segments={[{ icon: 'map' }, { icon: 'panel-right' }]} trailingDivider />,
+        <Segmented segments={[{ icon: 'map' }, { icon: 'panel-right-open' }]} trailingDivider />,
       ),
     )
     const run = host.firstElementChild!

@@ -110,6 +110,16 @@ export const labeled = style({ vars: { '--btn-pad': 'var(--btn-label-pad)' } })
 
 export const dividerBar = style({ height: 'var(--btn-div-h)' })
 
+export const nearMark = style({ display: 'inline-flex' })
+
+globalStyle(`${nearMark} > svg > :last-child`, {
+  opacity: 'var(--reveal, 0)',
+  transition: REVEAL_FADE,
+  '@media': { '(hover: none)': { opacity: 1 } },
+})
+
+globalStyle(`:focus-visible > ${nearMark} > svg > :last-child`, { opacity: 1 })
+
 // Exported from the same number so a button and what rings it — a tab row, a sidebar rail — can't drift.
 globalStyle(':root', {
   vars: {

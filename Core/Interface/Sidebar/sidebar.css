@@ -154,40 +154,14 @@
 
 .sidebar-toggle {
   position: absolute;
+  top: 1px;
+  right: 10px;
   z-index: var(--z-sidebar-toggle);
   border-radius: 6px;
   cursor: pointer;
-  transition:
-    opacity var(--reveal-fade) var(--ease-base),
-    color var(--duration-fast) var(--ease-base),
-    background var(--duration-fast) var(--ease-base);
 }
-.sidebar-toggle .flip-x {
-  transform: scaleX(-1);
-}
-.sidebar-collapse {
-  top: 1px;
-  right: 10px;
-}
-.shell.sidebar-hidden .sidebar-collapse {
+.shell.sidebar-hidden .sidebar-toggle {
   --reveal: 1;
-}
-.sidebar-expand {
-  top: calc(var(--app-inset) + 1px);
-  left: var(--expand-left);
-  opacity: 0;
-  transform: translateX(-6px);
-  pointer-events: none;
-  transition:
-    opacity var(--duration-base) var(--ease-base),
-    transform var(--duration-base) var(--ease-base),
-    color var(--duration-fast) var(--ease-base),
-    background var(--duration-fast) var(--ease-base);
-}
-.shell.sidebar-hidden .sidebar-expand {
-  opacity: 1;
-  transform: translateX(0);
-  pointer-events: auto;
 }
 
 .sidebar-resize {

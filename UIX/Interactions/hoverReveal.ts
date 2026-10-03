@@ -1,5 +1,6 @@
 import {
   type PointerEvent as ReactPointerEvent,
+  type RefObject,
   type TransitionEvent as ReactTransitionEvent,
   useCallback,
   useEffect,
@@ -160,8 +161,8 @@ export const REVEAL_REACH = { inline: 260, edge: 280, corner: 300 } as const // 
 
 export type Reach = {
   size: keyof typeof REVEAL_REACH
-  /** The directions the reach extends from its anchor; an edge reach is a band half as deep as it's wide, the others round their far corner. */
-  toward: { x: -1 | 1; y: -1 | 1 }
+  /** The directions the reach extends from its anchor; an edge reach is a band half as deep as it's wide, the others round their far corner. Without it, the reach surrounds the anchor. */
+  toward?: { x: -1 | 1; y: -1 | 1 }
 }
 
 export type Box = { left: number; top: number; right: number; bottom: number }
@@ -169,11 +170,53 @@ export type Box = { left: number; top: number; right: number; bottom: number }
 /** `scale` resizes the reach with its surface, as the editor's font and zoom do. */
 export function withinReach(anchor: Box, reach: Reach, x: number, y: number, scale = 1): boolean {
   const r = REVEAL_REACH[reach.size] * scale
-  if (reach.toward.x < 0 ? x > anchor.right : x < anchor.left) return false
-  if (reach.toward.y < 0 ? y > anchor.bottom : y < anchor.top) return false
-  const dx = Math.max(0, reach.toward.x < 0 ? anchor.left - x : x - anchor.right)
-  const dy = Math.max(0, reach.toward.y < 0 ? anchor.top - y : y - anchor.bottom)
+  const { toward } = reach
+  if (toward && (toward.x < 0 ? x > anchor.right : x < anchor.left)) return false
+  if (toward && (toward.y < 0 ? y > anchor.bottom : y < anchor.top)) return false
+  const dx = Math.max(0, anchor.left - x, x - anchor.right)
+  const dy = Math.max(0, anchor.top - y, y - anchor.bottom)
   return reach.size === 'edge' ? dx <= r && dy <= r / 2 : Math.hypot(dx, dy) <= r
+}
+
+/** Makes `ref`'s element a reveal host that turns on while the pointer is within `reach` of it, tracked window-wide. The rect is cached and dropped whenever the element may have moved: when a transition ends on it, an ancestor, or a sibling of either, on a resize, or while a button is held. */
+export function useRevealWithin(ref: RefObject<HTMLElement | null>, reach: Reach): void {
+  useEffect(() => {
+    const el = ref.current
+    if (!el) return
+    let box: Box | null = null
+    const show = (on: boolean): void => {
+      const v = on ? 'on' : 'off'
+      if (el.dataset.revealHost !== v) el.dataset.revealHost = v
+    }
+    const forget = (): void => {
+      box = null
+    }
+    const onMove = (e: PointerEvent): void => {
+      if (e.buttons !== 0) {
+        forget()
+        show(false)
+        return
+      }
+      box ??= el.getBoundingClientRect()
+      show(withinReach(box, reach, e.clientX, e.clientY))
+    }
+    const onOut = (e: PointerEvent): void => {
+      if (!e.relatedTarget) show(false)
+    }
+    const onTransitionEnd = (e: TransitionEvent): void => {
+      if ((e.target as Element).parentElement?.contains(el)) forget()
+    }
+    window.addEventListener('pointermove', onMove, { passive: true })
+    window.addEventListener('pointerout', onOut, { passive: true })
+    window.addEventListener('transitionend', onTransitionEnd, { capture: true, passive: true })
+    window.addEventListener('resize', forget, { passive: true })
+    return () => {
+      window.removeEventListener('pointermove', onMove)
+      window.removeEventListener('pointerout', onOut)
+      window.removeEventListener('transitionend', onTransitionEnd, { capture: true })
+      window.removeEventListener('resize', forget)
+    }
+  }, [ref, reach])
 }
 
 const TRAIL: Reach = { size: 'edge', toward: { x: -1, y: -1 } }

@@ -22,7 +22,12 @@ export function ToolbarTrio({
   return (
     <div className="toolbar-trio">
       <div className="toolbar-trio-glass" aria-hidden inert>
-        <Segmented glass radius="var(--trio-radius)" segments={segments} showSelection={false} />
+        <Segmented
+          glass
+          radius="var(--trio-radius)"
+          segments={segments.map((seg) => ({ ...seg, nearMark: false }))}
+          showSelection={false}
+        />
       </div>
       <div className="toolbar-trio-cover">
         <Segmented

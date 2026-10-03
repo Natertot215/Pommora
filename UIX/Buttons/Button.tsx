@@ -1,7 +1,8 @@
-import { type ButtonHTMLAttributes, Fragment, type ReactNode, type Ref } from 'react'
+import { type ButtonHTMLAttributes, Fragment, type ReactNode, type Ref, useRef } from 'react'
 import { segment } from '../Elements/segment.css'
 import { GlassControl } from '../Glass/GlassControl'
 import { revealTarget } from '../Interactions/hover-reveal.css'
+import { type Reach, useRevealWithin } from '../Interactions/hoverReveal'
 import { Icon } from '../Symbols'
 import { type ButtonSize, type IconSize, size as sizeTokens } from '../Theme/theme-vars.css'
 import { cx } from '../Utilities/cx'
@@ -19,6 +20,8 @@ type Look = {
 
 type ButtonProps = Look & {
   icon?: string
+  /** The icon's last mark — an arrow, say — shows only while the pointer is within reach. */
+  nearMark?: boolean
   label?: ReactNode
   labelCollapsed?: boolean
   reveal?: boolean
@@ -35,6 +38,7 @@ export function Button({
   paddingX,
   iconSize,
   icon,
+  nearMark,
   label,
   labelCollapsed,
   reveal,
@@ -72,7 +76,7 @@ export function Button({
       aria-pressed={pressed}
       {...rest}
     >
-      {icon && <Icon name={icon} />}
+      {icon && (nearMark ? <NearGlyph icon={icon} /> : <Icon name={icon} />)}
       {icon && label !== undefined ? (
         <span className={cx(s.labelSlot, labelCollapsed && s.labelSlotHidden)}>
           <span className={s.labelText}>{label}</span>
@@ -85,8 +89,21 @@ export function Button({
   )
 }
 
+const NEAR: Reach = { size: 'inline' }
+
+function NearGlyph({ icon }: { icon: string }): React.JSX.Element {
+  const ref = useRef<HTMLSpanElement>(null)
+  useRevealWithin(ref, NEAR)
+  return (
+    <span ref={ref} className={s.nearMark} data-reveal-host="off">
+      <Icon name={icon} />
+    </span>
+  )
+}
+
 export type Segment = {
   icon?: string
+  nearMark?: boolean
   label?: string
   onClick?: () => void
   disabled?: boolean
@@ -130,6 +147,7 @@ export function Segmented({
         paddingX={paddingX}
         iconSize={iconSize}
         icon={seg.icon}
+        nearMark={seg.nearMark}
         label={seg.label}
         labelCollapsed={labelCollapsed}
         onClick={seg.onClick}

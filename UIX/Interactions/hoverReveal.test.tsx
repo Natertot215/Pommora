@@ -1,12 +1,13 @@
 // @vitest-environment jsdom
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { act } from 'react'
+import { act, useRef } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
 import {
   REVEAL_DWELL_MS,
   REVEAL_GRACE_MS,
   REVEAL_REACH,
   useHoverReveal,
+  useRevealWithin,
   withinReach,
 } from './hoverReveal'
 ;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
@@ -298,8 +299,54 @@ describe('withinReach', () => {
     expect(withinReach(at, { size: 'corner', toward: outward }, 110, 99)).toBe(false)
   })
 
+  it('surrounds its anchor without a direction', () => {
+    const around = { size: 'inline' } as const
+    expect(withinReach(at, around, 100 - r * 0.6, 100 - r * 0.6)).toBe(true)
+    expect(withinReach(at, around, 100 - r * 0.8, 100 - r * 0.8)).toBe(false)
+    expect(withinReach(at, around, 120 + r, 105)).toBe(true)
+  })
+
   it('scales with its surface', () => {
     expect(withinReach(at, { size: 'inline', toward: outward }, 120 + r * 1.5, 110)).toBe(false)
     expect(withinReach(at, { size: 'inline', toward: outward }, 120 + r * 1.5, 110, 2)).toBe(true)
+  })
+})
+
+describe('useRevealWithin', () => {
+  const r = REVEAL_REACH.inline
+  let el: HTMLSpanElement
+
+  function Near(): React.JSX.Element {
+    const ref = useRef<HTMLSpanElement>(null)
+    useRevealWithin(ref, { size: 'inline' })
+    return <span ref={ref} data-reveal-host="off" />
+  }
+
+  const move = (x: number, y: number, buttons = 0): Promise<void> =>
+    run(() => window.dispatchEvent(new MouseEvent('pointermove', { clientX: x, clientY: y, buttons })))
+
+  beforeEach(async () => {
+    await act(async () => root.render(<Near />))
+    el = host.querySelector('span') as HTMLSpanElement
+    el.getBoundingClientRect = () => ({ left: 100, top: 100, right: 120, bottom: 110 }) as DOMRect
+  })
+
+  it('turns its host on within reach and off beyond it', async () => {
+    await move(120 + r, 105)
+    expect(el.dataset.revealHost).toBe('on')
+    await move(120 + r + 1, 105)
+    expect(el.dataset.revealHost).toBe('off')
+  })
+
+  it('turns off while a button is held', async () => {
+    await move(110, 105)
+    await move(110, 105, 1)
+    expect(el.dataset.revealHost).toBe('off')
+  })
+
+  it('turns off when the pointer leaves the window', async () => {
+    await move(110, 105)
+    await run(() => window.dispatchEvent(new MouseEvent('pointerout', { relatedTarget: null })))
+    expect(el.dataset.revealHost).toBe('off')
   })
 })
