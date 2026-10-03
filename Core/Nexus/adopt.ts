@@ -19,11 +19,11 @@ import {
   rewritePageSerialized,
   rmwJsonStrict,
 } from '../Files/atomicWrite'
-import { readSidecar } from '../Files/sidecar'
+import { sidecarId } from '../Files/sidecar'
 import { mergeFrontmatter, NO_FILEABLE_ID, parsePage, splitEnvelope } from '../Files/pageFile'
 import { readIdentity } from './identity'
+import { idHeld } from './heldPages'
 import { asString } from './coerce'
-import { baseSidecar } from './schemas'
 import { recordWrite } from '../Files/writeEcho'
 import { renamedSidecar } from './migrateConfig'
 import { outsideContent, type WatchScope } from '../Paths/exclusion'
@@ -47,8 +47,7 @@ async function reHomeRegistered(
     const registered = kindCtx.agenda[slot]
     if (!registered) continue
     if (kindCtx.homed.has(slot)) continue
-    const sidecar = await readSidecar(absDir, slot, baseSidecar)
-    if (sidecar?.id !== registered) continue
+    if ((await sidecarId(absDir, slot)) !== registered) continue
     const target = join(root, basename(absDir))
     if (await pathExists(target)) return false
     if ((await resolveFolderKind(absDir, 'root', kindCtx)) !== slot) return false
@@ -64,6 +63,7 @@ export async function stampPage(
   absFile: string,
   kind: ContentKind,
   overForeign = false,
+  held?: string,
 ): Promise<string | null> {
   const st = await machine().stat(absFile)
   if (!st) return null
@@ -72,9 +72,10 @@ export async function stampPage(
   let id: string | null = null
   const landed = await rewritePageSerialized(absFile, (content) => {
     const { admission } = parsePage(content, kind)
+    // The long-term approach is remembering an old ID to re-stamp in such an event; this *must* be done before any official release.
     const foreign = admission.state === 'unknown' && admission.reason === 'malformed'
     if (admission.state !== 'missing' && !(overForeign && foreign)) return null
-    id = contentIdAt(birthtimeMs ? Math.min(birthtimeMs, mtimeMs) : mtimeMs, kind)
+    id = held ?? contentIdAt(birthtimeMs ? Math.min(birthtimeMs, mtimeMs) : mtimeMs, kind)
     return mergeFrontmatter(content, { [ID_KEY]: id }, [ID_KEY], splitEnvelope(content).body)
   })
   return landed ? id : null
@@ -122,17 +123,19 @@ async function migrateContainerSidecar(absDir: string, kind: ContainerKind): Pro
   await relocate(from, to)
 }
 
-export async function stampMissing(
-  root: string,
-  listed: readonly Unreadable[] = [],
-): Promise<boolean> {
+// A page the tree held under an ID when its file lost it carries that ID, which its stamp writes back unless another page holds it by then.
+export type Stamp = Unreadable & { held?: string }
+
+export async function stampMissing(root: string, listed: readonly Stamp[] = []): Promise<boolean> {
   let landed = false
-  for (const { path, kind, reason } of listed) {
+  for (const { path, kind, reason, held } of listed) {
     if (reason !== 'missing' && reason !== 'malformed') continue
     const abs = join(root, path)
+    const kept = held && !idHeld(root, held) ? held : undefined
     if (kind === 'page')
       landed =
-        (await stampPage(abs, 'page', reason === 'malformed').catch(() => null)) !== null || landed
+        (await stampPage(abs, 'page', reason === 'malformed', kept).catch(() => null)) !== null ||
+        landed
     else if (reason === 'missing')
       landed = (await stampFolder(abs, kind).catch(() => false)) || landed
   }

@@ -11,7 +11,7 @@ import type {
   Unreadable,
 } from './tree'
 import type { PropertyDefinition } from '../Properties/properties'
-import { basename, relDirname, relJoin, titleFromPath } from '../Paths/posix'
+import { basename, isAtOrUnder, relDirname, relJoin, titleFromPath } from '../Paths/posix'
 import { CONTEXTS_DIR_REL, contextDirRel } from '../Paths/nexusPaths'
 import { asStringArray } from './coerce'
 import { resolveOrder } from './order'
@@ -37,7 +37,7 @@ function reparentPaths<T extends PageNode | SetNode | CollectionNode>(
 /** `newPath` null prunes. A stale entry lists a file at a dead address. */
 function repointUnreadable(tree: NexusTree, oldPath: string, newPath: string | null): NexusTree {
   const list = tree.unreadable
-  const hit = (p: string): boolean => p === oldPath || p.startsWith(`${oldPath}/`)
+  const hit = (p: string): boolean => isAtOrUnder(p, oldPath)
   if (!list?.some((u) => hit(u.path))) return tree
   const kept: Unreadable[] = []
   for (const u of list) {
@@ -261,7 +261,7 @@ export function moveNodeInTree(tree: NexusTree, from: string, to: string): Nexus
 export const withheldIn =
   (listed: readonly Unreadable[] = []) =>
   (path: string): boolean =>
-    listed.some((u) => u.kind !== 'page' && (path === u.path || path.startsWith(`${u.path}/`)))
+    listed.some((u) => u.kind !== 'page' && isAtOrUnder(path, u.path))
 
 export const damagedFolders = (listed: readonly Unreadable[] = []): Unreadable[] =>
   listed.filter((u) => u.reason === 'unparsed' && isContainer(u))

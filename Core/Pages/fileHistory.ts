@@ -27,11 +27,17 @@ async function capture(
   text: string,
   source: SnapshotSource,
   gated: boolean,
-  hash = bodyHash(text),
+  hash?: string,
 ): Promise<boolean> {
   try {
     if (kindOf(pageId) !== 'page') return false
-    if (source === 'edit' && utf8(text).length > SNAPSHOT_MAX_BYTES) return false
+    // UTF-8 spends at most three bytes per UTF-16 unit, so a text within a third of the cap is never encoded to measure it.
+    if (
+      source === 'edit' &&
+      text.length * 3 > SNAPSHOT_MAX_BYTES &&
+      utf8(text).length > SNAPSHOT_MAX_BYTES
+    )
+      return false
     const now = Date.now()
     const { enabled, intervalMs } = await readFileHistoryConfig(root)
     if (!enabled) return false
@@ -40,7 +46,7 @@ async function capture(
     const db = snapshotStore()
     if (!db) return false
     const latest = db.latestSnapshot(pageId)
-    if (latest && bodyHash(latest.text) === hash) return false
+    if (latest && bodyHash(latest.text) === (hash ?? bodyHash(text))) return false
     db.addSnapshot(pageId, now, source, text)
     lastTs.set(pageId, now)
     return true
@@ -113,8 +119,8 @@ export async function writeBody(
   const writtenHash = bodyHash(written)
   if (pageId) lastWritten.set(pageId, writtenHash)
   if (pageId) {
-    const previousHash = previous === null ? writtenHash : bodyHash(previous)
-    if (previous !== null && previousHash !== writtenHash) {
+    const previousHash = bodyHash(previous)
+    if (previousHash !== writtenHash) {
       const foreign = known !== undefined && known !== previousHash
       const offered: SnapshotSource =
         source === 'restore' ? 'restore' : foreign ? 'external' : 'edit'

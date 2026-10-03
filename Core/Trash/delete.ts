@@ -1,5 +1,6 @@
 import { basename, dirname, join, relative, titleFromPath } from '../Paths/posix'
 import { liveTreeOf, mutableTarget } from '../Nexus/liveTree'
+import { dropPageMetadata } from '../Nexus/pageMetadata'
 import { isContainer } from '../Nexus/entities'
 import { goneEdit, reachConfig, reachReport } from '../Nexus/configReach'
 import { pathExists, relocate } from '../Files/atomicWrite'
@@ -13,6 +14,7 @@ import { deleteCascade, joinCascades } from '../Nexus/cascade'
 import type { MutateReply, MutateRequest } from '../Nexus/mutateRequest'
 import { machine } from '../Platform/machine'
 import { discardFile, mintBundle } from './bundle'
+import { contentPages, pageIdsOf } from './holdings'
 import {
   buildContextRecord,
   gatherContentRecord,
@@ -29,6 +31,7 @@ export async function deleteOp(
   const resolved = await mutableTarget(root, req.path, [req.kind])
   if (!resolved.ok) return resolved
   const abs = resolved.value
+  const rel = relative(root, abs)
   if (!(await pathExists(abs))) return fail('not-found', 'Nothing to delete.')
   const edit = goneEdit(await liveTreeOf(root), req.kind, req.path)
   const contexts = req.kind === 'context' ? await readRegistryStrict(root) : null
@@ -39,6 +42,8 @@ export async function deleteOp(
   }
   // Write-ahead: the record lands before any sweep destroys what it describes; a Space or Context sweep runs before its artifact moves and refuses on failure, a content strip runs after, so a failed move strips nothing, and the artifact moves before the configuration pass, so a delete cut short leaves evidence rather than silence.
   const bundle = deps.trashMode === 'system' ? null : await mintBundle(root, abs)
+  // With no bundle to keep them, the pages' metadata entries leave with the delete, by the ids their files carry before the move.
+  const pageIds = bundle ? [] : await pageIdsOf(await contentPages(req.kind, abs))
   const write = bundle
     ? async (record: RecordFile | null): Promise<void> => {
         if (record) await writeRecord(bundle, record)
@@ -88,6 +93,7 @@ export async function deleteOp(
   }
   if (bundle) await relocate(abs, join(bundle, basename(abs)))
   else await machine().lock(abs, () => discardFile(root, abs, deps))
+  await dropPageMetadata(root, pageIds)
   const gone = titles ? await deleteCascade(root, abs, titles) : null
   if (write && record && gone)
     await write({
@@ -95,7 +101,7 @@ export async function deleteOp(
       ...(gone.links.length ? { links: gone.links } : {}),
       ...(gone.cascade.warning ? { partial: true as const } : {}),
     })
-  if (isContainer(req)) await releaseExcludedFolders(root, relative(root, abs))
+  if (isContainer(req)) await releaseExcludedFolders(root, rel)
   const reach = edit ? reachReport(await reachConfig(root, edit)) : null
   const cascade = gone && reach ? joinCascades(gone.cascade, reach) : (gone?.cascade ?? reach)
   return ok({

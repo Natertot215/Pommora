@@ -1,11 +1,10 @@
 import { isPlainObject } from '../Contract/validators'
 import { join } from '../Paths/posix'
-import { baseSidecar } from './schemas'
 import { pathExists } from '../Files/atomicWrite'
 import { isContentFile, listEntries, visibleFolders } from '../Files/walk'
 import { outsideContent, type WatchScope } from '../Paths/exclusion'
 import { AGENDA_FOLDERS, type AgendaFolder, SIDECAR_FILENAME } from '../Paths/nexusPaths'
-import { readSidecar } from '../Files/sidecar'
+import { sidecarId } from '../Files/sidecar'
 import type { ContainerKind } from './entities'
 
 export type FolderKind = ContainerKind | AgendaFolder | 'unknown'
@@ -47,9 +46,8 @@ export async function resolveFolderKind(
     const [slot] = claimed
     if (await hasContainerSidecar(absDir)) return 'unknown'
     if (depth !== 'root') return 'unknown'
-    const sidecar = await readSidecar(absDir, slot, baseSidecar)
     const registered = ctx.agenda[slot]
-    return sidecar && registered && sidecar.id === registered ? slot : 'unknown'
+    return registered && (await sidecarId(absDir, slot)) === registered ? slot : 'unknown'
   }
 
   return depth === 'nested' ? 'set' : 'collection'
@@ -76,14 +74,10 @@ export async function agendaContext(
   const folders = await visibleFolders(root)
   // Counting is order-independent, so the reads fan out — this runs on every walk, and a serial pass costs one round trip per root folder per slot before anything can render.
   const found = await Promise.all(
-    folders.flatMap((name) =>
-      AGENDA_FOLDERS.map((slot) => readSidecar(join(root, name), slot, baseSidecar)),
-    ),
+    folders.flatMap((name) => AGENDA_FOLDERS.map((slot) => sidecarId(join(root, name), slot))),
   )
   const claims = new Map<string, number>()
-  for (const sidecar of found) {
-    if (sidecar?.id) claims.set(sidecar.id, (claims.get(sidecar.id) ?? 0) + 1)
-  }
+  for (const id of found) if (id) claims.set(id, (claims.get(id) ?? 0) + 1)
   const agenda: AgendaRegistration = {}
   const homed = new Set<AgendaFolder>()
   for (const slot of AGENDA_FOLDERS) {

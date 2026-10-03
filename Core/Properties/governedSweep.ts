@@ -10,7 +10,7 @@ import { isMarkdownFile, join } from '../Paths/posix'
 import { ID_KEY } from '../Nexus/identityMark'
 import { asString } from '../Nexus/coerce'
 import type { EntityRecord } from '../Nexus/record'
-import { mergeFrontmatter, splitEnvelope, splitFrontmatter, sweepAdmits } from '../Files/pageFile'
+import { splitFrontmatter, sweepParse, type SweptPage } from '../Files/pageFile'
 import type { Json } from '../Files/stableJson'
 import { spaceSidecars } from '../Contexts/spaceSidecar'
 
@@ -53,15 +53,14 @@ const changedKeys = (raw: Json, next: Json): string[] =>
     (k) => JSON.stringify(raw[k]) !== JSON.stringify(next[k]),
   )
 
-function rewriteRaw(rewrite: Rewrite, content: string, file: string): string | null {
-  const raw = splitFrontmatter(content)
-  const next = rewrite(raw, file)
+function rewriteRaw(rewrite: Rewrite, page: SweptPage, file: string): string | null {
+  const next = rewrite(page.raw, file)
   if (next === null) return null
-  const keys = changedKeys(raw, next)
+  const keys = changedKeys(page.raw, next)
   if (!keys.length) return null
   const modeled: Json = {}
   for (const k of keys) if (k in next) modeled[k] = next[k]
-  return mergeFrontmatter(content, modeled, keys, splitEnvelope(content).body)
+  return page.merge(modeled, keys)
 }
 
 /** Files are absolute; a sidecar rewrite in the plan reaches every Space sidecar, which no index names. */
@@ -80,11 +79,12 @@ export async function sweepGovernedRoots(
         return
       }
       // An Unknown file, or one whose frontmatter cannot round-trip, is left byte-identical.
-      if (!sweepAdmits(content)) {
+      const page = sweepParse(content)
+      if (!page) {
         out.refused.push(file)
         return
       }
-      const next = 'text' in plan ? plan.text(content, file) : rewriteRaw(plan.raw, content, file)
+      const next = 'text' in plan ? plan.text(content, file) : rewriteRaw(plan.raw, page, file)
       if (next === null) return
       await rewritePreservingTimes(file, next)
       out.touched.set(file, { before: content, after: next })
@@ -141,8 +141,9 @@ function keysPutBack(file: string, now: string, before: string, after: string): 
     return next
   }
   if (isMarkdownFile(file)) {
-    if (!sweepAdmits(now)) throw new Error('The page no longer admits a sweep.')
-    return rewriteRaw(putBack, now, file)
+    const page = sweepParse(now)
+    if (!page) throw new Error('The page no longer admits a sweep.')
+    return rewriteRaw(putBack, page, file)
   }
   const raw = parseJsonObject(now)
   if (!raw) throw new Error('The sidecar no longer parses.')

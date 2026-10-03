@@ -1,4 +1,4 @@
-import { basename, dirname, join, relative } from '../Paths/posix'
+import { basename, dirname, relative } from '../Paths/posix'
 import { excludedWithin } from '../Settings/settings'
 import { stampedId } from '../Files/pageFile'
 import type { ContextDef, ContextsRegistry } from '../Contexts/contexts'
@@ -6,17 +6,12 @@ import type { Result } from '../Contract/result'
 import { liveTreeOf } from '../Nexus/liveTree'
 import { containerAt } from '../Nexus/treePatch'
 import type { SweepCapture, UnlinkOutcome } from '../Contexts/contextCascade'
-import { readJsonObject, readTextOrNull } from '../Files/atomicWrite'
+import { readTextOrNull } from '../Files/atomicWrite'
 import { spaceIdsIn } from '../Contexts/spaceSidecar'
-import { SIDECAR_FILENAME, SPACE_SIDECAR } from '../Paths/nexusPaths'
+import { sidecarId } from '../Files/sidecar'
 
 import type { RecordFile, ParentRef } from './record'
 import type { ContainerKind } from '../Nexus/entities'
-
-const sidecarId = async (absFolder: string, name: string): Promise<string | undefined> => {
-  const raw = await readJsonObject(join(absFolder, name))
-  return typeof raw?.id === 'string' ? raw.id : undefined
-}
 
 async function gatherParentRef(root: string, absEntity: string): Promise<ParentRef> {
   const parentDir = dirname(absEntity)
@@ -32,9 +27,7 @@ export async function gatherContentRecord(
 ): Promise<RecordFile> {
   const parent = await gatherParentRef(root, abs)
   const id =
-    kind === 'page'
-      ? stampedId((await readTextOrNull(abs)) ?? '')
-      : await sidecarId(abs, SIDECAR_FILENAME[kind])
+    kind === 'page' ? stampedId((await readTextOrNull(abs)) ?? '') : await sidecarId(abs, kind)
   return {
     entity: kind,
     ...(id ? { id } : {}),
@@ -51,7 +44,7 @@ export async function gatherSpaceRecord(
   registry: Result<ContextsRegistry> | null,
   swept: UnlinkOutcome | null,
 ): Promise<RecordFile | null> {
-  const id = await sidecarId(abs, SPACE_SIDECAR)
+  const id = await sidecarId(abs, 'space')
   if (!id) return null
   const contextTitle = basename(dirname(abs))
   const def = registry?.ok

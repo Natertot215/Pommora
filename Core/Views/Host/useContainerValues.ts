@@ -8,6 +8,7 @@ import {
 import type { PageFrontmatter } from '../../Nexus/schemas'
 import type { PageValues, RowValues } from '../viewRow'
 import { fetchPageValues } from '../../Properties/pageRow'
+import { isAtOrUnder } from '../../Paths/posix'
 import { useSession } from '../../Session/store'
 import { useLatest } from '@pommora/uix/Utilities/stableApi'
 
@@ -38,7 +39,7 @@ export function useValuesEpoch(
     if (!valuesEpoch || path === null || valuesEpoch === handled.current) return
     let named: string[] | undefined
     if (valuesEpoch.kind === 'container') {
-      const mine = valuesEpoch.changes.filter((c) => c.rel === path || c.rel.startsWith(`${path}/`))
+      const mine = valuesEpoch.changes.filter((c) => isAtOrUnder(c.rel, path))
       if (!mine.length) return
       if (mine.every((c) => c.pageIds.length > 0)) named = mine.flatMap((c) => c.pageIds)
       if (pageId && named && !named.includes(pageId)) return

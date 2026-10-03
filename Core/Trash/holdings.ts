@@ -58,6 +58,12 @@ export async function contentPages(
   }
 }
 
+/** The ids `pages` carry, read from the files themselves. */
+export async function pageIdsOf(pages: string[]): Promise<string[]> {
+  const texts = await Promise.all(pages.map(readTextOrNull))
+  return texts.flatMap((text) => stampedId(text ?? '') ?? [])
+}
+
 /** The newest bundle holding each page title in the Trash. */
 async function trashedTitles(root: string): Promise<Map<string, string>> {
   const newest = new Map<string, string>()

@@ -26,6 +26,7 @@ import {
 import type { Slice } from './sessionState'
 import { resetUndo } from './undo'
 import { dialer } from '../Platform/dialer'
+import { inTurns } from '../Platform/inTurns'
 import { withOwnSettings } from './configSlice'
 import { emitter } from '@pommora/uix/Utilities/subscribable'
 
@@ -58,6 +59,8 @@ export async function flushAllSaves(): Promise<void> {
 export const trashChanged = emitter()
 
 export const createNexusSlice: Slice<NexusSlice> = (set, get) => {
+  // One headings ask at a time, so an answer never lands over one asked after it.
+  const headingsInTurn = inTurns()
   const resetNexusSession = (): void => {
     cancelAllSaves()
     set({ headings: {} })
@@ -146,11 +149,12 @@ export const createNexusSlice: Slice<NexusSlice> = (set, get) => {
 
     applySyncStatus: (status) => set({ syncStatus: status }),
 
-    loadHeadings: async (paths) => {
-      const res = await dialer().ask('index:headings', paths)
-      if (!res.ok) return
-      set((s) => ({ headings: paths ? { ...s.headings, ...res.value } : res.value }))
-    },
+    loadHeadings: (paths) =>
+      headingsInTurn(async () => {
+        const res = await dialer().ask('index:headings', paths)
+        if (!res.ok) return
+        set((s) => ({ headings: paths ? { ...s.headings, ...res.value } : res.value }))
+      }),
 
     load: async () => {
       // Only the first open shows it; a switch keeps the old Nexus drawn until the new tree applies.

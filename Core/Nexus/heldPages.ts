@@ -1,7 +1,7 @@
 // The held tree's pages by path, by id, and by title, for the host's writers.
 
 import { heldTreeOf } from './liveTree'
-import { relative, titleFromPath } from '../Paths/posix'
+import { isAtOrUnder, relative, titleFromPath } from '../Paths/posix'
 import { normalizeTitle } from '../Connections/connections'
 import type { Frozen } from '../Properties/propertyValue'
 import { entityMemo, type NexusTree } from './tree'
@@ -63,9 +63,7 @@ export const titlesOf = entityMemo([], (tree): ReadonlyMap<string, readonly stri
 export function titleHeldOutside(root: string, title: string, rel: string): boolean {
   const tree = heldTreeOf(root)
   if (!tree) return false
-  return (titlesOf(tree).get(normalizeTitle(title)) ?? []).some(
-    (path) => path !== rel && !path.startsWith(`${rel}/`),
-  )
+  return (titlesOf(tree).get(normalizeTitle(title)) ?? []).some((path) => !isAtOrUnder(path, rel))
 }
 
 /** A restore's world: the pages the tree holds, and those landing with it. */

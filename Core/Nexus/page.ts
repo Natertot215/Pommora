@@ -1,6 +1,6 @@
 import { join, dirname, basename } from '../Paths/posix'
 import { ID_KEY, PAGE_MODELED_KEYS } from './identityMark'
-import { bodyHash, type PageWrite, writePageFile } from '../Files/pageFile'
+import { bodyHash, mergeFrontmatter } from '../Files/pageFile'
 import { machine } from '../Platform/machine'
 import {
   type Adoption,
@@ -10,7 +10,7 @@ import {
 } from '../Properties/propertyValue'
 import type { GovernedWorld } from '../Contexts/contextResolve'
 import { ok, fail, type Result, fault } from '../Contract/result'
-import { pathExists, relocate, targetTaken } from '../Files/atomicWrite'
+import { atomicWriteFile, pathExists, relocate, targetTaken } from '../Files/atomicWrite'
 import { nameError } from '../Paths/names'
 import { setGovernedRootKeys } from '../Properties/governedWrite'
 import type { PropertyDefinition } from '../Properties/properties'
@@ -43,7 +43,7 @@ export async function createPage(
   }
   return machine().lock(file, async () => {
     if (await pathExists(file)) return fail('exists', `"${name}" already exists.`)
-    await writePageFile(file, modeled, keys, opts.body ?? '')
+    await atomicWriteFile(file, mergeFrontmatter('', modeled, keys, opts.body ?? ''))
     return ok({ path: file })
   })
 }
@@ -61,6 +61,11 @@ export async function renamePage(
   return ok({ path: target })
 }
 
+interface PageWrite {
+  previous: string
+  written: string
+}
+
 export async function updatePageBody(
   absFile: string,
   body: string,
@@ -68,11 +73,13 @@ export async function updatePageBody(
   bodyOnly = false,
 ): Promise<Result<PageWrite | { stale: true }>> {
   return machine().lock(absFile, async () => {
-    if (!(await pathExists(absFile))) return fail('not-found', 'Page not found.')
-    if (baseHash !== undefined && bodyHash((await machine().readText(absFile)) ?? '') !== baseHash)
-      return ok({ stale: true })
     try {
-      return ok(await writePageFile(absFile, {}, [], body, bodyOnly))
+      const previous = await machine().readText(absFile)
+      if (previous === null) return fail('not-found', 'Page not found.')
+      if (baseHash !== undefined && bodyHash(previous) !== baseHash) return ok({ stale: true })
+      const written = mergeFrontmatter(previous, {}, [], body)
+      await atomicWriteFile(absFile, written, bodyOnly)
+      return ok({ previous, written })
     } catch (e) {
       return fault(e)
     }

@@ -91,6 +91,7 @@ import {
   TILE_DOC_FILENAME,
 } from '../Paths/nexusPaths'
 import { shardPages, withShards } from './pageMetadata'
+import type { Stamp } from './adopt'
 
 // Declared here, where events owe it; the settle in `settle.ts` pays it and empties it.
 interface Owed {
@@ -99,7 +100,7 @@ interface Owed {
   corpus: boolean
   rescope: boolean
   assets: boolean
-  stamp: Unreadable[]
+  stamp: Stamp[]
   // Paths newly in reach, under which a listing stamps every page missing its ID.
   whole: string[]
   pages: Set<string>
@@ -386,7 +387,7 @@ async function applyPage(
   owed.values.set(rel, !!ev.bodyOnly && (owed.values.get(rel) ?? true))
   if (ev.origin === 'watched') owed.pages.add(rel)
   if (read.kind === 'unread' && read.reason === 'missing')
-    owed.stamp.push({ path: rel, kind: 'page', reason: 'missing' })
+    owed.stamp.push({ path: rel, kind: 'page', reason: 'missing', held: pageAt(tree, rel)?.id })
   const landed = applyPatch(root, (t) => {
     if (read.kind === 'unread')
       return listUnreadable(removeNodeInTree(t, rel), [
