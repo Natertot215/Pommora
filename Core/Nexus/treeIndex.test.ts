@@ -15,7 +15,7 @@ import {
   spaceLinksOf,
 } from './treeIndex'
 import { titlesOf } from './heldPages'
-import { projectBaseline } from './remintLedger'
+import { recordById, recordsOf } from './record'
 
 describe('the record walk', () => {
   it('caches every projection on the tree identity — same tree, same object', () => {
@@ -26,10 +26,13 @@ describe('the record walk', () => {
     expect(pagesOf(t)).toBe(pagesOf(t))
     expect(pageIndexOf(t)).toBe(pageIndexOf(t))
     expect(navKeysOf(t)).toBe(navKeysOf(t))
+    expect(recordsOf(t)).toBe(recordsOf(t))
+    expect(recordById(t)).toBe(recordById(t))
   })
 
   it('a different tree object derives fresh projections', () => {
     expect(reconcileIndexOf(makeTree())).not.toBe(reconcileIndexOf(makeTree()))
+    expect(recordById(makeTree())).not.toBe(recordById(makeTree()))
   })
 })
 
@@ -202,12 +205,12 @@ describe('spaceLinksOf', () => {
 describe('a configuration patch keeps every entity lookup', () => {
   it('answers the same objects across a settings change, and rebuilds the index when unreadable moves', () => {
     const t = makeTree()
-    const held = [nodesOf(t), titlesOf(t), projectBaseline(t)]
+    const held = [nodesOf(t), titlesOf(t), recordsOf(t)]
     const toggled: NexusTree = {
       ...t,
       config: { ...t.config, personalization: { hideChevrons: true }, crops: {} },
     }
-    const kept = [nodesOf(toggled), titlesOf(toggled), projectBaseline(toggled)]
+    const kept = [nodesOf(toggled), titlesOf(toggled), recordsOf(toggled)]
     for (const [i, v] of kept.entries()) expect(v).toBe(held[i])
     const unreadable: NexusTree = {
       ...toggled,

@@ -6,6 +6,7 @@ import { type ArtifactRecord, resolveRecord } from './resolve'
 import { containerTrailWhere } from '../Nexus/treePatch'
 import type { ListedBundle } from './holdings'
 import { propertyType } from '../Properties/properties'
+import { contextWorldOf } from '../Contexts/contextResolve'
 
 const STAMP = /^(\d{4}-\d{2}-\d{2})T(\d{2})-(\d{2})-(\d{2})-(\d{3})Z$/
 
@@ -31,7 +32,7 @@ function liveCrumbs(record: ArtifactRecord, tree: NexusTree): TrashCrumb[] | nul
   if (record.entity === 'space') {
     const parent = record.parent
     if (parent.kind !== 'context') return null
-    const group = tree.contexts.find((g) => g.def.id === parent.id)
+    const group = contextWorldOf(tree.contexts).groupById.get(parent.id)
     return group ? [{ kind: 'context', title: group.def.title }] : null
   }
   if (record.parent.kind === 'root') return record.entity === 'collection' ? [] : null

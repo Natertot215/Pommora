@@ -16,6 +16,7 @@ import { CONTEXTS_DIR_REL, contextDirRel } from '../Paths/nexusPaths'
 import { asStringArray } from './coerce'
 import { resolveOrder } from './order'
 import { isContainer } from './entities'
+import { contextWorldOf } from '../Contexts/contextResolve'
 
 /** The ORIGINAL paths thread through: swapping against an already-swapped child re-prepends. */
 function reparentPaths<T extends PageNode | SetNode | CollectionNode>(
@@ -214,7 +215,7 @@ export function placeNode(tree: NexusTree, node: TreeEntity): NexusTree | null {
     return { ...tree, collections: resolveOrder(collections, tree.config.order.collections) }
   }
   if (node.kind === 'space') {
-    const group = tree.contexts.find((g) => g.def.id === node.contextId)
+    const group = contextWorldOf(tree.contexts).groupById.get(node.contextId)
     if (!group) return null
     const spaces = resolveOrder(
       [...others(group.spaces), node],

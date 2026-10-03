@@ -6,9 +6,8 @@ import { readJsonObject } from '../Files/atomicWrite'
 import { patchSidecar } from '../Files/sidecar'
 import { cachedValues, patchCacheBlock } from './propertyCache'
 import { heldTreeOf, liveTreeOf } from '../Nexus/liveTree'
-import { projectBaseline } from '../Nexus/remintLedger'
+import { type EntityRecord, recordById } from '../Nexus/record'
 import { damagedFolders } from '../Nexus/treePatch'
-import type { EntityRecord } from '../Nexus/record'
 import { NO_DEFS } from '../Contexts/contextResolve'
 import { readRegistry, serializeSchemaOp } from './propertiesRegistry'
 import type { PropertyDefinition } from './properties'
@@ -79,7 +78,7 @@ async function restoreCachedValues(
   if (!def) return ok(null)
   const under = `${relative(root, collectionFolder)}/`
   const tree = await liveTreeOf(root)
-  const live = projectBaseline(tree).entries
+  const live = recordById(tree)
   const members = Object.fromEntries(
     Object.keys(cached).flatMap((id) =>
       live[id]?.kind === 'page' && live[id].path.startsWith(under) ? [[id, live[id]]] : [],

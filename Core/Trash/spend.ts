@@ -31,13 +31,13 @@ import { recordWrite } from '../Files/writeEcho'
 import { frozenWorld } from '../Nexus/heldPages'
 import { liveTreeOf } from '../Nexus/liveTree'
 
-import { projectBaseline } from '../Nexus/remintLedger'
-import type { EntityRecord } from '../Nexus/record'
+import { type EntityRecord, recordById } from '../Nexus/record'
 import { type RecordFile, readRecord, bundleArtifact } from './record'
 import { deleteCascade, type StrippedLink } from '../Nexus/cascade'
 import { contentPages, pageIdsOf, parkLinks, refillTrashed } from './holdings'
 import { findContainerById, resolveRecord, type ArtifactRecord, type Refusal } from './resolve'
 import { owningCollection } from '../Nexus/treePatch'
+import { contextWorldOf } from '../Contexts/contextResolve'
 
 const REFUSAL_TEXT: Record<Refusal, string> = {
   'parent-gone': 'The place this belonged to no longer exists.',
@@ -99,7 +99,7 @@ function withDestination(
   switch (record.entity) {
     case 'space':
       if (destination.kind !== 'context') return fail('invalid-path', 'A Space lives in a Context.')
-      if (!tree.contexts.some((g) => g.def.id === destination.id))
+      if (!contextWorldOf(tree.contexts).groupById.has(destination.id))
         return fail('not-found', 'That Context no longer exists.')
       return ok({ ...record, parent: { kind: 'context', id: destination.id } })
     case 'page':
@@ -216,7 +216,7 @@ async function restoreArtifact(
       }))
     return fault(e)
   }
-  const roots = projectBaseline(tree).entries
+  const roots = recordById(tree)
   const unspent: string[] = []
   const unlinked = new Set<string>()
   if (record.entity === 'context') {
@@ -239,7 +239,7 @@ async function restoreArtifact(
     unspent.push(...(await reapply(root, roots, contextKey(title), additions)))
   } else if (record.entity === 'space' && record.parent.kind === 'context') {
     const parentId = record.parent.id
-    const group = tree.contexts.find((g) => g.def.id === parentId)
+    const group = contextWorldOf(tree.contexts).groupById.get(parentId)
     if (group) {
       const additions = Object.fromEntries(
         record.members

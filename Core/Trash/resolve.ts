@@ -4,9 +4,10 @@ import { CONTEXTS_DIR_REL, contextDirRel } from '../Paths/nexusPaths'
 import { titleFromPath } from '../Paths/posix'
 import { freeName } from '../Paths/names'
 import type { CollectionNode, NexusTree, SetNode } from '../Nexus/tree'
-import { projectBaseline } from '../Nexus/remintLedger'
+import { recordById } from '../Nexus/record'
 import { findContainerWhere } from '../Nexus/treePatch'
 import type { RecordFile } from './record'
+import { contextWorldOf } from '../Contexts/contextResolve'
 
 interface Placement {
   dir: string
@@ -32,7 +33,7 @@ export function resolveRecord(
   baseName: string,
   tree: NexusTree,
 ): Resolution {
-  const live = projectBaseline(tree).entries
+  const live = recordById(tree)
   const recordId = record.entity === 'context' ? record.registry.id : record.id
   if (recordId && live[recordId]) return { refuse: 'id-live' }
 
@@ -48,7 +49,7 @@ export function resolveRecord(
     const parent = record.parent
     if (parent.kind === 'unaddressable') return { refuse: 'unaddressable' }
     if (parent.kind !== 'context') return { refuse: 'cannot-hold' }
-    const group = tree.contexts.find((g) => g.def.id === parent.id)
+    const group = contextWorldOf(tree.contexts).groupById.get(parent.id)
     if (!group) return { refuse: 'parent-gone' }
     const finalTitle = freeName(
       baseName,

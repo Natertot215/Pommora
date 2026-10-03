@@ -17,17 +17,22 @@ const tree = (rootPath: string): NexusTree =>
       {
         kind: 'collection',
         path: 'Notes',
-        pages: [{ id: 'pA', path: 'Notes/A.md' }],
+        pages: [{ kind: 'page', id: 'pA', path: 'Notes/A.md' }],
         sets: [
           {
             kind: 'set',
             path: 'Notes/Deep',
-            pages: [{ id: 'pD', path: 'Notes/Deep/D.md' }],
+            pages: [{ kind: 'page', id: 'pD', path: 'Notes/Deep/D.md' }],
             sets: [],
           },
         ],
       },
-      { kind: 'collection', path: 'Ideas', pages: [{ id: 'pI', path: 'Ideas/I.md' }], sets: [] },
+      {
+        kind: 'collection',
+        path: 'Ideas',
+        pages: [{ kind: 'page', id: 'pI', path: 'Ideas/I.md' }],
+        sets: [],
+      },
     ],
   }) as unknown as NexusTree
 

@@ -1,9 +1,8 @@
 import { join } from '../Paths/posix'
 import { machine } from '../Platform/machine'
-import type { EntityRecord } from './record'
+import { type EntityRecord, recordById, recordsOf } from './record'
 import { errText } from '../Contract/result'
-import { contextDirRel } from '../Paths/nexusPaths'
-import { entityMemo, type NexusTree, type PageNode, type SetNode, type Unreadable } from './tree'
+import type { NexusTree, Unreadable } from './tree'
 import { withheldIn } from './treePatch'
 import { readKey, writeKey } from '../Platform/localState'
 import { applyRemints, runRemintPass } from './remint'
@@ -11,47 +10,20 @@ import { applyRemints, runRemintPass } from './remint'
 export type Baseline = Record<string, EntityRecord>
 
 export interface Projection {
-  entries: Record<string, EntityRecord>
+  entries: Readonly<Record<string, EntityRecord>>
   duplicates: Record<string, EntityRecord[]>
 }
 
-export const projectBaseline = entityMemo([(t) => t.contexts], buildBaseline)
-
-function buildBaseline(tree: NexusTree): Projection {
-  const entries: Record<string, EntityRecord> = {}
+export function projectBaseline(tree: NexusTree): Projection {
   const claimants: Record<string, EntityRecord[]> = {}
-  const add = (e: EntityRecord): void => {
-    claimants[e.id] ??= []
-    claimants[e.id].push(e)
-    entries[e.id] ??= e
-  }
-  const addPage = (p: PageNode): void =>
-    add({ id: p.id, kind: 'page', title: p.title, path: p.path })
-  const addSets = (sets: SetNode[] | undefined): void => {
-    for (const s of sets ?? []) {
-      add({ id: s.id, kind: 'set', title: s.title, path: s.path })
-      for (const p of s.pages) addPage(p)
-      addSets(s.sets)
-    }
-  }
-  for (const g of tree.contexts) {
-    add({
-      id: g.def.id,
-      kind: 'context',
-      title: g.def.title,
-      path: contextDirRel(g.def.title),
-    })
-    for (const s of g.spaces) add({ id: s.id, kind: 'space', title: s.title, path: s.path })
-  }
-  for (const c of tree.collections) {
-    add({ id: c.id, kind: 'collection', title: c.title, path: c.path })
-    for (const p of c.pages) addPage(p)
-    addSets(c.sets)
+  for (const r of recordsOf(tree)) {
+    claimants[r.id] ??= []
+    claimants[r.id].push(r)
   }
   const duplicates = Object.fromEntries(
     Object.entries(claimants).filter(([, claims]) => claims.length > 1),
   )
-  return { entries, duplicates }
+  return { entries: recordById(tree), duplicates }
 }
 
 export function latchBaseline(
@@ -84,11 +56,12 @@ export function latchBaseline(
 }
 
 /** With no prior evidence the claimant the baseline records is the ELDEST file, not whatever the walk enumerated first: a copy is born after its original and birth time survives a rename, so a walk-order pick would let the accidental copy keep the identity. */
-async function recordEldest(
+async function pickEldest(
   root: string,
   projection: Projection,
   prior: Baseline | null,
-): Promise<void> {
+): Promise<Projection> {
+  const entries = { ...projection.entries }
   for (const [id, claims] of Object.entries(projection.duplicates)) {
     if (prior?.[id]) continue
     const births = await Promise.all(
@@ -101,8 +74,9 @@ async function recordEldest(
     )
     let eldest = 0
     for (let i = 1; i < births.length; i++) if (births[i] < births[eldest]) eldest = i
-    projection.entries[id] = claims[eldest]
+    entries[id] = claims[eldest]
   }
+  return { ...projection, entries }
 }
 
 export async function runOpenLedger(root: string, tree: NexusTree): Promise<void> {
@@ -112,8 +86,7 @@ export async function runOpenLedger(root: string, tree: NexusTree): Promise<void
     // The re-mint runs between the walk and the latch — the baseline must record the re-minted state, or the next open reports every fresh id as a creation.
     const walked = projectBaseline(tree)
     const reminted = await runRemintPass(root, walked, prior, unreadablePaths)
-    const projection = applyRemints(walked, reminted)
-    await recordEldest(root, projection, prior)
+    const projection = await pickEldest(root, applyRemints(walked, reminted), prior)
     writeBaseline(latchBaseline(projection, tree.unreadable ?? [], prior))
   } catch (e) {
     console.error('ledger: the open pass failed:', errText(e))

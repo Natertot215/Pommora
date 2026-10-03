@@ -51,6 +51,7 @@ import { Disclosure, signalPeek } from './Disclosure'
 import { popMenu } from '../../Actions/menuActions'
 import { createNamed, newPageAdjacent, newSpaceAdjacent } from '../../Actions/createActions'
 import { useLatest } from '@pommora/uix/Utilities/stableApi'
+import { contextWorldOf } from '../../Contexts/contextResolve'
 
 const NEW_COLLECTION: Creator = {
   label: 'New Collection',
@@ -309,7 +310,7 @@ function SidebarIconChoice({ tree, index }: { tree: NexusTree; index: Index }): 
   const ownIcon = (): string | undefined => {
     switch (entry?.kind) {
       case 'contextGroup':
-        return tree.contexts.find((g) => g.def.id === entry.id)?.def.icon
+        return contextWorldOf(tree.contexts).groupById.get(entry.id)?.def.icon
       case 'space':
         return spaceNodeOf(tree, entry.id)?.icon
       case 'page':
@@ -370,7 +371,8 @@ export function Sidebar({ tree }: { tree: NexusTree }): React.JSX.Element {
       const entry = anchorId ? dndIndexRef.current.byId.get(anchorId) : undefined
       switch (entry?.kind) {
         case 'contextGroup': {
-          const def = useSession.getState().tree?.contexts.find((g) => g.def.id === entry.id)?.def
+          const held = useSession.getState().tree
+          const def = held && contextWorldOf(held.contexts).groupById.get(entry.id)?.def
           if (def) void createNamed(spaceCreator(def).req, 'sidebar')
           return
         }
