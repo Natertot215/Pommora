@@ -15,6 +15,7 @@ import { basename, relDirname, relJoin, titleFromPath } from '../Paths/posix'
 import { CONTEXTS_DIR_REL, contextDirRel } from '../Paths/nexusPaths'
 import { asStringArray } from './coerce'
 import { resolveOrder } from './order'
+import { isContainer } from './entities'
 
 /** The ORIGINAL paths thread through: swapping against an already-swapped child re-prepends. */
 function reparentPaths<T extends PageNode | SetNode | CollectionNode>(
@@ -222,7 +223,7 @@ export function placeNode(tree: NexusTree, node: TreeEntity): NexusTree | null {
     return { ...tree, contexts: tree.contexts.map((g) => (g === group ? { ...g, spaces } : g)) }
   }
   return updateNodeInTree(tree, relDirname(node.path), (parent) => {
-    if (parent.kind !== 'collection' && parent.kind !== 'set') return parent
+    if (!isContainer(parent)) return parent
     return node.kind === 'page'
       ? { ...parent, pages: resolveOrder([...others(parent.pages), node], parent.pageOrder) }
       : { ...parent, sets: resolveOrder([...others(parent.sets ?? []), node], parent.setOrder) }
@@ -263,4 +264,4 @@ export const withheldIn =
     listed.some((u) => u.kind !== 'page' && (path === u.path || path.startsWith(`${u.path}/`)))
 
 export const damagedFolders = (listed: readonly Unreadable[] = []): Unreadable[] =>
-  listed.filter((u) => u.reason === 'unparsed' && (u.kind === 'collection' || u.kind === 'set'))
+  listed.filter((u) => u.reason === 'unparsed' && isContainer(u))

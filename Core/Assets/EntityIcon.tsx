@@ -7,12 +7,12 @@ import { useSession } from '../Session/store'
 import { personalizationOf } from '../Session/configSlice'
 import { useAssetUrl } from './useAssetUrl'
 import type { ResolvedNav } from '../Navigation/navResolve'
-import type { EntityIconKind } from '../Settings/personalization'
+import type { HeldKind } from '../Nexus/entities'
 import * as assetImage from './asset-image.css'
 
 type EntityIconProps =
   | { item: ResolvedNav; kind?: undefined; icon?: undefined; size?: IconSize; className?: string }
-  | { item?: undefined; kind: EntityIconKind; icon?: unknown; size?: IconSize; className?: string }
+  | { item?: undefined; kind: HeldKind; icon?: unknown; size?: IconSize; className?: string }
 
 export function EntityIcon(props: EntityIconProps): React.JSX.Element {
   return props.item ? (
@@ -28,7 +28,7 @@ function KindGlyph({
   size,
   className,
 }: {
-  kind: EntityIconKind
+  kind: HeldKind
   icon?: unknown
   size?: IconSize
   className?: string

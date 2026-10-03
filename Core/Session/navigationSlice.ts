@@ -484,8 +484,6 @@ export const createNavigationSlice: Slice<NavigationSlice> = (set, get) => {
     },
 
     pinTarget: (target) => {
-      // A pin must resolve for as long as it is stored; agenda kinds resolve against nothing.
-      if (target.kind === 'task' || target.kind === 'event') return
       const ref = toNavRef(target)
       const key = navKey(ref)
       if (get().pinned.some((p) => navKey(p) === key)) return
@@ -586,9 +584,8 @@ export const createNavigationSlice: Slice<NavigationSlice> = (set, get) => {
         case 'matrix':
           set({ selection: { kind: 'matrix' } })
           break
-        case 'context':
         case 'space':
-          set({ selection: { kind: target.kind, id: target.id } })
+          set({ selection: { kind: 'space', id: target.id } })
           break
         case 'collection':
           set({ selection: { kind: 'collection', id: target.id } })

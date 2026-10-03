@@ -10,7 +10,8 @@ import {
 import { scaleRows } from './tileZoom'
 import { ZOOM } from '../Settings/personalization'
 import { type ActionItem, type PickItem, pickRows } from '../Actions/menuModel'
-import { containerPickTree, type DefaultIcons } from '../Actions/pickTree'
+import { containerPickTree } from '../Actions/pickTree'
+import type { DefaultIcons } from '../Settings/personalization'
 import type { NexusTree } from '../Nexus/tree'
 import { viewGlyph } from '../Views/viewIcon'
 

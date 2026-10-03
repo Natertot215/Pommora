@@ -7,6 +7,7 @@ import {
   type NavRef,
   type NewTabSentinel,
   type SelectTarget,
+  selectTargetOf,
   type StoredTab,
   type Tab,
   type TabTarget,
@@ -26,13 +27,7 @@ export function pinTabId(target: SelectTarget): string {
 }
 
 export function liveTarget(index: ReconcileIndex, ref: NavRef): SelectTarget | null {
-  if (ref.kind === 'task' || ref.kind === 'event') return null
-  const probe: SelectTarget =
-    ref.kind === 'set' || ref.kind === 'page'
-      ? { kind: ref.kind, id: ref.id, path: '' }
-      : isSingleton(ref)
-        ? { kind: ref.kind }
-        : { kind: ref.kind, id: ref.id }
+  const probe = isSingleton(ref) ? ref : selectTargetOf({ ...ref, path: '' })
   const r = reconcileWith(index, probe)
   return r.kind === 'none' ? null : r
 }

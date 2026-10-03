@@ -9,18 +9,17 @@ import {
 import { type TitleMenuAction, titleMenuItems } from './identityMenus'
 import { type PropertyAction, propertyBranchRows } from './propertyRows'
 import { lockLabel, openLabel } from './toggleLabels'
-import type { HeldKind } from '../Nexus/entities'
+import { isContainer, type NodeKind } from '../Nexus/entities'
 import type { RenameHost } from '../Session/editSlice'
 
-export interface EntityMenuTarget extends PageMenuContext {
-  kind: HeldKind
-  path: string
-  title: string
-  id?: string
-  alreadyOpen?: boolean
-  disclosureLocked?: boolean
-  host?: RenameHost
-}
+export type EntityMenuTarget = PageMenuContext &
+  ({ kind: NodeKind; id?: string } | { kind: 'context'; id?: never }) & {
+    path: string
+    title: string
+    alreadyOpen?: boolean
+    disclosureLocked?: boolean
+    host?: RenameHost
+  }
 
 export type EntityMenuAction =
   | PageMetaAction
@@ -57,7 +56,7 @@ export function entityMenuItems(
       )
     : []
   const create = createMenuItems(creators)
-  if (target.kind === 'collection' || target.kind === 'set')
+  if (isContainer(target))
     return joinGroups<EntityMenuAction>([
       open,
       create,

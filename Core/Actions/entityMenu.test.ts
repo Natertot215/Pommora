@@ -106,12 +106,6 @@ describe('the sidebar entity menu', () => {
     ])
   })
 
-  it('a Context offers no Preview — only a Space and a page are window tabs', () => {
-    expect(
-      shape(entityMenuItems({ kind: 'context', id: 'g1', path: 'Areas', title: 'Areas' }, [])),
-    ).toEqual(['New Tab', '—', 'Rename', 'Edit Icon', '—', 'Delete'])
-  })
-
   it('a page carries the same two branches, after Edit Icon', () => {
     const items = entityMenuItems(
       {

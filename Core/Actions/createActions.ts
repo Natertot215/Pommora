@@ -4,6 +4,7 @@ import type { RenameHost } from '../Session/editSlice'
 import { relDirname } from '../Paths/posix'
 import { placeAt, placeNew } from '../Views/creationOrder'
 import { containerAt, findContainerWhere } from '../Nexus/treePatch'
+import { isContainer } from '../Nexus/entities'
 import { useSession, windowTargetOf } from '../Session/store'
 import { personalizationOf } from '../Session/configSlice'
 
@@ -62,7 +63,7 @@ export async function newPage(inWindow: boolean): Promise<void> {
   if (!tree) return
   const from = inWindow ? windowTargetOf(s) : s.selection
   let parentPath: string | null = null
-  if (from?.kind === 'collection' || from?.kind === 'set')
+  if (isContainer(from))
     parentPath = findContainerWhere(tree, (n) => n.id === from.id)?.path ?? null
   else if (from?.kind === 'page') parentPath = relDirname(from.path)
   if (parentPath === null) parentPath = tree.collections[0]?.path ?? null

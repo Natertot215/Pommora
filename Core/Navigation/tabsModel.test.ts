@@ -432,12 +432,9 @@ describe('tabsModel — derivePinnedTabs', () => {
     expect(tabs[0].navIndex).toBe(0)
   })
 
-  it('drops agenda refs and refs that no longer resolve', () => {
-    const agendaRef: NavRef = { kind: 'task', id: 'tk' }
+  it('drops refs that no longer resolve', () => {
     expect(
-      derivePinnedTabs([agendaRef, pin('gone'), pin('a')], reconcileIndexOf(mkTree('a')), []).map(
-        (t) => t.id,
-      ),
+      derivePinnedTabs([pin('gone'), pin('a')], reconcileIndexOf(mkTree('a')), []).map((t) => t.id),
     ).toEqual(['pin:page:a'])
   })
 })

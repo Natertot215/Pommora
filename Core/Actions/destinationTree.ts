@@ -4,6 +4,7 @@ import type { MoveTarget } from './pageMenu'
 import { contextDirRel } from '../Paths/nexusPaths'
 import type { NexusTree } from '../Nexus/tree'
 import { nodesOf } from '../Nexus/treeIndex'
+import { isContainer } from '../Nexus/entities'
 
 /** The destination rules are the write path's: a page or Set lands in a container and nowhere else. */
 export function containerTargets(tree: NexusTree | null): MoveTarget[] {
@@ -11,7 +12,7 @@ export function containerTargets(tree: NexusTree | null): MoveTarget[] {
   const roots: MoveTarget[] = []
   const byId = new Map<string, MoveTarget>()
   for (const r of nodesOf(tree)) {
-    if (r.kind !== 'collection' && r.kind !== 'set') continue
+    if (!isContainer(r)) continue
     const target: MoveTarget = { id: r.id, label: r.title, path: r.path, children: [] }
     byId.set(r.id, target)
     const parent = r.parents.at(-1)

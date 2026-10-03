@@ -72,11 +72,6 @@ describe('resolveWith — single entry', () => {
     expect(resolveOne(makeTree(), { kind: 'collection', id: 'ghost' })).toBeNull()
   })
 
-  it('resolves agenda kinds to null in v1 (no destination yet)', () => {
-    expect(resolveOne(makeTree(), { kind: 'task', id: 'tk1' })).toBeNull()
-    expect(resolveOne(makeTree(), { kind: 'event', id: 'ev1' })).toBeNull()
-  })
-
   it('hands back the bare ref as the click target', () => {
     const r = resolveOne(makeTree(), { kind: 'page', id: 'p1' })
     expect(r?.target).toEqual({ kind: 'page', id: 'p1' })
@@ -88,7 +83,6 @@ describe('resolveIndexOf + resolveWith (index built once, O(1) per entry)', () =
     const index = resolveIndexOf(makeTree())
     expect(resolveWith(index, { kind: 'page', id: 'p1' })?.title).toBe('Alpha')
     expect(resolveWith(index, { kind: 'page', id: 'ghost' })).toBeNull()
-    expect(resolveWith(index, { kind: 'task', id: 'tk1' })).toBeNull()
   })
 })
 
@@ -110,7 +104,7 @@ describe('resolveAll', () => {
     const refs: NavRef[] = [
       { kind: 'page', id: 'p1' },
       { kind: 'page', id: 'ghost' },
-      { kind: 'context', id: 'a1' },
+      { kind: 'space', id: 'ghost' },
     ]
     expect(resolveAll(resolveIndexOf(makeTree()), refs).map((r) => r.key)).toEqual(['page:p1'])
   })

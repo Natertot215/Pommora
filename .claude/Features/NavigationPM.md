@@ -11,7 +11,7 @@ A per-Nexus, UI-agnostic store of recents and pins, plus client-side title searc
 - **Pins** — the durable, user-ordered working set. Pins are the pinned tabs, docked left in the tab bar, and also float to the top of the NavWindow gallery — one set surfaced in two places.
 - **Search** — a title-based subsequence scan over the in-memory tree, memoized per tree. A Context isn't itself a hit; it's the path crumb its Spaces resolve under.
 
-Pins persist as an ordered array in the `navigation` section of `.nexus/state.json`, which is hand-editable and follows the Nexus; recents persist per machine, since two machines interleaving one history has no correct answer.
+Pins persist as an ordered array in the `navigation` section of `.nexus/state.json`, which is hand-editable and follows the Nexus, and a pin of a kind an older build doesn't recognize rides through that build's writes unread; recents persist per machine, since two machines interleaving one history has no correct answer.
 
 ### NavWindow
 
@@ -41,7 +41,7 @@ The new-tab page (`Core/Navigation/NavView.tsx`): a full-window Recents gallery 
 
 #### Pending
 
-- **Agenda is unsearchable** — Tasks and Events are absent from the tree the index builds from; the persistence layer admits their refs and renders them as inert rows.
+- **Agenda isn't navigable** — Tasks and Events are absent from the tree the index builds from, and a navigation reference can't name them.
 - **Body and full-text search** — waits on a SQLite FTS layer that doesn't exist.
 
 #### Prospects

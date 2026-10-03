@@ -1,9 +1,7 @@
 import { entityIcon } from '../Assets/entityIconPolicy'
+import type { DefaultIcons } from '../Settings/personalization'
 import type { CollectionNode, NexusTree, PageNode, SetNode } from '../Nexus/tree'
-import type { EntityIconKind } from '../Settings/personalization'
 import type { PickItem } from './menuModel'
-
-export type DefaultIcons = Partial<Record<EntityIconKind, string>> | undefined
 
 /** Every Collection and Set as a branch, its Sets before its own leaves as the sidebar lists them. */
 export function containerPickTree<T>(

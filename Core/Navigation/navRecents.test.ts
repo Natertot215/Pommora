@@ -7,7 +7,7 @@ const page = (id: string): NavRef => ({ kind: 'page', id })
 describe('navKey', () => {
   it('keys by kind:id, and by bare kind for the id-less homepage', () => {
     expect(navKey({ kind: 'page', id: 'p1' })).toBe('page:p1')
-    expect(navKey({ kind: 'context', id: 'c1' })).toBe('context:c1')
+    expect(navKey({ kind: 'space', id: 's1' })).toBe('space:s1')
     expect(navKey({ kind: 'homepage' })).toBe('homepage')
   })
 })

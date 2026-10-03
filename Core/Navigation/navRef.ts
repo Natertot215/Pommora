@@ -1,20 +1,21 @@
 import { isPlainObject } from '../Contract/validators'
-import type { HeldKind } from '../Nexus/entities'
+import { NODE_KINDS, type NodeKind } from '../Nexus/entities'
+
+type NodeTarget = {
+  [K in NodeKind]: K extends 'set' | 'page'
+    ? { kind: K; id: string; path: string }
+    : { kind: K; id: string }
+}[NodeKind]
 
 export type SelectionState =
   | { kind: 'none' }
   | { kind: 'homepage' }
   | { kind: 'matrix' }
-  /** Reserved for ContextView; member selection is `space`. */
-  | { kind: 'context'; id: string }
-  | { kind: 'space'; id: string }
-  | { kind: 'collection'; id: string }
-  | { kind: 'set'; id: string; path: string }
-  | { kind: 'page'; id: string; path: string }
+  | NodeTarget
 
 export type SelectTarget = Exclude<SelectionState, { kind: 'none' }>
 
-export function selectTargetOf(t: { kind: HeldKind; id: string; path: string }): SelectTarget {
+export function selectTargetOf(t: { kind: NodeKind; id: string; path: string }): SelectTarget {
   switch (t.kind) {
     case 'page':
       return { kind: 'page', id: t.id, path: t.path }
@@ -24,18 +25,13 @@ export function selectTargetOf(t: { kind: HeldKind; id: string; path: string }):
       return { kind: 'collection', id: t.id }
     case 'space':
       return { kind: 'space', id: t.id }
-    case 'context':
-      return { kind: 'context', id: t.id }
   }
 }
 
 export type PageTarget = Extract<SelectTarget, { kind: 'page' }>
 export type SpaceTarget = Extract<SelectTarget, { kind: 'space' }>
 
-export type NavRef =
-  | { kind: 'homepage' }
-  | { kind: 'matrix' }
-  | { kind: 'context' | 'space' | 'collection' | 'set' | 'page' | 'task' | 'event'; id: string }
+export type NavRef = { kind: 'homepage' } | { kind: 'matrix' } | { kind: NodeKind; id: string }
 
 export const isSingleton = (t: { kind?: unknown }): t is { kind: 'homepage' | 'matrix' } =>
   t.kind === 'homepage' || t.kind === 'matrix'
@@ -48,26 +44,19 @@ export function navKey(t: NavRef | SelectTarget): string {
   return 'id' in t ? `${t.kind}:${t.id}` : t.kind
 }
 
-const NAV_KINDS = new Set<string>([
+const NAV_KINDS: ReadonlySet<string> = new Set<NavRef['kind']>([
   'homepage',
   'matrix',
-  'context',
-  'space',
-  'collection',
-  'set',
-  'page',
-  'task',
-  'event',
+  ...NODE_KINDS,
 ])
-
-export const TAB_KINDS = new Set<string>(
-  [...NAV_KINDS].filter((k) => k !== 'task' && k !== 'event'),
-)
 
 export function isNavRef(v: unknown, kinds: ReadonlySet<string> = NAV_KINDS): v is NavRef {
   if (!isPlainObject(v) || typeof v.kind !== 'string' || !kinds.has(v.kind)) return false
   return isSingleton(v) ? !('id' in v) : typeof v.id === 'string' && v.id.length > 0
 }
+
+export const isForeignRef = (v: unknown): boolean =>
+  isPlainObject(v) && typeof v.kind === 'string' && !NAV_KINDS.has(v.kind)
 
 export interface NavigationState {
   pinned?: NavRef[]

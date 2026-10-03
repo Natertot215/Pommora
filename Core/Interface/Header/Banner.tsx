@@ -1,6 +1,6 @@
 import { type ReactNode, useRef, useState } from 'react'
 import type { BannerOwnerKind, RenameKind } from '../../Nexus/mutateRequest'
-import type { HeldKind } from '../../Nexus/entities'
+import { type HeldKind, isContainer } from '../../Nexus/entities'
 import { DEFAULT_NEXUS_ICON, entityIcon } from '../../Assets/entityIconPolicy'
 import { IconChoice } from '../../Assets/IconChoice'
 import { useSession } from '../../Session/store'
@@ -93,10 +93,7 @@ export function EntityBanner({
   const [iconPickerOpen, setIconPickerOpen] = useState(false)
   const iconRef = useRef<Element>(null)
   const contentHost = useContentHost()
-  const searchTab =
-    chrome === 'detail' && (owner.kind === 'collection' || owner.kind === 'set')
-      ? contentHost?.tabId
-      : undefined
+  const searchTab = chrome === 'detail' && isContainer(owner) ? contentHost?.tabId : undefined
   const open = useSession((s) => (searchTab === undefined ? undefined : s.viewSearch[searchTab]))
   const searchView = useSession((s) => s.searchView)
   const setViewQuery = useSession((s) => s.setViewQuery)

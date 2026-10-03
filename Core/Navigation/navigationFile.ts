@@ -1,5 +1,5 @@
 import { isPlainObject } from '../Contract/validators'
-import { isNavRef, toNavRef } from './navRef'
+import { isForeignRef, isNavRef, toNavRef } from './navRef'
 import type { NavRef, NavigationState } from './navRef'
 import { nexusConfig } from '../Paths/paths'
 import { NEXUS_CONFIG_FILES } from '../Paths/nexusPaths'
@@ -19,6 +19,15 @@ const refList = (v: unknown): NavRef[] | undefined => {
   if (!Array.isArray(v)) return undefined
   const refs = cleanRefs(v)
   return refs.length ? refs : undefined
+}
+
+// Pins of a kind this build can't navigate belong to a newer build on another device, so they ride along unread.
+const pinsOver = (stored: unknown, pins: unknown): unknown[] | undefined => {
+  const kept = [
+    ...(refList(pins) ?? []),
+    ...(Array.isArray(stored) ? stored.filter(isForeignRef) : []),
+  ]
+  return kept.length ? kept : undefined
 }
 
 export async function readNavigationFile(root: string): Promise<Omit<NavigationState, 'recents'>> {
@@ -49,7 +58,8 @@ export async function writeNavigationState(
   if (!('pinned' in patch) && !('banner' in patch)) return stored
   const written = await updateNexusConfig(root, 'state', (state) => {
     const base = navigationOf(state)
-    const navigation = 'pinned' in patch ? setOrDrop(base, 'pinned', refList(patch.pinned)) : base
+    const navigation =
+      'pinned' in patch ? setOrDrop(base, 'pinned', pinsOver(base.pinned, patch.pinned)) : base
     // The reader drops a banner outside the asset folder, so the write keeps any path it's given.
     const banner = 'banner' in patch ? patch.banner : base.banner
     return {

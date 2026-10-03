@@ -57,7 +57,7 @@ beforeEach(() => {
   ;(window as unknown as { nexus: unknown }).nexus = stubDialer(channels)
 })
 
-const ctx = (id: string): SelectTarget => ({ kind: 'context', id })
+const space = (id: string): SelectTarget => ({ kind: 'space', id })
 const uTab = (
   id: string,
   target: Tab['target'],
@@ -89,13 +89,13 @@ const seed = (partial: Partial<State>): void => {
 describe('store — tab wiring (Phase 0)', () => {
   it('activateTab re-surfaces the target without recording (C-5)', () => {
     seed({
-      tabs: [uTab('t1', ctx('a'), [ctx('a')], 0), uTab('t2', ctx('b'), [ctx('b')], 0)],
+      tabs: [uTab('t1', space('a'), [space('a')], 0), uTab('t2', space('b'), [space('b')], 0)],
       activeTabId: 't1',
     })
     useSession.getState().activateTab('t2')
     const s = useSession.getState()
     expect(s.activeTabId).toBe('t2')
-    expect(s.selection).toEqual({ kind: 'context', id: 'b' })
+    expect(s.selection).toEqual({ kind: 'space', id: 'b' })
     expect(s.recents).toEqual([])
     expect(s.tabMru[0]).toBe('t2')
   })
@@ -107,57 +107,63 @@ describe('store — tab wiring (Phase 0)', () => {
   })
 
   it('a genuine select replaces the scratch tab in place and records recents', async () => {
-    seed({ tabs: [uTab('t1', ctx('a'), [ctx('a')], 0)], activeTabId: 't1' })
-    await useSession.getState().select(ctx('b'))
+    seed({ tabs: [uTab('t1', space('a'), [space('a')], 0)], activeTabId: 't1' })
+    await useSession.getState().select(space('b'))
     const s = useSession.getState()
     expect(s.tabs).toHaveLength(1)
-    expect(s.tabs[0].target).toEqual(ctx('b'))
-    expect(s.tabs[0].navStack).toEqual([ctx('a'), ctx('b')])
-    expect(s.selection).toEqual({ kind: 'context', id: 'b' })
+    expect(s.tabs[0].target).toEqual(space('b'))
+    expect(s.tabs[0].navStack).toEqual([space('a'), space('b')])
+    expect(s.selection).toEqual({ kind: 'space', id: 'b' })
     expect(s.recents.map((r) => ('id' in r ? r.id : r.kind))).toEqual(['b'])
   })
 
   it('re-selecting the shown entity after Back is a dedup no-op — Forward preserved', async () => {
     // target must move in lockstep with navIndex: after Back to b, clicking b in the sidebar must dedup against the LIVE shown entity (not the pre-Back target) and leave the Forward stack alone.
-    seed({ tabs: [uTab('t1', ctx('c'), [ctx('a'), ctx('b'), ctx('c')], 2)], activeTabId: 't1' })
+    seed({
+      tabs: [uTab('t1', space('c'), [space('a'), space('b'), space('c')], 2)],
+      activeTabId: 't1',
+    })
     useSession.getState().goBack()
-    expect(useSession.getState().tabs[0].target).toEqual(ctx('b'))
-    await useSession.getState().select(ctx('b'))
+    expect(useSession.getState().tabs[0].target).toEqual(space('b'))
+    await useSession.getState().select(space('b'))
     let s = useSession.getState()
-    expect(s.tabs[0].navStack).toEqual([ctx('a'), ctx('b'), ctx('c')])
+    expect(s.tabs[0].navStack).toEqual([space('a'), space('b'), space('c')])
     expect(s.tabs[0].navIndex).toBe(1)
     expect(s.recents).toEqual([])
     useSession.getState().goForward()
     s = useSession.getState()
-    expect(s.selection).toEqual({ kind: 'context', id: 'c' })
+    expect(s.selection).toEqual({ kind: 'space', id: 'c' })
   })
 
   it('per-tab Back/Forward walks the active tab own history (D-7)', () => {
-    seed({ tabs: [uTab('t1', ctx('c'), [ctx('a'), ctx('b'), ctx('c')], 2)], activeTabId: 't1' })
+    seed({
+      tabs: [uTab('t1', space('c'), [space('a'), space('b'), space('c')], 2)],
+      activeTabId: 't1',
+    })
     useSession.getState().goBack()
     let s = useSession.getState()
     expect(s.tabs[0].navIndex).toBe(1)
-    expect(s.selection).toEqual({ kind: 'context', id: 'b' })
+    expect(s.selection).toEqual({ kind: 'space', id: 'b' })
     useSession.getState().goForward()
     s = useSession.getState()
     expect(s.tabs[0].navIndex).toBe(2)
-    expect(s.selection).toEqual({ kind: 'context', id: 'c' })
+    expect(s.selection).toEqual({ kind: 'space', id: 'c' })
   })
 
   it('closing the active tab focuses the MRU top (D-9)', () => {
     seed({
-      tabs: [uTab('t1', ctx('a'), [ctx('a')], 0), uTab('t2', ctx('b'), [ctx('b')], 0)],
+      tabs: [uTab('t1', space('a'), [space('a')], 0), uTab('t2', space('b'), [space('b')], 0)],
       activeTabId: 't2',
       tabMru: ['t2', 't1'],
     })
     useSession.getState().closeTab('t2')
     const s = useSession.getState()
     expect(s.activeTabId).toBe('t1')
-    expect(s.selection).toEqual({ kind: 'context', id: 'a' })
+    expect(s.selection).toEqual({ kind: 'space', id: 'a' })
   })
 
   it('closing the last tab reseeds a NavView, routing to the empty state (I-5)', () => {
-    seed({ tabs: [uTab('t1', ctx('a'), [ctx('a')], 0)], activeTabId: 't1', tabMru: ['t1'] })
+    seed({ tabs: [uTab('t1', space('a'), [space('a')], 0)], activeTabId: 't1', tabMru: ['t1'] })
     useSession.getState().closeTab('t1')
     const s = useSession.getState()
     expect(s.tabs).toHaveLength(1)
@@ -168,7 +174,7 @@ describe('store — tab wiring (Phase 0)', () => {
   it('reorderTabs moves a tab before another and to the end on null; a no-move persists nothing', async () => {
     const order = (): string[] => useSession.getState().tabs.map((t) => t.id)
     seed({
-      tabs: [uTab('t1', ctx('a')), uTab('t2', ctx('b')), uTab('t3', ctx('c'))],
+      tabs: [uTab('t1', space('a')), uTab('t2', space('b')), uTab('t3', space('c'))],
       activeTabId: 't1',
     })
     useSession.getState().reorderTabs('t3', 't1')
@@ -789,9 +795,9 @@ describe('store — recents reorder + batched close', () => {
   const savedRecents = (): ReturnType<typeof vi.fn> => channels['nav:write']
 
   it('setRecentsOrder rewrites the order to the source and persists immediately (drag)', () => {
-    const a = ctx('a')
-    const b = ctx('b')
-    const c = ctx('c')
+    const a = space('a')
+    const b = space('b')
+    const c = space('c')
     seed({ recents: [a, b, c] })
     useSession.getState().setRecentsOrder([b, c, a].map(navKey))
     expect(useSession.getState().recents).toEqual([b, c, a])
@@ -799,8 +805,8 @@ describe('store — recents reorder + batched close', () => {
   })
 
   it('setRecentsOrder is a no-op on the standing order and on unknown keys', () => {
-    const a = ctx('a')
-    const b = ctx('b')
+    const a = space('a')
+    const b = space('b')
     seed({ recents: [a, b] })
     useSession.getState().setRecentsOrder([a, b].map(navKey))
     useSession.getState().setRecentsOrder(['missing'])
@@ -809,9 +815,9 @@ describe('store — recents reorder + batched close', () => {
   })
 
   it('setRecentsOrder leaves an entry the list hides in its own slot', () => {
-    const a = ctx('a')
-    const hidden = ctx('hidden')
-    const b = ctx('b')
+    const a = space('a')
+    const hidden = space('hidden')
+    const b = space('b')
     seed({ recents: [a, hidden, b] })
     useSession.getState().setRecentsOrder([b, a].map(navKey))
     expect(useSession.getState().recents).toEqual([b, hidden, a])
@@ -1210,7 +1216,7 @@ describe('store — view search', () => {
   const col = (id: string): SelectTarget => ({ kind: 'collection', id })
   const onContainer = (search: State['viewSearch'] = {}): void =>
     seed({
-      tabs: [uTab('t1', col('c1'), [col('c1')], 0), uTab('t2', ctx('b'), [ctx('b')], 0)],
+      tabs: [uTab('t1', col('c1'), [col('c1')], 0), uTab('t2', space('b'), [space('b')], 0)],
       activeTabId: 't1',
       tabMru: ['t1', 't2'],
       selection: col('c1'),
@@ -1219,9 +1225,9 @@ describe('store — view search', () => {
 
   it('opens on a container and refuses anything else', () => {
     seed({
-      tabs: [uTab('t1', ctx('a'), [ctx('a')], 0)],
+      tabs: [uTab('t1', space('a'), [space('a')], 0)],
       activeTabId: 't1',
-      selection: ctx('a'),
+      selection: space('a'),
       viewSearch: {},
     })
     expect(useSession.getState().searchView('t1')).toBe(false)
@@ -1254,7 +1260,7 @@ describe('store — view search', () => {
     useSession.getState().activateTab('t2')
     useSession.getState().activateTab('t1')
     expect(useSession.getState().viewSearch.t1?.query).toBe('ab')
-    await useSession.getState().select(ctx('z'), { newTab: false })
+    await useSession.getState().select(space('z'), { newTab: false })
     expect(useSession.getState().viewSearch).toEqual({})
   })
 
@@ -1335,11 +1341,11 @@ describe('store — view search', () => {
   it('clears with its pinned tab when the pin is removed', () => {
     const pinId = pinTabId(col('c1'))
     seed({
-      tabs: [uTab('t2', ctx('b'), [ctx('b')], 0)],
+      tabs: [uTab('t2', space('b'), [space('b')], 0)],
       activeTabId: 't2',
       pinned: [toNavRef(col('c1'))],
       pinnedTabs: [{ id: pinId, target: col('c1'), navStack: [col('c1')], navIndex: 0 }],
-      selection: ctx('b'),
+      selection: space('b'),
       viewSearch: { [pinId]: { key: 'collection:c1', query: 'ab', summon: 0 } },
     })
     useSession.getState().unpinTarget(navKey(col('c1')))

@@ -43,11 +43,6 @@ describe('reconcileIndexOf', () => {
     expect(ix.pages.get('p2')).toBe('Notes/Ideas/Beta.md')
   })
 
-  it('a Context-group selection reconciles dead — no layer holds what none can render', () => {
-    const ix = reconcileIndexOf(makeTree())
-    expect(reconcileWith(ix, { kind: 'context', id: 'g1' })).toEqual({ kind: 'none' })
-  })
-
   it('a page whose ID vanished follows the page now at its path', () => {
     const ix = reconcileIndexOf(makeTree())
     const selection = {

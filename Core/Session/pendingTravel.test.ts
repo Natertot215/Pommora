@@ -15,7 +15,7 @@ import { makeTree } from '../Testing/testTree'
 ;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
 
 const A: PageTarget = { kind: 'page', id: 'a', path: 'Notes/A.md' }
-const HOME: SelectTarget = { kind: 'context', id: 'home' }
+const HOME: SelectTarget = { kind: 'homepage' }
 
 let container: HTMLDivElement
 let root: Root

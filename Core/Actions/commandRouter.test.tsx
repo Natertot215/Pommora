@@ -9,8 +9,8 @@ import { makeTree } from '../Testing/testTree'
 import { stubDialer } from '../vitest.setup'
 import { runCommand } from './commandRouter'
 
-const ctx = (id: string): SelectTarget => ({ kind: 'context', id })
-const tab = (id: string): Tab => ({ id, target: ctx(id), navStack: [ctx(id)], navIndex: 0 })
+const space = (id: string): SelectTarget => ({ kind: 'space', id })
+const tab = (id: string): Tab => ({ id, target: space(id), navStack: [space(id)], navIndex: 0 })
 const page = (id: string) => ({ kind: 'page', id, path: `${id}.md` }) as const
 ;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
 

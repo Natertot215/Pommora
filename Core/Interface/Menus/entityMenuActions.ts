@@ -114,7 +114,7 @@ function runEntityAction(
   const s = useSession.getState()
   const { path, id, kind } = target
   if (kind === 'page' && id && runPageAction(action, { id, path, title: target.title })) return
-  const ref = id ? { kind, id, path } : undefined
+  const ref = target.id ? { kind: target.kind, id: target.id, path } : undefined
   switch (action) {
     case 'preview': {
       const t = ref && selectTargetOf(ref)
