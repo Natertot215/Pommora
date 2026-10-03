@@ -25,7 +25,6 @@ const CENSUS: ReadonlyArray<[string, string]> = [
 ]
 
 const ledger: Ledger = history
-const commit = import.meta.env.VERCEL_GIT_COMMIT_SHA?.slice(0, 7)
 
 export function LedgerLeaf(): React.JSX.Element {
   const { series, files, kinds } = ledger
@@ -46,16 +45,7 @@ export function LedgerLeaf(): React.JSX.Element {
   return (
     <div className="lg-page">
       <header className="lg-masthead">
-        <div className="lg-eyebrow">
-          <span>Pommora</span>
-          {commit && (
-            <>
-              <span className="lg-dot" />
-              <span className="lg-sha">{commit}</span>
-            </>
-          )}
-        </div>
-        <h1>Line Ledger</h1>
+        <h1>Pommora</h1>
         <div className="lg-figure">
           <span className="lg-n">{fmt(total)}</span>
           <span className="lg-k">Real code lines</span>

@@ -21,7 +21,7 @@ The design system, live: color tokens, the type ramp, icons, glass materials, bu
 
 ## Deploying
 
-`vercel.json` configures the Vercel project, whose root directory is `Dashboard` and whose production branch is `active`; the post-commit hook pushes `active` after every commit, and each push deploys. The install takes only the `Dashboard` and `UIX` workspaces, and `main` is excluded from deployment. The commit's short SHA reaches the page through Vercel's `VERCEL_GIT_` environment variables.
+`vercel.json` configures the Vercel project, whose root directory is `Dashboard` and whose production branch is `active`; the post-commit hook pushes `active` after every commit, and each push deploys. The install takes only the `Dashboard` and `UIX` workspaces, and `main` is excluded from deployment.
 
 ## Assets
 
