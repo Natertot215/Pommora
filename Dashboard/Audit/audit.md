@@ -40,8 +40,6 @@ Thirty-four Opus investigators read every production file in `Core`, `UIX`, `Des
 | A new persisted setting | 2–3 synced · 2 per device | 4 | Cheap |
 | A new host channel | 2–5 | 5 | Cheap |
 
-**After Applying Fixes:** Rebuild and republish the Dashboard, which carries the line ledger with this audit below it, to the Dashboard the session's account owns: run `npm run build -w Dashboard`, publish `Dashboard/dist/dashboard.html` with `url: https://claude.ai/artifact/8PRPLWwk9ar9XXyJ8Hy7gQ` under `ntaichman@icloud.com`, or `url: https://claude.ai/code/artifact/7840fc59-41d5-4692-b5b6-c45de4d11401` under `ntaichmanalt@gmail.com`, and the ledger as its `audit.md` supporting file, then write `Dashboard/Ledger/loc-history.json` into its `ledger/history` document.
-
 #### Pace Guidance
 
 **Too fast for verification, not too fast for design.** Pommora has taken 3,955 commits since 05-10-2026, 1,896 of them in the last sixty days. The design choices hold up under that speed. The checking behind each change doesn't.
