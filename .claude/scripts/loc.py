@@ -143,9 +143,9 @@ TEST_DIRS = {"Testing", "fixtures", "__tests__"}
 TEST_SUFFIX = "Harness.ts"
 CONFIG_NAMES = {"package.json", "biome.json", "vercel.json"}
 CONFIG_EXT = (".yml", ".yaml")
-# A manifest generated wholesale from a dependency's icon roster, not authored source; excluded from
+# Manifests generated wholesale from a dependency's icon roster, not authored source; excluded from
 # the ledger entirely so its bulk never reads as hand-written code.
-GENERATED = {"UIX/Symbols/iconNames.ts"}
+GENERATED = {"UIX/Symbols/iconNames.ts", "UIX/Symbols/iconTags.ts"}
 
 
 def classify(rel: str) -> str | None:
