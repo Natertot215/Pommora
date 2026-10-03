@@ -6,8 +6,11 @@ import {
   REVEAL_DWELL_MS,
   REVEAL_GRACE_MS,
   REVEAL_REACH,
+  type Nearness,
+  trackNear,
   useHoverReveal,
   useRevealWithin,
+  withinBox,
   withinReach,
 } from './hoverReveal'
 ;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
@@ -323,7 +326,11 @@ describe('useRevealWithin', () => {
   }
 
   const move = (x: number, y: number, buttons = 0): Promise<void> =>
-    run(() => window.dispatchEvent(new MouseEvent('pointermove', { clientX: x, clientY: y, buttons })))
+    run(() =>
+      document.body.dispatchEvent(
+        new MouseEvent('pointermove', { clientX: x, clientY: y, buttons, bubbles: true }),
+      ),
+    )
 
   beforeEach(async () => {
     await act(async () => root.render(<Near />))
@@ -346,7 +353,156 @@ describe('useRevealWithin', () => {
 
   it('turns off when the pointer leaves the window', async () => {
     await move(110, 105)
-    await run(() => window.dispatchEvent(new MouseEvent('pointerout', { relatedTarget: null })))
+    await run(() =>
+      document.body.dispatchEvent(
+        new MouseEvent('pointerout', { relatedTarget: null, bubbles: true }),
+      ),
+    )
     expect(el.dataset.revealHost).toBe('off')
+  })
+})
+
+describe('withinBox', () => {
+  const at = { left: 100, top: 100, right: 120, bottom: 110 }
+
+  it('holds its edges and its pad, and nothing past them', () => {
+    expect(withinBox(at, 120, 110)).toBe(true)
+    expect(withinBox(at, 121, 110)).toBe(false)
+    expect(withinBox(at, 94, 104, 6)).toBe(true)
+    expect(withinBox(at, 93, 104, 6)).toBe(false)
+  })
+})
+
+describe('trackNear', () => {
+  const r = REVEAL_REACH.inline
+  let anchor: HTMLElement
+  let heard: Nearness[]
+  let measured: number
+  let stop: () => void
+  let forget: () => void
+
+  const fire = (target: EventTarget, type: string, init: MouseEventInit = {}): void => {
+    target.dispatchEvent(new MouseEvent(type, { bubbles: true, ...init }))
+  }
+  const move = (x: number, buttons = 0, target: EventTarget = document.body): void =>
+    fire(target, 'pointermove', { clientX: x, clientY: 105, buttons })
+
+  const track = (scope?: HTMLElement): void => {
+    ;({ stop, forget } = trackNear({
+      anchor,
+      scope,
+      measure: () => {
+        measured++
+        const box = anchor.getBoundingClientRect()
+        return (x, y) => withinReach(box, { size: 'inline' }, x, y)
+      },
+      report: (at) => heard.push(at),
+    }))
+  }
+
+  beforeEach(() => {
+    heard = []
+    measured = 0
+    anchor = document.createElement('div')
+    document.body.appendChild(anchor)
+    anchor.getBoundingClientRect = () =>
+      ({ left: 100, top: 100, right: 120, bottom: 110 }) as DOMRect
+  })
+  afterEach(() => {
+    stop()
+    anchor.remove()
+  })
+
+  it('reports every move, near at exactly the reach and far one past it', () => {
+    track()
+    move(120 + r)
+    move(120 + r)
+    move(120 + r + 1)
+    expect(heard).toEqual(['near', 'near', 'far'])
+  })
+
+  it('measures once across moves', () => {
+    track()
+    move(110)
+    move(130)
+    move(400)
+    expect(measured).toBe(1)
+  })
+
+  it('reports held while a button is down, and measures afresh after', () => {
+    track()
+    move(110)
+    move(110, 1)
+    move(110)
+    expect(heard).toEqual(['near', 'held', 'near'])
+    expect(measured).toBe(2)
+  })
+
+  it('reports out when the pointer leaves the window', () => {
+    track()
+    move(110)
+    fire(document.body, 'pointerout', { relatedTarget: null })
+    expect(heard).toEqual(['near', 'out'])
+  })
+
+  it('reports out when the window loses focus', () => {
+    track()
+    move(110)
+    window.dispatchEvent(new Event('blur'))
+    move(110)
+    expect(heard).toEqual(['near', 'out', 'near'])
+    expect(measured).toBe(2)
+  })
+
+  it('drops its measure on a resize, a transition on the anchor, an ancestor, or a sibling, and forget', () => {
+    const sibling = document.body.appendChild(document.createElement('div'))
+    track()
+    move(110)
+    window.dispatchEvent(new Event('resize'))
+    move(110)
+    anchor.dispatchEvent(new Event('transitionend', { bubbles: true }))
+    move(110)
+    document.body.dispatchEvent(new Event('transitionend', { bubbles: true }))
+    move(110)
+    sibling.dispatchEvent(new Event('transitionend', { bubbles: true }))
+    move(110)
+    forget()
+    move(110)
+    sibling.remove()
+    expect(measured).toBe(6)
+  })
+
+  it('keeps its measure through a transition elsewhere', () => {
+    const other = document.createElement('div')
+    const inner = document.createElement('span')
+    other.appendChild(inner)
+    document.body.appendChild(other)
+    track()
+    move(110)
+    inner.dispatchEvent(new Event('transitionend', { bubbles: true }))
+    move(110)
+    other.remove()
+    expect(measured).toBe(1)
+  })
+
+  it('in a scope, hears only its moves and leaves only past its edge', () => {
+    const scope = document.createElement('div')
+    const child = document.createElement('span')
+    scope.appendChild(child)
+    document.body.appendChild(scope)
+    track(scope)
+    move(110)
+    move(110, 0, child)
+    fire(child, 'pointerout', { relatedTarget: scope })
+    fire(scope, 'pointerout', { relatedTarget: document.body })
+    scope.remove()
+    expect(heard).toEqual(['near', 'out'])
+  })
+
+  it('stops hearing once stopped', () => {
+    track()
+    stop()
+    move(110)
+    expect(heard).toEqual([])
   })
 })

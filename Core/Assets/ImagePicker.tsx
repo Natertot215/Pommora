@@ -3,6 +3,7 @@ import type { Crop } from '../Nexus/schemas'
 import { valueOr } from '../Contract/result'
 import { coverRect, CROP_ZOOM, DEFAULT_CROP, dragRect } from './cropGeometry'
 import { WEB_ADDRESS } from '../Paths/urlPath'
+import { basename } from '../Paths/posix'
 import { resolveAssetUrl, resolveAssetValue } from './assetUrl'
 import { useSession } from '../Session/store'
 import { cropFor } from './AssetImage'
@@ -19,6 +20,7 @@ import { ModalScrim } from '@pommora/uix/Windows/ModalScrim'
 import { usePointerGesture } from '@pommora/uix/Interactions/gesture'
 import * as s from './image-picker.css'
 import { clamp } from '@pommora/uix/Utilities/clamp'
+import { PINCH_RATE } from '@pommora/uix/Utilities/zoom'
 import { dialer } from '../Platform/dialer'
 import { useLatest } from '@pommora/uix/Utilities/stableApi'
 
@@ -28,7 +30,6 @@ const MAX_W = 460 // KNOB — widest the frame gets (a wide seat)
 const MARGIN = 28 // KNOB — the dimmed room around the seat, where the overflow shows
 const RECT_RADIUS = 12 // KNOB
 const SCROLL_RATE = 0.0015 // KNOB
-const PINCH_RATE = 0.01 // KNOB
 
 export function ImagePicker({
   open,
@@ -136,7 +137,7 @@ export function ImagePicker({
   const rect = coverRect(draft, imgAspect, boxW, boxH) ?? { left: 0, top: 0, width: 0, height: 0 }
   const resolved = resolveAssetValue(value, map)
   const echoPath = resolved.kind === 'asset' ? resolved.rel : value
-  const fileName = echoPath.split('/').filter(Boolean).pop() ?? echoPath
+  const fileName = basename(echoPath)
   const imgProps = { src: url ?? '', draggable: false }
   const imgSize = { width: rect.width, height: rect.height }
 

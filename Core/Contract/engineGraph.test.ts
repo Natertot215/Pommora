@@ -29,6 +29,7 @@ describe('the engine graph from serve.ts', () => {
       'UIX/Utilities/clamp.ts',
       'UIX/Utilities/moveItem.ts',
       'UIX/Utilities/pad.ts',
+      'UIX/Utilities/same.ts',
       'UIX/Utilities/tileMetrics.ts',
     ])
   })

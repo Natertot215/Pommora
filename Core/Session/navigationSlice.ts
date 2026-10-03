@@ -61,6 +61,7 @@ import { crumbDepthFor } from '../Interface/Subfield/crumbs'
 import type { SessionState, Slice } from './sessionState'
 import { personalizationOf } from './configSlice'
 import { dialer } from '../Platform/dialer'
+import { sameItems } from '@pommora/uix/Utilities/same'
 
 export type PageSlot =
   | { status: 'ready'; target: PageTarget; detail: PageDetail; body: string }
@@ -530,7 +531,7 @@ export const createNavigationSlice: Slice<NavigationSlice> = (set, get) => {
       listed.sort((a, b) => (pos.get(navKey(a)) ?? 0) - (pos.get(navKey(b)) ?? 0))
       let i = 0
       const next = s.recents.map((r) => (pos.has(navKey(r)) ? listed[i++] : r))
-      if (next.every((r, at) => r === s.recents[at])) return
+      if (sameItems(next, s.recents)) return
       commitRecents(next)
     },
 

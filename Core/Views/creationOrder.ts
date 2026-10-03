@@ -7,9 +7,6 @@ import { nextOrder } from '@pommora/uix/Utilities/moveItem'
 import { containerAt, pageIdsIn } from '../Nexus/treePatch'
 import { contextWorldOf } from '../Contexts/contextResolve'
 
-export const sameIds = (a: string[], b: string[]): boolean =>
-  a.length === b.length && a.every((x, i) => x === b[i])
-
 export type Slot = 'above' | 'below' | 'first' | 'last'
 
 export function spliceBeside(

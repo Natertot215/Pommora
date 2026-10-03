@@ -195,3 +195,56 @@ describe('the grid on the gesture engine', () => {
     expect(tileEl('c').style.width).toBe('296px')
   })
 })
+
+describe('the handle reveal', () => {
+  const reveal = (): string | undefined => tileEl('a').dataset.revealHost
+  const move = (x: number, y: number, buttons = 0): void =>
+    act(() => {
+      tileEl('a').dispatchEvent(
+        new PointerEvent('pointermove', { clientX: x, clientY: y, buttons, bubbles: true }),
+      )
+    })
+
+  beforeEach(() => {
+    act(() =>
+      root.render(
+        <TileGrid
+          layout={layout}
+          onLayoutChange={vi.fn()}
+          editingId="a"
+          renderTile={(id) => <span data-tile={id} />}
+        />,
+      ),
+    )
+    const tile = tileEl('a')
+    tile.getBoundingClientRect = () => ({ left: 0, top: 100, right: 400, bottom: 300 }) as DOMRect
+    const handle = tile.querySelector('.tile-handle') as HTMLElement
+    handle.getBoundingClientRect = () => ({ left: 20, top: 100, right: 40, bottom: 110 }) as DOMRect
+  })
+
+  it('reveals within the corner reach of the handle and hides past it', () => {
+    move(60, 140)
+    expect(reveal()).toBe('on')
+    move(380, 100 + 300)
+    expect(reveal()).toBe('off')
+  })
+
+  it('holds where it stands through a press, and hides once the pointer leaves the tile', () => {
+    move(60, 140)
+    move(380, 400, 1)
+    expect(reveal()).toBe('on')
+    act(() => {
+      tileEl('a').dispatchEvent(new PointerEvent('pointerout', { relatedTarget: document.body }))
+    })
+    expect(reveal()).toBe('off')
+  })
+
+  it('reads the corner afresh once the tile settles where its reflow moved it', () => {
+    move(60, 140)
+    tileEl('a').getBoundingClientRect = () =>
+      ({ left: 0, top: 700, right: 400, bottom: 900 }) as DOMRect
+    settled('a')
+    move(60, 140)
+    expect(reveal()).toBe('off')
+  })
+})

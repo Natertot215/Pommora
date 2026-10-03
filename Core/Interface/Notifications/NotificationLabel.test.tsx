@@ -42,3 +42,50 @@ describe('NotificationLabel', () => {
     expect(label()?.textContent).toBe('Deleted “Ideas”Undo')
   })
 })
+
+describe('the drain near the pointer', () => {
+  const FAKED = [
+    'setTimeout',
+    'clearTimeout',
+    'requestAnimationFrame',
+    'cancelAnimationFrame',
+    'performance',
+  ] as const
+  const move = (x: number, buttons = 0): void =>
+    act(() => {
+      document.body.dispatchEvent(
+        new PointerEvent('pointermove', { clientX: x, clientY: 20, buttons, bubbles: true }),
+      )
+    })
+  const run = (ms: number): void =>
+    act(() => {
+      vi.advanceTimersByTime(ms)
+    })
+  const showing = (): boolean => !label()?.hasAttribute('inert')
+
+  beforeEach(() => {
+    vi.useFakeTimers({ toFake: [...FAKED] })
+    act(() => notifyDeleted('Ideas', vi.fn()))
+    const el = label() as HTMLElement
+    el.getBoundingClientRect = () => ({ left: 100, top: 0, right: 300, bottom: 40 }) as DOMRect
+  })
+  afterEach(() => {
+    vi.useRealTimers()
+  })
+
+  it('stalls within its band and drains once the pointer leaves it', () => {
+    move(400)
+    run(10_000)
+    expect(showing()).toBe(true)
+    move(401)
+    run(10_000)
+    expect(showing()).toBe(false)
+  })
+
+  it('holds where it stands through a press', () => {
+    move(400)
+    move(1000, 1)
+    run(10_000)
+    expect(showing()).toBe(true)
+  })
+})

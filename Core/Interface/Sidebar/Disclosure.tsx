@@ -7,6 +7,7 @@ import { DropOutline, MenuItem } from '@pommora/uix/Menus'
 import { Reveal } from '@pommora/uix/Animations/Reveal'
 import { useHoverReveal } from '@pommora/uix/Interactions/hoverReveal'
 import { revealTarget } from '@pommora/uix/Interactions/hover-reveal.css'
+import { iconToggle } from '@pommora/uix/Buttons/button-base.css'
 import { useFold, useSession } from '../../Session/store'
 import { LineRow } from '@pommora/uix/Interactions/drag'
 import { ctxHandler, type RenameTarget, RowTitle } from './sidebarRows'
@@ -145,7 +146,7 @@ export function Disclosure({
     locked || lock.on ? (
       <button
         type="button"
-        className={cx('row-lock', revealTarget)}
+        className={cx(iconToggle, revealTarget)}
         aria-label={lockLabel(locked, 'Folder')}
         onClick={(e) => {
           e.stopPropagation()

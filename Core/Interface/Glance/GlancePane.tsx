@@ -8,6 +8,8 @@ import { lockLabel } from '../../Actions/toggleLabels'
 import { Icon, LockGlyph } from '@pommora/uix/Symbols'
 import { cx } from '@pommora/uix/Utilities/cx'
 import { revealTarget } from '@pommora/uix/Interactions/hover-reveal.css'
+import { iconToggle } from '@pommora/uix/Buttons/button-base.css'
+import { trackNear, withinBox } from '@pommora/uix/Interactions/hoverReveal'
 import { editorAt } from '../../MarkdownPM/api'
 import { HEADING_LINE, toggleFoldAt } from '../../MarkdownPM/folding'
 import type { WarmSeam } from '../../MarkdownPM/warmSeam'
@@ -44,12 +46,6 @@ const NOOP = (): void => {}
 export function glanceWarmSeam(id: string, path: string): WarmSeam {
   return warmSeamOf('glance', id, () => knownBody(path))
 }
-
-const inRect = (r: DOMRect, x: number, y: number): boolean =>
-  x >= r.left - RECT_SLOP &&
-  x <= r.right + RECT_SLOP &&
-  y >= r.top - RECT_SLOP &&
-  y <= r.bottom + RECT_SLOP
 
 const keyOf = (r: GlanceRequest): string =>
   r.target.kind === 'page' ? `p:${r.target.id}` : `s:${r.target.url}`
@@ -88,9 +84,6 @@ export function GlancePane(): React.JSX.Element {
   const anchorRef = useLatest(shown?.el ?? null)
   const shownRef = useLatest(shown)
   const held = useHeld(shown, !!shown)
-
-  const selectingRef = useRef(false)
-  const { resizing } = resize
 
   useEffect(() => {
     const show = (next: GlanceRequest): void => {
@@ -244,36 +237,28 @@ export function GlancePane(): React.JSX.Element {
       dismiss()
     }
     // Both boxes hold still between scrolls, keystrokes and resizes, so they are measured on exactly those rather than re-read on every pointer move.
-    let linkBox: DOMRect | null = null
-    let cardBox: DOMRect | null = null
-    const dropBoxes = (): void => {
-      linkBox = null
-      cardBox = null
-    }
-    const onMove = (e: PointerEvent): void => {
-      // A live resize or selection drag suspends the leave lifecycle, clearing rather than skipping so a countdown that pre-dates the drag can't fire mid-gesture.
-      if (selectingRef.current && (e.buttons & 1) === 0) selectingRef.current = false
-      if (resizing || selectingRef.current) {
-        clearGrace()
-        dropBoxes()
-        return
-      }
-      if (!shown.el.isConnected) {
-        close()
-        return
-      }
-      linkBox ??= shown.el.getBoundingClientRect()
-      cardBox ??= cardRef.current?.getBoundingClientRect() ?? null
-      const overCard = cardBox ? inRect(cardBox, e.clientX, e.clientY) : false
-      if (overCard || inRect(linkBox, e.clientX, e.clientY)) clearGrace()
-      // An Infinite grace ('always') never schedules a dismiss — the pane holds until nav/Esc/replace.
-      else if (!grace && Number.isFinite(graceMs)) grace = setTimeout(close, graceMs)
-    }
-    window.addEventListener('pointermove', onMove)
+    const near = trackNear({
+      anchor: shown.el,
+      measure: () => {
+        const link = shown.el.getBoundingClientRect()
+        const card = cardRef.current?.getBoundingClientRect()
+        return (x, y) =>
+          withinBox(link, x, y, RECT_SLOP) || (!!card && withinBox(card, x, y, RECT_SLOP))
+      },
+      report: (at) => {
+        // A held button suspends the leave lifecycle, clearing rather than skipping so a countdown that pre-dates a resize or selection drag can't fire mid-gesture.
+        if (at === 'held') clearGrace()
+        else if (!shown.el.isConnected) close()
+        else if (at === 'near') clearGrace()
+        // An Infinite grace ('always') never schedules a dismiss — the pane holds until nav/Esc/replace.
+        else if (at === 'far' && !grace && Number.isFinite(graceMs))
+          grace = setTimeout(close, graceMs)
+      },
+    })
     const unwatch = watchAnchor(shown.el, {
       onGone: close,
       onEscape: close,
-      onMoved: dropBoxes,
+      onMoved: near.forget,
       // The pane's rim and its resize edges sit outside the body, so containment reads against the portal layer and a press on an edge is not a press away.
       body: () => cardRef.current?.closest(`[${PICKER_PORTAL_ATTR}]`) ?? null,
       dismissOnPress: dismissOnPointer,
@@ -281,9 +266,9 @@ export function GlancePane(): React.JSX.Element {
     return () => {
       clearGrace()
       unwatch()
-      window.removeEventListener('pointermove', onMove)
+      near.stop()
     }
-  }, [shown, graceMs, dismiss, resizing, dismissOnPointer])
+  }, [shown, graceMs, dismiss, dismissOnPointer])
 
   const page = held?.target.kind === 'page' ? held.target : null
   const siteShown = shown?.target.kind === 'site'
@@ -336,7 +321,7 @@ export function GlancePane(): React.JSX.Element {
   const lockBtn = page && (
     <button
       type="button"
-      className={cx('glance-lock', revealTarget)}
+      className={cx('glance-lock', iconToggle, revealTarget)}
       aria-label={lockLabel(false, 'Preview')}
       onMouseDown={(e) => e.preventDefault()}
       onClick={onLock}
@@ -348,7 +333,7 @@ export function GlancePane(): React.JSX.Element {
   const pinBtn = (p: PinnedGlance): React.JSX.Element => (
     <button
       type="button"
-      className={cx('glance-lock', revealTarget)}
+      className={cx('glance-lock', iconToggle, revealTarget)}
       data-reveal-held={p.locked || undefined}
       aria-label={lockLabel(p.locked, 'Preview')}
       onMouseDown={(e) => e.preventDefault()}
@@ -379,7 +364,6 @@ export function GlancePane(): React.JSX.Element {
           style={{ width: resize.size.w, height: resize.size.h }}
           onPointerDownCapture={(e) => {
             if (e.button !== 0) return
-            selectingRef.current = true
             if (!cardRef.current?.contains(document.activeElement))
               focusBefore.current = document.activeElement
           }}

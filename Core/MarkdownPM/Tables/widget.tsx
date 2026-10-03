@@ -48,6 +48,7 @@ import type { ConnectionsApi } from '../Links/connectionsApi'
 import type { TableMenuAction, TableMenuContext } from './tableMenu'
 import { editorHost, persistPref, resolutionNudge } from '../api'
 import type { HeadingLinkStyle } from '../../Settings/personalization'
+import { sameSet } from '@pommora/uix/Utilities/same'
 
 type ConnGetter = () => ConnectionsApi | undefined
 const tableConnections = Facet.define<ConnGetter, ConnGetter>({
@@ -94,7 +95,7 @@ function remapHeadingCols(set: Set<number>, tr: Transaction): Set<number> {
   if (set.size === 0) return set
   const successors = tableSuccessors(tr)
   const next = new Set([...set].map((i) => successors[i] ?? -1).filter((j) => j >= 0))
-  return next.size === set.size && [...next].every((i) => set.has(i)) ? set : next
+  return sameSet(next, set) ? set : next
 }
 
 const headingColField = StateField.define<Set<number>>({

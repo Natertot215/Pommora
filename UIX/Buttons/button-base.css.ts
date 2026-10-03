@@ -103,6 +103,25 @@ export const size = styleVariants(SIZE, (s) => ({
   },
 }))
 
+export const pointer = style({ cursor: 'pointer' })
+
+/** A bare inline toggle (a lock, a view's settings) sized by its glyph rather than a fixed button box. */
+export const iconToggle = style([
+  pointer,
+  {
+    display: 'inline-flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: '1px 6px',
+    border: 'none',
+    borderRadius: '4px',
+    background: 'transparent',
+    color: c.label.tertiary,
+    transition: `${REVEAL_FADE}, background ${duration.fast} ${easing.baseEase}`,
+    ':hover': { background: c.state.hover },
+  },
+])
+
 /** Defined after `button` so the border-radius wins the cascade tie: a Segmented run reads as one pill split by dividers. */
 export const inRun = style({ borderRadius: 0 })
 

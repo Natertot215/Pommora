@@ -29,7 +29,8 @@ import { IconChoice } from '../../Assets/IconChoice'
 import { type BandNode, memberDepth, nodeLabel, springsInto } from '../Bands/bandModel'
 import { bandRouting, bucketValueAt } from '../Bands/bandRouter'
 import { type BandView, bandSpec } from '../Bands/GroupBand'
-import { sameIds, tieOrderWith } from '../creationOrder'
+import { tieOrderWith } from '../creationOrder'
+import { sameItems } from '@pommora/uix/Utilities/same'
 import { useViewTileScope } from '../ViewTileScope'
 import type { ViewHostApi } from './useViewHost'
 import { type CreateFlight, useViewCreation } from './useViewCreation'
@@ -179,7 +180,7 @@ export function useViewInteractions(host: ViewHostApi, policy: ViewInteractionPo
     const sibBefore = bandIds.slice(at).find((id) => rowById.get(id)?.parentSetId === destSetId)
     const pages = dest.pages.map((p) => p.id)
     const order = nextOrder(pages, activeId, sibBefore ?? null)
-    return sameIds(order, pages) ? undefined : order
+    return sameItems(order, pages) ? undefined : order
   }
   const placeInView = (row: ViewRow, beforeId: string | null, landed?: Promise<boolean>): void => {
     if (pageOrder !== 'custom') return
@@ -223,7 +224,7 @@ export function useViewInteractions(host: ViewHostApi, policy: ViewInteractionPo
     }
     const current = paintOrder.flatMap((r) => (r.groupKey === bandKey ? [r.id] : []))
     const bandOrder = nextOrder(bandRowIds(bandKey, row.id), row.id, beforeId)
-    if (sameIds(bandOrder, current)) return
+    if (sameItems(bandOrder, current)) return
     placeInView(row, beforeId)
     reassignBySortRun(bandOrder, bandKey, row.id)
   }

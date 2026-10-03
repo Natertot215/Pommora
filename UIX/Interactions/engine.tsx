@@ -211,6 +211,7 @@ const translate = (x: number, y: number): string => `translate3d(${px(x)}, ${px(
 
 const keyOf = (spec: AnyLine, slot: unknown): unknown => (spec.slotKey ? spec.slotKey(slot) : slot)
 
+// Over the engine's width-and-height rects as stored, since the drop test runs on every drag move; `withinBox` reads edges.
 const within = (r: Rect | undefined, x: number, y: number, pad: number): boolean =>
   r !== undefined &&
   x >= r.left - pad &&

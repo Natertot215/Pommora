@@ -27,7 +27,7 @@ The Nexus’ structure is based on relating **Content** ↔ **Content** through 
 - **Dependencies:** They're all placed behind thin replacement-enabling seams so they’re swappable without touching callers. Version numbers are compatibility pins, not endorsements.
 - **The [Figma Library](https://www.figma.com/file/EBJXShPFA50yUwmBti452p)** is where the design presentation happens beforehand. `Dashboard/` builds the Pommora Dashboard, a Vercel-hosted site holding the line ledger, the codebase audit, and the Showcase (the design system). The commit hooks keep it current; don’t emphasize it in-chat.
 - **Nathan Role:** Nathan *doesn’t* understand much of the architectural design, codebase complexities, or the app's inner workings — his familiarity and focus are primarily on the vision, design, features, and interaction. Most behind-the-scenes design *isn’t* Nathan’s own decision; don’t assume he’s always on the same page or understands what you’re talking about regarding these topics.
-- **Branches:** `active` is the development branch, where every commit lands and is pushed; `main` is GitHub's default branch, regenerated from `active` on request without `.claude/`, `Dashboard/`, or the tests, so it's never committed to directly.
+- **Branches:** `active` is the development branch, where every commit is automatically pushed; `main` is GitHub's default branch, regenerated from `active` on request without `.claude/`, `Dashboard/`, or the tests, so it's never committed to directly.
 
 ### Hard Rules
 
@@ -41,10 +41,10 @@ The Nexus’ structure is based on relating **Content** ↔ **Content** through 
 
 #### Testing Conventions
 
-`Guidelines/Development-Environment.md` holds the full operational layer — launching, CDP, toolchain pins, and commit mechanics — and is required reading before driving the app.
+`Guidelines/Development-Environment.md` holds the full operational layer — launching, CDP, toolchain pins, and commit mechanics — and is required reading before driving the app. Don't treat Nathan's live instance as constraining.
 
 - **Gates:** `npm run typecheck` (the only type gate), `npm run test`, and `npm run lint`, all from the repo root; lint runs clean. Biome formats every TS/CSS/JSON write, so an Edit failing on whitespace means it reformatted — re-read and retry.
-- **Launch:** `env -u ELECTRON_RUN_AS_NODE POMMORA_DEBUG_PORT=9333 npm run dev` from the repo root; `POMMORA_DEBUG_PORT` arms CDP, and the `env -u` is mandatory.
+- **Launch:** `env -u ELECTRON_RUN_AS_NODE POMMORA_DEBUG_PORT=9333 npm run dev` from the repo root; `POMMORA_DEBUG_PORT` arms CDP, and the `env -u` is mandatory. 
 - **Test Nexus:** `~/Test` is pre-seeded with scratch collections, sets, pages, and contexts.
 - **Iteration Scratchpad:** `Core/Interface/Windows/IterationWindow.tsx`, opened by ⌘⇧T, is for rapid iteration of an otherwise-scoped asset.
 - **Native Context Menus Over CDP:** a real right-click through `Input.dispatchMouseEvent` (`mousePressed` then `mouseReleased` at the target's box) reaches main's listener, where a JS-dispatched `contextmenu` event doesn't; `osascript -e 'tell application "System Events" to key code 53'` dismisses it.

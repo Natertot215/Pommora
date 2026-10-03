@@ -117,12 +117,12 @@ describe('Scrollbar', () => {
     const { scroller, track } = mount(400, 2000)
     const frame = track.parentElement!
     frame.dispatchEvent(new PointerEvent('pointermove', { clientX: 0, clientY: 0 }))
-    frame.dispatchEvent(new PointerEvent('pointerleave'))
+    frame.dispatchEvent(new PointerEvent('pointerout', { relatedTarget: document.body }))
     expect(track.dataset.revealHost).toBe('off')
     window.dispatchEvent(new KeyboardEvent('keydown'))
     scroller.scrollTop = 300
     scroller.dispatchEvent(new Event('scroll'))
-    frame.dispatchEvent(new PointerEvent('pointerleave'))
+    frame.dispatchEvent(new PointerEvent('pointerout', { relatedTarget: document.body }))
     expect(track.dataset.revealHost).toBe('on')
   })
 

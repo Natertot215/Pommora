@@ -8,6 +8,7 @@ import { cx } from '@pommora/uix/Utilities/cx'
 import { Segments } from '@pommora/uix/Elements/Segments'
 import * as s from './notification-label.css'
 import { clamp } from '@pommora/uix/Utilities/clamp'
+import { trackNear, withinBox } from '@pommora/uix/Interactions/hoverReveal'
 
 const BASE_MS = ms(duration.base)
 const MAX_STEP_MS = 100
@@ -56,38 +57,20 @@ export function NotificationLabel(): React.JSX.Element {
     return () => clearTimeout(t)
   }, [note, shown])
 
-  // Proximity rather than hover: the pointer heading for the action reaches the drain before it does, so the label can't leave out from under a reach.
+  // Proximity rather than hover: the pointer heading for the action reaches the drain before it does, so the label can't leave out from under a reach. A press holds the drain where it stands.
   useEffect(() => {
-    if (!note || !shown) return
-    let rect: DOMRect | null = null
-    const measure = (): void => {
-      rect = hostRef.current?.getBoundingClientRect() ?? null
-    }
-    const settled = setTimeout(measure, BASE_MS)
-    const onMove = (e: PointerEvent): void => {
-      if (!rect) return
-      const r = s.NEAR_RADIUS
-      nearRef.current =
-        e.clientX > rect.left - r &&
-        e.clientX < rect.right + r &&
-        e.clientY > rect.top - r &&
-        e.clientY < rect.bottom + r
-    }
-    // A pointer that leaves the window stops reporting, and a `near` left standing would freeze the drain on a label nothing is reaching for.
-    const release = (): void => {
-      nearRef.current = false
-    }
-    document.addEventListener('pointermove', onMove)
-    document.addEventListener('pointerleave', release)
-    window.addEventListener('blur', release)
-    window.addEventListener('resize', measure)
-    return () => {
-      clearTimeout(settled)
-      document.removeEventListener('pointermove', onMove)
-      document.removeEventListener('pointerleave', release)
-      window.removeEventListener('blur', release)
-      window.removeEventListener('resize', measure)
-    }
+    const host = hostRef.current
+    if (!note || !shown || !host) return
+    return trackNear({
+      anchor: host,
+      measure: () => {
+        const box = host.getBoundingClientRect()
+        return (x, y) => withinBox(box, x, y, s.NEAR_RADIUS)
+      },
+      report: (at) => {
+        if (at !== 'held') nearRef.current = at === 'near'
+      },
+    }).stop
   }, [note, shown])
 
   // Held so the label paints its own exit instead of retracting empty.

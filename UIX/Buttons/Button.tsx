@@ -28,6 +28,7 @@ type ButtonProps = Look & {
   inRun?: boolean
   pressed?: boolean
   showSelection?: boolean
+  cursor?: 'pointer'
   ref?: Ref<HTMLButtonElement>
 } & Omit<ButtonHTMLAttributes<HTMLButtonElement>, 'type'>
 
@@ -45,6 +46,7 @@ export function Button({
   inRun,
   pressed,
   showSelection = true,
+  cursor,
   className,
   style,
   children,
@@ -66,6 +68,7 @@ export function Button({
         reveal && revealTarget,
         labeled && !icon && s.labelOnly,
         pressed && showSelection && s.pressed,
+        cursor === 'pointer' && s.pointer,
         className,
       )}
       style={{

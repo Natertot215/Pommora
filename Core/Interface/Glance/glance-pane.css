@@ -8,20 +8,6 @@
   top: 6px;
   right: 6px;
   z-index: 2;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  border: none;
-  border-radius: 2px;
-  background: transparent;
-  color: var(--label-tertiary);
-  cursor: pointer;
-  transition:
-    opacity var(--reveal-fade) var(--ease-base),
-    background var(--duration-fast) var(--ease-base);
-}
-.glance-lock:hover {
-  background: var(--state-hover);
 }
 
 /* The shield sits above the web guest in stacking order, so pointer events land on the host pane until `.is-lifted` fades it away to reveal the site. */

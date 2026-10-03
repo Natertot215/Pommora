@@ -8,7 +8,6 @@ import { overScrollEllipsis } from '../Interactions/OverScroll'
 import { onActivateClick } from '../Interactions/activate'
 
 const BAR_GLYPH = 12 // KNOB
-const CHECK = 12
 const INDENT_BASE = 8 // KNOB
 
 const rowLead = (depth: number): number | string =>
@@ -165,7 +164,7 @@ export function MenuItem({
         </span>
       )}
       {checked !== undefined && (
-        <Icon name="check" size={CHECK} className={cx(s.check, !checked && s.checkHidden)} />
+        <Icon name="check" size="control" className={cx(s.check, !checked && s.checkHidden)} />
       )}
       {overlay}
     </div>
@@ -289,6 +288,7 @@ export function FooterIconButton({
   disabled,
   pressed,
   quiet,
+  cursor,
   ref,
 }: {
   icon: string | React.JSX.Element
@@ -297,6 +297,7 @@ export function FooterIconButton({
   disabled?: boolean
   pressed?: boolean
   quiet?: boolean
+  cursor?: 'pointer'
   ref?: Ref<HTMLButtonElement>
 }): React.JSX.Element {
   return (
@@ -308,6 +309,7 @@ export function FooterIconButton({
       onClick={onClick}
       disabled={disabled}
       pressed={pressed}
+      cursor={cursor}
     >
       {typeof icon === 'string' ? <Icon name={icon} size="body" /> : icon}
     </Button>
@@ -332,6 +334,7 @@ export function FooterLockButton({
       pressed={locked}
       onClick={onToggle}
       disabled={disabled}
+      cursor="pointer"
     />
   )
 }

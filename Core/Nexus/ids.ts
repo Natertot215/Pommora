@@ -1,6 +1,7 @@
 import { decodeTime, monotonicFactory, ulid } from 'ulidx'
 import { markId } from './identityMark'
 import type { ContentKind } from './entities'
+import { pad } from '@pommora/uix/Utilities/pad'
 
 const nextUlid = monotonicFactory()
 
@@ -34,7 +35,7 @@ export function shardOf(id: string): string | null {
   if (t === null) return null
   const d = new Date(t)
   const year = d.getUTCFullYear()
-  return year > 9999 ? null : `${String(d.getUTCMonth() + 1).padStart(2, '0')}-${year}`
+  return year > 9999 ? null : `${pad(d.getUTCMonth() + 1)}-${year}`
 }
 
 export function mintPropertyId(): string {

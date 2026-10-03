@@ -1,10 +1,9 @@
 import { useEffect, useRef, useState } from 'react'
-import { duration, ms } from './motion'
+import { duration, exitWait, ms } from './motion'
 import { SETTLE_FALLBACK } from '../Interactions/shared'
 import { useLatest } from '../Utilities/stableApi'
 
 type Exit = keyof typeof duration
-export const exitWait = (exit: Exit): number => ms(duration[exit]) + 30
 
 export function useExitPresence(open: boolean, exit: Exit): { mounted: boolean; closing: boolean } {
   const [mounted, setMounted] = useState(open)

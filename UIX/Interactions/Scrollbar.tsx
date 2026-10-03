@@ -1,7 +1,7 @@
 import { useEffect, useId, useRef } from 'react'
 import { currentZoom } from '../Utilities/zoom'
 import { beginPointerGesture } from './gesture'
-import { type Box, withinReach } from './hoverReveal'
+import { trackNear, withinReach } from './hoverReveal'
 import { pill as pillClass, track as trackClass } from './scrollbar.css'
 
 const SCROLLBAR_MIN_OVERFLOW = 1.25 // KNOB — content over visible height before a bar shows
@@ -46,7 +46,6 @@ export function Scrollbar({
     let shown = false
     let scrolled = false
     let seen = scroller.scrollTop
-    let box: Box | null = null
     let linger = 0
     const show = (on: boolean): void => {
       if (on === shown) return
@@ -67,9 +66,19 @@ export function Scrollbar({
       show(false)
     }
 
+    const near = trackNear({
+      anchor: track,
+      scope: frame,
+      measure: () => {
+        const box = track.getBoundingClientRect()
+        return (x, y) => withinReach(box, REACH, x, y)
+      },
+      report: (at) => (at === 'near' ? wake() : leave()),
+    })
+
     // Observed once each: a re-observed target reports again and loops the measure.
     const measure = (): void => {
-      box = null
+      near.forget()
       for (const child of scroller.children)
         if (!watched.has(child)) {
           watched.add(child)
@@ -103,14 +112,6 @@ export function Scrollbar({
       if (!armed) return
       scrolled = true
       wake()
-    }
-    const onMove = (e: PointerEvent): void => {
-      box ??= track.getBoundingClientRect()
-      if (e.buttons === 0 && withinReach(box, REACH, e.clientX, e.clientY)) wake()
-      else leave()
-    }
-    const forget = (): void => {
-      box = null
     }
     const onPress = (e: PointerEvent): void => {
       let from = 0
@@ -146,11 +147,6 @@ export function Scrollbar({
     io.observe(scroller)
     disarm()
     scroller.addEventListener('scroll', onScroll, { passive: true })
-    frame.addEventListener('pointermove', onMove, { passive: true })
-    frame.addEventListener('pointerenter', forget)
-    frame.addEventListener('pointerleave', leave)
-    // A pane's slide transitions on an ancestor, out of the frame's bubbling reach.
-    document.addEventListener('transitionend', forget, true)
     pill.addEventListener('pointerdown', onPress)
     return () => {
       ro.disconnect()
@@ -159,10 +155,7 @@ export function Scrollbar({
       window.clearTimeout(linger)
       for (const t of ARMING) window.removeEventListener(t, arm, true)
       scroller.removeEventListener('scroll', onScroll)
-      frame.removeEventListener('pointermove', onMove)
-      frame.removeEventListener('pointerenter', forget)
-      frame.removeEventListener('pointerleave', leave)
-      document.removeEventListener('transitionend', forget, true)
+      near.stop()
       pill.removeEventListener('pointerdown', onPress)
       scroller.style.removeProperty('anchor-name')
       if (!timeline) {

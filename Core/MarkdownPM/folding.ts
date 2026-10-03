@@ -8,7 +8,7 @@ import {
   type Text,
   type Range,
 } from '@codemirror/state'
-import { duration, ms } from '@pommora/uix/Animations/motion'
+import { exitWait } from '@pommora/uix/Animations/motion'
 import { docScan, perDoc } from './docCache'
 import { headingSections } from './Engine/headingScan'
 import { createBlockDragGesture } from './Gestures/blockDrag'
@@ -17,7 +17,7 @@ import { editorHost, mirrored } from './api'
 import { WEB_GUEST_CLASS } from '../Web/guest'
 
 /** The reveal's beat plus slack for the frame that draws its final height — a travel timed earlier lands on the collapsed document. */
-export const FOLD_SETTLE_MS = ms(duration.fast) + 30
+export const FOLD_SETTLE_MS = exitWait('fast')
 
 /** Carries the loaded keys on the mount-time re-apply, which the persist plugin records as saved rather than echoing back to disk. */
 const initialFoldAnnotation = Annotation.define<string[]>()

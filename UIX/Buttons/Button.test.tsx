@@ -37,6 +37,13 @@ describe('Button', () => {
     expect(b.querySelector('svg')).toBeNull()
     expect(b.className).toContain(s.labelOnly)
   })
+
+  it('takes the pointing hand only when asked', () => {
+    act(() => root.render(<Button icon="lock" />))
+    expect(host.querySelector('button')!.className).not.toContain(s.pointer)
+    act(() => root.render(<Button icon="lock" cursor="pointer" />))
+    expect(host.querySelector('button')!.className).toContain(s.pointer)
+  })
 })
 
 describe('Segmented', () => {

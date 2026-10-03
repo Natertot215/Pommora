@@ -7,6 +7,7 @@ import {
   THUMBNAILS_SEGMENT,
   TRASH_DIR,
 } from './nexusPaths'
+import { sameItems } from '@pommora/uix/Utilities/same'
 
 /** None is content, and a journal's churn must never cost a walk. */
 const STORE_FILE = /\.db(-wal|-shm)?$/
@@ -85,11 +86,7 @@ export const reachingExcluded = (scope: WatchScope): WatchScope => ({ ...scope, 
 
 /** Both the compiled matchers and chokidar's ignore filter capture the scope at arm time, so a change to either half is structural. */
 export function sameScope(a: WatchScope, b: WatchScope): boolean {
-  return (
-    a.assetDir === b.assetDir &&
-    a.excluded.length === b.excluded.length &&
-    a.excluded.every((v, i) => v === b.excluded[i])
-  )
+  return a.assetDir === b.assetDir && sameItems(a.excluded, b.excluded)
 }
 
 /** What `segs` holds below `dirSegs`, compared case-folded; `dirSegs` arrive already folded, so a matcher folds its prefixes once. Null when `segs` isn't under it. */

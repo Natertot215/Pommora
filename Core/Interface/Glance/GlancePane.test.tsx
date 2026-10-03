@@ -207,9 +207,11 @@ describe('the live-pane shown flag (ghost suppression, Task 8)', () => {
 })
 
 describe('the leave grace', () => {
-  const leaveMove = (): void =>
+  const leaveMove = (buttons = 0): void =>
     act(() => {
-      window.dispatchEvent(new PointerEvent('pointermove', { clientX: 500, clientY: 500 }))
+      document.body.dispatchEvent(
+        new PointerEvent('pointermove', { clientX: 500, clientY: 500, buttons, bubbles: true }),
+      )
     })
 
   const setPersistence = (v: 'off' | '5s' | 'always'): void =>
@@ -229,6 +231,58 @@ describe('the leave grace', () => {
       act(() => vi.advanceTimersByTime(4999))
       expect(paneOpen()).toBe(true)
       act(() => vi.advanceTimersByTime(1))
+      act(() => vi.advanceTimersByTime(1000))
+      expect(paneOpen()).toBe(false)
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+
+  it('a held button anywhere holds the pane, and the grace runs from the release', () => {
+    setPersistence('5s')
+    present(link())
+    vi.useFakeTimers()
+    try {
+      leaveMove()
+      act(() => vi.advanceTimersByTime(4000))
+      leaveMove(1)
+      act(() => vi.advanceTimersByTime(10_000))
+      expect(paneOpen()).toBe(true)
+      leaveMove()
+      act(() => vi.advanceTimersByTime(4999))
+      expect(paneOpen()).toBe(true)
+      act(() => vi.advanceTimersByTime(1))
+      act(() => vi.advanceTimersByTime(1000))
+      expect(paneOpen()).toBe(false)
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+
+  it('a pointer leaving the window starts no grace, since a site guest swallows its moves', () => {
+    setPersistence('5s')
+    present(link())
+    vi.useFakeTimers()
+    try {
+      act(() => {
+        document.body.dispatchEvent(
+          new PointerEvent('pointerout', { relatedTarget: null, bubbles: true }),
+        )
+      })
+      act(() => vi.advanceTimersByTime(10_000))
+      expect(paneOpen()).toBe(true)
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+
+  it('a move after its link left the page closes the pane', () => {
+    const el = link()
+    present(el)
+    vi.useFakeTimers()
+    try {
+      el.remove()
+      leaveMove()
       act(() => vi.advanceTimersByTime(1000))
       expect(paneOpen()).toBe(false)
     } finally {
