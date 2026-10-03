@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import type { PropertyDefinition } from './properties'
 import {
+  applyValueAtRoot,
   decodeValue,
   encodeValue,
   isBlankValue,
@@ -306,5 +307,14 @@ describe('reconcilePropertyValue — a frozen copy names only what still exists'
       kind: 'link',
       value: '[[Gone]]',
     })
+  })
+})
+
+describe('applyValueAtRoot', () => {
+  it('writes and clears the spelling the root holds', () => {
+    const status = { ...statusDef, name: 'Status' }
+    const done = { kind: 'select', value: 'Done' } as const
+    expect(applyValueAtRoot({ status: 'Open' }, status, done)).toEqual({ status: ['Done'] })
+    expect(applyValueAtRoot({ status: 'Open' }, status, null)).toEqual({})
   })
 })

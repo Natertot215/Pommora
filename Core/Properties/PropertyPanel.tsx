@@ -57,6 +57,8 @@ import { fetchPageDetail, readPageDetail } from '../Session/pageDetailCache'
 import { popMenu } from '../Actions/menuActions'
 import { linkValueMenuTarget, showConnectionMenu } from '../Interface/Menus/connectionMenuActions'
 import * as s from './property-panel.css'
+import { heldKey } from '../Paths/caseFold'
+import { normalizeTitle } from '../Connections/connections'
 
 type Editing = { id: string; mode: 'picker' | 'editor' | 'rename' } | null
 type Field = PaneTarget & { def: PropertyDefinition | null }
@@ -191,15 +193,16 @@ export function PropertyPanel({
   const schemaFields: Field[] = schemaTargets(schema, () => true)
   const held = (f: Field): boolean =>
     f.def
-      ? (fm as Record<string, unknown> | null)?.[f.def.name] !== undefined
+      ? fm !== null && heldKey(fm, f.def.name) !== undefined
       : (contextValues?.[f.id]?.length ?? 0) > 0
   const isShown = (f: Field): boolean => held(f) || revealed.has(f.id)
   const spaceOrder = useMemo(() => readSpaceRowOrder(spaceNode?.values), [spaceNode])
   const nameOf = (f: Field): string => f.def?.name ?? f.label
+  const orderKey = (f: Field): string => normalizeTitle(nameOf(f))
   const nexusWide = resolveRowOrder(contextFields, (f) => f.id, tree?.config.order.contexts)
   const fields: Record<GroupKey, Field[]> = {
-    contexts: resolveRowOrder(nexusWide, nameOf, spaceOrder.contexts),
-    properties: resolveRowOrder(schemaFields, nameOf, spaceOrder.properties),
+    contexts: resolveRowOrder(nexusWide, orderKey, spaceOrder.contexts.map(normalizeTitle)),
+    properties: resolveRowOrder(schemaFields, orderKey, spaceOrder.properties.map(normalizeTitle)),
   }
   const shown: Record<GroupKey, Field[]> = {
     contexts: fields.contexts.filter(isShown),

@@ -102,18 +102,18 @@ const STATUS: PropertyDefinition = {
   select_options: [{ value: 'Active' }, { value: 'Done' }],
 }
 
-const spacesTree = (): NexusTree => {
+const spacesTree = (aValues: Record<string, unknown> = { Status: 'Done' }): NexusTree => {
   const tree = linkedSpacesTree({
-    aValues: { Status: 'Done' },
+    aValues,
     aContextValues: { g2: ['b1'] },
   })
   tree.config.registry = [STATUS]
   return tree
 }
 
-const spacesVisible = (rules: FilterGroup): string[] => {
+const spacesVisible = (rules: FilterGroup, aValues?: Record<string, unknown>): string[] => {
   const visible = matrixVisible(
-    matrixTree(spacesTree()),
+    matrixTree(spacesTree(aValues)),
     {},
     {
       ...DEFAULT_MATRIX_CONFIG.filter,
@@ -132,6 +132,11 @@ describe('matrixVisible over Spaces', () => {
       'b1',
     ])
     expect(spacesVisible(all({ property_id: 'prop_status', op: 'is_not_empty' }))).toEqual(['a1'])
+  })
+
+  it('answers a rule on a property for a Space holding another spelling of its name', () => {
+    const rule = all({ property_id: 'prop_status', op: 'is', value: 'Active' })
+    expect(spacesVisible(rule, { status: 'Done' })).toEqual(['b1'])
   })
 
   it('keeps a Space under its own Context and the Spaces linked to it', () => {

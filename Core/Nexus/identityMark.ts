@@ -2,8 +2,6 @@ import { CONTENT_KINDS, ENTITIES, type ContentKind } from './entities'
 
 export const ID_KEY = 'ID'
 
-export const RETIRED_ID_KEYS = ['PageID', 'TaskID', 'EventID'] as const
-
 const MARK_INDEX = 10
 
 const MARK_KIND = new Map<string, ContentKind>(

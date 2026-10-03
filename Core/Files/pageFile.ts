@@ -15,6 +15,7 @@ import { asString } from '../Nexus/coerce'
 import { fail, fault, ok, type Result } from '../Contract/result'
 import type { PageDetail } from '../Pages/pageDetail'
 import { machine } from '../Platform/machine'
+import { spellings } from '../Paths/caseFold'
 
 interface PageEnvelope {
   frontmatter: string
@@ -101,8 +102,17 @@ function mergeInto(
   modeledKeys: readonly string[],
 ): string {
   if (mergeable(doc)) {
+    const written = (key: string): boolean => key in modeled && modeled[key] !== undefined
+    const items = isMap(doc.contents) ? doc.contents.items : []
+    const dropped = modeledKeys.filter((k) => !written(k) && doc.has(k))
+    // A key written beside a dropped spelling of itself takes that spelling's place.
+    for (const key of modeledKeys.filter((k) => written(k) && !doc.has(k))) {
+      const was = spellings(dropped, key)[0]
+      const pair = items.find((i) => String(i.key) === was)
+      if (pair) (pair.key as { value: string }).value = key
+    }
     for (const key of modeledKeys) {
-      if (key in modeled && modeled[key] !== undefined) doc.set(key, modeled[key])
+      if (written(key)) doc.set(key, modeled[key])
       else if (doc.has(key)) doc.delete(key)
     }
     const out = serialized(doc)

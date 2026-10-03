@@ -139,6 +139,12 @@ describe('PropertyPanel', () => {
     expect(text()).not.toContain('Note')
   })
 
+  it('a property held under another spelling shows its row', async () => {
+    cachePageDetail(detail({ path: 'Col/Page.md', frontmatter: { stage: 'Alpha' } }))
+    await renderPanel(<PropertyPanel subject={PAGE} host="side-pane" />)
+    expect(text()).toContain('Stage')
+  })
+
   it('a row removed through its menu disappears', async () => {
     ask = vi.fn(async () => ({ ok: true, value: 'value:remove' }))
     ;(window as unknown as { nexus: unknown }).nexus = {
@@ -250,6 +256,12 @@ describe('PropertyPanel', () => {
     expect(read).toContain('Note')
     expect(read.indexOf('Note')).toBeLessThan(read.indexOf('Stage'))
     expect(read.indexOf('Stage')).toBeLessThan(read.indexOf('Rank'))
+  })
+
+  it('a Space’s $order lists a row under any spelling of its name', async () => {
+    setTree({ Stage: 'Alpha', Rank: 7, $order: { properties: ['rank'] } })
+    await renderPanel(<PropertyPanel subject={SPACE} host="dropdown" />)
+    expect(text().indexOf('Rank')).toBeLessThan(text().indexOf('Stage'))
   })
 })
 

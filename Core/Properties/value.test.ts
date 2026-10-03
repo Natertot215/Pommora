@@ -112,6 +112,25 @@ describe('resolveFieldValue', () => {
     expect(rfv(row, 'prop_num')).toEqual({ kind: 'number', value: 42 })
   })
 
+  it('reads a property under any spelling of its name, the exact one first, else the first held', () => {
+    const held = (fm: Record<string, unknown>): ViewRow => ({
+      ...row,
+      frontmatter: { [ID_KEY]: '01ROW', ...fm },
+    })
+    expect(rfv(held({ status: 'in_progress' }), 'prop_status')).toEqual({
+      kind: 'select',
+      value: 'in_progress',
+    })
+    expect(rfv(held({ status: 'other', Status: 'in_progress' }), 'prop_status')).toEqual({
+      kind: 'select',
+      value: 'in_progress',
+    })
+    expect(rfv(held({ STATUS: 'in_progress', status: 'other' }), 'prop_status')).toEqual({
+      kind: 'select',
+      value: 'in_progress',
+    })
+  })
+
   it('returns null for an absent property', () => {
     expect(rfv(row, 'prop_absent')).toEqual({ kind: 'null' })
   })

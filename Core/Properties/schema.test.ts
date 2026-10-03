@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { validateName, validateDefinition, validateOptionValues } from './schema'
-import type { PropertyDefinition } from './properties'
+import { KEY_REFUSAL, type PropertyDefinition } from './properties'
 
 const def = (
   over: Partial<PropertyDefinition> & {
@@ -19,6 +19,30 @@ describe('validateName', () => {
 
   it('allows the same name when it is the excluded def (rename no-op)', () => {
     expect(validateName('Stage', existing, 'p1').ok).toBe(true)
+  })
+
+  const refusal = (name: string): string | null => {
+    const r = validateName(name, existing)
+    return r.ok ? null : r.error.message
+  }
+
+  it('refuses an empty name', () => {
+    expect(refusal('')).toBe(KEY_REFUSAL.empty)
+  })
+
+  it('refuses the $ prefix and the Context sigil', () => {
+    for (const name of ['$role', '<Foo', '$icon'])
+      expect(refusal(name)).toBe(KEY_REFUSAL.reservedPrefix)
+  })
+
+  it('refuses a key Pommora manages in any casing', () => {
+    for (const name of ['id', 'Id', 'BANNER', 'Heading_Icon_Hidden'])
+      expect(refusal(name)).toBe(KEY_REFUSAL.reserved(name))
+  })
+
+  it('takes ordinary names, the retired id and stamp names among them', () => {
+    for (const name of ['Budget ($)', 'icon', 'PageID', 'modified_at'])
+      expect(refusal(name)).toBeNull()
   })
 })
 

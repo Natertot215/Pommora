@@ -3,10 +3,23 @@
 
 const titleCollator = new Intl.Collator('en', { sensitivity: 'accent' })
 
-/** The locale-independent comparison key a path segment or title matches by. Lowercase precedes NFC so a title's stored membership key is byte-identical to what the index already holds. */
+/** The locale-independent comparison key a path segment, title, or frontmatter key matches by. Lowercase precedes NFC so a title's stored membership key is byte-identical to what the index already holds. */
 export function foldKey(text: string): string {
   return text.toLowerCase().normalize('NFC')
 }
+
+/** Every spelling `names` holds of `name`: its exact spelling first, then each other that folds to it, in order. */
+export function spellings(names: readonly string[], name: string): string[] {
+  const fold = foldKey(name)
+  const others = names.filter((n) => n !== name && foldKey(n) === fold)
+  return names.includes(name) ? [name, ...others] : others
+}
+
+export const heldKeys = (root: object, name: string): string[] => spellings(Object.keys(root), name)
+
+/** The key `root` reads `name` under; an exact spelling answers before anything folds. */
+export const heldKey = (root: object, name: string): string | undefined =>
+  Object.hasOwn(root, name) ? name : heldKeys(root, name)[0]
 
 /** A host-independent ordering for user-visible titles; accent-sensitive and case-insensitive, matching the value sort. */
 export function compareTitles(a: string, b: string): number {

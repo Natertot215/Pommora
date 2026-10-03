@@ -9,6 +9,7 @@ import {
   STAMP_TYPE,
 } from './properties'
 import { decodeValue, NULL_VALUE, type PropertyValue } from './propertyValue'
+import { heldValue } from './pageValue'
 import { parseConnectionText } from '../Connections/connections'
 
 export function declaredType(
@@ -54,7 +55,7 @@ export function resolveFieldValue(
   }
   let v = m.get(def)
   if (!v) {
-    v = decodeValue(def, (row.frontmatter as Record<string, unknown>)[def.name])
+    v = decodeValue(def, heldValue(row.frontmatter as Record<string, unknown>, def.name, false))
     m.set(def, v)
   }
   return v

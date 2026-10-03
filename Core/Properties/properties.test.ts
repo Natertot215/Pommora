@@ -5,7 +5,6 @@ import {
   propertyDefinition,
   propertyType,
   isReservedPropertyId,
-  invalidPropertyName,
   defaultStatusSeed,
   groupable,
   optionsOf,
@@ -161,24 +160,6 @@ describe('reserved property ids', () => {
     expect(isReservedPropertyId('_modified_at')).toBe(true)
     expect(isReservedPropertyId('prop_01H')).toBe(false)
     expect(isReservedPropertyId('stage')).toBe(false)
-  })
-})
-
-describe('invalidPropertyName', () => {
-  it('refuses empty, the $ prefix, the Context sigil, and the keys Pommora manages', () => {
-    expect(invalidPropertyName('')).toBe(true)
-    expect(invalidPropertyName('$role')).toBe(true)
-    expect(invalidPropertyName('<Foo')).toBe(true)
-    expect(invalidPropertyName('modified_at')).toBe(true)
-    expect(invalidPropertyName(' PageID ')).toBe(true)
-    expect(invalidPropertyName('id')).toBe(true)
-    expect(invalidPropertyName('heading_icon_hidden')).toBe(true)
-    expect(invalidPropertyName('pageid')).toBe(false)
-    expect(invalidPropertyName('Budget ($)')).toBe(false)
-  })
-
-  it('takes icon as an ordinary name', () => {
-    expect(invalidPropertyName('icon')).toBe(false)
   })
 })
 

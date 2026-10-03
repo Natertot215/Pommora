@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { compareTitles, matchScore, rankMatches } from './caseFold'
+import { compareTitles, heldKey, matchScore, rankMatches, spellings } from './caseFold'
 
 const titled = (...titles: string[]) => titles.map((title) => ({ title }))
 const scoreBy = (q: string) => (item: { title: string }) => matchScore(item.title.toLowerCase(), q)
@@ -25,5 +25,21 @@ describe('rankMatches', () => {
     expect(rankMatches(titled('Alpha', 'Beta'), scoreBy('alp')).map((i) => i.title)).toEqual([
       'Alpha',
     ])
+  })
+})
+
+describe('spellings', () => {
+  it('puts the exact spelling first, then every other that folds to it, in order', () => {
+    expect(spellings(['tags', 'Tags', 'TAGS'], 'Tags')).toEqual(['Tags', 'tags', 'TAGS'])
+    expect(spellings(['tags', 'TAGS'], 'Tags')).toEqual(['tags', 'TAGS'])
+    expect(spellings(['other'], 'Tags')).toEqual([])
+  })
+})
+
+describe('heldKey', () => {
+  it('answers the exact spelling before anything folds, else the first that folds', () => {
+    expect(heldKey({ tags: 1, Tags: 2 }, 'Tags')).toBe('Tags')
+    expect(heldKey({ STATUS: 1, status: 2 }, 'Status')).toBe('STATUS')
+    expect(heldKey({}, 'Status')).toBeUndefined()
   })
 })
