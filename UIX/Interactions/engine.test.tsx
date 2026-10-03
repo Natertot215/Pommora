@@ -796,6 +796,14 @@ describe('the drag engine across a family', () => {
     expect(onMove).toHaveBeenCalledExactlyOnceWith('a1', null)
   })
 
+  it('holds an item with nowhere else to go inside its own zone', async () => {
+    extra = { A: { carry: [carries(BOARD, () => null)] } }
+    await mount()
+    await dragHold('a1', 100, 900)
+    expect(item('a1').style.transform).toMatch(/,\s*100(\.0)?px/)
+    await release(100, 900)
+  })
+
   it('returns to its slot when released over nothing', async () => {
     await dropAt('a1', 300, 250)
     expect(onMove).not.toHaveBeenCalled()
