@@ -1,3 +1,23 @@
+export type Emitter<T = void> = {
+  emit: (value: T) => void
+  subscribe: (fn: (value: T) => void) => () => void
+}
+
+export function emitter<T = void>(): Emitter<T> {
+  const subs = new Set<(value: T) => void>()
+  return {
+    emit: (value) => {
+      for (const fn of subs) fn(value)
+    },
+    subscribe: (fn) => {
+      subs.add(fn)
+      return () => {
+        subs.delete(fn)
+      }
+    },
+  }
+}
+
 export type Channel<T> = {
   get: () => T
   set: (next: T) => void
@@ -6,19 +26,14 @@ export type Channel<T> = {
 
 export function channel<T>(initial: T): Channel<T> {
   let value = initial
-  const subs = new Set<() => void>()
+  const changed = emitter()
   return {
     get: () => value,
     set: (next) => {
       if (Object.is(next, value)) return
       value = next
-      for (const fn of subs) fn()
+      changed.emit()
     },
-    subscribe: (fn) => {
-      subs.add(fn)
-      return () => {
-        subs.delete(fn)
-      }
-    },
+    subscribe: changed.subscribe,
   }
 }

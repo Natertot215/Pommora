@@ -27,6 +27,7 @@ import type { Slice } from './sessionState'
 import { resetUndo } from './undo'
 import { dialer } from '../Platform/dialer'
 import { withOwnSettings } from './configSlice'
+import { emitter } from '@pommora/uix/Utilities/subscribable'
 
 export interface NexusSlice {
   status: 'idle' | 'loading' | 'ready' | 'error' | 'empty'
@@ -35,9 +36,6 @@ export interface NexusSlice {
   error?: PommoraError
   syncStatus: SyncStatus | null
   headings: Record<string, string[]>
-  /** Bumped by every delete, restore, and empty that lands, so an open Trash pane lists again. */
-  trashRevision: number
-  bumpTrashRevision: () => void
   /** Opens the bound Nexus into the window: its device preferences, its tree, then what the window restores from it. */
   load: () => Promise<void>
   /** Re-reads the bound Nexus's tree, for a root that moved under a Nexus the window already holds. */
@@ -55,6 +53,9 @@ export interface NexusSlice {
 export async function flushAllSaves(): Promise<void> {
   await Promise.all([flushAllPageSaves(), flushAllTileDocs(), flushAllSessionSaves()])
 }
+
+/** A delete, restore, or emptied bundle landed, so an open Trash list reads again. */
+export const trashChanged = emitter()
 
 export const createNexusSlice: Slice<NexusSlice> = (set, get) => {
   const resetNexusSession = (): void => {
@@ -142,8 +143,6 @@ export const createNexusSlice: Slice<NexusSlice> = (set, get) => {
     error: undefined,
     syncStatus: null,
     headings: {},
-    trashRevision: 0,
-    bumpTrashRevision: () => set((s) => ({ trashRevision: s.trashRevision + 1 })),
 
     applySyncStatus: (status) => set({ syncStatus: status }),
 
@@ -247,7 +246,7 @@ export const createNexusSlice: Slice<NexusSlice> = (set, get) => {
         else notifyReport(cascade.warning, true)
       }
       if (req.op === 'delete' || req.op === 'restore' || req.op === 'emptyBundle')
-        get().bumpTrashRevision()
+        trashChanged.emit()
       // The host pushed what this write changed before it replied, so the tree already holds it.
       get().patchPagesFor(req)
       return res.value

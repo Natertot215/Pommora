@@ -90,6 +90,7 @@ import { fileTypeGlyphs } from './fileTypes'
 import { ICON_NAMES } from './iconNames'
 import { size as sizeTokens, type IconSize } from '../Theme/theme-vars.css'
 import { cx } from '../Utilities/cx'
+import { channel } from '../Utilities/subscribable'
 import * as sym from './symbols.css'
 
 /** This registry IS the roster: to add an icon, import it above and add a line here. */
@@ -196,25 +197,20 @@ export const iconNameOr = (value: unknown, fallback: IconName): string =>
 export type { IconNode } from 'lucide-react'
 
 type FullIconSet = typeof import('./allSymbols')
-let fullSet: FullIconSet | null = null
+const fullSet = channel<FullIconSet | null>(null)
 let pending: Promise<FullIconSet> | null = null
-const setListeners = new Set<() => void>()
 
 export const loadFullIconSet = (): Promise<FullIconSet> => {
   pending ??= import('./allSymbols').then((m) => {
-    fullSet = m
-    for (const notify of setListeners) notify()
+    fullSet.set(m)
     return m
   })
   return pending
 }
 
-export const subscribeFullIconSet = (notify: () => void): (() => void) => {
-  setListeners.add(notify)
-  return () => setListeners.delete(notify)
-}
+export const subscribeFullIconSet = fullSet.subscribe
 
-export const fullIconSet = (): FullIconSet | null => fullSet
+export const fullIconSet = fullSet.get
 
 const iconSizeVars = sizeTokens.icon
 const isIconSize = (v: unknown): v is IconSize => typeof v === 'string' && v in iconSizeVars

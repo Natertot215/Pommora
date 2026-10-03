@@ -33,7 +33,7 @@ import {
   readWatchScope,
 } from '@pommora/core/Settings/settings'
 import { SYSTEM, WINDOW_BG } from '@pommora/uix/Theme/colors'
-import { installAppMenu } from './Actions/appMenu'
+import { installAppMenu, nativeEdit } from './Actions/appMenu'
 import { askEditorMenu, installEditorContextMenu } from './Actions/editorMenu'
 import { setCmdModifier } from '@pommora/uix/Interactions/chords'
 import { DEFAULT_COMMANDS } from '@pommora/core/Actions/commands'
@@ -347,6 +347,9 @@ const tells: TellHandlers = {
     if (!win) return
     push(win, 'win:fullscreen', win.isFullScreen())
     push(win, 'theme:systemAccent', systemAccent())
+  },
+  'edit:native': (win, edit) => {
+    if (win) nativeEdit(win.webContents, edit)
   },
   'web:wheel': (_win, ...args) => {
     if (args.length === 5 && args.every(isFiniteNumber))

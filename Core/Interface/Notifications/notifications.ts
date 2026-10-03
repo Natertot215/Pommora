@@ -6,6 +6,7 @@ import type { CascadeReport } from '../../Nexus/cascade'
 import type { Unreadable } from '../../Nexus/tree'
 import { titleFromPath } from '../../Paths/posix'
 import { inTurns } from '../../Platform/inTurns'
+import { channel } from '@pommora/uix/Utilities/subscribable'
 
 export interface Notification {
   message: string
@@ -16,33 +17,21 @@ export interface Notification {
 
 type Posted = Notification & { id: number }
 
-let shown: Posted | null = null
+const shown = channel<Posted | null>(null)
 let seq = 0
-const listeners = new Set<() => void>()
 
-const show = (next: Posted | null): void => {
-  shown = next
-  for (const fn of listeners) fn()
-}
+export const currentNotification = shown.get
 
-function subscribeNotification(fn: () => void): () => void {
-  listeners.add(fn)
-  return () => listeners.delete(fn)
-}
-
-export const currentNotification = (): Posted | null => shown
-
-export const useNotification = (): Posted | null =>
-  useSyncExternalStore(subscribeNotification, currentNotification)
+export const useNotification = (): Posted | null => useSyncExternalStore(shown.subscribe, shown.get)
 
 export function dismissNotification(id: number): void {
-  if (shown?.id === id) show(null)
+  if (shown.get()?.id === id) shown.set(null)
 }
 
-export const clearNotification = (): void => show(null)
+export const clearNotification = (): void => shown.set(null)
 
 const post = (n: Notification): number => {
-  show({ ...n, id: ++seq })
+  shown.set({ ...n, id: ++seq })
   return seq
 }
 

@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { describe, it, expect, afterEach } from 'vitest'
+import { describe, it, expect, afterEach, vi } from 'vitest'
 import { createElement, act } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
 import { MarkdownTable } from './MarkdownTable'
@@ -46,12 +46,12 @@ const props = {
 let container: HTMLDivElement
 let root: Root
 
-async function mount(): Promise<void> {
+async function mount(overrides: Partial<typeof props> = {}): Promise<void> {
   container = document.createElement('div')
   document.body.appendChild(container)
   root = createRoot(container)
   await act(async () => {
-    root.render(createElement(MarkdownTable, props))
+    root.render(createElement(MarkdownTable, { ...props, ...overrides }))
   })
 }
 
@@ -136,5 +136,21 @@ describe('table single-live-cell navigation', () => {
       document.body.dispatchEvent(new MouseEvent('pointerdown', { bubbles: true, button: 0 }))
     })
     expect(editors().length).toBe(0)
+  })
+})
+
+describe('a live cell under a menu’s native Undo and Redo', () => {
+  it('forwards each to the page history', async () => {
+    const onUndo = vi.fn()
+    const onRedo = vi.fn()
+    await mount({ onUndo, onRedo })
+    await clickCell(1, 0)
+    const content = container.querySelector('.cm-editor .cm-content')!
+    for (const inputType of ['historyUndo', 'historyRedo'])
+      content.dispatchEvent(
+        new InputEvent('beforeinput', { inputType, bubbles: true, cancelable: true }),
+      )
+    expect(onUndo).toHaveBeenCalledOnce()
+    expect(onRedo).toHaveBeenCalledOnce()
   })
 })

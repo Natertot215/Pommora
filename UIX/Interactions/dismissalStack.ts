@@ -1,6 +1,7 @@
 import { type RefObject, useEffect, useRef, useSyncExternalStore } from 'react'
 import { suppressReleaseClick } from './shared'
 import { useLatest } from '../Utilities/stableApi'
+import { emitter } from '../Utilities/subscribable'
 
 type DismissalEntry = {
   layer: () => Element | null
@@ -15,10 +16,7 @@ type DismissalEntry = {
 type Live = { entry: DismissalEntry; closing: boolean }
 
 let entries: Live[] = []
-const subscribers = new Set<() => void>()
-const notify = (): void => {
-  for (const fn of subscribers) fn()
-}
+const changed = emitter()
 
 let windows: HTMLElement[] = []
 
@@ -108,7 +106,7 @@ export function pushDismissal(entry: DismissalEntry): DismissalHandle {
   const live: Live = { entry, closing: false }
   if (entries.length === 0) listen(true)
   entries = [...entries, live]
-  notify()
+  changed.emit()
   return {
     setClosing: (closing) => {
       live.closing = closing
@@ -118,14 +116,9 @@ export function pushDismissal(entry: DismissalEntry): DismissalHandle {
       if (!entries.includes(live)) return
       entries = entries.filter((e) => e !== live)
       if (entries.length === 0) listen(false)
-      notify()
+      changed.emit()
     },
   }
-}
-
-const subscribe = (fn: () => void): (() => void) => {
-  subscribers.add(fn)
-  return () => subscribers.delete(fn)
 }
 
 export function useDismissal(active: boolean, closing: boolean, entry: DismissalEntry): boolean {
@@ -155,7 +148,7 @@ export function useDismissal(active: boolean, closing: boolean, entry: Dismissal
   useEffect(() => {
     handle.current?.setClosing(closing)
   }, [closing])
-  return useSyncExternalStore(subscribe, () => handle.current?.shields() === true)
+  return useSyncExternalStore(changed.subscribe, () => handle.current?.shields() === true)
 }
 
 export function useEscape(

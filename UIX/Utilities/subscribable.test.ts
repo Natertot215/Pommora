@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
-import { channel } from './subscribable'
+import { channel, emitter } from './subscribable'
 
 describe('channel', () => {
   it('notifies on a change and not on an Object.is-equal set', () => {
@@ -20,5 +20,18 @@ describe('channel', () => {
     off()
     c.set(2)
     expect(fn).not.toHaveBeenCalled()
+  })
+})
+
+describe('emitter', () => {
+  it('hands every emit to each subscriber until it unsubscribes', () => {
+    const e = emitter<number>()
+    const fn = vi.fn()
+    const off = e.subscribe(fn)
+    e.emit(1)
+    e.emit(1)
+    off()
+    e.emit(2)
+    expect(fn.mock.calls).toEqual([[1], [1]])
   })
 })

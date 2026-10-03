@@ -1,4 +1,5 @@
 import { duration, ms } from '@pommora/uix/Animations/motion'
+import { emitter } from '@pommora/uix/Utilities/subscribable'
 import { useSession } from '../Session/store'
 import type { Forces } from './Engine/forces'
 import {
@@ -38,8 +39,6 @@ import type { Positions } from './matrixLayout'
 const HIT_SLACK = 4
 export const FADE_MS = ms(duration.base)
 
-type Listener = () => void
-
 export interface Surface {
   visible: () => boolean
 }
@@ -75,7 +74,8 @@ class MatrixRuntime {
   arrivals = new Map<string, number>()
   private surfaces = new Set<Surface>()
   private stages = new Map<Surface, Stage>()
-  private listeners = new Set<Listener>()
+  private changes = emitter()
+  readonly subscribe = this.changes.subscribe
   private raf = 0
   private built: Built | null = null
   private wasAwake = false
@@ -100,14 +100,6 @@ class MatrixRuntime {
         this.clear()
         useSession.getState().unloadMatrix()
       } else if (this.sim?.awake && !this.visible) this.settled()
-    }
-  }
-
-  // An arrow property, so `useSyncExternalStore(matrixRuntime.subscribe, …)` keeps `this`.
-  subscribe = (fn: Listener): (() => void) => {
-    this.listeners.add(fn)
-    return () => {
-      this.listeners.delete(fn)
     }
   }
 
@@ -276,7 +268,7 @@ class MatrixRuntime {
       this.ghosts = this.ghosts.filter((g) => g.born > cutoff)
       for (const [id, born] of this.arrivals) if (born <= cutoff) this.arrivals.delete(id)
     }
-    for (const fn of this.listeners) fn()
+    this.changes.emit()
     if (this.wasAwake && !awake) this.settled()
     this.wasAwake = awake
     if (awake || this.animating()) this.invalidate()

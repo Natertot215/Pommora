@@ -2,7 +2,7 @@ import type { AssetMap, NexusChange, NexusState, ValueChange } from '../Nexus/tr
 import type { MutateReply, MutateRequest } from '../Nexus/mutateRequest'
 import type { Result } from './result'
 import type { EditorMenuRequest } from '../Actions/editorMenu'
-import type { KeyPress, MenuCommand } from '../Actions/commands'
+import type { EditMenuAction, KeyPress, MenuCommand, NativeEdit } from '../Actions/commands'
 import type { RemovedView, SavedView, ViewPatch } from '../Views/views'
 import type { BodyWrite, PageDetail } from '../Pages/pageDetail'
 import type { TrashMode, TrashRow } from '../Trash/trashRow'
@@ -263,10 +263,12 @@ export interface Tells {
   'app:flushed': []
   // Handed to the guest a host-owned pointer covers — the only way it can still scroll beneath it.
   'web:wheel': [guestId: number, x: number, y: number, deltaX: number, deltaY: number]
+  // An Edit menu row the window left to the focused field, run the way its native role would.
+  'edit:native': [edit: NativeEdit]
 }
 
 export interface Pushes {
-  'menu:action': MenuCommand | 'open'
+  'menu:action': MenuCommand | EditMenuAction | 'open'
   // Open Recent routed through the window, so its pending saves land before the root flips.
   'nexus:openRecent': string
   'app:flush': null
