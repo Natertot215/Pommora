@@ -8,7 +8,6 @@ import { pickKindOf } from '../../Properties/properties'
 import { Icon } from '@pommora/uix/Symbols'
 import { isCmd } from '@pommora/uix/Interactions/chords'
 import { entityIcon } from '../../Assets/entityIconPolicy'
-import type { DefaultIcons } from '../../Settings/personalization'
 import { text } from '@pommora/uix/Theme/typography.css'
 import {
   CardBody,
@@ -54,7 +53,7 @@ import { ancestryOf } from '../../Nexus/treeIndex'
 import { stabilize } from '../../Nexus/treeStabilize'
 import { type PickEntry, PropertyPicker } from '../../Properties/Pickers/PropertyPicker'
 import { resolveFieldValue } from '../../Properties/value'
-import { TENTHS_SCALE } from '../../Settings/personalization'
+import { type Personalization, TENTHS_SCALE } from '../../Settings/personalization'
 import { propertyIcon, propertyTypeIconName } from '../../Properties/Cells/PropertyTypes'
 import { type CardPickerKind, CardValue } from './CardValue'
 import { PropertyValueInput } from '../../Properties/Pickers/PropertyValueInput'
@@ -609,7 +608,7 @@ function GhostCard({
 
 interface SetCardProps {
   set: SetNode
-  defaultIcons: DefaultIcons
+  defaultIcons: Personalization['defaultIcons']
   api: Pick<CardApi, 'openSet' | 'banner'>
 }
 
@@ -636,7 +635,7 @@ function SetFace({
   onThumbMenu,
 }: {
   set: SetNode
-  defaultIcons: DefaultIcons
+  defaultIcons: Personalization['defaultIcons']
   onThumbMenu?: (e: React.MouseEvent<HTMLDivElement>) => void
 }): React.JSX.Element {
   const iconName = entityIcon('set', set.icon, defaultIcons)
@@ -672,7 +671,7 @@ interface PageCardProps {
   columns: ResolvedColumn[]
   ctx: ValueContext
   loc?: TrailSegment[]
-  defaultIcons: DefaultIcons
+  defaultIcons: Personalization['defaultIcons']
   capitalize: boolean
   styleById: Map<string, ColumnStyle>
   api: CardApi

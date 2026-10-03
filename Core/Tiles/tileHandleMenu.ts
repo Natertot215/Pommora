@@ -8,10 +8,9 @@ import {
   type ViewPick,
 } from './tiles'
 import { scaleRows } from './tileZoom'
-import { ZOOM } from '../Settings/personalization'
+import { type Personalization, ZOOM } from '../Settings/personalization'
 import { type ActionItem, type PickItem, pickRows } from '../Actions/menuModel'
 import { containerPickTree } from '../Actions/pickTree'
-import type { DefaultIcons } from '../Settings/personalization'
 import type { NexusTree } from '../Nexus/tree'
 import { viewGlyph } from '../Views/viewIcon'
 
@@ -35,7 +34,10 @@ export function menuPatch(action: string, entry: TileEntry): EntryPatch | null {
   return null
 }
 
-export const viewPickTree = (tree: NexusTree, icons: DefaultIcons): PickItem<ViewPick>[] =>
+export const viewPickTree = (
+  tree: NexusTree,
+  icons: Personalization['defaultIcons'],
+): PickItem<ViewPick>[] =>
   containerPickTree(tree, icons, (c) => [
     ...(c.views ?? []).map((v) => ({
       label: v.name,
