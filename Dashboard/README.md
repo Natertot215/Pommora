@@ -1,6 +1,6 @@
 # Dashboard — The Hosted Site
 
-Pommora Dashboard is one plain browser page built from the design system and deployed by Vercel from the `active` branch. It isn't the Electron app: `vite build` runs here on its own (`build:dashboard` from the root), not through `electron-vite`.
+Pommora Dashboard is one plain browser page built from the design system and deployed by Vercel from the `active` branch, at https://pommora-dashboard.vercel.app. It isn't the Electron app: `vite build` runs here on its own (`build:dashboard` from the root), not through `electron-vite`.
 
 A glass menu at the top left switches between its two views, the Dashboard and the Showcase; the address hash names a Showcase leaf, and an empty hash is the Dashboard.
 
