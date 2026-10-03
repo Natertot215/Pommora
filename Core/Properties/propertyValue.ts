@@ -2,6 +2,7 @@ import { z } from 'zod'
 import { listOf } from '../Contract/validators'
 import { optionValues, PROPERTY_TYPES, type PropertyDefinition } from './properties'
 import { parseConnectionText } from '../Connections/connections'
+import { heldKey } from '../Paths/caseFold'
 
 const strings = z.array(z.string())
 export const propertyValue = z.discriminatedUnion('kind', [
@@ -163,7 +164,7 @@ export function applyValueAtRoot(
   def: PropertyDefinition,
   value: PropertyValue | null,
 ): Record<string, unknown> {
-  const key = def.name
+  const key = heldKey(root, def.name) ?? def.name
   const next = { ...root }
   if (value === null || isBlankValue(value)) delete next[key]
   else next[key] = encodeValue(value)

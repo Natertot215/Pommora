@@ -11,6 +11,7 @@ import { type FilterRule, mapRules, OPERANDLESS_OPS } from '../Views/views'
 import type { GraphInput } from './Engine/graph'
 import type { MatrixConfig } from './matrixConfig'
 import type { MatrixGraphReply } from './matrixGraph'
+import { heldKey } from '../Paths/caseFold'
 
 const spaceIdsOf = (values: Record<string, string[]> | undefined): string[] =>
   values ? Object.values(values).flat() : []
@@ -91,7 +92,7 @@ function answers(
     case 'user': {
       if (OPERANDLESS_OPS.has(rule.op)) return true
       const name = schema.find((d) => d.id === rule.property_id)?.name
-      return name !== undefined && name in row.frontmatter
+      return name !== undefined && heldKey(row.frontmatter, name) !== undefined
     }
   }
 }

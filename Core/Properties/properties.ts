@@ -5,7 +5,6 @@ import { isKeyOf, isPlainObject } from '../Contract/validators'
 import { looseDecoder } from '../Files/decoders'
 import { rootSegs } from '../Paths/exclusion'
 import type { ValueKind } from './propertyValue'
-import { PAGE_MODELED_KEYS, RETIRED_ID_KEYS } from '../Nexus/identityMark'
 
 const typeIds = z.enum([
   'number',
@@ -233,16 +232,7 @@ export function isReservedPropertyId(id: string): boolean {
   return RESERVED_SET.has(id)
 }
 
-const RESERVED_NAME_PREFIX = '$'
-// The retired key and stamp names stay refused: a user property under any of them would collide with the vault's own history.
-const RESERVED_KEY_NAMES: ReadonlySet<string> = new Set([
-  ...RETIRED_ID_KEYS,
-  ...PAGE_MODELED_KEYS,
-  'created_at',
-  'modified_at',
-  'id',
-  'heading_icon_hidden',
-])
+export const RESERVED_NAME_PREFIX = '$'
 
 export const KEY_REFUSAL = {
   empty: 'A name cannot be empty.',
@@ -255,15 +245,6 @@ export const KEY_REFUSAL = {
 
 export function normalizePropertyName(raw: string): string {
   return raw.trim().normalize('NFC')
-}
-
-export function isReservedKeyName(name: string): boolean {
-  return RESERVED_KEY_NAMES.has(normalizePropertyName(name))
-}
-
-export function invalidPropertyName(name: string): boolean {
-  const n = normalizePropertyName(name)
-  return !n || n.startsWith(RESERVED_NAME_PREFIX) || n.startsWith('<') || RESERVED_KEY_NAMES.has(n)
 }
 
 /** An option without its own color wears its group's. */

@@ -15,7 +15,13 @@ export const ORDER_KEY = '$order'
 export const ICON_KEY = '$icon'
 
 // Each name here is a reserved property name or `$`-prefixed, so no property value can sit under one.
-const MODELED = new Set(['id', ICON_KEY, 'banner', 'heading_icon_hidden', COLOR_KEY])
+export const SPACE_MODELED_KEYS = new Set([
+  'id',
+  ICON_KEY,
+  'banner',
+  'heading_icon_hidden',
+  COLOR_KEY,
+])
 
 /** The Spaces a Context folder holds, by folder name, and where each one's sidecar sits; a folder without a sidecar is a plain folder its reader passes over. */
 export async function spaceSidecarsIn(
@@ -64,7 +70,7 @@ export function spaceNodeFrom(
   if (!id) return null
   let values: Json | undefined
   for (const [k, v] of Object.entries(sc)) {
-    if (MODELED.has(k) || parseContextKey(k) !== null) continue
+    if (SPACE_MODELED_KEYS.has(k) || parseContextKey(k) !== null) continue
     values ??= {}
     values[k] = v
   }
