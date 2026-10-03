@@ -22,7 +22,7 @@
     "sync:image": "docker build -f Sync/Dockerfile -t pommora-hub .",
     "typecheck": "tsc -p UIX && tsc -p Core && tsc -p Core/tsconfig.src.json && tsc -p Desktop/tsconfig.node.json && tsc -p Desktop/tsconfig.web.json && tsc -p Sync && tsc -p Dashboard",
     "test": "vitest run",
-    "lint": "biome check . && node .claude/hooks/no-wrapped-comments.mjs --scan",
+    "lint": "biome check . && node .claude/hooks/no-wrapped-comments.mjs --scan && node ../../.claude/hooks/no-name-mentions.mjs --scan",
     "format": "biome format --write .",
     "check": "biome check --write ."
   },

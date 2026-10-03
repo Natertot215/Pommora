@@ -11,10 +11,10 @@
     {
       "method": "POST",
       "path": "/connect",
-      "body": "{\"nexusId\":\"01JQZ\",\"name\":\"Nathan’s MacBook — café\"}",
+      "body": "{\"nexusId\":\"01JQZ\",\"name\":\"Test MacBook — café\"}",
       "timestampMs": 1757462401234,
-      "bodySha256": "52734c6e2aa78391745018751eb419f26f6d4c66633862f0367390f3c5622079",
-      "canonical": "POST\n/connect\n52734c6e2aa78391745018751eb419f26f6d4c66633862f0367390f3c5622079\n1757462401234"
+      "bodySha256": "823be6fb4c586a5769ff337f716c19665dd3b5ca5d520a4cf3bff696e561f924",
+      "canonical": "POST\n/connect\n823be6fb4c586a5769ff337f716c19665dd3b5ca5d520a4cf3bff696e561f924\n1757462401234"
     },
     {
       "method": "POST",
