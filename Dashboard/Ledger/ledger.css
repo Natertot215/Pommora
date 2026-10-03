@@ -343,7 +343,7 @@
 @media (max-width: 720px) {
   .lg-page {
     gap: 32px;
-    padding: 36px 16px 64px;
+    padding: 64px 16px 64px;
   }
   .lg-n {
     font-size: 28px;
