@@ -45,7 +45,10 @@ export function LedgerLeaf(): React.JSX.Element {
   return (
     <div className="lg-page">
       <header className="lg-masthead">
-        <h1>Pommora</h1>
+        <h1>
+          <Icon name="pommora" size={28} />
+          Pommora
+        </h1>
         <div className="lg-figure">
           <span className="lg-n">{fmt(total)}</span>
           <span className="lg-k">Real code lines</span>

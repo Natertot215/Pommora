@@ -14,7 +14,12 @@
   gap: 18px;
 }
 .lg-page h1 {
+  display: flex;
+  align-items: center;
+  gap: 10px;
   margin: 0;
+  padding-bottom: 18px;
+  border-bottom: var(--width-100) solid var(--border-base);
   font-size: 26px;
   line-height: 32px;
   font-weight: 600;
