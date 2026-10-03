@@ -9,7 +9,7 @@ Two plain browser pages built from the design system, each folded into a single 
 - **Line ledger:** real code lines per system, day by day, over the branch's history. It reads `Ledger/loc-history.json` from the artifact's database (`ledger/history`) and follows it live, so a data refresh is a document write rather than a rebuild; the dev server imports the file directly. `.claude/scripts/loc.py` writes that file and the versioned post-commit hook runs it after every commit. The include menu folds import and export lines, comment lines, and test lines in or out of the chart and the table.
 - **Codebase audit:** the page fetches `audit.md`, published beside it, and renders `.claude/Planning/Pommora Codebase Audit.md`: a summary strip, the document in reading order with each workstream and ride-along area collapsible, an area-by-lens heatmap, and a filterable search over every finding, with every total computed from the ledger.
 
-Published at https://claude.ai/code/artifact/7840fc59-41d5-4692-b5b6-c45de4d11401.
+Published once per Claude account, at https://claude.ai/code/artifact/7840fc59-41d5-4692-b5b6-c45de4d11401 and https://claude.ai/artifact/8PRPLWwk9ar9XXyJ8Hy7gQ; a session publishes to the one its account owns.
 
 ## Pommora Showcase
 
