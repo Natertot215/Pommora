@@ -92,6 +92,7 @@ import {
 } from '../Paths/nexusPaths'
 import { shardPages, withShards } from './pageMetadata'
 import type { Stamp } from './adopt'
+import { contextWorldOf } from '../Contexts/contextResolve'
 
 // Declared here, where events owe it; the settle in `settle.ts` pays it and empties it.
 interface Owed {
@@ -462,7 +463,7 @@ function regroup(held: ContextGroup[], defs: ContextDef[]): ContextGroup[] | nul
   if (held.some((g) => !defs.some((d) => d.id === g.def.id))) return null
   const next: ContextGroup[] = []
   for (const def of defs) {
-    const group = held.find((g) => g.def.id === def.id)
+    const group = contextWorldOf(held).groupById.get(def.id)
     if (!group || group.def.title !== def.title) return null
     next.push({ ...group, def })
   }

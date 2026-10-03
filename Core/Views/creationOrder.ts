@@ -5,6 +5,7 @@ import type { NexusTree } from '../Nexus/tree'
 import { type Personalization, type Placement, settingOf } from '../Settings/personalization'
 import { nextOrder } from '@pommora/uix/Utilities/moveItem'
 import { containerAt, pageIdsIn } from '../Nexus/treePatch'
+import { contextWorldOf } from '../Contexts/contextResolve'
 
 export const sameIds = (a: string[], b: string[]): boolean =>
   a.length === b.length && a.every((x, i) => x === b[i])
@@ -86,7 +87,9 @@ export function placeNew<R extends CreateRequest>(tree: NexusTree, req: R, p: Pe
     }
     case 'createSpace':
       return at(
-        tree.contexts.find((g) => g.def.id === r.contextId)?.spaces.map((n) => n.id),
+        contextWorldOf(tree.contexts)
+          .groupById.get(r.contextId)
+          ?.spaces.map((n) => n.id),
         settingOf(p, 'newSpacePlacement'),
       )
     default:

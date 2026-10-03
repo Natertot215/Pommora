@@ -4,6 +4,7 @@ import { heldTreeOf } from './liveTree'
 import { isAtOrUnder, relative, titleFromPath } from '../Paths/posix'
 import { normalizeTitle } from '../Connections/connections'
 import type { Frozen } from '../Properties/propertyValue'
+import { recordsOf } from './record'
 import { entityMemo, type NexusTree } from './tree'
 
 interface PageIndices {
@@ -15,16 +16,11 @@ interface PageIndices {
 const indicesOf = entityMemo([], (tree): PageIndices => {
   const byPath = new Map<string, string>()
   const byId = new Map<string, string | null>()
-  const walk = (nodes: { pages: { id: string; path: string }[]; sets?: unknown[] }[]): void => {
-    for (const n of nodes) {
-      for (const p of n.pages) {
-        byPath.set(p.path, p.id)
-        byId.set(p.id, byId.has(p.id) ? null : p.path)
-      }
-      walk((n.sets ?? []) as typeof nodes)
-    }
+  for (const r of recordsOf(tree)) {
+    if (r.kind !== 'page') continue
+    byPath.set(r.path, r.id)
+    byId.set(r.id, byId.has(r.id) ? null : r.path)
   }
-  walk(tree.collections)
   return { byPath, byId }
 })
 

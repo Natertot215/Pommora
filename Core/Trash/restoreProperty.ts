@@ -3,7 +3,7 @@ import { patchSidecar } from '../Files/sidecar'
 import { fail, ok, type Result, fault } from '../Contract/result'
 import { readRegistry, serializeSchemaOp } from '../Properties/propertiesRegistry'
 import type { RecordFile } from './record'
-import { projectBaseline } from '../Nexus/remintLedger'
+import { recordById } from '../Nexus/record'
 import { liveTreeOf } from '../Nexus/liveTree'
 import { frozenWorld } from '../Nexus/heldPages'
 import { join } from '../Paths/posix'
@@ -55,7 +55,7 @@ async function restoreInner(
   }
 
   const tree = await liveTreeOf(root)
-  const roots = projectBaseline(tree).entries
+  const roots = recordById(tree)
   const frozen = frozenWorld(tree)
   const dropped: StrippedLink[] = []
   const values = Object.fromEntries(
