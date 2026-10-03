@@ -158,6 +158,7 @@ type Session = {
   carried: ReadonlyMap<Family<unknown>, unknown>
   chain: Element[]
   home: Rect | null
+  pen: Rect | null
   loose: boolean
   pick: { zone: string; at: number }
   landing: Landing | null
@@ -345,13 +346,21 @@ function createEngine(setChrome: (c: Chrome | null) => void): Api {
     floored.add(box)
   }
 
-  const homeOf = (s: Session): Rect | null => {
-    if (s.carried.size === 0) return null
+  const extentOf = (s: Session): Rect | null => {
     const box = zones.get(s.zone)?.box
     const layout = frozen.get(s.zone)
-    const rect = box?.getBoundingClientRect() ?? (layout ? unionOf(layout) : null)
+    return box?.getBoundingClientRect() ?? (layout ? unionOf(layout) : null)
+  }
+
+  const homeOf = (s: Session): Rect | null => {
+    if (s.carried.size === 0) return null
+    const rect = extentOf(s)
     return rect ? intersect(rect, clipOf(s.chain)) : null
   }
+
+  /** An item with nowhere else to go travels no further than its own zone's run. */
+  const penOf = (s: Session): Rect | null =>
+    s.kind === 'displace' && s.carried.size === 0 ? extentOf(s) : null
 
   const atHome = (s: Session, x: number, y: number): boolean => {
     const home = s.home
@@ -368,8 +377,17 @@ function createEngine(setChrome: (c: Chrome | null) => void): Api {
     y: s.axis === 'x' && !s.loose ? 0 : y - s.start.y,
   })
 
-  const chipTravel = (s: Session, x: number, y: number): Point =>
-    s.fence ? travel(s, clamp(x, 0, s.fence.x), clamp(y, 0, s.fence.y)) : travel(s, x, y)
+  const chipTravel = (s: Session, x: number, y: number): Point => {
+    if (s.fence) return travel(s, clamp(x, 0, s.fence.x), clamp(y, 0, s.fence.y))
+    const pen = s.pen
+    if (!pen) return travel(s, x, y)
+    const grab = { x: s.start.x - s.rect.left, y: s.start.y - s.rect.top }
+    return travel(
+      s,
+      clamp(x, pen.left + grab.x, pen.left + pen.width - s.rect.width + grab.x),
+      clamp(y, pen.top + grab.y, pen.top + pen.height - s.rect.height + grab.y),
+    )
+  }
 
   const surfaceOf = (s: Session): Element => {
     let top: Element = s.el
@@ -601,6 +619,7 @@ function createEngine(setChrome: (c: Chrome | null) => void): Api {
     }
     syncBounds(target)
     s.home = homeOf(s)
+    s.pen = penOf(s)
     slotBox.set(slotBoxOf(s, s.landing))
     if (s.via === 'pointer') track(s.last.x, s.last.y)
     else refresh(s)
@@ -650,6 +669,7 @@ function createEngine(setChrome: (c: Chrome | null) => void): Api {
       carried: carriedOf(def.spec.carry, id),
       chain: clipChain(entry.box ?? el),
       home: null,
+      pen: null,
       loose: false,
       pick: { zone: zoneId, at: -1 },
       landing: null,
@@ -687,6 +707,7 @@ function createEngine(setChrome: (c: Chrome | null) => void): Api {
       }
     }
     s.home = homeOf(s)
+    s.pen = penOf(s)
     if (via === 'pointer') {
       const base: CSSProperties = {
         position: 'fixed',
