@@ -181,7 +181,7 @@ export function FindingReport({
           )}
           {call && (
             <p>
-              <strong>Nathan's call:</strong> <Inline text={call} />
+              <strong>Your call:</strong> <Inline text={call} />
             </p>
           )}
         </blockquote>

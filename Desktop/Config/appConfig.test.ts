@@ -68,7 +68,7 @@ describe('appConfig', () => {
   })
 
   it('reads back a well-formed device', async () => {
-    const device = { id: 'a'.repeat(64), publicKey: 'k'.repeat(43), name: 'Nathans-Air' }
+    const device = { id: 'a'.repeat(64), publicKey: 'k'.repeat(43), name: 'Test-Air' }
     writeFileSync(appConfigPath(dir), JSON.stringify({ device }))
     expect((await readAppConfig(dir)).device).toEqual(device)
   })
@@ -76,7 +76,7 @@ describe('appConfig', () => {
   it('ignores a device missing its public key', async () => {
     writeFileSync(
       appConfigPath(dir),
-      JSON.stringify({ device: { id: 'a'.repeat(64), name: 'Nathans-Air' } }),
+      JSON.stringify({ device: { id: 'a'.repeat(64), name: 'Test-Air' } }),
     )
     expect((await readAppConfig(dir)).device).toBeUndefined()
   })
@@ -86,7 +86,7 @@ describe('appConfig', () => {
       appConfigPath(dir),
       JSON.stringify({ trashMode: 'system', windowBounds: { w: 1 } }),
     )
-    const device = { id: 'b'.repeat(64), publicKey: 'p'.repeat(43), name: 'Nathans-Air' }
+    const device = { id: 'b'.repeat(64), publicKey: 'p'.repeat(43), name: 'Test-Air' }
     await updateAppConfig(dir, () => ({ device }))
     const raw = JSON.parse(readFileSync(appConfigPath(dir), 'utf8'))
     expect(raw.trashMode).toBe('system')

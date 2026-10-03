@@ -192,13 +192,13 @@ export const weightCounts = (findings: readonly Finding[]): Array<[string, numbe
   return ordered([...WEIGHTS, ...counts.keys()], WEIGHTS).map((w) => [w, counts.get(w) ?? 0])
 }
 
-const CALL = "**Nathan's call:**"
+const CALL = '**Your call:**'
 const COUNT = /^(?:Two|Three|Four|Five) \w+\.\s+/
 const STEP = /(?<=[.;:])\s+(?=(?:Second|Third|Fourth|Then|Finally),\s|\(\d\)\s)/
 const ORDINAL = /^(?:(?:First|Second|Third|Fourth|Then|Finally),|\(\d\))\s+/
 
 // A fix splits into steps only where its text enumerates them: "First, … Second, …" or a
-// leading "Two changes." before "(1) … (2) …". A trailing Nathan's call always stands apart.
+// leading "Two changes." before "(1) … (2) …". A trailing "Your call" always stands apart.
 export function change(fix: string): { steps: string[]; call: string } {
   const at = fix.indexOf(CALL)
   const body = (at < 0 ? fix : fix.slice(0, at)).trim()

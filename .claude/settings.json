@@ -12,6 +12,18 @@
           }
         ]
       }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"$HOME/The Studio/.claude/hooks/no-name-mentions.mjs\"",
+            "statusMessage": "Checking for name mentions"
+          }
+        ]
+      }
     ]
   }
 }
