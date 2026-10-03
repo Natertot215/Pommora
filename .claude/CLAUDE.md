@@ -27,7 +27,7 @@ The Nexus’ structure is based on relating **Content** ↔ **Content** through 
 - **Dependencies:** They're all placed behind thin replacement-enabling seams so they’re swappable without touching callers. Version numbers are compatibility pins, not endorsements.
 - **The [Figma Library](https://www.figma.com/file/EBJXShPFA50yUwmBti452p)** is where the design presentation happens beforehand. `Dashboard/` builds the Pommora Dashboard, a Vercel-hosted site holding the line ledger, the codebase audit, and the Showcase (the design system). The commit hooks keep it current; don’t emphasize it in-chat.
 - **Nathan Role:** Nathan *doesn’t* understand much of the architectural design, codebase complexities, or the app's inner workings — his familiarity and focus are primarily on the vision, design, features, and interaction. Most behind-the-scenes design *isn’t* Nathan’s own decision; don’t assume he’s always on the same page or understands what you’re talking about regarding these topics.
-- **Branches:** `active` is the development branch, and every commit lands there; `active` is pushed after every commit; `main` is GitHub's default branch, regenerated from `active` on request without `.claude/`, `Dashboard/`, or the tests, so it's never committed to directly.
+- **Branches:** `active` is the development branch, where every commit lands and is pushed; `main` is GitHub's default branch, regenerated from `active` on request without `.claude/`, `Dashboard/`, or the tests, so it's never committed to directly.
 
 ### Hard Rules
 
