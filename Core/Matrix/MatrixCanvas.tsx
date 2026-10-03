@@ -5,7 +5,7 @@ import { text } from '@pommora/uix/Theme'
 import { solidColorCss } from '@pommora/uix/Theme/ramp'
 import { clamp } from '@pommora/uix/Utilities/clamp'
 import { cx } from '@pommora/uix/Utilities/cx'
-import { currentZoom } from '@pommora/uix/Utilities/zoom'
+import { PINCH_RATE, currentZoom } from '@pommora/uix/Utilities/zoom'
 import { spacesByIdOf } from '../Contexts/contextIdentity'
 import { recordsByIdOf } from '../Nexus/treeIndex'
 import { useSession } from '../Session/store'
@@ -19,8 +19,7 @@ import * as s from './matrix.css'
 import { FADE_MS, matrixRuntime, type Surface } from './matrixRuntime'
 import { useLatest } from '@pommora/uix/Utilities/stableApi'
 
-// KNOBs — the pinch rate, the link widths, and the frame ceiling the emphasis eases against.
-const PINCH_RATE = 0.01
+// KNOBs — the link widths, and the frame ceiling the emphasis eases against.
 const LINK_WIDTH_MIN = 1.25
 const LINK_WIDTH_MAX = 5.0
 const LINK_WIDTH_SCALE = 0.5

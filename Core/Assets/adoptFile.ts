@@ -11,11 +11,9 @@ import { ASSET_MIME } from './assetMime'
 import { AMBIGUOUS, indexable, liveAssetMap, resolveAssetName } from './assetMap'
 import { NOT_A_PROPERTY_DIR, underAssetRoot, validPropertyDir } from './assetRoots'
 import { writeAssetFile } from './assetWrite'
+import { sameItems } from '@pommora/uix/Utilities/same'
 
 const UNREADABLE = 'That file could not be read.'
-
-const sameBytes = (a: Uint8Array, b: Uint8Array): boolean =>
-  a.length === b.length && a.every((v, i) => v === b[i])
 
 export async function adoptFile(
   root: string,
@@ -63,7 +61,7 @@ export async function adoptFile(
         .readBytes(join(root, hit))
         .catch(() => null)
     : null
-  if (held && sameBytes(bytes, held)) return ok(connectionText(base))
+  if (held && sameItems(bytes, held)) return ok(connectionText(base))
   return writeAssetFile(root, dir, base, bytes)
 }
 

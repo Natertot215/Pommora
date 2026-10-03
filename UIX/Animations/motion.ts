@@ -15,6 +15,9 @@ export const easing = {
 
 export const ms = (d: (typeof duration)[keyof typeof duration]): number => Number.parseInt(d, 10)
 
+/** An exit's beat plus slack for the frame that paints its last state. */
+export const exitWait = (exit: keyof typeof duration): number => ms(duration[exit]) + 30
+
 export const prefersReducedMotion = (): boolean =>
   window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false
 

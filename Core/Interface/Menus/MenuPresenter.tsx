@@ -10,10 +10,9 @@ import { Icon } from '@pommora/uix/Symbols'
 import { useSession } from '../../Session/store'
 import { menuRows, type PresenterRow } from './menuRows'
 
-const GLYPH = 12
-const CHEVRON = <Icon name="chevron-right" size={GLYPH} />
+const CHEVRON = <Icon name="chevron-right" size="control" />
 const leadingGlyph = (icon?: string): React.JSX.Element | undefined =>
-  icon ? <Icon name={icon} size={GLYPH} /> : undefined
+  icon ? <Icon name={icon} size="control" /> : undefined
 
 function Level({
   items,

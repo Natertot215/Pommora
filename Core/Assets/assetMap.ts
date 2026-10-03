@@ -3,7 +3,7 @@ import { stabilize } from '../Nexus/treeStabilize'
 import { ASSETS_DIR_REL, CROPS_REL, THUMBNAILS_SEGMENT } from '../Paths/nexusPaths'
 import type { AssetMap } from '../Nexus/tree'
 import { neverWatched, rootSegs } from '../Paths/exclusion'
-import { relative } from '../Paths/posix'
+import { basename, relative } from '../Paths/posix'
 import { assetsDir } from '../Paths/paths'
 import { listFilesRecursive } from '../Files/walk'
 import { readWatchScope } from '../Settings/settings'
@@ -22,7 +22,7 @@ export function legacyBookkeeping(rel: string): boolean {
   )
 }
 
-const nameOf = (rel: string): string => normalizeTitle(rel.split('/').pop() ?? '')
+const nameOf = (rel: string): string => normalizeTitle(basename(rel))
 
 export async function buildAssetMap(root: string, assetDir: string): Promise<AssetMap> {
   const abs = await listFilesRecursive(assetsDir(root, assetDir))

@@ -217,23 +217,6 @@
   margin-right: 6px;
 }
 
-.row-lock {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  border: none;
-  border-radius: 2px;
-  background: transparent;
-  color: var(--label-tertiary);
-  cursor: pointer;
-  transition:
-    opacity var(--reveal-fade) var(--ease-base),
-    background var(--duration-fast) var(--ease-base);
-}
-.row-lock:hover {
-  background: var(--state-hover);
-}
-
 .children-peek {
   animation: peek-fade var(--duration-fast) var(--ease-base);
 }

@@ -3,6 +3,7 @@
 import type { NexusTree } from '../Nexus/tree'
 import type { SelectionState } from '../Navigation/navRef'
 import { reconcileIndexOf } from '../Nexus/treeIndex'
+import { sameItems } from '@pommora/uix/Utilities/same'
 
 export interface ReconcileIndex {
   spaces: ReadonlySet<string>
@@ -58,6 +59,5 @@ export function reconcileHeld<T>(
     if (kept === null) dropped.push(item)
     else next.push(kept)
   }
-  const same = dropped.length === 0 && next.every((kept, i) => kept === items[i])
-  return { next: same ? items : next, dropped }
+  return { next: sameItems(next, items) ? items : next, dropped }
 }

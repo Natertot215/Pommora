@@ -143,12 +143,10 @@ export function watchAnchor(el: Element, watch: AnchorWatch): () => void {
   })
   window.addEventListener('scroll', onLayoutShift, true)
   window.addEventListener('keydown', onKey)
-  window.addEventListener('resize', watch.onMoved)
   return () => {
     if (raf) cancelAnimationFrame(raf)
     dismissal.release()
     window.removeEventListener('scroll', onLayoutShift, true)
     window.removeEventListener('keydown', onKey)
-    window.removeEventListener('resize', watch.onMoved)
   }
 }

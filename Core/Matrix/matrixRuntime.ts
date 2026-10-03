@@ -34,6 +34,7 @@ import {
 import { type MatrixConfig, sameForces } from './matrixConfig'
 import { matrixConnections, matrixTree, matrixVisible, type MatrixTree } from './matrixInput'
 import type { Positions } from './matrixLayout'
+import { sameSet } from '@pommora/uix/Utilities/same'
 
 // KNOB — the hit slack past a node's edge, in world units.
 const HIT_SLACK = 4
@@ -59,9 +60,6 @@ interface Built {
 }
 
 const EMPTY: Graph = { nodes: [], links: [], index: new Map() }
-
-const sameSet = (a: ReadonlySet<string> | null, b: ReadonlySet<string> | null): boolean =>
-  a === b || (a !== null && b !== null && a.size === b.size && [...a].every((id) => b.has(id)))
 
 class MatrixRuntime {
   graph: Graph = EMPTY
@@ -144,7 +142,7 @@ class MatrixRuntime {
       b && b.held === held && b.filter === c.filter && b.values === values
         ? b.visible
         : matrixVisible(held, values, c.filter)
-    const visible = b && sameSet(b.visible, judged) ? b.visible : judged
+    const visible = b?.visible && judged && sameSet(b.visible, judged) ? b.visible : judged
     this.built = {
       held,
       links,

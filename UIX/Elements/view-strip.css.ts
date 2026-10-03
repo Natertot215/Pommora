@@ -2,7 +2,7 @@ import { keyframes, style } from '@vanilla-extract/css'
 import { vars as colorVars } from '../Theme/color.css'
 import { text } from '../Theme/typography.css'
 import { duration, easing } from '../Animations/motion'
-import { REVEAL_FADE } from '../Interactions/hover-reveal.css'
+import { iconToggle } from '../Buttons/button-base.css'
 
 const c = colorVars.color
 
@@ -91,16 +91,7 @@ export const viewPillTrail = style({
   selectors: { '&&': { color: c.label.secondary } },
 })
 
-export const settingsBtn = style({
-  border: 'none',
-  background: 'none',
-  padding: '2px',
-  borderRadius: '4px',
-  display: 'flex',
-  color: c.label.tertiary,
-  transition: `${REVEAL_FADE}, background ${duration.fast} ${easing.baseEase}`,
-  ':hover': { background: c.state.hover },
-})
+export const settingsBtn = style([iconToggle, { padding: '2px' }])
 
 /** Held while its menu is open, so it reads as that menu's anchor. */
 export const settingsBtnActive = style({

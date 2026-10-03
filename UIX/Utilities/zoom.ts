@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react'
 
+export const PINCH_RATE = 0.01 // KNOB — zoom per unit of a pinch's ctrl-wheel delta, as exp(-deltaY * rate)
+
 /** The zoom the element renders at, every ancestor's compounded: a screen-space delta divides by it to land inside the element. */
 export const currentZoom = (el: Element): number => el.currentCSSZoom || 1
 

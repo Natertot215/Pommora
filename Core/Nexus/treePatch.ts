@@ -17,6 +17,7 @@ import { asStringArray } from './coerce'
 import { resolveOrder } from './order'
 import { isContainer } from './entities'
 import { contextWorldOf } from '../Contexts/contextResolve'
+import { sameItems } from '@pommora/uix/Utilities/same'
 
 /** The ORIGINAL paths thread through: swapping against an already-swapped child re-prepends. */
 function reparentPaths<T extends PageNode | SetNode | CollectionNode>(
@@ -121,7 +122,7 @@ export function repointRegistryInTree(tree: NexusTree, registry: PropertyDefinit
     const held = c.properties
     if (!held) return c
     const next = held.flatMap((d) => byId.get(d.id) ?? [])
-    if (next.length === held.length && next.every((d, i) => d === held[i])) return c
+    if (sameItems(next, held)) return c
     moved = true
     return { ...c, properties: next.length ? next : undefined }
   })

@@ -57,6 +57,7 @@ import * as fp from './filter-frame.css'
 import { NeutralChip } from '@pommora/uix/Labels/recipes'
 import { OptionChip } from '../../Properties/Cells/OptionChip'
 import { EditableInput } from '@pommora/uix/Fields/EditableInput'
+import { sameItems } from '@pommora/uix/Utilities/same'
 
 const MATCH_OPTIONS: PickerOption<MatchMode>[] = [
   { value: 'all', label: 'All' },
@@ -138,8 +139,7 @@ function useMultiValue(
   onCommit: (next: string[]) => void,
 ): { shown: string[]; toggle: (v: string) => void } {
   const [local, setLocal] = useState<string[] | null>(null)
-  if (local && local.length === values.length && local.every((v, i) => v === values[i]))
-    setLocal(null)
+  if (local && sameItems(local, values)) setLocal(null)
   const shown = local ?? values
   const toggle = (v: string): void => {
     const next = toggleValue(shown, v)
@@ -312,6 +312,23 @@ function ChipsField({
         )}
       </PickerMenu>
     </>
+  )
+}
+
+function ConnectorButton({ or, onClick }: { or: boolean; onClick: () => void }): React.JSX.Element {
+  return (
+    <button type="button" className={fp.connector} aria-label="Toggle connector" onClick={onClick}>
+      {or ? 'Or' : 'And'}
+      <Icon name="chevrons-up-down" size="control" className={fp.chevron} />
+    </button>
+  )
+}
+
+function RemoveButton({ onClick }: { onClick: () => void }): React.JSX.Element {
+  return (
+    <button type="button" className={fp.removeButton} aria-label="Remove filter" onClick={onClick}>
+      <Icon name="x" size="caption" />
+    </button>
   )
 }
 
@@ -535,15 +552,7 @@ export function FilterFrame({
         <div className={fp.ruleRow}>
           <span className={fp.whatCell}>
             {row.connector !== null && (
-              <button
-                type="button"
-                className={fp.connector}
-                aria-label="Toggle connector"
-                onClick={() => toggleConnector(index)}
-              >
-                {row.connector === 'and' ? 'And' : 'Or'}
-                <Icon name="chevrons-up-down" size="control" className={fp.chevron} />
-              </button>
+              <ConnectorButton or={row.connector === 'or'} onClick={() => toggleConnector(index)} />
             )}
             <FieldPicker
               ariaLabel="Filter property"
@@ -601,14 +610,7 @@ export function FilterFrame({
             }
           </FieldPicker>
           {valueCell(row, index, current)}
-          <button
-            type="button"
-            className={fp.removeButton}
-            aria-label="Remove filter"
-            onClick={() => removeRow(index)}
-          >
-            <Icon name="x" size="caption" />
-          </button>
+          <RemoveButton onClick={() => removeRow(index)} />
         </div>
       </Reveal>
     )
@@ -620,15 +622,10 @@ export function FilterFrame({
       <div className={fp.ruleRow}>
         <span className={fp.whatCell}>
           {!lead && (
-            <button
-              type="button"
-              className={fp.connector}
-              aria-label="Toggle connector"
+            <ConnectorButton
+              or={draft === 'or'}
               onClick={() => setDraft(draft === 'or' ? 'and' : 'or')}
-            >
-              {draft === 'or' ? 'Or' : 'And'}
-              <Icon name="chevrons-up-down" size="control" className={fp.chevron} />
-            </button>
+            />
           )}
           <FieldPicker
             ariaLabel="Filter property"
@@ -641,16 +638,7 @@ export function FilterFrame({
         </span>
         <span className={cx(fp.controlField, fp.blankNarrow)} />
         <span className={fp.valueField} />
-        {!lead && (
-          <button
-            type="button"
-            className={fp.removeButton}
-            aria-label="Remove filter"
-            onClick={() => setDraft(false)}
-          >
-            <Icon name="x" size="caption" />
-          </button>
-        )}
+        {!lead && <RemoveButton onClick={() => setDraft(false)} />}
       </div>
     </Reveal>
   )

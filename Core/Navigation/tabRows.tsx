@@ -1,5 +1,5 @@
 import { type ReactNode, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
-import { exitWait } from '@pommora/uix/Animations/useExitPresence'
+import { exitWait } from '@pommora/uix/Animations/motion'
 import {
   carries,
   type DisplaceSpec,

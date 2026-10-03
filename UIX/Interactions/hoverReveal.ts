@@ -178,51 +178,88 @@ export function withinReach(anchor: Box, reach: Reach, x: number, y: number, sca
   return reach.size === 'edge' ? dx <= r && dy <= r / 2 : Math.hypot(dx, dy) <= r
 }
 
-/** Makes `ref`'s element a reveal host that turns on while the pointer is within `reach` of it, tracked window-wide. The rect is cached and dropped whenever the element may have moved: when a transition ends on it, an ancestor, or a sibling of either, on a resize, or while a button is held. */
+export function withinBox(box: Box, x: number, y: number, pad = 0): boolean {
+  return x >= box.left - pad && x <= box.right + pad && y >= box.top - pad && y <= box.bottom + pad
+}
+
+/** Where the pointer stands against a tracked anchor. `held` carries no position, since a held button may be moving the surface; `out` is the pointer leaving the scope, or the window losing focus with the pointer parked over it. */
+export type Nearness = 'near' | 'far' | 'held' | 'out'
+
+/** Follows the pointer across `scope` against the test `measure` builds from the anchor's rects. The test is cached, since a rect per move forces a layout, and dropped whenever the anchor may have moved: when a transition ends on it, an ancestor, or a sibling of either, on a resize, while a button is held, once the pointer leaves, and on `forget`. `report` hears every move. */
+export function trackNear({
+  anchor,
+  measure,
+  report,
+  scope = document.documentElement,
+}: {
+  anchor: Element
+  measure: () => (x: number, y: number) => boolean
+  report: (at: Nearness) => void
+  scope?: HTMLElement
+}): { forget: () => void; stop: () => void } {
+  let test: ((x: number, y: number) => boolean) | null = null
+  const forget = (): void => {
+    test = null
+  }
+  const onMove = (e: PointerEvent): void => {
+    if (e.buttons !== 0) {
+      forget()
+      report('held')
+      return
+    }
+    test ??= measure()
+    report(test(e.clientX, e.clientY) ? 'near' : 'far')
+  }
+  const leave = (): void => {
+    forget()
+    report('out')
+  }
+  const onOut = (e: PointerEvent): void => {
+    if (!scope.contains(e.relatedTarget as Node | null)) leave()
+  }
+  const onTransitionEnd = (e: TransitionEvent): void => {
+    if ((e.target as Element).parentElement?.contains(anchor)) forget()
+  }
+  scope.addEventListener('pointermove', onMove, { passive: true })
+  scope.addEventListener('pointerout', onOut, { passive: true })
+  window.addEventListener('transitionend', onTransitionEnd, { capture: true, passive: true })
+  window.addEventListener('resize', forget, { passive: true })
+  window.addEventListener('blur', leave)
+  return {
+    forget,
+    stop: () => {
+      scope.removeEventListener('pointermove', onMove)
+      scope.removeEventListener('pointerout', onOut)
+      window.removeEventListener('transitionend', onTransitionEnd, { capture: true })
+      window.removeEventListener('resize', forget)
+      window.removeEventListener('blur', leave)
+    },
+  }
+}
+
+/** Makes `ref`'s element a reveal host that turns on while the pointer is within `reach` of it, tracked window-wide. */
 export function useRevealWithin(ref: RefObject<HTMLElement | null>, reach: Reach): void {
   useEffect(() => {
     const el = ref.current
     if (!el) return
-    let box: Box | null = null
-    const show = (on: boolean): void => {
-      const v = on ? 'on' : 'off'
-      if (el.dataset.revealHost !== v) el.dataset.revealHost = v
-    }
-    const forget = (): void => {
-      box = null
-    }
-    const onMove = (e: PointerEvent): void => {
-      if (e.buttons !== 0) {
-        forget()
-        show(false)
-        return
-      }
-      box ??= el.getBoundingClientRect()
-      show(withinReach(box, reach, e.clientX, e.clientY))
-    }
-    const onOut = (e: PointerEvent): void => {
-      if (!e.relatedTarget) show(false)
-    }
-    const onTransitionEnd = (e: TransitionEvent): void => {
-      if ((e.target as Element).parentElement?.contains(el)) forget()
-    }
-    window.addEventListener('pointermove', onMove, { passive: true })
-    window.addEventListener('pointerout', onOut, { passive: true })
-    window.addEventListener('transitionend', onTransitionEnd, { capture: true, passive: true })
-    window.addEventListener('resize', forget, { passive: true })
-    return () => {
-      window.removeEventListener('pointermove', onMove)
-      window.removeEventListener('pointerout', onOut)
-      window.removeEventListener('transitionend', onTransitionEnd, { capture: true })
-      window.removeEventListener('resize', forget)
-    }
+    return trackNear({
+      anchor: el,
+      measure: () => {
+        const box = el.getBoundingClientRect()
+        return (x, y) => withinReach(box, reach, x, y)
+      },
+      report: (at) => {
+        const v = at === 'near' ? 'on' : 'off'
+        if (el.dataset.revealHost !== v) el.dataset.revealHost = v
+      },
+    }).stop
   }, [ref, reach])
 }
 
 const TRAIL: Reach = { size: 'edge', toward: { x: -1, y: -1 } }
 const LEAD: Reach = { size: 'edge', toward: { x: 1, y: -1 } }
 
-/** Tracked against the pointer, not invisible buttons, so the reveal area never swallows clicks beneath it. Each toggle's reach runs down to the host's bottom edge, so the bar beneath a lifted toggle still reveals it. The rects are cached because a rect per move forces a layout, and dropped whenever the toggles may have moved: after the host renders, when the host's or a toggle's own transition ends, while a held button may be moving the surface, and on `remeasure`. */
+/** Tracked against the pointer, not invisible buttons, so the reveal area never swallows clicks beneath it. Each toggle's reach runs down to the host's bottom edge, so the bar beneath a lifted toggle still reveals it. The rects are cached because a rect per move forces a layout, and dropped whenever the toggles may have moved: after the host renders, when the host's or a toggle's own transition ends, while a held button may be moving the surface, and on `remeasure`. It keeps its own tracking rather than `trackNear`'s, since its two anchors sit inside the host and move on their own transitions, which `trackNear`'s kin rule doesn't watch. */
 export function useRevealNear(): {
   near: boolean
   nearLead: boolean

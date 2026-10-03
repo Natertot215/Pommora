@@ -1,7 +1,7 @@
 import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react'
 import { cx } from '../Utilities/cx'
 import { duration, ms } from '../Animations/motion'
-import { useExitPresence } from '../Animations/useExitPresence'
+import { useExitPresence, useHeld } from '../Animations/useExitPresence'
 import * as s from './frame-slide.css'
 
 const SLIDE_MS = ms(duration.base)
@@ -40,9 +40,8 @@ export function FrameSlide({
 
   // The caller nulls `detail` the same render the slide-out starts; latching keeps the measured box stable.
   const { mounted } = useExitPresence(open, 'base')
-  const latchedDetail = useRef<ReactNode>(null)
-  if (open) latchedDetail.current = detail
-  const shownDetail = open ? detail : mounted ? latchedDetail.current : null
+  const held = useHeld(detail, open)
+  const shownDetail = open || mounted ? held : null
 
   useLayoutEffect(() => {
     const a = aRef.current

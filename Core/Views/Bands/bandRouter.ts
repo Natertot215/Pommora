@@ -4,7 +4,7 @@ import { resolveRowOrder } from '../../Properties/rowOrder'
 import type { SavedView, ViewPatch } from '../views'
 import { nextOrder } from '@pommora/uix/Utilities/moveItem'
 import type { OrderRequest } from '../../Nexus/mutateRequest'
-import { sameIds } from '../creationOrder'
+import { sameItems } from '@pommora/uix/Utilities/same'
 import { bucketGroupingOf, type GroupPlan, liveBucketOrder, setOrderOf } from '../Pipeline/group'
 import type { SetIndex } from '../Pipeline/setIndex'
 
@@ -65,7 +65,7 @@ export function routeBandDrop(
 
 const showsAlike = (parents: readonly string[][], a: string[], b: string[] | undefined): boolean =>
   parents.every((kids) =>
-    sameIds(
+    sameItems(
       resolveRowOrder(kids, (s) => s, a),
       resolveRowOrder(kids, (s) => s, b),
     ),
@@ -116,7 +116,7 @@ function routeBucket(dragged: BucketRef, drop: BandDrop, scope: BandScope): Band
   const current = liveBucketOrder(config, def, scope.shown)
   const before = scope.valueAt(drop.beforeKey)
   const order = nextOrder(current, dragged.value, before)
-  if (sameIds(order, current)) return null
+  if (sameItems(order, current)) return null
   const next = { ...config, order_mode: 'manual' as const, order }
   return {
     kind: 'view',

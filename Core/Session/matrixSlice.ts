@@ -15,6 +15,7 @@ import { persist } from '../Interface/Notifications/notifications'
 import { dialer } from '../Platform/dialer'
 import { sessionWriter } from './saveScheduler'
 import type { Slice } from './sessionState'
+import { sameItems } from '@pommora/uix/Utilities/same'
 
 export type MatrixLoad =
   | { kind: 'unloaded' }
@@ -62,12 +63,8 @@ const HELD = {
 const linkKey = (l: MatrixLink): string =>
   `${l.pageId}\n${l.path}\n${l.kind}\n${l.target}\n${l.qualifier}\n${l.count}`
 
-const sameLinks = (a: MatrixLink[], b: MatrixLink[]): boolean => {
-  if (a.length !== b.length) return false
-  const keys = a.map(linkKey).sort()
-  const other = b.map(linkKey).sort()
-  return keys.every((k, i) => k === other[i])
-}
+const sameLinks = (a: MatrixLink[], b: MatrixLink[]): boolean =>
+  a.length === b.length && sameItems(a.map(linkKey).sort(), b.map(linkKey).sort())
 
 // KNOB — pushes inside this window fold into one refetch.
 const REFETCH_MS = 150

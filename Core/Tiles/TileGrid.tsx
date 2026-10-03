@@ -14,7 +14,7 @@ import { useSettleFallback } from '@pommora/uix/Animations/useExitPresence'
 import { usePointerGesture } from '@pommora/uix/Interactions/gesture'
 import { HYSTERESIS } from '@pommora/uix/Interactions/shared'
 import { TILE_MIN_PX } from '@pommora/uix/Utilities/tileMetrics'
-import { type Box, type Reach, withinReach } from '@pommora/uix/Interactions/hoverReveal'
+import { type Reach, trackNear, withinReach } from '@pommora/uix/Interactions/hoverReveal'
 import { revealTarget } from '@pommora/uix/Interactions/hover-reveal.css'
 import { cx } from '@pommora/uix/Utilities/cx'
 import { findTile } from './Layout/model'
@@ -127,10 +127,30 @@ const TileShell = memo(
           ? `transform ${SHELL_TRANSITION}, width ${SHELL_TRANSITION}, height ${SHELL_TRANSITION}`
           : undefined
     const [handleNear, setHandleNear] = useState(false)
+    const tileRef = useRef<HTMLDivElement>(null)
     const handleRef = useRef<HTMLDivElement>(null)
-    const cornerRef = useRef<Box | null>(null)
+    // The reach runs from the tile's top edge at the handle's left; a press holds the reveal where it stands, since the handle is what a drag grips.
+    useEffect(() => {
+      const tile = tileRef.current
+      if (!editing || !tile) return
+      const handle = handleRef.current ?? tile
+      return trackNear({
+        anchor: handle,
+        scope: tile,
+        measure: () => {
+          const top = tile.getBoundingClientRect().top
+          const left = handle.getBoundingClientRect().left
+          const corner = { left, top, right: left, bottom: top }
+          return (x, y) => withinReach(corner, HANDLE_REACH, x, y)
+        },
+        report: (at) => {
+          if (at !== 'held') setHandleNear(at === 'near')
+        },
+      }).stop
+    }, [editing])
     return (
       <div
+        ref={tileRef}
         className={cx(
           'tile tile-base',
           (phase === 'lifted' || phase === 'settling') && 'is-lifted',
@@ -140,21 +160,6 @@ const TileShell = memo(
           extraClass,
         )}
         data-reveal-host={editing ? (handleNear ? 'on' : 'off') : ''}
-        onPointerEnter={(e) => {
-          const top = e.currentTarget.getBoundingClientRect().top
-          const left = (handleRef.current ?? e.currentTarget).getBoundingClientRect().left
-          cornerRef.current = { left, top, right: left, bottom: top }
-        }}
-        onPointerMove={(e) => {
-          const c = cornerRef.current
-          if (!c) return
-          const near = withinReach(c, HANDLE_REACH, e.clientX, e.clientY)
-          if (near !== handleNear) setHandleNear(near)
-        }}
-        onPointerLeave={() => {
-          cornerRef.current = null
-          if (handleNear) setHandleNear(false)
-        }}
         style={{
           ...extraStyle,
           transform: `translate(${rect.x}px, ${rect.y}px)`,
