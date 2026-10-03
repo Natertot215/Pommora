@@ -386,7 +386,7 @@ The elements that draw and frame a stored image — `AssetImage`, `ImagePicker`,
 
 ### Utilities
 
-`UIX/Utilities/` — `cx` · `clamp` (with the `NumberRange` and `steppedRange` vocabulary for bounded numbers) · `pad` · `moveItem` (with the before-id helpers `moveBefore` and `nextOrder`) · `subscribable` (`emitter`, the one change notifier, and `channel`, the held value built on it) · `capMap` · `checkSet` · `tileMetrics`, with no catalog beyond this line. The two writers that put runtime values on the root live with what they compute: `applySystemAccent` in `UIX/Theme/ramp.ts` and `applyPersonalization` in `Core/Settings/applyPersonalization.ts`.
+`UIX/Utilities/` — `cx` · `clamp` (with the `NumberRange` and `steppedRange` vocabulary for bounded numbers) · `pad` · `moveItem` (with the before-id helpers `moveBefore` and `nextOrder`) · `subscribable` (`emitter` and the `channel` value built on it) · `capMap` · `checkSet` · `tileMetrics`. The two writers that put runtime values on the root live with what they compute: `applySystemAccent` in `UIX/Theme/ramp.ts` and `applyPersonalization` in `Core/Settings/applyPersonalization.ts`.
 
 ### Windows
 
