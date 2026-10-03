@@ -1,19 +1,13 @@
-import type { z } from 'zod'
 import { sidecarPath } from '../Paths/paths'
 import type { SidecarKind } from '../Paths/nexusPaths'
 import { fail, type Result } from '../Contract/result'
+import { asString } from '../Nexus/coerce'
 import { readJsonObject, rmwJsonStrict } from './atomicWrite'
 
-export async function readSidecar<S extends z.ZodType>(
+export const sidecarId = async (
   absFolder: string,
   kind: SidecarKind,
-  schema: S,
-): Promise<z.infer<S> | null> {
-  const raw = await readJsonObject(sidecarPath(absFolder, kind))
-  if (raw === null) return null
-  const parsed = schema.safeParse(raw)
-  return parsed.success ? parsed.data : null
-}
+): Promise<string | undefined> => asString((await readJsonObject(sidecarPath(absFolder, kind)))?.id)
 
 export type Refuse = (why: Result<never>) => null
 

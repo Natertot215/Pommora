@@ -1,4 +1,4 @@
-import { isMarkdownFile, join, relative, titleFromPath } from '../Paths/posix'
+import { isAtOrUnder, isMarkdownFile, join, relative, titleFromPath } from '../Paths/posix'
 import { errText } from '../Contract/result'
 import { splitEnvelope, mergeFrontmatter, splitFrontmatter, stampedId } from '../Files/pageFile'
 import {
@@ -84,7 +84,7 @@ export async function deleteCascade(
   titles: string[],
 ): Promise<DeleteCascade> {
   const deleted = relative(root, abs)
-  const inside = (rel: string): boolean => rel === deleted || rel.startsWith(`${deleted}/`)
+  const inside = (rel: string): boolean => isAtOrUnder(rel, deleted)
   const gone = new Set(
     titles.filter((t) => !titleHeldOutside(root, t, deleted)).map(normalizeTitle),
   )

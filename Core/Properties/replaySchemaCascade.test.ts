@@ -14,8 +14,8 @@ import { readRecord, writePropertyBundle } from '../Trash/record'
 import { listBundles } from '../Trash/holdings'
 import { mutateRegistry, readRegistry } from './propertiesRegistry'
 import { renameFrontmatterKey } from '../Files/pageFile'
-import { readSidecar } from '../Files/sidecar'
-import { pageCollectionSidecar } from '../Nexus/schemas'
+import { sidecarPath } from '../Paths/paths'
+import { readJsonObject } from '../Files/atomicWrite'
 import { createProperty, renameProperty } from './registryProperty'
 import { deleteProperty } from './deleteProperty'
 import { removeOption, renameOption } from './optionOps'
@@ -157,7 +157,7 @@ describe('delete replay', () => {
     expect(await page(crashed, 'A')).toBe(wantA)
     expect(await page(crashed, 'B')).toBe(wantB)
     expect((await readRegistry(crashed)).defs.prop_s).toBeUndefined()
-    const sidecar = await readSidecar(join(crashed, 'Col'), 'collection', pageCollectionSidecar)
+    const sidecar = await readJsonObject(sidecarPath(join(crashed, 'Col'), 'collection'))
     expect((sidecar?.properties as string[] | undefined) ?? []).toEqual([])
     expect(await listBundles(crashed)).toHaveLength(1)
     expect(await readSchemaJournal(crashed)).toBeNull()

@@ -15,7 +15,7 @@ import {
 } from './contentIndex'
 import { corpusFiles } from '../Files/walk'
 import { scanDoc } from '../MarkdownPM/Engine/docScan'
-import { sweepAdmits, splitEnvelope } from '../Files/pageFile'
+import { sweepParse, splitEnvelope } from '../Files/pageFile'
 import { indexWrittenPage, moveIndexPaths, seedContentIndex } from './indexSeed'
 import { renameCascade } from '../Nexus/cascade'
 import { newContentId } from '../Nexus/ids'
@@ -92,7 +92,7 @@ describe('seedContentIndex', () => {
       abs('Notes', 'Foreign.md'),
       '---\nID: 01BX5ZZKBKTCTAV9WEVGEMMVRZ\n---\n\n[[Target]]\n',
     )
-    expect(sweepAdmits(`---\nID: 01BX5ZZKBKTCTAV9WEVGEMMVRZ\n---\n\n[[Target]]\n`)).toBe(false)
+    expect(sweepParse(`---\nID: 01BX5ZZKBKTCTAV9WEVGEMMVRZ\n---\n\n[[Target]]\n`)).toBeNull()
     await seedContentIndex(root)
     expect(queryMentions('target')?.sort()).toEqual(['Loose/Note.md', 'Notes/A.md'])
     expect(readIndexedStats()?.has('Notes/Foreign.md')).toBe(true)

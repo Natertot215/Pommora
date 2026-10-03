@@ -1,13 +1,10 @@
-// `z.looseObject` ⇒ FOREIGN keys survive a rewrite — outside tools and agents can add keys to a sidecar without Pommora erasing them.
+// `z.looseObject` ⇒ FOREIGN keys survive a rewrite — outside tools and agents can add keys to a `.nexus` file or a page’s frontmatter without Pommora erasing them.
 
 import { z } from 'zod'
 import { entriesOf, numberCheck } from '../Files/decoders'
 import { CROP_POINT, CROP_ZOOM } from '../Assets/cropGeometry'
 import { OPEN_INS, VIEW_BUTTONS, type OpenIn, type ViewButton } from '../Views/viewRow'
-import { savedView } from '../Views/views'
 import { ID_KEY } from './identityMark'
-
-const ulidList = z.array(z.string()).optional()
 
 const openInField = z.enum(OPEN_INS).optional().catch(undefined)
 const viewButtonField = z.enum(VIEW_BUTTONS).optional().catch(undefined)
@@ -38,29 +35,6 @@ export type PageMetaPatch = { [K in keyof PageMeta]?: PageMeta[K] | null }
 
 export const metadataShardFile = z.looseObject({
   pages: entriesOf(pageMetaEntry).optional().catch(undefined),
-})
-
-/** Deliberately non-discriminating — it validates any sidecar — so it must never stand in for the kind decision itself. */
-export const baseSidecar = z.looseObject({
-  id: z.string(),
-  icon: z.string().optional(),
-})
-
-// Parentage is the folder nesting itself, never a stored field.
-export const pageSetSidecar = baseSidecar.extend({
-  page_order: ulidList,
-  set_order: ulidList,
-  banner: z.string().optional(),
-  views: z.array(savedView).optional(),
-  view_button: viewButtonField,
-  disclosure_locked: z.boolean().optional(),
-  active_view: z.string().optional(),
-})
-
-// `properties` is the ASSIGNMENT LIST — the nexus-wide registry prop-ids this Collection validates. The defs themselves live in `.nexus/properties.json`; readNexus joins ids→defs.
-export const pageCollectionSidecar = pageSetSidecar.extend({
-  properties: z.array(z.string()).optional(),
-  open_in: openInField,
 })
 
 export const pageFrontmatter = z.looseObject({

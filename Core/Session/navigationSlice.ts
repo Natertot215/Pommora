@@ -605,10 +605,13 @@ export const createNavigationSlice: Slice<NavigationSlice> = (set, get) => {
       if (!shown) return
       const detail = await fetchPageDetail(shown.target.path)
       if (!detail) return
-      const body = shown.status === 'ready' ? shown.body : detail.body
-      set((s) => ({
-        pages: { ...s.pages, [shown.target.id]: { ...readySlot(shown.target, detail), body } },
-      }))
+      set((s) => {
+        const now = s.pages[shown.target.id]
+        const body = now?.status === 'ready' ? now.body : detail.body
+        return {
+          pages: { ...s.pages, [shown.target.id]: { ...readySlot(shown.target, detail), body } },
+        }
+      })
     },
 
     reconcileNavigation: (index) => {

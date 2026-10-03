@@ -2,10 +2,9 @@ import { describe, it, expect, beforeEach, afterEach } from 'vitest'
 import { rm, readFile, writeFile } from 'node:fs/promises'
 import { join } from '../Paths/posix'
 import { readJsonAt, tempRoot } from '../Testing/hostFs'
-import { patchSidecar, readSidecar } from './sidecar'
+import { patchSidecar, sidecarId } from './sidecar'
 import { SIDECAR_FILENAME } from '../Paths/nexusPaths'
 import { fail } from '../Contract/result'
-import { pageCollectionSidecar } from '../Nexus/schemas'
 
 let dir: string
 beforeEach(async () => {
@@ -21,24 +20,16 @@ const raw = async (): Promise<string> => readFile(join(dir, SIDECAR_FILENAME.col
 const rawJson = (): Promise<Record<string, unknown>> =>
   readJsonAt(join(dir, SIDECAR_FILENAME.collection))
 
-describe('readSidecar', () => {
-  it('reads a sidecar through its schema, foreign keys included', async () => {
-    await seed({ id: 'T1', icon: 'box', plugin: 'keep', meta: { v: 2 } })
-    expect(await readSidecar(dir, 'collection', pageCollectionSidecar)).toMatchObject({
-      id: 'T1',
-      icon: 'box',
-      plugin: 'keep',
-      meta: { v: 2 },
-    })
+describe('sidecarId', () => {
+  it('reads the id whatever else the sidecar holds', async () => {
+    await seed({ id: 'T1', icon: 7, plugin: 'keep' })
+    expect(await sidecarId(dir, 'collection')).toBe('T1')
   })
 
-  it('returns null for a missing sidecar', async () => {
-    expect(await readSidecar(dir, 'collection', pageCollectionSidecar)).toBeNull()
-  })
-
-  it('returns null for an invalid sidecar (missing id)', async () => {
+  it('answers nothing for a missing sidecar, or one with no id', async () => {
+    expect(await sidecarId(dir, 'collection')).toBeUndefined()
     await seed({ icon: 'no-id' })
-    expect(await readSidecar(dir, 'collection', pageCollectionSidecar)).toBeNull()
+    expect(await sidecarId(dir, 'collection')).toBeUndefined()
   })
 })
 

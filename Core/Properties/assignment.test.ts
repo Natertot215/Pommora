@@ -6,8 +6,8 @@ import { dropLiveTree } from '../Nexus/liveTree'
 import { createFolderEntity } from '../Nexus/folderEntity'
 import { newId } from '../Nexus/ids'
 import { createTestPage } from '../Testing/createTestPage'
-import { readSidecar } from '../Files/sidecar'
-import { pageCollectionSidecar } from '../Nexus/schemas'
+import { sidecarPath } from '../Paths/paths'
+import { readJsonObject } from '../Files/atomicWrite'
 import type { PropertyDefinition } from './properties'
 
 let root: string
@@ -24,7 +24,7 @@ afterEach(async () => {
 })
 
 const ids = async (folder: string): Promise<string[]> =>
-  ((await readSidecar(folder, 'collection', pageCollectionSidecar))?.properties as string[]) ?? []
+  ((await readJsonObject(sidecarPath(folder, 'collection')))?.properties as string[]) ?? []
 
 it('assign appends + is idempotent', async () => {
   await assignProperty(root, notes, 'prop_x')
@@ -71,10 +71,7 @@ it('a Remove racing an Assign on ONE collection never loses either write (breake
   // Interleave 20 rounds — under the serialized chain the end state is always coherent: pC unassigned WITH its cache block intact, pB assigned.
   for (let round = 0; round < 20; round++) {
     await Promise.all([removeProperty(root, notes, pC), assignProperty(root, notes, pB)])
-    const sc = (await readSidecar(notes, 'collection', pageCollectionSidecar)) as Record<
-      string,
-      unknown
-    >
+    const sc = (await readJsonObject(sidecarPath(notes, 'collection'))) as Record<string, unknown>
     const assigned = (sc.properties as string[]) ?? []
     const cached = (
       sc.property_cache as Record<string, { values: Record<string, unknown> }> | undefined
@@ -82,7 +79,7 @@ it('a Remove racing an Assign on ONE collection never loses either write (breake
     expect(assigned).toContain(pB)
     expect(assigned).not.toContain(pC)
     expect(Object.values(cached?.values ?? {})).toEqual([7])
-    const fm = splitFrontmatter(await readFile(page.value.path, 'utf8')) as Record<string, unknown>
+    const fm = splitFrontmatter(await readFile(page.value.path, 'utf8'))
     expect(fm.Gone).toBeUndefined()
     await assignProperty(root, notes, pC)
     await removeProperty(root, notes, pB)

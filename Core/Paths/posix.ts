@@ -64,6 +64,9 @@ export function relative(from: string, to: string): string {
   return [...a.slice(i).map(() => '..'), ...b.slice(i)].join('/')
 }
 
+export const isAtOrUnder = (path: string, dir: string): boolean =>
+  path === dir || path.startsWith(`${dir}/`)
+
 export const relJoin = (parent: string, child: string): string =>
   parent ? `${parent}/${child}` : child
 

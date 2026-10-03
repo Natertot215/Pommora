@@ -1253,6 +1253,24 @@ describe('emptyBundle — giving a bundle up for good', () => {
     expect(await pages()).toEqual({})
   })
 
+  it('a Set deleted to the system trash drops its pages’ entries with the delete, and keeps another page’s', async () => {
+    const PAGE_G = '01KVGMT8BFP350FZZXAMG1QDVG'
+    await writeFile(join(root, 'Notes', 'Daily', 'Beta.md'), `---\nID: ${PAGE_B}\n---\nbeta`)
+    await writeFile(join(root, 'Notes', 'Gamma.md'), `---\nID: ${PAGE_G}\n---\ngamma`)
+    await updatePageMetadata(root, PAGE_A, { icon: 'star' })
+    await updatePageMetadata(root, PAGE_B, { locked: true })
+    await updatePageMetadata(root, PAGE_G, { icon: 'moon' })
+    await refreshTree(root)
+    const r = await settledMutate(
+      root,
+      { op: 'delete', path: 'Notes/Daily', kind: 'set' },
+      { trashMode: 'system', trashToSystem: (p) => rm(p, { recursive: true }) },
+    )
+    expect(r.ok).toBe(true)
+    const month = await readShard(root, shardOf(PAGE_A)!)
+    expect(month.kind === 'ok' && month.pages).toEqual({ [PAGE_G]: { icon: 'moon' } })
+  })
+
   it('emptying a copy’s bundle keeps the entry of the live page sharing its ID', async () => {
     await updatePageMetadata(root, PAGE_A, { icon: 'star' })
     await writeFile(join(root, 'Notes', 'Daily', 'Alpha copy.md'), `---\nID: ${PAGE_A}\n---\ncopy`)

@@ -10,11 +10,9 @@ import {
   setChildOrder,
   setPanelContextOrder,
 } from './reorder'
-import { pathExists } from '../Files/atomicWrite'
+import { pathExists, readJsonObject } from '../Files/atomicWrite'
 import { createFolderEntity } from './folderEntity'
 import { newId } from './ids'
-import { readSidecar } from '../Files/sidecar'
-import { pageCollectionSidecar, pageSetSidecar } from './schemas'
 import { nexusDir, nexusConfig, sidecarPath } from '../Paths/paths'
 import { NEXUS_CONFIG_FILES } from '../Paths/nexusPaths'
 
@@ -111,7 +109,7 @@ describe('setChildOrder', () => {
     if (!s.ok) throw new Error('setup failed')
     const r = await setChildOrder(s.value.path, 'page_order', ['p3', 'p1', 'p2'])
     expect(r.ok).toBe(true)
-    expect(await readSidecar(s.value.path, 'set', pageSetSidecar)).toMatchObject({
+    expect(await readJsonObject(sidecarPath(s.value.path, 'set'))).toMatchObject({
       page_order: ['p3', 'p1', 'p2'],
     })
   })
@@ -121,7 +119,7 @@ describe('setChildOrder', () => {
     if (!c.ok) throw new Error('setup failed')
     const r = await setChildOrder(c.value.path, 'set_order', ['s2', 's1'])
     expect(r.ok).toBe(true)
-    expect(await readSidecar(c.value.path, 'collection', pageCollectionSidecar)).toMatchObject({
+    expect(await readJsonObject(sidecarPath(c.value.path, 'collection'))).toMatchObject({
       set_order: ['s2', 's1'],
     })
   })

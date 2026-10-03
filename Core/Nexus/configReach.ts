@@ -34,7 +34,7 @@ import { editJsonStrict, type StrictEdit, updateNexusConfig } from '../Files/ato
 import { same } from '../Files/stableJson'
 import { errText } from '../Contract/result'
 import { sidecarPath, tileDocPath } from '../Paths/paths'
-import { join } from '../Paths/posix'
+import { isAtOrUnder, join } from '../Paths/posix'
 import { isPlainObject, listOf } from '../Contract/validators'
 import type { CollectionNode, NexusTree, SetNode } from './tree'
 import type { CascadeReport } from './cascade'
@@ -148,7 +148,7 @@ const optionRule = (e: OptionReach, rule: Raw): Raw | null =>
 const gone =
   (e: Gone): Matcher =>
   (el) =>
-    typeof el === 'string' && e.ids.some((id) => el === id || el.startsWith(`${id}/`))
+    typeof el === 'string' && e.ids.some((id) => isAtOrUnder(el, id))
 
 const goneRule = (e: Gone, rule: Raw): Raw | null =>
   onProperty(e.propertyId, rule) ? editOperands(rule, (xs) => stripList(xs, gone(e))) : rule
@@ -322,8 +322,7 @@ const cacheEdit = (e: OptionReach, cur: Raw): Raw | null =>
 
 type Container = { kind: ContainerKind; id: string; dir: string }
 
-const reaches = (dir: string, under?: string): boolean =>
-  !under || dir === under || dir.startsWith(`${under}/`)
+const reaches = (dir: string, under?: string): boolean => !under || isAtOrUnder(dir, under)
 
 function containersOf(tree: NexusTree, root: string, under?: string): Container[] {
   return tree.collections

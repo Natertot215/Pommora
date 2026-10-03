@@ -23,11 +23,10 @@ import { rewriteFrontmatterConnections } from '../Connections/rewrite'
 import { linkDefs } from '../Properties/propertiesRegistry'
 import { refillValues } from '../Properties/assignment'
 import { BUNDLE_SUFFIX } from './bundle'
-import { pathExists, readTextOrNull, relocate, rmwJsonStrict } from '../Files/atomicWrite'
+import { pathExists, relocate, rmwJsonStrict } from '../Files/atomicWrite'
 import { dropPageMetadata } from '../Nexus/pageMetadata'
 import { dropSpaceOrder } from '../Nexus/reorder'
 import { machine } from '../Platform/machine'
-import { stampedId } from '../Files/pageFile'
 import { recordWrite } from '../Files/writeEcho'
 import { frozenWorld } from '../Nexus/heldPages'
 import { liveTreeOf } from '../Nexus/liveTree'
@@ -36,7 +35,7 @@ import { projectBaseline } from '../Nexus/remintLedger'
 import type { EntityRecord } from '../Nexus/record'
 import { type RecordFile, readRecord, bundleArtifact } from './record'
 import { deleteCascade, type StrippedLink } from '../Nexus/cascade'
-import { contentPages, parkLinks, refillTrashed } from './holdings'
+import { contentPages, pageIdsOf, parkLinks, refillTrashed } from './holdings'
 import { findContainerById, resolveRecord, type ArtifactRecord, type Refusal } from './resolve'
 import { owningCollection } from '../Nexus/treePatch'
 
@@ -53,12 +52,6 @@ async function openBundle(root: string, bundleAbs: string): Promise<Result<Recor
     return fault('Only a trash record can be spent.')
   const record = await readRecord(bundleAbs)
   return record ? ok(record) : fault('That deletion record is unreadable.')
-}
-
-async function trashedPageIds(record: ArtifactRecord, pages: string[]): Promise<string[]> {
-  if (record.entity === 'page') return record.id ? [record.id] : []
-  const texts = await Promise.all(pages.map(readTextOrNull))
-  return texts.flatMap((text) => stampedId(text ?? '') ?? [])
 }
 
 // Artifact first: a failed bundle removal then leaves a record with no artifact, litter the listing skips, where the reverse order would orphan a live artifact.
@@ -79,7 +72,7 @@ export async function emptyBundle(
   if (!artifactAbs)
     return fail('not-found', "That deletion didn't finish, or something else is in with it.")
   const pages = await contentPages(opened.value.entity, artifactAbs)
-  const pageIds = await trashedPageIds(opened.value, pages)
+  const pageIds = await pageIdsOf(pages)
   recordWrite(artifactAbs)
   if (deps.permanentDelete === true) await machine().remove(artifactAbs)
   else await deps.trashToSystem(artifactAbs)

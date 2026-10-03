@@ -1,18 +1,17 @@
 import { readFile, rename, rm, mkdir, stat, utimes, writeFile } from 'node:fs/promises'
 import { join } from '../Paths/posix'
-import { contextsDir, contextsRegistryFile } from '../Paths/paths'
+import { contextsDir, contextsRegistryFile, sidecarPath } from '../Paths/paths'
 import { tempRoot, readJsonAt } from '../Testing/hostFs'
 import { createContextGroup, createSpace } from '../Contexts/contextWrite'
 import { newId } from '../Nexus/ids'
 import { setSpaceProperty } from '../Properties/setProperty'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
-import { pageCollectionSidecar } from '../Nexus/schemas'
 import type { PropertyDefinition } from '../Properties/properties'
 import { handleMutate } from '../Nexus/mutate'
 import { readRegistry } from '../Properties/propertiesRegistry'
 import { listBundles } from './holdings'
 import { splitFrontmatter } from '../Files/pageFile'
-import { readSidecar } from '../Files/sidecar'
+import { readJsonObject } from '../Files/atomicWrite'
 import { closeSession, openSession } from '../Nexus/session'
 import { assignProperty } from '../Properties/assignment'
 import { createFolderEntity } from '../Nexus/folderEntity'
@@ -36,7 +35,7 @@ const liveDef = async (id: string): Promise<PropertyDefinition> => {
 }
 
 const assigns = async (folder: string, id: string): Promise<boolean> => {
-  const sc = await readSidecar(folder, 'collection', pageCollectionSidecar)
+  const sc = await readJsonObject(sidecarPath(folder, 'collection'))
   return (((sc?.properties as string[]) ?? []) as string[]).includes(id)
 }
 

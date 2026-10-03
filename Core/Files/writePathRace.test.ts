@@ -13,8 +13,8 @@ import { createTestPage } from '../Testing/createTestPage'
 import { setChildOrder } from '../Nexus/reorder'
 import { saveView } from '../Views/viewsFile'
 import { setContainerConfig } from '../Views/containerConfig'
-import { readSidecar } from './sidecar'
-import { pageCollectionSidecar } from '../Nexus/schemas'
+import { sidecarPath } from '../Paths/paths'
+import { readJsonObject } from './atomicWrite'
 
 const view = (id: string): SavedView => ({
   id,
@@ -42,7 +42,7 @@ describe('concurrent sidecar writers', () => {
       setChildOrder(folder, 'page_order', ['p1', 'p2']),
       saveView(folder, 'collection', view('view_1'), view('view_1')),
     ])
-    const sidecar = await readSidecar(folder, 'collection', pageCollectionSidecar)
+    const sidecar = await readJsonObject(sidecarPath(folder, 'collection'))
     expect(sidecar?.page_order).toEqual(['p1', 'p2'])
     expect((sidecar?.views as SavedView[] | undefined)?.map((v) => v.id)).toEqual(['view_1'])
   })
@@ -53,7 +53,7 @@ describe('concurrent sidecar writers', () => {
       saveView(folder, 'collection', view('view_1'), view('view_1')),
       setContainerConfig(folder, 'collection', { view_button: 'labeled' }),
     ])
-    const sidecar = await readSidecar(folder, 'collection', pageCollectionSidecar)
+    const sidecar = await readJsonObject(sidecarPath(folder, 'collection'))
     expect(sidecar?.set_order).toEqual(['s1'])
     expect((sidecar?.views as SavedView[] | undefined)?.map((v) => v.id)).toEqual(['view_1'])
     expect(sidecar?.view_button).toBe('labeled')
@@ -65,7 +65,7 @@ describe('concurrent sidecar writers', () => {
     await setChildOrder(folder, 'page_order', ['p1'])
     await saveView(folder, 'collection', view('view_1'), view('view_1'))
     await setChildOrder(folder, 'page_order', ['p1', 'p2'])
-    const sidecar = await readSidecar(folder, 'collection', pageCollectionSidecar)
+    const sidecar = await readJsonObject(sidecarPath(folder, 'collection'))
     expect(sidecar?.page_order).toEqual(['p1', 'p2'])
     expect((sidecar?.views as SavedView[] | undefined)?.length).toBe(1)
   })

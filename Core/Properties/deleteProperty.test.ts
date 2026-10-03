@@ -20,8 +20,8 @@ import { createTestPage } from '../Testing/createTestPage'
 import { splitFrontmatter } from '../Files/pageFile'
 import { readRegistry } from './propertiesRegistry'
 import { readRecord } from '../Trash/record'
-import { readSidecar } from '../Files/sidecar'
-import { pageCollectionSidecar } from '../Nexus/schemas'
+import { sidecarPath } from '../Paths/paths'
+import { readJsonObject } from '../Files/atomicWrite'
 import type { PropertyDefinition } from './properties'
 import { installMachine, machine } from '../Platform/machine'
 
@@ -96,7 +96,7 @@ describe('deleteProperty', () => {
 
     expect((await readRegistry(root)).defs[id]).toBeUndefined()
     for (const folder of [notes, tasks]) {
-      const sc = await readSidecar(folder, 'collection', pageCollectionSidecar)
+      const sc = await readJsonObject(sidecarPath(folder, 'collection'))
       expect(((sc?.properties as string[]) ?? []).includes(id)).toBe(false)
       expect('modified_at' in (sc ?? {})).toBe(false)
     }
@@ -137,12 +137,12 @@ describe('deleteProperty', () => {
     if (!p.ok) return
     await updatePageProperty(p.value.path, await liveDef(id), { kind: 'select', value: 'hi' })
     await removeProperty(root, notes, id)
-    const before = await readSidecar(notes, 'collection', pageCollectionSidecar)
+    const before = await readJsonObject(sidecarPath(notes, 'collection'))
     expect((before?.property_cache as Record<string, unknown>)[id]).toBeDefined()
 
     expect((await deleteProperty(root, id)).ok).toBe(true)
 
-    const sc = await readSidecar(notes, 'collection', pageCollectionSidecar)
+    const sc = await readJsonObject(sidecarPath(notes, 'collection'))
     expect((sc?.property_cache as Record<string, unknown> | undefined)?.[id]).toBeUndefined()
     expect(sc?.property_cache).toBeUndefined()
     expect((await readRegistry(root)).defs[id]).toBeUndefined()

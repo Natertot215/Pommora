@@ -646,6 +646,26 @@ describe('an outside batch’s turn', () => {
     await agrees()
   })
 
+  it('a held page saved outside without its ID gets the ID it held back, and the window never sees it leave', async () => {
+    await writeFile(abs('Notes', 'A.md'), 'alpha, rewritten\n')
+    await settleBatch(pusher, root, [ev('change', 'Notes', 'A.md')])
+    expect(splitFrontmatter(await bytes('Notes', 'A.md'))[ID_KEY]).toBe(ULID_A)
+    expect(held('Notes/A.md')).toBe(ULID_A)
+    expect(windowTree()).toEqual(heldTreeOf(root))
+    expect(windowTree().collections[0].pages.map((p) => p.id)).toEqual([ULID_A])
+    await agrees()
+  })
+
+  it('a held page whose ID another file took in the same batch is stamped fresh, and the other keeps it', async () => {
+    await writeFile(abs('Notes', 'B.md'), `---\nID: ${ULID_A}\n---\n\nalpha\n`)
+    await writeFile(abs('Notes', 'A.md'), 'a new note\n')
+    await settleBatch(pusher, root, [ev('add', 'Notes', 'B.md'), ev('change', 'Notes', 'A.md')])
+    const stamped = splitFrontmatter(await bytes('Notes', 'A.md'))[ID_KEY]
+    expect(stamped).not.toBe(ULID_A)
+    expect(held('Notes/A.md')).toBe(stamped)
+    expect(held('Notes/B.md')).toBe(ULID_A)
+  })
+
   it('a reply while a batch applies stamps nothing the batch listed, and the window isn’t shown it as unreadable', async () => {
     await writeFile(abs('Notes', 'Bare.md'), 'bare\n')
     await writeFile(abs('Notes', 'Late.md'), 'late\n')

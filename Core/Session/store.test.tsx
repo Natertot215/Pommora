@@ -263,6 +263,20 @@ describe('store — warm tabs (B-2/B-3)', () => {
     expect(readPageDetail(pg('a').path)).toEqual(detail('a'))
   })
 
+  it('a reload keeps what was typed while its fetch was out', async () => {
+    let answer!: (v: unknown) => void
+    openPage().mockImplementation(() => new Promise((r) => (answer = r)))
+    seed({
+      selection: pg('a'),
+      pages: { a: { status: 'ready', target: pg('a'), detail: detail('a'), body: 'typed' } },
+    })
+    const reloading = useSession.getState().reloadPage()
+    useSession.getState().setPageBody(detail('a').path, 'typed more')
+    answer(ok(detail('a')))
+    await reloading
+    expect(shownPage(useSession.getState())).toMatchObject({ status: 'ready', body: 'typed more' })
+  })
+
   it('a cold fetch a drop disowned mid-flight still lands its slot but leaves the cache unseeded', async () => {
     const resolveB = pauseFetchOfB()
     seed({ tabs: [uTab('t1', pg('b'), [pg('b')], 0)], activeTabId: 't1' })
@@ -1182,6 +1196,24 @@ describe('store — the headings map (Task 2.3)', () => {
     channels['index:headings'] = vi.fn(async () => ({ ok: true, value: { 'Notes/C.md': ['x'] } }))
     await useSession.getState().loadHeadings()
     expect(useSession.getState().headings).toEqual({ 'Notes/C.md': ['x'] })
+  })
+
+  it('a partial load asked after a full one lands after it, so the full answer never overwrites it', async () => {
+    let answerFull!: (v: unknown) => void
+    channels['index:headings'] = vi.fn((paths?: string[]) =>
+      paths
+        ? Promise.resolve({ ok: true, value: { 'Notes/A.md': ['fresh'] } })
+        : new Promise((r) => (answerFull = r)),
+    )
+    const full = useSession.getState().loadHeadings()
+    const partial = useSession.getState().loadHeadings(['Notes/A.md'])
+    await vi.waitFor(() => expect(answerFull).toBeTypeOf('function'))
+    answerFull({ ok: true, value: { 'Notes/A.md': ['stale'], 'Notes/B.md': ['intro'] } })
+    await Promise.all([full, partial])
+    expect(useSession.getState().headings).toEqual({
+      'Notes/A.md': ['fresh'],
+      'Notes/B.md': ['intro'],
+    })
   })
 })
 

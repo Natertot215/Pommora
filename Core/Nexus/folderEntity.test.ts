@@ -3,8 +3,8 @@ import { readdir, rm, stat } from 'node:fs/promises'
 import { tempRoot } from '../Testing/hostFs'
 import { createFolderEntity, renameFolderEntity } from './folderEntity'
 import { newId } from './ids'
-import { readSidecar } from '../Files/sidecar'
-import { baseSidecar, pageCollectionSidecar } from './schemas'
+import { sidecarPath } from '../Paths/paths'
+import { readJsonObject } from '../Files/atomicWrite'
 
 let root: string
 beforeEach(async () => {
@@ -23,7 +23,7 @@ describe('createFolderEntity', () => {
     })
     expect(r.ok).toBe(true)
     if (!r.ok) return
-    expect(await readSidecar(r.value.path, 'space', baseSidecar)).toMatchObject({
+    expect(await readJsonObject(sidecarPath(r.value.path, 'space'))).toMatchObject({
       id,
       icon: 'folder',
       color: 'green',
@@ -65,7 +65,7 @@ describe('renameFolderEntity', () => {
     if (!r.ok) return
     expect(r.value.path.endsWith('New')).toBe(true)
     await expect(stat(c.value.path)).rejects.toThrow()
-    expect(await readSidecar(r.value.path, 'collection', pageCollectionSidecar)).toMatchObject({
+    expect(await readJsonObject(sidecarPath(r.value.path, 'collection'))).toMatchObject({
       id,
     })
   })

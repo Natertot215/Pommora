@@ -1,15 +1,11 @@
-import { describe, it, expect, beforeEach, afterEach } from 'vitest'
-import { chmod, rm, readFile, writeFile } from 'node:fs/promises'
-import { join } from '../Paths/posix'
-import { tempRoot, noModeBits } from '../Testing/hostFs'
+import { describe, it, expect } from 'vitest'
 import {
   splitEnvelope,
   splitFrontmatter,
   assembleEnvelope,
   mergeFrontmatter,
   renameFrontmatterKey,
-  writePageFile,
-  sweepAdmits,
+  sweepParse,
 } from './pageFile'
 
 describe('splitEnvelope / assembleEnvelope', () => {
@@ -210,60 +206,6 @@ describe('renameFrontmatterKey — the key keeps its place', () => {
   })
 })
 
-describe('writePageFile (fs)', () => {
-  let dir: string
-  beforeEach(async () => {
-    dir = tempRoot('pom-page-')
-  })
-  afterEach(async () => {
-    await rm(dir, { recursive: true, force: true })
-  })
-
-  it('writes a new page atomically', async () => {
-    const p = join(dir, 'page.md')
-    await writePageFile(p, { id: 'X', '<Areas>': ['T'] }, ['id', '<Areas>'], 'Hello')
-    const content = await readFile(p, 'utf8')
-    expect(content).toContain('id: X')
-    expect(splitEnvelope(content).body).toBe('Hello')
-  })
-
-  it('preserves foreign frontmatter on update', async () => {
-    const p = join(dir, 'page.md')
-    await writeFile(p, assembleEnvelope('id: OLD\nplugin: keep\n', 'Body'), 'utf8')
-    await writePageFile(p, { id: 'NEW' }, ['id'], 'Body')
-    const content = await readFile(p, 'utf8')
-    expect(content).toContain('id: NEW')
-    expect(content).toContain('plugin: keep')
-    expect(splitEnvelope(content).body).toBe('Body')
-  })
-
-  it('answers the text it overwrote and the text it wrote', async () => {
-    const p = join(dir, 'page.md')
-    const before = assembleEnvelope('id: X\n', 'one')
-    await writeFile(p, before, 'utf8')
-    const r = await writePageFile(p, {}, [], 'two')
-    expect(r.previous).toBe(before)
-    expect(r.written).toBe(await readFile(p, 'utf8'))
-    expect(splitEnvelope(r.written).body).toBe('two')
-  })
-
-  it('a missing file answers no previous text', async () => {
-    const r = await writePageFile(join(dir, 'new.md'), { id: 'X' }, ['id'], 'Hello')
-    expect(r.previous).toBeNull()
-    expect(r.written).toContain('id: X')
-  })
-
-  it.skipIf(noModeBits)('refuses when the read fails for any reason but absence', async () => {
-    const p = join(dir, 'page.md')
-    const before = assembleEnvelope('id: X\n', 'one')
-    await writeFile(p, before, 'utf8')
-    await chmod(p, 0o000)
-    await expect(writePageFile(p, {}, [], 'two')).rejects.toThrow(/EACCES/)
-    await chmod(p, 0o644)
-    expect(await readFile(p, 'utf8')).toBe(before)
-  })
-})
-
 describe('mergeFrontmatter — broken frontmatter is never re-serialized', () => {
   const broken = '---\nbad: [unclosed\n---\nold prose'
 
@@ -312,17 +254,21 @@ const ALIAS = '---\nID: 01KVGMT8BFP350FZZXAMG1QDVA\nsomething: *word\n---\nbody'
 const TAB = '---\nID: 01KVGMT8BFP350FZZXAMG1QDVA\n<Projects>:\n\t- Pommora\n---\nbody'
 const HEALTHY = '---\nID: 01KVGMT8BFP350FZZXAMG1QDVA\n<Projects>:\n  - Pommora\n---\nbody'
 
-describe('sweepAdmits — the field-write gate', () => {
+describe('sweepParse — the field-write gate', () => {
   it('an unresolvable alias reads as empty rather than throwing', () => {
     expect(splitFrontmatter(ALIAS)).toEqual({})
   })
 
   it('refuses both shapes of unwritable frontmatter', () => {
-    expect(sweepAdmits(ALIAS)).toBe(false)
-    expect(sweepAdmits(TAB)).toBe(false)
+    expect(sweepParse(ALIAS)).toBeNull()
+    expect(sweepParse(TAB)).toBeNull()
   })
 
-  it('admits a page whose frontmatter round-trips', () => {
-    expect(sweepAdmits(HEALTHY)).toBe(true)
+  it('admits a page whose frontmatter round-trips, and merges into the parse it read', () => {
+    const page = sweepParse(HEALTHY)
+    expect(page?.raw).toEqual({ ID: '01KVGMT8BFP350FZZXAMG1QDVA', '<Projects>': ['Pommora'] })
+    expect(page?.merge({ Status: 'Done' }, ['Status'])).toBe(
+      '---\nID: 01KVGMT8BFP350FZZXAMG1QDVA\n<Projects>:\n  - Pommora\nStatus: Done\n---\nbody',
+    )
   })
 })

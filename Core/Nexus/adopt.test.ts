@@ -5,14 +5,12 @@ import { join } from '../Paths/posix'
 import { tempRoot, readJsonAt } from '../Testing/hostFs'
 import { lockContention } from '../Testing/machines'
 import { ensurePageId, stampAdopted } from './adopt'
-import { readSidecar } from '../Files/sidecar'
 import { splitFrontmatter } from '../Files/pageFile'
 import { idTime } from './ids'
-import { pageCollectionSidecar, pageSetSidecar } from './schemas'
 import { nexusConfig, nexusDir, sidecarPath } from '../Paths/paths'
 import { NEXUS_CONFIG_FILES, SIDECAR_FILENAME } from '../Paths/nexusPaths'
 import { machine } from '../Platform/machine'
-import { readJsonStrict, writeJson } from '../Files/atomicWrite'
+import { readJsonStrict, writeJson, readJsonObject } from '../Files/atomicWrite'
 import type { HostContext } from '../Contract/handlers'
 import { openNexusSequence } from './handlers'
 import { closeSession } from './session'
@@ -49,8 +47,8 @@ const ctx = {
 } as unknown as HostContext
 const open = (): Promise<void> => openNexusSequence(ctx, root, false)
 
-const coll = (p: string) => readSidecar(p, 'collection', pageCollectionSidecar)
-const set = (p: string) => readSidecar(p, 'set', pageSetSidecar)
+const coll = (p: string) => readJsonObject(sidecarPath(p, 'collection'))
+const set = (p: string) => readJsonObject(sidecarPath(p, 'set'))
 
 describe('stampAdopted', () => {
   it('stamps a folder under its sidecar lock, so a write held across the pass keeps both facts', async () => {

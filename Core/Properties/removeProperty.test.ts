@@ -4,7 +4,7 @@ import { chmod, rename, rm, readFile, stat, utimes, writeFile } from 'node:fs/pr
 import { join, relative } from '../Paths/posix'
 import { noModeBits, tempRoot, readJsonAt } from '../Testing/hostFs'
 import { fault, ok } from '../Contract/result'
-import { editJsonStrict } from '../Files/atomicWrite'
+import { editJsonStrict, readJsonObject } from '../Files/atomicWrite'
 import { seedConfigSurfaces, viewOn } from '../Testing/configSurfaces'
 import { sidecarPath } from '../Paths/paths'
 import { settleNow } from '../Nexus/settle'
@@ -17,10 +17,9 @@ import { createFolderEntity } from '../Nexus/folderEntity'
 import { newId } from '../Nexus/ids'
 import { updatePageProperty } from '../Nexus/page'
 import { createTestPage } from '../Testing/createTestPage'
-import { patchSidecar, readSidecar } from '../Files/sidecar'
+import { patchSidecar } from '../Files/sidecar'
 import { readRegistry } from './propertiesRegistry'
 import { splitFrontmatter } from '../Files/pageFile'
-import { pageCollectionSidecar } from '../Nexus/schemas'
 import { closeSession, openSession } from '../Nexus/session'
 import { heldTreeOf, refreshTree } from '../Nexus/liveTree'
 import type { PropertyDefinition } from './properties'
@@ -80,9 +79,9 @@ afterEach(async () => {
 })
 
 const pageValue = async (path: string): Promise<unknown> =>
-  (splitFrontmatter(await readFile(path, 'utf8')) as Record<string, unknown>)[liveDef.name]
-const sidecar = async (): Promise<Record<string, unknown> | null> =>
-  (await readSidecar(folder, 'collection', pageCollectionSidecar)) as Record<string, unknown> | null
+  splitFrontmatter(await readFile(path, 'utf8'))[liveDef.name]
+const sidecar = (): Promise<Record<string, unknown> | null> =>
+  readJsonObject(sidecarPath(folder, 'collection'))
 const cacheBlock = async (): Promise<{ values: Record<string, unknown> } | undefined> =>
   (
     (await sidecar())?.property_cache as
@@ -347,7 +346,7 @@ describe('restore on re-assign — per-value schema-currency reconciliation (C-3
     await updatePageProperty(c.value.path, selDef, { kind: 'select', value: '2024-01-01' })
     await removeProperty(root, folder, id)
     await assignProperty(root, folder, id)
-    const root2 = splitFrontmatter(await readFile(c.value.path, 'utf8')) as Record<string, unknown>
+    const root2 = splitFrontmatter(await readFile(c.value.path, 'utf8'))
     expect(root2[selDef.name]).toEqual(['2024-01-01'])
   })
 

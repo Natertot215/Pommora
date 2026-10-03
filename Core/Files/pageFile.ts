@@ -14,7 +14,6 @@ import { isPlainObject } from '../Contract/validators'
 import { asString } from '../Nexus/coerce'
 import { fail, fault, ok, type Result } from '../Contract/result'
 import type { PageDetail } from '../Pages/pageDetail'
-import { atomicWriteFile } from './atomicWrite'
 import { machine } from '../Platform/machine'
 
 interface PageEnvelope {
@@ -35,14 +34,17 @@ export const bodyHash = (content: string): string =>
   machine().sha256Hex(splitEnvelope(content).body)
 
 /** Anything that isn't a YAML map — an array, a scalar, unrecoverable YAML — reads as an empty map, and the file is still a valid page. */
-export function splitFrontmatter(content: string): Record<string, unknown> {
+function valuesOf(doc: Document): Record<string, unknown> {
   try {
-    const parsed: unknown = parseDocument(splitEnvelope(content).frontmatter).toJSON()
+    const parsed: unknown = doc.toJSON()
     return isPlainObject(parsed) ? parsed : {}
   } catch {
     return {}
   }
 }
+
+export const splitFrontmatter = (content: string): Record<string, unknown> =>
+  valuesOf(parseDocument(splitEnvelope(content).frontmatter))
 
 export function parsePage(
   content: string,
@@ -75,10 +77,10 @@ const serialized = (doc: Document): string | null => {
   }
 }
 
-export function frontmatterWritable(content: string): boolean {
-  const doc = parseDocument(splitEnvelope(content).frontmatter)
-  return mergeable(doc) && serialized(doc) !== null
-}
+const writable = (doc: Document): boolean => mergeable(doc) && serialized(doc) !== null
+
+export const frontmatterWritable = (content: string): boolean =>
+  writable(parseDocument(splitEnvelope(content).frontmatter))
 
 /** `---\n<fm>---\n<body>`. No separator blank line — a note must never open with an empty line under Obsidian's properties panel; splitEnvelope still strips one legacy separator. */
 export function assembleEnvelope(frontmatterYaml: string, body: string): string {
@@ -90,6 +92,27 @@ export function assembleEnvelope(frontmatterYaml: string, body: string): string 
   return `---\n${lf(fm)}---\n${lf(body)}`
 }
 
+const envelope = (fenced: boolean, fm: string, body: string): string =>
+  fenced || fm !== '' ? assembleEnvelope(fm, body) : body
+
+function mergeInto(
+  doc: Document,
+  modeled: Record<string, unknown>,
+  modeledKeys: readonly string[],
+): string {
+  if (mergeable(doc)) {
+    for (const key of modeledKeys) {
+      if (key in modeled && modeled[key] !== undefined) doc.set(key, modeled[key])
+      else if (doc.has(key)) doc.delete(key)
+    }
+    const out = serialized(doc)
+    if (out !== null) return out
+  }
+  throw new Error(
+    'This page’s frontmatter has a syntax error, so Pommora left it untouched. Fix the frontmatter and try again.',
+  )
+}
+
 export function mergeFrontmatter(
   existingContent: string,
   modeled: Record<string, unknown>,
@@ -97,21 +120,9 @@ export function mergeFrontmatter(
   body: string,
 ): string {
   const { frontmatter, fenced } = splitEnvelope(existingContent)
-  const envelope = (fm: string): string => (fenced || fm !== '' ? assembleEnvelope(fm, body) : body)
   // A body-only write never parses the frontmatter: an un-adopted note keeps exactly its own bytes, and a broken map is passed through rather than re-serialized from what it recovered.
-  if (modeledKeys.length === 0) return envelope(frontmatter)
-  const doc = parseDocument(frontmatter)
-  if (mergeable(doc)) {
-    for (const key of modeledKeys) {
-      if (key in modeled && modeled[key] !== undefined) doc.set(key, modeled[key])
-      else if (doc.has(key)) doc.delete(key)
-    }
-    const out = serialized(doc)
-    if (out !== null) return envelope(out)
-  }
-  throw new Error(
-    'This page’s frontmatter has a syntax error, so Pommora left it untouched. Fix the frontmatter and try again.',
-  )
+  if (modeledKeys.length === 0) return envelope(fenced, frontmatter, body)
+  return envelope(fenced, mergeInto(parseDocument(frontmatter), modeled, modeledKeys), body)
 }
 
 export type KeyCollision = 'prefer-new' | 'merge'
@@ -157,24 +168,6 @@ export function renameFrontmatterKey(
   return out === null ? null : assembleEnvelope(out, body)
 }
 
-export interface PageWrite {
-  previous: string | null
-  written: string
-}
-
-export async function writePageFile(
-  absPath: string,
-  modeled: Record<string, unknown>,
-  modeledKeys: readonly string[],
-  body: string,
-  bodyOnly = false,
-): Promise<PageWrite> {
-  const previous = await machine().readText(absPath)
-  const written = mergeFrontmatter(previous ?? '', modeled, modeledKeys, body)
-  await atomicWriteFile(absPath, written, bodyOnly)
-  return { previous, written }
-}
-
 export const NO_FILEABLE_ID = fault('That page has no ID Pommora can file.')
 
 export async function readPage(rootPath: string, relPath: string): Promise<Result<PageDetail>> {
@@ -192,7 +185,16 @@ export async function readPage(rootPath: string, relPath: string): Promise<Resul
   })
 }
 
-// Any identity short of unknown admits it, so an identity-less page is still swept: the sweeps exist to change or clear values, and gating on membership alone would leave a page holding the very value a Remove ran to clear. Its frontmatter must round-trip, so one file nobody can parse is skipped rather than failing the fan-out around it.
-export function sweepAdmits(content: string): boolean {
-  return parsePage(content).admission.state !== 'unknown' && frontmatterWritable(content)
+export interface SweptPage {
+  raw: Record<string, unknown>
+  merge: (modeled: Record<string, unknown>, modeledKeys: readonly string[]) => string
+}
+
+// One parse serves a sweep's admission, its read of the values, and its merge. Any identity short of unknown admits it, so an identity-less page is still swept: the sweeps exist to change or clear values, and gating on membership alone would leave a page holding the very value a Remove ran to clear. Its frontmatter must round-trip, so one file nobody can parse is skipped rather than failing the fan-out around it.
+export function sweepParse(content: string): SweptPage | null {
+  const { frontmatter, fenced, body } = splitEnvelope(content)
+  const doc = parseDocument(frontmatter)
+  const raw = valuesOf(doc)
+  if (admitContentFile(raw, 'page').state === 'unknown' || !writable(doc)) return null
+  return { raw, merge: (modeled, keys) => envelope(fenced, mergeInto(doc, modeled, keys), body) }
 }

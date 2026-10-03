@@ -21,7 +21,6 @@ import {
   type FilterRule,
   type SavedView,
 } from './views'
-import { pageCollectionSidecar } from '../Nexus/schemas'
 import { RESERVED_PROPERTY_ID } from '../Properties/properties'
 
 describe('SavedView decode', () => {
@@ -146,12 +145,6 @@ describe('SavedView decode', () => {
       collapsed_groups: ['g1'],
       manual_order: ['p2', 'p1'],
     })
-  })
-
-  it('wires a typed views[] into the collection sidecar schema', () => {
-    const parsed = pageCollectionSidecar.parse(fixture)
-    expect(parsed.views?.[0].type).toBe('table')
-    expect(parsed.views?.[0].group).toMatchObject({ kind: 'property', order_mode: 'manual' })
   })
 })
 
