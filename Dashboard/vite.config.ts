@@ -1,19 +1,10 @@
-import { resolve } from 'node:path'
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import { vanillaExtractPlugin } from '@vanilla-extract/vite-plugin'
-import { viteSingleFile } from 'vite-plugin-singlefile'
 
-// Two plain browser pages, decoupled from Electron. Each build folds every chunk, stylesheet, font,
-// and image into its one page — the file an artifact publishes — so the pages build one at a time,
-// the mode naming which; only the first build empties dist, so the second leaves its output standing.
-export default defineConfig(({ mode }) => {
-  const page = mode === 'showcase' ? mode : 'dashboard'
-  return {
-    plugins: [react(), vanillaExtractPlugin(), viteSingleFile()],
-    build: {
-      emptyOutDir: page === 'dashboard',
-      rollupOptions: { input: { [page]: resolve(__dirname, `${page}.html`) } },
-    },
-  }
+// A plain browser page, decoupled from Electron. Vercel's commit reaches the page through the env
+// prefix, so the ledger names the commit it was deployed from.
+export default defineConfig({
+  plugins: [react(), vanillaExtractPlugin()],
+  envPrefix: ['VITE_', 'VERCEL_GIT_'],
 })

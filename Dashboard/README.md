@@ -1,30 +1,28 @@
-# Dashboard — The Hosted Pages
+# Dashboard — The Hosted Site
 
-Two plain browser pages built from the design system, each folded into a single HTML file and published as a claude.ai artifact. None is the Electron app: `vite build` runs here on its own (`build:dashboard` from the root), not through `electron-vite`.
+Pommora Dashboard is one plain browser page built from the design system and deployed by Vercel from the `active` branch. It isn't the Electron app: `vite build` runs here on its own (`build:dashboard` from the root), not through `electron-vite`.
 
-## Pommora Dashboard
+A glass menu at the top left switches between its two views, the Dashboard and the Showcase; the address hash names a Showcase leaf, and an empty hash is the Dashboard.
 
-`dashboard.html` → the line ledger with the codebase audit below it.
+## Dashboard
 
-- **Line ledger:** real code lines per system, day by day, over the branch's history. It reads `Ledger/loc-history.json` from the artifact's database (`ledger/history`) and follows it live, so a data refresh is a document write rather than a rebuild; the dev server imports the file directly. `.claude/scripts/loc.py` writes that file and the versioned post-commit hook runs it after every commit. The include menu folds import and export lines, comment lines, and test lines in or out of the chart and the table.
-- **Codebase audit:** the page fetches `audit.md`, published beside it, and renders `.claude/Planning/Pommora Codebase Audit.md`: a summary strip, the document in reading order with each workstream and ride-along area collapsible, an area-by-lens heatmap, and a filterable search over every finding, with every total computed from the ledger.
+The line ledger with the codebase audit below it.
 
-Published once per Claude account, at https://claude.ai/code/artifact/7840fc59-41d5-4692-b5b6-c45de4d11401 and https://claude.ai/artifact/8PRPLWwk9ar9XXyJ8Hy7gQ; a session publishes to the one its account owns.
+- **Line ledger:** real code lines per system, day by day, over the branch's history, read from `Ledger/loc-history.json` at build time. `.claude/scripts/loc.py` writes that file from the versioned pre-commit hook, so every commit carries the numbers measured from its own tree. The include menu folds import and export lines, comment lines, and test lines in or out of the chart and the table.
+- **Codebase audit:** renders `Audit/audit.md`, the copy of `.claude/Planning/Pommora Codebase Audit.md` the pre-commit hook carries into each commit: a summary strip, the document in reading order with each workstream and ride-along area collapsible, an area-by-lens heatmap, and a filterable search over every finding, with every total computed from the ledger.
 
-## Pommora Showcase
+## Showcase
 
-`showcase.html` → the design system, live: color tokens, the type ramp, icons, glass materials, buttons, and components, with a sidebar on desktop and a top-right menu on mobile.
-
-Published at https://claude.ai/code/artifact/684b7af1-55b2-49cf-b2fa-1b3a6b15dd9c.
+The design system, live: color tokens, the type ramp, icons, glass materials, buttons, and components, with a glass leaf menu at the top right.
 
 ## Building
 
-`npm run dashboard` serves the pages at `/dashboard.html` and `/showcase.html`; the audit reads a copy of the ledger saved as `Dashboard/audit.md`. `npm run build:dashboard` builds them one after the other into `dist/` — `vite-plugin-singlefile` inlines each page's script, stylesheet, fonts, and images, so each output is one file. The pages build one at a time because the plugin inlines every chunk into a single entry; the Vite mode names which page.
+`npm run dashboard` serves the page, and `npm run build:dashboard` builds it into `dist/`.
 
-## Publishing
+## Deploying
 
-The pages are published as Claude artifacts by hand from a session, whenever a session chooses to. The Dashboard publishes with the audit ledger as its `audit.md` supporting file, so one publish updates both halves; the line ledger's numbers still arrive through its `ledger/history` document.
+`vercel.json` configures the Vercel project, whose root directory is `Dashboard` and whose production branch is `active`; the post-commit hook pushes `active` after every commit, and each push deploys. The install takes only the `Dashboard` and `UIX` workspaces, and `main` is excluded from deployment. The commit's short SHA reaches the page through Vercel's `VERCEL_GIT_` environment variables.
 
 ## Assets
 
-Glass-stage photos live in `Surfaces/` and are imported by `Leaves/GlassLeaf.tsx`; the single-file build inlines them.
+Glass-stage photos live in `Surfaces/` and are imported by `Leaves/GlassLeaf.tsx`.

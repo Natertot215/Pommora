@@ -1,0 +1,11 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "framework": "vite",
+  "installCommand": "cd .. && npm ci --workspace Dashboard --workspace UIX",
+  "buildCommand": "npm run build",
+  "git": {
+    "deploymentEnabled": {
+      "main": false
+    }
+  }
+}

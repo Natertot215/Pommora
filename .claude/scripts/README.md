@@ -5,7 +5,7 @@
 and the `Dashboard` excluded. Run it bare for the working tree, or with `--history` for one sample
 per day of the branch. Both forms emit the eight areas in stack order alongside a file census —
 per-area source files, and the whole tree split into source, tests and config — and `--history` also
-carries the swatch colors and the head SHA. Each day's sample holds four arrays per area: the source
+carries the swatch colors. Each day's sample holds four arrays per area: the source
 lines, the import and export lines among them (import statements, re-exports and export lists, and
 stylesheet imports), the comment lines dropped beside them, and the code lines of the area's test
 files, so the dashboard folds each group in or out without re-measuring. A file's kind is decided by
@@ -16,14 +16,12 @@ lists the pre-monorepo paths it was assembled from as well as its current ones, 
 measures every commit on the branch and the earlier samples stay comparable; the one area that
 changed name carries its stored samples over through `RENAMED_FROM`.
 
-`loc.py --update` folds HEAD alone into `Dashboard/Ledger/loc-history.json`, the file the dashboard
-page imports at build time. The series holds one sample per day, so a commit touches exactly one
-row — measuring that commit's own archive answers it in a fraction of a second, where `--history`
-re-walks every day of the branch. It reads the commit rather than the working tree, so uncommitted
-work is never counted against a commit that doesn't contain it. A commit that moved no code leaves
-the file untouched, so the refresh itself does not dirty the tree; where code did move, the refresh
-lands in the working tree and the next commit carries it. `head` names the commit the numbers were
-measured at.
+`loc.py --update` folds the tree being committed into `Dashboard/Ledger/loc-history.json`, the file
+the dashboard page imports at build time. The series holds one sample per day, so a commit touches
+exactly one row — measuring the index's own tree answers it in a fraction of a second, where
+`--history` re-walks every day of the branch. It reads the index rather than the working tree, so
+uncommitted work is never counted against a commit that doesn't contain it, and a commit that moved
+no code leaves the file untouched.
 
 `loc.py --rebuild` re-walks the branch and rewrites the JSON from scratch — the run for when the area
 map or the counted groups change.
@@ -52,18 +50,15 @@ each literal value in its third must appear in those files. `UIX/Theme`'s `theme
 republishes hashed tokens under stable names. Exit 0 means the tables agree; drift is listed per
 table.
 
-`loc.py` and `check-atlas.mjs` run after every commit through the versioned git hook
-`../hooks/post-commit`, which runs `loc.py --update`, builds the two dashboard pages
-(`npm run build:dashboard`), and runs `check-atlas.mjs`. Because it is a native git hook rather than
-a tool-side one, it sees every commit — a terminal, an editor, or any agent — not only the ones made
-through a particular tool. Git looks for hooks under `.git/hooks` by default, so one command per
-clone points it at the versioned directory instead:
+`loc.py` and `check-atlas.mjs` run before every commit through the versioned git hook
+`../hooks/pre-commit`, which copies the codebase audit into `Dashboard/Audit/audit.md`, runs
+`loc.py --update`, stages both files into the commit, and runs `check-atlas.mjs`. Its partner
+`../hooks/post-commit` realigns the index with what the commit carried and pushes `active`, which
+deploys the Dashboard. Because they are native git hooks rather than tool-side ones, they see every
+commit — a terminal, an editor, or any agent — not only the ones made through a particular tool. Git
+looks for hooks under `.git/hooks` by default, so one command per clone points it at the versioned
+directory instead:
 
 ```
 git config core.hooksPath .claude/hooks
 ```
-
-The built pages under `Dashboard/dist` are published as two claude.ai artifacts — the Pommora
-Dashboard (the ledger) and the Pommora Showcase (the design system); `Dashboard/README.md` carries
-their URLs. The post-commit hook keeps the builds current on every commit; publishing them is a
-separate, by-hand step from a session, taken when wanted.

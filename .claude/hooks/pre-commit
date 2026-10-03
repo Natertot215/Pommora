@@ -1,0 +1,15 @@
+#!/bin/sh
+# Git pre-commit hook: fold the tree being committed into the line ledger, carry the audit beside it,
+# and re-check the token atlas, so every commit ships the numbers measured from itself.
+
+ROOT=$(git rev-parse --show-toplevel 2>/dev/null) || exit 0
+cd "$ROOT" || exit 0
+
+AUDIT=".claude/Planning/Pommora Codebase Audit.md"
+[ -f "$AUDIT" ] && cp "$AUDIT" Dashboard/Audit/audit.md
+
+python3 .claude/scripts/loc.py --update || echo "line ledger: skipped (loc.py --update failed)" >&2
+git add Dashboard/Ledger/loc-history.json Dashboard/Audit/audit.md
+
+node .claude/scripts/check-atlas.mjs || echo "token ledger: drift above — the Features SOURCE tables disagree with the code" >&2
+exit 0

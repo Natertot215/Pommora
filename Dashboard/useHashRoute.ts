@@ -1,22 +1,19 @@
 import { useEffect, useState } from 'react'
 
-export function useHashRoute(defaultId: string): string {
-  const [id, setId] = useState(defaultId)
+const read = (): string => window.location.hash.slice(1)
+
+export function useHashRoute(): string {
+  const [hash, setHash] = useState(read)
 
   useEffect(() => {
-    const onHashChange = () => {
-      const hash = window.location.hash.slice(1)
-      setId(hash || defaultId)
-    }
-
-    onHashChange()
+    const onHashChange = (): void => setHash(read())
     window.addEventListener('hashchange', onHashChange)
     return () => window.removeEventListener('hashchange', onHashChange)
-  }, [defaultId])
+  }, [])
 
-  return id
+  return hash
 }
 
-export function setHashRoute(id: string) {
+export function setHashRoute(id: string): void {
   window.location.hash = id
 }

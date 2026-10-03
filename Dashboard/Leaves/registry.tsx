@@ -65,7 +65,3 @@ export const LEAVES: readonly Leaf[] = [
     render: () => <ComponentsLeaf />,
   },
 ]
-
-export function leafById(id: string): Leaf {
-  return LEAVES.find((l) => l.id === id) ?? LEAVES[0]
-}

@@ -15,7 +15,7 @@ import {
   stacked,
   sum,
 } from './ledgerModel'
-import { useLedger } from './useLedger'
+import history from './loc-history.json'
 import './ledger.css'
 
 const CENSUS: ReadonlyArray<[string, string]> = [
@@ -24,20 +24,18 @@ const CENSUS: ReadonlyArray<[string, string]> = [
   ['config', 'config files'],
 ]
 
-export function LedgerLeaf(): React.JSX.Element | null {
-  const ledger = useLedger()
-  return ledger && <LedgerBody key={ledger.series.length} ledger={ledger} />
-}
+const ledger: Ledger = history
+const commit = import.meta.env.VERCEL_GIT_COMMIT_SHA?.slice(0, 7)
 
-function LedgerBody({ ledger }: { ledger: Ledger }): React.JSX.Element {
-  const { series, head, files, kinds } = ledger
+export function LedgerLeaf(): React.JSX.Element {
+  const { series, files, kinds } = ledger
   const last = series.length - 1
   const [filters, setFilters] = useState<Filters>(DEFAULT_FILTERS)
   const [win, setWin] = useState<Window>({ lo: 0, hi: last })
   const [filtering, setFiltering] = useState(false)
   const filterRef = useRef<HTMLButtonElement>(null)
 
-  const stack = useMemo(() => bands(ledger, filters), [ledger, filters])
+  const stack = useMemo(() => bands(ledger, filters), [filters])
   const values = useMemo(() => series.map((s) => stacked(s, filters)), [series, filters])
   const today = values[last]
   const total = sum(today)
@@ -50,10 +48,12 @@ function LedgerBody({ ledger }: { ledger: Ledger }): React.JSX.Element {
       <header className="lg-masthead">
         <div className="lg-eyebrow">
           <span>Pommora</span>
-          <span className="lg-dot" />
-          <span>main</span>
-          <span className="lg-dot" />
-          <span className="lg-sha">{head}</span>
+          {commit && (
+            <>
+              <span className="lg-dot" />
+              <span className="lg-sha">{commit}</span>
+            </>
+          )}
         </div>
         <h1>Line Ledger</h1>
         <div className="lg-figure">

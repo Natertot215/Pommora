@@ -2,8 +2,7 @@ name: Clean Main
 
 on:
   push:
-    branches: [active]
-  workflow_dispatch:
+    branches: [main]
 
 permissions:
   contents: write
@@ -18,11 +17,11 @@ jobs:
     steps:
       - uses: actions/checkout@v5
         with:
-          ref: active
+          ref: main
           fetch-depth: 0
       - run: pip install git-filter-repo
       - run: >
-          git filter-repo --force --refs active --invert-paths
+          git filter-repo --force --refs main --invert-paths
           --path .claude/ --path .github/ --path Dashboard/
           --path-regex '(?i)(^|/)[^/]*(testing|tests)/|\.(test|spec)\.[cm]?[jt]sx?$|(^|/)vitest\.(config|setup)\.[cm]?[jt]s$'
-      - run: git push --force "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" active:main
+      - run: git push --force "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" main

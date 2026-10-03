@@ -6,7 +6,6 @@ export type Ledger = {
   areas: string[]
   colors: string[]
   series: Sample[]
-  head: string
   files: number[]
   kinds: Record<string, number>
 }

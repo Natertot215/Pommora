@@ -1,4 +1,4 @@
-import { Fragment, useEffect, useState } from 'react'
+import { Fragment, useState } from 'react'
 import { Button } from '@pommora/uix/Buttons/Button'
 import { Icon } from '@pommora/uix/Symbols'
 import {
@@ -12,12 +12,20 @@ import { FindingReport, Totals } from './FindingReport'
 import { FindingsView } from './FindingsView'
 import { Inline, Markdown } from './markdown'
 import { HeatMap, Overview } from './Overview'
+import source from './audit.md?raw'
 import './audit.css'
 
-type Load =
-  | { state: 'loading' }
-  | { state: 'error'; message: string }
-  | { state: 'ready'; audit: AuditDoc }
+type Load = { state: 'error'; message: string } | { state: 'ready'; audit: AuditDoc }
+
+function parse(): Load {
+  try {
+    return { state: 'ready', audit: parseAudit(source) }
+  } catch (err) {
+    return { state: 'error', message: err instanceof Error ? err.message : String(err) }
+  }
+}
+
+const load = parse()
 
 function GroupSection({
   group,
@@ -115,25 +123,7 @@ function Document({ audit }: { audit: AuditDoc }): React.JSX.Element {
 }
 
 export function Audit(): React.JSX.Element {
-  const [load, setLoad] = useState<Load>({ state: 'loading' })
   const [filters, setFilters] = useState<Filters>(NO_FILTERS)
-
-  useEffect(() => {
-    let live = true
-    fetch('audit.md', { cache: 'no-cache' })
-      .then((res) => {
-        if (!res.ok) throw new Error(`audit.md answered ${res.status}.`)
-        return res.text()
-      })
-      .then((md) => live && setLoad({ state: 'ready', audit: parseAudit(md) }))
-      .catch((err: unknown) => {
-        if (live)
-          setLoad({ state: 'error', message: err instanceof Error ? err.message : String(err) })
-      })
-    return () => {
-      live = false
-    }
-  }, [])
 
   const audit = load.state === 'ready' ? load.audit : undefined
   return (
@@ -146,7 +136,6 @@ export function Audit(): React.JSX.Element {
           </p>
         )}
       </header>
-      {load.state === 'loading' && <p className="au-status">Loading audit…</p>}
       {load.state === 'error' && (
         <div className="au-status" role="alert">
           <p>The audit couldn't be loaded.</p>

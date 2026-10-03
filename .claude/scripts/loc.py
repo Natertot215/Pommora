@@ -8,7 +8,7 @@ dropped, and the code lines of its test files, so the dashboard can fold each ba
 
   loc.py            -> JSON for the working tree
   loc.py --history  -> JSON with one sample per day of main's history
-  loc.py --update   -> fold HEAD into the dashboard's loc-history.json
+  loc.py --update   -> fold the tree being committed into the dashboard's loc-history.json
   loc.py --rebuild  -> rewrite loc-history.json from the branch's history
 """
 
@@ -20,6 +20,7 @@ import re
 import subprocess
 import sys
 import tempfile
+import time
 from typing import NamedTuple
 
 ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -322,8 +323,8 @@ def sample(date: str, census: Census) -> dict:
 HISTORY_JSON = os.path.join(ROOT, "Dashboard", "Ledger", "loc-history.json")
 
 
-def measure_commit(rev: str) -> Census:
-    """The tree as that commit recorded it — never the working one, which may hold anyone's
+def measure_rev(rev: str) -> Census:
+    """The tree a commit or tree object records — never the working one, which may hold anyone's
     uncommitted work and would attribute it to a commit that doesn't contain it."""
     with tempfile.TemporaryDirectory() as tmp:
         tar = subprocess.run(
@@ -362,38 +363,34 @@ def migrate(payload: dict) -> dict:
 
 
 def update() -> str:
-    """Fold HEAD into the stored history.
+    """Fold the tree being committed into the stored history.
 
-    The series holds one sample per day, so a new commit touches exactly one row — the last one on
-    its own date. Re-walking every day of the branch to learn that costs seconds and answers the
-    same thing the archive of a single commit does.
+    Runs from the pre-commit hook, so the tree is the index's, and the date is today's. The series
+    holds one sample per day, so a commit touches exactly one row — the last one on its own date.
+    Re-walking every day of the branch to learn that costs seconds and answers the same thing the
+    archive of a single tree does.
     """
-    date = git("log", "-1", "--format=%ad", "--date=short", "HEAD").strip()
-    head = git("rev-parse", "--short", "HEAD").strip()
-    census = measure_commit("HEAD")
+    date = time.strftime("%Y-%m-%d")
+    census = measure_rev(git("write-tree").strip())
     row = sample(date, census)
     counts = census_payload(census)
 
     with open(HISTORY_JSON, encoding="utf-8") as fh:
         payload = migrate(json.load(fh))
-    # A commit that moved no code leaves the file alone. Rewriting it just to stamp a new SHA would
-    # dirty the tree on every commit forever — including the commit that carries the refresh — so
-    # `head` means the commit these numbers were measured at, which is the truthful reading anyway.
     if (
         payload["areas"] == ORDER
         and all(payload.get(k) == v for k, v in counts.items())
         and any(s == row for s in payload["series"])
     ):
-        return f"{date}  {head}  unchanged"
+        return f"{date}  unchanged"
     series = [s for s in payload["series"] if s["d"] != date]
     series.append(row)
     series.sort(key=lambda s: s["d"])
     payload["series"] = series
-    payload["head"] = head
     payload.update(counts)
 
     write_payload(payload)
-    return f"{date}  {head}  {sum(census.lines.values())} lines"
+    return f"{date}  {sum(census.lines.values())} lines"
 
 
 def write_payload(payload: dict) -> None:
@@ -408,8 +405,7 @@ if __name__ == "__main__":
                 "areas": ORDER,
                 "colors": COLORS,
                 "series": history(),
-                "head": git("rev-parse", "--short", "HEAD").strip(),
-                **census_payload(measure_commit("HEAD")),
+                **census_payload(measure_rev("HEAD")),
             }
         )
         print("line ledger: rebuilt from the branch's history")
@@ -423,7 +419,7 @@ if __name__ == "__main__":
             "colors": COLORS,
             "series": history(),
             "head": git("rev-parse", "--short", "HEAD").strip(),
-            **census_payload(measure_commit("HEAD")),
+            **census_payload(measure_rev("HEAD")),
         }
     else:
         census = measure_tree(ROOT)
