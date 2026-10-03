@@ -20,6 +20,7 @@ import { formatDate } from '../Properties/formatValue'
 import { containerTargets, contextTargets } from '../Actions/destinationTree'
 import { foldKey, matchScore, rankMatches } from '../Paths/caseFold'
 import { useSession } from '../Session/store'
+import { trashChanged } from '../Session/nexusSlice'
 import { personalizationOf } from '../Session/configSlice'
 import { notifyReport, unrestoredLine } from '../Interface/Notifications/notifications'
 import { displayPropertyName, useCapitalizeMetadata } from '../Properties/Cells/columnLabel'
@@ -74,7 +75,6 @@ function TrashBody(): React.JSX.Element {
   const defaultIcons = useSession((s) => personalizationOf(s).defaultIcons)
   const tree = useSession((s) => s.tree)
   const mutate = useSession((s) => s.mutate)
-  const trashRevision = useSession((s) => s.trashRevision)
   const [rows, setRows] = useState<TrashRow[] | null>(null)
   const [failed, setFailed] = useState(false)
   const [query, setQuery] = useState('')
@@ -94,7 +94,8 @@ function TrashBody(): React.JSX.Element {
 
   useEffect(() => {
     void refresh()
-  }, [refresh, trashRevision])
+    return trashChanged.subscribe(() => void refresh())
+  }, [refresh])
 
   const capitalize = useCapitalizeMetadata()
   const shown = useMemo(

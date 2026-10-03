@@ -30,8 +30,13 @@ export const resolutionNudge = StateEffect.define<null>()
 /** A cell is a document of its own, so the page editor is found from the element: a link or marker in a table answers to the page around it, from the table's seat. */
 export function pageEditorAt(el: Element): { seat: Element; view: EditorView | null } {
   const seat = el.closest('.mdpm-tbl-widget') ?? el
-  const editor = seat.closest<HTMLElement>('.cm-editor')
-  return { seat, view: editor && EditorView.findFromDOM(editor) }
+  return { seat, view: editorAt(seat) }
+}
+
+/** The innermost editor holding `el`, so a table cell answers with its own. */
+export function editorAt(el: Element): EditorView | null {
+  const editor = el.closest<HTMLElement>('.cm-editor')
+  return editor && EditorView.findFromDOM(editor)
 }
 
 /** Another mount's text, already past its own guards, applied as the changed span only: no filter touches it, it stays out of undo history, and it never echoes back through `onChange`. */

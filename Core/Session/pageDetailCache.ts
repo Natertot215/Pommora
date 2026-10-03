@@ -1,5 +1,6 @@
 // The path-keyed page-detail store — module state, seeded by every landed page and written through by the shared save scheduler so a returning reader always sees the newest body.
 import { useSyncExternalStore } from 'react'
+import { emitter } from '@pommora/uix/Utilities/subscribable'
 import { capSet } from '@pommora/uix/Utilities/capMap'
 import type { PageDetail } from '../Pages/pageDetail'
 import { type Result, valueOr } from '../Contract/result'
@@ -132,30 +133,25 @@ export function dropCacheDetail(path: string): void {
 }
 
 const bodyEpochs = new Map<string, number>()
-const epochListeners = new Set<() => void>()
+const epochBumped = emitter()
 
 /** A replaced body is the head from here: a mount remounting in a later commit must not follow the text it replaced. */
 export function bumpBodyEpoch(path: string): void {
   const text = knownBody(path)
   if (text !== undefined) advanceHead(path, text)
   bodyEpochs.set(path, (bodyEpochs.get(path) ?? 0) + 1)
-  for (const fn of epochListeners) fn()
-}
-
-function subscribeBodyEpoch(fn: () => void): () => void {
-  epochListeners.add(fn)
-  return () => epochListeners.delete(fn)
+  epochBumped.emit()
 }
 
 export const useBodyEpoch = (path: string): number =>
-  useSyncExternalStore(subscribeBodyEpoch, () => bodyEpochs.get(path) ?? 0)
+  useSyncExternalStore(epochBumped.subscribe, () => bodyEpochs.get(path) ?? 0)
 
 export function clearCache(): void {
   clearWarm()
   detailByPath.clear()
   inFlight.clear()
   bodyEpochs.clear()
-  for (const fn of epochListeners) fn()
+  epochBumped.emit()
   baseByPath.clear()
   heads.clear()
 }

@@ -3,6 +3,7 @@
 .resize-strip {
   position: absolute;
   -webkit-app-region: no-drag;
+  touch-action: none;
 }
 .resize-edge {
   z-index: 2;

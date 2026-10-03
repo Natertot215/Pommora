@@ -125,7 +125,7 @@ export function useBridgeSubscriptions(): void {
     () =>
       dialer().on('menu:action', (action) => {
         if (action === 'open') void choose()
-        else runCommand(action)
+        else runCommand(action, document.activeElement)
       }),
     [choose],
   )

@@ -64,6 +64,7 @@
   height: 100%;
   cursor: ew-resize;
   z-index: 1;
+  touch-action: none;
 }
 
 .data-cell {

@@ -243,6 +243,19 @@ export function CellEditor({
               setAc(null)
               return false
             },
+            // A menu's native Undo or Redo arrives as input rather than keys, and reaches the page history the same way.
+            beforeinput: (e) => {
+              const forward =
+                e.inputType === 'historyUndo'
+                  ? onUndoRef
+                  : e.inputType === 'historyRedo'
+                    ? onRedoRef
+                    : null
+              if (!forward) return false
+              e.preventDefault()
+              forward.current()
+              return true
+            },
           }),
           EditorView.updateListener.of((u) => {
             if (u.docChanged && !u.transactions.some((t) => t.annotation(silentEdit)))

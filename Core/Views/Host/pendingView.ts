@@ -13,7 +13,7 @@ import { useLatest } from '@pommora/uix/Utilities/stableApi'
 import type { CollectionNode, NexusTree, SetNode } from '../../Nexus/tree'
 import { isContainer } from '../../Nexus/entities'
 import { announceDrag } from '@pommora/uix/Interactions/a11y'
-import { channel } from '@pommora/uix/Utilities/subscribable'
+import { channel, emitter } from '@pommora/uix/Utilities/subscribable'
 import type { OrderRequest } from '../../Nexus/mutateRequest'
 import { resolveOrder } from '../../Nexus/order'
 import { containerAt, moveNodeInTree, updateNodeInTree } from '../../Nexus/treePatch'
@@ -72,11 +72,11 @@ interface Pending {
   users: number
 }
 const pending = new Map<string, Pending>()
-const restaged = channel(0)
+const restaged = emitter()
 const restage = (entry: Pending, staged: Staged): void => {
   if (staged === entry.staged) return
   entry.staged = staged
-  restaged.set(restaged.get() + 1)
+  restaged.emit()
 }
 const keyOf = (sourceId: string, viewId: string): string => `${sourceId}\0${viewId}`
 

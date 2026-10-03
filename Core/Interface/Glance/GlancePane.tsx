@@ -8,7 +8,7 @@ import { lockLabel } from '../../Actions/toggleLabels'
 import { Icon, LockGlyph } from '@pommora/uix/Symbols'
 import { cx } from '@pommora/uix/Utilities/cx'
 import { revealTarget } from '@pommora/uix/Interactions/hover-reveal.css'
-import { EditorView } from '@codemirror/view'
+import { editorAt } from '../../MarkdownPM/api'
 import { HEADING_LINE, toggleFoldAt } from '../../MarkdownPM/folding'
 import type { WarmSeam } from '../../MarkdownPM/warmSeam'
 import type { Size } from '@pommora/uix/Interactions/useResizable'
@@ -237,8 +237,7 @@ export function GlancePane(): React.JSX.Element {
     const close = (): void => {
       if (cardRef.current?.contains(document.activeElement)) {
         const before = focusBefore.current
-        const host = before?.closest('.cm-editor')
-        const view = host ? EditorView.findFromDOM(host as HTMLElement) : null
+        const view = before ? editorAt(before) : null
         if (view) view.focus()
         else (before as HTMLElement | null)?.focus?.()
       }
@@ -314,8 +313,7 @@ export function GlancePane(): React.JSX.Element {
   const onFoldClick = (e: React.MouseEvent): void => {
     if (window.getSelection()?.isCollapsed === false) return
     const line = (e.target as HTMLElement).closest?.(HEADING_LINE)
-    const editor = line?.closest('.cm-editor')
-    const view = editor && EditorView.findFromDOM(editor as HTMLElement)
+    const view = line && editorAt(line)
     if (line && view) toggleFoldAt(view, view.posAtDOM(line))
   }
 

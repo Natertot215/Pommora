@@ -2,6 +2,7 @@ import { Children, isValidElement, useEffect, useRef, useState } from 'react'
 import { lockLabel } from '../../Actions/toggleLabels'
 import { Icon, type IconName, LockGlyph } from '@pommora/uix/Symbols'
 import { cx } from '@pommora/uix/Utilities/cx'
+import { emitter } from '@pommora/uix/Utilities/subscribable'
 import { DropOutline, MenuItem } from '@pommora/uix/Menus'
 import { Reveal } from '@pommora/uix/Animations/Reveal'
 import { useHoverReveal } from '@pommora/uix/Interactions/hoverReveal'
@@ -12,12 +13,11 @@ import { ctxHandler, type RenameTarget, RowTitle } from './sidebarRows'
 
 const PEEK_LINGER_MS = 2500 // KNOB
 
-const peekListeners = new Set<(parentPath: string, childId: string) => void>()
+const peeks = emitter<{ parentPath: string; childId: string }>()
 
 /** A one-shot landed-here pulse; a disclosure-locked folder briefly reveals only that child. */
-export function signalPeek(parentPath: string, childId: string): void {
-  for (const hear of peekListeners) hear(parentPath, childId)
-}
+export const signalPeek = (parentPath: string, childId: string): void =>
+  peeks.emit({ parentPath, childId })
 
 export function Disclosure({
   icon,
@@ -117,13 +117,9 @@ export function Disclosure({
   }, [namingChildId])
   useEffect(() => {
     if (!locked) return
-    const hear = (parentPath: string, childId: string): void => {
+    return peeks.subscribe(({ parentPath, childId }) => {
       if (parentPath === selfPath) lingerPeek(childId)
-    }
-    peekListeners.add(hear)
-    return () => {
-      peekListeners.delete(hear)
-    }
+    })
   }, [locked, selfPath])
   useEffect(() => {
     if (!locked) stopPeek()

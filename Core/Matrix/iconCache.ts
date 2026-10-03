@@ -1,16 +1,12 @@
 import { type IconNode, loadFullIconSet } from '@pommora/uix/Symbols'
 import { clamp } from '@pommora/uix/Utilities/clamp'
 import { svgFrame } from '@pommora/uix/Symbols/svgFrame'
+import { emitter } from '@pommora/uix/Utilities/subscribable'
 
 const cache = new Map<string, HTMLImageElement | null>()
-const listeners = new Set<() => void>()
+const loaded = emitter()
 
-export function onIconLoad(fn: () => void): () => void {
-  listeners.add(fn)
-  return () => {
-    listeners.delete(fn)
-  }
-}
+export const onIconLoad = loaded.subscribe
 
 export function svgOf(nodes: IconNode, color: string): string {
   const body = nodes
@@ -44,7 +40,7 @@ export function iconFor(name: string, color: string, px: number): HTMLImageEleme
     const img = new Image(size, size)
     img.onload = () => {
       cache.set(key, img)
-      for (const fn of listeners) fn()
+      loaded.emit()
     }
     img.src = `data:image/svg+xml;utf8,${encodeURIComponent(svgOf(nodes, color))}`
   })

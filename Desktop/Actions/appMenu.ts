@@ -1,17 +1,29 @@
-import { Menu, app, shell, BrowserWindow } from 'electron'
-import type { MenuItemConstructorOptions } from 'electron'
+import { Menu, app, shell, BrowserWindow, webContents } from 'electron'
+import type { MenuItemConstructorOptions, WebContents } from 'electron'
 import { basename } from 'node:path'
 import { pruneRecents, readAppConfig, updateAppConfig } from '../Config/appConfig'
 import { type CurrentWindow, push } from '../Bridge/ipc'
 import { dropLiveTree } from '@pommora/core/Nexus/liveTree'
 import { sessionRoot } from '@pommora/core/Nexus/session'
-import { type Commands, type MenuCommand, toAccelerator } from '@pommora/core/Actions/commands'
+import {
+  type Commands,
+  type EditMenuAction,
+  type NativeEdit,
+  toAccelerator,
+} from '@pommora/core/Actions/commands'
+import type { Pushes } from '@pommora/core/Contract/bridge'
+import { PASTE_PLAIN_ACTION } from '@pommora/core/Actions/editorMenu'
 import { resetHostZoom, stepHostZoom } from '../Web/webGuests'
 import { isWindows, nativePath, posixPath } from '../Platform/hostPath'
 
 const menuTarget = (win: CurrentWindow): BrowserWindow | null => {
   const w = BrowserWindow.getFocusedWindow() ?? win()
   return w && !w.isDestroyed() ? w : null
+}
+
+/** Checked rather than trusted, since a window's tell can carry anything. */
+export const nativeEdit = (wc: WebContents, edit: unknown): void => {
+  if (edit === 'undo' || edit === 'pasteAndMatchStyle') wc[edit]()
 }
 
 const zoomStep = (win: CurrentWindow, dir: 1 | -1) => (): void => {
@@ -33,7 +45,13 @@ export async function installAppMenu(
   }
   const hasSession = sessionRoot() !== null
   const isMac = process.platform === 'darwin'
-  const send = (action: MenuCommand | 'open'): void => push(win, 'menu:action', action)
+  const send = (action: Pushes['menu:action']): void => push(win, 'menu:action', action)
+  // A focused web guest or DevTools takes the native edit itself; the app's window answers its own.
+  const routedEdit = (action: EditMenuAction, edit: NativeEdit) => (): void => {
+    const wc = webContents.getFocusedWebContents()
+    if (wc && wc !== win()?.webContents) nativeEdit(wc, edit)
+    else send(action)
+  }
 
   const recentItems: MenuItemConstructorOptions[] = recents.length
     ? recents.map((p) => ({
@@ -87,11 +105,19 @@ export async function installAppMenu(
         isMac ? { role: 'close' as const } : { role: 'quit' as const },
       ],
     },
-    // Spelled out so Paste and Match Style gives up ⌘⇧V, which the role claims main-side (→ ConfigurationPM §Commands).
+    // Undo and Paste Without Formatting are spelled out so the window answers them first, and so Paste and Match Style gives up ⌘⇧V, which the role claims main-side (→ ConfigurationPM §Shortcuts).
     {
       label: 'Edit',
       submenu: [
-        { role: 'undo' },
+        {
+          label: 'Undo',
+          accelerator: toAccelerator(commands['undo-value']),
+          // Windows and Linux leave the chord to the window's keydown; macOS registers it regardless, and a press the page leaves unhandled lands in the same native undo through the window.
+          registerAccelerator: false,
+          click: routedEdit('undo', 'undo'),
+        },
+        // The hidden role keeps ⌘Z reaching a text field's own undo once `undo-value` is rebound, as the Zoom In alias keeps ⌘=.
+        { role: 'undo', visible: false, acceleratorWorksWhenHidden: true },
         { role: 'redo' },
         { type: 'separator' },
         { role: 'cut' },
@@ -99,7 +125,7 @@ export async function installAppMenu(
         { role: 'paste' },
         {
           label: 'Paste Without Formatting',
-          click: () => BrowserWindow.getFocusedWindow()?.webContents.pasteAndMatchStyle(),
+          click: routedEdit(PASTE_PLAIN_ACTION, 'pasteAndMatchStyle'),
         },
         { role: 'delete' },
         { role: 'selectAll' },

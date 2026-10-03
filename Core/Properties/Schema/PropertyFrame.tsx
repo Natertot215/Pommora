@@ -7,6 +7,7 @@ import { useRef, useState, type ReactNode } from 'react'
 import { Icon, type IconName } from '@pommora/uix/Symbols'
 import type { IconSize } from '@pommora/uix/Theme'
 import { useSession } from '../../Session/store'
+import { trashChanged } from '../../Session/nexusSlice'
 import {
   DEFAULT_LINK_DISPLAY,
   isReservedPropertyId,
@@ -214,7 +215,6 @@ export function PropertyFrame({
   const bumpValuesEpoch = useSession((st) => st.bumpValuesEpoch)
   const renamingProperty = useSession((st) => st.renamingProperty)
   const beginPropertyRename = useSession((st) => st.beginPropertyRename)
-  const bumpTrashRevision = useSession((st) => st.bumpTrashRevision)
   const cancelPropertyRename = useSession((st) => st.cancelPropertyRename)
   const [view, setView] = useState<SubView>({ kind: 'list' })
   const [iconOpen, setIconOpen] = useState(false)
@@ -318,7 +318,7 @@ export function PropertyFrame({
     else if (action === 'property:destroy' && (await askDestroyProperty(def.name))) {
       const deleted = await dialer().ask('property:delete', def.id)
       if (!reportRefusal(deleted)) return
-      bumpTrashRevision()
+      trashChanged.emit()
       backToList()
       notifyTrashed(
         displayPropertyName(def.name, capitalize),
