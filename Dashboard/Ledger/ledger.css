@@ -327,24 +327,6 @@
   text-align: left;
 }
 
-.lg-footer {
-  padding-top: 20px;
-  border-top: var(--width-100) solid var(--border-base);
-}
-.lg-footer p {
-  max-width: 66ch;
-  margin: 0;
-  font-size: 11px;
-  line-height: 14px;
-  color: var(--label-tertiary);
-}
-.lg-footer code {
-  font-size: 10.5px;
-  color: var(--label-secondary);
-  background: var(--surface-primary);
-  border: var(--width-100) solid var(--border-base);
-}
-
 @media (max-width: 720px) {
   .lg-page {
     gap: 32px;

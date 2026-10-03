@@ -172,21 +172,6 @@ export function LedgerLeaf(): React.JSX.Element {
           </table>
         </div>
       </section>
-
-      <footer className="lg-footer">
-        <p>
-          Counted by <code>.claude/scripts/loc.py</code> across the app's three workspaces. Lines
-          are source only: the count drops every comment and blank line, and this dashboard,{' '}
-          <code>node_modules</code>, and build output are outside it entirely. The include menu
-          folds three groups back in or out: import and export statements (counted inside each
-          system, and on by default), comment lines (one grey band across the whole app), and the
-          code lines of each system's test files. Build and tooling files —{' '}
-          <code>package.json</code>, <code>tsconfig</code>, the Vite and Vitest configuration, and
-          the <code>.d.ts</code> shims — stay out under every setting. The census splits the same
-          tree three ways so it states what the line total leaves out. Per-system file counts are
-          source files.
-        </p>
-      </footer>
     </div>
   )
 }
