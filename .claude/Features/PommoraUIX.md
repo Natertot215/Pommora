@@ -209,7 +209,7 @@ Where each goes: menu and sidebar rows → Body (Standard) or Control (Compact, 
 | Bloom     | `menuBloom` · `pickerBloom` · `titleReveal` | The menu open/close keyframes at the `slow` and `menu` rungs.                                                                                            |
 | Window    | `windowIn` · `windowOut`                                                      | The floating window's scale-fade open and withdraw on the `fast` rung — the confirmation modal takes it too.                                             |
 | Reveal    | `Reveal`                                                                      | The `0fr ↔ 1fr` body open/close on the `fast` rung.                                                                                                      |
-| PaneSlide | `paneSlide`                                                                   | A docked pane's in-out motion — the overlay's transform park or the in-flow reflow, by side, mode, and open state.                                       |
+| PaneSlide | `paneSlide`                                                                   | A docked pane's in-out motion — the overlay's park on its own progress or the in-flow reflow, by side, mode, and open state.                                       |
 | Exit      | `useExitPresence` · `useSettleFallback`                                       | Keeps a surface mounted through its close, and settles an end-event wait whose transition never runs; the held forms also keep the value it was showing. |
 
 ### Buttons

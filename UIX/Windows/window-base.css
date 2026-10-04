@@ -90,7 +90,9 @@
   min-width: 0;
   min-height: 0;
   padding: var(--window-body-pad);
-  transition: padding var(--pane-slide) var(--ease-base);
+  transition:
+    padding-left var(--pane-slide) var(--ease-base),
+    padding-right var(--pane-slide) var(--ease-base);
   /* Content dissolves across the whole toolbar it scrolls under; a window carrying no toolbar keeps the kit's own edge fade. */
   --scroll-fade: max(var(--window-toolbar-h), var(--scroll-fade-default));
   overflow-y: auto;
@@ -155,7 +157,9 @@
   padding-top: var(--window-panel-inset);
   padding-left: var(--window-tab-clear-l);
   padding-right: var(--window-tab-clear-r);
-  transition: padding var(--pane-slide) var(--ease-base);
+  transition:
+    padding-left var(--pane-slide) var(--ease-base),
+    padding-right var(--pane-slide) var(--ease-base);
 }
 .page-window-crumbs {
   min-width: 0;
@@ -246,9 +250,6 @@
 .window.is-resizing {
   --pane-slide: 0s;
 }
-.window.is-resizing,
-.window.is-resizing .window-panel-left-inflow,
-.window.is-resizing .window-panel-right-inflow,
 .window.is-resizing .window-actions-flow,
 .window.is-resizing .window-footer,
 .window.is-resizing .window-footer-toggle {
@@ -259,7 +260,8 @@
   margin: 0 var(--window-clear-r) 0 var(--window-clear-l);
   transition:
     height var(--duration-base) var(--ease-base),
-    margin var(--pane-slide) var(--ease-base);
+    margin-left var(--pane-slide) var(--ease-base),
+    margin-right var(--pane-slide) var(--ease-base);
 }
 .window.is-footer-open .window-footer {
   height: var(--reveal-bar-h);

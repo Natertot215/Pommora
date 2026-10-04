@@ -19,8 +19,8 @@ export function hitTest(
   if (py < bandZonePx) return { kind: 'band', index: 0 }
   // Append owns only the pad BELOW the content — the last band's south edges stay targetable.
   if (py > geometry.totalHeight) return { kind: 'band', index: layout.bands.length }
-  for (const seam of geometry.bandEdges.slice(0, -1)) {
-    if (Math.abs(py - seam.y) <= bandZonePx) return { kind: 'band', index: seam.band + 1 }
+  for (const [band, y] of geometry.seams.slice(0, -1).entries()) {
+    if (Math.abs(py - y) <= bandZonePx) return { kind: 'band', index: band + 1 }
   }
 
   for (const [id, r] of geometry.tiles) {

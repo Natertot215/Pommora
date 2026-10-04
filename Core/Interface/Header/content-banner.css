@@ -12,7 +12,9 @@
   height: 140px; /* KNOB — the banner's height */
   margin: calc(-1 * var(--window-toolbar-h)) calc(-1 * var(--window-clear-r)) 0
     calc(-1 * var(--window-clear-l));
-  transition: margin var(--pane-slide) var(--ease-base);
+  transition:
+    margin-left var(--pane-slide) var(--ease-base),
+    margin-right var(--pane-slide) var(--ease-base);
 }
 .window .window-banner-title {
   left: calc(var(--content-edge) + var(--window-clear-l));
