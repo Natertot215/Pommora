@@ -121,7 +121,8 @@ async function settle(pusher: Pusher, root: string): Promise<{ rescope: boolean 
   if (away()) return null
   const owed = owedFor(root)
   // An arm still awaiting its file writes to this record after the push, so it is emptied in place and never replaced; the walk and the stamps still owed outlive it, and the paths newly in reach outlive it while a stamp is owed or a pass is stamping.
-  const { pages, values, options, tiles, assets, corpus, rescope, stamp, walk, whole } = owed
+  const drained = { ...owed }
+  const { pages, values, options, tiles, assets, corpus, rescope, stamp, walk, whole } = drained
   Object.assign(owed, nothingOwed(root), { stamp, walk, whole })
   const released = !stamp.length && !stamping
   if (released) owed.whole = []
@@ -130,7 +131,7 @@ async function settle(pusher: Pusher, root: string): Promise<{ rescope: boolean 
   if (holders.length) {
     await registerHeldOptions(root, holders)
     if (away()) {
-      oweAgain(owed, { pages, values, options, tiles, assets, corpus, rescope })
+      oweAgain(owed, drained)
       return null
     }
   }

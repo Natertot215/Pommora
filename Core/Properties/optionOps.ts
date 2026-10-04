@@ -99,11 +99,11 @@ export async function registerHeldOptions(root: string, rels?: readonly string[]
           if (members.length) held.set(def.id, [...(held.get(def.id) ?? []), ...members])
         }
       }
-      const everywhere = (): string[] => [
+      const everywhere = [
         ...tree.collections.map((c) => c.path),
         ...tree.contexts.flatMap((g) => g.spaces.map((s) => s.path)),
       ]
-      for (const rel of rels ?? everywhere()) {
+      for (const rel of rels ?? everywhere) {
         const space = spaceAt(tree, rel)
         const defs = (space ? tree.config.registry : containerSchema(tree, rel)).filter(
           (d) => d.type === 'multiSelect',
