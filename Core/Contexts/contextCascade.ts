@@ -5,7 +5,7 @@ import { ID_KEY } from '../Nexus/identityMark'
 import { asString } from '../Nexus/coerce'
 import { ok, fail, type Result, fault } from '../Contract/result'
 import { mutateRegistryFile, readRegistryStrict } from './contextsRegistry'
-import { pathExists, readJsonStrict, relocate, setOrDrop, targetTaken } from '../Files/atomicWrite'
+import { pathExists, readJsonStrict, relocate, targetTaken } from '../Files/atomicWrite'
 import { renameFrontmatterKey, type KeyCollision } from '../Files/pageFile'
 import type { Json } from '../Files/stableJson'
 import { contextsDir } from '../Paths/paths'
@@ -15,13 +15,15 @@ import {
   type Rewrite,
   type RewriteText,
   type SweepResult,
+  rekeyHeld,
   stripKeys,
   sweepGovernedRoots,
   undoSweep,
   unsweptLine,
 } from '../Properties/governedSweep'
 import { withOrderEntry } from './spaceSidecar'
-import { editList } from '../Properties/pageValue'
+import { heldKeys } from '../Paths/caseFold'
+import { editHeldLists, editList, stripList } from '../Properties/pageValue'
 import { contextWorldOf, namesSpace } from './contextResolve'
 import { liveTreeOf } from '../Nexus/liveTree'
 import { listOf } from '../Contract/validators'
@@ -32,36 +34,19 @@ import { nameError } from '../Paths/names'
 /** A Context rename commits its registry LAST, so a tag written mid-cascade still lands under the OLD key while a key already wearing the new title can only be inert or hand-authored — neither list is fresher, so dropping either would silently lose tags. */
 const NEITHER_KEY_IS_FRESHER: KeyCollision = 'merge'
 
-function rekeyRoot(raw: Json, oldTitle: string, newTitle: string): Json | null {
-  const oldKey = contextKey(oldTitle)
-  const newKey = contextKey(newTitle)
-  if (!(oldKey in raw)) return null
-  const oldV = raw[oldKey]
-  const existing = raw[newKey]
-  const moved =
-    Array.isArray(oldV) && Array.isArray(existing)
-      ? [...existing, ...oldV.filter((v) => !existing.includes(v))]
-      : oldV
-  const out: Json = {}
-  for (const [k, v] of Object.entries(raw)) {
-    if (k === oldKey) out[newKey] = moved
-    else if (k !== newKey) out[k] = v
-  }
-  return out
-}
-
 export const rekeyContext = (oldTitle: string, newTitle: string): Rewrite =>
-  withOrderEntry((raw) => rekeyRoot(raw, oldTitle, newTitle), 'contexts', oldTitle, newTitle)
+  withOrderEntry(
+    (raw) =>
+      rekeyHeld(raw, contextKey(oldTitle), contextKey(newTitle), NEITHER_KEY_IS_FRESHER, true),
+    'contexts',
+    oldTitle,
+    newTitle,
+  )
 
-function retitleSpace(raw: Json, contextTitle: string, j: RenameJournal): Json | null {
-  const key = contextKey(contextTitle)
-  const next = editList(listOf(raw[key]), namesSpace, j.oldTitle, {
-    op: 'replace',
-    to: j.newTitle,
-  })
-  if (!next) return null
-  return { ...raw, [key]: next }
-}
+const retitleSpace = (raw: Json, contextTitle: string, j: RenameJournal): Json | null =>
+  editHeldLists(raw, contextKey(contextTitle), (held) =>
+    editList(held, namesSpace, j.oldTitle, { op: 'replace', to: j.newTitle }),
+  )
 
 export interface SweepCapture {
   id?: string
@@ -128,6 +113,9 @@ async function cascadeTitle(
   contextTitle: string,
   j: RenameJournal,
 ): Promise<SweepResult> {
+  // A title that changes only its case moves no key or value: every file's spelling already resolves to it.
+  if (normalizeTitle(j.oldTitle) === normalizeTitle(j.newTitle))
+    return { touched: new Map(), skipped: [], refused: [] }
   // The key being rewritten comes from the journal, never the registry title, which may already read old or new.
   const member: Member =
     j.spaceId === undefined
@@ -148,10 +136,13 @@ export async function unlinkContextKey(
   const key = contextKey(contextTitle)
   const captured: SweepCapture[] = []
   const strip: Rewrite = (raw, file) => {
-    if (!(key in raw)) return null
-    const values = listOf(raw[key]).filter((v): v is string => typeof v === 'string')
+    const keys = heldKeys(raw, key)
+    if (!keys.length) return null
+    const values = keys
+      .flatMap((k) => listOf(raw[k]))
+      .filter((v): v is string => typeof v === 'string')
     captured.push(captureRoot(raw, file, values))
-    return stripKeys(key)(raw, file)
+    return stripKeys(...keys)(raw, file)
   }
   const entry = withOrderEntry(strip, 'contexts', contextTitle, null)
   const swept = await unlinkMembers(root, { key }, entry, skipUnder)
@@ -167,12 +158,14 @@ export async function unlinkSpaceValue(
   const captured: SweepCapture[] = []
   const names = namesSpace(spaceTitle)
   const take: Rewrite = (raw, file) => {
-    const held = listOf(raw[key])
-    const next = editList(held, namesSpace, spaceTitle, { op: 'strip' })
-    if (!next) return null
-    const taken = held.filter((v): v is string => typeof v === 'string' && names(v))
-    captured.push(captureRoot(raw, file, taken))
-    return setOrDrop(raw, key, next.length ? next : undefined)
+    const taken: string[] = []
+    const next = editHeldLists(raw, key, (held) => {
+      const list = stripList(held, names)
+      if (list) taken.push(...held.filter((v): v is string => typeof v === 'string' && names(v)))
+      return list
+    })
+    if (next) captured.push(captureRoot(raw, file, taken))
+    return next
   }
   return ok({ ...(await unlinkMembers(root, { key, spaceTitle }, take)), captured })
 }
@@ -219,7 +212,9 @@ export async function renameContextOp(
   if (!entry) return fail('not-found', 'Unknown Context.')
   // A retry sweeps what the rename left to the title the Context holds now, which a later rename may have moved on.
   if (from !== undefined) {
-    const taken = reg.value.contexts.some((c) => c.id !== contextId && c.title === from)
+    const taken = reg.value.contexts.some(
+      (c) => c.id !== contextId && normalizeTitle(c.title) === normalizeTitle(from),
+    )
     const again = { contextId, oldTitle: from, newTitle: entry.title, skipped: [] }
     return taken ? ok(null) : sweepAgain(root, entry.title, again)
   }
@@ -323,7 +318,7 @@ export async function replayPendingRename(root: string): Promise<void> {
 
   if (j.spaceId === undefined) {
     const othersOwnOld = reg.value.contexts.some(
-      (c) => c.id !== j.contextId && c.title === j.oldTitle,
+      (c) => c.id !== j.contextId && normalizeTitle(c.title) === normalizeTitle(j.oldTitle),
     )
     if ((entry.title !== j.oldTitle && entry.title !== j.newTitle) || othersOwnOld) {
       await clearJournal(root, j)
