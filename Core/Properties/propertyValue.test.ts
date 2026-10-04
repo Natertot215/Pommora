@@ -325,8 +325,16 @@ describe('applyValueAtRoot', () => {
   it('writes and clears the spelling the root holds', () => {
     const status = { ...statusDef, name: 'Status' }
     const done = { kind: 'select', value: 'Done' } as const
-    expect(applyValueAtRoot({ status: 'Open' }, status, done)).toEqual({ status: ['Done'] })
-    expect(applyValueAtRoot({ status: 'Open' }, status, null)).toEqual({})
+    expect(applyValueAtRoot({ status: 'Open' }, status, done, false)).toEqual({ status: ['Done'] })
+    expect(applyValueAtRoot({ status: 'Open' }, status, null, false)).toEqual({})
+  })
+
+  it('with casing resolved, writes under the name in place of every spelling', () => {
+    const status = { ...statusDef, name: 'Status' }
+    const done = { kind: 'select', value: 'Done' } as const
+    const held = { STATUS: 'Open', status: 'Later' }
+    expect(applyValueAtRoot(held, status, done, true)).toEqual({ Status: ['Done'] })
+    expect(applyValueAtRoot(held, status, null, true)).toEqual({})
   })
 })
 
