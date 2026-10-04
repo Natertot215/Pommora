@@ -1,15 +1,15 @@
-import { paneInflow, paneOverlay } from './pane-slide.css'
-import './slide-progress.css'
+import { cx } from '../Utilities/cx'
+import { paneInflow, paneOverlay, paneOverlayOpen } from './pane-slide.css'
 
 export function paneSlide({
   side,
   mode,
-  open = true,
+  open,
 }: {
   side: 'left' | 'right'
   mode: 'overlay' | 'inflow'
-  open?: boolean
+  open: boolean
 }): string {
-  if (mode === 'overlay') return paneOverlay[side]
+  if (mode === 'overlay') return cx(paneOverlay[side], open && paneOverlayOpen)
   return paneInflow[open ? 'open' : 'closed']
 }

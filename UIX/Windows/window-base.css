@@ -9,9 +9,10 @@
 
   --window-toolbar-h: 36px;
   --window-panel-inset: var(--app-inset);
-  /* How much of the body each floating pane covers; content clears it, a banner runs beneath it. They ride --io, so everything keyed to them moves in one frame. */
+  /* How much of the body each floating pane covers; content clears it, a banner runs beneath it. Each consumer transitions on --pane-slide, so everything keyed to them moves together. */
   --window-clear-l: 0px;
   --window-clear-r: 0px;
+  --pane-slide: var(--duration-base);
   --window-panel-top: 16px;
 
   --slide-panel-w: var(--window-panel-r-w);
@@ -19,33 +20,23 @@
   --slide-home: calc(var(--window-panel-inset) + 22px);
   --slide-cluster-w: 36px; /* KNOB — the trailing cluster's width, the two-glyph case */
   --slide-breathing: calc(var(--surface-inset) * 2);
-  --window-title-squeeze: max(0px, var(--io) * var(--window-panel-r-w) - 6px - 62px);
+  --window-title-squeeze: 0px;
   /* Half the right pane's clearance — the floating title rides the content column's center, not the window's. */
   --window-title-shift: calc(var(--window-clear-r) / -2);
   --window-tab-clear-l: calc(var(--window-panel-inset) + 22px);
-  --window-tab-clear-r: calc(var(--window-panel-inset) + 56px + var(--window-title-squeeze, 0px));
+  --window-tab-clear-r: calc(var(--window-panel-inset) + 56px + var(--window-title-squeeze));
   --window-body-pad: var(--window-toolbar-h) var(--window-clear-r) 0 var(--window-clear-l);
   --scrollbar-top: var(--window-toolbar-h);
   --scrollbar-right: var(--window-clear-r);
-
-  /* Declared HERE so the app-level --io can't inherit into a floating window. */
-  --io: 0;
-  --io-l: 0;
-  transition:
-    --io var(--duration-base) var(--ease-base),
-    --io-l var(--duration-base) var(--ease-base);
 }
 .window.is-panel-right-open {
-  --io: 1;
+  --window-title-squeeze: max(0px, var(--window-panel-r-w) - 6px - 62px);
 }
-.window.is-panel-left-open {
-  --io-l: 1;
+.window.is-panel-left-open:has(> .window-panel-left-overlay) {
+  --window-clear-l: calc(var(--window-panel-l-w) + var(--window-panel-inset));
 }
-.window:has(> .window-panel-left-overlay) {
-  --window-clear-l: calc(var(--io-l) * (var(--window-panel-l-w) + var(--window-panel-inset)));
-}
-.window:has(> .window-panel-right-overlay) {
-  --window-clear-r: calc(var(--io) * (var(--window-panel-r-w) + var(--window-panel-inset)));
+.window.is-panel-right-open:has(> .window-panel-right-overlay) {
+  --window-clear-r: calc(var(--window-panel-r-w) + var(--window-panel-inset));
 }
 
 /* The toolbar strip is zero-height, so the move gesture needs this surface; `z-index: 0` clears the body's flow without outranking it. */
@@ -87,6 +78,11 @@
 }
 .window-actions-trail {
   right: calc(var(--window-panel-inset) + 4px);
+  --io: 0;
+  transition: --io var(--pane-slide) var(--ease-base);
+}
+.window.is-panel-right-open .window-actions-trail {
+  --io: 1;
 }
 
 .window-body {
@@ -94,6 +90,7 @@
   min-width: 0;
   min-height: 0;
   padding: var(--window-body-pad);
+  transition: padding var(--pane-slide) var(--ease-base);
   /* Content dissolves across the whole toolbar it scrolls under; a window carrying no toolbar keeps the kit's own edge fade. */
   --scroll-fade: max(var(--window-toolbar-h), var(--scroll-fade-default));
   overflow-y: auto;
@@ -113,6 +110,7 @@
   transform: translateX(-50%);
   /* Its own property, so the host's collapse transform and its transition stay untouched. */
   translate: var(--window-title-shift);
+  transition: translate var(--pane-slide) var(--ease-base);
   display: flex;
   align-items: center;
   height: 20px;
@@ -128,7 +126,8 @@
   --page-window-morph-slide: -12px; /* KNOB — the title's collapse-left travel */
   transition:
     opacity var(--duration-base) var(--ease-base),
-    transform var(--duration-base) var(--ease-base);
+    transform var(--duration-base) var(--ease-base),
+    translate var(--pane-slide) var(--ease-base);
 }
 @starting-style {
   .page-window-title {
@@ -156,6 +155,7 @@
   padding-top: var(--window-panel-inset);
   padding-left: var(--window-tab-clear-l);
   padding-right: var(--window-tab-clear-r);
+  transition: padding var(--pane-slide) var(--ease-base);
 }
 .page-window-crumbs {
   min-width: 0;
@@ -242,7 +242,10 @@
   flex-shrink: 0;
 }
 
-/* Resize tracks the cursor 1:1; the root's driver transitions must not re-animate mid-drag. */
+/* Resize tracks the cursor 1:1; nothing keyed to a pane's width may re-animate mid-drag. */
+.window.is-resizing {
+  --pane-slide: 0s;
+}
 .window.is-resizing,
 .window.is-resizing .window-panel-left-inflow,
 .window.is-resizing .window-panel-right-inflow,
@@ -254,7 +257,9 @@
 
 .window-footer {
   margin: 0 var(--window-clear-r) 0 var(--window-clear-l);
-  transition: height var(--duration-base) var(--ease-base);
+  transition:
+    height var(--duration-base) var(--ease-base),
+    margin var(--pane-slide) var(--ease-base);
 }
 .window.is-footer-open .window-footer {
   height: var(--reveal-bar-h);
@@ -270,10 +275,11 @@
 .window.is-footer-open .window-footer-toggle {
   bottom: var(--reveal-bar-h);
 }
-/* Their edges ride --io each frame, and a transition on left or right would chase it. */
 .window .window-footer-toggle,
 .window [data-reveal-lead] {
   transition:
+    left var(--pane-slide) var(--ease-base),
+    right var(--pane-slide) var(--ease-base),
     bottom var(--duration-base) var(--ease-base),
     opacity var(--reveal-fade) var(--ease-base),
     background var(--duration-fast) var(--ease-base);
@@ -303,5 +309,5 @@
 }
 .window:has(.window-actions-flow > :only-child) {
   --slide-cluster-w: 17px;
-  --window-tab-clear-r: calc(var(--window-panel-inset) + 37px + var(--window-title-squeeze, 0px));
+  --window-tab-clear-r: calc(var(--window-panel-inset) + 37px + var(--window-title-squeeze));
 }

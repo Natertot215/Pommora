@@ -24,7 +24,8 @@
     "test": "vitest run",
     "lint": "biome check . && node .claude/hooks/no-wrapped-comments.mjs --scan && node ../../.claude/hooks/no-name-mentions.mjs --scan",
     "format": "biome format --write .",
-    "check": "biome check --write ."
+    "check": "biome check --write .",
+    "postinstall": "patch-package --patch-dir UIX/Glass"
   },
   "devDependencies": {
     "@biomejs/biome": "^2.5.1",
@@ -32,6 +33,7 @@
     "@vanilla-extract/vite-plugin": "^5.2.2",
     "@vitejs/plugin-react": "^5.2.0",
     "jsdom": "^29.1.1",
+    "patch-package": "^8.0.1",
     "typescript": "^6.0.3",
     "vitest": "^4.1.8"
   }

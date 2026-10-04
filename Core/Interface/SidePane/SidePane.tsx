@@ -8,7 +8,7 @@ export function SidePane({ open }: { open: boolean }): React.JSX.Element {
   return (
     <GlassPane
       ref={publishChromePart('sidePane')}
-      className={cx('side-pane-glass', paneSlide({ side: 'right', mode: 'overlay' }))}
+      className={cx('side-pane-glass', paneSlide({ side: 'right', mode: 'overlay', open }))}
       aria-hidden={!open}
     >
       <div className="side-pane-body" />

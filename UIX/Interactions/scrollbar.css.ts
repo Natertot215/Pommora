@@ -12,6 +12,8 @@ export const track = style({
   top: `calc(max(anchor(top), var(--scrollbar-top, 0px)) + var(--app-inset))`,
   bottom: `calc(anchor(bottom) + var(--app-inset))`,
   right: `calc(var(--scrollbar-right, 0px) + var(--app-inset))`,
+  // A host's --scrollbar-right moves with its panes, at the host's own --pane-slide.
+  transition: 'right var(--pane-slide, 0s) var(--ease-base)',
   width: SCROLLBAR.width,
   containerType: 'size',
   pointerEvents: 'none',

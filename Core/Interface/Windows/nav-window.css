@@ -6,7 +6,7 @@
 .navwindow .window-actions-flow {
   opacity: 0;
   pointer-events: none;
-  /* The nudge transitions as a VALUE, never as `transform` — the transform also carries the --io swallow, and transitioning it would retarget on every frame --io advances. */
+  /* The nudge transitions as a VALUE, never as `transform` — the transform also carries the swallow, and transitioning it would retarget on every frame the swallow advances. */
   --window-flow-reveal: 6px;
   transition:
     opacity var(--duration-base) var(--ease-base),
@@ -35,6 +35,7 @@
 
 .navwindow-main {
   padding: var(--window-body-pad);
+  transition: padding var(--pane-slide) var(--ease-base);
   display: flex;
   flex-direction: column;
   flex: 1;

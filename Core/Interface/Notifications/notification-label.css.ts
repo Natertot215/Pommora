@@ -2,7 +2,6 @@ import { style } from '@vanilla-extract/css'
 import { text, vars } from '@pommora/uix/Theme'
 import { stack } from '@pommora/uix/Theme/stack'
 import { SIZE } from '@pommora/uix/Labels/label-base.css'
-import { duration, easing } from '@pommora/uix/Animations/motion'
 
 const c = vars.color
 
@@ -25,12 +24,8 @@ export const host = style({
   borderWidth: SIZE.border,
   borderColor: c.fill.primary,
   background: c.fill.tertiary,
-  // The app-level `--io` inherits, so the driver is declared here — the side pane's must never reach this label.
-  vars: { '--pane-inset': 'var(--surface-inset)', '--io': '0' },
-  transition: `--io ${duration.base} ${easing.baseEase}`,
+  vars: { '--pane-inset': 'var(--surface-inset)' },
 })
-
-export const shown = style({ vars: { '--io': '1' } })
 
 export const error = style({ borderColor: 'var(--error)' })
 
