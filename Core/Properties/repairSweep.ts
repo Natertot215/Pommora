@@ -2,7 +2,6 @@ import { join } from '../Paths/posix'
 import {
   governedWorld,
   reconcileGovernedRoot,
-  survivingChanges,
   type GovernedWorld,
 } from '../Contexts/contextResolve'
 import type { Adoption } from './propertyValue'
@@ -37,14 +36,13 @@ export async function runRepairSweep(root: string, reread: SeedReread): Promise<
       worlds.set(abs, governedWorld(tree, defs))
     }
     if (!live()) return
-    // A key whose value reads as nothing stays as written, for the user to settle on the page.
     const adoptions: Adoption[] = []
     const raw: Rewrite = (fm, file) => {
       const world = worlds.get(file)
       if (!world || !live()) return null
       const r = reconcileGovernedRoot(fm, world)
       adoptions.push(...r.adoptions)
-      return { ...fm, ...survivingChanges(r) }
+      return r.root
     }
     await sweepGovernedRoots(root, [...worlds.keys()], { raw })
     await applyAdoptions(root, adoptions)

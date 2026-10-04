@@ -3,7 +3,6 @@ import {
   contextWorldOf,
   type GovernedWorld,
   reconcileGovernedRoot,
-  survivingChanges,
   resolveContextKeys,
 } from './contextResolve'
 import { byFoldedName, type PropertyDefinition } from '../Properties/properties'
@@ -134,10 +133,10 @@ describe('reconcileGovernedRoot — the context arm', () => {
     expect(changed.sort()).toEqual(['<Areas>', '<Classes>', '<Projects>'])
   })
 
-  it('a live reconcile writes nothing for an empty list, a bare key, or a key naming only an unknown Space', () => {
+  it('a live reconcile keeps an empty list, a bare key, and a key naming only an unknown Space as written', () => {
     const r = reconcileGovernedRoot(emptied, { ...world, contexts: withAreas })
-    expect(r.changed.sort()).toEqual(['<Areas>', '<Classes>', '<Projects>'])
-    expect(survivingChanges(r)).toEqual({})
+    expect(r.root).toEqual(emptied)
+    expect(r.changed).toEqual([])
   })
 
   it('writes a Space named twice in two casings once', () => {
@@ -193,10 +192,13 @@ describe('reconcileGovernedRoot — the property arm', () => {
     expect(changed).toEqual([])
   })
 
-  it('deletes an assigned key whose value reads as nothing', () => {
-    const { root, changed } = reconcileGovernedRoot({ Status: ['Wip'] }, world)
-    expect('Status' in root).toBe(false)
-    expect(changed).toEqual(['Status'])
+  it('keeps an assigned key whose value reads as nothing as written, and a restore deletes it', () => {
+    const live = reconcileGovernedRoot({ Status: ['Wip'] }, world)
+    expect(live.root).toEqual({ Status: ['Wip'] })
+    expect(live.changed).toEqual([])
+    const frozen = reconcileGovernedRoot({ Status: ['Wip'] }, world, {})
+    expect('Status' in frozen.root).toBe(false)
+    expect(frozen.changed).toEqual(['Status'])
   })
 
   it('a Multi-Select keeps an unregistered option and reports it for adoption', () => {
@@ -264,10 +266,9 @@ describe('reconcileGovernedRoot — spellings with case resolution off', () => {
 
 describe('reconcileGovernedRoot — spellings with case resolution on', () => {
   it('moves a key to its registered spelling and retires the one it read', () => {
-    const { root, changed, retired } = reconcileGovernedRoot({ tags: ['a'] }, resolving)
+    const { root, changed } = reconcileGovernedRoot({ tags: ['a'] }, resolving)
     expect(root).toEqual({ Tags: ['a'] })
     expect(changed.sort()).toEqual(['Tags', 'tags'])
-    expect([...retired]).toEqual(['tags'])
   })
 
   it('joins two spellings of a list', () => {
@@ -290,37 +291,35 @@ describe('reconcileGovernedRoot — spellings with case resolution on', () => {
 
   it('leaves a Context key naming an unknown Space wholly as written, its spellings unjoined', () => {
     const input = { '<Projects>': ['pommora', 'Ghost'], '<projects>': ['CS 161'] }
-    const { root, changed, retired } = reconcileGovernedRoot(input, resolving)
+    const { root, changed } = reconcileGovernedRoot(input, resolving)
     expect(root).toEqual(input)
     expect(changed).toEqual([])
-    expect(retired.size).toBe(0)
   })
 
   it('a retired spelling waits on its key being written', () => {
-    const { root, changed, retired } = reconcileGovernedRoot(
+    const { root, changed } = reconcileGovernedRoot(
       { Stage: ['Bogus'], stage: ['Done'] },
       resolving,
       {},
     )
     expect(root.stage).toEqual(['Done'])
     expect(changed).toContain('Stage')
-    expect(retired.size).toBe(0)
+    expect(changed).not.toContain('stage')
   })
 })
 
-describe('survivingChanges', () => {
+describe('reconcileGovernedRoot — a live join', () => {
   it('deletes a retired spelling when its key survives', () => {
-    const original = { Tags: ['alpha'], tags: ['beta'] }
-    const kept = survivingChanges(reconcileGovernedRoot(original, resolving))
-    expect(kept).toEqual({ Tags: ['alpha', 'beta'], tags: undefined })
-    expect('tags' in kept).toBe(true)
+    const r = reconcileGovernedRoot({ Tags: ['alpha'], tags: ['beta'] }, resolving)
+    expect(r.root).toEqual({ Tags: ['alpha', 'beta'] })
+    expect(r.changed.sort()).toEqual(['Tags', 'tags'])
   })
 
   it('a join that would lose a member is withheld, every spelling left as written', () => {
     const original = { tags: ['', 'alpha'], TAGS: ['beta'] }
     const r = reconcileGovernedRoot(original, resolving)
     expect(r.root).toEqual(original)
-    expect(survivingChanges(r)).toEqual({})
+    expect(r.changed).toEqual([])
   })
 })
 

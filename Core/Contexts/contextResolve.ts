@@ -92,8 +92,6 @@ interface Reconciled {
   root: Record<string, unknown>
   changed: string[]
   adoptions: Adoption[]
-  /** Each spelling joined into a key the reconcile wrote, by that key. */
-  retired: ReadonlySet<string>
 }
 
 type Governor = { name: string; def: PropertyDefinition } | { name: string; group: ContextGroup }
@@ -141,8 +139,8 @@ export function reconcileGovernedRoot(
       })
       if (titles.length) next = [...new Set(titles)]
     }
-    // A live reconcile never shrinks a value: one holding a member it can't resolve stays as written, every spelling of it, for the user to settle.
-    if (!frozen && next !== undefined && memberCount(next) < memberCount(held)) {
+    // A live reconcile never shrinks or blanks a value: one holding a member it can't resolve, or reading as nothing, stays as written, every spelling of it, for the user to settle.
+    if (!frozen && (next === undefined || memberCount(next) < memberCount(held))) {
       out[key] = raw
       continue
     }
@@ -160,11 +158,5 @@ export function reconcileGovernedRoot(
     delete out[k]
     changed.push(k)
   }
-  return { root: out, changed, adoptions, retired }
-}
-
-export function survivingChanges({ root, changed, retired }: Reconciled): Record<string, unknown> {
-  return Object.fromEntries(
-    changed.filter((k) => k in root || retired.has(k)).map((k) => [k, root[k]]),
-  )
+  return { root: out, changed, adoptions }
 }

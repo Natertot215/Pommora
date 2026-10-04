@@ -5,12 +5,7 @@ import { assignedDefs } from '../Properties/assignment'
 import { foldKey } from '../Paths/caseFold'
 import { heldKeys } from '../Files/heldKeys'
 import { byFoldedName } from '../Properties/properties'
-import {
-  governedWorld,
-  reconcileGovernedRoot,
-  spaceWorldOf,
-  survivingChanges,
-} from '../Contexts/contextResolve'
+import { governedWorld, reconcileGovernedRoot, spaceWorldOf } from '../Contexts/contextResolve'
 import { type Frozen, namesGonePage } from '../Properties/propertyValue'
 import { ensurePageId } from '../Nexus/adopt'
 import { valueOr } from '../Contract/result'
@@ -59,7 +54,8 @@ export async function scrubReturning(
       unstamped.set(file, Object.fromEntries(gone.map((k) => [k, raw[k]])))
     else note(raw, gone, asString(raw[ID_KEY]))
     const keys = [...new Set([...r.changed, ...gone])]
-    return mergeFrontmatter(content, survivingChanges(r), keys, splitEnvelope(content).body)
+    const kept = Object.fromEntries(Object.entries(r.root).filter(([k]) => !gone.includes(k)))
+    return mergeFrontmatter(content, kept, keys, splitEnvelope(content).body)
   }
   const { skipped } = await sweepGovernedRoots(root, pages, { text })
   if (skipped.length) throw new Error(unsweptLine(skipped.length))
