@@ -1,8 +1,8 @@
 // `mergeFrontmatter` is set-if-present-ELSE-DELETE over the keys it is handed: a changed key the next root holds no value for is deleted. `null` is not the delete sentinel — the merge would write the literal.
 
 import {
-  preservedChanges,
   reconcileGovernedRoot,
+  survivingChanges,
   type GovernedWorld,
 } from '../Contexts/contextResolve'
 import { heldKeys } from '../Paths/caseFold'
@@ -32,7 +32,7 @@ export function writtenRoot(
   const reconciled = reconcileGovernedRoot(raw, world, undefined, target.govern)
   adoptions.push(...reconciled.adoptions)
   const written = world.resolveCase ? value : heldSpelling(value, raw[target.key])
-  return landValue({ ...raw, ...preservedChanges(reconciled, raw) }, target, written)
+  return landValue({ ...raw, ...survivingChanges(reconciled) }, target, written)
 }
 
 export async function setGovernedRootKey(
