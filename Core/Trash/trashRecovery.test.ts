@@ -336,6 +336,16 @@ describe('links come back with the page', () => {
     expect(await rows()).toHaveLength(0)
   })
 
+  it('a Link held under two spellings comes back as the spelling that’s read', async () => {
+    await linker(beta, BETA_ID, 'Related: "[[Alpha]]"\nrelated: "[[Alpha|al]]"')
+    await del('Journal/Daily/Alpha.md', 'page')
+    expect((await listBundles(root))[0].record).toMatchObject({
+      links: [{ page: BETA_ID, property: 'prop_related', value: '[[Alpha]]' }],
+    })
+    expect(await restore('Alpha')).toBeUndefined()
+    expect((await frontmatter()).Related).toBe('[[Alpha]]')
+  })
+
   it.each([
     ['[[Alpha]]', '[[Alpha (2)]]'],
     ['[[Alpha#Intro|see]]', '[[Alpha (2)#Intro|see]]'],

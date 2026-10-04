@@ -1,5 +1,5 @@
 import { isAtOrUnder, isMarkdownFile, join, relative, titleFromPath } from '../Paths/posix'
-import { foldKey } from '../Paths/caseFold'
+import { foldKey, heldKey } from '../Paths/caseFold'
 import { errText } from '../Contract/result'
 import { splitEnvelope, mergeFrontmatter, splitFrontmatter, stampedId } from '../Files/pageFile'
 import {
@@ -90,7 +90,7 @@ export async function deleteCascade(
     titles.filter((t) => !titleHeldOutside(root, t, deleted)).map(normalizeTitle),
   )
   try {
-    const defs = new Map((await linkDefs(root)).map((d) => [foldKey(d.name), d.id]))
+    const defs = new Map((await linkDefs(root)).map((d) => [foldKey(d.name), d]))
     if (!defs.size) return { cascade: { pages: [], hosts: [] }, links: [] }
     const hits = [...gone].map(queryMentions)
     const rels = hits.includes(null)
@@ -103,10 +103,12 @@ export async function deleteCascade(
     }
     const named = (
       raw: Record<string, unknown>,
-    ): { key: string; property: string; value: string }[] =>
+    ): { key: string; property: string; held: boolean; value: string }[] =>
       Object.entries(raw).flatMap(([key, value]) => {
-        const property = defs.get(foldKey(key))
-        return property !== undefined && namesGone(value) ? [{ key, property, value }] : []
+        const def = defs.get(foldKey(key))
+        return def !== undefined && namesGone(value)
+          ? [{ key, property: def.id, held: key === heldKey(raw, def.name), value }]
+          : []
       })
     const strip: Rewrite = (raw, file) => stripKeys(...named(raw).map(({ key }) => key))(raw, file)
     // Tree pages, and the pages beneath a folder the tree withholds: a loose file outside every Collection shows in no view and no restore could reach it; dropping this filter strips them too.
@@ -137,7 +139,8 @@ export async function deleteCascade(
       const raw = governedRoot(file, before)
       const id = isMarkdownFile(file) ? stampedId(before) : asString(raw.id)
       if (!id) continue
-      for (const { property, value } of named(raw)) links.push({ page: id, property, value })
+      for (const { property, held, value } of named(raw))
+        if (held) links.push({ page: id, property, value })
     }
     const unswept = swept.skipped.length + twins
     return {
