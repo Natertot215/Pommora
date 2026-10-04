@@ -28,6 +28,7 @@
     "react-dom": "^19.2.7"
   },
   "devDependencies": {
-    "lucide-static": "1.18.0"
+    "lucide-static": "1.18.0",
+    "patch-package": "^8.0.1"
   }
 }
