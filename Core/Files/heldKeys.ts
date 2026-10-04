@@ -37,10 +37,10 @@ export function writeTarget(root: Json, name: string, resolveCase: boolean): Wri
     : { key: held[0] ?? name, govern: held.slice(0, 1) }
 }
 
-/** `root` with `value` under the target's key in place of every key it governs; `undefined` drops the key. */
+/** `root` with `value` under the target's key in place of every key it governs, the target keeping its place when the root holds it; `undefined` drops the key. */
 export function landValue(root: Json, { key, govern }: WriteTarget, value: unknown): Json {
   const next = { ...root }
-  for (const k of govern) delete next[k]
+  for (const k of govern) if (k !== key) delete next[k]
   if (value === undefined) delete next[key]
   else next[key] = value
   return next
