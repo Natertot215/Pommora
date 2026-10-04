@@ -164,10 +164,7 @@ const oweValue = (owed: Owed, rel: string, bodyOnly: boolean): void => {
 }
 
 // A settle that drained what was owed and found an open begun owes it again, joined with what was owed since.
-export function oweAgain(
-  owed: Owed,
-  drained: Pick<Owed, 'pages' | 'values' | 'options' | 'tiles' | 'assets' | 'corpus' | 'rescope'>,
-): void {
+export function oweAgain(owed: Owed, drained: Owed): void {
   for (const rel of drained.pages) owed.pages.add(rel)
   for (const [rel, bodyOnly] of drained.values) oweValue(owed, rel, bodyOnly)
   for (const rel of drained.options) owed.options.add(rel)
@@ -365,7 +362,7 @@ async function applyFolder(
   // A page missing its ID that isn't stamped stays out of the tree, since the window posts a Try Again notice when a push lists a new entry and the page's own event may still be coming; a walk lists it, and so does the read of a folder the tree listed unreadable, since a note added while it couldn't be read has spent its event.
   const unread = tree.unreadable?.some((u) => u.path === rel && u.reason !== 'missing')
   const listed = read.unreadable.filter((u) => unread || u.reason !== 'missing' || stamps.has(u))
-  for (const path of pagePathsIn(read.node)) owed.values.set(path, false)
+  for (const path of pagePathsIn(read.node)) oweValue(owed, path, false)
   return applyPatch(root, (t) => {
     const cleared = removeNodeInTree(t, rel)
     const landed = read.node ? placeNode(cleared, read.node) : cleared
@@ -571,7 +568,7 @@ async function applyMove(root: string, ev: Moved, owed: Owed): Promise<Applied> 
     return 'walk'
   }
   if (applyPatch(root, (t) => moveNodeInTree(t, from, to)) === 'ok') {
-    if (to.split('/', 1)[0] !== NEXUS_DIR) owed.values.set(to, false)
+    if (to.split('/', 1)[0] !== NEXUS_DIR) oweValue(owed, to, false)
     return 'ok'
   }
   // A Space or Context that left or came back changes how members resolve, which only the walk re-derives.
