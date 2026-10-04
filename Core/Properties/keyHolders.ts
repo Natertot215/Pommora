@@ -8,6 +8,9 @@ import { ID_KEY } from '../Nexus/identityMark'
 import { asString } from '../Nexus/coerce'
 import { isBlankRaw } from './propertyValue'
 import { spaceSidecars } from '../Contexts/spaceSidecar'
+import { heldKey } from '../Paths/caseFold'
+import { heldValue } from './pageValue'
+import { holdsList, type PropertyDefinition } from './properties'
 
 export async function keyHolderFiles(
   root: string,
@@ -28,11 +31,12 @@ export async function confirmedKeyHolders(
   for (const file of corpusUnder(root, indexed ?? (await nexusCorpus(root)), folders)) {
     const content = await readTextOrNull(file)
     // An unreadable file holds the key when the index last read it holding it.
-    if (content === null ? indexed !== null : key in splitFrontmatter(content)) holders.push(file)
+    if (content === null ? indexed !== null : heldKey(splitFrontmatter(content), key) !== undefined)
+      holders.push(file)
   }
   for (const file of await spaceSidecars(root)) {
     const raw = await readJsonObject(file)
-    if (raw && key in raw) holders.push(file)
+    if (raw && heldKey(raw, key) !== undefined) holders.push(file)
   }
   return holders
 }
@@ -40,7 +44,7 @@ export async function confirmedKeyHolders(
 /** The values of the pages holding `key`, filed by ID, the files a strip should reach, and whether the values miss a holder: a holder with no ID, or whose ID another already took, is kept out of the strip, and a file that can't be read is stripped once it reads. */
 export async function keyedHolders(
   files: string[],
-  key: string,
+  def: Pick<PropertyDefinition, 'name' | 'type'>,
 ): Promise<{ values: Record<string, unknown>; strip: string[]; partial: boolean }> {
   const values: Record<string, unknown> = {}
   const kept: string[] = []
@@ -53,14 +57,15 @@ export async function keyedHolders(
       continue
     }
     const fields = splitFrontmatter(content) as Record<string, unknown>
-    if (!(key in fields)) continue
+    if (heldKey(fields, def.name) === undefined) continue
     const id = asString(fields[ID_KEY])
     if (!id || seen.has(id)) {
       kept.push(file)
       continue
     }
     seen.add(id)
-    if (!isBlankRaw(fields[key])) values[id] = fields[key]
+    const held = heldValue(fields, def.name, holdsList(def))
+    if (!isBlankRaw(held)) values[id] = held
   }
   return {
     values,

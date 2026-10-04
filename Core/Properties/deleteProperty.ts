@@ -16,7 +16,10 @@ import {
   type SchemaJournal,
   writeSchemaJournal,
 } from './propertyJournal'
-import { stripKeys, sweepGovernedRoots } from './governedSweep'
+import { stripHeld, sweepGovernedRoots } from './governedSweep'
+import { heldKey } from '../Paths/caseFold'
+import { heldValue } from './pageValue'
+import { holdsList } from './properties'
 import { patchSidecar } from '../Files/sidecar'
 import { readJsonObject } from '../Files/atomicWrite'
 import { sidecarPath } from '../Paths/paths'
@@ -57,10 +60,10 @@ async function snapshot(
       partial = true
       continue
     }
-    if (!(key in raw)) continue
+    if (heldKey(raw, key) === undefined) continue
     const id = typeof raw.id === 'string' ? raw.id : undefined
     if (!id || id in values) partial = true
-    else values[id] = raw[key]
+    else values[id] = heldValue(raw, key, holdsList(def))
   }
   return writePropertyBundle(root, {
     entity: 'property',
@@ -89,7 +92,7 @@ async function deleteInner(root: string, propertyId: string): Promise<Result<Pro
 
   // EVERY collection folder, not just current assigners — a Remove-cache block lives on a collection sidecar that no longer assigns the id, and pre-cache dormant values may sit on any page.
   const folders = await collectionFolders(root)
-  const held = await keyedHolders(await keyHolderFiles(root, key, folders), key)
+  const held = await keyedHolders(await keyHolderFiles(root, key, folders), def)
   const bundle = await snapshot(root, propertyId, def, folders, held)
   // Journaled AFTER the snapshot — a replay re-runs the strip tail, never the bundle mint.
   const record: SchemaJournal = { op: 'delete', id: propertyId, name: def.name }
@@ -108,7 +111,7 @@ export async function stripAndRemove(
   folders: string[],
   files: string[],
 ): Promise<ConfigReach & { removed: Result<null> }> {
-  const raw = stripKeys(key)
+  const raw = stripHeld(key)
   const swept = await sweepGovernedRoots(root, files, {
     raw,
     sidecars: withOrderEntry(raw, 'properties', key, null),

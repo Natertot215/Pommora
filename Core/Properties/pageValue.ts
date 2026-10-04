@@ -74,11 +74,6 @@ export function editList(
   return out
 }
 
-export function valueEditRewrite(key: string, target: string, edit: ValueEdit): Rewrite {
-  return (raw) => {
-    const held = raw[key]
-    const next = editList(listOf(held), namesValue, target, edit)
-    if (next === null) return null
-    return setOrDrop(raw, key, next.length ? next : undefined)
-  }
+export function valueEditRewrite(name: string, target: string, edit: ValueEdit): Rewrite {
+  return (raw) => editHeldLists(raw, name, (held) => editList(held, namesValue, target, edit))
 }

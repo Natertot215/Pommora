@@ -6,6 +6,7 @@ import { freeName } from '../Paths/names'
 import {
   defaultStatusSeed,
   defaultSelectSeed,
+  holdsList,
   KEY_REFUSAL,
   normalizePropertyName,
   PROPERTY_TYPES,
@@ -15,8 +16,9 @@ import { ok, fail, type Result } from '../Contract/result'
 import { renameFrontmatterKey, type KeyCollision } from '../Files/pageFile'
 import { collectionFolders } from './assignment'
 import { confirmedKeyHolders, keyHolderFiles } from './keyHolders'
-import { sweepGovernedRoots, type Rewrite } from './governedSweep'
+import { rekeyHeld, sweepGovernedRoots, type Rewrite } from './governedSweep'
 import { withOrderEntry } from '../Contexts/spaceSidecar'
+import { normalizeTitle } from '../Connections/connections'
 import {
   clearSchemaJournal,
   readSchemaJournal,
@@ -65,7 +67,10 @@ export async function createProperty(
   // A landed create wearing a journaled delete's name or id supersedes the record, or a later replay would strip the living property. Only after commit: a refused create must not spend a record it never displaced.
   if (created.ok) {
     const journal = await readSchemaJournal(root)
-    if (journal?.op === 'delete' && (journal.name === landed || journal.id === created.value.id))
+    if (
+      journal?.op === 'delete' &&
+      (normalizeTitle(journal.name) === normalizeTitle(landed) || journal.id === created.value.id)
+    )
       await clearSchemaJournal(root, journal)
   }
   return created
@@ -73,20 +78,20 @@ export async function createProperty(
 
 const NEW_KEY_IS_FRESHER: KeyCollision = 'prefer-new'
 
-export async function renameSweep(root: string, oldName: string, newName: string): Promise<number> {
-  // Queried by the OLD key: a page holding only the new one needs no rewrite, and one holding both holds the old one too.
+export async function renameSweep(
+  root: string,
+  oldName: string,
+  def: PropertyDefinition,
+): Promise<number> {
+  // Queried by the OLD key: a page holding only the new one needs no rewrite, and one holding both holds the old one too. A list property's spellings join; any other keeps the value its read key holds.
   const files = await keyHolderFiles(root, oldName, await collectionFolders(root))
+  const join = holdsList(def)
   const text = (content: string): string | null =>
-    renameFrontmatterKey(content, oldName, newName, NEW_KEY_IS_FRESHER, false)
-  // Spreading the rest after the moved key lets an existing `newName` win, as the page half's collision rule does.
-  const moveKey: Rewrite = (raw) => {
-    if (!(oldName in raw)) return null
-    const { [oldName]: moved, ...rest } = raw
-    return { [newName]: moved, ...rest }
-  }
+    renameFrontmatterKey(content, oldName, def.name, NEW_KEY_IS_FRESHER, join)
+  const rekey: Rewrite = (raw) => rekeyHeld(raw, oldName, def.name, NEW_KEY_IS_FRESHER, join)
   const swept = await sweepGovernedRoots(root, files, {
     text,
-    sidecars: withOrderEntry(moveKey, 'properties', oldName, newName),
+    sidecars: withOrderEntry(rekey, 'properties', oldName, def.name),
   })
   return swept.skipped.length
 }
@@ -107,27 +112,36 @@ export function renameProperty(
     if (to === prior.name) return ok(null)
     const named = validateName(to, Object.values(defs), propertyId)
     if (!named.ok) return named
-    const holders = await confirmedKeyHolders(root, to, await collectionFolders(root))
+    // A change of case alone moves no key: every file's spelling already reads as the new name, and the holders a folded query finds are its own.
+    const recased = normalizeTitle(to) === normalizeTitle(prior.name)
+    const holders = recased
+      ? []
+      : await confirmedKeyHolders(root, to, await collectionFolders(root))
     if (holders.length) return fail('invalid-property', KEY_REFUSAL.held(to, holders.length))
     const record: SchemaJournal = { op: 'rename', id: propertyId, from: prior.name, to }
     await writeSchemaJournal(root, record)
-    const edit = await mutateRegistry<Result<{ from: string; to: string }>>(root, (registry) => {
-      const current = registry.defs[propertyId]
-      if (!current) return { result: NO_PROPERTY }
-      const v = validateName(to, Object.values(registry.defs), propertyId)
-      if (!v.ok) return { result: v }
-      return {
-        next: { ...registry, defs: { ...registry.defs, [propertyId]: { ...current, name: to } } },
-        result: ok({ from: current.name, to }),
-      }
-    })
+    const edit = await mutateRegistry<Result<{ from: string; def: PropertyDefinition }>>(
+      root,
+      (registry) => {
+        const current = registry.defs[propertyId]
+        if (!current) return { result: NO_PROPERTY }
+        const v = validateName(to, Object.values(registry.defs), propertyId)
+        if (!v.ok) return { result: v }
+        const def = { ...current, name: to }
+        return {
+          next: { ...registry, defs: { ...registry.defs, [propertyId]: def } },
+          result: ok({ from: current.name, def }),
+        }
+      },
+    )
     if (!edit.ok) {
       await clearSchemaJournal(root, record)
       return edit
     }
-    const skipped = await renameSweep(root, edit.value.from, to)
+    const { from, def } = edit.value
+    const skipped = recased ? 0 : await renameSweep(root, from, def)
     if (!skipped) await clearSchemaJournal(root, record)
-    return ok({ ...edit.value, ...schemaCascade({ skipped, hosts: [] }, record) })
+    return ok({ from, to, ...schemaCascade({ skipped, hosts: [] }, record) })
   })
 }
 
