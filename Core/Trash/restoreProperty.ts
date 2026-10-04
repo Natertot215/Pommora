@@ -12,7 +12,7 @@ import { patchCacheBlock } from '../Properties/propertyCache'
 import { isBlankRaw, namesGonePage } from '../Properties/propertyValue'
 import type { StrippedLink } from '../Nexus/cascade'
 import { createProperty } from '../Properties/registryProperty'
-import { resolvesCase } from '../Contexts/contextResolve'
+import { resolvesCase } from '../Settings/personalization'
 
 type PropertyRecord = Extract<RecordFile, { entity: 'property' }>
 

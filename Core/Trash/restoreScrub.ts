@@ -19,7 +19,7 @@ import { listMarkdownFiles, listPathsUnder } from '../Files/walk'
 import { hiddenFolder } from '../Paths/exclusion'
 
 import { SPACE_SIDECAR } from '../Paths/nexusPaths'
-import { sweepGovernedRoots, unsweptLine } from '../Properties/governedSweep'
+import { stripKeys, sweepGovernedRoots, unsweptLine } from '../Properties/governedSweep'
 
 /** Answers each Link value it dropped, by its root's id, so a restore can park the ones naming a page the Trash holds. */
 export async function scrubReturning(
@@ -54,7 +54,7 @@ export async function scrubReturning(
       unstamped.set(file, Object.fromEntries(gone.map((k) => [k, raw[k]])))
     else note(raw, gone, asString(raw[ID_KEY]))
     const keys = [...new Set([...r.changed, ...gone])]
-    const kept = Object.fromEntries(Object.entries(r.root).filter(([k]) => !gone.includes(k)))
+    const kept = stripKeys(...gone)(r.root, file) ?? r.root
     return mergeFrontmatter(content, kept, keys, splitEnvelope(content).body)
   }
   const { skipped } = await sweepGovernedRoots(root, pages, { text })
@@ -72,9 +72,7 @@ export async function scrubReturning(
       const next = r.changed.length ? r.root : null
       const gone = unlinked(next ?? raw)
       note(raw, gone, asString(raw.id))
-      return gone.length
-        ? Object.fromEntries(Object.entries(next ?? raw).filter(([k]) => !gone.includes(k)))
-        : next
+      return stripKeys(...gone)(next ?? raw, rel) ?? next
     })
   return dropped
 }

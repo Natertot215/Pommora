@@ -20,7 +20,7 @@ import {
 } from './propertyValue'
 import { parkLinks } from '../Trash/holdings'
 import { frozenWorld } from '../Nexus/heldPages'
-import { resolvesCase } from '../Contexts/contextResolve'
+import { resolvesCase } from '../Settings/personalization'
 import { sweepRootsById } from './governedSweep'
 import { heldValue, landValue, writeTarget } from '../Files/heldKeys'
 import { ok, fail, type Result } from '../Contract/result'
