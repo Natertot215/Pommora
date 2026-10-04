@@ -101,14 +101,10 @@ export async function deleteCascade(
       const link = readLink(value)
       return link.kind === 'page' && gone.has(normalizeTitle(link.title))
     }
-    const named = (
-      raw: Record<string, unknown>,
-    ): { key: string; property: string; held: boolean; value: string }[] =>
+    const named = (raw: Record<string, unknown>) =>
       Object.entries(raw).flatMap(([key, value]) => {
         const def = defs.get(foldKey(key))
-        return def !== undefined && namesGone(value)
-          ? [{ key, property: def.id, held: key === heldKey(raw, def.name), value }]
-          : []
+        return def !== undefined && namesGone(value) ? [{ key, def, value }] : []
       })
     const strip: Rewrite = (raw, file) => stripKeys(...named(raw).map(({ key }) => key))(raw, file)
     // Tree pages, and the pages beneath a folder the tree withholds: a loose file outside every Collection shows in no view and no restore could reach it; dropping this filter strips them too.
@@ -139,8 +135,8 @@ export async function deleteCascade(
       const raw = governedRoot(file, before)
       const id = isMarkdownFile(file) ? stampedId(before) : asString(raw.id)
       if (!id) continue
-      for (const { property, held, value } of named(raw))
-        if (held) links.push({ page: id, property, value })
+      for (const { key, def, value } of named(raw))
+        if (key === heldKey(raw, def.name)) links.push({ page: id, property: def.id, value })
     }
     const unswept = swept.skipped.length + twins
     return {
