@@ -8,7 +8,7 @@ A glass menu at the top left switches between its two views, the Dashboard and t
 
 The line ledger with the codebase audit below it.
 
-- **Line ledger:** real code lines per system, day by day, over the branch's history, read from `Ledger/loc-history.json` at build time. `.claude/scripts/loc.py` writes that file from the versioned pre-commit hook, so every commit carries the numbers measured from its own tree. The include menu folds import and export lines, comment lines, and test lines in or out of the chart and the table.
+- **Line ledger:** real code lines per system, day by day, over the branch's history, read from `Ledger/loc-history.json` at build time. `.claude/scripts/loc.py` writes that file from the versioned pre-commit hook, so every commit carries the numbers measured from its own tree. The include menu folds import and export lines, bracket-only lines, CSS, comment lines, and test lines in or out of the chart and the table.
 - **Codebase audit:** renders `Audit/audit.md`, the copy of `.claude/Planning/Pommora Codebase Audit.md` the pre-commit hook carries into each commit: a summary strip, the document in reading order with each workstream and ride-along area collapsible, an area-by-lens heatmap, and a filterable search over every finding, with every total computed from the ledger.
 
 ## Showcase

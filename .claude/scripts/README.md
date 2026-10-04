@@ -1,20 +1,22 @@
 ## Scripts
 
 `loc.py` counts the app's real code lines per area — TypeScript, TSX and CSS across the `Core`,
-`UIX` and `Desktop` workspaces, with comments, blank lines, tests, type shims, build configuration
-and the `Dashboard` excluded. Run it bare for the working tree, or with `--history` for one sample
-per day of the branch. Both forms emit the eight areas in stack order alongside a file census —
-per-area source files, and the whole tree split into source, tests and config — and `--history` also
-carries the swatch colors. Each day's sample holds four arrays per area: the source
-lines, the import and export lines among them (import statements, re-exports and export lists, and
-stylesheet imports), the comment lines dropped beside them, and the code lines of the area's test
-files, so the dashboard folds each group in or out without re-measuring. A file's kind is decided by
-`classify`: a name carrying `.test.` or `.spec.`, or a path under a testing or fixtures folder, is a
-test; build and tooling files, the Vite and Vitest configuration and setup, and the `.d.ts` shims
-are config and stay out of every count; the rest of the TypeScript, TSX and CSS is source. Each area
-lists the pre-monorepo paths it was assembled from as well as its current ones, so a single map
-measures every commit on the branch and the earlier samples stay comparable; the one area that
-changed name carries its stored samples over through `RENAMED_FROM`.
+`UIX`, `Desktop`, `Sync` and `Mobile` workspaces, with comments, blank lines, tests, type shims,
+build configuration and the `Dashboard` excluded. Run it bare for the working tree, or with
+`--history` for one sample per day of the branch. Both forms emit every area in stack order
+alongside a file census — per-area source files, and the whole tree split into source, tests and
+config — and `--history` also carries the swatch colors. Each day's sample holds six arrays per area:
+the source lines; three disjoint groups among them — the import and export lines (import statements,
+re-exports and export lists, and stylesheet imports), then the remaining lines of stylesheets (`.css`
+and `.css.ts`), then the bracket-only lines (`}`, `);`, `/>`, `</div>` and the like); the comment
+lines dropped beside them; and the code lines of the area's test files, so the dashboard folds each
+group in or out without re-measuring. A file's kind is decided by `classify`: a name carrying
+`.test.` or `.spec.`, or a path under a testing or fixtures folder, is a test; build and tooling
+files, the Vite and Vitest configuration and setup, and the `.d.ts` shims are config and stay out of
+every count; the rest of the TypeScript, TSX and CSS is source. `--history` credits every file to the
+area of the path it holds today, following the branch's renames back through each day, so a change to
+the area map re-attributes the whole history and the earlier samples stay comparable; each area's
+pre-monorepo prefixes only place the files deleted before the monorepo.
 
 `loc.py --update` folds the tree being committed into `Dashboard/Ledger/loc-history.json`, the file
 the dashboard page imports at build time. The series holds one sample per day, so a commit touches

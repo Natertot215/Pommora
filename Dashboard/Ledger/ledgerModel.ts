@@ -1,6 +1,14 @@
 import { vars } from '@pommora/uix/Theme/color.css'
 
-export type Sample = { d: string; v: number[]; io: number[]; c: number[]; t: number[] }
+export type Sample = {
+  d: string
+  v: number[]
+  io: number[]
+  br: number[]
+  css: number[]
+  c: number[]
+  t: number[]
+}
 
 export type Ledger = {
   areas: string[]
@@ -10,12 +18,26 @@ export type Ledger = {
   kinds: Record<string, number>
 }
 
-export type Filters = { io: boolean; comments: boolean; tests: boolean }
+export type Filters = {
+  io: boolean
+  brackets: boolean
+  css: boolean
+  comments: boolean
+  tests: boolean
+}
 
-export const DEFAULT_FILTERS: Filters = { io: true, comments: false, tests: false }
+export const DEFAULT_FILTERS: Filters = {
+  io: true,
+  brackets: true,
+  css: true,
+  comments: false,
+  tests: false,
+}
 
 export const FILTER_ROWS: ReadonlyArray<{ key: keyof Filters; label: string }> = [
   { key: 'io', label: 'Imports & Exports' },
+  { key: 'brackets', label: 'Brackets' },
+  { key: 'css', label: 'CSS' },
   { key: 'comments', label: 'Comments' },
   { key: 'tests', label: 'Tests' },
 ]
@@ -32,7 +54,14 @@ export function bands({ areas, colors }: Ledger, f: Filters): Band[] {
 
 /** One day's value per band, in `bands` order. */
 export function stacked(s: Sample, f: Filters): number[] {
-  const own = s.v.map((v, k) => v - (f.io ? 0 : s.io[k]) + (f.tests ? s.t[k] : 0))
+  const own = s.v.map(
+    (v, k) =>
+      v -
+      (f.io ? 0 : s.io[k]) -
+      (f.brackets ? 0 : s.br[k]) -
+      (f.css ? 0 : s.css[k]) +
+      (f.tests ? s.t[k] : 0),
+  )
   return f.comments ? [...own, sum(s.c)] : own
 }
 

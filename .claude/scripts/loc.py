@@ -3,11 +3,12 @@
 
 Counts .ts / .tsx / .css across the workspaces, excluding blank lines, comment lines, test files,
 type declaration shims, build configuration, and anything outside a workspace (node_modules, dist).
-Beside the count, each area carries the import and export lines inside it, the comment lines it
-dropped, and the code lines of its test files, so the dashboard can fold each back in on demand.
+Beside the count, each area carries the import/export, bracket-only, and stylesheet lines inside it,
+the comment lines it dropped, and the code lines of its test files, so the dashboard can fold each
+in or out on demand.
 
   loc.py            -> JSON for the working tree
-  loc.py --history  -> JSON with one sample per day of main's history
+  loc.py --history  -> JSON with one sample per day of the branch's history
   loc.py --update   -> fold the tree being committed into the dashboard's loc-history.json
   loc.py --rebuild  -> rewrite loc-history.json from the branch's history
 """
@@ -35,33 +36,33 @@ LEGACY_ROOT = "Pommora/src"
 SKIP_PREFIX = ["Dashboard", "Showcase", "renderer/Showcase"]
 
 # Ordered: the first matching prefix wins, so specific paths precede their parents. Each entry is
-# (area, new prefixes, prefixes under the legacy root).
+# (area, new prefixes, prefixes under the legacy root). History credits a file to the area of the
+# path it holds today, so the legacy prefixes only place files deleted before the monorepo.
 AREAS = [
     ("Editor — MarkdownPM", ["Core/MarkdownPM"], ["renderer/MarkdownPM"]),
-    ("Pommora UIX", ["UIX"], ["renderer/DesignSystem"]),
+    ("Interactions", ["UIX/Interactions"], ["renderer/Interactions", "renderer/DesignSystem/Interactions"]),
+    ("Pommora UIX", ["UIX"], ["renderer/DesignSystem", "renderer/Animation", "renderer/Cards"]),
     (
         "Surfaces & Embeds",
         ["Core/Tiles", "Core/Web"],
         ["renderer/Tiles", "renderer/SurfacePM", "renderer/Blocks", "renderer/Embeds", "renderer/PagePreview"],
     ),
     (
-        "Views & Properties",
-        ["Core/Views", "Core/Properties"],
-        [
-            "renderer/Views",
-            "renderer/Tables",
-            "renderer/Cards",
-            "renderer/Properties",
-            "renderer/Frames",
-            "renderer/Components",
-            "renderer/Detail",
-        ],
+        "Views",
+        ["Core/Views"],
+        ["renderer/Views", "renderer/Tables", "renderer/Frames", "renderer/Components", "renderer/Detail"],
     ),
-    ("Shared Contract", ["Core/Contract", "Core/Platform", "Desktop/Bridge"], ["shared", "preload"]),
+    ("Properties", ["Core/Properties"], ["renderer/Properties"]),
+    (
+        "State & Contract",
+        ["Core/Contract", "Core/Platform", "Core/Session", "Desktop/Bridge"],
+        ["shared", "preload", "renderer/Store"],
+    ),
+    ("Sync", ["Sync", "Core/Sync", "Desktop/Sync"], []),
+    ("Actions", ["Core/Actions"], ["renderer/Actions"]),
     (
         "Nexus & Data",
         [
-            "Core/Actions",
             "Core/Assets",
             "Core/Connections",
             "Core/Contexts",
@@ -77,35 +78,37 @@ AREAS = [
     ("Matrix", ["Core/Matrix"], []),
     ("App Chrome", ["Core"], ["renderer"]),
     ("Desktop Shell", ["Desktop"], []),
-    ("Sync", ["Sync"], []),
     ("Mobile", ["Mobile"], []),
 ]
-
-# Areas that changed name with the tree, so a stored sample keyed by the old name still reads.
-RENAMED_FROM = {"Nexus & Data": "Main Process", "Pommora UIX": "Design System"}
 
 # Stack order and swatch, bottom of the chart first.
 ORDER = [
     "Mobile",
     "Sync",
     "Desktop Shell",
-    "Views & Properties",
+    "Properties",
+    "Views",
     "Nexus & Data",
     "Editor — MarkdownPM",
+    "Interactions",
     "Pommora UIX",
+    "Actions",
     "App Chrome",
     "Matrix",
     "Surfaces & Embeds",
-    "Shared Contract",
+    "State & Contract",
 ]
 COLORS = [
     "#4B5A6B",
     "#0F6E5C",
     "#0E7C86",
+    "#6B8E23",
     "#1C7629",
     "#075CB2",
     "#8C7606",
+    "#9C2F72",
     "#DC519F",
+    "#C25A1C",
     "#B26F07",
     "#A24CCE",
     "#2F8F6B",
@@ -175,18 +178,25 @@ BLOCK_CLOSE = re.compile(r"\*/")
 # An import statement, a re-export or export list, or a stylesheet import. Declarations that happen
 # to be exported (`export const`) are code; a dynamic `import(` inside a body is too.
 IO_START = re.compile(r"^(import\s(?!\()|import\{|export\s+(type\s+)?\{|export\s+(type\s+)?\*|@import\b)")
+# A line of nothing but delimiters and closers — `}`, `);`, `})}`, `/>`, `</div>` — the formatter's
+# layout rather than a written statement.
+BRACKETS = re.compile(r"^(?:[{}()\[\];,>]|/>|<>|</[\w.]*>)+$")
+STYLE_EXT = (".css", ".css.ts")
 
 
 class Lines(NamedTuple):
     code: int
     io: int
+    brackets: int
+    styles: int
     comments: int
 
 
-def count_lines(text: str) -> Lines:
-    """Non-blank, non-comment lines, with the import/export lines among them and the comment lines
-    dropped counted beside. A multi-line import stays an import line until its specifier closes."""
-    code = io = comments = 0
+def count_lines(text: str, style: bool) -> Lines:
+    """Non-blank, non-comment lines, with three disjoint groups among them — import/export lines,
+    then a stylesheet's remaining lines, then bracket-only lines — and the comment lines dropped
+    counted beside. A multi-line import stays an import line until its specifier closes."""
+    code = io = brackets = styles = comments = 0
     in_block = False
     in_io = False
     for raw in text.split("\n"):
@@ -220,22 +230,29 @@ def count_lines(text: str) -> Lines:
             io += 1
             ends = line.endswith(("'", '"', ";")) or ("}" in line and "from" not in line)
             in_io = not ends
-    return Lines(code, io, comments)
+        elif style:
+            styles += 1
+        elif BRACKETS.match(line):
+            brackets += 1
+    return Lines(code, io, brackets, styles, comments)
 
 
 class Census(NamedTuple):
     lines: dict[str, int]
     io: dict[str, int]
+    brackets: dict[str, int]
+    styles: dict[str, int]
     comments: dict[str, int]
     tests: dict[str, int]
     files: dict[str, int]
     kinds: dict[str, int]
 
 
-def measure_tree(base: str) -> Census:
-    """base holds a checkout: the workspaces at its root, or the pre-monorepo Pommora/src."""
+def measure_tree(base: str, moved: dict[str, str]) -> Census:
+    """base holds a checkout: the workspaces at its root, or the pre-monorepo Pommora/src. moved maps
+    a path the checkout holds to the one its file holds today, which decides the file's area."""
     per_area = lambda: {name: 0 for name in ORDER}
-    lines, io, comments, tests, files = per_area(), per_area(), per_area(), per_area(), per_area()
+    lines, io, brackets, styles, comments, tests, files = (per_area() for _ in range(7))
     kinds: dict[str, int] = {"source": 0, "tests": 0, "config": 0}
     for root in [*WORKSPACES, LEGACY_ROOT]:
         top = os.path.join(base, root)
@@ -247,22 +264,24 @@ def measure_tree(base: str) -> Census:
                 full = os.path.join(dirpath, f)
                 rel = os.path.relpath(full, base)
                 kind = classify(rel)
-                area = area_of(rel)
+                area = area_of(moved.get(rel, rel))
                 if kind is None or area is None:
                     continue
                 kinds[kind] += 1
                 if kind == "config" or not rel.endswith(EXT):
                     continue
                 with open(full, encoding="utf-8", errors="ignore") as fh:
-                    counted = count_lines(fh.read())
+                    counted = count_lines(fh.read(), rel.endswith(STYLE_EXT))
                 if kind == "tests":
                     tests[area] += counted.code
                     continue
                 files[area] += 1
                 lines[area] += counted.code
                 io[area] += counted.io
+                brackets[area] += counted.brackets
+                styles[area] += counted.styles
                 comments[area] += counted.comments
-    return Census(lines, io, comments, tests, files, kinds)
+    return Census(lines, io, brackets, styles, comments, tests, files, kinds)
 
 
 def git(*args: str) -> str:
@@ -279,41 +298,44 @@ def archive_paths(rev: str) -> list[str]:
 
 
 def history() -> list[dict]:
+    """One sample per day of the branch, each file credited to the area of the path it holds today.
+    The walk runs newest first, so a commit's renames reach only the days before it."""
     log = git(
-        "log", "--first-parent", "--reverse", "--format=%H %ad", "--date=short", "HEAD"
-    ).strip().split("\n")
-    per_day: dict[str, str] = {}
-    for line in log:
-        sha, date = line.split(" ", 1)
-        per_day[date] = sha
+        "-c", "diff.renameLimit=0", "log", "--first-parent", "-M", "--name-status",
+        "--format=%x00%H %ad", "--date=short", "HEAD",
+    )
+    moved: dict[str, str] = {}
+    sampled: set[str] = set()
     out = []
-    for date in sorted(per_day):
-        sha = per_day[date]
-        with tempfile.TemporaryDirectory() as tmp:
+    for entry in log.split("\0")[1:]:
+        head, *changes = entry.strip("\n").split("\n")
+        sha, date = head.split(" ")
+        if date not in sampled:
+            sampled.add(date)
             try:
-                tar = subprocess.run(
-                    ["git", "-C", ROOT, "archive", sha, *archive_paths(sha)],
-                    capture_output=True,
-                    check=True,
-                )
+                census = measure_rev(sha, moved)
             except subprocess.CalledProcessError:
-                continue
-            subprocess.run(["tar", "-x", "-C", tmp], input=tar.stdout, check=True)
-            census = measure_tree(tmp)
-        if sum(census.lines.values()) == 0:
-            continue
-        out.append(sample(date, census))
-        print(f"  {date}  {sum(census.lines.values()):>7}", file=sys.stderr)
-    return out
+                census = None
+            if census and sum(census.lines.values()):
+                out.append(sample(date, census))
+                print(f"  {date}  {sum(census.lines.values()):>7}", file=sys.stderr)
+        for change in changes:
+            status, *paths = change.split("\t")
+            if status.startswith("R"):
+                old, new = paths
+                moved[old] = moved.pop(new, new)
+    return out[::-1]
 
 
 def sample(date: str, census: Census) -> dict:
-    """One day of the series: per area, the source lines, the import and export lines among them,
-    the comment lines beside them, and the code lines of the area's tests."""
+    """One day of the series: per area, the source lines, the import/export, bracket, and stylesheet
+    lines among them, the comment lines beside them, and the code lines of the area's tests."""
     return {
         "d": date,
         "v": [census.lines[a] for a in ORDER],
         "io": [census.io[a] for a in ORDER],
+        "br": [census.brackets[a] for a in ORDER],
+        "css": [census.styles[a] for a in ORDER],
         "c": [census.comments[a] for a in ORDER],
         "t": [census.tests[a] for a in ORDER],
     }
@@ -323,7 +345,7 @@ def sample(date: str, census: Census) -> dict:
 HISTORY_JSON = os.path.join(ROOT, "Dashboard", "Ledger", "loc-history.json")
 
 
-def measure_rev(rev: str) -> Census:
+def measure_rev(rev: str, moved: dict[str, str]) -> Census:
     """The tree a commit or tree object records — never the working one, which may hold anyone's
     uncommitted work and would attribute it to a commit that doesn't contain it."""
     with tempfile.TemporaryDirectory() as tmp:
@@ -331,7 +353,7 @@ def measure_rev(rev: str) -> Census:
             ["git", "-C", ROOT, "archive", rev, *archive_paths(rev)], capture_output=True, check=True
         )
         subprocess.run(["tar", "-x", "-C", tmp], input=tar.stdout, check=True)
-        return measure_tree(tmp)
+        return measure_tree(tmp, moved)
 
 
 def census_payload(census: Census) -> dict:
@@ -339,17 +361,17 @@ def census_payload(census: Census) -> dict:
     return {"files": [census.files[a] for a in ORDER], "kinds": census.kinds}
 
 
-SERIES_KEYS = ("v", "io", "c", "t")
+SERIES_KEYS = ("v", "io", "br", "css", "c", "t")
 
 
 def migrate(payload: dict) -> dict:
-    """Re-key a stored payload onto the current area list: a renamed area carries its samples over,
-    an area the tree gained reads zero for every day before it existed."""
+    """Re-key a stored payload onto the current area list: an area the tree gained reads zero for
+    every day before it existed."""
     stored = payload.get("areas", [])
     if stored == ORDER:
         return payload
     index = {name: i for i, name in enumerate(stored)}
-    slots = [index.get(a, index.get(RENAMED_FROM.get(a, ""), -1)) for a in ORDER]
+    slots = [index.get(a, -1) for a in ORDER]
     payload["areas"] = ORDER
     payload["colors"] = COLORS
     payload["series"] = [
@@ -371,7 +393,7 @@ def update() -> str:
     archive of a single tree does.
     """
     date = time.strftime("%Y-%m-%d")
-    census = measure_rev(git("write-tree").strip())
+    census = measure_rev(git("write-tree").strip(), {})
     row = sample(date, census)
     counts = census_payload(census)
 
@@ -405,7 +427,7 @@ if __name__ == "__main__":
                 "areas": ORDER,
                 "colors": COLORS,
                 "series": history(),
-                **census_payload(measure_rev("HEAD")),
+                **census_payload(measure_rev("HEAD", {})),
             }
         )
         print("line ledger: rebuilt from the branch's history")
@@ -419,10 +441,10 @@ if __name__ == "__main__":
             "colors": COLORS,
             "series": history(),
             "head": git("rev-parse", "--short", "HEAD").strip(),
-            **census_payload(measure_rev("HEAD")),
+            **census_payload(measure_rev("HEAD", {})),
         }
     else:
-        census = measure_tree(ROOT)
+        census = measure_tree(ROOT, {})
         payload = {
             "areas": ORDER,
             "head": git("rev-parse", "--short", "HEAD").strip(),
