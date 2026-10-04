@@ -3,7 +3,7 @@ import { mutableTarget } from '../Nexus/liveTree'
 import { readTextOrNull, setOrDrop, updateNexusConfig } from '../Files/atomicWrite'
 import { patchSidecar } from '../Files/sidecar'
 import { writeNavigationState } from '../Navigation/navigationFile'
-import { setGovernedRootKeys } from '../Properties/governedWrite'
+import { setGovernedRootKey } from '../Properties/governedWrite'
 import { adoptImageSource } from '../Assets/adoptFile'
 import { fault, ok, type Result } from '../Contract/result'
 import type { MutateContext } from '../Nexus/mutate'
@@ -26,7 +26,7 @@ export async function setBannerOp(
       const adopted = await adopt()
       if (!adopted.ok) return adopted
       const rel = adopted.value
-      await setGovernedRootKeys(abs, rel ? { banner: rel } : {}, ['banner'])
+      await setGovernedRootKey(abs, 'banner', rel || undefined)
       return landed(rel)
     })
   }

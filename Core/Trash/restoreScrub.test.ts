@@ -38,6 +38,12 @@ let root: string
 const fm = async (rel: string): Promise<Record<string, unknown>> =>
   splitFrontmatter(await readFile(join(root, rel), 'utf8'))
 
+const resolveCase = (): Promise<void> =>
+  writeFile(
+    join(root, '.nexus', 'settings.json'),
+    JSON.stringify({ personalization: { resolveCaseConflicts: true } }),
+  )
+
 const registry = (assigned: string[]): string =>
   JSON.stringify({ id: 'col-notes', properties: assigned })
 
@@ -193,12 +199,22 @@ describe('a returning artifact is reconciled against the world it comes back to'
   })
 
   it('repairs a near-miss Space title to the canonical spelling on the way back', async () => {
+    await resolveCase()
     await writeFile(
       join(root, 'Notes', 'Alpha.md'),
       `---\nID: ${PAGE_A}\n<Projects>:\n  - pommora\n---\nbody`,
     )
     await cycle('Notes/Alpha.md', 'page', async () => {})
     expect((await fm('Notes/Alpha.md'))['<Projects>']).toEqual(['Pommora'])
+  })
+
+  it('keeps a near-miss Space title’s spelling on the way back while casing stays', async () => {
+    await writeFile(
+      join(root, 'Notes', 'Alpha.md'),
+      `---\nID: ${PAGE_A}\n<Projects>:\n  - pommora\n---\nbody`,
+    )
+    await cycle('Notes/Alpha.md', 'page', async () => {})
+    expect((await fm('Notes/Alpha.md'))['<Projects>']).toEqual(['pommora'])
   })
 
   it('a value an outside write left as a number still names its Space', async () => {
@@ -215,7 +231,7 @@ describe('a returning artifact is reconciled against the world it comes back to'
     expect((await fm('Notes/Alpha.md'))['<Projects>']).toEqual(['2024'])
   })
 
-  it('prunes the dead Space from a near-miss tag and repairs the survivor', async () => {
+  const prunedTag = async (): Promise<void> => {
     await mkdir(join(contextsDir(root), 'Projects', 'Sapphire'), { recursive: true })
     await writeFile(
       join(contextsDir(root), 'Projects', 'Sapphire', '_space.json'),
@@ -228,7 +244,17 @@ describe('a returning artifact is reconciled against the world it comes back to'
     await cycle('Notes/Alpha.md', 'page', async () => {
       await rm(join(contextsDir(root), 'Projects', 'Sapphire'), { recursive: true, force: true })
     })
+  }
+
+  it('prunes the dead Space from a near-miss tag and repairs the survivor', async () => {
+    await resolveCase()
+    await prunedTag()
     expect((await fm('Notes/Alpha.md'))['<Projects>']).toEqual(['Pommora'])
+  })
+
+  it('prunes the dead Space from a near-miss tag and keeps the survivor’s spelling while casing stays', async () => {
+    await prunedTag()
+    expect((await fm('Notes/Alpha.md'))['<Projects>']).toEqual(['pommora'])
   })
 
   it('reconciles every page inside a returning folder, not just a lone file', async () => {
@@ -410,6 +436,26 @@ describe('a Space sidecar is a context root too', () => {
       (await settledMutate(root, { op: 'restore', bundlePath: listed.bundlePath }, nexusDeps)).ok,
     ).toBe(true)
     expect((await sidecar('Projects/Sapphire'))['<Projects>']).toEqual(['Pommora'])
+  })
+
+  it('a returning Context’s own key is left whole in every spelling', async () => {
+    await seedPassenger()
+    await writeFile(
+      join(contextsDir(root), 'Projects', 'Sapphire', '_space.json'),
+      JSON.stringify({ id: 'sp-sap', '<Projects>': ['Pommora'], '<projects>': ['pommora'] }),
+    )
+    await settledMutate(
+      root,
+      { op: 'delete', path: '.nexus/contexts/Projects', kind: 'context' },
+      nexusDeps,
+    )
+    const [listed] = await listBundles(root)
+    expect(
+      (await settledMutate(root, { op: 'restore', bundlePath: listed.bundlePath }, nexusDeps)).ok,
+    ).toBe(true)
+    const sap = await sidecar('Projects/Sapphire')
+    expect(sap['<Projects>']).toEqual(['Pommora'])
+    expect(sap['<projects>']).toEqual(['pommora'])
   })
 })
 

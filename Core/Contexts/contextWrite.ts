@@ -1,11 +1,10 @@
 import { basename, join, isMarkdownFile, relative } from '../Paths/posix'
 import { contextKey } from './contexts'
-import { editList } from '../Properties/pageValue'
+import { heldValue, stripList } from '../Properties/pageValue'
 import {
   contextWorldOf,
+  governedWorld,
   namesSpace,
-  preservedChanges,
-  reconcileGovernedRoot,
   spaceWorldOf,
   type ContextWorld,
   type GovernedWorld,
@@ -29,7 +28,7 @@ import { newId } from '../Nexus/ids'
 import { createDisambiguated, freeName, nameError } from '../Paths/names'
 import { atomicWriteFile, pathExists, rmwJsonStrict, setOrDrop } from '../Files/atomicWrite'
 import { machine } from '../Platform/machine'
-import { setGovernedRootKeys } from '../Properties/governedWrite'
+import { setGovernedRootKey, writtenRoot } from '../Properties/governedWrite'
 import { contextsDir, tileFilePath } from '../Paths/paths'
 import { createFolderEntity } from '../Nexus/folderEntity'
 import { COLOR_KEY, ORDER_KEY } from './spaceSidecar'
@@ -65,7 +64,7 @@ export async function setPageContext(
     const applied = contextTarget(governed.contexts, contextId, spaceIds)
     if (!applied.ok) return applied
     const { key, value } = applied.value
-    return ok(await setGovernedRootKeys(absFile, value ? { [key]: value } : {}, [key], governed))
+    return ok(await setGovernedRootKey(absFile, key, value, governed))
   })
   if (!adoptions.ok) return adoptions
   await applyAdoptions(root, adoptions.value)
@@ -75,21 +74,7 @@ export async function setPageContext(
 export async function governedWorldOf(root: string, absFile: string): Promise<GovernedWorld> {
   const tree = await liveTreeOf(root)
   const owner = owningCollection(tree, relative(root, absFile))
-  const defs = await assignedDefs(root, owner ? join(root, owner.path) : null)
-  return { contexts: contextWorldOf(tree.contexts), defs }
-}
-
-// The keys a write is about to set stay out of the reconcile, as `setGovernedRootKeys` keeps them out of a page's.
-export function repairedSpace(
-  raw: Json,
-  world: GovernedWorld,
-  adoptions: Adoption[],
-  govern: readonly string[],
-): Json {
-  const own = Object.fromEntries(Object.entries(raw).filter(([k]) => !govern.includes(k)))
-  const reconciled = reconcileGovernedRoot(own, world)
-  adoptions.push(...reconciled.adoptions)
-  return { ...raw, ...preservedChanges(reconciled, own) }
+  return governedWorld(tree, await assignedDefs(root, owner ? join(root, owner.path) : null))
 }
 
 export async function writeSpaceSidecar(
@@ -120,19 +105,18 @@ async function setSpaceContext(
   for (const far of world.contexts.groupById.get(contextId)?.spaces ?? []) {
     if (far.id === a.id) continue
     const wants = targetSpaceIds.includes(far.id)
-    // Decided on what the far file holds, inside its own read-modify-write, never on the tree's copy of it.
+    // Decided on what the far file holds, inside its own read-modify-write, never on the tree's copy of it. The far list is edited rather than replaced, so with casing resolved every spelling's members stay.
     const half = await writeSpaceSidecar(join(root, far.path), (raw) => {
-      if (listOf(raw[backKey]).some(namesA) === wants) return null
-      const base = repairedSpace(raw, world, adoptions, [backKey])
-      const held = base[backKey] == null ? [] : listOf(base[backKey])
-      const without = editList(held, namesSpace, a.title, { op: 'strip' }) ?? held
+      const held = listOf(heldValue(raw, backKey, world.resolveCase) ?? [])
+      if (held.some(namesA) === wants) return null
+      const without = stripList(held, namesA) ?? held
       const next = wants ? [...without, a.title] : without
-      return setOrDrop(base, backKey, next.length > 0 && next)
+      return writtenRoot(raw, backKey, next.length ? next : undefined, world, adoptions)
     })
     if (!half.ok) skipped++
   }
   const written = await writeSpaceSidecar(join(root, a.path), (raw) =>
-    setOrDrop(repairedSpace(raw, world, adoptions, [key]), key, value),
+    writtenRoot(raw, key, value, world, adoptions),
   )
   await applyAdoptions(root, adoptions)
   return written.ok ? ok(skipped) : written

@@ -26,6 +26,12 @@ import { createProperty } from '../Properties/registryProperty'
 import { readRegistry } from '../Properties/propertiesRegistry'
 
 let root: string
+const resolveCase = (): Promise<void> =>
+  writeFile(
+    join(nexusDir(root), 'settings.json'),
+    JSON.stringify({ personalization: { resolveCaseConflicts: true } }),
+  )
+
 beforeEach(async () => {
   root = tempRoot('pom-ctxwrite-')
   await mkdir(nexusDir(root), { recursive: true })
@@ -143,16 +149,37 @@ describe('setPageContext', () => {
     expect('<Projects>' in fm).toBe(false)
   })
 
+  const siblings =
+    '---\nid: p1\n<Projects>:\n  - pommora\n<Classes>:\n  - cs 161\n  - Bogus\n---\nbody'
+
   it('reconciles sibling keys in place (D-9a/H-5)', async () => {
-    await writeFile(
-      page(),
-      '---\nid: p1\n<Projects>:\n  - pommora\n<Classes>:\n  - cs 161\n  - Bogus\n---\nbody',
-    )
+    await resolveCase()
+    await writeFile(page(), siblings)
     const r = await setPageContext(page(), root, 'ctxC', ['sp-cs'])
     expect(r.ok).toBe(true)
     const fm = splitFrontmatter(await readFile(page(), 'utf8'))
     expect(fm['<Classes>']).toEqual(['CS 161'])
     expect(fm['<Projects>']).toEqual(['Pommora'])
+  })
+
+  it('keeps each held Space title’s spelling while casing stays', async () => {
+    await writeFile(page(), '---\nid: p1\n<Projects>:\n  - pommora\n---\nbody')
+    const other = join(contextsDir(root), 'Projects', 'Other')
+    await mkdir(other, { recursive: true })
+    await writeFile(join(other, '_space.json'), JSON.stringify({ id: 'sp-other' }))
+    expect((await setPageContext(page(), root, 'ctx_projects', ['sp-pom', 'sp-other'])).ok).toBe(
+      true,
+    )
+    expect(splitFrontmatter(await readFile(page(), 'utf8'))['<Projects>']).toEqual([
+      'pommora',
+      'Other',
+    ])
+  })
+
+  it('reconciles sibling keys keeping their spelling while casing stays', async () => {
+    await writeFile(page(), siblings)
+    expect((await setPageContext(page(), root, 'ctxC', ['sp-cs'])).ok).toBe(true)
+    expect(splitFrontmatter(await readFile(page(), 'utf8'))['<Projects>']).toEqual(['pommora'])
   })
 
   it('fails on an unknown space id without writing', async () => {
@@ -266,16 +293,38 @@ describe('setContext reads the held tree', () => {
       expect('modified_at' in sc).toBe(false)
     })
 
-    it('repairs a near-miss sibling key on the sidecar in the same write', async () => {
+    const nearMiss = async (): Promise<string> => {
       const path = join(contextsDir(root), 'Projects', 'Pommora', '_space.json')
       await writeFile(path, JSON.stringify({ id: 'sp-pom', '<Classes>': ['cs 161'] }))
-      const r = await link('ctx_projects', [])
-      expect(r.ok).toBe(true)
-      expect((await readJsonAt(path))['<Classes>']).toEqual(['CS 161'])
+      expect((await link('ctx_projects', [])).ok).toBe(true)
+      return path
+    }
+
+    it('repairs a near-miss sibling key on the sidecar in the same write', async () => {
+      await resolveCase()
+      await refreshTree(root)
+      expect((await readJsonAt(await nearMiss()))['<Classes>']).toEqual(['CS 161'])
+    })
+
+    it('keeps a near-miss sibling key’s spelling on the sidecar while casing stays', async () => {
+      expect((await readJsonAt(await nearMiss()))['<Classes>']).toEqual(['cs 161'])
     })
 
     const pomFile = (): string => join(contextsDir(root), 'Projects', 'Pommora', '_space.json')
     const csFile = (): string => join(contextsDir(root), 'Classes', 'CS 161', '_space.json')
+
+    it('with case resolution on, the far half edits the list its file holds, joining its spellings', async () => {
+      await resolveCase()
+      await writeFile(
+        csFile(),
+        JSON.stringify({ id: 'sp-cs', '<Projects>': ['B'], '<projects>': ['C'] }),
+      )
+      await refreshTree(root)
+      expect((await link('ctxC', ['sp-cs'])).ok).toBe(true)
+      const far = await readJsonAt(csFile())
+      expect(far['<Projects>']).toEqual(['B', 'C', 'Pommora'])
+      expect('<projects>' in far).toBe(false)
+    })
 
     it('writes the pair onto both files', async () => {
       const r = await link('ctxC', ['sp-cs'])

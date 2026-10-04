@@ -1,7 +1,7 @@
 import { z } from 'zod'
 import { listOf } from '../Contract/validators'
 import { optionValues, PROPERTY_TYPES, type PropertyDefinition } from './properties'
-import { parseConnectionText } from '../Connections/connections'
+import { normalizeTitle, parseConnectionText } from '../Connections/connections'
 import { heldKey } from '../Paths/caseFold'
 
 const strings = z.array(z.string())
@@ -47,6 +47,9 @@ export const resolveSingleOption = (
   known: readonly string[],
 ): string | undefined => written.filter((v) => known.includes(v)).at(-1)
 
+/** Checked as a file spells it. */
+const isCheckedRaw = (raw: unknown): boolean => raw === true
+
 export function decodeValue(def: PropertyDefinition, raw: unknown): PropertyValue {
   if (raw === null || raw === undefined) return NULL_VALUE
   const kind = PROPERTY_TYPES[def.type].kind
@@ -54,7 +57,7 @@ export function decodeValue(def: PropertyDefinition, raw: unknown): PropertyValu
     case 'number':
       return typeof raw === 'number' ? { kind, value: raw } : NULL_VALUE
     case 'checkbox':
-      return raw === true ? { kind, value: true } : NULL_VALUE
+      return isCheckedRaw(raw) ? { kind, value: true } : NULL_VALUE
     case 'link':
     case 'dateTime':
       return typeof raw === 'string' ? { kind, value: raw } : NULL_VALUE
@@ -111,6 +114,18 @@ export function reconcilePropertyValue(
   }
   const kept = value.value.filter((v) => known.includes(v))
   return { value: kept.length ? { kind: 'multiSelect', value: kept } : NULL_VALUE, adoptions: [] }
+}
+
+/** `next` spelled as `raw` already spells it: a checked `true` keeps `raw`'s checked word, and each string member takes a member of `raw` its title folds to, each used once. */
+export function heldSpelling(next: unknown, raw: unknown): unknown {
+  if (next === true) return isCheckedRaw(raw) ? raw : next
+  if (!Array.isArray(next)) return next
+  const written = listOf(raw).filter((w): w is string => typeof w === 'string')
+  return next.map((v) => {
+    const at =
+      typeof v === 'string' ? written.findIndex((w) => normalizeTitle(w) === normalizeTitle(v)) : -1
+    return at === -1 ? v : written.splice(at, 1)[0]
+  })
 }
 
 export function encodeValue(value: PropertyValue): unknown {

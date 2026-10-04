@@ -4,8 +4,8 @@ import { tempRoot } from '../Testing/hostFs'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { contextWorldOf, type GovernedWorld } from '../Contexts/contextResolve'
 import { splitFrontmatter } from '../Files/pageFile'
-import type { PropertyDefinition } from './properties'
-import { setGovernedRootKeys } from './governedWrite'
+import { byFoldedName, type PropertyDefinition } from './properties'
+import { setGovernedRootKey } from './governedWrite'
 
 let dir: string
 let page: string
@@ -18,10 +18,10 @@ afterEach(async () => {
   await rm(dir, { recursive: true, force: true })
 })
 
-describe('setGovernedRootKeys', () => {
+describe('setGovernedRootKey', () => {
   it('writes one governed key and preserves foreign keys and comments', async () => {
     await writeFile(page, '---\nid: p1\n# keep me\nfoo: bar\n---\nbody\n')
-    await setGovernedRootKeys(page, { Status: 'Done' }, ['Status'])
+    await setGovernedRootKey(page, 'Status', 'Done')
     const out = await readFile(page, 'utf8')
     expect(out).toContain('Status: Done')
     expect(out).toContain('# keep me')
@@ -33,7 +33,7 @@ describe('setGovernedRootKeys', () => {
     await writeFile(page, '---\nid: p1\nStatus: Done\n---\nbody\n')
     const past = new Date('2020-06-01T12:00:00Z')
     await utimes(page, past, past)
-    await setGovernedRootKeys(page, { Status: 'Done' }, ['Status'])
+    await setGovernedRootKey(page, 'Status', 'Done')
     expect(Math.floor((await stat(page)).mtimeMs / 1000)).toBe(Math.floor(past.getTime() / 1000))
   })
 
@@ -42,7 +42,7 @@ describe('setGovernedRootKeys', () => {
       page,
       '---\nid: p1\n# keep\nStatus: Active\nDue: 2026-08-01\n<Projects>:\n  - Pommora\n---\n',
     )
-    await setGovernedRootKeys(page, { Status: 'Live' }, ['Status'])
+    await setGovernedRootKey(page, 'Status', 'Live')
     const out = await readFile(page, 'utf8')
     expect(out).toContain('Status: Live')
     expect(out).toContain('Due: 2026-08-01')
@@ -52,19 +52,19 @@ describe('setGovernedRootKeys', () => {
 
   it('a governed key absent from the next values is deleted — that is how a clear is said', async () => {
     await writeFile(page, '---\nid: p1\nStatus: Active\n---\n')
-    await setGovernedRootKeys(page, {}, ['Status'])
+    await setGovernedRootKey(page, 'Status', undefined)
     expect(await readFile(page, 'utf8')).not.toContain('Status')
   })
 
   it('a Context unassign deletes its key too', async () => {
     await writeFile(page, '---\nid: p1\n<Projects>:\n  - Pommora\n---\n')
-    await setGovernedRootKeys(page, {}, ['<Projects>'])
+    await setGovernedRootKey(page, '<Projects>', undefined)
     expect(await readFile(page, 'utf8')).not.toContain('<Projects>')
   })
 
   it('writes no modified_at — a legacy one survives as foreign frontmatter', async () => {
     await writeFile(page, '---\nid: p1\nmodified_at: 2020-01-01T00:00:00.000Z\n---\n')
-    await setGovernedRootKeys(page, { Status: 'Done' }, ['Status'])
+    await setGovernedRootKey(page, 'Status', 'Done')
     const out = await readFile(page, 'utf8')
     expect(out).toContain('modified_at: 2020-01-01T00:00:00.000Z')
     expect(out.match(/modified_at/g)).toHaveLength(1)
@@ -72,7 +72,8 @@ describe('setGovernedRootKeys', () => {
 
   it('writes the key plain — neither glyph needs quoting', async () => {
     await writeFile(page, '---\nid: p1\n---\n')
-    await setGovernedRootKeys(page, { Status: 'Done', '<Areas>': ['Work'] }, ['Status', '<Areas>'])
+    await setGovernedRootKey(page, 'Status', 'Done')
+    await setGovernedRootKey(page, '<Areas>', ['Work'])
     const out = await readFile(page, 'utf8')
     expect(out).toContain('Status: Done')
     expect(out).toContain('<Areas>:')
@@ -80,7 +81,7 @@ describe('setGovernedRootKeys', () => {
   })
 })
 
-describe('setGovernedRootKeys with a world — the three precedence rules', () => {
+describe('setGovernedRootKey with a world — the three precedence rules', () => {
   const priority: PropertyDefinition = {
     id: 'prop_priority',
     name: 'Priority',
@@ -100,15 +101,13 @@ describe('setGovernedRootKeys with a world — the three precedence rules', () =
         spaces: [{ kind: 'space', id: 'sp', title: 'Health', path: 'x', contextId: 'ctx_areas' }],
       },
     ]),
-    defs: new Map([
-      ['Priority', priority],
-      ['Status', status],
-    ]),
+    defs: byFoldedName([priority, status]),
+    resolveCase: false,
   }
 
   it('an unassign deletes its key while the reconcile repairs the siblings', async () => {
     await writeFile(page, '---\nid: p1\n<Areas>:\n  - Health\nPriority: High\n---\nbody\n')
-    await setGovernedRootKeys(page, {}, ['<Areas>'], world)
+    await setGovernedRootKey(page, '<Areas>', undefined, world)
     const out = await readFile(page, 'utf8')
     expect(out).not.toContain('Areas')
     expect(out).toContain('Priority:\n  - High')
@@ -116,7 +115,7 @@ describe('setGovernedRootKeys with a world — the three precedence rules', () =
 
   it('a clear deletes its key while a drifted sibling is repaired', async () => {
     await writeFile(page, '---\nid: p1\nPriority:\n  - High\nStatus: Open\n---\nbody\n')
-    await setGovernedRootKeys(page, {}, ['Priority'], world)
+    await setGovernedRootKey(page, 'Priority', undefined, world)
     const out = await readFile(page, 'utf8')
     expect(out).not.toContain('Priority')
     expect(out).toContain('Status:\n  - Open')
@@ -124,7 +123,7 @@ describe('setGovernedRootKeys with a world — the three precedence rules', () =
 
   it('keeps a mixed Context list — an unresolvable Space is never dropped by a sibling write', async () => {
     await writeFile(page, '---\nid: p1\n<Areas>:\n  - Health\n  - Ghost\n---\nbody\n')
-    await setGovernedRootKeys(page, { Status: 'Open' }, ['Status'], world)
+    await setGovernedRootKey(page, 'Status', 'Open', world)
     const out = await readFile(page, 'utf8')
     expect(out).toContain('- Health')
     expect(out).toContain('- Ghost')
@@ -133,7 +132,7 @@ describe('setGovernedRootKeys with a world — the three precedence rules', () =
 
   it('keeps a wholly unresolvable Context value rather than deleting the key', async () => {
     await writeFile(page, '---\nid: p1\n<Areas>:\n  - Ghost\n---\nbody\n')
-    await setGovernedRootKeys(page, { Status: 'Open' }, ['Status'], world)
+    await setGovernedRootKey(page, 'Status', 'Open', world)
     const out = await readFile(page, 'utf8')
     expect(out).toContain('<Areas>')
     expect(out).toContain('- Ghost')
@@ -141,7 +140,7 @@ describe('setGovernedRootKeys with a world — the three precedence rules', () =
 
   it('keeps an own property that reconciles to blank rather than deleting it during a sibling write', async () => {
     await writeFile(page, '---\nid: p1\nPriority: Bogus\n---\nbody\n')
-    await setGovernedRootKeys(page, { Status: 'Done' }, ['Status'], world)
+    await setGovernedRootKey(page, 'Status', 'Done', world)
     const fm = splitFrontmatter(await readFile(page, 'utf8'))
     expect(fm.Priority).toBe('Bogus')
     expect(fm.Status).toBe('Done')
@@ -155,9 +154,9 @@ describe('setGovernedRootKeys with a world — the three precedence rules', () =
       select_options: [{ value: 'alpha' }],
     }
     await writeFile(page, "---\nid: p1\nTags:\n  - ''\n  - alpha\n---\nbody\n")
-    await setGovernedRootKeys(page, { Status: 'Done' }, ['Status'], {
+    await setGovernedRootKey(page, 'Status', 'Done', {
       ...world,
-      defs: new Map([['Tags', tags]]),
+      defs: byFoldedName([tags]),
     })
     const fm = splitFrontmatter(await readFile(page, 'utf8'))
     expect(fm.Tags).toEqual(['', 'alpha'])
@@ -171,11 +170,91 @@ describe('setGovernedRootKeys with a world — the three precedence rules', () =
       select_options: [{ value: 'alpha' }],
     }
     await writeFile(page, '---\nid: p1\nTags:\n  - alpha\n  - zeta\n---\nbody\n')
-    const adoptions = await setGovernedRootKeys(page, { Status: ['Open'] }, ['Status'], {
+    const adoptions = await setGovernedRootKey(page, 'Status', ['Open'], {
       ...world,
-      defs: new Map([['Tags', tags]]),
+      defs: byFoldedName([tags]),
     })
     expect(adoptions).toEqual([{ propertyId: 'prop_tags', value: 'zeta' }])
     expect(await readFile(page, 'utf8')).toContain('- zeta')
+  })
+})
+
+describe('setGovernedRootKey — spellings', () => {
+  const tags: PropertyDefinition = { id: 'prop_tags', name: 'Tags', type: 'multiSelect' }
+  const done: PropertyDefinition = { id: 'prop_done', name: 'Done', type: 'checkbox' }
+  const status: PropertyDefinition = {
+    id: 'prop_status',
+    name: 'Status',
+    type: 'select',
+    select_options: [{ value: 'Open' }, { value: 'Done' }],
+  }
+  const world: GovernedWorld = {
+    contexts: contextWorldOf([]),
+    defs: byFoldedName([tags, done, status]),
+    resolveCase: false,
+  }
+  const resolving: GovernedWorld = { ...world, resolveCase: true }
+  const seeded = async (keys: string): Promise<void> =>
+    writeFile(page, `---\nid: p1\n${keys}\nfoo: bar\n---\nbody\n`)
+  const lines = async (): Promise<string[]> => (await readFile(page, 'utf8')).split('\n')
+
+  it('writes to the spelling the page holds', async () => {
+    await seeded('status: Open')
+    await setGovernedRootKey(page, 'Status', ['Done'], world)
+    const fm = splitFrontmatter(await readFile(page, 'utf8'))
+    expect(fm.status).toEqual(['Done'])
+    expect('Status' in fm).toBe(false)
+  })
+
+  it('leaves a second spelling of the key byte-identical', async () => {
+    await seeded('Status: Open\nstatus: Done')
+    await setGovernedRootKey(page, 'Status', ['Open'], world)
+    expect(await lines()).toContain('status: Done')
+  })
+
+  it('with case resolution off, keeps how each held member is spelled', async () => {
+    await seeded('tags: [claude, docs]')
+    await setGovernedRootKey(page, 'Tags', ['Claude', 'Docs', 'New'], world)
+    expect(splitFrontmatter(await readFile(page, 'utf8')).tags).toEqual(['claude', 'docs', 'New'])
+  })
+
+  it('with case resolution off, a checked box the file spells otherwise lands as true', async () => {
+    await seeded('Done: No')
+    await setGovernedRootKey(page, 'Done', true, world)
+    expect(splitFrontmatter(await readFile(page, 'utf8')).Done).toBe(true)
+  })
+
+  it('with case resolution on, lands the registered spelling where the held one sat', async () => {
+    await seeded('tags: [a]')
+    const at = (await lines()).indexOf('tags: [a]')
+    await setGovernedRootKey(page, 'Tags', ['b'], resolving)
+    const out = await readFile(page, 'utf8')
+    expect(out.split('\n')[at]).toBe('Tags:')
+    expect(splitFrontmatter(out)).toEqual({ id: 'p1', Tags: ['b'], foo: 'bar' })
+  })
+
+  it('with case resolution on, replaces every spelling with the value set', async () => {
+    await seeded('Tags: [b]\ntags: [a]')
+    await setGovernedRootKey(page, 'Tags', ['c'], resolving)
+    expect(splitFrontmatter(await readFile(page, 'utf8'))).toEqual({
+      id: 'p1',
+      Tags: ['c'],
+      foo: 'bar',
+    })
+  })
+
+  it('a write of the value a flow list already holds leaves the file byte-identical', async () => {
+    await seeded('tags: [a]')
+    const before = await readFile(page, 'utf8')
+    await setGovernedRootKey(page, 'Tags', ['a'], world)
+    expect(await readFile(page, 'utf8')).toBe(before)
+  })
+
+  it('a banner write, which passes no world, writes its exact key beside a spelling of it', async () => {
+    await seeded('Banner: x')
+    await setGovernedRootKey(page, 'banner', '[[b.png]]')
+    const fm = splitFrontmatter(await readFile(page, 'utf8'))
+    expect(fm.Banner).toBe('x')
+    expect(fm.banner).toBe('[[b.png]]')
   })
 })

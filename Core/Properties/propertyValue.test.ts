@@ -4,6 +4,7 @@ import {
   applyValueAtRoot,
   decodeValue,
   encodeValue,
+  heldSpelling,
   isBlankValue,
   reconcilePropertyValue,
   resolveSingleOption,
@@ -316,5 +317,20 @@ describe('applyValueAtRoot', () => {
     const done = { kind: 'select', value: 'Done' } as const
     expect(applyValueAtRoot({ status: 'Open' }, status, done)).toEqual({ status: ['Done'] })
     expect(applyValueAtRoot({ status: 'Open' }, status, null)).toEqual({})
+  })
+})
+
+describe('heldSpelling — a value spelled as the file already spells it', () => {
+  it('gives each member a held member its title folds to, each used once', () => {
+    expect(heldSpelling(['Done', 'Done'], ['done', 'Done'])).toEqual(['done', 'Done'])
+    expect(heldSpelling(['Done', 'Active'], 'done')).toEqual(['done', 'Active'])
+  })
+
+  it('takes only string members', () => {
+    expect(heldSpelling(['2024'], [2024])).toEqual(['2024'])
+  })
+
+  it('a checked value the file never held stays true', () => {
+    expect(heldSpelling(true, undefined)).toBe(true)
   })
 })

@@ -3,6 +3,7 @@ import { join } from '../Paths/posix'
 import { tempRoot } from '../Testing/hostFs'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { PropertyDefinition } from './properties'
+import { splitFrontmatter } from '../Files/pageFile'
 import { assignProperty } from './assignment'
 import { createFolderEntity } from '../Nexus/folderEntity'
 import { newId } from '../Nexus/ids'
@@ -21,10 +22,10 @@ let root: string
 let page: string
 let tagsId: string
 
-const settings = (repairOnOpen: boolean): Promise<void> =>
+const settings = (repairOnOpen: boolean, resolveCaseConflicts = false): Promise<void> =>
   writeFile(
     join(root, '.nexus', 'settings.json'),
-    JSON.stringify({ personalization: { repairOnOpen } }),
+    JSON.stringify({ personalization: { repairOnOpen, resolveCaseConflicts } }),
   )
 
 const frontmatter = async (keys: string): Promise<void> => {
@@ -181,5 +182,31 @@ describe('runRepairSweep', () => {
     await frontmatter('Status: Open')
     await runRepairSweep(root, reread)
     expect(await readFile(page, 'utf8')).toContain('Status: Open')
+  })
+
+  it('with case resolution on, moves a re-read page’s key to its registered spelling on the same line', async () => {
+    await settings(true, true)
+    await refreshTree(root)
+    await frontmatter('tags: [alpha]')
+    const line = (await readFile(page, 'utf8')).split('\n').indexOf('tags: [alpha]')
+    await runRepairSweep(root, await seedContentIndex(root))
+    const out = await readFile(page, 'utf8')
+    expect(out.split('\n')[line]).toBe('Tags:')
+    expect(splitFrontmatter(out)).toMatchObject({ Tags: ['alpha'] })
+    expect('tags' in splitFrontmatter(out)).toBe(false)
+  })
+
+  it('with case resolution off, a re-read page’s Context key keeps its spelling, byte for byte', async () => {
+    await writeFile(
+      contextsRegistryFile(root),
+      JSON.stringify({ contexts: [{ id: 'ctx_projects', title: 'Projects' }] }),
+    )
+    await mkdir(join(contextsDir(root), 'Projects', 'Pommora'), { recursive: true })
+    await writeFile(join(contextsDir(root), 'Projects', 'Pommora', '_space.json'), '{"id":"sp-p"}')
+    await refreshTree(root)
+    await frontmatter('<Projects>: [pommora]')
+    const before = await readFile(page, 'utf8')
+    await runRepairSweep(root, await seedContentIndex(root))
+    expect(await readFile(page, 'utf8')).toBe(before)
   })
 })

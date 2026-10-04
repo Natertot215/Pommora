@@ -1,6 +1,8 @@
 import { describe, it, expect } from 'vitest'
 import {
   LEGACY_TYPE_IDS,
+  byFoldedName,
+  holdsList,
   LINK_DISPLAYS,
   propertyDefinition,
   propertyType,
@@ -299,5 +301,19 @@ describe("the display-config narrowers decode against the definition's own field
       number_family: 'percent',
     })
     expect(narrowNumberFormat('nope')).toBeNull()
+  })
+})
+
+describe('byFoldedName and holdsList', () => {
+  it('keys definitions by folded name', () => {
+    const def = { id: 'p', name: 'Due Date', type: 'dateTime' } as PropertyDefinition
+    expect([...byFoldedName([def]).entries()]).toEqual([['due date', def]])
+  })
+
+  it('holds a list for Multi-Select and File only', () => {
+    const holding = (Object.keys(PROPERTY_TYPES) as PropertyDefinition['type'][]).filter((type) =>
+      holdsList({ type }),
+    )
+    expect(holding.sort()).toEqual(['file', 'multiSelect'])
   })
 })

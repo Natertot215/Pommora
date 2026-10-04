@@ -27,6 +27,20 @@ export type RewriteText = (content: string, file: string) => string | null
 
 type SweepPlan = ({ raw: Rewrite } | { text: RewriteText }) & { sidecars?: Rewrite }
 
+export interface WriteTarget {
+  key: string
+  govern: readonly string[]
+}
+
+/** `root` with `value` under the target's key in place of every key it governs; `undefined` drops the key. */
+export function landValue(root: Json, { key, govern }: WriteTarget, value: unknown): Json {
+  const next = { ...root }
+  for (const k of govern) delete next[k]
+  if (value === undefined) delete next[key]
+  else next[key] = value
+  return next
+}
+
 /** Removes `keys` from a root holding any of them; a root holding none is left as it is. */
 export const stripKeys =
   (...keys: string[]): Rewrite =>
@@ -48,7 +62,7 @@ const guarded = (file: string, missed: string[], body: () => Promise<void>): Pro
     .lock(file, body)
     .catch(() => void missed.push(file))
 
-const changedKeys = (raw: Json, next: Json): string[] =>
+export const changedKeys = (raw: Json, next: Json): string[] =>
   [...new Set([...Object.keys(raw), ...Object.keys(next)])].filter(
     (k) => JSON.stringify(raw[k]) !== JSON.stringify(next[k]),
   )

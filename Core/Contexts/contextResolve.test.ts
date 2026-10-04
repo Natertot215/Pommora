@@ -2,10 +2,11 @@ import { describe, expect, it } from 'vitest'
 import {
   contextWorldOf,
   type GovernedWorld,
+  preservedChanges,
   reconcileGovernedRoot,
   resolveContextKeys,
 } from './contextResolve'
-import type { PropertyDefinition } from '../Properties/properties'
+import { byFoldedName, type PropertyDefinition } from '../Properties/properties'
 import { decodeValue } from '../Properties/propertyValue'
 import type { ContextGroup, SpaceNode } from '../Nexus/tree'
 
@@ -57,6 +58,17 @@ describe('resolveContextKeys', () => {
     const links = resolveContextKeys({ '<Projects>': ['Pommora', 'Pomora'] }, contexts)
     expect(links.get('ctx_projects')).toEqual(['sp1'])
   })
+
+  it('matches a key without regard to case, resolving only the spelling it reads', () => {
+    expect(resolveContextKeys({ '<projects>': ['Pommora'] }, contexts).get('ctx_projects')).toEqual(
+      ['sp1'],
+    )
+    const both = resolveContextKeys(
+      { '<projects>': ['CS 161'], '<Projects>': ['Pommora'] },
+      contexts,
+    )
+    expect(both.get('ctx_projects')).toEqual(['sp1'])
+  })
 })
 
 const statusDef: PropertyDefinition = {
@@ -71,22 +83,35 @@ const tagsDef: PropertyDefinition = {
   type: 'multiSelect',
   select_options: [{ value: 'alpha' }],
 }
+const stageDef: PropertyDefinition = {
+  id: 'prop_stage',
+  name: 'Stage',
+  type: 'select',
+  select_options: [{ value: 'Done' }, { value: 'Open' }],
+}
 const world: GovernedWorld = {
   contexts,
-  defs: new Map([
-    ['Status', statusDef],
-    ['Tags', tagsDef],
-  ]),
+  defs: byFoldedName([statusDef, tagsDef, stageDef]),
+  resolveCase: false,
 }
+const resolving: GovernedWorld = { ...world, resolveCase: true }
 
 describe('reconcileGovernedRoot — the context arm', () => {
   it('repairs near-misses, drops unknowns, keeps exacts', () => {
     const { root, changed } = reconcileGovernedRoot(
       { '<Projects>': ['pommora', 'Pomora', 'CS 161'] },
-      world,
+      resolving,
+      {},
     )
     expect(root['<Projects>']).toEqual(['Pommora', 'CS 161'])
     expect(changed).toEqual(['<Projects>'])
+  })
+
+  it('a live reconcile leaves a list naming an unknown Space as written', () => {
+    const input = { '<Projects>': ['pommora', 'Pomora', 'CS 161'] }
+    const { root, changed } = reconcileGovernedRoot(input, world)
+    expect(root).toEqual(input)
+    expect(changed).toEqual([])
   })
 
   it('repairs scalar-typed values to their canonical string titles', () => {
@@ -94,13 +119,14 @@ describe('reconcileGovernedRoot — the context arm', () => {
     expect(root['<Classes>']).toEqual(['2024', 'true'])
   })
 
+  const withAreas = contextWorldOf([...groups, { def: { id: 'ctxB', title: 'Areas' }, spaces: [] }])
+  const emptied = { '<Projects>': ['Pomora'], '<Classes>': [], '<Areas>': null }
+
   it('removes a key whose values all drop, a present-but-empty list, and a bare key (no empties)', () => {
     const { root, changed } = reconcileGovernedRoot(
-      { '<Projects>': ['Pomora'], '<Classes>': [], '<Areas>': null },
-      {
-        ...world,
-        contexts: contextWorldOf([...groups, { def: { id: 'ctxB', title: 'Areas' }, spaces: [] }]),
-      },
+      emptied,
+      { ...resolving, contexts: withAreas },
+      {},
     )
     expect('<Projects>' in root).toBe(false)
     expect('<Classes>' in root).toBe(false)
@@ -108,13 +134,25 @@ describe('reconcileGovernedRoot — the context arm', () => {
     expect(changed.sort()).toEqual(['<Areas>', '<Classes>', '<Projects>'])
   })
 
+  it('a live reconcile removes an empty list and a bare key, and keeps a key naming only an unknown Space', () => {
+    const { root, changed } = reconcileGovernedRoot(emptied, { ...world, contexts: withAreas })
+    expect(root).toEqual({ '<Projects>': ['Pomora'] })
+    expect(changed.sort()).toEqual(['<Areas>', '<Classes>'])
+  })
+
   it('reads a scalar Context value as a list of one, so a hand-typed tag repairs and resolves', () => {
-    const { root, changed } = reconcileGovernedRoot({ '<Projects>': 'pommora' }, world)
+    const { root, changed } = reconcileGovernedRoot({ '<Projects>': 'pommora' }, resolving)
     expect(root['<Projects>']).toEqual(['Pommora'])
     expect(changed).toEqual(['<Projects>'])
     expect(resolveContextKeys({ '<Projects>': 'Pommora' }, contexts).get('ctx_projects')).toEqual([
       'sp1',
     ])
+  })
+
+  it('reads a scalar Context value as a list of one, keeping its spelling while casing stays', () => {
+    const { root, changed } = reconcileGovernedRoot({ '<Projects>': 'pommora' }, world)
+    expect(root['<Projects>']).toEqual(['pommora'])
+    expect(changed).toEqual(['<Projects>'])
   })
 
   it('leaves unknown wrapped keys and foreign keys verbatim', () => {
@@ -172,5 +210,102 @@ describe('reconcileGovernedRoot — the property arm', () => {
       expect(
         decodeValue(statusDef, reconcileGovernedRoot({ Status: raw }, world).root.Status),
       ).toEqual(decodeValue(statusDef, raw))
+  })
+})
+
+describe('reconcileGovernedRoot — spellings with case resolution off', () => {
+  it('reconciles a folded key under the spelling the file holds', () => {
+    const { root, changed } = reconcileGovernedRoot({ status: 'Open' }, world)
+    expect(root).toEqual({ status: ['Open'] })
+    expect(changed).toEqual(['status'])
+  })
+
+  it('leaves a second spelling verbatim, as foreign', () => {
+    const { root, changed } = reconcileGovernedRoot({ Status: ['Open'], status: 'Done' }, world)
+    expect(root.status).toBe('Done')
+    expect(changed).not.toContain('status')
+  })
+
+  it('keeps the spelling a file gives each Space title', () => {
+    expect(reconcileGovernedRoot({ '<Projects>': 'pommora' }, world).root['<Projects>']).toEqual([
+      'pommora',
+    ])
+  })
+
+  it('leaves a Context list naming an unknown Space as written', () => {
+    const input = { '<Projects>': ['pommora', 'Ghost'] }
+    const { root, changed } = reconcileGovernedRoot(input, world)
+    expect(root).toEqual(input)
+    expect(changed).toEqual([])
+  })
+})
+
+describe('reconcileGovernedRoot — spellings with case resolution on', () => {
+  it('moves a key to its registered spelling and retires the one it read', () => {
+    const { root, changed, retired } = reconcileGovernedRoot({ tags: ['a'] }, resolving)
+    expect(root).toEqual({ Tags: ['a'] })
+    expect(changed.sort()).toEqual(['Tags', 'tags'])
+    expect(retired).toEqual({ tags: 'Tags' })
+  })
+
+  it('joins two spellings of a list', () => {
+    expect(reconcileGovernedRoot({ Tags: ['b'], tags: ['a'] }, resolving).root).toEqual({
+      Tags: ['b', 'a'],
+    })
+  })
+
+  it('keeps any other value from the key it reads, still retiring the other spelling', () => {
+    const { root, changed } = reconcileGovernedRoot({ Stage: ['Done'], stage: ['Open'] }, resolving)
+    expect(root).toEqual({ Stage: ['Done'] })
+    expect(changed.sort()).toEqual(['Stage', 'stage'])
+  })
+
+  it('writes a Context key and its Space titles in their registered spelling', () => {
+    expect(reconcileGovernedRoot({ '<projects>': ['pommora'] }, resolving).root).toEqual({
+      '<Projects>': ['Pommora'],
+    })
+  })
+
+  it('leaves a Context key naming an unknown Space wholly as written, its spellings unjoined', () => {
+    const input = { '<Projects>': ['pommora', 'Ghost'], '<projects>': ['CS 161'] }
+    const { root, changed, retired } = reconcileGovernedRoot(input, resolving)
+    expect(root).toEqual(input)
+    expect(changed).toEqual([])
+    expect(retired).toEqual({})
+  })
+
+  it('a retired spelling waits on its key being written', () => {
+    const { root, changed, retired } = reconcileGovernedRoot(
+      { Stage: ['Bogus'], stage: ['Done'] },
+      resolving,
+      {},
+    )
+    expect(root.stage).toEqual(['Done'])
+    expect(changed).toContain('Stage')
+    expect(retired).toEqual({})
+  })
+})
+
+describe('preservedChanges', () => {
+  it('deletes a retired spelling when its key survives', () => {
+    const original = { Tags: ['alpha'], tags: ['beta'] }
+    const kept = preservedChanges(reconcileGovernedRoot(original, resolving), original)
+    expect(kept).toEqual({ Tags: ['alpha', 'beta'], tags: undefined })
+    expect('tags' in kept).toBe(true)
+  })
+
+  it('keeps a retired spelling when its key’s change is withheld', () => {
+    const original = { Tags: ['alpha', 'zeta'], tags: ['beta'] }
+    const kept = preservedChanges(reconcileGovernedRoot(original, resolving, {}), original)
+    expect(kept).toEqual({})
+  })
+})
+
+describe('reconcileGovernedRoot — skip', () => {
+  it('passes a skipped key verbatim, and a second spelling of it stays while casing stays', () => {
+    const input = { Status: 'Open', status: 'Done' }
+    const { root, changed } = reconcileGovernedRoot(input, world, undefined, ['Status'])
+    expect(root).toEqual(input)
+    expect(changed).toEqual([])
   })
 })

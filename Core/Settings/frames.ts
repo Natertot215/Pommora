@@ -614,7 +614,7 @@ export const FRAMES = roster([
             kind: 'toggle',
             key: 'repairOnOpen',
             label: 'Repair Properties On Open',
-            hint: 'Canonicalize drifted property and Context values on the pages changed since the last open.',
+            hint: 'Repair property and Context values on the pages changed since the last open, and their casing when Automatically Resolve Case Conflicts is on.',
           },
           {
             kind: 'toggle',

@@ -48,8 +48,8 @@ afterEach(async () => {
 describe('assignedDefs', () => {
   it('names only what the Collection assigns; a null folder assigns nothing', async () => {
     const defs = await assignedDefs(root, notes)
-    expect([...defs.keys()]).toEqual(['Status'])
-    expect(defs.get('Status')?.id).toBe(statusId)
+    expect([...defs.keys()]).toEqual(['status'])
+    expect(defs.get('status')?.id).toBe(statusId)
     expect((await assignedDefs(root, null)).size).toBe(0)
   })
 
@@ -76,7 +76,7 @@ describe('governedWorldOf', () => {
     const names = async (file: string): Promise<string[]> => [
       ...(await governedWorldOf(root, file)).defs.keys(),
     ]
-    expect(await names(page.value.path)).toEqual(['Status'])
+    expect(await names(page.value.path)).toEqual(['status'])
     expect(await names(join(root, 'Tasks', 'T.md'))).toEqual([])
     expect(await names(join(root, '.nexus', 'contexts', 'Areas', 'Home', '_space.json'))).toEqual(
       [],

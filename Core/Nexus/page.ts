@@ -12,7 +12,7 @@ import type { GovernedWorld } from '../Contexts/contextResolve'
 import { ok, fail, type Result, fault } from '../Contract/result'
 import { atomicWriteFile, pathExists, relocate, targetTaken } from '../Files/atomicWrite'
 import { nameError } from '../Paths/names'
-import { setGovernedRootKeys } from '../Properties/governedWrite'
+import { setGovernedRootKey } from '../Properties/governedWrite'
 import type { PropertyDefinition } from '../Properties/properties'
 
 const MD = '.md'
@@ -105,9 +105,8 @@ export async function updatePageProperty(
   world?: GovernedWorld,
 ): Promise<Result<Adoption[]>> {
   if (!(await pathExists(absFile))) return fail('not-found', 'Page not found.')
-  const key = def.name
   const clear = value === null || isBlankValue(value)
   const encoded = clear ? undefined : encodeValue(value)
-  if (!clear && encoded === undefined) return noShape(key)
-  return ok(await setGovernedRootKeys(absFile, clear ? {} : { [key]: encoded }, [key], world))
+  if (!clear && encoded === undefined) return noShape(def.name)
+  return ok(await setGovernedRootKey(absFile, def.name, encoded, world))
 }
