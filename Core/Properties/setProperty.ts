@@ -1,6 +1,8 @@
 import { machine } from '../Platform/machine'
 import { liveTreeOf, mutableTarget } from '../Nexus/liveTree'
-import { governedWorldOf, repairedSpace, writeSpaceSidecar } from '../Contexts/contextWrite'
+import { heldKey } from '../Paths/caseFold'
+import { writtenRoot } from './governedWrite'
+import { governedWorldOf, writeSpaceSidecar } from '../Contexts/contextWrite'
 import { spaceWorldOf } from '../Contexts/contextResolve'
 import { noShape, updatePageProperty } from '../Nexus/page'
 import { ok, type Result } from '../Contract/result'
@@ -22,13 +24,11 @@ export async function setSpaceProperty(
   if (!clear && encoded === undefined) return noShape(def.name)
   const world = spaceWorldOf(await liveTreeOf(root))
   const adoptions: Adoption[] = []
-  const written = await writeSpaceSidecar(absSpaceDir, (raw) => {
-    if (clear && !(def.name in raw)) return null
-    const next = repairedSpace(raw, world, adoptions, [def.name])
-    if (clear) delete next[def.name]
-    else next[def.name] = encoded
-    return next
-  })
+  const written = await writeSpaceSidecar(absSpaceDir, (raw) =>
+    clear && heldKey(raw, def.name) === undefined
+      ? null
+      : writtenRoot(raw, def.name, encoded, world, adoptions),
+  )
   if (written.ok) await applyAdoptions(root, adoptions)
   return written
 }

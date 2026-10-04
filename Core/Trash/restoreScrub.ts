@@ -2,8 +2,9 @@
 
 import type { NexusTree } from '../Nexus/tree'
 import { assignedDefs } from '../Properties/assignment'
+import { heldKeys } from '../Paths/caseFold'
 import {
-  contextWorldOf,
+  governedWorld,
   reconcileGovernedRoot,
   spaceWorldOf,
   survivingChanges,
@@ -29,13 +30,9 @@ function reconciledSidecar(
   world: GovernedWorld,
   inTransitKey: string | undefined,
 ): Record<string, unknown> | null {
-  const held =
-    inTransitKey !== undefined && inTransitKey in raw ? { [inTransitKey]: raw[inTransitKey] } : null
-  const rest = held
-    ? Object.fromEntries(Object.entries(raw).filter(([k]) => k !== inTransitKey))
-    : raw
-  const r = reconcileGovernedRoot(rest, world, {})
-  return r.changed.length ? { ...r.root, ...held } : null
+  const skip = inTransitKey === undefined ? [] : heldKeys(raw, inTransitKey)
+  const r = reconcileGovernedRoot(raw, world, {}, skip)
+  return r.changed.length ? r.root : null
 }
 
 /** Answers each Link value it dropped, by its root's id, so a restore can park the ones naming a page the Trash holds. */
@@ -47,10 +44,7 @@ export async function scrubReturning(
   frozen: Frozen,
   inTransitKey?: string,
 ): Promise<StrippedLink[]> {
-  const world: GovernedWorld = {
-    contexts: contextWorldOf(tree.contexts),
-    defs: await assignedDefs(root, destCollectionFolder),
-  }
+  const world = governedWorld(tree, await assignedDefs(root, destCollectionFolder))
   const spaceWorld = spaceWorldOf(tree)
   const links = new Map(
     tree.config.registry.filter((d) => d.type === 'link').map((d) => [d.name, d]),

@@ -8,9 +8,8 @@ import { cachedValues, patchCacheBlock } from './propertyCache'
 import { heldTreeOf, liveTreeOf } from '../Nexus/liveTree'
 import { type EntityRecord, recordById } from '../Nexus/record'
 import { damagedFolders } from '../Nexus/treePatch'
-import { NO_DEFS } from '../Contexts/contextResolve'
 import { readRegistry, serializeSchemaOp } from './propertiesRegistry'
-import type { PropertyDefinition } from './properties'
+import { byFoldedName, type PropertyDefinition } from './properties'
 import {
   encodeValue,
   type Frozen,
@@ -32,17 +31,15 @@ export async function assignedDefs(
   root: string,
   collectionFolder: string | null,
 ): Promise<ReadonlyMap<string, PropertyDefinition>> {
-  if (collectionFolder === null) return NO_DEFS
+  if (collectionFolder === null) return new Map()
   const held = heldTreeOf(root)
   if (held) {
     const node = held.collections.find((c) => join(root, c.path) === collectionFolder)
-    if (node) return new Map((node.properties ?? []).map((d) => [d.name, d]))
+    if (node) return byFoldedName(node.properties ?? [])
   }
   const registry = (await readRegistry(root)).defs
   const assigned = assignedIds(await readJsonObject(sidecarPath(collectionFolder, 'collection')))
-  return new Map(
-    assigned.flatMap((id) => (registry[id] ? [[registry[id].name, registry[id]] as const] : [])),
-  )
+  return byFoldedName(assigned.flatMap((id) => registry[id] ?? []))
 }
 
 /** Puts each value `frozen` still admits back on the page or Space its ID names wherever that root holds none, and answers the IDs that took theirs. */
