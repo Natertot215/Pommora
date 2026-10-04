@@ -194,7 +194,7 @@ const agendaIds = { events: plainId(), tasks: plainId() }
 write('.nexus/nexus.json', json({ agenda_folders: agendaIds, createdAt: '2026-06-25T03:05:42Z', id: plainId() }))
 write('.nexus/state.json', json({}))
 write('.nexus/settings.json', json({ personalization: { accent: 'cyan' } }))
-write('.nexus/homepage/homepage.json', json({}))
+write('.nexus/interface/homepage/homepage.json', json({}))
 mkdirSync(join(target, '.nexus/assets'), { recursive: true })
 write('Tasks/_taskconfig.json', json({ id: agendaIds.tasks }))
 write('Events/_eventconfig.json', json({ id: agendaIds.events }))

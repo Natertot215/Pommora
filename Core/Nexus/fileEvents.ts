@@ -78,8 +78,8 @@ import {
   CROPS_REL,
   isMetadataShardRel,
   NEXUS_DIR,
-  HOMEPAGE_HOST_DIRNAME,
-  NEXUS_CONFIG_FILES,
+  HOMEPAGE_DIR_REL,
+  nexusConfigRel,
   SIDECAR_FILENAME,
   SIDECARS,
   SPACE_SIDECAR,
@@ -194,19 +194,12 @@ type EventClass =
   | { kind: 'ignored' }
   | { kind: 'walk' }
 
-const configRel = (file: keyof typeof NEXUS_CONFIG_FILES): string =>
-  `${NEXUS_DIR}/${NEXUS_CONFIG_FILES[file]}`
-
 // ── Classification ──
 
 // A tile body is no part of the tree; a change to one names its host, like the host's own document.
 function tileBodyUnder(segs: string[], rel: string): boolean {
   return (
-    (segs[0] === NEXUS_DIR &&
-      segs[1] === HOMEPAGE_HOST_DIRNAME &&
-      segs.length >= 3 &&
-      segs[2] !== TILE_DOC_FILENAME &&
-      rel !== configRel('homepage')) ||
+    (rel.startsWith(`${HOMEPAGE_DIR_REL}/`) && rel !== nexusConfigRel('homepage')) ||
     (segs[0] === NEXUS_DIR &&
       segs[1] === CONTEXTS_DIRNAME &&
       segs.length >= 5 &&
@@ -217,7 +210,7 @@ function tileBodyUnder(segs: string[], rel: string): boolean {
 function tileHostAt(tree: NexusTree, rel: string): TileHostRef | null {
   const segs = rel.split('/')
   if (segs[0] !== NEXUS_DIR) return null
-  if (segs.length === 3 && segs[1] === HOMEPAGE_HOST_DIRNAME) return HOMEPAGE_HOST
+  if (relDirname(rel) === HOMEPAGE_DIR_REL) return HOMEPAGE_HOST
   const space =
     segs[1] === CONTEXTS_DIRNAME && segs.length === 5 ? spaceAt(tree, relDirname(rel)) : null
   return space ? { kind: 'space', id: space.id } : null
@@ -241,12 +234,12 @@ export function classifyEvent(tree: NexusTree, root: string, ev: Changed): Event
       const host = tileHostAt(tree, rel)
       return host ? { kind: 'tiles-leaf', host, rel } : { kind: 'ignored' }
     }
-    if (rel === configRel('settings')) return { kind: 'settings-leaf' }
-    if (rel === configRel('homepage')) return { kind: 'homepage-leaf' }
-    if (rel === configRel('state')) return { kind: 'order-leaf' }
-    if (rel === configRel('properties')) return { kind: 'registry-leaf' }
+    if (rel === nexusConfigRel('settings')) return { kind: 'settings-leaf' }
+    if (rel === nexusConfigRel('homepage')) return { kind: 'homepage-leaf' }
+    if (rel === nexusConfigRel('state')) return { kind: 'order-leaf' }
+    if (rel === nexusConfigRel('properties')) return { kind: 'registry-leaf' }
     // Identity carries the Nexus's own id and the Agenda registration, which decide what the root's folders are.
-    if (rel === configRel('identity')) return { kind: 'walk' }
+    if (rel === nexusConfigRel('identity')) return { kind: 'walk' }
     if (isMetadataShardRel(rel)) return { kind: 'metadata-leaf', shard: basename(name, '.json') }
     if (segs[1] !== CONTEXTS_DIRNAME) return { kind: 'ignored' }
     if (rel === CONTEXTS_REGISTRY_REL) return { kind: 'contexts-leaf' }

@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 import { rm, mkdir, writeFile, readFile } from 'node:fs/promises'
 import { join } from '../Paths/posix'
 import { tempRoot, noModeBits, readJsonAt } from '../Testing/hostFs'
-import { ensureIdentity, readIdentity } from './identity'
+import { ensureConfigLayout, ensureIdentity, readIdentity } from './identity'
 import { agendaContext, resolveFolderKind } from './folderKind'
 import { isUlidShaped } from './identityMark'
 import { pathExists } from '../Files/atomicWrite'
@@ -177,5 +177,13 @@ describe('the agenda singleton seed', () => {
     expect(await pathExists(join(root, 'Tasks', SIDECAR_FILENAME.tasks))).toBe(false)
     expect(reg?.tasks).toBeUndefined()
     expect(typeof reg?.events).toBe('string')
+  })
+})
+
+describe('ensureConfigLayout', () => {
+  it('creates the three domain folders', async () => {
+    await ensureConfigLayout(root)
+    for (const rel of ['.nexus/assets', '.nexus/contexts', '.nexus/interface/homepage'])
+      expect(await pathExists(join(root, rel))).toBe(true)
   })
 })

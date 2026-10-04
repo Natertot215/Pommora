@@ -59,7 +59,9 @@ export const SIDECARS = new Set<string>(Object.values(SIDECAR_FILENAME))
 
 export const SPACE_SIDECAR = SIDECAR_FILENAME.space
 
-export const HOMEPAGE_HOST_DIRNAME = 'homepage'
+const INTERFACE_DIRNAME = 'interface'
+const HOMEPAGE_DIR = `${INTERFACE_DIRNAME}/homepage`
+export const HOMEPAGE_DIR_REL = `${NEXUS_DIR}/${HOMEPAGE_DIR}`
 
 export const TILE_DOC_FILENAME = '_tiles.json'
 
@@ -67,11 +69,16 @@ export const NEXUS_CONFIG_FILES = {
   identity: 'nexus.json',
   settings: 'settings.json',
   state: 'state.json',
-  matrix: 'matrix.json',
-  homepage: `${HOMEPAGE_HOST_DIRNAME}/homepage.json`,
+  matrix: `${INTERFACE_DIRNAME}/matrix.json`,
+  homepage: `${HOMEPAGE_DIR}/homepage.json`,
   properties: 'properties.json',
   crops: `${ASSETS_DIRNAME}/crops.json`,
 } as const
+
+export type NexusConfigFile = keyof typeof NEXUS_CONFIG_FILES
+
+export const nexusConfigRel = (file: NexusConfigFile): string =>
+  `${NEXUS_DIR}/${NEXUS_CONFIG_FILES[file]}`
 
 /** A colon is legal in a nav key and hostile in a filename. */
 export const thumbKey = (navKey: string): string => navKey.replace(':', '-')
@@ -82,7 +89,7 @@ export const thumbsRel = (nexusId: string): string =>
   `${ASSETS_DIR_REL}/${nexusId}/${THUMBNAILS_SEGMENT}`
 export const thumbRel = (nexusId: string, key: string): string => `${thumbsRel(nexusId)}/${key}.jpg`
 
-export const CROPS_REL = `${NEXUS_DIR}/${NEXUS_CONFIG_FILES.crops}`
+export const CROPS_REL = nexusConfigRel('crops')
 
 // One spelling: the write side keys crops from `assetFilePath`, the read side `resolveAssetValue`.
 export function cropKeyFor(rel: string | null, raw: string): string | null {

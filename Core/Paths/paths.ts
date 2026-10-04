@@ -2,7 +2,7 @@ import { join } from './posix'
 import {
   CONTEXTS_DIR_REL,
   CONTEXTS_REGISTRY_REL,
-  HOMEPAGE_HOST_DIRNAME,
+  HOMEPAGE_DIR_REL,
   METADATA_DIR_REL,
   NEXUS_DIR,
   SIDECAR_FILENAME,
@@ -40,7 +40,7 @@ export function contextsDir(root: string): string {
 }
 
 export function tileHostDir(root: string): string {
-  return join(nexusDir(root), HOMEPAGE_HOST_DIRNAME)
+  return join(root, HOMEPAGE_DIR_REL)
 }
 
 export const tileDocPath = (hostDirAbs: string): string => join(hostDirAbs, TILE_DOC_FILENAME)

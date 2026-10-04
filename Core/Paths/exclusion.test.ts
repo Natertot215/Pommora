@@ -117,7 +117,7 @@ describe('manifestAdmits', () => {
     expect(admits('.trash/Notes/2026__A.md.deleted')).toBe(true)
     expect(admits('.nexus/assets/crops.json')).toBe(true)
     expect(admits('.nexus/settings.json')).toBe(true)
-    expect(admits('.nexus/homepage/t1.md')).toBe(true)
+    expect(admits('.nexus/interface/homepage/t1.md')).toBe(true)
   })
 
   it('refuses thumbnails, journals, databases, and foreign dot-entries', () => {

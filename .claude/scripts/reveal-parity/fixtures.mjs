@@ -31,7 +31,7 @@ for (const [n, name] of [
     at(`Collection C/Window ${name}.md`),
     `---\nID: 01KYJHK6R9PWNDWA000000000${n}\n---\nWindow ${name.toLowerCase()} body.\n\nCite here[^1].\n\n[^1]: A note.\n`,
   )
-merge('.nexus/homepage/_tiles.json', (t) => {
+merge('.nexus/interface/homepage/_tiles.json', (t) => {
   t.tiles.push(
     {
       id: 'hover-probe-view',

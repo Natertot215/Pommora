@@ -80,7 +80,7 @@ const gate = <T>(): { promise: Promise<T>; open: (v: T) => void; fail: (e: Error
 beforeEach(async () => {
   root = tempRoot('pom-settle-')
   pushes = []
-  await mkdir(abs('.nexus', 'homepage'), { recursive: true })
+  await mkdir(abs('.nexus', 'interface', 'homepage'), { recursive: true })
   await writeFile(abs('.nexus', 'nexus.json'), JSON.stringify({ id: 'nx1' }))
   await mkdir(abs('Notes'))
   await writeFile(abs('Notes', '_pagecollection.json'), JSON.stringify({ id: 'c1' }))
@@ -109,8 +109,8 @@ describe('what a settle pushes for a batch', () => {
     await writeFile(abs('Notes', 'B.md'), `---\nID: ${ULID_B}\n---\n\nbeta\n`)
     await applyEvents(root, [
       ev('add', 'Notes', 'B.md'),
-      ev('change', '.nexus', 'homepage', '_tiles.json'),
-      ev('change', '.nexus', 'homepage', '_tiles.json'),
+      ev('change', '.nexus', 'interface', 'homepage', '_tiles.json'),
+      ev('change', '.nexus', 'interface', 'homepage', '_tiles.json'),
     ])
     await settleNow(pusher, root)
     expect(channels()).toEqual([
@@ -128,7 +128,7 @@ describe('what a settle pushes for a batch', () => {
   it('merges a cascade’s pages and hosts with the batch’s, once each', async () => {
     await applyEvents(root, [
       ev('change', 'Notes', 'A.md'),
-      ev('change', '.nexus', 'homepage', '_tiles.json'),
+      ev('change', '.nexus', 'interface', 'homepage', '_tiles.json'),
     ])
     oweCascade(
       root,

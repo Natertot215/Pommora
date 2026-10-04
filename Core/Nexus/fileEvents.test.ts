@@ -86,7 +86,7 @@ beforeEach(async () => {
   await openSession(root)
   await mkdir(abs('.nexus', 'contexts', 'Areas', 'Home'), { recursive: true })
   await mkdir(abs('.nexus', 'assets'), { recursive: true })
-  await mkdir(abs('.nexus', 'homepage'), { recursive: true })
+  await mkdir(abs('.nexus', 'interface', 'homepage'), { recursive: true })
   await writeFile(abs('.nexus', 'nexus.json'), JSON.stringify({ id: 'nx1' }))
   await writeFile(
     abs('.nexus', 'contexts', 'contexts.json'),
@@ -128,7 +128,7 @@ describe('applyEvents — must agree with the walk', () => {
     )
     await writeFile(abs('.nexus', 'settings.json'), JSON.stringify({ profile_icon: 'star' }))
     await writeFile(
-      abs('.nexus', 'homepage', 'homepage.json'),
+      abs('.nexus', 'interface', 'homepage', 'homepage.json'),
       JSON.stringify({ banner: 'Loose/b.png' }),
     )
 
@@ -139,7 +139,7 @@ describe('applyEvents — must agree with the walk', () => {
       ev('change', 'Notes', '_pagecollection.json'),
       ev('change', '.nexus', 'contexts', 'Areas', 'Home', '_space.json'),
       ev('change', '.nexus', 'settings.json'),
-      ev('change', '.nexus', 'homepage', 'homepage.json'),
+      ev('change', '.nexus', 'interface', 'homepage', 'homepage.json'),
     ])
     expect(walked()).toBe(false)
 
@@ -220,15 +220,15 @@ describe('applyEvents — must agree with the walk', () => {
   it('holds the order and the homepage through a damaged state.json and homepage.json, and the walk agrees', async () => {
     await writeFile(abs('.nexus', 'state.json'), JSON.stringify({ order: { contexts: ['ctx1'] } }))
     await writeFile(
-      abs('.nexus', 'homepage', 'homepage.json'),
+      abs('.nexus', 'interface', 'homepage', 'homepage.json'),
       JSON.stringify({ banner: 'Loose/b.png' }),
     )
     const before = await refreshTree(root)
     await writeFile(abs('.nexus', 'state.json'), '{ corrupt')
-    await writeFile(abs('.nexus', 'homepage', 'homepage.json'), '[1, 2]')
+    await writeFile(abs('.nexus', 'interface', 'homepage', 'homepage.json'), '[1, 2]')
     await applyEvents(root, [
       ev('change', '.nexus', 'state.json'),
-      ev('change', '.nexus', 'homepage', 'homepage.json'),
+      ev('change', '.nexus', 'interface', 'homepage', 'homepage.json'),
     ])
     expect(walked()).toBe(false)
     const live = held()
@@ -587,11 +587,15 @@ describe('classifyEvent', () => {
     expect(kind(ev('change', 'Notes', '_pagecollection.json'))).toBe('container-meta')
     expect(kind(ev('change', '.nexus', 'contexts', 'Areas', 'Home', '_space.json'))).toBe('space')
     expect(kind(ev('change', '.nexus', 'settings.json'))).toBe('settings-leaf')
-    expect(kind(ev('change', '.nexus', 'homepage', 'homepage.json'))).toBe('homepage-leaf')
-    expect(classifyEvent(tree, root, ev('change', '.nexus', 'homepage', '_tiles.json'))).toEqual({
+    expect(kind(ev('change', '.nexus', 'interface', 'homepage', 'homepage.json'))).toBe(
+      'homepage-leaf',
+    )
+    expect(
+      classifyEvent(tree, root, ev('change', '.nexus', 'interface', 'homepage', '_tiles.json')),
+    ).toEqual({
       kind: 'tiles-leaf',
       host: { kind: 'homepage' },
-      rel: '.nexus/homepage/_tiles.json',
+      rel: '.nexus/interface/homepage/_tiles.json',
     })
     expect(
       classifyEvent(tree, root, ev('change', '.nexus', 'contexts', 'Areas', 'Home', '_tiles.json')),
@@ -615,7 +619,7 @@ describe('classifyEvent', () => {
         ),
       ),
     ).toBe('ignored')
-    expect(kind(ev('addDir', '.nexus', 'homepage'))).toBe('ignored')
+    expect(kind(ev('addDir', '.nexus', 'interface', 'homepage'))).toBe('ignored')
     expect(kind(ev('change', '.nexus', 'assets', 'crops.json'))).toBe('crops-leaf')
     expect(kind(ev('add', 'Loose', 'second.md'))).toBe('page')
     expect(kind(ev('add', 'root-note.md'))).toBe('ignored')
@@ -845,10 +849,10 @@ describe('tile bodies', () => {
     const kind = (...segs: string[]): string =>
       classifyEvent(tree, root, ev('change', ...segs)).kind
     for (const name of ['_tiles.json', 't1.md']) {
-      expect(kind('.nexus', 'homepage', name)).toBe('tiles-leaf')
+      expect(kind('.nexus', 'interface', 'homepage', name)).toBe('tiles-leaf')
       expect(kind('.nexus', 'contexts', 'Areas', 'Home', name)).toBe('tiles-leaf')
     }
-    expect(kind('.nexus', 'homepage', 'homepage.json')).toBe('homepage-leaf')
+    expect(kind('.nexus', 'interface', 'homepage', 'homepage.json')).toBe('homepage-leaf')
     expect(kind('Notes', 'Page.md')).toBe('page')
     expect(kind()).toBe('walk')
   })
@@ -870,7 +874,7 @@ describe('an outside heading rename', () => {
       await page('Setup', 'Keep')
       await refreshTree(root)
       await seedContentIndex(root)
-      const home = abs('.nexus', 'homepage')
+      const home = abs('.nexus', 'interface', 'homepage')
       const tile = await landedId(createMarkdownTile(home))
       await renamed('Intro', 'Keep')
       expect(hosts()).toEqual([])
@@ -883,7 +887,7 @@ describe('an outside heading rename', () => {
       await renamed('Other', 'Held')
       expect(hosts()).toEqual([])
       await writeFile(tileFilePath(home, tile), 'see [[A#Other]]')
-      await renamed('Start', 'Held', ev('change', '.nexus', 'homepage', `${tile}.md`))
+      await renamed('Start', 'Held', ev('change', '.nexus', 'interface', 'homepage', `${tile}.md`))
       expect(await readFile(tileFilePath(home, tile), 'utf8')).toBe('see [[A#Start]]')
     } finally {
       installStores(NO_STORES)
@@ -1021,7 +1025,10 @@ describe('the app’s own events', () => {
     const SEP = contentIdAt(Date.UTC(2026, 8, 5), 'page')
     await mkdir(abs('.nexus', 'metadata'))
     await ownUnderLock('.nexus/state.json', JSON.stringify({ order: { contexts: ['ctx1'] } }))
-    await ownUnderLock('.nexus/homepage/homepage.json', JSON.stringify({ banner: 'Loose/b.png' }))
+    await ownUnderLock(
+      '.nexus/interface/homepage/homepage.json',
+      JSON.stringify({ banner: 'Loose/b.png' }),
+    )
     await ownUnderLock(
       '.nexus/assets/crops.json',
       JSON.stringify({ byImage: { 'Loose/b.png': { x: 0.3, y: 0.4, zoom: 2 } } }),

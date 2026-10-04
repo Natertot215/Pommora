@@ -90,7 +90,7 @@ const withValuesPush = async (
 beforeEach(async () => {
   root = tempRoot('pom-mutate-')
   await mkdir(join(root, '.nexus', 'assets'), { recursive: true })
-  await mkdir(join(root, '.nexus', 'homepage'), { recursive: true })
+  await mkdir(join(root, '.nexus', 'interface', 'homepage'), { recursive: true })
   await mkdir(join(root, 'Notes', 'Daily'), { recursive: true })
   await writeFile(
     join(root, '.nexus', 'nexus.json'),
@@ -1086,7 +1086,7 @@ describe('handleMutate — review-round hardening', () => {
 
   it('homepage setBanner preserves blocks/icon/foreign keys (read-merge-write)', async () => {
     await writeFile(
-      join(root, '.nexus', 'homepage', 'homepage.json'),
+      join(root, '.nexus', 'interface', 'homepage', 'homepage.json'),
       JSON.stringify({ outside_field: 2, icon: 'house', blocks: [{ t: 'x' }] }),
     )
     const src = join(root, 'Pick.png')
@@ -1097,7 +1097,7 @@ describe('handleMutate — review-round hardening', () => {
       nexusDeps,
     )
     expect(r.ok).toBe(true)
-    const cfg = await readJson('.nexus/homepage/homepage.json')
+    const cfg = await readJson('.nexus/interface/homepage/homepage.json')
     expect(cfg.banner).toBe('[[Pick.png]]')
     expect(cfg.blocks).toEqual([{ t: 'x' }])
     expect(cfg.icon).toBe('house')
@@ -1693,7 +1693,7 @@ describe('handleMutate — setBanner', () => {
     expect(await read(pagePath)).not.toMatch(/banner:/)
   })
 
-  it('sets a homepage banner in .nexus/homepage/homepage.json', async () => {
+  it('sets a homepage banner in .nexus/interface/homepage/homepage.json', async () => {
     await withAssetDir()
     const r = await settledMutate(
       root,
@@ -1701,7 +1701,7 @@ describe('handleMutate — setBanner', () => {
       nexusDeps,
     )
     expect(r.ok).toBe(true)
-    expect((await readJson('.nexus/homepage/homepage.json')).banner).toBe('[[Home.png]]')
+    expect((await readJson('.nexus/interface/homepage/homepage.json')).banner).toBe('[[Home.png]]')
     expect((await readNexus(root)).config.homepage.banner).toBe('[[Home.png]]')
   })
 })

@@ -3,14 +3,15 @@ import {
   CONTEXTS_REGISTRY_REL,
   isMetadataShardRel,
   NEXUS_CONFIG_FILES,
-  NEXUS_DIR,
+  type NexusConfigFile,
+  nexusConfigRel,
   SIDECARS,
   TILE_DOC_FILENAME,
 } from '../../Paths/nexusPaths'
 import { basename } from '../../Paths/posix'
 
 const CONFIG_RELS = new Set([
-  ...Object.values(NEXUS_CONFIG_FILES).map((file) => `${NEXUS_DIR}/${file}`),
+  ...(Object.keys(NEXUS_CONFIG_FILES) as NexusConfigFile[]).map(nexusConfigRel),
   CONTEXTS_REGISTRY_REL,
 ])
 const OWN_NAMES = new Set([...SIDECARS, TILE_DOC_FILENAME])
@@ -24,15 +25,15 @@ export const MATRIX_MERGE_DEPTH: Depth = { group: 1, filter: 1, forces: 2, displ
 export function mergeDepthFor(rel: string): Depth {
   if (isMetadataShardRel(rel)) return { pages: 2 }
   switch (rel) {
-    case `${NEXUS_DIR}/${NEXUS_CONFIG_FILES.settings}`:
+    case nexusConfigRel('settings'):
       return { personalization: 1 }
-    case `${NEXUS_DIR}/${NEXUS_CONFIG_FILES.state}`:
+    case nexusConfigRel('state'):
       return { order: 1, navigation: 1 }
-    case `${NEXUS_DIR}/${NEXUS_CONFIG_FILES.properties}`:
+    case nexusConfigRel('properties'):
       return { defs: 2 }
-    case `${NEXUS_DIR}/${NEXUS_CONFIG_FILES.crops}`:
+    case nexusConfigRel('crops'):
       return { byImage: 1 }
-    case `${NEXUS_DIR}/${NEXUS_CONFIG_FILES.matrix}`:
+    case nexusConfigRel('matrix'):
       return MATRIX_MERGE_DEPTH
     default:
       return {}

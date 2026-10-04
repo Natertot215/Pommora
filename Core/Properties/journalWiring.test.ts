@@ -244,7 +244,7 @@ describe('the option-op writers', () => {
     )
     expect(configWrites.map((o) => o.path.slice(root.length + 1)).sort()).toEqual([
       '.nexus/contexts/Areas/Home/_tiles.json',
-      '.nexus/matrix.json',
+      '.nexus/interface/matrix.json',
       'Col/Deep/_pageset.json',
       'Col/_pagecollection.json',
     ])

@@ -93,7 +93,7 @@ describe('mergeKeys', () => {
   it('names the merged set and the depth table', () => {
     expect(isMergedJson('.nexus/settings.json')).toBe(true)
     expect(isMergedJson('Notes/_pagecollection.json')).toBe(true)
-    expect(isMergedJson('.nexus/homepage/_tiles.json')).toBe(true)
+    expect(isMergedJson('.nexus/interface/homepage/_tiles.json')).toBe(true)
     expect(isMergedJson('Notes/A.md')).toBe(false)
     expect(isMergedJson('assets/x.json')).toBe(false)
     expect(isMergedJson('.nexus/assets/crops.json')).toBe(true)
@@ -108,8 +108,8 @@ describe('mergeKeys', () => {
     expect(mergeDepthFor('.nexus/assets/crops.json')).toEqual({ byImage: 1 })
     expect(mergeDepthFor('.nexus/metadata/09-2026.json')).toEqual({ pages: 2 })
     expect(mergeDepthFor('.nexus/metadata/09-2026.json.bad-x')).toEqual({})
-    expect(mergeDepthFor('.nexus/homepage/homepage.json')).toEqual({})
-    expect(mergeDepthFor('.nexus/matrix.json')).toEqual({
+    expect(mergeDepthFor('.nexus/interface/homepage/homepage.json')).toEqual({})
+    expect(mergeDepthFor('.nexus/interface/matrix.json')).toEqual({
       group: 1,
       filter: 1,
       forces: 2,
@@ -136,7 +136,7 @@ describe('mergeKeys', () => {
   })
 
   it('merges two forces keys and takes one side of rules whole', () => {
-    const depth = mergeDepthFor('.nexus/matrix.json')
+    const depth = mergeDepthFor('.nexus/interface/matrix.json')
     const base = {
       forces: { gravity: 0.5, spread: 0.5 },
       filter: { rules: { match: 'all', rules: [{ key: 'Status' }] } },
@@ -156,7 +156,7 @@ describe('mergeKeys', () => {
   })
 
   it("merges two devices' moves to different forces of one grouping", () => {
-    const depth = mergeDepthFor('.nexus/matrix.json')
+    const depth = mergeDepthFor('.nexus/interface/matrix.json')
     const base = { forces: { connection: { gravity: 1.5 } } }
     const local = { forces: { connection: { gravity: 1.5, spread: 2 } } }
     const remote = { forces: { connection: { gravity: 1.5, strength: 3 } } }

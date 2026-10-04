@@ -20,12 +20,12 @@ afterEach(async () => {
 })
 
 const seed = async (file: Record<string, unknown>): Promise<void> => {
-  await mkdir(join(root, '.nexus'), { recursive: true })
-  await writeFile(join(root, '.nexus', 'matrix.json'), JSON.stringify(file))
+  await mkdir(join(root, '.nexus', 'interface'), { recursive: true })
+  await writeFile(join(root, '.nexus', 'interface', 'matrix.json'), JSON.stringify(file))
 }
 
 const onDisk = async (): Promise<Record<string, unknown>> =>
-  await readJsonAt(join(root, '.nexus', 'matrix.json'))
+  await readJsonAt(join(root, '.nexus', 'interface', 'matrix.json'))
 
 describe('matrix.json', () => {
   it('reads an absent file as the defaults', async () => {

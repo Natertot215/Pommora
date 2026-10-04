@@ -513,11 +513,11 @@ describe('the watcher with the window closed', () => {
 describe('a host document under the watcher', () => {
   it('pushes the host once even when the batch also forces a walk', async () => {
     await startWatcher(root, win)
-    await mkdir(abs('.nexus', 'homepage'), { recursive: true })
-    await writeFile(abs('.nexus', 'homepage', '_tiles.json'), '{}')
+    await mkdir(abs('.nexus', 'interface', 'homepage'), { recursive: true })
+    await writeFile(abs('.nexus', 'interface', 'homepage', '_tiles.json'), '{}')
     await writeFile(abs('.nexus', 'nexus.json'), JSON.stringify({ id: 'nx1' }))
-    emit('change', '.nexus', 'homepage', '_tiles.json')
-    emit('change', '.nexus', 'homepage', '_tiles.json')
+    emit('change', '.nexus', 'interface', 'homepage', '_tiles.json')
+    emit('change', '.nexus', 'interface', 'homepage', '_tiles.json')
     emit('change', '.nexus', 'nexus.json')
     await settleAll(() => pushMock.mock.calls.some((c) => c[1] === 'tiles:changed'))
     const tiles = pushMock.mock.calls.filter((c) => c[1] === 'tiles:changed')
@@ -527,14 +527,14 @@ describe('a host document under the watcher', () => {
 
   it('pushes the host for an outside edit to a tile body, and nothing for its own write', async () => {
     await startWatcher(root, win)
-    await mkdir(abs('.nexus', 'homepage'), { recursive: true })
-    recordWrite(abs('.nexus', 'homepage', `${ULID_B}.md`), 'typed')
-    await writeFile(abs('.nexus', 'homepage', `${ULID_B}.md`), 'typed')
-    emit('change', '.nexus', 'homepage', `${ULID_B}.md`)
+    await mkdir(abs('.nexus', 'interface', 'homepage'), { recursive: true })
+    recordWrite(abs('.nexus', 'interface', 'homepage', `${ULID_B}.md`), 'typed')
+    await writeFile(abs('.nexus', 'interface', 'homepage', `${ULID_B}.md`), 'typed')
+    emit('change', '.nexus', 'interface', 'homepage', `${ULID_B}.md`)
     await settleAll()
     expect(pushMock.mock.calls.filter((c) => c[1] === 'tiles:changed')).toEqual([])
-    await writeFile(abs('.nexus', 'homepage', `${ULID_B}.md`), 'synced')
-    emit('change', '.nexus', 'homepage', `${ULID_B}.md`)
+    await writeFile(abs('.nexus', 'interface', 'homepage', `${ULID_B}.md`), 'synced')
+    emit('change', '.nexus', 'interface', 'homepage', `${ULID_B}.md`)
     await settleAll(() => pushMock.mock.calls.some((c) => c[1] === 'tiles:changed'))
     expect(pushMock.mock.calls.map((c) => c[1])).toEqual(['tiles:changed'])
   })
@@ -638,9 +638,9 @@ describe('syncIgnoredUnder', () => {
 
   it('watches every tile document and body, and lets chokidar descend into the homepage folder', () => {
     for (const segs of [
-      ['.nexus', 'homepage'],
-      ['.nexus', 'homepage', '_tiles.json'],
-      ['.nexus', 'homepage', '01ARZ3NDEKPSV4RRFFQ69G5FAV.md'],
+      ['.nexus', 'interface', 'homepage'],
+      ['.nexus', 'interface', 'homepage', '_tiles.json'],
+      ['.nexus', 'interface', 'homepage', '01ARZ3NDEKPSV4RRFFQ69G5FAV.md'],
       ['.nexus', 'contexts', 'Areas', 'Home', '_tiles.json'],
       ['.nexus', 'contexts', 'Areas', 'Home', '01ARZ3NDEKPSV4RRFFQ69G5FAV.md'],
     ])
@@ -651,8 +651,8 @@ describe('syncIgnoredUnder', () => {
 describe('isConfigPath', () => {
   it('names each config file apart from the other', () => {
     expect(isConfigPath('/nexus', '/nexus/.nexus/state.json', 'state')).toBe(true)
-    expect(isConfigPath('/nexus', '/nexus/.nexus/matrix.json', 'matrix')).toBe(true)
-    expect(isConfigPath('/nexus', '/nexus/.nexus/matrix.json', 'state')).toBe(false)
+    expect(isConfigPath('/nexus', '/nexus/.nexus/interface/matrix.json', 'matrix')).toBe(true)
+    expect(isConfigPath('/nexus', '/nexus/.nexus/interface/matrix.json', 'state')).toBe(false)
     expect(isConfigPath('/nexus', '/nexus/.nexus/state.json', 'matrix')).toBe(false)
     expect(isConfigPath('/nexus', '/nexus/Notes/matrix.json', 'matrix')).toBe(false)
   })
@@ -677,7 +677,10 @@ describe('syncIgnoredUnder beside the classifier', () => {
 
   it('the homepage config under its host folder stays watched, though tile bodies do not', () => {
     expect(
-      syncIgnoredUnder(root, scope('.nexus/assets'))(abs('.nexus', 'homepage', 'homepage.json')),
+      syncIgnoredUnder(
+        root,
+        scope('.nexus/assets'),
+      )(abs('.nexus', 'interface', 'homepage', 'homepage.json')),
     ).toBe(false)
   })
 

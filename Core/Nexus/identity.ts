@@ -3,8 +3,14 @@ import { errText, valueOr } from '../Contract/result'
 import { newId } from './ids'
 import { readJsonStrict, readKept, writeJson } from '../Files/atomicWrite'
 import { asString } from './coerce'
-import { nexusDir, nexusConfig } from '../Paths/paths'
-import { AGENDA_FOLDERS, NEXUS_CONFIG_FILES } from '../Paths/nexusPaths'
+import { nexusDir, nexusConfig, tileHostDir } from '../Paths/paths'
+import {
+  AGENDA_FOLDERS,
+  ASSETS_DIR_REL,
+  CONTEXTS_DIR_REL,
+  NEXUS_CONFIG_FILES,
+} from '../Paths/nexusPaths'
+import { join } from '../Paths/posix'
 import { createFolderEntity } from './folderEntity'
 import type { AgendaRegistration } from './folderKind'
 
@@ -47,6 +53,12 @@ export async function ensureIdentity(
     await writeJson(path, { id, createdAt, agenda_folders })
   }
   return { id, created: true }
+}
+
+export async function ensureConfigLayout(root: string): Promise<void> {
+  await machine().mkdir(join(root, ASSETS_DIR_REL))
+  await machine().mkdir(join(root, CONTEXTS_DIR_REL))
+  await machine().mkdir(tileHostDir(root))
 }
 
 function retireAgendaKey(identity: Record<string, unknown>): Record<string, unknown> {

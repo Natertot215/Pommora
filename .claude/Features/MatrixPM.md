@@ -50,7 +50,7 @@ Hovering a node lights its links, raises its fill and its glyph, and eases the r
 
 ### What Persists
 
-The Matrix's choices travel with the Nexus in `.nexus/matrix.json`, written in four sections — group, filter, forces, and display — merged section by section, so a device that moved one section never clobbers another's; forces holds a block per grouping, merged value by value, so a change to one force writes that value alone. A hand edit from outside surfaces live through the file watcher.
+The Matrix's choices travel with the Nexus in `.nexus/interface/matrix.json`, written in four sections — group, filter, forces, and display — merged section by section, so a device that moved one section never clobbers another's; forces holds a block per grouping, merged value by value, so a change to one force writes that value alone. A hand edit from outside surfaces live through the file watcher.
 
 The picture's own geometry stays on the machine that made it: every node's place in a row of its own keyed by id, so a rename keeps a node where it was, and the world rectangle the picture is framed on. A row that no longer reads is dropped on its own rather than taking the rest of the layout with it; a node the Nexus no longer holds is let go when the Matrix opens; and a first open with nothing stored fits the graph once it settles.
 

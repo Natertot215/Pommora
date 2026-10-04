@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { chmod, mkdir, readdir, readFile, rm, stat, writeFile } from 'node:fs/promises'
-import { join } from '../Paths/posix'
+import { dirname, join } from '../Paths/posix'
 import { noModeBits, putJson, readJsonAt, tempRoot } from '../Testing/hostFs'
 import { contextsDir, contextsRegistryFile, nexusConfig, tileHostDir } from '../Paths/paths'
 import { NEXUS_CONFIG_FILES, SIDECAR_FILENAME, TILE_DOC_FILENAME } from '../Paths/nexusPaths'
@@ -315,11 +315,10 @@ describe('what the pass skips', () => {
     const gone = { kind: 'gone' as const, propertyId: '_location', ids: ['set_deep'] }
     expect(await reachConfig(root, gone)).toEqual({ skipped: 0, hosts: [] })
     expect(await readJsonAt(matrixFile())).toEqual({})
-    const aside = (await readdir(join(root, '.nexus'))).filter((n) =>
-      n.startsWith('.matrix.json.bad-'),
-    )
+    const dir = dirname(matrixFile())
+    const aside = (await readdir(dir)).filter((n) => n.startsWith('.matrix.json.bad-'))
     expect(aside).toHaveLength(1)
-    expect(await readFile(join(root, '.nexus', aside[0]), 'utf8')).toBe('{ not json')
+    expect(await readFile(join(dir, aside[0]), 'utf8')).toBe('{ not json')
   })
 
   it('counts a directory at a Set sidecar as one skip', async () => {
