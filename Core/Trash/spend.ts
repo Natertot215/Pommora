@@ -219,6 +219,7 @@ async function restoreArtifact(
     return fault(e)
   }
   const roots = recordById(tree)
+  const resolveCase = resolvesCase(tree)
   const unspent: string[] = []
   const unlinked = new Set<string>()
   if (record.entity === 'context') {
@@ -238,7 +239,7 @@ async function restoreArtifact(
         .filter((t): t is string => typeof t === 'string')
       if (titles.length) additions[m.root.id] = titles
     }
-    unspent.push(...(await reapply(root, roots, contextKey(title), additions, resolvesCase(tree))))
+    unspent.push(...(await reapply(root, roots, contextKey(title), additions, resolveCase)))
   } else if (record.entity === 'space' && record.parent.kind === 'context') {
     const parentId = record.parent.id
     const group = contextWorldOf(tree.contexts).groupById.get(parentId)
@@ -249,7 +250,7 @@ async function restoreArtifact(
           .map((m) => [m.id, [title]]),
       )
       unspent.push(
-        ...(await reapply(root, roots, contextKey(group.def.title), additions, resolvesCase(tree))),
+        ...(await reapply(root, roots, contextKey(group.def.title), additions, resolveCase)),
       )
     }
   } else if (
@@ -266,13 +267,13 @@ async function restoreArtifact(
       const rebuilt =
         landed === was ? {} : rewriteFrontmatterConnections(values, was, { title: landed })
       const all = { ...values, ...rebuilt }
-      const taken = await refillValues(root, def, roots, all, frozen, resolvesCase(tree))
+      const taken = await refillValues(root, def, roots, all, frozen, resolveCase)
       for (const id of Object.keys(values))
         if (!roots[id]) trashed.push({ page: id, property: def.id, value: String(all[id]) })
         else if (!taken.has(id)) unlinked.add(id)
     }
     // A page or Space in the Trash takes its value back into its trashed copy, so it returns with it.
-    await refillTrashed(root, trashed, new Map(defs.map((d) => [d.id, d.name])))
+    await refillTrashed(root, trashed, new Map(defs.map((d) => [d.id, d.name])), resolveCase)
   }
   // The record outlives a partial re-tag, so what didn't come back stays written down.
   if (!unspent.length) {

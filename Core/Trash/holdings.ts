@@ -2,7 +2,7 @@
 
 import { basename, join, relative, titleFromPath } from '../Paths/posix'
 import { SPACE_SIDECAR, TRASH_DIR } from '../Paths/nexusPaths'
-import { heldKey } from '../Files/heldKeys'
+import { heldValue, landValue, writeTarget } from '../Files/heldKeys'
 import { parseConnectionText } from '../Connections/connections'
 import { normalizeTitle } from '../Paths/caseFold'
 import type { StrippedLink } from '../Nexus/cascade'
@@ -125,21 +125,23 @@ async function trashedHolders(
   return found
 }
 
-/** A Link value whose page or Space sits in the Trash goes back into its trashed copy wherever that key is blank, so it returns with it; `names` maps each property's ID to its key. */
+/** A Link value whose page or Space sits in the Trash goes back into its trashed copy wherever that property reads blank, landing where `writeTarget` places it, so it returns with it; `names` maps each property's ID to its name. */
 export async function refillTrashed(
   root: string,
   links: StrippedLink[],
   names: ReadonlyMap<string, string>,
+  resolveCase: boolean,
 ): Promise<void> {
   if (!links.length) return
   const holders = await trashedHolders(root, new Set(links.map((l) => l.page)))
   const fill = (raw: Record<string, unknown>, id: unknown): Record<string, unknown> | null => {
-    const added = links.flatMap((l) => {
-      const name = names.get(l.property)
-      const key = name && (heldKey(raw, name) ?? name)
-      return l.page === id && key && isBlankRaw(raw[key]) ? [[key, l.value] as const] : []
-    })
-    return added.length ? { ...raw, ...Object.fromEntries(added) } : null
+    let next = raw
+    for (const { page, property, value } of links) {
+      const name = names.get(property)
+      if (page === id && name && isBlankRaw(heldValue(next, name, false)))
+        next = landValue(next, writeTarget(next, name, resolveCase), value)
+    }
+    return next === raw ? null : next
   }
   for (const [id, file] of holders)
     if (basename(file) === SPACE_SIDECAR) await rmwJsonStrict(file, (raw) => fill(raw, id))
