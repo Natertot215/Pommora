@@ -155,7 +155,7 @@ export function waitUntilReadable(open: WaitingOpen, reopen: (path: string) => v
     .on('error', (error: unknown) => console.error('Nexus watcher error (non-fatal):', error))
 }
 
-// Counted, so a start still awaiting its settings read never arms after a later start or a stop. The batch outlives it, so a restart's first turn applies what was collected; one left from a Nexus the session switched away from lies outside the new root, where an event only owes the walk that turn takes anyway.
+// Counted, so a start still awaiting its settings read never arms after a later start or a stop. The batch outlives it, so a restart's first turn applies what was collected.
 export function stopWatcher(): void {
   starts++
   if (debounce) {
@@ -173,7 +173,8 @@ export function stopWatcher(): void {
 
 async function drainBatch(root: string, win: CurrentWindow, missed = false): Promise<void> {
   if (sessionRoot() !== root) return
-  const noted = batch
+  // What a Nexus the session switched away from left behind lies outside this root.
+  const noted = batch.filter((e) => !escapes(relative(root, e.absPath)))
   batch = []
   try {
     await settleBatch(
