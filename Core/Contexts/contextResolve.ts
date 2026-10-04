@@ -1,13 +1,13 @@
 import { normalizeTitle } from '../Connections/connections'
 import { foldKey } from '../Paths/caseFold'
-import { heldKey, heldKeys, heldValue } from '../Files/heldKeys'
+import { heldKey, heldKeys, heldValue, writeTarget } from '../Files/heldKeys'
 import { contextKey, parseContextKey } from './contexts'
 import { byFoldedName, holdsList, type PropertyDefinition } from '../Properties/properties'
 import {
   type Adoption,
   type Frozen,
   encodeValue,
-  heldSpelling,
+  writtenSpelling,
   isBlankValue,
   reconcilePropertyValue,
 } from '../Properties/propertyValue'
@@ -50,13 +50,17 @@ export interface GovernedWorld {
   resolveCase: boolean
 }
 
+/** Whether a write respells what a file holds to the registered spelling, as the tree's settings say. */
+export const resolvesCase = (tree: NexusTree): boolean =>
+  settingOf(tree.config.personalization, 'resolveCaseConflicts')
+
 export const governedWorld = (
   tree: NexusTree,
   defs: ReadonlyMap<string, PropertyDefinition>,
 ): GovernedWorld => ({
   contexts: contextWorldOf(tree.contexts),
   defs,
-  resolveCase: settingOf(tree.config.personalization, 'resolveCaseConflicts'),
+  resolveCase: resolvesCase(tree),
 })
 
 // A Space holds any registry property, so its own values reconcile against every definition, by name.
@@ -148,10 +152,10 @@ export function reconcileGovernedRoot(
       changed.push(key)
       continue
     }
-    const target = resolveCase ? governor.name : key
-    const joined = resolveCase ? keys.filter((k) => k !== target) : []
+    const { key: target, govern } = writeTarget(root, governor.name, resolveCase)
+    const joined = govern.filter((k) => k !== target)
     for (const k of joined) retired.add(k)
-    out[target] = resolveCase ? next : heldSpelling(next, held)
+    out[target] = writtenSpelling(next, held, resolveCase)
     if (joined.length || JSON.stringify(out[target]) !== JSON.stringify(raw)) changed.push(target)
   }
   for (const k of retired) {

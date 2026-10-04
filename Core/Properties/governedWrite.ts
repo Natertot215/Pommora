@@ -1,7 +1,7 @@
 // `mergeFrontmatter` is set-if-present-ELSE-DELETE over the keys it is handed: a changed key the next root holds no value for is deleted. `null` is not the delete sentinel — the merge would write the literal.
 
 import { reconcileGovernedRoot, type GovernedWorld } from '../Contexts/contextResolve'
-import { type Adoption, heldSpelling } from './propertyValue'
+import { type Adoption, writtenSpelling } from './propertyValue'
 import { changedKeys } from './governedSweep'
 import { landValue, writeTarget } from '../Files/heldKeys'
 import { atomicWriteFile, readTextOrNull } from '../Files/atomicWrite'
@@ -19,8 +19,11 @@ export function writtenRoot(
   const target = writeTarget(raw, name, world.resolveCase)
   const reconciled = reconcileGovernedRoot(raw, world, undefined, target.govern)
   adoptions.push(...reconciled.adoptions)
-  const written = world.resolveCase ? value : heldSpelling(value, raw[target.key])
-  return landValue(reconciled.root, target, written)
+  return landValue(
+    reconciled.root,
+    target,
+    writtenSpelling(value, raw[target.key], world.resolveCase),
+  )
 }
 
 export async function setGovernedRootKey(

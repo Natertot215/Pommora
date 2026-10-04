@@ -4,7 +4,7 @@ import {
   applyValueAtRoot,
   decodeValue,
   encodeValue,
-  heldSpelling,
+  writtenSpelling,
   isBlankValue,
   reconcilePropertyValue,
   registeredOption,
@@ -330,23 +330,28 @@ describe('applyValueAtRoot', () => {
   })
 })
 
-describe('heldSpelling — a value spelled as the file already spells it', () => {
+describe('writtenSpelling', () => {
+  it('with casing resolved, writes the value as given', () => {
+    expect(writtenSpelling(['Done'], ['done'], true)).toEqual(['Done'])
+    expect(writtenSpelling(true, 'Yes', true)).toBe(true)
+  })
+
   it('gives each member the one held member its title folds to; a member held twice keeps the registered spelling', () => {
-    expect(heldSpelling(['Done'], ['done', 'Done'])).toEqual(['Done'])
-    expect(heldSpelling(['Done'], ['done', 'DONE'])).toEqual(['Done'])
-    expect(heldSpelling(['Done', 'Active'], 'done')).toEqual(['done', 'Active'])
+    expect(writtenSpelling(['Done'], ['done', 'Done'], false)).toEqual(['Done'])
+    expect(writtenSpelling(['Done'], ['done', 'DONE'], false)).toEqual(['Done'])
+    expect(writtenSpelling(['Done', 'Active'], 'done', false)).toEqual(['done', 'Active'])
   })
 
   it('takes only string members', () => {
-    expect(heldSpelling(['2024'], [2024])).toEqual(['2024'])
+    expect(writtenSpelling(['2024'], [2024], false)).toEqual(['2024'])
   })
 
   it('a checked value keeps the checked word the file holds', () => {
-    expect(heldSpelling(true, 'Yes')).toBe('Yes')
+    expect(writtenSpelling(true, 'Yes', false)).toBe('Yes')
   })
 
   it('a checked value the file never held stays true', () => {
-    expect(heldSpelling(true, undefined)).toBe(true)
+    expect(writtenSpelling(true, undefined, false)).toBe(true)
   })
 })
 

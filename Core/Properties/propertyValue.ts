@@ -134,8 +134,9 @@ export function reconcilePropertyValue(
   return { value: kept.length ? { kind: 'multiSelect', value: kept } : NULL_VALUE, adoptions: [] }
 }
 
-/** `next` spelled as `raw` already spells it: a checked `true` keeps `raw`'s checked word, and each member takes the one member of `raw` its title folds to. A member `raw` names more than once keeps the spelling `next` gives it, the registered one. */
-export function heldSpelling(next: unknown, raw: unknown): unknown {
+/** `next` as a write spells it: as given when casing resolves, otherwise as `raw` already spells it — a checked `true` keeps `raw`'s checked word, and each member takes the one member of `raw` its title folds to. A member `raw` names more than once keeps the spelling `next` gives it, the registered one. */
+export function writtenSpelling(next: unknown, raw: unknown, resolveCase: boolean): unknown {
+  if (resolveCase) return next
   if (next === true) return isCheckedRaw(raw) ? raw : next
   if (!Array.isArray(next)) return next
   const written = listOf(raw).filter((w): w is string => typeof w === 'string')
