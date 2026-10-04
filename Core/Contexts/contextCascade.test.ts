@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 import { splitFrontmatter } from '../Files/pageFile'
-import { chmod, rm, mkdir, symlink, writeFile, readFile } from 'node:fs/promises'
+import { chmod, rm, mkdir, readdir, symlink, writeFile, readFile } from 'node:fs/promises'
 import { join, relative } from '../Paths/posix'
 import { noModeBits, tempRoot, windows, readJsonAt } from '../Testing/hostFs'
 import {
@@ -137,10 +137,92 @@ describe('case folding on renames', () => {
     expect(reg.contexts.find((c) => c.id === 'ctx_projects')!.title).toBe('PROJECTS')
   })
 
-  it('a case-only Space rename passes (its own folder is not a collision)', async () => {
-    const r = await renameSpaceOp(root, 'sp-pom', 'POMMORA')
-    expect(r.ok).toBe(true)
-    expect((await fmOf(page()))['<Projects>']).toEqual(['POMMORA'])
+  const members = () => [page(), other(), csSidecar()]
+  const snapshot = (files: string[]) => Promise.all(files.map((f) => readFile(f, 'utf8')))
+
+  it('a case-only Context rename relocates the folder, commits the registry, and leaves every member file byte-identical', async () => {
+    await writeFile(other(), '---\nid: p2\n<projects>:\n  - Pommora\n---\nbody')
+    const before = await snapshot(members())
+    expect((await renameContextOp(root, 'ctx_projects', 'projects')).ok).toBe(true)
+    expect(await readdir(contextsDir(root))).toContain('projects')
+    expect(await regTitle('ctx_projects')).toBe('projects')
+    expect(await snapshot(members())).toEqual(before)
+    expect(await readJournal(root)).toBeNull()
+  })
+
+  it('a case-only Space rename relocates the folder and leaves every member file byte-identical', async () => {
+    await writeFile(other(), '---\nid: p2\n<projects>: Pommora\n---\nbody')
+    const before = await snapshot(members())
+    expect((await renameSpaceOp(root, 'sp-pom', 'pommora')).ok).toBe(true)
+    expect(await readdir(join(contextsDir(root), 'Projects'))).toContain('pommora')
+    expect(await snapshot(members())).toEqual(before)
+    expect(await readJournal(root)).toBeNull()
+  })
+
+  it('a Context rename rewrites every spelling of the key on a page and a Space', async () => {
+    await writeFile(other(), '---\nid: p2\n<projects>:\n  - Pommora\n---\nbody')
+    await writeFile(csSidecar(), JSON.stringify({ id: 'sp-cs', '<projects>': ['Pommora'] }))
+    expect((await renameContextOp(root, 'ctx_projects', 'Ventures')).ok).toBe(true)
+    expect(await fmOf(other())).toEqual({ id: 'p2', '<Ventures>': ['Pommora'] })
+    expect(await readJsonAt(csSidecar())).toEqual({ id: 'sp-cs', '<Ventures>': ['Pommora'] })
+  })
+
+  it('two spellings of the key join into one renamed list, on a page and a Space', async () => {
+    await writeFile(
+      other(),
+      '---\nid: p2\n<Projects>:\n  - Pommora\n<projects>:\n  - Sapphire\n---\nbody',
+    )
+    await writeFile(
+      csSidecar(),
+      JSON.stringify({ id: 'sp-cs', '<Projects>': ['Pommora'], '<projects>': ['Sapphire'] }),
+    )
+    expect((await renameContextOp(root, 'ctx_projects', 'Ventures')).ok).toBe(true)
+    expect(await fmOf(other())).toEqual({ id: 'p2', '<Ventures>': ['Pommora', 'Sapphire'] })
+    expect(await readJsonAt(csSidecar())).toEqual({
+      id: 'sp-cs',
+      '<Ventures>': ['Pommora', 'Sapphire'],
+    })
+  })
+
+  it('a single value renamed onto a held list joins it as a list of one, on a page and a Space', async () => {
+    await writeFile(other(), '---\nid: p2\n<Projects>: Pommora\n<Ventures>:\n  - X\n---\nbody')
+    await writeFile(
+      csSidecar(),
+      JSON.stringify({ id: 'sp-cs', '<Projects>': 'Pommora', '<Ventures>': ['X'] }),
+    )
+    expect((await renameContextOp(root, 'ctx_projects', 'Ventures')).ok).toBe(true)
+    expect(await fmOf(other())).toEqual({ id: 'p2', '<Ventures>': ['X', 'Pommora'] })
+    expect(await readJsonAt(csSidecar())).toEqual({ id: 'sp-cs', '<Ventures>': ['X', 'Pommora'] })
+  })
+
+  it('a Space rename rewrites the title under every spelling of the key', async () => {
+    await writeFile(other(), '---\nid: p2\n<projects>:\n  - Pommora\n---\nbody')
+    await writeFile(csSidecar(), JSON.stringify({ id: 'sp-cs', '<projects>': ['Pommora'] }))
+    expect((await renameSpaceOp(root, 'sp-pom', 'Pom')).ok).toBe(true)
+    expect((await fmOf(other()))['<projects>']).toEqual(['Pom'])
+    expect((await readJsonAt(csSidecar()))['<projects>']).toEqual(['Pom'])
+  })
+
+  it('unlinking a Context strips every spelling of its key and captures their values', async () => {
+    await writeFile(
+      other(),
+      '---\nid: p2\n<projects>:\n  - Pommora\n<Projects>: Sapphire\n---\nbody',
+    )
+    const r = await unlinkContextKey(root, 'Projects')
+    expect(r.ok && r.value.captured).toContainEqual({
+      kind: 'page',
+      values: ['Sapphire', 'Pommora'],
+    })
+    expect(await fmOf(other())).toEqual({ id: 'p2' })
+  })
+
+  it('a retry whose old title another Context holds in another case answers null and sweeps nothing', async () => {
+    await writeFile(other(), '---\nid: p2\n<Classes>:\n  - CS 161\n---\nbody')
+    const before = await readFile(other(), 'utf8')
+    sweepSpy.mockClear()
+    expect(await renameContextOp(root, 'ctx_projects', 'Projects', 'classes')).toEqual(ok(null))
+    expect(sweepSpy).not.toHaveBeenCalled()
+    expect(await readFile(other(), 'utf8')).toBe(before)
   })
 })
 
