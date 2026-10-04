@@ -38,7 +38,8 @@ import { deleteCascade, type StrippedLink } from '../Nexus/cascade'
 import { contentPages, pageIdsOf, parkLinks, refillTrashed } from './holdings'
 import { findContainerById, resolveRecord, type ArtifactRecord, type Refusal } from './resolve'
 import { owningCollection } from '../Nexus/treePatch'
-import { contextWorldOf, resolvesCase } from '../Contexts/contextResolve'
+import { contextWorldOf } from '../Contexts/contextResolve'
+import { resolvesCase } from '../Settings/personalization'
 
 const REFUSAL_TEXT: Record<Refusal, string> = {
   'parent-gone': 'The place this belonged to no longer exists.',

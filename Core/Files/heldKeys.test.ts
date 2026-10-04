@@ -1,5 +1,13 @@
 import { describe, expect, it } from 'vitest'
-import { editHeldLists, heldKey, heldValue, joinValues } from './heldKeys'
+import {
+  editHeldLists,
+  heldKey,
+  heldValue,
+  joinValues,
+  type KeyCollision,
+  rekeyHeld,
+} from './heldKeys'
+import { assembleEnvelope, renameFrontmatterKey, splitFrontmatter } from './pageFile'
 import { namesValue, stripList } from '../Properties/pageValue'
 
 describe('heldKey', () => {
@@ -38,5 +46,25 @@ describe('editHeldLists', () => {
   it('answers null when no spelling changed', () => {
     expect(editHeldLists({ Tags: ['b'], tags: ['c'] }, 'Tags', strip('a'))).toBeNull()
     expect(editHeldLists({ other: ['a'] }, 'Tags', strip('a'))).toBeNull()
+  })
+})
+
+describe('rekeyHeld — the twin of renameFrontmatterKey', () => {
+  const cases: [string, string, string, KeyCollision, boolean][] = [
+    ['a: 1\nTags: [b]\ntags: [a, B]\nz: 2', 'Tags', 'Labels', 'prefer-new', true],
+    ['a: 1\nTags: [b]\ntags: [a, B]', 'Tags', 'Labels', 'prefer-new', false],
+    ['Tags: [b]\nlabels: [x]\ntags: [a]', 'Tags', 'Labels', 'prefer-new', true],
+    ['<Projects>: [Y]\n<Ventures>: X', '<Projects>', '<Ventures>', 'merge', true],
+    ['tags:\n  - a\n  - b', 'Tags', 'Labels', 'prefer-new', true],
+    ['<Other>: x', 'Status', 'Stage', 'prefer-new', false],
+  ]
+
+  it.each(
+    cases,
+  )('answers the keys and values the page rename does for %j', (fm, from, to, collision, join) => {
+    const content = assembleEnvelope(`${fm}\n`, 'Body')
+    const page = renameFrontmatterKey(content, from, to, collision, join)
+    const json = rekeyHeld(splitFrontmatter(content), from, to, collision, join)
+    expect(json).toEqual(page === null ? null : splitFrontmatter(page))
   })
 })

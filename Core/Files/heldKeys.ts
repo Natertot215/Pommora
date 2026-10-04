@@ -1,4 +1,4 @@
-// What a root holds for a name, and where a write to it lands. A name is held under its exact spelling, else the first key that folds to it, in the root's order: a read, a value write, and the reconcile act on that one key, and a rename, a strip, or a list edit acts on every spelling.
+// What a root holds for a name, and where a write to it lands. A name is held under its exact spelling, else the first key that folds to it, in the root's order: a read acts on that one key, a value write and the reconcile land on it or, with casing resolved, under the name in place of every spelling, and a rename, a strip, or a list edit acts on every spelling.
 
 import { setOrDrop } from './atomicWrite'
 import type { Json } from './stableJson'

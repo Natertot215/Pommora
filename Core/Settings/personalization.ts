@@ -3,6 +3,7 @@ import { eachOf, numberCheck } from '../Files/decoders'
 import { columnStyle, DATE_FORMATS, type TimeFormat } from '../Properties/columnStyles'
 import { DEFAULT_LINK_DISPLAY, LINK_DISPLAYS } from '../Properties/properties'
 import { HELD_KINDS, type HeldKind } from '../Nexus/entities'
+import type { NexusTree } from '../Nexus/tree'
 import { type ColorSetting, isColorKey } from '@pommora/uix/Theme/colors'
 import { type NumberRange, type SteppedRange, steppedRange } from '@pommora/uix/Utilities/clamp'
 
@@ -255,6 +256,10 @@ export type SteppedKey = {
 
 export const settingOf = <K extends SettingKey>(p: Personalization, key: K): SettingValue<K> =>
   (p[key] ?? SETTING_DEFAULTS[key]) as SettingValue<K>
+
+/** Whether a write respells what a file holds to the registered spelling, as the tree's settings say. */
+export const resolvesCase = (tree: NexusTree): boolean =>
+  settingOf(tree.config.personalization, 'resolveCaseConflicts')
 
 // A Collection's Sets sit above or below its pages by setPlacement, a Set's by subSetPlacement.
 export const placementOf = (p: Personalization, containerKind: string): Placement =>

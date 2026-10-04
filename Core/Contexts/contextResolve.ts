@@ -11,7 +11,7 @@ import {
   isBlankValue,
   reconcilePropertyValue,
 } from '../Properties/propertyValue'
-import { settingOf } from '../Settings/personalization'
+import { resolvesCase } from '../Settings/personalization'
 import type { ContextGroup, NexusTree, SpaceNode } from '../Nexus/tree'
 import { listOf } from '../Contract/validators'
 
@@ -49,10 +49,6 @@ export interface GovernedWorld {
   defs: ReadonlyMap<string, PropertyDefinition>
   resolveCase: boolean
 }
-
-/** Whether a write respells what a file holds to the registered spelling, as the tree's settings say. */
-export const resolvesCase = (tree: NexusTree): boolean =>
-  settingOf(tree.config.personalization, 'resolveCaseConflicts')
 
 export const governedWorld = (
   tree: NexusTree,
