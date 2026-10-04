@@ -38,7 +38,7 @@ import { deleteCascade, type StrippedLink } from '../Nexus/cascade'
 import { contentPages, pageIdsOf, parkLinks, refillTrashed } from './holdings'
 import { findContainerById, resolveRecord, type ArtifactRecord, type Refusal } from './resolve'
 import { owningCollection } from '../Nexus/treePatch'
-import { contextWorldOf } from '../Contexts/contextResolve'
+import { contextWorldOf, resolvesCase } from '../Contexts/contextResolve'
 
 const REFUSAL_TEXT: Record<Refusal, string> = {
   'parent-gone': 'The place this belonged to no longer exists.',
@@ -237,7 +237,7 @@ async function restoreArtifact(
         .filter((t): t is string => typeof t === 'string')
       if (titles.length) additions[m.root.id] = titles
     }
-    unspent.push(...(await reapply(root, roots, contextKey(title), additions)))
+    unspent.push(...(await reapply(root, roots, contextKey(title), additions, resolvesCase(tree))))
   } else if (record.entity === 'space' && record.parent.kind === 'context') {
     const parentId = record.parent.id
     const group = contextWorldOf(tree.contexts).groupById.get(parentId)
@@ -247,7 +247,9 @@ async function restoreArtifact(
           .filter((m): m is typeof m & { id: string } => typeof m.id === 'string')
           .map((m) => [m.id, [title]]),
       )
-      unspent.push(...(await reapply(root, roots, contextKey(group.def.title), additions)))
+      unspent.push(
+        ...(await reapply(root, roots, contextKey(group.def.title), additions, resolvesCase(tree))),
+      )
     }
   } else if (
     record.entity !== 'space' &&
@@ -263,7 +265,7 @@ async function restoreArtifact(
       const rebuilt =
         landed === was ? {} : rewriteFrontmatterConnections(values, was, { title: landed })
       const all = { ...values, ...rebuilt }
-      const taken = await refillValues(root, def, roots, all, frozen)
+      const taken = await refillValues(root, def, roots, all, frozen, resolvesCase(tree))
       for (const id of Object.keys(values))
         if (!roots[id]) trashed.push({ page: id, property: def.id, value: String(all[id]) })
         else if (!taken.has(id)) unlinked.add(id)
@@ -285,8 +287,8 @@ async function reapply(
   roots: Record<string, EntityRecord>,
   key: string,
   additions: Record<string, string[]>,
+  resolveCase: boolean,
 ): Promise<string[]> {
-  const resolveCase = await readLiveSetting(root, 'resolveCaseConflicts')
   const taken = await sweepRootsById(root, roots, additions, (raw, titles) =>
     landValue(
       raw,

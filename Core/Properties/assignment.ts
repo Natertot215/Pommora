@@ -10,17 +10,17 @@ import { type EntityRecord, recordById } from '../Nexus/record'
 import { damagedFolders } from '../Nexus/treePatch'
 import { readRegistry, serializeSchemaOp } from './propertiesRegistry'
 import { byFoldedName, type PropertyDefinition } from './properties'
-import { readLiveSetting } from '../Settings/settings'
 import {
   encodeValue,
   type Frozen,
-  heldSpelling,
   isBlankValue,
   namesGonePage,
   reconcilePropertyValue,
+  writtenSpelling,
 } from './propertyValue'
 import { parkLinks } from '../Trash/holdings'
 import { frozenWorld } from '../Nexus/heldPages'
+import { resolvesCase } from '../Contexts/contextResolve'
 import { sweepRootsById } from './governedSweep'
 import { heldValue, landValue, writeTarget } from '../Files/heldKeys'
 import { ok, fail, type Result } from '../Contract/result'
@@ -52,8 +52,8 @@ export async function refillValues(
   roots: Record<string, EntityRecord>,
   values: Record<string, unknown>,
   frozen: Frozen,
+  resolveCase: boolean,
 ): Promise<Set<string>> {
-  const resolveCase = await readLiveSetting(root, 'resolveCaseConflicts')
   return sweepRootsById(root, roots, values, (raw, value) => {
     const restored = reconcilePropertyValue(def, value, frozen).value
     const encoded = isBlankValue(restored) ? undefined : encodeValue(restored)
@@ -63,7 +63,7 @@ export async function refillValues(
     return landValue(
       raw,
       writeTarget(raw, def.name, resolveCase),
-      resolveCase ? encoded : heldSpelling(encoded, value),
+      writtenSpelling(encoded, value, resolveCase),
     )
   })
 }
@@ -96,7 +96,7 @@ async function restoreCachedValues(
     def.type === 'link'
       ? Object.keys(members).filter((id) => namesGonePage(cached[id], frozen))
       : []
-  const spent = await refillValues(root, def, members, cached, frozen)
+  const spent = await refillValues(root, def, members, cached, frozen, resolvesCase(tree))
   await parkLinks(
     root,
     gone.map((id) => ({ page: id, property: propertyId, value: String(cached[id]) })),
