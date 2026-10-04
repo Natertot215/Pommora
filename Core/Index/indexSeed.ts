@@ -7,6 +7,7 @@ import { normalizeTitle } from '../Connections/connections'
 import { headingOutlineOf } from '../MarkdownPM/Engine/headingScan'
 import { inCodeAt, scanDoc } from '../MarkdownPM/Engine/docScan'
 import { parseContextKey } from '../Contexts/contexts'
+import { foldKey } from '../Paths/caseFold'
 import { parsePage, splitEnvelope } from '../Files/pageFile'
 import {
   markIndexReady,
@@ -79,7 +80,7 @@ function* spaceRelations(
       const title = normalizeTitle(value)
       if (title) titles.add(title)
     }
-    for (const target of titles) yield { target, qualifier: key }
+    for (const target of titles) yield { target, qualifier: foldKey(key) }
   }
 }
 

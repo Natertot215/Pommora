@@ -1,6 +1,7 @@
 // A null answer means no index, and an empty array is a genuine empty result: the title, Context, and key-holder queries fall back to a scan on null, while the heading cascade and the Matrix graph wait for the index.
 
 import { errText } from '../Contract/result'
+import { foldKey } from '../Paths/caseFold'
 import {
   type ContentIndexStore,
   contentIndexStore,
@@ -80,11 +81,11 @@ export function queryKeyHolders(key: string): string[] | null {
   return queryPaths((db) => db.queryKeyHolders(key))
 }
 
-/** The pages holding a Context key, or — given a normalized Space title — those whose key names that Space. */
+/** The pages holding a Context key in any casing, or — given a normalized Space title — those whose key names that Space. */
 export function queryMembers(key: string, title?: string): string[] | null {
   return title === undefined
     ? queryKeyHolders(key)
-    : queryPaths((db) => db.queryMembers(key, title))
+    : queryPaths((db) => db.queryMembers(foldKey(key), title))
 }
 
 export function readPageRelations(paths?: string[]): PageRelations | null {

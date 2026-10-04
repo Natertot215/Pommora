@@ -1,7 +1,7 @@
 import { realpathSync } from 'node:fs'
 import { join } from '@pommora/core/Paths/posix'
 import { damagedError, openRebuildable, type Db } from './driver'
-import { applySchema, INDEX_GENERATION, readMeta, rebuildIndex, writeMeta } from './ddl'
+import { openSchema, readMeta, writeMeta } from './ddl'
 
 export const DB_FILENAME = 'nexus.db'
 
@@ -19,13 +19,8 @@ const elsewhere = (stamped: string, root: string): boolean => {
 
 export function openNexusDb(dir: string, root: string): Db | null {
   return openRebuildable(join(dir, DB_FILENAME), (db) => {
-    // Additive DDL must reach databases that have already been opened — the idempotent re-apply is how a pre-index file gains the index tables.
     try {
-      applySchema(db)
-      if (readMeta(db, 'index_generation') !== String(INDEX_GENERATION)) {
-        rebuildIndex(db)
-        writeMeta(db, 'index_generation', String(INDEX_GENERATION))
-      }
+      openSchema(db)
       const stamped = readMeta(db, 'root')
       if (stamped !== null && elsewhere(stamped, root)) db.exec('DELETE FROM sync_base')
       writeMeta(db, 'root', root)

@@ -1,12 +1,14 @@
 import type { Db } from './driver'
 
-export const INDEX_GENERATION = 9
+export const INDEX_GENERATION = 10
 
-const DDL = `
+const META_DDL = `
   CREATE TABLE IF NOT EXISTS meta (
     key TEXT PRIMARY KEY,
     value TEXT NOT NULL
-  );
+  );`
+
+const DDL = `
   CREATE TABLE IF NOT EXISTS local_state (
     scope TEXT NOT NULL,
     key TEXT NOT NULL,
@@ -31,10 +33,11 @@ const DDL = `
   CREATE TABLE IF NOT EXISTS page_values (
     path TEXT NOT NULL,
     key TEXT NOT NULL,
+    fold TEXT NOT NULL,
     value TEXT NOT NULL,
     PRIMARY KEY (path, key)
   );
-  CREATE INDEX IF NOT EXISTS page_values_by_key ON page_values (key);
+  CREATE INDEX IF NOT EXISTS page_values_by_fold ON page_values (fold);
   CREATE TABLE IF NOT EXISTS indexed_files (
     path TEXT PRIMARY KEY,
     mtime_ms REAL NOT NULL,
@@ -51,10 +54,6 @@ const DDL = `
     base_bytes BLOB
   );`
 
-export function applySchema(db: Db): void {
-  db.exec(DDL)
-}
-
 export function readMeta(db: Db, key: string): string | null {
   const row = db.prepare('SELECT value FROM meta WHERE key = ?').get(key) as
     | { value: string }
@@ -68,7 +67,7 @@ export function writeMeta(db: Db, key: string, value: string): void {
 
 export const INDEX_TABLES = ['relations', 'headings', 'page_values', 'indexed_files'] as const
 
-// Names a generation has retired. `applySchema` only ever creates, so a table dropped from the schema is dropped from an existing database here or never.
+// Names a generation has retired. The schema only ever creates, so a table dropped from it is dropped from an existing database here or never.
 const RETIRED_TABLES = [
   'mentions',
   'heading_mentions',
@@ -77,10 +76,16 @@ const RETIRED_TABLES = [
   'matrix_nodes',
 ] as const
 
-// A generation step drops every index table and every retired name outright, so a table whose shape changed is recreated and one whose rows moved elsewhere is gone.
-export function rebuildIndex(db: Db): void {
-  db.exec(
-    [...INDEX_TABLES, ...RETIRED_TABLES].map((table) => `DROP TABLE IF EXISTS ${table};`).join(' '),
-  )
-  applySchema(db)
+/** Applies the schema on every open, so a database from before a table existed gains it. A stale generation first drops every index table and every retired name, so a table whose shape changed is created fresh and one whose rows moved elsewhere is gone. */
+export function openSchema(db: Db): void {
+  db.exec(META_DDL)
+  const stale = readMeta(db, 'index_generation') !== String(INDEX_GENERATION)
+  if (stale)
+    db.exec(
+      [...INDEX_TABLES, ...RETIRED_TABLES]
+        .map((table) => `DROP TABLE IF EXISTS ${table};`)
+        .join(' '),
+    )
+  db.exec(DDL)
+  if (stale) writeMeta(db, 'index_generation', String(INDEX_GENERATION))
 }
