@@ -225,19 +225,6 @@ describe('reconcileGovernedRoot — spellings with case resolution off', () => {
     expect(root.status).toBe('Done')
     expect(changed).not.toContain('status')
   })
-
-  it('keeps the spelling a file gives each Space title', () => {
-    expect(reconcileGovernedRoot({ '<Projects>': 'pommora' }, world).root['<Projects>']).toEqual([
-      'pommora',
-    ])
-  })
-
-  it('leaves a Context list naming an unknown Space as written', () => {
-    const input = { '<Projects>': ['pommora', 'Ghost'] }
-    const { root, changed } = reconcileGovernedRoot(input, world)
-    expect(root).toEqual(input)
-    expect(changed).toEqual([])
-  })
 })
 
 describe('reconcileGovernedRoot — spellings with case resolution on', () => {

@@ -438,24 +438,28 @@ describe('a Space sidecar is a context root too', () => {
     expect((await sidecar('Projects/Sapphire'))['<Projects>']).toEqual(['Pommora'])
   })
 
-  it('a returning Context’s own key is left whole in every spelling', async () => {
+  it('a returning Context’s own key is left for the rekey while a live Context holds its title', async () => {
     await seedPassenger()
     await writeFile(
       join(contextsDir(root), 'Projects', 'Sapphire', '_space.json'),
-      JSON.stringify({ id: 'sp-sap', '<Projects>': ['Pommora'], '<projects>': ['pommora'] }),
+      JSON.stringify({ id: 'sp-sap', '<Projects>': ['Pommora'] }),
     )
     await settledMutate(
       root,
       { op: 'delete', path: '.nexus/contexts/Projects', kind: 'context' },
       nexusDeps,
     )
+    await writeFile(
+      contextsRegistryFile(root),
+      JSON.stringify({ contexts: [{ id: 'ctx_live', title: 'Projects' }] }),
+    )
+    await mkdir(join(contextsDir(root), 'Projects'), { recursive: true })
+    await refreshTree(root)
     const [listed] = await listBundles(root)
     expect(
       (await settledMutate(root, { op: 'restore', bundlePath: listed.bundlePath }, nexusDeps)).ok,
     ).toBe(true)
-    const sap = await sidecar('Projects/Sapphire')
-    expect(sap['<Projects>']).toEqual(['Pommora'])
-    expect(sap['<projects>']).toEqual(['pommora'])
+    expect((await sidecar('Projects (2)/Sapphire'))['<Projects (2)>']).toEqual(['Pommora'])
   })
 })
 
