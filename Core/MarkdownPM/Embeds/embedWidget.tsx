@@ -25,7 +25,7 @@ import { type DismissalHandle, pushDismissal } from '@pommora/uix/Interactions/d
 import { TILE_DEFAULT_PX, TILE_GAP_PX } from '@pommora/uix/Theme/theme-vars.css'
 import { TILE_MIN_PX } from '@pommora/uix/Utilities/tileMetrics'
 import { titleFromPath } from '../../Paths/posix'
-import { normalizeTitle } from '../../Connections/connections'
+import { normalizeTitle } from '../../Paths/caseFold'
 import '../../Tiles/tile-base.css'
 import { ZOOM } from '../../Settings/personalization'
 import { zoomStep } from '../../Tiles/tileZoom'

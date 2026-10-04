@@ -1,8 +1,23 @@
 import { describe, expect, it } from 'vitest'
-import { compareTitles, matchScore, rankMatches, spellings } from './caseFold'
+import { compareTitles, matchScore, normalizeTitle, rankMatches, spellings } from './caseFold'
 
 const titled = (...titles: string[]) => titles.map((title) => ({ title }))
 const scoreBy = (q: string) => (item: { title: string }) => matchScore(item.title.toLowerCase(), q)
+
+describe('normalizeTitle', () => {
+  it('trims surrounding whitespace/newlines and case-folds', () => {
+    expect(normalizeTitle('  My Page \n')).toBe('my page')
+    expect(normalizeTitle('PROJECT')).toBe('project')
+  })
+
+  it('collapses titles that differ only by case/whitespace to one key', () => {
+    expect(normalizeTitle(' Notes')).toBe(normalizeTitle('notes '))
+  })
+
+  it('NFC-normalizes so NFD and NFC spellings collapse to one key', () => {
+    expect(normalizeTitle('Café')).toBe(normalizeTitle('Café'))
+  })
+})
 
 describe('rankMatches', () => {
   it('keeps the same best items a full sort would, in the same order', () => {

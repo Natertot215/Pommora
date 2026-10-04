@@ -1,5 +1,5 @@
 import { basename, dirname, join } from '../Paths/posix'
-import { normalizeTitle } from '../Connections/connections'
+import { normalizeTitle } from '../Paths/caseFold'
 import { contextKey } from './contexts'
 import { ID_KEY } from '../Nexus/identityMark'
 import { asString } from '../Nexus/coerce'

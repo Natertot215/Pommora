@@ -1,7 +1,7 @@
 import { clamp } from '@pommora/uix/Utilities/clamp'
 import type { EditorView } from '@codemirror/view'
 import { SEEK_GLIDE, scrollGlide } from '@pommora/uix/Interactions/autoscroll'
-import { normalizeTitle } from '../Connections/connections'
+import { normalizeTitle } from '../Paths/caseFold'
 import { docOutline } from './docCache'
 import type { OutlineHeading } from './Engine/headingScan'
 import { FOLD_SETTLE_MS, expandFoldsAt } from './folding'

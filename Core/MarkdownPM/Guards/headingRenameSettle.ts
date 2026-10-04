@@ -1,6 +1,6 @@
 import { type EditorState, MapMode, Transaction } from '@codemirror/state'
 import { ViewPlugin } from '@codemirror/view'
-import { normalizeTitle } from '../../Connections/connections'
+import { normalizeTitle } from '../../Paths/caseFold'
 import { rewriteHeadingConnections } from '../../Connections/rewrite'
 import { headingParts } from '../Engine/detect'
 import { editorHost } from '../api'

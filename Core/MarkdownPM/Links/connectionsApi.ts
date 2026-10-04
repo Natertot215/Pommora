@@ -1,4 +1,5 @@
-import { type LinkStatus, normalizeTitle } from '../../Connections/connections'
+import type { LinkStatus } from '../../Connections/connections'
+import { normalizeTitle } from '../../Paths/caseFold'
 import { headingOf, linkTarget, type Token } from '../Engine/tokens'
 import type {
   ConnCellApply,

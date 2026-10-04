@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { normalizeTitle } from '../Connections/connections'
+import { normalizeTitle } from '../Paths/caseFold'
 import {
   createSpaceLabel,
   contextKey,

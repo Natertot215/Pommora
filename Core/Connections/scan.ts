@@ -1,6 +1,7 @@
 // `![[ ]]` embeds are NOT connections, but the cascade still sweeps them so a rename reaches them — one walker answers for every syntax, and `syntax` keeps them apart for a reader that cares.
 
-import { normalizeTitle, pageEmbedPattern, pageLinkPattern, titleOf } from './connections'
+import { pageEmbedPattern, pageLinkPattern, titleOf } from './connections'
+import { normalizeTitle } from '../Paths/caseFold'
 import { markdownLinkRegex, targetFragment, targetTitle } from './links'
 import { readLink } from './linkValue'
 import { codeMask, type CodeMask, lineEndAt, lineStartAt } from '../MarkdownPM/Engine/markdownCode'

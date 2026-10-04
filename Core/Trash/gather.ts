@@ -9,7 +9,7 @@ import type { SweepCapture, UnlinkOutcome } from '../Contexts/contextCascade'
 import { readTextOrNull } from '../Files/atomicWrite'
 import { spaceIdsIn } from '../Contexts/spaceSidecar'
 import { sidecarId } from '../Files/sidecar'
-import { normalizeTitle } from '../Connections/connections'
+import { normalizeTitle } from '../Paths/caseFold'
 
 import type { RecordFile, ParentRef } from './record'
 import type { ContainerKind } from '../Nexus/entities'

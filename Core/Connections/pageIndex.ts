@@ -1,5 +1,5 @@
-import { normalizeTitle, type LinkStatus } from './connections'
-import { compareTitles } from '../Paths/caseFold'
+import type { LinkStatus } from './connections'
+import { compareTitles, normalizeTitle } from '../Paths/caseFold'
 
 export interface ConnPage {
   id: string

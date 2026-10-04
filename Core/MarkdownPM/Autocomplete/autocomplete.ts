@@ -1,9 +1,5 @@
-import {
-  expressibleHeading,
-  linkAt,
-  normalizeTitle,
-  pageEmbedText,
-} from '../../Connections/connections'
+import { expressibleHeading, linkAt, pageEmbedText } from '../../Connections/connections'
+import { normalizeTitle } from '../../Paths/caseFold'
 import {
   decodeLinkTarget,
   emptyTolerantLinkRegex,

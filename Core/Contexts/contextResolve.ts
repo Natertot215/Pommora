@@ -1,5 +1,4 @@
-import { normalizeTitle } from '../Connections/connections'
-import { foldKey } from '../Paths/caseFold'
+import { foldKey, normalizeTitle } from '../Paths/caseFold'
 import { heldKey, heldValue, writeTarget } from '../Files/heldKeys'
 import { contextKey, parseContextKey } from './contexts'
 import { byFoldedName, holdsList, type PropertyDefinition } from '../Properties/properties'

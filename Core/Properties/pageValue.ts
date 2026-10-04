@@ -3,7 +3,7 @@
 import { isScalar } from '../Contract/validators'
 import type { Rewrite } from './governedSweep'
 import { editHeldLists } from '../Files/heldKeys'
-import { normalizeTitle } from '../Connections/connections'
+import { normalizeTitle } from '../Paths/caseFold'
 
 export type ValueEdit = { op: 'strip' } | { op: 'replace'; to: string }
 export type Matcher = (el: unknown) => boolean

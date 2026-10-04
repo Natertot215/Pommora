@@ -33,7 +33,7 @@ import type { ContainerKind } from './entities'
 import type { Json } from '../Files/stableJson'
 import { isContentName } from '../Files/walk'
 import { queryHeadingMentions } from '../Index/contentIndex'
-import { normalizeTitle } from '../Connections/connections'
+import { normalizeTitle } from '../Paths/caseFold'
 import {
   deindexPath,
   type HeadingRenameSeen,

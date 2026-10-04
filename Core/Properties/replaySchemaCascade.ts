@@ -9,7 +9,7 @@ import { renameSweep } from './registryProperty'
 import { stripAndRemove } from './deleteProperty'
 import { dropOptionFromDef, optionCascade } from './optionOps'
 import { optionValues } from './properties'
-import { normalizeTitle } from '../Connections/connections'
+import { normalizeTitle } from '../Paths/caseFold'
 import {
   clearSchemaJournal,
   readSchemaJournal,
