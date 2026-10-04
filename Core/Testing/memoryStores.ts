@@ -178,9 +178,10 @@ const contentIndex = (index: MemoryIndex): ContentIndexStore => {
       )
     },
     queryMembers(key, title) {
+      const fold = foldKey(key)
       return sortedPaths(
         relationRows()
-          .filter((r) => r.kind === 'space' && r.qualifier === key && r.target === title)
+          .filter((r) => r.kind === 'space' && r.qualifier === fold && r.target === title)
           .map((r) => r.path),
       )
     },

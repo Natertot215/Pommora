@@ -1,3 +1,4 @@
+import { foldKey } from '../Paths/caseFold'
 import { beforeEach, describe, expect, it } from 'vitest'
 import type {
   BaseRecord,
@@ -64,7 +65,7 @@ export function describeContentIndexStore(name: string, make: () => ContentIndex
       count: 1,
     })
     const body = (target: string, qualifier = ''): Relation => relation('body', target, qualifier)
-    const space = (key: string, title: string): Relation => relation('space', title, key)
+    const space = (key: string, title: string): Relation => relation('space', title, foldKey(key))
     const upsert = (path: string, entry: PageIndexEntry, stat = STAT): void =>
       store.upsertPageIndexes([{ path, entry, stat }])
     beforeEach(() => {
