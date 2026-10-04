@@ -150,7 +150,7 @@ What Pommora remembers, and for how long. Four tiers, told by where a thing is w
 | Embed heights · heading columns · footnotes | Per-page editor chrome, in every editor showing the page — a tile's dragged height and Scale, a table's heading column, whether the page shows its footnotes | Changing it back |
 | Window tab sets | One tab set per tabbed window kind | Closing the last tab of a set |
 | Recents | The navigation trail, most recent first, capped by roll-off | Roll-off |
-| Content index | Every relationship each page carries, keyed by kind and target, the governed values it carries, and the mtime and size it was read at | The next open re-indexes any file whose mtime or size moved, and a file that can't be read keeps the rows it was last read at; an index-generation change drops it whole |
+| Content index | Every relationship each page carries, keyed by kind and target, the governed values it carries under their folded keys, and the mtime and size it was read at | The next open re-indexes any file whose mtime or size moved, and a file that can't be read keeps the rows it was last read at; an index-generation change drops it whole |
 | Matrix layout and lens | Every node's dragged place, keyed by id, and the world rectangle the picture shows | A node's row leaves with its entity |
 | Fetched link titles | A URL's page title, so the same link never refetches | Nothing — a cached title is kept |
 | Page snapshots (`versions.db`) | The text each page held before an edit, after a burst settled, or before a restore | The History Timeframe sweep at open; deleting a row from the History window; Clear History, which also gives the file's bytes back |
