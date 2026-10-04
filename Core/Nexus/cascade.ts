@@ -1,4 +1,5 @@
 import { isAtOrUnder, isMarkdownFile, join, relative, titleFromPath } from '../Paths/posix'
+import { foldKey } from '../Paths/caseFold'
 import { errText } from '../Contract/result'
 import { splitEnvelope, mergeFrontmatter, splitFrontmatter, stampedId } from '../Files/pageFile'
 import {
@@ -89,7 +90,7 @@ export async function deleteCascade(
     titles.filter((t) => !titleHeldOutside(root, t, deleted)).map(normalizeTitle),
   )
   try {
-    const defs = new Map((await linkDefs(root)).map((d) => [d.name, d.id]))
+    const defs = new Map((await linkDefs(root)).map((d) => [foldKey(d.name), d.id]))
     if (!defs.size) return { cascade: { pages: [], hosts: [] }, links: [] }
     const hits = [...gone].map(queryMentions)
     const rels = hits.includes(null)
@@ -104,7 +105,7 @@ export async function deleteCascade(
       raw: Record<string, unknown>,
     ): { key: string; property: string; value: string }[] =>
       Object.entries(raw).flatMap(([key, value]) => {
-        const property = defs.get(key)
+        const property = defs.get(foldKey(key))
         return property !== undefined && namesGone(value) ? [{ key, property, value }] : []
       })
     const strip: Rewrite = (raw, file) => stripKeys(...named(raw).map(({ key }) => key))(raw, file)
@@ -186,9 +187,9 @@ export async function renameCascade(
               : undefined,
           )
     const defs = Object.values((await readKeptRegistry(root)).defs)
-    const names = new Set(defs.map((d) => d.name))
+    const names = new Set(defs.map((d) => foldKey(d.name)))
     const registered = (raw: Record<string, unknown>): Record<string, unknown> =>
-      Object.fromEntries(Object.entries(raw).filter(([k]) => names.has(k)))
+      Object.fromEntries(Object.entries(raw).filter(([k]) => names.has(foldKey(k))))
     const moved = (values: Record<string, unknown>): Record<string, unknown> | null => {
       const patch = rewriteFrontmatterConnections(values, title, change)
       return Object.keys(patch).length ? { ...values, ...patch } : null

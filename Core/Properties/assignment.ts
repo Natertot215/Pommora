@@ -10,16 +10,20 @@ import { type EntityRecord, recordById } from '../Nexus/record'
 import { damagedFolders } from '../Nexus/treePatch'
 import { readRegistry, serializeSchemaOp } from './propertiesRegistry'
 import { byFoldedName, type PropertyDefinition } from './properties'
+import { readLiveSetting } from '../Settings/settings'
 import {
   encodeValue,
   type Frozen,
+  heldSpelling,
   isBlankValue,
   namesGonePage,
   reconcilePropertyValue,
 } from './propertyValue'
 import { parkLinks } from '../Trash/holdings'
 import { frozenWorld } from '../Nexus/heldPages'
-import { sweepRootsById } from './governedSweep'
+import { landValue, sweepRootsById } from './governedSweep'
+import { writeTarget } from './governedWrite'
+import { heldValue } from './pageValue'
 import { ok, fail, type Result } from '../Contract/result'
 
 export const assignedIds = (raw: Record<string, unknown> | null): string[] =>
@@ -43,19 +47,25 @@ export async function assignedDefs(
 }
 
 /** Puts each value `frozen` still admits back on the page or Space its ID names wherever that root holds none, and answers the IDs that took theirs. */
-export function refillValues(
+export async function refillValues(
   root: string,
   def: PropertyDefinition,
   roots: Record<string, EntityRecord>,
   values: Record<string, unknown>,
   frozen: Frozen,
 ): Promise<Set<string>> {
+  const resolveCase = await readLiveSetting(root, 'resolveCaseConflicts')
   return sweepRootsById(root, roots, values, (raw, value) => {
     const restored = reconcilePropertyValue(def, value, frozen).value
     const encoded = isBlankValue(restored) ? undefined : encodeValue(restored)
     if (encoded === undefined) return null
-    if (!isBlankValue(reconcilePropertyValue(def, raw[def.name], {}).value)) return null
-    return { ...raw, [def.name]: encoded }
+    if (!isBlankValue(reconcilePropertyValue(def, heldValue(raw, def.name, false), {}).value))
+      return null
+    return landValue(
+      raw,
+      writeTarget(raw, def.name, resolveCase),
+      resolveCase ? encoded : heldSpelling(encoded, value),
+    )
   })
 }
 
