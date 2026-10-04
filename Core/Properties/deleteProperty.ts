@@ -16,7 +16,7 @@ import {
   type SchemaJournal,
   writeSchemaJournal,
 } from './propertyJournal'
-import { type Rewrite, sweepGovernedRoots } from './governedSweep'
+import { sweepGovernedRoots } from './governedSweep'
 import { heldKey, heldValue, stripHeld } from '../Files/heldKeys'
 import { holdsList } from './properties'
 import { patchSidecar } from '../Files/sidecar'
@@ -110,7 +110,7 @@ export async function stripAndRemove(
   folders: string[],
   files: string[],
 ): Promise<ConfigReach & { removed: Result<null> }> {
-  const raw: Rewrite = (fm) => stripHeld(fm, key)
+  const raw = stripHeld(key)
   const swept = await sweepGovernedRoots(root, files, {
     raw,
     sidecars: withOrderEntry(raw, 'properties', key, null),

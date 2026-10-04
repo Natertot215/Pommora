@@ -72,10 +72,10 @@ describe('rekeyHeld — the twin of renameFrontmatterKey', () => {
 
 describe('stripHeld', () => {
   it('strips every spelling of the name, and answers null when none is held', () => {
-    expect(stripHeld({ ID: 'p', Tags: ['a'], tags: ['b'], other: 1 }, 'Tags')).toEqual({
+    expect(stripHeld('Tags')({ ID: 'p', Tags: ['a'], tags: ['b'], other: 1 })).toEqual({
       ID: 'p',
       other: 1,
     })
-    expect(stripHeld({ ID: 'p', Tag: ['a'] }, 'Tags')).toBeNull()
+    expect(stripHeld('Tags')({ ID: 'p', Tag: ['a'] })).toBeNull()
   })
 })

@@ -52,6 +52,6 @@ async function removeInner(
   })
   if (!written.ok) return written
   const reach = await reachConfig(root, { kind: 'property', propertyId }, collectionFolder)
-  const { skipped } = await sweepGovernedRoots(root, strip, { raw: (fm) => stripHeld(fm, key) })
+  const { skipped } = await sweepGovernedRoots(root, strip, { raw: stripHeld(key) })
   return ok({ skipped: skipped.length + reach.skipped, hosts: reach.hosts })
 }
