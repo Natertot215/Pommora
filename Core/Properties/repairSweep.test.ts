@@ -9,7 +9,6 @@ import { createFolderEntity } from '../Nexus/folderEntity'
 import { newId } from '../Nexus/ids'
 import { createTestPage } from '../Testing/createTestPage'
 import { createProperty } from './registryProperty'
-import { readRegistry } from './propertiesRegistry'
 import { seedContentIndex } from '../Index/indexSeed'
 import { runRepairSweep } from './repairSweep'
 import * as walk from '../Nexus/readNexus'
@@ -72,16 +71,12 @@ afterEach(async () => {
 })
 
 describe('runRepairSweep', () => {
-  it('canonicalizes a drifted page the seed re-read and adopts its unknown option', async () => {
+  it('canonicalizes a drifted page the seed re-read', async () => {
     await frontmatter('Status: Open\nTags:\n  - alpha\n  - zeta')
     await runRepairSweep(root, await seedContentIndex(root))
     const out = await readFile(page, 'utf8')
     expect(out).toContain('Status:\n  - Open')
     expect(out).toContain('- zeta')
-    expect((await readRegistry(root)).defs[tagsId].select_options?.map((o) => o.value)).toEqual([
-      'alpha',
-      'zeta',
-    ])
   })
 
   it('walks the tree once however many re-read pages it checks', async () => {
@@ -132,17 +127,6 @@ describe('runRepairSweep', () => {
     const out = await readFile(page, 'utf8')
     expect(out).toContain('Status: Blocked')
     expect(out).toContain('Tags:\n  - alpha')
-  })
-
-  it('adopts an unknown option on a page that needed no rewrite', async () => {
-    await frontmatter('Tags:\n  - alpha\n  - zeta')
-    const before = (await stat(page)).mtimeMs
-    await runRepairSweep(root, await seedContentIndex(root))
-    expect((await stat(page)).mtimeMs).toBe(before)
-    expect((await readRegistry(root)).defs[tagsId].select_options?.map((o) => o.value)).toEqual([
-      'alpha',
-      'zeta',
-    ])
   })
 
   it('a cold index — the first open of a database — sweeps nothing', async () => {

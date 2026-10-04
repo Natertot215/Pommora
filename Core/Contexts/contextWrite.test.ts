@@ -18,6 +18,7 @@ import type { ContextsRegistry } from './contexts'
 import { handleMutate } from '../Nexus/mutate'
 import { closeSession, openSession } from '../Nexus/session'
 import { dropLiveTree, refreshTree } from '../Nexus/liveTree'
+import { settleNow } from '../Nexus/settle'
 import { createFolderEntity } from '../Nexus/folderEntity'
 import { createTestPage } from '../Testing/createTestPage'
 import { unsweptLine } from '../Properties/governedSweep'
@@ -262,7 +263,7 @@ describe('setContext reads the held tree', () => {
     expect(await readFile(sidecarOf('Projects', 'Sapphire'), 'utf8')).toBe('{corrupt')
   })
 
-  it('a Space link edit whose own sidecar is unwritable still adopts the option a far Space’s write found', async () => {
+  it('a Space link edit that fails on its own sidecar still lands the far Space’s write, whose held option the settle registers', async () => {
     const tags = await createProperty(root, {
       id: '',
       name: 'Tags',
@@ -279,6 +280,7 @@ describe('setContext reads the held tree', () => {
     await writeFile(sidecarOf('Projects', 'Pommora'), '{corrupt')
     expect((await link('ctx_projects', ['sp-ath'])).ok).toBe(false)
     expect((await readJsonAt(sidecarOf('Projects', 'Athena')))['<Projects>']).toEqual(['Pommora'])
+    await settleNow({ push: () => {}, watch: async () => {} }, root)
     const options = (await readRegistry(root)).defs[tags.value.id].select_options
     expect(options?.map((o) => o.value)).toEqual(['alpha', 'zeta'])
   })

@@ -1,7 +1,7 @@
 // `mergeFrontmatter` is set-if-present-ELSE-DELETE over the keys it is handed: a changed key the next root holds no value for is deleted. `null` is not the delete sentinel — the merge would write the literal.
 
 import { reconcileGovernedRoot, type GovernedWorld } from '../Contexts/contextResolve'
-import { type Adoption, writtenSpelling } from './propertyValue'
+import { writtenSpelling } from './propertyValue'
 import { changedKeys } from './governedSweep'
 import { landValue, writeTarget } from '../Files/heldKeys'
 import { atomicWriteFile, readTextOrNull } from '../Files/atomicWrite'
@@ -9,18 +9,11 @@ import { mergeFrontmatter, splitEnvelope, splitFrontmatter } from '../Files/page
 import type { Json } from '../Files/stableJson'
 
 /** `raw` with `value` written where `writeTarget` places it, spelled as the root already spells it unless casing resolves, after the reconcile repairs every other governed key. */
-export function writtenRoot(
-  raw: Json,
-  name: string,
-  value: unknown,
-  world: GovernedWorld,
-  adoptions: Adoption[],
-): Json {
+export function writtenRoot(raw: Json, name: string, value: unknown, world: GovernedWorld): Json {
   const target = writeTarget(raw, name, world.resolveCase)
-  const reconciled = reconcileGovernedRoot(raw, world, undefined, target.govern)
-  adoptions.push(...reconciled.adoptions)
+  const reconciled = reconcileGovernedRoot(raw, world, undefined, target.govern).root
   const written = writtenSpelling(value, raw[target.key], world.resolveCase)
-  return landValue(reconciled.root, target, written)
+  return landValue(reconciled, target, written)
 }
 
 export async function setGovernedRootKey(
@@ -28,13 +21,12 @@ export async function setGovernedRootKey(
   name: string,
   value: unknown,
   world?: GovernedWorld,
-): Promise<Adoption[]> {
+): Promise<void> {
   const existing = await readTextOrNull(absFile)
   if (existing === null) throw new Error('That page could not be read.')
   const raw = splitFrontmatter(existing)
-  const adoptions: Adoption[] = []
   const next = world
-    ? writtenRoot(raw, name, value, world, adoptions)
+    ? writtenRoot(raw, name, value, world)
     : landValue(raw, { key: name, govern: [] }, value)
   const content = mergeFrontmatter(
     existing,
@@ -43,5 +35,4 @@ export async function setGovernedRootKey(
     splitEnvelope(existing).body,
   )
   if (content !== existing) await atomicWriteFile(absFile, content)
-  return adoptions
 }

@@ -9,7 +9,6 @@ import { contextsDir, contextsRegistryFile, sidecarPath } from '../Paths/paths'
 
 import { closeSession, openSession } from '../Nexus/session'
 import { refreshTree, dropLiveTree, liveTreeOf } from '../Nexus/liveTree'
-import { readRegistry } from './propertiesRegistry'
 import { assignProperty } from './assignment'
 import { newId } from '../Nexus/ids'
 import { createFolderEntity } from '../Nexus/folderEntity'
@@ -125,36 +124,6 @@ describe('a property write reconciles the whole file', () => {
     expect(r.ok).toBe(false)
     if (!r.ok) expect(r.error.code).toBe('not-found')
     expect(await readFile(sidecar, 'utf8')).toBe('{corrupt')
-  })
-
-  it('a Multi-Select value the page holds is adopted by the write that finds it', async () => {
-    const tags = await createProperty(root, {
-      id: '',
-      name: 'Tags',
-      type: 'multiSelect',
-      select_options: [{ value: 'alpha' }],
-    } as PropertyDefinition)
-    if (!tags.ok) throw new Error('setup')
-    await assignProperty(root, notes, tags.value.id)
-    const page = await createTestPage(notes, 'C', { body: 'b' })
-    if (!page.ok) throw new Error('setup')
-    await writeFile(
-      page.value.path,
-      `---\nID: 01ARZ3NDEKPSV4RRFFQ69G5FAD\nTags:\n  - alpha\n  - zeta\n---\nb\n`,
-    )
-    await handleMutate(
-      root,
-      {
-        op: 'setProperty',
-        path: rel(page.value.path),
-        propertyId: priorityId,
-        value: { kind: 'number', value: 1 },
-      },
-      deps,
-    )
-    expect(
-      (await readRegistry(root)).defs[tags.value.id].select_options?.map((o) => o.value),
-    ).toEqual(['alpha', 'zeta'])
   })
 })
 

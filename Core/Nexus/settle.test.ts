@@ -864,6 +864,23 @@ describe('held options — the registry takes the Multi-Select members a changed
     expect(await options()).toEqual(['alpha', 'Ideas'])
   })
 
+  it('an in-app write of a different property registers the member the page already holds', async () => {
+    await writeFile(abs('Notes', 'A.md'), page(ULID_A, tags('Ideas')))
+    await walked()
+    const reply = await settledMutate(
+      root,
+      {
+        op: 'setProperty',
+        path: 'Notes/A.md',
+        propertyId: 'kind',
+        value: { kind: 'select', value: 'Note' },
+      },
+      DEPS,
+    )
+    expect(reply.ok).toBe(true)
+    expect(await options()).toEqual(['alpha', 'Ideas'])
+  })
+
   it('two pages holding one member in two casings register one option', async () => {
     await writeFile(abs('Notes', 'A.md'), page(ULID_A, tags('Claude')))
     await writeFile(abs('Notes', 'B.md'), page(ULID_B, tags('claude')))

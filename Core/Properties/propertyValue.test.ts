@@ -8,7 +8,6 @@ import {
   writtenSpelling,
   isBlankValue,
   reconcilePropertyValue,
-  registeredOption,
   unregisteredMembers,
   type PropertyValue,
 } from './propertyValue'
@@ -297,26 +296,26 @@ describe('reconcilePropertyValue — a frozen copy names only what still exists'
 
   it('keeps a Link value naming a page the world holds, whatever it carries', () => {
     const value = '[[Alpha#Intro|see]]'
-    expect(reconcilePropertyValue(link, value, { holds }).value).toEqual({ kind: 'link', value })
+    expect(reconcilePropertyValue(link, value, { holds })).toEqual({ kind: 'link', value })
   })
 
   it('drops a Link value naming a page the world doesn’t hold', () => {
-    expect(reconcilePropertyValue(link, '[[Gone]]', { holds }).value).toEqual({ kind: 'null' })
+    expect(reconcilePropertyValue(link, '[[Gone]]', { holds })).toEqual({ kind: 'null' })
   })
 
   it('keeps a Link value naming only a heading of the page it sits on', () => {
     const value = '[[#Intro]]'
-    expect(reconcilePropertyValue(link, value, { holds }).value).toEqual({ kind: 'link', value })
+    expect(reconcilePropertyValue(link, value, { holds })).toEqual({ kind: 'link', value })
   })
 
   it('keeps an address, and a live read or an options-only freeze keeps any page', () => {
     const url = 'https://example.com'
-    expect(reconcilePropertyValue(link, url, { holds }).value).toEqual({ kind: 'link', value: url })
-    expect(reconcilePropertyValue(link, '[[Gone]]').value).toEqual({
+    expect(reconcilePropertyValue(link, url, { holds })).toEqual({ kind: 'link', value: url })
+    expect(reconcilePropertyValue(link, '[[Gone]]')).toEqual({
       kind: 'link',
       value: '[[Gone]]',
     })
-    expect(reconcilePropertyValue(link, '[[Gone]]', {}).value).toEqual({
+    expect(reconcilePropertyValue(link, '[[Gone]]', {})).toEqual({
       kind: 'link',
       value: '[[Gone]]',
     })
@@ -380,15 +379,12 @@ describe('options and checkboxes decode without regard to case', () => {
     expect(decodeValue(stage, ['done', 'Active'])).toEqual({ kind: 'select', value: 'Active' })
   })
 
-  it('a Multi-Select reads each registered member as its option and adopts only the rest', () => {
+  it('a Multi-Select reads each registered member as its option and keeps the rest', () => {
     const raw = ['claude', 'Docs', 'new']
     expect(decodeValue(labels, raw)).toEqual({
       kind: 'multiSelect',
       value: ['Claude', 'Docs', 'new'],
     })
-    expect(reconcilePropertyValue(labels, raw).adoptions).toEqual([
-      { propertyId: 'p', value: 'new' },
-    ])
   })
 
   it('a Multi-Select reads two casings of one member as that member once, where it first stands', () => {
@@ -408,11 +404,5 @@ describe('options and checkboxes decode without regard to case', () => {
   it('unregisteredMembers answers each member a Multi-Select holds beyond its definition once, and none for a Select', () => {
     expect(unregisteredMembers(labels, ['CLAUDE', 'Ideas', 'ideas'])).toEqual(['Ideas'])
     expect(unregisteredMembers(stage, ['Ideas'])).toEqual([])
-  })
-
-  it("registeredOption answers the definition's own spelling for any casing", () => {
-    expect(registeredOption(stage, 'DONE')).toBe('Done')
-    expect(registeredOption(stage, 'active')).toBe('Active')
-    expect(registeredOption(stage, 'Gone')).toBeUndefined()
   })
 })

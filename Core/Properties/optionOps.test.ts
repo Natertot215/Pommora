@@ -3,21 +3,13 @@ import { chmod, mkdir, rm, readFile, stat, writeFile } from 'node:fs/promises'
 import { join } from '../Paths/posix'
 import { noModeBits, seedSpaceSidecar, readJsonAt, tempRoot } from '../Testing/hostFs'
 import { fault, ok } from '../Contract/result'
-import {
-  editOption,
-  renameOption,
-  removeOption,
-  clearOption,
-  addOptionToDef,
-  applyAdoptions,
-} from './optionOps'
+import { editOption, renameOption, removeOption, clearOption } from './optionOps'
 import { createProperty, editProperty } from './registryProperty'
 import { assignProperty } from './assignment'
 import { createFolderEntity } from '../Nexus/folderEntity'
 import { newId } from '../Nexus/ids'
 import { updatePageProperty } from '../Nexus/page'
 import { createTestPage } from '../Testing/createTestPage'
-import { machine } from '../Platform/machine'
 import { mutateRegistry, readRegistry, serializeSchemaOp } from './propertiesRegistry'
 
 type PropDefLike = Record<string, unknown> & {
@@ -31,7 +23,7 @@ import { unsweptLine } from './governedSweep'
 import { type ConfigSurfaces, seedConfigSurfaces, viewOn } from '../Testing/configSurfaces'
 import { sidecarPath } from '../Paths/paths'
 import { splitFrontmatter } from '../Files/pageFile'
-import type { PropertyDefinition, SelectOption } from './properties'
+import { type PropertyDefinition, SELECT_GROUP, type SelectOption } from './properties'
 import { settleNow } from '../Nexus/settle'
 import type { ValueChange } from '../Nexus/tree'
 import type { Pushes } from '../Contract/bridge'
@@ -232,7 +224,7 @@ describe('an option edit leaves every other stored entry as written (F-562)', ()
     )
   })
 
-  it('after a recolor, a rename, a remove, and an adoption, the untouched entries deep-equal what was seeded', async () => {
+  it('after a recolor, a rename, a remove, and an option add, the untouched entries deep-equal what was seeded', async () => {
     expect(
       (await editOption(root, 'prop_sel', { op: 'recolor', value: 'A', color: 'red' })).ok,
     ).toBe(true)
@@ -243,7 +235,9 @@ describe('an option edit leaves every other stored entry as written (F-562)', ()
     expect((await renameOption(root, 'prop_st', 'X', 'XX')).ok).toBe(true)
     expect((await removeOption(root, 'prop_sel', 'C')).ok).toBe(true)
     expect((await removeOption(root, 'prop_st', 'W')).ok).toBe(true)
-    expect((await addOptionToDef(root, 'prop_multi', 'c')).ok).toBe(true)
+    expect(
+      (await editOption(root, 'prop_multi', { op: 'add', groupId: SELECT_GROUP, title: 'c' })).ok,
+    ).toBe(true)
     const defs = await rawDefs()
     expect(defs.prop_sel.select_options).toEqual([{ value: 'AA', color: 'red' }, selectSeed[1]])
     expect(defs.prop_st.status_groups).toEqual([
@@ -302,7 +296,9 @@ describe('an option edit leaves every other stored entry as written (F-562)', ()
     const file = await readJsonAt<RegistryFile>(registryFile())
     file.defs.prop_multi.type = 'multi_select'
     await writeFile(registryFile(), JSON.stringify(file))
-    expect((await addOptionToDef(root, 'prop_multi', 'c')).ok).toBe(true)
+    expect(
+      (await editOption(root, 'prop_multi', { op: 'add', groupId: SELECT_GROUP, title: 'c' })).ok,
+    ).toBe(true)
     expect(
       (await editOption(root, 'prop_multi', { op: 'recolor', value: 'a', color: 'red' })).ok,
     ).toBe(true)
@@ -653,64 +649,6 @@ describe('clearOption on a Status', () => {
     expect(r.ok).toBe(true)
     expect(await statusValues(id)).toContain('Done')
     expect(await readFile(page, 'utf8')).not.toContain(id)
-  })
-})
-
-describe('adoption — a Multi-Select registers an option a page already holds', () => {
-  const mkMulti = (): Promise<string> =>
-    mkProperty({
-      name: 'Labels',
-      type: 'multiSelect',
-      select_options: [{ value: 'alpha' }],
-    })
-  const values = async (id: string) =>
-    ((await readRegistry(root)).defs[id].select_options ?? []).map((o) => o.value)
-
-  it('adds the option once across concurrent calls, and is a no-op when present', async () => {
-    const id = await mkMulti()
-    const both = await Promise.all([
-      addOptionToDef(root, id, 'zeta'),
-      addOptionToDef(root, id, 'zeta'),
-    ])
-    expect(both.every((r) => r.ok)).toBe(true)
-    expect(await values(id)).toEqual(['alpha', 'zeta'])
-    expect((await addOptionToDef(root, id, 'alpha')).ok).toBe(true)
-    expect(await values(id)).toEqual(['alpha', 'zeta'])
-  })
-
-  it('adopts no second casing of an option the definition holds', async () => {
-    const id = await mkProperty({
-      name: 'Labels',
-      type: 'multiSelect',
-      select_options: [{ value: 'Claude' }],
-    })
-    expect((await addOptionToDef(root, id, 'claude')).ok).toBe(true)
-    expect(await values(id)).toEqual(['Claude'])
-    const other = await mkProperty({ name: 'Other', type: 'multiSelect', select_options: [] })
-    await applyAdoptions(root, [
-      { propertyId: other, value: 'Claude' },
-      { propertyId: other, value: 'claude' },
-    ])
-    expect(await values(other)).toEqual(['Claude'])
-  })
-
-  it('refuses a Select — only a Multi-Select adopts', async () => {
-    const sel = await mkSelect([{ value: 'a' }])
-    expect((await addOptionToDef(root, sel, 'b')).ok).toBe(false)
-    expect((await readRegistry(root)).defs[sel].select_options?.map((o) => o.value)).toEqual(['a'])
-  })
-
-  it('applyAdoptions resolves from inside a page lock and from inside the schema lock', async () => {
-    const id = await mkMulti()
-    await machine().lock(join(root, 'any.md'), () =>
-      applyAdoptions(root, [
-        { propertyId: id, value: 'beta' },
-        { propertyId: id, value: 'beta' },
-      ]),
-    )
-    await serializeSchemaOp(root, () => applyAdoptions(root, [{ propertyId: id, value: 'gamma' }]))
-    await applyAdoptions(root, [])
-    expect(await values(id)).toEqual(['alpha', 'beta', 'gamma'])
   })
 })
 

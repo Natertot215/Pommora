@@ -181,10 +181,9 @@ describe('reconcileGovernedRoot — the context arm', () => {
 
 describe('reconcileGovernedRoot — the property arm', () => {
   it('re-encodes an assigned key as its definition reads it', () => {
-    const { root, changed, adoptions } = reconcileGovernedRoot({ Status: 'Active' }, world)
+    const { root, changed } = reconcileGovernedRoot({ Status: 'Active' }, world)
     expect(root.Status).toEqual(['Active'])
     expect(changed).toEqual(['Status'])
-    expect(adoptions).toEqual([])
   })
 
   it('keeps a list that already reads canonically, unchanged', () => {
@@ -201,11 +200,10 @@ describe('reconcileGovernedRoot — the property arm', () => {
     expect(frozen.changed).toEqual(['Status'])
   })
 
-  it('a Multi-Select keeps an unregistered option and reports it for adoption', () => {
-    const { root, changed, adoptions } = reconcileGovernedRoot({ Tags: ['alpha', 'zeta'] }, world)
+  it('a Multi-Select keeps an unregistered option', () => {
+    const { root, changed } = reconcileGovernedRoot({ Tags: ['alpha', 'zeta'] }, world)
     expect(root.Tags).toEqual(['alpha', 'zeta'])
     expect(changed).toEqual([])
-    expect(adoptions).toEqual([{ propertyId: 'prop_tags', value: 'zeta' }])
   })
 
   it('a registered key the Collection does not assign passes verbatim', () => {

@@ -271,7 +271,7 @@ describe('a returning artifact is reconciled against the world it comes back to'
     expect(f.Priority).toEqual(['lo'])
   })
 
-  it('keeps a Multi-Select option deleted while it sat in the trash, and adopts it back', async () => {
+  it('drops a Select value whose option was deleted while it sat in the Trash', async () => {
     // The definition still stands; the value it held no longer can. Both restore routes ask the same standing check, so this cannot survive here and be dropped by a property restore.
     await cycle('Notes/Alpha.md', 'page', async () => {
       await writeFile(

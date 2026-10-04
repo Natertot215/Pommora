@@ -3,7 +3,6 @@ import { heldKey, heldValue, writeTarget } from '../Files/heldKeys'
 import { contextKey, parseContextKey } from './contexts'
 import { byFoldedName, holdsList, type PropertyDefinition } from '../Properties/properties'
 import {
-  type Adoption,
   type Frozen,
   encodeValue,
   writtenSpelling,
@@ -90,7 +89,6 @@ export function resolveContextKeys(
 interface Reconciled {
   root: Record<string, unknown>
   changed: string[]
-  adoptions: Adoption[]
 }
 
 type Governor = { name: string; def: PropertyDefinition } | { name: string; group: ContextGroup }
@@ -113,7 +111,6 @@ export function reconcileGovernedRoot(
 ): Reconciled {
   const out: Record<string, unknown> = {}
   const changed: string[] = []
-  const adoptions: Adoption[] = []
   const retired = new Set<string>()
   const { resolveCase } = world
   for (const [key, raw] of Object.entries(root)) {
@@ -127,8 +124,7 @@ export function reconcileGovernedRoot(
     let next: unknown
     if ('def' in governor) {
       const reconciled = reconcilePropertyValue(governor.def, held, frozen)
-      adoptions.push(...reconciled.adoptions)
-      if (!isBlankValue(reconciled.value)) next = encodeValue(reconciled.value)
+      if (!isBlankValue(reconciled)) next = encodeValue(reconciled)
     } else {
       const byTitle = world.contexts.spacesByTitle.get(governor.group.def.id)
       const titles = listOf(held ?? []).flatMap((value) => {
@@ -156,5 +152,5 @@ export function reconcileGovernedRoot(
     delete out[k]
     changed.push(k)
   }
-  return { root: out, changed, adoptions }
+  return { root: out, changed }
 }

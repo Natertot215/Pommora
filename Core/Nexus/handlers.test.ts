@@ -169,7 +169,7 @@ describe('openNexusSequence', () => {
     )
   })
 
-  it('registers the Multi-Select member a page already holds, with the repair sweep off', async () => {
+  it('registers the Multi-Select member a page already holds once the Nexus opens', async () => {
     const registry = join(root, '.nexus', 'properties.json')
     await writeFile(
       registry,

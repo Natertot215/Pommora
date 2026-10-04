@@ -138,7 +138,7 @@ describe('a value write reconciles the Space it lands on', () => {
     expect(await sidecar()).toMatchObject({ Priority: 3, Status: { not: 'a select' } })
   })
 
-  it('clearing a Multi-Select adopts none of the old value’s options', async () => {
+  it('clearing a Multi-Select registers none of the old value’s options', async () => {
     await seed({ Tags: ['alpha', 'zeta'] })
     expect((await set(tagsId, null)).ok).toBe(true)
     expect('Tags' in (await sidecar())).toBe(false)

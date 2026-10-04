@@ -161,22 +161,6 @@ describe('setGovernedRootKey with a world — the three precedence rules', () =>
     const fm = splitFrontmatter(await readFile(page, 'utf8'))
     expect(fm.Tags).toEqual(['', 'alpha'])
   })
-
-  it('reports the adoptions the reconcile found', async () => {
-    const tags: PropertyDefinition = {
-      id: 'prop_tags',
-      name: 'Tags',
-      type: 'multiSelect',
-      select_options: [{ value: 'alpha' }],
-    }
-    await writeFile(page, '---\nid: p1\nTags:\n  - alpha\n  - zeta\n---\nbody\n')
-    const adoptions = await setGovernedRootKey(page, 'Status', ['Open'], {
-      ...world,
-      defs: byFoldedName([tags]),
-    })
-    expect(adoptions).toEqual([{ propertyId: 'prop_tags', value: 'zeta' }])
-    expect(await readFile(page, 'utf8')).toContain('- zeta')
-  })
 })
 
 describe('setGovernedRootKey — spellings', () => {

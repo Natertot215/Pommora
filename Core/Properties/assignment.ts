@@ -55,11 +55,10 @@ export async function refillValues(
   resolveCase: boolean,
 ): Promise<Set<string>> {
   return sweepRootsById(root, roots, values, (raw, value) => {
-    const restored = reconcilePropertyValue(def, value, frozen).value
+    const restored = reconcilePropertyValue(def, value, frozen)
     const encoded = isBlankValue(restored) ? undefined : encodeValue(restored)
     if (encoded === undefined) return null
-    if (!isBlankValue(reconcilePropertyValue(def, heldValue(raw, def.name, false), {}).value))
-      return null
+    if (!isBlankValue(reconcilePropertyValue(def, heldValue(raw, def.name, false), {}))) return null
     return landValue(
       raw,
       writeTarget(raw, def.name, resolveCase),
