@@ -39,6 +39,8 @@ interface PageRead {
   outline: string[]
 }
 
+type ReadRow = PageIndexRow & PageRead
+
 const NO_ROWS: PageRead = { entry: { relations: [], headings: [], values: {} }, outline: [] }
 
 function extractPageIndex(rel: string, content: string): PageRead {
@@ -110,41 +112,48 @@ export interface HeadingRenameSeen {
   next: string
 }
 
-// Re-indexes a written page, from `text` when its writer hands it over, and reports a heading rename it reads: one heading gone and one fresh heading at its ordinal, the outline otherwise unchanged. Anything murkier is left to the muted heading.
+// Re-indexes a written page, from `text` when its writer hands it over, and reports a heading rename it reads.
 export async function indexWrittenPage(
   root: string,
   abs: string,
   text?: string,
-): Promise<HeadingRenameSeen | null> {
-  if (!isMarkdownFile(abs)) return null
+): Promise<HeadingRenameSeen[]> {
+  if (!isMarkdownFile(abs)) return []
   const rel = await relCorpusPath(root, abs)
-  if (!rel) return null
+  if (!rel) return []
   const st = await machine()
     .stat(abs)
     .catch(() => null)
   if (!st) {
     removePathIndex(rel)
-    return null
+    return []
   }
   // An unreadable page keeps its rows, so a sweep the index seeds still reaches the file and counts it.
   const content = text ?? (await readTextOrNull(abs))
-  if (content === null) return null
-  const title = titleFromPath(rel)
-  const before = readHeadings([rel])?.[rel] ?? []
-  const { entry, outline } = extractPageIndex(rel, content)
-  upsertPageIndexes([{ path: rel, entry, stat: { mtimeMs: st.mtimeMs, size: st.size } }])
-  const after = entry.headings
-  if (after.length !== before.length) return null
-  const gone = before.filter((k) => !after.includes(k))
-  const fresh = after.filter((k) => !before.includes(k))
-  if (
-    gone.length !== 1 ||
-    fresh.length !== 1 ||
-    before.indexOf(gone[0]) !== after.indexOf(fresh[0])
-  )
-    return null
-  const next = outline.find((text) => normalizeTitle(text) === fresh[0])
-  return next ? { title, old: gone[0], next } : null
+  if (content === null) return []
+  const stat = { mtimeMs: st.mtimeMs, size: st.size }
+  return reindex([{ path: rel, ...extractPageIndex(rel, content), stat }])
+}
+
+// Writes each page's rows and reports the heading renames they show against the rows they replace: one heading gone and one fresh heading at its ordinal, the outline otherwise unchanged. Anything murkier is left to the muted heading.
+function reindex(rows: readonly ReadRow[]): HeadingRenameSeen[] {
+  const held = readHeadings(rows.map(({ path }) => path)) ?? {}
+  upsertPageIndexes(rows)
+  return rows.flatMap(({ path, entry, outline }) => {
+    const before = held[path] ?? []
+    const after = entry.headings
+    if (after.length !== before.length) return []
+    const gone = before.filter((k) => !after.includes(k))
+    const fresh = after.filter((k) => !before.includes(k))
+    if (
+      gone.length !== 1 ||
+      fresh.length !== 1 ||
+      before.indexOf(gone[0]) !== after.indexOf(fresh[0])
+    )
+      return []
+    const next = outline.find((text) => normalizeTitle(text) === fresh[0])
+    return next ? [{ title: titleFromPath(path), old: gone[0], next }] : []
+  })
 }
 
 export async function deindexPath(root: string, abs: string): Promise<void> {
@@ -171,13 +180,14 @@ export async function moveIndexPaths(root: string, oldAbs: string, newAbs: strin
   await indexWrittenPage(root, newAbs)
 }
 
-/** The pages a seed re-read, bound to the database it read them into; none when it built a cold index, bailed, or failed. */
+/** The pages a seed re-read and the heading renames they showed, bound to the database it read them into; none when it built a cold index, bailed, or failed. */
 export interface SeedReread {
   db: ContentIndexStore | null
   rels: readonly string[]
+  renames: readonly HeadingRenameSeen[]
 }
 
-const NO_REREAD: SeedReread = { db: null, rels: [] }
+const NO_REREAD: SeedReread = { db: null, rels: [], renames: [] }
 
 const SEED_BATCH = 200
 
@@ -187,7 +197,8 @@ export async function seedContentIndex(root: string): Promise<SeedReread> {
   // The handle this seed started against. Every await below is a window for a nexus switch to swap it; a seed that kept writing would pour the OLD corpus's rows into the NEW database, so it bails wherever the identity moved.
   const db0 = contentIndexStore()
   const reread: string[] = []
-  const queued: PageIndexRow[] = []
+  const renames: HeadingRenameSeen[] = []
+  const queued: ReadRow[] = []
   const flush = (): void => {
     const rows = queued.splice(0).filter(({ path }) => {
       // A maintaining writer that landed while this file's read was in flight left a fresher row than the snapshot knew — keep theirs; this read predates their write.
@@ -195,7 +206,7 @@ export async function seedContentIndex(root: string): Promise<SeedReread> {
       const row = readIndexedStat(path)
       return !row || (row.mtimeMs === prior?.mtimeMs && row.size === prior?.size)
     })
-    upsertPageIndexes(rows)
+    renames.push(...reindex(rows))
     for (const { path } of rows) reread.push(path)
   }
   try {
@@ -217,7 +228,7 @@ export async function seedContentIndex(root: string): Promise<SeedReread> {
       if (contentIndexStore() !== db0) return NO_REREAD
       queued.push({
         path: rel,
-        entry: extractPageIndex(rel, content).entry,
+        ...extractPageIndex(rel, content),
         stat: { mtimeMs: st.mtimeMs, size: st.size },
       })
       if (queued.length === SEED_BATCH) flush()
@@ -227,7 +238,7 @@ export async function seedContentIndex(root: string): Promise<SeedReread> {
     // Prune only what the pre-seed gate knew and the corpus no longer yields — a page born while the seed ran is absent from the snapshot and must survive this pass.
     for (const rel of indexed.keys()) if (!seen.has(rel)) removePathIndex(rel)
     markIndexReady()
-    return indexed.size === 0 ? NO_REREAD : { db: db0, rels: reread }
+    return indexed.size === 0 ? NO_REREAD : { db: db0, rels: reread, renames }
   } catch (e) {
     console.error('content index: seed failed — queries fall back to scans:', errText(e))
     return NO_REREAD

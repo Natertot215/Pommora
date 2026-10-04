@@ -861,11 +861,18 @@ describe('tile bodies', () => {
 describe('an outside heading rename', () => {
   const page = (a: string, b: string): Promise<void> =>
     writeFile(abs('Notes', 'A.md'), `---\nID: ${ULID_A}\n---\n\n## ${a}\n\n## ${b}\n`)
-  const hosts = () => [...owedFor(root).tiles.values()]
+  let pushed: unknown[] = []
+  const hosts = () => pushed
+  const tilePushes = {
+    push: (channel: string, host: unknown) => {
+      if (channel === 'tiles:changed') pushed.push(host)
+    },
+    watch: async () => {},
+  }
   const renamed = async (a: string, b: string, ...more: Changed[]) => {
-    owedFor(root).tiles.clear()
+    pushed = []
     await page(a, b)
-    await applyEvents(root, [...more, ev('change', 'Notes', 'A.md')])
+    await settleBatch(tilePushes, root, [...more, ev('change', 'Notes', 'A.md')])
   }
 
   it('cascades into a markdown tile that alone links the heading, reading tile links written in the app or outside it', async () => {
@@ -917,7 +924,7 @@ describe('an outside heading rename a Space alone links', () => {
       await refreshTree(root)
       await seedContentIndex(root)
       await writeFile(abs('Notes', 'A.md'), `---\nID: ${ULID_A}\n---\n\n## Kept\n`)
-      await applyEvents(root, [ev('change', 'Notes', 'A.md')])
+      await settleBatch(QUIET, root, [ev('change', 'Notes', 'A.md')])
       expect(JSON.parse(await readFile(sidecar, 'utf8')).Related).toBe('[[A#Kept]]')
     } finally {
       installStores(NO_STORES)

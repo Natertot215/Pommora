@@ -1,4 +1,4 @@
-import { mkdir, readFile, rm, writeFile } from 'node:fs/promises'
+import { mkdir, readFile, rm, utimes, writeFile } from 'node:fs/promises'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { HostContext } from '../Contract/handlers'
 import { writeJournal } from '../Contexts/contextJournal'
@@ -10,6 +10,7 @@ import { currentSession, startSession, stopSession } from '../Sync/Client/sessio
 import { currentStatus } from '../Sync/Client/status'
 import { tempRoot, readJsonAt } from '../Testing/hostFs'
 import { memoryStores } from '../Testing/memoryStores'
+import { seedContentIndex } from '../Index/indexSeed'
 import { type HubHost, hubHost } from '../Testing/syncHub'
 import { nexusHandlers, openNexusSequence } from './handlers'
 import { dropLiveTree, heldTreeOf, refreshTree } from './liveTree'
@@ -435,5 +436,19 @@ describe('openNexusSequence', () => {
     } finally {
       await rm(second, { recursive: true, force: true })
     }
+  })
+
+  it('an open cascades a heading renamed while it was closed into the page that links it', async () => {
+    const notes = join(root, 'Library', 'Notes.md')
+    const linker = join(root, 'Library', 'Linker.md')
+    await writeFile(notes, `---\nID: ${NOTES}\n---\n\n## Setup\n`)
+    await writeFile(linker, `---\nID: ${THIRD_PAGE}\n---\n\n[[Notes#Setup]]\n`)
+    await seedContentIndex(root)
+    await writeFile(notes, `---\nID: ${NOTES}\n---\n\n## Intro\n`)
+    await utimes(notes, new Date(Date.now() + 86_400_000), new Date(Date.now() + 86_400_000))
+    await openNexusSequence(ctx, root, false)
+    await vi.waitFor(async () =>
+      expect(await readFile(linker, 'utf8')).toContain('[[Notes#Intro]]'),
+    )
   })
 })

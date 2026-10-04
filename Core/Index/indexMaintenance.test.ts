@@ -15,6 +15,7 @@ import { seedContentIndex } from './indexSeed'
 import { queryKeyHolders, queryMembers, queryMentions } from './contentIndex'
 import { applyEvents, owedFor } from '../Nexus/fileEvents'
 import { dropLiveTree, refreshTree } from '../Nexus/liveTree'
+import { settleBatch } from '../Nexus/settle'
 import type { TrashDeps } from '../Trash/bundle'
 import { tileHostDir } from '../Paths/paths'
 import { machine } from '../Platform/machine'
@@ -274,10 +275,16 @@ describe('the watcher maintains the rows', () => {
     await seedContentIndex(root)
     await refreshTree(root)
     await writeFile(beta, `---\nID: ${B_ID}\n---\n\n## Intro\n`)
-    await applyEvents(root, [{ event: 'change', absPath: beta, origin: 'watched' }])
-    const owed = owedFor(root)
-    expect([...owed.pages]).toContain('Notes/Daily/Alpha.md')
-    expect([...owed.tiles.values()]).toEqual([{ kind: 'homepage' }])
+    const pushed: [string, unknown][] = []
+    const pusher = { push: (c: string, v: unknown) => pushed.push([c, v]), watch: async () => {} }
+    await settleBatch(pusher, root, [{ event: 'change', absPath: beta, origin: 'watched' }])
+    expect(pushed).toContainEqual([
+      'pages:changed',
+      expect.arrayContaining(['Notes/Daily/Alpha.md']),
+    ])
+    expect(pushed.filter(([c]) => c === 'tiles:changed')).toEqual([
+      ['tiles:changed', { kind: 'homepage' }],
+    ])
     expect(await readFile(alpha, 'utf8')).toContain('[[Beta#Intro]]')
     await expectMaintained()
   })

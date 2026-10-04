@@ -19,7 +19,7 @@ import { readNexus } from './readNexus'
 import * as adopt from './adopt'
 import { atomicWriteFile } from '../Files/atomicWrite'
 import { updatePageBody } from './page'
-import { splitFrontmatter } from '../Files/pageFile'
+import { splitEnvelope, splitFrontmatter } from '../Files/pageFile'
 import { ID_KEY } from './identityMark'
 import { stabilize } from './treeStabilize'
 import { applyEvents, oweCascade, owedFor, oweWalk } from './fileEvents'
@@ -29,6 +29,8 @@ import { applyDelta } from './treeDelta'
 import * as session from './session'
 import { closeSession, openSession, whileAdopting } from './session'
 import { writeExcludedFolders } from '../Settings/settings'
+import { installStores, NO_STORES } from '../Platform/stores'
+import { memoryStores } from '../Testing/memoryStores'
 
 const sweep = vi.hoisted(() => ({ hold: null as Promise<void> | null, entered: () => {} }))
 vi.mock('../Properties/governedSweep', async (importOriginal) => {
@@ -617,7 +619,7 @@ describe('the settle', () => {
     await settleNow(pusher, root)
     expect(seed).toHaveBeenCalledTimes(1)
     expect(firstDone).toBe(false)
-    seeding.open({ db: null, rels: [] })
+    seeding.open({ db: null, rels: [], renames: [] })
     await first
     expect(firstDone).toBe(true)
   })
@@ -1001,5 +1003,78 @@ describe('held options — the Multi-Select members a changed file holds are reg
       'beta',
       'Ideas',
     ])
+  })
+})
+
+describe('a heading renamed while no watcher listened', () => {
+  const page = (...headings: string[]): Promise<void> =>
+    writeFile(
+      abs('Notes', 'A.md'),
+      `---\nID: ${ULID_A}\n---\n\n${headings.map((h) => `## ${h}\n`).join('\n')}`,
+    )
+  const linker = (heading: string): Promise<void> =>
+    writeFile(abs('Notes', 'B.md'), `---\nID: ${ULID_B}\n---\n\n[[A#${heading}]]\n`)
+  const linked = async (): Promise<string> =>
+    splitEnvelope(await readFile(abs('Notes', 'B.md'), 'utf8')).body
+  const renamedOutside = async (...headings: string[]): Promise<void> => {
+    await page(...headings)
+    await ahead('Notes', 'A.md')
+  }
+
+  beforeEach(async () => {
+    installStores(memoryStores().stores)
+    await page('Setup', 'Keep')
+    await linker('Setup')
+    recordHanded(await refreshTree(root))
+    await indexSeed.seedContentIndex(root)
+  })
+  afterEach(() => installStores(NO_STORES))
+
+  it('the catch-up cascades it into the page that links it', async () => {
+    await renamedOutside('Intro', 'Keep')
+    await settleBatch(pusher, root, [], true)
+    expect(await linked()).toBe('[[A#Intro]]\n')
+    expect(payload('pages:changed')).toEqual(expect.arrayContaining(['Notes/B.md']))
+  })
+
+  it('two headings renamed in one edit cascade nothing', async () => {
+    await renamedOutside('Intro', 'Kept')
+    await settleBatch(pusher, root, [], true)
+    expect(await linked()).toBe('[[A#Setup]]\n')
+    expect(payload('pages:changed')).toEqual(['Notes/A.md'])
+  })
+
+  it('a catch-up that finds no heading changed cascades nothing and pushes nothing', async () => {
+    await settleBatch(pusher, root, [], true)
+    expect(await linked()).toBe('[[A#Setup]]\n')
+    expect(pushes).toEqual([])
+  })
+
+  it('a rename owed while a settle walks is paid by the next settle', async () => {
+    const reached = gate<void>()
+    const walked = gate<NexusTree>()
+    vi.spyOn(liveTree, 'refreshTree').mockImplementationOnce(() => {
+      reached.open()
+      return walked.promise
+    })
+    oweWalk(root)
+    const settling = settleNow(pusher, root)
+    await reached.promise
+    await renamedOutside('Intro', 'Keep')
+    await applyEvents(root, [ev('change', 'Notes', 'A.md')])
+    walked.open(await readNexus(root))
+    await settling
+    await settleNow(pusher, root)
+    expect(await linked()).toBe('[[A#Intro]]\n')
+  })
+
+  it('a linker another device already rewrote is left as it is', async () => {
+    await renamedOutside('Intro', 'Keep')
+    await linker('Intro')
+    await ahead('Notes', 'B.md')
+    const before = await readFile(abs('Notes', 'B.md'), 'utf8')
+    await settleBatch(pusher, root, [], true)
+    expect(await readFile(abs('Notes', 'B.md'), 'utf8')).toBe(before)
+    expect(payload('pages:changed')).toEqual(expect.arrayContaining(['Notes/A.md', 'Notes/B.md']))
   })
 })
