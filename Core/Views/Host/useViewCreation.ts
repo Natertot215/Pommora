@@ -15,7 +15,7 @@ import { type CreatePageRequest, DEFAULT_NEW_NAME, minted } from '../../Nexus/mu
 import { relDirname } from '../../Paths/posix'
 import { findScroller, SEEK_GLIDE, scrollGlide } from '@pommora/uix/Interactions/autoscroll'
 import { useSession } from '../../Session/store'
-import { settingOf } from '../../Settings/personalization'
+import { resolvesCase, settingOf } from '../../Settings/personalization'
 import { declaredType, resolveFieldValue } from '../../Properties/value'
 import { filterSeeds } from '../Pipeline/creationSeeds'
 import { flattenContainer, frontmatterOf } from '../Pipeline/group'
@@ -86,7 +86,7 @@ export function useViewCreation(getCfg: () => ViewCreationConfig): ViewCreation 
     const c = cfg()
     return filterSeeds(c.view.filter, viewOption(c.view, 'filter_enabled'), c.schema, c.contextIds)
   }
-  // The created page's seeds reach the pipeline the way a band-drop's reassign does; a newborn holds no second spelling of a key, so casing has nothing to resolve.
+  // The created page's seeds reach the pipeline the way a band-drop's reassign does.
   const patchSeedValues = (
     pageId: string,
     seeds: Record<string, PropertyValue>,
@@ -97,9 +97,10 @@ export function useViewCreation(getCfg: () => ViewCreationConfig): ViewCreation 
     if (entries.length === 0) return
     let patched = frontmatterOf(c.values, pageId) as Record<string, unknown>
     let contexts: Record<string, string[]> | undefined
+    const resolveCase = resolvesCase(personalizationOf(useSession.getState()))
     for (const [propId, value] of entries) {
       const def = c.schema.find((d) => d.id === propId)
-      if (def) patched = applyValueAtRoot(patched, def, value, false)
+      if (def) patched = applyValueAtRoot(patched, def, value, resolveCase)
       else if (value.kind === 'context') contexts = { ...contexts, [propId]: value.value }
     }
     patchOverride(c.setValueOverride, pageId, patched as PageFrontmatter, landed, contexts)

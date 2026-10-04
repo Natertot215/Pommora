@@ -68,7 +68,8 @@ async function restoreInner(
       return false
     }),
   )
-  const taken = await refillValues(root, def, roots, values, frozen, resolvesCase(tree))
+  const resolveCase = resolvesCase(tree.config.personalization)
+  const taken = await refillValues(root, def, roots, values, frozen, resolveCase)
   return ok({
     unrestored: Object.keys(values).flatMap((id) => (taken.has(id) ? [] : roots[id].title)),
     dropped,

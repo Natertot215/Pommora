@@ -55,7 +55,7 @@ export const governedWorld = (
 ): GovernedWorld => ({
   contexts: contextWorldOf(tree.contexts),
   defs,
-  resolveCase: resolvesCase(tree),
+  resolveCase: resolvesCase(tree.config.personalization),
 })
 
 // A Space holds any registry property, so its own values reconcile against every definition, by name.

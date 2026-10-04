@@ -96,7 +96,8 @@ async function restoreCachedValues(
     def.type === 'link'
       ? Object.keys(members).filter((id) => namesGonePage(cached[id], frozen))
       : []
-  const spent = await refillValues(root, def, members, cached, frozen, resolvesCase(tree))
+  const resolveCase = resolvesCase(tree.config.personalization)
+  const spent = await refillValues(root, def, members, cached, frozen, resolveCase)
   await parkLinks(
     root,
     gone.map((id) => ({ page: id, property: propertyId, value: String(cached[id]) })),

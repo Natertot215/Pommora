@@ -219,7 +219,7 @@ async function restoreArtifact(
     return fault(e)
   }
   const roots = recordById(tree)
-  const resolveCase = resolvesCase(tree)
+  const resolveCase = resolvesCase(tree.config.personalization)
   const unspent: string[] = []
   const unlinked = new Set<string>()
   if (record.entity === 'context') {
