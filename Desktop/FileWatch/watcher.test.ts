@@ -239,6 +239,131 @@ describe('overlapping watcher starts', () => {
   })
 })
 
+describe('a watcher that restarts', () => {
+  const watch = vi.mocked(chokidar.watch)
+  const listening = (): void => handlers.get('ready')?.(root)
+  const pushed = (channel: string): unknown[] =>
+    pushMock.mock.calls.filter((c) => c[1] === channel).flatMap((c) => c[2] as unknown[])
+  const edit = (...segs: string[]): Promise<void> =>
+    writeFile(abs(...segs), `---\nID: ${ULID_A}\n---\n\nalpha, edited outside\n`)
+  const indexed = async (): Promise<void> => {
+    installStores(memoryStores().stores)
+    await seedContentIndex(root)
+  }
+  const unexclude = (): void => {
+    void writeFile(abs('.nexus', 'settings.json'), JSON.stringify({ excluded_folders: [] }))
+  }
+  const hidden = async (): Promise<void> => {
+    await mkdir(abs('Hidden'))
+    await writeFile(abs('Hidden', '_pagecollection.json'), JSON.stringify({ id: 'c-hidden' }))
+    await writeFile(abs('Hidden', 'P.md'), `---\nID: ${ULID_C}\n---\n\nhidden\n`)
+    await writeFile(
+      abs('.nexus', 'settings.json'),
+      JSON.stringify({ excluded_folders: ['Hidden'] }),
+    )
+    shown = recordHanded(await refreshTree(root)).tree
+  }
+  // The restart a change of scope owes: the settings event settles, and its reseed arms the next watcher.
+  const rescope = async (): Promise<void> => {
+    const armed = watch.mock.calls.length
+    unexclude()
+    await vi.advanceTimersByTimeAsync(0)
+    emit('change', '.nexus', 'settings.json')
+    await settleAll(() => watch.mock.calls.length > armed)
+  }
+  afterEach(() => {
+    installStores(NO_STORES)
+    vi.restoreAllMocks()
+  })
+
+  it('applies the outside edits it had collected before it stopped', async () => {
+    await startWatcher(root, win)
+    await writeFile(abs('Notes', 'B.md'), `---\nID: ${ULID_B}\n---\n\nbeta\n`)
+    emit('add', 'Notes', 'B.md')
+    await startWatcher(root, win)
+    listening()
+    await settleAll(() => pushed('pages:changed').length > 0)
+    expect(pushed('pages:changed')).toEqual(['Notes/B.md'])
+    expect(pushed('values:changed')).toEqual([{ rel: 'Notes', pageIds: [ULID_B] }])
+  })
+
+  it('pushes nothing for the edits it had collected under a Nexus the session switched away from', async () => {
+    await startWatcher(root, win)
+    await writeFile(abs('Notes', 'B.md'), `---\nID: ${ULID_B}\n---\n\nbeta\n`)
+    emit('add', 'Notes', 'B.md')
+    const other = tempRoot('pom-watchglue-other-')
+    try {
+      await mkdir(join(other, '.nexus'), { recursive: true })
+      await writeFile(join(other, '.nexus', 'nexus.json'), JSON.stringify({ id: 'nx2' }))
+      rootMock.mockReturnValue(other)
+      recordHanded(await refreshTree(other))
+      const walks = vi.spyOn(liveTree, 'refreshTree')
+      await startWatcher(other, win)
+      handlers.get('ready')?.(other)
+      await settleAll(() => walks.mock.calls.length > 0)
+      await settleAll()
+      expect(pushMock).not.toHaveBeenCalled()
+      expect(walks).toHaveBeenCalledTimes(1)
+    } finally {
+      await rm(other, { recursive: true, force: true })
+    }
+  })
+
+  it('reads what changed while it was down once it listens again', async () => {
+    await writeFile(abs('Notes', 'C.md'), `---\nID: ${ULID_C}\n---\n\ngamma\n`)
+    shown = recordHanded(await refreshTree(root)).tree
+    await indexed()
+    await startWatcher(root, win)
+    await startWatcher(root, win)
+    await edit('Notes', 'A.md')
+    await rm(abs('Notes', 'C.md'))
+    listening()
+    await settleAll(() => pushed('pages:changed').length > 0 && pushed('nexus:changed').length > 0)
+    expect(pushed('pages:changed')).toEqual(['Notes/A.md'])
+    expect(pushed('values:changed')).toEqual([{ rel: 'Notes', pageIds: [ULID_A] }])
+    expect(heldTreeOf(root)?.collections[0]?.pages.map((p) => p.id)).toEqual([ULID_A])
+  })
+
+  it('reads a page under a folder it admits that changed before it listened', async () => {
+    await hidden()
+    await indexed()
+    await startWatcher(root, win)
+    await rescope()
+    await writeFile(abs('Hidden', 'P.md'), `---\nID: ${ULID_C}\n---\n\nhidden, edited outside\n`)
+    listening()
+    await settleAll(() => pushed('pages:changed').includes('Hidden/P.md'))
+    expect(pushed('pages:changed')).toContain('Hidden/P.md')
+    expect(readIndexedStat('Hidden/P.md')?.size).toBe(
+      (await readFile(abs('Hidden', 'P.md'))).byteLength,
+    )
+  })
+
+  it('reads a page whose event its stop cut off, though the change of scope rescanned the corpus first', async () => {
+    await hidden()
+    await indexed()
+    await startWatcher(root, win)
+    await edit('Notes', 'A.md')
+    await rescope()
+    listening()
+    await settleAll(() => pushed('pages:changed').includes('Notes/A.md'))
+    expect(pushed('pages:changed')).toContain('Notes/A.md')
+  })
+
+  it('pushes nothing and restarts nothing when nothing changed', async () => {
+    await indexed()
+    await startWatcher(root, win)
+    await startWatcher(root, win)
+    const armed = watch.mock.calls.length
+    const walks = vi.spyOn(liveTree, 'refreshTree')
+    listening()
+    await settleAll(() => walks.mock.calls.length > 0)
+    await settleAll()
+    expect(walks).toHaveBeenCalled()
+    expect(pushMock).not.toHaveBeenCalled()
+    expect(watch).toHaveBeenCalledTimes(armed)
+  })
+})
+
 describe('a waiting open', () => {
   const settings = (): string => abs('.nexus', 'settings.json')
   let waiting: WaitingOpen
