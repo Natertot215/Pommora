@@ -8,7 +8,7 @@ import { basename, dirname, join } from '../Paths/posix'
 import { foldKey, spellings } from '../Paths/caseFold'
 import { newId } from '../Nexus/ids'
 import { nexusConfig } from '../Paths/paths'
-import { NEXUS_CONFIG_FILES } from '../Paths/nexusPaths'
+import { NEXUS_CONFIG_FILES, type NexusConfigFile } from '../Paths/nexusPaths'
 
 async function land(filePath: string, data: string): Promise<void> {
   recordWrite(filePath, data)
@@ -260,11 +260,11 @@ const REPAIRABLE = {
   matrix: true,
   homepage: true,
   crops: true,
-} as const satisfies Record<keyof typeof NEXUS_CONFIG_FILES, boolean>
+} as const satisfies Record<NexusConfigFile, boolean>
 
 export function updateNexusConfig(
   root: string,
-  file: keyof typeof NEXUS_CONFIG_FILES,
+  file: NexusConfigFile,
   mutate: (current: Record<string, unknown>) => Record<string, unknown> | null,
 ): Promise<Result<Record<string, unknown>>> {
   return updateNexusFile(nexusConfig(root, NEXUS_CONFIG_FILES[file]), mutate, REPAIRABLE[file])

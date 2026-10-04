@@ -1,47 +1,17 @@
 import { isPlainObject } from '../Contract/validators'
-import { pathExists, rmwJsonStrict } from '../Files/atomicWrite'
+import { rmwJsonStrict } from '../Files/atomicWrite'
 import { listFilesRecursive } from '../Files/walk'
-import { recordWrite } from '../Files/writeEcho'
 import {
-  ASSETS_DIR_REL,
   CONTEXTS_DIR_REL,
-  NEXUS_DIR,
   NEXUS_CONFIG_FILES,
   SIDECARS,
   TILE_DOC_FILENAME,
   TRASH_DIR,
 } from '../Paths/nexusPaths'
-import { contextsRegistryFile, nexusConfig, tileHostDir } from '../Paths/paths'
+import { nexusConfig, tileHostDir } from '../Paths/paths'
 import { join } from '../Paths/posix'
-import { machine } from '../Platform/machine'
 import { propertyType } from '../Properties/properties'
 import { mapTiles, mapViews } from '../Views/views'
-
-async function migrateFile(oldAbs: string, newAbs: string): Promise<void> {
-  if (!(await pathExists(oldAbs))) return
-  recordWrite(oldAbs)
-  if (await pathExists(newAbs)) {
-    await machine().remove(oldAbs)
-    return
-  }
-  recordWrite(newAbs)
-  await machine().rename(oldAbs, newAbs)
-}
-
-export async function ensureConfigLayout(root: string): Promise<void> {
-  await machine().mkdir(join(root, ASSETS_DIR_REL))
-  await machine().mkdir(join(root, CONTEXTS_DIR_REL))
-  await machine().mkdir(tileHostDir(root))
-  await migrateFile(
-    join(root, NEXUS_DIR, 'crops.json'),
-    nexusConfig(root, NEXUS_CONFIG_FILES.crops),
-  )
-  await migrateFile(
-    join(root, NEXUS_DIR, 'homepage.json'),
-    nexusConfig(root, NEXUS_CONFIG_FILES.homepage),
-  )
-  await migrateFile(join(root, NEXUS_DIR, 'contexts.json'), contextsRegistryFile(root))
-}
 
 // One-time normalizations of what a saved view writes down; each can go once no nexus carries it.
 // `card_banner` spelled its banner mode `image` before the key and the mode were told apart, and the

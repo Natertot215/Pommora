@@ -20,7 +20,12 @@ import {
   isRecentWrite,
   writtenHash,
 } from '@pommora/core/Files/writeEcho'
-import { isMetadataShardRel, NEXUS_CONFIG_FILES, NEXUS_DIR } from '@pommora/core/Paths/nexusPaths'
+import {
+  isMetadataShardRel,
+  type NexusConfigFile,
+  NEXUS_DIR,
+  nexusConfigRel,
+} from '@pommora/core/Paths/nexusPaths'
 import { join, relative } from '@pommora/core/Paths/posix'
 import type { Pushes } from '@pommora/core/Contract/bridge'
 import { type CurrentWindow, push } from '../Bridge/ipc'
@@ -41,13 +46,8 @@ const configDebounce = new Map<string, ReturnType<typeof setTimeout>>()
 const pushedConfig = new Map<string, string>()
 
 // Exported for tests alone.
-export function isConfigPath(
-  root: string,
-  path: string,
-  file: keyof typeof NEXUS_CONFIG_FILES,
-): boolean {
-  const segs = relative(root, path).split('/')
-  return segs[0] === NEXUS_DIR && segs[1] === NEXUS_CONFIG_FILES[file]
+export function isConfigPath(root: string, path: string, file: NexusConfigFile): boolean {
+  return relative(root, path) === nexusConfigRel(file)
 }
 
 // We DO watch .nexus/ — Contexts and settings/state live there. Checks only the path BELOW the root, so a dot-segment in the root's own absolute path (a nexus under ~/.something) can't blank the whole watch.

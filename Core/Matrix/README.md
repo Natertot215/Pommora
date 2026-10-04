@@ -38,7 +38,7 @@ drove the loop's own shape rather than a library's:
 | `matrixInput.ts` | The tree walk into a `GraphInput`, and what the filter leaves visible |
 | `matrixGraph.ts` | The index read behind `matrix:graph` and the shape of its reply |
 | `matrixConfig.ts` | The four sections and their patch |
-| `matrixFile.ts`, `handlers.ts` | `.nexus/matrix.json`, its per-key merge, and the channels over it |
+| `matrixFile.ts`, `handlers.ts` | `.nexus/interface/matrix.json`, its per-key merge, and the channels over it |
 | `matrixLayout.ts` | The machine-local positions and lens, and the readers that validate them |
 | `matrixKind.ts` | The selection kind, its title, its icon, and a node's record shape |
 | `MatrixView.tsx` | What the surface is told: the label's node, the menu, the tap, the drag, and a locked node's carry to the tab strips |
