@@ -29,8 +29,7 @@ import {
   resizeStackPair,
   stretchTileHeight,
 } from './Layout/ops'
-import { computeGeometry, type Placement, pinned, placeTiles, type Span } from './Layout/rects'
-import type { Rect } from '@pommora/uix/Interactions/useResizable'
+import { computeGeometry, type Placement, pinned, placeTiles } from './Layout/rects'
 import { snapAxis, xCandidates, yCandidates } from './Layout/snap'
 import { stackLayout, stackedAt } from './Layout/stack'
 import { useLatest } from '@pommora/uix/Utilities/stableApi'
@@ -58,7 +57,7 @@ type TilePhase = 'idle' | 'reflow' | 'lifted' | 'settling'
 
 interface TileDrag {
   id: string
-  lift: Rect
+  lift: Placement
 }
 
 interface Settle {
@@ -89,24 +88,13 @@ const EDGE_ZONES: Edge[][] = [
 const refKey = (ref: { band: number; path: number[]; index: number }): string =>
   `${ref.band}|${ref.path.join('.')}|${ref.index}`
 
-const spanCss = (s: Span): string =>
-  `calc(${s.share * 100}% ${s.px < 0 ? '-' : '+'} ${Math.abs(s.px)}px)`
-
-// The share rides `left` and `width` as percentages, so the browser lays the board out at whatever width the grid has, the frame it has it.
+// The share rides `left` and `width` as percentages, so the browser lays the board out at whatever width the grid has, the frame it has it; the pixels ride the transform with y, so every move transitions `transform`, the property a settle commits on.
 const placementStyle = (p: Placement): CSSProperties => ({
   left: `${p.x.share * 100}%`,
   transform: `translate(${p.x.px}px, ${p.y}px)`,
-  width: spanCss(p.w),
+  width: `calc(${p.w.share * 100}% ${p.w.px < 0 ? '-' : '+'} ${Math.abs(p.w.px)}px)`,
   height: p.h,
 })
-
-const samePlacement = (a: Placement, b: Placement): boolean =>
-  a.x.share === b.x.share &&
-  a.x.px === b.x.px &&
-  a.y === b.y &&
-  a.w.share === b.w.share &&
-  a.w.px === b.w.px &&
-  a.h === b.h
 
 const TileShell = memo(
   function TileShell({
@@ -229,7 +217,12 @@ const TileShell = memo(
     a.onHandleMenu === b.onHandleMenu &&
     a.onEdgeDown === b.onEdgeDown &&
     a.onSettled === b.onSettled &&
-    samePlacement(a.place, b.place),
+    a.place.x.share === b.place.x.share &&
+    a.place.x.px === b.place.x.px &&
+    a.place.y === b.place.y &&
+    a.place.w.share === b.place.w.share &&
+    a.place.w.px === b.place.w.px &&
+    a.place.h === b.place.h,
 )
 
 export function TileGrid({
@@ -259,8 +252,6 @@ export function TileGrid({
   // Under the stacking width the board is DRAWN as one column; the tree the grid was handed is still the tree it hands back.
   const view = useMemo(() => (stacked ? stackLayout(layout) : layout), [layout, stacked])
   const placed = useMemo(() => placeTiles(draft ?? view, GAP), [draft, view])
-  // Hit-testing and boundary extents run against the origin measured at the press — a preview shifting under the pointer must never retarget the gesture.
-  const measured = (of: TileLayout, grid: HTMLElement) => computeGeometry(of, grid.clientWidth, GAP)
 
   const boardStatic = locked || stacked
   const now = {
@@ -306,7 +297,8 @@ export function TileGrid({
     const grid = gridRef.current
     if (!grid) return null
     const origin = settling?.next ?? live.current.view
-    const g = measured(origin, grid)
+    // Hit-testing and boundary extents run against the origin measured at the press — a preview shifting under the pointer must never retarget the gesture.
+    const g = computeGeometry(origin, grid.clientWidth, GAP)
     const rect = g.tiles.get(id)
     return rect ? { origin, g, grid, rect } : null
   }
@@ -418,7 +410,7 @@ export function TileGrid({
         const dsy = (scroller?.scrollTop ?? 0) - scroll0.y
         const px = clientX - downBox.left + dsx
         const py = clientY - downBox.top + dsy
-        setTileDrag({ id, lift: { x: px - grab.x, y: py - grab.y, w: rect.w, h: rect.h } })
+        setTileDrag({ id, lift: pinned({ x: px - grab.x, y: py - grab.y, w: rect.w, h: rect.h }) })
         target = hitTest(g, origin, id, px, py, BAND_ZONE_PX, target, HYSTERESIS)
         latest = applyTarget(origin, id, target)
         setDraft(latest === origin ? null : latest)
@@ -489,7 +481,7 @@ export function TileGrid({
     const box = grid.getBoundingClientRect()
     const px = e.clientX - box.left
     const py = e.clientY - box.top
-    const g = measured(view, grid)
+    const g = computeGeometry(view, grid.clientWidth, GAP)
     let above: { id: string; bottom: number; band: number } | null = null
     for (const [id, r] of g.tiles) {
       const bottom = r.y + r.h
@@ -502,8 +494,8 @@ export function TileGrid({
       onBackdrop({ kind: 'append' }, e)
       return
     }
-    const seam = g.bandEdges[above.band]
-    const bandBottom = seam ? seam.y - GAP / 2 : g.totalHeight
+    const seam = g.seams[above.band]
+    const bandBottom = seam !== undefined ? seam - GAP / 2 : g.totalHeight
     const fillPx = bandBottom - above.bottom - GAP
     if (fillPx < TILE_MIN_PX || py > bandBottom) onBackdrop({ kind: 'append' }, e)
     else onBackdrop({ kind: 'wedge', above: above.id, fillPx }, e)
@@ -538,7 +530,7 @@ export function TileGrid({
             <TileShell
               key={id}
               id={id}
-              place={lifted ? pinned(lifted.lift) : (settling?.to ?? place)}
+              place={lifted?.lift ?? settling?.to ?? place}
               phase={phase}
               resizing={resizingId === id}
               editing={editingId === id}

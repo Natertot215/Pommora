@@ -1,10 +1,4 @@
-@property --io {
-  syntax: "<number>";
-  inherits: true;
-  initial-value: 0;
-}
-
-/* Each host declares its own --io and --slide-* inputs on the cluster the swallow moves, so this one formula tracks whichever driver the host holds and each frame restyles that cluster alone. */
+/* Each host declares its own --slide-* inputs, and its --io on the cluster the swallow moves, so this one formula tracks whichever driver the host holds and each frame restyles that cluster alone. */
 .app-toolbar,
 .window-actions-trail {
   --toolbar-slide: max(

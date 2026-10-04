@@ -41,7 +41,7 @@ own behavior, so every host gets it.
 | --- | --- |
 | `Layout/model.ts` | Tree types, height derivation, lookup, validation |
 | `Layout/ops.ts` | Pure tree operations — split, move, remove, band ops, the three resize ops |
-| `Layout/rects.ts` | Tree → per-tile pixel rects, divider hit zones, band seam centerlines |
+| `Layout/rects.ts` | Tree → per-tile placements as shares of the board width, resolved to pixel rects, dividers, and band seams at a measured width |
 | `Layout/edges.ts` | A tile edge → the shared boundary it actually moves |
 | `Layout/hitTest.ts` | Drag pointer → drop target (band seam or tile edge, with hysteresis) |
 | `Layout/snap.ts` | Alignment magnetism — boundaries lock to other tiles' edges |

@@ -17,7 +17,7 @@
   padding: 0 var(--trailing-room) 0 4px;
   pointer-events: none;
   --trio-inset: 4px;
-  /* Inputs to the shared --toolbar-slide swallow (Animation/toolbar-slide.css). */
+  /* Inputs to the shared --toolbar-slide swallow (UIX/Animations/toolbar-slide.css). */
   --slide-panel-w: var(--side-pane-width);
   --slide-inset: var(--app-inset);
   --slide-home: var(--trailing-room);

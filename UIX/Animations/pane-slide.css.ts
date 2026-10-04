@@ -1,18 +1,24 @@
-import { createVar, style, styleVariants } from '@vanilla-extract/css'
-import { duration, easing } from './motion'
+import { style, styleVariants } from '@vanilla-extract/css'
+import { duration } from './motion'
 
 const parked = '(100% + var(--pane-inset) + var(--park-clearance))'
+// The host's --pane-slide, which everything clearing the pane follows, so pane and content move on the same frames.
+const slide = (property: string): string =>
+  `${property} var(--pane-slide, ${duration.base}) var(--ease-base)`
 
-// The pane's own progress, uninherited: it animates on the same frames as the content clearing it, so the two move in lockstep, and restyles the pane alone.
-const open = createVar({ syntax: '<number>', inherits: false, initialValue: '0' })
-const slide = `${open.slice('var('.length, -1)} ${duration.base} ${easing.baseEase}`
 export const paneOverlay = styleVariants({
-  right: { transition: slide, transform: `translateX(calc((1 - ${open}) * ${parked}))` },
-  left: { transition: slide, transform: `translateX(calc((${open} - 1) * ${parked}))` },
+  right: {
+    transition: slide('--pane-open'),
+    transform: `translateX(calc((1 - var(--pane-open)) * ${parked}))`,
+  },
+  left: {
+    transition: slide('--pane-open'),
+    transform: `translateX(calc((var(--pane-open) - 1) * ${parked}))`,
+  },
 })
-export const paneOverlayOpen = style({ vars: { [open]: '1' } })
+export const paneOverlayOpen = style({ vars: { '--pane-open': '1' } })
 
-const inflowTransition = `width ${duration.base} ${easing.baseEase}, opacity ${duration.base} ${easing.baseEase}`
+const inflowTransition = `${slide('width')}, ${slide('opacity')}`
 export const paneInflow = styleVariants({
   open: { transition: inflowTransition, width: 'var(--pane-w)' },
   closed: {

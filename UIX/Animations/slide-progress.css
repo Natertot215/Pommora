@@ -1,0 +1,13 @@
+/* A pane's own slide progress: uninherited, so animating it restyles the pane alone. */
+@property --pane-open {
+  syntax: "<number>";
+  inherits: false;
+  initial-value: 0;
+}
+
+/* The toolbar swallow's progress: inherited, since the clusters it moves read it through their descendants and the derived --toolbar-slide. */
+@property --io {
+  syntax: "<number>";
+  inherits: true;
+  initial-value: 0;
+}

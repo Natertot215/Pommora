@@ -1,5 +1,6 @@
 import { cx } from '../Utilities/cx'
 import { paneInflow, paneOverlay, paneOverlayOpen } from './pane-slide.css'
+import './slide-progress.css'
 
 export function paneSlide({
   side,

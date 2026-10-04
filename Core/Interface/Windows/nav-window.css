@@ -35,7 +35,9 @@
 
 .navwindow-main {
   padding: var(--window-body-pad);
-  transition: padding var(--pane-slide) var(--ease-base);
+  transition:
+    padding-left var(--pane-slide) var(--ease-base),
+    padding-right var(--pane-slide) var(--ease-base);
   display: flex;
   flex-direction: column;
   flex: 1;
