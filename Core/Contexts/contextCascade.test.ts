@@ -150,6 +150,29 @@ describe('case folding on renames', () => {
     expect(await readJournal(root)).toBeNull()
   })
 
+  it('a case-only Context rename re-reads a page holding two spellings of the key, which now reads the first', async () => {
+    await mkdir(join(contextsDir(root), 'Projects', 'Sapphire'), { recursive: true })
+    await writeFile(
+      join(contextsDir(root), 'Projects', 'Sapphire', '_space.json'),
+      JSON.stringify({ id: 'sp-sap' }),
+    )
+    await writeFile(
+      other(),
+      '---\nID: 01ARZ3NDEKPSV4RRFFQ69G5FAV\n<projects>: [Sapphire]\n<Projects>: [Pommora]\n---\nbody',
+    )
+    await refreshTree(root)
+    const tagged = () =>
+      heldTreeOf(root)?.collections[0].pages.find((p) => p.title === 'B')?.contextValues
+    expect(tagged()).toEqual({ ctx_projects: ['sp-pom'] })
+    const r = await settledMutate(
+      root,
+      { op: 'renameContext', contextId: 'ctx_projects', newName: 'PROJECTS' },
+      deps,
+    )
+    expect(r.ok).toBe(true)
+    expect(tagged()).toEqual({ ctx_projects: ['sp-sap'] })
+  })
+
   it('a case-only Space rename relocates the folder and leaves every member file byte-identical', async () => {
     await writeFile(other(), '---\nid: p2\n<projects>: Pommora\n---\nbody')
     const before = await snapshot(members())

@@ -25,6 +25,7 @@ import { withOrderEntry } from './spaceSidecar'
 import { heldKeys } from '../Paths/caseFold'
 import { editHeldLists, editList, namesValue, stripList } from '../Properties/pageValue'
 import { contextWorldOf } from './contextResolve'
+import { oweWalk } from '../Nexus/fileEvents'
 import { liveTreeOf } from '../Nexus/liveTree'
 import { isScalar, listOf } from '../Contract/validators'
 import { queryMembers } from '../Index/contentIndex'
@@ -113,9 +114,11 @@ async function cascadeTitle(
   contextTitle: string,
   j: RenameJournal,
 ): Promise<SweepResult> {
-  // A title that changes only its case moves no key or value: every file's spelling already resolves to it.
-  if (normalizeTitle(j.oldTitle) === normalizeTitle(j.newTitle))
+  // A title that changes only its case moves no key or value: every file's spelling already resolves to it. A file holding two spellings of a Context's key is read under the one the new title matches, so the held tree is owed a walk.
+  if (normalizeTitle(j.oldTitle) === normalizeTitle(j.newTitle)) {
+    if (j.spaceId === undefined) oweWalk(root)
     return { touched: new Map(), skipped: [], refused: [] }
+  }
   // The key being rewritten comes from the journal, never the registry title, which may already read old or new.
   const member: Member =
     j.spaceId === undefined
