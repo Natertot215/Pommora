@@ -21,8 +21,7 @@ import {
 } from './propertyValue'
 import { parkLinks } from '../Trash/holdings'
 import { frozenWorld } from '../Nexus/heldPages'
-import { landValue, sweepRootsById } from './governedSweep'
-import { writeTarget } from './governedWrite'
+import { landValue, sweepRootsById, writeTarget } from './governedSweep'
 import { heldValue } from './pageValue'
 import { ok, fail, type Result } from '../Contract/result'
 

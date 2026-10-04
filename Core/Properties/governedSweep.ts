@@ -34,6 +34,14 @@ export interface WriteTarget {
   govern: readonly string[]
 }
 
+/** Where a write to `name` lands on `root` and the spellings it replaces: the key the root reads, or with `resolveCase` the name itself in place of every spelling. */
+export function writeTarget(root: Json, name: string, resolveCase: boolean): WriteTarget {
+  const held = heldKeys(root, name)
+  return resolveCase
+    ? { key: name, govern: held }
+    : { key: held[0] ?? name, govern: held.slice(0, 1) }
+}
+
 /** `root` with `value` under the target's key in place of every key it governs; `undefined` drops the key. */
 export function landValue(root: Json, { key, govern }: WriteTarget, value: unknown): Json {
   const next = { ...root }
