@@ -8,6 +8,7 @@ import type { Json } from '../Files/stableJson'
 import { isPlainObject } from '../Contract/validators'
 import { propertyDefinition, type PropertyDefinition } from './properties'
 import { resolveRowOrder } from './rowOrder'
+import { keyRefusal } from './schema'
 
 export const NO_PROPERTY = fail('not-found', 'Property not found.')
 
@@ -19,16 +20,16 @@ const registryPath = (root: string): string => nexusConfig(root, NEXUS_CONFIG_FI
 
 function normalizeRegistry(obj: Record<string, unknown>): {
   registry: RegistryFile
-  unparsed: Record<string, unknown>
+  unadmitted: Record<string, unknown>
 } {
   const rawDefs = isPlainObject(obj.defs) ? obj.defs : {}
   const defs: PropertyRegistry = {}
-  const unparsed: Record<string, unknown> = {}
+  const unadmitted: Record<string, unknown> = {}
   for (const [id, value] of Object.entries(rawDefs)) {
     const parsed = propertyDefinition.safeParse(value)
-    if (parsed.success) defs[id] = parsed.data
+    if (parsed.success && keyRefusal(parsed.data.name) === null) defs[id] = parsed.data
     // Only a plausible def (a plain object) rides through writes — a scalar under an id key is corrupt noise, and re-writing it is what would break the file-shape check above.
-    else if (isPlainObject(value)) unparsed[id] = value
+    else if (isPlainObject(value)) unadmitted[id] = value
   }
   const order = [
     ...new Set(
@@ -37,7 +38,7 @@ function normalizeRegistry(obj: Record<string, unknown>): {
       ),
     ),
   ]
-  return { registry: { order, defs }, unparsed }
+  return { registry: { order, defs }, unadmitted }
 }
 
 export const registryFrom = (raw: Record<string, unknown>): RegistryFile =>
@@ -88,13 +89,13 @@ export async function mutateRegistry<T>(
   const written = await updateNexusFile(
     registryPath(root),
     (raw) => {
-      const { registry, unparsed } = normalizeRegistry(raw)
+      const { registry, unadmitted } = normalizeRegistry(raw)
       const rawDefs = isPlainObject(raw.defs) ? raw.defs : {}
       const edit = fn(registry, rawDefs)
       result = edit.result
       const next = edit.next
       if (!next) return null
-      const defs: Record<string, unknown> = { ...unparsed }
+      const defs: Record<string, unknown> = { ...unadmitted }
       for (const [id, d] of Object.entries(next.defs)) {
         const stored = registry.defs[id]
         defs[id] = stored
@@ -104,10 +105,10 @@ export async function mutateRegistry<T>(
             }
           : d
       }
-      // Unparsed ids keep their order membership too, appended, so a repaired def re-lists rather than vanishing from the pane.
+      // Unadmitted ids keep their order membership too, appended, so a repaired def re-lists rather than vanishing from the pane.
       const order = [
         ...next.order,
-        ...Object.keys(unparsed).filter((id) => !next.order.includes(id)),
+        ...Object.keys(unadmitted).filter((id) => !next.order.includes(id)),
       ]
       return { ...raw, order, defs }
     },
