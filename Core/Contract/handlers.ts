@@ -70,6 +70,7 @@ export interface HostContext {
   transport(req: TransportRequest): Promise<TransportReply>
   openStores(root: string, nexusId: string | null): void
   adopted(path: string): Promise<void>
+  /** Starts the watch again, and once it listens, settles what it missed through `settleBatch`'s `missed`, which seeds the index a change of scope leaves to it. */
   watch(root: string): Promise<void>
   applyZoom(): Promise<void>
 }

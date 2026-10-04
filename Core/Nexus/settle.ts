@@ -198,7 +198,7 @@ export async function settleBatch(
 
 export const payOwedWalk = (root: string): Promise<void> => inTurn(() => walkWhileOwed(root))
 
-// One settle at a time, and one reseed at a time on a chain of its own: a reply waits for the settles ahead of its own, and for a reseed only when its own settle found the corpus or the scope moved.
+// One settle at a time, and one reseed at a time on a chain of its own: a reply waits for the settles ahead of its own, and for a reseed only when its own settle found the corpus moved; a moved scope waits for the watcher's restart, whose catch-up seeds after the reply.
 export async function settleNow(pusher: Pusher, root: string): Promise<void> {
   await stampListed(root, true)
   const moved = await inTurn(() => settle(pusher, root)).catch(() => null)

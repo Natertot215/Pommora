@@ -73,6 +73,8 @@ let shown: NexusTree
 const applied = (change: unknown): NexusTree => applyDelta(shown, (change as NexusChange).delta)
 const abs = (...segs: string[]): string => join(root, ...segs)
 const emit = (event: string, ...segs: string[]): void => handlers.get(event)?.(abs(...segs))
+const idIn = async (...segs: string[]): Promise<unknown> =>
+  splitFrontmatter(await readFile(abs(...segs), 'utf8'))[ID_KEY]
 // After the fake-timer debounce fires, the settle's apply work runs on real time — poll for the outcome (with a hard ceiling) rather than sleeping a fixed budget a loaded suite can overrun.
 const settleAll = async (until?: () => boolean): Promise<void> => {
   await vi.advanceTimersByTimeAsync(250)
@@ -250,9 +252,6 @@ describe('a watcher that restarts', () => {
     installStores(memoryStores().stores)
     await seedContentIndex(root)
   }
-  const unexclude = (): void => {
-    void writeFile(abs('.nexus', 'settings.json'), JSON.stringify({ excluded_folders: [] }))
-  }
   const hidden = async (): Promise<void> => {
     await mkdir(abs('Hidden'))
     await writeFile(abs('Hidden', '_pagecollection.json'), JSON.stringify({ id: 'c-hidden' }))
@@ -266,8 +265,7 @@ describe('a watcher that restarts', () => {
   // The restart a change of scope owes: the settings event settles, and its reseed arms the next watcher.
   const rescope = async (): Promise<void> => {
     const armed = watch.mock.calls.length
-    unexclude()
-    await vi.advanceTimersByTimeAsync(0)
+    await writeFile(abs('.nexus', 'settings.json'), JSON.stringify({ excluded_folders: [] }))
     emit('change', '.nexus', 'settings.json')
     await settleAll(() => watch.mock.calls.length > armed)
   }
@@ -317,11 +315,13 @@ describe('a watcher that restarts', () => {
     await startWatcher(root, win)
     await edit('Notes', 'A.md')
     await rm(abs('Notes', 'C.md'))
+    await writeFile(abs('Notes', 'D.md'), 'delta\n')
     listening()
-    await settleAll(() => pushed('pages:changed').length > 0 && pushed('nexus:changed').length > 0)
-    expect(pushed('pages:changed')).toEqual(['Notes/A.md'])
-    expect(pushed('values:changed')).toEqual([{ rel: 'Notes', pageIds: [ULID_A] }])
-    expect(heldTreeOf(root)?.collections[0]?.pages.map((p) => p.id)).toEqual([ULID_A])
+    await settleAll(() => isUlidShaped(heldTreeOf(root)?.collections[0]?.pages[1]?.id))
+    const stamped = await idIn('Notes', 'D.md')
+    expect(isUlidShaped(stamped)).toBe(true)
+    expect(heldTreeOf(root)?.collections[0]?.pages.map((p) => p.id)).toEqual([ULID_A, stamped])
+    expect(pushed('pages:changed')).toEqual(expect.arrayContaining(['Notes/A.md', 'Notes/D.md']))
   })
 
   it('reads a page under a folder it admits that changed before it listened', async () => {
@@ -433,9 +433,6 @@ describe('a waiting open', () => {
 })
 
 describe('a file made outside the app', () => {
-  const idIn = async (...segs: string[]): Promise<unknown> =>
-    splitFrontmatter(await readFile(abs(...segs), 'utf8'))[ID_KEY]
-
   it('an ID-less page is stamped and held without a walk', async () => {
     await startWatcher(root, win)
     const walks = vi.spyOn(liveTree, 'refreshTree')
