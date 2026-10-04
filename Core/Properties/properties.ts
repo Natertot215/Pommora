@@ -5,6 +5,7 @@ import { isKeyOf, isPlainObject } from '../Contract/validators'
 import { looseDecoder } from '../Files/decoders'
 import { rootSegs } from '../Paths/exclusion'
 import { foldKey } from '../Paths/caseFold'
+import { normalizeTitle } from '../Connections/connections'
 import type { ValueKind } from './propertyValue'
 
 const typeIds = z.enum([
@@ -46,6 +47,19 @@ export const PROPERTY_TYPES: Readonly<Record<PropertyType, TypeSpec>> = {
 
 export const byFoldedName = <D extends { name: string }>(defs: Iterable<D>): Map<string, D> =>
   new Map(Array.from(defs, (d) => [foldKey(d.name), d]))
+
+/** Each item under its folded title, the first of any whose titles fold alike. */
+export function firstPerTitle<T>(
+  items: Iterable<T>,
+  titleOf: (item: T) => unknown = (item) => item,
+): Map<string, T> {
+  const byTitle = new Map<string, T>()
+  for (const item of items) {
+    const fold = normalizeTitle(titleOf(item))
+    if (!byTitle.has(fold)) byTitle.set(fold, item)
+  }
+  return byTitle
+}
 
 /** Whether two spellings of the property's key join into one list; every other type keeps the value its read key holds. */
 export function holdsList(def: Pick<PropertyDefinition, 'type'>): boolean {

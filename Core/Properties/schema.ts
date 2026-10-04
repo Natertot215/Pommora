@@ -1,4 +1,5 @@
 import {
+  firstPerTitle,
   isReservedPropertyId,
   KEY_REFUSAL,
   optionGroupsOf,
@@ -8,7 +9,7 @@ import {
   withOptionGroups,
 } from './properties'
 import { fail, ok, type Result } from '../Contract/result'
-import { firstPerTitle, normalizeTitle } from '../Connections/connections'
+import { normalizeTitle } from '../Connections/connections'
 import { PAGE_MODELED_KEYS } from '../Nexus/identityMark'
 import { SPACE_MODELED_KEYS } from '../Contexts/spaceSidecar'
 
