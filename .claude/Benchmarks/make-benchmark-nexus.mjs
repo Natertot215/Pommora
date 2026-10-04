@@ -1,33 +1,61 @@
-// Builds a deterministic benchmark Nexus: 10,000 pages in 20 Collections of 5 Sets, 3 Context groups holding 500 Spaces, and the .nexus/ files the app expects.
-// Run: node .claude/Benchmarks/make-benchmark-nexus.mjs [target]   (default ~/Benchmark; a rebuild requires the marker file this script writes)
+// Builds a deterministic benchmark Nexus at one of four sizes into ~/Benchmark-<Size>, after sweeping every earlier benchmark
+// Nexus (each size, and the legacy ~/Benchmark) along with the index database Pommora keeps for it under userData/Nexuses.
+// Run: node .claude/Benchmarks/make-benchmark-nexus.mjs [small|medium|large|xlarge]   (default medium)
 
-import { existsSync, mkdirSync, readdirSync, rmSync, writeFileSync } from 'node:fs'
+import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { homedir } from 'node:os'
-import { join, resolve } from 'node:path'
+import { join } from 'node:path'
 
-const MARKER = '.pommora-benchmark-nexus'
-const target = resolve(process.argv[2] ?? join(homedir(), 'Benchmark'))
-
-const COLLECTIONS = 20
-const SETS_PER_COLLECTION = 5
-const PAGES_PER_COLLECTION = 500
-const ROOT_PAGES_PER_COLLECTION = 100
-const SPACE_COUNTS = [150, 150, 200]
-const BASE_TIME = 1780000000000
-
-if (existsSync(target)) {
-  const entries = readdirSync(target)
-  if (entries.length > 0 && !entries.includes(MARKER)) {
-    console.error(`Refusing to touch ${target}: it exists and holds no ${MARKER}.`)
-    process.exit(1)
-  }
-  rmSync(target, { recursive: true, force: true })
+const PRESETS = {
+  small: { folder: 'Benchmark-Small', pages: 1000, collections: 5, sets: 4, spaces: [20, 20, 20], optionProps: 1, options: 10, plainProps: 1 },
+  medium: { folder: 'Benchmark-Medium', pages: 10000, collections: 20, sets: 5, spaces: [150, 150, 200], optionProps: 3, options: 10, plainProps: 2 },
+  large: { folder: 'Benchmark-Large', pages: 25000, collections: 25, sets: 5, spaces: [250, 250, 300], optionProps: 5, options: 25, plainProps: 5 },
+  xlarge: { folder: 'Benchmark-XLarge', pages: 50000, collections: 50, sets: 5, spaces: [400, 400, 500], optionProps: 10, options: 50, plainProps: 10 },
+}
+const presetName = (process.argv[2] ?? 'medium').toLowerCase()
+const preset = PRESETS[presetName]
+if (!preset) {
+  console.error(`Unknown size "${process.argv[2]}"; pick one of ${Object.keys(PRESETS).join(', ')}.`)
+  process.exit(1)
 }
 
-mkdirSync(target, { recursive: true })
-writeFileSync(join(target, MARKER), 'Written by make-benchmark-nexus.mjs; safe to delete and rebuild.\n')
+const MARKER = '.pommora-benchmark-nexus'
+const ULID = /^[0-9A-HJKMNP-TV-Z]{26}$/
+const BASE_TIME = 1780000000000
+const ROOT_PAGE_SHARE = 0.2
+const target = join(homedir(), preset.folder)
 
-let seed = 0x9e3779b9
+const userData =
+  process.env.POMMORA_USERDATA ??
+  (process.platform === 'darwin'
+    ? join(homedir(), 'Library/Application Support/Pommora')
+    : process.platform === 'win32'
+      ? join(process.env.APPDATA ?? join(homedir(), 'AppData/Roaming'), 'Pommora')
+      : join(homedir(), '.config/Pommora'))
+
+function sweep(dir) {
+  if (!existsSync(dir)) return
+  const entries = readdirSync(dir)
+  if (entries.length > 0 && !entries.includes(MARKER)) {
+    if (dir === target) {
+      console.error(`Refusing to touch ${dir}: it exists and holds no ${MARKER}.`)
+      process.exit(1)
+    }
+    return
+  }
+  try {
+    const { id } = JSON.parse(readFileSync(join(dir, '.nexus/nexus.json'), 'utf8'))
+    if (ULID.test(id)) rmSync(join(userData, 'Nexuses', id), { recursive: true, force: true })
+  } catch {}
+  rmSync(dir, { recursive: true, force: true })
+  console.log(`Swept ${dir}`)
+}
+for (const dir of [join(homedir(), 'Benchmark'), ...Object.values(PRESETS).map((p) => join(homedir(), p.folder))]) sweep(dir)
+
+mkdirSync(target, { recursive: true })
+writeFileSync(join(target, MARKER), 'Written by make-benchmark-nexus.mjs; the next build sweeps it.\n')
+
+let seed = 0x9e3779b9 ^ Object.keys(PRESETS).indexOf(presetName)
 function rand() {
   seed = (seed + 0x6d2b79f5) | 0
   let t = Math.imul(seed ^ (seed >>> 15), 1 | seed)
@@ -80,65 +108,54 @@ const NOUNS = ['Ledger', 'Compass', 'Harbor', 'Meadow', 'Lantern', 'Orchard', 'S
 const VERBS = ['gathers', 'carries', 'tracks', 'frames', 'settles', 'weighs', 'shapes', 'reviews', 'sketches', 'compares']
 const OBJECTS = ['the open questions', 'a handful of notes', 'the working draft', 'every loose thread', 'the earlier plan', 'a short list of options', 'the latest numbers', 'two competing ideas']
 const ENDINGS = ['before the next review', 'while the details are fresh', 'ahead of the deadline', 'for later reference', 'without losing the thread', 'in plain terms']
-const CATEGORIES = ['Research', 'Design', 'Planning', 'Writing', 'Admin', 'Learning']
-const TAGS = ['Draft', 'Reference', 'Urgent', 'Idea', 'Archive', 'Review', 'Shared']
+const OPTION_WORDS = [...ADJECTIVES, ...NOUNS]
 const DOMAINS = ['example.com', 'notes.example.org', 'docs.example.net']
 
 const sentence = () => `${pick(NOUNS)} ${pick(VERBS)} ${pick(OBJECTS)} ${pick(ENDINGS)}.`
 const paragraph = () => Array.from({ length: 2 + int(3) }, sentence).join(' ')
-
-const statusGroups = [
-  { id: 'upcoming', label: 'Open', color: 'grey', options: ['Open', 'Queued'] },
-  { id: 'in_progress', label: 'Active', color: 'blue', options: ['Active', 'Blocked'] },
-  { id: 'done', label: 'Done', color: 'green', options: ['Done', 'Shipped'] },
-]
-const STATUS_VALUES = statusGroups.flatMap((g) => g.options)
-const asOptions = (labels) => labels.map((label) => ({ label, value: label }))
-
-const PROPS = [
-  { name: 'Priority', type: 'number', make: () => 1 + int(5) },
-  { name: 'Effort', type: 'number', make: () => 1 + int(40) },
-  { name: 'Pinned', type: 'checkbox', make: () => true },
-  { name: 'Due', type: 'dateTime', make: () => dateOf(int(700)) },
-  { name: 'Reviewed', type: 'dateTime', make: () => dateOf(int(700)) },
-  { name: 'Category', type: 'select', options: CATEGORIES, make: () => [pick(CATEGORIES)] },
-  { name: 'Tags', type: 'multiSelect', options: TAGS, make: () => sample(TAGS, 1 + int(3)) },
-  { name: 'Stage', type: 'status', make: () => [pick(STATUS_VALUES)] },
-  { name: 'Source', type: 'link', make: () => `https://${pick(DOMAINS)}/${pick(NOUNS).toLowerCase()}/${int(9999)}` },
-].map((p) => ({ ...p, id: `prop_${plainId()}` }))
 
 function dateOf(offsetDays) {
   const d = new Date(Date.UTC(2025, 0, 1) + offsetDays * 86400000)
   return d.toISOString().slice(0, 10)
 }
 
-write(
-  '.nexus/properties.json',
-  json({
-    defs: Object.fromEntries(
-      PROPS.map((p) => [
-        p.id,
-        {
-          id: p.id,
-          name: p.name,
-          type: p.type,
-          ...(p.type === 'select' || p.type === 'multiSelect' ? { select_options: asOptions(p.options) } : {}),
-          ...(p.type === 'status'
-            ? {
-                status_groups: statusGroups.map((g) => ({
-                  id: g.id,
-                  label: g.label,
-                  color: g.color,
-                  options: g.options.map((value) => ({ value, label: value, color: g.color, group_id: g.id })),
-                })),
-              }
-            : {}),
-        },
-      ]),
-    ),
-    order: PROPS.map((p) => p.id),
+const STATUS_GROUPS = [
+  { id: 'upcoming', label: 'Open', color: 'grey' },
+  { id: 'in_progress', label: 'Active', color: 'blue' },
+  { id: 'done', label: 'Done', color: 'green' },
+]
+
+const TYPES = [
+  { type: 'select', name: 'Category', count: preset.optionProps, make: (o) => [pick(o)] },
+  { type: 'multiSelect', name: 'Tags', count: preset.optionProps, make: (o) => sample(o, 1 + int(3)) },
+  { type: 'status', name: 'Stage', count: preset.optionProps, make: (o) => [pick(o)] },
+  { type: 'number', name: 'Priority', count: preset.plainProps, make: () => 1 + int(100) },
+  { type: 'checkbox', name: 'Pinned', count: preset.plainProps, make: () => rand() < 0.5 },
+  { type: 'dateTime', name: 'Due', count: preset.plainProps, make: () => dateOf(int(700)) },
+  { type: 'link', name: 'Source', count: preset.plainProps, make: () => `https://${pick(DOMAINS)}/${pick(NOUNS).toLowerCase()}/${int(9999)}` },
+]
+
+const PROPS = TYPES.flatMap(({ type, name, count, make }) =>
+  Array.from({ length: count }, (_, k) => {
+    const options = type === 'select' || type === 'multiSelect' || type === 'status' ? sample(OPTION_WORDS, preset.options) : null
+    return { id: `prop_${plainId()}`, name: k === 0 ? name : `${name} ${k + 1}`, type, primary: k === 0, options, make: () => make(options) }
   }),
 )
+
+function definition(p) {
+  const def = { id: p.id, name: p.name, type: p.type }
+  if (p.type === 'select' || p.type === 'multiSelect') def.select_options = p.options.map((value) => ({ value }))
+  if (p.type === 'status') {
+    def.status_groups = STATUS_GROUPS.map((g, gi) => ({
+      ...g,
+      options: p.options
+        .filter((_, i) => Math.floor((i * STATUS_GROUPS.length) / p.options.length) === gi)
+        .map((value) => ({ value, color: g.color, group_id: g.id })),
+    }))
+  }
+  return def
+}
+write('.nexus/properties.json', json({ defs: Object.fromEntries(PROPS.map((p) => [p.id, definition(p)])), order: PROPS.map((p) => p.id) }))
 
 const contextDefs = [
   { id: plainId(), singular: 'Area', title: 'Areas' },
@@ -151,7 +168,7 @@ const spacesByGroup = contextDefs.map(() => [])
 const allSpaces = []
 contextDefs.forEach((group, gi) => {
   const used = new Set()
-  for (let i = 0; i < SPACE_COUNTS[gi]; i++) {
+  for (let i = 0; i < preset.spaces[gi]; i++) {
     let title
     do title = `${pick(ADJECTIVES)} ${group.singular} ${pick(NOUNS)}`
     while (used.has(title))
@@ -182,47 +199,30 @@ mkdirSync(join(target, '.nexus/assets'), { recursive: true })
 write('Tasks/_taskconfig.json', json({ id: agendaIds.tasks }))
 write('Events/_eventconfig.json', json({ id: agendaIds.events }))
 
-const titles = new Set()
-function pageTitle(n) {
-  let title
-  do title = `${pick(ADJECTIVES)} ${pick(NOUNS)} ${String(n).padStart(5, '0')}`
-  while (titles.has(title))
-  titles.add(title)
-  return title
-}
-
+const pagesPerCollection = preset.pages / preset.collections
+const rootPages = Math.round(pagesPerCollection * ROOT_PAGE_SHARE)
 const collections = []
-let pageNumber = 0
-for (let c = 0; c < COLLECTIONS; c++) {
+const allPages = []
+for (let c = 0; c < preset.collections; c++) {
   const name = `Collection ${String(c + 1).padStart(2, '0')} ${NOUNS[c % NOUNS.length]}`
-  const assigned = sample(PROPS, 5 + int(3))
-  const sets = Array.from({ length: SETS_PER_COLLECTION }, (_, s) => ({ name: `Set ${s + 1}`, id: plainId() }))
+  const assigned = PROPS.filter((p) => p.primary || rand() < 0.5)
+  const sets = Array.from({ length: preset.sets }, (_, s) => ({ name: `Set ${s + 1}`, id: plainId() }))
   const pages = []
-  for (let p = 0; p < PAGES_PER_COLLECTION; p++) {
-    const home = p < ROOT_PAGES_PER_COLLECTION ? null : sets[(p - ROOT_PAGES_PER_COLLECTION) % SETS_PER_COLLECTION]
-    pages.push({ title: pageTitle(++pageNumber), dir: home ? `${name}/${home.name}` : name, assigned })
+  for (let p = 0; p < pagesPerCollection; p++) {
+    const home = p < rootPages ? null : sets[(p - rootPages) % preset.sets]
+    const n = allPages.length + pages.length + 1
+    pages.push({ title: `${pick(ADJECTIVES)} ${pick(NOUNS)} ${String(n).padStart(5, '0')}`, dir: home ? `${name}/${home.name}` : name, assigned })
   }
   collections.push({ name, id: plainId(), assigned, sets, pages })
+  allPages.push(...pages)
 }
-const allPages = collections.flatMap((c) => c.pages)
 
 function frontmatterValue(key, value) {
   if (Array.isArray(value)) return `${key}:\n${value.map((v) => `  - ${JSON.stringify(v)}`).join('\n')}`
   return `${key}: ${typeof value === 'string' ? JSON.stringify(value) : value}`
 }
 
-function propertyLines(assigned) {
-  const wanted = 3 + int(2)
-  const chosen = []
-  const seenTypes = new Set()
-  for (const p of sample(assigned, assigned.length)) {
-    if (seenTypes.has(p.type)) continue
-    seenTypes.add(p.type)
-    chosen.push(p)
-    if (chosen.length === wanted) break
-  }
-  return chosen.map((p) => frontmatterValue(p.name, p.make()))
-}
+const propertyLines = (assigned) => assigned.filter(() => rand() < 0.7).map((p) => frontmatterValue(p.name, p.make()))
 
 function spaceLines() {
   const chosen = sample(allSpaces, 1 + int(3))
@@ -234,10 +234,17 @@ function spaceLines() {
   return lines
 }
 
-function body(selfTitle) {
+function otherPage(self) {
+  let page
+  do page = pick(allPages)
+  while (page === self)
+  return page
+}
+
+function body(self) {
   const paragraphs = Array.from({ length: 2 + int(3) }, paragraph)
   if (rand() < 0.2) {
-    const links = sample(allPages.filter((p) => p.title !== selfTitle), 1 + int(2))
+    const links = Array.from({ length: 1 + int(2) }, () => otherPage(self))
     paragraphs.push(`See also ${links.map((p) => `[[${p.title}]]`).join(' and ')}.`)
   }
   return paragraphs.join('\n\n')
@@ -248,8 +255,10 @@ for (const collection of collections) {
   for (const set of collection.sets) write(`${collection.name}/${set.name}/_pageset.json`, json({ id: set.id }))
   for (const page of collection.pages) {
     const front = [`ID: ${pageId()}`, ...propertyLines(page.assigned), ...spaceLines()].join('\n')
-    write(`${page.dir}/${page.title}.md`, `---\n${front}\n---\n${body(page.title)}\n`)
+    write(`${page.dir}/${page.title}.md`, `---\n${front}\n---\n${body(page)}\n`)
   }
 }
 
-console.log(`Built ${allPages.length} pages, ${COLLECTIONS} collections, ${COLLECTIONS * SETS_PER_COLLECTION} sets, ${allSpaces.length} spaces at ${target}`)
+console.log(
+  `Built ${presetName}: ${allPages.length} pages, ${preset.collections} collections, ${preset.collections * preset.sets} sets, ${PROPS.length} properties, ${allSpaces.length} spaces at ${target}`,
+)

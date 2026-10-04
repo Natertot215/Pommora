@@ -1,7 +1,7 @@
-// Times a cold open of Collection 01 Ledger's table view, grouped by Stage, on ~/Benchmark: five fresh launches of the
+// Times a cold open of Collection 01 Ledger's table view, grouped by Stage, on ~/Benchmark-Medium: five fresh launches of the
 // built app, each measuring from the sidebar click that opens the tab to the frame after its first data row mounts.
 // Run from the repo root: node .claude/Benchmarks/grouped-view-cold.mjs   (runs `npm run build` first, so it measures the
-// working tree as it stands). Expects ~/Benchmark from make-benchmark-nexus.mjs with the Ledger's first view grouped by
+// working tree as it stands). Expects ~/Benchmark-Medium from make-benchmark-nexus.mjs with the Ledger's first view grouped by
 // Stage, launches on a scratch userData and debug port 9341, leaves any other instance alone, and kills what it started.
 
 import { execFileSync, spawn } from 'node:child_process'
@@ -11,7 +11,7 @@ import { join, resolve } from 'node:path'
 
 const REPO = resolve(import.meta.dirname, '../..')
 const ELECTRON = join(REPO, 'node_modules/electron/dist/Electron.app/Contents/MacOS/Electron')
-const NEXUS = join(homedir(), 'Benchmark')
+const NEXUS = join(homedir(), 'Benchmark-Medium')
 const COLLECTION = 'Collection 01 Ledger'
 const PORT = 9341
 const RUNS = 5
