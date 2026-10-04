@@ -1,9 +1,12 @@
 import {
   isReservedPropertyId,
   KEY_REFUSAL,
+  optionGroupsOf,
+  optionsOf,
   PROPERTY_TYPES,
   type PropertyDefinition,
   RESERVED_NAME_PREFIX,
+  withOptionGroups,
 } from './properties'
 import { fail, ok, type Result } from '../Contract/result'
 import { normalizeTitle } from '../Connections/connections'
@@ -53,6 +56,20 @@ export function validateDefinition(
     if (!check.ok) return check
   }
   return ok(null)
+}
+
+/** `def` holding each option title once, the first of any that fold alike; a definition `validateOptionValues` admits is answered as it is. */
+export function withUniqueOptions(def: PropertyDefinition): PropertyDefinition {
+  if (validateOptionValues(optionsOf(def)).ok) return def
+  const seen = new Set<string>()
+  const first = (o: { value: string }): boolean => {
+    const fold = normalizeTitle(o.value)
+    if (seen.has(fold)) return false
+    seen.add(fold)
+    return true
+  }
+  const groups = optionGroupsOf(def).map((g) => ({ ...g, options: g.options.filter(first) }))
+  return withOptionGroups(def, groups)
 }
 
 /** No minimum count — a Select may hold zero options. Enforced at create AND on every option edit; titles compare case-folded. */

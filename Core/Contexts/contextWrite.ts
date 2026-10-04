@@ -1,5 +1,6 @@
 import { basename, join, isMarkdownFile, relative } from '../Paths/posix'
 import { contextKey } from './contexts'
+import { normalizeTitle } from '../Connections/connections'
 import { heldValue, namesValue, stripList } from '../Properties/pageValue'
 import {
   contextWorldOf,
@@ -101,6 +102,7 @@ async function setSpaceContext(
   const adoptions: Adoption[] = []
   let skipped = 0
   const namesA = namesValue(a.title)
+  const titled = world.contexts.spacesByTitle.get(own.def.id)
   for (const far of world.contexts.groupById.get(contextId)?.spaces ?? []) {
     if (far.id === a.id) continue
     const wants = targetSpaceIds.includes(far.id)
@@ -108,7 +110,10 @@ async function setSpaceContext(
     const half = await writeSpaceSidecar(join(root, far.path), (raw) => {
       if (listOf(heldValue(raw, backKey, false) ?? []).some(namesA) === wants) return null
       const held = listOf(heldValue(raw, backKey, world.resolveCase) ?? [])
-      const without = stripList(held, namesA) ?? held
+      const kept = stripList(held, namesA) ?? held
+      const without = world.resolveCase
+        ? kept.map((v) => titled?.get(normalizeTitle(v))?.title ?? v)
+        : kept
       const next = wants ? [...without, a.title] : without
       return writtenRoot(raw, backKey, next.length ? next : undefined, world, adoptions)
     })
