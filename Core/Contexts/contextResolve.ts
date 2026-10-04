@@ -105,7 +105,7 @@ function governorOf(key: string, world: GovernedWorld): Governor | undefined {
   return group && { name: contextKey(group.def.title), group }
 }
 
-const memberCount = (v: unknown): number => (Array.isArray(v) ? v.length : 1)
+const memberCount = (v: unknown): number => new Set(listOf(v).map(normalizeTitle)).size
 
 // A governed name reconciles once, under the key `heldKey` reads, and its other spellings pass through as foreign; with `resolveCase` they join it under the registered spelling and leave once that key is written. A key in `skip` passes through verbatim.
 export function reconcileGovernedRoot(
@@ -139,7 +139,7 @@ export function reconcileGovernedRoot(
         const space = byTitle?.get(normalizeTitle(value))
         return space ? [space.title] : []
       })
-      if (titles.length) next = titles
+      if (titles.length) next = [...new Set(titles)]
     }
     // A live reconcile never shrinks a value: one holding a member it can't resolve stays as written, every spelling of it, for the user to settle.
     if (!frozen && next !== undefined && memberCount(next) < memberCount(held)) {

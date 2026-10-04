@@ -26,7 +26,7 @@ import { heldKeys } from '../Paths/caseFold'
 import { editHeldLists, editList, namesValue, stripList } from '../Properties/pageValue'
 import { contextWorldOf } from './contextResolve'
 import { liveTreeOf } from '../Nexus/liveTree'
-import { listOf } from '../Contract/validators'
+import { isScalar, listOf } from '../Contract/validators'
 import { queryMembers } from '../Index/contentIndex'
 import { nexusCorpus } from '../Index/indexSeed'
 import { nameError } from '../Paths/names'
@@ -140,7 +140,8 @@ export async function unlinkContextKey(
     if (!keys.length) return null
     const values = keys
       .flatMap((k) => listOf(raw[k]))
-      .filter((v): v is string => typeof v === 'string')
+      .filter(isScalar)
+      .map(String)
     captured.push(captureRoot(raw, file, values))
     return stripKeys(...keys)(raw, file)
   }

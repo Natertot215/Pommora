@@ -1,7 +1,7 @@
 // Raw values as a root holds them: what it holds for a name, how two values join, and option lists edited IN PLACE, never decode-to-strings→re-encode — a holder may carry foreign or non-string elements, and an op must touch only its target.
 
 import { setOrDrop } from '../Files/atomicWrite'
-import { listOf } from '../Contract/validators'
+import { isScalar, listOf } from '../Contract/validators'
 import type { Rewrite } from './governedSweep'
 import { heldKey, heldKeys } from '../Paths/caseFold'
 import { normalizeTitle } from '../Connections/connections'
@@ -49,9 +49,7 @@ export type Matcher = (el: unknown) => boolean
 
 export const namesValue = (value: string): Matcher => {
   const want = normalizeTitle(value)
-  return (el) =>
-    (typeof el === 'string' || typeof el === 'number' || typeof el === 'boolean') &&
-    normalizeTitle(el) === want
+  return (el) => isScalar(el) && normalizeTitle(el) === want
 }
 
 export const stripList = (xs: readonly unknown[], matches: Matcher): unknown[] | null =>
