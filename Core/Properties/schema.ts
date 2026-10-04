@@ -14,17 +14,23 @@ const RESERVED_KEY_NAMES: ReadonlySet<string> = new Set(
   [...PAGE_MODELED_KEYS, ...SPACE_MODELED_KEYS].map(normalizeTitle),
 )
 
-/** The whole name gate: non-empty, not a key Pommora manages in any casing, and unique nexus-wide, compared case-folded because the name is the on-disk key. */
+/** Why `name` can't be a property's on-disk key — empty, or a key Pommora manages in any casing — or null when it can. */
+export function keyRefusal(name: string): string | null {
+  if (!name) return KEY_REFUSAL.empty
+  if (name.startsWith(RESERVED_NAME_PREFIX) || name.startsWith('<'))
+    return KEY_REFUSAL.reservedPrefix
+  return RESERVED_KEY_NAMES.has(normalizeTitle(name)) ? KEY_REFUSAL.reserved(name) : null
+}
+
+/** The whole name gate: an admissible key, unique nexus-wide, compared case-folded because the name is the on-disk key. */
 export function validateName(
   name: string,
   existing: PropertyDefinition[],
   excludeId?: string,
 ): Result<null> {
-  if (!name) return fail('invalid-property', KEY_REFUSAL.empty)
-  if (name.startsWith(RESERVED_NAME_PREFIX) || name.startsWith('<'))
-    return fail('invalid-property', KEY_REFUSAL.reservedPrefix)
+  const refusal = keyRefusal(name)
+  if (refusal) return fail('invalid-property', refusal)
   const folded = normalizeTitle(name)
-  if (RESERVED_KEY_NAMES.has(folded)) return fail('invalid-property', KEY_REFUSAL.reserved(name))
   const clash = existing.some((d) => d.id !== excludeId && normalizeTitle(d.name) === folded)
   if (clash) return fail('invalid-property', KEY_REFUSAL.duplicate(name))
   return ok(null)
