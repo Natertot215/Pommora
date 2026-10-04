@@ -2,7 +2,8 @@
 
 import type { NexusTree } from '../Nexus/tree'
 import { assignedDefs } from '../Properties/assignment'
-import { foldKey, heldKeys } from '../Paths/caseFold'
+import { foldKey } from '../Paths/caseFold'
+import { heldKeys } from '../Files/heldKeys'
 import { byFoldedName } from '../Properties/properties'
 import {
   governedWorld,

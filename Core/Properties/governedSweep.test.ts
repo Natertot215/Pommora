@@ -2,13 +2,9 @@ import { describe, it, expect, afterEach } from 'vitest'
 import { chmod, mkdir, readFile, rm, writeFile } from 'node:fs/promises'
 import { join } from '../Paths/posix'
 import { noModeBits, tempRoot } from '../Testing/hostFs'
-import { rekeyHeld, stripHeld, sweepGovernedRoots } from './governedSweep'
-import {
-  assembleEnvelope,
-  renameFrontmatterKey,
-  splitFrontmatter,
-  type KeyCollision,
-} from '../Files/pageFile'
+import { stripHeld, sweepGovernedRoots } from './governedSweep'
+import { rekeyHeld, type KeyCollision } from '../Files/heldKeys'
+import { assembleEnvelope, renameFrontmatterKey, splitFrontmatter } from '../Files/pageFile'
 
 const roots: string[] = []
 afterEach(async () => {

@@ -1,5 +1,6 @@
 import { isAtOrUnder, isMarkdownFile, join, relative, titleFromPath } from '../Paths/posix'
-import { foldKey, heldKey } from '../Paths/caseFold'
+import { foldKey } from '../Paths/caseFold'
+import { heldKey } from '../Files/heldKeys'
 import { errText } from '../Contract/result'
 import { splitEnvelope, mergeFrontmatter, splitFrontmatter, stampedId } from '../Files/pageFile'
 import {

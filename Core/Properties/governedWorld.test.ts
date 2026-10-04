@@ -5,7 +5,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { PropertyDefinition } from './properties'
 import * as liveTree from '../Nexus/liveTree'
 import { assignedDefs, assignProperty, collectionFolders } from './assignment'
-import { governedWorldOf } from '../Contexts/contextWrite'
+import { pageWorldOf } from '../Contexts/contextWrite'
 import { createFolderEntity } from '../Nexus/folderEntity'
 import { newId } from '../Nexus/ids'
 import { createTestPage } from '../Testing/createTestPage'
@@ -65,7 +65,7 @@ describe('assignedDefs', () => {
   })
 })
 
-describe('governedWorldOf', () => {
+describe('pageWorldOf', () => {
   it('reads a page two Sets deep by its Collection’s definitions, and an Agenda page or a Space by none', async () => {
     const set = await createFolderEntity(notes, 'set', 'Daily', newId())
     if (!set.ok) throw new Error('setup')
@@ -74,7 +74,7 @@ describe('governedWorldOf', () => {
     const page = await createTestPage(inner.value.path, 'Deep', { body: 'b' })
     if (!page.ok) throw new Error('setup')
     const names = async (file: string): Promise<string[]> => [
-      ...(await governedWorldOf(root, file)).defs.keys(),
+      ...(await pageWorldOf(root, file)).defs.keys(),
     ]
     expect(await names(page.value.path)).toEqual(['status'])
     expect(await names(join(root, 'Tasks', 'T.md'))).toEqual([])

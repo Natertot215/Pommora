@@ -21,8 +21,8 @@ import {
 } from './propertyValue'
 import { parkLinks } from '../Trash/holdings'
 import { frozenWorld } from '../Nexus/heldPages'
-import { landValue, sweepRootsById, writeTarget } from './governedSweep'
-import { heldValue } from './pageValue'
+import { sweepRootsById } from './governedSweep'
+import { heldValue, landValue, writeTarget } from '../Files/heldKeys'
 import { ok, fail, type Result } from '../Contract/result'
 
 export const assignedIds = (raw: Record<string, unknown> | null): string[] =>

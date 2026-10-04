@@ -2,7 +2,7 @@ import { z } from 'zod'
 import { isScalar, listOf } from '../Contract/validators'
 import { optionValues, PROPERTY_TYPES, type PropertyDefinition } from './properties'
 import { normalizeTitle, parseConnectionText } from '../Connections/connections'
-import { heldKey } from '../Paths/caseFold'
+import { heldKey } from '../Files/heldKeys'
 
 const strings = z.array(z.string())
 export const propertyValue = z.discriminatedUnion('kind', [

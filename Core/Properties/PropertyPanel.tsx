@@ -57,7 +57,7 @@ import { fetchPageDetail, readPageDetail } from '../Session/pageDetailCache'
 import { popMenu } from '../Actions/menuActions'
 import { linkValueMenuTarget, showConnectionMenu } from '../Interface/Menus/connectionMenuActions'
 import * as s from './property-panel.css'
-import { heldKey } from '../Paths/caseFold'
+import { heldKey } from '../Files/heldKeys'
 import { normalizeTitle } from '../Connections/connections'
 
 type Editing = { id: string; mode: 'picker' | 'editor' | 'rename' } | null

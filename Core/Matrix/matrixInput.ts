@@ -1,7 +1,7 @@
 import { contextIdsOf } from '../Contexts/contextIdentity'
 import type { CollectionNode, NexusTree, PageNode, SetNode } from '../Nexus/tree'
 import { pageIndexOf } from '../Nexus/treeIndex'
-import { heldKey } from '../Paths/caseFold'
+import { heldKey } from '../Files/heldKeys'
 import { spaceRowOf } from '../Properties/pageRow'
 import { type PropertyDefinition, specOf } from '../Properties/properties'
 import { declaredType } from '../Properties/value'

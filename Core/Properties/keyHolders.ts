@@ -8,8 +8,7 @@ import { ID_KEY } from '../Nexus/identityMark'
 import { asString } from '../Nexus/coerce'
 import { isBlankRaw } from './propertyValue'
 import { spaceSidecars } from '../Contexts/spaceSidecar'
-import { heldKey } from '../Paths/caseFold'
-import { heldValue } from './pageValue'
+import { heldKey, heldValue } from '../Files/heldKeys'
 import { holdsList, type PropertyDefinition } from './properties'
 
 export async function keyHolderFiles(
