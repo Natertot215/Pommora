@@ -17,7 +17,7 @@ import { runRepairSweep } from '../Properties/repairSweep'
 import { replaySchemaCascade } from '../Properties/replaySchemaCascade'
 import { startSession, stopSession } from '../Sync/Client/session'
 import { stampAdopted, stampMissing } from './adopt'
-import { oweCascade } from './fileEvents'
+import { oweCascade, oweRenames } from './fileEvents'
 import { ensureConfigLayout, ensureIdentity } from './identity'
 import { dropLiveTree, liveTreeOf, seedLiveTree } from './liveTree'
 import { normalizePropertyTypes, normalizeSavedViews } from './migrateConfig'
@@ -98,6 +98,7 @@ export async function openNexusSequence(
       console.error('adopt: the seed walk failed; reads will retry:', errText(e))
     }
     const reread = await seedContentIndex(root)
+    oweRenames(root, reread.renames)
     await replaySchemaCascade(root)
     await settleNow(ctx, root)
     void runRepairSweep(root, reread)

@@ -89,7 +89,7 @@ import { shardPages, withShards } from './pageMetadata'
 import type { Stamp } from './adopt'
 import { contextWorldOf } from '../Contexts/contextResolve'
 
-// Declared here, where events owe it; the settle in `settle.ts` pays it and empties it.
+// Declared here, where events and the index seeds owe it; the settle in `settle.ts` pays it and empties it.
 interface Owed {
   root: string
   walk: boolean
@@ -105,6 +105,7 @@ interface Owed {
   // Spaces, and Collections that gained a property, whose held options are yet to be registered.
   options: Set<string>
   tiles: Map<string, TileHostRef>
+  renames: HeadingRenameSeen[]
 }
 
 export const nothingOwed = (root: string): Owed => ({
@@ -119,6 +120,7 @@ export const nothingOwed = (root: string): Owed => ({
   values: new Map(),
   options: new Set(),
   tiles: new Map(),
+  renames: [],
 })
 
 let owed: Owed | null = null
@@ -273,31 +275,38 @@ export function classifyEvent(tree: NexusTree, root: string, ev: Changed): Event
 
 // ── The index's half ──
 
-export async function indexEvent(root: string, ev: FileEvent): Promise<HeadingRenameSeen | null> {
+export async function indexEvent(root: string, ev: FileEvent): Promise<void> {
   try {
     switch (ev.event) {
       case 'move':
         await moveIndexPaths(root, ev.from, ev.absPath)
-        return null
+        return
       case 'unlink':
       case 'unlinkDir':
         await deindexPath(root, ev.absPath)
-        return null
+        return
       case 'addDir':
-        return null
+        return
       case 'add':
-      case 'change':
-        return await indexWrittenPage(root, ev.absPath, ev.text)
+      case 'change': {
+        const renames = await indexWrittenPage(root, ev.absPath, ev.text)
+        if (ev.origin === 'watched') oweRenames(root, renames)
+        return
+      }
     }
   } catch (e) {
     console.error('events: the index missed an event and reseeds:', errText(e))
     owedFor(root).corpus = true
-    return null
   }
 }
 
-// A rename a landed file shows (an Obsidian or sync edit) takes the same cascade the editor's settle takes; the editor's own save reports none, its settle having spoken.
-async function cascadeSeen(root: string, seen: HeadingRenameSeen): Promise<void> {
+// A seed that bailed reads none, so a root a switch left behind never takes the record.
+export function oweRenames(root: string, renames: readonly HeadingRenameSeen[]): void {
+  if (renames.length) owedFor(root).renames.push(...renames)
+}
+
+// A rename an outside edit shows (Obsidian or sync, landed live or found by the index seed) takes the same cascade the editor's settle takes; the editor's own save owes none, its settle having spoken.
+export async function cascadeSeen(root: string, seen: HeadingRenameSeen): Promise<void> {
   const title = normalizeTitle(seen.title)
   const linked = queryHeadingMentions(title, seen.old)?.length
   if (
@@ -624,7 +633,7 @@ async function applyOne(root: string, ev: FileEvent, owed: Owed): Promise<Applie
   }
 }
 
-// Answers the events that wait on a folder's stamp, one per path. A replay places events already indexed, so it neither indexes nor cascades them again.
+// Answers the events that wait on a folder's stamp, one per path. A replay places events already indexed, so it neither indexes them nor owes their renames again.
 export async function applyEvents(
   root: string,
   events: FileEvent[],
@@ -633,9 +642,8 @@ export async function applyEvents(
   const owed = owedFor(root)
   const later = new Map<string, FileEvent>()
   for (const ev of events) {
-    const seen = replay ? null : await indexEvent(root, ev)
+    if (!replay) await indexEvent(root, ev)
     try {
-      if (seen && ev.event !== 'move' && ev.origin === 'watched') await cascadeSeen(root, seen)
       const applied = await applyOne(root, ev, owed)
       if (applied === 'later') later.set(ev.absPath, ev)
       if (applied !== 'walk') continue
