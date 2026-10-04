@@ -1,6 +1,7 @@
 import { contextIdsOf } from '../Contexts/contextIdentity'
 import type { CollectionNode, NexusTree, PageNode, SetNode } from '../Nexus/tree'
 import { pageIndexOf } from '../Nexus/treeIndex'
+import { heldKey } from '../Paths/caseFold'
 import { spaceRowOf } from '../Properties/pageRow'
 import { type PropertyDefinition, specOf } from '../Properties/properties'
 import { declaredType } from '../Properties/value'
@@ -11,7 +12,6 @@ import { type FilterRule, mapRules, OPERANDLESS_OPS } from '../Views/views'
 import type { GraphInput } from './Engine/graph'
 import type { MatrixConfig } from './matrixConfig'
 import type { MatrixGraphReply } from './matrixGraph'
-import { heldKey } from '../Paths/caseFold'
 
 const spaceIdsOf = (values: Record<string, string[]> | undefined): string[] =>
   values ? Object.values(values).flat() : []

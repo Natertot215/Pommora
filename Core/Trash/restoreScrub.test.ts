@@ -209,7 +209,7 @@ describe('a returning artifact is reconciled against the world it comes back to'
     expect((await fm('Notes/Alpha.md'))['<Projects>']).toEqual(['Pommora'])
   })
 
-  it('keeps a near-miss Space title’s spelling on the way back while casing stays', async () => {
+  it('with case resolution off, keeps a near-miss Space title’s spelling on the way back', async () => {
     await writeFile(
       join(root, 'Notes', 'Alpha.md'),
       `---\nID: ${PAGE_A}\n<Projects>:\n  - pommora\n---\nbody`,
@@ -253,7 +253,7 @@ describe('a returning artifact is reconciled against the world it comes back to'
     expect((await fm('Notes/Alpha.md'))['<Projects>']).toEqual(['Pommora'])
   })
 
-  it('prunes the dead Space from a near-miss tag and keeps the survivor’s spelling while casing stays', async () => {
+  it('with case resolution off, prunes the dead Space from a near-miss tag and keeps the survivor’s spelling', async () => {
     await prunedTag()
     expect((await fm('Notes/Alpha.md'))['<Projects>']).toEqual(['pommora'])
   })

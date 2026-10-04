@@ -341,6 +341,10 @@ describe('heldSpelling — a value spelled as the file already spells it', () =>
     expect(heldSpelling(['2024'], [2024])).toEqual(['2024'])
   })
 
+  it('a checked value keeps the checked word the file holds', () => {
+    expect(heldSpelling(true, 'Yes')).toBe('Yes')
+  })
+
   it('a checked value the file never held stays true', () => {
     expect(heldSpelling(true, undefined)).toBe(true)
   })
@@ -382,10 +386,6 @@ describe('options and checkboxes decode without regard to case', () => {
       expect(decodeValue(checkbox, raw)).toEqual({ kind: 'checkbox', value: true })
     for (const raw of ['No', '1', false, 1])
       expect(decodeValue(checkbox, raw)).toEqual({ kind: 'null' })
-  })
-
-  it('a checked value keeps the checked word the file holds', () => {
-    expect(heldSpelling(true, 'Yes')).toBe('Yes')
   })
 
   it("registeredOption answers the definition's own spelling for any casing", () => {

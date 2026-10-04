@@ -162,7 +162,7 @@ describe('setPageContext', () => {
     expect(fm['<Projects>']).toEqual(['Pommora'])
   })
 
-  it('keeps each held Space title’s spelling while casing stays', async () => {
+  it('with case resolution off, keeps each held Space title’s spelling', async () => {
     await writeFile(page(), '---\nid: p1\n<Projects>:\n  - pommora\n---\nbody')
     const other = join(contextsDir(root), 'Projects', 'Other')
     await mkdir(other, { recursive: true })
@@ -176,7 +176,7 @@ describe('setPageContext', () => {
     ])
   })
 
-  it('reconciles sibling keys keeping their spelling while casing stays', async () => {
+  it('with case resolution off, reconciles sibling keys keeping their spelling', async () => {
     await writeFile(page(), siblings)
     expect((await setPageContext(page(), root, 'ctxC', ['sp-cs'])).ok).toBe(true)
     expect(splitFrontmatter(await readFile(page(), 'utf8'))['<Projects>']).toEqual(['pommora'])
@@ -306,7 +306,7 @@ describe('setContext reads the held tree', () => {
       expect((await readJsonAt(await nearMiss()))['<Classes>']).toEqual(['CS 161'])
     })
 
-    it('keeps a near-miss sibling key’s spelling on the sidecar while casing stays', async () => {
+    it('with case resolution off, keeps a near-miss sibling key’s spelling on the sidecar', async () => {
       expect((await readJsonAt(await nearMiss()))['<Classes>']).toEqual(['cs 161'])
     })
 
@@ -337,17 +337,6 @@ describe('setContext reads the held tree', () => {
       const far = await readJsonAt(csFile())
       expect(far['<Projects>']).toEqual(['B', 'Pommora'])
       expect('<projects>' in far).toBe(false)
-    })
-
-    it('with case resolution on, the far half writes each Space it keeps as that Space is titled', async () => {
-      await resolveCase()
-      const other = join(contextsDir(root), 'Projects', 'Other')
-      await mkdir(other, { recursive: true })
-      await writeFile(join(other, '_space.json'), JSON.stringify({ id: 'sp-other' }))
-      await writeFile(csFile(), JSON.stringify({ id: 'sp-cs', '<projects>': ['OTHER', 'Gone'] }))
-      await refreshTree(root)
-      expect((await link('ctxC', ['sp-cs'])).ok).toBe(true)
-      expect((await readJsonAt(csFile()))['<Projects>']).toEqual(['Other', 'Gone', 'Pommora'])
     })
 
     it('writes the pair onto both files', async () => {

@@ -150,7 +150,7 @@ describe('case folding on renames', () => {
     expect(await readJournal(root)).toBeNull()
   })
 
-  it('a case-only Context rename re-reads a page holding two spellings of the key, which now reads the first', async () => {
+  it('a case-only Context rename re-reads a page holding two spellings of the key, which then reads the first', async () => {
     await mkdir(join(contextsDir(root), 'Projects', 'Sapphire'), { recursive: true })
     await writeFile(
       join(contextsDir(root), 'Projects', 'Sapphire', '_space.json'),

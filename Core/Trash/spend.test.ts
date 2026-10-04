@@ -865,7 +865,7 @@ describe('restore — the record spends, headless', () => {
       expect(fm).not.toHaveProperty('<Projects>')
     })
 
-    it('with Automatically Resolve Case Conflicts on, lands one registered key holding every spelling’s members', async () => {
+    it('with case resolution on, lands one registered key holding every spelling’s members', async () => {
       await writeFile(
         join(root, '.nexus', 'settings.json'),
         JSON.stringify({ personalization: { resolveCaseConflicts: true } }),

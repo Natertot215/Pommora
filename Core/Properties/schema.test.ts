@@ -40,7 +40,7 @@ describe('validateName', () => {
       expect(refusal(name)).toBe(KEY_REFUSAL.reserved(name))
   })
 
-  it('takes ordinary names, the retired id and stamp names among them', () => {
+  it('takes ordinary names, PageID and modified_at among them', () => {
     for (const name of ['Budget ($)', 'icon', 'PageID', 'modified_at'])
       expect(refusal(name)).toBeNull()
   })

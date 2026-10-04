@@ -156,7 +156,7 @@ describe('reconcileGovernedRoot — the context arm', () => {
     ])
   })
 
-  it('reads a scalar Context value as a list of one, keeping its spelling while casing stays', () => {
+  it('with case resolution off, reads a scalar Context value as a list of one, keeping its spelling', () => {
     const { root, changed } = reconcileGovernedRoot({ '<Projects>': 'pommora' }, world)
     expect(root['<Projects>']).toEqual(['pommora'])
     expect(changed).toEqual(['<Projects>'])
@@ -225,7 +225,7 @@ describe('reconcileGovernedRoot — option and checkbox casing (the crossing)', 
   const casing: GovernedWorld = { ...world, defs: byFoldedName([stageDef, doneDef]) }
   const input = { Stage: ['done'], Done: 'Yes' }
 
-  it('keeps each value as the file spells it while casing stays, reading it as registered', () => {
+  it('with case resolution off, keeps each value as the file spells it, reading it as registered', () => {
     const { root } = reconcileGovernedRoot(input, casing)
     expect(root).toEqual(input)
     expect(decodeValue(stageDef, root.Stage)).toEqual({ kind: 'select', value: 'Done' })
@@ -267,7 +267,7 @@ describe('reconcileGovernedRoot — spellings with case resolution on', () => {
     const { root, changed, retired } = reconcileGovernedRoot({ tags: ['a'] }, resolving)
     expect(root).toEqual({ Tags: ['a'] })
     expect(changed.sort()).toEqual(['Tags', 'tags'])
-    expect(retired).toEqual({ tags: 'Tags' })
+    expect([...retired]).toEqual(['tags'])
   })
 
   it('joins two spellings of a list', () => {
@@ -293,7 +293,7 @@ describe('reconcileGovernedRoot — spellings with case resolution on', () => {
     const { root, changed, retired } = reconcileGovernedRoot(input, resolving)
     expect(root).toEqual(input)
     expect(changed).toEqual([])
-    expect(retired).toEqual({})
+    expect(retired.size).toBe(0)
   })
 
   it('a retired spelling waits on its key being written', () => {
@@ -304,7 +304,7 @@ describe('reconcileGovernedRoot — spellings with case resolution on', () => {
     )
     expect(root.stage).toEqual(['Done'])
     expect(changed).toContain('Stage')
-    expect(retired).toEqual({})
+    expect(retired.size).toBe(0)
   })
 })
 
@@ -325,7 +325,7 @@ describe('survivingChanges', () => {
 })
 
 describe('reconcileGovernedRoot — skip', () => {
-  it('passes a skipped key verbatim, and a second spelling of it stays while casing stays', () => {
+  it('with case resolution off, passes a skipped key and a second spelling of it verbatim', () => {
     const input = { Status: 'Open', status: 'Done' }
     const { root, changed } = reconcileGovernedRoot(input, world, undefined, ['Status'])
     expect(root).toEqual(input)

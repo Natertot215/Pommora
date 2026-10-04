@@ -131,7 +131,7 @@ describe('a re-assign puts a cached value back', () => {
     expect(fm).not.toHaveProperty('Status')
   })
 
-  it('with Automatically Resolve Case Conflicts on, writes the registered key in place of every spelling', async () => {
+  it('with case resolution on, writes the registered key in place of every spelling', async () => {
     const fm = await reassigned(true)
     expect(fm.Status).toEqual(['hi'])
     expect(fm).not.toHaveProperty('status')
@@ -143,11 +143,11 @@ describe('a re-assign puts a cached value back', () => {
     select_options: [{ value: 'Claude', color: 'red' }],
   }
 
-  it("keeps a cached Multi-Select member's spelling with the toggle off", async () => {
+  it('with case resolution off, keeps a cached Multi-Select member’s spelling', async () => {
     expect((await reassigned(false, '', tags, 'Tags: [claude]')).Tags).toEqual(['claude'])
   })
 
-  it('writes a cached Multi-Select member in its registered spelling with the toggle on', async () => {
+  it('with case resolution on, writes a cached Multi-Select member in its registered spelling', async () => {
     expect((await reassigned(true, '', tags, 'Tags: [claude]')).Tags).toEqual(['Claude'])
   })
 })
