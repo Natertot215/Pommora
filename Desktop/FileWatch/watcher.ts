@@ -129,6 +129,8 @@ export async function startWatcher(root: string, win: CurrentWindow): Promise<vo
     .on('unlink', onEvent('unlink'))
     .on('addDir', onEvent('addDir'))
     .on('unlinkDir', onEvent('unlinkDir'))
+    // Nothing raised an event while no watcher listened, so once this one does, its turn reads what changed meanwhile.
+    .on('ready', () => void batchQueue(() => drainBatch(root, win, true)))
     // An unhandled 'error' on an EventEmitter is RE-THROWN → it would crash the main process (EMFILE/ENOSPC, EPERM, a watched dir vanishing). Log + no-op; ⌘R Reload recovers.
     .on('error', (error: unknown) => console.error('Nexus watcher error (non-fatal):', error))
 }
@@ -153,7 +155,7 @@ export function waitUntilReadable(open: WaitingOpen, reopen: (path: string) => v
     .on('error', (error: unknown) => console.error('Nexus watcher error (non-fatal):', error))
 }
 
-// Counted, so a start still awaiting its settings read never arms after a later start or a stop.
+// Counted, so a start still awaiting its settings read never arms after a later start or a stop. The batch outlives it, so a restart's first turn applies what was collected; one left from a Nexus the session switched away from lies outside the new root, where an event only owes the walk that turn takes anyway.
 export function stopWatcher(): void {
   starts++
   if (debounce) {
@@ -167,10 +169,9 @@ export function stopWatcher(): void {
     void watcher.close()
     watcher = null
   }
-  batch = []
 }
 
-async function drainBatch(root: string, win: CurrentWindow): Promise<void> {
+async function drainBatch(root: string, win: CurrentWindow, missed = false): Promise<void> {
   if (sessionRoot() !== root) return
   const noted = batch
   batch = []
@@ -182,6 +183,7 @@ async function drainBatch(root: string, win: CurrentWindow): Promise<void> {
       },
       root,
       await dropOwnEchoes(noted),
+      missed,
     )
   } catch {
     // Transient FS state mid-write — the next settle re-reads (Reload is the fallback).

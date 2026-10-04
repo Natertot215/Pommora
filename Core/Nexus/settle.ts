@@ -1,6 +1,6 @@
 // The one place a change to the tree, pages, values, tiles, or assets reaches the window. The app's own writes land here as events while they happen; a write's gate and the watcher's batch then stamp what their events listed missing, and settle: the walk the events owed, whose own listing of what is missing its ID is stamped as `stampable` allows and settled in turn, the options the changed files hold registered, and one push of what moved.
 
-import { relDirname, relative } from '../Paths/posix'
+import { join, relDirname, relative } from '../Paths/posix'
 import { escapes } from '../Paths/pathSafety'
 import type { HostContext } from '../Contract/handlers'
 import { errText } from '../Contract/result'
@@ -17,6 +17,7 @@ import {
   nothingOwed,
   oweAgain,
   oweRescope,
+  oweWalk,
   owedFor,
   stampable,
 } from './fileEvents'
@@ -149,11 +150,18 @@ async function settle(pusher: Pusher, root: string): Promise<{ rescope: boolean 
   return corpus || rescope ? { rescope } : null
 }
 
+// The armed scope is spent state: chokidar's ignore filter would keep reading the stale capture. A rescope leaves the seed to the restarted watcher's catch-up, since a seed while the old watcher still holds an event its stop drops would take in that page and leave the catch-up nothing to find.
 async function reseed(pusher: Pusher, root: string, rescope: boolean): Promise<void> {
   if (sessionRoot() !== root) return
-  await seedContentIndex(root)
-  // The armed scope is spent state: chokidar's ignore filter would keep reading the stale capture.
-  if (rescope && sessionRoot() === root) await pusher.watch(root)
+  if (rescope) await pusher.watch(root)
+  else await seedContentIndex(root)
+}
+
+// What changed while no watcher listened: the walk reads the tree, and each page the seed finds moved applies as the event it never raised, already indexed.
+async function missedEvents(root: string): Promise<FileEvent[]> {
+  oweWalk(root)
+  const { rels } = await seedContentIndex(root)
+  return rels.map((rel) => ({ event: 'change', absPath: join(root, rel), origin: 'watched' }))
 }
 
 // A stamp's own write lands as an event that may list more, so a turn stamps until nothing is listed. A gate leaves the list to a batch in its turn, which may still be reading the files it listed.
@@ -168,15 +176,17 @@ async function stampListed(root: string, gate: boolean): Promise<void> {
   }
 }
 
-// The watcher's turn: the batch applies, and what it listed is stamped before its settle, so a reply's settle never waits on those stamps; an event that waited on a folder's stamp applies once more after it, and is dropped if it waits again.
+// The watcher's turn: the batch applies, then, once a started watcher listens, what it missed, and what they listed is stamped before its settle, so a reply's settle never waits on those stamps; an event that waited on a folder's stamp applies once more after it, and is dropped if it waits again.
 export async function settleBatch(
   pusher: Pusher,
   root: string,
   events: FileEvent[],
+  missed = false,
 ): Promise<void> {
   batching = true
   try {
     const later = await applyEvents(root, events)
+    if (missed) later.push(...(await applyEvents(root, await missedEvents(root), true)))
     await stampListed(root, false)
     await applyEvents(root, later, true)
     await stampListed(root, false)
