@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { PropertyDefinition } from './properties'
+import { heldValue } from '../Files/heldKeys'
 import {
   applyValueAtRoot,
   decodeValue,
@@ -327,6 +328,8 @@ describe('applyValueAtRoot', () => {
     const done = { kind: 'select', value: 'Done' } as const
     expect(applyValueAtRoot({ status: 'Open' }, status, done, false)).toEqual({ status: ['Done'] })
     expect(applyValueAtRoot({ status: 'Open' }, status, null, false)).toEqual({})
+    const twice = applyValueAtRoot({ STATUS: 'Open', status: 'Later' }, status, done, false)
+    expect(heldValue(twice, 'Status', false)).toEqual(['Done'])
   })
 
   it('with casing resolved, writes under the name in place of every spelling', () => {

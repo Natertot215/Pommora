@@ -6,6 +6,8 @@ import type { ViewRow } from '../Views/viewRow'
 import type { PropertyDefinition } from './properties'
 import { assignValue, type ValueWriter } from './assignValue'
 import { groupUndo, resetUndo, undoValue } from '../Session/undo'
+import { useSession } from '../Session/store'
+import { makeTree } from '../Testing/testTree'
 
 const schema: PropertyDefinition[] = [
   {
@@ -38,9 +40,27 @@ beforeEach(() => {
   live = { schema, mutate, rowOf: (id) => (id === row.id ? row : undefined), apply }
   writer = { current: live }
   resetUndo()
+  useSession.setState({ tree: null })
 })
 
 describe('assignValue', () => {
+  it('with casing resolved, patches the value under the name in place of every spelling', () => {
+    useSession.setState({ tree: makeTree({ personalization: { resolveCaseConflicts: true } }) })
+    row = rowOf({ id: 'page1', TAG: ['red'], tag: ['red'] })
+    assignValue(
+      writer,
+      row,
+      { id: 'prop_tag', kind: 'property' },
+      { kind: 'select', value: 'blue' },
+    )
+    expect(apply).toHaveBeenCalledWith(
+      'page1',
+      { id: 'page1', Tag: ['blue'] },
+      expect.anything(),
+      undefined,
+    )
+  })
+
   it('patches the frontmatter and mutates the property', () => {
     assignValue(
       writer,
