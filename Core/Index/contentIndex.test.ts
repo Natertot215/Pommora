@@ -25,7 +25,7 @@ const STAT = { mtimeMs: 1000, size: 10 }
 const TAGGED: PageIndexEntry = {
   relations: [
     { kind: 'body', target: 'beta', qualifier: '', count: 1 },
-    { kind: 'space', target: 'pommora', qualifier: '<Projects>', count: 1 },
+    { kind: 'space', target: 'pommora', qualifier: '<projects>', count: 1 },
   ],
   headings: [],
   values: { Status: 'Open', '<Projects>': ['Pommora'] },
@@ -39,7 +39,7 @@ describe('the content index', () => {
         entry: {
           relations: [
             { kind: 'body', target: 'beta', qualifier: '', count: 1 },
-            { kind: 'space', target: 'pommora', qualifier: '<Projects>', count: 1 },
+            { kind: 'space', target: 'pommora', qualifier: '<projects>', count: 1 },
           ],
           headings: [],
           values: { Status: 'Open', '<Projects>': ['Pommora'] },
@@ -54,8 +54,8 @@ describe('the content index', () => {
           relations: [
             { kind: 'body', target: 'beta', qualifier: '', count: 1 },
             { kind: 'body', target: 'gamma', qualifier: '', count: 1 },
-            { kind: 'space', target: 'pommora', qualifier: '<Projects>', count: 1 },
-            { kind: 'space', target: 'sapphire', qualifier: '<Projects>', count: 1 },
+            { kind: 'space', target: 'pommora', qualifier: '<projects>', count: 1 },
+            { kind: 'space', target: 'sapphire', qualifier: '<projects>', count: 1 },
           ],
           headings: [],
           values: { '<Projects>': ['Pommora', 'Sapphire'] },
@@ -79,7 +79,7 @@ describe('the content index', () => {
         entry: {
           relations: [
             { kind: 'body', target: 'beta', qualifier: '', count: 1 },
-            { kind: 'space', target: 'pommora', qualifier: '<Projects>', count: 1 },
+            { kind: 'space', target: 'pommora', qualifier: '<projects>', count: 1 },
           ],
           headings: [],
           values: { Status: 'Open' },

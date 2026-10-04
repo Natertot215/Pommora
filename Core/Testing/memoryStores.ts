@@ -172,7 +172,10 @@ const contentIndex = (index: MemoryIndex): ContentIndexStore => {
       return { relations, pages }
     },
     queryKeyHolders(key) {
-      return sortedPaths([...index.values.values()].filter((r) => r.key === key).map((r) => r.path))
+      const fold = foldKey(key)
+      return sortedPaths(
+        [...index.values.values()].filter((r) => foldKey(r.key) === fold).map((r) => r.path),
+      )
     },
     queryMembers(key, title) {
       return sortedPaths(

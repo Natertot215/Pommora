@@ -109,6 +109,13 @@ export function describeContentIndexStore(name: string, make: () => ContentIndex
       expect(store.readIndexedStat('Notes/A.md')).toEqual({ mtimeMs: 2000, size: 12 })
     })
 
+    it('answers a key holder in any casing, listing a page once', () => {
+      upsert('Notes/A.md', { relations: [], headings: [], values: { Status: 'Open' } })
+      upsert('Notes/B.md', { relations: [], headings: [], values: { tags: ['a'], Tags: ['b'] } })
+      expect(store.queryKeyHolders('status')).toEqual(['Notes/A.md'])
+      expect(store.queryKeyHolders('TAGS')).toEqual(['Notes/B.md'])
+    })
+
     it('serializes a null value rather than dropping the key', () => {
       upsert('Notes/A.md', { relations: [], headings: [], values: { Blank: null } })
       expect(store.queryKeyHolders('Blank')).toEqual(['Notes/A.md'])

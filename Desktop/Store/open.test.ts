@@ -75,7 +75,9 @@ describe('openNexusDb', () => {
         .run(scope, 'k', '{}')
     }
     first
-      .prepare("INSERT INTO page_values (path, key, value) VALUES ('a.md', 'Status', '\"x\"')")
+      .prepare(
+        "INSERT INTO page_values (path, key, fold, value) VALUES ('a.md', 'Status', 'status', '\"x\"')",
+      )
       .run()
     first
       .prepare(
@@ -122,10 +124,29 @@ describe('openNexusDb', () => {
     second.close()
   })
 
+  it('a generation-9 index whose page_values has no fold column rebuilds into the current shape', () => {
+    const first = opened()
+    first.exec(
+      'DROP TABLE page_values; CREATE TABLE page_values (path TEXT NOT NULL, key TEXT NOT NULL, value TEXT NOT NULL, PRIMARY KEY (path, key)); CREATE INDEX page_values_by_key ON page_values (key);',
+    )
+    first.prepare("INSERT OR REPLACE INTO meta (key, value) VALUES ('index_generation', '9')").run()
+    first.close()
+
+    const second = opened()
+    const columns = (
+      second.prepare('PRAGMA table_info(page_values)').all() as { name: string }[]
+    ).map((c) => c.name)
+    expect(columns).toContain('fold')
+    expect(readMeta(second, 'index_generation')).toBe(String(INDEX_GENERATION))
+    second.close()
+  })
+
   it('the current index generation keeps the index across a reopen', () => {
     const first = opened()
     first
-      .prepare("INSERT INTO page_values (path, key, value) VALUES ('a.md', 'Status', '\"x\"')")
+      .prepare(
+        "INSERT INTO page_values (path, key, fold, value) VALUES ('a.md', 'Status', 'status', '\"x\"')",
+      )
       .run()
     first.close()
 

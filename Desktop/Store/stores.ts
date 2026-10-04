@@ -55,7 +55,7 @@ export const contentIndexStore = (db: Db): ContentIndexStore => ({
       'INSERT OR REPLACE INTO headings (path, heading, ordinal) VALUES (?, ?, ?)',
     )
     const insValue = db.prepare(
-      'INSERT OR REPLACE INTO page_values (path, key, value) VALUES (?, ?, ?)',
+      'INSERT OR REPLACE INTO page_values (path, key, fold, value) VALUES (?, ?, ?, ?)',
     )
     const insFile = db.prepare(
       'INSERT OR REPLACE INTO indexed_files (path, mtime_ms, size) VALUES (?, ?, ?)',
@@ -69,7 +69,7 @@ export const contentIndexStore = (db: Db): ContentIndexStore => ({
           insHeading.run(path, heading, ordinal)
         })
         for (const [key, value] of Object.entries(entry.values))
-          insValue.run(path, key, JSON.stringify(value) ?? 'null')
+          insValue.run(path, key, foldKey(key), JSON.stringify(value) ?? 'null')
         insFile.run(path, stat.mtimeMs, stat.size)
       }
     })
@@ -152,9 +152,13 @@ export const contentIndexStore = (db: Db): ContentIndexStore => ({
     return { relations, pages }
   },
   queryKeyHolders(key) {
-    return paths(db, 'SELECT path FROM page_values WHERE key = ? ORDER BY path', key)
+    return paths(
+      db,
+      'SELECT DISTINCT path FROM page_values WHERE fold = ? ORDER BY path',
+      foldKey(key),
+    )
   },
-  // `key` is the Context key and lands in `qualifier`; `title` is the Space title and lands in `target`.
+  // `key` is the folded Context key and lands in `qualifier`; `title` is the Space title and lands in `target`.
   queryMembers(key, title) {
     return paths(
       db,
