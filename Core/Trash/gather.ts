@@ -9,6 +9,7 @@ import type { SweepCapture, UnlinkOutcome } from '../Contexts/contextCascade'
 import { readTextOrNull } from '../Files/atomicWrite'
 import { spaceIdsIn } from '../Contexts/spaceSidecar'
 import { sidecarId } from '../Files/sidecar'
+import { normalizeTitle } from '../Connections/connections'
 
 import type { RecordFile, ParentRef } from './record'
 import type { ContainerKind } from '../Nexus/entities'
@@ -76,7 +77,8 @@ export async function gatherContextEvidence(
   entry: ContextDef,
   at: number,
 ): Promise<ContextEvidence> {
-  const { ids: spaceIds, unread: unresolved } = await spaceIdsIn(abs)
+  const { ids, unread: unresolved } = await spaceIdsIn(abs)
+  const spaceIds = new Map([...ids].map(([name, id]) => [normalizeTitle(name), id]))
   return { entry: { ...entry }, at, spaceIds, unresolved }
 }
 
@@ -86,10 +88,14 @@ export function buildContextRecord(
 ): RecordFile {
   const membership = (swept?.captured ?? []).map((c) => ({
     root: { ...(c.id ? { id: c.id } : {}), kind: c.kind },
-    spaces: c.values.map((title) => {
-      const id = evidence.spaceIds.get(title)
-      return id ? { id, title } : { title }
-    }),
+    spaces: [
+      ...new Map(
+        c.values.map((title) => {
+          const id = evidence.spaceIds.get(normalizeTitle(title))
+          return [id ?? title, id ? { id, title } : { title }]
+        }),
+      ).values(),
+    ],
   }))
   const partial = evidence.unresolved || sweepIncomplete(swept)
   return {
