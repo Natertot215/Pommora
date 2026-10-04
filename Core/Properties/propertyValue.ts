@@ -42,10 +42,7 @@ const optionList = (raw: unknown): string[] =>
     .filter((x) => x !== '')
 
 /** The option `written` names, as its definition spells it. */
-export function registeredOption(
-  def: Pick<PropertyDefinition, 'type' | 'status_groups' | 'select_options'>,
-  written: string,
-): string | undefined {
+export function registeredOption(def: PropertyDefinition, written: string): string | undefined {
   const fold = normalizeTitle(written)
   return optionValues(def).find((v) => normalizeTitle(v) === fold)
 }
