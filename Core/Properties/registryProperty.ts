@@ -77,7 +77,7 @@ export async function renameSweep(root: string, oldName: string, newName: string
   // Queried by the OLD key: a page holding only the new one needs no rewrite, and one holding both holds the old one too.
   const files = await keyHolderFiles(root, oldName, await collectionFolders(root))
   const text = (content: string): string | null =>
-    renameFrontmatterKey(content, oldName, newName, NEW_KEY_IS_FRESHER)
+    renameFrontmatterKey(content, oldName, newName, NEW_KEY_IS_FRESHER, false)
   // Spreading the rest after the moved key lets an existing `newName` win, as the page half's collision rule does.
   const moveKey: Rewrite = (raw) => {
     if (!(oldName in raw)) return null

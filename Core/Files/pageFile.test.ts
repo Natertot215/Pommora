@@ -153,14 +153,14 @@ describe('renameFrontmatterKey — the key keeps its place', () => {
   it('renames the key where it sits, keeping the comment attached to it', () => {
     const before =
       'title: Alpha\n# which clients this is for\n<Projects>:\n  - Pommora\nstatus: draft'
-    const out = renameFrontmatterKey(page(before), '<Projects>', '<Ventures>', 'prefer-new')
+    const out = renameFrontmatterKey(page(before), '<Projects>', '<Ventures>', 'prefer-new', false)
     expect(fmOf(out)).toBe(
       'title: Alpha\n# which clients this is for\n<Ventures>:\n  - Pommora\nstatus: draft',
     )
   })
 
   it('leaves the body alone', () => {
-    const out = renameFrontmatterKey(page('Status: Old'), 'Status', 'Stage', 'prefer-new')
+    const out = renameFrontmatterKey(page('Status: Old'), 'Status', 'Stage', 'prefer-new', false)
     expect(splitEnvelope(out ?? '').body).toBe('Body')
   })
 
@@ -170,6 +170,7 @@ describe('renameFrontmatterKey — the key keeps its place', () => {
       'Status',
       'Stage',
       'prefer-new',
+      false,
     )
     expect(fmOf(out)).toBe('keep: 1\nStage: Fresh')
   })
@@ -182,18 +183,27 @@ describe('renameFrontmatterKey — the key keeps its place', () => {
       '<Projects>',
       '<Ventures>',
       'merge',
+      true,
     )
     expect(fmOf(out)).toBe('id: p2\n# tags\n<Ventures>:\n  - Other\n  - Pommora\nforeign: 1')
   })
 
   it('answers null for a page holding neither key', () => {
-    expect(renameFrontmatterKey(page('<Other>: x'), 'Status', 'Stage', 'prefer-new')).toBeNull()
+    expect(
+      renameFrontmatterKey(page('<Other>: x'), 'Status', 'Stage', 'prefer-new', false),
+    ).toBeNull()
   })
 
   it('answers null for frontmatter that cannot round-trip, in either shape', () => {
     // A tab-indented sequence never parses; an unresolved alias parses clean and refuses to serialize. Both would lose everything the parser did not recover.
     expect(
-      renameFrontmatterKey(page('<Projects>:\n\t- Pommora'), '<Projects>', '<Ventures>', 'merge'),
+      renameFrontmatterKey(
+        page('<Projects>:\n\t- Pommora'),
+        '<Projects>',
+        '<Ventures>',
+        'merge',
+        true,
+      ),
     ).toBeNull()
     expect(
       renameFrontmatterKey(
@@ -201,8 +211,77 @@ describe('renameFrontmatterKey — the key keeps its place', () => {
         '<Projects>',
         '<Ventures>',
         'merge',
+        true,
       ),
     ).toBeNull()
+  })
+})
+
+describe('renameFrontmatterKey — every spelling of the old name', () => {
+  const page = (fm: string): string => assembleEnvelope(`${fm}\n`, 'Body')
+  const held = (out: string | null): [string, unknown][] =>
+    Object.entries(splitFrontmatter(out ?? ''))
+
+  it('joins the old spellings at the first one’s line with `join`', () => {
+    const out = renameFrontmatterKey(
+      page('a: 1\nTags: [b]\ntags: [a, B]\nz: 2'),
+      'Tags',
+      'Labels',
+      'prefer-new',
+      true,
+    )
+    expect(held(out)).toEqual([
+      ['a', 1],
+      ['Labels', ['b', 'a']],
+      ['z', 2],
+    ])
+  })
+
+  it('keeps the first spelling’s value and drops the rest without `join`', () => {
+    const out = renameFrontmatterKey(
+      page('a: 1\nTags: [b]\ntags: [a, B]'),
+      'Tags',
+      'Labels',
+      'prefer-new',
+      false,
+    )
+    expect(held(out)).toEqual([
+      ['a', 1],
+      ['Labels', ['b']],
+    ])
+  })
+
+  it('prefer-new keeps a rival held in another spelling, and every old spelling goes', () => {
+    const out = renameFrontmatterKey(
+      page('Tags: [b]\nlabels: [x]\ntags: [a]'),
+      'Tags',
+      'Labels',
+      'prefer-new',
+      true,
+    )
+    expect(held(out)).toEqual([['labels', ['x']]])
+  })
+
+  it('merge joins a scalar rival with the old list', () => {
+    const out = renameFrontmatterKey(
+      page('<Projects>: [Y]\n<Ventures>: X'),
+      '<Projects>',
+      '<Ventures>',
+      'merge',
+      true,
+    )
+    expect(held(out)).toEqual([['<Ventures>', ['X', 'Y']]])
+  })
+
+  it('a single spelling with no rival changes only the key’s text', () => {
+    const out = renameFrontmatterKey(
+      page('tags:\n  # first\n  - a # mine\n  - b'),
+      'Tags',
+      'Labels',
+      'prefer-new',
+      true,
+    )
+    expect(splitEnvelope(out ?? '').frontmatter).toBe('Labels:\n  # first\n  - a # mine\n  - b')
   })
 })
 

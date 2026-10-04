@@ -1,12 +1,4 @@
-import {
-  type Document,
-  type Pair,
-  type ParsedNode,
-  parseDocument,
-  isMap,
-  isScalar,
-  isSeq,
-} from 'yaml'
+import { type Document, type Pair, type ParsedNode, parseDocument, isMap } from 'yaml'
 import { join, titleFromPath } from '../Paths/posix'
 import { type Admission, admitContentFile, ID_KEY } from '../Nexus/identityMark'
 import type { ContentKind } from '../Nexus/entities'
@@ -16,6 +8,7 @@ import { fail, fault, ok, type Result } from '../Contract/result'
 import type { PageDetail } from '../Pages/pageDetail'
 import { machine } from '../Platform/machine'
 import { spellings } from '../Paths/caseFold'
+import { joinValues } from '../Properties/pageValue'
 
 interface PageEnvelope {
   frontmatter: string
@@ -142,40 +135,39 @@ export type KeyCollision = 'prefer-new' | 'merge'
 
 type FrontmatterPair = Pair<ParsedNode, ParsedNode | null>
 
-function foldValues(pair: FrontmatterPair, rival: FrontmatterPair): void {
-  const into = pair.value
-  const from = rival.value
-  if (!isSeq(into) || !isSeq(from)) return
-  const held = new Set<unknown>()
-  for (const item of from.items) if (isScalar(item)) held.add(item.value)
-  into.items = [...from.items, ...into.items.filter((i) => !(isScalar(i) && held.has(i.value)))]
-}
-
+/** Renames every spelling of `oldName` the frontmatter holds to `newName`, at the first one's place. A held spelling of `newName` is the rival: under `'prefer-new'` it keeps its value and the old spellings go; otherwise the rival, the first old spelling, and with `join` the other old spellings combine through `joinValues`. */
 export function renameFrontmatterKey(
   content: string,
-  oldKey: string,
-  newKey: string,
+  oldName: string,
+  newName: string,
   collision: KeyCollision,
+  join: boolean,
 ): string | null {
   const { frontmatter, body } = splitEnvelope(content)
   const doc = parseDocument(frontmatter)
   if (doc.errors.length > 0 || !isMap(doc.contents)) return null
   const items = doc.contents.items
-  const pair = items.find((i) => String(i.key) === oldKey)
+  const keys = items.map((i) => String(i.key))
+  const values = valuesOf(doc)
+  const held = (name: string): FrontmatterPair[] =>
+    spellings(keys, name).map((k) => items[keys.indexOf(k)])
+  const [pair, ...variants] = held(oldName)
   if (!pair) return null
+  const [rival] = held(newName)
   const drop = (p: FrontmatterPair): void => {
     items.splice(items.indexOf(p), 1)
   }
-
-  const rival = items.find((i) => String(i.key) === newKey)
   if (rival && collision === 'prefer-new') {
-    drop(pair)
+    for (const p of [pair, ...variants]) drop(p)
   } else {
-    if (rival) {
-      foldValues(pair, rival)
-      drop(rival)
-    }
-    ;(pair.key as { value: string }).value = newKey
+    const joined = [...(rival ? [rival] : []), pair, ...(join ? variants : [])]
+    if (joined.length > 1)
+      doc.set(
+        String(pair.key),
+        joined.map((p) => values[String(p.key)]).reduce((a, b) => joinValues(a, b)),
+      )
+    for (const p of [...variants, ...(rival ? [rival] : [])]) drop(p)
+    ;(pair.key as { value: string }).value = newName
   }
   const out = serialized(doc)
   return out === null ? null : assembleEnvelope(out, body)

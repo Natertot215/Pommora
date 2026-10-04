@@ -102,7 +102,7 @@ function pageLeg(j: RenameJournal): RewriteText | undefined {
   if (j.spaceId !== undefined) return undefined
   const oldKey = contextKey(j.oldTitle)
   const newKey = contextKey(j.newTitle)
-  return (content) => renameFrontmatterKey(content, oldKey, newKey, NEITHER_KEY_IS_FRESHER)
+  return (content) => renameFrontmatterKey(content, oldKey, newKey, NEITHER_KEY_IS_FRESHER, true)
 }
 
 export interface Unswept {

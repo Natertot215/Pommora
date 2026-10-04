@@ -30,6 +30,20 @@ export function heldValue(root: Json, name: string, join: boolean): unknown {
   )
 }
 
+/** Edits the list under every spelling of `name` in place; null when none changed. A list the edit empties drops its key. */
+export function editHeldLists(
+  raw: Json,
+  name: string,
+  edit: (held: unknown[]) => unknown[] | null,
+): Json | null {
+  let next: Json | null = null
+  for (const key of heldKeys(raw, name)) {
+    const list = edit(listOf(raw[key]))
+    if (list) next = setOrDrop(next ?? raw, key, list.length ? list : undefined)
+  }
+  return next
+}
+
 export type ValueEdit = { op: 'strip' } | { op: 'replace'; to: string }
 export type Matcher = (el: unknown) => boolean
 

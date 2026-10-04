@@ -10,9 +10,11 @@ import { isMarkdownFile, join } from '../Paths/posix'
 import { ID_KEY } from '../Nexus/identityMark'
 import { asString } from '../Nexus/coerce'
 import type { EntityRecord } from '../Nexus/record'
-import { splitFrontmatter, sweepParse, type SweptPage } from '../Files/pageFile'
+import { splitFrontmatter, sweepParse, type KeyCollision, type SweptPage } from '../Files/pageFile'
 import type { Json } from '../Files/stableJson'
 import { spaceSidecars } from '../Contexts/spaceSidecar'
+import { heldKey, heldKeys } from '../Paths/caseFold'
+import { heldValue, joinValues } from './pageValue'
 
 export interface SweepResult {
   /** Each file the sweep wrote, with the text it held before the write and the text the write left. */
@@ -48,6 +50,30 @@ export const stripKeys =
     keys.some((k) => k in raw)
       ? Object.fromEntries(Object.entries(raw).filter(([k]) => !keys.includes(k)))
       : null
+
+/** Removes every spelling of `name` a root holds; a root holding none is left as it is. */
+export const stripHeld =
+  (name: string): Rewrite =>
+  (raw, file) =>
+    stripKeys(...heldKeys(raw, name))(raw, file)
+
+/** A JSON root with every spelling of `oldName` moved to `newName`; the twin of `renameFrontmatterKey`, by the same collision and join rules. */
+export function rekeyHeld(
+  raw: Json,
+  oldName: string,
+  newName: string,
+  collision: KeyCollision,
+  join: boolean,
+): Json | null {
+  const olds = heldKeys(raw, oldName)
+  if (!olds.length) return null
+  const rival = heldKey(raw, newName)
+  if (rival !== undefined && collision === 'prefer-new')
+    return landValue(raw, { key: rival, govern: olds }, raw[rival])
+  const moved = heldValue(raw, oldName, join)
+  if (rival === undefined) return landValue(raw, { key: newName, govern: olds }, moved)
+  return landValue(raw, { key: newName, govern: [...olds, rival] }, joinValues(raw[rival], moved))
+}
 
 export const unsweptLine = (count: number, what = ''): string =>
   `Couldn’t update ${what}${count} ${count === 1 ? 'file' : 'files'}.`

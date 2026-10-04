@@ -2,7 +2,13 @@ import { describe, it, expect, afterEach } from 'vitest'
 import { chmod, mkdir, readFile, rm, writeFile } from 'node:fs/promises'
 import { join } from '../Paths/posix'
 import { noModeBits, tempRoot } from '../Testing/hostFs'
-import { sweepGovernedRoots } from './governedSweep'
+import { rekeyHeld, stripHeld, sweepGovernedRoots } from './governedSweep'
+import {
+  assembleEnvelope,
+  renameFrontmatterKey,
+  splitFrontmatter,
+  type KeyCollision,
+} from '../Files/pageFile'
 
 const roots: string[] = []
 afterEach(async () => {
@@ -58,5 +64,35 @@ describe('sweepGovernedRoots', () => {
     const r = await sweepGovernedRoots(root, [], { raw: () => null, sidecars: (raw) => raw })
     expect(r).toEqual({ skipped: [], refused: [bad], touched: new Map() })
     expect(await readFile(bad, 'utf8')).toBe('{ not json')
+  })
+})
+
+describe('stripHeld', () => {
+  it('strips every spelling of the name, and answers null when none is held', () => {
+    expect(stripHeld('Tags')({ ID: 'p', Tags: ['a'], tags: ['b'], other: 1 }, 'p.md')).toEqual({
+      ID: 'p',
+      other: 1,
+    })
+    expect(stripHeld('Tags')({ ID: 'p', Tag: ['a'] }, 'p.md')).toBeNull()
+  })
+})
+
+describe('rekeyHeld — the twin of renameFrontmatterKey', () => {
+  const cases: [string, string, string, KeyCollision, boolean][] = [
+    ['a: 1\nTags: [b]\ntags: [a, B]\nz: 2', 'Tags', 'Labels', 'prefer-new', true],
+    ['a: 1\nTags: [b]\ntags: [a, B]', 'Tags', 'Labels', 'prefer-new', false],
+    ['Tags: [b]\nlabels: [x]\ntags: [a]', 'Tags', 'Labels', 'prefer-new', true],
+    ['<Projects>: [Y]\n<Ventures>: X', '<Projects>', '<Ventures>', 'merge', true],
+    ['tags:\n  - a\n  - b', 'Tags', 'Labels', 'prefer-new', true],
+    ['<Other>: x', 'Status', 'Stage', 'prefer-new', false],
+  ]
+
+  it.each(
+    cases,
+  )('answers the keys and values the page rename does for %j', (fm, from, to, collision, join) => {
+    const content = assembleEnvelope(`${fm}\n`, 'Body')
+    const page = renameFrontmatterKey(content, from, to, collision, join)
+    const json = rekeyHeld(splitFrontmatter(content), from, to, collision, join)
+    expect(json).toEqual(page === null ? null : splitFrontmatter(page))
   })
 })

@@ -72,7 +72,7 @@ async function renameCrashState(root: string): Promise<void> {
     },
     result: null,
   }))
-  const half = renameFrontmatterKey(await page(root, 'A'), 'Stage', 'Phase', 'prefer-new')
+  const half = renameFrontmatterKey(await page(root, 'A'), 'Stage', 'Phase', 'prefer-new', false)
   if (half === null) throw new Error('fixture: half-fold produced nothing')
   await writeFile(join(root, 'Col', 'A.md'), half)
 }
