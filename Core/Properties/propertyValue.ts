@@ -100,6 +100,14 @@ export function decodeValue(def: PropertyDefinition, raw: unknown): PropertyValu
   }
 }
 
+/** The members `raw` holds that a Multi-Select `def` doesn't register, each once; none for any other type. */
+export function unregisteredMembers(def: PropertyDefinition, raw: unknown): string[] {
+  const value = decodeValue(def, raw)
+  return value.kind === 'multiSelect'
+    ? value.value.filter((v) => registeredOption(def, v) === undefined)
+    : []
+}
+
 /** What a frozen copy may still name: its options are the definition's own, and `holds`, when given, answers which pages still exist. */
 export interface Frozen {
   holds?: (title: string) => boolean

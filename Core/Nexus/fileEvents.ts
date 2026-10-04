@@ -2,14 +2,7 @@
 
 import { basename, isMarkdownFile, join, relDirname, relative } from '../Paths/posix'
 import { escapes } from '../Paths/pathSafety'
-import type {
-  CollectionNode,
-  ContextGroup,
-  NexusConfig,
-  NexusTree,
-  SetNode,
-  Unreadable,
-} from './tree'
+import type { ContextGroup, NexusConfig, NexusTree, Unreadable } from './tree'
 import { asString, asStringArray } from './coerce'
 import { patchHeldAssetMap } from '../Assets/assetMap'
 import {
@@ -66,9 +59,11 @@ import { orderedDefs, registryFrom, registryOf } from '../Properties/propertiesR
 import { stabilize } from './treeStabilize'
 import {
   containerAt,
+  containerSchema,
   contextAt,
   moveNodeInTree,
   pageAt,
+  pagePathsIn,
   placeNode,
   removeNodeInTree,
   repointRegistryInTree,
@@ -107,6 +102,8 @@ interface Owed {
   pages: Set<string>
   // True while every write of the page was the editor's own body save.
   values: Map<string, boolean>
+  // Spaces, and Collections that gained a property, whose held options the registry has yet to take.
+  options: Set<string>
   tiles: Map<string, TileHostRef>
 }
 
@@ -120,6 +117,7 @@ export const nothingOwed = (root: string): Owed => ({
   whole: [],
   pages: new Set(),
   values: new Map(),
+  options: new Set(),
   tiles: new Map(),
 })
 
@@ -329,9 +327,6 @@ const jsonOf = (
   return ev.text === undefined ? read(ev.absPath) : Promise.resolve(parseJsonObject(ev.text))
 }
 
-const pagePathsIn = (node: CollectionNode | SetNode | null): string[] =>
-  node ? [...node.pages.map((p) => p.path), ...(node.sets ?? []).flatMap(pagePathsIn)] : []
-
 async function applyFolder(
   root: string,
   tree: NexusTree,
@@ -409,6 +404,7 @@ async function applyContainer(
   dirRel: string,
   of: ContainerKind,
   ev: Changed,
+  owed: Owed,
 ): Promise<Applied> {
   const meta = await jsonOf(ev)
   if (meta === null)
@@ -430,11 +426,15 @@ async function applyContainer(
       node.pages,
       registryOf(t.config.registry),
     )
+    const had = containerSchema(t, node)
+    if (next && containerSchema(t, next).some((d) => !had.some((p) => p.id === d.id)))
+      owed.options.add(dirRel)
     return next?.id === node.id ? updateNodeInTree(t, dirRel, () => next) : null
   })
 }
 
 async function applySpace(root: string, dirRel: string, ev: Changed, owed: Owed): Promise<Applied> {
+  owed.options.add(dirRel)
   const sc = await jsonOf(ev)
   const tree = heldTreeOf(root)
   if (sc === null || !tree) return 'walk'
@@ -588,7 +588,7 @@ async function applyOne(root: string, ev: FileEvent, owed: Owed): Promise<Applie
     case 'folder':
       return applyFolder(root, tree, c.rel, owed, c.sidecar)
     case 'container-meta':
-      return applyContainer(root, c.dirRel, c.of, ev)
+      return applyContainer(root, c.dirRel, c.of, ev, owed)
     case 'space':
       return applySpace(root, c.dirRel, ev, owed)
     case 'contexts-leaf':

@@ -1,4 +1,4 @@
-// The one place a change to the tree, pages, values, tiles, or assets reaches the window. The app's own writes land here as events while they happen; a write's gate and the watcher's batch then stamp what their events listed missing, and settle: the walk the events owed, whose own listing of what is missing its ID is stamped as `stampable` allows and settled in turn, and one push of what moved.
+// The one place a change to the tree, pages, values, tiles, or assets reaches the window. The app's own writes land here as events while they happen; a write's gate and the watcher's batch then stamp what their events listed missing, and settle: the walk the events owed, whose own listing of what is missing its ID is stamped as `stampable` allows and settled in turn, the registry taking the options the changed files hold, and one push of what moved.
 
 import { relDirname, relative } from '../Paths/posix'
 import { escapes } from '../Paths/pathSafety'
@@ -8,6 +8,7 @@ import { inTurns } from '../Platform/inTurns'
 import { type FileEvent, setOwnTap } from '../Files/writeEcho'
 import { getHeldAssetMap, refreshAssetMap } from '../Assets/assetMap'
 import { seedContentIndex } from '../Index/indexSeed'
+import { registerHeldOptions } from '../Properties/optionOps'
 import { dropTileHeadingLinks } from '../Tiles/tilesFile'
 import { stampMissing } from './adopt'
 import { applyEvents, indexEvent, nothingOwed, oweRescope, owedFor, stampable } from './fileEvents'
@@ -107,13 +108,31 @@ async function walkWhileOwed(root: string): Promise<void> {
 
 async function settle(pusher: Pusher, root: string): Promise<{ rescope: boolean } | null> {
   await walkWhileOwed(root)
-  // An open in progress has no window on this Nexus yet, so what is owed waits for the settle that follows it.
-  if (sessionRoot() !== root || adopting()) return null
+  // An open in progress has no window on this Nexus yet, so what is owed waits for the settle that follows it, and is owed again when the open begins while the options are taken.
+  const away = (): boolean => sessionRoot() !== root || adopting()
+  if (away()) return null
   const owed = owedFor(root)
   // An arm still awaiting its file writes to this record after the push, so it is emptied in place and never replaced; the walk and the stamps still owed outlive it, and the paths newly in reach outlive it while a stamp is owed or a pass is stamping.
-  const { pages, values, tiles, assets, corpus, rescope, stamp, walk, whole } = owed
+  const { pages, values, options, tiles, assets, corpus, rescope, stamp, walk, whole } = owed
   Object.assign(owed, nothingOwed(root), { stamp, walk, whole })
   if (!stamp.length && !stamping) owed.whole = []
+  const changed = [...values].flatMap(([rel, bodyOnly]) => (bodyOnly ? [] : rel))
+  const holders = [...options, ...changed, ...(owed.whole.length ? [] : whole)]
+  if (holders.length) {
+    await registerHeldOptions(root, holders)
+    if (away()) {
+      for (const rel of pages) owed.pages.add(rel)
+      for (const [rel, body] of values) owed.values.set(rel, body && (owed.values.get(rel) ?? true))
+      for (const rel of options) owed.options.add(rel)
+      for (const [key, host] of tiles) owed.tiles.set(key, host)
+      Object.assign(owed, {
+        assets: owed.assets || assets,
+        corpus: owed.corpus || corpus,
+        rescope: owed.rescope || rescope,
+      })
+      return null
+    }
+  }
   const held = heldTreeOf(root)
   const tree = held && shown(held, stamp)
   const delta = tree && deltaOf(pushed?.nexus.rootPath === root ? pushed : undefined, tree)
