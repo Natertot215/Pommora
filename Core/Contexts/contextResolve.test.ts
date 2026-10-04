@@ -213,6 +213,24 @@ describe('reconcileGovernedRoot — the property arm', () => {
   })
 })
 
+describe('reconcileGovernedRoot — option and checkbox casing (the crossing)', () => {
+  const doneDef: PropertyDefinition = { id: 'prop_done', name: 'Done', type: 'checkbox' }
+  const casing: GovernedWorld = { ...world, defs: byFoldedName([stageDef, doneDef]) }
+  const input = { Stage: ['done'], Done: 'Yes' }
+
+  it('keeps each value as the file spells it while casing stays, reading it as registered', () => {
+    const { root } = reconcileGovernedRoot(input, casing)
+    expect(root).toEqual(input)
+    expect(decodeValue(stageDef, root.Stage)).toEqual({ kind: 'select', value: 'Done' })
+    expect(decodeValue(doneDef, root.Done)).toEqual({ kind: 'checkbox', value: true })
+  })
+
+  it('writes the registered option and true with case resolution on', () => {
+    const { root } = reconcileGovernedRoot(input, { ...casing, resolveCase: true })
+    expect(root).toEqual({ Stage: ['Done'], Done: true })
+  })
+})
+
 describe('reconcileGovernedRoot — spellings with case resolution off', () => {
   it('reconciles a folded key under the spelling the file holds', () => {
     const { root, changed } = reconcileGovernedRoot({ status: 'Open' }, world)

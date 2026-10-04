@@ -104,4 +104,9 @@ describe('validateOptionValues', () => {
     expect(validateOptionValues([{ value: 'A' }, { value: 'B' }]).ok).toBe(true)
     expect(validateOptionValues([]).ok).toBe(true)
   })
+
+  it('compares titles without regard to case', () => {
+    expect(validateOptionValues([{ value: 'Done' }, { value: 'done' }]).ok).toBe(false)
+    expect(validateOptionValues([{ value: 'done' }, { value: 'Open' }]).ok).toBe(true)
+  })
 })

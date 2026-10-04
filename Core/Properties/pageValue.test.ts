@@ -8,7 +8,6 @@ import {
   stripList,
   valueEditRewrite,
 } from './pageValue'
-import { namesSpace } from '../Contexts/contextResolve'
 import type { Json } from '../Files/stableJson'
 
 const strip = (raw: Json, key: string, value: string): Json | null =>
@@ -85,36 +84,45 @@ describe('valueEditRewrite — replace (rename cascade)', () => {
 
 describe('editList', () => {
   it('edits a list of one', () => {
-    expect(editList(['a'], namesValue, 'a', { op: 'replace', to: 'b' })).toEqual(['b'])
+    expect(editList(['a'], 'a', { op: 'replace', to: 'b' })).toEqual(['b'])
   })
 
   it('answers null when nothing matches', () => {
-    expect(editList(['a', 1, null], namesValue, 'z', { op: 'strip' })).toBeNull()
+    expect(editList(['a', 1, null], 'z', { op: 'strip' })).toBeNull()
   })
 
   it('a replace into a value the list holds keeps one copy at the renamed element', () => {
-    expect(editList(['x', 'a', 'y', 'b'], namesValue, 'a', { op: 'replace', to: 'b' })).toEqual([
-      'x',
-      'b',
-      'y',
-    ])
+    expect(editList(['x', 'a', 'y', 'b'], 'a', { op: 'replace', to: 'b' })).toEqual(['x', 'b', 'y'])
   })
 
   it('a replace of two spellings of one Space yields one title', () => {
-    expect(
-      editList(['Pommora', 'x', 'pommora'], namesSpace, 'Pommora', { op: 'replace', to: 'Pom' }),
-    ).toEqual(['Pom', 'x'])
-  })
-
-  it('a Space renamed onto a title the list already spells differently holds one copy, spelled as the new title', () => {
-    expect(editList(['b', 'x', 'A'], namesSpace, 'A', { op: 'replace', to: 'B' })).toEqual([
-      'B',
+    expect(editList(['Pommora', 'x', 'pommora'], 'Pommora', { op: 'replace', to: 'Pom' })).toEqual([
+      'Pom',
       'x',
     ])
   })
 
+  it('a Space renamed onto a title the list already spells differently holds one copy, spelled as the new title', () => {
+    expect(editList(['b', 'x', 'A'], 'A', { op: 'replace', to: 'B' })).toEqual(['B', 'x'])
+  })
+
+  it('renames an option written in any casing, merging one already held in another', () => {
+    const finished = { op: 'replace', to: 'Finished' } as const
+    expect(editList(['done', 'Active'], 'Done', finished)).toEqual(['Finished', 'Active'])
+    expect(editList(['done', 'finished'], 'Done', finished)).toEqual(['Finished'])
+  })
+
   it('a strip that empties the list answers an empty list', () => {
-    expect(editList(['a', 'a'], namesValue, 'a', { op: 'strip' })).toEqual([])
+    expect(editList(['a', 'a'], 'a', { op: 'strip' })).toEqual([])
+  })
+})
+
+describe('namesValue', () => {
+  it('names a value written in any casing', () => {
+    const done = namesValue('Done')
+    expect(done('done')).toBe(true)
+    expect(done('DONE')).toBe(true)
+    expect(done('Open')).toBe(false)
   })
 })
 

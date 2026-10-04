@@ -599,6 +599,13 @@ describe('unlink cascades (D-3)', () => {
     expect((await fmOf(other()))['<Projects>']).toEqual(['Sapphire'])
   })
 
+  it('unlinkSpaceValue strips and captures a member written as a number', async () => {
+    await writeFile(other(), '---\nid: p2\n<Classes>:\n  - 2024\n  - CS 161\n---\nbody')
+    const r = await unlinkSpaceValue(root, 'Classes', '2024')
+    expect(r.ok && r.value.captured).toContainEqual({ kind: 'page', values: ['2024'] })
+    expect((await fmOf(other()))['<Classes>']).toEqual(['CS 161'])
+  })
+
   it('unlinkSpaceValue strips and captures a tag written as a single value', async () => {
     await writeFile(other(), '---\nid: p2\n<Projects>: Pommora\n---\nbody')
     const r = await unlinkSpaceValue(root, 'Projects', 'Pommora')
@@ -673,6 +680,16 @@ describe('the Context cascades carry $order.contexts (B-7)', () => {
     expect((await renameContextOp(root, 'ctx_projects', 'Ventures')).ok).toBe(true)
     const pom = await readJsonAt(join(contextsDir(root), 'Ventures', 'Pommora', '_space.json'))
     expect(pom.$order).toEqual({ contexts: ['Classes', 'Ventures'] })
+  })
+
+  it('a rename rewrites an entry spelled in another casing', async () => {
+    await writeFile(
+      pomSidecar(),
+      JSON.stringify({ id: 'sp-pom', $order: { contexts: ['projects'] } }),
+    )
+    expect((await renameContextOp(root, 'ctx_projects', 'Ventures')).ok).toBe(true)
+    const pom = await readJsonAt(join(contextsDir(root), 'Ventures', 'Pommora', '_space.json'))
+    expect(pom.$order).toEqual({ contexts: ['Ventures'] })
   })
 
   it('a delete drops the entry and captures nothing for a Space that only listed it', async () => {

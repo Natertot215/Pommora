@@ -663,6 +663,22 @@ describe('adoption — a Multi-Select registers an option a page already holds',
     expect(await values(id)).toEqual(['alpha', 'zeta'])
   })
 
+  it('adopts no second casing of an option the definition holds', async () => {
+    const id = await mkProperty({
+      name: 'Labels',
+      type: 'multiSelect',
+      select_options: [{ value: 'Claude' }],
+    })
+    expect((await addOptionToDef(root, id, 'claude')).ok).toBe(true)
+    expect(await values(id)).toEqual(['Claude'])
+    const other = await mkProperty({ name: 'Other', type: 'multiSelect', select_options: [] })
+    await applyAdoptions(root, [
+      { propertyId: other, value: 'Claude' },
+      { propertyId: other, value: 'claude' },
+    ])
+    expect(await values(other)).toEqual(['Claude'])
+  })
+
   it('refuses a Select — only a Multi-Select adopts', async () => {
     const sel = await mkSelect([{ value: 'a' }])
     expect((await addOptionToDef(root, sel, 'b')).ok).toBe(false)

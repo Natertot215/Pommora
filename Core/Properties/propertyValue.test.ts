@@ -7,7 +7,7 @@ import {
   heldSpelling,
   isBlankValue,
   reconcilePropertyValue,
-  resolveSingleOption,
+  registeredOption,
   type PropertyValue,
 } from './propertyValue'
 
@@ -74,7 +74,6 @@ describe('decodeValue — the declared type decides, never the shape', () => {
 
   it('a value whose shape contradicts its type reads as null, never as another type', () => {
     expect(decodeValue(def({ type: 'number' }), 'five')).toEqual({ kind: 'null' })
-    expect(decodeValue(def({ type: 'checkbox' }), 'true')).toEqual({ kind: 'null' })
     expect(decodeValue(def({ type: 'multiSelect' }), { a: 1 })).toEqual({ kind: 'null' })
   })
 
@@ -135,12 +134,23 @@ describe('the single-option resolution — one rule, tested on Select and on Sta
     })
   }
 
-  it('resolveSingleOption is that rule', () => {
-    expect(resolveSingleOption(['Open', 'Active'], ['Open', 'Active', 'Done'])).toBe('Active')
-    expect(resolveSingleOption(['Green', 'Blue'], ['Red', 'Blue'])).toBe('Blue')
-    expect(resolveSingleOption(['Active', 'Wip'], ['Open', 'Active'])).toBe('Active')
-    expect(resolveSingleOption(['Wip'], ['Open'])).toBeUndefined()
-    expect(resolveSingleOption([], ['Open'])).toBeUndefined()
+  it("decodeValue's select case is that rule", () => {
+    const options = (...values: string[]) =>
+      def({ type: 'select', select_options: values.map((value) => ({ value })) })
+    expect(decodeValue(options('Open', 'Active', 'Done'), ['Open', 'Active'])).toEqual({
+      kind: 'select',
+      value: 'Active',
+    })
+    expect(decodeValue(options('Red', 'Blue'), ['Green', 'Blue'])).toEqual({
+      kind: 'select',
+      value: 'Blue',
+    })
+    expect(decodeValue(options('Open', 'Active'), ['Active', 'Wip'])).toEqual({
+      kind: 'select',
+      value: 'Active',
+    })
+    expect(decodeValue(options('Open'), ['Wip'])).toEqual({ kind: 'null' })
+    expect(decodeValue(options('Open'), [])).toEqual({ kind: 'null' })
   })
 })
 
@@ -332,5 +342,47 @@ describe('heldSpelling — a value spelled as the file already spells it', () =>
 
   it('a checked value the file never held stays true', () => {
     expect(heldSpelling(true, undefined)).toBe(true)
+  })
+})
+
+describe('options and checkboxes decode without regard to case', () => {
+  const stage = def({ type: 'select', select_options: [{ value: 'Done' }, { value: 'Active' }] })
+  const labels = def({
+    type: 'multiSelect',
+    select_options: [{ value: 'Claude' }, { value: 'Docs' }],
+  })
+  const checkbox = def({ type: 'checkbox' })
+
+  it('a Select reads a written option as the registered spelling', () => {
+    expect(decodeValue(stage, 'done')).toEqual({ kind: 'select', value: 'Done' })
+    expect(decodeValue(stage, ['done', 'Active'])).toEqual({ kind: 'select', value: 'Active' })
+  })
+
+  it('a Multi-Select reads each registered member as its option and adopts only the rest', () => {
+    const raw = ['claude', 'Docs', 'new']
+    expect(decodeValue(labels, raw)).toEqual({
+      kind: 'multiSelect',
+      value: ['Claude', 'Docs', 'new'],
+    })
+    expect(reconcilePropertyValue(labels, raw).adoptions).toEqual([
+      { propertyId: 'p', value: 'new' },
+    ])
+  })
+
+  it('a checkbox reads true, or the word true or yes in any casing, as checked', () => {
+    for (const raw of ['Yes', 'yes', 'TRUE', 'true', true])
+      expect(decodeValue(checkbox, raw)).toEqual({ kind: 'checkbox', value: true })
+    for (const raw of ['No', '1', false, 1])
+      expect(decodeValue(checkbox, raw)).toEqual({ kind: 'null' })
+  })
+
+  it('a checked value keeps the checked word the file holds', () => {
+    expect(heldSpelling(true, 'Yes')).toBe('Yes')
+  })
+
+  it("registeredOption answers the definition's own spelling for any casing", () => {
+    expect(registeredOption(stage, 'DONE')).toBe('Done')
+    expect(registeredOption(stage, 'active')).toBe('Active')
+    expect(registeredOption(stage, 'Gone')).toBeUndefined()
   })
 })

@@ -137,6 +137,12 @@ describe('renameSweep reaches a Space sidecar', () => {
     expect((await readJsonAt(file)).$order).toEqual({ properties: ['Stage'] })
   })
 
+  it('renames a listed entry spelled in another casing', async () => {
+    const file = await seedSpace({ id: 'sp1', $order: { properties: ['status'] } })
+    await renameSweep(root, 'Status', stage)
+    expect((await readJsonAt(file)).$order).toEqual({ properties: ['Stage'] })
+  })
+
   it('leaves a sidecar with neither the key nor the entry byte-identical', async () => {
     const file = await seedSpace({ id: 'sp1', Other: 'x' })
     const bytes = await readFile(file, 'utf8')

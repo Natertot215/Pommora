@@ -92,26 +92,28 @@ it('a Remove racing an Assign on ONE collection never loses either write (breake
 })
 
 describe('a re-assign puts a cached value back', () => {
+  const status: Omit<PropertyDefinition, 'id'> = {
+    name: 'Status',
+    type: 'select',
+    select_options: [{ value: 'hi', color: 'red' }],
+  }
   const reassigned = async (
     resolveCaseConflicts: boolean,
     held = '\nstatus:',
+    property: Omit<PropertyDefinition, 'id'> = status,
+    cached = 'Status: hi',
   ): Promise<Record<string, unknown>> => {
     await mkdir(join(root, '.nexus'), { recursive: true })
     await writeFile(
       join(root, '.nexus', 'settings.json'),
       JSON.stringify({ personalization: { resolveCaseConflicts } }),
     )
-    const made = await createProperty(root, {
-      id: '',
-      name: 'Status',
-      type: 'select',
-      select_options: [{ value: 'hi', color: 'red' }],
-    } as PropertyDefinition)
+    const made = await createProperty(root, { id: '', ...property })
     if (!made.ok) throw new Error('setup failed')
     await assignProperty(root, notes, made.value.id)
     const page = await createTestPage(notes, 'A', { body: 'b' })
     if (!page.ok) throw new Error('setup failed')
-    await writeFile(page.value.path, `---\nID: ${page.value.id}\nStatus: hi\n---\nb`)
+    await writeFile(page.value.path, `---\nID: ${page.value.id}\n${cached}\n---\nb`)
     await refreshTree(root)
     expect((await removeProperty(root, notes, made.value.id)).ok).toBe(true)
     await writeFile(page.value.path, `---\nID: ${page.value.id}${held}\n---\nb`)
@@ -133,5 +135,19 @@ describe('a re-assign puts a cached value back', () => {
     const fm = await reassigned(true)
     expect(fm.Status).toEqual(['hi'])
     expect(fm).not.toHaveProperty('status')
+  })
+
+  const tags: Omit<PropertyDefinition, 'id'> = {
+    name: 'Tags',
+    type: 'multiSelect',
+    select_options: [{ value: 'Claude', color: 'red' }],
+  }
+
+  it("keeps a cached Multi-Select member's spelling with the toggle off", async () => {
+    expect((await reassigned(false, '', tags, 'Tags: [claude]')).Tags).toEqual(['claude'])
+  })
+
+  it('writes a cached Multi-Select member in its registered spelling with the toggle on', async () => {
+    expect((await reassigned(true, '', tags, 'Tags: [claude]')).Tags).toEqual(['Claude'])
   })
 })
