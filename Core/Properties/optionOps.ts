@@ -5,7 +5,7 @@ import { keyHolderFiles } from './keyHolders'
 import { sweepGovernedRoots, unsweptLine } from './governedSweep'
 import { namesValue, valueEditRewrite, type ValueEdit } from './pageValue'
 import { errText, ok, fail, fault, type Result } from '../Contract/result'
-import { type Adoption, registeredOption, unregisteredMembers } from './propertyValue'
+import { unregisteredMembers } from './propertyValue'
 import {
   addOption,
   applyOptionEdit,
@@ -109,14 +109,13 @@ export async function registerHeldOptions(root: string, rels?: readonly string[]
           (d) => d.type === 'multiSelect',
         )
         if (!defs.length) continue
-        if (space) {
-          take(space.values ?? {}, defs)
-          continue
-        }
-        const container = containerAt(tree, rel)
-        for (const page of container ? pagePathsIn(container) : [rel]) {
-          const read = await readPageRecord(join(root, page), page).catch(() => null)
-          if (read?.kind === 'read') take(read.fm, defs)
+        if (space) take(space.values ?? {}, defs)
+        else {
+          const container = containerAt(tree, rel)
+          for (const page of container ? pagePathsIn(container) : [rel]) {
+            const read = await readPageRecord(join(root, page), page).catch(() => null)
+            if (read?.kind === 'read') take(read.fm, defs)
+          }
         }
       }
       if (!held.size) return
@@ -144,37 +143,6 @@ export async function registerHeldOptions(root: string, rels?: readonly string[]
     })
   } catch (e) {
     console.error('held options: the registry could not take them:', errText(e))
-  }
-}
-
-export function addOptionToDef(
-  root: string,
-  propertyId: string,
-  value: string,
-): Promise<Result<null>> {
-  return mutateRegistry<Result<null>>(root, (registry, stored) => {
-    const current = registry.defs[propertyId]
-    if (!current) return { result: NO_PROPERTY }
-    if (current.type !== 'multiSelect')
-      return { result: fail('invalid-property', 'Only a Multi-Select adopts options.') }
-    if (registeredOption(current, value) !== undefined) return { result: ok(null) }
-    const next = editStoredOptions(current, stored[propertyId], (groups) =>
-      addOption(groups, SELECT_GROUP, value),
-    )
-    return {
-      next: { ...registry, defs: { ...registry.defs, [propertyId]: next } },
-      result: ok(null),
-    }
-  })
-}
-
-export async function applyAdoptions(root: string, adoptions: readonly Adoption[]): Promise<void> {
-  const seen = new Set<string>()
-  for (const a of adoptions) {
-    const key = `${a.propertyId}\u0000${a.value}`
-    if (seen.has(key)) continue
-    seen.add(key)
-    await addOptionToDef(root, a.propertyId, a.value)
   }
 }
 

@@ -159,6 +159,24 @@ export function oweCascade(
   for (const host of hosts) owed.tiles.set(navKey(host), host)
 }
 
+const oweValue = (owed: Owed, rel: string, bodyOnly: boolean): void => {
+  owed.values.set(rel, bodyOnly && (owed.values.get(rel) ?? true))
+}
+
+// A settle that drained what was owed and found an open begun owes it again, joined with what was owed since.
+export function oweAgain(
+  owed: Owed,
+  drained: Pick<Owed, 'pages' | 'values' | 'options' | 'tiles' | 'assets' | 'corpus' | 'rescope'>,
+): void {
+  for (const rel of drained.pages) owed.pages.add(rel)
+  for (const [rel, bodyOnly] of drained.values) oweValue(owed, rel, bodyOnly)
+  for (const rel of drained.options) owed.options.add(rel)
+  for (const [key, host] of drained.tiles) owed.tiles.set(key, host)
+  owed.assets ||= drained.assets
+  owed.corpus ||= drained.corpus
+  owed.rescope ||= drained.rescope
+}
+
 // `later` is a page whose folder the tree doesn't hold yet, under a folder whose stamp is owed: a watcher's batch applies it once more after that stamp lands.
 type Applied = 'ok' | 'walk' | 'later'
 
@@ -380,7 +398,7 @@ async function applyPage(
     if (await pathExists(abs)) return 'walk'
     return applyPatch(root, (t) => removeNodeInTree(t, rel))
   }
-  owed.values.set(rel, !!ev.bodyOnly && (owed.values.get(rel) ?? true))
+  oweValue(owed, rel, !!ev.bodyOnly)
   if (ev.origin === 'watched') owed.pages.add(rel)
   if (read.kind === 'unread' && read.reason === 'missing')
     owed.stamp.push({ path: rel, kind: 'page', reason: 'missing', held: pageAt(tree, rel)?.id })

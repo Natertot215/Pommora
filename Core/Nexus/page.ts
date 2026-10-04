@@ -2,12 +2,7 @@ import { join, dirname, basename } from '../Paths/posix'
 import { ID_KEY, PAGE_MODELED_KEYS } from './identityMark'
 import { bodyHash, mergeFrontmatter } from '../Files/pageFile'
 import { machine } from '../Platform/machine'
-import {
-  type Adoption,
-  encodeValue,
-  isBlankValue,
-  type PropertyValue,
-} from '../Properties/propertyValue'
+import { encodeValue, isBlankValue, type PropertyValue } from '../Properties/propertyValue'
 import type { GovernedWorld } from '../Contexts/contextResolve'
 import { ok, fail, type Result, fault } from '../Contract/result'
 import { atomicWriteFile, pathExists, relocate, targetTaken } from '../Files/atomicWrite'
@@ -103,10 +98,11 @@ export async function updatePageProperty(
   def: PropertyDefinition,
   value: PropertyValue | null,
   world?: GovernedWorld,
-): Promise<Result<Adoption[]>> {
+): Promise<Result<null>> {
   if (!(await pathExists(absFile))) return fail('not-found', 'Page not found.')
   const clear = value === null || isBlankValue(value)
   const encoded = clear ? undefined : encodeValue(value)
   if (!clear && encoded === undefined) return noShape(def.name)
-  return ok(await setGovernedRootKey(absFile, def.name, encoded, world))
+  await setGovernedRootKey(absFile, def.name, encoded, world)
+  return ok(null)
 }

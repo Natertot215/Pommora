@@ -33,8 +33,6 @@ function fileEntry(v: unknown): string | null {
 
 export const NULL_VALUE: PropertyValue = { kind: 'null' }
 
-export type Adoption = { propertyId: string; value: string }
-
 // An outside `- 2024` parses as a number and must still name the option "2024".
 const optionList = (raw: unknown): string[] =>
   listOf(raw)
@@ -55,7 +53,7 @@ function optionsByFold(def: PropertyDefinition): Map<string, string> {
 }
 
 /** The option `written` names, as its definition spells it. */
-export const registeredOption = (def: PropertyDefinition, written: string): string | undefined =>
+const registeredOption = (def: PropertyDefinition, written: string): string | undefined =>
   optionsByFold(def).get(normalizeTitle(written))
 
 /** Checked as a file spells it: `true`, or the word `true` or `yes` in any casing. */
@@ -119,25 +117,18 @@ export function namesGonePage(raw: unknown, frozen: Frozen): boolean {
   return !!page?.title && frozen.holds !== undefined && !frozen.holds(page.title)
 }
 
-// A restore of a frozen copy keeps only the options the definition still offers and the pages its world holds, so a deleted option or page never comes back through it; a live write adopts instead.
+// A restore of a frozen copy keeps only the options the definition still offers and the pages its world holds, so a deleted option or page never comes back through it.
 export function reconcilePropertyValue(
   def: PropertyDefinition,
   raw: unknown,
   frozen?: Frozen,
-): { value: PropertyValue; adoptions: Adoption[] } {
+): PropertyValue {
   const value = decodeValue(def, raw)
-  if (value.kind === 'link' && frozen && namesGonePage(value.value, frozen))
-    return { value: NULL_VALUE, adoptions: [] }
-  if (value.kind !== 'multiSelect') return { value, adoptions: [] }
-  const known = optionValues(def)
-  if (!frozen) {
-    const adoptions = value.value
-      .filter((v) => !known.includes(v))
-      .map((v) => ({ propertyId: def.id, value: v }))
-    return { value, adoptions }
-  }
-  const kept = value.value.filter((v) => known.includes(v))
-  return { value: kept.length ? { kind: 'multiSelect', value: kept } : NULL_VALUE, adoptions: [] }
+  if (!frozen) return value
+  if (value.kind === 'link') return namesGonePage(value.value, frozen) ? NULL_VALUE : value
+  if (value.kind !== 'multiSelect') return value
+  const kept = value.value.filter((v) => registeredOption(def, v) !== undefined)
+  return kept.length ? { kind: 'multiSelect', value: kept } : NULL_VALUE
 }
 
 /** `next` as a write spells it: as given when casing resolves, otherwise as `raw` already spells it — a checked `true` keeps `raw`'s checked word, and each member takes the one member of `raw` its title folds to. A member `raw` names more than once keeps the spelling `next` gives it, the registered one. */

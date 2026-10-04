@@ -18,9 +18,7 @@ import { owningCollection, spaceAt } from '../Nexus/treePatch'
 import type { MutateContext } from '../Nexus/mutate'
 import { done, type MutateReply, type MutateRequest } from '../Nexus/mutateRequest'
 import { assignedDefs } from '../Properties/assignment'
-import { applyAdoptions } from '../Properties/optionOps'
 import type { ContextGroup, NexusTree, SpaceNode } from '../Nexus/tree'
-import type { Adoption } from '../Properties/propertyValue'
 import { isColorKey } from '@pommora/uix/Theme/colors'
 import { ok, fail, type Result, fault } from '../Contract/result'
 import { mutateRegistryFile, withContextAt } from './contextsRegistry'
@@ -58,17 +56,15 @@ export async function setPageContext(
   contextId: string,
   spaceIds: string[],
 ): Promise<Result<null>> {
-  const adoptions = await machine().lock(absFile, async () => {
+  return machine().lock(absFile, async () => {
     if (!(await pathExists(absFile))) return fail('not-found', 'Page not found.')
     const governed = await pageWorldOf(root, absFile)
     const applied = contextTarget(governed.contexts, contextId, spaceIds)
     if (!applied.ok) return applied
     const { key, value } = applied.value
-    return ok(await setGovernedRootKey(absFile, key, value, governed))
+    await setGovernedRootKey(absFile, key, value, governed)
+    return ok(null)
   })
-  if (!adoptions.ok) return adoptions
-  await applyAdoptions(root, adoptions.value)
-  return ok(null)
 }
 
 export async function pageWorldOf(root: string, absFile: string): Promise<GovernedWorld> {
@@ -99,7 +95,6 @@ async function setSpaceContext(
   if (!applied.ok) return applied
   const { key, value } = applied.value
   const backKey = contextKey(own.def.title)
-  const adoptions: Adoption[] = []
   let skipped = 0
   const namesA = namesValue(a.title)
   for (const far of world.contexts.groupById.get(contextId)?.spaces ?? []) {
@@ -111,14 +106,13 @@ async function setSpaceContext(
       const held = listOf(heldValue(raw, backKey, world.resolveCase) ?? [])
       const without = stripList(held, namesA) ?? held
       const next = wants ? [...without, a.title] : without
-      return writtenRoot(raw, backKey, next.length ? next : undefined, world, adoptions)
+      return writtenRoot(raw, backKey, next.length ? next : undefined, world)
     })
     if (!half.ok) skipped++
   }
   const written = await writeSpaceSidecar(join(root, a.path), (raw) =>
-    writtenRoot(raw, key, value, world, adoptions),
+    writtenRoot(raw, key, value, world),
   )
-  await applyAdoptions(root, adoptions)
   return written.ok ? ok(skipped) : written
 }
 

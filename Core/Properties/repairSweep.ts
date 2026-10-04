@@ -4,14 +4,12 @@ import {
   reconcileGovernedRoot,
   type GovernedWorld,
 } from '../Contexts/contextResolve'
-import type { Adoption } from './propertyValue'
 import type { PropertyDefinition } from './properties'
 import { errText } from '../Contract/result'
 import { assignedDefs } from './assignment'
 import { liveTreeOf } from '../Nexus/liveTree'
 import { owningCollection } from '../Nexus/treePatch'
 import { type Rewrite, sweepGovernedRoots } from './governedSweep'
-import { applyAdoptions } from './optionOps'
 import type { SeedReread } from '../Index/indexSeed'
 import { contentIndexStore } from '../Platform/stores'
 import { readLiveSetting } from '../Settings/settings'
@@ -36,16 +34,11 @@ export async function runRepairSweep(root: string, reread: SeedReread): Promise<
       worlds.set(abs, governedWorld(tree, defs))
     }
     if (!live()) return
-    const adoptions: Adoption[] = []
     const raw: Rewrite = (fm, file) => {
       const world = worlds.get(file)
-      if (!world || !live()) return null
-      const r = reconcileGovernedRoot(fm, world)
-      adoptions.push(...r.adoptions)
-      return r.root
+      return world && live() ? reconcileGovernedRoot(fm, world).root : null
     }
     await sweepGovernedRoots(root, [...worlds.keys()], { raw })
-    await applyAdoptions(root, adoptions)
   } catch (e) {
     console.error('repair sweep: failed; values repair on their next edit:', errText(e))
   }
