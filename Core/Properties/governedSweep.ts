@@ -13,7 +13,6 @@ import type { EntityRecord } from '../Nexus/record'
 import { splitFrontmatter, sweepParse, type SweptPage } from '../Files/pageFile'
 import type { Json } from '../Files/stableJson'
 import { spaceSidecars } from '../Contexts/spaceSidecar'
-import { heldKeys } from '../Files/heldKeys'
 
 export interface SweepResult {
   /** Each file the sweep wrote, with the text it held before the write and the text the write left. */
@@ -27,20 +26,6 @@ export type Rewrite = (raw: Json, file: string) => Json | null
 export type RewriteText = (content: string, file: string) => string | null
 
 type SweepPlan = ({ raw: Rewrite } | { text: RewriteText }) & { sidecars?: Rewrite }
-
-/** Removes `keys` from a root holding any of them; a root holding none is left as it is. */
-export const stripKeys =
-  (...keys: string[]): Rewrite =>
-  (raw) =>
-    keys.some((k) => k in raw)
-      ? Object.fromEntries(Object.entries(raw).filter(([k]) => !keys.includes(k)))
-      : null
-
-/** Removes every spelling of `name` a root holds; a root holding none is left as it is. */
-export const stripHeld =
-  (name: string): Rewrite =>
-  (raw, file) =>
-    stripKeys(...heldKeys(raw, name))(raw, file)
 
 export const unsweptLine = (count: number, what = ''): string =>
   `Couldn’t update ${what}${count} ${count === 1 ? 'file' : 'files'}.`

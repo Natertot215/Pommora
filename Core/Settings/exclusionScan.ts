@@ -5,12 +5,8 @@ import { ID_KEY } from '../Nexus/identityMark'
 import { asString } from '../Nexus/coerce'
 import { dropPageMetadata } from '../Nexus/pageMetadata'
 import { fault, ok, type Result } from '../Contract/result'
-import {
-  type Rewrite,
-  stripKeys,
-  sweepGovernedRoots,
-  unsweptLine,
-} from '../Properties/governedSweep'
+import { type Rewrite, sweepGovernedRoots, unsweptLine } from '../Properties/governedSweep'
+import { stripKeys } from '../Files/heldKeys'
 import {
   excludedMatcher,
   hiddenFolder,
@@ -60,10 +56,9 @@ const clearRewrite =
   (raw, file) => {
     const id = asString(raw[ID_KEY])
     const next = stripKeys(
-      ...Object.keys(raw).filter(
-        (k) => BOOKKEEPING_KEYS.includes(k) || parseContextKey(k) !== null,
-      ),
-    )(raw, file)
+      raw,
+      Object.keys(raw).filter((k) => BOOKKEEPING_KEYS.includes(k) || parseContextKey(k) !== null),
+    )
     if (next !== null && id) cleared.set(file, id)
     return next
   }

@@ -15,13 +15,12 @@ import {
   type Rewrite,
   type RewriteText,
   type SweepResult,
-  stripKeys,
   sweepGovernedRoots,
   undoSweep,
   unsweptLine,
 } from '../Properties/governedSweep'
 import { withOrderEntry } from './spaceSidecar'
-import { editHeldLists, heldKeys, rekeyHeld, type KeyCollision } from '../Files/heldKeys'
+import { editHeldLists, heldKeys, rekeyHeld, stripKeys, type KeyCollision } from '../Files/heldKeys'
 import { editList, namesValue, stripList } from '../Properties/pageValue'
 import { contextWorldOf } from './contextResolve'
 import { oweWalk } from '../Nexus/fileEvents'
@@ -145,7 +144,7 @@ export async function unlinkContextKey(
       .filter(isScalar)
       .map(String)
     captured.push(captureRoot(raw, file, values))
-    return stripKeys(...keys)(raw, file)
+    return stripKeys(raw, keys)
   }
   const entry = withOrderEntry(strip, 'contexts', contextTitle, null)
   const swept = await unlinkMembers(root, { key }, entry, skipUnder)

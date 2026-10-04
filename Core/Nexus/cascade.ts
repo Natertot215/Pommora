@@ -1,12 +1,11 @@
 import { isAtOrUnder, isMarkdownFile, join, relative, titleFromPath } from '../Paths/posix'
 import { foldKey } from '../Paths/caseFold'
-import { heldKey } from '../Files/heldKeys'
+import { heldKey, stripKeys } from '../Files/heldKeys'
 import { errText } from '../Contract/result'
 import { splitEnvelope, mergeFrontmatter, splitFrontmatter, stampedId } from '../Files/pageFile'
 import {
   type Rewrite,
   governedRoot,
-  stripKeys,
   sweepGovernedRoots,
   unsweptLine,
 } from '../Properties/governedSweep'
@@ -108,7 +107,11 @@ export async function deleteCascade(
         const def = defs.get(foldKey(key))
         return def !== undefined && namesGone(value) ? [{ key, def, value }] : []
       })
-    const strip: Rewrite = (raw, file) => stripKeys(...named(raw).map(({ key }) => key))(raw, file)
+    const strip: Rewrite = (raw) =>
+      stripKeys(
+        raw,
+        named(raw).map(({ key }) => key),
+      )
     // Tree pages, and the pages beneath a folder the tree withholds: a loose file outside every Collection shows in no view and no restore could reach it; dropping this filter strips them too.
     const held = liveIdIndex(root)
     const withheld = withheldIn(heldTreeOf(root)?.unreadable)
