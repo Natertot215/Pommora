@@ -124,7 +124,7 @@ describe('openNexusDb', () => {
     second.close()
   })
 
-  it('a generation-9 index whose page_values has no fold column rebuilds into the current shape', () => {
+  it('an index of another generation whose page_values has no fold column rebuilds into the current shape', () => {
     const first = opened()
     first.exec(
       'DROP TABLE page_values; CREATE TABLE page_values (path TEXT NOT NULL, key TEXT NOT NULL, value TEXT NOT NULL, PRIMARY KEY (path, key)); CREATE INDEX page_values_by_key ON page_values (key);',

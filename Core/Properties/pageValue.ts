@@ -9,12 +9,9 @@ import type { Json } from '../Files/stableJson'
 
 /** Two values as one list: `keep`'s members, then each of `from`'s whose title folds to none of them; a single value reads as a list of one. Every join of two spellings, and a `'merge'` rename, uses it. */
 export function joinValues(keep: unknown, from: unknown): unknown[] {
-  const kept = keep == null ? [] : listOf(keep)
+  const kept = listOf(keep ?? [])
   const seen = new Set(kept.map(normalizeTitle))
-  return [
-    ...kept,
-    ...(from == null ? [] : listOf(from)).filter((v) => !seen.has(normalizeTitle(v))),
-  ]
+  return [...kept, ...listOf(from ?? []).filter((v) => !seen.has(normalizeTitle(v)))]
 }
 
 /** What `root` holds for `name`: the value under the key `heldKey` reads, or with `join` every spelling's value as one list. */
