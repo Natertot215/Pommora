@@ -144,7 +144,7 @@ describe('reconcileGovernedRoot — the context arm', () => {
     const on = reconcileGovernedRoot({ '<Projects>': ['Pommora', 'pommora'] }, resolving)
     expect(on.root['<Projects>']).toEqual(['Pommora'])
     const off = reconcileGovernedRoot({ '<Projects>': ['pommora', 'Pommora'] }, world)
-    expect(off.root['<Projects>']).toEqual(['pommora'])
+    expect(off.root['<Projects>']).toEqual(['Pommora'])
   })
 
   it('reads a scalar Context value as a list of one, so a hand-typed tag repairs and resolves', () => {
@@ -241,7 +241,7 @@ describe('reconcileGovernedRoot — option and checkbox casing (the crossing)', 
     const labels: PropertyDefinition = { ...tagsDef, select_options: [{ value: 'Done' }] }
     const held = { ...casing, defs: byFoldedName([labels]) }
     const twice = { Tags: ['done', 'Done', 'x'] }
-    expect(reconcileGovernedRoot(twice, held).root).toEqual({ Tags: ['done', 'x'] })
+    expect(reconcileGovernedRoot(twice, held).root).toEqual({ Tags: ['Done', 'x'] })
     expect(reconcileGovernedRoot(twice, { ...held, resolveCase: true }).root).toEqual({
       Tags: ['Done', 'x'],
     })

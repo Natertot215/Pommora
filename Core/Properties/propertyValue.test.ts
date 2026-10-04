@@ -331,8 +331,9 @@ describe('applyValueAtRoot', () => {
 })
 
 describe('heldSpelling — a value spelled as the file already spells it', () => {
-  it('gives each member a held member its title folds to, each used once', () => {
-    expect(heldSpelling(['Done', 'Done'], ['done', 'Done'])).toEqual(['done', 'Done'])
+  it('gives each member the one held member its title folds to; a member held twice keeps the registered spelling', () => {
+    expect(heldSpelling(['Done'], ['done', 'Done'])).toEqual(['Done'])
+    expect(heldSpelling(['Done'], ['done', 'DONE'])).toEqual(['Done'])
     expect(heldSpelling(['Done', 'Active'], 'done')).toEqual(['done', 'Active'])
   })
 
