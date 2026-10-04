@@ -9,7 +9,6 @@ import {
   reconcileGovernedRoot,
   spaceWorldOf,
   survivingChanges,
-  type GovernedWorld,
 } from '../Contexts/contextResolve'
 import { type Frozen, namesGonePage } from '../Properties/propertyValue'
 import { ensurePageId } from '../Nexus/adopt'
@@ -25,16 +24,6 @@ import { hiddenFolder } from '../Paths/exclusion'
 
 import { SPACE_SIDECAR } from '../Paths/nexusPaths'
 import { sweepGovernedRoots, unsweptLine } from '../Properties/governedSweep'
-
-function reconciledSidecar(
-  raw: Record<string, unknown>,
-  world: GovernedWorld,
-  inTransitKey: string | undefined,
-): Record<string, unknown> | null {
-  const skip = inTransitKey === undefined ? [] : heldKeys(raw, inTransitKey)
-  const r = reconcileGovernedRoot(raw, world, {}, skip)
-  return r.changed.length ? r.root : null
-}
 
 /** Answers each Link value it dropped, by its root's id, so a restore can park the ones naming a page the Trash holds. */
 export async function scrubReturning(
@@ -81,7 +70,9 @@ export async function scrubReturning(
   )
   for (const rel of sidecars)
     await rmwJsonStrict(join(root, rel), (raw) => {
-      const next = reconciledSidecar(raw, spaceWorld, inTransitKey)
+      const skip = inTransitKey === undefined ? [] : heldKeys(raw, inTransitKey)
+      const r = reconcileGovernedRoot(raw, spaceWorld, {}, skip)
+      const next = r.changed.length ? r.root : null
       const gone = unlinked(next ?? raw)
       note(raw, gone, asString(raw.id))
       return gone.length

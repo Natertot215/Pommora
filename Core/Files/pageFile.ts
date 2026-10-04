@@ -95,7 +95,7 @@ function mergeInto(
   modeledKeys: readonly string[],
 ): string {
   if (mergeable(doc)) {
-    const written = (key: string): boolean => key in modeled && modeled[key] !== undefined
+    const written = (key: string): boolean => modeled[key] !== undefined
     const items = isMap(doc.contents) ? doc.contents.items : []
     const dropped = modeledKeys.filter((k) => !written(k) && doc.has(k))
     // A key written beside a dropped spelling of itself takes that spelling's place.
@@ -104,7 +104,7 @@ function mergeInto(
       const pair = items.find((i) => String(i.key) === was)
       if (pair) (pair.key as { value: string }).value = key
     }
-    const held: Record<string, unknown> = doc.toJS() ?? {}
+    const held = valuesOf(doc)
     for (const key of modeledKeys) {
       if (!written(key)) {
         if (doc.has(key)) doc.delete(key)

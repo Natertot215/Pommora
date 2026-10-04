@@ -9,6 +9,7 @@ import {
   sweepGovernedRoots,
   unsweptLine,
 } from '../Properties/governedSweep'
+import { byFoldedName } from '../Properties/properties'
 import { editCaches } from '../Properties/propertyCache'
 import { heldTreeOf } from './liveTree'
 import type { NexusTree } from './tree'
@@ -90,7 +91,7 @@ export async function deleteCascade(
     titles.filter((t) => !titleHeldOutside(root, t, deleted)).map(normalizeTitle),
   )
   try {
-    const defs = new Map((await linkDefs(root)).map((d) => [foldKey(d.name), d]))
+    const defs = byFoldedName(await linkDefs(root))
     if (!defs.size) return { cascade: { pages: [], hosts: [] }, links: [] }
     const hits = [...gone].map(queryMentions)
     const rels = hits.includes(null)
@@ -186,7 +187,7 @@ export async function renameCascade(
               : undefined,
           )
     const defs = Object.values((await readKeptRegistry(root)).defs)
-    const names = new Set(defs.map((d) => foldKey(d.name)))
+    const names = byFoldedName(defs)
     const registered = (raw: Record<string, unknown>): Record<string, unknown> =>
       Object.fromEntries(Object.entries(raw).filter(([k]) => names.has(foldKey(k))))
     const moved = (values: Record<string, unknown>): Record<string, unknown> | null => {
