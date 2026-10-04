@@ -229,6 +229,17 @@ describe('mergeFrontmatter — a key moved to another spelling keeps its place',
     ).toBe('---\na: 1\nTags:\n  - x\n  - y\nb: 2\n---\nbody')
   })
 
+  it('a moved key whose value is unchanged keeps its node, comments included', () => {
+    expect(
+      mergeFrontmatter(
+        '---\ntags:\n  - x # first\n  - y\n---\nbody',
+        { Tags: ['x', 'y'] },
+        ['tags', 'Tags'],
+        'body',
+      ),
+    ).toBe('---\nTags:\n  - x # first\n  - y\n---\nbody')
+  })
+
   it('appends a key written beside an unrelated dropped one', () => {
     expect(
       mergeFrontmatter('---\nold: 1\nb: 2\n---\nbody', { Tags: ['x'] }, ['old', 'Tags'], 'body'),

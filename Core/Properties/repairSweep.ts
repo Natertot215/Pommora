@@ -1,8 +1,8 @@
 import { join } from '../Paths/posix'
 import {
   governedWorld,
-  preservedChanges,
   reconcileGovernedRoot,
+  survivingChanges,
   type GovernedWorld,
 } from '../Contexts/contextResolve'
 import type { Adoption } from './propertyValue'
@@ -44,7 +44,7 @@ export async function runRepairSweep(root: string, reread: SeedReread): Promise<
       if (!world || !live()) return null
       const r = reconcileGovernedRoot(fm, world)
       adoptions.push(...r.adoptions)
-      return { ...fm, ...preservedChanges(r, fm) }
+      return { ...fm, ...survivingChanges(r) }
     }
     await sweepGovernedRoots(root, [...worlds.keys()], { raw })
     await applyAdoptions(root, adoptions)

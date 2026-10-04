@@ -326,6 +326,19 @@ describe('setContext reads the held tree', () => {
       expect('<projects>' in far).toBe(false)
     })
 
+    it('with case resolution on, a link the far file reads as missing lands, whatever a second spelling holds', async () => {
+      await resolveCase()
+      await writeFile(
+        csFile(),
+        JSON.stringify({ id: 'sp-cs', '<Projects>': ['B'], '<projects>': ['Pommora'] }),
+      )
+      await refreshTree(root)
+      expect((await link('ctxC', ['sp-cs'])).ok).toBe(true)
+      const far = await readJsonAt(csFile())
+      expect(far['<Projects>']).toEqual(['B', 'Pommora'])
+      expect('<projects>' in far).toBe(false)
+    })
+
     it('writes the pair onto both files', async () => {
       const r = await link('ctxC', ['sp-cs'])
       expect(r.ok).toBe(true)

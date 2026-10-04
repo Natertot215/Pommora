@@ -110,6 +110,8 @@ function governorOf(key: string, world: GovernedWorld): Governor | undefined {
   return group && { name: contextKey(group.def.title), group }
 }
 
+const memberCount = (v: unknown): number => (Array.isArray(v) ? v.length : 1)
+
 // A governed name reconciles once, under the key `heldKey` reads, and its other spellings pass through as foreign; with `resolveCase` they join it under the registered spelling and leave once that key is written. A key in `skip` passes through verbatim.
 export function reconcileGovernedRoot(
   root: Record<string, unknown>,
@@ -138,14 +140,16 @@ export function reconcileGovernedRoot(
       if (!isBlankValue(reconciled.value)) next = encodeValue(reconciled.value)
     } else {
       const byTitle = world.contexts.spacesByTitle.get(governor.group.def.id)
-      const spaces = listOf(held ?? []).map((value) => byTitle?.get(normalizeTitle(value)))
-      // A live reconcile leaves a key naming a Space it can't resolve as written, for the user to settle.
-      if (!frozen && spaces.includes(undefined)) {
-        out[key] = raw
-        continue
-      }
-      const titles = spaces.flatMap((space) => (space ? [space.title] : []))
+      const titles = listOf(held ?? []).flatMap((value) => {
+        const space = byTitle?.get(normalizeTitle(value))
+        return space ? [space.title] : []
+      })
       if (titles.length) next = titles
+    }
+    // A live reconcile never shrinks a value: one holding a member it can't resolve stays as written, every spelling of it, for the user to settle.
+    if (!frozen && next !== undefined && memberCount(next) < memberCount(held)) {
+      out[key] = raw
+      continue
     }
     if (next === undefined) {
       changed.push(key)
@@ -164,23 +168,8 @@ export function reconcileGovernedRoot(
   return { root: out, changed, adoptions, retired }
 }
 
-export function survivingChanges({ root, changed }: Reconciled): Record<string, unknown> {
-  return Object.fromEntries(changed.filter((k) => k in root).map((k) => [k, root[k]]))
-}
-
-const memberCount = (v: unknown): number => (Array.isArray(v) ? v.length : 1)
-
-// A reconcile that can't resolve a member must never shrink the value it writes: `original` is the pre-reconcile root, a change that drops members against the key it read is withheld, and a spelling joined into a withheld key stays.
-export function preservedChanges(
-  reconciled: Reconciled,
-  original: Record<string, unknown>,
-): Record<string, unknown> {
-  const surviving = survivingChanges(reconciled)
-  for (const key of Object.keys(surviving)) {
-    if (memberCount(surviving[key]) < memberCount(heldValue(original, key, false)))
-      delete surviving[key]
-  }
-  for (const [key, target] of Object.entries(reconciled.retired))
-    if (target in surviving) surviving[key] = undefined
-  return surviving
+export function survivingChanges({ root, changed, retired }: Reconciled): Record<string, unknown> {
+  return Object.fromEntries(
+    changed.filter((k) => k in root || k in retired).map((k) => [k, root[k]]),
+  )
 }

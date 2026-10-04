@@ -69,7 +69,7 @@ function renamed(
 
 async function dispatch(ctx: MutateContext, req: MutateRequest): Promise<MutateReply> {
   const { root, deps } = ctx
-  // A write sent here changes which Contexts and Spaces exist or what they're titled, or resolves a Space by title or path to write a tag or the Space's sidecar, so it holds the Contexts folder's one lock until the walk it owed is paid and resolves against a world no rename or delete is moving: a tag or Space value written mid-rename lands under the new key, and one naming a Space by a path the rename moved answers the refusal. A page's value write runs outside it, since it takes the page's own lock, which every sweep takes too, and never shrinks or drops a key it can't resolve (`preservedChanges` in `contextResolve.ts`), so it lands right whether it comes before or after a sweep reaches the page.
+  // A write sent here changes which Contexts and Spaces exist or what they're titled, or resolves a Space by title or path to write a tag or the Space's sidecar, so it holds the Contexts folder's one lock until the walk it owed is paid and resolves against a world no rename or delete is moving: a tag or Space value written mid-rename lands under the new key, and one naming a Space by a path the rename moved answers the refusal. A page's value write runs outside it, since it takes the page's own lock, which every sweep takes too, and never shrinks or drops a key it can't resolve (`reconcileGovernedRoot` in `contextResolve.ts`), so it lands right whether it comes before or after a sweep reaches the page.
   const underContexts = <T>(fn: () => Promise<T>): Promise<T> =>
     machine().lock(contextsDir(root), async () => {
       try {

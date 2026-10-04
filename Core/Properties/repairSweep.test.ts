@@ -191,7 +191,7 @@ describe('runRepairSweep', () => {
     const line = (await readFile(page, 'utf8')).split('\n').indexOf('tags: [alpha]')
     await runRepairSweep(root, await seedContentIndex(root))
     const out = await readFile(page, 'utf8')
-    expect(out.split('\n')[line]).toBe('Tags:')
+    expect(out.split('\n')[line]).toBe('Tags: [ alpha ]')
     expect(splitFrontmatter(out)).toMatchObject({ Tags: ['alpha'] })
     expect('tags' in splitFrontmatter(out)).toBe(false)
   })

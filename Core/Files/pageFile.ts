@@ -111,9 +111,12 @@ function mergeInto(
       const pair = items.find((i) => String(i.key) === was)
       if (pair) (pair.key as { value: string }).value = key
     }
+    const held: Record<string, unknown> = doc.toJS() ?? {}
     for (const key of modeledKeys) {
-      if (written(key)) doc.set(key, modeled[key])
-      else if (doc.has(key)) doc.delete(key)
+      if (!written(key)) {
+        if (doc.has(key)) doc.delete(key)
+      } else if (JSON.stringify(held[key]) !== JSON.stringify(modeled[key]))
+        doc.set(key, modeled[key])
     }
     const out = serialized(doc)
     if (out !== null) return out
