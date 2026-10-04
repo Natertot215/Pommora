@@ -160,9 +160,8 @@ export async function unlinkSpaceValue(
   const take: Rewrite = (raw, file) => {
     const taken: string[] = []
     const next = editHeldLists(raw, key, (held) => {
-      const list = stripList(held, names)
-      if (list) taken.push(...held.filter((v): v is string => typeof v === 'string' && names(v)))
-      return list
+      taken.push(...held.filter((v): v is string => typeof v === 'string' && names(v)))
+      return stripList(held, names)
     })
     if (next) captured.push(captureRoot(raw, file, taken))
     return next

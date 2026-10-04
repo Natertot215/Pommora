@@ -8,7 +8,7 @@ import { fail, fault, ok, type Result } from '../Contract/result'
 import type { PageDetail } from '../Pages/pageDetail'
 import { machine } from '../Platform/machine'
 import { spellings } from '../Paths/caseFold'
-import { joinValues } from '../Properties/pageValue'
+import { heldValue, joinValues } from '../Properties/pageValue'
 
 interface PageEnvelope {
   frontmatter: string
@@ -160,12 +160,9 @@ export function renameFrontmatterKey(
   if (rival && collision === 'prefer-new') {
     for (const p of [pair, ...variants]) drop(p)
   } else {
-    const joined = [...(rival ? [rival] : []), pair, ...(join ? variants : [])]
-    if (joined.length > 1)
-      doc.set(
-        String(pair.key),
-        joined.map((p) => values[String(p.key)]).reduce((a, b) => joinValues(a, b)),
-      )
+    const moved = heldValue(values, oldName, join)
+    const value = rival ? joinValues(values[String(rival.key)], moved) : moved
+    if (value !== values[String(pair.key)]) doc.set(String(pair.key), value)
     for (const p of [...variants, ...(rival ? [rival] : [])]) drop(p)
     ;(pair.key as { value: string }).value = newName
   }
