@@ -1,6 +1,6 @@
 import { firstPerTitle, normalizeTitle } from '../Connections/connections'
 import { foldKey } from '../Paths/caseFold'
-import { heldKey, heldKeys, heldValue, writeTarget } from '../Files/heldKeys'
+import { heldKey, heldValue, writeTarget } from '../Files/heldKeys'
 import { contextKey, parseContextKey } from './contexts'
 import { byFoldedName, holdsList, type PropertyDefinition } from '../Properties/properties'
 import {
@@ -123,8 +123,7 @@ export function reconcileGovernedRoot(
   const { resolveCase } = world
   for (const [key, raw] of Object.entries(root)) {
     const governor = skip.includes(key) ? undefined : governorOf(key, world)
-    const keys = governor ? heldKeys(root, governor.name) : []
-    if (!governor || keys[0] !== key) {
+    if (!governor || heldKey(root, governor.name) !== key) {
       out[key] = raw
       continue
     }
