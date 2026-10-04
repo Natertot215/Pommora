@@ -140,6 +140,13 @@ describe('reconcileGovernedRoot — the context arm', () => {
     expect(survivingChanges(r)).toEqual({})
   })
 
+  it('writes a Space named twice in two casings once', () => {
+    const on = reconcileGovernedRoot({ '<Projects>': ['Pommora', 'pommora'] }, resolving)
+    expect(on.root['<Projects>']).toEqual(['Pommora'])
+    const off = reconcileGovernedRoot({ '<Projects>': ['pommora', 'Pommora'] }, world)
+    expect(off.root['<Projects>']).toEqual(['pommora'])
+  })
+
   it('reads a scalar Context value as a list of one, so a hand-typed tag repairs and resolves', () => {
     const { root, changed } = reconcileGovernedRoot({ '<Projects>': 'pommora' }, resolving)
     expect(root['<Projects>']).toEqual(['Pommora'])
@@ -228,6 +235,16 @@ describe('reconcileGovernedRoot — option and checkbox casing (the crossing)', 
   it('writes the registered option and true with case resolution on', () => {
     const { root } = reconcileGovernedRoot(input, { ...casing, resolveCase: true })
     expect(root).toEqual({ Stage: ['Done'], Done: true })
+  })
+
+  it('writes a Multi-Select holding two casings of one option as that option once', () => {
+    const labels: PropertyDefinition = { ...tagsDef, select_options: [{ value: 'Done' }] }
+    const held = { ...casing, defs: byFoldedName([labels]) }
+    const twice = { Tags: ['done', 'Done', 'x'] }
+    expect(reconcileGovernedRoot(twice, held).root).toEqual({ Tags: ['done', 'x'] })
+    expect(reconcileGovernedRoot(twice, { ...held, resolveCase: true }).root).toEqual({
+      Tags: ['Done', 'x'],
+    })
   })
 })
 

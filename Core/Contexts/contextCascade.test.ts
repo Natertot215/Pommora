@@ -606,6 +606,12 @@ describe('unlink cascades (D-3)', () => {
     expect((await fmOf(other()))['<Classes>']).toEqual(['CS 161'])
   })
 
+  it('unlinkContextKey captures a member written as a number', async () => {
+    await writeFile(other(), '---\nid: p2\n<Classes>:\n  - 2024\n  - CS 161\n---\nbody')
+    const r = await unlinkContextKey(root, 'Classes')
+    expect(r.ok && r.value.captured).toContainEqual({ kind: 'page', values: ['2024', 'CS 161'] })
+  })
+
   it('unlinkSpaceValue strips and captures a tag written as a single value', async () => {
     await writeFile(other(), '---\nid: p2\n<Projects>: Pommora\n---\nbody')
     const r = await unlinkSpaceValue(root, 'Projects', 'Pommora')

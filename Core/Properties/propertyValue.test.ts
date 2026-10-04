@@ -369,6 +369,13 @@ describe('options and checkboxes decode without regard to case', () => {
     ])
   })
 
+  it('a Multi-Select reads two casings of one member as that member once, where it first stands', () => {
+    expect(decodeValue(labels, ['docs', 'new', 'Docs', 'NEW'])).toEqual({
+      kind: 'multiSelect',
+      value: ['Docs', 'new'],
+    })
+  })
+
   it('a checkbox reads true, or the word true or yes in any casing, as checked', () => {
     for (const raw of ['Yes', 'yes', 'TRUE', 'true', true])
       expect(decodeValue(checkbox, raw)).toEqual({ kind: 'checkbox', value: true })

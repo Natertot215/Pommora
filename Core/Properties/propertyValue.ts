@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import { listOf } from '../Contract/validators'
+import { isScalar, listOf } from '../Contract/validators'
 import { optionValues, PROPERTY_TYPES, type PropertyDefinition } from './properties'
 import { normalizeTitle, parseConnectionText } from '../Connections/connections'
 import { heldKey } from '../Paths/caseFold'
@@ -37,15 +37,25 @@ export type Adoption = { propertyId: string; value: string }
 // An outside `- 2024` parses as a number and must still name the option "2024".
 const optionList = (raw: unknown): string[] =>
   listOf(raw)
-    .filter((x) => typeof x === 'string' || typeof x === 'number' || typeof x === 'boolean')
+    .filter(isScalar)
     .map(String)
     .filter((x) => x !== '')
 
-/** The option `written` names, as its definition spells it. */
-export function registeredOption(def: PropertyDefinition, written: string): string | undefined {
-  const fold = normalizeTitle(written)
-  return optionValues(def).find((v) => normalizeTitle(v) === fold)
+const foldedOptions = new WeakMap<PropertyDefinition, Map<string, string>>()
+
+// Held against the definition it was built from, which an edit replaces rather than mutates.
+function optionsByFold(def: PropertyDefinition): Map<string, string> {
+  let byFold = foldedOptions.get(def)
+  if (!byFold) {
+    byFold = new Map(optionValues(def).map((v) => [normalizeTitle(v), v]))
+    foldedOptions.set(def, byFold)
+  }
+  return byFold
 }
+
+/** The option `written` names, as its definition spells it. */
+export const registeredOption = (def: PropertyDefinition, written: string): string | undefined =>
+  optionsByFold(def).get(normalizeTitle(written))
 
 /** Checked as a file spells it: `true`, or the word `true` or `yes` in any casing. */
 const isCheckedRaw = (raw: unknown): boolean =>
@@ -70,8 +80,12 @@ export function decodeValue(def: PropertyDefinition, raw: unknown): PropertyValu
       return value === undefined ? NULL_VALUE : { kind, value }
     }
     case 'multiSelect': {
-      const xs = optionList(raw).map((x) => registeredOption(def, x) ?? x)
-      return xs.length === 0 ? NULL_VALUE : { kind, value: xs }
+      const members = new Map<string, string>()
+      for (const x of optionList(raw)) {
+        const fold = normalizeTitle(x)
+        if (!members.has(fold)) members.set(fold, optionsByFold(def).get(fold) ?? x)
+      }
+      return members.size === 0 ? NULL_VALUE : { kind, value: [...members.values()] }
     }
     // Deliberately NOT merged with multiSelect: optionValues on a file def returns [], so a merged case would discard every attachment through the restore path.
     case 'file': {
