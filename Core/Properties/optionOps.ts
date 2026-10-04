@@ -36,7 +36,7 @@ import { readPageRecord } from '../Nexus/readNexus'
 import { containerAt, containerSchema, pagePathsIn, spaceAt } from '../Nexus/treePatch'
 import { heldValue } from '../Files/heldKeys'
 import type { Json } from '../Files/stableJson'
-import { join } from '../Paths/posix'
+import { isMarkdownFile, join } from '../Paths/posix'
 
 const NO_OPTION = fail('not-found', 'That option no longer exists.')
 const NO_GROUP = fail('not-found', 'That group no longer exists.')
@@ -104,19 +104,18 @@ export async function registerHeldOptions(root: string, rels?: readonly string[]
         ...tree.contexts.flatMap((g) => g.spaces.map((s) => s.path)),
       ]
       for (const rel of rels ?? everywhere) {
-        const space = spaceAt(tree, rel)
+        const pages = isMarkdownFile(rel) ? [rel] : null
+        const space = pages ? null : spaceAt(tree, rel)
         const defs = (space ? tree.config.registry : containerSchema(tree, rel)).filter(
           (d) => d.type === 'multiSelect',
         )
         if (!defs.length) continue
         if (space) take(space.values ?? {}, defs)
-        else {
-          const container = containerAt(tree, rel)
-          for (const page of container ? pagePathsIn(container) : [rel]) {
+        else
+          for (const page of pages ?? pagePathsIn(containerAt(tree, rel))) {
             const read = await readPageRecord(join(root, page), page).catch(() => null)
             if (read?.kind === 'read') take(read.fm, defs)
           }
-        }
       }
       if (!held.size) return
       // A rename still owed to the files its sweep skipped leaves its old value held, and registering it would end the rename's replay.

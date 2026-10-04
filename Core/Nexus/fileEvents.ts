@@ -163,11 +163,10 @@ const oweValue = (owed: Owed, rel: string, bodyOnly: boolean): void => {
   owed.values.set(rel, bodyOnly && (owed.values.get(rel) ?? true))
 }
 
-// A settle that drained what was owed and found an open begun owes it again, joined with what was owed since.
+// A settle that drained what was owed and found an open begun owes again what it had yet to push, joined with what was owed since.
 export function oweAgain(owed: Owed, drained: Owed): void {
   for (const rel of drained.pages) owed.pages.add(rel)
   for (const [rel, bodyOnly] of drained.values) oweValue(owed, rel, bodyOnly)
-  for (const rel of drained.options) owed.options.add(rel)
   for (const [key, host] of drained.tiles) owed.tiles.set(key, host)
   owed.assets ||= drained.assets
   owed.corpus ||= drained.corpus
