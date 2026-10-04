@@ -86,14 +86,14 @@ export function editOption(root: string, propertyId: string, e: OptionEdit): Pro
   )
 }
 
-/** The registry takes each Multi-Select member the files at `rels` hold beyond their definition — a page, a container's pages, or a Space — or every file's when `rels` is omitted, in one write. It reads under the schema lock, so a cascade is read whole. */
+/** Registers each Multi-Select member the files at `rels` hold beyond their definition — a page, a container's pages, or a Space — or every file's when `rels` is omitted, in one write. It reads under the schema lock, so a cascade is read whole. */
 export async function registerHeldOptions(root: string, rels?: readonly string[]): Promise<void> {
   try {
     await serializeSchemaOp(root, async () => {
       const tree = heldTreeOf(root)
       if (!tree) return
       const held = new Map<string, string[]>()
-      const take = (values: Json, defs: readonly PropertyDefinition[]): void => {
+      const collect = (values: Json, defs: readonly PropertyDefinition[]): void => {
         for (const def of defs) {
           const members = unregisteredMembers(def, heldValue(values, def.name, false))
           if (members.length) held.set(def.id, [...(held.get(def.id) ?? []), ...members])
@@ -110,11 +110,11 @@ export async function registerHeldOptions(root: string, rels?: readonly string[]
           (d) => d.type === 'multiSelect',
         )
         if (!defs.length) continue
-        if (space) take(space.values ?? {}, defs)
+        if (space) collect(space.values ?? {}, defs)
         else
           for (const page of pages ?? pagePathsIn(containerAt(tree, rel))) {
             const read = await readPageRecord(join(root, page), page).catch(() => null)
-            if (read?.kind === 'read') take(read.fm, defs)
+            if (read?.kind === 'read') collect(read.fm, defs)
           }
       }
       if (!held.size) return
@@ -141,7 +141,7 @@ export async function registerHeldOptions(root: string, rels?: readonly string[]
       })
     })
   } catch (e) {
-    console.error('held options: the registry could not take them:', errText(e))
+    console.error('held options: could not be registered:', errText(e))
   }
 }
 

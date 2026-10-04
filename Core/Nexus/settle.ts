@@ -1,4 +1,4 @@
-// The one place a change to the tree, pages, values, tiles, or assets reaches the window. The app's own writes land here as events while they happen; a write's gate and the watcher's batch then stamp what their events listed missing, and settle: the walk the events owed, whose own listing of what is missing its ID is stamped as `stampable` allows and settled in turn, the registry taking the options the changed files hold, and one push of what moved.
+// The one place a change to the tree, pages, values, tiles, or assets reaches the window. The app's own writes land here as events while they happen; a write's gate and the watcher's batch then stamp what their events listed missing, and settle: the walk the events owed, whose own listing of what is missing its ID is stamped as `stampable` allows and settled in turn, the options the changed files hold registered, and one push of what moved.
 
 import { relDirname, relative } from '../Paths/posix'
 import { escapes } from '../Paths/pathSafety'

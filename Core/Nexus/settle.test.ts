@@ -781,7 +781,7 @@ describe('an outside batch’s turn', () => {
   })
 })
 
-describe('held options — the registry takes the Multi-Select members a changed file holds', () => {
+describe('held options — the Multi-Select members a changed file holds are registered', () => {
   const DEPS: TrashDeps = { trashMode: 'system', trashToSystem: async () => {} }
   const SPACE = ['.nexus', 'contexts', 'Areas', 'Home', '_space.json'] as const
   const page = (id: string, fm = ''): string => `---\nID: ${id}\n${fm}---\n\nbody\n`
