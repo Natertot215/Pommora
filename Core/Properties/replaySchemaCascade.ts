@@ -9,6 +9,7 @@ import { renameSweep } from './registryProperty'
 import { stripAndRemove } from './deleteProperty'
 import { dropOptionFromDef, optionCascade } from './optionOps'
 import { optionValues } from './properties'
+import { normalizeTitle } from '../Connections/connections'
 import {
   clearSchemaJournal,
   readSchemaJournal,
@@ -34,6 +35,11 @@ export function replaySchemaCascade(
   })
 }
 
+const named =
+  (name: string) =>
+  (d: { name: string }): boolean =>
+    normalizeTitle(d.name) === normalizeTitle(name)
+
 async function replay(
   root: string,
   journal: SchemaJournal,
@@ -42,16 +48,17 @@ async function replay(
   const defs = (await readRegistry(root)).defs
   switch (journal.op) {
     case 'rename': {
-      // The def still named `to`, with `from` taken by no other, means the commit landed and the sweep is owed; anything else is a state the record no longer maps.
-      const taken = Object.values(defs).some((d) => d.name === journal.from)
-      if (defs[journal.id]?.name !== journal.to || taken) return NO_REACH
-      return { skipped: await renameSweep(root, journal.from, journal.to), hosts: [] }
+      // The def still named `to` in any casing, with `from` taken by none, means the commit landed and the sweep is owed, to the name the def holds now; anything else is a state the record no longer maps.
+      const def = defs[journal.id]
+      if (!def || !named(journal.to)(def) || Object.values(defs).some(named(journal.from)))
+        return NO_REACH
+      return { skipped: await renameSweep(root, journal.from, def), hosts: [] }
     }
     case 'delete': {
       // The registry commits LAST in a delete, so the def still present under its journaled name is the crash state. The id under another name is alive on purpose — a restore or re-create consumes the record at createProperty; this arm catches what the delete left owed. A record a delete's answer carried exists only once its registry commit landed, so for it a present def is a restore.
       const def = defs[journal.id]
-      const crashed = !answered && def?.name === journal.name
-      const freed = !def && !Object.values(defs).some((d) => d.name === journal.name)
+      const crashed = !answered && def !== undefined && named(journal.name)(def)
+      const freed = !def && !Object.values(defs).some(named(journal.name))
       if (!crashed && !freed) return NO_REACH
       const folders = await collectionFolders(root)
       const files = await keyHolderFiles(root, journal.name, folders)

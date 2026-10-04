@@ -4,7 +4,7 @@ import { keyedHolders, keyHolderFiles } from './keyHolders'
 import { patchSidecar } from '../Files/sidecar'
 import { sidecarPath } from '../Paths/paths'
 import { readJsonObject } from '../Files/atomicWrite'
-import { stripKeys, sweepGovernedRoots } from './governedSweep'
+import { stripHeld, sweepGovernedRoots } from './governedSweep'
 import { readRegistry, serializeSchemaOp } from './propertiesRegistry'
 import { ok, type Result } from '../Contract/result'
 import { mapViews } from '../Views/views'
@@ -34,7 +34,7 @@ async function removeInner(
 
   const { values, strip } = await keyedHolders(
     await keyHolderFiles(root, key, [collectionFolder]),
-    key,
+    def,
   )
   const clear = propertyClear(propertyId)
   // Views, cache, and the assignment change in ONE write under the sidecar's own lock, so the page-read window above can't revert a concurrent icon/banner/view write — THEN the pass and the page strip. The cache keeps the values it already holds, which a refill cut short left for pages it never reached.
@@ -51,6 +51,6 @@ async function removeInner(
   })
   if (!written.ok) return written
   const reach = await reachConfig(root, { kind: 'property', propertyId }, collectionFolder)
-  const { skipped } = await sweepGovernedRoots(root, strip, { raw: stripKeys(key) })
+  const { skipped } = await sweepGovernedRoots(root, strip, { raw: stripHeld(key) })
   return ok({ skipped: skipped.length + reach.skipped, hosts: reach.hosts })
 }

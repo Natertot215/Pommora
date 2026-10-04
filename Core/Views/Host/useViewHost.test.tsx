@@ -521,6 +521,18 @@ describe('the values epoch', () => {
     await act(async () => {})
     expect(vals?.effectiveValues.p2?.frontmatter).toEqual({ id: 'p2', State: ['Done'] })
   })
+
+  it('a rename re-keys an override holding another casing', async () => {
+    await mountValues()
+    act(() =>
+      vals?.setValueOverride({
+        p2: { fm: { id: 'p2', status: ['Done'] } as never, write: 0 },
+      }),
+    )
+    act(() => useSession.getState().bumpValuesEpoch('Status', 'State'))
+    await act(async () => {})
+    expect(vals?.effectiveValues.p2?.frontmatter).toEqual({ id: 'p2', State: ['Done'] })
+  })
 })
 
 const setCollection = (view?: Partial<SavedView>): CollectionNode =>

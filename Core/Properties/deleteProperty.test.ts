@@ -191,6 +191,28 @@ describe('a global delete reaches a Space sidecar', () => {
     expect(raw.$order).toEqual({ properties: ['Other'] })
   })
 
+  it('strips every spelling from a page and a Space and records the joined value', async () => {
+    const c = await createProperty(root, {
+      id: '',
+      name: 'Tags',
+      type: 'multiSelect',
+      select_options: [{ value: 'a' }, { value: 'b' }],
+    } as PropertyDefinition)
+    if (!c.ok) throw new Error('setup failed')
+    await assignProperty(root, notes, c.value.id)
+    const p = await createTestPage(notes, 'A', { body: 'b' })
+    if (!p.ok) throw new Error('setup failed')
+    const pid = '01ARZ3NDEKPSV4RRFFQ69G5FAV'
+    await writeFile(p.value.path, `---\n${ID_KEY}: ${pid}\nTags: [a]\ntags: [b]\n---\nb\n`)
+    const file = await seedSpace('Pommora', { id: 'sp1', Tags: ['b'], tags: ['a', 'B'] })
+
+    expect((await deleteProperty(root, c.value.id)).ok).toBe(true)
+
+    expect(await readFile(p.value.path, 'utf8')).toBe(`---\n${ID_KEY}: ${pid}\n---\nb\n`)
+    expect(await readJsonAt(file)).toEqual({ id: 'sp1' })
+    expect((await bundle(c.value.id)).values).toEqual({ [pid]: ['a', 'b'], sp1: ['b', 'a'] })
+  })
+
   it('a property named icon sets and deletes as a value, leaving every Space its glyph', async () => {
     const c = await createProperty(root, {
       id: '',

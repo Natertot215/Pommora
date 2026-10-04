@@ -113,6 +113,14 @@ describe('removeProperty — strip + cache (C-3/C-6)', () => {
     expect(vals).toEqual(expect.arrayContaining([['active'], ['done']]))
   })
 
+  it('a holder of another casing has its value cached and its key stripped', async () => {
+    await writeFile(pageA, (await readFile(pageA, 'utf8')).replace('Stage:', 'stage:'))
+    const id = splitFrontmatter(await readFile(pageA, 'utf8'))[ID_KEY] as string
+    expect((await removeProperty(root, folder, propId)).ok).toBe(true)
+    expect(splitFrontmatter(await readFile(pageA, 'utf8'))).not.toHaveProperty('stage')
+    expect((await cacheBlock())?.values[id]).toEqual(['active'])
+  })
+
   it('an identity-less holder isn’t held, isn’t stamped by the strip, and keeps its bytes', async () => {
     const raw = await readFile(pageA, 'utf8')
     const bare = raw.replace(new RegExp(`^${ID_KEY}:.*\\n`, 'm'), '')

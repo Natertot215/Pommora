@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest'
-import { readFile, rm, writeFile } from 'node:fs/promises'
+import { readFile, rm, stat, writeFile } from 'node:fs/promises'
 import { join } from '../Paths/posix'
 import { readJsonAt, seedSpaceSidecar, tempRoot } from '../Testing/hostFs'
 import {
@@ -16,6 +16,7 @@ import { updatePageProperty } from '../Nexus/page'
 import { createTestPage } from '../Testing/createTestPage'
 import { pathExists } from '../Files/atomicWrite'
 import { readRegistry } from './propertiesRegistry'
+import { readSchemaJournal } from './propertyJournal'
 import { nexusConfig } from '../Paths/paths'
 import { NEXUS_CONFIG_FILES } from '../Paths/nexusPaths'
 import type { PropertyDefinition } from './properties'
@@ -159,6 +160,42 @@ describe('renameProperty and editProperty', () => {
       value: { from: 'Status', to: 'Phase', cascade: { pages: [], hosts: [] } },
     })
     expect(await readFile(p.value.path, 'utf8')).toContain('foo: bar')
+  })
+
+  it('a change of case alone commits the registry and writes no member file or journal', async () => {
+    const c = await createProperty(root, def({ name: 'Status', type: 'select' }))
+    const col = await createFolderEntity(root, 'collection', 'Col', newId())
+    if (!c.ok || !col.ok) return
+    await assignProperty(root, col.value.path, c.value.id)
+    const p = await createTestPage(col.value.path, 'Holder', { body: 'b' })
+    if (!p.ok) return
+    await writeFile(p.value.path, `---\nID: 01ARZ3NDEKPSV4RRFFQ69G5FAV\nStatus: Active\n---\nb\n`)
+    const space = await seedSpaceSidecar(root, 'Projects', 'Pommora', { id: 'sp1', status: 'x' })
+    const before = await stat(p.value.path)
+
+    expect((await renameProperty(root, c.value.id, 'STATUS')).ok).toBe(true)
+    expect((await readRegistry(root)).defs[c.value.id].name).toBe('STATUS')
+    expect(await readFile(p.value.path, 'utf8')).toBe(
+      `---\nID: 01ARZ3NDEKPSV4RRFFQ69G5FAV\nStatus: Active\n---\nb\n`,
+    )
+    expect((await stat(p.value.path)).mtimeMs).toBe(before.mtimeMs)
+    expect(await readJsonAt(space)).toEqual({ id: 'sp1', status: 'x' })
+    expect(await readSchemaJournal(root)).toBeNull()
+  })
+
+  it('refuses a rename onto a key a page holds in another case, with the held count', async () => {
+    const c = await createProperty(root, def({ name: 'Status', type: 'select' }))
+    const col = await createFolderEntity(root, 'collection', 'Col', newId())
+    if (!c.ok || !col.ok) return
+    await assignProperty(root, col.value.path, c.value.id)
+    const p = await createTestPage(col.value.path, 'Holder', { body: 'b' })
+    if (!p.ok) return
+    await writeFile(p.value.path, `---\nID: 01ARZ3NDEKPSV4RRFFQ69G5FAV\nfoo: bar\n---\nb\n`)
+
+    const refused = await renameProperty(root, c.value.id, 'Foo')
+    expect(refused.ok).toBe(false)
+    if (!refused.ok) expect(refused.error.message).toBe('1 file already uses "Foo" as a key.')
+    expect((await readRegistry(root)).defs[c.value.id].name).toBe('Status')
   })
 
   it('refuses a rename onto a key a Space sidecar already holds', async () => {

@@ -30,6 +30,7 @@ import { readSchemaJournal } from './propertyJournal'
 import { unsweptLine } from './governedSweep'
 import { type ConfigSurfaces, seedConfigSurfaces, viewOn } from '../Testing/configSurfaces'
 import { sidecarPath } from '../Paths/paths'
+import { splitFrontmatter } from '../Files/pageFile'
 import type { PropertyDefinition, SelectOption } from './properties'
 import { settleNow } from '../Nexus/settle'
 import type { ValueChange } from '../Nexus/tree'
@@ -387,6 +388,37 @@ describe('renameOption', () => {
     const content = await readFile(page, 'utf8')
     expect(content).toContain('Critical')
     expect(content).not.toContain('Urgent')
+  })
+
+  it('rewrites the value under every spelling a page holds', async () => {
+    const status = await mkProperty({
+      name: 'Status',
+      type: 'select',
+      select_options: [{ value: 'Done' }],
+    })
+    const tags = await mkProperty({
+      name: 'Tags',
+      type: 'multiSelect',
+      select_options: [{ value: 'Done' }],
+    })
+    const col = await createFolderEntity(root, 'collection', 'Col', newId())
+    if (!col.ok) throw new Error('folder failed')
+    await assignProperty(root, col.value.path, status)
+    await assignProperty(root, col.value.path, tags)
+    const page = join(col.value.path, 'One.md')
+    await writeFile(
+      page,
+      '---\nID: 01ARZ3NDEKPSV4RRFFQ69G5FAV\nstatus: Done\nTags: [Done, Keep]\ntags: [Done]\n---\nb\n',
+    )
+
+    expect((await renameOption(root, status, 'Done', 'Finished')).ok).toBe(true)
+    expect((await renameOption(root, tags, 'Done', 'Finished')).ok).toBe(true)
+    expect(splitFrontmatter(await readFile(page, 'utf8'))).toEqual({
+      ID: '01ARZ3NDEKPSV4RRFFQ69G5FAV',
+      status: ['Finished'],
+      Tags: ['Finished', 'Keep'],
+      tags: ['Finished'],
+    })
   })
 
   it('rejects a rename that collides with an existing title (no page writes)', async () => {

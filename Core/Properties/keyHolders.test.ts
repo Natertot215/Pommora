@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 import { chmod, rm, mkdir, readFile, stat, utimes, writeFile } from 'node:fs/promises'
 import { join } from '../Paths/posix'
-import { noModeBits, tempRoot } from '../Testing/hostFs'
+import { noModeBits, seedSpaceSidecar, tempRoot } from '../Testing/hostFs'
 import { installStores, NO_STORES } from '../Platform/stores'
 import { memoryStores } from '../Testing/memoryStores'
 import { indexWrittenPage, nexusCorpus, seedContentIndex } from '../Index/indexSeed'
@@ -9,7 +9,7 @@ import { dropLiveTree } from '../Nexus/liveTree'
 import { createProperty, renameProperty } from './registryProperty'
 import { renameOption } from './optionOps'
 import { deleteProperty } from './deleteProperty'
-import { keyHolderFiles } from './keyHolders'
+import { confirmedKeyHolders, keyedHolders, keyHolderFiles } from './keyHolders'
 import { sweepGovernedRoots } from './governedSweep'
 
 vi.mock('./governedSweep', async (importOriginal) => {
@@ -117,11 +117,47 @@ describe('keyHolderFiles', () => {
     },
   )
 
+  it('confirmedKeyHolders counts a page and a Space holding another casing', async () => {
+    await page('Q9X', 'phase: x\n')
+    await seedContentIndex(root)
+    const space = await seedSpaceSidecar(root, 'Projects', 'Pommora', { id: 'sp1', PHASE: 'y' })
+    expect(await confirmedKeyHolders(root, 'Phase', [abs('Notes')])).toEqual([
+      abs('Notes', 'Q9X.md'),
+      space,
+    ])
+  })
+
   it('with no index it answers the corpus intersected the same way', async () => {
     installStores(NO_STORES)
     const files = await keyHolderFiles(root, 'Stage', [abs('Notes')])
     expect(files).toHaveLength(30)
     expect(files.some((f) => f.includes('Loose'))).toBe(false)
+  })
+})
+
+describe('keyedHolders', () => {
+  const tags = { name: 'Tags', type: 'multiSelect' } as const
+
+  it('files a holder of another casing under the definition', async () => {
+    await page('K1', 'tags: [a]\n')
+    const file = abs('Notes', 'K1.md')
+    expect(await keyedHolders([file], tags)).toEqual({
+      values: { '01ARZ3NDEKPSV4RRFFQ69G5FK1': ['a'] },
+      strip: [file],
+      partial: false,
+    })
+  })
+
+  it('joins every spelling for a list property', async () => {
+    await page('K2', 'Tags: [a]\ntags: [b, A]\n')
+    const held = await keyedHolders([abs('Notes', 'K2.md')], tags)
+    expect(held.values).toEqual({ '01ARZ3NDEKPSV4RRFFQ69G5FK2': ['a', 'b'] })
+  })
+
+  it('keeps the read spelling’s value alone for any other type', async () => {
+    await page('K3', 'Stage: Draft\nstage: Done\n')
+    const held = await keyedHolders([abs('Notes', 'K3.md')], { name: 'Stage', type: 'select' })
+    expect(held.values).toEqual({ '01ARZ3NDEKPSV4RRFFQ69G5FK3': 'Draft' })
   })
 })
 

@@ -122,6 +122,28 @@ describe('rename replay', () => {
     expect(await readSchemaJournal(root)).toBeNull()
   })
 
+  it('a record still replays after the property is re-cased, sweeping to the name it holds now', async () => {
+    const root = await seedNexus()
+    for (const [name, id] of [
+      ['A', PAGE_IDS[0]],
+      ['B', PAGE_IDS[1]],
+    ])
+      await writeFile(join(root, 'Col', `${name}.md`), `---\nID: ${id}\nStatus: Draft\n---\nbody\n`)
+    await mutateRegistry(root, (registry) => ({
+      next: {
+        ...registry,
+        defs: { ...registry.defs, prop_s: { ...registry.defs.prop_s, name: 'STAGE' } },
+      },
+      result: null,
+    }))
+    await writeSchemaJournal(root, { op: 'rename', id: 'prop_s', from: 'Status', to: 'Stage' })
+    await openSession(root)
+    await replaySchemaCascade(root)
+    expect(await page(root, 'A')).toBe(`---\nID: ${PAGE_IDS[0]}\nSTAGE: Draft\n---\nbody\n`)
+    expect(await page(root, 'B')).toBe(`---\nID: ${PAGE_IDS[1]}\nSTAGE: Draft\n---\nbody\n`)
+    expect(await readSchemaJournal(root)).toBeNull()
+  })
+
   it('the divergence persists without the replay — the fixture is not self-healing', async () => {
     const root = await seedNexus()
     await renameCrashState(root)
@@ -176,6 +198,21 @@ describe('delete replay', () => {
     const raw = await readJsonAt(file)
     expect('Stage' in raw).toBe(false)
     expect(raw.$order).toEqual({ properties: [] })
+  })
+
+  it('a create named in another case supersedes the record', async () => {
+    const root = await seedNexus()
+    await writeSchemaJournal(root, { op: 'delete', id: 'prop_gone', name: 'Example' })
+    expect(
+      (
+        await createProperty(root, {
+          id: '',
+          name: 'example',
+          type: 'number',
+        } as PropertyDefinition)
+      ).ok,
+    ).toBe(true)
+    expect(await readSchemaJournal(root)).toBeNull()
   })
 
   it('a record meeting the id under another name clears untouched', async () => {
