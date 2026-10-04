@@ -1,7 +1,8 @@
 import { z } from 'zod'
 import { isScalar, listOf } from '../Contract/validators'
 import { firstPerTitle, optionValues, PROPERTY_TYPES, type PropertyDefinition } from './properties'
-import { normalizeTitle, parseConnectionText } from '../Connections/connections'
+import { parseConnectionText } from '../Connections/connections'
+import { normalizeTitle } from '../Paths/caseFold'
 import { heldKey } from '../Files/heldKeys'
 
 const strings = z.array(z.string())

@@ -5,7 +5,7 @@ import { docLineIntents, stepLineIntents } from './Engine/intents'
 import type { MarkdownScope } from './Engine/detect'
 import { rescan, scanDoc } from './Engine/docScan'
 import { headingOutlineOf } from './Engine/headingScan'
-import { normalizeTitle } from '../Connections/connections'
+import { normalizeTitle } from '../Paths/caseFold'
 
 interface PerDoc<T> {
   (doc: Text): T

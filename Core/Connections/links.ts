@@ -1,5 +1,5 @@
 import { HAS_SCHEME } from '../Paths/urlPath'
-import { normalizeTitle } from './connections'
+import { normalizeTitle } from '../Paths/caseFold'
 
 export const MD_LINK = /^\[((?:[^\]\\]|\\.)*)\]\((.*)\)$/
 

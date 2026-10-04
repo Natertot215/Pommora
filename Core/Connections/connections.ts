@@ -1,12 +1,7 @@
-import { foldKey } from '../Paths/caseFold'
+import { normalizeTitle } from '../Paths/caseFold'
 
 export const pageEmbedPattern = (): RegExp =>
   /!\[\[(?<page>[^\]\r\n#]*)(?:#(?<heading>[^\]\r\n]*))?\]\]/dg
-
-// NFC so an NFD-composed outside write still matches the NFC title it names; `unknown` because a YAML scalar `- 2024` off disk must still match "2024".
-export function normalizeTitle(raw: unknown): string {
-  return foldKey(String(raw).trim())
-}
 
 // Fresh per call so callers never share `lastIndex`. `]` is content unless it closes the pair; the 255 cap is load-bearing, since an unbounded run backtracks quadratically on an unclosed `[`-run. The page half stops at the first `#`; the heading takes the rest up to the pipe.
 export function pageLinkPattern(): RegExp {

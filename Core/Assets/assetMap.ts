@@ -1,4 +1,4 @@
-import { normalizeTitle } from '../Connections/connections'
+import { normalizeTitle } from '../Paths/caseFold'
 import { stabilize } from '../Nexus/treeStabilize'
 import { ASSETS_DIR_REL, CROPS_REL, THUMBNAILS_SEGMENT } from '../Paths/nexusPaths'
 import type { AssetMap } from '../Nexus/tree'

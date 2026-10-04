@@ -3,11 +3,10 @@ import { escapes } from '../Paths/pathSafety'
 import { errText } from '../Contract/result'
 import { listOf } from '../Contract/validators'
 import { frontmatterMentions, linksIn } from '../Connections/scan'
-import { normalizeTitle } from '../Connections/connections'
 import { headingOutlineOf } from '../MarkdownPM/Engine/headingScan'
 import { inCodeAt, scanDoc } from '../MarkdownPM/Engine/docScan'
 import { parseContextKey } from '../Contexts/contexts'
-import { foldKey } from '../Paths/caseFold'
+import { foldKey, normalizeTitle } from '../Paths/caseFold'
 import { parsePage, splitEnvelope } from '../Files/pageFile'
 import {
   markIndexReady,

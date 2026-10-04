@@ -2,8 +2,7 @@
 
 import { setOrDrop } from './atomicWrite'
 import type { Json } from './stableJson'
-import { spellings } from '../Paths/caseFold'
-import { normalizeTitle } from '../Connections/connections'
+import { spellings, normalizeTitle } from '../Paths/caseFold'
 import { listOf } from '../Contract/validators'
 
 export const heldKeys = (root: object, name: string): string[] => spellings(Object.keys(root), name)

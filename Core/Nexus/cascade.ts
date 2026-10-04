@@ -1,5 +1,5 @@
 import { isAtOrUnder, isMarkdownFile, join, relative, titleFromPath } from '../Paths/posix'
-import { foldKey } from '../Paths/caseFold'
+import { foldKey, normalizeTitle } from '../Paths/caseFold'
 import { heldKey, stripKeys } from '../Files/heldKeys'
 import { errText } from '../Contract/result'
 import { splitEnvelope, mergeFrontmatter, splitFrontmatter, stampedId } from '../Files/pageFile'
@@ -20,7 +20,6 @@ import {
   rewriteFrontmatterConnections,
   rewriteHeadingConnections,
 } from '../Connections/rewrite'
-import { normalizeTitle } from '../Connections/connections'
 import { headingOutline } from '../MarkdownPM/Engine/headingScan'
 import { queryHeadingMentions, queryMentions } from '../Index/contentIndex'
 import { nexusCorpus } from '../Index/indexSeed'

@@ -1,12 +1,12 @@
 import {
   connectionText,
   expressibleHeading,
-  normalizeTitle,
   pageEmbedPattern,
   pageEmbedText,
   pageLinkPattern,
   titleOf,
 } from './connections'
+import { normalizeTitle } from '../Paths/caseFold'
 import {
   encodeLinkTarget,
   markdownLinkRegex,

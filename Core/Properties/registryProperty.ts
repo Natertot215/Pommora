@@ -19,7 +19,7 @@ import { confirmedKeyHolders, keyHolderFiles } from './keyHolders'
 import { sweepGovernedRoots, type Rewrite } from './governedSweep'
 import { rekeyHeld, type KeyCollision } from '../Files/heldKeys'
 import { withOrderEntry } from '../Contexts/spaceSidecar'
-import { normalizeTitle } from '../Connections/connections'
+import { normalizeTitle } from '../Paths/caseFold'
 import {
   clearSchemaJournal,
   readSchemaJournal,

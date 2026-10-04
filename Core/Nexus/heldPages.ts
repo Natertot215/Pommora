@@ -2,7 +2,7 @@
 
 import { heldTreeOf } from './liveTree'
 import { isAtOrUnder, relative, titleFromPath } from '../Paths/posix'
-import { normalizeTitle } from '../Connections/connections'
+import { normalizeTitle } from '../Paths/caseFold'
 import type { Frozen } from '../Properties/propertyValue'
 import { recordsOf } from './record'
 import { entityMemo, type NexusTree } from './tree'

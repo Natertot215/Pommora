@@ -9,7 +9,7 @@ import { isPlainObject } from '../Contract/validators'
 import { propertyDefinition, type PropertyDefinition } from './properties'
 import { resolveRowOrder } from './rowOrder'
 import { keyRefusal, withUniqueOptions } from './schema'
-import { normalizeTitle } from '../Connections/connections'
+import { normalizeTitle } from '../Paths/caseFold'
 
 export const NO_PROPERTY = fail('not-found', 'Property not found.')
 

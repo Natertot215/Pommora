@@ -4,8 +4,7 @@ import { z } from 'zod'
 import { isKeyOf, isPlainObject } from '../Contract/validators'
 import { looseDecoder } from '../Files/decoders'
 import { rootSegs } from '../Paths/exclusion'
-import { foldKey } from '../Paths/caseFold'
-import { normalizeTitle } from '../Connections/connections'
+import { foldKey, normalizeTitle } from '../Paths/caseFold'
 import type { ValueKind } from './propertyValue'
 
 const typeIds = z.enum([

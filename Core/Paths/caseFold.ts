@@ -8,6 +8,11 @@ export function foldKey(text: string): string {
   return text.toLowerCase().normalize('NFC')
 }
 
+// NFC so an NFD-composed outside write still matches the NFC title it names; `unknown` because a YAML scalar `- 2024` off disk must still match "2024".
+export function normalizeTitle(raw: unknown): string {
+  return foldKey(String(raw).trim())
+}
+
 /** Every spelling `names` holds of `name`: its exact spelling first, then each other that folds to it, in order. */
 export function spellings(names: readonly string[], name: string): string[] {
   const fold = foldKey(name)
