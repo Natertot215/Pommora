@@ -93,7 +93,7 @@ interface Reconciled {
   changed: string[]
   adoptions: Adoption[]
   /** Each spelling joined into a key the reconcile wrote, by that key. */
-  retired: Record<string, string>
+  retired: ReadonlySet<string>
 }
 
 type Governor = { name: string; def: PropertyDefinition } | { name: string; group: ContextGroup }
@@ -117,7 +117,7 @@ export function reconcileGovernedRoot(
   const out: Record<string, unknown> = {}
   const changed: string[] = []
   const adoptions: Adoption[] = []
-  const retired: Record<string, string> = {}
+  const retired = new Set<string>()
   const { resolveCase } = world
   for (const [key, raw] of Object.entries(root)) {
     const governor = skip.includes(key) ? undefined : governorOf(key, world)
@@ -152,11 +152,11 @@ export function reconcileGovernedRoot(
     }
     const target = resolveCase ? governor.name : key
     const joined = resolveCase ? keys.filter((k) => k !== target) : []
-    for (const k of joined) retired[k] = target
+    for (const k of joined) retired.add(k)
     out[target] = resolveCase ? next : heldSpelling(next, held)
     if (joined.length || JSON.stringify(out[target]) !== JSON.stringify(raw)) changed.push(target)
   }
-  for (const k of Object.keys(retired)) {
+  for (const k of retired) {
     delete out[k]
     changed.push(k)
   }
@@ -165,6 +165,6 @@ export function reconcileGovernedRoot(
 
 export function survivingChanges({ root, changed, retired }: Reconciled): Record<string, unknown> {
   return Object.fromEntries(
-    changed.filter((k) => k in root || k in retired).map((k) => [k, root[k]]),
+    changed.filter((k) => k in root || retired.has(k)).map((k) => [k, root[k]]),
   )
 }

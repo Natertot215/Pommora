@@ -29,7 +29,7 @@ export type RewriteText = (content: string, file: string) => string | null
 
 type SweepPlan = ({ raw: Rewrite } | { text: RewriteText }) & { sidecars?: Rewrite }
 
-export interface WriteTarget {
+interface WriteTarget {
   key: string
   govern: readonly string[]
 }
