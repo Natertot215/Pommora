@@ -5,20 +5,11 @@ import {
   survivingChanges,
   type GovernedWorld,
 } from '../Contexts/contextResolve'
-import { heldKeys } from '../Paths/caseFold'
 import { type Adoption, heldSpelling } from './propertyValue'
-import { changedKeys, landValue, type WriteTarget } from './governedSweep'
+import { changedKeys, landValue, writeTarget } from './governedSweep'
 import { atomicWriteFile, readTextOrNull } from '../Files/atomicWrite'
 import { mergeFrontmatter, splitEnvelope, splitFrontmatter } from '../Files/pageFile'
 import type { Json } from '../Files/stableJson'
-
-/** Where a write to `name` lands on `root` and the spellings it replaces: the key the root reads, or with `resolveCase` the name itself in place of every spelling. */
-export function writeTarget(root: Json, name: string, resolveCase: boolean): WriteTarget {
-  const held = heldKeys(root, name)
-  return resolveCase
-    ? { key: name, govern: held }
-    : { key: held[0] ?? name, govern: held.slice(0, 1) }
-}
 
 /** `raw` with `value` written where `writeTarget` places it, spelled as the root already spells it unless casing resolves, after the reconcile repairs every other governed key. */
 export function writtenRoot(
