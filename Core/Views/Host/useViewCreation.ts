@@ -97,9 +97,10 @@ export function useViewCreation(getCfg: () => ViewCreationConfig): ViewCreation 
     if (entries.length === 0) return
     let patched = frontmatterOf(c.values, pageId) as Record<string, unknown>
     let contexts: Record<string, string[]> | undefined
+    const resolveCase = settingOf(personalizationOf(useSession.getState()), 'resolveCaseConflicts')
     for (const [propId, value] of entries) {
       const def = c.schema.find((d) => d.id === propId)
-      if (def) patched = applyValueAtRoot(patched, def, value)
+      if (def) patched = applyValueAtRoot(patched, def, value, resolveCase)
       else if (value.kind === 'context') contexts = { ...contexts, [propId]: value.value }
     }
     patchOverride(c.setValueOverride, pageId, patched as PageFrontmatter, landed, contexts)

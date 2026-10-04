@@ -6,6 +6,9 @@ import { applyValueAtRoot, isBlankValue, type PropertyValue } from './propertyVa
 import type { ResolvedColumn, ViewRow } from '../Views/viewRow'
 import { resolveFieldValue } from './value'
 import { pushUndo } from '../Session/undo'
+import { useSession } from '../Session/store'
+import { personalizationOf } from '../Session/configSlice'
+import { settingOf } from '../Settings/personalization'
 
 export interface ValueWriter {
   schema: PropertyDefinition[]
@@ -35,7 +38,8 @@ function write(
   } else {
     const def = w.schema.find((d) => d.id === column.id)
     if (!def) return undefined
-    patched = applyValueAtRoot(row.frontmatter, def, value) as PageFrontmatter
+    const resolveCase = settingOf(personalizationOf(useSession.getState()), 'resolveCaseConflicts')
+    patched = applyValueAtRoot(row.frontmatter, def, value, resolveCase) as PageFrontmatter
     req = { op: 'setProperty', path: row.path, propertyId: column.id, value }
   }
   const pending = w.mutate(req).then((done) => done !== null)

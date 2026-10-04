@@ -3,7 +3,7 @@ import { isScalar, listOf } from '../Contract/validators'
 import { firstPerTitle, optionValues, PROPERTY_TYPES, type PropertyDefinition } from './properties'
 import { parseConnectionText } from '../Connections/connections'
 import { normalizeTitle } from '../Paths/caseFold'
-import { heldKey } from '../Files/heldKeys'
+import { landValue, writeTarget } from '../Files/heldKeys'
 
 const strings = z.array(z.string())
 export const propertyValue = z.discriminatedUnion('kind', [
@@ -190,14 +190,15 @@ export function isBlankValue(value: PropertyValue | null): boolean {
   }
 }
 
-export function applyValueAtRoot(
+/** The renderer's copy of a value write, landed where the host's lands; its members keep the spelling given, since a read decodes them by fold. */
+export const applyValueAtRoot = (
   root: Record<string, unknown>,
   def: PropertyDefinition,
   value: PropertyValue | null,
-): Record<string, unknown> {
-  const key = heldKey(root, def.name) ?? def.name
-  const next = { ...root }
-  if (value === null || isBlankValue(value)) delete next[key]
-  else next[key] = encodeValue(value)
-  return next
-}
+  resolveCase: boolean,
+): Record<string, unknown> =>
+  landValue(
+    root,
+    writeTarget(root, def.name, resolveCase),
+    value === null || isBlankValue(value) ? undefined : encodeValue(value),
+  )
