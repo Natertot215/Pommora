@@ -177,7 +177,7 @@ export function preservedChanges(
 ): Record<string, unknown> {
   const surviving = survivingChanges(reconciled)
   for (const key of Object.keys(surviving)) {
-    if (memberCount(surviving[key]) < memberCount(original[heldKey(original, key) ?? key]))
+    if (memberCount(surviving[key]) < memberCount(heldValue(original, key, false)))
       delete surviving[key]
   }
   for (const [key, target] of Object.entries(reconciled.retired))
