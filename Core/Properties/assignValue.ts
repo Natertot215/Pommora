@@ -8,7 +8,7 @@ import { resolveFieldValue } from './value'
 import { pushUndo } from '../Session/undo'
 import { useSession } from '../Session/store'
 import { personalizationOf } from '../Session/configSlice'
-import { settingOf } from '../Settings/personalization'
+import { resolvesCase } from '../Settings/personalization'
 
 export interface ValueWriter {
   schema: PropertyDefinition[]
@@ -38,7 +38,7 @@ function write(
   } else {
     const def = w.schema.find((d) => d.id === column.id)
     if (!def) return undefined
-    const resolveCase = settingOf(personalizationOf(useSession.getState()), 'resolveCaseConflicts')
+    const resolveCase = resolvesCase(personalizationOf(useSession.getState()))
     patched = applyValueAtRoot(row.frontmatter, def, value, resolveCase) as PageFrontmatter
     req = { op: 'setProperty', path: row.path, propertyId: column.id, value }
   }
