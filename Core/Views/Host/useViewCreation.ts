@@ -86,7 +86,7 @@ export function useViewCreation(getCfg: () => ViewCreationConfig): ViewCreation 
     const c = cfg()
     return filterSeeds(c.view.filter, viewOption(c.view, 'filter_enabled'), c.schema, c.contextIds)
   }
-  // The created page's seeds reach the pipeline the way a band-drop's reassign does.
+  // The created page's seeds reach the pipeline the way a band-drop's reassign does; a newborn holds no second spelling of a key, so casing has nothing to resolve.
   const patchSeedValues = (
     pageId: string,
     seeds: Record<string, PropertyValue>,
@@ -97,10 +97,9 @@ export function useViewCreation(getCfg: () => ViewCreationConfig): ViewCreation 
     if (entries.length === 0) return
     let patched = frontmatterOf(c.values, pageId) as Record<string, unknown>
     let contexts: Record<string, string[]> | undefined
-    const resolveCase = settingOf(personalizationOf(useSession.getState()), 'resolveCaseConflicts')
     for (const [propId, value] of entries) {
       const def = c.schema.find((d) => d.id === propId)
-      if (def) patched = applyValueAtRoot(patched, def, value, resolveCase)
+      if (def) patched = applyValueAtRoot(patched, def, value, false)
       else if (value.kind === 'context') contexts = { ...contexts, [propId]: value.value }
     }
     patchOverride(c.setValueOverride, pageId, patched as PageFrontmatter, landed, contexts)

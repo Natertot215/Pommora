@@ -8,7 +8,7 @@ export function foldKey(text: string): string {
   return text.toLowerCase().normalize('NFC')
 }
 
-// NFC so an NFD-composed outside write still matches the NFC title it names; `unknown` because a YAML scalar `- 2024` off disk must still match "2024".
+/** The fold values, registry names, and titles match by, where a frontmatter key or path segment matches by `foldKey` alone: the trimmed text of any scalar, so a YAML `- 2024` off disk still matches "2024", and NFC so an NFD-composed outside write still matches the NFC title it names. */
 export function normalizeTitle(raw: unknown): string {
   return foldKey(String(raw).trim())
 }
