@@ -11,7 +11,7 @@ import { fetchPageValues } from '../../Properties/pageRow'
 import { isAtOrUnder } from '../../Paths/posix'
 import { useSession } from '../../Session/store'
 import { useLatest } from '@pommora/uix/Utilities/stableApi'
-import { heldKey } from '../../Paths/caseFold'
+import { heldKey } from '../../Files/heldKeys'
 
 const rekeyOverrides = (o: Overrides | null, oldKey: string, newKey: string): Overrides | null => {
   if (!o) return o

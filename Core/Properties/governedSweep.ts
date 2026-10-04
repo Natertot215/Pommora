@@ -10,11 +10,10 @@ import { isMarkdownFile, join } from '../Paths/posix'
 import { ID_KEY } from '../Nexus/identityMark'
 import { asString } from '../Nexus/coerce'
 import type { EntityRecord } from '../Nexus/record'
-import { splitFrontmatter, sweepParse, type KeyCollision, type SweptPage } from '../Files/pageFile'
+import { splitFrontmatter, sweepParse, type SweptPage } from '../Files/pageFile'
 import type { Json } from '../Files/stableJson'
 import { spaceSidecars } from '../Contexts/spaceSidecar'
-import { heldKey, heldKeys } from '../Paths/caseFold'
-import { heldValue, joinValues } from './pageValue'
+import { heldKeys } from '../Files/heldKeys'
 
 export interface SweepResult {
   /** Each file the sweep wrote, with the text it held before the write and the text the write left. */
@@ -29,28 +28,6 @@ export type RewriteText = (content: string, file: string) => string | null
 
 type SweepPlan = ({ raw: Rewrite } | { text: RewriteText }) & { sidecars?: Rewrite }
 
-interface WriteTarget {
-  key: string
-  govern: readonly string[]
-}
-
-/** Where a write to `name` lands on `root` and the spellings it replaces: the key the root reads, or with `resolveCase` the name itself in place of every spelling. */
-export function writeTarget(root: Json, name: string, resolveCase: boolean): WriteTarget {
-  const held = heldKeys(root, name)
-  return resolveCase
-    ? { key: name, govern: held }
-    : { key: held[0] ?? name, govern: held.slice(0, 1) }
-}
-
-/** `root` with `value` under the target's key in place of every key it governs; `undefined` drops the key. */
-export function landValue(root: Json, { key, govern }: WriteTarget, value: unknown): Json {
-  const next = { ...root }
-  for (const k of govern) delete next[k]
-  if (value === undefined) delete next[key]
-  else next[key] = value
-  return next
-}
-
 /** Removes `keys` from a root holding any of them; a root holding none is left as it is. */
 export const stripKeys =
   (...keys: string[]): Rewrite =>
@@ -64,24 +41,6 @@ export const stripHeld =
   (name: string): Rewrite =>
   (raw, file) =>
     stripKeys(...heldKeys(raw, name))(raw, file)
-
-/** A JSON root with every spelling of `oldName` moved to `newName`; the twin of `renameFrontmatterKey`, by the same collision and join rules. */
-export function rekeyHeld(
-  raw: Json,
-  oldName: string,
-  newName: string,
-  collision: KeyCollision,
-  join: boolean,
-): Json | null {
-  const olds = heldKeys(raw, oldName)
-  if (!olds.length) return null
-  const rival = heldKey(raw, newName)
-  if (rival !== undefined && collision === 'prefer-new')
-    return landValue(raw, { key: rival, govern: olds }, raw[rival])
-  const moved = heldValue(raw, oldName, join)
-  if (rival === undefined) return landValue(raw, { key: newName, govern: olds }, moved)
-  return landValue(raw, { key: newName, govern: [...olds, rival] }, joinValues(raw[rival], moved))
-}
 
 export const unsweptLine = (count: number, what = ''): string =>
   `Couldn’t update ${what}${count} ${count === 1 ? 'file' : 'files'}.`

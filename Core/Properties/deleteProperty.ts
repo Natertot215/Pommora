@@ -17,8 +17,7 @@ import {
   writeSchemaJournal,
 } from './propertyJournal'
 import { stripHeld, sweepGovernedRoots } from './governedSweep'
-import { heldKey } from '../Paths/caseFold'
-import { heldValue } from './pageValue'
+import { heldKey, heldValue } from '../Files/heldKeys'
 import { holdsList } from './properties'
 import { patchSidecar } from '../Files/sidecar'
 import { readJsonObject } from '../Files/atomicWrite'

@@ -13,10 +13,11 @@ import {
   type PropertyDefinition,
 } from './properties'
 import { ok, fail, type Result } from '../Contract/result'
-import { renameFrontmatterKey, type KeyCollision } from '../Files/pageFile'
+import { renameFrontmatterKey } from '../Files/pageFile'
 import { collectionFolders } from './assignment'
 import { confirmedKeyHolders, keyHolderFiles } from './keyHolders'
-import { rekeyHeld, sweepGovernedRoots, type Rewrite } from './governedSweep'
+import { sweepGovernedRoots, type Rewrite } from './governedSweep'
+import { rekeyHeld, type KeyCollision } from '../Files/heldKeys'
 import { withOrderEntry } from '../Contexts/spaceSidecar'
 import { normalizeTitle } from '../Connections/connections'
 import {

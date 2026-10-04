@@ -9,7 +9,7 @@ import {
   STAMP_TYPE,
 } from './properties'
 import { decodeValue, NULL_VALUE, type PropertyValue } from './propertyValue'
-import { heldValue } from './pageValue'
+import { heldValue } from '../Files/heldKeys'
 import { parseConnectionText } from '../Connections/connections'
 
 export function declaredType(

@@ -6,7 +6,8 @@ import {
   type GovernedWorld,
 } from '../Contexts/contextResolve'
 import { type Adoption, heldSpelling } from './propertyValue'
-import { changedKeys, landValue, writeTarget } from './governedSweep'
+import { changedKeys } from './governedSweep'
+import { landValue, writeTarget } from '../Files/heldKeys'
 import { atomicWriteFile, readTextOrNull } from '../Files/atomicWrite'
 import { mergeFrontmatter, splitEnvelope, splitFrontmatter } from '../Files/pageFile'
 import type { Json } from '../Files/stableJson'

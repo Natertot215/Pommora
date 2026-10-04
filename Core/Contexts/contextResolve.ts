@@ -1,8 +1,8 @@
 import { normalizeTitle } from '../Connections/connections'
-import { foldKey, heldKey, heldKeys } from '../Paths/caseFold'
+import { foldKey } from '../Paths/caseFold'
+import { heldKey, heldKeys, heldValue } from '../Files/heldKeys'
 import { contextKey, parseContextKey } from './contexts'
 import { byFoldedName, holdsList, type PropertyDefinition } from '../Properties/properties'
-import { heldValue } from '../Properties/pageValue'
 import {
   type Adoption,
   type Frozen,

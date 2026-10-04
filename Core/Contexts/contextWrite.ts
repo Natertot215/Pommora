@@ -1,6 +1,7 @@
 import { basename, join, isMarkdownFile, relative } from '../Paths/posix'
 import { contextKey } from './contexts'
-import { heldValue, namesValue, stripList } from '../Properties/pageValue'
+import { namesValue, stripList } from '../Properties/pageValue'
+import { heldValue } from '../Files/heldKeys'
 import {
   contextWorldOf,
   governedWorld,
@@ -59,7 +60,7 @@ export async function setPageContext(
 ): Promise<Result<null>> {
   const adoptions = await machine().lock(absFile, async () => {
     if (!(await pathExists(absFile))) return fail('not-found', 'Page not found.')
-    const governed = await governedWorldOf(root, absFile)
+    const governed = await pageWorldOf(root, absFile)
     const applied = contextTarget(governed.contexts, contextId, spaceIds)
     if (!applied.ok) return applied
     const { key, value } = applied.value
@@ -70,7 +71,7 @@ export async function setPageContext(
   return ok(null)
 }
 
-export async function governedWorldOf(root: string, absFile: string): Promise<GovernedWorld> {
+export async function pageWorldOf(root: string, absFile: string): Promise<GovernedWorld> {
   const tree = await liveTreeOf(root)
   const owner = owningCollection(tree, relative(root, absFile))
   return governedWorld(tree, await assignedDefs(root, owner ? join(root, owner.path) : null))

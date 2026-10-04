@@ -2,7 +2,7 @@
 
 import { basename, join, relative, titleFromPath } from '../Paths/posix'
 import { SPACE_SIDECAR, TRASH_DIR } from '../Paths/nexusPaths'
-import { heldKey } from '../Paths/caseFold'
+import { heldKey } from '../Files/heldKeys'
 import { normalizeTitle, parseConnectionText } from '../Connections/connections'
 import type { StrippedLink } from '../Nexus/cascade'
 import { spaceIdsIn } from '../Contexts/spaceSidecar'

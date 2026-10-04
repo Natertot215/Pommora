@@ -8,7 +8,7 @@ import { fail, fault, ok, type Result } from '../Contract/result'
 import type { PageDetail } from '../Pages/pageDetail'
 import { machine } from '../Platform/machine'
 import { spellings } from '../Paths/caseFold'
-import { heldValue, joinValues } from '../Properties/pageValue'
+import { heldValue, joinValues, type KeyCollision } from './heldKeys'
 
 interface PageEnvelope {
   frontmatter: string
@@ -130,8 +130,6 @@ export function mergeFrontmatter(
   if (modeledKeys.length === 0) return envelope(fenced, frontmatter, body)
   return envelope(fenced, mergeInto(parseDocument(frontmatter), modeled, modeledKeys), body)
 }
-
-export type KeyCollision = 'prefer-new' | 'merge'
 
 type FrontmatterPair = Pair<ParsedNode, ParsedNode | null>
 

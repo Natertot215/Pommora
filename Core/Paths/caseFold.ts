@@ -15,12 +15,6 @@ export function spellings(names: readonly string[], name: string): string[] {
   return names.includes(name) ? [name, ...others] : others
 }
 
-export const heldKeys = (root: object, name: string): string[] => spellings(Object.keys(root), name)
-
-/** The key `root` reads `name` under; an exact spelling answers before anything folds. */
-export const heldKey = (root: object, name: string): string | undefined =>
-  Object.hasOwn(root, name) ? name : heldKeys(root, name)[0]
-
 /** A host-independent ordering for user-visible titles; accent-sensitive and case-insensitive, matching the value sort. */
 export function compareTitles(a: string, b: string): number {
   return titleCollator.compare(a, b)

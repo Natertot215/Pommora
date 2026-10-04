@@ -1,8 +1,8 @@
 import { machine } from '../Platform/machine'
 import { liveTreeOf, mutableTarget } from '../Nexus/liveTree'
-import { heldKey } from '../Paths/caseFold'
+import { heldKey } from '../Files/heldKeys'
 import { writtenRoot } from './governedWrite'
-import { governedWorldOf, writeSpaceSidecar } from '../Contexts/contextWrite'
+import { pageWorldOf, writeSpaceSidecar } from '../Contexts/contextWrite'
 import { spaceWorldOf } from '../Contexts/contextResolve'
 import { noShape, updatePageProperty } from '../Nexus/page'
 import { ok, type Result } from '../Contract/result'
@@ -58,7 +58,7 @@ export async function setPagePropertyOp(
       resolved.value,
       def,
       req.value,
-      await governedWorldOf(root, resolved.value),
+      await pageWorldOf(root, resolved.value),
     )
   })
   if (!adoptions.ok) return adoptions

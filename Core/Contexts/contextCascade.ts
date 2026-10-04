@@ -6,7 +6,7 @@ import { asString } from '../Nexus/coerce'
 import { ok, fail, type Result, fault } from '../Contract/result'
 import { mutateRegistryFile, readRegistryStrict } from './contextsRegistry'
 import { pathExists, readJsonStrict, relocate, targetTaken } from '../Files/atomicWrite'
-import { renameFrontmatterKey, type KeyCollision } from '../Files/pageFile'
+import { renameFrontmatterKey } from '../Files/pageFile'
 import type { Json } from '../Files/stableJson'
 import { contextsDir } from '../Paths/paths'
 import { SPACE_SIDECAR } from '../Paths/nexusPaths'
@@ -15,15 +15,14 @@ import {
   type Rewrite,
   type RewriteText,
   type SweepResult,
-  rekeyHeld,
   stripKeys,
   sweepGovernedRoots,
   undoSweep,
   unsweptLine,
 } from '../Properties/governedSweep'
 import { withOrderEntry } from './spaceSidecar'
-import { heldKeys } from '../Paths/caseFold'
-import { editHeldLists, editList, namesValue, stripList } from '../Properties/pageValue'
+import { editHeldLists, heldKeys, rekeyHeld, type KeyCollision } from '../Files/heldKeys'
+import { editList, namesValue, stripList } from '../Properties/pageValue'
 import { contextWorldOf } from './contextResolve'
 import { oweWalk } from '../Nexus/fileEvents'
 import { liveTreeOf } from '../Nexus/liveTree'
