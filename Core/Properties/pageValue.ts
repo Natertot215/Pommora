@@ -47,25 +47,25 @@ export function editHeldLists(
 export type ValueEdit = { op: 'strip' } | { op: 'replace'; to: string }
 export type Matcher = (el: unknown) => boolean
 
-export const namesValue =
-  (value: string): Matcher =>
-  (el) =>
+export const namesValue = (value: string): Matcher => {
+  const want = normalizeTitle(value)
+  return (el) =>
     (typeof el === 'string' || typeof el === 'number' || typeof el === 'boolean') &&
-    String(el) === value
+    normalizeTitle(el) === want
+}
 
 export const stripList = (xs: readonly unknown[], matches: Matcher): unknown[] | null =>
   xs.some(matches) ? xs.filter((el) => !matches(el)) : null
 
 export function editList(
   xs: readonly unknown[],
-  names: (value: string) => Matcher,
   target: string,
   edit: ValueEdit,
 ): unknown[] | null {
-  const matches = names(target)
+  const matches = namesValue(target)
   if (edit.op === 'strip') return stripList(xs, matches)
   if (!xs.some(matches)) return null
-  const isTo = names(edit.to)
+  const isTo = namesValue(edit.to)
   const out: unknown[] = []
   for (const el of xs) {
     const next = matches(el) || isTo(el) ? edit.to : el
@@ -75,5 +75,5 @@ export function editList(
 }
 
 export function valueEditRewrite(name: string, target: string, edit: ValueEdit): Rewrite {
-  return (raw) => editHeldLists(raw, name, (held) => editList(held, namesValue, target, edit))
+  return (raw) => editHeldLists(raw, name, (held) => editList(held, target, edit))
 }

@@ -1,10 +1,9 @@
 import { basename, join, isMarkdownFile, relative } from '../Paths/posix'
 import { contextKey } from './contexts'
-import { heldValue, stripList } from '../Properties/pageValue'
+import { heldValue, namesValue, stripList } from '../Properties/pageValue'
 import {
   contextWorldOf,
   governedWorld,
-  namesSpace,
   spaceWorldOf,
   type ContextWorld,
   type GovernedWorld,
@@ -101,7 +100,7 @@ async function setSpaceContext(
   const backKey = contextKey(own.def.title)
   const adoptions: Adoption[] = []
   let skipped = 0
-  const namesA = namesSpace(a.title)
+  const namesA = namesValue(a.title)
   for (const far of world.contexts.groupById.get(contextId)?.spaces ?? []) {
     if (far.id === a.id) continue
     const wants = targetSpaceIds.includes(far.id)

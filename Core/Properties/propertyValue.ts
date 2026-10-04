@@ -41,14 +41,18 @@ const optionList = (raw: unknown): string[] =>
     .map(String)
     .filter((x) => x !== '')
 
-// The one rule for an externally written option list: the newest registered element wins.
-export const resolveSingleOption = (
-  written: readonly string[],
-  known: readonly string[],
-): string | undefined => written.filter((v) => known.includes(v)).at(-1)
+/** The option `written` names, as its definition spells it. */
+export function registeredOption(
+  def: Pick<PropertyDefinition, 'type' | 'status_groups' | 'select_options'>,
+  written: string,
+): string | undefined {
+  const fold = normalizeTitle(written)
+  return optionValues(def).find((v) => normalizeTitle(v) === fold)
+}
 
-/** Checked as a file spells it. */
-const isCheckedRaw = (raw: unknown): boolean => raw === true
+/** Checked as a file spells it: `true`, or the word `true` or `yes` in any casing. */
+const isCheckedRaw = (raw: unknown): boolean =>
+  raw === true || (typeof raw === 'string' && ['true', 'yes'].includes(normalizeTitle(raw)))
 
 export function decodeValue(def: PropertyDefinition, raw: unknown): PropertyValue {
   if (raw === null || raw === undefined) return NULL_VALUE
@@ -62,11 +66,14 @@ export function decodeValue(def: PropertyDefinition, raw: unknown): PropertyValu
     case 'dateTime':
       return typeof raw === 'string' ? { kind, value: raw } : NULL_VALUE
     case 'select': {
-      const value = resolveSingleOption(optionList(raw), optionValues(def))
+      // The one rule for an externally written option list: the newest registered element wins.
+      const value = optionList(raw)
+        .flatMap((v) => registeredOption(def, v) ?? [])
+        .at(-1)
       return value === undefined ? NULL_VALUE : { kind, value }
     }
     case 'multiSelect': {
-      const xs = optionList(raw)
+      const xs = optionList(raw).map((x) => registeredOption(def, x) ?? x)
       return xs.length === 0 ? NULL_VALUE : { kind, value: xs }
     }
     // Deliberately NOT merged with multiSelect: optionValues on a file def returns [], so a merged case would discard every attachment through the restore path.

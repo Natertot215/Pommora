@@ -5,7 +5,7 @@ import { keyHolderFiles } from './keyHolders'
 import { sweepGovernedRoots, unsweptLine } from './governedSweep'
 import { valueEditRewrite, type ValueEdit } from './pageValue'
 import { ok, fail, fault, type Result } from '../Contract/result'
-import type { Adoption } from './propertyValue'
+import { type Adoption, registeredOption } from './propertyValue'
 import {
   addOption,
   applyOptionEdit,
@@ -89,7 +89,7 @@ export function addOptionToDef(
     if (!current) return { result: NO_PROPERTY }
     if (current.type !== 'multiSelect')
       return { result: fail('invalid-property', 'Only a Multi-Select adopts options.') }
-    if (optionValues(current).includes(value)) return { result: ok(null) }
+    if (registeredOption(current, value) !== undefined) return { result: ok(null) }
     const next = editStoredOptions(current, stored[propertyId], (groups) =>
       addOption(groups, SELECT_GROUP, value),
     )

@@ -23,8 +23,8 @@ import {
 } from '../Properties/governedSweep'
 import { withOrderEntry } from './spaceSidecar'
 import { heldKeys } from '../Paths/caseFold'
-import { editHeldLists, editList, stripList } from '../Properties/pageValue'
-import { contextWorldOf, namesSpace } from './contextResolve'
+import { editHeldLists, editList, namesValue, stripList } from '../Properties/pageValue'
+import { contextWorldOf } from './contextResolve'
 import { liveTreeOf } from '../Nexus/liveTree'
 import { listOf } from '../Contract/validators'
 import { queryMembers } from '../Index/contentIndex'
@@ -45,7 +45,7 @@ export const rekeyContext = (oldTitle: string, newTitle: string): Rewrite =>
 
 const retitleSpace = (raw: Json, contextTitle: string, j: RenameJournal): Json | null =>
   editHeldLists(raw, contextKey(contextTitle), (held) =>
-    editList(held, namesSpace, j.oldTitle, { op: 'replace', to: j.newTitle }),
+    editList(held, j.oldTitle, { op: 'replace', to: j.newTitle }),
   )
 
 export interface SweepCapture {
@@ -156,11 +156,11 @@ export async function unlinkSpaceValue(
 ): Promise<Result<UnlinkOutcome>> {
   const key = contextKey(contextTitle)
   const captured: SweepCapture[] = []
-  const names = namesSpace(spaceTitle)
+  const names = namesValue(spaceTitle)
   const take: Rewrite = (raw, file) => {
     const taken: string[] = []
     const next = editHeldLists(raw, key, (held) => {
-      taken.push(...held.filter((v): v is string => typeof v === 'string' && names(v)))
+      taken.push(...held.filter(names).map(String))
       return stripList(held, names)
     })
     if (next) captured.push(captureRoot(raw, file, taken))

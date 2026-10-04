@@ -55,10 +55,10 @@ export function validateDefinition(
   return ok(null)
 }
 
-/** No minimum count — a Select may hold zero options. Enforced at create AND on every option edit. */
+/** No minimum count — a Select may hold zero options. Enforced at create AND on every option edit; titles compare case-folded. */
 export function validateOptionValues(options: { value: string }[]): Result<null> {
-  const values = options.map((o) => o.value)
-  if (new Set(values).size < values.length) {
+  const folded = options.map((o) => normalizeTitle(o.value))
+  if (new Set(folded).size < folded.length) {
     return fail('invalid-property', 'Option titles must be unique.')
   }
   return ok(null)

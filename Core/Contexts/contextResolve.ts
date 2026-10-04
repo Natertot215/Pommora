@@ -2,7 +2,7 @@ import { normalizeTitle } from '../Connections/connections'
 import { foldKey, heldKey, heldKeys } from '../Paths/caseFold'
 import { contextKey, parseContextKey } from './contexts'
 import { byFoldedName, holdsList, type PropertyDefinition } from '../Properties/properties'
-import { heldValue, type Matcher } from '../Properties/pageValue'
+import { heldValue } from '../Properties/pageValue'
 import {
   type Adoption,
   type Frozen,
@@ -16,11 +16,6 @@ import type { ContextGroup, NexusTree, SpaceNode } from '../Nexus/tree'
 import { listOf } from '../Contract/validators'
 
 type ResolvedLinks = Map<string, string[]>
-
-export const namesSpace =
-  (title: string): Matcher =>
-  (el) =>
-    typeof el === 'string' && normalizeTitle(el) === normalizeTitle(title)
 
 export interface ContextWorld {
   groupById: ReadonlyMap<string, ContextGroup>

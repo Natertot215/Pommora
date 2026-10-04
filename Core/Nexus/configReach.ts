@@ -19,13 +19,7 @@ import {
   type PropertyDefinition,
   RESERVED_PROPERTY_ID,
 } from '../Properties/properties'
-import {
-  editList,
-  type Matcher,
-  namesValue,
-  stripList,
-  type ValueEdit,
-} from '../Properties/pageValue'
+import { editList, type Matcher, stripList, type ValueEdit } from '../Properties/pageValue'
 import { unsweptLine } from '../Properties/governedSweep'
 import { tileHostsOf } from '../Tiles/tilesFile'
 import type { TileHostRef } from '../Tiles/tiles'
@@ -142,7 +136,7 @@ function editOperands(rule: Raw, edit: (xs: readonly unknown[]) => unknown[] | n
 
 const optionRule = (e: OptionReach, rule: Raw): Raw | null =>
   onProperty(e.def.id, rule) && wholeValues(e.def, rule.op)
-    ? editOperands(rule, (xs) => editList(xs, namesValue, e.value, e.edit))
+    ? editOperands(rule, (xs) => editList(xs, e.value, e.edit))
     : rule
 
 const gone =
@@ -155,7 +149,7 @@ const goneRule = (e: Gone, rule: Raw): Raw | null =>
 
 const scopedOrder = (e: OptionReach, holder: unknown): unknown => {
   if (!onProperty(e.def.id, holder) || !Array.isArray(holder.order)) return holder
-  const order = editList(holder.order, namesValue, e.value, e.edit)
+  const order = editList(holder.order, e.value, e.edit)
   return order ? { ...holder, order } : holder
 }
 
@@ -311,7 +305,7 @@ const cacheEdit = (e: OptionReach, cur: Raw): Raw | null =>
     const values = { ...cached }
     let touched = false
     for (const [id, held] of Object.entries(cached)) {
-      const edited = editList(listOf(held), namesValue, e.value, e.edit)
+      const edited = editList(listOf(held), e.value, e.edit)
       if (!edited) continue
       touched = true
       if (edited.length) values[id] = edited
