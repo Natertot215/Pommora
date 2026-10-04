@@ -1,5 +1,5 @@
-import { it, expect, beforeEach, afterEach } from 'vitest'
-import { rm } from 'node:fs/promises'
+import { describe, it, expect, beforeEach, afterEach } from 'vitest'
+import { mkdir, readFile, rm, writeFile } from 'node:fs/promises'
 import { tempRoot } from '../Testing/hostFs'
 import { assignProperty, reorderAssignment, collectionFolders } from './assignment'
 import { dropLiveTree } from '../Nexus/liveTree'
@@ -9,6 +9,11 @@ import { createTestPage } from '../Testing/createTestPage'
 import { sidecarPath } from '../Paths/paths'
 import { readJsonObject } from '../Files/atomicWrite'
 import type { PropertyDefinition } from './properties'
+import { join } from '../Paths/posix'
+import { splitFrontmatter } from '../Files/pageFile'
+import { createProperty } from './registryProperty'
+import { removeProperty } from './removeProperty'
+import { refreshTree } from '../Nexus/liveTree'
 
 let root: string
 let notes: string
@@ -84,4 +89,49 @@ it('a Remove racing an Assign on ONE collection never loses either write (breake
     await assignProperty(root, notes, pC)
     await removeProperty(root, notes, pB)
   }
+})
+
+describe('a re-assign puts a cached value back', () => {
+  const reassigned = async (
+    resolveCaseConflicts: boolean,
+    held = '\nstatus:',
+  ): Promise<Record<string, unknown>> => {
+    await mkdir(join(root, '.nexus'), { recursive: true })
+    await writeFile(
+      join(root, '.nexus', 'settings.json'),
+      JSON.stringify({ personalization: { resolveCaseConflicts } }),
+    )
+    const made = await createProperty(root, {
+      id: '',
+      name: 'Status',
+      type: 'select',
+      select_options: [{ value: 'hi', color: 'red' }],
+    } as PropertyDefinition)
+    if (!made.ok) throw new Error('setup failed')
+    await assignProperty(root, notes, made.value.id)
+    const page = await createTestPage(notes, 'A', { body: 'b' })
+    if (!page.ok) throw new Error('setup failed')
+    await writeFile(page.value.path, `---\nID: ${page.value.id}\nStatus: hi\n---\nb`)
+    await refreshTree(root)
+    expect((await removeProperty(root, notes, made.value.id)).ok).toBe(true)
+    await writeFile(page.value.path, `---\nID: ${page.value.id}${held}\n---\nb`)
+    expect((await assignProperty(root, notes, made.value.id)).ok).toBe(true)
+    return splitFrontmatter(await readFile(page.value.path, 'utf8'))
+  }
+
+  it('fills the registered key on a root holding none', async () => {
+    expect((await reassigned(false, '')).Status).toEqual(['hi'])
+  })
+
+  it('fills a blank key spelled in another case where it sits', async () => {
+    const fm = await reassigned(false)
+    expect(fm.status).toEqual(['hi'])
+    expect(fm).not.toHaveProperty('Status')
+  })
+
+  it('with Automatically Resolve Case Conflicts on, writes the registered key in place of every spelling', async () => {
+    const fm = await reassigned(true)
+    expect(fm.Status).toEqual(['hi'])
+    expect(fm).not.toHaveProperty('status')
+  })
 })

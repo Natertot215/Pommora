@@ -839,6 +839,49 @@ describe('restore — the record spends, headless', () => {
     expect(sap['<Projects>']).toEqual(['Pommora'])
   })
 
+  describe('a Space’s tags go back under the key each root holds', () => {
+    const alpha = (): string => join(root, 'Notes', 'Daily', 'Alpha.md')
+    const restoredPommora = async (keys: string): Promise<Record<string, unknown>> => {
+      await settledMutate(
+        root,
+        { op: 'delete', path: '.nexus/contexts/Projects/Pommora', kind: 'space' },
+        nexusDeps,
+      )
+      await writeFile(alpha(), `---\nID: ${PAGE_A}\n${keys}\n---\nbody`)
+      await refreshTree(root)
+      const [listed] = await listBundles(root)
+      const r = await settledMutate(
+        root,
+        { op: 'restore', bundlePath: listed.bundlePath },
+        nexusDeps,
+      )
+      expect(r.ok).toBe(true)
+      return splitFrontmatter(await readFile(alpha(), 'utf8'))
+    }
+
+    it('appends to a held key spelled in another case, keeping its members’ spelling', async () => {
+      const fm = await restoredPommora('<projects>:\n  - sapphire')
+      expect(fm['<projects>']).toEqual(['sapphire', 'Pommora'])
+      expect(fm).not.toHaveProperty('<Projects>')
+    })
+
+    it('with Automatically Resolve Case Conflicts on, lands one registered key holding every spelling’s members', async () => {
+      await writeFile(
+        join(root, '.nexus', 'settings.json'),
+        JSON.stringify({ personalization: { resolveCaseConflicts: true } }),
+      )
+      await mkdir(join(contextsDir(root), 'Projects', 'Studio'), { recursive: true })
+      await writeFile(
+        join(contextsDir(root), 'Projects', 'Studio', '_space.json'),
+        JSON.stringify({ id: 'sp-studio' }),
+      )
+      const fm = await restoredPommora('<projects>:\n  - sapphire\n<PROJECTS>:\n  - Studio')
+      expect(fm['<Projects>']).toEqual(['sapphire', 'Studio', 'Pommora'])
+      expect(fm).not.toHaveProperty('<projects>')
+      expect(fm).not.toHaveProperty('<PROJECTS>')
+    })
+  })
+
   it('a Space restored during its Context’s rename lands in the renamed Context, its tags under the new key', async () => {
     await settledMutate(
       root,
@@ -944,6 +987,47 @@ describe('restore — the record spends, headless', () => {
     )
     expect(r.ok).toBe(false)
     expect(await pathExists(join(dir, '_record.json'))).toBe(true)
+  })
+})
+
+describe('a Link value refilled into a trashed copy', () => {
+  const beta = (): string => join(root, 'Notes', 'Beta.md')
+  const restore = async (name: string): Promise<void> => {
+    const listed = (await listBundles(root)).find((b) => b.artifactName === name)
+    const r = await settledMutate(
+      root,
+      { op: 'restore', bundlePath: listed?.bundlePath ?? '' },
+      nexusDeps,
+    )
+    expect(r.ok).toBe(true)
+  }
+
+  beforeEach(async () => {
+    await writeFile(
+      join(root, '.nexus', 'properties.json'),
+      JSON.stringify({
+        order: ['prop_related'],
+        defs: { prop_related: { id: 'prop_related', name: 'Related', type: 'link' } },
+      }),
+    )
+    await writeFile(beta(), `---\nID: ${PAGE_B}\nRelated: "[[Alpha]]"\n---\nlinker`)
+    await refreshTree(root)
+  })
+
+  it('fills the key the copy holds, spelled in another case', async () => {
+    await settledMutate(
+      root,
+      { op: 'delete', path: 'Notes/Daily/Alpha.md', kind: 'page' },
+      nexusDeps,
+    )
+    await writeFile(beta(), `---\nID: ${PAGE_B}\nrelated:\n---\nlinker`)
+    await refreshTree(root)
+    await settledMutate(root, { op: 'delete', path: 'Notes/Beta.md', kind: 'page' }, nexusDeps)
+    await restore('Alpha.md')
+    await restore('Beta.md')
+    const fm = splitFrontmatter(await readFile(beta(), 'utf8'))
+    expect(fm.related).toBe('[[Alpha]]')
+    expect(fm).not.toHaveProperty('Related')
   })
 })
 

@@ -18,7 +18,9 @@ import { mutateRegistryFile, withContextAt } from '../Contexts/contextsRegistry'
 import { restoreProperty } from './restoreProperty'
 import { scrubReturning } from './restoreScrub'
 import { exclusionWriteRefusal, readLiveSetting, reseatExcludedFolders } from '../Settings/settings'
-import { sweepRootsById } from '../Properties/governedSweep'
+import { landValue, sweepRootsById } from '../Properties/governedSweep'
+import { writeTarget } from '../Properties/governedWrite'
+import { heldValue, joinValues } from '../Properties/pageValue'
 import { rewriteFrontmatterConnections } from '../Connections/rewrite'
 import { linkDefs } from '../Properties/propertiesRegistry'
 import { refillValues } from '../Properties/assignment'
@@ -285,11 +287,13 @@ async function reapply(
   key: string,
   additions: Record<string, string[]>,
 ): Promise<string[]> {
-  const taken = await sweepRootsById(root, roots, additions, (raw, titles) => {
-    const held = Array.isArray(raw[key])
-      ? raw[key].filter((v): v is string => typeof v === 'string')
-      : []
-    return { ...raw, [key]: [...held, ...titles.filter((t) => !held.includes(t))] }
-  })
+  const resolveCase = await readLiveSetting(root, 'resolveCaseConflicts')
+  const taken = await sweepRootsById(root, roots, additions, (raw, titles) =>
+    landValue(
+      raw,
+      writeTarget(raw, key, resolveCase),
+      joinValues(heldValue(raw, key, resolveCase), titles),
+    ),
+  )
   return Object.keys(additions).filter((id) => roots[id] && !taken.has(id))
 }

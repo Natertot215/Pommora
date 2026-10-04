@@ -184,6 +184,17 @@ describe('renameCascade over frontmatter', () => {
     expect((await fmOf(a.value.path))[SOURCE]).toBe('[[New Target]]')
   })
 
+  it('moves a connection held under a key spelled in another case', async () => {
+    const a = await createTestPage(dir, 'Lowercase', { body: 'no links here' })
+    if (!a.ok) throw new Error('setup failed')
+    await setValue(a.value.path, 'source', '[[Target]]')
+
+    await renameCascade(root, 'Target', { title: 'New Target' })
+    const fm = await fmOf(a.value.path)
+    expect(fm.source).toBe('[[New Target]]')
+    expect(fm).not.toHaveProperty(SOURCE)
+  })
+
   it('leaves an address alone when its last segment happens to match', async () => {
     const a = await createTestPage(dir, 'Address', { body: 'no links here' })
     if (!a.ok) throw new Error('setup failed')
@@ -336,6 +347,14 @@ describe('deleteCascade', () => {
       cascade: { pages: [rel(a.path)], hosts: [] },
       links: [{ page: a.id, property: related, value: '[[Target]]' }],
     })
+  })
+
+  it('strips a Link value held under a key spelled in another case, recording it', async () => {
+    const a = await linker('Cites', '[[Target]]', dir, 'related')
+    await refreshTree(root)
+    const r = await deleteCascade(root, target(), ['Target'])
+    expect(await fmOf(a.path)).not.toHaveProperty('related')
+    expect(r.links).toEqual([{ page: a.id, property: related, value: '[[Target]]' }])
   })
 
   it('records an aliased heading value verbatim', async () => {

@@ -2,6 +2,7 @@
 
 import { basename, join, relative, titleFromPath } from '../Paths/posix'
 import { SPACE_SIDECAR, TRASH_DIR } from '../Paths/nexusPaths'
+import { heldKey } from '../Paths/caseFold'
 import { normalizeTitle, parseConnectionText } from '../Connections/connections'
 import type { StrippedLink } from '../Nexus/cascade'
 import { spaceIdsIn } from '../Contexts/spaceSidecar'
@@ -133,7 +134,8 @@ export async function refillTrashed(
   const holders = await trashedHolders(root, new Set(links.map((l) => l.page)))
   const fill = (raw: Record<string, unknown>, id: unknown): Record<string, unknown> | null => {
     const added = links.flatMap((l) => {
-      const key = names.get(l.property)
+      const name = names.get(l.property)
+      const key = name && (heldKey(raw, name) ?? name)
       return l.page === id && key && isBlankRaw(raw[key]) ? [[key, l.value] as const] : []
     })
     return added.length ? { ...raw, ...Object.fromEntries(added) } : null

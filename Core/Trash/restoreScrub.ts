@@ -2,7 +2,8 @@
 
 import type { NexusTree } from '../Nexus/tree'
 import { assignedDefs } from '../Properties/assignment'
-import { heldKeys } from '../Paths/caseFold'
+import { foldKey, heldKeys } from '../Paths/caseFold'
+import { byFoldedName } from '../Properties/properties'
 import {
   governedWorld,
   reconcileGovernedRoot,
@@ -46,16 +47,14 @@ export async function scrubReturning(
 ): Promise<StrippedLink[]> {
   const world = governedWorld(tree, await assignedDefs(root, destCollectionFolder))
   const spaceWorld = spaceWorldOf(tree)
-  const links = new Map(
-    tree.config.registry.filter((d) => d.type === 'link').map((d) => [d.name, d]),
-  )
+  const links = byFoldedName(tree.config.registry.filter((d) => d.type === 'link'))
   const dropped: StrippedLink[] = []
   // Whether or not the destination assigns its key, a Link naming a page gone leaves, noted by its root's id.
   const unlinked = (raw: Record<string, unknown>): string[] =>
-    Object.keys(raw).filter((k) => links.has(k) && namesGonePage(raw[k], frozen))
+    Object.keys(raw).filter((k) => links.has(foldKey(k)) && namesGonePage(raw[k], frozen))
   const note = (raw: Record<string, unknown>, keys: string[], id: string | undefined): void => {
     for (const key of keys) {
-      const def = links.get(key)
+      const def = links.get(foldKey(key))
       if (def && id) dropped.push({ page: id, property: def.id, value: String(raw[key]) })
     }
   }

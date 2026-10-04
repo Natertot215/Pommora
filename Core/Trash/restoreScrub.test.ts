@@ -31,6 +31,7 @@ vi.mock('../Files/atomicWrite', async (importOriginal) => {
 
 const PAGE_A = '01KVGMT8BFP350FZZXAMG1QDVA'
 const PROP = 'prop_01KVGMT8BFP350FZZXAMG1QDVZ'
+const LINK = 'prop_01KVGMT8BFP350FZZXAMG1QDVY'
 const nexusDeps: TrashDeps = { trashMode: 'nexus', trashToSystem: async () => {} }
 
 let root: string
@@ -338,6 +339,22 @@ describe('a returning artifact is reconciled against the world it comes back to'
     expect(def.select_options.map((o) => o.value)).toEqual(['a'])
   })
 
+  it('drops a Link naming a page gone, held under a key spelled in another case', async () => {
+    await writeFile(
+      join(root, '.nexus', 'properties.json'),
+      JSON.stringify({
+        order: [LINK],
+        defs: { [LINK]: { id: LINK, name: 'Related', type: 'link' } },
+      }),
+    )
+    await writeFile(
+      join(root, 'Notes', 'Alpha.md'),
+      `---\nID: ${PAGE_A}\nrelated: "[[Nowhere]]"\n---\nbody`,
+    )
+    await cycle('Notes/Alpha.md', 'page', async () => {})
+    expect(await fm('Notes/Alpha.md')).not.toHaveProperty('related')
+  })
+
   it('leaves foreign frontmatter and the body untouched while it strips', async () => {
     await writeFile(
       join(root, 'Notes', 'Alpha.md'),
@@ -418,24 +435,6 @@ describe('a Space sidecar is a context root too', () => {
     expect(sap.id).toBe('sp-sap')
     expect(sap.color).toBe('blue')
     expect(sap.Status).toBe('Done')
-  })
-
-  it('a returning Context’s own key is left for the rekey, never judged mid-transit', async () => {
-    await seedPassenger()
-    await writeFile(
-      join(contextsDir(root), 'Projects', 'Sapphire', '_space.json'),
-      JSON.stringify({ id: 'sp-sap', '<Projects>': ['Pommora'] }),
-    )
-    await settledMutate(
-      root,
-      { op: 'delete', path: '.nexus/contexts/Projects', kind: 'context' },
-      nexusDeps,
-    )
-    const [listed] = await listBundles(root)
-    expect(
-      (await settledMutate(root, { op: 'restore', bundlePath: listed.bundlePath }, nexusDeps)).ok,
-    ).toBe(true)
-    expect((await sidecar('Projects/Sapphire'))['<Projects>']).toEqual(['Pommora'])
   })
 
   it('a returning Context’s own key is left for the rekey while a live Context holds its title', async () => {
