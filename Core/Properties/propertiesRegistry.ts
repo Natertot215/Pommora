@@ -28,7 +28,7 @@ function normalizeRegistry(obj: Record<string, unknown>): {
   for (const [id, value] of Object.entries(rawDefs)) {
     const parsed = propertyDefinition.safeParse(value)
     if (parsed.success && keyRefusal(parsed.data.name) === null) defs[id] = parsed.data
-    // Only a plausible def (a plain object) rides through writes — a scalar under an id key is corrupt noise, and re-writing it is what would break the file-shape check above.
+    // Only a plausible def (a plain object) rides through writes; a scalar under an id key is corrupt noise.
     else if (isPlainObject(value)) unadmitted[id] = value
   }
   const order = [
