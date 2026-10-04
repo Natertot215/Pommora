@@ -68,6 +68,16 @@ export function editHeldLists(
   return next
 }
 
+/** `root` without `keys`; null when it holds none of them. */
+export function stripKeys(root: Json, keys: readonly string[]): Json | null {
+  if (!keys.some((k) => k in root)) return null
+  return Object.fromEntries(Object.entries(root).filter(([k]) => !keys.includes(k)))
+}
+
+/** `root` without any spelling of `name`; null when it holds none. */
+export const stripHeld = (root: Json, name: string): Json | null =>
+  stripKeys(root, heldKeys(root, name))
+
 export type KeyCollision = 'prefer-new' | 'merge'
 
 /** A JSON root with every spelling of `oldName` moved to `newName`; the twin of `renameFrontmatterKey`, by the same collision and join rules. */

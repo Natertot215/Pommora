@@ -2,7 +2,7 @@ import { describe, it, expect, afterEach } from 'vitest'
 import { chmod, mkdir, readFile, rm, writeFile } from 'node:fs/promises'
 import { join } from '../Paths/posix'
 import { noModeBits, tempRoot } from '../Testing/hostFs'
-import { stripHeld, sweepGovernedRoots } from './governedSweep'
+import { sweepGovernedRoots } from './governedSweep'
 
 const roots: string[] = []
 afterEach(async () => {
@@ -58,15 +58,5 @@ describe('sweepGovernedRoots', () => {
     const r = await sweepGovernedRoots(root, [], { raw: () => null, sidecars: (raw) => raw })
     expect(r).toEqual({ skipped: [], refused: [bad], touched: new Map() })
     expect(await readFile(bad, 'utf8')).toBe('{ not json')
-  })
-})
-
-describe('stripHeld', () => {
-  it('strips every spelling of the name, and answers null when none is held', () => {
-    expect(stripHeld('Tags')({ ID: 'p', Tags: ['a'], tags: ['b'], other: 1 }, 'p.md')).toEqual({
-      ID: 'p',
-      other: 1,
-    })
-    expect(stripHeld('Tags')({ ID: 'p', Tag: ['a'] }, 'p.md')).toBeNull()
   })
 })

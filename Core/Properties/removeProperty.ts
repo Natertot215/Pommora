@@ -4,7 +4,8 @@ import { keyedHolders, keyHolderFiles } from './keyHolders'
 import { patchSidecar } from '../Files/sidecar'
 import { sidecarPath } from '../Paths/paths'
 import { readJsonObject } from '../Files/atomicWrite'
-import { stripHeld, sweepGovernedRoots } from './governedSweep'
+import { sweepGovernedRoots } from './governedSweep'
+import { stripHeld } from '../Files/heldKeys'
 import { readRegistry, serializeSchemaOp } from './propertiesRegistry'
 import { ok, type Result } from '../Contract/result'
 import { mapViews } from '../Views/views'
@@ -51,6 +52,6 @@ async function removeInner(
   })
   if (!written.ok) return written
   const reach = await reachConfig(root, { kind: 'property', propertyId }, collectionFolder)
-  const { skipped } = await sweepGovernedRoots(root, strip, { raw: stripHeld(key) })
+  const { skipped } = await sweepGovernedRoots(root, strip, { raw: (fm) => stripHeld(fm, key) })
   return ok({ skipped: skipped.length + reach.skipped, hosts: reach.hosts })
 }

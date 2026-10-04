@@ -1,4 +1,4 @@
-import { firstPerTitle, normalizeTitle } from '../Connections/connections'
+import { normalizeTitle } from '../Connections/connections'
 import { foldKey } from '../Paths/caseFold'
 import { heldKey, heldValue, writeTarget } from '../Files/heldKeys'
 import { contextKey, parseContextKey } from './contexts'
@@ -103,7 +103,7 @@ function governorOf(key: string, world: GovernedWorld): Governor | undefined {
   return group && { name: contextKey(group.def.title), group }
 }
 
-const memberCount = (v: unknown): number => firstPerTitle(listOf(v)).size
+const memberCount = (v: unknown): number => new Set(listOf(v).map(normalizeTitle)).size
 
 // A governed name reconciles once, under the key `heldKey` reads, and its other spellings pass through as foreign; with `resolveCase` they join it under the registered spelling and leave once that key is written. A key in `skip` passes through verbatim.
 export function reconcileGovernedRoot(

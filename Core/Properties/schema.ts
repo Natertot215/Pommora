@@ -61,15 +61,15 @@ export function validateDefinition(
 export function withUniqueOptions(def: PropertyDefinition): PropertyDefinition {
   const groups = optionGroupsOf(def)
   const options = groups.flatMap((g) => g.options)
+  if (validateOptionValues(options).ok) return def
   const first = new Set(firstPerTitle(options, (o) => o.value).values())
-  if (first.size === options.length) return def
   const kept = groups.map((g) => ({ ...g, options: g.options.filter((o) => first.has(o)) }))
   return withOptionGroups(def, kept)
 }
 
 /** No minimum count — a Select may hold zero options. Enforced at create AND on every option edit; titles compare case-folded. */
 export function validateOptionValues(options: { value: string }[]): Result<null> {
-  if (firstPerTitle(options, (o) => o.value).size < options.length) {
+  if (new Set(options.map((o) => normalizeTitle(o.value))).size < options.length) {
     return fail('invalid-property', 'Option titles must be unique.')
   }
   return ok(null)

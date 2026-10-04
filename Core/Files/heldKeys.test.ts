@@ -6,6 +6,7 @@ import {
   joinValues,
   type KeyCollision,
   rekeyHeld,
+  stripHeld,
 } from './heldKeys'
 import { assembleEnvelope, renameFrontmatterKey, splitFrontmatter } from './pageFile'
 import { namesValue, stripList } from '../Properties/pageValue'
@@ -66,5 +67,15 @@ describe('rekeyHeld — the twin of renameFrontmatterKey', () => {
     const page = renameFrontmatterKey(content, from, to, collision, join)
     const json = rekeyHeld(splitFrontmatter(content), from, to, collision, join)
     expect(json).toEqual(page === null ? null : splitFrontmatter(page))
+  })
+})
+
+describe('stripHeld', () => {
+  it('strips every spelling of the name, and answers null when none is held', () => {
+    expect(stripHeld({ ID: 'p', Tags: ['a'], tags: ['b'], other: 1 }, 'Tags')).toEqual({
+      ID: 'p',
+      other: 1,
+    })
+    expect(stripHeld({ ID: 'p', Tag: ['a'] }, 'Tags')).toBeNull()
   })
 })

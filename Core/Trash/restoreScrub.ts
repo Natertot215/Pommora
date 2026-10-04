@@ -3,7 +3,7 @@
 import type { NexusTree } from '../Nexus/tree'
 import { assignedDefs } from '../Properties/assignment'
 import { foldKey } from '../Paths/caseFold'
-import { heldKeys } from '../Files/heldKeys'
+import { heldKeys, stripKeys } from '../Files/heldKeys'
 import { byFoldedName } from '../Properties/properties'
 import { governedWorld, reconcileGovernedRoot, spaceWorldOf } from '../Contexts/contextResolve'
 import { type Frozen, namesGonePage } from '../Properties/propertyValue'
@@ -19,7 +19,7 @@ import { listMarkdownFiles, listPathsUnder } from '../Files/walk'
 import { hiddenFolder } from '../Paths/exclusion'
 
 import { SPACE_SIDECAR } from '../Paths/nexusPaths'
-import { stripKeys, sweepGovernedRoots, unsweptLine } from '../Properties/governedSweep'
+import { sweepGovernedRoots, unsweptLine } from '../Properties/governedSweep'
 
 /** Answers each Link value it dropped, by its root's id, so a restore can park the ones naming a page the Trash holds. */
 export async function scrubReturning(
@@ -54,7 +54,7 @@ export async function scrubReturning(
       unstamped.set(file, Object.fromEntries(gone.map((k) => [k, raw[k]])))
     else note(raw, gone, asString(raw[ID_KEY]))
     const keys = [...new Set([...r.changed, ...gone])]
-    const kept = stripKeys(...gone)(r.root, file) ?? r.root
+    const kept = stripKeys(r.root, gone) ?? r.root
     return mergeFrontmatter(content, kept, keys, splitEnvelope(content).body)
   }
   const { skipped } = await sweepGovernedRoots(root, pages, { text })
@@ -72,7 +72,7 @@ export async function scrubReturning(
       const next = r.changed.length ? r.root : null
       const gone = unlinked(next ?? raw)
       note(raw, gone, asString(raw.id))
-      return stripKeys(...gone)(next ?? raw, rel) ?? next
+      return stripKeys(next ?? raw, gone) ?? next
     })
   return dropped
 }
