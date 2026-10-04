@@ -1,7 +1,7 @@
 import { z } from 'zod'
 import { isScalar, listOf } from '../Contract/validators'
 import { optionValues, PROPERTY_TYPES, type PropertyDefinition } from './properties'
-import { normalizeTitle, parseConnectionText } from '../Connections/connections'
+import { firstPerTitle, normalizeTitle, parseConnectionText } from '../Connections/connections'
 import { heldKey } from '../Files/heldKeys'
 
 const strings = z.array(z.string())
@@ -47,7 +47,7 @@ const foldedOptions = new WeakMap<PropertyDefinition, Map<string, string>>()
 function optionsByFold(def: PropertyDefinition): Map<string, string> {
   let byFold = foldedOptions.get(def)
   if (!byFold) {
-    byFold = new Map(optionValues(def).map((v) => [normalizeTitle(v), v]))
+    byFold = firstPerTitle(optionValues(def))
     foldedOptions.set(def, byFold)
   }
   return byFold
@@ -80,12 +80,9 @@ export function decodeValue(def: PropertyDefinition, raw: unknown): PropertyValu
       return value === undefined ? NULL_VALUE : { kind, value }
     }
     case 'multiSelect': {
-      const members = new Map<string, string>()
-      for (const x of optionList(raw)) {
-        const fold = normalizeTitle(x)
-        if (!members.has(fold)) members.set(fold, optionsByFold(def).get(fold) ?? x)
-      }
-      return members.size === 0 ? NULL_VALUE : { kind, value: [...members.values()] }
+      const byFold = optionsByFold(def)
+      const value = Array.from(firstPerTitle(optionList(raw)), ([fold, x]) => byFold.get(fold) ?? x)
+      return value.length === 0 ? NULL_VALUE : { kind, value }
     }
     // Deliberately NOT merged with multiSelect: optionValues on a file def returns [], so a merged case would discard every attachment through the restore path.
     case 'file': {

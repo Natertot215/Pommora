@@ -2,14 +2,13 @@ import {
   isReservedPropertyId,
   KEY_REFUSAL,
   optionGroupsOf,
-  optionsOf,
   PROPERTY_TYPES,
   type PropertyDefinition,
   RESERVED_NAME_PREFIX,
   withOptionGroups,
 } from './properties'
 import { fail, ok, type Result } from '../Contract/result'
-import { normalizeTitle } from '../Connections/connections'
+import { firstPerTitle, normalizeTitle } from '../Connections/connections'
 import { PAGE_MODELED_KEYS } from '../Nexus/identityMark'
 import { SPACE_MODELED_KEYS } from '../Contexts/spaceSidecar'
 
@@ -58,24 +57,19 @@ export function validateDefinition(
   return ok(null)
 }
 
-/** `def` holding each option title once, the first of any that fold alike; a definition `validateOptionValues` admits is answered as it is. */
+/** `def` holding each option title once, the first of any that fold alike; a definition already holding each once is answered as it is. */
 export function withUniqueOptions(def: PropertyDefinition): PropertyDefinition {
-  if (validateOptionValues(optionsOf(def)).ok) return def
-  const seen = new Set<string>()
-  const first = (o: { value: string }): boolean => {
-    const fold = normalizeTitle(o.value)
-    if (seen.has(fold)) return false
-    seen.add(fold)
-    return true
-  }
-  const groups = optionGroupsOf(def).map((g) => ({ ...g, options: g.options.filter(first) }))
-  return withOptionGroups(def, groups)
+  const groups = optionGroupsOf(def)
+  const options = groups.flatMap((g) => g.options)
+  const first = new Set(firstPerTitle(options, (o) => o.value).values())
+  if (first.size === options.length) return def
+  const kept = groups.map((g) => ({ ...g, options: g.options.filter((o) => first.has(o)) }))
+  return withOptionGroups(def, kept)
 }
 
 /** No minimum count — a Select may hold zero options. Enforced at create AND on every option edit; titles compare case-folded. */
 export function validateOptionValues(options: { value: string }[]): Result<null> {
-  const folded = options.map((o) => normalizeTitle(o.value))
-  if (new Set(folded).size < folded.length) {
+  if (firstPerTitle(options, (o) => o.value).size < options.length) {
     return fail('invalid-property', 'Option titles must be unique.')
   }
   return ok(null)

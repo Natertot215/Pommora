@@ -8,6 +8,19 @@ export function normalizeTitle(raw: unknown): string {
   return foldKey(String(raw).trim())
 }
 
+/** Each item under its folded title, the first of any whose titles fold alike. */
+export function firstPerTitle<T>(
+  items: Iterable<T>,
+  titleOf: (item: T) => unknown = (item) => item,
+): Map<string, T> {
+  const byTitle = new Map<string, T>()
+  for (const item of items) {
+    const fold = normalizeTitle(titleOf(item))
+    if (!byTitle.has(fold)) byTitle.set(fold, item)
+  }
+  return byTitle
+}
+
 // Fresh per call so callers never share `lastIndex`. `]` is content unless it closes the pair; the 255 cap is load-bearing, since an unbounded run backtracks quadratically on an unclosed `[`-run. The page half stops at the first `#`; the heading takes the rest up to the pipe.
 export function pageLinkPattern(): RegExp {
   return /(?<!!)\[\[(?<page>(?:[^\]\r\n|#]|\](?!\])){0,255})(?:#(?<heading>(?:[^\]\r\n|]|\](?!\])){0,255}))?(?:\|(?<alias>[^\]\r\n]{0,255}))?\]\]/dg
