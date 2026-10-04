@@ -57,7 +57,7 @@ export interface ContentIndexStore {
   readHeadings(paths?: string[]): Record<string, string[]>
   /** Every page holding `key` in any casing. */
   queryKeyHolders(key: string): string[]
-  /** Every page whose Context key names the Space; `key` arrives folded and `title` normalized. */
+  /** Every page whose Context `key`, in any casing, names the Space of the normalized `title`. */
   queryMembers(key: string, title: string): string[]
   readIndexedStat(path: string): IndexedStat | null
   readIndexedStats(): Map<string, IndexedStat>

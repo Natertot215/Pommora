@@ -158,12 +158,12 @@ export const contentIndexStore = (db: Db): ContentIndexStore => ({
       foldKey(key),
     )
   },
-  // `key` is the folded Context key and lands in `qualifier`; `title` is the Space title and lands in `target`.
+  // A `space` row holds the folded Context key in `qualifier` and the Space title in `target`.
   queryMembers(key, title) {
     return paths(
       db,
       "SELECT DISTINCT path FROM relations WHERE kind = 'space' AND qualifier = ? AND target = ? ORDER BY path",
-      key,
+      foldKey(key),
       title,
     )
   },
