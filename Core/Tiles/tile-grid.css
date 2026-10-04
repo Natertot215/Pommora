@@ -10,6 +10,7 @@
   top: 0;
   left: 0;
   transition:
+    left var(--duration-base) var(--ease-base),
     transform var(--duration-base) var(--ease-base),
     width var(--duration-base) var(--ease-base),
     height var(--duration-base) var(--ease-base),

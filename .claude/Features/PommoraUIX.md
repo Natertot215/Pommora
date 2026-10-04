@@ -209,7 +209,7 @@ Where each goes: menu and sidebar rows → Body (Standard) or Control (Compact, 
 | Bloom     | `menuBloom` · `pickerBloom` · `titleReveal` | The menu open/close keyframes at the `slow` and `menu` rungs.                                                                                            |
 | Window    | `windowIn` · `windowOut`                                                      | The floating window's scale-fade open and withdraw on the `fast` rung — the confirmation modal takes it too.                                             |
 | Reveal    | `Reveal`                                                                      | The `0fr ↔ 1fr` body open/close on the `fast` rung.                                                                                                      |
-| PaneSlide | `paneSlide`                                                                   | A docked pane's in-out motion — the `--io` overlay park or the in-flow reflow, by side and mode.                                                         |
+| PaneSlide | `paneSlide`                                                                   | A docked pane's in-out motion — the overlay's transform park or the in-flow reflow, by side, mode, and open state.                                       |
 | Exit      | `useExitPresence` · `useSettleFallback`                                       | Keeps a surface mounted through its close, and settles an end-event wait whose transition never runs; the held forms also keep the value it was showing. |
 
 ### Buttons
@@ -285,7 +285,7 @@ The elements that draw and frame a stored image — `AssetImage`, `ImagePicker`,
 
 ### Glass
 
-`UIX/Glass/` — the material: one recipe in four tiers, brightest and clearest first, behind one barrel. **Frost** is a CSS `backdrop-filter` recipe parameterized by `FrostParams` in `glassBase.ts`; `GlassPane.tsx`, `GlassSurface.tsx`, and `GlassWindow.tsx` are its three tiers; `GlassControl.tsx` is **Liquid**, a real edge-refraction shader (`@samasante/liquid-glass`) worn by the in-use controls.
+`UIX/Glass/` — the material: one recipe in four tiers, brightest and clearest first, behind one barrel. **Frost** is a CSS `backdrop-filter` recipe parameterized by `FrostParams` in `glassBase.ts`; `GlassPane.tsx`, `GlassSurface.tsx`, and `GlassWindow.tsx` are its three tiers; `GlassControl.tsx` is **Liquid**, a real edge-refraction shader (`@samasante/liquid-glass`) worn by the in-use controls. The library is patched by a patch file beside it in `UIX/Glass/`, applied on install, so a resizing control keeps its lens map until its size settles and encodes the new one off the main thread.
 
 | Title         | Export                                        | What it is                                                                                                                                                    |
 | ------------- | --------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- |

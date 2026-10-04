@@ -138,7 +138,10 @@ export function App(): React.JSX.Element {
         </main>
         <GlassPane
           ref={publishChromePart('sidebar')}
-          className={cx('surface-glass', paneSlide({ side: 'left', mode: 'overlay' }))}
+          className={cx(
+            'surface-glass',
+            paneSlide({ side: 'left', mode: 'overlay', open: !sidebarHidden }),
+          )}
           data-reveal-host=""
         >
           {status === 'ready' && tree && <Ribbon />}

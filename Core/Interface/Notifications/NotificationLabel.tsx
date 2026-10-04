@@ -81,8 +81,7 @@ export function NotificationLabel(): React.JSX.Element {
       ref={hostRef}
       className={cx(
         s.host,
-        paneSlide({ side: 'right', mode: 'overlay' }),
-        shown && s.shown,
+        paneSlide({ side: 'right', mode: 'overlay', open: shown }),
         held?.tone === 'error' && s.error,
       )}
       role={held?.tone === 'error' ? 'alert' : 'status'}

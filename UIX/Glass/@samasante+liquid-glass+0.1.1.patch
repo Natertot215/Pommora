@@ -1,0 +1,100 @@
+diff --git a/node_modules/@samasante/liquid-glass/dist/index.js b/node_modules/@samasante/liquid-glass/dist/index.js
+index 81c5c02..019784f 100644
+--- a/node_modules/@samasante/liquid-glass/dist/index.js
++++ b/node_modules/@samasante/liquid-glass/dist/index.js
+@@ -303,7 +303,13 @@ var createLensMapGenerator = (size) => {
+         }
+       }
+       ctx.putImageData(image, 0, 0);
+-      return canvas.toDataURL();
++      if (!shape.async) return canvas.toDataURL();
++      return new Promise((resolve) => canvas.toBlob((blob) => {
++        if (!blob) return resolve(null);
++        const reader = new FileReader();
++        reader.onload = () => resolve(reader.result);
++        reader.readAsDataURL(blob);
++      }));
+     },
+     dispose() {
+       if (canvas) {
+@@ -1509,36 +1515,50 @@ var GlassMaterial = ({
+   const hasSpecular = merged.glow > 0 || merged.sheen > 0;
+   useLayoutEffect(() => {
+     if (!sized) return;
+-    const mapSize = merged.mapSize;
+-    if (!generatorRef.current || generatorRef.current.size !== mapSize) {
+-      generatorRef.current?.gen.dispose();
+-      generatorRef.current = {
+-        gen: createLensMapGenerator(mapSize),
+-        size: mapSize
+-      };
+-    }
+-    const url = generatorRef.current.gen.generate({
+-      lensHalfWidth: box.w / 2,
+-      lensHalfHeight: box.h / 2,
+-      borderRadius: box.r,
+-      depth: merged.depth,
+-      clipToShape: merged.clipToShape,
+-      softEdge: merged.softEdge,
+-      sheenAngle: merged.sheenAngle,
+-      glow: merged.glow,
+-      glowSpread: merged.glowSpread,
+-      glowFalloff: merged.glowFalloff,
+-      sheen: merged.sheen,
+-      sheenWidth: merged.sheenWidth,
+-      sheenFalloff: merged.sheenFalloff,
+-      curvature: merged.curvature,
+-      splay: merged.splay,
+-      bend: merged.bend,
+-      bendWidth: merged.bendWidth
+-    });
+-    mapUrlRef.current = url;
+-    feImageRef.current?.setAttribute("href", url);
+-    applyBackdropFilter();
++    let cancelled = false;
++    const regenerate = () => {
++      const mapSize = merged.mapSize;
++      if (!generatorRef.current || generatorRef.current.size !== mapSize) {
++        generatorRef.current?.gen.dispose();
++        generatorRef.current = {
++          gen: createLensMapGenerator(mapSize),
++          size: mapSize
++        };
++      }
++      generatorRef.current.gen.generate({
++        async: true,
++        lensHalfWidth: box.w / 2,
++        lensHalfHeight: box.h / 2,
++        borderRadius: box.r,
++        depth: merged.depth,
++        clipToShape: merged.clipToShape,
++        softEdge: merged.softEdge,
++        sheenAngle: merged.sheenAngle,
++        glow: merged.glow,
++        glowSpread: merged.glowSpread,
++        glowFalloff: merged.glowFalloff,
++        sheen: merged.sheen,
++        sheenWidth: merged.sheenWidth,
++        sheenFalloff: merged.sheenFalloff,
++        curvature: merged.curvature,
++        splay: merged.splay,
++        bend: merged.bend,
++        bendWidth: merged.bendWidth
++      }).then((url) => {
++        if (cancelled || !url) return;
++        mapUrlRef.current = url;
++        feImageRef.current?.setAttribute("href", url);
++        applyBackdropFilter();
++      });
++    };
++    // A resizing lens keeps its last map until the size settles: re-rasterizing every frame of a size animation blocks the main thread.
++    let settle;
++    if (mapUrlRef.current) settle = setTimeout(regenerate, 120);
++    else regenerate();
++    return () => {
++      cancelled = true;
++      clearTimeout(settle);
++    };
+   }, [sized, shapeKey]);
+   const applyBackdropFilter = useMemo(
+     () => () => {

@@ -12,13 +12,15 @@
   height: 140px; /* KNOB — the banner's height */
   margin: calc(-1 * var(--window-toolbar-h)) calc(-1 * var(--window-clear-r)) 0
     calc(-1 * var(--window-clear-l));
+  transition: margin var(--pane-slide) var(--ease-base);
 }
-/* The clearances ride --io, which a transition on left or right would chase. */
 .window .window-banner-title {
   left: calc(var(--content-edge) + var(--window-clear-l));
   right: calc(var(--content-edge) + var(--window-clear-r));
   bottom: 12px;
-  transition: none;
+  transition:
+    left var(--pane-slide) var(--ease-base),
+    right var(--pane-slide) var(--ease-base);
 }
 
 .banner-title,

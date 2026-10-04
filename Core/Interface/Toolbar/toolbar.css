@@ -23,10 +23,15 @@
   --slide-home: var(--trailing-room);
   --slide-cluster-w: var(--trio-w);
   --slide-breathing: var(--trio-inset);
+  --io: 0;
 
   transition:
     left var(--pane-slide) var(--ease-base),
-    padding-left var(--pane-slide) var(--ease-base);
+    padding-left var(--pane-slide) var(--ease-base),
+    --io var(--pane-slide) var(--ease-base);
+}
+.shell.side-pane-open .app-toolbar {
+  --io: 1;
 }
 .shell.sidebar-hidden .app-toolbar {
   left: 0;

@@ -51,12 +51,7 @@ textarea,
 .shell {
   position: relative;
   height: 100dvh;
-  --io: 0;
-  --io-l: 1;
   --pane-slide: var(--duration-base);
-  transition:
-    --io var(--pane-slide) var(--ease-base),
-    --io-l var(--pane-slide) var(--ease-base);
   overflow: clip;
   background: var(--main-bg);
   --content-inset: 24px;
@@ -70,10 +65,8 @@ textarea,
 }
 .shell.sidebar-hidden {
   --sidebar-clearance: 0px;
-  --io-l: 0;
 }
 .shell.side-pane-open {
-  --io: 1;
   --side-pane-clearance: calc(var(--app-inset) + var(--side-pane-width));
 }
 .shell.is-resizing {

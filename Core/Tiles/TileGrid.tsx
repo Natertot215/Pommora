@@ -29,7 +29,7 @@ import {
   resizeStackPair,
   stretchTileHeight,
 } from './Layout/ops'
-import { computeGeometry } from './Layout/rects'
+import { computeGeometry, type Placement, pinned, placeTiles, type Span } from './Layout/rects'
 import type { Rect } from '@pommora/uix/Interactions/useResizable'
 import { snapAxis, xCandidates, yCandidates } from './Layout/snap'
 import { stackLayout, stackedAt } from './Layout/stack'
@@ -63,12 +63,11 @@ interface TileDrag {
 
 interface Settle {
   id: string
-  to: Rect
+  to: Placement
   next: TileLayout | null
 }
 
 const HANDLE_REACH: Reach = { size: 'corner', toward: { x: 1, y: 1 } }
-const TRACK_SETTLE_MS = 160
 // KNOB — grid gutter, drop-band zone, snap radius, and the append space under the last band.
 const GAP = 8
 const BAND_ZONE_PX = 10
@@ -90,10 +89,29 @@ const EDGE_ZONES: Edge[][] = [
 const refKey = (ref: { band: number; path: number[]; index: number }): string =>
   `${ref.band}|${ref.path.join('.')}|${ref.index}`
 
+const spanCss = (s: Span): string =>
+  `calc(${s.share * 100}% ${s.px < 0 ? '-' : '+'} ${Math.abs(s.px)}px)`
+
+// The share rides `left` and `width` as percentages, so the browser lays the board out at whatever width the grid has, the frame it has it.
+const placementStyle = (p: Placement): CSSProperties => ({
+  left: `${p.x.share * 100}%`,
+  transform: `translate(${p.x.px}px, ${p.y}px)`,
+  width: spanCss(p.w),
+  height: p.h,
+})
+
+const samePlacement = (a: Placement, b: Placement): boolean =>
+  a.x.share === b.x.share &&
+  a.x.px === b.x.px &&
+  a.y === b.y &&
+  a.w.share === b.w.share &&
+  a.w.px === b.w.px &&
+  a.h === b.h
+
 const TileShell = memo(
   function TileShell({
     id,
-    rect,
+    place,
     phase,
     resizing,
     editing,
@@ -107,7 +125,7 @@ const TileShell = memo(
     onSettled,
   }: {
     id: string
-    rect: Rect
+    place: Placement
     phase: TilePhase
     resizing: boolean
     editing: boolean
@@ -124,7 +142,7 @@ const TileShell = memo(
       phase === 'lifted'
         ? 'none'
         : phase === 'reflow' || phase === 'settling'
-          ? `transform ${SHELL_TRANSITION}, width ${SHELL_TRANSITION}, height ${SHELL_TRANSITION}`
+          ? `left ${SHELL_TRANSITION}, transform ${SHELL_TRANSITION}, width ${SHELL_TRANSITION}, height ${SHELL_TRANSITION}`
           : undefined
     const [handleNear, setHandleNear] = useState(false)
     const tileRef = useRef<HTMLDivElement>(null)
@@ -162,9 +180,7 @@ const TileShell = memo(
         data-reveal-host={editing ? (handleNear ? 'on' : 'off') : ''}
         style={{
           ...extraStyle,
-          transform: `translate(${rect.x}px, ${rect.y}px)`,
-          width: rect.w,
-          height: rect.h,
+          ...placementStyle(place),
           transition,
         }}
         onTransitionEnd={(e) => {
@@ -213,10 +229,7 @@ const TileShell = memo(
     a.onHandleMenu === b.onHandleMenu &&
     a.onEdgeDown === b.onEdgeDown &&
     a.onSettled === b.onSettled &&
-    a.rect.x === b.rect.x &&
-    a.rect.y === b.rect.y &&
-    a.rect.w === b.rect.w &&
-    a.rect.h === b.rect.h,
+    samePlacement(a.place, b.place),
 )
 
 export function TileGrid({
@@ -234,7 +247,6 @@ export function TileGrid({
   onBackdrop,
 }: TileGridProps): React.JSX.Element {
   const gridRef = useRef<HTMLDivElement | null>(null)
-  const [width, setWidth] = useState(0)
   const [stacked, setStacked] = useState(false)
   const [draft, setDraft] = useState<TileLayout | null>(null)
   const [tileDrag, setTileDrag] = useState<TileDrag | null>(null)
@@ -244,42 +256,15 @@ export function TileGrid({
   const [pressedId, setPressedId] = useState<string | null>(null)
   const begin = usePointerGesture()
 
-  // While the surface WIDTH is animating, tiles must track 1:1 — their own width transition would lag the pane.
-  const [tracking, setTracking] = useState(false)
-  useEffect(() => {
-    const el = gridRef.current
-    if (!el) return
-    setWidth(el.clientWidth)
-    let settleTimer: ReturnType<typeof setTimeout> | null = null
-    const ro = new ResizeObserver(() => {
-      setWidth(el.clientWidth)
-      setTracking(true)
-      if (settleTimer) clearTimeout(settleTimer)
-      settleTimer = setTimeout(() => setTracking(false), TRACK_SETTLE_MS)
-    })
-    ro.observe(el)
-    return () => {
-      ro.disconnect()
-      if (settleTimer) clearTimeout(settleTimer)
-    }
-  }, [])
-
   // Under the stacking width the board is DRAWN as one column; the tree the grid was handed is still the tree it hands back.
   const view = useMemo(() => (stacked ? stackLayout(layout) : layout), [layout, stacked])
-  // Hit-testing and boundary extents run against the frozen origin's geometry — a preview shifting under the pointer must never retarget the gesture.
-  const originGeometry = useMemo(
-    () => computeGeometry(view, Math.max(0, width), GAP),
-    [view, width],
-  )
-  const geometry = useMemo(
-    () => (draft ? computeGeometry(draft, Math.max(0, width), GAP) : originGeometry),
-    [draft, originGeometry, width],
-  )
+  const placed = useMemo(() => placeTiles(draft ?? view, GAP), [draft, view])
+  // Hit-testing and boundary extents run against the origin measured at the press — a preview shifting under the pointer must never retarget the gesture.
+  const measured = (of: TileLayout, grid: HTMLElement) => computeGeometry(of, grid.clientWidth, GAP)
 
   const boardStatic = locked || stacked
   const now = {
     view,
-    originGeometry,
     onLayoutChange,
     boardStatic,
     isTileLocked,
@@ -318,14 +303,12 @@ export function TileGrid({
     // A gesture starting during a live settle finalizes the pending commit NOW: the parent hasn't re-rendered, so a gesture built on the stale origin would erase the just-dropped move.
     const settling = settleRef.current
     if (settling) finishSettle(settling.id)
-    const pending = settling?.next ?? null
     const grid = gridRef.current
-    const g =
-      pending && grid
-        ? computeGeometry(pending, Math.max(0, grid.clientWidth), GAP)
-        : live.current.originGeometry
+    if (!grid) return null
+    const origin = settling?.next ?? live.current.view
+    const g = measured(origin, grid)
     const rect = g.tiles.get(id)
-    return rect ? { origin: pending ?? live.current.view, g, grid, rect } : null
+    return rect ? { origin, g, grid, rect } : null
   }
 
   const onEdgeDown = useCallback(
@@ -416,7 +399,6 @@ export function TileGrid({
       const from = gestureOrigin(id, e)
       if (!from) return
       const { origin, g, grid, rect } = from
-      if (!grid) return
       const downBox = grid.getBoundingClientRect()
       // The grab offset is frozen at the down event — recomputing it per move would cancel the pointer delta and pin the lifted tile to its origin.
       const grab = {
@@ -443,10 +425,7 @@ export function TileGrid({
       }
 
       const settleInto = (decided: TileLayout | null): void => {
-        const finalGeometry = decided
-          ? computeGeometry(decided, Math.max(0, grid.clientWidth), GAP)
-          : g
-        const to = finalGeometry.tiles.get(id) ?? rect
+        const to = placeTiles(decided ?? origin, GAP).tiles.get(id) ?? pinned(rect)
         setTileDrag(null)
         if (!decided) setDraft(null)
         const s: Settle = { id, to, next: decided }
@@ -486,14 +465,21 @@ export function TileGrid({
     return () => onBusyChange?.(false)
   }, [busy, onBusyChange])
 
-  // Sampled only between gestures and only off a measured width, before paint: a crossing under a held pointer would re-lay the board mid-drag, width is 0 until the observer's first read, and a narrow mount must never paint two-across first.
+  // Sampled only between gestures and only off a measured width, before paint: a crossing under a held pointer would re-lay the board mid-drag, and a narrow mount must never paint two-across first.
   useLayoutEffect(() => {
-    if (busy || width <= 0) return
-    setStacked((was) => stackedAt(width, was))
-  }, [busy, width])
+    const grid = gridRef.current
+    if (busy || !grid) return
+    const sample = (): void => {
+      const width = grid.clientWidth
+      if (width > 0) setStacked((was) => stackedAt(width, was))
+    }
+    sample()
+    const ro = new ResizeObserver(sample)
+    ro.observe(grid)
+    return () => ro.disconnect()
+  }, [busy])
 
-  const interacting = resizingId !== null || tracking
-  const dropSlot = tileDrag && draft ? geometry.tiles.get(tileDrag.id) : null
+  const dropSlot = tileDrag && draft ? placed.tiles.get(tileDrag.id) : null
 
   const onGridContextMenu = (e: React.MouseEvent): void => {
     if (!onBackdrop || boardStatic || e.target !== e.currentTarget) return
@@ -503,7 +489,7 @@ export function TileGrid({
     const box = grid.getBoundingClientRect()
     const px = e.clientX - box.left
     const py = e.clientY - box.top
-    const g = originGeometry
+    const g = measured(view, grid)
     let above: { id: string; bottom: number; band: number } | null = null
     for (const [id, r] of g.tiles) {
       const bottom = r.y + r.h
@@ -527,14 +513,18 @@ export function TileGrid({
     // biome-ignore lint/a11y/noStaticElementInteractions: a right-click affordance on a container, not a control — the contents carry their own semantics
     <div
       ref={gridRef}
-      className={cx('tile-grid', interacting && 'is-interacting', boardStatic && 'is-static')}
-      style={{ height: geometry.totalHeight + BOTTOM_PAD_PX }}
+      className={cx(
+        'tile-grid',
+        resizingId !== null && 'is-interacting',
+        boardStatic && 'is-static',
+      )}
+      style={{ height: placed.totalHeight + BOTTOM_PAD_PX }}
       onContextMenu={onGridContextMenu}
     >
       {/* Tiles render in STABLE id order, never tree order — React moving the keyed DOM nodes to match a mid-drag preview would remount every reflowing tile mid-transition. */}
-      {[...geometry.tiles.entries()]
+      {[...placed.tiles.entries()]
         .sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0))
-        .map(([id, rect]) => {
+        .map(([id, place]) => {
           const lifted = tileDrag?.id === id ? tileDrag : null
           const settling = settle?.id === id ? settle : null
           const phase: TilePhase = lifted
@@ -548,7 +538,7 @@ export function TileGrid({
             <TileShell
               key={id}
               id={id}
-              rect={lifted?.lift ?? settling?.to ?? rect}
+              place={lifted ? pinned(lifted.lift) : (settling?.to ?? place)}
               phase={phase}
               resizing={resizingId === id}
               editing={editingId === id}
@@ -564,16 +554,7 @@ export function TileGrid({
           )
         })}
 
-      {dropSlot && (
-        <div
-          className="tile-placement drop-slot"
-          style={{
-            transform: `translate(${dropSlot.x}px, ${dropSlot.y}px)`,
-            width: dropSlot.w,
-            height: dropSlot.h,
-          }}
-        />
-      )}
+      {dropSlot && <div className="tile-placement drop-slot" style={placementStyle(dropSlot)} />}
     </div>
   )
 }

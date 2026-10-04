@@ -188,11 +188,11 @@ describe('the grid on the gesture engine', () => {
       ),
     )
     measure(300)
-    expect(tileEl('c').style.width).toBe('300px')
+    expect(tileEl('c').style.width).toBe('calc(100% + 0px)')
     measure(500)
-    expect(tileEl('c').style.width).toBe('500px')
+    expect(tileEl('c').style.width).toBe('calc(100% + 0px)')
     measure(600)
-    expect(tileEl('c').style.width).toBe('296px')
+    expect(tileEl('c').style.width).toBe('calc(50% - 4px)')
   })
 })
 
