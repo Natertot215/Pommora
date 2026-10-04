@@ -19,11 +19,8 @@ export function writtenRoot(
   const target = writeTarget(raw, name, world.resolveCase)
   const reconciled = reconcileGovernedRoot(raw, world, undefined, target.govern)
   adoptions.push(...reconciled.adoptions)
-  return landValue(
-    reconciled.root,
-    target,
-    writtenSpelling(value, raw[target.key], world.resolveCase),
-  )
+  const written = writtenSpelling(value, raw[target.key], world.resolveCase)
+  return landValue(reconciled.root, target, written)
 }
 
 export async function setGovernedRootKey(
