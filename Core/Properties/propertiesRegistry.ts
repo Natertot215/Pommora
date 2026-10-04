@@ -8,7 +8,8 @@ import type { Json } from '../Files/stableJson'
 import { isPlainObject } from '../Contract/validators'
 import { propertyDefinition, type PropertyDefinition } from './properties'
 import { resolveRowOrder } from './rowOrder'
-import { keyRefusal } from './schema'
+import { keyRefusal, withUniqueOptions } from './schema'
+import { normalizeTitle } from '../Connections/connections'
 
 export const NO_PROPERTY = fail('not-found', 'Property not found.')
 
@@ -25,9 +26,15 @@ function normalizeRegistry(obj: Record<string, unknown>): {
   const rawDefs = isPlainObject(obj.defs) ? obj.defs : {}
   const defs: PropertyRegistry = {}
   const unadmitted: Record<string, unknown> = {}
+  const names = new Set<string>()
   for (const [id, value] of Object.entries(rawDefs)) {
     const parsed = propertyDefinition.safeParse(value)
-    if (parsed.success && keyRefusal(parsed.data.name) === null) defs[id] = parsed.data
+    const name = parsed.success ? normalizeTitle(parsed.data.name) : ''
+    // A name is one key on disk, so the first definition to hold it in any casing is the one admitted.
+    if (parsed.success && keyRefusal(parsed.data.name) === null && !names.has(name)) {
+      names.add(name)
+      defs[id] = withUniqueOptions(parsed.data)
+    }
     // Only a plausible def (a plain object) rides through writes; a scalar under an id key is corrupt noise.
     else if (isPlainObject(value)) unadmitted[id] = value
   }

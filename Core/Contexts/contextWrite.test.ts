@@ -339,6 +339,17 @@ describe('setContext reads the held tree', () => {
       expect('<projects>' in far).toBe(false)
     })
 
+    it('with case resolution on, the far half writes each Space it keeps as that Space is titled', async () => {
+      await resolveCase()
+      const other = join(contextsDir(root), 'Projects', 'Other')
+      await mkdir(other, { recursive: true })
+      await writeFile(join(other, '_space.json'), JSON.stringify({ id: 'sp-other' }))
+      await writeFile(csFile(), JSON.stringify({ id: 'sp-cs', '<projects>': ['OTHER', 'Gone'] }))
+      await refreshTree(root)
+      expect((await link('ctxC', ['sp-cs'])).ok).toBe(true)
+      expect((await readJsonAt(csFile()))['<Projects>']).toEqual(['Other', 'Gone', 'Pommora'])
+    })
+
     it('writes the pair onto both files', async () => {
       const r = await link('ctxC', ['sp-cs'])
       expect(r.ok).toBe(true)

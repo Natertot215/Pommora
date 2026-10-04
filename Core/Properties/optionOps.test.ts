@@ -144,6 +144,21 @@ describe('editOption', () => {
   })
 })
 
+describe('a definition stored with two options that fold alike', () => {
+  it('takes an added option, written with the first of the pair alone', async () => {
+    const id = await mkSelect([{ value: 'alpha' }])
+    const file = join(root, '.nexus', 'properties.json')
+    const raw = await readJsonAt<{ defs: Record<string, PropDefLike> }>(file)
+    raw.defs[id].select_options = [{ value: 'alpha' }, { value: 'Alpha' }]
+    await writeFile(file, JSON.stringify(raw))
+    expect((await editOption(root, id, { op: 'add', groupId: 'select', title: 'beta' })).ok).toBe(
+      true,
+    )
+    const after = await readJsonAt<{ defs: Record<string, PropDefLike> }>(file)
+    expect(after.defs[id].select_options).toEqual([{ value: 'alpha' }, { value: 'beta' }])
+  })
+})
+
 describe('a rename followed by a registry-only edit (F-134)', () => {
   it('an edit still addressed to the old value is refused, and the new title holds in the registry and on the page', async () => {
     const id = await mkSelect([{ value: 'Urgent' }])

@@ -1,5 +1,5 @@
 import { mutateRegistry, readRegistry, NO_PROPERTY, serializeSchemaOp } from './propertiesRegistry'
-import { validateOptionValues } from './schema'
+import { validateOptionValues, withUniqueOptions } from './schema'
 import { collectionFolders } from './assignment'
 import { keyHolderFiles } from './keyHolders'
 import { sweepGovernedRoots, unsweptLine } from './governedSweep'
@@ -46,7 +46,7 @@ function editStoredOptions(
   stored: unknown,
   edit: (groups: StatusGroup[]) => StatusGroup[],
 ): PropertyDefinition {
-  const raw = { ...(stored as PropertyDefinition), type: def.type }
+  const raw = withUniqueOptions({ ...(stored as PropertyDefinition), type: def.type })
   return withOptionGroups(def, edit(optionGroupsOf(raw)))
 }
 

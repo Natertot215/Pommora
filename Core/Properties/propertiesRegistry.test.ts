@@ -66,6 +66,26 @@ describe('propertiesRegistry', () => {
     )
     expect(Object.keys((await readRegistry(root)).defs)).toEqual(['prop_a'])
   })
+
+  it('reads two options that fold alike as the first, and two definitions whose names fold alike as the first', async () => {
+    await mkdir(join(root, '.nexus'), { recursive: true })
+    const options = [{ value: 'alpha' }, { value: 'Alpha' }, { value: 'beta' }]
+    const file = {
+      order: ['prop_a', 'prop_b'],
+      defs: {
+        prop_a: { id: 'prop_a', name: 'Tags', type: 'multiSelect', select_options: options },
+        prop_b: { id: 'prop_b', name: 'tags', type: 'number' },
+      },
+    }
+    await writeFile(join(root, '.nexus', 'properties.json'), JSON.stringify(file))
+    const { defs } = await readRegistry(root)
+    expect(Object.keys(defs)).toEqual(['prop_a'])
+    expect(defs.prop_a.select_options?.map((o) => o.value)).toEqual(['alpha', 'beta'])
+    await mutateRegistry(root, (registry) => ({ next: registry, result: undefined }))
+    const kept = await readJsonAt<RegistryFile>(join(root, '.nexus', 'properties.json'))
+    expect(kept.defs.prop_b).toEqual(file.defs.prop_b)
+    expect(kept.defs.prop_a.select_options).toEqual(options)
+  })
 })
 
 describe('hostile hand-edited files (breaker M-2/L-1)', () => {
