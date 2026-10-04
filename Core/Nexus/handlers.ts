@@ -12,6 +12,7 @@ import { basename, dirname, join } from '../Paths/posix'
 import { retireFileHistory, sweepFileHistory } from '../Pages/fileHistory'
 import { mutateRequest } from './mutateRequest'
 import { machine } from '../Platform/machine'
+import { registerHeldOptions } from '../Properties/optionOps'
 import { runRepairSweep } from '../Properties/repairSweep'
 import { replaySchemaCascade } from '../Properties/replaySchemaCascade'
 import { startSession, stopSession } from '../Sync/Client/session'
@@ -99,7 +100,9 @@ export async function openNexusSequence(
     const reread = await seedContentIndex(root)
     await replaySchemaCascade(root)
     await settleNow(ctx, root)
-    void runRepairSweep(root, reread).then(() => settleNow(ctx, root))
+    void runRepairSweep(root, reread)
+      .then(() => registerHeldOptions(root))
+      .then(() => settleNow(ctx, root))
   }
   if (nexusId !== null) void startSession(ctx, root, nexusId)
 }

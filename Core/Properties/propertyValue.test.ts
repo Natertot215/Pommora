@@ -9,6 +9,7 @@ import {
   isBlankValue,
   reconcilePropertyValue,
   registeredOption,
+  unregisteredMembers,
   type PropertyValue,
 } from './propertyValue'
 
@@ -402,6 +403,11 @@ describe('options and checkboxes decode without regard to case', () => {
       expect(decodeValue(checkbox, raw)).toEqual({ kind: 'checkbox', value: true })
     for (const raw of ['No', '1', false, 1])
       expect(decodeValue(checkbox, raw)).toEqual({ kind: 'null' })
+  })
+
+  it('unregisteredMembers answers each member a Multi-Select holds beyond its definition once, and none for a Select', () => {
+    expect(unregisteredMembers(labels, ['CLAUDE', 'Ideas', 'ideas'])).toEqual(['Ideas'])
+    expect(unregisteredMembers(stage, ['Ideas'])).toEqual([])
   })
 
   it("registeredOption answers the definition's own spelling for any casing", () => {

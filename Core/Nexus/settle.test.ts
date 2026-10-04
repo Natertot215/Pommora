@@ -1,7 +1,14 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { mkdir, open, readFile, rm, utimes, writeFile } from 'node:fs/promises'
 import { join } from '../Paths/posix'
-import { tempRoot } from '../Testing/hostFs'
+import { readJsonAt, tempRoot } from '../Testing/hostFs'
+import { settledMutate } from '../Testing/settledMutate'
+import type { TrashDeps } from '../Trash/bundle'
+import { assignProperty } from '../Properties/assignment'
+import { renameOption } from '../Properties/optionOps'
+import { optionValues, type PropertyDefinition } from '../Properties/properties'
+import { writeSchemaJournal } from '../Properties/propertyJournal'
+import { replaySchemaCascade } from '../Properties/replaySchemaCascade'
 import type { Pushes } from '../Contract/bridge'
 import type { Changed } from '../Files/writeEcho'
 import * as indexSeed from '../Index/indexSeed'
@@ -22,6 +29,19 @@ import { applyDelta } from './treeDelta'
 import * as session from './session'
 import { closeSession, openSession, whileAdopting } from './session'
 import { writeExcludedFolders } from '../Settings/settings'
+
+const sweep = vi.hoisted(() => ({ hold: null as Promise<void> | null, entered: () => {} }))
+vi.mock('../Properties/governedSweep', async (importOriginal) => {
+  const real = await importOriginal<typeof import('../Properties/governedSweep')>()
+  return {
+    ...real,
+    sweepGovernedRoots: async (...args: Parameters<typeof real.sweepGovernedRoots>) => {
+      sweep.entered()
+      await sweep.hold
+      return real.sweepGovernedRoots(...args)
+    },
+  }
+})
 
 const ULID_A = '01ARZ3NDEKPSV4RRFFQ69G5FAV'
 const ULID_B = '01BX5ZZKBKPCTAV9WEVGEMMVRZ'
@@ -758,5 +778,211 @@ describe('an outside batch’s turn', () => {
     expect(held('Notes/Bare.md')).toBe(splitFrontmatter(await bytes('Notes', 'Bare.md'))[ID_KEY])
     expect(heldTreeOf(root)?.unreadable).toBeUndefined()
     await agrees()
+  })
+})
+
+describe('held options — the registry takes the Multi-Select members a changed file holds', () => {
+  const DEPS: TrashDeps = { trashMode: 'system', trashToSystem: async () => {} }
+  const SPACE = ['.nexus', 'contexts', 'Areas', 'Home', '_space.json'] as const
+  const page = (id: string, fm = ''): string => `---\nID: ${id}\n${fm}---\n\nbody\n`
+  const tags = (...members: string[]): string =>
+    `Tags:\n${members.map((m) => `  - ${m}\n`).join('')}`
+  const registry = (first: string): Promise<void> =>
+    writeFile(
+      abs('.nexus', 'properties.json'),
+      JSON.stringify({
+        order: ['tags', 'kind'],
+        defs: {
+          tags: {
+            id: 'tags',
+            name: 'Tags',
+            type: 'multiSelect',
+            select_options: [{ value: first, color: 'blue' }],
+          },
+          kind: { id: 'kind', name: 'Kind', type: 'select', select_options: [{ value: 'Note' }] },
+        },
+      }),
+    )
+  const stored = async (id: 'tags' | 'kind') =>
+    (
+      await readJsonAt<{
+        defs: Record<string, { select_options: { value: string; color?: string }[] }>
+      }>(abs('.nexus', 'properties.json'))
+    ).defs[id]?.select_options ?? []
+  const options = async (id: 'tags' | 'kind' = 'tags'): Promise<string[]> =>
+    (await stored(id)).map((o) => o.value)
+  const walked = async (): Promise<void> => {
+    shown = recordHanded(await refreshTree(root)).tree
+  }
+
+  beforeEach(async () => {
+    await registry('alpha')
+    await writeFile(
+      abs('Notes', '_pagecollection.json'),
+      JSON.stringify({ id: 'c1', properties: ['tags', 'kind'] }),
+    )
+    await mkdir(abs('Loose'))
+    await writeFile(abs('Loose', '_pagecollection.json'), JSON.stringify({ id: 'c2' }))
+    await writeFile(abs('Loose', 'L.md'), page(ULID_C))
+    await mkdir(abs('.nexus', 'contexts', 'Areas', 'Home'), { recursive: true })
+    await writeFile(
+      abs('.nexus', 'contexts', 'contexts.json'),
+      JSON.stringify({ contexts: [{ id: 'ctx1', title: 'Areas' }] }),
+    )
+    await writeFile(abs(...SPACE), JSON.stringify({ id: ULID_D }))
+    await walked()
+  })
+  afterEach(() => {
+    sweep.hold = null
+    sweep.entered = () => {}
+  })
+
+  it('an outside edit registers the member its page holds after the options already there, in the push that carries the page', async () => {
+    await writeFile(abs('Notes', 'A.md'), page(ULID_A, tags('alpha', 'Ideas')))
+    await settleBatch(pusher, root, [ev('change', 'Notes', 'A.md')])
+    expect(await stored('tags')).toEqual([{ value: 'alpha', color: 'blue' }, { value: 'Ideas' }])
+    expect(channels()).toEqual(['nexus:changed', 'pages:changed', 'values:changed'])
+    const pushed = applyDelta(shown, (payload('nexus:changed') as NexusChange).delta)
+    const def = pushed.config.registry.find((d) => d.id === 'tags') as PropertyDefinition
+    expect(optionValues(def)).toEqual(['alpha', 'Ideas'])
+  })
+
+  it('an in-app toggle of another option registers the member the page already holds', async () => {
+    await writeFile(abs('Notes', 'A.md'), page(ULID_A, tags('Ideas')))
+    await walked()
+    const reply = await settledMutate(
+      root,
+      {
+        op: 'setProperty',
+        path: 'Notes/A.md',
+        propertyId: 'tags',
+        value: { kind: 'multiSelect', value: ['Ideas', 'alpha'] },
+      },
+      DEPS,
+    )
+    expect(reply.ok).toBe(true)
+    expect(await options()).toEqual(['alpha', 'Ideas'])
+  })
+
+  it('two pages holding one member in two casings register one option', async () => {
+    await writeFile(abs('Notes', 'A.md'), page(ULID_A, tags('Claude')))
+    await writeFile(abs('Notes', 'B.md'), page(ULID_B, tags('claude')))
+    await settleBatch(pusher, root, [ev('change', 'Notes', 'A.md'), ev('add', 'Notes', 'B.md')])
+    expect(await options()).toEqual(['alpha', 'Claude'])
+  })
+
+  it('a Select value its definition doesn’t register stays unregistered', async () => {
+    await writeFile(abs('Notes', 'A.md'), page(ULID_A, `Kind: Draft\n${tags('Ideas')}`))
+    await settleBatch(pusher, root, [ev('change', 'Notes', 'A.md')])
+    expect(await options()).toEqual(['alpha', 'Ideas'])
+    expect(await options('kind')).toEqual(['Note'])
+  })
+
+  it('a page whose Collection doesn’t assign the property registers nothing', async () => {
+    await writeFile(abs('Loose', 'L.md'), page(ULID_C, tags('Zeta')))
+    await writeFile(abs('Notes', 'A.md'), page(ULID_A, tags('Ideas')))
+    await settleBatch(pusher, root, [ev('change', 'Loose', 'L.md'), ev('change', 'Notes', 'A.md')])
+    expect(await options()).toEqual(['alpha', 'Ideas'])
+  })
+
+  it('an editor’s body save registers nothing', async () => {
+    const text = page(ULID_B, tags('Zeta'))
+    await writeFile(abs('Notes', 'B.md'), text)
+    await walked()
+    await writeFile(abs('Notes', 'A.md'), page(ULID_A, tags('Ideas')))
+    await settleBatch(pusher, root, [
+      { event: 'change', absPath: abs('Notes', 'B.md'), origin: 'own', text, bodyOnly: true },
+      ev('change', 'Notes', 'A.md'),
+    ])
+    expect(await options()).toEqual(['alpha', 'Ideas'])
+  })
+
+  it('an outside edit of a Space sidecar registers the member it holds', async () => {
+    await writeFile(abs(...SPACE), JSON.stringify({ id: ULID_D, Tags: ['Ideas'] }))
+    await settleBatch(pusher, root, [ev('change', ...SPACE)])
+    expect(await options()).toEqual(['alpha', 'Ideas'])
+  })
+
+  it('assigning the property to a Collection registers the member its page already holds', async () => {
+    await writeFile(abs('Loose', 'L.md'), page(ULID_C, tags('Ideas')))
+    await walked()
+    expect((await assignProperty(root, abs('Loose'), 'tags')).ok).toBe(true)
+    await settleNow(pusher, root)
+    expect(await options()).toEqual(['alpha', 'Ideas'])
+  })
+
+  it('un-excluding a Set registers the member a page added while it was excluded holds', async () => {
+    await mkdir(abs('Notes', 'Old'))
+    await writeFile(abs('Notes', 'Old', '_pageset.json'), JSON.stringify({ id: 's1' }))
+    await walked()
+    await writeExcludedFolders(root, ['Notes/Old'])
+    await settleNow(pusher, root)
+    await writeFile(abs('Notes', 'Old', 'New.md'), page(ULID_B, tags('Ideas')))
+    await writeExcludedFolders(root, [])
+    await settleNow(pusher, root)
+    expect(await options()).toEqual(['alpha', 'Ideas'])
+  })
+
+  it('a settle during an option rename’s cascade registers the new member alone, once the cascade ends', async () => {
+    await writeFile(abs('Notes', 'A.md'), page(ULID_A, tags('alpha', 'Ideas')))
+    const entered = gate<void>()
+    const release = gate<void>()
+    sweep.entered = () => entered.open()
+    sweep.hold = release.promise
+    const renaming = renameOption(root, 'tags', 'alpha', 'beta')
+    await entered.promise
+    const settling = settleBatch(pusher, root, [ev('change', 'Notes', 'A.md')])
+    expect(
+      await Promise.race([
+        settling.then(() => 'settled' as const),
+        new Promise<'waited'>((r) => setTimeout(() => r('waited'), 200)),
+      ]),
+    ).toBe('waited')
+    release.open()
+    expect((await renaming).ok).toBe(true)
+    await settling
+    expect(await options()).toEqual(['beta', 'Ideas'])
+    expect(splitFrontmatter(await readFile(abs('Notes', 'A.md'), 'utf8')).Tags).toEqual([
+      'beta',
+      'Ideas',
+    ])
+  })
+
+  it('an open that begins while a settle waits on a cascade leaves what the settle owed for the next one', async () => {
+    await writeFile(abs('Notes', 'A.md'), page(ULID_A, tags('alpha', 'Ideas')))
+    const entered = gate<void>()
+    const release = gate<void>()
+    const opened = gate<void>()
+    sweep.entered = () => entered.open()
+    sweep.hold = release.promise
+    const renaming = renameOption(root, 'tags', 'alpha', 'beta')
+    await entered.promise
+    const settling = settleBatch(pusher, root, [ev('change', 'Notes', 'A.md')])
+    await new Promise((wake) => setTimeout(wake, 50))
+    const opening = whileAdopting(() => opened.promise)
+    release.open()
+    await renaming
+    await settling
+    opened.open()
+    await opening
+    pushes = []
+    await settleNow(pusher, root)
+    expect(channels()).toEqual(['nexus:changed', 'pages:changed', 'values:changed'])
+    expect(await options()).toEqual(['beta', 'Ideas'])
+  })
+
+  it('a page a rename’s sweep skipped registers its new member alone, and the rename’s replay still reaches it', async () => {
+    await registry('beta')
+    await writeFile(abs('Notes', 'A.md'), page(ULID_A, tags('alpha')))
+    await walked()
+    await writeSchemaJournal(root, { op: 'option-rename', id: 'tags', from: 'alpha', to: 'beta' })
+    await writeFile(abs('Notes', 'A.md'), page(ULID_A, tags('alpha', 'Ideas')))
+    await settleBatch(pusher, root, [ev('change', 'Notes', 'A.md')])
+    expect(await options()).toEqual(['beta', 'Ideas'])
+    await replaySchemaCascade(root)
+    expect(splitFrontmatter(await readFile(abs('Notes', 'A.md'), 'utf8')).Tags).toEqual([
+      'beta',
+      'Ideas',
+    ])
   })
 })

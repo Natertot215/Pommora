@@ -169,6 +169,39 @@ describe('openNexusSequence', () => {
     )
   })
 
+  it('registers the Multi-Select member a page already holds, with the repair sweep off', async () => {
+    const registry = join(root, '.nexus', 'properties.json')
+    await writeFile(
+      registry,
+      JSON.stringify({
+        defs: {
+          tags: {
+            id: 'tags',
+            name: 'Tags',
+            type: 'multiSelect',
+            select_options: [{ value: 'alpha' }],
+          },
+        },
+      }),
+    )
+    await writeFile(
+      join(root, 'Library', '_pagecollection.json'),
+      JSON.stringify({ id: 'col-lib', properties: ['tags'] }),
+    )
+    await writeFile(
+      join(root, 'Library', 'Notes.md'),
+      `---\nID: ${NOTES}\nTags:\n  - Ideas\n---\nbody`,
+    )
+    await openNexusSequence(ctx, root, false)
+    await vi.waitFor(async () =>
+      expect(
+        (
+          await readJsonAt<{ defs: { tags: { select_options: { value: string }[] } } }>(registry)
+        ).defs.tags.select_options.map((o) => o.value),
+      ).toEqual(['alpha', 'Ideas']),
+    )
+  })
+
   it('stamps a folder of ID-less notes and holds each under the ID in its file', async () => {
     await mkdir(join(root, 'Inbox', 'Later'), { recursive: true })
     await writeFile(join(root, 'Inbox', 'One.md'), 'one')

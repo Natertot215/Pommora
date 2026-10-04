@@ -101,6 +101,9 @@ export const containerSchema = (
 export const containerAt = (tree: NexusTree, rel: string): CollectionNode | SetNode | null =>
   findContainerWhere(tree, (n) => n.path === rel)
 
+export const pagePathsIn = (node: CollectionNode | SetNode | null): string[] =>
+  node ? [...node.pages.map((p) => p.path), ...(node.sets ?? []).flatMap(pagePathsIn)] : []
+
 export const pageAt = (tree: NexusTree, rel: string): PageNode | null =>
   containerAt(tree, relDirname(rel))?.pages.find((p) => p.path === rel) ?? null
 

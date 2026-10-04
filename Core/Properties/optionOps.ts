@@ -3,9 +3,9 @@ import { validateOptionValues, withUniqueOptions } from './schema'
 import { collectionFolders } from './assignment'
 import { keyHolderFiles } from './keyHolders'
 import { sweepGovernedRoots, unsweptLine } from './governedSweep'
-import { valueEditRewrite, type ValueEdit } from './pageValue'
-import { ok, fail, fault, type Result } from '../Contract/result'
-import { type Adoption, registeredOption } from './propertyValue'
+import { namesValue, valueEditRewrite, type ValueEdit } from './pageValue'
+import { errText, ok, fail, fault, type Result } from '../Contract/result'
+import { type Adoption, registeredOption, unregisteredMembers } from './propertyValue'
 import {
   addOption,
   applyOptionEdit,
@@ -24,12 +24,19 @@ import {
 } from './properties'
 import {
   clearSchemaJournal,
+  readSchemaJournal,
   type SchemaCascade,
   schemaCascade,
   type SchemaJournal,
   writeSchemaJournal,
 } from './propertyJournal'
 import { type ConfigReach, reachConfig } from '../Nexus/configReach'
+import { heldTreeOf } from '../Nexus/liveTree'
+import { readPageRecord } from '../Nexus/readNexus'
+import { containerAt, containerSchema, pagePathsIn, spaceAt } from '../Nexus/treePatch'
+import { heldValue } from '../Files/heldKeys'
+import type { Json } from '../Files/stableJson'
+import { join } from '../Paths/posix'
 
 const NO_OPTION = fail('not-found', 'That option no longer exists.')
 const NO_GROUP = fail('not-found', 'That group no longer exists.')
@@ -77,6 +84,67 @@ export function editOption(root: string, propertyId: string, e: OptionEdit): Pro
       }
     }),
   )
+}
+
+/** The registry takes each Multi-Select member the files at `rels` hold beyond their definition — a page, a container's pages, or a Space — or every file's when `rels` is omitted, in one write. It reads under the schema lock, so a cascade is read whole. */
+export async function registerHeldOptions(root: string, rels?: readonly string[]): Promise<void> {
+  try {
+    await serializeSchemaOp(root, async () => {
+      const tree = heldTreeOf(root)
+      if (!tree) return
+      const held = new Map<string, string[]>()
+      const take = (values: Json, defs: readonly PropertyDefinition[]): void => {
+        for (const def of defs) {
+          const members = unregisteredMembers(def, heldValue(values, def.name, false))
+          if (members.length) held.set(def.id, [...(held.get(def.id) ?? []), ...members])
+        }
+      }
+      const everywhere = (): string[] => [
+        ...tree.collections.map((c) => c.path),
+        ...tree.contexts.flatMap((g) => g.spaces.map((s) => s.path)),
+      ]
+      for (const rel of rels ?? everywhere()) {
+        const space = spaceAt(tree, rel)
+        const defs = (space ? tree.config.registry : containerSchema(tree, rel)).filter(
+          (d) => d.type === 'multiSelect',
+        )
+        if (!defs.length) continue
+        if (space) {
+          take(space.values ?? {}, defs)
+          continue
+        }
+        const container = containerAt(tree, rel)
+        for (const page of container ? pagePathsIn(container) : [rel]) {
+          const read = await readPageRecord(join(root, page), page).catch(() => null)
+          if (read?.kind === 'read') take(read.fm, defs)
+        }
+      }
+      if (!held.size) return
+      // A rename still owed to the files its sweep skipped leaves its old value held, and registering it would end the rename's replay.
+      const journal = await readSchemaJournal(root)
+      const renamed = journal?.op === 'option-rename' ? journal : null
+      await mutateRegistry(root, (registry, stored) => {
+        let defs = registry.defs
+        for (const [id, members] of held) {
+          const def = defs[id]
+          if (!def) continue
+          const fresh = unregisteredMembers(def, members).filter(
+            (v) => !(renamed?.id === id && namesValue(renamed.from)(v)),
+          )
+          if (!fresh.length) continue
+          const next = editStoredOptions(def, stored[id], (groups) =>
+            fresh.reduce((g, v) => addOption(g, SELECT_GROUP, v), groups),
+          )
+          defs = { ...defs, [id]: next }
+        }
+        return defs === registry.defs
+          ? { result: null }
+          : { next: { ...registry, defs }, result: null }
+      })
+    })
+  } catch (e) {
+    console.error('held options: the registry could not take them:', errText(e))
+  }
 }
 
 export function addOptionToDef(
