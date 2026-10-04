@@ -102,7 +102,7 @@ interface Owed {
   pages: Set<string>
   // True while every write of the page was the editor's own body save.
   values: Map<string, boolean>
-  // Spaces, and Collections that gained a property, whose held options the registry has yet to take.
+  // Spaces, and Collections that gained a property, whose held options are yet to be registered.
   options: Set<string>
   tiles: Map<string, TileHostRef>
 }
