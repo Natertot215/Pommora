@@ -27,6 +27,12 @@ const GROUP_OPTIONS: readonly PickerOption<GroupMode>[] = [
   { value: 'space', label: 'Space' },
 ]
 
+const DISPLAY: Array<{ key: keyof MatrixConfig['display']; label: string }> = [
+  { key: 'unlinked', label: 'Unlinked Items' },
+  { key: 'hideIcon', label: 'Hide Icons' },
+  { key: 'hidePath', label: 'Hide Paths' },
+]
+
 const FORCES: Array<{ key: keyof Forces; label: string }> = [
   { key: 'gravity', label: 'Gravity' },
   { key: 'spread', label: 'Spread' },
@@ -61,36 +67,16 @@ export function MatrixMenu(): React.JSX.Element {
           onSelect: () => setFiltering(true),
         },
         { kind: 'separator' },
-        {
-          kind: 'item',
-          label: 'Unlinked Items',
+        ...DISPLAY.map(({ key, label }) => ({
+          kind: 'item' as const,
+          label,
           trailing: {
-            kind: 'switch',
-            checked: display.unlinked,
-            onChange: (next) => patch({ display: { unlinked: next } }),
-            ariaLabel: 'Unlinked Items',
+            kind: 'switch' as const,
+            checked: display[key],
+            onChange: (next: boolean) => patch({ display: { [key]: next } }),
+            ariaLabel: label,
           },
-        },
-        {
-          kind: 'item',
-          label: 'Hide Icons',
-          trailing: {
-            kind: 'switch',
-            checked: display.hideIcon,
-            onChange: (next) => patch({ display: { hideIcon: next } }),
-            ariaLabel: 'Hide Icons',
-          },
-        },
-        {
-          kind: 'item',
-          label: 'Hide Paths',
-          trailing: {
-            kind: 'switch',
-            checked: display.hidePath,
-            onChange: (next) => patch({ display: { hidePath: next } }),
-            ariaLabel: 'Hide Paths',
-          },
-        },
+        })),
       ],
     },
     {
