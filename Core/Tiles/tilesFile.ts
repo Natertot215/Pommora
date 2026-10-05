@@ -7,7 +7,6 @@ import {
   landed,
   mergeEntry,
   mintSeed,
-  NEW_TILE_H,
   type PickKind,
   type RemovedTile,
   TILE_KINDS,
@@ -15,6 +14,7 @@ import {
   type TilesChanged,
 } from './tiles'
 import { decodeLayout } from './Layout/codec'
+import { NEW_TILE_H } from './Layout/model'
 import { insertBand } from './Layout/ops'
 import { fail, ok, type Result, valueOr, fault } from '../Contract/result'
 import { readTileDocAt, writeTileDocAt } from './tileDoc'

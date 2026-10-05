@@ -8,10 +8,8 @@ import { isUlidShaped } from '../Nexus/identityMark'
 import { VIEW_BUTTONS, VIEW_STYLES } from '../Views/viewRow'
 import { mapViews, mintViewId } from '../Views/views'
 import { rawLayoutSchema } from './Layout/codec'
-import type { RowNode, TileLeaf } from './Layout/model'
+import { NEW_TILE_H, type RowNode, type TileLeaf } from './Layout/model'
 import { zoomStep } from './tileZoom'
-
-export const NEW_TILE_H = 160
 
 // A homepage carrying an id is no host; a Space sheds whatever else its reference carries.
 const tileHostSchema = z.discriminatedUnion('kind', [
