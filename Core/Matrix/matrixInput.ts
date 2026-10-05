@@ -7,7 +7,7 @@ import { spaceRowOf } from '../Properties/pageRow'
 import { type PropertyDefinition, specOf } from '../Properties/properties'
 import { declaredType } from '../Properties/value'
 import { applyFilter } from '../Views/Pipeline/filter'
-import { buildSetTree, type SetTreeNode, toRow } from '../Views/Pipeline/group'
+import { buildSetTree, toRow } from '../Views/Pipeline/group'
 import type { ViewRow } from '../Views/viewRow'
 import { type FilterRule, mapRules, OPERANDLESS_OPS } from '../Views/views'
 import type { GraphInput } from './Engine/graph'
@@ -16,10 +16,6 @@ import type { MatrixGraphReply } from './matrixGraph'
 
 const spaceIdsOf = (values: Record<string, string[]> | undefined): string[] =>
   values ? Object.values(values).flat() : []
-
-// Collections are the roots, so a Location rule can name a Collection as well as a Set.
-const filterSetTree = (tree: NexusTree): SetTreeNode[] =>
-  tree.collections.map((c) => ({ id: c.id, children: buildSetTree(c.sets) }))
 
 export interface MatrixTree {
   pages: GraphInput['pages']
@@ -103,9 +99,9 @@ export function matrixVisible(
   const schema = tree.config.registry
   const contextIds = contextIdsOf(tree)
   const rows = seats.map((s) => toRow(s.page, s.folderId, values, tree.config.pageMetadata))
-  const ids = new Set(
-    applyFilter(rows, rules, schema, filterSetTree(tree), contextIds).map((r) => r.id),
-  )
+  // Collections are the roots, so a Location rule can name a Collection as well as a Set.
+  const setTree = tree.collections.map((c) => ({ id: c.id, children: buildSetTree(c.sets) }))
+  const ids = new Set(applyFilter(rows, rules, schema, setTree, contextIds).map((r) => r.id))
   // Self-membership belongs to the filter and stays out of spaceRowOf, which the panel and the menus read.
   for (const g of tree.contexts)
     for (const s of g.spaces) {
