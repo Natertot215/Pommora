@@ -56,8 +56,3 @@ export function useLoadedTileDocs(hosts: readonly TileHostRef[]): void {
     }
   }, [hosts.map(tileHostKey).join(' ')])
 }
-
-export function useTileDocReady(host: TileHostRef | null): boolean {
-  const { ready } = useDocState(host)
-  return host === null || ready
-}

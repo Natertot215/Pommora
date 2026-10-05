@@ -42,10 +42,7 @@ export function MarkdownTile({
   }, [tileId])
 
   // Leaving the edit sends its typing, and the save brings every other mount of the tile up to it before another can be clicked into.
-  useEffect(() => {
-    if (!editing) void tileBodyWriter.flush(tileId)
-    return () => void tileBodyWriter.flush(tileId)
-  }, [editing, tileId])
+  useEffect(() => () => void tileBodyWriter.flush(tileId), [editing, tileId])
 
   if (body === null) return <div className="markdown-tile" />
   return (

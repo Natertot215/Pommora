@@ -127,7 +127,7 @@ export function TileHost({
     (id: string) => {
       void askRemoveTile().then((ok) => {
         if (!ok) return
-        // Order is load-bearing: suppress the tile's editor flush, layout first (invisible orphan beats a dead box on a crash), then the entry + file.
+        // Order is load-bearing: mark the tile so a save of its body sends nothing, layout first (invisible orphan beats a dead box on a crash), then the entry + file.
         markTileRemoving(id)
         setEditingId((cur) => (cur === id ? null : cur))
         let before = emptyLayout()

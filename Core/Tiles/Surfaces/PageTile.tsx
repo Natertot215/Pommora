@@ -106,10 +106,7 @@ export function PageTile({
     }
   }, [path, entry])
 
-  useEffect(() => {
-    if (!editing) void pageWriter.flush(path)
-    return () => void pageWriter.flush(path)
-  }, [editing, path])
+  useEffect(() => () => void pageWriter.flush(path), [editing, path])
 
   if (failed) return <div className="page-tile page-tile-failed">{titleFromPath(path)}</div>
   if (body === null) return <div className="page-tile" />

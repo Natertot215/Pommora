@@ -14,7 +14,7 @@ import { personalizationOf } from '../../Session/configSlice'
 import { useExperimental } from '../../Settings/experimental'
 import { PageTile } from '../../Tiles/Surfaces/PageTile'
 import { TileHost } from '../../Tiles/TileHost'
-import { useLoadedTileDocs, useTileDocReady } from '../../Tiles/useTileDoc'
+import { useDocState, useLoadedTileDocs } from '../../Tiles/useTileDoc'
 import { EntityBanner } from '../Header/Banner'
 import { CitationsToggle } from '../Subfield/CitationsToggle'
 import { Subfield } from '../Subfield/Subfield'
@@ -154,7 +154,8 @@ export function useWindowTabBody(target: WindowTarget | null): WindowTabBodySlot
 
   const bodyRef = useRef<HTMLDivElement>(null)
   // A Space tab's scroll restore waits for its board's first read; a Page tab has no board to wait on.
-  const boardReady = useTileDocReady(spaceTarget)
+  const { ready } = useDocState(spaceTarget)
+  const boardReady = spaceTarget === null || ready
   useWindowWarm(bodyRef, boardReady)
   const connections = useConnections(tree, 'window')
   const { page, onBody } = useSubfieldPage(pageTarget)
