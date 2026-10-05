@@ -1,3 +1,4 @@
+import { memo } from 'react'
 import type { ConnectionsApi } from '../MarkdownPM/Links/connectionsApi'
 import type { ConnPage } from '../Connections/pageIndex'
 import {
@@ -17,20 +18,19 @@ export type MutateEntry = (
   patchOf: (raw: Record<string, unknown>) => EntryPatch | null,
 ) => void
 
-export interface TileRenderContext {
+interface TileBodyProps {
   entry: TileEntry
-  id: string
   host: TileHostRef
   editing: boolean
   beginEdit: (id: string) => void
   connections?: ConnectionsApi
   openPage?: (page: ConnPage) => void
-  pagesById: ReadonlyMap<string, ConnPage>
+  page?: ConnPage
   mutateEntry: MutateEntry
 }
 
 interface TileSurface<E extends TileEntry = TileEntry> {
-  render: (ctx: TileRenderContext & { entry: E }) => React.ReactNode
+  render: (props: TileBodyProps & { entry: E }) => React.ReactNode
   sourceInfo?: (entry: E, pagesById: ReadonlyMap<string, ConnPage>) => ConnPage | undefined
 }
 
@@ -38,10 +38,10 @@ export const inertTile = (): React.JSX.Element => <div className="tile-inert" />
 
 const TILE_SURFACES: { [T in TileType]: TileSurface<Extract<TileEntry, { type: T }>> } = {
   markdown: {
-    render: ({ entry, id, host, editing, beginEdit, connections }) => (
+    render: ({ entry, host, editing, beginEdit, connections }) => (
       <MarkdownTile
         host={host}
-        tileId={id}
+        tileId={entry.id}
         editing={editing}
         onBeginEdit={beginEdit}
         connections={connections}
@@ -50,39 +50,39 @@ const TILE_SURFACES: { [T in TileType]: TileSurface<Extract<TileEntry, { type: T
     ),
   },
   page: {
-    render: ({ entry, id, editing, beginEdit, connections, pagesById }) => {
-      const page = pagesById.get(entry.page_id)
-      return page ? (
+    render: ({ entry, editing, beginEdit, connections, page }) =>
+      page ? (
         <PageTile
           path={page.path}
           editing={editing}
-          onBeginEdit={() => beginEdit(id)}
+          onBeginEdit={() => beginEdit(entry.id)}
           connections={connections}
           locked={entry.locked ?? false}
         />
       ) : (
         inertTile()
-      )
-    },
+      ),
     sourceInfo: (entry, pagesById) => pagesById.get(entry.page_id),
   },
   view: {
     // The surface may only rewrite an entry still of its own kind.
-    render: ({ entry, id, beginEdit, mutateEntry, openPage }) => (
+    render: ({ entry, beginEdit, mutateEntry, openPage }) => (
       <ViewTile
         entry={entry}
         mutateEntry={(target, fn) =>
           mutateEntry(target, (raw) => (knownTile(raw)?.type === entry.type ? fn(raw) : null))
         }
-        onActivate={() => beginEdit(id)}
+        onActivate={() => beginEdit(entry.id)}
         openPage={openPage}
       />
     ),
   },
 }
 
-export const renderTile = (ctx: TileRenderContext): React.ReactNode =>
-  (TILE_SURFACES[ctx.entry.type] as TileSurface).render(ctx)
+/** A surface redraws when its own entry, its edit state, its page, or the connections change. */
+export const TileBody = memo(function TileBody(props: TileBodyProps): React.ReactNode {
+  return (TILE_SURFACES[props.entry.type] as TileSurface).render(props)
+})
 
 export const tileSourceInfo = (
   entry: TileEntry,

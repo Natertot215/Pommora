@@ -132,10 +132,12 @@ const put = (doc: HostDoc, next: Partial<TileDocState>): void => {
   notify(doc)
 }
 
-// An entry the disk holds as this window already does keeps its object, so a write re-parses and redraws only what it changed.
+// An entry the disk holds as this window already does keeps its object, and a list that kept every entry keeps its array, so a write re-parses and redraws only what it changed.
 const kept = (doc: HostDoc, tiles: unknown[]): unknown[] => {
-  const held = new Map(doc.state.tiles.map((b) => [stableStringify(b), b]))
-  return tiles.map((b) => held.get(stableStringify(b)) ?? b)
+  const cur = doc.state.tiles
+  const held = new Map(cur.map((b) => [stableStringify(b), b]))
+  const next = tiles.map((b) => held.get(stableStringify(b)) ?? b)
+  return next.length === cur.length && next.every((b, i) => b === cur[i]) ? cur : next
 }
 
 const adopt = (doc: HostDoc, raw: TileDoc): void => {
