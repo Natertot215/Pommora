@@ -30,13 +30,6 @@ export const FORCE_RANGES: Record<keyof Forces, SteppedRange> = {
   distance: QUARTERS,
 }
 
-// A patch spreads a new block for its grouping even when no value moved, so the runtime reads these by value rather than re-solving the picture for an unchanged set.
-export const sameForces = (a: Forces, b: Forces): boolean =>
-  a.gravity === b.gravity &&
-  a.spread === b.spread &&
-  a.strength === b.strength &&
-  a.distance === b.distance
-
 // KNOBs — where each grouping's forces rest. They start alike and are meant to part: containment, membership, and connection springs pull on different shapes.
 const CONNECTION_FORCES: Forces = { gravity: 1, spread: 1, strength: 1, distance: 1 }
 const LOCATION_FORCES: Forces = { gravity: 1, spread: 1, strength: 1, distance: 1 }
