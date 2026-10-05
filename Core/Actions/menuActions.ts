@@ -11,9 +11,12 @@ export async function popMenu<A extends string>(
   if (items.length === 0) return null
   if (!trigger || useSession.getState().devicePrefs.nativeMenus) {
     const box = trigger?.getBoundingClientRect()
+    const at = options?.at
     const res = await dialer().ask('menu', {
       items,
-      anchor: box && { left: box.left, top: box.top, height: box.height },
+      anchor: at
+        ? { left: at.x, top: at.y, height: 0 }
+        : box && { left: box.left, top: box.top, height: box.height },
     })
     return valueOr(res, null) as A | null
   }
