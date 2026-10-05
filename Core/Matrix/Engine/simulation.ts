@@ -37,7 +37,6 @@ export function tick(sim: Simulation): boolean {
   if (!sim.awake) return false
   const { nodes, links } = sim.graph
   sim.alpha += ((sim.drag ? DRAG_ALPHA_TARGET : 0) - sim.alpha) * ALPHA_DECAY
-  sim.tree = buildQuadtree(nodes)
   applyGravity(nodes, sim.forces, sim.alpha)
   applySpread(nodes, sim.tree, sim.forces, sim.alpha)
   applyLink(nodes, links, sim.forces, sim.alpha)
@@ -64,6 +63,7 @@ export function tick(sim: Simulation): boolean {
     energy += n.vx * n.vx + n.vy * n.vy
     moving++
   }
+  sim.tree = buildQuadtree(nodes)
   // Energy is per moving node, so a local wake of one page isn't judged against a thousand pinned ones.
   if (!sim.drag && (energy / Math.max(moving, 1) < SLEEP_ENERGY || sim.alpha < ALPHA_MIN))
     sleep(sim)
@@ -80,7 +80,6 @@ function sleep(sim: Simulation): void {
   sim.awake = false
   sim.alpha = 0
   releasePins(sim)
-  sim.tree = buildQuadtree(sim.graph.nodes)
 }
 
 function wake(sim: Simulation, alpha: number): void {
@@ -108,6 +107,7 @@ export function shuffle(sim: Simulation): void {
     n.vx = n.vy = 0
     n.pinned = false
   }
+  sim.tree = buildQuadtree(sim.graph.nodes)
   wake(sim, 1)
 }
 
