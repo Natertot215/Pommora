@@ -21,6 +21,9 @@ import { matrixRuntime, type Surface } from './matrixRuntime'
 import { useMatrixCount, useMatrixHover } from './useMatrixRuntime'
 import { useLatest } from '@pommora/uix/Utilities/stableApi'
 
+// Whichever surface last raised a menu owns what that menu starts; with one surface open there is nothing to tell apart.
+let acting: string | null = null
+
 const idAtPath = (tree: NexusTree | null, path: string | null): string | null =>
   path === null || !tree ? null : (nodesOf(tree).find((r) => r.path === path)?.id ?? null)
 
@@ -47,8 +50,7 @@ export function MatrixView(): React.JSX.Element {
   // One identity for the life of the view: the runtime keys a surface's stage — and so its own framing of the picture — off it.
   const [surface] = useState<Surface>(() => ({ visible: () => !parkedRef.current }))
   const surfaceId = useId()
-  // Whichever surface last raised a menu owns what that menu starts; with one surface open there is nothing to tell apart.
-  const mine = matrixRuntime.acting === null || matrixRuntime.acting === surfaceId
+  const mine = acting === null || acting === surfaceId
 
   // Read when the gesture lands, not when it began: a rename mid-press moves the path the tap opens.
   const open = (id: string): void => {
@@ -60,7 +62,7 @@ export function MatrixView(): React.JSX.Element {
     const { tabs, pinned, tree } = useSession.getState()
     const rec = recordOf(tree, id)
     if (!rec) return
-    matrixRuntime.acting = surfaceId
+    acting = surfaceId
     // Committed before the menu asks for it: the label seats its anchor on the node in the same pass.
     flushSync(() => setMenuId(rec.id))
     const anchor = anchorRef.current?.dataset.nodeId === rec.id ? anchorRef.current : undefined
