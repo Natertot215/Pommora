@@ -67,4 +67,17 @@ describe('the one door every menu opens through', () => {
     expect(asked.mock.calls[0][0].anchor).toBeUndefined()
     expect(presented).not.toHaveBeenCalled()
   })
+
+  it('a click point anchors the host menu there in place of the trigger’s box', async () => {
+    useSession.setState({ devicePrefs: { nativeMenus: true } })
+    await popMenu([{ label: 'New Page', action: 'new' }], trigger(), { at: { x: 40, y: 60 } })
+    expect(asked.mock.calls[0][0].anchor).toEqual({ left: 40, top: 60, height: 0 })
+  })
+
+  it('a click point reaches the presenter with the trigger', async () => {
+    const el = trigger()
+    await popMenu([{ label: 'New Page', action: 'new' }], el, { at: { x: 40, y: 60 } })
+    expect(presented.mock.calls[0][1]).toBe(el)
+    expect(presented.mock.calls[0][2]?.at).toEqual({ x: 40, y: 60 })
+  })
 })

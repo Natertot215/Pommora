@@ -98,7 +98,9 @@ export function MenuPresenter(): React.JSX.Element {
       open={pending !== null}
       onDismiss={() => pending?.settle(null)}
       triggerRef={triggerRef}
-      origin="center"
+      anchorX={shown?.at?.x}
+      anchorY={shown?.at?.y}
+      origin={shown?.at ? 'left' : 'center'}
       solid={shown?.solid}
     >
       {shown && (

@@ -102,4 +102,6 @@ export interface MenuOptions<A extends string = string> {
   solid?: boolean
   stay?: (action: A) => readonly ActionItem<A>[]
   compact?: boolean
+  /** A viewport point the menu hangs from in place of its trigger's box. */
+  at?: { x: number; y: number }
 }
