@@ -17,10 +17,9 @@ import { reconcileIndexOf } from '../Nexus/treeIndex'
 import { flushAllTileDocs, tileBodyWriter } from '../Tiles/tileDocStore'
 import {
   cancelAllSaves,
-  flushAllPageSaves,
   flushAllSessionSaves,
-  flushPageSave,
   holdSaves,
+  pageWriter,
   releaseSaves,
 } from './saveScheduler'
 import type { Slice } from './sessionState'
@@ -52,7 +51,8 @@ export interface NexusSlice {
 
 /** Every save the window still owes, landed: awaited while the OLD root is bound before a switch, and before the host closes its stores on quit. */
 export async function flushAllSaves(): Promise<void> {
-  await Promise.all([flushAllPageSaves(), flushAllTileDocs(), flushAllSessionSaves()])
+  // A page write after the flip would bind the new Nexus and overwrite a same-relative-path file (data loss).
+  await Promise.all([pageWriter.flushAll(), flushAllTileDocs(), flushAllSessionSaves()])
 }
 
 /** A delete, restore, or emptied bundle landed, so an open Trash list reads again. */
@@ -222,21 +222,21 @@ export const createNexusSlice: Slice<NexusSlice> = (set, get) => {
       // A save queued for a path this op moves would land on the old path and be refused.
       switch (req.op) {
         case 'movePage':
-          await flushPageSave(req.path)
+          await pageWriter.flush(req.path)
           break
         case 'rename':
           // A page rename's cascade rewrites links inside tile files, so their pending saves land first.
           if (req.kind === 'page' && !req.fromCreate) await tileBodyWriter.flushAll()
-          await (req.kind === 'page' ? flushPageSave(req.path) : flushAllPageSaves())
+          await (req.kind === 'page' ? pageWriter.flush(req.path) : pageWriter.flushAll())
           break
         case 'renameHeading':
           await tileBodyWriter.flushAll()
           break
         case 'delete':
-          await (req.kind === 'page' ? flushPageSave(req.path) : flushAllPageSaves())
+          await (req.kind === 'page' ? pageWriter.flush(req.path) : pageWriter.flushAll())
           break
         case 'moveSet':
-          await flushAllPageSaves()
+          await pageWriter.flushAll()
           break
       }
       // A flush held by a Nexus switch resumes after it, when the path this op names belongs to the Nexus it left.

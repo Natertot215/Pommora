@@ -1,4 +1,4 @@
-// The path-keyed page-detail store — module state, seeded by every landed page and written through by the shared save scheduler so a returning reader always sees the newest body.
+// The page-detail store and the body layer under it — module state keyed by a page's path or a markdown tile's id, seeded by every landed page and written through by the shared save scheduler so a returning reader always sees the newest body.
 import { useSyncExternalStore } from 'react'
 import { emitter } from '@pommora/uix/Utilities/subscribable'
 import { capSet } from '@pommora/uix/Utilities/capMap'
@@ -11,8 +11,13 @@ const DETAIL_CAP = 50
 
 const detailByPath = new Map<string, PageDetail>()
 const baseByPath = new Map<string, { text: string; hash: string }>()
+// The newest text a write was scheduled with, for a body no detail holds: a markdown tile's, or a page's between its detail being dropped and seated again.
+const slots = new Map<string, string>()
 
-const seat = (detail: PageDetail): void => capSet(detailByPath, detail.path, detail, DETAIL_CAP)
+const seat = (detail: PageDetail): void => {
+  slots.delete(detail.path)
+  capSet(detailByPath, detail.path, detail, DETAIL_CAP)
+}
 
 export function cachePageDetail(detail: PageDetail): void {
   seat(detail)
@@ -32,9 +37,9 @@ export function readPageDetail(path: string): PageDetail | undefined {
   return detailByPath.get(path)
 }
 
-/** The newest body this session knows for a path: a pending write's text leads the last one known on disk. */
-export const knownBody = (path: string): string | undefined =>
-  detailByPath.get(path)?.body ?? baseByPath.get(path)?.text
+/** The newest body this session knows for a key: a pending write's text leads the last one known on disk. */
+export const knownBody = (key: string): string | undefined =>
+  detailByPath.get(key)?.body ?? slots.get(key) ?? baseByPath.get(key)?.text
 
 /** One mounted editor of a path: `seq` and `basis` name the head it last held and the text it shows. */
 export interface BodyMount {
@@ -113,14 +118,16 @@ export function fetchPageResult(path: string): Promise<Result<PageDetail>> {
 export const fetchPageDetail = (path: string): Promise<PageDetail | null> =>
   fetchPageResult(path).then((r) => valueOr(r, null))
 
-/** The slot's body must never lag a pending write, or a remounting tile would seed on pre-edit prose and the next keystroke would save it back. */
-export function writeThroughBody(path: string, body: string): void {
-  const d = detailByPath.get(path)
+/** The known body must never lag a pending write, or a remounting tile would seed on pre-edit prose and the next keystroke would save it back. */
+export function writeThroughBody(key: string, body: string): void {
+  const d = detailByPath.get(key)
   if (d) seat({ ...d, body })
+  else slots.set(key, body)
 }
 
 export function dropPageDetail(path: string): void {
   detailByPath.delete(path)
+  slots.delete(path)
   baseByPath.delete(path)
   inFlight.delete(path)
 }
@@ -129,6 +136,7 @@ export function dropPageDetail(path: string): void {
 export function dropCacheDetail(path: string): void {
   dropWarmDetail(path)
   detailByPath.delete(path)
+  slots.delete(path)
   inFlight.delete(path)
 }
 
@@ -149,6 +157,7 @@ export const useBodyEpoch = (path: string): number =>
 export function clearCache(): void {
   clearWarm()
   detailByPath.clear()
+  slots.clear()
   inFlight.clear()
   bodyEpochs.clear()
   epochBumped.emit()

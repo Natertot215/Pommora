@@ -1,4 +1,3 @@
-import { persist } from '../Interface/Notifications/notifications'
 import { useState } from 'react'
 import type { EditorView } from '@codemirror/view'
 import { mirrorBody } from '../MarkdownPM/api'
@@ -8,15 +7,13 @@ import {
   attachBody,
   bodyHead,
   type BodyMount,
-  dropCacheDetail,
-  fetchPageDetail,
   followBody,
   publishBody,
   readBodyBase,
   setBodyBase,
+  writeThroughBody,
 } from '../Session/pageDetailCache'
-import { cancelPageSave, schedulePageSave, settlePageSave } from '../Session/saveScheduler'
-import { dialer } from '../Platform/dialer'
+import { type BodyIO, pageIO, scheduleBodySave } from '../Session/saveScheduler'
 import { merge3 } from './merge3'
 import { useLatest } from '@pommora/uix/Utilities/stableApi'
 
@@ -25,12 +22,16 @@ interface BodySeat {
   save: (body: string) => void
 }
 
-/** Seats one editor of a page in its path's shared head. A keystroke typed while another mount's text hasn't reached this one merges onto the head before it saves. */
-export function useBodyMount(path: string, onFollow?: (body: string) => void): BodySeat {
-  const live = useLatest({ path, onFollow })
+/** Seats one editor of a body in its key's shared head. A keystroke typed while another mount's text hasn't reached this one merges onto the head before it saves. */
+export function useBodyMount(
+  key: string,
+  onFollow?: (body: string) => void,
+  io: BodyIO = pageIO,
+): BodySeat {
+  const live = useLatest({ key, onFollow, io })
   const [seat] = useState((): BodySeat => {
     let view: EditorView | null = null
-    let at = path
+    let at = key
     let leave: (() => void) | null = null
     const mount: BodyMount = {
       seq: 0,
@@ -52,20 +53,20 @@ export function useBodyMount(path: string, onFollow?: (body: string) => void): B
         leave = null
         view = next
         if (!next) return
-        at = live.current.path
+        at = live.current.key
         leave = attachBody(at, mount, docString(next.state.doc))
       },
       save: (body) => {
+        const { io } = live.current
         const head = bodyHead(at)
         let text = body
         if (head && mount.seq !== head.seq) {
           const merged = merge3(mount.basis, body, head.text)
-          if (merged.conflicted)
-            void persist('the conflicting version', dialer().ask('sync:captureLocal', at, body))
+          if (merged.conflicted) io.capture(at, body)
           text = merged.text
         }
         publishBody(at, mount, text, body)
-        schedulePageSave(at, text)
+        scheduleBodySave(at, text, io)
         // The keystroke's own update is still dispatching, so the merged text follows a microtask later.
         if (text !== body) queueMicrotask(() => followBody(at))
       },
@@ -74,24 +75,22 @@ export function useBodyMount(path: string, onFollow?: (body: string) => void): B
   return seat
 }
 
-/** An outside change to a page some editor holds merges into the shared head once, every mount follows the merge in place, and only text the disk doesn't hold yet is saved. */
-export async function absorbLanding(path: string): Promise<void> {
-  // The page's own save in flight names the base its typing grew from.
-  await settlePageSave(path)
-  const base = readBodyBase(path)?.text
-  dropCacheDetail(path)
-  const fresh = await fetchPageDetail(path)
-  const head = bodyHead(path)
-  if (!fresh || !head) return
+/** An outside change to a body some editor holds merges into the shared head once, every mount follows the merge in place, and only text the disk doesn't hold yet is saved. */
+export async function absorbLanding(key: string, io: BodyIO = pageIO): Promise<void> {
+  // The body's own save in flight names the base its typing grew from.
+  await io.writer.settled(key)
+  const base = readBodyBase(key)?.text
+  const fresh = await io.read(key)
+  const head = bodyHead(key)
+  if (!fresh.ok || !head) return
+  const { body, hash } = fresh.value
   const merged =
-    base === undefined
-      ? { text: fresh.body, conflicted: true }
-      : merge3(base, head.text, fresh.body)
-  if (merged.conflicted)
-    void persist('the conflicting version', dialer().ask('sync:captureLocal', path, head.text))
-  setBodyBase(path, { text: fresh.body, hash: fresh.bodyHash })
-  advanceHead(path, merged.text)
-  followBody(path)
-  if (merged.text === fresh.body) cancelPageSave(path)
-  else schedulePageSave(path, merged.text)
+    base === undefined ? { text: body, conflicted: true } : merge3(base, head.text, body)
+  if (merged.conflicted) io.capture(key, head.text)
+  setBodyBase(key, { text: body, hash })
+  advanceHead(key, merged.text)
+  followBody(key)
+  writeThroughBody(key, merged.text)
+  if (merged.text === body) io.writer.cancel(key)
+  else scheduleBodySave(key, merged.text, io)
 }
