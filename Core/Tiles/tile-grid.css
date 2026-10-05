@@ -2,6 +2,13 @@
   position: relative;
   width: 100%;
   min-height: 120px;
+  transition: height var(--duration-base) var(--ease-base);
+}
+
+/* A drag grows the board under its drop slot and a resize under its edge, frame by frame; easing either would trail the pointer. */
+.tile-grid.is-interacting,
+.tile-grid.is-dragging {
+  transition: none;
 }
 
 /* The chassis geometry (border, radius, body clip) is the shared tile-base; what's here is the grid's own layer — placement, motion, and the state selectors that drive --tile-border-color. */
@@ -38,6 +45,48 @@
 .tile-placement {
   z-index: 0;
   --drop-slot-radius: 16px;
+}
+
+/* A wedge's hover zone is the box its ghost would take; it sits beneath the tiles, so a tile's edges and handle keep every pointer that reaches them. */
+.tile-zone {
+  position: absolute;
+  top: 0;
+  left: 0;
+}
+
+.tile-grid .tile-ghost {
+  position: absolute;
+  top: 0;
+  left: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 0;
+  background: none;
+  font: inherit;
+  --tile-border: var(--width-200);
+  color: var(--label-secondary);
+  animation: tile-ghost-in var(--duration-base) var(--ease-base);
+}
+.tile-grid .tile-ghost.is-closing {
+  --ghost-opacity: 0;
+}
+@keyframes tile-ghost-in {
+  from {
+    opacity: 0;
+  }
+}
+
+/* The board's add strip rides under the last band, inside the bottom clearance. */
+.tile-add {
+  position: absolute;
+  top: 0;
+  left: 0;
+}
+.tile-add > .add-strip {
+  inset: 0;
 }
 
 /* A bordered chip notched into the left border: its own rounded border is the curve, its --main-bg fill erases the straight border line behind it, and its border-color inherits the tile's so the accent highlight flows through. */

@@ -1,5 +1,6 @@
 import { isPlainObject } from '../Contract/validators'
 import { type CSSProperties, useCallback, useMemo, useRef, useState } from 'react'
+import { flushSync } from 'react-dom'
 import {
   knownTile,
   tileIdOf,
@@ -13,8 +14,17 @@ import { pagesByIdOf } from '../Nexus/treeIndex'
 import type { ConnectionsApi } from '../MarkdownPM/Links/connectionsApi'
 import { useConnections } from '../Session/pageConnections'
 import { insertBand, removeLeaf, seatBelow } from './Layout/ops'
-import { emptyLayout, findTile, getTile, NEW_TILE_H, type TileLayout } from './Layout/model'
-import { TileGrid } from './TileGrid'
+import {
+  emptyLayout,
+  findTile,
+  getTile,
+  NEW_TILE_H,
+  TILE_GAP,
+  type TileLayout,
+} from './Layout/model'
+import { wedgeFills } from './Layout/rects'
+import { TILE_MIN_PX } from '@pommora/uix/Utilities/tileMetrics'
+import { type Inserting, type InsertTarget, TileGrid } from './TileGrid'
 import { useDismissal } from '@pommora/uix/Interactions/dismissalStack'
 import { entityIcon } from '../Assets/entityIconPolicy'
 import { ZOOM } from '../Settings/personalization'
@@ -25,7 +35,7 @@ import { askRemoveTile } from '../Interface/Confirm/confirmations'
 import { notifyUndoable, reportRefusal } from '../Interface/Notifications/notifications'
 import { ZOOM_STEPS } from './tileZoom'
 import { inertTile, type MutateEntry, TileBody, tileSourceInfo } from './tileKinds'
-import { menuPatch, pickOf, pickTreesOf, tileMenuItems } from './tileHandleMenu'
+import { insertMenuItems, menuPatch, pickOf, pickTreesOf, tileMenuItems } from './tileHandleMenu'
 import {
   landTileWrite,
   markTileRemoving,
@@ -109,6 +119,7 @@ export function TileHost({
   )
 
   const [menuOpenId, setMenuOpenId] = useState<string | null>(null)
+  const [inserting, setInserting] = useState<Inserting | null>(null)
   const mutateEntry = useCallback<MutateEntry>(
     (id, patchOf) => patchTileEntry(host, id, patchOf),
     [host],
@@ -210,12 +221,14 @@ export function TileHost({
             title: page.title,
             icon: entityIcon('page', page.icon, defaultIcons),
           },
-          boardLocked: hostLocked,
+          boardLocked: readTileDoc(host).locked,
         })
       const latest = (): TileEntry | undefined =>
         parsedTile(readTileDoc(host).tiles.find((b) => tileIdOf(b) === id)) ?? entry
       let built = build(entry)
       const run = (action: string): void => {
+        // A board locked since the menu opened answers only the row a locked board still offers.
+        if (action !== 'tile:open' && readTileDoc(host).locked) return
         const chosen = pickOf(action, built.picks)
         const cur = latest()
         const patch = cur && menuPatch(action, cur)
@@ -243,7 +256,6 @@ export function TileHost({
     [
       entries,
       pagesById,
-      hostLocked,
       host,
       applyPick,
       mutateEntry,
@@ -278,6 +290,46 @@ export function TileHost({
     [entries, editingId, conn, openRoute, pagesById, host, mutateEntry, retry],
   )
 
+  const onInsert = useCallback(
+    (target: InsertTarget, e: React.MouseEvent) => {
+      const s = useSession.getState()
+      if (!s.tree) return
+      const { defaultIcons } = personalizationOf(s)
+      const built = insertMenuItems(
+        pickTreesOf(s.tree, defaultIcons),
+        entityIcon('page', undefined, defaultIcons),
+      )
+      setInserting({ target, phase: 'menu' })
+      void popMenu(built.items, e.currentTarget as HTMLElement, {
+        // A keyboard press carries no point, so its menu hangs from the control it pressed.
+        at: e.detail > 0 ? { x: e.clientX, y: e.clientY } : undefined,
+      }).then((action) => {
+        if (action === null || readTileDoc(host).locked) return setInserting(null)
+        const pick = pickOf(action, built.picks)
+        setInserting({ target, phase: 'flight' })
+        void landTileWrite(host, dialer().ask('tiles:create', host, pick)).then((r) => {
+          const made = reportRefusal(r) ? r.value.id : null
+          const above = target.kind === 'wedge' ? target.above : null
+          // One commit outside a sibling mount's held gesture, so no frame draws the ghost beside its tile or neither: the store's write renders at once, and a state set from a promise would trail it.
+          flushSync(() => {
+            setInserting(null)
+            if (made === null) return
+            commitLayout((cur) =>
+              seatBelow(
+                cur,
+                made,
+                above,
+                above === null ? undefined : wedgeFills(cur, TILE_GAP, TILE_MIN_PX).get(above),
+              ),
+            )
+            if (!pick) setEditingId(made)
+          })
+        })
+      })
+    },
+    [commitLayout, host],
+  )
+
   if (!ready) return null
 
   return (
@@ -289,11 +341,13 @@ export function TileHost({
         tileClassName={tileClassName}
         editingId={editingId}
         menuOpenId={menuOpenId}
+        inserting={inserting}
         tileStyle={tileStyle}
         onBusyChange={setBusy}
         locked={hostLocked}
         isTileLocked={(id) => entries.get(id)?.locked ?? false}
         onHandleMenu={onHandleMenu}
+        onInsert={onInsert}
       />
     </div>
   )

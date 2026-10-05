@@ -9,6 +9,11 @@
 [data-ghost-root]:hover {
   --ghost-opacity: var(--state-ghost);
 }
+/* Held while the menu its click opened is open: lifted as a hover lifts it, under the hover wash. */
+[data-ghost-root][data-reveal-held] {
+  --ghost-opacity: var(--state-ghost);
+  background: var(--state-hover);
+}
 .ghost-worn {
   opacity: var(--ghost-opacity, var(--state-inactive));
   transition: opacity var(--duration-base) var(--ease-base);
