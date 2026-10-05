@@ -198,7 +198,7 @@ export async function duplicateTile(
   let text: string | null = null
   if (TILE_KINDS[entry.type].fileBacked) {
     const body = await readMarkdownTile(dir, tileId)
-    if (!body.ok && body.error.code !== 'not-found') throw new Error(body.error.message)
+    if (!body.ok && body.error.code !== 'not-found') return body
     text = valueOr(body, '')
   }
   return addTile(dir, id, copyEntry({ ...(src as Json), id }), text)
@@ -225,7 +225,7 @@ export async function writeMarkdownTile(
   return machine().lock(file, async () => {
     const held = await machine().readText(file)
     if (held !== null && machine().sha256Hex(held) !== baseHash) return { stale: true }
-    await atomicWriteFile(file, body)
+    await atomicWriteFile(file, body, true)
     dropTileHeadingLinks()
     return { stale: false, hash: machine().sha256Hex(body) }
   })
@@ -285,8 +285,9 @@ export async function rewriteTileConnections(
       if (landed === null) failed++
       else if (landed) wrote.push(id)
     }
-    if (wrote.length && host) hosts.push({ host, ids: wrote })
+    if (!wrote.length) continue
+    dropTileHeadingLinks()
+    if (host) hosts.push({ host, ids: wrote })
   }
-  dropTileHeadingLinks()
   return { hosts, failed }
 }

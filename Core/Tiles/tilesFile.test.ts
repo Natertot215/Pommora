@@ -425,6 +425,24 @@ describe('markdown tile lifecycle', () => {
     ).toBe('cfg-a')
   })
 
+  it.skipIf(noModeBits)(
+    'duplicate answers the fault when the source body can’t be read',
+    async () => {
+      const id = await landedId(createTile(home(), 'markdown'))
+      await write(home(), id, 'body text')
+      await chmod(tileFilePath(home(), id), 0o000)
+      try {
+        expect(await duplicateTile(home(), id)).toMatchObject({
+          ok: false,
+          error: { code: 'operation-failed' },
+        })
+      } finally {
+        await chmod(tileFilePath(home(), id), 0o644)
+      }
+      expect(await entries()).toHaveLength(1)
+    },
+  )
+
   it('removing a non-markdown tile touches no files', async () => {
     await seed(home(), [{ id: tileId('p'), type: 'page', page_id: 'x' }])
     await removeTile(root, home(), tileId('p'), nexusDeps)

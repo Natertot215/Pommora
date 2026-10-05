@@ -25,7 +25,7 @@ import { queryHeadingMentions, queryMentions } from '../Index/contentIndex'
 import { nexusCorpus } from '../Index/indexSeed'
 import { linkDefs, readKeptRegistry } from '../Properties/propertiesRegistry'
 import { readLiveSetting } from '../Settings/settings'
-import { rewriteTileConnections } from '../Tiles/tilesFile'
+import { rewriteTileConnections, tilesLinkHeading } from '../Tiles/tilesFile'
 import type { TilesChanged } from '../Tiles/tiles'
 import { readLink } from '../Connections/linkValue'
 import { liveIdIndex, livePathOf, titleHeldOutside } from './heldPages'
@@ -159,7 +159,7 @@ export async function deleteCascade(
   }
 }
 
-/** A page rename sweeps the files the index names, or the whole corpus before there is one; a heading rename sweeps only what a ready index names, since a corpus scan per heading edit is an on-every-edit cost. Markdown tiles sit outside the index, so every one is read either way. `skipRel` is a page whose editor has already rewritten its own links. */
+/** A page rename sweeps the files the index names, or the whole corpus before there is one; a heading rename sweeps only what a ready index names, since a corpus scan per heading edit is an on-every-edit cost. Markdown tiles sit outside the index: a title rename reads every one, and a heading rename reads them when one links the heading. `skipRel` is a page whose editor has already rewritten its own links. */
 export async function renameCascade(
   root: string,
   title: string,
@@ -220,7 +220,10 @@ export async function renameCascade(
       text,
       ...spaceArm(tree, spaceMoved),
     })
-    const tiles = await rewriteTileConnections(root, rewrite)
+    const tiles =
+      'title' in change || (await tilesLinkHeading(root, titleKey, normalizeTitle(change.heading)))
+        ? await rewriteTileConnections(root, rewrite)
+        : { hosts: [], failed: 0 }
     // A heading edit settles often and a cached Link still reaches its page, so only a title reaches the caches.
     const linkIds = new Set(defs.filter((d) => d.type === 'link').map((d) => d.id))
     const uncached =
