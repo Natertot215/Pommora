@@ -1,7 +1,6 @@
 import { globalStyle, style } from '@vanilla-extract/css'
 import { duration, easing } from '@pommora/uix/Animations/motion'
-import { GLASS_EDGE } from '@pommora/uix/Glass/glassBase'
-import { STATE_OPACITY, vars } from '@pommora/uix/Theme/color.css'
+import { vars } from '@pommora/uix/Theme/color.css'
 
 const c = vars.color
 
@@ -31,25 +30,6 @@ export const host = style({
         '--scroll-fade': 'var(--window-toolbar-h)',
       },
     },
-  },
-  vars: {
-    '--matrix-fill': c.label.control,
-    '--matrix-fill-lit': c.label.primary,
-    '--matrix-ring': GLASS_EDGE,
-    '--matrix-ring-hover': 'var(--accent-stroke)',
-    '--matrix-ring-drag': 'var(--accent-stroke-hot)',
-    '--matrix-link': c.solid.greyDefault,
-    '--matrix-link-other': c.border.base,
-    '--matrix-link-hover': 'var(--accent-stroke)',
-    '--matrix-title': c.label.primary,
-    '--matrix-icon': c.solid.grey,
-    '--matrix-icon-scale': '0.5',
-    '--matrix-space-tint': 'var(--tint-tertiary)',
-    '--matrix-space-lit-tint': 'var(--tint-primary)',
-    '--matrix-space-icon-tint': 'var(--tint-solid)',
-    '--matrix-inactive': STATE_OPACITY.inactive,
-    '--matrix-hairline': 'var(--width-200)',
-    '--matrix-ring-width': 'var(--width-200)',
   },
 })
 
