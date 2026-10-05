@@ -1102,7 +1102,6 @@ describe('store — a Nexus switch lands every owed save first', () => {
     channels['tiles:writeMarkdown'] = record('tile', null)
     channels['tabs:save'] = record('tabs', null)
     channels['nexus:choose'] = record('choose', false)
-    channels['matrixLayout:save'] = vi.fn(async () => ok(null))
     scheduleBodySave('Notes/A.md', 'typed', pageIO)
     tileBodyWriter.schedule('t1', () =>
       dialer().ask('tiles:writeMarkdown', { kind: 'homepage' }, 't1', 'x', ''),

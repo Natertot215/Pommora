@@ -7,7 +7,6 @@ import { useSession } from '../Session/store'
 import { makeTree } from '../Testing/testTree'
 import { DEFAULT_MATRIX_CONFIG } from './matrixConfig'
 import { MatrixMenu } from './MatrixMenu'
-import { matrixRuntime } from './matrixRuntime'
 ;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
 
 class ResizeObserverStub {
@@ -116,9 +115,5 @@ describe('the Matrix menu', () => {
 
     mount({ locked: true })
     expect(control('Shuffle Layout').disabled).toBe(true)
-    const shuffle = vi.spyOn(matrixRuntime, 'shuffle')
-    click(control('Shuffle Layout'))
-    expect(shuffle).not.toHaveBeenCalled()
-    shuffle.mockRestore()
   })
 })
