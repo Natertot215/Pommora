@@ -153,7 +153,7 @@ const contentIndex = (index: MemoryIndex): ContentIndexStore => {
       }
       return out
     },
-    readPageRelations(paths) {
+    readPageRelations(paths, key) {
       const held = (path: string): boolean => !paths || paths.includes(path)
       const relations = relationRows()
         .filter(
@@ -167,7 +167,8 @@ const contentIndex = (index: MemoryIndex): ContentIndexStore => {
         if (held(path)) pages[path] = { values: {}, mtimeMs: stat.mtimeMs }
       for (const row of index.values.values()) {
         const page = pages[row.path]
-        if (page) page.values[row.key] = JSON.parse(row.value)
+        if (page && (key === undefined || row.key === key))
+          page.values[row.key] = JSON.parse(row.value)
       }
       return { relations, pages }
     },

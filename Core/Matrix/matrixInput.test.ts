@@ -75,6 +75,11 @@ describe('matrixInput', () => {
     const off = matrixInput(makeTree(), replyOf([]), configWith({ rules, enabled: false }))
     expect(off.visible).toBeNull()
   })
+
+  it('judges nothing until the values a filter reads have landed', () => {
+    const rules = { match: 'all' as const, rules: [] }
+    expect(matrixVisible(makeTree(), null, configWith({ rules, enabled: true }).filter)).toBeNull()
+  })
 })
 
 const STATUS: PropertyDefinition = {

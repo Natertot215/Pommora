@@ -127,7 +127,7 @@ describe('loadMatrix', () => {
     await seatLoaded()
     await vi.advanceTimersByTimeAsync(200)
     expect(channels['matrix:graph']).toHaveBeenCalledTimes(2)
-    expect(channels['matrix:graph']).toHaveBeenLastCalledWith()
+    expect(channels['matrix:graph']).toHaveBeenLastCalledWith(false)
   })
 
   it('keeps a reply that lands after an edit in the same Nexus, and starts no second load meanwhile', async () => {
@@ -150,7 +150,7 @@ describe('loadMatrix', () => {
       land({ ok: true, value: GRAPH })
       await pass
       expect(useSession.getState().matrixLoad.kind).not.toBe('loaded')
-      expect(useSession.getState().matrixGraph).toEqual({ links: [], values: {} })
+      expect(useSession.getState().matrixGraph).toEqual({ links: [], values: null })
       useSession.setState({ tree: makeTree() })
     }
   })
@@ -180,7 +180,7 @@ describe('the refetch lane', () => {
     await pass
     await vi.advanceTimersByTimeAsync(0)
     expect(channels['matrix:graph']).toHaveBeenCalledTimes(2)
-    expect(channels['matrix:graph']).toHaveBeenLastCalledWith(['Notes/Alpha.md'])
+    expect(channels['matrix:graph']).toHaveBeenLastCalledWith(false, ['Notes/Alpha.md'])
   })
 
   it('stops refetching once unloaded', async () => {
@@ -190,7 +190,7 @@ describe('the refetch lane', () => {
     useSession.getState().refetchMatrixPaths(['Notes/Alpha.md'])
     await vi.advanceTimersByTimeAsync(200)
     expect(channels['matrix:graph']).not.toHaveBeenCalled()
-    expect(useSession.getState().matrixGraph).toEqual({ links: [], values: {} })
+    expect(useSession.getState().matrixGraph).toEqual({ links: [], values: null })
   })
 
   it('keeps the held links when a refetch moved none', async () => {
@@ -207,7 +207,7 @@ describe('the refetch lane', () => {
     await vi.advanceTimersByTimeAsync(200)
     const after = useSession.getState().matrixGraph
     expect(after.links).toBe(before)
-    expect(after.values.p1.modifiedAt).toBe('later')
+    expect(after.values?.p1.modifiedAt).toBe('later')
   })
 
   it('reads a page id through the tree and folds a burst into one ask', async () => {
@@ -217,24 +217,70 @@ describe('the refetch lane', () => {
     useSession.getState().refetchMatrixPages(['p2', 'gone'])
     await vi.advanceTimersByTimeAsync(200)
     expect(channels['matrix:graph']).toHaveBeenCalledTimes(1)
-    expect(channels['matrix:graph']).toHaveBeenCalledWith(['Notes/Alpha.md', 'Notes/Ideas/Beta.md'])
+    expect(channels['matrix:graph']).toHaveBeenCalledWith(false, [
+      'Notes/Alpha.md',
+      'Notes/Ideas/Beta.md',
+    ])
   })
 
-  it('merges by path and by page id, so a renamed page keeps one set of rows', async () => {
+  it('lets a renamed page’s old rows go by the id the tree holds at the asked path', async () => {
     await seatLoaded()
+    const renamed = makeTree()
+    renamed.collections[0].pages[0].path = 'Notes/Renamed.md'
+    useSession.setState({ tree: renamed })
+    const beta = link('Notes/Ideas/Beta.md', 'p2', 'alpha')
+    channels['matrix:graph'].mockResolvedValue({ ok: true, value: { links: [beta], values: null } })
+    useSession.getState().refetchMatrixPaths(['Notes/Renamed.md', 'Notes/Ideas/Beta.md'])
+    await vi.advanceTimersByTimeAsync(200)
+    expect(useSession.getState().matrixGraph.links).toEqual([beta])
+  })
+
+  it('lets a renamed page’s old rows go by the id its reply names when the tree hasn’t moved yet', async () => {
+    await seatLoaded()
+    const renamed = link('Notes/Renamed.md', 'p1', 'beta')
     channels['matrix:graph'].mockResolvedValue({
       ok: true,
-      value: { links: [link('Notes/Renamed.md', 'p1', 'beta')], values: values('p1') },
+      value: { links: [renamed], values: null },
     })
     useSession.getState().refetchMatrixPaths(['Notes/Renamed.md'])
     await vi.advanceTimersByTimeAsync(200)
-    expect(useSession.getState().matrixGraph.links).toEqual([
-      link('Notes/Renamed.md', 'p1', 'beta'),
-    ])
-    channels['matrix:graph'].mockResolvedValue({ ok: true, value: { links: [], values: {} } })
-    useSession.getState().refetchMatrixPaths(['Notes/Renamed.md'])
+    expect(useSession.getState().matrixGraph.links).toEqual([renamed])
+  })
+})
+
+describe('the values a filter reads', () => {
+  const RULES = {
+    match: 'all' as const,
+    rules: [{ property_id: '_location', op: 'is_inside', value: 'c1' }],
+  }
+
+  it('asks for every page’s once a filter turns on, and lands them on none', async () => {
+    channels['matrix:graph'].mockResolvedValueOnce({
+      ok: true,
+      value: { links: GRAPH.links, values: null },
+    })
+    await seatLoaded()
+    useSession.getState().patchMatrix({ filter: { rules: RULES } })
     await vi.advanceTimersByTimeAsync(200)
-    expect(useSession.getState().matrixGraph).toEqual({ links: [], values: {} })
+    expect(channels['matrix:graph']).toHaveBeenLastCalledWith(true, [
+      'Notes/Alpha.md',
+      'Notes/Ideas/Beta.md',
+    ])
+    expect(useSession.getState().matrixGraph.values).toEqual(GRAPH.values)
+  })
+
+  it('lets the held values go with the first refetch after the filter turns off', async () => {
+    useSession.getState().applyMatrixChanged(parseMatrixConfig({ filter: { rules: RULES } }))
+    await seatLoaded()
+    expect(channels['matrix:graph']).toHaveBeenLastCalledWith(true)
+    useSession.getState().patchMatrix({ filter: { enabled: false } })
+    channels['matrix:graph'].mockResolvedValue({
+      ok: true,
+      value: { links: GRAPH.links, values: null },
+    })
+    useSession.getState().refetchMatrixPaths(['Notes/Alpha.md'])
+    await vi.advanceTimersByTimeAsync(200)
+    expect(useSession.getState().matrixGraph.values).toBeNull()
   })
 })
 
@@ -346,7 +392,7 @@ describe('resetMatrix', () => {
     useSession.getState().resetMatrix()
     const s = useSession.getState()
     expect(s.matrixConfig).toBe(DEFAULT_MATRIX_CONFIG)
-    expect(s.matrixGraph).toEqual({ links: [], values: {} })
+    expect(s.matrixGraph).toEqual({ links: [], values: null })
     expect(s.matrixPositions).toEqual({})
     expect(s.matrixLens).toBeNull()
     expect(s.matrixLoad).toEqual({ kind: 'switching' })

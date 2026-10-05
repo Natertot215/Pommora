@@ -56,26 +56,26 @@ afterEach(() => {
 
 describe('readMatrixGraph', () => {
   it('keys values by page id and stamps both dates through iso', () => {
-    const reply = readMatrixGraph()!
-    expect(Object.keys(reply.values).sort()).toEqual([A, B])
-    expect(reply.values[A]).toEqual({
+    const values = readMatrixGraph(true)!.values!
+    expect(Object.keys(values).sort()).toEqual([A, B])
+    expect(values[A]).toEqual({
       frontmatter: { ID: A, Status: ['Open'] },
       createdAt: iso(idTime(A)),
       modifiedAt: iso(1000),
     })
-    expect(reply.values[B].modifiedAt).toBe(iso(2000))
+    expect(values[B].modifiedAt).toBe(iso(2000))
   })
 
   it('drops an id-less markdown file, its rows included', () => {
-    const reply = readMatrixGraph()!
-    expect(reply.values['Notes/Loose.md']).toBeUndefined()
+    const reply = readMatrixGraph(true)!
+    expect(reply.values?.['Notes/Loose.md']).toBeUndefined()
     expect(reply.links.map((l) => l.path)).toEqual(['Notes/A.md', 'Notes/B.md'])
     expect(reply.links.map((l) => l.pageId)).toEqual([A, B])
   })
 
   it('narrows to the named paths', () => {
-    const reply = readMatrixGraph(['Notes/A.md'])!
-    expect(Object.keys(reply.values)).toEqual([A])
+    const reply = readMatrixGraph(true, ['Notes/A.md'])!
+    expect(Object.keys(reply.values!)).toEqual([A])
     expect(reply.links).toEqual([{ path: 'Notes/A.md', kind: 'body', target: 'beta', pageId: A }])
   })
 
@@ -95,13 +95,17 @@ describe('readMatrixGraph', () => {
         stat: { mtimeMs: 1000, size: 10 },
       },
     ])
-    expect(readMatrixGraph(['Notes/A.md'])!.links).toEqual([
+    expect(readMatrixGraph(true, ['Notes/A.md'])!.links).toEqual([
       { path: 'Notes/A.md', kind: 'body', target: 'beta', pageId: A },
     ])
   })
 
+  it('reads no values when none are asked for', () => {
+    expect(readMatrixGraph(false)!.values).toBeNull()
+  })
+
   it('answers null with no index', () => {
     installStores(NO_STORES)
-    expect(readMatrixGraph()).toBeNull()
+    expect(readMatrixGraph(true)).toBeNull()
   })
 })

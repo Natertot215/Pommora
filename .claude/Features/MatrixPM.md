@@ -40,7 +40,7 @@ Work is scoped to what changed. A save that moves no link and changes no filtere
 
 #### Scale
 
-Every expensive step is bounded: the spread force approximates distant clusters rather than visiting them, labels are culled to one per cell so a dense field prints the largest node's title and drops the rest, and the layout is written once on settle, for the nodes that moved, rather than per frame. A closed Matrix holds nothing: its graph loads when the first surface opens and is let go with the last. A bench ticks a synthetic Nexus against a budget as a gate.
+Every expensive step is bounded: the spread force approximates distant clusters rather than visiting them, labels are culled to one per cell so a dense field prints the largest node's title and drops the rest, and the layout is written once on settle, for the nodes that moved, rather than per frame. A closed Matrix holds nothing: its graph loads when the first surface opens and is let go with the last. A Matrix with no filter set reads and holds its links alone; page values are fetched when a filter turns on and let go once it's off. A bench ticks a synthetic Nexus against a budget as a gate.
 
 ### The Surface
 

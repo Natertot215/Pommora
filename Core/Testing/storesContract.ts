@@ -169,7 +169,7 @@ export function describeContentIndexStore(name: string, make: () => ContentIndex
       expect(store.readHeadings(['Notes/H.md'])).toEqual({ 'Notes/H.md': [] })
     })
 
-    it("reads the page-to-page rows and every page's values, whole and by path", () => {
+    it("reads the page-to-page rows and every page's values, whole, by path, and by key", () => {
       upsert('Notes/A.md', {
         relations: [body('beta'), relation('citation', 'gamma'), space('<Projects>', 'pommora')],
         headings: [],
@@ -192,6 +192,10 @@ export function describeContentIndexStore(name: string, make: () => ContentIndex
       const narrowed = store.readPageRelations(['Notes/B.md'])
       expect(narrowed.relations).toEqual([])
       expect(narrowed.pages).toEqual({ 'Notes/B.md': { values: { ID: 'idB' }, mtimeMs: 2000 } })
+      expect(store.readPageRelations(undefined, 'ID').pages).toEqual({
+        'Notes/A.md': { values: { ID: 'idA' }, mtimeMs: 1000 },
+        'Notes/B.md': { values: { ID: 'idB' }, mtimeMs: 2000 },
+      })
     })
 
     it('a heading-naming link answers the bare title query', () => {

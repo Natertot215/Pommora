@@ -10,20 +10,20 @@ export interface MatrixLink extends Pick<PageRelationRow, 'path' | 'kind' | 'tar
 
 export interface MatrixGraphReply {
   links: MatrixLink[]
-  values: Record<string, PageValues>
+  values: Record<string, PageValues> | null
 }
 
-// `null` when there is no index yet; the renderer keeps what it holds and the next push refetches.
-export function readMatrixGraph(paths?: string[]): MatrixGraphReply | null {
-  const rows = readPageRelations(paths)
+// `null` when there is no index yet; the renderer keeps what it holds and the next push refetches. Without values, the store reads each page's ID alone.
+export function readMatrixGraph(withValues: boolean, paths?: string[]): MatrixGraphReply | null {
+  const rows = readPageRelations(paths, withValues ? undefined : ID_KEY)
   if (!rows) return null
   const idOf = new Map<string, string>()
-  const values: Record<string, PageValues> = {}
+  const values: MatrixGraphReply['values'] = withValues ? {} : null
   for (const [path, page] of Object.entries(rows.pages)) {
     const id = page.values[ID_KEY]
     if (typeof id !== 'string') continue
     idOf.set(path, id)
-    values[id] = pageValuesOf(id, page.values, page.mtimeMs)
+    if (values) values[id] = pageValuesOf(id, page.values, page.mtimeMs)
   }
   // A link to a page and links to its headings are one row each in the index, and one link here.
   const seen = new Set<string>()

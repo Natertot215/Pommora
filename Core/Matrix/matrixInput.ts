@@ -11,7 +11,7 @@ import { buildSetTree, type SetTreeNode, toRow } from '../Views/Pipeline/group'
 import type { ViewRow } from '../Views/viewRow'
 import { type FilterRule, mapRules, OPERANDLESS_OPS } from '../Views/views'
 import type { GraphInput } from './Engine/graph'
-import type { MatrixConfig } from './matrixConfig'
+import { filtering, type MatrixConfig } from './matrixConfig'
 import type { MatrixGraphReply } from './matrixGraph'
 
 const spaceIdsOf = (values: Record<string, string[]> | undefined): string[] =>
@@ -91,13 +91,13 @@ function answers(
   }
 }
 
-// Rows exist only for a filter to read, so a Matrix with none set builds none.
+// Rows exist only for a filter to read, so a Matrix with none set builds none, nor does one whose values have yet to land.
 export function matrixVisible(
   tree: NexusTree,
   values: MatrixGraphReply['values'],
   filter: MatrixConfig['filter'],
 ): ReadonlySet<string> | null {
-  if (!filter.enabled || !filter.rules) return null
+  if (!values || !filtering(filter)) return null
   const { seats } = matrixTree(tree)
   const rules = filter.rules
   const schema = tree.config.registry

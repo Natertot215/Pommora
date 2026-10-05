@@ -2,13 +2,14 @@ import type { Lens } from '../Matrix/Engine/viewport'
 import {
   applyPatch,
   DEFAULT_MATRIX_CONFIG,
+  filtering,
   type MatrixConfig,
   type MatrixPatch,
 } from '../Matrix/matrixConfig'
 import type { MatrixGraphReply, MatrixLink } from '../Matrix/matrixGraph'
 import type { PositionRows, Positions } from '../Matrix/matrixLayout'
 import type { NexusTree } from '../Nexus/tree'
-import { pagesByIdOf, recordsByIdOf } from '../Nexus/treeIndex'
+import { pagesByIdOf, pagesOf, reconcileIndexOf, recordsByIdOf } from '../Nexus/treeIndex'
 import { stabilize } from '../Nexus/treeStabilize'
 import { persist } from '../Interface/Notifications/notifications'
 import { dialer } from '../Platform/dialer'
@@ -54,7 +55,7 @@ function withRows(held: Positions, rows: PositionRows): Positions {
 }
 
 const HELD = {
-  matrixGraph: { links: [], values: {} },
+  matrixGraph: { links: [], values: null },
   matrixPositions: {},
   matrixLens: null,
 } satisfies Partial<MatrixSlice>
@@ -81,23 +82,21 @@ export const createMatrixSlice: Slice<MatrixSlice> = (set, get) => {
   // Bumped by a Nexus switch, so a refusal that answers after it doesn't owe the old Nexus's rows to the new one.
   let switches = 0
 
-  // A renamed or moved page answers under its new path, so the rows it held under the old one go by id as well as by path.
   const merge = (
     held: MatrixGraphReply,
     next: MatrixGraphReply,
     paths: string[],
+    ids: ReadonlySet<string>,
   ): MatrixGraphReply => {
     const replaced = new Set(paths)
-    const ids = new Set([...Object.keys(next.values), ...next.links.map((l) => l.pageId)])
-    const refetched = (l: MatrixLink): boolean => replaced.has(l.path) || ids.has(l.pageId)
-    const values = { ...held.values, ...next.values }
-    for (const l of held.links)
-      if (replaced.has(l.path) && !ids.has(l.pageId)) delete values[l.pageId]
+    const answered = new Set(next.links.map((l) => l.pageId))
+    const refetched = (l: MatrixLink): boolean =>
+      replaced.has(l.path) || ids.has(l.pageId) || answered.has(l.pageId)
     // A save that moved no link keeps the held array, so nothing a link feeds is derived again.
     const links = sameLinks(held.links.filter(refetched), next.links)
       ? held.links
       : [...held.links.filter((l) => !refetched(l)), ...next.links]
-    return { links, values }
+    return { links, values: next.values && { ...held.values, ...next.values } }
   }
 
   const cancelRefetch = (): void => {
@@ -107,13 +106,17 @@ export const createMatrixSlice: Slice<MatrixSlice> = (set, get) => {
 
   const flush = async (): Promise<void> => {
     cancelRefetch()
-    if (get().matrixLoad.kind !== 'loaded' || pendingPaths.size === 0) return
+    const { tree, matrixLoad, matrixConfig } = get()
+    if (!tree || matrixLoad.kind !== 'loaded' || pendingPaths.size === 0) return
     const asked = generation
     const paths = [...pendingPaths]
     pendingPaths = new Set()
-    const reply = await dialer().ask('matrix:graph', paths)
+    // A renamed or moved page answers under its new path, so the rows it held under the old one go by its id as well as by path: the id the tree holds at an asked path, or the one the reply names while the tree has yet to catch up.
+    const { pagesByPath } = reconcileIndexOf(tree)
+    const ids = new Set(paths.flatMap((p) => pagesByPath.get(p) ?? []))
+    const reply = await dialer().ask('matrix:graph', filtering(matrixConfig.filter), paths)
     if (!reply.ok || generation !== asked) return
-    set((s) => ({ matrixGraph: merge(s.matrixGraph, reply.value, paths) }))
+    set((s) => ({ matrixGraph: merge(s.matrixGraph, reply.value, paths, ids) }))
   }
 
   // Buffered while a load is in flight, so a write that races it isn't lost; with nothing held or asked for, the next load reads it fresh.
@@ -145,7 +148,7 @@ export const createMatrixSlice: Slice<MatrixSlice> = (set, get) => {
       const started = generation
       set({ matrixLoad: { kind: 'loading' } })
       const [graph, layout] = await Promise.all([
-        dialer().ask('matrix:graph'),
+        dialer().ask('matrix:graph', filtering(get().matrixConfig.filter)),
         dialer().ask('matrixLayout:load'),
       ])
       // An unload or a Nexus switch between the ask and its answer: the answer belongs to a graph the store has let go.
@@ -175,9 +178,13 @@ export const createMatrixSlice: Slice<MatrixSlice> = (set, get) => {
       void persist('the Matrix', dialer().ask('matrix:write', patch), true)
     },
 
-    // The watcher pushes our own writes back too; every section that reads the same keeps its reference, so only what moved rebuilds.
-    applyMatrixChanged: (config) =>
-      set((s) => ({ matrixConfig: stabilize(config, s.matrixConfig) })),
+    // The watcher pushes our own writes back too; every section that reads the same keeps its reference, so only what moved rebuilds. Page values travel only while a filter reads them: each ask says whether one does, a reply without them lets the held ones go, and a filter turning on asks for every page's.
+    applyMatrixChanged: (config) => {
+      const { matrixConfig: held, tree } = get()
+      set({ matrixConfig: stabilize(config, held) })
+      if (tree && !filtering(held.filter) && filtering(config.filter))
+        queue(pagesOf(tree).map((p) => p.path))
+    },
 
     refetchMatrixPages: (pageIds) => {
       const tree = get().tree

@@ -50,6 +50,10 @@ export const DEFAULT_MATRIX_CONFIG: MatrixConfig = {
 
 const GROUP_MODES = Object.keys(DEFAULT_FORCES) as GroupMode[]
 
+export const filtering = (
+  filter: MatrixConfig['filter'],
+): filter is { rules: FilterGroup; enabled: true } => filter.enabled && filter.rules !== null
+
 const section = (raw: unknown, key: string): Record<string, unknown> =>
   isPlainObject(raw) && isPlainObject(raw[key]) ? raw[key] : {}
 const bool = (v: unknown, fallback: boolean): boolean => (typeof v === 'boolean' ? v : fallback)

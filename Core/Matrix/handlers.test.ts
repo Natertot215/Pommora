@@ -120,14 +120,14 @@ describe('the layout channels', () => {
 
 describe('the graph channel', () => {
   it('fails while the index is unready rather than answering an empty graph', () => {
-    expect(matrixHandlers['matrix:graph'](ctx, undefined)).toEqual({
+    expect(matrixHandlers['matrix:graph'](ctx, false, undefined)).toEqual({
       ok: false,
       error: { code: 'operation-failed', message: 'The index is not ready.' },
     })
   })
 
   it('refuses paths that are not strings', () => {
-    expect(matrixHandlers['matrix:graph'](ctx, [7])).toEqual({
+    expect(matrixHandlers['matrix:graph'](ctx, false, [7])).toEqual({
       ok: false,
       error: { code: 'operation-failed', message: 'Paths must be strings.' },
     })

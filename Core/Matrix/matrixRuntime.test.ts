@@ -424,7 +424,7 @@ describe('matrixRuntime', () => {
     detach?.()
     detach = null
     expect(useSession.getState().matrixLoad.kind).toBe('unloaded')
-    expect(useSession.getState().matrixGraph).toEqual({ links: [], values: {} })
+    expect(useSession.getState().matrixGraph).toEqual({ links: [], values: null })
   })
 
   // Every lens is made from a box, so a gesture before the first fit moves a real picture rather than scaling an empty one.
