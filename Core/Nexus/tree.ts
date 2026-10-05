@@ -96,7 +96,7 @@ export interface NexusOrder {
 }
 
 export interface NexusConfig extends SettingsLeaves {
-  /** The tile doc's heavy layout and entries stay off the walk, loaded lazily by useTileDoc. */
+  /** The tile doc's heavy layout and entries stay off the walk, loaded lazily by the tile document store. */
   homepage: { banner?: string; headingIconHidden: boolean }
   crops: Record<string, Crop>
   pageMetadata: Record<string, PageMeta>

@@ -1,17 +1,10 @@
 ## Tiles
 
-The tile layout engine: a mosaic of draggable, resizable tiles rendered from a pure layout
-tree. The grid is host-agnostic — it knows nothing about what a tile contains (markdown, a
-page, a view) or where the tree persists; the host binding (`TileHost.tsx`) supplies both,
-and the surfaces a tile can hold live under `Surfaces/`.
-
-#### Provenance
-
-Built after a full teardown of **react-grid-layout**. RGL was studied for its patterns —
-collision semantics, resize-handle geometry, controlled-layout data flow — and then retired:
-**no RGL code was copied**. Its
-grid-cell model (units + compaction + tetris holes) was rejected in favor of a split tree,
-and its synthetic drag core was replaced by PommoraDND's capture discipline.
+Tiles names the board, the surfaces a tile holds, and the page and web embeds that share those
+surfaces across the app. The layout engine under `Layout/` is one part of it: a mosaic of
+draggable, resizable tiles rendered from a pure layout tree. The grid is host-agnostic — it knows
+nothing about what a tile contains (markdown, a page, a view) or where the tree persists; the host
+binding (`TileHost.tsx`) supplies both, and the surfaces a tile can hold live under `Surfaces/`.
 
 #### The Model (`Layout/model.ts`)
 
@@ -27,7 +20,7 @@ axes deliberately obey different physics:
 
 #### Stacking
 
-Under a threshold on the grid's own measured width the board is drawn as one column:
+Under 480px of the grid's own measured width the board is drawn as one column:
 `Layout/stack.ts` re-serializes the tree into one band per tile in reading order — left to right
 inside a row, bands top to bottom — keeping each tile's height. The derivation is for render
 alone, so the invariants above are untouched: the tree the grid was handed is the tree it hands
@@ -39,18 +32,26 @@ own behavior, so every host gets it.
 
 | File | Role |
 | --- | --- |
-| `Layout/model.ts` | Tree types, height derivation, lookup, validation |
-| `Layout/ops.ts` | Pure tree operations — split, move, remove, band ops, the three resize ops |
+| `Layout/model.ts` | Tree types, height derivation, and lookup |
+| `Layout/ops.ts` | Pure tree operations — split, move, remove, band ops, the four resize ops, and `repairLayout` |
 | `Layout/rects.ts` | Tree → per-tile placements as shares of the board width, resolved to pixel rects, dividers, and band seams at a measured width |
 | `Layout/edges.ts` | A tile edge → the shared boundary it actually moves |
 | `Layout/hitTest.ts` | Drag pointer → drop target (band seam or tile edge, with hysteresis) |
 | `Layout/snap.ts` | Alignment magnetism — boundaries lock to other tiles' edges |
-| `Layout/codec.ts` | Persistence codec — a parse; the ops keep every mutation normalized |
+| `Layout/codec.ts` | The stored and write-gate layout schemas; decoding repairs what a hand edit left |
 | `Layout/stack.ts` | The narrow-width derivation — rows flattened to one column, and its threshold |
+| `tiles.ts` | The entry union, the kinds table (`TILE_KINDS`), and the host schema and key |
+| `tileHosts.ts` | The hosts table (`TILE_HOSTS`) — a host's folder and every board; host-run |
+| `tilesFile.ts` | Entry lifecycle, tile body IO, and the rename rewrite; host-run |
+| `tileDoc.ts` | The document's read-modify-write; host-run |
+| `handlers.ts` | The `tiles:*` channels; host-run |
 | `TileGrid.tsx` | The React grid — gestures on the app's pointer engine, preview, settle, placement tint, the stacked board |
-| `tileDocStore.ts` | The host-keyed tile document — one tree, one debounce, one lock per host, shared by every mount |
+| `tileDocStore.ts` | The host-keyed tile document, shared by every mount, plus the markdown tile's `BodyIO` and removal marks; the tile's text itself is held in `Core/Session/pageDetailCache.ts` under the tile id |
 | `useTileDoc.ts` | The document's React reader — its snapshot and lock, and the gesture hold |
-| `TileHost.tsx` | The host binding — the entry union, the menus, create, remove, convert, duplicate |
+| `TileHost.tsx` | The host binding — the menus, create, remove, convert, duplicate |
+| `tileKinds.tsx` | The surface table (`TILE_SURFACES`) and `TileBody` |
+| `tileHandleMenu.ts` | The handle menu's model and pick trees |
+| `tileZoom.ts` | The Scale steps and their menu rows |
 | `BoardLock.tsx` | The board lock control — the host settings surfaces and a windowed Space's footer bar all mount this one |
 | `Surfaces/` | What a tile can hold — markdown, a page, a view — and the web tile MarkdownPM's embed mounts |
 
@@ -85,9 +86,10 @@ These are load-bearing; the comments at each site say why. Summarized:
 - **PommoraDND is the interaction vocabulary**: the shared `ACTIVATION` threshold,
   `suppressNextClick`, `HYSTERESIS` edge-hold, `findScroller` + the shared auto-scroll loop
   (`startAutoScroll`), and the shared `Feel` for reflow/settle.
-- **Handlers are identity-stable**, reading all live values through a per-render ref, so the
-  memoized `TileShell` never re-renders for a callback identity change. The `renderTile`
-  prop carries the same contract: identity-stable, no mutable per-tile closures.
+- **The grid's own handlers are identity-stable**, reading all live values through a per-render
+  ref, so the memoized `TileShell` never re-renders for a callback identity change. `renderTile`
+  changes with the board's data, and each surface redraws only when its own entry, its edit
+  state, its page, or the connections change.
 - **A static board answers no geometry gesture.** A host lock and the stacking width are one
   state; the grid refuses the press before the pointer engine sees it and withholds the
   backdrop's create menu, so no gesture path carries a stacked branch. Content editing, the
@@ -97,5 +99,6 @@ These are load-bearing; the comments at each site say why. Summarized:
 
 `TileGrid` is fully controlled: `layout` in, `onLayoutChange` out — the tree it draws may be a
 narrow-width derivation, while the tree it hands back is the one it was given. The codec
-parses the stored tree; entry payloads and unknown-key preservation belong to the host binding
-above, and the tile document itself to `tileDocStore.ts`, not here.
+decodes the stored tree. Unknown keys on an entry or the document are kept by the loose entry
+schemas, `mergeEntry`, `patchEntries`, the document writer, and the store's `kept`; the tile
+document itself belongs to `tileDocStore.ts`.
