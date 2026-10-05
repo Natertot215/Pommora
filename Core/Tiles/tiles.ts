@@ -5,7 +5,6 @@ import { type Result, fault, ok } from '../Contract/result'
 import { isPlainObject } from '../Contract/validators'
 import { looseDecoder } from '../Files/decoders'
 import { isUlidShaped } from '../Nexus/identityMark'
-import { isNavRef, toNavRef } from '../Navigation/navRef'
 import { VIEW_BUTTONS, VIEW_STYLES } from '../Views/viewRow'
 import { zoomStep } from './tileZoom'
 
@@ -48,7 +47,12 @@ export const rawLayoutSchema = z.object({
 
 export const NEW_TILE_H = 160
 
-export type TileHostRef = { kind: 'homepage' } | { kind: 'space'; id: string }
+// A homepage carrying an id is no host; a Space sheds whatever else its reference carries.
+const tileHostSchema = z.discriminatedUnion('kind', [
+  z.strictObject({ kind: z.literal('homepage') }),
+  z.object({ kind: z.literal('space'), id: z.string().min(1) }),
+])
+export type TileHostRef = z.infer<typeof tileHostSchema>
 
 /** A board whose document or tiles changed outside its window, with the tiles whose text did. */
 export interface TilesChanged {
@@ -58,11 +62,11 @@ export interface TilesChanged {
 
 export const HOMEPAGE_HOST = { kind: 'homepage' } as const satisfies TileHostRef
 
-const TILE_HOST_KINDS: ReadonlySet<string> = new Set<TileHostRef['kind']>(['homepage', 'space'])
+export const coerceTileHost = (raw: unknown): TileHostRef | null =>
+  tileHostSchema.safeParse(raw).data ?? null
 
-export function coerceTileHost(raw: unknown): TileHostRef | null {
-  return isNavRef(raw, TILE_HOST_KINDS) ? (toNavRef(raw) as TileHostRef) : null
-}
+export const tileHostKey = (host: TileHostRef): string =>
+  'id' in host ? `${host.kind}:${host.id}` : host.kind
 
 const TILE_STYLES = ['bordered', 'borderless'] as const
 export type TileStyle = (typeof TILE_STYLES)[number]

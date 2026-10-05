@@ -50,8 +50,8 @@ const NAV_KINDS: ReadonlySet<string> = new Set<NavRef['kind']>([
   ...NODE_KINDS,
 ])
 
-export function isNavRef(v: unknown, kinds: ReadonlySet<string> = NAV_KINDS): v is NavRef {
-  if (!isPlainObject(v) || typeof v.kind !== 'string' || !kinds.has(v.kind)) return false
+export function isNavRef(v: unknown): v is NavRef {
+  if (!isPlainObject(v) || typeof v.kind !== 'string' || !NAV_KINDS.has(v.kind)) return false
   return isSingleton(v) ? !('id' in v) : typeof v.id === 'string' && v.id.length > 0
 }
 

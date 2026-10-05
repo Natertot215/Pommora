@@ -21,7 +21,7 @@ import {
 } from '../Properties/properties'
 import { editList, type Matcher, stripList, type ValueEdit } from '../Properties/pageValue'
 import { unsweptLine } from '../Properties/governedSweep'
-import { tileHostsOf } from '../Tiles/tilesFile'
+import { tileHostsOf } from '../Tiles/tileHosts'
 import type { TilesChanged } from '../Tiles/tiles'
 import { liveTreeOf } from './liveTree'
 import { editJsonStrict, type StrictEdit, updateNexusConfig } from '../Files/atomicWrite'

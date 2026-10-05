@@ -46,6 +46,7 @@ const renamedTileDoc = (doc: unknown) =>
 export async function normalizeSavedViews(root: string): Promise<void> {
   for (const file of await listFilesRecursive(join(root, TRASH_DIR), [...SIDECARS]))
     await rmwJsonStrict(file, renamedSidecar)
+  // Runs at open, before a tree exists to ask TILE_HOSTS for its boards.
   for (const dir of [tileHostDir(root), join(root, CONTEXTS_DIR_REL)])
     for (const file of await listFilesRecursive(dir, [TILE_DOC_FILENAME]))
       await rmwJsonStrict(file, renamedTileDoc)
