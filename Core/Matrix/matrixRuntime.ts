@@ -335,9 +335,8 @@ class MatrixRuntime {
   }
 
   setHovered(surface: Surface, node: string | null): void {
-    const id = node !== null && this.graph.index.has(node) ? node : null
-    if (this.hoveredOn !== surface ? id === null : this.hoveredId === id) return
-    this.hoveredId = id
+    if (this.hoveredOn !== surface ? node === null : this.hoveredId === node) return
+    this.hoveredId = node
     this.hoveredOn = surface
     this.invalidate()
   }
