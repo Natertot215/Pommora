@@ -34,7 +34,7 @@ export function MatrixLabel({
   id,
   closing,
   editing,
-  hosts,
+  picking,
   anchorRef,
   onPointerDown,
   onOpen,
@@ -44,17 +44,13 @@ export function MatrixLabel({
   id: string | null
   closing: boolean
   editing: boolean
-  hosts: boolean
+  picking: 'icon' | 'color' | null
   anchorRef: React.RefObject<HTMLDivElement | null>
   onPointerDown: (e: React.PointerEvent) => void
   onOpen: () => void
   onContextMenu: (e: React.MouseEvent) => void
 }): React.JSX.Element | null {
   const tree = useSession((st) => st.tree)
-  const iconPath = useSession((st) => (st.iconHost === 'matrix' ? st.iconPath : null))
-  const colorPath = useSession((st) => (st.colorHost === 'matrix' ? st.colorPath : null))
-  const picking = hosts ? iconPath : null
-  const pickingColor = hosts ? colorPath : null
   const endIcon = useSession((st) => st.endIcon)
   const endColor = useSession((st) => st.endColor)
   const mutate = useSession((st) => st.mutate)
@@ -140,7 +136,7 @@ export function MatrixLabel({
         onContextMenu={onContextMenu}
       />
       <IconChoice
-        open={picking === rec.path}
+        open={picking === 'icon'}
         onClose={endIcon}
         triggerRef={anchorRef}
         value={rec.icon}
@@ -148,7 +144,7 @@ export function MatrixLabel({
       />
       {rec.kind === 'space' && (
         <ColorPicker
-          open={pickingColor === rec.path}
+          open={picking === 'color'}
           selected={colorNameFor(spaceIdentityOf(tree, rec.id)?.color)}
           onPick={(color) => {
             endColor()
