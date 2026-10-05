@@ -8,6 +8,7 @@ import type { NexusTree } from '../Nexus/tree'
 import { ASSETS_DIR_REL } from '../Paths/nexusPaths'
 import { stubDialer } from '../vitest.setup'
 import { DEFAULT_COMMANDS } from '../Actions/commands'
+import { parseMatrixConfig } from '../Matrix/matrixConfig'
 ;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
 
 const treeAt = (rootPath: string): NexusTree => ({
@@ -56,6 +57,7 @@ async function freshStore(
     'citations:get': vi.fn(async () => ok({})),
     'linkTitles:get': vi.fn(async () => ok({})),
     'nav:read': vi.fn(async () => ok(null)),
+    'matrix:read': vi.fn(async () => ok(parseMatrixConfig({ group: { mode: 'space' } }))),
     'windows:load': vi.fn(async () => ok(null)),
     'tabs:load': vi.fn(async () => ok(null)),
   }
@@ -151,6 +153,19 @@ describe('the prefs are read once per nexus', () => {
     await useSession.getState().load()
     await useSession.getState().choose()
     expect(prefsLoad).toHaveBeenCalledTimes(2)
+  })
+})
+
+describe('the Matrix settings', () => {
+  it('land with the Nexus, before its tabs are restored', async () => {
+    const { useSession } = await freshStore(withPrefs({}))
+    let atRestore: string | undefined
+    const stop = useSession.subscribe((s, prev) => {
+      if (s.activeTabId !== prev.activeTabId) atRestore ??= s.matrixConfig.group.mode
+    })
+    await useSession.getState().load()
+    stop()
+    expect(atRestore).toBe('space')
   })
 })
 

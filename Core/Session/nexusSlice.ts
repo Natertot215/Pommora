@@ -173,7 +173,7 @@ export const createNexusSlice: Slice<NexusSlice> = (set, get) => {
         }
         if (!(await readTree())) return
         void get().loadHeadings()
-        const [, , read, windows, stored] = await Promise.all([
+        const [, , read, matrix, windows, stored] = await Promise.all([
           dialer()
             .ask('citations:get')
             .then((r) => set({ citationsShown: valueOr(r, {}) })),
@@ -181,9 +181,11 @@ export const createNexusSlice: Slice<NexusSlice> = (set, get) => {
             .ask('linkTitles:get')
             .then((r) => set({ linkTitles: valueOr(r, {}) })),
           dialer().ask('nav:read'),
+          dialer().ask('matrix:read'),
           dialer().ask('windows:load'),
           dialer().ask('tabs:load'),
         ])
+        if (matrix.ok) get().applyMatrixChanged(matrix.value)
         if (windows.ok) set({ windowsFile: windows.value })
         get().restoreNavigation(valueOr(read, null), valueOr(stored, null))
       } catch (e) {

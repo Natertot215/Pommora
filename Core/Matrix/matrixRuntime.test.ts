@@ -676,7 +676,6 @@ describe('matrixRuntime', () => {
   it('reads nothing while a Nexus switch is between its reset and its landing', () => {
     const graphAsk = vi.fn(async () => ok({ links: [], values: {} }))
     ;(window as unknown as { nexus: unknown }).nexus = stubDialer({
-      'matrix:read': async () => ok(DEFAULT_MATRIX_CONFIG),
       'matrix:graph': graphAsk,
       'matrixLayout:load': async () => ok({ positions: {}, lens: null }),
       'matrixLayout:save': async () => ok(null),

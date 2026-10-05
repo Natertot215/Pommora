@@ -45,7 +45,6 @@ beforeEach(() => {
   vi.useFakeTimers()
   tree = makeTree()
   channels = {
-    'matrix:read': vi.fn(async () => ({ ok: true, value: DEFAULT_MATRIX_CONFIG })),
     'matrix:write': vi.fn(async () => ({ ok: true, value: null })),
     'matrix:graph': vi.fn(async () => ({ ok: true, value: GRAPH })),
     'matrixLayout:load': vi.fn(async () => ({
@@ -102,7 +101,7 @@ describe('the config half', () => {
 })
 
 describe('loadMatrix', () => {
-  it('lands config, graph, and layout in one pass', async () => {
+  it('lands the graph and the layout in one pass', async () => {
     await seatLoaded()
     const s = useSession.getState()
     expect(s.matrixLoad.kind).toBe('loaded')
@@ -110,11 +109,7 @@ describe('loadMatrix', () => {
     expect(s.matrixPositions).toEqual({ p1: [1, 2] })
   })
 
-  it('lands the config on a refused graph and asks again only once the tree has moved', async () => {
-    channels['matrix:read'].mockResolvedValue({
-      ok: true,
-      value: parseMatrixConfig({ display: { hideIcon: true } }),
-    })
+  it('asks again after a refused graph only once the tree has moved', async () => {
     channels['matrix:graph'].mockResolvedValue({
       ok: false,
       error: { code: 'operation-failed', message: 'The index is not ready.' },
@@ -125,7 +120,6 @@ describe('loadMatrix', () => {
     land({ ok: false, error: { code: 'operation-failed', message: 'The index is not ready.' } })
     await pass
     expect(useSession.getState().matrixLoad.kind).toBe('refused')
-    expect(useSession.getState().matrixConfig.display.hideIcon).toBe(true)
     await seatLoaded()
     expect(channels['matrix:graph']).toHaveBeenCalledTimes(1)
     channels['matrix:graph'].mockResolvedValue({ ok: true, value: GRAPH })
@@ -150,17 +144,12 @@ describe('loadMatrix', () => {
 
   it('discards a reply that lands after the Matrix was let go', async () => {
     for (const letGo of ['unloadMatrix', 'resetMatrix'] as const) {
-      channels['matrix:read'].mockResolvedValueOnce({
-        ok: true,
-        value: parseMatrixConfig({ display: { hideIcon: true } }),
-      })
       const land = heldGraph()
       const pass = useSession.getState().loadMatrix()
       useSession.getState()[letGo]()
       land({ ok: true, value: GRAPH })
       await pass
       expect(useSession.getState().matrixLoad.kind).not.toBe('loaded')
-      expect(useSession.getState().matrixConfig.display.hideIcon).toBe(false)
       expect(useSession.getState().matrixGraph).toEqual({ links: [], values: {} })
       useSession.setState({ tree: makeTree() })
     }

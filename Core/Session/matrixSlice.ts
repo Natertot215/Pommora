@@ -4,7 +4,6 @@ import {
   DEFAULT_MATRIX_CONFIG,
   type MatrixConfig,
   type MatrixPatch,
-  SECTIONS,
 } from '../Matrix/matrixConfig'
 import type { MatrixGraphReply, MatrixLink } from '../Matrix/matrixGraph'
 import type { PositionRows, Positions } from '../Matrix/matrixLayout'
@@ -145,23 +144,12 @@ export const createMatrixSlice: Slice<MatrixSlice> = (set, get) => {
       if (tree === null || !ready) return
       const started = generation
       set({ matrixLoad: { kind: 'loading' } })
-      const asked = get().matrixConfig
-      const [config, graph, layout] = await Promise.all([
-        dialer().ask('matrix:read'),
+      const [graph, layout] = await Promise.all([
         dialer().ask('matrix:graph'),
         dialer().ask('matrixLayout:load'),
       ])
-      if (!config.ok) console.error('matrix read failed:', config.error.message)
       // An unload or a Nexus switch between the ask and its answer: the answer belongs to a graph the store has let go.
       if (generation !== started) return
-      // A section changed while the read was in flight is newer than the file it answered with, and recency-first keeps it; the rest still take the file's.
-      if (config.ok) {
-        const held = get().matrixConfig
-        const landed = Object.fromEntries(
-          SECTIONS.filter((k) => held[k] === asked[k]).map((k) => [k, config.value[k]]),
-        )
-        get().applyMatrixChanged({ ...held, ...landed })
-      }
       if (!graph.ok) {
         pendingPaths = new Set()
         set({ matrixLoad: { kind: 'refused', tree } })
