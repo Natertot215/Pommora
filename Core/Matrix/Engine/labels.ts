@@ -22,7 +22,7 @@ export const labelReveal = (zoom: number): LabelReveal => ({
   space: revealOf('space', zoom),
 })
 
-// The caller owns `cells` and reads the surviving indices off it, so a per-frame cull allocates nothing.
+// The caller owns `cells` and reads the surviving indices off it, so every frame's cull reuses one map.
 export function cullLabels(
   nodes: GraphNode[],
   v: Viewport,
