@@ -100,6 +100,6 @@ export function editorContextItems(
   }
   const lists = { label: 'Lists', submenu: rows(LIST_ROWS) }
   return s.scope === 'cell'
-    ? [...insertLink, format, lists]
-    : [...insertLink, insert, format, embed, heading, lists]
+    ? [...insertLink, lists, format]
+    : [...insertLink, insert, lists, format, embed, heading]
 }

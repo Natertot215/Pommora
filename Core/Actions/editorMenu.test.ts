@@ -25,7 +25,7 @@ const branch = (label: string) => items.find((i) => i.label === label)?.submenu 
 
 describe('the editor’s right-click block', () => {
   it('words and orders its submenus as the block menu does', () => {
-    expect(items.map((i) => i.label)).toEqual(['Insert', 'Format', 'Embed', 'Heading', 'Lists'])
+    expect(items.map((i) => i.label)).toEqual(['Insert', 'Lists', 'Format', 'Embed', 'Heading'])
     expect(branch('Insert').map((r) => r.label)).toEqual([
       'Blockquote',
       'Callout',
@@ -67,7 +67,7 @@ describe('the editor’s right-click block', () => {
   it('trims a cell’s block to Insert Link, Format, and Lists', () => {
     expect(
       editorContextItems({ ...state, scope: 'cell' }, DEFAULT_COMMANDS, '').map((i) => i.label),
-    ).toEqual(['Format', 'Lists'])
+    ).toEqual(['Lists', 'Format'])
     expect(
       editorContextItems({ ...state, scope: 'cell' }, DEFAULT_COMMANDS, 'https://a.com')[0].label,
     ).toBe('Insert Link')
