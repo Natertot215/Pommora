@@ -1,7 +1,10 @@
 import { useEffect, useRef } from 'react'
 import { duration, easeBase, ms } from '@pommora/uix/Animations/motion'
 import { usePointerGesture } from '@pommora/uix/Interactions/gesture'
-import { text } from '@pommora/uix/Theme'
+import { GLASS_EDGE } from '@pommora/uix/Glass/glassBase'
+import { text, vars } from '@pommora/uix/Theme'
+import { STATE_OPACITY } from '@pommora/uix/Theme/color.css'
+import { mixAt } from '@pommora/uix/Theme/colors'
 import { solidColorCss } from '@pommora/uix/Theme/ramp'
 import { clamp } from '@pommora/uix/Utilities/clamp'
 import { cx } from '@pommora/uix/Utilities/cx'
@@ -19,11 +22,15 @@ import * as s from './matrix.css'
 import { FADE_MS, matrixRuntime, type Surface } from './matrixRuntime'
 import { useLatest } from '@pommora/uix/Utilities/stableApi'
 
-// KNOBs — the link widths, and the frame ceiling the emphasis eases against.
+// KNOBs — the link widths, the frame ceiling the emphasis eases against, and a glyph's share of its node's diameter.
 const LINK_WIDTH_MIN = 1.25
 const LINK_WIDTH_MAX = 5.0
 const LINK_WIDTH_SCALE = 0.5
 const MAX_FRAME_MS = 64
+const ICON_SCALE = 0.5
+
+const INACTIVE = Number(STATE_OPACITY.inactive)
+const c = vars.color
 
 const titleAlphas = (zoom: number): LabelReveal => {
   const r = labelReveal(zoom)
@@ -41,10 +48,8 @@ interface Paint {
   linkHover: string
   title: string
   icon: string
-  inactive: number
   hairline: number
   ringWidth: number
-  iconScale: number
   titleFont: string
 }
 
@@ -75,26 +80,23 @@ const colorOf = (probe: HTMLElement, css: string): string => {
 }
 
 function readPaint(host: HTMLElement): Paint {
-  const scoped = getComputedStyle(host)
-  const number = (token: string): number => Number.parseFloat(scoped.getPropertyValue(token))
+  const width = Number.parseFloat(getComputedStyle(host).getPropertyValue('--width-200'))
   return withProbe(host, (probe) => {
     const cs = getComputedStyle(probe)
-    const color = (token: string): string => colorOf(probe, `var(${token})`)
+    const color = (css: string): string => colorOf(probe, css)
     return {
-      fill: color('--matrix-fill'),
-      fillLit: color('--matrix-fill-lit'),
-      ring: color('--matrix-ring'),
-      ringHover: color('--matrix-ring-hover'),
-      ringDrag: color('--matrix-ring-drag'),
-      link: color('--matrix-link'),
-      linkOther: color('--matrix-link-other'),
-      linkHover: color('--matrix-link-hover'),
-      title: color('--matrix-title'),
-      icon: color('--matrix-icon'),
-      inactive: number('--matrix-inactive'),
-      hairline: number('--matrix-hairline'),
-      ringWidth: number('--matrix-ring-width'),
-      iconScale: number('--matrix-icon-scale'),
+      fill: color(c.label.control),
+      fillLit: color(c.label.primary),
+      ring: color(GLASS_EDGE),
+      ringHover: color('var(--accent-stroke)'),
+      ringDrag: color('var(--accent-stroke-hot)'),
+      link: color(c.solid.greyDefault),
+      linkOther: color(c.border.base),
+      linkHover: color('var(--accent-stroke)'),
+      title: color(c.label.primary),
+      icon: color(c.solid.grey),
+      hairline: width,
+      ringWidth: width,
       titleFont: `${cs.fontWeight} ${cs.fontSize} ${cs.fontFamily}`,
     }
   })
@@ -103,19 +105,10 @@ function readPaint(host: HTMLElement): Paint {
 function readSpacePaint(host: HTMLElement, color: string): SpacePaint {
   const solid = solidColorCss(color)
   return withProbe(host, (probe) => ({
-    fill: colorOf(
-      probe,
-      `color-mix(in srgb, ${solid} var(--matrix-space-tint), var(--matrix-fill))`,
-    ),
-    lit: colorOf(
-      probe,
-      `color-mix(in srgb, ${solid} var(--matrix-space-lit-tint), var(--matrix-fill))`,
-    ),
+    fill: colorOf(probe, mixAt(solid, 'tertiary', c.label.control)),
+    lit: colorOf(probe, mixAt(solid, 'primary', c.label.control)),
     stroke: colorOf(probe, solid),
-    icon: colorOf(
-      probe,
-      `color-mix(in srgb, ${solid} var(--matrix-space-icon-tint), var(--matrix-icon))`,
-    ),
+    icon: colorOf(probe, mixAt(solid, 'solid', c.solid.grey)),
   }))
 }
 
@@ -307,7 +300,7 @@ export function MatrixCanvas({
       emphasis = 0
       subject = -1
     }
-    const dim = 1 - emphasis * (1 - paint.inactive)
+    const dim = 1 - emphasis * (1 - INACTIVE)
 
     const arrivals = matrixRuntime.arrivals
     const arrival =
@@ -370,7 +363,7 @@ export function MatrixCanvas({
       const iconAlpha = alpha * (n.kind === 'page' ? alphas.page : 1)
       const glyph = iconAlpha > 0 ? records?.get(n.id)?.icon : undefined
       if (!glyph) return
-      const box = r * 2 * paint.iconScale
+      const box = r * 2 * ICON_SCALE
       const px = box * dprRef.current
       const left = sx - box / 2
       const top = sy - box / 2
