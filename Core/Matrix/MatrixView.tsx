@@ -119,7 +119,8 @@ export function MatrixView(): React.JSX.Element {
   // The overlay outlives its hover by one fade, and the canvas keeps skipping that title until the fade is over — otherwise the painted one lands under the leaving one. The live node shows at once; only a leaving one waits on the presence.
   const shown = useHeldPresence(liveId, 'slow')
   const labelId = liveId ?? shown?.held ?? null
-  const picker = mine && labelId === pickingId ? (iconPath === null ? 'color' : 'icon') : null
+  const pickKind = iconPath !== null ? 'icon' : colorPath !== null ? 'color' : null
+  const picker = mine && labelId === pickingId ? pickKind : null
   return (
     <MatrixCanvas
       surface={surface}
