@@ -28,6 +28,7 @@ const tree = {
       id: 'c1',
       title: 'Notes',
       path: 'Notes',
+      icon: 'anchor',
       sets: [],
       pages: [{ kind: 'page', id: 'p1', title: 'First', path: 'Notes/First.md' }],
     },
@@ -133,9 +134,10 @@ describe('the sidebar icon picker', () => {
 })
 
 describe('the sidebar icon picker preselection', () => {
-  it("opens on the row's own icon, for a Page, a Space, and a Context", () => {
+  it("opens on the row's own icon, for a Page, a Collection, a Space, and a Context", () => {
     mount('collections')
     expect(preselected('Notes/First.md')).toEqual(['Rocket'])
+    expect(preselected('Notes')).toEqual(['Anchor'])
     mount('contexts')
     expect(preselected('Areas/Health.json')).toEqual(['Moon'])
     expect(preselected(contextDirRel('Areas'))).toEqual(['Star'])

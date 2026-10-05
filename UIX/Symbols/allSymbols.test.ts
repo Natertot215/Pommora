@@ -7,7 +7,7 @@ import { execFileSync } from 'node:child_process'
 import { fileURLToPath } from 'node:url'
 import { createElement } from 'react'
 import { renderToStaticMarkup } from 'react-dom/server'
-import { asRenderableIcon, Icon, icons } from './index'
+import { asRenderableIcon, Icon, icons, loadFullIconSet } from './index'
 
 describe('toKebabIconId', () => {
   it('matches lucide canonical kebab for the tricky boundary cases', () => {
@@ -52,6 +52,11 @@ describe('iconMarkup', () => {
       expect(svg).toMatch(/^<svg[^>]* xmlns="http:\/\/www.w3.org\/2000\/svg"/)
       expect(svg).toContain('color:#123456')
     }
+  })
+
+  it('draws a glyph from the full set once the set has loaded', async () => {
+    await loadFullIconSet()
+    expect(iconMarkup('earth', '#123456')).toContain('lucide-earth')
   })
 })
 
