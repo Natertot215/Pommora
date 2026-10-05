@@ -653,7 +653,7 @@ describe('clearOption on a Status', () => {
 })
 
 describe('option cascades reach saved views', () => {
-  const HOME = { kind: 'space', id: 'sp_home' }
+  const HOME = { host: { kind: 'space', id: 'sp_home' }, ids: [] }
 
   async function seeded(): Promise<{
     id: string

@@ -265,13 +265,7 @@ describe('the watcher maintains the rows', () => {
     await writeFile(beta, `---\nID: ${B_ID}\n---\n\n## Setup\n`)
     await writeFile(alpha, `---\nID: ${A_ID}\n---\n\nSee [[Beta#Setup]].`)
     const tile = await landedId(createMarkdownTile(tileHostDir(root)))
-    await writeMarkdownTile(
-      root,
-      tileHostDir(root),
-      tile,
-      '[[Beta#Setup]]',
-      machine().sha256Hex(''),
-    )
+    await writeMarkdownTile(tileHostDir(root), tile, '[[Beta#Setup]]', machine().sha256Hex(''))
     await seedContentIndex(root)
     await refreshTree(root)
     await writeFile(beta, `---\nID: ${B_ID}\n---\n\n## Intro\n`)
@@ -283,7 +277,7 @@ describe('the watcher maintains the rows', () => {
       expect.arrayContaining(['Notes/Daily/Alpha.md']),
     ])
     expect(pushed.filter(([c]) => c === 'tiles:changed')).toEqual([
-      ['tiles:changed', { kind: 'homepage' }],
+      ['tiles:changed', { host: { kind: 'homepage' }, ids: [tile] }],
     ])
     expect(await readFile(alpha, 'utf8')).toContain('[[Beta#Intro]]')
     await expectMaintained()

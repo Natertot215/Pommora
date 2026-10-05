@@ -27,7 +27,7 @@ import { removeProperty } from './removeProperty'
 import { replaySchemaCascade } from './replaySchemaCascade'
 import { unsweptLine } from './governedSweep'
 import { decodeSchemaJournal, type SchemaCascade, type SchemaJournal } from './propertyJournal'
-import type { TileHostRef } from '../Tiles/tiles'
+import type { TilesChanged } from '../Tiles/tiles'
 import { type ConfigReach, NO_REACH } from '../Nexus/configReach'
 
 const NEEDS_PROPERTY_ID = fault('A property id is required.')
@@ -45,7 +45,7 @@ const resolveSchemaFolder = async (
     ? mutableTarget(root, containerPath, ['collection'])
     : fault('A container path is required.')
 
-type Reply<R> = { hosts: TileHostRef[]; result: Result<R> }
+type Reply<R> = { hosts: TilesChanged[]; result: Result<R> }
 const asIs = <T>(value: T): Reply<T> => ({ hosts: [], result: ok(value) })
 const unsweptReply = ({ hosts, skipped }: ConfigReach): Reply<null> => ({
   hosts,

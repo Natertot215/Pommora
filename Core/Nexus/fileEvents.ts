@@ -38,7 +38,7 @@ import { noteExternalEdit } from '../Pages/fileHistory'
 import { heldTreeOf, patchLiveTree } from './liveTree'
 import { resolveOrder } from './order'
 import { navKey } from '../Navigation/navRef'
-import { HOMEPAGE_HOST, type TileHostRef } from '../Tiles/tiles'
+import { HOMEPAGE_HOST, type TileHostRef, type TilesChanged } from '../Tiles/tiles'
 import { dropTileHeadingLinks, tilesLinkHeading } from '../Tiles/tilesFile'
 import {
   contextLinker,
@@ -104,7 +104,7 @@ interface Owed {
   values: Map<string, boolean>
   // Spaces, and Collections that gained a property, whose held options are yet to be registered.
   options: Set<string>
-  tiles: Map<string, TileHostRef>
+  tiles: Map<string, { host: TileHostRef; ids: Set<string> }>
   renames: HeadingRenameSeen[]
 }
 
@@ -151,14 +151,21 @@ export function stampable(owed: Owed, listed: readonly Unreadable[]): Unreadable
   )
 }
 
+const oweTiles = (owed: Owed, host: TileHostRef, ids: Iterable<string>): void => {
+  const key = navKey(host)
+  const held = owed.tiles.get(key) ?? { host, ids: new Set<string>() }
+  owed.tiles.set(key, held)
+  for (const id of ids) held.ids.add(id)
+}
+
 export function oweCascade(
   root: string,
   pages: readonly string[],
-  hosts: readonly TileHostRef[],
+  hosts: readonly TilesChanged[],
 ): void {
   const owed = owedFor(root)
   for (const rel of pages) owed.pages.add(rel)
-  for (const host of hosts) owed.tiles.set(navKey(host), host)
+  for (const { host, ids } of hosts) oweTiles(owed, host, ids)
 }
 
 const oweValue = (owed: Owed, rel: string, bodyOnly: boolean): void => {
@@ -169,7 +176,7 @@ const oweValue = (owed: Owed, rel: string, bodyOnly: boolean): void => {
 export function oweAgain(owed: Owed, drained: Owed): void {
   for (const rel of drained.pages) owed.pages.add(rel)
   for (const [rel, bodyOnly] of drained.values) oweValue(owed, rel, bodyOnly)
-  for (const [key, host] of drained.tiles) owed.tiles.set(key, host)
+  for (const { host, ids } of drained.tiles.values()) oweTiles(owed, host, ids)
   owed.assets ||= drained.assets
   owed.corpus ||= drained.corpus
   owed.rescope ||= drained.rescope
@@ -613,13 +620,15 @@ async function applyOne(root: string, ev: FileEvent, owed: Owed): Promise<Applie
       return applyRegistry(root, ev)
     case 'settings-leaf':
       return applySettings(root, ev, owed)
-    case 'tiles-leaf':
+    case 'tiles-leaf': {
       dropTileHeadingLinks()
       if (ev.origin === 'own') return 'ok'
-      owed.tiles.set(navKey(c.host), c.host)
+      const doc = basename(c.rel) === TILE_DOC_FILENAME
+      oweTiles(owed, c.host, doc ? [] : [basename(c.rel, '.md')])
       // A host off screen isn't re-read by the window, so its document's last read would otherwise stay where it was.
-      if (basename(c.rel) === TILE_DOC_FILENAME) await readAppFile(join(root, c.rel))
+      if (doc) await readAppFile(join(root, c.rel))
       return 'ok'
+    }
     case 'homepage-leaf':
       return patchConfig(root, {
         homepage: readHomepageLeaves((await jsonOf(ev, readAppFile)) ?? {}),

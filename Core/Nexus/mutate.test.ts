@@ -1202,13 +1202,7 @@ describe('handleMutate — renameHeading', () => {
     )
     await seedContentIndex(root)
     tile = await landedId(createMarkdownTile(tileHostDir(root)))
-    await writeMarkdownTile(
-      root,
-      tileHostDir(root),
-      tile,
-      '[[Beta#Setup]]',
-      machine().sha256Hex(''),
-    )
+    await writeMarkdownTile(tileHostDir(root), tile, '[[Beta#Setup]]', machine().sha256Hex(''))
   })
   afterEach(() => installStores(NO_STORES))
 
@@ -1222,12 +1216,15 @@ describe('handleMutate — renameHeading', () => {
     await new Promise((resolve) => setTimeout(resolve, 0))
     expect(r.ok && r.value.cascade).toEqual({
       pages: ['Notes/Daily/Alpha.md'],
-      hosts: [{ kind: 'homepage' }],
+      hosts: [{ host: { kind: 'homepage' }, ids: [tile] }],
       warning: undefined,
     })
     const names = push.mock.calls.map(([name]) => name)
     expect(push.mock.calls).toContainEqual(['pages:changed', ['Notes/Daily/Alpha.md']])
-    expect(push.mock.calls).toContainEqual(['tiles:changed', { kind: 'homepage' }])
+    expect(push.mock.calls).toContainEqual([
+      'tiles:changed',
+      { host: { kind: 'homepage' }, ids: [tile] },
+    ])
     expect(names).toContain('values:changed')
     expect(names.indexOf('pages:changed')).toBeLessThan(names.indexOf('values:changed'))
     expect(await read('Notes/Daily/Alpha.md')).toContain('See [[Beta#Intro]].')

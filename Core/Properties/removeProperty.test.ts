@@ -218,7 +218,7 @@ describe('removeProperty reaches saved views (B-6)', () => {
     vi.mocked(editJsonStrict).mockClear()
 
     expect(await removeProperty(root, folder, propId)).toEqual(
-      ok({ skipped: 0, hosts: [{ kind: 'space', id: 'sp_home' }] }),
+      ok({ skipped: 0, hosts: [{ host: { kind: 'space', id: 'sp_home' }, ids: [] }] }),
     )
     const { calls, results } = vi.mocked(editJsonStrict).mock
     const own = calls.flatMap(([path], i) =>

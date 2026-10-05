@@ -27,7 +27,7 @@ vi.mock('./propertiesRegistry', async (importOriginal) => {
   return { ...mod, mutateRegistry: vi.fn(mod.mutateRegistry) }
 })
 
-const HOME = { kind: 'space', id: 'sp_home' }
+const HOME = { host: { kind: 'space', id: 'sp_home' }, ids: [] }
 const deps: TrashDeps = { trashMode: 'nexus', trashToSystem: async () => {} }
 
 let root: string

@@ -6,6 +6,7 @@ import { settledMutate } from '../Testing/settledMutate'
 import type { TrashDeps } from '../Trash/bundle'
 import { assignProperty } from '../Properties/assignment'
 import { renameOption } from '../Properties/optionOps'
+import * as optionOps from '../Properties/optionOps'
 import { optionValues, type PropertyDefinition } from '../Properties/properties'
 import { writeSchemaJournal } from '../Properties/propertyJournal'
 import { replaySchemaCascade } from '../Properties/replaySchemaCascade'
@@ -124,7 +125,7 @@ describe('what a settle pushes for a batch', () => {
     expect(applyDelta(shown, (payload('nexus:changed') as NexusChange).delta)).toEqual(
       heldTreeOf(root),
     )
-    expect(payload('tiles:changed')).toEqual({ kind: 'homepage' })
+    expect(payload('tiles:changed')).toEqual({ host: { kind: 'homepage' }, ids: [] })
   })
 
   it('merges a cascade’s pages and hosts with the batch’s, once each', async () => {
@@ -135,13 +136,16 @@ describe('what a settle pushes for a batch', () => {
     oweCascade(
       root,
       ['Notes/A.md', 'Other/B.md'],
-      [{ kind: 'homepage' }, { kind: 'space', id: 'sp1' }],
+      [
+        { host: { kind: 'homepage' }, ids: ['t1'] },
+        { host: { kind: 'space', id: 'sp1' }, ids: ['t2'] },
+      ],
     )
     await settleNow(pusher, root)
     expect(payload('pages:changed')).toEqual(['Notes/A.md', 'Other/B.md'])
     expect(pushes.filter(([c]) => c === 'tiles:changed').map(([, v]) => v)).toEqual([
-      { kind: 'homepage' },
-      { kind: 'space', id: 'sp1' },
+      { host: { kind: 'homepage' }, ids: ['t1'] },
+      { host: { kind: 'space', id: 'sp1' }, ids: ['t2'] },
     ])
   })
 
@@ -606,6 +610,22 @@ describe('the settle', () => {
     expect(pushes).toEqual([])
     await settleNow(pusher, root)
     expect(pushes).toEqual([['pages:changed', ['Notes/A.md']]])
+  })
+
+  it('an open begun after a settle drained what was owed leaves the next one the same tiles', async () => {
+    const opened = gate<void>()
+    let opening: Promise<void> | undefined
+    vi.spyOn(optionOps, 'registerHeldOptions').mockImplementationOnce(async () => {
+      opening = whileAdopting(() => opened.promise)
+    })
+    owedFor(root).options.add('Notes')
+    oweCascade(root, [], [{ host: { kind: 'homepage' }, ids: ['t1', 't2'] }])
+    await settleNow(pusher, root)
+    expect(pushes).toEqual([])
+    opened.open()
+    await opening
+    await settleNow(pusher, root)
+    expect(payload('tiles:changed')).toEqual({ host: { kind: 'homepage' }, ids: ['t1', 't2'] })
   })
 
   it('a settle that owes a reseed doesn’t delay a second settle behind it', async () => {

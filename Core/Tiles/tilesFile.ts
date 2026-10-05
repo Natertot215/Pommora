@@ -1,5 +1,5 @@
 import { isPlainObject } from '../Contract/validators'
-import { join, relative } from '../Paths/posix'
+import { join } from '../Paths/posix'
 import {
   HOMEPAGE_HOST,
   knownTile,
@@ -13,6 +13,7 @@ import {
   TILE_KINDS,
   type TileDoc,
   type TileHostRef,
+  type TilesChanged,
 } from './tiles'
 import { decodeLayout } from './Layout/codec'
 import { insertBand } from './Layout/ops'
@@ -25,7 +26,6 @@ import type { Json } from '../Files/stableJson'
 import { containerSchema, findContainerWhere } from '../Nexus/treePatch'
 import { resolveUnderRoot } from '../Paths/pathSafety'
 import { atomicWriteFile, pathExists, rewritePageSerialized } from '../Files/atomicWrite'
-import { utf8 } from '../Files/utf8'
 import { linksIn } from '../Connections/scan'
 import { discardFile } from '../Trash/bundle'
 import { machine } from '../Platform/machine'
@@ -33,7 +33,6 @@ import { heldTreeOf, liveTreeOf } from '../Nexus/liveTree'
 import type { NexusTree } from '../Nexus/tree'
 import { tileFilePath, tileHostDir } from '../Paths/paths'
 import type { BodyWrite } from '../Pages/pageDetail'
-import { captureLoser } from '../Sync/Arrival/captures'
 import type { TrashDeps } from '../Trash/bundle'
 
 /** A Space whose sidecar the walk couldn't read is still reached by its folder, with no host to name; only an unreadable Contexts registry hides the Spaces themselves. */
@@ -246,9 +245,8 @@ export async function readMarkdownTile(dir: string, tileId: string): Promise<Res
   }
 }
 
-/** Locked on the file so the rename-cascade rewrite can't clobber a live edit; a file that moved past the text the editor started from refuses the write and keeps it as a capture, the way a refused page save is kept. */
+/** Locked on the file so the rename-cascade rewrite can't clobber a live edit; a file that moved past the text the editor started from refuses the write, and the window merges onto what it holds now. */
 export async function writeMarkdownTile(
-  root: string,
   dir: string,
   tileId: string,
   body: string,
@@ -257,10 +255,7 @@ export async function writeMarkdownTile(
   const file = tileFilePath(dir, tileId)
   return machine().lock(file, async () => {
     const held = await machine().readText(file)
-    if (held !== null && machine().sha256Hex(held) !== baseHash) {
-      await captureLoser(root, relative(root, file), utf8(body), 'merge-lost')
-      return { stale: true }
-    }
+    if (held !== null && machine().sha256Hex(held) !== baseHash) return { stale: true }
     await atomicWriteFile(file, body)
     dropTileHeadingLinks()
     return { stale: false, hash: machine().sha256Hex(body) }
@@ -304,12 +299,12 @@ export function tilesLinkHeading(
 export async function rewriteTileConnections(
   root: string,
   rewrite: (body: string) => string,
-): Promise<{ hosts: TileHostRef[]; failed: number }> {
+): Promise<{ hosts: TilesChanged[]; failed: number }> {
   const found = tileHostsOf(root, await liveTreeOf(root))
-  const hosts: TileHostRef[] = []
+  const hosts: TilesChanged[] = []
   let failed = found.unreadable
   for (const { host, dir } of found.hosts) {
-    let wrote = false
+    const wrote: string[] = []
     const ids = await markdownTileIds(dir)
     if (!ids) failed++
     for (const id of ids ?? []) {
@@ -319,9 +314,9 @@ export async function rewriteTileConnections(
         return next === body ? null : next
       }).catch(() => null)
       if (landed === null) failed++
-      else wrote ||= landed
+      else if (landed) wrote.push(id)
     }
-    if (wrote && host) hosts.push(host)
+    if (wrote.length && host) hosts.push({ host, ids: wrote })
   }
   dropTileHeadingLinks()
   return { hosts, failed }

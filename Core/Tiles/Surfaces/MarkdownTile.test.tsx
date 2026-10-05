@@ -28,7 +28,8 @@ vi.mock('../../MarkdownPM/MarkdownEditor', () => ({
   },
 }))
 
-import { dropAllTileDocs, dropTileBodies, readTileBody } from '../tileDocStore'
+import { dropAllTileDocs } from '../tileDocStore'
+import { clearCache, knownBody } from '../../Session/pageDetailCache'
 import { MarkdownTile } from './MarkdownTile'
 import { stubDialer } from '../../vitest.setup'
 ;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
@@ -54,12 +55,8 @@ const mount = (editing = false): Promise<void> =>
     root.render(tile(editing))
   })
 
-const mountBoth = (a: boolean, b: boolean): Promise<void> =>
-  act(async () => {
-    root.render(createElement('div', null, tile(a), tile(b)))
-  })
-
 beforeEach(() => {
+  clearCache()
   dropAllTileDocs()
   write.mockClear()
   seeds.length = 0
@@ -78,6 +75,7 @@ beforeEach(() => {
 afterEach(async () => {
   await act(async () => root.unmount())
   container.remove()
+  clearCache()
   dropAllTileDocs()
 })
 
@@ -86,7 +84,7 @@ describe("a markdown tile's shared body", () => {
     await mount(true)
     expect(text()).toBe('on disk')
     act(() => editors()[0]?.click())
-    expect(readTileBody('t1')).toBe('on disk!')
+    expect(knownBody('t1')).toBe('on disk!')
     expect(write).not.toHaveBeenCalled()
   })
 
@@ -101,71 +99,27 @@ describe("a markdown tile's shared body", () => {
   })
 
   it('seeds a fresh mount from the slot rather than the file', async () => {
+    let release = (): void => {}
+    write.mockImplementationOnce(async (_h, _id, body) => {
+      await new Promise<void>((r) => (release = r))
+      return { ok: true, value: { stale: false, hash: `h:${body}` } }
+    })
     await mount(true)
     act(() => editors()[0]?.click())
     await act(async () => root.render(null))
     await mount()
     expect(text()).toBe('on disk!')
+    await act(async () => release())
   })
 
   it('keeps the editor of the mount that did the typing when the edit returns to it', async () => {
     await mount(true)
     act(() => editors()[0]?.click())
     act(() => editors()[0]?.click())
-    expect(readTileBody('t1')).toBe('on disk!!')
+    expect(knownBody('t1')).toBe('on disk!!')
     await mount(false)
     await mount(true)
     expect(seeds).toEqual(['on disk'])
     expect(text()).toBe('on disk!!')
-  })
-
-  it('mirrors a landed save into the mount that is not editing, in place', async () => {
-    await mountBoth(true, false)
-    act(() => editors()[0]?.click())
-    expect(text(1)).toBe('on disk')
-    await act(async () => {
-      await new Promise((r) => setTimeout(r, 500))
-    })
-    expect(write).toHaveBeenCalledOnce()
-    expect(text(0)).toBe('on disk!')
-    expect(text(1)).toBe('on disk!')
-    expect(seeds).toEqual(['on disk', 'on disk'])
-  })
-
-  it('starts the mount clicked into from the text the other mount typed', async () => {
-    await mountBoth(true, false)
-    expect(text(0)).toBe('on disk')
-    expect(text(1)).toBe('on disk')
-    act(() => editors()[0]?.click())
-    await mountBoth(false, true)
-    expect(text(1)).toBe('on disk!')
-    act(() => editors()[1]?.click())
-    await act(async () => {
-      await new Promise((r) => setTimeout(r, 500))
-    })
-    expect(readTileBody('t1')).toBe('on disk!!')
-    expect(write).toHaveBeenLastCalledWith(HOST, 't1', 'on disk!!', 'h:on disk!')
-  })
-})
-
-describe('a tile file that moved without this window', () => {
-  it('a refused save that conflicts with the file takes the file in every mount', async () => {
-    await mountBoth(true, false)
-    onDisk = 'synced'
-    write.mockImplementationOnce(async () => ({ ok: true, value: { stale: true } }) as never)
-    await act(async () => {
-      editors()[0]?.click()
-      await new Promise((r) => setTimeout(r, 500))
-    })
-    expect(write).toHaveBeenCalledWith(HOST, 't1', 'on disk!', 'h:on disk')
-    expect(text(0)).toBe('synced')
-    expect(text(1)).toBe('synced')
-  })
-
-  it('an outside edit re-reads the file into a mount that is not editing', async () => {
-    await mount()
-    onDisk = 'renamed [[Link]]'
-    await act(async () => dropTileBodies(['t1']))
-    expect(text()).toBe('renamed [[Link]]')
   })
 })

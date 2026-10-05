@@ -7,14 +7,9 @@ import type { Result } from '../Contract/result'
 import { tileId } from '../Testing/tileLayouts'
 import { insertBand } from './Layout/ops'
 import { tileIds, type TileLayout } from './Layout/model'
-import {
-  dropAllTileDocs,
-  patchTileEntry,
-  readTileBody,
-  setTileDocLock,
-  writeTileBody,
-} from './tileDocStore'
+import { dropAllTileDocs, patchTileEntry, setTileDocLock } from './tileDocStore'
 import { cancelAllSaves } from '../Session/saveScheduler'
+import { knownBody, setBodyBase, writeThroughBody } from '../Session/pageDetailCache'
 import { flushAllSaves } from '../Session/nexusSlice'
 import { type TileDocSession, useTileDoc, useTileDocReady } from './useTileDoc'
 import { stubDialer } from '../vitest.setup'
@@ -30,7 +25,7 @@ const docWith = (...ids: string[]): TileDoc => ({
 })
 
 let disk = docWith('a')
-let push: (host: TileHostRef) => void = () => {}
+let push: (changed: { host: TileHostRef; ids: string[] }) => void = () => {}
 const held: Array<() => void> = []
 const releaseSave = (): void => {
   for (const release of held.splice(0)) release()
@@ -85,7 +80,7 @@ beforeEach(async () => {
   ;(window as unknown as { nexus: unknown }).nexus = stubDialer({
     'tiles:get': get,
     'tiles:save': save,
-    'tiles:changed': (fn: (host: TileHostRef) => void) => {
+    'tiles:changed': (fn: (changed: { host: TileHostRef; ids: string[] }) => void) => {
       push = fn
       return () => {}
     },
@@ -139,7 +134,7 @@ describe('one document per host', () => {
   it('answers a disk push with one read for both mounts', async () => {
     get.mockClear()
     disk = docWith('a', 'b')
-    await act(async () => push(HOST))
+    await act(async () => push({ host: HOST, ids: [] }))
     await tick()
     expect(get).toHaveBeenCalledOnce()
     expect(shown('a')).toEqual(['a', 'b'])
@@ -220,12 +215,13 @@ describe('one document per host', () => {
     expect(get).not.toHaveBeenCalled()
   })
 
-  it("drops its tiles' body slots when it retires", async () => {
-    writeTileBody('a', 'typed')
-    expect(readTileBody('a')).toBe('typed')
+  it("drops its tiles' bodies when it retires", async () => {
+    writeThroughBody('a', 'typed')
+    setBodyBase('a', { text: 'on disk', hash: 'h' })
+    expect(knownBody('a')).toBe('typed')
     await act(async () => root.render(null))
     await tick()
-    expect(readTileBody('a')).toBeNull()
+    expect(knownBody('a')).toBeUndefined()
   })
 
   it('a host swapped in place loads the new document', async () => {
@@ -255,7 +251,7 @@ describe('the gesture hold across mounts', () => {
     act(() => at('a').setBusy(true))
     act(() => at('b').setBusy(true))
     disk = docWith('a', 'synced')
-    await act(async () => push(HOST))
+    await act(async () => push({ host: HOST, ids: [] }))
     await tick()
     act(() => at('a').setBusy(false))
     await tick()
@@ -396,10 +392,10 @@ describe('a host document changing on disk', () => {
   it('replaces the layout for the mounted host and ignores another host', async () => {
     expect(shown('a')).toEqual(['a'])
     disk = docWith('a', 'b')
-    await act(async () => push(OTHER))
+    await act(async () => push({ host: OTHER, ids: [] }))
     await tick()
     expect(shown('a')).toEqual(['a'])
-    await act(async () => push(HOST))
+    await act(async () => push({ host: HOST, ids: [] }))
     await tick()
     expect(shown('a')).toEqual(['a', 'b'])
   })
@@ -408,7 +404,7 @@ describe('a host document changing on disk', () => {
     act(() => at('a').setLayout(insertBand(at('a').layout, 1, 'local', 100)))
     expect(save).not.toHaveBeenCalled()
     disk = docWith('a', 'synced')
-    await act(async () => push(HOST))
+    await act(async () => push({ host: HOST, ids: [] }))
     expect(save).toHaveBeenCalledOnce()
     await tick()
     expect(get).toHaveBeenCalledOnce()
@@ -428,7 +424,7 @@ describe('a host document changing on disk', () => {
         }),
     )
     disk = docWith('a', 'synced')
-    await act(async () => push(HOST))
+    await act(async () => push({ host: HOST, ids: [] }))
     act(() => at('a').setLayout(insertBand(at('a').layout, 1, 'local', 100)))
     await act(async () => releaseGet?.())
     expect(save).toHaveBeenCalledOnce()
@@ -444,7 +440,7 @@ describe('a host document changing on disk', () => {
         }),
     )
     disk = docWith('a', 'synced')
-    await act(async () => push(HOST))
+    await act(async () => push({ host: HOST, ids: [] }))
     act(() => setTileDocLock(HOST, true))
     await act(async () => releaseGet?.())
     expect(shown('a')).toEqual(['a'])
@@ -455,7 +451,7 @@ describe('a host document changing on disk', () => {
 
   it('a later commit builds on the pushed layout, not the pre-push one', async () => {
     disk = docWith('a', 'b')
-    await act(async () => push(HOST))
+    await act(async () => push({ host: HOST, ids: [] }))
     await tick()
     act(() => at('a').commitLayout((cur) => insertBand(cur, 2, 'c', 100)))
     expect(shown('a')).toEqual(['a', 'b', 'c'])
@@ -470,7 +466,7 @@ describe('a host document changing on disk', () => {
         }),
     )
     disk = docWith('a', 'b')
-    await act(async () => push(HOST))
+    await act(async () => push({ host: HOST, ids: [] }))
     act(() => at('a').setBusy(true))
     await act(async () => releaseGet?.())
     await tick()
@@ -483,7 +479,7 @@ describe('a host document changing on disk', () => {
   it('holds a push while a gesture is busy and applies it once the gesture settles', async () => {
     act(() => at('a').setBusy(true))
     disk = docWith('a', 'b')
-    await act(async () => push(HOST))
+    await act(async () => push({ host: HOST, ids: [] }))
     await tick()
     expect(shown('a')).toEqual(['a'])
     act(() => at('a').commitLayout((cur) => insertBand(cur, 1, 'dropped', 100)))

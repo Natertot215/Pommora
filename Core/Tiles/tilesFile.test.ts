@@ -40,7 +40,7 @@ const entries = async (dir = home()): Promise<Array<Record<string, unknown>>> =>
   (await docAt(dir)).tiles as Array<Record<string, unknown>>
 // Every write here lands on a freshly created, empty tile.
 const write = (dir: string, id: string, body: string): Promise<unknown> =>
-  writeMarkdownTile(root, dir, id, body, machine().sha256Hex(''))
+  writeMarkdownTile(dir, id, body, machine().sha256Hex(''))
 const seed = (dir: string, tiles: unknown[]): Promise<unknown> =>
   writeTileDocAt(dir, (cur) => ({ ...cur, tiles }))
 
@@ -207,15 +207,14 @@ describe('markdown tile lifecycle', () => {
   it('refuses a write whose base the file moved past, and leaves the file alone', async () => {
     const id = await landedId(createMarkdownTile(home()))
     await write(home(), id, 'outside')
-    expect(
-      await writeMarkdownTile(root, home(), id, 'stale typing', machine().sha256Hex('')),
-    ).toEqual({
+    expect(await writeMarkdownTile(home(), id, 'stale typing', machine().sha256Hex(''))).toEqual({
       stale: true,
     })
     expect(await readMarkdownTile(home(), id)).toEqual(ok('outside'))
-    expect(
-      await writeMarkdownTile(root, home(), id, 'typed', machine().sha256Hex('outside')),
-    ).toEqual({ stale: false, hash: machine().sha256Hex('typed') })
+    expect(await writeMarkdownTile(home(), id, 'typed', machine().sha256Hex('outside'))).toEqual({
+      stale: false,
+      hash: machine().sha256Hex('typed'),
+    })
   })
 
   it('a markdown tile mints its file inside the Space folder', async () => {
@@ -436,7 +435,7 @@ describe('rewriteTileConnections', () => {
     const id = await landedId(createMarkdownTile(home()))
     await write(home(), id, 'see [[Target]] and [[Other]]')
     expect(await rewriteTileConnections(root, rename)).toEqual({
-      hosts: [{ kind: 'homepage' }],
+      hosts: [{ host: { kind: 'homepage' }, ids: [id] }],
       failed: 0,
     })
     expect(await readMarkdownTile(home(), id)).toEqual(ok('see [[Renamed]] and [[Other]]'))
@@ -457,7 +456,7 @@ describe('rewriteTileConnections', () => {
     await chmod(home(), 0o555)
     try {
       expect(await rewriteTileConnections(root, rename)).toEqual({
-        hosts: [{ kind: 'space', id: 'sp1' }],
+        hosts: [{ host: { kind: 'space', id: 'sp1' }, ids: [open] }],
         failed: 1,
       })
     } finally {
@@ -475,7 +474,7 @@ describe('rewriteTileConnections', () => {
     const id = await landedId(createMarkdownTile(spaceDir()))
     await write(spaceDir(), id, 'see [[Target]]')
     expect(await rewriteTileConnections(root, rename)).toEqual({
-      hosts: [{ kind: 'space', id: 'sp1' }],
+      hosts: [{ host: { kind: 'space', id: 'sp1' }, ids: [id] }],
       failed: 0,
     })
     expect(await readMarkdownTile(spaceDir(), id)).toEqual(ok('see [[Renamed]]'))

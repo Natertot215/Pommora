@@ -15,7 +15,6 @@ const ctx = (entry: TileEntry, pages = new Map([[page.id, page]])): TileRenderCo
   host: { kind: 'homepage' },
   editing: false,
   beginEdit: () => {},
-  suppressFlush: () => false,
   pagesById: pages,
   mutateEntry: () => {},
 })

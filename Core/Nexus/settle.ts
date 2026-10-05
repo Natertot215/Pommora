@@ -152,7 +152,7 @@ async function settle(pusher: Pusher, root: string): Promise<{ rescope: boolean 
   if (pages.size) pusher.push('pages:changed', [...pages])
   const changes = valueChangesOf(root, values)
   if (changes.length) pusher.push('values:changed', changes)
-  for (const host of tiles.values()) pusher.push('tiles:changed', host)
+  for (const { host, ids } of tiles.values()) pusher.push('tiles:changed', { host, ids: [...ids] })
   const map = getHeldAssetMap(root)
   if (assets && map) pusher.push('assets:changed', map)
   return corpus || rescope ? { rescope } : null

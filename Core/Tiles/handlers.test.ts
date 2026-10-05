@@ -39,6 +39,7 @@ describe('the tile channels', () => {
     const id = '../../outside'
     expect(await tilesHandlers['tiles:readMarkdown'](ctx, homepage, id)).toEqual(invalid)
     expect(await tilesHandlers['tiles:writeMarkdown'](ctx, homepage, id, 'x', 'h')).toEqual(invalid)
+    expect(await tilesHandlers['tiles:captureMarkdown'](ctx, homepage, id, 'x')).toEqual(invalid)
     expect(await tilesHandlers['tiles:removeTile'](ctx, homepage, id)).toEqual(invalid)
     expect(await tilesHandlers['tiles:duplicateTile'](ctx, homepage, id)).toEqual(invalid)
     expect(

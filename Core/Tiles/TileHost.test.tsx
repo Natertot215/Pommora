@@ -7,7 +7,8 @@ import { createRoot, type Root } from 'react-dom/client'
 import { EditorView } from '@codemirror/view'
 import { stubEditorBridge } from '../Testing/editorHarness'
 import { TileHost, zoomStyle } from './TileHost'
-import { dropAllTileDocs, isTileRemoving, markTileRemoving, readTileBody } from './tileDocStore'
+import { dropAllTileDocs, markTileRemoving } from './tileDocStore'
+import { clearCache, knownBody } from '../Session/pageDetailCache'
 import { useSession } from '../Session/store'
 import { makeTree } from '../Testing/testTree'
 import { personalizationOf } from '../Session/configSlice'
@@ -39,6 +40,7 @@ let root: Root
 const writeMarkdown = vi.fn(async () => ({ ok: true, value: null }))
 
 beforeEach(() => {
+  clearCache()
   dropAllTileDocs()
   writeMarkdown.mockClear()
   stubEditorBridge({
@@ -129,9 +131,8 @@ describe('the host over the renderer table', () => {
     await act(async () => {
       view?.dispatch({ changes: { from: view.state.doc.length, insert: '!' } })
     })
-    expect(readTileBody(tileId('m'))).toBe('hello!')
+    expect(knownBody(tileId('m'))).toBe('hello!')
     markTileRemoving(tileId('m'))
-    expect(isTileRemoving(tileId('m'))).toBe(true)
     await act(async () => root.render(null))
     expect(writeMarkdown).not.toHaveBeenCalled()
   })

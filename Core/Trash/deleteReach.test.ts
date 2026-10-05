@@ -154,7 +154,7 @@ describe('a Space delete', () => {
     const r = await del('.nexus/contexts/Areas/Work', 'space')
     expect(r.ok && r.value.cascade).toEqual({
       pages: [],
-      hosts: [{ kind: 'space', id: 'sp_home' }],
+      hosts: [{ host: { kind: 'space', id: 'sp_home' }, ids: [] }],
     })
     const kept = {
       match: 'all',
@@ -270,7 +270,7 @@ describe('a Set delete', () => {
     const r = await del('Notes/Gone', 'set')
     expect(r.ok && r.value.cascade).toEqual({
       pages: [],
-      hosts: [{ kind: 'space', id: 'sp_home' }],
+      hosts: [{ host: { kind: 'space', id: 'sp_home' }, ids: [] }],
     })
     const v = await surfaces.read()
     expect([v.collection, v.set, v.tile]).toEqual([stripped, stripped, stripped])
@@ -303,7 +303,9 @@ describe('a Set delete', () => {
       systemDeps,
     )
     expect(r.ok && r.value.trashed).toBeUndefined()
-    expect(r.ok && r.value.cascade?.hosts).toEqual([{ kind: 'space', id: 'sp_home' }])
+    expect(r.ok && r.value.cascade?.hosts).toEqual([
+      { host: { kind: 'space', id: 'sp_home' }, ids: [] },
+    ])
     expect((await surfaces.read()).collection).toEqual(stripped)
   })
 
@@ -321,7 +323,7 @@ describe('a Set delete', () => {
     r.value.cascade?.pages.sort()
     expect(r.value.cascade).toEqual({
       pages: ['Notes/Far.md', 'Notes/Outside.md'],
-      hosts: [{ kind: 'space', id: 'sp_home' }],
+      hosts: [{ host: { kind: 'space', id: 'sp_home' }, ids: [] }],
     })
     expect(
       await readFile(join(root, r.value.trashed.bundlePath, 'Gone', 'Inside.md'), 'utf8'),

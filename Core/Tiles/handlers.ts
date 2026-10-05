@@ -16,6 +16,10 @@ import {
   writeMarkdownTile,
 } from './tilesFile'
 import { trashDeps } from '../Trash/bundle'
+import { captureLoser } from '../Sync/Arrival/captures'
+import { relative } from '../Paths/posix'
+import { tileFilePath } from '../Paths/paths'
+import { utf8 } from '../Files/utf8'
 
 type TileCtx = { root: string; dir: string }
 
@@ -97,10 +101,18 @@ export const tilesHandlers = {
   ),
 
   'tiles:writeMarkdown': withWriteRoot(
-    onTile(async ({ root, dir }, tileId, body, baseHash) => {
+    onTile(async ({ dir }, tileId, body, baseHash) => {
       if (typeof body !== 'string' || typeof baseHash !== 'string')
         return fault('A body and its base hash are required.')
-      return ok(await writeMarkdownTile(root, dir, tileId, body, baseHash))
+      return ok(await writeMarkdownTile(dir, tileId, body, baseHash))
+    }),
+  ),
+
+  'tiles:captureMarkdown': withWriteRoot(
+    onTile(async ({ root, dir }, tileId, text) => {
+      if (typeof text !== 'string') return fault('The text is required.')
+      await captureLoser(root, relative(root, tileFilePath(dir, tileId)), utf8(text), 'merge-lost')
+      return ok(null)
     }),
   ),
 

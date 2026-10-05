@@ -22,7 +22,7 @@ import {
 import { editList, type Matcher, stripList, type ValueEdit } from '../Properties/pageValue'
 import { unsweptLine } from '../Properties/governedSweep'
 import { tileHostsOf } from '../Tiles/tilesFile'
-import type { TileHostRef } from '../Tiles/tiles'
+import type { TilesChanged } from '../Tiles/tiles'
 import { liveTreeOf } from './liveTree'
 import { editJsonStrict, type StrictEdit, updateNexusConfig } from '../Files/atomicWrite'
 import { same } from '../Files/stableJson'
@@ -258,7 +258,7 @@ function editsOf(e: ConfigEdit): { view: ViewEdit; rule: (rule: Raw) => Raw | nu
 // ── Reach ──
 export interface ConfigReach {
   skipped: number
-  hosts: TileHostRef[]
+  hosts: TilesChanged[]
 }
 
 export const NO_REACH: ConfigReach = { skipped: 0, hosts: [] }
@@ -368,7 +368,7 @@ export async function reachConfig(
         mapViews(tile, (view, i) => (inScope((tile.views as unknown[])[i]) ? edit(view) : null)),
       ),
     )
-    if (wrote && host) reach.hosts.push(host)
+    if (wrote && host) reach.hosts.push({ host, ids: [] })
   }
   if (!under) {
     const edited = await updateNexusConfig(root, 'matrix', (cur) => {

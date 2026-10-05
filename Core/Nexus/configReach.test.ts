@@ -148,7 +148,10 @@ afterEach(async () => {
 describe('an option rename', () => {
   it('reaches every field that holds the option on a Collection, a Set, a tile, and the Matrix', async () => {
     const reach = await reachConfig(root, rename)
-    expect(reach).toEqual({ skipped: 0, hosts: [{ kind: 'space', id: 'sp_home' }] })
+    expect(reach).toEqual({
+      skipped: 0,
+      hosts: [{ host: { kind: 'space', id: 'sp_home' }, ids: [] }],
+    })
     for (const view of [
       (await viewsOf(colFile()))[0],
       (await viewsOf(setFile()))[0],
@@ -377,7 +380,10 @@ describe('what the pass skips', () => {
 describe('a pass scoped under one Collection', () => {
   it('edits the Collection, its Sets, and the tiles sourcing them, and leaves other sources and the Matrix', async () => {
     const reach = await reachConfig(root, clear, col())
-    expect(reach).toEqual({ skipped: 0, hosts: [{ kind: 'space', id: 'sp_home' }] })
+    expect(reach).toEqual({
+      skipped: 0,
+      hosts: [{ host: { kind: 'space', id: 'sp_home' }, ids: [] }],
+    })
     expect((await viewsOf(colFile()))[0].group).toEqual({ kind: 'structural' })
     expect((await viewsOf(setFile()))[0].group).toEqual({ kind: 'structural' })
     expect((await tileViews('t_deep'))[0].group).toEqual({ kind: 'structural' })
@@ -467,7 +473,10 @@ describe('a gone edit', () => {
 
   it('strips the gone ids from Location rules and band keys on a Collection, a Set, a tile, and the Matrix', async () => {
     const reach = await reachConfig(root, setGone)
-    expect(reach).toEqual({ skipped: 0, hosts: [{ kind: 'space', id: 'sp_home' }] })
+    expect(reach).toEqual({
+      skipped: 0,
+      hosts: [{ host: { kind: 'space', id: 'sp_home' }, ids: [] }],
+    })
     for (const view of [
       (await viewsOf(colFile()))[0],
       (await viewsOf(setFile()))[0],

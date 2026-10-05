@@ -306,7 +306,9 @@ describe('a delete reaches saved views', () => {
   it('clears every field that names the property on the Collection, the Set, the tile, and the Matrix', async () => {
     const { id, surfaces } = await seeded()
     const r = await deleteProperty(root, id)
-    expect(r.ok && r.value.cascade.hosts).toEqual([{ kind: 'space', id: 'sp_home' }])
+    expect(r.ok && r.value.cascade.hosts).toEqual([
+      { host: { kind: 'space', id: 'sp_home' }, ids: [] },
+    ])
     await expectCleared(surfaces)
   })
 

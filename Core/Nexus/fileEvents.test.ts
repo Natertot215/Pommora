@@ -856,6 +856,18 @@ describe('tile bodies', () => {
     expect(kind('Notes', 'Page.md')).toBe('page')
     expect(kind()).toBe('walk')
   })
+
+  it('owes a board alone for its document, and with the tile whose body changed', async () => {
+    await refreshTree(root)
+    await writeFile(abs('.nexus', 'contexts', 'Areas', 'Home', '_tiles.json'), '{}')
+    await writeFile(abs('.nexus', 'contexts', 'Areas', 'Home', 't1.md'), 'outside')
+    const owedTiles = () => [...owedFor(root).tiles.values()]
+    const host = { kind: 'space', id: 'sp1' }
+    await applyEvents(root, [ev('change', '.nexus', 'contexts', 'Areas', 'Home', '_tiles.json')])
+    expect(owedTiles()).toEqual([{ host, ids: new Set() }])
+    await applyEvents(root, [ev('change', '.nexus', 'contexts', 'Areas', 'Home', 't1.md')])
+    expect(owedTiles()).toEqual([{ host, ids: new Set(['t1']) }])
+  })
 })
 
 describe('an outside heading rename', () => {
@@ -885,12 +897,12 @@ describe('an outside heading rename', () => {
       const tile = await landedId(createMarkdownTile(home))
       await renamed('Intro', 'Keep')
       expect(hosts()).toEqual([])
-      await writeMarkdownTile(root, home, tile, 'see [[A#Keep]]', machine().sha256Hex(''))
+      await writeMarkdownTile(home, tile, 'see [[A#Keep]]', machine().sha256Hex(''))
       await renamed('Intro', 'Kept')
-      expect(hosts()).toEqual([{ kind: 'homepage' }])
+      expect(hosts()).toEqual([{ host: { kind: 'homepage' }, ids: [tile] }])
       expect(await readFile(tileFilePath(home, tile), 'utf8')).toBe('see [[A#Kept]]')
       await renamed('Intro', 'Held')
-      expect(hosts()).toEqual([{ kind: 'homepage' }])
+      expect(hosts()).toEqual([{ host: { kind: 'homepage' }, ids: [tile] }])
       await renamed('Other', 'Held')
       expect(hosts()).toEqual([])
       await writeFile(tileFilePath(home, tile), 'see [[A#Other]]')

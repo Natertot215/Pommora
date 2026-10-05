@@ -250,16 +250,10 @@ describe('renameCascade for a heading', () => {
     installStores(memoryStores().stores)
     await seedContentIndex(root)
     const tile = await landedId(createMarkdownTile(tileHostDir(root)))
-    await writeMarkdownTile(
-      root,
-      tileHostDir(root),
-      tile,
-      'see [[A#Setup]]',
-      machine().sha256Hex(''),
-    )
+    await writeMarkdownTile(tileHostDir(root), tile, 'see [[A#Setup]]', machine().sha256Hex(''))
     const r = await renameCascade(root, 'A', { heading: 'Setup', to: 'Intro' })
     installStores(NO_STORES)
-    expect(r.hosts).toEqual([{ kind: 'homepage' }])
+    expect(r.hosts).toEqual([{ host: { kind: 'homepage' }, ids: [tile] }])
     expect(await readMarkdownTile(tileHostDir(root), tile)).toEqual(ok('see [[A#Intro]]'))
   })
 

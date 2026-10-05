@@ -50,6 +50,12 @@ export const NEW_TILE_H = 160
 
 export type TileHostRef = { kind: 'homepage' } | { kind: 'space'; id: string }
 
+/** A board whose document or tiles changed outside its window, with the tiles whose text did. */
+export interface TilesChanged {
+  host: TileHostRef
+  ids: string[]
+}
+
 export const HOMEPAGE_HOST = { kind: 'homepage' } as const satisfies TileHostRef
 
 const TILE_HOST_KINDS: ReadonlySet<string> = new Set<TileHostRef['kind']>(['homepage', 'space'])

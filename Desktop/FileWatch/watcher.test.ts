@@ -317,7 +317,10 @@ describe('a watcher that restarts', () => {
     await rm(abs('Notes', 'C.md'))
     await writeFile(abs('Notes', 'D.md'), 'delta\n')
     listening()
-    await settleAll(() => isUlidShaped(heldTreeOf(root)?.collections[0]?.pages[1]?.id))
+    await settleAll(() => {
+      const second = heldTreeOf(root)?.collections[0]?.pages[1]?.id
+      return second !== ULID_C && isUlidShaped(second)
+    })
     const stamped = await idIn('Notes', 'D.md')
     expect(isUlidShaped(stamped)).toBe(true)
     expect(heldTreeOf(root)?.collections[0]?.pages.map((p) => p.id)).toEqual([ULID_A, stamped])
@@ -522,7 +525,7 @@ describe('a host document under the watcher', () => {
     await settleAll(() => pushMock.mock.calls.some((c) => c[1] === 'tiles:changed'))
     const tiles = pushMock.mock.calls.filter((c) => c[1] === 'tiles:changed')
     expect(tiles).toHaveLength(1)
-    expect(tiles[0][2]).toEqual({ kind: 'homepage' })
+    expect(tiles[0][2]).toEqual({ host: { kind: 'homepage' }, ids: [] })
   })
 
   it('pushes the host for an outside edit to a tile body, and nothing for its own write', async () => {
