@@ -93,6 +93,7 @@ function walk(tree: NexusTree): NodeRecord[] {
         id: s.id,
         title: s.title,
         icon: entityIcon('space', s.icon, di),
+        ownIcon: s.icon,
         path: s.path,
         parents: [group],
       })
@@ -118,6 +119,7 @@ function walk(tree: NexusTree): NodeRecord[] {
         id: s.id,
         title: s.title,
         icon: entityIcon('set', s.icon, di),
+        ownIcon: s.icon,
         path: s.path,
         parents,
       }
@@ -134,6 +136,7 @@ function walk(tree: NexusTree): NodeRecord[] {
       id: col.id,
       title: col.title,
       icon: entityIcon('collection', col.icon, di),
+      ownIcon: col.icon,
       path: col.path,
       parents: [],
     }

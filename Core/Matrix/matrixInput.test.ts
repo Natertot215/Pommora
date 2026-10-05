@@ -48,21 +48,14 @@ describe('matrixInput', () => {
     tree.collections[0].pages[0].contextValues = { g1: ['a1'] }
     const { input } = matrixInput(tree, replyOf([]), DEFAULT_MATRIX_CONFIG)
     expect(input.pages).toEqual([
-      { id: 'p1', title: 'Alpha', icon: undefined, folderId: 'c1', spaceIds: ['a1'] },
-      { id: 'p2', title: 'Nested Beta', icon: undefined, folderId: 's1', spaceIds: [] },
+      { id: 'p1', title: 'Alpha', folderId: 'c1', spaceIds: ['a1'] },
+      { id: 'p2', title: 'Nested Beta', folderId: 's1', spaceIds: [] },
     ])
     expect(input.folders).toEqual([
-      { id: 'c1', title: 'Notes', icon: undefined, parentId: null },
-      { id: 's1', title: 'Ideas', icon: undefined, parentId: 'c1' },
+      { id: 'c1', title: 'Notes', parentId: null },
+      { id: 's1', title: 'Ideas', parentId: 'c1' },
     ])
     expect(input.spaces.map((s) => s.id)).toEqual(['a1', 't1', 'pr1'])
-  })
-
-  it('takes a page node’s icon from the page metadata', () => {
-    const tree = makeTree()
-    tree.config.pageMetadata = { p1: { icon: 'star' } }
-    const { input } = matrixInput(tree, replyOf([]), DEFAULT_MATRIX_CONFIG)
-    expect(input.pages.map((p) => p.icon)).toEqual(['star', undefined])
   })
 
   it('draws a connection for a resolved target and none for ambiguous or phantom ones', () => {

@@ -6,9 +6,9 @@ export type ConnectionKind = Extract<LinkKind, 'body' | 'citation' | 'frontmatte
 export type GroupMode = 'connection' | 'location' | 'space'
 
 export interface GraphInput {
-  pages: Array<{ id: string; title: string; icon?: string; folderId: string; spaceIds: string[] }>
-  folders: Array<{ id: string; title: string; icon?: string; parentId: string | null }>
-  spaces: Array<{ id: string; title: string; icon?: string; spaceIds: string[] }>
+  pages: Array<{ id: string; title: string; folderId: string; spaceIds: string[] }>
+  folders: Array<{ id: string; title: string; parentId: string | null }>
+  spaces: Array<{ id: string; title: string; spaceIds: string[] }>
   connections: Array<{ from: string; to: string; kind: ConnectionKind }>
 }
 
@@ -22,7 +22,6 @@ export interface GraphNode {
   id: string
   kind: GraphNodeKind
   title: string
-  icon?: string
   x: number
   y: number
   vx: number
@@ -59,14 +58,13 @@ export function buildGraph(input: GraphInput, options: BuildOptions): Graph {
   const nodes: GraphNode[] = []
   const index = new Map<string, number>()
   const members: number[] = []
-  const add = (id: string, kind: GraphNodeKind, title: string, icon?: string): void => {
+  const add = (id: string, kind: GraphNodeKind, title: string): void => {
     index.set(id, nodes.length)
     members.push(0)
     nodes.push({
       id,
       kind,
       title,
-      icon,
       x: 0,
       y: 0,
       vx: 0,
@@ -85,13 +83,13 @@ export function buildGraph(input: GraphInput, options: BuildOptions): Graph {
   }
 
   for (const p of input.pages)
-    if (!options.visible || options.visible.has(p.id)) add(p.id, 'page', p.title, p.icon)
+    if (!options.visible || options.visible.has(p.id)) add(p.id, 'page', p.title)
   for (const c of input.connections) link(c.from, c.to, c.kind)
   switch (options.mode) {
     case 'connection':
       break
     case 'location': {
-      for (const f of input.folders) add(f.id, 'folder', f.title, f.icon)
+      for (const f of input.folders) add(f.id, 'folder', f.title)
       const parentOf = new Map(input.folders.map((f) => [f.id, f.parentId]))
       for (const p of input.pages) {
         link(p.id, p.folderId, 'location')
@@ -106,7 +104,7 @@ export function buildGraph(input: GraphInput, options: BuildOptions): Graph {
     }
     case 'space': {
       for (const s of input.spaces)
-        if (!options.visible || options.visible.has(s.id)) add(s.id, 'space', s.title, s.icon)
+        if (!options.visible || options.visible.has(s.id)) add(s.id, 'space', s.title)
       for (const p of input.pages)
         for (const s of p.spaceIds) {
           link(p.id, s, 'space')

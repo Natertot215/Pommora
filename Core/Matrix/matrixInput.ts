@@ -34,12 +34,11 @@ export function matrixTree(tree: NexusTree): MatrixTree {
   const folders: GraphInput['folders'] = []
   const seats: MatrixTree['seats'] = []
   const walk = (node: CollectionNode | SetNode, parentId: string | null): void => {
-    folders.push({ id: node.id, title: node.title, icon: node.icon, parentId })
+    folders.push({ id: node.id, title: node.title, parentId })
     for (const p of node.pages) {
       pages.push({
         id: p.id,
         title: p.title,
-        icon: tree.config.pageMetadata[p.id]?.icon,
         folderId: node.id,
         spaceIds: spaceIdsOf(p.contextValues),
       })
@@ -50,12 +49,7 @@ export function matrixTree(tree: NexusTree): MatrixTree {
   for (const c of tree.collections) walk(c, null)
 
   const spaces: GraphInput['spaces'] = tree.contexts.flatMap((g) =>
-    g.spaces.map((s) => ({
-      id: s.id,
-      title: s.title,
-      icon: s.icon,
-      spaceIds: spaceIdsOf(s.contextValues),
-    })),
+    g.spaces.map((s) => ({ id: s.id, title: s.title, spaceIds: spaceIdsOf(s.contextValues) })),
   )
 
   return { tree, pages, folders, spaces, seats }

@@ -145,7 +145,7 @@ export function MatrixView(): React.JSX.Element {
         label={(id) => recordOf(useSession.getState().tree, id)?.title ?? ''}
         glyph={(id) => {
           const rec = recordOf(useSession.getState().tree, id)
-          return rec && <EntityIcon kind={rec.kind} icon={matrixRuntime.nodeOf(id)?.icon} />
+          return rec && <EntityIcon kind={rec.kind} icon={rec.icon} />
         }}
         carry={[
           carries(TAB_FAMILY, (id) => {
