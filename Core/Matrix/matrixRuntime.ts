@@ -71,7 +71,6 @@ class MatrixRuntime {
   sim: Simulation | null = null
   lens: Lens | null = null
   hoveredId: string | null = null
-  acting: string | null = null
   ghosts: Array<{ x: number; y: number; radius: number; born: number }> = []
   arrivals = new Map<string, number>()
   private surfaces = new Set<Surface>()
