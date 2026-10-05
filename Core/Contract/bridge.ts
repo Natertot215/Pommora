@@ -28,6 +28,7 @@ import type {
   TileDocPatch,
   TileHostRef,
   TilePick,
+  TilesChanged,
 } from '../Tiles/tiles'
 import type {
   FileConfig,
@@ -190,6 +191,10 @@ export interface Asks {
     args: [host: TileHostRef, tileId: string, body: string, baseHash: string]
     reply: Result<BodyWrite>
   }
+  'tiles:captureMarkdown': {
+    args: [host: TileHostRef, tileId: string, text: string]
+    reply: Result<null>
+  }
   'tiles:convert': {
     args: [host: TileHostRef, tileId: string, pick: TilePick]
     reply: Result<Landed>
@@ -277,7 +282,7 @@ export interface Pushes {
   'assets:changed': AssetMap
   'nexus:changed': NexusChange
   'values:changed': ValueChange[]
-  'tiles:changed': TileHostRef
+  'tiles:changed': TilesChanged
   'pages:changed': string[]
   'sync:changed': SyncStatus
   'win:fullscreen': boolean

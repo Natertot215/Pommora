@@ -34,14 +34,13 @@ import {
 } from './tileKinds'
 import { menuPatch, tileMenuItems, viewPickTree } from './tileHandleMenu'
 import {
-  isTileRemoving,
   landTileWrite,
   markTileRemoving,
   patchTileEntry,
-  readTileBody,
   readTileDoc,
   unmarkTileRemoving,
 } from './tileDocStore'
+import { knownBody } from '../Session/pageDetailCache'
 import { useTileDoc } from './useTileDoc'
 import { dialer } from '../Platform/dialer'
 import { isUlidShaped } from '../Nexus/identityMark'
@@ -179,7 +178,7 @@ export function TileHost({
           const label = `Deleted ${kind ? TILE_KINDS[kind].label : 'Tile'}`
           // A box with no entry behind it has nothing to restore, so its removal is final.
           if (tileIdOf(removed.entry) === null) return notifyUndoable(label)
-          const body = readTileBody(id) ?? removed.body
+          const body = knownBody(id) ?? removed.body
           notifyUndoable(label, async () => {
             const back = await landTileWrite(
               host,
@@ -291,7 +290,6 @@ export function TileHost({
             beginEdit: setEditingId,
             connections: conn,
             openPage: openRoute,
-            suppressFlush: isTileRemoving,
             pagesById,
             mutateEntry,
           })}

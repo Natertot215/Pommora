@@ -26,7 +26,7 @@ import { nexusCorpus } from '../Index/indexSeed'
 import { linkDefs, readKeptRegistry } from '../Properties/propertiesRegistry'
 import { readLiveSetting } from '../Settings/settings'
 import { rewriteTileConnections } from '../Tiles/tilesFile'
-import type { TileHostRef } from '../Tiles/tiles'
+import type { TilesChanged } from '../Tiles/tiles'
 import { readLink } from '../Connections/linkValue'
 import { liveIdIndex, livePathOf, titleHeldOutside } from './heldPages'
 import { ID_KEY } from './identityMark'
@@ -34,7 +34,7 @@ import { asString } from './coerce'
 
 export interface CascadeReport {
   pages: string[]
-  hosts: TileHostRef[]
+  hosts: TilesChanged[]
   warning?: string
 }
 

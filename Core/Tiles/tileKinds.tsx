@@ -25,7 +25,6 @@ export interface TileRenderContext {
   beginEdit: (id: string) => void
   connections?: ConnectionsApi
   openPage?: (page: ConnPage) => void
-  suppressFlush: (id: string) => boolean
   pagesById: ReadonlyMap<string, ConnPage>
   mutateEntry: MutateEntry
 }
@@ -39,14 +38,13 @@ export const inertTile = (): React.JSX.Element => <div className="tile-inert" />
 
 const TILE_SURFACES: { [T in TileType]: TileSurface<Extract<TileEntry, { type: T }>> } = {
   markdown: {
-    render: ({ entry, id, host, editing, beginEdit, connections, suppressFlush }) => (
+    render: ({ entry, id, host, editing, beginEdit, connections }) => (
       <MarkdownTile
         host={host}
         tileId={id}
         editing={editing}
         onBeginEdit={beginEdit}
         connections={connections}
-        suppressFlush={suppressFlush}
         locked={entry.locked ?? false}
       />
     ),

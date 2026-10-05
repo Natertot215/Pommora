@@ -1,5 +1,4 @@
-import { capSet } from '@pommora/uix/Utilities/capMap'
-import type { Result } from '../Contract/result'
+import { ok, type Result } from '../Contract/result'
 import {
   type EntryPatch,
   knownTile,
@@ -15,10 +14,10 @@ import { navKey } from '../Navigation/navRef'
 import { decodeLayout } from './Layout/codec'
 import { emptyLayout, type TileLayout, tileIds } from './Layout/model'
 import { dialer } from '../Platform/dialer'
-import { notifyRetry, reportRefusal } from '../Interface/Notifications/notifications'
-import { createBodyWriter, sessionWriter } from '../Session/saveScheduler'
-
-const BODY_CAP = 50
+import { notifyRetry, persist, reportRefusal } from '../Interface/Notifications/notifications'
+import { type BodyIO, createBodyWriter, sessionWriter } from '../Session/saveScheduler'
+import { bodyHead, dropPageDetail, readBodyBase } from '../Session/pageDetailCache'
+import { absorbLanding } from '../Pages/bodyMount'
 
 export interface TileDocState {
   layout: TileLayout
@@ -45,58 +44,42 @@ interface HostDoc {
 // One frozen snapshot for every document that has not loaded and for every reader with no host: `useSyncExternalStore` compares snapshots by reference.
 export const EMPTY: TileDocState = { layout: emptyLayout(), tiles: [], ready: false, lock: false }
 
-const bodies = new Map<string, string>()
-// The text each tile's file last held as far as this window knows, with its hash: a read or an acknowledged save sets it, a save carries the hash, and a refused save merges against the text.
-const bases = new Map<string, TileBase>()
-const bodyListeners = new Map<string, Set<() => void>>()
-
-export const tileBodyWriter = createBodyWriter('the tile')
-
-export const writeTileBody = (tileId: string, text: string): void => {
-  capSet(bodies, tileId, text, BODY_CAP)
-}
-
-export const readTileBody = (tileId: string): string | null => bodies.get(tileId) ?? null
-
-export interface TileBase {
-  text: string
-  hash: string
-}
-
-export const readTileBase = (tileId: string): TileBase | undefined => bases.get(tileId)
-
-export const setTileBase = (tileId: string, base: TileBase): void => void bases.set(tileId, base)
-
-// A sibling mount re-seeds once per debounced save, never per keystroke.
-export const settleTileBody = (tileId: string): void => {
-  for (const fn of bodyListeners.get(tileId) ?? []) fn()
-}
-
-/** The file moved without this window's typing: every mount that isn't editing reads it again. */
-export const dropTileBodies = (ids: Iterable<string>): void => {
-  for (const id of ids) {
-    bodies.delete(id)
-    settleTileBody(id)
-  }
-}
-
-export const subscribeTileBody = (tileId: string, fn: () => void): (() => void) => {
-  const set = bodyListeners.get(tileId) ?? new Set()
-  bodyListeners.set(tileId, set)
-  set.add(fn)
-  return () => {
-    set.delete(fn)
-    if (set.size === 0) bodyListeners.delete(tileId)
-  }
-}
-
 const removing = new Set<string>()
 
 export const markTileRemoving = (tileId: string): void => void removing.add(tileId)
 
 export const unmarkTileRemoving = (tileId: string): void => void removing.delete(tileId)
 
-export const isTileRemoving = (tileId: string): boolean => removing.has(tileId)
+export const tileBodyWriter = createBodyWriter('the tile')
+
+// A markdown tile's text rides the page body layer under its tile id, through its host's channels.
+export const tileBody = (host: TileHostRef): BodyIO => {
+  const io: BodyIO = {
+    writer: tileBodyWriter,
+    read: (id) => dialer().ask('tiles:readMarkdown', host, id),
+    // A save falling due while its tile is being removed would land after the trash and bring the file back, so it sends nothing.
+    write: (id, body, baseHash) =>
+      removing.has(id)
+        ? Promise.resolve(ok({ stale: false as const, hash: baseHash }))
+        : dialer().ask('tiles:writeMarkdown', host, id, body, baseHash),
+    capture: (id, text) =>
+      void persist(
+        'the conflicting version',
+        dialer().ask('tiles:captureMarkdown', host, id, text),
+      ),
+    stale: (id, body) => {
+      if (!bodyHead(id) && body !== readBodyBase(id)?.text) io.capture(id, body)
+      landTileBody(io, id)
+    },
+  }
+  return io
+}
+
+// Text a mount holds merges with the file and every mount follows it in place; text none holds is read afresh by the next.
+const landTileBody = (io: BodyIO, id: string): void => {
+  if (bodyHead(id)) void absorbLanding(id, io)
+  else dropPageDetail(id)
+}
 
 const docs = new Map<string, HostDoc>()
 
@@ -210,8 +193,9 @@ function create(host: TileHostRef): HostDoc {
   }
   docs.set(key, doc)
   doc.off = dialer().on('tiles:changed', (changed) => {
-    if (navKey(changed) !== key) return
-    dropTileBodies(tileIds(doc.state.layout))
+    if (navKey(changed.host) !== key) return
+    const io = tileBody(host)
+    for (const id of changed.ids) landTileBody(io, id)
     if (doc.holds > 0) doc.heldPush = true
     else void reload(doc)
   })
@@ -232,15 +216,15 @@ const load = (doc: HostDoc): Promise<void> =>
     })
 
 async function retire(doc: HostDoc): Promise<void> {
-  await flush(doc)
+  // A body save still out would land after its slot is dropped, and a mount returning before it lands would seed on the file it replaces.
+  await Promise.all([flush(doc), ...tileIds(doc.state.layout).map(tileBodyWriter.flush)])
   await doc.lastSave
   // A remount inside the same commit — a host swapped in place, React's double-invoked effects — re-subscribes before this resolves, and keeps the document rather than re-reading the file.
   if (doc.listeners.size > 0) return
   if (at(doc.host) === doc) {
     docs.delete(navKey(doc.host))
     for (const id of tileIds(doc.state.layout)) {
-      bodies.delete(id)
-      bases.delete(id)
+      dropPageDetail(id)
       removing.delete(id)
     }
   }
@@ -334,8 +318,6 @@ export function flushAllTileDocs(): Promise<void> {
 export function dropAllTileDocs(): void {
   const live = [...docs.values()]
   docs.clear()
-  bodies.clear()
-  bases.clear()
   removing.clear()
   tileBodyWriter.cancelAll()
   for (const doc of live) {
