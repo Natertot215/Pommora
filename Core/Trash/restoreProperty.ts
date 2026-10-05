@@ -12,7 +12,6 @@ import { patchCacheBlock } from '../Properties/propertyCache'
 import { isBlankRaw, namesGonePage } from '../Properties/propertyValue'
 import type { StrippedLink } from '../Nexus/cascade'
 import { createProperty } from '../Properties/registryProperty'
-import { resolvesCase } from '../Settings/personalization'
 
 type PropertyRecord = Extract<RecordFile, { entity: 'property' }>
 
@@ -68,8 +67,7 @@ async function restoreInner(
       return false
     }),
   )
-  const resolveCase = resolvesCase(tree.config.personalization)
-  const taken = await refillValues(root, def, roots, values, frozen, resolveCase)
+  const taken = await refillValues(root, def, roots, values, frozen)
   return ok({
     unrestored: Object.keys(values).flatMap((id) => (taken.has(id) ? [] : roots[id].title)),
     dropped,

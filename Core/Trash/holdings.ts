@@ -130,7 +130,6 @@ export async function refillTrashed(
   root: string,
   links: StrippedLink[],
   names: ReadonlyMap<string, string>,
-  resolveCase: boolean,
 ): Promise<void> {
   if (!links.length) return
   const holders = await trashedHolders(root, new Set(links.map((l) => l.page)))
@@ -139,7 +138,7 @@ export async function refillTrashed(
     for (const { page, property, value } of links) {
       const name = names.get(property)
       if (page === id && name && isBlankRaw(heldValue(next, name, false)))
-        next = landValue(next, writeTarget(next, name, resolveCase), value)
+        next = landValue(next, writeTarget(next, name, false), value)
     }
     return next === raw ? null : next
   }

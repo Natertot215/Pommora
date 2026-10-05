@@ -5,7 +5,7 @@ import { keyHolderFiles } from './keyHolders'
 import { sweepGovernedRoots, unsweptLine } from './governedSweep'
 import { namesValue, valueEditRewrite, type ValueEdit } from './pageValue'
 import { errText, ok, fail, fault, type Result } from '../Contract/result'
-import { unregisteredMembers } from './propertyValue'
+import { heldPropertyValue, unregisteredMembers } from './propertyValue'
 import {
   addOption,
   applyOptionEdit,
@@ -34,7 +34,6 @@ import { type ConfigReach, reachConfig } from '../Nexus/configReach'
 import { heldTreeOf } from '../Nexus/liveTree'
 import { readPageRecord } from '../Nexus/readNexus'
 import { containerAt, containerSchema, pagePathsIn, spaceAt } from '../Nexus/treePatch'
-import { heldValue } from '../Files/heldKeys'
 import type { Json } from '../Files/stableJson'
 import { isMarkdownFile, join } from '../Paths/posix'
 
@@ -95,7 +94,7 @@ export async function registerHeldOptions(root: string, rels?: readonly string[]
       const held = new Map<string, string[]>()
       const collect = (values: Json, defs: readonly PropertyDefinition[]): void => {
         for (const def of defs) {
-          const members = unregisteredMembers(def, heldValue(values, def.name, false))
+          const members = unregisteredMembers(def, heldPropertyValue(values, def))
           if (members.length) held.set(def.id, [...(held.get(def.id) ?? []), ...members])
         }
       }
@@ -178,12 +177,12 @@ async function resolveForCascade(
 
 async function valueEditSweep(
   root: string,
-  key: string,
+  def: PropertyDefinition,
   target: string,
   edit: ValueEdit,
 ): Promise<number> {
-  const files = await keyHolderFiles(root, key, await collectionFolders(root))
-  const raw = valueEditRewrite(key, target, edit)
+  const files = await keyHolderFiles(root, def.name, await collectionFolders(root))
+  const raw = valueEditRewrite(def, target, edit)
   return (await sweepGovernedRoots(root, files, { raw, sidecars: raw })).skipped.length
 }
 
@@ -193,7 +192,7 @@ export async function optionCascade(
   value: string,
   edit: ValueEdit,
 ): Promise<ConfigReach> {
-  const pages = await valueEditSweep(root, def.name, value, edit)
+  const pages = await valueEditSweep(root, def, value, edit)
   if (pages && edit.op === 'strip') return { skipped: pages, hosts: [] }
   const reach = await reachConfig(root, { kind: 'option', def, value, edit })
   return { skipped: pages + reach.skipped, hosts: reach.hosts }
@@ -248,7 +247,7 @@ export function clearOption(
   return serializeSchemaOp(root, async () => {
     const r = await resolveForCascade(root, propertyId, value)
     if (!r.ok) return r
-    const skipped = await valueEditSweep(root, r.value.name, value, { op: 'strip' })
+    const skipped = await valueEditSweep(root, r.value, value, { op: 'strip' })
     return skipped ? fault(unsweptLine(skipped)) : ok(null)
   })
 }
