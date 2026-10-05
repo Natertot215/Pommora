@@ -17,7 +17,10 @@ const link = (path: string, pageId: string, target: string): MatrixLink => ({
 
 const GRAPH: MatrixGraphReply = {
   links: [link('Notes/Alpha.md', 'p1', 'beta')],
-  values: { p1: { frontmatter: { ID: 'p1' }, createdAt: null, modifiedAt: null } },
+  values: {
+    p1: { frontmatter: { ID: 'p1' }, createdAt: null, modifiedAt: null },
+    p2: { frontmatter: { ID: 'p2' }, createdAt: null, modifiedAt: null },
+  },
 }
 
 let channels: Record<string, ReturnType<typeof vi.fn>>
@@ -189,7 +192,7 @@ describe('the refetch lane', () => {
     expect(useSession.getState().matrixGraph).toEqual({ links: [], values: null })
   })
 
-  it('keeps the held links when a refetch moved none', async () => {
+  it('keeps the held links and the other pages’ values when a refetch moved no link', async () => {
     await seatLoaded()
     const before = useSession.getState().matrixGraph.links
     channels['matrix:graph'].mockResolvedValue({
@@ -204,6 +207,7 @@ describe('the refetch lane', () => {
     const after = useSession.getState().matrixGraph
     expect(after.links).toBe(before)
     expect(after.values?.p1.modifiedAt).toBe('later')
+    expect(after.values?.p2).toBe(GRAPH.values?.p2)
   })
 
   it('reads a page id through the tree and folds a burst into one ask', async () => {
@@ -250,6 +254,15 @@ describe('the values a filter reads', () => {
       'Notes/Ideas/Beta.md',
     ])
     expect(useSession.getState().matrixGraph.values).toEqual(GRAPH.values)
+  })
+
+  it('asks for nothing when a setting changes under a filter already on', async () => {
+    useSession.getState().applyMatrixChanged(parseMatrixConfig({ filter: { rules: RULES } }))
+    await seatLoaded()
+    channels['matrix:graph'].mockClear()
+    useSession.getState().patchMatrix({ display: { hideIcon: true } })
+    await vi.advanceTimersByTimeAsync(200)
+    expect(channels['matrix:graph']).not.toHaveBeenCalled()
   })
 
   it('lets the held values go with the first refetch after the filter turns off', async () => {
