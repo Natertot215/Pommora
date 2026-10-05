@@ -77,6 +77,7 @@ const hover = (el: HTMLElement, entering: boolean): void => {
       relatedTarget: document.body,
     }),
   )
+  if (entering) window.dispatchEvent(new MouseEvent('pointermove'))
 }
 const tick = async (ms: number): Promise<void> => {
   await act(async () => {

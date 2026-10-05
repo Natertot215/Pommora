@@ -44,6 +44,8 @@ export function useGhostAnchor(opts: GhostAnchorOptions): GhostAnchor {
       exit: null,
     }
     let menusOpen = 0
+    // An entered anchor waits for the pointer's next move: content scrolled or drawn under a resting pointer delivers an enter and no move, and a real move delivers its enter first.
+    let entered: string | null = null
     const blocked = (): boolean => gestureLive() || optsRef.current.suppressed() || menusOpen > 0
     const clearTimer = (key: keyof typeof timers): void => {
       const t = timers[key]
@@ -63,22 +65,9 @@ export function useGhostAnchor(opts: GhostAnchorOptions): GhostAnchor {
         if (!blocked()) setGhost((g) => (g?.anchorId === id ? g : { anchorId: id, closing: false }))
       }, optsRef.current.dwellMs)
     }
-    const clear = (anchorId?: string): void => {
+    const enter = (id: string): void => {
       clearTimer('dwell')
       clearTimer('grace')
-      const g = ghostRef.current
-      if (anchorId === undefined || g?.anchorId === anchorId) {
-        clearTimer('exit')
-        setGhost(null)
-      }
-    }
-    const onHover = (id: string, entering: boolean): void => {
-      clearTimer('dwell')
-      clearTimer('grace')
-      if (!entering) {
-        timers.grace = window.setTimeout(closeGhost, optsRef.current.graceMs)
-        return
-      }
       if (blocked()) return
       const hold = optsRef.current.travelHold
       const g = ghostRef.current
@@ -99,6 +88,32 @@ export function useGhostAnchor(opts: GhostAnchorOptions): GhostAnchor {
       })
       armDwell(id)
     }
+    const arrive = (): void => {
+      const id = entered
+      entered = null
+      if (id !== null) enter(id)
+    }
+    const clear = (anchorId?: string): void => {
+      entered = null
+      clearTimer('dwell')
+      clearTimer('grace')
+      const g = ghostRef.current
+      if (anchorId === undefined || g?.anchorId === anchorId) {
+        clearTimer('exit')
+        setGhost(null)
+      }
+    }
+    const onHover = (id: string, entering: boolean): void => {
+      if (entering) {
+        entered = id
+        window.addEventListener('pointermove', arrive, { once: true })
+        return
+      }
+      if (entered === id) entered = null
+      clearTimer('dwell')
+      clearTimer('grace')
+      timers.grace = window.setTimeout(closeGhost, optsRef.current.graceMs)
+    }
     const onGhostEnter = (): void => {
       clearTimer('grace')
       clearTimer('exit')
@@ -109,6 +124,7 @@ export function useGhostAnchor(opts: GhostAnchorOptions): GhostAnchor {
       timers.grace = window.setTimeout(closeGhost, optsRef.current.graceMs)
     }
     const take = (): string | null => {
+      entered = null
       // A dwell armed on a row crossed en route must not fire after the create.
       clearTimer('dwell')
       clearTimer('grace')

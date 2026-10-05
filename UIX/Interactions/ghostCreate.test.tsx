@@ -43,15 +43,23 @@ const tick = async (ms: number): Promise<void> => {
   })
 }
 
+/** A real move onto an anchor: its enter, then the move that arms it. */
+const enter = async (id: string): Promise<void> => {
+  await act(async () => {
+    api.onHover(id, true)
+    firePointer(window, 'pointermove', { x: 0, y: 0 })
+  })
+}
+
 /** The standing-ghost preamble: hover the anchor and let its dwell fire. */
 const dwellOpen = async (id: string): Promise<void> => {
-  await act(async () => api.onHover(id, true))
+  await enter(id)
   await tick(DWELL)
 }
 
 describe('useGhostAnchor', () => {
   it('dwell arms the ghost on the hovered anchor', async () => {
-    await act(async () => api.onHover('a', true))
+    await enter('a')
     expect(api.ghost).toBeNull()
     await tick(DWELL)
     expect(api.ghost).toEqual({ anchorId: 'a', closing: false })
@@ -75,12 +83,12 @@ describe('useGhostAnchor', () => {
     await act(async () => api.onHover('a', false))
     await tick(GRACE)
     expect(api.ghost?.closing).toBe(true)
-    await act(async () => api.onHover('a', true))
+    await enter('a')
     expect(api.ghost).toEqual({ anchorId: 'a', closing: false })
   })
 
   it('a suppressor arriving mid-dwell cancels the pending open', async () => {
-    await act(async () => api.onHover('a', true))
+    await enter('a')
     await tick(DWELL / 2)
     suppressed = true
     await tick(DWELL)
@@ -96,11 +104,11 @@ describe('useGhostAnchor', () => {
       onDrop: () => {},
     })
     firePointer(window, 'pointermove', { x: 20, y: 0 })
-    await act(async () => api.onHover('a', true))
+    await enter('a')
     await tick(DWELL)
     expect(api.ghost).toBeNull()
     firePointer(window, 'pointerup')
-    await act(async () => api.onHover('b', true))
+    await enter('b')
     await tick(DWELL)
     expect(api.ghost).toEqual({ anchorId: 'b', closing: false })
   })
@@ -120,7 +128,7 @@ describe('useGhostAnchor', () => {
         })
     })
     expect(api.ghost?.closing).toBe(true)
-    await act(async () => api.onHover('b', true))
+    await enter('b')
     await tick(DWELL)
     expect(api.ghost?.anchorId).not.toBe('b')
     await act(async () => {
@@ -156,7 +164,7 @@ describe('useGhostAnchor', () => {
     await act(async () => api.clear('a'))
     expect(api.ghost).toBeNull()
     // Re-hovering must re-dwell — the stranded-closing skip-dwell regression.
-    await act(async () => api.onHover('a', true))
+    await enter('a')
     expect(api.ghost).toBeNull()
     await tick(DWELL)
     expect(api.ghost).toEqual({ anchorId: 'a', closing: false })
@@ -177,7 +185,7 @@ describe('useGhostAnchor', () => {
 
   it('hovering a different row closes the standing ghost and dwells fresh', async () => {
     await dwellOpen('a')
-    await act(async () => api.onHover('b', true))
+    await enter('b')
     expect(api.ghost).toEqual({ anchorId: 'a', closing: true })
     await act(async () => api.closed())
     await tick(DWELL)
@@ -187,7 +195,7 @@ describe('useGhostAnchor', () => {
   it("take() kills every armed timer — a crossed row's dwell never fires post-create", async () => {
     await dwellOpen('a')
     // Crossing row b toward the ghost arms b's dwell; the ghost click takes before it fires.
-    await act(async () => api.onHover('b', true))
+    await enter('b')
     await act(async () => {
       expect(api.take()).toBe('a')
     })
@@ -203,7 +211,7 @@ describe('useGhostAnchor', () => {
     // No closed() arrives — the consumer's exit motion unmounted behind a gate.
     await tick(1000)
     expect(api.ghost).toBeNull()
-    await act(async () => api.onHover('a', true))
+    await enter('a')
     expect(api.ghost).toBeNull()
     await tick(DWELL)
     expect(api.ghost).toEqual({ anchorId: 'a', closing: false })
@@ -223,16 +231,59 @@ describe('useGhostAnchor', () => {
       releases[0]()
       await Promise.resolve()
     })
-    await act(async () => api.onHover('b', true))
+    await enter('b')
     await tick(DWELL)
     expect(api.ghost).toBeNull()
     await act(async () => {
       releases[1]()
       await Promise.resolve()
     })
-    await act(async () => api.onHover('b', true))
+    await enter('b')
     await tick(DWELL)
     expect(api.ghost).toEqual({ anchorId: 'b', closing: false })
+  })
+
+  it('an enter with no move arms nothing until the pointer moves', async () => {
+    await act(async () => api.onHover('a', true))
+    await tick(DWELL)
+    expect(api.ghost).toBeNull()
+    await act(async () => firePointer(window, 'pointermove', { x: 0, y: 0 }))
+    await tick(DWELL)
+    expect(api.ghost).toEqual({ anchorId: 'a', closing: false })
+  })
+
+  it('an anchor entered and left before any move never arms; the one entered last does', async () => {
+    await act(async () => {
+      api.onHover('a', true)
+      api.onHover('a', false)
+      api.onHover('b', true)
+      firePointer(window, 'pointermove', { x: 0, y: 0 })
+    })
+    await tick(DWELL)
+    expect(api.ghost).toEqual({ anchorId: 'b', closing: false })
+    await act(async () => api.clear())
+    await act(async () => {
+      api.onHover('a', true)
+      api.onHover('a', false)
+      firePointer(window, 'pointermove', { x: 0, y: 0 })
+    })
+    await tick(DWELL)
+    expect(api.ghost).toBeNull()
+  })
+
+  it('an anchor drawn under the pointer neither closes nor replaces a standing ghost', async () => {
+    await dwellOpen('a')
+    await act(async () => api.onHover('b', true))
+    await tick(DWELL)
+    expect(api.ghost).toEqual({ anchorId: 'a', closing: false })
+  })
+
+  it('take() forgets an anchor entered before the move', async () => {
+    await act(async () => api.onHover('a', true))
+    await act(async () => api.take())
+    await act(async () => firePointer(window, 'pointermove', { x: 0, y: 0 }))
+    await tick(DWELL)
+    expect(api.ghost).toBeNull()
   })
 })
 
@@ -257,14 +308,14 @@ describe('useGhostAnchor travel hold', () => {
   it('entering a zone anchor holds the ghost instead of closing it', async () => {
     inZone.add('b')
     await dwellOpen('a')
-    await act(async () => api.onHover('b', true))
+    await enter('b')
     expect(api.ghost).toEqual({ anchorId: 'a', closing: false })
   })
 
   it("the hold expiring closes the ghost and arms the rested anchor's own dwell", async () => {
     inZone.add('b')
     await dwellOpen('a')
-    await act(async () => api.onHover('b', true))
+    await enter('b')
     await tick(500)
     expect(api.ghost).toEqual({ anchorId: 'a', closing: true })
     await act(async () => api.closed())
@@ -275,7 +326,7 @@ describe('useGhostAnchor travel hold', () => {
 
   it('an out-of-zone anchor still closes the ghost immediately', async () => {
     await dwellOpen('a')
-    await act(async () => api.onHover('b', true))
+    await enter('b')
     expect(api.ghost).toEqual({ anchorId: 'a', closing: true })
   })
 })
