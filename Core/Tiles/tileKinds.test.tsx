@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { describe, expect, it } from 'vitest'
 import { isValidElement } from 'react'
-import { type TileEntry, TILE_KINDS } from './tiles'
+import { type PickKind, type TileEntry, TILE_KINDS } from './tiles'
 import { MarkdownTile } from './Surfaces/MarkdownTile'
 import { PageTile } from './Surfaces/PageTile'
 import { ViewTile } from './Surfaces/ViewTile'
@@ -55,8 +55,10 @@ describe('the renderer table', () => {
       const rows = TILE_KINDS[entry.type].menuRows
       const model = tileMenuItems({
         entry,
-        pageItems: [{ label: 'Notes', pick: 'p9' }],
-        viewItems: [{ label: 'Board', pick: { source_id: 's', view_id: 'v1' } }],
+        pickTree: ((kind: PickKind) =>
+          kind === 'page'
+            ? [{ label: 'Notes', pick: 'p9' }]
+            : [{ label: 'Board', pick: { source_id: 's', view_id: 'v1' } }]) as never,
         containerLocked: false,
       })
       const linkRows = model.items.filter((i) => rows.some((r) => r.label === i.label))

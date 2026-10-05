@@ -58,7 +58,7 @@ import * as atomicWrite from '../Files/atomicWrite'
 import * as governedSweep from '../Properties/governedSweep'
 import { updatePageBody } from './page'
 import { seedContentIndex } from '../Index/indexSeed'
-import { createMarkdownTile, readMarkdownTile, writeMarkdownTile } from '../Tiles/tilesFile'
+import { createTile, readMarkdownTile, writeMarkdownTile } from '../Tiles/tilesFile'
 import { landedId } from '../Testing/tileLayouts'
 import { lockContention } from '../Testing/machines'
 import { listBundles } from '../Trash/holdings'
@@ -1201,7 +1201,7 @@ describe('handleMutate — renameHeading', () => {
       `---\nID: ${B_ID}\n---\n\n## Setup\n\n[[#Setup]]`,
     )
     await seedContentIndex(root)
-    tile = await landedId(createMarkdownTile(tileHostDir(root)))
+    tile = await landedId(createTile(tileHostDir(root), 'markdown'))
     await writeMarkdownTile(tileHostDir(root), tile, '[[Beta#Setup]]', machine().sha256Hex(''))
   })
   afterEach(() => installStores(NO_STORES))

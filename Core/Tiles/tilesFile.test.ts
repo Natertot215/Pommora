@@ -1,4 +1,4 @@
-import { ok } from '../Contract/result'
+import { fault, ok } from '../Contract/result'
 import { chmod, mkdir, readFile, readdir, writeFile } from 'node:fs/promises'
 import { join } from '../Paths/posix'
 import { tempRoot, noModeBits, readJsonAt } from '../Testing/hostFs'
@@ -7,8 +7,7 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { pathExists } from '../Files/atomicWrite'
 import {
   convertTile,
-  copyEntry,
-  createMarkdownTile,
+  createTile,
   duplicateTile,
   readMarkdownTile,
   removeTile,
@@ -157,7 +156,7 @@ describe('the document', () => {
         },
       }
       expect(await readTileDocAt(home())).toMatchObject(refused)
-      expect(await createMarkdownTile(home())).toMatchObject(refused)
+      expect(await createTile(home(), 'markdown')).toMatchObject(refused)
       expect((await readdir(home())).filter((f) => f.endsWith('.md'))).toEqual([])
       expect((await rewriteTileConnections(root, (body) => body)).failed).toBe(1)
       await chmod(tileDocPath(home()), 0o644)
@@ -181,7 +180,7 @@ describe('markdown tile lifecycle', () => {
   it.skipIf(noModeBits)(
     'an absent body is not-found; a body the read fails on is not an empty one',
     async () => {
-      const id = await landedId(createMarkdownTile(home()))
+      const id = await landedId(createTile(home(), 'markdown'))
       await write(home(), id, 'prose')
       expect((await readMarkdownTile(home(), 'x')).ok).toBe(false)
       expect(await readMarkdownTile(home(), 'x')).toMatchObject({ error: { code: 'not-found' } })
@@ -195,7 +194,7 @@ describe('markdown tile lifecycle', () => {
   )
 
   it('create mints the dir + empty file + entry; the body round-trips pure (no frontmatter)', async () => {
-    const id = await landedId(createMarkdownTile(home()))
+    const id = await landedId(createTile(home(), 'markdown'))
     expect(await pathExists(tileFilePath(home(), id))).toBe(true)
     expect(await entries()).toEqual([{ id, type: 'markdown' }])
 
@@ -204,8 +203,14 @@ describe('markdown tile lifecycle', () => {
     expect(await readFile(tileFilePath(home(), id), 'utf8')).not.toContain('---')
   })
 
+  it('creates only a kind whose bare seed is a whole entry, and writes nothing for the rest', async () => {
+    for (const type of ['page', 'view', 'widget', 'toString', undefined])
+      expect(await createTile(home(), type)).toEqual(fault('That tile can’t be created.'))
+    expect(await pathExists(tileDocPath(home()))).toBe(false)
+  })
+
   it('refuses a write whose base the file moved past, and leaves the file alone', async () => {
-    const id = await landedId(createMarkdownTile(home()))
+    const id = await landedId(createTile(home(), 'markdown'))
     await write(home(), id, 'outside')
     expect(await writeMarkdownTile(home(), id, 'stale typing', machine().sha256Hex(''))).toEqual({
       stale: true,
@@ -218,7 +223,7 @@ describe('markdown tile lifecycle', () => {
   })
 
   it('a markdown tile mints its file inside the Space folder', async () => {
-    const id = await landedId(createMarkdownTile(spaceDir()))
+    const id = await landedId(createTile(spaceDir(), 'markdown'))
     expect(await pathExists(join(spaceDir(), `${id}.md`))).toBe(true)
     await write(spaceDir(), id, 'body')
     expect(await readMarkdownTile(spaceDir(), id)).toEqual(ok('body'))
@@ -226,7 +231,7 @@ describe('markdown tile lifecycle', () => {
 
   it('remove drops the entry and trashes the file; foreign entries survive', async () => {
     await seed(home(), [{ id: tileId('a'), type: 'widget', keep: true }])
-    const id = await landedId(createMarkdownTile(home()))
+    const id = await landedId(createTile(home(), 'markdown'))
     await write(home(), id, 'kept text')
     const removed = await removeTile(root, home(), id, nexusDeps)
     expect(removed).toEqual(
@@ -270,7 +275,7 @@ describe('markdown tile lifecycle', () => {
   })
 
   it('a removed tile restores with its text, once, and never over a file already there', async () => {
-    const id = await landedId(createMarkdownTile(home()))
+    const id = await landedId(createTile(home(), 'markdown'))
     await write(home(), id, 'kept text')
     const removed = await removeTile(root, home(), id, nexusDeps)
     if (!removed.ok) throw new Error('remove refused')
@@ -283,7 +288,7 @@ describe('markdown tile lifecycle', () => {
   })
 
   it('a restored tile’s links count again for a heading renamed outside the app', async () => {
-    const id = await landedId(createMarkdownTile(home()))
+    const id = await landedId(createTile(home(), 'markdown'))
     await write(home(), id, 'see [[A#Keep]]')
     const removed = await removeTile(root, home(), id, nexusDeps)
     if (!removed.ok) throw new Error('remove refused')
@@ -293,7 +298,7 @@ describe('markdown tile lifecycle', () => {
   })
 
   it('a restore seats the tile in its band on disk, and leaves a board already holding it alone', async () => {
-    const id = await landedId(createMarkdownTile(home()))
+    const id = await landedId(createTile(home(), 'markdown'))
     const band = (tile: string) => ({ node: { kind: 'tile', id: tileId(tile), h: 80 } })
     await writeTileDocAt(home(), (cur) => ({ ...cur, layout: { bands: [band('a'), band('b')] } }))
     const removed = await removeTile(root, home(), id, nexusDeps)
@@ -306,7 +311,7 @@ describe('markdown tile lifecycle', () => {
   })
 
   it('a removed tile file goes to the system trash in System mode', async () => {
-    const id = await landedId(createMarkdownTile(home()))
+    const id = await landedId(createTile(home(), 'markdown'))
     const sent: string[] = []
     await removeTile(root, home(), id, {
       trashMode: 'system',
@@ -321,7 +326,7 @@ describe('markdown tile lifecycle', () => {
 
   it('an entry op leaves the layout and lock alone', async () => {
     await writeTileDocAt(home(), (cur) => ({ ...cur, layout: { bands: [] }, locked: true }))
-    await landedId(createMarkdownTile(home()))
+    await landedId(createTile(home(), 'markdown'))
     const doc = await docAt()
     expect(doc.layout).toEqual({ bands: [] })
     expect(doc.locked).toBe(true)
@@ -343,7 +348,7 @@ describe('markdown tile lifecycle', () => {
       JSON.stringify({ id: 'col-notes', views: [stored] }),
     )
     dropLiveTree()
-    const id = await landedId(createMarkdownTile(home()))
+    const id = await landedId(createTile(home(), 'markdown'))
     await seed(home(), [{ id, type: 'markdown', style: 'borderless', outside_key: 1 }])
     const pick = { kind: 'view', value: { source_id: 'col-notes', view_id: 'view_src' } } as const
     expect((await convertTile(root, home(), id, pick, nexusDeps)).ok).toBe(true)
@@ -364,7 +369,7 @@ describe('markdown tile lifecycle', () => {
       JSON.stringify({ id: 'col-notes' }),
     )
     dropLiveTree()
-    const id = await landedId(createMarkdownTile(home()))
+    const id = await landedId(createTile(home(), 'markdown'))
     const pick = { kind: 'view', value: { source_id: 'col-notes' } } as const
     expect((await convertTile(root, home(), id, pick, nexusDeps)).ok).toBe(true)
     const view = ((await entries())[0].views as Array<Record<string, unknown>>)[0]
@@ -373,7 +378,7 @@ describe('markdown tile lifecycle', () => {
   })
 
   it('convert to page points the tile at the page and refuses a pick it cannot read', async () => {
-    const id = await landedId(createMarkdownTile(home()))
+    const id = await landedId(createTile(home(), 'markdown'))
     await seed(home(), [{ id, type: 'markdown', style: 'borderless' }])
     expect((await convertTile(root, home(), id, { kind: 'view', value: 3 }, nexusDeps)).ok).toBe(
       false,
@@ -389,7 +394,7 @@ describe('markdown tile lifecycle', () => {
   })
 
   it('duplicate copies the raw entry + file; a view copy re-mints its config ids', async () => {
-    const id = await landedId(createMarkdownTile(home()))
+    const id = await landedId(createTile(home(), 'markdown'))
     await write(home(), id, 'body text')
     await seed(home(), [{ id, type: 'markdown', style: 'borderless', alien: 1 }])
     const dupId = await landedId(duplicateTile(home(), id))
@@ -432,7 +437,7 @@ describe('rewriteTileConnections', () => {
   const rename = (body: string): string => rewriteConnections(body, 'Target', 'Renamed')
 
   it('rewrites [[oldTitle]] → [[newTitle]] in tile bodies, leaving non-matches untouched', async () => {
-    const id = await landedId(createMarkdownTile(home()))
+    const id = await landedId(createTile(home(), 'markdown'))
     await write(home(), id, 'see [[Target]] and [[Other]]')
     expect(await rewriteTileConnections(root, rename)).toEqual({
       hosts: [{ host: { kind: 'homepage' }, ids: [id] }],
@@ -442,16 +447,16 @@ describe('rewriteTileConnections', () => {
   })
 
   it('leaves a body without the old title byte-identical (no needless write)', async () => {
-    const id = await landedId(createMarkdownTile(home()))
+    const id = await landedId(createTile(home(), 'markdown'))
     await write(home(), id, 'see [[Other]]')
     expect(await rewriteTileConnections(root, rename)).toEqual({ hosts: [], failed: 0 })
     expect(await readMarkdownTile(home(), id)).toEqual(ok('see [[Other]]'))
   })
 
   it.skipIf(noModeBits)('counts a tile it can’t write and still rewrites the rest', async () => {
-    const locked = await landedId(createMarkdownTile(home()))
+    const locked = await landedId(createTile(home(), 'markdown'))
     await write(home(), locked, 'see [[Target]]')
-    const open = await landedId(createMarkdownTile(spaceDir()))
+    const open = await landedId(createTile(spaceDir(), 'markdown'))
     await write(spaceDir(), open, 'see [[Target]]')
     await chmod(home(), 0o555)
     try {
@@ -468,10 +473,10 @@ describe('rewriteTileConnections', () => {
   it('rewrites the tiles of a Space whose sidecar can’t be read, pushing no host for it', async () => {
     const broken = join(root, '.nexus', 'contexts', 'Realms', 'Broken')
     await mkdir(broken, { recursive: true })
-    const lost = await landedId(createMarkdownTile(broken))
+    const lost = await landedId(createTile(broken, 'markdown'))
     await write(broken, lost, 'see [[Target]]')
     await writeFile(join(broken, '_space.json'), '{ corrupt')
-    const id = await landedId(createMarkdownTile(spaceDir()))
+    const id = await landedId(createTile(spaceDir(), 'markdown'))
     await write(spaceDir(), id, 'see [[Target]]')
     expect(await rewriteTileConnections(root, rename)).toEqual({
       hosts: [{ host: { kind: 'space', id: 'sp1' }, ids: [id] }],
@@ -479,20 +484,5 @@ describe('rewriteTileConnections', () => {
     })
     expect(await readMarkdownTile(spaceDir(), id)).toEqual(ok('see [[Renamed]]'))
     expect(await readMarkdownTile(broken, lost)).toEqual(ok('see [[Renamed]]'))
-  })
-})
-
-describe('copyEntry', () => {
-  it("copyEntry dispatches by the entry's own kind and passes everything else through", () => {
-    const view = { id: tileId('v'), type: 'view', views: [{ config: { id: 'old' } }] }
-    expect((copyEntry(view) as typeof view).views[0].config.id).not.toBe('old')
-    for (const raw of [
-      null,
-      7,
-      { id: tileId('m'), type: 'markdown' },
-      { id: tileId('x'), type: 'toString' },
-      { id: tileId('y'), type: '__proto__' },
-    ])
-      expect(copyEntry(raw)).toBe(raw)
   })
 })

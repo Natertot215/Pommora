@@ -1,4 +1,4 @@
-import { Fragment, memo, useEffect, useMemo, useRef, useState, type RefObject } from 'react'
+import { Fragment, memo, useMemo, useRef, useState, type RefObject } from 'react'
 import type { PageTarget, SpaceTarget, WindowTarget } from '../../Navigation/navRef'
 import { useHeld } from '@pommora/uix/Animations/useExitPresence'
 import { cx } from '@pommora/uix/Utilities/cx'
@@ -14,8 +14,7 @@ import { personalizationOf } from '../../Session/configSlice'
 import { useExperimental } from '../../Settings/experimental'
 import { PageTile } from '../../Tiles/Surfaces/PageTile'
 import { TileHost } from '../../Tiles/TileHost'
-import { subscribeTileDoc } from '../../Tiles/tileDocStore'
-import { useTileDocReady } from '../../Tiles/useTileDoc'
+import { useLoadedTileDocs, useTileDocReady } from '../../Tiles/useTileDoc'
 import { EntityBanner } from '../Header/Banner'
 import { CitationsToggle } from '../Subfield/CitationsToggle'
 import { Subfield } from '../Subfield/Subfield'
@@ -129,18 +128,9 @@ export function useWindowTabBody(target: WindowTarget | null): WindowTabBodySlot
   const activeTabId = slot?.activeTabId
 
   // Every Space tab the window holds keeps its document loaded, so switching back draws the board in the same frame rather than after a reload.
-  const heldSpaces = (windowTabs ?? [])
-    .flatMap((t) => (t.target.kind === 'space' ? [t.target.id] : []))
-    .join(' ')
-  useEffect(() => {
-    const held = heldSpaces
-      .split(' ')
-      .filter(Boolean)
-      .map((id) => subscribeTileDoc({ kind: 'space', id }, () => {}))
-    return () => {
-      for (const off of held) off()
-    }
-  }, [heldSpaces])
+  useLoadedTileDocs(
+    (windowTabs ?? []).flatMap((t) => (t.target.kind === 'space' ? [t.target] : [])),
+  )
 
   // The shown page tab and the most recent ones up to the Active Tab Cache, each mounted once and parked off screen while another shows.
   const recent = useRef<string[]>([])

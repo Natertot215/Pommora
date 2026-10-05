@@ -19,7 +19,7 @@ import { settleBatch } from '../Nexus/settle'
 import type { TrashDeps } from '../Trash/bundle'
 import { tileHostDir } from '../Paths/paths'
 import { machine } from '../Platform/machine'
-import { createMarkdownTile, writeMarkdownTile } from '../Tiles/tilesFile'
+import { createTile, writeMarkdownTile } from '../Tiles/tilesFile'
 import { landedId } from '../Testing/tileLayouts'
 
 const A_ID = '01KVGMT8BFP350FZZXAMG1QDRA'
@@ -264,7 +264,7 @@ describe('the watcher maintains the rows', () => {
     const alpha = join(root, 'Notes', 'Daily', 'Alpha.md')
     await writeFile(beta, `---\nID: ${B_ID}\n---\n\n## Setup\n`)
     await writeFile(alpha, `---\nID: ${A_ID}\n---\n\nSee [[Beta#Setup]].`)
-    const tile = await landedId(createMarkdownTile(tileHostDir(root)))
+    const tile = await landedId(createTile(tileHostDir(root), 'markdown'))
     await writeMarkdownTile(tileHostDir(root), tile, '[[Beta#Setup]]', machine().sha256Hex(''))
     await seedContentIndex(root)
     await refreshTree(root)

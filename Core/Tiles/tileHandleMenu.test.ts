@@ -1,15 +1,18 @@
 import { describe, expect, it } from 'vitest'
 import type { PickItem } from '../Actions/menuModel'
-import type { TileEntry, ViewPick } from '../Tiles/tiles'
+import type { PickKind, TileEntry, ViewPick } from '../Tiles/tiles'
 import { makeTree } from '../Testing/testTree'
-import { menuPatch, tileMenuItems, viewPickTree } from './tileHandleMenu'
+import { menuPatch, pickTreesOf, tileMenuItems } from './tileHandleMenu'
 
 type Ctx = Parameters<typeof tileMenuItems>[0]
+type Over = Partial<Omit<Ctx, 'pickTree'>> & {
+  pages?: PickItem<string>[]
+  views?: PickItem<ViewPick>[]
+}
 
-const ctx = (over: Partial<Ctx> = {}): Ctx => ({
+const ctx = ({ pages = [], views = [], ...over }: Over = {}): Ctx => ({
   entry: { type: 'markdown', id: 'b1' } as unknown as TileEntry,
-  pageItems: [],
-  viewItems: [],
+  pickTree: ((kind: PickKind) => (kind === 'page' ? pages : views)) as Ctx['pickTree'],
   containerLocked: false,
   ...over,
 })
@@ -69,7 +72,7 @@ describe('the tile menu model both renderers draw', () => {
       },
     ]
     const pages: PickItem<string>[] = [{ label: 'Notes', pick: 'p9' }]
-    const m = tileMenuItems(ctx({ viewItems: views, pageItems: pages }))
+    const m = tileMenuItems(ctx({ views, pages }))
     const leaf = row(m, 'Link View')?.submenu?.[0].submenu?.[0]
     expect(leaf?.label).toBe('Board')
     expect(m.picks[Number(leaf?.action?.slice(10))]).toEqual({
@@ -105,7 +108,7 @@ describe('the tile menu model both renderers draw', () => {
   })
 
   it('leaves a container holding nothing an empty branch, which both renderers grey out', () => {
-    const m = tileMenuItems(ctx({ pageItems: [{ label: 'Empty Collection', submenu: [] }] }))
+    const m = tileMenuItems(ctx({ pages: [{ label: 'Empty Collection', submenu: [] }] }))
     expect(row(m, 'Link Page')?.submenu?.[0]).toMatchObject({
       label: 'Empty Collection',
       submenu: [],
@@ -122,7 +125,7 @@ describe('the tile menu model both renderers draw', () => {
         ],
       },
     ]
-    const level = row(tileMenuItems(ctx({ viewItems: views })), 'Link View')?.submenu?.[0].submenu
+    const level = row(tileMenuItems(ctx({ views })), 'Link View')?.submenu?.[0].submenu
     expect(level?.map((r) => r.label)).toEqual(['Board', '+ Custom'])
     expect(level?.[1].separatorBefore).toBe(true)
     expect(level?.[0].separatorBefore).toBeFalsy()
@@ -135,9 +138,23 @@ describe('the tile menu model both renderers draw', () => {
         submenu: [{ label: '+ Custom', pick: { source_id: 's1' }, footer: true }],
       },
     ]
-    const level = row(tileMenuItems(ctx({ viewItems: views })), 'Link View')?.submenu?.[0].submenu
+    const level = row(tileMenuItems(ctx({ views })), 'Link View')?.submenu?.[0].submenu
     expect(level?.map((r) => r.label)).toEqual(['+ Custom'])
     expect(level?.[0].separatorBefore).toBeFalsy()
+  })
+
+  it('asks only for the trees its rows name, none under a lock, and builds each once per menu', () => {
+    const asked: PickKind[] = []
+    const pickTree = ((kind: PickKind) => {
+      asked.push(kind)
+      return []
+    }) as Ctx['pickTree']
+    const page = { type: 'page', page_id: 'p1', id: 'b1' } as unknown as TileEntry
+    tileMenuItems({ ...ctx({ entry: page }), pickTree })
+    tileMenuItems({ ...ctx({ entry: { type: 'markdown', id: 'b1', locked: true } }), pickTree })
+    expect(asked).toEqual(['page'])
+    const trees = pickTreesOf(makeTree(), undefined)
+    expect(trees('view')).toBe(trees('view'))
   })
 
   it('reaches the views of a Set nested inside another Set', () => {
@@ -153,7 +170,7 @@ describe('the tile menu model both renderers draw', () => {
         views: [{ id: 'v1', name: 'Board', type: 'table' } as never],
       },
     ]
-    const deep = viewPickTree(tree, undefined)[0].submenu?.[0].submenu?.[0]
+    const deep = pickTreesOf(tree, undefined)('view')[0].submenu?.[0].submenu?.[0]
     expect(deep?.label).toBe('Deep')
     expect(deep?.submenu?.map((n) => n.pick)).toEqual([
       { source_id: 's2', view_id: 'v1' },

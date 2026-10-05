@@ -23,7 +23,7 @@ import { installStores, NO_STORES } from '../Platform/stores'
 import { memoryStores } from '../Testing/memoryStores'
 import * as indexSeed from '../Index/indexSeed'
 import { seedContentIndex } from '../Index/indexSeed'
-import { createMarkdownTile, writeMarkdownTile } from '../Tiles/tilesFile'
+import { createTile, writeMarkdownTile } from '../Tiles/tilesFile'
 import { landedId } from '../Testing/tileLayouts'
 import { contextsDir, contextsRegistryFile, tileFilePath } from '../Paths/paths'
 import { machine } from '../Platform/machine'
@@ -906,7 +906,7 @@ describe('an outside heading rename', () => {
       await refreshTree(root)
       await seedContentIndex(root)
       const home = abs('.nexus', 'interface', 'homepage')
-      const tile = await landedId(createMarkdownTile(home))
+      const tile = await landedId(createTile(home, 'markdown'))
       await renamed('Intro', 'Keep')
       expect(hosts()).toEqual([])
       await writeMarkdownTile(home, tile, 'see [[A#Keep]]', machine().sha256Hex(''))

@@ -3,6 +3,7 @@ import { fault, ok } from '../Contract/result'
 import { tileId } from '../Testing/tileLayouts'
 import {
   coerceTileHost,
+  copyEntry,
   knownTile,
   rawLayoutSchema,
   TILE_KINDS,
@@ -224,12 +225,27 @@ describe('the tile recipe', () => {
     expect(TILE_KINDS.page.fileBacked).toBe(false)
     expect(TILE_KINDS.view.fileBacked).toBe(false)
     expect(TILE_KINDS.markdown.menuRows).toEqual([
-      { label: 'Link View', source: 'views' },
-      { label: 'Link Page', source: 'pages' },
+      { label: 'Link View', to: 'view' },
+      { label: 'Link Page', to: 'page' },
     ])
-    expect(TILE_KINDS.page.menuRows).toEqual([{ label: 'Source', source: 'pages' }])
+    expect(TILE_KINDS.page.menuRows).toEqual([{ label: 'Source', to: 'page' }])
     expect(TILE_KINDS.view.menuRows).toEqual([])
     expect(knownTile({ id: tileId('x'), type: 'widget' })).toBeNull()
+  })
+})
+
+describe('copyEntry', () => {
+  it("copyEntry dispatches by the entry's own kind and passes everything else through", () => {
+    const view = { id: tileId('v'), type: 'view', views: [{ config: { id: 'old' } }] }
+    expect((copyEntry(view) as typeof view).views[0].config.id).not.toBe('old')
+    for (const raw of [
+      null,
+      7,
+      { id: tileId('m'), type: 'markdown' },
+      { id: tileId('x'), type: 'toString' },
+      { id: tileId('y'), type: '__proto__' },
+    ])
+      expect(copyEntry(raw)).toBe(raw)
   })
 })
 

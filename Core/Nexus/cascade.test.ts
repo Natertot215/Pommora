@@ -18,7 +18,7 @@ import { seedContentIndex } from '../Index/indexSeed'
 import { ok } from '../Contract/result'
 import { machine } from '../Platform/machine'
 import { contextsDir, contextsRegistryFile, tileHostDir } from '../Paths/paths'
-import { createMarkdownTile, readMarkdownTile, writeMarkdownTile } from '../Tiles/tilesFile'
+import { createTile, readMarkdownTile, writeMarkdownTile } from '../Tiles/tilesFile'
 import { landedId } from '../Testing/tileLayouts'
 
 vi.mock('../Properties/governedSweep', async (importOriginal) => {
@@ -249,7 +249,7 @@ describe('renameCascade for a heading', () => {
     if (!a.ok) throw new Error('setup failed')
     installStores(memoryStores().stores)
     await seedContentIndex(root)
-    const tile = await landedId(createMarkdownTile(tileHostDir(root)))
+    const tile = await landedId(createTile(tileHostDir(root), 'markdown'))
     await writeMarkdownTile(tileHostDir(root), tile, 'see [[A#Setup]]', machine().sha256Hex(''))
     const r = await renameCascade(root, 'A', { heading: 'Setup', to: 'Intro' })
     installStores(NO_STORES)

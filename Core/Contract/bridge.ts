@@ -29,6 +29,7 @@ import type {
   TileHostRef,
   TilePick,
   TilesChanged,
+  TileType,
 } from '../Tiles/tiles'
 import type {
   FileConfig,
@@ -177,7 +178,10 @@ export interface Asks {
 
   'tiles:get': { args: [host: TileHostRef]; reply: Result<TileDoc> }
   'tiles:save': { args: [host: TileHostRef, patch: TileDocPatch]; reply: Result<Landed> }
-  'tiles:createMarkdown': { args: [host: TileHostRef]; reply: Result<Landed<{ id: string }>> }
+  'tiles:create': {
+    args: [host: TileHostRef, type: TileType]
+    reply: Result<Landed<{ id: string }>>
+  }
   'tiles:removeTile': {
     args: [host: TileHostRef, tileId: string]
     reply: Result<Landed<{ removed: RemovedTile }>>

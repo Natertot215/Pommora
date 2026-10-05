@@ -1,10 +1,11 @@
-import { mkdir } from 'node:fs/promises'
+import { mkdir, rename, writeFile } from 'node:fs/promises'
 import { pathExists } from '../Files/atomicWrite'
 import { join } from '../Paths/posix'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { HostContext } from '../Contract/handlers'
 import { fail, fault, ok } from '../Contract/result'
-import { tileDocPath, tileHostDir } from '../Paths/paths'
+import { tileDocPath, tileFilePath, tileHostDir } from '../Paths/paths'
+import { dropLiveTree, liveTreeOf } from '../Nexus/liveTree'
 import { tempRoot, readJsonAt } from '../Testing/hostFs'
 import { tileId } from '../Testing/tileLayouts'
 import { readTileDocAt, writeTileDocAt } from './tileDoc'
@@ -25,11 +26,30 @@ beforeEach(() => {
 
 afterEach(() => {
   sessionRoot.mockReset()
+  dropLiveTree()
 })
 
 describe('the tile channels', () => {
   it('refuse a host the Nexus does not hold', async () => {
     expect(await tilesHandlers['tiles:get'](ctx, { kind: 'space', id: 'nope' })).toEqual(
+      fail('not-found', 'Unknown tile host.'),
+    )
+  })
+
+  it('resolve a Space through the held tree, and refuse one whose folder a rename just moved', async () => {
+    const dir = join(root, '.nexus', 'contexts', 'Realms', 'Astral')
+    await mkdir(dir, { recursive: true })
+    await writeFile(
+      join(root, '.nexus', 'contexts', 'contexts.json'),
+      JSON.stringify({ contexts: [{ id: 'g1', title: 'Realms', singular: 'Realm' }] }),
+    )
+    await writeFile(join(dir, '_space.json'), JSON.stringify({ id: 'sp1' }))
+    await liveTreeOf(root)
+    const space = { kind: 'space', id: 'sp1' }
+    const made = await tilesHandlers['tiles:create'](ctx, space, 'markdown')
+    expect(made.ok && (await pathExists(tileFilePath(dir, made.value.id)))).toBe(true)
+    await rename(dir, join(root, '.nexus', 'contexts', 'Realms', 'Moved'))
+    expect(await tilesHandlers['tiles:get'](ctx, space)).toEqual(
       fail('not-found', 'Unknown tile host.'),
     )
   })

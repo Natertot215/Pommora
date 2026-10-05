@@ -2,10 +2,11 @@
 
 import { z } from 'zod'
 import { type Result, fault, ok } from '../Contract/result'
-import { isPlainObject } from '../Contract/validators'
+import { isKeyOf, isPlainObject } from '../Contract/validators'
 import { looseDecoder } from '../Files/decoders'
 import { isUlidShaped } from '../Nexus/identityMark'
 import { VIEW_BUTTONS, VIEW_STYLES } from '../Views/viewRow'
+import { mapViews, mintViewId } from '../Views/views'
 import { zoomStep } from './tileZoom'
 
 interface RawTile {
@@ -117,13 +118,22 @@ export type ViewTileEntry = z.infer<typeof viewEntry>
 export type TileEntry = z.infer<typeof markdownEntry> | z.infer<typeof pageEntry> | ViewTileEntry
 export type TileType = TileEntry['type']
 
-type TileMenuSource = 'pages' | 'views'
+export interface ViewPick {
+  source_id: string
+  view_id?: string
+}
+
+/** What a convert into each kind is given; a kind a menu row converts into has a member here. */
+export type TilePick = { kind: 'page'; value: string } | { kind: 'view'; value: ViewPick }
+export type PickKind = TilePick['kind']
 
 interface TileKind<E extends TileEntry = TileEntry> {
   schema: z.ZodType<E>
   label: string
   fileBacked: boolean
-  menuRows: ReadonlyArray<{ label: string; source: TileMenuSource }>
+  menuRows: ReadonlyArray<{ label: string; to: PickKind }>
+  /** Re-mints what a copy must not share with its source. */
+  copy?: (raw: Record<string, unknown>) => unknown
 }
 
 export const TILE_KINDS: { [T in TileType]: TileKind<Extract<TileEntry, { type: T }>> } = {
@@ -132,21 +142,23 @@ export const TILE_KINDS: { [T in TileType]: TileKind<Extract<TileEntry, { type: 
     label: 'Markdown Tile',
     fileBacked: true,
     menuRows: [
-      { label: 'Link View', source: 'views' },
-      { label: 'Link Page', source: 'pages' },
+      { label: 'Link View', to: 'view' },
+      { label: 'Link Page', to: 'page' },
     ],
   },
   page: {
     schema: pageEntry.loose(),
     label: 'Page Tile',
     fileBacked: false,
-    menuRows: [{ label: 'Source', source: 'pages' }],
+    menuRows: [{ label: 'Source', to: 'page' }],
   },
   view: {
     schema: viewEntry.loose(),
     label: 'View Tile',
     fileBacked: false,
     menuRows: [],
+    // The source view's id and the DEFAULT_VIEW_ID sentinel are live keys outside the payload — preserving one would silently re-couple a copied snapshot to its source.
+    copy: (raw) => mapViews(raw, (config) => ({ ...config, id: mintViewId() })),
   },
 }
 
@@ -174,13 +186,6 @@ export function seedBoard([a, b, c, d]: readonly string[]): TileDoc {
   }
 }
 
-export interface ViewPick {
-  source_id: string
-  view_id?: string
-}
-
-export type TilePick = { kind: 'page'; value: string } | { kind: 'view'; value: ViewPick }
-
 export const tileIdOf = (raw: unknown): string | null =>
   isPlainObject(raw) && isUlidShaped(raw.id) ? raw.id : null
 
@@ -188,6 +193,9 @@ export function knownTile(raw: unknown): TileEntry | null {
   const parsed = knownEntry.safeParse(raw)
   return parsed.success ? (parsed.data as TileEntry) : null
 }
+
+export const copyEntry = (raw: unknown): unknown =>
+  (isPlainObject(raw) && isKeyOf(TILE_KINDS, raw.type) && TILE_KINDS[raw.type].copy?.(raw)) || raw
 
 export interface TileDoc {
   layout: unknown
