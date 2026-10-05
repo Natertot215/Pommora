@@ -14,16 +14,12 @@ export const host = style({
   width: '100%',
   height: '100%',
   overflow: 'hidden',
-  // The fade is a fixed band here, not a scroll signal: a canvas never scrolls, so the kit's timeline is dropped and its progress pinned open.
-  animationName: 'none',
   selectors: {
-    '&:not(.window *)': {
-      maskImage: 'none',
-      WebkitMaskImage: 'none',
-    },
     '.window &': {
       flex: 1,
       minHeight: 0,
+      // The fade is a fixed band here, not a scroll signal: a canvas never scrolls, so the kit's timeline is dropped and its progress pinned open.
+      animationName: 'none',
       vars: {
         '--scroll-fade-lead': '1',
         '--scroll-fade-trail': '1',

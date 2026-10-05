@@ -21,7 +21,8 @@ import { useMatrixCount, useMatrixHover } from './useMatrixRuntime'
 import { useLatest } from '@pommora/uix/Utilities/stableApi'
 
 export function MatrixView(): React.JSX.Element {
-  const parked = useContentHost()?.parked ?? false
+  const content = useContentHost()
+  const parked = content?.parked ?? false
   const tree = useSession((st) => st.tree)
   const select = useSession((st) => st.select)
   const renamingPath = useSession((st) => (st.renamingHost === 'matrix' ? st.renamingPath : null))
@@ -129,6 +130,7 @@ export function MatrixView(): React.JSX.Element {
     <MatrixCanvas
       surface={surface}
       parked={parked}
+      inWindow={content === null}
       editing={editing}
       labelId={labelId}
       canvasRef={canvasRef}
