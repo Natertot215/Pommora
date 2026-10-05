@@ -1,4 +1,4 @@
-import { radiusOf } from './forces'
+import { LINK_MULTIPLE, radiusOf } from './forces'
 
 export type GraphNodeKind = 'page' | 'folder' | 'space'
 export type LinkKind = 'body' | 'citation' | 'frontmatter' | 'space' | 'location'
@@ -44,10 +44,6 @@ export interface Graph {
   index: Map<string, number>
 }
 
-type Inbound = Record<LinkKind, number>
-
-const noInbound = (): Inbound => ({ body: 0, citation: 0, frontmatter: 0, space: 0, location: 0 })
-
 export function isGroupingLink(mode: GroupMode, kind: LinkKind): boolean {
   switch (mode) {
     case 'connection':
@@ -62,8 +58,10 @@ export function isGroupingLink(mode: GroupMode, kind: LinkKind): boolean {
 export function buildGraph(input: GraphInput, options: BuildOptions): Graph {
   const nodes: GraphNode[] = []
   const index = new Map<string, number>()
+  const members: number[] = []
   const add = (id: string, kind: GraphNodeKind, title: string, icon?: string): void => {
     index.set(id, nodes.length)
+    members.push(0)
     nodes.push({
       id,
       kind,
@@ -78,15 +76,6 @@ export function buildGraph(input: GraphInput, options: BuildOptions): Graph {
       pinned: false,
     })
   }
-
-  for (const p of input.pages)
-    if (!options.visible || options.visible.has(p.id)) add(p.id, 'page', p.title, p.icon)
-  if (options.mode === 'location')
-    for (const f of input.folders) add(f.id, 'folder', f.title, f.icon)
-  if (options.mode === 'space')
-    for (const s of input.spaces)
-      if (!options.visible || options.visible.has(s.id)) add(s.id, 'space', s.title, s.icon)
-
   const links: GraphLink[] = []
   const link = (from: string, to: string, kind: LinkKind): void => {
     const source = index.get(from)
@@ -95,46 +84,56 @@ export function buildGraph(input: GraphInput, options: BuildOptions): Graph {
       links.push({ source, target, kind })
   }
 
+  for (const p of input.pages)
+    if (!options.visible || options.visible.has(p.id)) add(p.id, 'page', p.title, p.icon)
   for (const c of input.connections) link(c.from, c.to, c.kind)
-  if (options.mode === 'location') {
-    for (const p of input.pages) link(p.id, p.folderId, 'location')
-    for (const f of input.folders) if (f.parentId) link(f.id, f.parentId, 'location')
-  }
-  if (options.mode === 'space') {
-    for (const p of input.pages) for (const s of p.spaceIds) link(p.id, s, 'space')
-    const drawn = new Set<string>()
-    for (const s of input.spaces)
-      for (const t of s.spaceIds) {
-        const pair = s.id < t ? `${s.id}\u0000${t}` : `${t}\u0000${s.id}`
-        if (drawn.has(pair)) continue
-        drawn.add(pair)
-        link(s.id, t, 'space')
+  switch (options.mode) {
+    case 'connection':
+      break
+    case 'location': {
+      for (const f of input.folders) add(f.id, 'folder', f.title, f.icon)
+      const parentOf = new Map(input.folders.map((f) => [f.id, f.parentId]))
+      for (const p of input.pages) {
+        link(p.id, p.folderId, 'location')
+        if (index.has(p.id))
+          for (let f: string | null = p.folderId; f !== null; f = parentOf.get(f) ?? null) {
+            const i = index.get(f)
+            if (i !== undefined) members[i]++
+          }
       }
+      for (const f of input.folders) if (f.parentId) link(f.id, f.parentId, 'location')
+      break
+    }
+    case 'space': {
+      for (const s of input.spaces)
+        if (!options.visible || options.visible.has(s.id)) add(s.id, 'space', s.title, s.icon)
+      for (const p of input.pages)
+        for (const s of p.spaceIds) {
+          link(p.id, s, 'space')
+          const i = index.get(s)
+          if (i !== undefined && index.has(p.id)) members[i]++
+        }
+      const drawn = new Set<string>()
+      for (const s of input.spaces)
+        for (const t of s.spaceIds) {
+          const pair = s.id < t ? `${s.id}\u0000${t}` : `${t}\u0000${s.id}`
+          if (drawn.has(pair)) continue
+          drawn.add(pair)
+          link(s.id, t, 'space')
+        }
+      break
+    }
   }
 
-  const inbound = nodes.map(noInbound)
+  const inbound = new Array<number>(nodes.length).fill(0)
   const spaceLinks = new Array<number>(nodes.length).fill(0)
   for (const l of links) {
     nodes[l.source].degree++
     nodes[l.target].degree++
-    inbound[l.target][l.kind]++
+    inbound[l.target] += LINK_MULTIPLE[l.kind]
     if (nodes[l.source].kind === 'space' && nodes[l.target].kind === 'space') {
       spaceLinks[l.source]++
       spaceLinks[l.target]++
-    }
-  }
-
-  const members = new Array<number>(nodes.length).fill(0)
-  const parentOf = new Map(input.folders.map((f) => [f.id, f.parentId]))
-  for (const p of input.pages) {
-    if (!index.has(p.id)) continue
-    for (let f: string | null = p.folderId; f !== null; f = parentOf.get(f) ?? null) {
-      const i = index.get(f)
-      if (i !== undefined) members[i]++
-    }
-    for (const sp of p.spaceIds) {
-      const i = index.get(sp)
-      if (i !== undefined) members[i]++
     }
   }
 
