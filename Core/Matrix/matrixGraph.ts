@@ -11,9 +11,10 @@ export interface MatrixLink extends Pick<PageRelationRow, 'path' | 'kind' | 'tar
 export interface MatrixGraphReply {
   links: MatrixLink[]
   values: Record<string, PageValues> | null
+  ids?: string[]
 }
 
-// `null` when there is no index yet; the renderer keeps what it holds and the next push refetches. Without values, the store reads each page's ID alone.
+// `null` when there is no index yet; the renderer keeps what it holds and the next push refetches. Without values, the store reads each page's ID alone. An ask for named paths also answers every page id at them, linked or not, so the renderer lets go of the rows a moved page held under its old path.
 export function readMatrixGraph(withValues: boolean, paths?: string[]): MatrixGraphReply | null {
   const rows = readPageRelations(paths, withValues ? undefined : ID_KEY)
   if (!rows) return null
@@ -35,5 +36,5 @@ export function readMatrixGraph(withValues: boolean, paths?: string[]): MatrixGr
     seen.add(key)
     links.push({ path, kind, target, pageId })
   }
-  return { links, values }
+  return paths ? { links, values, ids: [...idOf.values()] } : { links, values }
 }
