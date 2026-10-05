@@ -1,5 +1,6 @@
 import { duration, ms } from '@pommora/uix/Animations/motion'
 import { emitter } from '@pommora/uix/Utilities/subscribable'
+import type { NexusTree } from '../Nexus/tree'
 import { useSession } from '../Session/store'
 import type { Forces } from './Engine/forces'
 import {
@@ -47,6 +48,7 @@ const NO_STAGE: Stage = { x: 0, y: 0, width: 0, height: 0 }
 
 // Each stage is kept on what it reads: the tree for the walk, the links for the connections, and the values only while a filter judges them.
 interface Built {
+  tree: NexusTree
   held: MatrixTree
   links: unknown
   connections: GraphInput['connections']
@@ -134,15 +136,21 @@ class MatrixRuntime {
     const c = s.matrixConfig
     const { links, values } = s.matrixGraph
     const b = this.built
-    const held = b && b.held.tree === s.tree ? b.held : matrixTree(s.tree)
+    const held = matrixTree(s.tree)
     const connections =
-      b && b.held === held && b.links === links ? b.connections : matrixConnections(held, links)
+      b && b.held === held && b.links === links ? b.connections : matrixConnections(s.tree, links)
     const judged =
-      b && b.held === held && b.filter === c.filter && b.values === values
+      b &&
+      b.held === held &&
+      b.filter === c.filter &&
+      b.values === values &&
+      b.tree.config.registry === s.tree.config.registry &&
+      b.tree.config.pageMetadata === s.tree.config.pageMetadata
         ? b.visible
-        : matrixVisible(held, values, c.filter)
+        : matrixVisible(s.tree, values, c.filter)
     const visible = b?.visible && judged && sameSet(b.visible, judged) ? b.visible : judged
     this.built = {
+      tree: s.tree,
       held,
       links,
       connections,
@@ -153,7 +161,7 @@ class MatrixRuntime {
       forces: c.forces,
       display: c.display,
     }
-    // A save that moved no link and changed no filter verdict leaves the picture as it stands.
+    // A save that moved no link and changed no filter verdict leaves the picture as it stands; a tree that moved under it only repaints, since the canvas draws icons and Space colors from the tree.
     if (
       b &&
       b.connections === connections &&
@@ -164,7 +172,7 @@ class MatrixRuntime {
       // Only the active grouping's set reaches the simulation, so moving a slider for one the picture is not drawn under leaves it settled.
       const forces = c.forces[c.group.mode]
       if (b.forces[c.group.mode] !== forces) this.setForces(forces)
-      if (b.display !== c.display) this.invalidate()
+      if (b.display !== c.display || b.tree !== s.tree) this.invalidate()
       return
     }
     const first = b === null

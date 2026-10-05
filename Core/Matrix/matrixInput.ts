@@ -1,5 +1,6 @@
 import { contextIdsOf } from '../Contexts/contextIdentity'
 import type { CollectionNode, NexusTree, PageNode, SetNode } from '../Nexus/tree'
+import { entityMemo } from '../Nexus/tree'
 import { pageIndexOf } from '../Nexus/treeIndex'
 import { heldKey } from '../Files/heldKeys'
 import { spaceRowOf } from '../Properties/pageRow'
@@ -21,7 +22,6 @@ const filterSetTree = (tree: NexusTree): SetTreeNode[] =>
   tree.collections.map((c) => ({ id: c.id, children: buildSetTree(c.sets) }))
 
 export interface MatrixTree {
-  tree: NexusTree
   pages: GraphInput['pages']
   folders: GraphInput['folders']
   spaces: GraphInput['spaces']
@@ -29,7 +29,7 @@ export interface MatrixTree {
 }
 
 // The half that only the tree can change. A page save replaces the reply alone, and re-walking every collection for it is the whole nexus paid for one edit.
-export function matrixTree(tree: NexusTree): MatrixTree {
+export const matrixTree = entityMemo([(t) => t.contexts], (tree): MatrixTree => {
   const pages: GraphInput['pages'] = []
   const folders: GraphInput['folders'] = []
   const seats: MatrixTree['seats'] = []
@@ -52,14 +52,14 @@ export function matrixTree(tree: NexusTree): MatrixTree {
     g.spaces.map((s) => ({ id: s.id, title: s.title, spaceIds: spaceIdsOf(s.contextValues) })),
   )
 
-  return { tree, pages, folders, spaces, seats }
-}
+  return { pages, folders, spaces, seats }
+})
 
 export function matrixConnections(
-  held: MatrixTree,
+  tree: NexusTree,
   links: MatrixGraphReply['links'],
 ): GraphInput['connections'] {
-  const resolve = pageIndexOf(held.tree).resolve
+  const resolve = pageIndexOf(tree).resolve
   const connections: GraphInput['connections'] = []
   for (const link of links) {
     const hit = resolve(link.target)
@@ -93,16 +93,16 @@ function answers(
 
 // Rows exist only for a filter to read, so a Matrix with none set builds none.
 export function matrixVisible(
-  held: MatrixTree,
+  tree: NexusTree,
   values: MatrixGraphReply['values'],
   filter: MatrixConfig['filter'],
 ): ReadonlySet<string> | null {
   if (!filter.enabled || !filter.rules) return null
-  const { tree } = held
+  const { seats } = matrixTree(tree)
   const rules = filter.rules
   const schema = tree.config.registry
   const contextIds = contextIdsOf(tree)
-  const rows = held.seats.map((s) => toRow(s.page, s.folderId, values, tree.config.pageMetadata))
+  const rows = seats.map((s) => toRow(s.page, s.folderId, values, tree.config.pageMetadata))
   const ids = new Set(
     applyFilter(rows, rules, schema, filterSetTree(tree), contextIds).map((r) => r.id),
   )
