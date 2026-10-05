@@ -60,8 +60,7 @@ const HELD = {
   matrixLens: null,
 } satisfies Partial<MatrixSlice>
 
-const linkKey = (l: MatrixLink): string =>
-  `${l.pageId}\n${l.path}\n${l.kind}\n${l.target}\n${l.qualifier}\n${l.count}`
+const linkKey = (l: MatrixLink): string => `${l.pageId}\n${l.path}\n${l.kind}\n${l.target}`
 
 const sameLinks = (a: MatrixLink[], b: MatrixLink[]): boolean =>
   a.length === b.length && sameItems(a.map(linkKey).sort(), b.map(linkKey).sort())
