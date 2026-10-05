@@ -1,4 +1,4 @@
-/* The ghost's dim, lift target, and timing live here once rather than in each surface. */
+/* The create affordances' shared chrome lives here once rather than in each surface: the ghost's dim, lift target, and timing, and the add strip. */
 [data-ghost-root],
 [data-create] {
   cursor: pointer;
@@ -12,4 +12,26 @@
 .ghost-worn {
   opacity: var(--ghost-opacity, var(--state-inactive));
   transition: opacity var(--duration-base) var(--ease-base);
+}
+
+/* The bordered "+" strip a surface is extended by: a table's row and column, a board's bottom row. Its host positions it and reveals it. */
+.add-strip {
+  position: absolute;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: var(--width-150) solid var(--border-base);
+  border-radius: 4px;
+  background: none;
+  color: var(--label-tertiary);
+  --reveal-fade: var(--duration-base);
+  transition:
+    opacity var(--reveal-fade) var(--ease-base),
+    background var(--duration-base) var(--ease-base);
+}
+.add-strip:hover,
+.add-strip[data-reveal-held] {
+  background: var(--state-hover);
 }

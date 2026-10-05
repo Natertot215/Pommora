@@ -626,7 +626,7 @@ export function MarkdownTable({
       ))}
       <button
         type="button"
-        className={cx('mdpm-tbl-add mdpm-tbl-add-col', revealTarget)}
+        className={cx('add-strip mdpm-tbl-add mdpm-tbl-add-col', revealTarget)}
         style={{ top: tableTop, height: tableHeight }}
         data-create
         aria-label="Add Column"
@@ -637,7 +637,7 @@ export function MarkdownTable({
       </button>
       <button
         type="button"
-        className={cx('mdpm-tbl-add mdpm-tbl-add-row', revealTarget)}
+        className={cx('add-strip mdpm-tbl-add mdpm-tbl-add-row', revealTarget)}
         data-create
         aria-label="Add Row"
         onMouseDown={swallowCaret}

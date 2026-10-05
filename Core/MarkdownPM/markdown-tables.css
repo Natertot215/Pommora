@@ -56,25 +56,6 @@
   transition: opacity var(--reveal-fade) var(--ease-base);
 }
 
-.mdpm-tbl-add {
-  position: absolute;
-  z-index: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0;
-  border: var(--width-150) solid var(--border-base);
-  border-radius: 4px;
-  background: none;
-  color: var(--label-tertiary);
-  --reveal-fade: var(--duration-base);
-  transition:
-    opacity var(--reveal-fade) var(--ease-base),
-    background var(--duration-base) var(--ease-base);
-}
-.mdpm-tbl-add:hover {
-  background: var(--state-hover);
-}
 /* Bridges the approach gap so crossing it doesn't drop the wrap's hover before the strip is reached. */
 .mdpm-tbl-add::before {
   content: "";
