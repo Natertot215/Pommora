@@ -51,6 +51,8 @@ export function radiusOf(
   return clamp(grown, base, RADIUS_MAX)
 }
 
+const jiggle = (): number => (Math.random() - 0.5) * 1e-6
+
 export function applyGravity(nodes: GraphNode[], forces: Forces, alpha: number): void {
   const k = GRAVITY * forces.gravity * alpha
   for (const n of nodes) {
@@ -77,8 +79,8 @@ export function applySpread(
     if (w * w < THETA2 * d2 || cell.leaf) {
       if (cell.leaf && cell.node === n) return true
       if (d2 < DISTANCE_MIN2) {
-        dx = dx || (Math.random() - 0.5) * 1e-6
-        dy = dy || (Math.random() - 0.5) * 1e-6
+        dx = dx || jiggle()
+        dy = dy || jiggle()
         d2 = DISTANCE_MIN2
       }
       const f = (charge * cell.count) / d2
@@ -101,8 +103,8 @@ export function applyLink(
   for (const l of links) {
     const a = nodes[l.source]
     const b = nodes[l.target]
-    let dx = b.x + b.vx - a.x - a.vx || (Math.random() - 0.5) * 1e-6
-    let dy = b.y + b.vy - a.y - a.vy || (Math.random() - 0.5) * 1e-6
+    let dx = b.x + b.vx - a.x - a.vx || jiggle()
+    let dy = b.y + b.vy - a.y - a.vy || jiggle()
     const d = Math.sqrt(dx * dx + dy * dy)
     const rest = distance + a.radius + b.radius
     const strength = (LINK_STRENGTH[l.kind] * forces.strength) / Math.min(a.degree, b.degree)
@@ -131,8 +133,8 @@ export function applyCollide(nodes: GraphNode[], tree: Quadtree): void {
     const m = cell.node
     if (m === null || m === n || m.id < n.id) return true
     const rr = r + m.radius + LINK_GAP
-    let dx = n.x + n.vx - m.x - m.vx || (Math.random() - 0.5) * 1e-6
-    let dy = n.y + n.vy - m.y - m.vy || (Math.random() - 0.5) * 1e-6
+    let dx = n.x + n.vx - m.x - m.vx || jiggle()
+    let dy = n.y + n.vy - m.y - m.vy || jiggle()
     const d2 = dx * dx + dy * dy
     if (d2 < rr * rr) {
       const d = Math.sqrt(d2)
