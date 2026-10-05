@@ -40,6 +40,7 @@ export function toWorldPoint(
 export function MatrixCanvas({
   surface,
   parked,
+  inWindow,
   editing,
   labelId,
   canvasRef,
@@ -49,6 +50,7 @@ export function MatrixCanvas({
 }: {
   surface: Surface
   parked: boolean
+  inWindow: boolean
   editing: boolean
   labelId: string | null
   canvasRef: React.RefObject<HTMLCanvasElement | null>
@@ -163,7 +165,7 @@ export function MatrixCanvas({
   return (
     <div
       ref={hostRef}
-      className={cx('scroll-fade', s.host)}
+      className={cx(inWindow && 'scroll-fade', s.host)}
       onPointerLeave={() => {
         if (canvasRef.current) boxes.delete(canvasRef.current)
         if (!editing && !glanceShown()) matrixRuntime.setHovered(null)
