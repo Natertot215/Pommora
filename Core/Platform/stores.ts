@@ -61,8 +61,8 @@ export interface ContentIndexStore {
   queryMembers(key: string, title: string): string[]
   readIndexedStat(path: string): IndexedStat | null
   readIndexedStats(): Map<string, IndexedStat>
-  /** Page → page rows only (`body`, `citation`, `frontmatter`), plus every indexed page's governed values and mtime; `paths` narrows both. */
-  readPageRelations(paths?: string[]): PageRelations
+  /** Page → page rows only (`body`, `citation`, `frontmatter`), plus every indexed page's governed values and mtime; `paths` narrows both, and `key` narrows the values to that one key. */
+  readPageRelations(paths?: string[], key?: string): PageRelations
 }
 
 export type SnapshotSource = 'edit' | 'external' | 'restore'

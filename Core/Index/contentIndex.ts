@@ -87,8 +87,8 @@ export function queryMembers(key: string, title?: string): string[] | null {
     : queryPaths((db) => db.queryMembers(key, title))
 }
 
-export function readPageRelations(paths?: string[]): PageRelations | null {
-  return contentIndexStore() !== readyDb ? null : queried((db) => db.readPageRelations(paths))
+export function readPageRelations(paths?: string[], key?: string): PageRelations | null {
+  return contentIndexStore() !== readyDb ? null : queried((db) => db.readPageRelations(paths, key))
 }
 
 export function readIndexedStat(path: string): IndexedStat | null {

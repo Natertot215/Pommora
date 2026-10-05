@@ -129,7 +129,7 @@ export const contentIndexStore = (db: Db): ContentIndexStore => ({
     }
     return out
   },
-  readPageRelations(only) {
+  readPageRelations(only, key) {
     const inClause = only ? ` AND path IN ${PATHS_OF}` : ''
     const args = only ? [JSON.stringify(only)] : []
     const relations = db
@@ -140,9 +140,12 @@ export const contentIndexStore = (db: Db): ContentIndexStore => ({
     const stats = db
       .prepare(`SELECT path, mtime_ms FROM indexed_files WHERE 1=1${inClause}`)
       .all(...args) as { path: string; mtime_ms: number }[]
+    const keyed = key === undefined ? [] : [key]
     const values = db
-      .prepare(`SELECT path, key, value FROM page_values WHERE 1=1${inClause}`)
-      .all(...args) as { path: string; key: string; value: string }[]
+      .prepare(
+        `SELECT path, key, value FROM page_values WHERE 1=1${inClause}${keyed.length ? ' AND key = ?' : ''}`,
+      )
+      .all(...args, ...keyed) as { path: string; key: string; value: string }[]
     const pages: PageRelations['pages'] = {}
     for (const s of stats) pages[s.path] = { values: {}, mtimeMs: s.mtime_ms }
     for (const v of values) {

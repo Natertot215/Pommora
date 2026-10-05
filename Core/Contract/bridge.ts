@@ -218,7 +218,7 @@ export interface Asks {
   'nav:write': { args: [patch: Partial<NavigationState>]; reply: Result<null> }
   'matrix:read': { args: []; reply: Result<MatrixConfig> }
   'matrix:write': { args: [patch: MatrixPatch]; reply: Result<null> }
-  'matrix:graph': { args: [paths?: string[]]; reply: Result<MatrixGraphReply> }
+  'matrix:graph': { args: [withValues: boolean, paths?: string[]]; reply: Result<MatrixGraphReply> }
   'matrixLayout:load': { args: []; reply: Result<MatrixLayout> }
   'matrixLayout:save': { args: [patch: LayoutPatch]; reply: Result<null> }
   'tabs:load': { args: []; reply: Result<StoredTabSet | null> }

@@ -17,9 +17,9 @@ export const matrixHandlers = {
     return ok(null)
   }),
 
-  'matrix:graph': withRoot((_root, _ctx, paths: unknown) => {
+  'matrix:graph': withRoot((_root, _ctx, withValues: unknown, paths: unknown) => {
     if (paths !== undefined && !isStringArray(paths)) return fault('Paths must be strings.')
-    const reply = readMatrixGraph(paths)
+    const reply = readMatrixGraph(withValues === true, paths)
     return reply ? ok(reply) : fault('The index is not ready.')
   }),
 
