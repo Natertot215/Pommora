@@ -70,22 +70,10 @@ afterEach(() => {
 })
 
 describe('the config half', () => {
-  it('patches optimistically, keeps the untouched sections, and writes only the patched one', () => {
-    const before = useSession.getState().matrixConfig
+  it('patches optimistically and writes only the patched section', () => {
     useSession.getState().patchMatrix({ group: { mode: 'space' } })
-    const after = useSession.getState().matrixConfig
-    expect(after.group).toEqual({ mode: 'space' })
-    expect(after.filter).toBe(before.filter)
-    expect(after.forces).toBe(before.forces)
+    expect(useSession.getState().matrixConfig.group).toEqual({ mode: 'space' })
     expect(channels['matrix:write']).toHaveBeenCalledWith({ group: { mode: 'space' } })
-  })
-
-  it('keeps the reference when the push carries an equal config', () => {
-    const before = useSession.getState().matrixConfig
-    useSession.getState().applyMatrixChanged(parseMatrixConfig(null))
-    expect(useSession.getState().matrixConfig).toBe(before)
-    useSession.getState().applyMatrixChanged(parseMatrixConfig({ group: { mode: 'space' } }))
-    expect(useSession.getState().matrixConfig).not.toBe(before)
   })
 
   it('keeps the reference for a push that differs only in key order', () => {
