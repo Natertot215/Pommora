@@ -34,7 +34,7 @@ import {
   readTileDoc,
   unmarkTileRemoving,
 } from './tileDocStore'
-import { knownBody } from '../Session/pageDetailCache'
+import { dropPageDetail, knownBody } from '../Session/pageDetailCache'
 import { useTileDoc } from './useTileDoc'
 import { dialer } from '../Platform/dialer'
 import { isUlidShaped } from '../Nexus/identityMark'
@@ -163,6 +163,7 @@ export function TileHost({
           // A box with no entry behind it has nothing to restore, so its removal is final.
           if (tileIdOf(removed.entry) === null) return notifyUndoable(label)
           const body = knownBody(id) ?? removed.body
+          dropPageDetail(id)
           notifyUndoable(label, async () => {
             const back = await landTileWrite(
               host,
