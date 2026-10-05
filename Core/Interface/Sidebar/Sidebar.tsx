@@ -33,7 +33,7 @@ import { DEFAULT_NEW_NAME, type MutateRequest } from '../../Nexus/mutateRequest'
 import type { NodeKind } from '../../Nexus/entities'
 import { type Creator, spaceCreator } from '../../Actions/createMenu'
 import { owningCollection } from '../../Nexus/treePatch'
-import { spaceNodeOf } from '../../Nexus/treeIndex'
+import { recordsByIdOf } from '../../Nexus/treeIndex'
 import { SidebarDnd } from './sidebarDnd'
 import { buildIndex, type Index } from './sidebarDndModel'
 import { AgendaMode } from './AgendaMode'
@@ -307,22 +307,16 @@ function SidebarIconChoice({ tree, index }: { tree: NexusTree; index: Index }): 
   const entry =
     iconPath === null ? undefined : [...index.byId.values()].find((e) => e.path === iconPath)
   if (entry) trigger.current = rowEl(entry.id) ?? null
-  const ownIcon = (): string | undefined => {
-    switch (entry?.kind) {
-      case 'contextGroup':
-        return contextWorldOf(tree.contexts).groupById.get(entry.id)?.def.icon
-      case 'space':
-        return spaceNodeOf(tree, entry.id)?.icon
-      case 'page':
-        return tree.config.pageMetadata[entry.id]?.icon
-    }
-  }
+  const ownIcon =
+    entry?.kind === 'contextGroup'
+      ? contextWorldOf(tree.contexts).groupById.get(entry.id)?.def.icon
+      : entry && recordsByIdOf(tree).get(entry.id)?.ownIcon
   return (
     <IconChoice
       open={entry !== undefined && trigger.current !== null}
       onClose={endIcon}
       triggerRef={trigger}
-      value={ownIcon()}
+      value={ownIcon}
       onSelect={(icon) => {
         if (entry)
           void mutate({
