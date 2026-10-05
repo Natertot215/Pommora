@@ -15,13 +15,9 @@ const link = (path: string, pageId: string, target: string): MatrixLink => ({
   target,
 })
 
-const values = (id: string): MatrixGraphReply['values'] => ({
-  [id]: { frontmatter: { ID: id }, createdAt: null, modifiedAt: null },
-})
-
 const GRAPH: MatrixGraphReply = {
   links: [link('Notes/Alpha.md', 'p1', 'beta')],
-  values: values('p1'),
+  values: { p1: { frontmatter: { ID: 'p1' }, createdAt: null, modifiedAt: null } },
 }
 
 let channels: Record<string, ReturnType<typeof vi.fn>>

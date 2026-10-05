@@ -17,7 +17,7 @@ import { sessionWriter } from './saveScheduler'
 import type { Slice } from './sessionState'
 import { sameItems } from '@pommora/uix/Utilities/same'
 
-export type MatrixLoad =
+type MatrixLoad =
   | { kind: 'unloaded' }
   | { kind: 'loading' }
   | { kind: 'loaded' }
