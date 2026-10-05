@@ -853,6 +853,18 @@ describe('tile bodies', () => {
       expect(kind('.nexus', 'contexts', 'Areas', 'Home', name)).toBe('tiles-leaf')
     }
     expect(kind('.nexus', 'interface', 'homepage', 'homepage.json')).toBe('homepage-leaf')
+    expect(kind('.nexus', 'interface', 'homepage', '.DS_Store')).toBe('ignored')
+    expect(kind('.nexus', 'contexts', 'Areas', 'Home', 'sub', 't1.md')).toBe('ignored')
+    const [areas] = tree.contexts
+    const mdTitled = {
+      ...tree,
+      contexts: [
+        { ...areas, spaces: [{ ...areas.spaces[0], path: '.nexus/contexts/Areas/Home.md' }] },
+      ],
+    }
+    expect(
+      classifyEvent(mdTitled, root, ev('unlinkDir', '.nexus', 'contexts', 'Areas', 'Home.md')).kind,
+    ).toBe('walk')
     expect(kind('Notes', 'Page.md')).toBe('page')
     expect(kind()).toBe('walk')
   })

@@ -7,10 +7,10 @@ import {
   type TileDoc,
   type TileDocPatch,
   type TileHostRef,
+  tileHostKey,
 } from './tiles'
 import { isPlainObject } from '../Contract/validators'
 import { stableStringify } from '../Files/stableJson'
-import { navKey } from '../Navigation/navRef'
 import { decodeLayout } from './Layout/codec'
 import { emptyLayout, type TileLayout, tileIds } from './Layout/model'
 import { dialer } from '../Platform/dialer'
@@ -83,7 +83,7 @@ const landTileBody = (io: BodyIO, id: string): void => {
 
 const docs = new Map<string, HostDoc>()
 
-const at = (host: TileHostRef): HostDoc | undefined => docs.get(navKey(host))
+const at = (host: TileHostRef): HostDoc | undefined => docs.get(tileHostKey(host))
 
 // Every write joins the ones in flight, so a flush awaits all of them and a reload sees any of them land.
 const joined = <T>(doc: HostDoc, sent: Promise<T>): Promise<T> => {
@@ -119,7 +119,7 @@ const land = <T>(doc: HostDoc, sent: Promise<Result<Landed<T>>>): Promise<Result
   })
 }
 
-const layoutKey = (doc: HostDoc): string => `layout:${navKey(doc.host)}`
+const layoutKey = (doc: HostDoc): string => `layout:${tileHostKey(doc.host)}`
 
 const flush = (doc: HostDoc): Promise<void> => sessionWriter.flush(layoutKey(doc))
 
@@ -178,7 +178,7 @@ const reload = async (doc: HostDoc): Promise<void> => {
 }
 
 function create(host: TileHostRef): HostDoc {
-  const key = navKey(host)
+  const key = tileHostKey(host)
   const doc: HostDoc = {
     host,
     state: EMPTY,
@@ -193,7 +193,7 @@ function create(host: TileHostRef): HostDoc {
   }
   docs.set(key, doc)
   doc.off = dialer().on('tiles:changed', (changed) => {
-    if (navKey(changed.host) !== key) return
+    if (tileHostKey(changed.host) !== key) return
     const io = tileBody(host)
     for (const id of changed.ids) landTileBody(io, id)
     if (doc.holds > 0) doc.heldPush = true
@@ -222,7 +222,7 @@ async function retire(doc: HostDoc): Promise<void> {
   // A remount inside the same commit — a host swapped in place, React's double-invoked effects — re-subscribes before this resolves, and keeps the document rather than re-reading the file.
   if (doc.listeners.size > 0) return
   if (at(doc.host) === doc) {
-    docs.delete(navKey(doc.host))
+    docs.delete(tileHostKey(doc.host))
     for (const id of tileIds(doc.state.layout)) {
       dropPageDetail(id)
       removing.delete(id)

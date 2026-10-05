@@ -8,6 +8,7 @@ import {
   TILE_KINDS,
   type TileType,
   tileDocPatch,
+  tileHostKey,
   type ViewTileEntry,
 } from './tiles'
 
@@ -185,6 +186,11 @@ describe('coerceTileHost', () => {
     expect(coerceTileHost({ kind: 'homepage', id: 'x' })).toBeNull()
     expect(coerceTileHost({ kind: 'area', path: 'x' })).toBeNull()
     expect(coerceTileHost('homepage')).toBeNull()
+  })
+
+  it('keys a host by its kind and id, apart from any navigation key', () => {
+    expect(tileHostKey({ kind: 'homepage' })).toBe('homepage')
+    expect(tileHostKey({ kind: 'space', id: 's1' })).toBe('space:s1')
   })
 })
 

@@ -37,8 +37,8 @@ import { renameCascade, spacesLinkHeading } from './cascade'
 import { noteExternalEdit } from '../Pages/fileHistory'
 import { heldTreeOf, patchLiveTree } from './liveTree'
 import { resolveOrder } from './order'
-import { navKey } from '../Navigation/navRef'
-import { HOMEPAGE_HOST, type TileHostRef, type TilesChanged } from '../Tiles/tiles'
+import { type TileHostRef, type TilesChanged, tileHostKey } from '../Tiles/tiles'
+import { tileHostAt } from '../Tiles/tileHosts'
 import { dropTileHeadingLinks, tilesLinkHeading } from '../Tiles/tilesFile'
 import {
   contextLinker,
@@ -78,7 +78,6 @@ import {
   CROPS_REL,
   isMetadataShardRel,
   NEXUS_DIR,
-  HOMEPAGE_DIR_REL,
   nexusConfigRel,
   SIDECAR_FILENAME,
   SIDECARS,
@@ -152,7 +151,7 @@ export function stampable(owed: Owed, listed: readonly Unreadable[]): Unreadable
 }
 
 const oweTiles = (owed: Owed, host: TileHostRef, ids: Iterable<string>): void => {
-  const key = navKey(host)
+  const key = tileHostKey(host)
   const held = owed.tiles.get(key) ?? { host, ids: new Set<string>() }
   owed.tiles.set(key, held)
   for (const id of ids) held.ids.add(id)
@@ -205,26 +204,6 @@ type EventClass =
 
 // ── Classification ──
 
-// A tile body is no part of the tree; a change to one names its host, like the host's own document.
-function tileBodyUnder(segs: string[], rel: string): boolean {
-  return (
-    (rel.startsWith(`${HOMEPAGE_DIR_REL}/`) && rel !== nexusConfigRel('homepage')) ||
-    (segs[0] === NEXUS_DIR &&
-      segs[1] === CONTEXTS_DIRNAME &&
-      segs.length >= 5 &&
-      isMarkdownFile(segs[segs.length - 1]))
-  )
-}
-
-function tileHostAt(tree: NexusTree, rel: string): TileHostRef | null {
-  const segs = rel.split('/')
-  if (segs[0] !== NEXUS_DIR) return null
-  if (relDirname(rel) === HOMEPAGE_DIR_REL) return HOMEPAGE_HOST
-  const space =
-    segs[1] === CONTEXTS_DIRNAME && segs.length === 5 ? spaceAt(tree, relDirname(rel)) : null
-  return space ? { kind: 'space', id: space.id } : null
-}
-
 // Exported for tests alone.
 export function classifyEvent(tree: NexusTree, root: string, ev: Changed): EventClass {
   const rel = relative(root, ev.absPath)
@@ -239,9 +218,10 @@ export function classifyEvent(tree: NexusTree, root: string, ev: Changed): Event
   if (excludedMatcher(scope.excluded)(segs)) return { kind: 'ignored' }
   if (segs[0] === NEXUS_DIR) {
     if (name.startsWith(`${TILE_DOC_FILENAME}.bad`)) return { kind: 'ignored' }
-    if (name === TILE_DOC_FILENAME || tileBodyUnder(segs, rel)) {
-      const host = tileHostAt(tree, rel)
-      return host ? { kind: 'tiles-leaf', host, rel } : { kind: 'ignored' }
+    // A tile body is no part of the tree; a change to one names its host, like the host's own document.
+    if (name === TILE_DOC_FILENAME || isMarkdownFile(name)) {
+      const host = tileHostAt(tree, relDirname(rel))
+      if (host) return { kind: 'tiles-leaf', host, rel }
     }
     if (rel === nexusConfigRel('settings')) return { kind: 'settings-leaf' }
     if (rel === nexusConfigRel('homepage')) return { kind: 'homepage-leaf' }

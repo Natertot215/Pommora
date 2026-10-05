@@ -1,7 +1,5 @@
 import { isPlainObject } from '../Contract/validators'
-import { join } from '../Paths/posix'
 import {
-  HOMEPAGE_HOST,
   knownTile,
   type Landed,
   tileIdOf,
@@ -12,7 +10,6 @@ import {
   type RemovedTile,
   TILE_KINDS,
   type TileDoc,
-  type TileHostRef,
   type TilesChanged,
 } from './tiles'
 import { decodeLayout } from './Layout/codec'
@@ -29,43 +26,11 @@ import { atomicWriteFile, pathExists, rewritePageSerialized } from '../Files/ato
 import { linksIn } from '../Connections/scan'
 import { discardFile } from '../Trash/bundle'
 import { machine } from '../Platform/machine'
-import { heldTreeOf, liveTreeOf } from '../Nexus/liveTree'
-import type { NexusTree } from '../Nexus/tree'
-import { tileFilePath, tileHostDir } from '../Paths/paths'
+import { liveTreeOf } from '../Nexus/liveTree'
+import { tileFilePath } from '../Paths/paths'
+import { tileHostsOf } from './tileHosts'
 import type { BodyWrite } from '../Pages/pageDetail'
 import type { TrashDeps } from '../Trash/bundle'
-
-/** A Space whose sidecar the walk couldn't read is still reached by its folder, with no host to name; only an unreadable Contexts registry hides the Spaces themselves. */
-export function tileHostsOf(
-  root: string,
-  tree: NexusTree,
-): { hosts: { host?: TileHostRef; dir: string }[]; unreadable: number } {
-  const unread = tree.unreadable ?? []
-  return {
-    hosts: [
-      { host: HOMEPAGE_HOST, dir: tileHostDir(root) },
-      ...tree.contexts.flatMap((g) =>
-        g.spaces.map((s) => ({
-          host: { kind: 'space' as const, id: s.id },
-          dir: join(root, s.path),
-        })),
-      ),
-      ...unread.filter((u) => u.kind === 'space').map((u) => ({ dir: join(root, u.path) })),
-    ],
-    unreadable: unread.some((u) => u.kind === 'registry') ? 1 : 0,
-  }
-}
-
-export async function hostDir(root: string, host: TileHostRef): Promise<string | null> {
-  if (host.kind === 'homepage') return tileHostDir(root)
-  const held = heldTreeOf(root)
-  if (!held) return null
-  const hit = tileHostsOf(root, held).hosts.find(
-    (h) => h.host?.kind === 'space' && h.host.id === host.id,
-  )
-  // Mid-cascade the tree still spells the folder a rename just moved.
-  return hit && (await pathExists(hit.dir)) ? hit.dir : null
-}
 
 const setTiles = (dir: string, update: (tiles: unknown[]) => unknown[]): Promise<Result<TileDoc>> =>
   writeTileDocAt(dir, (cur) => ({ ...cur, tiles: update(cur.tiles) }))

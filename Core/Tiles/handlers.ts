@@ -9,12 +9,12 @@ import {
   convertTile,
   createMarkdownTile,
   duplicateTile,
-  hostDir,
   readMarkdownTile,
   removeTile,
   restoreTile,
   writeMarkdownTile,
 } from './tilesFile'
+import { hostDir } from './tileHosts'
 import { trashDeps } from '../Trash/bundle'
 import { captureLoser } from '../Sync/Arrival/captures'
 import { relative } from '../Paths/posix'
