@@ -25,7 +25,7 @@ const branch = (label: string) => items.find((i) => i.label === label)?.submenu 
 
 describe('the editor’s right-click block', () => {
   it('words and orders its submenus as the block menu does', () => {
-    expect(items.map((i) => i.label)).toEqual(['Insert', 'Lists', 'Format', 'Embed', 'Heading'])
+    expect(items.map((i) => i.label)).toEqual(['Lists', 'Insert', 'Format', 'Embed', 'Heading'])
     expect(branch('Insert').map((r) => r.label)).toEqual([
       'Blockquote',
       'Callout',

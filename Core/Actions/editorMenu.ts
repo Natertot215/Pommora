@@ -101,5 +101,5 @@ export function editorContextItems(
   const lists = { label: 'Lists', submenu: rows(LIST_ROWS) }
   return s.scope === 'cell'
     ? [...insertLink, lists, format]
-    : [...insertLink, insert, lists, format, embed, heading]
+    : [...insertLink, lists, insert, format, embed, heading]
 }
