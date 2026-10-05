@@ -77,9 +77,9 @@ export const tilesHandlers = {
     )
   }),
 
-  'tiles:create': withWriteRoot(async (root, _ctx, host: unknown, type: unknown) => {
+  'tiles:create': withWriteRoot(async (root, _ctx, host: unknown, pick?: unknown) => {
     const tile = await tileHostAnd(root, host)
-    return tile.ok ? createTile(tile.value.dir, type) : tile
+    return tile.ok ? createTile(root, tile.value.dir, pick) : tile
   }),
 
   'tiles:removeTile': withWriteRoot(

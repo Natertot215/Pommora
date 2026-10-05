@@ -84,7 +84,7 @@ export interface ViewPick {
   view_id?: string
 }
 
-/** What a convert into each kind is given; a kind a menu row converts into has a member here. */
+/** What a create or a convert into each kind is given; a kind a menu row makes has a member here. */
 export type TilePick = { kind: 'page'; value: string } | { kind: 'view'; value: ViewPick }
 export type PickKind = TilePick['kind']
 
@@ -133,7 +133,7 @@ export interface RemovedTile {
 type EntrySchemas = [z.ZodType<TileEntry>, z.ZodType<TileEntry>, ...z.ZodType<TileEntry>[]]
 const knownEntry = z.union(Object.values(TILE_KINDS).map((k) => k.schema) as EntrySchemas)
 
-export const mintSeed = (type: TileType, id: string): Record<string, unknown> => ({ id, type })
+export const mintSeed = (id: string): Record<string, unknown> => ({ id, type: 'markdown' })
 
 export function seedBoard([a, b, c, d]: readonly string[]): TileDoc {
   const tile = (id: string): TileLeaf => ({ kind: 'tile', id, h: NEW_TILE_H })
@@ -142,7 +142,7 @@ export function seedBoard([a, b, c, d]: readonly string[]): TileDoc {
   })
   return {
     layout: { bands: [band(a, b), band(c, d)] },
-    tiles: [a, b, c, d].map((id) => mintSeed('markdown', id)),
+    tiles: [a, b, c, d].map(mintSeed),
     locked: false,
   }
 }

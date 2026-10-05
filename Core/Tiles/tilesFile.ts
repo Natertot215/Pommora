@@ -51,16 +51,47 @@ async function addTile(
   return landed(written, { id })
 }
 
-// A kind is created directly when its bare seed is a whole entry; a kind that needs a source is reached by convert.
+const PICK_ENTRIES: Record<PickKind, (root: string, value: unknown) => Promise<Result<Json>>> = {
+  page: async (_root, value) =>
+    typeof value === 'string' && value !== ''
+      ? ok({ type: 'page', page_id: value })
+      : fault('Invalid page id.'),
+  // A view pick naming no view takes the container's default.
+  view: async (root, value) => {
+    if (!isPlainObject(value) || typeof value.source_id !== 'string') return fault('Invalid pick.')
+    const tree = await liveTreeOf(root)
+    const source = findContainerWhere(tree, (c) => c.id === value.source_id)
+    if (!source) return fail('not-found', 'That view’s source is gone.')
+    let config: Json | null
+    if (typeof value.view_id === 'string') {
+      const folder = await resolveUnderRoot(root, source.path)
+      if (!folder.ok) return folder
+      config = await readStoredView(folder.value, source.kind, value.view_id)
+    } else config = mintDefaultView(containerSchema(tree, source))
+    if (!config) return fail('not-found', 'View not found.')
+    const views = [{ source_id: source.id, config: { ...config, id: mintViewId() } }]
+    return ok({ type: 'view', views, active: 0 })
+  },
+}
+
+const pickEntry = (root: string, pick: unknown): Promise<Result<Json>> =>
+  isPlainObject(pick) && isKeyOf(PICK_ENTRIES, pick.kind)
+    ? PICK_ENTRIES[pick.kind](root, pick.value)
+    : Promise.resolve(fault('Invalid pick.'))
+
+// With no pick a tile starts as a blank Markdown Tile; a pick makes the entry a convert would, so a linked tile lands in one write and owns no file.
 export async function createTile(
+  root: string,
   dir: string,
-  type: unknown,
+  pick?: unknown,
 ): Promise<Result<Landed<{ id: string }>>> {
   const id = newId()
-  const seed = knownTile({ id, type })
-  if (!seed) return fault('That tile can’t be created.')
+  const linked = pick === undefined ? null : await pickEntry(root, pick)
+  if (linked && !linked.ok) return linked
   await machine().mkdir(dir)
-  return addTile(dir, id, mintSeed(seed.type, id), TILE_KINDS[seed.type].fileBacked ? '' : null)
+  return linked
+    ? addTile(dir, id, mergeEntry({ id }, linked.value), null)
+    : addTile(dir, id, mintSeed(id), '')
 }
 
 async function reviseTile(
@@ -146,29 +177,6 @@ export async function restoreTile(dir: string, removed: unknown): Promise<Result
   return landed(written, {})
 }
 
-const CONVERTS: Record<PickKind, (root: string, value: unknown) => Promise<Result<Json>>> = {
-  page: async (_root, value) =>
-    typeof value === 'string' && value !== ''
-      ? ok({ type: 'page', page_id: value })
-      : fault('Invalid page id.'),
-  // A view pick naming no view takes the container's default.
-  view: async (root, value) => {
-    if (!isPlainObject(value) || typeof value.source_id !== 'string') return fault('Invalid pick.')
-    const tree = await liveTreeOf(root)
-    const source = findContainerWhere(tree, (c) => c.id === value.source_id)
-    if (!source) return fail('not-found', 'That view’s source is gone.')
-    let config: Json | null
-    if (typeof value.view_id === 'string') {
-      const folder = await resolveUnderRoot(root, source.path)
-      if (!folder.ok) return folder
-      config = await readStoredView(folder.value, source.kind, value.view_id)
-    } else config = mintDefaultView(containerSchema(tree, source))
-    if (!config) return fail('not-found', 'View not found.')
-    const views = [{ source_id: source.id, config: { ...config, id: mintViewId() } }]
-    return ok({ type: 'view', views, active: 0 })
-  },
-}
-
 export async function convertTile(
   root: string,
   dir: string,
@@ -176,10 +184,7 @@ export async function convertTile(
   pick: unknown,
   deps: TrashDeps,
 ): Promise<Result<Landed>> {
-  const patch =
-    isPlainObject(pick) && isKeyOf(CONVERTS, pick.kind)
-      ? await CONVERTS[pick.kind](root, pick.value)
-      : fault('Invalid pick.')
+  const patch = await pickEntry(root, pick)
   if (!patch.ok) return patch
   const revised = await reviseTile(root, dir, tileId, patch.value, deps)
   return revised.ok ? ok({ landed: revised.value.landed }) : revised
