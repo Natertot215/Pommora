@@ -7,7 +7,7 @@ import { coerceTileHost, landed, patchEntries, tileDocPatch } from './tiles'
 
 import {
   convertTile,
-  createMarkdownTile,
+  createTile,
   duplicateTile,
   readMarkdownTile,
   removeTile,
@@ -77,9 +77,9 @@ export const tilesHandlers = {
     )
   }),
 
-  'tiles:createMarkdown': withWriteRoot(async (root, _ctx, host: unknown) => {
+  'tiles:create': withWriteRoot(async (root, _ctx, host: unknown, type: unknown) => {
     const tile = await tileHostAnd(root, host)
-    return tile.ok ? createMarkdownTile(tile.value.dir) : tile
+    return tile.ok ? createTile(tile.value.dir, type) : tile
   }),
 
   'tiles:removeTile': withWriteRoot(

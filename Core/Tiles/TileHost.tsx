@@ -24,7 +24,6 @@ import { personalizationOf } from '../Session/configSlice'
 import { popMenu } from '../Actions/menuActions'
 import { askRemoveTile } from '../Interface/Confirm/confirmations'
 import { notifyUndoable, reportRefusal } from '../Interface/Notifications/notifications'
-import { pagePickTree } from '../Actions/pickTree'
 import { ZOOM_STEPS } from './tileZoom'
 import {
   inertTile,
@@ -32,7 +31,7 @@ import {
   renderTile as renderSurface,
   tileSourceInfo,
 } from './tileKinds'
-import { menuPatch, tileMenuItems, viewPickTree } from './tileHandleMenu'
+import { menuPatch, pickTreesOf, tileMenuItems } from './tileHandleMenu'
 import {
   landTileWrite,
   markTileRemoving,
@@ -77,12 +76,14 @@ const storedEntry = (host: TileHostRef, id: string): TileEntry | undefined => {
 }
 
 export function TileHost({
-  host,
+  host: given,
   connections,
 }: {
   host: TileHostRef
   connections?: ConnectionsApi
 }): React.JSX.Element | null {
+  // Every mount keys this component by its host, so the first object stands for its life and a mount may pass a fresh literal.
+  const [host] = useState(given)
   const {
     layout,
     tiles,
@@ -217,13 +218,11 @@ export function TileHost({
       if (!tree) return
       const { defaultIcons } = personalizationOf(s)
       const page = entry && tileSourceInfo(entry, pagesById)
-      const pageItems = pagePickTree(tree, defaultIcons, (p) => p.id)
-      const viewItems = viewPickTree(tree, defaultIcons)
+      const pickTree = pickTreesOf(tree, defaultIcons)
       const build = (on: TileEntry | undefined): ReturnType<typeof tileMenuItems> =>
         tileMenuItems({
           entry: on,
-          pageItems,
-          viewItems,
+          pickTree,
           pageInfo: page && {
             title: page.title,
             icon: entityIcon('page', page.icon, defaultIcons),
@@ -301,7 +300,7 @@ export function TileHost({
 
   const onBackdrop = useCallback(
     (target: BackdropTarget) => {
-      void landTileWrite(host, dialer().ask('tiles:createMarkdown', host)).then((r) => {
+      void landTileWrite(host, dialer().ask('tiles:create', host, 'markdown')).then((r) => {
         if (!reportRefusal(r)) return
         commitLayout((cur) =>
           target.kind === 'wedge'

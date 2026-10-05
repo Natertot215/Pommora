@@ -1,16 +1,16 @@
 import { lockLabel } from '../Actions/toggleLabels'
 import {
   type EntryPatch,
+  type PickKind,
   TILE_KINDS,
   type TileEntry,
   type TilePick,
   type TileStyle,
-  type ViewPick,
 } from './tiles'
 import { scaleRows } from './tileZoom'
 import { type Personalization, ZOOM } from '../Settings/personalization'
 import { type ActionItem, type PickItem, pickRows } from '../Actions/menuModel'
-import { containerPickTree } from '../Actions/pickTree'
+import { containerPickTree, pagePickTree } from '../Actions/pickTree'
 import type { NexusTree } from '../Nexus/tree'
 import { viewGlyph } from '../Views/viewIcon'
 
@@ -34,29 +34,38 @@ export function menuPatch(action: string, entry: TileEntry): EntryPatch | null {
   return null
 }
 
-export const viewPickTree = (
-  tree: NexusTree,
-  icons: Personalization['defaultIcons'],
-): PickItem<ViewPick>[] =>
-  containerPickTree(tree, icons, (c) => [
-    ...(c.views ?? []).map((v) => ({
-      label: v.name,
-      icon: viewGlyph(v),
-      pick: { source_id: c.id, view_id: v.id },
-    })),
-    { label: '+ Custom', pick: { source_id: c.id }, footer: true },
-  ])
+type PickTrees = { [K in PickKind]: readonly PickItem<Extract<TilePick, { kind: K }>['value']>[] }
+type PickTree = <K extends PickKind>(kind: K) => PickTrees[K]
+
+const PICK_TREES: {
+  [K in PickKind]: (tree: NexusTree, icons: Personalization['defaultIcons']) => PickTrees[K]
+} = {
+  page: (tree, icons) => pagePickTree(tree, icons, (p) => p.id),
+  view: (tree, icons) =>
+    containerPickTree(tree, icons, (c) => [
+      ...(c.views ?? []).map((v) => ({
+        label: v.name,
+        icon: viewGlyph(v),
+        pick: { source_id: c.id, view_id: v.id },
+      })),
+      { label: '+ Custom', pick: { source_id: c.id }, footer: true },
+    ]),
+}
+
+/** A kind's tree is built when a menu row first asks for it, once per menu. */
+export function pickTreesOf(tree: NexusTree, icons: Personalization['defaultIcons']): PickTree {
+  const built: Partial<PickTrees> = {}
+  return (kind) => (built[kind] ??= PICK_TREES[kind](tree, icons))
+}
 
 export function tileMenuItems({
   entry,
-  pageItems,
-  viewItems,
+  pickTree,
   pageInfo,
   containerLocked,
 }: {
   entry: TileEntry | undefined
-  pageItems: readonly PickItem<string>[]
-  viewItems: readonly PickItem<ViewPick>[]
+  pickTree: PickTree
   pageInfo?: { title: string; icon: string }
   containerLocked: boolean
 }): { items: ActionItem<TileMenuAction>[]; picks: TilePick[] } {
@@ -70,20 +79,18 @@ export function tileMenuItems({
     picks.push(pick)
     return `tile:pick:${picks.length - 1}`
   }
+  const pickRowsTo = <K extends PickKind>(to: K) =>
+    pickRows(pickTree(to), (value) => pickAction({ kind: to, value } as TilePick))
   const borderless = entry.style === 'borderless'
   const items: ActionItem<TileMenuAction>[] = [
     ...(pageInfo
       ? [{ label: pageInfo.title, icon: pageInfo.icon, action: 'tile:open' as const }]
       : []),
     // A row with no source is shown and refused rather than dropped.
-    ...TILE_KINDS[entry.type].menuRows.map(({ label, source }) => ({
+    ...TILE_KINDS[entry.type].menuRows.map(({ label, to }) => ({
       label,
       icon: 'link',
-      submenu: locked
-        ? []
-        : source === 'pages'
-          ? pickRows(pageItems, (value) => pickAction({ kind: 'page', value }))
-          : pickRows(viewItems, (value) => pickAction({ kind: 'view', value })),
+      submenu: locked ? [] : pickRowsTo(to),
     })),
     {
       label: 'Style',

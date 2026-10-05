@@ -1,12 +1,9 @@
-import { useMemo } from 'react'
 import type { NexusTree } from '../Nexus/tree'
 import { TileHost } from '../Tiles/TileHost'
 import { InterfaceScaffold } from '../Interface/InterfaceScaffold'
 import { findSpace } from '../Nexus/treeIndex'
 
 export function SpaceView({ tree, id }: { tree: NexusTree | null; id: string }): React.JSX.Element {
-  // Memoized per Space — a fresh host literal each render would churn every tile memo downstream.
-  const host = useMemo(() => ({ kind: 'space' as const, id }), [id])
   const owner = findSpace(tree, id)
   if (!owner)
     return (
@@ -17,7 +14,7 @@ export function SpaceView({ tree, id }: { tree: NexusTree | null; id: string }):
   return (
     <InterfaceScaffold owner={owner}>
       {/* Keyed per Space: the surface's debounced saves and editor session must never carry across an in-place host swap. */}
-      <TileHost key={id} host={host} />
+      <TileHost key={id} host={{ kind: 'space', id }} />
     </InterfaceScaffold>
   )
 }

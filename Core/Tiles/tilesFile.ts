@@ -1,5 +1,6 @@
-import { isPlainObject } from '../Contract/validators'
+import { isKeyOf, isPlainObject } from '../Contract/validators'
 import {
+  copyEntry,
   knownTile,
   type Landed,
   tileIdOf,
@@ -7,6 +8,7 @@ import {
   mergeEntry,
   mintSeed,
   NEW_TILE_H,
+  type PickKind,
   type RemovedTile,
   TILE_KINDS,
   type TileDoc,
@@ -17,7 +19,7 @@ import { insertBand } from './Layout/ops'
 import { fail, ok, type Result, valueOr, fault } from '../Contract/result'
 import { readTileDocAt, writeTileDocAt } from './tileDoc'
 import { newId } from '../Nexus/ids'
-import { mapViews, mintDefaultView, mintViewId } from '../Views/views'
+import { mintDefaultView, mintViewId } from '../Views/views'
 import { readStoredView } from '../Views/viewsFile'
 import type { Json } from '../Files/stableJson'
 import { containerSchema, findContainerWhere } from '../Nexus/treePatch'
@@ -49,10 +51,16 @@ async function addTile(
   return landed(written, { id })
 }
 
-export async function createMarkdownTile(dir: string): Promise<Result<Landed<{ id: string }>>> {
+// A kind is created directly when its bare seed is a whole entry; a kind that needs a source is reached by convert.
+export async function createTile(
+  dir: string,
+  type: unknown,
+): Promise<Result<Landed<{ id: string }>>> {
   const id = newId()
+  const seed = knownTile({ id, type })
+  if (!seed) return fault('That tile can’t be created.')
   await machine().mkdir(dir)
-  return addTile(dir, id, mintSeed('markdown', id), '')
+  return addTile(dir, id, mintSeed(seed.type, id), TILE_KINDS[seed.type].fileBacked ? '' : null)
 }
 
 async function reviseTile(
@@ -138,6 +146,29 @@ export async function restoreTile(dir: string, removed: unknown): Promise<Result
   return landed(written, {})
 }
 
+const CONVERTS: Record<PickKind, (root: string, value: unknown) => Promise<Result<Json>>> = {
+  page: async (_root, value) =>
+    typeof value === 'string' && value !== ''
+      ? ok({ type: 'page', page_id: value })
+      : fault('Invalid page id.'),
+  // A view pick naming no view takes the container's default.
+  view: async (root, value) => {
+    if (!isPlainObject(value) || typeof value.source_id !== 'string') return fault('Invalid pick.')
+    const tree = await liveTreeOf(root)
+    const source = findContainerWhere(tree, (c) => c.id === value.source_id)
+    if (!source) return fail('not-found', 'That view’s source is gone.')
+    let config: Json | null
+    if (typeof value.view_id === 'string') {
+      const folder = await resolveUnderRoot(root, source.path)
+      if (!folder.ok) return folder
+      config = await readStoredView(folder.value, source.kind, value.view_id)
+    } else config = mintDefaultView(containerSchema(tree, source))
+    if (!config) return fail('not-found', 'View not found.')
+    const views = [{ source_id: source.id, config: { ...config, id: mintViewId() } }]
+    return ok({ type: 'view', views, active: 0 })
+  },
+}
+
 export async function convertTile(
   root: string,
   dir: string,
@@ -145,41 +176,14 @@ export async function convertTile(
   pick: unknown,
   deps: TrashDeps,
 ): Promise<Result<Landed>> {
-  const patch = await convertedEntry(root, pick)
+  const patch =
+    isPlainObject(pick) && isKeyOf(CONVERTS, pick.kind)
+      ? await CONVERTS[pick.kind](root, pick.value)
+      : fault('Invalid pick.')
   if (!patch.ok) return patch
   const revised = await reviseTile(root, dir, tileId, patch.value, deps)
   return revised.ok ? ok({ landed: revised.value.landed }) : revised
 }
-
-// A view pick naming no view takes the container's default.
-async function convertedEntry(root: string, pick: unknown): Promise<Result<Json>> {
-  if (!isPlainObject(pick)) return fault('Invalid pick.')
-  const { kind, value } = pick
-  if (kind === 'page')
-    return typeof value === 'string' && value !== ''
-      ? ok({ type: 'page', page_id: value })
-      : fault('Invalid page id.')
-  if (kind !== 'view' || !isPlainObject(value) || typeof value.source_id !== 'string')
-    return fault('Invalid pick.')
-  const tree = await liveTreeOf(root)
-  const source = findContainerWhere(tree, (c) => c.id === value.source_id)
-  if (!source) return fail('not-found', 'That view’s source is gone.')
-  let config: Json | null
-  if (typeof value.view_id === 'string') {
-    const folder = await resolveUnderRoot(root, source.path)
-    if (!folder.ok) return folder
-    config = await readStoredView(folder.value, source.kind, value.view_id)
-  } else config = mintDefaultView(containerSchema(tree, source))
-  if (!config) return fail('not-found', 'View not found.')
-  const views = [{ source_id: source.id, config: { ...config, id: mintViewId() } }]
-  return ok({ type: 'view', views, active: 0 })
-}
-
-/** The source view's id and the DEFAULT_VIEW_ID sentinel are live keys outside the payload — preserving one would silently re-couple a copied snapshot to its source. */
-export const copyEntry = (raw: unknown): unknown =>
-  isPlainObject(raw) && raw.type === 'view'
-    ? (mapViews(raw, (config) => ({ ...config, id: mintViewId() })) ?? raw)
-    : raw
 
 export async function duplicateTile(
   dir: string,

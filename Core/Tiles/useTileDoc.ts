@@ -81,6 +81,17 @@ export function useTileDoc(host: TileHostRef): TileDocSession {
   }
 }
 
+/** Each host's document stays loaded while the caller holds it, whether or not a board shows it. */
+export function useLoadedTileDocs(hosts: readonly TileHostRef[]): void {
+  const latest = useLatest(hosts)
+  useEffect(() => {
+    const held = latest.current.map((host) => subscribeTileDoc(host, () => {}))
+    return () => {
+      for (const off of held) off()
+    }
+  }, [hosts.map(tileHostKey).join(' ')])
+}
+
 export function useTileDocReady(host: TileHostRef | null): boolean {
   const { ready } = useDocState(host)
   return host === null || ready
