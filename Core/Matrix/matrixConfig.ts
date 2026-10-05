@@ -111,5 +111,3 @@ export function applyPatch(config: MatrixConfig, patch: MatrixPatch): MatrixConf
     display: patch.display ? { ...config.display, ...patch.display } : config.display,
   }
 }
-
-export const SECTIONS = ['group', 'filter', 'forces', 'display'] as const
