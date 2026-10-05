@@ -7,24 +7,9 @@ const GOLDEN_ANGLE = Math.PI * (3 - Math.sqrt(5))
 
 type Layout = ReadonlyMap<string, { x: number; y: number }>
 
-export function spiral(i: number): { x: number; y: number } {
-  const r = SPIRAL_STEP * Math.sqrt(0.5 + i)
-  const a = i * GOLDEN_ANGLE
-  return { x: r * Math.cos(a), y: r * Math.sin(a) }
-}
-
 export function place(graph: Graph, layout: Layout): Set<string> {
   const { nodes, links } = graph
   const fresh = new Set<string>()
-  if (layout.size === 0) {
-    nodes.forEach((n, i) => {
-      const p = spiral(i)
-      n.x = p.x
-      n.y = p.y
-      fresh.add(n.id)
-    })
-    return fresh
-  }
   let ring = 0
   for (const n of nodes) {
     const p = layout.get(n.id)
