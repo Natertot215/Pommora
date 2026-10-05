@@ -1,9 +1,10 @@
 ## Matrix
 
-The graph view: a Nexus's Pages, Folders, and Spaces drawn as nodes on a canvas, their
+The Matrix view: a Nexus's Pages, Folders, and Spaces drawn as nodes on a canvas, their
 connections and containment as links, laid out by a force simulation this package owns.
-`Engine/` is the physics and reaches no browser global, no store, and no React; everything
-above it consumes the engine and none of it changes the engine.
+`Engine/` holds the physics, the lens, and the label policy, and reaches no browser global,
+no store, and no React; everything above it consumes the engine and none of it changes the
+engine.
 
 #### Provenance
 
@@ -28,7 +29,7 @@ drove the loop's own shape rather than a library's:
 | `Engine/graph.ts` | Nodes, the five link kinds, the three Group modes, degree, members, radius |
 | `Engine/forces.ts` | The force KNOBs, `radiusOf`, gravity, spread, link springs, collision |
 | `Engine/quadtree.ts` | The Barnes–Hut tree, built per tick, and the hit test behind it |
-| `Engine/simulation.ts` | The tick, sleep by energy, local wake, the drag and return spring, Shuffle |
+| `Engine/simulation.ts` | The tick, sleep by energy, local wake, the drag spring, Shuffle |
 | `Engine/placement.ts` | Seating a node the layout has never carried, on a spiral outside the extent |
 | `Engine/viewport.ts` | The lens, its pan and zoom, the zoom clamps, world ↔ screen, and the fit |
 | `Engine/labels.ts` | How far each kind is through its zoom reveal, and culling titles to one per cell |
@@ -50,3 +51,6 @@ drove the loop's own shape rather than a library's:
 | `matrix.css.ts` | The package's styles |
 | `iconCache.ts` | Node glyphs rasterised once per colour and scale, for the draw path |
 | `useMatrixRuntime.ts` | The runtime's two subscriptions into React |
+
+`handlers.ts`, `matrixFile.ts`, and `matrixGraph.ts` run in the host, and `matrixConfig.ts` and
+`matrixLayout.ts` are shared by the host and the interface.

@@ -28,7 +28,7 @@ Each link kind pulls at its own strength — body and containment hardest, a cit
 
 ### The Engine
 
-`Core/Matrix/Engine/` is the physics. It reaches no browser global, no store, and no React, and every module carries its own tests.
+`Core/Matrix/Engine/` holds the physics, the lens, and the label policy. It reaches no browser global, no store, and no React, and every module carries its own tests.
 
 #### The Loop
 
@@ -36,7 +36,7 @@ One integration step runs gravity toward the center, charge-based spread through
 
 #### Waking
 
-Work is scoped to what changed. A save that moves no link and changes no filtered value leaves the picture as it stands. A Page created elsewhere joins among the nodes it already links to, and only it moves, while the rest of the picture holds still. A dragged node wakes the graph around it; a released one is carried home by the same spring that followed the pointer, and the loop stays awake until it arrives. A node the layout has never seen is seated on a spiral outside the current extent, so a first open and a growing Nexus both open without overlap.
+Work is scoped to what changed. A save that moves no link and changes no filtered value leaves the picture as it stands. A Page created elsewhere joins among the nodes it already links to, and only it moves, while the rest of the picture holds still. A dragged node wakes the graph around it; a released one stays where it was let go while the layout relaxes around it. A node the layout has never seen is seated on a spiral outside the current extent, so a first open and a growing Nexus both open without overlap.
 
 #### Scale
 
@@ -44,7 +44,7 @@ Every expensive step is bounded: the spread force approximates distant clusters 
 
 ### The Surface
 
-The picture is drawn on a `<canvas>`, with one DOM overlay following the node under the pointer. Paint is read from the design kit's tokens through a probe and the host's computed style, so the canvas takes the same tokens the DOM does. Every node carries its glyph inside its own circle, at one-third of its diameter across all three kinds, and a Page's arrives at the zoom that reveals Page titles while a Folder's and a Space's stand at any scale. A Space with a color takes it into that circle's fill and glyph, and a Space without one paints as any other node does. The overlay carries the node's icon, title, and location trail, and is where the inline rename field, the icon picker, a Space's color picker, and the Shift-preview open — each on the surface it was raised from, since a tab and a window can stand at once. Both read one world rectangle and fit it to their own box, so each is centered on the same picture at the scale its box allows.
+The picture is drawn on a `<canvas>`, with one DOM overlay following the node under the pointer. Paint is read from the design kit's tokens through a probe and the host's computed style, so the canvas takes the same tokens the DOM does. Every node carries its glyph inside its own circle, at half of its diameter across all three kinds, and a Page's arrives at the zoom that reveals Page titles while a Folder's and a Space's stand at any scale. A Space with a color takes it into that circle's fill and glyph, and a Space without one paints as any other node does. The overlay carries the node's icon, title, and location trail, and is where the inline rename field, the icon picker, a Space's color picker, and the Shift-preview open — each on the surface it was raised from, since a tab and a window can stand at once. Both read one world rectangle and fit it to their own box, so each is centered on the same picture at the scale its box allows.
 
 Hovering a node lights its links, raises its fill and its glyph, and eases the rest of the picture down; letting it go returns them on the same curve. A colored Space rises through its own color and lights its links and ring in that color solid, while every other node rises to the primary tone against the accent. A held node carries that emphasis for as long as it is held, whatever the pointer is over, since it trails the cursor on its springs; releasing it lets it settle back. Each kind of node carries its title from a zoom of its own — Spaces first, then Folders, then Pages — fading it in across a band above that zoom rather than printing it whole at a threshold, and the overlay's own title arrives and leaves by the same fade. **Lock** holds the layout and stands Shuffle down, turning a node drag into a carry — a Page, Folder, or Space dragged out of the Matrix drops into the main tab bar as a new tab, and a Page or Space into an open window's tab strip, as a sidebar row does — **Shuffle** jitters every node and lets the layout re-solve, and **Hide Icons** and **Hide Paths** trim every node's glyph and the overlay's trail. A right-click answers as a sidebar row does, with Change Color on a Space, a node renamed from here keeps its emphasis until the name is committed, and a Page moved in Location mode fades out where it was and in beside its new Folder.
 
