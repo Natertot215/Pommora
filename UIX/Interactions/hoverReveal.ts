@@ -185,7 +185,7 @@ export function withinBox(box: Box, x: number, y: number, pad = 0): boolean {
 /** Where the pointer stands against a tracked anchor. `held` carries no position, since a held button may be moving the surface; `out` is the pointer leaving the scope, or the window losing focus with the pointer parked over it. */
 export type Nearness = 'near' | 'far' | 'held' | 'out'
 
-/** Follows the pointer across `scope` against the test `measure` builds from the anchor's rects. The test is cached, since a rect per move forces a layout, and dropped whenever the anchor may have moved: when a transition ends on it, an ancestor, or a sibling of either, on a resize, while a button is held, once the pointer leaves, and on `forget`. `report` hears every move. */
+/** Follows the pointer across `scope` against the test `measure` builds from the anchor's rects. The test is cached, since a rect per move forces a layout, and dropped whenever the anchor may have moved: when a transition ends on it, an ancestor, or a sibling of either, on a resize or a scroll, while a button is held, once the pointer leaves, and on `forget`. `report` hears every move. */
 export function trackNear({
   anchor,
   measure,
@@ -224,6 +224,7 @@ export function trackNear({
   scope.addEventListener('pointerout', onOut, { passive: true })
   window.addEventListener('transitionend', onTransitionEnd, { capture: true, passive: true })
   window.addEventListener('resize', forget, { passive: true })
+  window.addEventListener('scroll', forget, { capture: true, passive: true })
   window.addEventListener('blur', leave)
   return {
     forget,
@@ -232,6 +233,7 @@ export function trackNear({
       scope.removeEventListener('pointerout', onOut)
       window.removeEventListener('transitionend', onTransitionEnd, { capture: true })
       window.removeEventListener('resize', forget)
+      window.removeEventListener('scroll', forget, { capture: true })
       window.removeEventListener('blur', leave)
     },
   }
