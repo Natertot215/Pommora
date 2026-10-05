@@ -184,7 +184,6 @@ export function CalendarPicker({
       event: e,
       activation: 0,
       capture: true,
-      onActivate: () => true,
       onDragMove: (ev) => {
         const at = dataKey(document.elementFromPoint(ev.clientX, ev.clientY))
         if (!at) return

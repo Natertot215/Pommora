@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useSyncExternalStore } from 'react'
+import { useEffect, useMemo, useSyncExternalStore } from 'react'
 import { useLatest } from '@pommora/uix/Utilities/stableApi'
 import { type TileHostRef, tileHostKey } from './tiles'
 import type { TileLayout } from './Layout/model'
@@ -12,18 +12,14 @@ import {
   type TileDocState,
 } from './tileDocStore'
 
-export interface TileDocSession {
-  layout: TileLayout
-  tiles: unknown[]
-  ready: boolean
-  locked: boolean
+type TileDocSession = TileDocState & {
   setLayout: (layout: TileLayout) => void
   commitLayout: (update: (cur: TileLayout) => TileLayout) => void
   setBusy: (busy: boolean) => void
 }
 
 // A null host holds `EMPTY` and subscribes to nothing, so a reader leaves its document when its tab does and the last-listener retirement fires.
-function useDocState(host: TileHostRef | null): TileDocState {
+export function useDocState(host: TileHostRef | null): TileDocState {
   const hostRef = useLatest(host)
   const hostKey = host ? tileHostKey(host) : ''
   const subscribe = useMemo(() => {
@@ -37,48 +33,17 @@ function useDocState(host: TileHostRef | null): TileDocState {
 }
 
 export function useTileDoc(host: TileHostRef): TileDocSession {
-  const hostKey = tileHostKey(host)
   const hostRef = useLatest(host)
-
   const state = useDocState(host)
-
-  // TileGrid's effect cleanup re-sends `false` on every gesture end, so the hold is tracked per mount and counted once.
-  const held = useRef(false)
-  const setBusy = useCallback(
-    (busy: boolean) => {
-      if (busy === held.current) return
-      held.current = busy
-      holdTileDoc(hostRef.current, busy)
-    },
-    [hostKey],
-  )
-  useEffect(() => {
+  const writes = useMemo(() => {
     const target = hostRef.current
-    return () => {
-      if (!held.current) return
-      held.current = false
-      holdTileDoc(target, false)
+    return {
+      setLayout: (layout: TileLayout) => setTileLayout(target, layout),
+      commitLayout: (update: (cur: TileLayout) => TileLayout) => commitTileLayout(target, update),
+      setBusy: (busy: boolean) => holdTileDoc(target, busy),
     }
-  }, [hostKey])
-
-  const setLayout = useCallback(
-    (layout: TileLayout) => setTileLayout(hostRef.current, layout),
-    [hostKey],
-  )
-  const commitLayout = useCallback(
-    (update: (cur: TileLayout) => TileLayout) => commitTileLayout(hostRef.current, update),
-    [hostKey],
-  )
-
-  return {
-    layout: state.layout,
-    tiles: state.tiles,
-    ready: state.ready,
-    locked: state.lock,
-    setLayout,
-    commitLayout,
-    setBusy,
-  }
+  }, [tileHostKey(host)])
+  return { ...state, ...writes }
 }
 
 /** Each host's document stays loaded while the caller holds it, whether or not a board shows it. */
@@ -95,9 +60,4 @@ export function useLoadedTileDocs(hosts: readonly TileHostRef[]): void {
 export function useTileDocReady(host: TileHostRef | null): boolean {
   const { ready } = useDocState(host)
   return host === null || ready
-}
-
-export function useTileDocLock(host: TileHostRef): { locked: boolean; ready: boolean } {
-  const { lock, ready } = useDocState(host)
-  return { locked: lock, ready }
 }

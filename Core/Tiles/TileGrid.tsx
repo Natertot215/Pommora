@@ -20,7 +20,7 @@ import { cx } from '@pommora/uix/Utilities/cx'
 import { findTile } from './Layout/model'
 import type { DividerRef, Edge, TileLayout } from './Layout/model'
 import { resolveEdge } from './Layout/edges'
-import { hitTest, type DropTarget } from './Layout/hitTest'
+import { hitTest, type DropTarget, sameTarget } from './Layout/hitTest'
 import {
   moveTile,
   moveTileToBand,
@@ -254,13 +254,7 @@ export function TileGrid({
   const placed = useMemo(() => placeTiles(draft ?? view, GAP), [draft, view])
 
   const boardStatic = locked || stacked
-  const now = {
-    view,
-    onLayoutChange,
-    boardStatic,
-    isTileLocked,
-  }
-  const live = useLatest(now)
+  const live = useLatest({ view, onLayoutChange, boardStatic, isTileLocked })
 
   // The ref mirrors the state so the commit runs as a plain event side effect, never inside a state updater (React forbids cross-component updates there).
   const settleRef = useRef<Settle | null>(null)
@@ -356,8 +350,6 @@ export function TileGrid({
         el: e.currentTarget,
         event: e,
         activation: 0,
-        capture: true,
-        onActivate: () => true,
         onDragMove: (ev) => {
           const dx = ev.clientX - sx
           const dy = ev.clientY - sy
@@ -411,7 +403,9 @@ export function TileGrid({
         const px = clientX - downBox.left + dsx
         const py = clientY - downBox.top + dsy
         setTileDrag({ id, lift: pinned({ x: px - grab.x, y: py - grab.y, w: rect.w, h: rect.h }) })
-        target = hitTest(g, origin, id, px, py, BAND_ZONE_PX, target, HYSTERESIS)
+        const next = hitTest(g, origin, id, px, py, BAND_ZONE_PX, target, HYSTERESIS)
+        if (sameTarget(next, target)) return
+        target = next
         latest = applyTarget(origin, id, target)
         setDraft(latest === origin ? null : latest)
       }
@@ -428,10 +422,8 @@ export function TileGrid({
       const started = begin({
         el: e.currentTarget,
         event: e,
-        capture: true,
         cursor: 'grabbing',
         autoScroll: { from: grid, axis: 'xy' },
-        onActivate: () => true,
         onDragMove: (ev) => {
           moved = true
           lastPoint.x = ev.clientX
@@ -453,8 +445,9 @@ export function TileGrid({
 
   const busy = pressedId !== null || resizingId !== null || tileDrag !== null || settle !== null
   useEffect(() => {
-    onBusyChange?.(busy)
-    return () => onBusyChange?.(false)
+    if (!busy || !onBusyChange) return
+    onBusyChange(true)
+    return () => onBusyChange(false)
   }, [busy, onBusyChange])
 
   // Sampled only between gestures and only off a measured width, before paint: a crossing under a held pointer would re-lay the board mid-drag, and a narrow mount must never paint two-across first.
@@ -470,6 +463,12 @@ export function TileGrid({
     ro.observe(grid)
     return () => ro.disconnect()
   }, [busy])
+
+  // Tiles render in STABLE id order, never tree order — React moving the keyed DOM nodes to match a mid-drag preview would remount every reflowing tile mid-transition.
+  const order = useMemo(
+    () => [...placed.tiles].sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0)),
+    [placed],
+  )
 
   const dropSlot = tileDrag && draft ? placed.tiles.get(tileDrag.id) : null
 
@@ -513,38 +512,35 @@ export function TileGrid({
       style={{ height: placed.totalHeight + BOTTOM_PAD_PX }}
       onContextMenu={onGridContextMenu}
     >
-      {/* Tiles render in STABLE id order, never tree order — React moving the keyed DOM nodes to match a mid-drag preview would remount every reflowing tile mid-transition. */}
-      {[...placed.tiles.entries()]
-        .sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0))
-        .map(([id, place]) => {
-          const lifted = tileDrag?.id === id ? tileDrag : null
-          const settling = settle?.id === id ? settle : null
-          const phase: TilePhase = lifted
-            ? 'lifted'
-            : settling
-              ? 'settling'
-              : tileDrag || settle
-                ? 'reflow'
-                : 'idle'
-          return (
-            <TileShell
-              key={id}
-              id={id}
-              place={lifted?.lift ?? settling?.to ?? place}
-              phase={phase}
-              resizing={resizingId === id}
-              editing={editingId === id}
-              menuOpen={menuOpenId === id}
-              extraClass={tileClassName?.(id)}
-              extraStyle={tileStyle?.(id)}
-              renderTile={renderTile}
-              onHandleDown={onHandleDown}
-              onHandleMenu={onHandleMenu}
-              onEdgeDown={onEdgeDown}
-              onSettled={finishSettle}
-            />
-          )
-        })}
+      {order.map(([id, place]) => {
+        const lifted = tileDrag?.id === id ? tileDrag : null
+        const settling = settle?.id === id ? settle : null
+        const phase: TilePhase = lifted
+          ? 'lifted'
+          : settling
+            ? 'settling'
+            : tileDrag || settle
+              ? 'reflow'
+              : 'idle'
+        return (
+          <TileShell
+            key={id}
+            id={id}
+            place={lifted?.lift ?? settling?.to ?? place}
+            phase={phase}
+            resizing={resizingId === id}
+            editing={editingId === id}
+            menuOpen={menuOpenId === id}
+            extraClass={tileClassName?.(id)}
+            extraStyle={tileStyle?.(id)}
+            renderTile={renderTile}
+            onHandleDown={onHandleDown}
+            onHandleMenu={onHandleMenu}
+            onEdgeDown={onEdgeDown}
+            onSettled={finishSettle}
+          />
+        )
+      })}
 
       {dropSlot && <div className="tile-placement drop-slot" style={placementStyle(dropSlot)} />}
     </div>

@@ -6,15 +6,22 @@ export type DropTarget =
   | { kind: 'band'; index: number }
   | null
 
+export const sameTarget = (a: DropTarget, b: DropTarget): boolean =>
+  a?.kind === 'tile' && b?.kind === 'tile'
+    ? a.id === b.id && a.edge === b.edge
+    : a?.kind === 'band' && b?.kind === 'band'
+      ? a.index === b.index
+      : a === b
+
 export function hitTest(
   geometry: TileGeometry,
   layout: TileLayout,
   dragId: string,
   px: number,
   py: number,
-  bandZonePx = 10,
-  prev: DropTarget = null,
-  hysteresisPx = 0,
+  bandZonePx: number,
+  prev: DropTarget,
+  hysteresisPx: number,
 ): DropTarget {
   if (py < bandZonePx) return { kind: 'band', index: 0 }
   // Append owns only the pad BELOW the content — the last band's south edges stay targetable.
