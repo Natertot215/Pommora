@@ -23,12 +23,10 @@ export const matrixHandlers = {
     return reply ? ok(reply) : fault('The index is not ready.')
   }),
 
-  // A layout saved before positions took a row per node is one map under the scope's empty key. Reads merge it under the rows, and the first position save folds it into rows of their own, so the read path never writes.
   'matrixLayout:load': withRoot(() => {
     const lens = readValue<Lens>('matrixFrame')
-    const { '': legacy, ...rows } = readScope('matrixLayout')
     return ok({
-      positions: readPositions({ ...readPositions(legacy), ...rows }),
+      positions: readPositions(readScope('matrixLayout')),
       lens: isLens(lens) ? lens : null,
     } satisfies MatrixLayout)
   }),
@@ -36,10 +34,7 @@ export const matrixHandlers = {
   'matrixLayout:save': withWriteRoot((_root, _ctx, patch: unknown) => {
     if (!isLayoutPatch(patch))
       return fault('A layout patch needs finite positions or a finite lens.')
-    const legacy = patch.positions ? readValue('matrixLayout') : null
-    const rows =
-      legacy === null ? patch.positions : { ...readPositions(legacy), ...patch.positions, '': null }
-    if (rows && !writeKeys('matrixLayout', rows)) return NO_STORE
+    if (patch.positions && !writeKeys('matrixLayout', patch.positions)) return NO_STORE
     if (patch.lens && !writeValue('matrixFrame', patch.lens)) return NO_STORE
     return ok(null)
   }),

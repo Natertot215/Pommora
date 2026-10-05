@@ -16,22 +16,18 @@ export interface LayoutPatch {
   lens?: Lens
 }
 
+const isPoint = (p: unknown): p is [number, number] =>
+  Array.isArray(p) && p.length === 2 && isFiniteNumber(p[0]) && isFiniteNumber(p[1])
+
 // The layout is machine-local and regenerative, so a row that no longer reads is dropped on its own rather than taking every other node's place with it.
-export function readPositions(v: unknown): Positions {
-  if (!isPlainObject(v)) return {}
+export function readPositions(rows: Record<string, unknown>): Positions {
   const out: Positions = {}
-  for (const [id, p] of Object.entries(v))
-    if (Array.isArray(p) && isFiniteNumber(p[0]) && isFiniteNumber(p[1])) out[id] = [p[0], p[1]]
+  for (const [id, p] of Object.entries(rows)) if (isPoint(p)) out[id] = p
   return out
 }
 
 const isPositionRows = (v: unknown): v is PositionRows =>
-  isPlainObject(v) &&
-  Object.values(v).every(
-    (p) =>
-      p === null ||
-      (Array.isArray(p) && p.length === 2 && isFiniteNumber(p[0]) && isFiniteNumber(p[1])),
-  )
+  isPlainObject(v) && Object.values(v).every((p) => p === null || isPoint(p))
 
 export const isLens = (v: unknown): v is Lens =>
   isPlainObject(v) &&
