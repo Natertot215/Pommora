@@ -54,7 +54,6 @@ Known shortcuts, none broken today. Each is cheap on its own and best taken when
 
 ### Known Issues
 
-- [ ] **A re-aimed tile resets its height and scale.** → See `Pommora Codebase Audit.md`, F-567.
 - [ ] **A second dropdown pressed inside a pop-up pane reopens the closing list there.** → See `Pommora Codebase Audit.md`, F-568.
 
 ### Recent Work

@@ -674,7 +674,7 @@ Before a layout write replaces undecodable bytes, the writer copies them under a
 
 **Finding**
 
-`TileShell`'s comparator names each of its twelve props. A prop added later and left off the list silently stops triggering a redraw.[^624]
+`TileShell`'s comparator names each of its thirteen props. A prop added later and left off the list silently stops triggering a redraw.[^624]
 
 **Fix | TBD**
 

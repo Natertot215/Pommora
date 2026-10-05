@@ -48,7 +48,7 @@ The Nexus’ structure is based on relating **Content** ↔ **Content** through 
 - **Test Nexus:** `~/Test` is pre-seeded with scratch collections, sets, pages, and contexts for live-drive testing.
 - **Iteration Scratchpad:** `Core/Interface/Windows/IterationWindow.tsx`, opened by ⌘⇧T, is for rapid iteration of an otherwise-scoped asset.
 - **Native Context Menus Over CDP:** a real right-click through `Input.dispatchMouseEvent` (`mousePressed` then `mouseReleased` at the target's box) reaches main's listener, where a JS-dispatched `contextmenu` event doesn't; `osascript -e 'tell application "System Events" to key code 53'` dismisses it.
-- **Benchmarks:** `node .claude/Benchmarks/make-benchmark-nexus.mjs small|medium|large|xlarge` builds `~/Benchmark-<Size>` (1k → 50k pages; option types 1 → 10 per type x 10 → 50 options, other types 1 → 10) after sweeping every earlier build and its index database.
+- **Benchmarks:** `node .claude/Benchmarks/make-benchmark-nexus.mjs small|medium|large|xlarge` builds `~/Benchmark-<Size>` (1k → 50k pages; option types 1 → 10 per type x 10 → 50 options, other types 1 → 10) after sweeping earlier builds.
 
 ### Locked Decisions
 
