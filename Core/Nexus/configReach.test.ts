@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { chmod, mkdir, readdir, readFile, rm, stat, writeFile } from 'node:fs/promises'
 import { dirname, join } from '../Paths/posix'
 import { noModeBits, putJson, readJsonAt, tempRoot } from '../Testing/hostFs'
-import { contextsDir, contextsRegistryFile, nexusConfig, tileHostDir } from '../Paths/paths'
+import { contextsDir, contextsRegistryFile, nexusConfig, homepageDir } from '../Paths/paths'
 import { NEXUS_CONFIG_FILES, SIDECAR_FILENAME, TILE_DOC_FILENAME } from '../Paths/nexusPaths'
 import type { PropertyDefinition } from '../Properties/properties'
 import { dropLiveTree, heldTreeOf, liveTreeOf, refreshTree } from './liveTree'
@@ -97,7 +97,7 @@ const space = (): string => join(contextsDir(root), 'Areas', 'Home')
 const colFile = (): string => join(col(), SIDECAR_FILENAME.collection)
 const setFile = (): string => join(set(), SIDECAR_FILENAME.set)
 const spaceTiles = (): string => join(space(), TILE_DOC_FILENAME)
-const homeTiles = (): string => join(tileHostDir(root), TILE_DOC_FILENAME)
+const homeTiles = (): string => join(homepageDir(root), TILE_DOC_FILENAME)
 const matrixFile = (): string => nexusConfig(root, NEXUS_CONFIG_FILES.matrix)
 
 const viewsOf = async (file: string): Promise<Raw[]> => (await readJsonAt(file)).views as Raw[]

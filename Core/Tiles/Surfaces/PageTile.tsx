@@ -158,7 +158,6 @@ export function PageTile({
     <div
       className={cx(
         'page-tile',
-        editing && 'is-editing',
         chrome === 'page' && entry?.cover && 'has-banner',
         chrome === 'window' && 'is-window-chrome',
       )}

@@ -62,16 +62,16 @@ export function tileMenuItems({
   entry,
   pickTree,
   pageInfo,
-  containerLocked,
+  boardLocked,
 }: {
   entry: TileEntry | undefined
   pickTree: PickTree
   pageInfo?: { title: string; icon: string }
-  containerLocked: boolean
+  boardLocked: boolean
 }): { items: ActionItem<TileMenuAction>[]; picks: TilePick[] } {
   // Rows name an index into `picks` because a menu row can't carry a pick.
   const picks: TilePick[] = []
-  const locked = (entry?.locked ?? false) || containerLocked
+  const locked = (entry?.locked ?? false) || boardLocked
   const deleteRow = { label: 'Delete', icon: 'x', action: 'tile:delete' as const, disabled: locked }
   // A box with no entry this build can draw offers Delete alone, so it can still be removed.
   if (!entry) return { items: [deleteRow], picks }
@@ -116,11 +116,11 @@ export function tileMenuItems({
     },
     deleteRow,
     {
-      label: containerLocked ? 'Locked' : lockLabel(locked),
+      label: boardLocked ? 'Locked' : lockLabel(locked),
       icon: locked ? 'locked' : 'lock-outline',
       action: 'tile:lock',
       separatorBefore: true,
-      disabled: containerLocked,
+      disabled: boardLocked,
       stay: true,
     },
   ]

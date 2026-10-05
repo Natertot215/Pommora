@@ -13,7 +13,7 @@ type Over = Partial<Omit<Ctx, 'pickTree'>> & {
 const ctx = ({ pages = [], views = [], ...over }: Over = {}): Ctx => ({
   entry: { type: 'markdown', id: 'b1' } as unknown as TileEntry,
   pickTree: ((kind: PickKind) => (kind === 'page' ? pages : views)) as Ctx['pickTree'],
-  containerLocked: false,
+  boardLocked: false,
   ...over,
 })
 
@@ -94,7 +94,7 @@ describe('the tile menu model both renderers draw', () => {
   })
 
   it('shows a board lock as an inert Locked the tile cannot undo', () => {
-    const m = tileMenuItems(ctx({ containerLocked: true }))
+    const m = tileMenuItems(ctx({ boardLocked: true }))
     expect(row(m, 'Locked')?.disabled).toBe(true)
   })
 
@@ -185,7 +185,7 @@ describe('the menu of a box with no entry this build draws', () => {
       { label: 'Delete', icon: 'x', action: 'tile:delete', disabled: false },
     ])
     expect(
-      row(tileMenuItems(ctx({ entry: undefined, containerLocked: true })), 'Delete')?.disabled,
+      row(tileMenuItems(ctx({ entry: undefined, boardLocked: true })), 'Delete')?.disabled,
     ).toBe(true)
   })
 })

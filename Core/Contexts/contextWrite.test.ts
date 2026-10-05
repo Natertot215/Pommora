@@ -11,7 +11,7 @@ import {
   setSpaceRowOrder,
 } from './contextWrite'
 import { newId } from '../Nexus/ids'
-import { rawLayoutSchema } from '../Tiles/tiles'
+import { rawLayoutSchema } from '../Tiles/Layout/codec'
 import { readTileDocAt } from '../Tiles/tileDoc'
 import { contextsRegistryFile, contextsDir, nexusDir } from '../Paths/paths'
 import type { ContextsRegistry } from './contexts'

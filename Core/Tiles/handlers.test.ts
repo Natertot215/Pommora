@@ -4,7 +4,7 @@ import { join } from '../Paths/posix'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { HostContext } from '../Contract/handlers'
 import { fail, fault, ok } from '../Contract/result'
-import { tileDocPath, tileFilePath, tileHostDir } from '../Paths/paths'
+import { tileDocPath, tileFilePath, homepageDir } from '../Paths/paths'
 import { dropLiveTree, liveTreeOf } from '../Nexus/liveTree'
 import { tempRoot, readJsonAt } from '../Testing/hostFs'
 import { tileId } from '../Testing/tileLayouts'
@@ -74,7 +74,7 @@ describe('the tile channels', () => {
     )
     const saved = await tilesHandlers['tiles:save'](ctx, homepage, { locked: true, extra: 1 })
     expect(saved.ok).toBe(true)
-    expect(await readJsonAt(tileDocPath(tileHostDir(root)))).toEqual({
+    expect(await readJsonAt(tileDocPath(homepageDir(root)))).toEqual({
       locked: true,
       tiles: [],
     })
@@ -82,7 +82,7 @@ describe('the tile channels', () => {
 
   it('save merges an entry patch into that entry alone and answers with the document it left', async () => {
     const [a, b] = [tileId('a'), tileId('b')]
-    await writeTileDocAt(tileHostDir(root), (cur) => ({
+    await writeTileDocAt(homepageDir(root), (cur) => ({
       ...cur,
       tiles: [
         { id: a, type: 'markdown', zoom: 1.2, foreign: 1 },
@@ -92,7 +92,7 @@ describe('the tile channels', () => {
     const saved = await tilesHandlers['tiles:save'](ctx, homepage, {
       entry: { id: a, patch: { style: 'borderless', zoom: null } },
     })
-    const read = await readTileDocAt(tileHostDir(root))
+    const read = await readTileDocAt(homepageDir(root))
     if (!read.ok) throw new Error(read.error.message)
     const disk = read.value
     expect(disk.tiles).toEqual([
@@ -110,9 +110,9 @@ describe('the tile channels', () => {
     expect(await tilesHandlers['tiles:restoreTile'](ctx, homepage, null)).toEqual(
       fault('Invalid tile.'),
     )
-    expect(await readTileDocAt(tileHostDir(root))).toMatchObject(ok({ tiles: [] }))
+    expect(await readTileDocAt(homepageDir(root))).toMatchObject(ok({ tiles: [] }))
     expect(await pathExists(join(root, 'outside.md'))).toBe(false)
-    await mkdir(tileHostDir(root), { recursive: true })
+    await mkdir(homepageDir(root), { recursive: true })
     const well = { entry: { id: tileId('a'), type: 'markdown' }, body: 'x' }
     expect((await tilesHandlers['tiles:restoreTile'](ctx, homepage, well)).ok).toBe(true)
   })

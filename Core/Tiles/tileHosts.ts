@@ -3,7 +3,7 @@ import { pathExists } from '../Files/atomicWrite'
 import { heldTreeOf } from '../Nexus/liveTree'
 import type { NexusTree } from '../Nexus/tree'
 import { HOMEPAGE_DIR_REL } from '../Paths/nexusPaths'
-import { tileHostDir } from '../Paths/paths'
+import { homepageDir } from '../Paths/paths'
 import { join } from '../Paths/posix'
 import { HOMEPAGE_HOST, type TileHostRef } from './tiles'
 
@@ -16,7 +16,7 @@ interface TileHostKind<H extends TileHostRef> {
 const TILE_HOSTS: { [K in TileHostRef['kind']]: TileHostKind<Extract<TileHostRef, { kind: K }>> } =
   {
     homepage: {
-      dir: async (root) => tileHostDir(root),
+      dir: async (root) => homepageDir(root),
       boards: () => [{ host: HOMEPAGE_HOST, rel: HOMEPAGE_DIR_REL }],
     },
     // A Space whose sidecar the walk couldn't read is still reached by its folder, with no host to name; only an unreadable Contexts registry hides the Spaces themselves.

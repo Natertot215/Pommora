@@ -76,7 +76,7 @@ describe('the renderer table', () => {
           kind === 'page'
             ? [{ label: 'Notes', pick: 'p9' }]
             : [{ label: 'Board', pick: { source_id: 's', view_id: 'v1' } }]) as never,
-        containerLocked: false,
+        boardLocked: false,
       })
       const linkRows = model.items.filter((i) => rows.some((r) => r.label === i.label))
       expect(linkRows.map((i) => i.label)).toEqual(rows.map((r) => r.label))

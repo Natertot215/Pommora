@@ -17,7 +17,7 @@ import { applyEvents, owedFor } from '../Nexus/fileEvents'
 import { dropLiveTree, refreshTree } from '../Nexus/liveTree'
 import { settleBatch } from '../Nexus/settle'
 import type { TrashDeps } from '../Trash/bundle'
-import { tileHostDir } from '../Paths/paths'
+import { homepageDir } from '../Paths/paths'
 import { machine } from '../Platform/machine'
 import { createTile, writeMarkdownTile } from '../Tiles/tilesFile'
 import { landedId } from '../Testing/tileLayouts'
@@ -264,8 +264,8 @@ describe('the watcher maintains the rows', () => {
     const alpha = join(root, 'Notes', 'Daily', 'Alpha.md')
     await writeFile(beta, `---\nID: ${B_ID}\n---\n\n## Setup\n`)
     await writeFile(alpha, `---\nID: ${A_ID}\n---\n\nSee [[Beta#Setup]].`)
-    const tile = await landedId(createTile(tileHostDir(root), 'markdown'))
-    await writeMarkdownTile(tileHostDir(root), tile, '[[Beta#Setup]]', machine().sha256Hex(''))
+    const tile = await landedId(createTile(homepageDir(root), 'markdown'))
+    await writeMarkdownTile(homepageDir(root), tile, '[[Beta#Setup]]', machine().sha256Hex(''))
     await seedContentIndex(root)
     await refreshTree(root)
     await writeFile(beta, `---\nID: ${B_ID}\n---\n\n## Intro\n`)

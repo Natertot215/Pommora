@@ -17,7 +17,7 @@ import { memoryStores } from '../Testing/memoryStores'
 import { seedContentIndex } from '../Index/indexSeed'
 import { ok } from '../Contract/result'
 import { machine } from '../Platform/machine'
-import { contextsDir, contextsRegistryFile, tileFilePath, tileHostDir } from '../Paths/paths'
+import { contextsDir, contextsRegistryFile, tileFilePath, homepageDir } from '../Paths/paths'
 import { createTile, readMarkdownTile, writeMarkdownTile } from '../Tiles/tilesFile'
 import { landedId } from '../Testing/tileLayouts'
 
@@ -255,12 +255,12 @@ describe('renameCascade for a heading', () => {
     if (!a.ok) throw new Error('setup failed')
     installStores(memoryStores().stores)
     await seedContentIndex(root)
-    const tile = await landedId(createTile(tileHostDir(root), 'markdown'))
-    await writeMarkdownTile(tileHostDir(root), tile, 'see [[A#Setup]]', machine().sha256Hex(''))
+    const tile = await landedId(createTile(homepageDir(root), 'markdown'))
+    await writeMarkdownTile(homepageDir(root), tile, 'see [[A#Setup]]', machine().sha256Hex(''))
     const r = await renameCascade(root, 'A', { heading: 'Setup', to: 'Intro' })
     installStores(NO_STORES)
     expect(r.hosts).toEqual([{ host: { kind: 'homepage' }, ids: [tile] }])
-    expect(await readMarkdownTile(tileHostDir(root), tile)).toEqual(ok('see [[A#Intro]]'))
+    expect(await readMarkdownTile(homepageDir(root), tile)).toEqual(ok('see [[A#Intro]]'))
   })
 
   it('locks and rewrites no tile file when no tile links the heading', async () => {
@@ -268,16 +268,16 @@ describe('renameCascade for a heading', () => {
     if (!a.ok) throw new Error('setup failed')
     installStores(memoryStores().stores)
     await seedContentIndex(root)
-    const tile = await landedId(createTile(tileHostDir(root), 'markdown'))
-    await writeMarkdownTile(tileHostDir(root), tile, 'see [[A#Other]]', machine().sha256Hex(''))
+    const tile = await landedId(createTile(homepageDir(root), 'markdown'))
+    await writeMarkdownTile(homepageDir(root), tile, 'see [[A#Other]]', machine().sha256Hex(''))
     rewriteSpy.mockClear()
     const r = await renameCascade(root, 'A', { heading: 'Setup', to: 'Intro' })
     installStores(NO_STORES)
     expect(r.hosts).toEqual([])
     expect(rewriteSpy.mock.calls.map(([file]) => file)).not.toContain(
-      tileFilePath(tileHostDir(root), tile),
+      tileFilePath(homepageDir(root), tile),
     )
-    expect(await readMarkdownTile(tileHostDir(root), tile)).toEqual(ok('see [[A#Other]]'))
+    expect(await readMarkdownTile(homepageDir(root), tile)).toEqual(ok('see [[A#Other]]'))
   })
 
   it('moves a Link property aimed at the renamed heading, found through the index', async () => {

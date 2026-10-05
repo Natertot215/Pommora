@@ -6,7 +6,7 @@ import { act } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
 import { EditorView } from '@codemirror/view'
 import { stubEditorBridge } from '../Testing/editorHarness'
-import { TileHost, zoomStyle } from './TileHost'
+import { TileHost } from './TileHost'
 import { dropAllTileDocs, markTileRemoving } from './tileDocStore'
 import { clearCache, knownBody } from '../Session/pageDetailCache'
 import { useSession } from '../Session/store'
@@ -81,10 +81,27 @@ async function until(cond: () => boolean): Promise<boolean> {
 }
 
 describe('a tile zoom style', () => {
-  it('styles every step but 1.0 with the one variable, identity-stable per step', () => {
-    expect(zoomStyle(1)).toBeUndefined()
-    expect(zoomStyle(0.9)).toEqual({ '--tile-zoom': 0.9 })
-    expect(zoomStyle(0.9)).toBe(zoomStyle(0.9))
+  it('styles a zoomed shell with the one variable and leaves a 1.0 shell bare', async () => {
+    const zoomed = {
+      ...doc,
+      layout: {
+        bands: ['a', 'b'].map((id) => ({ node: { kind: 'tile', id: tileId(id), h: 100 } })),
+      },
+      tiles: [
+        { id: tileId('a'), type: 'markdown', zoom: 0.9 },
+        { id: tileId('b'), type: 'markdown' },
+      ],
+    }
+    stubEditorBridge({
+      'tiles:changed': () => () => {},
+      'tiles:get': async () => ({ ok: true, value: zoomed }),
+      'tiles:readMarkdown': async () => ({ ok: true, value: { body: '' } }),
+    })
+    await act(async () => root.render(<TileHost host={{ kind: 'homepage' }} />))
+    expect(await until(() => host.querySelectorAll('.tile').length === 2)).toBe(true)
+    const [a, b] = host.querySelectorAll<HTMLElement>('.tile')
+    expect(a?.style.getPropertyValue('--tile-zoom')).toBe('0.9')
+    expect(b?.style.getPropertyValue('--tile-zoom')).toBe('')
   })
 })
 

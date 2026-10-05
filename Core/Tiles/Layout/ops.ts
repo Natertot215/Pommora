@@ -150,7 +150,6 @@ export function resizeDivider(
   extentPx: number,
   minPx: number,
 ): TileLayout {
-  if (extentPx <= 0) return layout
   const next = cloneLayout(layout)
   const node = nodeAt(next, ref)
   if (node?.kind !== 'row') return layout
@@ -183,7 +182,7 @@ export function stretchTileHeight(
   return next
 }
 
-// Pair negotiation is tile-to-tile; a nested split neighbor doesn't have one height to give, so those edges stretch instead.
+// Pair negotiation is tile-to-tile; a nested split neighbor doesn't have one height to give, so that edge trades nothing.
 function tradeHeights(
   above: LayoutNode | undefined,
   below: LayoutNode | undefined,

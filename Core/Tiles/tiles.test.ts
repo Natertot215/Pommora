@@ -1,11 +1,11 @@
 import { describe, expect, it } from 'vitest'
 import { fault, ok } from '../Contract/result'
 import { tileId } from '../Testing/tileLayouts'
+import { rawLayoutSchema } from './Layout/codec'
 import {
   coerceTileHost,
   copyEntry,
   knownTile,
-  rawLayoutSchema,
   TILE_KINDS,
   type TileType,
   tileDocPatch,

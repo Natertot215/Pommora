@@ -18,7 +18,7 @@ import {
 } from './tilesFile'
 import { readTileDocAt, writeTileDocAt } from './tileDoc'
 import type { TileDoc } from './tiles'
-import { tileDocPath, tileFilePath, tileHostDir } from '../Paths/paths'
+import { tileDocPath, tileFilePath, homepageDir } from '../Paths/paths'
 import { machine } from '../Platform/machine'
 import { rewriteConnections } from '../Connections/rewrite'
 import type { TrashDeps } from '../Trash/bundle'
@@ -27,7 +27,7 @@ import { dropLiveTree } from '../Nexus/liveTree'
 const nexusDeps: TrashDeps = { trashMode: 'nexus', trashToSystem: async () => {} }
 
 let root: string
-const home = (): string => tileHostDir(root)
+const home = (): string => homepageDir(root)
 const spaceDir = (): string => join(root, '.nexus', 'contexts', 'Realms', 'Astral')
 const spaceSidecar = (): string => join(spaceDir(), '_space.json')
 const docAt = async (dir = home()): Promise<TileDoc> => {

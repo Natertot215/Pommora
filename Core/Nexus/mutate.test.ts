@@ -20,7 +20,7 @@ import { adoptFile } from '../Assets/adoptFile'
 import { settledMutate } from '../Testing/settledMutate'
 import { handleMutate } from './mutate'
 import { machine } from '../Platform/machine'
-import { contextsDir, nexusConfig, sidecarPath, tileHostDir } from '../Paths/paths'
+import { contextsDir, nexusConfig, sidecarPath, homepageDir } from '../Paths/paths'
 import { resolveUnderRoot } from '../Paths/pathSafety'
 import { type MutateRequest, mutateRequest } from './mutateRequest'
 import type { Crop } from './schemas'
@@ -1201,8 +1201,8 @@ describe('handleMutate — renameHeading', () => {
       `---\nID: ${B_ID}\n---\n\n## Setup\n\n[[#Setup]]`,
     )
     await seedContentIndex(root)
-    tile = await landedId(createTile(tileHostDir(root), 'markdown'))
-    await writeMarkdownTile(tileHostDir(root), tile, '[[Beta#Setup]]', machine().sha256Hex(''))
+    tile = await landedId(createTile(homepageDir(root), 'markdown'))
+    await writeMarkdownTile(homepageDir(root), tile, '[[Beta#Setup]]', machine().sha256Hex(''))
   })
   afterEach(() => installStores(NO_STORES))
 
@@ -1229,7 +1229,7 @@ describe('handleMutate — renameHeading', () => {
     expect(names.indexOf('pages:changed')).toBeLessThan(names.indexOf('values:changed'))
     expect(await read('Notes/Daily/Alpha.md')).toContain('See [[Beta#Intro]].')
     expect(await read('Notes/Daily/Beta.md')).toContain('[[#Setup]]')
-    expect(await readMarkdownTile(tileHostDir(root), tile)).toEqual(ok('[[Beta#Intro]]'))
+    expect(await readMarkdownTile(homepageDir(root), tile)).toEqual(ok('[[Beta#Intro]]'))
   })
 
   it('answers a heading rename whose cascade can’t start with a warning, not a fault', async () => {

@@ -40,7 +40,6 @@ import { dialer } from '../Platform/dialer'
 import { isUlidShaped } from '../Nexus/identityMark'
 import { cx } from '@pommora/uix/Utilities/cx'
 import { RenderBoundary } from '@pommora/uix/Elements/RenderBoundary'
-import './tile-base.css'
 
 const NO_PAGES: ReadonlyMap<string, ConnPage> = new Map()
 
@@ -51,23 +50,12 @@ const ZOOM_STYLES = new Map<number, CSSProperties>(
   ]),
 )
 
-export function zoomStyle(factor: number): CSSProperties | undefined {
-  return ZOOM_STYLES.get(factor)
-}
-
 // A write replaces only the entries it changed, so an untouched entry keeps its parse, and every memo keyed on it holds.
 const parsedTiles = new WeakMap<object, TileEntry | null>()
 const parsedTile = (raw: unknown): TileEntry | null => {
   if (!isPlainObject(raw)) return knownTile(raw)
   if (!parsedTiles.has(raw)) parsedTiles.set(raw, knownTile(raw))
   return parsedTiles.get(raw) ?? null
-}
-
-const storedEntry = (host: TileHostRef, id: string): TileEntry | undefined => {
-  for (const raw of readTileDoc(host).tiles) {
-    const entry = parsedTile(raw)
-    if (entry?.id === id) return entry
-  }
 }
 
 export function TileHost({
@@ -201,7 +189,7 @@ export function TileHost({
   )
 
   const tileStyle = useCallback(
-    (id: string) => zoomStyle(entries.get(id)?.zoom ?? ZOOM.default),
+    (id: string) => ZOOM_STYLES.get(entries.get(id)?.zoom ?? ZOOM.default),
     [entries],
   )
 
@@ -222,15 +210,15 @@ export function TileHost({
             title: page.title,
             icon: entityIcon('page', page.icon, defaultIcons),
           },
-          containerLocked: hostLocked,
+          boardLocked: hostLocked,
         })
-      const latest = (): TileEntry | undefined => storedEntry(host, id) ?? entry
+      const latest = (): TileEntry | undefined =>
+        parsedTile(readTileDoc(host).tiles.find((b) => tileIdOf(b) === id)) ?? entry
       let built = build(entry)
-      const arg = (action: string, prefix: string): string | undefined =>
-        action.startsWith(prefix) ? action.slice(prefix.length) : undefined
       const run = (action: string): void => {
-        const picked = arg(action, 'tile:pick:')
-        const chosen = picked === undefined ? undefined : built.picks[Number(picked)]
+        const chosen = action.startsWith('tile:pick:')
+          ? built.picks[Number(action.slice('tile:pick:'.length))]
+          : undefined
         const cur = latest()
         const patch = cur && menuPatch(action, cur)
         if (chosen) applyPick(id, chosen)

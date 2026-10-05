@@ -29,11 +29,10 @@
   background: linear-gradient(var(--state-selected), var(--state-selected)), var(--main-bg);
 }
 
-/* The border tints accent on edge hover or during resize, never while dragged. --tile-border-hot sets the highlight thickness. */
+/* The border tints accent on edge hover or during resize, never while dragged. */
 .tile.is-resizing,
 .tile:has(> .tile-edge:hover) {
   --tile-border-color: var(--accent-stroke-hot);
-  border-width: var(--tile-border-hot, var(--tile-border));
 }
 
 .tile-placement {
