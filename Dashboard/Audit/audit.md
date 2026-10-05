@@ -1,6 +1,6 @@
 ## Pommora Codebase Audit
 
-**Pinned:** `f6511401d` (09-23-2026) · **Reconciled:** `a3b8f7cb1` (10-04-2026) · **Findings:** 44/556
+**Pinned:** `f6511401d` (09-23-2026) · **Reconciled:** `a3b8f7cb1` (10-04-2026) · **Findings:** 45/557
 
 Thirty-four Opus investigators read every production file in `Core`, `UIX`, `Desktop`, and `Sync` in full, sliced by folder and by the jobs the code performs. Two mergers combined their 857 candidates by root cause, and twenty-one reviewers who hadn't raised them re-read every citation, reproduced the High ones against real modules, and killed 63. This document is the current state: findings that were fixed, withdrawn, or ruled moot are removed rather than annotated, and rulings are written into the findings they settle. The readiness and pace sections are the orchestrator's judgment, drawn from the evidence below them.
 
@@ -680,6 +680,18 @@ Before a layout write replaces undecodable bytes, the writer copies them under a
 
 A generic comparison over the props doesn't fit as written: the comparator compares `place` field by field, which a shallow comparison can't, and building the objects to compare allocates per shell on every pointer move of a drag. The design has to keep the field-wise `place` comparison and allocate nothing on that path.
 
+##### F-644 · Three sites that run without a tree name the tile hosts' folders by hand.
+
+> **Area:** Tiles, Nexus · **Lens:** Ownership · **Weight:** Low · **Size:** S · **Net:** ≈0 · **Origin:** Drift
+
+**Finding**
+
+`TILE_HOSTS` resolves a host to its folder and lists every board from the held tree, and the watcher, the channels, and the rename cascade read it. Three sites run before or without a tree and name host folders themselves. The saved-view normalization at open walks the Homepage folder and the Contexts folder for tile documents, so a new host whose boards live elsewhere has its view tiles skipped without a word. `ensureConfigLayout` creates the Homepage folder, and the open-time re-mint checks for a Space by kind before rewriting a copied folder's board. Adding a host means finding these three beside the table.[^625]
+
+**Fix | TBD**
+
+Each `TILE_HOSTS` arm names the folder a tree-less pass reaches its boards under, and `normalizeSavedViews` and `ensureConfigLayout` read it. The re-mint's check concerns the copied folder's own kind and may stay.
+
 #### Files
 
 ##### F-604 · An app file this session never read and can't read opens as empty, so its section shows defaults and its changes are refused, some without a word.
@@ -742,3 +754,4 @@ Route the four readers (the walk's `readConfig`, `readNavigationFile`, `readMatr
 [^622]: **F-641:** `UIX/Animations/motion.ts:19` (`exitWait`), `UIX/Interactions/shared.ts:43` (`SETTLE_FALLBACK`), `UIX/Animations/useExitPresence.ts:29` (`useSettleFallback`), `UIX/Interactions/dragDisclose.ts:5` (`SETTLE_MS`), `UIX/Theme/nativeCaret.ts:335` (`SETTLE_DEADLINE_MS`), `Core/MarkdownPM/folding.ts:20` (`FOLD_SETTLE_MS`)
 [^623]: **F-642:** `Core/Tiles/Layout/codec.ts:26-31`, `Core/Tiles/tileDocStore.ts:143-153` (`adopt`), `Core/Tiles/TileHost.tsx:283-295`, `Core/Tiles/tilesFile.ts:136-145,192,235-242,253,277`, `Core/Tiles/tileDoc.ts:20-23` (`readTileDocAt`), `Core/Files/atomicWrite.ts:215` (`setAside`)
 [^624]: **F-643:** `Core/Tiles/TileGrid.tsx:207-226` (`TileShell`'s comparator)
+[^625]: **F-644:** `Core/Tiles/tileHosts.ts:16-37` (`TILE_HOSTS`), `Core/Nexus/migrateConfig.ts:45-53` (`normalizeSavedViews`), `Core/Nexus/identity.ts:58-62` (`ensureConfigLayout`), `Core/Nexus/remint.ts:110`

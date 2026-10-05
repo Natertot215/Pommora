@@ -17,7 +17,7 @@ const spaceIdsOf = (values: Record<string, string[]> | undefined): string[] =>
   values ? Object.values(values).flat() : []
 
 // Collections are the roots, so a Location rule can name a Collection as well as a Set.
-export const filterSetTree = (tree: NexusTree): SetTreeNode[] =>
+const filterSetTree = (tree: NexusTree): SetTreeNode[] =>
   tree.collections.map((c) => ({ id: c.id, children: buildSetTree(c.sets) }))
 
 export interface MatrixTree {

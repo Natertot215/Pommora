@@ -5,7 +5,7 @@ import { linkedSpacesTree, makeTree } from '../Testing/testTree'
 import type { FilterGroup } from '../Views/views'
 import { DEFAULT_MATRIX_CONFIG, type MatrixConfig } from './matrixConfig'
 import type { MatrixGraphReply, MatrixLink } from './matrixGraph'
-import { filterSetTree, matrixConnections, matrixTree, matrixVisible } from './matrixInput'
+import { matrixConnections, matrixTree, matrixVisible } from './matrixInput'
 
 const link = (pageId: string, target: string): MatrixLink => ({
   pageId,
@@ -76,22 +76,16 @@ describe('matrixInput', () => {
     expect(phantom.input.connections).toEqual([])
   })
 
-  it('admits a Collection rule at every depth and every page when the filter is off', () => {
+  it('excludes a Collection at every depth and admits every page when the filter is off', () => {
     const rules = {
       match: 'all' as const,
-      rules: [{ property_id: '_location', op: 'is_inside', value: 'c1' }],
+      rules: [{ property_id: '_location', op: 'is_not_inside', value: 'c1' }],
     }
-    const inside = matrixInput(makeTree(), replyOf([]), configWith({ rules, enabled: true }))
-    expect([...(inside.visible ?? [])].sort()).toEqual(['a1', 'p1', 'p2', 'pr1', 't1'])
+    const outside = matrixInput(makeTree(), replyOf([]), configWith({ rules, enabled: true }))
+    expect([...(outside.visible ?? [])].sort()).toEqual(['a1', 'pr1', 't1'])
 
     const off = matrixInput(makeTree(), replyOf([]), configWith({ rules, enabled: false }))
     expect(off.visible).toBeNull()
-  })
-
-  it('roots the filter set tree at the Collections', () => {
-    expect(filterSetTree(makeTree())).toEqual([
-      { id: 'c1', children: [{ id: 's1', children: [] }] },
-    ])
   })
 })
 
