@@ -53,8 +53,10 @@ export function IconPicker({
 
   const [query, setQuery] = useState('')
   const set = useSyncExternalStore(subscribeFullIconSet, fullIconSet, fullIconSet)
+  // Cleared on close: the pane's held body still shows the last query through its exit, and the next opening starts empty.
   useEffect(() => {
     if (open) void loadFullIconSet()
+    else setQuery('')
   }, [open])
   const filtered = useMemo(() => set?.searchIcons(query) ?? [], [set, query])
 

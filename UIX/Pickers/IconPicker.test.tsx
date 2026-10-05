@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { afterEach, beforeEach, expect, it } from 'vitest'
+import { afterEach, beforeEach, expect, it, vi } from 'vitest'
 import { act } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
 import { IconPicker } from './IconPicker'
@@ -46,4 +46,30 @@ it('names an icon favourite by its words, and announces that name on lift', asyn
   await act(async () => {
     window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }))
   })
+})
+
+it('opens with an empty search after a close, whatever was typed before it', async () => {
+  vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] })
+  const render = (open: boolean) =>
+    act(async () =>
+      root.render(
+        <IconPicker
+          open={open}
+          onClose={() => {}}
+          iconFavorites={{ ids: [], onChange: () => {} }}
+        />,
+      ),
+    )
+  const field = (): HTMLInputElement => document.querySelector('input') as HTMLInputElement
+  await render(true)
+  await act(async () => {
+    Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')?.set?.call(field(), 'zzz')
+    field().dispatchEvent(new Event('input', { bubbles: true }))
+  })
+  expect(field().value).toBe('zzz')
+  await render(false)
+  await act(async () => vi.runAllTimers())
+  await render(true)
+  expect(field().value).toBe('')
+  vi.useRealTimers()
 })
