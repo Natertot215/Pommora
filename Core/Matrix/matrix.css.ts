@@ -89,6 +89,14 @@ export const label = style({
   gap: ROW_GAP,
   // The title follows the hovered node across the canvas, so anything it covers must still take the pointer.
   pointerEvents: 'none',
+  // Raised over its node at the stage's bottom edge, the title keeps the node's side and the trail goes on top.
+  selectors: {
+    '&[data-above]': {
+      flexDirection: 'column-reverse',
+      paddingTop: 0,
+      paddingBottom: `${TITLE_OFFSET}px`,
+    },
+  },
 })
 
 export const labelField = style({

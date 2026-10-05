@@ -3,6 +3,8 @@ import { useLineRow } from '@pommora/uix/Interactions/drag'
 import { NavTrail } from '@pommora/uix/Elements/NavTrail'
 import { titleInput } from '@pommora/uix/Menus'
 import { ColorPicker } from '@pommora/uix/Pickers/ColorPicker'
+import { VIEWPORT_MARGIN } from '@pommora/uix/Pickers/PickerMenu'
+import { clamp } from '@pommora/uix/Utilities/clamp'
 import { colorNameFor } from '@pommora/uix/Theme/ramp'
 import { text } from '@pommora/uix/Theme'
 import { cx } from '@pommora/uix/Utilities/cx'
@@ -87,6 +89,8 @@ export function MatrixLabel({
     if (id === null) return
     let lx = Number.NaN
     let ly = Number.NaN
+    // Measured on resize, never per frame: the label follows its node on every one.
+    let box = { w: 0, h: 0 }
     const follow = (): void => {
       const n = matrixRuntime.nodeOf(id)
       const a = anchorRef.current
@@ -98,15 +102,32 @@ export function MatrixLabel({
       const r = n.radius * zoom
       a.style.transform = `translate(${sx - r}px, ${sy - r}px)`
       a.style.width = a.style.height = `${r * 2}px`
-      l.style.transform = `translate(-50%, 0) translate(${sx}px, ${sy + r}px)`
+      // The pickers' rule, held to the stage's free box: below the node unless above has more of the room it lacks, and centred until an edge stops it.
+      const st = matrixRuntime.stageOf(surface)
+      const below = st.y + st.height - VIEWPORT_MARGIN - (sy + r)
+      const up = box.h > below && sy - r - st.y - VIEWPORT_MARGIN > below
+      const half = box.w / 2
+      const x = clamp(sx, st.x + VIEWPORT_MARGIN + half, st.x + st.width - VIEWPORT_MARGIN - half)
+      l.toggleAttribute('data-above', up)
+      l.style.transform = `translate(-50%, ${up ? -100 : 0}%) translate(${x}px, ${up ? sy - r : sy + r}px)`
       if (sx === lx && sy === ly) return
       lx = sx
       ly = sy
       // A standing pane re-measures off the anchor's own scroll, so it tracks the node rather than the frame.
       if (glanceShown()) a.dispatchEvent(new Event('scroll'))
     }
+    const ro = new ResizeObserver(() => {
+      const l = labelRef.current
+      if (l) box = { w: l.offsetWidth, h: l.offsetHeight }
+      follow()
+    })
+    if (labelRef.current) ro.observe(labelRef.current)
     follow()
-    return matrixRuntime.subscribe(follow)
+    const stop = matrixRuntime.subscribe(follow)
+    return () => {
+      stop()
+      ro.disconnect()
+    }
   }, [id, surface])
 
   // Keyed on the node's identity, not its record, which every tree push rebuilds: a push mid-dwell would cancel the preview.

@@ -231,6 +231,17 @@ describe('MatrixView', () => {
     expect(label()).toBeNull()
   })
 
+  it('raises the label over a node at the stage bottom, where it would run past the edge', () => {
+    vi.spyOn(HTMLElement.prototype, 'offsetHeight', 'get').mockReturnValue(40)
+    const low = { clientX: 400, clientY: 580 }
+    fire(host.firstElementChild as Element, new WheelEvent('wheel', { deltaY: -280 }))
+    fire(canvas(), pointer('pointermove', low))
+    drain()
+    for (const o of observers) o([{ contentRect: { x: 0, y: 0, width: 800, height: 600 } }])
+    drain()
+    expect(label()?.hasAttribute('data-above')).toBe(true)
+  })
+
   it('leaves the hover where a gesture began', () => {
     fire(canvas(), pointer('pointermove', FAR))
     fire(canvas(), held('pointermove', CENTRE))
