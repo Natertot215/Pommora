@@ -294,7 +294,7 @@ class MatrixRuntime {
     this.invalidate()
   }
 
-  private stageOf(surface: Surface): Stage {
+  stageOf(surface: Surface): Stage {
     return this.stages.get(surface) ?? NO_STAGE
   }
 
