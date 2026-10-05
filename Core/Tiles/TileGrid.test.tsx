@@ -3,10 +3,11 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { act } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
 import { firePointer, pressEscape, stubPointerCapture } from '@pommora/uix/Testing/pointerHarness'
-import { getTile, tileIds } from './Layout/model'
+import { getTile, type TileLayout, tileIds } from './Layout/model'
 import { insertBand, moveTileToBand } from './Layout/ops'
 import { splitTile } from '../Testing/tileLayouts'
-import { TileGrid } from './TileGrid'
+import { type Inserting, type InsertTarget, TileGrid } from './TileGrid'
+import { useState } from 'react'
 ;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
 
 vi.mock('./Layout/ops', async (original) => {
@@ -53,6 +54,8 @@ const grid = {
   locked: false,
   isTileLocked: () => false,
   onHandleMenu: () => {},
+  inserting: null,
+  onInsert: () => {},
 }
 
 function mount(): { onLayoutChange: ReturnType<typeof vi.fn>; edge: HTMLElement } {
@@ -302,5 +305,195 @@ describe('the handle reveal', () => {
     settled('a')
     move(60, 140)
     expect(reveal()).toBe('off')
+  })
+})
+
+describe('the ghost tiles and the add strip', () => {
+  const rowBoard: TileLayout = {
+    bands: [
+      {
+        node: {
+          kind: 'row',
+          ratios: [0.5, 0.5],
+          children: [
+            { kind: 'tile', id: 'a', h: 200 },
+            { kind: 'tile', id: 'b', h: 100 },
+          ],
+        },
+      },
+    ],
+  }
+  const render = (over: Partial<Parameters<typeof TileGrid>[0]> = {}, board = rowBoard): void =>
+    act(() =>
+      root.render(
+        <TileGrid
+          {...grid}
+          layout={board}
+          onLayoutChange={() => {}}
+          renderTile={(id) => <span data-tile={id} />}
+          {...over}
+        />,
+      ),
+    )
+  const q = (sel: string): HTMLElement | null => host.querySelector<HTMLElement>(sel)
+  const hoverZone = (): void =>
+    act(() => {
+      q('.tile-zone')?.dispatchEvent(
+        new PointerEvent('pointerover', { bubbles: true, relatedTarget: document.body }),
+      )
+      window.dispatchEvent(new PointerEvent('pointermove'))
+    })
+  const tick = (ms: number): void => act(() => void vi.advanceTimersByTime(ms))
+  // A press, its release, and the click they make.
+  const click = (sel: string): void =>
+    act(() => {
+      const el = q(sel) as HTMLElement
+      firePointer(el, 'pointerdown', { x: 0, y: 0 })
+      firePointer(window, 'pointerup')
+      el.click()
+    })
+
+  // A drop arms the kit's one-click swallow on a zero timer that jsdom never fires here; a throwaway click spends it before a test clicks for real.
+  beforeEach(() => {
+    document.body.click()
+    vi.useFakeTimers()
+  })
+  afterEach(() => vi.useRealTimers())
+
+  it('draws one zone per wedge, and a dwell on it raises the ghost in the wedge’s box', () => {
+    render()
+    expect(host.querySelectorAll('.tile-zone')).toHaveLength(1)
+    hoverZone()
+    tick(999)
+    expect(q('.tile-ghost')).toBeNull()
+    tick(1)
+    expect(q('.tile-ghost')?.style.height).toBe('92px')
+    expect(q('.tile-ghost')?.style.transform).toBe('translate(4px, 108px)')
+  })
+
+  it('seats the add strip under the last band and adds from it, with the board’s height unchanged', () => {
+    const onInsert = vi.fn()
+    render({ onInsert })
+    expect(q('.tile-add')?.style.transform).toBe('translate(0px, 208px)')
+    expect(q('.tile-grid')?.style.height).toBe('228px')
+    click('.tile-add button')
+    expect(onInsert).toHaveBeenCalledOnce()
+    expect(onInsert.mock.calls[0][0]).toEqual({ kind: 'append' })
+    expect(onInsert.mock.calls[0][1]).toMatchObject({ type: 'click' })
+    expect(q('.tile-grid')?.style.height).toBe('228px')
+  })
+
+  it('reveals the strip as the pointer nears it and keeps the reveal through a press', () => {
+    render()
+    const strip = q('.tile-add') as HTMLElement
+    strip.getBoundingClientRect = () => ({ left: 0, top: 300, right: 400, bottom: 314 }) as DOMRect
+    const move = (y: number, buttons = 0): void =>
+      act(() => {
+        host.dispatchEvent(
+          new PointerEvent('pointermove', { clientX: 100, clientY: y, buttons, bubbles: true }),
+        )
+      })
+    move(290)
+    expect(strip.dataset.revealHost).toBe('on')
+    move(260)
+    expect(strip.dataset.revealHost).toBe('')
+    move(290)
+    move(290, 1)
+    expect(strip.dataset.revealHost).toBe('on')
+  })
+
+  it('a locked board offers neither zone nor strip, and an empty one no ghost under a lock', () => {
+    render({ locked: true })
+    expect(q('.tile-zone')).toBeNull()
+    expect(q('.tile-add')).toBeNull()
+    render({ locked: true }, { bands: [] })
+    expect(q('.tile-ghost')).toBeNull()
+  })
+
+  it('an empty board stands one ghost at the first tile’s box, with no zone and no strip', () => {
+    render({}, { bands: [] })
+    const ghost = q('.tile-ghost')
+    expect(ghost?.style.transform).toBe('translate(0px, 0px)')
+    expect(ghost?.style.height).toBe('160px')
+    expect(q('.tile-zone')).toBeNull()
+    expect(q('.tile-add')).toBeNull()
+    expect(q('.tile-grid')?.style.height).toBe('188px')
+  })
+
+  it('a stacked board has no wedge and keeps its strip', () => {
+    render()
+    measure(300)
+    expect(q('.tile-zone')).toBeNull()
+    expect(host.querySelectorAll('.tile-add')).toHaveLength(1)
+  })
+
+  it('a gesture withdraws the zones and the strip until its settle commits', () => {
+    render()
+    const handle = tileEl('b').querySelector('.tile-handle') as HTMLElement
+    act(() => firePointer(handle, 'pointerdown', { x: 0, y: 150 }))
+    expect(q('.tile-zone')).toBeNull()
+    expect(q('.tile-add')).toBeNull()
+    act(() => firePointer(window, 'pointermove', { x: 0, y: 5 }))
+    act(() => firePointer(window, 'pointerup'))
+    expect(q('.tile-zone')).toBeNull()
+    settled('b')
+    expect(q('.tile-zone')).not.toBeNull()
+    expect(q('.tile-add')).not.toBeNull()
+  })
+
+  it('clicking the ghost reports its wedge; an open menu takes no second click', () => {
+    const onInsert = vi.fn()
+    render({ onInsert })
+    hoverZone()
+    tick(1000)
+    click('.tile-ghost')
+    expect(onInsert).toHaveBeenCalledOnce()
+    expect(onInsert.mock.calls[0][0]).toEqual({ kind: 'wedge', above: 'b' })
+    expect(onInsert.mock.calls[0][1]).toMatchObject({ type: 'click' })
+    render({ onInsert, inserting: { target: { kind: 'wedge', above: 'b' }, phase: 'menu' } })
+    click('.tile-ghost')
+    click('.tile-add button')
+    expect(onInsert).toHaveBeenCalledOnce()
+  })
+
+  it('the hovered ghost becomes the held one in place, fades on dismissal, and leaves at once on landing', () => {
+    let set: (v: Inserting | null) => void = () => {}
+    function Host(): React.JSX.Element {
+      const [inserting, setInserting] = useState<Inserting | null>(null)
+      set = setInserting
+      return (
+        <TileGrid
+          {...grid}
+          layout={rowBoard}
+          onLayoutChange={() => {}}
+          renderTile={(id) => <span data-tile={id} />}
+          inserting={inserting}
+          onInsert={(target: InsertTarget) => setInserting({ target, phase: 'menu' })}
+        />
+      )
+    }
+    act(() => root.render(<Host />))
+    hoverZone()
+    tick(1000)
+    const ghost = q('.tile-ghost')
+    click('.tile-ghost')
+    expect(q('.tile-ghost')).toBe(ghost)
+    expect(ghost?.hasAttribute('data-reveal-held')).toBe(true)
+    act(() => set(null))
+    expect(q('.tile-ghost')).toBe(ghost)
+    expect(ghost?.classList.contains('is-closing')).toBe(true)
+    tick(2000)
+    expect(q('.tile-ghost')).toBeNull()
+    act(() => set({ target: { kind: 'wedge', above: 'b' }, phase: 'menu' }))
+    act(() => set({ target: { kind: 'wedge', above: 'b' }, phase: 'flight' }))
+    expect(q('.tile-ghost')).not.toBeNull()
+    act(() => set(null))
+    expect(q('.tile-ghost')).toBeNull()
+  })
+
+  it('an append held from the strip lights the strip and draws no ghost over a board with tiles', () => {
+    render({ inserting: { target: { kind: 'append' }, phase: 'menu' } })
+    expect(q('.tile-add button')?.hasAttribute('data-reveal-held')).toBe(true)
+    expect(q('.tile-ghost')).toBeNull()
   })
 })

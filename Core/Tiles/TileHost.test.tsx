@@ -13,7 +13,10 @@ import { useSession } from '../Session/store'
 import { makeTree } from '../Testing/testTree'
 import { personalizationOf } from '../Session/configSlice'
 import { tileId } from '../Testing/tileLayouts'
-import { removeLeaf } from './Layout/ops'
+import { removeLeaf, stretchTileHeight } from './Layout/ops'
+import { insertMenuItems, pickTreesOf } from './tileHandleMenu'
+import type { TileLayout } from './Layout/model'
+import { TILE_MIN_PX } from '@pommora/uix/Utilities/tileMetrics'
 
 const surfaceRenders = vi.hoisted(() => new Map<string, number>())
 vi.mock('./Surfaces/MarkdownTile', async (importOriginal) => {
@@ -415,5 +418,266 @@ describe('the host over the renderer table', () => {
       copy,
     ])
     expect(final?.bands.at(-1)?.node.h).toBe(160)
+  })
+})
+
+describe('the Insert Menu a ghost tile opens', () => {
+  const made = tileId('n')
+  type Saved = { bands: { node: { kind: string; id: string; h: number } }[] }
+  const empty = { layout: { bands: [] }, tiles: [], locked: false }
+  // A row whose second tile ends above the first: a wedge under `b`.
+  const wedged = {
+    layout: {
+      bands: [
+        {
+          node: {
+            kind: 'row',
+            ratios: [0.5, 0.5],
+            children: [
+              { kind: 'tile', id: tileId('a'), h: 200 },
+              { kind: 'tile', id: tileId('b'), h: 100 },
+            ],
+          },
+        },
+      ],
+    },
+    tiles: [
+      { id: tileId('a'), type: 'markdown' },
+      { id: tileId('b'), type: 'markdown' },
+    ],
+    locked: false,
+  }
+  const bridge = (
+    action: string | null,
+    over: Record<string, unknown> = {},
+    get: () => unknown = () => empty,
+  ) => {
+    const saves: Saved[] = []
+    const menus: { anchor?: unknown }[] = []
+    const creates: unknown[][] = []
+    let changed: ((c: unknown) => void) | null = null
+    stubEditorBridge({
+      'tiles:changed': (fn: (c: unknown) => void) => {
+        changed = fn
+        return () => {}
+      },
+      'tiles:get': async () => ({ ok: true, value: get() }),
+      'tiles:save': async (_host: unknown, patch: { layout?: unknown }) => {
+        if (patch.layout) saves.push(patch.layout as Saved)
+        return { ok: true, value: { landed: get() } }
+      },
+      'tiles:readMarkdown': async () => ({ ok: true, value: { body: '' } }),
+      'tiles:create': async (...args: unknown[]) => {
+        creates.push(args)
+        const cur = get() as typeof empty
+        return {
+          ok: true,
+          value: {
+            id: made,
+            landed: { ...cur, tiles: [...cur.tiles, { id: made, type: 'markdown' }] },
+          },
+        }
+      },
+      menu: async (req: { anchor?: unknown }) => {
+        menus.push(req)
+        return { ok: true, value: action }
+      },
+      ...over,
+    })
+    useSession.setState((st) => ({
+      tree: makeTree(),
+      devicePrefs: { ...st.devicePrefs, nativeMenus: true },
+    }))
+    return {
+      saves,
+      menus,
+      creates,
+      reload: () => changed?.({ host: { kind: 'homepage' }, ids: [] }),
+    }
+  }
+  const click = async (sel: string, detail = 1): Promise<void> => {
+    const el = host.querySelector(sel) as HTMLElement
+    await act(async () => {
+      el.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true }))
+      el.dispatchEvent(new PointerEvent('pointerup', { bubbles: true }))
+      el.dispatchEvent(new MouseEvent('click', { bubbles: true, detail, clientX: 40, clientY: 60 }))
+    })
+  }
+  const mountHost = async (ready: () => boolean): Promise<void> => {
+    await act(async () => root.render(<TileHost host={{ kind: 'homepage' }} />))
+    expect(await until(ready)).toBe(true)
+  }
+  const bandIds = (saved: Saved | undefined): string[] | undefined =>
+    saved?.bands.map((b) => b.node.id)
+
+  it('New Page over an empty board creates a blank tile as its first band and hands it the caret', async () => {
+    const { saves, creates } = bridge('tile:new')
+    await mountHost(() => host.querySelector('.tile-ghost') !== null)
+    await click('.tile-ghost')
+    expect(await until(() => saves.length > 0)).toBe(true)
+    expect(creates[0]).toEqual([{ kind: 'homepage' }, undefined])
+    expect(bandIds(saves.at(-1))).toEqual([made])
+    expect(saves.at(-1)?.bands[0].node.h).toBe(160)
+    expect(await until(() => host.querySelector('.tile.is-editing-tile') !== null)).toBe(true)
+    expect(host.querySelector('.tile-ghost')).toBeNull()
+  })
+
+  it('a link row creates the tile already linked, without the caret', async () => {
+    const linked: unknown[][] = []
+    bridge('tile:pick:0', {
+      'tiles:create': async (...args: unknown[]) => {
+        linked.push(args)
+        return {
+          ok: true,
+          value: {
+            id: made,
+            landed: { ...empty, tiles: [{ id: made, type: 'page', page_id: 'p1' }] },
+          },
+        }
+      },
+    })
+    await mountHost(() => host.querySelector('.tile-ghost') !== null)
+    await click('.tile-ghost')
+    expect(await until(() => host.querySelectorAll('.tile').length === 1)).toBe(true)
+    const { picks } = insertMenuItems(pickTreesOf(makeTree(), undefined), 'file')
+    expect(linked[0]).toEqual([{ kind: 'homepage' }, picks[0]])
+    expect(host.querySelector('.tile.is-editing-tile')).toBeNull()
+  })
+
+  it('the add strip appends a full-width band, its menu hanging from the click or, from the keyboard, the strip', async () => {
+    const { saves, menus } = bridge('tile:new', {}, () => wedged)
+    await mountHost(() => host.querySelector('.tile-add button') !== null)
+    const strip = host.querySelector('.tile-add button') as HTMLElement
+    strip.getBoundingClientRect = () => ({ left: 10, top: 300, width: 400, height: 14 }) as DOMRect
+    await click('.tile-add button')
+    expect(await until(() => saves.length > 0)).toBe(true)
+    expect(saves.at(-1)?.bands).toHaveLength(2)
+    expect(saves.at(-1)?.bands.at(-1)?.node).toEqual({ kind: 'tile', id: made, h: 160 })
+    expect(menus[0].anchor).toEqual({ left: 40, top: 60, height: 0 })
+    expect(await until(() => host.querySelector('.tile.is-editing-tile') !== null)).toBe(true)
+    await click('.tile-add button', 0)
+    expect(await until(() => menus.length === 2)).toBe(true)
+    expect(menus[1].anchor).toEqual({ left: 10, top: 300, height: 14 })
+  })
+
+  it('a dismissed menu creates nothing and leaves the standing ghost unheld', async () => {
+    const { creates, menus } = bridge(null)
+    await mountHost(() => host.querySelector('.tile-ghost') !== null)
+    await click('.tile-ghost')
+    expect(await until(() => menus.length === 1)).toBe(true)
+    await act(async () => {})
+    expect(creates).toHaveLength(0)
+    const ghost = host.querySelector('.tile-ghost')
+    expect(ghost).not.toBeNull()
+    expect(ghost?.hasAttribute('data-reveal-held')).toBe(false)
+  })
+
+  // A sibling mount changes the board while the create is in flight; the reply then seats against the board as it stands.
+  const wedgeFlight = async (meanwhile: (cur: TileLayout) => TileLayout): Promise<Saved[]> => {
+    let reply: (r: unknown) => void = () => {}
+    const { saves } = bridge(
+      'tile:new',
+      {
+        'tiles:create': () =>
+          new Promise((r) => {
+            reply = r
+          }),
+      },
+      () => wedged,
+    )
+    await mountHost(() => host.querySelectorAll('.tile').length === 2)
+    const zone = host.querySelector('.tile-zone') as HTMLElement
+    await act(async () => {
+      zone.dispatchEvent(
+        new PointerEvent('pointerover', { bubbles: true, relatedTarget: document.body }),
+      )
+      window.dispatchEvent(new PointerEvent('pointermove'))
+    })
+    expect(await until(() => host.querySelector('.tile-ghost') !== null)).toBe(true)
+    await click('.tile-ghost')
+    await act(async () => commitTileLayout({ kind: 'homepage' }, meanwhile))
+    await act(async () => {
+      reply({
+        ok: true,
+        value: {
+          id: made,
+          landed: { ...wedged, tiles: [...wedged.tiles, { id: made, type: 'markdown' }] },
+        },
+      })
+    })
+    expect(await until(() => saves.some((x) => JSON.stringify(x).includes(made)))).toBe(true)
+    return saves
+  }
+
+  it('a wedge whose tile left before the reply gives way to the last band', async () => {
+    const saves = await wedgeFlight((cur) => removeLeaf(cur, tileId('b')))
+    expect(saves.at(-1)?.bands).toHaveLength(2)
+    expect(saves.at(-1)?.bands.at(-1)?.node).toEqual({ kind: 'tile', id: made, h: 160 })
+  })
+
+  it('a wedge whose fill changed before the reply seats the tile at the fill the board now gives', async () => {
+    const saves = await wedgeFlight((cur) => stretchTileHeight(cur, tileId('a'), 100, TILE_MIN_PX))
+    const row = saves.at(-1)?.bands[0].node as unknown as {
+      children: { kind: string; children: { id: string; h: number }[] }[]
+    }
+    expect(row.children[1].kind).toBe('column')
+    expect(row.children[1].children.map((c) => c.id)).toEqual([tileId('b'), made])
+    expect(row.children[1].children[1].h).toBe(192)
+  })
+
+  it('a board locked while the menu is open takes no pick', async () => {
+    let cur: unknown = empty
+    const { creates, reload } = bridge(
+      'tile:new',
+      {
+        menu: async () => {
+          cur = { ...empty, locked: true }
+          reload()
+          await new Promise((r) => setTimeout(r, 20))
+          return { ok: true, value: 'tile:new' }
+        },
+      },
+      () => cur,
+    )
+    await mountHost(() => host.querySelector('.tile-ghost') !== null)
+    await click('.tile-ghost')
+    expect(await until(() => host.querySelector('.tile-ghost') === null)).toBe(true)
+    await act(async () => {
+      await new Promise((r) => setTimeout(r, 40))
+    })
+    expect(creates).toHaveLength(0)
+  })
+
+  it('the handle menu takes no mutating pick on a board locked since it opened, and still opens the page', async () => {
+    let cur: unknown = { ...doc, tiles: [doc.tiles[0], { ...doc.tiles[1], page_id: 'p1' }] }
+    let action = 'tile:duplicate'
+    const duplicate = vi.fn()
+    const select = vi.fn()
+    const { reload } = bridge(
+      null,
+      {
+        'tiles:duplicateTile': duplicate,
+        menu: async () => {
+          cur = { ...(cur as object), locked: true }
+          reload()
+          await new Promise((r) => setTimeout(r, 20))
+          return { ok: true, value: action }
+        },
+      },
+      () => cur,
+    )
+    useSession.setState({ select })
+    await mountHost(() => host.querySelectorAll('.tile').length === 4)
+    await click('.tile-handle')
+    await act(async () => {
+      await new Promise((r) => setTimeout(r, 60))
+    })
+    expect(duplicate).not.toHaveBeenCalled()
+    action = 'tile:open'
+    await act(async () => {
+      ;(host.querySelectorAll('.tile-handle')[1] as HTMLElement).click()
+    })
+    expect(await until(() => select.mock.calls.length === 1)).toBe(true)
+    expect(select.mock.calls[0][0]).toMatchObject({ kind: 'page', id: 'p1' })
   })
 })

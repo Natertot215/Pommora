@@ -10,14 +10,27 @@ import {
 } from 'react'
 import { findScroller } from '@pommora/uix/Interactions/autoscroll'
 import { GLIDE_FEEL } from '@pommora/uix/Animations/feel'
-import { useSettleFallback } from '@pommora/uix/Animations/useExitPresence'
+import { useHeldPresence, useSettleFallback } from '@pommora/uix/Animations/useExitPresence'
 import { usePointerGesture } from '@pommora/uix/Interactions/gesture'
 import { HYSTERESIS } from '@pommora/uix/Interactions/shared'
 import { TILE_MIN_PX } from '@pommora/uix/Utilities/tileMetrics'
-import { type Reach, trackNear, withinReach } from '@pommora/uix/Interactions/hoverReveal'
+import {
+  ghostAnchorProps,
+  useClearStrandedGhost,
+  useGhostAnchor,
+} from '@pommora/uix/Interactions/ghostCreate'
+import {
+  type Reach,
+  REVEAL_GRACE_MS,
+  trackNear,
+  withinBox,
+  withinReach,
+} from '@pommora/uix/Interactions/hoverReveal'
 import { revealTarget } from '@pommora/uix/Interactions/hover-reveal.css'
 import { cx } from '@pommora/uix/Utilities/cx'
-import { type DividerRef, type Edge, TILE_GAP, type TileLayout } from './Layout/model'
+import { Icon } from '@pommora/uix/Symbols'
+import { text } from '@pommora/uix/Theme'
+import { type DividerRef, type Edge, NEW_TILE_H, TILE_GAP, type TileLayout } from './Layout/model'
 import { resolveEdge } from './Layout/edges'
 import { hitTest, type DropTarget, sameTarget } from './Layout/hitTest'
 import {
@@ -28,7 +41,7 @@ import {
   resizeStackPair,
   stretchTileHeight,
 } from './Layout/ops'
-import { computeGeometry, type Placement, pinned, placeTiles } from './Layout/rects'
+import { computeGeometry, type Placement, pinned, placeTiles, wedgeFills } from './Layout/rects'
 import { snapAxis, xCandidates, yCandidates } from './Layout/snap'
 import { stackLayout, stackedAt } from './Layout/stack'
 import { useLatest } from '@pommora/uix/Utilities/stableApi'
@@ -42,11 +55,22 @@ interface TileGridProps {
   tileClassName: (id: string) => string | undefined
   editingId: string | null
   menuOpenId: string | null
+  inserting: Inserting | null
   tileStyle: (id: string) => CSSProperties | undefined
   onBusyChange: (busy: boolean) => void
   locked: boolean
   isTileLocked: (id: string) => boolean
   onHandleMenu: (id: string, e: React.MouseEvent) => void
+  onInsert: (target: InsertTarget, e: React.MouseEvent) => void
+}
+
+/** Where a new tile lands: as the board's last band, or flush in the wedge under a tile. */
+export type InsertTarget = { kind: 'append' } | { kind: 'wedge'; above: string }
+
+/** The Insert Menu a ghost or the add strip opened, held while the menu is open and then through its create's flight. */
+export interface Inserting {
+  target: InsertTarget
+  phase: 'menu' | 'flight'
 }
 
 type TilePhase = 'idle' | 'reflow' | 'lifted' | 'settling'
@@ -67,6 +91,9 @@ const HANDLE_REACH: Reach = { size: 'corner', toward: { x: 1, y: 1 } }
 const BAND_ZONE_PX = 10
 const SNAP_PX = 9
 const BOTTOM_PAD_PX = 28
+const WEDGE_DWELL_MS = 1000
+const ADD_STRIP_PX = 14
+const ADD_REACH_PX = 16
 const SHELL_TRANSITION = `${GLIDE_FEEL.duration}ms ${GLIDE_FEEL.easing}`
 
 const EDGE_ZONES: Edge[][] = [
@@ -220,6 +247,58 @@ const TileShell = memo(
     a.place.h === b.place.h,
 )
 
+function AddStrip({
+  y,
+  held,
+  onAdd,
+}: {
+  y: number
+  held: boolean
+  onAdd: (e: React.MouseEvent) => void
+}): React.JSX.Element {
+  const ref = useRef<HTMLDivElement>(null)
+  const [near, setNear] = useState(false)
+  // A press holds the reveal where it stands, so the strip is still there to take its own click.
+  useEffect(() => {
+    const el = ref.current
+    if (!el) return
+    return trackNear({
+      anchor: el,
+      measure: () => {
+        const box = el.getBoundingClientRect()
+        return (px, py) => withinBox(box, px, py, ADD_REACH_PX)
+      },
+      report: (at) => {
+        if (at !== 'held') setNear(at === 'near')
+      },
+    }).stop
+  }, [])
+  return (
+    <div
+      ref={ref}
+      className="tile-add"
+      data-reveal-host={near ? 'on' : ''}
+      style={placementStyle({
+        x: { share: 0, px: 0 },
+        y,
+        w: { share: 1, px: 0 },
+        h: ADD_STRIP_PX,
+      })}
+    >
+      <button
+        type="button"
+        className={cx('add-strip', revealTarget)}
+        data-create
+        data-reveal-held={held || undefined}
+        aria-label="New Tile"
+        onClick={onAdd}
+      >
+        <Icon name="plus" size="body" />
+      </button>
+    </div>
+  )
+}
+
 export function TileGrid({
   layout,
   onLayoutChange,
@@ -227,11 +306,13 @@ export function TileGrid({
   tileClassName,
   editingId,
   menuOpenId,
+  inserting,
   tileStyle,
   onBusyChange,
   locked,
   isTileLocked,
   onHandleMenu,
+  onInsert,
 }: TileGridProps): React.JSX.Element {
   const gridRef = useRef<HTMLDivElement | null>(null)
   const [stacked, setStacked] = useState(false)
@@ -246,8 +327,13 @@ export function TileGrid({
   // Under the stacking width the board is DRAWN as one column; the tree the grid was handed is still the tree it hands back.
   const view = useMemo(() => (stacked ? stackLayout(layout) : layout), [layout, stacked])
   const placed = useMemo(() => placeTiles(draft ?? view, TILE_GAP), [draft, view])
+  // Keyed on the drawn tree, so it never recomputes under a gesture's draft; the stacked view is one bare tile per band and so has no wedge.
+  const wedges = useMemo(() => wedgeFills(view, TILE_GAP, TILE_MIN_PX), [view])
 
   const boardStatic = locked || stacked
+  const busy = pressedId !== null || resizingId !== null || tileDrag !== null || settle !== null
+  // A board with tiles offers its wedge ghosts and its add strip while it is unlocked and at rest; a stacked board has no wedge and keeps the strip.
+  const zones = !locked && !busy && view.bands.length > 0
   const live = useLatest({ view, onLayoutChange, boardStatic, isTileLocked })
 
   // The ref mirrors the state so the commit runs as a plain event side effect, never inside a state updater (React forbids cross-component updates there).
@@ -437,12 +523,18 @@ export function TileGrid({
     [begin],
   )
 
-  const busy = pressedId !== null || resizingId !== null || tileDrag !== null || settle !== null
   useEffect(() => {
     if (!busy) return
     onBusyChange(true)
     return () => onBusyChange(false)
   }, [busy, onBusyChange])
+
+  const ghostApi = useGhostAnchor({
+    dwellMs: WEDGE_DWELL_MS,
+    graceMs: REVEAL_GRACE_MS,
+    suppressed: () => inserting !== null,
+  })
+  useClearStrandedGhost(ghostApi, { has: (id) => zones && wedges.has(id) })
 
   // Sampled only between gestures and only off a measured width, before paint: a crossing under a held pointer would re-lay the board mid-drag, and a narrow mount must never paint two-across first.
   useLayoutEffect(() => {
@@ -466,16 +558,63 @@ export function TileGrid({
 
   const dropSlot = tileDrag && draft ? placed.tiles.get(tileDrag.id) : null
 
+  // A wedge's ghost fills the wedge; an append's draws only on an empty board, where it is the first tile's box — a board with tiles adds its bottom row from the strip.
+  const boxOf = (target: InsertTarget): Placement | null => {
+    if (target.kind === 'append')
+      return placed.totalHeight > 0
+        ? null
+        : { x: { share: 0, px: 0 }, y: 0, w: { share: 1, px: 0 }, h: NEW_TILE_H }
+    const above = placed.tiles.get(target.above)
+    const h = wedges.get(target.above)
+    return above && h !== undefined
+      ? { x: above.x, y: above.y + above.h + TILE_GAP, w: above.w, h }
+      : null
+  }
+
+  // The open menu's ghost draws from the live value, so the hovered ghost becomes the held one in place; only a dismissed one waits on the presence.
+  const seat = useHeldPresence(inserting, 'base')
+  const hovered = ghostApi.ghost
+  const shownGhost = (): { target: InsertTarget; closing: boolean } | null => {
+    if (locked) return null
+    if (inserting) return { target: inserting.target, closing: false }
+    if (hovered)
+      return { target: { kind: 'wedge', above: hovered.anchorId }, closing: hovered.closing }
+    if (view.bands.length === 0) return { target: { kind: 'append' }, closing: false }
+    // A dismissed menu's ghost fades where it stood; a landed create's is already its tile.
+    return seat?.held.phase === 'menu' ? { target: seat.held.target, closing: true } : null
+  }
+  const ghost = shownGhost()
+  const ghostBox = ghost && boxOf(ghost.target)
+
   return (
     <div
       ref={gridRef}
       className={cx(
         'tile-grid',
         resizingId !== null && 'is-interacting',
+        tileDrag !== null && 'is-dragging',
         boardStatic && 'is-static',
       )}
-      style={{ height: placed.totalHeight + BOTTOM_PAD_PX }}
+      style={{
+        height:
+          Math.max(placed.totalHeight, ghostBox ? ghostBox.y + ghostBox.h : 0) + BOTTOM_PAD_PX,
+      }}
     >
+      {zones &&
+        [...wedges.keys()].map((id) => {
+          const box = boxOf({ kind: 'wedge', above: id })
+          return (
+            box && (
+              <div
+                key={`zone-${id}`}
+                className="tile-zone"
+                style={placementStyle(box)}
+                {...ghostAnchorProps(ghostApi, id)}
+              />
+            )
+          )
+        })}
+
       {order.map(([id, place]) => {
         const lifted = tileDrag?.id === id ? tileDrag : null
         const settling = settle?.id === id ? settle : null
@@ -507,6 +646,41 @@ export function TileGrid({
       })}
 
       {dropSlot && <div className="tile-placement drop-slot" style={placementStyle(dropSlot)} />}
+
+      {ghost && ghostBox && (
+        <button
+          type="button"
+          data-ghost-root
+          data-reveal-held={inserting !== null || undefined}
+          className={cx('tile-ghost tile-base ghost-worn', ghost.closing && 'is-closing')}
+          style={placementStyle(ghostBox)}
+          onPointerEnter={ghostApi.onGhostEnter}
+          onPointerLeave={ghostApi.onGhostLeave}
+          onTransitionEnd={(e) => {
+            if (ghost.closing && e.target === e.currentTarget && e.propertyName === 'opacity')
+              ghostApi.closed()
+          }}
+          onClick={(e) => {
+            if (inserting !== null) return
+            ghostApi.take()
+            onInsert(ghost.target, e)
+          }}
+        >
+          {/* A button, so an empty board can be given its first tile from the keyboard; the tile base's border and radius are its chrome. */}
+          <Icon name="layout-dashboard" size="titleMedium" />
+          <span className={text.footnote.standard}>New Tile</span>
+        </button>
+      )}
+
+      {zones && (
+        <AddStrip
+          y={placed.totalHeight + TILE_GAP}
+          held={inserting?.target.kind === 'append'}
+          onAdd={(e) => {
+            if (inserting === null) onInsert({ kind: 'append' }, e)
+          }}
+        />
+      )}
     </div>
   )
 }
