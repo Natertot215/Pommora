@@ -147,6 +147,15 @@ export function MatrixCanvas({
   const nodeAt = (e: React.MouseEvent<HTMLCanvasElement>): string | null =>
     matrixRuntime.hitTest(...toWorldPoint(surface, e.currentTarget, e))
 
+  // An arrival reads the pointer as a move does: a picker or rename field closing under a still pointer hands the canvas back without one.
+  const hover = (e: React.PointerEvent<HTMLCanvasElement>): void => {
+    lastShift = e.shiftKey
+    // A held button is a drag or a pan in progress, which the hover leaves where it began.
+    if (e.buttons !== 0) return
+    const id = nodeAt(e)
+    if (id !== null || !glanceShown()) matrixRuntime.setHovered(surface, id)
+  }
+
   const backgroundDown = (e: React.PointerEvent<HTMLCanvasElement>): void => {
     // Hoisted: `e.currentTarget` is null by the time a window-level move listener runs.
     const el = e.currentTarget
@@ -181,13 +190,8 @@ export function MatrixCanvas({
           if (id !== null) onNodeDown(e, id)
           else backgroundDown(e)
         }}
-        onPointerMove={(e) => {
-          lastShift = e.shiftKey
-          // A held button is a drag or a pan in progress, which the hover leaves where it began.
-          if (e.buttons !== 0) return
-          const id = nodeAt(e)
-          if (id !== null || !glanceShown()) matrixRuntime.setHovered(surface, id)
-        }}
+        onPointerMove={hover}
+        onPointerOver={hover}
         // Cancelled here alone, so the rename field and anything else laid over the canvas keeps the system's own menu.
         onContextMenu={(e) => {
           e.preventDefault()

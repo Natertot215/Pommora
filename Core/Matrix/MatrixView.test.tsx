@@ -221,6 +221,16 @@ describe('MatrixView', () => {
     moveAfter(() => fire(window, new Event('resize')), 5)
   })
 
+  it('reads the hover again when the pointer arrives back without moving', () => {
+    fire(canvas(), pointer('pointermove', CENTRE))
+    drain()
+    expect(label()).not.toBeNull()
+    fire(canvas(), pointer('pointerover', FAR))
+    drain()
+    act(() => vi.runAllTimers())
+    expect(label()).toBeNull()
+  })
+
   it('leaves the hover where a gesture began', () => {
     fire(canvas(), pointer('pointermove', FAR))
     fire(canvas(), held('pointermove', CENTRE))
