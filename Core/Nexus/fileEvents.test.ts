@@ -906,7 +906,7 @@ describe('an outside heading rename', () => {
       await refreshTree(root)
       await seedContentIndex(root)
       const home = abs('.nexus', 'interface', 'homepage')
-      const tile = await landedId(createTile(home, 'markdown'))
+      const tile = await landedId(createTile(root, home))
       await renamed('Intro', 'Keep')
       expect(hosts()).toEqual([])
       await writeMarkdownTile(home, tile, 'see [[A#Keep]]', machine().sha256Hex(''))

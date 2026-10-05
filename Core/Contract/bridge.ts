@@ -29,7 +29,6 @@ import type {
   TileHostRef,
   TilePick,
   TilesChanged,
-  TileType,
 } from '../Tiles/tiles'
 import type {
   FileConfig,
@@ -179,7 +178,7 @@ export interface Asks {
   'tiles:get': { args: [host: TileHostRef]; reply: Result<TileDoc> }
   'tiles:save': { args: [host: TileHostRef, patch: TileDocPatch]; reply: Result<Landed> }
   'tiles:create': {
-    args: [host: TileHostRef, type: TileType]
+    args: [host: TileHostRef, pick?: TilePick]
     reply: Result<Landed<{ id: string }>>
   }
   'tiles:removeTile': {
