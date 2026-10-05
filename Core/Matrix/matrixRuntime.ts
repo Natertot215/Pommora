@@ -11,7 +11,6 @@ import {
 } from './Engine/graph'
 import { place } from './Engine/placement'
 import {
-  cool,
   createSimulation,
   nodeAt,
   reheat,
@@ -198,19 +197,14 @@ class MatrixRuntime {
     this.mode = c.group.mode
     if (this.hoveredId !== null && !graph.index.has(this.hoveredId)) this.hoveredId = null
     this.sim = createSimulation(graph, c.forces[c.group.mode], settleAll)
-    const carried = prev?.drag ?? null
-    this.sim.drag = carried && graph.index.has(carried.id) ? carried : null
-    const lostDrag = carried !== null && this.sim.drag === null
+    this.sim.drag = prev?.drag && graph.index.has(prev.drag.id) ? prev.drag : null
     if (prev?.awake && !settleAll) {
       if (moving) wakeLocal(this.sim, new Set([...moving, ...fresh]))
       this.sim.awake = true
       this.sim.alpha = prev.alpha
-      this.sim.alphaTarget = prev.alphaTarget
     } else if (!settleAll && fresh.size > 0) wakeLocal(this.sim, fresh)
     if (b && b.group !== c.group) resettle(this.sim)
-    else if (b && !sameForces(b.forces[c.group.mode], c.forces[c.group.mode])) cool(this.sim)
-    if (lostDrag) cool(this.sim)
-    if (this.sim.drag) reheat(this.sim)
+    else if (b && !sameForces(b.forces[c.group.mode], c.forces[c.group.mode])) reheat(this.sim)
     if (first) {
       this.lens = s.matrixLens ?? this.lens
       // A first-ever open fits the settled picture, not the spiral: the fit waits for the first settle when nothing was persisted.
@@ -363,7 +357,6 @@ class MatrixRuntime {
   endDrag(): void {
     if (!this.sim?.drag) return
     this.sim.drag = null
-    cool(this.sim)
     this.invalidate()
   }
 
@@ -376,7 +369,7 @@ class MatrixRuntime {
   private setForces(forces: Forces): void {
     if (!this.sim) return
     this.sim.forces = forces
-    cool(this.sim)
+    reheat(this.sim)
     this.invalidate()
   }
 }
