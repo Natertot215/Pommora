@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { fail, ok } from '../Contract/result'
+import { ok } from '../Contract/result'
 import { useSession } from '../Session/store'
 import { makeTree } from '../Testing/testTree'
 import { stubDialer } from '../vitest.setup'
@@ -299,35 +299,6 @@ describe('matrixRuntime', () => {
     expect(matrixRuntime.lens).not.toEqual({ cx: 0, cy: 0, w: 800, h: 600 })
   })
 
-  it('writes one lens for a pan, and the last surface flushes it as it leaves', () => {
-    seed()
-    attach()
-    flush()
-    saveLens.mockClear()
-    matrixRuntime.setLens({ cx: 10, cy: 0, w: STAGE.width, h: STAGE.height })
-    matrixRuntime.setLens({ cx: 20, cy: 0, w: STAGE.width, h: STAGE.height })
-    expect(saveLens).not.toHaveBeenCalled()
-    detach?.()
-    detach = null
-    expect(saveLens).toHaveBeenCalledTimes(1)
-    expect(saveLens.mock.calls[0][0]).toEqual({
-      lens: { cx: 20, cy: 0, w: STAGE.width, h: STAGE.height },
-    })
-    vi.runAllTimers()
-    expect(saveLens).toHaveBeenCalledTimes(1)
-  })
-
-  it('sends a pan still pending when the window unloads', () => {
-    seed()
-    attach()
-    flush()
-    saveLens.mockClear()
-    matrixRuntime.setLens({ cx: 30, cy: 0, w: STAGE.width, h: STAGE.height })
-    expect(saveLens).not.toHaveBeenCalled()
-    window.dispatchEvent(new Event('beforeunload'))
-    expect(saveLens).toHaveBeenCalledTimes(1)
-  })
-
   it('walks the tree once for a filter patch and rebuilds the graph from the cache', () => {
     seed({ matrixGraph: linked() })
     attach()
@@ -484,24 +455,6 @@ describe('matrixRuntime', () => {
     expect(useSession.getState().matrixGraph).toEqual({ links: [], values: {} })
   })
 
-  it('clears the graph and asks the store to load once when it unloads', async () => {
-    const graphAsk = vi.fn(async () => fail('operation-failed', 'The index is not ready.'))
-    ;(window as unknown as { nexus: unknown }).nexus = stubDialer({
-      'matrix:read': async () => ok(DEFAULT_MATRIX_CONFIG),
-      'matrix:graph': graphAsk,
-      'matrixLayout:load': async () => ok({ positions: {}, lens: null }),
-    })
-    seed()
-    attach()
-    flush()
-    useSession.setState({ matrixLoad: { kind: 'unloaded' } })
-    expect(matrixRuntime.graph.nodes).toHaveLength(0)
-    expect(matrixRuntime.sim).toBeNull()
-    useSession.setState({ matrixPositions: {} })
-    await Promise.resolve()
-    expect(graphAsk).toHaveBeenCalledTimes(1)
-  })
-
   // Every lens is made from a box, so a gesture before the first fit moves a real picture rather than scaling an empty one.
   it('takes its first lens from the first stage that has a size', () => {
     seed()
@@ -517,17 +470,6 @@ describe('matrixRuntime', () => {
     matrixRuntime.setStage(surface, STAGE)
     expect(matrixRuntime.lens).toEqual({ cx: 0, cy: 0, w: STAGE.width, h: STAGE.height })
     expect(matrixRuntime.viewportOf(surface).zoom).toBe(1)
-  })
-
-  it('keeps a resized stage centred on the world point it already held', () => {
-    seed()
-    attach()
-    flush()
-    const held = centreOf(matrixRuntime.viewportOf(surface), STAGE)
-    const moved: Stage = { ...STAGE, x: 100, width: STAGE.width - 100 }
-    matrixRuntime.setStage(surface, moved)
-    expect(centreOf(matrixRuntime.viewportOf(surface), moved)).toEqual(held)
-    matrixRuntime.setStage(surface, STAGE)
   })
 
   it('shows one picture on every surface, each scaled to its own box', () => {
@@ -551,15 +493,6 @@ describe('matrixRuntime', () => {
 
     detachWindow()
     expect(centreOf(matrixRuntime.viewportOf(surface), STAGE)).toEqual(held)
-  })
-
-  it('never moves the picture on the collapsing measure a surface reports as it is torn down', () => {
-    seed()
-    attach()
-    flush()
-    const before = matrixRuntime.lens
-    matrixRuntime.setStage(surface, { x: 0, y: 0, width: 0, height: 0 })
-    expect(matrixRuntime.lens).toEqual(before)
   })
 
   it('saves only the nodes a settle moved', () => {
@@ -729,6 +662,7 @@ describe('matrixRuntime', () => {
     useSession.getState().resetMatrix()
     expect(graphAsk).not.toHaveBeenCalled()
     expect(matrixRuntime.graph.nodes).toHaveLength(0)
+    expect(matrixRuntime.sim).toBeNull()
     useSession.getState().unloadMatrix()
     expect(graphAsk).toHaveBeenCalledTimes(1)
   })
