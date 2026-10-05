@@ -8,7 +8,7 @@ import { EditorView } from '@codemirror/view'
 import { stubEditorBridge } from '../Testing/editorHarness'
 import { TileHost } from './TileHost'
 import { dropAllTileDocs, markTileRemoving } from './tileDocStore'
-import { clearCache, knownBody } from '../Session/pageDetailCache'
+import { clearCache, knownBody, readBodyBase } from '../Session/pageDetailCache'
 import { useSession } from '../Session/store'
 import { makeTree } from '../Testing/testTree'
 import { personalizationOf } from '../Session/configSlice'
@@ -245,13 +245,22 @@ describe('the host over the renderer table', () => {
     }))
     clearNotification()
     await act(async () => root.render(<TileHost host={{ kind: 'homepage' }} />))
-    expect(await until(() => host.querySelectorAll('.tile').length === 4)).toBe(true)
+    expect(await until(() => host.querySelector('.cm-editor') !== null)).toBe(true)
+    await act(async () => {
+      ;(host.querySelector('.markdown-tile') as HTMLElement).click()
+    })
+    const view = EditorView.findFromDOM(host.querySelector('.cm-editor') as HTMLElement)
+    await act(async () => {
+      view?.dispatch({ changes: { from: view.state.doc.length, insert: '!' } })
+    })
     await act(async () => {
       ;(host.querySelector('.tile-handle') as HTMLElement).click()
     })
     expect(await until(() => currentNotification() !== null)).toBe(true)
     expect(currentNotification()?.message).toBe('Deleted Markdown Tile')
     expect(host.querySelectorAll('.tile')).toHaveLength(3)
+    expect(knownBody(tileId('m'))).toBeUndefined()
+    expect(readBodyBase(tileId('m'))).toBeNull()
 
     await act(async () => {
       undoValue(null)
@@ -259,9 +268,10 @@ describe('the host over the renderer table', () => {
     expect(await until(() => host.querySelectorAll('.tile').length === 4)).toBe(true)
     expect(restoreTile).toHaveBeenCalledWith(
       { kind: 'homepage' },
-      { ...removed, at: { band: 0, h: 100 } },
+      { ...removed, body: 'hello!', at: { band: 0, h: 100 } },
     )
     expect(saves.at(-1)).toEqual(doc.layout)
+    expect(writeMarkdown).not.toHaveBeenCalled()
   })
 
   const deleteBox = async (at: number, bridge: Record<string, unknown>, layout = doc.layout) => {
@@ -324,6 +334,7 @@ describe('the host over the renderer table', () => {
       'tiles:get': async () => ({ ok: true, value: doc }),
       'tiles:save': async () => ({ ok: true, value: { landed: doc } }),
       'tiles:readMarkdown': async () => ({ ok: true, value: { body: 'hello' } }),
+      'tiles:writeMarkdown': writeMarkdown,
       'tiles:removeTile': async () => ({
         ok: false,
         error: { code: 'operation-failed', message: 'refused' },
@@ -342,5 +353,13 @@ describe('the host over the renderer table', () => {
     })
     expect(await until(() => currentNotification()?.message === 'refused')).toBe(true)
     expect(host.querySelectorAll('.tile')).toHaveLength(4)
+    await act(async () => {
+      ;(host.querySelector('.markdown-tile') as HTMLElement).click()
+    })
+    const view = EditorView.findFromDOM(host.querySelector('.cm-editor') as HTMLElement)
+    await act(async () => {
+      view?.dispatch({ changes: { from: view.state.doc.length, insert: '!' } })
+    })
+    expect(await until(() => writeMarkdown.mock.calls.length > 0)).toBe(true)
   })
 })

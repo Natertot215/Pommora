@@ -149,10 +149,9 @@ describe('a markdown tile over the real editor', () => {
 
   it('a tile whose file is missing saves on from the file its first save made', async () => {
     let missing = true
-    read.mockImplementationOnce(async () => ({
-      ok: false,
-      error: { code: 'not-found', message: 'missing' },
-    }))
+    read.mockImplementationOnce(
+      async () => ({ ok: false, error: { code: 'not-found', message: 'missing' } }) as never,
+    )
     write.mockImplementation(async (_h: unknown, _id: string, body: string, base: string) => {
       if (!missing && base !== `h:${onDisk}`) return { ok: true, value: { stale: true } }
       missing = false
