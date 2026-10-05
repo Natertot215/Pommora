@@ -1,39 +1,56 @@
 // @vitest-environment jsdom
-import { describe, expect, it } from 'vitest'
-import { isValidElement } from 'react'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { act } from 'react'
+import { createRoot, type Root } from 'react-dom/client'
 import { type PickKind, type TileEntry, TILE_KINDS } from './tiles'
-import { MarkdownTile } from './Surfaces/MarkdownTile'
-import { PageTile } from './Surfaces/PageTile'
-import { ViewTile } from './Surfaces/ViewTile'
-import { renderTile, tileSourceInfo, type TileRenderContext } from './tileKinds'
+import { TileBody, tileSourceInfo } from './tileKinds'
 import { tileMenuItems } from './tileHandleMenu'
 
+vi.mock('./Surfaces/MarkdownTile', () => ({ MarkdownTile: () => <div data-surface="markdown" /> }))
+vi.mock('./Surfaces/PageTile', () => ({ PageTile: () => <div data-surface="page" /> }))
+vi.mock('./Surfaces/ViewTile', () => ({ ViewTile: () => <div data-surface="view" /> }))
+
 const page = { id: 'p1', title: 'Alpha', path: 'Notes/Alpha.md' }
-const ctx = (entry: TileEntry, pages = new Map([[page.id, page]])): TileRenderContext => ({
-  entry,
-  id: entry.id,
-  host: { kind: 'homepage' },
-  editing: false,
-  beginEdit: () => {},
-  pagesById: pages,
-  mutateEntry: () => {},
+
+let container: HTMLDivElement
+let root: Root
+beforeEach(() => {
+  container = document.createElement('div')
+  root = createRoot(container)
 })
-const typeOf = (node: React.ReactNode): unknown => (isValidElement(node) ? node.type : node)
+afterEach(() => act(() => root.unmount()))
+
+const mount = (entry: TileEntry, resolved?: typeof page): Element | null => {
+  act(() =>
+    root.render(
+      <TileBody
+        entry={entry}
+        host={{ kind: 'homepage' }}
+        editing={false}
+        beginEdit={() => {}}
+        page={resolved}
+        mutateEntry={() => {}}
+      />,
+    ),
+  )
+  return container.firstElementChild
+}
 
 describe('the renderer table', () => {
   it('dispatches each kind to its component', () => {
-    expect(typeOf(renderTile(ctx({ id: 'm', type: 'markdown' })))).toBe(MarkdownTile)
-    expect(typeOf(renderTile(ctx({ id: 'p', type: 'page', page_id: 'p1' })))).toBe(PageTile)
-    expect(typeOf(renderTile(ctx({ id: 'v', type: 'view', views: [{ source_id: 's' }] })))).toBe(
-      ViewTile,
-    )
+    expect(mount({ id: 'm', type: 'markdown' })?.getAttribute('data-surface')).toBe('markdown')
+    expect(
+      mount({ id: 'p', type: 'page', page_id: 'p1' }, page)?.getAttribute('data-surface'),
+    ).toBe('page')
+    expect(
+      mount({ id: 'v', type: 'view', views: [{ source_id: 's' }] })?.getAttribute('data-surface'),
+    ).toBe('view')
   })
 
   it('a page tile whose page is gone renders inert', () => {
-    const node = renderTile(ctx({ id: 'p', type: 'page', page_id: 'p1' }, new Map()))
-    expect(isValidElement(node) && (node.props as { className: string }).className).toBe(
-      'tile-inert',
-    )
+    mount({ id: 'p', type: 'page', page_id: 'p1' })
+    expect(container.querySelector('.tile-inert')).not.toBeNull()
+    expect(container.querySelector('[data-surface]')).toBeNull()
   })
 
   it('only a page tile stands for a page', () => {

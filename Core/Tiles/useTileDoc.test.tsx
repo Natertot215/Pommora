@@ -7,7 +7,7 @@ import type { Result } from '../Contract/result'
 import { tileId } from '../Testing/tileLayouts'
 import { insertBand } from './Layout/ops'
 import { tileIds, type TileLayout } from './Layout/model'
-import { dropAllTileDocs, patchTileEntry, setTileDocLock } from './tileDocStore'
+import { dropAllTileDocs, patchTileEntry, readTileDoc, setTileDocLock } from './tileDocStore'
 import { cancelAllSaves } from '../Session/saveScheduler'
 import { knownBody, setBodyBase, writeThroughBody } from '../Session/pageDetailCache'
 import { flushAllSaves } from '../Session/nexusSlice'
@@ -313,12 +313,14 @@ describe('an entry write', () => {
     expect(entry()).toEqual({ id: A, type: 'markdown', style: 'borderless', synced: 1 })
   })
 
-  it('an entry the answer left as painted keeps its object', async () => {
+  it('an entry the answer left as painted keeps its object, and the list its array', async () => {
     act(() => patchTileEntry(OTHER, A, () => ({ style: 'borderless' })))
     const painted = entry()
+    const tiles = readTileDoc(OTHER).tiles
     disk = { ...docWith(A), tiles: [{ id: A, type: 'markdown', style: 'borderless' }] }
     await act(async () => releaseSave())
     expect(entry()).toBe(painted)
+    expect(readTileDoc(OTHER).tiles).toBe(tiles)
   })
 
   it('overlapping writes keep the paint until the last answers, then show the disk', async () => {

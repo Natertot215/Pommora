@@ -14,6 +14,20 @@ import { makeTree } from '../Testing/testTree'
 import { personalizationOf } from '../Session/configSlice'
 import { tileId } from '../Testing/tileLayouts'
 
+const surfaceRenders = vi.hoisted(() => new Map<string, number>())
+vi.mock('./Surfaces/MarkdownTile', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('./Surfaces/MarkdownTile')>()
+  return {
+    MarkdownTile: (props: Parameters<typeof actual.MarkdownTile>[0]) => {
+      surfaceRenders.set(props.tileId, (surfaceRenders.get(props.tileId) ?? 0) + 1)
+      return <actual.MarkdownTile {...props} />
+    },
+  }
+})
+vi.mock('./Surfaces/PageTile', () => ({
+  PageTile: ({ path }: { path: string }) => <div className="page-tile" data-path={path} />,
+}))
+
 vi.stubGlobal(
   'ResizeObserver',
   class {
@@ -95,6 +109,58 @@ describe('the host over the renderer table', () => {
       )
     })
     expect(host.querySelector('.tile.is-editing-tile')).toBeNull()
+  })
+
+  it("entering edit on one tile leaves another tile's surface undrawn", async () => {
+    const two = {
+      ...doc,
+      layout: {
+        bands: ['a', 'b'].map((id) => ({ node: { kind: 'tile', id: tileId(id), h: 100 } })),
+      },
+      tiles: ['a', 'b'].map((id) => ({ id: tileId(id), type: 'markdown' })),
+    }
+    stubEditorBridge({
+      'tiles:changed': () => () => {},
+      'tiles:get': async () => ({ ok: true, value: two }),
+      'tiles:readMarkdown': async () => ({ ok: true, value: { body: 'hello' } }),
+    })
+    await act(async () => root.render(<TileHost host={{ kind: 'homepage' }} />))
+    expect(await until(() => host.querySelectorAll('.cm-editor').length === 2)).toBe(true)
+    const before = surfaceRenders.get(tileId('b'))
+    expect(before).toBeGreaterThan(0)
+    await act(async () => {
+      ;(host.querySelector('.markdown-tile') as HTMLElement).click()
+    })
+    expect(host.querySelector('.tile.is-editing-tile')).not.toBeNull()
+    expect(surfaceRenders.get(tileId('b'))).toBe(before)
+  })
+
+  it('a page tile follows its page through a rename', async () => {
+    stubEditorBridge({
+      'tiles:changed': () => () => {},
+      'tiles:get': async () => ({
+        ok: true,
+        value: { ...doc, tiles: [doc.tiles[0], { ...doc.tiles[1], page_id: 'p1' }] },
+      }),
+      'tiles:readMarkdown': async () => ({ ok: true, value: { body: 'hello' } }),
+    })
+    const tree = makeTree()
+    useSession.setState({ tree })
+    await act(async () => root.render(<TileHost host={{ kind: 'homepage' }} />))
+    expect(await until(() => host.querySelector('.page-tile') !== null)).toBe(true)
+    expect(host.querySelector('.page-tile')?.getAttribute('data-path')).toBe('Notes/Alpha.md')
+    const [notes] = tree.collections
+    await act(async () => {
+      useSession.setState({
+        tree: {
+          ...tree,
+          collections: [
+            { ...notes, pages: [{ ...notes.pages[0], title: 'Gamma', path: 'Notes/Gamma.md' }] },
+          ],
+        },
+      })
+    })
+    expect(host.querySelector('.page-tile')?.getAttribute('data-path')).toBe('Notes/Gamma.md')
   })
 
   const press = (el: HTMLElement): void => {

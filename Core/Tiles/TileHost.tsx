@@ -25,12 +25,7 @@ import { popMenu } from '../Actions/menuActions'
 import { askRemoveTile } from '../Interface/Confirm/confirmations'
 import { notifyUndoable, reportRefusal } from '../Interface/Notifications/notifications'
 import { ZOOM_STEPS } from './tileZoom'
-import {
-  inertTile,
-  type MutateEntry,
-  renderTile as renderSurface,
-  tileSourceInfo,
-} from './tileKinds'
+import { inertTile, type MutateEntry, TileBody, tileSourceInfo } from './tileKinds'
 import { menuPatch, pickTreesOf, tileMenuItems } from './tileHandleMenu'
 import {
   landTileWrite,
@@ -281,17 +276,16 @@ export function TileHost({
       if (!entry) return inertTile()
       return (
         <RenderBoundary resetKey={retry}>
-          {renderSurface({
-            entry,
-            id,
-            host,
-            editing: editingId === id,
-            beginEdit: setEditingId,
-            connections: conn,
-            openPage: openRoute,
-            pagesById,
-            mutateEntry,
-          })}
+          <TileBody
+            entry={entry}
+            host={host}
+            editing={editingId === id}
+            beginEdit={setEditingId}
+            connections={conn}
+            openPage={openRoute}
+            page={tileSourceInfo(entry, pagesById)}
+            mutateEntry={mutateEntry}
+          />
         </RenderBoundary>
       )
     },
