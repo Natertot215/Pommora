@@ -22,7 +22,7 @@ type Save = () => Promise<Result<unknown>>
 // Set while a Nexus switch is in flight: a save that falls due then can't tell which root would take it, so it waits for the switch and then lands or is cancelled with the old Nexus.
 let hold: { depth: number; done: Promise<void>; release: () => void } | null = null
 
-export interface BodyWriter {
+interface BodyWriter {
   schedule: (key: string, save: Save) => void
   flush: (key: string) => Promise<void>
   settled: (key: string) => Promise<void>

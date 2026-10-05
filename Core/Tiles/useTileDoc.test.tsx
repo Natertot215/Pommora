@@ -11,7 +11,7 @@ import { dropAllTileDocs, patchTileEntry, readTileDoc, setTileDocLock } from './
 import { cancelAllSaves } from '../Session/saveScheduler'
 import { knownBody, setBodyBase, writeThroughBody } from '../Session/pageDetailCache'
 import { flushAllSaves } from '../Session/nexusSlice'
-import { useTileDoc, useTileDocReady } from './useTileDoc'
+import { useDocState, useTileDoc } from './useTileDoc'
 import { stubDialer } from '../vitest.setup'
 import { clearNotification, currentNotification } from '../Interface/Notifications/notifications'
 ;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
@@ -43,11 +43,9 @@ let host: HTMLDivElement
 let root: Root
 type TileDocSession = ReturnType<typeof useTileDoc>
 const seats = new Map<string, TileDocSession>()
-const ready = new Map<string, boolean>()
 
 function Probe({ seat, on = HOST }: { seat: string; on?: TileHostRef }): null {
   seats.set(seat, useTileDoc(on))
-  ready.set(seat, useTileDocReady(on))
   return null
 }
 
@@ -58,14 +56,12 @@ function ReadyProbe({
   on: TileHostRef | null
   report: (v: boolean) => void
 }): null {
-  const value = useTileDocReady(on)
-  report(value)
+  report(useDocState(on).ready)
   return null
 }
 
 const tick = (): Promise<void> => act(async () => {})
 const at = (seat: string): TileDocSession => seats.get(seat) as TileDocSession
-const readyAt = (seat: string): boolean => ready.get(seat) === true
 const shown = (seat: string): string[] => tileIds(at(seat).layout ?? { bands: [] })
 const append = (cur: TileLayout, id: string): TileLayout =>
   insertBand(cur, cur.bands.length, id, 100)
@@ -74,7 +70,6 @@ beforeEach(async () => {
   disk = docWith('a')
   cancelAllSaves()
   seats.clear()
-  ready.clear()
   dropAllTileDocs()
   save.mockClear()
   get.mockClear()
@@ -177,7 +172,7 @@ describe('one document per host', () => {
   })
 
   it('readiness reads the same document and retires with it', async () => {
-    expect(readyAt('a')).toBe(true)
+    expect(at('a').ready).toBe(true)
     expect(get).toHaveBeenCalledOnce()
     await act(async () => root.render(null))
     await tick()
@@ -199,7 +194,7 @@ describe('one document per host', () => {
     expect(get).toHaveBeenCalledOnce()
   })
 
-  it('a null host is ready and subscribes to nothing', async () => {
+  it('a null host subscribes to nothing', async () => {
     get.mockClear()
     let seen: boolean | null = null
     await act(async () =>
@@ -212,7 +207,7 @@ describe('one document per host', () => {
         />,
       ),
     )
-    expect(seen).toBe(true)
+    expect(seen).toBe(false)
     expect(get).not.toHaveBeenCalled()
   })
 
@@ -374,11 +369,11 @@ describe('a document the host fails to read', () => {
     get.mockImplementationOnce(refusal('operation-failed', 'unreadable'))
     await act(async () => root.render(<Probe seat="d" on={{ kind: 'space', id: 'sp3' }} />))
     await tick()
-    expect(readyAt('d')).toBe(false)
+    expect(at('d').ready).toBe(false)
     expect(currentNotification()?.message).toBe('unreadable')
     await act(async () => currentNotification()?.action?.run())
     await tick()
-    expect(readyAt('d')).toBe(true)
+    expect(at('d').ready).toBe(true)
   })
 })
 

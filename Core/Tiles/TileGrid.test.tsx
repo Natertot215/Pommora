@@ -44,11 +44,24 @@ afterEach(() => {
 
 const layout = insertBand(insertBand({ bands: [] }, 0, 'a', 200), 1, 'b', 100)
 
+const grid = {
+  tileClassName: () => undefined,
+  editingId: null,
+  menuOpenId: null,
+  tileStyle: () => undefined,
+  onBusyChange: () => {},
+  locked: false,
+  isTileLocked: () => false,
+  onHandleMenu: () => {},
+  onBackdrop: () => {},
+}
+
 function mount(): { onLayoutChange: ReturnType<typeof vi.fn>; edge: HTMLElement } {
   const onLayoutChange = vi.fn()
   act(() =>
     root.render(
       <TileGrid
+        {...grid}
         layout={layout}
         onLayoutChange={onLayoutChange}
         renderTile={(id) => <span data-tile={id} />}
@@ -121,6 +134,7 @@ describe('the grid on the gesture engine', () => {
     act(() =>
       root.render(
         <TileGrid
+          {...grid}
           layout={layout}
           onLayoutChange={() => {}}
           renderTile={(id) => <span data-tile={id} />}
@@ -140,6 +154,7 @@ describe('the grid on the gesture engine', () => {
     act(() =>
       root.render(
         <TileGrid
+          {...grid}
           layout={layout}
           onLayoutChange={() => {}}
           renderTile={(id) => <span data-tile={id} />}
@@ -199,6 +214,7 @@ describe('the grid on the gesture engine', () => {
     act(() =>
       root.render(
         <TileGrid
+          {...grid}
           layout={layout}
           onLayoutChange={onLayoutChange}
           onBusyChange={onBusyChange}
@@ -220,6 +236,7 @@ describe('the grid on the gesture engine', () => {
     act(() =>
       root.render(
         <TileGrid
+          {...grid}
           layout={rowBoard}
           onLayoutChange={() => {}}
           renderTile={(id) => <span data-tile={id} />}
@@ -248,6 +265,7 @@ describe('the handle reveal', () => {
     act(() =>
       root.render(
         <TileGrid
+          {...grid}
           layout={layout}
           onLayoutChange={vi.fn()}
           editingId="a"

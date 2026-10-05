@@ -40,15 +40,15 @@ interface TileGridProps {
   layout: TileLayout
   onLayoutChange: (layout: TileLayout) => void
   renderTile: (id: string) => React.ReactNode
-  tileClassName?: (id: string) => string | undefined
-  editingId?: string | null
-  menuOpenId?: string | null
-  tileStyle?: (id: string) => CSSProperties | undefined
-  onBusyChange?: (busy: boolean) => void
-  locked?: boolean
-  isTileLocked?: (id: string) => boolean
-  onHandleMenu?: (id: string, e: React.MouseEvent) => void
-  onBackdrop?: (target: BackdropTarget, e: React.MouseEvent) => void
+  tileClassName: (id: string) => string | undefined
+  editingId: string | null
+  menuOpenId: string | null
+  tileStyle: (id: string) => CSSProperties | undefined
+  onBusyChange: (busy: boolean) => void
+  locked: boolean
+  isTileLocked: (id: string) => boolean
+  onHandleMenu: (id: string, e: React.MouseEvent) => void
+  onBackdrop: (target: BackdropTarget, e: React.MouseEvent) => void
 }
 
 export type BackdropTarget = { kind: 'append' } | { kind: 'wedge'; above: string; fillPx: number }
@@ -122,7 +122,7 @@ const TileShell = memo(
     extraStyle?: CSSProperties
     renderTile: (id: string) => React.ReactNode
     onHandleDown: (id: string, e: React.PointerEvent<HTMLElement>) => void
-    onHandleMenu?: (id: string, e: React.MouseEvent) => void
+    onHandleMenu: (id: string, e: React.MouseEvent) => void
     onEdgeDown: (id: string, edges: Edge[], e: React.PointerEvent<HTMLElement>) => void
     onSettled: (id: string) => void
   }) {
@@ -187,10 +187,10 @@ const TileShell = memo(
           className={cx('tile-handle', revealTarget)}
           data-reveal-held={menuOpen || undefined}
           onPointerDown={(e) => onHandleDown(id, e)}
-          onClick={(e) => onHandleMenu?.(id, e)}
+          onClick={(e) => onHandleMenu(id, e)}
           onContextMenu={(e) => {
             e.preventDefault()
-            onHandleMenu?.(id, e)
+            onHandleMenu(id, e)
           }}
         />
         {EDGE_ZONES.map((edges) => (
@@ -282,7 +282,7 @@ export function TileGrid({
     candidates.filter((c) => Math.abs(c - start) > 0.5)
 
   const gestureOrigin = (id: string, e: React.PointerEvent<HTMLElement>) => {
-    if (e.button !== 0 || live.current.boardStatic || live.current.isTileLocked?.(id)) return null
+    if (e.button !== 0 || live.current.boardStatic || live.current.isTileLocked(id)) return null
     e.preventDefault()
     e.stopPropagation()
     // A gesture starting during a live settle finalizes the pending commit NOW: the parent hasn't re-rendered, so a gesture built on the stale origin would erase the just-dropped move.
@@ -445,7 +445,7 @@ export function TileGrid({
 
   const busy = pressedId !== null || resizingId !== null || tileDrag !== null || settle !== null
   useEffect(() => {
-    if (!busy || !onBusyChange) return
+    if (!busy) return
     onBusyChange(true)
     return () => onBusyChange(false)
   }, [busy, onBusyChange])
@@ -473,7 +473,7 @@ export function TileGrid({
   const dropSlot = tileDrag && draft ? placed.tiles.get(tileDrag.id) : null
 
   const onGridContextMenu = (e: React.MouseEvent): void => {
-    if (!onBackdrop || boardStatic || e.target !== e.currentTarget) return
+    if (boardStatic || e.target !== e.currentTarget) return
     e.preventDefault()
     const grid = gridRef.current
     if (!grid) return
@@ -531,8 +531,8 @@ export function TileGrid({
             resizing={resizingId === id}
             editing={editingId === id}
             menuOpen={menuOpenId === id}
-            extraClass={tileClassName?.(id)}
-            extraStyle={tileStyle?.(id)}
+            extraClass={tileClassName(id)}
+            extraStyle={tileStyle(id)}
             renderTile={renderTile}
             onHandleDown={onHandleDown}
             onHandleMenu={onHandleMenu}

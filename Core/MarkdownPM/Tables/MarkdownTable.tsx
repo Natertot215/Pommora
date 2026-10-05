@@ -196,7 +196,6 @@ export function MarkdownTable({
       event: e,
       capture: false,
       autoScroll: { from: wrap, axis: 'xy' },
-      onActivate: () => undefined,
       onDragMove: (ev) => {
         last = { x: ev.clientX, y: ev.clientY }
         resolveAt()
