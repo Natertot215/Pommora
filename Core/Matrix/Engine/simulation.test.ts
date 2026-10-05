@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import type { Forces } from './forces'
 import { buildGraph, type Graph, type GraphInput } from './graph'
+import { buildQuadtree } from './quadtree'
 import { createSimulation, reheat, shuffle, tick, wakeLocal } from './simulation'
 
 const linkOnly: Forces = { gravity: 0, spread: 0, strength: 1, distance: 1 }
@@ -73,6 +74,15 @@ describe('the simulation', () => {
     graph.nodes.forEach((n, i) => {
       expect([n.x, n.y]).not.toEqual(before[i])
     })
+  })
+
+  it('keeps its tree on the positions the last tick or shuffle left', () => {
+    const graph = chain(6)
+    const sim = createSimulation(graph, linkOnly, true)
+    tick(sim)
+    expect(sim.tree).toEqual(buildQuadtree(graph.nodes))
+    shuffle(sim)
+    expect(sim.tree).toEqual(buildQuadtree(graph.nodes))
   })
 
   it('wakeLocal pins every node but the named ones, runs a real settle, and unpins on sleep', () => {
