@@ -51,7 +51,7 @@ const doc = {
 
 let host: HTMLDivElement
 let root: Root
-const writeMarkdown = vi.fn(async () => ({ ok: true, value: null }))
+const writeMarkdown = vi.fn(async () => ({ ok: true, value: { stale: false, hash: 'h' } }))
 
 beforeEach(() => {
   clearCache()
