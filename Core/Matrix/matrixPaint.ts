@@ -36,15 +36,13 @@ interface Paint {
   fill: string
   fillLit: string
   ring: string
-  ringHover: string
+  accent: string
   ringDrag: string
   link: string
   linkOther: string
-  linkHover: string
   title: string
   icon: string
   hairline: number
-  ringWidth: number
   titleFont: string
 }
 
@@ -89,15 +87,13 @@ function readPaint(host: HTMLElement): Paint {
       fill: color(c.label.control),
       fillLit: color(c.label.primary),
       ring: color(GLASS_EDGE),
-      ringHover: color('var(--accent-stroke)'),
+      accent: color('var(--accent-stroke)'),
       ringDrag: color('var(--accent-stroke-hot)'),
       link: color(c.solid.greyDefault),
       linkOther: color(c.border.base),
-      linkHover: color('var(--accent-stroke)'),
       title: color(c.label.primary),
       icon: color(c.solid.grey),
       hairline: width,
-      ringWidth: width,
       titleFont: `${cs.fontWeight} ${cs.fontSize} ${cs.fontFamily}`,
     }
   })
@@ -141,7 +137,6 @@ function drawNode(
   ctx.stroke()
   if (ringed && lit > 0) {
     ctx.globalAlpha = alpha * lit
-    ctx.lineWidth = paint.ringWidth
     ctx.strokeStyle = tone.stroke
     ctx.stroke()
   }
@@ -185,11 +180,11 @@ export function createPainter(
   host: HTMLElement,
   canvas: HTMLCanvasElement,
   surface: Surface,
-  labelOf: () => string | null,
+  live: { readonly current: string | null },
+  label: { readonly current: string | null },
 ): Painter {
   const ctx = canvas.getContext('2d')
   let paint = readPaint(host)
-  let scale = 1
   let subjectId: string | null = null
   let presented = false
   const ease = { from: 0, to: 0, t: 1, at: 0 }
@@ -224,7 +219,7 @@ export function createPainter(
     }
     const dragging = matrixRuntime.indexOf(matrixRuntime.draggingId)
     // A held node keeps the focus even when the pointer outruns it, since it trails the cursor on its spring.
-    const focus = dragging >= 0 ? dragging : matrixRuntime.indexOf(matrixRuntime.hoverOf(surface))
+    const focus = dragging >= 0 ? dragging : matrixRuntime.indexOf(live.current)
     if (focus >= 0) subjectId = nodes[focus].id
 
     const now = performance.now()
@@ -263,7 +258,7 @@ export function createPainter(
           }
 
     const strokeOf = (l: GraphLink): string =>
-      isGroupingLink(matrixRuntime.mode, l.kind) ? paint.link : paint.linkOther
+      isGroupingLink(matrixConfig.group.mode, l.kind) ? paint.link : paint.linkOther
 
     const isLit = (i: number): boolean => subject < 0 || i === subject || neighbours.has(i)
     neighbours.clear()
@@ -285,7 +280,7 @@ export function createPainter(
         )
     }
     const subjectSpace = subject >= 0 ? spacePaintOf(nodes[subject]) : null
-    const hotStroke = subjectSpace?.stroke ?? (dragging >= 0 ? paint.ringDrag : paint.linkHover)
+    const hotStroke = subjectSpace?.stroke ?? (dragging >= 0 ? paint.ringDrag : paint.accent)
     for (const l of hot) {
       const a = Math.min(arrival(l.source), arrival(l.target))
       drawLink(ctx, graph, l, v, strokeOf(l), a)
@@ -294,7 +289,7 @@ export function createPainter(
 
     const alphas = titleAlphas(v.zoom)
     // Both resting tones are cut once: a node loop that minted one per node would allocate the whole graph every frame.
-    const rest: Tone = { fill: paint.fill, lit: paint.fillLit, stroke: paint.ringHover }
+    const rest: Tone = { fill: paint.fill, lit: paint.fillLit, stroke: paint.accent }
     const restHeld: Tone = { fill: paint.fill, lit: paint.fillLit, stroke: paint.ringDrag }
     nodes.forEach((n, i) => {
       const [sx, sy] = toScreen(v, n.x, n.y)
@@ -312,17 +307,16 @@ export function createPainter(
       const glyph = iconAlpha > 0 ? records?.get(n.id)?.icon : undefined
       if (!glyph) return
       const box = r * 2 * ICON_SCALE
-      const px = box * scale
       const left = sx - box / 2
       const top = sy - box / 2
-      const image = iconFor(glyph, space?.icon ?? paint.icon, px)
+      const image = iconFor(glyph, space?.icon ?? paint.icon)
       if (image) {
         ctx.globalAlpha = iconAlpha
         ctx.drawImage(image, left, top, box, box)
         ctx.globalAlpha = 1
       }
       // The glyph rides the same layering its fill does, so a Space's icon brightens with the tint it sits on rather than holding its resting color through the raise.
-      const raised = space && raise > 0 ? iconFor(glyph, paint.fillLit, px) : null
+      const raised = space && raise > 0 ? iconFor(glyph, paint.fillLit) : null
       if (raised) {
         ctx.globalAlpha = iconAlpha * raise
         ctx.drawImage(raised, left, top, box, box)
@@ -355,7 +349,7 @@ export function createPainter(
     ctx.textAlign = 'center'
     ctx.textBaseline = 'top'
     ctx.fillStyle = paint.title
-    cullLabels(nodes, v, width, height, matrixRuntime.indexOf(labelOf()), cells, alphas)
+    cullLabels(nodes, v, width, height, matrixRuntime.indexOf(label.current), cells, alphas)
     for (const i of cells.values()) {
       const n = nodes[i]
       const [sx, sy] = toScreen(v, n.x, n.y + n.radius)
@@ -374,7 +368,7 @@ export function createPainter(
     },
     resize: () => {
       // The backing store is physical pixels: the device ratio compounded with any CSS zoom the surface renders at.
-      scale = (window.devicePixelRatio || 1) * currentZoom(host)
+      const scale = (window.devicePixelRatio || 1) * currentZoom(host)
       canvas.width = Math.round(host.clientWidth * scale)
       canvas.height = Math.round(host.clientHeight * scale)
       ctx?.setTransform(scale, 0, 0, scale, 0, 0)

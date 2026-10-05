@@ -45,24 +45,28 @@ afterEach(() => {
   detach?.()
   detach = null
   vi.unstubAllGlobals()
+  vi.restoreAllMocks()
 })
+
+const paintOn = (surface: Surface, live: string | null): (() => string[]) => {
+  detach = matrixRuntime.attach(surface)
+  matrixRuntime.setStage(surface, { x: 0, y: 0, width: 800, height: 600 })
+  const canvas = document.createElement('canvas')
+  vi.spyOn(canvas, 'getContext').mockReturnValue(context() as never)
+  Object.defineProperties(canvas, { clientWidth: { value: 800 }, clientHeight: { value: 600 } })
+  const host = document.createElement('div')
+  const painter = createPainter(host, canvas, surface, { current: live }, { current: null })
+  return () => {
+    calls = []
+    painter.draw()
+    return calls
+  }
+}
 
 describe('createPainter', () => {
   it('holds its first picture with nodes blank while glyphs load, and no picture after', () => {
     useSession.setState({ tree: { ...makeTree(), collections: [] } })
-    const surface: Surface = { visible: () => true }
-    detach = matrixRuntime.attach(surface)
-    matrixRuntime.setStage(surface, { x: 0, y: 0, width: 800, height: 600 })
-    const host = document.createElement('div')
-    const canvas = document.createElement('canvas')
-    vi.spyOn(canvas, 'getContext').mockReturnValue(context() as never)
-    Object.defineProperties(canvas, { clientWidth: { value: 800 }, clientHeight: { value: 600 } })
-    const painter = createPainter(host, canvas, surface, () => null)
-    const drawn = (): string[] => {
-      calls = []
-      painter.draw()
-      return calls
-    }
+    const drawn = paintOn({ visible: () => true }, null)
 
     loading.now = false
     expect(drawn()).not.toContain('arc')
@@ -80,5 +84,24 @@ describe('createPainter', () => {
     const later = drawn()
     expect(later).toContain('arc')
     expect(later.at(-1)).not.toBe('clearRect')
+  })
+
+  it("lights the surface's live subject rather than the node its pointer hovers", () => {
+    useSession.setState({ matrixPositions: { p1: [0, 0], p2: [100, 0] } })
+    loading.now = false
+    let at = 0
+    vi.spyOn(performance, 'now').mockImplementation(() => (at += 64))
+    const surface: Surface = { visible: () => true }
+    const drawn = paintOn(surface, 'p1')
+    matrixRuntime.setHovered(surface, 'p2')
+    for (let i = 0; i < 10; i++) drawn()
+    // Each node draws from its `arc`: one stroke for its edge, and a second for the ring only the subject wears.
+    const strokes = drawn()
+      .join(' ')
+      .split('arc')
+      .slice(1)
+      .map((node) => node.split(' ').filter((c) => c === 'stroke').length)
+    expect(strokes[matrixRuntime.indexOf('p1')]).toBe(2)
+    expect(strokes[matrixRuntime.indexOf('p2')]).toBe(1)
   })
 })

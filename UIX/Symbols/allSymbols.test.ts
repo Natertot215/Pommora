@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { ALL_ICONS, lucideGlyph, lucideIconNodes, searchIcons, toKebabIconId } from './allSymbols'
+import { ALL_ICONS, iconMarkup, lucideGlyph, searchIcons, toKebabIconId } from './allSymbols'
 import { ICON_NAMES } from './iconNames'
 import { ICON_TAGS } from './iconTags'
 import { createRequire } from 'node:module'
@@ -41,22 +41,17 @@ describe('ALL_ICONS', () => {
   })
 })
 
-describe('lucideIconNodes', () => {
-  // The drawing is read out of createLucideIcon's closure, so a lucide-react release that reshapes it
-  // turns this red rather than silently blanking every glyph the Matrix paints.
-  it('reads the drawing out of every icon in the set', () => {
-    const earth = lucideIconNodes('earth')
-    expect(earth).toEqual(
-      expect.arrayContaining([['circle', expect.objectContaining({ cx: '12', r: '10' })]]),
-    )
-    for (const { id } of ALL_ICONS) {
-      const nodes = lucideIconNodes(id)
-      expect(Array.isArray(nodes) && nodes.length > 0, id).toBe(true)
+describe('iconMarkup', () => {
+  it('draws an app glyph and an aliased name as themselves, as standalone SVG in the color asked', () => {
+    const mark = iconMarkup('pommora', '#123456')
+    const alias = iconMarkup('view-table', '#123456')
+    expect(mark).toContain('<circle')
+    expect(alias).toContain('lucide-grid-3x2')
+    for (const svg of [mark, alias]) {
+      expect(svg).not.toContain('square-dashed')
+      expect(svg).toMatch(/^<svg[^>]* xmlns="http:\/\/www.w3.org\/2000\/svg"/)
+      expect(svg).toContain('color:#123456')
     }
-  })
-
-  it('misses an id the roster does not hold', () => {
-    expect(lucideIconNodes('not-a-real-icon')).toBeNull()
   })
 })
 

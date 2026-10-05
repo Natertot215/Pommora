@@ -120,19 +120,12 @@ export function MatrixView(): React.JSX.Element {
   const shown = useHeldPresence(liveId, 'slow')
   const labelId = liveId ?? shown?.held ?? null
   const picker = mine && labelId === pickingId ? (iconPath === null ? 'color' : 'icon') : null
-  // The renamed node keeps the surface's focus while its field is open, and lets it go on the same fade any other hover leaves by.
-  useEffect(() => {
-    if (!editing) return
-    matrixRuntime.setHovered(surface, renamingId)
-    return () => matrixRuntime.setHovered(surface, null)
-  }, [editing, renamingId, surface])
-
   return (
     <MatrixCanvas
       surface={surface}
       parked={parked}
       inWindow={content === null}
-      editing={editing}
+      liveId={liveId}
       labelId={labelId}
       canvasRef={canvasRef}
       onNodeDown={nodeDown}

@@ -41,7 +41,7 @@ export function MatrixCanvas({
   surface,
   parked,
   inWindow,
-  editing,
+  liveId,
   labelId,
   canvasRef,
   onNodeDown,
@@ -51,7 +51,7 @@ export function MatrixCanvas({
   surface: Surface
   parked: boolean
   inWindow: boolean
-  editing: boolean
+  liveId: string | null
   labelId: string | null
   canvasRef: React.RefObject<HTMLCanvasElement | null>
   onNodeDown: (e: React.PointerEvent, id: string) => void
@@ -60,6 +60,7 @@ export function MatrixCanvas({
 }): React.JSX.Element {
   const hostRef = useRef<HTMLDivElement>(null)
   const stageRef = useRef<HTMLDivElement>(null)
+  const liveRef = useLatest(liveId)
   const labelRef = useLatest(labelId)
   const begin = usePointerGesture()
 
@@ -67,7 +68,7 @@ export function MatrixCanvas({
     const host = hostRef.current
     const canvas = canvasRef.current
     if (!host || !canvas) return
-    const painter = createPainter(host, canvas, surface, () => labelRef.current)
+    const painter = createPainter(host, canvas, surface, liveRef, labelRef)
     // The accent lands as `--accent` on the root, from the setting and from the system colour alike; the paint is re-read off that write.
     const mo = new MutationObserver(painter.restyle)
     mo.observe(document.documentElement, { attributes: true, attributeFilter: ['style'] })
@@ -122,8 +123,8 @@ export function MatrixCanvas({
     else matrixRuntime.resume()
   }, [parked, surface])
 
-  // The overlaid node's title is skipped by index, and a rename moves that index without any runtime event to repaint on.
-  useEffect(() => matrixRuntime.invalidate(), [labelId])
+  // The subject and the overlaid title change with no runtime event to repaint on: the emphasis follows the one, and the title the canvas skips follows the other.
+  useEffect(() => matrixRuntime.invalidate(), [liveId, labelId])
 
   useEffect(() => {
     const host = hostRef.current
@@ -168,7 +169,7 @@ export function MatrixCanvas({
       className={cx(inWindow && 'scroll-fade', s.host)}
       onPointerLeave={() => {
         if (canvasRef.current) boxes.delete(canvasRef.current)
-        if (!editing && !glanceShown()) matrixRuntime.setHovered(surface, null)
+        if (!glanceShown()) matrixRuntime.setHovered(surface, null)
       }}
     >
       <canvas
@@ -183,7 +184,7 @@ export function MatrixCanvas({
         onPointerMove={(e) => {
           lastShift = e.shiftKey
           // A held button is a drag or a pan in progress, which the hover leaves where it began.
-          if (editing || e.buttons !== 0) return
+          if (e.buttons !== 0) return
           const id = nodeAt(e)
           if (id !== null || !glanceShown()) matrixRuntime.setHovered(surface, id)
         }}
