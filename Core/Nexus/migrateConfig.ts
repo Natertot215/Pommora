@@ -8,7 +8,7 @@ import {
   TILE_DOC_FILENAME,
   TRASH_DIR,
 } from '../Paths/nexusPaths'
-import { nexusConfig, tileHostDir } from '../Paths/paths'
+import { nexusConfig, homepageDir } from '../Paths/paths'
 import { join } from '../Paths/posix'
 import { propertyType } from '../Properties/properties'
 import { mapTiles, mapViews } from '../Views/views'
@@ -47,7 +47,7 @@ export async function normalizeSavedViews(root: string): Promise<void> {
   for (const file of await listFilesRecursive(join(root, TRASH_DIR), [...SIDECARS]))
     await rmwJsonStrict(file, renamedSidecar)
   // Runs at open, before a tree exists to ask TILE_HOSTS for its boards.
-  for (const dir of [tileHostDir(root), join(root, CONTEXTS_DIR_REL)])
+  for (const dir of [homepageDir(root), join(root, CONTEXTS_DIR_REL)])
     for (const file of await listFilesRecursive(dir, [TILE_DOC_FILENAME]))
       await rmwJsonStrict(file, renamedTileDoc)
 }

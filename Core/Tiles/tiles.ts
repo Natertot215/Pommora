@@ -7,44 +7,9 @@ import { looseDecoder } from '../Files/decoders'
 import { isUlidShaped } from '../Nexus/identityMark'
 import { VIEW_BUTTONS, VIEW_STYLES } from '../Views/viewRow'
 import { mapViews, mintViewId } from '../Views/views'
+import { rawLayoutSchema } from './Layout/codec'
+import type { RowNode, TileLeaf } from './Layout/model'
 import { zoomStep } from './tileZoom'
-
-interface RawTile {
-  kind: 'tile'
-  id: string
-  h: number
-}
-
-interface RawRow {
-  kind: 'row'
-  ratios: number[]
-  children: RawNode[]
-}
-
-interface RawColumn {
-  kind: 'column'
-  children: RawNode[]
-}
-
-type RawNode = RawTile | RawRow | RawColumn
-
-// The write gate takes a node as an op shaped it; a stored one takes what a hand may have left for repairLayout to finish: a height or share off its type reads as 0, a container may hold one child, and a row's shares may run short.
-const layoutNode = (stored: boolean): z.ZodType<RawNode> => {
-  const num = stored ? z.number().catch(0) : z.number()
-  const children = z.lazy(() => z.array(node).min(stored ? 1 : 2))
-  const tile = z.object({ kind: z.literal('tile'), id: z.string().min(1), h: num })
-  const row = z
-    .object({ kind: z.literal('row'), ratios: z.array(num), children })
-    .refine((r) => stored || r.ratios.length === r.children.length)
-  const column = z.object({ kind: z.literal('column'), children })
-  const node: z.ZodType<RawNode> = z.union([tile, row, column])
-  return node
-}
-export const storedNodeSchema = layoutNode(true)
-
-export const rawLayoutSchema = z.object({
-  bands: z.array(z.object({ node: layoutNode(false) })),
-})
 
 export const NEW_TILE_H = 160
 
@@ -90,8 +55,6 @@ const pageEntry = z.object({
   ...chassisFields,
   type: z.literal('page'),
   page_id: z.string().min(1),
-  banner: boolField,
-  title: boolField,
 })
 const embeddedView = looseDecoder(
   z.object({
@@ -175,8 +138,8 @@ const knownEntry = z.union(Object.values(TILE_KINDS).map((k) => k.schema) as Ent
 export const mintSeed = (type: TileType, id: string): Record<string, unknown> => ({ id, type })
 
 export function seedBoard([a, b, c, d]: readonly string[]): TileDoc {
-  const tile = (id: string): RawTile => ({ kind: 'tile', id, h: NEW_TILE_H })
-  const band = (left: string, right: string): { node: RawRow } => ({
+  const tile = (id: string): TileLeaf => ({ kind: 'tile', id, h: NEW_TILE_H })
+  const band = (left: string, right: string): { node: RowNode } => ({
     node: { kind: 'row', ratios: [0.5, 0.5], children: [tile(left), tile(right)] },
   })
   return {

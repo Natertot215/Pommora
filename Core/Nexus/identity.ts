@@ -3,7 +3,7 @@ import { errText, valueOr } from '../Contract/result'
 import { newId } from './ids'
 import { readJsonStrict, readKept, writeJson } from '../Files/atomicWrite'
 import { asString } from './coerce'
-import { nexusDir, nexusConfig, tileHostDir } from '../Paths/paths'
+import { nexusDir, nexusConfig, homepageDir } from '../Paths/paths'
 import {
   AGENDA_FOLDERS,
   ASSETS_DIR_REL,
@@ -58,7 +58,7 @@ export async function ensureIdentity(
 export async function ensureConfigLayout(root: string): Promise<void> {
   await machine().mkdir(join(root, ASSETS_DIR_REL))
   await machine().mkdir(join(root, CONTEXTS_DIR_REL))
-  await machine().mkdir(tileHostDir(root))
+  await machine().mkdir(homepageDir(root))
 }
 
 function retireAgendaKey(identity: Record<string, unknown>): Record<string, unknown> {

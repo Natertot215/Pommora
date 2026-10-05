@@ -39,7 +39,7 @@ export function contextsDir(root: string): string {
   return join(root, CONTEXTS_DIR_REL)
 }
 
-export function tileHostDir(root: string): string {
+export function homepageDir(root: string): string {
   return join(root, HOMEPAGE_DIR_REL)
 }
 
