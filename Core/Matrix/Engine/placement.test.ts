@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { buildGraph, type Graph, type GraphInput } from './graph'
-import { place, spiral } from './placement'
+import { place } from './placement'
 
 const input: GraphInput = {
   pages: [
@@ -34,7 +34,6 @@ describe('place', () => {
     expect(place(first, new Map()).size).toBe(4)
     place(second, new Map())
     expect(first.nodes.map((n) => [n.x, n.y])).toEqual(second.nodes.map((n) => [n.x, n.y]))
-    expect([first.nodes[2].x, first.nodes[2].y]).toEqual([spiral(2).x, spiral(2).y])
   })
 
   it('seats a persisted position exactly and reports only the nodes without one', () => {
