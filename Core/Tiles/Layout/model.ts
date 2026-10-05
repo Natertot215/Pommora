@@ -38,6 +38,10 @@ export interface DividerRef extends NodePath {
   index: number
 }
 
+// KNOB — the gutter between tiles, and the height a tile with nothing to size it by takes.
+export const TILE_GAP = 8
+export const NEW_TILE_H = 160
+
 export const emptyLayout = (): TileLayout => ({ bands: [] })
 
 /** A row is as tall as its tallest child; shorter children end ragged. */

@@ -17,7 +17,7 @@ import { TILE_MIN_PX } from '@pommora/uix/Utilities/tileMetrics'
 import { type Reach, trackNear, withinReach } from '@pommora/uix/Interactions/hoverReveal'
 import { revealTarget } from '@pommora/uix/Interactions/hover-reveal.css'
 import { cx } from '@pommora/uix/Utilities/cx'
-import type { DividerRef, Edge, TileLayout } from './Layout/model'
+import { type DividerRef, type Edge, TILE_GAP, type TileLayout } from './Layout/model'
 import { resolveEdge } from './Layout/edges'
 import { hitTest, type DropTarget, sameTarget } from './Layout/hitTest'
 import {
@@ -63,8 +63,7 @@ interface Settle {
 }
 
 const HANDLE_REACH: Reach = { size: 'corner', toward: { x: 1, y: 1 } }
-// KNOB — grid gutter, drop-band zone, snap radius, and the append space under the last band.
-const GAP = 8
+// KNOB — drop-band zone, snap radius, and the clearance under the last band.
 const BAND_ZONE_PX = 10
 const SNAP_PX = 9
 const BOTTOM_PAD_PX = 28
@@ -246,7 +245,7 @@ export function TileGrid({
 
   // Under the stacking width the board is DRAWN as one column; the tree the grid was handed is still the tree it hands back.
   const view = useMemo(() => (stacked ? stackLayout(layout) : layout), [layout, stacked])
-  const placed = useMemo(() => placeTiles(draft ?? view, GAP), [draft, view])
+  const placed = useMemo(() => placeTiles(draft ?? view, TILE_GAP), [draft, view])
 
   const boardStatic = locked || stacked
   const live = useLatest({ view, onLayoutChange, boardStatic, isTileLocked })
@@ -287,7 +286,7 @@ export function TileGrid({
     if (!grid) return null
     const origin = settling?.next ?? live.current.view
     // Hit-testing and boundary extents run against the origin measured at the press — a preview shifting under the pointer must never retarget the gesture.
-    const g = computeGeometry(origin, grid.clientWidth, GAP)
+    const g = computeGeometry(origin, grid.clientWidth, TILE_GAP)
     const rect = g.tiles.get(id)
     return rect ? { origin, g, grid, rect } : null
   }
@@ -406,7 +405,7 @@ export function TileGrid({
       }
 
       const settleInto = (decided: TileLayout | null): void => {
-        const to = placeTiles(decided ?? origin, GAP).tiles.get(id) ?? pinned(rect)
+        const to = placeTiles(decided ?? origin, TILE_GAP).tiles.get(id) ?? pinned(rect)
         setTileDrag(null)
         if (!decided) setDraft(null)
         const s: Settle = { id, to, next: decided }

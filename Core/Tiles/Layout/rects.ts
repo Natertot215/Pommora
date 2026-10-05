@@ -110,3 +110,23 @@ export function computeGeometry(layout: TileLayout, width: number, gap: number):
     totalHeight: placed.totalHeight,
   }
 }
+
+/** Each tile with a wedge under it → the height a tile attached below it takes to land flush on its branch's floor. A row's shorter children end above the row's floor; only a column's last child inherits the room beneath the column. */
+export function wedgeFills(layout: TileLayout, gap: number, minPx: number): Map<string, number> {
+  const fills = new Map<string, number>()
+  const walk = (node: LayoutNode, room: number): void => {
+    if (node.kind === 'tile') {
+      if (room - gap >= minPx) fills.set(node.id, room - gap)
+      return
+    }
+    if (node.kind === 'row') {
+      const h = nodeHeight(node, gap)
+      for (const child of node.children) walk(child, room + h - nodeHeight(child, gap))
+      return
+    }
+    for (const [i, child] of node.children.entries())
+      walk(child, i === node.children.length - 1 ? room : 0)
+  }
+  for (const band of layout.bands) walk(band.node, 0)
+  return fills
+}

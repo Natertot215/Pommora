@@ -2,7 +2,6 @@ import { isPlainObject } from '../Contract/validators'
 import { type CSSProperties, useCallback, useMemo, useRef, useState } from 'react'
 import {
   knownTile,
-  NEW_TILE_H,
   tileIdOf,
   type TileEntry,
   type TileHostRef,
@@ -13,8 +12,8 @@ import type { ConnPage } from '../Connections/pageIndex'
 import { pagesByIdOf } from '../Nexus/treeIndex'
 import type { ConnectionsApi } from '../MarkdownPM/Links/connectionsApi'
 import { useConnections } from '../Session/pageConnections'
-import { attachBelow, insertBand, removeLeaf } from './Layout/ops'
-import { emptyLayout, findTile, getTile, type TileLayout } from './Layout/model'
+import { insertBand, removeLeaf, seatBelow } from './Layout/ops'
+import { emptyLayout, findTile, getTile, NEW_TILE_H, type TileLayout } from './Layout/model'
 import { TileGrid } from './TileGrid'
 import { useDismissal } from '@pommora/uix/Interactions/dismissalStack'
 import { entityIcon } from '../Assets/entityIconPolicy'
@@ -118,7 +117,7 @@ export function TileHost({
     (id: string) => {
       void landTileWrite(host, dialer().ask('tiles:duplicateTile', host, id)).then((r) => {
         if (!reportRefusal(r)) return
-        commitLayout((cur) => attachBelow(cur, id, r.value.id, getTile(cur, id)?.h ?? NEW_TILE_H))
+        commitLayout((cur) => seatBelow(cur, r.value.id, id, getTile(cur, id)?.h))
       })
     },
     [commitLayout, host],

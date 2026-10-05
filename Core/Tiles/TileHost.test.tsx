@@ -7,12 +7,13 @@ import { createRoot, type Root } from 'react-dom/client'
 import { EditorView } from '@codemirror/view'
 import { stubEditorBridge } from '../Testing/editorHarness'
 import { TileHost } from './TileHost'
-import { dropAllTileDocs, markTileRemoving } from './tileDocStore'
+import { commitTileLayout, dropAllTileDocs, markTileRemoving } from './tileDocStore'
 import { clearCache, knownBody, readBodyBase } from '../Session/pageDetailCache'
 import { useSession } from '../Session/store'
 import { makeTree } from '../Testing/testTree'
 import { personalizationOf } from '../Session/configSlice'
 import { tileId } from '../Testing/tileLayouts'
+import { removeLeaf } from './Layout/ops'
 
 const surfaceRenders = vi.hoisted(() => new Map<string, number>())
 vi.mock('./Surfaces/MarkdownTile', async (importOriginal) => {
@@ -361,5 +362,58 @@ describe('the host over the renderer table', () => {
       view?.dispatch({ changes: { from: view.state.doc.length, insert: '!' } })
     })
     expect(await until(() => writeMarkdown.mock.calls.length > 0)).toBe(true)
+  })
+
+  it('a duplicate whose source left the board before its reply lands as the last band', async () => {
+    const copy = tileId('c')
+    let reply: (r: unknown) => void = () => {}
+    const saves: { bands: { node: { kind: string; id: string; h: number } }[] }[] = []
+    stubEditorBridge({
+      'tiles:changed': () => () => {},
+      'tiles:get': async () => ({ ok: true, value: doc }),
+      'tiles:save': async (_host: unknown, patch: { layout?: unknown }) => {
+        if (patch.layout) saves.push(patch.layout as (typeof saves)[number])
+        return { ok: true, value: { landed: doc } }
+      },
+      'tiles:readMarkdown': async () => ({ ok: true, value: { body: 'hello' } }),
+      'tiles:duplicateTile': () =>
+        new Promise((r) => {
+          reply = r
+        }),
+      menu: async () => ({ ok: true, value: 'tile:duplicate' }),
+    })
+    useSession.setState((st) => ({
+      tree: makeTree(),
+      devicePrefs: { ...st.devicePrefs, nativeMenus: true },
+    }))
+    await act(async () => root.render(<TileHost host={{ kind: 'homepage' }} />))
+    expect(await until(() => host.querySelectorAll('.tile').length === 4)).toBe(true)
+    await act(async () => {
+      ;(host.querySelector('.tile-handle') as HTMLElement).click()
+    })
+    // A sibling mount removes the source while the copy is in flight.
+    await act(async () =>
+      commitTileLayout({ kind: 'homepage' }, (cur) => removeLeaf(cur, tileId('m'))),
+    )
+    await act(async () => {
+      reply({
+        ok: true,
+        value: {
+          id: copy,
+          landed: { ...doc, tiles: [...doc.tiles, { id: copy, type: 'markdown' }] },
+        },
+      })
+    })
+    expect(await until(() => saves.at(-1)?.bands.some((b) => b.node.id === copy) ?? false)).toBe(
+      true,
+    )
+    const final = saves.at(-1)
+    expect(final?.bands.map((b) => b.node.id)).toEqual([
+      tileId('p'),
+      tileId('v'),
+      tileId('w'),
+      copy,
+    ])
+    expect(final?.bands.at(-1)?.node.h).toBe(160)
   })
 })

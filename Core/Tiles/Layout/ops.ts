@@ -1,5 +1,5 @@
 import type { DividerRef, Edge, LayoutNode, TileBand, TileLayout, TileLeaf } from './model'
-import { cloneLayout, findTile, getTile, nodeAt } from './model'
+import { cloneLayout, findTile, getTile, NEW_TILE_H, nodeAt } from './model'
 import { clamp } from '@pommora/uix/Utilities/clamp'
 
 // A share that isn't positive takes the mean of those that are, so a row a hand edit broke still draws every child.
@@ -129,6 +129,18 @@ export function insertBand(
   const band: TileBand = { node: { kind: 'tile', id: tileId, h: height } }
   next.bands.splice(at, 0, band)
   return next
+}
+
+/** A new leaf lands under `under` at height `h`, or as the board's last band when there is no tile or no height to seat it by. */
+export function seatBelow(
+  layout: TileLayout,
+  id: string,
+  under: string | null,
+  h: number | undefined,
+): TileLayout {
+  return under === null || h === undefined
+    ? insertBand(layout, layout.bands.length, id, NEW_TILE_H)
+    : attachBelow(layout, under, id, h)
 }
 
 /** The index is against the layout as given — when the tile currently IS a band above the target, its removal shifts the band list, so the insertion compensates. */
