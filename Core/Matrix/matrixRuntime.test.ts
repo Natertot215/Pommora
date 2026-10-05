@@ -535,14 +535,31 @@ describe('matrixRuntime', () => {
     seed()
     attach()
     flush()
-    matrixRuntime.setHovered('p2')
-    expect(matrixRuntime.hoveredId).toBe('p2')
+    matrixRuntime.setHovered(surface, 'p2')
+    expect(matrixRuntime.hoverOf(surface)).toBe('p2')
     const shrunk = makeTree()
     shrunk.collections[0].sets[0].pages = []
     useSession.setState({ tree: shrunk })
-    expect(matrixRuntime.hoveredId).toBeNull()
+    expect(matrixRuntime.hoverOf(surface)).toBeNull()
     useSession.setState({ tree: makeTree() })
-    expect(matrixRuntime.hoveredId).toBeNull()
+    expect(matrixRuntime.hoverOf(surface)).toBeNull()
+  })
+
+  it('reads a hover on the surface it was set from alone, and lets another surface release nothing', () => {
+    seed()
+    attach()
+    flush()
+    const window: Surface = { visible: () => true }
+    const detachWindow = matrixRuntime.attach(window)
+    matrixRuntime.setHovered(window, 'p2')
+    expect(matrixRuntime.hoverOf(window)).toBe('p2')
+    expect(matrixRuntime.hoverOf(surface)).toBeNull()
+    matrixRuntime.setHovered(surface, null)
+    expect(matrixRuntime.hoverOf(window)).toBe('p2')
+    matrixRuntime.setHovered(surface, 'p2')
+    expect(matrixRuntime.hoverOf(surface)).toBe('p2')
+    expect(matrixRuntime.hoverOf(window)).toBeNull()
+    detachWindow()
   })
 
   it('leaves the picture standing for a refetch that moved no link', () => {

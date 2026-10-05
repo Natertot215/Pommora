@@ -70,7 +70,8 @@ class MatrixRuntime {
   mode: GroupMode = 'connection'
   sim: Simulation | null = null
   lens: Lens | null = null
-  hoveredId: string | null = null
+  private hoveredId: string | null = null
+  private hoveredOn: Surface | null = null
   ghosts: Array<{ x: number; y: number; radius: number; born: number }> = []
   arrivals = new Map<string, number>()
   private surfaces = new Set<Surface>()
@@ -120,6 +121,7 @@ class MatrixRuntime {
     this.fitOnSettle = false
     this.dirty = false
     this.hoveredId = null
+    this.hoveredOn = null
     this.ghosts = []
     this.arrivals.clear()
   }
@@ -335,10 +337,16 @@ class MatrixRuntime {
     return this.sim?.drag?.id ?? null
   }
 
-  setHovered(node: string | null): void {
+  // A hover is read only by the surface it was set from; a release from any other leaves it standing.
+  hoverOf(surface: Surface): string | null {
+    return this.hoveredOn === surface ? this.hoveredId : null
+  }
+
+  setHovered(surface: Surface, node: string | null): void {
     const id = node !== null && this.graph.index.has(node) ? node : null
-    if (this.hoveredId === id) return
+    if (this.hoveredOn !== surface ? id === null : this.hoveredId === id) return
     this.hoveredId = id
+    this.hoveredOn = surface
     this.invalidate()
   }
 

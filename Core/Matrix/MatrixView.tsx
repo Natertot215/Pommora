@@ -36,7 +36,6 @@ export function MatrixView(): React.JSX.Element {
   const iconPath = useSession((st) => (st.iconHost === 'matrix' ? st.iconPath : null))
   const colorPath = useSession((st) => (st.colorHost === 'matrix' ? st.colorPath : null))
   const locked = useSession((st) => st.matrixConfig.display.locked)
-  const hoveredId = useMatrixHover()
   usePublishCount(useMatrixCount())
   const begin = usePointerGesture()
   const canvasRef = useRef<HTMLCanvasElement>(null)
@@ -47,8 +46,9 @@ export function MatrixView(): React.JSX.Element {
     if (!picking) setMenuId(null)
   }, [picking])
   const parkedRef = useLatest(parked)
-  // One identity for the life of the view: the runtime keys a surface's stage — and so its own framing of the picture — off it.
+  // One identity for the life of the view: the runtime keys a surface's stage — and so its own framing of the picture — and its hover off it.
   const [surface] = useState<Surface>(() => ({ visible: () => !parkedRef.current }))
+  const hoveredId = useMatrixHover(surface)
   const surfaceId = useId()
   const mine = acting === null || acting === surfaceId
 
@@ -123,9 +123,9 @@ export function MatrixView(): React.JSX.Element {
   // The renamed node keeps the surface's focus while its field is open, and lets it go on the same fade any other hover leaves by.
   useEffect(() => {
     if (!editing) return
-    matrixRuntime.setHovered(renamingId)
-    return () => matrixRuntime.setHovered(null)
-  }, [editing, renamingId])
+    matrixRuntime.setHovered(surface, renamingId)
+    return () => matrixRuntime.setHovered(surface, null)
+  }, [editing, renamingId, surface])
 
   return (
     <MatrixCanvas
