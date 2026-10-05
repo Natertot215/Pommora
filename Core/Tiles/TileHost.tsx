@@ -25,7 +25,7 @@ import { askRemoveTile } from '../Interface/Confirm/confirmations'
 import { notifyUndoable, reportRefusal } from '../Interface/Notifications/notifications'
 import { ZOOM_STEPS } from './tileZoom'
 import { inertTile, type MutateEntry, TileBody, tileSourceInfo } from './tileKinds'
-import { menuPatch, pickTreesOf, tileMenuItems } from './tileHandleMenu'
+import { menuPatch, pickOf, pickTreesOf, tileMenuItems } from './tileHandleMenu'
 import {
   landTileWrite,
   markTileRemoving,
@@ -216,9 +216,7 @@ export function TileHost({
         parsedTile(readTileDoc(host).tiles.find((b) => tileIdOf(b) === id)) ?? entry
       let built = build(entry)
       const run = (action: string): void => {
-        const chosen = action.startsWith('tile:pick:')
-          ? built.picks[Number(action.slice('tile:pick:'.length))]
-          : undefined
+        const chosen = pickOf(action, built.picks)
         const cur = latest()
         const patch = cur && menuPatch(action, cur)
         if (chosen) applyPick(id, chosen)

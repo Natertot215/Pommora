@@ -103,8 +103,8 @@ export const TILE_KINDS: { [T in TileType]: TileKind<Extract<TileEntry, { type: 
     label: 'Markdown Tile',
     fileBacked: true,
     menuRows: [
-      { label: 'Link View', to: 'view' },
       { label: 'Link Page', to: 'page' },
+      { label: 'Link View', to: 'view' },
     ],
   },
   page: {

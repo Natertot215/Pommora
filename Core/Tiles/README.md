@@ -50,7 +50,7 @@ own behavior, so every host gets it.
 | `useTileDoc.ts` | The document's React reader — its snapshot and lock, and the gesture hold |
 | `TileHost.tsx` | The host binding — the menus, create, remove, convert, duplicate |
 | `tileKinds.tsx` | The surface table (`TILE_SURFACES`) and `TileBody` |
-| `tileHandleMenu.ts` | The handle menu's model and pick trees |
+| `tileHandleMenu.ts` | The handle menu's and the Insert Menu's models, their shared link rows, and the pick trees |
 | `tileZoom.ts` | The Scale steps and their menu rows |
 | `BoardLock.tsx` | The board lock control — the host settings surfaces and a windowed Space's footer bar all mount this one |
 | `Surfaces/` | What a tile can hold — markdown, a page, a view — and the web tile MarkdownPM's embed mounts |
