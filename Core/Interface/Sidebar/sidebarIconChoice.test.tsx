@@ -9,6 +9,7 @@ import { Sidebar } from './Sidebar'
 import { useSession } from '../../Session/store'
 import { stubDialer } from '../../vitest.setup'
 import { DEFAULT_COMMANDS } from '../../Actions/commands'
+import { cellSelected } from '@pommora/uix/Pickers/icon-picker.css'
 ;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
 
 const tree = {
@@ -16,7 +17,9 @@ const tree = {
   contexts: [
     {
       def: { id: 'g1', title: 'Areas', icon: 'star' },
-      spaces: [{ kind: 'space', id: 'sp1', title: 'Health', path: 'Areas/Health.json' }],
+      spaces: [
+        { kind: 'space', id: 'sp1', title: 'Health', path: 'Areas/Health.json', icon: 'moon' },
+      ],
     },
   ],
   collections: [
@@ -53,7 +56,11 @@ const mount = (sidebarMode: SidebarMode): void => {
       ...tree,
       config: {
         ...tree.config,
-        personalization: { defaultIcons: {}, iconFavorites: ['anchor'], sidebarMode },
+        personalization: {
+          defaultIcons: {},
+          iconFavorites: ['anchor', 'rocket', 'moon', 'star'],
+          sidebarMode,
+        },
       },
     },
     devicePrefs: { disclosure: { c1: true } },
@@ -73,6 +80,14 @@ const pickFavorite = (path: string): void => {
   )
   if (!favorite) throw new Error(`no picker opened for ${path}`)
   act(() => favorite.click())
+}
+
+const preselected = (path: string): string[] => {
+  act(() => useSession.getState().beginIcon(path, 'sidebar'))
+  const cells = document.querySelectorAll<HTMLButtonElement>('[data-picker-portal] button')
+  const titles = [...cells].filter((b) => b.classList.contains(cellSelected)).map((b) => b.title)
+  act(() => useSession.getState().endIcon())
+  return titles
 }
 
 beforeEach(() => {
@@ -114,6 +129,16 @@ describe('the sidebar icon picker', () => {
       ['Areas/Health.json', 'space'],
       [contextDirRel('Areas'), 'context'],
     ])
+  })
+})
+
+describe('the sidebar icon picker preselection', () => {
+  it("opens on the row's own icon, for a Page, a Space, and a Context", () => {
+    mount('collections')
+    expect(preselected('Notes/First.md')).toEqual(['Rocket'])
+    mount('contexts')
+    expect(preselected('Areas/Health.json')).toEqual(['Moon'])
+    expect(preselected(contextDirRel('Areas'))).toEqual(['Star'])
   })
 })
 
