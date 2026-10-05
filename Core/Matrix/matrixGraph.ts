@@ -4,7 +4,7 @@ import type { PageRelationRow } from '../Platform/stores'
 import { pageValuesOf } from '../Views/loadValues'
 import type { PageValues } from '../Views/viewRow'
 
-export interface MatrixLink extends PageRelationRow {
+export interface MatrixLink extends Pick<PageRelationRow, 'path' | 'kind' | 'target'> {
   pageId: string
 }
 
@@ -25,10 +25,15 @@ export function readMatrixGraph(paths?: string[]): MatrixGraphReply | null {
     idOf.set(path, id)
     values[id] = pageValuesOf(id, page.values, page.mtimeMs)
   }
+  // A link to a page and links to its headings are one row each in the index, and one link here.
+  const seen = new Set<string>()
   const links: MatrixLink[] = []
-  for (const row of rows.relations) {
-    const pageId = idOf.get(row.path)
-    if (pageId) links.push({ ...row, pageId })
+  for (const { path, kind, target } of rows.relations) {
+    const pageId = idOf.get(path)
+    const key = `${path}\0${kind}\0${target}`
+    if (!pageId || seen.has(key)) continue
+    seen.add(key)
+    links.push({ path, kind, target, pageId })
   }
   return { links, values }
 }

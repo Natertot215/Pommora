@@ -13,8 +13,6 @@ const link = (path: string, pageId: string, target: string): MatrixLink => ({
   pageId,
   kind: 'body',
   target,
-  qualifier: '',
-  count: 1,
 })
 
 const values = (id: string): MatrixGraphReply['values'] => ({

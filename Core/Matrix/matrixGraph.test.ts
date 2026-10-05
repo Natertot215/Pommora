@@ -76,7 +76,28 @@ describe('readMatrixGraph', () => {
   it('narrows to the named paths', () => {
     const reply = readMatrixGraph(['Notes/A.md'])!
     expect(Object.keys(reply.values)).toEqual([A])
-    expect(reply.links).toEqual([{ path: 'Notes/A.md', ...relation('body', 'beta'), pageId: A }])
+    expect(reply.links).toEqual([{ path: 'Notes/A.md', kind: 'body', target: 'beta', pageId: A }])
+  })
+
+  it('answers one link where a page names another and its headings', () => {
+    stores.stores.contentIndex!.upsertPageIndexes([
+      {
+        path: 'Notes/A.md',
+        entry: {
+          relations: [
+            relation('body', 'beta'),
+            { ...relation('body', 'beta'), qualifier: 'setup' },
+            { ...relation('body', 'beta'), qualifier: 'intro' },
+          ],
+          headings: [],
+          values: { ID: A },
+        },
+        stat: { mtimeMs: 1000, size: 10 },
+      },
+    ])
+    expect(readMatrixGraph(['Notes/A.md'])!.links).toEqual([
+      { path: 'Notes/A.md', kind: 'body', target: 'beta', pageId: A },
+    ])
   })
 
   it('answers null with no index', () => {
