@@ -6,7 +6,7 @@ import type { WarmSeam } from '../../MarkdownPM/warmSeam'
 import type { ConnectionsApi } from '../../MarkdownPM/Links/connectionsApi'
 import { useEditorHost } from '../../Pages/editorHost'
 import { PageHeader } from '../../Pages/PageHeader'
-import { flushPageSave } from '../../Session/saveScheduler'
+import { pageWriter } from '../../Session/saveScheduler'
 import { useBodyMount } from '../../Pages/bodyMount'
 import { fetchPageDetail, readPageDetail, useBodyEpoch } from '../../Session/pageDetailCache'
 import { useSession } from '../../Session/store'
@@ -107,8 +107,8 @@ export function PageTile({
   }, [path, entry])
 
   useEffect(() => {
-    if (!editing) void flushPageSave(path)
-    return () => void flushPageSave(path)
+    if (!editing) void pageWriter.flush(path)
+    return () => void pageWriter.flush(path)
   }, [editing, path])
 
   if (failed) return <div className="page-tile page-tile-failed">{titleFromPath(path)}</div>

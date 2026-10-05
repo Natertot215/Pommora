@@ -56,7 +56,7 @@ import {
 } from './pageDetailCache'
 import { dropWarmOwner, readWarm } from './warmCache'
 import { dropAllTileDocs } from '../Tiles/tileDocStore'
-import { cancelPageSave, scheduleTabsSave } from './saveScheduler'
+import { pageWriter, scheduleTabsSave } from './saveScheduler'
 import { crumbDepthFor } from '../Interface/Subfield/crumbs'
 import type { SessionState, Slice } from './sessionState'
 import { personalizationOf } from './configSlice'
@@ -377,7 +377,7 @@ export const createNavigationSlice: Slice<NavigationSlice> = (set, get) => {
         return {}
       }),
     replaceBody: async (path) => {
-      cancelPageSave(path)
+      pageWriter.cancel(path)
       dropCacheDetail(path)
       const detail = await fetchPageDetail(path)
       if (!detail) return false

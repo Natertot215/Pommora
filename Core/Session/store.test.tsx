@@ -32,7 +32,7 @@ import {
   readPageDetail,
   setBodyBase,
 } from './pageDetailCache'
-import { flushAllSessionSaves, schedulePageSave, scheduleTabsSave } from './saveScheduler'
+import { flushAllSessionSaves, pageIO, scheduleBodySave, scheduleTabsSave } from './saveScheduler'
 import { makeTree } from '../Testing/testTree'
 import { tileBodyWriter } from '../Tiles/tileDocStore'
 import { dialer } from '../Platform/dialer'
@@ -1033,7 +1033,7 @@ describe('store — the mutate rail', () => {
       order.push('mutate')
       return ok({})
     })
-    schedulePageSave('Notes/A.md', 'typed')
+    scheduleBodySave('Notes/A.md', 'typed', pageIO)
     await useSession
       .getState()
       .mutate({ op: 'rename', path: 'Notes/A.md', kind: 'page', newName: 'B' })
@@ -1103,7 +1103,7 @@ describe('store — a Nexus switch lands every owed save first', () => {
     channels['tabs:save'] = record('tabs', null)
     channels['nexus:choose'] = record('choose', false)
     channels['matrixLayout:save'] = vi.fn(async () => ok(null))
-    schedulePageSave('Notes/A.md', 'typed')
+    scheduleBodySave('Notes/A.md', 'typed', pageIO)
     tileBodyWriter.schedule('t1', () =>
       dialer().ask('tiles:writeMarkdown', { kind: 'homepage' }, 't1', 'x', ''),
     )
@@ -1143,7 +1143,7 @@ describe('store — a Nexus switch lands every owed save first', () => {
     useSession.setState({ tree: makeTree() })
     let moved: Promise<unknown> = Promise.resolve(true)
     channels['nexus:choose'] = vi.fn(async () => {
-      schedulePageSave('Notes/A.md', 'typed')
+      scheduleBodySave('Notes/A.md', 'typed', pageIO)
       moved = useSession
         .getState()
         .mutate({ op: 'movePage', path: 'Notes/A.md', newParentPath: 'Notes/Ideas' })

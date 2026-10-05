@@ -19,11 +19,14 @@ vi.mock('../../MarkdownPM/MarkdownEditor', () => ({
     return createElement('div', { className: 'stub-editor' }, body)
   },
 }))
-vi.mock('../../Session/saveScheduler', async (importOriginal) => ({
-  ...(await importOriginal<typeof import('../../Session/saveScheduler')>()),
-  flushPageSave: vi.fn(async () => undefined),
-  schedulePageSave: vi.fn(),
-}))
+vi.mock('../../Session/saveScheduler', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../../Session/saveScheduler')>()
+  return {
+    ...actual,
+    pageWriter: { ...actual.pageWriter, flush: vi.fn(async () => undefined) },
+    scheduleBodySave: vi.fn(),
+  }
+})
 
 import { PageTile } from './PageTile'
 import { stubDialer } from '../../vitest.setup'

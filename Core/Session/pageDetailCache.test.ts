@@ -8,6 +8,7 @@ import {
   dropCacheDetail,
   dropPageDetail,
   fetchPageDetail,
+  knownBody,
   readBodyBase,
   readPageDetail,
   setBodyBase,
@@ -131,6 +132,15 @@ describe('the body base', () => {
     cachePageDetail(detail({ path: 'x/a.md', body: 'hello' }))
     setBodyBase('x/a.md', { text: 'typed', hash: machine().sha256Hex('typed') })
     expect(readBodyBase('x/a.md')).toEqual({ text: 'typed', hash: machine().sha256Hex('typed') })
+  })
+
+  it('a seated detail retires the slot, so an evicted page reads its newer base', () => {
+    writeThroughBody('x/a.md', 'first')
+    cachePageDetail(detail({ path: 'x/a.md', body: 'first' }))
+    setBodyBase('x/a.md', { text: 'acked', hash: machine().sha256Hex('acked') })
+    for (let i = 0; i < 50; i++) cachePageDetail(detail({ path: `x/p${i}.md`, body: 'other' }))
+    expect(readPageDetail('x/a.md')).toBeUndefined()
+    expect(knownBody('x/a.md')).toBe('acked')
   })
 })
 

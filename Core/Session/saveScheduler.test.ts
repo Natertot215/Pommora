@@ -4,10 +4,11 @@ import { detail } from '../Testing/fixtures'
 import { machine } from '../Platform/machine'
 import { cachePageDetail, clearCache, readPageDetail } from './pageDetailCache'
 import {
-  flushPageSave,
   holdSaves,
+  pageIO,
+  pageWriter,
   releaseSaves,
-  schedulePageSave,
+  scheduleBodySave,
   setStaleSaveSink,
 } from './saveScheduler'
 import { stubDialer } from '../vitest.setup'
@@ -35,15 +36,15 @@ afterEach(() => {
   clearCache()
 })
 
-describe('schedulePageSave', () => {
+describe('scheduleBodySave', () => {
   it('does not requeue a stale ack and calls the sink once', async () => {
     vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] })
     stub({ ok: true, value: { stale: true } })
     cachePageDetail(disk)
     const stale = vi.fn()
     setStaleSaveSink(stale)
-    schedulePageSave(PATH, 'typed')
-    await flushPageSave(PATH)
+    scheduleBodySave(PATH, 'typed', pageIO)
+    await pageWriter.flush(PATH)
     await vi.advanceTimersByTimeAsync(2000)
     expect(updateBody).toHaveBeenCalledTimes(1)
     expect(stale).toHaveBeenCalledExactlyOnceWith(PATH, 'typed')
@@ -52,13 +53,13 @@ describe('schedulePageSave', () => {
   it('sends the write before any await so an unload flush escapes', async () => {
     stub({ ok: true, value: { hash: machine().sha256Hex('typed'), stale: false } })
     cachePageDetail(disk)
-    schedulePageSave(PATH, 'typed')
-    const landed = flushPageSave(PATH)
+    scheduleBodySave(PATH, 'typed', pageIO)
+    const landed = pageWriter.flush(PATH)
     expect(updateBody).toHaveBeenCalledWith(PATH, 'typed', disk.bodyHash)
     expect(readPageDetail(PATH)?.body).toBe('typed')
     await landed
-    schedulePageSave(PATH, 'typed again')
-    await flushPageSave(PATH)
+    scheduleBodySave(PATH, 'typed again', pageIO)
+    await pageWriter.flush(PATH)
     expect(updateBody).toHaveBeenLastCalledWith(PATH, 'typed again', machine().sha256Hex('typed'))
     expect(openPage).not.toHaveBeenCalled()
   })
@@ -67,8 +68,8 @@ describe('schedulePageSave', () => {
     stub({ ok: true, value: { stale: true } })
     const stale = vi.fn()
     setStaleSaveSink(stale)
-    schedulePageSave(PATH, 'typed')
-    await flushPageSave(PATH)
+    scheduleBodySave(PATH, 'typed', pageIO)
+    await pageWriter.flush(PATH)
     expect(updateBody).toHaveBeenCalledWith(PATH, 'typed', '')
     expect(stale).toHaveBeenCalledExactlyOnceWith(PATH, 'typed')
   })
@@ -76,7 +77,7 @@ describe('schedulePageSave', () => {
   it('drops a refused save instead of retrying it', async () => {
     vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] })
     stub({ ok: false, error: { code: 'not-found', message: 'gone' } })
-    schedulePageSave(PATH, 'typed')
+    scheduleBodySave(PATH, 'typed', pageIO)
     await vi.advanceTimersByTimeAsync(60_000)
     expect(updateBody).toHaveBeenCalledTimes(1)
   })
@@ -96,10 +97,10 @@ describe('one save in flight per page', () => {
     })
     ;(window as unknown as { nexus: unknown }).nexus = stubDialer({ 'page:updateBody': updateBody })
     cachePageDetail(disk)
-    schedulePageSave(PATH, 'v1')
-    const first = flushPageSave(PATH)
-    schedulePageSave(PATH, 'v2')
-    const second = flushPageSave(PATH)
+    scheduleBodySave(PATH, 'v1', pageIO)
+    const first = pageWriter.flush(PATH)
+    scheduleBodySave(PATH, 'v2', pageIO)
+    const second = pageWriter.flush(PATH)
     await Promise.resolve()
     expect(sent).toEqual([['v1', disk.bodyHash]])
     land({ ok: true, value: { hash: machine().sha256Hex('v1'), stale: false } })
@@ -116,7 +117,7 @@ describe('holdSaves', () => {
   it('lets a flush with nothing held through at once', async () => {
     holdSaves()
     let landed = false
-    await flushPageSave(PATH).then(() => {
+    await pageWriter.flush(PATH).then(() => {
       landed = true
     })
     releaseSaves()
@@ -128,9 +129,9 @@ describe('holdSaves', () => {
     cachePageDetail(disk)
     holdSaves()
     holdSaves()
-    schedulePageSave(PATH, 'typed')
+    scheduleBodySave(PATH, 'typed', pageIO)
     let landed = false
-    const flushed = flushPageSave(PATH).then(() => {
+    const flushed = pageWriter.flush(PATH).then(() => {
       landed = true
     })
     releaseSaves()

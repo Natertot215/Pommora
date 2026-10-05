@@ -18,7 +18,7 @@ import {
   readPageDetail,
   useBodyEpoch,
 } from '../Session/pageDetailCache'
-import { flushPageSave } from '../Session/saveScheduler'
+import { pageWriter } from '../Session/saveScheduler'
 import { stubDialer } from '../vitest.setup'
 import { absorbLanding, useBodyMount } from './bodyMount'
 
@@ -79,7 +79,7 @@ const type = (view: EditorView, at: number, text: string): void =>
     userEvent: 'input.type',
   })
 
-const flush = (): Promise<void> => act(() => flushPageSave(PATH))
+const flush = (): Promise<void> => act(() => pageWriter.flush(PATH))
 
 beforeEach(() => {
   clearCache()
@@ -222,7 +222,7 @@ describe('one head per page path', () => {
     })
     const { a } = await mountTwo('Hello\n\nother\n')
     type(a, 5, ' wor')
-    const out = flushPageSave(PATH)
+    const out = pageWriter.flush(PATH)
     await act(async () => {})
     type(a, 9, 'ld')
     disk = `${disk}remote\n`

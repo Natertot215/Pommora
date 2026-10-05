@@ -21,7 +21,7 @@ import {
   dropPageDetail,
 } from '../Session/pageDetailCache'
 import { readWarm } from '../Session/warmCache'
-import { flushPageSave, setStaleSaveSink } from '../Session/saveScheduler'
+import { pageWriter, setStaleSaveSink } from '../Session/saveScheduler'
 import { absorbLanding } from './bodyMount'
 
 ;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
@@ -194,7 +194,7 @@ describe('a landing under the open page', () => {
     })
     expect(view.state.doc.toString()).toBe(local)
     await act(async () => {
-      await flushPageSave(PATH)
+      await pageWriter.flush(PATH)
     })
     expect(updated).toHaveBeenCalledWith(PATH, local, machine().sha256Hex(BASE))
   })
@@ -223,7 +223,7 @@ describe('a landing under the open page', () => {
       view.dispatch({ changes: { from: 5, insert: ' ONE' } })
     })
     await act(async () => {
-      await flushPageSave(PATH)
+      await pageWriter.flush(PATH)
     })
     expect(view.state.doc.toString()).toBe('alpha ONE\nbeta\ngamma\ndelta')
   })

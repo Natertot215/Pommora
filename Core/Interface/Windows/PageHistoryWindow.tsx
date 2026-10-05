@@ -14,7 +14,7 @@ import { retained, toggled } from '@pommora/uix/Utilities/checkSet'
 import { MarkdownEditor } from '../../MarkdownPM/MarkdownEditor'
 import { useEditorHost } from '../../Pages/editorHost'
 import { clockOf, formatDate } from '../../Properties/formatValue'
-import { flushPageSave } from '../../Session/saveScheduler'
+import { pageWriter } from '../../Session/saveScheduler'
 import { fetchPageDetail } from '../../Session/pageDetailCache'
 import { livePagePath, trailOf } from '../../Nexus/treeIndex'
 import { useConnections } from '../../Session/pageConnections'
@@ -36,7 +36,7 @@ const HISTORY_ANCESTOR = 'page-history'
 
 async function restoreFromHistory(target: PageTarget, ts: number): Promise<Result<null>> {
   const { tree, replaceBody } = useSession.getState()
-  await flushPageSave(livePagePath(tree, target))
+  await pageWriter.flush(livePagePath(tree, target))
   const r = await dialer().ask('history:restore', target.id, ts)
   if (!r.ok) return r
   return (await replaceBody(r.value.path))

@@ -14,7 +14,7 @@ import {
   dropCacheDetail,
   readPageDetail,
 } from './pageDetailCache'
-import { flushPageSave, schedulePageSave } from './saveScheduler'
+import { pageIO, pageWriter, scheduleBodySave } from './saveScheduler'
 import { useSession } from './store'
 import { useBridgeSubscriptions } from './useBridgeSubscriptions'
 import { captureWarm, readWarm } from './warmCache'
@@ -125,7 +125,7 @@ describe('a page that changed outside the app', () => {
     showInSlot()
     cachePageDetail(detail({ path: PATH }))
     dropCacheDetail(PATH)
-    schedulePageSave(PATH, 'typed')
+    scheduleBodySave(PATH, 'typed', pageIO)
     await act(async () => landed([PATH]))
     expect(captured).toHaveBeenCalledExactlyOnceWith(PATH, 'typed')
     expect(replaceBody).toHaveBeenCalled()
@@ -137,8 +137,8 @@ describe('a page that changed outside the app', () => {
     act(() => landed([PATH]))
     expect(captured).not.toHaveBeenCalled()
 
-    schedulePageSave(PATH, 'typed')
-    await act(async () => flushPageSave(PATH))
+    scheduleBodySave(PATH, 'typed', pageIO)
+    await act(async () => pageWriter.flush(PATH))
 
     expect(captured).toHaveBeenCalledExactlyOnceWith(PATH, 'typed')
     expect(replaceBody).toHaveBeenCalledTimes(2)
@@ -146,8 +146,8 @@ describe('a page that changed outside the app', () => {
 
   it('captures a refused save whose page detail is no longer held', async () => {
     await mount()
-    schedulePageSave(PATH, 'typed')
-    await act(async () => flushPageSave(PATH))
+    scheduleBodySave(PATH, 'typed', pageIO)
+    await act(async () => pageWriter.flush(PATH))
 
     expect(captured).toHaveBeenCalledExactlyOnceWith(PATH, 'typed')
     expect(replaceBody).toHaveBeenCalledExactlyOnceWith(PATH)
@@ -156,7 +156,7 @@ describe('a page that changed outside the app', () => {
   it('captures typing a landing replaces before its save went out', async () => {
     await mount()
     cachePageDetail(detail({ path: PATH }))
-    schedulePageSave(PATH, 'typed')
+    scheduleBodySave(PATH, 'typed', pageIO)
 
     act(() => landed([PATH]))
 
@@ -167,12 +167,12 @@ describe('a page that changed outside the app', () => {
   it('routes a stale save the same way while mounted, and nothing once unmounted', async () => {
     await mount()
     cachePageDetail(detail({ path: PATH }))
-    schedulePageSave(PATH, 'typed')
-    await act(async () => flushPageSave(PATH))
+    scheduleBodySave(PATH, 'typed', pageIO)
+    await act(async () => pageWriter.flush(PATH))
     expect(replaceBody).toHaveBeenCalledExactlyOnceWith(PATH)
     await act(async () => root.unmount())
-    schedulePageSave(PATH, 'typed again')
-    await flushPageSave(PATH)
+    scheduleBodySave(PATH, 'typed again', pageIO)
+    await pageWriter.flush(PATH)
     expect(replaceBody).toHaveBeenCalledTimes(1)
   })
 })

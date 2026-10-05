@@ -1,6 +1,6 @@
 ## Pommora Codebase Audit
 
-**Pinned:** `f6511401d` (09-23-2026) · **Reconciled:** `a3b8f7cb1` (10-04-2026) · **Findings:** 42/556
+**Pinned:** `f6511401d` (09-23-2026) · **Reconciled:** `a3b8f7cb1` (10-04-2026) · **Findings:** 44/556
 
 Thirty-four Opus investigators read every production file in `Core`, `UIX`, `Desktop`, and `Sync` in full, sliced by folder and by the jobs the code performs. Two mergers combined their 857 candidates by root cause, and twenty-one reviewers who hadn't raised them re-read every citation, reproduced the High ones against real modules, and killed 63. This document is the current state: findings that were fixed, withdrawn, or ruled moot are removed rather than annotated, and rulings are written into the findings they settle. The readiness and pace sections are the orchestrator's judgment, drawn from the evidence below them.
 
@@ -652,6 +652,34 @@ On a touchscreen, such as a Windows touch laptop, two fingers on the Matrix pan 
 
 In `MatrixCanvas`, keep a small map of active pointer ids on the host; while two are down, feed the change in their distance ratio to `matrixRuntime.zoom` at their midpoint (the same call the wheel makes, which already takes a focus point and factor) and suppress the one-pointer pan.
 
+#### Tiles & Embeds
+
+##### F-642 · A board whose saved layout can't be read opens empty, and the first new tile replaces the saved layout.
+
+> **Area:** Tiles · **Lens:** Integrity · **Weight:** Low · **Size:** S · **Net:** +5 · **Origin:** Shortcut
+
+**Finding**
+
+If a board's stored layout is present but isn't in a shape the app can decode, the board opens looking empty. Its tiles are still in the file. Creating a tile then writes a new one-tile layout over the stored one, and the old arrangement is gone. This is reachable by a hand edit, or by a newer layout format arriving through sync from a newer build. A missing layout is the ordinary fresh board and is unaffected; nothing in the app writes an undecodable layout.
+
+Decoding fails only when `layout` is present and not `{bands: array}`. `adopt` then takes `emptyLayout()` and marks the board ready, and a create commits `insertBand` onto the empty layout. Treating an undecodable layout as an unreadable document at `readTileDocAt` regresses three readers: the rename cascade's tile list, `duplicateTile`, and the heading-link cache.[^623]
+
+**Fix | TBD**
+
+Before a layout write replaces undecodable bytes, the writer copies them under a `.bad-` name, the rule corrupt JSON already follows; the board stays usable and nothing is lost. `setAside` renames the whole file, so this needs a copy primitive beside it in the file layer. It is worth taking when a layout format version exists, which is what makes an undecodable layout something sync can deliver.
+
+##### F-643 · The tile shell's memo comparator lists its props by hand.
+
+> **Area:** Tiles · **Lens:** Residue · **Weight:** Low · **Size:** S · **Net:** −8 · **Origin:** Shortcut
+
+**Finding**
+
+`TileShell`'s comparator names each of its twelve props. A prop added later and left off the list silently stops triggering a redraw.[^624]
+
+**Fix | TBD**
+
+A generic comparison over the props doesn't fit as written: the comparator compares `place` field by field, which a shallow comparison can't, and building the objects to compare allocates per shell on every pointer move of a drag. The design has to keep the field-wise `place` comparison and allocate nothing on that path.
+
 #### Files
 
 ##### F-604 · An app file this session never read and can't read opens as empty, so its section shows defaults and its changes are refused, some without a word.
@@ -712,3 +740,5 @@ Route the four readers (the walk's `readConfig`, `readNavigationFile`, `readMatr
 [^620]: **F-639:** `Core/Nexus/fileEvents.ts:564-584` (`applyMove`), `Core/Nexus/treePatch.ts:238-264` (`moveNodeInTree`), `Core/Nexus/fileEvents.ts:348-374` (`applyFolder`), `Core/Nexus/fileEvents.ts:376-418` (`applyPage`), `Core/Index/indexSeed.ts:116-136` (`indexWrittenPage`), `Core/Files/atomicWrite.ts:62-75` (`relocate`), `Core/Files/writeEcho.ts:10,74-88` (`PREFIX_WINDOW_MS`, `isRecentWrite`)
 [^621]: **F-640:** `Core/Nexus/adopt.ts:62-82` (`stampPage`), `Core/Nexus/adopt.ts:89-98` (`ensurePageId`), `Core/Nexus/adopt.ts:102-115` (`stampFolder`), `Core/Nexus/adopt.ts:126-143` (`Stamp`, `stampMissing`), `Core/Nexus/adopt.ts:145-191` (`stampTree`, `stampAdopted`), `Core/Nexus/fileEvents.ts:139-143` (`oweRetry`), `Core/Nexus/fileEvents.ts:146-152` (`stampable`), `Core/Nexus/fileEvents.ts:403-404` (`applyPage`), `Core/Nexus/fileEvents.ts:454-463` (`applySpace`), `Core/Nexus/readNexus.ts:105-109,312-317`, `Core/Nexus/mutate.ts:209-213` (`retryUnreadable`), `Core/Nexus/handlers.ts:34-51,79-96` (`prepareOpenedNexus`, `openStores`), `Core/Nexus/heldPages.ts:43` (`idHeld`), `Core/Nexus/identity.ts:17-50` (`ensureIdentity`), `Core/Nexus/remintLedger.ts:82-98` (`runOpenLedger`, `readBaseline`), `Core/Nexus/remintLedger.ts:17-27,59-80` (`projectBaseline`, `pickEldest`), `Core/Nexus/record.ts:15-47` (`recordsOf`, `recordById`), `Core/Nexus/heldPages.ts:16-25,40-41` (`indicesOf`, `livePathOf`), `Core/Nexus/treeIndex.ts:254-258` (`pagesByIdOf`), `Core/Contexts/contextResolve.ts:29-42` (`contextWorldOf`), `Core/Contexts/contexts.ts:12-17,35-43` (`contextEntry`, `seededRegistry`), `Core/Contexts/contextsRegistry.ts:20-25` (`ensureContextsRegistry`), `Core/Trash/restoreScrub.ts:85`
 [^622]: **F-641:** `UIX/Animations/motion.ts:19` (`exitWait`), `UIX/Interactions/shared.ts:43` (`SETTLE_FALLBACK`), `UIX/Animations/useExitPresence.ts:29` (`useSettleFallback`), `UIX/Interactions/dragDisclose.ts:5` (`SETTLE_MS`), `UIX/Theme/nativeCaret.ts:335` (`SETTLE_DEADLINE_MS`), `Core/MarkdownPM/folding.ts:20` (`FOLD_SETTLE_MS`)
+[^623]: **F-642:** `Core/Tiles/Layout/codec.ts:10-14`, `Core/Tiles/tiles.ts:223-225`, `Core/Tiles/tileDocStore.ts:160` (`adopt`), `Core/Tiles/TileHost.tsx:306-312`, `Core/Tiles/tilesFile.ts:165-171,224,271-278,289`, `Core/Tiles/tileDoc.ts:20-23` (`readTileDocAt`), `Core/Files/atomicWrite.ts` (`setAside`)
+[^624]: **F-643:** `Core/Tiles/TileGrid.tsx:207-229` (`TileShell`'s comparator)

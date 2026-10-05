@@ -1,5 +1,4 @@
 // Every push the host bridge makes lands here, and the Dialer's `on` is the one seam a non-Electron host implements; a surface that needs a push of its own subscribes through the same `on`.
-import { persist } from '../Interface/Notifications/notifications'
 import { useEffect } from 'react'
 import { valueOr } from '../Contract/result'
 import { setCmdModifier } from '@pommora/uix/Interactions/chords'
@@ -9,7 +8,7 @@ import { pagesByIdOf } from '../Nexus/treeIndex'
 import { bodyHead, dropCacheDetail, readBodyBase, readPageDetail } from './pageDetailCache'
 import { absorbLanding } from '../Pages/bodyMount'
 import { flushAllSaves } from './nexusSlice'
-import { flushPageSave, setStaleSaveSink } from './saveScheduler'
+import { pageIO, pageWriter, setStaleSaveSink } from './saveScheduler'
 import { useSession } from './store'
 import { openWebLink } from '../Web/openWebLink'
 import { dialer } from '../Platform/dialer'
@@ -72,11 +71,10 @@ export function useBridgeSubscriptions(): void {
         const shown = Object.values(useSession.getState().pages).some(
           (s) => s.status === 'ready' && s.detail.path === path,
         )
-        if (shown) void flushPageSave(path).then(() => replaceBody(path))
+        if (shown) void pageWriter.flush(path).then(() => replaceBody(path))
         return
       }
-      if (unsaved !== readBodyBase(path)?.text)
-        void persist('the conflicting version', dialer().ask('sync:captureLocal', path, unsaved))
+      if (unsaved !== readBodyBase(path)?.text) pageIO.capture(path, unsaved)
       void replaceBody(path)
     }
     setStaleSaveSink(absorb)

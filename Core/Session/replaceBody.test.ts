@@ -6,7 +6,7 @@ import { createRoot, type Root } from 'react-dom/client'
 import { useSession } from './store'
 import { bumpBodyEpoch, clearCache, readPageDetail, useBodyEpoch } from './pageDetailCache'
 import { captureWarm, readWarm } from './warmCache'
-import { schedulePageSave } from './saveScheduler'
+import { pageIO, scheduleBodySave } from './saveScheduler'
 import { stubDialer } from '../vitest.setup'
 
 const opened = detail({ id: 'a', title: 'A', path: 'Notes/a.md', body: 'restored' })
@@ -43,7 +43,7 @@ const armSave = (openPage: () => Promise<unknown>) => {
   const updatePageBody = vi.fn(async () => ({ ok: true, value: null }))
   channels['page:updateBody'] = updatePageBody
   channels['page:open'] = openPage
-  schedulePageSave('Notes/a.md', 'stale plus a keystroke')
+  scheduleBodySave('Notes/a.md', 'stale plus a keystroke', pageIO)
   return updatePageBody
 }
 
