@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import type { PickItem } from '../Actions/menuModel'
 import type { PickKind, TileEntry, ViewPick } from '../Tiles/tiles'
 import { makeTree } from '../Testing/testTree'
-import { menuPatch, pickTreesOf, tileMenuItems } from './tileHandleMenu'
+import { insertMenuItems, menuPatch, pickOf, pickTreesOf, tileMenuItems } from './tileHandleMenu'
 
 type Ctx = Parameters<typeof tileMenuItems>[0]
 type Over = Partial<Omit<Ctx, 'pickTree'>> & {
@@ -176,6 +176,33 @@ describe('the tile menu model both renderers draw', () => {
       { source_id: 's2', view_id: 'v1' },
       { source_id: 's2' },
     ])
+  })
+})
+
+describe('the Insert Menu a ghost tile opens', () => {
+  it('offers New Page, then the Markdown Tile’s own link rows', () => {
+    const m = insertMenuItems(ctx().pickTree, 'file-text')
+    expect(m.items.map((i) => i.label)).toEqual(['New Page', 'Link Page', 'Link View'])
+    expect(m.items[0]).toEqual({ label: 'New Page', icon: 'file-text', action: 'tile:new' })
+  })
+
+  it('indexes a link row’s pick the way the handle menu does', () => {
+    const m = insertMenuItems(ctx({ pages: [{ label: 'Notes', pick: 'p9' }] }).pickTree, 'file')
+    const page = m.items.find((i) => i.label === 'Link Page')
+    expect(page?.submenu).toHaveLength(1)
+    expect(page?.submenu?.[0].action).toBe('tile:pick:0')
+    expect(pickOf('tile:pick:0', m.picks)).toEqual({ kind: 'page', value: 'p9' })
+  })
+
+  it('leaves an empty tree an empty branch, as the handle menu does', () => {
+    const m = insertMenuItems(ctx().pickTree, 'file')
+    expect(m.items.find((i) => i.label === 'Link Page')?.submenu).toEqual([])
+    expect(m.items.find((i) => i.label === 'Link View')?.submenu).toEqual([])
+  })
+
+  it('reads no pick from a row that carries none', () => {
+    expect(pickOf('tile:new', [])).toBeUndefined()
+    expect(pickOf('tile:pick:3', [])).toBeUndefined()
   })
 })
 

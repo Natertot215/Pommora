@@ -14,6 +14,8 @@ import { containerPickTree, pagePickTree } from '../Actions/pickTree'
 import type { NexusTree } from '../Nexus/tree'
 import { viewGlyph } from '../Views/viewIcon'
 
+type PickAction = `tile:pick:${number}`
+
 type TileMenuAction =
   | 'tile:open'
   | 'tile:duplicate'
@@ -21,7 +23,7 @@ type TileMenuAction =
   | 'tile:lock'
   | `tile:style:${TileStyle}`
   | `tile:zoom:${number}`
-  | `tile:pick:${number}`
+  | PickAction
 
 export function menuPatch(action: string, entry: TileEntry): EntryPatch | null {
   if (action.startsWith('tile:zoom:')) {
@@ -58,6 +60,41 @@ export function pickTreesOf(tree: NexusTree, icons: Personalization['defaultIcon
   return (kind) => (built[kind] ??= PICK_TREES[kind](tree, icons))
 }
 
+// Rows name an index into `picks` because a menu row can't carry a pick; a row with no source is shown and refused rather than dropped.
+function linkRows(
+  rows: ReadonlyArray<{ label: string; to: PickKind }>,
+  pickTree: PickTree,
+  locked: boolean,
+): { items: ActionItem<PickAction>[]; picks: TilePick[] } {
+  const picks: TilePick[] = []
+  const rowsTo = <K extends PickKind>(to: K) =>
+    pickRows(pickTree(to), (value): PickAction => {
+      picks.push({ kind: to, value } as TilePick)
+      return `tile:pick:${picks.length - 1}`
+    })
+  const items = rows.map(({ label, to }) => ({
+    label,
+    icon: 'link',
+    submenu: locked ? [] : rowsTo(to),
+  }))
+  return { items, picks }
+}
+
+export const pickOf = (action: string, picks: readonly TilePick[]): TilePick | undefined =>
+  action.startsWith('tile:pick:') ? picks[Number(action.slice('tile:pick:'.length))] : undefined
+
+/** What a ghost tile's click offers: a blank Markdown Tile, or one made already linked through the rows a Markdown Tile's own menu links by. */
+export function insertMenuItems(
+  pickTree: PickTree,
+  pageIcon: string,
+): { items: ActionItem<'tile:new' | PickAction>[]; picks: TilePick[] } {
+  const links = linkRows(TILE_KINDS.markdown.menuRows, pickTree, false)
+  return {
+    items: [{ label: 'New Page', icon: pageIcon, action: 'tile:new' }, ...links.items],
+    picks: links.picks,
+  }
+}
+
 export function tileMenuItems({
   entry,
   pickTree,
@@ -69,29 +106,17 @@ export function tileMenuItems({
   pageInfo?: { title: string; icon: string }
   boardLocked: boolean
 }): { items: ActionItem<TileMenuAction>[]; picks: TilePick[] } {
-  // Rows name an index into `picks` because a menu row can't carry a pick.
-  const picks: TilePick[] = []
   const locked = (entry?.locked ?? false) || boardLocked
   const deleteRow = { label: 'Delete', icon: 'x', action: 'tile:delete' as const, disabled: locked }
   // A box with no entry this build can draw offers Delete alone, so it can still be removed.
-  if (!entry) return { items: [deleteRow], picks }
-  const pickAction = (pick: TilePick): TileMenuAction => {
-    picks.push(pick)
-    return `tile:pick:${picks.length - 1}`
-  }
-  const pickRowsTo = <K extends PickKind>(to: K) =>
-    pickRows(pickTree(to), (value) => pickAction({ kind: to, value } as TilePick))
+  if (!entry) return { items: [deleteRow], picks: [] }
+  const links = linkRows(TILE_KINDS[entry.type].menuRows, pickTree, locked)
   const borderless = entry.style === 'borderless'
   const items: ActionItem<TileMenuAction>[] = [
     ...(pageInfo
       ? [{ label: pageInfo.title, icon: pageInfo.icon, action: 'tile:open' as const }]
       : []),
-    // A row with no source is shown and refused rather than dropped.
-    ...TILE_KINDS[entry.type].menuRows.map(({ label, to }) => ({
-      label,
-      icon: 'link',
-      submenu: locked ? [] : pickRowsTo(to),
-    })),
+    ...links.items,
     {
       label: 'Style',
       icon: 'palette',
@@ -124,5 +149,5 @@ export function tileMenuItems({
       stay: true,
     },
   ]
-  return { items, picks }
+  return { items, picks: links.picks }
 }

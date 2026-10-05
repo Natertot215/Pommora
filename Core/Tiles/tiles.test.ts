@@ -225,8 +225,8 @@ describe('the tile recipe', () => {
     expect(TILE_KINDS.page.fileBacked).toBe(false)
     expect(TILE_KINDS.view.fileBacked).toBe(false)
     expect(TILE_KINDS.markdown.menuRows).toEqual([
-      { label: 'Link View', to: 'view' },
       { label: 'Link Page', to: 'page' },
+      { label: 'Link View', to: 'view' },
     ])
     expect(TILE_KINDS.page.menuRows).toEqual([{ label: 'Source', to: 'page' }])
     expect(TILE_KINDS.view.menuRows).toEqual([])
