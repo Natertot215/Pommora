@@ -5,4 +5,4 @@ export function sameItems<T>(a: ArrayLike<T>, b: ArrayLike<T>): boolean {
 }
 
 export const sameSet = <T>(a: ReadonlySet<T>, b: ReadonlySet<T>): boolean =>
-  a.size === b.size && [...a].every((k) => b.has(k))
+  a === b || (a.size === b.size && [...a].every((k) => b.has(k)))

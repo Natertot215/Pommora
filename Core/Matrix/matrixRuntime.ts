@@ -46,6 +46,9 @@ export interface Surface {
 
 const NO_STAGE: Stage = { x: 0, y: 0, width: 0, height: 0 }
 
+// The positions and the lens are read only by a rebuild, and they land in the same write as the load that triggers one.
+const SYNCED = ['tree', 'matrixConfig', 'matrixGraph', 'matrixLoad'] as const
+
 // Each stage is kept on what it reads: the tree for the walk, the links for the connections, and the values only while a filter judges them.
 interface Built {
   tree: NexusTree
@@ -85,7 +88,9 @@ class MatrixRuntime {
   attach(surface: Surface): () => void {
     this.surfaces.add(surface)
     if (this.surfaces.size === 1) {
-      this.unsubscribe = useSession.subscribe(() => this.sync())
+      this.unsubscribe = useSession.subscribe((s, prev) => {
+        if (SYNCED.some((k) => s[k] !== prev[k])) this.sync()
+      })
       this.sync()
     }
     this.resume()

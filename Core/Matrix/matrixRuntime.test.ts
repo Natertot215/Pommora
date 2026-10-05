@@ -507,6 +507,15 @@ describe('matrixRuntime', () => {
     expect([at('p1').pinned, at('p2').pinned, at('p3').pinned]).toEqual([true, true, false])
   })
 
+  it('reads nothing for a store write it does not draw from', () => {
+    seed()
+    attach()
+    flush()
+    const passed = passes.count
+    useSession.setState({ headings: { 'Notes/Alpha.md': ['intro'] } })
+    expect(passes.count).toBe(passed)
+  })
+
   it('defers a store change while every surface is hidden and rebuilds once on resume', () => {
     seed()
     attach()
