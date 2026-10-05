@@ -28,20 +28,6 @@ describe('parseMatrixConfig', () => {
     expect(config.forces.location.distance).toBe(DEFAULT_MATRIX_CONFIG.forces.location.distance)
   })
 
-  it('seeds every grouping from one flat set, as a file written before the split carries it', () => {
-    const config = parseMatrixConfig({ forces: { spread: 2 } })
-    for (const set of Object.values(config.forces)) expect(set.spread).toBe(2)
-  })
-
-  it("lets a grouping's own value win over the flat set, key by key", () => {
-    const config = parseMatrixConfig({ forces: { spread: 2, space: { gravity: 1.5 } } })
-    expect(config.forces.space).toEqual({
-      ...DEFAULT_MATRIX_CONFIG.forces.space,
-      spread: 2,
-      gravity: 1.5,
-    })
-  })
-
   it('leaves a grouping the file does not name at its own default', () => {
     const config = parseMatrixConfig({ forces: { space: { spread: 2 } } })
     expect(config.forces.space.spread).toBe(2)

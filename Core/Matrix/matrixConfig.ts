@@ -70,9 +70,8 @@ export function parseMatrixConfig(raw: unknown): MatrixConfig {
   const forces = section(raw, 'forces')
   const display = section(raw, 'display')
   const mode = GROUP_MODES.find((m) => m === group.mode) ?? d.group.mode
-  // A file written before each grouping carried its own set holds one flat set; it seeds all three rather than being dropped.
   const forcesFor = (of: GroupMode): Forces => {
-    const own = { ...forces, ...(isPlainObject(forces[of]) ? forces[of] : {}) }
+    const own = section(forces, of)
     const fallback = d.forces[of]
     return {
       gravity: force(own.gravity, 'gravity', fallback.gravity),

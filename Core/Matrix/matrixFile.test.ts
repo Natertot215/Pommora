@@ -70,17 +70,6 @@ describe('matrix.json', () => {
     })
   })
 
-  it('moves one force of a file holding one flat set, leaving the set to seed the rest', async () => {
-    await seed({ forces: { gravity: 2, spread: 3 } })
-    await writeMatrixFile(root, { forces: { connection: { gravity: 1.5 } } })
-    expect(await onDisk()).toEqual({
-      forces: { gravity: 2, spread: 3, connection: { gravity: 1.5 } },
-    })
-    const forces = (await readMatrixFile(root)).forces
-    expect(forces.connection).toMatchObject({ gravity: 1.5, spread: 3 })
-    expect(forces.space).toMatchObject({ gravity: 2, spread: 3 })
-  })
-
   it('leaves the file untouched by a patch that changes nothing', async () => {
     await writeMatrixFile(root, { group: { mode: 'connection' } })
     await expect(onDisk()).rejects.toThrow()

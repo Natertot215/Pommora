@@ -2,7 +2,7 @@ import { rm } from 'node:fs/promises'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import type { HostContext } from '../Contract/handlers'
 import { closeSession, openSession } from '../Nexus/session'
-import { readScope, readValue, writeValue } from '../Platform/localState'
+import { readScope, writeKeys, writeValue } from '../Platform/localState'
 import { installStores, NO_STORES } from '../Platform/stores'
 import { tempRoot } from '../Testing/hostFs'
 import { memoryStores } from '../Testing/memoryStores'
@@ -77,10 +77,10 @@ describe('the layout channels', () => {
     )
   })
 
-  it('reads a stored layout row by row, keeping every pair it understands', async () => {
-    writeValue('matrixLayout', { a: [1, 2], b: [3, 4, 1], c: [5], d: 'no' })
+  it('reads a stored layout row by row, keeping every row the save would accept', async () => {
+    writeKeys('matrixLayout', { a: [1, 2], b: [3, 4, 1], c: [5], d: 'no' })
     const reply = await matrixHandlers['matrixLayout:load'](ctx)
-    expect(reply.ok && reply.value.positions).toEqual({ a: [1, 2], b: [3, 4] })
+    expect(reply.ok && reply.value.positions).toEqual({ a: [1, 2] })
   })
 
   it('writes either half alone and loads both back', async () => {
@@ -94,7 +94,7 @@ describe('the layout channels', () => {
   })
 
   it('loads a stored row the save would have refused as nothing', async () => {
-    writeValue('matrixLayout', { a: [1] })
+    writeKeys('matrixLayout', { a: [1] })
     writeValue('matrixFrame', { cx: 0, cy: 0, w: 0, h: 0 })
     expect(await matrixHandlers['matrixLayout:load'](ctx)).toEqual({
       ok: true,
@@ -108,16 +108,6 @@ describe('the layout channels', () => {
     expect(readScope('matrixLayout')).toEqual({ b: [3, 4], c: [5, 6] })
     const reply = await matrixHandlers['matrixLayout:load'](ctx)
     expect(reply.ok && reply.value.positions).toEqual({ b: [3, 4], c: [5, 6] })
-  })
-
-  it('reads a layout saved as one map, and folds it into rows on the first save', async () => {
-    writeValue('matrixLayout', { a: [1, 2], b: [3, 4], c: [5, 5] })
-    const before = await matrixHandlers['matrixLayout:load'](ctx)
-    expect(before.ok && before.value.positions).toEqual({ a: [1, 2], b: [3, 4], c: [5, 5] })
-    expect(readValue('matrixLayout')).not.toBeNull()
-    await matrixHandlers['matrixLayout:save'](ctx, { positions: { b: [9, 9], a: null } })
-    expect(readValue('matrixLayout')).toBeNull()
-    expect(readScope('matrixLayout')).toEqual({ b: [9, 9], c: [5, 5] })
   })
 
   it('loads an unwritten layout as an empty map and no lens', async () => {
