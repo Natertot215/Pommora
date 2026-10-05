@@ -54,6 +54,7 @@ export function radiusOf(
 export function applyGravity(nodes: GraphNode[], forces: Forces, alpha: number): void {
   const k = GRAVITY * forces.gravity * alpha
   for (const n of nodes) {
+    if (n.pinned) continue
     n.vx -= n.x * k
     n.vy -= n.y * k
   }
@@ -87,7 +88,7 @@ export function applySpread(
     }
     return false
   }
-  for (n of nodes) visit(tree, push)
+  for (n of nodes) if (!n.pinned) visit(tree, push)
 }
 
 export function applyLink(

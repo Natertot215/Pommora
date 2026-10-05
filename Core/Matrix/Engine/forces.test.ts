@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import {
   applyCollide,
+  applyGravity,
   applyLink,
   applySpread,
   BASE_RADIUS,
@@ -70,6 +71,14 @@ describe('applySpread', () => {
     const nodes = [node('a', -10, 40, 1), node('b', 10, 40, 1)]
     applySpread(nodes, buildQuadtree(nodes), even, 1)
     expect(nodes[0].vx).toBeLessThan(0)
+    expect(nodes[1].vx).toBeGreaterThan(0)
+  })
+
+  it('moves no pinned node under gravity or spread, and a pinned node still pushes', () => {
+    const nodes = [{ ...node('a', -10, 40, 1), pinned: true }, node('b', 10, 40, 1)]
+    applyGravity(nodes, even, 1)
+    applySpread(nodes, buildQuadtree(nodes), even, 1)
+    expect(nodes[0].vx).toBe(0)
     expect(nodes[1].vx).toBeGreaterThan(0)
   })
 })
