@@ -145,7 +145,8 @@ export function scheduleBodySave(key: string, body: string, io: BodyIO): void {
     const r = await io.write(key, body, sent)
     // A landing that moved the base while this save was out keeps it; the save no longer names the file's last state.
     if (r.ok && !r.value.stale) {
-      if (readBodyBase(key)?.hash === sent) setBodyBase(key, { text: body, hash: r.value.hash })
+      if ((readBodyBase(key)?.hash ?? '') === sent)
+        setBodyBase(key, { text: body, hash: r.value.hash })
     } else if (r.ok) io.stale(key, body)
     return r
   })
