@@ -4,7 +4,7 @@ import { type Cell, type Quadtree, visit } from './quadtree'
 
 // KNOBs — the node radii and their growth, the per-kind link strengths, and the four forces the menu scales.
 export const BASE_RADIUS: Record<GraphNodeKind, number> = { page: 25, folder: 35, space: 45 }
-const LINK_MULTIPLE: Record<LinkKind, number> = {
+export const LINK_MULTIPLE: Record<LinkKind, number> = {
   body: 0.075,
   citation: 0.05,
   frontmatter: 0.075,
@@ -36,17 +36,11 @@ export interface Forces {
   distance: number
 }
 
-export function radiusOf(
-  kind: GraphNodeKind,
-  inbound: Record<LinkKind, number>,
-  members: number,
-  links = 0,
-): number {
+export function radiusOf(kind: GraphNodeKind, inbound: number, members: number, links = 0): number {
   const base = BASE_RADIUS[kind]
   const grown =
     kind === 'page'
-      ? base *
-        (1 + Object.entries(inbound).reduce((s, [k, n]) => s + LINK_MULTIPLE[k as LinkKind] * n, 0))
+      ? base * (1 + inbound)
       : base * (1 + MEMBER_MULTIPLE * members + SPACE_LINK_MULTIPLE * links)
   return clamp(grown, base, RADIUS_MAX)
 }

@@ -10,7 +10,7 @@ import {
   RADIUS_MAX,
   radiusOf,
 } from './forces'
-import type { GraphLink, GraphNode, LinkKind } from './graph'
+import type { GraphLink, GraphNode } from './graph'
 import { buildQuadtree } from './quadtree'
 
 const node = (id: string, x: number, radius: number, degree: number): GraphNode => ({
@@ -26,43 +26,32 @@ const node = (id: string, x: number, radius: number, degree: number): GraphNode 
   pinned: false,
 })
 
-const inbound = (counts: Partial<Record<LinkKind, number>>): Record<LinkKind, number> => ({
-  body: 0,
-  citation: 0,
-  frontmatter: 0,
-  space: 0,
-  location: 0,
-  ...counts,
-})
-
 const linkOnly: Forces = { gravity: 0, spread: 0, strength: 1, distance: 1 }
 const even: Forces = { gravity: 1, spread: 1, strength: 1, distance: 1 }
 const body: GraphLink[] = [{ source: 0, target: 1, kind: 'body' }]
 
 describe('radiusOf', () => {
-  it('compounds a page linearly with its inbound links and never with its outbound', () => {
-    const one = radiusOf('page', inbound({ body: 1 }), 0)
-    const two = radiusOf('page', inbound({ body: 2 }), 0)
-    const three = radiusOf('page', inbound({ body: 3 }), 0)
+  it('compounds a page linearly with the weight of its inbound links', () => {
+    const one = radiusOf('page', 0.1, 0)
+    const two = radiusOf('page', 0.2, 0)
+    const three = radiusOf('page', 0.3, 0)
     expect(one - BASE_RADIUS.page).toBeCloseTo(two - one)
     expect(two - one).toBeCloseTo(three - two)
-    expect(radiusOf('page', inbound({}), 0)).toBe(BASE_RADIUS.page)
+    expect(radiusOf('page', 0, 0)).toBe(BASE_RADIUS.page)
   })
 
   it('grows a hub with its members and clamps at the maximum', () => {
-    expect(radiusOf('space', inbound({}), 10)).toBeGreaterThan(BASE_RADIUS.space)
-    expect(radiusOf('space', inbound({}), 10_000)).toBe(RADIUS_MAX)
-    expect(radiusOf('folder', inbound({}), 40)).toBe(BASE_RADIUS.folder * 2)
+    expect(radiusOf('space', 0, 10)).toBeGreaterThan(BASE_RADIUS.space)
+    expect(radiusOf('space', 0, 10_000)).toBe(RADIUS_MAX)
+    expect(radiusOf('folder', 0, 40)).toBe(BASE_RADIUS.folder * 2)
   })
 
   it('compounds a Space linearly with its Space links, apart from its members', () => {
-    expect(radiusOf('space', inbound({}), 0, 5)).toBe(BASE_RADIUS.space * 1.5)
-    const one = radiusOf('space', inbound({}), 0, 1)
-    const two = radiusOf('space', inbound({}), 0, 2)
+    expect(radiusOf('space', 0, 0, 5)).toBe(BASE_RADIUS.space * 1.5)
+    const one = radiusOf('space', 0, 0, 1)
+    const two = radiusOf('space', 0, 0, 2)
     expect(one - BASE_RADIUS.space).toBeCloseTo(two - one)
-    expect(radiusOf('space', inbound({}), 4, 2) - radiusOf('space', inbound({}), 4, 1)).toBeCloseTo(
-      two - one,
-    )
+    expect(radiusOf('space', 0, 4, 2) - radiusOf('space', 0, 4, 1)).toBeCloseTo(two - one)
   })
 })
 
