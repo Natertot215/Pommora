@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import type { Forces } from './forces'
 import { buildGraph, type Graph, type GraphInput } from './graph'
-import { cool, createSimulation, reheat, shuffle, tick, wakeLocal } from './simulation'
+import { createSimulation, reheat, shuffle, tick, wakeLocal } from './simulation'
 
 const linkOnly: Forces = { gravity: 0, spread: 0, strength: 1, distance: 1 }
 const REST = 240
@@ -49,15 +49,17 @@ describe('the simulation', () => {
     expect(ticks).toBeLessThan(600)
   })
 
-  it('reheat holds a sleeping simulation warm past the ceiling and cool lets it settle again', () => {
+  it('a held node keeps a reheated simulation warm past the ceiling, and letting go lets it settle again', () => {
     const sim = createSimulation(chain(2), linkOnly, true)
     run(sim, 600)
     expect(sim.awake).toBe(false)
+    sim.drag = { id: 'p0', x: 0, y: 0 }
     reheat(sim)
     expect(tick(sim)).toBe(true)
     for (let i = 0; i < 700; i++) tick(sim)
     expect(sim.awake).toBe(true)
-    cool(sim)
+    expect(sim.alpha).toBeCloseTo(0.3)
+    sim.drag = null
     run(sim, 900)
     expect(sim.awake).toBe(false)
   })

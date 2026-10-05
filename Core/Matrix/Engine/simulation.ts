@@ -2,7 +2,7 @@ import { applyCollide, applyGravity, applyLink, applySpread, type Forces } from 
 import type { Graph, GraphNode } from './graph'
 import { buildQuadtree, find, type Quadtree } from './quadtree'
 
-// KNOBs — the alpha ramp, the sleep floor, the drag and return pulls, and the shuffle jitter.
+// KNOBs — the alpha ramp, the sleep floor, the drag pull, and the shuffle jitter.
 const ALPHA_DECAY = 0.0228
 const ALPHA_MIN = 0.001
 const VELOCITY_DECAY = 0.4
@@ -15,7 +15,6 @@ export interface Simulation {
   graph: Graph
   forces: Forces
   alpha: number
-  alphaTarget: number
   awake: boolean
   tree: Quadtree
   local: boolean
@@ -27,7 +26,6 @@ export function createSimulation(graph: Graph, forces: Forces, awake: boolean): 
     graph,
     forces,
     alpha: awake ? 1 : 0,
-    alphaTarget: 0,
     awake,
     tree: buildQuadtree(graph.nodes),
     local: false,
@@ -38,7 +36,7 @@ export function createSimulation(graph: Graph, forces: Forces, awake: boolean): 
 export function tick(sim: Simulation): boolean {
   if (!sim.awake) return false
   const { nodes, links } = sim.graph
-  sim.alpha += (sim.alphaTarget - sim.alpha) * ALPHA_DECAY
+  sim.alpha += ((sim.drag ? DRAG_ALPHA_TARGET : 0) - sim.alpha) * ALPHA_DECAY
   sim.tree = buildQuadtree(nodes)
   applyGravity(nodes, sim.forces, sim.alpha)
   applySpread(nodes, sim.tree, sim.forces, sim.alpha)
@@ -67,10 +65,7 @@ export function tick(sim: Simulation): boolean {
     moving++
   }
   // Energy is per moving node, so a local wake of one page isn't judged against a thousand pinned ones.
-  if (
-    sim.alphaTarget === 0 &&
-    (energy / Math.max(moving, 1) < SLEEP_ENERGY || sim.alpha < ALPHA_MIN)
-  )
+  if (!sim.drag && (energy / Math.max(moving, 1) < SLEEP_ENERGY || sim.alpha < ALPHA_MIN))
     sleep(sim)
   return sim.awake
 }
@@ -81,7 +76,6 @@ function releasePins(sim: Simulation): void {
   sim.local = false
 }
 
-// Never reached while a node is held: the drag keeps `alphaTarget` above zero.
 function sleep(sim: Simulation): void {
   sim.awake = false
   sim.alpha = 0
@@ -96,20 +90,12 @@ function wake(sim: Simulation, alpha: number): void {
 }
 
 export function reheat(sim: Simulation): void {
-  sim.alphaTarget = DRAG_ALPHA_TARGET
   wake(sim, DRAG_ALPHA_TARGET)
 }
 
 // A mode change replaces every link, so the picture re-solves at full heat rather than relaxing out of the shape the last mode left it in.
 export function resettle(sim: Simulation): void {
-  sim.alphaTarget = 0
   wake(sim, 1)
-}
-
-// A held node keeps the heat it needs to follow the pointer through anything that cools the rest.
-export function cool(sim: Simulation): void {
-  sim.alphaTarget = sim.drag ? DRAG_ALPHA_TARGET : 0
-  wake(sim, DRAG_ALPHA_TARGET)
 }
 
 export function shuffle(sim: Simulation): void {
