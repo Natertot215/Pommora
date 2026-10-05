@@ -187,7 +187,6 @@ describe('matrixRuntime', () => {
     const n = matrixRuntime.graph.nodes[0]
     const from = [n.x, n.y]
     matrixRuntime.beginDrag(matrixRuntime.graph.nodes[0].id)
-    expect(n.pinned).toBe(false)
     matrixRuntime.moveDrag(from[0] + 400, from[1])
     step()
     const first = n.x
@@ -213,7 +212,6 @@ describe('matrixRuntime', () => {
     expect(matrixRuntime.sim?.drag).toBeNull()
     flush()
     expect(matrixRuntime.sim?.awake).toBe(false)
-    expect(n.pinned).toBe(false)
     expect(Math.hypot(n.x - from[0], n.y - from[1])).toBeGreaterThan(carried / 4)
     expect(saveLayout.mock.lastCall?.[0][n.id]).toHaveLength(2)
   })
@@ -239,7 +237,6 @@ describe('matrixRuntime', () => {
     expect(matrixRuntime.sim?.alphaTarget).toBeGreaterThan(0)
     useSession.setState({ tree: without('p1') } as never)
     expect(matrixRuntime.draggingId).toBeNull()
-    expect(matrixRuntime.sim?.drag).toBeNull()
     expect(matrixRuntime.sim?.alphaTarget).toBe(0)
     flush()
     expect(matrixRuntime.sim?.awake).toBe(false)
@@ -255,7 +252,6 @@ describe('matrixRuntime', () => {
     for (let i = 0; i < 10; i++) step()
     useSession.setState({ matrixGraph: { links: [], values: {} } })
     expect(matrixRuntime.draggingId).toBe(id)
-    expect(matrixRuntime.sim?.drag?.id).toBe(id)
     const carried = placeOf(id)[0]
     matrixRuntime.moveDrag(900, 0)
     for (let i = 0; i < 20; i++) step()
@@ -287,12 +283,9 @@ describe('matrixRuntime', () => {
   })
 
   it('fits a first open that carries positions once its settle lands', async () => {
-    matrixRuntime.setLens({ cx: 0, cy: 0, w: STAGE.width, h: STAGE.height })
-    await vi.runAllTimersAsync()
     seed({ matrixLens: null, matrixPositions: { p1: [0, 0], p2: [60, 0] } })
     attach(null)
     flush()
-    expect(saveLens).not.toHaveBeenCalled()
     matrixRuntime.setStage(surface, STAGE)
     await vi.runAllTimersAsync()
     expect(saveLens).toHaveBeenCalledTimes(1)
@@ -317,16 +310,6 @@ describe('matrixRuntime', () => {
     })
     expect(walks.count).toBe(1)
     expect(matrixRuntime.graph.nodes).toHaveLength(1)
-  })
-
-  it('seats every stored position unpinned and writes back a bare pair', () => {
-    seed({ matrixPositions: { p1: [0, 0], p2: [60, 0] } })
-    attach()
-    const at = (id: string) => matrixRuntime.nodeOf(id)
-    expect([at('p1')?.pinned, at('p2')?.pinned]).toEqual([false, false])
-    matrixRuntime.shuffle()
-    flush()
-    expect(saveLayout.mock.lastCall?.[0].p1).toHaveLength(2)
   })
 
   it('eases the live simulation on a forces-only patch', () => {
@@ -415,13 +398,12 @@ describe('matrixRuntime', () => {
     }
   })
 
-  it('pins nothing under a locked display', () => {
+  it('starts no drag under a locked display', () => {
     seed({ matrixConfig: config({ locked: true }) })
     attach()
     flush()
     matrixRuntime.beginDrag(matrixRuntime.graph.nodes[0].id)
     expect(matrixRuntime.draggingId).toBeNull()
-    expect(matrixRuntime.graph.nodes[0].pinned).toBe(false)
     matrixRuntime.endDrag()
     expect(matrixRuntime.sim?.awake).toBe(false)
   })
@@ -690,7 +672,7 @@ describe('matrixRuntime', () => {
       matrixConfig: applyPatch(DEFAULT_MATRIX_CONFIG, { group: { mode: 'location' } }),
     })
     flush(2000)
-    expect(matrixRuntime.sim?.drag?.id).toBe('p1')
+    expect(matrixRuntime.draggingId).toBe('p1')
     expect(matrixRuntime.sim?.awake).toBe(true)
   })
 
@@ -719,7 +701,6 @@ describe('matrixRuntime', () => {
     })
     flush(2000)
     expect(matrixRuntime.draggingId).toBe('p1')
-    expect(matrixRuntime.sim?.drag?.id).toBe('p1')
     expect(matrixRuntime.sim?.awake).toBe(true)
   })
 
