@@ -15,7 +15,7 @@ import type { ConnectionsApi } from '../MarkdownPM/Links/connectionsApi'
 import { useConnections } from '../Session/pageConnections'
 import { attachBelow, insertBand, removeLeaf } from './Layout/ops'
 import { emptyLayout, findTile, getTile, type TileLayout } from './Layout/model'
-import { TileGrid, type BackdropTarget } from './TileGrid'
+import { TileGrid } from './TileGrid'
 import { useDismissal } from '@pommora/uix/Interactions/dismissalStack'
 import { entityIcon } from '../Assets/entityIconPolicy'
 import { ZOOM } from '../Settings/personalization'
@@ -281,20 +281,6 @@ export function TileHost({
     [entries, editingId, conn, openRoute, pagesById, host, mutateEntry, retry],
   )
 
-  const onBackdrop = useCallback(
-    (target: BackdropTarget) => {
-      void landTileWrite(host, dialer().ask('tiles:create', host, 'markdown')).then((r) => {
-        if (!reportRefusal(r)) return
-        commitLayout((cur) =>
-          target.kind === 'wedge'
-            ? attachBelow(cur, target.above, r.value.id, target.fillPx)
-            : insertBand(cur, cur.bands.length, r.value.id, NEW_TILE_H),
-        )
-      })
-    },
-    [commitLayout, host],
-  )
-
   if (!ready) return null
 
   return (
@@ -311,7 +297,6 @@ export function TileHost({
         locked={hostLocked}
         isTileLocked={(id) => entries.get(id)?.locked ?? false}
         onHandleMenu={onHandleMenu}
-        onBackdrop={onBackdrop}
       />
     </div>
   )
