@@ -11,6 +11,7 @@ import { useContentHost } from '../Interface/contentHost'
 import { isOpenInTabs } from '../Navigation/tabsModel'
 import { selectTargetOf } from '../Navigation/navRef'
 import { TAB_FAMILY } from '../Navigation/tabRows'
+import type { NexusTree } from '../Nexus/tree'
 import { nodesOf } from '../Nexus/treeIndex'
 import { useSession } from '../Session/store'
 import { MatrixCanvas, toWorldPoint } from './MatrixCanvas'
@@ -19,6 +20,9 @@ import * as s from './matrix.css'
 import { matrixRuntime, type Surface } from './matrixRuntime'
 import { useMatrixCount, useMatrixHover } from './useMatrixRuntime'
 import { useLatest } from '@pommora/uix/Utilities/stableApi'
+
+const idAtPath = (tree: NexusTree | null, path: string | null): string | null =>
+  path === null || !tree ? null : (nodesOf(tree).find((r) => r.path === path)?.id ?? null)
 
 export function MatrixView(): React.JSX.Element {
   const content = useContentHost()
@@ -96,21 +100,15 @@ export function MatrixView(): React.JSX.Element {
     })
   }
 
-  const renamingId = useMemo(
-    () =>
-      renamingPath === null || !tree
-        ? null
-        : (nodesOf(tree).find((r) => r.path === renamingPath)?.id ?? null),
-    [renamingPath, tree],
-  )
+  const renamingId = useMemo(() => idAtPath(tree, renamingPath), [tree, renamingPath])
   // Read past the memo: a page the graph does not yet carry has no node to seat the field under, and a reply can add one without changing the tree. A hidden surface never claims either, or the field opens where nobody can see it.
   const editing =
     renamingId !== null && !parked && mine && matrixRuntime.graph.index.has(renamingId)
   // The overlay names its node by id: an index taken here goes stale the moment a reply rebuilds the graph under it.
-  const pickingId = useMemo(() => {
-    const path = iconPath ?? colorPath
-    return path === null || !tree ? null : (nodesOf(tree).find((r) => r.path === path)?.id ?? null)
-  }, [iconPath, colorPath, tree])
+  const pickingId = useMemo(
+    () => idAtPath(tree, iconPath ?? colorPath),
+    [tree, iconPath, colorPath],
+  )
   const liveId = parked
     ? null
     : editing
@@ -119,6 +117,7 @@ export function MatrixView(): React.JSX.Element {
   // The overlay outlives its hover by one fade, and the canvas keeps skipping that title until the fade is over — otherwise the painted one lands under the leaving one. The live node shows at once; only a leaving one waits on the presence.
   const shown = useHeldPresence(liveId, 'slow')
   const labelId = liveId ?? shown?.held ?? null
+  const picker = mine && labelId === pickingId ? (iconPath === null ? 'color' : 'icon') : null
   // The renamed node keeps the surface's focus while its field is open, and lets it go on the same fade any other hover leaves by.
   useEffect(() => {
     if (!editing) return
@@ -162,7 +161,7 @@ export function MatrixView(): React.JSX.Element {
           id={labelId}
           closing={liveId === null && labelId !== null}
           editing={editing}
-          hosts={mine}
+          picking={picker}
           anchorRef={anchorRef}
           onPointerDown={(e) => {
             if (labelId !== null) nodeDown(e, labelId)
