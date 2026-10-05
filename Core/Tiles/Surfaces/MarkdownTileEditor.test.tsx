@@ -147,6 +147,29 @@ describe('a markdown tile over the real editor', () => {
     expect(capture).not.toHaveBeenCalled()
   })
 
+  it('a tile whose file is missing saves on from the file its first save made', async () => {
+    let missing = true
+    read.mockImplementationOnce(async () => ({
+      ok: false,
+      error: { code: 'not-found', message: 'missing' },
+    }))
+    write.mockImplementation(async (_h: unknown, _id: string, body: string, base: string) => {
+      if (!missing && base !== `h:${onDisk}`) return { ok: true, value: { stale: true } }
+      missing = false
+      onDisk = body
+      return { ok: true, value: { stale: false, hash: `h:${body}` } }
+    })
+    await show(tile(true))
+    await wait(20)
+    type(views()[0], 'abc')
+    await wait(500)
+    type(views()[0], 'd')
+    await wait(560)
+    expect(docOf()).toBe('abcd')
+    expect(onDisk).toBe('abcd')
+    expect(capture).not.toHaveBeenCalled()
+  })
+
   it('a refused save that conflicts takes the file in every mount and keeps the typing', async () => {
     await show(both(true, false))
     onDisk = 'synced'
