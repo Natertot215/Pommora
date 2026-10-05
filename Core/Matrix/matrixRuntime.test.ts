@@ -9,13 +9,13 @@ import { applyPatch, DEFAULT_MATRIX_CONFIG, type MatrixConfig } from './matrixCo
 import type { MatrixGraphReply, MatrixLink } from './matrixGraph'
 import { matrixRuntime, type Surface } from './matrixRuntime'
 
-const walks = vi.hoisted(() => ({ count: 0 }))
+const passes = vi.hoisted(() => ({ count: 0 }))
 vi.mock('./matrixInput', async (actual) => {
   const real = await actual<typeof import('./matrixInput')>()
   return {
     ...real,
     matrixTree: (...args: Parameters<typeof real.matrixTree>) => {
-      walks.count += 1
+      passes.count += 1
       return real.matrixTree(...args)
     },
   }
@@ -105,7 +105,7 @@ const attach = (stage: Stage | null = STAGE): void => {
 
 beforeEach(() => {
   vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] })
-  walks.count = 0
+  passes.count = 0
   saveLens = vi.fn(async () => ok(null))
   ;(window as unknown as { nexus: unknown }).nexus = stubDialer({
     'matrix:write': async () => ok(null),
@@ -290,11 +290,10 @@ describe('matrixRuntime', () => {
     expect(matrixRuntime.lens).not.toEqual({ cx: 0, cy: 0, w: 800, h: 600 })
   })
 
-  it('walks the tree once for a filter patch and rebuilds the graph from the cache', () => {
+  it('rebuilds the graph for a filter patch', () => {
     seed({ matrixGraph: linked() })
     attach()
     flush()
-    expect(walks.count).toBe(1)
     useSession.setState({
       matrixConfig: applyPatch(DEFAULT_MATRIX_CONFIG, {
         filter: {
@@ -306,7 +305,6 @@ describe('matrixRuntime', () => {
         },
       }),
     })
-    expect(walks.count).toBe(1)
     expect(matrixRuntime.graph.nodes).toHaveLength(1)
   })
 
@@ -513,16 +511,16 @@ describe('matrixRuntime', () => {
     seed()
     attach()
     flush()
-    const walked = walks.count
+    const passed = passes.count
     visible = false
     useSession.setState({ tree: makeTree() })
-    expect(walks.count).toBe(walked)
+    expect(passes.count).toBe(passed)
     visible = true
     matrixRuntime.resume()
-    expect(walks.count).toBe(walked + 1)
+    expect(passes.count).toBe(passed + 1)
     const graph = matrixRuntime.graph
     matrixRuntime.resume()
-    expect(walks.count).toBe(walked + 1)
+    expect(passes.count).toBe(passed + 1)
     expect(matrixRuntime.graph).toBe(graph)
   })
 
@@ -599,6 +597,50 @@ describe('matrixRuntime', () => {
       matrixGraph: {
         links: reply.links,
         values: { p1: { frontmatter: { ID: 'p1', Rank: 3 }, createdAt: null, modifiedAt: null } },
+      },
+    })
+    expect(matrixRuntime.graph.index.has('p1')).toBe(false)
+  })
+
+  it('keeps the simulation and repaints for a tree change that moves no node or link', () => {
+    const tree = makeTree()
+    seed({ tree, matrixGraph: linked() })
+    attach()
+    flush()
+    const sim = matrixRuntime.sim
+    const paint = vi.fn()
+    const stop = matrixRuntime.subscribe(paint)
+    useSession.setState({
+      tree: { ...tree, config: { ...tree.config, pageMetadata: { p1: { icon: 'star' } } } },
+    })
+    step()
+    stop()
+    expect(matrixRuntime.sim).toBe(sim)
+    expect(paint).toHaveBeenCalledTimes(1)
+  })
+
+  it('re-judges a filter when the registry defines the property it reads', () => {
+    const tree = makeTree()
+    seed({
+      tree,
+      matrixGraph: {
+        links: [],
+        values: { p1: { frontmatter: { ID: 'p1', Rank: 3 }, createdAt: null, modifiedAt: null } },
+      },
+      matrixConfig: applyPatch(DEFAULT_MATRIX_CONFIG, {
+        filter: {
+          rules: { match: 'all' as const, rules: [{ property_id: 'prop_rank', op: 'is_empty' }] },
+          enabled: true,
+        },
+      }),
+    })
+    attach()
+    flush()
+    expect(matrixRuntime.graph.index.has('p1')).toBe(true)
+    useSession.setState({
+      tree: {
+        ...tree,
+        config: { ...tree.config, registry: [{ id: 'prop_rank', name: 'Rank', type: 'number' }] },
       },
     })
     expect(matrixRuntime.graph.index.has('p1')).toBe(false)

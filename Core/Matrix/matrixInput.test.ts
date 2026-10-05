@@ -34,13 +34,10 @@ const withTwin = (): NexusTree => {
   return tree
 }
 
-const matrixInput = (tree: NexusTree, reply: MatrixGraphReply, config: MatrixConfig) => {
-  const held = matrixTree(tree)
-  return {
-    input: { ...held, connections: matrixConnections(held, reply.links) },
-    visible: matrixVisible(held, reply.values, config.filter),
-  }
-}
+const matrixInput = (tree: NexusTree, reply: MatrixGraphReply, config: MatrixConfig) => ({
+  input: { ...matrixTree(tree), connections: matrixConnections(tree, reply.links) },
+  visible: matrixVisible(tree, reply.values, config.filter),
+})
 
 describe('matrixInput', () => {
   it('lands every page, folder and space with its parent and space ids', () => {
@@ -100,7 +97,7 @@ const spacesTree = (aValues: Record<string, unknown> = { Status: 'Done' }): Nexu
 
 const spacesVisible = (rules: FilterGroup, aValues?: Record<string, unknown>): string[] => {
   const visible = matrixVisible(
-    matrixTree(spacesTree(aValues)),
+    spacesTree(aValues),
     {},
     {
       ...DEFAULT_MATRIX_CONFIG.filter,
