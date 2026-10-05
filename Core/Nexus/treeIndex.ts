@@ -18,7 +18,7 @@ import { contextWorldOf } from '../Contexts/contextResolve'
 import type { ReconcileIndex } from '../Session/reconcileSelection'
 
 /** `id` and `path` are '' for the two folderless singletons, the Homepage and the Matrix. */
-export interface NodeRecord extends TrailNode {
+interface NodeRecord extends TrailNode {
   key: string
   kind: NavRef['kind']
   /** The raw icon field — surfaces that render absence read this, not the resolved glyph. */
