@@ -1,6 +1,9 @@
-import type { IconNode, LucideIcon } from 'lucide-react'
+import type { LucideIcon } from 'lucide-react'
+import { createElement } from 'react'
+import { renderToStaticMarkup } from 'react-dom/server'
 import { ALL_ICONS, type IconEntry } from './iconRoster'
 import { ICON_TAGS } from './iconTags'
+import { Icon } from './index'
 
 export { ALL_ICONS, type IconEntry, toKebabIconId } from './iconRoster'
 
@@ -8,14 +11,11 @@ const BY_ID = new Map(ALL_ICONS.map((e) => [e.id, e.Glyph]))
 
 export const lucideGlyph = (id: string): LucideIcon | undefined => BY_ID.get(id)
 
-// `createLucideIcon` keeps an icon's node list in the closure it hands to `forwardRef`, so the drawing is
-// reachable only through that render function; it runs no hooks, and calling it costs one element.
-type NodeCarrier = { render: (props: object, ref: null) => { props: { iconNode: IconNode } } }
-
-export const lucideIconNodes = (id: string): IconNode | null => {
-  const Glyph = BY_ID.get(id)
-  return Glyph ? (Glyph as unknown as NodeCarrier).render({}, null).props.iconNode : null
-}
+// The markup an <Icon> mounts for `name`, for a surface that can only draw it as an image; `color` lands as its `currentColor`.
+export const iconMarkup = (name: string, color: string): string =>
+  renderToStaticMarkup(
+    createElement(Icon, { name, style: { color }, xmlns: 'http://www.w3.org/2000/svg' }),
+  )
 
 const searchKey = (text: string): string => text.toLowerCase().replace(/[\s-]/g, '')
 

@@ -49,7 +49,7 @@ drove the loop's own shape rather than a library's:
 | `MatrixMenu.tsx` | The pane the toolbar's Settings button shows for a Matrix surface |
 | `MatrixWindow.tsx` | The Matrix as a kind of the one floating window slot |
 | `matrix.css.ts` | The package's styles |
-| `iconCache.ts` | Node glyphs rasterised once per colour and scale, for the draw path |
+| `iconCache.ts` | Node glyph images, one per icon and colour at every zoom, for the draw path |
 | `useMatrixRuntime.ts` | The runtime's two subscriptions into React |
 
 `handlers.ts`, `matrixFile.ts`, and `matrixGraph.ts` run in the host, and `matrixConfig.ts` and
