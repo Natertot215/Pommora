@@ -39,12 +39,6 @@ let root: string
 const fm = async (rel: string): Promise<Record<string, unknown>> =>
   splitFrontmatter(await readFile(join(root, rel), 'utf8'))
 
-const resolveCase = (): Promise<void> =>
-  writeFile(
-    join(root, '.nexus', 'settings.json'),
-    JSON.stringify({ personalization: { resolveCaseConflicts: true } }),
-  )
-
 const registry = (assigned: string[]): string =>
   JSON.stringify({ id: 'col-notes', properties: assigned })
 
@@ -199,17 +193,7 @@ describe('a returning artifact is reconciled against the world it comes back to'
     expect(await pathExists(join(root, 'Notes', 'Alpha.md'))).toBe(false)
   })
 
-  it('repairs a near-miss Space title to the canonical spelling on the way back', async () => {
-    await resolveCase()
-    await writeFile(
-      join(root, 'Notes', 'Alpha.md'),
-      `---\nID: ${PAGE_A}\n<Projects>:\n  - pommora\n---\nbody`,
-    )
-    await cycle('Notes/Alpha.md', 'page', async () => {})
-    expect((await fm('Notes/Alpha.md'))['<Projects>']).toEqual(['Pommora'])
-  })
-
-  it('with case resolution off, keeps a near-miss Space title’s spelling on the way back', async () => {
+  it('keeps a near-miss Space title’s spelling on the way back', async () => {
     await writeFile(
       join(root, 'Notes', 'Alpha.md'),
       `---\nID: ${PAGE_A}\n<Projects>:\n  - pommora\n---\nbody`,
@@ -247,13 +231,7 @@ describe('a returning artifact is reconciled against the world it comes back to'
     })
   }
 
-  it('prunes the dead Space from a near-miss tag and repairs the survivor', async () => {
-    await resolveCase()
-    await prunedTag()
-    expect((await fm('Notes/Alpha.md'))['<Projects>']).toEqual(['Pommora'])
-  })
-
-  it('with case resolution off, prunes the dead Space from a near-miss tag and keeps the survivor’s spelling', async () => {
+  it('prunes the dead Space from a near-miss tag and keeps the survivor’s spelling', async () => {
     await prunedTag()
     expect((await fm('Notes/Alpha.md'))['<Projects>']).toEqual(['pommora'])
   })

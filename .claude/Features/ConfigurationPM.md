@@ -131,8 +131,7 @@ The three colors the interface derives from. Each opens the ramp grid without it
 
 | Setting | Key | Description | Options |
 | --- | --- | --- | --- |
-| Repair Properties On Open | `repairOnOpen` | Repairs the shape of property and Context values on the pages changed since the last open, and their casing while Automatically Resolve Case Conflicts is on. | On · **Off** |
-| Automatically Resolve Case Conflicts | `resolveCaseConflicts` | Rewrites property names, Context keys, and values to their registered casing on the pages and Spaces a write or a repair reaches, joining keys that differ only by case. | On · **Off** |
+| Repair Properties On Open | `repairOnOpen` | Repairs the shape of property and Context values on the pages changed since the last open. | On · **Off** |
 
 #### Pages & Writing
 

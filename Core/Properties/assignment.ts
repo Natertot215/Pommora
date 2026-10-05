@@ -9,10 +9,11 @@ import { heldTreeOf, liveTreeOf } from '../Nexus/liveTree'
 import { type EntityRecord, recordById } from '../Nexus/record'
 import { damagedFolders } from '../Nexus/treePatch'
 import { readRegistry, serializeSchemaOp } from './propertiesRegistry'
-import { byFoldedName, type PropertyDefinition } from './properties'
+import { byFoldedName, holdsList, type PropertyDefinition } from './properties'
 import {
   encodeValue,
   type Frozen,
+  heldPropertyValue,
   isBlankValue,
   namesGonePage,
   reconcilePropertyValue,
@@ -20,9 +21,8 @@ import {
 } from './propertyValue'
 import { parkLinks } from '../Trash/holdings'
 import { frozenWorld } from '../Nexus/heldPages'
-import { resolvesCase } from '../Settings/personalization'
 import { sweepRootsById } from './governedSweep'
-import { heldValue, landValue, writeTarget } from '../Files/heldKeys'
+import { landValue, writeTarget } from '../Files/heldKeys'
 import { ok, fail, type Result } from '../Contract/result'
 
 export const assignedIds = (raw: Record<string, unknown> | null): string[] =>
@@ -52,17 +52,16 @@ export async function refillValues(
   roots: Record<string, EntityRecord>,
   values: Record<string, unknown>,
   frozen: Frozen,
-  resolveCase: boolean,
 ): Promise<Set<string>> {
   return sweepRootsById(root, roots, values, (raw, value) => {
     const restored = reconcilePropertyValue(def, value, frozen)
     const encoded = isBlankValue(restored) ? undefined : encodeValue(restored)
     if (encoded === undefined) return null
-    if (!isBlankValue(reconcilePropertyValue(def, heldValue(raw, def.name, false), {}))) return null
+    if (!isBlankValue(reconcilePropertyValue(def, heldPropertyValue(raw, def), {}))) return null
     return landValue(
       raw,
-      writeTarget(raw, def.name, resolveCase),
-      writtenSpelling(encoded, value, resolveCase),
+      writeTarget(raw, def.name, holdsList(def)),
+      writtenSpelling(encoded, value),
     )
   })
 }
@@ -95,8 +94,7 @@ async function restoreCachedValues(
     def.type === 'link'
       ? Object.keys(members).filter((id) => namesGonePage(cached[id], frozen))
       : []
-  const resolveCase = resolvesCase(tree.config.personalization)
-  const spent = await refillValues(root, def, members, cached, frozen, resolveCase)
+  const spent = await refillValues(root, def, members, cached, frozen)
   await parkLinks(
     root,
     gone.map((id) => ({ page: id, property: propertyId, value: String(cached[id]) })),

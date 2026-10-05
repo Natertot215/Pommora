@@ -17,8 +17,8 @@ import {
   writeSchemaJournal,
 } from './propertyJournal'
 import { sweepGovernedRoots } from './governedSweep'
-import { heldKey, heldValue, stripHeld } from '../Files/heldKeys'
-import { holdsList } from './properties'
+import { heldKey, stripHeld } from '../Files/heldKeys'
+import { heldPropertyValue } from './propertyValue'
 import { patchSidecar } from '../Files/sidecar'
 import { readJsonObject } from '../Files/atomicWrite'
 import { sidecarPath } from '../Paths/paths'
@@ -62,7 +62,7 @@ async function snapshot(
     if (heldKey(raw, key) === undefined) continue
     const id = typeof raw.id === 'string' ? raw.id : undefined
     if (!id || id in values) partial = true
-    else values[id] = heldValue(raw, key, holdsList(def))
+    else values[id] = heldPropertyValue(raw, def)
   }
   return writePropertyBundle(root, {
     entity: 'property',

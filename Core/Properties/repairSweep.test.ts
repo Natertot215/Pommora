@@ -21,10 +21,10 @@ let root: string
 let page: string
 let tagsId: string
 
-const settings = (repairOnOpen: boolean, resolveCaseConflicts = false): Promise<void> =>
+const settings = (repairOnOpen: boolean): Promise<void> =>
   writeFile(
     join(root, '.nexus', 'settings.json'),
-    JSON.stringify({ personalization: { repairOnOpen, resolveCaseConflicts } }),
+    JSON.stringify({ personalization: { repairOnOpen } }),
   )
 
 const frontmatter = async (keys: string): Promise<void> => {
@@ -168,19 +168,26 @@ describe('runRepairSweep', () => {
     expect(await readFile(page, 'utf8')).toContain('Status: Open')
   })
 
-  it('with case resolution on, moves a re-read page’s key to its registered spelling on the same line', async () => {
-    await settings(true, true)
+  it('a re-read page’s lone list key keeps its spelling, byte for byte', async () => {
     await refreshTree(root)
     await frontmatter('tags: [alpha]')
+    const before = await readFile(page, 'utf8')
+    await runRepairSweep(root, await seedContentIndex(root))
+    expect(await readFile(page, 'utf8')).toBe(before)
+  })
+
+  it('joins a re-read page’s two spellings of a list under the registered one, on the first’s line', async () => {
+    await refreshTree(root)
+    await frontmatter('tags: [alpha]\nTAGS: [beta]')
     const line = (await readFile(page, 'utf8')).split('\n').indexOf('tags: [alpha]')
     await runRepairSweep(root, await seedContentIndex(root))
     const out = await readFile(page, 'utf8')
-    expect(out.split('\n')[line]).toBe('Tags: [ alpha ]')
-    expect(splitFrontmatter(out)).toMatchObject({ Tags: ['alpha'] })
-    expect('tags' in splitFrontmatter(out)).toBe(false)
+    expect(out.split('\n')[line]).toBe('Tags:')
+    expect(splitFrontmatter(out)).toMatchObject({ Tags: ['alpha', 'beta'] })
+    expect('tags' in splitFrontmatter(out) || 'TAGS' in splitFrontmatter(out)).toBe(false)
   })
 
-  it('with case resolution off, a re-read page’s Context key keeps its spelling, byte for byte', async () => {
+  it('a re-read page’s Context key keeps its spelling, byte for byte', async () => {
     await writeFile(
       contextsRegistryFile(root),
       JSON.stringify({ contexts: [{ id: 'ctx_projects', title: 'Projects' }] }),

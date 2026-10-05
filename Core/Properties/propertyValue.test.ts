@@ -1,6 +1,5 @@
 import { describe, expect, it } from 'vitest'
 import type { PropertyDefinition } from './properties'
-import { heldValue } from '../Files/heldKeys'
 import {
   applyValueAtRoot,
   decodeValue,
@@ -326,43 +325,36 @@ describe('applyValueAtRoot', () => {
   it('writes and clears the spelling the root holds', () => {
     const status = { ...statusDef, name: 'Status' }
     const done = { kind: 'select', value: 'Done' } as const
-    expect(applyValueAtRoot({ status: 'Open' }, status, done, false)).toEqual({ status: ['Done'] })
-    expect(applyValueAtRoot({ status: 'Open' }, status, null, false)).toEqual({})
-    const twice = applyValueAtRoot({ STATUS: 'Open', status: 'Later' }, status, done, false)
-    expect(heldValue(twice, 'Status', false)).toEqual(['Done'])
+    expect(applyValueAtRoot({ status: 'Open' }, status, done)).toEqual({ status: ['Done'] })
+    expect(applyValueAtRoot({ status: 'Open' }, status, null)).toEqual({})
   })
 
-  it('with casing resolved, writes under the name in place of every spelling', () => {
+  it('writes under the name in place of two or more spellings', () => {
     const status = { ...statusDef, name: 'Status' }
     const done = { kind: 'select', value: 'Done' } as const
     const held = { STATUS: 'Open', status: 'Later' }
-    expect(applyValueAtRoot(held, status, done, true)).toEqual({ Status: ['Done'] })
-    expect(applyValueAtRoot(held, status, null, true)).toEqual({})
+    expect(applyValueAtRoot(held, status, done)).toEqual({ Status: ['Done'] })
+    expect(applyValueAtRoot(held, status, null)).toEqual({})
   })
 })
 
 describe('writtenSpelling', () => {
-  it('with casing resolved, writes the value as given', () => {
-    expect(writtenSpelling(['Done'], ['done'], true)).toEqual(['Done'])
-    expect(writtenSpelling(true, 'Yes', true)).toBe(true)
-  })
-
   it('gives each member the one held member its title folds to; a member held twice keeps the registered spelling', () => {
-    expect(writtenSpelling(['Done'], ['done', 'Done'], false)).toEqual(['Done'])
-    expect(writtenSpelling(['Done'], ['done', 'DONE'], false)).toEqual(['Done'])
-    expect(writtenSpelling(['Done', 'Active'], 'done', false)).toEqual(['done', 'Active'])
+    expect(writtenSpelling(['Done'], ['done', 'Done'])).toEqual(['Done'])
+    expect(writtenSpelling(['Done'], ['done', 'DONE'])).toEqual(['Done'])
+    expect(writtenSpelling(['Done', 'Active'], 'done')).toEqual(['done', 'Active'])
   })
 
   it('takes only string members', () => {
-    expect(writtenSpelling(['2024'], [2024], false)).toEqual(['2024'])
+    expect(writtenSpelling(['2024'], [2024])).toEqual(['2024'])
   })
 
   it('a checked value keeps the checked word the file holds', () => {
-    expect(writtenSpelling(true, 'Yes', false)).toBe('Yes')
+    expect(writtenSpelling(true, 'Yes')).toBe('Yes')
   })
 
   it('a checked value the file never held stays true', () => {
-    expect(writtenSpelling(true, undefined, false)).toBe(true)
+    expect(writtenSpelling(true, undefined)).toBe(true)
   })
 })
 

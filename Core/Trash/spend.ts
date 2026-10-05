@@ -39,7 +39,6 @@ import { contentPages, pageIdsOf, parkLinks, refillTrashed } from './holdings'
 import { findContainerById, resolveRecord, type ArtifactRecord, type Refusal } from './resolve'
 import { owningCollection } from '../Nexus/treePatch'
 import { contextWorldOf } from '../Contexts/contextResolve'
-import { resolvesCase } from '../Settings/personalization'
 
 const REFUSAL_TEXT: Record<Refusal, string> = {
   'parent-gone': 'The place this belonged to no longer exists.',
@@ -219,7 +218,6 @@ async function restoreArtifact(
     return fault(e)
   }
   const roots = recordById(tree)
-  const resolveCase = resolvesCase(tree.config.personalization)
   const unspent: string[] = []
   const unlinked = new Set<string>()
   if (record.entity === 'context') {
@@ -239,7 +237,7 @@ async function restoreArtifact(
         .filter((t): t is string => typeof t === 'string')
       if (titles.length) additions[m.root.id] = titles
     }
-    unspent.push(...(await reapply(root, roots, contextKey(title), additions, resolveCase)))
+    unspent.push(...(await reapply(root, roots, contextKey(title), additions)))
   } else if (record.entity === 'space' && record.parent.kind === 'context') {
     const parentId = record.parent.id
     const group = contextWorldOf(tree.contexts).groupById.get(parentId)
@@ -249,9 +247,7 @@ async function restoreArtifact(
           .filter((m): m is typeof m & { id: string } => typeof m.id === 'string')
           .map((m) => [m.id, [title]]),
       )
-      unspent.push(
-        ...(await reapply(root, roots, contextKey(group.def.title), additions, resolveCase)),
-      )
+      unspent.push(...(await reapply(root, roots, contextKey(group.def.title), additions)))
     }
   } else if (
     record.entity !== 'space' &&
@@ -267,13 +263,13 @@ async function restoreArtifact(
       const rebuilt =
         landed === was ? {} : rewriteFrontmatterConnections(values, was, { title: landed })
       const all = { ...values, ...rebuilt }
-      const taken = await refillValues(root, def, roots, all, frozen, resolveCase)
+      const taken = await refillValues(root, def, roots, all, frozen)
       for (const id of Object.keys(values))
         if (!roots[id]) trashed.push({ page: id, property: def.id, value: String(all[id]) })
         else if (!taken.has(id)) unlinked.add(id)
     }
     // A page or Space in the Trash takes its value back into its trashed copy, so it returns with it.
-    await refillTrashed(root, trashed, new Map(defs.map((d) => [d.id, d.name])), resolveCase)
+    await refillTrashed(root, trashed, new Map(defs.map((d) => [d.id, d.name])))
   }
   // The record outlives a partial re-tag, so what didn't come back stays written down.
   if (!unspent.length) {
@@ -289,14 +285,9 @@ async function reapply(
   roots: Record<string, EntityRecord>,
   key: string,
   additions: Record<string, string[]>,
-  resolveCase: boolean,
 ): Promise<string[]> {
   const taken = await sweepRootsById(root, roots, additions, (raw, titles) =>
-    landValue(
-      raw,
-      writeTarget(raw, key, resolveCase),
-      joinValues(heldValue(raw, key, resolveCase), titles),
-    ),
+    landValue(raw, writeTarget(raw, key), joinValues(heldValue(raw, key, true), titles)),
   )
   return Object.keys(additions).filter((id) => roots[id] && !taken.has(id))
 }

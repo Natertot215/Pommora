@@ -1,9 +1,15 @@
 import { z } from 'zod'
 import { isScalar, listOf } from '../Contract/validators'
-import { firstPerTitle, optionValues, PROPERTY_TYPES, type PropertyDefinition } from './properties'
+import {
+  firstPerTitle,
+  holdsList,
+  optionValues,
+  PROPERTY_TYPES,
+  type PropertyDefinition,
+} from './properties'
 import { parseConnectionText } from '../Connections/connections'
 import { normalizeTitle } from '../Paths/caseFold'
-import { landValue, writeTarget } from '../Files/heldKeys'
+import { heldValue, landValue, writeTarget } from '../Files/heldKeys'
 
 const strings = z.array(z.string())
 export const propertyValue = z.discriminatedUnion('kind', [
@@ -131,9 +137,8 @@ export function reconcilePropertyValue(
   return kept.length ? { kind: 'multiSelect', value: kept } : NULL_VALUE
 }
 
-/** `next` as a write spells it: as given when casing resolves, otherwise as `raw` already spells it — a checked `true` keeps `raw`'s checked word, and each member takes the one member of `raw` its title folds to. A member `raw` names more than once keeps the spelling `next` gives it, the registered one. */
-export function writtenSpelling(next: unknown, raw: unknown, resolveCase: boolean): unknown {
-  if (resolveCase) return next
+/** `next` spelled as `raw` already spells it: a checked `true` keeps `raw`'s checked word, and each member takes the one member of `raw` its title folds to. A member `raw` names more than once keeps the spelling `next` gives it, the registered one. */
+export function writtenSpelling(next: unknown, raw: unknown): unknown {
   if (next === true) return isCheckedRaw(raw) ? raw : next
   if (!Array.isArray(next)) return next
   const written = listOf(raw).filter((w): w is string => typeof w === 'string')
@@ -189,15 +194,20 @@ export function isBlankValue(value: PropertyValue | null): boolean {
   }
 }
 
+/** What `root` holds for `def`: a list property's every spelling joined, any other's the one key it reads. */
+export const heldPropertyValue = (
+  root: Record<string, unknown>,
+  def: Pick<PropertyDefinition, 'name' | 'type'>,
+): unknown => heldValue(root, def.name, holdsList(def))
+
 /** The renderer's copy of a value write, landed where the host's lands; its members keep the spelling given, since a read decodes them by fold. */
 export const applyValueAtRoot = (
   root: Record<string, unknown>,
   def: PropertyDefinition,
   value: PropertyValue | null,
-  resolveCase: boolean,
 ): Record<string, unknown> =>
   landValue(
     root,
-    writeTarget(root, def.name, resolveCase),
+    writeTarget(root, def.name),
     value === null || isBlankValue(value) ? undefined : encodeValue(value),
   )

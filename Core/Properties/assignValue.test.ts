@@ -7,7 +7,6 @@ import type { PropertyDefinition } from './properties'
 import { assignValue, type ValueWriter } from './assignValue'
 import { groupUndo, resetUndo, undoValue } from '../Session/undo'
 import { useSession } from '../Session/store'
-import { makeTree } from '../Testing/testTree'
 
 const schema: PropertyDefinition[] = [
   {
@@ -44,8 +43,7 @@ beforeEach(() => {
 })
 
 describe('assignValue', () => {
-  it('with casing resolved, patches the value under the name in place of every spelling', () => {
-    useSession.setState({ tree: makeTree({ personalization: { resolveCaseConflicts: true } }) })
+  it('patches the value under the name in place of two or more spellings', () => {
     row = rowOf({ id: 'page1', TAG: ['red'], tag: ['red'] })
     assignValue(
       writer,

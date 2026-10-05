@@ -128,7 +128,7 @@ describe('a property write reconciles the whole file', () => {
 })
 
 describe('a registry definition named for a key Pommora manages', () => {
-  it('governs no own key and reads as no property, with case resolution off or on', async () => {
+  it('governs no own key and reads as no property', async () => {
     const registryFile = join(root, '.nexus', 'properties.json')
     const registry = JSON.parse(await readFile(registryFile, 'utf8'))
     registry.defs.prop_id = { id: 'prop_id', name: 'Id', type: 'multiSelect', select_options: [] }
@@ -146,37 +146,31 @@ describe('a registry definition named for a key Pommora manages', () => {
     const spaceFile = join(space, '_space.json')
     const ownLines = '---\nID: 01ARZ3NDEKPSV4RRFFQ69G5FAV\nbanner: cover.png\n'
 
-    for (const resolveCaseConflicts of [false, true]) {
-      await writeFile(
-        join(root, '.nexus', 'settings.json'),
-        JSON.stringify({ personalization: { resolveCaseConflicts } }),
+    await writeFile(page.value.path, `${ownLines}Status: Open\n---\nb\n`)
+    await writeFile(spaceFile, JSON.stringify({ id: 'sp-work', banner: 'cover.png' }))
+    await refreshTree(root)
+
+    const tree = await liveTreeOf(root)
+    const names = (defs: readonly PropertyDefinition[] = []) => defs.map((d) => d.name)
+    expect(names(tree.config.registry)).toEqual(['Status', 'Priority'])
+    expect(names(tree.collections.find((c) => c.path === rel(notes))?.properties)).toEqual([
+      'Status',
+      'Priority',
+    ])
+
+    for (const path of [rel(page.value.path), rel(space)]) {
+      const r = await handleMutate(
+        root,
+        { op: 'setProperty', path, propertyId: priorityId, value: { kind: 'number', value: 3 } },
+        deps,
       )
-      await writeFile(page.value.path, `${ownLines}Status: Open\n---\nb\n`)
-      await writeFile(spaceFile, JSON.stringify({ id: 'sp-work', banner: 'cover.png' }))
-      await refreshTree(root)
-
-      const tree = await liveTreeOf(root)
-      const names = (defs: readonly PropertyDefinition[] = []) => defs.map((d) => d.name)
-      expect(names(tree.config.registry)).toEqual(['Status', 'Priority'])
-      expect(names(tree.collections.find((c) => c.path === rel(notes))?.properties)).toEqual([
-        'Status',
-        'Priority',
-      ])
-
-      for (const path of [rel(page.value.path), rel(space)]) {
-        const r = await handleMutate(
-          root,
-          { op: 'setProperty', path, propertyId: priorityId, value: { kind: 'number', value: 3 } },
-          deps,
-        )
-        expect(r.ok).toBe(true)
-      }
-      expect((await readFile(page.value.path, 'utf8')).startsWith(ownLines)).toBe(true)
-      expect(JSON.parse(await readFile(spaceFile, 'utf8'))).toEqual({
-        id: 'sp-work',
-        banner: 'cover.png',
-        Priority: 3,
-      })
+      expect(r.ok).toBe(true)
     }
+    expect((await readFile(page.value.path, 'utf8')).startsWith(ownLines)).toBe(true)
+    expect(JSON.parse(await readFile(spaceFile, 'utf8'))).toEqual({
+      id: 'sp-work',
+      banner: 'cover.png',
+      Priority: 3,
+    })
   })
 })

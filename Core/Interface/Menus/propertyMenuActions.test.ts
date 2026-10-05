@@ -202,8 +202,7 @@ describe('a property pick from the page menu', () => {
       const req = sent[0]
       if (req.op === 'setProperty') {
         const def = SCHEMA.find((d) => d.id === req.propertyId)
-        if (def)
-          frontmatter = applyValueAtRoot(frontmatter as PageFrontmatter, def, req.value, false)
+        if (def) frontmatter = applyValueAtRoot(frontmatter as PageFrontmatter, def, req.value)
       }
       return req
     }

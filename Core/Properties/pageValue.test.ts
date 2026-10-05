@@ -2,11 +2,13 @@ import { describe, it, expect } from 'vitest'
 import { editList, namesValue, stripList, valueEditRewrite } from './pageValue'
 import type { Json } from '../Files/stableJson'
 
+const defOf = (name: string) => ({ name, type: name === 'M' ? 'multiSelect' : 'select' }) as const
+
 const strip = (raw: Json, key: string, value: string): Json | null =>
-  valueEditRewrite(key, value, { op: 'strip' })(raw, 'p.md')
+  valueEditRewrite(defOf(key), value, { op: 'strip' })(raw, 'p.md')
 
 const replace = (raw: Json, key: string, oldValue: string, newValue: string): Json | null =>
-  valueEditRewrite(key, oldValue, { op: 'replace', to: newValue })(raw, 'p.md')
+  valueEditRewrite(defOf(key), oldValue, { op: 'replace', to: newValue })(raw, 'p.md')
 
 describe('valueEditRewrite — strip', () => {
   it('select: deletes the key iff the value matches', () => {

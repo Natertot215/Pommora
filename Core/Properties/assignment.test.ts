@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest'
-import { mkdir, readFile, rm, writeFile } from 'node:fs/promises'
+import { readFile, rm, writeFile } from 'node:fs/promises'
 import { tempRoot } from '../Testing/hostFs'
 import { assignProperty, reorderAssignment, collectionFolders } from './assignment'
 import { dropLiveTree } from '../Nexus/liveTree'
@@ -9,7 +9,6 @@ import { createTestPage } from '../Testing/createTestPage'
 import { sidecarPath } from '../Paths/paths'
 import { readJsonObject } from '../Files/atomicWrite'
 import type { PropertyDefinition } from './properties'
-import { join } from '../Paths/posix'
 import { splitFrontmatter } from '../Files/pageFile'
 import { createProperty } from './registryProperty'
 import { removeProperty } from './removeProperty'
@@ -98,16 +97,10 @@ describe('a re-assign puts a cached value back', () => {
     select_options: [{ value: 'hi', color: 'red' }],
   }
   const reassigned = async (
-    resolveCaseConflicts: boolean,
     held = '\nstatus:',
     property: Omit<PropertyDefinition, 'id'> = status,
     cached = 'Status: hi',
   ): Promise<Record<string, unknown>> => {
-    await mkdir(join(root, '.nexus'), { recursive: true })
-    await writeFile(
-      join(root, '.nexus', 'settings.json'),
-      JSON.stringify({ personalization: { resolveCaseConflicts } }),
-    )
     const made = await createProperty(root, { id: '', ...property })
     if (!made.ok) throw new Error('setup failed')
     await assignProperty(root, notes, made.value.id)
@@ -122,19 +115,13 @@ describe('a re-assign puts a cached value back', () => {
   }
 
   it('fills the registered key on a root holding none', async () => {
-    expect((await reassigned(false, '')).Status).toEqual(['hi'])
+    expect((await reassigned('')).Status).toEqual(['hi'])
   })
 
   it('fills a blank key spelled in another case where it sits', async () => {
-    const fm = await reassigned(false)
+    const fm = await reassigned()
     expect(fm.status).toEqual(['hi'])
     expect(fm).not.toHaveProperty('Status')
-  })
-
-  it('with case resolution on, writes the registered key in place of every spelling', async () => {
-    const fm = await reassigned(true)
-    expect(fm.Status).toEqual(['hi'])
-    expect(fm).not.toHaveProperty('status')
   })
 
   const tags: Omit<PropertyDefinition, 'id'> = {
@@ -143,11 +130,20 @@ describe('a re-assign puts a cached value back', () => {
     select_options: [{ value: 'Claude', color: 'red' }],
   }
 
-  it('with case resolution off, keeps a cached Multi-Select member’s spelling', async () => {
-    expect((await reassigned(false, '', tags, 'Tags: [claude]')).Tags).toEqual(['claude'])
+  it('keeps a cached Multi-Select member’s spelling', async () => {
+    expect((await reassigned('', tags, 'Tags: [claude]')).Tags).toEqual(['claude'])
   })
 
-  it('with case resolution on, writes a cached Multi-Select member in its registered spelling', async () => {
-    expect((await reassigned(true, '', tags, 'Tags: [claude]')).Tags).toEqual(['Claude'])
+  it('collapses blank spellings of a list under the registered key', async () => {
+    expect(await reassigned('\ntags:\nTAGS:', tags, 'Tags: [claude]')).toEqual({
+      ID: expect.any(String),
+      Tags: ['claude'],
+    })
+  })
+
+  it('leaves a list whose second spelling holds a value untouched', async () => {
+    const fm = await reassigned('\ntags:\nTAGS: [Claude]', tags, 'Tags: [claude]')
+    expect(fm.TAGS).toEqual(['Claude'])
+    expect(fm).not.toHaveProperty('Tags')
   })
 })

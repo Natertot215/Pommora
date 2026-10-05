@@ -27,12 +27,6 @@ import { createProperty } from '../Properties/registryProperty'
 import { readRegistry } from '../Properties/propertiesRegistry'
 
 let root: string
-const resolveCase = (): Promise<void> =>
-  writeFile(
-    join(nexusDir(root), 'settings.json'),
-    JSON.stringify({ personalization: { resolveCaseConflicts: true } }),
-  )
-
 beforeEach(async () => {
   root = tempRoot('pom-ctxwrite-')
   await mkdir(nexusDir(root), { recursive: true })
@@ -153,17 +147,7 @@ describe('setPageContext', () => {
   const siblings =
     '---\nid: p1\n<Projects>:\n  - pommora\n<Classes>:\n  - cs 161\n  - Bogus\n---\nbody'
 
-  it('reconciles sibling keys in place (D-9a/H-5)', async () => {
-    await resolveCase()
-    await writeFile(page(), siblings)
-    const r = await setPageContext(page(), root, 'ctxC', ['sp-cs'])
-    expect(r.ok).toBe(true)
-    const fm = splitFrontmatter(await readFile(page(), 'utf8'))
-    expect(fm['<Classes>']).toEqual(['CS 161'])
-    expect(fm['<Projects>']).toEqual(['Pommora'])
-  })
-
-  it('with case resolution off, keeps each held Space title’s spelling', async () => {
+  it('keeps each held Space title’s spelling', async () => {
     await writeFile(page(), '---\nid: p1\n<Projects>:\n  - pommora\n---\nbody')
     const other = join(contextsDir(root), 'Projects', 'Other')
     await mkdir(other, { recursive: true })
@@ -177,7 +161,7 @@ describe('setPageContext', () => {
     ])
   })
 
-  it('with case resolution off, reconciles sibling keys keeping their spelling', async () => {
+  it('reconciles sibling keys keeping their spelling (D-9a/H-5)', async () => {
     await writeFile(page(), siblings)
     expect((await setPageContext(page(), root, 'ctxC', ['sp-cs'])).ok).toBe(true)
     expect(splitFrontmatter(await readFile(page(), 'utf8'))['<Projects>']).toEqual(['pommora'])
@@ -302,21 +286,14 @@ describe('setContext reads the held tree', () => {
       return path
     }
 
-    it('repairs a near-miss sibling key on the sidecar in the same write', async () => {
-      await resolveCase()
-      await refreshTree(root)
-      expect((await readJsonAt(await nearMiss()))['<Classes>']).toEqual(['CS 161'])
-    })
-
-    it('with case resolution off, keeps a near-miss sibling key’s spelling on the sidecar', async () => {
+    it('keeps a near-miss sibling key’s spelling on the sidecar', async () => {
       expect((await readJsonAt(await nearMiss()))['<Classes>']).toEqual(['cs 161'])
     })
 
     const pomFile = (): string => join(contextsDir(root), 'Projects', 'Pommora', '_space.json')
     const csFile = (): string => join(contextsDir(root), 'Classes', 'CS 161', '_space.json')
 
-    it('with case resolution on, the far half edits the list its file holds, joining its spellings', async () => {
-      await resolveCase()
+    it('the far half edits the list its file holds, joining its spellings', async () => {
       await writeFile(
         csFile(),
         JSON.stringify({ id: 'sp-cs', '<Projects>': ['B'], '<projects>': ['C'] }),
@@ -328,17 +305,12 @@ describe('setContext reads the held tree', () => {
       expect('<projects>' in far).toBe(false)
     })
 
-    it('with case resolution on, a link the far file reads as missing lands, whatever a second spelling holds', async () => {
-      await resolveCase()
-      await writeFile(
-        csFile(),
-        JSON.stringify({ id: 'sp-cs', '<Projects>': ['B'], '<projects>': ['Pommora'] }),
-      )
+    it('a link the far file holds under a second spelling leaves the far file as written', async () => {
+      const held = { id: 'sp-cs', '<Projects>': ['B'], '<projects>': ['Pommora'] }
+      await writeFile(csFile(), JSON.stringify(held))
       await refreshTree(root)
       expect((await link('ctxC', ['sp-cs'])).ok).toBe(true)
-      const far = await readJsonAt(csFile())
-      expect(far['<Projects>']).toEqual(['B', 'Pommora'])
-      expect('<projects>' in far).toBe(false)
+      expect(await readJsonAt(csFile())).toEqual(held)
     })
 
     it('writes the pair onto both files', async () => {

@@ -144,7 +144,6 @@ const SETTINGS = {
   muteCheckedItems: flag(false),
   hideChevrons: flag(false),
   repairOnOpen: flag(false),
-  resolveCaseConflicts: flag(false),
   outlinerLines: flag(false),
   titleIcon: flag(false),
   codeblockLineCount: flag(false),
@@ -255,9 +254,6 @@ export type SteppedKey = {
 
 export const settingOf = <K extends SettingKey>(p: Personalization, key: K): SettingValue<K> =>
   (p[key] ?? SETTING_DEFAULTS[key]) as SettingValue<K>
-
-/** Whether a write respells what a file holds to the registered spelling. */
-export const resolvesCase = (p: Personalization): boolean => settingOf(p, 'resolveCaseConflicts')
 
 // A Collection's Sets sit above or below its pages by setPlacement, a Set's by subSetPlacement.
 export const placementOf = (p: Personalization, containerKind: string): Placement =>

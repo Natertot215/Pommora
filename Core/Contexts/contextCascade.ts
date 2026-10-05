@@ -20,7 +20,7 @@ import {
   unsweptLine,
 } from '../Properties/governedSweep'
 import { withOrderEntry } from './spaceSidecar'
-import { editHeldLists, heldKeys, rekeyHeld, stripKeys, type KeyCollision } from '../Files/heldKeys'
+import { editHeldList, heldKeys, rekeyHeld, stripKeys, type KeyCollision } from '../Files/heldKeys'
 import { editList, namesValue, stripList } from '../Properties/pageValue'
 import { contextWorldOf } from './contextResolve'
 import { oweWalk } from '../Nexus/fileEvents'
@@ -43,7 +43,7 @@ export const rekeyContext = (oldTitle: string, newTitle: string): Rewrite =>
   )
 
 const retitleSpace = (raw: Json, contextTitle: string, j: RenameJournal): Json | null =>
-  editHeldLists(raw, contextKey(contextTitle), (held) =>
+  editHeldList(raw, contextKey(contextTitle), true, (held) =>
     editList(held, j.oldTitle, { op: 'replace', to: j.newTitle }),
   )
 
@@ -161,7 +161,7 @@ export async function unlinkSpaceValue(
   const names = namesValue(spaceTitle)
   const take: Rewrite = (raw, file) => {
     const taken: string[] = []
-    const next = editHeldLists(raw, key, (held) => {
+    const next = editHeldList(raw, key, true, (held) => {
       taken.push(...held.filter(names).map(String))
       return stripList(held, names)
     })

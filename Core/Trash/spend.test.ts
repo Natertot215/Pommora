@@ -865,11 +865,7 @@ describe('restore — the record spends, headless', () => {
       expect(fm).not.toHaveProperty('<Projects>')
     })
 
-    it('with case resolution on, lands one registered key holding every spelling’s members', async () => {
-      await writeFile(
-        join(root, '.nexus', 'settings.json'),
-        JSON.stringify({ personalization: { resolveCaseConflicts: true } }),
-      )
+    it('lands one registered key holding every spelling’s members', async () => {
       await mkdir(join(contextsDir(root), 'Projects', 'Studio'), { recursive: true })
       await writeFile(
         join(contextsDir(root), 'Projects', 'Studio', '_space.json'),

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import {
-  editHeldLists,
+  editHeldList,
   heldKey,
   heldValue,
   joinValues,
@@ -28,25 +28,48 @@ describe('joinValues', () => {
 })
 
 describe('heldValue', () => {
-  it('reads the held key, or joins every spelling', () => {
+  it('reads the held key, or joins every spelling in the root’s order', () => {
     expect(heldValue({ status: 'Open' }, 'Status', false)).toBe('Open')
     expect(heldValue({ Tags: ['b'], tags: ['a'] }, 'Tags', true)).toEqual(['b', 'a'])
+    expect(heldValue({ tags: ['a'], Tags: ['b'] }, 'Tags', true)).toEqual(['a', 'b'])
     expect(heldValue({ tags: 'a' }, 'Tags', true)).toBe('a')
   })
 })
 
-describe('editHeldLists', () => {
+describe('editHeldList', () => {
   const strip = (value: string) => (held: unknown[]) => stripList(held, namesValue(value))
 
-  it('edits the list under every spelling, dropping a key its edit empties', () => {
+  it('without join, edits each spelling where it sits', () => {
     expect(
-      editHeldLists({ ID: 'p', Tags: ['a', 'b'], tags: 'a', other: ['a'] }, 'Tags', strip('a')),
-    ).toEqual({ ID: 'p', Tags: ['b'], other: ['a'] })
+      editHeldList({ status: ['a'], Status: ['a', 'b'] }, 'Status', false, strip('a')),
+    ).toEqual({ Status: ['b'] })
   })
 
-  it('answers null when no spelling changed', () => {
-    expect(editHeldLists({ Tags: ['b'], tags: ['c'] }, 'Tags', strip('a'))).toBeNull()
-    expect(editHeldLists({ other: ['a'] }, 'Tags', strip('a'))).toBeNull()
+  it('edits a lone spelling where it sits', () => {
+    expect(editHeldList({ ID: 'p', tags: ['a', 'b'] }, 'Tags', true, strip('a'))).toEqual({
+      ID: 'p',
+      tags: ['b'],
+    })
+  })
+
+  it('edits every spelling as one list, collapsed under the name', () => {
+    expect(
+      editHeldList(
+        { ID: 'p', Tags: ['a', 'b'], tags: ['a', 'c'], other: ['a'] },
+        'Tags',
+        true,
+        strip('a'),
+      ),
+    ).toEqual({ ID: 'p', Tags: ['b', 'c'], other: ['a'] })
+  })
+
+  it('drops every spelling when the edit empties the list', () => {
+    expect(editHeldList({ Tags: ['a'], tags: 'a' }, 'Tags', true, strip('a'))).toEqual({})
+  })
+
+  it('answers null when nothing changed', () => {
+    expect(editHeldList({ Tags: ['b'], tags: ['c'] }, 'Tags', true, strip('a'))).toBeNull()
+    expect(editHeldList({ other: ['a'] }, 'Tags', true, strip('a'))).toBeNull()
   })
 })
 

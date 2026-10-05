@@ -100,10 +100,10 @@ async function setSpaceContext(
   for (const far of world.contexts.groupById.get(contextId)?.spaces ?? []) {
     if (far.id === a.id) continue
     const wants = targetSpaceIds.includes(far.id)
-    // Decided on what the far file holds, inside its own read-modify-write, never on the tree's copy of it. The far list is edited rather than replaced, so with casing resolved every spelling's members stay.
+    // Decided on what the far file holds, inside its own read-modify-write, never on the tree's copy of it. The far list is edited rather than replaced, so every spelling's members stay.
     const half = await writeSpaceSidecar(join(root, far.path), (raw) => {
-      if (listOf(heldValue(raw, backKey, false) ?? []).some(namesA) === wants) return null
-      const held = listOf(heldValue(raw, backKey, world.resolveCase) ?? [])
+      const held = listOf(heldValue(raw, backKey, true) ?? [])
+      if (held.some(namesA) === wants) return null
       const without = stripList(held, namesA) ?? held
       const next = wants ? [...without, a.title] : without
       return writtenRoot(raw, backKey, next.length ? next : undefined, world)

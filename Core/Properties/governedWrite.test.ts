@@ -102,7 +102,6 @@ describe('setGovernedRootKey with a world — the three precedence rules', () =>
       },
     ]),
     defs: byFoldedName([priority, status]),
-    resolveCase: false,
   }
 
   it('an unassign deletes its key while the reconcile repairs the siblings', async () => {
@@ -175,9 +174,7 @@ describe('setGovernedRootKey — spellings', () => {
   const world: GovernedWorld = {
     contexts: contextWorldOf([]),
     defs: byFoldedName([tags, done, status]),
-    resolveCase: false,
   }
-  const resolving: GovernedWorld = { ...world, resolveCase: true }
   const seeded = async (keys: string): Promise<void> =>
     writeFile(page, `---\nid: p1\n${keys}\nfoo: bar\n---\nbody\n`)
   const lines = async (): Promise<string[]> => (await readFile(page, 'utf8')).split('\n')
@@ -190,39 +187,43 @@ describe('setGovernedRootKey — spellings', () => {
     expect('Status' in fm).toBe(false)
   })
 
-  it('leaves a second spelling of the key byte-identical', async () => {
-    await seeded('Status: Open\nstatus: Done')
-    await setGovernedRootKey(page, 'Status', ['Open'], world)
-    expect(await lines()).toContain('status: Done')
-  })
-
-  it('with case resolution off, keeps how each held member is spelled', async () => {
+  it('keeps how each held member is spelled', async () => {
     await seeded('tags: [claude, docs]')
     await setGovernedRootKey(page, 'Tags', ['Claude', 'Docs', 'New'], world)
     expect(splitFrontmatter(await readFile(page, 'utf8')).tags).toEqual(['claude', 'docs', 'New'])
   })
 
-  it('with case resolution off, a checked box the file spells otherwise lands as true', async () => {
+  it('a checked box the file spells otherwise lands as true', async () => {
     await seeded('Done: No')
     await setGovernedRootKey(page, 'Done', true, world)
     expect(splitFrontmatter(await readFile(page, 'utf8')).Done).toBe(true)
   })
 
-  it('with case resolution on, lands the registered spelling where the held one sat', async () => {
-    await seeded('tags: [a]')
-    const at = (await lines()).indexOf('tags: [a]')
-    await setGovernedRootKey(page, 'Tags', ['b'], resolving)
+  it('collapses two spellings of a scalar under the registered spelling, where the first sat', async () => {
+    await seeded('status: Open\nSTATUS: Done')
+    const at = (await lines()).indexOf('status: Open')
+    await setGovernedRootKey(page, 'Status', ['Open'], world)
     const out = await readFile(page, 'utf8')
-    expect(out.split('\n')[at]).toBe('Tags:')
-    expect(splitFrontmatter(out)).toEqual({ id: 'p1', Tags: ['b'], foo: 'bar' })
+    expect(out.split('\n')[at]).toBe('Status:')
+    expect(splitFrontmatter(out)).toEqual({ id: 'p1', Status: ['Open'], foo: 'bar' })
   })
 
-  it('with case resolution on, replaces every spelling with the value set', async () => {
-    await seeded('Tags: [b]\ntags: [a]')
-    await setGovernedRootKey(page, 'Tags', ['c'], resolving)
+  it('spells a collapsed scalar from the key it reads, never from the twin it discards', async () => {
+    await seeded('status: [open]\nStatus: [Done]')
+    await setGovernedRootKey(page, 'Status', ['Open'], world)
     expect(splitFrontmatter(await readFile(page, 'utf8'))).toEqual({
       id: 'p1',
-      Tags: ['c'],
+      Status: ['Open'],
+      foo: 'bar',
+    })
+  })
+
+  it('collapses two spellings of a list into the value set, keeping how each held member is spelled', async () => {
+    await seeded('Tags: [b]\ntags: [claude]')
+    await setGovernedRootKey(page, 'Tags', ['b', 'Claude', 'c'], world)
+    expect(splitFrontmatter(await readFile(page, 'utf8'))).toEqual({
+      id: 'p1',
+      Tags: ['b', 'claude', 'c'],
       foo: 'bar',
     })
   })

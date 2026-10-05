@@ -161,10 +161,6 @@ describe('readPersonalization: the Metadata toggles', () => {
     expect(readPersonalization({ repairOnOpen: true }).repairOnOpen).toBe(true)
     expect(readPersonalization({}).repairOnOpen).toBeUndefined()
   })
-  it('round-trips resolveCaseConflicts; absent is undefined', () => {
-    expect(readPersonalization({ resolveCaseConflicts: true }).resolveCaseConflicts).toBe(true)
-    expect(readPersonalization({}).resolveCaseConflicts).toBeUndefined()
-  })
 })
 
 describe('readPersonalization: file history', () => {

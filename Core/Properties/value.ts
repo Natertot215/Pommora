@@ -8,8 +8,7 @@ import {
   RESERVED_PROPERTY_ID,
   STAMP_TYPE,
 } from './properties'
-import { decodeValue, NULL_VALUE, type PropertyValue } from './propertyValue'
-import { heldValue } from '../Files/heldKeys'
+import { decodeValue, heldPropertyValue, NULL_VALUE, type PropertyValue } from './propertyValue'
 import { parseConnectionText } from '../Connections/connections'
 
 export function declaredType(
@@ -55,7 +54,7 @@ export function resolveFieldValue(
   }
   let v = m.get(def)
   if (!v) {
-    v = decodeValue(def, heldValue(row.frontmatter as Record<string, unknown>, def.name, false))
+    v = decodeValue(def, heldPropertyValue(row.frontmatter as Record<string, unknown>, def))
     m.set(def, v)
   }
   return v

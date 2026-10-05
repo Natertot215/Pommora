@@ -6,10 +6,10 @@ import { readJsonObject, readTextOrNull } from '../Files/atomicWrite'
 import { splitFrontmatter } from '../Files/pageFile'
 import { ID_KEY } from '../Nexus/identityMark'
 import { asString } from '../Nexus/coerce'
-import { isBlankRaw } from './propertyValue'
+import { heldPropertyValue, isBlankRaw } from './propertyValue'
 import { spaceSidecars } from '../Contexts/spaceSidecar'
-import { heldKey, heldValue } from '../Files/heldKeys'
-import { holdsList, type PropertyDefinition } from './properties'
+import { heldKey } from '../Files/heldKeys'
+import type { PropertyDefinition } from './properties'
 
 export async function keyHolderFiles(
   root: string,
@@ -63,7 +63,7 @@ export async function keyedHolders(
       continue
     }
     seen.add(id)
-    const held = heldValue(fields, def.name, holdsList(def))
+    const held = heldPropertyValue(fields, def)
     if (!isBlankRaw(held)) values[id] = held
   }
   return {

@@ -168,22 +168,30 @@ describe('a value write reconciles the Space it lands on', () => {
     expect('Status' in after).toBe(false)
   })
 
-  it('leaves a second spelling of the key as written', async () => {
-    await seed({ Status: 'Option 1', status: 'Done' })
-    expect((await set(statusId, { kind: 'select', value: 'Option 2' })).ok).toBe(true)
-    expect(await sidecar()).toMatchObject({ Status: ['Option 2'], status: 'Done' })
+  it('keeps a lone spelling the sidecar holds', async () => {
+    await seed({ tags: ['alpha'] })
+    expect((await set(tagsId, { kind: 'multiSelect', value: ['alpha', 'beta'] })).ok).toBe(true)
+    const after = await sidecar()
+    expect(after.tags).toEqual(['alpha', 'beta'])
+    expect('Tags' in after).toBe(false)
   })
 
-  it('with case resolution on, replaces every spelling with the registered one', async () => {
-    await writeFile(
-      join(nexusDir(root), 'settings.json'),
-      JSON.stringify({ personalization: { resolveCaseConflicts: true } }),
-    )
-    await seed({ tags: ['alpha'] })
-    expect((await set(tagsId, { kind: 'multiSelect', value: ['beta'] })).ok).toBe(true)
+  it('collapses two spellings of a scalar under the registered one', async () => {
+    await seed({ Status: 'Option 1', status: 'Done' })
+    expect((await set(statusId, { kind: 'select', value: 'Option 2' })).ok).toBe(true)
     const after = await sidecar()
-    expect(after.Tags).toEqual(['beta'])
-    expect('tags' in after).toBe(false)
+    expect(after.Status).toEqual(['Option 2'])
+    expect('status' in after).toBe(false)
+  })
+
+  it('collapses two spellings of a list under the registered one', async () => {
+    await seed({ tags: ['alpha'], TAGS: ['gamma'] })
+    expect((await set(tagsId, { kind: 'multiSelect', value: ['alpha', 'gamma', 'beta'] })).ok).toBe(
+      true,
+    )
+    const after = await sidecar()
+    expect(after.Tags).toEqual(['alpha', 'gamma', 'beta'])
+    expect('tags' in after || 'TAGS' in after).toBe(false)
   })
 
   it('lands a number 0', async () => {

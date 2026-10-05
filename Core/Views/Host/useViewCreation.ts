@@ -15,7 +15,7 @@ import { type CreatePageRequest, DEFAULT_NEW_NAME, minted } from '../../Nexus/mu
 import { relDirname } from '../../Paths/posix'
 import { findScroller, SEEK_GLIDE, scrollGlide } from '@pommora/uix/Interactions/autoscroll'
 import { useSession } from '../../Session/store'
-import { resolvesCase, settingOf } from '../../Settings/personalization'
+import { settingOf } from '../../Settings/personalization'
 import { declaredType, resolveFieldValue } from '../../Properties/value'
 import { filterSeeds } from '../Pipeline/creationSeeds'
 import { flattenContainer, frontmatterOf } from '../Pipeline/group'
@@ -97,10 +97,9 @@ export function useViewCreation(getCfg: () => ViewCreationConfig): ViewCreation 
     if (entries.length === 0) return
     let patched = frontmatterOf(c.values, pageId) as Record<string, unknown>
     let contexts: Record<string, string[]> | undefined
-    const resolveCase = resolvesCase(personalizationOf(useSession.getState()))
     for (const [propId, value] of entries) {
       const def = c.schema.find((d) => d.id === propId)
-      if (def) patched = applyValueAtRoot(patched, def, value, resolveCase)
+      if (def) patched = applyValueAtRoot(patched, def, value)
       else if (value.kind === 'context') contexts = { ...contexts, [propId]: value.value }
     }
     patchOverride(c.setValueOverride, pageId, patched as PageFrontmatter, landed, contexts)

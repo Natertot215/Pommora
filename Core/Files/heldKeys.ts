@@ -1,8 +1,8 @@
-// What a root holds for a name, and where a write to it lands. A name is held under its exact spelling, else the first key that folds to it, in the root's order: a read acts on that one key, a value write and the reconcile land on it or, with casing resolved, under the name in place of every spelling, and a rename, a strip, or a list edit acts on every spelling.
+// What a root holds for a name, and where a write to it lands. A name is held under its exact spelling, else the first key that folds to it, in the root's order: a scalar read acts on that one key and a list read joins every spelling in the root's order; a write lands on a lone spelling where it sits and, when it collapses, puts the name in place of two or more, and a rename, a strip, or a list edit acts on every spelling.
 
 import { setOrDrop } from './atomicWrite'
 import type { Json } from './stableJson'
-import { spellings, normalizeTitle } from '../Paths/caseFold'
+import { foldKey, spellings, normalizeTitle } from '../Paths/caseFold'
 import { listOf } from '../Contract/validators'
 
 export const heldKeys = (root: object, name: string): string[] => spellings(Object.keys(root), name)
@@ -11,13 +11,14 @@ export const heldKeys = (root: object, name: string): string[] => spellings(Obje
 export const heldKey = (root: object, name: string): string | undefined =>
   Object.hasOwn(root, name) ? name : heldKeys(root, name)[0]
 
-/** What `root` holds for `name`: the value under the key `heldKey` reads, or with `join` every spelling's value as one list. */
+/** What `root` holds for `name`: the value under the key `heldKey` reads, or with `join` every spelling's value as one list, in the root's order. */
 export function heldValue(root: Json, name: string, join: boolean): unknown {
   if (!join) {
     const key = heldKey(root, name)
     return key === undefined ? undefined : root[key]
   }
-  const [first, ...rest] = heldKeys(root, name)
+  const fold = foldKey(name)
+  const [first, ...rest] = Object.keys(root).filter((k) => foldKey(k) === fold)
   return rest.reduce<unknown>(
     (value, key) => joinValues(value, root[key]),
     first === undefined ? undefined : root[first],
@@ -29,10 +30,10 @@ interface WriteTarget {
   govern: readonly string[]
 }
 
-/** Where a write to `name` lands on `root` and the spellings it replaces: the key the root reads, or with `resolveCase` the name itself in place of every spelling. */
-export function writeTarget(root: Json, name: string, resolveCase: boolean): WriteTarget {
+/** Where a write to `name` lands on `root` and the spellings it replaces: with `collapse`, the name itself in place of two or more spellings; otherwise the first spelling, or the name when the root holds none. */
+export function writeTarget(root: Json, name: string, collapse = true): WriteTarget {
   const held = heldKeys(root, name)
-  return resolveCase
+  return collapse && held.length > 1
     ? { key: name, govern: held }
     : { key: held[0] ?? name, govern: held.slice(0, 1) }
 }
@@ -53,12 +54,18 @@ export function joinValues(keep: unknown, from: unknown): unknown[] {
   return [...kept, ...listOf(from ?? []).filter((v) => !seen.has(normalizeTitle(v)))]
 }
 
-/** Edits the list under every spelling of `name` in place; null when none changed. A list the edit empties drops its key. */
-export function editHeldLists(
+/** Edits what `name` holds as a list; null when nothing changed. With `join`, every spelling is edited as one list landing where `writeTarget` places it; otherwise each spelling is edited where it sits. A list the edit empties drops its key. */
+export function editHeldList(
   raw: Json,
   name: string,
+  join: boolean,
   edit: (held: unknown[]) => unknown[] | null,
 ): Json | null {
+  if (join) {
+    const held = heldValue(raw, name, true)
+    const list = held === undefined ? null : edit(listOf(held))
+    return list && landValue(raw, writeTarget(raw, name), list.length ? list : undefined)
+  }
   let next: Json | null = null
   for (const key of heldKeys(raw, name)) {
     const list = edit(listOf(raw[key]))

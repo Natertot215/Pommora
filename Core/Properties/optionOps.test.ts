@@ -401,7 +401,7 @@ describe('renameOption', () => {
     expect(content).not.toContain('Urgent')
   })
 
-  it('rewrites the value under every spelling a page holds', async () => {
+  it('rewrites a scalar under every spelling where it sits, and collapses a list’s spellings', async () => {
     const status = await mkProperty({
       name: 'Status',
       type: 'select',
@@ -428,7 +428,6 @@ describe('renameOption', () => {
       ID: '01ARZ3NDEKPSV4RRFFQ69G5FAV',
       status: ['Finished'],
       Tags: ['Finished', 'Keep'],
-      tags: ['Finished'],
     })
   })
 

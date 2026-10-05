@@ -131,6 +131,15 @@ describe('resolveFieldValue', () => {
     })
   })
 
+  it('reads a list held under two spellings as one, in the file’s order', () => {
+    const tags: PropertyDefinition = { id: 'prop_tags', name: 'Tags', type: 'multiSelect' }
+    const frontmatter = { [ID_KEY]: '01ROW', tags: ['foo', 'Bar'], Tags: ['bar', 'baz'] }
+    expect(resolveFieldValue({ ...row, frontmatter }, 'prop_tags', [tags])).toEqual({
+      kind: 'multiSelect',
+      value: ['foo', 'Bar', 'baz'],
+    })
+  })
+
   it('returns null for an absent property', () => {
     expect(rfv(row, 'prop_absent')).toEqual({ kind: 'null' })
   })
