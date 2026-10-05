@@ -30,7 +30,7 @@ import {
   lensViewport,
   zoomLens,
 } from './Engine/viewport'
-import { type MatrixConfig, sameForces } from './matrixConfig'
+import type { MatrixConfig } from './matrixConfig'
 import { matrixConnections, matrixTree, matrixVisible, type MatrixTree } from './matrixInput'
 import type { Positions } from './matrixLayout'
 import { sameSet } from '@pommora/uix/Utilities/same'
@@ -163,7 +163,7 @@ class MatrixRuntime {
     ) {
       // Only the active grouping's set reaches the simulation, so moving a slider for one the picture is not drawn under leaves it settled.
       const forces = c.forces[c.group.mode]
-      if (!sameForces(b.forces[c.group.mode], forces)) this.setForces(forces)
+      if (b.forces[c.group.mode] !== forces) this.setForces(forces)
       if (b.display !== c.display) this.invalidate()
       return
     }
@@ -204,7 +204,7 @@ class MatrixRuntime {
       this.sim.alpha = prev.alpha
     } else if (!settleAll && fresh.size > 0) wakeLocal(this.sim, fresh)
     if (b && b.group !== c.group) resettle(this.sim)
-    else if (b && !sameForces(b.forces[c.group.mode], c.forces[c.group.mode])) reheat(this.sim)
+    else if (b && b.forces[c.group.mode] !== c.forces[c.group.mode]) reheat(this.sim)
     if (first) {
       this.lens = s.matrixLens ?? this.lens
       // A first-ever open fits the settled picture, not the spiral: the fit waits for the first settle when nothing was persisted.

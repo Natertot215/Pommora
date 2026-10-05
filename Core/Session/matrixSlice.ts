@@ -184,7 +184,7 @@ export const createMatrixSlice: Slice<MatrixSlice> = (set, get) => {
     },
 
     patchMatrix: (patch) => {
-      set((s) => ({ matrixConfig: applyPatch(s.matrixConfig, patch) }))
+      get().applyMatrixChanged(applyPatch(get().matrixConfig, patch))
       void persist('the Matrix', dialer().ask('matrix:write', patch), true)
     },
 

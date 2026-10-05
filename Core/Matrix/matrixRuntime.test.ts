@@ -331,17 +331,13 @@ describe('matrixRuntime', () => {
     flush()
     const sim = matrixRuntime.sim
     const forces = matrixRuntime.sim?.forces
-    matrixRuntime.sim!.awake = false
-    // The shape a file watcher pushes: every grouping's set is rebuilt, so only a comparison by value can tell that the active one held still.
     const held = DEFAULT_MATRIX_CONFIG.forces
-    useSession.setState({
-      matrixConfig: {
-        ...DEFAULT_MATRIX_CONFIG,
-        forces: {
-          connection: { ...held.connection },
-          location: { ...held.location },
-          space: { ...held.space, gravity: 2 },
-        },
+    useSession.getState().applyMatrixChanged({
+      ...DEFAULT_MATRIX_CONFIG,
+      forces: {
+        connection: { ...held.connection },
+        location: { ...held.location },
+        space: { ...held.space, gravity: 2 },
       },
     })
     expect(matrixRuntime.sim).toBe(sim)

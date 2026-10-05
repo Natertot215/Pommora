@@ -76,6 +76,12 @@ describe('the config half', () => {
     expect(channels['matrix:write']).toHaveBeenCalledWith({ group: { mode: 'space' } })
   })
 
+  it('keeps the reference for a patch that changes nothing', () => {
+    const before = useSession.getState().matrixConfig
+    useSession.getState().patchMatrix({ forces: { connection: { gravity: 1 } } })
+    expect(useSession.getState().matrixConfig).toBe(before)
+  })
+
   it('keeps the reference for a push that differs only in key order', () => {
     const before = useSession.getState().matrixConfig
     const reversed = (o: object): object => Object.fromEntries(Object.entries(o).reverse())
