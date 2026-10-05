@@ -44,7 +44,7 @@ const atWidth = (s: Span, width: number): number => s.share * width + s.px
 
 export const pinned = (r: Rect): Placement => ({ x: fixed(r.x), y: r.y, w: fixed(r.w), h: r.h })
 
-export function placeTiles(layout: TileLayout, gap = 0): TilePlacements {
+export function placeTiles(layout: TileLayout, gap: number): TilePlacements {
   const tiles = new Map<string, Placement>()
   const dividers: DividerPlacement[] = []
   const seams: number[] = []
@@ -94,7 +94,7 @@ export function placeTiles(layout: TileLayout, gap = 0): TilePlacements {
   return { tiles, dividers, seams, totalHeight: Math.max(0, y - gap) }
 }
 
-export function computeGeometry(layout: TileLayout, width: number, gap = 0): TileGeometry {
+export function computeGeometry(layout: TileLayout, width: number, gap: number): TileGeometry {
   const placed = placeTiles(layout, gap)
   const tiles = new Map<string, Rect>()
   for (const [id, p] of placed.tiles)

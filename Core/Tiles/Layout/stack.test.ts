@@ -46,10 +46,10 @@ describe('stackLayout', () => {
 
 describe('stackedAt', () => {
   it('stacks below the threshold and holds until the margin is regained', () => {
-    expect(stackedAt(487, false)).toBe(true)
-    expect(stackedAt(488, false)).toBe(false)
+    expect(stackedAt(479, false)).toBe(true)
+    expect(stackedAt(480, false)).toBe(false)
     expect(stackedAt(500, true)).toBe(true)
-    expect(stackedAt(527, true)).toBe(true)
-    expect(stackedAt(528, true)).toBe(false)
+    expect(stackedAt(519, true)).toBe(true)
+    expect(stackedAt(520, true)).toBe(false)
   })
 })
