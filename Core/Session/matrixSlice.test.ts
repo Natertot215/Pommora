@@ -223,28 +223,15 @@ describe('the refetch lane', () => {
     ])
   })
 
-  it('lets a renamed page’s old rows go by the id the tree holds at the asked path', async () => {
+  it('lets a moved page’s old rows go by the id its reply names at the asked path, linked or not', async () => {
     await seatLoaded()
-    const renamed = makeTree()
-    renamed.collections[0].pages[0].path = 'Notes/Renamed.md'
-    useSession.setState({ tree: renamed })
-    const beta = link('Notes/Ideas/Beta.md', 'p2', 'alpha')
-    channels['matrix:graph'].mockResolvedValue({ ok: true, value: { links: [beta], values: null } })
-    useSession.getState().refetchMatrixPaths(['Notes/Renamed.md', 'Notes/Ideas/Beta.md'])
-    await vi.advanceTimersByTimeAsync(200)
-    expect(useSession.getState().matrixGraph.links).toEqual([beta])
-  })
-
-  it('lets a renamed page’s old rows go by the id its reply names when the tree hasn’t moved yet', async () => {
-    await seatLoaded()
-    const renamed = link('Notes/Renamed.md', 'p1', 'beta')
     channels['matrix:graph'].mockResolvedValue({
       ok: true,
-      value: { links: [renamed], values: null },
+      value: { links: [], values: null, ids: ['p1'] },
     })
     useSession.getState().refetchMatrixPaths(['Notes/Renamed.md'])
     await vi.advanceTimersByTimeAsync(200)
-    expect(useSession.getState().matrixGraph.links).toEqual([renamed])
+    expect(useSession.getState().matrixGraph.links).toEqual([])
   })
 })
 

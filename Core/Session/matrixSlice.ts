@@ -9,7 +9,7 @@ import {
 import type { MatrixGraphReply, MatrixLink } from '../Matrix/matrixGraph'
 import type { PositionRows, Positions } from '../Matrix/matrixLayout'
 import type { NexusTree } from '../Nexus/tree'
-import { pagesByIdOf, pagesOf, reconcileIndexOf, recordsByIdOf } from '../Nexus/treeIndex'
+import { pagesByIdOf, pagesOf, recordsByIdOf } from '../Nexus/treeIndex'
 import { stabilize } from '../Nexus/treeStabilize'
 import { persist } from '../Interface/Notifications/notifications'
 import { dialer } from '../Platform/dialer'
@@ -86,12 +86,10 @@ export const createMatrixSlice: Slice<MatrixSlice> = (set, get) => {
     held: MatrixGraphReply,
     next: MatrixGraphReply,
     paths: string[],
-    ids: ReadonlySet<string>,
   ): MatrixGraphReply => {
     const replaced = new Set(paths)
-    const answered = new Set(next.links.map((l) => l.pageId))
-    const refetched = (l: MatrixLink): boolean =>
-      replaced.has(l.path) || ids.has(l.pageId) || answered.has(l.pageId)
+    const ids = new Set(next.ids)
+    const refetched = (l: MatrixLink): boolean => replaced.has(l.path) || ids.has(l.pageId)
     // A save that moved no link keeps the held array, so nothing a link feeds is derived again.
     const links = sameLinks(held.links.filter(refetched), next.links)
       ? held.links
@@ -106,17 +104,14 @@ export const createMatrixSlice: Slice<MatrixSlice> = (set, get) => {
 
   const flush = async (): Promise<void> => {
     cancelRefetch()
-    const { tree, matrixLoad, matrixConfig } = get()
-    if (!tree || matrixLoad.kind !== 'loaded' || pendingPaths.size === 0) return
+    const { matrixLoad, matrixConfig } = get()
+    if (matrixLoad.kind !== 'loaded' || pendingPaths.size === 0) return
     const asked = generation
     const paths = [...pendingPaths]
     pendingPaths = new Set()
-    // A renamed or moved page answers under its new path, so the rows it held under the old one go by its id as well as by path: the id the tree holds at an asked path, or the one the reply names while the tree has yet to catch up.
-    const { pagesByPath } = reconcileIndexOf(tree)
-    const ids = new Set(paths.flatMap((p) => pagesByPath.get(p) ?? []))
     const reply = await dialer().ask('matrix:graph', filtering(matrixConfig.filter), paths)
     if (!reply.ok || generation !== asked) return
-    set((s) => ({ matrixGraph: merge(s.matrixGraph, reply.value, paths, ids) }))
+    set((s) => ({ matrixGraph: merge(s.matrixGraph, reply.value, paths) }))
   }
 
   // Buffered while a load is in flight, so a write that races it isn't lost; with nothing held or asked for, the next load reads it fresh.

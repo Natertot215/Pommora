@@ -8,6 +8,7 @@ import { readMatrixGraph } from './matrixGraph'
 
 const A = '01KVGMT8BFP350FZZXAMG1QDRN'
 const B = '01KVGMT8BFP350FZZXAMG1QDRW'
+const C = '01KVGMT8BFP350FZZXAMG1QDRX'
 
 let stores: ReturnType<typeof memoryStores>
 
@@ -71,6 +72,17 @@ describe('readMatrixGraph', () => {
     expect(reply.values?.['Notes/Loose.md']).toBeUndefined()
     expect(reply.links.map((l) => l.path)).toEqual(['Notes/A.md', 'Notes/B.md'])
     expect(reply.links.map((l) => l.pageId)).toEqual([A, B])
+  })
+
+  it('names every page id at the asked paths, linked or not', () => {
+    stores.stores.contentIndex!.upsertPageIndexes([
+      {
+        path: 'Notes/C.md',
+        entry: { relations: [], headings: [], values: { ID: C } },
+        stat: { mtimeMs: 4000, size: 40 },
+      },
+    ])
+    expect(readMatrixGraph(false, ['Notes/B.md', 'Notes/C.md'])!.ids!.sort()).toEqual([B, C])
   })
 
   it('narrows to the named paths', () => {
