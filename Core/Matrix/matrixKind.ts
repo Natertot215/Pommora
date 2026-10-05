@@ -10,4 +10,5 @@ export interface MatrixRecord {
   id: string
   path: string
   title: string
+  icon?: string
 }

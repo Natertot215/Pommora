@@ -25,7 +25,7 @@ export function recordOf(tree: NexusTree | null, id: string | null): MatrixRecor
   if (id === null || !tree) return null
   const r = recordsByIdOf(tree).get(id)
   return r && r.kind !== 'homepage' && r.kind !== 'matrix'
-    ? { kind: r.kind, id: r.id, path: r.path, title: r.title }
+    ? { kind: r.kind, id: r.id, path: r.path, title: r.title, icon: r.ownIcon }
     : null
 }
 
@@ -143,7 +143,7 @@ export function MatrixLabel({
         open={picking === rec.path}
         onClose={endIcon}
         triggerRef={anchorRef}
-        value={node.icon}
+        value={rec.icon}
         onSelect={(icon) => void mutate({ op: 'setIcon', path: rec.path, kind: rec.kind, icon })}
       />
       {rec.kind === 'space' && (
@@ -165,7 +165,7 @@ export function MatrixLabel({
       >
         <div className={cx(s.labelRow, text.footnote.emphasized)}>
           {!hideIcon && (
-            <EntityIcon kind={rec.kind} icon={node.icon} size="footnote" className={s.labelGlyph} />
+            <EntityIcon kind={rec.kind} icon={rec.icon} size="footnote" className={s.labelGlyph} />
           )}
           {editing ? (
             <RenamableTitle
