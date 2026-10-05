@@ -55,7 +55,7 @@ export const DEFAULT_MATRIX_CONFIG: MatrixConfig = {
   display: { unlinked: true, hideIcon: false, hidePath: false, locked: false },
 }
 
-const GROUP_MODES: readonly GroupMode[] = ['connection', 'location', 'space']
+const GROUP_MODES = Object.keys(DEFAULT_FORCES) as GroupMode[]
 
 const section = (raw: unknown, key: string): Record<string, unknown> =>
   isPlainObject(raw) && isPlainObject(raw[key]) ? raw[key] : {}
