@@ -472,6 +472,14 @@ describe('trackNear', () => {
     expect(measured).toBe(6)
   })
 
+  it('measures afresh after a scroll', () => {
+    track()
+    move(110)
+    window.dispatchEvent(new Event('scroll'))
+    move(110)
+    expect(measured).toBe(2)
+  })
+
   it('keeps its measure through a transition elsewhere', () => {
     const other = document.createElement('div')
     const inner = document.createElement('span')
