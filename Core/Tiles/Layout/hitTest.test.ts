@@ -9,23 +9,34 @@ const geo = computeGeometry(two, 1000, 8)
 
 describe('hitTest', () => {
   it('targets a tile edge by nearest normalized distance', () => {
-    expect(hitTest(geo, two, 'b', 950, 100)).toEqual({ kind: 'tile', id: 'a', edge: 'e' })
-    expect(hitTest(geo, two, 'b', 500, 15)).toEqual({ kind: 'tile', id: 'a', edge: 'n' })
+    expect(hitTest(geo, two, 'b', 950, 100, 10, null, 0)).toEqual({
+      kind: 'tile',
+      id: 'a',
+      edge: 'e',
+    })
+    expect(hitTest(geo, two, 'b', 500, 15, 10, null, 0)).toEqual({
+      kind: 'tile',
+      id: 'a',
+      edge: 'n',
+    })
   })
 
   it('targets the seam between bands as a band insertion', () => {
-    expect(hitTest(geo, two, 'b', 500, 204)).toEqual({ kind: 'band', index: 1 })
-    expect(hitTest(geo, two, 'b', 500, 197)).toEqual({ kind: 'band', index: 1 })
+    expect(hitTest(geo, two, 'b', 500, 204, 10, null, 0)).toEqual({ kind: 'band', index: 1 })
+    expect(hitTest(geo, two, 'b', 500, 197, 10, null, 0)).toEqual({ kind: 'band', index: 1 })
   })
 
   it('targets above the first band as index 0', () => {
-    expect(hitTest(geo, two, 'b', 500, -2)).toEqual({ kind: 'band', index: 0 })
-    expect(hitTest(geo, two, 'b', 500, 4)).toEqual({ kind: 'band', index: 0 })
+    expect(hitTest(geo, two, 'b', 500, -2, 10, null, 0)).toEqual({ kind: 'band', index: 0 })
+    expect(hitTest(geo, two, 'b', 500, 4, 10, null, 0)).toEqual({ kind: 'band', index: 0 })
   })
 
   it('targets past the bottom as an append — but never inside the last band', () => {
-    expect(hitTest(geo, two, 'a', 500, geo.totalHeight + 10)).toEqual({ kind: 'band', index: 2 })
-    expect(hitTest(geo, two, 'a', 500, geo.totalHeight - 4)).toEqual({
+    expect(hitTest(geo, two, 'a', 500, geo.totalHeight + 10, 10, null, 0)).toEqual({
+      kind: 'band',
+      index: 2,
+    })
+    expect(hitTest(geo, two, 'a', 500, geo.totalHeight - 4, 10, null, 0)).toEqual({
       kind: 'tile',
       id: 'b',
       edge: 's',
@@ -33,12 +44,16 @@ describe('hitTest', () => {
   })
 
   it('never targets the dragged tile itself', () => {
-    expect(hitTest(geo, two, 'a', 500, 100)).toBeNull()
+    expect(hitTest(geo, two, 'a', 500, 100, 10, null, 0)).toBeNull()
   })
 
   it('scales its zones with bandZonePx without swallowing tile centers', () => {
-    expect(hitTest(geo, two, 'b', 500, 180, 28)).toEqual({ kind: 'band', index: 1 })
-    expect(hitTest(geo, two, 'b', 500, 60, 28)).toEqual({ kind: 'tile', id: 'a', edge: 'n' })
+    expect(hitTest(geo, two, 'b', 500, 180, 28, null, 0)).toEqual({ kind: 'band', index: 1 })
+    expect(hitTest(geo, two, 'b', 500, 60, 28, null, 0)).toEqual({
+      kind: 'tile',
+      id: 'a',
+      edge: 'n',
+    })
   })
 
   it('holds the previous edge near a quadrant diagonal (hysteresis)', () => {

@@ -11,7 +11,7 @@ import { dropAllTileDocs, patchTileEntry, readTileDoc, setTileDocLock } from './
 import { cancelAllSaves } from '../Session/saveScheduler'
 import { knownBody, setBodyBase, writeThroughBody } from '../Session/pageDetailCache'
 import { flushAllSaves } from '../Session/nexusSlice'
-import { type TileDocSession, useTileDoc, useTileDocReady } from './useTileDoc'
+import { useTileDoc, useTileDocReady } from './useTileDoc'
 import { stubDialer } from '../vitest.setup'
 import { clearNotification, currentNotification } from '../Interface/Notifications/notifications'
 ;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
@@ -41,6 +41,7 @@ const get = vi.fn(async (): Promise<Result<TileDoc>> => ({ ok: true, value: disk
 
 let host: HTMLDivElement
 let root: Root
+type TileDocSession = ReturnType<typeof useTileDoc>
 const seats = new Map<string, TileDocSession>()
 const ready = new Map<string, boolean>()
 
@@ -260,15 +261,6 @@ describe('the gesture hold across mounts', () => {
     await act(async () => releaseSave())
     await tick()
     expect(shown('b')).toEqual(['a', 'synced'])
-  })
-
-  it('ignores a repeated release, which TileGrid sends on every gesture end', () => {
-    act(() => at('a').setBusy(true))
-    act(() => at('b').commitLayout((cur) => append(cur, 'queued')))
-    act(() => at('b').setBusy(false))
-    expect(shown('a')).toEqual(['a'])
-    act(() => at('a').setBusy(false))
-    expect(shown('a')).toEqual(['a', 'queued'])
   })
 })
 

@@ -153,7 +153,6 @@ export function ImagePicker({
       activation: 0,
       capture: true,
       cursor: 'grabbing',
-      onActivate: () => true,
       onDragMove: (ev) =>
         setDraft(
           dragRect(anchor, aspectRef.current ?? 0, boxW, boxH, ev.clientX - sx, ev.clientY - sy),

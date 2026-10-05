@@ -23,7 +23,7 @@ export interface TileDocState {
   layout: TileLayout
   tiles: unknown[]
   ready: boolean
-  lock: boolean
+  locked: boolean
 }
 
 type LayoutUpdate = (cur: TileLayout) => TileLayout
@@ -42,7 +42,7 @@ interface HostDoc {
 }
 
 // One frozen snapshot for every document that has not loaded and for every reader with no host: `useSyncExternalStore` compares snapshots by reference.
-export const EMPTY: TileDocState = { layout: emptyLayout(), tiles: [], ready: false, lock: false }
+export const EMPTY: TileDocState = { layout: emptyLayout(), tiles: [], ready: false, locked: false }
 
 const removing = new Set<string>()
 
@@ -114,7 +114,7 @@ const land = <T>(doc: HostDoc, sent: Promise<Result<Landed<T>>>): Promise<Result
       doc.overlapped = false
       void reload(doc)
     } else if (r.ok)
-      put(doc, { tiles: kept(doc, r.value.landed.tiles), lock: r.value.landed.locked })
+      put(doc, { tiles: kept(doc, r.value.landed.tiles), locked: r.value.landed.locked })
     return r
   })
 }
@@ -148,7 +148,7 @@ const adopt = (doc: HostDoc, raw: TileDoc): void => {
     layout,
     tiles: kept(doc, raw.tiles),
     ready: true,
-    lock: raw.locked,
+    locked: raw.locked,
   })
 }
 
@@ -303,8 +303,8 @@ export function patchTileEntry(
 
 export function setTileDocLock(host: TileHostRef, locked: boolean): void {
   const doc = at(host)
-  if (!doc?.state.ready || doc.state.lock === locked) return
-  put(doc, { lock: locked })
+  if (!doc?.state.ready || doc.state.locked === locked) return
+  put(doc, { locked })
   void land(doc, save(doc, { locked }))
 }
 

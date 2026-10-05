@@ -14,7 +14,7 @@ export type PointerGestureSpec = {
   capture?: boolean
   cursor?: 'grabbing'
   autoScroll?: { from: HTMLElement; axis: ScrollAxis }
-  onActivate: (e: PointerEvent) => boolean | undefined
+  onActivate?: (e: PointerEvent) => boolean | undefined
   onDragMove: (e: PointerEvent) => void
   onDrop: () => void
   onTap?: () => void
@@ -144,7 +144,7 @@ export function beginPointerGesture(spec: PointerGestureSpec): GestureHandle | n
           g.active = true
           let ok: boolean | undefined
           try {
-            ok = spec.onActivate(ev)
+            ok = spec.onActivate?.(ev)
           } catch (err) {
             console.error(err)
             ok = false

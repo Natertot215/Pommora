@@ -4,10 +4,15 @@ import { act } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
 import { firePointer, pressEscape, stubPointerCapture } from '@pommora/uix/Testing/pointerHarness'
 import { getTile, tileIds } from './Layout/model'
-import { insertBand } from './Layout/ops'
+import { insertBand, moveTileToBand } from './Layout/ops'
 import { splitTile } from '../Testing/tileLayouts'
 import { TileGrid } from './TileGrid'
 ;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
+
+vi.mock('./Layout/ops', async (original) => {
+  const ops = await original<typeof import('./Layout/ops')>()
+  return { ...ops, moveTileToBand: vi.fn(ops.moveTileToBand) }
+})
 
 stubPointerCapture()
 let observed: (() => void) | null = null
@@ -128,6 +133,40 @@ describe('the grid on the gesture engine', () => {
     expect(onBusyChange).toHaveBeenLastCalledWith(true)
     act(() => firePointer(window, 'pointerup'))
     expect(onBusyChange).toHaveBeenLastCalledWith(false)
+  })
+
+  it('pairs every hold with one release, through repeated gestures and an unmount mid-gesture', () => {
+    const onBusyChange = vi.fn()
+    act(() =>
+      root.render(
+        <TileGrid
+          layout={layout}
+          onLayoutChange={() => {}}
+          renderTile={(id) => <span data-tile={id} />}
+          onBusyChange={onBusyChange}
+        />,
+      ),
+    )
+    const handle = tileEl('b').querySelector('.tile-handle') as HTMLElement
+    for (let i = 0; i < 2; i++) {
+      act(() => firePointer(handle, 'pointerdown', { x: 0, y: 210 }))
+      act(() => firePointer(window, 'pointerup'))
+    }
+    act(() => firePointer(handle, 'pointerdown', { x: 0, y: 210 }))
+    act(() => root.unmount())
+    expect(onBusyChange.mock.calls).toEqual([[true], [false], [true], [false], [true], [false]])
+    root = createRoot(host)
+  })
+
+  it('rebuilds the preview only when the drop target changes', () => {
+    mount()
+    vi.mocked(moveTileToBand).mockClear()
+    const handle = tileEl('b').querySelector('.tile-handle') as HTMLElement
+    act(() => firePointer(handle, 'pointerdown', { x: 0, y: 210 }))
+    act(() => firePointer(window, 'pointermove', { x: 0, y: 5 }))
+    act(() => firePointer(window, 'pointermove', { x: 0, y: 6 }))
+    expect(moveTileToBand).toHaveBeenCalledOnce()
+    act(() => pressEscape())
   })
 
   it('unmounting during a settle commits the decided move', () => {

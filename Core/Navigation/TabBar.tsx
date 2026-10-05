@@ -125,7 +125,6 @@ function TabBarBody({
     beginGesture({
       el: e.currentTarget,
       event: e,
-      onActivate: () => true,
       onDragMove: (ev) => {
         dialer().tell('win:dragBy', ev.screenX - last.x, ev.screenY - last.y)
         last = { x: ev.screenX, y: ev.screenY }

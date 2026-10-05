@@ -523,7 +523,6 @@ export function MatrixCanvas({
     begin({
       el,
       event: e,
-      onActivate: () => true,
       onDragMove: (ev) => {
         const z = currentZoom(el)
         matrixRuntime.pan(surface, (ev.clientX - last[0]) / z, (ev.clientY - last[1]) / z)

@@ -73,7 +73,6 @@ export function Slider({
             event: e,
             activation: 0,
             capture: true,
-            onActivate: () => true,
             onDragMove: (ev) => {
               last = valueAt(r, ev.clientX)
               scrub(last)
