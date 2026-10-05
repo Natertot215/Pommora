@@ -1,5 +1,5 @@
 import { foldKey, normalizeTitle } from '../Paths/caseFold'
-import { heldKey, heldKeys, heldValue, writeTarget } from '../Files/heldKeys'
+import { heldKey, heldValue, writeTarget } from '../Files/heldKeys'
 import { contextKey, parseContextKey } from './contexts'
 import { byFoldedName, holdsList, type PropertyDefinition } from '../Properties/properties'
 import {
@@ -144,12 +144,11 @@ export function reconcileGovernedRoot(
       out[key] = raw
       continue
     }
+    const { key: target, govern } = writeTarget(root, governor.name, join)
     if (next === undefined) {
-      changed.push(key)
-      if (join) for (const k of heldKeys(root, governor.name)) if (k !== key) retired.add(k)
+      for (const k of govern) retired.add(k)
       continue
     }
-    const { key: target, govern } = writeTarget(root, governor.name, join)
     const joined = govern.filter((k) => k !== target)
     for (const k of joined) retired.add(k)
     out[target] = writtenSpelling(next, held)
