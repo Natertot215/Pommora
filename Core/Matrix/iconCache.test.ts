@@ -2,28 +2,31 @@
 import { describe, expect, it, vi } from 'vitest'
 import type { IconNode } from '@pommora/uix/Symbols'
 
-const roster = vi.hoisted(() =>
-  vi.fn((name: string): IconNode | null => (name === 'earth' ? [['path', { d: 'M0 0' }]] : null)),
-)
+const GLYPHS: Record<string, IconNode> = {
+  earth: [['path', { d: 'M0 0' }]],
+  broken: [['path', { d: 'BROKEN' }]],
+}
 
-vi.mock('@pommora/uix/Symbols', () => ({
-  loadFullIconSet: async () => ({ lucideIconNodes: roster }),
-}))
+const roster = vi.hoisted(() => vi.fn((name: string): IconNode | null => GLYPHS[name] ?? null))
+const loader = vi.hoisted(() => vi.fn(async () => ({ lucideIconNodes: roster })))
+
+vi.mock('@pommora/uix/Symbols', () => ({ loadFullIconSet: loader }))
 
 class ImageStub {
   onload: (() => void) | null = null
+  onerror: (() => void) | null = null
   #src = ''
   get src(): string {
     return this.#src
   }
   set src(value: string) {
     this.#src = value
-    queueMicrotask(() => this.onload?.())
+    queueMicrotask(() => (value.includes('BROKEN') ? this.onerror?.() : this.onload?.()))
   }
 }
 ;(globalThis as { Image?: unknown }).Image = ImageStub
 
-const { iconFor, onIconLoad, svgOf } = await import('./iconCache')
+const { iconFor, iconsLoading, onIconLoad, svgOf } = await import('./iconCache')
 
 describe('iconCache', () => {
   it('builds markup from a node list, dropping React keys', () => {
@@ -47,6 +50,16 @@ describe('iconCache', () => {
     await vi.waitFor(() => expect(told).toHaveBeenCalled())
     expect(iconFor('earth', '#0f0', 32)).toBeInstanceOf(ImageStub)
     stop()
+  })
+
+  it('settles every load it starts, whether it lands, names nothing, fails to decode, or never fetches', async () => {
+    iconFor('earth', '#123', 32)
+    iconFor('not-an-icon', '#123', 32)
+    iconFor('broken', '#123', 32)
+    loader.mockRejectedValueOnce(new Error('chunk'))
+    iconFor('earth', '#456', 32)
+    expect(iconsLoading()).toBe(true)
+    await vi.waitFor(() => expect(iconsLoading()).toBe(false))
   })
 
   it('loads a name, colour and size bucket once, and rounds a size up to its bucket', async () => {

@@ -13,7 +13,7 @@ import { BASE_RADIUS, LINK_GAP } from './Engine/forces'
 import { type Graph, type GraphLink, type GraphNode, isGroupingLink } from './Engine/graph'
 import { cullLabels, labelReveal, type LabelReveal } from './Engine/labels'
 import { toScreen, type Viewport } from './Engine/viewport'
-import { iconFor } from './iconCache'
+import { iconFor, iconsLoading } from './iconCache'
 import { TITLE_OFFSET } from './matrix.css'
 import { FADE_MS, matrixRuntime, type Surface } from './matrixRuntime'
 
@@ -191,6 +191,7 @@ export function createPainter(
   let paint = readPaint(host)
   let scale = 1
   let subjectId: string | null = null
+  let presented = false
   const ease = { from: 0, to: 0, t: 1, at: 0 }
   const neighbours = new Set<number>()
   const hot: GraphLink[] = []
@@ -223,7 +224,7 @@ export function createPainter(
     }
     const dragging = matrixRuntime.indexOf(matrixRuntime.draggingId)
     // A held node keeps the focus even when the pointer outruns it, since it trails the cursor on its spring.
-    const focus = dragging >= 0 ? dragging : matrixRuntime.indexOf(matrixRuntime.hoveredId)
+    const focus = dragging >= 0 ? dragging : matrixRuntime.indexOf(matrixRuntime.hoverOf(surface))
     if (focus >= 0) subjectId = nodes[focus].id
 
     const now = performance.now()
@@ -328,6 +329,14 @@ export function createPainter(
         ctx.globalAlpha = 1
       }
     })
+    // The first picture with nodes in it waits on the glyphs it asked for, so it never shows them bare.
+    if (!presented) {
+      if (iconsLoading()) {
+        ctx.clearRect(0, 0, width, height)
+        return
+      }
+      presented = nodes.length > 0
+    }
     for (const g of matrixRuntime.ghosts) {
       const [sx, sy] = toScreen(v, g.x, g.y)
       drawNode(

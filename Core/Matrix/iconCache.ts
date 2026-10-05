@@ -5,8 +5,11 @@ import { emitter } from '@pommora/uix/Utilities/subscribable'
 
 const cache = new Map<string, HTMLImageElement | null>()
 const loaded = emitter()
+let pending = 0
 
+// Told on every settle, a failed load included, so whatever waits on `iconsLoading` is asked again.
 export const onIconLoad = loaded.subscribe
+export const iconsLoading = (): boolean => pending > 0
 
 export function svgOf(nodes: IconNode, color: string): string {
   const body = nodes
@@ -34,15 +37,25 @@ export function iconFor(name: string, color: string, px: number): HTMLImageEleme
   const key = `${name}|${color}|${size}`
   if (cache.has(key)) return cache.get(key) ?? null
   cache.set(key, null)
-  void loadFullIconSet().then((set) => {
-    const nodes = set.lucideIconNodes(name)
-    if (!nodes) return
-    const img = new Image(size, size)
-    img.onload = () => {
-      cache.set(key, img)
-      loaded.emit()
-    }
-    img.src = `data:image/svg+xml;utf8,${encodeURIComponent(svgOf(nodes, color))}`
-  })
+  pending += 1
+  const settle = (img: HTMLImageElement | null): void => {
+    pending -= 1
+    if (img) cache.set(key, img)
+    loaded.emit()
+  }
+  loadFullIconSet().then(
+    (set) => {
+      const nodes = set.lucideIconNodes(name)
+      if (!nodes) {
+        settle(null)
+        return
+      }
+      const img = new Image(size, size)
+      img.onload = () => settle(img)
+      img.onerror = () => settle(null)
+      img.src = `data:image/svg+xml;utf8,${encodeURIComponent(svgOf(nodes, color))}`
+    },
+    () => settle(null),
+  )
   return null
 }
