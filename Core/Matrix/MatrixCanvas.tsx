@@ -118,9 +118,9 @@ export function MatrixCanvas({
   }, [surface])
 
   useEffect(() => {
-    if (parked) matrixRuntime.setHovered(null)
+    if (parked) matrixRuntime.setHovered(surface, null)
     else matrixRuntime.resume()
-  }, [parked])
+  }, [parked, surface])
 
   // The overlaid node's title is skipped by index, and a rename moves that index without any runtime event to repaint on.
   useEffect(() => matrixRuntime.invalidate(), [labelId])
@@ -168,7 +168,7 @@ export function MatrixCanvas({
       className={cx(inWindow && 'scroll-fade', s.host)}
       onPointerLeave={() => {
         if (canvasRef.current) boxes.delete(canvasRef.current)
-        if (!editing && !glanceShown()) matrixRuntime.setHovered(null)
+        if (!editing && !glanceShown()) matrixRuntime.setHovered(surface, null)
       }}
     >
       <canvas
@@ -185,7 +185,7 @@ export function MatrixCanvas({
           // A held button is a drag or a pan in progress, which the hover leaves where it began.
           if (editing || e.buttons !== 0) return
           const id = nodeAt(e)
-          if (id !== null || !glanceShown()) matrixRuntime.setHovered(id)
+          if (id !== null || !glanceShown()) matrixRuntime.setHovered(surface, id)
         }}
         // Cancelled here alone, so the rename field and anything else laid over the canvas keeps the system's own menu.
         onContextMenu={(e) => {
