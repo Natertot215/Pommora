@@ -53,7 +53,6 @@ const grid = {
   locked: false,
   isTileLocked: () => false,
   onHandleMenu: () => {},
-  onBackdrop: () => {},
 }
 
 function mount(): { onLayoutChange: ReturnType<typeof vi.fn>; edge: HTMLElement } {

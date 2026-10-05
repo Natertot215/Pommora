@@ -17,7 +17,6 @@ import { TILE_MIN_PX } from '@pommora/uix/Utilities/tileMetrics'
 import { type Reach, trackNear, withinReach } from '@pommora/uix/Interactions/hoverReveal'
 import { revealTarget } from '@pommora/uix/Interactions/hover-reveal.css'
 import { cx } from '@pommora/uix/Utilities/cx'
-import { findTile } from './Layout/model'
 import type { DividerRef, Edge, TileLayout } from './Layout/model'
 import { resolveEdge } from './Layout/edges'
 import { hitTest, type DropTarget, sameTarget } from './Layout/hitTest'
@@ -48,10 +47,7 @@ interface TileGridProps {
   locked: boolean
   isTileLocked: (id: string) => boolean
   onHandleMenu: (id: string, e: React.MouseEvent) => void
-  onBackdrop: (target: BackdropTarget, e: React.MouseEvent) => void
 }
-
-export type BackdropTarget = { kind: 'append' } | { kind: 'wedge'; above: string; fillPx: number }
 
 type TilePhase = 'idle' | 'reflow' | 'lifted' | 'settling'
 
@@ -237,7 +233,6 @@ export function TileGrid({
   locked,
   isTileLocked,
   onHandleMenu,
-  onBackdrop,
 }: TileGridProps): React.JSX.Element {
   const gridRef = useRef<HTMLDivElement | null>(null)
   const [stacked, setStacked] = useState(false)
@@ -472,36 +467,7 @@ export function TileGrid({
 
   const dropSlot = tileDrag && draft ? placed.tiles.get(tileDrag.id) : null
 
-  const onGridContextMenu = (e: React.MouseEvent): void => {
-    if (boardStatic || e.target !== e.currentTarget) return
-    e.preventDefault()
-    const grid = gridRef.current
-    if (!grid) return
-    const box = grid.getBoundingClientRect()
-    const px = e.clientX - box.left
-    const py = e.clientY - box.top
-    const g = computeGeometry(view, grid.clientWidth, GAP)
-    let above: { id: string; bottom: number; band: number } | null = null
-    for (const [id, r] of g.tiles) {
-      const bottom = r.y + r.h
-      if (px >= r.x && px <= r.x + r.w && py >= bottom && (!above || bottom > above.bottom)) {
-        const at = findTile(view, id)
-        if (at) above = { id, bottom, band: at.band }
-      }
-    }
-    if (!above) {
-      onBackdrop({ kind: 'append' }, e)
-      return
-    }
-    const seam = g.seams[above.band]
-    const bandBottom = seam !== undefined ? seam - GAP / 2 : g.totalHeight
-    const fillPx = bandBottom - above.bottom - GAP
-    if (fillPx < TILE_MIN_PX || py > bandBottom) onBackdrop({ kind: 'append' }, e)
-    else onBackdrop({ kind: 'wedge', above: above.id, fillPx }, e)
-  }
-
   return (
-    // biome-ignore lint/a11y/noStaticElementInteractions: a right-click affordance on a container, not a control — the contents carry their own semantics
     <div
       ref={gridRef}
       className={cx(
@@ -510,7 +476,6 @@ export function TileGrid({
         boardStatic && 'is-static',
       )}
       style={{ height: placed.totalHeight + BOTTOM_PAD_PX }}
-      onContextMenu={onGridContextMenu}
     >
       {order.map(([id, place]) => {
         const lifted = tileDrag?.id === id ? tileDrag : null
