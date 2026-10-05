@@ -146,7 +146,7 @@ function drawNode(
   r: number,
   paint: Paint,
   tone: Tone,
-  ring: 'rest' | 'hover' | 'drag',
+  ringed: boolean,
   alpha: number,
   lit = 0,
 ): void {
@@ -165,7 +165,7 @@ function drawNode(
   ctx.lineWidth = paint.hairline
   ctx.strokeStyle = paint.ring
   ctx.stroke()
-  if (ring !== 'rest' && lit > 0) {
+  if (ringed && lit > 0) {
     ctx.globalAlpha = alpha * lit
     ctx.lineWidth = paint.ringWidth
     ctx.strokeStyle = tone.stroke
@@ -291,14 +291,13 @@ export function MatrixCanvas({
     }
     if (ease.t < 1) matrixRuntime.invalidate()
     // The released subject outlives its focus until the emphasis reaches nothing, held by id so a rebuild mid-fade cannot resolve it onto whatever took the slot.
-    let subject = focus >= 0 || emphasis > 0 ? matrixRuntime.indexOf(subjectRef.current) : -1
+    const subject = focus >= 0 || emphasis > 0 ? matrixRuntime.indexOf(subjectRef.current) : -1
     // A subject that left the graph mid-fade takes the emphasis with it: without this the whole picture reads as lit.
     if (subject < 0 && emphasis > 0) {
       ease.from = 0
       ease.to = 0
       ease.t = 1
       emphasis = 0
-      subject = -1
     }
     const dim = 1 - emphasis * (1 - INACTIVE)
 
@@ -351,13 +350,12 @@ export function MatrixCanvas({
       const [sx, sy] = toScreen(v, n.x, n.y)
       const r = n.radius * v.zoom
       if (sx + r < 0 || sy + r < 0 || sx - r > width || sy - r > height) return
-      const ring = i === dragging ? 'drag' : i === subject ? 'hover' : 'rest'
       const lit = isLit(i)
       const space = spacePaintOf(n)
-      const tone = space ?? (ring === 'drag' ? restHeld : rest)
+      const tone = space ?? (i === dragging ? restHeld : rest)
       const alpha = (lit ? 1 : dim) * arrival(i)
       const raise = lit ? emphasis : 0
-      drawNode(ctx, sx, sy, r, paint, tone, ring, alpha, raise)
+      drawNode(ctx, sx, sy, r, paint, tone, i === subject, alpha, raise)
       if (hideIcon) return
       // A Page's glyph arrives on the zoom that reveals its title; a Folder's and a Space's stand whatever the picture is scaled to.
       const iconAlpha = alpha * (n.kind === 'page' ? alphas.page : 1)
@@ -390,7 +388,7 @@ export function MatrixCanvas({
         g.radius * v.zoom,
         paint,
         rest,
-        'rest',
+        false,
         clamp(1 - (now - g.born) / FADE_MS, 0, 1),
       )
     }
