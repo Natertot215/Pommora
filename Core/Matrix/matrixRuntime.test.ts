@@ -711,6 +711,8 @@ describe('matrixRuntime', () => {
     expect(matrixRuntime.sim?.awake).toBe(false)
     matrixRuntime.shuffle()
     expect(matrixRuntime.sim?.awake).toBe(true)
+    flush()
+    expect(saveLayout).toHaveBeenCalledTimes(2)
   })
 
   it('fades a page out of its old folder and in beside the new one, in Location mode', () => {
