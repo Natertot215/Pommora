@@ -53,6 +53,12 @@ export function notifyRetry(message: string, retry: () => void): void {
   post({ message, tone: 'error', action: tryAgain(retry) })
 }
 
+export function warnCascade(cascade: { warning?: string }, retry?: () => void): void {
+  if (!cascade.warning) return
+  if (retry) notifyRetry(cascade.warning, retry)
+  else notifyReport(cascade.warning, true)
+}
+
 export function notifyUnreadable(file: Unreadable, retry: () => void): void {
   const what =
     file.reason === 'contradicting' || file.reason === 'unparsed' ? 'invalid' : 'unreadable'

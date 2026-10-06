@@ -19,8 +19,8 @@ export function OptionSlot({
 }: {
   option: OptionChipData
   type: string
-  look?: ColumnLook
-  def?: Pick<PropertyDefinition, 'status_groups'>
+  look: ColumnLook | undefined
+  def: Pick<PropertyDefinition, 'status_groups'>
   editing: boolean
   ghost: GhostAnchor
   onToggleEditing: (anchor: HTMLElement) => void
@@ -49,7 +49,7 @@ export function OptionSlot({
         className={s.optionEditButton}
         data-reveal-held={editing || undefined}
         aria-label="Edit Option"
-        onClick={(e) => onToggleEditing(e.currentTarget)}
+        onClick={(e) => onToggleEditing(e.currentTarget.closest('[data-line-row]') as HTMLElement)}
       />
     </LineRow>
   )

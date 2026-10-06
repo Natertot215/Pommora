@@ -17,7 +17,7 @@ import { type ColumnStyle, lookOptions, OPTION_LOOKS } from '../columnStyles'
 import type { CollectionNode, SetNode } from '../../Nexus/tree'
 import { useActiveView } from '../../Views/Host/useActiveView'
 import { useSaveView } from '../../Views/viewWrite'
-import { pickedStyle, useNexusForms, useStyleFor } from '../../Views/Host/useColumnStyles'
+import { columnStylePatch, useNexusForms, useStyleFor } from '../../Views/Host/useColumnStyles'
 import { DateTimeEditor } from './DateTimeEditor'
 import { CheckboxEditor } from './CheckboxEditor'
 import { FileEditor } from './FileEditor'
@@ -31,6 +31,7 @@ import {
   FootingItem,
   MenuSeparator,
   AccessoryButton,
+  FootingCreate,
   DropOutline,
 } from '@pommora/uix/Menus'
 import { titleInput, actionRow } from '@pommora/uix/Menus/menu-row.css'
@@ -60,7 +61,6 @@ import { popMenu } from '../../Actions/menuActions'
 import { propertyMenuModel } from '../../Actions/propertyMenu'
 
 type SubView = { kind: 'list' } | { kind: 'type' } | { kind: 'edit'; id: string }
-type OptionStyle = (typeof OPTION_LOOKS)[number]
 const OPTION_STYLE_OPTIONS = lookOptions(OPTION_LOOKS)
 
 const TITLES = { assigned: 'Properties', all: 'All Properties' }
@@ -247,12 +247,7 @@ export function PropertyFrame({
   const saveFileDirectory = (id: string, dir: string): Promise<void> =>
     write(dialer().ask('property:setFileDirectory', id, { file_directory: dir }))
   const saveColumnStyle = async (propId: string, patch: Partial<ColumnStyle>): Promise<void> => {
-    const picks = Object.entries(patch).map(([key, value]) => [
-      key,
-      pickedStyle(propId, schema, nexus, key as keyof ColumnStyle, String(value)),
-    ])
-    const next = { ...activeView.column_styles?.[propId], ...Object.fromEntries(picks) }
-    await saveView(activeView, { column_styles: { [propId]: next } })
+    await saveView(activeView, columnStylePatch(activeView, schema, nexus, propId, patch))
   }
   const handleDrop = (drop: PaneDrop): Promise<void> =>
     write(
@@ -400,7 +395,7 @@ export function PropertyFrame({
       )
     }
     const columnStyle = styleFor(def.id, schema, activeView)
-    const optionLook: OptionStyle = columnStyle.look === 'compact' ? 'compact' : 'standard'
+    const optionLook = columnStyle.look === 'compact' ? 'compact' : 'standard'
     const styleFooting =
       PROPERTY_TYPES[def.type].options !== undefined ? (
         <MenuFooting>
@@ -449,14 +444,7 @@ export function PropertyFrame({
       footer={
         <MenuFooting
           leading={
-            <AccessoryButton
-              icon="plus"
-              size="control"
-              box={20}
-              create
-              ariaLabel="New Property"
-              onClick={() => setView({ kind: 'type' })}
-            />
+            <FootingCreate ariaLabel="New Property" onClick={() => setView({ kind: 'type' })} />
           }
         />
       }

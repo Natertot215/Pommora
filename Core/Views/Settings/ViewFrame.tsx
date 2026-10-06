@@ -13,6 +13,7 @@ import {
   MenuFooting,
   MenuScrollFrame,
   AccessoryButton,
+  FootingCreate,
   menuDropLine,
 } from '@pommora/uix/Menus'
 import { titleInput } from '@pommora/uix/Menus/menu-row.css'
@@ -104,16 +105,7 @@ export function ViewFrame({
     <MenuScrollFrame
       footer={
         <MenuFooting
-          leading={
-            <AccessoryButton
-              icon="plus"
-              size="control"
-              box={20}
-              create
-              ariaLabel="New View"
-              onClick={() => void createView()}
-            />
-          }
+          leading={<FootingCreate ariaLabel="New View" onClick={() => void createView()} />}
           trailing={
             // PLACEHOLDER
             <AccessoryButton

@@ -1,7 +1,7 @@
 import {
   clearNotification,
   notifyReport,
-  notifyRetry,
+  warnCascade,
   notifyUnreadable,
   reportRefusal,
   unrestoredLine,
@@ -247,10 +247,8 @@ export const createNexusSlice: Slice<NexusSlice> = (set, get) => {
       if (!reportRefusal(res)) return null
       if (res.value.unrestored) notifyReport(unrestoredLine(res.value.unrestored), true)
       const { cascade, retry } = res.value
-      if (req.op !== 'delete' && cascade?.warning) {
-        if (retry) notifyRetry(cascade.warning, () => void get().mutate(retry))
-        else notifyReport(cascade.warning, true)
-      }
+      if (req.op !== 'delete' && cascade)
+        warnCascade(cascade, retry ? () => void get().mutate(retry) : undefined)
       if (req.op === 'delete' || req.op === 'restore' || req.op === 'emptyBundle')
         trashChanged.emit()
       // The host pushed what this write changed before it replied, so the tree already holds it.

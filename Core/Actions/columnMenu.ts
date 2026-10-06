@@ -36,7 +36,7 @@ export interface StyleMenuContext {
   barCapable?: boolean
 }
 
-export function styleMenuLabel(type: PropertyType): string {
+function styleMenuLabel(type: PropertyType): string {
   return type === 'link' || type === 'number' ? 'Format' : 'Style'
 }
 

@@ -44,7 +44,7 @@ const optionList = (raw: unknown): string[] =>
   listOf(raw)
     .filter(isScalar)
     .map(String)
-    .filter((x) => x !== '')
+    .filter((x) => normalizeTitle(x) !== '')
 
 const foldedOptions = new WeakMap<PropertyDefinition, Map<string, string>>()
 

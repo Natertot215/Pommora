@@ -72,7 +72,7 @@ export const optionEdit = z.discriminatedUnion('op', [
   edit('icon', { value, icon: z.string().optional() }),
   edit('appearance', { value, appearance: optionAppearance }),
   edit('move', { value, groupId, toIndex: index }),
-  edit('relabelGroup', { groupId, label: z.string().min(1) }),
+  edit('relabelGroup', { groupId, label: z.string() }),
 ])
 export type OptionEdit = z.infer<typeof optionEdit>
 

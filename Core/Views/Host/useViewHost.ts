@@ -33,7 +33,7 @@ import { useActiveView } from './useActiveView'
 import { useBandHeads } from './useBandHeads'
 import { patchOverride } from '../../Properties/valueOverride'
 import { useContainerValues } from './useContainerValues'
-import { pickedStyle, styleFor } from './useColumnStyles'
+import { columnStylePatch, styleFor } from './useColumnStyles'
 import type { ViewPatch } from '../views'
 import { groupKeyToValue, reassignable, reassignTarget } from '../reassign'
 
@@ -142,16 +142,8 @@ export function useViewHost(source: CollectionNode | SetNode, nests: boolean) {
     else next.add(key)
     void persistView({ collapsed_groups: next.size ? [...next] : undefined }, { viewState: true })
   }
-  const setStylePatch = (colId: string, key: keyof ColumnStyle & string, value: string): void => {
-    void persistView({
-      column_styles: {
-        [colId]: {
-          ...view.column_styles?.[colId],
-          [key]: pickedStyle(colId, schema, nexus, key, value),
-        },
-      },
-    })
-  }
+  const setStylePatch = (colId: string, key: keyof ColumnStyle & string, value: string): void =>
+    void persistView(columnStylePatch(view, schema, nexus, colId, { [key]: value }))
   const viewRootRef = useRef<HTMLElement | null>(null)
   const revealingRef = useRef<Set<string>>(new Set())
   const revealProperty = (id: string): void => {

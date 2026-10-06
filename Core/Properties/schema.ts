@@ -58,13 +58,16 @@ export function validateDefinition(
   return ok(null)
 }
 
-/** `def` holding each option title once, the first of any that fold alike; a definition already holding each once is answered as it is. */
+/** `def` holding each option title once, the first of any that fold alike, and none blank; a definition already so is answered as it is. */
 export function withUniqueOptions(def: PropertyDefinition): PropertyDefinition {
   const groups = optionGroupsOf(def)
   const options = groups.flatMap((g) => g.options)
   if (validateOptionValues(options).ok) return def
   const first = new Set(firstPerTitle(options, (o) => o.value).values())
-  const kept = groups.map((g) => ({ ...g, options: g.options.filter((o) => first.has(o)) }))
+  const kept = groups.map((g) => ({
+    ...g,
+    options: g.options.filter((o) => first.has(o) && normalizeTitle(o.value) !== ''),
+  }))
   return withOptionGroups(def, kept)
 }
 

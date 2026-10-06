@@ -21,7 +21,7 @@ import { Icon, LockGlyph } from '@pommora/uix/Symbols'
 import { cellRing, colorNameFor } from '@pommora/uix/Theme/ramp'
 import { ColorPicker } from '@pommora/uix/Pickers/ColorPicker'
 import { PickerMenu } from '@pommora/uix/Pickers/PickerMenu'
-import { AccessoryButton, MenuFooting, MenuItem, MenuScrollFrame } from '@pommora/uix/Menus'
+import { FootingCreate, MenuFooting, MenuItem, MenuScrollFrame } from '@pommora/uix/Menus'
 import { titleInput as rowInput, rowDisabled, spacer } from '@pommora/uix/Menus/menu-row.css'
 import { SortableZone, useDragItem } from '@pommora/uix/Interactions/drag'
 import { moveBefore } from '@pommora/uix/Utilities/moveItem'
@@ -533,11 +533,7 @@ export function ViewTile({
   )
 
   const newViewButton = (
-    <AccessoryButton
-      icon="plus"
-      size="control"
-      box={20}
-      create
+    <FootingCreate
       ariaLabel="New View"
       disabled={locked}
       className={locked ? rowDisabled : undefined}

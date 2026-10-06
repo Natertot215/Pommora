@@ -9,7 +9,7 @@ import {
   type TimeFormat,
 } from '../../Properties/columnStyles'
 import type { PropertyDefinition } from '../../Properties/properties'
-import type { SavedView } from '../views'
+import type { SavedView, ViewPatch } from '../views'
 import { declaredType } from '../../Properties/value'
 import type { ViewHostApi } from './useViewHost'
 import { useSetting } from '../../Session/store'
@@ -54,6 +54,24 @@ export function pickedStyle(
   value: string,
 ): string | undefined {
   return storedPick(key, value, columnDefaults(columnId, schema, nexus), nexus.clock)
+}
+
+export function columnStylePatch(
+  view: SavedView,
+  schema: PropertyDefinition[],
+  nexus: NexusForms,
+  columnId: string,
+  patch: Partial<ColumnStyle>,
+): ViewPatch {
+  const picks = Object.entries(patch).map(([key, value]) => [
+    key,
+    pickedStyle(columnId, schema, nexus, key as keyof ColumnStyle & string, String(value)),
+  ])
+  return {
+    column_styles: {
+      [columnId]: { ...view.column_styles?.[columnId], ...Object.fromEntries(picks) },
+    },
+  }
 }
 
 export function useNexusForms(): NexusForms {

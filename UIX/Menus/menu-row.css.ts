@@ -221,7 +221,7 @@ export const footing = style([
   { vars: { '--row-pad-y': '0px', '--row-pad-trail': '0px' } },
 ])
 
-export const footingCentered = style([footing, { justifyContent: 'center' }])
+export const footingCentered = style({ justifyContent: 'center' })
 
 export const footingBar = style({ display: 'flex', flexDirection: 'column' })
 
