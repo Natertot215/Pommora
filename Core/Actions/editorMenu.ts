@@ -11,6 +11,9 @@ import {
   LIST_ROWS,
 } from './blockMenu'
 import { isValidLink } from '../Paths/urlPath'
+import { HIGHLIGHT_COLOR_NAMES, type HighlightColor } from '../MarkdownPM/Engine/highlightColors'
+
+const HIGHLIGHT_SHADES = ['accent', ...HIGHLIGHT_COLOR_NAMES] as ['accent', ...HighlightColor[]]
 
 /** What sits under a right-click, sent to the host as the menu is asked for; main cannot see CM6 state. */
 export const editorMenuRequest = z.object({
@@ -20,7 +23,7 @@ export const editorMenuRequest = z.object({
   bold: z.boolean(),
   italic: z.boolean(),
   strikethrough: z.boolean(),
-  highlight: z.boolean(),
+  highlight: z.enum(HIGHLIGHT_SHADES).nullable(),
   inlineCode: z.boolean(),
   link: z.boolean(),
   connection: z.boolean(),
@@ -43,18 +46,45 @@ type EditorMenuAction =
   | FormatChordAction
   | 'heading:0'
   | typeof INSERT_LINK_ACTION
+  | `highlight:${HighlightColor}`
 
-type FormatFlag = FormatChordAction extends `format:${infer F}` ? F : never
+type FormatFlag = Exclude<FormatChordAction extends `format:${infer F}` ? F : never, 'highlight'>
 
-const FORMAT_ROWS: readonly LeafItem<FormatChordAction>[] = [
+const MARK_ROWS: readonly LeafItem<FormatChordAction>[] = [
   { label: 'Italic', action: 'format:italic' },
   { label: 'Inline Code', action: 'format:inlineCode' },
   { label: 'Bold', action: 'format:bold' },
   { label: 'Strikethrough', action: 'format:strikethrough' },
-  { label: 'Highlight', action: 'format:highlight' },
-  CONNECTION_ROW,
-  EXTERNAL_LINK_ROW,
 ]
+const LINK_ROWS: readonly LeafItem<FormatChordAction>[] = [CONNECTION_ROW, EXTERNAL_LINK_ROW]
+
+/** The accent is the bare `==`, so it carries the highlight chord; a checked row clicked again removes the highlight. */
+function highlightRows(s: EditorMenuRequest, commands: Commands): LeafItem<EditorMenuAction>[] {
+  return [
+    {
+      label: 'Accent',
+      action: 'format:highlight',
+      checked: s.highlight === 'accent',
+      chord: commands['format:highlight'],
+    },
+    ...HIGHLIGHT_COLOR_NAMES.map(
+      (color, i): LeafItem<EditorMenuAction> => ({
+        label: color[0].toUpperCase() + color.slice(1),
+        action: `highlight:${color}`,
+        checked: s.highlight === color,
+        separatorBefore: i === 0,
+      }),
+    ),
+  ]
+}
+
+/** Offered only over a highlight, seated with the edit items rather than in the formatting block. */
+export function changeColorItems(
+  s: EditorMenuRequest,
+  commands: Commands,
+): ActionItem<EditorMenuAction>[] {
+  return s.highlight ? [{ label: 'Change Color', submenu: highlightRows(s, commands) }] : []
+}
 
 function checkedIn(s: EditorMenuRequest, action: EditorMenuAction): boolean | undefined {
   const [kind, value] = action.split(':')
@@ -83,13 +113,15 @@ export function editorContextItems(
     ? [{ label: 'Insert Link', action: INSERT_LINK_ACTION }]
     : []
   const insert = { label: 'Insert', submenu: rows(insertRows(s.citeSeat)) }
+  const formatRows = (items: readonly LeafItem<FormatChordAction>[]) =>
+    items.map((r) => ({ ...r, checked: checkedIn(s, r.action), chord: commands[r.action] }))
   const format = {
     label: 'Format',
-    submenu: FORMAT_ROWS.map((r) => ({
-      ...r,
-      checked: checkedIn(s, r.action),
-      chord: commands[r.action],
-    })),
+    submenu: [
+      ...formatRows(MARK_ROWS),
+      { label: 'Highlight', submenu: highlightRows(s, commands) },
+      ...formatRows(LINK_ROWS),
+    ],
   }
   const embed = { label: 'Embed', submenu: rows(EMBED_ROWS) }
   const heading = {

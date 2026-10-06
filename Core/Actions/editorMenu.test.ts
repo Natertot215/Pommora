@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { DEFAULT_COMMANDS } from './commands'
-import { type EditorMenuRequest, editorContextItems } from './editorMenu'
+import { type EditorMenuRequest, changeColorItems, editorContextItems } from './editorMenu'
 
 const state: EditorMenuRequest = {
   scope: 'page',
@@ -9,7 +9,7 @@ const state: EditorMenuRequest = {
   bold: true,
   italic: false,
   strikethrough: false,
-  highlight: false,
+  highlight: null,
   inlineCode: false,
   link: false,
   connection: false,
@@ -71,5 +71,44 @@ describe('the editor’s right-click block', () => {
     expect(
       editorContextItems({ ...state, scope: 'cell' }, DEFAULT_COMMANDS, 'https://a.com')[0].label,
     ).toBe('Insert Link')
+  })
+})
+
+describe('the highlight rows', () => {
+  const highlight = (s: EditorMenuRequest) =>
+    editorContextItems(s, DEFAULT_COMMANDS, '')
+      .find((i) => i.label === 'Format')
+      ?.submenu?.find((r) => r.label === 'Highlight')?.submenu ?? []
+
+  it('lead with the accent on the highlight chord, the colors set apart under it', () => {
+    const rows = highlight(state)
+    expect(rows[0]).toMatchObject({ label: 'Accent', action: 'format:highlight', chord: 'cmd+l' })
+    expect(rows.map((r) => r.label).slice(1)).toEqual([
+      'Red',
+      'Orange',
+      'Yellow',
+      'Green',
+      'Blue',
+      'Purple',
+      'Brown',
+      'Black',
+      'White',
+    ])
+    expect(rows[1]).toMatchObject({ action: 'highlight:red', separatorBefore: true })
+    expect(rows.filter((r) => r.checked)).toEqual([])
+  })
+
+  it('check the color the caret sits in', () => {
+    expect(highlight({ ...state, highlight: 'accent' }).find((r) => r.checked)?.label).toBe(
+      'Accent',
+    )
+    expect(highlight({ ...state, highlight: 'green' }).find((r) => r.checked)?.label).toBe('Green')
+  })
+
+  it('offer Change Color over a highlight alone, with the same rows', () => {
+    expect(changeColorItems(state, DEFAULT_COMMANDS)).toEqual([])
+    const [row] = changeColorItems({ ...state, highlight: 'red' }, DEFAULT_COMMANDS)
+    expect(row.label).toBe('Change Color')
+    expect(row.submenu).toEqual(highlight({ ...state, highlight: 'red' }))
   })
 })

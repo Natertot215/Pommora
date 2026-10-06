@@ -7,9 +7,11 @@ import type {
 } from 'electron'
 import {
   type EditorMenuRequest,
+  changeColorItems,
   editorContextItems,
   PASTE_PLAIN_ACTION,
 } from '@pommora/core/Actions/editorMenu'
+import type { ActionItem } from '@pommora/core/Actions/menuModel'
 import { PASTE_AS_PREFIX, pasteAsRows } from '@pommora/core/Actions/pasteAsMenu'
 import { heldCommands } from '@pommora/core/Settings/settings'
 import { rowTemplate } from './menu'
@@ -83,6 +85,7 @@ function systemItems(
       click: editor ? () => editor.resolve(PASTE_PLAIN_ACTION) : () => wc.pasteAndMatchStyle(),
     },
     { role: 'selectAll' },
+    ...(editor ? editorRows(editor, changeColorItems(editor.req, heldCommands())) : []),
   )
   return items
 }
@@ -112,6 +115,13 @@ function pasteAsItems(editor: EditorMenu): MenuItemConstructorOptions[] {
   ]
 }
 
+function editorRows(
+  editor: EditorMenu,
+  rows: readonly ActionItem<string>[],
+): MenuItemConstructorOptions[] {
+  return rowTemplate(rows, (action) => () => editor.resolve(action))
+}
+
 export function installEditorContextMenu(win: BrowserWindow): void {
   win.webContents.on('context-menu', (_e, params) => {
     const editor = takeEditorMenu(win, params)
@@ -120,10 +130,7 @@ export function installEditorContextMenu(win: BrowserWindow): void {
     if (editor)
       items.push(
         { type: 'separator' },
-        ...rowTemplate(
-          editorContextItems(editor.req, heldCommands(), params.selectionText),
-          (action) => () => editor.resolve(action),
-        ),
+        ...editorRows(editor, editorContextItems(editor.req, heldCommands(), params.selectionText)),
       )
     items.push(...speechShareItems(params))
     Menu.buildFromTemplate(items).popup({ window: win, callback: () => editor?.resolve(null) })

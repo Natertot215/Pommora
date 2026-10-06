@@ -295,3 +295,22 @@ describe('setBlock', () => {
     )
   })
 })
+
+describe('highlight colors', () => {
+  it('wraps in the written circle on both sides, caret after the content', () => {
+    const e = toggleInline('hi', 0, 2, 'highlight', 'red')
+    expect(apply('hi', e)).toBe('==🔴hi🔴==')
+    expect(e.selection).toBe(6)
+  })
+  it('recolors a highlight of another color, the accent included', () => {
+    expect(apply('==hi==', toggleInline('==hi==', 3, 3, 'highlight', 'blue'))).toBe('==🔵hi🔵==')
+    expect(apply('==🟥hi🟥==', toggleInline('==🟥hi🟥==', 5, 5, 'highlight', 'green'))).toBe(
+      '==🟢hi🟢==',
+    )
+    expect(apply('==🔴hi🔴==', toggleInline('==🔴hi🔴==', 5, 5, 'highlight'))).toBe('==hi==')
+  })
+  it('removes a highlight already in the picked color', () => {
+    expect(apply('==🔴hi🔴==', toggleInline('==🔴hi🔴==', 5, 5, 'highlight', 'red'))).toBe('hi')
+    expect(apply('==hi==', toggleInline('==hi==', 3, 3, 'highlight'))).toBe('hi')
+  })
+})

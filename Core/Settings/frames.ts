@@ -738,18 +738,6 @@ export const FRAMES = roster([
         ],
       },
       {
-        title: 'Highlights',
-        rows: [
-          {
-            kind: 'color',
-            key: 'highlightColor',
-            label: 'Highlight Color',
-            hint: 'The wash behind highlighted text. Cleared follows the accent.',
-            clearedVar: 'var(--highlight)',
-          },
-        ],
-      },
-      {
         title: 'Code',
         rows: [
           {

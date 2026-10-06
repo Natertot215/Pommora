@@ -28,7 +28,7 @@ const req = (x: number, y: number): EditorMenuRequest => ({
   bold: false,
   italic: false,
   strikethrough: false,
-  highlight: false,
+  highlight: null,
   inlineCode: false,
   link: false,
   connection: false,
@@ -144,5 +144,22 @@ describe('the window’s right-click', () => {
     void askEditorMenu(req(10, 10))
     rightClick({})
     expect(labels()).not.toContain('Paste As')
+  })
+
+  it('seats Change Color under Select All, above the line over the editor block', async () => {
+    const asked = askEditorMenu({ ...req(10, 10), highlight: 'accent' })
+    rightClick({})
+    const at = labels().indexOf('Change Color')
+    expect(labels()[at - 1]).toBe('selectAll')
+    expect(native.popped?.[at + 1].type).toBe('separator')
+    pick(
+      (row('Change Color')?.submenu as MenuItemConstructorOptions[]).find(
+        (r) => r.label === 'Blue',
+      ),
+    )
+    await expect(asked).resolves.toBe('highlight:blue')
+    void askEditorMenu(req(10, 10))
+    rightClick({})
+    expect(labels()).not.toContain('Change Color')
   })
 })

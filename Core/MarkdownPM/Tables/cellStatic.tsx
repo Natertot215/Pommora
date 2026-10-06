@@ -2,7 +2,7 @@ import { Fragment, memo } from 'react'
 import { aliasedToken, linkTokenAt, tokenize, type Token } from '../Engine/tokens'
 import { MD_LINK_CLASS } from '../decorations'
 import {
-  CONTENT_CLASS,
+  contentClass,
   listGlyphOf,
   listLineClass,
   railClass,
@@ -145,7 +145,7 @@ export function renderCellContent(
         ),
       )
     } else {
-      const cls = CONTENT_CLASS[tk.kind]
+      const cls = contentClass(tk)
       out.push(
         cls ? (
           <span key={key++} className={cls}>

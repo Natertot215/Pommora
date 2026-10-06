@@ -21,7 +21,6 @@ describe('a cleared color leaves its var to the theme', () => {
     ['accent', '--accent'],
     ['connectionColor', '--connection'],
     ['externalLinkColor', '--link'],
-    ['highlightColor', '--highlight'],
     ['codeColor', '--code'],
   ] as const)('%s writes a pick and removes %s when cleared', (key, name) => {
     const inline = (): string => document.documentElement.style.getPropertyValue(name)

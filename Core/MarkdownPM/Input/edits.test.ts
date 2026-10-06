@@ -6,6 +6,7 @@ import {
   smartBackspace,
   canonicalizeCheckbox,
   autoPair,
+  pairColorMark,
   autoDelete,
   closeConstructOnEnter,
   closeBlockOnEnter,
@@ -837,5 +838,37 @@ describe('isInsideWikilink', () => {
   it('resets per line (an unclosed [[ does not bleed to the next line)', () => {
     const t = 'a [[b\nc]] d'
     expect(isInsideWikilink(t.indexOf('c]]'), t)).toBe(false)
+  })
+})
+
+describe('color marks in a highlight', () => {
+  it('pair inside an empty highlight, caret between', () => {
+    const e = pairColorMark(scanDoc('===='), 2, '🔴')!
+    expect(apply('====', e)).toBe('==🔴🔴==')
+    expect(e.selection).toBe(4)
+  })
+  it('pair ahead of the closing == of a highlight holding words', () => {
+    const e = pairColorMark(scanDoc('a ==hi== b'), 4, '🟥')!
+    expect(apply('a ==hi== b', e)).toBe('a ==🟥hi🟥== b')
+    expect(e.selection).toBe(6)
+  })
+  it('pair a mark one code unit long', () => {
+    expect(apply('====', pairColorMark(scanDoc('===='), 2, '⚫')!)).toBe('==⚫⚫==')
+  })
+  it('stay single anywhere else', () => {
+    expect(pairColorMark(scanDoc('a  b'), 2, '🔴')).toBeNull()
+    expect(pairColorMark(scanDoc('==hi=='), 3, '🔴')).toBeNull()
+    expect(pairColorMark(scanDoc('==🔴hi🔴=='), 2, '🔴')).toBeNull()
+    expect(pairColorMark(scanDoc('===='), 2, '😀')).toBeNull()
+    expect(pairColorMark(scanDoc('===='), 2, '🔴', { pairMarkers: false })).toBeNull()
+  })
+  it('delete together from inside an empty pair', () => {
+    const e = autoDelete(scanDoc('==🔴🟥=='), 4, 4)!
+    expect(apply('==🔴🟥==', e)).toBe('====')
+    expect(e.selection).toBe(2)
+    expect(autoDelete(scanDoc('a🔴🔴b'), 3, 3)).toBeNull()
+  })
+  it('join the closer Enter jumps past', () => {
+    expect(closeConstructOnEnter(scanDoc('==🔴hi🔴=='), 6, 6)!.selection).toBe(10)
   })
 })

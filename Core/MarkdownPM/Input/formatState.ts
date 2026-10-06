@@ -16,8 +16,10 @@ export function readFormatState(
   const tokens = tokenize(line)
   const f = from - ls
   const t = to - ls
-  const wraps = (kind: string): boolean =>
-    tokens.some((tk) => tk.kind === kind && tk.contentRange[0] <= f && t <= tk.contentRange[1])
+  const wrapping = (kind: string) =>
+    tokens.find((tk) => tk.kind === kind && tk.contentRange[0] <= f && t <= tk.contentRange[1])
+  const wraps = (kind: string): boolean => wrapping(kind) !== undefined
+  const highlight = wrapping('highlight')
 
   // List/heading state reads the line's INNER body so a `> - item` reports as a list — the render layer shows the bullet behind the `>`, and the menu must agree with what the user sees.
   const { body } = splitPrefix(line)
@@ -28,7 +30,7 @@ export function readFormatState(
     bold: wraps('bold'),
     italic: wraps('italic'),
     strikethrough: wraps('strikethrough'),
-    highlight: wraps('highlight'),
+    highlight: highlight ? (highlight.color ?? 'accent') : null,
     inlineCode: wraps('inlineCode'),
     link: tokens.some((tk) => tk.kind === 'link' && tk.range[0] <= f && t <= tk.range[1]),
     connection: tokens.some((tk) => tk.kind === 'wikiLink' && tk.range[0] <= f && t <= tk.range[1]),

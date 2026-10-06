@@ -23,12 +23,15 @@ import {
   type InlineFormat,
 } from '../Input/format'
 import { trimmedRange } from '../Engine/markdownCode'
+import type { HighlightColor } from '../Engine/highlightColors'
 
 function editFor(action: string, doc: string, from: number, to: number): FormatEdit | null {
   const [group, value] = action.split(':')
   switch (group) {
     case 'format':
       return toggleInline(doc, from, to, value as InlineFormat)
+    case 'highlight':
+      return toggleInline(doc, from, to, 'highlight', value as HighlightColor)
     case 'heading':
       return setHeading(doc, from, to, Number(value) as HeadingLevel)
     case 'list':

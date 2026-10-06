@@ -26,6 +26,7 @@ export const SPECTRUM = {
   purple: '#7852EE',
   lavender: '#A78BCC',
   pink: '#EF7697',
+  brown: '#AC8E68',
   grey: '#8E8E93',
 } as const
 
@@ -71,6 +72,7 @@ export const RAMP_FAMILIES = [
   'cyan',
   'blue',
   'purple',
+  'brown',
   'grey',
 ] as const
 export const RAMP_STEPS = [0, 1, 2, 3, 4, 5, 6, 7] as const

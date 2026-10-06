@@ -125,6 +125,7 @@ Authored once, validated by main and renderer alike; the accent resolves from it
 | Purple            | `SPECTRUM.purple` · `--solid-purple`        | `#7852EE`                                  |
 | Lavender          | `SPECTRUM.lavender`    | `#A78BCC`                                  |
 | Pink              | `SPECTRUM.pink`                             | `#EF7697`                                  |
+| Brown             | `SPECTRUM.brown`                            | `#AC8E68`                                  |
 | Grey              | `SPECTRUM.grey`            | `#8E8E93`                                  |
 | Default           | `GREY_DEFAULT`                              | `#48484A`                                  |
 | Default Accent    | `DEFAULT_ACCENT`                            | `cyan`                                     |
@@ -140,7 +141,7 @@ Authored once, validated by main and renderer alike; the accent resolves from it
 
 **SOURCE:** `UIX/Theme/ramp.ts`
 
-Eight families × eight steps, dark to light, each spectrum solid seated on an exact cell. The three constants below are the file's own, not exports; the ramp is read through `cellColor` / `cellPaint` / `cellRing`.
+Nine families × eight steps, dark to light, each spectrum solid seated on an exact cell. The three constants below are the file's own, not exports; the ramp is read through `cellColor` / `cellPaint` / `cellRing`.
 
 | Title         | Token           | Value                                                  |
 | ------------- | --------------- | ------------------------------------------------------ |

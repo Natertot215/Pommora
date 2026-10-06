@@ -20,6 +20,7 @@ import {
 import type { HeadingLevel, ListKind } from '../../Actions/gripMenu'
 import type { BlockFormat, LinkFormat } from '../../Actions/blockMenu'
 import { emptyTable } from '../Engine/Tables/model'
+import { type HighlightColor, writtenMark } from '../Engine/highlightColors'
 import { serialize } from '../Engine/Tables/codec'
 
 export type InlineFormat = keyof typeof WRAP | LinkFormat
@@ -60,16 +61,21 @@ const LINKS: Record<LinkFormat, LinkWrap> = {
 const SWAPS: Partial<Record<TokenKind, TokenKind>> = { bold: 'italic', italic: 'bold' }
 const MARKER_CHARS = '*_~=`'
 
+/** A highlight's `color` is null for the accent; one already highlighted in another color is recolored rather than removed. */
 export function toggleInline(
   doc: string,
   selFrom: number,
   selTo: number,
   fmt: InlineFormat,
+  color: HighlightColor | null = null,
 ): FormatEdit {
   const [from, to] = trimmedRange(doc, selFrom, selTo)
   if (fmt in LINKS) return toggleWrap(doc, from, to, LINKS[fmt as LinkFormat])
   const kind = fmt as keyof typeof WRAP & TokenKind
   const w = WRAP[kind]
+  const mark = color ? writtenMark(color) : ''
+  const open = w + mark
+  const close = mark + w
   // Inline marks are line-local, so only the caret's line is tokenized; the hit is shifted back to document coordinates.
   const ls = lineStartAt(doc, from)
   const line = doc.slice(ls, lineEndAt(doc, from))
@@ -87,20 +93,20 @@ export function toggleInline(
     )
   if (found) {
     const [m0, m1] = shiftToken(found, ls).markerRanges
-    const insert = found.kind === kind ? '' : w
+    const off = found.kind === kind && (found.color ?? null) === color
     return {
       changes: [
-        { from: m0[0], to: m0[1], insert },
-        { from: m1[0], to: m1[1], insert },
+        { from: m0[0], to: m0[1], insert: off ? '' : open },
+        { from: m1[0], to: m1[1], insert: off ? '' : close },
       ],
     }
   }
   return {
     changes: [
-      { from, to: from, insert: w },
-      { from: to, to, insert: w },
+      { from, to: from, insert: open },
+      { from: to, to, insert: close },
     ],
-    selection: to + w.length,
+    selection: to + open.length,
   }
 }
 
