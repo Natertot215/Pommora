@@ -354,6 +354,7 @@ function EditableOptionRows({
           {naming && (
             <MenuItem centered>
               <OptionDraft
+                type={def.type}
                 onCommit={(title) => {
                   setNaming(false)
                   void edit.editOption({ op: 'add', groupId: SELECT_GROUP, title })
