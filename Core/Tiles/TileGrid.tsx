@@ -40,11 +40,13 @@ import {
   resizeDivider,
   resizeStackPair,
   stretchTileHeight,
+  wedgeFills,
 } from './Layout/ops'
-import { computeGeometry, type Placement, pinned, placeTiles, wedgeFills } from './Layout/rects'
+import { computeGeometry, type Placement, pinned, placeTiles } from './Layout/rects'
 import { snapAxis, xCandidates, yCandidates } from './Layout/snap'
 import { stackLayout, stackedAt } from './Layout/stack'
 import { useLatest } from '@pommora/uix/Utilities/stableApi'
+import type { InsertTarget } from './tiles'
 import './tile-base.css'
 import './tile-grid.css'
 
@@ -63,9 +65,6 @@ interface TileGridProps {
   onHandleMenu: (id: string, e: React.MouseEvent) => void
   onInsert: (target: InsertTarget, e: React.MouseEvent) => void
 }
-
-/** Where a new tile lands: as the board's last band, at the height the room below the board gave its ghost or else the default, or flush in the wedge under a tile. */
-export type InsertTarget = { kind: 'append'; h?: number } | { kind: 'wedge'; above: string }
 
 /** The Insert Menu a ghost or the add strip opened, held while the menu is open and then through its create's flight. */
 export interface Inserting {

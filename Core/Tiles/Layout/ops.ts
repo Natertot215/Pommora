@@ -1,5 +1,5 @@
 import type { DividerRef, Edge, LayoutNode, TileBand, TileLayout, TileLeaf } from './model'
-import { cloneLayout, findTile, getTile, NEW_TILE_H, nodeAt } from './model'
+import { cloneLayout, findTile, getTile, NEW_TILE_H, nodeAt, nodeHeight } from './model'
 import { clamp } from '@pommora/uix/Utilities/clamp'
 
 // A share that isn't positive takes the mean of those that are, so a row a hand edit broke still draws every child.
@@ -140,6 +140,26 @@ export function seatBelow(
 ): TileLayout {
   if (under !== null && h !== undefined) return attachBelow(layout, under, id, h)
   return insertBand(layout, layout.bands.length, id, h ?? NEW_TILE_H)
+}
+
+/** Each tile with a wedge under it → the height a tile attached below it takes to land flush on its branch's floor. A row's shorter children end above the row's floor; only a column's last child inherits the room beneath the column. */
+export function wedgeFills(layout: TileLayout, gap: number, minPx: number): Map<string, number> {
+  const fills = new Map<string, number>()
+  const walk = (node: LayoutNode, room: number): void => {
+    if (node.kind === 'tile') {
+      if (room - gap >= minPx) fills.set(node.id, room - gap)
+      return
+    }
+    if (node.kind === 'row') {
+      const h = nodeHeight(node, gap)
+      for (const child of node.children) walk(child, room + h - nodeHeight(child, gap))
+      return
+    }
+    for (const [i, child] of node.children.entries())
+      walk(child, i === node.children.length - 1 ? room : 0)
+  }
+  for (const band of layout.bands) walk(band.node, 0)
+  return fills
 }
 
 /** The index is against the layout as given — when the tile currently IS a band above the target, its removal shifts the band list, so the insertion compensates. */

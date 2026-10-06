@@ -103,8 +103,12 @@ const save = (doc: HostDoc, patch: TileDocPatch): Promise<Result<Landed>> =>
       }),
   )
 
-// An entry or lock write answers with the document it left, and a lone write's answer is what the disk holds. Writes that overlap can land in any order, so the board keeps its own paint until the last one answers and then reads the disk.
-const land = <T>(doc: HostDoc, sent: Promise<Result<Landed<T>>>): Promise<Result<Landed<T>>> => {
+// An entry or lock write answers with the document it left, and a lone write's answer is what the disk holds; a write that seats a tile hands over its layout too, which a held gesture defers to its release. Writes that overlap can land in any order, so the board keeps its own paint until the last one answers and then reads the disk.
+const land = <T>(
+  doc: HostDoc,
+  sent: Promise<Result<Landed<T>>>,
+  seats = false,
+): Promise<Result<Landed<T>>> => {
   doc.writing += 1
   doc.overlapped ||= doc.writing > 1
   return sent.then((r) => {
@@ -113,8 +117,11 @@ const land = <T>(doc: HostDoc, sent: Promise<Result<Landed<T>>>): Promise<Result
     if (doc.overlapped) {
       doc.overlapped = false
       void reload(doc)
-    } else if (r.ok)
+    } else if (r.ok && seats && doc.holds === 0) adopt(doc, r.value.landed)
+    else if (r.ok) {
+      doc.heldPush ||= seats
       put(doc, { tiles: kept(doc, r.value.landed.tiles), locked: r.value.landed.locked })
+    }
     return r
   })
 }
@@ -276,6 +283,15 @@ export function holdTileDoc(host: TileHostRef, held: boolean): void {
     doc.heldPush = false
     void reload(doc)
   }
+}
+
+// The seat lands on the disk's layout, so a layout still owed sends first.
+export function seatTileWrite<T>(
+  host: TileHostRef,
+  send: () => Promise<Result<Landed<T>>>,
+): Promise<Result<Landed<T>>> {
+  const doc = at(host)
+  return doc ? land(doc, joined(doc, flush(doc).then(send)), true) : send()
 }
 
 export function landTileWrite<T>(

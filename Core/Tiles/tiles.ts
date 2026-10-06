@@ -88,6 +88,13 @@ export interface ViewPick {
 export type TilePick = { kind: 'page'; value: string } | { kind: 'view'; value: ViewPick }
 export type PickKind = TilePick['kind']
 
+/** Where a new tile lands: as the board's last band, at the height the room below the board gave its ghost or else the default, or flush in the wedge under a tile. */
+export const insertTargetSchema = z.discriminatedUnion('kind', [
+  z.object({ kind: z.literal('append'), h: z.number().positive().optional() }),
+  z.object({ kind: z.literal('wedge'), above: z.string().min(1) }),
+])
+export type InsertTarget = z.infer<typeof insertTargetSchema>
+
 interface TileKind<E extends TileEntry = TileEntry> {
   schema: z.ZodType<E>
   label: string

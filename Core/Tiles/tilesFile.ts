@@ -1,6 +1,7 @@
 import { isKeyOf, isPlainObject } from '../Contract/validators'
 import {
   copyEntry,
+  insertTargetSchema,
   knownTile,
   type Landed,
   tileIdOf,
@@ -14,8 +15,9 @@ import {
   type TilesChanged,
 } from './tiles'
 import { decodeLayout } from './Layout/codec'
-import { NEW_TILE_H } from './Layout/model'
-import { insertBand } from './Layout/ops'
+import { emptyLayout, getTile, NEW_TILE_H, TILE_GAP, type TileLayout } from './Layout/model'
+import { insertBand, seatBelow, wedgeFills } from './Layout/ops'
+import { TILE_MIN_PX } from '@pommora/uix/Utilities/tileMetrics'
 import { fail, ok, type Result, valueOr, fault } from '../Contract/result'
 import { readTileDocAt, writeTileDocAt } from './tileDoc'
 import { newId } from '../Nexus/ids'
@@ -34,8 +36,21 @@ import { tileHostsOf } from './tileHosts'
 import type { BodyWrite } from '../Pages/pageDetail'
 import type { TrashDeps } from '../Trash/bundle'
 
-const setTiles = (dir: string, update: (tiles: unknown[]) => unknown[]): Promise<Result<TileDoc>> =>
-  writeTileDocAt(dir, (cur) => ({ ...cur, tiles: update(cur.tiles) }))
+// The entry and its leaf land in one write, so a board no window holds still shows the tile; a layout this build can't read is left as it stands.
+const seatTile = (
+  dir: string,
+  entry: unknown,
+  seat: (layout: TileLayout) => TileLayout,
+): Promise<Result<TileDoc>> =>
+  writeTileDocAt(dir, (cur) => {
+    const layout = decodeLayout(cur.layout ?? emptyLayout())
+    const id = tileIdOf(entry)
+    return {
+      ...cur,
+      tiles: cur.tiles.some((b) => tileIdOf(b) === id) ? cur.tiles : [...cur.tiles, entry],
+      layout: layout ? seat(layout) : cur.layout,
+    }
+  })
 
 // A new tile's file lands before its entry, so a crash leaks at worst an orphan file, never an entry without one; a refused entry takes its file back.
 async function addTile(
@@ -43,10 +58,11 @@ async function addTile(
   id: string,
   entry: unknown,
   body: string | null,
+  seat: (layout: TileLayout) => TileLayout,
 ): Promise<Result<Landed<{ id: string }>>> {
   const file = tileFilePath(dir, id)
   if (body !== null) await atomicWriteFile(file, body)
-  const written = await setTiles(dir, (tiles) => [...tiles, entry])
+  const written = await seatTile(dir, entry, seat)
   if (!written.ok && body !== null) await machine().remove(file)
   return landed(written, { id })
 }
@@ -79,19 +95,26 @@ const pickEntry = (root: string, pick: unknown): Promise<Result<Json>> =>
     ? PICK_ENTRIES[pick.kind](root, pick.value)
     : Promise.resolve(fault('Invalid pick.'))
 
-// With no pick a tile starts as a blank Markdown Tile; a pick makes the entry a convert would, so a linked tile lands in one write and owns no file.
+// With no pick a tile starts as a blank Markdown Tile; a pick makes the entry a convert would, so a linked tile lands in one write and owns no file. A wedge seats on the fill the disk's layout gives it, and one whose tile is gone gives way to the last band.
 export async function createTile(
   root: string,
   dir: string,
+  target: unknown,
   pick?: unknown,
 ): Promise<Result<Landed<{ id: string }>>> {
+  const at = insertTargetSchema.safeParse(target).data
+  if (!at) return fault('Invalid insert target.')
   const id = newId()
   const linked = pick === undefined ? null : await pickEntry(root, pick)
   if (linked && !linked.ok) return linked
   await machine().mkdir(dir)
+  const seat = (layout: TileLayout): TileLayout =>
+    at.kind === 'wedge'
+      ? seatBelow(layout, id, at.above, wedgeFills(layout, TILE_GAP, TILE_MIN_PX).get(at.above))
+      : seatBelow(layout, id, null, at.h)
   return linked
-    ? addTile(dir, id, mergeEntry({ id }, linked.value), null)
-    : addTile(dir, id, mintSeed(id), '')
+    ? addTile(dir, id, mergeEntry({ id }, linked.value), null, seat)
+    : addTile(dir, id, mintSeed(id), '', seat)
 }
 
 async function reviseTile(
@@ -104,13 +127,14 @@ async function reviseTile(
   // A convert rewrites a tile this build knows; a removal takes any entry by its id, or none, since a box can outlive its entry.
   const matches = (b: unknown): boolean => (patch ? knownTile(b)?.id : tileIdOf(b)) === tileId
   let entry: Json | null = null
-  const written = await setTiles(dir, (tiles) =>
-    tiles.flatMap((b) => {
+  const written = await writeTileDocAt(dir, (cur) => ({
+    ...cur,
+    tiles: cur.tiles.flatMap((b) => {
       if (!matches(b)) return [b]
       entry = b as Json
       return patch ? [mergeEntry(entry, patch)] : []
     }),
-  )
+  }))
   if (!written.ok) return written
   const known = knownTile(entry)
   if (patch && !known) return fail('not-found', 'No such tile.')
@@ -145,7 +169,7 @@ export const removeTile = (
   deps: TrashDeps,
 ): Promise<Result<Landed<{ removed: RemovedTile }>>> => reviseTile(root, dir, tileId, null, deps)
 
-/** File first, as a create is, never over the file its id names; the band lands with the entry, so a board no window holds still shows it. */
+/** File first, as a create is, never over the file its id names. */
 export async function restoreTile(dir: string, removed: unknown): Promise<Result<Landed>> {
   if (!isPlainObject(removed)) return fault('Invalid tile.')
   const id = tileIdOf(removed.entry)
@@ -164,16 +188,9 @@ export async function restoreTile(dir: string, removed: unknown): Promise<Result
       if (!(await pathExists(file))) await atomicWriteFile(file, body)
     })
   }
-  const written = await writeTileDocAt(dir, (cur) => {
-    const layout = decodeLayout(cur.layout)
-    return {
-      ...cur,
-      tiles: cur.tiles.some((b) => tileIdOf(b) === id) ? cur.tiles : [...cur.tiles, removed.entry],
-      layout: layout
-        ? insertBand(layout, at?.band ?? layout.bands.length, id, at?.h ?? NEW_TILE_H)
-        : cur.layout,
-    }
-  }).finally(dropTileHeadingLinks)
+  const written = await seatTile(dir, removed.entry, (layout) =>
+    insertBand(layout, at?.band ?? layout.bands.length, id, at?.h ?? NEW_TILE_H),
+  ).finally(dropTileHeadingLinks)
   return landed(written, {})
 }
 
@@ -206,7 +223,9 @@ export async function duplicateTile(
     if (!body.ok && body.error.code !== 'not-found') return body
     text = valueOr(body, '')
   }
-  return addTile(dir, id, copyEntry({ ...(src as Json), id }), text)
+  return addTile(dir, id, copyEntry({ ...(src as Json), id }), text, (layout) =>
+    seatBelow(layout, id, tileId, getTile(layout, tileId)?.h),
+  )
 }
 
 /** Absent and unreadable stay apart: a body the read merely failed on must never render as an empty tile the next keystroke overwrites. */
