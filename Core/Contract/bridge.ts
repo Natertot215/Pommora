@@ -21,8 +21,8 @@ import type { PropertyDeletion } from '../Properties/deleteProperty'
 import type { SchemaCascade, SchemaJournal } from '../Properties/propertyJournal'
 import type { PropertyRename } from '../Properties/registryProperty'
 import type { Personalization } from '../Settings/personalization'
+import type { InsertTarget } from '../Tiles/Layout/model'
 import type {
-  InsertTarget,
   Landed,
   RemovedTile,
   TileDoc,

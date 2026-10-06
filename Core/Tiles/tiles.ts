@@ -8,7 +8,7 @@ import { isUlidShaped } from '../Nexus/identityMark'
 import { VIEW_BUTTONS, VIEW_STYLES } from '../Views/viewRow'
 import { mapViews, mintViewId } from '../Views/views'
 import { rawLayoutSchema } from './Layout/codec'
-import { NEW_TILE_H, type RowNode, type TileLeaf } from './Layout/model'
+import { type InsertTarget, NEW_TILE_H, type RowNode, type TileLeaf } from './Layout/model'
 import { zoomStep } from './tileZoom'
 
 // A homepage carrying an id is no host; a Space sheds whatever else its reference carries.
@@ -88,12 +88,10 @@ export interface ViewPick {
 export type TilePick = { kind: 'page'; value: string } | { kind: 'view'; value: ViewPick }
 export type PickKind = TilePick['kind']
 
-/** Where a new tile lands: as the board's last band, at the height the room below the board gave its ghost or else the default, or flush in the wedge under a tile. */
-export const insertTargetSchema = z.discriminatedUnion('kind', [
+export const insertTargetSchema: z.ZodType<InsertTarget> = z.discriminatedUnion('kind', [
   z.object({ kind: z.literal('append'), h: z.number().positive().optional() }),
   z.object({ kind: z.literal('wedge'), above: z.string().min(1) }),
 ])
-export type InsertTarget = z.infer<typeof insertTargetSchema>
 
 interface TileKind<E extends TileEntry = TileEntry> {
   schema: z.ZodType<E>
@@ -195,7 +193,7 @@ export interface TileDocPatch {
   locked?: boolean
 }
 
-/** Every write answers with the document it left on disk, and the board adopts its entries and lock from it. */
+/** Every write answers with the document it left on disk, and the board adopts its entries and lock from it, and its layout when the write seated a tile. */
 export type Landed<T = unknown> = T & { landed: TileDoc }
 
 export const landed = <T>(written: Result<TileDoc>, value: T): Result<Landed<T>> =>

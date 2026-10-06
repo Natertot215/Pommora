@@ -30,7 +30,14 @@ import { revealTarget } from '@pommora/uix/Interactions/hover-reveal.css'
 import { cx } from '@pommora/uix/Utilities/cx'
 import { Icon } from '@pommora/uix/Symbols'
 import { text } from '@pommora/uix/Theme'
-import { type DividerRef, type Edge, NEW_TILE_H, TILE_GAP, type TileLayout } from './Layout/model'
+import {
+  type DividerRef,
+  type Edge,
+  type InsertTarget,
+  NEW_TILE_H,
+  TILE_GAP,
+  type TileLayout,
+} from './Layout/model'
 import { resolveEdge } from './Layout/edges'
 import { hitTest, type DropTarget, sameTarget } from './Layout/hitTest'
 import {
@@ -46,7 +53,6 @@ import { computeGeometry, type Placement, pinned, placeTiles } from './Layout/re
 import { snapAxis, xCandidates, yCandidates } from './Layout/snap'
 import { stackLayout, stackedAt } from './Layout/stack'
 import { useLatest } from '@pommora/uix/Utilities/stableApi'
-import type { InsertTarget } from './tiles'
 import './tile-base.css'
 import './tile-grid.css'
 

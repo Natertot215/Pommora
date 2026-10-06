@@ -4,7 +4,6 @@ import { flushSync } from 'react-dom'
 import {
   knownTile,
   tileIdOf,
-  type InsertTarget,
   type TileEntry,
   type TileHostRef,
   TILE_KINDS,
@@ -15,7 +14,14 @@ import { pagesByIdOf } from '../Nexus/treeIndex'
 import type { ConnectionsApi } from '../MarkdownPM/Links/connectionsApi'
 import { useConnections } from '../Session/pageConnections'
 import { insertBand, removeLeaf } from './Layout/ops'
-import { emptyLayout, findTile, getTile, NEW_TILE_H, type TileLayout } from './Layout/model'
+import {
+  emptyLayout,
+  findTile,
+  getTile,
+  type InsertTarget,
+  NEW_TILE_H,
+  type TileLayout,
+} from './Layout/model'
 import { type Inserting, TileGrid } from './TileGrid'
 import { useDismissal } from '@pommora/uix/Interactions/dismissalStack'
 import { entityIcon } from '../Assets/entityIconPolicy'

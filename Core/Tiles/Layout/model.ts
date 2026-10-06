@@ -38,6 +38,9 @@ export interface DividerRef extends NodePath {
   index: number
 }
 
+/** Where a new tile lands: as the board's last band, at the height the room below the board gave its ghost or else the default, or flush in the wedge under a tile. */
+export type InsertTarget = { kind: 'append'; h?: number } | { kind: 'wedge'; above: string }
+
 // KNOB — the gutter between tiles, and the height a tile with nothing to size it by takes.
 export const TILE_GAP = 8
 export const NEW_TILE_H = 250
