@@ -6,6 +6,7 @@ import * as s from './menu-row.css'
 import { cx } from '../Utilities/cx'
 import { overScrollEllipsis } from '../Interactions/OverScroll'
 import { onActivateClick } from '../Interactions/activate'
+import type { PickRun } from './pickRuns'
 
 const BAR_GLYPH = 12 // KNOB
 const INDENT_BASE = 8 // KNOB
@@ -83,7 +84,8 @@ type MenuItemProps = {
   trailing?: ReactNode
   overlay?: ReactNode
   selected?: boolean
-  checked?: boolean
+  active?: boolean
+  picked?: PickRun
   centered?: boolean
   disabled?: boolean
   inert?: boolean
@@ -107,7 +109,8 @@ export function MenuItem({
   trailing,
   overlay,
   selected = false,
-  checked,
+  active = false,
+  picked,
   centered = false,
   disabled = false,
   inert = false,
@@ -136,7 +139,10 @@ export function MenuItem({
       className={cx(
         inert ? s.rowBox : s.item,
         selected && s.itemSelected,
-        checked && s.itemChecked,
+        active && s.itemActive,
+        picked && s.itemPicked[picked],
+        centered && s.chipRow,
+        centered && picked && s.chipPicked[picked],
         disabled && s.rowDisabled,
         className,
       )}
@@ -162,9 +168,6 @@ export function MenuItem({
           {detail != null && <span className={s.detail}>{detail}</span>}
           {trailing}
         </span>
-      )}
-      {checked !== undefined && (
-        <Icon name="check" size="control" className={cx(s.check, !checked && s.checkHidden)} />
       )}
       {overlay}
     </div>

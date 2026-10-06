@@ -4,7 +4,7 @@ import { LabelsLeaf } from './LabelsLeaf'
 import { MenuLeaf } from './MenuLeaf'
 import { CalendarPicker } from '@pommora/uix/Pickers/CalendarPicker'
 import { PickerMenu } from '@pommora/uix/Pickers/PickerMenu'
-import { MenuItem, MenuSurface } from '@pommora/uix/Menus'
+import { MenuItem, MenuSurface, pickRuns } from '@pommora/uix/Menus'
 import { Checkbox } from '@pommora/uix/Controls/Checkbox'
 import { Label } from '@pommora/uix/Labels/Label'
 
@@ -55,6 +55,7 @@ const PICKER_LABELS = [
   { label: 'On Hold', color: 'orange-3' },
   { label: 'Complete', color: 'green-3' },
 ] as const
+const PICKED_RUNS = pickRuns(PICKER_LABELS.map((_, i) => i < 2))
 
 export function ComponentsLeaf(): React.JSX.Element {
   return (
@@ -69,7 +70,7 @@ export function ComponentsLeaf(): React.JSX.Element {
             {(open, close, trigger) => (
               <PickerMenu solid open={open} onDismiss={close} triggerRef={trigger}>
                 {PICKER_LABELS.map((o, i) => (
-                  <MenuItem key={o.label} checked={i === 0} centered onClick={() => {}}>
+                  <MenuItem key={o.label} picked={PICKED_RUNS[i]} centered onClick={() => {}}>
                     <Label color={o.color} text={o.label} shape="tag" />
                   </MenuItem>
                 ))}

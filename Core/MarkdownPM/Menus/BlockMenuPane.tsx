@@ -39,7 +39,7 @@ export function BlockMenuPane({ state, selected, onPick, geometry }: Props): Rea
                 key={row.action}
                 className="mdpm-block-row"
                 ref={row.action === v.selected ? keepInView : undefined}
-                selected={row.action === v.selected}
+                active={row.action === v.selected}
                 leading={row.icon && <Icon name={row.icon} size="body" />}
                 onMouseDown={() => onPick(row.action)}
               >

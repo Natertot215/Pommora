@@ -31,7 +31,6 @@ export type MenuRow = (
       label: ReactNode
       caption?: ReactNode
       trailing?: Trailing
-      selected?: boolean
       disabled?: boolean
       inert?: boolean
       onSelect?: () => void
@@ -145,7 +144,6 @@ function rowNode(row: MenuRow): React.JSX.Element {
           leading={row.icon}
           subLabel={row.caption}
           trailing={t && trailingNode(t)}
-          selected={row.selected}
           disabled={row.disabled}
           inert={row.inert}
           onClick={row.onSelect}

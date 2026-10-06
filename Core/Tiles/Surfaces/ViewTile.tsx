@@ -663,7 +663,7 @@ export function ViewTile({
               {views.map((v, i) => (
                 <MenuItem
                   key={v.id}
-                  checked={i === index}
+                  picked={i === index ? 'solo' : undefined}
                   leading={<Icon name={viewGlyph(v)} size="headline" />}
                   onClick={renaming === v.id ? undefined : () => patchEntry({ active: i })}
                   onContextMenu={(e) => void rowMenu(v.id, e, false)}

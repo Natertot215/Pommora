@@ -30,7 +30,6 @@ import { colorNameFor } from '@pommora/uix/Theme/ramp'
 import { RenamableLabel } from '@pommora/uix/Fields/RenamableLabel'
 import { IconChoice } from '../../Assets/IconChoice'
 import { useSession } from '../../Session/store'
-import { optionRing } from '@pommora/uix/Pickers/picker-base.css'
 import * as vd from '../../Interface/Toolbar/toolbar-menu.css'
 import { dialer } from '../../Platform/dialer'
 import { popMenu } from '../../Actions/menuActions'
@@ -149,7 +148,7 @@ export function ViewFrame({
             return (
               <LineRow key={v.id} id={v.id} open={open}>
                 <MenuItem
-                  className={active.id === v.id ? optionRing : undefined}
+                  picked={active.id === v.id ? 'solo' : undefined}
                   leading={<Icon name={viewGlyph(v)} size="headline" />}
                   trailing={
                     <Button

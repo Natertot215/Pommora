@@ -12,7 +12,7 @@ export type CornerRow = {
   key: string
   label: string
   icon: string
-  checked: boolean
+  picked: boolean
   onPick: () => void
 }
 
@@ -53,7 +53,7 @@ export function CornerMenu({
                 <MenuItem
                   key={row.key}
                   leading={<Icon name={row.icon} size={GLYPH} />}
-                  checked={row.checked}
+                  picked={row.picked ? 'solo' : undefined}
                   onClick={() => {
                     row.onPick()
                     setOpen(false)

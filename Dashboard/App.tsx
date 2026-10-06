@@ -27,7 +27,7 @@ export function App(): React.JSX.Element {
             key: v.label,
             label: v.label,
             icon: v.icon,
-            checked: v === view,
+            picked: v === view,
             onPick: () => setHashRoute(v.route),
           })),
         ]}
@@ -44,7 +44,7 @@ export function App(): React.JSX.Element {
                 key: l.id,
                 label: l.label,
                 icon: l.icon,
-                checked: l === leaf,
+                picked: l === leaf,
                 onPick: () => setHashRoute(l.id),
               })),
             )}

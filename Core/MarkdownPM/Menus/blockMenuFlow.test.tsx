@@ -3,7 +3,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import { act } from 'react'
 import { undo } from '@codemirror/commands'
 import type { EditorView } from '@codemirror/view'
-import { itemSelected, matchText } from '@pommora/uix/Menus/menu-row.css'
+import { itemActive, matchText } from '@pommora/uix/Menus/menu-row.css'
 import { emptyTable } from '../Engine/Tables/model'
 import { serialize } from '../Engine/Tables/codec'
 import { cleanupEditor, mountEditor, stubEditorBridge } from '../../Testing/editorHarness'
@@ -19,7 +19,7 @@ const pane = (): Element | null => document.querySelector('.mdpm-block-menu')
 const rows = (): NodeListOf<Element> =>
   document.querySelectorAll('.mdpm-block-menu .mdpm-block-row')
 
-const highlighted = (): Element[] => [...rows()].filter((r) => r.classList.contains(itemSelected))
+const highlighted = (): Element[] => [...rows()].filter((r) => r.classList.contains(itemActive))
 
 async function open(initialBody: string, caret = initialBody.length): Promise<EditorView> {
   const view = await mountEditor({ initialBody })

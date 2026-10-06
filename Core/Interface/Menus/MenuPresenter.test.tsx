@@ -4,7 +4,7 @@ import { act } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
 import type { ActionItem } from '../../Actions/menuModel'
 import { slotContent } from '@pommora/uix/Menus/frame-slide.css'
-import { check, itemChecked } from '@pommora/uix/Menus/menu-row.css'
+import { itemPicked } from '@pommora/uix/Menus/menu-row.css'
 import { SHIELD_ATTR } from '@pommora/uix/Interactions/dismissalStack'
 import { useSession } from '../../Session/store'
 import { MenuPresenter } from './MenuPresenter'
@@ -122,19 +122,24 @@ describe('the in-app menu presenter', () => {
     await expect(promise).resolves.toBe('style:a')
   })
 
-  it('draws a checked row with its check beside a command row that has none', async () => {
+  it('rings checked rows, joining adjacent ones into one run that a separator breaks', async () => {
     await act(async () => {
       void useSession.getState().presentMenu(
         [
-          { label: 'Bordered', action: 'style:bordered', checked: true },
+          { label: 'Red', action: 'red', checked: true },
+          { label: 'Green', action: 'green', checked: true },
+          { label: 'Blue', action: 'blue', checked: true, separatorBefore: true },
           { label: 'Rename', action: 'rename' },
         ],
         trigger,
       )
     })
-    expect(labelled('Bordered')?.className).toContain(itemChecked)
-    expect(labelled('Bordered')?.querySelector(`.${check}`)).not.toBeNull()
-    expect(labelled('Rename')?.querySelector(`.${check}`)).toBeNull()
+    expect(labelled('Red')?.className).toContain(itemPicked.first)
+    expect(labelled('Green')?.className).toContain(itemPicked.last)
+    expect(labelled('Blue')?.className).toContain(itemPicked.solo)
+    expect(Object.values(itemPicked).some((c) => labelled('Rename')?.className.includes(c))).toBe(
+      false,
+    )
     await act(async () => {
       useSession.getState().pendingMenu?.settle(null)
     })
@@ -162,14 +167,14 @@ describe('the in-app menu presenter', () => {
     await act(async () => {
       labelled('Style')?.click()
     })
-    expect(labelled('Bordered')?.className).toContain(itemChecked)
+    expect(labelled('Bordered')?.className).toContain(itemPicked.solo)
     await act(async () => {
       labelled('Borderless')?.click()
     })
     expect(stay).toHaveBeenCalledWith('style:borderless')
     expect(useSession.getState().pendingMenu).not.toBeNull()
-    expect(labelled('Borderless')?.className).toContain(itemChecked)
-    expect(labelled('Bordered')?.className).not.toContain(itemChecked)
+    expect(labelled('Borderless')?.className).toContain(itemPicked.solo)
+    expect(labelled('Bordered')?.className).not.toContain(itemPicked.solo)
     await act(async () => {
       useSession.getState().pendingMenu?.settle(null)
     })

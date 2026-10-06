@@ -8,6 +8,7 @@ import type { SavedView } from '../views'
 import { FilterFrame, type FilterView } from './FilterFrame'
 import { mountEachTest } from '../../Testing/viewHarness'
 import { linkedSpacesTree } from '../../Testing/testTree'
+import { itemPicked } from '@pommora/uix/Menus/menu-row.css'
 
 const statusDef: PropertyDefinition = {
   id: 'prop_status',
@@ -408,6 +409,44 @@ describe('FilterFrame', () => {
 })
 
 describe('FilterFrame value editors', () => {
+  it('location picks join into one ring across siblings, and an expanded parent ends the run', async () => {
+    const set = (id: string, sets: unknown[] = []) => ({
+      kind: 'set',
+      id,
+      title: id,
+      path: id,
+      sets,
+      pages: [],
+    })
+    Object.assign(source, { sets: [set('A', [set('A1')]), set('B'), set('C')] })
+    await mount(
+      view({
+        filter: {
+          match: 'all',
+          rules: [{ property_id: '_location', op: 'is', values: ['A', 'B', 'C'] }],
+        },
+      }),
+    )
+    await click(host.querySelector('[aria-label="Filter values"]'))
+    const row = (t: string): string => optionWithText(t)?.className ?? ''
+    expect([row('A'), row('B'), row('C')]).toEqual([
+      expect.stringContaining(itemPicked.first),
+      expect.stringContaining(itemPicked.middle),
+      expect.stringContaining(itemPicked.last),
+    ])
+    await act(async () => {
+      document
+        .querySelector('[data-picker-portal] [data-drop-outline]')
+        ?.dispatchEvent(new MouseEvent('click', { bubbles: true }))
+    })
+    expect([row('A'), row('B'), row('C')]).toEqual([
+      expect.stringContaining(itemPicked.solo),
+      expect.stringContaining(itemPicked.first),
+      expect.stringContaining(itemPicked.last),
+    ])
+    Object.assign(source, { sets: [] })
+  })
+
   it('the chips picker toggles values[] and stays open — never a value key', async () => {
     await mount(
       view({ filter: { match: 'all', rules: [{ property_id: 'prop_status', op: 'is' }] } }),

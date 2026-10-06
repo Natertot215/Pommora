@@ -24,6 +24,8 @@ import {
   MenuSeparator,
   MenuTopRow,
   menuDropLine,
+  pickRuns,
+  type PickRun,
 } from '@pommora/uix/Menus'
 import { FrameSlide } from '@pommora/uix/Menus/FrameSlide'
 import { LineRow, LineZone, lineList } from '@pommora/uix/Interactions/drag'
@@ -257,13 +259,9 @@ export function PropertyOptionRows({
     <MenuScrollFrame maxHeight={PICKER_MAX_HEIGHT}>
       <OptionGroups
         groups={groups}
-        row={(o) => (
-          <MenuItem
-            key={o.value}
-            checked={selected.includes(o.value)}
-            centered
-            onClick={() => onPick(o.value)}
-          >
+        selected={selected}
+        row={(o, run) => (
+          <MenuItem key={o.value} picked={run} centered onClick={() => onPick(o.value)}>
             {contextOptions ? (
               <NeutralChip color={colorNameFor(o.color)} title={o.label} icon={o.icon} />
             ) : (
@@ -278,20 +276,25 @@ export function PropertyOptionRows({
 
 function OptionGroups({
   groups,
+  selected,
   row,
 }: {
   groups: PickGroup[]
-  row: (option: PickOption) => ReactNode
+  selected: string[]
+  row: (option: PickOption, run: PickRun | undefined) => ReactNode
 }): React.JSX.Element {
   if (groups.length === 0) return <div className={emptyPane} />
   return (
     <>
-      {groups.map((g, i) => (
-        <Fragment key={g.id}>
-          {i > 0 && <MenuSeparator group />}
-          {g.options.map(row)}
-        </Fragment>
-      ))}
+      {groups.map((g, i) => {
+        const runs = pickRuns(g.options.map((o) => selected.includes(o.value)))
+        return (
+          <Fragment key={g.id}>
+            {i > 0 && <MenuSeparator group />}
+            {g.options.map((o, at) => row(o, runs[at]))}
+          </Fragment>
+        )
+      })}
     </>
   )
 }
@@ -321,7 +324,7 @@ function EditableOptionRows({
           creates && (
             <>
               {edit.draft && (
-                <MenuItem inert checked={false} centered>
+                <MenuItem inert centered>
                   <OptionDraft edit={edit} type={def.type} />
                 </MenuItem>
               )}
@@ -348,7 +351,8 @@ function EditableOptionRows({
         >
           <OptionGroups
             groups={groups}
-            row={(o) => (
+            selected={selected}
+            row={(o, run) => (
               <Reveal key={edit.keyOf(o.value)} open enterOnMount={edit.entering(o.value)} fill>
                 <LineRow
                   id={o.value}
@@ -358,12 +362,7 @@ function EditableOptionRows({
                     void edit.openMenu(o.value, e.currentTarget)
                   }}
                 >
-                  <MenuItem
-                    checked={selected.includes(o.value)}
-                    centered
-                    tabIndex={-1}
-                    onClick={() => onPick(o.value)}
-                  >
+                  <MenuItem picked={run} centered tabIndex={-1} onClick={() => onPick(o.value)}>
                     <OptionChip type={def.type} look={look} option={o} def={def} />
                   </MenuItem>
                 </LineRow>

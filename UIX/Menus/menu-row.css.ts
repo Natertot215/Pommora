@@ -1,11 +1,11 @@
-import { globalStyle, style, type StyleRule } from '@vanilla-extract/css'
+import { globalStyle, style, styleVariants, type StyleRule } from '@vanilla-extract/css'
 import { STATE_OPACITY, vars as colorVars } from '../Theme/color.css'
 import { font, text } from '../Theme/typography.css'
 import { tintAt } from '../Theme/colors'
-import { fieldRing, ROW_RING } from '../Fields/fieldRing'
+import { ROW_RING } from '../Fields/fieldRing'
 import { fillInput } from '../Fields/fields.css'
 import { REVEAL_FADE, revealTarget } from '../Interactions/hover-reveal.css'
-import { duration } from '../Animations/motion'
+import { duration, easing } from '../Animations/motion'
 
 const c = colorVars.color
 
@@ -21,17 +21,20 @@ globalStyle(':root', {
   },
 })
 
-const rowFocus = {
-  outline: 'none',
-  boxShadow: fieldRing(ROW_RING),
-  vars: { '--field-ring': tintAt('var(--accent)', 'secondary') },
-}
+export const ROW_RADIUS = 8
+
+const POINTED = tintAt('var(--accent)', 'quaternary')
+
+/** What the keyboard stands on — a focused row, or the row an editor-driven list's cursor holds — washed as a layer over whatever fill the row already wears. */
+const pointed = { backgroundImage: `linear-gradient(${POINTED}, ${POINTED})` }
+
+const rowFocus = { outline: 'none', ...pointed }
 
 export const rowShell = style({
-  borderRadius: '8px',
+  borderRadius: `${ROW_RADIUS}px`,
   cursor: 'default',
   selectors: {
-    '&:hover': { background: c.state.hover },
+    '&:hover': { backgroundColor: c.state.hover },
     '&:focus-visible, [data-line-row]:focus-visible &': rowFocus,
   },
 })
@@ -112,22 +115,40 @@ export const menuCompact = style({
 })
 
 export const itemSelected = style({
-  background: c.state.selected,
-  selectors: { '&:hover': { background: c.state.selected } },
+  backgroundColor: c.state.selected,
+  selectors: { '&:hover': { backgroundColor: c.state.selected } },
 })
 
-/** Carries no fill of its own: the mark is the check, and a pane's `:has()` reads this to tell a list that has a selection from one that has none. */
-export const itemChecked = style({})
+export const itemActive = style({ ...pointed, selectors: { '&:hover': pointed } })
 
-/** Shown only inside a picker pane holding a checked row (`picker-base.css.ts`), so a menu of plain commands keeps no check gutter. */
-export const check = style({
-  display: 'none',
-  color: 'var(--accent)',
-  flex: 'none',
-  pointerEvents: 'none',
-})
+const PICK_EASE = `${duration.fast} ${easing.baseEase}`
 
-export const checkHidden = style({ visibility: 'hidden' })
+/** A run of picked rows draws as one ring, each row squaring the corners and dropping the edges it shares with a picked neighbor. */
+const RUN_EDGES = { solo: [1, 1], first: [1, 0], middle: [0, 0], last: [0, 1] } as const
+
+export const itemPicked = styleVariants(RUN_EDGES, ([top, bottom]) => ({
+  borderRadius: `${top * ROW_RADIUS}px ${top * ROW_RADIUS}px ${bottom * ROW_RADIUS}px ${bottom * ROW_RADIUS}px`,
+  '::after': {
+    content: '""',
+    position: 'absolute',
+    inset: 0,
+    borderRadius: 'inherit',
+    border: `${ROW_RING}px solid var(--accent-stroke-hot)`,
+    borderTopWidth: top * ROW_RING,
+    borderBottomWidth: bottom * ROW_RING,
+    pointerEvents: 'none',
+    transition: `border-color ${PICK_EASE}`,
+    '@starting-style': { borderColor: 'transparent' },
+  },
+}))
+
+export const chipRow = style({ transition: `padding-block ${PICK_EASE}` })
+
+/** A picked chip's ringed edges pad out by the ring's weight, so the ring clears the chip above and below as it does beside it. */
+export const chipPicked = styleVariants(RUN_EDGES, ([top, bottom]) => ({
+  paddingTop: `calc(var(--row-pad-y) + ${top * ROW_RING}px)`,
+  paddingBottom: `calc(var(--row-pad-y) + ${bottom * ROW_RING}px)`,
+}))
 
 export const itemEmphasized = style([text.body.emphasized])
 
