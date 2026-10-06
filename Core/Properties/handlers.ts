@@ -1,13 +1,13 @@
 import { NOT_A_PROPERTY_DIR, validPropertyDir } from '../Assets/assetRoots'
-import { type Handlers, withWriteRoot } from '../Contract/handlers'
+import { type Handlers, withRoot, withWriteRoot } from '../Contract/handlers'
 import { ok, type Result, fault } from '../Contract/result'
 import { isFiniteNumber, isPlainObject, NEEDS_CONFIG_PATCH } from '../Contract/validators'
 import { mutableTarget } from '../Nexus/liveTree'
 import { oweCascade } from '../Nexus/fileEvents'
 import { readWatchScope } from '../Settings/settings'
 import { assignProperty, reorderAssignment } from './assignment'
-import { deleteProperty } from './deleteProperty'
-import { clearOption, editOption, removeOption, renameOption } from './optionOps'
+import { deleteProperty, propertyHolders } from './deleteProperty'
+import { clearOption, editOption, optionHolders, removeOption, renameOption } from './optionOps'
 import { optionEdit, type OptionEdit } from './optionModel'
 import {
   type FileConfig,
@@ -178,4 +178,8 @@ export const propertiesHandlers = {
   'property:renameOption': registryChannel(idOldNew, renameOption, cascadeReply),
   'property:removeOption': registryChannel(idAndValue, removeOption, cascadeReply),
   'property:clearOption': registryChannel(idAndValue, clearOption),
+  'property:holders': withRoot(async (root, _ctx, id: unknown, value: unknown) => {
+    if (typeof id !== 'string') return NEEDS_PROPERTY_ID
+    return typeof value === 'string' ? optionHolders(root, id, value) : propertyHolders(root, id)
+  }),
 } satisfies Partial<Handlers>

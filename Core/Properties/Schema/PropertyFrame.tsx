@@ -280,7 +280,7 @@ export function PropertyFrame({
   const editorMenu = async (def: PropertyDefinition): Promise<void> => {
     const action = await popMenu(propertyMenuModel({ kind: 'editor', name: def.name }))
     if (action === 'property:remove') await remove(def.id)
-    else if (action === 'property:destroy' && (await askDestroyProperty(def.name))) {
+    else if (action === 'property:destroy' && (await askDestroyProperty(def.id, def.name))) {
       const deleted = await dialer().ask('property:delete', def.id)
       if (!reportRefusal(deleted)) return
       trashChanged.emit()
