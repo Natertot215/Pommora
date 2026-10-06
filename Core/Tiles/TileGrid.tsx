@@ -92,8 +92,8 @@ const BAND_ZONE_PX = 10
 const SNAP_PX = 9
 // The clearance under the last band is the add strip's seat: a gutter and the strip, so the board ends where the strip does.
 const BOTTOM_PAD_PX = TILE_GAP + ADD_STRIP_PX
-// KNOB — a wedge's dwell, and the least a bottom ghost may fill before the bottom offers the strip instead.
-const WEDGE_DWELL_MS = 1000
+// KNOB — a ghost's dwell, and the least a bottom ghost may fill before the bottom offers the strip instead.
+const GHOST_DWELL_MS = 1000
 const BOTTOM_FILL_MIN_PX = 80
 /** The bottom zone's anchor on the ghost hook: the one id the layout codec lets no leaf carry. */
 const APPEND = ''
@@ -114,6 +114,14 @@ const refKey = (ref: { band: number; path: number[]; index: number }): string =>
   `${ref.band}|${ref.path.join('.')}|${ref.index}`
 
 // The share rides `left` and `width` as percentages, so the browser lays the board out at whatever width the grid has, the frame it has it; the pixels ride the transform with y, so every move transitions `transform`, the property a settle commits on.
+/** A full-width box at `y`: a band's, a bottom ghost's, the bottom zone's. */
+const bandBox = (y: number, h: number): Placement => ({
+  x: { share: 0, px: 0 },
+  y,
+  w: { share: 1, px: 0 },
+  h,
+})
+
 const placementStyle = (p: Placement): CSSProperties => ({
   left: `${p.x.share * 100}%`,
   transform: `translate(${p.x.px}px, ${p.y}px)`,
@@ -121,13 +129,13 @@ const placementStyle = (p: Placement): CSSProperties => ({
   height: p.h,
 })
 
-/** The height a bottom ghost fills: the pane's room from the last band down to its own end, less what the pane keeps under the board and the gutter the ghost sits behind, so the board's growth while the ghost shows gives the pane no scroll. Read from the band, so the ghost's own growth never feeds it; null where it is less than a tile worth offering. */
+/** The height a bottom ghost fills: the pane's room from the last band down to its own end, less what the pane keeps under the board and the gutter the ghost sits behind, so the board's growth while the ghost shows gives the pane no scroll. Read from the band, so the ghost's own growth never feeds it; null where it is less than a tile worth offering, or where no pane bounds it. */
 const fillBelow = (
   pane: HTMLElement | null,
   grid: HTMLElement,
   totalHeight: number,
 ): number | null => {
-  if (!pane) return NEW_TILE_H
+  if (!pane) return null
   const box = grid.getBoundingClientRect()
   const trailing = pane.lastElementChild!.getBoundingClientRect().bottom - box.bottom
   const fill =
@@ -495,7 +503,7 @@ export function TileGrid({
   }, [busy, onBusyChange])
 
   const ghostApi = useGhostAnchor({
-    dwellMs: WEDGE_DWELL_MS,
+    dwellMs: GHOST_DWELL_MS,
     graceMs: REVEAL_GRACE_MS,
     suppressed: () => inserting !== null,
   })
@@ -542,12 +550,10 @@ export function TileGrid({
   // A wedge's ghost fills the wedge; an append's is the next band's box, which on an empty board is the first tile's.
   const boxOf = (target: InsertTarget): Placement | null => {
     if (target.kind === 'append')
-      return {
-        x: { share: 0, px: 0 },
-        y: view.bands.length === 0 ? 0 : placed.totalHeight + TILE_GAP,
-        w: { share: 1, px: 0 },
-        h: target.h ?? NEW_TILE_H,
-      }
+      return bandBox(
+        view.bands.length === 0 ? 0 : placed.totalHeight + TILE_GAP,
+        target.h ?? NEW_TILE_H,
+      )
     const above = placed.tiles.get(target.above)
     const h = wedges.get(target.above)
     return above && h !== undefined
@@ -617,12 +623,9 @@ export function TileGrid({
         <div
           className="tile-add"
           data-reveal-host={fill === null ? '' : 'off'}
-          style={placementStyle({
-            x: { share: 0, px: 0 },
-            y: placed.totalHeight,
-            w: { share: 1, px: 0 },
-            h: fill === null ? BOTTOM_PAD_PX : TILE_GAP + fill,
-          })}
+          style={placementStyle(
+            bandBox(placed.totalHeight, fill === null ? BOTTOM_PAD_PX : TILE_GAP + fill),
+          )}
           {...(fill !== null ? ghostAnchorProps(ghostApi, APPEND) : {})}
         >
           <button
@@ -692,7 +695,7 @@ export function TileGrid({
             onInsert(ghost.target, e)
           }}
         >
-          {/* A button, so an empty board can be given its first tile from the keyboard; the tile base's border and radius are its chrome. */}
+          {/* A button, so an empty board can be given its first tile from the keyboard. */}
           <Icon name="layout-dashboard" size="titleMedium" />
           <span className={text.footnote.standard}>New Tile</span>
         </button>

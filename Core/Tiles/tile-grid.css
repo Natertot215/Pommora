@@ -47,7 +47,7 @@
   --drop-slot-radius: 16px;
 }
 
-/* A wedge's hover zone is the box its ghost would take, and the bottom zone the clearance under the last band; both sit beneath the tiles, so a tile's edges and handle keep every pointer that reaches them. */
+/* A wedge's hover zone is the box its ghost would take, and the bottom zone the room under the last band; both sit beneath the tiles, so a tile's edges and handle keep every pointer that reaches them. */
 .tile-zone,
 .tile-add {
   position: absolute;
