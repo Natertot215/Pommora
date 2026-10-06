@@ -52,7 +52,8 @@ export function RenamableLabel({
       boxed={boxed}
       ariaLabel={ariaLabel}
       caretAtEnd={renames === 'title'}
-      onCommit={(next) => ((next || emptyCommits) && next !== value ? onCommit(next) : onCancel())}
+      required={!emptyCommits}
+      onCommit={(next) => (next !== value ? onCommit(next) : onCancel())}
       onCancel={onCancel}
     />
   )

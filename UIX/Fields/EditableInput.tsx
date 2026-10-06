@@ -16,6 +16,7 @@ export function EditableInput({
   ariaLabel,
   autoFocus = true,
   invalid,
+  required,
   onCommit,
   onCancel,
 }: {
@@ -33,6 +34,8 @@ export function EditableInput({
   autoFocus?: boolean
   /** Dims text that won't commit, marked on the node so a keystroke never renders. */
   invalid?: (text: string) => boolean
+  /** A blank commit restores the field and cancels: a name, not a value. */
+  required?: boolean
   onCommit: (next: string) => void
   onCancel: () => void
 }): React.JSX.Element {
@@ -91,7 +94,12 @@ export function EditableInput({
       onBlur={(e) => {
         if (settled.current) return
         settled.current = true
-        onCommit(e.currentTarget.value.trim())
+        const next = e.currentTarget.value.trim()
+        if (required && !next) {
+          e.currentTarget.value = initial
+          return onCancel()
+        }
+        onCommit(next)
       }}
     />
   )
