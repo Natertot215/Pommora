@@ -30,7 +30,7 @@ The rest of the Settings editing UI — the window ships off the ribbon with its
 
 #### v0.9.0 — Tiles Completion + Context Surfaces
 
-The tile system's remaining reach — bidirectional tile conversion, the background Insert menu, embed banners, the remaining locks — plus the Homepage's final shape. The Contexts registry shipped early, so what rides here is its aggregate surfaces: **ContextView** and the **Linked-From** list, both gated on the content index above.
+The tile system's remaining reach — bidirectional tile conversion, embed banners, the remaining locks — plus the Homepage's final shape. The Contexts registry shipped early, so what rides here is its aggregate surfaces: **ContextView** and the **Linked-From** list, both gated on the content index above.
 
 #### v1.0.0 — Stabilization
 
