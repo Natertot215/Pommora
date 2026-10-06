@@ -31,7 +31,7 @@ import {
   type ListMarker,
   type MarkdownScope,
 } from '../Engine/detect'
-import { isColorMark, leadingMark, trailingMark } from '../Engine/highlightColors'
+import { isColorMark, markAfter, markBefore } from '../Engine/highlightColors'
 import { tokenize } from '../Engine/tokens'
 
 // A transform reading more than its own line takes the caller's whole-document scan (one per doc version): the string-form code and callout tests re-split and re-pair every fence per call.
@@ -347,7 +347,6 @@ export function autoPair(
   return { from: c, to: c, insert: inserted + pair.close, selection: c + 1 }
 }
 
-/** A color mark typed right after a highlight's opening `==` pairs ahead of its closing one. */
 export function pairColorMark(
   scan: DocScan,
   c: number,
@@ -357,21 +356,24 @@ export function pairColorMark(
   if (!isColorMark(inserted) || !settingOf(settings, 'pairMarkers') || inCodeAt(scan, c))
     return null
   const doc = scan.text
-  if (doc.slice(c - 2, c) !== '==') return null
-  if (doc.startsWith('==', c) && emptyPairAt(doc, c))
-    return { from: c, to: c, insert: inserted + inserted, selection: c + inserted.length }
-  const ls = lineStartAt(doc, c)
-  const open = tokenize(doc.slice(ls, lineEndAt(doc, c))).find(
-    (tk) => tk.kind === 'highlight' && !tk.color && tk.range[0] === c - 2 - ls,
-  )
-  if (!open) return null
-  const close = ls + open.range[1] - 2
+  if (doc.slice(c - 2, c) !== '==' || doc[c - 3] === '=') return null
+  const close = emptyPairAt(doc, c) ? c : highlightCloseAt(doc, c - 2)
+  if (close === null) return null
   return {
     from: c,
     to: close,
     insert: inserted + doc.slice(c, close) + inserted,
     selection: c + inserted.length,
   }
+}
+
+/** Where the uncolored highlight opening at `open` starts its closing `==`. */
+function highlightCloseAt(doc: string, open: number): number | null {
+  const ls = lineStartAt(doc, open)
+  const tk = tokenize(doc.slice(ls, lineEndAt(doc, open))).find(
+    (tk) => tk.kind === 'highlight' && !tk.color && tk.range[0] === open - ls,
+  )
+  return tk ? ls + tk.range[1] - 2 : null
 }
 
 // A wrap over a selection already wrapped by its own cycle steps to the next wrapper instead of compounding; '' unwraps, and a cycle without it loops.
@@ -433,12 +435,12 @@ export function autoDelete(
   if (!settingOf(settings, 'deletePairsTogether')) return null
   if (selStart !== selEnd || selStart === 0 || inCodeAt(scan, selStart)) return null
   const doc = scan.text
-  const before = trailingMark(doc.slice(Math.max(0, selStart - 3), selStart))
-  const after = leadingMark(doc.slice(selStart, selStart + 3))
+  const before = markBefore(doc, selStart)
+  const after = markAfter(doc, selStart)
   if (before && before.color === after?.color) {
     const from = selStart - before.length
     const to = selStart + after.length
-    if (doc.slice(from - 2, from) === '==' && doc.startsWith('==', to))
+    if (doc.slice(from - 2, from) === '==' && highlightCloseAt(doc, from - 2) === to)
       return { from, to, insert: '', selection: from }
   }
   const close = PAIRS[doc[selStart - 1]]?.close
@@ -471,7 +473,7 @@ function closerEndAt(scan: DocScan, caret: number): number | null {
   if (inCodeAt(scan, caret)) return null
   const doc = scan.text
   // A highlight's closing color mark is part of its closer.
-  const mark = leadingMark(doc.slice(caret, caret + 3))
+  const mark = markAfter(doc, caret)
   const c = mark && doc.startsWith('==', caret + mark.length) ? caret + mark.length : caret
   const before = doc.slice(lineStartAt(doc, c), c)
   // A single-char symmetric marker flanked by word chars is prose — contractions would poison the parity and teleport the caret.

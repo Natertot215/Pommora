@@ -6,7 +6,7 @@ import { inCodeAt, scanDoc } from './docScan'
 import { markdownLinkRegex } from '../../Connections/links'
 import { isInlineMathContent, highlightRegex, inlineLatexRegex, markerRegex } from './detect'
 import { linkSpans, pageEmbedPattern, pageLinkPattern } from '../../Connections/connections'
-import { type HighlightColor, leadingMark, trailingMark } from './highlightColors'
+import { type HighlightColor, markAfter, markBefore } from './highlightColors'
 
 export type TokenKind =
   | 'italic'
@@ -42,6 +42,10 @@ export function linkTarget(text: string, tk: Token): string {
 
 export const headingOf = (text: string, tk: Token): string | undefined =>
   tk.fragment && text.slice(tk.fragment[0], tk.fragment[1])
+
+/** What a mark wraps, seen from outside it: a highlight's color marks sit inside its `==`, so a caret on them is still inside the highlight. */
+export const wrappedSpan = (tk: Token): [number, number] =>
+  tk.kind === 'highlight' ? [tk.range[0] + 2, tk.range[1] - 2] : tk.contentRange
 
 export function shiftToken(tk: Token, by: number): Token {
   const move = ([s, e]: [number, number]): [number, number] => [s + by, e + by]
@@ -142,10 +146,9 @@ function regexTokens(text: string, spec: RegexSpec, inCode: (offset: number) => 
 /** A matching color mark inside each `==` joins the markers, so it hides and reveals with them; a lone or mismatched one stays text. */
 function colorHighlight(text: string, tk: Token): Token {
   const [cs, ce] = tk.contentRange
-  const inner = text.slice(cs, ce)
-  const open = leadingMark(inner)
-  const close = trailingMark(inner)
-  if (!open || open.color !== close?.color || open.length + close.length >= inner.length) return tk
+  const open = markAfter(text, cs)
+  const close = markBefore(text, ce)
+  if (!open || open.color !== close?.color || open.length + close.length >= ce - cs) return tk
   const content: Span = [cs + open.length, ce - close.length]
   return {
     ...tk,

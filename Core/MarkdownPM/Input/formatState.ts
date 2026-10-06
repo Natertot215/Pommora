@@ -1,4 +1,4 @@
-import { tokenize } from '../Engine/tokens'
+import { tokenize, wrappedSpan } from '../Engine/tokens'
 import { parseListMarker, headingParts } from '../Engine/detect'
 import { isQuoteToggleable, splitPrefix } from './format'
 import type { EditorMenuRequest } from '../../Actions/editorMenu'
@@ -17,7 +17,10 @@ export function readFormatState(
   const f = from - ls
   const t = to - ls
   const wrapping = (kind: string) =>
-    tokens.find((tk) => tk.kind === kind && tk.contentRange[0] <= f && t <= tk.contentRange[1])
+    tokens.find((tk) => {
+      const [s, e] = wrappedSpan(tk)
+      return tk.kind === kind && s <= f && t <= e
+    })
   const wraps = (kind: string): boolean => wrapping(kind) !== undefined
   const highlight = wrapping('highlight')
 
