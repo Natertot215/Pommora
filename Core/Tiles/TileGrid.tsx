@@ -95,8 +95,8 @@ const BOTTOM_PAD_PX = TILE_GAP + ADD_STRIP_PX
 // KNOB — a wedge's dwell, and the least a bottom ghost may fill before the bottom offers the strip instead.
 const WEDGE_DWELL_MS = 1000
 const BOTTOM_FILL_MIN_PX = 80
-/** The bottom zone's anchor on the ghost hook; a tile's id is a ULID, so the two never meet. */
-const APPEND = 'append'
+/** The bottom zone's anchor on the ghost hook: the one id the layout codec lets no leaf carry. */
+const APPEND = ''
 const SHELL_TRANSITION = `${GLIDE_FEEL.duration}ms ${GLIDE_FEEL.easing}`
 
 const EDGE_ZONES: Edge[][] = [
@@ -122,8 +122,11 @@ const placementStyle = (p: Placement): CSSProperties => ({
 })
 
 /** The height a bottom ghost fills: the pane's room from the last band down to its own end, less what the pane keeps under the board and the gutter the ghost sits behind, so the board's growth while the ghost shows gives the pane no scroll. Read from the band, so the ghost's own growth never feeds it; null where it is less than a tile worth offering. */
-const fillBelow = (grid: HTMLElement, totalHeight: number): number | null => {
-  const pane = scrollContainer(grid, 'y')
+const fillBelow = (
+  pane: HTMLElement | null,
+  grid: HTMLElement,
+  totalHeight: number,
+): number | null => {
   if (!pane) return NEW_TILE_H
   const box = grid.getBoundingClientRect()
   const trailing = pane.lastElementChild!.getBoundingClientRect().bottom - box.bottom
@@ -502,20 +505,29 @@ export function TileGrid({
     has: (id) => zones && (id === APPEND ? fill !== null : wedges.has(id)),
   })
 
-  // Sampled only between gestures and only off a measured width, before paint: a crossing under a held pointer would re-lay the board mid-drag, and a narrow mount must never paint two-across first. The room under the last band rides the same sample, watching the pane as well, since its height and the board's are what move it.
+  // Sampled only between gestures and only off a measured width, before paint: a crossing under a held pointer would re-lay the board mid-drag, and a narrow mount must never paint two-across first. The room under the last band rides the same sample.
   useLayoutEffect(() => {
     const grid = gridRef.current
     if (busy || !grid) return
+    const pane = scrollContainer(grid, 'y')
     const sample = (): void => {
       const width = grid.clientWidth
       if (width > 0) setStacked((was) => stackedAt(width, was))
-      setFill(fillBelow(grid, live.current.placed.totalHeight))
+      setFill(fillBelow(pane, grid, live.current.placed.totalHeight))
+    }
+    // The pane's children move the board without resizing it or the pane — a banner filling in above — so each is watched too, the set refreshed as they change.
+    const ro = new ResizeObserver(() => {
+      sample()
+      watch()
+    })
+    const watch = (): void => {
+      if (!pane) return
+      ro.observe(pane)
+      for (const child of pane.children) ro.observe(child)
     }
     sample()
-    const ro = new ResizeObserver(sample)
     ro.observe(grid)
-    const pane = scrollContainer(grid, 'y')
-    if (pane) ro.observe(pane)
+    watch()
     return () => ro.disconnect()
   }, [busy])
 
@@ -554,11 +566,12 @@ export function TileGrid({
     if (inserting)
       return stripped(inserting.target) ? null : { target: inserting.target, closing: false }
     if (hovered) {
-      const target: InsertTarget =
-        hovered.anchorId === APPEND
-          ? { kind: 'append', h: fill ?? undefined }
-          : { kind: 'wedge', above: hovered.anchorId }
-      return { target, closing: hovered.closing }
+      if (hovered.anchorId !== APPEND)
+        return { target: { kind: 'wedge', above: hovered.anchorId }, closing: hovered.closing }
+      // A bottom zone whose room closed while its ghost stood has nothing to draw; the stranded ghost clears.
+      return fill === null
+        ? null
+        : { target: { kind: 'append', h: fill }, closing: hovered.closing }
     }
     if (view.bands.length === 0) return { target: { kind: 'append' }, closing: false }
     // A dismissed menu's ghost fades where it stood; a landed create's is already its tile.
