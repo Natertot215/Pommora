@@ -45,7 +45,7 @@ own behavior, so every host gets it.
 | `tilesFile.ts` | Entry lifecycle, tile body IO, and the rename rewrite; host-run |
 | `tileDoc.ts` | The document's read-modify-write; host-run |
 | `handlers.ts` | The `tiles:*` channels; host-run |
-| `TileGrid.tsx` | The React grid — gestures on the app's pointer engine, preview, settle, placement tint, the stacked board |
+| `TileGrid.tsx` | The React grid — gestures on the app's pointer engine, preview, settle, placement tint, the ghost tiles, their hover zones, and the add strip, the stacked board |
 | `tileDocStore.ts` | The host-keyed tile document, shared by every mount, plus the markdown tile's `BodyIO` and removal marks; the tile's text itself is held in `Core/Session/pageDetailCache.ts` under the tile id |
 | `useTileDoc.ts` | The document's React reader — its snapshot and lock, and the gesture hold |
 | `TileHost.tsx` | The host binding — the menus, create, remove, convert, duplicate |
@@ -91,9 +91,10 @@ These are load-bearing; the comments at each site say why. Summarized:
   changes with the board's data, and each surface redraws only when its own entry, its edit
   state, its page, or the connections change.
 - **A static board answers no geometry gesture.** A host lock and the stacking width are one
-  state; the grid refuses the press before the pointer engine sees it and withholds the
-  backdrop's create menu, so no gesture path carries a stacked branch. Content editing, the
-  handle menu, and view tiles run either way.
+  state for gestures: the grid refuses the press before the pointer engine sees it, so no gesture
+  path carries a stacked branch. A host lock withholds the ghost tiles and the add strip; a
+  stacked board has no wedge and keeps the strip. Content editing, the handle menu, and view
+  tiles run either way.
 
 #### Persistence Seam
 
