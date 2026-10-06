@@ -8,7 +8,7 @@ import {
   useRef,
   useState,
 } from 'react'
-import { findScroller } from '@pommora/uix/Interactions/autoscroll'
+import { findScroller, scrollContainer } from '@pommora/uix/Interactions/autoscroll'
 import { GLIDE_FEEL } from '@pommora/uix/Animations/feel'
 import { useHeldPresence, useSettleFallback } from '@pommora/uix/Animations/useExitPresence'
 import { usePointerGesture } from '@pommora/uix/Interactions/gesture'
@@ -23,7 +23,6 @@ import {
   type Reach,
   REVEAL_GRACE_MS,
   trackNear,
-  withinBox,
   withinReach,
 } from '@pommora/uix/Interactions/hoverReveal'
 import { revealTarget } from '@pommora/uix/Interactions/hover-reveal.css'
@@ -64,8 +63,8 @@ interface TileGridProps {
   onInsert: (target: InsertTarget, e: React.MouseEvent) => void
 }
 
-/** Where a new tile lands: as the board's last band, or flush in the wedge under a tile. */
-export type InsertTarget = { kind: 'append' } | { kind: 'wedge'; above: string }
+/** Where a new tile lands: as the board's last band, at the height the room below the board gave its ghost or else the default, or flush in the wedge under a tile. */
+export type InsertTarget = { kind: 'append'; h?: number } | { kind: 'wedge'; above: string }
 
 /** The Insert Menu a ghost or the add strip opened, held while the menu is open and then through its create's flight. */
 export interface Inserting {
@@ -91,9 +90,11 @@ const HANDLE_REACH: Reach = { size: 'corner', toward: { x: 1, y: 1 } }
 const BAND_ZONE_PX = 10
 const SNAP_PX = 9
 const BOTTOM_PAD_PX = 28
+// KNOB — a wedge's dwell, and the least a bottom ghost may fill before the bottom offers the strip instead.
 const WEDGE_DWELL_MS = 1000
-const ADD_STRIP_PX = 14
-const ADD_REACH_PX = 16
+const BOTTOM_FILL_MIN_PX = 80
+/** The bottom zone's anchor on the ghost hook; a tile's id is a ULID, so the two never meet. */
+const APPEND = 'append'
 const SHELL_TRANSITION = `${GLIDE_FEEL.duration}ms ${GLIDE_FEEL.easing}`
 
 const EDGE_ZONES: Edge[][] = [
@@ -117,6 +118,15 @@ const placementStyle = (p: Placement): CSSProperties => ({
   width: `calc(${p.w.share * 100}% ${p.w.px < 0 ? '-' : '+'} ${Math.abs(p.w.px)}px)`,
   height: p.h,
 })
+
+/** The height a bottom ghost fills: the pane's room below its content, less the gutter the ghost sits behind, so the board's growth while it shows gives the pane no scroll; null where that is less than a tile worth offering. */
+const fillBelow = (grid: HTMLElement): number | null => {
+  const pane = scrollContainer(grid, 'y')
+  if (!pane) return NEW_TILE_H
+  const end = (pane.lastElementChild ?? grid).getBoundingClientRect().bottom
+  const fill = Math.floor(pane.getBoundingClientRect().bottom - end) - TILE_GAP
+  return fill >= BOTTOM_FILL_MIN_PX ? fill : null
+}
 
 const TileShell = memo(
   function TileShell({
@@ -246,58 +256,6 @@ const TileShell = memo(
     a.place.w.px === b.place.w.px &&
     a.place.h === b.place.h,
 )
-
-function AddStrip({
-  y,
-  held,
-  onAdd,
-}: {
-  y: number
-  held: boolean
-  onAdd: (e: React.MouseEvent) => void
-}): React.JSX.Element {
-  const ref = useRef<HTMLDivElement>(null)
-  const [near, setNear] = useState(false)
-  // A press holds the reveal where it stands, so the strip is still there to take its own click.
-  useEffect(() => {
-    const el = ref.current
-    if (!el) return
-    return trackNear({
-      anchor: el,
-      measure: () => {
-        const box = el.getBoundingClientRect()
-        return (px, py) => withinBox(box, px, py, ADD_REACH_PX)
-      },
-      report: (at) => {
-        if (at !== 'held') setNear(at === 'near')
-      },
-    }).stop
-  }, [])
-  return (
-    <div
-      ref={ref}
-      className="tile-add"
-      data-reveal-host={near ? 'on' : ''}
-      style={placementStyle({
-        x: { share: 0, px: 0 },
-        y,
-        w: { share: 1, px: 0 },
-        h: ADD_STRIP_PX,
-      })}
-    >
-      <button
-        type="button"
-        className={cx('add-strip', revealTarget)}
-        data-create
-        data-reveal-held={held || undefined}
-        aria-label="New Tile"
-        onClick={onAdd}
-      >
-        <Icon name="plus" size="body" />
-      </button>
-    </div>
-  )
-}
 
 export function TileGrid({
   layout,
@@ -534,7 +492,15 @@ export function TileGrid({
     graceMs: REVEAL_GRACE_MS,
     suppressed: () => inserting !== null,
   })
-  useClearStrandedGhost(ghostApi, { has: (id) => zones && wedges.has(id) })
+  useClearStrandedGhost(ghostApi, { has: (id) => zones && (id === APPEND || wedges.has(id)) })
+  // Measured as the pointer arrives at the bottom: with room the bottom is a ghost's zone, without it the strip's, and the shape holds through the menu it opened.
+  const [fill, setFill] = useState<number | null>(null)
+  const [strip, setStrip] = useState(false)
+  const measureFill = (): number | null => {
+    const h = gridRef.current && fillBelow(gridRef.current)
+    setFill(h)
+    return h
+  }
 
   // Sampled only between gestures and only off a measured width, before paint: a crossing under a held pointer would re-lay the board mid-drag, and a narrow mount must never paint two-across first.
   useLayoutEffect(() => {
@@ -558,12 +524,15 @@ export function TileGrid({
 
   const dropSlot = tileDrag && draft ? placed.tiles.get(tileDrag.id) : null
 
-  // A wedge's ghost fills the wedge; an append's draws only on an empty board, where it is the first tile's box — a board with tiles adds its bottom row from the strip.
+  // A wedge's ghost fills the wedge; an append's is the next band's box, which on an empty board is the first tile's.
   const boxOf = (target: InsertTarget): Placement | null => {
     if (target.kind === 'append')
-      return placed.totalHeight > 0
-        ? null
-        : { x: { share: 0, px: 0 }, y: 0, w: { share: 1, px: 0 }, h: NEW_TILE_H }
+      return {
+        x: { share: 0, px: 0 },
+        y: view.bands.length === 0 ? 0 : placed.totalHeight + TILE_GAP,
+        w: { share: 1, px: 0 },
+        h: target.h ?? NEW_TILE_H,
+      }
     const above = placed.tiles.get(target.above)
     const h = wedges.get(target.above)
     return above && h !== undefined
@@ -574,14 +543,25 @@ export function TileGrid({
   // The open menu's ghost draws from the live value, so the hovered ghost becomes the held one in place; only a dismissed one waits on the presence.
   const seat = useHeldPresence(inserting, 'base')
   const hovered = ghostApi.ghost
+  // A bottom row the strip offers has no ghost to hold or fade; the strip holds instead.
+  const stripped = (target: InsertTarget): boolean =>
+    target.kind === 'append' && view.bands.length > 0 && target.h === undefined
   const shownGhost = (): { target: InsertTarget; closing: boolean } | null => {
     if (locked) return null
-    if (inserting) return { target: inserting.target, closing: false }
-    if (hovered)
-      return { target: { kind: 'wedge', above: hovered.anchorId }, closing: hovered.closing }
+    if (inserting)
+      return stripped(inserting.target) ? null : { target: inserting.target, closing: false }
+    if (hovered) {
+      const target: InsertTarget =
+        hovered.anchorId === APPEND
+          ? { kind: 'append', h: fill ?? undefined }
+          : { kind: 'wedge', above: hovered.anchorId }
+      return { target, closing: hovered.closing }
+    }
     if (view.bands.length === 0) return { target: { kind: 'append' }, closing: false }
     // A dismissed menu's ghost fades where it stood; a landed create's is already its tile.
-    return seat?.held.phase === 'menu' ? { target: seat.held.target, closing: true } : null
+    return seat?.held.phase === 'menu' && !stripped(seat.held.target)
+      ? { target: seat.held.target, closing: true }
+      : null
   }
   const ghost = shownGhost()
   const ghostBox = ghost && boxOf(ghost.target)
@@ -673,13 +653,38 @@ export function TileGrid({
       )}
 
       {zones && (
-        <AddStrip
-          y={placed.totalHeight + TILE_GAP}
-          held={inserting?.target.kind === 'append'}
-          onAdd={(e) => {
-            if (inserting === null) onInsert({ kind: 'append' }, e)
+        <div
+          className="tile-add"
+          data-reveal-host={strip ? 'on' : 'off'}
+          style={placementStyle({
+            x: { share: 0, px: 0 },
+            y: placed.totalHeight,
+            w: { share: 1, px: 0 },
+            h: BOTTOM_PAD_PX,
+          })}
+          onPointerEnter={() => {
+            if (measureFill() !== null) ghostApi.onHover(APPEND, true)
+            else setStrip(true)
           }}
-        />
+          onPointerLeave={() => {
+            ghostApi.onHover(APPEND, false)
+            setStrip(false)
+          }}
+        >
+          <button
+            type="button"
+            className={cx('add-strip', revealTarget)}
+            data-create
+            data-reveal-held={(inserting !== null && stripped(inserting.target)) || undefined}
+            aria-label="New Tile"
+            style={{ top: TILE_GAP }}
+            onClick={(e) => {
+              if (inserting === null) onInsert({ kind: 'append' }, e)
+            }}
+          >
+            <Icon name="plus" size="body" />
+          </button>
+        </div>
       )}
     </div>
   )

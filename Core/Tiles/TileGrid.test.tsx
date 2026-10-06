@@ -371,38 +371,121 @@ describe('the ghost tiles and the add strip', () => {
     expect(q('.tile-ghost')?.style.transform).toBe('translate(4px, 108px)')
   })
 
-  it('seats the add strip under the last band and adds from it, with the board’s height unchanged', () => {
+  const hoverBottom = (): void =>
+    act(() => {
+      q('.tile-add')?.dispatchEvent(
+        new PointerEvent('pointerover', { bubbles: true, relatedTarget: document.body }),
+      )
+      window.dispatchEvent(new PointerEvent('pointermove'))
+    })
+  const leaveBottom = (): void =>
+    act(() => {
+      q('.tile-add')?.dispatchEvent(
+        new PointerEvent('pointerout', { bubbles: true, relatedTarget: document.body }),
+      )
+    })
+  // The host scrolls, and shows `room` px below the grid's box.
+  const paneWithRoom = (room: number): void => {
+    host.style.overflowY = 'auto'
+    host.getBoundingClientRect = () => ({ top: 0, bottom: 1000 }) as DOMRect
+    const grid = q('.tile-grid') as HTMLElement
+    grid.getBoundingClientRect = () => ({ top: 0, bottom: 1000 - room }) as DOMRect
+  }
+
+  it('with room below, the bottom zone is a dwell ghost filling that room, and the board grows to hold it', () => {
     const onInsert = vi.fn()
     render({ onInsert })
-    expect(q('.tile-add')?.style.transform).toBe('translate(0px, 208px)')
+    const zone = q('.tile-add') as HTMLElement
+    expect(zone.style.transform).toBe('translate(0px, 200px)')
+    expect(zone.style.height).toBe('28px')
+    expect(q('.tile-grid')?.style.height).toBe('228px')
+    paneWithRoom(400)
+    hoverBottom()
+    expect(zone.dataset.revealHost).toBe('off')
+    tick(999)
+    expect(q('.tile-ghost')).toBeNull()
+    tick(1)
+    expect(q('.tile-ghost')?.style.transform).toBe('translate(0px, 208px)')
+    expect(q('.tile-ghost')?.style.height).toBe('392px')
+    expect(q('.tile-grid')?.style.height).toBe('628px')
+    click('.tile-ghost')
+    expect(onInsert).toHaveBeenCalledOnce()
+    expect(onInsert.mock.calls[0][0]).toEqual({ kind: 'append', h: 392 })
+  })
+
+  it('with less than a tile’s worth below, the bottom zone offers the strip at once, one gutter in, and the board keeps its height', () => {
+    const onInsert = vi.fn()
+    render({ onInsert })
+    paneWithRoom(87)
+    hoverBottom()
+    const zone = q('.tile-add') as HTMLElement
+    expect(zone.dataset.revealHost).toBe('on')
+    expect(q('.tile-add button')?.style.top).toBe('8px')
+    tick(1000)
+    expect(q('.tile-ghost')).toBeNull()
     expect(q('.tile-grid')?.style.height).toBe('228px')
     click('.tile-add button')
     expect(onInsert).toHaveBeenCalledOnce()
     expect(onInsert.mock.calls[0][0]).toEqual({ kind: 'append' })
     expect(onInsert.mock.calls[0][1]).toMatchObject({ type: 'click' })
-    expect(q('.tile-grid')?.style.height).toBe('228px')
+    leaveBottom()
+    expect(zone.dataset.revealHost).toBe('off')
   })
 
-  it('reveals the strip as the pointer nears it and keeps the reveal through a press', () => {
+  it('the room is read as the pointer arrives, so the pane scrolling between visits changes the shape', () => {
     render()
-    const strip = q('.tile-add') as HTMLElement
-    strip.getBoundingClientRect = () => ({ left: 0, top: 300, right: 400, bottom: 314 }) as DOMRect
-    const move = (y: number, buttons = 0): void =>
-      act(() => {
-        host.dispatchEvent(
-          new PointerEvent('pointermove', { clientX: 100, clientY: y, buttons, bubbles: true }),
-        )
-      })
-    move(290)
-    expect(strip.dataset.revealHost).toBe('on')
-    move(260)
-    expect(strip.dataset.revealHost).toBe('')
-    move(290)
-    move(290, 1)
-    expect(strip.dataset.revealHost).toBe('on')
+    paneWithRoom(87)
+    hoverBottom()
+    expect(q('.tile-add')?.dataset.revealHost).toBe('on')
+    leaveBottom()
+    paneWithRoom(88)
+    hoverBottom()
+    expect(q('.tile-add')?.dataset.revealHost).toBe('off')
+    tick(1000)
+    expect(q('.tile-ghost')?.style.height).toBe('80px')
   })
 
-  it('a locked board offers neither zone nor strip, and an empty one no ghost under a lock', () => {
+  it('the strip holds its menu and fades no ghost; a bottom ghost holds and fades as a wedge’s does', () => {
+    let set: (v: Inserting | null) => void = () => {}
+    function Host(): React.JSX.Element {
+      const [inserting, setInserting] = useState<Inserting | null>(null)
+      set = setInserting
+      return (
+        <TileGrid
+          {...grid}
+          layout={rowBoard}
+          onLayoutChange={() => {}}
+          renderTile={(id) => <span data-tile={id} />}
+          inserting={inserting}
+          onInsert={(target: InsertTarget) => setInserting({ target, phase: 'menu' })}
+        />
+      )
+    }
+    act(() => root.render(<Host />))
+    paneWithRoom(60)
+    hoverBottom()
+    click('.tile-add button')
+    expect(q('.tile-add button')?.hasAttribute('data-reveal-held')).toBe(true)
+    expect(q('.tile-ghost')).toBeNull()
+    leaveBottom()
+    expect(q('.tile-add button')?.hasAttribute('data-reveal-held')).toBe(true)
+    act(() => set(null))
+    expect(q('.tile-ghost')).toBeNull()
+    expect(q('.tile-add button')?.hasAttribute('data-reveal-held')).toBe(false)
+
+    paneWithRoom(400)
+    hoverBottom()
+    tick(1000)
+    const ghost = q('.tile-ghost')
+    click('.tile-ghost')
+    expect(q('.tile-ghost')).toBe(ghost)
+    expect(ghost?.hasAttribute('data-reveal-held')).toBe(true)
+    expect(q('.tile-add button')?.hasAttribute('data-reveal-held')).toBe(false)
+    act(() => set(null))
+    expect(ghost?.classList.contains('is-closing')).toBe(true)
+  })
+
+  it('a locked board offers neither zone nor bottom zone, and an empty one no ghost under a lock', () => {
     render({ locked: true })
     expect(q('.tile-zone')).toBeNull()
     expect(q('.tile-add')).toBeNull()
@@ -410,24 +493,24 @@ describe('the ghost tiles and the add strip', () => {
     expect(q('.tile-ghost')).toBeNull()
   })
 
-  it('an empty board stands one ghost at the first tile’s box, with no zone and no strip', () => {
+  it('an empty board stands one ghost at the first tile’s box, with no zone', () => {
     render({}, { bands: [] })
     const ghost = q('.tile-ghost')
     expect(ghost?.style.transform).toBe('translate(0px, 0px)')
-    expect(ghost?.style.height).toBe('160px')
+    expect(ghost?.style.height).toBe('250px')
     expect(q('.tile-zone')).toBeNull()
     expect(q('.tile-add')).toBeNull()
-    expect(q('.tile-grid')?.style.height).toBe('188px')
+    expect(q('.tile-grid')?.style.height).toBe('278px')
   })
 
-  it('a stacked board has no wedge and keeps its strip', () => {
+  it('a stacked board has no wedge and keeps its bottom zone', () => {
     render()
     measure(300)
     expect(q('.tile-zone')).toBeNull()
     expect(host.querySelectorAll('.tile-add')).toHaveLength(1)
   })
 
-  it('a gesture withdraws the zones and the strip until its settle commits', () => {
+  it('a gesture withdraws the zones until its settle commits', () => {
     render()
     const handle = tileEl('b').querySelector('.tile-handle') as HTMLElement
     act(() => firePointer(handle, 'pointerdown', { x: 0, y: 150 }))
@@ -491,9 +574,14 @@ describe('the ghost tiles and the add strip', () => {
     expect(q('.tile-ghost')).toBeNull()
   })
 
-  it('an append held from the strip lights the strip and draws no ghost over a board with tiles', () => {
+  it('an append holding a height draws the bottom ghost held at it; one without holds the strip', () => {
+    render({ inserting: { target: { kind: 'append', h: 300 }, phase: 'menu' } })
+    expect(q('.tile-ghost')?.style.transform).toBe('translate(0px, 208px)')
+    expect(q('.tile-ghost')?.style.height).toBe('300px')
+    expect(q('.tile-ghost')?.hasAttribute('data-reveal-held')).toBe(true)
+    expect(q('.tile-add button')?.hasAttribute('data-reveal-held')).toBe(false)
     render({ inserting: { target: { kind: 'append' }, phase: 'menu' } })
-    expect(q('.tile-add button')?.hasAttribute('data-reveal-held')).toBe(true)
     expect(q('.tile-ghost')).toBeNull()
+    expect(q('.tile-add button')?.hasAttribute('data-reveal-held')).toBe(true)
   })
 })

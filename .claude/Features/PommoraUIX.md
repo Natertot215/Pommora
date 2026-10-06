@@ -318,7 +318,7 @@ The elements that draw and frame a stored image — `AssetImage`, `ImagePicker`,
 | ------------ | ------------------------------------------------------- | ------------------------------------------------------ |
 | Drag engine  | `DragGroup` · `SortableZone` · `LineZone` · `LineRow` · `LineGroup` · `useDragItem` · `useLineRow` · `useLineGroup` · `useLineSlot` · `useLineEl` · `useLooseItem` · `useLineSpring` · `DropSlot` · `groupedLine` · `carries` | The in-house DND: one engine (`engine.tsx`) serving displace and line zones. |
 | Line lists   | `lineList` · `rowLine` · `rowStep`                      | The lane spec any flat or grouped vertical list mounts on a `LineZone`, with a row-spanning line and keyboard steps for headed lanes. |
-| Drop chrome  | `DropLine` · `DragGhost` · `.drop-slot` · `.add-strip` · `drop-chrome.css` · `ghost-create.css` | The insertion line, dot, the landing slot, the glass drag chip, and the add strip a table and a board extend by. |
+| Drop chrome  | `DropLine` · `DragGhost` · `.drop-slot` · `.add-strip` · `--add-strip-size` · `drop-chrome.css` · `ghost-create.css` | The insertion line, dot, the landing slot, the glass drag chip, and the add strip a table and a board extend by, at one thickness. |
 | Disclose     | `beginDragDisclose` · `addSpring` · `useLineSpring`     | Hover-open while dragging.                             |
 | Gesture      | `usePointerGesture` · `beginPointerGesture` · `gestureLive` | Press, threshold, move, release.                   |
 | Autoscroll   | `scrollGlide` · `AUTOSCROLL`                            | Edge-proximity scrolling and the glide to a destination. |

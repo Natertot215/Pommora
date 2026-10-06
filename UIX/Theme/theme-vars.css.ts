@@ -121,6 +121,7 @@ globalStyle(':root', {
     '--drop-line-thickness': '2px',
     '--drop-dot-size': '7px',
     '--drop-line-inset': `${DROP_LINE_INSET}px`,
+    '--add-strip-size': '18px',
 
     '--list-outline-width': '2px',
     '--list-outline-color': c.border.light,

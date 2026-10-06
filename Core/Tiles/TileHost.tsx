@@ -319,7 +319,9 @@ export function TileHost({
                 cur,
                 made,
                 above,
-                above === null ? undefined : wedgeFills(cur, TILE_GAP, TILE_MIN_PX).get(above),
+                target.kind === 'append'
+                  ? target.h
+                  : wedgeFills(cur, TILE_GAP, TILE_MIN_PX).get(target.above),
               ),
             )
             if (!pick) setEditingId(made)

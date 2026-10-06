@@ -28,15 +28,23 @@ export interface Intent {
   right: boolean
 }
 
+const scrolls = (overflow: string): boolean => overflow === 'auto' || overflow === 'scroll'
+
+/** Whether a box clips and scrolls `axis`, whether or not its content overflows it yet. */
+export function scrollsAxis(overflowX: string, overflowY: string, axis: ScrollAxis): boolean {
+  if (axis === 'y') return scrolls(overflowY)
+  if (axis === 'x') return scrolls(overflowX)
+  return scrolls(overflowX) || scrolls(overflowY)
+}
+
 export function scrollableInAxis(
   overflowX: string,
   overflowY: string,
   dims: { scrollWidth: number; clientWidth: number; scrollHeight: number; clientHeight: number },
   axis: ScrollAxis,
 ): boolean {
-  const y =
-    (overflowY === 'auto' || overflowY === 'scroll') && dims.scrollHeight > dims.clientHeight
-  const x = (overflowX === 'auto' || overflowX === 'scroll') && dims.scrollWidth > dims.clientWidth
+  const y = scrolls(overflowY) && dims.scrollHeight > dims.clientHeight
+  const x = scrolls(overflowX) && dims.scrollWidth > dims.clientWidth
   if (axis === 'y') return y
   if (axis === 'x') return x
   return x || y
@@ -47,6 +55,20 @@ export function findScroller(el: HTMLElement | null, axis: ScrollAxis = 'xy'): H
   while (n) {
     const s = getComputedStyle(n)
     if (scrollableInAxis(s.overflowX, s.overflowY, n, axis)) return n
+    n = n.parentElement
+  }
+  return null
+}
+
+/** The nearest ancestor that would scroll `axis` once its content asked it to; `findScroller` wants one that already does. */
+export function scrollContainer(
+  el: HTMLElement | null,
+  axis: ScrollAxis = 'xy',
+): HTMLElement | null {
+  let n = el?.parentElement ?? null
+  while (n) {
+    const s = getComputedStyle(n)
+    if (scrollsAxis(s.overflowX, s.overflowY, axis)) return n
     n = n.parentElement
   }
   return null

@@ -47,8 +47,9 @@
   --drop-slot-radius: 16px;
 }
 
-/* A wedge's hover zone is the box its ghost would take; it sits beneath the tiles, so a tile's edges and handle keep every pointer that reaches them. */
-.tile-zone {
+/* A wedge's hover zone is the box its ghost would take, and the bottom zone the clearance under the last band; both sit beneath the tiles, so a tile's edges and handle keep every pointer that reaches them. */
+.tile-zone,
+.tile-add {
   position: absolute;
   top: 0;
   left: 0;
@@ -79,14 +80,11 @@
   }
 }
 
-/* The board's add strip rides under the last band, inside the bottom clearance. */
-.tile-add {
-  position: absolute;
-  top: 0;
-  left: 0;
-}
+/* The bottom zone is the clearance under the last band; the strip it may offer rides one gutter in, full-width. */
 .tile-add > .add-strip {
-  inset: 0;
+  left: 0;
+  right: 0;
+  height: var(--add-strip-size);
 }
 
 /* A bordered chip notched into the left border: its own rounded border is the curve, its --main-bg fill erases the straight border line behind it, and its border-color inherits the tile's so the accent highlight flows through. */

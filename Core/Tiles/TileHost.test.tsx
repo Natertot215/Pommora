@@ -417,7 +417,7 @@ describe('the host over the renderer table', () => {
       tileId('w'),
       copy,
     ])
-    expect(final?.bands.at(-1)?.node.h).toBe(160)
+    expect(final?.bands.at(-1)?.node.h).toBe(250)
   })
 })
 
@@ -517,7 +517,7 @@ describe('the Insert Menu a ghost tile opens', () => {
     expect(await until(() => saves.length > 0)).toBe(true)
     expect(creates[0]).toEqual([{ kind: 'homepage' }, undefined])
     expect(bandIds(saves.at(-1))).toEqual([made])
-    expect(saves.at(-1)?.bands[0].node.h).toBe(160)
+    expect(saves.at(-1)?.bands[0].node.h).toBe(250)
     expect(await until(() => host.querySelector('.tile.is-editing-tile') !== null)).toBe(true)
     expect(host.querySelector('.tile-ghost')).toBeNull()
   })
@@ -552,12 +552,34 @@ describe('the Insert Menu a ghost tile opens', () => {
     await click('.tile-add button')
     expect(await until(() => saves.length > 0)).toBe(true)
     expect(saves.at(-1)?.bands).toHaveLength(2)
-    expect(saves.at(-1)?.bands.at(-1)?.node).toEqual({ kind: 'tile', id: made, h: 160 })
+    expect(saves.at(-1)?.bands.at(-1)?.node).toEqual({ kind: 'tile', id: made, h: 250 })
     expect(menus[0].anchor).toEqual({ left: 40, top: 60, height: 0 })
     expect(await until(() => host.querySelector('.tile.is-editing-tile') !== null)).toBe(true)
     await click('.tile-add button', 0)
     expect(await until(() => menus.length === 2)).toBe(true)
     expect(menus[1].anchor).toEqual({ left: 10, top: 300, height: 14 })
+  })
+
+  it('a bottom ghost seats its band at the height the room below the board gave it', async () => {
+    const { saves } = bridge('tile:new', {}, () => wedged)
+    await mountHost(() => host.querySelector('.tile-add') !== null)
+    host.style.overflowY = 'auto'
+    host.getBoundingClientRect = () => ({ top: 0, bottom: 1000 }) as DOMRect
+    ;(host.lastElementChild as HTMLElement).getBoundingClientRect = () =>
+      ({ top: 0, bottom: 700 }) as DOMRect
+    await act(async () => {
+      host
+        .querySelector('.tile-add')
+        ?.dispatchEvent(
+          new PointerEvent('pointerover', { bubbles: true, relatedTarget: document.body }),
+        )
+      window.dispatchEvent(new PointerEvent('pointermove'))
+    })
+    expect(await until(() => host.querySelector('.tile-ghost') !== null)).toBe(true)
+    expect(host.querySelector<HTMLElement>('.tile-ghost')?.style.height).toBe('292px')
+    await click('.tile-ghost')
+    expect(await until(() => saves.length > 0)).toBe(true)
+    expect(saves.at(-1)?.bands.at(-1)?.node).toEqual({ kind: 'tile', id: made, h: 292 })
   })
 
   it('a dismissed menu creates nothing and leaves the standing ghost unheld', async () => {
@@ -612,7 +634,7 @@ describe('the Insert Menu a ghost tile opens', () => {
   it('a wedge whose tile left before the reply gives way to the last band', async () => {
     const saves = await wedgeFlight((cur) => removeLeaf(cur, tileId('b')))
     expect(saves.at(-1)?.bands).toHaveLength(2)
-    expect(saves.at(-1)?.bands.at(-1)?.node).toEqual({ kind: 'tile', id: made, h: 160 })
+    expect(saves.at(-1)?.bands.at(-1)?.node).toEqual({ kind: 'tile', id: made, h: 250 })
   })
 
   it('a wedge whose fill changed before the reply seats the tile at the fill the board now gives', async () => {
