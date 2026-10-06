@@ -171,16 +171,19 @@ export function MenuItem({
   )
 }
 
+/** A `group` separator divides runs of one list — a Status's groups — at the heavier stroke. */
 export function MenuSeparator({
   flush = false,
+  group = false,
   className,
 }: {
   flush?: boolean
+  group?: boolean
   className?: string
 } = {}): React.JSX.Element {
   return (
     <div className={cx(s.separator, flush && s.separatorFlush, className)} aria-hidden="true">
-      <span className={s.separatorLine} />
+      <span className={cx(s.separatorLine, group && s.separatorLineGroup)} />
     </div>
   )
 }

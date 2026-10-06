@@ -208,6 +208,7 @@ export const separatorLine = style({
   width: '100%',
   background: c.border.base,
 })
+export const separatorLineGroup = style({ height: 'var(--width-200)' })
 export const separatorFlush = style({ padding: 0 })
 
 export const caption = style([

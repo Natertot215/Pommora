@@ -96,9 +96,11 @@ describe('propertyMenuBranches', () => {
   it('a context offers its spaces, checked against the page', () => {
     const [realms] = branchesFor({ '<Realms>': ['Reading'] }).spaces
     expect(realms.options).toEqual([
-      { value: 'a1', label: 'Work', checked: false },
-      { value: 't1', label: 'Reading', checked: true },
-      { value: 'pr1', label: 'Pommora', checked: false },
+      [
+        { value: 'a1', label: 'Work', checked: false },
+        { value: 't1', label: 'Reading', checked: true },
+        { value: 'pr1', label: 'Pommora', checked: false },
+      ],
     ])
   })
 
@@ -106,17 +108,21 @@ describe('propertyMenuBranches', () => {
     const done = (fm?: Record<string, unknown>) =>
       branchesFor(fm).properties.find((r) => r.name === 'Done')?.options
     expect(done()).toEqual([
-      { value: 'true', label: 'Check', checked: false },
-      { value: '', label: 'Uncheck', checked: true },
+      [
+        { value: 'true', label: 'Check', checked: false },
+        { value: '', label: 'Uncheck', checked: true },
+      ],
     ])
-    expect(done({ Done: true })?.[0].checked).toBe(true)
+    expect(done({ Done: true })?.[0][0].checked).toBe(true)
   })
 
   it('a select marks the held option; a number stays a leaf for its own picker', () => {
     const { properties } = branchesFor({ stage: 'b' })
     expect(properties.find((r) => r.name === 'stage')?.options).toEqual([
-      { value: 'a', label: 'a', checked: false },
-      { value: 'b', label: 'b', checked: true },
+      [
+        { value: 'a', label: 'a', checked: false },
+        { value: 'b', label: 'b', checked: true },
+      ],
     ])
     expect(properties.find((r) => r.name === 'Count')?.options).toBeUndefined()
   })
@@ -129,7 +135,42 @@ describe('propertyMenuBranches', () => {
       schema: tree.config.registry,
       row: spaceRowOf(tree, node),
     })
-    expect(spaces[0].options?.map((o) => o.value)).toEqual(['t1', 'pr1'])
+    expect(spaces[0].options?.flat().map((o) => o.value)).toEqual(['t1', 'pr1'])
+  })
+
+  it('a status offers its non-empty groups as runs, in group order', () => {
+    const status: PropertyDefinition = {
+      id: 'prop_st',
+      name: 'Phase',
+      type: 'status',
+      status_groups: [
+        {
+          id: 'upcoming',
+          label: 'Open',
+          color: 'grey',
+          options: [{ value: 'Open', group_id: 'upcoming' }],
+        },
+        { id: 'in_progress', label: 'Active', color: 'blue', options: [] },
+        {
+          id: 'done',
+          label: 'Done',
+          color: 'green',
+          options: [
+            { value: 'Done', group_id: 'done' },
+            { value: 'Dropped', group_id: 'done' },
+          ],
+        },
+      ],
+    }
+    const { properties } = propertyMenuBranches({
+      tree: treeWithSchema(),
+      schema: [status],
+      row: row(),
+    })
+    expect(properties[0].options?.map((run) => run.map((o) => o.value))).toEqual([
+      ['Open'],
+      ['Done', 'Dropped'],
+    ])
   })
 })
 

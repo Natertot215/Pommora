@@ -1,7 +1,8 @@
-import { type RefObject, useEffect, useState } from 'react'
+import { Fragment, type ReactNode, type RefObject, useEffect, useState } from 'react'
 import type { ColumnStyle } from '../columnStyles'
 import {
-  optionsOf,
+  groupOptions,
+  optionGroupsOf,
   type OptionPickKind,
   pickKindOf,
   type PickOption,
@@ -61,11 +62,21 @@ export const selectedValues = (current: PropertyValue | null): string[] => {
   return []
 }
 
+export type PickGroup = { id: string; options: PickOption[] }
+
+/** The runs a pick list draws between dividers: a Status's non-empty groups, or every other kind's one list. */
+export const pickGroups = (def: PropertyDefinition, contextOptions?: PickOption[]): PickGroup[] =>
+  contextOptions
+    ? [{ id: def.id, options: contextOptions }]
+    : optionGroupsOf(def)
+        .map((g) => ({ id: g.id, options: groupOptions(g).map((o) => ({ ...o, label: o.value })) }))
+        .filter((g) => g.options.length > 0)
+
 export const pickShape = (
   def: PropertyDefinition,
   contextOptions?: PickOption[],
 ): { options: PickOption[]; kind: OptionPickKind } => ({
-  options: contextOptions ?? optionsOf(def).map((o) => ({ ...o, label: o.value })),
+  options: pickGroups(def, contextOptions).flatMap((g) => g.options),
   kind: pickKindOf(def.type) ?? 'select',
 })
 
@@ -112,7 +123,7 @@ export function PropertyPicker({
 
   const pane = !t ? null : t.kind === 'options' ? (
     (() => {
-      const { options, selected, pick } = pickSemantics(
+      const { selected, pick } = pickSemantics(
         t.def,
         t.current,
         commit,
@@ -124,7 +135,6 @@ export function PropertyPicker({
           def={t.def}
           style={t.style}
           contextOptions={t.contextOptions}
-          options={options}
           selected={selected}
           onPick={pick}
           editable
@@ -224,7 +234,6 @@ export function PropertyOptionRows({
   def,
   style,
   contextOptions,
-  options,
   selected,
   onPick,
   editable,
@@ -232,18 +241,18 @@ export function PropertyOptionRows({
   def: PropertyDefinition
   style?: OptionStyleControl
   contextOptions?: PickOption[]
-  options: PickOption[]
   selected: string[]
   onPick: (value: string) => void
   editable?: boolean
 }): React.JSX.Element {
-  if (editable && PROPERTY_TYPES[def.type].options === 'select')
+  const groups = pickGroups(def, contextOptions)
+  if (editable && PROPERTY_TYPES[def.type].options)
     return (
       <EditableOptionRows
         key={def.id}
         def={def}
         style={style}
-        options={options}
+        groups={groups}
         selected={selected}
         onPick={onPick}
       />
@@ -251,72 +260,97 @@ export function PropertyOptionRows({
   const look = style?.current.look
   return (
     <MenuScrollFrame maxHeight={PICKER_MAX_HEIGHT}>
-      {options.length === 0 && <div className={emptyPane} />}
-      {options.map((o) => (
-        <MenuItem
-          key={o.value}
-          checked={selected.includes(o.value)}
-          centered
-          onClick={() => onPick(o.value)}
-        >
-          {contextOptions ? (
-            <NeutralChip color={colorNameFor(o.color)} title={o.label} icon={o.icon} />
-          ) : (
-            <OptionChip type={def.type} look={look} option={o} def={def} />
-          )}
-        </MenuItem>
-      ))}
+      <OptionGroups
+        groups={groups}
+        row={(o) => (
+          <MenuItem
+            key={o.value}
+            checked={selected.includes(o.value)}
+            centered
+            onClick={() => onPick(o.value)}
+          >
+            {contextOptions ? (
+              <NeutralChip color={colorNameFor(o.color)} title={o.label} icon={o.icon} />
+            ) : (
+              <OptionChip type={def.type} look={look} option={o} def={def} />
+            )}
+          </MenuItem>
+        )}
+      />
     </MenuScrollFrame>
+  )
+}
+
+function OptionGroups({
+  groups,
+  row,
+}: {
+  groups: PickGroup[]
+  row: (option: PickOption) => ReactNode
+}): React.JSX.Element {
+  if (groups.length === 0) return <div className={emptyPane} />
+  return (
+    <>
+      {groups.map((g, i) => (
+        <Fragment key={g.id}>
+          {i > 0 && <MenuSeparator group />}
+          {g.options.map(row)}
+        </Fragment>
+      ))}
+    </>
   )
 }
 
 function EditableOptionRows({
   def,
   style,
-  options,
+  groups,
   selected,
   onPick,
 }: {
   def: PropertyDefinition
   style?: OptionStyleControl
-  options: PickOption[]
+  groups: PickGroup[]
   selected: string[]
   onPick: (value: string) => void
 }): React.JSX.Element {
   const look = style?.current.look
+  const options = groups.flatMap((g) => g.options)
   const edit = useOptionEdit({ def, options, style })
+  const creates = PROPERTY_TYPES[def.type].options === 'select'
   return (
     <>
       <MenuScrollFrame
         maxHeight={PICKER_MAX_HEIGHT}
         footer={
-          <>
-            {edit.draft && (
-              <MenuItem inert checked={false} centered>
-                <OptionDraft edit={edit} type={def.type} />
-              </MenuItem>
-            )}
-            <MenuFooting
-              centered={look === 'compact'}
-              leading={
-                <FootingCreate
-                  ariaLabel="New Option"
-                  onClick={() => edit.beginDraft(SELECT_GROUP)}
-                />
-              }
-            />
-          </>
+          creates && (
+            <>
+              {edit.draft && (
+                <MenuItem inert checked={false} centered>
+                  <OptionDraft edit={edit} type={def.type} />
+                </MenuItem>
+              )}
+              <MenuFooting
+                centered={look === 'compact'}
+                leading={
+                  <FootingCreate
+                    ariaLabel="New Option"
+                    onClick={() => edit.beginDraft(SELECT_GROUP)}
+                  />
+                }
+              />
+            </>
+          )
         }
       >
         <LineZone
           {...lineList({
+            laneOf: () => {
+              const laneOf = new Map(groups.flatMap((g) => g.options.map((o) => [o.value, g.id])))
+              return (value) => laneOf.get(value)
+            },
             commit: (value, slot) =>
-              void edit.editOption({
-                op: 'move',
-                value,
-                groupId: SELECT_GROUP,
-                toIndex: slot.index,
-              }),
+              void edit.editOption({ op: 'move', value, groupId: slot.lane, toIndex: slot.index }),
             line: menuDropLine,
             label: (value) => value,
             chip: (value) => (
@@ -330,28 +364,30 @@ function EditableOptionRows({
             watch: [def],
           })}
         >
-          {options.length === 0 && <div className={emptyPane} />}
-          {options.map((o) => (
-            <Reveal key={edit.keyOf(o.value)} open enterOnMount={edit.entering(o.value)} fill>
-              <LineRow
-                id={o.value}
-                open={() => onPick(o.value)}
-                onContextMenu={(e) => {
-                  e.preventDefault()
-                  void edit.openMenu(o.value, e.currentTarget)
-                }}
-              >
-                <MenuItem
-                  checked={selected.includes(o.value)}
-                  centered
-                  tabIndex={-1}
-                  onClick={() => onPick(o.value)}
+          <OptionGroups
+            groups={groups}
+            row={(o) => (
+              <Reveal key={edit.keyOf(o.value)} open enterOnMount={edit.entering(o.value)} fill>
+                <LineRow
+                  id={o.value}
+                  open={() => onPick(o.value)}
+                  onContextMenu={(e) => {
+                    e.preventDefault()
+                    void edit.openMenu(o.value, e.currentTarget)
+                  }}
                 >
-                  <OptionChip type={def.type} look={look} option={o} def={def} />
-                </MenuItem>
-              </LineRow>
-            </Reveal>
-          ))}
+                  <MenuItem
+                    checked={selected.includes(o.value)}
+                    centered
+                    tabIndex={-1}
+                    onClick={() => onPick(o.value)}
+                  >
+                    <OptionChip type={def.type} look={look} option={o} def={def} />
+                  </MenuItem>
+                </LineRow>
+              </Reveal>
+            )}
+          />
         </LineZone>
       </MenuScrollFrame>
       {edit.popup}
@@ -366,17 +402,16 @@ function pickSemantics(
   onSinglePicked: () => void,
   contextOptions?: PickOption[],
 ): {
-  options: PickOption[]
   selected: string[]
   pick: (value: string) => void
 } {
-  const { options, kind } = pickShape(def, contextOptions)
+  const { kind } = pickShape(def, contextOptions)
   const selected = selectedValues(current)
   const pick = (value: string): void => {
     onCommit(pickedValue(def, current, value, contextOptions))
     if (kind === 'select') onSinglePicked()
   }
-  return { options, selected, pick }
+  return { selected, pick }
 }
 
 /** The value a pick lands on, independent of the surface that offered it: a repeat select clears, every other kind toggles. */

@@ -10,7 +10,7 @@ import { columnLabel } from '../../Properties/Cells/columnLabel'
 import { pickFileInto } from '../../Properties/Pickers/filePick'
 import {
   pickedValue,
-  pickShape,
+  pickGroups,
   selectedValues,
   syntheticContextDef,
 } from '../../Properties/Pickers/PropertyPicker'
@@ -47,18 +47,22 @@ export function propertyMenuBranches({ tree, schema, row }: PropertyMenuTarget):
       const checked = current.kind === 'checkbox' && current.value
       return {
         ...base,
-        options: CHECKBOX_OPTIONS.map((o) => ({ ...o, checked: (o.value === 'true') === checked })),
+        options: [
+          CHECKBOX_OPTIONS.map((o) => ({ ...o, checked: (o.value === 'true') === checked })),
+        ],
       }
     }
     if (pickKindOf(def.type) === null) return base
     const selected = selectedValues(current)
     return {
       ...base,
-      options: pickShape(def, contextOptionsOf(tree, def, row.id)).options.map((o) => ({
-        value: o.value,
-        label: o.label,
-        checked: selected.includes(o.value),
-      })),
+      options: pickGroups(def, contextOptionsOf(tree, def, row.id)).map((g) =>
+        g.options.map((o) => ({
+          value: o.value,
+          label: o.label,
+          checked: selected.includes(o.value),
+        })),
+      ),
     }
   }
   const built = schema

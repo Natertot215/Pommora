@@ -1,4 +1,4 @@
-import type { ActionItem } from './menuModel'
+import { type ActionItem, joinGroups } from './menuModel'
 
 export interface PropertyMenuOption {
   value: string
@@ -9,7 +9,8 @@ export interface PropertyMenuOption {
 export interface PropertyMenuRow {
   id: string
   name: string
-  options?: readonly PropertyMenuOption[]
+  /** The picks in the runs a divider separates: a Status's groups, or every other kind's one run. */
+  options?: readonly (readonly PropertyMenuOption[])[]
 }
 
 export type PropertyAction = `prop:${string}`
@@ -20,11 +21,15 @@ function propertyRow(row: PropertyMenuRow): ActionItem<PropertyAction> {
   if (row.options === undefined) return { label: row.name, action: `${PREFIX}${row.id}` }
   return {
     label: row.name,
-    submenu: row.options.map((o) => ({
-      label: o.label,
-      action: `${PREFIX}${row.id}:${o.value}` as PropertyAction,
-      checked: o.checked,
-    })),
+    submenu: joinGroups<PropertyAction>(
+      row.options.map((run) =>
+        run.map((o) => ({
+          label: o.label,
+          action: `${PREFIX}${row.id}:${o.value}` as PropertyAction,
+          checked: o.checked,
+        })),
+      ),
+    ),
   }
 }
 

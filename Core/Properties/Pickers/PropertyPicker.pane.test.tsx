@@ -6,6 +6,7 @@ import { ok } from '../../Contract/result'
 import { stubDialer } from '../../vitest.setup'
 import { dateDefaults } from '../columnStyles'
 import { defaultStatusSeed, type PropertyDefinition } from '../properties'
+import { separator } from '@pommora/uix/Menus/menu-row.css'
 import {
   PropertyPicker,
   pickShape,
@@ -307,15 +308,22 @@ describe('editing options from the picker', () => {
     expect(editOption).not.toHaveBeenCalled()
   })
 
-  it('a Status target and a Context target stay pick-only', async () => {
+  it('a Status target reorders and edits in place without New Option, its non-empty groups apart behind dividers; a Context target stays pick-only', async () => {
+    const [open, active, done] = defaultStatusSeed()
     const statusDef: PropertyDefinition = {
       id: 'prop_st',
       name: 'Status',
       type: 'status',
-      status_groups: defaultStatusSeed(),
+      status_groups: [open, { ...active, options: [] }, done],
     }
     await render({ target: { kind: 'options', def: statusDef, current: null } })
     expect(newOption()).toBeNull()
+    const order = [
+      ...document.querySelectorAll(
+        `[data-picker-portal] [data-line-row], [data-picker-portal] .${separator}`,
+      ),
+    ].map((e) => (e.matches(`.${separator}`) ? '—' : e.textContent))
+    expect(order).toEqual(['Open', '—', 'Done'])
     await render({
       target: {
         kind: 'options',
@@ -325,6 +333,7 @@ describe('editing options from the picker', () => {
       },
     })
     expect(newOption()).toBeNull()
+    expect(document.querySelector('[data-picker-portal] [data-line-row]')).toBeNull()
   })
 
   it('Enter on a focused row picks it', async () => {

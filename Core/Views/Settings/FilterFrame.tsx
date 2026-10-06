@@ -305,7 +305,6 @@ function ChipsField({
           <PropertyOptionRows
             def={def}
             contextOptions={contextOptions}
-            options={options}
             selected={shown}
             onPick={toggle}
           />

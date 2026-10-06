@@ -5,7 +5,7 @@ const ROWS = [
   {
     id: 'ctx1',
     name: 'Areas',
-    options: [{ value: 's1', label: 'Health', checked: true }],
+    options: [[{ value: 's1', label: 'Health', checked: true }]],
   },
   { id: 'p1', name: 'Select', options: [] },
   { id: 'p2', name: 'Link' },
@@ -24,6 +24,29 @@ describe('propertyBranchRows', () => {
     expect(areas.submenu).toEqual([{ label: 'Health', action: 'prop:ctx1:s1', checked: true }])
     expect(link.submenu).toBeUndefined()
     expect(link.action).toBe('prop:p2')
+  })
+
+  it('divides each later run of picks from the one before it', () => {
+    const [status] = propertyBranchRows({
+      properties: [
+        {
+          id: 'st',
+          name: 'Status',
+          options: [
+            [{ value: 'Open', label: 'Open', checked: false }],
+            [
+              { value: 'Active', label: 'Active', checked: true },
+              { value: 'Review', label: 'Review', checked: false },
+            ],
+          ],
+        },
+      ],
+    })
+    expect(status.submenu?.[0].submenu?.map((i) => [i.label, i.separatorBefore ?? false])).toEqual([
+      ['Open', false],
+      ['Active', true],
+      ['Review', false],
+    ])
   })
 
   it('labels the Spaces half over the same submenu', () => {
