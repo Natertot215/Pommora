@@ -352,7 +352,7 @@ function EditableOptionRows({
             </Reveal>
           ))}
           {naming && (
-            <MenuItem centered>
+            <MenuItem checked={false} centered>
               <OptionDraft
                 type={def.type}
                 onCommit={(title) => {
