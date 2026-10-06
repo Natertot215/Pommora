@@ -1,18 +1,35 @@
 import { type RefObject, useEffect, useState } from 'react'
-import type { ColumnLook, ColumnStyle } from '../columnStyles'
+import type { ColumnStyle } from '../columnStyles'
 import {
   optionsOf,
   type OptionPickKind,
   pickKindOf,
   type PickOption,
+  PROPERTY_TYPES,
   type PropertyDefinition,
+  SELECT_GROUP,
 } from '../properties'
 import { NULL_VALUE, type PropertyValue } from '../propertyValue'
+import { type OptionStyleControl, useOptionEdit } from '../Schema/useOptionEdit'
 import { PickerMenu } from '@pommora/uix/Pickers/PickerMenu'
+import { PICKER_MAX_HEIGHT } from '@pommora/uix/Pickers/picker-base.css'
 import { colorNameFor } from '@pommora/uix/Theme/ramp'
 import { NeutralChip } from '@pommora/uix/Labels/recipes'
-import { MenuItem, MenuSeparator, MenuTopRow } from '@pommora/uix/Menus'
+import {
+  AccessoryButton,
+  MenuFooting,
+  MenuItem,
+  MenuScrollFrame,
+  MenuSeparator,
+  MenuTopRow,
+  menuDropLine,
+} from '@pommora/uix/Menus'
+import { footing, footingCentered, titleInput } from '@pommora/uix/Menus/menu-row.css'
 import { FrameSlide } from '@pommora/uix/Menus/FrameSlide'
+import { LineRow, LineZone, lineList } from '@pommora/uix/Interactions/drag'
+import { RenamableLabel } from '@pommora/uix/Fields/RenamableLabel'
+import { Reveal } from '@pommora/uix/Animations/Reveal'
+import { useEntrance } from '@pommora/uix/Animations/useEntrance'
 import { Icon } from '@pommora/uix/Symbols'
 import { useHeld } from '@pommora/uix/Animations/useExitPresence'
 import { DateTimeValuePicker } from './DateTimeValuePicker'
@@ -22,7 +39,7 @@ import { chooserTop, emptyPane } from './property-picker.css'
 import { PathField } from '@pommora/uix/Fields/PathField'
 
 export type PickTarget = { def: PropertyDefinition; current: PropertyValue | null } & (
-  | { kind: 'options'; look?: ColumnLook; contextOptions?: PickOption[] }
+  | { kind: 'options'; style?: OptionStyleControl; contextOptions?: PickOption[] }
   | {
       kind: 'dateTime'
       dateFormat?: ColumnStyle['date_format']
@@ -108,11 +125,12 @@ export function PropertyPicker({
       return (
         <PropertyOptionRows
           def={t.def}
-          look={t.look}
+          style={t.style}
           contextOptions={t.contextOptions}
           options={options}
           selected={selected}
           onPick={pick}
+          editable
         />
       )
     })()
@@ -207,20 +225,33 @@ export function PropertyPicker({
 
 export function PropertyOptionRows({
   def,
-  look,
+  style,
   contextOptions,
   options,
   selected,
   onPick,
+  editable,
 }: {
   def: PropertyDefinition
-  look?: ColumnLook
+  style?: OptionStyleControl
   contextOptions?: PickOption[]
   options: PickOption[]
   selected: string[]
   onPick: (value: string) => void
+  editable?: boolean
 }): React.JSX.Element {
+  if (editable && PROPERTY_TYPES[def.type].options === 'select')
+    return (
+      <EditableOptionRows
+        def={def}
+        style={style}
+        options={options}
+        selected={selected}
+        onPick={onPick}
+      />
+    )
   if (options.length === 0) return <div className={emptyPane} />
+  const look = style?.current.look
   return (
     <>
       {options.map((o) => (
@@ -237,6 +268,111 @@ export function PropertyOptionRows({
           )}
         </MenuItem>
       ))}
+    </>
+  )
+}
+
+function EditableOptionRows({
+  def,
+  style,
+  options,
+  selected,
+  onPick,
+}: {
+  def: PropertyDefinition
+  style?: OptionStyleControl
+  options: PickOption[]
+  selected: string[]
+  onPick: (value: string) => void
+}): React.JSX.Element {
+  const look = style?.current.look
+  const edit = useOptionEdit({ propertyId: def.id, type: def.type, def, options, style })
+  const [naming, setNaming] = useState(false)
+  const entering = useEntrance(options, (o) => edit.keyOf(o.value))
+  return (
+    <>
+      <MenuScrollFrame
+        maxHeight={PICKER_MAX_HEIGHT}
+        footer={
+          <MenuFooting>
+            <div className={look === 'compact' ? footingCentered : footing}>
+              <AccessoryButton
+                icon="plus"
+                size="control"
+                box={20}
+                create
+                ariaLabel="New Option"
+                onClick={() => setNaming(true)}
+              />
+            </div>
+          </MenuFooting>
+        }
+      >
+        <LineZone
+          {...lineList({
+            commit: (value, slot) =>
+              void edit.editOption({
+                op: 'move',
+                value,
+                groupId: SELECT_GROUP,
+                toIndex: slot.index,
+              }),
+            line: menuDropLine,
+            label: (value) => value,
+            chip: (value) => (
+              <OptionChip
+                type={def.type}
+                look={look}
+                option={options.find((o) => o.value === value)}
+                def={def}
+              />
+            ),
+            watch: [options],
+          })}
+        >
+          {options.map((o) => (
+            <Reveal
+              key={edit.keyOf(o.value)}
+              open
+              enterOnMount={entering(edit.keyOf(o.value))}
+              fill
+            >
+              <LineRow
+                id={o.value}
+                onContextMenu={(e) => {
+                  e.preventDefault()
+                  void edit.openMenu(o.value, e.currentTarget)
+                }}
+              >
+                <MenuItem
+                  checked={selected.includes(o.value)}
+                  centered
+                  onClick={() => onPick(o.value)}
+                >
+                  <OptionChip type={def.type} look={look} option={o} def={def} />
+                </MenuItem>
+              </LineRow>
+            </Reveal>
+          ))}
+          {naming && (
+            <MenuItem>
+              <RenamableLabel
+                renames="title"
+                editing
+                value=""
+                className={titleInput}
+                autoSize
+                onCommit={(title) => {
+                  setNaming(false)
+                  void edit.editOption({ op: 'add', groupId: SELECT_GROUP, title })
+                }}
+                onCancel={() => setNaming(false)}
+              />
+            </MenuItem>
+          )}
+        </LineZone>
+      </MenuScrollFrame>
+      {edit.popup}
     </>
   )
 }

@@ -224,7 +224,7 @@ export function useViewHost(source: CollectionNode | SetNode, nests: boolean) {
       kind: 'options',
       def,
       current,
-      look: style.look,
+      style: { current: style, set: (key, value) => setStylePatch(column.id, key, value) },
       contextOptions:
         column.kind === 'context' && tree ? contextOptionsFor(column.id, tree) : undefined,
     }

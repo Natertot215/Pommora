@@ -62,7 +62,7 @@ Recorded 10-05-2026 at `4b045c30b` on `active`.
   - [x] Task 2.2
   - [x] Task 2.3
 - [ ] **Phase 3** — The Picker
-  - [ ] Task 3.1
+  - [x] Task 3.1
   - [ ] Review Checkpoint
 - [ ] **Phase 4** — Live Drive And Reconciliation
   - [ ] Task 4.1

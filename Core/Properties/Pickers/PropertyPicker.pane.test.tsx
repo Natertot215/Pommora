@@ -2,8 +2,17 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { act, useRef } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
-import type { PropertyDefinition } from '../properties'
-import { PropertyPicker, pickShape, type PickEntry, type PickTarget } from './PropertyPicker'
+import { ok } from '../../Contract/result'
+import { stubDialer } from '../../vitest.setup'
+import { dateDefaults } from '../columnStyles'
+import { defaultStatusSeed, type PropertyDefinition } from '../properties'
+import {
+  PropertyPicker,
+  pickShape,
+  syntheticContextDef,
+  type PickEntry,
+  type PickTarget,
+} from './PropertyPicker'
 
 ;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
 
@@ -65,7 +74,15 @@ const rowButton = (name: string): HTMLElement | undefined =>
 
 let host: HTMLDivElement
 let root: Root
+const menu = vi.fn(async (_req: unknown) => ok(null))
+const editOption = vi.fn(async () => ok(null))
 beforeEach(() => {
+  menu.mockClear()
+  editOption.mockClear()
+  ;(window as unknown as { nexus: unknown }).nexus = stubDialer({
+    menu,
+    'property:editOption': editOption,
+  })
   host = document.createElement('div')
   document.body.appendChild(host)
   root = createRoot(host)
@@ -102,7 +119,14 @@ describe('PropertyPicker panes', () => {
   })
 
   it('an options target follows the column look: a compact Select shows glyphs, not labels', async () => {
-    await render({ target: { kind: 'options', def: selectDef, current: null, look: 'compact' } })
+    await render({
+      target: {
+        kind: 'options',
+        def: selectDef,
+        current: null,
+        style: { current: { ...dateDefaults('full'), look: 'compact' }, set: () => {} },
+      },
+    })
     expect(portal()).toBeTruthy()
     expect(portalText()).not.toContain('Alpha')
   })
@@ -227,6 +251,91 @@ describe('PropertyPicker panes', () => {
     })
     expect(onCommit).toHaveBeenCalled()
     expect(onCommit.mock.calls[0]?.[1]).toMatchObject({ id: 'prop_sel' })
+  })
+})
+
+describe('editing options from the picker', () => {
+  const newOption = (): HTMLButtonElement | null =>
+    document.querySelector('[data-picker-portal] button[aria-label="New Option"]')
+  const draft = (): HTMLInputElement | null => document.querySelector('[data-picker-portal] input')
+  const rowText = (label: string): HTMLElement | undefined =>
+    [...document.querySelectorAll<HTMLElement>('[data-picker-portal] *')].find(
+      (e) => e.textContent === label && e.children.length === 0,
+    )
+  const beginDraft = async (): Promise<HTMLInputElement> => {
+    await act(async () => {
+      newOption()?.click()
+    })
+    const input = draft()
+    if (!input) throw new Error('no draft row')
+    return input
+  }
+  const key = (input: HTMLInputElement, name: string): void =>
+    act(() => {
+      input.focus()
+      input.dispatchEvent(new KeyboardEvent('keydown', { key: name, bubbles: true }))
+    })
+
+  it('a Select target offers New Option beneath its rows; the draft is the last row and Enter adds the option unassigned', async () => {
+    const onCommit = vi.fn()
+    await render({ target: optionsTarget(), onCommit })
+    expect(newOption()).toBeTruthy()
+    const input = await beginDraft()
+    const beta = rowText('Beta')
+    expect(
+      beta && beta.compareDocumentPosition(input) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy()
+    input.value = 'Fresh'
+    key(input, 'Enter')
+    expect(editOption).toHaveBeenCalledWith('prop_sel', {
+      op: 'add',
+      groupId: 'select',
+      title: 'Fresh',
+    })
+    expect(onCommit).not.toHaveBeenCalled()
+    expect(draft()).toBeNull()
+  })
+
+  it('a blank Enter and an Escape on the draft add nothing', async () => {
+    await render({ target: optionsTarget() })
+    key(await beginDraft(), 'Enter')
+    expect(draft()).toBeNull()
+    const second = await beginDraft()
+    second.value = 'Nope'
+    key(second, 'Escape')
+    expect(draft()).toBeNull()
+    expect(editOption).not.toHaveBeenCalled()
+  })
+
+  it('a Status target and a Context target stay pick-only', async () => {
+    const statusDef: PropertyDefinition = {
+      id: 'prop_st',
+      name: 'Status',
+      type: 'status',
+      status_groups: defaultStatusSeed(),
+    }
+    await render({ target: { kind: 'options', def: statusDef, current: null } })
+    expect(newOption()).toBeNull()
+    await render({
+      target: {
+        kind: 'options',
+        def: syntheticContextDef('ctx_a'),
+        current: null,
+        contextOptions: [{ value: 'Home', label: 'Home' }],
+      },
+    })
+    expect(newOption()).toBeNull()
+  })
+
+  it("a row's right-click offers the option menu, without Style where no view is in hand", async () => {
+    await render({ target: optionsTarget() })
+    await act(async () => {
+      rowText('Alpha')?.dispatchEvent(
+        new MouseEvent('contextmenu', { bubbles: true, cancelable: true }),
+      )
+    })
+    const req = menu.mock.calls[0]?.[0] as { items: { label: string }[] } | undefined
+    expect(req?.items.map((i) => i.label)).toEqual(['Edit Option', 'Clear', 'Remove'])
   })
 })
 

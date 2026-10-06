@@ -1,7 +1,7 @@
 import type { RefObject } from 'react'
-import type { ColumnLook } from '../columnStyles'
 import type { PickOption, PropertyDefinition } from '../properties'
 import type { PropertyValue } from '../propertyValue'
+import type { OptionStyleControl } from '../Schema/useOptionEdit'
 import { PickerMenu } from '@pommora/uix/Pickers/PickerMenu'
 import { massPickCommits, massSelected } from './massAssign'
 import { pickShape, PropertyOptionRows, selectedValues } from './PropertyPicker'
@@ -11,7 +11,7 @@ export function MassPropertyPicker({
   currents,
   open,
   triggerRef,
-  look,
+  style,
   contextOptions,
   onPick,
   onDismiss,
@@ -20,7 +20,7 @@ export function MassPropertyPicker({
   currents: Array<PropertyValue | null>
   open: boolean
   triggerRef: RefObject<HTMLElement | null>
-  look?: ColumnLook
+  style?: OptionStyleControl
   contextOptions?: PickOption[]
   onPick: (commits: Array<{ index: number; next: PropertyValue | null }>) => void
   onDismiss: () => void
@@ -39,11 +39,12 @@ export function MassPropertyPicker({
     <PickerMenu open={open} onDismiss={onDismiss} triggerRef={triggerRef} solid>
       <PropertyOptionRows
         def={def}
-        look={look}
+        style={style}
         contextOptions={contextOptions}
         options={options}
         selected={selected}
         onPick={pick}
+        editable
       />
     </PickerMenu>
   )
