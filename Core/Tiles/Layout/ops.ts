@@ -131,16 +131,20 @@ export function insertBand(
   return next
 }
 
-/** A new leaf lands under `under` at height `h`, or as the board's last band when there is no tile or no height to seat it by. */
+/** A new leaf lands under `under` at height `h`, or as the board's last band — at `h` when there is no tile to seat it under, at the default when there is no height. */
 export function seatBelow(
   layout: TileLayout,
   id: string,
   under: string | null,
   h: number | undefined,
 ): TileLayout {
-  return under === null || h === undefined
-    ? insertBand(layout, layout.bands.length, id, NEW_TILE_H)
-    : attachBelow(layout, under, id, h)
+  if (under !== null && h !== undefined) return attachBelow(layout, under, id, h)
+  return insertBand(
+    layout,
+    layout.bands.length,
+    id,
+    under === null && h !== undefined ? h : NEW_TILE_H,
+  )
 }
 
 /** The index is against the layout as given — when the tile currently IS a band above the target, its removal shifts the band list, so the insertion compensates. */

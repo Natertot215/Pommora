@@ -8,9 +8,8 @@
   --grip-inset: 8px; /* KNOB — the row glyph's gap left of the table's left edge */
   --grip-size: var(--icon-body);
   --grip-gutter: calc(var(--grip-size) + var(--grip-inset));
-  --tbl-add-size: 14px;
   --tbl-add-gap: 6px;
-  --tbl-add-span: calc(var(--tbl-add-gap) + var(--tbl-add-size));
+  --tbl-add-span: calc(var(--tbl-add-gap) + var(--add-strip-size));
   --gutter-right: max(var(--grip-gutter), var(--tbl-add-span));
   position: relative;
   /* Padding, not a negative margin, keeps the grips/strip hoverable; top stays 0 so column grips hang into it. */
@@ -75,13 +74,13 @@
 }
 .mdpm-tbl-add-col {
   right: calc(var(--gutter-right) - var(--tbl-add-span));
-  width: var(--tbl-add-size);
+  width: var(--add-strip-size);
 }
 .mdpm-tbl-add-row {
   left: var(--grip-gutter);
   right: var(--grip-gutter);
   top: calc(100% + var(--tbl-add-gap));
-  height: var(--tbl-add-size);
+  height: var(--add-strip-size);
 }
 
 /* No visible resize bar — the live column widths already show drag feedback. */

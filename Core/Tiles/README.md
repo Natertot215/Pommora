@@ -93,8 +93,8 @@ These are load-bearing; the comments at each site say why. Summarized:
 - **A static board answers no geometry gesture.** A host lock and the stacking width are one
   state for gestures: the grid refuses the press before the pointer engine sees it, so no gesture
   path carries a stacked branch. A host lock withholds the ghost tiles and the add strip; a
-  stacked board has no wedge and keeps the strip. Content editing, the handle menu, and view
-  tiles run either way.
+  stacked board has no wedge and keeps its bottom zone. Content editing, the handle menu, and
+  view tiles run either way.
 
 #### Persistence Seam
 
