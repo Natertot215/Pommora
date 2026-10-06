@@ -8,8 +8,8 @@ const rows = (items: ReturnType<typeof optionMenuModel>) =>
 describe('optionMenuModel', () => {
   it('leads with Style where a view gives one, then Edit Option, then Clear and Remove apart', () => {
     const items = optionMenuModel({
-      type: 'select',
-      current: { ...dateDefaults('full'), look: 'compact' },
+      style: { type: 'select', current: { ...dateDefaults('full'), look: 'compact' } },
+      destructive: true,
     })
     expect(rows(items)).toEqual([
       ['Style', false],
@@ -23,11 +23,7 @@ describe('optionMenuModel', () => {
     ])
   })
 
-  it('omits Style where no view exists', () => {
-    expect(rows(optionMenuModel())).toEqual([
-      ['Edit Option', false],
-      ['Clear', true],
-      ['Remove', false],
-    ])
+  it('omits Style where no view exists, and Clear and Remove where the surface is not destructive', () => {
+    expect(rows(optionMenuModel({ destructive: false }))).toEqual([['Edit Option', false]])
   })
 })

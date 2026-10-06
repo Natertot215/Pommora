@@ -5,11 +5,21 @@ import type { ActionItem } from './menuModel'
 
 type OptionMenuAction = 'option:edit' | 'option:clear' | 'option:remove' | StyleAction
 
-export function optionMenuModel(style?: StyleMenuContext): ActionItem<OptionMenuAction>[] {
+export function optionMenuModel({
+  style,
+  destructive,
+}: {
+  style?: StyleMenuContext
+  destructive: boolean
+}): ActionItem<OptionMenuAction>[] {
   return [
     ...(style ? styleBranch(style) : []),
     { label: 'Edit Option', action: 'option:edit' },
-    { label: 'Clear', action: 'option:clear', separatorBefore: true },
-    { label: 'Remove', action: 'option:remove' },
+    ...(destructive
+      ? [
+          { label: 'Clear', action: 'option:clear' as const, separatorBefore: true },
+          { label: 'Remove', action: 'option:remove' as const },
+        ]
+      : []),
   ]
 }

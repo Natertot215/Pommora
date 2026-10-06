@@ -338,7 +338,7 @@ describe('editing options from the picker', () => {
     expect(onCommit).toHaveBeenCalledWith({ kind: 'select', value: 'Alpha' })
   })
 
-  it("a row's right-click offers the option menu, without Style where no view is in hand", async () => {
+  it("a row's right-click offers the option menu, without Style where no view is in hand and without Clear or Remove", async () => {
     await render({ target: optionsTarget() })
     await act(async () => {
       rowText('Alpha')?.dispatchEvent(
@@ -346,7 +346,7 @@ describe('editing options from the picker', () => {
       )
     })
     const req = menu.mock.calls[0]?.[0] as { items: { label: string }[] } | undefined
-    expect(req?.items.map((i) => i.label)).toEqual(['Edit Option', 'Clear', 'Remove'])
+    expect(req?.items.map((i) => i.label)).toEqual(['Edit Option'])
   })
 })
 
