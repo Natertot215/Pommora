@@ -10,6 +10,7 @@ import {
 } from 'react'
 import { findScroller, scrollContainer } from '@pommora/uix/Interactions/autoscroll'
 import { GLIDE_FEEL } from '@pommora/uix/Animations/feel'
+import { ADD_STRIP_PX } from '@pommora/uix/Theme/theme-vars.css'
 import { useHeldPresence, useSettleFallback } from '@pommora/uix/Animations/useExitPresence'
 import { usePointerGesture } from '@pommora/uix/Interactions/gesture'
 import { HYSTERESIS } from '@pommora/uix/Interactions/shared'
@@ -86,10 +87,11 @@ interface Settle {
 }
 
 const HANDLE_REACH: Reach = { size: 'corner', toward: { x: 1, y: 1 } }
-// KNOB — drop-band zone, snap radius, and the clearance under the last band.
+// KNOB — drop-band zone and snap radius.
 const BAND_ZONE_PX = 10
 const SNAP_PX = 9
-const BOTTOM_PAD_PX = 28
+// The clearance under the last band is the add strip's seat: a gutter and the strip, so the board ends where the strip does.
+const BOTTOM_PAD_PX = TILE_GAP + ADD_STRIP_PX
 // KNOB — a wedge's dwell, and the least a bottom ghost may fill before the bottom offers the strip instead.
 const WEDGE_DWELL_MS = 1000
 const BOTTOM_FILL_MIN_PX = 80
@@ -495,9 +497,8 @@ export function TileGrid({
     suppressed: () => inserting !== null,
   })
   useClearStrandedGhost(ghostApi, { has: (id) => zones && (id === APPEND || wedges.has(id)) })
-  // The bottom zone is the room under the last band: with a tile's worth it is a ghost's zone that fills it, with less the clearance alone, offering the strip; the shape holds through the menu it opened.
+  // The bottom zone is the room under the last band: with a tile's worth it is a ghost's zone that fills it, with less the clearance alone, a hover host revealing the strip; the shape holds through the menu it opened.
   const [fill, setFill] = useState<number | null>(null)
-  const [strip, setStrip] = useState(false)
 
   // Sampled only between gestures and only off a measured width, before paint: a crossing under a held pointer would re-lay the board mid-drag, and a narrow mount must never paint two-across first. The room under the last band rides the same sample, since the pane's height and the board's are what move it.
   useLayoutEffect(() => {
@@ -599,7 +600,7 @@ export function TileGrid({
       {zones && (
         <div
           className="tile-add"
-          data-reveal-host={strip ? 'on' : 'off'}
+          data-reveal-host={fill === null ? '' : 'off'}
           style={placementStyle({
             x: { share: 0, px: 0 },
             y: placed.totalHeight,
@@ -608,12 +609,8 @@ export function TileGrid({
           })}
           onPointerEnter={() => {
             if (fill !== null) ghostApi.onHover(APPEND, true)
-            else setStrip(true)
           }}
-          onPointerLeave={() => {
-            ghostApi.onHover(APPEND, false)
-            setStrip(false)
-          }}
+          onPointerLeave={() => ghostApi.onHover(APPEND, false)}
         >
           <button
             type="button"

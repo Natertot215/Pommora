@@ -80,11 +80,14 @@
   }
 }
 
-/* The bottom zone is the clearance under the last band; the strip it may offer rides one gutter in, full-width. */
+/* The strip the bottom zone offers rides one gutter in, full-width, and takes the press that reveals it: a press is the pointer's first word there as often as not. */
 .tile-add > .add-strip {
   left: 0;
   right: 0;
   height: var(--add-strip-size);
+}
+.tile-add[data-reveal-host=""] > .add-strip {
+  pointer-events: auto;
 }
 
 /* A bordered chip notched into the left border: its own rounded border is the curve, its --main-bg fill erases the straight border line behind it, and its border-color inherits the tile's so the accent highlight flows through. */

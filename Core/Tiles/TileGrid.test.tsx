@@ -387,9 +387,9 @@ describe('the ghost tiles and the add strip', () => {
   // The host scrolls, and shows `room` px below the grid's resting box; the grid's sample reads it.
   const paneWithRoom = (room: number): void => {
     host.style.overflowY = 'auto'
-    host.getBoundingClientRect = () => ({ top: 0, bottom: 228 + room }) as DOMRect
+    host.getBoundingClientRect = () => ({ top: 0, bottom: 226 + room }) as DOMRect
     const grid = q('.tile-grid') as HTMLElement
-    grid.getBoundingClientRect = () => ({ top: 0, bottom: 228 }) as DOMRect
+    grid.getBoundingClientRect = () => ({ top: 0, bottom: 226 }) as DOMRect
     act(() => observed?.())
   }
 
@@ -398,53 +398,49 @@ describe('the ghost tiles and the add strip', () => {
     render({ onInsert })
     const zone = q('.tile-add') as HTMLElement
     expect(zone.style.transform).toBe('translate(0px, 200px)')
-    expect(q('.tile-grid')?.style.height).toBe('228px')
+    expect(q('.tile-grid')?.style.height).toBe('226px')
     paneWithRoom(400)
-    expect(zone.style.height).toBe('428px')
+    expect(zone.style.height).toBe('426px')
     hoverBottom()
     expect(zone.dataset.revealHost).toBe('off')
     tick(999)
     expect(q('.tile-ghost')).toBeNull()
     tick(1)
     expect(q('.tile-ghost')?.style.transform).toBe('translate(0px, 208px)')
-    expect(q('.tile-ghost')?.style.height).toBe('420px')
-    expect(q('.tile-grid')?.style.height).toBe('628px')
+    expect(q('.tile-ghost')?.style.height).toBe('418px')
+    expect(q('.tile-grid')?.style.height).toBe('626px')
     // The ghost draws over its zone, so the click is the ghost's.
     expect(
       zone.compareDocumentPosition(q('.tile-ghost') as Node) & Node.DOCUMENT_POSITION_FOLLOWING,
     ).toBeTruthy()
     click('.tile-ghost')
     expect(onInsert).toHaveBeenCalledOnce()
-    expect(onInsert.mock.calls[0][0]).toEqual({ kind: 'append', h: 420 })
+    expect(onInsert.mock.calls[0][0]).toEqual({ kind: 'append', h: 418 })
   })
 
   it('with less than a tile’s worth below, the bottom zone is the clearance and offers the strip at once, one gutter in', () => {
     const onInsert = vi.fn()
     render({ onInsert })
-    paneWithRoom(59)
+    paneWithRoom(61)
     const zone = q('.tile-add') as HTMLElement
-    expect(zone.style.height).toBe('28px')
+    expect(zone.style.height).toBe('26px')
     hoverBottom()
-    expect(zone.dataset.revealHost).toBe('on')
+    expect(zone.dataset.revealHost).toBe('')
     expect(q('.tile-add button')?.style.top).toBe('8px')
     tick(1000)
     expect(q('.tile-ghost')).toBeNull()
-    expect(q('.tile-grid')?.style.height).toBe('228px')
+    expect(q('.tile-grid')?.style.height).toBe('226px')
     click('.tile-add button')
     expect(onInsert).toHaveBeenCalledOnce()
     expect(onInsert.mock.calls[0][0]).toEqual({ kind: 'append' })
     expect(onInsert.mock.calls[0][1]).toMatchObject({ type: 'click' })
-    leaveBottom()
-    expect(zone.dataset.revealHost).toBe('off')
   })
 
   it('the room is read with the board’s sample, so a pane or board resize changes the shape', () => {
     render()
-    paneWithRoom(59)
-    hoverBottom()
-    expect(q('.tile-add')?.dataset.revealHost).toBe('on')
-    leaveBottom()
-    paneWithRoom(60)
+    paneWithRoom(61)
+    expect(q('.tile-add')?.dataset.revealHost).toBe('')
+    paneWithRoom(62)
     hoverBottom()
     expect(q('.tile-add')?.dataset.revealHost).toBe('off')
     tick(1000)

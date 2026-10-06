@@ -43,6 +43,9 @@ export const TILE_DEFAULT_PX = 320
 /** KNOB — a resizable tile's float gap above and below; a tile widget adds it back to the height it reports to CM6. */
 export const TILE_GAP_PX = 4
 
+/** KNOB — the add strip's thickness, a table's row and column strips' and a board's bottom strip's. */
+export const ADD_STRIP_PX = 18
+
 const c = colorVars.color
 
 globalStyle(':root', {
@@ -121,7 +124,7 @@ globalStyle(':root', {
     '--drop-line-thickness': '2px',
     '--drop-dot-size': '7px',
     '--drop-line-inset': `${DROP_LINE_INSET}px`,
-    '--add-strip-size': '18px',
+    '--add-strip-size': `${ADD_STRIP_PX}px`,
 
     '--list-outline-width': '2px',
     '--list-outline-color': c.border.light,
