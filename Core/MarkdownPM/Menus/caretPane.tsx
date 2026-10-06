@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState, type ReactNode, type RefObject } from 'react'
 import type { EditorView, KeyBinding } from '@codemirror/view'
+import { scrollContainer } from '@pommora/uix/Interactions/autoscroll'
 import { PickerMenu } from '@pommora/uix/Pickers/PickerMenu'
 import type { PaneResize } from '@pommora/uix/Pickers/usePaneResize'
 import { clamp } from '@pommora/uix/Utilities/clamp'
@@ -25,15 +26,9 @@ function surfaceOf(view: EditorView): HTMLElement {
   // Containment, not connectedness: a cached surface can be in the document while the editor has been re-slotted out of it.
   const cached = surfaces.get(view.dom)
   if (cached?.contains(view.dom)) return cached
-  // The answer must not be cached: the loop bottoms out at the body, which is connected by definition, so nothing would re-walk.
+  // The answer must not be cached: the fallback is the body, which is connected by definition, so nothing would re-walk.
   if (!view.dom.isConnected) return document.body
-  let el = view.dom.parentElement
-  while (el && el !== document.body) {
-    const oy = getComputedStyle(el).overflowY
-    if (oy === 'auto' || oy === 'scroll') break
-    el = el.parentElement
-  }
-  const found = el ?? document.body
+  const found = scrollContainer(view.dom, 'y') ?? document.body
   surfaces.set(view.dom, found)
   return found
 }
