@@ -103,3 +103,12 @@ narrow-width derivation, while the tree it hands back is the one it was given. T
 decodes the stored tree. Unknown keys on an entry or the document are kept by the loose entry
 schemas, `mergeEntry`, `patchEntries`, the document writer, and the store's `kept`; the tile
 document itself belongs to `tileDocStore.ts`.
+
+A main-side write that changes the layout races the renderer's saves, which replace the layout
+whole. `seatTileWrite` is the one place that reconciles the two: it lands the layout the board
+owes first, then adopts the written layout or, when the board changed during the flight, joins
+the new leaf to it. Any future main-side layout write goes through it.
+
+Undoing a delete still puts the tile back from the renderer: on an untouched board it returns
+the exact layout from before the removal, which the main-side band in `restoreTile` can't. A
+main-side exact return would retire that step.
