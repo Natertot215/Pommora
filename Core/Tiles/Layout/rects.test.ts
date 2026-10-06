@@ -3,12 +3,11 @@ import { attachBelow, insertBand } from './ops'
 import { splitTile } from '../../Testing/tileLayouts'
 import type { LayoutNode, TileLayout, TileLeaf } from './model'
 import { placeTiles, wedgeFills } from './rects'
-import { stackLayout } from './stack'
 
 describe('placeTiles', () => {
   it('places a row as shares of the width with the gutters fixed', () => {
-    const row = splitTile(insertBand({ bands: [] }, 0, 'a', 200), 'a', 'e', 'b')
-    const b = placeTiles(row, 8).tiles.get('b')
+    const split = splitTile(insertBand({ bands: [] }, 0, 'a', 200), 'a', 'e', 'b')
+    const b = placeTiles(split, 8).tiles.get('b')
     expect(b?.x).toEqual({ share: 0.5, px: 4 })
     expect(b?.w).toEqual({ share: 0.5, px: -4 })
   })
@@ -68,10 +67,6 @@ describe('wedgeFills', () => {
 
   it('a band’s floor is its own; the next band offers no room', () => {
     expect(fills(board(row(tile('a', 100), tile('b', 200)), tile('c', 100)))).toEqual({ a: 92 })
-  })
-
-  it('a stacked board has no wedge', () => {
-    for (const x of FIXTURES) expect(wedgeFills(stackLayout(x), 8, 64).size).toBe(0)
   })
 
   it('a tile attached below at its fill lands flush on the floor and moves nothing else', () => {

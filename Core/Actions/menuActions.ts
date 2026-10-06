@@ -10,8 +10,8 @@ export async function popMenu<A extends string>(
 ): Promise<A | null> {
   if (items.length === 0) return null
   if (!trigger || useSession.getState().devicePrefs.nativeMenus) {
-    const box = trigger?.getBoundingClientRect()
     const at = options?.at
+    const box = at ? undefined : trigger?.getBoundingClientRect()
     const res = await dialer().ask('menu', {
       items,
       anchor: at

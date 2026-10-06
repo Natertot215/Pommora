@@ -309,20 +309,19 @@ export function TileHost({
         setInserting({ target, phase: 'flight' })
         void landTileWrite(host, dialer().ask('tiles:create', host, pick)).then((r) => {
           const made = reportRefusal(r) ? r.value.id : null
-          const above = target.kind === 'wedge' ? target.above : null
           // One commit outside a sibling mount's held gesture, so no frame draws the ghost beside its tile or neither: the store's write renders at once, and a state set from a promise would trail it.
           flushSync(() => {
             setInserting(null)
             if (made === null) return
             commitLayout((cur) =>
-              seatBelow(
-                cur,
-                made,
-                above,
-                target.kind === 'append'
-                  ? target.h
-                  : wedgeFills(cur, TILE_GAP, TILE_MIN_PX).get(target.above),
-              ),
+              target.kind === 'wedge'
+                ? seatBelow(
+                    cur,
+                    made,
+                    target.above,
+                    wedgeFills(cur, TILE_GAP, TILE_MIN_PX).get(target.above),
+                  )
+                : seatBelow(cur, made, null, target.h),
             )
             if (!pick) setEditingId(made)
           })

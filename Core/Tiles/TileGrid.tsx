@@ -126,7 +126,7 @@ const fillBelow = (grid: HTMLElement, totalHeight: number): number | null => {
   const pane = scrollContainer(grid, 'y')
   if (!pane) return NEW_TILE_H
   const box = grid.getBoundingClientRect()
-  const trailing = (pane.lastElementChild ?? grid).getBoundingClientRect().bottom - box.bottom
+  const trailing = pane.lastElementChild!.getBoundingClientRect().bottom - box.bottom
   const fill =
     Math.floor(pane.getBoundingClientRect().bottom - box.top - trailing) - totalHeight - TILE_GAP
   return fill >= BOTTOM_FILL_MIN_PX ? fill : null
@@ -294,7 +294,7 @@ export function TileGrid({
 
   const boardStatic = locked || stacked
   const busy = pressedId !== null || resizingId !== null || tileDrag !== null || settle !== null
-  // A board with tiles offers its wedge ghosts and its add strip while it is unlocked and at rest; a stacked board has no wedge and keeps the strip.
+  // A board with tiles offers its wedge ghosts and its bottom zone while it is unlocked and at rest; a stacked board has no wedge and keeps the zone.
   const zones = !locked && !busy && view.bands.length > 0
   const live = useLatest({ view, onLayoutChange, boardStatic, isTileLocked, placed })
 
@@ -496,11 +496,13 @@ export function TileGrid({
     graceMs: REVEAL_GRACE_MS,
     suppressed: () => inserting !== null,
   })
-  useClearStrandedGhost(ghostApi, { has: (id) => zones && (id === APPEND || wedges.has(id)) })
-  // The bottom zone is the room under the last band: with a tile's worth it is a ghost's zone that fills it, with less the clearance alone, a hover host revealing the strip; the shape holds through the menu it opened.
+  // The room under the last band, read with the board's sample: a tile's worth makes the bottom zone a ghost's, less leaves it the strip's.
   const [fill, setFill] = useState<number | null>(null)
+  useClearStrandedGhost(ghostApi, {
+    has: (id) => zones && (id === APPEND ? fill !== null : wedges.has(id)),
+  })
 
-  // Sampled only between gestures and only off a measured width, before paint: a crossing under a held pointer would re-lay the board mid-drag, and a narrow mount must never paint two-across first. The room under the last band rides the same sample, since the pane's height and the board's are what move it.
+  // Sampled only between gestures and only off a measured width, before paint: a crossing under a held pointer would re-lay the board mid-drag, and a narrow mount must never paint two-across first. The room under the last band rides the same sample, watching the pane as well, since its height and the board's are what move it.
   useLayoutEffect(() => {
     const grid = gridRef.current
     if (busy || !grid) return
@@ -512,6 +514,8 @@ export function TileGrid({
     sample()
     const ro = new ResizeObserver(sample)
     ro.observe(grid)
+    const pane = scrollContainer(grid, 'y')
+    if (pane) ro.observe(pane)
     return () => ro.disconnect()
   }, [busy])
 
@@ -575,7 +579,6 @@ export function TileGrid({
         boardStatic && 'is-static',
       )}
       style={{
-        // The clearance under the last band, or a bottom ghost's own end, which takes the clearance as its own.
         height: Math.max(
           placed.totalHeight + BOTTOM_PAD_PX,
           ghostBox ? ghostBox.y + ghostBox.h : 0,
@@ -607,10 +610,7 @@ export function TileGrid({
             w: { share: 1, px: 0 },
             h: fill === null ? BOTTOM_PAD_PX : TILE_GAP + fill,
           })}
-          onPointerEnter={() => {
-            if (fill !== null) ghostApi.onHover(APPEND, true)
-          }}
-          onPointerLeave={() => ghostApi.onHover(APPEND, false)}
+          {...(fill !== null ? ghostAnchorProps(ghostApi, APPEND) : {})}
         >
           <button
             type="button"
