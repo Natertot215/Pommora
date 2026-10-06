@@ -579,10 +579,6 @@ describe('a create’s seat', () => {
   })
   const board = (layout: unknown): Promise<unknown> =>
     writeTileDocAt(home(), (cur) => ({ ...cur, layout }))
-  const bandIds = async (): Promise<string[]> =>
-    ((await docAt()).layout as { bands: { node: { id: string } }[] }).bands.map((x) => x.node.id)
-  const lastBand = async (): Promise<unknown> =>
-    ((await docAt()).layout as { bands: { node: unknown }[] }).bands.at(-1)?.node
 
   it('an append lands the entry and its band in one write, at the height it brought or the default', async () => {
     const made = await landedId(createTile(root, home(), append))
@@ -591,7 +587,9 @@ describe('a create’s seat', () => {
       layout: { bands: [{ node: { kind: 'tile', id: made, h: 250 } }] },
     })
     const tall = await landedId(createTile(root, home(), { kind: 'append', h: 392 }))
-    expect(await lastBand()).toEqual({ kind: 'tile', id: tall, h: 392 })
+    expect((await docAt()).layout).toMatchObject({
+      bands: [{}, { node: { kind: 'tile', id: tall, h: 392 } }],
+    })
   })
 
   it('a wedge seats under its tile at the fill the disk’s layout gives', async () => {
@@ -622,14 +620,20 @@ describe('a create’s seat', () => {
   it('a wedge whose tile left the disk’s layout gives way to the last band', async () => {
     await board({ bands: [{ node: { kind: 'tile', id: a, h: 200 } }] })
     const made = await landedId(createTile(root, home(), { kind: 'wedge', above: b }))
-    expect(await bandIds()).toEqual([a, made])
-    expect(await lastBand()).toEqual({ kind: 'tile', id: made, h: 250 })
+    expect((await docAt()).layout).toEqual({
+      bands: [
+        { node: { kind: 'tile', id: a, h: 200 } },
+        { node: { kind: 'tile', id: made, h: 250 } },
+      ],
+    })
   })
 
-  it('a layout this build can’t read is left as it stands, and a target it can’t read refuses before anything is written', async () => {
+  it('a layout this build can’t read seats as an empty board, and a target it can’t read refuses before anything is written', async () => {
     await board(7)
-    await landedId(createTile(root, home(), append))
-    expect((await docAt()).layout).toBe(7)
+    const made = await landedId(createTile(root, home(), append))
+    expect((await docAt()).layout).toEqual({
+      bands: [{ node: { kind: 'tile', id: made, h: 250 } }],
+    })
     const before = await docAt()
     expect((await createTile(root, home(), { kind: 'wedge' })).ok).toBe(false)
     expect((await createTile(root, home(), { kind: 'append', h: -1 })).ok).toBe(false)

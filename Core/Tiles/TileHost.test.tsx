@@ -7,7 +7,8 @@ import { createRoot, type Root } from 'react-dom/client'
 import { EditorView } from '@codemirror/view'
 import { stubEditorBridge } from '../Testing/editorHarness'
 import { TileHost } from './TileHost'
-import { dropAllTileDocs, holdTileDoc, markTileRemoving } from './tileDocStore'
+import { dropAllTileDocs, holdTileDoc, markTileRemoving, setTileLayout } from './tileDocStore'
+import type { TileLayout } from './Layout/model'
 import { clearCache, knownBody, readBodyBase } from '../Session/pageDetailCache'
 import { useSession } from '../Session/store'
 import { makeTree } from '../Testing/testTree'
@@ -543,21 +544,30 @@ describe('the Insert Menu a ghost tile opens', () => {
     expect(ghost?.hasAttribute('data-reveal-held')).toBe(false)
   })
 
-  it('a wedge sends its tile, and a seat landing under a sibling’s held gesture waits for the release', async () => {
+  // A wedge create whose reply the test hands back, the board's layout writes and its order of calls kept.
+  const wedgeFlight = async () => {
     let reply: (r: unknown) => void = () => {}
-    let sent: unknown[] = []
-    let disk: unknown = wedged
-    bridge(
+    const sent: unknown[][] = []
+    const order: string[] = []
+    const { saves } = bridge(
       'tile:new',
       {
+        'tiles:save': async (_host: unknown, patch: { layout?: unknown }) => {
+          if (patch.layout) {
+            saves.push(patch.layout)
+            order.push('save')
+          }
+          return { ok: true, value: { landed: wedged } }
+        },
         'tiles:create': (...args: unknown[]) => {
-          sent = args
+          sent.push(args)
+          order.push('create')
           return new Promise((r) => {
             reply = r
           })
         },
       },
-      () => disk,
+      () => wedged,
     )
     await mountHost(() => host.querySelectorAll('.tile').length === 2)
     const zone = host.querySelector('.tile-zone') as HTMLElement
@@ -568,17 +578,91 @@ describe('the Insert Menu a ghost tile opens', () => {
       window.dispatchEvent(new PointerEvent('pointermove'))
     })
     expect(await until(() => host.querySelector('.tile-ghost') !== null)).toBe(true)
+    const land = (): Promise<void> =>
+      act(async () =>
+        reply({
+          ok: true,
+          value: { id: made, landed: seated(wedged, { id: made, type: 'markdown' }) },
+        }),
+      )
+    return { sent, order, saves, land }
+  }
+  // The board as a gesture leaves it: `a` taller, and no leaf for the tile in flight.
+  const stretched = {
+    bands: [
+      {
+        node: {
+          kind: 'row',
+          ratios: [0.5, 0.5],
+          children: [
+            { kind: 'tile', id: tileId('a'), h: 300 },
+            { kind: 'tile', id: tileId('b'), h: 100 },
+          ],
+        },
+      },
+    ],
+  } as TileLayout
+  const holds = (saved: unknown): boolean =>
+    JSON.stringify(saved).includes(made) && JSON.stringify(saved).includes('"h":300')
+
+  it('a wedge sends its tile, and a layout still owed lands before the create', async () => {
+    const { sent, order } = await wedgeFlight()
+    setTileLayout({ kind: 'homepage' }, stretched)
     await click('.tile-ghost')
-    expect(sent[1]).toEqual({ kind: 'wedge', above: tileId('b') })
+    expect(await until(() => sent.length === 1)).toBe(true)
+    expect(sent[0][1]).toEqual({ kind: 'wedge', above: tileId('b') })
+    expect(order).toEqual(['save', 'create'])
+  })
+
+  it('a layout committed while the seat is in flight keeps both the change and the tile', async () => {
+    const { saves, land } = await wedgeFlight()
+    await click('.tile-ghost')
+    await act(async () => setTileLayout({ kind: 'homepage' }, stretched))
+    await land()
+    expect(await until(() => host.querySelectorAll('.tile').length === 3)).toBe(true)
+    expect(await until(() => holds(saves.at(-1)))).toBe(true)
+  })
+
+  it('a seat landing under a held gesture joins the tree the gesture commits at its release', async () => {
+    const { saves, land } = await wedgeFlight()
+    await click('.tile-ghost')
     holdTileDoc({ kind: 'homepage' }, true)
-    disk = seated(wedged, { id: made, type: 'markdown' })
-    await act(async () => reply({ ok: true, value: { id: made, landed: disk } }))
-    await act(async () => {
-      await new Promise((r) => setTimeout(r, 20))
-    })
+    await land()
+    await act(async () => setTileLayout({ kind: 'homepage' }, stretched))
     expect(host.querySelectorAll('.tile')).toHaveLength(2)
     await act(async () => holdTileDoc({ kind: 'homepage' }, false))
     expect(await until(() => host.querySelectorAll('.tile').length === 3)).toBe(true)
+    expect(await until(() => holds(saves.at(-1)))).toBe(true)
+  })
+
+  it('a duplicate shows its copy from the layout its write landed, writing none of its own', async () => {
+    const copy = tileId('c')
+    const { saves } = bridge(
+      null,
+      {
+        'tiles:duplicateTile': async () => ({
+          ok: true,
+          value: {
+            id: copy,
+            landed: {
+              ...wedged,
+              tiles: [...wedged.tiles, { id: copy, type: 'markdown' }],
+              layout: {
+                bands: [...wedged.layout.bands, { node: { kind: 'tile', id: copy, h: 250 } }],
+              },
+            },
+          },
+        }),
+        menu: async () => ({ ok: true, value: 'tile:duplicate' }),
+      },
+      () => wedged,
+    )
+    await mountHost(() => host.querySelectorAll('.tile').length === 2)
+    await act(async () => {
+      ;(host.querySelector('.tile-handle') as HTMLElement).click()
+    })
+    expect(await until(() => host.querySelectorAll('.tile').length === 3)).toBe(true)
+    expect(saves).toEqual([])
   })
 
   it('a board locked while the menu is open takes no pick', async () => {
