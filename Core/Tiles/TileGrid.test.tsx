@@ -3,11 +3,10 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { act } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
 import { firePointer, pressEscape, stubPointerCapture } from '@pommora/uix/Testing/pointerHarness'
-import { getTile, type TileLayout, tileIds } from './Layout/model'
+import { getTile, type InsertTarget, type TileLayout, tileIds } from './Layout/model'
 import { insertBand, moveTileToBand } from './Layout/ops'
 import { splitTile } from '../Testing/tileLayouts'
 import { type Inserting, TileGrid } from './TileGrid'
-import type { InsertTarget } from './tiles'
 import { useState } from 'react'
 ;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
 
