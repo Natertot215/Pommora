@@ -107,6 +107,6 @@ export function runPropertyAction(
   }
   if (def.type === 'checkbox')
     commitValue(value === 'true' ? { kind: 'checkbox', value: true } : null)
-  else commitValue(pickedValue(def, current, value, contextOptionsOf(tree, def, row.id)))
+  else commitValue(pickedValue(def, current, value))
   return true
 }

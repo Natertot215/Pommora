@@ -71,12 +71,14 @@ export const pickGroups = (def: PropertyDefinition, contextOptions?: PickOption[
         .map((g) => ({ id: g.id, options: groupOptions(g).map((o) => ({ ...o, label: o.value })) }))
         .filter((g) => g.options.length > 0)
 
+const pickKind = (def: PropertyDefinition): OptionPickKind => pickKindOf(def.type) ?? 'select'
+
 export const pickShape = (
   def: PropertyDefinition,
   contextOptions?: PickOption[],
 ): { options: PickOption[]; kind: OptionPickKind } => ({
   options: pickGroups(def, contextOptions).flatMap((g) => g.options),
-  kind: pickKindOf(def.type) ?? 'select',
+  kind: pickKind(def),
 })
 
 export const toggleValue = (selected: string[], value: string): string[] =>
@@ -122,13 +124,7 @@ export function PropertyPicker({
 
   const pane = !t ? null : t.kind === 'options' ? (
     (() => {
-      const { selected, pick } = pickSemantics(
-        t.def,
-        t.current,
-        commit,
-        onDismiss,
-        t.contextOptions,
-      )
+      const { selected, pick } = pickSemantics(t.def, t.current, commit, onDismiss)
       return (
         <PropertyOptionRows
           def={t.def}
@@ -386,16 +382,14 @@ function pickSemantics(
   current: PropertyValue | null,
   onCommit: (value: PropertyValue | null) => void,
   onSinglePicked: () => void,
-  contextOptions?: PickOption[],
 ): {
   selected: string[]
   pick: (value: string) => void
 } {
-  const { kind } = pickShape(def, contextOptions)
   const selected = selectedValues(current)
   const pick = (value: string): void => {
-    onCommit(pickedValue(def, current, value, contextOptions))
-    if (kind === 'select') onSinglePicked()
+    onCommit(pickedValue(def, current, value))
+    if (pickKind(def) === 'select') onSinglePicked()
   }
   return { selected, pick }
 }
@@ -405,9 +399,8 @@ export function pickedValue(
   def: PropertyDefinition,
   current: PropertyValue | null,
   value: string,
-  contextOptions?: PickOption[],
 ): PropertyValue | null {
-  const { kind } = pickShape(def, contextOptions)
+  const kind = pickKind(def)
   const selected = selectedValues(current)
   if (kind !== 'select') return { kind, value: toggleValue(selected, value) }
   return selected.includes(value) ? null : { kind: 'select', value }
