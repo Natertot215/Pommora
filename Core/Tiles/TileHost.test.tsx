@@ -32,11 +32,19 @@ vi.mock('./Surfaces/PageTile', () => ({
   PageTile: ({ path }: { path: string }) => <div className="page-tile" data-path={path} />,
 }))
 
+const observers = new Set<() => void>()
 vi.stubGlobal(
   'ResizeObserver',
   class {
+    cb: () => void
+    constructor(cb: () => void) {
+      this.cb = cb
+      observers.add(cb)
+    }
     observe(): void {}
-    disconnect(): void {}
+    disconnect(): void {
+      observers.delete(this.cb)
+    }
   },
 )
 
@@ -564,9 +572,10 @@ describe('the Insert Menu a ghost tile opens', () => {
     const { saves } = bridge('tile:new', {}, () => wedged)
     await mountHost(() => host.querySelector('.tile-add') !== null)
     host.style.overflowY = 'auto'
-    host.getBoundingClientRect = () => ({ top: 0, bottom: 1000 }) as DOMRect
-    ;(host.lastElementChild as HTMLElement).getBoundingClientRect = () =>
-      ({ top: 0, bottom: 700 }) as DOMRect
+    host.getBoundingClientRect = () => ({ top: 0, bottom: 600 }) as DOMRect
+    await act(async () => {
+      for (const resized of observers) resized()
+    })
     await act(async () => {
       host
         .querySelector('.tile-add')
@@ -576,10 +585,10 @@ describe('the Insert Menu a ghost tile opens', () => {
       window.dispatchEvent(new PointerEvent('pointermove'))
     })
     expect(await until(() => host.querySelector('.tile-ghost') !== null)).toBe(true)
-    expect(host.querySelector<HTMLElement>('.tile-ghost')?.style.height).toBe('292px')
+    expect(host.querySelector<HTMLElement>('.tile-ghost')?.style.height).toBe('392px')
     await click('.tile-ghost')
     expect(await until(() => saves.length > 0)).toBe(true)
-    expect(saves.at(-1)?.bands.at(-1)?.node).toEqual({ kind: 'tile', id: made, h: 292 })
+    expect(saves.at(-1)?.bands.at(-1)?.node).toEqual({ kind: 'tile', id: made, h: 392 })
   })
 
   it('a dismissed menu creates nothing and leaves the standing ghost unheld', async () => {

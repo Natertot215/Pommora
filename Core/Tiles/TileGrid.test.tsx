@@ -384,41 +384,47 @@ describe('the ghost tiles and the add strip', () => {
         new PointerEvent('pointerout', { bubbles: true, relatedTarget: document.body }),
       )
     })
-  // The host scrolls, and shows `room` px below the grid's box.
+  // The host scrolls, and shows `room` px below the grid's resting box; the grid's sample reads it.
   const paneWithRoom = (room: number): void => {
     host.style.overflowY = 'auto'
-    host.getBoundingClientRect = () => ({ top: 0, bottom: 1000 }) as DOMRect
+    host.getBoundingClientRect = () => ({ top: 0, bottom: 228 + room }) as DOMRect
     const grid = q('.tile-grid') as HTMLElement
-    grid.getBoundingClientRect = () => ({ top: 0, bottom: 1000 - room }) as DOMRect
+    grid.getBoundingClientRect = () => ({ top: 0, bottom: 228 }) as DOMRect
+    act(() => observed?.())
   }
 
-  it('with room below, the bottom zone is a dwell ghost filling that room, and the board grows to hold it', () => {
+  it('with room below, the bottom zone spans it, a dwell raises a ghost filling it, and the board grows to the ghost’s end', () => {
     const onInsert = vi.fn()
     render({ onInsert })
     const zone = q('.tile-add') as HTMLElement
     expect(zone.style.transform).toBe('translate(0px, 200px)')
-    expect(zone.style.height).toBe('28px')
     expect(q('.tile-grid')?.style.height).toBe('228px')
     paneWithRoom(400)
+    expect(zone.style.height).toBe('428px')
     hoverBottom()
     expect(zone.dataset.revealHost).toBe('off')
     tick(999)
     expect(q('.tile-ghost')).toBeNull()
     tick(1)
     expect(q('.tile-ghost')?.style.transform).toBe('translate(0px, 208px)')
-    expect(q('.tile-ghost')?.style.height).toBe('392px')
+    expect(q('.tile-ghost')?.style.height).toBe('420px')
     expect(q('.tile-grid')?.style.height).toBe('628px')
+    // The ghost draws over its zone, so the click is the ghost's.
+    expect(
+      zone.compareDocumentPosition(q('.tile-ghost') as Node) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy()
     click('.tile-ghost')
     expect(onInsert).toHaveBeenCalledOnce()
-    expect(onInsert.mock.calls[0][0]).toEqual({ kind: 'append', h: 392 })
+    expect(onInsert.mock.calls[0][0]).toEqual({ kind: 'append', h: 420 })
   })
 
-  it('with less than a tile’s worth below, the bottom zone offers the strip at once, one gutter in, and the board keeps its height', () => {
+  it('with less than a tile’s worth below, the bottom zone is the clearance and offers the strip at once, one gutter in', () => {
     const onInsert = vi.fn()
     render({ onInsert })
-    paneWithRoom(87)
-    hoverBottom()
+    paneWithRoom(59)
     const zone = q('.tile-add') as HTMLElement
+    expect(zone.style.height).toBe('28px')
+    hoverBottom()
     expect(zone.dataset.revealHost).toBe('on')
     expect(q('.tile-add button')?.style.top).toBe('8px')
     tick(1000)
@@ -432,13 +438,13 @@ describe('the ghost tiles and the add strip', () => {
     expect(zone.dataset.revealHost).toBe('off')
   })
 
-  it('the room is read as the pointer arrives, so the pane scrolling between visits changes the shape', () => {
+  it('the room is read with the board’s sample, so a pane or board resize changes the shape', () => {
     render()
-    paneWithRoom(87)
+    paneWithRoom(59)
     hoverBottom()
     expect(q('.tile-add')?.dataset.revealHost).toBe('on')
     leaveBottom()
-    paneWithRoom(88)
+    paneWithRoom(60)
     hoverBottom()
     expect(q('.tile-add')?.dataset.revealHost).toBe('off')
     tick(1000)
@@ -462,7 +468,7 @@ describe('the ghost tiles and the add strip', () => {
       )
     }
     act(() => root.render(<Host />))
-    paneWithRoom(60)
+    paneWithRoom(40)
     hoverBottom()
     click('.tile-add button')
     expect(q('.tile-add button')?.hasAttribute('data-reveal-held')).toBe(true)
@@ -500,7 +506,7 @@ describe('the ghost tiles and the add strip', () => {
     expect(ghost?.style.height).toBe('250px')
     expect(q('.tile-zone')).toBeNull()
     expect(q('.tile-add')).toBeNull()
-    expect(q('.tile-grid')?.style.height).toBe('278px')
+    expect(q('.tile-grid')?.style.height).toBe('250px')
   })
 
   it('a stacked board has no wedge and keeps its bottom zone', () => {
