@@ -70,7 +70,9 @@ export function withUniqueOptions(def: PropertyDefinition): PropertyDefinition {
 
 /** No minimum count — a Select may hold zero options. Enforced at create AND on every option edit; titles compare case-folded. */
 export function validateOptionValues(options: { value: string }[]): Result<null> {
-  if (new Set(options.map((o) => normalizeTitle(o.value))).size < options.length) {
+  const titles = options.map((o) => normalizeTitle(o.value))
+  if (titles.includes('')) return fail('invalid-property', 'Option titles can’t be blank.')
+  if (new Set(titles).size < titles.length) {
     return fail('invalid-property', 'Option titles must be unique.')
   }
   return ok(null)

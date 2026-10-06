@@ -90,6 +90,14 @@ describe('editOption', () => {
     expect((await readRegistry(root)).defs[id].select_options).toEqual([{ value: 'A' }])
   })
 
+  it('add refuses a blank title', async () => {
+    const id = await mkSelect([{ value: 'A' }])
+    const r = await editOption(root, id, { op: 'add', groupId: SELECT_GROUP, title: '' })
+    expect(r.ok).toBe(false)
+    if (!r.ok) expect(r.error.message).toBe('Option titles can’t be blank.')
+    expect((await readRegistry(root)).defs[id].select_options).toEqual([{ value: 'A' }])
+  })
+
   it('fails for an unknown property id', async () => {
     expect((await editOption(root, 'prop_nope', { op: 'recolor', value: 'A' })).ok).toBe(false)
   })
@@ -429,6 +437,14 @@ describe('renameOption', () => {
       status: ['Finished'],
       Tags: ['Finished', 'Keep'],
     })
+  })
+
+  it('rejects a whitespace rename, leaving the option as it was', async () => {
+    const id = await mkSelect([{ value: 'Alpha' }])
+    const r = await renameOption(root, id, 'Alpha', '  ')
+    expect(r.ok).toBe(false)
+    if (!r.ok) expect(r.error.message).toBe('Option titles can’t be blank.')
+    expect((await readRegistry(root)).defs[id].select_options).toEqual([{ value: 'Alpha' }])
   })
 
   it('rejects a rename that collides with an existing title (no page writes)', async () => {

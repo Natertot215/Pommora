@@ -48,7 +48,7 @@ Recorded 10-05-2026 at `4b045c30b` on `active`.
 - `grep -rn "function warnOwed\|const retryOwed\|const replay" Core | grep -v "/out/" | wc -l` → 3 — stays 3, all in `propertyWrite.ts`
 - `npm run test` → 7282 passed, 2 skipped — rises by the tests this plan adds, less those it retires
 
-**START:** <`date -u +"%Y-%m-%dT%H:%M:%SZ"`, as Task 1.1 begins>
+**START:** 2026-10-06T02:26:11Z
 **END:** <same, as the report is given>
 
 #### Implementation Process
