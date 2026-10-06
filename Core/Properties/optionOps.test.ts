@@ -3,7 +3,7 @@ import { chmod, mkdir, rm, readFile, stat, writeFile } from 'node:fs/promises'
 import { join } from '../Paths/posix'
 import { noModeBits, seedSpaceSidecar, readJsonAt, tempRoot } from '../Testing/hostFs'
 import { fault, ok } from '../Contract/result'
-import { editOption, renameOption, removeOption, clearOption } from './optionOps'
+import { editOption, optionHolders, renameOption, removeOption, clearOption } from './optionOps'
 import { createProperty, editProperty } from './registryProperty'
 import { assignProperty } from './assignment'
 import { createFolderEntity } from '../Nexus/folderEntity'
@@ -609,6 +609,23 @@ describe('clearOption', () => {
     } finally {
       await chmod(set.value.path, 0o755)
     }
+  })
+})
+
+describe('optionHolders', () => {
+  it('counts the pages and Spaces holding the value, and no holder of another', async () => {
+    const id = await mkSelect([{ value: 'A' }, { value: 'B' }])
+    await pageHolding(id, 'A')
+    await spaceSidecar('Pommora', { id: 'sp1', Tags: ['A', 'B'] })
+    await spaceSidecar('Sapphire', { id: 'sp2', Tags: 'B' })
+
+    expect(await optionHolders(root, id, 'A')).toEqual(ok(2))
+    expect(await optionHolders(root, id, 'B')).toEqual(ok(2))
+  })
+
+  it('is refused for a value the definition lacks', async () => {
+    const id = await mkSelect([{ value: 'A' }])
+    expect((await optionHolders(root, id, 'Stray')).ok).toBe(false)
   })
 })
 

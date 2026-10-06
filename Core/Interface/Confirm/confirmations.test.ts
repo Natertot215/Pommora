@@ -14,7 +14,7 @@ import { makeTree } from '../../Testing/testTree'
 import { clearNotification, currentNotification } from '../Notifications/notifications'
 import type { HeldKind } from '../../Nexus/entities'
 import { stubDialer } from '../../vitest.setup'
-import { ok } from '../../Contract/result'
+import { fault, ok } from '../../Contract/result'
 
 const asked: string[] = []
 
@@ -36,20 +36,35 @@ const switchOn = (): void => {
 }
 
 describe('what the Confirm Before Deletion switch governs', () => {
-  it('lets the switch waive a property, an option, and a clear', async () => {
+  it('asks before a property delete and an option Remove and Clear whatever the switch says, naming the Items the host counts', async () => {
+    const holders = vi.fn(async (_id: string, value?: string) => ok(value === undefined ? 4 : 1))
+    ;(window as unknown as { nexus: unknown }).nexus = stubDialer({ 'property:holders': holders })
+    useSession.setState({
+      askConfirm: async (r) => {
+        asked.push(`${r.message} ${r.detail}`)
+        return true
+      },
+    })
     switchOff()
-    await askDestroyProperty('Status')
-    await askRemoveOption('Active')
-    await askClearOption('Active')
-    expect(asked).toEqual([])
+    await askDestroyProperty('p1', 'Status')
+    await askRemoveOption('p1', 'Active')
+    await askClearOption('p1', 'Active')
+    expect(holders.mock.calls).toEqual([
+      ['p1', undefined],
+      ['p1', 'Active'],
+      ['p1', 'Active'],
+    ])
+    expect(asked[0]).toContain('stripped from 4 Items;')
+    expect(asked[1]).toContain('stripped from 1 Item.')
+    expect(asked[2]).toMatch(/^Clear “Active” from 1 Item\?/)
   })
 
-  it('asks for all three when the switch is on', async () => {
-    switchOn()
-    await askDestroyProperty('Status')
-    await askRemoveOption('Active')
-    await askClearOption('Active')
-    expect(asked).toHaveLength(3)
+  it('asks nothing when the host refuses the count', async () => {
+    ;(window as unknown as { nexus: unknown }).nexus = stubDialer({
+      'property:holders': async () => fault('That option no longer exists.'),
+    })
+    expect(await askRemoveOption('p1', 'Gone')).toBe(false)
+    expect(asked).toEqual([])
   })
 
   it('asks before deleting a view whatever the switch says', async () => {

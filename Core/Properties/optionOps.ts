@@ -2,7 +2,10 @@ import { mutateRegistry, readRegistry, NO_PROPERTY, serializeSchemaOp } from './
 import { validateOptionValues, withUniqueOptions } from './schema'
 import { collectionFolders } from './assignment'
 import { keyHolderFiles } from './keyHolders'
-import { sweepGovernedRoots, unsweptLine } from './governedSweep'
+import { type Rewrite, sweepGovernedRoots, unsweptLine } from './governedSweep'
+import { parseJsonObject, readTextOrNull } from '../Files/atomicWrite'
+import { sweepParse } from '../Files/pageFile'
+import { spaceSidecars } from '../Contexts/spaceSidecar'
 import { namesValue, valueEditRewrite, type ValueEdit } from './pageValue'
 import { errText, ok, fail, fault, type Result } from '../Contract/result'
 import { heldPropertyValue, unregisteredMembers } from './propertyValue'
@@ -177,15 +180,24 @@ async function resolveForCascade(
   return ok(def)
 }
 
+async function valueEditPlan(
+  root: string,
+  def: PropertyDefinition,
+  target: string,
+  edit: ValueEdit,
+): Promise<{ pages: string[]; raw: Rewrite }> {
+  const pages = await keyHolderFiles(root, def.name, await collectionFolders(root))
+  return { pages, raw: valueEditRewrite(def, target, edit) }
+}
+
 async function valueEditSweep(
   root: string,
   def: PropertyDefinition,
   target: string,
   edit: ValueEdit,
 ): Promise<number> {
-  const files = await keyHolderFiles(root, def.name, await collectionFolders(root))
-  const raw = valueEditRewrite(def, target, edit)
-  return (await sweepGovernedRoots(root, files, { raw, sidecars: raw })).skipped.length
+  const { pages, raw } = await valueEditPlan(root, def, target, edit)
+  return (await sweepGovernedRoots(root, pages, { raw, sidecars: raw })).skipped.length
 }
 
 export async function optionCascade(
@@ -252,6 +264,25 @@ export function clearOption(
     const skipped = await valueEditSweep(root, r.value, value, { op: 'strip' })
     return skipped ? fault(unsweptLine(skipped)) : ok(null)
   })
+}
+
+/** The pages and Spaces holding `value`: the ones a Clear or Remove of it rewrites. */
+export async function optionHolders(
+  root: string,
+  propertyId: string,
+  value: string,
+): Promise<Result<number>> {
+  const r = await resolveForCascade(root, propertyId, value)
+  if (!r.ok) return r
+  const { pages, raw: strip } = await valueEditPlan(root, r.value, value, { op: 'strip' })
+  let held = 0
+  for (const file of [...pages, ...(await spaceSidecars(root))]) {
+    const text = await readTextOrNull(file)
+    if (text === null) continue
+    const raw = isMarkdownFile(file) ? sweepParse(text)?.raw : parseJsonObject(text)
+    if (raw && strip(raw, file) !== null) held++
+  }
+  return ok(held)
 }
 
 export function removeOption(

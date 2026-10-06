@@ -276,17 +276,23 @@ async function stepEditOption(cdp, pid) {
 
 const confirmButton = (action) => `[...document.querySelectorAll('button')].find((b) => b.textContent.trim() === ${JSON.stringify(action)} && b.closest('[aria-label]')?.getAttribute('aria-label').startsWith(${JSON.stringify(action)}))`
 async function stepClearRemove(cdp, pid) {
-  await openCellPicker(cdp, 'Drive One', 'Drive Select')
-  await chooseNative(cdp, pid, pickerRow('Alpha'), { downs: 3 })
+  const r = await ask(cdp, 'mutate', { op: 'setProperty', path: 'Collection A/Set Alpha/Drive Two.md', propertyId: ids['Drive Select'], value: { kind: 'select', value: 'Alpha' } })
+  check('clear: Drive Two holds Alpha', r.ok && lists('Drive Two', 'Drive Select', 'Alpha'), JSON.stringify(r))
+  await openEditor(cdp, 'Drive Select')
+  const alphaRow = `[...document.querySelectorAll('[data-line-row]')].find((r) => r.textContent.trim() === 'Alpha' && r.querySelector('[aria-label="Edit Option"]'))`
+  await chooseNative(cdp, pid, alphaRow, { downs: 3 })
+  check('Clear asks, naming the one Item holding Alpha', await cdp.evaluate(`document.body.innerText.includes('Clear “Alpha” from 1 Item?')`))
+  await shot(cdp, 'editor-clear-confirm')
   await click(cdp, confirmButton('Clear'))
   await sleep(1000)
-  check('Clear strips Alpha from every page and keeps the option', !lists('Drive One', 'Drive Select', 'Alpha') && optionValues('Drive Select').includes('Alpha'))
-  await openCellPicker(cdp, 'Drive One', 'Drive Select')
-  await chooseNative(cdp, pid, pickerRow('Alpha'), { downs: 4 })
+  check('Clear strips Alpha from every page and keeps the option', !lists('Drive Two', 'Drive Select', 'Alpha') && optionValues('Drive Select').includes('Alpha'))
+  await chooseNative(cdp, pid, alphaRow, { downs: 4 })
+  check('Remove asks, naming no Item', await cdp.evaluate(`document.body.innerText.includes('stripped from 0 Items.')`))
   await click(cdp, confirmButton('Remove'))
   await sleep(1000)
   check('Remove deletes Alpha from the registry', !optionValues('Drive Select').includes('Alpha'), JSON.stringify(optionValues('Drive Select')))
   while (await portalOpen(cdp)) await pressKey(cdp, 'Escape')
+  await pressKey(cdp, 'Escape')
 }
 
 async function surfaceCreateDragMenu(cdp, pid, tag, title, { editOptionDowns }) {
@@ -344,13 +350,17 @@ async function stepMulti(cdp) {
 }
 
 const statusGroups = () => defNamed('Drive Status').status_groups
-async function stepEditor(cdp, pid) {
+async function openEditor(cdp, name) {
   await mouseClick(cdp, `[...document.querySelectorAll('button')].find((b) => b.title === 'Settings')`)
   await sleep(800)
   await click(cdp, `[...document.querySelectorAll('button, [role=button]')].find((b) => b.textContent.trim() === 'Properties')`)
   await sleep(800)
-  await click(cdp, `${textEl('span', 'Drive Status')}.closest('[role=button],button,[data-line-row]')`)
+  await click(cdp, `${textEl('span', name)}.closest('[role=button],button,[data-line-row]')`)
   await sleep(1000)
+}
+
+async function stepEditor(cdp, pid) {
+  await openEditor(cdp, 'Drive Status')
   await shot(cdp, 'editor')
   const firstRow = `[...document.querySelectorAll('[data-line-row]')].find((r) => r.querySelector('[aria-label="Edit Option"]'))`
   const first = statusGroups()[0].options[0].value
@@ -429,11 +439,11 @@ try {
   await stepDragReorder(cdp)
   await stepStyleCompact(cdp, pid)
   await stepEditOption(cdp, pid)
-  await stepClearRemove(cdp, pid)
   await stepCardsAndMass(cdp, pid)
   await stepPanel(cdp, pid)
   await stepMulti(cdp)
   await stepEditor(cdp, pid)
+  await stepClearRemove(cdp, pid)
   await stepHostRefusal(cdp)
   cdp.close()
 } catch (e) {

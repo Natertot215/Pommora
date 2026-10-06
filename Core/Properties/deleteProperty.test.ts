@@ -3,9 +3,9 @@ import { ID_KEY } from '../Nexus/identityMark'
 import { rm, readFile, readdir, writeFile } from 'node:fs/promises'
 import { dirname, join } from '../Paths/posix'
 import { seedSpaceSidecar, readJsonAt, tempRoot } from '../Testing/hostFs'
-import { deleteProperty } from './deleteProperty'
+import { deleteProperty, propertyHolders } from './deleteProperty'
 import { createProperty, removeFromRegistry } from './registryProperty'
-import { fault } from '../Contract/result'
+import { fault, ok } from '../Contract/result'
 import { readSchemaJournal, writeSchemaJournal } from './propertyJournal'
 import { replaySchemaCascade } from './replaySchemaCascade'
 import { type ConfigSurfaces, seedConfigSurfaces, viewOn } from '../Testing/configSurfaces'
@@ -146,6 +146,30 @@ describe('deleteProperty', () => {
     expect((sc?.property_cache as Record<string, unknown> | undefined)?.[id]).toBeUndefined()
     expect(sc?.property_cache).toBeUndefined()
     expect((await readRegistry(root)).defs[id]).toBeUndefined()
+  })
+})
+
+describe('propertyHolders', () => {
+  it('counts the pages and Spaces holding the property', async () => {
+    const c = await createProperty(root, {
+      id: '',
+      name: 'Priority',
+      type: 'select',
+      select_options: [{ value: 'hi' }],
+    } as PropertyDefinition)
+    if (!c.ok) throw new Error('setup failed')
+    await assignProperty(root, notes, c.value.id)
+    const page = await createTestPage(notes, 'A', { body: 'b' })
+    await createTestPage(notes, 'B', { body: 'b' })
+    if (!page.ok) throw new Error('setup failed')
+    await updatePageProperty(page.value.path, await liveDef(c.value.id), {
+      kind: 'select',
+      value: 'hi',
+    })
+    await seedSpaceSidecar(root, 'Projects', 'Pommora', { id: 'sp1', Priority: ['hi'] })
+
+    expect(await propertyHolders(root, c.value.id)).toEqual(ok(2))
+    expect((await propertyHolders(root, 'prop_nope')).ok).toBe(false)
   })
 })
 

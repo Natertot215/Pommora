@@ -74,6 +74,7 @@ beforeEach(() => {
     'schema:unassign': unassignSpy,
     'schema:assign': assignSpy,
     'property:delete': destroySpy,
+    'property:holders': vi.fn(async () => ok(3)),
     menu: async (req: unknown) =>
       ok(await (propertyMenuSpy as (r: unknown) => Promise<unknown>)(req)),
   })
@@ -405,6 +406,7 @@ describe('native menus + the inline-rename channel (T7)', () => {
     })
     const pending = useSession.getState().pendingConfirm
     expect(pending?.req.message).toBe('Delete “Status” everywhere?')
+    expect(pending?.req.detail).toContain('stripped from 3 Items;')
     expect(destroySpy).not.toHaveBeenCalled()
     await act(async () => {
       pending!.settle(true)

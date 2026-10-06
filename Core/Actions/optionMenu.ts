@@ -1,4 +1,4 @@
-// Clear strips the option's value from every page; Remove deletes the option and strips it too.
+// Clear strips the option's value from every item holding it; Remove deletes the option and strips it too.
 
 import { styleBranch, type StyleAction, type StyleMenuContext } from './columnMenu'
 import type { ActionItem } from './menuModel'

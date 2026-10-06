@@ -54,8 +54,9 @@ table.
 
 `Option Picker Drive/live-drive.mjs` drives the option mutations the value picker offers, and the
 Property Frame's option editor's share of them — creation from the footer, blank and duplicate
-refusals, drag reorder, the right-click menu's Style, Edit Option, Clear and Remove, the popup's
-rename, color, appearance and icon, and the host's own blank refusal — against the real app, on the
+refusals, drag reorder, the right-click menu's Style and Edit Option, the editor's Clear and Remove
+with the Items each names, the popup's rename, color, appearance and icon, and the host's own blank
+refusal — against the real app, on the
 Table, Cards, mass-assign, and Properties-panel surfaces alike, and asserts each one in
 `.nexus/properties.json`, the page files and the view's sidecar. It builds the app, backs up
 `~/Test`, launches the build with its own userData and debug port, seeds `Collection A/Set Alpha`

@@ -43,6 +43,7 @@ const editOption = vi.fn(async () => ok(null))
 const renameOption = vi.fn(async (): Promise<Result<{ cascade: object }>> => ok({ cascade: {} }))
 const removeOption = vi.fn(async () => ok({ cascade: {} }))
 const clearOption = vi.fn(async () => ok(null))
+const holders = vi.fn(async () => ok(2))
 const style = { current: { ...dateDefaults('full'), look: 'standard' as const }, set: vi.fn() }
 
 beforeEach(() => {
@@ -52,12 +53,13 @@ beforeEach(() => {
     'property:renameOption': renameOption,
     'property:removeOption': removeOption,
     'property:clearOption': clearOption,
+    'property:holders': holders,
   })
   useSession.setState({ tree: makeTree({ personalization: { iconFavorites: ['anchor'] } }) })
   host = document.createElement('div')
   document.body.appendChild(host)
   root = createRoot(host)
-  for (const fn of [menu, editOption, renameOption, removeOption, clearOption, style.set])
+  for (const fn of [menu, editOption, renameOption, removeOption, clearOption, holders, style.set])
     fn.mockClear()
 })
 
@@ -130,11 +132,13 @@ describe('the option menu', () => {
     expect(style.set).toHaveBeenCalledWith('look', 'compact')
   })
 
-  it('Clear asks, then clears the option from every page', async () => {
+  it('Clear asks, naming the Items holding the option, then clears it from each', async () => {
     menu.mockResolvedValueOnce(ok('option:clear'))
     render('select', select)
     await rightClick('Urgent')
     expect(clearOption).not.toHaveBeenCalled()
+    expect(holders).toHaveBeenCalledWith('p1', 'Urgent')
+    expect(useSession.getState().pendingConfirm?.req.message).toBe('Clear “Urgent” from 2 Items?')
     await confirm()
     expect(clearOption).toHaveBeenCalledWith('p1', 'Urgent')
   })

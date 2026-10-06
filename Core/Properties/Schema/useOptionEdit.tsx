@@ -105,11 +105,11 @@ export function useOptionEdit({
       case 'option:edit':
         return open(value, row)
       case 'option:clear':
-        if (await askClearOption(value))
+        if (await askClearOption(def.id, value))
           await write(dialer().ask('property:clearOption', def.id, value))
         return
       case 'option:remove':
-        if (await askRemoveOption(value))
+        if (await askRemoveOption(def.id, value))
           await warnOwed(dialer().ask('property:removeOption', def.id, value))
         return
       default: {

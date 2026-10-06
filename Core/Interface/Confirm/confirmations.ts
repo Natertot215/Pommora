@@ -5,7 +5,7 @@ import { DEFAULT_TRASH_MODE } from '../../Trash/trashRow'
 import { useSession } from '../../Session/store'
 import { personalizationOf } from '../../Session/configSlice'
 import { SETTING_DEFAULTS, settingOf } from '../../Settings/personalization'
-import { notifyDeleted } from '../Notifications/notifications'
+import { notifyDeleted, reportRefusal } from '../Notifications/notifications'
 import { dialer } from '../../Platform/dialer'
 
 const DELETE_FACTS_FALLBACK = {
@@ -23,7 +23,7 @@ export interface ConfirmRequest {
 
 const ask = (req: ConfirmRequest): Promise<boolean> => useSession.getState().askConfirm(req)
 
-/** A container, a Context, and a Space each carry everything filed under them, so they ask regardless of the Confirm Before Deletion switch — the switch governs what a single delete takes: a page, a property, an option. */
+/** A container, a Context, and a Space each carry everything filed under them, so they ask regardless of the Confirm Before Deletion switch — the switch governs what a single delete takes: a page, a tile, a folder that carries no schema. */
 const ALWAYS_ASKS: ReadonlySet<HeldKind> = new Set<HeldKind>([
   'collection',
   'set',
@@ -104,37 +104,41 @@ export const askDeleteView = (from: 'container' | 'tile' = 'container'): Promise
     tone: 'destructive',
   })
 
-export const askDestroyProperty = (name: string): Promise<boolean> =>
-  waived()
-    ? Promise.resolve(true)
-    : ask({
-        message: `Delete “${name}” everywhere?`,
-        detail:
-          'It is removed from every collection; a restorable record lands in the nexus’s .trash folder.',
-        action: 'Delete',
-        tone: 'destructive',
-      })
+const items = (count: number): string => `${count} ${count === 1 ? 'Item' : 'Items'}`
 
-export const askRemoveOption = (name: string): Promise<boolean> =>
-  waived()
-    ? Promise.resolve(true)
-    : ask({
-        message: `Remove “${name}”?`,
-        detail:
-          'The option is deleted from the property and its value stripped from every page that had it.',
-        action: 'Remove',
-        tone: 'destructive',
-      })
+/** A property's delete and an option's Clear and Remove reach every page and Space holding it, so they ask regardless of the switch, naming the Items the host counts. */
+const askHolding = async (
+  propertyId: string,
+  value: string | undefined,
+  req: (held: string) => ConfirmRequest,
+): Promise<boolean> => {
+  const r = await dialer().ask('property:holders', propertyId, value)
+  return reportRefusal(r) && ask(req(items(r.value)))
+}
 
-export const askClearOption = (name: string): Promise<boolean> =>
-  waived()
-    ? Promise.resolve(true)
-    : ask({
-        message: `Clear “${name}” from every page?`,
-        detail: 'The option stays; only its assigned values are removed.',
-        action: 'Clear',
-        tone: 'destructive',
-      })
+export const askDestroyProperty = (propertyId: string, name: string): Promise<boolean> =>
+  askHolding(propertyId, undefined, (held) => ({
+    message: `Delete “${name}” everywhere?`,
+    detail: `It is removed from every collection and stripped from ${held}; a restorable record lands in the nexus’s .trash folder.`,
+    action: 'Delete',
+    tone: 'destructive',
+  }))
+
+export const askRemoveOption = (propertyId: string, name: string): Promise<boolean> =>
+  askHolding(propertyId, name, (held) => ({
+    message: `Remove “${name}”?`,
+    detail: `The option is deleted from the property and its value stripped from ${held}.`,
+    action: 'Remove',
+    tone: 'destructive',
+  }))
+
+export const askClearOption = (propertyId: string, name: string): Promise<boolean> =>
+  askHolding(propertyId, name, (held) => ({
+    message: `Clear “${name}” from ${held}?`,
+    detail: 'The option stays; only its assigned values are removed.',
+    action: 'Clear',
+    tone: 'destructive',
+  }))
 
 export const askEmptyTrash = async (count: number): Promise<boolean> => {
   const { permanentDelete } = valueOr(await dialer().ask('delete:facts'), DELETE_FACTS_FALLBACK)

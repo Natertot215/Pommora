@@ -2,7 +2,7 @@ import { globalStyle, style } from '@vanilla-extract/css'
 import { STATE_OPACITY, vars as colorVars } from '../Theme/color.css'
 import type { IconSize } from '../Theme/theme-vars.css'
 import { duration, easing } from '../Animations/motion'
-import { accessoryButton, flushAffordance, rowBox } from './menu-row.css'
+import { accessoryButton, flushAffordance, rowBox, scrollFrameBody } from './menu-row.css'
 import { button as eyeToggleButton } from '../Elements/eye-toggle.css'
 import { menuAnchor } from './menuAnchor'
 import { stack } from '../Theme/stack'
@@ -119,6 +119,12 @@ export const middleRegion = style({
   maxHeight: MIDDLE_MAX_HEIGHT,
   overflowY: 'auto',
   vars: { '--scroll-fade': 'var(--fade-base)' },
+})
+
+/** A drop line draws below its edge with its dot centered on it, so a zone its scroll host clips holds the first and last slots' chrome inside itself. */
+globalStyle(`${scrollFrameBody} > .line-zone, ${middleRegion} > .line-zone`, {
+  paddingTop: 'calc((var(--drop-dot-size) - var(--drop-line-thickness)) / 2)',
+  paddingBottom: 'calc((var(--drop-dot-size) + var(--drop-line-thickness)) / 2)',
 })
 
 export const optionLead = style({
