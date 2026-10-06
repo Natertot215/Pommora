@@ -256,6 +256,67 @@ describe('the popup through a rename (F-134)', () => {
     expect(editOption).toHaveBeenCalledWith('p1', { op: 'recolor', value: 'Critical', color })
   })
 
+  it('a second rename after the refresh keeps the popup on its row', () => {
+    render('select', select)
+    openPopup()
+    commit(titleField(), 'Critical')
+    render('select', [
+      { ...select[0], options: [{ value: 'Critical', group_id: 'select' }, select[0].options[1]] },
+    ])
+    const field = titleField()
+    commit(field, 'Severe')
+    expect(renameOption).toHaveBeenLastCalledWith('p1', 'Critical', 'Severe')
+    expect(titleField()).toBe(field)
+    render('select', [
+      { ...select[0], options: [{ value: 'Severe', group_id: 'select' }, select[0].options[1]] },
+    ])
+    expect(titleField()).toBe(field)
+    const color = pickSwatch()
+    expect(editOption).toHaveBeenCalledWith('p1', { op: 'recolor', value: 'Severe', color })
+  })
+
+  it('a rename differing only in case from another title leaves the popup addressed to the old one', () => {
+    render('select', select)
+    openPopup()
+    commit(titleField(), 'later')
+    expect(renameOption).toHaveBeenCalledWith('p1', 'Urgent', 'later')
+    const color = pickSwatch()
+    expect(editOption).toHaveBeenCalledWith('p1', { op: 'recolor', value: 'Urgent', color })
+  })
+
+  it('a later option taking an intermediate name keys apart from the renamed row', () => {
+    render('select', select)
+    openPopup()
+    commit(titleField(), 'High')
+    render('select', [
+      { ...select[0], options: [{ value: 'High', group_id: 'select' }, select[0].options[1]] },
+    ])
+    commit(titleField(), 'Critical')
+    const refreshed = [{ value: 'Critical', group_id: 'select' }, select[0].options[1]]
+    render('select', [{ ...select[0], options: refreshed }])
+    const errors = vi.spyOn(console, 'error').mockImplementation(() => {})
+    render('select', [
+      { ...select[0], options: [...refreshed, { value: 'High', group_id: 'select' }] },
+    ])
+    expect(errors).not.toHaveBeenCalled()
+    errors.mockRestore()
+    expect(span('High')).toBeTruthy()
+  })
+
+  it('the popup closes when its option is removed from under it', async () => {
+    render('select', select)
+    openPopup()
+    expect(titleField()).toBeTruthy()
+    render('select', [{ ...select[0], options: [select[0].options[1]] }])
+    await act(async () => {
+      await new Promise((r) => setTimeout(r, 600))
+    })
+    expect(titleField()).toBeNull()
+    expect(host.querySelector('[data-reveal-held]')).toBeNull()
+    act(() => host.querySelector<HTMLButtonElement>('button[aria-label="Edit Option"]')?.click())
+    expect(titleField()?.value).toBe('Later')
+  })
+
   it('a rename onto a title another option holds leaves the popup on the old option', () => {
     render('select', select)
     openPopup()

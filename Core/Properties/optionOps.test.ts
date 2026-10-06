@@ -123,6 +123,14 @@ describe('editOption', () => {
     expect(order).toEqual(['schema-op', 'editOption'])
   })
 
+  it('relabelGroup refuses a whitespace label', async () => {
+    const id = await mkStatus()
+    const groupId = (await readRegistry(root)).defs[id].status_groups?.[0].id ?? ''
+    const r = await editOption(root, id, { op: 'relabelGroup', groupId, label: '  ' })
+    expect(r.ok).toBe(false)
+    if (!r.ok) expect(r.error.message).toBe('Group labels can’t be blank.')
+  })
+
   it('relabelGroup is refused on a Select', async () => {
     const id = await mkSelect([{ value: 'A' }])
     const r = await editOption(root, id, { op: 'relabelGroup', groupId: 'select', label: 'Named' })

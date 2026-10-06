@@ -10,7 +10,7 @@ import {
   SELECT_GROUP,
 } from '../properties'
 import { NULL_VALUE, type PropertyValue } from '../propertyValue'
-import { type OptionStyleControl, useOptionEdit } from '../Schema/useOptionEdit'
+import { OptionDraft, type OptionStyleControl, useOptionEdit } from '../Schema/useOptionEdit'
 import { PickerMenu } from '@pommora/uix/Pickers/PickerMenu'
 import { PICKER_MAX_HEIGHT } from '@pommora/uix/Pickers/picker-base.css'
 import { colorNameFor } from '@pommora/uix/Theme/ramp'
@@ -24,12 +24,9 @@ import {
   MenuTopRow,
   menuDropLine,
 } from '@pommora/uix/Menus'
-import { footing, footingCentered, titleInput } from '@pommora/uix/Menus/menu-row.css'
 import { FrameSlide } from '@pommora/uix/Menus/FrameSlide'
 import { LineRow, LineZone, lineList } from '@pommora/uix/Interactions/drag'
-import { RenamableLabel } from '@pommora/uix/Fields/RenamableLabel'
 import { Reveal } from '@pommora/uix/Animations/Reveal'
-import { useEntrance } from '@pommora/uix/Animations/useEntrance'
 import { Icon } from '@pommora/uix/Symbols'
 import { useHeld } from '@pommora/uix/Animations/useExitPresence'
 import { DateTimeValuePicker } from './DateTimeValuePicker'
@@ -288,14 +285,14 @@ function EditableOptionRows({
   const look = style?.current.look
   const edit = useOptionEdit({ propertyId: def.id, type: def.type, def, options, style })
   const [naming, setNaming] = useState(false)
-  const entering = useEntrance(options, (o) => edit.keyOf(o.value))
   return (
     <>
       <MenuScrollFrame
         maxHeight={PICKER_MAX_HEIGHT}
         footer={
-          <MenuFooting>
-            <div className={look === 'compact' ? footingCentered : footing}>
+          <MenuFooting
+            centered={look === 'compact'}
+            leading={
               <AccessoryButton
                 icon="plus"
                 size="control"
@@ -304,8 +301,8 @@ function EditableOptionRows({
                 ariaLabel="New Option"
                 onClick={() => setNaming(true)}
               />
-            </div>
-          </MenuFooting>
+            }
+          />
         }
       >
         <LineZone
@@ -334,7 +331,7 @@ function EditableOptionRows({
             <Reveal
               key={edit.keyOf(o.value)}
               open
-              enterOnMount={entering(edit.keyOf(o.value))}
+              enterOnMount={edit.entering(edit.keyOf(o.value))}
               fill
             >
               <LineRow
@@ -356,12 +353,7 @@ function EditableOptionRows({
           ))}
           {naming && (
             <MenuItem>
-              <RenamableLabel
-                renames="title"
-                editing
-                value=""
-                className={titleInput}
-                autoSize
+              <OptionDraft
                 onCommit={(title) => {
                   setNaming(false)
                   void edit.editOption({ op: 'add', groupId: SELECT_GROUP, title })

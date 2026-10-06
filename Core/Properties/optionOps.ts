@@ -60,6 +60,8 @@ function admitOptionEdit(def: PropertyDefinition, e: OptionEdit): Result<null> {
   if ('value' in e && !optionValues(def).includes(e.value)) return NO_OPTION
   if ('groupId' in e && !optionGroupsOf(def).some((g) => g.id === e.groupId)) return NO_GROUP
   if (e.op === 'relabelGroup' && PROPERTY_TYPES[def.type].options !== 'status') return NO_GROUP
+  if (e.op === 'relabelGroup' && !e.label.trim())
+    return fail('invalid-property', 'Group labels can’t be blank.')
   return ok(null)
 }
 

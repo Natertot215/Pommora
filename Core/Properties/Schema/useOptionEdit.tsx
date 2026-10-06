@@ -1,10 +1,15 @@
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useHeld } from '@pommora/uix/Animations/useExitPresence'
+import { Reveal } from '@pommora/uix/Animations/Reveal'
+import { useEntrance } from '@pommora/uix/Animations/useEntrance'
+import { RenamableLabel } from '@pommora/uix/Fields/RenamableLabel'
+import { titleInput } from '@pommora/uix/Menus/menu-row.css'
 import type { ColumnStyle } from '../columnStyles'
 import type { OptionEdit } from '../optionModel'
 import type { PropertyDefinition, PropertyType } from '../properties'
 import type { OptionChipData } from '../Cells/OptionChip'
 import { warnOwed, write } from '../propertyWrite'
+import { normalizeTitle } from '../../Paths/caseFold'
 import { dialer } from '../../Platform/dialer'
 import { popMenu } from '../../Actions/menuActions'
 import { optionMenuModel } from '../../Actions/optionMenu'
@@ -33,6 +38,7 @@ export function useOptionEdit({
   style?: OptionStyleControl
 }): {
   keyOf: (value: string) => string
+  entering: (key: string) => boolean
   isOpen: (row: string) => boolean
   toggle: (value: string, anchor: HTMLElement) => void
   openMenu: (value: string, row: HTMLElement) => Promise<void>
@@ -44,6 +50,8 @@ export function useOptionEdit({
   const anchor = useRef<HTMLElement | null>(null)
   const alias = useRef(new Map<string, string>())
   const values = options.map((o) => o.value)
+  for (const [title] of alias.current)
+    if (!values.includes(title) && title !== editing?.value) alias.current.delete(title)
 
   const editOption = (edit: OptionEdit): Promise<void> =>
     write(dialer().ask('property:editOption', propertyId, edit))
@@ -51,9 +59,8 @@ export function useOptionEdit({
     const key = alias.current.get(value)
     return key !== undefined && !values.includes(key) ? key : value
   }
-  const isOpen = (row: string): boolean =>
-    editing !== null &&
-    (editing.value === row || (editing.row === row && !values.includes(editing.value)))
+  const entering = useEntrance(options, (o) => keyOf(o.value))
+  const isOpen = (row: string): boolean => editing !== null && keyOf(row) === keyOf(editing.row)
   const open = (value: string, el: HTMLElement): void => {
     anchor.current = el
     setEditing({ row: value, value })
@@ -64,7 +71,8 @@ export function useOptionEdit({
   const rename = (title: string): void => {
     if (!editing || title === editing.value) return
     const { row, value: from } = editing
-    if (title === row || !values.includes(title)) {
+    const taken = values.some((v) => v !== from && normalizeTitle(v) === normalizeTitle(title))
+    if (title === row || !taken) {
       alias.current.set(title, keyOf(row))
       setEditing((e) => (e && e.value === from ? { row: e.row, value: title } : e))
     }
@@ -93,28 +101,50 @@ export function useOptionEdit({
     }
   }
 
-  const held = useHeld(editing, editing !== null)
-  const option =
-    held &&
-    (options.find((o) => o.value === held.value) ?? options.find((o) => o.value === held.row))
-  const popup =
-    held && option ? (
-      <OptionEditPopup
-        open={editing !== null}
-        contentKey={held.row}
-        type={type}
-        option={option}
-        def={def}
-        triggerRef={anchor}
-        onDismiss={() => setEditing(null)}
-        onRename={rename}
-        onPickIcon={(icon) => void editOption({ op: 'icon', value: held.value, icon })}
-        onPickColor={(color) => void editOption({ op: 'recolor', value: held.value, color })}
-        onPickAppearance={(appearance) =>
-          void editOption({ op: 'appearance', value: held.value, appearance })
-        }
-      />
-    ) : null
+  const option = editing && options.find((o) => keyOf(o.value) === keyOf(editing.row))
+  useEffect(() => {
+    if (editing && !option) setEditing(null)
+  }, [editing, option])
+  const held = useHeld(editing && option ? { ...editing, option } : null, !!option)
+  const popup = held ? (
+    <OptionEditPopup
+      open={!!option}
+      contentKey={held.row}
+      type={type}
+      option={held.option}
+      def={def}
+      triggerRef={anchor}
+      onDismiss={() => setEditing(null)}
+      onRename={rename}
+      onPickIcon={(icon) => void editOption({ op: 'icon', value: held.value, icon })}
+      onPickColor={(color) => void editOption({ op: 'recolor', value: held.value, color })}
+      onPickAppearance={(appearance) =>
+        void editOption({ op: 'appearance', value: held.value, appearance })
+      }
+    />
+  ) : null
 
-  return { keyOf, isOpen, toggle, openMenu, editOption, busy: editing !== null, popup }
+  return { keyOf, entering, isOpen, toggle, openMenu, editOption, busy: editing !== null, popup }
+}
+
+export function OptionDraft({
+  onCommit,
+  onCancel,
+}: {
+  onCommit: (title: string) => void
+  onCancel: () => void
+}): React.JSX.Element {
+  return (
+    <Reveal open enterOnMount fill>
+      <RenamableLabel
+        renames="title"
+        editing
+        value=""
+        className={titleInput}
+        autoSize
+        onCommit={onCommit}
+        onCancel={onCancel}
+      />
+    </Reveal>
+  )
 }

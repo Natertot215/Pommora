@@ -13,7 +13,7 @@ import {
   type PropertyType,
 } from '../properties'
 import { replay, retryOwed, write } from '../propertyWrite'
-import type { ColumnStyle } from '../columnStyles'
+import { type ColumnStyle, lookOptions, OPTION_LOOKS } from '../columnStyles'
 import type { CollectionNode, SetNode } from '../../Nexus/tree'
 import { useActiveView } from '../../Views/Host/useActiveView'
 import { useSaveView } from '../../Views/viewWrite'
@@ -40,7 +40,6 @@ import { IconChoice } from '../../Assets/IconChoice'
 import { RenamableLabel } from '@pommora/uix/Fields/RenamableLabel'
 import { InlineEditHeader } from '@pommora/uix/Menus/InlineEditHeader'
 import { OptionEditor } from './OptionEditor'
-import { OPTION_STYLE_OPTIONS, type OptionStyle } from './OptionRow'
 import { PickerControl } from '@pommora/uix/Pickers/PickerControl'
 import { LinkEditor } from './LinkEditor'
 import { FrameSlide } from '@pommora/uix/Menus/FrameSlide'
@@ -61,6 +60,8 @@ import { popMenu } from '../../Actions/menuActions'
 import { propertyMenuModel } from '../../Actions/propertyMenu'
 
 type SubView = { kind: 'list' } | { kind: 'type' } | { kind: 'edit'; id: string }
+type OptionStyle = (typeof OPTION_LOOKS)[number]
+const OPTION_STYLE_OPTIONS = lookOptions(OPTION_LOOKS)
 
 const TITLES = { assigned: 'Properties', all: 'All Properties' }
 
