@@ -20,6 +20,7 @@ export type LabelProps = {
   /** The hover × removes THIS label's value, so the handler owns what that means. */
   onRemove?: () => void
   className?: string
+  children?: ReactNode
 }
 
 /** Composed rather than named: fill, outline, alignment, tint and content are axes independent of SHAPE and of each other, so an unused combination costs a line rather than a class. */
@@ -34,6 +35,7 @@ export function Label({
   roomy,
   onRemove,
   className,
+  children,
 }: LabelProps): React.JSX.Element {
   return (
     <span
@@ -50,6 +52,7 @@ export function Label({
     >
       {icon}
       {text != null && <LabelText text={text} onRemove={onRemove} />}
+      {children}
     </span>
   )
 }

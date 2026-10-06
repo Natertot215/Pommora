@@ -4,21 +4,19 @@ import { Reveal } from '@pommora/uix/Animations/Reveal'
 import { useEntrance } from '@pommora/uix/Animations/useEntrance'
 import { RenamableLabel } from '@pommora/uix/Fields/RenamableLabel'
 import { base } from '@pommora/uix/Fields/fields.css'
-import { labelColor, shape } from '@pommora/uix/Labels/label-base.css'
+import { Label } from '@pommora/uix/Labels/Label'
 import { optionShapeFor } from '@pommora/uix/Labels/recipes'
 import { colorNameFor } from '@pommora/uix/Theme/ramp'
-import { cx } from '@pommora/uix/Utilities/cx'
 import type { ColumnStyle } from '../columnStyles'
 import type { OptionEdit } from '../optionModel'
 import type { PropertyDefinition } from '../properties'
 import type { OptionChipData } from '../Cells/OptionChip'
-import { retryOwed, warnOwed, write } from '../propertyWrite'
+import { warnOwed, write } from '../propertyWrite'
 import { dialer } from '../../Platform/dialer'
 import { popMenu } from '../../Actions/menuActions'
 import { optionMenuModel } from '../../Actions/optionMenu'
 import { parseStyleAction } from '../../Actions/columnMenu'
 import { askClearOption, askRemoveOption } from '../../Interface/Confirm/confirmations'
-import { reportRefusal } from '../../Interface/Notifications/notifications'
 import { OptionEditPopup } from './OptionEditPopup'
 
 export type OptionStyleControl = {
@@ -35,7 +33,7 @@ export type OptionEditApi = {
   keyOf: (value: string) => string
   entering: (value: string) => boolean
   isOpen: (row: string) => boolean
-  toggle: (value: string, anchor: HTMLElement) => void
+  toggle: (value: string, anchor: HTMLElement | undefined) => void
   openMenu: (value: string, row: HTMLElement) => Promise<void>
   editOption: (edit: OptionEdit) => Promise<void>
   draft: Draft | null
@@ -74,11 +72,11 @@ export function useOptionEdit({
   const enteringKey = useEntrance(options, (o) => keyOf(o.value))
   const entering = (value: string): boolean => enteringKey(keyOf(value))
   const isOpen = (row: string): boolean => editing !== null && keyOf(row) === keyOf(editing.row)
-  const open = (value: string, el: HTMLElement): void => {
-    anchor.current = el
+  const open = (value: string, el: HTMLElement | undefined): void => {
+    anchor.current = el ?? null
     setEditing({ row: value, value })
   }
-  const toggle = (value: string, el: HTMLElement): void =>
+  const toggle = (value: string, el: HTMLElement | undefined): void =>
     isOpen(value) ? setEditing(null) : open(value, el)
 
   const rename = async (title: string): Promise<void> => {
@@ -86,12 +84,10 @@ export function useOptionEdit({
     const { row, value: from } = editing
     alias.current.set(title, { key: keyOf(row), seen: false })
     setEditing((e) => (e && e.value === from ? { row: e.row, value: title } : e))
-    const r = await dialer().ask('property:renameOption', def.id, from, title)
-    if (!r.ok) {
+    if (!(await warnOwed(dialer().ask('property:renameOption', def.id, from, title)))) {
       alias.current.delete(title)
       setEditing((e) => (e && e.value === title ? { row: e.row, value: from } : e))
     }
-    if (reportRefusal(r)) retryOwed(r.value)
   }
 
   const openMenu = async (value: string, row: HTMLElement): Promise<void> => {
@@ -174,7 +170,7 @@ export function OptionDraft({
 }): React.JSX.Element {
   return (
     <Reveal open enterOnMount fill>
-      <span className={cx(shape[optionShapeFor(type)], labelColor[colorNameFor(color)])}>
+      <Label shape={optionShapeFor(type)} color={colorNameFor(color)}>
         <RenamableLabel
           renames="title"
           editing
@@ -184,7 +180,7 @@ export function OptionDraft({
           onCommit={edit.commitDraft}
           onCancel={edit.cancelDraft}
         />
-      </span>
+      </Label>
     </Reveal>
   )
 }
