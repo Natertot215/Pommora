@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest'
-import { attachBelow, insertBand } from './ops'
+import { attachBelow, insertBand, wedgeFills } from './ops'
 import { splitTile } from '../../Testing/tileLayouts'
 import type { LayoutNode, TileLayout, TileLeaf } from './model'
-import { placeTiles, wedgeFills } from './rects'
+import { placeTiles } from './rects'
 
 describe('placeTiles', () => {
   it('places a row as shares of the width with the gutters fixed', () => {

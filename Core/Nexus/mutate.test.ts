@@ -1201,7 +1201,7 @@ describe('handleMutate — renameHeading', () => {
       `---\nID: ${B_ID}\n---\n\n## Setup\n\n[[#Setup]]`,
     )
     await seedContentIndex(root)
-    tile = await landedId(createTile(root, homepageDir(root)))
+    tile = await landedId(createTile(root, homepageDir(root), { kind: 'append' }))
     await writeMarkdownTile(homepageDir(root), tile, '[[Beta#Setup]]', machine().sha256Hex(''))
   })
   afterEach(() => installStores(NO_STORES))

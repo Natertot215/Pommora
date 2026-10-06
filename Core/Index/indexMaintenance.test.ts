@@ -264,7 +264,7 @@ describe('the watcher maintains the rows', () => {
     const alpha = join(root, 'Notes', 'Daily', 'Alpha.md')
     await writeFile(beta, `---\nID: ${B_ID}\n---\n\n## Setup\n`)
     await writeFile(alpha, `---\nID: ${A_ID}\n---\n\nSee [[Beta#Setup]].`)
-    const tile = await landedId(createTile(root, homepageDir(root)))
+    const tile = await landedId(createTile(root, homepageDir(root), { kind: 'append' }))
     await writeMarkdownTile(homepageDir(root), tile, '[[Beta#Setup]]', machine().sha256Hex(''))
     await seedContentIndex(root)
     await refreshTree(root)

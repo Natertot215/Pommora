@@ -46,9 +46,14 @@ describe('the tile channels', () => {
     await writeFile(join(dir, '_space.json'), JSON.stringify({ id: 'sp1' }))
     await liveTreeOf(root)
     const space = { kind: 'space', id: 'sp1' }
-    const made = await tilesHandlers['tiles:create'](ctx, space)
+    const made = await tilesHandlers['tiles:create'](ctx, space, { kind: 'append' })
     expect(made.ok && (await pathExists(tileFilePath(dir, made.value.id)))).toBe(true)
-    const linked = await tilesHandlers['tiles:create'](ctx, space, { kind: 'page', value: 'p1' })
+    const linked = await tilesHandlers['tiles:create'](
+      ctx,
+      space,
+      { kind: 'append' },
+      { kind: 'page', value: 'p1' },
+    )
     expect(linked.ok && !(await pathExists(tileFilePath(dir, linked.value.id)))).toBe(true)
     await rename(dir, join(root, '.nexus', 'contexts', 'Realms', 'Moved'))
     expect(await tilesHandlers['tiles:get'](ctx, space)).toEqual(

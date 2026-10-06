@@ -4,6 +4,7 @@ import { flushSync } from 'react-dom'
 import {
   knownTile,
   tileIdOf,
+  type InsertTarget,
   type TileEntry,
   type TileHostRef,
   TILE_KINDS,
@@ -13,18 +14,9 @@ import type { ConnPage } from '../Connections/pageIndex'
 import { pagesByIdOf } from '../Nexus/treeIndex'
 import type { ConnectionsApi } from '../MarkdownPM/Links/connectionsApi'
 import { useConnections } from '../Session/pageConnections'
-import { insertBand, removeLeaf, seatBelow } from './Layout/ops'
-import {
-  emptyLayout,
-  findTile,
-  getTile,
-  NEW_TILE_H,
-  TILE_GAP,
-  type TileLayout,
-} from './Layout/model'
-import { wedgeFills } from './Layout/rects'
-import { TILE_MIN_PX } from '@pommora/uix/Utilities/tileMetrics'
-import { type Inserting, type InsertTarget, TileGrid } from './TileGrid'
+import { insertBand, removeLeaf } from './Layout/ops'
+import { emptyLayout, findTile, getTile, NEW_TILE_H, type TileLayout } from './Layout/model'
+import { type Inserting, TileGrid } from './TileGrid'
 import { useDismissal } from '@pommora/uix/Interactions/dismissalStack'
 import { entityIcon } from '../Assets/entityIconPolicy'
 import { ZOOM } from '../Settings/personalization'
@@ -41,6 +33,7 @@ import {
   markTileRemoving,
   patchTileEntry,
   readTileDoc,
+  seatTileWrite,
   unmarkTileRemoving,
 } from './tileDocStore'
 import { dropPageDetail, knownBody } from '../Session/pageDetailCache'
@@ -126,12 +119,11 @@ export function TileHost({
   )
   const duplicateTile = useCallback(
     (id: string) => {
-      void landTileWrite(host, dialer().ask('tiles:duplicateTile', host, id)).then((r) => {
-        if (!reportRefusal(r)) return
-        commitLayout((cur) => seatBelow(cur, r.value.id, id, getTile(cur, id)?.h))
-      })
+      void seatTileWrite(host, () => dialer().ask('tiles:duplicateTile', host, id)).then(
+        reportRefusal,
+      )
     },
-    [commitLayout, host],
+    [host],
   )
   const confirmRemove = useCallback(
     (id: string) => {
@@ -307,28 +299,18 @@ export function TileHost({
         if (action === null || readTileDoc(host).locked) return setInserting(null)
         const pick = pickOf(action, built.picks)
         setInserting({ target, phase: 'flight' })
-        void landTileWrite(host, dialer().ask('tiles:create', host, pick)).then((r) => {
-          const made = reportRefusal(r) ? r.value.id : null
-          // One commit outside a sibling mount's held gesture, so no frame draws the ghost beside its tile or neither: the store's write renders at once, and a state set from a promise would trail it.
-          flushSync(() => {
-            setInserting(null)
-            if (made === null) return
-            commitLayout((cur) =>
-              target.kind === 'wedge'
-                ? seatBelow(
-                    cur,
-                    made,
-                    target.above,
-                    wedgeFills(cur, TILE_GAP, TILE_MIN_PX).get(target.above),
-                  )
-                : seatBelow(cur, made, null, target.h),
-            )
-            if (!pick) setEditingId(made)
-          })
-        })
+        void seatTileWrite(host, () => dialer().ask('tiles:create', host, target, pick)).then(
+          (r) => {
+            // Flushed, so the ghost leaves before the next paint, the paint its landed tile first draws in.
+            flushSync(() => {
+              setInserting(null)
+              if (reportRefusal(r) && !pick) setEditingId(r.value.id)
+            })
+          },
+        )
       })
     },
-    [commitLayout, host],
+    [host],
   )
 
   if (!ready) return null

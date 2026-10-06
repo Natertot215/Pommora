@@ -22,6 +22,7 @@ import type { SchemaCascade, SchemaJournal } from '../Properties/propertyJournal
 import type { PropertyRename } from '../Properties/registryProperty'
 import type { Personalization } from '../Settings/personalization'
 import type {
+  InsertTarget,
   Landed,
   RemovedTile,
   TileDoc,
@@ -178,7 +179,7 @@ export interface Asks {
   'tiles:get': { args: [host: TileHostRef]; reply: Result<TileDoc> }
   'tiles:save': { args: [host: TileHostRef, patch: TileDocPatch]; reply: Result<Landed> }
   'tiles:create': {
-    args: [host: TileHostRef, pick?: TilePick]
+    args: [host: TileHostRef, target: InsertTarget, pick?: TilePick]
     reply: Result<Landed<{ id: string }>>
   }
   'tiles:removeTile': {

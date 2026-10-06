@@ -7,16 +7,13 @@ import { createRoot, type Root } from 'react-dom/client'
 import { EditorView } from '@codemirror/view'
 import { stubEditorBridge } from '../Testing/editorHarness'
 import { TileHost } from './TileHost'
-import { commitTileLayout, dropAllTileDocs, markTileRemoving } from './tileDocStore'
+import { dropAllTileDocs, holdTileDoc, markTileRemoving } from './tileDocStore'
 import { clearCache, knownBody, readBodyBase } from '../Session/pageDetailCache'
 import { useSession } from '../Session/store'
 import { makeTree } from '../Testing/testTree'
 import { personalizationOf } from '../Session/configSlice'
 import { tileId } from '../Testing/tileLayouts'
-import { removeLeaf, stretchTileHeight } from './Layout/ops'
 import { insertMenuItems, pickTreesOf } from './tileHandleMenu'
-import type { TileLayout } from './Layout/model'
-import { TILE_MIN_PX } from '@pommora/uix/Utilities/tileMetrics'
 
 const surfaceRenders = vi.hoisted(() => new Map<string, number>())
 vi.mock('./Surfaces/MarkdownTile', async (importOriginal) => {
@@ -374,64 +371,10 @@ describe('the host over the renderer table', () => {
     })
     expect(await until(() => writeMarkdown.mock.calls.length > 0)).toBe(true)
   })
-
-  it('a duplicate whose source left the board before its reply lands as the last band', async () => {
-    const copy = tileId('c')
-    let reply: (r: unknown) => void = () => {}
-    const saves: { bands: { node: { kind: string; id: string; h: number } }[] }[] = []
-    stubEditorBridge({
-      'tiles:changed': () => () => {},
-      'tiles:get': async () => ({ ok: true, value: doc }),
-      'tiles:save': async (_host: unknown, patch: { layout?: unknown }) => {
-        if (patch.layout) saves.push(patch.layout as (typeof saves)[number])
-        return { ok: true, value: { landed: doc } }
-      },
-      'tiles:readMarkdown': async () => ({ ok: true, value: { body: 'hello' } }),
-      'tiles:duplicateTile': () =>
-        new Promise((r) => {
-          reply = r
-        }),
-      menu: async () => ({ ok: true, value: 'tile:duplicate' }),
-    })
-    useSession.setState((st) => ({
-      tree: makeTree(),
-      devicePrefs: { ...st.devicePrefs, nativeMenus: true },
-    }))
-    await act(async () => root.render(<TileHost host={{ kind: 'homepage' }} />))
-    expect(await until(() => host.querySelectorAll('.tile').length === 4)).toBe(true)
-    await act(async () => {
-      ;(host.querySelector('.tile-handle') as HTMLElement).click()
-    })
-    // A sibling mount removes the source while the copy is in flight.
-    await act(async () =>
-      commitTileLayout({ kind: 'homepage' }, (cur) => removeLeaf(cur, tileId('m'))),
-    )
-    await act(async () => {
-      reply({
-        ok: true,
-        value: {
-          id: copy,
-          landed: { ...doc, tiles: [...doc.tiles, { id: copy, type: 'markdown' }] },
-        },
-      })
-    })
-    expect(await until(() => saves.at(-1)?.bands.some((b) => b.node.id === copy) ?? false)).toBe(
-      true,
-    )
-    const final = saves.at(-1)
-    expect(final?.bands.map((b) => b.node.id)).toEqual([
-      tileId('p'),
-      tileId('v'),
-      tileId('w'),
-      copy,
-    ])
-    expect(final?.bands.at(-1)?.node.h).toBe(250)
-  })
 })
 
 describe('the Insert Menu a ghost tile opens', () => {
   const made = tileId('n')
-  type Saved = { bands: { node: { kind: string; id: string; h: number } }[] }
   const empty = { layout: { bands: [] }, tiles: [], locked: false }
   // A row whose second tile ends above the first: a wedge under `b`.
   const wedged = {
@@ -455,12 +398,21 @@ describe('the Insert Menu a ghost tile opens', () => {
     ],
     locked: false,
   }
+  // The landed document a create answers with: its entry and its leaf, as the last band.
+  const seated = (doc: unknown, entry: unknown) => {
+    const cur = doc as typeof empty
+    return {
+      ...cur,
+      tiles: [...cur.tiles, entry],
+      layout: { bands: [...cur.layout.bands, { node: { kind: 'tile', id: made, h: 250 } }] },
+    }
+  }
   const bridge = (
     action: string | null,
     over: Record<string, unknown> = {},
     get: () => unknown = () => empty,
   ) => {
-    const saves: Saved[] = []
+    const saves: unknown[] = []
     const menus: { anchor?: unknown }[] = []
     const creates: unknown[][] = []
     let changed: ((c: unknown) => void) | null = null
@@ -471,19 +423,15 @@ describe('the Insert Menu a ghost tile opens', () => {
       },
       'tiles:get': async () => ({ ok: true, value: get() }),
       'tiles:save': async (_host: unknown, patch: { layout?: unknown }) => {
-        if (patch.layout) saves.push(patch.layout as Saved)
+        if (patch.layout) saves.push(patch.layout)
         return { ok: true, value: { landed: get() } }
       },
       'tiles:readMarkdown': async () => ({ ok: true, value: { body: '' } }),
       'tiles:create': async (...args: unknown[]) => {
         creates.push(args)
-        const cur = get() as typeof empty
         return {
           ok: true,
-          value: {
-            id: made,
-            landed: { ...cur, tiles: [...cur.tiles, { id: made, type: 'markdown' }] },
-          },
+          value: { id: made, landed: seated(get(), { id: made, type: 'markdown' }) },
         }
       },
       menu: async (req: { anchor?: unknown }) => {
@@ -515,19 +463,15 @@ describe('the Insert Menu a ghost tile opens', () => {
     await act(async () => root.render(<TileHost host={{ kind: 'homepage' }} />))
     expect(await until(ready)).toBe(true)
   }
-  const bandIds = (saved: Saved | undefined): string[] | undefined =>
-    saved?.bands.map((b) => b.node.id)
-
   it('New Page over an empty board creates a blank tile as its first band and hands it the caret', async () => {
     const { saves, creates } = bridge('tile:new')
     await mountHost(() => host.querySelector('.tile-ghost') !== null)
     await click('.tile-ghost')
-    expect(await until(() => saves.length > 0)).toBe(true)
-    expect(creates[0]).toEqual([{ kind: 'homepage' }, undefined])
-    expect(bandIds(saves.at(-1))).toEqual([made])
-    expect(saves.at(-1)?.bands[0].node.h).toBe(250)
     expect(await until(() => host.querySelector('.tile.is-editing-tile') !== null)).toBe(true)
+    expect(creates[0]).toEqual([{ kind: 'homepage' }, { kind: 'append' }, undefined])
     expect(host.querySelector('.tile-ghost')).toBeNull()
+    // The board adopts the layout the write landed, and writes none of its own.
+    expect(saves).toEqual([])
   })
 
   it('a link row creates the tile already linked, without the caret', async () => {
@@ -537,10 +481,7 @@ describe('the Insert Menu a ghost tile opens', () => {
         linked.push(args)
         return {
           ok: true,
-          value: {
-            id: made,
-            landed: { ...empty, tiles: [{ id: made, type: 'page', page_id: 'p1' }] },
-          },
+          value: { id: made, landed: seated(empty, { id: made, type: 'page', page_id: 'p1' }) },
         }
       },
     })
@@ -548,19 +489,18 @@ describe('the Insert Menu a ghost tile opens', () => {
     await click('.tile-ghost')
     expect(await until(() => host.querySelectorAll('.tile').length === 1)).toBe(true)
     const { picks } = insertMenuItems(pickTreesOf(makeTree(), undefined), 'file')
-    expect(linked[0]).toEqual([{ kind: 'homepage' }, picks[0]])
+    expect(linked[0]).toEqual([{ kind: 'homepage' }, { kind: 'append' }, picks[0]])
     expect(host.querySelector('.tile.is-editing-tile')).toBeNull()
   })
 
   it('the add strip appends a full-width band, its menu hanging from the click or, from the keyboard, the strip', async () => {
-    const { saves, menus } = bridge('tile:new', {}, () => wedged)
+    const { creates, menus } = bridge('tile:new', {}, () => wedged)
     await mountHost(() => host.querySelector('.tile-add button') !== null)
     const strip = host.querySelector('.tile-add button') as HTMLElement
     strip.getBoundingClientRect = () => ({ left: 10, top: 300, width: 400, height: 14 }) as DOMRect
     await click('.tile-add button')
-    expect(await until(() => saves.length > 0)).toBe(true)
-    expect(saves.at(-1)?.bands).toHaveLength(2)
-    expect(saves.at(-1)?.bands.at(-1)?.node).toEqual({ kind: 'tile', id: made, h: 250 })
+    expect(await until(() => creates.length > 0)).toBe(true)
+    expect(creates[0][1]).toEqual({ kind: 'append' })
     expect(menus[0].anchor).toEqual({ left: 40, top: 60, height: 0 })
     expect(await until(() => host.querySelector('.tile.is-editing-tile') !== null)).toBe(true)
     await click('.tile-add button', 0)
@@ -569,7 +509,7 @@ describe('the Insert Menu a ghost tile opens', () => {
   })
 
   it('a bottom ghost seats its band at the height the room below the board gave it', async () => {
-    const { saves } = bridge('tile:new', {}, () => wedged)
+    const { creates } = bridge('tile:new', {}, () => wedged)
     host.style.overflowY = 'auto'
     await mountHost(() => host.querySelector('.tile-add') !== null)
     host.getBoundingClientRect = () => ({ top: 0, bottom: 600 }) as DOMRect
@@ -587,8 +527,8 @@ describe('the Insert Menu a ghost tile opens', () => {
     expect(await until(() => host.querySelector('.tile-ghost') !== null)).toBe(true)
     expect(host.querySelector<HTMLElement>('.tile-ghost')?.style.height).toBe('392px')
     await click('.tile-ghost')
-    expect(await until(() => saves.length > 0)).toBe(true)
-    expect(saves.at(-1)?.bands.at(-1)?.node).toEqual({ kind: 'tile', id: made, h: 392 })
+    expect(await until(() => creates.length > 0)).toBe(true)
+    expect(creates[0][1]).toEqual({ kind: 'append', h: 392 })
   })
 
   it('a dismissed menu creates nothing and leaves the standing ghost unheld', async () => {
@@ -603,18 +543,21 @@ describe('the Insert Menu a ghost tile opens', () => {
     expect(ghost?.hasAttribute('data-reveal-held')).toBe(false)
   })
 
-  // A sibling mount changes the board while the create is in flight; the reply then seats against the board as it stands.
-  const wedgeFlight = async (meanwhile: (cur: TileLayout) => TileLayout): Promise<Saved[]> => {
+  it('a wedge sends its tile, and a seat landing under a sibling’s held gesture waits for the release', async () => {
     let reply: (r: unknown) => void = () => {}
-    const { saves } = bridge(
+    let sent: unknown[] = []
+    let disk: unknown = wedged
+    bridge(
       'tile:new',
       {
-        'tiles:create': () =>
-          new Promise((r) => {
+        'tiles:create': (...args: unknown[]) => {
+          sent = args
+          return new Promise((r) => {
             reply = r
-          }),
+          })
+        },
       },
-      () => wedged,
+      () => disk,
     )
     await mountHost(() => host.querySelectorAll('.tile').length === 2)
     const zone = host.querySelector('.tile-zone') as HTMLElement
@@ -626,34 +569,16 @@ describe('the Insert Menu a ghost tile opens', () => {
     })
     expect(await until(() => host.querySelector('.tile-ghost') !== null)).toBe(true)
     await click('.tile-ghost')
-    await act(async () => commitTileLayout({ kind: 'homepage' }, meanwhile))
+    expect(sent[1]).toEqual({ kind: 'wedge', above: tileId('b') })
+    holdTileDoc({ kind: 'homepage' }, true)
+    disk = seated(wedged, { id: made, type: 'markdown' })
+    await act(async () => reply({ ok: true, value: { id: made, landed: disk } }))
     await act(async () => {
-      reply({
-        ok: true,
-        value: {
-          id: made,
-          landed: { ...wedged, tiles: [...wedged.tiles, { id: made, type: 'markdown' }] },
-        },
-      })
+      await new Promise((r) => setTimeout(r, 20))
     })
-    expect(await until(() => saves.some((x) => JSON.stringify(x).includes(made)))).toBe(true)
-    return saves
-  }
-
-  it('a wedge whose tile left before the reply gives way to the last band', async () => {
-    const saves = await wedgeFlight((cur) => removeLeaf(cur, tileId('b')))
-    expect(saves.at(-1)?.bands).toHaveLength(2)
-    expect(saves.at(-1)?.bands.at(-1)?.node).toEqual({ kind: 'tile', id: made, h: 250 })
-  })
-
-  it('a wedge whose fill changed before the reply seats the tile at the fill the board now gives', async () => {
-    const saves = await wedgeFlight((cur) => stretchTileHeight(cur, tileId('a'), 100, TILE_MIN_PX))
-    const row = saves.at(-1)?.bands[0].node as unknown as {
-      children: { kind: string; children: { id: string; h: number }[] }[]
-    }
-    expect(row.children[1].kind).toBe('column')
-    expect(row.children[1].children.map((c) => c.id)).toEqual([tileId('b'), made])
-    expect(row.children[1].children[1].h).toBe(192)
+    expect(host.querySelectorAll('.tile')).toHaveLength(2)
+    await act(async () => holdTileDoc({ kind: 'homepage' }, false))
+    expect(await until(() => host.querySelectorAll('.tile').length === 3)).toBe(true)
   })
 
   it('a board locked while the menu is open takes no pick', async () => {
