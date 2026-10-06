@@ -2,7 +2,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { act } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
-import { ok } from '../../Contract/result'
+import { fail, ok, type Result } from '../../Contract/result'
 import { currentNotification } from '../../Interface/Notifications/notifications'
 import { dateDefaults } from '../columnStyles'
 import type { PropertyType, StatusGroup } from '../properties'
@@ -40,7 +40,7 @@ let host: HTMLDivElement
 let root: Root
 const menu = vi.fn(async () => ok<string | null>(null))
 const editOption = vi.fn(async () => ok(null))
-const renameOption = vi.fn(async () => ok({ cascade: {} }))
+const renameOption = vi.fn(async (): Promise<Result<{ cascade: object }>> => ok({ cascade: {} }))
 const removeOption = vi.fn(async () => ok({ cascade: {} }))
 const clearOption = vi.fn(async () => ok(null))
 const style = { current: { ...dateDefaults('full'), look: 'standard' as const }, set: vi.fn() }
@@ -81,14 +81,15 @@ const openPopup = (): void => {
 const titleField = (): HTMLInputElement | null =>
   document.querySelector('[data-picker-portal] input[aria-label="Option Title"]')
 
-const commit = (field: HTMLInputElement | null, next: string): void => {
+const commit = async (field: HTMLInputElement | null, next: string): Promise<void> => {
   if (!field) throw new Error('no field')
-  act(() => {
+  await act(async () => {
     field.focus()
     field.value = next
     field.blur()
   })
 }
+const refuse = fail('invalid-property', 'taken')
 
 const portalButton = (label: string): HTMLButtonElement | null =>
   document.querySelector(`[data-picker-portal] button[aria-label="${label}"]`)
@@ -165,10 +166,10 @@ describe('creating an option', () => {
   const plus = (): void =>
     act(() => host.querySelector<HTMLButtonElement>('[aria-label="Add Option"]')?.click())
 
-  it('the + names a new option at the end of its group', () => {
+  it('the + names a new option at the end of its group', async () => {
     render('select', select)
     plus()
-    commit(host.querySelector('input'), 'Fresh')
+    await commit(host.querySelector('input'), 'Fresh')
     expect(editOption).toHaveBeenCalledWith('p1', {
       op: 'add',
       groupId: 'select',
@@ -177,28 +178,28 @@ describe('creating an option', () => {
     })
   })
 
-  it('a blank name adds nothing', () => {
+  it('a blank name adds nothing', async () => {
     render('select', select)
     plus()
-    commit(host.querySelector('input'), '')
+    await commit(host.querySelector('input'), '')
     expect(editOption).not.toHaveBeenCalled()
     expect(host.querySelector('input')).toBeNull()
   })
 
-  it("a blank popup title leaves the option's name in place", () => {
+  it("a blank popup title leaves the option's name in place", async () => {
     render('select', select)
     openPopup()
-    commit(titleField(), '')
+    await commit(titleField(), '')
     expect(renameOption).not.toHaveBeenCalled()
     expect(titleField()?.value).toBe('Urgent')
   })
 })
 
 describe('the popup through a rename (F-134)', () => {
-  it('a recolor after a rename addresses the new title, and the popup stays open', () => {
+  it('a recolor after a rename addresses the new title, and the popup stays open', async () => {
     render('select', select)
     openPopup()
-    commit(titleField(), 'Critical')
+    await commit(titleField(), 'Critical')
     expect(renameOption).toHaveBeenCalledWith('p1', 'Urgent', 'Critical')
     const color = pickSwatch()
     expect(editOption).toHaveBeenCalledWith('p1', { op: 'recolor', value: 'Critical', color })
@@ -216,15 +217,15 @@ describe('the popup through a rename (F-134)', () => {
     )
     expect(editOption).toHaveBeenCalledWith('p1', { op: 'icon', value: 'Critical', icon: 'anchor' })
     expect(popup()).not.toBeNull()
-    commit(titleField(), 'Critical')
+    await commit(titleField(), 'Critical')
     expect(renameOption).toHaveBeenCalledTimes(1)
   })
 
-  it("a rename back to the row's own title re-keys the popup to it", () => {
+  it("a rename back to the row's own title re-keys the popup to it", async () => {
     render('select', select)
     openPopup()
-    commit(titleField(), 'Critical')
-    commit(titleField(), 'Urgent')
+    await commit(titleField(), 'Critical')
+    await commit(titleField(), 'Urgent')
     expect(renameOption.mock.calls).toEqual([
       ['p1', 'Urgent', 'Critical'],
       ['p1', 'Critical', 'Urgent'],
@@ -233,10 +234,10 @@ describe('the popup through a rename (F-134)', () => {
     expect(editOption).toHaveBeenCalledWith('p1', { op: 'recolor', value: 'Urgent', color })
   })
 
-  it('the row and its popup survive the refresh that carries the rename', () => {
+  it('the row and its popup survive the refresh that carries the rename', async () => {
     render('select', select)
     openPopup()
-    commit(titleField(), 'Critical')
+    await commit(titleField(), 'Critical')
     const field = titleField()
     const row = host.querySelector('[data-reveal-host] [data-reveal-host]')
     const refreshed = [
@@ -256,17 +257,17 @@ describe('the popup through a rename (F-134)', () => {
     expect(editOption).toHaveBeenCalledWith('p1', { op: 'recolor', value: 'Critical', color })
   })
 
-  it('a second rename after the refresh keeps the popup on its row', () => {
+  it('a second rename after the refresh keeps the popup on its row', async () => {
     render('select', select)
     openPopup()
-    commit(titleField(), 'Critical')
+    await commit(titleField(), 'Critical')
     render('select', [
       { ...select[0], options: [{ value: 'Critical', group_id: 'select' }, select[0].options[1]] },
     ])
-    const field = titleField()
-    commit(field, 'Severe')
+    await commit(titleField(), 'Severe')
     expect(renameOption).toHaveBeenLastCalledWith('p1', 'Critical', 'Severe')
-    expect(titleField()).toBe(field)
+    const field = titleField()
+    expect(field?.value).toBe('Severe')
     render('select', [
       { ...select[0], options: [{ value: 'Severe', group_id: 'select' }, select[0].options[1]] },
     ])
@@ -275,23 +276,45 @@ describe('the popup through a rename (F-134)', () => {
     expect(editOption).toHaveBeenCalledWith('p1', { op: 'recolor', value: 'Severe', color })
   })
 
-  it('a rename differing only in case from another title leaves the popup addressed to the old one', () => {
+  it('two renames before a refresh lands keep the popup through both refreshes', async () => {
     render('select', select)
     openPopup()
-    commit(titleField(), 'later')
+    await commit(titleField(), 'High')
+    await commit(titleField(), 'Critical')
+    const errors = vi.spyOn(console, 'error').mockImplementation(() => {})
+    render('select', [
+      { ...select[0], options: [{ value: 'High', group_id: 'select' }, select[0].options[1]] },
+    ])
+    expect(titleField()?.value).toBe('Critical')
+    render('select', [
+      { ...select[0], options: [{ value: 'Critical', group_id: 'select' }, select[0].options[1]] },
+    ])
+    expect(errors).not.toHaveBeenCalled()
+    errors.mockRestore()
+    expect(titleField()?.value).toBe('Critical')
+    const color = pickSwatch()
+    expect(editOption).toHaveBeenCalledWith('p1', { op: 'recolor', value: 'Critical', color })
+  })
+
+  it('a rename the host refuses leaves the popup addressed to the old title, and the field reads it again', async () => {
+    renameOption.mockResolvedValueOnce(refuse)
+    render('select', select)
+    openPopup()
+    await commit(titleField(), 'later')
     expect(renameOption).toHaveBeenCalledWith('p1', 'Urgent', 'later')
+    expect(titleField()?.value).toBe('Urgent')
     const color = pickSwatch()
     expect(editOption).toHaveBeenCalledWith('p1', { op: 'recolor', value: 'Urgent', color })
   })
 
-  it('a later option taking an intermediate name keys apart from the renamed row', () => {
+  it('a later option taking an intermediate name keys apart from the renamed row', async () => {
     render('select', select)
     openPopup()
-    commit(titleField(), 'High')
+    await commit(titleField(), 'High')
     render('select', [
       { ...select[0], options: [{ value: 'High', group_id: 'select' }, select[0].options[1]] },
     ])
-    commit(titleField(), 'Critical')
+    await commit(titleField(), 'Critical')
     const refreshed = [{ value: 'Critical', group_id: 'select' }, select[0].options[1]]
     render('select', [{ ...select[0], options: refreshed }])
     const errors = vi.spyOn(console, 'error').mockImplementation(() => {})
@@ -303,7 +326,7 @@ describe('the popup through a rename (F-134)', () => {
     expect(span('High')).toBeTruthy()
   })
 
-  it('the popup closes when its option is removed from under it', async () => {
+  it('the popup closes when its option is removed from under it, and stays closed when it returns', async () => {
     render('select', select)
     openPopup()
     expect(titleField()).toBeTruthy()
@@ -313,18 +336,21 @@ describe('the popup through a rename (F-134)', () => {
     })
     expect(titleField()).toBeNull()
     expect(host.querySelector('[data-reveal-held]')).toBeNull()
+    render('select', select)
+    expect(titleField()).toBeNull()
     act(() => host.querySelector<HTMLButtonElement>('button[aria-label="Edit Option"]')?.click())
-    expect(titleField()?.value).toBe('Later')
+    expect(titleField()?.value).toBe('Urgent')
   })
 
-  it('a rename onto a title another option holds leaves the popup on the old option', () => {
+  it('a refused rename leaves one popup, on the old option', async () => {
+    renameOption.mockResolvedValueOnce(refuse)
     render('select', select)
     openPopup()
-    commit(titleField(), 'Later')
-    expect(renameOption).toHaveBeenCalledWith('p1', 'Urgent', 'Later')
+    await commit(titleField(), 'Later')
     expect(
       document.querySelectorAll('[data-picker-portal] input[aria-label="Option Title"]'),
     ).toHaveLength(1)
+    expect(host.querySelectorAll('[data-reveal-held]')).toHaveLength(1)
     const color = pickSwatch()
     expect(editOption).toHaveBeenCalledWith('p1', { op: 'recolor', value: 'Urgent', color })
   })
@@ -337,10 +363,10 @@ describe('the group heading', () => {
     })
   }
 
-  it('relabels a Status group on double-click and commit', () => {
+  it('relabels a Status group on double-click and commit', async () => {
     render('status', status)
     dblclick('To-do')
-    commit(host.querySelector('input'), 'Backlog')
+    await commit(host.querySelector('input'), 'Backlog')
     expect(editOption).toHaveBeenCalledWith('p1', {
       op: 'relabelGroup',
       groupId: 'todo',
@@ -348,10 +374,10 @@ describe('the group heading', () => {
     })
   })
 
-  it('a blank relabel keeps the label', () => {
+  it('a blank relabel keeps the label', async () => {
     render('status', status)
     dblclick('To-do')
-    commit(host.querySelector('input'), '')
+    await commit(host.querySelector('input'), '')
     expect(editOption).not.toHaveBeenCalled()
     expect(span('To-do')).toBeTruthy()
   })

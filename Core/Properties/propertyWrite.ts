@@ -1,5 +1,5 @@
 import type { Result } from '../Contract/result'
-import { notifyReport, notifyRetry, reportRefusal } from '../Interface/Notifications/notifications'
+import { notifyRetry, reportRefusal, warnCascade } from '../Interface/Notifications/notifications'
 import { dialer } from '../Platform/dialer'
 import type { SchemaCascade, SchemaJournal } from './propertyJournal'
 
@@ -15,11 +15,8 @@ export const replay = (record: SchemaJournal) => (): void =>
       if (!r.ok) notifyRetry(r.error.message, replay(record))
     })
 
-export const retryOwed = ({ cascade, owed }: SchemaCascade): void => {
-  if (!cascade.warning) return
-  if (owed) notifyRetry(cascade.warning, replay(owed))
-  else notifyReport(cascade.warning, true)
-}
+export const retryOwed = ({ cascade, owed }: SchemaCascade): void =>
+  warnCascade(cascade, owed ? replay(owed) : undefined)
 
 export async function warnOwed(res: Promise<Result<SchemaCascade>>): Promise<void> {
   const r = await res

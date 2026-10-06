@@ -1,9 +1,10 @@
 import { describe, expect, it } from 'vitest'
 import { type ColumnStyle, dateDefaults } from '../Properties/columnStyles'
+import type { PropertyType } from '../Properties/properties'
 import {
   columnMenuItems,
-  styleMenuLabel,
   parseStyleAction,
+  styleBranch,
   styleMenuItems,
   type StyleMenuContext,
 } from './columnMenu'
@@ -159,13 +160,15 @@ describe('parseStyleAction', () => {
   })
 })
 
-describe('styleMenuLabel', () => {
+describe('styleBranch', () => {
+  const label = (type: PropertyType): string | undefined =>
+    styleBranch({ type, current: { ...dateDefaults('full'), look: 'standard' } })[0]?.label
   it('says Format for the two whose rows are one', () => {
-    expect(styleMenuLabel('link')).toBe('Format')
-    expect(styleMenuLabel('number')).toBe('Format')
+    expect(label('link')).toBe('Format')
+    expect(label('number')).toBe('Format')
   })
-  it('leaves the rest as Style', () => {
-    for (const t of ['status', 'checkbox', 'file', 'dateTime', 'lastEditedTime'] as const)
-      expect(styleMenuLabel(t)).toBe('Style')
+  it('leaves the rest as Style, and offers nothing where no style exists', () => {
+    for (const t of ['status', 'checkbox', 'dateTime'] as const) expect(label(t)).toBe('Style')
+    expect(label('file')).toBeUndefined()
   })
 })

@@ -52,16 +52,17 @@ each literal value in its third must appear in those files. `UIX/Theme`'s `theme
 republishes hashed tokens under stable names. Exit 0 means the tables agree; drift is listed per
 table.
 
-`Option Picker Drive/live-drive.mjs` drives every option mutation the value picker and the
-Property Frame's option editor offer — creation from the picker's footer, blank and duplicate
+`Option Picker Drive/live-drive.mjs` drives the option mutations the value picker offers, and the
+Property Frame's option editor's share of them — creation from the footer, blank and duplicate
 refusals, drag reorder, the right-click menu's Style, Edit Option, Clear and Remove, the popup's
 rename, color, appearance and icon, and the host's own blank refusal — against the real app, on the
 Table, Cards, mass-assign, and Properties-panel surfaces alike, and asserts each one in
-`.nexus/properties.json`, the page files and the view's sidecar. It backs up `~/Test`, launches the
-built app with its own userData and debug port, writes a screenshot of each state it produces to
+`.nexus/properties.json`, the page files and the view's sidecar. It builds the app, backs up
+`~/Test`, launches the build with its own userData and debug port, seeds `Collection A/Set Alpha`
+with its properties, view, and pages, writes a screenshot of each state it produces to
 `$POMMORA_DRIVE_SHOTS` (the system temp directory's `option-picker-shots` otherwise), and restores
-`~/Test` when it ends, pass or fail. Native menus are chosen with System Events keystrokes, so the
-terminal needs Accessibility permission, and the run refuses to send a key unless the app is
+`~/Test` when it ends or is interrupted. Native menus are chosen with System Events keystrokes, so
+the terminal needs Accessibility permission, and the run refuses to send a key unless the app is
 frontmost.
 
 `loc.py` and `check-atlas.mjs` run before every commit through the versioned git hook

@@ -5,6 +5,7 @@ export {
   MenuTopRow,
   Menu,
   AccessoryButton,
+  FootingCreate,
   FooterLockButton,
   FooterIconButton,
   MenuFooting,

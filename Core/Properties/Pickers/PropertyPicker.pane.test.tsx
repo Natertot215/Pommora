@@ -327,6 +327,17 @@ describe('editing options from the picker', () => {
     expect(newOption()).toBeNull()
   })
 
+  it('Enter on a focused row picks it', async () => {
+    const onCommit = vi.fn()
+    await render({ target: optionsTarget(), onCommit })
+    const row = document.querySelector<HTMLElement>('[data-picker-portal] [data-line-row]')
+    await act(async () => {
+      row?.focus()
+      row?.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }))
+    })
+    expect(onCommit).toHaveBeenCalledWith({ kind: 'select', value: 'Alpha' })
+  })
+
   it("a row's right-click offers the option menu, without Style where no view is in hand", async () => {
     await render({ target: optionsTarget() })
     await act(async () => {

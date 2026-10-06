@@ -90,11 +90,13 @@ describe('editOption', () => {
     expect((await readRegistry(root)).defs[id].select_options).toEqual([{ value: 'A' }])
   })
 
-  it('add refuses a blank title', async () => {
+  it('add refuses a blank or whitespace title', async () => {
     const id = await mkSelect([{ value: 'A' }])
-    const r = await editOption(root, id, { op: 'add', groupId: SELECT_GROUP, title: '' })
-    expect(r.ok).toBe(false)
-    if (!r.ok) expect(r.error.message).toBe('Option titles can’t be blank.')
+    for (const title of ['', '  ']) {
+      const r = await editOption(root, id, { op: 'add', groupId: SELECT_GROUP, title })
+      expect(r.ok).toBe(false)
+      if (!r.ok) expect(r.error.message).toBe('Option titles can’t be blank.')
+    }
     expect((await readRegistry(root)).defs[id].select_options).toEqual([{ value: 'A' }])
   })
 
@@ -136,6 +138,21 @@ describe('editOption', () => {
     const r = await editOption(root, id, { op: 'relabelGroup', groupId: 'select', label: 'Named' })
     expect(r).toMatchObject({ ok: false, error: { code: 'not-found' } })
     expect((await readRegistry(root)).defs[id].select_options).toEqual([{ value: 'A' }])
+  })
+
+  it('a definition stored with a blank option takes an added option, written without the blank', async () => {
+    const id = await mkSelect([{ value: 'A' }])
+    await mutateRegistry(root, (registry) => {
+      ;(registry.defs[id] as PropDefLike).select_options = [{ value: 'A' }, { value: ' ' }]
+      return { registry, result: null }
+    })
+    expect((await editOption(root, id, { op: 'add', groupId: SELECT_GROUP, title: 'B' })).ok).toBe(
+      true,
+    )
+    expect((await readRegistry(root)).defs[id].select_options).toEqual([
+      { value: 'A' },
+      { value: 'B' },
+    ])
   })
 
   it('add and move are refused for a group the definition lacks', async () => {

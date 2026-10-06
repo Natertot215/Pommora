@@ -226,13 +226,38 @@ export function MenuFooting({
     <div className={s.footingBar}>
       <MenuSeparator flush />
       {children ?? (
-        <div className={centered ? s.footingCentered : s.footing}>
+        <div className={cx(s.footing, centered && s.footingCentered)}>
           {leading}
           {!centered && <span className={s.spacer} />}
           {trailing}
         </div>
       )}
     </div>
+  )
+}
+
+export function FootingCreate({
+  ariaLabel,
+  onClick,
+  disabled,
+  className,
+}: {
+  ariaLabel: string
+  onClick: () => void
+  disabled?: boolean
+  className?: string
+}): React.JSX.Element {
+  return (
+    <AccessoryButton
+      icon="plus"
+      size="control"
+      box={20}
+      create
+      ariaLabel={ariaLabel}
+      disabled={disabled}
+      className={className}
+      onClick={onClick}
+    />
   )
 }
 

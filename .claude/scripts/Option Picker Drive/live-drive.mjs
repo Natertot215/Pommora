@@ -1,7 +1,9 @@
 import { execFileSync, spawn } from 'node:child_process'
-import { cpSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { homedir, tmpdir } from 'node:os'
 import { join } from 'node:path'
+import { ulid } from 'ulidx'
+import { parse } from 'yaml'
 
 const REPO = join(homedir(), 'The Studio/Projects/Project Pommora')
 const ELECTRON = join(REPO, 'node_modules/electron/dist/Electron.app/Contents/MacOS/Electron')
@@ -26,7 +28,7 @@ async function connect() {
   const ws = new WebSocket(target.webSocketDebuggerUrl)
   await new Promise((ok, fail) => { ws.onopen = ok; ws.onerror = fail })
   const pending = new Map(); let next = 0
-  ws.onmessage = (m) => { const { id, result, error } = JSON.parse(m.data); if (!pending.has(id)) return; pending.get(id)(error ? Promise.reject(new Error(error.message)) : result); pending.delete(id) }
+  ws.onmessage = (m) => { const { id, result, error } = JSON.parse(m.data); pending.get(id)?.(error ? Promise.reject(new Error(error.message)) : result); pending.delete(id) }
   const send = (method, params = {}) => new Promise((r) => { pending.set(++next, r); ws.send(JSON.stringify({ id: next, method, params })) })
   const evaluate = async (expression) => {
     const { result, exceptionDetails } = await send('Runtime.evaluate', { expression, awaitPromise: true, returnByValue: true })
@@ -52,8 +54,8 @@ async function activate(cdp, pid) {
   if (front !== 'true') throw new Error('The app is not frontmost; no keystroke was sent.')
 }
 
-// Every target is a JS expression that evaluates to an element; `sel` wraps a CSS selector as one.
 const PICKER_ROWS = '[data-picker-portal] [data-line-row]'
+const TITLE_FIELD = '[aria-label="Option Title"]'
 const sel = (css) => `document.querySelector(${JSON.stringify(css)})`
 const textEl = (scope, text) =>
   `[...document.querySelectorAll(${JSON.stringify(scope)})].find((e) => e.children.length === 0 && e.textContent.trim() === ${JSON.stringify(text)})`
@@ -69,12 +71,11 @@ async function mouseClick(cdp, expr, button = 'left') {
     await cdp.send('Input.dispatchMouseEvent', { type, x, y, button, clickCount: 1 })
   await sleep(500)
 }
-const rightClick = (cdp, expr) => mouseClick(cdp, expr, 'right')
 
-// A freshly popped native menu highlights nothing, so the first Down lands on row 1; Right opens a submenu with its first row highlighted.
+// A freshly popped native menu highlights nothing: the first Down lands on row 1.
 async function chooseNative(cdp, pid, expr, { downs, into = [] }) {
   await activate(cdp, pid)
-  await rightClick(cdp, expr)
+  await mouseClick(cdp, expr, 'right')
   try {
     for (let i = 0; i < downs; i++) key(KEY.down)
     for (const d of into) {
@@ -97,29 +98,30 @@ async function pressKey(cdp, name) {
     await cdp.send('Input.dispatchKeyEvent', { type, key: name, code: name, windowsVirtualKeyCode: VK[name] })
   await sleep(300)
 }
-async function typeAndEnter(cdp, text) {
-  if (text) await cdp.send('Input.insertText', { text })
+async function enter(cdp) {
   await pressKey(cdp, 'Enter')
-  await sleep(600)
+  await sleep(800)
 }
 async function retitle(cdp, text) {
-  await cdp.evaluate(`(() => { const f = ${sel('[aria-label="Option Title"]')}; f.focus(); f.select() })()`)
+  await cdp.evaluate(`(() => { const f = ${sel(TITLE_FIELD)}; f.focus(); f.select() })()`)
   if (text) await cdp.send('Input.insertText', { text })
   else await cdp.evaluate(`(() => { const f = document.activeElement; f.value = '' })()`)
   await cdp.evaluate(`document.activeElement.blur()`)
   await sleep(800)
 }
 
-async function drag(cdp, from, to) {
+async function sweep(cdp, a, b, { steps, held }) {
+  await cdp.send('Input.dispatchMouseEvent', { type: 'mousePressed', x: a.x, y: a.y, button: 'left', buttons: 1, clickCount: 1 })
+  for (let i = 1; i <= steps; i++)
+    await cdp.send('Input.dispatchMouseEvent', { type: 'mouseMoved', x: a.x, y: a.y + ((b.y - a.y) * i) / steps, button: 'left', buttons: 1 })
+  if (held) await held()
+  await cdp.send('Input.dispatchMouseEvent', { type: 'mouseReleased', x: b.x, y: b.y, button: 'left', buttons: 0, clickCount: 1 })
+  await sleep(800)
+}
+async function drag(cdp, from, to, held) {
   const a = await boxOf(cdp, from)
   const b = await boxOf(cdp, to)
-  const end = b.y - 6
-  await cdp.send('Input.dispatchMouseEvent', { type: 'mousePressed', x: a.x, y: a.y, button: 'left', buttons: 1, clickCount: 1 })
-  for (let i = 1; i <= 8; i++)
-    await cdp.send('Input.dispatchMouseEvent', { type: 'mouseMoved', x: a.x, y: a.y + ((end - a.y) * i) / 8, button: 'left', buttons: 1 })
-  await shot(cdp, 'drag-band')
-  await cdp.send('Input.dispatchMouseEvent', { type: 'mouseReleased', x: b.x, y: end, button: 'left', buttons: 0, clickCount: 1 })
-  await sleep(800)
+  await sweep(cdp, a, { x: b.x, y: b.y - 6 }, { steps: 8, held })
 }
 
 let shots = 0
@@ -133,21 +135,16 @@ const defNamed = (name) => Object.values(registry()).find((d) => d.name === name
 const optionValues = (name) => (defNamed(name).select_options ?? []).map((o) => o.value)
 const read = (rel) => readFileSync(join(NEXUS, rel), 'utf8')
 const page = (title) => read(`Collection A/Set Alpha/${title}.md`)
-const lists = (title, prop, value) => new RegExp(`^${prop}:(?: \\[?${value}\\]?$|\\n(?:  - .*\\n)*  - ${value}$)`, 'm').test(page(title))
+const frontmatter = (title) => parse(/^---\n([\s\S]*?)\n---/.exec(page(title))[1])
+const lists = (title, prop, value) => [frontmatter(title)[prop]].flat().includes(value)
 const driveView = () => JSON.parse(read('Collection A/_pagecollection.json')).views.find((v) => v.name === 'Drive Table')
 
-const ULID = '0123456789ABCDEFGHJKMNPQRSTVWXYZ'
-const mintPageId = () => {
-  let t = Date.now(), head = ''
-  for (let i = 0; i < 10; i++) { head = ULID[t % 32] + head; t = Math.floor(t / 32) }
-  let tail = ''
-  for (let i = 0; i < 16; i++) tail += ULID[Math.floor(Math.random() * 32)]
-  return `${head}P${tail.slice(1)}`
-}
+const mintPageId = () => { const id = ulid(); return `${id.slice(0, 10)}P${id.slice(11)}` }
 
+const PROPS = { 'Drive Select': 'select', 'Drive Multi': 'multiSelect', 'Drive Status': 'status' }
 const ids = {}
 async function seed(cdp) {
-  for (const [name, type] of [['Drive Select', 'select'], ['Drive Multi', 'multiSelect'], ['Drive Status', 'status']]) {
+  for (const [name, type] of Object.entries(PROPS)) {
     const r = await ask(cdp, 'schema:add', 'Collection A', { id: '', name, type })
     check(`seed: ${name} added`, r.ok, JSON.stringify(r))
     ids[name] = r.value?.id
@@ -157,7 +154,7 @@ async function seed(cdp) {
       const r = await ask(cdp, 'property:editOption', ids[name], { op: 'add', groupId: 'select', title })
       check(`seed: ${name} ${title}`, r.ok, JSON.stringify(r))
     }
-  const view = await ask(cdp, 'views:save', 'Collection A', 'collection', { id: 'view_01KZDRIVE0000000000000TABLE', name: 'Drive Table', type: 'table', property_order: ['_title', ids['Drive Select'], ids['Drive Multi'], ids['Drive Status']], hidden_properties: [] }, {})
+  const view = await ask(cdp, 'views:save', 'Collection A', 'collection', { id: 'view_01KZDRIVE0000000000000TABLE', name: 'Drive Table', type: 'table', property_order: ['_title', ...Object.keys(PROPS).map((name) => ids[name])], hidden_properties: [] }, {})
   check('seed: Drive Table view', view.ok, JSON.stringify(view))
   const one = await ask(cdp, 'mutate', { op: 'createPage', id: mintPageId(), parentPath: 'Collection A/Set Alpha', name: 'Drive One', seeds: { [ids['Drive Select']]: { kind: 'select', value: 'Alpha' }, [ids['Drive Multi']]: { kind: 'multiSelect', value: ['One'] } } })
   const two = await ask(cdp, 'mutate', { op: 'createPage', id: mintPageId(), parentPath: 'Collection A/Set Alpha', name: 'Drive Two', seeds: { [ids['Drive Select']]: { kind: 'select', value: 'Beta' } } })
@@ -181,20 +178,18 @@ async function openDriveTable(cdp) {
 }
 
 const portalOpen = (cdp) => cdp.evaluate(`!!document.querySelector('[data-picker-portal]')`)
-const popupOpen = (cdp) => cdp.evaluate(`!!document.querySelector('[aria-label="Option Title"]')`)
-const COLS = { 'Drive Select': 1, 'Drive Multi': 2, 'Drive Status': 3 }
+const popupOpen = (cdp) => cdp.evaluate(`!!document.querySelector(${JSON.stringify(TITLE_FIELD)})`)
+const drafting = (cdp) => cdp.evaluate(`!!document.querySelector('[data-picker-portal] input')`)
+const cell = (title, prop) => `[...document.querySelectorAll('.data-row')].find((r) => r.textContent.includes(${JSON.stringify(title)})).querySelectorAll('.data-cell')[${Object.keys(PROPS).indexOf(prop) + 1}]`
 async function openCellPicker(cdp, title, prop) {
   while (await portalOpen(cdp)) await pressKey(cdp, 'Escape')
-  const cell = `[...document.querySelectorAll('.data-row')].find((r) => r.textContent.includes(${JSON.stringify(title)})).querySelectorAll('.data-cell')[${COLS[prop]}]`
-  await mouseClick(cdp, cell)
-  if (!(await portalOpen(cdp))) await mouseClick(cdp, cell)
+  await mouseClick(cdp, cell(title, prop))
   if (!(await portalOpen(cdp))) throw new Error(`${title}'s ${prop} picker did not open`)
 }
 async function newOption(cdp, title) {
   await click(cdp, sel('[data-picker-portal] [aria-label="New Option"]'))
   await sleep(500)
   if (title) await cdp.send('Input.insertText', { text: title })
-  await shot(cdp, `draft-${(title || 'blank').toLowerCase().replace(/\s+/g, '-')}`)
 }
 
 async function proveNativeMenu(cdp, pid) {
@@ -210,8 +205,8 @@ async function proveNativeMenu(cdp, pid) {
 async function stepCreate(cdp) {
   await openCellPicker(cdp, 'Drive One', 'Drive Select')
   await newOption(cdp, 'Fresh')
-  await pressKey(cdp, 'Enter')
-  await sleep(800)
+  await shot(cdp, 'draft-standard')
+  await enter(cdp)
   const fresh = defNamed('Drive Select').select_options.find((o) => o.value === 'Fresh')
   check('create: Fresh is appended with no color', optionValues('Drive Select').at(-1) === 'Fresh' && fresh && !('color' in fresh), JSON.stringify(optionValues('Drive Select')))
   check('create: Drive One still holds Alpha alone', lists('Drive One', 'Drive Select', 'Alpha') && !lists('Drive One', 'Drive Select', 'Fresh'))
@@ -221,9 +216,8 @@ async function stepCreate(cdp) {
 async function stepRefuseBlankAndEscape(cdp) {
   const before = optionValues('Drive Select')
   await newOption(cdp, '')
-  await pressKey(cdp, 'Enter')
-  await sleep(600)
-  check('blank Enter adds nothing', JSON.stringify(optionValues('Drive Select')) === JSON.stringify(before))
+  await enter(cdp)
+  check('blank Enter adds nothing and closes the draft', JSON.stringify(optionValues('Drive Select')) === JSON.stringify(before) && !(await drafting(cdp)))
   await newOption(cdp, 'Nope')
   await pressKey(cdp, 'Escape')
   await sleep(600)
@@ -233,13 +227,12 @@ async function stepRefuseBlankAndEscape(cdp) {
 async function stepRefuseDuplicate(cdp) {
   const before = optionValues('Drive Select')
   await newOption(cdp, 'alpha')
-  await pressKey(cdp, 'Enter')
-  await sleep(800)
+  await enter(cdp)
   check('a case-variant duplicate is refused with a notice', JSON.stringify(optionValues('Drive Select')) === JSON.stringify(before) && (await cdp.evaluate(`!!document.querySelector('[role="alert"]')`)))
 }
 
 async function stepDragReorder(cdp) {
-  await drag(cdp, pickerRow('Fresh'), pickerRow('Alpha'))
+  await drag(cdp, pickerRow('Fresh'), pickerRow('Alpha'), () => shot(cdp, 'drag-band'))
   const order = optionValues('Drive Select')
   check('drag: Fresh lands above Alpha', order.indexOf('Fresh') === order.indexOf('Alpha') - 1, JSON.stringify(order))
   await shot(cdp, 'table-reordered')
@@ -252,10 +245,11 @@ async function stepStyleCompact(cdp, pid) {
   await openCellPicker(cdp, 'Drive One', 'Drive Select')
   await shot(cdp, 'table-picker-compact')
   await newOption(cdp, 'Compact')
+  await shot(cdp, 'draft-compact')
   await pressKey(cdp, 'Escape')
   await chooseNative(cdp, pid, `document.querySelectorAll(${JSON.stringify(PICKER_ROWS)})[1]`, { downs: 1, into: [0] })
   await sleep(800)
-  check('Style ▸ Standard lands in the view sidecar', driveView().column_styles?.[ids['Drive Select']]?.look !== 'compact', JSON.stringify(driveView().column_styles))
+  check('Style ▸ Standard lands in the view sidecar', driveView().column_styles?.[ids['Drive Select']]?.look === undefined, JSON.stringify(driveView().column_styles))
 }
 
 async function stepEditOption(cdp, pid) {
@@ -263,9 +257,9 @@ async function stepEditOption(cdp, pid) {
   await chooseNative(cdp, pid, pickerRow('Beta'), { downs: 2 })
   await retitle(cdp, 'Gamma')
   check('popup rename: the registry and Drive Two read Gamma', optionValues('Drive Select').includes('Gamma') && lists('Drive Two', 'Drive Select', 'Gamma'), JSON.stringify(optionValues('Drive Select')))
-  check('popup rename: the popup stays open on Gamma', (await popupOpen(cdp)) && (await cdp.evaluate(`${sel('[aria-label="Option Title"]')}.value`)) === 'Gamma')
+  check('popup rename: the popup stays open on Gamma', (await popupOpen(cdp)) && (await cdp.evaluate(`${sel(TITLE_FIELD)}.value`)) === 'Gamma')
   await retitle(cdp, '')
-  check('popup blank title: the field reads Gamma and nothing was written', (await cdp.evaluate(`${sel('[aria-label="Option Title"]')}.value`)) === 'Gamma' && optionValues('Drive Select').includes('Gamma'))
+  check('popup blank title: the field reads Gamma and nothing was written', (await cdp.evaluate(`${sel(TITLE_FIELD)}.value`)) === 'Gamma' && optionValues('Drive Select').includes('Gamma'))
   await click(cdp, sel('[data-picker-portal] button[aria-label="red-4"]'))
   await sleep(600)
   await click(cdp, sel('[data-picker-portal] [aria-label="Appearance"]'))
@@ -297,8 +291,7 @@ async function stepClearRemove(cdp, pid) {
 
 async function surfaceCreateDragMenu(cdp, pid, tag, title, { editOptionDowns }) {
   await newOption(cdp, title)
-  await pressKey(cdp, 'Enter')
-  await sleep(800)
+  await enter(cdp)
   check(`${tag}: ${title} is appended and assigned nowhere`, optionValues('Drive Select').at(-1) === title && !lists('Drive One', 'Drive Select', title) && !lists('Drive Two', 'Drive Select', title), JSON.stringify(optionValues('Drive Select')))
   await drag(cdp, pickerRow(title), `document.querySelectorAll(${JSON.stringify(PICKER_ROWS)})[0]`)
   check(`${tag}: ${title} drags to the top`, optionValues('Drive Select')[0] === title, JSON.stringify(optionValues('Drive Select')))
@@ -311,23 +304,16 @@ async function surfaceCreateDragMenu(cdp, pid, tag, title, { editOptionDowns }) 
 
 async function stepCardsAndMass(cdp, pid) {
   const r = await ask(cdp, 'views:save', 'Collection A', 'collection', driveView(), { type: 'cards' })
-  check('cards: the view switches to Cards', r.ok)
+  check('cards: the view switches to Cards', r.ok && driveView().type === 'cards')
   await sleep(1500)
   await mouseClick(cdp, `[...document.querySelectorAll('[data-rid]')].find((c) => c.textContent.includes('Drive One')).querySelector('.card-prop-row .card-value')`)
   if (!(await portalOpen(cdp))) throw new Error("Drive One's card picker did not open")
   await shot(cdp, 'card-picker')
   await surfaceCreateDragMenu(cdp, pid, 'cards', 'Card New', { editOptionDowns: 2 })
   const back = await ask(cdp, 'views:save', 'Collection A', 'collection', driveView(), { type: 'table' })
-  check('mass: the view switches back to Table', back.ok)
+  check('mass: the view switches back to Table', back.ok && driveView().type === 'table')
   await sleep(1500)
-  const cell = (title) => `[...document.querySelectorAll('.data-row')].find((r) => r.textContent.includes(${JSON.stringify(title)})).querySelectorAll('.data-cell')[1]`
-  const a = await boxOf(cdp, cell('Drive One'))
-  const b = await boxOf(cdp, cell('Drive Two'))
-  await cdp.send('Input.dispatchMouseEvent', { type: 'mousePressed', x: a.x, y: a.y, button: 'left', buttons: 1, clickCount: 1 })
-  for (let i = 1; i <= 6; i++)
-    await cdp.send('Input.dispatchMouseEvent', { type: 'mouseMoved', x: a.x, y: a.y + ((b.y - a.y) * i) / 6, button: 'left', buttons: 1 })
-  await cdp.send('Input.dispatchMouseEvent', { type: 'mouseReleased', x: b.x, y: b.y, button: 'left', buttons: 0, clickCount: 1 })
-  await sleep(800)
+  await sweep(cdp, await boxOf(cdp, cell('Drive One', 'Drive Select')), await boxOf(cdp, cell('Drive Two', 'Drive Select')), { steps: 6 })
   if (!(await portalOpen(cdp))) throw new Error('The mass picker did not open from the sweep')
   await shot(cdp, 'mass-picker')
   await surfaceCreateDragMenu(cdp, pid, 'mass', 'Mass New', { editOptionDowns: 2 })
@@ -335,7 +321,7 @@ async function stepCardsAndMass(cdp, pid) {
 
 async function stepPanel(cdp, pid) {
   const r = await ask(cdp, 'mutate', { op: 'setProperty', path: 'Collection A/Set Alpha/Drive One.md', propertyId: ids['Drive Select'], value: { kind: 'select', value: 'Fresh' } })
-  check('panel: Drive One holds Fresh, so its row shows', r.ok, JSON.stringify(r))
+  check('panel: Drive One holds Fresh, so its row shows', r.ok && lists('Drive One', 'Drive Select', 'Fresh'), JSON.stringify(r))
   await sleep(800)
   await mouseClick(cdp, textEl('.data-row .cell-title-text', 'Drive One'))
   await sleep(1500)
@@ -352,8 +338,7 @@ async function stepMulti(cdp) {
   await openCellPicker(cdp, 'Drive One', 'Drive Multi')
   await shot(cdp, 'multi-picker')
   await newOption(cdp, 'Three')
-  await pressKey(cdp, 'Enter')
-  await sleep(800)
+  await enter(cdp)
   check('multi: Three is appended and Drive One still holds One alone', optionValues('Drive Multi').at(-1) === 'Three' && lists('Drive One', 'Drive Multi', 'One') && !lists('Drive One', 'Drive Multi', 'Three'), JSON.stringify(optionValues('Drive Multi')))
   while (await portalOpen(cdp)) await pressKey(cdp, 'Escape')
 }
@@ -384,13 +369,19 @@ async function stepEditor(cdp, pid) {
   await click(cdp, sel('[aria-label^="Add to"]'))
   await sleep(500)
   await shot(cdp, 'editor-draft')
-  await typeAndEnter(cdp, '')
-  check('editor: a blank + adds nothing', statusGroups().flatMap((g) => g.options).length === count)
+  await enter(cdp)
+  check('editor: a blank + adds nothing and closes the draft', statusGroups().flatMap((g) => g.options).length === count && !(await drafting(cdp)))
+  await click(cdp, sel('[aria-label^="Add to"]'))
+  await sleep(500)
+  await cdp.send('Input.insertText', { text: 'Added' })
+  await enter(cdp)
+  check('editor: + appends Added to the first group', statusGroups()[0].options.at(-1)?.value === 'Added' && statusGroups().flatMap((g) => g.options).length === count + 1, JSON.stringify(statusGroups()[0].options))
   const heading = `[...document.querySelectorAll('span')].find((e) => e.children.length === 0 && e.textContent.trim() === ${JSON.stringify(statusGroups()[0].label)} && !e.closest('[data-line-row]'))`
   await cdp.evaluate(`(${heading}).dispatchEvent(new MouseEvent('dblclick', { bubbles: true }))`)
   await sleep(400)
   await cdp.evaluate(`document.activeElement.select()`)
-  await typeAndEnter(cdp, 'Queued')
+  await cdp.send('Input.insertText', { text: 'Queued' })
+  await enter(cdp)
   check("editor: the heading's inline rename relabels the group", statusGroups()[0].label === 'Queued', JSON.stringify(statusGroups()[0].label))
   while (await portalOpen(cdp)) await pressKey(cdp, 'Escape')
   await pressKey(cdp, 'Escape')
@@ -401,14 +392,27 @@ async function stepHostRefusal(cdp) {
   check('the host refuses a blank option title', r.ok === false, JSON.stringify(r))
 }
 
-execFileSync('npm', ['run', 'build'], { cwd: REPO, stdio: 'ignore' })
+execFileSync('npm', ['run', 'build'], { cwd: REPO, stdio: ['ignore', 'ignore', 'inherit'] })
 const backup = mkdtempSync(join(tmpdir(), 'pommora-live-'))
-cpSync(NEXUS, join(backup, 'Test'), { recursive: true, verbatimSymlinks: true, preserveTimestamps: true })
+execFileSync('rsync', ['-a', NEXUS + '/', join(backup, 'Test') + '/'])
 const userData = join(backup, 'ud'); mkdirSync(userData)
 writeFileSync(join(userData, 'pommora.json'), JSON.stringify({ lastNexusPath: NEXUS }))
 mkdirSync(SHOTS, { recursive: true })
 
 let child, cdp
+async function restore() {
+  if (child) {
+    child.kill('SIGTERM')
+    await Promise.race([new Promise((r) => child.once('exit', r)), sleep(8000)])
+    if (child.exitCode === null) child.kill('SIGKILL')
+  }
+  const strays = execFileSync('ps', ['-A', '-o', 'pid=,command='], { encoding: 'utf8' }).split('\n').filter((l) => l.includes(userData)).map((l) => Number.parseInt(l, 10))
+  for (const pid of strays) try { process.kill(pid, 'SIGKILL') } catch {}
+  execFileSync('rsync', ['-a', '--delete', join(backup, 'Test') + '/', NEXUS + '/'])
+  rmSync(backup, { recursive: true, force: true })
+  console.log(`~/Test restored · screenshots in ${SHOTS}`)
+}
+process.once('SIGINT', () => restore().then(() => process.exit(130)))
 try {
   const env = { ...process.env, POMMORA_USERDATA: userData, POMMORA_DEBUG_PORT: String(PORT) }
   delete env.ELECTRON_RUN_AS_NODE; delete env.ELECTRON_RENDERER_URL
@@ -439,12 +443,7 @@ try {
     console.log(await cdp.evaluate(`JSON.stringify({ url: location.href, buttons: [...document.querySelectorAll('button')].map((b) => b.title || b.getAttribute('aria-label') || b.textContent.trim().slice(0, 20)).slice(0, 40), text: document.body.innerText.slice(0, 400) })`).catch((err) => String(err)))
   }
 } finally {
-  if (child) { child.kill('SIGTERM'); await Promise.race([new Promise((r) => child.once('exit', r)), sleep(8000)]) }
-  const strays = execFileSync('ps', ['-A', '-o', 'pid=,command='], { encoding: 'utf8' }).split('\n').filter((l) => l.includes(userData)).map((l) => Number.parseInt(l, 10))
-  for (const pid of strays) try { process.kill(pid, 'SIGKILL') } catch {}
-  execFileSync('rsync', ['-a', '--delete', join(backup, 'Test') + '/', NEXUS + '/'])
-  rmSync(backup, { recursive: true, force: true })
-  console.log(`~/Test restored · screenshots in ${SHOTS}`)
+  await restore()
 }
 console.log(`${results.filter((r) => r.pass).length}/${results.length} passed`)
 process.exit(results.every((r) => r.pass) ? 0 : 1)

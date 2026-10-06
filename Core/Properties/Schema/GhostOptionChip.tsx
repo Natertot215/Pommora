@@ -4,7 +4,7 @@ import { REVEAL_DWELL_MS } from '@pommora/uix/Interactions/hoverReveal'
 import { cx } from '@pommora/uix/Utilities/cx'
 import * as s from '@pommora/uix/Menus/frames.css'
 import { Label } from '@pommora/uix/Labels/Label'
-import type { LabelShape } from '@pommora/uix/Labels/label-base.css'
+import { optionShapeFor } from '@pommora/uix/Labels/recipes'
 import { useLatest } from '@pommora/uix/Utilities/stableApi'
 
 // The slot sits flush under the list it joins, so a leave closes it immediately and landing in the slot keeps it alive either way.
@@ -23,12 +23,12 @@ export function useGhostOptionAnchor(busy: boolean): GhostAnchor {
 export function GhostOptionChip({
   api,
   anchorId,
-  shape,
+  type,
   onCreate,
 }: {
   api: GhostAnchor
   anchorId: string
-  shape: LabelShape
+  type: string
   onCreate: () => void
 }): React.JSX.Element | null {
   const ghost = api.ghost
@@ -48,7 +48,7 @@ export function GhostOptionChip({
         }}
       >
         <Label
-          shape={shape}
+          shape={optionShapeFor(type)}
           color="default"
           text="New Option"
           className={cx(s.ghostChip, 'ghost-worn')}

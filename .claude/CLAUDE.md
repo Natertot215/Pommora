@@ -12,7 +12,7 @@ The Nexus’ structure is based on relating **Content** ↔ **Content** through 
 
 **Content:** The operational layer — what you actually make, linked to each other through **Connections** for content ↔ content relations, and front-matter for content ↔ Space relations.
 
-- **Collections & Sets:** a **Collection** is a folder that carries a shared property schema and saved views via its `.pagecollection.json` at the folder’s root; it contains **Sets** as organizational subfolders that inherit that schema.
+- **Collections & Sets:** a **Collection** is a folder that carries a shared property schema and saved views via its `_pagecollection.json` at the folder’s root; it contains **Sets** as organizational subfolders that inherit that schema.
 - **Pages:** Markdown documents inside a Collection or Set, conforming to its Collection's properties, identified via its `ID` key. Pages use MarkdownPM as their editor surface, which includes inline connections to other pages.
 - **Agenda:** the calendar layer — **Tasks** (reminder-shaped; located within `/Tasks`) and **Events** (calendar-shaped; located within `/Events`) — each as Markdown files distinguished via their ID’s kind mark and validated against their folder placement. Agenda’s *scaffolding* exists; the feature itself doesn’t yet.
 - **Properties:** the Nexus-wide typed attributes that collections assign, and their members fill in — Select, Status, Date, and the rest; the schema is nexus-wide, collections validate properties for their pages to use; written as bare `Property: `so any application that reads YAML reads them.
@@ -47,7 +47,7 @@ The Nexus’ structure is based on relating **Content** ↔ **Content** through 
 - **Test Nexus:** `~/Test` is pre-seeded with scratch collections, sets, pages, and contexts for live-drive testing.
 - **Iteration Scratchpad:** `Core/Interface/Windows/IterationWindow.tsx`, opened by ⌘⇧T, is for rapid iteration of an otherwise-scoped asset.
 - **Native Context Menus Over CDP:** a real right-click through `Input.dispatchMouseEvent` (`mousePressed` then `mouseReleased` at the target's box) reaches main's listener, where a JS-dispatched `contextmenu` event doesn't; `osascript -e 'tell application "System Events" to key code 53'` dismisses it.
-- **Benchmarks:** `node .claude/Benchmarks/make-benchmark-nexus.mjs small|medium|large|xlarge` builds `~/Benchmark-<Size>` (1k → 50k pages; option types 1 → 10 per type x 10 → 50 options, other types 1 → 10) after sweeping earlier builds.
+- **Benchmarks:** `node .claude/Benchmarks/make-benchmark-nexus.mjs small|medium|large|xlarge` builds `~/Benchmark-<Size>` (1k-50k pages; option types 1-10 per type x 10-50 options, other types 1-10) after sweeping earlier builds.
 
 ### Locked Decisions
 

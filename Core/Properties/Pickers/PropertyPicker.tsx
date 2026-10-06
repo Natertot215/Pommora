@@ -16,7 +16,7 @@ import { PICKER_MAX_HEIGHT } from '@pommora/uix/Pickers/picker-base.css'
 import { colorNameFor } from '@pommora/uix/Theme/ramp'
 import { NeutralChip } from '@pommora/uix/Labels/recipes'
 import {
-  AccessoryButton,
+  FootingCreate,
   MenuFooting,
   MenuItem,
   MenuScrollFrame,
@@ -240,6 +240,7 @@ export function PropertyOptionRows({
   if (editable && PROPERTY_TYPES[def.type].options === 'select')
     return (
       <EditableOptionRows
+        key={def.id}
         def={def}
         style={style}
         options={options}
@@ -283,26 +284,28 @@ function EditableOptionRows({
   onPick: (value: string) => void
 }): React.JSX.Element {
   const look = style?.current.look
-  const edit = useOptionEdit({ propertyId: def.id, type: def.type, def, options, style })
-  const [naming, setNaming] = useState(false)
+  const edit = useOptionEdit({ def, options, style })
   return (
     <>
       <MenuScrollFrame
         maxHeight={PICKER_MAX_HEIGHT}
         footer={
-          <MenuFooting
-            centered={look === 'compact'}
-            leading={
-              <AccessoryButton
-                icon="plus"
-                size="control"
-                box={20}
-                create
-                ariaLabel="New Option"
-                onClick={() => setNaming(true)}
-              />
-            }
-          />
+          <>
+            {edit.draft && (
+              <MenuItem inert checked={false} centered>
+                <OptionDraft edit={edit} type={def.type} />
+              </MenuItem>
+            )}
+            <MenuFooting
+              centered={look === 'compact'}
+              leading={
+                <FootingCreate
+                  ariaLabel="New Option"
+                  onClick={() => edit.beginDraft(SELECT_GROUP)}
+                />
+              }
+            />
+          </>
         }
       >
         <LineZone
@@ -324,18 +327,15 @@ function EditableOptionRows({
                 def={def}
               />
             ),
-            watch: [options],
+            watch: [def],
           })}
         >
+          {options.length === 0 && <div className={emptyPane} />}
           {options.map((o) => (
-            <Reveal
-              key={edit.keyOf(o.value)}
-              open
-              enterOnMount={edit.entering(edit.keyOf(o.value))}
-              fill
-            >
+            <Reveal key={edit.keyOf(o.value)} open enterOnMount={edit.entering(o.value)} fill>
               <LineRow
                 id={o.value}
+                open={() => onPick(o.value)}
                 onContextMenu={(e) => {
                   e.preventDefault()
                   void edit.openMenu(o.value, e.currentTarget)
@@ -351,18 +351,6 @@ function EditableOptionRows({
               </LineRow>
             </Reveal>
           ))}
-          {naming && (
-            <MenuItem checked={false} centered>
-              <OptionDraft
-                type={def.type}
-                onCommit={(title) => {
-                  setNaming(false)
-                  void edit.editOption({ op: 'add', groupId: SELECT_GROUP, title })
-                }}
-                onCancel={() => setNaming(false)}
-              />
-            </MenuItem>
-          )}
         </LineZone>
       </MenuScrollFrame>
       {edit.popup}

@@ -13,7 +13,6 @@ import { OptionDraft, type OptionStyleControl, useOptionEdit } from './useOption
 import { OptionChip } from '../Cells/OptionChip'
 import * as s from '@pommora/uix/Menus/frames.css'
 import { AccessoryButton, heading, menuDropLine } from '@pommora/uix/Menus'
-import { optionShapeFor } from '@pommora/uix/Labels/recipes'
 
 export function OptionEditor({
   propertyId,
@@ -28,35 +27,28 @@ export function OptionEditor({
 }): React.JSX.Element {
   const grouped = PROPERTY_TYPES[type].options === 'status'
   const look = style.current.look
-  const [adding, setAdding] = useState<{ groupId: string; index: number } | null>(null)
   const [renamingGroup, setRenamingGroup] = useState<string | null>(null)
   const options = useMemo(() => groups.flatMap(groupOptions), [groups])
-  const def = useMemo(() => ({ status_groups: groups }), [groups])
-  const edit = useOptionEdit({ propertyId, type, def, options, style })
+  const def = useMemo(
+    () => ({ id: propertyId, type, status_groups: groups }),
+    [propertyId, type, groups],
+  )
+  const edit = useOptionEdit({ def, options, style })
   const headingOf = (id: string): string =>
     grouped ? (groups.find((g) => g.id === id)?.label ?? id) : 'Options'
-  const ghostApi = useGhostOptionAnchor(adding !== null || renamingGroup !== null || edit.busy)
+  const ghostApi = useGhostOptionAnchor(renamingGroup !== null || edit.busy)
 
-  const commitAdd = (g: StatusGroup, title: string, atIndex: number): void => {
-    setAdding(null)
-    void edit.editOption({ op: 'add', groupId: g.id, title, atIndex })
-  }
   const slotAt = (g: StatusGroup, index: number, anchorId: string): React.JSX.Element | null =>
-    adding?.groupId === g.id && adding.index === index ? (
+    edit.draft?.groupId === g.id && edit.draft.index === index ? (
       <div className={s.optionRow}>
-        <OptionDraft
-          type={type}
-          color={g.color}
-          onCommit={(title) => commitAdd(g, title, index)}
-          onCancel={() => setAdding(null)}
-        />
+        <OptionDraft edit={edit} type={type} color={g.color} />
       </div>
     ) : (
       <GhostOptionChip
         api={ghostApi}
         anchorId={anchorId}
-        shape={optionShapeFor(type)}
-        onCreate={() => setAdding({ groupId: g.id, index })}
+        type={type}
+        onCreate={() => edit.beginDraft(g.id, index)}
       />
     )
 
@@ -76,7 +68,14 @@ export function OptionEditor({
           void edit.editOption({ op: 'move', value, groupId: slot.lane, toIndex: slot.index }),
         line: menuDropLine,
         label: (value) => (options.some((o) => o.value === value) ? value : headingOf(value)),
-        chip: (value) => <OptionChip type={type} option={options.find((o) => o.value === value)} />,
+        chip: (value) => (
+          <OptionChip
+            type={type}
+            look={look}
+            option={options.find((o) => o.value === value)}
+            def={def}
+          />
+        ),
         watch: [groups],
       })}
     >
@@ -104,7 +103,7 @@ export function OptionEditor({
               ariaLabel={grouped ? `Add to ${g.label}` : 'Add Option'}
               create
               reveal={grouped}
-              onClick={() => setAdding({ groupId: g.id, index: g.options.length })}
+              onClick={() => edit.beginDraft(g.id, g.options.length)}
             />
           </div>
           <LineGroup
@@ -114,7 +113,7 @@ export function OptionEditor({
           >
             {groupOptions(g).map((o, i) => (
               <Fragment key={edit.keyOf(o.value)}>
-                <Reveal open enterOnMount={edit.entering(edit.keyOf(o.value))} fill>
+                <Reveal open enterOnMount={edit.entering(o.value)} fill>
                   <OptionSlot
                     option={o}
                     type={type}

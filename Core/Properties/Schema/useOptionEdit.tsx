@@ -10,15 +10,15 @@ import { colorNameFor } from '@pommora/uix/Theme/ramp'
 import { cx } from '@pommora/uix/Utilities/cx'
 import type { ColumnStyle } from '../columnStyles'
 import type { OptionEdit } from '../optionModel'
-import type { PropertyDefinition, PropertyType } from '../properties'
+import type { PropertyDefinition } from '../properties'
 import type { OptionChipData } from '../Cells/OptionChip'
-import { warnOwed, write } from '../propertyWrite'
-import { normalizeTitle } from '../../Paths/caseFold'
+import { retryOwed, warnOwed, write } from '../propertyWrite'
 import { dialer } from '../../Platform/dialer'
 import { popMenu } from '../../Actions/menuActions'
 import { optionMenuModel } from '../../Actions/optionMenu'
 import { parseStyleAction } from '../../Actions/columnMenu'
 import { askClearOption, askRemoveOption } from '../../Interface/Confirm/confirmations'
+import { reportRefusal } from '../../Interface/Notifications/notifications'
 import { OptionEditPopup } from './OptionEditPopup'
 
 export type OptionStyleControl = {
@@ -26,44 +26,53 @@ export type OptionStyleControl = {
   set: (key: keyof ColumnStyle & string, value: string) => void
 }
 
-type Editing = { row: string; value: string }
+export type OptionDef = Pick<PropertyDefinition, 'id' | 'type' | 'status_groups'>
 
-export function useOptionEdit({
-  propertyId,
-  type,
-  def,
-  options,
-  style,
-}: {
-  propertyId: string
-  type: PropertyType
-  def?: Pick<PropertyDefinition, 'status_groups'>
-  options: readonly OptionChipData[]
-  style?: OptionStyleControl
-}): {
+type Editing = { row: string; value: string }
+type Draft = { groupId: string; index?: number }
+
+export type OptionEditApi = {
   keyOf: (value: string) => string
-  entering: (key: string) => boolean
+  entering: (value: string) => boolean
   isOpen: (row: string) => boolean
   toggle: (value: string, anchor: HTMLElement) => void
   openMenu: (value: string, row: HTMLElement) => Promise<void>
   editOption: (edit: OptionEdit) => Promise<void>
+  draft: Draft | null
+  beginDraft: (groupId: string, index?: number) => void
+  commitDraft: (title: string) => void
+  cancelDraft: () => void
   busy: boolean
   popup: React.JSX.Element | null
-} {
+}
+
+export function useOptionEdit({
+  def,
+  options,
+  style,
+}: {
+  def: OptionDef
+  options: readonly OptionChipData[]
+  style?: OptionStyleControl
+}): OptionEditApi {
   const [editing, setEditing] = useState<Editing | null>(null)
+  const [draft, setDraft] = useState<Draft | null>(null)
   const anchor = useRef<HTMLElement | null>(null)
-  const alias = useRef(new Map<string, string>())
-  const values = options.map((o) => o.value)
-  for (const [title] of alias.current)
-    if (!values.includes(title) && title !== editing?.value) alias.current.delete(title)
+  const alias = useRef(new Map<string, { key: string; seen: boolean }>())
+  const values = new Set(options.map((o) => o.value))
+  for (const [title, entry] of alias.current) {
+    if (values.has(title)) entry.seen = true
+    else if (entry.seen && title !== editing?.value) alias.current.delete(title)
+  }
 
   const editOption = (edit: OptionEdit): Promise<void> =>
-    write(dialer().ask('property:editOption', propertyId, edit))
+    write(dialer().ask('property:editOption', def.id, edit))
   const keyOf = (value: string): string => {
-    const key = alias.current.get(value)
-    return key !== undefined && !values.includes(key) ? key : value
+    const key = alias.current.get(value)?.key
+    return key !== undefined && !values.has(key) ? key : value
   }
-  const entering = useEntrance(options, (o) => keyOf(o.value))
+  const enteringKey = useEntrance(options, (o) => keyOf(o.value))
+  const entering = (value: string): boolean => enteringKey(keyOf(value))
   const isOpen = (row: string): boolean => editing !== null && keyOf(row) === keyOf(editing.row)
   const open = (value: string, el: HTMLElement): void => {
     anchor.current = el
@@ -72,19 +81,23 @@ export function useOptionEdit({
   const toggle = (value: string, el: HTMLElement): void =>
     isOpen(value) ? setEditing(null) : open(value, el)
 
-  const rename = (title: string): void => {
+  const rename = async (title: string): Promise<void> => {
     if (!editing || title === editing.value) return
     const { row, value: from } = editing
-    const taken = values.some((v) => v !== from && normalizeTitle(v) === normalizeTitle(title))
-    if (title === row || !taken) {
-      alias.current.set(title, keyOf(row))
-      setEditing((e) => (e && e.value === from ? { row: e.row, value: title } : e))
+    alias.current.set(title, { key: keyOf(row), seen: false })
+    setEditing((e) => (e && e.value === from ? { row: e.row, value: title } : e))
+    const r = await dialer().ask('property:renameOption', def.id, from, title)
+    if (!r.ok) {
+      alias.current.delete(title)
+      setEditing((e) => (e && e.value === title ? { row: e.row, value: from } : e))
     }
-    void warnOwed(dialer().ask('property:renameOption', propertyId, from, title))
+    if (reportRefusal(r)) retryOwed(r.value)
   }
 
   const openMenu = async (value: string, row: HTMLElement): Promise<void> => {
-    const action = await popMenu(optionMenuModel(style && { type, current: style.current }))
+    const action = await popMenu(
+      optionMenuModel(style && { type: def.type, current: style.current }),
+    )
     switch (action) {
       case null:
         return
@@ -92,17 +105,23 @@ export function useOptionEdit({
         return open(value, row)
       case 'option:clear':
         if (await askClearOption(value))
-          await write(dialer().ask('property:clearOption', propertyId, value))
+          await write(dialer().ask('property:clearOption', def.id, value))
         return
       case 'option:remove':
         if (await askRemoveOption(value))
-          await warnOwed(dialer().ask('property:removeOption', propertyId, value))
+          await warnOwed(dialer().ask('property:removeOption', def.id, value))
         return
       default: {
         const picked = parseStyleAction(action)
         if (picked) style?.set(picked.key, picked.value)
       }
     }
+  }
+
+  const commitDraft = (title: string): void => {
+    if (!draft) return
+    setDraft(null)
+    void editOption({ op: 'add', groupId: draft.groupId, title, atIndex: draft.index })
   }
 
   const option = editing && options.find((o) => keyOf(o.value) === keyOf(editing.row))
@@ -113,13 +132,13 @@ export function useOptionEdit({
   const popup = held ? (
     <OptionEditPopup
       open={!!option}
-      contentKey={held.row}
-      type={type}
-      option={held.option}
+      contentKey={held.value}
+      type={def.type}
+      option={{ ...held.option, value: held.value }}
       def={def}
       triggerRef={anchor}
       onDismiss={() => setEditing(null)}
-      onRename={rename}
+      onRename={(title) => void rename(title)}
       onPickIcon={(icon) => void editOption({ op: 'icon', value: held.value, icon })}
       onPickColor={(color) => void editOption({ op: 'recolor', value: held.value, color })}
       onPickAppearance={(appearance) =>
@@ -128,19 +147,30 @@ export function useOptionEdit({
     />
   ) : null
 
-  return { keyOf, entering, isOpen, toggle, openMenu, editOption, busy: editing !== null, popup }
+  return {
+    keyOf,
+    entering,
+    isOpen,
+    toggle,
+    openMenu,
+    editOption,
+    draft,
+    beginDraft: (groupId, index) => setDraft({ groupId, index }),
+    commitDraft,
+    cancelDraft: () => setDraft(null),
+    busy: editing !== null || draft !== null,
+    popup,
+  }
 }
 
 export function OptionDraft({
+  edit,
   type,
   color,
-  onCommit,
-  onCancel,
 }: {
+  edit: OptionEditApi
   type: string
   color?: string
-  onCommit: (title: string) => void
-  onCancel: () => void
 }): React.JSX.Element {
   return (
     <Reveal open enterOnMount fill>
@@ -151,8 +181,8 @@ export function OptionDraft({
           value=""
           className={base}
           autoSize
-          onCommit={onCommit}
-          onCancel={onCancel}
+          onCommit={edit.commitDraft}
+          onCancel={edit.cancelDraft}
         />
       </span>
     </Reveal>
