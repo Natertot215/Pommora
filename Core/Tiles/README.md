@@ -33,8 +33,8 @@ own behavior, so every host gets it.
 | File | Role |
 | --- | --- |
 | `Layout/model.ts` | Tree types, height derivation, lookup, and the board's two metrics |
-| `Layout/ops.ts` | Pure tree operations — split, move, remove, band ops, seat, the four resize ops, and `repairLayout` |
-| `Layout/rects.ts` | Tree → per-tile placements as shares of the board width, resolved to pixel rects, dividers, and band seams at a measured width; the wedge under each tile |
+| `Layout/ops.ts` | Pure tree operations — split, move, remove, band ops, seat and the wedge under each tile, the four resize ops, and `repairLayout` |
+| `Layout/rects.ts` | Tree → per-tile placements as shares of the board width, resolved to pixel rects, dividers, and band seams at a measured width |
 | `Layout/edges.ts` | A tile edge → the shared boundary it actually moves |
 | `Layout/hitTest.ts` | Drag pointer → drop target (band seam or tile edge, with hysteresis) |
 | `Layout/snap.ts` | Alignment magnetism — boundaries lock to other tiles' edges |
