@@ -33,7 +33,7 @@ export function OptionEditor({
     () => ({ id: propertyId, type, status_groups: groups }),
     [propertyId, type, groups],
   )
-  const edit = useOptionEdit({ def, options, style })
+  const edit = useOptionEdit({ def, options, style, destructive: true })
   const headingOf = (id: string): string =>
     grouped ? (groups.find((g) => g.id === id)?.label ?? id) : 'Options'
   const ghostApi = useGhostOptionAnchor(renamingGroup !== null || edit.busy)

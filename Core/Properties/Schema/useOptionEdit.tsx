@@ -48,10 +48,12 @@ export function useOptionEdit({
   def,
   options,
   style,
+  destructive = false,
 }: {
   def: OptionDef
   options: readonly OptionChipData[]
   style?: OptionStyleControl
+  destructive?: boolean
 }): OptionEditApi {
   const [editing, setEditing] = useState<Editing | null>(null)
   const [draft, setDraft] = useState<Draft | null>(null)
@@ -92,7 +94,10 @@ export function useOptionEdit({
 
   const openMenu = async (value: string, row: HTMLElement): Promise<void> => {
     const action = await popMenu(
-      optionMenuModel(style && { type: def.type, current: style.current }),
+      optionMenuModel({
+        style: style && { type: def.type, current: style.current },
+        destructive,
+      }),
     )
     switch (action) {
       case null:
