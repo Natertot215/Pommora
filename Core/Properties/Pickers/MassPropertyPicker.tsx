@@ -41,7 +41,6 @@ export function MassPropertyPicker({
         def={def}
         style={style}
         contextOptions={contextOptions}
-        options={options}
         selected={selected}
         onPick={pick}
         editable
