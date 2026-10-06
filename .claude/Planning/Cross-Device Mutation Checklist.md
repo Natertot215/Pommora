@@ -1,0 +1,211 @@
+## Cross-Device Mutation Checklist
+
+The enumeration of every mutation whose on-disk effect is expected to reach a second instance holding the same Nexus id. Derived from the write path as it stands on 09-14-2026, it is the test plan the sync arc's content phase executes. The Measured column carries what a two-instance run has actually timed; a row without a reading states so.
+
+### Frame
+
+**What Travels:** decision C-1 of [[Sync-Scaffolding-V2 — Decision Log]], expressed as `manifestAdmits` in `Core/Paths/exclusion.ts` — every entry the watcher would watch, plus `.trash` at the top level, minus any `.db` file and its `-wal` and `-shm` journals. `neverWatched` in the same file is the watcher's half: `.trash`, `node_modules`, database files, and every dot-entry except `.nexus` are dropped. Almost everything under `.nexus/` therefore travels; the navigation thumbnail folders and the two cascade journals, `property-cascade.json` and `context-rename.json`, stay on the device that wrote them, while `crops.json` is authored and travels.
+
+**Two Instances:** the second-instance recipe is in `.claude/Guidelines/Development-Environment.md` — `POMMORA_USERDATA` at a scratch directory with its own `pommora.json`, `POMMORA_DEBUG_PORT` to arm CDP, and one instance per userData because the single-instance lock lives there. Instance A holds the Nexus; instance B holds a copy carrying the same `.nexus/nexus.json` id.
+
+**Taking A Measurement:** perform the mutation on A and record the wall-clock moment the reply returns. On B, record the moment the file lands on disk, then the moment the tree row or the rendered surface reflects it; the two are separate readings, because a file can arrive before the watcher's patch reaches the interface. The delta is the second reading minus the first. For a fan-out mutation the first reading is taken at the last file landing, not the first.
+
+**Reading The Tables:** **Writer** names the file and the function that performs the write. **On-Disk Effect** names the file that changes and the key inside it. **Expected On B** describes the settled state after propagation, not the mechanism that gets it there.
+
+### Content Tables
+
+#### Page Body
+
+| Mutation                           | Writer                                                                                     | On-Disk Effect                                                          | Expected On B                                                                                                                                        | Measured     |
+| ---------------------------------- | ------------------------------------------------------------------------------------------ | ----------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- | ------------ |
+| Type in a page's editor            | `Core/Pages/handlers.ts` `page:updateBody` → `Core/Pages/fileHistory.ts` `writeBody`       | `<Collection>/<Page>.md`, the bytes after the closing frontmatter fence | The file carries the new body; a closed tab opens on it                                                                                              | 2756 ms      |
+| Restore a File History snapshot    | `Core/Pages/handlers.ts` `history:restore` → `Core/Pages/fileHistory.ts` `restoreSnapshot` | The same file, body replaced from A's local snapshot store              | The restored body lands; the snapshot it came from does not                                                                                          | not measured |
+| Edit a page open on both instances | as above                                                                                   | The same file, the winning bytes under the conflict rule                | The newer edit lands on both; the loser is captured on both ends, and an editor holding the old text absorbs the landing through the three-way merge | not measured |
+
+#### Page Frontmatter Values
+
+Every typed value is written by `Core/Properties/setProperty.ts` `setPropertyOp` → `Core/Nexus/page.ts` `updatePageProperty`, which merges through `Core/Files/pageFile.ts` `mergeFrontmatter` and lands a bare `<Property Name>:` key in the page's YAML. Each row below exercises one entry of the `propertyType` union in `Core/Properties/properties.ts`.
+
+| Mutation                                       | Writer                                                                                                        | On-Disk Effect                                                                                                                        | Expected On B                                                                                         | Measured     |
+| ---------------------------------------------- | ------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------- | ------------ |
+| Set a `number` value                           | `setPropertyOp`                                                                                               | The page's frontmatter, a numeric scalar under the property's name                                                                    | The value renders in every view column bound to that property                                         | 2755 ms      |
+| Set a `checkbox` value                         | `setPropertyOp`                                                                                               | The page's frontmatter, a boolean scalar                                                                                              | The checkbox reads checked                                                                            | 2753 ms      |
+| Set a `dateTime` value                         | `setPropertyOp`                                                                                               | The page's frontmatter, an ISO date string                                                                                            | The date renders in B's own date format setting                                                       | 2759 ms      |
+| Set a `select` value                           | `setPropertyOp`, then `Core/Properties/optionOps.ts` `applyAdoptions` for a value the definition did not hold | The page's frontmatter, plus `.nexus/properties.json` when the option is newly adopted                                                | Both the value and the adopted option are present                                                     | 2746 ms      |
+| Set a `multiSelect` value                      | `setPropertyOp`                                                                                               | The page's frontmatter, a YAML sequence                                                                                               | Every selected option renders                                                                         | not measured |
+| Set a `status` value                           | `setPropertyOp`                                                                                               | The page's frontmatter, the option's value string                                                                                     | The status renders in its group's color                                                               | not measured |
+| Set a `link` value                             | `setPropertyOp`                                                                                               | The page's frontmatter, the address string                                                                                            | The link renders under the definition's `link_display`                                                | 2758 ms      |
+| Set a `file` value                             | `setPropertyOp` with `Core/Assets/adoptFile.ts` `adoptFile` for a file from outside                           | The page's frontmatter holds the connection text; the adopted bytes land under the property's `file_directory` beneath the asset root | The reference resolves against B's copy of the asset file                                             | not measured |
+| Set a `context` value                          | `Core/Nexus/mutate.ts` `setContext` → `Core/Contexts/contextWrite.ts` `setContextOp` → `setPageContext`       | The page's frontmatter, a bare `<Context Title>:` key holding Space titles                                                            | The page appears under those Spaces on B                                                              | 2754 ms      |
+| Set a page icon                                | `Core/Pages/setIcon.ts` `setIconOp`                                                                           | The page's entry in `.nexus/metadata/MM-YYYY.json`, `icon`                                                                            | The icon renders in the tree and the page heading                                                     | not measured |
+| Remember or forget an alias                    | `Core/Nexus/mutate.ts` `setPageMeta` → `Core/Nexus/pageMetadata.ts` `writePageMeta`                           | The page's entry in `.nexus/metadata/MM-YYYY.json`, `aliases`                                                                         | The alias picker offers the same aliases, most recent first                                           | not measured |
+| Override a page's title icon                   | `Core/Nexus/mutate.ts` `setPageMeta` → `Core/Nexus/pageMetadata.ts` `writePageMeta`                           | The page's entry in `.nexus/metadata/MM-YYYY.json`, `title_icon`                                                                      | The page header shows or hides its icon the same way                                                  | not measured |
+| Set a page banner                              | `Core/Pages/setBanner.ts` `setBannerOp`                                                                       | The page's frontmatter, `banner`; the adopted image lands under the asset root                                                        | The banner renders from B's copy of the image                                                         | not measured |
+| Read a `createdTime` or `lastEditedTime` value | No writer; derived at read time                                                                               | None                                                                                                                                  | Each instance derives its own; a divergence here is a filesystem-timestamp difference, not a sync gap | not measured |
+
+#### Page Lifecycle
+
+| Mutation | Writer | On-Disk Effect | Expected On B | Measured |
+| --- | --- | --- | --- | --- |
+| Create a page | `Core/Nexus/create.ts` `createPageOp` → `Core/Nexus/page.ts` `createPage`, then `Core/Contexts/contextWrite.ts` `setPageContext` for a Space the view implies | A new `<Name>.md` carrying one `ID` key, the ULID marked `page`, and the values its view implies, a second write adding the `<Context Title>:` key when the view implies a Space; the parent's `page_order` in `_pagecollection.json` or `_pageset.json` when an order was supplied | The page appears in the tree at its ordered position | 2751 ms |
+| Rename a page | `Core/Nexus/rename.ts` `renameOp` → `Core/Nexus/page.ts` `renamePage`, `Core/Nexus/cascade.ts` `renameCascade`, `Core/Tiles/tilesFile.ts` `rewriteTileConnections` | The file is renamed; every page whose body holds a `[[Title]]` connection is rewritten, and every tile Markdown body with it | The new filename and every rewritten connection land; the delta is taken at the last rewritten file | 2863 ms with one connection rewritten; 102 ms with none |
+| Move a page to another Collection or Set | `Core/Nexus/move.ts` `movePageOp` → `Core/Nexus/page.ts` `movePage` | The file moves; the destination's `page_order` is rewritten | The page sits under its new parent, ordered | 102 ms |
+| Delete a page | `Core/Trash/delete.ts` `deleteOp` | The file moves into `.trash/<chain>/<stamp>.deleted/` beside a `_record.json` | See the Trash table | 2630 ms |
+| Restore a page | `Core/Nexus/mutate.ts` `restore` → `Core/Trash/spend.ts` `restoreArtifact` | The artifact moves back to the directory the record names | The page is back in the tree at its recorded parent | 2750 ms |
+
+#### Collections And Sets
+
+| Mutation                         | Writer                                                                                                | On-Disk Effect                                                                                         | Expected On B                                              | Measured     |
+| -------------------------------- | ----------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------- | ------------ |
+| Create a Collection or Set       | `Core/Nexus/create.ts` `createContainerOp` → `Core/Nexus/folderEntity.ts` `createFolderEntity`        | A new folder holding `_pagecollection.json` or `_pageset.json` with `id` and one default `views` entry | The container appears in the tree with its default view    | 2551 ms      |
+| Rename a Collection or Set       | `Core/Nexus/rename.ts` `renameOp` → `Core/Nexus/folderEntity.ts` `renameFolderEntity`                 | The folder is renamed; the sidecar's `id` is unchanged                                                 | The new name renders; every reference by id still resolves | 102 ms       |
+| Move a Set                       | `Core/Nexus/move.ts` `moveSetOp` → `Core/Nexus/folderEntity.ts` `moveFolderEntity`                    | The folder moves; the destination's `set_order` is rewritten                                           | The Set sits under its new parent, ordered                 | not measured |
+| Delete a Collection or Set       | `Core/Trash/delete.ts` `deleteOp`                                                                     | The folder moves into a `.deleted` bundle beside its `_record.json`                                    | See the Trash table                                        | not measured |
+| Reorder children                 | `Core/Nexus/reorder.ts` `setChildOrder`                                                               | `page_order` or `set_order` on the parent's sidecar                                                    | The order matches                                          | 2754 ms      |
+| Reorder top-level Collections    | `Core/Nexus/reorder.ts` `setCollectionOrder`                                                          | `.nexus/state.json`, `order.collections`                                                               | The sidebar order matches                                  | 2762 ms      |
+| Lock a container's disclosure    | `Core/Nexus/mutate.ts` `setDisclosureLock` → `Core/Files/sidecar.ts` `patchSidecar`                   | The sidecar's `disclosure_locked`                                                                      | The container reads locked                                 | 2749 ms      |
+| Set a container's icon or banner | `Core/Pages/setIcon.ts` `setIconOp`, `Core/Pages/setBanner.ts` `setBannerOp`                          | The sidecar's `icon`, `banner`                                                                         | Both render                                                | not measured |
+| Set Open In or the view button   | `Core/Views/handlers.ts` `container:configure` → `Core/Views/containerConfig.ts` `setContainerConfig` | The sidecar's `open_in`, `view_button`                                                                 | The container opens the same way                           | not measured |
+
+#### Schema
+
+A property definition is nexus-wide and lives in `.nexus/properties.json`; a Collection's `properties` array is the assignment list of the ids it validates.
+
+| Mutation | Writer | On-Disk Effect | Expected On B | Measured |
+| --- | --- | --- | --- | --- |
+| Add a property to a Collection | `Core/Properties/handlers.ts` `schema:add` → `Core/Properties/registryProperty.ts` `createProperty` and `Core/Properties/assignment.ts` `assignProperty` | A new def in `.nexus/properties.json`; its id appended to the sidecar's `properties` | The column appears in the Collection's views | not measured |
+| Rename a property | `Core/Properties/handlers.ts` `property:rename` → `Core/Properties/registryProperty.ts` `renameProperty` → `renameSweep` | The def's `name`; every holding page's frontmatter key rewritten; `.nexus/property-cascade.json` written before the commit and cleared after | Every page carries the new key; the journal stays on the device that wrote it, and the delta is taken at the last rewritten page | 2757 ms |
+| Remove a property from a Collection | `Core/Properties/handlers.ts` `schema:unassign` → `Core/Properties/removeProperty.ts` `removeProperty` | The id leaves the sidecar's `properties`; the def stays in the registry | The column leaves that Collection's views and no other | not measured |
+| Delete a property nexus-wide | `Core/Properties/handlers.ts` `property:delete` → `Core/Properties/deleteProperty.ts` `deleteProperty` → `unassignAndPurge` | The def leaves `.nexus/properties.json`; the key is stripped from every holding page; a `property` bundle lands in `.trash` | The property is gone everywhere and its bundle is restorable | not measured |
+| Retype a property | `Core/Properties/handlers.ts` `property:setOptions`, `property:setStatusGroups`, `property:setNumberFormat`, `property:setLinkConfig`, `property:setFileDirectory`, `property:setCheckboxColor`, `property:setIcon` → `Core/Properties/registryProperty.ts` `editProperty` | The def's type-shaped keys in `.nexus/properties.json`; page values are unchanged | Values render under the new configuration | not measured |
+| Rename or remove a select or status option | `Core/Properties/optionOps.ts` `renameOption`, `removeOption`, `renameStatusOption`, `removeStatusOption` | The def's `select_options` or `status_groups`, and every holding page's value | Both the definition and every page value agree | not measured |
+| Reorder the registry or a Collection's assignment | `Core/Properties/registryProperty.ts` `reorderRegistry`, `Core/Properties/assignment.ts` `reorderAssignment` | `.nexus/properties.json` order, or the sidecar's `properties` order | The column order matches | not measured |
+
+#### Saved Views
+
+| Mutation | Writer | On-Disk Effect | Expected On B | Measured |
+| --- | --- | --- | --- | --- |
+| Add or edit a saved view | `Core/Views/handlers.ts` `views:save` → `Core/Views/viewsFile.ts` `saveView` | The container sidecar's `views` array, one `SavedView` record | The view appears with its columns, sort, filter, and grouping | 2757 ms |
+| Rename a saved view | `views:save` with a changed `name` | The record's `name` | The tab label matches | not measured |
+| Reorder saved views | `Core/Views/handlers.ts` `views:reorder` → `Core/Views/viewsFile.ts` `reorderViews` | The `views` array order | The tab order matches | not measured |
+| Duplicate a saved view | `Core/Views/handlers.ts` `views:duplicate` → `Core/Views/viewsFile.ts` `duplicateView` | The stored record's copy enters `views` after its original | The copy sits after its original | not measured |
+| Remove a saved view | `Core/Views/handlers.ts` `views:delete` → `Core/Views/viewsFile.ts` `deleteView` | The record leaves `views`; `active_view` is dropped when it named the removed view | The view is gone and the container opens on a surviving one | not measured |
+| Select a view | `Core/Nexus/mutate.ts` `setActiveView` → `Core/Files/sidecar.ts` `patchSidecar` | The container sidecar's `active_view` | The container opens on the same view | not measured |
+| Drag a row into a manual order | `views:save` → `Core/Views/viewsFile.ts` `saveView` | `manual_order` on the view record inside the sidecar | The row order matches | not measured |
+| Collapse a group | `views:save` → `saveView` | `collapsed_groups` on the view record | The same groups read collapsed | not measured |
+
+#### Contexts
+
+| Mutation | Writer | On-Disk Effect | Expected On B | Measured |
+| --- | --- | --- | --- | --- |
+| Add a Context group | `Core/Contexts/contextWrite.ts` `createContextGroup` | A new entry in `.nexus/contexts/contexts.json` and a folder `.nexus/contexts/<Title>/` | The group appears in the Contexts sidebar | 2863 ms |
+| Rename a Context group | `Core/Contexts/contextCascade.ts` `renameContextOp` | The registry entry's `title`, the folder rename, every holding page's frontmatter key, and `.nexus/context-rename.json` held across the sweep | The new title is everywhere; the journal stays on the device that wrote it | not measured |
+| Add a Space | `Core/Contexts/contextWrite.ts` `createSpace` | A folder `.nexus/contexts/<Context>/<Space>/` holding `_space.json` with its `id` | The Space appears under its group | 2548 ms |
+| Rename a Space | `Core/Contexts/contextCascade.ts` `renameSpaceOp` | The folder rename and every holding page's value under the Context key, journaled the same way | Every page's membership follows the new title | 2851 ms |
+| Remove a Space | `Core/Trash/delete.ts` `deleteOp` with `kind: 'space'` → `Core/Contexts/contextCascade.ts` `unlinkSpaceValue` | The folder moves to `.trash`; the value is stripped from every holding page | The Space is gone and no page names it | not measured |
+| Assign a page to a Space | `Core/Contexts/contextWrite.ts` `setPageContext` | The page's frontmatter, the bare `<Context Title>:` key | The page is listed under that Space | 2751 ms |
+| Set a Space color | `Core/Contexts/contextWrite.ts` `setSpaceColor` | `_space.json`, `$color` | The Space renders in that color | 2755 ms |
+| Set a Space icon | `Core/Pages/setIcon.ts` `setIconOp` | `_space.json`, `$icon` | The Space renders with that icon | not measured |
+| Reorder Context groups | `Core/Contexts/reorderContexts.ts` `reorderContextsOp` → `Core/Contexts/contextsRegistry.ts` `mutateRegistryFile` | `.nexus/contexts/contexts.json`, the order of the `contexts` array | The sidebar order matches | not measured |
+| Reorder Spaces within a group | `Core/Nexus/reorder.ts` `setSpaceOrder` | `.nexus/state.json`, `order.spaces.<contextId>` | The sidebar order matches | not measured |
+
+#### Tasks And Events
+
+Agenda entities are Markdown files whose kind is marked inside the ULID and validated against the folder's `_taskconfig.json` or `_eventconfig.json`. Agenda's surface is unbuilt, so no in-app creator mints a `task` or `event` id: `Core/Nexus/page.ts` `createPage` mints `page` for every page it writes, and `Core/Nexus/adopt.ts` is the only writer that stamps either agenda kind, resolved from the folder the file already sits in.
+
+| Mutation | Writer | On-Disk Effect | Expected On B | Measured |
+| --- | --- | --- | --- | --- |
+| Place a Task or Event file into its folder by hand | `Core/Nexus/adopt.ts` on the next open | A Markdown file whose `ID` carries the `task` or `event` mark, stamped from the file's birth time | The file and its stamped id land; B reads the same kind from the same folder | not measured |
+| Edit a Task or Event value | `Core/Properties/setProperty.ts` `setPropertyOp` | The file's frontmatter | The value renders | not measured |
+| Rename, move, or delete either | The Page Lifecycle writers | As the Page Lifecycle table | As the Page Lifecycle table | not measured |
+| Read the Agenda folder registration | `Core/Nexus/identity.ts` `ensureIdentity` seeds it once | `.nexus/nexus.json`, `agenda_folders` | Both instances resolve the same two folders by id | not measured |
+
+#### Tiles And The Homepage
+
+| Mutation | Writer | On-Disk Effect | Expected On B | Measured |
+| --- | --- | --- | --- | --- |
+| Add, resize, or rearrange a tile | `Core/Tiles/handlers.ts` `tiles:save` → `Core/Tiles/tileDoc.ts` `writeTileDocAt` | `_tiles.json` in the host directory — `.nexus/homepage/` for the homepage, the Space folder for a Space | The layout matches | 2861 ms |
+| Create a Markdown tile | `Core/Tiles/tilesFile.ts` `createMarkdownTile` | A `<tileId>.md` in the host directory and its entry in `_tiles.json` | The tile renders with its body | not measured |
+| Edit a Markdown tile's body | `Core/Tiles/tilesFile.ts` `writeMarkdownTile` | The tile's `.md` | The body matches | not measured |
+| Remove or duplicate a tile | `Core/Tiles/tilesFile.ts` `removeTile`, `duplicateTile` | `_tiles.json` and the tile's `.md` | The tile set matches | not measured |
+| Convert a tile to a page or a view | `Core/Tiles/handlers.ts` `tiles:convert` → `Core/Tiles/tilesFile.ts` `convertTile` | The tile's entry in `_tiles.json` is rewritten; the source `.md` is discarded | The converted tile renders its target | not measured |
+| Set the homepage banner or heading icon | `Core/Pages/setBanner.ts` `setBannerOp`, `Core/Pages/setHeadingIconHidden.ts` `setHeadingIconHiddenOp` | `.nexus/homepage/homepage.json`, `banner` and `heading_icon_hidden` | Both render | 2753 ms for the heading icon |
+
+#### Assets
+
+| Mutation | Writer | On-Disk Effect | Expected On B | Measured |
+| --- | --- | --- | --- | --- |
+| Adopt an image from outside the Nexus | `Core/Assets/handlers.ts` `assets:adopt` → `Core/Assets/adoptFile.ts` `adoptFile` → `Core/Assets/assetWrite.ts` `writeAssetFile` | The bytes land under the asset root, `.nexus/assets/` by default or the `asset_directory` setting's folder | The file is present and every reference to it resolves | 2799 ms for a 391,260-byte PNG |
+| Adopt an image already inside the asset root | `adoptFile` | No new file; the existing name is reused | Unchanged | not measured |
+| Set a profile image | `Core/Assets/setProfileImage.ts` `setProfileImageOp` | `.nexus/settings.json`, `profile_image`, and the adopted bytes | The image renders | not measured |
+| Crop an image | `Core/Assets/setCrop.ts` `setCropOp` → `Core/Settings/settings.ts` `updateCrops` | `.nexus/assets/crops.json`, `byImage.<key>` | The same crop renders | not measured |
+| Change the asset directory | `Core/Assets/handlers.ts` `assets:setDir` | `.nexus/settings.json`, `asset_directory` | New adoptions land in the same folder; files already on disk keep resolving where they sit | not measured |
+| Capture a navigation thumbnail | `Core/Navigation/handlers.ts` `capture:thumbnail` → the host's `thumbnails.capture` | `.nexus/assets/<nexusId>/thumbnails/<key>.jpg` | Nothing lands; the thumbnail folder stays on the device that captured it, and B regenerates its own from the assets that travel | never on B, verified: no `thumbnails/` path among the hub's 443 items |
+
+#### Trash
+
+`.trash` travels under C-1 and sits outside the file watcher; every Trash writer reports its write to the sync client through the write funnel, and the Trash surface re-asks after every action it takes rather than updating live.
+
+| Mutation | Writer | On-Disk Effect | Expected On B | Measured |
+| --- | --- | --- | --- | --- |
+| Delete with the Nexus trash mode | `Core/Trash/delete.ts` `deleteOp` → `Core/Trash/bundle.ts` `mintBundle`, `settleBundle` | `.trash/<chain>/<stamp>.deleted/` holding `_record.json` and the artifact under its own name | The bundle lands; the listing shows it on the next `trash:list`, not live | 2630 ms |
+| Delete with the system trash mode | `deleteOp` → the host's `trashToSystem` | The artifact leaves the Nexus; no bundle is written | The artifact's absence propagates; nothing lands in `.trash` | not measured |
+| Delete a Context or a Space | `deleteOp` with the cascade writers | The bundle carries the membership evidence the restore replays | The bundle lands with its evidence intact | not measured |
+| Restore an artifact | `Core/Trash/spend.ts` `restoreArtifact` | The artifact moves to the recorded parent; the bundle directory is removed | The entity is back in the tree and the bundle is gone | 2750 ms |
+| Restore a deleted property | `Core/Trash/restoreProperty.ts` `restoreProperty` | The def returns to `.nexus/properties.json`, values return to their pages, assignments return to their sidecars | The property and every value are back | not measured |
+| Empty one bundle | `Core/Trash/spend.ts` `emptyBundle` | The artifact is removed or handed to the system trash; the bundle directory follows | Both are gone | 2543 ms |
+| Empty the whole Trash | `emptyBundle` per bundle | As above, per bundle | `.trash` holds no bundles | not measured |
+
+#### Settings, Navigation, And State
+
+`.nexus/settings.json` and `.nexus/state.json` are nexus data and travel.
+
+Both land through the key-level merge, so two devices changing different keys while apart keep both changes.
+
+| Mutation | Writer | On-Disk Effect | Expected On B | Measured |
+| --- | --- | --- | --- | --- |
+| Change any personalization setting | `Core/Settings/handlers.ts` `personalization:set` → `Core/Settings/settings.ts` `writePersonalization` | `.nexus/settings.json`, `personalization.<key>` | The setting reads the same, Interface Scale and Webpage Zoom included, by standing decision | 2755 ms |
+| Set excluded folders | `Core/Settings/handlers.ts` `exclusions:set` → `Core/Settings/settings.ts` `writeExcludedFolders` | `.nexus/settings.json`, `excluded_folders` | The same folders leave B's tree and the manifest on both devices | 2549 ms to B's settings file; 3063 ms to B's tree |
+| Rebind a command chord | No writer today; `Core/Settings/codec.ts` `readCommands` reads the key a hand edit supplies | `.nexus/settings.json`, `commands.<id>` | The same chord fires | not measured |
+| Set the profile icon | `Core/Nexus/mutate.ts` `setProfileIcon` → `Core/Settings/settings.ts` `updateSettings` | `.nexus/settings.json`, `profile_icon` | The icon renders | not measured |
+| Set the profile subtitle | No writer today; `Core/Settings/codec.ts` reads `profile_subtitle` from a hand edit | `.nexus/settings.json`, `profile_subtitle` | The subtitle renders | not measured |
+| Pin an item | `Core/Navigation/handlers.ts` `nav:write` → `Core/Navigation/navigationFile.ts` `writeNavigationState` | `.nexus/state.json`, `navigation.pinned`, `navigation.banner` | The same items are pinned; `recents` is per-device and stays behind | 2858 ms |
+| Rename the Nexus | `Core/Nexus/handlers.ts` `nexus:rename` | The Nexus folder's own name | B's folder name is its own; the `nexus.json` id is what makes the two one Nexus | not measured |
+
+### Must Not Travel
+
+Every row here is per-machine state. A value crossing to B is a failure of the what-travels predicate, not a success.
+
+| Store | Reason |
+| --- | --- |
+| `nexus.db` | The per-machine key-value store, in the app's userData directory under `Nexuses/<nexusId>/` |
+| `nexus.db-wal`, `nexus.db-shm` | SQLite journals of a database that does not travel |
+| `versions.db` and its journals | File History snapshots and the `captures` table holding every conflict's losing bytes, beside `nexus.db` |
+| `local_state` scope `folds` | Which headings a reader collapsed, per machine |
+| `local_state` scope `headingCols` | Which table heading columns a reader hid, per machine |
+| `local_state` scope `citations` | Whether citations are shown, per machine |
+| `local_state` scope `embedHeights` | Per-embed heights a reader dragged, per machine |
+| `local_state` scope `embedZooms` | Per-embed zoom a reader set, per machine |
+| `local_state` scope `linkTitle` | Fetched web titles, a cache |
+| `local_state` scope `tabs` | The open tab set, true of this window on this machine |
+| `local_state` scope `windows` | Window bounds, true of this display |
+| `local_state` scope `recents` | The recently visited list, true of this machine's reading |
+| `local_state` scope `record` | The identity re-minting baseline read and written by `Core/Nexus/remintLedger.ts`, adjudicated from this machine's own history |
+| `local_state` scope `devicePrefs` | Menu style, pane widths, sidebar folds, window sizes, the footer folds, and the navigation layouts — `Core/Settings/devicePrefs.ts` states the rule |
+| `local_state` scope `sync` | The hub address this machine's Nexus is bound to, the certificate fingerprint pinned at bind, and this device's pull cursor, per device by design |
+| The `sync` table in `nexus.db` | One base record per item — path, mtime, size, hash, blob hash, version, and the last synced bytes for the merged JSON files — regenerable from the hub |
+| `pommora.json` | The app config beside the application, never inside a Nexus; it holds `lastNexusPath`, `recents`, `trashMode`, and the `device` entry |
+| `secrets.json` | The device's private key, encrypted by the OS keychain, beside `pommora.json` and never inside a Nexus |
+
+### Identity Checks
+
+What the identity layer under the content tables proves. The first row is Task 6.1 of [[Sync Groundwork — Implementation Plan]], driven over CDP against two built instances; the rest are covered by `Desktop/Config/device.test.ts`.
+
+| Check | Evidence |
+| --- | --- |
+| Two userData directories give two device fingerprints against one Nexus id: connect, pending, approve, revoke, each state surviving a server restart and an app relaunch | Task 6.1, observed; `sync.db` holds two `device` rows and, before the revoke, two `membership` rows for one `nexus_id` |
+| A device name set on one instance reaches the bound server | `Core/Sync/handlers.ts` `sync:renameDevice` re-sends `connect` with the new name; `device.test.ts` "persists a rename" covers the config half |
+| A deleted secret store re-mints the identity and reports once | `device.test.ts` "re-mints and reports once when the secret store lost the key" |
+| A crash between the key write and the config write re-mints rather than stranding a half-identity | `device.test.ts` "re-mints after a crash between the key write and the config write" |
+| A keychain that refuses leaves the launch identity-less and the stored identity intact | `Desktop/main.ts` leaves `device` null and `Core/Sync/handlers.ts` answers every channel with the no-device refusal; `device.test.ts` "keeps the identity across a launch the keychain refused" |
+| A secret that cannot be decrypted leaves the launch identity-less without destroying the key | `device.test.ts` "keeps the key and the identity across a launch that could not decrypt it" — `secrets.json` is byte-identical afterward and the next launch recovers the same id |
