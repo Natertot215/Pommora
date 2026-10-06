@@ -17,6 +17,7 @@ import {
   FootingItem,
   MenuScrollFrame,
   MenuTopRow,
+  pickRuns,
   useDisclosureSet,
 } from '@pommora/uix/Menus'
 import { accessoryButton } from '@pommora/uix/Menus/menu-row.css'
@@ -188,24 +189,28 @@ function LocationField({
   const expanded = useDisclosureSet()
   const { shown, toggle } = useMultiValue(values, onCommit)
   const byId = new Map(flattenNodes(nodes).map((n) => [n.id, n]))
-
-  const renderNode = (n: CollectionNode | SetNode): React.JSX.Element => {
-    const kids = n.sets ?? []
-    const picked = shown.includes(n.id)
-    return (
-      <DisclosureRow
-        key={n.id}
-        title={n.title}
-        icon={<EntityIcon kind={n.kind} icon={n.icon} size="body" />}
-        dropOutline={kids.length > 0 ? 'chevron' : 'spacer'}
-        open={expanded.has(n.id)}
-        onToggle={() => expanded.toggle(n.id)}
-        onClick={() => toggle(n.id)}
-        checked={picked}
-      >
-        {kids.length > 0 ? kids.map(renderNode) : undefined}
-      </DisclosureRow>
+  const renderLevel = (ns: (CollectionNode | SetNode)[]): React.JSX.Element[] => {
+    const runs = pickRuns(
+      ns.map((n) => shown.includes(n.id)),
+      ns.map((n) => expanded.has(n.id) && (n.sets?.length ?? 0) > 0),
     )
+    return ns.map((n, i) => {
+      const kids = n.sets ?? []
+      return (
+        <DisclosureRow
+          key={n.id}
+          title={n.title}
+          icon={<EntityIcon kind={n.kind} icon={n.icon} size="body" />}
+          dropOutline={kids.length > 0 ? 'chevron' : 'spacer'}
+          open={expanded.has(n.id)}
+          onToggle={() => expanded.toggle(n.id)}
+          onClick={() => toggle(n.id)}
+          picked={runs[i]}
+        >
+          {kids.length > 0 ? renderLevel(kids) : undefined}
+        </DisclosureRow>
+      )
+    })
   }
 
   return (
@@ -246,7 +251,7 @@ function LocationField({
             ? null
             : nodes.length === 0
               ? emptyPicker('No Sets in this collection.')
-              : nodes.map(renderNode)}
+              : renderLevel(nodes)}
         </MenuScrollFrame>
       </PickerMenu>
     </>
@@ -442,7 +447,7 @@ export function FilterFrame({
     targets.map((t) => (
       <MenuItem
         key={t.id}
-        checked={t.id === current}
+        picked={t.id === current ? 'solo' : undefined}
         leading={<Icon name={t.icon} size="body" />}
         onClick={() => {
           close()
@@ -583,7 +588,7 @@ export function FilterFrame({
                 return (
                   <MenuItem
                     key={o.label}
-                    checked={o === current}
+                    picked={o === current ? 'solo' : undefined}
                     {...(isCheckbox ? { leading: checkboxBox(o) } : {})}
                     onClick={() => {
                       close()

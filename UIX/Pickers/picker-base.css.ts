@@ -1,7 +1,7 @@
 import { globalStyle, style } from '@vanilla-extract/css'
 import { stack } from '../Theme/stack'
 import { fieldRing, ROW_RING } from '../Fields/fieldRing'
-import { check, itemChecked, menuCompact } from '../Menus/menu-row.css'
+import { menuCompact } from '../Menus/menu-row.css'
 import { viewport as frameViewport } from '../Menus/frame-slide.css'
 
 /** KNOB — a picker's height ceiling; below MENU_MAX_HEIGHT because a picker hangs off a control rather than filling a pane. */
@@ -39,8 +39,6 @@ export const surface = style({
   flexDirection: 'column',
   gap: '0px',
 })
-
-globalStyle(`${pane}:has(${itemChecked}) ${check}`, { display: 'inline-flex' })
 
 /** A pane under a live resize tracks the pointer 1:1, so a frame's easing toward its content's size holds off. */
 export const resizing = style({})

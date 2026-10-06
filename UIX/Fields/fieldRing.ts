@@ -2,7 +2,7 @@
 import { duration, easing } from '../Animations/motion'
 import { tintAt } from '../Theme/colors'
 
-/** KNOB — a menu row's ring weight; selection and focus both paint at it. */
+/** KNOB — the weight of the ring a picked row or cell wears. */
 export const ROW_RING = 2
 
 /** The channel's one spelling. */

@@ -125,11 +125,11 @@
 }
 
 .data-row:hover {
-  background: var(--state-hover);
+  background-color: var(--state-hover);
 }
 .data-row.selected,
 .data-row.selected:hover {
-  background: var(--text-selection);
+  background-color: var(--text-selection);
 }
 /* The heading row keeps its borders so it stays structured over an otherwise lineless body. */
 .table-grid.no-borders .data-row {

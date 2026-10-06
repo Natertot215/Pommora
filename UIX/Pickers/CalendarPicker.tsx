@@ -267,13 +267,21 @@ export function CalendarPicker({
     }
   const monthRows = (): React.JSX.Element[] =>
     Array.from({ length: 12 }, (_, m) => (
-      <MenuItem key={monthName(m)} checked={m === cursor.getMonth()} onClick={() => jump(year, m)}>
+      <MenuItem
+        key={monthName(m)}
+        picked={m === cursor.getMonth() ? 'solo' : undefined}
+        onClick={() => jump(year, m)}
+      >
         {monthName(m)}
       </MenuItem>
     ))
   const yearRows = (): React.JSX.Element[] =>
     Array.from({ length: 21 }, (_, i) => year - 10 + i).map((y) => (
-      <MenuItem key={y} checked={y === year} onClick={() => jump(y, cursor.getMonth())}>
+      <MenuItem
+        key={y}
+        picked={y === year ? 'solo' : undefined}
+        onClick={() => jump(y, cursor.getMonth())}
+      >
         {y}
       </MenuItem>
     ))
@@ -499,7 +507,7 @@ function ClockField({
       setTimeMenu(null)
     }
     return (part === 'h' ? (twelve ? HOURS_12 : HOURS_24) : MINUTES).map((v) => (
-      <MenuItem key={v} checked={v === current} onClick={() => choose(v)}>
+      <MenuItem key={v} picked={v === current ? 'solo' : undefined} onClick={() => choose(v)}>
         {part === 'h' ? hourText(v) : pad(v)}
       </MenuItem>
     ))

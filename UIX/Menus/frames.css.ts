@@ -2,7 +2,13 @@ import { globalStyle, style } from '@vanilla-extract/css'
 import { STATE_OPACITY, vars as colorVars } from '../Theme/color.css'
 import type { IconSize } from '../Theme/theme-vars.css'
 import { duration, easing } from '../Animations/motion'
-import { accessoryButton, flushAffordance, rowBox, scrollFrameBody } from './menu-row.css'
+import {
+  accessoryButton,
+  flushAffordance,
+  ROW_RADIUS,
+  rowBox,
+  scrollFrameBody,
+} from './menu-row.css'
 import { button as eyeToggleButton } from '../Elements/eye-toggle.css'
 import { menuAnchor } from './menuAnchor'
 import { stack } from '../Theme/stack'
@@ -109,7 +115,10 @@ export const optionList = style({
   vars: { '--label-pad-x': `${OPTION.chipPadX}px` },
 })
 
-export const optionRow = style([rowBox, { justifyContent: 'space-between' }])
+export const optionRow = style([
+  rowBox,
+  { justifyContent: 'space-between', borderRadius: `${ROW_RADIUS}px` },
+])
 
 /** KNOB — a pane's middle list region's scroll ceiling. */
 const MIDDLE_MAX_HEIGHT = '280px'

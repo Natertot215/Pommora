@@ -4,6 +4,7 @@ import { cx } from '../Utilities/cx'
 import { toggled } from '../Utilities/checkSet'
 import { Reveal } from '../Animations/Reveal'
 import { MenuItem } from './MenuRows'
+import type { PickRun } from './pickRuns'
 import { railRow, dropOutline, dropOutlineOpen, dropOutlineSpacer } from './listed-outline.css'
 
 // The set holds the exceptions to `defaultOpen`, never the open nodes, so a default-open tree needs no seed and stays right as nodes appear and vanish beneath it.
@@ -66,8 +67,8 @@ export function DisclosureRow({
   onToggle,
   onClick,
   onContextMenu,
-  selected = false,
-  checked,
+  active = false,
+  picked,
   className,
   tabIndex,
   trailing,
@@ -81,8 +82,8 @@ export function DisclosureRow({
   onToggle: () => void
   onClick?: () => void
   onContextMenu?: (e: React.MouseEvent) => void
-  selected?: boolean
-  checked?: boolean
+  active?: boolean
+  picked?: PickRun
   className?: string
   tabIndex?: number
   trailing?: ReactNode
@@ -92,8 +93,8 @@ export function DisclosureRow({
 }): React.JSX.Element {
   const row = (
     <MenuItem
-      selected={selected}
-      checked={checked}
+      active={active}
+      picked={picked}
       className={className}
       tabIndex={tabIndex}
       leading={

@@ -93,7 +93,7 @@ export function AutocompletePane({
           key={row.kind === 'page' ? row.pageId : row.value}
           ref={active && i === v.index ? keepInView : undefined}
           className={hoverRemoveHost}
-          selected={active && i === v.index}
+          active={active && i === v.index}
           subLabel={
             <NavTrail
               segments={row.kind === 'page' ? row.location : []}
@@ -148,7 +148,7 @@ export function AutocompletePane({
       dropOutline={children ? 'chevron' : 'spacer'}
       open={!v.collapsed.has(row.value)}
       onToggle={() => onToggleHeading(row.value)}
-      selected={i === v.index}
+      active={i === v.index}
       wrap={(node) => (
         // biome-ignore lint/a11y/noStaticElementInteractions: commits on mousedown, the way every autocomplete row does
         <div

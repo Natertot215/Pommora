@@ -3,7 +3,7 @@ import { useLatest } from '@pommora/uix/Utilities/stableApi'
 import type { ActionItem } from '../../Actions/menuModel'
 import { useHeld } from '@pommora/uix/Animations/useExitPresence'
 import { FrameSlide } from '@pommora/uix/Menus/FrameSlide'
-import { MenuItem, MenuScrollFrame, MenuSeparator, MenuTopRow } from '@pommora/uix/Menus'
+import { MenuItem, MenuScrollFrame, MenuSeparator, MenuTopRow, pickRuns } from '@pommora/uix/Menus'
 import { PickerMenu } from '@pommora/uix/Pickers/PickerMenu'
 import { PICKER_MAX_HEIGHT } from '@pommora/uix/Pickers/picker-base.css'
 import { Icon } from '@pommora/uix/Symbols'
@@ -29,6 +29,7 @@ function Level({
 }): React.JSX.Element {
   const [branchAt, setBranchAt] = useState<number | null>(null)
   const rows = menuRows(items)
+  const runs = pickRuns(rows.map((row) => row.kind === 'item' && row.checked === true))
   const at = branchAt === null ? undefined : rows[branchAt]
   const branch =
     at?.kind === 'item' && at.submenu ? { label: at.label, items: at.submenu } : undefined
@@ -43,7 +44,7 @@ function Level({
             disabled={row.disabled}
             leading={leadingGlyph(row.icon)}
             trailing={row.submenu?.length ? CHEVRON : undefined}
-            checked={row.checked}
+            picked={runs[i]}
             onClick={row.submenu ? () => setBranchAt(i) : () => onPick(row.action, row.stay)}
           >
             {row.label}
