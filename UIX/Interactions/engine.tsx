@@ -715,22 +715,17 @@ function createEngine(setChrome: (c: Chrome | null) => void): Api {
         pointerEvents: 'none',
         zIndex: stack.top.dragOverlay,
       }
-      if (def.kind === 'line') {
-        const chip = def.spec.chip?.(id)
+      if (def.kind === 'line')
         setChrome({
-          node: (
-            <DragGhost bare={chip != null}>
-              {chip ?? (
-                <>
-                  {def.spec.glyph?.(id)}
-                  {s.name}
-                </>
-              )}
+          node: def.spec.chip?.(id) ?? (
+            <DragGhost>
+              {def.spec.glyph?.(id)}
+              {s.name}
             </DragGhost>
           ),
           style: { ...base, left: start.x, top: start.y },
         })
-      } else if (def.spec.renderOverlay)
+      else if (def.spec.renderOverlay)
         setChrome({
           node: def.spec.renderOverlay(id, rect),
           style: {

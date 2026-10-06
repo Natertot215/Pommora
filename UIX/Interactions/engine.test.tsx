@@ -985,14 +985,15 @@ describe('the line zone', () => {
 
   it('shows the chip, marks the source, and commits on release', async () => {
     await dragHold('r1', 100, 70)
-    expect(document.querySelector('.drag-ghost [data-chip]')?.textContent).toBe('r1')
+    expect(document.querySelector('[data-chip]')?.textContent).toBe('r1')
+    expect(document.querySelector('.drag-ghost')).toBeNull()
     expect(item('r1').hasAttribute('data-drag-source')).toBe(true)
     expect((host.querySelector('.drop-line') as HTMLElement).style.top).toBe('60px')
     await release(100, 70)
     expect(commit).toHaveBeenCalledExactlyOnceWith('r1', 'r3')
     expect(spoken().at(-1)).toBe('Moved r1.')
     expect(item('r1').hasAttribute('data-drag-source')).toBe(false)
-    expect(document.querySelector('.drag-ghost')).toBeNull()
+    expect(document.querySelector('[data-chip]')).toBeNull()
     expect(host.querySelector('.drop-line')).toBeNull()
   })
 
@@ -1011,7 +1012,7 @@ describe('the line zone', () => {
       firePointer(item('r1'), 'pointerdown', { x: 7, y: 15 })
     })
     await move(40, 70)
-    const chrome = document.querySelector('.drag-ghost')?.parentElement as HTMLElement
+    const chrome = document.querySelector('[data-chip]')?.parentElement as HTMLElement
     expect([chrome.style.left, chrome.style.top]).toEqual(['7px', '15px'])
     pressEscape()
   })
@@ -1307,7 +1308,7 @@ describe('the engine seams', () => {
       firePointer(item('r1'), 'pointerdown', { x: 100, y: 15 })
     })
     await move(200, 70)
-    const chrome = document.querySelector('.drag-ghost')?.parentElement as HTMLElement
+    const chrome = document.querySelector('[data-chip]')?.parentElement as HTMLElement
     const reads = measure.mock.calls.length
     await move(290, 70)
     await move(295, 60)
