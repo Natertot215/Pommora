@@ -6,6 +6,13 @@ import type { DocScan } from './docScan'
 import { applyEdits, fenceAt, quotePrefix, type TextEdit } from './markdownCode'
 
 const options = { extensions: [gfm()], mdastExtensions: [gfmFromMarkdown()] }
+const throughHtml = {
+  ...options,
+  extensions: [...options.extensions, { disable: { null: ['htmlFlow'] } }],
+}
+
+/** An HTML block read as prose, so the Markdown inside it parses. */
+export const parseThroughHtml = (text: string): Root => fromMarkdown(text, throughHtml)
 
 export function parse(text: string, scan?: DocScan): Root {
   if (!scan) return fromMarkdown(text, options)

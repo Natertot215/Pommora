@@ -16,6 +16,8 @@ import { isValidLink, WEB_ADDRESS } from '../../Paths/urlPath'
 import type { ListKind } from '../../Actions/gripMenu'
 export const highlightRegex = (): RegExp => /(?<!=)==(?!=)((?:[^=\n]|=(?!=))+)==(?!=)/dg
 export const inlineLatexRegex = (): RegExp => /(?<!\$)\$(?!\$)([^$\n]+?)\$(?!\$)/dg
+export const htmlTagRegex = (): RegExp =>
+  /<\/?([A-Za-z][A-Za-z0-9-]*(?:\s(?:[^<>"'\n]|"[^"\n]*"|'[^'\n]*')*?)?)\/?>/dg
 
 export function stripQuotePrefix(line: string): string {
   if (!isBlockquoteLine(line)) return line

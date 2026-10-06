@@ -79,6 +79,7 @@ globalStyle(':root', {
     '--solid-purple': c.solid.purple,
     '--error': c.solid.red,
     '--code': tintAt(c.solid.red, 85),
+    '--html-tag': 'var(--code)',
 
     ...Object.fromEntries(
       Object.entries(TINT_STEPS).map(([step, pct]) => [`--tint-${step}`, `${pct}%`]),

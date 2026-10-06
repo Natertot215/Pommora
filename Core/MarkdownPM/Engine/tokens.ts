@@ -1,10 +1,16 @@
 // Emphasis is located on the mdast AST so `_`/`*` mixing/nesting is correct and code spans never emit emphasis.
 import type { Root, RootContent, PhrasingContent } from 'mdast'
-import { parse } from './parser'
+import { parse, parseThroughHtml } from './parser'
 import { inlineSpans, type CodeMask } from './markdownCode'
 import { inCodeAt, scanDoc } from './docScan'
 import { markdownLinkRegex } from '../../Connections/links'
-import { isInlineMathContent, highlightRegex, inlineLatexRegex, markerRegex } from './detect'
+import {
+  htmlTagRegex,
+  isInlineMathContent,
+  highlightRegex,
+  inlineLatexRegex,
+  markerRegex,
+} from './detect'
 import { linkSpans, pageEmbedPattern, pageLinkPattern } from '../../Connections/connections'
 import { type HighlightColor, markAfter, markBefore } from './highlightColors'
 
@@ -20,6 +26,7 @@ export type TokenKind =
   | 'wikiLink'
   | 'link'
   | 'citationRef'
+  | 'htmlTag'
 
 export interface Token {
   kind: TokenKind
@@ -29,6 +36,8 @@ export interface Token {
   fragment?: [number, number]
   markerRanges: [number, number][]
   color?: HighlightColor
+  /** Inside an HTML block, where HTML Formatting draws the source raw. */
+  inHtml?: true
 }
 
 // The page half alone resolves; a heading token carries `resolveRange` too and is not aliased by that alone.
@@ -57,6 +66,7 @@ export function shiftToken(tk: Token, by: number): Token {
     ...(tk.fragment ? { fragment: move(tk.fragment) } : {}),
     markerRanges: tk.markerRanges.map(move),
     ...(tk.color ? { color: tk.color } : {}),
+    ...(tk.inHtml ? { inHtml: true } : {}),
   }
 }
 
@@ -101,6 +111,18 @@ function pushEmphasis(
       [contentEnd, contentEnd + width],
     ],
   })
+}
+
+const FLOW_CONTAINERS = new Set(['root', 'blockquote', 'list', 'listItem', 'footnoteDefinition'])
+
+function htmlBlockSpans(node: MdNode, out: Span[] = []): Span[] {
+  if (!FLOW_CONTAINERS.has(node.type) || !('children' in node)) return out
+  for (const child of node.children) {
+    const [s, e] = [child.position?.start.offset, child.position?.end.offset]
+    if (child.type !== 'html') htmlBlockSpans(child, out)
+    else if (s != null && e != null) out.push([s, e])
+  }
+  return out
 }
 
 function walkEmphasis(node: MdNode, out: Token[]): void {
@@ -229,13 +251,20 @@ function wikiLinkTokens(text: string, inCode: (offset: number) => boolean): Toke
 }
 
 /** Every token opens on one of these, so text holding none of them tokenizes to nothing. */
-export const holdsTokens = (text: string): boolean => /[*_~`=$[]/.test(text)
+export const holdsTokens = (text: string): boolean => /[*_~`=$[<]/.test(text)
 
 export function tokenize(text: string): Token[] {
   const scan = scanDoc(text)
   const ast = parse(text, scan)
   const tokens: Token[] = []
   walkEmphasis(ast, tokens)
+  // The parser reads an HTML block as one opaque node, so its emphasis is read from the block alone, as prose.
+  const blocks = htmlBlockSpans(ast)
+  for (const [f, t] of blocks) {
+    const inner: Token[] = []
+    walkEmphasis(parseThroughHtml(text.slice(f, t)), inner)
+    tokens.push(...inner.map((tk) => shiftToken(tk, f)))
+  }
   const inCode: CodeMask = (p) => inCodeAt(scan, p)
   const matches = (spec: RegexSpec): Token[] => regexTokens(text, spec, inCode)
 
@@ -274,6 +303,9 @@ export function tokenize(text: string): Token[] {
     close: 1,
     accept: isInlineMathContent,
   }).filter(notOverlapping([...code, ...blockTex]))
+  const tags = matches({ kind: 'htmlTag', re: htmlTagRegex(), open: 1, close: 1 }).filter(
+    notOverlapping([...code, ...embeds, ...wikis, ...links, ...blockTex, ...inlineTex]),
+  )
 
   tokens.push(
     ...embeds,
@@ -285,6 +317,8 @@ export function tokenize(text: string): Token[] {
     ...blockTex,
     ...inlineTex,
   )
+  for (const tk of tokens) if (blocks.some((b) => overlaps(b, tk.range))) tk.inHtml = true
+  tokens.push(...tags)
   tokens.sort((a, b) => a.range[0] - b.range[0])
   return tokens
 }

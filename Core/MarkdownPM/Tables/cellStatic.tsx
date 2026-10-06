@@ -1,5 +1,5 @@
 import { Fragment, memo } from 'react'
-import { aliasedToken, linkTokenAt, tokenize, type Token } from '../Engine/tokens'
+import { aliasedToken, holdsTokens, linkTokenAt, tokenize, type Token } from '../Engine/tokens'
 import { MD_LINK_CLASS } from '../decorations'
 import {
   contentClass,
@@ -49,7 +49,7 @@ export function renderCellContent(
   base = 0,
 ): React.ReactNode {
   // No markdown-significant char → no token possible, so skip the mdast parse; this is the per-cell cost of a table scrolling in.
-  if (!/[*_~`[$=]/.test(text)) return text
+  if (!holdsTokens(text)) return text
   const tokens = cellTokens(text)
   if (tokens.length === 0) return text
   const conn = getConn?.()
@@ -132,6 +132,15 @@ export function renderCellContent(
             {content}
           </span>
         ),
+      )
+    } else if (tk.kind === 'htmlTag') {
+      const [open, close] = tk.markerRanges
+      out.push(
+        <Fragment key={key++}>
+          <span className="md-bracket">{text.slice(open[0], open[1])}</span>
+          <span className="md-html-tag">{content}</span>
+          <span className="md-bracket">{text.slice(close[0], close[1])}</span>
+        </Fragment>,
       )
     } else if (tk.kind === 'citationRef') {
       const n = around?.ordinalOf(content) ?? null

@@ -121,6 +121,7 @@ const CONTENT_CLASS: Partial<Record<TokenKind, string>> = {
   embed: 'md-embed',
   inlineLatex: 'md-latex',
   blockLatex: 'md-latex',
+  htmlTag: 'md-html-tag',
 }
 
 export const contentClass = (tk: Token): string | undefined =>
@@ -138,7 +139,11 @@ export function tokenIntents(tokens: Token[], active: Set<number>): DecoIntent[]
         to: tk.contentRange[1],
         className: cls,
       })
-    if (!active.has(i))
+    // A tag's brackets are its syntax on show, never hidden.
+    if (tk.kind === 'htmlTag')
+      for (const [s, e] of tk.markerRanges)
+        intents.push({ kind: 'class', from: s, to: e, className: 'md-bracket' })
+    else if (!active.has(i))
       for (const [s, e] of tk.markerRanges) intents.push({ kind: 'hide', from: s, to: e })
   })
   return intents

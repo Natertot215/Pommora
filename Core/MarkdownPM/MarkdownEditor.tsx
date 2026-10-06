@@ -113,10 +113,10 @@ export function MarkdownEditor({
     viewRef.current?.requestMeasure()
   }, [cbLineCount])
 
-  const { headingLinkStyle, inPageHeadingResolution } = host.settings()
+  const { headingLinkStyle, inPageHeadingResolution, htmlFormatting } = host.settings()
   useEffect(() => {
     viewRef.current?.dispatch({ effects: resolutionNudge.of(null) })
-  }, [headingLinkStyle, inPageHeadingResolution])
+  }, [headingLinkStyle, inPageHeadingResolution, htmlFormatting])
 
   useEffect(() => {
     const view = viewRef.current
