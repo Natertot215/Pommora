@@ -119,12 +119,14 @@ const placementStyle = (p: Placement): CSSProperties => ({
   height: p.h,
 })
 
-/** The height a bottom ghost fills: the pane's room below its content, less the gutter the ghost sits behind, so the board's growth while it shows gives the pane no scroll; null where that is less than a tile worth offering. */
-const fillBelow = (grid: HTMLElement): number | null => {
+/** The height a bottom ghost fills: the pane's room from the last band down to its own end, less what the pane keeps under the board and the gutter the ghost sits behind, so the board's growth while the ghost shows gives the pane no scroll. Read from the band, so the ghost's own growth never feeds it; null where it is less than a tile worth offering. */
+const fillBelow = (grid: HTMLElement, totalHeight: number): number | null => {
   const pane = scrollContainer(grid, 'y')
   if (!pane) return NEW_TILE_H
-  const end = (pane.lastElementChild ?? grid).getBoundingClientRect().bottom
-  const fill = Math.floor(pane.getBoundingClientRect().bottom - end) - TILE_GAP
+  const box = grid.getBoundingClientRect()
+  const trailing = (pane.lastElementChild ?? grid).getBoundingClientRect().bottom - box.bottom
+  const fill =
+    Math.floor(pane.getBoundingClientRect().bottom - box.top - trailing) - totalHeight - TILE_GAP
   return fill >= BOTTOM_FILL_MIN_PX ? fill : null
 }
 
@@ -292,7 +294,7 @@ export function TileGrid({
   const busy = pressedId !== null || resizingId !== null || tileDrag !== null || settle !== null
   // A board with tiles offers its wedge ghosts and its add strip while it is unlocked and at rest; a stacked board has no wedge and keeps the strip.
   const zones = !locked && !busy && view.bands.length > 0
-  const live = useLatest({ view, onLayoutChange, boardStatic, isTileLocked })
+  const live = useLatest({ view, onLayoutChange, boardStatic, isTileLocked, placed })
 
   // The ref mirrors the state so the commit runs as a plain event side effect, never inside a state updater (React forbids cross-component updates there).
   const settleRef = useRef<Settle | null>(null)
@@ -493,22 +495,18 @@ export function TileGrid({
     suppressed: () => inserting !== null,
   })
   useClearStrandedGhost(ghostApi, { has: (id) => zones && (id === APPEND || wedges.has(id)) })
-  // Measured as the pointer arrives at the bottom: with room the bottom is a ghost's zone, without it the strip's, and the shape holds through the menu it opened.
+  // The bottom zone is the room under the last band: with a tile's worth it is a ghost's zone that fills it, with less the clearance alone, offering the strip; the shape holds through the menu it opened.
   const [fill, setFill] = useState<number | null>(null)
   const [strip, setStrip] = useState(false)
-  const measureFill = (): number | null => {
-    const h = gridRef.current && fillBelow(gridRef.current)
-    setFill(h)
-    return h
-  }
 
-  // Sampled only between gestures and only off a measured width, before paint: a crossing under a held pointer would re-lay the board mid-drag, and a narrow mount must never paint two-across first.
+  // Sampled only between gestures and only off a measured width, before paint: a crossing under a held pointer would re-lay the board mid-drag, and a narrow mount must never paint two-across first. The room under the last band rides the same sample, since the pane's height and the board's are what move it.
   useLayoutEffect(() => {
     const grid = gridRef.current
     if (busy || !grid) return
     const sample = (): void => {
       const width = grid.clientWidth
       if (width > 0) setStacked((was) => stackedAt(width, was))
+      setFill(fillBelow(grid, live.current.placed.totalHeight))
     }
     sample()
     const ro = new ResizeObserver(sample)
@@ -576,8 +574,11 @@ export function TileGrid({
         boardStatic && 'is-static',
       )}
       style={{
-        height:
-          Math.max(placed.totalHeight, ghostBox ? ghostBox.y + ghostBox.h : 0) + BOTTOM_PAD_PX,
+        // The clearance under the last band, or a bottom ghost's own end, which takes the clearance as its own.
+        height: Math.max(
+          placed.totalHeight + BOTTOM_PAD_PX,
+          ghostBox ? ghostBox.y + ghostBox.h : 0,
+        ),
       }}
     >
       {zones &&
@@ -594,6 +595,41 @@ export function TileGrid({
             )
           )
         })}
+
+      {zones && (
+        <div
+          className="tile-add"
+          data-reveal-host={strip ? 'on' : 'off'}
+          style={placementStyle({
+            x: { share: 0, px: 0 },
+            y: placed.totalHeight,
+            w: { share: 1, px: 0 },
+            h: fill === null ? BOTTOM_PAD_PX : TILE_GAP + fill,
+          })}
+          onPointerEnter={() => {
+            if (fill !== null) ghostApi.onHover(APPEND, true)
+            else setStrip(true)
+          }}
+          onPointerLeave={() => {
+            ghostApi.onHover(APPEND, false)
+            setStrip(false)
+          }}
+        >
+          <button
+            type="button"
+            className={cx('add-strip', revealTarget)}
+            data-create
+            data-reveal-held={(inserting !== null && stripped(inserting.target)) || undefined}
+            aria-label="New Tile"
+            style={{ top: TILE_GAP }}
+            onClick={(e) => {
+              if (inserting === null) onInsert({ kind: 'append' }, e)
+            }}
+          >
+            <Icon name="plus" size="body" />
+          </button>
+        </div>
+      )}
 
       {order.map(([id, place]) => {
         const lifted = tileDrag?.id === id ? tileDrag : null
@@ -650,41 +686,6 @@ export function TileGrid({
           <Icon name="layout-dashboard" size="titleMedium" />
           <span className={text.footnote.standard}>New Tile</span>
         </button>
-      )}
-
-      {zones && (
-        <div
-          className="tile-add"
-          data-reveal-host={strip ? 'on' : 'off'}
-          style={placementStyle({
-            x: { share: 0, px: 0 },
-            y: placed.totalHeight,
-            w: { share: 1, px: 0 },
-            h: BOTTOM_PAD_PX,
-          })}
-          onPointerEnter={() => {
-            if (measureFill() !== null) ghostApi.onHover(APPEND, true)
-            else setStrip(true)
-          }}
-          onPointerLeave={() => {
-            ghostApi.onHover(APPEND, false)
-            setStrip(false)
-          }}
-        >
-          <button
-            type="button"
-            className={cx('add-strip', revealTarget)}
-            data-create
-            data-reveal-held={(inserting !== null && stripped(inserting.target)) || undefined}
-            aria-label="New Tile"
-            style={{ top: TILE_GAP }}
-            onClick={(e) => {
-              if (inserting === null) onInsert({ kind: 'append' }, e)
-            }}
-          >
-            <Icon name="plus" size="body" />
-          </button>
-        </div>
       )}
     </div>
   )
