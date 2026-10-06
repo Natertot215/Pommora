@@ -214,17 +214,19 @@ export function FootingItem({
 export function MenuFooting({
   leading,
   trailing,
+  centered = false,
   children,
 }: {
   leading?: ReactNode
   trailing?: ReactNode
+  centered?: boolean
   children?: ReactNode
 }): React.JSX.Element {
   return (
     <div className={s.footingBar}>
       <MenuSeparator flush />
       {children ?? (
-        <div className={s.footing}>
+        <div className={centered ? s.footingCentered : s.footing}>
           {leading}
           <span className={s.spacer} />
           {trailing}

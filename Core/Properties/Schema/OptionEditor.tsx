@@ -4,16 +4,14 @@ import { cx } from '@pommora/uix/Utilities/cx'
 import { GhostOptionChip, useGhostOptionAnchor } from './GhostOptionChip'
 import { ghostAnchorProps } from '@pommora/uix/Interactions/ghostCreate'
 import { Reveal } from '@pommora/uix/Animations/Reveal'
-import { useEntrance } from '@pommora/uix/Animations/useEntrance'
 import { LineGroup, LineZone, lineList } from '@pommora/uix/Interactions/drag'
 import { RenamableLabel } from '@pommora/uix/Fields/RenamableLabel'
 import { base } from '@pommora/uix/Fields/fields.css'
 import { text } from '@pommora/uix/Theme'
 import { OptionSlot } from './OptionRow'
-import { type OptionStyleControl, useOptionEdit } from './useOptionEdit'
+import { OptionDraft, type OptionStyleControl, useOptionEdit } from './useOptionEdit'
 import { OptionChip } from '../Cells/OptionChip'
 import * as s from '@pommora/uix/Menus/frames.css'
-import { titleInput } from '@pommora/uix/Menus/menu-row.css'
 import { AccessoryButton, heading, menuDropLine } from '@pommora/uix/Menus'
 import { optionShapeFor } from '@pommora/uix/Labels/recipes'
 
@@ -37,7 +35,6 @@ export function OptionEditor({
   const edit = useOptionEdit({ propertyId, type, def, options, style })
   const headingOf = (id: string): string =>
     grouped ? (groups.find((g) => g.id === id)?.label ?? id) : 'Options'
-  const entering = useEntrance(options, (o) => edit.keyOf(o.value))
   const ghostApi = useGhostOptionAnchor(adding !== null || renamingGroup !== null || edit.busy)
 
   const commitAdd = (g: StatusGroup, title: string, atIndex: number): void => {
@@ -47,12 +44,7 @@ export function OptionEditor({
   const slotAt = (g: StatusGroup, index: number, anchorId: string): React.JSX.Element | null =>
     adding?.groupId === g.id && adding.index === index ? (
       <div className={s.optionRow}>
-        <RenamableLabel
-          renames="title"
-          editing
-          value=""
-          className={titleInput}
-          autoSize
+        <OptionDraft
           onCommit={(title) => commitAdd(g, title, index)}
           onCancel={() => setAdding(null)}
         />
@@ -120,7 +112,7 @@ export function OptionEditor({
           >
             {groupOptions(g).map((o, i) => (
               <Fragment key={edit.keyOf(o.value)}>
-                <Reveal open enterOnMount={entering(edit.keyOf(o.value))} fill>
+                <Reveal open enterOnMount={edit.entering(edit.keyOf(o.value))} fill>
                   <OptionSlot
                     option={o}
                     type={type}

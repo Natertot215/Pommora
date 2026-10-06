@@ -1,15 +1,11 @@
 import { LineRow } from '@pommora/uix/Interactions/drag'
 import { Button } from '@pommora/uix/Buttons/Button'
-import { type ColumnLook, lookOptions, OPTION_LOOKS } from '../columnStyles'
+import type { ColumnLook } from '../columnStyles'
 import type { PropertyDefinition } from '../properties'
 import { OptionChip, type OptionChipData } from '../Cells/OptionChip'
 import { ghostAnchorProps, type GhostAnchor } from '@pommora/uix/Interactions/ghostCreate'
 import * as s from '@pommora/uix/Menus/frames.css'
 import { compactTitle } from './option-row.css'
-
-export type OptionStyle = (typeof OPTION_LOOKS)[number]
-
-export const OPTION_STYLE_OPTIONS = lookOptions(OPTION_LOOKS)
 
 export function OptionSlot({
   option,
