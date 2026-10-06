@@ -1,4 +1,4 @@
-import { styleMenuItems, styleMenuLabel, type StyleAction } from './columnMenu'
+import { styleBranch, type StyleAction } from './columnMenu'
 import type { ColumnStyle } from '../Properties/columnStyles'
 import {
   type PageMetaAction,
@@ -107,16 +107,7 @@ function baseCellMenuModel(ctx: CellMenuContext): ActionItem<CellMenuAction>[][]
       ]
     case 'style-only':
       return [
-        [
-          {
-            label: styleMenuLabel(ctx.type),
-            submenu: styleMenuItems({
-              type: ctx.type,
-              current: ctx.current,
-              barCapable: ctx.barCapable,
-            }),
-          },
-        ],
+        styleBranch({ type: ctx.type, current: ctx.current, barCapable: ctx.barCapable }),
         ctx.clearable ? [{ label: 'Clear', action: 'cell:clear' }] : [],
       ]
     case 'link':

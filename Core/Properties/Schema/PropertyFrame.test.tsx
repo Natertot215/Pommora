@@ -30,17 +30,6 @@ vi.mock('@pommora/uix/Fields/RenamableLabel', async (actual) => {
   }
 })
 
-const optionEditor = vi.hoisted(() => ({ remove: (_value: string): void => {} }))
-vi.mock('./OptionEditor', async (actual) => {
-  const real = await actual<typeof import('./OptionEditor')>()
-  return {
-    OptionEditor: (props: Parameters<typeof real.OptionEditor>[0]) => {
-      optionEditor.remove = props.onRemoveOption
-      return <real.OptionEditor {...props} />
-    },
-  }
-})
-
 class ResizeObserverStub {
   observe(): void {}
   unobserve(): void {}
@@ -488,36 +477,6 @@ describe('native menus + the inline-rename channel (T7)', () => {
     expect(propertyMenuSpy).toHaveBeenCalledWith({
       items: propertyMenuModel({ kind: 'registry-row', name: 'Effort' }),
       anchor: undefined,
-    })
-  })
-})
-
-describe("an option remove's skipped-files line", () => {
-  const removeWith = async (owed?: unknown): Promise<void> => {
-    const warning = owed ? 'Owed line' : 'Unowed line'
-    ;(window as unknown as { nexus: unknown }).nexus = stubDialer({
-      'property:removeOption': async () => ok({ cascade: { pages: [], hosts: [], warning }, owed }),
-    })
-    await mountPane()
-    await act(async () => {
-      rowFor('Status').click()
-    })
-    await act(async () => {
-      optionEditor.remove('Done')
-    })
-  }
-
-  it('is shown with no action when the journal kept no record', async () => {
-    await removeWith()
-    expect(currentNotification()).toMatchObject({ message: 'Unowed line', tone: 'error' })
-    expect(currentNotification()?.action).toBeUndefined()
-  })
-
-  it('offers Try Again when the journal holds its record', async () => {
-    await removeWith({ kind: 'removeOption' })
-    expect(currentNotification()).toMatchObject({
-      message: 'Owed line',
-      action: { label: 'Try Again' },
     })
   })
 })

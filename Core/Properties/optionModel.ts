@@ -1,10 +1,5 @@
 import { z } from 'zod'
 import { optionAppearance, type StatusGroup, type StatusOption } from './properties'
-import { freeName } from '../Paths/names'
-
-export function fallbackTitle(taken: readonly string[], groupLabel?: string): string {
-  return freeName(groupLabel || 'Label', taken)
-}
 
 function mapOption(
   groups: StatusGroup[],

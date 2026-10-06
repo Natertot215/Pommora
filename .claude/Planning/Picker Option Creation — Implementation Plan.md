@@ -57,10 +57,10 @@ Recorded 10-05-2026 at `4b045c30b` on `active`.
   - [x] Task 1.1
   - [x] Task 1.2
   - [x] Task 1.3
-- [ ] **Phase 2** — The Shared Option Edit And The Editor (one commit)
-  - [ ] Task 2.1
-  - [ ] Task 2.2
-  - [ ] Task 2.3
+- [x] **Phase 2** — The Shared Option Edit And The Editor (one commit)
+  - [x] Task 2.1
+  - [x] Task 2.2
+  - [x] Task 2.3
 - [ ] **Phase 3** — The Picker
   - [ ] Task 3.1
   - [ ] Review Checkpoint

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { addOption, applyOptionEdit, fallbackTitle, moveOption, renameOption } from './optionModel'
+import { addOption, applyOptionEdit, moveOption, renameOption } from './optionModel'
 import {
   optionGroupsOf,
   withOptionGroups,
@@ -26,17 +26,6 @@ const A = groups[0].options[0]
 const D = groups[1].options[0]
 
 describe('optionModel', () => {
-  it('fallbackTitle yields Label for select and the group name for status', () => {
-    expect(fallbackTitle([])).toBe('Label')
-    expect(fallbackTitle([], 'Active')).toBe('Active')
-    expect(fallbackTitle(['Label'], '')).toBe('Label (2)')
-  })
-
-  it('fallbackTitle steps aside from a title already taken', () => {
-    expect(fallbackTitle(['Label'])).toBe('Label (2)')
-    expect(fallbackTitle(['Open'], 'Open')).toBe('Open (2)')
-  })
-
   it('addOption inserts into the matched group only, carrying its group_id', () => {
     expect(addOption(groups, 'upcoming', 'Triage', 0)[0].options.map((o) => o.value)).toEqual([
       'Triage',

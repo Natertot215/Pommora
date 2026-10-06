@@ -1,14 +1,15 @@
-// Remove deletes the option AND strips its value from every page; Clear strips the value only.
+// Clear strips the option's value from every page; Remove deletes the option and strips it too.
 
+import { styleBranch, type StyleAction, type StyleMenuContext } from './columnMenu'
 import type { ActionItem } from './menuModel'
 
-type OptionMenuAction = 'option:rename' | 'option:edit-icon' | 'option:remove' | 'option:clear'
+type OptionMenuAction = 'option:edit' | 'option:clear' | 'option:remove' | StyleAction
 
-export function optionMenuModel(): ActionItem<OptionMenuAction>[] {
+export function optionMenuModel(style?: StyleMenuContext): ActionItem<OptionMenuAction>[] {
   return [
-    { label: 'Rename', action: 'option:rename' },
-    { label: 'Edit Icon', action: 'option:edit-icon' },
-    { label: 'Remove', action: 'option:remove', separatorBefore: true },
-    { label: 'Clear', action: 'option:clear' },
+    ...(style ? styleBranch(style) : []),
+    { label: 'Edit Option', action: 'option:edit' },
+    { label: 'Clear', action: 'option:clear', separatorBefore: true },
+    { label: 'Remove', action: 'option:remove' },
   ]
 }
