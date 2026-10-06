@@ -344,6 +344,7 @@ function EditableOptionRows({
                 <MenuItem
                   checked={selected.includes(o.value)}
                   centered
+                  tabIndex={-1}
                   onClick={() => onPick(o.value)}
                 >
                   <OptionChip type={def.type} look={look} option={o} def={def} />

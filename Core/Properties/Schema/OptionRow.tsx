@@ -1,4 +1,4 @@
-import { LineRow } from '@pommora/uix/Interactions/drag'
+import { LineRow, useLineEl } from '@pommora/uix/Interactions/drag'
 import { Button } from '@pommora/uix/Buttons/Button'
 import type { ColumnLook } from '../columnStyles'
 import type { PropertyDefinition } from '../properties'
@@ -23,9 +23,10 @@ export function OptionSlot({
   def: Pick<PropertyDefinition, 'status_groups'>
   editing: boolean
   ghost: GhostAnchor
-  onToggleEditing: (anchor: HTMLElement) => void
+  onToggleEditing: (anchor: HTMLElement | undefined) => void
   onOpenMenu: (row: HTMLElement) => void
 }): React.JSX.Element {
+  const rowEl = useLineEl()
   return (
     <LineRow
       id={option.value}
@@ -49,7 +50,7 @@ export function OptionSlot({
         className={s.optionEditButton}
         data-reveal-held={editing || undefined}
         aria-label="Edit Option"
-        onClick={(e) => onToggleEditing(e.currentTarget.closest('[data-line-row]') as HTMLElement)}
+        onClick={() => onToggleEditing(rowEl(option.value))}
       />
     </LineRow>
   )

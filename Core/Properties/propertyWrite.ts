@@ -18,7 +18,9 @@ export const replay = (record: SchemaJournal) => (): void =>
 export const retryOwed = ({ cascade, owed }: SchemaCascade): void =>
   warnCascade(cascade, owed ? replay(owed) : undefined)
 
-export async function warnOwed(res: Promise<Result<SchemaCascade>>): Promise<void> {
+export async function warnOwed(res: Promise<Result<SchemaCascade>>): Promise<boolean> {
   const r = await res
-  if (reportRefusal(r)) retryOwed(r.value)
+  const landed = reportRefusal(r)
+  if (landed) retryOwed(r.value)
+  return landed
 }

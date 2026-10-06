@@ -44,12 +44,12 @@ Recorded 10-05-2026 at `4b045c30b` on `active`.
 - Gates: green at `4b045c30b` — `npm run typecheck` exit 0 · `npm run lint` "Checked 1409 files in 631ms. No fixes applied." exit 0 · `npm run test` 515 files, 7282 passed, 2 skipped, exit 0.
 - `grep -rn "fallbackTitle\|OptionNameCaret\|useOptionIconChoice" Core | grep -v "/out/" | wc -l` → 21 — retires to 0
 - `grep -rn "option:rename\|option:edit-icon" Core | grep -v "/out/" | wc -l` → 6 — retires to 0
-- `grep -rn "styleMenuLabel(" Core/Actions --include="*.ts" | grep -v test | grep -v "export function" | wc -l` → 2 — becomes 1 (inside `styleBranch`)
+- `grep -rn "styleMenuLabel(" Core/Actions --include="*.ts" | grep -v test | grep -v "export function" | wc -l` → 2 — the one call left is inside `styleBranch`; the fold un-exported the declaration, so the command counts it too and reads 2
 - `grep -rn "function warnOwed\|const retryOwed\|const replay" Core | grep -v "/out/" | wc -l` → 3 — stays 3, all in `propertyWrite.ts`
 - `npm run test` → 7282 passed, 2 skipped — rises by the tests this plan adds, less those it retires
 
 **START:** 2026-10-06T02:26:11Z
-**END:** <same, as the report is given>
+**END:** 2026-10-06T08:58:41Z
 
 #### Implementation Process
 
@@ -466,16 +466,14 @@ export type OptionStyleControl = {
 
 type Editing = { row: string; value: string }
 
+export type OptionDef = Pick<PropertyDefinition, 'id' | 'type' | 'status_groups'>
+
 export function useOptionEdit({
-  propertyId,
-  type,
   def,
   options,
   style,
 }: {
-  propertyId: string
-  type: PropertyType
-  def?: Pick<PropertyDefinition, 'status_groups'>
+  def: OptionDef
   options: readonly OptionChipData[]
   style?: OptionStyleControl
 }): {
@@ -719,7 +717,7 @@ export function OptionEditor({
   const [renamingGroup, setRenamingGroup] = useState<string | null>(null)
   const options = useMemo(() => groups.flatMap(groupOptions), [groups])
   const def = useMemo(() => ({ status_groups: groups }), [groups])
-  const edit = useOptionEdit({ propertyId, type, def, options, style })
+  const edit = useOptionEdit({ def, options, style })
   const headingOf = (id: string): string =>
     grouped ? (groups.find((g) => g.id === id)?.label ?? id) : 'Options'
   const entering = useEntrance(options, (o) => edit.keyOf(o.value))
@@ -1078,7 +1076,7 @@ function EditableOptionRows({
   onPick: (value: string) => void
 }): React.JSX.Element {
   const look = style?.current.look
-  const edit = useOptionEdit({ propertyId: def.id, type: def.type, def, options, style })
+  const edit = useOptionEdit({ def, options, style })
   const [naming, setNaming] = useState(false)
   const entering = useEntrance(options, (o) => edit.keyOf(o.value))
   return (
@@ -1503,6 +1501,7 @@ Per the skill's 5.5 shape, written when the chain above is confirmed.
 ### Deviations
 
 - **10-06-2026, early Phase 2 reviews (two read-only reviewers, dispatched at Nathan's direction from a forked session), folded after Phase 3:** `MenuFooting` takes `centered` and the picker passes its `+` as `leading`, so `footing`/`footingCentered` stay inside the kit (Tasks 1.2 and 3.1's AFTERs). `useOptionEdit` resolves the open popup's option and `isOpen` through `keyOf`, so a second rename inside one popup session holds; it clears `editing` when the open option is removed, so the popup closes through its exit instead of unmounting; its rename collision check folds case like the host; and it prunes aliases no live option or pending rename needs. The hook returns `entering`, and an `OptionDraft` beside it serves both the editor and the picker: per Nathan's rulings of 10-06-2026, it discloses through `Reveal` and renders as a chip being renamed — the option's `shape` and `labelColor` shell (greyDefault in the picker, the group color in the editor) around the `base` input — rather than as the View Tile's bare title field; in the picker it sits in a `MenuItem` laid out exactly as an unchecked option row (`checked={false} centered`), so its chip centers on the same axis as the chips above it. `OptionStyle`/`OPTION_STYLE_OPTIONS` live in `PropertyFrame.tsx`, their only reader. The host refuses a whitespace group label in `admitOptionEdit`. Tests added for each.
-- **10-06-2026, phase-review folds (eight reviewers, two per phase):** The host is the sole judge of a rename collision — `useOptionEdit.rename` writes optimistically, reverts its alias and `editing` on a refusal, and the popup's field is keyed on the accepted title, so a refused rename shows the old title again; aliases are pruned once a refresh has carried the renamed title and it's gone again. The draft lives in the hook (`draft`, `beginDraft`, `commitDraft`, `cancelDraft`, `busy`) and `OptionDraft` takes the hook, so the editor's `adding` state is gone; the picker pins the draft row above its footer, outside the scroller. Rows pick through `LineRow`'s `open`, so Enter on a focused row picks it; `EditableOptionRows` is keyed on `def.id`. `columnStylePatch` in `useColumnStyles.ts` is the one `column_styles` writer, shared by the Property Frame and the view host; `warnCascade` in `notifications.ts` is the one cascade warning, shared by `retryOwed` and `nexusSlice`. `withUniqueOptions` heals a blank stored option at read and `optionList` drops whitespace values; `relabelGroup`'s `min(1)` is gone since `admitOptionEdit` refuses the whitespace label. `styleMenuLabel` is un-exported (`columnMenu.test.ts` asserts through `styleBranch`), the `OptionStyle` alias is gone, and `FootingCreate` in `MenuRows.tsx` is the one footing `+` for the View Tile, View Frame, Property Frame, and picker. The drive mints page ids through `ulidx`, reads frontmatter through `yaml`, shares one `sweep` between `drag` and the mass gesture, derives its columns from the seed, asserts the draft closes after a blank Enter, drives the editor's `+` to create `Added`, and restores `~/Test` on SIGINT. `CLAUDE.md` names the sidecar `_pagecollection.json`.
+- **10-06-2026, phase-review folds (eight reviewers, two per phase):** The host is the sole judge of a rename collision — `useOptionEdit.rename` writes optimistically, reverts its alias and `editing` on a refusal, and the popup's field is keyed on the accepted title, so a refused rename shows the old title again; aliases are pruned once a refresh has carried the renamed title and it's gone again. The draft lives in the hook (`draft`, `beginDraft`, `commitDraft`, `cancelDraft`, `busy`) and `OptionDraft` takes the hook, so the editor's `adding` state is gone; the picker pins the draft row above its footer, outside the scroller. Rows pick through `LineRow`'s `open`, so Enter on a focused row picks it; `EditableOptionRows` is keyed on `def.id`. `columnStylePatch` in `useColumnStyles.ts` is the one `column_styles` writer, shared by the Property Frame and the view host; `warnCascade` in `notifications.ts` is the one cascade warning, shared by `retryOwed` and `nexusSlice`. `withUniqueOptions` heals a blank stored option at read and `optionList` drops whitespace values; `relabelGroup`'s `min(1)` is gone since `admitOptionEdit` refuses the whitespace label. `styleMenuLabel` is un-exported (`columnMenu.test.ts` asserts through `styleBranch`), the `OptionStyle` alias is gone, and `FootingCreate` in `MenuRows.tsx` is the one footing `+` for the View Tile, View Frame, Property Frame, and picker. The drive mints page ids through `ulidx`, reads frontmatter through `yaml`, shares one `sweep` between `drag` and the mass gesture, derives its columns from the seed, asserts the draft closes after a blank Enter, drives the editor's `+` to create `Added`, and restores `~/Test` on SIGINT. `CLAUDE.md` names the sidecar `_pagecollection.json`; its Branches bullet and Benchmarks arrows in the same commit are Nathan's own edits, bundled. The pen's popup anchors at its row on every surface, and `OptionSlot`'s `look` and `def` are required.
+- **10-06-2026, neutral verification folds:** the picker's row `MenuItem` is `tabIndex={-1}` like every `LineRow` item, so the zone stays the one tab stop; the pen finds its row through `useLineEl` instead of a DOM walk; `warnOwed` answers whether the write landed, so `rename` reverts through it; `OptionDraft` renders through `Label`, which takes `children`, so no Core file composes `label-base.css` classes by hand; `OptionEditPopup`'s `def` is required.
 - **10-06-2026, Nathan's ruling:** He isn't available for the hand-checks, so the `[Stop]` after Phase 4 is a delivered screenshot gallery instead of a halt, and closeout runs through to the report. The drive gains parity steps (drag and the menu on Cards, mass-assign, and the Properties panel) and per-step screenshots. Neutral verification is briefed outward, and the report is published through `/view-changes`.
 

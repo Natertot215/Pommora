@@ -35,7 +35,7 @@ export function OptionEditPopup({
   contentKey: string
   type: string
   option: OptionChipData
-  def?: Pick<PropertyDefinition, 'status_groups'>
+  def: Pick<PropertyDefinition, 'status_groups'>
   triggerRef: RefObject<Element | null>
   onDismiss: () => void
   onRename: (raw: string) => void
