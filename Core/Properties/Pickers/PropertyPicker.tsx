@@ -248,10 +248,10 @@ export function PropertyOptionRows({
         onPick={onPick}
       />
     )
-  if (options.length === 0) return <div className={emptyPane} />
   const look = style?.current.look
   return (
-    <>
+    <MenuScrollFrame maxHeight={PICKER_MAX_HEIGHT}>
+      {options.length === 0 && <div className={emptyPane} />}
       {options.map((o) => (
         <MenuItem
           key={o.value}
@@ -266,7 +266,7 @@ export function PropertyOptionRows({
           )}
         </MenuItem>
       ))}
-    </>
+    </MenuScrollFrame>
   )
 }
 
