@@ -352,7 +352,7 @@ function EditableOptionRows({
             </Reveal>
           ))}
           {naming && (
-            <MenuItem>
+            <MenuItem centered>
               <OptionDraft
                 onCommit={(title) => {
                   setNaming(false)
