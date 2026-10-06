@@ -1,3 +1,4 @@
+import { capitalize } from '@pommora/uix/Utilities/capitalize'
 import { machine } from '../Platform/machine'
 import { errText, valueOr } from '../Contract/result'
 import { newId } from './ids'
@@ -70,9 +71,8 @@ function retireAgendaKey(identity: Record<string, unknown>): Record<string, unkn
 async function seedAgenda(root: string): Promise<AgendaRegistration> {
   const out: AgendaRegistration = {}
   for (const slot of AGENDA_FOLDERS) {
-    const title = slot.charAt(0).toUpperCase() + slot.slice(1)
     const id = newId()
-    if ((await createFolderEntity(root, slot, title, id)).ok) out[slot] = id
+    if ((await createFolderEntity(root, slot, capitalize(slot), id)).ok) out[slot] = id
   }
   return out
 }
