@@ -52,6 +52,18 @@ each literal value in its third must appear in those files. `UIX/Theme`'s `theme
 republishes hashed tokens under stable names. Exit 0 means the tables agree; drift is listed per
 table.
 
+`Option Picker Drive/live-drive.mjs` drives every option mutation the value picker and the
+Property Frame's option editor offer — creation from the picker's footer, blank and duplicate
+refusals, drag reorder, the right-click menu's Style, Edit Option, Clear and Remove, the popup's
+rename, color, appearance and icon, and the host's own blank refusal — against the real app, on the
+Table, Cards, mass-assign, and Properties-panel surfaces alike, and asserts each one in
+`.nexus/properties.json`, the page files and the view's sidecar. It backs up `~/Test`, launches the
+built app with its own userData and debug port, writes a screenshot of each state it produces to
+`$POMMORA_DRIVE_SHOTS` (the system temp directory's `option-picker-shots` otherwise), and restores
+`~/Test` when it ends, pass or fail. Native menus are chosen with System Events keystrokes, so the
+terminal needs Accessibility permission, and the run refuses to send a key unless the app is
+frontmost.
+
 `loc.py` and `check-atlas.mjs` run before every commit through the versioned git hook
 `../hooks/pre-commit`, which copies the codebase audit into `Dashboard/Audit/audit.md`, runs
 `loc.py --update`, stages both files into the commit, and runs `check-atlas.mjs`. Its partner

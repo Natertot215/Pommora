@@ -61,13 +61,13 @@ Recorded 10-05-2026 at `4b045c30b` on `active`.
   - [x] Task 2.1
   - [x] Task 2.2
   - [x] Task 2.3
-- [ ] **Phase 3** — The Picker
+- [x] **Phase 3** — The Picker
   - [x] Task 3.1
-  - [ ] Review Checkpoint
-- [ ] **Phase 4** — Live Drive And Reconciliation
-  - [ ] Task 4.1
-  - [ ] Task 4.2
-- [ ] Screenshot gallery delivered for Nathan's walkthrough — Footer + Draft Look · Drag Feel · Menu + Popup, on every surface; closeout proceeds without waiting on it
+  - [x] Review Checkpoint
+- [x] **Phase 4** — Live Drive And Reconciliation
+  - [x] Task 4.1
+  - [x] Task 4.2
+- [x] Screenshot gallery delivered for Nathan's walkthrough — Footer + Draft Look · Drag Feel · Menu + Popup, on every surface; closeout proceeds without waiting on it
 
 ### Phase 1 — Foundations
 
@@ -1391,12 +1391,12 @@ Every step asserts with `check` after `sleep(800)`. Row selectors are found by t
 | `stepCreate` | `click('[aria-label="New Option"]')`; `typeAndEnter('Fresh')` | `optionValues('Drive Select')` ends with `Fresh`, whose option has no `color`; `Drive One.md`'s `Drive Select` still lists `Alpha` alone |
 | `stepRefuseBlankAndEscape` | `+` → `typeAndEnter('')`; `+` → `Input.insertText('Nope')` → `pressKey(cdp, 'Escape')` | options unchanged both times |
 | `stepRefuseDuplicate` | `+` → `typeAndEnter('alpha')` | options unchanged; a notification is in the DOM |
-| `stepDragReorder` | `drag` from the `Fresh` row to the `Alpha` row | order `Fresh, Alpha, Beta` |
-| `stepStyleCompact` | `chooseNative(Alpha row, { downs: 1, into: [2] })` (Style ▸ Compact) | the view sidecar's `column_styles[<Drive Select id>].look === 'compact'` |
+| `stepDragReorder` | `drag` from the `Fresh` row to the `Alpha` row | `Fresh` sits directly above `Alpha` (a new Select seeds `Option 1` first) |
+| `stepStyleCompact` | `chooseNative(Alpha row, { downs: 1, into: [1] })` (Style ▸ Compact; Right opens the submenu with Standard highlighted); then, from the compact picker, `{ downs: 1, into: [0] }` (Style ▸ Standard) | the view sidecar's `column_styles[<Drive Select id>].look` reads `'compact'`, then no longer `'compact'` (the default look is stored as no key) |
 | `stepEditOption` | `chooseNative(Beta row, { downs: 2 })`; in the popup, set the title field to `Gamma` and blur it; then clear it and blur; click a color cell; pick Clear in Appearance; open the icon seat and pick the first icon | registry and `Drive Two.md` read `Gamma`, and the popup is still open with title `Gamma`; after the blank blur the field reads `Gamma` and the registry is unchanged; `Gamma` carries `color`, `appearance: 'clear'`, and `icon` |
 | `stepClearRemove` | `chooseNative(Alpha row, { downs: 3 })` → click the dialog's confirm; then `chooseNative(Alpha row, { downs: 4 })` → confirm | after Clear: no page lists `Alpha`, and `Alpha` is still an option; after Remove: `Alpha` is gone from the registry |
 | `stepCardsAndMass` | switch the view to Cards, open `Drive One`'s card `Drive Select` picker, `+` → `typeAndEnter('Card New')`, `drag` the new row to the top, `chooseNative(first row, { downs: 2 })` → popup → Escape; back to Table, ⌘-click both rows' `Drive Select` cells, open the mass picker, `+` → `typeAndEnter('Mass New')`, `drag` it to the top, `chooseNative` → popup → Escape | both appended; neither page lists them; each drag lands first in the registry; each surface's popup opened |
-| `stepPanel` | open `Drive One` as a page and its Properties panel; the `Drive Select` row's picker: `+` → `typeAndEnter('Panel New')`, `drag` it to the top, `chooseNative(first row, { downs: 1 })` (Edit Option is first: no view, no Style) → popup → Escape | `Panel New` appended then first; the popup opened |
+| `stepPanel` | give `Drive One` a `Drive Select` value again (`ask('mutate', …)`, since the panel shows set values), open it as a page and its Properties panel; the `Drive Select` row's picker: `+` → `typeAndEnter('Panel New')`, `drag` it to the top, `chooseNative(first row, { downs: 1 })` (Edit Option is first: no view, no Style) → popup → Escape | `Panel New` appended then first; the popup opened |
 | `stepMulti` | `Drive One`'s `Drive Multi` picker, `+` → `typeAndEnter('Three')` | `Three` appended; `Drive One.md`'s `Drive Multi` still lists `One` alone |
 | `stepEditor` | open the view settings › Properties › `Drive Status`; `chooseNative` on its first option row, `{ downs: 2 }` → popup; rename it to `Opened` there; click that row's `[aria-label="Edit Option"]` twice; click the first group's `+` → `typeAndEnter('')`; double-click the first heading → select all → `typeAndEnter('Queued')` | the option reads `Opened` in `status_groups`; the popup opened then closed; no option was added; the first group's `label === 'Queued'` |
 | `stepHostRefusal` | `ask('property:editOption', <Drive Select id>, { op: 'add', groupId: 'select', title: '' })` | `ok === false` |
@@ -1502,6 +1502,6 @@ Per the skill's 5.5 shape, written when the chain above is confirmed.
 
 ### Deviations
 
-- **10-06-2026, early Phase 2 reviews (two read-only reviewers, dispatched at Nathan's direction from a forked session), folded after Phase 3:** `MenuFooting` takes `centered` and the picker passes its `+` as `leading`, so `footing`/`footingCentered` stay inside the kit (Tasks 1.2 and 3.1's AFTERs). `useOptionEdit` resolves the open popup's option and `isOpen` through `keyOf`, so a second rename inside one popup session holds; it clears `editing` when the open option is removed, so the popup closes through its exit instead of unmounting; its rename collision check folds case like the host; and it prunes aliases no live option or pending rename needs. The hook returns `entering`, and an `OptionDraft` beside it (a `Reveal` disclosing the `RenamableLabel` draft row, per Nathan's ruling that a new option arrives with the disclosure animation) serves both the editor and the picker. `OptionStyle`/`OPTION_STYLE_OPTIONS` live in `PropertyFrame.tsx`, their only reader. The host refuses a whitespace group label in `admitOptionEdit`. Tests added for each.
+- **10-06-2026, early Phase 2 reviews (two read-only reviewers, dispatched at Nathan's direction from a forked session), folded after Phase 3:** `MenuFooting` takes `centered` and the picker passes its `+` as `leading`, so `footing`/`footingCentered` stay inside the kit (Tasks 1.2 and 3.1's AFTERs). `useOptionEdit` resolves the open popup's option and `isOpen` through `keyOf`, so a second rename inside one popup session holds; it clears `editing` when the open option is removed, so the popup closes through its exit instead of unmounting; its rename collision check folds case like the host; and it prunes aliases no live option or pending rename needs. The hook returns `entering`, and an `OptionDraft` beside it serves both the editor and the picker: per Nathan's rulings of 10-06-2026, it discloses through `Reveal` and renders as a chip being renamed — the option's `shape` and `labelColor` shell (greyDefault in the picker, the group color in the editor) around the `base` input — rather than as the View Tile's bare title field. `OptionStyle`/`OPTION_STYLE_OPTIONS` live in `PropertyFrame.tsx`, their only reader. The host refuses a whitespace group label in `admitOptionEdit`. Tests added for each.
 - **10-06-2026, Nathan's ruling:** He isn't available for the hand-checks, so the `[Stop]` after Phase 4 is a delivered screenshot gallery instead of a halt, and closeout runs through to the report. The drive gains parity steps (drag and the menu on Cards, mass-assign, and the Properties panel) and per-step screenshots. Neutral verification is briefed outward, and the report is published through `/view-changes`.
 
