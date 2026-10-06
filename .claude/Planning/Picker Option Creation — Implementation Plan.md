@@ -53,10 +53,10 @@ Recorded 10-05-2026 at `4b045c30b` on `active`.
 
 #### Implementation Process
 
-- [ ] **Phase 1** — Foundations
-  - [ ] Task 1.1
-  - [ ] Task 1.2
-  - [ ] Task 1.3
+- [x] **Phase 1** — Foundations
+  - [x] Task 1.1
+  - [x] Task 1.2
+  - [x] Task 1.3
 - [ ] **Phase 2** — The Shared Option Edit And The Editor (one commit)
   - [ ] Task 2.1
   - [ ] Task 2.2
@@ -67,7 +67,7 @@ Recorded 10-05-2026 at `4b045c30b` on `active`.
 - [ ] **Phase 4** — Live Drive And Reconciliation
   - [ ] Task 4.1
   - [ ] Task 4.2
-- [ ] `[Stop: Nathan's hand-checks — Footer + Draft Look · Drag Feel · Menu + Popup]`
+- [ ] Screenshot gallery delivered for Nathan's walkthrough — Footer + Draft Look · Drag Feel · Menu + Popup, on every surface; closeout proceeds without waiting on it
 
 ### Phase 1 — Foundations
 
@@ -1252,6 +1252,7 @@ export function MassPropertyPicker({
 #### Review Checkpoint
 
 - [ ] In a running app on `~/Test`, a Table cell's Select picker creates, reorders, and opens the menu and popup, and the Properties panel's picker offers no Style.
+- [ ] Screenshots, sent to Nathan as they're taken: the standard and compact pickers with the footer; the draft row mid-typing in each look; a drag's drop band; the popup open over the picker; the Properties panel's picker. Each is read for clipping or a row that differs from its neighbors before moving on.
 
 ### Phase 4 — Live Drive And Reconciliation
 
@@ -1368,7 +1369,8 @@ try {
   await stepStyleCompact(cdp, pid)
   await stepEditOption(cdp, pid)
   await stepClearRemove(cdp, pid)
-  await stepCardsAndMass(cdp)
+  await stepCardsAndMass(cdp, pid)
+  await stepPanel(cdp, pid)
   await stepMulti(cdp)
   await stepEditor(cdp, pid)
   await stepHostRefusal(cdp)
@@ -1380,7 +1382,7 @@ console.log(`${results.filter((r) => r.pass).length}/${results.length} passed`)
 process.exit(results.every((r) => r.pass) ? 0 : 1)
 ```
 
-Every step asserts with `check` after `sleep(800)`. Row selectors are found by the option's text inside the open picker (`[data-picker-portal]`); the Table's menu has Style first, so Edit Option is Down ×2, Clear ×3, Remove ×4 there.
+Every step asserts with `check` after `sleep(800)`. Row selectors are found by the option's text inside the open picker (`[data-picker-portal]`); the Table's menu has Style first, so Edit Option is Down ×2, Clear ×3, Remove ×4 there. A `shot(cdp, name)` helper writes `Page.captureScreenshot` to `<scratchpad>/option-picker-shots/<name>.png`; each step shoots the state it just produced (the footer in each look, the draft row mid-typing, the drop band mid-drag, the popup over the picker, each surface's picker), and the gallery is sent to Nathan at the end of the run.
 
 | Step | Gesture | Asserts |
 | --- | --- | --- |
@@ -1393,7 +1395,8 @@ Every step asserts with `check` after `sleep(800)`. Row selectors are found by t
 | `stepStyleCompact` | `chooseNative(Alpha row, { downs: 1, into: [2] })` (Style ▸ Compact) | the view sidecar's `column_styles[<Drive Select id>].look === 'compact'` |
 | `stepEditOption` | `chooseNative(Beta row, { downs: 2 })`; in the popup, set the title field to `Gamma` and blur it; then clear it and blur; click a color cell; pick Clear in Appearance; open the icon seat and pick the first icon | registry and `Drive Two.md` read `Gamma`, and the popup is still open with title `Gamma`; after the blank blur the field reads `Gamma` and the registry is unchanged; `Gamma` carries `color`, `appearance: 'clear'`, and `icon` |
 | `stepClearRemove` | `chooseNative(Alpha row, { downs: 3 })` → click the dialog's confirm; then `chooseNative(Alpha row, { downs: 4 })` → confirm | after Clear: no page lists `Alpha`, and `Alpha` is still an option; after Remove: `Alpha` is gone from the registry |
-| `stepCardsAndMass` | switch the view to Cards, open `Drive One`'s card `Drive Select` picker, `+` → `typeAndEnter('Card New')`; back to Table, ⌘-click both rows' `Drive Select` cells, open the mass picker, `+` → `typeAndEnter('Mass New')` | both appended; neither page lists them |
+| `stepCardsAndMass` | switch the view to Cards, open `Drive One`'s card `Drive Select` picker, `+` → `typeAndEnter('Card New')`, `drag` the new row to the top, `chooseNative(first row, { downs: 2 })` → popup → Escape; back to Table, ⌘-click both rows' `Drive Select` cells, open the mass picker, `+` → `typeAndEnter('Mass New')`, `drag` it to the top, `chooseNative` → popup → Escape | both appended; neither page lists them; each drag lands first in the registry; each surface's popup opened |
+| `stepPanel` | open `Drive One` as a page and its Properties panel; the `Drive Select` row's picker: `+` → `typeAndEnter('Panel New')`, `drag` it to the top, `chooseNative(first row, { downs: 1 })` (Edit Option is first: no view, no Style) → popup → Escape | `Panel New` appended then first; the popup opened |
 | `stepMulti` | `Drive One`'s `Drive Multi` picker, `+` → `typeAndEnter('Three')` | `Three` appended; `Drive One.md`'s `Drive Multi` still lists `One` alone |
 | `stepEditor` | open the view settings › Properties › `Drive Status`; `chooseNative` on its first option row, `{ downs: 2 }` → popup; rename it to `Opened` there; click that row's `[aria-label="Edit Option"]` twice; click the first group's `+` → `typeAndEnter('')`; double-click the first heading → select all → `typeAndEnter('Queued')` | the option reads `Opened` in `status_groups`; the popup opened then closed; no option was added; the first group's `label === 'Queued'` |
 | `stepHostRefusal` | `ask('property:editOption', <Drive Select id>, { op: 'add', groupId: 'select', title: '' })` | `ok === false` |
@@ -1463,7 +1466,7 @@ Select and Multi-select option titles are non-empty and unique within their prop
 **Confirmation**
 
 - [ ] Every new test goes red with its change reverted; every verification result read.
-- [ ] Nathan: Footer + Draft Look · Drag Feel · Menu + Popup.
+- [ ] Nathan: Footer + Draft Look · Drag Feel · Menu + Popup — his morning walkthrough, from the delivered screenshots and the live app; left unticked by the orchestrator.
 
 **Continuity**
 
@@ -1478,12 +1481,12 @@ Select and Multi-select option titles are non-empty and unique within their prop
 
 **THE STANDARD:** The work is finished when a later review of it finds nothing to correct. Nothing is carried as a concern, nothing is deferred where the fix is known, and nothing is declared that wasn't watched happen. Ambiguity met during execution took the simplest reading and was recorded; it didn't stop the run. Edits found in adjacent files that no task made belong to Nathan — folded into the commit at hand, not reverted.
 
-- [ ] Phase review dispatched: Phase 1 · Phase 2 · Phase 3 · Phase 4
+- [ ] Phase review dispatched: Phase 1 · Phase 2 · Phase 3 · Phase 4 — every reviewer briefed that the diff adds no comment the plan's AFTERs don't write
 - [ ] All findings fixed or ruled on
-- [ ] Neutral verification passed on `<baseline>..HEAD`
+- [ ] Neutral verification passed on `<baseline>..HEAD` — briefed to look outward from the diff: any hand-rolled parallel to a mechanism the codebase holds, any odd-one-out across the surfaces, the data layer, or the interaction, and any "next" that would fold complexity away, fix a bug, or clear residue, each closed in the run rather than deferred
 - [ ] Final pass: gates · baseline · diff · deviations · criteria
 - [ ] Reconciliation walked; living documents read
-- [ ] Report delivered
+- [ ] Report delivered, with the range published through `/view-changes`
 
 #### Reconciliation
 
@@ -1498,4 +1501,6 @@ Select and Multi-select option titles are non-empty and unique within their prop
 Per the skill's 5.5 shape, written when the chain above is confirmed.
 
 ### Deviations
+
+- **10-06-2026, Nathan's ruling:** He isn't available for the hand-checks, so the `[Stop]` after Phase 4 is a delivered screenshot gallery instead of a halt, and closeout runs through to the report. The drive gains parity steps (drag and the menu on Cards, mass-assign, and the Properties panel) and per-step screenshots. Neutral verification is briefed outward, and the report is published through `/view-changes`.
 
