@@ -1,8 +1,4 @@
-import {
-  notifyReport,
-  notifyRetry,
-  reportRefusal,
-} from '../../Interface/Notifications/notifications'
+import { reportRefusal } from '../../Interface/Notifications/notifications'
 import { useRef, useState, type ReactNode } from 'react'
 import { Icon, type IconName } from '@pommora/uix/Symbols'
 import type { IconSize } from '@pommora/uix/Theme'
@@ -16,8 +12,7 @@ import {
   PROPERTY_TYPES,
   type PropertyType,
 } from '../properties'
-import type { Result } from '../../Contract/result'
-import type { SchemaCascade, SchemaJournal } from '../propertyJournal'
+import { replay, retryOwed, warnOwed, write } from '../propertyWrite'
 import type { ColumnStyle } from '../columnStyles'
 import type { CollectionNode, SetNode } from '../../Nexus/tree'
 import { useActiveView } from '../../Views/Host/useActiveView'
@@ -66,7 +61,6 @@ import { popMenu } from '../../Actions/menuActions'
 import { propertyMenuModel } from '../../Actions/propertyMenu'
 
 type SubView = { kind: 'list' } | { kind: 'type' } | { kind: 'edit'; id: string }
-type WriteResult = Result<null>
 
 const TITLES = { assigned: 'Properties', all: 'All Properties' }
 
@@ -175,24 +169,6 @@ function ListGroups({
   )
 }
 
-const replay = (record: SchemaJournal) => (): void =>
-  void dialer()
-    .ask('property:replay', record)
-    .then((r) => {
-      if (!r.ok) notifyRetry(r.error.message, replay(record))
-    })
-
-const retryOwed = ({ cascade, owed }: SchemaCascade): void => {
-  if (!cascade.warning) return
-  if (owed) notifyRetry(cascade.warning, replay(owed))
-  else notifyReport(cascade.warning, true)
-}
-
-async function warnOwed(res: Promise<Result<SchemaCascade>>): Promise<void> {
-  const r = await res
-  if (reportRefusal(r)) retryOwed(r.value)
-}
-
 export function PropertyFrame({
   collectionPath,
   schema,
@@ -266,10 +242,6 @@ export function PropertyFrame({
   }
   const remove = async (id: string): Promise<void> => {
     if (reportRefusal(await dialer().ask('schema:unassign', collectionPath, id))) backToList()
-  }
-  // Every property write is the same round trip; only the channel and its arguments differ.
-  const write = async (res: Promise<WriteResult>): Promise<void> => {
-    reportRefusal(await res)
   }
   const saveFileDirectory = (id: string, dir: string): Promise<void> =>
     write(dialer().ask('property:setFileDirectory', id, { file_directory: dir }))

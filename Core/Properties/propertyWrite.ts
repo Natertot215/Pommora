@@ -1,0 +1,27 @@
+import type { Result } from '../Contract/result'
+import { notifyReport, notifyRetry, reportRefusal } from '../Interface/Notifications/notifications'
+import { dialer } from '../Platform/dialer'
+import type { SchemaCascade, SchemaJournal } from './propertyJournal'
+
+// Every property write is the same round trip; only the channel and its arguments differ.
+export const write = async (res: Promise<Result<null>>): Promise<void> => {
+  reportRefusal(await res)
+}
+
+export const replay = (record: SchemaJournal) => (): void =>
+  void dialer()
+    .ask('property:replay', record)
+    .then((r) => {
+      if (!r.ok) notifyRetry(r.error.message, replay(record))
+    })
+
+export const retryOwed = ({ cascade, owed }: SchemaCascade): void => {
+  if (!cascade.warning) return
+  if (owed) notifyRetry(cascade.warning, replay(owed))
+  else notifyReport(cascade.warning, true)
+}
+
+export async function warnOwed(res: Promise<Result<SchemaCascade>>): Promise<void> {
+  const r = await res
+  if (reportRefusal(r)) retryOwed(r.value)
+}
