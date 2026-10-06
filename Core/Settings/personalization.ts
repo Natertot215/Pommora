@@ -139,6 +139,7 @@ const SETTINGS = {
   externalLinkColor: color<'system'>('system'),
   checkboxColor: color<'accent'>('accent'),
   codeColor: color<'default'>('default'),
+  htmlTagColor: color<'default'>('default'),
   // Display only: the strike is drawn, never written, so the file stays the plain `- [x]` it was.
   muteCheckedItems: flag(false),
   hideChevrons: flag(false),
@@ -147,6 +148,7 @@ const SETTINGS = {
   titleIcon: flag(false),
   codeblockLineCount: flag(false),
   htmlShortcuts: flag(false),
+  htmlFormatting: flag(true),
   navCloseOnSelect: flag(true),
   removeTitleOnLinkChange: flag(true),
   aliasPickerOnCommit: flag(true),

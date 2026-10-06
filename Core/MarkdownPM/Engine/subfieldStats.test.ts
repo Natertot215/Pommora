@@ -270,6 +270,11 @@ describe('computeStats — marks count as the tokenizer draws them', () => {
     expect(computeStats('see [label](https://x.y) and [[Page|alias]]').words).toBe(4)
   })
 
+  it('keeps a tag whole and an HTML block as written', () => {
+    expect(computeStats('a <b>c</b>').characters).toBe(10)
+    expect(computeStats('<div>\n**b**\n</div>').characters).toBe(16)
+  })
+
   it('a selection cutting a mark keeps only the drawn part it holds', () => {
     const doc = 'one **two** three'
     expect(rangeStats(scanDoc(doc), doc.indexOf('two'), doc.length).characters).toBe(9)

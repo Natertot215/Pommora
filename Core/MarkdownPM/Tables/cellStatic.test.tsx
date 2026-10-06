@@ -3,6 +3,7 @@ import { describe, it, expect, afterEach, vi } from 'vitest'
 import { createElement, act } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
 import { MarkdownTable } from './MarkdownTable'
+import { renderCellContent } from './cellStatic'
 import { testHost } from '../../Testing/editorHarness'
 import type { TableModel } from '../Engine/Tables/model'
 import { followCitation } from '../Citations/citationPointer'
@@ -206,5 +207,17 @@ describe('an entered cell follows the numbering too', () => {
       ),
     )
     expect(inEditor()).toEqual(['3'])
+  })
+})
+
+describe('a resting cell draws a tag whole', () => {
+  it('colors the name between brackets it keeps, beside a mark it hides', async () => {
+    container = document.createElement('div')
+    document.body.appendChild(container)
+    root = createRoot(container)
+    await act(async () => root.render(renderCellContent('**y** <b>x</b>')))
+    expect(container.textContent).toBe('y <b>x</b>')
+    const tags = [...container.querySelectorAll('.md-html-tag')].map((el) => el.textContent)
+    expect(tags).toEqual(['b', 'b'])
   })
 })

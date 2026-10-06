@@ -183,6 +183,50 @@ describe('a heading link separates its page half, its fragment, and what it reso
   })
 })
 
+describe('an HTML tag colors its name and keeps its brackets', () => {
+  const tags = (t: string): string[][] =>
+    byKind(tokenize(t), 'htmlTag').map((tk) => [
+      slice(t, tk.contentRange),
+      ...tk.markerRanges.map((m) => slice(t, m)),
+    ])
+
+  it('splits open, closing, self-closing, and attributed tags into brackets and text', () => {
+    expect(tags('<b>x</b> <br/> <span class="a">')).toEqual([
+      ['b', '<', '>'],
+      ['b', '</', '>'],
+      ['br', '<', '/>'],
+      ['span class="a"', '<', '>'],
+    ])
+    expect(tags('<a href="x>y">')).toEqual([['a href="x>y"', '<', '>']])
+  })
+
+  it('needs a name, and stands down inside code, links, and autolinks', () => {
+    expect(tags('<> a < b `<i>` [x](<y z>) <https://a.b> <a@b.c>')).toEqual([])
+  })
+})
+
+describe('a token inside an HTML block is marked as such', () => {
+  const inHtml = (t: string): [string, boolean][] =>
+    tokenize(t).map((tk) => [tk.kind, tk.inHtml === true])
+
+  it('reads emphasis through the block and marks every token in it but the tags', () => {
+    expect(inHtml('<div>\n**x** ==h==\n</div>')).toEqual([
+      ['htmlTag', false],
+      ['bold', true],
+      ['highlight', true],
+      ['htmlTag', false],
+    ])
+  })
+
+  it('leaves an inline tag mid-sentence as prose', () => {
+    expect(inHtml('a <span>**x**</span>')).toEqual([
+      ['htmlTag', false],
+      ['bold', false],
+      ['htmlTag', false],
+    ])
+  })
+})
+
 describe('activeTokenIndices', () => {
   it('caret inside a token marks it active; before it does not', () => {
     const t = 'a *b* c'

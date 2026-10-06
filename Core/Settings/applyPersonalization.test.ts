@@ -22,6 +22,7 @@ describe('a cleared color leaves its var to the theme', () => {
     ['connectionColor', '--connection'],
     ['externalLinkColor', '--link'],
     ['codeColor', '--code'],
+    ['htmlTagColor', '--html-tag'],
   ] as const)('%s writes a pick and removes %s when cleared', (key, name) => {
     const inline = (): string => document.documentElement.style.getPropertyValue(name)
     applyPersonalizationKey(key, 'red')

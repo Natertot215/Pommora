@@ -360,7 +360,10 @@ function build(view: EditorView, conn: ConnectionsApi | undefined, scope: Markdo
   const { text } = scan
   const focused = view.hasFocus
   const sel = view.state.selection.main
+  const settings = view.state.facet(editorHost).settings()
   let tokens = visibleInlineTokens(view, scan)
+  // A cell's text parses alone, where a leading tag reads as a block the table never holds.
+  if (scope === 'page' && settings.htmlFormatting) tokens = tokens.filter((tk) => !tk.inHtml)
   // A CLAIMED embed line's token styling stands down; the claim is the tile field's own predicate, so one owner decides.
   if (conn && scan.embeds.length > 0) {
     const claimed = claimedEmbeds(scan.embeds, (t) => conn.resolve(t).status)
@@ -475,7 +478,7 @@ function build(view: EditorView, conn: ConnectionsApi | undefined, scope: Markdo
     }
   })
   if (conn) {
-    const { headingLinkStyle } = view.state.facet(editorHost).settings()
+    const { headingLinkStyle } = settings
     const page = scope === 'cell' ? pageEditorAt(view.dom).view : view
     const ownKeys = page ? docHeadingKeys(page.state.doc) : undefined
     tokens.forEach((tk, i) => {
@@ -549,7 +552,7 @@ function build(view: EditorView, conn: ConnectionsApi | undefined, scope: Markdo
       for (const [s, e] of tk.markerRanges) ranges.push(bracket.range(s, e))
     })
   }
-  if (view.state.facet(editorHost).settings().inPageHeadingResolution === 'automatic') {
+  if (settings.inPageHeadingResolution === 'automatic') {
     const sectionHeadings = docSectionHeadings(view.state.doc)
     const sectionMark = Decoration.mark({ class: 'md-connection-resolved md-section-run' })
     for (const { from: a, to: b } of view.visibleRanges)

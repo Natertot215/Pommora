@@ -659,6 +659,14 @@ describe('embed token styling', () => {
     expect(perLine[1]).toEqual([])
   })
 
+  it('an HTML tag wears its color on the name and the bracket color on its brackets, caret or not', () => {
+    const tokens = tokenize('<b>')
+    const drawn = (active: Set<number>) =>
+      tokenIntents(tokens, active).map((i) => i.kind === 'class' && i.className)
+    expect(drawn(new Set())).toEqual(['md-html-tag', 'md-bracket', 'md-bracket'])
+    expect(drawn(new Set([0]))).toEqual(drawn(new Set()))
+  })
+
   it('the embed token wears the embed content class', () => {
     const tokens = tokenize('see ![[Foo]] here')
     const embed = tokens.find((t) => t.kind === 'embed')

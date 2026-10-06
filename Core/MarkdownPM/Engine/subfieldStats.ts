@@ -34,12 +34,14 @@ function proseStart(line: string): number {
 
 type Hidden = readonly [from: number, to: number, fill: string]
 
-/** What the editor draws in place of a token's source: code as nothing, marks, links, and embeds as their shown text, while citation markers and math stay as written. */
+/** What the editor draws in place of a token's source: code as nothing, marks, links, and embeds as their shown text, while citation markers, tags, math, and anything in an HTML block stay as written. */
 function hiddenOf(tk: Token): Hidden[] {
+  if (tk.inHtml) return []
   switch (tk.kind) {
     case 'inlineCode':
       return [[tk.range[0], tk.range[1], GONE]]
     case 'citationRef':
+    case 'htmlTag':
     case 'inlineLatex':
     case 'blockLatex':
       return []

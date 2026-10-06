@@ -45,6 +45,7 @@ const ROOT_VARS: VarWriters = {
       '--checkbox-outline': null,
     },
   codeColor: (v) => ({ '--code': settingColorCss(v) }),
+  htmlTagColor: (v) => ({ '--html-tag': settingColorCss(v) }),
   ...headingVars,
   tabMinWidth: (v) => ({ '--tab-min-user': v == null ? null : `${v}px` }),
   tabMaxWidth: (v) => ({ '--tab-max-user': v == null ? null : `${v}px` }),

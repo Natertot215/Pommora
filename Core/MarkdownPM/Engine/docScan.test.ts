@@ -304,6 +304,8 @@ describe('chunksOver — a chunk tokenizes as it does inside the whole document'
     const math = scanDoc(block('$$', 80))
     expect(chunksOver(math, [[90, 150]]).map((c) => lines(math, c))).toEqual([[90, 182]])
     expect(chunksOver(math, [[160, 200]]).map((c) => lines(math, c))).toEqual([[100, 201]])
+    const html = scanDoc(['<div>', ...prose.slice(0, 120), '</div>'].join('\n'))
+    expect(chunksOver(html, [[100, 110]]).map((c) => lines(html, c))[0][0]).toBe(0)
     const outline = scanDoc(
       ['- Notes', ...prose.slice(0, 200).map((l) => `\t- ${l} **b**`)].join('\n'),
     )

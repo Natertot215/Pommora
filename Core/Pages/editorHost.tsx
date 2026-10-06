@@ -167,6 +167,7 @@ export function useEditorHost({
   const shown = useSession((s) => citationsVisible(s, pageId))
   const cbLineCount = useSession((s) => personalizationOf(s).codeblockLineCount)
   const htmlShortcuts = useSession((s) => personalizationOf(s).htmlShortcuts)
+  const htmlFormatting = useSession((s) => personalizationOf(s).htmlFormatting)
   const headingLinkStyle = useSession((s) => personalizationOf(s).headingLinkStyle)
   const inPageHeadingResolution = useSession((s) => personalizationOf(s).inPageHeadingResolution)
   const commands = useSession(commandsOf)
@@ -181,6 +182,7 @@ export function useEditorHost({
       shown,
       cbLineCount,
       htmlShortcuts,
+      htmlFormatting,
       headingLinkStyle,
       inPageHeadingResolution,
       commands,

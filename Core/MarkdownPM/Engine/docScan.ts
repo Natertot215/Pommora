@@ -271,8 +271,9 @@ export function chunksOver(
     let i = top
     while (i > next && i > top - CHUNK_REACH && !cutAt(s, i)) i--
     if (i > next && !cutAt(s, i)) {
-      const math = spanAt(s.maths, s.lineStarts[top])
-      i = math !== undefined ? Math.max(next, lineIndexAt(s, math[0])) : top
+      const at = s.lineStarts[top]
+      const open = spanAt(s.maths, at) ?? spanAt(s.html, at)
+      i = open !== undefined ? Math.max(next, lineIndexAt(s, open[0])) : top
       while (i > next && /^(?:[ \t]|\r?$)/.test(s.lines[i]) && s.fences[i - 1] === undefined) i--
     }
     if (i === next && out.length > 0 && !cutAt(s, i)) i = lineIndexAt(s, out.pop()![0])
