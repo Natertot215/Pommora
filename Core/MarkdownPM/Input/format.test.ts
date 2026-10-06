@@ -313,4 +313,11 @@ describe('highlight colors', () => {
     expect(apply('==🔴hi🔴==', toggleInline('==🔴hi🔴==', 5, 5, 'highlight', 'red'))).toBe('hi')
     expect(apply('==hi==', toggleInline('==hi==', 3, 3, 'highlight'))).toBe('hi')
   })
+  it('reaches a colored highlight from its revealed color marks', () => {
+    const doc = 'a ==🔴text🔴== b'
+    expect(apply(doc, toggleInline(doc, 4, 4, 'highlight'))).toBe('a ==text== b')
+    expect(apply(doc, toggleInline(doc, 12, 12, 'highlight', 'red'))).toBe('a text b')
+    expect(apply(doc, toggleInline(doc, 2, 14, 'highlight', 'green'))).toBe('a ==🟢text🟢== b')
+    expect(apply(doc, toggleInline(doc, 4, 12, 'highlight'))).toBe('a ==text== b')
+  })
 })

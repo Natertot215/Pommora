@@ -13,8 +13,6 @@ import {
 import { isValidLink } from '../Paths/urlPath'
 import { HIGHLIGHT_COLOR_NAMES, type HighlightColor } from '../MarkdownPM/Engine/highlightColors'
 
-const HIGHLIGHT_SHADES = ['accent', ...HIGHLIGHT_COLOR_NAMES] as ['accent', ...HighlightColor[]]
-
 /** What sits under a right-click, sent to the host as the menu is asked for; main cannot see CM6 state. */
 export const editorMenuRequest = z.object({
   scope: z.enum(['page', 'cell']),
@@ -23,7 +21,9 @@ export const editorMenuRequest = z.object({
   bold: z.boolean(),
   italic: z.boolean(),
   strikethrough: z.boolean(),
-  highlight: z.enum(HIGHLIGHT_SHADES).nullable(),
+  highlight: z
+    .enum(['accent', ...HIGHLIGHT_COLOR_NAMES] as ['accent', ...HighlightColor[]])
+    .nullable(),
   inlineCode: z.boolean(),
   link: z.boolean(),
   connection: z.boolean(),

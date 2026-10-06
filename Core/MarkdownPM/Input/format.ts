@@ -1,4 +1,4 @@
-import { shiftToken, tokenize, type TokenKind } from '../Engine/tokens'
+import { shiftToken, tokenize, type TokenKind, wrappedSpan } from '../Engine/tokens'
 import {
   headingParts,
   calloutHeadPrefixLen,
@@ -83,7 +83,10 @@ export function toggleInline(
   let t = to - ls
   while (f < t && MARKER_CHARS.includes(line[f])) f++
   while (t > f && MARKER_CHARS.includes(line[t - 1])) t--
-  const covering = tokenize(line).filter((tk) => tk.contentRange[0] <= f && t <= tk.contentRange[1])
+  const covering = tokenize(line).filter((tk) => {
+    const [s, e] = wrappedSpan(tk)
+    return s <= f && t <= e
+  })
   const found =
     covering.find((tk) => tk.kind === kind) ??
     covering.find(

@@ -372,7 +372,7 @@ The elements that draw and frame a stored image — `AssetImage`, `ImagePicker`,
 | ------------- | -------------------- | ------------------------------------------------------------------- |
 | PickerMenu | `PickerMenu` | The rectangle every menu, dropdown panel, and picker mounts — anchoring to an element or a bare point, the collision flip decided once per open, dismissal, focus, and an opt-in resize from its free edges (`usePaneResize`).                   |
 | CalendarPicker | `CalendarPicker` | Date and time selection, with an optional End Date span. |
-| ColorPicker | `ColorPicker` | The 8×8 ramp grid; clicking the selected cell clears. |
+| ColorPicker | `ColorPicker` | The 9×8 ramp grid; clicking the selected cell clears. |
 | IconPicker | `IconPicker` · `IconFavorites` | The searchable glyph grid with a reorderable icon-favorites strip; the app binds icon favorites through `UIX/Pickers/IconPicker`. |
 | TextPicker | `TextPicker` | A typed-value picker in the shared pane. |
 | PickerControl | `PickerControl` · `setMenuDoor` · `steppedPickerProps` · `PickerOption` · `NumberUnit` · `unitLabel` · `numberFrom` | The double-chevron picker: two options toggle in place; three or more open the list through the menu door the app registers with `setMenuDoor`; right-clicks write values into the field, and with no options a left press does too. `numberFrom` reads typed text as a number. `steppedPickerProps` builds a stepped number picker in any unit. |

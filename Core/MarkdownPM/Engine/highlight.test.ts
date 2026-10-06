@@ -57,4 +57,8 @@ describe('a colored highlight', () => {
   it('needs words between the marks', () => {
     expect(colored('==🔴🔴==')).toEqual([{ content: '🔴🔴', color: undefined }])
   })
+  it('leaves a mark joined into a longer emoji to that emoji', () => {
+    expect(colored('==❤️‍🔥 fire ❤️==')).toEqual([{ content: '❤️‍🔥 fire ❤️', color: undefined }])
+    expect(colored('==🖤 cat 🐈‍⬛==')).toEqual([{ content: '🖤 cat 🐈‍⬛', color: undefined }])
+  })
 })

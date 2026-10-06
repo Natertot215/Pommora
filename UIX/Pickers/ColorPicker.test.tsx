@@ -44,13 +44,13 @@ function mount(greyscale?: boolean, selected = 'default'): HTMLButtonElement[] {
 }
 
 describe('ColorPicker', () => {
-  it('offers the full 8×8 grid by default', () => {
+  it('offers the full 9×8 grid by default', () => {
     const cells = mount()
     expect(cells).toHaveLength(72)
     expect(cells.some((c) => c.getAttribute('aria-label')?.startsWith('grey'))).toBe(true)
   })
 
-  // The negative control's other half: withholding the row must actually remove it, and the assertion must be able to go red — with `greyscale` left off, the count returns to 64.
+  // The negative control's other half: withholding the row must actually remove it, and the assertion must be able to go red — with `greyscale` left off, the count returns to 72.
   it('withholds the greyscale row when a surface paints the raw color', () => {
     const cells = mount(false)
     expect(cells).toHaveLength(64)

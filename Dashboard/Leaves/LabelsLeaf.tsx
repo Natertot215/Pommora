@@ -12,7 +12,7 @@ import { cx } from '@pommora/uix/Utilities/cx'
 import { overScrollUnmasked } from '@pommora/uix/Interactions/OverScroll'
 import { humanize, useIsCompact } from './helpers'
 
-// The demo rows show one chip per SPECTRUM anchor rather than all 64 cells — the ramp's shape is the
+// The demo rows show one chip per SPECTRUM anchor rather than all 72 cells — the ramp's shape is the
 // picker's story, not the chip shapes'.
 const CHIP_COLORS: ColorName[] = [...Object.values(ANCHOR_CELLS), 'default']
 const pillClass = (color: ColorName): string => `${shape.pill} ${labelColor[color]}`

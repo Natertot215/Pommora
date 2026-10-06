@@ -860,6 +860,7 @@ describe('color marks in a highlight', () => {
     expect(pairColorMark(scanDoc('==hi=='), 3, '🔴')).toBeNull()
     expect(pairColorMark(scanDoc('==🔴hi🔴=='), 2, '🔴')).toBeNull()
     expect(pairColorMark(scanDoc('===='), 2, '😀')).toBeNull()
+    expect(pairColorMark(scanDoc('======'), 3, '🔴')).toBeNull()
     expect(pairColorMark(scanDoc('===='), 2, '🔴', { pairMarkers: false })).toBeNull()
   })
   it('delete together from inside an empty pair', () => {
@@ -867,6 +868,7 @@ describe('color marks in a highlight', () => {
     expect(apply('==🔴🟥==', e)).toBe('====')
     expect(e.selection).toBe(2)
     expect(autoDelete(scanDoc('a🔴🔴b'), 3, 3)).toBeNull()
+    expect(autoDelete(scanDoc('==a==🔴🔴==b=='), 7, 7)).toBeNull()
   })
   it('join the closer Enter jumps past', () => {
     expect(closeConstructOnEnter(scanDoc('==🔴hi🔴=='), 6, 6)!.selection).toBe(10)

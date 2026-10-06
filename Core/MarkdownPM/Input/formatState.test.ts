@@ -23,3 +23,14 @@ describe('readFormatState', () => {
     expect(readFormatState('> [!callout] hi', 14, 14).block).toBeNull()
   })
 })
+
+describe('the highlight a right-click reads', () => {
+  it('names the color, the accent for a bare one, and none outside', () => {
+    const doc = 'a ==🔴warm🔴== ==plain== b'
+    expect(readFormatState(doc, 6, 6).highlight).toBe('red')
+    expect(readFormatState(doc, 4, 4).highlight).toBe('red')
+    expect(readFormatState(doc, 12, 12).highlight).toBe('red')
+    expect(readFormatState(doc, 18, 18).highlight).toBe('accent')
+    expect(readFormatState(doc, 0, 0).highlight).toBeNull()
+  })
+})

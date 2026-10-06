@@ -25,24 +25,29 @@ const COLOR_OF = new Map<string, HighlightColor>(
   ),
 )
 
-const MARK = `(?:${[...COLOR_OF.keys()].join('|')})️?`
-const LEADING = new RegExp(`^${MARK}`, 'u')
-const TRAILING = new RegExp(`${MARK}$`, 'u')
+// A mark is at most a surrogate pair and its variation selector; one unit past it tells whether it joins a longer emoji.
+const VARIATION_SELECTOR = '\uFE0F'
+const MARK_WIDTH = 4
+const MARK = `(?:${[...COLOR_OF.keys()].join('|')})${VARIATION_SELECTOR}?`
+// A mark joined into a longer emoji (`❤️‍🔥`, `🐈‍⬛`) belongs to that emoji.
+const LEADING = new RegExp(`^${MARK}(?![${VARIATION_SELECTOR}\u200D])`, 'u')
+const TRAILING = new RegExp(`(?<!\u200D)${MARK}$`, 'u')
 
-export interface ColorMark {
+interface ColorMark {
   color: HighlightColor
   length: number
 }
 
 function markOf(m: RegExpExecArray | null): ColorMark | null {
   if (!m) return null
-  return { color: COLOR_OF.get(m[0].replace('️', ''))!, length: m[0].length }
+  return { color: COLOR_OF.get(m[0].replace(VARIATION_SELECTOR, ''))!, length: m[0].length }
 }
 
-/** The color mark `text` opens on, when it is one whole emoji. */
-export const leadingMark = (text: string): ColorMark | null => markOf(LEADING.exec(text))
+export const markAfter = (text: string, at: number): ColorMark | null =>
+  markOf(LEADING.exec(text.slice(at, at + MARK_WIDTH)))
 
-export const trailingMark = (text: string): ColorMark | null => markOf(TRAILING.exec(text))
+export const markBefore = (text: string, at: number): ColorMark | null =>
+  markOf(TRAILING.exec(text.slice(Math.max(0, at - MARK_WIDTH), at)))
 
 /** True when `text` is exactly one color mark, as a typed emoji arrives. */
-export const isColorMark = (text: string): boolean => leadingMark(text)?.length === text.length
+export const isColorMark = (text: string): boolean => markAfter(text, 0)?.length === text.length
