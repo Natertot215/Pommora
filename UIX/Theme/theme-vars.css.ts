@@ -123,6 +123,7 @@ globalStyle(':root', {
     '--drop-slot-fill': tintAt('var(--accent)', 'tertiary'),
     '--drop-line-thickness': '2px',
     '--drop-dot-size': '7px',
+    '--drop-dot-overhang': 'calc((var(--drop-dot-size) - var(--drop-line-thickness)) / 2)',
     '--drop-line-inset': `${DROP_LINE_INSET}px`,
     '--add-strip-size': `${ADD_STRIP_PX}px`,
 

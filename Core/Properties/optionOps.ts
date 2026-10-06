@@ -266,7 +266,6 @@ export function clearOption(
   })
 }
 
-/** The pages and Spaces holding `value`: the ones a Clear or Remove of it rewrites. */
 export async function optionHolders(
   root: string,
   propertyId: string,

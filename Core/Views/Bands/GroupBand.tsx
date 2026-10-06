@@ -67,9 +67,15 @@ export function bandSpec({
     line: (slot) => ({ ...indent?.(slot.depth), top: slot.top }),
     step: (slot) => slot.step,
     label: (key) => nodeLabel(nodeOf(key)),
+    glyph: (key) => {
+      const node = nodeOf(key)
+      return node && node.kind !== 'tail' ? bandIcon(node) : null
+    },
     chip: (key) => {
       const node = nodeOf(key)
-      return node && node.kind !== 'tail' ? <BandGlyph node={node} /> : null
+      return node?.kind === 'bucket' && node.face.kind === 'option' ? (
+        <BandGlyph node={node} />
+      ) : null
     },
     disabled,
     disclose: true,
@@ -94,7 +100,7 @@ export function GroupBand({
 }): React.JSX.Element {
   if (node === undefined || node.kind === 'tail')
     return (
-      <div className="group-band">
+      <div className="group-band band-tail">
         <Reveal open fill={fill}>
           {children}
         </Reveal>
@@ -213,6 +219,13 @@ function HeadedBand({
   )
 }
 
+const bandIcon = (node: SetBand | BucketBand): ReactNode =>
+  node.kind === 'set' ? (
+    <EntityIcon kind="set" icon={node.set.icon} size="body" />
+  ) : node.face.kind === 'date' && node.face.icon ? (
+    <Icon name={node.face.icon} size="body" />
+  ) : null
+
 export function BandGlyph({
   node,
   renamable = false,
@@ -223,7 +236,7 @@ export function BandGlyph({
   if (node.kind === 'set')
     return (
       <span className="group-name">
-        <EntityIcon kind="set" icon={node.set.icon} size="body" />
+        {bandIcon(node)}
         {renamable ? (
           <RenamableTitle
             path={node.set.path}
@@ -245,7 +258,7 @@ export function BandGlyph({
     case 'date':
       return (
         <span className="group-name">
-          {node.face.icon ? <Icon name={node.face.icon} size="body" /> : null}
+          {bandIcon(node)}
           {node.label}
         </span>
       )

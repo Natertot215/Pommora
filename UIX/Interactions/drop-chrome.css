@@ -19,7 +19,7 @@
 .drop-dot {
   position: absolute;
   left: calc(var(--drop-dot-size) / -2);
-  top: calc((var(--drop-line-thickness) - var(--drop-dot-size)) / 2);
+  top: calc(-1 * var(--drop-dot-overhang));
   width: var(--drop-dot-size);
   height: var(--drop-dot-size);
   border-radius: 50%;
