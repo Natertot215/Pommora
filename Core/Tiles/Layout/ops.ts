@@ -139,12 +139,7 @@ export function seatBelow(
   h: number | undefined,
 ): TileLayout {
   if (under !== null && h !== undefined) return attachBelow(layout, under, id, h)
-  return insertBand(
-    layout,
-    layout.bands.length,
-    id,
-    under === null && h !== undefined ? h : NEW_TILE_H,
-  )
+  return insertBand(layout, layout.bands.length, id, h ?? NEW_TILE_H)
 }
 
 /** The index is against the layout as given — when the tile currently IS a band above the target, its removal shifts the band list, so the insertion compensates. */
