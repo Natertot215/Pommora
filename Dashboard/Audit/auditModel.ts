@@ -1,3 +1,5 @@
+import { capitalize } from '@pommora/uix/Utilities/capitalize'
+
 export const LENSES = [
   'Defect',
   'Integrity',
@@ -205,7 +207,7 @@ export function change(fix: string): { steps: string[]; call: string } {
   const call = at < 0 ? '' : fix.slice(at + CALL.length).trim()
   const parts = body.replace(COUNT, '').split(STEP)
   if (parts.length < 2) return { steps: [body], call }
-  const steps = parts.map((p) => p.replace(ORDINAL, '')).map((p) => p[0].toUpperCase() + p.slice(1))
+  const steps = parts.map((p) => p.replace(ORDINAL, '')).map(capitalize)
   return { steps, call }
 }
 

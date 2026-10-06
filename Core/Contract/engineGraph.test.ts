@@ -26,6 +26,7 @@ describe('the engine graph from serve.ts', () => {
       'UIX/Pickers/numberUnit.ts',
       'UIX/Theme/colors.ts',
       'UIX/Utilities/capMap.ts',
+      'UIX/Utilities/capitalize.ts',
       'UIX/Utilities/clamp.ts',
       'UIX/Utilities/moveItem.ts',
       'UIX/Utilities/pad.ts',

@@ -14,16 +14,13 @@ import { fullIconSet, Icon, loadFullIconSet, subscribeFullIconSet } from '../Sym
 import type { IconEntry } from '../Symbols/allSymbols'
 import { SortableZone, useDragItem } from '../Interactions/drag'
 import { moveBefore } from '../Utilities/moveItem'
+import { capitalize } from '../Utilities/capitalize'
 import { cx } from '../Utilities/cx'
 import * as s from './icon-picker.css'
 
 const { CELL, COLS } = s
 
-const iconLabel = (id: string): string =>
-  id
-    .split('-')
-    .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
-    .join(' ')
+const iconLabel = (id: string): string => id.split('-').map(capitalize).join(' ')
 
 export interface IconPickerProps {
   open: boolean

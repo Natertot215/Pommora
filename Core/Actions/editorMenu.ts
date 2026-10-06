@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { capitalize } from '@pommora/uix/Utilities/capitalize'
 import type { ActionItem, LeafItem } from './menuModel'
 import { HEADING_LEVELS, LIST_KINDS, type ListKind } from './gripMenu'
 import type { CommandId, Commands } from './commands'
@@ -69,7 +70,7 @@ function highlightRows(s: EditorMenuRequest, commands: Commands): LeafItem<Edito
     },
     ...HIGHLIGHT_COLOR_NAMES.map(
       (color, i): LeafItem<EditorMenuAction> => ({
-        label: color[0].toUpperCase() + color.slice(1),
+        label: capitalize(color),
         action: `highlight:${color}`,
         checked: s.highlight === color,
         separatorBefore: i === 0,

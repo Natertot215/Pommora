@@ -1,3 +1,4 @@
+import { capitalize } from '@pommora/uix/Utilities/capitalize'
 import {
   CHECKBOX_LOOKS,
   COLUMN_LOOKS,
@@ -44,7 +45,7 @@ export function alignRows(
   current: ColumnAlign | null | undefined,
 ): ActionItem<`align:${ColumnAlign}`>[] {
   return COLUMN_ALIGNS.map((a) => ({
-    label: `${a[0].toUpperCase()}${a.slice(1)}`,
+    label: capitalize(a),
     action: `align:${a}`,
     checked: current === a,
   }))
