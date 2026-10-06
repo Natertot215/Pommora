@@ -228,7 +228,7 @@ export function MenuFooting({
       {children ?? (
         <div className={centered ? s.footingCentered : s.footing}>
           {leading}
-          <span className={s.spacer} />
+          {!centered && <span className={s.spacer} />}
           {trailing}
         </div>
       )}
