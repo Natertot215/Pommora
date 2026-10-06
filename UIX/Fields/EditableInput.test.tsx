@@ -71,6 +71,31 @@ describe('EditableInput in a field that stays mounted', () => {
   })
 })
 
+describe('EditableInput naming something', () => {
+  it('a blank commit restores the name and cancels', () => {
+    const onCommit = vi.fn()
+    const onCancel = vi.fn()
+    act(() =>
+      root.render(
+        <EditableInput
+          initial="Gamma"
+          required
+          className="field"
+          onCommit={onCommit}
+          onCancel={onCancel}
+        />,
+      ),
+    )
+    const input = host.querySelector('input') as HTMLInputElement
+    act(() => input.focus())
+    input.value = ''
+    act(() => input.blur())
+    expect(onCancel).toHaveBeenCalledTimes(1)
+    expect(onCommit).not.toHaveBeenCalled()
+    expect(input.value).toBe('Gamma')
+  })
+})
+
 describe('EditableInput torn down without a blur', () => {
   it('discards the typed text', () => {
     const onCommit = vi.fn()
