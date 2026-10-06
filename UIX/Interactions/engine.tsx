@@ -718,7 +718,7 @@ function createEngine(setChrome: (c: Chrome | null) => void): Api {
       if (def.kind === 'line')
         setChrome({
           node: (
-            <DragGhost>
+            <DragGhost bare={def.spec.chip !== undefined}>
               {def.spec.chip?.(id) ?? (
                 <>
                   {def.spec.glyph?.(id)}
