@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useHeld } from '@pommora/uix/Animations/useExitPresence'
 import { Reveal } from '@pommora/uix/Animations/Reveal'
 import { useEntrance } from '@pommora/uix/Animations/useEntrance'
+import type { LaneSlot } from '@pommora/uix/Interactions/reorderModel'
 import { RenamableLabel } from '@pommora/uix/Fields/RenamableLabel'
 import { base } from '@pommora/uix/Fields/fields.css'
 import { Label } from '@pommora/uix/Labels/Label'
@@ -10,7 +11,7 @@ import { colorNameFor } from '@pommora/uix/Theme/ramp'
 import type { ColumnStyle } from '../columnStyles'
 import type { OptionEdit } from '../optionModel'
 import type { PropertyDefinition } from '../properties'
-import type { OptionChipData } from '../Cells/OptionChip'
+import { OptionChip, type OptionChipData } from '../Cells/OptionChip'
 import { warnOwed, write } from '../propertyWrite'
 import { dialer } from '../../Platform/dialer'
 import { popMenu } from '../../Actions/menuActions'
@@ -36,6 +37,11 @@ export type OptionEditApi = {
   toggle: (value: string, anchor: HTMLElement | undefined) => void
   openMenu: (value: string, row: HTMLElement) => Promise<void>
   editOption: (edit: OptionEdit) => Promise<void>
+  moves: (groups: readonly { id: string; options: readonly { value: string }[] }[]) => {
+    laneOf: () => (value: string) => string | undefined
+    commit: (value: string, slot: LaneSlot) => void
+    chip: (value: string) => React.JSX.Element
+  }
   draft: Draft | null
   beginDraft: (groupId: string, index?: number) => void
   commitDraft: (title: string) => void
@@ -119,6 +125,23 @@ export function useOptionEdit({
     }
   }
 
+  const moves: OptionEditApi['moves'] = (groups) => ({
+    laneOf: () => {
+      const laneOf = new Map(groups.flatMap((g) => g.options.map((o) => [o.value, g.id] as const)))
+      return (value) => laneOf.get(value)
+    },
+    commit: (value, slot) =>
+      void editOption({ op: 'move', value, groupId: slot.lane, toIndex: slot.index }),
+    chip: (value) => (
+      <OptionChip
+        type={def.type}
+        look={style?.current.look}
+        option={options.find((o) => o.value === value)}
+        def={def}
+      />
+    ),
+  })
+
   const commitDraft = (title: string): void => {
     if (!draft) return
     setDraft(null)
@@ -155,6 +178,7 @@ export function useOptionEdit({
     toggle,
     openMenu,
     editOption,
+    moves,
     draft,
     beginDraft: (groupId, index) => setDraft({ groupId, index }),
     commitDraft,

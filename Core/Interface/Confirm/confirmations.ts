@@ -106,7 +106,6 @@ export const askDeleteView = (from: 'container' | 'tile' = 'container'): Promise
 
 const items = (count: number): string => `${count} ${count === 1 ? 'Item' : 'Items'}`
 
-/** A property's delete and an option's Clear and Remove reach every page and Space holding it, so they ask regardless of the switch, naming the Items the host counts. */
 const askHolding = async (
   propertyId: string,
   value: string | undefined,

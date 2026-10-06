@@ -9,7 +9,6 @@ export interface PropertyMenuOption {
 export interface PropertyMenuRow {
   id: string
   name: string
-  /** The picks in the runs a divider separates: a Status's groups, or every other kind's one run. */
   options?: readonly (readonly PropertyMenuOption[])[]
 }
 

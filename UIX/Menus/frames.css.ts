@@ -121,10 +121,9 @@ export const middleRegion = style({
   vars: { '--scroll-fade': 'var(--fade-base)' },
 })
 
-/** A drop line draws below its edge with its dot centered on it, so a zone its scroll host clips holds the first and last slots' chrome inside itself. */
 globalStyle(`${scrollFrameBody} > .line-zone, ${middleRegion} > .line-zone`, {
-  paddingTop: 'calc((var(--drop-dot-size) - var(--drop-line-thickness)) / 2)',
-  paddingBottom: 'calc((var(--drop-dot-size) + var(--drop-line-thickness)) / 2)',
+  paddingTop: 'var(--drop-dot-overhang)',
+  paddingBottom: 'calc(var(--drop-line-thickness) + var(--drop-dot-overhang))',
 })
 
 export const optionLead = style({

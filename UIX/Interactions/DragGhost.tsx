@@ -3,7 +3,6 @@ import { GHOST_FROST, frostStyle } from '../Glass/glassBase'
 import { text } from '../Theme/typography.css'
 import { cx } from '../Utilities/cx'
 
-/** A `bare` ghost carries a chip that is its own surface, so it travels without the frosted pill. */
 export function DragGhost({
   bare = false,
   children,

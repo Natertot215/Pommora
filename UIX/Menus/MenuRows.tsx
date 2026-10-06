@@ -171,7 +171,6 @@ export function MenuItem({
   )
 }
 
-/** A `group` separator divides runs of one list — a Status's groups — at the heavier stroke. */
 export function MenuSeparator({
   flush = false,
   group = false,

@@ -75,10 +75,12 @@
 }
 
 /* Chrome lives in group-band.css; this scopes the section rhythm (the row), the sticky pin (the head), and the gutter chevron. */
-.table-view .group-band-row {
+.table-view .group-band-row,
+.table-view .group-band + .band-tail {
   padding-top: var(--band-gap);
 }
-.table-view .group-band.sub-band .group-band-row {
+.table-view .group-band.sub-band .group-band-row,
+.table-view .sub-band + .band-tail {
   padding-top: var(--band-clearance);
 }
 .table-view .group-band-head {

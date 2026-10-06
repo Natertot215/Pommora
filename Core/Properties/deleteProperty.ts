@@ -77,7 +77,6 @@ async function snapshot(
 
 export type PropertyDeletion = SchemaCascade & Required<Pick<MutateOutcome, 'trashed'>>
 
-/** The pages and Spaces holding the property: the ones a delete strips it from. */
 export async function propertyHolders(root: string, propertyId: string): Promise<Result<number>> {
   const def = (await readRegistry(root)).defs[propertyId]
   if (!def) return NO_PROPERTY

@@ -10,7 +10,6 @@ import { base } from '@pommora/uix/Fields/fields.css'
 import { text } from '@pommora/uix/Theme'
 import { OptionSlot } from './OptionRow'
 import { OptionDraft, type OptionStyleControl, useOptionEdit } from './useOptionEdit'
-import { OptionChip } from '../Cells/OptionChip'
 import * as s from '@pommora/uix/Menus/frames.css'
 import { AccessoryButton, heading, menuDropLine } from '@pommora/uix/Menus'
 
@@ -56,26 +55,11 @@ export function OptionEditor({
     <LineZone
       className={s.statusGroups}
       {...lineList({
-        laneOf: () => {
-          const laneOf = new Map(
-            groups.flatMap((grp) => grp.options.map((o) => [o.value, grp.id] as const)),
-          )
-          return (v) => laneOf.get(v)
-        },
+        ...edit.moves(groups),
         across: true,
         boxes: (g) => g.groups,
-        commit: (value, slot) =>
-          void edit.editOption({ op: 'move', value, groupId: slot.lane, toIndex: slot.index }),
         line: menuDropLine,
         label: (value) => (options.some((o) => o.value === value) ? value : headingOf(value)),
-        chip: (value) => (
-          <OptionChip
-            type={type}
-            look={look}
-            option={options.find((o) => o.value === value)}
-            def={def}
-          />
-        ),
         watch: [groups],
       })}
     >

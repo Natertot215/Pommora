@@ -62,9 +62,8 @@ export const selectedValues = (current: PropertyValue | null): string[] => {
   return []
 }
 
-export type PickGroup = { id: string; options: PickOption[] }
+type PickGroup = { id: string; options: PickOption[] }
 
-/** The runs a pick list draws between dividers: a Status's non-empty groups, or every other kind's one list. */
 export const pickGroups = (def: PropertyDefinition, contextOptions?: PickOption[]): PickGroup[] =>
   contextOptions
     ? [{ id: def.id, options: contextOptions }]
@@ -345,22 +344,9 @@ function EditableOptionRows({
       >
         <LineZone
           {...lineList({
-            laneOf: () => {
-              const laneOf = new Map(groups.flatMap((g) => g.options.map((o) => [o.value, g.id])))
-              return (value) => laneOf.get(value)
-            },
-            commit: (value, slot) =>
-              void edit.editOption({ op: 'move', value, groupId: slot.lane, toIndex: slot.index }),
+            ...edit.moves(groups),
             line: menuDropLine,
             label: (value) => value,
-            chip: (value) => (
-              <OptionChip
-                type={def.type}
-                look={look}
-                option={options.find((o) => o.value === value)}
-                def={def}
-              />
-            ),
             watch: [def],
           })}
         >

@@ -180,6 +180,7 @@ export const propertiesHandlers = {
   'property:clearOption': registryChannel(idAndValue, clearOption),
   'property:holders': withRoot(async (root, _ctx, id: unknown, value: unknown) => {
     if (typeof id !== 'string') return NEEDS_PROPERTY_ID
-    return typeof value === 'string' ? optionHolders(root, id, value) : propertyHolders(root, id)
+    if (value === undefined) return propertyHolders(root, id)
+    return typeof value === 'string' ? optionHolders(root, id, value) : NEEDS_ID_AND_VALUE
   }),
 } satisfies Partial<Handlers>
