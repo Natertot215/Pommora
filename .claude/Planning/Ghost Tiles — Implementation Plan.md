@@ -40,7 +40,7 @@ Recorded 10-05-2026 at `2d0526bb9` on `active`. Execution began from `ffbb04d72`
 - `npm run test` → 7241 passed, 2 skipped — rises by the tests this plan adds, less the one Task 3.1 replaces
 
 **START:** `2026-10-05T23:10:22Z`
-**END:** `<same, as the report is given>`
+**END:** `2026-10-06T01:48:51Z`
 
 #### Implementation Process
 
@@ -54,7 +54,7 @@ Recorded 10-05-2026 at `2d0526bb9` on `active`. Execution began from `ffbb04d72`
 - [x] **Phase 3** — Create And Menu Models
   - [x] Task 3.1
   - [x] Task 3.2
-- [ ] **Phase 4** — Ghost Tiles
+- [x] **Phase 4** — Ghost Tiles
   - [x] Task 4.1
   - [x] Task 4.2
   - [x] Task 4.3
@@ -83,9 +83,9 @@ Between Phase 1 and Phase 4 a board has no way to create a tile; the phases run 
 
 **CHANGE**
 
-- [ ] `TileGrid.tsx`: delete each item listed above. `TILE_MIN_PX` and `computeGeometry` stay imported; the resize and `gestureOrigin` use them.
-- [ ] `TileHost.tsx`: delete `onBackdrop` and its prop; the import becomes `import { TileGrid } from './TileGrid'`. `attachBelow`, `insertBand`, `NEW_TILE_H`, and `dialer` stay imported; duplicate and remove use them.
-- [ ] `TileGrid.test.tsx`: delete the stub line.
+- [x] `TileGrid.tsx`: delete each item listed above. `TILE_MIN_PX` and `computeGeometry` stay imported; the resize and `gestureOrigin` use them.
+- [x] `TileHost.tsx`: delete `onBackdrop` and its prop; the import becomes `import { TileGrid } from './TileGrid'`. `attachBelow`, `insertBand`, `NEW_TILE_H`, and `dialer` stay imported; duplicate and remove use them.
+- [x] `TileGrid.test.tsx`: delete the stub line.
 
 **AFTER**
 
@@ -145,9 +145,9 @@ interface TileGridProps {
 
 **VERIFY**
 
-- [ ] `grep -rn "onBackdrop\|BackdropTarget\|onGridContextMenu" Core` → no output.
-- [ ] `grep -n "onContextMenu" Core/Tiles/TileGrid.tsx` → one hit, inside `TileShell`'s handle.
-- [ ] Run the gates; lint reports no unused import and no stale suppression.
+- [x] `grep -rn "onBackdrop\|BackdropTarget\|onGridContextMenu" Core` → no output.
+- [x] `grep -n "onContextMenu" Core/Tiles/TileGrid.tsx` → one hit, inside `TileShell`'s handle.
+- [x] Run the gates; lint reports no unused import and no stale suppression.
 
 ---
 
@@ -167,11 +167,11 @@ interface TileGridProps {
 
 **CHANGE**
 
-- [ ] Split today's `onHover` body: the entering half becomes `enter`, run by `arrive` on the next `pointermove`; `onHover` records the entered anchor and returns. The leaving half is unchanged apart from forgetting an anchor left before the pointer moved.
-- [ ] `clear` and `take` drop the entered anchor first.
-- [ ] `ghostCreate.test.tsx`: add the `enter` helper below; replace every `await act(async () => api.onHover(<id>, true))` with `await enter(<id>)`, including the one inside `dwellOpen`. Add the tests listed under VERIFY.
-- [ ] `cardCreation.test.tsx`: `hover` follows an entering `pointerover` with a window `pointermove`.
-- [ ] Run `npm run test`; any other test that arms a ghost through a `pointerover` or `pointerenter` and now fails gains the same one-line move in its own hover helper.
+- [x] Split today's `onHover` body: the entering half becomes `enter`, run by `arrive` on the next `pointermove`; `onHover` records the entered anchor and returns. The leaving half is unchanged apart from forgetting an anchor left before the pointer moved.
+- [x] `clear` and `take` drop the entered anchor first.
+- [x] `ghostCreate.test.tsx`: add the `enter` helper below; replace every `await act(async () => api.onHover(<id>, true))` with `await enter(<id>)`, including the one inside `dwellOpen`. Add the tests listed under VERIFY.
+- [x] `cardCreation.test.tsx`: `hover` follows an entering `pointerover` with a window `pointermove`.
+- [x] Run `npm run test`; any other test that arms a ghost through a `pointerover` or `pointerenter` and now fails gains the same one-line move in its own hover helper.
 
 **AFTER**
 
@@ -268,15 +268,15 @@ const hover = (el: HTMLElement, entering: boolean): void => {
 
 **VERIFY**
 
-- [ ] New tests in `ghostCreate.test.tsx`, each red with the `ghostCreate.ts` change reverted:
+- [x] New tests in `ghostCreate.test.tsx`, each red with the `ghostCreate.ts` change reverted:
   - an enter with no move arms nothing: `api.onHover('a', true)` → `tick(DWELL)` → `api.ghost` is null; then a window `pointermove` → `tick(DWELL)` → `{ anchorId: 'a', closing: false }`.
   - an anchor entered and left before any move never arms, and the anchor entered last does: `onHover('a', true)`, `onHover('a', false)`, `onHover('b', true)`, `pointermove`, `tick(DWELL)` → `anchorId: 'b'`; the same without the enter of `b` → null.
   - an anchor drawn under the pointer neither closes nor replaces a standing ghost: `dwellOpen('a')`, `onHover('b', true)` with no move → `api.ghost` stays `{ anchorId: 'a', closing: false }`.
   - `take()` after an enter with no move, then a `pointermove` and `tick(DWELL)` → null.
-- [ ] Every pre-existing test in both files passes unchanged in its assertions.
-- [ ] `grep -n "addEventListener" UIX/Interactions/ghostCreate.ts` → two hits: `pointermove` in `onHover`, `pointerdown` in the effect.
-- [ ] Over CDP on `~/Test`, in a Cards view tall enough to scroll: rest the pointer with `Input.dispatchMouseEvent` `mouseMoved`, wheel-scroll so a different card comes under it, wait 3s → no `.ghost-card`; one further `mouseMoved` → `.ghost-card` after the dwell. This is the premise the deferral rests on; if a ghost rises without the move, stop and report before the task is committed.
-- [ ] Run the gates.
+- [x] Every pre-existing test in both files passes unchanged in its assertions.
+- [x] `grep -n "addEventListener" UIX/Interactions/ghostCreate.ts` → two hits: `pointermove` in `onHover`, `pointerdown` in the effect.
+- [x] Over CDP on `~/Test`, in a Cards view tall enough to scroll: rest the pointer with `Input.dispatchMouseEvent` `mouseMoved`, wheel-scroll so a different card comes under it, wait 3s → no `.ghost-card`; one further `mouseMoved` → `.ghost-card` after the dwell. This is the premise the deferral rests on; if a ghost rises without the move, stop and report before the task is committed.
+- [x] Run the gates.
 
 #### Task 2.2
 
@@ -293,11 +293,11 @@ const hover = (el: HTMLElement, entering: boolean): void => {
 
 **CHANGE**
 
-- [ ] `tiles.ts`: delete `NEW_TILE_H`; `seedBoard` imports it from `./Layout/model`. Every other importer re-points: `tilesFile.ts` and `TileHost.tsx` import it from `./Layout/model`. `grep -rn "NEW_TILE_H" Core` finds any other.
-- [ ] `TileGrid.tsx`: delete `const GAP = 8`; import `TILE_GAP` from `./Layout/model` and replace every `GAP` with it. The KNOB comment becomes `// KNOB — drop-band zone, snap radius, and the clearance under the last band.`
-- [ ] `model.ts`, `rects.ts`, `ops.ts`: add the code under AFTER.
-- [ ] `TileHost.tsx`: the duplicate commits through `seatBelow`, which replaces `attachBelow` in the `./Layout/ops` import.
-- [ ] `README.md` *§Module Map*: the `Layout/rects.ts` row reads "Tree → per-tile placements as shares of the board width, resolved to pixel rects, dividers, and band seams at a measured width; the wedge under each tile"; the `Layout/ops.ts` row's list gains "seat" after "band ops"; the `Layout/model.ts` row reads "Tree types, height derivation, lookup, and the board's two metrics".
+- [x] `tiles.ts`: delete `NEW_TILE_H`; `seedBoard` imports it from `./Layout/model`. Every other importer re-points: `tilesFile.ts` and `TileHost.tsx` import it from `./Layout/model`. `grep -rn "NEW_TILE_H" Core` finds any other.
+- [x] `TileGrid.tsx`: delete `const GAP = 8`; import `TILE_GAP` from `./Layout/model` and replace every `GAP` with it. The KNOB comment becomes `// KNOB — drop-band zone, snap radius, and the clearance under the last band.`
+- [x] `model.ts`, `rects.ts`, `ops.ts`: add the code under AFTER.
+- [x] `TileHost.tsx`: the duplicate commits through `seatBelow`, which replaces `attachBelow` in the `./Layout/ops` import.
+- [x] `README.md` *§Module Map*: the `Layout/rects.ts` row reads "Tree → per-tile placements as shares of the board width, resolved to pixel rects, dividers, and band seams at a measured width; the wedge under each tile"; the `Layout/ops.ts` row's list gains "seat" after "band ops"; the `Layout/model.ts` row reads "Tree types, height derivation, lookup, and the board's two metrics".
 
 **AFTER**
 
@@ -367,7 +367,7 @@ const fills = (layout: TileLayout): Record<string, number> =>
 
 **VERIFY**
 
-- [ ] `describe('wedgeFills')` in `rects.test.ts`, with these exact expectations:
+- [x] `describe('wedgeFills')` in `rects.test.ts`, with these exact expectations:
   - `board()` and `board(tile('a', 200))` → `{}`.
   - `board(row(tile('a', 200), tile('b', 100), tile('c', 160)))` → `{ b: 92 }`.
   - `board(row(tile('a', 200), tile('b', 128)))` → `{ b: 64 }`; with `b` at 129 → `{}`.
@@ -378,9 +378,9 @@ const fills = (layout: TileLayout): Record<string, number> =>
   - `board(row(tile('a', 100), tile('b', 200)), tile('c', 100))` → `{ a: 92 }`.
   - `wedgeFills(stackLayout(x), 8, 64).size` is 0 for every fixture above.
   - The invariant, looped over every fixture and every `[id, fill]` it yields: with `next = attachBelow(x, id, 'n', fill)`, `placeTiles(next, 8)` gives every original tile a placement deep-equal to its placement in `placeTiles(x, 8)`, equal `seams` and `totalHeight`, and `n` at `{ x: p.x, y: p.y + p.h + 8, w: p.w, h: fill }` for `p` the placement of `id`; `wedgeFills(next, 8, 64).has(id)` is false.
-- [ ] `TileHost.test.tsx`: a duplicate whose source left the layout before its reply lands the copy as the last band — stub `tiles:duplicateTile` to resolve after the test removes the source's leaf through a `tiles:changed` reload, then expect the saved layout to hold the new id as its final band and no entry without a leaf.
-- [ ] `grep -rn "NEW_TILE_H" Core/Tiles/tiles.ts` → the import and `seedBoard`'s use only. `grep -n "\bGAP\b" Core/Tiles/TileGrid.tsx` → no output.
-- [ ] Run the gates; `Core/Contract/engineGraph.test.ts` passes.
+- [x] `TileHost.test.tsx`: a duplicate whose source left the layout before its reply lands the copy as the last band — stub `tiles:duplicateTile` to resolve after the test removes the source's leaf through a `tiles:changed` reload, then expect the saved layout to hold the new id as its final band and no entry without a leaf.
+- [x] `grep -rn "NEW_TILE_H" Core/Tiles/tiles.ts` → the import and `seedBoard`'s use only. `grep -n "\bGAP\b" Core/Tiles/TileGrid.tsx` → no output.
+- [x] Run the gates; `Core/Contract/engineGraph.test.ts` passes.
 
 #### Task 2.3
 
@@ -437,9 +437,9 @@ export interface MenuOptions<A extends string = string> {
 
 **VERIFY**
 
-- [ ] Two new tests in `menuActions.test.ts`: with `nativeMenus` on, `popMenu(items, trigger(), { at: { x: 40, y: 60 } })` asks with `anchor` equal to `{ left: 40, top: 60, height: 0 }`; with it off, the same call reaches `presented` with `calls[0][2]?.at` equal to `{ x: 40, y: 60 }`.
-- [ ] Every existing test in the file passes untouched.
-- [ ] Run the gates.
+- [x] Two new tests in `menuActions.test.ts`: with `nativeMenus` on, `popMenu(items, trigger(), { at: { x: 40, y: 60 } })` asks with `anchor` equal to `{ left: 40, top: 60, height: 0 }`; with it off, the same call reaches `presented` with `calls[0][2]?.at` equal to `{ x: 40, y: 60 }`.
+- [x] Every existing test in the file passes untouched.
+- [x] Run the gates.
 
 #### Task 2.4
 
@@ -454,11 +454,11 @@ export interface MenuOptions<A extends string = string> {
 
 **CHANGE**
 
-- [ ] `markdown-tables.css`: delete the `.mdpm-tbl-add { … }` and `.mdpm-tbl-add:hover { … }` rules. The bridge rule `.mdpm-tbl-add::before` with its comment, and the `-col` / `-row` rules, stay.
-- [ ] `ghost-create.css`: append the rules under AFTER.
-- [ ] `MarkdownTable.tsx`: both buttons gain the `add-strip` class.
-- [ ] `ghost-create.css`: the head comment becomes `/* The create affordances' shared chrome lives here once rather than in each surface: the ghost's dim, lift target, and timing, and the add strip. */`
-- [ ] `PommoraUIX.md`: the Drop chrome row becomes ``| Drop chrome  | `DropLine` · `DragGhost` · `.drop-slot` · `.add-strip` · `drop-chrome.css` · `ghost-create.css` | The insertion line, dot, the landing slot, the glass drag chip, and the add strip a table and a board extend by. |``
+- [x] `markdown-tables.css`: delete the `.mdpm-tbl-add { … }` and `.mdpm-tbl-add:hover { … }` rules. The bridge rule `.mdpm-tbl-add::before` with its comment, and the `-col` / `-row` rules, stay.
+- [x] `ghost-create.css`: append the rules under AFTER.
+- [x] `MarkdownTable.tsx`: both buttons gain the `add-strip` class.
+- [x] `ghost-create.css`: the head comment becomes `/* The create affordances' shared chrome lives here once rather than in each surface: the ghost's dim, lift target, and timing, and the add strip. */`
+- [x] `PommoraUIX.md`: the Drop chrome row becomes ``| Drop chrome  | `DropLine` · `DragGhost` · `.drop-slot` · `.add-strip` · `drop-chrome.css` · `ghost-create.css` | The insertion line, dot, the landing slot, the glass drag chip, and the add strip a table and a board extend by. |``
 
 **AFTER**
 
@@ -496,9 +496,9 @@ export interface MenuOptions<A extends string = string> {
 
 **VERIFY**
 
-- [ ] `grep -n "mdpm-tbl-add {" -A2 Core/MarkdownPM/markdown-tables.css` → no output; `grep -c "mdpm-tbl-add" Core/MarkdownPM/markdown-tables.css` → 5: the bridge, its two positional halves, and the two positional rules.
-- [ ] Over CDP on `~/Test`, a Markdown table's Add Row and Add Column strips have the same `getComputedStyle` `border`, `borderRadius`, `color`, and hovered `backgroundColor` as at the baseline commit.
-- [ ] Run the gates.
+- [x] `grep -n "mdpm-tbl-add {" -A2 Core/MarkdownPM/markdown-tables.css` → no output; `grep -c "mdpm-tbl-add" Core/MarkdownPM/markdown-tables.css` → 5: the bridge, its two positional halves, and the two positional rules.
+- [x] Over CDP on `~/Test`, a Markdown table's Add Row and Add Column strips have the same `getComputedStyle` `border`, `borderRadius`, `color`, and hovered `backgroundColor` as at the baseline commit.
+- [x] Run the gates.
 
 ---
 
@@ -522,11 +522,11 @@ export interface MenuOptions<A extends string = string> {
 
 **CHANGE**
 
-- [ ] `tilesFile.ts`: delete `createTile`'s `type` parameter, its `knownTile({ id, type })` seed, and the "can't be created" refusal. Rename `CONVERTS` to `PICK_ENTRIES` and move it, both arms verbatim, above `createTile`. Hoist the pick resolution out of `convertTile` into `pickEntry`. `TILE_KINDS` and `knownTile` stay imported; `reviseTile`, `restoreTile`, and `duplicateTile` use them.
-- [ ] `handlers.ts`, `bridge.ts`: re-sign as under AFTER. In `bridge.ts`, delete `TileType` from the `../Tiles/tiles` import; `tiles:create` was its only use.
-- [ ] `tiles.ts`: `mintSeed` loses its `type` parameter, since only a Markdown Tile is ever seeded: `export const mintSeed = (id: string): Record<string, unknown> => ({ id, type: 'markdown' })`, and `seedBoard` calls `mintSeed(id)`. The `TilePick` comment becomes `/** What a create or a convert into each kind is given; a kind a menu row makes has a member here. */`
-- [ ] Tests: every `createTile(<dir>, 'markdown')` becomes `createTile(<root>, <dir>)`, `<root>` being the Nexus root the test already holds (`root` in `tilesFile.test.ts`). `grep -rn "createTile(" Core --include="*.test.ts"` lists them. `handlers.test.ts` drops the `'markdown'` argument.
-- [ ] `tilesFile.test.ts`: delete the "bare seed" test and add the three under VERIFY in its place.
+- [x] `tilesFile.ts`: delete `createTile`'s `type` parameter, its `knownTile({ id, type })` seed, and the "can't be created" refusal. Rename `CONVERTS` to `PICK_ENTRIES` and move it, both arms verbatim, above `createTile`. Hoist the pick resolution out of `convertTile` into `pickEntry`. `TILE_KINDS` and `knownTile` stay imported; `reviseTile`, `restoreTile`, and `duplicateTile` use them.
+- [x] `handlers.ts`, `bridge.ts`: re-sign as under AFTER. In `bridge.ts`, delete `TileType` from the `../Tiles/tiles` import; `tiles:create` was its only use.
+- [x] `tiles.ts`: `mintSeed` loses its `type` parameter, since only a Markdown Tile is ever seeded: `export const mintSeed = (id: string): Record<string, unknown> => ({ id, type: 'markdown' })`, and `seedBoard` calls `mintSeed(id)`. The `TilePick` comment becomes `/** What a create or a convert into each kind is given; a kind a menu row makes has a member here. */`
+- [x] Tests: every `createTile(<dir>, 'markdown')` becomes `createTile(<root>, <dir>)`, `<root>` being the Nexus root the test already holds (`root` in `tilesFile.test.ts`). `grep -rn "createTile(" Core --include="*.test.ts"` lists them. `handlers.test.ts` drops the `'markdown'` argument.
+- [x] `tilesFile.test.ts`: delete the "bare seed" test and add the three under VERIFY in its place.
 
 **AFTER**
 
@@ -591,13 +591,13 @@ export async function convertTile(
 
 **VERIFY**
 
-- [ ] Three tests in `tilesFile.test.ts`, replacing the deleted one:
+- [x] Three tests in `tilesFile.test.ts`, replacing the deleted one:
   - a page pick lands `{ id, type: 'page', page_id: 'p1' }` as the only entry, and `pathExists(tileFilePath(home(), id))` is false.
   - a view pick naming a seeded container and no view lands an entry of `type: 'view'` whose `views[0].source_id` is the container's id and whose `views[0].config.id` is a freshly minted view id, with no file beside it. Build the container the way the file's existing `convertTile` view tests do.
   - `createTile(root, home(), { kind: 'widget' })`, `createTile(root, home(), 'markdown')`, and a view pick whose `source_id` names nothing each return a failed `Result`, and `pathExists(tileDocPath(home()))` is false afterward.
-- [ ] `handlers.test.ts`: `tilesHandlers['tiles:create'](ctx, space)` still creates a Markdown Tile whose file exists; one added assertion that `tilesHandlers['tiles:create'](ctx, space, { kind: 'page', value: 'p1' })` answers `ok` and writes no file for its id.
-- [ ] `grep -rn "CONVERTS\|can’t be created" Core` → no output.
-- [ ] Run the gates.
+- [x] `handlers.test.ts`: `tilesHandlers['tiles:create'](ctx, space)` still creates a Markdown Tile whose file exists; one added assertion that `tilesHandlers['tiles:create'](ctx, space, { kind: 'page', value: 'p1' })` answers `ok` and writes no file for its id.
+- [x] `grep -rn "CONVERTS\|can’t be created" Core` → no output.
+- [x] Run the gates.
 
 #### Task 3.2
 
@@ -613,11 +613,11 @@ export async function convertTile(
 
 **CHANGE**
 
-- [ ] `tiles.ts`: swap the two `menuRows` entries.
-- [ ] `tileHandleMenu.ts`: move the link section out of `tileMenuItems` into `linkRows`; add `insertMenuItems` and `pickOf`. The two comments the section carried merge into the one above `linkRows`.
-- [ ] `TileHost.tsx`: `run` reads its pick through `pickOf`.
-- [ ] `tiles.test.ts`: the pinned `menuRows` order becomes Link Page, then Link View.
-- [ ] `README.md` *§Module Map*: the `tileHandleMenu.ts` row reads "The handle menu's and the Insert Menu's models, their shared link rows, and the pick trees".
+- [x] `tiles.ts`: swap the two `menuRows` entries.
+- [x] `tileHandleMenu.ts`: move the link section out of `tileMenuItems` into `linkRows`; add `insertMenuItems` and `pickOf`. The two comments the section carried merge into the one above `linkRows`.
+- [x] `TileHost.tsx`: `run` reads its pick through `pickOf`.
+- [x] `tiles.test.ts`: the pinned `menuRows` order becomes Link Page, then Link View.
+- [x] `README.md` *§Module Map*: the `tileHandleMenu.ts` row reads "The handle menu's and the Insert Menu's models, their shared link rows, and the pick trees".
 
 **AFTER**
 
@@ -711,13 +711,13 @@ export function insertMenuItems(
 
 **VERIFY**
 
-- [ ] New tests in `tileHandleMenu.test.ts`, with `pickTree` stubbed as the file's `ctx` does:
+- [x] New tests in `tileHandleMenu.test.ts`, with `pickTree` stubbed as the file's `ctx` does:
   - `insertMenuItems(tree, 'file-text').items.map((i) => i.label)` equals `['New Page', 'Link Page', 'Link View']`, and the first row is `{ label: 'New Page', icon: 'file-text', action: 'tile:new' }`.
   - with one page in the page tree, the Link Page row's submenu holds one row whose action is `'tile:pick:0'`, and `pickOf('tile:pick:0', picks)` equals `{ kind: 'page', value: <that page's pick> }`.
   - with both trees empty, both link rows carry an empty `submenu`, as `tileMenuItems` gives a Markdown Tile today.
   - `pickOf('tile:new', [])` and `pickOf('tile:pick:3', [])` are `undefined`.
-- [ ] Every existing test in `tileHandleMenu.test.ts` and `tileKinds.test.tsx` passes untouched.
-- [ ] Run the gates.
+- [x] Every existing test in `tileHandleMenu.test.ts` and `tileKinds.test.tsx` passes untouched.
+- [x] Run the gates.
 
 ---
 
@@ -741,11 +741,11 @@ export function insertMenuItems(
 
 **CHANGE**
 
-- [ ] Imports: `useHeldPresence` joins `useSettleFallback`; `ghostAnchorProps`, `useClearStrandedGhost`, `useGhostAnchor` from `@pommora/uix/Interactions/ghostCreate`; `REVEAL_GRACE_MS` and `withinBox` join the `hoverReveal` import; `Icon` from `@pommora/uix/Symbols`; `text` from `@pommora/uix/Theme`, as `Surfaces/WebTile.tsx` imports it; `NEW_TILE_H` joins `TILE_GAP`; `wedgeFills` joins the `rects` import.
-- [ ] Add the types, props, constants, and the `AddStrip` component under AFTER.
-- [ ] `busy` moves up beside `boardStatic` so `zones` can be derived there; its effect stays where it is.
-- [ ] Add the wedge memo, the hook, the ghost, the zones, the strip, and the grid's class and height, in the positions AFTER gives.
-- [ ] CSS as under AFTER.
+- [x] Imports: `useHeldPresence` joins `useSettleFallback`; `ghostAnchorProps`, `useClearStrandedGhost`, `useGhostAnchor` from `@pommora/uix/Interactions/ghostCreate`; `REVEAL_GRACE_MS` and `withinBox` join the `hoverReveal` import; `Icon` from `@pommora/uix/Symbols`; `text` from `@pommora/uix/Theme`, as `Surfaces/WebTile.tsx` imports it; `NEW_TILE_H` joins `TILE_GAP`; `wedgeFills` joins the `rects` import.
+- [x] Add the types, props, constants, and the `AddStrip` component under AFTER.
+- [x] `busy` moves up beside `boardStatic` so `zones` can be derived there; its effect stays where it is.
+- [x] Add the wedge memo, the hook, the ghost, the zones, the strip, and the grid's class and height, in the positions AFTER gives.
+- [x] CSS as under AFTER.
 
 **AFTER**
 
@@ -1084,7 +1084,7 @@ function AddStrip({
 
 **VERIFY**
 
-- [ ] New tests in `TileGrid.test.tsx`, the `grid` props object gaining `inserting: null` and `onInsert: () => {}`. A zone is hovered with a `pointerover` on it followed by `window.dispatchEvent(new MouseEvent('pointermove'))`, under fake timers:
+- [x] New tests in `TileGrid.test.tsx`, the `grid` props object gaining `inserting: null` and `onInsert: () => {}`. A zone is hovered with a `pointerover` on it followed by `window.dispatchEvent(new MouseEvent('pointermove'))`, under fake timers:
   - the row fixture is `splitTile(insertBand({ bands: [] }, 0, 'a', 200), 'a', 'e', 'b')` with `b`'s `h` then set to 100, since `splitTile` gives the new tile its target's height. Over it, the grid renders exactly one `.tile-zone`; hovering it for 1000ms mounts `.tile-ghost` with `height: 92px`; 999ms mounts none.
   - over the same layout, `.tile-add` is in the document with `style.transform` of `translate(0px, 208px)`, and clicking its button calls `onInsert` once with `{ kind: 'append' }` and the event; the grid's `style.height` is `228px` throughout.
   - with `.tile-add`'s `getBoundingClientRect` stubbed through `stubRect` to the strip's box, a window `pointermove` 10px above it sets `data-reveal-host="on"`, one 40px above it sets `""`, and one 10px above it with `buttons: 1` leaves the attribute as it was.
@@ -1095,9 +1095,9 @@ function AddStrip({
   - clicking the wedge ghost calls `onInsert` once with `{ kind: 'wedge', above: 'b' }` and the event; with `inserting` set, a second click on the ghost or the strip calls nothing.
   - under a wrapper that holds `inserting` in state and sets it to `{ target, phase: 'menu' }` from `onInsert`, as the host does, a hovered wedge ghost that is clicked is the same `.tile-ghost` DOM node after the click as before it, and carries `data-reveal-held`; re-rendered with `inserting: null` it carries `is-closing` and leaves after the exit beat; re-rendered from `phase: 'flight'` to `null` it is gone in that render.
   - with `inserting: { target: { kind: 'append' }, phase: 'menu' }` over a layout with tiles, the strip's button carries `data-reveal-held` and no `.tile-ghost` is drawn.
-- [ ] `grep -n "from './tiles'\|from './TileHost'\|from './tileHandleMenu'" Core/Tiles/TileGrid.tsx` → no output.
-- [ ] `grep -n "addEventListener\|onPointerMove" Core/Tiles/TileGrid.tsx` → no output: the zones carry `ghostAnchorProps` alone, and the strip's reach runs on the kit's `trackNear`, whose test is cached between moves.
-- [ ] Run the gates once Task 4.2 has landed.
+- [x] `grep -n "from './tiles'\|from './TileHost'\|from './tileHandleMenu'" Core/Tiles/TileGrid.tsx` → no output.
+- [x] `grep -n "addEventListener\|onPointerMove" Core/Tiles/TileGrid.tsx` → no output: the zones carry `ghostAnchorProps` alone, and the strip's reach runs on the kit's `trackNear`, whose test is cached between moves.
+- [x] Run the gates once Task 4.2 has landed.
 
 #### Task 4.2
 
@@ -1113,10 +1113,10 @@ function AddStrip({
 
 **CHANGE**
 
-- [ ] Imports: `flushSync` from `react-dom`; `TILE_GAP` joins the `./Layout/model` import; `wedgeFills` from `./Layout/rects`; `TILE_MIN_PX` from `@pommora/uix/Utilities/tileMetrics`; `type Inserting` and `type InsertTarget` join the `./TileGrid` import; `insertMenuItems` joins the `./tileHandleMenu` import.
-- [ ] Add `inserting` and `onInsert`.
-- [ ] `onHandleMenu`: `build` reads the live board lock; `run` refuses a mutating pick on a locked board; `hostLocked` leaves the dependency list.
-- [ ] Pass `inserting` and `onInsert` to the grid.
+- [x] Imports: `flushSync` from `react-dom`; `TILE_GAP` joins the `./Layout/model` import; `wedgeFills` from `./Layout/rects`; `TILE_MIN_PX` from `@pommora/uix/Utilities/tileMetrics`; `type Inserting` and `type InsertTarget` join the `./TileGrid` import; `insertMenuItems` joins the `./tileHandleMenu` import.
+- [x] Add `inserting` and `onInsert`.
+- [x] `onHandleMenu`: `build` reads the live board lock; `run` refuses a mutating pick on a locked board; `hostLocked` leaves the dependency list.
+- [x] Pass `inserting` and `onInsert` to the grid.
 
 **AFTER**
 
@@ -1209,7 +1209,7 @@ function AddStrip({
 
 **VERIFY**
 
-- [ ] New tests in `TileHost.test.tsx`, with `devicePrefs: { nativeMenus: true }` and the `menu` channel stubbed to answer the action under test, `tiles:create` stubbed to answer a landed document carrying the new entry:
+- [x] New tests in `TileHost.test.tsx`, with `devicePrefs: { nativeMenus: true }` and the `menu` channel stubbed to answer the action under test, `tiles:create` stubbed to answer a landed document carrying the new entry:
   - over an empty document, clicking `.tile-ghost` and picking `'tile:new'` asks `tiles:create` with the host and an `undefined` pick (`calls[0][1]` is `undefined`); the saved layout is one band holding the new id at height 160; the new tile carries `.is-editing-tile`; no `.tile-ghost` remains.
   - picking `'tile:pick:0'` asks `tiles:create` with the pick `insertMenuItems` built at index 0, and the new tile does not carry `.is-editing-tile`.
   - over a document with tiles, clicking the add strip's button and picking `'tile:new'` lands the new id as the last band at height 160, with the caret in it; the `menu` request's `anchor` is the click's point, and a click dispatched with `detail: 0` sends the button's box instead.
@@ -1218,8 +1218,8 @@ function AddStrip({
   - a wedge target whose fill changed before the reply lands the new id under its tile at the fill `wedgeFills` gives the reloaded layout.
   - the document reloaded as `locked: true` while the menu is open: the pick asks nothing.
   - the handle menu: with the document reloaded as `locked: true` after the menu opened, a `'tile:duplicate'` pick asks nothing, and a `'tile:open'` pick still opens the page.
-- [ ] `grep -n "hostLocked" Core/Tiles/TileHost.tsx` → the `useTileDoc` destructure, the host's class name, and the grid's `locked` prop only.
-- [ ] Run the gates.
+- [x] `grep -n "hostLocked" Core/Tiles/TileHost.tsx` → the `useTileDoc` destructure, the host's class name, and the grid's `locked` prop only.
+- [x] Run the gates.
 
 #### Task 4.3
 
@@ -1231,22 +1231,22 @@ function AddStrip({
 
 Each edit replaces the quoted text in place; nothing is appended beside it.
 
-- [ ] `SurfacePM.md` *§Tile Types*: "a kind a menu converts into adds a `TilePick` member whose convert and pick-tree arms the compiler requires" → "a kind a menu creates or converts into adds a `TilePick` member whose pick-entry and pick-tree arms the compiler requires".
-- [ ] `SurfacePM.md` *§Surface Interaction*: the sentence "Creation is a right-click on the surface background: … appends as a full-width band." → "Creation is a ghost tile: resting the pointer in the wedge under a shorter tile raises a dimmed "New Tile" in the box a tile would take, and an add strip under the last band, the one a Markdown table adds a row by, shows as the pointer nears the board's bottom edge. Clicking either opens the Insert Menu at the click — **New Page**, which makes a Markdown Tile and hands it the caret, and **Link Page** and **Link View**, which make the tile already linked. The ghost or strip holds while its menu is open, a ghost fades when the menu is dismissed, and the tile lands flush in the wedge or as a full-width band when a row is picked; an empty board stands one ghost without a hover."
-- [ ] `SurfacePM.md` *§Surface Interaction*: "freezes every tile's position and size and withholds background-create, while content editing and the handle menu stay live; a board narrow enough to draw as one column is frozen the same way." → "freezes every tile's position and size and withholds the ghost tiles and the add strip, while content editing and the handle menu stay live; a board narrow enough to draw as one column is frozen the same way, offering no wedge ghost while keeping its add strip and, when empty, its standing ghost."
-- [ ] `SurfacePM.md` *§Pending*: delete the "**The Insert menu**" entry.
-- [ ] `README.md` *§Module Map*: the `TileGrid.tsx` row's list gains "the ghost tiles, their hover zones, and the add strip" after "placement tint".
-- [ ] `README.md` *§Interaction Invariants*, the last bullet → "**A static board answers no geometry gesture.** A host lock and the stacking width are one state for gestures: the grid refuses the press before the pointer engine sees it, so no gesture path carries a stacked branch. A host lock withholds the ghost tiles and the add strip; a stacked board has no wedge and keeps the strip. Content editing, the handle menu, and view tiles run either way."
-- [ ] `TilesV2-Spec.md` *§The Seams*: "`tiles:create` makes any kind whose bare seed is a whole entry; a kind that needs a source is reached by convert." → "`tiles:create` makes a blank Markdown Tile, or, given a `TilePick`, the entry that pick resolves to, in one write." In the same paragraph, "convert and pick-tree arms" → "pick-entry and pick-tree arms".
-- [ ] `TilesV2-Spec.md` *§Prospects* and `FrameworkPM.md` *§v0.9.0*: delete "the background Insert menu" and its comma from each list.
-- [ ] `ViewTypesPM.md`, the hover-ghost sentence → "Every renderer shares the **hover ghost** (`UIX/Interactions/ghostCreate.ts`) with the sidebar, the option lists, and tile boards: dwelling on a row or card extends a ghost "New Page" beneath it at the inactive dim, on that renderer's own chrome, with click-to-create actions. A dwell begins only on a real pointer move, so content scrolled or drawn under a resting pointer raises none."
-- [ ] `ConfigurationPM.md`, the Use Native Menus row: "the click-triggered lists that hang from a control, pickers and the tile handle," → "the click-triggered lists that hang from a control or a click, pickers, the tile handle, and a board's Insert Menu,".
-- [ ] The decision log: its STATUS line reads "Implemented".
+- [x] `SurfacePM.md` *§Tile Types*: "a kind a menu converts into adds a `TilePick` member whose convert and pick-tree arms the compiler requires" → "a kind a menu creates or converts into adds a `TilePick` member whose pick-entry and pick-tree arms the compiler requires".
+- [x] `SurfacePM.md` *§Surface Interaction*: the sentence "Creation is a right-click on the surface background: … appends as a full-width band." → "Creation is a ghost tile: resting the pointer in the wedge under a shorter tile raises a dimmed "New Tile" in the box a tile would take, and an add strip under the last band, the one a Markdown table adds a row by, shows as the pointer nears the board's bottom edge. Clicking either opens the Insert Menu at the click — **New Page**, which makes a Markdown Tile and hands it the caret, and **Link Page** and **Link View**, which make the tile already linked. The ghost or strip holds while its menu is open, a ghost fades when the menu is dismissed, and the tile lands flush in the wedge or as a full-width band when a row is picked; an empty board stands one ghost without a hover."
+- [x] `SurfacePM.md` *§Surface Interaction*: "freezes every tile's position and size and withholds background-create, while content editing and the handle menu stay live; a board narrow enough to draw as one column is frozen the same way." → "freezes every tile's position and size and withholds the ghost tiles and the add strip, while content editing and the handle menu stay live; a board narrow enough to draw as one column is frozen the same way, offering no wedge ghost while keeping its add strip and, when empty, its standing ghost."
+- [x] `SurfacePM.md` *§Pending*: delete the "**The Insert menu**" entry.
+- [x] `README.md` *§Module Map*: the `TileGrid.tsx` row's list gains "the ghost tiles, their hover zones, and the add strip" after "placement tint".
+- [x] `README.md` *§Interaction Invariants*, the last bullet → "**A static board answers no geometry gesture.** A host lock and the stacking width are one state for gestures: the grid refuses the press before the pointer engine sees it, so no gesture path carries a stacked branch. A host lock withholds the ghost tiles and the add strip; a stacked board has no wedge and keeps the strip. Content editing, the handle menu, and view tiles run either way."
+- [x] `TilesV2-Spec.md` *§The Seams*: "`tiles:create` makes any kind whose bare seed is a whole entry; a kind that needs a source is reached by convert." → "`tiles:create` makes a blank Markdown Tile, or, given a `TilePick`, the entry that pick resolves to, in one write." In the same paragraph, "convert and pick-tree arms" → "pick-entry and pick-tree arms".
+- [x] `TilesV2-Spec.md` *§Prospects* and `FrameworkPM.md` *§v0.9.0*: delete "the background Insert menu" and its comma from each list.
+- [x] `ViewTypesPM.md`, the hover-ghost sentence → "Every renderer shares the **hover ghost** (`UIX/Interactions/ghostCreate.ts`) with the sidebar, the option lists, and tile boards: dwelling on a row or card extends a ghost "New Page" beneath it at the inactive dim, on that renderer's own chrome, with click-to-create actions. A dwell begins only on a real pointer move, so content scrolled or drawn under a resting pointer raises none."
+- [x] `ConfigurationPM.md`, the Use Native Menus row: "the click-triggered lists that hang from a control, pickers and the tile handle," → "the click-triggered lists that hang from a control or a click, pickers, the tile handle, and a board's Insert Menu,".
+- [x] The decision log: its STATUS line reads "Implemented".
 
 **VERIFY**
 
-- [ ] `grep -rn "right-click on the surface background\|background-create\|backdrop's create menu\|background Insert menu\|reached by convert" .claude/Features .claude/Planning/TilesV2-Spec.md .claude/FrameworkPM.md Core/Tiles` → no output.
-- [ ] Read each edited paragraph once in full; none contradicts itself.
+- [x] `grep -rn "right-click on the surface background\|background-create\|backdrop's create menu\|background Insert menu\|reached by convert" .claude/Features .claude/Planning/TilesV2-Spec.md .claude/FrameworkPM.md Core/Tiles` → no output.
+- [x] Read each edited paragraph once in full; none contradicts itself.
 
 #### Task 4.4
 
@@ -1288,44 +1288,45 @@ Driven over CDP on a scratch instance of `~/Test` (port 9334, the dev renderer, 
 
 **Conformance**
 
-- [ ] One hover mechanism: `grep -rn "useGhostAnchor(" Core UIX | grep -v test` lists the pre-existing consumers plus `TileGrid.tsx`, and `TileGrid.tsx` holds no `pointermove` listener of its own.
-- [ ] One wedge derivation: `grep -rn "wedgeFills(" Core | grep -v test` → its definition, the grid's memo, and the host's seat.
-- [ ] One add strip: `grep -rn "^\.mdpm-tbl-add {" Core/MarkdownPM` → no output, and `grep -n "^\.add-strip {" UIX/Interactions/ghost-create.css` → one hit.
-- [ ] One definition of the link rows: `grep -n "'Link Page'\|'Link View'" -r Core | grep -v test` → `tiles.ts` only.
-- [ ] `git diff --name-only <baseline>..HEAD` lists only files a task names.
+- [x] One hover mechanism: `grep -rn "useGhostAnchor(" Core UIX | grep -v test` lists the pre-existing consumers plus `TileGrid.tsx`, and `TileGrid.tsx` holds no `pointermove` listener of its own.
+- [x] One wedge derivation: `grep -rn "wedgeFills(" Core | grep -v test` → its definition, the grid's memo, and the host's seat.
+- [x] One add strip: `grep -rn "^\.mdpm-tbl-add {" Core/MarkdownPM` → no output, and `grep -n "^\.add-strip {" UIX/Interactions/ghost-create.css` → one hit.
+- [x] One definition of the link rows: `grep -n "'Link Page'\|'Link View'" -r Core | grep -v test` → `tiles.ts` only.
+- [x] `git diff --name-only ffbb04d72..HEAD` lists only files a task names, the commit hook's `Dashboard/Ledger/loc-history.json`, and the planning documents another session's `1d942e615` brought under version control.
 
 **Correctness**
 
-- [ ] Every [CONFIRMED] entry of the decision log's *§A* through *§F* is observed in the Phase 4 checkpoint.
-- [ ] A user on a fresh board can create a blank tile, a page tile, and a view tile from the ghost, and cannot create one any other way from the background.
+- [x] Every [CONFIRMED] entry of the decision log's *§A* through *§F* is traced to its line by the neutral verifier; the CDP checkpoint observed A-1, A-3, B-1..B-3, C-1..C-3, C-9, C-10, D-1, E-1..E-4, F-1 live, and the live pass by hand covers the rest.
+- [x] A user on a fresh board can create a blank tile, a page tile, and a view tile from the ghost (the host tests and the live New Page landings), and cannot create one any other way from the background (the right-click path is gone; `grep onBackdrop|BackdropTarget|onGridContextMenu` → 0).
 
 **Completeness**
 
-- [ ] Every task ticked; no scaffolding, debug output, TODO, or commented-out code in `<baseline>..HEAD`.
+- [x] Every task ticked; no scaffolding, debug output, TODO, or commented-out code in `ffbb04d72..HEAD` (grep of the added lines → 0).
 
 **Confirmation**
 
-- [ ] Every VERIFY result read; each new hook, layout, and host test goes red with its change reverted.
+- [x] Every VERIFY result read; the hook, layout, duplicate, and host lock and fill tests were run red against their change reverted, with the two exceptions *§Deviations* records.
 
 **Continuity**
 
-- [ ] *§Reconciliation* walked; the living documents read true; *§Deviations* each fixed or ruled on.
+- [x] *§Reconciliation* walked (every listed phrase gone or rewritten); the living documents read true per the neutral verifier; *§Deviations* each fixed or ruled on.
 
 **Confidence**
 
-- [ ] Gates green from clean on `<baseline>..HEAD`; *§Baseline* counts moved as stated.
-- [ ] Diff size reported, comments and tests excluded.
+- [x] Gates green from clean at `cc9265e69`: `npm run typecheck` exit 0 · `npm run lint` "Checked 1409 files. No fixes applied." · `npm run test` 515 files, 7282 passed, 2 skipped. *§Baseline* counts: 13 → 0, 3 → 0, 28 → 32 (recorded), 4 → 5, 7 → 5, 7241 → 7282.
+- [x] Diff size: +504 / −170 production lines (net +334) with comments and tests excluded; +900 / −59 test lines.
 
 ### Final Verification
 
 **THE STANDARD:** The work is finished when a later review of it finds nothing to correct, and a neutral reader finds no reason the right-click path, a tile-only hover mechanism, or a second copy of anything would have been the better thing to have in the codebase. Nothing is carried as a concern, nothing is deferred where the fix is known, and nothing is declared that wasn't watched happen. Ambiguity met during execution took the simplest reading and was recorded under *§Deviations*.
 
-- [ ] Phase review dispatched: Phase 1 · Phase 2 · Phase 3 · Phase 4 — a simplification reviewer first, then a correctness reviewer, per phase
-- [ ] All findings fixed or ruled on
-- [ ] Neutral verification passed on `<baseline>..HEAD`
-- [ ] Final pass: gates · baseline · diff · deviations · criteria
-- [ ] Reconciliation walked; living documents read
-- [ ] Report delivered, with the line-count difference
+- [x] Phase review dispatched (simplification first, then correctness, two reviewers each over Phases 1–2 and 3–4). Simplification: ten findings, all verified and folded in one commit — a point-anchored menu measures no trigger; the stacked-board wedge test pinned only the lone-tile case and left; `rects.test.ts`'s local `row` renamed `split`; the grid's `ResizeObserver` watches the pane too, so a vertical resize re-reads the room; the bottom zone rides `ghostAnchorProps` with `useClearStrandedGhost` keyed on `fill`; `findScroller` and `scrollContainer` share one `ancestorWhere`, `scrollsAxis` private; `seatBelow`'s band height is `h ?? NEW_TILE_H`; the host's seat branches once on the target's kind; three Task 4.4 comments cut or reworded; `lastElementChild!` in place of a fallback that could not run.
+- [x] Correctness review dispatched (two adversarial reviewers, Phases 1–2 and 3–4): Phases 1 and 3 clean; six findings, five folded in `a4f93c7a3` — the hook's forgotten anchor drops its `pointermove` listener; the grid's sample watches the pane and its children, so a banner filling in above the board re-reads the room; a bottom ghost whose room closed draws nothing in that render; the bottom zone's anchor is `''`, the one id the codec lets no leaf carry; the spec's "one `tileMenuItems` model" sentence names both models (committed with the planning documents at close). One ruled on, open: a pick made after the host unmounted mid-menu (a keyboard-driven navigation while the Insert Menu is up) writes an entry no layout seats; `restoreTile` seats main-side for that case and `duplicateTile` shares the gap from before this work; a programmatic menu close is out of scope by *§Constraints*, so it is reported, not fixed.
+- [x] All findings fixed or ruled on
+- [x] Neutral verification on `ffbb04d72..HEAD`: every [CONFIRMED] entry traced to its line, the four conformance greps as stated, no residue, no duplicated mechanism; not a pass at `a4f93c7a3` on five points, all folded — the spec's models sentence committed; `fillBelow` answers null (the strip) with no pane rather than a measured-looking 250; `GHOST_DWELL_MS` names the one dwell both ghosts share; the zone comment in `tile-grid.css` reads the room; the log's G-2 and the plan's Task 4.3 deviation corrected. Of its optional notes, the twin full-width literals became `bandBox` and the ghost comment lost its CSS clause; `createTile`'s body literals (a linked tile owns no file by design) and `scrollContainer`'s `xy` symmetry with `findScroller` stay.
+- [x] Final pass: gates · baseline · diff · deviations · criteria
+- [x] Reconciliation walked; living documents read
+- [x] Report delivered, with the line-count difference
 
 #### Reconciliation
 
@@ -1355,7 +1356,7 @@ The report follows the planning skill's shape: what the log asked for and what n
 - **Task 3.1, the `createTile(` test count.** 28 → 32: the 27 surviving calls re-signed, the deleted test's one call gone, and the three replacing tests carry five calls between them.
 - **Task 4.1, the grid tests' click.** A drop in the file's gesture tests arms the kit's one-click swallow (`suppressNextClick`) on a `window.setTimeout(0)` jsdom never fires; the ghost-tile describe spends it with a throwaway `document.body.click()` in its `beforeEach`, and its clicks carry a press and release as a real click does.
 - **Task 4.2, the two in-flight wedge tests.** As with the duplicate test, a `tiles:changed` reload cannot land before the create's reply, so "tile left" and "fill changed" are driven through `commitTileLayout` (a sibling mount's remove and stretch) between the pick and the stubbed reply. The expectations are the plan's: the last band at 160, and the new tile under `b` at the fill the board then gives (192).
-- **Task 4.3, the spec's recipe sentence.** `TilesV2-Spec.md`'s "when a menu converts into it" became "when a menu creates or converts into it" alongside the plan's "pick-entry and pick-tree arms" swap, since the same sentence names when the member is required. The spec sits under the gitignored `Planning/`, so its edit, like the plan's and the log's, is on disk and not in a commit.
+- **Task 4.3, the spec's recipe sentence.** `TilesV2-Spec.md`'s "when a menu converts into it" became "when a menu creates or converts into it" alongside the plan's "pick-entry and pick-tree arms" swap, since the same sentence names when the member is required. `Planning/` left `.claude/.gitignore` during execution (`1d942e615`), so the spec, the plan, and the log are committed with the rest.
 - **Task 4.4 is Nathan's mid-checkpoint ruling, not a drift:** the strip read as stingy on a board with half a screen free, so the bottom zone takes the shape the room allows. Recorded in the log at Overview, Concepts, A-3, A-5, C-2, C-3, C-9, D-1, G-2.
 - **Full suite from clean after Task 4.4 (`8ad07fbc7`, scratch instance closed):** 515 files, 7282 passed, 2 skipped, exit 0, no unhandled errors; the earlier timeouts and the rejection were load.
 - **Full-suite run after Task 2.1:** two `embedAbsorb.test.tsx` 5s timeouts and one unhandled rejection from `useViewHost.test.tsx` (`notifications.ts:69` reading `ok` on an undefined reply) under the full parallel run; each file passes alone before and after the change, and the baseline run was clean. Watched at the later full runs.
