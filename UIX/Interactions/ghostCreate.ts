@@ -93,8 +93,12 @@ export function useGhostAnchor(opts: GhostAnchorOptions): GhostAnchor {
       entered = null
       if (id !== null) enter(id)
     }
-    const clear = (anchorId?: string): void => {
+    const forget = (): void => {
       entered = null
+      window.removeEventListener('pointermove', arrive)
+    }
+    const clear = (anchorId?: string): void => {
+      forget()
       clearTimer('dwell')
       clearTimer('grace')
       const g = ghostRef.current
@@ -109,7 +113,7 @@ export function useGhostAnchor(opts: GhostAnchorOptions): GhostAnchor {
         window.addEventListener('pointermove', arrive, { once: true })
         return
       }
-      if (entered === id) entered = null
+      if (entered === id) forget()
       clearTimer('dwell')
       clearTimer('grace')
       timers.grace = window.setTimeout(closeGhost, optsRef.current.graceMs)
@@ -124,7 +128,7 @@ export function useGhostAnchor(opts: GhostAnchorOptions): GhostAnchor {
       timers.grace = window.setTimeout(closeGhost, optsRef.current.graceMs)
     }
     const take = (): string | null => {
-      entered = null
+      forget()
       // A dwell armed on a row crossed en route must not fire after the create.
       clearTimer('dwell')
       clearTimer('grace')

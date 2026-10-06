@@ -356,6 +356,7 @@ describe('the ghost tiles and the add strip', () => {
   // A drop arms the kit's one-click swallow on a zero timer that jsdom never fires here; a throwaway click spends it before a test clicks for real.
   beforeEach(() => {
     document.body.click()
+    host.style.overflowY = 'auto'
     vi.useFakeTimers()
   })
   afterEach(() => vi.useRealTimers())
@@ -384,9 +385,8 @@ describe('the ghost tiles and the add strip', () => {
         new PointerEvent('pointerout', { bubbles: true, relatedTarget: document.body }),
       )
     })
-  // The host scrolls, and shows `room` px below the grid's resting box; the grid's sample reads it.
+  // The host is the pane, and shows `room` px below the grid's resting box; the grid's sample reads it.
   const paneWithRoom = (room: number): void => {
-    host.style.overflowY = 'auto'
     host.getBoundingClientRect = () => ({ top: 0, bottom: 226 + room }) as DOMRect
     const grid = q('.tile-grid') as HTMLElement
     grid.getBoundingClientRect = () => ({ top: 0, bottom: 226 }) as DOMRect
@@ -434,6 +434,19 @@ describe('the ghost tiles and the add strip', () => {
     expect(onInsert).toHaveBeenCalledOnce()
     expect(onInsert.mock.calls[0][0]).toEqual({ kind: 'append' })
     expect(onInsert.mock.calls[0][1]).toMatchObject({ type: 'click' })
+  })
+
+  it('a bottom ghost whose room closes draws nothing in that render, and the strip takes the bottom', () => {
+    render()
+    paneWithRoom(400)
+    hoverBottom()
+    tick(1000)
+    expect(q('.tile-ghost')).not.toBeNull()
+    paneWithRoom(0)
+    expect(q('.tile-ghost')).toBeNull()
+    expect(q('.tile-add')?.dataset.revealHost).toBe('')
+    expect(q('.tile-add')?.style.height).toBe('26px')
+    expect(q('.tile-grid')?.style.height).toBe('226px')
   })
 
   it('the room is read with the board’s sample, so a pane or board resize changes the shape', () => {

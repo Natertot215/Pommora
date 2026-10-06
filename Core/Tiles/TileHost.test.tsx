@@ -570,8 +570,8 @@ describe('the Insert Menu a ghost tile opens', () => {
 
   it('a bottom ghost seats its band at the height the room below the board gave it', async () => {
     const { saves } = bridge('tile:new', {}, () => wedged)
-    await mountHost(() => host.querySelector('.tile-add') !== null)
     host.style.overflowY = 'auto'
+    await mountHost(() => host.querySelector('.tile-add') !== null)
     host.getBoundingClientRect = () => ({ top: 0, bottom: 600 }) as DOMRect
     await act(async () => {
       for (const resized of observers) resized()
