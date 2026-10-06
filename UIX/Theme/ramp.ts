@@ -79,6 +79,7 @@ const RAMP: Record<RampFamily, Row> = {
   cyan: single(c.solid.cyan),
   blue: pair(c.solid.blue, c.solid.lightBlue),
   purple: purpleRow,
+  brown: single(c.solid.brown),
   grey: greyRow,
 }
 
@@ -94,6 +95,7 @@ export const ANCHOR_CELLS: Record<keyof typeof SPECTRUM, CellKey> = {
   purple: 'purple-1',
   lavender: 'purple-3',
   pink: 'purple-5',
+  brown: 'brown-3',
   grey: 'grey-6',
 }
 

@@ -6,6 +6,7 @@ import {
   smartBackspace,
   canonicalizeCheckbox,
   autoPair,
+  pairColorMark,
   autoDelete,
   closeConstructOnEnter,
   closeBlockOnEnter,
@@ -23,6 +24,7 @@ import {
   wrapSelection,
   type Edit,
 } from './edits'
+import { isColorMark } from '../Engine/highlightColors'
 import { applyEdit } from './applyEdit'
 import { fenceAt, lineIndexAt } from '../Engine/markdownCode'
 import { refusedInAlias } from '../Guards/aliasGuard'
@@ -161,7 +163,7 @@ export const typedInput = (scope: MarkdownScope): Extension =>
   EditorView.inputHandler.of((view, from, to, text) => {
     // Never dispatch mid-composition: a transaction there aborts or garbles the IME session.
     if (view.composing || view.compositionStarted) return false
-    if (text.length !== 1) return false
+    if (text.length !== 1 && !isColorMark(text)) return false
     const scan = docScan(view.state.doc)
     const settings = settingsOf(view)
     if (from !== to)
@@ -174,7 +176,8 @@ export const typedInput = (scope: MarkdownScope): Extension =>
     if (page && text === ']' && seedTypedCitation(view, from)) return true
     return apply(
       view,
-      headingHash(scan, from, from, text) ??
+      pairColorMark(scan, from, text, settings) ??
+        headingHash(scan, from, from, text) ??
         (page ? calloutShorthand(scan.text, from, from, text, settings) : null) ??
         canonicalizeCheckbox(scan.text, from, from, text, scope) ??
         autoPair(scan, from, from, text, settings) ??

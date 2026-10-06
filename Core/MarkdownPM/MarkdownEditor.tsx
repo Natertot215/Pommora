@@ -37,6 +37,7 @@ import { type EditorHost, editorHost, mirrorBody, mirrored, resolutionNudge } fr
 import { useLatest } from '@pommora/uix/Utilities/stableApi'
 import { Scrollbar } from '@pommora/uix/Interactions/Scrollbar'
 import './markdown-pm.css'
+import './highlights.css'
 
 export const EMPTY_PAGE_TEXT = 'Click to type or press / for actions'
 

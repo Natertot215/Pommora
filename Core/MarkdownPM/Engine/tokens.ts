@@ -6,6 +6,7 @@ import { inCodeAt, scanDoc } from './docScan'
 import { markdownLinkRegex } from '../../Connections/links'
 import { isInlineMathContent, highlightRegex, inlineLatexRegex, markerRegex } from './detect'
 import { linkSpans, pageEmbedPattern, pageLinkPattern } from '../../Connections/connections'
+import { type HighlightColor, leadingMark, trailingMark } from './highlightColors'
 
 export type TokenKind =
   | 'italic'
@@ -27,6 +28,7 @@ export interface Token {
   resolveRange?: [number, number]
   fragment?: [number, number]
   markerRanges: [number, number][]
+  color?: HighlightColor
 }
 
 // The page half alone resolves; a heading token carries `resolveRange` too and is not aliased by that alone.
@@ -50,6 +52,7 @@ export function shiftToken(tk: Token, by: number): Token {
     ...(tk.resolveRange ? { resolveRange: move(tk.resolveRange) } : {}),
     ...(tk.fragment ? { fragment: move(tk.fragment) } : {}),
     markerRanges: tk.markerRanges.map(move),
+    ...(tk.color ? { color: tk.color } : {}),
   }
 }
 
@@ -134,6 +137,25 @@ function regexTokens(text: string, spec: RegexSpec, inCode: (offset: number) => 
     })
   }
   return tokens
+}
+
+/** A matching color mark inside each `==` joins the markers, so it hides and reveals with them; a lone or mismatched one stays text. */
+function colorHighlight(text: string, tk: Token): Token {
+  const [cs, ce] = tk.contentRange
+  const inner = text.slice(cs, ce)
+  const open = leadingMark(inner)
+  const close = trailingMark(inner)
+  if (!open || open.color !== close?.color || open.length + close.length >= inner.length) return tk
+  const content: Span = [cs + open.length, ce - close.length]
+  return {
+    ...tk,
+    contentRange: content,
+    markerRanges: [
+      [tk.range[0], content[0]],
+      [content[1], tk.range[1]],
+    ],
+    color: open.color,
+  }
 }
 
 function inlineCodeTokens(text: string, inCode: (offset: number) => boolean): Token[] {
@@ -238,7 +260,9 @@ export function tokenize(text: string): Token[] {
     re: highlightRegex(),
     open: 2,
     close: 2,
-  }).filter(notOverlapping([...code, ...embeds, ...wikis, ...links]))
+  })
+    .filter(notOverlapping([...code, ...embeds, ...wikis, ...links]))
+    .map((tk) => colorHighlight(text, tk))
   const blockTex = blockLatexTokens(text, scan.maths).filter(notOverlapping(code))
   const inlineTex = matches({
     kind: 'inlineLatex',

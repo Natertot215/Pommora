@@ -112,7 +112,7 @@ export function listLineClass(lm: ListMarker): string {
   return isSequenced(lm.kind) ? 'md-list-item md-list-ordered' : 'md-list-item'
 }
 
-export const CONTENT_CLASS: Partial<Record<TokenKind, string>> = {
+const CONTENT_CLASS: Partial<Record<TokenKind, string>> = {
   bold: 'md-bold',
   italic: 'md-italic',
   strikethrough: 'md-strike',
@@ -123,11 +123,14 @@ export const CONTENT_CLASS: Partial<Record<TokenKind, string>> = {
   blockLatex: 'md-latex',
 }
 
+export const contentClass = (tk: Token): string | undefined =>
+  tk.color ? `${CONTENT_CLASS.highlight} md-highlight-${tk.color}` : CONTENT_CLASS[tk.kind]
+
 export function tokenIntents(tokens: Token[], active: Set<number>): DecoIntent[] {
   const intents: DecoIntent[] = []
   tokens.forEach((tk, i) => {
     if (tk.kind === 'wikiLink' || tk.kind === 'link' || tk.kind === 'citationRef') return
-    const cls = CONTENT_CLASS[tk.kind]
+    const cls = contentClass(tk)
     if (cls)
       intents.push({
         kind: 'class',

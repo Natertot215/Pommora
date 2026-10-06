@@ -138,7 +138,6 @@ const SETTINGS = {
   connectionColor: color<'accent'>('accent'),
   externalLinkColor: color<'system'>('system'),
   checkboxColor: color<'accent'>('accent'),
-  highlightColor: color<'accent'>('accent'),
   codeColor: color<'default'>('default'),
   // Display only: the strike is drawn, never written, so the file stays the plain `- [x]` it was.
   muteCheckedItems: flag(false),
