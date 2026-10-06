@@ -12,7 +12,8 @@ import {
 import { isPlainObject } from '../Contract/validators'
 import { stableStringify } from '../Files/stableJson'
 import { decodeLayout } from './Layout/codec'
-import { emptyLayout, type TileLayout, tileIds } from './Layout/model'
+import { emptyLayout, getTile, type TileLayout, tileIds } from './Layout/model'
+import { insertBand } from './Layout/ops'
 import { dialer } from '../Platform/dialer'
 import { notifyRetry, persist, reportRefusal } from '../Interface/Notifications/notifications'
 import { type BodyIO, createBodyWriter, sessionWriter } from '../Session/saveScheduler'
@@ -103,11 +104,12 @@ const save = (doc: HostDoc, patch: TileDocPatch): Promise<Result<Landed>> =>
       }),
   )
 
-// An entry or lock write answers with the document it left, and a lone write's answer is what the disk holds; a write that seats a tile hands over its layout too, which a held gesture defers to its release. Writes that overlap can land in any order, so the board keeps its own paint until the last one answers and then reads the disk.
+// An entry or lock write answers with the document it left, and a lone write's answer is what the disk holds. Writes that overlap can land in any order, so the board keeps its own paint until the last one answers and then reads the disk.
 const land = <T>(
   doc: HostDoc,
   sent: Promise<Result<Landed<T>>>,
-  seats = false,
+  landed: (value: Landed<T>) => void = (value) =>
+    put(doc, { tiles: kept(doc, value.landed.tiles), locked: value.landed.locked }),
 ): Promise<Result<Landed<T>>> => {
   doc.writing += 1
   doc.overlapped ||= doc.writing > 1
@@ -117,11 +119,7 @@ const land = <T>(
     if (doc.overlapped) {
       doc.overlapped = false
       void reload(doc)
-    } else if (r.ok && seats && doc.holds === 0) adopt(doc, r.value.landed)
-    else if (r.ok) {
-      doc.heldPush ||= seats
-      put(doc, { tiles: kept(doc, r.value.landed.tiles), locked: r.value.landed.locked })
-    }
+    } else if (r.ok) landed(r.value)
     return r
   })
 }
@@ -285,13 +283,24 @@ export function holdTileDoc(host: TileHostRef, held: boolean): void {
   }
 }
 
-// The seat lands on the disk's layout, so a layout still owed sends first.
-export function seatTileWrite<T>(
+// The seat lands on the disk's layout, so a layout still owed lands first. A board untouched since then adopts the landed layout whole; one a gesture holds or a layout changed in the meantime keeps that change, and the new leaf joins it as the last band, at release when a gesture holds it.
+export function seatTileWrite(
   host: TileHostRef,
-  send: () => Promise<Result<Landed<T>>>,
-): Promise<Result<Landed<T>>> {
+  send: () => Promise<Result<Landed<{ id: string }>>>,
+): Promise<Result<Landed<{ id: string }>>> {
   const doc = at(host)
-  return doc ? land(doc, joined(doc, flush(doc).then(send)), true) : send()
+  if (!doc) return send()
+  let over = doc.state.layout
+  const sent = flush(doc).then(() => {
+    over = doc.state.layout
+    return send()
+  })
+  return land(doc, joined(doc, sent), ({ id, landed }) => {
+    if (doc.holds === 0 && doc.state.layout === over) return adopt(doc, landed)
+    put(doc, { tiles: kept(doc, landed.tiles), locked: landed.locked })
+    const leaf = getTile(decodeLayout(landed.layout) ?? emptyLayout(), id)
+    if (leaf) commitTileLayout(host, (cur) => insertBand(cur, cur.bands.length, id, leaf.h))
+  })
 }
 
 export function landTileWrite<T>(

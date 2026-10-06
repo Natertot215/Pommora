@@ -36,19 +36,18 @@ import { tileHostsOf } from './tileHosts'
 import type { BodyWrite } from '../Pages/pageDetail'
 import type { TrashDeps } from '../Trash/bundle'
 
-// The entry and its leaf land in one write, so a board no window holds still shows the tile; a layout this build can't read is left as it stands.
+// The entry and its leaf land in one write, so a board no window holds still shows the tile; a layout this build can't read seats as the empty board a window shows for it.
 const seatTile = (
   dir: string,
   entry: unknown,
   seat: (layout: TileLayout) => TileLayout,
 ): Promise<Result<TileDoc>> =>
   writeTileDocAt(dir, (cur) => {
-    const layout = decodeLayout(cur.layout ?? emptyLayout())
     const id = tileIdOf(entry)
     return {
       ...cur,
       tiles: cur.tiles.some((b) => tileIdOf(b) === id) ? cur.tiles : [...cur.tiles, entry],
-      layout: layout ? seat(layout) : cur.layout,
+      layout: seat(decodeLayout(cur.layout) ?? emptyLayout()),
     }
   })
 
