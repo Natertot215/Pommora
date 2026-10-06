@@ -144,8 +144,6 @@ export const ghostChip = style({
   },
 })
 
-export const optionAnchor = style({ position: 'relative', display: 'flex', alignItems: 'center' })
-
 export const optionEditButton = style([accessoryButton, revealDim])
 
 export const configEditor = style({

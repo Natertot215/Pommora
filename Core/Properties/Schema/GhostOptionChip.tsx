@@ -2,8 +2,6 @@ import { Reveal } from '@pommora/uix/Animations/Reveal'
 import { useGhostAnchor, type GhostAnchor } from '@pommora/uix/Interactions/ghostCreate'
 import { REVEAL_DWELL_MS } from '@pommora/uix/Interactions/hoverReveal'
 import { cx } from '@pommora/uix/Utilities/cx'
-import { EditableInput } from '@pommora/uix/Fields/EditableInput'
-import { base } from '@pommora/uix/Fields/fields.css'
 import * as s from '@pommora/uix/Menus/frames.css'
 import { Label } from '@pommora/uix/Labels/Label'
 import type { LabelShape } from '@pommora/uix/Labels/label-base.css'
@@ -20,30 +18,6 @@ export function useGhostOptionAnchor(busy: boolean): GhostAnchor {
     graceMs: GHOST_GRACE_MS,
     suppressed: () => busyRef.current,
   })
-}
-
-export function OptionNameCaret({
-  className,
-  value = '',
-  onCommit,
-  onCancel,
-}: {
-  className: string
-  value?: string
-  onCommit: (raw: string) => void
-  onCancel: () => void
-}): React.JSX.Element {
-  return (
-    <span className={className}>
-      <EditableInput
-        initial={value}
-        autoSize
-        className={base}
-        onCommit={onCommit}
-        onCancel={onCancel}
-      />
-    </span>
-  )
 }
 
 export function GhostOptionChip({

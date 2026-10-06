@@ -12,7 +12,7 @@ import {
   PROPERTY_TYPES,
   type PropertyType,
 } from '../properties'
-import { replay, retryOwed, warnOwed, write } from '../propertyWrite'
+import { replay, retryOwed, write } from '../propertyWrite'
 import type { ColumnStyle } from '../columnStyles'
 import type { CollectionNode, SetNode } from '../../Nexus/tree'
 import { useActiveView } from '../../Views/Host/useActiveView'
@@ -321,30 +321,22 @@ export function PropertyFrame({
   )
 
   const NO_SETTINGS = (): React.JSX.Element => <div style={{ minHeight: 8 }} />
-  const optionSettings = (
-    def: PropertyDefinition,
-    _style: ColumnStyle,
-    look: OptionStyle,
-  ): React.JSX.Element => (
+  const optionSettings = (def: PropertyDefinition, style: ColumnStyle): React.JSX.Element => (
     <OptionEditor
+      propertyId={def.id}
       type={def.type}
       groups={optionGroupsOf(def)}
-      look={look}
-      onEdit={(edit) => void write(dialer().ask('property:editOption', def.id, edit))}
-      onRenameOption={(oldValue, newTitle) =>
-        void warnOwed(dialer().ask('property:renameOption', def.id, oldValue, newTitle))
-      }
-      onRemoveOption={(value) =>
-        void warnOwed(dialer().ask('property:removeOption', def.id, value))
-      }
-      onClearOption={(value) => void write(dialer().ask('property:clearOption', def.id, value))}
+      style={{
+        current: style,
+        set: (key, value) => void saveColumnStyle(def.id, { [key]: value }),
+      }}
     />
   )
 
   // One arm per property type, so a type added to the schema is a compile error here rather than a blank panel at runtime.
   const SETTINGS: Record<
     PropertyType,
-    (def: PropertyDefinition, style: ColumnStyle, look: OptionStyle) => React.JSX.Element
+    (def: PropertyDefinition, style: ColumnStyle) => React.JSX.Element
   > = {
     select: optionSettings,
     multiSelect: optionSettings,
@@ -445,7 +437,7 @@ export function PropertyFrame({
           onCommit={(next) => void rename(def.id, next)}
         />
         <MenuSeparator flush />
-        {SETTINGS[def.type](def, columnStyle, optionLook)}
+        {SETTINGS[def.type](def, columnStyle)}
       </MenuScrollFrame>
     )
   }

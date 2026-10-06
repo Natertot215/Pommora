@@ -20,6 +20,7 @@ const APPEARANCE_OPTIONS = [
 
 export function OptionEditPopup({
   open,
+  contentKey,
   type,
   option,
   def,
@@ -31,6 +32,7 @@ export function OptionEditPopup({
   onPickAppearance,
 }: {
   open: boolean
+  contentKey: string
   type: string
   option: OptionChipData
   def?: Pick<PropertyDefinition, 'status_groups'>
@@ -53,7 +55,7 @@ export function OptionEditPopup({
         direction="down"
         focus="leave"
       >
-        <div className={s.root}>
+        <div key={contentKey} className={s.root}>
           <div className={s.fieldRow}>
             <button
               ref={iconRef}
@@ -68,6 +70,7 @@ export function OptionEditPopup({
               initial={option.value}
               boxed
               autoFocus={false}
+              required
               className={s.titleField}
               ariaLabel="Option Title"
               onCommit={onRename}

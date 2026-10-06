@@ -91,14 +91,15 @@ export function styleMenuItems(ctx: StyleMenuContext): ActionItem<StyleAction>[]
   }
 }
 
+export function styleBranch(ctx: StyleMenuContext): ActionItem<StyleAction>[] {
+  const submenu = styleMenuItems(ctx)
+  return submenu.length > 0 ? [{ label: styleMenuLabel(ctx.type), submenu }] : []
+}
+
 export function columnMenuItems(ctx: ColumnMenuContext): ActionItem<ColumnMenuAction>[] {
-  const style = ctx.style
-  const styleRows = style ? styleMenuItems(style) : []
   return [
     ...(ctx.alignable ? [{ label: 'Align', submenu: alignRows(ctx.align) }] : []),
-    ...(style && styleRows.length > 0
-      ? [{ label: styleMenuLabel(style.type), submenu: styleRows }]
-      : []),
+    ...(ctx.style ? styleBranch(ctx.style) : []),
     { label: 'Icon', action: 'column:toggle-icons', checked: ctx.iconsShown },
     ...(ctx.hideable
       ? [{ label: 'Hide', action: 'column:hide' as const, separatorBefore: true }]
