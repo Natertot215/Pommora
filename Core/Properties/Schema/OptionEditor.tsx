@@ -45,6 +45,8 @@ export function OptionEditor({
     adding?.groupId === g.id && adding.index === index ? (
       <div className={s.optionRow}>
         <OptionDraft
+          type={type}
+          color={g.color}
           onCommit={(title) => commitAdd(g, title, index)}
           onCancel={() => setAdding(null)}
         />

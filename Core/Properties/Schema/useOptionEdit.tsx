@@ -3,7 +3,11 @@ import { useHeld } from '@pommora/uix/Animations/useExitPresence'
 import { Reveal } from '@pommora/uix/Animations/Reveal'
 import { useEntrance } from '@pommora/uix/Animations/useEntrance'
 import { RenamableLabel } from '@pommora/uix/Fields/RenamableLabel'
-import { titleInput } from '@pommora/uix/Menus/menu-row.css'
+import { base } from '@pommora/uix/Fields/fields.css'
+import { labelColor, shape } from '@pommora/uix/Labels/label-base.css'
+import { optionShapeFor } from '@pommora/uix/Labels/recipes'
+import { colorNameFor } from '@pommora/uix/Theme/ramp'
+import { cx } from '@pommora/uix/Utilities/cx'
 import type { ColumnStyle } from '../columnStyles'
 import type { OptionEdit } from '../optionModel'
 import type { PropertyDefinition, PropertyType } from '../properties'
@@ -128,23 +132,29 @@ export function useOptionEdit({
 }
 
 export function OptionDraft({
+  type,
+  color,
   onCommit,
   onCancel,
 }: {
+  type: string
+  color?: string
   onCommit: (title: string) => void
   onCancel: () => void
 }): React.JSX.Element {
   return (
     <Reveal open enterOnMount fill>
-      <RenamableLabel
-        renames="title"
-        editing
-        value=""
-        className={titleInput}
-        autoSize
-        onCommit={onCommit}
-        onCancel={onCancel}
-      />
+      <span className={cx(shape[optionShapeFor(type)], labelColor[colorNameFor(color)])}>
+        <RenamableLabel
+          renames="title"
+          editing
+          value=""
+          className={base}
+          autoSize
+          onCommit={onCommit}
+          onCancel={onCancel}
+        />
+      </span>
     </Reveal>
   )
 }
