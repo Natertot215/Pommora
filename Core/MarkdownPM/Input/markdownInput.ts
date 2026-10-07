@@ -165,8 +165,15 @@ export const typedInput = (scope: MarkdownScope): Extension =>
   EditorView.inputHandler.of((view, from, to, text) => {
     // Never dispatch mid-composition: a transaction there aborts or garbles the IME session.
     if (view.composing || view.compositionStarted) return false
-    if (text.length !== 1 && !isColorMark(text)) return false
     const scan = docScan(view.state.doc)
+    const page = scope === 'page'
+    // A diff line's margin takes only a sign.
+    const { empty, assoc } = view.state.selection.main
+    if (page && empty && assoc < 0 && signSeatAt(scan, from) === from) {
+      const sign = text === '+' || text === '-' ? marginSign(scan, from, text) : null
+      return sign ? apply(view, sign) : true
+    }
+    if (text.length !== 1 && !isColorMark(text)) return false
     const settings = settingsOf(view)
     if (from !== to)
       return apply(
@@ -174,11 +181,6 @@ export const typedInput = (scope: MarkdownScope): Extension =>
         wrapSelection(scan, from, to, text, settings) ?? headingHash(scan, from, to, text),
       )
     if (refusedInAlias(scan.text, from, text)) return true
-    const page = scope === 'page'
-    // A diff line's margin takes only a sign.
-    const { empty, assoc } = view.state.selection.main
-    if (page && empty && assoc < 0 && signSeatAt(scan, from) === from)
-      return text === '+' || text === '-' ? apply(view, marginSign(scan, from, text)) : true
     if (page && text === ']' && seedTypedCitation(view, from)) return true
     return apply(
       view,

@@ -34,7 +34,7 @@ export interface DiffTally {
 /** Every kind but `head` carries a one-character sign column. */
 export type DiffLine = 'add' | 'del' | 'same' | 'head'
 
-/** A line opening on a diff sign, which the caret floors past and stands against. */
+/** A diff line opening on its sign, which the caret never stands before. */
 export const signedLine = (f: FenceInfo | undefined): boolean =>
   f?.diff !== undefined && f.diff !== 'head'
 

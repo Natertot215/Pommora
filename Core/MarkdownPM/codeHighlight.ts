@@ -125,13 +125,17 @@ const described = new Map(
   CODE_LANGS.map(({ name }) => [name, LanguageDescription.of({ name, load: LOADERS[name] })]),
 )
 
-/** The page's own parse and the block colors both read a fence through this, so a fence colors as exactly the language its tag names. */
-export const codeLanguage = (info: string): LanguageDescription | null => {
+/** The block colors read a fence through this, past a diff's signs, so a fence colors as exactly the language its tag names. */
+const fenceLanguage = (info: string): LanguageDescription | null => {
   const { name } = codeFence(info)
   return name ? (described.get(name) ?? null) : null
 }
 
-const blockParser = markdown({ codeLanguages: codeLanguage }).language.parser
+/** The page's own parse nests the same language, except under a diff fence, whose raw lines still carry their signs. */
+export const codeLanguage = (info: string): LanguageDescription | null =>
+  codeFence(info).diff ? null : fenceLanguage(info)
+
+const blockParser = markdown({ codeLanguages: fenceLanguage }).language.parser
 
 const loaded = StateEffect.define<null>()
 
@@ -172,7 +176,7 @@ function paint(
     const sign = scan.fences[open + k]?.diff
     return sign === 'head' ? '' : sign ? body.slice(1) : body
   })
-  const desc = f.lang ? codeLanguage(f.lang) : null
+  const desc = f.lang ? fenceLanguage(f.lang) : null
   if (desc && !desc.support)
     desc.load().then(() => {
       if (view.dom.isConnected) view.dispatch({ effects: loaded.of(null) })
