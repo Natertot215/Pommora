@@ -123,12 +123,10 @@ function readDiff(
     else if (text.startsWith('--- ') && k + 1 < close && body(k + 1).startsWith('+++ ')) {
       f.diff = 'head'
       out[++k]!.diff = 'head'
-    } else {
-      const kind = signKind(text[0])
-      if (kind) {
-        f.diff = kind
-        if (kind !== 'mod') tally[kind]++
-      } else if (text[0] === ' ') f.diff = 'same'
+    } else if (text[0] === ' ') f.diff = 'same'
+    else {
+      f.diff = signKind(text[0])
+      if (f.diff && f.diff !== 'mod') tally[f.diff]++
     }
   }
 }

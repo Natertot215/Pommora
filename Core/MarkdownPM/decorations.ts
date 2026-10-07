@@ -183,7 +183,7 @@ function mark(body: string, className: string): SVGSVGElement {
 
 const COPIED_MS = 1000
 
-const count = (kind: 'add' | 'del', n: number): string =>
+const count = (kind: keyof DiffTally, n: number): string =>
   `<b class="md-diff-${kind}">${kind === 'add' ? '+' : '−'}${Math.abs(n)}</b>`
 
 function tallyPill({ add, del }: DiffTally): HTMLElement {

@@ -153,8 +153,7 @@ export function tokenIntents(tokens: Token[], active: Set<number>): DecoIntent[]
   return intents
 }
 
-const barred = (f: FenceInfo | undefined): boolean =>
-  f?.diff === 'add' || f?.diff === 'del' || f?.diff === 'mod'
+const barred = (f: FenceInfo | undefined): boolean => signedLine(f) && f?.diff !== 'same'
 
 // Null where the line is chrome of its own and never enters the list vocabulary; otherwise the offset the list grammar starts at.
 // A cell holds no box, no fence, no math and no citation row, and its own extension draws the footnote markers, so none of this is walked there.
