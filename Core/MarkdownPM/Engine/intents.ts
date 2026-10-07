@@ -6,6 +6,8 @@ import {
   parseListMarker,
   headingParts,
   fenceBodyStart,
+  awaitsSign,
+  signedLine,
   type CalloutLine,
   type CitationEntry,
   type DiffTally,
@@ -212,8 +214,10 @@ function pageChrome(
   if (fence) {
     const innerStart = ls + fenceBodyStart(line, fence)
     const caretOnLine = selStart >= ls && selStart <= le
-    const signed = fence.diff !== undefined && fence.diff !== 'head'
-    const raw = signed && selStart >= fence.from && selStart <= fence.to
+    const signed = signedLine(fence)
+    const open = fence.tally !== undefined && selStart >= fence.from && selStart <= fence.to
+    const slot = open && awaitsSign(fence)
+    const raw = open && (signed || slot)
     intents.push({
       kind: 'line',
       from: ls,
@@ -263,11 +267,15 @@ function pageChrome(
     if (fence.ordinal !== undefined)
       intents.push({
         kind: 'lineWidget',
-        from: signed ? innerStart + 1 : ls,
+        from: ls,
         className: 'codeblock-line-number',
         text: String(fence.ordinal),
-        side: signed ? 1 : undefined,
       })
+    // An open line anchors each seat that has nothing of its own to draw the caret against: the margin of a line with no sign, and the code of a line with none.
+    const seat = innerStart + (signed ? 1 : 0)
+    if (slot) intents.push({ kind: 'lineWidget', from: seat, className: 'md-diff-slot' })
+    if (raw && seat === le)
+      intents.push({ kind: 'lineWidget', from: seat, className: 'md-diff-code', side: 1 })
     return null
   }
 

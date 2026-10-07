@@ -1,6 +1,8 @@
 import { describe, it, expect } from 'vitest'
 import { scanDoc } from '../Engine/docScan'
 import {
+  continueSign,
+  marginSign,
   isInsideWikilink,
   continueListOnEnter,
   smartBackspace,
@@ -872,5 +874,35 @@ describe('color marks in a highlight', () => {
   })
   it('join the closer Enter jumps past', () => {
     expect(closeConstructOnEnter(scanDoc('==🔴hi🔴=='), 6, 6)!.selection).toBe(10)
+  })
+})
+
+describe('a diff line’s sign', () => {
+  const doc = '```diff\n+a\nplain\n> x\n```\n> ```diff\n> -q\n> ```'
+  const scan = scanDoc(doc)
+  const typed = (e: { from: number; to: number; insert: string }) =>
+    doc.slice(0, e.from) + e.insert + doc.slice(e.to)
+
+  it('typed in the margin, stands in for the one already there', () => {
+    const e = marginSign(scan, doc.indexOf('+a') + 1, '-')
+    expect(typed(e)).toContain('\n-a\n')
+    expect(e.selection).toBe(doc.indexOf('+a') + 1)
+  })
+  it('typed in the margin of a line without one, becomes its sign', () => {
+    const e = marginSign(scan, doc.indexOf('plain'), '+')
+    expect(typed(e)).toContain('\n+plain\n')
+    expect(e.selection).toBe(doc.indexOf('plain') + 1)
+  })
+  it('carries on to the next line on Mod-Enter, behind the same quote', () => {
+    const top = continueSign(scan, doc.indexOf('+a') + 2)!
+    expect(typed(top)).toContain('\n+a\n+\nplain')
+    expect(top.selection).toBe(doc.indexOf('+a') + 4)
+    const quoted = continueSign(scan, doc.indexOf('-q'))!
+    expect(typed(quoted)).toContain('> -q\n> -\n> ```')
+  })
+  it('opens a bare line past one that carries no sign, and stays out of other fences and prose', () => {
+    expect(typed(continueSign(scan, doc.indexOf('plain'))!)).toContain('plain\n\n> x')
+    expect(continueSign(scanDoc('```ts\n+a\n```'), 8)).toBeNull()
+    expect(continueSign(scan, doc.indexOf('```diff'))).toBeNull()
   })
 })

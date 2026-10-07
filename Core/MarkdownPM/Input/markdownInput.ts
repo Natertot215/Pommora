@@ -2,6 +2,8 @@ import { EditorView, type KeyBinding, keymap } from '@codemirror/view'
 import { type Extension, Prec, StateField } from '@codemirror/state'
 import {
   continueListOnEnter,
+  continueSign,
+  marginSign,
   continueBlockquoteOnEnter,
   smartBackspace,
   canonicalizeCheckbox,
@@ -31,7 +33,7 @@ import { refusedInAlias } from '../Guards/aliasGuard'
 import { commitAliasOnEnter } from '../Links/linkEdit'
 import { headingHash } from '../Links/headingHash'
 import { embedTileRanges } from '../Embeds/embedWidget'
-import type { DocScan } from '../Engine/docScan'
+import { type DocScan, signSeatAt } from '../Engine/docScan'
 import type { MarkdownScope } from '../Engine/detect'
 import { commitCitation, seedTypedCitation } from '../Citations/citationActions'
 import { citationDeleteIntent } from '../Citations/citationEdits'
@@ -173,6 +175,10 @@ export const typedInput = (scope: MarkdownScope): Extension =>
       )
     if (refusedInAlias(scan.text, from, text)) return true
     const page = scope === 'page'
+    // A diff line's margin takes only a sign.
+    const { empty, assoc } = view.state.selection.main
+    if (page && empty && assoc < 0 && signSeatAt(scan, from) === from)
+      return text === '+' || text === '-' ? apply(view, marginSign(scan, from, text)) : true
     if (page && text === ']' && seedTypedCitation(view, from)) return true
     return apply(
       view,
@@ -197,6 +203,11 @@ export const markdownInput = [
       { key: 'Enter', run: commitAliasOnEnter },
       { key: 'Enter', run: onEnter },
       { key: 'Shift-Enter', run: onShiftEnter },
+      {
+        key: 'Mod-Enter',
+        run: (view) =>
+          apply(view, continueSign(docScan(view.state.doc), view.state.selection.main.head)),
+      },
       { key: 'Tab', run: nest(indentListOnTab) },
       { key: 'Shift-Tab', run: nest(outdentListOnShiftTab) },
       { key: 'Backspace', run: onBackspace },

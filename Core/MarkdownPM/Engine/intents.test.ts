@@ -428,18 +428,6 @@ describe('decoration intents', () => {
         'codeblock codeblock-last codeblock-diff',
       ])
     })
-    it('seats a signed line’s number past its sign, on the caret’s far side', () => {
-      const numbers = of(at(NO_CARET), 'lineWidget').filter(
-        (w) => w.className === 'codeblock-line-number',
-      )
-      expect(numbers.map((w) => [w.from, w.side])).toEqual([
-        [t.indexOf('@@'), undefined],
-        [t.indexOf(' const') + 1, 1],
-        [t.indexOf('-let') + 1, 1],
-        [t.indexOf('+let') + 1, 1],
-        [t.indexOf('plain'), undefined],
-      ])
-    })
     it('floors the caret past each sign', () => {
       const cached = docLineIntents(scan)
       expect(prefixEndAt(cached, scan, t.indexOf('-let'))).toBe(t.indexOf('-let') + 1)
@@ -470,7 +458,31 @@ describe('decoration intents', () => {
       ).toEqual([' ', '-', '+'])
       expect(
         of(intents, 'line').filter((d) => d.className.includes('codeblock-diff-raw')),
-      ).toHaveLength(3)
+      ).toHaveLength(4)
+    })
+    it('keeps an empty sign slot before a line with no sign while the fence is open', () => {
+      const plain = t.indexOf('plain')
+      const slots = (caret: number) =>
+        of(at(caret), 'lineWidget')
+          .filter((w) => w.from === plain)
+          .map((w) => w.className)
+      expect(slots(plain)).toEqual(['codeblock-line-number', 'md-diff-slot'])
+      expect(slots(NO_CARET)).toEqual(['codeblock-line-number'])
+    })
+    it('anchors the code’s seat on an open line with no code to draw against', () => {
+      const bare = '```diff\n+\n\n+a\n```'
+      const s = scanDoc(bare)
+      const anchors = of(
+        assembleLineIntents(s, docLineIntents(s), bare.indexOf('+a')),
+        'lineWidget',
+      )
+        .filter((w) => w.className.startsWith('md-diff-') && !w.className.startsWith('md-diff '))
+        .map((w) => [w.className, w.from, w.side])
+      expect(anchors).toEqual([
+        ['md-diff-code', bare.indexOf('+\n') + 1, 1],
+        ['md-diff-slot', bare.indexOf('\n\n') + 1, undefined],
+        ['md-diff-code', bare.indexOf('\n\n') + 1, 1],
+      ])
     })
   })
 

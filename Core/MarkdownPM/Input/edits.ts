@@ -22,6 +22,7 @@ import {
   calloutHeadPrefixLen,
   headingParts,
   fenceBodyStart,
+  signedLine,
   type ListMarker,
   type MarkdownScope,
 } from '../Engine/detect'
@@ -176,6 +177,29 @@ function markerEndOf(line: string, scope: MarkdownScope): number | null {
   if (lm) return lm.contentStart
   if (scope === 'cell') return null
   return headingParts(line)?.contentStart ?? (quotePrefix(line).length || null)
+}
+
+/** A sign typed in a diff line's margin becomes the line's own, standing in for any already there. */
+export function marginSign(scan: DocScan, seat: number, sign: string): Edit {
+  const signed = signedLine(scan.fences[lineIndexAt(scan, seat)])
+  return {
+    from: signed ? seat - 1 : seat,
+    to: seat,
+    insert: sign,
+    selection: signed ? seat : seat + 1,
+  }
+}
+
+/** Mod-Enter on a diff line opens the line below carrying the same sign, as a list item carries its marker; a line with none opens a bare one. */
+export function continueSign(scan: DocScan, pos: number): Edit | null {
+  const i = lineIndexAt(scan, pos)
+  const f = scan.fences[i]
+  if (f?.tally === undefined || f.role !== 'content') return null
+  const line = scan.lines[i]
+  const body = fenceBodyStart(line, f)
+  const lead = line.slice(0, signedLine(f) ? body + 1 : body)
+  const end = lineEndOf(scan, i)
+  return { from: end, to: end, insert: `\n${lead}`, selection: end + 1 + lead.length }
 }
 
 export function smartBackspace(

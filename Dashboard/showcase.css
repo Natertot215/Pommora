@@ -372,7 +372,7 @@
 }
 .ds-tint-row {
   display: grid;
-  grid-template-columns: 90px repeat(5, 1fr);
+  grid-template-columns: 90px repeat(6, 1fr);
   gap: 8px;
   align-items: center;
 }

@@ -197,7 +197,9 @@ export const type = styleVariants({
   },
 })
 
-export const outlined = style({ boxShadow: `inset 0 0 0 ${OUTLINE_W} var(--button-outline)` })
+export const outlined = style({
+  boxShadow: `inset 0 0 0 var(--button-outline-width, ${OUTLINE_W}) var(--button-outline)`,
+})
 
 export const ghostRest = style({
   opacity: STATE_OPACITY.ghost,

@@ -11,6 +11,7 @@ import {
   blockEmbedLines,
   blockMathRanges,
   blockWebpageLines,
+  awaitsSign,
   calloutLines,
   fenceBodyStart,
   fenceRangesOf,
@@ -19,6 +20,7 @@ import {
   isThematicBreakLine,
   lineRefs,
   scanFencedCode,
+  signedLine,
   splitWithOffsets,
   type CalloutLine,
   type CitationScan,
@@ -321,6 +323,15 @@ export function spanAt<S extends Span>(spans: readonly S[], pos: number): S | un
 export function inJoinedMath(scan: LineScan, i: number, first: number, last: number): boolean {
   const math = spanAt(scan.maths, scan.lineStarts[i])
   return math !== undefined && math[0] >= scan.lineStarts[first] && math[0] <= lineEndOf(scan, last)
+}
+
+/** Where a diff line's margin meets its code: past its sign, or at its start while it awaits one. */
+export function signSeatAt(scan: DocScan, pos: number): number | null {
+  const i = lineIndexAt(scan, pos)
+  const f = scan.fences[i]
+  const signed = signedLine(f)
+  if (!signed && !awaitsSign(f)) return null
+  return scan.lineStarts[i] + fenceBodyStart(scan.lines[i], f!) + (signed ? 1 : 0)
 }
 
 export function codeBlockTextAt(scan: DocScan, pos: number): string {
