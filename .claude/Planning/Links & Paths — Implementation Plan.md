@@ -44,11 +44,11 @@ Recorded at ratification on 10-06-2026, at `fcddee588`. The plan's own commit fo
   - [x] Task 1.2
   - [x] Task 1.3
   - [x] Task 1.4
-- [ ] **Phase 2** — Copy Path
+- [x] **Phase 2** — Copy Path
   - [x] Task 2.1
   - [x] Task 2.2
   - [x] Task 2.3
-  - [ ] Task 2.4
+  - [x] Task 2.4
 
 ### Phase 1 — Links & Paths Settings
 
@@ -84,8 +84,8 @@ import { DEFAULT_LINK_DISPLAY, LINK_DISPLAYS } from '../Properties/properties'
 
 **CHANGE**
 
-- [ ] Delete the `pasteLinkIntoText` and `defaultLinkFormat` entries from `SETTINGS`, and the `Properties/properties` import, which nothing else in the file uses.
-- [ ] Delete the `readNexus.test.ts` case "the default link format survives the round-trip, and an unrecognized one reads as absent", together with its comment.
+- [x] Delete the `pasteLinkIntoText` and `defaultLinkFormat` entries from `SETTINGS`, and the `Properties/properties` import, which nothing else in the file uses.
+- [x] Delete the `readNexus.test.ts` case "the default link format survives the round-trip, and an unrecognized one reads as absent", together with its comment.
 
 **AFTER**
 
@@ -96,8 +96,8 @@ import { DEFAULT_LINK_DISPLAY, LINK_DISPLAYS } from '../Properties/properties'
 
 **VERIFY**
 
-- [ ] `grep -n "defaultLinkFormat\|pasteLinkIntoText\|LINK_DISPLAY" Core/Settings/personalization.ts` → no hits.
-- [ ] `npx vitest run Core/Nexus/readNexus.test.ts` → passes.
+- [x] `grep -n "defaultLinkFormat\|pasteLinkIntoText\|LINK_DISPLAY" Core/Settings/personalization.ts` → no hits.
+- [x] `npx vitest run Core/Nexus/readNexus.test.ts` → passes.
 
 #### Task 1.2
 
@@ -109,9 +109,9 @@ import { DEFAULT_LINK_DISPLAY, LINK_DISPLAYS } from '../Properties/properties'
 
 **CHANGE**
 
-- [ ] Create `Core/Paths/pathFormat.ts` holding the values and the type alone. Task 2.1 adds the formatter.
-- [ ] In `devicePrefs.ts`, import `DEFAULT_LINK_DISPLAY`/`LINK_DISPLAYS` from `../Properties/properties` and `PATH_FORMATS` from `../Paths/pathFormat`. Add the four decoder fields and the four defaults.
-- [ ] Rewrite `devicePrefs.ts`'s header comment, whose rationale ("all true of the display and operating system") doesn't hold for a paste format. It becomes: `// Preferences that belong to the MACHINE rather than the Nexus: menu style, interface scale, brightness, scrollbars, pane widths, sidebar and footer folds, window sizes, the navigation layouts, and how links paste and paths copy stay with the device and travel nowhere.`
+- [x] Create `Core/Paths/pathFormat.ts` holding the values and the type alone. Task 2.1 adds the formatter.
+- [x] In `devicePrefs.ts`, import `DEFAULT_LINK_DISPLAY`/`LINK_DISPLAYS` from `../Properties/properties` and `PATH_FORMATS` from `../Paths/pathFormat`. Add the four decoder fields and the four defaults.
+- [x] Rewrite `devicePrefs.ts`'s header comment, whose rationale ("all true of the display and operating system") doesn't hold for a paste format. It becomes: `// Preferences that belong to the MACHINE rather than the Nexus: menu style, interface scale, brightness, scrollbars, pane widths, sidebar and footer folds, window sizes, the navigation layouts, and how links paste and paths copy stay with the device and travel nowhere.`
 
 **AFTER**
 
@@ -143,8 +143,8 @@ export const DEVICE_DEFAULTS = {
 
 **VERIFY**
 
-- [ ] `npx vitest run Core/Settings/devicePrefs.test.ts` → passes unchanged. The decoder's per-field catch already has a test, and Task 1.4's typecheck proves each key's value type through `DeviceKeyOf`.
-- [ ] Both new toggles default to `false`, so `packDevicePrefs` dropping `false` stores nothing at rest. No special case is added.
+- [x] `npx vitest run Core/Settings/devicePrefs.test.ts` → passes unchanged. The decoder's per-field catch already has a test, and Task 1.4's typecheck proves each key's value type through `DeviceKeyOf`.
+- [x] Both new toggles default to `false`, so `packDevicePrefs` dropping `false` stores nothing at rest. No special case is added.
 
 #### Task 1.3
 
@@ -191,19 +191,19 @@ const display = useSetting('defaultLinkFormat')
 
 **CHANGE**
 
-- [ ] Write the failing test first. In `editorHost.test.ts` › "the host follows the editor settings", add "re-identifies on an editor device preference, and stays put on any other":
+- [x] Write the failing test first. In `editorHost.test.ts` › "the host follows the editor settings", add "re-identifies on an editor device preference, and stays put on any other":
   - `useSession.setState({ devicePrefs: { pasteLinksIntoText: true } })` yields a new host whose `settings().pasteLinksIntoText` is `true`.
   - A following `useSession.setState({ devicePrefs: { pasteLinksIntoText: true, windows: { nav: { w: 400, h: 300 } } } })` keeps that same host.
   - The paste tests seed `settings` over the harness, so this is the only test that runs the device read.
-- [ ] `api.ts`:
+- [x] `api.ts`:
   - Drop the two keys from `EDITOR_SETTING_KEYS` and add `EDITOR_DEVICE_KEYS = ['defaultLinkFormat', 'pasteLinksIntoText'] as const`.
   - `EditorSettings` gains the device half, typed `NonNullable<DevicePrefs[K]>`.
   - `editorSettingsOf(p, d, commands)` caches on all three identities, reads the device half through `devicePref`, and runs the `same` check across both halves. The cache comment names the device preferences.
-- [ ] `editorHost.tsx`: both calls pass `s.devicePrefs` as the second argument.
-- [ ] `editorHarness.ts`: `editorSettingsOf({}, {}, DEFAULT_COMMANDS)`.
-- [ ] `pasteLink.ts`: `settings.pasteLinksIntoText`.
-- [ ] `pasteLink.test.tsx`: the `settings` helper takes `Partial<EditorSettings>`, its `Personalization` import goes, and `pasteLinkIntoText` becomes `pasteLinksIntoText` at each call.
-- [ ] `WebTile.tsx`: read through the established idiom (`App.tsx` reads scrollbars the same way) and import `devicePref`. `useSetting` stays imported for its other use.
+- [x] `editorHost.tsx`: both calls pass `s.devicePrefs` as the second argument.
+- [x] `editorHarness.ts`: `editorSettingsOf({}, {}, DEFAULT_COMMANDS)`.
+- [x] `pasteLink.ts`: `settings.pasteLinksIntoText`.
+- [x] `pasteLink.test.tsx`: the `settings` helper takes `Partial<EditorSettings>`, its `Personalization` import goes, and `pasteLinkIntoText` becomes `pasteLinksIntoText` at each call.
+- [x] `WebTile.tsx`: read through the established idiom (`App.tsx` reads scrollbars the same way) and import `devicePref`. `useSetting` stays imported for its other use.
 
 **AFTER**
 
@@ -246,10 +246,10 @@ const display = useSession((s) => devicePref(s.devicePrefs, 'defaultLinkFormat')
 
 **VERIFY**
 
-- [ ] `npx vitest run Core/Pages/editorHost.test.ts` → the new case fails before the device half lands and passes after.
-- [ ] `npx vitest run Core/MarkdownPM/Links` → every paste and link-format test passes unchanged apart from the key rename.
-- [ ] `grep -rn "pasteLinkIntoText" Core` → no hits.
-- [ ] Check that no second cache or per-call allocation entered `editorSettingsOf`'s hit path.
+- [x] `npx vitest run Core/Pages/editorHost.test.ts` → the new case fails before the device half lands and passes after.
+- [x] `npx vitest run Core/MarkdownPM/Links` → every paste and link-format test passes unchanged apart from the key rename.
+- [x] `grep -rn "pasteLinkIntoText" Core` → no hits.
+- [x] Check that no second cache or per-call allocation entered `editorSettingsOf`'s hit path.
 
 #### Task 1.4
 
@@ -271,19 +271,19 @@ const display = useSession((s) => devicePref(s.devicePrefs, 'defaultLinkFormat')
 
 **CHANGE**
 
-- [ ] `frames.ts`:
+- [x] `frames.ts`:
   - Add `PATH_FORMAT_OPTIONS` beside `SCROLLBAR_REVEAL_OPTIONS`.
   - Import `type PathFormat` from `../Paths/pathFormat`.
   - Add `| PickerControlRow<PathFormat>` to the `Row` union.
   - Replace the section with the one shown under AFTER.
-- [ ] `ConfigurationPM.md` › Files & Links:
+- [x] `ConfigurationPM.md` › Files & Links:
   - Retitle **Pasted Links** to **Links & Paths**.
   - Add the sentence "Every setting here is a machine-level preference, stored in the device database rather than the Nexus."
   - Replace the two rows with the four shown under AFTER.
-- [ ] `ConfigurationPM.md` › App Configuration: delete "; Use Native Menus is the first", which is already stale, so the sentence ends at "a machine-and-Nexus pair."
-- [ ] `MarkdownPM.md` › Pasted Links: change "**Default Format** picks the form and **Paste Link Into Text** decides" to "**Default Link Format** picks the form and **Paste Links Into Text** decides".
-- [ ] `CorePM.md` › the stored-data table's **Device preferences** row: after "Use Native Menus, Interface Scale, Brightness," add "the Links & Paths settings,".
-- [ ] `WebviewPM.md`: change "derives through the Nexus's default link format" to "derives through Default Link Format".
+- [x] `ConfigurationPM.md` › App Configuration: delete "; Use Native Menus is the first", which is already stale, so the sentence ends at "a machine-and-Nexus pair."
+- [x] `MarkdownPM.md` › Pasted Links: change "**Default Format** picks the form and **Paste Link Into Text** decides" to "**Default Link Format** picks the form and **Paste Links Into Text** decides".
+- [x] `CorePM.md` › the stored-data table's **Device preferences** row: after "Use Native Menus, Interface Scale, Brightness," add "the Links & Paths settings,".
+- [x] `WebviewPM.md`: change "derives through the Nexus's default link format" to "derives through Default Link Format".
 
 **AFTER**
 
@@ -340,9 +340,9 @@ const PATH_FORMAT_OPTIONS: readonly PickerOption<PathFormat>[] = [
 
 **VERIFY**
 
-- [ ] Run the gates. All green, including typecheck's proof that each `device: true` row's key resolves through `DeviceKeyOf`.
-- [ ] `grep -rn "Default Format\|Paste Link Into Text\|Pasted Links" Core .claude/Features` → only `MarkdownPM.md`'s own **Pasted Links** feature bullet remains. That bullet names the editor feature, not the section.
-- [ ] Commit Phase 1: `feat(settings, markdownpm): Files & Links' Links & Paths section holds Default Link Format, Paste Links Into Text, Default Path Format, and Include Extensions as machine-level preferences`.
+- [x] Run the gates. All green, including typecheck's proof that each `device: true` row's key resolves through `DeviceKeyOf`.
+- [x] `grep -rn "Default Format\|Paste Link Into Text\|Pasted Links" Core .claude/Features` → only `MarkdownPM.md`'s own **Pasted Links** feature bullet remains. That bullet names the editor feature, not the section.
+- [x] Commit Phase 1: `feat(settings, markdownpm): Files & Links' Links & Paths section holds Default Link Format, Paste Links Into Text, Default Path Format, and Include Extensions as machine-level preferences`.
 
 ### Phase 2 — Copy Path
 
@@ -358,12 +358,12 @@ const PATH_FORMAT_OPTIONS: readonly PickerOption<PathFormat>[] = [
 
 **CHANGE**
 
-- [ ] Write `pathFormat.test.ts` first, with a root of `/Users/nathan/NexusOS`, a home of `/Users/nathan`, and the posix platform unless a case says otherwise:
+- [x] Write `pathFormat.test.ts` first, with a root of `/Users/nathan/NexusOS`, a home of `/Users/nathan`, and the posix platform unless a case says otherwise:
   - Relative gives `Notes/Set/Page` for `Notes/Set/Page.md`. With extensions on, `Notes/Set/Page.md` stays as it is, and a folder `Notes/Set` is unchanged either way.
   - Absolute gives `/Users/nathan/NexusOS/Notes/Page`.
   - Home gives `~/NexusOS/Notes/Page`. A root of `/Volumes/Drive/NexusOS` gives the absolute path. A home of `/Users/nat` against a root under `/Users/nathan` gives the absolute path.
   - On Windows, a root of `C:/Users/nathan/NexusOS` and a home of `C:/Users/nathan` give `~\NexusOS\Notes\Page` for Home.
-- [ ] Add `formatPath` to `pathFormat.ts`, built from `posix.ts`'s existing `join`, `isAtOrUnder`, `relDirname`, `relJoin`, and `titleFromPath`. No new regex.
+- [x] Add `formatPath` to `pathFormat.ts`, built from `posix.ts`'s existing `join`, `isAtOrUnder`, `relDirname`, `relJoin`, and `titleFromPath`. No new regex.
 
 **AFTER**
 
@@ -405,8 +405,8 @@ function anchored(rel: string, { format, root, home }: PathForm): string {
 
 **VERIFY**
 
-- [ ] `npx vitest run Core/Paths/pathFormat.test.ts` fails before `formatPath` exists and passes after.
-- [ ] Check that `formatPath` reads nothing global. Every input arrives in `form`.
+- [x] `npx vitest run Core/Paths/pathFormat.test.ts` fails before `formatPath` exists and passes after.
+- [x] Check that `formatPath` reads nothing global. Every input arrives in `form`.
 
 #### Task 2.2
 
@@ -435,17 +435,17 @@ function anchored(rel: string, { format, root, home }: PathForm): string {
 
 **CHANGE**
 
-- [ ] Write the failing handler test first, in `handlers.test.ts` › a new `describe('path:copy')`, on the file's `beforeEach` Nexus (`root` with `Library/Notes.md`):
+- [x] Write the failing handler test first, in `handlers.test.ts` › a new `describe('path:copy')`, on the file's `beforeEach` Nexus (`root` with `Library/Notes.md`):
   - Set `ctx.clipboard = { read: async () => '', write: vi.fn(async () => {}) }`.
   - Run `await openNexusSequence(ctx, root, false)` first. Without an open session, `withRoot` answers `ok(null)` without running the handler, which would pass vacuously.
   - Then install `{ ...machine(), home: dirname(sessionRoot()!) }`, which takes the home from the canonical root the handler receives. Reinstall `diskMachine()` in the describe's `afterEach`, as `Core/Paths/names.test.ts` does.
   - With no stored preferences, `nexusHandlers['path:copy'](ctx, 'Library/Notes.md')` writes `~/<basename(root)>/Library/Notes`.
   - After `writeValue('devicePrefs', { defaultPathFormat: 'relative', includeExtensions: true })` it writes `Library/Notes.md`.
-- [ ] `machine.ts`: add `home: string` beside `platform`.
-- [ ] `nodeMachine.ts`: set `home: posixPath(realpathSync.native(homedir()))`, computed once, importing `realpathSync` from `node:fs` and `homedir` from `node:os`. The file imports only from `node:fs/promises` today. The native realpath canonicalizes the way the session root's `fs/promises` `realpath` does, letter case included.
-- [ ] `Core/Testing/machines.ts`: the memory machine gets `home: '/Users/test'`, and `diskMachine` gets `home: homedir()`.
-- [ ] `bridge.ts`: declare `'path:copy': { args: [nexusRelativePath: string]; reply: Result<null> }` under `path:reveal`.
-- [ ] `Nexus/handlers.ts`: add the handler under `path:reveal`. It narrows the argument and formats the path. It doesn't resolve against the disk, since a copied path is text and nothing is opened.
+- [x] `machine.ts`: add `home: string` beside `platform`.
+- [x] `nodeMachine.ts`: set `home: posixPath(realpathSync.native(homedir()))`, computed once, importing `realpathSync` from `node:fs` and `homedir` from `node:os`. The file imports only from `node:fs/promises` today. The native realpath canonicalizes the way the session root's `fs/promises` `realpath` does, letter case included.
+- [x] `Core/Testing/machines.ts`: the memory machine gets `home: '/Users/test'`, and `diskMachine` gets `home: homedir()`.
+- [x] `bridge.ts`: declare `'path:copy': { args: [nexusRelativePath: string]; reply: Result<null> }` under `path:reveal`.
+- [x] `Nexus/handlers.ts`: add the handler under `path:reveal`. It narrows the argument and formats the path. It doesn't resolve against the disk, since a copied path is text and nothing is opened.
 
 **AFTER**
 
@@ -469,8 +469,8 @@ function anchored(rel: string, { format, root, home }: PathForm): string {
 
 **VERIFY**
 
-- [ ] The new test fails before the handler lands and passes after: `npx vitest run Core/Nexus/handlers.test.ts`. Its `write` spy is called exactly once per ask.
-- [ ] Run the gates. `Core/Contract/engineGraph.test.ts` and `Desktop/hostGraph.test.ts` stay green.
+- [x] The new test fails before the handler lands and passes after: `npx vitest run Core/Nexus/handlers.test.ts`. Its `write` spy is called exactly once per ask.
+- [x] Run the gates. `Core/Contract/engineGraph.test.ts` and `Desktop/hostGraph.test.ts` stay green.
 
 #### Task 2.3
 
@@ -504,18 +504,18 @@ function anchored(rel: string, { format, root, home }: PathForm): string {
 
 **CHANGE**
 
-- [ ] Removal first:
+- [x] Removal first:
   - Delete `pagePathText` from `pageMenu.ts`, its import in `pageMenuActions.ts`, and its test case and import in `pageMenu.test.ts`.
   - Delete `'reveal'` from `EntityMenuAction`.
   - Delete the `'title:copypath'` and `'title:reveal'` cases from `runPageAction`, and the `'reveal'` case from `runEntityAction`.
-- [ ] Update the tests first, so they fail:
+- [x] Update the tests first, so they fail:
   - `entityMenu.test.ts`: both container shapes read `…, 'Copy Path', 'Reveal Location'`, the sidebar collection's last group is `Lock Folder`, `Copy Path`, `Reveal Location`, and container Reveal's action is `'title:reveal'`.
   - `externalLink.test.tsx`: add a `'path:copy'` `vi.fn()` beside `'clipboard:write'` in the file's `stubEditorBridge` call and reset it with the others. The page case expects it asked with `'Notes/Alpha.md'`, and `writeClipboard` not called.
-- [ ] `pageMenuActions.ts`: add `runPathAction` above `runPageAction`, as shown under AFTER. `runPageAction` opens its switch with `if (runPathAction(action, path)) return true`.
-- [ ] `entityMenuActions.ts`: `runEntityAction` calls `if (runPathAction(action, path)) return` before its switch, importing it beside `runPageAction`.
-- [ ] `entityMenu.ts`: import `COPY_PATH_ROW`/`REVEAL_ROW` from `./pageMenu`. The container group becomes `[...lock, COPY_PATH_ROW, REVEAL_ROW]`, unconditioned on `host`.
-- [ ] `PageMenu.tsx`: `[COPY_LINK_ROW, COPY_PATH_ROW, HISTORY_ROW, REVEAL_ROW]`. The import gains `COPY_PATH_ROW`.
-- [ ] `InterfacePM.md`: in the page menu table's Send row, change "Copy Path" to "Copy Path (in Files & Links › Default Path Format)".
+- [x] `pageMenuActions.ts`: add `runPathAction` above `runPageAction`, as shown under AFTER. `runPageAction` opens its switch with `if (runPathAction(action, path)) return true`.
+- [x] `entityMenuActions.ts`: `runEntityAction` calls `if (runPathAction(action, path)) return` before its switch, importing it beside `runPageAction`.
+- [x] `entityMenu.ts`: import `COPY_PATH_ROW`/`REVEAL_ROW` from `./pageMenu`. The container group becomes `[...lock, COPY_PATH_ROW, REVEAL_ROW]`, unconditioned on `host`.
+- [x] `PageMenu.tsx`: `[COPY_LINK_ROW, COPY_PATH_ROW, HISTORY_ROW, REVEAL_ROW]`. The import gains `COPY_PATH_ROW`.
+- [x] `InterfacePM.md`: in the page menu table's Send row, change "Copy Path" to "Copy Path (in Files & Links › Default Path Format)".
 
 **AFTER**
 
@@ -546,10 +546,10 @@ export function runPathAction(action: string, path: string): boolean {
 
 **VERIFY**
 
-- [ ] Run the gates. The updated `entityMenu.test.ts` and `externalLink.test.tsx` cases fail before the change and pass after.
-- [ ] `grep -rn "pagePathText" Core` → 0. `grep -rn "'reveal'" Core/Actions Core/Interface` → 0. `grep -rn "'path:copy'\|'path:reveal'" Core/Interface/Menus` → only `runPathAction`. `grep -rn "clipboard:write" Core/Interface/Menus` shows only Copy Link's two writers.
-- [ ] Check that no surface outside the Reveal Location parity set gained a row. Tabs, navigation rows, and banners for containers are untouched.
-- [ ] Commit Phase 2's Tasks 2.1–2.3: `feat(paths, menus): Copy Path writes the Default Path Format, with or without the extension, through one host-side formatter, and Collections, Sets, and a page's Settings menu carry it beside Reveal Location`.
+- [x] Run the gates. The updated `entityMenu.test.ts` and `externalLink.test.tsx` cases fail before the change and pass after.
+- [x] `grep -rn "pagePathText" Core` → 0. `grep -rn "'reveal'" Core/Actions Core/Interface` → 0. `grep -rn "'path:copy'\|'path:reveal'" Core/Interface/Menus` → only `runPathAction`. `grep -rn "clipboard:write" Core/Interface/Menus` shows only Copy Link's two writers.
+- [x] Check that no surface outside the Reveal Location parity set gained a row. Tabs, navigation rows, and banners for containers are untouched.
+- [x] Commit Phase 2's Tasks 2.1–2.3: `feat(paths, menus): Copy Path writes the Default Path Format, with or without the extension, through one host-side formatter, and Collections, Sets, and a page's Settings menu carry it beside Reveal Location`.
 
 #### Task 2.4
 
@@ -574,8 +574,8 @@ export function runPathAction(action: string, path: string): boolean {
 
 **VERIFY**
 
-- [ ] Each clipboard read matches its expected string, recorded in the report.
-- [ ] `grep -n "defaultLinkFormat\|pasteLinkIntoText" ~/NexusOS/.nexus/settings.json` → no hits. NexusOS's Settings rows read Page Title and On in Nathan's instance, or that step is handed to Nathan by name.
+- [x] Each clipboard read matches its expected string, recorded in the report.
+- [x] `grep -n "defaultLinkFormat\|pasteLinkIntoText" ~/NexusOS/.nexus/settings.json` → no hits. NexusOS's Settings rows read Page Title and On in Nathan's instance, or that step is handed to Nathan by name.
 - [ ] User confirms, after restarting his dev process so main serves `path:copy`: the Links & Paths section reads right, and right-click Copy Path on a page, a Collection, and a Set pastes the expected form.
 
 ### Completion Criteria
@@ -614,7 +614,7 @@ export function runPathAction(action: string, path: string): boolean {
 
 **THE STANDARD:** The work is finished when a later review of it finds nothing to correct. Not just doing the chores — doing the laundry, folding it, picking up what fell out of the hamper, emptying the lint trap, leaving no trace that anything went wrong. Nothing is carried as a concern, nothing is deferred where the fix is known, and nothing is declared that wasn't watched happen. Where something genuinely couldn't get there, the report names which and why, and everything else is still finished. Ambiguity met during execution took the simplest reading and was recorded; it didn't stop the run. Edits found in adjacent files that no task made belong to the user and are folded into the commit at hand, except the parallel codeblock-deltas session's files, which stay out of this plan's commits.
 
-- [ ] Phase review dispatched: Phase 1 · Phase 2
+- [x] Phase review dispatched: Phase 1 · Phase 2
 - [ ] All findings fixed or ruled on
 - [ ] Neutral verification passed on this plan's commits
 - [ ] Final pass: gates · baseline · diff · deviations · criteria
