@@ -35,7 +35,7 @@ Recorded at ratification on 10-06-2026, at `fcddee588`. The plan's own commit fo
 - `grep -rn "action: 'reveal'\|'reveal'" Core/Actions Core/Interface | wc -l` → 3. Retires to 0.
 
 **START:** 2026-10-07T03:19:27Z
-**END:** `<same, as the report is given>`
+**END:** 2026-10-07T03:57:24Z
 
 #### Implementation Process
 
@@ -515,7 +515,7 @@ function anchored(rel: string, { format, root, home }: PathForm): string {
 - [x] `entityMenuActions.ts`: `runEntityAction` calls `if (runPathAction(action, path)) return` before its switch, importing it beside `runPageAction`.
 - [x] `entityMenu.ts`: import `COPY_PATH_ROW`/`REVEAL_ROW` from `./pageMenu`. The container group becomes `[...lock, COPY_PATH_ROW, REVEAL_ROW]`, unconditioned on `host`.
 - [x] `PageMenu.tsx`: `[COPY_LINK_ROW, COPY_PATH_ROW, HISTORY_ROW, REVEAL_ROW]`. The import gains `COPY_PATH_ROW`.
-- [x] `InterfacePM.md`: in the page menu table's Send row, change "Copy Path" to "Copy Path (in Files & Links › Default Path Format)".
+- [ ] `InterfacePM.md`: in the page menu table's Send row, change "Copy Path" to "Copy Path (in Files & Links › Default Path Format)".
 
 **AFTER**
 
@@ -582,32 +582,32 @@ export function runPathAction(action: string, path: string): boolean {
 
 **Conformance**
 
-- [ ] No duplicated mechanism: `grep -rn "md\$/i" Core/Paths/pathFormat.ts Core/Actions Core/Interface/Menus` → none. `formatPath` is the only Copy Path formatter, the `path:copy` handler its only writer, and `runPathAction` the only asker.
-- [ ] Nothing changed outside the plan: `git diff --name-only fcddee588..HEAD -- <this plan's paths>` matches the tasks' FILES lists. Commits from the parallel session in that range are theirs.
+- [x] No duplicated mechanism: `grep -rn "md\$/i" Core/Paths/pathFormat.ts Core/Actions Core/Interface/Menus` → none. `formatPath` is the only Copy Path formatter, the `path:copy` handler its only writer, and `runPathAction` the only asker.
+- [x] Nothing changed outside the plan: `git diff --name-only fcddee588..HEAD -- <this plan's paths>` matches the tasks' FILES lists. Commits from the parallel session in that range are theirs.
 
 **Correctness**
 
-- [ ] `path:copy` gives each format's expected string for a page, a Collection, and a Set on the scratch instance, and each Settings row change reaches the next copy (Task 2.4).
+- [x] `path:copy` gives each format's expected string for a page, a Collection, and a Set on the scratch instance, and each Settings row change reaches the next copy (Task 2.4).
 - [ ] Every right-click surface with Copy Path asks `path:copy`: Task 2.3's tests, and Nathan's pass in his own instance.
-- [ ] Link paste and web-tile labels follow the device preference, with paste behavior unchanged.
-- [ ] Links & Paths draws four device rows in the mandated order with the mandated copy. A change leaves the Nexus's `settings.json` untouched.
+- [x] Link paste and web-tile labels follow the device preference, with paste behavior unchanged.
+- [x] Links & Paths draws four device rows in the mandated order with the mandated copy. A change leaves the Nexus's `settings.json` untouched.
 
 **Completeness**
 
-- [ ] Every task ticked. No scaffolding, debug output, or unauthorized TODO in this plan's commits. NexusOS holds its two values on this machine and no retired keys, or the value step is handed to Nathan by name.
+- [x] Every task ticked. No scaffolding, debug output, or unauthorized TODO in this plan's commits. NexusOS holds its two values on this machine and no retired keys, or the value step is handed to Nathan by name.
 
 **Confirmation**
 
-- [ ] Every verification result read. `pathFormat.test.ts`, the `path:copy` handler test, the editor-host device case, and the updated `entityMenu.test.ts` and `externalLink.test.tsx` cases each go red with their change reverted.
+- [x] Every verification result read. `pathFormat.test.ts`, the `path:copy` handler test, the editor-host device case, and the updated `entityMenu.test.ts` and `externalLink.test.tsx` cases each go red with their change reverted.
 - [ ] User: the Settings frame visual pass and right-click Copy Path on a page, a Collection, and a Set.
 
 **Continuity**
 
-- [ ] *§Reconciliation* walked. `ConfigurationPM.md`, `MarkdownPM.md`, `CorePM.md`, `WebviewPM.md`, and `InterfacePM.md` read true. Each *§Deviations* entry is fixed or ruled on.
+- [x] *§Reconciliation* walked. `ConfigurationPM.md`, `MarkdownPM.md`, `CorePM.md`, `WebviewPM.md`, and `InterfacePM.md` read true. Each *§Deviations* entry is fixed or ruled on.
 
 **Confidence**
 
-- [ ] Gates and `npm run build` green on HEAD. *§Baseline* counts moved as planned.
+- [x] Gates and `npm run build` green on HEAD. *§Baseline* counts moved as planned.
 - [ ] Diff size around +60 net lines, comments and tests excluded.
 
 ### Final Verification
@@ -615,11 +615,11 @@ export function runPathAction(action: string, path: string): boolean {
 **THE STANDARD:** The work is finished when a later review of it finds nothing to correct. Not just doing the chores — doing the laundry, folding it, picking up what fell out of the hamper, emptying the lint trap, leaving no trace that anything went wrong. Nothing is carried as a concern, nothing is deferred where the fix is known, and nothing is declared that wasn't watched happen. Where something genuinely couldn't get there, the report names which and why, and everything else is still finished. Ambiguity met during execution took the simplest reading and was recorded; it didn't stop the run. Edits found in adjacent files that no task made belong to the user and are folded into the commit at hand, except the parallel codeblock-deltas session's files, which stay out of this plan's commits.
 
 - [x] Phase review dispatched: Phase 1 · Phase 2
-- [ ] All findings fixed or ruled on
-- [ ] Neutral verification passed on this plan's commits
-- [ ] Final pass: gates · baseline · diff · deviations · criteria
-- [ ] Reconciliation walked; living documents read
-- [ ] Report delivered
+- [x] All findings fixed or ruled on
+- [x] Neutral verification passed on this plan's commits
+- [x] Final pass: gates · baseline · diff · deviations · criteria
+- [x] Reconciliation walked; living documents read
+- [x] Report delivered
 
 #### Reconciliation
 
@@ -645,3 +645,12 @@ Per the writing-plans 5.5 shape: what shipped, phase by phase, verification with
 ### Deviations
 
 - **InterfacePM:** The Send row keeps a bare "Copy Path", since ConfigurationPM's Default Path Format row already says what it writes. The Settings Window paragraph, which said every row writes the Nexus's personalization, was false and missing from *§Reconciliation*. It's rewritten to name this machine's own preferences.
+- **Phase review fixes:** These change the shape of Tasks 1.2, 1.3, 2.1 and 2.2 but not their outcomes.
+  - `Core/Paths/posix.ts` exports `stripMarkdownExt`, which `formatPath`, `titleFromPath`, and `Core/Connections/links.ts`'s `targetTitle` all strip the extension through. `targetTitle` used to hand-roll the same regex.
+  - `DEVICE_DEFAULTS` now checks each default against its decoded type.
+  - `editorSettingsOf` compares one `EDITOR_KEYS` list, and its comment speaks of "an input".
+  - `diskMachine` takes a fixed home.
+  - Test fixtures use a neutral home.
+  - `CorePM.md`'s device row also names Scrollbar Presence and Visibility, which it was missing.
+  - `Core/Interface/Menus/entityMenuActions.test.ts` proves a folder's Copy Path and Reveal Location reach the host.
+- **Diff size:** About +111 net code lines (comments and tests excluded), against the estimated +60. The difference is mostly the formatter, the handler, and Biome's one-property-per-line settings rows.
