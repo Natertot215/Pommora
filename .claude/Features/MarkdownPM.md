@@ -163,6 +163,7 @@ The box constructs — quote, callout, code, and highlight — share a corner ra
 | Callout Grip | `--grip-x` / `--grip-y` | `-18px` / `4px` |
 | Nested Quote | `--nested-quote-bar` / `--nested-quote-bar-radius` / `--box-radius-r` / `--nested-quote-gap` / `--nested-quote-inset` | `3px` / `2px` / `5px` / `8px` / `2px` · `.md-callout.md-blockquote-nested` |
 | Code Block | `--box-fill` / `--codeblock-radius` / `--box-pad` / `--codeblock-pad` | fill-quaternary / → box corner / `6px` / `12px` (`10px` inside quotes and callouts) · `.codeblock`, whose text is a bare `font-size: 0.85em` |
+| Diff Lines | `--diff-bar` / `--diff-radius` | `3px` / `4px` · `.codeblock-diff` — the bar green or red at tint-secondary over its fill at tint-quinary, both opening at the sign's column, which reserves the sign and a list gap |
 | Box Corner | `--md-box-radius` | `6px` · `:root` — what quote, callout, code and highlight round to; each still names its own knob |
 | Box Gap | `--md-box-gap-base` / `--md-box-gap` | `6px` · `:root` / `base × --glyph-scale` · `.mdpm-shell` — what quote, callout, code and the table float off their neighbours by, scaling with the surface |
 | Highlight | `--highlight` / `--highlight-bleed` | the accent, or the highlight's own color, at tint-secondary / `0.1em` · `.md-highlight` |

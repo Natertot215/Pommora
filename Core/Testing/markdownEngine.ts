@@ -10,9 +10,9 @@ import {
 } from '../MarkdownPM/Engine/detect'
 import { type DocScan, scanDoc } from '../MarkdownPM/Engine/docScan'
 import {
-  assembleLineIntents,
   type DecoIntent,
   docLineIntents,
+  lineIntentsInto,
   tokenIntents,
 } from '../MarkdownPM/Engine/intents'
 import { EditorState } from '@codemirror/state'
@@ -41,6 +41,7 @@ export function parseTable(src: string): TableModel | null {
   return normalize({ columns, header, rows })
 }
 
+/** The whole-document reference the cached assembly is held to: every line derived against the caret, so a caret dependency the live path doesn't re-derive shows as a difference. */
 export function decorationsFor(
   text: string,
   tokens: Token[],
@@ -51,8 +52,9 @@ export function decorationsFor(
 ): DecoIntent[] {
   const s = scan ?? scanDoc(text)
   const intents: DecoIntent[] = tokenIntents(tokens, active)
-  for (const it of assembleLineIntents(s, docLineIntents(s, scope), selStart, undefined, scope))
-    intents.push(it)
+  for (let i = 0; i < s.lines.length; i++) lineIntentsInto(s, i, selStart, intents, scope)
+  for (const rails of docLineIntents(s, scope).rails)
+    if (rails) for (const it of rails) intents.push(it)
   return intents
 }
 

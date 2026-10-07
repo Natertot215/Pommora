@@ -8,6 +8,7 @@ import {
   fenceBodyStart,
   type CalloutLine,
   type CitationEntry,
+  type FenceInfo,
   type ListMarker,
   type MarkdownScope,
 } from './detect'
@@ -150,6 +151,8 @@ export function tokenIntents(tokens: Token[], active: Set<number>): DecoIntent[]
   return intents
 }
 
+const barred = (f: FenceInfo | undefined): boolean => f?.diff === 'add' || f?.diff === 'del'
+
 // Null where the line is chrome of its own and never enters the list vocabulary; otherwise the offset the list grammar starts at.
 // A cell holds no box, no fence, no math and no citation row, and its own extension draws the footnote markers, so none of this is walked there.
 function pageChrome(
@@ -208,6 +211,8 @@ function pageChrome(
   if (fence) {
     const innerStart = ls + fenceBodyStart(line, fence)
     const caretOnLine = selStart >= ls && selStart <= le
+    const signed = fence.diff !== undefined && fence.diff !== 'head'
+    const raw = signed && selStart >= fence.from && selStart <= fence.to
     intents.push({
       kind: 'line',
       from: ls,
@@ -215,9 +220,29 @@ function pageChrome(
         'codeblock',
         fence.role === 'open' && 'codeblock-first',
         fence.role === 'close' && 'codeblock-last',
+        fence.tally && 'codeblock-diff',
+        fence.diff === 'head' && 'codeblock-diff-head',
+        raw && 'codeblock-diff-raw',
       ),
     })
     pushPrefix(intents, ls, innerStart)
+    if (barred(fence))
+      intents.push({
+        kind: 'lineWidget',
+        from: ls,
+        className: cx(
+          'md-diff',
+          `md-diff-${fence.diff}`,
+          !barred(fences[i - 1]) && 'md-diff-first',
+          !barred(fences[i + 1]) && 'md-diff-last',
+        ),
+      })
+    if (signed)
+      intents.push(
+        raw
+          ? { kind: 'class', from: innerStart, to: innerStart + 1, className: 'md-diff-sign' }
+          : { kind: 'hide', from: innerStart, to: innerStart + 1 },
+      )
     // The offset comes from the fence grammar itself (markerEnd), so an indented or quoted fence never hides its own marker.
     const infoStart = ls + fence.markerEnd
     const named = fence.lang ? codeFence(fence.lang).name : null
@@ -228,7 +253,7 @@ function pageChrome(
     if (fence.ordinal !== undefined)
       intents.push({
         kind: 'lineWidget',
-        from: ls,
+        from: signed ? innerStart + 1 : ls,
         className: 'codeblock-line-number',
         text: String(fence.ordinal),
       })
@@ -283,7 +308,7 @@ function pageChrome(
   return base
 }
 
-function lineIntentsInto(
+export function lineIntentsInto(
   scan: DocScan,
   i: number,
   selStart: number,
@@ -341,7 +366,7 @@ export function railIntents(
 
 interface CachedLineIntents {
   perLine: DecoIntent[][]
-  /** Held apart from `perLine` because the caret's own line re-derives, and a rail folded in there would go with it. */
+  /** Held apart from `perLine` because the lines a caret move re-derives would take a rail folded in there with them. */
   rails: RailIntent[][]
   listLevels: number[]
   listKinds: string[]
@@ -435,8 +460,12 @@ function citationLines(
   return ranges
 }
 
-function caretLine(scan: DocScan, selStart: number): number {
-  return selStart < 0 ? NO_CARET : lineIndexAt(scan, selStart)
+/** The lines a caret move re-derives: its own, or every line of the diff fence it sits in, whose signs it reveals at once. */
+function liveLines(scan: DocScan, selStart: number): [number, number] {
+  if (selStart < 0) return [NO_CARET, NO_CARET]
+  const i = lineIndexAt(scan, selStart)
+  const f = scan.fences[i]
+  return f?.tally ? [lineIndexAt(scan, f.from), lineIndexAt(scan, f.to)] : [i, i]
 }
 
 /** `window` scopes only the copy — every intent was derived against the whole document, so no margin is owed. */
@@ -448,12 +477,12 @@ export function assembleLineIntents(
   scope: MarkdownScope = 'page',
   ranged = false,
 ): DecoIntent[] {
-  const caret = caretLine(scan, selStart)
+  const [top, bottom] = liveLines(scan, selStart)
   const first = window ? lineIndexAt(scan, window.from) : 0
   const last = window ? lineIndexAt(scan, window.to) : scan.lines.length - 1
   const intents: DecoIntent[] = []
   for (let i = first; i <= last; i++) {
-    if (i === caret) lineIntentsInto(scan, i, selStart, intents, scope, ranged)
+    if (i >= top && i <= bottom) lineIntentsInto(scan, i, selStart, intents, scope, ranged)
     else for (const it of cached.perLine[i]) intents.push(it)
   }
   for (let i = first; i <= last; i++) {

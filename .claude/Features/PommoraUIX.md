@@ -74,6 +74,7 @@ The Pommora design system — the code counterpart of the Figma library, which l
 | Tint Secondary  | `TINT_STEPS.secondary` · `--tint-secondary`   | 40%   |
 | Tint Tertiary   | `TINT_STEPS.tertiary` · `--tint-tertiary`     | 20%   |
 | Tint Quaternary | `TINT_STEPS.quaternary` · `--tint-quaternary` | 15%   |
+| Tint Quinary    | `TINT_STEPS.quinary` · `--tint-quinary`       | 10%   |
 
 #### Borders
 

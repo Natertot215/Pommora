@@ -45,9 +45,9 @@ The plan also tidies what it touches. The old diff highlighter retires, the tag 
 - [x] **Phase 2** — Colors Past The Sign
   - [x] Task 2.1
 - [ ] **Phase 3** — Bars, Fills, And The Caret
-  - [ ] Task 3.1
-  - [ ] Task 3.2
-  - [ ] Task 3.3
+  - [x] Task 3.1
+  - [x] Task 3.2
+  - [x] Task 3.3
   - [ ] Review Checkpoint
 - [ ] **Phase 4** — The Tally Pill
   - [ ] Task 4.1
@@ -77,8 +77,7 @@ The plan also tidies what it touches. The old diff highlighter retires, the tag 
    { name: 'Dockerfile', alias: ['dockerfile', 'docker'] },
 -  { name: 'Diff', alias: ['diff', 'patch'] },
    { name: 'Lua', alias: ['lua'] },
-@@ codeLanguageName @@
--/** Null where no language answers to the word: a fence that selected no parse wears no tag. */
+@@ codeLanguageName @@-/** Null where no language answers to the word: a fence that selected no parse wears no tag. */
 -export function codeLanguageName(info: string): string | null {
 +const DIFF_WORD = /^(?:(?:diff|patch)(?:[-/|](.+))?|(.+)[-/|](?:diff|patch))$/
 +
@@ -555,10 +554,10 @@ The plan also tidies what it touches. The old diff highlighter retires, the tag 
 
 **TASK**
 
-- [ ] Write the line-chrome intent tests and watch them fail.
-- [ ] Give every diff fence line `codeblock-diff`, a header line `codeblock-diff-head`, and a signed line in the caret's fence `codeblock-diff-raw`.
-- [ ] Push one `md-diff` line widget per added or removed line, flagged `md-diff-first` or `md-diff-last` where its neighbor carries no bar.
-- [ ] Hide the sign while the caret is outside the fence, and seat the line number past the sign.
+- [x] Write the line-chrome intent tests and watch them fail.
+- [x] Give every diff fence line `codeblock-diff`, a header line `codeblock-diff-head`, and a signed line in the caret's fence `codeblock-diff-raw`.
+- [x] Push one `md-diff` line widget per added or removed line, flagged `md-diff-first` or `md-diff-last` where its neighbor carries no bar.
+- [x] Hide the sign while the caret is outside the fence, wrap it as a glyph reserving its zone while the caret is inside, and seat the line number past the sign.
 
 ```diff-ts
 --- a/Core/MarkdownPM/Engine/intents.ts
@@ -607,7 +606,12 @@ The plan also tidies what it touches. The old diff highlighter retires, the tag 
 +          !barred(fences[i + 1]) && 'md-diff-last',
 +        ),
 +      })
-+    if (signed && !raw) intents.push({ kind: 'hide', from: innerStart, to: innerStart + 1 })
++    if (signed)
++      intents.push(
++        raw
++          ? { kind: 'class', from: innerStart, to: innerStart + 1, className: 'md-diff-sign' }
++          : { kind: 'hide', from: innerStart, to: innerStart + 1 },
++      )
      // The offset comes from the fence grammar itself (markerEnd), so an indented or quoted fence never hides its own marker.
      const infoStart = ls + fence.markerEnd
 @@ pageChrome — the line number @@
@@ -675,9 +679,9 @@ The plan also tidies what it touches. The old diff highlighter retires, the tag 
 
 **VERIFY**
 
-- [ ] The four `a diff fence` cases fail before the intents change and pass after.
-- [ ] Run the gates.
-- [ ] Check the work for unnecessary code or obvious mistakes.
+- [x] The four `a diff fence` cases fail before the intents change and pass after.
+- [x] Run the gates.
+- [x] Check the work for unnecessary code or obvious mistakes.
 
 #### Task 3.2
 
@@ -685,10 +689,10 @@ The plan also tidies what it touches. The old diff highlighter retires, the tag 
 
 **TASK**
 
-- [ ] Make `decorationsFor` a true whole-document reference: every line derived against the caret, through the now-exported `lineIntentsInto`. Today it calls the same `assembleLineIntents` the suite compares it to, so the equivalence suite can't go red. A probe at `a356034e5` showed the existing corpus already matches a true reference at every caret.
-- [ ] Add a diff fence to the equivalence corpus and watch the suite go red.
-- [ ] Fold `caretLine` into `liveLines`, which widens what a caret move re-derives from the caret's line to every on-screen line of the diff fence it sits in.
-- [ ] Rewrite the comments and the *Editor-Internals* rule this makes false.
+- [x] Make `decorationsFor` a true whole-document reference: every line derived against the caret, through the now-exported `lineIntentsInto`. Today it calls the same `assembleLineIntents` the suite compares it to, so the equivalence suite can't go red. A probe at `a356034e5` showed the existing corpus already matches a true reference at every caret.
+- [x] Add a diff fence to the equivalence corpus and watch the suite go red.
+- [x] Fold `caretLine` into `liveLines`, which widens what a caret move re-derives from the caret's line to every on-screen line of the diff fence it sits in.
+- [x] Rewrite the comments and the *Editor-Internals* rule this makes false.
 
 ```diff/ts
 --- a/Core/MarkdownPM/Engine/intents.ts
@@ -770,6 +774,11 @@ The plan also tidies what it touches. The old diff highlighter retires, the tag 
 +    it('reveals every sign at once from anywhere in the fence', () => {
 +      const intents = at(t.indexOf('plain'))
 +      expect(hidden(intents)).toEqual(['diff-ts'])
++      expect(
++        of(intents, 'class')
++          .filter((d) => d.className === 'md-diff-sign')
++          .map((d) => t.slice(d.from, d.to)),
++      ).toEqual([' ', '-', '+'])
 +      expect(of(intents, 'line').filter((d) => d.className.includes('codeblock-diff-raw'))).toHaveLength(3)
 +    })
 ```
@@ -784,19 +793,19 @@ The plan also tidies what it touches. The old diff highlighter retires, the tag 
 
 **VERIFY**
 
-- [ ] With the true reference and the diff corpus doc in place, the `cached assembly ≡ pure derivation` suite goes red on that doc before `liveLines`, and green after. The other nine docs stay green throughout, and so does `Tables/cellLists.test.tsx`, the other `decorationsFor` consumer.
-- [ ] `reveals every sign at once` fails before `liveLines` and passes after.
-- [ ] Run the gates.
-- [ ] Check the work for unnecessary code or obvious mistakes.
+- [x] With the true reference and the diff corpus doc in place, the `cached assembly ≡ pure derivation` suite goes red on that doc before `liveLines`, and green after. The other nine docs stay green throughout, and so does `Tables/cellLists.test.tsx`, the other `decorationsFor` consumer.
+- [x] `reveals every sign at once` fails before `liveLines` and passes after.
+- [x] Run the gates.
+- [x] Check the work for unnecessary code or obvious mistakes.
 
 #### Task 3.3
 
 **TASK**
 
-- [ ] Collapse the codeblock's three `padding-left` formulas into one `--codeblock-indent` that the nested rule reuses, with the line-count rule setting only its zone.
-- [ ] Add the diff zone, the raw-sign pull, and the header color.
-- [ ] Draw `md-diff`: a fill whose left edge is the sign column, with its right edge mirroring it, and a bar at that edge clipped into the fill's rounded run ends, so the bar stands exactly where the sign appears. The bar hides on raw lines.
-- [ ] Add the *Diff Lines* knob row to *MarkdownPM.md*.
+- [x] Collapse the codeblock's three `padding-left` formulas into one `--codeblock-indent` that the nested rule reuses, with the line-count rule setting only its zone.
+- [x] Add the diff zone, the raw-sign pull, and the header color.
+- [x] Draw `md-diff`: a fill whose left edge is the sign column, with its right edge mirroring it, and a bar at that edge that lies over the fill and caps its own run ends, as a quote's does, so the bar stands exactly where the sign appears. The bar hides on raw lines, and the fill's left corners round in its place.
+- [x] Add the *Diff Lines* knob row to *MarkdownPM.md*.
 
 ```css-diff
 --- a/Core/MarkdownPM/markdown-pm.css
@@ -828,15 +837,22 @@ The plan also tidies what it touches. The old diff highlighter retires, the tag 
    border-bottom: var(--codeblock-border);
  }
 +
-+/* The code holds one column whether its sign shows or not: a sign-wide zone opens before it, a raw sign is pulled back into that zone, and the bar stands in the same column the sign does. KNOBS: --diff-bar, --diff-radius (a run's ends). */
++/* The code holds one column whether its sign shows or not: the sign reserves a zone before it as a list marker does, its gap included, a raw sign is pulled back into that zone, and the bar stands in the same column the sign does. */
 +.mdpm-editor .cm-line.codeblock-diff {
-+  --diff-zone: 1ch;
++  --diff-zone: calc(1ch + var(--list-gap));
 +  --diff-bar: 3px;
 +  --diff-radius: 4px;
++  --diff-radius-l: 0px;
 +  --box-z: -2;
 +}
 +.mdpm-editor .cm-line.codeblock-diff-raw {
-+  --diff-sign: 1ch;
++  --diff-sign: var(--diff-zone);
++  --diff-radius-l: var(--diff-radius);
++}
++.mdpm-editor .md-diff-sign {
++  display: inline-block;
++  min-width: var(--diff-zone);
++  text-indent: 0;
 +}
 +.mdpm-editor .cm-line.codeblock-diff-head {
 +  color: var(--label-secondary);
@@ -845,8 +861,7 @@ The plan also tidies what it touches. The old diff highlighter retires, the tag 
 +  position: absolute;
 +  inset: 0 calc(var(--codeblock-inset) + var(--codeblock-pad));
 +  z-index: -1;
-+  overflow: hidden;
-+  background: color-mix(in srgb, var(--diff-color) var(--tint-secondary), transparent);
++  background: color-mix(in srgb, var(--diff-color) var(--tint-quinary), transparent);
 +  pointer-events: none;
 +}
 +.mdpm-editor .md-diff::before {
@@ -854,7 +869,7 @@ The plan also tidies what it touches. The old diff highlighter retires, the tag 
 +  position: absolute;
 +  inset: 0 auto 0 0;
 +  width: var(--diff-bar);
-+  background: color-mix(in srgb, var(--diff-color) var(--tint-primary), transparent);
++  background: color-mix(in srgb, var(--diff-color) var(--tint-secondary), transparent);
 +}
 +.mdpm-editor .md-diff-add {
 +  --diff-color: var(--solid-green);
@@ -863,10 +878,18 @@ The plan also tidies what it touches. The old diff highlighter retires, the tag 
 +  --diff-color: var(--solid-red);
 +}
 +.mdpm-editor .md-diff-first {
-+  border-top-left-radius: var(--diff-radius);
++  border-top-left-radius: var(--diff-radius-l);
 +  border-top-right-radius: var(--diff-radius);
 +}
 +.mdpm-editor .md-diff-last {
++  border-bottom-left-radius: var(--diff-radius-l);
++  border-bottom-right-radius: var(--diff-radius);
++}
++.mdpm-editor .md-diff-first::before {
++  border-top-left-radius: var(--diff-radius);
++  border-top-right-radius: var(--diff-radius);
++}
++.mdpm-editor .md-diff-last::before {
 +  border-bottom-left-radius: var(--diff-radius);
 +  border-bottom-right-radius: var(--diff-radius);
 +}
@@ -886,22 +909,22 @@ The plan also tidies what it touches. The old diff highlighter retires, the tag 
 +++ b/.claude/Features/MarkdownPM.md
 @@ II. Knobs — Code Block @@
  | Code Block | `--box-fill` / `--codeblock-radius` / `--box-pad` / `--codeblock-pad` | fill-quaternary / → box corner / `6px` / `12px` (`10px` inside quotes and callouts) · `.codeblock`, whose text is a bare `font-size: 0.85em` |
-+| Diff Lines | `--diff-bar` / `--diff-radius` | `3px` / `4px` · `.codeblock-diff` — the bar green or red at tint-primary over its fill at tint-secondary, both opening at the sign's column |
++| Diff Lines | `--diff-bar` / `--diff-radius` | `3px` / `4px` · `.codeblock-diff` — the bar green or red at tint-secondary over its fill at tint-quinary, both opening at the sign's column, which reserves the sign and a list gap |
 ```
 
 **VERIFY**
 
-- [ ] Run the gates. `grep -c "padding-left" Core/MarkdownPM/markdown-pm.css` → one fewer than *§Baseline*.
-- [ ] Live drive per *Development-Environment*: a plain fence, a quoted fence, and a callout fence keep their code column with **Show Line Count In Code Blocks** both on and off, matching `a356034e5`.
-- [ ] Live drive: an added line holding only `+` keeps a full line's height with its sign hidden.
+- [x] Run the gates. `grep -c "padding-left" Core/MarkdownPM/markdown-pm.css` → one fewer than *§Baseline*.
+- [x] Live drive per *Development-Environment*: a plain fence, a quoted fence, and a callout fence keep their code column with **Show Line Count In Code Blocks** both on and off, matching `a356034e5`.
+- [x] Live drive: an added line holding only `+` keeps a full line's height with its sign hidden.
 - [ ] User confirms: bars and fills read as one box per run, a red run meeting a green one is flat, the corners round only at a run's ends, the bar stands exactly where the sign appears, and line numbers sit right of the bar.
 - [ ] User confirms: clicking into the block swaps every bar for its sign with the code staying put, and the fills stay.
-- [ ] Check the work for unnecessary code or obvious mistakes.
+- [x] Check the work for unnecessary code or obvious mistakes.
 
 #### Review Checkpoint
 
-- [ ] Every Phase 3 test passes, along with the `cached assembly ≡ pure derivation` suite.
-- [ ] A non-diff fence, both top-level and quoted, renders the same as at `a356034e5`, with line numbers on and off.
+- [x] Every Phase 3 test passes, along with the `cached assembly ≡ pure derivation` suite.
+- [x] A non-diff fence, both top-level and quoted, renders the same as at `a356034e5`, with line numbers on and off.
 - [ ] Nathan's two Task 3.3 checks are recorded in his words.
 
 ### Phase 4 — The Tally Pill
@@ -1231,3 +1254,7 @@ Per *§5.5* of the planning standard: the report goes to Nathan in plain languag
 - ⌘/ inside a `diff-ts` block now reaches TypeScript's comment syntax, which inserts `//` ahead of the line's sign rather than after it. Toggling comments inside a diff is rare, and this plan leaves it as-is.
 
 ### Deviations
+
+- **Bar over the fill (Task 3.3):** Nathan ruled during the live pass that the bar lies over the fill as a quote's does, rather than being clipped into the fill's rounded corners. The bar now caps its own run ends, the fill keeps square left corners beneath it, and a raw line, which has no bar, rounds the fill's left corners instead. This adds one variable, `--diff-radius-l`.
+- **Sign zone (Tasks 3.1 and 3.3):** Nathan asked that a sign reserve its zone the way a list glyph does, with the list gap before the code. The zone is now `1ch + --list-gap`, and a raw sign is wrapped in an `md-diff-sign` class mark that holds the zone's width, the same inline-block pattern as the list gap.
+- **Tints (Task 3.3):** Nathan set the bar to tint-secondary and the fill to tint-quinary during the live pass. `--tint-quinary` didn't exist, so it joined `TINT_STEPS` at 10%, with its row in *PommoraUIX.md*.

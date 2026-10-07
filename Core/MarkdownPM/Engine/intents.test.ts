@@ -12,7 +12,7 @@ import {
 import { codeBlockTextAt, scanDoc } from './docScan'
 import { decorationsFor } from '../../Testing/markdownEngine'
 
-// The live build assembles line intents from the per-version cache, re-deriving only the caret-affected lines; this holds it byte-equivalent to the pure whole-doc reference at EVERY caret position, so a construct that gains a caret dependency without joining caretAffectedLines goes red here.
+// The live build assembles line intents from the per-version cache, re-deriving only the lines a caret move reaches (`liveLines`); this holds it byte-equivalent to the whole-doc reference, which derives every line against the caret, at EVERY caret position, so a construct that gains a caret dependency without joining `liveLines` goes red here.
 describe('cached assembly ≡ pure derivation', () => {
   const corpus = [
     '- item\n\ttwo words here\n# Head\nbody\n---\npara',
@@ -24,6 +24,7 @@ describe('cached assembly ≡ pure derivation', () => {
     '',
     '- ',
     'body [^2] and [^1]\n\n[^1]: one\n[^2]: two\ncontinued',
+    '```diff-ts\n@@ h @@\n a\n-b\n+c\n```\ntail',
   ]
   // Sequence compare, not a sorted multiset — order decides stacked line-class order at a shared offset.
   const seq = (xs: DecoIntent[]): string[] => xs.map((x) => JSON.stringify(x))
@@ -396,6 +397,63 @@ describe('decoration intents', () => {
       '> ',
       '> ',
     ])
+  })
+
+  describe('a diff fence', () => {
+    const t = '```diff-ts\n@@ run @@\n const a\n-let b\n+let c\nplain\n```'
+    const scan = scanDoc(t)
+    const at = (caret: number) => assembleLineIntents(scan, docLineIntents(scan), caret)
+    const of = <K extends DecoIntent['kind']>(intents: DecoIntent[], kind: K) =>
+      intents.filter((d): d is Extract<DecoIntent, { kind: K }> => d.kind === kind)
+    const hidden = (intents: DecoIntent[]) => of(intents, 'hide').map((d) => t.slice(d.from, d.to))
+
+    it('stands a bar in each sign’s place while the caret is away, a red run meeting a green one flat', () => {
+      const intents = at(NO_CARET)
+      expect(hidden(intents)).toEqual(['diff-ts', ' ', '-', '+'])
+      expect(
+        of(intents, 'lineWidget')
+          .filter((w) => w.className.startsWith('md-diff'))
+          .map((w) => w.className),
+      ).toEqual(['md-diff md-diff-del md-diff-first', 'md-diff md-diff-add md-diff-last'])
+    })
+    it('marks every line of the fence, and its header apart', () => {
+      expect(of(at(NO_CARET), 'line').map((d) => d.className)).toEqual([
+        'codeblock codeblock-first codeblock-diff',
+        'codeblock codeblock-diff codeblock-diff-head',
+        'codeblock codeblock-diff',
+        'codeblock codeblock-diff',
+        'codeblock codeblock-diff',
+        'codeblock codeblock-diff',
+        'codeblock codeblock-last codeblock-diff',
+      ])
+    })
+    it('seats a signed line’s number past its sign', () => {
+      const numbers = of(at(NO_CARET), 'lineWidget').filter(
+        (w) => w.className === 'codeblock-line-number',
+      )
+      expect(numbers.map((w) => w.from)).toEqual([
+        t.indexOf('@@'),
+        t.indexOf(' const') + 1,
+        t.indexOf('-let') + 1,
+        t.indexOf('+let') + 1,
+        t.indexOf('plain'),
+      ])
+    })
+    it('trades the bar for the raw sign on the caret’s own line', () => {
+      expect(hidden(at(t.indexOf('let b')))).not.toContain('-')
+    })
+    it('reveals every sign at once from anywhere in the fence', () => {
+      const intents = at(t.indexOf('plain'))
+      expect(hidden(intents)).toEqual(['diff-ts'])
+      expect(
+        of(intents, 'class')
+          .filter((d) => d.className === 'md-diff-sign')
+          .map((d) => t.slice(d.from, d.to)),
+      ).toEqual([' ', '-', '+'])
+      expect(
+        of(intents, 'line').filter((d) => d.className.includes('codeblock-diff-raw')),
+      ).toHaveLength(3)
+    })
   })
 
   it('a typed fence names its language; a bare one still carries the tag, unnamed', () => {
