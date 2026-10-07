@@ -12,6 +12,7 @@ import { aliasedToken, linkTokenAt, type Token } from '../Engine/tokens'
 import { focusRange } from '../caretPlacement'
 import { restedOnLink } from './linkReveal'
 import { editorHost } from '../api'
+import { drawnRawAt } from '../decorations'
 import { clamp } from '@pommora/uix/Utilities/clamp'
 
 /** Pure of any editor, because a connection in a resting table cell has none. Reads the token's spans, since a displayed alias hides where the title is. */
@@ -56,7 +57,7 @@ export function commitAliasOnEnter(view: EditorView): boolean {
   const span = aliasSpanAt(line.text, sel.head - line.from)
   if (!span) return false
   const tk = linkTokenAt(line.text, span[0], 'wikiLink')
-  if (!tk) return false
+  if (!tk || drawnRawAt(view, line.from + tk.range[0])) return false
   const end = line.from + tk.range[1]
   view.dispatch({
     selection: EditorSelection.cursor(end, 1),

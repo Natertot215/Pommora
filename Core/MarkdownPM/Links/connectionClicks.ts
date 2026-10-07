@@ -5,6 +5,7 @@ import { titleTarget, type ConnectionsApi, type MdTarget } from './connectionsAp
 import { dwellTarget, followTarget } from './linkClicks'
 import { applyLinkAction } from './linkEdit'
 import { pointerHandlers, type PointerTarget } from '../Gestures/pointerPath'
+import { drawnRawAt } from '../decorations'
 
 type GetApi = () => ConnectionsApi | undefined
 
@@ -20,7 +21,7 @@ function wikiLinkAt(view: EditorView, pos: number): WikiHit | null {
   const line = view.state.doc.lineAt(pos)
   const rel = pos - line.from
   const tk = linkTokenAt(line.text, rel, 'wikiLink')
-  if (!tk) return null
+  if (!tk || drawnRawAt(view, line.from + tk.range[0])) return null
   const [rs, re] = tk.resolveRange ?? tk.contentRange
   const abs = ([s, e]: [number, number]): [number, number] => [line.from + s, line.from + e]
   return {

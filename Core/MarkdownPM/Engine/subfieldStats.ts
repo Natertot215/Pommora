@@ -9,6 +9,7 @@ import {
   isThematicBreakLine,
   loneEmbedTitle,
   loneWebpageEmbed,
+  type MarkdownScope,
   markerRegex,
   parseListMarker,
 } from './detect'
@@ -34,9 +35,9 @@ function proseStart(line: string): number {
 
 type Hidden = readonly [from: number, to: number, fill: string]
 
-/** What the editor draws in place of a token's source: code as nothing, marks, links, and embeds as their shown text, while citation markers, tags, math, and anything in an HTML block stay as written. */
-function hiddenOf(tk: Token): Hidden[] {
-  if (tk.inHtml) return []
+/** What the editor draws in place of a token's source: code as nothing, marks, links, and embeds as their shown text, while citation markers, tags, math, and anything in a page's HTML block stay as written. */
+function hiddenOf(tk: Token, scope: MarkdownScope): Hidden[] {
+  if (tk.inHtml && scope === 'page') return []
   switch (tk.kind) {
     case 'inlineCode':
       return [[tk.range[0], tk.range[1], GONE]]
@@ -53,16 +54,19 @@ function hiddenOf(tk: Token): Hidden[] {
 const NOTHING_HIDDEN: Hidden[] = []
 
 // By chunk text, the editor's own unit: an edit re-tokenizes only the chunk it changed.
-const tokenHidden = perText(
-  (text: string) =>
-    tokenize(text)
-      .flatMap(hiddenOf)
-      .sort((a, b) => a[0] - b[0]),
-  8192,
-)
+const tokenHidden = (scope: MarkdownScope) =>
+  perText(
+    (text: string) =>
+      tokenize(text)
+        .flatMap((tk) => hiddenOf(tk, scope))
+        .sort((a, b) => a[0] - b[0]),
+    8192,
+  )
+const pageHidden = tokenHidden('page')
+const cellHidden = tokenHidden('cell')
 
-const hiddenIn = (text: string): Hidden[] =>
-  holdsTokens(text) ? tokenHidden(text) : NOTHING_HIDDEN
+const hiddenIn = (text: string, hidden = pageHidden): Hidden[] =>
+  holdsTokens(text) ? hidden(text) : NOTHING_HIDDEN
 
 /** `text` from `from` to `to` as drawn; `hidden` is sorted by start and read from `h` on. */
 function drawnSlice(
@@ -110,7 +114,9 @@ function tableProse(scan: DocScan): Map<number, string> {
     const last = lineIndexAt(scan, region.to)
     for (let i = lineIndexAt(scan, region.from); i <= last; i++) drawn.set(i, '')
     for (const row of region.rows) {
-      const cells = row.cells.map((c) => drawnSlice(c.text, 0, c.text.length, hiddenIn(c.text)))
+      const cells = row.cells.map((c) =>
+        drawnSlice(c.text, 0, c.text.length, hiddenIn(c.text, cellHidden)),
+      )
       drawn.set(lineIndexAt(scan, row.from), cells.join(GONE))
     }
   }

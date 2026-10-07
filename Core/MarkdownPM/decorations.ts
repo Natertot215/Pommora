@@ -19,7 +19,7 @@ import {
 } from '@codemirror/state'
 
 import {
-  tokenize,
+  tokenizeChunk,
   activeTokenIndices,
   aliasedToken,
   linkTarget,
@@ -50,11 +50,11 @@ import {
   tokenIntents,
   type WidgetSpec,
 } from './Engine/intents'
-import { type DocScan, chunksOver, codeBlockTextAt, inCodeAt } from './Engine/docScan'
+import { type DocScan, chunksOver, codeBlockTextAt, inCodeAt, spanAt } from './Engine/docScan'
 import { lineEndOf, lineIndexAt } from './Engine/markdownCode'
 import { resolveMdTarget, wikiLinkView, type ConnectionsApi } from './Links/connectionsApi'
 import type { LinkStatus } from '../Connections/connections'
-import { editorHost, pageEditorAt, resolutionNudge } from './api'
+import { editorHost, pageEditorAt, redrawNudge } from './api'
 import { checkMarkSvg, checkboxClass } from '@pommora/uix/Controls/Checkbox'
 import { svgFrame } from '@pommora/uix/Symbols/svgFrame'
 import { cx } from '@pommora/uix/Utilities/cx'
@@ -280,20 +280,29 @@ const hideMarker = Decoration.replace({})
 const atomicSpan = Decoration.mark({})
 const NO_ACTIVE = new Set<number>()
 
-const chunkTokens = drawnLast(tokenize)
+const chunkTokens = drawnLast(tokenizeChunk)
+const drawnRaw = new WeakMap<EditorView, readonly [number, number][]>()
+
+/** Inside an HTML block the last draw left as written, where a link gesture has no drawn link to act on. */
+export const drawnRawAt = (view: EditorView, pos: number): boolean =>
+  spanAt(drawnRaw.get(view) ?? [], pos) !== undefined
 
 // On-screen chunks only — the whole-document parse is what made long docs lag.
-function visibleInlineTokens(view: EditorView, scan: DocScan): Token[] {
+function visibleInline(view: EditorView, scan: DocScan): ReturnType<typeof tokenizeChunk> {
   const spans = view.visibleRanges.map(({ from, to }): [number, number] => [
     lineIndexAt(scan, from),
     lineIndexAt(scan, to),
   ])
-  const out: Token[] = []
+  const tokens: Token[] = []
+  const html: [number, number][] = []
   chunkTokens(view, (read) => {
-    for (const [a, b] of chunksOver(scan, spans))
-      for (const tk of read(scan.text.slice(a, b))) out.push(shiftToken(tk, a))
+    for (const [a, b] of chunksOver(scan, spans)) {
+      const chunk = read(scan.text.slice(a, b))
+      for (const tk of chunk.tokens) tokens.push(shiftToken(tk, a))
+      for (const [f, t] of chunk.html) html.push([a + f, a + t])
+    }
   })
-  return out
+  return { tokens, html }
 }
 
 interface Built {
@@ -361,9 +370,11 @@ function build(view: EditorView, conn: ConnectionsApi | undefined, scope: Markdo
   const focused = view.hasFocus
   const sel = view.state.selection.main
   const settings = view.state.facet(editorHost).settings()
-  let tokens = visibleInlineTokens(view, scan)
+  const inline = visibleInline(view, scan)
   // A cell's text parses alone, where a leading tag reads as a block the table never holds.
-  if (scope === 'page' && settings.htmlFormatting) tokens = tokens.filter((tk) => !tk.inHtml)
+  const raw = scope === 'page' && settings.htmlFormatting ? inline.html : []
+  drawnRaw.set(view, raw)
+  let tokens = raw.length > 0 ? inline.tokens.filter((tk) => !tk.inHtml) : inline.tokens
   // A CLAIMED embed line's token styling stands down; the claim is the tile field's own predicate, so one owner decides.
   if (conn && scan.embeds.length > 0) {
     const claimed = claimedEmbeds(scan.embeds, (t) => conn.resolve(t).status)
@@ -556,8 +567,10 @@ function build(view: EditorView, conn: ConnectionsApi | undefined, scope: Markdo
     const sectionHeadings = docSectionHeadings(view.state.doc)
     const sectionMark = Decoration.mark({ class: 'md-connection-resolved md-section-run' })
     for (const { from: a, to: b } of view.visibleRanges)
-      for (const run of sectionRunsIn(text.slice(a, b), sectionHeadings, (o) =>
-        inCodeAt(scan, a + o),
+      for (const run of sectionRunsIn(
+        text.slice(a, b),
+        sectionHeadings,
+        (o) => inCodeAt(scan, a + o) || spanAt(raw, a + o) !== undefined,
       ))
         ranges.push(sectionMark.range(a + run.from, a + run.to))
   }
@@ -646,7 +659,7 @@ function decorationPlugin(
           u.selectionSet ||
           u.focusChanged ||
           u.viewportChanged ||
-          u.transactions.some((tr) => tr.effects.some((e) => e.is(resolutionNudge)))
+          u.transactions.some((tr) => tr.effects.some((e) => e.is(redrawNudge)))
         )
           this.built = build(u.view, getConn(), scope)
       }

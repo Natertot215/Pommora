@@ -25,7 +25,7 @@ import type { CitationMenuAction, CitationMenuContext } from './Citations/citati
 
 export const mirrored = Annotation.define<boolean>()
 
-export const resolutionNudge = StateEffect.define<null>()
+export const redrawNudge = StateEffect.define<null>()
 
 /** A cell is a document of its own, so the page editor is found from the element: a link or marker in a table answers to the page around it, from the table's seat. */
 export function pageEditorAt(el: Element): { seat: Element; view: EditorView | null } {
@@ -87,14 +87,16 @@ export type EditorSettings = {
 
 let resolved: { p: Personalization; commands: Commands; settings: EditorSettings } | null = null
 
-// Read on per-transaction paths, so it resolves again only when the personalization or the commands change.
+// Read on per-transaction paths, so it resolves again only when the personalization or the commands change, and stays the same object until an editor setting does.
 export function editorSettingsOf(p: Personalization, commands: Commands): EditorSettings {
   if (resolved?.p !== p || resolved.commands !== commands) {
+    const was = resolved?.commands === commands ? resolved.settings : null
     const values = Object.fromEntries(EDITOR_SETTING_KEYS.map((k) => [k, settingOf(p, k)]))
+    const same = was !== null && EDITOR_SETTING_KEYS.every((k) => was[k] === values[k])
     resolved = {
       p,
       commands,
-      settings: { ...(values as Omit<EditorSettings, 'commands'>), commands },
+      settings: same ? was : { ...(values as Omit<EditorSettings, 'commands'>), commands },
     }
   }
   return resolved.settings

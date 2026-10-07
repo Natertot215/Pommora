@@ -165,27 +165,9 @@ export function useEditorHost({
 }: EditorHostOptions): EditorHost {
   const connRef = useLatest(connections)
   const shown = useSession((s) => citationsVisible(s, pageId))
-  const cbLineCount = useSession((s) => personalizationOf(s).codeblockLineCount)
-  const htmlShortcuts = useSession((s) => personalizationOf(s).htmlShortcuts)
-  const htmlFormatting = useSession((s) => personalizationOf(s).htmlFormatting)
-  const headingLinkStyle = useSession((s) => personalizationOf(s).headingLinkStyle)
-  const inPageHeadingResolution = useSession((s) => personalizationOf(s).inPageHeadingResolution)
-  const commands = useSession(commandsOf)
+  const settings = useSession((s) => editorSettingsOf(personalizationOf(s), commandsOf(s)))
   return useMemo(
     () => buildEditorHost({ pageId, inert, pageSurface, preview }, connRef),
-    [
-      pageId,
-      connections,
-      inert,
-      pageSurface,
-      preview,
-      shown,
-      cbLineCount,
-      htmlShortcuts,
-      htmlFormatting,
-      headingLinkStyle,
-      inPageHeadingResolution,
-      commands,
-    ],
+    [pageId, connections, inert, pageSurface, preview, shown, settings],
   )
 }

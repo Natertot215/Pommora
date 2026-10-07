@@ -33,7 +33,7 @@ import { BlockMenuPane } from './Menus/BlockMenuPane'
 import { useBlockMenu } from './Menus/useBlockMenu'
 import type { ConnectionsApi } from './Links/connectionsApi'
 import type { WarmSeam } from './warmSeam'
-import { type EditorHost, editorHost, mirrorBody, mirrored, resolutionNudge } from './api'
+import { type EditorHost, editorHost, mirrorBody, mirrored, redrawNudge } from './api'
 import { useLatest } from '@pommora/uix/Utilities/stableApi'
 import { Scrollbar } from '@pommora/uix/Interactions/Scrollbar'
 import './markdown-pm.css'
@@ -105,18 +105,17 @@ export function MarkdownEditor({
 
   // Decorations rebuild only on editor updates, so a real tree change dispatches an empty transaction.
   useEffect(() => {
-    if (connections) viewRef.current?.dispatch({ effects: resolutionNudge.of(null) })
+    if (connections) viewRef.current?.dispatch({ effects: redrawNudge.of(null) })
   }, [connections])
 
-  const cbLineCount = host.settings().codeblockLineCount
+  const settings = host.settings()
   useEffect(() => {
     viewRef.current?.requestMeasure()
-  }, [cbLineCount])
+  }, [settings.codeblockLineCount])
 
-  const { headingLinkStyle, inPageHeadingResolution, htmlFormatting } = host.settings()
   useEffect(() => {
-    viewRef.current?.dispatch({ effects: resolutionNudge.of(null) })
-  }, [headingLinkStyle, inPageHeadingResolution, htmlFormatting])
+    viewRef.current?.dispatch({ effects: redrawNudge.of(null) })
+  }, [settings])
 
   useEffect(() => {
     const view = viewRef.current
@@ -151,8 +150,8 @@ export function MarkdownEditor({
     host,
     () => connectionsRef.current,
   )
-  const formatExt = useReconfigured(viewRef, host.settings().commands, formatKeymap)
-  const htmlExt = useReconfigured(viewRef, host.settings().htmlShortcuts, htmlShortcuts)
+  const formatExt = useReconfigured(viewRef, settings.commands, formatKeymap)
+  const htmlExt = useReconfigured(viewRef, settings.htmlShortcuts, htmlShortcuts)
   const block = useBlockMenu(viewRef)
 
   // The pane closing (Escape, a commit, a blur) leaves the § bare rather than arming the next keystroke near it.
