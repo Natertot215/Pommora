@@ -1,5 +1,6 @@
 import { HAS_SCHEME } from '../Paths/urlPath'
 import { normalizeTitle } from '../Paths/caseFold'
+import { stripMarkdownExt } from '../Paths/posix'
 
 export const MD_LINK = /^\[((?:[^\]\\]|\\.)*)\]\((.*)\)$/
 
@@ -73,7 +74,7 @@ export function targetTitle(rawTarget: string): string | null {
   if (!t) return null
   const decoded = decodeLinkTarget(t.page).trim()
   if (!decoded) return t.fragment ? '' : null
-  return decoded.replace(/\.md$/i, '')
+  return stripMarkdownExt(decoded)
 }
 
 export function targetFragment(rawTarget: string): string {
