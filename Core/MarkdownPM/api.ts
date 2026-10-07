@@ -14,6 +14,7 @@ import {
 } from '@codemirror/state'
 import { EditorView } from '@codemirror/view'
 import { type Personalization, type SettingValue, settingOf } from '../Settings/personalization'
+import { type DevicePrefs, devicePref } from '../Settings/devicePrefs'
 import type { HostContext } from '../Contract/handlers'
 import type { EditorPrefs, EditorPrefWrite } from '../Contract/bridge'
 import type { Commands } from '../Actions/commands'
@@ -61,8 +62,6 @@ const EDITOR_SETTING_KEYS = [
   'removeTitleOnLinkChange',
   'aliasPickerOnCommit',
   'jumpToCitation',
-  'pasteLinkIntoText',
-  'defaultLinkFormat',
   'headingLinkStyle',
   'inPageHeadingResolution',
   'transformDashes',
@@ -80,21 +79,38 @@ const EDITOR_SETTING_KEYS = [
   'deletePairsTogether',
   'exitPairsOnEnter',
 ] as const
+const EDITOR_DEVICE_KEYS = ['defaultLinkFormat', 'pasteLinksIntoText'] as const
 
 export type EditorSettings = {
   [K in (typeof EDITOR_SETTING_KEYS)[number]]: SettingValue<K>
+} & {
+  [K in (typeof EDITOR_DEVICE_KEYS)[number]]: NonNullable<DevicePrefs[K]>
 } & { commands: Commands }
 
-let resolved: { p: Personalization; commands: Commands; settings: EditorSettings } | null = null
+let resolved: {
+  p: Personalization
+  d: DevicePrefs
+  commands: Commands
+  settings: EditorSettings
+} | null = null
 
-// Read on per-transaction paths, so it resolves again only when the personalization or the commands change, and stays the same object until an editor setting does.
-export function editorSettingsOf(p: Personalization, commands: Commands): EditorSettings {
-  if (resolved?.p !== p || resolved.commands !== commands) {
+// Read on per-transaction paths, so it resolves again only when the personalization, the device preferences, or the commands change, and stays the same object until an editor setting does.
+export function editorSettingsOf(
+  p: Personalization,
+  d: DevicePrefs,
+  commands: Commands,
+): EditorSettings {
+  if (resolved?.p !== p || resolved.d !== d || resolved.commands !== commands) {
     const was = resolved?.commands === commands ? resolved.settings : null
-    const values = Object.fromEntries(EDITOR_SETTING_KEYS.map((k) => [k, settingOf(p, k)]))
-    const same = was !== null && EDITOR_SETTING_KEYS.every((k) => was[k] === values[k])
+    const values: Record<string, unknown> = {
+      ...Object.fromEntries(EDITOR_SETTING_KEYS.map((k) => [k, settingOf(p, k)])),
+      ...Object.fromEntries(EDITOR_DEVICE_KEYS.map((k) => [k, devicePref(d, k)])),
+    }
+    const same =
+      was !== null && Object.keys(values).every((k) => was[k as keyof EditorSettings] === values[k])
     resolved = {
       p,
+      d,
       commands,
       settings: same ? was : { ...(values as Omit<EditorSettings, 'commands'>), commands },
     }

@@ -1,7 +1,6 @@
 import { z } from 'zod'
 import { eachOf, numberCheck } from '../Files/decoders'
 import { columnStyle, DATE_FORMATS, type TimeFormat } from '../Properties/columnStyles'
-import { DEFAULT_LINK_DISPLAY, LINK_DISPLAYS } from '../Properties/properties'
 import { HELD_KINDS, type HeldKind } from '../Nexus/entities'
 import { type ColorSetting, isColorKey } from '@pommora/uix/Theme/colors'
 import { type NumberRange, type SteppedRange, steppedRange } from '@pommora/uix/Utilities/clamp'
@@ -191,8 +190,6 @@ const SETTINGS = {
   dateFormat: oneOf(DATE_FORMATS, 'full'),
   timeFormat: oneOf(TIME_FORMAT_SETTINGS, 'twelveHour'),
   trashColumnStyle: setting(columnStyle),
-  pasteLinkIntoText: flag(false),
-  defaultLinkFormat: oneOf(LINK_DISPLAYS, DEFAULT_LINK_DISPLAY),
   openLinksInApp: flag(false),
   webZoomFactor: scaled(1),
   embedScale: scaled(0.9),

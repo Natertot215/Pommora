@@ -32,7 +32,7 @@ function linkFor(view: EditorView, text: string, inverse: boolean): LinkPaste | 
     selectionText: view.state.sliceDoc(
       ...trimmedRange(docString(view.state.doc), sel.from, sel.to),
     ),
-    pasteIntoText: settings.pasteLinkIntoText,
+    pasteIntoText: settings.pasteLinksIntoText,
     inverse,
     format: settings.defaultLinkFormat,
     title: host.linkTitles.get(url) ?? undefined,
