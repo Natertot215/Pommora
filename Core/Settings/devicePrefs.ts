@@ -1,8 +1,10 @@
-// Preferences that belong to the MACHINE rather than the Nexus: menu style, interface scale, brightness, scrollbars, pane widths, sidebar and footer folds, window sizes and the navigation layouts are all true of the display and operating system in front of the user, so they stay with the device and travel nowhere.
+// Preferences that belong to the MACHINE rather than the Nexus: menu style, interface scale, brightness, scrollbars, pane widths, sidebar and footer folds, window sizes, the navigation layouts, and how links paste and paths copy stay with the device and travel nowhere.
 import { z } from 'zod'
 import type { NumberRange } from '@pommora/uix/Utilities/clamp'
 import { readValue } from '../Platform/localState'
 import { entriesOf, looseDecoder, numberCheck } from '../Files/decoders'
+import { PATH_FORMATS } from '../Paths/pathFormat'
+import { DEFAULT_LINK_DISPLAY, LINK_DISPLAYS } from '../Properties/properties'
 import { TENTHS_SCALE } from './personalization'
 
 export const SIDEBAR_WIDTH = { min: 180, max: 380, default: 240 }
@@ -36,6 +38,10 @@ const devicePrefs = looseDecoder(
       .catch(undefined),
     navWindowGallery: flag,
     navViewGallery: flag,
+    defaultLinkFormat: z.enum(LINK_DISPLAYS).optional().catch(undefined),
+    pasteLinksIntoText: flag,
+    defaultPathFormat: z.enum(PATH_FORMATS).optional().catch(undefined),
+    includeExtensions: flag,
   }),
 ).catch({})
 export type DevicePrefs = z.infer<typeof devicePrefs>
@@ -55,6 +61,10 @@ export const DEVICE_DEFAULTS = {
   brightness: TENTHS_SCALE.default,
   scrollbars: 'pages',
   scrollbarReveal: 'hover',
+  defaultLinkFormat: DEFAULT_LINK_DISPLAY,
+  pasteLinksIntoText: false,
+  defaultPathFormat: 'home',
+  includeExtensions: false,
 } as const satisfies Partial<Record<keyof DevicePrefs, unknown>>
 export type DeviceDefaultKey = keyof typeof DEVICE_DEFAULTS
 

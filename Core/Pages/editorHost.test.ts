@@ -138,6 +138,28 @@ describe('the host follows the editor settings', () => {
     expect(after.settings().htmlFormatting).toBe(false)
     act(() => root.unmount())
   })
+  it('re-identifies on an editor device preference, and stays put on any other', async () => {
+    useSession.setState({ tree: makeTree() })
+    const hosts: EditorHost[] = []
+    const Probe = (): null => {
+      hosts.push(useEditorHost({}))
+      return null
+    }
+    const root = createRoot(document.createElement('div'))
+    await act(async () => root.render(createElement(Probe)))
+    const first = hosts[hosts.length - 1]
+    await act(async () => useSession.setState({ devicePrefs: { pasteLinksIntoText: true } }))
+    const after = hosts[hosts.length - 1]
+    expect(after).not.toBe(first)
+    expect(after.settings().pasteLinksIntoText).toBe(true)
+    await act(async () =>
+      useSession.setState({
+        devicePrefs: { pasteLinksIntoText: true, windows: { nav: { w: 400, h: 300 } } },
+      }),
+    )
+    expect(hosts[hosts.length - 1]).toBe(after)
+    act(() => root.unmount())
+  })
 })
 
 describe('the alias memory', () => {

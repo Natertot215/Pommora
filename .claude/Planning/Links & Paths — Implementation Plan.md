@@ -34,16 +34,16 @@ Recorded at ratification on 10-06-2026, at `fcddee588`. The plan's own commit fo
 - `grep -rn "pasteLinkIntoText" Core | wc -l` → 6. Retires to 0.
 - `grep -rn "action: 'reveal'\|'reveal'" Core/Actions Core/Interface | wc -l` → 3. Retires to 0.
 
-**START:** `<date -u +"%Y-%m-%dT%H:%M:%SZ" as Task 1.1 begins>`
+**START:** 2026-10-07T03:19:27Z
 **END:** `<same, as the report is given>`
 
 #### Implementation Process
 
-- [ ] **Phase 1** — Links & Paths Settings
-  - [ ] Task 1.1
-  - [ ] Task 1.2
-  - [ ] Task 1.3
-  - [ ] Task 1.4
+- [x] **Phase 1** — Links & Paths Settings
+  - [x] Task 1.1
+  - [x] Task 1.2
+  - [x] Task 1.3
+  - [x] Task 1.4
 - [ ] **Phase 2** — Copy Path
   - [ ] Task 2.1
   - [ ] Task 2.2

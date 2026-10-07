@@ -68,7 +68,7 @@ function harnessHost(
   bump: () => void,
 ): HarnessState {
   const state = {
-    settings: { ...editorSettingsOf({}, DEFAULT_COMMANDS), ...spec.settings },
+    settings: { ...editorSettingsOf({}, {}, DEFAULT_COMMANDS), ...spec.settings },
     aliases: { ...spec.aliases },
     bodies: { ...spec.bodies },
     linkTitles: { ...spec.linkTitles },

@@ -60,7 +60,7 @@ function buildEditorHost(
   return {
     settings: () => {
       const s = state()
-      return editorSettingsOf(personalizationOf(s), commandsOf(s))
+      return editorSettingsOf(personalizationOf(s), s.devicePrefs, commandsOf(s))
     },
     aliases: {
       list: worn,
@@ -165,7 +165,9 @@ export function useEditorHost({
 }: EditorHostOptions): EditorHost {
   const connRef = useLatest(connections)
   const shown = useSession((s) => citationsVisible(s, pageId))
-  const settings = useSession((s) => editorSettingsOf(personalizationOf(s), commandsOf(s)))
+  const settings = useSession((s) =>
+    editorSettingsOf(personalizationOf(s), s.devicePrefs, commandsOf(s)),
+  )
   return useMemo(
     () => buildEditorHost({ pageId, inert, pageSurface, preview }, connRef),
     [pageId, connections, inert, pageSurface, preview, shown, settings],

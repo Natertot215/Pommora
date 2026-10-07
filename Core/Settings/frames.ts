@@ -12,6 +12,7 @@ import { type NumberUnit, unitLabel } from '@pommora/uix/Pickers/numberUnit'
 import type { NumberRange } from '@pommora/uix/Utilities/clamp'
 import { LINK_FORMAT_OPTIONS } from '../Properties/Schema/linkFormatOptions'
 import type { LinkDisplay } from '../Properties/properties'
+import type { PathFormat } from '../Paths/pathFormat'
 import {
   HEADING_LINK_STYLE_LABELS,
   HEADING_LINK_STYLES,
@@ -56,6 +57,11 @@ const SCROLLBAR_PRESENCE_OPTIONS: readonly PickerOption<ScrollbarPresence>[] = [
 const SCROLLBAR_REVEAL_OPTIONS: readonly PickerOption<ScrollbarReveal>[] = [
   { value: 'always', label: 'Always' },
   { value: 'hover', label: 'On Hover' },
+]
+const PATH_FORMAT_OPTIONS: readonly PickerOption<PathFormat>[] = [
+  { value: 'absolute', label: 'Absolute' },
+  { value: 'home', label: 'Home Anchored' },
+  { value: 'relative', label: 'Relative' },
 ]
 
 type KeyOf<V> = { [K in SettingKey]: SettingValue<K> extends V ? K : never }[SettingKey]
@@ -118,6 +124,7 @@ export type Row =
   | PickerControlRow<Placement>
   | PickerControlRow<ScrollbarPresence>
   | PickerControlRow<ScrollbarReveal>
+  | PickerControlRow<PathFormat>
   | (RowText & {
       kind: 'nexus'
     })
@@ -488,20 +495,37 @@ export const FRAMES = roster([
     icon: 'folder-tree',
     sections: [
       {
-        title: 'Pasted Links',
+        title: 'Links & Paths',
         rows: [
           {
             kind: 'picker',
             key: 'defaultLinkFormat',
-            label: 'Default Format',
-            hint: 'How a pasted link reads.',
+            device: true,
+            label: 'Default Link Format',
+            hint: 'The format an external link is pasted with by default.',
             options: LINK_FORMAT_OPTIONS,
           },
           {
             kind: 'toggle',
-            key: 'pasteLinkIntoText',
-            label: 'Paste Link Into Text',
+            key: 'pasteLinksIntoText',
+            device: true,
+            label: 'Paste Links Into Text',
             hint: 'Pasting an address over selected text turns that text into the link, instead of replacing it.',
+          },
+          {
+            kind: 'picker',
+            key: 'defaultPathFormat',
+            device: true,
+            label: 'Default Path Format',
+            hint: 'How file paths on this machine are copied to the clipboard.',
+            options: PATH_FORMAT_OPTIONS,
+          },
+          {
+            kind: 'toggle',
+            key: 'includeExtensions',
+            device: true,
+            label: 'Include Extensions',
+            hint: "Include file extensions in the clipboard's path.",
           },
         ],
       },

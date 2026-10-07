@@ -83,12 +83,16 @@ The three colors the interface derives from. Each opens the ramp grid without it
 
 #### Files & Links
 
-**Pasted Links**
+**Links & Paths**
+
+Every setting here is a machine-level preference, stored in the device database rather than the Nexus.
 
 | Setting | Key | Description | Options |
 | --- | --- | --- | --- |
-| Default Format | `defaultLinkFormat` | Which form a pasted address is written in. | **Full Link** · Short Link · Page Title |
-| Paste Link Into Text | `pasteLinkIntoText` | Pasting an address over selected text turns that text into the link instead of replacing it. | On · **Off** |
+| Default Link Format | `defaultLinkFormat` | Which form a pasted external address is written in. | **Full Link** · Short Link · Page Title |
+| Paste Links Into Text | `pasteLinksIntoText` | Pasting an address over selected text turns that text into the link instead of replacing it. | On · **Off** |
+| Default Path Format | `defaultPathFormat` | How Copy Path writes a page's or folder's location: from the filesystem root, from the home folder as `~/`, or from the Nexus root. A Nexus outside the home folder copies Home Anchored paths as Absolute, and a Windows machine writes them with backslashes. | Absolute · **Home Anchored** · Relative |
+| Include Extensions | `includeExtensions` | Copy Path keeps a page's `.md` extension. | On · **Off** |
 
 **Connections**
 
@@ -252,7 +256,7 @@ More keys sit at the settings root beside `personalization`: `excluded_folders`,
 
 ### App Configuration (Per-Device)
 
-Cross-session, machine-local state in `pommora.json` under the app's userData directory (`Desktop/Config/appConfig.ts`): the last-opened Nexus, the roll-off list of recently opened Nexuses behind Open Recent, the delete target — the in-Nexus `.trash` or the system trash — and the device, whose public key, fingerprint, and name identify this install. The device's two private keys — the signing key and the agreement key — sit keychain-encrypted in the same folder's `secrets.json`, beside each bound Nexus's password and its wrapped ring entries. Neither file is ever part of a Nexus and neither syncs. A second class of machine-local state lives in each Nexus's database in the same directory, as preferences for a machine-and-Nexus pair; Use Native Menus is the first.
+Cross-session, machine-local state in `pommora.json` under the app's userData directory (`Desktop/Config/appConfig.ts`): the last-opened Nexus, the roll-off list of recently opened Nexuses behind Open Recent, the delete target — the in-Nexus `.trash` or the system trash — and the device, whose public key, fingerprint, and name identify this install. The device's two private keys — the signing key and the agreement key — sit keychain-encrypted in the same folder's `secrets.json`, beside each bound Nexus's password and its wrapped ring entries. Neither file is ever part of a Nexus and neither syncs. A second class of machine-local state lives in each Nexus's database in the same directory, as preferences for a machine-and-Nexus pair.
 
 ---
 

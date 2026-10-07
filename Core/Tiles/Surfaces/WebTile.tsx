@@ -8,6 +8,7 @@ import { linkDisplayText } from '../../Connections/linkValue'
 import { WebGuest, type WebGuestHandle } from '../../Web/WebGuest'
 import { useDismissal } from '@pommora/uix/Interactions/dismissalStack'
 import { useSession, useSetting } from '../../Session/store'
+import { devicePref } from '../../Settings/devicePrefs'
 import { openWebLink } from '../../Web/openWebLink'
 import { webGuestRetention } from './webRetention'
 import { revealTarget } from '@pommora/uix/Interactions/hover-reveal.css'
@@ -18,7 +19,7 @@ import '../tile-title.css'
 const CAPTURE_DEADLINE_MS = 200
 
 function useWebpageTitle(label: string, url: string): string {
-  const display = useSetting('defaultLinkFormat')
+  const display = useSession((s) => devicePref(s.devicePrefs, 'defaultLinkFormat'))
   const title = useSession((s) => s.linkTitles[url])
   const resolveLinkTitle = useSession((s) => s.resolveLinkTitle)
   const wantsTitle = label === '' && display === 'link-title'

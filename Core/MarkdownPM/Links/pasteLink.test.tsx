@@ -2,7 +2,7 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest'
 import { act } from 'react'
 import type { EditorView } from '@codemirror/view'
-import type { Personalization } from '../../Settings/personalization'
+import type { EditorSettings } from '../api'
 import {
   stubEditorBridge,
   mountEditor,
@@ -38,7 +38,7 @@ function chord(view: EditorView): void {
   )
 }
 
-const settings = (p: Partial<Personalization>): void => {
+const settings = (p: Partial<EditorSettings>): void => {
   seedHost({ settings: p, clipboard: { read: async () => clipboard } })
 }
 
@@ -66,7 +66,7 @@ describe('pasting an address into the editor', () => {
   })
 
   it('wraps a selection when that setting is on', async () => {
-    settings({ pasteLinkIntoText: true })
+    settings({ pasteLinksIntoText: true })
     const view = await mountEditor({ initialBody: 'read the docs now' })
     view.dispatch({ selection: { anchor: 9, head: 13 } })
     await act(async () => paste(view, URL))
@@ -187,7 +187,7 @@ describe('the inverse chord', () => {
   })
 
   it('replaces a selection with the formatted link where a plain paste would have wrapped it', async () => {
-    settings({ pasteLinkIntoText: true })
+    settings({ pasteLinksIntoText: true })
     const view = await mountEditor({ initialBody: 'read the docs now' })
     view.dispatch({ selection: { anchor: 9, head: 13 } })
     await act(async () => chord(view))
