@@ -146,14 +146,6 @@ const diffBreak =
     return apply(view, edits[0] ?? null)
   }
 
-// A paste never reaches the input handler, so the margin refuses it here: every paste path tags itself `input.paste`.
-const marginPaste = EditorState.transactionFilter.of((tr) =>
-  tr.isUserEvent('input.paste') &&
-  caretInMargin(docScan(tr.startState.doc), tr.startState.selection.main)
-    ? []
-    : tr,
-)
-
 // Forward-delete at the end of the line above a table would join prose into the header row, so it mirrors the backspace atomic behavior instead.
 /** Dispatched rather than returned into the transform chain: removing a footnote is two disjoint sites, and the edit that chain carries is a single range. */
 const citationCascade = (view: EditorView, from: number, to: number): boolean => {
@@ -265,7 +257,6 @@ export const typedInput = (scope: MarkdownScope): Extension =>
 
 export const markdownInput = [
   typedLine,
-  marginPaste,
   Prec.high(
     keymap.of([
       { key: 'Enter', run: commitAliasOnEnter },
