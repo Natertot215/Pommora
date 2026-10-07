@@ -8,7 +8,6 @@ const at = (over: Partial<PasteInput> = {}): ReturnType<typeof decidePaste> =>
   decidePaste({
     clipboard: URL,
     selectionText: '',
-    pasteIntoText: false,
     inverse: false,
     format: 'link-full',
     ...over,
@@ -64,38 +63,27 @@ describe('decidePaste — no selection, the format axis', () => {
 describe('decidePaste — a selection, the wrap axis', () => {
   const sel = { selectionText: 'the docs' }
 
-  it('wraps the selection on ⌘V when the setting is on', () => {
-    expect(textOf(at({ ...sel, pasteIntoText: true }))).toBe(`[the docs](${URL})`)
-  })
-
-  it('wraps under the inverse when the setting is off', () => {
-    expect(textOf(at({ ...sel, pasteIntoText: false, inverse: true }))).toBe(`[the docs](${URL})`)
+  it('wraps the selection on ⌘V', () => {
+    expect(textOf(at(sel))).toBe(`[the docs](${URL})`)
   })
 
   // Not wrapping means the selection is replaced, which is an ordinary paste at a caret — and a caret paste formats. The inverse was already spent choosing the axis, so it does not flip the format a second time.
   it('formats when it does not wrap', () => {
-    expect(textOf(at({ ...sel, pasteIntoText: false }))).toBe(`[${URL}](${URL})`)
-    expect(textOf(at({ ...sel, pasteIntoText: true, inverse: true }))).toBe(`[${URL}](${URL})`)
+    expect(textOf(at({ ...sel, inverse: true }))).toBe(`[${URL}](${URL})`)
   })
 
   it('escapes a selection carrying the characters that would break the shape', () => {
-    expect(textOf(at({ selectionText: 'Chapter [2]', pasteIntoText: true }))).toBe(
-      `[Chapter [2\\]](${URL})`,
-    )
+    expect(textOf(at({ selectionText: 'Chapter [2]' }))).toBe(`[Chapter [2\\]](${URL})`)
   })
 
   // A multi-line selection is not a label — the link would straddle a line break and stop being one. The selection is replaced by the caret paste's formatted link instead.
   it('does not wrap a selection spanning a line break', () => {
-    expect(textOf(at({ selectionText: 'two\nlines', pasteIntoText: true }))).toBe(
-      `[${URL}](${URL})`,
-    )
+    expect(textOf(at({ selectionText: 'two\nlines' }))).toBe(`[${URL}](${URL})`)
   })
 
   // The whole point of the wrap: your words are the label, so the nexus-wide format has nothing to say about it.
   it('ignores the default format when wrapping', () => {
-    expect(textOf(at({ ...sel, pasteIntoText: true, format: 'link-short' }))).toBe(
-      `[the docs](${URL})`,
-    )
+    expect(textOf(at({ ...sel, format: 'link-short' }))).toBe(`[the docs](${URL})`)
   })
 })
 

@@ -7,7 +7,6 @@ import type { LinkDisplay } from '../../Properties/properties'
 export interface PasteInput {
   clipboard: string
   selectionText: string
-  pasteIntoText: boolean
   inverse: boolean
   format: LinkDisplay
   /** A cached page title; absent means Page Title has to fetch one. */
@@ -33,7 +32,7 @@ export function decidePaste(input: PasteInput): PasteDecision {
 
   // A selection chooses the wrap axis; a bare caret chooses the format axis. The chord inverts only whichever axis is in play.
   const wrappable = input.selectionText !== '' && !/[\r\n]/.test(input.selectionText)
-  if (wrappable && (input.inverse ? !input.pasteIntoText : input.pasteIntoText))
+  if (wrappable && !input.inverse)
     return {
       kind: 'link',
       text: serializeLink({ url: target, alias: input.selectionText }),

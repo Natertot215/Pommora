@@ -90,7 +90,6 @@ Every setting here is a machine-level preference, stored in the device database 
 | Setting | Key | Description | Options |
 | --- | --- | --- | --- |
 | Default Link Format | `defaultLinkFormat` | Which form a pasted external address is written in. | **Full Link** · Short Link · Page Title |
-| Paste Links Into Text | `pasteLinksIntoText` | Pasting an address over selected text turns that text into the link instead of replacing it. | On · **Off** |
 | Default Path Format | `defaultPathFormat` | How Copy Path writes a page's or folder's location: from the filesystem root, from the home folder as `~/`, or from the Nexus root. A Nexus outside the home folder copies Home Anchored paths as Absolute, and a Windows machine writes every form with backslashes. | Absolute · **Home Anchored** · Relative |
 | Include Extensions | `includeExtensions` | Copy Path keeps a page's `.md` extension. | On · **Off** |
 

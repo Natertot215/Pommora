@@ -79,7 +79,7 @@ const EDITOR_SETTING_KEYS = [
   'deletePairsTogether',
   'exitPairsOnEnter',
 ] as const
-const EDITOR_DEVICE_KEYS = ['defaultLinkFormat', 'pasteLinksIntoText'] as const
+const EDITOR_DEVICE_KEYS = ['defaultLinkFormat'] as const
 const EDITOR_KEYS = [...EDITOR_SETTING_KEYS, ...EDITOR_DEVICE_KEYS] as const
 
 export type EditorSettings = {

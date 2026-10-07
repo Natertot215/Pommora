@@ -65,8 +65,7 @@ describe('pasting an address into the editor', () => {
     expect(view.state.doc.toString()).toBe(`[example.com](${URL})`)
   })
 
-  it('wraps a selection when that setting is on', async () => {
-    settings({ pasteLinksIntoText: true })
+  it('wraps a selection', async () => {
     const view = await mountEditor({ initialBody: 'read the docs now' })
     view.dispatch({ selection: { anchor: 9, head: 13 } })
     await act(async () => paste(view, URL))
@@ -179,15 +178,7 @@ describe('the inverse chord', () => {
     expect(view.state.doc.toString()).toBe(URL)
   })
 
-  it('wraps a selection where a plain paste would have replaced it', async () => {
-    const view = await mountEditor({ initialBody: 'read the docs now' })
-    view.dispatch({ selection: { anchor: 9, head: 13 } })
-    await act(async () => chord(view))
-    expect(view.state.doc.toString()).toBe(`read the [docs](${URL}) now`)
-  })
-
   it('replaces a selection with the formatted link where a plain paste would have wrapped it', async () => {
-    settings({ pasteLinksIntoText: true })
     const view = await mountEditor({ initialBody: 'read the docs now' })
     view.dispatch({ selection: { anchor: 9, head: 13 } })
     await act(async () => chord(view))

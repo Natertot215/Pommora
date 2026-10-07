@@ -148,13 +148,13 @@ describe('the host follows the editor settings', () => {
     const root = createRoot(document.createElement('div'))
     await act(async () => root.render(createElement(Probe)))
     const first = hosts[hosts.length - 1]
-    await act(async () => useSession.setState({ devicePrefs: { pasteLinksIntoText: true } }))
+    await act(async () => useSession.setState({ devicePrefs: { defaultLinkFormat: 'link-short' } }))
     const after = hosts[hosts.length - 1]
     expect(after).not.toBe(first)
-    expect(after.settings().pasteLinksIntoText).toBe(true)
+    expect(after.settings().defaultLinkFormat).toBe('link-short')
     await act(async () =>
       useSession.setState({
-        devicePrefs: { pasteLinksIntoText: true, windows: { nav: { w: 400, h: 300 } } },
+        devicePrefs: { defaultLinkFormat: 'link-short', windows: { nav: { w: 400, h: 300 } } },
       }),
     )
     expect(hosts[hosts.length - 1]).toBe(after)
