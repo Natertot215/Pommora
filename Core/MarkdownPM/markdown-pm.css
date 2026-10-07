@@ -858,6 +858,9 @@
 .mdpm-editor .md-diff-del {
   --diff-color: var(--solid-red);
 }
+.mdpm-editor .md-diff-mod {
+  --diff-color: var(--solid-light-blue);
+}
 .mdpm-editor .md-diff-first {
   border-top-left-radius: var(--diff-radius-l);
   border-top-right-radius: var(--diff-radius);

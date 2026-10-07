@@ -23,6 +23,7 @@ import {
   headingParts,
   fenceBodyStart,
   signedLine,
+  signKind,
   type ListMarker,
   type MarkdownScope,
 } from '../Engine/detect'
@@ -186,7 +187,7 @@ function markerEndOf(line: string, scope: MarkdownScope): number | null {
 
 /** A diff line's margin takes only a sign, which becomes the line's own, standing in for the other; the one it already wears changes nothing. */
 export function marginSign(scan: DocScan, seat: number, text: string): Edit | null {
-  if (text !== '+' && text !== '-') return null
+  if (!signKind(text)) return null
   const signed = signedLine(scan.fences[lineIndexAt(scan, seat)])
   if (signed && scan.text[seat - 1] === text) return null
   return {
