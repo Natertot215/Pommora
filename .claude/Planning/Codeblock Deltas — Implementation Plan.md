@@ -42,8 +42,8 @@ The plan also tidies what it touches. The old diff highlighter retires, the tag 
 - [x] **Phase 1** — One Fence Reading
   - [x] Task 1.1
   - [x] Task 1.2
-- [ ] **Phase 2** — Colors Past The Sign
-  - [ ] Task 2.1
+- [x] **Phase 2** — Colors Past The Sign
+  - [x] Task 2.1
 - [ ] **Phase 3** — Bars, Fills, And The Caret
   - [ ] Task 3.1
   - [ ] Task 3.2
@@ -440,10 +440,10 @@ The plan also tidies what it touches. The old diff highlighter retires, the tag 
 
 **TASK**
 
-- [ ] Generalize the `painted` test helper, write the diff paint tests, and watch them fail.
-- [ ] Replace the exported `codeLanguages` array with a `codeLanguage` resolver built on `codeFence`, and hand it to both `markdown()` calls.
-- [ ] Have `paint` drop the sign column and blank header lines.
-- [ ] Rewrite *Editor-Internals*'s code-colors sentence.
+- [x] Generalize the `painted` test helper, write the diff paint tests, and watch them fail.
+- [x] Replace the exported `codeLanguages` array with a `codeLanguage` resolver built on `codeFence`, and hand it to both `markdown()` calls.
+- [x] Have `paint` drop the sign column and blank header lines.
+- [x] Rewrite *Editor-Internals*'s code-colors sentence.
 
 ```diff|ts
 --- a/Core/MarkdownPM/codeHighlight.ts
@@ -543,9 +543,9 @@ The plan also tidies what it touches. The old diff highlighter retires, the tag 
 
 **VERIFY**
 
-- [ ] The two new color tests fail before the `paint` change (YAML reads `+key`, the header's `const` paints) and pass after.
-- [ ] Run the gates. `grep -rn "matchLanguageName\|codeLanguages\b" Core --include='*.ts' --include='*.tsx'` → only the `codeLanguages:` option key in `MarkdownEditor.tsx` and `codeHighlight.ts`.
-- [ ] Check the work for unnecessary code or obvious mistakes.
+- [x] The two new color tests fail before the `paint` change (YAML reads `+key`, the header's `const` paints) and pass after.
+- [x] Run the gates. `grep -rn "matchLanguageName\|codeLanguages\b" Core --include='*.ts' --include='*.tsx'` → only the `codeLanguages:` option key in `MarkdownEditor.tsx` and `codeHighlight.ts`.
+- [x] Check the work for unnecessary code or obvious mistakes.
 
 ### Phase 3 — Bars, Fills, And The Caret
 

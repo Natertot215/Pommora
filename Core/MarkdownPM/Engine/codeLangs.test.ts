@@ -3,7 +3,7 @@ import { describe, it, expect } from 'vitest'
 import { EditorState } from '@codemirror/state'
 import { EditorView } from '@codemirror/view'
 import { CODE_LANGS, codeFence } from './codeLangs'
-import { codeHighlight, codeLanguages } from '../codeHighlight'
+import { codeHighlight, codeLanguage } from '../codeHighlight'
 import { CODE_TAGS } from '../codeGlyphs'
 
 describe('the code-language roster', () => {
@@ -71,16 +71,14 @@ describe('a fence word', () => {
 })
 
 describe('a code block’s colors', () => {
-  const painted = async (doc: string): Promise<string[]> => {
+  const painted = async (doc: string, word = 'js', cls = 'syntax-keyword'): Promise<string[]> => {
     const view = new EditorView({
       state: EditorState.create({ doc, extensions: [codeHighlight] }),
       parent: document.body,
     })
-    await codeLanguages.find((l) => l.name === 'JavaScript')?.load()
+    await codeLanguage(word)?.load()
     await new Promise((r) => setTimeout(r, 0))
-    const words = [...view.contentDOM.querySelectorAll('.syntax-keyword')].map(
-      (e) => e.textContent ?? '',
-    )
+    const words = [...view.contentDOM.querySelectorAll(`.${cls}`)].map((e) => e.textContent ?? '')
     view.destroy()
     return words
   }
@@ -92,5 +90,19 @@ describe('a code block’s colors', () => {
   it('stay off prose the fences don’t hold', async () => {
     expect(await painted('const a = 1\n\n```js\nlet b\n```')).toEqual(['let'])
     expect(await painted('```js\nconst a = 1')).toEqual([])
+  })
+
+  it('color a diff block as the language it names, past each sign', async () => {
+    expect(await painted('```diff-yaml\n+key: 1\n-old: 2\n```', 'yaml', 'syntax-key')).toEqual([
+      'key',
+      'old',
+    ])
+  })
+
+  it('leave a diff block’s headers, and a bare diff, uncolored', async () => {
+    expect(await painted('```js|diff\n--- a/x.js\n+++ b/x.js\n@@ const @@\n+let a\n```')).toEqual([
+      'let',
+    ])
+    expect(await painted('```diff\n+const a = 1\n```')).toEqual([])
   })
 })

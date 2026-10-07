@@ -20,7 +20,7 @@ import { fenceBodyStart, type FenceInfo } from './Engine/detect'
 import type { DocScan } from './Engine/docScan'
 import { lineEndOf, lineIndexAt, lineOffsetsOf } from './Engine/markdownCode'
 import { perText } from './Engine/perText'
-import { CODE_LANGS, type CodeLangName } from './Engine/codeLangs'
+import { CODE_LANGS, type CodeLangName, codeFence } from './Engine/codeLangs'
 
 /** A legacy stream mode dressed as the language support a description hands back. */
 const stream = (mode: Promise<unknown>): Promise<LanguageSupport> =>
@@ -121,11 +121,17 @@ const LOADERS: Record<CodeLangName, () => Promise<LanguageSupport>> = {
 }
 
 /** A name the loaders don't know would be a language the fence recognizes and then fails to parse, so LOADERS is keyed by the roster's names. */
-export const codeLanguages = CODE_LANGS.map(({ name, alias }) =>
-  LanguageDescription.of({ name, alias: [...alias], load: LOADERS[name] }),
+const described = new Map(
+  CODE_LANGS.map(({ name }) => [name, LanguageDescription.of({ name, load: LOADERS[name] })]),
 )
 
-const blockParser = markdown({ codeLanguages }).language.parser
+/** The page's own parse and the block colors both read a fence through this, so a fence colors as exactly the language its tag names. */
+export const codeLanguage = (info: string): LanguageDescription | null => {
+  const { name } = codeFence(info)
+  return name ? (described.get(name) ?? null) : null
+}
+
+const blockParser = markdown({ codeLanguages: codeLanguage }).language.parser
 
 const loaded = StateEffect.define<null>()
 
@@ -160,8 +166,13 @@ function paint(
 ): number {
   const open = lineIndexAt(scan, f.from)
   const close = lineIndexAt(scan, f.to)
-  const lines = scan.lines.slice(open, close + 1).map((line) => line.slice(fenceBodyStart(line, f)))
-  const desc = f.lang ? LanguageDescription.matchLanguageName(codeLanguages, f.lang, true) : null
+  // A diff line parses past its sign, and a header as nothing; marks map back by line end, so the trimmed start costs no offset math.
+  const lines = scan.lines.slice(open, close + 1).map((line, k) => {
+    const body = line.slice(fenceBodyStart(line, f))
+    const sign = scan.fences[open + k]?.diff
+    return sign === 'head' ? '' : sign ? body.slice(1) : body
+  })
+  const desc = f.lang ? codeLanguage(f.lang) : null
   if (desc && !desc.support)
     desc.load().then(() => {
       if (view.dom.isConnected) view.dispatch({ effects: loaded.of(null) })
