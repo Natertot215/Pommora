@@ -693,7 +693,14 @@ const caretSeat = (scope: MarkdownScope): Extension => {
       },
     }
   })
-  // A drop into the margin lands nothing, as a paste there does.
+  // The margin takes only a typed sign, and a paste or a drop never reaches the input handler that admits one, so both land nothing there: a paste from a caret in the margin, a drop from a pointer over it. Every paste path tags itself `input.paste`.
+  const pasteMargin = EditorState.transactionFilter.of((tr) =>
+    page &&
+    tr.isUserEvent('input.paste') &&
+    caretInMargin(docScan(tr.startState.doc), tr.startState.selection.main)
+      ? []
+      : tr,
+  )
   const dropMargin = EditorView.domEventHandlers({
     drop(e, view) {
       if (!page || !seatUnder(view, e.clientX, e.clientY)?.margin) return false
@@ -715,6 +722,7 @@ const caretSeat = (scope: MarkdownScope): Extension => {
   const shift = (view: EditorView) => leaveLine(view, true)
   return [
     pressMargin,
+    pasteMargin,
     dropMargin,
     EditorState.transactionFilter.of((tr) => {
       if (!tr.selection && !tr.docChanged) return tr
