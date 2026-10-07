@@ -39,7 +39,6 @@ const devicePrefs = looseDecoder(
     navWindowGallery: flag,
     navViewGallery: flag,
     defaultLinkFormat: z.enum(LINK_DISPLAYS).optional().catch(undefined),
-    pasteLinksIntoText: flag,
     defaultPathFormat: z.enum(PATH_FORMATS).optional().catch(undefined),
     includeExtensions: flag,
   }),
@@ -62,7 +61,6 @@ export const DEVICE_DEFAULTS = {
   scrollbars: 'pages',
   scrollbarReveal: 'hover',
   defaultLinkFormat: DEFAULT_LINK_DISPLAY,
-  pasteLinksIntoText: false,
   defaultPathFormat: 'home',
   includeExtensions: false,
 } as const satisfies { [K in keyof DevicePrefs]?: NonNullable<DevicePrefs[K]> }

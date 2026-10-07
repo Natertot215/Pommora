@@ -506,13 +506,6 @@ export const FRAMES = roster([
             options: LINK_FORMAT_OPTIONS,
           },
           {
-            kind: 'toggle',
-            key: 'pasteLinksIntoText',
-            device: true,
-            label: 'Paste Links Into Text',
-            hint: 'Pasting an address over selected text turns that text into the link, instead of replacing it.',
-          },
-          {
             kind: 'picker',
             key: 'defaultPathFormat',
             device: true,
