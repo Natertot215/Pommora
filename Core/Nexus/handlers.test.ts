@@ -3,9 +3,11 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { HostContext } from '../Contract/handlers'
 import { writeJournal } from '../Contexts/contextJournal'
 import { contextsDir, contextsRegistryFile } from '../Paths/paths'
-import { join } from '../Paths/posix'
+import { basename, dirname, join } from '../Paths/posix'
 import { readValue, writeValue } from '../Platform/localState'
 import { installStores, NO_STORES } from '../Platform/stores'
+import { installMachine, machine } from '../Platform/machine'
+import { diskMachine } from '../Testing/machines'
 import { currentSession, startSession, stopSession } from '../Sync/Client/session'
 import { currentStatus } from '../Sync/Client/status'
 import { tempRoot, readJsonAt } from '../Testing/hostFs'
@@ -450,5 +452,25 @@ describe('openNexusSequence', () => {
     await vi.waitFor(async () =>
       expect(await readFile(linker, 'utf8')).toContain('[[Notes#Intro]]'),
     )
+  })
+})
+
+describe('path:copy', () => {
+  afterEach(() => installMachine(diskMachine()))
+
+  it('writes the Default Path Format to the clipboard, with or without the extension', async () => {
+    const write = vi.fn(async () => {})
+    ctx.clipboard = { read: async () => '', write }
+    await openNexusSequence(ctx, root, false)
+    const at = sessionRoot()!
+    installMachine({ ...machine(), home: dirname(at) })
+
+    await nexusHandlers['path:copy'](ctx, 'Library/Notes.md')
+    expect(write).toHaveBeenLastCalledWith(`~/${basename(at)}/Library/Notes`)
+
+    writeValue('devicePrefs', { defaultPathFormat: 'relative', includeExtensions: true })
+    await nexusHandlers['path:copy'](ctx, 'Library/Notes.md')
+    expect(write).toHaveBeenLastCalledWith('Library/Notes.md')
+    expect(write).toHaveBeenCalledTimes(2)
   })
 })

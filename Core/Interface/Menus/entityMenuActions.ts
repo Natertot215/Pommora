@@ -23,12 +23,11 @@ import {
   type PropertyMenuTarget,
   runPropertyAction,
 } from './propertyMenuActions'
-import { dialer } from '../../Platform/dialer'
 import { popMenu } from '../../Actions/menuActions'
 import { createNamed, newPageAdjacent } from '../../Actions/createActions'
 import { useSession } from '../../Session/store'
 import { confirmDelete } from '../Confirm/confirmations'
-import { runPageAction } from './pageMenuActions'
+import { runPageAction, runPathAction } from './pageMenuActions'
 
 function creatorsFor(target: EntityMenuTarget): Creator[] {
   switch (target.kind) {
@@ -105,6 +104,7 @@ function runEntityAction(
   const s = useSession.getState()
   const { path, id, kind } = target
   if (kind === 'page' && id && runPageAction(action, { id, path, title: target.title })) return
+  if (runPathAction(action, path)) return
   const ref = target.id ? { kind: target.kind, id: target.id, path } : undefined
   switch (action) {
     case 'preview': {
@@ -129,9 +129,6 @@ function runEntityAction(
     case 'title:newabove':
     case 'title:newbelow':
       void newPageAdjacent(path, action === 'title:newabove' ? 'above' : 'below', target.host)
-      return
-    case 'reveal':
-      void dialer().ask('path:reveal', path)
       return
     case 'delete':
       void confirmDelete(target)

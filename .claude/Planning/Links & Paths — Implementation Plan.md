@@ -45,9 +45,9 @@ Recorded at ratification on 10-06-2026, at `fcddee588`. The plan's own commit fo
   - [x] Task 1.3
   - [x] Task 1.4
 - [ ] **Phase 2** — Copy Path
-  - [ ] Task 2.1
-  - [ ] Task 2.2
-  - [ ] Task 2.3
+  - [x] Task 2.1
+  - [x] Task 2.2
+  - [x] Task 2.3
   - [ ] Task 2.4
 
 ### Phase 1 — Links & Paths Settings

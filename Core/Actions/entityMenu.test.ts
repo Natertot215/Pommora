@@ -38,7 +38,7 @@ describe('the sidebar entity menu', () => {
     expect(items[0].label).toBe('Open')
   })
 
-  it('a sidebar collection opens, creates, renames, deletes, locks, and reveals in four groups', () => {
+  it('a sidebar collection opens, creates, renames, deletes, locks, copies its path, and reveals in four groups', () => {
     const items = entityMenuItems(
       { kind: 'collection', id: 'c1', path: 'Notes', title: 'Notes', host: 'sidebar' },
       creators,
@@ -52,9 +52,11 @@ describe('the sidebar entity menu', () => {
       'Delete',
       '—',
       'Lock Folder',
+      'Copy Path',
       'Reveal Location',
     ])
     expect(items.find((i) => i.action === 'lock')?.label).toBe('Lock Folder')
+    expect(items.find((i) => i.label === 'Reveal Location')?.action).toBe('title:reveal')
   })
 
   it('a band set neither opens nor locks, and a context without creators starts at Rename', () => {
@@ -62,7 +64,7 @@ describe('the sidebar entity menu', () => {
       shape(
         entityMenuItems({ kind: 'set', path: 'Notes/S', title: 'S', host: 'detail' }, creators),
       ),
-    ).toEqual(['New Page', '—', 'Rename', 'Delete', '—', 'Reveal Location'])
+    ).toEqual(['New Page', '—', 'Rename', 'Delete', '—', 'Copy Path', 'Reveal Location'])
     expect(
       shape(
         entityMenuItems({ kind: 'context', path: 'Areas', title: 'Areas', host: 'sidebar' }, []),

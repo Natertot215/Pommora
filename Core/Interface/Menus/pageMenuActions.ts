@@ -1,5 +1,5 @@
 import { connectionText } from '../../Connections/connections'
-import { pagePathText, type PageMenuContext } from '../../Actions/pageMenu'
+import type { PageMenuContext } from '../../Actions/pageMenu'
 import type { NexusTree } from '../../Nexus/tree'
 import { relDirname, titleFromPath } from '../../Paths/posix'
 import { containerTargets } from '../../Actions/destinationTree'
@@ -11,6 +11,20 @@ export function pageMoveContext(tree: NexusTree | null, path: string): PageMenuC
   return {
     moveTargets: containerTargets(tree),
     currentParentPath: relDirname(path),
+  }
+}
+
+/** The verbs every Nexus file and folder answers by its path alone; returns false for any other. */
+export function runPathAction(action: string, path: string): boolean {
+  switch (action) {
+    case 'title:copypath':
+      void dialer().ask('path:copy', path)
+      return true
+    case 'title:reveal':
+      void dialer().ask('path:reveal', path)
+      return true
+    default:
+      return false
   }
 }
 
@@ -26,6 +40,7 @@ export function runPageAction(
     void s.mutate({ op: 'movePage', path, newParentPath: action.slice(5) })
     return true
   }
+  if (runPathAction(action, path)) return true
   switch (action) {
     case 'title:window':
       s.openWindowTab(ref, { heading: page.heading })
@@ -36,14 +51,8 @@ export function runPageAction(
     case 'title:copylink':
       void dialer().ask('clipboard:write', connectionText(title, undefined, page.heading))
       return true
-    case 'title:copypath':
-      void dialer().ask('clipboard:write', pagePathText(path))
-      return true
     case 'title:history':
       s.openHistory(ref)
-      return true
-    case 'title:reveal':
-      void dialer().ask('path:reveal', path)
       return true
     case 'title:delete':
       void confirmDelete({ path, kind: 'page', title })

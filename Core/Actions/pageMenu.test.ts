@@ -1,12 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import type { ActionItem } from './menuModel'
-import {
-  destinationRows,
-  pageMetaMenuItems,
-  pageOpenRows,
-  pagePathText,
-  pageSendGroups,
-} from './pageMenu'
+import { destinationRows, pageMetaMenuItems, pageOpenRows, pageSendGroups } from './pageMenu'
 
 const shape = (items: readonly ActionItem<string>[]): string[] =>
   items.flatMap((i) => [...(i.separatorBefore ? ['—'] : []), i.label])
@@ -80,10 +74,5 @@ describe('the page menu', () => {
     expect(destinationRows([{ id: 'a', label: 'A', path: 'A' }], (t) => t.id)).toEqual([
       { label: 'A', action: 'a' },
     ])
-  })
-
-  it('copies a page as its location without the extension', () => {
-    expect(pagePathText('Collection A/Set Alpha/Page A.md')).toBe('Collection A/Set Alpha/Page A')
-    expect(pagePathText('Notes/Read.MD')).toBe('Notes/Read')
   })
 })

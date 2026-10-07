@@ -19,15 +19,18 @@ class ResizeObserverStub {
 const openExternal = vi.fn()
 const connMenu = vi.fn<(req: unknown) => Promise<ConnMenuAction | null>>()
 const writeClipboard = vi.fn()
+const copyPath = vi.fn()
 stubEditorBridge({
   menu: async (req: unknown) => ok(await connMenu(req)),
   'clipboard:write': writeClipboard,
+  'path:copy': copyPath,
 })
 seedHost({ openLink: openExternal })
 
 beforeEach(() => {
   openExternal.mockReset()
   writeClipboard.mockReset()
+  copyPath.mockReset()
   connMenu.mockReset()
   connMenu.mockResolvedValue(null)
 })
@@ -145,6 +148,7 @@ describe('a markdown link’s menu follows what its target names', () => {
       }),
       anchor: undefined,
     })
-    expect(writeClipboard).toHaveBeenCalledWith('Notes/Alpha')
+    expect(copyPath).toHaveBeenCalledWith('Notes/Alpha.md')
+    expect(writeClipboard).not.toHaveBeenCalled()
   })
 })
