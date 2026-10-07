@@ -127,18 +127,14 @@ const described = new Map(
   CODE_LANGS.map(({ name }) => [name, LanguageDescription.of({ name, load: LOADERS[name] })]),
 )
 
-/** The block colors read a fence through this, past a diff's signs, so a fence colors as exactly the language its tag names. */
-const fenceLanguage = (info: string): LanguageDescription | null => {
+/** A fence's language, read from its whole info string: a diff fence's is the one past its signs, so a block colors as exactly the language its tag names. */
+export const codeLanguage = (info: string): LanguageDescription | null => {
   const { name } = codeFence(info)
   return name ? (described.get(name) ?? null) : null
 }
 
-/** The page's own parse nests the same language, except under a diff fence, whose raw lines still carry their signs. */
-export const codeLanguage = (info: string): LanguageDescription | null =>
-  codeFence(info).diff ? null : fenceLanguage(info)
-
 /** Markdown's own `codeLanguages` hands a resolver only the info string's first word, so a fence nests its language here instead, where the resolver reads the whole string and a diff word spaced from its language resolves as written. */
-export const nestedCode = (resolve: (info: string) => LanguageDescription | null) =>
+const nestedCode = (resolve: (info: string) => LanguageDescription | null) =>
   parseCode({
     codeParser: (info) => {
       const desc = resolve(info)
@@ -150,7 +146,10 @@ export const nestedCode = (resolve: (info: string) => LanguageDescription | null
   })
 
 /** Markdown nesting each fence's language past a diff's signs: the colors parse a block through it, and a diff line's Enter reads its indentation there. */
-export const blockLanguage = markdown({ extensions: nestedCode(fenceLanguage) })
+export const blockLanguage = markdown({ extensions: nestedCode(codeLanguage) })
+
+/** The page's own parse nests the same language, except under a diff fence, whose raw lines still carry their signs. */
+export const pageCode = nestedCode((info) => (codeFence(info).diff ? null : codeLanguage(info)))
 
 const blockParser = blockLanguage.language.parser
 

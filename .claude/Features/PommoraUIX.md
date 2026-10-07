@@ -216,7 +216,7 @@ Where each goes: menu and sidebar rows → Body (Standard) or Control (Compact, 
 
 ### Buttons
 
-`UIX/Buttons/` — the one button recipe. `Button` is `type` × `size` × content (icon · icon + label · label), with `outline` as an inset ring and `reveal` making it a hover-reveal target; hover on every button, and `pressed` for a toggle whose menu is open.
+`UIX/Buttons/` — the one button recipe. `Button` is `type` × `size` × content (icon · icon + label · label), with `outline` as an inset ring whose width `--button-outline-width` sets, and `reveal` making it a hover-reveal target; hover on every button, and `pressed` for a toggle whose menu is open. `buttonClass` hands the same classes to a control drawn outside React.
 
 **Button Types** — one `--button-fill` / `--button-ink` / `--button-outline` triple per row; the hover is `state.hover` laid over the fill.
 
@@ -247,7 +247,7 @@ Where each goes: menu and sidebar rows → Body (Standard) or Control (Compact, 
 
 | Title       | Export        | What it is                                                                                                                                            |
 | ----------- | ------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Segmented   | `Segmented`   | N Buttons of one type divided by `segment`; `glass` for the toolbar, and `trailingDivider` to close the run on one more divider.                                                                                  |
+| Segmented   | `Segmented` · `segmentDivider` | N Buttons of one type divided by `segment`; `glass` for the toolbar, and `trailingDivider` to close the run on one more divider. `segmentDivider` is that divider for a run drawn outside React.                                                                                  |
 | Checkbox    | `Checkbox`    | The app's one checkbox — `size` (standard/compact), a `filled` wash, a `color` override, and a `readOnly` glyph form; on the Nexus's checkbox color or a chosen cell. |
 | DualSwitch  | `DualSwitch`  | A boolean toggle with a sliding glass knob, with the checkbox's `color` and `readOnly`.                                                                                                        |
 | ColorSwatch | `ColorSwatch` | The switch shape holding a color, anchoring a ColorPicker.                                                                                            |
@@ -260,7 +260,7 @@ Where each goes: menu and sidebar rows → Body (Standard) or Control (Compact, 
 | Title       | Export                                                         | What it is                                                                                                                                                                                                                               |
 | ----------- | -------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | NavTrail    | `NavTrail` · `NavTrailProps` · `TrailSegment` · `pathSegments` | An entity's location as a chevron-divided run of icon + title segments — inert, selectable, or a navigable path with a dimmed ghost tail; `variant` reads it as a dim location or a bright `option`, and `selected` pops the final stop. |
-| Segment     | `segment` · `Segments`                                         | The between-values divider — `--segment-width` overrides it; `Segments` draws it between a run of parts that wraps as one line of text.                                                                                                  |
+| Segment     | `segment` · `Segments`                                         | The between-values divider — `--segment-width` and `--segment-color` override it; `Segments` draws it between a run of parts that wraps as one line of text.                                                                                                  |
 | ProgressBar | `ProgressBar` · `paintProgress`                                | A determinate bar on the accent; `paintProgress` drives one every frame without a render.                                                                                                                                                                                                       |
 | EyeToggle   | `EyeToggle`                                                    | The visibility eye — the current state's glyph at rest, the toggle previewed on hover.                                                                                                                                                   |
 | RenderBoundary | `RenderBoundary` | A region's guard against a drawing error: a throw inside draws nothing there, retried when `resetKey` changes, and the rest of the window keeps drawing. |
