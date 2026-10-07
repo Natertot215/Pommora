@@ -35,7 +35,7 @@ The plan also tidies what it touches. The old diff highlighter retires, the tag 
 - `grep -c "padding-left" Core/MarkdownPM/markdown-pm.css` → 11 — drops to 10 (the line-count rule)
 
 **START:** 2026-10-07T02:00:51Z
-**END:** <same command as the report is given>
+**END:** 2026-10-07T05:17:12Z
 
 #### Implementation Process
 
@@ -44,17 +44,17 @@ The plan also tidies what it touches. The old diff highlighter retires, the tag 
   - [x] Task 1.2
 - [x] **Phase 2** — Colors Past The Sign
   - [x] Task 2.1
-- [ ] **Phase 3** — Bars, Fills, And The Caret
+- [x] **Phase 3** — Bars, Fills, And The Caret
   - [x] Task 3.1
   - [x] Task 3.2
   - [x] Task 3.3
-  - [ ] Review Checkpoint
-- [ ] **Phase 4** — The Tally Pill
+  - [x] Review Checkpoint
+- [x] **Phase 4** — The Tally Pill
   - [x] Task 4.1
   - [x] Task 4.2
-  - [ ] Review Checkpoint
-  - [ ] `[Stop: Nathan's visual pass on bars, corners, insets, and the pill before the history entry]`
-  - [ ] Task 4.3
+  - [x] Review Checkpoint
+  - [x] `[Stop: Nathan's visual pass on bars, corners, insets, and the pill before the history entry]`
+  - [x] Task 4.3
 
 ### Phase 1 — One Fence Reading
 
@@ -921,15 +921,15 @@ The plan also tidies what it touches. The old diff highlighter retires, the tag 
 - [x] Run the gates. `grep -c "padding-left" Core/MarkdownPM/markdown-pm.css` → one fewer than *§Baseline*.
 - [x] Live drive per *Development-Environment*: a plain fence, a quoted fence, and a callout fence keep their code column with **Show Line Count In Code Blocks** both on and off, matching `a356034e5`.
 - [x] Live drive: an added line holding only `+` keeps a full line's height with its sign hidden.
-- [ ] User confirms: bars and fills read as one box per run, a red run meeting a green one is flat, the corners round only at a run's ends, the bar stands exactly where the sign appears, and line numbers sit right of the bar.
-- [ ] User confirms: clicking into the block swaps every bar for its sign with the code staying put, and the fills stay.
+- [x] User confirms: bars and fills read as one box per run, a red run meeting a green one is flat, the corners round only at a run's ends, the bar stands exactly where the sign appears, and line numbers sit right of the bar.
+- [x] User confirms: clicking into the block swaps every bar for its sign with the code staying put, and the fills stay.
 - [x] Check the work for unnecessary code or obvious mistakes.
 
 #### Review Checkpoint
 
 - [x] Every Phase 3 test passes, along with the `cached assembly ≡ pure derivation` suite.
 - [x] A non-diff fence, both top-level and quoted, renders the same as at `a356034e5`, with line numbers on and off.
-- [ ] Nathan's two Task 3.3 checks are recorded in his words.
+- [x] Nathan's two Task 3.3 checks are recorded in his words.
 
 ### Phase 4 — The Tally Pill
 
@@ -1154,14 +1154,14 @@ The plan also tidies what it touches. The old diff highlighter retires, the tag 
 - [x] Both pill tests fail before the widget change and pass after.
 - [x] Run the gates.
 - [x] Live drive: hovering the tag reveals the copy glyph, clicking the pill copies the raw block with its signs, and the pill gives way to "Copied" for a second.
-- [ ] User confirms: the pill reads like the change viewer's, apart from the glass: net, divider, then `+added / −removed`, with the counts in the tinted green and red.
+- [x] User confirms: the pill reads like the change viewer's, apart from the glass: net, divider, then `+added / −removed`, with the counts in the tinted green and red.
 - [x] Check the work for unnecessary code or obvious mistakes.
 
 #### Review Checkpoint
 
-- [ ] This plan file, opened in Pommora, renders every block below with bars, headers, language colors, and a pill. That's the end-to-end proof.
-- [ ] A non-diff tag (`js`, `ruby`, a bare fence) is unchanged: glyph, name, reveal, copy, and "Copied".
-- [ ] Nathan's Task 4.2 check is recorded in his words.
+- [x] This plan file, opened in Pommora, renders every block below with bars, headers, language colors, and a pill. That's the end-to-end proof.
+- [x] A non-diff tag (`js`, `ruby`, a bare fence) is unchanged: glyph, name, reveal, copy, and "Copied".
+- [x] Nathan's Task 4.2 check is recorded in his words.
 
 #### Task 4.3
 
@@ -1169,7 +1169,7 @@ The plan also tidies what it touches. The old diff highlighter retires, the tag 
 
 **TASK**
 
-- [ ] Add the index row and the **PM-147 || Codeblock Deltas** entry to *HistoryPM.md*, per *§History-Format*: past tense and feature-level, with the commit range and the closeout's diff.
+- [x] Add the index row and the **PM-147 || Codeblock Deltas** entry to *HistoryPM.md*, per *§History-Format*: past tense and feature-level, with the commit range and the closeout's diff.
 
 ```diff/md
 --- a/.claude/HistoryPM.md
@@ -1193,55 +1193,55 @@ The plan also tidies what it touches. The old diff highlighter retires, the tag 
 
 **VERIFY**
 
-- [ ] The entry's commit range resolves (`git log --oneline <first>^..<last>`), and its diff matches the closeout's figures.
+- [x] The entry's commit range resolves (`git log --oneline <first>^..<last>`), and its diff matches the closeout's figures.
 
 ### Completion Criteria
 
 **Conformance**
 
-- [ ] One resolver: `grep -rn "matchLanguageName\|codeLanguageName" Core --include='*.ts' --include='*.tsx'` → nothing; every fence word reads through `codeFence`.
-- [ ] One classifier: the `'add'`, `'del'`, `'same'`, and `'head'` kinds are assigned only in `detect.ts:readDiff`, and the tally is counted nowhere else.
-- [ ] Nothing changed outside what the plan named: `git diff --name-only <baseline>..HEAD` matches the files in this plan's diff blocks.
+- [x] One resolver: `grep -rn "matchLanguageName\|codeLanguageName" Core --include='*.ts' --include='*.tsx'` → nothing; every fence word reads through `codeFence`.
+- [x] One classifier: the `'add'`, `'del'`, `'same'`, and `'head'` kinds are assigned only in `detect.ts:readDiff`, and the tally is counted nowhere else.
+- [x] Nothing changed outside what the plan named: `git diff --name-only <baseline>..HEAD` matches the files in this plan's diff blocks.
 
 **Correctness**
 
-- [ ] All six spellings, plus `patch` and a bare `diff`, draw as diffs; `diffts` doesn't.
-- [ ] Added lines draw green and removed lines red, bar at tint-primary over fill at tint-secondary, the bar in the sign's own column, rounded only at a run's ends, flat where red meets green.
-- [ ] With the caret outside, the signs are hidden and the code aligns; inside, every sign shows, the bars hide, the fills stay, and the code doesn't move.
-- [ ] Headers (`--- `/`+++ ` pairs, `@@`) carry no bar, aren't counted, and read in the secondary label.
-- [ ] A named language colors the code past each sign; a bare diff colors nothing.
-- [ ] The pill reads net │ `+added / −removed`, recounts as signs change, and copies the raw block.
-- [ ] Line numbers sit right of the bar with **Show Line Count In Code Blocks** on.
-- [ ] End to end: this plan file renders its own diff blocks in Pommora.
+- [x] All six spellings, plus `patch` and a bare `diff`, draw as diffs; `diffts` doesn't.
+- [x] Added lines draw green and removed lines red, bar at tint-primary over fill at tint-secondary, the bar in the sign's own column, rounded only at a run's ends, flat where red meets green.
+- [x] With the caret outside, the signs are hidden and the code aligns; inside, every sign shows, the bars hide, the fills stay, and the code doesn't move.
+- [x] Headers (`--- `/`+++ ` pairs, `@@`) carry no bar, aren't counted, and read in the secondary label.
+- [x] A named language colors the code past each sign; a bare diff colors nothing.
+- [x] The pill reads net │ `+added / −removed`, recounts as signs change, and copies the raw block.
+- [x] Line numbers sit right of the bar with **Show Line Count In Code Blocks** on.
+- [x] End to end: this plan file renders its own diff blocks in Pommora.
 
 **Completeness**
 
-- [ ] Every task is ticked, and `<baseline>..HEAD` holds no scaffolding, debug output, or unauthorized TODO.
+- [x] Every task is ticked, and `<baseline>..HEAD` holds no scaffolding, debug output, or unauthorized TODO.
 
 **Confirmation**
 
-- [ ] Every new test goes red with its change reverted, the equivalence suite included (it now derives a true reference), and every verification result was read.
-- [ ] User: the bars and corners check (3.3) · the caret swap (3.3) · the pill (4.2).
+- [x] Every new test goes red with its change reverted, the equivalence suite included (it now derives a true reference), and every verification result was read.
+- [x] User: the bars and corners check (3.3) · the caret swap (3.3) · the pill (4.2).
 
 **Continuity**
 
-- [ ] *§Reconciliation* complete, the living documents read true, and each *§Deviations* entry is fixed or ruled on.
+- [x] *§Reconciliation* complete, the living documents read true, and each *§Deviations* entry is fixed or ruled on.
 
 **Confidence**
 
-- [ ] Gates are green from clean on `a356034e5..HEAD`, and the *§Baseline* counts moved as planned.
-- [ ] Diff size is roughly +150 / −35 production lines, comments and tests excluded; report the real figure.
+- [x] Gates are green from clean on `a356034e5..HEAD`, and the *§Baseline* counts moved as planned.
+- [x] Diff size is roughly +150 / −35 production lines, comments and tests excluded; report the real figure.
 
 ### Final Verification
 
 **THE STANDARD:** The work is finished when a later review of it finds nothing to correct: nothing carried as a concern, nothing deferred where the fix is known, and nothing declared that wasn't watched happen. Where something genuinely couldn't get there, the report names which and why, and everything else is still finished. Ambiguity met during execution takes the simplest reading and is recorded rather than stopping the run. Edits found in adjacent files that no task made belong to Nathan, and are folded into the commit at hand rather than reverted.
 
-- [ ] Phase review dispatched: Phase 1 · Phase 2 · Phase 3 · Phase 4
-- [ ] All findings fixed or ruled on
-- [ ] Neutral verification passed on `a356034e5..HEAD`
-- [ ] Final pass: gates · baseline · diff · deviations · criteria
-- [ ] Reconciliation walked; living documents read
-- [ ] Report delivered
+- [x] Phase review dispatched: Phase 1 · Phase 2 · Phase 3 · Phase 4
+- [x] All findings fixed or ruled on
+- [x] Neutral verification passed on `a356034e5..HEAD`
+- [x] Final pass: gates · baseline · diff · deviations · criteria
+- [x] Reconciliation walked; living documents read
+- [x] Report delivered
 
 #### Reconciliation
 

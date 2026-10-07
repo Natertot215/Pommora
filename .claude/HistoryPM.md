@@ -2,6 +2,7 @@
 
 | Date                    | ID     | Entry                                                |
 | ----------------------- | ------ | ---------------------------------------------------- |
+| 10-06-2026 → 10-07      | PM-147 | Codeblock Deltas                                     |
 | 09-29-2026              | PM-146 | Interface Scrollbars                                 |
 | 09-23-2026              | PM-145 | Metadata & Page Locking                              |
 | 09-22-2026 → 09-23      | PM-144 | View Search                                          |
@@ -149,6 +150,14 @@
 | 06-14-2026 → 06-15      | PM-002 | The Headless Data Layer                              |
 | 06-14-2026              | PM-001 | Genesis — The Walking Skeleton                       |
 | 05-13-2026 → 06-13-2026 | PM-000 | Swift Origin & Pivot                                 |
+
+#### PM-147 || Codeblock Deltas
+**DATE:** 10-06-2026 → 10-07
+
+Diff became a property of any fenced codeblock rather than a language: `diff` or `patch`, alone or joined to a language by a separator or a space, draws added and removed lines as green and red bars over tinted fills while the code keeps its language's colors, and file and hunk headers read in the secondary label. Entering the block reveals every sign without moving the code, and each line's sign and number form a margin where the caret can stand to set or swap the sign, which takes nothing but a typed `+` or `-`. Enter carries a line's sign and its language's indentation to the next line, ⌘↩ opens an unchanged line at that indentation, and Shift+Enter breaks to a bare one. The block's tag became the change viewer's tally pill, drawn from UIX's own button and segment classes, and the tint ladder gained a quinary step. Fence words now resolve through one reading of the whole info string shared by the tag, the colors, and the page's parse, which retired the legacy diff highlighter and its fuzzy matches.
+
+- **Commits:** `eaffe24cd^..4d56bb583`
+- **Diff:** Net +467 | +562 / −95
 
 #### PM-146 || Interface Scrollbars
 **DATE:** 09-29-2026
