@@ -334,6 +334,12 @@ export function signSeatAt(scan: DocScan, pos: number): number | null {
   return scan.lineStarts[i] + fenceBodyStart(scan.lines[i], f!) + (signed ? 1 : 0)
 }
 
+/** A caret standing in a diff line's margin: at its seat, on the margin's side. */
+export const caretInMargin = (
+  scan: DocScan,
+  caret: { head: number; empty: boolean; assoc: number },
+): boolean => caret.empty && caret.assoc < 0 && signSeatAt(scan, caret.head) === caret.head
+
 export function codeBlockTextAt(scan: DocScan, pos: number): string {
   const out: string[] = []
   for (let i = lineIndexAt(scan, pos) + 1; scan.fences[i]?.role === 'content'; i++)

@@ -136,13 +136,64 @@ describe('a diff fence’s caret', () => {
 })
 
 describe('a diff fence’s Enter', () => {
-  it('opens a bare line, reading the fence’s raw lines as no language', async () => {
+  const mod = /Mac/.test(navigator.platform) ? { metaKey: true } : { ctrlKey: true }
+  const enter = async (body: string, at: number, mods = {}) => {
     await codeLanguage('ts')?.load()
-    const body = '```diff-ts\n+let a = 1\n-let b = 2\n```'
     const view = await mountEditor({ initialBody: body })
-    const end = body.indexOf(' = 1') + 4
-    view.dispatch({ selection: { anchor: end } })
-    runScopeHandlers(view, new KeyboardEvent('keydown', { key: 'Enter' }), 'editor')
-    expect(view.state.doc.toString()).toBe(body.replace('= 1\n', '= 1\n\n'))
+    view.dispatch({ selection: { anchor: at } })
+    runScopeHandlers(view, new KeyboardEvent('keydown', { key: 'Enter', ...mods }), 'editor')
+    const { head } = view.state.selection.main
+    return { doc: view.state.doc.toString(), head }
+  }
+
+  it('carries the sign to the new line, indented as the language reads the code past it', async () => {
+    const body = '```diff-ts\n+if (a) {\n-let b = 2\n```'
+    const at = body.indexOf('{') + 1
+    const out = await enter(body, at)
+    expect(out.doc).toBe(body.replace('{\n', '{\n+  \n'))
+    expect(out.head).toBe(at + 4)
+    const flat = '```diff-ts\n+let a = 1\n-let b = 2\n```'
+    expect((await enter(flat, flat.indexOf(' = 1') + 4)).doc).toBe(
+      flat.replace('= 1\n', '= 1\n+\n'),
+    )
+  })
+
+  it('signs every line a break between brackets opens, behind the fence’s quote', async () => {
+    const body = '> ```diff-ts\n> +f({})\n> ```'
+    const out = await enter(body, body.indexOf('{}') + 1)
+    expect(out.doc).toBe('> ```diff-ts\n> +f({\n> +  \n> +})\n> ```')
+  })
+
+  it('opens the signed line below on Mod-Enter, wherever the caret stands in the line', async () => {
+    const body = '```diff-ts\n+if (a) {\n```'
+    const out = await enter(body, body.indexOf('(a)'), mod)
+    expect(out.doc).toBe('```diff-ts\n+if (a) {\n+  \n```')
+  })
+
+  it('leaves a header’s and a plain block’s Enter to the editor', async () => {
+    expect((await enter('```diff\n@@ h @@\n```', 15)).doc).toBe('```diff\n@@ h @@\n\n```')
+    expect((await enter('```ts\nif (a) {\n```', 14)).doc).toBe('```ts\nif (a) {\n  \n```')
+  })
+})
+
+describe('a diff fence’s margin', () => {
+  it('refuses a paste, which lands at the code’s start', async () => {
+    const doc = '```diff\n+a\n```'
+    const seat = doc.indexOf('+a') + 1
+    const view = await mountEditor({ initialBody: doc })
+    const paste = () =>
+      view.dispatch({ changes: { from: seat, insert: 'zz' }, userEvent: 'input.paste' })
+    view.dispatch({
+      selection: EditorSelection.create([EditorSelection.cursor(seat, -1)]),
+      userEvent: 'select.margin',
+    })
+    paste()
+    expect(view.state.doc.toString()).toBe(doc)
+    view.dispatch({
+      selection: EditorSelection.create([EditorSelection.cursor(seat, 1)]),
+      userEvent: 'select',
+    })
+    paste()
+    expect(view.state.doc.toString()).toBe(doc.replace('+a', '+zza'))
   })
 })

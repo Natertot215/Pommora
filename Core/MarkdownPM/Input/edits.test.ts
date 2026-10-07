@@ -1,7 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { scanDoc } from '../Engine/docScan'
 import {
-  continueSign,
   marginSign,
   isInsideWikilink,
   continueListOnEnter,
@@ -893,17 +892,5 @@ describe('a diff line’s sign', () => {
     const e = marginSign(scan, doc.indexOf('plain'), '+')!
     expect(typed(e)).toContain('\n+plain\n')
     expect(e.selection).toBe(doc.indexOf('plain') + 1)
-  })
-  it('carries on to the next line on Mod-Enter, behind the same quote', () => {
-    const top = continueSign(scan, doc.indexOf('+a') + 2)!
-    expect(typed(top)).toContain('\n+a\n+\nplain')
-    expect(top.selection).toBe(doc.indexOf('+a') + 4)
-    const quoted = continueSign(scan, doc.indexOf('-q'))!
-    expect(typed(quoted)).toContain('> -q\n> -\n> ```')
-  })
-  it('opens a bare line past one that carries no sign, and stays out of other fences and prose', () => {
-    expect(typed(continueSign(scan, doc.indexOf('plain'))!)).toContain('plain\n\n> x')
-    expect(continueSign(scanDoc('```ts\n+a\n```'), 8)).toBeNull()
-    expect(continueSign(scan, doc.indexOf('```diff'))).toBeNull()
   })
 })

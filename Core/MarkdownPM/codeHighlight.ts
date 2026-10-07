@@ -135,7 +135,20 @@ const fenceLanguage = (info: string): LanguageDescription | null => {
 export const codeLanguage = (info: string): LanguageDescription | null =>
   codeFence(info).diff ? null : fenceLanguage(info)
 
-const blockParser = markdown({ codeLanguages: fenceLanguage }).language.parser
+/** Markdown nesting each fence's language past a diff's signs: the colors parse a block through it, and a diff line's Enter reads its indentation there. */
+export const blockLanguage = markdown({ codeLanguages: fenceLanguage })
+
+const blockParser = blockLanguage.language.parser
+
+/** A block's lines as its language reads them, fences included: past any quote or indent, a diff line past its sign, a header as nothing. Line for line with the document. */
+export function blockLines(scan: DocScan, f: FenceInfo): string[] {
+  const open = lineIndexAt(scan, f.from)
+  return scan.lines.slice(open, lineIndexAt(scan, f.to) + 1).map((line, k) => {
+    const body = line.slice(fenceBodyStart(line, f))
+    const sign = scan.fences[open + k]?.diff
+    return sign === 'head' ? '' : sign ? body.slice(1) : body
+  })
+}
 
 const loaded = StateEffect.define<null>()
 
@@ -170,13 +183,8 @@ function paint(
 ): number {
   const open = lineIndexAt(scan, f.from)
   const close = lineIndexAt(scan, f.to)
-  // A diff line parses past its sign, and a header as nothing; marks map back by line end, so the trimmed start costs no offset math.
-  const lines = scan.lines.slice(open, close + 1).map((line, k) => {
-    const body = line.slice(fenceBodyStart(line, f))
-    const sign = scan.fences[open + k]?.diff
-    return sign === 'head' ? '' : sign ? body.slice(1) : body
-  })
-  const desc = f.lang ? fenceLanguage(f.lang) : null
+  const lines = blockLines(scan, f)
+  const desc = f.name === undefined ? undefined : described.get(f.name)
   if (desc && !desc.support)
     desc.load().then(() => {
       if (view.dom.isConnected) view.dispatch({ effects: loaded.of(null) })
@@ -186,6 +194,7 @@ function paint(
   const first = Math.max(0, lineIndexAt(scan, view.viewport.from) - open)
   const last = Math.min(lines.length - 1, lineIndexAt(scan, view.viewport.to) - open)
   const local = { lines, lineStarts: starts }
+  // Marks map back by line end, so a line's trimmed start costs no offset math.
   for (const [a, b, cls] of readBlock(tree, starts[first], lineEndOf(local, last)))
     for (let k = lineIndexAt(local, a); k < lines.length && starts[k] < b; k++) {
       const from = Math.max(a, starts[k])

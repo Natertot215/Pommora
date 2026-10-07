@@ -1,7 +1,7 @@
 // Inline matchers return a fresh /g regex per call so callers never share lastIndex.
 import { perText } from './perText'
 import { parse } from './parser'
-import { codeFence } from './codeLangs'
+import { type CodeLangName, codeFence } from './codeLangs'
 import {
   fenceLang,
   fenceSpans,
@@ -32,7 +32,7 @@ export interface DiffTally {
 }
 
 /** Every kind but `head` carries a one-character sign column. */
-export type DiffLine = 'add' | 'del' | 'same' | 'head'
+type DiffLine = 'add' | 'del' | 'same' | 'head'
 
 /** A diff line opening on its sign, which the caret never stands before. */
 export const signedLine = (f: FenceInfo | undefined): boolean =>
@@ -47,7 +47,7 @@ export interface FenceInfo {
   from: number
   to: number
   depth: number
-  lang?: string
+  name?: CodeLangName
   indent: number
   markerEnd: number
   ordinal?: number
@@ -72,13 +72,13 @@ export function scanFencedCode(lines: string[], lineStarts: number[]): (FenceInf
   const out: (FenceInfo | undefined)[] = new Array(lines.length)
   for (const span of fenceSpans(lines)) {
     const { open, close } = span
-    const lang = fenceLang(span.fence) || undefined
-    const tally = lang && codeFence(lang).diff ? { add: 0, del: 0 } : undefined
+    const { name, diff } = codeFence(fenceLang(span.fence))
+    const tally = diff ? { add: 0, del: 0 } : undefined
     const base = {
       from: lineStarts[open],
       to: lineEndOf({ lines, lineStarts }, close),
       depth: span.fence.depth,
-      lang,
+      name: name ?? undefined,
       indent: span.fence.indent,
       markerEnd: span.fence.markerEnd,
       tally,

@@ -221,17 +221,17 @@ describe('fence language capture', () => {
   }
   it('the info word rides the whole block; a bare fence carries none', () => {
     const typed = scan('```yaml\nkey: 1\n```')
-    expect(typed[0]?.lang).toBe('yaml')
-    expect(typed[1]?.lang).toBe('yaml')
+    expect(typed[0]?.name).toBe('YAML')
+    expect(typed[1]?.name).toBe('YAML')
     const bare = scan('```\nx\n```')
-    expect(bare[0]?.lang).toBeUndefined()
+    expect(bare[0]?.name).toBeUndefined()
   })
   it('only the first word counts, whitespace tolerated', () => {
-    expect(scan('``` json extra\n{}\n```')[0]?.lang).toBe('json')
+    expect(scan('``` json extra\n{}\n```')[0]?.name).toBe('JSON')
   })
   it('the info word rides a run of any length', () => {
-    expect(scan('````yaml\nk: 1\n````')[0]?.lang).toBe('yaml')
-    expect(scan('`````yaml\nk: 1\n`````')[0]?.lang).toBe('yaml')
+    expect(scan('````yaml\nk: 1\n````')[0]?.name).toBe('YAML')
+    expect(scan('`````yaml\nk: 1\n`````')[0]?.name).toBe('YAML')
   })
   it('markerEnd tracks the run, so the info word hides in its own place', () => {
     expect(scan('```yaml\nx\n```')[0]?.markerEnd).toBe(3)
