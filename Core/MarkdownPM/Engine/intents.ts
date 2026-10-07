@@ -5,13 +5,14 @@ import {
   isSequenced,
   parseListMarker,
   headingParts,
+  fenceBodyStart,
   type CalloutLine,
   type CitationEntry,
   type ListMarker,
   type MarkdownScope,
 } from './detect'
-import { codeLanguageName } from './codeLangs'
-import { carriedFrom, type DocScan, fenceBodyStart, spanAt } from './docScan'
+import { codeFence } from './codeLangs'
+import { carriedFrom, type DocScan, spanAt } from './docScan'
 import { isBlockquoteLine, lineIndexAt, quotePrefix, quotePrefixWidth } from './markdownCode'
 import { cx } from '@pommora/uix/Utilities/cx'
 
@@ -219,7 +220,7 @@ function pageChrome(
     pushPrefix(intents, ls, innerStart)
     // The offset comes from the fence grammar itself (markerEnd), so an indented or quoted fence never hides its own marker.
     const infoStart = ls + fence.markerEnd
-    const named = fence.lang ? codeLanguageName(fence.lang) : null
+    const named = fence.lang ? codeFence(fence.lang).name : null
     if (fence.role === 'open' && !caretOnLine) {
       intents.push({ kind: 'codeTag', from: infoStart, name: named ?? undefined })
       if (named && infoStart < le) intents.push({ kind: 'hide', from: infoStart, to: le })

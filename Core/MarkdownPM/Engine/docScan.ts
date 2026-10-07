@@ -4,7 +4,6 @@ import {
   isBlockquoteLine,
   lineEndOf,
   lineIndexAt,
-  quotePrefixWidth,
   type CodeMask,
 } from './markdownCode'
 import {
@@ -13,6 +12,7 @@ import {
   blockMathRanges,
   blockWebpageLines,
   calloutLines,
+  fenceBodyStart,
   fenceRangesOf,
   htmlBlocks,
   isHeadingLine,
@@ -321,13 +321,6 @@ export function spanAt<S extends Span>(spans: readonly S[], pos: number): S | un
 export function inJoinedMath(scan: LineScan, i: number, first: number, last: number): boolean {
   const math = spanAt(scan.maths, scan.lineStarts[i])
   return math !== undefined && math[0] >= scan.lineStarts[first] && math[0] <= lineEndOf(scan, last)
-}
-
-export const indentWidth = (line: string): number => /^[ \t]*/.exec(line)![0].length
-
-export function fenceBodyStart(line: string, f: FenceInfo): number {
-  const quote = quotePrefixWidth(line, f.depth)
-  return quote + Math.min(f.indent, indentWidth(line.slice(quote)))
 }
 
 export function codeBlockTextAt(scan: DocScan, pos: number): string {

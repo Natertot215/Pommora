@@ -1,6 +1,7 @@
 // Inline matchers return a fresh /g regex per call so callers never share lastIndex.
 import { perText } from './perText'
 import { parse } from './parser'
+import { codeFence } from './codeLangs'
 import {
   fenceLang,
   fenceSpans,
@@ -24,6 +25,15 @@ export function stripQuotePrefix(line: string): string {
   return /^ */.exec(line)![0] + line.slice(quotePrefixWidth(line, 1))
 }
 
+/** A diff fence's totals: one object every line of the fence shares, so a line the scan moves still carries it. */
+export interface DiffTally {
+  add: number
+  del: number
+}
+
+/** Every kind but `head` carries a one-character sign column. */
+export type DiffLine = 'add' | 'del' | 'same' | 'head'
+
 export interface FenceInfo {
   role: 'open' | 'content' | 'close'
   from: number
@@ -33,6 +43,8 @@ export interface FenceInfo {
   indent: number
   markerEnd: number
   ordinal?: number
+  tally?: DiffTally
+  diff?: DiffLine
 }
 
 export interface DocLines {
@@ -52,19 +64,56 @@ export function scanFencedCode(lines: string[], lineStarts: number[]): (FenceInf
   const out: (FenceInfo | undefined)[] = new Array(lines.length)
   for (const span of fenceSpans(lines)) {
     const { open, close } = span
+    const lang = fenceLang(span.fence) || undefined
+    const tally = lang && codeFence(lang).diff ? { add: 0, del: 0 } : undefined
     const base = {
       from: lineStarts[open],
       to: lineEndOf({ lines, lineStarts }, close),
       depth: span.fence.depth,
-      lang: fenceLang(span.fence) || undefined,
+      lang,
       indent: span.fence.indent,
       markerEnd: span.fence.markerEnd,
+      tally,
     }
     out[open] = { role: 'open', ...base }
     for (let k = open + 1; k < close; k++) out[k] = { role: 'content', ...base, ordinal: k - open }
     out[close] = { role: 'close', ...base }
+    if (tally) readDiff(lines, out, open, close, tally)
   }
   return out
+}
+
+/** Git writes a file header as a `--- ` line over a `+++ ` line, so a lone `--- ` is a removed line that begins with dashes. */
+function readDiff(
+  lines: string[],
+  out: (FenceInfo | undefined)[],
+  open: number,
+  close: number,
+  tally: DiffTally,
+): void {
+  const body = (k: number): string => lines[k].slice(fenceBodyStart(lines[k], out[k]!))
+  for (let k = open + 1; k < close; k++) {
+    const f = out[k]!
+    const text = body(k)
+    if (text.startsWith('@@')) f.diff = 'head'
+    else if (text.startsWith('--- ') && k + 1 < close && body(k + 1).startsWith('+++ ')) {
+      f.diff = 'head'
+      out[++k]!.diff = 'head'
+    } else if (text[0] === '+') {
+      f.diff = 'add'
+      tally.add++
+    } else if (text[0] === '-') {
+      f.diff = 'del'
+      tally.del++
+    } else if (text[0] === ' ') f.diff = 'same'
+  }
+}
+
+export const indentWidth = (line: string): number => /^[ \t]*/.exec(line)![0].length
+
+export function fenceBodyStart(line: string, f: FenceInfo): number {
+  const quote = quotePrefixWidth(line, f.depth)
+  return quote + Math.min(f.indent, indentWidth(line.slice(quote)))
 }
 
 export function fenceRangesOf(fences: readonly (FenceInfo | undefined)[]): [number, number][] {

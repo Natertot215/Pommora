@@ -1,14 +1,7 @@
 import { type Personalization, settingOf } from '../../Settings/personalization'
 import { linkDestinationAt } from '../../Connections/links'
 import { aliasSpanAt } from '../../Connections/connections'
-import {
-  fenceBodyStart,
-  inCalloutAt,
-  inCodeAt,
-  inFenceAt,
-  spanAt,
-  type DocScan,
-} from '../Engine/docScan'
+import { inCalloutAt, inCodeAt, inFenceAt, spanAt, type DocScan } from '../Engine/docScan'
 import {
   fenceAt,
   isBlockquoteLine,
@@ -28,6 +21,7 @@ import {
   MAX_NESTING_LEVEL,
   calloutHeadPrefixLen,
   headingParts,
+  fenceBodyStart,
   type ListMarker,
   type MarkdownScope,
 } from '../Engine/detect'

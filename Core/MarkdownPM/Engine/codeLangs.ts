@@ -31,7 +31,6 @@ export const CODE_LANGS = [
   { name: 'XML', alias: ['xml'] },
   { name: 'TOML', alias: ['toml'] },
   { name: 'Dockerfile', alias: ['dockerfile', 'docker'] },
-  { name: 'Diff', alias: ['diff', 'patch'] },
   { name: 'Lua', alias: ['lua'] },
   { name: 'Perl', alias: ['perl', 'pl'] },
   { name: 'Haskell', alias: ['haskell', 'hs'] },
@@ -49,12 +48,15 @@ export const CODE_LANGS = [
 
 export type CodeLangName = (typeof CODE_LANGS)[number]['name']
 
-/** Null where no language answers to the word: a fence that selected no parse wears no tag. */
-export function codeLanguageName(info: string): string | null {
+const DIFF_WORD = /^(?:(?:diff|patch)(?:[-/|](.+))?|(.+)[-/|](?:diff|patch))$/
+
+/** The one reading of a fence word: the language its code colors as, and whether it draws as a diff — `diff` or `patch` alone, or joined to a language by `-`, `/`, or `|` on either side. A null name selects no parse, and the fence wears no language tag. */
+export function codeFence(info: string): { name: CodeLangName | null; diff: boolean } {
   const word = info.trim().toLowerCase()
-  if (!word) return null
-  return (
-    CODE_LANGS.find((l) => l.name.toLowerCase() === word || l.alias.some((a) => a === word))
-      ?.name ?? null
+  const m = DIFF_WORD.exec(word)
+  const lang = m ? (m[1] ?? m[2]) : word
+  const named = CODE_LANGS.find(
+    (l) => l.name.toLowerCase() === lang || l.alias.some((a) => a === lang),
   )
+  return { name: named?.name ?? null, diff: m !== null }
 }
