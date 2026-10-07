@@ -80,6 +80,7 @@ const EDITOR_SETTING_KEYS = [
   'exitPairsOnEnter',
 ] as const
 const EDITOR_DEVICE_KEYS = ['defaultLinkFormat', 'pasteLinksIntoText'] as const
+const EDITOR_KEYS = [...EDITOR_SETTING_KEYS, ...EDITOR_DEVICE_KEYS] as const
 
 export type EditorSettings = {
   [K in (typeof EDITOR_SETTING_KEYS)[number]]: SettingValue<K>
@@ -94,7 +95,7 @@ let resolved: {
   settings: EditorSettings
 } | null = null
 
-// Read on per-transaction paths, so it resolves again only when the personalization, the device preferences, or the commands change, and stays the same object until an editor setting does.
+// Read on per-transaction paths, so it resolves again only when an input changes, and stays the same object until an editor setting does.
 export function editorSettingsOf(
   p: Personalization,
   d: DevicePrefs,
@@ -102,12 +103,11 @@ export function editorSettingsOf(
 ): EditorSettings {
   if (resolved?.p !== p || resolved.d !== d || resolved.commands !== commands) {
     const was = resolved?.commands === commands ? resolved.settings : null
-    const values: Record<string, unknown> = {
-      ...Object.fromEntries(EDITOR_SETTING_KEYS.map((k) => [k, settingOf(p, k)])),
-      ...Object.fromEntries(EDITOR_DEVICE_KEYS.map((k) => [k, devicePref(d, k)])),
-    }
-    const same =
-      was !== null && Object.keys(values).every((k) => was[k as keyof EditorSettings] === values[k])
+    const values = Object.fromEntries([
+      ...EDITOR_SETTING_KEYS.map((k) => [k, settingOf(p, k)]),
+      ...EDITOR_DEVICE_KEYS.map((k) => [k, devicePref(d, k)]),
+    ])
+    const same = was !== null && EDITOR_KEYS.every((k) => was[k] === values[k])
     resolved = {
       p,
       d,

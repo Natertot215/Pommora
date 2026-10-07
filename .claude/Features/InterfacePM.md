@@ -33,15 +33,15 @@ Creation is right-click-first. A mode's empty area pops its native New menu — 
 
 A page row's menu is the **page menu** (`Core/Actions/pageMenu.ts`), the same rows in the same order wherever a page can be right-clicked — a sidebar row, a table row, a card, a row grip, a tab:
 
-| Group    | Rows                                                                                                                                              |
-| -------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Open     | Preview · New Tab (reads *Open*, and leads, where the page already holds a tab)                                                                   |
-| Identity | Rename · Edit Icon                                                                                                                                |
-| Values   | Spaces ▸ · Properties ▸ (the page's Contexts and its Collection's properties, set in place)                                                       |
-| Create   | New Page Above · New Page Below (a sibling at that slot in the manual order)                                                                      |
-| Send     | Move To ▸ (every Collection and its Sets, the page's own disabled) · Copy Link (`[[Title]]`) · Copy Path (in Files & Links › Default Path Format) |
-| Locate   | View History · Reveal Location                                                                                                                    |
-| Remove   | Delete                                                                                                                                            |
+| Group    | Rows                                                                                                     |
+| -------- | -------------------------------------------------------------------------------------------------------- |
+| Open     | Preview · New Tab (reads *Open*, and leads, where the page already holds a tab)                          |
+| Identity | Rename · Edit Icon                                                                                       |
+| Values   | Spaces ▸ · Properties ▸ (the page's Contexts and its Collection's properties, set in place)              |
+| Create   | New Page Above · New Page Below (a sibling at that slot in the manual order)                             |
+| Send     | Move To ▸ (every Collection and its Sets, the page's own disabled) · Copy Link (`[[Title]]`) · Copy Path |
+| Locate   | View History · Reveal Location                                                                           |
+| Remove   | Delete                                                                                                   |
 
 ### Scrollbars
 
@@ -73,7 +73,7 @@ The NavWindow is one kind of the same window: tab 1 is a perma-pinned, icon-only
 
 #### The Settings Window
 
-The Nexus Settings window (`Core/Settings/SettingsWindow.tsx`) is summoned and dismissed by the ribbon's Settings glyph, a rail of frames in a side slot beside the frame it opens: General, Interface, Navigation, Appearance, Files & Links, Properties, Pages & Writing, Automations, and Shortcuts from the top, Trash anchored to the foot. A frame either fills with sections of labeled rows, each writing one key of the Nexus's personalization or, as the Nexus heading does, binding to the device, the hub, and the Nexus password, or is a surface of its own, as Trash is. A frame whose settings are undecided still holds its place and opens empty.
+The Nexus Settings window (`Core/Settings/SettingsWindow.tsx`) is summoned and dismissed by the ribbon's Settings glyph, a rail of frames in a side slot beside the frame it opens: General, Interface, Navigation, Appearance, Files & Links, Properties, Pages & Writing, Automations, and Shortcuts from the top, Trash anchored to the foot. A frame either fills with sections of labeled rows, each writing one key of the Nexus's personalization or of this machine's own preferences, or, as the Nexus heading does, binding to the device, the hub, and the Nexus password, or is a surface of its own, as Trash is. A frame whose settings are undecided still holds its place and opens empty.
 
 ### Confirmation & Notifications
 

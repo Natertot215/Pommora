@@ -643,3 +643,5 @@ Per the writing-plans 5.5 shape: what shipped, phase by phase, verification with
 ### Open Items
 
 ### Deviations
+
+- **InterfacePM:** The Send row keeps a bare "Copy Path", since ConfigurationPM's Default Path Format row already says what it writes. The Settings Window paragraph, which said every row writes the Nexus's personalization, was false and missing from *§Reconciliation*. It's rewritten to name this machine's own preferences.

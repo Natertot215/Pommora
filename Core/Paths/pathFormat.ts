@@ -1,5 +1,5 @@
 import type { HostPlatform } from '../Contract/bridge'
-import { isAtOrUnder, join, relDirname, relJoin, titleFromPath } from './posix'
+import { isAtOrUnder, join, stripMarkdownExt } from './posix'
 
 export const PATH_FORMATS = ['absolute', 'home', 'relative'] as const
 export type PathFormat = (typeof PATH_FORMATS)[number]
@@ -14,7 +14,7 @@ interface PathForm {
 
 /** A Nexus-relative path as Copy Path writes it; a Nexus outside the home folder copies its home-anchored paths whole. */
 export function formatPath(rel: string, form: PathForm): string {
-  const named = form.extensions ? rel : relJoin(relDirname(rel), titleFromPath(rel))
+  const named = form.extensions ? rel : stripMarkdownExt(rel)
   const text = anchored(named, form)
   return form.platform === 'windows' ? text.replaceAll('/', '\\') : text
 }

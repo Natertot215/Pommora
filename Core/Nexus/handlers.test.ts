@@ -462,11 +462,10 @@ describe('path:copy', () => {
     const write = vi.fn(async () => {})
     ctx.clipboard = { read: async () => '', write }
     await openNexusSequence(ctx, root, false)
-    const at = sessionRoot()!
-    installMachine({ ...machine(), home: dirname(at) })
+    installMachine({ ...machine(), home: dirname(root) })
 
     await nexusHandlers['path:copy'](ctx, 'Library/Notes.md')
-    expect(write).toHaveBeenLastCalledWith(`~/${basename(at)}/Library/Notes`)
+    expect(write).toHaveBeenLastCalledWith(`~/${basename(root)}/Library/Notes`)
 
     writeValue('devicePrefs', { defaultPathFormat: 'relative', includeExtensions: true })
     await nexusHandlers['path:copy'](ctx, 'Library/Notes.md')

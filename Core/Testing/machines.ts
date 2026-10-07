@@ -1,7 +1,6 @@
 import { AsyncLocalStorage } from 'node:async_hooks'
 import { createHash } from 'node:crypto'
 import { mkdir, readdir, readFile, rename, rm, stat, utimes, writeFile } from 'node:fs/promises'
-import { homedir } from 'node:os'
 import { dirname } from '../Paths/posix'
 import { realpathPosix, windows } from './hostFs'
 import { type DirEntry, type FileStat, type Machine, machine } from '../Platform/machine'
@@ -182,6 +181,6 @@ export function diskMachine(): Machine {
     lock: chainLock(),
     sha256Hex,
     platform: windows ? 'windows' : 'posix',
-    home: homedir(),
+    home: '/Users/test',
   }
 }

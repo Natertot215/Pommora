@@ -65,7 +65,7 @@ export const DEVICE_DEFAULTS = {
   pasteLinksIntoText: false,
   defaultPathFormat: 'home',
   includeExtensions: false,
-} as const satisfies Partial<Record<keyof DevicePrefs, unknown>>
+} as const satisfies { [K in keyof DevicePrefs]?: NonNullable<DevicePrefs[K]> }
 export type DeviceDefaultKey = keyof typeof DEVICE_DEFAULTS
 
 export const DEVICE_RANGES = { interfaceScale: TENTHS_SCALE, brightness: TENTHS_SCALE } as const
