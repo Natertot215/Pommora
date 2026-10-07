@@ -30,8 +30,25 @@ export interface DiffTally {
   del: number
 }
 
+type DiffSign = 'add' | 'del' | 'mod'
+
 /** Every kind but `head` carries a one-character sign column. */
-type DiffLine = 'add' | 'del' | 'same' | 'head'
+type DiffLine = DiffSign | 'same' | 'head'
+
+/** The kind a sign draws its line as: `=` and `~` both mark a changed line, which the tally leaves out. */
+export function signKind(sign: string | undefined): DiffSign | undefined {
+  switch (sign) {
+    case '+':
+      return 'add'
+    case '-':
+      return 'del'
+    case '=':
+    case '~':
+      return 'mod'
+    default:
+      return undefined
+  }
+}
 
 /** A diff line opening on its sign, which the caret never stands before. */
 export const signedLine = (f: FenceInfo | undefined): boolean =>
@@ -106,13 +123,13 @@ function readDiff(
     else if (text.startsWith('--- ') && k + 1 < close && body(k + 1).startsWith('+++ ')) {
       f.diff = 'head'
       out[++k]!.diff = 'head'
-    } else if (text[0] === '+') {
-      f.diff = 'add'
-      tally.add++
-    } else if (text[0] === '-') {
-      f.diff = 'del'
-      tally.del++
-    } else if (text[0] === ' ') f.diff = 'same'
+    } else {
+      const kind = signKind(text[0])
+      if (kind) {
+        f.diff = kind
+        if (kind !== 'mod') tally[kind]++
+      } else if (text[0] === ' ') f.diff = 'same'
+    }
   }
 }
 

@@ -2,7 +2,7 @@
 
 ### Context
 
-MarkdownPM draws fenced codeblocks with a language tag, syntax colors, and optional line numbers, and its roster already lists `Diff` as a language: CodeMirror's legacy diff mode tints the whole line's text. This plan makes a diff a property of the fence instead of a language. `diff` and `patch`, alone or joined to a language by `-`, `/`, or `|` on either side, draw added and removed lines as blockquote-style bars over a tinted fill, color the code past each sign in the named language, and replace the top-right tag with a tally pill. The work touches the fence scan (`Engine/detect.ts`, `Engine/docScan.ts`), the word resolver (`Engine/codeLangs.ts`), block colors (`codeHighlight.ts`, `MarkdownEditor.tsx`), line intents and the caret seam (`Engine/intents.ts`), the tag widget (`decorations.ts`), and `markdown-pm.css`, along with `MarkdownPM.md`, `Editor-Internals.md`, and `HistoryPM.md`.
+MarkdownPM draws fenced code blocks with a language tag, syntax colors, and optional line numbers, and its roster already lists `Diff` as a language: CodeMirror's legacy diff mode tints the whole line's text. This plan makes a diff a property of the fence instead of a language. `diff` and `patch`, alone or joined to a language by `-`, `/`, or `|` on either side, draw added and removed lines as blockquote-style bars over a tinted fill, color the code past each sign in the named language, and replace the top-right tag with a tally pill. The work touches the fence scan (`Engine/detect.ts`, `Engine/docScan.ts`), the word resolver (`Engine/codeLangs.ts`), block colors (`codeHighlight.ts`, `MarkdownEditor.tsx`), line intents and the caret seam (`Engine/intents.ts`), the tag widget (`decorations.ts`), and `markdown-pm.css`, along with `MarkdownPM.md`, `Editor-Internals.md`, and `HistoryPM.md`.
 
 It leaves copy alone: the tag still copies the block's raw text, signs included. Nothing outside MarkdownPM changes, and UIX is only read from: the pill wears its existing button and segment classes.
 
@@ -93,6 +93,7 @@ The plan also tidies what it touches. The old diff highlighter retires, the tag 
 +  const lang = m ? (m[1] ?? m[2]) : word
 +  const named = CODE_LANGS.find((l) => l.name.toLowerCase() === lang || l.alias.some((a) => a === lang))
 +  return { name: named?.name ?? null, diff: m !== null }
+=
  }
 ```
 

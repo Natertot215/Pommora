@@ -133,6 +133,15 @@ describe('a diff fence’s caret', () => {
     type(view, 'x')
     expect(view.state.doc.toString()).toBe(doc.replace('+a', '-xa'))
   })
+
+  it('takes either changed sign in the margin, each as written', async () => {
+    const view = await mountEditor({ initialBody: doc })
+    put(view, seat, -1, 'select.margin')
+    type(view, '~')
+    expect(view.state.doc.toString()).toBe(doc.replace('+a', '~a'))
+    type(view, '=')
+    expect(view.state.doc.toString()).toBe(doc.replace('+a', '=a'))
+  })
 })
 
 describe('a diff fence’s Enter', () => {
