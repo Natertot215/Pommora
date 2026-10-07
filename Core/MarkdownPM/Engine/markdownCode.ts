@@ -81,10 +81,6 @@ export function fenceAt(line: string): Fence | null {
   }
 }
 
-export function fenceLang(f: Fence): string {
-  return /^[^`~\s]*/.exec(f.info)?.[0] ?? ''
-}
-
 function fenceCloses(open: Fence, candidate: Fence): boolean {
   return (
     candidate.marker === open.marker &&

@@ -4,8 +4,10 @@ import {
   HighlightStyle,
   LanguageDescription,
   LanguageSupport,
+  ParseContext,
   StreamLanguage,
 } from '@codemirror/language'
+import { parseCode } from '@lezer/markdown'
 import { type Range, StateEffect } from '@codemirror/state'
 import {
   Decoration,
@@ -135,8 +137,20 @@ const fenceLanguage = (info: string): LanguageDescription | null => {
 export const codeLanguage = (info: string): LanguageDescription | null =>
   codeFence(info).diff ? null : fenceLanguage(info)
 
+/** Markdown's own `codeLanguages` hands a resolver only the info string's first word, so a fence nests its language here instead, where the resolver reads the whole string and a diff word spaced from its language resolves as written. */
+export const nestedCode = (resolve: (info: string) => LanguageDescription | null) =>
+  parseCode({
+    codeParser: (info) => {
+      const desc = resolve(info)
+      if (!desc) return null
+      return desc.support
+        ? desc.support.language.parser
+        : ParseContext.getSkippingParser(desc.load())
+    },
+  })
+
 /** Markdown nesting each fence's language past a diff's signs: the colors parse a block through it, and a diff line's Enter reads its indentation there. */
-export const blockLanguage = markdown({ codeLanguages: fenceLanguage })
+export const blockLanguage = markdown({ extensions: nestedCode(fenceLanguage) })
 
 const blockParser = blockLanguage.language.parser
 
