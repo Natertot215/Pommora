@@ -16,6 +16,7 @@ import {
   Prec,
   type Range,
   type Text,
+  type Transaction,
 } from '@codemirror/state'
 
 import {
@@ -34,10 +35,9 @@ import {
   drawnLast,
   perScopedDoc,
 } from './docCache'
-import type { MarkdownScope } from './Engine/detect'
+import type { DiffTally, MarkdownScope } from './Engine/detect'
 import { sectionRunsIn } from '../Connections/scan'
 import { CHECK_GLYPH, CODE_TAGS, COPY_GLYPH } from './codeGlyphs'
-import type { DiffTally } from './Engine/detect'
 import { claimedEmbeds } from './Engine/embedClaims'
 import { linkRest, linkTyping } from './Links/linkReveal'
 import {
@@ -647,33 +647,59 @@ const caretSeat = (scope: MarkdownScope): Extension => {
     })
     return true
   }
-  // A diff line's seat draws on the code's side unless the caret was brought into the margin: a step left from the code, or a press left of it.
-  const seatTo = (view: EditorView, seat: number, side: -1 | 1): true => {
+  const page = scope === 'page'
+  // A diff line's seat draws on the code's side unless a caret was brought into the margin: a step left from the code, or a press left of it. It keeps the margin through an edit that stays on its line, and a selection's head always draws on the code's side.
+  const toSide = (view: EditorView, side: -1 | 1): boolean => {
+    const { head, empty, assoc } = view.state.selection.main
+    const there = side < 0 ? assoc < 0 : assoc >= 0
+    if (!page || !empty || there || signSeatAt(docScan(view.state.doc), head) !== head) return false
     view.dispatch({
-      selection: EditorSelection.create([EditorSelection.cursor(seat, side)]),
+      selection: EditorSelection.create([EditorSelection.cursor(head, side)]),
       userEvent: side < 0 ? 'select.margin' : 'select',
     })
     return true
   }
-  const toSide = (view: EditorView, side: -1 | 1): boolean => {
-    const { head, empty, assoc } = view.state.selection.main
-    const there = side < 0 ? assoc < 0 : assoc >= 0
-    if (!empty || there || signSeatAt(docScan(view.state.doc), head) !== head) return false
-    return seatTo(view, head, side)
-  }
-  const pressMargin = EditorView.domEventHandlers({
-    mousedown(e, view) {
-      if (e.button !== 0 || e.detail > 1 || e.shiftKey || e.altKey || e.metaKey || e.ctrlKey)
-        return false
-      const pos = view.posAtCoords({ x: e.clientX, y: e.clientY })
-      const seat = pos === null ? null : signSeatAt(docScan(view.state.doc), pos)
-      const code = seat === null ? null : view.coordsAtPos(seat, 1)
-      if (seat === null || !code || e.clientX >= code.left) return false
-      e.preventDefault()
-      view.focus()
-      return seatTo(view, seat, -1)
-    },
+  const pressMargin = EditorView.mouseSelectionStyle.of((view, start) => {
+    if (
+      !page ||
+      start.button !== 0 ||
+      start.detail > 2 ||
+      start.shiftKey ||
+      start.altKey ||
+      start.metaKey ||
+      start.ctrlKey
+    )
+      return null
+    const pos = view.posAtCoords({ x: start.clientX, y: start.clientY })
+    const at = pos === null ? null : signSeatAt(docScan(view.state.doc), pos)
+    const code = at === null ? null : view.coordsAtPos(at, 1)
+    if (at === null || !code || start.clientX >= code.left) return null
+    let seat = at
+    return {
+      get: (e) => {
+        const head = view.posAtCoords({ x: e.clientX, y: e.clientY }, false)
+        const back = head <= seat && head >= view.state.doc.lineAt(seat).from
+        return EditorSelection.create([
+          back ? EditorSelection.cursor(seat, -1) : EditorSelection.range(seat, head),
+        ])
+      },
+      update: (u) => {
+        seat = u.changes.mapPos(seat)
+      },
+    }
   })
+  const inMargin = (tr: Transaction, seat: number): boolean => {
+    if (tr.isUserEvent('select.margin')) return true
+    if (tr.isUserEvent('select.pointer')) return tr.newSelection.main.assoc < 0
+    const was = tr.startState.selection.main
+    return (
+      tr.docChanged &&
+      was.empty &&
+      was.assoc < 0 &&
+      signSeatAt(docScan(tr.startState.doc), was.head) === was.head &&
+      tr.newDoc.lineAt(tr.changes.mapPos(was.head, -1)).from === tr.newDoc.lineAt(seat).from
+    )
+  }
   const run = (view: EditorView) => leaveLine(view, false)
   const shift = (view: EditorView) => leaveLine(view, true)
   return [
@@ -690,18 +716,14 @@ const caretSeat = (scope: MarkdownScope): Extension => {
           : empty && tr.isUserEvent('select.pointer')
             ? seatPastMarker(intents, scan, head, scope)
             : null) ?? head
-      const was = tr.startState.selection.main
-      const margin =
-        tr.isUserEvent('select.margin') ||
-        (tr.docChanged &&
-          was.empty &&
-          was.assoc < 0 &&
-          signSeatAt(docScan(tr.startState.doc), was.head) === was.head)
-      const side = empty && signSeatAt(scan, seat) === seat ? (margin ? -1 : 1) : assoc
+      const side =
+        page && signSeatAt(scan, seat) === seat ? (empty && inMargin(tr, seat) ? -1 : 1) : assoc
       if (seat === head && side === assoc) return tr
-      const selection = EditorSelection.create([
-        empty ? EditorSelection.cursor(seat, side) : EditorSelection.range(anchor, seat),
-      ])
+      const selection = tr.newSelection.replaceRange(
+        empty
+          ? EditorSelection.cursor(seat, side)
+          : EditorSelection.range(anchor, seat, undefined, undefined, side),
+      )
       return [tr, { selection, sequential: true }]
     }),
     Prec.high(

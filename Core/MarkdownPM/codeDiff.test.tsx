@@ -1,9 +1,11 @@
 // @vitest-environment jsdom
 import { afterEach, describe, expect, it } from 'vitest'
 import { act } from 'react'
-import { EditorSelection } from '@codemirror/state'
-import { EditorView } from '@codemirror/view'
+import { EditorSelection, EditorState } from '@codemirror/state'
+import { EditorView, runScopeHandlers } from '@codemirror/view'
 import { cleanupEditor, mountEditor, stubEditorBridge } from '../Testing/editorHarness'
+import { codeLanguage } from './codeHighlight'
+import { markdownDecorations } from './decorations'
 
 class ResizeObserverStub {
   observe(): void {}
@@ -73,15 +75,46 @@ describe('a diff fence’s caret', () => {
     expect(caret(view)).toEqual({ head: seat - 1, side: -1 })
   })
 
-  it('lands an edit made from the code on the code’s side of a new line', async () => {
+  it('lands an edit that opens a new line on the code’s side, from the code or the margin', async () => {
     const view = await mountEditor({ initialBody: doc })
-    put(view, seat + 1, -1, 'select')
+    for (const [from, side, userEvent] of [
+      [seat + 1, -1, 'select'],
+      [seat, -1, 'select.margin'],
+    ] as const) {
+      put(view, from, side, userEvent)
+      const end = seat + 1
+      view.dispatch({
+        changes: { from: end, insert: '\n+' },
+        selection: { anchor: end + 2 },
+        userEvent: 'input',
+      })
+      expect(caret(view)).toEqual({ head: end + 2, side: 1 })
+      view.dispatch({ changes: { from: end, to: end + 2 } })
+    }
+  })
+
+  it('draws a selection’s head at a seat on the code’s side, and a caret on the side a pointer put it', async () => {
+    const view = await mountEditor({ initialBody: doc })
+    const next = doc.indexOf('-b') + 1
     view.dispatch({
-      changes: { from: seat + 1, insert: '\n+' },
-      selection: { anchor: seat + 3 },
-      userEvent: 'input',
+      selection: EditorSelection.create([EditorSelection.range(seat + 1, next)]),
+      userEvent: 'select.extend',
     })
-    expect(caret(view)).toEqual({ head: seat + 3, side: 1 })
+    expect(caret(view)).toEqual({ head: next, side: 1 })
+    put(view, seat, -1, 'select.pointer')
+    expect(caret(view)).toEqual({ head: seat, side: -1 })
+    put(view, seat, 1, 'select.pointer')
+    expect(caret(view)).toEqual({ head: seat, side: 1 })
+  })
+
+  it('belongs to the page alone, so a cell keeps the side it was given', () => {
+    const side = (scope: 'page' | 'cell') =>
+      EditorState.create({ doc, extensions: markdownDecorations(() => undefined, scope) }).update({
+        selection: EditorSelection.create([EditorSelection.cursor(seat, -1)]),
+        userEvent: 'select',
+      }).state.selection.main.assoc
+    expect(side('page')).toBe(1)
+    expect(side('cell')).toBe(-1)
   })
 
   it('takes only a sign in the margin, and anything at the code’s start', async () => {
@@ -92,8 +125,24 @@ describe('a diff fence’s caret', () => {
     type(view, '-')
     expect(view.state.doc.toString()).toBe(doc.replace('+a', '-a'))
     expect(caret(view)).toEqual({ head: seat, side: -1 })
+    const signed = view.state
+    type(view, 'ab')
+    type(view, '-')
+    expect(view.state).toBe(signed)
     put(view, seat, 1, 'select')
     type(view, 'x')
     expect(view.state.doc.toString()).toBe(doc.replace('+a', '-xa'))
+  })
+})
+
+describe('a diff fence’s Enter', () => {
+  it('opens a bare line, reading the fence’s raw lines as no language', async () => {
+    await codeLanguage('ts')?.load()
+    const body = '```diff-ts\n+let a = 1\n-let b = 2\n```'
+    const view = await mountEditor({ initialBody: body })
+    const end = body.indexOf(' = 1') + 4
+    view.dispatch({ selection: { anchor: end } })
+    runScopeHandlers(view, new KeyboardEvent('keydown', { key: 'Enter' }), 'editor')
+    expect(view.state.doc.toString()).toBe(body.replace('= 1\n', '= 1\n\n'))
   })
 })

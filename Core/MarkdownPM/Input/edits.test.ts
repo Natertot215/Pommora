@@ -883,13 +883,14 @@ describe('a diff line’s sign', () => {
   const typed = (e: { from: number; to: number; insert: string }) =>
     doc.slice(0, e.from) + e.insert + doc.slice(e.to)
 
-  it('typed in the margin, stands in for the one already there', () => {
-    const e = marginSign(scan, doc.indexOf('+a') + 1, '-')
+  it('typed in the margin, stands in for the other one there, and repeats nothing', () => {
+    const e = marginSign(scan, doc.indexOf('+a') + 1, '-')!
     expect(typed(e)).toContain('\n-a\n')
     expect(e.selection).toBe(doc.indexOf('+a') + 1)
+    expect(marginSign(scan, doc.indexOf('+a') + 1, '+')).toBeNull()
   })
   it('typed in the margin of a line without one, becomes its sign', () => {
-    const e = marginSign(scan, doc.indexOf('plain'), '+')
+    const e = marginSign(scan, doc.indexOf('plain'), '+')!
     expect(typed(e)).toContain('\n+plain\n')
     expect(e.selection).toBe(doc.indexOf('plain') + 1)
   })
