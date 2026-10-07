@@ -75,4 +75,6 @@ const MD_EXT = /\.md$/i
 
 export const isMarkdownFile = (name: string): boolean => MD_EXT.test(name)
 
-export const titleFromPath = (path: string): string => basename(path).replace(MD_EXT, '')
+export const stripMarkdownExt = (path: string): string => path.replace(MD_EXT, '')
+
+export const titleFromPath = (path: string): string => stripMarkdownExt(basename(path))
