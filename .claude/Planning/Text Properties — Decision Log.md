@@ -28,7 +28,7 @@ Pommora's property catalog holds eleven types and no free-typed one; *§Pending*
 5. [CONFIRMED] A connection written inside a Text value is a body link in every respect: a page rename rewrites it, a heading rename rewrites it, deleting its target leaves it as a phantom, and nothing strips, parks, or restores it. This requires the content index to record links inside frontmatter strings, which today it doesn't (`indexSeed.ts:61-67`).
 6. [CONFIRMED] Text is single-line on every in-place surface and multi-line only in TextPane. Every in-place surface is an input field on the `PathField` pattern — typed into directly on a single click, with a right-side glyph as the one door into TextPane, which opens as a PickerMenu dropdown anchored to the field. The panel row and the card value wear the field's chrome; a table cell stays a plain cell carrying the same right-side glyph. A single click on a filled field seats the caret, as Number does.
 7. [CONFIRMED] In the native **Properties ▸** menu the Text row is a clickable leaf, as Number, Link, and Date are, and picking it opens TextPane anchored where the menu originated — in place of the `TextPicker` popover the leaf chain presents for Link today (`ValuePickPresenter.tsx:9-46`).
-8. [ASSUMED] The user creates a Text property named Description, and the `description:` values files already hold appear on their pages at once. This is the catalog's existing adoption rule and needs no Text-specific code. The other reading — Pommora creating the property itself on finding the key — is a registry mutation with no precedent and would have to pick a type for every foreign key.
+8. [CONFIRMED] The user creates a Text property named Description, and the `description:` values files already hold appear on their pages at once — the catalog's existing adoption rule, with no Text-specific code. Pommora never creates a property from a key it finds, for Text as for every other type: Multi-Select recognition adds options to a Multi-Select that already exists (`optionOps.ts:93-150`), and `createProperty` is called only by the user's Create and a Trash restore. Automatic creation is the Recognize Foreign Frontmatter prospect.
 9. [CONFIRMED] "Recognize Foreign Frontmatter" means a Nexus-level toggle making Pommora's reading of externally added frontmatter optional. It isn't part of Text; it's a separate feature that would also govern Multi-Select's unconditional option recognition, and it goes to Prospects.
 10. [INFERRED] The rename cascade's frontmatter patch becomes type-aware: a Link-typed key keeps the whole-value patch, a Text-typed key runs the body rewriter. One writer per key, so a Text value of exactly `[[Old|New]]` is never handled twice (the two writers disagree: `[[New]]` against `[[New|New]]`).
 11. [INFERRED] `[[Nowhere]]` typed into a Text value is accepted as prose, as a page body accepts a phantom; the Link type's refusal of a title no page answers doesn't apply.
@@ -44,6 +44,10 @@ Pommora's property catalog holds eleven types and no free-typed one; *§Pending*
 21. [INFERRED] Navigation and a tab switch close TextPane and save it, as they close an unlocked glance pin.
 22. [CONFIRMED] A Compact card draws the Text value as a bordered, full-width `InputField` row on the hook the Number bar already uses (`cards-view.css:116-123`). A Standard card and a panel row draw plain text and open the bare inline field on click, as Number does.
 23. [CONFIRMED] A `[[#Heading]]` written inside a Text value on a page names a heading on that page, and a click travels there. Link gets the same reading: today `ConnectionCell` resolves the empty title to no page and the click does nothing (`LinkCell.tsx:66-67`). On a Space, which has no body, the fragment resolves to nothing.
+24. [INFERRED] Text carries no `groups` flag on its `TypeSpec`, so Group By and Sub-Group exclude it as they exclude Link; `bucketKey` gains its compile-forced arm returning no bucket.
+25. [INFERRED] Text seeds nothing: `FROM_GROUP_KEY.text` is `null` and `SEEDS_FROM_SORT.text` is `false`, as Link's are, so no filter rule, band, or New Page Above/Below writes a Text value onto a new page, and a sort-run drag never rewrites one.
+26. [INFERRED] A link inside a Text value lands in the content index as a `body` relation, as decision 5's "body link in every respect" implies; it weighs in the Matrix as a body link, and no new relation kind is introduced.
+27. [INFERRED] `text-align-start` joins the curated icon registry (`UIX/Symbols/index.tsx:76-81, 99-184`) as Text's default glyph in `TYPE_META`.
 
 ---
 
@@ -64,10 +68,12 @@ Grounded facts the decisions sit on; each traces to *00 — Orchestrator Notes* 
 
 #### Open Items
 
-1. Whether Pommora creates a Text property on its own when it finds a frontmatter key no definition names. Nathan holds that Multi-Select recognition already does this; it doesn't — `registerHeldOptions` adds options to an existing Multi-Select (`optionOps.ts:93-150`), and `createProperty` is called only by the user's handler and the Trash restore (`Core/Properties/handlers.ts:142`, `restoreProperty.ts`). Decision 8 waits on this.
-2. Whether "PathField within a TableView gets the same treatment" means File cells gain the same hover glyph, opening the file dialog — a change to File's cell, outside Text.
 
 #### Prospects
+
+- **Wrapped Table Cells:** a Table layout toggle under which a cell shows its line breaks and wraps its content — links, chips, titles, and text — instead of one `nowrap` line. A Table feature, briefed in *Wrapped Table Cells — Brainstorm Brief*. Don't-foreclose: Text's resting renderer draws `\n` as a line break whenever its container allows wrapping, so the toggle becomes a view flag and a CSS rule.
+- **Edit In Place:** a table cell becoming the restricted editor on entry, as a cell inside a page body does. Needs the editor component in a second seat and the table's edit overlay learning it. Don't-foreclose: decision 12.
+- **Recognize Foreign Frontmatter:** a Nexus-level toggle making Pommora's reading of externally added frontmatter optional, and a path from a found key to a definition. Would also govern Multi-Select's unconditional option recognition. Its own brainstorm.
 
 ---
 

@@ -185,7 +185,7 @@ function markerEndOf(line: string, scope: MarkdownScope): number | null {
   return headingParts(line)?.contentStart ?? (quotePrefix(line).length || null)
 }
 
-/** A diff line's margin takes only a sign, which becomes the line's own, standing in for the other; the one it already wears changes nothing. */
+/** A diff line's margin takes only a sign, which replaces the one the line wears; the same sign again changes nothing. */
 export function marginSign(scan: DocScan, seat: number, text: string): Edit | null {
   if (!signKind(text)) return null
   const signed = signedLine(scan.fences[lineIndexAt(scan, seat)])

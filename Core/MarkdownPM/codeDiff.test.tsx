@@ -33,6 +33,13 @@ describe('a diff fence’s tally', () => {
     await act(async () => view.dispatch({ changes: { from: at, to: at + 1, insert: '+' } }))
     expect(pill(view)).toBe('+3+3 / −0')
   })
+
+  it('leaves a line out once it changes to a changed sign', async () => {
+    const view = await mountEditor({ initialBody: doc })
+    const at = view.state.doc.toString().indexOf('+a')
+    await act(async () => view.dispatch({ changes: { from: at, to: at + 1, insert: '~' } }))
+    expect(pill(view)).toBe('±0+1 / −1')
+  })
 })
 
 describe('a diff fence’s caret', () => {

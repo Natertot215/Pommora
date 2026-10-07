@@ -93,7 +93,6 @@ The plan also tidies what it touches. The old diff highlighter retires, the tag 
 +  const lang = m ? (m[1] ?? m[2]) : word
 +  const named = CODE_LANGS.find((l) => l.name.toLowerCase() === lang || l.alias.some((a) => a === lang))
 +  return { name: named?.name ?? null, diff: m !== null }
-=
  }
 ```
 
