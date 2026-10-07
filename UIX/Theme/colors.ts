@@ -44,6 +44,7 @@ export const TINT_STEPS = {
   secondary: 40,
   tertiary: 20,
   quaternary: 15,
+  quinary: 10,
   solid: 100,
 } as const
 

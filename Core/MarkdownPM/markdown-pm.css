@@ -741,7 +741,7 @@
   --box-gap: 0px;
   --box-radius-l: var(--codeblock-radius);
   --box-radius-r: var(--codeblock-radius);
-  padding-left: calc(var(--codeblock-inset) + var(--codeblock-pad));
+  padding-left: var(--codeblock-indent);
   padding-right: calc(var(--codeblock-inset) + var(--codeblock-pad));
 }
 
@@ -772,10 +772,17 @@
   --box-radius-r: var(--codeblock-radius);
   --box-gap: var(--md-box-gap);
   --box-pad: 6px;
+  --codeblock-indent: calc(
+    var(--codeblock-inset) +
+    var(--codeblock-pad) +
+    var(--diff-zone, 0px) +
+    var(--codeblock-line-zone, 0px)
+  );
   font-family: var(--font-mono);
   font-size: 0.85em;
-  padding-left: calc(var(--codeblock-inset) + var(--codeblock-pad));
+  padding-left: var(--codeblock-indent);
   padding-right: calc(var(--codeblock-inset) + var(--codeblock-pad));
+  text-indent: calc(-1 * (var(--codeblock-line-zone, 0px) + var(--diff-sign, 0px)));
   word-break: break-all;
 }
 
@@ -790,6 +797,66 @@
 }
 .mdpm-editor .cm-line.codeblock-last::after {
   border-bottom: var(--codeblock-border);
+}
+
+/* The code holds one column whether its sign shows or not: the sign reserves a zone before it as a list marker does, its gap included, a raw sign is pulled back into that zone, and the bar stands in the same column the sign does. */
+.mdpm-editor .cm-line.codeblock-diff {
+  --diff-zone: calc(1ch + var(--list-gap));
+  --diff-bar: 3px;
+  --diff-radius: 4px;
+  --diff-radius-l: 0px;
+  --box-z: -2;
+}
+.mdpm-editor .cm-line.codeblock-diff-raw {
+  --diff-sign: var(--diff-zone);
+  --diff-radius-l: var(--diff-radius);
+}
+.mdpm-editor .md-diff-sign {
+  display: inline-block;
+  min-width: var(--diff-zone);
+  text-indent: 0;
+}
+.mdpm-editor .cm-line.codeblock-diff-head {
+  color: var(--label-secondary);
+}
+.mdpm-editor .md-diff {
+  position: absolute;
+  inset: 0 calc(var(--codeblock-inset) + var(--codeblock-pad));
+  z-index: -1;
+  background: color-mix(in srgb, var(--diff-color) var(--tint-quinary), transparent);
+  pointer-events: none;
+}
+.mdpm-editor .md-diff::before {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: var(--diff-bar);
+  background: color-mix(in srgb, var(--diff-color) var(--tint-secondary), transparent);
+}
+.mdpm-editor .md-diff-add {
+  --diff-color: var(--solid-green);
+}
+.mdpm-editor .md-diff-del {
+  --diff-color: var(--solid-red);
+}
+.mdpm-editor .md-diff-first {
+  border-top-left-radius: var(--diff-radius-l);
+  border-top-right-radius: var(--diff-radius);
+}
+.mdpm-editor .md-diff-last {
+  border-bottom-left-radius: var(--diff-radius-l);
+  border-bottom-right-radius: var(--diff-radius);
+}
+.mdpm-editor .md-diff-first::before {
+  border-top-left-radius: var(--diff-radius);
+  border-top-right-radius: var(--diff-radius);
+}
+.mdpm-editor .md-diff-last::before {
+  border-bottom-left-radius: var(--diff-radius);
+  border-bottom-right-radius: var(--diff-radius);
+}
+.mdpm-editor .codeblock-diff-raw .md-diff::before {
+  display: none;
 }
 
 .mdpm-editor
@@ -929,8 +996,6 @@
 }
 :root.codeblock-line-count .mdpm-editor .cm-line.codeblock {
   --codeblock-line-zone: calc(3ch + var(--list-gap));
-  padding-left: calc(var(--codeblock-inset) + var(--codeblock-pad) + var(--codeblock-line-zone));
-  text-indent: calc(-1 * var(--codeblock-line-zone));
 }
 :root.codeblock-line-count .codeblock-line-number {
   display: inline-block;
