@@ -982,12 +982,31 @@
 .mdpm-editor .codeblock .codeblock-language .codeblock-name:empty {
   display: none;
 }
+/* Segmented's own pill, outlined where the change viewer's is glass. */
+.mdpm-editor .codeblock .codeblock-language .codeblock-tally {
+  --btn-radius: var(--radius-full);
+  height: auto;
+  padding: 2px;
+  box-shadow: inset 0 0 0 var(--width-175) var(--button-outline);
+  color: var(--label-secondary);
+  font-variant-numeric: tabular-nums;
+}
+.mdpm-editor .codeblock-tally .codeblock-tally-segment {
+  background: var(--border-strong);
+}
+.mdpm-editor .codeblock-tally :is(.md-diff-add, .md-diff-del) {
+  color: color-mix(in srgb, var(--diff-color) var(--tint-primary), var(--label-secondary));
+}
+.mdpm-editor .codeblock .codeblock-language.is-copied .codeblock-tally {
+  display: none;
+}
 .mdpm-editor .codeblock .codeblock-language .codeblock-copy {
   color: var(--label-tertiary);
   opacity: var(--reveal, 0);
 }
 .mdpm-editor .codeblock .codeblock-language .codeblock-mark-slot,
-.mdpm-editor .codeblock .codeblock-language .codeblock-name {
+.mdpm-editor .codeblock .codeblock-language .codeblock-name,
+.mdpm-editor .codeblock .codeblock-language .codeblock-tally {
   cursor: pointer;
 }
 
@@ -1000,6 +1019,8 @@
 :root.codeblock-line-count .codeblock-line-number {
   display: inline-block;
   min-width: var(--codeblock-line-zone);
+  /* The caret beside a widget takes the widget's height, so the number stands only as tall as the code's own text. */
+  line-height: normal;
   text-indent: 0;
   color: var(--label-tertiary);
   user-select: none;

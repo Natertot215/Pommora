@@ -37,6 +37,7 @@ import {
 import type { MarkdownScope } from './Engine/detect'
 import { sectionRunsIn } from '../Connections/scan'
 import { CHECK_GLYPH, CODE_TAGS, COPY_GLYPH } from './codeGlyphs'
+import type { DiffTally } from './Engine/detect'
 import { claimedEmbeds } from './Engine/embedClaims'
 import { linkRest, linkTyping } from './Links/linkReveal'
 import {
@@ -56,6 +57,8 @@ import { resolveMdTarget, wikiLinkView, type ConnectionsApi } from './Links/conn
 import type { LinkStatus } from '../Connections/connections'
 import { editorHost, pageEditorAt, redrawNudge } from './api'
 import { checkMarkSvg, checkboxClass } from '@pommora/uix/Controls/Checkbox'
+import * as btn from '@pommora/uix/Buttons/button-base.css'
+import { segment } from '@pommora/uix/Elements/segment.css'
 import { svgFrame } from '@pommora/uix/Symbols/svgFrame'
 import { cx } from '@pommora/uix/Utilities/cx'
 
@@ -172,12 +175,45 @@ function mark(body: string, className: string): SVGSVGElement {
 
 const COPIED_MS = 1000
 
+function tallyPill({ add, del }: DiffTally): HTMLElement {
+  const n = add - del
+  const net =
+    n > 0
+      ? `<b class="md-diff-add">+${n}</b>`
+      : n < 0
+        ? `<b class="md-diff-del">−${-n}</b>`
+        : '<b>±0</b>'
+  const run = cx(
+    btn.button,
+    btn.type.base,
+    btn.size['button-inline'],
+    btn.inRun,
+    btn.labeled,
+    btn.labelOnly,
+  )
+  const pill = document.createElement('span')
+  pill.className = cx(
+    'codeblock-tally',
+    btn.container,
+    btn.size['button-inline'],
+    btn.type.base,
+    btn.outlined,
+  )
+  pill.innerHTML = `<span class="${run}">${net}</span><span class="${cx('codeblock-tally-segment', segment, btn.dividerBar)}"></span><span class="${run}"><span><b class="md-diff-add">+${add}</b> / <b class="md-diff-del">−${del}</b></span></span>`
+  return pill
+}
+
 class CodeTagWidget extends WidgetType {
-  constructor(readonly name?: string) {
+  constructor(
+    readonly name?: string,
+    readonly tally?: DiffTally,
+  ) {
     super()
   }
   eq(o: CodeTagWidget): boolean {
-    return o.name === this.name
+    return (
+      o.name === this.name && o.tally?.add === this.tally?.add && o.tally?.del === this.tally?.del
+    )
   }
   toDOM(view: EditorView): HTMLElement {
     const el = document.createElement('span')
@@ -195,6 +231,7 @@ class CodeTagWidget extends WidgetType {
     const name = el.appendChild(document.createElement('span'))
     name.className = 'codeblock-name'
     name.textContent = resting
+    const pill = this.tally ? el.appendChild(tallyPill(this.tally)) : null
 
     let timer: number | undefined
     const copy = (e: MouseEvent): void => {
@@ -203,7 +240,7 @@ class CodeTagWidget extends WidgetType {
       if (!text) return
       void view.state.facet(editorHost).clipboard.write(text)
       el.classList.add('is-copied')
-      if (resting) name.textContent = 'Copied'
+      if (resting || pill) name.textContent = 'Copied'
       window.clearTimeout(timer)
       timer = window.setTimeout(() => {
         el.classList.remove('is-copied')
@@ -211,7 +248,7 @@ class CodeTagWidget extends WidgetType {
       }, COPIED_MS)
     }
     // Swallowed: a caret on the fence line trades the tag back for the raw info word, unmounting what is being pressed.
-    for (const target of [slot, name]) {
+    for (const target of pill ? [slot, name, pill] : [slot, name]) {
       target.addEventListener('mousedown', (e) => e.preventDefault())
       target.addEventListener('click', copy)
     }
@@ -418,15 +455,18 @@ function build(view: EditorView, conn: ConnectionsApi | undefined, scope: Markdo
     }
     if (it.kind === 'lineWidget') {
       ranges.push(
-        Decoration.widget({ widget: new LineWidget(it.className, it.text), side: -1 }).range(
-          it.from,
-        ),
+        Decoration.widget({
+          widget: new LineWidget(it.className, it.text),
+          side: it.side ?? -1,
+        }).range(it.from),
       )
       continue
     }
     if (it.kind === 'codeTag') {
       ranges.push(
-        Decoration.widget({ widget: new CodeTagWidget(it.name), side: -1 }).range(it.from),
+        Decoration.widget({ widget: new CodeTagWidget(it.name, it.tally), side: -1 }).range(
+          it.from,
+        ),
       )
       continue
     }

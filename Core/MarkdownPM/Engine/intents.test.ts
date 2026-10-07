@@ -6,6 +6,7 @@ import {
   docLineIntents,
   GRIP_HOST,
   NO_CARET,
+  prefixEndAt,
   tokenIntents,
   type DecoIntent,
 } from './intents'
@@ -427,20 +428,37 @@ describe('decoration intents', () => {
         'codeblock codeblock-last codeblock-diff',
       ])
     })
-    it('seats a signed line’s number past its sign', () => {
+    it('seats a signed line’s number past its sign, on the caret’s far side', () => {
       const numbers = of(at(NO_CARET), 'lineWidget').filter(
         (w) => w.className === 'codeblock-line-number',
       )
-      expect(numbers.map((w) => w.from)).toEqual([
-        t.indexOf('@@'),
-        t.indexOf(' const') + 1,
-        t.indexOf('-let') + 1,
-        t.indexOf('+let') + 1,
-        t.indexOf('plain'),
+      expect(numbers.map((w) => [w.from, w.side])).toEqual([
+        [t.indexOf('@@'), undefined],
+        [t.indexOf(' const') + 1, 1],
+        [t.indexOf('-let') + 1, 1],
+        [t.indexOf('+let') + 1, 1],
+        [t.indexOf('plain'), undefined],
       ])
+    })
+    it('floors the caret past each sign', () => {
+      const cached = docLineIntents(scan)
+      expect(prefixEndAt(cached, scan, t.indexOf('-let'))).toBe(t.indexOf('-let') + 1)
+      expect(prefixEndAt(cached, scan, t.indexOf(' const'))).toBe(t.indexOf(' const') + 1)
+      expect(prefixEndAt(cached, scan, t.indexOf('@@'))).toBe(t.indexOf('@@'))
     })
     it('trades the bar for the raw sign on the caret’s own line', () => {
       expect(hidden(at(t.indexOf('let b')))).not.toContain('-')
+    })
+    it('hands its tag the fence’s totals and no language name', () => {
+      const [tag] = of(at(NO_CARET), 'codeTag')
+      expect(tag.name).toBeUndefined()
+      expect(tag.tally).toEqual({ add: 1, del: 1 })
+    })
+    it('hides a bare diff word behind its tag', () => {
+      const bare = '```diff\n+a\n```'
+      const s = scanDoc(bare)
+      const hides = of(assembleLineIntents(s, docLineIntents(s), NO_CARET), 'hide')
+      expect(hides.map((d) => bare.slice(d.from, d.to))).toEqual(['diff', '+'])
     })
     it('reveals every sign at once from anywhere in the fence', () => {
       const intents = at(t.indexOf('plain'))

@@ -8,6 +8,7 @@ import {
   fenceBodyStart,
   type CalloutLine,
   type CitationEntry,
+  type DiffTally,
   type FenceInfo,
   type ListMarker,
   type MarkdownScope,
@@ -76,8 +77,8 @@ export type DecoIntent =
   | { kind: 'atomic'; from: number; to: number }
   | { kind: 'prefix'; from: number; to: number; drawnOver: boolean }
   | { kind: 'widget'; from: number; to: number; spec: WidgetSpec }
-  | { kind: 'lineWidget'; from: number; className: string; text?: string }
-  | { kind: 'codeTag'; from: number; name?: string }
+  | { kind: 'lineWidget'; from: number; className: string; text?: string; side?: 1 }
+  | { kind: 'codeTag'; from: number; name?: string; tally?: DiffTally }
   | {
       kind: 'line'
       from: number
@@ -237,18 +238,27 @@ function pageChrome(
           !barred(fences[i + 1]) && 'md-diff-last',
         ),
       })
-    if (signed)
+    // The sign is the line's own prefix: the caret floors past it as it does past a quote marker, and stays where the sign shows.
+    if (signed) {
+      pushPrefix(intents, innerStart, innerStart + 1, true)
       intents.push(
         raw
           ? { kind: 'class', from: innerStart, to: innerStart + 1, className: 'md-diff-sign' }
           : { kind: 'hide', from: innerStart, to: innerStart + 1 },
       )
+    }
     // The offset comes from the fence grammar itself (markerEnd), so an indented or quoted fence never hides its own marker.
     const infoStart = ls + fence.markerEnd
-    const named = fence.lang ? codeFence(fence.lang).name : null
+    const named = !fence.tally && fence.lang ? codeFence(fence.lang).name : null
     if (fence.role === 'open' && !caretOnLine) {
-      intents.push({ kind: 'codeTag', from: infoStart, name: named ?? undefined })
-      if (named && infoStart < le) intents.push({ kind: 'hide', from: infoStart, to: le })
+      intents.push({
+        kind: 'codeTag',
+        from: infoStart,
+        name: named ?? undefined,
+        tally: fence.tally,
+      })
+      if ((named || fence.tally) && infoStart < le)
+        intents.push({ kind: 'hide', from: infoStart, to: le })
     }
     if (fence.ordinal !== undefined)
       intents.push({
@@ -256,6 +266,7 @@ function pageChrome(
         from: signed ? innerStart + 1 : ls,
         className: 'codeblock-line-number',
         text: String(fence.ordinal),
+        side: signed ? 1 : undefined,
       })
     return null
   }

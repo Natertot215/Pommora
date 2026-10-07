@@ -50,8 +50,8 @@ The plan also tidies what it touches. The old diff highlighter retires, the tag 
   - [x] Task 3.3
   - [ ] Review Checkpoint
 - [ ] **Phase 4** — The Tally Pill
-  - [ ] Task 4.1
-  - [ ] Task 4.2
+  - [x] Task 4.1
+  - [x] Task 4.2
   - [ ] Review Checkpoint
   - [ ] `[Stop: Nathan's visual pass on bars, corners, insets, and the pill before the history entry]`
   - [ ] Task 4.3
@@ -606,12 +606,15 @@ The plan also tidies what it touches. The old diff highlighter retires, the tag 
 +          !barred(fences[i + 1]) && 'md-diff-last',
 +        ),
 +      })
-+    if (signed)
++    // The sign is the line's own prefix: the caret floors past it as it does past a quote marker, and stays where the sign shows.
++    if (signed) {
++      pushPrefix(intents, innerStart, innerStart + 1, true)
 +      intents.push(
 +        raw
 +          ? { kind: 'class', from: innerStart, to: innerStart + 1, className: 'md-diff-sign' }
 +          : { kind: 'hide', from: innerStart, to: innerStart + 1 },
 +      )
++    }
      // The offset comes from the fence grammar itself (markerEnd), so an indented or quoted fence never hides its own marker.
      const infoStart = ls + fence.markerEnd
 @@ pageChrome — the line number @@
@@ -622,6 +625,7 @@ The plan also tidies what it touches. The old diff highlighter retires, the tag 
 +        from: signed ? innerStart + 1 : ls,
          className: 'codeblock-line-number',
          text: String(fence.ordinal),
++        side: signed ? 1 : undefined,
        })
 ```
 
@@ -935,8 +939,8 @@ The plan also tidies what it touches. The old diff highlighter retires, the tag 
 
 **TASK**
 
-- [ ] Write the tag intent tests and watch them fail.
-- [ ] Carry `tally` on the `codeTag` intent, name no language on a diff fence's tag, and hide a bare `diff` word behind it.
+- [x] Write the tag intent tests and watch them fail.
+- [x] Carry `tally` on the `codeTag` intent, name no language on a diff fence's tag, and hide a bare `diff` word behind it.
 
 ```ts|diff
 --- a/Core/MarkdownPM/Engine/intents.ts
@@ -979,9 +983,9 @@ The plan also tidies what it touches. The old diff highlighter retires, the tag 
 
 **VERIFY**
 
-- [ ] Both cases fail before the change and pass after.
-- [ ] Run the gates.
-- [ ] Check the work for unnecessary code or obvious mistakes.
+- [x] Both cases fail before the change and pass after.
+- [x] Run the gates.
+- [x] Check the work for unnecessary code or obvious mistakes.
 
 #### Task 4.2
 
@@ -989,11 +993,11 @@ The plan also tidies what it touches. The old diff highlighter retires, the tag 
 
 **TASK**
 
-- [ ] Write the pill DOM tests in a new `Core/MarkdownPM/codeTally.test.tsx` and watch them fail.
-- [ ] Have `CodeTagWidget` take the tally and append the pill, built from Segmented's classes on plain DOM: the container, a `button-inline` run, and a segment divider, outlined in place of glass. A count change fails `eq` and re-creates the tag, the same as every other plain widget in `decorations.ts`.
-- [ ] Make the pill a copy target and swap it for "Copied" during the flash.
-- [ ] Color its counts through the `--diff-color` that `.md-diff-add` and `.md-diff-del` already carry, at tint-primary.
-- [ ] Add the diff paragraph and the pill to *MarkdownPM.md*.
+- [x] Write the pill DOM tests in a new `Core/MarkdownPM/codeTally.test.tsx` and watch them fail.
+- [x] Have `CodeTagWidget` take the tally and append the pill, built from Segmented's classes on plain DOM: the container, a `button-inline` run, and a segment divider, outlined in place of glass. A count change fails `eq` and re-creates the tag, the same as every other plain widget in `decorations.ts`.
+- [x] Make the pill a copy target and swap it for "Copied" during the flash.
+- [x] Color its counts through the `--diff-color` that `.md-diff-add` and `.md-diff-del` already carry, at tint-primary.
+- [x] Add the diff paragraph and the pill to *MarkdownPM.md*.
 
 ```diff-ts
 --- a/Core/MarkdownPM/decorations.ts
@@ -1015,7 +1019,7 @@ The plan also tidies what it touches. The old diff highlighter retires, the tag 
 +  const run = cx(btn.button, btn.type.base, btn.size['button-inline'], btn.inRun, btn.labeled, btn.labelOnly)
 +  const pill = document.createElement('span')
 +  pill.className = cx('codeblock-tally', btn.container, btn.size['button-inline'], btn.type.base, btn.outlined)
-+  pill.innerHTML = `<span class="${run}">${net}</span><span class="${cx(segment, btn.dividerBar)}"></span><span class="${run}"><b class="md-diff-add">+${add}</b> / <b class="md-diff-del">−${del}</b></span>`
++  pill.innerHTML = `<span class="${run}">${net}</span><span class="${cx('codeblock-tally-segment', segment, btn.dividerBar)}"></span><span class="${run}"><span><b class="md-diff-add">+${add}</b> / <b class="md-diff-del">−${del}</b></span></span>`
 +  return pill
 +}
 @@ CodeTagWidget @@
@@ -1073,11 +1077,17 @@ The plan also tidies what it touches. The old diff highlighter retires, the tag 
 +/* Segmented's own pill, outlined where the change viewer's is glass. */
 +.mdpm-editor .codeblock .codeblock-language .codeblock-tally {
 +  --btn-radius: var(--radius-full);
++  height: auto;
++  padding: 2px;
++  box-shadow: inset 0 0 0 var(--width-175) var(--button-outline);
 +  color: var(--label-secondary);
 +  font-variant-numeric: tabular-nums;
 +}
++.mdpm-editor .codeblock-tally .codeblock-tally-segment {
++  background: var(--border-strong);
++}
 +.mdpm-editor .codeblock-tally :is(.md-diff-add, .md-diff-del) {
-+  color: color-mix(in srgb, var(--diff-color) var(--tint-primary), var(--label-primary));
++  color: color-mix(in srgb, var(--diff-color) var(--tint-primary), var(--label-secondary));
 +}
 +.mdpm-editor .codeblock .codeblock-language.is-copied .codeblock-tally {
 +  display: none;
@@ -1141,11 +1151,11 @@ The plan also tidies what it touches. The old diff highlighter retires, the tag 
 
 **VERIFY**
 
-- [ ] Both pill tests fail before the widget change and pass after.
-- [ ] Run the gates.
-- [ ] Live drive: hovering the tag reveals the copy glyph, clicking the pill copies the raw block with its signs, and the pill gives way to "Copied" for a second.
+- [x] Both pill tests fail before the widget change and pass after.
+- [x] Run the gates.
+- [x] Live drive: hovering the tag reveals the copy glyph, clicking the pill copies the raw block with its signs, and the pill gives way to "Copied" for a second.
 - [ ] User confirms: the pill reads like the change viewer's, apart from the glass: net, divider, then `+added / −removed`, with the counts in the tinted green and red.
-- [ ] Check the work for unnecessary code or obvious mistakes.
+- [x] Check the work for unnecessary code or obvious mistakes.
 
 #### Review Checkpoint
 
@@ -1258,3 +1268,6 @@ Per *§5.5* of the planning standard: the report goes to Nathan in plain languag
 - **Bar over the fill (Task 3.3):** Nathan ruled during the live pass that the bar lies over the fill as a quote's does, rather than being clipped into the fill's rounded corners. The bar now caps its own run ends, the fill keeps square left corners beneath it, and a raw line, which has no bar, rounds the fill's left corners instead. This adds one variable, `--diff-radius-l`.
 - **Sign zone (Tasks 3.1 and 3.3):** Nathan asked that a sign reserve its zone the way a list glyph does, with the list gap before the code. The zone is now `1ch + --list-gap`, and a raw sign is wrapped in an `md-diff-sign` class mark that holds the zone's width, the same inline-block pattern as the list gap.
 - **Tints (Task 3.3):** Nathan set the bar to tint-secondary and the fill to tint-quinary during the live pass. `--tint-quinary` didn't exist, so it joined `TINT_STEPS` at 10%, with its row in *PommoraUIX.md*.
+- **Caret floor (Task 3.1):** Nathan asked that the caret seat between a sign and its line number, never before the sign. Each sign is a drawn-over `prefix` intent, so `prefixEndAt` and `caretSeat` floor the caret past it the way they do past a quote marker, and ArrowLeft there leaves the line. A signed line's number widget takes `side: 1` (a new optional field on `lineWidget`), so the caret stands before it. Backspace still deletes the sign, and Delete at the end of the line above joins past it.
+- **Caret height beside a line number (Task 3.3):** Nathan found that a caret seated against a line number drew at the widget's full line height. The number now sets `line-height: normal`, standing only as tall as the code's text, and the caret beside it measures the same as anywhere in the code. This applies to every codeblock's numbers.
+- **Pill (Task 4.2):** Nathan set the counts to mix into the secondary label, and asked for 2px of inner padding, a `--width-175` outline, and a divider in `--border-strong`. The divider carries `codeblock-tally-segment` so the color can reach it. The totals sit in one span, so a flex run keeps the spaces around the slash.
