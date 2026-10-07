@@ -268,6 +268,11 @@ describe('a diff fence', () => {
   it('reads the sign past a quote prefix', () => {
     expect(scan('> ```diff\n> +x\n> ```')[1]?.diff).toBe('add')
   })
+  it('reads a diff word spaced from its language, past the info string’s first word', () => {
+    const f = scan('```ts diff\n+x\n```')
+    expect(f[1]?.diff).toBe('add')
+    expect(f[0]?.name).toBe('TypeScript')
+  })
   it('leaves a fence that names no diff without signs or totals', () => {
     const f = scan('```ts\n+x\n```')
     expect(f[1]?.diff).toBeUndefined()

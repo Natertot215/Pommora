@@ -3,7 +3,6 @@ import { perText } from './perText'
 import { parse } from './parser'
 import { type CodeLangName, codeFence } from './codeLangs'
 import {
-  fenceLang,
   fenceSpans,
   isBlockquoteLine,
   lineEndOf,
@@ -72,7 +71,7 @@ export function scanFencedCode(lines: string[], lineStarts: number[]): (FenceInf
   const out: (FenceInfo | undefined)[] = new Array(lines.length)
   for (const span of fenceSpans(lines)) {
     const { open, close } = span
-    const { name, diff } = codeFence(fenceLang(span.fence))
+    const { name, diff } = codeFence(span.fence.info)
     const tally = diff ? { add: 0, del: 0 } : undefined
     const base = {
       from: lineStarts[open],

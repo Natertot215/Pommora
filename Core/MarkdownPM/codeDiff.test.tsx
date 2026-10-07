@@ -164,14 +164,22 @@ describe('a diff fence’s Enter', () => {
     expect(out.doc).toBe('> ```diff-ts\n> +f({\n> +  \n> +})\n> ```')
   })
 
-  it('opens the signed line below on Mod-Enter, wherever the caret stands in the line', async () => {
+  it('opens an unchanged line below on Mod-Enter, at the indentation the language gives it', async () => {
     const body = '```diff-ts\n+if (a) {\n```'
     const out = await enter(body, body.indexOf('(a)'), mod)
-    expect(out.doc).toBe('```diff-ts\n+if (a) {\n+  \n```')
+    expect(out.doc).toBe('```diff-ts\n+if (a) {\n   \n```')
+    expect(out.head).toBe(body.indexOf('{') + 5)
+  })
+
+  it('breaks to a bare line on Shift-Enter, with neither the sign nor the language’s indentation', async () => {
+    const body = '> ```diff-ts\n> +if (a) {\n> ```'
+    const out = await enter(body, body.indexOf('{') + 1, { shiftKey: true })
+    expect(out.doc).toBe('> ```diff-ts\n> +if (a) {\n> \n> ```')
   })
 
   it('leaves a header’s and a plain block’s Enter to the editor', async () => {
     expect((await enter('```diff\n@@ h @@\n```', 15)).doc).toBe('```diff\n@@ h @@\n\n```')
+    expect((await enter('```ts diff\nif (a) {\n```', 19)).doc).toBe('```ts diff\nif (a) {\n\n```')
     expect((await enter('```ts\nif (a) {\n```', 14)).doc).toBe('```ts\nif (a) {\n  \n```')
   })
 })

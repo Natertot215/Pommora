@@ -47,7 +47,7 @@ describe('a fence word', () => {
     expect(codeFence('brainfuck')).toEqual({ name: null, diff: false })
     expect(codeFence('')).toEqual({ name: null, diff: false })
   })
-  it('reads a diff joined to its language by any separator, on either side', () => {
+  it('reads a diff joined to its language by any separator or a space, on either side', () => {
     for (const word of [
       'diff-ts',
       'diff/ts',
@@ -56,6 +56,9 @@ describe('a fence word', () => {
       'ts/diff',
       'ts|diff',
       'patch-ts',
+      'diff ts',
+      'TS  Diff',
+      'patch ts extra',
     ])
       expect(codeFence(word)).toEqual({ name: 'TypeScript', diff: true })
   })
@@ -63,6 +66,10 @@ describe('a fence word', () => {
     expect(codeFence('diff')).toEqual({ name: null, diff: true })
     expect(codeFence('PATCH')).toEqual({ name: null, diff: true })
     expect(codeFence('diff-foo')).toEqual({ name: null, diff: true })
+  })
+  it('reads only the first word of an info string that names no diff', () => {
+    expect(codeFence('json extra')).toEqual({ name: 'JSON', diff: false })
+    expect(codeFence('ts diffs')).toEqual({ name: 'TypeScript', diff: false })
   })
   it('reads no diff in a word that only begins with one', () => {
     expect(codeFence('diffts')).toEqual({ name: null, diff: false })
@@ -97,6 +104,11 @@ describe('a code block’s colors', () => {
       'key',
       'old',
     ])
+  })
+
+  it('color a diff block whose word stands a space from its language, on either side', async () => {
+    expect(await painted('```diff ts\n+let a\n```')).toEqual(['let'])
+    expect(await painted('```ts diff\n+let a\n```')).toEqual(['let'])
   })
 
   it('leave a diff block’s headers, and a bare diff, uncolored', async () => {

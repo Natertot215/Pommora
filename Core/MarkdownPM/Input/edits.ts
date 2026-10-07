@@ -136,7 +136,12 @@ export function shiftEnterEdit(scan: DocScan, selStart: number, selEnd: number):
     const insert = `\n${pfx} `
     return { from: selStart, to: selEnd, insert, selection: selStart + insert.length }
   }
-  return { from: selStart, to: selEnd, insert: '\n', selection: selStart + 1 }
+  // Inside a fence the break keeps the fence's quote or list indent, so it stays in the block; a diff line's sign stays behind, as a list item's marker does.
+  const i = lineIndexAt(scan, selStart)
+  const f = scan.fences[i]
+  const lead = f?.role === 'content' ? scan.lines[i].slice(0, fenceBodyStart(scan.lines[i], f)) : ''
+  const insert = `\n${lead}`
+  return { from: selStart, to: selEnd, insert, selection: selStart + insert.length }
 }
 
 export function indentListOnTab(

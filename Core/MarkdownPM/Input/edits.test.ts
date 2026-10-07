@@ -771,6 +771,18 @@ describe('shift+enter', () => {
     const e = a + 3
     expect(apply(doc, shiftEnterEdit(scanDoc(doc), a, e))).toBe('> [!callout] head\n> abc\n> def')
   })
+  it('inside a fence, keeps the fence’s quote or list indent, and leaves a diff line’s sign behind', () => {
+    const quoted = '> ```diff\n> +foobar\n> ```'
+    const at = quoted.indexOf('bar')
+    expect(apply(quoted, shiftEnterEdit(scanDoc(quoted), at, at))).toBe(
+      '> ```diff\n> +foo\n> bar\n> ```',
+    )
+    const listed = '- item\n  ```js\n  ab\n  ```'
+    const b = listed.indexOf('ab') + 1
+    expect(apply(listed, shiftEnterEdit(scanDoc(listed), b, b))).toBe(
+      '- item\n  ```js\n  a\n  b\n  ```',
+    )
+  })
   it('a selection STRADDLING the box edge falls back to plain newline (no outside text pulled in)', () => {
     const doc = '> [!callout] body here\nplain below line'
     const a = doc.indexOf('body here')

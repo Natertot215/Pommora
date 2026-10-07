@@ -97,18 +97,25 @@ const onEnter = (view: EditorView): boolean => {
   )
 }
 
-// Enter on a diff line carries its sign to the new line, as a list item carries its marker, and Mod-Enter opens the signed line below. Each is CodeMirror's own command run on the block as its language reads it, so the code indents past the sign; the break then lands back behind the line's prefix.
+// Enter on a diff line carries its sign to the new line, as a list item carries its marker, and Mod-Enter opens an unchanged line below. Each is CodeMirror's own command run on the block as its language reads it, so the code indents past the sign column; the break then lands back behind the line's prefix.
 const diffBreak =
-  (command: StateCommand) =>
+  (command: StateCommand, sign?: ' ') =>
   (view: EditorView): boolean => {
     const { from, to } = view.state.selection.main
     const scan = docScan(view.state.doc)
     const i = lineIndexAt(scan, from)
     const f = scan.fences[i]
     const seat = signSeatAt(scan, from)
-    if (!signedLine(f) || seat === null || from < seat || to > lineEndOf(scan, i)) return false
-    const lines = blockLines(scan, f!)
-    const shift = lineOffsetsOf(lines)[i - lineIndexAt(scan, f!.from)] - seat
+    if (
+      f === undefined ||
+      !signedLine(f) ||
+      seat === null ||
+      from < seat ||
+      to > lineEndOf(scan, i)
+    )
+      return false
+    const lines = blockLines(scan, f)
+    const shift = lineOffsetsOf(lines)[i - lineIndexAt(scan, f.from)] - seat
     const broke: Transaction[] = []
     command({
       state: EditorState.create({
@@ -122,20 +129,20 @@ const diffBreak =
       }),
       dispatch: (tr) => broke.push(tr),
     })
-    const lead = `\n${scan.lines[i].slice(0, seat - scan.lineStarts[i])}`
+    const lead = `\n${scan.lines[i].slice(0, seat - 1 - scan.lineStarts[i])}${sign ?? scan.text[seat - 1]}`
     const signed = (text: string) => text.replaceAll('\n', lead)
-    let edit: Edit | null = null
+    const edits: Edit[] = []
     broke[0]?.changes.iterChanges((fromA, toA, fromB, _toB, inserted) => {
       const text = inserted.toString()
       const head = broke[0].newSelection.main.head - fromB
-      edit = {
+      edits.push({
         from: fromA - shift,
         to: toA - shift,
         insert: signed(text),
         selection: fromA - shift + signed(text.slice(0, head)).length,
-      }
+      })
     })
-    return apply(view, edit)
+    return apply(view, edits[0] ?? null)
   }
 
 // A paste never reaches the input handler, so the margin refuses it here: every paste path tags itself `input.paste`.
@@ -264,7 +271,7 @@ export const markdownInput = [
       { key: 'Enter', run: diffBreak(insertNewlineAndIndent) },
       { key: 'Enter', run: onEnter },
       { key: 'Shift-Enter', run: onShiftEnter },
-      { key: 'Mod-Enter', run: diffBreak(insertBlankLine) },
+      { key: 'Mod-Enter', run: diffBreak(insertBlankLine, ' ') },
       { key: 'Tab', run: nest(indentListOnTab) },
       { key: 'Shift-Tab', run: nest(outdentListOnShiftTab) },
       { key: 'Backspace', run: onBackspace },

@@ -48,13 +48,14 @@ export const CODE_LANGS = [
 
 export type CodeLangName = (typeof CODE_LANGS)[number]['name']
 
-const DIFF_WORD = /^(?:(?:diff|patch)(?:[-/|](.+))?|(.+)[-/|](?:diff|patch))$/
+const DIFF_WORD =
+  /^(?:(?:diff|patch)(?:(?:[-/|]|\s+)(\S+))?|(\S+?)(?:[-/|]|\s+)(?:diff|patch))(?:\s|$)/
 
-/** The one reading of a fence word: the language its code colors as, and whether it draws as a diff — `diff` or `patch` alone, or joined to a language by `-`, `/`, or `|` on either side. A null name selects no parse, and the fence wears no language tag. */
+/** The one reading of a fence's info string: the language its code colors as, and whether it draws as a diff — `diff` or `patch` alone, or joined to a language by `-`, `/`, `|`, or a space on either side. Past that, only the first word counts. A null name selects no parse, and the fence wears no language tag. */
 export function codeFence(info: string): { name: CodeLangName | null; diff: boolean } {
-  const word = info.trim().toLowerCase()
-  const m = DIFF_WORD.exec(word)
-  const lang = m ? (m[1] ?? m[2]) : word
+  const text = info.trim().toLowerCase()
+  const m = DIFF_WORD.exec(text)
+  const lang = m ? (m[1] ?? m[2]) : text.split(/\s/, 1)[0]
   const named = CODE_LANGS.find(
     (l) => l.name.toLowerCase() === lang || l.alias.some((a) => a === lang),
   )
