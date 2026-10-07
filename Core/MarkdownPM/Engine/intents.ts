@@ -214,9 +214,9 @@ function pageChrome(
     const innerStart = ls + fenceBodyStart(line, fence)
     const caretOnLine = selStart >= ls && selStart <= le
     const signed = signedLine(fence)
-    const open = fence.tally !== undefined && selStart >= fence.from && selStart <= fence.to
-    const slot = open && awaitsSign(fence)
-    const raw = open && (signed || slot)
+    const revealed = fence.tally !== undefined && selStart >= fence.from && selStart <= fence.to
+    const slot = revealed && awaitsSign(fence)
+    const raw = revealed && (signed || slot)
     intents.push({
       kind: 'line',
       from: ls,
@@ -269,7 +269,7 @@ function pageChrome(
         className: 'codeblock-line-number',
         text: String(fence.ordinal),
       })
-    // An open line anchors each seat that has nothing of its own to draw the caret against: the margin of a line with no sign, and the code of a line with none.
+    // While the caret reveals the block, a line anchors each seat that has nothing of its own to draw the caret against: the margin of a line with no sign, and the code of a line with none.
     const seat = innerStart + (signed ? 1 : 0)
     if (slot) intents.push({ kind: 'lineWidget', from: seat, className: 'md-diff-slot' })
     if (raw && seat === le)

@@ -799,7 +799,7 @@
   border-bottom: var(--codeblock-border);
 }
 
-/* The code holds one column whether its sign shows or not: the sign reserves a zone before it as a list marker does, its gap included, and the bar stands in the same column the sign does. A diff line's number stands out of the text's flow, so the margin (the sign and the number) is one stretch the open fence pulls the line back across, and the caret meets the sign on one side of its seat and the code on the other. */
+/* The code holds one column whether its sign shows or not: the sign reserves a zone before it as a list marker does, its gap included, and the bar stands in the same column the sign does. A diff line's number stands out of the text's flow, so the margin (the sign and the number) is one stretch a revealed block pulls the line back across, and the caret meets the sign on one side of its seat and the code on the other. */
 .mdpm-editor .cm-line.codeblock-diff {
   --diff-zone: calc(1ch + var(--list-gap));
   --diff-bar: 3px;

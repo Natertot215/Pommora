@@ -131,6 +131,7 @@ const diffBreak =
     })
     const lead = `\n${scan.lines[i].slice(0, seat - 1 - scan.lineStarts[i])}${sign ?? scan.text[seat - 1]}`
     const signed = (text: string) => text.replaceAll('\n', lead)
+    // Each command makes one change for the one caret.
     const edits: Edit[] = []
     broke[0]?.changes.iterChanges((fromA, toA, fromB, _toB, inserted) => {
       const text = inserted.toString()
