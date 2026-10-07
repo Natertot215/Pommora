@@ -657,6 +657,12 @@ const caretSeat = (scope: MarkdownScope): Extension => {
     })
     return true
   }
+  const seatUnder = (view: EditorView, x: number, y: number) => {
+    const pos = view.posAtCoords({ x, y })
+    const seat = pos === null ? null : signSeatAt(docScan(view.state.doc), pos)
+    const code = seat === null ? null : view.coordsAtPos(seat, 1)
+    return seat === null || !code ? null : { seat, margin: x < code.left }
+  }
   const pressMargin = EditorView.mouseSelectionStyle.of((view, start) => {
     if (
       !page ||
@@ -668,23 +674,32 @@ const caretSeat = (scope: MarkdownScope): Extension => {
       start.ctrlKey
     )
       return null
-    const pos = view.posAtCoords({ x: start.clientX, y: start.clientY })
-    const at = pos === null ? null : signSeatAt(docScan(view.state.doc), pos)
-    const code = at === null ? null : view.coordsAtPos(at, 1)
-    if (at === null || !code || start.clientX >= code.left) return null
-    let seat = at
+    const under = seatUnder(view, start.clientX, start.clientY)
+    // A press past the end of a line with no code resolves to its seat on the margin's side, so this style seats that one too, on the code's.
+    if (!under || (!under.margin && under.seat !== view.state.doc.lineAt(under.seat).to))
+      return null
+    const side = under.margin ? -1 : 1
+    let { seat } = under
     return {
       get: (e) => {
         const head = view.posAtCoords({ x: e.clientX, y: e.clientY }, false)
         const back = head <= seat && head >= view.state.doc.lineAt(seat).from
         return EditorSelection.create([
-          back ? EditorSelection.cursor(seat, -1) : EditorSelection.range(seat, head),
+          back ? EditorSelection.cursor(seat, side) : EditorSelection.range(seat, head),
         ])
       },
       update: (u) => {
         seat = u.changes.mapPos(seat)
       },
     }
+  })
+  // A drop into the margin lands nothing, as a paste there does.
+  const dropMargin = EditorView.domEventHandlers({
+    drop(e, view) {
+      if (!page || !seatUnder(view, e.clientX, e.clientY)?.margin) return false
+      e.preventDefault()
+      return true
+    },
   })
   const inMargin = (tr: Transaction, seat: number): boolean => {
     if (tr.isUserEvent('select.margin')) return true
@@ -700,6 +715,7 @@ const caretSeat = (scope: MarkdownScope): Extension => {
   const shift = (view: EditorView) => leaveLine(view, true)
   return [
     pressMargin,
+    dropMargin,
     EditorState.transactionFilter.of((tr) => {
       if (!tr.selection && !tr.docChanged) return tr
       const { anchor, head, empty, assoc } = tr.newSelection.main
