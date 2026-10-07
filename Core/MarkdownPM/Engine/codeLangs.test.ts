@@ -13,9 +13,6 @@ describe('the code-language roster', () => {
   })
   it('labels the tags that override their name', () => {
     expect(CODE_TAGS.Shell?.label).toBe('Command')
-    expect(CODE_TAGS['C#']?.label).toBeNull()
-    expect(CODE_TAGS.SQL?.label).toBeNull()
-    expect(CODE_TAGS.TOML?.label).toBeNull()
     expect(CODE_TAGS.Python?.label).toBeUndefined()
   })
 

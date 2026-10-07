@@ -224,8 +224,7 @@ class CodeTagWidget extends WidgetType {
     el.className = 'codeblock-language'
     el.dataset.revealHost = ''
     const tag = this.name === undefined ? undefined : CODE_TAGS[this.name]
-    const label = tag?.label === undefined ? this.name : tag.label
-    const resting = label ?? ''
+    const resting = tag?.label ?? this.name ?? ''
 
     const slot = el.appendChild(document.createElement('span'))
     slot.className = 'codeblock-mark-slot'
