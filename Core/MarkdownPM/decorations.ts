@@ -53,6 +53,7 @@ import {
 } from './Engine/intents'
 import {
   type DocScan,
+  caretInMargin,
   chunksOver,
   codeBlockTextAt,
   inCodeAt,
@@ -182,14 +183,11 @@ function mark(body: string, className: string): SVGSVGElement {
 
 const COPIED_MS = 1000
 
+const count = (kind: 'add' | 'del', n: number): string =>
+  `<b class="md-diff-${kind}">${kind === 'add' ? '+' : '−'}${Math.abs(n)}</b>`
+
 function tallyPill({ add, del }: DiffTally): HTMLElement {
-  const n = add - del
-  const net =
-    n > 0
-      ? `<b class="md-diff-add">+${n}</b>`
-      : n < 0
-        ? `<b class="md-diff-del">−${-n}</b>`
-        : '<b>±0</b>'
+  const net = add === del ? '<b>±0</b>' : count(add > del ? 'add' : 'del', add - del)
   const run = buttonClass({
     size: 'button-inline',
     inRun: true,
@@ -205,7 +203,7 @@ function tallyPill({ add, del }: DiffTally): HTMLElement {
     btn.type.base,
     btn.outlined,
   )
-  pill.innerHTML = `<span class="codeblock-tally-counts"><span class="${run}">${net}</span><span class="${segmentDivider}"></span><span class="${run}"><span><b class="md-diff-add">+${add}</b> / <b class="md-diff-del">−${del}</b></span></span></span><span class="${cx('codeblock-tally-copied', run)}">Copied</span>`
+  pill.innerHTML = `<span class="codeblock-tally-counts"><span class="${run}">${net}</span><span class="${segmentDivider}"></span><span class="${run}"><span>${count('add', add)} / ${count('del', del)}</span></span></span><span class="${cx('codeblock-tally-copied', run)}">Copied</span>`
   return pill
 }
 
@@ -694,9 +692,7 @@ const caretSeat = (scope: MarkdownScope): Extension => {
     const was = tr.startState.selection.main
     return (
       tr.docChanged &&
-      was.empty &&
-      was.assoc < 0 &&
-      signSeatAt(docScan(tr.startState.doc), was.head) === was.head &&
+      caretInMargin(docScan(tr.startState.doc), was) &&
       tr.newDoc.lineAt(tr.changes.mapPos(was.head, -1)).from === tr.newDoc.lineAt(seat).from
     )
   }
@@ -716,8 +712,8 @@ const caretSeat = (scope: MarkdownScope): Extension => {
           : empty && tr.isUserEvent('select.pointer')
             ? seatPastMarker(intents, scan, head, scope)
             : null) ?? head
-      const side =
-        page && signSeatAt(scan, seat) === seat ? (empty && inMargin(tr, seat) ? -1 : 1) : assoc
+      let side = assoc
+      if (page && signSeatAt(scan, seat) === seat) side = empty && inMargin(tr, seat) ? -1 : 1
       if (seat === head && side === assoc) return tr
       const selection = tr.newSelection.replaceRange(
         empty

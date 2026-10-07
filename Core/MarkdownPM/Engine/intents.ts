@@ -15,7 +15,6 @@ import {
   type ListMarker,
   type MarkdownScope,
 } from './detect'
-import { codeFence } from './codeLangs'
 import { carriedFrom, type DocScan, spanAt } from './docScan'
 import { isBlockquoteLine, lineIndexAt, quotePrefix, quotePrefixWidth } from './markdownCode'
 import { cx } from '@pommora/uix/Utilities/cx'
@@ -253,15 +252,14 @@ function pageChrome(
     }
     // The offset comes from the fence grammar itself (markerEnd), so an indented or quoted fence never hides its own marker.
     const infoStart = ls + fence.markerEnd
-    const named = !fence.tally && fence.lang ? codeFence(fence.lang).name : null
     if (fence.role === 'open' && !caretOnLine) {
       intents.push({
         kind: 'codeTag',
         from: infoStart,
-        name: named ?? undefined,
+        name: fence.tally ? undefined : fence.name,
         tally: fence.tally,
       })
-      if ((named || fence.tally) && infoStart < le)
+      if ((fence.name || fence.tally) && infoStart < le)
         intents.push({ kind: 'hide', from: infoStart, to: le })
     }
     if (fence.ordinal !== undefined)

@@ -1,8 +1,17 @@
 import { EditorView, type KeyBinding, keymap } from '@codemirror/view'
-import { type Extension, Prec, StateField } from '@codemirror/state'
+import {
+  EditorSelection,
+  EditorState,
+  type Extension,
+  Prec,
+  type StateCommand,
+  StateField,
+  type Transaction,
+} from '@codemirror/state'
+import { insertBlankLine, insertNewlineAndIndent } from '@codemirror/commands'
+import { indentUnit } from '@codemirror/language'
 import {
   continueListOnEnter,
-  continueSign,
   marginSign,
   continueBlockquoteOnEnter,
   smartBackspace,
@@ -28,13 +37,14 @@ import {
 } from './edits'
 import { isColorMark } from '../Engine/highlightColors'
 import { applyEdit } from './applyEdit'
-import { fenceAt, lineIndexAt } from '../Engine/markdownCode'
+import { fenceAt, lineEndOf, lineIndexAt, lineOffsetsOf } from '../Engine/markdownCode'
 import { refusedInAlias } from '../Guards/aliasGuard'
 import { commitAliasOnEnter } from '../Links/linkEdit'
 import { headingHash } from '../Links/headingHash'
 import { embedTileRanges } from '../Embeds/embedWidget'
-import { type DocScan, signSeatAt } from '../Engine/docScan'
-import type { MarkdownScope } from '../Engine/detect'
+import { caretInMargin, type DocScan, signSeatAt } from '../Engine/docScan'
+import { type MarkdownScope, signedLine } from '../Engine/detect'
+import { blockLanguage, blockLines } from '../codeHighlight'
 import { commitCitation, seedTypedCitation } from '../Citations/citationActions'
 import { citationDeleteIntent } from '../Citations/citationEdits'
 import { docLineIntentsOf, docScan } from '../docCache'
@@ -86,6 +96,55 @@ const onEnter = (view: EditorView): boolean => {
       continueBlockquoteOnEnter(scan, s.from, s.to),
   )
 }
+
+// Enter on a diff line carries its sign to the new line, as a list item carries its marker, and Mod-Enter opens the signed line below. Each is CodeMirror's own command run on the block as its language reads it, so the code indents past the sign; the break then lands back behind the line's prefix.
+const diffBreak =
+  (command: StateCommand) =>
+  (view: EditorView): boolean => {
+    const { from, to } = view.state.selection.main
+    const scan = docScan(view.state.doc)
+    const i = lineIndexAt(scan, from)
+    const f = scan.fences[i]
+    const seat = signSeatAt(scan, from)
+    if (!signedLine(f) || seat === null || from < seat || to > lineEndOf(scan, i)) return false
+    const lines = blockLines(scan, f!)
+    const shift = lineOffsetsOf(lines)[i - lineIndexAt(scan, f!.from)] - seat
+    const broke: Transaction[] = []
+    command({
+      state: EditorState.create({
+        doc: lines.join('\n'),
+        selection: EditorSelection.range(from + shift, to + shift),
+        extensions: [
+          blockLanguage,
+          indentUnit.of(view.state.facet(indentUnit)),
+          EditorState.tabSize.of(view.state.tabSize),
+        ],
+      }),
+      dispatch: (tr) => broke.push(tr),
+    })
+    const lead = `\n${scan.lines[i].slice(0, seat - scan.lineStarts[i])}`
+    const signed = (text: string) => text.replaceAll('\n', lead)
+    let edit: Edit | null = null
+    broke[0]?.changes.iterChanges((fromA, toA, fromB, _toB, inserted) => {
+      const text = inserted.toString()
+      const head = broke[0].newSelection.main.head - fromB
+      edit = {
+        from: fromA - shift,
+        to: toA - shift,
+        insert: signed(text),
+        selection: fromA - shift + signed(text.slice(0, head)).length,
+      }
+    })
+    return apply(view, edit)
+  }
+
+// A paste never reaches the input handler, so the margin refuses it here: every paste path tags itself `input.paste`.
+const marginPaste = EditorState.transactionFilter.of((tr) =>
+  tr.isUserEvent('input.paste') &&
+  caretInMargin(docScan(tr.startState.doc), tr.startState.selection.main)
+    ? []
+    : tr,
+)
 
 // Forward-delete at the end of the line above a table would join prose into the header row, so it mirrors the backspace atomic behavior instead.
 /** Dispatched rather than returned into the transform chain: removing a footnote is two disjoint sites, and the edit that chain carries is a single range. */
@@ -167,11 +226,9 @@ export const typedInput = (scope: MarkdownScope): Extension =>
     if (view.composing || view.compositionStarted) return false
     const scan = docScan(view.state.doc)
     const page = scope === 'page'
-    // A diff line's margin takes only a sign.
-    const { empty, assoc } = view.state.selection.main
-    if (page && empty && assoc < 0 && signSeatAt(scan, from) === from) {
-      const sign = text === '+' || text === '-' ? marginSign(scan, from, text) : null
-      return sign ? apply(view, sign) : true
+    if (page && caretInMargin(scan, view.state.selection.main)) {
+      apply(view, marginSign(scan, from, text))
+      return true
     }
     if (text.length !== 1 && !isColorMark(text)) return false
     const settings = settingsOf(view)
@@ -200,16 +257,14 @@ export const typedInput = (scope: MarkdownScope): Extension =>
 
 export const markdownInput = [
   typedLine,
+  marginPaste,
   Prec.high(
     keymap.of([
       { key: 'Enter', run: commitAliasOnEnter },
+      { key: 'Enter', run: diffBreak(insertNewlineAndIndent) },
       { key: 'Enter', run: onEnter },
       { key: 'Shift-Enter', run: onShiftEnter },
-      {
-        key: 'Mod-Enter',
-        run: (view) =>
-          apply(view, continueSign(docScan(view.state.doc), view.state.selection.main.head)),
-      },
+      { key: 'Mod-Enter', run: diffBreak(insertBlankLine) },
       { key: 'Tab', run: nest(indentListOnTab) },
       { key: 'Shift-Tab', run: nest(outdentListOnShiftTab) },
       { key: 'Backspace', run: onBackspace },
