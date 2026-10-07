@@ -1,9 +1,9 @@
 // A CodeMirror widget building raw DOM, so it mounts an <svg> rather than a React icon. A language absent here draws its name alone, which is the intended look: the brand sets have no mark for a Ruby or a Haskell.
 
-/** The glyph is the body of a 24×24 viewBox; `label` overrides the name shown, and `null` shows none at all — for a mark that already draws the wordmark itself. */
+/** The glyph is the body of a 24×24 viewBox; `label` overrides the name shown. */
 interface CodeTag {
   glyph: string
-  label?: string | null
+  label?: string
 }
 
 /** The tag's own chrome, belonging to no language. Same 24×24 body as a language mark. */
@@ -19,10 +19,6 @@ export const CODE_TAGS: Readonly<Record<string, CodeTag>> = {
   TypeScript: {
     glyph:
       '<path d="M15 17.5c.32 .32 .754 .5 1.207 .5h.543c.69 0 1.25 -.56 1.25 -1.25v-.25a1.5 1.5 0 0 0 -1.5 -1.5a1.5 1.5 0 0 1 -1.5 -1.5v-.25c0 -.69 .56 -1.25 1.25 -1.25h.543c.453 0 .887 .18 1.207 .5"/><path d="M9 12h4"/><path d="M11 12v6"/><path d="M21 19v-14a2 2 0 0 0 -2 -2h-14a2 2 0 0 0 -2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2 -2"/>',
-  },
-  JSON: {
-    glyph:
-      '<path d="M20 16v-8l3 8v-8"/><path d="M15 8a2 2 0 0 1 2 2v4a2 2 0 1 1 -4 0v-4a2 2 0 0 1 2 -2"/><path d="M1 8h3v6.5a1.5 1.5 0 0 1 -3 0v-.5"/><path d="M7 15a1 1 0 0 0 1 1h1a1 1 0 0 0 1 -1v-2a1 1 0 0 0 -1 -1h-1a1 1 0 0 1 -1 -1v-2a1 1 0 0 1 1 -1h1a1 1 0 0 1 1 1"/>',
   },
   CSS: {
     glyph:
@@ -52,24 +48,9 @@ export const CODE_TAGS: Readonly<Record<string, CodeTag>> = {
     glyph:
       '<path d="M10.139 3.463c.473 -1.95 3.249 -1.95 3.722 0a1.916 1.916 0 0 0 2.859 1.185c1.714 -1.045 3.678 .918 2.633 2.633a1.916 1.916 0 0 0 1.184 2.858c1.95 .473 1.95 3.249 0 3.722a1.916 1.916 0 0 0 -1.185 2.859c1.045 1.714 -.918 3.678 -2.633 2.633a1.916 1.916 0 0 0 -2.858 1.184c-.473 1.95 -3.249 1.95 -3.722 0a1.916 1.916 0 0 0 -2.859 -1.185c-1.714 1.045 -3.678 -.918 -2.633 -2.633a1.916 1.916 0 0 0 -1.184 -2.858c-1.95 -.473 -1.95 -3.249 0 -3.722a1.916 1.916 0 0 0 1.185 -2.859c-1.045 -1.714 .918 -3.678 2.633 -2.633a1.914 1.914 0 0 0 2.858 -1.184"/><path d="M8 12h6a2 2 0 1 0 0 -4h-6v8v-4"/><path d="M19 16h-2a2 2 0 0 1 -2 -2a2 2 0 0 0 -2 -2h-1"/><path d="M9 8h-4"/><path d="M5 16h4"/>',
   },
-  'C#': {
-    glyph:
-      '<path d="M10 9a3 3 0 0 0 -3 -3h-.5a3.5 3.5 0 0 0 -3.5 3.5v5a3.5 3.5 0 0 0 3.5 3.5h.5a3 3 0 0 0 3 -3"/><path d="M16 7l-1 10"/><path d="M20 7l-1 10"/><path d="M14 10h7.5"/><path d="M21 14h-7.5"/>',
-    label: null,
-  },
   Shell: {
     glyph: '<path d="M5 7l5 5l-5 5"/><path d="M12 19l7 0"/>',
     label: 'Command',
-  },
-  SQL: {
-    glyph:
-      '<path d="M14 3v4a1 1 0 0 0 1 1h4"/><path d="M5 20.25c0 .414 .336 .75 .75 .75h1.25a1 1 0 0 0 1 -1v-1a1 1 0 0 0 -1 -1h-1a1 1 0 0 1 -1 -1v-1a1 1 0 0 1 1 -1h1.25a.75 .75 0 0 1 .75 .75"/><path d="M5 12v-7a2 2 0 0 1 2 -2h7l5 5v4"/><path d="M18 15v6h2"/><path d="M13 15a2 2 0 0 1 2 2v2a2 2 0 1 1 -4 0v-2a2 2 0 0 1 2 -2"/><path d="M14 20l1.5 1.5"/>',
-    label: null,
-  },
-  TOML: {
-    glyph:
-      '<path d="M1.499 8h3"/><path d="M2.999 8v8"/><path d="M8.5 8a1.5 1.5 0 0 1 1.5 1.5v5a1.5 1.5 0 0 1 -3 0v-5a1.5 1.5 0 0 1 1.5 -1.5"/><path d="M13 16v-8l2 5l2 -5v8"/><path d="M20 8v8h2.5"/>',
-    label: null,
   },
   Dockerfile: {
     glyph:
