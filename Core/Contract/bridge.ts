@@ -71,6 +71,7 @@ export interface Asks {
   // A chord matched on keydown has no `clipboardData` of its own; read is its door to a paste.
   'clipboard:read': { args: []; reply: Result<string> }
   'path:reveal': { args: [nexusRelativePath: string]; reply: Result<null> }
+  'path:copy': { args: [nexusRelativePath: string]; reply: Result<null> }
   'assets:map': { args: []; reply: Result<AssetMap> }
   // `null` is a cancelled dialog, not a failure.
   'assets:chooseDir': {

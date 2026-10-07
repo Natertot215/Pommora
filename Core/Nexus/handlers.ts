@@ -8,10 +8,12 @@ import { isStringArray } from '../Contract/validators'
 import { forgetLastReads, targetTaken } from '../Files/atomicWrite'
 import { nameError } from '../Paths/names'
 import { resolveUnderRoot } from '../Paths/pathSafety'
+import { formatPath } from '../Paths/pathFormat'
 import { basename, dirname, join } from '../Paths/posix'
 import { retireFileHistory, sweepFileHistory } from '../Pages/fileHistory'
 import { mutateRequest } from './mutateRequest'
 import { machine } from '../Platform/machine'
+import { devicePref, readDevicePrefs } from '../Settings/devicePrefs'
 import { registerHeldOptions } from '../Properties/optionOps'
 import { runRepairSweep } from '../Properties/repairSweep'
 import { replaySchemaCascade } from '../Properties/replaySchemaCascade'
@@ -168,6 +170,22 @@ export const nexusHandlers = {
     if (typeof p !== 'string') return ok(null)
     const r = await resolveUnderRoot(root, p)
     if (r.ok) ctx.reveal(r.value)
+    return ok(null)
+  }, ok(null)),
+
+  'path:copy': withRoot(async (root, ctx, p: unknown) => {
+    if (typeof p !== 'string') return ok(null)
+    const prefs = readDevicePrefs()
+    const { home, platform } = machine()
+    await ctx.clipboard.write(
+      formatPath(p, {
+        format: devicePref(prefs, 'defaultPathFormat'),
+        extensions: devicePref(prefs, 'includeExtensions'),
+        root,
+        home,
+        platform,
+      }),
+    )
     return ok(null)
   }, ok(null)),
 

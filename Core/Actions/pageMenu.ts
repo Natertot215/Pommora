@@ -2,10 +2,6 @@ import { type ActionItem, joinGroups, openOrder } from './menuModel'
 import { type PropertyAction, type PropertyMenuRow, propertyBranchRows } from './propertyRows'
 import { openLabel } from './toggleLabels'
 
-export function pagePathText(nexusRelativePath: string): string {
-  return nexusRelativePath.replace(/\.md$/i, '')
-}
-
 export type PageMetaAction =
   | 'title:window'
   | 'title:newtab'

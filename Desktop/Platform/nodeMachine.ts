@@ -1,5 +1,7 @@
 import { createHash } from 'node:crypto'
+import { realpathSync } from 'node:fs'
 import { mkdir, readdir, readFile, realpath, rename, rm, stat, utimes } from 'node:fs/promises'
+import { homedir } from 'node:os'
 import writeFileAtomic from 'write-file-atomic'
 import type { DirEntry, Machine } from '@pommora/core/Platform/machine'
 import { serializeOnFile } from './fileLock'
@@ -74,4 +76,5 @@ export const nodeMachine: Machine = {
   lock: serializeOnFile,
   sha256Hex: (input) => createHash('sha256').update(input).digest('hex'),
   platform: isWindows ? 'windows' : 'posix',
+  home: posixPath(realpathSync.native(homedir())),
 }

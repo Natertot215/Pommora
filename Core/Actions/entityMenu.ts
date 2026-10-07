@@ -4,7 +4,9 @@ import {
   type PageMenuContext,
   type PageMetaAction,
   type PageMoveAction,
+  COPY_PATH_ROW,
   pageMetaMenuItems,
+  REVEAL_ROW,
 } from './pageMenu'
 import { type TitleMenuAction, titleMenuItems } from './identityMenus'
 import { type PropertyAction, propertyBranchRows } from './propertyRows'
@@ -30,7 +32,6 @@ export type EntityMenuAction =
   | 'preview'
   | 'delete'
   | 'lock'
-  | 'reveal'
   | TitleMenuAction
   | 'changeColor'
 
@@ -73,7 +74,8 @@ export function entityMenuItems(
               },
             ]
           : []),
-        { label: 'Reveal Location', action: 'reveal' },
+        COPY_PATH_ROW,
+        REVEAL_ROW,
       ],
     ])
   const identity: ActionItem<EntityMenuAction>[] =

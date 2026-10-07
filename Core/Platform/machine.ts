@@ -32,6 +32,7 @@ export interface Machine {
   lock<T>(key: string, fn: () => Promise<T>): Promise<T>
   sha256Hex(input: string | Uint8Array): string
   platform: HostPlatform
+  home: string
   trashToSystem?(p: string): Promise<void>
 }
 
