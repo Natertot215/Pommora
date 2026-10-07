@@ -32,6 +32,45 @@ type ButtonProps = Look & {
   ref?: Ref<HTMLButtonElement>
 } & Omit<ButtonHTMLAttributes<HTMLButtonElement>, 'type'>
 
+/** The classes a button wears, so a control drawn outside React wears exactly what `Button` does. */
+export function buttonClass({
+  type = 'base',
+  size = 'button-small',
+  inRun,
+  labeled,
+  outline,
+  reveal,
+  labelOnly,
+  pressed,
+  pointer,
+}: {
+  type?: ButtonType
+  size?: ButtonSize
+  inRun?: boolean
+  labeled?: boolean
+  outline?: boolean
+  reveal?: boolean
+  labelOnly?: boolean
+  pressed?: boolean
+  pointer?: boolean
+}): string {
+  return cx(
+    s.button,
+    s.type[type],
+    s.size[size],
+    inRun && s.inRun,
+    labeled && s.labeled,
+    outline && s.outlined,
+    reveal && revealTarget,
+    labelOnly && s.labelOnly,
+    pressed && s.pressed,
+    pointer && s.pointer,
+  )
+}
+
+/** The divider a Segmented run stands between its buttons. */
+export const segmentDivider = cx(segment, s.dividerBar)
+
 export function Button({
   type = 'base',
   size = 'button-small',
@@ -59,16 +98,17 @@ export function Button({
       ref={ref}
       type="button"
       className={cx(
-        s.button,
-        s.type[type],
-        s.size[size],
-        inRun && s.inRun,
-        labeled && s.labeled,
-        outline && s.outlined,
-        reveal && revealTarget,
-        labeled && !icon && s.labelOnly,
-        pressed && showSelection && s.pressed,
-        cursor === 'pointer' && s.pointer,
+        buttonClass({
+          type,
+          size,
+          inRun,
+          labeled,
+          outline,
+          reveal,
+          labelOnly: labeled && !icon,
+          pressed: pressed && showSelection,
+          pointer: cursor === 'pointer',
+        }),
         className,
       )}
       style={{
@@ -137,7 +177,7 @@ export function Segmented({
   /** The glass clips to the element's computed radius, so a CSS value (a var) works for both the glass and the cover. */
   radius?: string
 }): React.JSX.Element {
-  const divider = <span className={cx(segment, s.dividerBar)} />
+  const divider = <span className={segmentDivider} />
   const buttons = segments.map((seg, i) => (
     // biome-ignore lint/suspicious/noArrayIndexKey: segments are a fixed config array that never reorders
     <Fragment key={i}>

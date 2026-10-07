@@ -742,7 +742,7 @@
   --box-radius-l: var(--codeblock-radius);
   --box-radius-r: var(--codeblock-radius);
   padding-left: var(--codeblock-indent);
-  padding-right: calc(var(--codeblock-inset) + var(--codeblock-pad));
+  padding-right: var(--codeblock-edge);
 }
 
 /* KNOBS: --grip-x (gutter offset), --grip-y (top offset past the gap). */
@@ -772,17 +772,17 @@
   --box-radius-r: var(--codeblock-radius);
   --box-gap: var(--md-box-gap);
   --box-pad: 6px;
+  --codeblock-edge: calc(var(--codeblock-inset) + var(--codeblock-pad));
   --codeblock-indent: calc(
-    var(--codeblock-inset) +
-    var(--codeblock-pad) +
+    var(--codeblock-edge) +
     var(--diff-zone, 0px) +
     var(--codeblock-line-zone, 0px)
   );
   font-family: var(--font-mono);
   font-size: 0.85em;
   padding-left: var(--codeblock-indent);
-  padding-right: calc(var(--codeblock-inset) + var(--codeblock-pad));
-  text-indent: calc(-1 * (var(--codeblock-line-zone, 0px) + var(--diff-sign, 0px)));
+  padding-right: var(--codeblock-edge);
+  text-indent: calc(-1 * var(--codeblock-line-zone, 0px));
   word-break: break-all;
 }
 
@@ -799,7 +799,7 @@
   border-bottom: var(--codeblock-border);
 }
 
-/* The code holds one column whether its sign shows or not: the sign reserves a zone before it as a list marker does, its gap included, a raw sign is pulled back into that zone, and the bar stands in the same column the sign does. */
+/* The code holds one column whether its sign shows or not: the sign reserves a zone before it as a list marker does, its gap included, and the bar stands in the same column the sign does. A diff line's number stands out of the text's flow, so the margin (the sign and the number) is one stretch the open fence pulls the line back across, and the caret meets the sign on one side of its seat and the code on the other. */
 .mdpm-editor .cm-line.codeblock-diff {
   --diff-zone: calc(1ch + var(--list-gap));
   --diff-bar: 3px;
@@ -807,21 +807,40 @@
   --diff-radius-l: 0px;
   --box-z: -2;
 }
+.mdpm-editor .cm-line.codeblock-diff:not(.codeblock-first, .codeblock-last) {
+  text-indent: calc(-1 * var(--diff-sign, 0px));
+}
 .mdpm-editor .cm-line.codeblock-diff-raw {
-  --diff-sign: var(--diff-zone);
+  --diff-sign: calc(var(--diff-zone) + var(--codeblock-line-zone, 0px));
   --diff-radius-l: var(--diff-radius);
+}
+:root.codeblock-line-count .mdpm-editor .codeblock-diff .codeblock-line-number {
+  position: absolute;
+  left: calc(var(--codeblock-edge) + var(--diff-zone));
+  line-height: inherit;
 }
 .mdpm-editor .md-diff-sign {
   display: inline-block;
-  min-width: var(--diff-zone);
+  min-width: var(--diff-sign);
   text-indent: 0;
+}
+/* A seat with nothing of its own to draw the caret against holds a zero-width anchor as tall as the code's text: the slot at a signless line's margin, which opens the margin before the code, and the code's start on a line with no code. */
+.mdpm-editor :is(.md-diff-slot, .md-diff-code) {
+  display: inline-block;
+  line-height: normal;
+}
+.mdpm-editor :is(.md-diff-slot, .md-diff-code)::before {
+  content: "\200b";
+}
+.mdpm-editor .md-diff-slot {
+  margin-right: var(--diff-sign);
 }
 .mdpm-editor .cm-line.codeblock-diff-head {
   color: var(--label-secondary);
 }
 .mdpm-editor .md-diff {
   position: absolute;
-  inset: 0 calc(var(--codeblock-inset) + var(--codeblock-pad));
+  inset: 0 var(--codeblock-edge);
   z-index: -1;
   background: color-mix(in srgb, var(--diff-color) var(--tint-quinary), transparent);
   pointer-events: none;
@@ -930,7 +949,7 @@
 .mdpm-editor .codeblock .codeblock-language {
   --reveal-fade: var(--duration-slow);
   position: absolute;
-  right: calc(var(--codeblock-inset) + var(--codeblock-pad));
+  right: var(--codeblock-edge);
   display: inline-flex;
   align-items: center;
   line-height: 1;
@@ -982,23 +1001,35 @@
 .mdpm-editor .codeblock .codeblock-language .codeblock-name:empty {
   display: none;
 }
-/* Segmented's own pill, outlined where the change viewer's is glass. */
+/* A diff block's tag is a Segmented run on plain DOM, outlined rather than glass. A copy keeps the pill's size: its counts fade out as "Copied" fades in over them, at the pill's own start. */
 .mdpm-editor .codeblock .codeblock-language .codeblock-tally {
   --btn-radius: var(--radius-full);
+  --button-outline-width: var(--width-175);
+  --segment-color: var(--border-strong);
+  position: relative;
   height: auto;
   padding: 2px;
-  box-shadow: inset 0 0 0 var(--width-175) var(--button-outline);
   color: var(--label-secondary);
   font-variant-numeric: tabular-nums;
 }
-.mdpm-editor .codeblock-tally .codeblock-tally-segment {
-  background: var(--border-strong);
+.mdpm-editor .codeblock-tally-counts {
+  display: flex;
+  align-items: center;
+  transition: opacity var(--reveal-fade) var(--ease-base);
+}
+.mdpm-editor .codeblock-tally .codeblock-tally-copied {
+  position: absolute;
+  inset: 2px auto 2px 2px;
+  opacity: 0;
+}
+.mdpm-editor .codeblock-language.is-copied .codeblock-tally-counts {
+  opacity: 0;
+}
+.mdpm-editor .codeblock-language.is-copied .codeblock-tally .codeblock-tally-copied {
+  opacity: 1;
 }
 .mdpm-editor .codeblock-tally :is(.md-diff-add, .md-diff-del) {
   color: color-mix(in srgb, var(--diff-color) var(--tint-primary), var(--label-secondary));
-}
-.mdpm-editor .codeblock .codeblock-language.is-copied .codeblock-tally {
-  display: none;
 }
 .mdpm-editor .codeblock .codeblock-language .codeblock-copy {
   color: var(--label-tertiary);

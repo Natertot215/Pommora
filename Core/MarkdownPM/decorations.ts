@@ -51,14 +51,21 @@ import {
   tokenIntents,
   type WidgetSpec,
 } from './Engine/intents'
-import { type DocScan, chunksOver, codeBlockTextAt, inCodeAt, spanAt } from './Engine/docScan'
+import {
+  type DocScan,
+  chunksOver,
+  codeBlockTextAt,
+  inCodeAt,
+  signSeatAt,
+  spanAt,
+} from './Engine/docScan'
 import { lineEndOf, lineIndexAt } from './Engine/markdownCode'
 import { resolveMdTarget, wikiLinkView, type ConnectionsApi } from './Links/connectionsApi'
 import type { LinkStatus } from '../Connections/connections'
 import { editorHost, pageEditorAt, redrawNudge } from './api'
 import { checkMarkSvg, checkboxClass } from '@pommora/uix/Controls/Checkbox'
 import * as btn from '@pommora/uix/Buttons/button-base.css'
-import { segment } from '@pommora/uix/Elements/segment.css'
+import { buttonClass, segmentDivider } from '@pommora/uix/Buttons/Button'
 import { svgFrame } from '@pommora/uix/Symbols/svgFrame'
 import { cx } from '@pommora/uix/Utilities/cx'
 
@@ -183,14 +190,13 @@ function tallyPill({ add, del }: DiffTally): HTMLElement {
       : n < 0
         ? `<b class="md-diff-del">−${-n}</b>`
         : '<b>±0</b>'
-  const run = cx(
-    btn.button,
-    btn.type.base,
-    btn.size['button-inline'],
-    btn.inRun,
-    btn.labeled,
-    btn.labelOnly,
-  )
+  const run = buttonClass({
+    size: 'button-inline',
+    inRun: true,
+    labeled: true,
+    labelOnly: true,
+    pointer: true,
+  })
   const pill = document.createElement('span')
   pill.className = cx(
     'codeblock-tally',
@@ -199,7 +205,7 @@ function tallyPill({ add, del }: DiffTally): HTMLElement {
     btn.type.base,
     btn.outlined,
   )
-  pill.innerHTML = `<span class="${run}">${net}</span><span class="${cx('codeblock-tally-segment', segment, btn.dividerBar)}"></span><span class="${run}"><span><b class="md-diff-add">+${add}</b> / <b class="md-diff-del">−${del}</b></span></span>`
+  pill.innerHTML = `<span class="codeblock-tally-counts"><span class="${run}">${net}</span><span class="${segmentDivider}"></span><span class="${run}"><span><b class="md-diff-add">+${add}</b> / <b class="md-diff-del">−${del}</b></span></span></span><span class="${cx('codeblock-tally-copied', run)}">Copied</span>`
   return pill
 }
 
@@ -240,7 +246,7 @@ class CodeTagWidget extends WidgetType {
       if (!text) return
       void view.state.facet(editorHost).clipboard.write(text)
       el.classList.add('is-copied')
-      if (resting || pill) name.textContent = 'Copied'
+      if (resting) name.textContent = 'Copied'
       window.clearTimeout(timer)
       timer = window.setTimeout(() => {
         el.classList.remove('is-copied')
@@ -641,28 +647,67 @@ const caretSeat = (scope: MarkdownScope): Extension => {
     })
     return true
   }
+  // A diff line's seat draws on the code's side unless the caret was brought into the margin: a step left from the code, or a press left of it.
+  const seatTo = (view: EditorView, seat: number, side: -1 | 1): true => {
+    view.dispatch({
+      selection: EditorSelection.create([EditorSelection.cursor(seat, side)]),
+      userEvent: side < 0 ? 'select.margin' : 'select',
+    })
+    return true
+  }
+  const toSide = (view: EditorView, side: -1 | 1): boolean => {
+    const { head, empty, assoc } = view.state.selection.main
+    const there = side < 0 ? assoc < 0 : assoc >= 0
+    if (!empty || there || signSeatAt(docScan(view.state.doc), head) !== head) return false
+    return seatTo(view, head, side)
+  }
+  const pressMargin = EditorView.domEventHandlers({
+    mousedown(e, view) {
+      if (e.button !== 0 || e.detail > 1 || e.shiftKey || e.altKey || e.metaKey || e.ctrlKey)
+        return false
+      const pos = view.posAtCoords({ x: e.clientX, y: e.clientY })
+      const seat = pos === null ? null : signSeatAt(docScan(view.state.doc), pos)
+      const code = seat === null ? null : view.coordsAtPos(seat, 1)
+      if (seat === null || !code || e.clientX >= code.left) return false
+      e.preventDefault()
+      view.focus()
+      return seatTo(view, seat, -1)
+    },
+  })
   const run = (view: EditorView) => leaveLine(view, false)
   const shift = (view: EditorView) => leaveLine(view, true)
   return [
+    pressMargin,
     EditorState.transactionFilter.of((tr) => {
       if (!tr.selection && !tr.docChanged) return tr
-      const { anchor, head, empty } = tr.newSelection.main
+      const { anchor, head, empty, assoc } = tr.newSelection.main
       const intents = docLineIntentsOf.after(tr, scope)
       const scan = docScan.after(tr)
       const visible = prefixEndAt(intents, scan, head)
       const seat =
-        head < visible
+        (head < visible
           ? visible
           : empty && tr.isUserEvent('select.pointer')
             ? seatPastMarker(intents, scan, head, scope)
-            : null
-      if (seat === null || seat === head) return tr
-      const selection = empty ? EditorSelection.cursor(seat) : EditorSelection.range(anchor, seat)
+            : null) ?? head
+      const was = tr.startState.selection.main
+      const margin =
+        tr.isUserEvent('select.margin') ||
+        (tr.docChanged &&
+          was.empty &&
+          was.assoc < 0 &&
+          signSeatAt(docScan(tr.startState.doc), was.head) === was.head)
+      const side = empty && signSeatAt(scan, seat) === seat ? (margin ? -1 : 1) : assoc
+      if (seat === head && side === assoc) return tr
+      const selection = EditorSelection.create([
+        empty ? EditorSelection.cursor(seat, side) : EditorSelection.range(anchor, seat),
+      ])
       return [tr, { selection, sequential: true }]
     }),
     Prec.high(
       keymap.of([
-        { key: 'ArrowLeft', run, shift },
+        { key: 'ArrowLeft', run: (view) => toSide(view, -1) || run(view), shift },
+        { key: 'ArrowRight', run: (view) => toSide(view, 1) },
         { key: 'Mod-ArrowLeft', mac: 'Alt-ArrowLeft', run, shift },
       ]),
     ),

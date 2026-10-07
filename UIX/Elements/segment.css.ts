@@ -5,7 +5,7 @@ export const segment = style({
   flexShrink: 0,
   alignSelf: 'center',
   width: 'var(--segment-width, 2px)',
-  background: vars.color.border.light,
+  background: `var(--segment-color, ${vars.color.border.light})`,
   borderRadius: 'var(--radius-full)',
 })
 
