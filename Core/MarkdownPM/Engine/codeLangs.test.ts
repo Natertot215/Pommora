@@ -2,7 +2,7 @@
 import { describe, it, expect } from 'vitest'
 import { EditorState } from '@codemirror/state'
 import { EditorView } from '@codemirror/view'
-import { CODE_LANGS, codeLanguageName } from './codeLangs'
+import { CODE_LANGS, codeFence } from './codeLangs'
 import { codeHighlight, codeLanguages } from '../codeHighlight'
 import { CODE_TAGS } from '../codeGlyphs'
 
@@ -35,17 +35,38 @@ describe('the code-language roster', () => {
 
 describe('a fence word', () => {
   it('resolves to the language it names, whichever spelling it used', () => {
-    expect(codeLanguageName('ts')).toBe('TypeScript')
-    expect(codeLanguageName('tsx')).toBe('TypeScript')
-    expect(codeLanguageName('TypeScript')).toBe('TypeScript')
-    expect(codeLanguageName('bash')).toBe('Shell')
+    expect(codeFence('ts')).toEqual({ name: 'TypeScript', diff: false })
+    expect(codeFence('tsx').name).toBe('TypeScript')
+    expect(codeFence('TypeScript').name).toBe('TypeScript')
+    expect(codeFence('bash').name).toBe('Shell')
   })
   it('reads the same however it was cased or spaced', () => {
-    expect(codeLanguageName('  PYTHON ')).toBe('Python')
+    expect(codeFence('  PYTHON ').name).toBe('Python')
   })
   it('answers nothing for a word no language carries', () => {
-    expect(codeLanguageName('brainfuck')).toBeNull()
-    expect(codeLanguageName('')).toBeNull()
+    expect(codeFence('brainfuck')).toEqual({ name: null, diff: false })
+    expect(codeFence('')).toEqual({ name: null, diff: false })
+  })
+  it('reads a diff joined to its language by any separator, on either side', () => {
+    for (const word of [
+      'diff-ts',
+      'diff/ts',
+      'diff|ts',
+      'ts-diff',
+      'ts/diff',
+      'ts|diff',
+      'patch-ts',
+    ])
+      expect(codeFence(word)).toEqual({ name: 'TypeScript', diff: true })
+  })
+  it('reads a bare diff, and a diff in a language no roster entry names, as a diff with no colors', () => {
+    expect(codeFence('diff')).toEqual({ name: null, diff: true })
+    expect(codeFence('PATCH')).toEqual({ name: null, diff: true })
+    expect(codeFence('diff-foo')).toEqual({ name: null, diff: true })
+  })
+  it('reads no diff in a word that only begins with one', () => {
+    expect(codeFence('diffts')).toEqual({ name: null, diff: false })
+    expect(codeFence('diff-')).toEqual({ name: null, diff: false })
   })
 })
 

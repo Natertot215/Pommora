@@ -16,8 +16,8 @@ import {
 } from '@codemirror/view'
 import { highlightTree, styleTags, tags as t } from '@lezer/highlight'
 import { docScan, drawnLast } from './docCache'
-import type { FenceInfo } from './Engine/detect'
-import { type DocScan, fenceBodyStart } from './Engine/docScan'
+import { fenceBodyStart, type FenceInfo } from './Engine/detect'
+import type { DocScan } from './Engine/docScan'
 import { lineEndOf, lineIndexAt, lineOffsetsOf } from './Engine/markdownCode'
 import { perText } from './Engine/perText'
 import { CODE_LANGS, type CodeLangName } from './Engine/codeLangs'
@@ -104,7 +104,6 @@ const LOADERS: Record<CodeLangName, () => Promise<LanguageSupport>> = {
   TOML: () => stream(import('@codemirror/legacy-modes/mode/toml').then((m) => m.toml)),
   Dockerfile: () =>
     stream(import('@codemirror/legacy-modes/mode/dockerfile').then((m) => m.dockerFile)),
-  Diff: () => stream(import('@codemirror/legacy-modes/mode/diff').then((m) => m.diff)),
   Lua: () => stream(import('@codemirror/legacy-modes/mode/lua').then((m) => m.lua)),
   Perl: () => stream(import('@codemirror/legacy-modes/mode/perl').then((m) => m.perl)),
   Haskell: () => stream(import('@codemirror/legacy-modes/mode/haskell').then((m) => m.haskell)),

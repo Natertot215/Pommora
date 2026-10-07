@@ -34,14 +34,14 @@ The plan also tidies what it touches. The old diff highlighter retires, the tag 
 - `grep -cE "export (const indentWidth|function fenceBodyStart)" Core/MarkdownPM/Engine/docScan.ts` → 2 — moves to `detect.ts`
 - `grep -c "padding-left" Core/MarkdownPM/markdown-pm.css` → 11 — drops to 10 (the line-count rule)
 
-**START:** <`date -u +"%Y-%m-%dT%H:%M:%SZ"` as Task 1.1 begins>
+**START:** 2026-10-07T02:00:51Z
 **END:** <same command as the report is given>
 
 #### Implementation Process
 
-- [ ] **Phase 1** — One Fence Reading
-  - [ ] Task 1.1
-  - [ ] Task 1.2
+- [x] **Phase 1** — One Fence Reading
+  - [x] Task 1.1
+  - [x] Task 1.2
 - [ ] **Phase 2** — Colors Past The Sign
   - [ ] Task 2.1
 - [ ] **Phase 3** — Bars, Fills, And The Caret
@@ -64,11 +64,11 @@ The plan also tidies what it touches. The old diff highlighter retires, the tag 
 
 **TASK**
 
-- [ ] Write the `codeFence` tests first and watch them fail.
-- [ ] Retire `Diff` from the roster and its loader.
-- [ ] Replace `codeLanguageName` with `codeFence`, which reads the diff word and the language in one lookup.
-- [ ] Point `intents.ts` at `codeFence`.
-- [ ] Rewrite *MarkdownPM.md*'s language count.
+- [x] Write the `codeFence` tests first and watch them fail.
+- [x] Retire `Diff` from the roster and its loader.
+- [x] Replace `codeLanguageName` with `codeFence`, which reads the diff word and the language in one lookup.
+- [x] Point `intents.ts` at `codeFence`.
+- [x] Rewrite *MarkdownPM.md*'s language count.
 
 ```diff-ts
 --- a/Core/MarkdownPM/Engine/codeLangs.ts
@@ -173,20 +173,20 @@ The plan also tidies what it touches. The old diff highlighter retires, the tag 
 
 **VERIFY**
 
-- [ ] The new `codeFence` cases fail before `codeFence` exists and pass after; read the run.
-- [ ] Run the gates. `grep -rn "codeLanguageName" Core --include='*.ts' --include='*.tsx'` → nothing.
-- [ ] `grep -c "name: 'Diff'" Core/MarkdownPM/Engine/codeLangs.ts` → 0; `grep -c "mode/diff" Core/MarkdownPM/codeHighlight.ts` → 0.
-- [ ] Check the work for unnecessary code or obvious mistakes.
+- [x] The new `codeFence` cases fail before `codeFence` exists and pass after; read the run.
+- [x] Run the gates. `grep -rn "codeLanguageName" Core --include='*.ts' --include='*.tsx'` → nothing.
+- [x] `grep -c "name: 'Diff'" Core/MarkdownPM/Engine/codeLangs.ts` → 0; `grep -c "mode/diff" Core/MarkdownPM/codeHighlight.ts` → 0.
+- [x] Check the work for unnecessary code or obvious mistakes.
 
 #### Task 1.2
 
 **TASK**
 
-- [ ] Write the diff-fence scan tests and add diff lines to the stepped-scan soup; watch the scan tests fail.
-- [ ] Move `indentWidth` and `fenceBodyStart` from `docScan.ts` into `detect.ts`, beside the `FenceInfo` they read. The scan needs them there, and `docScan.ts` already imports `detect.ts`.
-- [ ] Add `DiffTally`, `DiffLine`, and the two optional `FenceInfo` fields.
-- [ ] Have `scanFencedCode` read each diff fence's signs and totals in its existing per-span loop.
-- [ ] Repoint the four importers of the moved helpers.
+- [x] Write the diff-fence scan tests and add diff lines to the stepped-scan soup; watch the scan tests fail.
+- [x] Move `indentWidth` and `fenceBodyStart` from `docScan.ts` into `detect.ts`, beside the `FenceInfo` they read. The scan needs them there, and `docScan.ts` already imports `detect.ts`.
+- [x] Add `DiffTally`, `DiffLine`, and the two optional `FenceInfo` fields.
+- [x] Have `scanFencedCode` read each diff fence's signs and totals in its existing per-span loop.
+- [x] Repoint the four importers of the moved helpers.
 
 ```ts-diff
 --- a/Core/MarkdownPM/Engine/detect.ts
@@ -427,10 +427,10 @@ The plan also tidies what it touches. The old diff highlighter retires, the tag 
 
 **VERIFY**
 
-- [ ] The `a diff fence` cases fail before `readDiff` exists and pass after.
-- [ ] Run the gates; the stepped-scan property tests in `docScan.test.ts` stay green with the new soup lines.
-- [ ] `grep -cE "export (const indentWidth|function fenceBodyStart)" Core/MarkdownPM/Engine/docScan.ts` → 0; `grep -rnE "(indentWidth|fenceBodyStart).*from '\.\.?/(Engine/)?docScan'" Core` → nothing.
-- [ ] Check the work for unnecessary code or obvious mistakes.
+- [x] The `a diff fence` cases fail before `readDiff` exists and pass after.
+- [x] Run the gates; the stepped-scan property tests in `docScan.test.ts` stay green with the new soup lines.
+- [x] `grep -cE "export (const indentWidth|function fenceBodyStart)" Core/MarkdownPM/Engine/docScan.ts` → 0; `grep -rnE "(indentWidth|fenceBodyStart).*from '\.\.?/(Engine/)?docScan'" Core` → nothing.
+- [x] Check the work for unnecessary code or obvious mistakes.
 
 ### Phase 2 — Colors Past The Sign
 

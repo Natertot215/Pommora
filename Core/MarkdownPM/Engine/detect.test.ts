@@ -240,6 +240,41 @@ describe('fence language capture', () => {
   })
 })
 
+describe('a diff fence', () => {
+  const scan = (text: string) => {
+    const { lines, lineStarts } = splitWithOffsets(text)
+    return scanFencedCode(lines, lineStarts)
+  }
+  it('reads each line’s sign and the fence’s totals, which every line shares', () => {
+    const f = scan(
+      '```diff-ts\n--- a/x\n+++ b/x\n@@ run @@\n const a\n-let b\n+let c\n+let d\nplain\n```',
+    )
+    expect(f.slice(1, 9).map((l) => l?.diff)).toEqual([
+      'head',
+      'head',
+      'head',
+      'same',
+      'del',
+      'add',
+      'add',
+      undefined,
+    ])
+    expect(f[0]?.tally).toEqual({ add: 2, del: 1 })
+    expect(f[9]?.tally).toBe(f[0]?.tally)
+  })
+  it('reads a lone `--- ` as a removed line', () => {
+    expect(scan('```sql|diff\n--- old comment\n+select 1\n```')[1]?.diff).toBe('del')
+  })
+  it('reads the sign past a quote prefix', () => {
+    expect(scan('> ```diff\n> +x\n> ```')[1]?.diff).toBe('add')
+  })
+  it('leaves a fence that names no diff without signs or totals', () => {
+    const f = scan('```ts\n+x\n```')
+    expect(f[1]?.diff).toBeUndefined()
+    expect(f[0]?.tally).toBeUndefined()
+  })
+})
+
 describe('fence run length — a longer fence holds shorter ones', () => {
   const roles = (text: string): (string | undefined)[] => {
     const { lines, lineStarts } = splitWithOffsets(text)
