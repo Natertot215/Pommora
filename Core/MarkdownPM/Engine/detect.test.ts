@@ -262,9 +262,9 @@ describe('a diff fence', () => {
     expect(f[0]?.tally).toEqual({ add: 2, del: 1 })
     expect(f[9]?.tally).toBe(f[0]?.tally)
   })
-  it('reads `=` and `~` both as changed lines, which the totals leave out', () => {
-    const f = scan('```diff\n=a\n~b\n+c\n```')
-    expect(f.slice(1, 4).map((l) => l?.diff)).toEqual(['mod', 'mod', 'add'])
+  it('reads `~` as a changed line, which the totals leave out', () => {
+    const f = scan('```diff\n~a\n=b\n+c\n```')
+    expect(f.slice(1, 4).map((l) => l?.diff)).toEqual(['mod', undefined, 'add'])
     expect(f[0]?.tally).toEqual({ add: 1, del: 0 })
   })
   it('reads a lone `--- ` as a removed line', () => {

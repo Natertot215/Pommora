@@ -418,7 +418,7 @@ describe('decoration intents', () => {
       ).toEqual(['md-diff md-diff-del md-diff-first', 'md-diff md-diff-add md-diff-last'])
     })
     it('bars a changed line as it does an added or removed one', () => {
-      const changed = scanDoc('```diff\n~a\n=b\n```')
+      const changed = scanDoc('```diff\n~a\n~b\n```')
       expect(
         of(assembleLineIntents(changed, docLineIntents(changed), NO_CARET), 'lineWidget')
           .filter((w) => w.className.startsWith('md-diff'))
