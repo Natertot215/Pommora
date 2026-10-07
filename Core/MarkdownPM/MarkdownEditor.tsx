@@ -9,7 +9,7 @@ import { markdownInput } from './Input/markdownInput'
 import { tableWidgetExtension, applySavedHeadingCols } from './Tables/widget'
 import { applySavedEmbeds, embedTiles, rerenderWebTiles } from './Embeds/embedWidget'
 import { type PageStats, rangeStats } from './Engine/subfieldStats'
-import { codeHighlight, codeLanguages } from './codeHighlight'
+import { codeHighlight, codeLanguage } from './codeHighlight'
 import { registerScrollHeal } from './Embeds/scrollHeal'
 import { calloutGuard } from './Guards/calloutGuard'
 import { embedGuard } from './Guards/embedGuard'
@@ -192,7 +192,7 @@ export function MarkdownEditor({
         pasteURLAsLink: false,
         completeHTMLTags: false,
         htmlTagLanguage: htmlTags,
-        codeLanguages,
+        codeLanguages: codeLanguage,
       }),
       codeHighlight,
       inlineSurface(() => connectionsRef.current, 'page'),
