@@ -253,7 +253,7 @@ function wikiLinkTokens(text: string, inCode: (offset: number) => boolean): Toke
 /** Every token opens on one of these, so text holding none of them tokenizes to nothing. */
 export const holdsTokens = (text: string): boolean => /[*_~`=$[<]/.test(text)
 
-export function tokenize(text: string): Token[] {
+export function tokenizeChunk(text: string): { tokens: Token[]; html: Span[] } {
   const scan = scanDoc(text)
   const ast = parse(text, scan)
   const tokens: Token[] = []
@@ -320,8 +320,10 @@ export function tokenize(text: string): Token[] {
   for (const tk of tokens) if (blocks.some((b) => overlaps(b, tk.range))) tk.inHtml = true
   tokens.push(...tags)
   tokens.sort((a, b) => a.range[0] - b.range[0])
-  return tokens
+  return { tokens, html: blocks }
 }
+
+export const tokenize = (text: string): Token[] => tokenizeChunk(text).tokens
 
 /** The link or wikiLink token an offset sits in, markers included — the one read every click, hover, and resting cell shares. At a boundary two abutting tokens both contain the offset; the later-starting one wins, so a span captured at a token's own start resolves to that token and not its neighbor. */
 export function linkTokenAt(

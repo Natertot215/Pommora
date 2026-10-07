@@ -133,6 +133,23 @@ describe('a bare §Heading in prose resolves under Automatic', () => {
     expect(view.dom.textContent).toContain('§Setup')
   })
 
+  it('leaves §Setup as written inside an HTML block, and resolves it there once HTML Formatting is off', async () => {
+    const initialBody = '## Setup\n<div>\nsee §Setup.\n</div>'
+    const raw = await mountEditor({
+      initialBody,
+      connections: conn,
+      host: { settings: { inPageHeadingResolution: 'automatic' } },
+    })
+    expect(raw.dom.querySelector('.md-section-run')).toBeNull()
+    await cleanupEditor()
+    const drawn = await mountEditor({
+      initialBody,
+      connections: conn,
+      host: { settings: { inPageHeadingResolution: 'automatic', htmlFormatting: false } },
+    })
+    expect(drawn.dom.querySelector('.md-section-run')?.textContent).toBe('§Setup')
+  })
+
   it('leaves §Setups as plain prose under Automatic', async () => {
     const view = await mountEditor({
       initialBody: '## Setup\nsee §Setups.',

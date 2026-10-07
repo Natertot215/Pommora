@@ -28,7 +28,7 @@ import { paneKeys } from '../Menus/caretPane'
 import { AutocompletePane } from '../Autocomplete/AutocompletePane'
 import type { ConnectionsApi } from '../Links/connectionsApi'
 import type { NavDir } from '../Engine/Tables/navigate'
-import { type EditorHost, editorHost, resolutionNudge } from '../api'
+import { type EditorHost, editorHost, redrawNudge } from '../api'
 import { useLatest } from '@pommora/uix/Utilities/stableApi'
 import { inlineSurface } from '../surface'
 
@@ -296,7 +296,7 @@ export function CellEditor({
 
   // A renumber or a heading change elsewhere on the page never touches this cell's document, so the host announces it on the same beat it re-keys the resting cells.
   useEffect(() => {
-    viewRef.current?.dispatch({ effects: resolutionNudge.of(null) })
+    viewRef.current?.dispatch({ effects: redrawNudge.of(null) })
   }, [ordinalOf])
 
   // Compared as SOURCE, not as text: a rebuild that differs only in what a GFM cell cannot hold — an edge space, a trailing empty item — would otherwise rewrite the live document under the caret.

@@ -275,6 +275,10 @@ describe('computeStats — marks count as the tokenizer draws them', () => {
     expect(computeStats('<div>\n**b**\n</div>').characters).toBe(16)
   })
 
+  it('reads a cell opening on a tag as the table draws it, never as an HTML block', () => {
+    expect(computeStats('| <div>**b** | c |\n|---|---|').characters).toBe(7)
+  })
+
   it('a selection cutting a mark keeps only the drawn part it holds', () => {
     const doc = 'one **two** three'
     expect(rangeStats(scanDoc(doc), doc.indexOf('two'), doc.length).characters).toBe(9)

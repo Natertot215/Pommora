@@ -115,6 +115,31 @@ describe('useEditorHost', () => {
   })
 })
 
+describe('the host follows the editor settings', () => {
+  it('re-identifies on an editor setting, and stays put on any other', async () => {
+    useSession.setState({ tree: makeTree() })
+    const hosts: EditorHost[] = []
+    const Probe = (): null => {
+      hosts.push(useEditorHost({}))
+      return null
+    }
+    const root = createRoot(document.createElement('div'))
+    await act(async () => root.render(createElement(Probe)))
+    const first = hosts[hosts.length - 1]
+    await act(async () =>
+      useSession.setState({ tree: makeTree({ personalization: { hideChevrons: true } }) }),
+    )
+    expect(hosts[hosts.length - 1]).toBe(first)
+    await act(async () =>
+      useSession.setState({ tree: makeTree({ personalization: { htmlFormatting: false } }) }),
+    )
+    const after = hosts[hosts.length - 1]
+    expect(after).not.toBe(first)
+    expect(after.settings().htmlFormatting).toBe(false)
+    act(() => root.unmount())
+  })
+})
+
 describe('the alias memory', () => {
   const withAliases = (aliases: string[]) =>
     makeTree({ pageMetadata: { p1: { aliases } } as Record<string, PageMeta> })

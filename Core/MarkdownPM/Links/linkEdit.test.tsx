@@ -227,6 +227,18 @@ describe('Enter finishes an alias without writing anything', () => {
     expect(view.state.selection.main.head).toBe(19)
   })
 
+  it('declines in an alias left as written in an HTML block, so Enter still breaks the line', async () => {
+    const view = await mountEditor({
+      initialBody: '<div>\na [[Alpha|the one]] b\n</div>',
+      connections: conn,
+    })
+    await act(async () => {
+      view.focus()
+      view.dispatch({ selection: { anchor: 19 } })
+    })
+    expect(commitAliasOnEnter(view)).toBe(false)
+  })
+
   it('declines outside an alias, so Enter still breaks the line', async () => {
     const view = await mountEditor({ initialBody: 'a [[Alpha]] b', connections: conn })
     await act(async () => {

@@ -34,7 +34,7 @@ import { claimedEmbeds } from '../Engine/embedClaims'
 import { ownElements } from '../lineDom'
 import { healTileScrolls } from './scrollHeal'
 import type { ConnectionsApi } from '../Links/connectionsApi'
-import { editorHost, persistPref, resolutionNudge } from '../api'
+import { editorHost, persistPref, redrawNudge } from '../api'
 import { clamp } from '@pommora/uix/Utilities/clamp'
 
 interface EmbedHost {
@@ -523,7 +523,7 @@ export const embedField = StateField.define<EmbedTiles>({
         const key = tile ? keyOf(tile) : seat?.at === e.value ? seat.key : null
         seat = e.value === null ? null : { at: e.value, key }
       } else if (e.is(setEmbedEditing)) editing = e.value
-      else if (e.is(resolutionNudge)) nudged = true
+      else if (e.is(redrawNudge)) nudged = true
       else if (e.is(setEmbedHeights)) heights = e.value
       else if (e.is(setEmbedZooms)) zooms = e.value
       else if (e.is(loadEmbedPrefs)) {

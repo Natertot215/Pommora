@@ -10,7 +10,7 @@ import {
   type ConnectionsApi,
   type MdTarget,
 } from './connectionsApi'
-import { MD_LINK_CLASS } from '../decorations'
+import { drawnRawAt, MD_LINK_CLASS } from '../decorations'
 import { applyUrlLinkAction } from './linkFormat'
 import { pointerHandlers, type PointerTarget } from '../Gestures/pointerPath'
 import { travelToHeading } from '../travel'
@@ -29,7 +29,7 @@ function linkUnder(view: EditorView, getApi: GetApi, event: MouseEvent): LinkHit
   const line = view.state.doc.lineAt(pos)
   const rel = pos - line.from
   const tk = linkTokenAt(line.text, rel, 'link')
-  if (!tk) return null
+  if (!tk || drawnRawAt(view, line.from + tk.range[0])) return null
   const url = linkTarget(line.text, tk)
   if (!url) return null
   const target = resolveMdTarget(getApi(), url)

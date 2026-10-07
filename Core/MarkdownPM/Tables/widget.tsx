@@ -46,7 +46,7 @@ import { tableMergeGuard, tablePasteGuard } from '../Guards/tableGuard'
 import type { TableModel } from '../Engine/Tables/model'
 import type { ConnectionsApi } from '../Links/connectionsApi'
 import type { TableMenuAction, TableMenuContext } from './tableMenu'
-import { editorHost, persistPref, resolutionNudge } from '../api'
+import { editorHost, persistPref, redrawNudge } from '../api'
 import type { HeadingLinkStyle } from '../../Settings/personalization'
 import { sameSet } from '@pommora/uix/Utilities/same'
 
@@ -519,7 +519,7 @@ const widgetField = StateField.define<DecorationSet>({
       })
     }
     if (toggled) return toggledSet
-    if (tr.effects.some((e) => e.is(setHeadingColsEffect) || e.is(resolutionNudge)))
+    if (tr.effects.some((e) => e.is(setHeadingColsEffect) || e.is(redrawNudge)))
       return buildWidgetDecorations(tr.state, { deco, tr })
     // Map the widgets forward and STOP: rebuilding per keystroke makes CM re-measure against React content that hasn't rendered. `refreshTableEffect` does it when the cell demotes.
     if (tr.annotation(tableSelfEdit)) return deco.map(tr.changes)
