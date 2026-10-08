@@ -172,8 +172,7 @@ describe('the alias memory', () => {
     useSession.setState({ tree: withAliases(aliases) })
     const hosts: EditorHost[] = []
     const Probe = (): null => {
-      const tree = useSession((s) => s.tree)
-      hosts.push(useEditorHost({ pageId: 'p2', connections: useConnections(tree, 'preview') }))
+      hosts.push(useEditorHost({ pageId: 'p2', connections: useConnections('preview') }))
       return null
     }
     const root = createRoot(document.createElement('div'))

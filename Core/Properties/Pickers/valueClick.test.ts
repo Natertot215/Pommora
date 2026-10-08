@@ -47,7 +47,7 @@ describe('valueClickIntent', () => {
     const percent = { number_family: 'percent' } as const
     const n = { kind: 'number', value: 40 } as const
     expect(valueClickIntent('number', n)).toEqual({ kind: 'edit' })
-    expect(valueClickIntent('number', n, 'bar', percent)).toEqual({ kind: 'numberPicker' })
+    expect(valueClickIntent('number', n, 'bar', percent)).toEqual({ kind: 'popover' })
     expect(valueClickIntent('number', n, 'number', percent)).toEqual({ kind: 'edit' })
   })
 
@@ -86,7 +86,7 @@ describe('runValueIntent', () => {
     dateTime: null,
     file: null,
     edit,
-    numberPicker: null,
+    popover: null,
     rename: null,
     open: null,
     hide: null,

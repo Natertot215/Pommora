@@ -89,7 +89,7 @@ export function CardValue({
       picker: () => open('picker'),
       dateTime: () => open('dateTime'),
       rename: () => open('rename'),
-      numberPicker: () => open('popover'),
+      popover: () => open('popover'),
       edit: () => setEditing(true),
       open: ({ url }) => openWebLink(url),
       hide: () => onHide(column.id),
@@ -163,6 +163,7 @@ export function CardValue({
           }
           commit={commit}
           hideRemove={!allowInlineRemove}
+          onPane={() => runIntent({ kind: 'popover' }, null)}
         />
       )}
     </span>

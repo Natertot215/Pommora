@@ -52,7 +52,9 @@ import { NO_TRAIL, type TrailSegment } from '@pommora/uix/Elements/NavTrail'
 import { ancestryOf } from '../../Nexus/treeIndex'
 import { stabilize } from '../../Nexus/treeStabilize'
 import { type PickEntry, PropertyPicker } from '../../Properties/Pickers/PropertyPicker'
-import { resolveFieldValue } from '../../Properties/value'
+import { borderedField } from '@pommora/uix/Fields/fields.css'
+import { overScrollEllipsis } from '@pommora/uix/Interactions/OverScroll'
+import { columnType, resolveFieldValue } from '../../Properties/value'
 import { type Personalization, TENTHS_SCALE } from '../../Settings/personalization'
 import { propertyIcon, propertyTypeIconName } from '../../Properties/Cells/PropertyTypes'
 import { type CardPickerKind, CardValue } from './CardValue'
@@ -585,7 +587,9 @@ function GhostCard({
             <div className="card-props">
               {props.map((c) => (
                 <div key={c.id} className="card-prop-row">
-                  <span className={cx('card-prop-label', text.caption.emphasized)}>
+                  <span
+                    className={cx('card-prop-label', text.caption.emphasized, overScrollEllipsis)}
+                  >
                     {columnLabel(c.id, ctx.schema, ctx.contexts)}
                   </span>
                 </div>
@@ -708,7 +712,14 @@ function CardProperties({
     // biome-ignore lint/a11y/useKeyWithClickEvents lint/a11y/noStaticElementInteractions: a grid cell — per-cell tab stops are the wrong pattern; the grid wants roving tabindex, which is a feature rather than a lint fix
     <div className="card-props is-flow" onClick={zoneClick}>
       {shown.map((c) => (
-        <span key={c.id}>{value(c)}</span>
+        <span
+          key={c.id}
+          className={
+            columnType(c, ctx.schema) === 'text' ? cx('card-text-value', borderedField) : undefined
+          }
+        >
+          {value(c)}
+        </span>
       ))}
     </div>
   ) : (
@@ -716,7 +727,7 @@ function CardProperties({
     <div className="card-props" onClick={zoneClick}>
       {shown.map((c) => (
         <div key={c.id} className="card-prop-row">
-          <span className={cx('card-prop-label', text.caption.emphasized)}>
+          <span className={cx('card-prop-label', text.caption.emphasized, overScrollEllipsis)}>
             {columnLabel(c.id, ctx.schema, ctx.contexts)}
           </span>
           {value(c)}

@@ -192,7 +192,7 @@ function MarkerGlyph({
 }
 
 // A cell holding a list draws one block per line, so the indent, the glyph and the rails have something to sit on; a cell holding none stays a single flow, which is what pre-wrap already renders correctly.
-export function renderCellBody(
+function renderCellBody(
   text: string,
   getConn?: () => ConnectionsApi | undefined,
   around?: CellPage,
@@ -405,13 +405,13 @@ function StaticCellImpl({
   )
 }
 
-function cellLinkTarget(
+export function cellLinkTarget(
   text: string,
   eventTarget: EventTarget | null,
   api: ConnectionsApi | undefined,
 ): { el: Element; target: MdTarget } | null {
   const el = (eventTarget as HTMLElement | null)?.closest?.(LINK_SELECTOR)
-  if (!el || !api || !el.closest('.mdpm-tbl-cell-static')) return null
+  if (!el || !api) return null
   const span = linkSpanAt(eventTarget)
   const tk = span && linkTokenAt(text, span[0])
   return tk ? { el, target: tokenTarget(api, text, tk) } : null

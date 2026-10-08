@@ -52,6 +52,8 @@ import { relDirname } from '../Paths/posix'
 import { spaceNodeOf } from '../Nexus/treeIndex'
 import { type Overrides, patchOverride, retireSettled } from './valueOverride'
 import { useSession, useSetting } from '../Session/store'
+import { previewConnections } from '../Session/pageConnections'
+import type { ConnectionsApi } from '../MarkdownPM/Links/connectionsApi'
 import { dateDefaults } from './columnStyles'
 import { fetchPageDetail, readPageDetail } from '../Session/pageDetailCache'
 import { popMenu } from '../Actions/menuActions'
@@ -60,7 +62,7 @@ import * as s from './property-panel.css'
 import { heldKey } from '../Files/heldKeys'
 import { normalizeTitle } from '../Paths/caseFold'
 
-type Editing = { id: string; mode: 'picker' | 'editor' | 'rename' } | null
+type Editing = { id: string; mode: 'picker' | 'editor' | 'popover' } | null
 type Field = PaneTarget & { def: PropertyDefinition | null }
 
 const GROUPS = [
@@ -76,9 +78,12 @@ type PanelSubject =
 export function PropertyPanel({
   subject,
   host: panelHost,
+  connections: hostConnections,
 }: {
   subject: PanelSubject
   host: 'dropdown' | 'side-pane'
+  /** A window's own routing for the links its values hold, as `TileHost` takes it; preview otherwise. */
+  connections?: ConnectionsApi
 }): React.JSX.Element {
   const isSpace = subject.kind === 'space'
   const tree = useSession((st) => st.tree)
@@ -160,8 +165,16 @@ export function PropertyPanel({
   )
   const identity = tree && identityOf(tree)
   const ctx = useMemo<ValueContext | null>(
-    () => (identity ? buildValueContext(identity, schema, assetMap) : null),
-    [identity, schema, assetMap],
+    () =>
+      identity
+        ? buildValueContext(
+            identity,
+            schema,
+            assetMap,
+            hostConnections ? () => hostConnections : previewConnections,
+          )
+        : null,
+    [identity, schema, assetMap, hostConnections],
   )
   const dateFormat = useSetting('dateFormat')
   const pending = override?.[subjectId]
@@ -285,9 +298,9 @@ export function PropertyPanel({
       picker: editAs('picker'),
       dateTime: editAs('picker'),
       edit: editAs('editor'),
-      rename: editAs('rename'),
+      rename: editAs('popover'),
       open: ({ url }) => openWebLink(url),
-      numberPicker: null,
+      popover: editAs('popover'),
       hide: null,
     })
   }
@@ -401,6 +414,10 @@ export function PropertyPanel({
                   style={{ look: 'standard', ...dateDefaults(dateFormat) }}
                   commit={(next) => commit(id, next)}
                   empty={<EmptyValue className={s.empty} />}
+                  onPane={(anchor) => {
+                    triggerRef.current = anchor.closest<HTMLElement>('[data-property-row]')
+                    runIntent(def!, current, { kind: 'popover' }, null)
+                  }}
                 />
               )}
             </span>
@@ -497,9 +514,9 @@ export function PropertyPanel({
             )
           })}
         </div>
-        {editing?.mode === 'rename' && editingDef && row && (
+        {editing?.mode === 'popover' && editingDef && row && (
           <PropertyValueInput
-            alias
+            alias={editingDef.type === 'link'}
             popover={{ open: true, triggerRef }}
             def={editingDef}
             current={resolveFieldValue(row, editing.id, schema)}

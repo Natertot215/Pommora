@@ -99,7 +99,7 @@ export function TileHost({
 
   const pagesById = tree ? pagesByIdOf(tree) : NO_PAGES
 
-  const preview = useConnections(tree, 'preview')
+  const preview = useConnections('preview')
   const conn = connections ?? preview
   const openRoute = connections?.open
 

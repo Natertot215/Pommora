@@ -10,6 +10,7 @@ import type { ResolvedColumn, ViewRow } from '../../Views/viewRow'
 import { EMPTY_ASSET_MAP } from '../../Nexus/tree'
 import { Cell } from './Cell'
 import type { ValueContext } from '../valueContext'
+import type { ConnectionsApi } from '../../MarkdownPM/Links/connectionsApi'
 import { propsAtRoot } from '../../Testing/pageValues'
 
 ;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
@@ -271,8 +272,27 @@ describe('a text value', () => {
     const root = host.querySelector('.cell-text')
     expect(root?.textContent).toBe('first line\nsecond line')
   })
-  it('renders a list value one item per line, as a resting table cell does', () => {
-    mount(rowWith({ prop_notes: '- milk\n- eggs' }), 'prop_notes', {})
-    expect(host.querySelectorAll('[data-cell-line]').length).toBe(2)
+  it('colors a link it holds through the context’s connections, as a resting table cell does', () => {
+    const page = { id: 'p9', title: 'Target', path: 'X/Target.md' }
+    const connections = () =>
+      ({
+        resolve: (title: string) =>
+          title === 'Target' ? { status: 'resolved', page } : { status: 'phantom', page: null },
+        candidates: () => [],
+        open: () => {},
+      }) as unknown as ConnectionsApi
+    act(() =>
+      root.render(
+        <Cell
+          row={rowWith({ prop_notes: 'see [[Target]] and [[Nowhere]]' })}
+          column={col('prop_notes')}
+          ctx={{ ...ctx, connections }}
+          hideIcon={false}
+          style={dateDefaults('full')}
+        />,
+      ),
+    )
+    expect(host.querySelector('.md-connection-resolved')?.textContent).toBe('Target')
+    expect(host.querySelector('.md-connection-phantom')?.textContent).toBe('Nowhere')
   })
 })

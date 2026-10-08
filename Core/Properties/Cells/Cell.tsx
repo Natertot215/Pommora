@@ -13,7 +13,7 @@ import { barDivisor, formatDate, formatNumber } from '../formatValue'
 import { OptionChip } from './OptionChip'
 import { findOption } from './cellResolve'
 import { LinkCell } from './LinkCell'
-import { renderCellBody } from '../../MarkdownPM/Tables/cellStatic'
+import { TextCell } from './TextCell'
 import { CheckboxGlyph } from './CheckboxGlyph'
 import type { ValueContext } from '../valueContext'
 import { FileChip, NeutralChip } from '@pommora/uix/Labels/recipes'
@@ -30,6 +30,7 @@ export function Cell({
   commit,
   hideRemove,
   empty,
+  onPane,
 }: {
   row: ViewRow
   column: ResolvedColumn
@@ -40,6 +41,8 @@ export function Cell({
   commit?: (next: PropertyValue | null) => void
   hideRemove?: boolean
   empty?: React.JSX.Element
+  /** Opens the value's pane from its pen, anchored at the pen's host; absent, no pen is drawn. */
+  onPane?: (anchor: HTMLElement) => void
 }): React.JSX.Element | null {
   if (column.kind === 'title') {
     return (
@@ -54,6 +57,7 @@ export function Cell({
   const def = ctx.schema.find((d) => d.id === column.id)
   // A status value is a bare label on disk, indistinguishable from a select — the schema is the only thing that knows the declared type.
   const dt = def?.type
+  const holder = ctx.contextsById.has(row.id) ? undefined : row
 
   // Keyed off the schema TYPE rather than value presence, so a checkbox toggles in place without first assigning the property.
   if (dt === 'checkbox')
@@ -123,12 +127,18 @@ export function Cell({
         </Chips>
       )
     case 'link':
-      return <LinkCell raw={v.value} def={def} look={style.look} showFullLink={showFullLink} />
+      return (
+        <LinkCell
+          raw={v.value}
+          def={def}
+          look={style.look}
+          showFullLink={showFullLink}
+          holder={holder}
+        />
+      )
     case 'text':
       return (
-        <OverScroll className="cell-text-scroll">
-          <div className="cell-text">{renderCellBody(v.value)}</div>
-        </OverScroll>
+        <TextCell text={v.value} connections={ctx.connections} holder={holder} onPane={onPane} />
       )
     case 'dateTime':
       return (

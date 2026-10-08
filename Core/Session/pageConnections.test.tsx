@@ -21,8 +21,7 @@ afterEach(() => {
 async function mountBundles(mode: 'preview' | 'window' | 'inert'): Promise<ConnectionsApi[]> {
   const bundles: ConnectionsApi[] = []
   const Probe = (): null => {
-    const tree = useSession((s) => s.tree)
-    const bundle = useConnections(tree, mode)
+    const bundle = useConnections(mode)
     if (bundle) bundles.push(bundle)
     return null
   }

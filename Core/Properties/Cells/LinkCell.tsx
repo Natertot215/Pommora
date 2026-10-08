@@ -10,6 +10,7 @@ import { linkDisplayText, readLink, type LinkTarget } from '../../Connections/li
 import { resolveConnection } from '../../Nexus/treeIndex'
 import { solidColorCss } from '@pommora/uix/Theme/ramp'
 import { openWebLink } from '../../Web/openWebLink'
+import type { ConnPage } from '../../Connections/pageIndex'
 
 /** Opens through the sanctioned IPC — a raw <a> nav is denied by main's will-navigate hardening. Only the Page Title format fetches; the other two derive from the URL itself. */
 export function LinkCell({
@@ -17,11 +18,14 @@ export function LinkCell({
   def,
   look,
   showFullLink,
+  holder,
 }: {
   raw: string
   def: PropertyDefinition | undefined
   look?: ColumnLook
   showFullLink?: boolean
+  /** The page the value sits on, which a bare `[[#Heading]]` names; a Space has none to name. */
+  holder?: ConnPage
 }): React.JSX.Element | null {
   const target = readLink(raw)
   const url = target.kind === 'url' ? target.url : ''
@@ -34,7 +38,7 @@ export function LinkCell({
   }, [wantsTitle, title, url, resolveLinkTitle])
 
   if (target.kind === 'page')
-    return <ConnectionCell target={target} showTitle={showFullLink === true} />
+    return <ConnectionCell target={target} showTitle={showFullLink === true} holder={holder} />
   if (!url) return null
   return (
     <OverScroll className="cell-text-scroll">
@@ -60,13 +64,16 @@ export function LinkCell({
 function ConnectionCell({
   target,
   showTitle,
+  holder,
 }: {
   target: Extract<LinkTarget, { kind: 'page' }>
   showTitle: boolean
+  holder?: ConnPage
 }): React.JSX.Element {
   const tree = useSession((s) => s.tree)
   const select = useSession((s) => s.select)
-  const page = resolveConnection(tree, target.title)
+  const page = target.title ? resolveConnection(tree, target.title) : (holder ?? null)
+  const name = target.title || `#${target.heading}`
   return (
     <OverScroll className="cell-text-scroll">
       <a
@@ -83,7 +90,7 @@ function ConnectionCell({
           )
         }}
       >
-        {showTitle ? target.title : (target.alias ?? target.title)}
+        {showTitle ? name : (target.alias ?? name)}
       </a>
     </OverScroll>
   )

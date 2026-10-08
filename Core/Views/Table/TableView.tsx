@@ -150,7 +150,7 @@ export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
       picker: editAs('picker'),
       dateTime: editAs('picker'),
       edit: editAs('editor'),
-      numberPicker: editAs('popover'),
+      popover: editAs('popover'),
       rename: editAs('popover'),
       open: ({ url }) => openWebLink(url),
       hide: null,
@@ -380,6 +380,10 @@ export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
   const cellApi = useStableApi<RowCellApi>({
     menu: (row, col, e) => void openCellMenu(row, col, e),
     click: onCellClick,
+    pane: (row, col, anchor) => {
+      triggerElRef.current = anchor.closest<HTMLElement>('.data-cell')
+      runIntent(row, col, { kind: 'popover' }, null)
+    },
     overlay: cellEditor,
     commit: commitValue,
     grip: (row, e) => {
@@ -550,6 +554,7 @@ export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
 type RowCellApi = {
   menu: (row: ViewRow, col: ResolvedColumn, e: React.MouseEvent) => void
   click: (row: ViewRow, col: ResolvedColumn, e: React.MouseEvent) => void
+  pane: (row: ViewRow, col: ResolvedColumn, anchor: HTMLElement) => void
   overlay: (row: ViewRow, col: ResolvedColumn) => React.ReactNode
   commit: (row: ViewRow, col: ResolvedColumn, next: PropertyValue | null) => void
   grip: (row: ViewRow, e: React.MouseEvent) => void
@@ -672,6 +677,7 @@ const DataRow = memo(function DataRow({
             style={styleByCol[i]}
             showFullLink={popoverCol === c.id}
             commit={(next) => api.commit(row, c, next)}
+            onPane={(anchor) => api.pane(row, c, anchor)}
           />
         )
         return (

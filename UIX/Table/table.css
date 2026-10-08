@@ -191,12 +191,34 @@
   max-width: 100%;
   vertical-align: middle;
 }
-/* Every line is drawn; the box is one line tall and clips the rest, so a wrapping container later shows them all. */
-.cell-text {
+/* The value and the pen it reveals. The pen overlays the text's trailing edge rather than holding a slot, so at rest the text runs to the edge a Link value does; while the pen shows, the text stands clear of it by the pen's box and one step. */
+.cell-text-host {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 100%;
+  min-width: 0;
+  max-height: 1lh;
+}
+.cell-text-host > span {
+  position: absolute;
+  inset-block: 0;
+  right: 0;
+  display: flex;
+  align-items: center;
+}
+.cell-text-host > .cell-text:not(:only-child) {
+  padding-right: calc(var(--reveal, 0) * (var(--accessory-box, 20px) + 4px));
+}
+/* Every line is drawn; the box is one line tall and clips the rest, so a wrapping container later shows them all. The newline breaks where the pane breaks it, so the first line is the one that shows, ending in an ellipsis. It never scrolls on hover: the box's scroll width is its widest line's, hidden lines included, so a scroll would run the first line into blank space. */
+.cell-text-host > .cell-text {
   display: block;
+  flex: 1 1 auto;
+  min-width: 0;
   white-space: pre;
   max-height: 1lh;
-  overflow-y: clip;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 .cell-chips {
   display: inline-flex;

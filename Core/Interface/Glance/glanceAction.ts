@@ -68,6 +68,14 @@ export function armPreview(target: GlanceTarget, el: Element, slot: GlanceDwell)
 export const glanceLink = (target: GlanceTarget, el: Element): void =>
   armPreview(target, el, 'link')
 
+/** What an editor host, and a resting value outside one, arm a glance through. */
+export const glanceHost = {
+  arm: glanceLink,
+  cancel: cancelGlance,
+  close: closeGlance,
+  contains: insideGlance,
+}
+
 // The surface currently under the pointer, so a Shift pressed while already at rest can raise its preview without a leave-and-re-enter.
 let hovered: { target: GlanceTarget; el: Element; slot: GlanceDwell } | null = null
 let armListenersBound = false

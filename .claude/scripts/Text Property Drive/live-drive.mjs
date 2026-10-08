@@ -187,13 +187,9 @@ const LINK = 'Drive Link'
 const BAR = 'Drive Bar'
 const SHOWCASE = [
   'see [[Drive Target]] and [[Drive Target#Setup]], then [[Nowhere]]',
-  '- milk with **bold** and _italic_',
-  '  - a nested item',
-  '- eggs with ==🔴a highlight🔴==',
-  '1. first numbered',
-  '2. second numbered',
-  '- [ ] an open task',
-  '- [x] a done task',
+  'milk with **bold** and _italic_',
+  'eggs with ==🔴a highlight🔴==',
+  'a third line, plain',
 ].join('\n')
 const TARGET_NOTES = 'see [[#Setup]] first'
 const ITEMS = '- milk\n- eggs'
@@ -269,7 +265,7 @@ const panelRow = (prop = NOTES) => `document.querySelector('[data-property-row="
 const cellText = (cdp, expr) => cdp.evaluate(`(${expr})?.querySelector('.cell-text')?.textContent ?? null`)
 // The value's box stands one line tall whatever it holds.
 const oneLine = (cdp, expr) =>
-  cdp.evaluate(`(() => { const t = (${expr})?.querySelector('.cell-text'); if (!t) return false; const lh = parseFloat(getComputedStyle(t).lineHeight) || parseFloat(getComputedStyle(t).fontSize) * 1.4; const h = t.getBoundingClientRect().height; const lines = Math.max(t.textContent.split('\\n').length, t.querySelectorAll('[data-cell-line]').length); return h > 0 && h <= lh * 1.5 && (lines > 1 ? t.scrollHeight > t.clientHeight : true) })()`)
+  cdp.evaluate(`(() => { const t = (${expr})?.querySelector('.cell-text'); if (!t) return false; const lh = parseFloat(getComputedStyle(t).lineHeight) || parseFloat(getComputedStyle(t).fontSize) * 1.4; const h = t.getBoundingClientRect().height; const lines = t.textContent.split('\\n').length; return h > 0 && h <= lh * 1.5 && (lines > 1 ? t.scrollHeight > t.clientHeight : true) })()`)
 const field = `document.activeElement?.tagName === 'INPUT' ? document.activeElement : null`
 const fieldValue = (cdp) => cdp.evaluate(`(${field})?.value ?? null`)
 async function pickRow(cdp, label) {
@@ -282,8 +278,11 @@ async function pickRow(cdp, label) {
 const portalOpen = (cdp) => cdp.evaluate(`!!document.querySelector('[data-picker-portal]')`)
 const activeTab = (cdp) => cdp.evaluate(`document.querySelector('[role=tab][aria-selected=true]')?.getAttribute('title') ?? null`)
 
+// A press on the value's first glyph, so a link inside it is never the target.
 async function openField(cdp, expr) {
-  await mouseClick(cdp, expr)
+  const text = await boxOf(cdp, `(${expr}).querySelector('.cell-text')`).catch(() => null)
+  if (text) await mouseAt(cdp, { x: text.left + 3, y: text.y })
+  else await mouseClick(cdp, expr)
   await until('the inline field', () => cdp.evaluate(`!!(${field})`))
 }
 async function commitField(cdp, expr, text) {
@@ -318,9 +317,11 @@ async function escapeAll(cdp) {
 async function group1(cdp, pid) {
   check('group 1: Drive Raw reads 42 and Drive List its flow list', (await cellText(cdp, cell('Drive Raw'))) === '42' && (await cellText(cdp, cell('Drive List'))) === '[milk, eggs, bread]',
     JSON.stringify([await cellText(cdp, cell('Drive Raw')), await cellText(cdp, cell('Drive List'))]))
-  const drawn = { first: (await cellText(cdp, cell('Drive Prose')))?.slice(0, 30), lines: await cdp.evaluate(`(${cell('Drive Prose')}).querySelectorAll('[data-cell-line]').length`), oneLine: await oneLine(cdp, cell('Drive Prose')), empty: await cellText(cdp, cell('Drive Empty')) }
+  const drawn = { first: (await cellText(cdp, cell('Drive Prose')))?.slice(0, 30), lines: (await cellText(cdp, cell('Drive Prose')))?.split('\n').length, oneLine: await oneLine(cdp, cell('Drive Prose')), empty: await cellText(cdp, cell('Drive Empty')) }
   check("group 1: Drive Prose's cell draws every line, one line tall; Drive Empty's is empty",
     drawn.first?.startsWith('see ') && drawn.lines === SHOWCASE.split('\n').length && drawn.oneLine && drawn.empty === null, JSON.stringify(drawn))
+  const items = await cdp.evaluate(`(() => { const t = (${cell('Drive Items')}).querySelector('.cell-text'); return { first: t.textContent.split('\\n')[0], marks: t.querySelectorAll('[class*="md-list-"]').length } })()`)
+  check("group 1: Drive Items's list-spelled value reads as prose, its first line the literal - milk", items.first === '- milk' && items.marks === 0, JSON.stringify(items))
   await shot(cdp, 'table-filled-empty')
 
   for (const title of ['Drive Raw', 'Drive List'])
@@ -438,16 +439,30 @@ async function group1(cdp, pid) {
 const connection = (scope, kind, text) =>
   `[...(${scope}).querySelectorAll('.md-connection-${kind}')].find((e) => e.textContent.includes(${JSON.stringify(text)}))`
 const PEN = '[aria-label="Open in TextPane"]'
+const rectOf = (cdp, expr) =>
+  cdp.evaluate(`(() => { const e = (${expr}); if (!e) return null; const b = e.getBoundingClientRect(); return { left: b.left, right: b.right, top: b.top, bottom: b.bottom, width: b.width, height: b.height } })()`)
+const styleOf = (cdp, expr, props) =>
+  cdp.evaluate(`(() => { const e = (${expr}); if (!e) return null; const s = getComputedStyle(e); return ${JSON.stringify(props)}.map((p) => s[p]) })()`)
+// The text's content box: the padding the text takes while the pen shows is the room the pen sits in.
+const penApart = async (cdp, scope) => {
+  const text = await cdp.evaluate(`(() => { const e = (${scope}).querySelector('.cell-text'); if (!e) return null; const b = e.getBoundingClientRect(); return { left: b.left, right: b.right - parseFloat(getComputedStyle(e).paddingRight), top: b.top, bottom: b.bottom } })()`)
+  const pen = await rectOf(cdp, `(${scope}).querySelector(${JSON.stringify(PEN)})`)
+  return !!text && !!pen && !overlaps(text, pen)
+}
 async function penOn(cdp, scope, tag) {
   await hover(cdp, scope)
-  const shown = await cdp.evaluate(`(() => { const p = (${scope}).querySelector(${JSON.stringify(PEN)}) ?? document.querySelector(${JSON.stringify(PEN)}); return !!p && parseFloat(getComputedStyle(p).opacity) > 0 })()`)
+  const shown = await cdp.evaluate(`(() => { const p = (${scope}).querySelector(${JSON.stringify(PEN)}); return !!p && parseFloat(getComputedStyle(p).opacity) > 0 })()`)
   check(`group 2: ${tag}: hovering the value shows the pen`, shown)
+  check(`group 2: ${tag}: on hover the pen's box stands clear of the text's`, await penApart(cdp, scope))
   await shot(cdp, `${tag}-pen`)
   await mouseClick(cdp, `(${scope}).querySelector(${JSON.stringify(PEN)})`)
   const opened = await settles(() => portalOpen(cdp), 3000)
-  const a = await boxOf(cdp, sel('[data-picker-portal]')).catch(() => null)
+  const a = await boxOf(cdp, sel('[data-picker-portal]:has(input)')).catch(() => null)
   const b = await boxOf(cdp, scope)
-  check(`group 2: ${tag}: the pen opens a popover over the value`, opened && a && overlaps(a, b))
+  // Anchored at the value: across its span, touching or within a few pixels of its box.
+  const anchored = a && a.left < b.right && b.left < a.right && a.top < b.bottom + 8 && b.top - 8 < a.bottom
+  const glance = await cdp.evaluate(`!!document.querySelector('[data-glance]')`)
+  check(`group 2: ${tag}: the pen opens a popover anchored at the value, with no glance up`, opened && anchored && !glance, JSON.stringify({ a, b, glance }))
   await shot(cdp, `${tag}-popover`)
   await escapeAll(cdp)
 }
@@ -455,10 +470,35 @@ async function connectionsOn(cdp, scope, tag) {
   check(`group 2: ${tag}: Drive Target resolves and Nowhere is a phantom`,
     await cdp.evaluate(`!!${connection(scope, 'resolved', 'Drive Target')} && !!${connection(scope, 'phantom', 'Nowhere')}`))
 }
+// The label is whole, the value takes at most the row's reach, and `gap` is how far the value's right edge sits from the row's.
+const reachOf = (cdp, rowExpr, labelExpr, valueExpr) =>
+  cdp.evaluate(`(() => { const r = (${rowExpr}), l = (${labelExpr}), v = (${valueExpr}); if (!r || !l || !v) return null; const cs = getComputedStyle(r); const reach = parseFloat(cs.getPropertyValue('--row-value-reach')) / 100; const content = r.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight); const vb = v.getBoundingClientRect(); const text = document.createRange(); text.selectNodeContents(l); return { whole: text.getBoundingClientRect().width <= l.getBoundingClientRect().width + 0.01, share: vb.width / content, reach, gap: r.getBoundingClientRect().right - parseFloat(cs.paddingRight) - parseFloat(cs.borderRightWidth) - vb.right } })()`)
+const reached = (r) => !!r && r.whole && r.share <= r.reach + 0.01
+const panelLine = (prop = NOTES) => `${panelRow(prop)}.parentElement.parentElement`
+const panelLabel = (prop = NOTES) => `[...(${panelLine(prop)}).querySelectorAll('*')].find((e) => e.children.length === 0 && e.textContent.trim() === ${JSON.stringify(prop)})`
+const cardRow = (title) => `(${cardValue(title)}).closest('.card-prop-row')`
 
 async function group2(cdp) {
   await showView(cdp, 'Drive Table')
   await connectionsOn(cdp, cell('Drive Prose'), 'table')
+  const ellipsis = {
+    prose: (await styleOf(cdp, `(${cell('Drive Prose')}).querySelector('.cell-text')`, ['textOverflow']))?.[0],
+    items: (await styleOf(cdp, `(${cell('Drive Items')}).querySelector('.cell-text')`, ['textOverflow']))?.[0],
+  }
+  check("group 2: at rest Drive Prose's text and Drive Items's end in an ellipsis", ellipsis.prose === 'ellipsis' && ellipsis.items === 'ellipsis', JSON.stringify(ellipsis))
+
+  // The box's scroll width is its widest line's, so a first line shorter than the next is the case a hover scroll would run into blank space.
+  await must('a short first line on Drive Empty', ask(cdp, 'mutate', { op: 'setProperty', path: pagePath('Drive Empty'), propertyId: ids[NOTES], value: { kind: 'text', value: 'short\na much longer second line that runs well past the width of the cell it sits in' } }))
+  await until("Drive Empty's value", async () => (await cellText(cdp, cell('Drive Empty'))) !== null)
+  await hover(cdp, `(${cell('Drive Empty')}).querySelector('.cell-text')`)
+  const at = await boxOf(cdp, `(${cell('Drive Empty')}).querySelector('.cell-text')`)
+  await cdp.send('Input.dispatchMouseEvent', { type: 'mouseWheel', x: at.x, y: at.y, deltaX: 300, deltaY: 0 })
+  await sleep(500)
+  const still = await cdp.evaluate(`(() => { const t = (${cell('Drive Empty')}).querySelector('.cell-text'); return { left: t.scrollLeft, overflow: getComputedStyle(t).textOverflow } })()`)
+  check('group 2: hovering and wheeling a value never scrolls it, so its first line stays in view', still.left === 0 && still.overflow === 'ellipsis', JSON.stringify(still))
+  await must('Drive Empty restored', ask(cdp, 'mutate', { op: 'setProperty', path: pagePath('Drive Empty'), propertyId: ids[NOTES], value: null }))
+  await until('Drive Empty emptied', async () => (await cellText(cdp, cell('Drive Empty'))) === null)
+
   await mouseClick(cdp, connection(cell('Drive Prose'), 'resolved', 'Drive Target'))
   check('group 2: a click on Drive Target opens the page', await settles(async () => (await activeTab(cdp)) === 'Drive Target'))
   await openCollection(cdp)
@@ -473,17 +513,28 @@ async function group2(cdp) {
   await hover(cdp, cell('Drive Prose'))
   await shot(cdp, 'cell-hover-pen')
   await penOn(cdp, cell('Drive Prose'), 'cell')
+  await cdp.send('Emulation.setTouchEmulationEnabled', { enabled: true, maxTouchPoints: 1 })
+  await sleep(1200)
+  const touch = await cdp.evaluate(`[...document.querySelectorAll('.data-row[data-rid] ${PEN}')].map((p) => parseFloat(getComputedStyle(p).opacity))`)
+  await cdp.send('Emulation.setTouchEmulationEnabled', { enabled: false })
+  check('group 2: without hover every pen shows at rest', touch.length >= 4 && touch.every((o) => o > 0), JSON.stringify(touch))
 
   await showView(cdp, 'Drive Cards')
   await connectionsOn(cdp, cardValue('Drive Prose'), 'standard card')
+  const cardReach = await reachOf(cdp, cardRow('Drive Prose'), `(${cardRow('Drive Prose')}).querySelector('.card-prop-label')`, cardValue('Drive Prose'))
+  const ends = await cdp.evaluate(`(() => { const end = (e) => { const r = document.createRange(); r.selectNodeContents(e); return r.getBoundingClientRect().right }; return [end((${cardValue('Drive Raw')}).querySelector('.cell-text')), end([...${card('Drive Raw')}.querySelectorAll('.card-prop-row')].find((r) => r.querySelector('.card-prop-label').textContent.trim() === ${JSON.stringify(BAR)}).querySelector('.cell-text-scroll'))] })()`)
+  check("group 2: a Standard card keeps Drive Notes's label whole and holds the value to the reach", reached(cardReach), JSON.stringify(cardReach))
+  check("group 2: on Drive Raw's card, 42 ends where Drive Bar's 25% does", Math.abs(ends[0] - ends[1]) <= 1, JSON.stringify(ends))
   await penOn(cdp, cardValue('Drive Prose'), 'cards-standard')
   await showView(cdp, 'Drive Compact')
   await connectionsOn(cdp, cardValue('Drive Prose'), 'compact card')
-  const flow = await cdp.evaluate(`(() => { const v = ${cardValue('Drive Prose')}; const s = v.closest('.card-props.is-flow > span') ?? v; const cs = getComputedStyle(s); const h = s.getBoundingClientRect().height; const others = [...s.parentElement.children].filter((e) => e !== s).map((e) => e.getBoundingClientRect().height); return { width: parseFloat(cs.borderTopWidth), color: cs.borderTopColor, tallest: Math.max(0, ...others), h } })()`)
-  check("group 2: the Compact flow span wears the field's border and stands no taller than its neighbors", flow.width > 0 && flow.color !== 'rgba(0, 0, 0, 0)' && flow.h <= flow.tallest + 1, JSON.stringify(flow))
+  const flow = await cdp.evaluate(`(() => { const s = (${cardValue('Drive Prose')}).closest('.card-props.is-flow > span'); if (!s) return null; const probe = document.createElement('i'); probe.style.color = 'var(--border-base)'; s.appendChild(probe); const kit = getComputedStyle(probe).color; probe.remove(); const ring = /^(.*) 0px 0px 0px ([\\d.]+)px inset$/.exec(getComputedStyle(s).boxShadow); const others = [...s.parentElement.children].filter((e) => e !== s).map((e) => e.getBoundingClientRect().height); return { ring: ring && { color: ring[1], width: parseFloat(ring[2]) }, kit, tallest: Math.max(0, ...others), h: s.getBoundingClientRect().height } })()`)
+  check("group 2: the Compact flow span wears the field's ring in the kit's border color and stands no taller than its neighbors", !!flow?.ring && flow.ring.width > 0 && flow.ring.color === flow.kit && flow.h <= flow.tallest + 1, JSON.stringify(flow))
   await penOn(cdp, cardValue('Drive Prose'), 'cards-compact')
 
   await showView(cdp, 'Drive Table')
+  const bar = await cdp.evaluate(`(() => { const c = ${cell('Drive Prose', BAR)}; const b = c.querySelector('.cell-bar'); const cs = getComputedStyle(c); return { bar: b.getBoundingClientRect().width, room: c.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight) } })()`)
+  check("group 2: Drive Bar's bar fills its cell", Math.abs(bar.bar - bar.room) <= 1, JSON.stringify(bar))
   await mouseClick(cdp, cell('Drive Prose', BAR))
   check("group 2: Drive Bar's bar still opens its popover", await settles(() => portalOpen(cdp), 3000))
   await escapeAll(cdp)
@@ -491,19 +542,48 @@ async function group2(cdp) {
   await openPage(cdp, 'Drive Prose')
   await openPanel(cdp)
   await connectionsOn(cdp, panelRow(), 'panel')
+  const panelReach = await reachOf(cdp, panelLine(), panelLabel(), `${panelRow()}.parentElement`)
+  check("group 2: the panel keeps Drive Notes's label whole and holds the value to the reach", reached(panelReach), JSON.stringify(panelReach))
   await penOn(cdp, panelRow(), 'panel')
+  await closePanel(cdp)
+  await openCollection(cdp)
+  await openPage(cdp, 'Drive Raw')
+  await openPanel(cdp)
+  const panelShort = await reachOf(cdp, panelLine(), panelLabel(), `${panelRow()}.parentElement`)
+  check('group 2: the panel sits Drive Raw’s 42 at the row’s right edge', panelShort && Math.abs(panelShort.gap) <= 1, JSON.stringify(panelShort))
   await closePanel(cdp)
   await openCollection(cdp)
 
   check("group 2: Drive Target's Drive Link reads #Setup", (await cdp.evaluate(`(${cell('Drive Target', LINK)}).textContent.trim()`)) === '#Setup')
   await openPage(cdp, 'Drive Target')
   await openPanel(cdp)
-  await mouseClick(cdp, `${panelRow(LINK)}.querySelector('.md-connection-resolved, a, span')`)
+  const rows = [await rectOf(cdp, panelLine()), await rectOf(cdp, panelLine(LINK))].map((r) => r?.height)
+  const fonts = [await styleOf(cdp, `${panelRow()}.querySelector('.cell-text')`, ['fontFamily', 'fontSize', 'lineHeight']), await styleOf(cdp, `${panelRow(LINK)}.querySelector('.cell-connection')`, ['fontFamily', 'fontSize', 'lineHeight'])]
+  await cdp.send('Input.dispatchMouseEvent', { type: 'mouseMoved', x: 5, y: 300, button: 'none' })
+  await sleep(500)
+  const edges = await cdp.evaluate(`(() => { const end = (e) => { const r = document.createRange(); r.selectNodeContents(e); return r.getBoundingClientRect().right }; return [end(${panelRow()}.querySelector('.cell-text')), end(${panelRow(LINK)}.querySelector('.cell-connection'))] })()`)
+  check("group 2: at rest Drive Notes's text ends where Drive Link's does", Math.abs(edges[0] - edges[1]) <= 1, JSON.stringify(edges))
+  check("group 2: the panel's Drive Notes row matches Drive Link's in height and type", Math.abs(rows[0] - rows[1]) < 0.5 && !!fonts[0] && JSON.stringify(fonts[0]) === JSON.stringify(fonts[1]), JSON.stringify({ rows, fonts }))
+  await mouseClick(cdp, `${panelRow(LINK)}.querySelector('.cell-connection')`)
   const inView = await settles(() => cdp.evaluate(`(() => { const h = [...document.querySelectorAll('.cm-line')].find((l) => l.textContent.includes('Setup')); if (!h) return false; const r = h.getBoundingClientRect(); return r.top >= 0 && r.bottom <= innerHeight })()`), 3000)
   check('group 2: a click on #Setup brings the heading into view', inView)
   await shot(cdp, 'link-heading')
   await closePanel(cdp)
   await openCollection(cdp)
+
+  await must('a long device name', ask(cdp, 'sync:renameDevice', 'M'.repeat(64)))
+  await mouseClick(cdp, sel('.sidebar-ribbon [aria-label="Settings"]'))
+  const DEVICE = '[aria-label="Device name"]'
+  await until('the device name field', () => cdp.evaluate(`!!document.querySelector(${JSON.stringify(DEVICE)})`))
+  await cdp.evaluate(`document.querySelector(${JSON.stringify(DEVICE)}).scrollIntoView({ block: 'center' })`)
+  await sleep(500)
+  const deviceRow = `document.querySelector(${JSON.stringify(DEVICE)}).parentElement.parentElement`
+  const device = await reachOf(cdp, deviceRow, `[...(${deviceRow}).querySelectorAll('*')].find((e) => e.children.length === 0 && e.textContent.trim() === 'This Device')`, `document.querySelector(${JSON.stringify(DEVICE)})`)
+  const clipped = await cdp.evaluate(`(() => { const f = document.querySelector(${JSON.stringify(DEVICE)}); return f.scrollWidth > f.clientWidth })()`)
+  check('group 2: a long device name clips inside its field and leaves This Device whole', reached(device) && clipped, JSON.stringify({ device, clipped }))
+  await shot(cdp, 'settings-device')
+  await mouseClick(cdp, sel('.sidebar-ribbon [aria-label="Settings"]'))
+  await sleep(600)
 }
 
 // ── Group 3 — index and cascade ─────────────────────────────────────────────
@@ -526,6 +606,9 @@ async function group3(cdp) {
   check("group 3: a heading rename patches Drive Target's own value and Drive Prose's",
     await settles(async () => frontmatter('Drive Target')[NOTES] === 'see [[#Intro]] first' && frontmatter('Drive Prose')[NOTES].includes('[[Drive Target#Intro]]')),
     JSON.stringify([frontmatter('Drive Target')[NOTES], frontmatter('Drive Prose')[NOTES].split('\n')[0]]))
+  // `mutate renameHeading` is the editor's settle alone (the cascade); the editor itself writes the body, so the drive writes it here. The watcher sees Setup → Intro, which the values already hold, and then Intro → Setup, which carries them back.
+  writeBody('Drive Target', pageFile('Drive Target').slice(FM.exec(pageFile('Drive Target'))[0].length).replace('## Setup', '## Intro'))
+  await sleep(2000)
   writeBody('Drive Target', pageFile('Drive Target').slice(FM.exec(pageFile('Drive Target'))[0].length).replace('## Intro', '## Setup'))
   check('group 3: the seen heading rename carries both values back',
     await settles(async () => frontmatter('Drive Target')[NOTES] === TARGET_NOTES && frontmatter('Drive Prose')[NOTES].includes('[[Drive Target#Setup]]'), 10000),
@@ -557,13 +640,6 @@ async function openPane(cdp, scope) {
 }
 const placeAt = (cdp, needle, end = true) =>
   cdp.evaluate(`(() => { const v = ${PANE_VIEW}; const d = v.state.doc.toString(); const i = d.indexOf(${JSON.stringify(needle)}); const at = ${end} ? v.state.doc.lineAt(i).to : i; v.focus(); v.dispatch({ selection: { anchor: at } }) })()`)
-async function paneRoundTrip(cdp, text, line) {
-  await openPane(cdp, cell('Drive Empty'))
-  await cdp.evaluate(`(() => { const v = ${PANE_VIEW}; v.dispatch({ changes: { from: 0, to: v.state.doc.length, insert: ${JSON.stringify(text)} } }) })()`)
-  await pressKey(cdp, 'Escape')
-  return settles(async () => keyLines('Drive Empty', NOTES) === line)
-}
-
 const SNAP_OF = (view) => `(() => {
   const view = ${view}
   const style = (el) => {
@@ -613,20 +689,18 @@ async function group4(cdp, pid) {
   await openPane(cdp, cell('Drive Prose'))
   const caretEnd = await cdp.evaluate(`(() => { const v = ${PANE_VIEW}; return v.hasFocus && v.state.selection.main.head === v.state.doc.length })()`)
   check('group 4: the pen opens TextPane focused, caret at the end', caretEnd)
-  const body = await cdp.evaluate(`(() => { const p = document.querySelector('${PANE}'); return { bullets: p.querySelectorAll('.md-list-bullet, [class*=bullet]').length, numbers: p.querySelectorAll('[class*=ordered], [class*=number]').length, boxes: p.querySelectorAll('input[type=checkbox], .md-list-checkbox-seat').length, checked: p.querySelectorAll('.md-list-checkbox-seat.is-checked, input[type=checkbox]:checked, [aria-checked=true]').length, bold: !!p.querySelector('strong, .md-strong, [class*=bold]'), italic: !!p.querySelector('em, .md-em, [class*=italic]'), highlight: !!p.querySelector('mark, [class*=highlight]'), resolved: !!p.querySelector('.md-connection-resolved'), phantom: !!p.querySelector('.md-connection-phantom') } })()`)
-  check('group 4: the pane draws lists, numbers, checkboxes, marks, and both connection classes',
-    body.bullets > 0 && body.numbers > 0 && body.boxes === 2 && body.checked === 1 && body.bold && body.italic && body.highlight && body.resolved && body.phantom, JSON.stringify(body))
+  const body = await cdp.evaluate(`(() => { const p = document.querySelector('${PANE}'); return { lists: p.querySelectorAll('[class*="md-list-"]').length, bold: !!p.querySelector('strong, .md-strong, [class*=bold]'), italic: !!p.querySelector('em, .md-em, [class*=italic]'), highlight: !!p.querySelector('mark, [class*=highlight]'), resolved: !!p.querySelector('.md-connection-resolved'), phantom: !!p.querySelector('.md-connection-phantom') } })()`)
+  check('group 4: the pane draws the marks and both connection classes, and no list',
+    body.lists === 0 && body.bold && body.italic && body.highlight && body.resolved && body.phantom, JSON.stringify(body))
   await shot(cdp, 'pane-open')
 
-  await placeAt(cdp, '- eggs with')
-  await pressKey(cdp, 'Enter')
-  const continued = (await paneDoc(cdp)).includes('🔴==\n- ')
+  await placeAt(cdp, 'eggs with')
+  await pressKey(cdp, 'Enter', SHIFT)
+  check('group 4: Shift-Enter at the end of a line writes a line break', (await paneDoc(cdp)).includes('🔴==\n\na third line'))
+  await shot(cdp, 'pane-break')
+  const beforeTab = await paneDoc(cdp)
   await pressKey(cdp, 'Tab')
-  const nested = (await paneDoc(cdp)).includes('🔴==\n  - ')
-  await pressKey(cdp, 'Tab', SHIFT)
-  const unnested = (await paneDoc(cdp)).includes('🔴==\n- ')
-  check('group 4: Enter continues the list, Tab nests, Shift-Tab unnests, focus stays in the pane', continued && nested && unnested && (await focusInPane(cdp)))
-  await shot(cdp, 'pane-list-continued')
+  check('group 4: Tab inserts nothing and focus stays in the pane', (await paneDoc(cdp)) === beforeTab && (await focusInPane(cdp)))
   await typeText(cdp, '[[Dri')
   await until('the autocomplete', () => cdp.evaluate(`!!document.querySelector('.mdpm-ac')`), 4000).catch(() => {})
   const ac = await boxOf(cdp, sel('.mdpm-ac')).catch(() => null)
@@ -634,20 +708,21 @@ async function group4(cdp, pid) {
   check('group 4: [[Dri opens the autocomplete inside the pane', ac && overlaps(ac, paneBox))
   await shot(cdp, 'pane-autocomplete')
   await mouseClick(cdp, `${textEl('.mdpm-ac *', 'Drive Target')}`)
-  check('group 4: a press on its row inserts [[Drive Target]] and the pane stays', (await paneDoc(cdp)).includes('- [[Drive Target]]') && (await cdp.evaluate(`!!document.querySelector('${PANE}')`)))
-  await cdp.evaluate(`(() => { const v = ${PANE_VIEW}; const i = v.state.doc.toString().indexOf('first numbered'); v.dispatch({ selection: { anchor: i, head: i + 5 } }) })()`)
+  check('group 4: a press on its row inserts [[Drive Target]] and the pane stays', (await paneDoc(cdp)).includes('🔴==\n[[Drive Target]]') && (await cdp.evaluate(`!!document.querySelector('${PANE}')`)))
+  await cdp.evaluate(`(() => { const v = ${PANE_VIEW}; const i = v.state.doc.toString().indexOf('a third line'); v.dispatch({ selection: { anchor: i, head: i + 7 } }) })()`)
   await pressKey(cdp, 'b', META)
-  check('group 4: ⌘B wraps the selection in **', (await paneDoc(cdp)).includes('**first** numbered'))
-  await placeAt(cdp, 'a done task')
-  await pressKey(cdp, 'Enter')
+  check('group 4: ⌘B wraps the selection in **', (await paneDoc(cdp)).includes('**a third** line'))
+  await placeAt(cdp, 'line, plain')
+  await pressKey(cdp, 'Enter', SHIFT)
   await typeText(cdp, 'https://example.com')
   await sleep(600)
   check('group 4: a typed URL lands in the Default Link Format', /\nhttps:\/\/example\.com$|\[[^\]]*\]\(https:\/\/example\.com\)|<https:\/\/example\.com>/.test(await paneDoc(cdp)), (await paneDoc(cdp)).split('\n').at(-1))
-  await placeAt(cdp, 'second numbered')
-  await pressKey(cdp, 'Enter')
-  await typeText(cdp, 'plain')
-  await chooseNative(cdp, pid, `[...document.querySelectorAll('${PANE} .cm-line')].find((l) => l.textContent === 'plain')`, { downs: 6, into: [1], seen: async () => screenShot('pane-format-menu') })
-  check('group 4: Lists ▸ Bulleted from the native menu gains a - ', (await paneDoc(cdp)).includes('\n- plain'))
+  await activate(cdp, pid)
+  await mouseClick(cdp, `[...document.querySelectorAll('${PANE} .cm-line')].find((l) => l.textContent.startsWith('milk'))`, { button: 'right' })
+  await sleep(700)
+  screenShot('pane-format-menu')
+  key(KEY.esc)
+  await sleep(500)
   const typed = await paneDoc(cdp)
   await pressKey(cdp, 'Escape')
   check('group 4: Escape saves and closes as a |- block', await settles(async () => frontmatter('Drive Prose')[NOTES] === typed && keyLines('Drive Prose', NOTES).startsWith(`${NOTES}: |-`)) && !(await cdp.evaluate(`!!document.querySelector('${PANE}')`)))
@@ -657,6 +732,11 @@ async function group4(cdp, pid) {
   await pressKey(cdp, 'Escape')
   await sleep(1200)
   check('group 4: Escape without typing writes nothing', mtime('Drive Prose') === stamp)
+  await openPane(cdp, cell('Drive Prose'))
+  await typeText(cdp, ' w')
+  const entered = await paneDoc(cdp)
+  await pressKey(cdp, 'Enter')
+  check('group 4: Enter saves and closes', await settles(async () => frontmatter('Drive Prose')[NOTES] === entered) && !(await cdp.evaluate(`!!document.querySelector('${PANE}')`)))
   await openPane(cdp, cell('Drive Prose'))
   await typeText(cdp, ' x')
   await mouseClick(cdp, `document.querySelector('${PANE} [aria-label="Save and close"]')`)
@@ -683,16 +763,6 @@ async function group4(cdp, pid) {
   await shot(cdp, 'pane-from-chooser')
   await pressKey(cdp, 'Escape')
   await showView(cdp, 'Drive Table')
-
-  for (const [text, line, tag] of [
-    ['- a\n- b', `${NOTES}: |-\n  - a\n  - b`, 'bulleted'],
-    ['1. a\n2. b', `${NOTES}: |-\n  1. a\n  2. b`, 'numbered'],
-    ['- [ ] a\n- [x] b', `${NOTES}: |-\n  - [ ] a\n  - [x] b`, 'tasks'],
-    ['- a', `${NOTES}: "- a"`, 'one item'],
-    ['- a\n  - b', `${NOTES}: |-\n  - a\n    - b`, 'nested'],
-  ])
-    check(`group 4: a typed ${tag} list lands as pinned`, await paneRoundTrip(cdp, text, line), keyLines('Drive Empty', NOTES))
-  await must('Drive Empty restored', ask(cdp, 'mutate', { op: 'setProperty', path: pagePath('Drive Empty'), propertyId: ids[NOTES], value: null }))
 
   await openPage(cdp, 'Drive Target')
   await cdp.evaluate(`(() => { const v = ${PAGE_VIEW}; v.focus(); v.dispatch({ selection: { anchor: v.state.doc.length } }) })()`)

@@ -37,7 +37,6 @@ export function PageView({
   const pendingTravel = useSession((s) => s.pendingTravel)
   const clearPendingTravel = useSession((s) => s.clearPendingTravel)
   const reloadPage = useSession((s) => s.reloadPage)
-  const tree = useSession((s) => s.tree)
   const setPageBody = useSession((s) => s.setPageBody)
   const settle = useSettledBody<[string, string]>((live) => setPageBody(...live), true)
   const path = slot?.status === 'ready' ? slot.detail.path : ''
@@ -56,7 +55,7 @@ export function PageView({
     return () => registerPageEditor(null)
   }, [parked])
 
-  const connections = useConnections(tree, 'preview')
+  const connections = useConnections('preview')
   const editorHost = useEditorHost({ pageId, connections, pageSurface: true })
 
   const seat = useBodyMount(path, (body) => settle.push([path, body]))

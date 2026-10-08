@@ -157,7 +157,7 @@ export function useWindowTabBody(target: WindowTarget | null): WindowTabBodySlot
   const { ready } = useDocState(spaceTarget)
   const boardReady = spaceTarget === null || ready
   useWindowWarm(bodyRef, boardReady)
-  const connections = useConnections(tree, 'window')
+  const connections = useConnections('window')
   const { page, onBody } = useSubfieldPage(pageTarget)
 
   const arrive =
@@ -215,6 +215,7 @@ export function useWindowTabBody(target: WindowTarget | null): WindowTabBodySlot
             <PropertyPanel
               subject={{ kind: 'page', id: pageTarget.id, path: pageTarget.path }}
               host="side-pane"
+              connections={connections}
             />
           )}
         </div>

@@ -71,7 +71,7 @@ four groups that follow the phases that built it: the catalog and the inline fie
 foreign number or list, the spellings each commit writes, sort, filter, and the cell menu's Clear);
 the value surfaces (live connections, the pen, the glance, and Link's own-page heading) on the
 Table, both Card formats, and the Properties panel; the index and the rename cascade reaching the
-links inside a value; and TextPane (list keys, autocomplete, formatting, the native menu, every
+links inside a value; and TextPane (keys, autocomplete, formatting, the native menu, every
 way it saves, and style parity with the page body). It takes the groups to run as arguments —
 `node live-drive.mjs 1 2` — and asserts each step in the page files, the view sidecar, the DOM, or
 a channel's reply. It builds the app, backs up `~/Test`, launches the build with its own userData
