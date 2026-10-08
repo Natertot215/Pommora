@@ -1,3 +1,4 @@
+import type { ConnectionsApi } from '../../MarkdownPM/Links/connectionsApi'
 import type { RefObject } from 'react'
 import { EditableInput } from '@pommora/uix/Fields/EditableInput'
 import { fillInput } from '@pommora/uix/Fields/fields.css'
@@ -15,6 +16,7 @@ export function PropertyValueInput({
   def,
   current,
   holder,
+  connections,
   alias,
   popover,
   onCommit,
@@ -23,6 +25,7 @@ export function PropertyValueInput({
   def: PropertyDefinition
   current: PropertyValue | null
   holder?: ConnPage
+  connections?: () => ConnectionsApi | undefined
   alias?: boolean
   popover?: { open: boolean; triggerRef: RefObject<HTMLElement | null> }
   onCommit: (next: PropertyValue | null) => void
@@ -44,6 +47,7 @@ export function PropertyValueInput({
         {...popover}
         current={current}
         holder={holder}
+        connections={connections}
         onCommit={onCommit}
         onDismiss={onClose}
       />

@@ -225,7 +225,7 @@ export function CardsView({ host }: { host: ViewHostApi }): React.JSX.Element {
   const valuePopup = valuePicker && PROPERTY_PICKER_KINDS.has(valuePicker.kind) ? valuePicker : null
   const vRow = valuePicker && rowById.get(valuePicker.rowId)
   const vTarget = valuePicker && vRow ? pickTarget(vRow, valuePicker.column) : null
-  const popoverOpen = valuePicker?.kind === 'popover' || valuePicker?.kind === 'rename'
+  const popoverOpen = valuePicker?.kind === 'popover'
   const popover = useHeld(
     popoverOpen && vTarget ? { ...vTarget, ...valuePicker } : null,
     popoverOpen,
@@ -493,7 +493,8 @@ export function CardsView({ host }: { host: ViewHostApi }): React.JSX.Element {
             def={popover.def}
             current={popover.current}
             holder={popoverRow ? holderOf(popoverRow, ctx) : undefined}
-            alias={popover.kind === 'rename'}
+            connections={ctx.connections}
+            alias={popover.def.type === 'link'}
             onCommit={commitPicked}
             onClose={() => setValuePicker(null)}
           />

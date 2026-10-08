@@ -60,8 +60,8 @@ const spaceArm = (tree: NexusTree | null, rewrite: Rewrite): { sidecars?: Rewrit
 export function spacesLinkHeading(root: string, title: string, heading: string): boolean {
   const [page, section] = [normalizeTitle(title), normalizeTitle(heading)]
   return (heldTreeOf(root)?.contexts ?? []).some((g) =>
-    g.spaces.some((s) =>
-      [...frontmatterMentions(s.values ?? {}), ...valueLinks(s.values ?? {})].some(
+    g.spaces.some(({ values = {} }) =>
+      [...frontmatterMentions(values), ...valueLinks(values)].some(
         (h) => h.target === page && h.qualifier === section,
       ),
     ),

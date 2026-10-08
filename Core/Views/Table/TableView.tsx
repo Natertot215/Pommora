@@ -256,6 +256,7 @@ export function TableView({ host }: { host: ViewHostApi }): React.JSX.Element {
         def={def}
         current={resolveFieldValue(row, col.id, schema)}
         holder={holderOf(row, ctx)}
+        connections={ctx.connections}
         alias={def.type === 'link'}
         onCommit={(next) => commitValue(row, col, next)}
         onClose={() => setEditing(null)}

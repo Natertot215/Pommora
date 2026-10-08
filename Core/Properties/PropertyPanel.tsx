@@ -413,10 +413,14 @@ export function PropertyPanel({
                   style={{ look: 'standard', ...dateDefaults(dateFormat) }}
                   commit={(next) => commit(id, next)}
                   empty={<EmptyValue className={s.empty} />}
-                  onPane={(anchor) => {
-                    triggerRef.current = anchor.closest<HTMLElement>('[data-property-row]')
-                    runIntent(def!, current, { kind: 'popover' }, null)
-                  }}
+                  onPane={
+                    def
+                      ? (anchor) => {
+                          triggerRef.current = anchor.closest<HTMLElement>('[data-property-row]')
+                          runIntent(def, current, { kind: 'popover' }, null)
+                        }
+                      : undefined
+                  }
                 />
               )}
             </span>
@@ -523,6 +527,7 @@ export function PropertyPanel({
             popover={{ open: true, triggerRef }}
             def={editingDef}
             holder={holderOf(row, ctx)}
+            connections={ctx.connections}
             current={resolveFieldValue(row, editing.id, schema)}
             onCommit={(next) => commit(editing.id, next)}
             onClose={() => setEditing(null)}

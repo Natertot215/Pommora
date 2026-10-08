@@ -21,6 +21,12 @@ export function linkEntry(v: unknown, nesting = 1): string | null {
   return typeof inner === 'string' && depth >= nesting ? `[[${inner}]]` : null
 }
 
+/** The link a whole key value spells — a string, or an unquoted `[[Page]]` — or `null` for any other shape. */
+export function wholeValueLink(v: unknown): LinkTarget | null {
+  const entry = linkEntry(v, 2)
+  return entry === null ? null : readLink(entry)
+}
+
 export function readLink(raw: string): LinkTarget {
   const conn = parseConnectionText(raw)
   if (conn) return { kind: 'page', ...conn }

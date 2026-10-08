@@ -29,7 +29,7 @@ import { popMenu } from '../../Actions/menuActions'
 import { openWebLink } from '../../Web/openWebLink'
 import { fillsBlank } from './cardValueInput'
 
-export type CardPickerKind = 'picker' | 'dateTime' | 'popover' | 'rename'
+export type CardPickerKind = 'picker' | 'dateTime' | 'popover'
 
 export function CardValue({
   row,
@@ -88,7 +88,7 @@ export function CardValue({
       },
       picker: () => open('picker'),
       dateTime: () => open('dateTime'),
-      rename: () => open('rename'),
+      rename: () => open('popover'),
       popover: () => open('popover'),
       edit: () => setEditing(true),
       open: ({ url }) => openWebLink(url),

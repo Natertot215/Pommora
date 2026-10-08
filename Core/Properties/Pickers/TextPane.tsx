@@ -13,6 +13,7 @@ import { useReconfigured } from '../../MarkdownPM/Input/useReconfigured'
 import { useConnectionAutocomplete } from '../../MarkdownPM/Autocomplete/useConnectionAutocomplete'
 import { AutocompletePane } from '../../MarkdownPM/Autocomplete/AutocompletePane'
 import { useEditorHost } from '../../Pages/editorHost'
+import type { ConnectionsApi } from '../../MarkdownPM/Links/connectionsApi'
 import { previewConnections } from '../../Session/pageConnections'
 import type { PropertyValue } from '../propertyValue'
 import './text-pane.css'
@@ -25,6 +26,7 @@ const settled = (doc: string): string => (doc.trim() === '' ? '' : doc)
 export function TextPane({
   current,
   holder,
+  connections = previewConnections,
   open,
   triggerRef,
   onCommit,
@@ -32,6 +34,7 @@ export function TextPane({
 }: {
   current: PropertyValue | null
   holder?: ConnPage
+  connections?: () => ConnectionsApi | undefined
   open: boolean
   triggerRef: RefObject<HTMLElement | null>
   onCommit: (value: PropertyValue | null) => void
@@ -55,6 +58,7 @@ export function TextPane({
       <TextPaneEditor
         text={current?.kind === 'text' ? current.value : ''}
         holder={holder}
+        connections={connections}
         host={host}
         saveRef={saveRef}
         onCommit={onCommit}
@@ -74,6 +78,7 @@ export function TextPane({
 function TextPaneEditor({
   text,
   holder,
+  connections,
   host,
   saveRef,
   onCommit,
@@ -81,6 +86,7 @@ function TextPaneEditor({
 }: {
   text: string
   holder: ConnPage | undefined
+  connections: () => ConnectionsApi | undefined
   host: EditorHost
   saveRef: RefObject<() => void>
   onCommit: (value: PropertyValue | null) => void
@@ -91,7 +97,7 @@ function TextPaneEditor({
   const viewRef = useRef<EditorView | null>(null)
   const committed = useRef(text)
   const onCommitRef = useLatest(onCommit)
-  const { setAc, acCtl, pane } = useConnectionAutocomplete(viewRef, host, previewConnections)
+  const { setAc, acCtl, pane } = useConnectionAutocomplete(viewRef, host, connections)
   const formatExt = useReconfigured(viewRef, host.settings().commands, formatKeymap)
 
   const save = (): void => {
@@ -110,7 +116,7 @@ function TextPaneEditor({
         extensions: [
           editorBase({
             host,
-            getConn: previewConnections,
+            getConn: connections,
             scope: 'text',
             ac: { acCtl, setAc },
             formatExt,
