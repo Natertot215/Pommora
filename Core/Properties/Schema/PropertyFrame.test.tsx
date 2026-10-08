@@ -176,6 +176,31 @@ describe('the All Properties section (T5)', () => {
     expect(host.textContent).toContain('Checkbox')
   })
 
+  it('creating a property lands back on the list with its row renaming; Enter commits the name', async () => {
+    await mountPane([...defs, { id: 'prop_new', name: 'New Text', type: 'text' }])
+    await act(async () => {
+      host.querySelector<HTMLButtonElement>('[aria-label="New Property"]')!.click()
+    })
+    await act(async () => {
+      ;[...host.querySelectorAll<HTMLElement>('[role="button"]')]
+        .find((el) => el.textContent === 'Text')!
+        .click()
+    })
+    const input = host.querySelector<HTMLInputElement>('.row-title-input')
+    expect(input?.value).toBe('New Text')
+    expect(document.activeElement).toBe(input)
+    await act(async () => {
+      Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value')?.set?.call(
+        input,
+        'Tags',
+      )
+      input!.dispatchEvent(new Event('input', { bubbles: true }))
+      input!.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }))
+    })
+    expect(renameSpy).toHaveBeenCalledWith('prop_new', 'Tags')
+    expect(host.querySelector('.row-title-input')).toBeNull()
+  })
+
   it('the assigned group runs down to the All heading, so its lane owns the space between', async () => {
     await mountPane()
     expect(assignedGroup().nextElementSibling).toBe(allGroup())
@@ -464,9 +489,8 @@ describe('native menus + the inline-rename channel (T7)', () => {
     expect(host.querySelector('.row-title-input')).toBeNull()
   })
 
-  it('a registry row offers Rename only (registry-row context)', async () => {
+  it('a registry row opens no menu', async () => {
     useSession.setState({ tree: { config: { registry: [effortDef] } } as never })
-    propertyMenuSpy.mockResolvedValueOnce(null)
     await mountPane()
     await act(async () => {
       rowFor('All Properties').click()
@@ -476,9 +500,6 @@ describe('native menus + the inline-rename channel (T7)', () => {
         .querySelector('[class*="item"]')!
         .dispatchEvent(new MouseEvent('contextmenu', { bubbles: true }))
     })
-    expect(propertyMenuSpy).toHaveBeenCalledWith({
-      items: propertyMenuModel({ kind: 'registry-row', name: 'Effort' }),
-      anchor: undefined,
-    })
+    expect(propertyMenuSpy).not.toHaveBeenCalled()
   })
 })

@@ -14,10 +14,4 @@ describe('propertyMenuModel', () => {
       propertyMenuModel({ kind: 'assigned-row', name: 'Status' }).map((i) => i.action),
     ).toEqual(['property:rename', 'property:remove'])
   })
-
-  it('a registry row yields Rename only', () => {
-    expect(
-      propertyMenuModel({ kind: 'registry-row', name: 'Effort' }).map((i) => i.action),
-    ).toEqual(['property:rename'])
-  })
 })
