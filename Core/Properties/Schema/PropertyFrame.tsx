@@ -85,7 +85,7 @@ function ListGroups({
   onToggleAll: () => void
   onOpenEditor: (id: string) => void
   onAssign: (id: string) => void
-  onRowMenu: (d: PropertyDefinition, group: 'assigned' | 'all') => void
+  onRowMenu: (d: PropertyDefinition) => void
   onRenameCommit: (id: string, next: string) => void
   onRenameCancel: () => void
 }): React.JSX.Element {
@@ -120,7 +120,7 @@ function ListGroups({
                     onClick={open}
                     onContextMenu={(e) => {
                       e.preventDefault()
-                      onRowMenu(d, 'assigned')
+                      onRowMenu(d)
                     }}
                   >
                     {title(d)}
@@ -144,10 +144,6 @@ function ListGroups({
                   <MenuItem
                     className={s.allRow}
                     leading={<Icon name={propertyIcon(d)} size={s.ICON.doc} />}
-                    onContextMenu={(e) => {
-                      e.preventDefault()
-                      onRowMenu(d, 'all')
-                    }}
                     trailing={
                       <AccessoryButton
                         icon="plus"
@@ -233,7 +229,9 @@ export function PropertyFrame({
       name: `New ${propertyTypeLabel(type)}`,
       type,
     })
-    if (reportRefusal(res)) setView({ kind: 'edit', id: res.value.id })
+    if (!reportRefusal(res)) return
+    backToList()
+    beginPropertyRename({ collectionPath, propertyId: res.value.id })
   }
   const rename = async (id: string, name: string): Promise<void> => {
     const res = await dialer().ask('property:rename', id, name)
@@ -288,13 +286,8 @@ export function PropertyFrame({
       notifyTrashed(def.name, deleted.value, deleted.value.owed && replay(deleted.value.owed))
     }
   }
-  const rowMenu = async (d: PropertyDefinition, group: 'assigned' | 'all'): Promise<void> => {
-    const action = await popMenu(
-      propertyMenuModel({
-        kind: group === 'assigned' ? 'assigned-row' : 'registry-row',
-        name: d.name,
-      }),
-    )
+  const rowMenu = async (d: PropertyDefinition): Promise<void> => {
+    const action = await popMenu(propertyMenuModel({ kind: 'assigned-row', name: d.name }))
     if (action === 'property:rename') beginPropertyRename({ collectionPath, propertyId: d.id })
     else if (action === 'property:remove')
       reportRefusal(await dialer().ask('schema:unassign', collectionPath, d.id))
@@ -472,7 +465,7 @@ export function PropertyFrame({
           onToggleAll={() => setAllOpen((o) => !o)}
           onOpenEditor={(id) => setView({ kind: 'edit', id })}
           onAssign={(id) => void write(dialer().ask('schema:assign', collectionPath, id))}
-          onRowMenu={(d, group) => void rowMenu(d, group)}
+          onRowMenu={(d) => void rowMenu(d)}
           onRenameCommit={(id, next) => {
             cancelPropertyRename()
             void rename(id, next)

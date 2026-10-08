@@ -5,7 +5,6 @@ import type { ActionItem } from './menuModel'
 type PropertyMenuContext =
   | { kind: 'editor'; name: string }
   | { kind: 'assigned-row'; name: string }
-  | { kind: 'registry-row'; name: string }
   /** Neither Clear nor Remove touches the schema: the property stays assigned to its Collection. */
   | { kind: 'page-value'; name: string; filled: boolean }
 
@@ -28,8 +27,6 @@ export function propertyMenuModel(ctx: PropertyMenuContext): ActionItem<Property
         { label: 'Rename', action: 'property:rename' },
         { label: 'Remove', action: 'property:remove' },
       ]
-    case 'registry-row':
-      return [{ label: 'Rename', action: 'property:rename' }]
     case 'page-value':
       return ctx.filled
         ? [
