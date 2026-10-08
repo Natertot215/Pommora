@@ -1,5 +1,5 @@
 import { reportRefusal } from '../../Interface/Notifications/notifications'
-import { useRef, useState, type ReactNode } from 'react'
+import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { Icon, type IconName } from '@pommora/uix/Symbols'
 import type { IconSize } from '@pommora/uix/Theme'
 import { useSession } from '../../Session/store'
@@ -190,6 +190,13 @@ export function PropertyFrame({
   const [iconOpen, setIconOpen] = useState(false)
   const iconRef = useRef<HTMLButtonElement>(null)
   const [allOpen, setAllOpen] = useState(false)
+  const shown = useRef(true)
+  useEffect(
+    () => () => {
+      shown.current = false
+    },
+    [],
+  )
 
   const props = schema.filter((d) => !isReservedPropertyId(d.id))
   const assignedIds = new Set(schema.map((d) => d.id))
@@ -229,7 +236,7 @@ export function PropertyFrame({
       name: `New ${propertyTypeLabel(type)}`,
       type,
     })
-    if (!reportRefusal(res)) return
+    if (!reportRefusal(res) || !shown.current) return
     backToList()
     beginPropertyRename({ collectionPath, propertyId: res.value.id })
   }

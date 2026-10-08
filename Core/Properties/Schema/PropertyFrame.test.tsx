@@ -184,6 +184,32 @@ describe('the All Properties section (T5)', () => {
     expect(host.textContent).toContain('Checkbox')
   })
 
+  it('a create whose reply lands after the frame left begins no rename', async () => {
+    let land: (r: unknown) => void = () => {}
+    const pending = new Promise((r) => {
+      land = r
+    })
+    ;(window as unknown as { nexus: { ask: unknown } }).nexus = stubDialer({
+      'schema:add': vi.fn(() => pending),
+      'property:holders': vi.fn(async () => ok(3)),
+    })
+    await mountPane()
+    await act(async () => {
+      host.querySelector<HTMLButtonElement>('[aria-label="New Property"]')!.click()
+    })
+    await act(async () => {
+      ;[...host.querySelectorAll<HTMLElement>('[role="button"]')]
+        .find((el) => el.textContent === 'Text')!
+        .click()
+    })
+    await act(async () => root.unmount())
+    root = createRoot(host)
+    await act(async () => {
+      land({ ok: true, value: { id: 'prop_new' } })
+    })
+    expect(useSession.getState().renamingProperty).toBeNull()
+  })
+
   it('creating a property lands back on the list with its row renaming, focused once the list slot is live; Enter commits the name', async () => {
     const focusedWhileInert: boolean[] = []
     const focus = HTMLInputElement.prototype.focus
