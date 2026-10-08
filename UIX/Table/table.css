@@ -198,7 +198,6 @@
   align-items: center;
   width: 100%;
   min-width: 0;
-  max-height: 1lh;
 }
 .cell-pen {
   position: absolute;
@@ -207,18 +206,18 @@
   display: flex;
   align-items: center;
 }
+/* A margin, not padding: a scrolled line runs under its own padding. */
 .cell-text-host > .cell-text:not(:only-child) {
-  padding-right: calc(var(--reveal, 0) * (var(--accessory-box, 20px) + 4px));
+  margin-right: calc(var(--reveal, 0) * (var(--accessory-box, 20px) + 4px));
 }
-/* Every line is drawn; the box is one line tall and clips the rest, so a wrapping container later shows them all. The newline breaks where the pane breaks it, so the first line is the one that shows, ending in an ellipsis. It never scrolls on hover: the box's scroll width is its widest line's, hidden lines included, so a scroll would run the first line into blank space. */
+/* Every line is drawn on its own and only the first shows, so a wrapping container later shows them all; the hidden lines add no width, so the hover scroll ends where the first line does. */
 .cell-text-host > .cell-text {
   display: block;
   flex: 1 1 auto;
-  min-width: 0;
   white-space: pre;
-  max-height: 1lh;
-  overflow: hidden;
-  text-overflow: ellipsis;
+}
+.cell-text-line + .cell-text-line {
+  display: none;
 }
 .cell-chips {
   display: inline-flex;
