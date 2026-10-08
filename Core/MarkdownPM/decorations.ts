@@ -617,7 +617,6 @@ function build(view: EditorView, conn: ConnectionsApi | undefined, scope: Markdo
     })
   }
   if (settings.inPageHeadingResolution === 'automatic') {
-    // A held page's are the index's keys, which a run still matches by length: a case fold keeps it, a length-changing fold misses.
     const sectionHeadings = ownHeadings(view, conn, docSectionHeadings) ?? []
     const sectionMark = Decoration.mark({ class: 'md-connection-resolved md-section-run' })
     for (const { from: a, to: b } of view.visibleRanges)

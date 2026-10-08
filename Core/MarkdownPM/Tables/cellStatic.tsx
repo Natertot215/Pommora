@@ -422,11 +422,12 @@ export function linkGestures(
     onContextMenu: (e: React.MouseEvent): boolean => {
       dismiss(e)
       const api = connections?.()
-      const target = api?.menu && (menuAt ? menuAt(e, api) : readOnlyMenu(e))
+      if (!api?.menu) return false
+      const target = menuAt ? menuAt(e, api) : readOnlyMenu(e)
       if (!target) return false
       e.preventDefault()
       e.stopPropagation()
-      api.menu?.(target)
+      api.menu(target)
       return true
     },
     onPointerOver: (e: React.PointerEvent): void => {
