@@ -94,8 +94,15 @@
   min-width: 0;
 }
 .card-prop-label {
-  flex: 0 0 auto;
+  flex: 0 1 auto;
   color: var(--label-secondary);
+}
+/* The card's row reads the same mark a menu row does; a percentage against the Compact flow's content-sized span would be circular, so the rule sits on the row. The value grows from nothing into the room the label leaves, up to the reach, so a label that fits is never shrunk by a long value; it sits at the row's end, as the panel's does. */
+.card-prop-row > .card-value {
+  flex: 1 1 0;
+  justify-content: flex-end;
+  text-align: right;
+  max-width: var(--row-value-reach);
 }
 .card-value {
   display: inline-flex;
@@ -106,6 +113,7 @@
   overflow: hidden;
 }
 .card-value .cell-text-scroll,
+.card-value .cell-text-host,
 .card-value .cell-control,
 .card-value-empty {
   padding: 0 var(--label-pad-x);
@@ -116,8 +124,15 @@
 .card-props.is-flow > span:has(.cell-bar) {
   flex-basis: 100%;
 }
+/* The field's own minimum and padding would stand a Text row taller than the compact row it sits in. */
+.card-props.is-flow > .card-text-value {
+  flex-basis: 100%;
+  min-height: 0;
+  padding-block: 0;
+}
 .card-value:has(.cell-bar) {
   flex: 1;
   width: 100%;
+  max-width: none;
   overflow: visible;
 }

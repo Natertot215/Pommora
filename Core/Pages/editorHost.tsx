@@ -15,12 +15,7 @@ import { fetchPageDetail, knownBody } from '../Session/pageDetailCache'
 import { warmSeamOf } from '../Session/warmCache'
 import { dialer } from '../Platform/dialer'
 import { popMenu } from '../Actions/menuActions'
-import {
-  cancelGlance,
-  closeGlance,
-  glanceLink,
-  insideGlance,
-} from '../Interface/Glance/glanceAction'
+import { glanceHost } from '../Interface/Glance/glanceAction'
 import { PageTile } from '../Tiles/Surfaces/PageTile'
 import { WebTile } from '../Tiles/Surfaces/WebTile'
 import { windowGeometry } from '../Interface/Windows/useWindowGeometry'
@@ -113,9 +108,7 @@ function buildEditorHost(
               .ask('editor:menu', req)
               .then((r) => valueOr(r, null)),
     },
-    glance: inert
-      ? undefined
-      : { arm: glanceLink, cancel: cancelGlance, close: closeGlance, contains: insideGlance },
+    glance: inert ? undefined : glanceHost,
     renderTile: (tile) =>
       tile.kind === 'page' ? (
         <PageTile

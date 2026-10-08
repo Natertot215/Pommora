@@ -52,7 +52,12 @@ export const value = style({
   textAlign: 'right',
 })
 
-globalStyle(`${row} > .${side}:last-child`, { flex: '0 1 auto', minWidth: 0 })
+/* The value grows from nothing into the room the label leaves, up to the row's reach, so a label that fits is never shrunk by a long value; the value's grow weight dwarfs the label's 1. */
+globalStyle(`${side}:has(> ${value})`, {
+  flex: '1000 1 0',
+  minWidth: 0,
+  justifyContent: 'flex-end',
+})
 
 export const empty = style([text.caption.standard, { paddingRight: 'var(--row-pad-standard)' }])
 

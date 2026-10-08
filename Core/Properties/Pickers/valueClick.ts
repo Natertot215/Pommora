@@ -13,7 +13,7 @@ export type ValueIntent =
   | { kind: 'dateTime' }
   | { kind: 'file' }
   | { kind: 'edit' }
-  | { kind: 'numberPicker' }
+  | { kind: 'popover' }
   | { kind: 'rename' }
   | { kind: 'open'; url: string }
   | { kind: 'hide' }
@@ -41,7 +41,7 @@ export function valueClickIntent(
     case 'file':
       return { kind: 'file' }
     case 'number':
-      return barDivisor(look, config) === undefined ? { kind: 'edit' } : { kind: 'numberPicker' }
+      return barDivisor(look, config) === undefined ? { kind: 'edit' } : { kind: 'popover' }
     case 'text':
       return { kind: 'edit' }
     case 'link': {

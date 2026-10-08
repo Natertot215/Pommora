@@ -213,8 +213,7 @@ export function GlancePane(): React.JSX.Element {
     if (persistence === 'off') dismiss()
   }, [persistence, dismiss])
 
-  const tree = useSession((s) => s.tree)
-  const resolveOnly = useConnections(tree, 'inert')
+  const resolveOnly = useConnections('inert')
 
   const focusBefore = useRef<Element | null>(null)
 

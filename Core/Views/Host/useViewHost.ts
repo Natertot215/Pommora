@@ -7,6 +7,7 @@ import type { PropertyValue } from '../../Properties/propertyValue'
 import { assignValue, type ValueWriter } from '../../Properties/assignValue'
 import type { Result } from '../../Contract/result'
 import { useSession } from '../../Session/store'
+import { previewConnections } from '../../Session/pageConnections'
 import { useContentHost } from '../../Interface/contentHost'
 import { useViewTileScope } from '../ViewTileScope'
 import { useSaveView } from '../viewWrite'
@@ -109,7 +110,7 @@ export function useViewHost(source: CollectionNode | SetNode, nests: boolean) {
 
   const identity = tree && identityOf(tree)
   const ctx = useMemo(
-    () => (identity ? buildValueContext(identity, schema, assetMap) : null),
+    () => (identity ? buildValueContext(identity, schema, assetMap, previewConnections) : null),
     [identity, schema, assetMap],
   )
   const bands = useMemo(() => bandModelOf(groups, heads), [groups, heads])
