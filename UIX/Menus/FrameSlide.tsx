@@ -77,7 +77,9 @@ export function FrameSlide({
   const width = active === 'a' ? size.aw : size.bw
   const height = active === 'a' ? size.ah : size.bh
   const shift = active === 'b' ? size.aw : 0
-  const idle = (slot: 'a' | 'b'): boolean => !navigating && active !== slot
+  // The slot the flip is heading for is live and shown from the render that chooses it, so what mounts there can take focus before the slide.
+  const target = open ? 'b' : 'a'
+  const idle = (slot: 'a' | 'b'): boolean => !navigating && active !== slot && target !== slot
   const slotBox = { minWidth, maxWidth, minHeight }
   return (
     <div
@@ -88,12 +90,12 @@ export function FrameSlide({
         className={cx(s.track, enabled && s.trackAnimated)}
         style={{ transform: `translateX(-${shift}px)` }}
       >
-        <div className={cx(s.slot, idle('a') && s.slotIdle)} inert={open}>
+        <div className={cx(s.slot, idle('a') && s.slotIdle)} inert={target !== 'a'}>
           <div ref={aRef} className={s.slotContent} style={slotBox}>
             {root}
           </div>
         </div>
-        <div className={cx(s.slot, idle('b') && s.slotIdle)} inert={!open}>
+        <div className={cx(s.slot, idle('b') && s.slotIdle)} inert={target !== 'b'}>
           <div ref={bRef} className={s.slotContent} style={slotBox}>
             {shownDetail}
           </div>
