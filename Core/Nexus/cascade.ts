@@ -93,7 +93,7 @@ export async function deleteCascade(
       ? await nexusCorpus(root)
       : [...new Set(hits.flatMap((h) => h ?? []))]
     const goneEntry = (value: unknown): string | null => {
-      const entry = linkEntry(value)
+      const entry = linkEntry(value, 2)
       const link = entry === null ? null : readLink(entry)
       return link?.kind === 'page' && gone.has(normalizeTitle(link.title)) ? entry : null
     }

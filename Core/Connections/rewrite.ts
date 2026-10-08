@@ -122,7 +122,7 @@ export function rewriteFrontmatterConnections(
   const headingKey = 'heading' in change ? normalizeTitle(change.heading) : ''
   const patch: Record<string, string> = {}
   for (const [key, value] of Object.entries(values)) {
-    const entry = linkEntry(value)
+    const entry = linkEntry(value, 2)
     const link = entry === null ? null : readLink(entry)
     if (link?.kind !== 'page' || normalizeTitle(link.title || ownTitle) !== titleKey) continue
     if ('heading' in change) {

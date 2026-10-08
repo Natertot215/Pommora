@@ -87,6 +87,8 @@ describe('decodeValue — the declared type decides, never the shape', () => {
       value: '[[Page]]',
     })
     expect(decodeValue(def({ type: 'link' }), 42)).toEqual({ kind: 'null' })
+    // A one-item list is a list, as the index reads it, not a link.
+    expect(decodeValue(def({ type: 'link' }), ['Page'])).toEqual({ kind: 'null' })
     expect(decodeValue(def({ type: 'dateTime' }), '2026-06-15')).toEqual({
       kind: 'dateTime',
       value: '2026-06-15',
