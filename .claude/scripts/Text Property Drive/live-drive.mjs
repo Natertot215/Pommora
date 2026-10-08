@@ -102,9 +102,11 @@ const hover = async (cdp, expr, dwell = 600) => {
 }
 
 // A freshly popped native menu highlights nothing: the first Down lands on row 1. `seen` runs while the menu is up.
-async function chooseNative(cdp, pid, expr, { downs, into = [], seen }) {
+// `edge` presses the element's leading padding, so a link inside it is never the target.
+async function chooseNative(cdp, pid, expr, { downs, into = [], seen, edge = false }) {
   await activate(cdp, pid)
-  await mouseClick(cdp, expr, { button: 'right' })
+  const box = await boxOf(cdp, expr)
+  await mouseAt(cdp, edge ? { x: box.left + 4, y: box.y } : box, { button: 'right' })
   await sleep(700)
   try {
     if (seen) await seen()
@@ -119,6 +121,15 @@ async function chooseNative(cdp, pid, expr, { downs, into = [], seen }) {
     throw e
   }
   await sleep(800)
+}
+
+// The items of the native menu now up, read from the app's window; empty when none is.
+const nativeMenu = (pid) => {
+  try {
+    return osa(`tell application "System Events" to tell (first process whose unix id is ${pid}) to get name of every menu item of every menu of UI element 1`).split(', ')
+  } catch {
+    return []
+  }
 }
 
 const click = (cdp, expr) => cdp.evaluate(`(${expr}).click()`)
@@ -393,7 +404,7 @@ async function group1(cdp, pid) {
   await must('filter off', ask(cdp, 'views:save', 'Collection A', 'collection', table(), { filter_enabled: false }))
   await until('every row back', async () => (await titles()).includes('Drive Empty'))
 
-  await chooseNative(cdp, pid, cell('Drive Prose'), { downs: 1, seen: async () => screenShot('cell-menu') })
+  await chooseNative(cdp, pid, cell('Drive Prose'), { downs: 1, edge: true, seen: async () => screenShot('cell-menu') })
   check("group 1: the cell menu's Clear empties the cell and the key", await settles(async () => !has('Drive Prose', NOTES) && (await cellText(cdp, cell('Drive Prose'))) === null), keyLines('Drive Prose', NOTES))
   await must('Drive Prose restored', ask(cdp, 'mutate', { op: 'setProperty', path: pagePath('Drive Prose'), propertyId: ids[NOTES], value: { kind: 'text', value: SHOWCASE } }))
   await until("Drive Prose's value back", async () => (await cellText(cdp, cell('Drive Prose'))) !== null)
@@ -478,9 +489,17 @@ const panelLine = (prop = NOTES) => `${panelRow(prop)}.parentElement.parentEleme
 const panelLabel = (prop = NOTES) => `[...(${panelLine(prop)}).querySelectorAll('*')].find((e) => e.children.length === 0 && e.textContent.trim() === ${JSON.stringify(prop)})`
 const cardRow = (title) => `(${cardValue(title)}).closest('.card-prop-row')`
 
-async function group2(cdp) {
+async function group2(cdp, pid) {
   await showView(cdp, 'Drive Table')
   await connectionsOn(cdp, cell('Drive Prose'), 'table')
+  await activate(cdp, pid)
+  await mouseClick(cdp, connection(cell('Drive Prose'), 'resolved', 'Drive Target'), { button: 'right' })
+  await sleep(700)
+  const linkMenu = nativeMenu(pid)
+  screenShot('link-menu')
+  key(KEY.esc)
+  await sleep(500)
+  check('group 2: right-clicking Drive Target in a Text value opens the link menu, not the cell menu', linkMenu.includes('Copy Link') && !linkMenu.includes('Clear'), JSON.stringify(linkMenu))
   const ellipsis = {
     prose: (await styleOf(cdp, `(${cell('Drive Prose')}).querySelector('.cell-text')`, ['textOverflow']))?.[0],
     items: (await styleOf(cdp, `(${cell('Drive Items')}).querySelector('.cell-text')`, ['textOverflow']))?.[0],
@@ -925,7 +944,7 @@ try {
   await sleep(3000)
   await seed(cdp)
   if (GROUPS.has(1)) await group1(cdp, pid)
-  if (GROUPS.has(2)) await group2(cdp)
+  if (GROUPS.has(2)) await group2(cdp, pid)
   if (GROUPS.has(3)) await group3(cdp)
   if (GROUPS.has(4)) await group4(cdp, pid)
   cdp.close()

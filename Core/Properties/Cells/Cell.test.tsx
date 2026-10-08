@@ -295,4 +295,41 @@ describe('a text value', () => {
     expect(host.querySelector('.md-connection-resolved')?.textContent).toBe('Target')
     expect(host.querySelector('.md-connection-phantom')?.textContent).toBe('Nowhere')
   })
+  it('opens the link menu on a right-click over a link it holds, and leaves the rest to the cell menu', () => {
+    const page = { id: 'p9', title: 'Target', path: 'X/Target.md' }
+    const menu = vi.fn()
+    const connections = () =>
+      ({
+        resolve: (title: string) =>
+          title === 'Target' ? { status: 'resolved', page } : { status: 'phantom', page: null },
+        candidates: () => [],
+        open: () => {},
+        menu,
+      }) as unknown as ConnectionsApi
+    act(() =>
+      root.render(
+        <Cell
+          row={rowWith({ prop_notes: 'see [[Target]] first' })}
+          column={col('prop_notes')}
+          ctx={{ ...ctx, connections }}
+          hideIcon={false}
+          style={dateDefaults('full')}
+        />,
+      ),
+    )
+    const outer = vi.fn()
+    document.addEventListener('contextmenu', outer)
+    const press = (el: Element): boolean =>
+      el.dispatchEvent(
+        new MouseEvent('contextmenu', { bubbles: true, cancelable: true, button: 2 }),
+      )
+    act(() => press(host.querySelector('.md-connection-resolved')!))
+    expect(menu).toHaveBeenCalledWith(expect.objectContaining({ kind: 'page', page }))
+    expect(outer).not.toHaveBeenCalled()
+    menu.mockClear()
+    act(() => press(host.querySelector('.cell-text')!))
+    expect(menu).not.toHaveBeenCalled()
+    expect(outer).toHaveBeenCalledTimes(1)
+    document.removeEventListener('contextmenu', outer)
+  })
 })
