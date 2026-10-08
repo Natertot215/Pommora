@@ -10,6 +10,7 @@ import type { MarkdownScope } from '../Engine/detect'
 import { REVEAL_REACH, type Reach, withinReach } from '@pommora/uix/Interactions/hoverReveal'
 
 type Kind = Block['kind']
+type BlockScope = Exclude<MarkdownScope, 'text'>
 
 const GRIP_KINDS: ReadonlySet<Kind> = new Set([
   'paragraph',
@@ -39,7 +40,7 @@ class GripWidget extends GlyphWidget {
 const gripWidget = new GripWidget()
 const handleLine = Decoration.line({ class: 'md-block-handle', attributes: GRIP_HOST })
 
-export function blockHandles(scope: MarkdownScope = 'page'): Extension {
+export function blockHandles(scope: BlockScope = 'page'): Extension {
   const kinds = scope === 'cell' ? CELL_KINDS : GRIP_KINDS
   return EditorView.decorations.compute(['doc'], (state) => {
     const ranges: Range<Decoration>[] = []
@@ -144,7 +145,7 @@ class TagReveal {
 }
 
 // Grips can't self-hover, so a grippable block's first line is a script host, turned `on` whenever the pointer sits in the gutter strip of any of its lines. On a page each code tag reveals its copy mark while the pointer is within reach, scaled with the editor's font; that listener is the content's own, so a move over a table or an embed, which the editor's handlers skip, still counts.
-export function pointerReveal(scope: MarkdownScope = 'page'): Extension {
+export function pointerReveal(scope: BlockScope = 'page'): Extension {
   let hotLine: HTMLElement | null = null
   const setHot = (next: HTMLElement | null): void => {
     if (next === hotLine && next?.dataset.revealHost !== 'off') return

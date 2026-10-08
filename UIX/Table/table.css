@@ -200,7 +200,7 @@
   min-width: 0;
   max-height: 1lh;
 }
-.cell-text-host > span {
+.cell-pen {
   position: absolute;
   inset-block: 0;
   right: 0;

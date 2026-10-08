@@ -1,6 +1,6 @@
 ## Development Environment
 
-The operational layer for running, driving, and committing to the app; the Feature docs (`.claude/Features/`) describe how the app itself works. Sibling guidelines: [[Editor-Internals]], [[Interface-Styling]], and [[Web-Guests]].
+The operational layer for running, driving, and committing to the app; the Feature docs (`.claude/Features/`) describe how the app itself works. Sibling guidelines: [[Editor-Internals]] and [[Web-Guests]].
 
 ### Running the App
 

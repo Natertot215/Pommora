@@ -20,7 +20,7 @@ export function TextCell({
   holder?: ConnPage
   onPane?: (anchor: HTMLElement) => void
 }): React.JSX.Element {
-  const hostRef = useRef<HTMLSpanElement>(null)
+  const hostRef = useRef<HTMLDivElement>(null)
   const own = holder ? ({ kind: 'held', page: holder } as const) : null
   const { linkAt, dismiss, onContextMenu, onPointerOver, onPointerOut } = linkGestures(
     text,
@@ -39,7 +39,7 @@ export function TextCell({
   }
   return (
     // biome-ignore lint/a11y/useKeyWithClickEvents lint/a11y/noStaticElementInteractions: the value's keyboard route is its field; a link inside it is pointer-followed as a resting table cell's is
-    <span
+    <div
       ref={hostRef}
       className="cell-text-host"
       data-reveal-host=""
@@ -50,7 +50,7 @@ export function TextCell({
     >
       <div className="cell-text">{renderCellContent(text, connections)}</div>
       {onPane && (
-        <span>
+        <span className="cell-pen">
           <AccessoryButton
             icon="square-pen"
             size="body"
@@ -63,6 +63,6 @@ export function TextCell({
           />
         </span>
       )}
-    </span>
+    </div>
   )
 }
